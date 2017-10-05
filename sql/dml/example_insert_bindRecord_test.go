@@ -22,7 +22,7 @@ import (
 )
 
 // Make sure that type productEntity implements interface.
-var _ dml.ArgumentsAppender = (*productEntity)(nil)
+var _ dml.ColumnMapper = (*productEntity)(nil)
 
 // productEntity represents just a demo record.
 type productEntity struct {
@@ -33,41 +33,32 @@ type productEntity struct {
 	HasOptions     bool
 }
 
-func (pe productEntity) AppendArgs(args dml.Arguments, columns []string) (dml.Arguments, error) {
-	l := len(columns)
-	if l == 1 {
-		// Most commonly used case
-		return pe.appendArgs(args, columns[0])
-	}
-	if l == 0 {
+func (pe productEntity) MapColumns(rm *dml.ColumnMap) error {
+	if rm.Mode() == 'a' {
 		// This case gets executed when an INSERT statement doesn't contain any
 		// columns.
-		return args.Int64(pe.EntityID).Int64(pe.AttributeSetID).String(pe.TypeID).NullString(pe.SKU).Bool(pe.HasOptions), nil
+		return rm.Int64(&pe.EntityID).Int64(&pe.AttributeSetID).String(&pe.TypeID).NullString(&pe.SKU).Bool(&pe.HasOptions).Err()
 	}
 	// This case gets executed when an INSERT statement requests specific columns.
-	for _, col := range columns {
-		var err error
-		if args, err = pe.appendArgs(args, col); err != nil {
-			return nil, errors.WithStack(err)
+	for i, column := range rm.Columns {
+		rm = rm.Index(i)
+		switch column {
+		case "attribute_set_id":
+			rm.Int64(&pe.AttributeSetID)
+		case "type_id":
+			rm.String(&pe.TypeID)
+		case "sku":
+			rm.NullString(&pe.SKU)
+		case "has_options":
+			rm.Bool(&pe.HasOptions)
+		default:
+			return errors.NewNotFoundf("[dml_test] Column %q not found", column)
+		}
+		if rm.Err() != nil {
+			return errors.WithStack(rm.Err())
 		}
 	}
-	return args, nil
-}
-
-func (pe productEntity) appendArgs(args dml.Arguments, column string) (_ dml.Arguments, err error) {
-	switch column {
-	case "attribute_set_id":
-		args = args.Int64(pe.AttributeSetID)
-	case "type_id":
-		args = args.String(pe.TypeID)
-	case "sku":
-		args = args.NullString(pe.SKU)
-	case "has_options":
-		args = args.Bool(pe.HasOptions)
-	default:
-		return nil, errors.NewNotFoundf("[dml_test] Column %q not found", column)
-	}
-	return args, nil
+	return nil
 }
 
 // ExampleInsert_BindRecord inserts new data into table

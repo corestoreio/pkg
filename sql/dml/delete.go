@@ -130,7 +130,7 @@ func (b *Delete) BindRecord(records ...QualifiedRecord) *Delete {
 
 func (b *Delete) bindRecord(records []QualifiedRecord) {
 	if b.ArgumentsAppender == nil {
-		b.ArgumentsAppender = make(map[string]ArgumentsAppender)
+		b.ArgumentsAppender = make(map[string]ColumnMapper)
 	}
 	for _, rec := range records {
 		q := rec.Qualifier

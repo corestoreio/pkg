@@ -25,7 +25,7 @@ import (
 )
 
 // Make sure that type salesOrder implements interface.
-var _ dml.ArgumentsAppender = (*salesOrder)(nil)
+var _ dml.ColumnMapper = (*salesOrder)(nil)
 
 // salesOrder represents just a demo record.
 type salesOrder struct {
@@ -36,44 +36,31 @@ type salesOrder struct {
 	GrandTotal dml.NullFloat64
 }
 
-func (so salesOrder) appendArgs(args dml.Arguments, column string) (_ dml.Arguments, err error) {
-	switch column {
-	case "entity_id":
-		args = args.Int64(so.EntityID)
-	case "state":
-		args = args.String(so.State)
-	case "store_id":
-		args = args.Int64(so.StoreID)
-	case "customer_id":
-		args = args.Int64(so.CustomerID)
-	case "grand_total":
-		args = args.NullFloat64(so.GrandTotal)
-	default:
-		return nil, errors.NewNotFoundf("[dml_test] Column %q not found", column)
+func (so *salesOrder) MapColumns(rm *dml.ColumnMap) error {
+	if rm.Mode() == 'a' {
+		return rm.Int64(&so.EntityID).String(&so.State).Int64(&so.StoreID).Err()
 	}
-	return args, nil
-}
-
-// AppendArgs implements dml.ArgumentsAppender interface
-func (so salesOrder) AppendArgs(args dml.Arguments, columns []string) (dml.Arguments, error) {
-	l := len(columns)
-	if l == 1 {
-		// Most commonly used case
-		return so.appendArgs(args, columns[0])
-	}
-	if l == 0 {
-		// This case gets executed when an INSERT statement doesn't contain any
-		// columns.
-		return args.Int64(so.EntityID).String(so.State).Int64(so.StoreID), nil
-	}
-	// This case gets executed when an INSERT statement requests specific columns.
-	for _, col := range columns {
-		var err error
-		if args, err = so.appendArgs(args, col); err != nil {
-			return nil, errors.WithStack(err)
+	for i, column := range rm.Columns {
+		rm = rm.Index(i)
+		switch column {
+		case "entity_id":
+			rm.Int64(&so.EntityID)
+		case "state":
+			rm.String(&so.State)
+		case "store_id":
+			rm.Int64(&so.StoreID)
+		case "customer_id":
+			rm.Int64(&so.CustomerID)
+		case "grand_total":
+			rm.NullFloat64(&so.GrandTotal)
+		default:
+			return errors.NewNotFoundf("[dml_test] Column %q not found", column)
+		}
+		if rm.Err() != nil {
+			return rm.Err()
 		}
 	}
-	return args, nil
+	return nil
 }
 
 // ExampleUpdate_Prepare can create a prepared statement or interpolated statements
@@ -114,7 +101,7 @@ func ExampleUpdate_Prepare() {
 
 	// Our objects which should update the columns in the database table
 	// `sales_order`.
-	collection := []salesOrder{
+	collection := []*salesOrder{
 		{1, "pending", 5, 5678, dml.MakeNullFloat64(31.41459)},
 		{2, "processing", 7, 8912, dml.NullFloat64{}},
 	}

@@ -326,9 +326,9 @@ func TestUpdate_SetRecord(t *testing.T) {
 			"Gopher", "gopher@g00gle.c0m", int64(12345),
 		)
 	})
-	t.Run("fails column not in entity object", func(t *testing.T) {
+	t.Run("fails column `key` not in entity object", func(t *testing.T) {
 		u := NewUpdate("dml_person").AddColumns("name", "email").BindRecord(Qualify("", pRec)).
-			Set(Column("key").Str("JustAKey")).
+			Set(Column("keyXXX").Str("JustAKey")).
 			Where(Column("id").PlaceHolder())
 		compareToSQL(t, u, errors.IsNotFound,
 			"",

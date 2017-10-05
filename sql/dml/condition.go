@@ -1019,7 +1019,7 @@ func (cs Conditions) writeOnDuplicateKey(w *bytes.Buffer) error {
 	return nil
 }
 
-func appendArgs(pendingArgPos []int, records map[string]ArgumentsAppender, args Arguments, defaultQualifier string, columns []string) (_ Arguments, err error) {
+func appendArgs(pendingArgPos []int, records map[string]ColumnMapper, args Arguments, defaultQualifier string, columns []string) (_ Arguments, err error) {
 	// arguments list above is a bit long, maybe later this function can be
 	// integrated into Conditions.appendArgs.
 	if records == nil {
@@ -1027,20 +1027,23 @@ func appendArgs(pendingArgPos []int, records map[string]ArgumentsAppender, args 
 	}
 
 	lenBefore := len(args)
-	var argCol [1]string
+	rm := &ColumnMap{
+		Args:    args,
+		Columns: []string{""},
+	}
 	for _, identifier := range columns {
 		qualifier, column := splitColumn(identifier)
 		if qualifier == "" {
 			qualifier = defaultQualifier
 		}
 		if rec, ok := records[qualifier]; ok {
-			argCol[0] = column
-			args, err = rec.AppendArgs(args, argCol[:])
-			if err != nil {
+			rm.Columns[0] = column
+			if err = rec.MapColumns(rm); err != nil {
 				return nil, errors.WithStack(err)
 			}
 		}
 	}
+	args = rm.Args
 	lenAfter := len(args)
 	if lenAfter > lenBefore {
 		j := 0

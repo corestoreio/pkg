@@ -24,6 +24,12 @@ import (
 	"github.com/corestoreio/log"
 )
 
+// LastInsertIDAssigner assigns the last insert ID of an auto increment
+// column back to the objects.
+type LastInsertIDAssigner interface {
+	AssignLastInsertID(int64)
+}
+
 // Insert contains the clauses for an INSERT statement
 type Insert struct {
 	BuilderBase
@@ -38,7 +44,7 @@ type Insert struct {
 	// RowCount defines the number of expected rows.
 	RowCount int // See SetRowCount()
 
-	Records []ArgumentsAppender
+	Records []ColumnMapper
 	// RecordValueCount defines the number of place holders for each value
 	// within the brackets for each set. Must only be set when Records are set
 	// and `Columns` field has been omitted.
@@ -204,7 +210,7 @@ func (b *Insert) AddArguments(args Arguments) *Insert {
 // record can also be e.g. a slice which appends all requested arguments at
 // once. Using a slice requires to call `SetRowCount` to tell the Insert object
 // the number of rows.
-func (b *Insert) BindRecord(recs ...ArgumentsAppender) *Insert {
+func (b *Insert) BindRecord(recs ...ColumnMapper) *Insert {
 	b.Records = append(b.Records, recs...)
 	return b
 }
@@ -474,16 +480,20 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 		return args, errors.WithStack(err)
 	}
 
+	rm := &ColumnMap{
+		Args:    args,
+		Columns: b.Columns, // b.Columns can be nil
+	}
 	for _, rec := range b.Records {
-		alBefore := len(args)
-		args, err = rec.AppendArgs(args, b.Columns) // b.Columns can be nil
-		if err != nil {
+		alBefore := len(rm.Args)
+		if err = rec.MapColumns(rm); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if addedArgs := len(args) - alBefore; addedArgs%argCount0 != 0 {
+		if addedArgs := len(rm.Args) - alBefore; addedArgs%argCount0 != 0 {
 			return nil, errors.NewMismatchf("[dml] Insert.appendArgs RecordValueCount(%d) does not match the number of assembled arguments (%d)", b.RecordValueCount, addedArgs)
 		}
 	}
+	args = rm.Args
 
 	if args, _, err = b.OnDuplicateKeys.appendArgs(args, appendArgsDUPKEY); err != nil {
 		return nil, errors.WithStack(err)
@@ -583,7 +593,7 @@ func (st *StmtInsert) WithArguments(args Arguments) *StmtInsert {
 
 // WithRecords sets the records for the execution with Exec. It internally
 // resets previously applied arguments.
-func (st *StmtInsert) WithRecords(records ...ArgumentsAppender) *StmtInsert {
+func (st *StmtInsert) WithRecords(records ...ColumnMapper) *StmtInsert {
 	st.argsCache = st.argsCache[:0]
 	st.ins.Records = nil
 	st.ins.BindRecord(records...)

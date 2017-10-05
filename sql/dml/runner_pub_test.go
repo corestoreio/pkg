@@ -17,8 +17,6 @@ package dml_test
 import (
 	"bytes"
 	"context"
-	"database/sql"
-	"io"
 	"testing"
 	"time"
 
@@ -29,8 +27,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-var _ io.WriterTo = (*dml.RowConvert)(nil)
 
 type myToSQL struct {
 	sql  string
@@ -74,6 +70,11 @@ func TestPrepare(t *testing.T) {
 	})
 }
 
+var (
+	_ dml.ColumnMapper = (*baseTest)(nil)
+	_ dml.ColumnMapper = (*baseTestCollection)(nil)
+)
+
 type baseTest struct {
 	Bool        bool
 	NullBool    dml.NullBool
@@ -94,77 +95,101 @@ type baseTest struct {
 	NullTime    dml.NullTime
 }
 
+func (bt *baseTest) MapColumns(rm *dml.ColumnMap) error {
+	if rm.Mode() == 'a' {
+		return rm.Bool(&bt.Bool).NullBool(&bt.NullBool).Int(&bt.Int).Int64(&bt.Int64).NullInt64(&bt.NullInt64).Float64(&bt.Float64).NullFloat64(&bt.NullFloat64).Uint(&bt.Uint).Uint8(&bt.Uint8).Uint16(&bt.Uint16).Uint32(&bt.Uint32).Uint64(&bt.Uint64).Byte(&bt.Byte).String(&bt.Str).NullString(&bt.NullString).Time(&bt.Time).NullTime(&bt.NullTime).Err()
+	}
+	for i, column := range rm.Columns {
+		// TODO: build something like `for rm.Next() {` to avoid calling `Index()`.
+		// TODO: numbers are experimental and in case all columns are requested, as we
+		// don't know the column names numbering them would be enough. this
+		// should avoid the above AllColumns `if` branch.
+		rm = rm.Index(i)
+		switch column {
+		case "bool":
+			rm.Bool(&bt.Bool)
+		case "null_bool":
+			rm.NullBool(&bt.NullBool)
+		case "int":
+			rm.Int(&bt.Int)
+		case "int64":
+			rm.Int64(&bt.Int64)
+		case "null_int64":
+			rm.NullInt64(&bt.NullInt64)
+		case "float64":
+			rm.Float64(&bt.Float64)
+		case "null_float64":
+			rm.NullFloat64(&bt.NullFloat64)
+		case "uint":
+			rm.Uint(&bt.Uint)
+		case "uint8":
+			rm.Uint8(&bt.Uint8)
+		case "uint16":
+			rm.Uint16(&bt.Uint16)
+		case "uint32":
+			rm.Uint32(&bt.Uint32)
+		case "uint64":
+			rm.Uint64(&bt.Uint64)
+		case "byte":
+			rm.Byte(&bt.Byte)
+		case "str":
+			rm.String(&bt.Str)
+		case "null_string":
+			rm.NullString(&bt.NullString)
+		case "time":
+			rm.Time(&bt.Time)
+		case "null_time":
+			rm.NullTime(&bt.NullTime)
+		default:
+			return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", column)
+		}
+		if rm.Err() != nil {
+			return rm.Err()
+		}
+	}
+	return nil
+}
+
 type baseTestCollection struct {
-	Convert        dml.RowConvert
 	Data           []*baseTest
-	EventAfterScan func(dml.RowConvert, *baseTest)
+	EventAfterScan func(*dml.ColumnMap, *baseTest)
+	CheckValidUTF8 bool
 }
 
 func (vs *baseTestCollection) ToSQL() (string, []interface{}, error) {
 	return "SELECT * FROM `test`", nil, nil
 }
 
-// RowScan implements dml.Scanner interface and scans a single row from the
+// RowScan implements dml.ColumnMapper interface and scans a single row from the
 // database query result.
-func (vs *baseTestCollection) RowScan(r *sql.Rows) error {
-	if err := vs.Convert.Scan(r); err != nil {
-		return err
-	}
-
-	o := new(baseTest)
-	for i, col := range vs.Convert.Columns {
-		if vs.Convert.Alias != nil {
-			if orgCol, ok := vs.Convert.Alias[col]; ok {
-				col = orgCol
+func (vs *baseTestCollection) MapColumns(rm *dml.ColumnMap) error {
+	switch m := rm.Mode(); m {
+	case 'a': // INSERT STATEMENT requesting all columns aka arguments
+		for _, p := range vs.Data {
+			if err := p.MapColumns(rm); err != nil {
+				return errors.WithStack(err)
 			}
 		}
-		b := vs.Convert.Index(i)
-		var err error
-
-		switch col {
-		case "bool":
-			o.Bool, err = b.Bool()
-		case "null_bool":
-			o.NullBool, err = b.NullBool()
-		case "int":
-			o.Int, err = b.Int()
-		case "int64":
-			o.Int64, err = b.Int64()
-		case "null_int64":
-			o.NullInt64, err = b.NullInt64()
-		case "float64":
-			o.Float64, err = b.Float64()
-		case "null_float64":
-			o.NullFloat64, err = b.NullFloat64()
-		case "uint":
-			o.Uint, err = b.Uint()
-		case "uint8":
-			o.Uint8, err = b.Uint8()
-		case "uint16":
-			o.Uint16, err = b.Uint16()
-		case "uint32":
-			o.Uint32, err = b.Uint32()
-		case "uint64":
-			o.Uint64, err = b.Uint64()
-		case "byte":
-			o.Byte = b.Byte()
-		case "str":
-			o.Str, err = b.String()
-		case "null_string":
-			o.NullString, err = b.NullString()
-		case "time":
-			o.Time, err = b.Time()
-		case "null_time":
-			o.NullTime, err = b.NullTime()
+	case 'w':
+		// case for scanning when loading certain rows, hence we write data from
+		// the DB into the struct in each for-loop.
+		if rm.Count == 1 {
+			vs.Data = vs.Data[:0]
+			rm.CheckValidUTF8 = vs.CheckValidUTF8
 		}
-		if err != nil {
-			return errors.Wrapf(err, "[dml_test] Failed to scan column %q at row %d", col, b.Count)
+		p := new(baseTest)
+		if err := p.MapColumns(rm); err != nil {
+			return errors.WithStack(err)
 		}
+		if vs.EventAfterScan != nil {
+			vs.EventAfterScan(rm, p)
+		}
+		vs.Data = append(vs.Data, p)
+	case 'r':
+		panic("not needed")
+	default:
+		return errors.NewNotSupportedf("[dml] Unknown Mode: %q", string(m))
 	}
-	if vs.EventAfterScan != nil {
-		vs.EventAfterScan(vs.Convert, o)
-	}
-	vs.Data = append(vs.Data, o)
 	return nil
 }
 
@@ -174,7 +199,7 @@ func TestRowConvert(t *testing.T) {
 	dbc, dbMock := cstesting.MockDB(t)
 	defer cstesting.MockClose(t, dbc, dbMock)
 
-	// TODO(CyS) check that RowConvert.Byte() returns a copy
+	// TODO(CyS) check that RowMap.Byte() returns a copy
 
 	columns := []string{
 		"bool", "null_bool",
@@ -196,7 +221,7 @@ func TestRowConvert(t *testing.T) {
 		tbl := new(baseTestCollection)
 
 		rc, err := dml.Load(context.TODO(), dbc.DB, tbl, tbl)
-		assert.Exactly(t, int64(0), rc)
+		assert.Exactly(t, uint64(0), rc)
 		assert.Contains(t, err.Error(), "sql: Scan error on column index 0: unsupported Scan, storing driver.Value type chan int into type *sql.RawBytes")
 	})
 
@@ -213,14 +238,14 @@ func TestRowConvert(t *testing.T) {
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
 		tbl := new(baseTestCollection)
-		tbl.EventAfterScan = func(b dml.RowConvert, _ *baseTest) {
+		tbl.EventAfterScan = func(b *dml.ColumnMap, _ *baseTest) {
 			buf := new(bytes.Buffer)
 			require.NoError(t, b.Debug(buf))
 			assert.Exactly(t, "bool: \"1\"\nnull_bool: \"false\"\nint: \"-1\"\nint64: \"-64\"\nnull_int64: \"-128\"\nfloat64: \"0.1\"\nnull_float64: \"3.141\"\nuint: \"0\"\nuint8: \"8\"\nuint16: \"16\"\nuint32: \"32\"\nuint64: \"64\"\nbyte: \"byte data\"\nstr: \"I'm a string\"\nnull_string: <nil>\ntime: \"2006-01-02T15:04:05.000000002+00:00\"\nnull_time: <nil>", buf.String())
 		}
 
 		rc, err := dml.Load(context.TODO(), dbc.DB, tbl, tbl)
-		assert.Exactly(t, int64(1), rc)
+		assert.Exactly(t, uint64(1), rc)
 		require.NoError(t, err)
 	})
 
@@ -240,7 +265,7 @@ func TestRowConvert(t *testing.T) {
 		rc, err := dml.Load(context.TODO(), dbc.DB, tbl, tbl)
 		require.NoError(t, err)
 
-		assert.Exactly(t, int64(1), rc)
+		assert.Exactly(t, uint64(1), rc)
 		require.Len(t, tbl.Data, 1)
 
 		tbl.Data[0].Time = now()
@@ -282,7 +307,7 @@ func TestRowConvert(t *testing.T) {
 		tbl := new(baseTestCollection)
 
 		rc, err := dml.Load(context.TODO(), dbc.DB, tbl, tbl)
-		assert.Exactly(t, int64(1), rc)
+		assert.Exactly(t, uint64(1), rc)
 		require.NoError(t, err)
 		require.Len(t, tbl.Data, 1)
 
@@ -301,12 +326,6 @@ func TestRowConvert(t *testing.T) {
 		}
 		tbl.Data[0].Time = now() // useless to test this because location gets set new, hence a new pointer ...
 		assert.Exactly(t, want, tbl.Data[0])
-
-		buf := new(bytes.Buffer)
-		require.NoError(t, tbl.Convert.Debug(buf))
-
-		assert.Exactly(t, "bool: \"True\"\nnull_bool: <nil>\nint: \"-1\"\nint64: \"-64\"\nnull_int64: <nil>\nfloat64: \"0.1\"\nnull_float64: <nil>\nuint: \"0\"\nuint8: \"8\"\nuint16: \"16\"\nuint32: \"32\"\nuint64: \"64\"\nbyte: <nil>\nstr: \"I'm a string\"\nnull_string: <nil>\ntime: \"2006-01-02T15:04:05.000000002+00:00\"\nnull_time: <nil>",
-			buf.String())
 	})
 
 	t.Run("invalid UTF8 Str", func(t *testing.T) {
@@ -321,10 +340,10 @@ func TestRowConvert(t *testing.T) {
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
 		tbl := new(baseTestCollection)
-		tbl.Convert.CheckValidUTF8 = true
+		tbl.CheckValidUTF8 = true
 
 		rc, err := dml.Load(context.TODO(), dbc.DB, tbl, tbl)
-		assert.Exactly(t, int64(0), rc)
+		assert.Exactly(t, uint64(0), rc)
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
 	})
 	t.Run("invalid UTF8 NullStr", func(t *testing.T) {
@@ -340,37 +359,11 @@ func TestRowConvert(t *testing.T) {
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
 		tbl := new(baseTestCollection)
-		tbl.Convert.CheckValidUTF8 = true
+		tbl.CheckValidUTF8 = true
 
 		rc, err := dml.Load(context.TODO(), dbc.DB, tbl, tbl)
-		assert.Exactly(t, int64(0), rc)
+		assert.Exactly(t, uint64(0), rc)
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
-
-	})
-	t.Run("WriteTo", func(t *testing.T) {
-
-		r := sqlmock.NewRows(columns).AddRow(
-			"True", nil,
-			-1, -64, nil,
-			0.1, nil,
-			0, 8, 16, 32, 64,
-			nil, "I'm writing to ...", nil,
-			now(), now(),
-		)
-		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
-
-		tbl := new(baseTestCollection)
-
-		rc, err := dml.Load(context.TODO(), dbc.DB, tbl, tbl)
-		assert.Exactly(t, int64(1), rc)
-		require.NoError(t, err)
-
-		// Does only work for one returned row OR when using a call back function
-		buf := new(bytes.Buffer)
-		l, err := tbl.Convert.Index(13).WriteTo(buf)
-		require.NoError(t, err)
-		assert.Exactly(t, int64(18), l)
-		assert.Exactly(t, `I'm writing to ...`, buf.String())
 
 	})
 }

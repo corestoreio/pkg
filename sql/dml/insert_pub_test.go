@@ -31,7 +31,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var _ dml.ArgumentsAppender = (*someRecord)(nil)
+var _ dml.ColumnMapper = (*someRecord)(nil)
 
 type someRecord struct {
 	SomethingID int
@@ -39,34 +39,27 @@ type someRecord struct {
 	Other       bool
 }
 
-func (sr someRecord) appendArgs(args dml.Arguments, column string) (_ dml.Arguments, err error) {
-	switch column {
-	case "something_id":
-		args = args.Int(sr.SomethingID)
-	case "user_id":
-		args = args.Int64(sr.UserID)
-	case "other":
-		args = args.Bool(sr.Other)
-	default:
-		err = errors.NewNotFoundf("[dml_test] Column %q not found", column)
+func (sr someRecord) MapColumns(rm *dml.ColumnMap) error {
+	if rm.Mode() == 'a' {
+		return rm.Int(&sr.SomethingID).Int64(&sr.UserID).Bool(&sr.Other).Err()
 	}
-	return args, err
-}
-
-func (sr someRecord) AppendArgs(args dml.Arguments, columns []string) (_ dml.Arguments, err error) {
-	l := len(columns)
-	if l == 1 {
-		return sr.appendArgs(args, columns[0])
-	}
-	if l == 0 {
-		return args.Int(sr.SomethingID).Int64(sr.UserID).Bool(sr.Other), nil // except auto inc column ;-)
-	}
-	for _, col := range columns {
-		if args, err = sr.appendArgs(args, col); err != nil {
-			return nil, errors.WithStack(err)
+	for i, column := range rm.Columns {
+		rm = rm.Index(i)
+		switch column {
+		case "something_id":
+			rm.Int(&sr.SomethingID)
+		case "user_id":
+			rm.Int64(&sr.UserID)
+		case "other":
+			rm.Bool(&sr.Other)
+		default:
+			return errors.NewNotFoundf("[dml_test] Column %q not found", column)
+		}
+		if rm.Err() != nil {
+			return rm.Err()
 		}
 	}
-	return args, err
+	return nil
 }
 
 func TestInsert_Bind(t *testing.T) {

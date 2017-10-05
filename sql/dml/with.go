@@ -337,9 +337,9 @@ func (b *With) Query(ctx context.Context) (*sql.Rows, error) {
 
 // Load loads data from a query into an object. You must set DB.QueryContext on
 // the With object or it just panics. Load can load a single row or n-rows.
-func (b *With) Load(ctx context.Context, s Scanner) (rowCount int64, err error) {
+func (b *With) Load(ctx context.Context, s ColumnMapper) (rowCount uint64, err error) {
 	if b.Log != nil && b.Log.IsDebug() {
-		defer log.WhenDone(b.Log).Debug("Load", log.Int64("row_count", rowCount), log.Stringer("sql", b))
+		defer log.WhenDone(b.Log).Debug("Load", log.Uint64("row_count", rowCount), log.Stringer("sql", b))
 	}
 	rowCount, err = Load(ctx, b.DB, b, s)
 	return rowCount, errors.WithStack(err)

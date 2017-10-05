@@ -136,7 +136,7 @@ func (b *Update) BindRecord(records ...QualifiedRecord) *Update {
 
 func (b *Update) bindRecord(records []QualifiedRecord) {
 	if b.ArgumentsAppender == nil {
-		b.ArgumentsAppender = make(map[string]ArgumentsAppender)
+		b.ArgumentsAppender = make(map[string]ColumnMapper)
 	}
 	for _, rec := range records {
 		q := rec.Qualifier
@@ -276,14 +276,17 @@ func (b *Update) appendArgs(args Arguments) (_ Arguments, err error) {
 		qualifier := b.Table.mustQualifier() // if this panics, you have different problems.
 
 		if aa, ok := b.ArgumentsAppender[qualifier]; ok {
-			var argCol [1]string
+			rm := &ColumnMap{
+				Args:    args,
+				Columns: []string{""},
+			}
 			for _, col := range b.SetClausAliases {
-				argCol[0] = col
-				args, err = aa.AppendArgs(args, argCol[:])
-				if err != nil {
+				rm.Columns[0] = col
+				if err = aa.MapColumns(rm); err != nil {
 					return nil, errors.Wrapf(err, "[dml] Update.appendArgs.AppendArgs at qualifier %q and column %q", qualifier, col)
 				}
 			}
+			args = rm.Args
 		}
 	}
 

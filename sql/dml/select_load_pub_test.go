@@ -20,9 +20,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"testing"
-
+	"io"
 	"sync/atomic"
+	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/sql/dml"
@@ -81,16 +81,17 @@ func TestSelect_Rows(t *testing.T) {
 	})
 }
 
-var _ dml.Scanner = (*TableCoreConfigDataSlice)(nil)
-
-var _ dml.RowCloser = (*TableCoreConfigDataSlice)(nil)
+var (
+	_ dml.ColumnMapper = (*TableCoreConfigDataSlice)(nil)
+	_ dml.ColumnMapper = (*TableCoreConfigData)(nil)
+	_ io.Closer        = (*TableCoreConfigDataSlice)(nil)
+)
 
 // TableCoreConfigDataSlice represents a collection type for DB table core_config_data
 // Generated via tableToStruct.
 type TableCoreConfigDataSlice struct {
-	Convert dml.RowConvert
-	Data    []*TableCoreConfigData
-	err     error // just for testing not needed otherwise
+	Data []*TableCoreConfigData
+	err  error // just for testing not needed otherwise
 }
 
 // TableCoreConfigData represents a type for DB table core_config_data
@@ -103,42 +104,54 @@ type TableCoreConfigData struct {
 	Value    dml.NullString `json:",omitempty"` // value text NULL
 }
 
-func (ps *TableCoreConfigDataSlice) RowScan(r *sql.Rows) error {
-	if err := ps.Convert.Scan(r); err != nil {
-		return errors.WithStack(err)
+func (p *TableCoreConfigData) MapColumns(rm *dml.ColumnMap) error {
+	if rm.Mode() == 'a' {
+		return rm.Int64(&p.ConfigID).String(&p.Scope).Int64(&p.ScopeID).String(&p.Path).NullString(&p.Value).Err()
 	}
-	var o TableCoreConfigData
-	for i, col := range ps.Convert.Columns {
-		b := ps.Convert.Index(i)
-		var err error
-		switch col {
+	for i, column := range rm.Columns {
+		rm = rm.Index(i)
+		switch column {
 		case "config_id":
-			o.ConfigID, err = b.Int64()
+			rm.Int64(&p.ConfigID)
 		case "scope":
-			o.Scope, err = b.String()
+			rm.String(&p.Scope)
 		case "scope_id":
-			o.ScopeID, err = b.Int64()
+			rm.Int64(&p.ScopeID)
 		case "path":
-			o.Path, err = b.String()
+			rm.String(&p.Path)
 		case "value":
-			o.Value, err = b.NullString()
+			rm.NullString(&p.Value)
 		}
-		if err != nil {
-			return errors.Wrapf(err, "[dml] Failed to convert value at row % with column index %d", ps.Convert.Count, i)
+		if rm.Err() != nil {
+			return rm.Err()
 		}
 	}
-	ps.Data = append(ps.Data, &o)
 	return nil
 }
 
-func (ps *TableCoreConfigDataSlice) RowClose() error {
+func (ps *TableCoreConfigDataSlice) MapColumns(rm *dml.ColumnMap) error {
+	switch m := rm.Mode(); m {
+	case 'w':
+		// case for scanning when loading certain rows, hence we write data from
+		// the DB into the struct in each for-loop.
+		if rm.Count == 1 {
+			ps.Data = ps.Data[:0]
+		}
+		p := new(TableCoreConfigData)
+		if err := p.MapColumns(rm); err != nil {
+			return errors.WithStack(err)
+		}
+		ps.Data = append(ps.Data, p)
+	case 'r', 'a', 'A':
+		// noop not needed
+	default:
+		return errors.NewNotSupportedf("[dml] Unknown Mode: %q", string(m))
+	}
 	return ps.err
 }
 
-var _ dml.ArgumentsAppender = (*TableCoreConfigDataSlice)(nil)
-
-func (ps TableCoreConfigDataSlice) AppendArgs(args dml.Arguments, _ []string) (dml.Arguments, error) {
-	return args, ps.err
+func (ps *TableCoreConfigDataSlice) Close() error {
+	return ps.err
 }
 
 func TestSelect_Load(t *testing.T) {
@@ -184,7 +197,7 @@ func TestSelect_Load(t *testing.T) {
 		assert.True(t, errors.IsConnectionFailed(err), "%+v", err)
 	})
 
-	t.Run("RowClose error", func(t *testing.T) {
+	t.Run("ioClose error", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
 		defer cstesting.MockClose(t, dbc, dbMock)
 
@@ -319,7 +332,7 @@ func TestSelect_Prepare(t *testing.T) {
 		})
 
 		t.Run("WithRecords Error", func(t *testing.T) {
-			p := TableCoreConfigDataSlice{err: errors.NewDuplicatedf("Found a duplicate")}
+			p := &TableCoreConfigDataSlice{err: errors.NewDuplicatedf("Found a duplicate")}
 			stmt.WithRecords(dml.Qualify("", p))
 			rows, err := stmt.Query(context.TODO())
 			assert.True(t, errors.IsDuplicated(err), "%+v", err)
@@ -351,7 +364,7 @@ func TestSelect_Prepare(t *testing.T) {
 
 			rc, err := stmt.WithArgs(345).Load(context.TODO(), ccd)
 			require.NoError(t, err)
-			assert.Exactly(t, int64(2), rc)
+			assert.Exactly(t, uint64(2), rc)
 
 			assert.Exactly(t, "&{3  4 a/b/c {{ false}}}", fmt.Sprintf("%v", ccd.Data[0]))
 			assert.Exactly(t, "&{4  4 a/b/d {{ false}}}", fmt.Sprintf("%v", ccd.Data[1]))
@@ -646,7 +659,7 @@ func TestSelect_WithLogger(t *testing.T) {
 				p := &dmlPerson{}
 				_, err := stmt.WithArgs(-6).Load(context.TODO(), p)
 				require.NoError(t, err)
-				assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" is_prepared: true duration: 0 arg_len: 1\nDEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" is_prepared: true duration: 0 row_count: 0 object_type: \"*dml_test.dmlPerson\"\n",
+				assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" is_prepared: true duration: 0 arg_len: 1\nDEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" is_prepared: true duration: 0 row_count: 0x0 object_type: \"*dml_test.dmlPerson\"\n",
 					buf.String())
 			})
 

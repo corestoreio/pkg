@@ -161,6 +161,8 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 		name := "Maria Gopher ExecContext"
 		email := sql.NullString{String: "maria@gopherExecContext.go", Valid: true}
 
+		stmt.WithArguments(nil) // reset or arguments get doubled
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 

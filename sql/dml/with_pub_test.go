@@ -64,7 +64,7 @@ func TestWith_Load(t *testing.T) {
 			Select(dml.NewSelect().Star().From("sel")).
 			WithDB(dbc.DB)
 		rows, err := sel.Load(context.TODO(), nil)
-		assert.Exactly(t, int64(0), rows)
+		assert.Exactly(t, uint64(0), rows)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})
 }
@@ -309,7 +309,7 @@ func TestWith_Prepare(t *testing.T) {
 		})
 
 		t.Run("WithRecords Error", func(t *testing.T) {
-			p := TableCoreConfigDataSlice{err: errors.NewDuplicatedf("Found a duplicate")}
+			p := &TableCoreConfigDataSlice{err: errors.NewDuplicatedf("Found a duplicate")}
 			stmt.WithRecords(dml.Qualify("", p))
 			rows, err := stmt.Query(context.TODO())
 			assert.True(t, errors.IsDuplicated(err), "%+v", err)
@@ -371,7 +371,7 @@ func TestWith_WithLogger(t *testing.T) {
 			_, err := u.Interpolate().Load(context.TODO(), p)
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ02\" with_cte_id: \"UNIQ04\" tables: \"zehTeEh\" duration: 0 row_count: 0 sql: \"WITH /*ID:UNIQ04*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dml_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\"\n",
+			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ02\" with_cte_id: \"UNIQ04\" tables: \"zehTeEh\" duration: 0 row_count: 0x0 sql: \"WITH /*ID:UNIQ04*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dml_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\"\n",
 				buf.String())
 		})
 
@@ -439,7 +439,7 @@ func TestWith_WithLogger(t *testing.T) {
 			_, err := u.Interpolate().Load(context.TODO(), p)
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" with_cte_id: \"UNIQ12\" tables: \"zehTeEh\" duration: 0 row_count: 0 sql: \"WITH /*ID:UNIQ12*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dml_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\"\n",
+			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" with_cte_id: \"UNIQ12\" tables: \"zehTeEh\" duration: 0 row_count: 0x0 sql: \"WITH /*ID:UNIQ12*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dml_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\"\n",
 				buf.String())
 		})
 

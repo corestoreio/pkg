@@ -29,24 +29,6 @@ import (
 	"github.com/corestoreio/log"
 )
 
-// Scanner allows a type to load data from database query. It's used in the
-// rows.Next() for-loop.
-type Scanner interface {
-	// RowScan implementation must use function `Scan` to scan the values of the
-	// query into its own type. See database/sql package for examples.
-	RowScan(*sql.Rows) error
-}
-
-// RowCloser allows to execute special functions after the scanning has
-// happened. Should only be implemented in a custom type, if the interface
-// Scanner has been implemented too. Not every type might need a RowCloser.
-type RowCloser interface {
-	// RowClose gets called at the very end and even after rows.Close. Allows
-	// to implement special functions, like unlocking a mutex or updating
-	// internal structures or resetting internal type containers.
-	RowClose() error
-}
-
 // Exec executes the statement represented by the QueryBuilder. It returns the
 // raw database/sql Result or an error if there was one. Regarding
 // LastInsertID(): If you insert multiple rows using a single INSERT statement,
@@ -101,11 +83,15 @@ func Query(ctx context.Context, db Querier, b QueryBuilder) (*sql.Rows, error) {
 }
 
 // Load loads data from a query into `s`. Load supports loading of up to n-rows.
-// Load checks if a type implements RowCloser interface.
-// `db` can be either a *sql.DB (connection pool), a *sql.Conn (a single
-// dedicated database session) or a *sql.Tx (an in-progress database
-// transaction).
-func Load(ctx context.Context, db Querier, b QueryBuilder, s Scanner) (rowCount int64, err error) {
+// Load checks if a type implements io.Closer interface. `db` can be either a
+// *sql.DB (connection pool), a *sql.Conn (a single dedicated database session)
+// or a *sql.Tx (an in-progress database transaction).
+//
+// If ColumnMapper `s` implements io.Closer, the Close() function gets called in
+// the defer function after rows.Close. `s.Close` function allows to implement
+// features like unlocking a mutex or updating internal structures or closing a
+// connection.
+func Load(ctx context.Context, db Querier, b QueryBuilder, s ColumnMapper) (rowCount uint64, err error) {
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return 0, errors.WithStack(err)
@@ -118,7 +104,7 @@ func Load(ctx context.Context, db Querier, b QueryBuilder, s Scanner) (rowCount 
 	return rowCount, nil
 }
 
-func load(r *sql.Rows, errIn error, s Scanner) (rowCount int64, err error) {
+func load(r *sql.Rows, errIn error, s ColumnMapper) (rowCount uint64, err error) {
 	if errIn != nil {
 		return 0, errors.WithStack(errIn)
 	}
@@ -127,66 +113,104 @@ func load(r *sql.Rows, errIn error, s Scanner) (rowCount int64, err error) {
 		if err2 := r.Close(); err2 != nil && err == nil {
 			err = errors.Wrap(err2, "[dml] Load.QueryContext.Rows.Close")
 		}
-		if rc, ok := s.(RowCloser); ok {
-			if err2 := rc.RowClose(); err2 != nil && err == nil {
-				err = errors.Wrap(err2, "[dml] Load.QueryContext.Scanner.RowClose")
+		if rc, ok := s.(io.Closer); ok {
+			if err2 := rc.Close(); err2 != nil && err == nil {
+				err = errors.Wrap(err2, "[dml] Load.QueryContext.ColumnMapper.Close")
 			}
 		}
 	}()
 
+	rm := new(ColumnMap) // TODO(CyS) use sync.Pool
 	for r.Next() {
-		err = s.RowScan(r)
-		if err != nil {
+		if err = rm.Scan(r); err != nil {
 			return 0, errors.WithStack(err)
 		}
-		rowCount++
+		if err = s.MapColumns(rm); err != nil {
+			return 0, errors.WithStack(err)
+		}
 	}
 	if err = r.Err(); err != nil {
-		return rowCount, errors.WithStack(err)
+		return rm.Count, errors.WithStack(err)
 	}
-	return rowCount, err
+	return rm.Count, err
 }
 
-// RowConvert represents the commonly used fields for each struct for a database
-// table or a view to convert the sql.RawBytes into the desired final type. It
-// scans a *sql.Rows into a *sql.RawBytes slice. The conversion into the desired
-// final type can happen without allocating of memory. RowConvert should be used
-// as a composite field in a database table struct. Does not support streaming
-// because neither database/sql does :-(  The method receiver functions have the
-// same names as in type RowConvert.
-type RowConvert struct {
+// ColumnMapper allows a type to load data from database query into its fields
+// or return the fields values as arguments for a query. It's used in the
+// rows.Next() for-loop. A ColumnMapper is usually a single record/row or in
+// case of a slice a complete query result.
+type ColumnMapper interface {
+	// RowScan implementation must use function `Scan` to scan the values of the
+	// query into its own type. See database/sql package for examples.
+	MapColumns(rc *ColumnMap) error
+}
+
+// ColumnMap takes care that the table/view/identifiers are getting properly
+// mapped to ColumnMapper interface. ColumnMap has two run modes either collect
+// arguments from a type for running a SQL query OR to convert the sql.RawBytes
+// into the desired final type. ColumnMap scans a *sql.Rows into a *sql.RawBytes
+// slice without having a big memory overhead and not a single use of
+// reflection. The conversion into the desired final type can happen without
+// allocating of memory. It does not support streaming because neither
+// database/sql does :-(  The method receiver functions have the same names as
+// in type ColumnMap.
+type ColumnMap struct {
+	Args Arguments // in case we collect arguments
+
 	// Count increments on call to Scan.
 	Count uint64
-	// Columns contains the names of the column returned from the query.
+	// Columns contains the names of the column returned from the query. One
+	// should only read from the slice. Never modify it.
 	Columns []string
-	// Aliased maps a `key` containing the alias name, used in the query, to the
-	// `value`, the original snake case name used in the parent struct.
-	Alias map[string]string
-	// Initialized gets set to true after the first call to Scan to initialize
+	// initialized gets set to true after the first call to Scan to initialize
 	// the internal slices.
-	Initialized bool
+	initialized bool
 	// CheckValidUTF8 if enabled checks if strings contains valid UTF-8 characters.
 	CheckValidUTF8 bool
 	scanArgs       []interface{} // could be a sync.Pool but check it in benchmarks.
 	scanRaw        []*sql.RawBytes
+	scanErr        error // delayed error and also to avoid `if err != nil`
 	index          int
 	current        []byte
+}
+
+// Mode returns a status byte of four different states. These states are getting
+// used in the implementation of ColumnMapper. Each state represents a different
+// action while scanning from the query or collecting arguments. ColumnMapper
+// can be implemented by either a single type or a slice/map type. This
+// difference requires different states. A single can use the states 'a','r' and
+// 'w' where a slice type must additionally handle state 'R'.
+// 'a' means an INSERT statement without columns requests all arguments when
+// preparing a query. a=All.
+// 'R' means a SELECT statement with >= 2 columns needs all arguments. R=Read
+// from.
+// 'r' means a statement requests an argument for a single column. r=Read from.
+// 'w' write rows from the query into the struct fields.
+// See the examples. Documentation needs to be written better.
+func (b *ColumnMap) Mode() (m byte) {
+	switch {
+	case len(b.Columns) == 0:
+		m = 'a' // read all mode
+	case len(b.Columns) > 1 && b.Args != nil:
+		m = 'R' // no lower a because in MapColumns entity implementation if would add all args instead specific columns
+	case b.Args != nil:
+		m = 'r' // read mode, we request certain arguments, hence we're reading. like WHERE/JOIN clauses
+	case b.scanArgs != nil:
+		m = 'w' // write mode, we assign the data from the DB to the structs and create new structs in a slice.
+	}
+	return m
 }
 
 // Scan calls rows.Scan and builds an internal stack of sql.RawBytes for further
 // processing and type conversion.
 //
 // Each function for a specific type converts the underlying byte slice at the
-// current set index (see function Index) to the appropriate type. You can call
-// as many times as you want the specific functions. The underlying byte slice
-// value is valid until the next call to rows.Next, rows,Scan or rows.Close. See
-// the example for further usages.
-//
-// sqlRower relates to type *sql.Rows, but kept private to not confuse
-// developers with another exported interface. The interface exists mainly for
-// testing purposes.
-func (b *RowConvert) Scan(r *sql.Rows) error {
-	if !b.Initialized {
+// current applied index (see function Index) to the appropriate type. You can
+// call as many times as you want the specific functions. The underlying byte
+// slice value is valid until the next call to rows.Next, rows.Scan or
+// rows.Close. See the example for further usages.
+func (b *ColumnMap) Scan(r *sql.Rows) error {
+	if !b.initialized {
 		var err error
 		b.Columns, err = r.Columns()
 		if err != nil {
@@ -200,7 +224,7 @@ func (b *RowConvert) Scan(r *sql.Rows) error {
 			b.scanRaw[i] = rb
 			b.scanArgs[i] = rb
 		}
-		b.Initialized = true
+		b.initialized = true
 		b.Count = 0
 	}
 	if err := r.Scan(b.scanArgs...); err != nil {
@@ -210,108 +234,264 @@ func (b *RowConvert) Scan(r *sql.Rows) error {
 	return nil
 }
 
+// Err returns the delayed error from one of the scans and parsings. Function is
+// idempotent.
+func (b *ColumnMap) Err() error {
+	return b.scanErr
+}
+
 // Index sets the current column index to read data from. You must call this
 // first before calling any other type conversion function or they will return
 // empty or NULL values.
-func (b *RowConvert) Index(i int) *RowConvert {
+func (b *ColumnMap) Index(i int) *ColumnMap {
 	b.index = i
-	b.current = *b.scanRaw[i]
+	if b.scanRaw != nil {
+		b.current = *b.scanRaw[i]
+	}
 	return b
 }
 
-// Bool see the documentation for function Scan.
-func (b *RowConvert) Bool() (bool, error) {
-	return byteconv.ParseBool(b.current)
-}
-
-// NullBool see the documentation for function Scan.
-func (b *RowConvert) NullBool() (NullBool, error) {
-	nv, err := byteconv.ParseNullBool(b.current)
-	return NullBool{NullBool: nv}, err
-}
-
-// Int see the documentation for function Scan.
-func (b *RowConvert) Int() (int, error) {
-	i, err := byteconv.ParseInt(b.current)
-	if err != nil {
-		return 0, err
+// Bool reads a bool value and appends it to the arguments slice or assigns the
+// bool value stored in sql.RawBytes to the pointer. See the documentation for
+// function Scan.
+func (b *ColumnMap) Bool(ptr *bool) *ColumnMap {
+	if b.Args != nil {
+		if ptr == nil {
+			b.Args = b.Args.Null()
+		} else {
+			b.Args = b.Args.Bool(*ptr)
+		}
+		return b
 	}
-	if strconv.IntSize == 32 && (i < -math.MaxInt32 || i > math.MaxInt32) {
-		return 0, rangeError("RowConvert.Int", string(b.current))
+	if b.scanErr == nil {
+		*ptr, b.scanErr = byteconv.ParseBool(b.current)
 	}
-	return int(i), nil
+	return b
 }
 
-// Int64 see the documentation for function Scan.
-func (b *RowConvert) Int64() (int64, error) {
-	return byteconv.ParseInt(b.current)
-}
-
-// NullInt64 see the documentation for function Scan.
-func (b *RowConvert) NullInt64() (NullInt64, error) {
-	nv, err := byteconv.ParseNullInt64(b.current)
-	return NullInt64{NullInt64: nv}, err
-}
-
-// Float64 see the documentation for function Scan.
-func (b *RowConvert) Float64() (float64, error) {
-	return byteconv.ParseFloat(b.current)
-}
-
-// NullFloat64 see the documentation for function Scan.
-func (b *RowConvert) NullFloat64() (NullFloat64, error) {
-	nv, err := byteconv.ParseNullFloat64(b.current)
-	return NullFloat64{NullFloat64: nv}, err
-}
-
-// Uint see the documentation for function Scan.
-func (b *RowConvert) Uint() (uint, error) {
-	i, _, err := byteconv.ParseUintSQL(b.current, 10, strconv.IntSize)
-	if err != nil {
-		return 0, err
+// NullBool reads a bool value and appends it to the arguments slice or assigns the
+// bool value stored in sql.RawBytes to the pointer. See the documentation for
+// function Scan.
+func (b *ColumnMap) NullBool(ptr *NullBool) *ColumnMap {
+	if b.Args != nil {
+		if ptr == nil {
+			b.Args = b.Args.Null()
+		} else {
+			b.Args = b.Args.NullBool(*ptr)
+		}
+		return b
 	}
-	if strconv.IntSize == 32 && i > math.MaxUint32 {
-		return 0, rangeError("RowConvert.Uint", string(b.current))
+	if b.scanErr == nil {
+		var nv sql.NullBool
+		nv, b.scanErr = byteconv.ParseNullBool(b.current)
+		*ptr = NullBool{NullBool: nv}
 	}
-	return uint(i), nil
+	return b
 }
 
-// Uint8 see the documentation for function Scan.
-func (b *RowConvert) Uint8() (uint8, error) {
-	i, _, err := byteconv.ParseUintSQL(b.current, 10, 8)
-	if err != nil {
-		return 0, err
+// Int reads an int value and appends it to the arguments slice or assigns the
+// int value stored in sql.RawBytes to the pointer. See the documentation for
+// function Scan.
+func (b *ColumnMap) Int(ptr *int) *ColumnMap {
+	if b.Args != nil {
+		if ptr == nil {
+			b.Args = b.Args.Null()
+		} else {
+			b.Args = b.Args.Int(*ptr)
+		}
+		return b
 	}
-	return uint8(i), nil
+	if b.scanErr == nil {
+		var i64 int64
+		i64, b.scanErr = byteconv.ParseInt(b.current)
+		if b.scanErr == nil && strconv.IntSize == 32 && (i64 < -math.MaxInt32 || i64 > math.MaxInt32) { // hmm rethink that depending on goarch
+			b.scanErr = rangeError("ColumnMap.Int", string(b.current))
+		}
+		*ptr = int(i64)
+	}
+	return b
 }
 
-// Uint16 see the documentation for function Scan.
-func (b *RowConvert) Uint16() (uint16, error) {
-	i, _, err := byteconv.ParseUintSQL(b.current, 10, 16)
-	if err != nil {
-		return 0, err
+// Int64 reads a int64 value and appends it to the arguments slice or assigns
+// the int64 value stored in sql.RawBytes to the pointer. See the documentation
+// for function Scan.
+func (b *ColumnMap) Int64(ptr *int64) *ColumnMap {
+	if b.Args != nil {
+		if ptr == nil {
+			b.Args = b.Args.Null()
+		} else {
+			b.Args = b.Args.Int64(*ptr)
+		}
+		return b
 	}
-	return uint16(i), nil
+	if b.scanErr == nil {
+		*ptr, b.scanErr = byteconv.ParseInt(b.current)
+		if i64 := *ptr; b.scanErr == nil && strconv.IntSize == 32 && (i64 < -math.MaxInt32 || i64 > math.MaxInt32) { // hmm rethink that depending on goarch
+			b.scanErr = rangeError("ColumnMap.Int", string(b.current))
+		}
+	}
+	return b
 }
 
-// Uint32 see the documentation for function Scan.
-func (b *RowConvert) Uint32() (uint32, error) {
-	i, _, err := byteconv.ParseUintSQL(b.current, 10, 32)
-	if err != nil {
-		return 0, err
+// NullInt64 reads an int64 value and appends it to the arguments slice or
+// assigns the int64 value stored in sql.RawBytes to the pointer. See the
+// documentation for function Scan.
+func (b *ColumnMap) NullInt64(ptr *NullInt64) *ColumnMap {
+	if b.Args != nil {
+		if ptr == nil {
+			b.Args = b.Args.Null()
+		} else {
+			b.Args = b.Args.NullInt64(*ptr)
+		}
+		return b
 	}
-	return uint32(i), nil
+	if b.scanErr == nil {
+		var nv sql.NullInt64
+		nv, b.scanErr = byteconv.ParseNullInt64(b.current)
+		*ptr = NullInt64{NullInt64: nv}
+	}
+	return b
 }
 
-// Uint64 see the documentation for function Scan.
-func (b *RowConvert) Uint64() (uint64, error) {
-	i, _, err := byteconv.ParseUintSQL(b.current, 10, 64)
-	return i, err
+// Float64 reads a float64 value and appends it to the arguments slice or
+// assigns the float64 value stored in sql.RawBytes to the pointer. See the
+// documentation for function Scan.
+func (b *ColumnMap) Float64(ptr *float64) *ColumnMap {
+	if b.Args != nil {
+		if ptr == nil {
+			b.Args = b.Args.Null()
+		} else {
+			b.Args = b.Args.Float64(*ptr)
+		}
+		return b
+	}
+	if b.scanErr == nil {
+		*ptr, b.scanErr = byteconv.ParseFloat(b.current)
+	}
+	return b
+}
+
+// NullFloat64 reads a float64 value and appends it to the arguments slice or
+// assigns the float64 value stored in sql.RawBytes to the pointer. See the
+// documentation for function Scan.
+func (b *ColumnMap) NullFloat64(ptr *NullFloat64) *ColumnMap {
+	if b.Args != nil {
+		if ptr == nil {
+			b.Args = b.Args.Null()
+		} else {
+			b.Args = b.Args.NullFloat64(*ptr)
+		}
+		return b
+	}
+	if b.scanErr == nil {
+		var nv sql.NullFloat64
+		nv, b.scanErr = byteconv.ParseNullFloat64(b.current)
+		*ptr = NullFloat64{NullFloat64: nv}
+	}
+	return b
+}
+
+// Uint reads an uint value and appends it to the arguments slice or assigns the
+// uint value stored in sql.RawBytes to the pointer. See the documentation for
+// function Scan.
+func (b *ColumnMap) Uint(ptr *uint) *ColumnMap {
+	if b.Args != nil {
+		if ptr == nil {
+			b.Args = b.Args.Null()
+		} else {
+			b.Args = b.Args.Uint(*ptr)
+		}
+		return b
+	}
+	if b.scanErr == nil {
+		var u64 uint64
+		u64, _, b.scanErr = byteconv.ParseUintSQL(b.current, 10, strconv.IntSize)
+		*ptr = uint(u64)
+	}
+	return b
+}
+
+// Uint8 reads an uint8 value and appends it to the arguments slice or assigns
+// the uint8 value stored in sql.RawBytes to the pointer. See the documentation
+// for function Scan.
+func (b *ColumnMap) Uint8(ptr *uint8) *ColumnMap {
+	if b.Args != nil {
+		if ptr == nil {
+			b.Args = b.Args.Null()
+		} else {
+			b.Args = b.Args.Uint(uint(*ptr))
+		}
+		return b
+	}
+	if b.scanErr == nil {
+		var u64 uint64
+		u64, _, b.scanErr = byteconv.ParseUintSQL(b.current, 10, 8)
+		*ptr = uint8(u64)
+	}
+	return b
+}
+
+// Uint16 reads an uint16 value and appends it to the arguments slice or assigns
+// the uint16 value stored in sql.RawBytes to the pointer. See the documentation
+// for function Scan.
+func (b *ColumnMap) Uint16(ptr *uint16) *ColumnMap {
+	if b.Args != nil {
+		if ptr == nil {
+			b.Args = b.Args.Null()
+		} else {
+			b.Args = b.Args.Uint(uint(*ptr))
+		}
+		return b
+	}
+	if b.scanErr == nil {
+		var u64 uint64
+		u64, _, b.scanErr = byteconv.ParseUintSQL(b.current, 10, 16)
+		*ptr = uint16(u64)
+	}
+	return b
+}
+
+// Uint32 reads an uint32 value and appends it to the arguments slice or assigns
+// the uint32 value stored in sql.RawBytes to the pointer. See the documentation
+// for function Scan.
+func (b *ColumnMap) Uint32(ptr *uint32) *ColumnMap {
+	if b.Args != nil {
+		if ptr == nil {
+			b.Args = b.Args.Null()
+		} else {
+			b.Args = b.Args.Uint(uint(*ptr))
+		}
+		return b
+	}
+	if b.scanErr == nil {
+		var u64 uint64
+		u64, _, b.scanErr = byteconv.ParseUintSQL(b.current, 10, 32)
+		*ptr = uint32(u64)
+	}
+	return b
+}
+
+// Uint64 reads an uint64 value and appends it to the arguments slice or assigns
+// the uint64 value stored in sql.RawBytes to the pointer. See the documentation
+// for function Scan.
+func (b *ColumnMap) Uint64(ptr *uint64) *ColumnMap {
+	if b.Args != nil {
+		if ptr == nil {
+			b.Args = b.Args.Null()
+		} else {
+			b.Args = b.Args.Uint64(*ptr)
+		}
+		return b
+	}
+	if b.scanErr == nil {
+		*ptr, b.scanErr = byteconv.ParseUint(b.current, 10, strconv.IntSize)
+	}
+	return b
 }
 
 // Debug writes the column names with their values into `w`. The output format
 // might change.
-func (b *RowConvert) Debug(w io.Writer) (err error) {
+func (b *ColumnMap) Debug(w io.Writer) (err error) {
 	nl := []byte("\n")
 	tNil := []byte(": <nil>")
 	for i, c := range b.Columns {
@@ -331,58 +511,106 @@ func (b *RowConvert) Debug(w io.Writer) (err error) {
 	return nil
 }
 
-// Byte copies the value byte slice at index `idx` into a new slice. See the
+// Byte reads a []byte value and appends it to the arguments slice or assigns
+// the []byte value stored in sql.RawBytes to the pointer. See the documentation
+// for function Scan.
+func (b *ColumnMap) Byte(ptr *[]byte) *ColumnMap {
+	if b.Args != nil {
+		if ptr == nil {
+			b.Args = b.Args.Null()
+		} else {
+			b.Args = b.Args.Bytes(*ptr)
+		}
+		return b
+	}
+	if b.scanErr == nil {
+		*ptr = append((*ptr)[:0], b.current...)
+	}
+	return b
+}
+
+// String reads a string value and appends it to the arguments slice or assigns
+// the string value stored in sql.RawBytes to the pointer. See the documentation
+// for function Scan.
+func (b *ColumnMap) String(ptr *string) *ColumnMap {
+	if b.Args != nil {
+		if ptr == nil {
+			b.Args = b.Args.Null()
+		} else {
+			b.Args = b.Args.String(*ptr)
+		}
+		return b
+	}
+	if b.CheckValidUTF8 && !utf8.Valid(b.current) {
+		b.scanErr = errors.NewNotValidf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
+	}
+	if b.scanErr == nil {
+		*ptr = string(b.current)
+	}
+	return b
+}
+
+// NullString reads a string value and appends it to the arguments slice or
+// assigns the string value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
-func (b *RowConvert) Byte() []byte {
-	if b.current == nil {
-		return nil
+func (b *ColumnMap) NullString(ptr *NullString) *ColumnMap {
+	if b.Args != nil {
+		if ptr == nil {
+			b.Args = b.Args.Null()
+		} else {
+			b.Args = b.Args.NullString(*ptr)
+		}
+		return b
 	}
-	ret := make([]byte, len(b.current))
-	copy(ret, b.current)
-	return ret
-}
-
-// WriteTo implements interface io.WriterTo. It puts the underlying byte slice
-// directly into w. The value is valid until the next call to rows.Next.
-// See the documentation for function Scan.
-func (b *RowConvert) WriteTo(w io.Writer) (n int64, err error) {
-	var n2 int
-	n2, err = w.Write(b.current)
-	return int64(n2), errors.WithStack(err)
-}
-
-// String see the documentation for function Scan.
-func (b *RowConvert) String() (string, error) {
 	if b.CheckValidUTF8 && !utf8.Valid(b.current) {
-		return "", errors.NewNotValidf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
+		b.scanErr = errors.NewNotValidf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
 	}
-	return string(b.current), nil
+	if b.scanErr == nil {
+		*ptr = NullString{NullString: byteconv.ParseNullString(b.current)}
+	}
+	return b
 }
 
-// NullString see the documentation for function Scan.
-func (b *RowConvert) NullString() (NullString, error) {
-	if b.CheckValidUTF8 && !utf8.Valid(b.current) {
-		return NullString{}, errors.NewNotValidf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
+// Time reads a time.Time value and appends it to the arguments slice or assigns
+// the time.Time value stored in sql.RawBytes to the pointer. See the
+// documentation for function Scan.
+func (b *ColumnMap) Time(ptr *time.Time) *ColumnMap {
+	if b.Args != nil {
+		if ptr == nil {
+			b.Args = b.Args.Null()
+		} else {
+			b.Args = b.Args.Time(*ptr)
+		}
+		return b
 	}
-	return NullString{NullString: byteconv.ParseNullString(b.current)}, nil
+	if b.scanErr == nil {
+		var err error
+		*ptr, err = time.Parse(time.RFC3339Nano, string(b.current))
+		if err != nil {
+			b.scanErr = errors.NewNotValidf("[dml] ColumnMap Time: Invalid time string: %q with error %q", string(b.current), err)
+		}
+	}
+	return b
 }
 
-// String see the documentation for function Scan.
-func (b *RowConvert) Time() (time.Time, error) {
-	t, err := time.Parse(time.RFC3339Nano, string(b.current))
-	if err != nil {
-		return time.Time{}, errors.NewNotValidf("[dml] RowConvert Time: Invalid time string: %q", string(b.current))
+// NullTime reads a time value and appends it to the arguments slice or assigns
+// the NullTime value stored in sql.RawBytes to the pointer. See the
+// documentation for function Scan.
+func (b *ColumnMap) NullTime(ptr *NullTime) *ColumnMap {
+	if b.Args != nil {
+		if ptr == nil {
+			b.Args = b.Args.Null()
+		} else {
+			b.Args = b.Args.NullTime(*ptr)
+		}
+		return b
 	}
-	return t, nil
-}
-
-// NullString see the documentation for function Scan.
-func (b *RowConvert) NullTime() (NullTime, error) {
-	var nt NullTime
-	if err := nt.Scan(b.current); err != nil {
-		return NullTime{}, errors.NewNotValidf("[dml] RowConvert NullTime: Invalid time string: %q", string(b.current))
+	if b.scanErr == nil {
+		if err := ptr.Scan(b.current); err != nil {
+			b.scanErr = errors.NewNotValidf("[dml] ColumnMap NullTime: Invalid time string: %q with error %s", string(b.current), err)
+		}
 	}
-	return nt, nil
+	return b
 }
 
 func rangeError(fn, str string) *strconv.NumError {
@@ -428,7 +656,7 @@ type BuilderConditional struct {
 	// key (the qualifier) can either be the table or object name or in cases,
 	// where an alias gets used, the string key must be the same as the alias.
 	// The map get called internally when the arguments are getting assembled.
-	ArgumentsAppender map[string]ArgumentsAppender
+	ArgumentsAppender map[string]ColumnMapper
 	Joins             Joins
 	Wheres            Conditions
 	OrderBys          identifiers
@@ -553,9 +781,9 @@ func (st *StmtBase) QueryRow(ctx context.Context, args ...interface{}) *sql.Row 
 
 // Load loads data from a query into an object. You must set DB.QueryContext on
 // the Select object or it just panics. Load can load a single row or n-rows.
-func (st *StmtBase) Load(ctx context.Context, s Scanner) (rowCount int64, err error) {
+func (st *StmtBase) Load(ctx context.Context, s ColumnMapper) (rowCount uint64, err error) {
 	if st.log != nil && st.log.IsDebug() {
-		defer log.WhenDone(st.log).Debug("Load", log.Int64("row_count", rowCount), log.String("object_type", fmt.Sprintf("%T", s)))
+		defer log.WhenDone(st.log).Debug("Load", log.Uint64("row_count", rowCount), log.String("object_type", fmt.Sprintf("%T", s)))
 	}
 	r, err := st.Query(ctx)
 	rowCount, err = load(r, err, s)

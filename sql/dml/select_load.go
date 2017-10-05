@@ -33,7 +33,7 @@ func (b *Select) Query(ctx context.Context) (*sql.Rows, error) {
 
 // Load loads data from a query into an object. You must set DB.QueryContext on
 // the Select object or it just panics. Load can load a single row or n-rows.
-func (b *Select) Load(ctx context.Context, s Scanner) (rowCount int64, err error) {
+func (b *Select) Load(ctx context.Context, s ColumnMapper) (rowCount uint64, err error) {
 	if b.Log != nil && b.Log.IsDebug() {
 		defer log.WhenDone(b.Log).Debug("Load", log.Stringer("sql", b))
 	}

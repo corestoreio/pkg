@@ -382,9 +382,9 @@ func (u *Union) Query(ctx context.Context) (*sql.Rows, error) {
 // the Union object or it just panics. Load can load a single row or n-rows. If
 // debug mode for logging has been enabled it logs the duration taken and the
 // SQL string.
-func (u *Union) Load(ctx context.Context, s Scanner) (rowCount int64, err error) {
+func (u *Union) Load(ctx context.Context, s ColumnMapper) (rowCount uint64, err error) {
 	if u.Log != nil && u.Log.IsDebug() {
-		defer log.WhenDone(u.Log).Debug("Load", log.Int64("row_count", rowCount), log.Stringer("sql", u))
+		defer log.WhenDone(u.Log).Debug("Load", log.Uint64("row_count", rowCount), log.Stringer("sql", u))
 	}
 	rowCount, err = Load(ctx, u.DB, u, s)
 	return rowCount, errors.WithStack(err)

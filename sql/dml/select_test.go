@@ -536,7 +536,7 @@ func TestSelect_Load_Slice_Scanner(t *testing.T) {
 	count, err := s.SelectFrom("dml_people").AddColumns("id", "name", "email").OrderBy("id").Load(context.TODO(), &people)
 
 	require.NoError(t, err)
-	assert.Equal(t, int64(2), count)
+	assert.Equal(t, uint64(2), count)
 
 	assert.Equal(t, len(people.Data), 2)
 	if len(people.Data) == 2 {
@@ -587,7 +587,7 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 		count, err := s.SelectBySQL("SELECT name FROM dml_people WHERE email = ?", MakeArgs(1).String("jonathan@uservoice.com")).Load(context.TODO(), &people)
 
 		require.NoError(t, err)
-		assert.Equal(t, int64(1), count)
+		assert.Equal(t, uint64(1), count)
 		if len(people.Data) == 1 {
 			assert.Equal(t, "Jonathan", people.Data[0].Name)
 			assert.Equal(t, uint64(0), people.Data[0].ID)      // not set

@@ -27,7 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var _ ArgumentsAppender = (*Arguments)(nil)
+var _ ColumnMapper = (*Arguments)(nil)
 var _ fmt.GoStringer = (*Arguments)(nil)
 var _ fmt.GoStringer = (*argument)(nil)
 
@@ -398,7 +398,7 @@ func TestArguments_Named(t *testing.T) {
 			GoString())
 }
 
-func TestArguments_AppendArgs(t *testing.T) {
+func TestArguments_MapColumns(t *testing.T) {
 	t.Parallel()
 
 	to := MakeArgs(4)
@@ -407,39 +407,47 @@ func TestArguments_AppendArgs(t *testing.T) {
 	t.Run("len=1", func(t *testing.T) {
 
 		from = from.Reset().Int64(3).Float64(2.2).Name("colA").Strings("a", "b")
-		var err error
-		from, err = from.AppendArgs(to, []string{"colA"})
-		if err != nil {
+		rm := &ColumnMap{
+			Args:    to.Reset(),
+			Columns: []string{"colA"},
+		}
+		if err := from.MapColumns(rm); err != nil {
 			t.Fatal(err)
 		}
+		to = rm.Args
 		assert.Exactly(t,
 			"dml.MakeArgs(1).Name(\"colA\").Strings(\"a\",\"b\")",
-			from.GoString())
+			to.GoString())
 	})
 
 	t.Run("len=0", func(t *testing.T) {
 
 		from = from.Reset().Name("colZ").Int64(3).Float64(2.2).Name("colA").Strings("a", "b")
-		var err error
-		from, err = from.AppendArgs(to.Reset(), nil)
-		if err != nil {
+		rm := &ColumnMap{
+			Args: to.Reset(),
+		}
+		if err := from.MapColumns(rm); err != nil {
 			t.Fatal(err)
 		}
+		to = rm.Args
 		assert.Exactly(t,
 			"dml.MakeArgs(3).Name(\"colZ\").Int64(3).Float64(2.200000).Name(\"colA\").Strings(\"a\",\"b\")",
-			from.GoString())
+			to.GoString())
 	})
 
 	t.Run("len>1", func(t *testing.T) {
 
 		from = from.Reset().Name("colZ").Int64(3).Uint64(6).Name("colB").Float64(2.2).String("c").Name("colA").Strings("a", "b")
-		var err error
-		from, err = from.AppendArgs(to.Reset(), []string{"colA", "colB"})
-		if err != nil {
+		rm := &ColumnMap{
+			Args:    to.Reset(),
+			Columns: []string{"colA", "colB"},
+		}
+		if err := from.MapColumns(rm); err != nil {
 			t.Fatal(err)
 		}
+		to = rm.Args
 		assert.Exactly(t,
 			"dml.MakeArgs(2).Name(\"colA\").Strings(\"a\",\"b\").Name(\"colB\").Float64(2.200000)",
-			from.GoString())
+			to.GoString())
 	})
 }

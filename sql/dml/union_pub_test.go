@@ -99,7 +99,7 @@ func TestUnion_Load(t *testing.T) {
 			WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
 
 		rows, err := u.WithDB(dbc.DB).Load(context.TODO(), nil)
-		assert.Exactly(t, int64(0), rows)
+		assert.Exactly(t, uint64(0), rows)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})
 }
@@ -244,7 +244,7 @@ func TestUnion_Prepare(t *testing.T) {
 		})
 
 		t.Run("WithRecords Error", func(t *testing.T) {
-			p := TableCoreConfigDataSlice{err: errors.NewDuplicatedf("Found a duplicate")}
+			p := &TableCoreConfigDataSlice{err: errors.NewDuplicatedf("Found a duplicate")}
 			stmt.WithRecords(dml.Qualify("", p))
 			rows, err := stmt.Query(context.TODO())
 			assert.True(t, errors.IsDuplicated(err), "%+v", err)
@@ -298,7 +298,7 @@ func TestUnion_WithLogger(t *testing.T) {
 			_, err := u.Interpolate().Load(context.TODO(), p)
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ01\" union_id: \"UNIQ02\" tables: \"dml_people, dml_people\" duration: 0 row_count: 0 sql: \"(SELECT /*ID:UNIQ02*/ `name`, `email` AS `email` FROM `dml_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8)))\"\n",
+			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ01\" union_id: \"UNIQ02\" tables: \"dml_people, dml_people\" duration: 0 row_count: 0x0 sql: \"(SELECT /*ID:UNIQ02*/ `name`, `email` AS `email` FROM `dml_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8)))\"\n",
 				buf.String())
 		})
 
@@ -361,7 +361,7 @@ func TestUnion_WithLogger(t *testing.T) {
 			_, err := u.Interpolate().Load(context.TODO(), p)
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" union_id: \"UNIQ06\" tables: \"dml_people, dml_people\" duration: 0 row_count: 0 sql: \"(SELECT /*ID:UNIQ06*/ `name`, `email` AS `email` FROM `dml_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (61,81)))\"\n",
+			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" union_id: \"UNIQ06\" tables: \"dml_people, dml_people\" duration: 0 row_count: 0x0 sql: \"(SELECT /*ID:UNIQ06*/ `name`, `email` AS `email` FROM `dml_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (61,81)))\"\n",
 				buf.String())
 		})
 

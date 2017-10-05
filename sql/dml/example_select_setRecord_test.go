@@ -23,8 +23,8 @@ import (
 )
 
 // Make sure that type catalogCategoryEntity implements interface
-var _ dml.ArgumentsAppender = (*catalogCategoryEntity)(nil)
-var _ dml.ArgumentsAppender = (*tableStore)(nil)
+var _ dml.ColumnMapper = (*catalogCategoryEntity)(nil)
+var _ dml.ColumnMapper = (*tableStore)(nil)
 
 // catalogCategoryEntity defined somewhere in a different package.
 type catalogCategoryEntity struct {
@@ -36,46 +36,35 @@ type catalogCategoryEntity struct {
 	CreatedAt      time.Time
 }
 
-func (ce catalogCategoryEntity) appendArgs(args dml.Arguments, column string) (_ dml.Arguments, err error) {
-	switch column {
-	case "entity_id":
-		args = args.Int64(ce.EntityID)
-	case "attribute_set_id":
-		args = args.Int64(ce.AttributeSetID)
-	case "parent_id":
-		args = args.Int64(ce.ParentID)
-	case "path":
-		args = args.String(ce.Path)
-	case "position":
-		args = args.Int(ce.Position)
-	case "created_at":
-		args = args.Time(ce.CreatedAt)
-	default:
-		return nil, errors.NewNotFoundf("[dml_test] %T: Column %q not found", ce, column)
-	}
-	return args, nil
-}
-
-// AppendArgs implements dml.ArgumentsAppender interface
-func (ce catalogCategoryEntity) AppendArgs(args dml.Arguments, columns []string) (dml.Arguments, error) {
-	l := len(columns)
-	if l == 1 {
-		// Most commonly used case
-		return ce.appendArgs(args, columns[0])
-	}
-	if l == 0 {
+func (ce *catalogCategoryEntity) MapColumns(rm *dml.ColumnMap) error {
+	if rm.Mode() == 'a' {
 		// This case gets executed when an INSERT statement doesn't contain any
-		// columns.
-		return args.Int64(ce.EntityID).Int64(ce.AttributeSetID).Int64(ce.ParentID).String(ce.Path).Int(ce.Position).Time(ce.CreatedAt), nil
+		// columns, hence it requests all columns.
+		return rm.Int64(&ce.EntityID).Int64(&ce.AttributeSetID).Int64(&ce.ParentID).String(&ce.Path).Int(&ce.Position).Time(&ce.CreatedAt).Err()
 	}
-	// This case gets executed when an INSERT statement requests specific columns.
-	for _, col := range columns {
-		var err error
-		if args, err = ce.appendArgs(args, col); err != nil {
-			return nil, errors.WithStack(err)
+	for i, column := range rm.Columns {
+		rm = rm.Index(i)
+		switch column {
+		case "entity_id":
+			rm.Int64(&ce.EntityID)
+		case "attribute_set_id":
+			rm.Int64(&ce.AttributeSetID)
+		case "parent_id":
+			rm.Int64(&ce.ParentID)
+		case "path":
+			rm.String(&ce.Path)
+		case "position":
+			rm.Int(&ce.Position)
+		case "created_at":
+			rm.Time(&ce.CreatedAt)
+		default:
+			return errors.NewNotFoundf("[dml_test] %T: Column %q not found", ce, column)
+		}
+		if rm.Err() != nil {
+			return rm.Err()
 		}
 	}
-	return args, nil
+	return nil
 }
 
 // tableStore defined somewhere in a different package.
@@ -87,50 +76,39 @@ type tableStore struct {
 	Name      string // name varchar(255) NOT NULL
 }
 
-func (ts tableStore) appendArgs(args dml.Arguments, column string) (_ dml.Arguments, err error) {
-	switch column {
-	case "store_id":
-		args = args.Int64(ts.StoreID)
-	case "code":
-		args = args.String(ts.Code)
-	case "website_id":
-		args = args.Int64(ts.WebsiteID)
-	case "group_id":
-		args = args.Int64(ts.GroupID)
-	case "name":
-		args = args.String(ts.Name)
-	default:
-		return nil, errors.NewNotFoundf("[dml_test] %T: Column %q not found", ts, column)
-	}
-	return args, nil
-}
-
-// AppendArgs implements dml.ArgumentsAppender interface
-func (ts tableStore) AppendArgs(args dml.Arguments, columns []string) (dml.Arguments, error) {
-	l := len(columns)
-	if l == 1 {
-		// Most commonly used case
-		return ts.appendArgs(args, columns[0])
-	}
-	if l == 0 {
+func (ts *tableStore) MapColumns(rm *dml.ColumnMap) error {
+	if rm.Mode() == 'a' {
 		// This case gets executed when an INSERT statement doesn't contain any
-		// columns.
-		return args.Int64(ts.StoreID).String(ts.Code).Int64(ts.WebsiteID).Int64(ts.GroupID).String(ts.Name), nil
+		// columns, hence it requests all columns.
+		return rm.Int64(&ts.StoreID).String(&ts.Code).Int64(&ts.WebsiteID).Int64(&ts.GroupID).String(&ts.Name).Err()
 	}
-	// This case gets executed when an INSERT statement requests specific columns.
-	for _, col := range columns {
-		var err error
-		if args, err = ts.appendArgs(args, col); err != nil {
-			return nil, errors.WithStack(err)
+	for i, column := range rm.Columns {
+		rm = rm.Index(i)
+		switch column {
+		case "store_id":
+			rm.Int64(&ts.StoreID)
+		case "code":
+			rm.String(&ts.Code)
+		case "website_id":
+			rm.Int64(&ts.WebsiteID)
+		case "group_id":
+			rm.Int64(&ts.GroupID)
+		case "name":
+			rm.String(&ts.Name)
+		default:
+			return errors.NewNotFoundf("[dml_test] %T: Column %q not found", ts, column)
+		}
+		if rm.Err() != nil {
+			return rm.Err()
 		}
 	}
-	return args, nil
+	return nil
 }
 
 func ExampleSelect_BindRecord() {
 
-	ce := catalogCategoryEntity{678, 6, 670, "2/13/670/678", 0, now()}
-	st := tableStore{17, "ch-en", 2, 4, "Swiss EN Store"}
+	ce := &catalogCategoryEntity{678, 6, 670, "2/13/670/678", 0, now()}
+	st := &tableStore{17, "ch-en", 2, 4, "Swiss EN Store"}
 
 	s := dml.NewSelect("t_d.attribute_id", "e.entity_id").
 		AddColumnsAliases("t_d.value", "default_value").

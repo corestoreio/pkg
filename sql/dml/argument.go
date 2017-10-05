@@ -32,28 +32,6 @@ const (
 	sqlStar    = "*"
 )
 
-// ArgumentsAppender appends the values from an object to the arguments slice.
-// The object which implements this interface maps usually to a database table
-// record. Further in this library we reference always to a record which
-// implements ArgumentsAppender. The readonly variable `columns` contains the
-// name of the requested columns. It is the responsibility of the implementor to
-// match the column name with the corresponding internal field. E.g. if the
-// first requested column names `id` (int) then the first appended value must be
-// an integer. The columns slice can have the following length with the
-// following semantics:
-// - length: 0 = INSERT statement requests all columns;
-// - length: 1 = SELECT, DELETE or UPDATE statement requests a specific column;
-// - length: >1 = INSERT statement requests a specific list of columns.
-type ArgumentsAppender interface {
-	AppendArgs(args Arguments, columns []string) (Arguments, error)
-}
-
-// LastInsertIDAssigner assigns the last insert ID of an auto increment
-// column back to the objects.
-type LastInsertIDAssigner interface {
-	AssignLastInsertID(int64)
-}
-
 // QualifiedRecord is an ArgumentsAppender with a qualifier. A QualifiedRecord
 // gets used as arguments to ExecRecord or BindRecord in the SQL statement. If
 // you use an alias for the main table/view you must the alias as the qualifier.
@@ -68,11 +46,11 @@ type QualifiedRecord struct {
 	// If you provide multiple default qualifier, the last one wins and
 	// overwrites the previous.
 	Qualifier string
-	Record    ArgumentsAppender
+	Record    ColumnMapper
 }
 
 // Qualify provides a more concise way to create QualifiedRecord values.
-func Qualify(q string, record ArgumentsAppender) QualifiedRecord {
+func Qualify(q string, record ColumnMapper) QualifiedRecord {
 	return QualifiedRecord{Qualifier: q, Record: record}
 }
 
@@ -355,37 +333,27 @@ func MakeArgs(cap int) Arguments {
 	return make(Arguments, 0, cap)
 }
 
-// AppendArgs allows to merge one argument slice with another depending on the
+// MapColumns allows to merge one argument slice with another depending on the
 // matched columns. Each argument in the slice must be a named argument.
-func (a Arguments) AppendArgs(args Arguments, columns []string) (Arguments, error) {
-	l := len(columns)
-	if l == 1 {
-		// most used case.
-		return a.appendArgs(args, columns[0]), nil
+// Implements interface ColumnMapper.
+func (a Arguments) MapColumns(rm *ColumnMap) error {
+	if rm.Mode() == 'a' {
+		rm.Args = append(rm.Args, a...)
+		return nil
 	}
-	if l == 0 {
-		// case insert statement requests all columns
-		return append(args, a...), nil
-	}
-
-	// case insert statement requests specific columns
-	for _, col := range columns {
-		args = a.appendArgs(args, col)
-	}
-	return args, nil
-}
-
-func (a Arguments) appendArgs(args Arguments, column string) Arguments {
-	// now a bit slow ... but will be refactored later with constant time
-	// access, but first benchmark it. This for loop can be the 3rd one in the
-	// overall chain.
-	for _, arg := range a {
-		// Case sensitive comparison
-		if column != "" && arg.name == column {
-			return append(args, arg)
+	for _, column := range rm.Columns {
+		// now a bit slow ... but will be refactored later with constant time
+		// access, but first benchmark it. This for loop can be the 3rd one in the
+		// overall chain.
+		for _, arg := range a {
+			// Case sensitive comparison
+			if column != "" && arg.name == column {
+				rm.Args = append(rm.Args, arg)
+				break
+			}
 		}
 	}
-	return args
+	return nil
 }
 
 func (a Arguments) GoString() string {

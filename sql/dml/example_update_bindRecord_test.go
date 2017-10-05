@@ -23,7 +23,7 @@ import (
 )
 
 // Make sure that type categoryEntity implements interface
-var _ dml.ArgumentsAppender = (*categoryEntity)(nil)
+var _ dml.ColumnMapper = (*categoryEntity)(nil)
 
 // categoryEntity represents just a demo record.
 type categoryEntity struct {
@@ -37,58 +37,48 @@ type categoryEntity struct {
 	TeaserIDs []string
 }
 
-func (pe categoryEntity) appendArgs(args dml.Arguments, column string) (_ dml.Arguments, err error) {
-	switch column {
-	case "entity_id":
-		args = args.Int64(pe.EntityID)
-	case "attribute_set_id":
-		args = args.Int64(pe.AttributeSetID)
-	case "parent_id":
-		args = args.String(pe.ParentID)
-	case "path":
-		args = args.NullString(pe.Path)
-	case "teaser_id_s":
-		if pe.TeaserIDs == nil {
-			args = args.Null()
-		} else {
-			args = args.String(strings.Join(pe.TeaserIDs, "|"))
+func (pe *categoryEntity) MapColumns(rm *dml.ColumnMap) error {
+	if rm.Mode() == 'a' {
+		return rm.Int64(&pe.EntityID).Int64(&pe.AttributeSetID).String(&pe.ParentID).Err()
+	}
+	for i, column := range rm.Columns {
+		rm = rm.Index(i)
+		switch column {
+		case "entity_id":
+			rm.Int64(&pe.EntityID)
+		case "attribute_set_id":
+			rm.Int64(&pe.AttributeSetID)
+		case "parent_id":
+			rm.String(&pe.ParentID)
+		case "path":
+			rm.NullString(&pe.Path)
+		case "teaser_id_s":
+			if pe.TeaserIDs == nil {
+				rm.String(nil)
+			} else {
+				s := strings.Join(pe.TeaserIDs, "|")
+				rm.String(&s)
+			}
+		case "fk_teaser_id_s": // TODO ...
+			panic("TODO")
+			//rm.Strings(pe.TeaserIDs...)
+		default:
+			return errors.NewNotFoundf("[dml_test] Column %q not found", column)
 		}
-	case "fk_teaser_id_s": // TODO ...
-		args = args.Strings(pe.TeaserIDs...)
-	default:
-		return nil, errors.NewNotFoundf("[dml_test] Column %q not found", column)
-	}
-	return args, nil
-}
-
-// AppendArgs implements dml.ArgumentsAppender interface
-func (pe categoryEntity) AppendArgs(args dml.Arguments, columns []string) (dml.Arguments, error) {
-	l := len(columns)
-	if l == 1 {
-		// Most commonly used case
-		return pe.appendArgs(args, columns[0])
-	}
-	if l == 0 {
-		// This case gets executed when an INSERT statement doesn't contain any
-		// columns.
-		return args.Int64(pe.EntityID).Int64(pe.AttributeSetID).String(pe.ParentID), nil
-	}
-	// This case gets executed when an INSERT statement requests specific columns.
-	for _, col := range columns {
-		var err error
-		if args, err = pe.appendArgs(args, col); err != nil {
-			return nil, errors.WithStack(err)
+		if rm.Err() != nil {
+			return rm.Err()
 		}
 	}
-	return args, nil
+	return nil
 }
 
-// ExampleUpdate_BindRecord performs an UPDATE query in the table `catalog_category_entity` with the
-// fix specified columns. The Go type categoryEntity implements the dml.ArgumentsAppender interface and can
-// append the required arguments.
+// ExampleUpdate_BindRecord performs an UPDATE query in the table
+// `catalog_category_entity` with the fix specified columns. The Go type
+// categoryEntity implements the dml.ArgumentsAppender interface and can append
+// the required arguments.
 func ExampleUpdate_BindRecord() {
 
-	ce := categoryEntity{345, 6, "p123", dml.MakeNullString("4/5/6/7"), []string{"saleAutumn", "saleShoe"}}
+	ce := &categoryEntity{345, 6, "p123", dml.MakeNullString("4/5/6/7"), []string{"saleAutumn", "saleShoe"}}
 
 	// Updates all rows in the table because of missing WHERE statement.
 	u := dml.NewUpdate("catalog_category_entity").
@@ -100,7 +90,7 @@ func ExampleUpdate_BindRecord() {
 
 	fmt.Print("\n\n")
 
-	ce = categoryEntity{678, 6, "p456", dml.NullString{}, nil}
+	ce = &categoryEntity{678, 6, "p456", dml.NullString{}, nil}
 
 	// Updates only one row in the table because of the WHERE. You can call
 	// AddArgumentsAppender and Exec as often as you like. Each call to Exec will

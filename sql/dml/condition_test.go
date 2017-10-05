@@ -410,8 +410,10 @@ func TestSplitColumn(t *testing.T) {
 
 type appendInt int
 
-func (ai appendInt) AppendArgs(args Arguments, _ []string) (Arguments, error) {
-	return args.Int(int(ai)), nil
+func (ai appendInt) MapColumns(rc *ColumnMap) error {
+	i := int(ai)
+	rc.Int(&i)
+	return nil
 }
 
 func TestAppendArgs(t *testing.T) {

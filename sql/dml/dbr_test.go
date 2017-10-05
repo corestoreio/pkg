@@ -50,7 +50,7 @@ func createRealSession(t testing.TB) *ConnPool {
 		WithDSN(dsn),
 	)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 	return cxn
 }
@@ -61,19 +61,17 @@ func createRealSessionWithFixtures(t testing.TB, c *installFixturesConfig) *Conn
 	return sess
 }
 
-var _ ArgumentsAppender = (*dmlPerson)(nil)
-var _ Scanner = (*dmlPerson)(nil)
+var _ ColumnMapper = (*dmlPerson)(nil)
 var _ LastInsertIDAssigner = (*dmlPerson)(nil)
-var _ Scanner = (*dmlPersons)(nil)
-var _ ArgumentsAppender = (*nullTypedRecord)(nil)
-var _ Scanner = (*nullTypedRecord)(nil)
+var _ ColumnMapper = (*dmlPersons)(nil)
+
+var _ ColumnMapper = (*nullTypedRecord)(nil)
 
 type dmlPerson struct {
-	convert RowConvert
-	ID      uint64
-	Name    string
-	Email   NullString
-	Key     NullString
+	ID    uint64
+	Name  string
+	Email NullString
+	Key   NullString
 }
 
 func (p *dmlPerson) AssignLastInsertID(id int64) {
@@ -81,111 +79,111 @@ func (p *dmlPerson) AssignLastInsertID(id int64) {
 }
 
 // RowScan loads a single row from a SELECT statement returning only one row
-func (p *dmlPerson) RowScan(r *sql.Rows) error {
-	if err := p.convert.Scan(r); err != nil {
-		return errors.WithStack(err)
+func (p *dmlPerson) MapColumns(rm *ColumnMap) error {
+	if rm.Mode() == 'a' {
+		// TODO(CyS) jump into this case when `select *` or `select col1,col2...` returns all columns!!! not possible due to missing Index() call.
+		return rm.Uint64(&p.ID).String(&p.Name).NullString(&p.Email).NullString(&p.Key).Err()
 	}
-	return p.assign(&p.convert)
-}
-
-func (p *dmlPerson) assign(rc *RowConvert) (err error) {
-	for i, c := range rc.Columns {
-		b := rc.Index(i)
-		switch c {
-		case "id":
-			p.ID, err = b.Uint64()
-		case "name":
-			p.Name, err = b.String()
-		case "email":
-			p.Email, err = b.NullString()
-		case "key":
-			p.Key, err = b.NullString()
-			//default:
-			//	return errors.NewNotFoundf("[dml_test] Column %q not found", c)
+	for i, column := range rm.Columns {
+		// TODO: build something like `for rm.Next() {` to avoid calling `Index()`.
+		// TODO: numbers are experimental and in case all columns are requested, as we
+		// don't know the column names numbering them would be enough. this
+		// should avoid the above AllColumns `if` branch.
+		rm = rm.Index(i)
+		switch column {
+		case "id", "0":
+			rm.Uint64(&p.ID)
+		case "name", "1":
+			rm.String(&p.Name)
+		case "email", "2":
+			rm.NullString(&p.Email)
+		case "key", "3":
+			//return nil, errors.NewNotFoundf("[dml_test] Column %q should not be added due to testing", column)
+			rm.NullString(&p.Key)
+		case "store_id", "created_at", "total_income":
+			// noop don't trigger the default case
+		default:
+			return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", column)
 		}
-		if err != nil {
-			return errors.WithStack(err)
+		if rm.Err() != nil {
+			return rm.Err()
 		}
 	}
 	return nil
 }
 
-func (p *dmlPerson) AppendArgs(args Arguments, columns []string) (_ Arguments, err error) {
-	l := len(columns)
-	if l == 1 {
-		return p.appendArgs(args, columns[0])
-	}
-	if l == 0 {
-		return args.Uint64(p.ID).String(p.Name).NullString(p.Email), nil // except auto inc column ;-)
-	}
-	for _, col := range columns {
-		if args, err = p.appendArgs(args, col); err != nil {
-			return nil, errors.WithStack(err)
-		}
-	}
-	return args, err
-}
-
-func (p *dmlPerson) appendArgs(args Arguments, column string) (_ Arguments, err error) {
-	switch column {
-	case "id":
-		args = args.Uint64(p.ID)
-	case "name":
-		args = args.String(p.Name)
-	case "email":
-		args = args.NullString(p.Email)
-		// case "key": don't add key, it triggers a test failure condition
-	default:
-		return nil, errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", column)
-	}
-	return args, err
-}
-
 type dmlPersons struct {
-	convert RowConvert
-	Data    []*dmlPerson
+	Data []*dmlPerson
 }
 
-func (ps *dmlPersons) AppendArgs(args Arguments, columns []string) (_ Arguments, err error) {
-	if len(columns) != 1 {
-		// INSERT STATEMENT requesting all columns or specific columns
+func (ps *dmlPersons) IDs(ret ...uint64) []uint64 {
+	if ret == nil {
+		ret = make([]uint64, 0, len(ps.Data))
+	}
+	for _, p := range ps.Data {
+		ret = append(ret, p.ID)
+	}
+	return ret
+}
+
+func (ps *dmlPersons) Names(ret ...string) []string {
+	if ret == nil {
+		ret = make([]string, 0, len(ps.Data))
+	}
+	for _, p := range ps.Data {
+		ret = append(ret, p.Name)
+	}
+	return ret
+}
+
+func (ps *dmlPersons) Emails(ret ...NullString) []NullString {
+	if ret == nil {
+		ret = make([]NullString, 0, len(ps.Data))
+	}
+	for _, p := range ps.Data {
+		ret = append(ret, p.Email)
+	}
+	return ret
+}
+
+// MapColumns gets called in the `for rows.Next()` loop each time in case of IsNew
+func (ps *dmlPersons) MapColumns(rm *ColumnMap) error {
+	switch m := rm.Mode(); m {
+	case 'a', 'R': // INSERT STATEMENT requesting all columns aka arguments
 		for _, p := range ps.Data {
-			if args, err = p.AppendArgs(args, columns); err != nil {
-				return nil, errors.WithStack(err)
+			if err := p.MapColumns(rm); err != nil {
+				return errors.WithStack(err)
 			}
 		}
-		return args, err
-	}
-
-	// SELECT, DELETE or UPDATE or INSERT with one column
-	column := columns[0]
-	var ids []uint64
-	var names []string
-	var emails []NullString
-	for _, p := range ps.Data {
-		switch column {
-		case "id":
-			ids = append(ids, p.ID)
-		case "name":
-			names = append(names, p.Name)
-		case "email":
-			emails = append(emails, p.Email)
-			// case "key": don't add key, it triggers a test failure condition
-		default:
-			return nil, errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", column)
+	case 'w':
+		// case for scanning when loading certain rows, hence we write data from
+		// the DB into the struct in each for-loop.
+		if rm.Count == 1 { // Yes, first row mapped 1 and not zero.
+			ps.Data = ps.Data[:0]
 		}
+		p := new(dmlPerson)
+		if err := p.MapColumns(rm); err != nil {
+			return errors.WithStack(err)
+		}
+		ps.Data = append(ps.Data, p)
+	case 'r':
+		// SELECT, DELETE or UPDATE or INSERT with n columns
+		for _, column := range rm.Columns {
+			switch column {
+			case "id":
+				rm.Args = rm.Args.Uint64s(ps.IDs()...)
+			case "name":
+				rm.Args = rm.Args.Strings(ps.Names()...)
+			case "email":
+				rm.Args = rm.Args.NullString(ps.Emails()...)
+			default:
+				return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", column)
+			}
+		}
+	default:
+		return errors.NewNotSupportedf("[dml] Unknown Mode: %q", string(m))
 	}
-
-	switch column {
-	case "id":
-		args = args.Uint64s(ids...)
-	case "name":
-		args = args.Strings(names...)
-	case "email":
-		args = args.NullString(emails...)
-	}
-
-	return args, nil
+	return nil
 }
 
 //func (ps *dmlPersons) AssignLastInsertID(uint64) error {
@@ -194,19 +192,6 @@ func (ps *dmlPersons) AppendArgs(args Arguments, columns []string) (_ Arguments,
 //	return nil
 //}
 //
-
-func (ps *dmlPersons) RowScan(r *sql.Rows) error {
-	if err := ps.convert.Scan(r); err != nil {
-		return errors.WithStack(err)
-	}
-
-	p := new(dmlPerson)
-	if err := p.assign(&ps.convert); err != nil {
-		return errors.WithStack(err)
-	}
-	ps.Data = append(ps.Data, p)
-	return nil
-}
 
 type nullTypedRecord struct {
 	ID         int64
@@ -217,46 +202,33 @@ type nullTypedRecord struct {
 	BoolVal    NullBool
 }
 
-func (p *nullTypedRecord) RowScan(r *sql.Rows) error {
-	return r.Scan(&p.ID, &p.StringVal, &p.Int64Val, &p.Float64Val, &p.TimeVal, &p.BoolVal)
-}
-
-func (p *nullTypedRecord) AppendArgs(args Arguments, columns []string) (Arguments, error) {
-	for _, column := range columns {
+func (p *nullTypedRecord) MapColumns(rm *ColumnMap) error {
+	if rm.Mode() == 'a' {
+		return rm.Int64(&p.ID).NullString(&p.StringVal).NullInt64(&p.Int64Val).NullFloat64(&p.Float64Val).NullTime(&p.TimeVal).NullBool(&p.BoolVal).Err()
+	}
+	for i, column := range rm.Columns {
+		rm = rm.Index(i)
 		switch column {
 		case "id":
-			args = args.Int64(p.ID)
+			rm.Int64(&p.ID)
 		case "string_val":
-			args = args.NullString(p.StringVal)
+			rm.NullString(&p.StringVal)
 		case "int64_val":
-			if p.Int64Val.Valid {
-				args = args.Int64(p.Int64Val.Int64)
-			} else {
-				args = args.Null()
-			}
+			rm.NullInt64(&p.Int64Val)
 		case "float64_val":
-			if p.Float64Val.Valid {
-				args = args.Float64(p.Float64Val.Float64)
-			} else {
-				args = args.Null()
-			}
+			rm.NullFloat64(&p.Float64Val)
 		case "time_val":
-			if p.TimeVal.Valid {
-				args = args.Time(p.TimeVal.Time)
-			} else {
-				args = args.Null()
-			}
+			rm.NullTime(&p.TimeVal)
 		case "bool_val":
-			if p.BoolVal.Valid {
-				args = args.Bool(p.BoolVal.Bool)
-			} else {
-				args = args.Null()
-			}
+			rm.NullBool(&p.BoolVal)
 		default:
-			return nil, errors.NewNotFoundf("[dml_test] Column %q not found", columns)
+			return errors.NewNotFoundf("[dml_test] Column %q not found", column)
+		}
+		if rm.Err() != nil {
+			return rm.Err()
 		}
 	}
-	return args, nil
+	return nil
 }
 
 type installFixturesConfig struct {

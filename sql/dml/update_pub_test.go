@@ -185,7 +185,7 @@ func TestUpdate_Prepare(t *testing.T) {
 }
 
 // Make sure that type salesInvoice implements interface.
-var _ dml.ArgumentsAppender = (*salesInvoice)(nil)
+var _ dml.ColumnMapper = (*salesInvoice)(nil)
 
 // salesInvoice represents just a demo record.
 type salesInvoice struct {
@@ -196,27 +196,29 @@ type salesInvoice struct {
 	GrandTotal dml.NullFloat64
 }
 
-func (so salesInvoice) AppendArgs(args dml.Arguments, columns []string) (dml.Arguments, error) {
-	column := columns[0]
-	switch column {
-	case "entity_id":
-		args = args.Int64(so.EntityID)
-	case "state":
-		args = args.String(so.State)
-	case "store_id":
-		args = args.Int64(so.StoreID)
-	case "customer_id":
-		args = args.Int64(so.CustomerID)
-	case "alias_customer_id":
-		// Here can be a special treatment implemented like encoding to JSON
-		// or encryption
-		args = args.Int64(so.CustomerID)
-	case "grand_total":
-		args = args.NullFloat64(so.GrandTotal)
-	default:
-		return nil, errors.NewNotFoundf("[dml_test] Column %q not found", column)
+func (so *salesInvoice) MapColumns(rm *dml.ColumnMap) error {
+	for i, column := range rm.Columns {
+		rm = rm.Index(i)
+		switch column {
+		case "entity_id":
+			rm.Int64(&so.EntityID)
+		case "state":
+			rm.String(&so.State)
+		case "store_id":
+			rm.Int64(&so.StoreID)
+		case "customer_id":
+			rm.Int64(&so.CustomerID)
+		case "alias_customer_id":
+			// Here can be a special treatment implemented like encoding to JSON
+			// or encryption
+			rm.Int64(&so.CustomerID)
+		case "grand_total":
+			rm.NullFloat64(&so.GrandTotal)
+		default:
+			return errors.NewNotFoundf("[dml_test] Column %q not found", column)
+		}
 	}
-	return args, nil
+	return nil
 }
 
 func TestUpdate_SetClausAliases(t *testing.T) {
@@ -240,7 +242,7 @@ func TestUpdate_SetClausAliases(t *testing.T) {
 	// Our objects which should update the columns in the database table
 	// `sales_invoice`.
 
-	collection := []salesInvoice{
+	collection := []*salesInvoice{
 		{21, "pending", 5, 5678, dml.MakeNullFloat64(31.41459)},
 		{32, "processing", 7, 8912, dml.NullFloat64{}},
 	}

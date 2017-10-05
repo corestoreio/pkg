@@ -284,7 +284,7 @@ func (b *Select) BindRecord(records ...QualifiedRecord) *Select {
 
 func (b *Select) bindRecord(records []QualifiedRecord) {
 	if b.ArgumentsAppender == nil {
-		b.ArgumentsAppender = make(map[string]ArgumentsAppender)
+		b.ArgumentsAppender = make(map[string]ColumnMapper)
 	}
 	for _, rec := range records {
 		q := rec.Qualifier

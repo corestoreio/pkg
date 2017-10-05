@@ -15,7 +15,6 @@
 package dml_test
 
 import (
-	"database/sql"
 	"os"
 	"testing"
 	"time"
@@ -36,8 +35,7 @@ func init() {
 	log.Now = now
 }
 
-var _ dml.ArgumentsAppender = (*dmlPerson)(nil)
-var _ dml.Scanner = (*dmlPerson)(nil)
+var _ dml.ColumnMapper = (*dmlPerson)(nil)
 
 type dmlPerson struct {
 	ID          int64
@@ -49,51 +47,39 @@ type dmlPerson struct {
 	TotalIncome float64
 }
 
-func (p *dmlPerson) RowScan(r *sql.Rows) error {
-	// noop
-	return nil
-}
-
 func (p *dmlPerson) AssignLastInsertID(id int64) {
 	p.ID = id
 }
 
-func (p *dmlPerson) AppendArgs(args dml.Arguments, columns []string) (_ dml.Arguments, err error) {
-	l := len(columns)
-	if l == 1 {
-		return p.appendArgs(args, columns[0])
+func (p *dmlPerson) MapColumns(rm *dml.ColumnMap) error {
+	if rm.Mode() == 'a' {
+		return rm.Int64(&p.ID).String(&p.Name).NullString(&p.Email).NullString(&p.Key).Int64(&p.StoreID).Time(&p.CreatedAt).Float64(&p.TotalIncome).Err()
 	}
-	if l == 0 {
-		return args.Int64(p.ID).String(p.Name).NullString(p.Email).NullString(p.Key).Int64(p.StoreID).Time(p.CreatedAt).Float64(p.TotalIncome), nil
-	}
-	for _, col := range columns {
-		if args, err = p.appendArgs(args, col); err != nil {
-			return nil, errors.WithStack(err)
+	for i, column := range rm.Columns {
+		rm = rm.Index(i)
+		switch column {
+		case "id":
+			rm.Int64(&p.ID)
+		case "name":
+			rm.String(&p.Name)
+		case "email":
+			rm.NullString(&p.Email)
+		case "key":
+			rm.NullString(&p.Key)
+		case "store_id":
+			rm.Int64(&p.StoreID)
+		case "created_at":
+			rm.Time(&p.CreatedAt)
+		case "total_income":
+			rm.Float64(&p.TotalIncome)
+		default:
+			return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", column)
+		}
+		if rm.Err() != nil {
+			return rm.Err()
 		}
 	}
-	return args, err
-}
-
-func (p *dmlPerson) appendArgs(args dml.Arguments, column string) (_ dml.Arguments, err error) {
-	switch column {
-	case "id":
-		args = args.Int64(p.ID)
-	case "name":
-		args = args.String(p.Name)
-	case "email":
-		args = args.NullString(p.Email)
-	case "key":
-		args = args.NullString(p.Key)
-	case "store_id":
-		args = args.Int64(p.StoreID)
-	case "created_at":
-		args = args.Time(p.CreatedAt)
-	case "total_income":
-		args = args.Float64(p.TotalIncome)
-	default:
-		return nil, errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", column)
-	}
-	return args, err
+	return nil
 }
 
 func createRealSession(t testing.TB) *dml.ConnPool {

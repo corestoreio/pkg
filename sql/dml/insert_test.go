@@ -162,7 +162,7 @@ func TestInsertReal(t *testing.T) {
 	ib := s.InsertInto("dml_people").AddColumns("name", "email").BindRecord(&person)
 	res, err = ib.Exec(context.TODO())
 	if err != nil {
-		t.Errorf("%s: %s", err, ib.String())
+		t.Fatalf("%s: %s", err, ib.String())
 	}
 	validateInsertingBarack(t, s, res, err)
 }
