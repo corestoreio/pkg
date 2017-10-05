@@ -74,8 +74,8 @@ func (pe *categoryEntity) MapColumns(rm *dml.ColumnMap) error {
 
 // ExampleUpdate_BindRecord performs an UPDATE query in the table
 // `catalog_category_entity` with the fix specified columns. The Go type
-// categoryEntity implements the dml.ArgumentsAppender interface and can append
-// the required arguments.
+// categoryEntity implements the dml.ColumnMapper interface and can provide the
+// required arguments.
 func ExampleUpdate_BindRecord() {
 
 	ce := &categoryEntity{345, 6, "p123", dml.MakeNullString("4/5/6/7"), []string{"saleAutumn", "saleShoe"}}
@@ -92,10 +92,10 @@ func ExampleUpdate_BindRecord() {
 
 	ce = &categoryEntity{678, 6, "p456", dml.NullString{}, nil}
 
-	// Updates only one row in the table because of the WHERE. You can call
-	// AddArgumentsAppender and Exec as often as you like. Each call to Exec will
-	// reassemble the arguments from AddArgumentsAppender, means you can exchange AddArgumentsAppender
-	// with different objects.
+	// Updates only one row in the table because of the WHERE clause. You can
+	// call BindRecord and Exec as often as you like. Each call to Exec will
+	// reassemble the arguments from the ColumnMapper, that means you can
+	// exchange BindRecord with different objects.
 	u.
 		BindRecord(dml.Qualify("", ce)). // overwrites previously set default qualifier
 		Where(dml.Column("entity_id").PlaceHolder())

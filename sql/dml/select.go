@@ -274,24 +274,24 @@ func (b *Select) AddColumnsConditions(expressions ...*Condition) *Select {
 }
 
 // BindRecord binds the qualified record to the main table/view, or any other
-// table/view/alias used in the query, for assembling and appending arguments.
-// An ArgumentsAppender gets called if it matches the qualifier, in this case
-// the current table name or its alias.
+// table/view/alias used in the query, for assembling and appending arguments. A
+// ColumnMapper gets called if it matches the qualifier, in this case the
+// current table name or its alias.
 func (b *Select) BindRecord(records ...QualifiedRecord) *Select {
 	b.bindRecord(records)
 	return b
 }
 
 func (b *Select) bindRecord(records []QualifiedRecord) {
-	if b.ArgumentsAppender == nil {
-		b.ArgumentsAppender = make(map[string]ColumnMapper)
+	if b.QualifiedRecords == nil {
+		b.QualifiedRecords = make(map[string]ColumnMapper)
 	}
 	for _, rec := range records {
 		q := rec.Qualifier
 		if q == "" {
 			q = b.Table.mustQualifier()
 		}
-		b.ArgumentsAppender[q] = rec.Record
+		b.QualifiedRecords[q] = rec.Record
 	}
 }
 
@@ -596,7 +596,7 @@ func (b *Select) appendArgs(args Arguments) (_ Arguments, err error) {
 			// TODO: think about caching all calls to intersectConditions
 			if boundCols := f.On.intersectConditions(placeHolderColumns); len(boundCols) > 0 {
 				defaultQualifier := b.Table.mustQualifier()
-				if args, err = appendArgs(pap, b.ArgumentsAppender, args, defaultQualifier, boundCols); err != nil {
+				if args, err = appendArgs(pap, b.QualifiedRecords, args, defaultQualifier, boundCols); err != nil {
 					return nil, errors.WithStack(err)
 				}
 			}
@@ -609,7 +609,7 @@ func (b *Select) appendArgs(args Arguments) (_ Arguments, err error) {
 	}
 	if boundCols := b.Wheres.intersectConditions(placeHolderColumns); len(boundCols) > 0 {
 		defaultQualifier := b.Table.mustQualifier()
-		if args, err = appendArgs(pap, b.ArgumentsAppender, args, defaultQualifier, boundCols); err != nil {
+		if args, err = appendArgs(pap, b.QualifiedRecords, args, defaultQualifier, boundCols); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		placeHolderColumns = placeHolderColumns[:0]
@@ -620,7 +620,7 @@ func (b *Select) appendArgs(args Arguments) (_ Arguments, err error) {
 	}
 	if boundCols := b.Havings.intersectConditions(placeHolderColumns); len(boundCols) > 0 {
 		defaultQualifier := b.Table.mustQualifier()
-		if args, err = appendArgs(pap, b.ArgumentsAppender, args, defaultQualifier, boundCols); err != nil {
+		if args, err = appendArgs(pap, b.QualifiedRecords, args, defaultQualifier, boundCols); err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}

@@ -32,9 +32,9 @@ const (
 	sqlStar    = "*"
 )
 
-// QualifiedRecord is an ArgumentsAppender with a qualifier. A QualifiedRecord
-// gets used as arguments to ExecRecord or BindRecord in the SQL statement. If
-// you use an alias for the main table/view you must the alias as the qualifier.
+// QualifiedRecord is a ColumnMapper with a qualifier. A QualifiedRecord gets
+// used as arguments to ExecRecord or BindRecord in the SQL statement. If you
+// use an alias for the main table/view you must set the alias as the qualifier.
 type QualifiedRecord struct {
 	_Named_Fields_Required struct{}
 

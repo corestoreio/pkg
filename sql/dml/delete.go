@@ -120,24 +120,24 @@ func (b *Delete) Unsafe() *Delete {
 }
 
 // BindRecord binds the qualified record to the main table/view, or any other
-// table/view/alias used in the query, for assembling and appending arguments.
-// An ArgumentsAppender gets called if it matches the qualifier, in this case
-// the current table name or its alias.
+// table/view/alias used in the query, for assembling and appending arguments. A
+// ColumnMapper gets called if it matches the qualifier, in this case the
+// current table name or its alias.
 func (b *Delete) BindRecord(records ...QualifiedRecord) *Delete {
 	b.bindRecord(records)
 	return b
 }
 
 func (b *Delete) bindRecord(records []QualifiedRecord) {
-	if b.ArgumentsAppender == nil {
-		b.ArgumentsAppender = make(map[string]ColumnMapper)
+	if b.QualifiedRecords == nil {
+		b.QualifiedRecords = make(map[string]ColumnMapper)
 	}
 	for _, rec := range records {
 		q := rec.Qualifier
 		if q == "" {
 			q = b.Table.mustQualifier()
 		}
-		b.ArgumentsAppender[q] = rec.Record
+		b.QualifiedRecords[q] = rec.Record
 	}
 }
 
@@ -270,7 +270,7 @@ func (b *Delete) appendArgs(args Arguments) (_ Arguments, err error) {
 		return nil, errors.WithStack(err)
 	}
 	if boundCols := b.Wheres.intersectConditions(placeHolderColumns); len(boundCols) > 0 {
-		if args, err = appendArgs(pap, b.ArgumentsAppender, args, b.Table.mustQualifier(), boundCols); err != nil {
+		if args, err = appendArgs(pap, b.QualifiedRecords, args, b.Table.mustQualifier(), boundCols); err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}

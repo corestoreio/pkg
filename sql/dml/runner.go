@@ -651,17 +651,18 @@ type BuilderBase struct {
 // conditional constraints like WHERE, JOIN, ORDER, etc. Exported for
 // documentation reasons.
 type BuilderConditional struct {
-	// ArgumentsAppender a map of ArgumentsAppender to retrieve the necessary
-	// arguments from the interface implementations of the objects. The string
-	// key (the qualifier) can either be the table or object name or in cases,
-	// where an alias gets used, the string key must be the same as the alias.
-	// The map get called internally when the arguments are getting assembled.
-	ArgumentsAppender map[string]ColumnMapper
-	Joins             Joins
-	Wheres            Conditions
-	OrderBys          identifiers
-	LimitCount        uint64
-	LimitValid        bool
+	// QualifiedRecords represents a map of ColumnMappers to retrieve the
+	// necessary arguments from the interface implementations of the types. The
+	// string key (the qualifier) can either be the table or object name or in
+	// cases, where an alias gets used, the string key must be the same as the
+	// alias. The map get called internally when the arguments are getting
+	// assembled.
+	QualifiedRecords map[string]ColumnMapper
+	Joins            Joins
+	Wheres           Conditions
+	OrderBys         identifiers
+	LimitCount       uint64
+	LimitValid       bool
 }
 
 func (b *BuilderConditional) join(j string, t identifier, on ...*Condition) {

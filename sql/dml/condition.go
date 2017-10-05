@@ -287,8 +287,8 @@ func (c *Condition) isExpression() bool {
 func (cs Conditions) intersectConditions(cols []string) []string {
 	// this calculates the intersection of the columns in Conditions which
 	// already have an value provided/assigned and those where the arguments
-	// must be assembled from the interface ArgumentsAppender. If the arguments
-	// should be assembled from the interface IsPlaceHolder is true.
+	// must be retrieved from the interface ColumnMapper. If the arguments
+	// should be assembled from ColumnMapper the value IsPlaceHolder is true.
 	for _, cnd := range cs {
 		if cnd.IsPlaceHolder {
 			cols = append(cols, cnd.Left)
@@ -465,7 +465,7 @@ func (c *Condition) Column(col string) *Condition {
 }
 
 // NamedArg if set the MySQL/MariaDB placeholder `?` will be replaced with a
-// name. Records which implement ArgumentAppender must also use this name.
+// name. Records which implement ColumnMapper must also use this name.
 func (c *Condition) NamedArg(n string) *Condition {
 	c.Right.NamedArg = n
 	c.IsPlaceHolder = true

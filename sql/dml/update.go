@@ -34,9 +34,9 @@ type Update struct {
 
 	// TODO: add UPDATE JOINS SQLStmtUpdateJoin
 
-	// SetClausAliases only applicable in case when Record field has been set or
-	// ExecMulti gets used. `SetClausAliases` contains the lis of column names
-	// which gets passed to the ArgumentsAppender function. If empty
+	// SetClausAliases only applicable in case when field QualifiedRecords has
+	// been set or ExecMulti gets used. `SetClausAliases` contains the lis of
+	// column names which gets passed to the ColumnMapper. If empty,
 	// `SetClausAliases` collects the column names from the `SetClauses`. The
 	// alias slice must have the same length as the columns slice. Despite
 	// setting `SetClausAliases` the SetClauses.Columns must be provided to
@@ -115,9 +115,8 @@ func (b *Update) Set(c ...*Condition) *Update {
 	return b
 }
 
-// AddColumns adds columns which values gets later derived from an
-// ArgumentsAppender. Those columns will get passed to the ArgumentsAppender
-// implementation. Mostly used with the type Update.
+// AddColumns adds columns which values gets later derived from a ColumnMapper.
+// Those columns will get passed to the ColumnMapper implementation.
 func (b *Update) AddColumns(columnNames ...string) *Update {
 	for _, col := range columnNames {
 		b.SetClauses = append(b.SetClauses, Column(col))
@@ -127,23 +126,23 @@ func (b *Update) AddColumns(columnNames ...string) *Update {
 
 // BindRecord binds the qualified record to the main table/view, or any other
 // table/view/alias used in the query, for assembling and appending arguments.
-// An ArgumentsAppender gets called if it matches the qualifier, in this case
-// the current table name or its alias.
+// The ColumnMapper gets called if it matches the qualifier, in this case the
+// current table name or its alias.
 func (b *Update) BindRecord(records ...QualifiedRecord) *Update {
 	b.bindRecord(records)
 	return b
 }
 
 func (b *Update) bindRecord(records []QualifiedRecord) {
-	if b.ArgumentsAppender == nil {
-		b.ArgumentsAppender = make(map[string]ColumnMapper)
+	if b.QualifiedRecords == nil {
+		b.QualifiedRecords = make(map[string]ColumnMapper)
 	}
 	for _, rec := range records {
 		q := rec.Qualifier
 		if q == "" {
 			q = b.Table.mustQualifier()
 		}
-		b.ArgumentsAppender[q] = rec.Record
+		b.QualifiedRecords[q] = rec.Record
 	}
 }
 
@@ -268,14 +267,14 @@ func (b *Update) appendArgs(args Arguments) (_ Arguments, err error) {
 		args = make(Arguments, 0, len(b.SetClauses)+len(b.Wheres))
 	}
 
-	if b.ArgumentsAppender != nil {
+	if b.QualifiedRecords != nil {
 		if len(b.SetClausAliases) == 0 {
 			b.SetClausAliases = b.SetClauses.leftHands(b.SetClausAliases)
 		}
 
 		qualifier := b.Table.mustQualifier() // if this panics, you have different problems.
 
-		if aa, ok := b.ArgumentsAppender[qualifier]; ok {
+		if aa, ok := b.QualifiedRecords[qualifier]; ok {
 			rm := &ColumnMap{
 				Args:    args,
 				Columns: []string{""},
@@ -302,7 +301,7 @@ func (b *Update) appendArgs(args Arguments) (_ Arguments, err error) {
 	}
 	placeHolderColumns := make([]string, 0, len(b.Wheres)) // can be reused once we implement more features of the DELETE statement, like JOINs.
 	if boundedCols := b.Wheres.intersectConditions(placeHolderColumns); len(boundedCols) > 0 {
-		if args, err = appendArgs(pap, b.ArgumentsAppender, args, b.Table.mustQualifier(), boundedCols); err != nil {
+		if args, err = appendArgs(pap, b.QualifiedRecords, args, b.Table.mustQualifier(), boundedCols); err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}

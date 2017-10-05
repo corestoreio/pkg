@@ -249,10 +249,10 @@ func (u *Union) MultiplyArguments(args Arguments) Arguments {
 }
 
 // BindRecord binds the qualified record to the main table/view, or any other
-// table/view/alias used in the query, for assembling and appending arguments.
-// An ArgumentsAppender gets called if it matches the qualifier, in this case
-// the current table name or its alias.
-// Should be called once all selects have been set.
+// table/view/alias used in the query, for assembling and appending arguments. A
+// ColumnMapper gets called if it matches the qualifier, in this case the
+// current table name or its alias. Should be called once all selects have been
+// set.
 func (u *Union) BindRecord(records ...QualifiedRecord) *Union {
 	u.bindRecord(records)
 	return u
