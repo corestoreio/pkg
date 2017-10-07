@@ -64,11 +64,8 @@ func (pe *categoryEntity) MapColumns(cm *dml.ColumnMap) error {
 		default:
 			return errors.NewNotFoundf("[dml_test] Column %q not found", c)
 		}
-		if cm.Err() != nil {
-			return cm.Err()
-		}
 	}
-	return nil
+	return cm.Err()
 }
 
 // ExampleUpdate_BindRecord performs an UPDATE query in the table

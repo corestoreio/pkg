@@ -339,7 +339,7 @@ func MakeArgs(cap int) Arguments {
 func (a Arguments) MapColumns(cm *ColumnMap) error {
 	if cm.Mode() == 'a' {
 		cm.Args = append(cm.Args, a...)
-		return nil
+		return cm.Err()
 	}
 	for cm.Next() {
 		// now a bit slow ... but will be refactored later with constant time
@@ -354,7 +354,7 @@ func (a Arguments) MapColumns(cm *ColumnMap) error {
 			}
 		}
 	}
-	return nil
+	return cm.Err()
 }
 
 func (a Arguments) GoString() string {

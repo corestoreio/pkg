@@ -54,11 +54,8 @@ func (sr someRecord) MapColumns(cm *dml.ColumnMap) error {
 		default:
 			return errors.NewNotFoundf("[dml_test] Column %q not found", c)
 		}
-		if cm.Err() != nil {
-			return cm.Err()
-		}
 	}
-	return nil
+	return cm.Err()
 }
 
 func TestInsert_Bind(t *testing.T) {

@@ -93,11 +93,8 @@ func (p *salesCreditMemo) MapColumns(cm *dml.ColumnMap) error {
 		default:
 			return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", c)
 		}
-		if cm.Err() != nil {
-			return cm.Err()
-		}
 	}
-	return nil
+	return cm.Err()
 }
 
 func (cc *salesCreditMemoCollection) MapColumns(cm *dml.ColumnMap) error {
@@ -130,7 +127,7 @@ func (cc *salesCreditMemoCollection) MapColumns(cm *dml.ColumnMap) error {
 	default:
 		return errors.NewNotSupportedf("[dml] Unknown Mode: %q", string(m))
 	}
-	return nil
+	return cm.Err()
 }
 
 // ExampleColumnMap loads from the table `sales_creditmemo` two rows into the

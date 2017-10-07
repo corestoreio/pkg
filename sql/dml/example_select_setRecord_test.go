@@ -59,11 +59,8 @@ func (ce *catalogCategoryEntity) MapColumns(cm *dml.ColumnMap) error {
 		default:
 			return errors.NewNotFoundf("[dml_test] %T: Column %q not found", ce, c)
 		}
-		if cm.Err() != nil {
-			return cm.Err()
-		}
 	}
-	return nil
+	return cm.Err()
 }
 
 // tableStore defined somewhere in a different package.
@@ -96,11 +93,8 @@ func (ts *tableStore) MapColumns(cm *dml.ColumnMap) error {
 		default:
 			return errors.NewNotFoundf("[dml_test] %T: Column %q not found", ts, c)
 		}
-		if cm.Err() != nil {
-			return cm.Err()
-		}
 	}
-	return nil
+	return cm.Err()
 }
 
 func ExampleSelect_BindRecord() {

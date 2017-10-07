@@ -217,7 +217,7 @@ func (so *salesInvoice) MapColumns(cm *dml.ColumnMap) error {
 			return errors.NewNotFoundf("[dml_test] Column %q not found", c)
 		}
 	}
-	return nil
+	return cm.Err()
 }
 
 func TestUpdate_SetClausAliases(t *testing.T) {

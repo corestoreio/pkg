@@ -138,11 +138,8 @@ func (bt *baseTest) MapColumns(cm *dml.ColumnMap) error {
 		default:
 			return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", c)
 		}
-		if cm.Err() != nil {
-			return cm.Err()
-		}
 	}
-	return nil
+	return cm.Err()
 }
 
 type baseTestCollection struct {
@@ -185,7 +182,7 @@ func (vs *baseTestCollection) MapColumns(cm *dml.ColumnMap) error {
 	default:
 		return errors.NewNotSupportedf("[dml] Unknown Mode: %q", string(m))
 	}
-	return nil
+	return cm.Err()
 }
 
 func TestRowConvert(t *testing.T) {

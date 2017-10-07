@@ -74,11 +74,8 @@ func (p *dmlPerson) MapColumns(cm *dml.ColumnMap) error {
 		default:
 			return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", c)
 		}
-		if cm.Err() != nil {
-			return cm.Err()
-		}
 	}
-	return nil
+	return cm.Err()
 }
 
 func createRealSession(t testing.TB) *dml.ConnPool {

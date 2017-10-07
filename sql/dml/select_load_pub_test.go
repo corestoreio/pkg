@@ -120,12 +120,11 @@ func (p *TableCoreConfigData) MapColumns(cm *dml.ColumnMap) error {
 			cm.String(&p.Path)
 		case "value":
 			cm.NullString(&p.Value)
-		}
-		if cm.Err() != nil {
-			return cm.Err()
+		default:
+			return errors.NewNotFoundf("[dml] Field %q not found", c)
 		}
 	}
-	return nil
+	return cm.Err()
 }
 
 func (ps *TableCoreConfigDataSlice) MapColumns(cm *dml.ColumnMap) error {

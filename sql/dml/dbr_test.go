@@ -180,7 +180,7 @@ func (ps *dmlPersons) MapColumns(cm *ColumnMap) error {
 	default:
 		return errors.NewNotSupportedf("[dml] Unknown Mode: %q", string(m))
 	}
-	return nil
+	return cm.Err()
 }
 
 //func (ps *dmlPersons) AssignLastInsertID(uint64) error {
@@ -221,11 +221,8 @@ func (p *nullTypedRecord) MapColumns(cm *ColumnMap) error {
 		default:
 			return errors.NewNotFoundf("[dml_test] Column %q not found", c)
 		}
-		if cm.Err() != nil {
-			return cm.Err()
-		}
 	}
-	return nil
+	return cm.Err()
 }
 
 type installFixturesConfig struct {

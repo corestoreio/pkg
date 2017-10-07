@@ -53,11 +53,8 @@ func (pe productEntity) MapColumns(cm *dml.ColumnMap) error {
 		default:
 			return errors.NewNotFoundf("[dml_test] Column %q not found", c)
 		}
-		if cm.Err() != nil {
-			return errors.WithStack(cm.Err())
-		}
 	}
-	return nil
+	return errors.WithStack(cm.Err())
 }
 
 // ExampleInsert_BindRecord inserts new data into table
