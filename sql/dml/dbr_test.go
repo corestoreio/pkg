@@ -79,37 +79,34 @@ func (p *dmlPerson) AssignLastInsertID(id int64) {
 }
 
 // RowScan loads a single row from a SELECT statement returning only one row
-func (p *dmlPerson) MapColumns(rm *ColumnMap) error {
-	if rm.Mode() == 'a' {
-		// TODO(CyS) jump into this case when `select *` or `select col1,col2...` returns all columns!!! not possible due to missing Index() call.
-		return rm.Uint64(&p.ID).String(&p.Name).NullString(&p.Email).NullString(&p.Key).Err()
+func (p *dmlPerson) MapColumns(cm *ColumnMap) error {
+	if cm.Mode() == 'a' {
+		// TODO(CyS) jump into this case when `select *` or `select
+		// col1,col2...` returns all columns!!! not possible due to missing
+		// Index() call.
+		return cm.Uint64(&p.ID).String(&p.Name).NullString(&p.Email).NullString(&p.Key).Err()
 	}
-	for i, column := range rm.Columns {
-		// TODO: build something like `for rm.Next() {` to avoid calling `Index()`.
-		// TODO: numbers are experimental and in case all columns are requested, as we
-		// don't know the column names numbering them would be enough. this
-		// should avoid the above AllColumns `if` branch.
-		rm = rm.Index(i)
-		switch column {
+	for cm.Next() {
+		// TODO: numbers are experimental and in case all columns are requested,
+		// as we don't know the column names numbering them would be enough.
+		// this should avoid the above AllColumns `if` branch.
+		c := cm.Column()
+		switch c {
 		case "id", "0":
-			rm.Uint64(&p.ID)
+			cm.Uint64(&p.ID)
 		case "name", "1":
-			rm.String(&p.Name)
+			cm.String(&p.Name)
 		case "email", "2":
-			rm.NullString(&p.Email)
+			cm.NullString(&p.Email)
 		case "key", "3":
-			//return nil, errors.NewNotFoundf("[dml_test] Column %q should not be added due to testing", column)
-			rm.NullString(&p.Key)
+			cm.NullString(&p.Key)
 		case "store_id", "created_at", "total_income":
 			// noop don't trigger the default case
 		default:
-			return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", column)
-		}
-		if rm.Err() != nil {
-			return rm.Err()
+			return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", c)
 		}
 	}
-	return nil
+	return errors.WithStack(cm.Err())
 }
 
 type dmlPersons struct {
@@ -147,37 +144,37 @@ func (ps *dmlPersons) Emails(ret ...NullString) []NullString {
 }
 
 // MapColumns gets called in the `for rows.Next()` loop each time in case of IsNew
-func (ps *dmlPersons) MapColumns(rm *ColumnMap) error {
-	switch m := rm.Mode(); m {
+func (ps *dmlPersons) MapColumns(cm *ColumnMap) error {
+	switch m := cm.Mode(); m {
 	case 'a', 'R': // INSERT STATEMENT requesting all columns aka arguments
 		for _, p := range ps.Data {
-			if err := p.MapColumns(rm); err != nil {
+			if err := p.MapColumns(cm); err != nil {
 				return errors.WithStack(err)
 			}
 		}
 	case 'w':
 		// case for scanning when loading certain rows, hence we write data from
 		// the DB into the struct in each for-loop.
-		if rm.Count == 1 { // Yes, first row mapped 1 and not zero.
+		if cm.Count == 0 {
 			ps.Data = ps.Data[:0]
 		}
 		p := new(dmlPerson)
-		if err := p.MapColumns(rm); err != nil {
+		if err := p.MapColumns(cm); err != nil {
 			return errors.WithStack(err)
 		}
 		ps.Data = append(ps.Data, p)
 	case 'r':
 		// SELECT, DELETE or UPDATE or INSERT with n columns
-		for _, column := range rm.Columns {
-			switch column {
+		for cm.Next() {
+			switch c := cm.Column(); c {
 			case "id":
-				rm.Args = rm.Args.Uint64s(ps.IDs()...)
+				cm.Args = cm.Args.Uint64s(ps.IDs()...)
 			case "name":
-				rm.Args = rm.Args.Strings(ps.Names()...)
+				cm.Args = cm.Args.Strings(ps.Names()...)
 			case "email":
-				rm.Args = rm.Args.NullString(ps.Emails()...)
+				cm.Args = cm.Args.NullString(ps.Emails()...)
 			default:
-				return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", column)
+				return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", c)
 			}
 		}
 	default:
@@ -202,30 +199,30 @@ type nullTypedRecord struct {
 	BoolVal    NullBool
 }
 
-func (p *nullTypedRecord) MapColumns(rm *ColumnMap) error {
-	if rm.Mode() == 'a' {
-		return rm.Int64(&p.ID).NullString(&p.StringVal).NullInt64(&p.Int64Val).NullFloat64(&p.Float64Val).NullTime(&p.TimeVal).NullBool(&p.BoolVal).Err()
+func (p *nullTypedRecord) MapColumns(cm *ColumnMap) error {
+	if cm.Mode() == 'a' {
+		return cm.Int64(&p.ID).NullString(&p.StringVal).NullInt64(&p.Int64Val).NullFloat64(&p.Float64Val).NullTime(&p.TimeVal).NullBool(&p.BoolVal).Err()
 	}
-	for i, column := range rm.Columns {
-		rm = rm.Index(i)
-		switch column {
+	for cm.Next() {
+		c := cm.Column()
+		switch c {
 		case "id":
-			rm.Int64(&p.ID)
+			cm.Int64(&p.ID)
 		case "string_val":
-			rm.NullString(&p.StringVal)
+			cm.NullString(&p.StringVal)
 		case "int64_val":
-			rm.NullInt64(&p.Int64Val)
+			cm.NullInt64(&p.Int64Val)
 		case "float64_val":
-			rm.NullFloat64(&p.Float64Val)
+			cm.NullFloat64(&p.Float64Val)
 		case "time_val":
-			rm.NullTime(&p.TimeVal)
+			cm.NullTime(&p.TimeVal)
 		case "bool_val":
-			rm.NullBool(&p.BoolVal)
+			cm.NullBool(&p.BoolVal)
 		default:
-			return errors.NewNotFoundf("[dml_test] Column %q not found", column)
+			return errors.NewNotFoundf("[dml_test] Column %q not found", c)
 		}
-		if rm.Err() != nil {
-			return rm.Err()
+		if cm.Err() != nil {
+			return cm.Err()
 		}
 	}
 	return nil

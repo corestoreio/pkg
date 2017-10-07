@@ -196,26 +196,25 @@ type salesInvoice struct {
 	GrandTotal dml.NullFloat64
 }
 
-func (so *salesInvoice) MapColumns(rm *dml.ColumnMap) error {
-	for i, column := range rm.Columns {
-		rm = rm.Index(i)
-		switch column {
+func (so *salesInvoice) MapColumns(cm *dml.ColumnMap) error {
+	for cm.Next() {
+		switch c := cm.Column(); c {
 		case "entity_id":
-			rm.Int64(&so.EntityID)
+			cm.Int64(&so.EntityID)
 		case "state":
-			rm.String(&so.State)
+			cm.String(&so.State)
 		case "store_id":
-			rm.Int64(&so.StoreID)
+			cm.Int64(&so.StoreID)
 		case "customer_id":
-			rm.Int64(&so.CustomerID)
+			cm.Int64(&so.CustomerID)
 		case "alias_customer_id":
 			// Here can be a special treatment implemented like encoding to JSON
 			// or encryption
-			rm.Int64(&so.CustomerID)
+			cm.Int64(&so.CustomerID)
 		case "grand_total":
-			rm.NullFloat64(&so.GrandTotal)
+			cm.NullFloat64(&so.GrandTotal)
 		default:
-			return errors.NewNotFoundf("[dml_test] Column %q not found", column)
+			return errors.NewNotFoundf("[dml_test] Column %q not found", c)
 		}
 	}
 	return nil

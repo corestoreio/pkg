@@ -130,7 +130,10 @@ func load(r *sql.Rows, errIn error, s ColumnMapper) (rowCount uint64, err error)
 		}
 	}
 	if err = r.Err(); err != nil {
-		return rm.Count, errors.WithStack(err)
+		return 0, errors.WithStack(err)
+	}
+	if rm.HasRows {
+		rm.Count++ // because first row is zero but we want the actual row number
 	}
 	return rm.Count, err
 }
@@ -157,11 +160,14 @@ type ColumnMapper interface {
 type ColumnMap struct {
 	Args Arguments // in case we collect arguments
 
+	// HasRows set to true if at least one row has been found.
+	HasRows bool
 	// Count increments on call to Scan.
 	Count uint64
 	// Columns contains the names of the column returned from the query. One
 	// should only read from the slice. Never modify it.
-	Columns []string
+	columns    []string
+	columnsLen int
 	// initialized gets set to true after the first call to Scan to initialize
 	// the internal slices.
 	initialized bool
@@ -172,6 +178,18 @@ type ColumnMap struct {
 	scanErr        error // delayed error and also to avoid `if err != nil`
 	index          int
 	current        []byte
+}
+
+func newColumnMap(args Arguments, columns ...string) *ColumnMap {
+	cm := &ColumnMap{Args: args}
+	cm.setColumns(columns...)
+	return cm
+}
+
+func (b *ColumnMap) setColumns(cols ...string) {
+	b.columns = cols
+	b.columnsLen = len(cols)
+	b.index = -1
 }
 
 // Mode returns a status byte of four different states. These states are getting
@@ -189,9 +207,9 @@ type ColumnMap struct {
 // See the examples. Documentation needs to be written better.
 func (b *ColumnMap) Mode() (m byte) {
 	switch {
-	case len(b.Columns) == 0:
+	case b.columnsLen == 0:
 		m = 'a' // read all mode
-	case len(b.Columns) > 1 && b.Args != nil:
+	case b.columnsLen > 1 && b.Args != nil:
 		m = 'R' // no lower a because in MapColumns entity implementation if would add all args instead specific columns
 	case b.Args != nil:
 		m = 'r' // read mode, we request certain arguments, hence we're reading. like WHERE/JOIN clauses
@@ -211,26 +229,27 @@ func (b *ColumnMap) Mode() (m byte) {
 // rows.Close. See the example for further usages.
 func (b *ColumnMap) Scan(r *sql.Rows) error {
 	if !b.initialized {
-		var err error
-		b.Columns, err = r.Columns()
+		cols, err := r.Columns()
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		lc := len(b.Columns)
-		b.scanRaw = make([]*sql.RawBytes, lc)
-		b.scanArgs = make([]interface{}, lc)
-		for i := range b.Columns {
+		b.setColumns(cols...)
+		b.scanRaw = make([]*sql.RawBytes, b.columnsLen)
+		b.scanArgs = make([]interface{}, b.columnsLen)
+		for i := 0; i < b.columnsLen; i++ {
 			rb := new(sql.RawBytes)
 			b.scanRaw[i] = rb
 			b.scanArgs[i] = rb
 		}
 		b.initialized = true
 		b.Count = 0
+		b.HasRows = true
+	} else {
+		b.Count++
 	}
 	if err := r.Scan(b.scanArgs...); err != nil {
 		return errors.WithStack(err)
 	}
-	b.Count++
 	return nil
 }
 
@@ -240,15 +259,25 @@ func (b *ColumnMap) Err() error {
 	return b.scanErr
 }
 
-// Index sets the current column index to read data from. You must call this
-// first before calling any other type conversion function or they will return
-// empty or NULL values.
-func (b *ColumnMap) Index(i int) *ColumnMap {
-	b.index = i
-	if b.scanRaw != nil {
-		b.current = *b.scanRaw[i]
+// Column returns the current column name after calling `Next`.
+func (b *ColumnMap) Column() string {
+	return b.columns[b.index]
+}
+
+// Next moves the internal index to the next position. It may return false if
+// during RawBytes scanning an error has occurred.
+func (b *ColumnMap) Next() bool {
+	b.index++
+	ok := b.index < b.columnsLen && b.scanErr == nil
+	if ok && b.scanRaw != nil {
+		b.current = *b.scanRaw[b.index]
 	}
-	return b
+	if !ok {
+		// reset because the next row from the result-set will start or the next
+		// Record/ColumnMapper collects the arguments.
+		b.index = -1
+	}
+	return ok
 }
 
 // Bool reads a bool value and appends it to the arguments slice or assigns the
@@ -485,6 +514,9 @@ func (b *ColumnMap) Uint64(ptr *uint64) *ColumnMap {
 	}
 	if b.scanErr == nil {
 		*ptr, b.scanErr = byteconv.ParseUint(b.current, 10, strconv.IntSize)
+		if b.scanErr != nil {
+			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		}
 	}
 	return b
 }
@@ -494,7 +526,7 @@ func (b *ColumnMap) Uint64(ptr *uint64) *ColumnMap {
 func (b *ColumnMap) Debug(w io.Writer) (err error) {
 	nl := []byte("\n")
 	tNil := []byte(": <nil>")
-	for i, c := range b.Columns {
+	for i, c := range b.columns {
 		if i > 0 {
 			_, _ = w.Write(nl)
 		}
@@ -640,7 +672,7 @@ type BuilderBase struct {
 	// non valid identifier (not `{a-z}[a-z0-9$_]+`i) into an expression.
 	IsUnsafe  bool
 	cacheSQL  []byte
-	cacheArgs Arguments // like a buffer, gets reused
+	cacheArgs Arguments // like a buffer, gets reused so a pool, TODO rename to pool
 	// propagationStoppedAt position in the slice where the stopped propagation
 	// has been requested. for every new iteration the propagation must stop at
 	// this position.

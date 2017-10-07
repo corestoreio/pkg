@@ -95,56 +95,51 @@ type baseTest struct {
 	NullTime    dml.NullTime
 }
 
-func (bt *baseTest) MapColumns(rm *dml.ColumnMap) error {
-	if rm.Mode() == 'a' {
-		return rm.Bool(&bt.Bool).NullBool(&bt.NullBool).Int(&bt.Int).Int64(&bt.Int64).NullInt64(&bt.NullInt64).Float64(&bt.Float64).NullFloat64(&bt.NullFloat64).Uint(&bt.Uint).Uint8(&bt.Uint8).Uint16(&bt.Uint16).Uint32(&bt.Uint32).Uint64(&bt.Uint64).Byte(&bt.Byte).String(&bt.Str).NullString(&bt.NullString).Time(&bt.Time).NullTime(&bt.NullTime).Err()
+func (bt *baseTest) MapColumns(cm *dml.ColumnMap) error {
+	if cm.Mode() == 'a' {
+		return cm.Bool(&bt.Bool).NullBool(&bt.NullBool).Int(&bt.Int).Int64(&bt.Int64).NullInt64(&bt.NullInt64).Float64(&bt.Float64).NullFloat64(&bt.NullFloat64).Uint(&bt.Uint).Uint8(&bt.Uint8).Uint16(&bt.Uint16).Uint32(&bt.Uint32).Uint64(&bt.Uint64).Byte(&bt.Byte).String(&bt.Str).NullString(&bt.NullString).Time(&bt.Time).NullTime(&bt.NullTime).Err()
 	}
-	for i, column := range rm.Columns {
-		// TODO: build something like `for rm.Next() {` to avoid calling `Index()`.
-		// TODO: numbers are experimental and in case all columns are requested, as we
-		// don't know the column names numbering them would be enough. this
-		// should avoid the above AllColumns `if` branch.
-		rm = rm.Index(i)
-		switch column {
+	for cm.Next() {
+		switch c := cm.Column(); c {
 		case "bool":
-			rm.Bool(&bt.Bool)
+			cm.Bool(&bt.Bool)
 		case "null_bool":
-			rm.NullBool(&bt.NullBool)
+			cm.NullBool(&bt.NullBool)
 		case "int":
-			rm.Int(&bt.Int)
+			cm.Int(&bt.Int)
 		case "int64":
-			rm.Int64(&bt.Int64)
+			cm.Int64(&bt.Int64)
 		case "null_int64":
-			rm.NullInt64(&bt.NullInt64)
+			cm.NullInt64(&bt.NullInt64)
 		case "float64":
-			rm.Float64(&bt.Float64)
+			cm.Float64(&bt.Float64)
 		case "null_float64":
-			rm.NullFloat64(&bt.NullFloat64)
+			cm.NullFloat64(&bt.NullFloat64)
 		case "uint":
-			rm.Uint(&bt.Uint)
+			cm.Uint(&bt.Uint)
 		case "uint8":
-			rm.Uint8(&bt.Uint8)
+			cm.Uint8(&bt.Uint8)
 		case "uint16":
-			rm.Uint16(&bt.Uint16)
+			cm.Uint16(&bt.Uint16)
 		case "uint32":
-			rm.Uint32(&bt.Uint32)
+			cm.Uint32(&bt.Uint32)
 		case "uint64":
-			rm.Uint64(&bt.Uint64)
+			cm.Uint64(&bt.Uint64)
 		case "byte":
-			rm.Byte(&bt.Byte)
+			cm.Byte(&bt.Byte)
 		case "str":
-			rm.String(&bt.Str)
+			cm.String(&bt.Str)
 		case "null_string":
-			rm.NullString(&bt.NullString)
+			cm.NullString(&bt.NullString)
 		case "time":
-			rm.Time(&bt.Time)
+			cm.Time(&bt.Time)
 		case "null_time":
-			rm.NullTime(&bt.NullTime)
+			cm.NullTime(&bt.NullTime)
 		default:
-			return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", column)
+			return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", c)
 		}
-		if rm.Err() != nil {
-			return rm.Err()
+		if cm.Err() != nil {
+			return cm.Err()
 		}
 	}
 	return nil
@@ -162,27 +157,27 @@ func (vs *baseTestCollection) ToSQL() (string, []interface{}, error) {
 
 // RowScan implements dml.ColumnMapper interface and scans a single row from the
 // database query result.
-func (vs *baseTestCollection) MapColumns(rm *dml.ColumnMap) error {
-	switch m := rm.Mode(); m {
+func (vs *baseTestCollection) MapColumns(cm *dml.ColumnMap) error {
+	switch m := cm.Mode(); m {
 	case 'a': // INSERT STATEMENT requesting all columns aka arguments
 		for _, p := range vs.Data {
-			if err := p.MapColumns(rm); err != nil {
+			if err := p.MapColumns(cm); err != nil {
 				return errors.WithStack(err)
 			}
 		}
 	case 'w':
 		// case for scanning when loading certain rows, hence we write data from
 		// the DB into the struct in each for-loop.
-		if rm.Count == 1 {
+		if cm.Count == 0 {
 			vs.Data = vs.Data[:0]
-			rm.CheckValidUTF8 = vs.CheckValidUTF8
+			cm.CheckValidUTF8 = vs.CheckValidUTF8
 		}
 		p := new(baseTest)
-		if err := p.MapColumns(rm); err != nil {
+		if err := p.MapColumns(cm); err != nil {
 			return errors.WithStack(err)
 		}
 		if vs.EventAfterScan != nil {
-			vs.EventAfterScan(rm, p)
+			vs.EventAfterScan(cm, p)
 		}
 		vs.Data = append(vs.Data, p)
 	case 'r':

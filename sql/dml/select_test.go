@@ -608,6 +608,13 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 		require.NoError(t, err)
 		assert.Exactly(t, []int64{1}, ids)
 	})
+	t.Run("Scan string into arg UINT returns error", func(t *testing.T) {
+		var people dmlPersons
+		rc, err := s.SelectFrom("dml_people").AddColumnsAliases("email", "id", "name", "email").Load(context.TODO(), &people)
+		require.EqualError(t, err, "[dml] Load.QueryContext with query \"SELECT `email` AS `id`, `name` AS `email` FROM `dml_people`\": [dml] Column \"id\": strconv.ParseUint: parsing \"jonathan@uservoice.com\": invalid syntax")
+		assert.EqualError(t, errors.Cause(err), "strconv.ParseUint: parsing \"jonathan@uservoice.com\": invalid syntax")
+		assert.Empty(t, rc)
+	})
 }
 
 func TestSelect_LoadType_Single(t *testing.T) {

@@ -104,41 +104,40 @@ type TableCoreConfigData struct {
 	Value    dml.NullString `json:",omitempty"` // value text NULL
 }
 
-func (p *TableCoreConfigData) MapColumns(rm *dml.ColumnMap) error {
-	if rm.Mode() == 'a' {
-		return rm.Int64(&p.ConfigID).String(&p.Scope).Int64(&p.ScopeID).String(&p.Path).NullString(&p.Value).Err()
+func (p *TableCoreConfigData) MapColumns(cm *dml.ColumnMap) error {
+	if cm.Mode() == 'a' {
+		return cm.Int64(&p.ConfigID).String(&p.Scope).Int64(&p.ScopeID).String(&p.Path).NullString(&p.Value).Err()
 	}
-	for i, column := range rm.Columns {
-		rm = rm.Index(i)
-		switch column {
+	for cm.Next() {
+		switch c := cm.Column(); c {
 		case "config_id":
-			rm.Int64(&p.ConfigID)
+			cm.Int64(&p.ConfigID)
 		case "scope":
-			rm.String(&p.Scope)
+			cm.String(&p.Scope)
 		case "scope_id":
-			rm.Int64(&p.ScopeID)
+			cm.Int64(&p.ScopeID)
 		case "path":
-			rm.String(&p.Path)
+			cm.String(&p.Path)
 		case "value":
-			rm.NullString(&p.Value)
+			cm.NullString(&p.Value)
 		}
-		if rm.Err() != nil {
-			return rm.Err()
+		if cm.Err() != nil {
+			return cm.Err()
 		}
 	}
 	return nil
 }
 
-func (ps *TableCoreConfigDataSlice) MapColumns(rm *dml.ColumnMap) error {
-	switch m := rm.Mode(); m {
+func (ps *TableCoreConfigDataSlice) MapColumns(cm *dml.ColumnMap) error {
+	switch m := cm.Mode(); m {
 	case 'w':
 		// case for scanning when loading certain rows, hence we write data from
 		// the DB into the struct in each for-loop.
-		if rm.Count == 1 {
+		if cm.Count == 0 {
 			ps.Data = ps.Data[:0]
 		}
 		p := new(TableCoreConfigData)
-		if err := p.MapColumns(rm); err != nil {
+		if err := p.MapColumns(cm); err != nil {
 			return errors.WithStack(err)
 		}
 		ps.Data = append(ps.Data, p)

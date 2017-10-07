@@ -51,32 +51,31 @@ func (p *dmlPerson) AssignLastInsertID(id int64) {
 	p.ID = id
 }
 
-func (p *dmlPerson) MapColumns(rm *dml.ColumnMap) error {
-	if rm.Mode() == 'a' {
-		return rm.Int64(&p.ID).String(&p.Name).NullString(&p.Email).NullString(&p.Key).Int64(&p.StoreID).Time(&p.CreatedAt).Float64(&p.TotalIncome).Err()
+func (p *dmlPerson) MapColumns(cm *dml.ColumnMap) error {
+	if cm.Mode() == 'a' {
+		return cm.Int64(&p.ID).String(&p.Name).NullString(&p.Email).NullString(&p.Key).Int64(&p.StoreID).Time(&p.CreatedAt).Float64(&p.TotalIncome).Err()
 	}
-	for i, column := range rm.Columns {
-		rm = rm.Index(i)
-		switch column {
+	for cm.Next() {
+		switch c := cm.Column(); c {
 		case "id":
-			rm.Int64(&p.ID)
+			cm.Int64(&p.ID)
 		case "name":
-			rm.String(&p.Name)
+			cm.String(&p.Name)
 		case "email":
-			rm.NullString(&p.Email)
+			cm.NullString(&p.Email)
 		case "key":
-			rm.NullString(&p.Key)
+			cm.NullString(&p.Key)
 		case "store_id":
-			rm.Int64(&p.StoreID)
+			cm.Int64(&p.StoreID)
 		case "created_at":
-			rm.Time(&p.CreatedAt)
+			cm.Time(&p.CreatedAt)
 		case "total_income":
-			rm.Float64(&p.TotalIncome)
+			cm.Float64(&p.TotalIncome)
 		default:
-			return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", column)
+			return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", c)
 		}
-		if rm.Err() != nil {
-			return rm.Err()
+		if cm.Err() != nil {
+			return cm.Err()
 		}
 	}
 	return nil

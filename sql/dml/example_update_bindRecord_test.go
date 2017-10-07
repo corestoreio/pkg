@@ -37,36 +37,35 @@ type categoryEntity struct {
 	TeaserIDs []string
 }
 
-func (pe *categoryEntity) MapColumns(rm *dml.ColumnMap) error {
-	if rm.Mode() == 'a' {
-		return rm.Int64(&pe.EntityID).Int64(&pe.AttributeSetID).String(&pe.ParentID).Err()
+func (pe *categoryEntity) MapColumns(cm *dml.ColumnMap) error {
+	if cm.Mode() == 'a' {
+		return cm.Int64(&pe.EntityID).Int64(&pe.AttributeSetID).String(&pe.ParentID).Err()
 	}
-	for i, column := range rm.Columns {
-		rm = rm.Index(i)
-		switch column {
+	for cm.Next() {
+		switch c := cm.Column(); c {
 		case "entity_id":
-			rm.Int64(&pe.EntityID)
+			cm.Int64(&pe.EntityID)
 		case "attribute_set_id":
-			rm.Int64(&pe.AttributeSetID)
+			cm.Int64(&pe.AttributeSetID)
 		case "parent_id":
-			rm.String(&pe.ParentID)
+			cm.String(&pe.ParentID)
 		case "path":
-			rm.NullString(&pe.Path)
+			cm.NullString(&pe.Path)
 		case "teaser_id_s":
 			if pe.TeaserIDs == nil {
-				rm.String(nil)
+				cm.String(nil)
 			} else {
 				s := strings.Join(pe.TeaserIDs, "|")
-				rm.String(&s)
+				cm.String(&s)
 			}
 		case "fk_teaser_id_s": // TODO ...
 			panic("TODO")
-			//rm.Strings(pe.TeaserIDs...)
+			//cm.Strings(pe.TeaserIDs...)
 		default:
-			return errors.NewNotFoundf("[dml_test] Column %q not found", column)
+			return errors.NewNotFoundf("[dml_test] Column %q not found", c)
 		}
-		if rm.Err() != nil {
-			return rm.Err()
+		if cm.Err() != nil {
+			return cm.Err()
 		}
 	}
 	return nil

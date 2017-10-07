@@ -36,32 +36,31 @@ type catalogCategoryEntity struct {
 	CreatedAt      time.Time
 }
 
-func (ce *catalogCategoryEntity) MapColumns(rm *dml.ColumnMap) error {
-	if rm.Mode() == 'a' {
+func (ce *catalogCategoryEntity) MapColumns(cm *dml.ColumnMap) error {
+	if cm.Mode() == 'a' {
 		// This case gets executed when an INSERT statement doesn't contain any
 		// columns, hence it requests all columns.
-		return rm.Int64(&ce.EntityID).Int64(&ce.AttributeSetID).Int64(&ce.ParentID).String(&ce.Path).Int(&ce.Position).Time(&ce.CreatedAt).Err()
+		return cm.Int64(&ce.EntityID).Int64(&ce.AttributeSetID).Int64(&ce.ParentID).String(&ce.Path).Int(&ce.Position).Time(&ce.CreatedAt).Err()
 	}
-	for i, column := range rm.Columns {
-		rm = rm.Index(i)
-		switch column {
+	for cm.Next() {
+		switch c := cm.Column(); c {
 		case "entity_id":
-			rm.Int64(&ce.EntityID)
+			cm.Int64(&ce.EntityID)
 		case "attribute_set_id":
-			rm.Int64(&ce.AttributeSetID)
+			cm.Int64(&ce.AttributeSetID)
 		case "parent_id":
-			rm.Int64(&ce.ParentID)
+			cm.Int64(&ce.ParentID)
 		case "path":
-			rm.String(&ce.Path)
+			cm.String(&ce.Path)
 		case "position":
-			rm.Int(&ce.Position)
+			cm.Int(&ce.Position)
 		case "created_at":
-			rm.Time(&ce.CreatedAt)
+			cm.Time(&ce.CreatedAt)
 		default:
-			return errors.NewNotFoundf("[dml_test] %T: Column %q not found", ce, column)
+			return errors.NewNotFoundf("[dml_test] %T: Column %q not found", ce, c)
 		}
-		if rm.Err() != nil {
-			return rm.Err()
+		if cm.Err() != nil {
+			return cm.Err()
 		}
 	}
 	return nil
@@ -76,30 +75,29 @@ type tableStore struct {
 	Name      string // name varchar(255) NOT NULL
 }
 
-func (ts *tableStore) MapColumns(rm *dml.ColumnMap) error {
-	if rm.Mode() == 'a' {
+func (ts *tableStore) MapColumns(cm *dml.ColumnMap) error {
+	if cm.Mode() == 'a' {
 		// This case gets executed when an INSERT statement doesn't contain any
 		// columns, hence it requests all columns.
-		return rm.Int64(&ts.StoreID).String(&ts.Code).Int64(&ts.WebsiteID).Int64(&ts.GroupID).String(&ts.Name).Err()
+		return cm.Int64(&ts.StoreID).String(&ts.Code).Int64(&ts.WebsiteID).Int64(&ts.GroupID).String(&ts.Name).Err()
 	}
-	for i, column := range rm.Columns {
-		rm = rm.Index(i)
-		switch column {
+	for cm.Next() {
+		switch c := cm.Column(); c {
 		case "store_id":
-			rm.Int64(&ts.StoreID)
+			cm.Int64(&ts.StoreID)
 		case "code":
-			rm.String(&ts.Code)
+			cm.String(&ts.Code)
 		case "website_id":
-			rm.Int64(&ts.WebsiteID)
+			cm.Int64(&ts.WebsiteID)
 		case "group_id":
-			rm.Int64(&ts.GroupID)
+			cm.Int64(&ts.GroupID)
 		case "name":
-			rm.String(&ts.Name)
+			cm.String(&ts.Name)
 		default:
-			return errors.NewNotFoundf("[dml_test] %T: Column %q not found", ts, column)
+			return errors.NewNotFoundf("[dml_test] %T: Column %q not found", ts, c)
 		}
-		if rm.Err() != nil {
-			return rm.Err()
+		if cm.Err() != nil {
+			return cm.Err()
 		}
 	}
 	return nil

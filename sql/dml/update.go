@@ -275,17 +275,14 @@ func (b *Update) appendArgs(args Arguments) (_ Arguments, err error) {
 		qualifier := b.Table.mustQualifier() // if this panics, you have different problems.
 
 		if aa, ok := b.QualifiedRecords[qualifier]; ok {
-			rm := &ColumnMap{
-				Args:    args,
-				Columns: []string{""},
-			}
+			cm := newColumnMap(args, "")
 			for _, col := range b.SetClausAliases {
-				rm.Columns[0] = col
-				if err = aa.MapColumns(rm); err != nil {
+				cm.columns[0] = col
+				if err = aa.MapColumns(cm); err != nil {
 					return nil, errors.Wrapf(err, "[dml] Update.appendArgs.AppendArgs at qualifier %q and column %q", qualifier, col)
 				}
 			}
-			args = rm.Args
+			args = cm.Args
 		}
 	}
 

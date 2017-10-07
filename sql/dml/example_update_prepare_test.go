@@ -36,28 +36,27 @@ type salesOrder struct {
 	GrandTotal dml.NullFloat64
 }
 
-func (so *salesOrder) MapColumns(rm *dml.ColumnMap) error {
-	if rm.Mode() == 'a' {
-		return rm.Int64(&so.EntityID).String(&so.State).Int64(&so.StoreID).Err()
+func (so *salesOrder) MapColumns(cm *dml.ColumnMap) error {
+	if cm.Mode() == 'a' {
+		return cm.Int64(&so.EntityID).String(&so.State).Int64(&so.StoreID).Err()
 	}
-	for i, column := range rm.Columns {
-		rm = rm.Index(i)
-		switch column {
+	for cm.Next() {
+		switch c := cm.Column(); c {
 		case "entity_id":
-			rm.Int64(&so.EntityID)
+			cm.Int64(&so.EntityID)
 		case "state":
-			rm.String(&so.State)
+			cm.String(&so.State)
 		case "store_id":
-			rm.Int64(&so.StoreID)
+			cm.Int64(&so.StoreID)
 		case "customer_id":
-			rm.Int64(&so.CustomerID)
+			cm.Int64(&so.CustomerID)
 		case "grand_total":
-			rm.NullFloat64(&so.GrandTotal)
+			cm.NullFloat64(&so.GrandTotal)
 		default:
-			return errors.NewNotFoundf("[dml_test] Column %q not found", column)
+			return errors.NewNotFoundf("[dml_test] Column %q not found", c)
 		}
-		if rm.Err() != nil {
-			return rm.Err()
+		if cm.Err() != nil {
+			return cm.Err()
 		}
 	}
 	return nil

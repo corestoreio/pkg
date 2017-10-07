@@ -1027,23 +1027,20 @@ func appendArgs(pendingArgPos []int, records map[string]ColumnMapper, args Argum
 	}
 
 	lenBefore := len(args)
-	rm := &ColumnMap{
-		Args:    args,
-		Columns: []string{""},
-	}
+	cm := newColumnMap(args, "")
 	for _, identifier := range columns {
 		qualifier, column := splitColumn(identifier)
 		if qualifier == "" {
 			qualifier = defaultQualifier
 		}
 		if rec, ok := records[qualifier]; ok {
-			rm.Columns[0] = column
-			if err = rec.MapColumns(rm); err != nil {
+			cm.columns[0] = column // length is always one!
+			if err = rec.MapColumns(cm); err != nil {
 				return nil, errors.WithStack(err)
 			}
 		}
 	}
-	args = rm.Args
+	args = cm.Args
 	lenAfter := len(args)
 	if lenAfter > lenBefore {
 		j := 0

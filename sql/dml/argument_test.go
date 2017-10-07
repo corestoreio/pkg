@@ -407,10 +407,7 @@ func TestArguments_MapColumns(t *testing.T) {
 	t.Run("len=1", func(t *testing.T) {
 
 		from = from.Reset().Int64(3).Float64(2.2).Name("colA").Strings("a", "b")
-		rm := &ColumnMap{
-			Args:    to.Reset(),
-			Columns: []string{"colA"},
-		}
+		rm := newColumnMap(to.Reset(), "colA")
 		if err := from.MapColumns(rm); err != nil {
 			t.Fatal(err)
 		}
@@ -423,9 +420,7 @@ func TestArguments_MapColumns(t *testing.T) {
 	t.Run("len=0", func(t *testing.T) {
 
 		from = from.Reset().Name("colZ").Int64(3).Float64(2.2).Name("colA").Strings("a", "b")
-		rm := &ColumnMap{
-			Args: to.Reset(),
-		}
+		rm := newColumnMap(to.Reset())
 		if err := from.MapColumns(rm); err != nil {
 			t.Fatal(err)
 		}
@@ -438,10 +433,7 @@ func TestArguments_MapColumns(t *testing.T) {
 	t.Run("len>1", func(t *testing.T) {
 
 		from = from.Reset().Name("colZ").Int64(3).Uint64(6).Name("colB").Float64(2.2).String("c").Name("colA").Strings("a", "b")
-		rm := &ColumnMap{
-			Args:    to.Reset(),
-			Columns: []string{"colA", "colB"},
-		}
+		rm := newColumnMap(to.Reset(), "colA", "colB")
 		if err := from.MapColumns(rm); err != nil {
 			t.Fatal(err)
 		}

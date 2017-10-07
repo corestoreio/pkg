@@ -68,57 +68,56 @@ func newSalesCreditMemo() *salesCreditMemo {
 }
 
 // MapColumns implements interface ColumnMapper only partially.
-func (p *salesCreditMemo) MapColumns(rm *dml.ColumnMap) error {
-	if rm.Mode() == 'a' {
+func (p *salesCreditMemo) MapColumns(cm *dml.ColumnMap) error {
+	if cm.Mode() == 'a' {
 		voucherCodes, _ := p.VoucherCodeEncoder.Encode(p.VoucherCodes)
-		return rm.Uint64(&p.EntityID).String(&p.State).Uint16(&p.StoreID).Int64(&p.CustomerID).NullFloat64(&p.GrandTotal).String(&voucherCodes).Err()
+		return cm.Uint64(&p.EntityID).String(&p.State).Uint16(&p.StoreID).Int64(&p.CustomerID).NullFloat64(&p.GrandTotal).String(&voucherCodes).Err()
 	}
-	for i, column := range rm.Columns {
-		rm = rm.Index(i)
-		switch column {
+	for cm.Next() {
+		switch c := cm.Column(); c {
 		case "entity_id":
-			rm.Uint64(&p.EntityID)
+			cm.Uint64(&p.EntityID)
 		case "state":
-			rm.String(&p.State)
+			cm.String(&p.State)
 		case "store_id":
-			rm.Uint16(&p.StoreID)
+			cm.Uint16(&p.StoreID)
 		case "customer_id":
-			rm.Int64(&p.CustomerID)
+			cm.Int64(&p.CustomerID)
 		case "grand_total":
-			rm.NullFloat64(&p.GrandTotal)
+			cm.NullFloat64(&p.GrandTotal)
 		case "voucher_codes":
 			// TODO(CyS) fix bug in case we're reading or writing
 			var voucherCodes string
-			rm.String(&voucherCodes)
+			cm.String(&voucherCodes)
 			p.VoucherCodes, _ = p.VoucherCodeEncoder.Decode(voucherCodes)
 		default:
-			return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", column)
+			return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", c)
 		}
-		if rm.Err() != nil {
-			return rm.Err()
+		if cm.Err() != nil {
+			return cm.Err()
 		}
 	}
 	return nil
 }
 
-func (cc *salesCreditMemoCollection) MapColumns(rm *dml.ColumnMap) error {
-	switch m := rm.Mode(); m {
+func (cc *salesCreditMemoCollection) MapColumns(cm *dml.ColumnMap) error {
+	switch m := cm.Mode(); m {
 	case 'a', 'R':
 		// INSERT STATEMENT requesting all columns aka arguments or SELECT
 		// requesting specific columns.
 		for _, p := range cc.Data {
-			if err := p.MapColumns(rm); err != nil {
+			if err := p.MapColumns(cm); err != nil {
 				return errors.WithStack(err)
 			}
 		}
 	case 'w':
 		// case for scanning when loading certain rows, hence we write data from
 		// the DB into the struct in each for-loop.
-		if rm.Count == 1 { // Yes, first row mapped 1 and not zero.
+		if cm.Count == 0 {
 			cc.Data = cc.Data[:0]
 		}
 		p := newSalesCreditMemo()
-		if err := p.MapColumns(rm); err != nil {
+		if err := p.MapColumns(cm); err != nil {
 			return errors.WithStack(err)
 		}
 		for _, fn := range cc.EventAfterScan {

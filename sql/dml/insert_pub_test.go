@@ -39,24 +39,23 @@ type someRecord struct {
 	Other       bool
 }
 
-func (sr someRecord) MapColumns(rm *dml.ColumnMap) error {
-	if rm.Mode() == 'a' {
-		return rm.Int(&sr.SomethingID).Int64(&sr.UserID).Bool(&sr.Other).Err()
+func (sr someRecord) MapColumns(cm *dml.ColumnMap) error {
+	if cm.Mode() == 'a' {
+		return cm.Int(&sr.SomethingID).Int64(&sr.UserID).Bool(&sr.Other).Err()
 	}
-	for i, column := range rm.Columns {
-		rm = rm.Index(i)
-		switch column {
+	for cm.Next() {
+		switch c := cm.Column(); c {
 		case "something_id":
-			rm.Int(&sr.SomethingID)
+			cm.Int(&sr.SomethingID)
 		case "user_id":
-			rm.Int64(&sr.UserID)
+			cm.Int64(&sr.UserID)
 		case "other":
-			rm.Bool(&sr.Other)
+			cm.Bool(&sr.Other)
 		default:
-			return errors.NewNotFoundf("[dml_test] Column %q not found", column)
+			return errors.NewNotFoundf("[dml_test] Column %q not found", c)
 		}
-		if rm.Err() != nil {
-			return rm.Err()
+		if cm.Err() != nil {
+			return cm.Err()
 		}
 	}
 	return nil

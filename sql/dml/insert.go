@@ -480,25 +480,21 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 		return args, errors.WithStack(err)
 	}
 
-	rm := &ColumnMap{
-		Args:    args,
-		Columns: b.Columns, // b.Columns can be nil
-	}
+	cm := newColumnMap(args, b.Columns...) // b.Columns can be nil
 	for _, rec := range b.Records {
-		alBefore := len(rm.Args)
-		if err = rec.MapColumns(rm); err != nil {
+		alBefore := len(cm.Args)
+		if err = rec.MapColumns(cm); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if addedArgs := len(rm.Args) - alBefore; addedArgs%argCount0 != 0 {
+		if addedArgs := len(cm.Args) - alBefore; addedArgs%argCount0 != 0 {
 			return nil, errors.NewMismatchf("[dml] Insert.appendArgs RecordValueCount(%d) does not match the number of assembled arguments (%d)", b.RecordValueCount, addedArgs)
 		}
 	}
-	args = rm.Args
+	args = cm.Args
 
 	if args, _, err = b.OnDuplicateKeys.appendArgs(args, appendArgsDUPKEY); err != nil {
 		return nil, errors.WithStack(err)
 	}
-
 	return args, nil
 }
 

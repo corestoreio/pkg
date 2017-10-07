@@ -336,19 +336,20 @@ func MakeArgs(cap int) Arguments {
 // MapColumns allows to merge one argument slice with another depending on the
 // matched columns. Each argument in the slice must be a named argument.
 // Implements interface ColumnMapper.
-func (a Arguments) MapColumns(rm *ColumnMap) error {
-	if rm.Mode() == 'a' {
-		rm.Args = append(rm.Args, a...)
+func (a Arguments) MapColumns(cm *ColumnMap) error {
+	if cm.Mode() == 'a' {
+		cm.Args = append(cm.Args, a...)
 		return nil
 	}
-	for _, column := range rm.Columns {
+	for cm.Next() {
 		// now a bit slow ... but will be refactored later with constant time
 		// access, but first benchmark it. This for loop can be the 3rd one in the
 		// overall chain.
+		c := cm.Column()
 		for _, arg := range a {
 			// Case sensitive comparison
-			if column != "" && arg.name == column {
-				rm.Args = append(rm.Args, arg)
+			if c != "" && arg.name == c {
+				cm.Args = append(cm.Args, arg)
 				break
 			}
 		}
