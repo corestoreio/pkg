@@ -15,9 +15,10 @@
 package dml
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestColumnMap_Nil_Pointers(t *testing.T) {

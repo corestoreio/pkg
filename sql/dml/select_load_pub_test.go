@@ -105,7 +105,7 @@ type TableCoreConfigData struct {
 }
 
 func (p *TableCoreConfigData) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == 'a' {
+	if cm.Mode() == dml.ColumnMapEntityReadAll {
 		return cm.Int64(&p.ConfigID).String(&p.Scope).Int64(&p.ScopeID).String(&p.Path).NullString(&p.Value).Err()
 	}
 	for cm.Next() {
@@ -129,7 +129,7 @@ func (p *TableCoreConfigData) MapColumns(cm *dml.ColumnMap) error {
 
 func (ps *TableCoreConfigDataSlice) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
-	case 'w':
+	case dml.ColumnMapCollectionCreate:
 		// case for scanning when loading certain rows, hence we write data from
 		// the DB into the struct in each for-loop.
 		if cm.Count == 0 {
@@ -140,7 +140,7 @@ func (ps *TableCoreConfigDataSlice) MapColumns(cm *dml.ColumnMap) error {
 			return errors.WithStack(err)
 		}
 		ps.Data = append(ps.Data, p)
-	case 'r', 'a', 'A':
+	case dml.ColumnMapCollectionReadSpecific, dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSpecific:
 		// noop not needed
 	default:
 		return errors.NewNotSupportedf("[dml] Unknown Mode: %q", string(m))

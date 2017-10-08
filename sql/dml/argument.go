@@ -337,7 +337,7 @@ func MakeArgs(cap int) Arguments {
 // matched columns. Each argument in the slice must be a named argument.
 // Implements interface ColumnMapper.
 func (a Arguments) MapColumns(cm *ColumnMap) error {
-	if cm.Mode() == 'a' {
+	if cm.Mode() == ColumnMapEntityReadAll {
 		cm.Args = append(cm.Args, a...)
 		return cm.Err()
 	}

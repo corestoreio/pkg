@@ -34,7 +34,7 @@ type productEntity struct {
 }
 
 func (pe productEntity) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == 'a' {
+	if cm.Mode() == dml.ColumnMapEntityReadAll {
 		// This case gets executed when an INSERT statement doesn't contain any
 		// columns.
 		return cm.Int64(&pe.EntityID).Int64(&pe.AttributeSetID).String(&pe.TypeID).NullString(&pe.SKU).Bool(&pe.HasOptions).Err()

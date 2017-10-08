@@ -96,7 +96,7 @@ type baseTest struct {
 }
 
 func (bt *baseTest) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == 'a' {
+	if cm.Mode() == dml.ColumnMapEntityReadAll {
 		return cm.Bool(&bt.Bool).NullBool(&bt.NullBool).Int(&bt.Int).Int64(&bt.Int64).NullInt64(&bt.NullInt64).Float64(&bt.Float64).NullFloat64(&bt.NullFloat64).Uint(&bt.Uint).Uint8(&bt.Uint8).Uint16(&bt.Uint16).Uint32(&bt.Uint32).Uint64(&bt.Uint64).Byte(&bt.Byte).String(&bt.Str).NullString(&bt.NullString).Time(&bt.Time).NullTime(&bt.NullTime).Err()
 	}
 	for cm.Next() {
@@ -156,13 +156,13 @@ func (vs *baseTestCollection) ToSQL() (string, []interface{}, error) {
 // database query result.
 func (vs *baseTestCollection) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
-	case 'a': // INSERT STATEMENT requesting all columns aka arguments
+	case dml.ColumnMapEntityReadAll: // INSERT STATEMENT requesting all columns aka arguments
 		for _, p := range vs.Data {
 			if err := p.MapColumns(cm); err != nil {
 				return errors.WithStack(err)
 			}
 		}
-	case 'w':
+	case dml.ColumnMapCollectionCreate:
 		// case for scanning when loading certain rows, hence we write data from
 		// the DB into the struct in each for-loop.
 		if cm.Count == 0 {

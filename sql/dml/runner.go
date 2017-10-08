@@ -192,29 +192,45 @@ func (b *ColumnMap) setColumns(cols ...string) {
 	b.index = -1
 }
 
+// columnMapMode should be private because no need for a developer to take care
+// of this mode in a variable.
+type columnMapMode byte
+
+func (m columnMapMode) String() string {
+	return string(m)
+}
+
+// Those four constants represents the modes for ColumnMap.Mode. An upper case
+// letter defines a collection and a lower case letter an entity.
+const (
+	ColumnMapEntityReadAll          columnMapMode = 'a'
+	ColumnMapEntityReadSpecific     columnMapMode = 's'
+	ColumnMapCollectionReadSpecific columnMapMode = 'S'
+	ColumnMapCollectionCreate       columnMapMode = 'C'
+)
+
 // Mode returns a status byte of four different states. These states are getting
 // used in the implementation of ColumnMapper. Each state represents a different
 // action while scanning from the query or collecting arguments. ColumnMapper
-// can be implemented by either a single type or a slice/map type. This
-// difference requires different states. A single can use the states 'a','r' and
-// 'w' where a slice type must additionally handle state 'R'.
-// 'a' means an INSERT statement without columns requests all arguments when
-// preparing a query. a=All.
-// 'R' means a SELECT statement with >= 2 columns needs all arguments. R=Read
-// from.
-// 'r' means a statement requests an argument for a single column. r=Read from.
-// 'w' write rows from the query into the struct fields.
-// See the examples. Documentation needs to be written better.
-func (b *ColumnMap) Mode() (m byte) {
-	switch {
-	case b.columnsLen == 0:
-		m = 'a' // read all mode
-	case b.columnsLen > 1 && b.Args != nil:
-		m = 'R' // no lower a because in MapColumns entity implementation if would add all args instead specific columns
-	case b.Args != nil:
-		m = 'r' // read mode, we request certain arguments, hence we're reading. like WHERE/JOIN clauses
-	case b.scanArgs != nil:
-		m = 'w' // write mode, we assign the data from the DB to the structs and create new structs in a slice.
+// can be implemented by either a single type or a slice/map type. Slice or not
+// slice requires different states. A primitive type must only handle mode
+// ColumnMapEntityReadAll to return all requested fields. A slice type must
+// handle additionally the cases ColumnMapEntityReadSpecific,
+// ColumnMapCollectionReadSpecific and ColumnMapCollectionCreate. See the
+// examples. Documentation needs to be written better.
+func (b *ColumnMap) Mode() (m columnMapMode) {
+	if b.scanArgs != nil {
+		return ColumnMapCollectionCreate // assign the column values from the DB to the structs and create new structs in a slice.
+	}
+
+	// case b.Args != nil
+	switch b.columnsLen {
+	case 0:
+		m = ColumnMapEntityReadAll // Entity: read all mode; Collection jump into loop and pass on to Entity
+	case 1:
+		m = ColumnMapCollectionReadSpecific // request certain column values as a slice. implemented in func condition.go:appendArgs.
+	default:
+		m = ColumnMapEntityReadSpecific // Entity: calls the for cm.Next loop; Collection jump into loop and pass on to Entity
 	}
 	return m
 }

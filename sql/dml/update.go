@@ -275,7 +275,7 @@ func (b *Update) appendArgs(args Arguments) (_ Arguments, err error) {
 		qualifier := b.Table.mustQualifier() // if this panics, you have different problems.
 
 		if aa, ok := b.QualifiedRecords[qualifier]; ok {
-			cm := newColumnMap( args,"")
+			cm := newColumnMap(args, "")
 			for _, col := range b.SetClausAliases {
 				cm.columns[0] = col
 				if err = aa.MapColumns(cm); err != nil {

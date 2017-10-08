@@ -37,7 +37,7 @@ type salesOrder struct {
 }
 
 func (so *salesOrder) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == 'a' {
+	if cm.Mode() == dml.ColumnMapEntityReadAll {
 		return cm.Int64(&so.EntityID).String(&so.State).Int64(&so.StoreID).Err()
 	}
 	for cm.Next() {

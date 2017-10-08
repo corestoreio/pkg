@@ -38,7 +38,7 @@ type categoryEntity struct {
 }
 
 func (pe *categoryEntity) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == 'a' {
+	if cm.Mode() == dml.ColumnMapEntityReadAll {
 		return cm.Int64(&pe.EntityID).Int64(&pe.AttributeSetID).String(&pe.ParentID).Err()
 	}
 	for cm.Next() {

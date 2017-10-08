@@ -1438,28 +1438,59 @@ func TestSelect_SetRecord(t *testing.T) {
 		)
 	})
 
-	t.Run("slice as record - nice feature", func(t *testing.T) {
+	t.Run("slice as record", func(t *testing.T) {
 		persons := &dmlPersons{
 			Data: []*dmlPerson{
-				{Name: "Muffin Hat", Email: MakeNullString("Muffin@Hat.head")},
-				{Name: "Marianne Phyllis Finch", Email: MakeNullString("marianne@phyllis.finch")},
-				{Name: "Daphne Augusta Perry", Email: MakeNullString("daphne@augusta.perry")},
+				{ID: 33, Name: "Muffin Hat", Email: MakeNullString("Muffin@Hat.head")},
+				{ID: 44, Name: "Marianne Phyllis Finch", Email: MakeNullString("marianne@phyllis.finch")},
+				{ID: 55, Name: "Daphne Augusta Perry", Email: MakeNullString("daphne@augusta.perry")},
 			},
 		}
-
-		compareToSQL(t,
-			NewSelect("name", "email").From("dml_person").
-				Where(
-					Column("name").In().PlaceHolder(),
-					Column("email").In().PlaceHolder(),
-				).
-				BindRecord(Qualify("", persons)),
-			nil,
-			"SELECT `name`, `email` FROM `dml_person` WHERE (`name` IN (?)) AND (`email` IN (?))",
-			"SELECT `name`, `email` FROM `dml_person` WHERE (`name` IN ('Muffin Hat','Marianne Phyllis Finch','Daphne Augusta Perry')) AND (`email` IN ('Muffin@Hat.head','marianne@phyllis.finch','daphne@augusta.perry'))",
-			"Muffin Hat", "Marianne Phyllis Finch", "Daphne Augusta Perry",
-			"Muffin@Hat.head", "marianne@phyllis.finch", "daphne@augusta.perry",
-		)
+		t.Run("one column in WHERE", func(t *testing.T) {
+			compareToSQL(t,
+				NewSelect("name", "email").From("dml_person").
+					Where(
+						Column("id").In().PlaceHolder(),
+					).
+					BindRecord(Qualify("", persons)),
+				nil,
+				"SELECT `name`, `email` FROM `dml_person` WHERE (`id` IN (?))",
+				"", //"SELECT `name`, `email` FROM `dml_person` WHERE (`id` IN (33,44,55))",
+				int64(33), int64(44), int64(55),
+			)
+		})
+		t.Run("two columns in WHERE", func(t *testing.T) {
+			compareToSQL(t,
+				NewSelect("name", "email").From("dml_person").
+					Where(
+						Column("name").In().PlaceHolder(),
+						Column("email").In().PlaceHolder(),
+					).
+					BindRecord(Qualify("", persons)),
+				nil,
+				"SELECT `name`, `email` FROM `dml_person` WHERE (`name` IN (?)) AND (`email` IN (?))",
+				"SELECT `name`, `email` FROM `dml_person` WHERE (`name` IN ('Muffin Hat','Marianne Phyllis Finch','Daphne Augusta Perry')) AND (`email` IN ('Muffin@Hat.head','marianne@phyllis.finch','daphne@augusta.perry'))",
+				"Muffin Hat", "Marianne Phyllis Finch", "Daphne Augusta Perry",
+				"Muffin@Hat.head", "marianne@phyllis.finch", "daphne@augusta.perry",
+			)
+		})
+		t.Run("three columns in WHERE", func(t *testing.T) {
+			compareToSQL(t,
+				NewSelect("name", "email").From("dml_person").
+					Where(
+						Column("email").In().PlaceHolder(),
+						Column("name").In().PlaceHolder(),
+						Column("id").In().PlaceHolder(),
+					).
+					BindRecord(Qualify("", persons)),
+				nil,
+				"SELECT `name`, `email` FROM `dml_person` WHERE (`email` IN (?)) AND (`name` IN (?)) AND (`id` IN (?))",
+				"SELECT `name`, `email` FROM `dml_person` WHERE (`email` IN ('Muffin@Hat.head','marianne@phyllis.finch','daphne@augusta.perry')) AND (`name` IN ('Muffin Hat','Marianne Phyllis Finch','Daphne Augusta Perry')) AND (`id` IN (33,44,55))",
+				"Muffin@Hat.head", "marianne@phyllis.finch", "daphne@augusta.perry",
+				"Muffin Hat", "Marianne Phyllis Finch", "Daphne Augusta Perry",
+				int64(33), int64(44), int64(55),
+			)
+		})
 	})
 
 }

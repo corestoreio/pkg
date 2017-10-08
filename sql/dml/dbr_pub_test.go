@@ -52,7 +52,7 @@ func (p *dmlPerson) AssignLastInsertID(id int64) {
 }
 
 func (p *dmlPerson) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == 'a' {
+	if cm.Mode() == dml.ColumnMapEntityReadAll {
 		return cm.Int64(&p.ID).String(&p.Name).NullString(&p.Email).NullString(&p.Key).Int64(&p.StoreID).Time(&p.CreatedAt).Float64(&p.TotalIncome).Err()
 	}
 	for cm.Next() {

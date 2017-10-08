@@ -37,7 +37,7 @@ type catalogCategoryEntity struct {
 }
 
 func (ce *catalogCategoryEntity) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == 'a' {
+	if cm.Mode() == dml.ColumnMapEntityReadAll {
 		// This case gets executed when an INSERT statement doesn't contain any
 		// columns, hence it requests all columns.
 		return cm.Int64(&ce.EntityID).Int64(&ce.AttributeSetID).Int64(&ce.ParentID).String(&ce.Path).Int(&ce.Position).Time(&ce.CreatedAt).Err()
@@ -73,7 +73,7 @@ type tableStore struct {
 }
 
 func (ts *tableStore) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == 'a' {
+	if cm.Mode() == dml.ColumnMapEntityReadAll {
 		// This case gets executed when an INSERT statement doesn't contain any
 		// columns, hence it requests all columns.
 		return cm.Int64(&ts.StoreID).String(&ts.Code).Int64(&ts.WebsiteID).Int64(&ts.GroupID).String(&ts.Name).Err()

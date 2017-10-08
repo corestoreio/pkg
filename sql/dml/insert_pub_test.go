@@ -40,7 +40,7 @@ type someRecord struct {
 }
 
 func (sr someRecord) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == 'a' {
+	if cm.Mode() == dml.ColumnMapEntityReadAll {
 		return cm.Int(&sr.SomethingID).Int64(&sr.UserID).Bool(&sr.Other).Err()
 	}
 	for cm.Next() {

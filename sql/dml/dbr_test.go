@@ -80,25 +80,19 @@ func (p *dmlPerson) AssignLastInsertID(id int64) {
 
 // RowScan loads a single row from a SELECT statement returning only one row
 func (p *dmlPerson) MapColumns(cm *ColumnMap) error {
-	if cm.Mode() == 'a' {
-		// TODO(CyS) jump into this case when `select *` or `select
-		// col1,col2...` returns all columns!!! not possible due to missing
-		// Index() call.
+	if cm.Mode() == ColumnMapEntityReadAll {
 		return cm.Uint64(&p.ID).String(&p.Name).NullString(&p.Email).NullString(&p.Key).Err()
 	}
 	for cm.Next() {
-		// TODO: numbers are experimental and in case all columns are requested,
-		// as we don't know the column names numbering them would be enough.
-		// this should avoid the above AllColumns `if` branch.
 		c := cm.Column()
 		switch c {
-		case "id", "0":
+		case "id":
 			cm.Uint64(&p.ID)
-		case "name", "1":
+		case "name":
 			cm.String(&p.Name)
-		case "email", "2":
+		case "email":
 			cm.NullString(&p.Email)
-		case "key", "3":
+		case "key":
 			cm.NullString(&p.Key)
 		case "store_id", "created_at", "total_income":
 			// noop don't trigger the default case
@@ -111,6 +105,48 @@ func (p *dmlPerson) MapColumns(cm *ColumnMap) error {
 
 type dmlPersons struct {
 	Data []*dmlPerson
+}
+
+// MapColumns gets called in the `for rows.Next()` loop each time in case of IsNew
+func (ps *dmlPersons) MapColumns(cm *ColumnMap) error {
+	m := cm.Mode()
+	//println("mode in collection:", string(m), " => ", strings.Join(cm.columns, ", "), "cm.columnsLen", cm.columnsLen)
+	switch m {
+	case ColumnMapEntityReadAll, ColumnMapEntityReadSpecific:
+		for _, p := range ps.Data {
+			if err := p.MapColumns(cm); err != nil {
+				return errors.WithStack(err)
+			}
+		}
+	case ColumnMapCollectionCreate:
+		// case for scanning when loading certain rows, hence we write data from
+		// the DB into the struct in each for-loop.
+		if cm.Count == 0 {
+			ps.Data = ps.Data[:0]
+		}
+		p := new(dmlPerson)
+		if err := p.MapColumns(cm); err != nil {
+			return errors.WithStack(err)
+		}
+		ps.Data = append(ps.Data, p)
+	case ColumnMapCollectionReadSpecific: // See Test in select_test.go:TestSelect_SetRecord
+		// SELECT, DELETE or UPDATE or INSERT with n columns
+		for cm.Next() {
+			switch c := cm.Column(); c {
+			case "id":
+				cm.Args = cm.Args.Uint64s(ps.IDs()...)
+			case "name":
+				cm.Args = cm.Args.Strings(ps.Names()...)
+			case "email":
+				cm.Args = cm.Args.NullString(ps.Emails()...)
+			default:
+				return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", c)
+			}
+		}
+	default:
+		return errors.NewNotSupportedf("[dml] Unknown Mode: %q", string(m))
+	}
+	return cm.Err()
 }
 
 func (ps *dmlPersons) IDs(ret ...uint64) []uint64 {
@@ -143,46 +179,6 @@ func (ps *dmlPersons) Emails(ret ...NullString) []NullString {
 	return ret
 }
 
-// MapColumns gets called in the `for rows.Next()` loop each time in case of IsNew
-func (ps *dmlPersons) MapColumns(cm *ColumnMap) error {
-	switch m := cm.Mode(); m {
-	case 'a', 'R': // INSERT STATEMENT requesting all columns aka arguments
-		for _, p := range ps.Data {
-			if err := p.MapColumns(cm); err != nil {
-				return errors.WithStack(err)
-			}
-		}
-	case 'w':
-		// case for scanning when loading certain rows, hence we write data from
-		// the DB into the struct in each for-loop.
-		if cm.Count == 0 {
-			ps.Data = ps.Data[:0]
-		}
-		p := new(dmlPerson)
-		if err := p.MapColumns(cm); err != nil {
-			return errors.WithStack(err)
-		}
-		ps.Data = append(ps.Data, p)
-	case 'r':
-		// SELECT, DELETE or UPDATE or INSERT with n columns
-		for cm.Next() {
-			switch c := cm.Column(); c {
-			case "id":
-				cm.Args = cm.Args.Uint64s(ps.IDs()...)
-			case "name":
-				cm.Args = cm.Args.Strings(ps.Names()...)
-			case "email":
-				cm.Args = cm.Args.NullString(ps.Emails()...)
-			default:
-				return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", c)
-			}
-		}
-	default:
-		return errors.NewNotSupportedf("[dml] Unknown Mode: %q", string(m))
-	}
-	return cm.Err()
-}
-
 //func (ps *dmlPersons) AssignLastInsertID(uint64) error {
 //	// todo iterate and assign to the last item in the slice and assign
 //	// decremented IDs to the previous items in the slice.
@@ -200,7 +196,7 @@ type nullTypedRecord struct {
 }
 
 func (p *nullTypedRecord) MapColumns(cm *ColumnMap) error {
-	if cm.Mode() == 'a' {
+	if cm.Mode() == ColumnMapEntityReadAll {
 		return cm.Int64(&p.ID).NullString(&p.StringVal).NullInt64(&p.Int64Val).NullFloat64(&p.Float64Val).NullTime(&p.TimeVal).NullBool(&p.BoolVal).Err()
 	}
 	for cm.Next() {

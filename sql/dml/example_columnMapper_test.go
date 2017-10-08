@@ -69,7 +69,7 @@ func newSalesCreditMemo() *salesCreditMemo {
 
 // MapColumns implements interface ColumnMapper only partially.
 func (p *salesCreditMemo) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == 'a' {
+	if cm.Mode() == dml.ColumnMapEntityReadAll {
 		voucherCodes, _ := p.VoucherCodeEncoder.Encode(p.VoucherCodes)
 		return cm.Uint64(&p.EntityID).String(&p.State).Uint16(&p.StoreID).Int64(&p.CustomerID).NullFloat64(&p.GrandTotal).String(&voucherCodes).Err()
 	}
@@ -107,7 +107,7 @@ func (cc *salesCreditMemoCollection) MapColumns(cm *dml.ColumnMap) error {
 				return errors.WithStack(err)
 			}
 		}
-	case 'w':
+	case dml.ColumnMapCollectionCreate:
 		// case for scanning when loading certain rows, hence we write data from
 		// the DB into the struct in each for-loop.
 		if cm.Count == 0 {
@@ -130,11 +130,8 @@ func (cc *salesCreditMemoCollection) MapColumns(cm *dml.ColumnMap) error {
 	return cm.Err()
 }
 
-// ExampleColumnMap loads from the table `sales_creditmemo` two rows into the
-// type salesCreditMemoCollection which implements interface dml.ColumnMapper. The
-// column `voucher_codes` contains a special encoded values. These values gets
-// split into a slice during RowScan aka. ColumnMap.
-func ExampleColumnMap() {
+// ExampleColumnMapper implementation POC for interface ColumnMapper.
+func ExampleColumnMapper() {
 	// <ignore_this>
 	dbc, dbMock := cstesting.MockDB(nil)
 	defer cstesting.MockClose(nil, dbc, dbMock)
