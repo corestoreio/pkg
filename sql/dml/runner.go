@@ -272,9 +272,11 @@ func (b *ColumnMap) Next() bool {
 	if ok && b.scanRaw != nil {
 		b.current = *b.scanRaw[b.index]
 	}
-	if !ok {
+	if !ok && b.scanErr == nil {
 		// reset because the next row from the result-set will start or the next
-		// Record/ColumnMapper collects the arguments.
+		// Record/ColumnMapper collects the arguments. Only reset the index in
+		// case of no-error because with an error you can get the column name
+		// where the error has happened.
 		b.index = -1
 	}
 	return ok
@@ -294,6 +296,9 @@ func (b *ColumnMap) Bool(ptr *bool) *ColumnMap {
 	}
 	if b.scanErr == nil {
 		*ptr, b.scanErr = byteconv.ParseBool(b.current)
+		if b.scanErr != nil {
+			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		}
 	}
 	return b
 }
@@ -314,6 +319,9 @@ func (b *ColumnMap) NullBool(ptr *NullBool) *ColumnMap {
 		var nv sql.NullBool
 		nv, b.scanErr = byteconv.ParseNullBool(b.current)
 		*ptr = NullBool{NullBool: nv}
+		if b.scanErr != nil {
+			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		}
 	}
 	return b
 }
@@ -335,6 +343,9 @@ func (b *ColumnMap) Int(ptr *int) *ColumnMap {
 		i64, b.scanErr = byteconv.ParseInt(b.current)
 		if b.scanErr == nil && strconv.IntSize == 32 && (i64 < -math.MaxInt32 || i64 > math.MaxInt32) { // hmm rethink that depending on goarch
 			b.scanErr = rangeError("ColumnMap.Int", string(b.current))
+		}
+		if b.scanErr != nil {
+			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
 		}
 		*ptr = int(i64)
 	}
@@ -358,6 +369,9 @@ func (b *ColumnMap) Int64(ptr *int64) *ColumnMap {
 		if i64 := *ptr; b.scanErr == nil && strconv.IntSize == 32 && (i64 < -math.MaxInt32 || i64 > math.MaxInt32) { // hmm rethink that depending on goarch
 			b.scanErr = rangeError("ColumnMap.Int", string(b.current))
 		}
+		if b.scanErr != nil {
+			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		}
 	}
 	return b
 }
@@ -378,6 +392,9 @@ func (b *ColumnMap) NullInt64(ptr *NullInt64) *ColumnMap {
 		var nv sql.NullInt64
 		nv, b.scanErr = byteconv.ParseNullInt64(b.current)
 		*ptr = NullInt64{NullInt64: nv}
+		if b.scanErr != nil {
+			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		}
 	}
 	return b
 }
@@ -396,6 +413,9 @@ func (b *ColumnMap) Float64(ptr *float64) *ColumnMap {
 	}
 	if b.scanErr == nil {
 		*ptr, b.scanErr = byteconv.ParseFloat(b.current)
+		if b.scanErr != nil {
+			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		}
 	}
 	return b
 }
@@ -416,6 +436,9 @@ func (b *ColumnMap) NullFloat64(ptr *NullFloat64) *ColumnMap {
 		var nv sql.NullFloat64
 		nv, b.scanErr = byteconv.ParseNullFloat64(b.current)
 		*ptr = NullFloat64{NullFloat64: nv}
+		if b.scanErr != nil {
+			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		}
 	}
 	return b
 }
@@ -436,6 +459,9 @@ func (b *ColumnMap) Uint(ptr *uint) *ColumnMap {
 		var u64 uint64
 		u64, _, b.scanErr = byteconv.ParseUintSQL(b.current, 10, strconv.IntSize)
 		*ptr = uint(u64)
+		if b.scanErr != nil {
+			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		}
 	}
 	return b
 }
@@ -456,6 +482,9 @@ func (b *ColumnMap) Uint8(ptr *uint8) *ColumnMap {
 		var u64 uint64
 		u64, _, b.scanErr = byteconv.ParseUintSQL(b.current, 10, 8)
 		*ptr = uint8(u64)
+		if b.scanErr != nil {
+			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		}
 	}
 	return b
 }
@@ -476,6 +505,9 @@ func (b *ColumnMap) Uint16(ptr *uint16) *ColumnMap {
 		var u64 uint64
 		u64, _, b.scanErr = byteconv.ParseUintSQL(b.current, 10, 16)
 		*ptr = uint16(u64)
+		if b.scanErr != nil {
+			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		}
 	}
 	return b
 }
@@ -496,6 +528,9 @@ func (b *ColumnMap) Uint32(ptr *uint32) *ColumnMap {
 		var u64 uint64
 		u64, _, b.scanErr = byteconv.ParseUintSQL(b.current, 10, 32)
 		*ptr = uint32(u64)
+		if b.scanErr != nil {
+			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		}
 	}
 	return b
 }
@@ -513,7 +548,7 @@ func (b *ColumnMap) Uint64(ptr *uint64) *ColumnMap {
 		return b
 	}
 	if b.scanErr == nil {
-		*ptr, b.scanErr = byteconv.ParseUint(b.current, 10, strconv.IntSize)
+		*ptr, _, b.scanErr = byteconv.ParseUintSQL(b.current, 10, strconv.IntSize)
 		if b.scanErr != nil {
 			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
 		}
@@ -574,7 +609,7 @@ func (b *ColumnMap) String(ptr *string) *ColumnMap {
 		return b
 	}
 	if b.CheckValidUTF8 && !utf8.Valid(b.current) {
-		b.scanErr = errors.NewNotValidf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
+		b.scanErr = errors.NewNotValidf("[dml] Column %q at position %d contains invalid UTF-8 characters", b.Column(), b.Count)
 	}
 	if b.scanErr == nil {
 		*ptr = string(b.current)
@@ -599,6 +634,8 @@ func (b *ColumnMap) NullString(ptr *NullString) *ColumnMap {
 	}
 	if b.scanErr == nil {
 		*ptr = NullString{NullString: byteconv.ParseNullString(b.current)}
+	} else {
+		b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
 	}
 	return b
 }
@@ -616,10 +653,9 @@ func (b *ColumnMap) Time(ptr *time.Time) *ColumnMap {
 		return b
 	}
 	if b.scanErr == nil {
-		var err error
-		*ptr, err = time.Parse(time.RFC3339Nano, string(b.current))
-		if err != nil {
-			b.scanErr = errors.NewNotValidf("[dml] ColumnMap Time: Invalid time string: %q with error %q", string(b.current), err)
+		*ptr, b.scanErr = time.Parse(time.RFC3339Nano, string(b.current))
+		if b.scanErr != nil {
+			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
 		}
 	}
 	return b
