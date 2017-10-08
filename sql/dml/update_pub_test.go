@@ -226,15 +226,15 @@ func TestUpdate_SetClausAliases(t *testing.T) {
 	dbc, dbMock := cstesting.MockDB(t)
 
 	prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta(
-		"UPDATE `sales_invoice` SET `state`=?, `customer_id`=?, `grand_total`=? WHERE (`shipping_method` = ?) AND (`entity_id` = ?)",
+		"UPDATE `sales_invoice` SET `state`=?, `customer_id`=?, `grand_total`=? WHERE (`shipping_method` IN (?,?)) AND (`entity_id` = ?)",
 	))
 
 	prep.ExpectExec().WithArgs(
-		"pending", int64(5678), 31.41459, "DHL", 21).
+		"pending", int64(5678), 31.41459, "DHL", "UPS", 21).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	prep.ExpectExec().WithArgs(
-		"processing", int64(8912), nil, "DHL", 32).
+		"processing", int64(8912), nil, "DHL", "UPS", 32).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	// </ignore_this>
 
@@ -250,9 +250,8 @@ func TestUpdate_SetClausAliases(t *testing.T) {
 	um := dml.NewUpdate("sales_invoice").
 		AddColumns("state", "customer_id", "grand_total").
 		Where(
-			// dml.Column("shipping_method", dml.In.String("DHL", "UPS")), // For all clauses the same restriction TODO fix bug when using IN
-			dml.Column("shipping_method").Str("DHL"), // For all clauses the same restriction
-			dml.Column("entity_id").PlaceHolder(),    // Int64() acts as a place holder
+			dml.Column("shipping_method").In().Strs("DHL", "UPS"), // For all clauses the same restriction
+			dml.Column("entity_id").PlaceHolder(),                 // Int64() acts as a place holder
 		).WithDB(dbc.DB)
 
 	um.SetClausAliases = []string{"state", "alias_customer_id", "grand_total"}
