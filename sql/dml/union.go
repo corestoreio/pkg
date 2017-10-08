@@ -277,8 +277,8 @@ func (u *Union) readBuildCache() (sql []byte, _ Arguments, err error) {
 	if u.cacheSQL == nil {
 		return nil, nil, nil
 	}
-	u.cacheArgs, err = u.appendArgs(u.cacheArgs[:0])
-	return u.cacheSQL, u.cacheArgs, err
+	u.argPool, err = u.appendArgs(u.argPool[:0])
+	return u.cacheSQL, u.argPool, err
 }
 
 // BuildCache if `true` the final build query including place holders will be

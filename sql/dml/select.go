@@ -449,8 +449,8 @@ func (b *Select) readBuildCache() (sql []byte, _ Arguments, err error) {
 	if b.cacheSQL == nil {
 		return nil, nil, nil
 	}
-	b.cacheArgs, err = b.appendArgs(b.cacheArgs[:0])
-	return b.cacheSQL, b.cacheArgs, err
+	b.argPool, err = b.appendArgs(b.argPool[:0])
+	return b.cacheSQL, b.argPool, err
 }
 
 // BuildCache enables that the final SQL string including place holders will be

@@ -200,8 +200,8 @@ func (b *Update) readBuildCache() (sql []byte, _ Arguments, err error) {
 	if b.cacheSQL == nil {
 		return nil, nil, nil
 	}
-	b.cacheArgs, err = b.appendArgs(b.cacheArgs[:0])
-	return b.cacheSQL, b.cacheArgs, err
+	b.argPool, err = b.appendArgs(b.argPool[:0])
+	return b.cacheSQL, b.argPool, err
 }
 
 // BuildCache if `true` the final build query including place holders will be
@@ -275,7 +275,7 @@ func (b *Update) appendArgs(args Arguments) (_ Arguments, err error) {
 		qualifier := b.Table.mustQualifier() // if this panics, you have different problems.
 
 		if aa, ok := b.QualifiedRecords[qualifier]; ok {
-			cm := newColumnMap(args, "")
+			cm := newColumnMap( args,"")
 			for _, col := range b.SetClausAliases {
 				cm.columns[0] = col
 				if err = aa.MapColumns(cm); err != nil {

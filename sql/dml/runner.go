@@ -688,9 +688,9 @@ func rangeError(fn, str string) *strconv.NumError {
 // BuilderBase contains fields which all SQL query builder have in common, the
 // same base. Exported for documentation reasons.
 type BuilderBase struct {
-	// ID of a statement. Used in logging. If empty the generated SQL string
-	// gets used which can might contain sensitive information which should not
-	// get logged. TODO implement
+	// ID of a statement. Used in logging. The ID gets generated with function
+	// signature `func() string`. This func gets applied to the logger when
+	// setting up a logger.
 	id           string
 	Log          log.Logger // Log optional logger
 	RawFullSQL   string
@@ -706,9 +706,9 @@ type BuilderBase struct {
 	IsBuildCache       bool // see BuildCache()
 	// IsUnsafe if set to true the functions AddColumn* will turn any
 	// non valid identifier (not `{a-z}[a-z0-9$_]+`i) into an expression.
-	IsUnsafe  bool
-	cacheSQL  []byte
-	cacheArgs Arguments // like a buffer, gets reused so a pool, TODO rename to pool
+	IsUnsafe bool
+	cacheSQL []byte
+	argPool  Arguments // like a buffer, gets reused internally, so a pool.
 	// propagationStoppedAt position in the slice where the stopped propagation
 	// has been requested. for every new iteration the propagation must stop at
 	// this position.

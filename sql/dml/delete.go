@@ -197,8 +197,8 @@ func (b *Delete) readBuildCache() (sql []byte, _ Arguments, err error) {
 	if b.cacheSQL == nil {
 		return nil, nil, nil
 	}
-	b.cacheArgs, err = b.appendArgs(b.cacheArgs[:0])
-	return b.cacheSQL, b.cacheArgs, err
+	b.argPool, err = b.appendArgs(b.argPool[:0])
+	return b.cacheSQL, b.argPool, err
 }
 
 // BuildCache if `true` the final build query including place holders will be
