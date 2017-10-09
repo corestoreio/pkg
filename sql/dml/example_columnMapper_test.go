@@ -19,115 +19,135 @@ import (
 	"fmt"
 	"strings"
 
-	sqlmock "github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
 )
 
-// Make sure that type salesCreditMemo implements interface.
-var _ dml.ColumnMapper = (*salesCreditMemoCollection)(nil)
-var _ dml.ColumnMapper = (*salesCreditMemo)(nil)
+// Make sure that type customerEntity implements interface.
+var _ dml.ColumnMapper = (*customerCollection)(nil)
+var _ dml.ColumnMapper = (*customerEntity)(nil)
 
-// salesCreditMemo represents just a demo record.
-type salesCreditMemoCollection struct {
-	Data           []*salesCreditMemo
-	EventAfterScan []func(*salesCreditMemo)
+// customerCollection a slice of customer entities.
+type customerCollection struct {
+	Data []*customerEntity
+	// AfterScan gets called in mode ColumnMapScan after the new
+	// customerEntity has been created and assigned with values from the query.
+	AfterScan []func(*customerEntity)
 }
 
-// salesCreditMemo represents just a demo record.
-type salesCreditMemo struct {
-	EntityID   uint64 // Auto Increment, supports until MaxUint64
-	State      string // processing, pending, shipped,
-	StoreID    uint16
-	CustomerID int64
-	GrandTotal dml.NullFloat64
+// customerEntity has been generated from the SQL table customer_entities.
+type customerEntity struct {
+	EntityID      uint64 // Auto Increment, supports until MaxUint64
+	Firstname     string
+	StoreID       uint16
+	LifetimeSales dml.NullFloat64
 	// VoucherCodes contains list of refunded codes, stored as CSV. Or even
 	// stored in another table or even encrypted and the function decrypts it on
-	// load. Same as the M2 EAV models
-	VoucherCodes       []string
-	VoucherCodeEncoder interface {
-		Encode([]string) (string, error)
-		Decode(string) ([]string, error)
-	}
+	// load. Same as the M2 EAV models.
+	VoucherCodes exampleStringSlice
 }
 
-type globalExampleStringSliceEncoder struct{}
+type exampleStringSlice []string
 
-func (globalExampleStringSliceEncoder) Encode(sl []string) (string, error) {
-	return strings.Join(sl, "|"), nil
+func (sl exampleStringSlice) ToString() string {
+	return strings.Join(sl, "|")
 }
-func (globalExampleStringSliceEncoder) Decode(s string) ([]string, error) {
-	return strings.Split(s, "|"), nil
+func (sl exampleStringSlice) FromString(s string) []string {
+	return strings.Split(s, "|")
 }
 
-func newSalesCreditMemo() *salesCreditMemo {
-	return &salesCreditMemo{
-		VoucherCodeEncoder: globalExampleStringSliceEncoder{},
-	}
+func newCustomerEntity() *customerEntity {
+	return &customerEntity{}
 }
 
 // MapColumns implements interface ColumnMapper only partially.
-func (p *salesCreditMemo) MapColumns(cm *dml.ColumnMap) error {
+func (p *customerEntity) MapColumns(cm *dml.ColumnMap) error {
 	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		voucherCodes, _ := p.VoucherCodeEncoder.Encode(p.VoucherCodes)
-		return cm.Uint64(&p.EntityID).String(&p.State).Uint16(&p.StoreID).Int64(&p.CustomerID).NullFloat64(&p.GrandTotal).String(&voucherCodes).Err()
+		voucherCodes := p.VoucherCodes.ToString()
+		return cm.Uint64(&p.EntityID).String(&p.Firstname).Uint16(&p.StoreID).NullFloat64(&p.LifetimeSales).String(&voucherCodes).Err()
 	}
 	for cm.Next() {
 		switch c := cm.Column(); c {
 		case "entity_id":
 			cm.Uint64(&p.EntityID)
-		case "state":
-			cm.String(&p.State)
+		case "firstname":
+			cm.String(&p.Firstname)
 		case "store_id":
 			cm.Uint16(&p.StoreID)
-		case "customer_id":
-			cm.Int64(&p.CustomerID)
-		case "grand_total":
-			cm.NullFloat64(&p.GrandTotal)
+		case "lifetime_sales":
+			cm.NullFloat64(&p.LifetimeSales)
 		case "voucher_codes":
-			// TODO(CyS) fix bug in case we're reading or writing
-			var voucherCodes string
-			cm.String(&voucherCodes)
-			p.VoucherCodes, _ = p.VoucherCodeEncoder.Decode(voucherCodes)
+			if cm.Mode() == dml.ColumnMapScan {
+				var voucherCodes string
+				cm.String(&voucherCodes)
+				p.VoucherCodes = p.VoucherCodes.FromString(voucherCodes)
+			} else {
+				voucherCodes := p.VoucherCodes.ToString()
+				cm.String(&voucherCodes)
+			}
 		default:
-			return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", c)
+			return errors.NewNotFoundf("[dml_test] customerEntity Column %q not found", c)
 		}
 	}
 	return cm.Err()
 }
 
-func (cc *salesCreditMemoCollection) MapColumns(cm *dml.ColumnMap) error {
+func (cc *customerCollection) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
-	case 'a', 'R':
-		// INSERT STATEMENT requesting all columns aka arguments or SELECT
-		// requesting specific columns.
+	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
 		for _, p := range cc.Data {
 			if err := p.MapColumns(cm); err != nil {
 				return errors.WithStack(err)
 			}
 		}
-	case dml.ColumnMapCollectionCreate:
-		// case for scanning when loading certain rows, hence we write data from
-		// the DB into the struct in each for-loop.
+	case dml.ColumnMapScan:
 		if cm.Count == 0 {
 			cc.Data = cc.Data[:0]
 		}
-		p := newSalesCreditMemo()
+		p := newCustomerEntity()
 		if err := p.MapColumns(cm); err != nil {
 			return errors.WithStack(err)
 		}
-		for _, fn := range cc.EventAfterScan {
+		for _, fn := range cc.AfterScan {
 			fn(p)
 		}
 		cc.Data = append(cc.Data, p)
-	case 'r':
-		// SELECT, DELETE or UPDATE or INSERT with n columns
-		// omitted because not needed in this example.
+	case dml.ColumnMapCollectionReadSet:
+		for cm.Next() {
+			switch c := cm.Column(); c {
+			case "entity_id":
+				cm.Args = cm.Args.Uint64s(cc.EntityIDs()...)
+			case "firstname":
+				cm.Args = cm.Args.Strings(cc.Firstnames()...)
+			default:
+				return errors.NewNotFoundf("[dml_test] customerCollection Column %q not found", c)
+			}
+		}
 	default:
 		return errors.NewNotSupportedf("[dml] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
+}
+
+func (ps *customerCollection) EntityIDs(ret ...uint64) []uint64 {
+	if ret == nil {
+		ret = make([]uint64, 0, len(ps.Data))
+	}
+	for _, p := range ps.Data {
+		ret = append(ret, p.EntityID)
+	}
+	return ret
+}
+
+func (ps *customerCollection) Firstnames(ret ...string) []string {
+	if ret == nil {
+		ret = make([]string, 0, len(ps.Data))
+	}
+	for _, p := range ps.Data {
+		ret = append(ret, p.Firstname)
+	}
+	return ret // can be made unique
 }
 
 // ExampleColumnMapper implementation POC for interface ColumnMapper.
@@ -136,29 +156,99 @@ func ExampleColumnMapper() {
 	dbc, dbMock := cstesting.MockDB(nil)
 	defer cstesting.MockClose(nil, dbc, dbMock)
 
-	r := sqlmock.NewRows([]string{"entity_id", "state", "store_id", "customer_id", "grand_total", "voucher_codes"}).
-		FromCSVString("18446744073700551613,shipped,7,98765,47.11,1FE9983E|28E76FBC\n18446744073700551614,shipped,7,12345,28.94,4FE7787E|15E59FBB|794EFDE8\n")
-
-	dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SELECT * FROM `sales_creditmemo` WHERE (`state` = 'shipped')")).WillReturnRows(r)
+	r := cstesting.MustMockRows(cstesting.WithFile("testdata", "customer_entity_example.csv"))
+	dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SELECT * FROM `customer_entity`")).WillReturnRows(r)
 	// </ignore_this>
 
-	s := dml.NewSelect("*").From("sales_creditmemo").
-		Where(dml.Column("state").Str("shipped")).
-		WithDB(dbc.DB).Interpolate()
-
-	cmc := &salesCreditMemoCollection{}
-	_, err := s.Load(context.TODO(), cmc)
-	if err != nil {
-		panic(err)
+	customers := new(customerCollection)
+	// Example Query 10 retrieving rows from a database mock
+	{
+		s := dml.NewSelect("*").From("customer_entity").WithDB(dbc.DB)
+		_, err := s.Load(context.TODO(), customers)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("Result of %q query:\n", s)
+		fmt.Println("[entity_id firstname store_id lifetime_sales voucher_codes]")
+		for _, c := range customers.Data {
+			fmt.Printf("%v\n", *c)
+		}
 	}
 
-	fmt.Print("[entity_id state store_id customer_id grand_total voucher_codes]\n")
-	for _, c := range cmc.Data {
-		fmt.Printf("%v\n", *c)
+	// Example SELECT Query 20
+	{
+		s := dml.NewSelect("entity_id", "firstname", "lifetime_sales").From("customer_entity").
+			Where(
+				dml.Column("entity_id").In().PlaceHolder(),
+			).
+			BindRecord(dml.Qualify("", customers)).Interpolate()
+		writeToSQL("\nExample query: SELECT using data from an unqualified customer collection.", s)
 	}
+
+	// Example SELECT Query 30
+	{
+		s := dml.NewSelect("ce.entity_id", "ce.firstname", "cg.customer_group_code", "cg.tax_class_id").FromAlias("customer_entity", "ce").
+			Join(dml.MakeIdentifier("customer_group").Alias("cg"),
+				dml.Column("ce.group_id").Equal().Column("cg.customer_group_id"),
+			).
+			Where(
+				dml.Column("ce.entity_id").In().PlaceHolder(),
+			).
+			BindRecord(dml.Qualify("ce", customers)).Interpolate()
+		writeToSQL("\nExample query: SELECT using data from a qualified customer collection.", s)
+	}
+
+	// TODO somehow variable customers must know that it should return all entity_ids for column customer_id
+	//s = dml.NewSelect("entity_id", "status", "increment_id", "grand_total", "tax_total").From("sales_order_entity").
+	//	Where(dml.Column("customer_id").In().PlaceHolder()).BindRecord(
+	//	dml.Qualify("customer_entity", customers),
+	//)
+
+	// Example UPDATE Query 40
+	{
+		u := dml.NewUpdate("customer_entity").AddColumns("firstname", "lifetime_sales", "voucher_codes").
+			BindRecord(dml.Qualify("", customers.Data[0])).
+			Where(dml.Column("entity_id").Equal().PlaceHolder()).Interpolate()
+		writeToSQL("\nExample query: UPDATE using data from an unqualified customer entity.", u)
+	}
+
+	// Example INSERT Query 50
+	{
+		in := dml.NewInsert("customer_entity").AddColumns("firstname", "lifetime_sales", "store_id", "voucher_codes").
+			BindRecord(customers.Data[0], customers.Data[1]).Interpolate()
+		writeToSQL("\nExample query: INSERT using data from customer entities.", in)
+	}
+	//{
+	//	in := dml.NewInsert("customer_entity").
+	//		BindRecord(customers.Data[0], customers.Data[1]).Interpolate()
+	//	writeToSQL("\nExample query: INSERT using data from customer entities.", in)
+	//}
 
 	// Output:
-	//[entity_id state store_id customer_id grand_total voucher_codes]
-	//{18446744073700551613 shipped 7 98765 {{47.11 true}} [1FE9983E 28E76FBC] {}}
-	//{18446744073700551614 shipped 7 12345 {{28.94 true}} [4FE7787E 15E59FBB 794EFDE8] {}}
+	//Result of "SELECT * FROM `customer_entity`" query:
+	//[entity_id firstname store_id lifetime_sales voucher_codes]
+	//{18446744073700551613 Karl Gopher 7 {{47.11 true}} [1FE9983E 28E76FBC]}
+	//{18446744073700551614 Fung Go Roo 7 {{28.94 true}} [4FE7787E 15E59FBB 794EFDE8]}
+	//{18446744073700551615 John Doe 6 {{138.54 true}} []}
+	//
+	//Example query: SELECT using data from an unqualified customer collection. Statement:
+	//SELECT `entity_id`, `firstname`, `lifetime_sales` FROM `customer_entity` WHERE
+	//(`entity_id` IN
+	//(18446744073700551613,18446744073700551614,18446744073700551615))
+	//
+	//Example query: SELECT using data from a qualified customer collection. Statement:
+	//SELECT `ce`.`entity_id`, `ce`.`firstname`, `cg`.`customer_group_code`,
+	//	`cg`.`tax_class_id` FROM `customer_entity` AS `ce` INNER JOIN `customer_group`
+	//AS `cg` ON (`ce`.`group_id` = `cg`.`customer_group_id`) WHERE (`ce`.`entity_id`
+	//IN (18446744073700551613,18446744073700551614,18446744073700551615))
+	//
+	//Example query: UPDATE using data from an unqualified customer entity. Statement:
+	//UPDATE `customer_entity` SET `firstname`='Karl Gopher', `lifetime_sales`=47.11,
+	//	`voucher_codes`='1FE9983E|28E76FBC' WHERE (`entity_id` = 18446744073700551613)
+	//
+	//Example query: INSERT using data from customer entities. Statement:
+	//INSERT INTO `customer_entity`
+	//(`firstname`,`lifetime_sales`,`store_id`,`voucher_codes`) VALUES ('Karl
+	//Gopher',47.11,7,'1FE9983E|28E76FBC'),('Fung Go
+	//Roo',28.94,7,'4FE7787E|15E59FBB|794EFDE8')
 }

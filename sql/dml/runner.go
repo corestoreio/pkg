@@ -203,10 +203,10 @@ func (m columnMapMode) String() string {
 // Those four constants represents the modes for ColumnMap.Mode. An upper case
 // letter defines a collection and a lower case letter an entity.
 const (
-	ColumnMapEntityReadAll          columnMapMode = 'a'
-	ColumnMapEntityReadSpecific     columnMapMode = 's'
-	ColumnMapCollectionReadSpecific columnMapMode = 'S'
-	ColumnMapCollectionCreate       columnMapMode = 'C'
+	ColumnMapEntityReadAll     columnMapMode = 'a'
+	ColumnMapEntityReadSet     columnMapMode = 'r'
+	ColumnMapCollectionReadSet columnMapMode = 'R'
+	ColumnMapScan              columnMapMode = 'S' // can be used for both
 )
 
 // Mode returns a status byte of four different states. These states are getting
@@ -215,12 +215,12 @@ const (
 // can be implemented by either a single type or a slice/map type. Slice or not
 // slice requires different states. A primitive type must only handle mode
 // ColumnMapEntityReadAll to return all requested fields. A slice type must
-// handle additionally the cases ColumnMapEntityReadSpecific,
-// ColumnMapCollectionReadSpecific and ColumnMapCollectionCreate. See the
-// examples. Documentation needs to be written better.
+// handle additionally the cases ColumnMapEntityReadSet,
+// ColumnMapCollectionReadSet and ColumnMapScan. See the examples. Documentation
+// needs to be written better.
 func (b *ColumnMap) Mode() (m columnMapMode) {
 	if b.scanArgs != nil {
-		return ColumnMapCollectionCreate // assign the column values from the DB to the structs and create new structs in a slice.
+		return ColumnMapScan // assign the column values from the DB to the structs and create new structs in a slice.
 	}
 
 	// case b.Args != nil
@@ -228,9 +228,9 @@ func (b *ColumnMap) Mode() (m columnMapMode) {
 	case 0:
 		m = ColumnMapEntityReadAll // Entity: read all mode; Collection jump into loop and pass on to Entity
 	case 1:
-		m = ColumnMapCollectionReadSpecific // request certain column values as a slice. implemented in func condition.go:appendArgs.
+		m = ColumnMapCollectionReadSet // request certain column values as a slice. implemented in func condition.go:appendArgs.
 	default:
-		m = ColumnMapEntityReadSpecific // Entity: calls the for cm.Next loop; Collection jump into loop and pass on to Entity
+		m = ColumnMapEntityReadSet // Entity: calls the for cm.Next loop; Collection jump into loop and pass on to Entity
 	}
 	return m
 }

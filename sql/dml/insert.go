@@ -486,7 +486,7 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 		if err = rec.MapColumns(cm); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if addedArgs := len(cm.Args) - alBefore; addedArgs%argCount0 != 0 {
+		if addedArgs := len(cm.Args) - alBefore; argCount0 > 0 && addedArgs%argCount0 != 0 {
 			return nil, errors.NewMismatchf("[dml] Insert.appendArgs RecordValueCount(%d) does not match the number of assembled arguments (%d)", b.RecordValueCount, addedArgs)
 		}
 	}

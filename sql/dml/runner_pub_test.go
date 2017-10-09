@@ -162,7 +162,7 @@ func (vs *baseTestCollection) MapColumns(cm *dml.ColumnMap) error {
 				return errors.WithStack(err)
 			}
 		}
-	case dml.ColumnMapCollectionCreate:
+	case dml.ColumnMapScan:
 		// case for scanning when loading certain rows, hence we write data from
 		// the DB into the struct in each for-loop.
 		if cm.Count == 0 {

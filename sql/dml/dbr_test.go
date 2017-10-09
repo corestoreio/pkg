@@ -109,16 +109,14 @@ type dmlPersons struct {
 
 // MapColumns gets called in the `for rows.Next()` loop each time in case of IsNew
 func (ps *dmlPersons) MapColumns(cm *ColumnMap) error {
-	m := cm.Mode()
-	//println("mode in collection:", string(m), " => ", strings.Join(cm.columns, ", "), "cm.columnsLen", cm.columnsLen)
-	switch m {
-	case ColumnMapEntityReadAll, ColumnMapEntityReadSpecific:
+	switch m := cm.Mode(); m {
+	case ColumnMapEntityReadAll, ColumnMapEntityReadSet:
 		for _, p := range ps.Data {
 			if err := p.MapColumns(cm); err != nil {
 				return errors.WithStack(err)
 			}
 		}
-	case ColumnMapCollectionCreate:
+	case ColumnMapScan:
 		// case for scanning when loading certain rows, hence we write data from
 		// the DB into the struct in each for-loop.
 		if cm.Count == 0 {
@@ -129,7 +127,7 @@ func (ps *dmlPersons) MapColumns(cm *ColumnMap) error {
 			return errors.WithStack(err)
 		}
 		ps.Data = append(ps.Data, p)
-	case ColumnMapCollectionReadSpecific: // See Test in select_test.go:TestSelect_SetRecord
+	case ColumnMapCollectionReadSet: // See Test in select_test.go:TestSelect_SetRecord
 		// SELECT, DELETE or UPDATE or INSERT with n columns
 		for cm.Next() {
 			switch c := cm.Column(); c {

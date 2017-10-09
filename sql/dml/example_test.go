@@ -80,6 +80,17 @@ func writeToSQLAndInterpolate(qb dml.QueryBuilder) {
 	strs.FwordWrap(os.Stdout, sqlStr, 80)
 }
 
+func writeToSQL(text string, qb dml.QueryBuilder) {
+	sqlStr, _, err := qb.ToSQL()
+	if err != nil {
+		fmt.Printf("%+v\n", err)
+		return
+	}
+	fmt.Println(text, "Statement:")
+	strs.FwordWrap(os.Stdout, sqlStr, 80)
+	fmt.Print("\n")
+}
+
 func ExampleNewInsert() {
 	i := dml.NewInsert("tableA").
 		AddColumns("b", "c", "d", "e").
