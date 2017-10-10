@@ -27,7 +27,7 @@ import (
 )
 
 var _ dml.QueryBuilder = (*ddl.Table)(nil)
-var _ dml.Scanner = (*ddl.Table)(nil)
+var _ dml.ColumnMapper = (*ddl.Table)(nil)
 
 var tableMap *ddl.Tables
 

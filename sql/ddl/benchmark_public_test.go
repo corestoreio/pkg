@@ -19,6 +19,8 @@ import (
 	"context"
 	"testing"
 
+	"hash/fnv"
+
 	"github.com/corestoreio/csfw/sql/ddl"
 	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/csfw/util/byteconv"
@@ -171,7 +173,7 @@ func BenchmarkLoadColumns(b *testing.B) {
 				b.Error(err)
 			}
 		}
-		hashHave, err := benchmarkLoadColumns[tn].Hash()
+		hashHave, err := benchmarkLoadColumns[tn].Hash(fnv.New64a())
 		if err != nil {
 			b.Error(err)
 		}

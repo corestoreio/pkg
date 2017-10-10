@@ -20,6 +20,8 @@ import (
 	"sort"
 	"testing"
 
+	"hash/fnv"
+
 	"github.com/corestoreio/csfw/sql/ddl"
 	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/csfw/util/cstesting"
@@ -66,10 +68,10 @@ func TestLoadColumns_Mage21(t *testing.T) {
 		tc, err := ddl.LoadColumns(context.TODO(), dbc.DB, test.table)
 		cols1 := tc[test.table]
 		if test.wantErr != nil {
-			assert.Error(t, err, "Index %d => %+v", i, err)
+			assert.Error(t, err, "Index %d", i)
 			assert.True(t, test.wantErr(err), "Index %d", i)
 		} else {
-			assert.NoError(t, err, "Index %d => %+v", i, err)
+			assert.NoError(t, err, "Index %d", i)
 			assert.Equal(t, test.want, fmt.Sprintf("%#v\n", cols1), "Index %d", i)
 			assert.Equal(t, test.wantJoinFields, cols1.JoinFields("_"), "Index %d", i)
 		}
@@ -125,7 +127,7 @@ func TestColumns(t *testing.T) {
 	emptyTS := &ddl.Table{}
 	assert.False(t, emptyTS.Columns.First().IsPK())
 
-	hash, err := tableMap.MustTable("catalog_category_anc_products_index_idx").Columns.Hash()
+	hash, err := tableMap.MustTable("catalog_category_anc_products_index_idx").Columns.Hash(fnv.New64a())
 	assert.NoError(t, err)
 	assert.Equal(t, []byte{0x3b, 0x72, 0x14, 0x1d, 0x3f, 0x61, 0xf, 0x5b}, hash)
 }

@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var _ dml.Scanner = (*Variables)(nil)
+var _ dml.ColumnMapper = (*Variables)(nil)
 var _ dml.QueryBuilder = (*Variables)(nil)
 
 func TestNewVariables_Integration(t *testing.T) {
@@ -49,7 +49,7 @@ func TestNewVariables_Mock(t *testing.T) {
 	defer cstesting.MockClose(t, dbc, dbMock)
 
 	t.Run("one with LIKE", func(t *testing.T) {
-		var mockedRows = sqlmock.NewRows([]string{"Variable_name", "Argument"}).
+		var mockedRows = sqlmock.NewRows([]string{"Variable_name", "Value"}).
 			FromCSVString("keyVal11,helloAustralia")
 
 		dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SHOW VARIABLES WHERE (`Variable_name` LIKE 'keyVal11')")).
@@ -60,14 +60,14 @@ func TestNewVariables_Mock(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%+v", err)
 		}
-		assert.Exactly(t, int64(1), rc, "Should load one row")
+		assert.Exactly(t, uint64(1), rc, "Should load one row")
 
 		assert.Exactly(t, `helloAustralia`, vs.Data["keyVal11"])
 		assert.Len(t, vs.Data, 1)
 	})
 
 	t.Run("many with WHERE", func(t *testing.T) {
-		var mockedRows = sqlmock.NewRows([]string{"Variable_name", "Argument"}).
+		var mockedRows = sqlmock.NewRows([]string{"Variable_name", "Value"}).
 			FromCSVString("keyVal11,helloAustralia\nkeyVal22,helloNewZealand")
 
 		dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SHOW VARIABLES WHERE (`Variable_name` IN ('keyVal11','keyVal22'))")).
@@ -78,7 +78,7 @@ func TestNewVariables_Mock(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%+v", err)
 		}
-		assert.Exactly(t, int64(2), rc, "Shoud load two rows")
+		assert.Exactly(t, uint64(2), rc, "Shoud load two rows")
 
 		assert.Exactly(t, `helloAustralia`, vs.Data["keyVal11"])
 		assert.Exactly(t, `helloNewZealand`, vs.Data["keyVal22"])

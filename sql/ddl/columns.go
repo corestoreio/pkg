@@ -19,9 +19,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"hash/fnv"
 	"strconv"
 	"strings"
+
+	"hash"
 
 	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/csfw/util/bufferpool"
@@ -111,7 +112,7 @@ func LoadColumns(ctx context.Context, db dml.Querier, tables ...string) (map[str
 	}()
 
 	tc := make(map[string]Columns)
-	rc := new(dml.RowConvert)
+	rc := new(dml.ColumnMap)
 	for rows.Next() {
 		if err = rc.Scan(rows); err != nil {
 			return nil, errors.Wrapf(err, "[ddl] Scan Query for tables: %v", tables)
@@ -138,11 +139,11 @@ func LoadColumns(ctx context.Context, db dml.Querier, tables ...string) (map[str
 }
 
 // Hash calculates a non-cryptographic, fast and efficient hash value from all
-// columns. Current hash algorithm is fnv64a.
-func (cs Columns) Hash() ([]byte, error) {
+// columns.
+func (cs Columns) Hash(h hash.Hash) ([]byte, error) {
 	// TODO use encoding/binary
-	var tr byte = 't' // letter t for true
-	var fl byte = 'f' // letter f for false
+	const tr = 't' // letter t for true
+	const fl = 'f' // letter f for false
 	var buf bytes.Buffer
 	for _, c := range cs {
 		_, _ = buf.WriteString(c.Field)
@@ -166,12 +167,11 @@ func (cs Columns) Hash() ([]byte, error) {
 		_, _ = buf.WriteString(c.Comment)
 	}
 
-	f64 := fnv.New64a()
-	if _, err := f64.Write(buf.Bytes()); err != nil {
+	if _, err := h.Write(buf.Bytes()); err != nil {
 		return nil, err
 	}
 	buf.Reset()
-	return f64.Sum(buf.Bytes()), nil
+	return h.Sum(buf.Bytes()), nil
 }
 
 // Filter filters the columns by predicate f and appends the column pointers to
@@ -317,54 +317,41 @@ func (cs Columns) JoinFields(sep string) string {
 
 // NewColumn creates a new column pointer and maps it from a raw database row
 // its bytes into the type Column.
-func NewColumn(rc *dml.RowConvert) (c *Column, tableName string, err error) {
+func NewColumn(rc *dml.ColumnMap) (c *Column, tableName string, err error) {
 	c = new(Column)
-	for i, col := range rc.Columns {
-		if rc.Alias != nil {
-			// col might be the alias name used in the query. Lookup the
-			// original upper case name as used in the switch mapping.
-			if orgCol, ok := rc.Alias[col]; ok {
-				col = orgCol
-			}
-		}
-
-		rc = rc.Index(i)
-		var err error
-		switch col {
+	for rc.Next() {
+		switch col := rc.Column(); col {
 		case "TABLE_NAME":
-			tableName, err = rc.String()
+			rc.String(&tableName)
 		case "COLUMN_NAME":
-			c.Field, err = rc.String()
+			rc.String(&c.Field)
 		case "ORDINAL_POSITION":
-			c.Pos, err = rc.Uint64()
+			rc.Uint64(&c.Pos)
 		case "COLUMN_DEFAULT":
-			c.Default, err = rc.NullString()
+			rc.NullString(&c.Default)
 		case "IS_NULLABLE":
-			c.Null, err = rc.String()
+			rc.String(&c.Null)
 		case "DATA_TYPE":
-			c.DataType, err = rc.String()
+			rc.String(&c.DataType)
 		case "CHARACTER_MAXIMUM_LENGTH":
-			c.CharMaxLength, err = rc.NullInt64()
+			rc.NullInt64(&c.CharMaxLength)
 		case "NUMERIC_PRECISION":
-			c.Precision, err = rc.NullInt64()
+			rc.NullInt64(&c.Precision)
 		case "NUMERIC_SCALE":
-			c.Scale, err = rc.NullInt64()
+			rc.NullInt64(&c.Scale)
 		case "COLUMN_TYPE":
-			c.ColumnType, err = rc.String()
+			rc.String(&c.ColumnType)
 		case "COLUMN_KEY":
-			c.Key, err = rc.String()
+			rc.String(&c.Key)
 		case "EXTRA":
-			c.Extra, err = rc.String()
+			rc.String(&c.Extra)
 		case "COLUMN_COMMENT":
-			c.Comment, err = rc.String()
+			rc.String(&c.Comment)
 		default:
-			return nil, "", errors.NewNotSupportedf("[ddl] Column %q not supported or alias not found")
-		}
-		if err != nil {
-			return nil, "", errors.Wrapf(err, "[ddl] Failed to scan %q at row %d", col, rc.Count)
+			return nil, "", errors.NewNotSupportedf("[ddl] Column %q not supported or alias not found", col)
 		}
 	}
-	return c, tableName, nil
+	return c, tableName, errors.WithStack(rc.Err())
 }
 
 // GoComment creates a comment from a database column to be used in Go code
@@ -467,7 +454,7 @@ func (c *Column) IsFloat() bool {
 	return false
 }
 
-// isMoney checks if a column contains a MySQL decimal or float type and if the
+// IsMoney checks if a column contains a MySQL decimal or float type and if the
 // column name has a special naming.
 // This function needs a lot of care ...
 func (c *Column) IsMoney() bool {

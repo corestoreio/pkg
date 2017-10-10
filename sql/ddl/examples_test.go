@@ -14,7 +14,6 @@
 
 package ddl_test
 
-func ExampleMasterStatus() {
+func ExampleMasterStatus_MapColumns() {
 
-	//Output:
 }

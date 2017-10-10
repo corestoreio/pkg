@@ -27,7 +27,7 @@ import (
 )
 
 var _ dml.QueryBuilder = (*ddl.MasterStatus)(nil)
-var _ dml.Scanner = (*ddl.MasterStatus)(nil)
+var _ dml.ColumnMapper = (*ddl.MasterStatus)(nil)
 
 func TestMasterStatus_Compare(t *testing.T) {
 	t.Parallel()

@@ -16,6 +16,7 @@ package ddl_test
 
 import (
 	"context"
+	"io"
 	"testing"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
@@ -28,8 +29,8 @@ import (
 )
 
 var _ dml.QueryBuilder = (*ddl.Tables)(nil)
-var _ dml.Scanner = (*ddl.Tables)(nil)
-var _ dml.RowCloser = (*ddl.Tables)(nil)
+var _ dml.ColumnMapper = (*ddl.Tables)(nil)
+var _ io.Closer = (*ddl.Tables)(nil)
 
 func TestNewTableService(t *testing.T) {
 	t.Parallel()

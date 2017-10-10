@@ -17,7 +17,6 @@ package ddl
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"fmt"
 	"strconv"
 	"time"
@@ -30,7 +29,6 @@ import (
 
 // Table represents a table from a specific database.
 type Table struct {
-	Convert dml.RowConvert
 	// Schema represents the name of the database. Might be empty.
 	Schema string
 	// Name of the table
@@ -82,18 +80,15 @@ func (t *Table) resetColumns() {
 	t.Columns = t.Columns[:0]
 }
 
-// RowScan implements dml.Scanner interface
-func (t *Table) RowScan(r *sql.Rows) error {
-	if t.Convert.Count == 0 {
+// MapColumns implements dml.ColumnMapper interface.
+func (t *Table) MapColumns(rc *dml.ColumnMap) error {
+	if rc.Count == 0 {
 		t.resetColumns()
 	}
-	if err := t.Convert.Scan(r); err != nil {
-		return err
-	}
 
-	c, tableName, err := NewColumn(&t.Convert)
+	c, tableName, err := NewColumn(rc)
 	if err != nil {
-		return errors.Wrapf(err, "[ddl] Table.RowScan. Table %q Columns %v\n", t.Name, t.Convert.Columns)
+		return errors.Wrapf(err, "[ddl] Table.RowScan. Table %q\n", t.Name)
 	}
 
 	if t.Name == "" {

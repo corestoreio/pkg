@@ -16,7 +16,6 @@ package ddl
 
 import (
 	"context"
-	"database/sql"
 	"sort"
 	"sync"
 
@@ -42,7 +41,6 @@ type TableOption struct {
 
 // Tables handles all the tables defined for a package. Thread safe.
 type Tables struct {
-	Convert dml.RowConvert
 	// Schema represents the name of the database. Might be empty.
 	Schema        string
 	previousTable string // the table which has been scanned beforehand
@@ -362,19 +360,15 @@ func (tm *Tables) DeleteAllFromCache() {
 	tm.tm = make(map[string]*Table)
 }
 
-// RowScan scans a row from a database. It creates automatically a new Table
+// MapColumns scans a row from a database. It creates automatically a new Table
 // object for non-existing ones. Existing tables gets reset their columns slice
 // and it refreshes them.
-func (tm *Tables) RowScan(r *sql.Rows) error {
-	if tm.Convert.Count == 0 {
+func (tm *Tables) MapColumns(rc *dml.ColumnMap) error {
+	if rc.Count == 0 {
 		tm.mu.Lock()
 	}
 
-	if err := tm.Convert.Scan(r); err != nil {
-		return err
-	}
-
-	c, tableName, err := NewColumn(&tm.Convert)
+	c, tableName, err := NewColumn(rc)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -394,9 +388,9 @@ func (tm *Tables) RowScan(r *sql.Rows) error {
 	return nil
 }
 
-// RowClose implements dml.RowCloser interface used in dml.Load. It unlocks the
+// Close implements io.Closer interface used in dml.Load. It unlocks the
 // internal mutex.
-func (tm *Tables) RowClose() error {
+func (tm *Tables) Close() error {
 	tm.mu.Unlock()
 	return nil
 }

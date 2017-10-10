@@ -15,7 +15,6 @@
 package ddl
 
 import (
-	"database/sql"
 	"strings"
 
 	"github.com/corestoreio/csfw/sql/dml"
@@ -24,9 +23,8 @@ import (
 
 // Variables contains multiple MySQL configuration variables. Not threadsafe.
 type Variables struct {
-	Convert dml.RowConvert
-	Data    map[string]string
-	Show    *dml.Show
+	Data map[string]string
+	Show *dml.Show
 }
 
 // NewVariables creates a new variable collection. If the argument names gets
@@ -63,21 +61,21 @@ func (vs *Variables) ToSQL() (string, []interface{}, error) {
 	return vs.Show.ToSQL()
 }
 
-// RowScan implements dml.Scanner interface and scans a single row from the
-// database query result. It expects that the variable name is in column 0 and
-// the variable value in column 1.
-func (vs *Variables) RowScan(r *sql.Rows) error {
-	if err := vs.Convert.Scan(r); err != nil {
-		return err
-	}
-	name, err := vs.Convert.Index(0).String()
-	if err != nil {
-		return errors.Wrapf(err, "[ddl] Variables.RowScan.Index.0 at Row %d", vs.Convert.Count)
-	}
-	value, err := vs.Convert.Index(1).String()
-	if err != nil {
-		return errors.Wrapf(err, "[ddl] Variables.RowScan.Index.1 at Row %d", vs.Convert.Count)
+// MapColumns implements dml.ColumnMapper interface and scans a single row from
+// the database query result.
+func (vs *Variables) MapColumns(rc *dml.ColumnMap) error {
+	// TODO: how to handle to load all variables stored in the map?
+	name, value := "", ""
+	for rc.Next() {
+		switch col := rc.Column(); col {
+		case "Variable_name":
+			rc.String(&name)
+		case "Value":
+			rc.String(&value)
+		default:
+			return errors.NewNotFoundf("[ddl] Column %q not found in SHOW VARIABLES", col)
+		}
 	}
 	vs.Data[name] = value
-	return nil
+	return errors.WithStack(rc.Err())
 }

@@ -15,7 +15,6 @@
 package ddl
 
 import (
-	"database/sql"
 	"strconv"
 	"strings"
 
@@ -28,7 +27,6 @@ import (
 // MasterStatus pointer variable has been created it can be reused multiple
 // times.
 type MasterStatus struct {
-	rc             dml.RowConvert
 	File           string
 	Position       uint
 	BinlogDoDB     string
@@ -47,39 +45,26 @@ func (ms *MasterStatus) ToSQL() (string, []interface{}, error) {
 	return "SHOW MASTER STATUS", nil, nil
 }
 
-// RowScan implements dml.Scanner interface to scan a row returned from database
-// query.
-func (ms *MasterStatus) RowScan(r *sql.Rows) error {
-	if err := ms.rc.Scan(r); err != nil {
-		return err
-	}
-	for i, col := range ms.rc.Columns {
-		if ms.rc.Alias != nil {
-			if orgCol, ok := ms.rc.Alias[col]; ok {
-				col = orgCol
-			}
-		}
-		b := ms.rc.Index(i)
-		var err error
-		switch col {
+// MapColumns implements dml.ColumnMapper interface to scan a row returned from
+// a database query.
+func (ms *MasterStatus) MapColumns(rc *dml.ColumnMap) error {
+	for rc.Next() {
+		switch col := rc.Column(); col {
 		case "File":
-			ms.File, err = b.String()
+			rc.String(&ms.File)
 		case "Position":
-			ms.Position, err = b.Uint()
+			rc.Uint(&ms.Position)
 		case "Binlog_Do_DB":
-			ms.BinlogDoDB, err = b.String()
+			rc.String(&ms.BinlogDoDB)
 		case "Binlog_Ignore_DB":
-			ms.BinlogIgnoreDB, err = b.String()
+			rc.String(&ms.BinlogIgnoreDB)
 		case "Executed_Gtid_Set":
-			ms.ExecutedGTIDSet, err = b.String()
+			rc.String(&ms.ExecutedGTIDSet)
 		default:
 			return errors.NewNotFoundf("[ddl] Column %q not found in SHOW MASTER STATUS", col)
 		}
-		if err != nil {
-			return errors.Wrapf(err, "[dml] Failed to rc value at row % with column index %d", ms.rc.Count, i)
-		}
 	}
-	return nil
+	return errors.WithStack(rc.Err())
 }
 
 // Compare compares with another MasterStatus. Returns 1 if left hand side is
