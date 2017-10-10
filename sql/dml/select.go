@@ -35,13 +35,13 @@ type Select struct {
 	// Columns represents a slice of names and its optional identifiers. Wildcard
 	// `SELECT *` statements are not really supported:
 	// http://stackoverflow.com/questions/3639861/why-is-select-considered-harmful
-	Columns identifiers
+	Columns ids
 
 	//TODO: create a possibility of the Select type which has a half-pre-rendered
 	// SQL statement where a developer can only modify or append WHERE clauses.
 	// especially useful during code generation
 
-	GroupBys             identifiers
+	GroupBys             ids
 	Havings              Conditions
 	IsStar               bool // IsStar generates a SELECT * FROM query
 	IsCountStar          bool // IsCountStar retains the column names but executes a COUNT(*) query.
@@ -78,7 +78,7 @@ func NewSelect(columns ...string) *Select {
 func NewSelectWithDerivedTable(subSelect *Select, aliasName string) *Select {
 	return &Select{
 		BuilderBase: BuilderBase{
-			Table: identifier{
+			Table: id{
 				DerivedTable: subSelect,
 				Aliased:      aliasName,
 			},
@@ -397,35 +397,35 @@ func (b *Select) Interpolate() *Select {
 
 // Join creates an INNER join construct. By default, the onConditions are glued
 // together with AND.
-func (b *Select) Join(table identifier, onConditions ...*Condition) *Select {
+func (b *Select) Join(table id, onConditions ...*Condition) *Select {
 	b.join("INNER", table, onConditions...)
 	return b
 }
 
 // LeftJoin creates a LEFT join construct. By default, the onConditions are
 // glued together with AND.
-func (b *Select) LeftJoin(table identifier, onConditions ...*Condition) *Select {
+func (b *Select) LeftJoin(table id, onConditions ...*Condition) *Select {
 	b.join("LEFT", table, onConditions...)
 	return b
 }
 
 // RightJoin creates a RIGHT join construct. By default, the onConditions are
 // glued together with AND.
-func (b *Select) RightJoin(table identifier, onConditions ...*Condition) *Select {
+func (b *Select) RightJoin(table id, onConditions ...*Condition) *Select {
 	b.join("RIGHT", table, onConditions...)
 	return b
 }
 
 // OuterJoin creates an OUTER join construct. By default, the onConditions are
 // glued together with AND.
-func (b *Select) OuterJoin(table identifier, onConditions ...*Condition) *Select {
+func (b *Select) OuterJoin(table id, onConditions ...*Condition) *Select {
 	b.join("OUTER", table, onConditions...)
 	return b
 }
 
 // CrossJoin creates a CROSS join construct. By default, the onConditions are
 // glued together with AND.
-func (b *Select) CrossJoin(table identifier, onConditions ...*Condition) *Select {
+func (b *Select) CrossJoin(table id, onConditions ...*Condition) *Select {
 	b.join("CROSS", table, onConditions...)
 	return b
 }

@@ -717,7 +717,7 @@ type BuilderBase struct {
 	RawFullSQL   string
 	RawArguments Arguments // args used by RawFullSQL
 
-	Table identifier
+	Table id
 
 	// PropagationStopped set to true if you would like to interrupt the
 	// listener chain. Once set to true all sub sequent calls of the next
@@ -749,12 +749,12 @@ type BuilderConditional struct {
 	QualifiedRecords map[string]ColumnMapper
 	Joins            Joins
 	Wheres           Conditions
-	OrderBys         identifiers
+	OrderBys         ids
 	LimitCount       uint64
 	LimitValid       bool
 }
 
-func (b *BuilderConditional) join(j string, t identifier, on ...*Condition) {
+func (b *BuilderConditional) join(j string, t id, on ...*Condition) {
 	jf := &join{
 		JoinType: j,
 		Table:    t,

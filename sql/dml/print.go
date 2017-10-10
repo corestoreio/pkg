@@ -166,7 +166,7 @@ func sqlWriteUnionAll(w *bytes.Buffer, isAll bool, isIntersect bool, isExcept bo
 	w.WriteByte('\n')
 }
 
-func sqlWriteOrderBy(w *bytes.Buffer, orderBys identifiers, br bool) {
+func sqlWriteOrderBy(w *bytes.Buffer, orderBys ids, br bool) {
 	if len(orderBys) == 0 {
 		return
 	}

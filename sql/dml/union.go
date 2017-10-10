@@ -38,7 +38,7 @@ type Union struct {
 	DB QueryPreparer
 
 	Selects     []*Select
-	OrderBys    identifiers
+	OrderBys    ids
 	IsAll       bool // IsAll enables UNION ALL
 	IsIntersect bool // See Intersect()
 	IsExcept    bool // See Except()
@@ -145,13 +145,13 @@ func (u *Union) PreserveResultSet() *Union {
 		for i, s := range u.Selects {
 			s.AddColumnsConditions(Expr(strconv.Itoa(i)).Alias("_preserve_result_set"))
 		}
-		u.OrderBys = append(identifiers{MakeIdentifier("_preserve_result_set")}, u.OrderBys...)
+		u.OrderBys = append(ids{MakeIdentifier("_preserve_result_set")}, u.OrderBys...)
 		return u
 	}
 
 	// Panics without any *Select in the slice. Programmer error.
 	u.Selects[0].AddColumnsConditions(Expr("{preserveResultSet}").Alias("_preserve_result_set"))
-	u.OrderBys = append(identifiers{MakeIdentifier("_preserve_result_set")}, u.OrderBys...)
+	u.OrderBys = append(ids{MakeIdentifier("_preserve_result_set")}, u.OrderBys...)
 	for i := 0; i < u.stmtCount; i++ {
 		u.oldNew[i] = append(u.oldNew[i], "{preserveResultSet}", strconv.Itoa(i))
 	}

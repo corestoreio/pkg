@@ -255,7 +255,7 @@ type join struct {
 	// JoinType can be LEFT, RIGHT, INNER, OUTER, CROSS or another word.
 	JoinType string
 	// Table name and alias of the table
-	Table identifier
+	Table id
 	// On join on those conditions
 	On Conditions
 }

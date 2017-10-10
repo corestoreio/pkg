@@ -33,7 +33,9 @@ var Quoter = MysqlQuoter{
 	replacer: strings.NewReplacer(quote, ""),
 }
 
-type identifier struct {
+// id is an identifier for table name or a column name or an alias for a sub
+// query.
+type id struct {
 	// Derived Tables (Subqueries in the FROM Clause). A derived table is a
 	// subquery in a SELECT statement FROM clause. Derived tables can return a
 	// scalar, column, row, or table. Ignored in any other case.
@@ -66,10 +68,10 @@ const (
 
 // MakeIdentifier creates a new quoted name with an optional alias `a`, which can be
 // empty.
-func MakeIdentifier(name string) identifier { return identifier{Name: name} }
+func MakeIdentifier(name string) id { return id{Name: name} }
 
 // Alias sets the aliased name for the `Name` field.
-func (a identifier) Alias(alias string) identifier { a.Aliased = alias; return a }
+func (a id) Alias(alias string) id { a.Aliased = alias; return a }
 
 // uncomment this functions and its test once needed
 // MakeExpressionAlias creates a new unquoted expression with an optional alias
@@ -81,10 +83,10 @@ func (a identifier) Alias(alias string) identifier { a.Aliased = alias; return a
 //	}
 //}
 
-func (a identifier) isEmpty() bool { return a.Name == "" && a.DerivedTable == nil && a.Expression == "" }
+func (a id) isEmpty() bool { return a.Name == "" && a.DerivedTable == nil && a.Expression == "" }
 
 // qualifier returns the correct qualifier for an identifier
-func (a identifier) mustQualifier() string {
+func (a id) mustQualifier() string {
 	q := a.Name
 	if a.Aliased != "" {
 		q = a.Aliased
@@ -97,7 +99,7 @@ func (a identifier) mustQualifier() string {
 }
 
 // String returns the correct stringyfied statement.
-func (a identifier) String() string {
+func (a id) String() string {
 	if a.Expression != "" {
 		buf := bufferpool.Get()
 		defer bufferpool.Put(buf)
@@ -110,10 +112,10 @@ func (a identifier) String() string {
 }
 
 // NameAlias always quuotes the name and the alias
-func (a identifier) QuoteAs() string { return Quoter.NameAlias(a.Name, a.Aliased) }
+func (a id) QuoteAs() string { return Quoter.NameAlias(a.Name, a.Aliased) }
 
 // appendArgs assembles the arguments and appends them to `args`
-func (a identifier) appendArgs(args Arguments) (_ Arguments, err error) {
+func (a id) appendArgs(args Arguments) (_ Arguments, err error) {
 	if a.DerivedTable != nil {
 		args, err = a.DerivedTable.appendArgs(args)
 	}
@@ -121,7 +123,7 @@ func (a identifier) appendArgs(args Arguments) (_ Arguments, err error) {
 }
 
 // WriteQuoted writes the quoted table and its maybe alias into w.
-func (a identifier) WriteQuoted(w *bytes.Buffer) error {
+func (a id) WriteQuoted(w *bytes.Buffer) error {
 	if a.DerivedTable != nil {
 		w.WriteByte('(')
 		if err := a.DerivedTable.toSQL(w); err != nil {
@@ -152,11 +154,12 @@ func (a identifier) WriteQuoted(w *bytes.Buffer) error {
 	return nil
 }
 
-type identifiers []identifier
+// ids is a slice of identifiers. `idc` in the receiver means id-collection.
+type ids []id
 
 // WriteQuoted writes all identifiers comma separated and quoted into w.
-func (ids identifiers) WriteQuoted(w *bytes.Buffer) error {
-	for i, a := range ids {
+func (idc ids) WriteQuoted(w *bytes.Buffer) error {
+	for i, a := range idc {
 		if i > 0 {
 			w.WriteString(", ")
 		}
@@ -167,8 +170,8 @@ func (ids identifiers) WriteQuoted(w *bytes.Buffer) error {
 	return nil
 }
 
-func (ids identifiers) appendArgs(args Arguments) (Arguments, error) {
-	for _, a := range ids {
+func (idc ids) appendArgs(args Arguments) (Arguments, error) {
+	for _, a := range idc {
 		var err error
 		args, err = a.appendArgs(args)
 		if err != nil {
@@ -182,31 +185,31 @@ func (ids identifiers) appendArgs(args Arguments) (Arguments, error) {
 // Usuallay `lastNindexes` is len(object) because we decrement 1 from
 // `lastNindexes`. This function panics when lastNindexes does not match the
 // length of `identifiers`.
-func (ids identifiers) applySort(lastNindexes int, sort byte) identifiers {
-	to := len(ids) - lastNindexes
-	for i := len(ids) - 1; i >= to; i-- {
-		ids[i].Sort = sort
+func (idc ids) applySort(lastNindexes int, sort byte) ids {
+	to := len(idc) - lastNindexes
+	for i := len(idc) - 1; i >= to; i-- {
+		idc[i].Sort = sort
 	}
-	return ids
+	return idc
 }
 
 // AppendColumns adds new columns to the identifier slice. If a column name is
 // not valid identifier that column gets switched into an expression. You should
 // use this function when no arguments should be attached to an expression,
 // otherwise use the function AppendConditions.
-func (ids identifiers) AppendColumns(isUnsafe bool, columns ...string) identifiers {
-	if cap(ids) == 0 {
-		ids = make(identifiers, 0, len(columns)*2)
+func (idc ids) AppendColumns(isUnsafe bool, columns ...string) ids {
+	if cap(idc) == 0 {
+		idc = make(ids, 0, len(columns)*2)
 	}
 	for _, c := range columns {
-		id := identifier{Name: c}
+		id := id{Name: c}
 		if isUnsafe && isValidIdentifier(c) != 0 {
 			id.Expression = id.Name
 			id.Name = ""
 		}
-		ids = append(ids, id)
+		idc = append(idc, id)
 	}
-	return ids
+	return idc
 }
 
 // AppendColumnsAliases expects a balanced slice where i=column name and
@@ -214,44 +217,44 @@ func (ids identifiers) AppendColumns(isUnsafe bool, columns ...string) identifie
 // not valid identifier that column gets switched into an expression. The alias
 // does not change. You should use this function when no arguments should be
 // attached to an expression, otherwise use the function AppendConditions.
-func (ids identifiers) AppendColumnsAliases(isUnsafe bool, columns ...string) identifiers {
+func (idc ids) AppendColumnsAliases(isUnsafe bool, columns ...string) ids {
 	if (len(columns) % 2) == 1 {
 		// A programmer made an error
 		panic(errors.NewMismatchf("[dml] Expecting a balanced slice! Got: %v", columns))
 	}
-	if cap(ids) == 0 {
-		ids = make(identifiers, 0, len(columns)/2)
+	if cap(idc) == 0 {
+		idc = make(ids, 0, len(columns)/2)
 	}
 
 	for i := 0; i < len(columns); i = i + 2 {
-		id := identifier{Name: columns[i], Aliased: columns[i+1]}
+		id := id{Name: columns[i], Aliased: columns[i+1]}
 		if isUnsafe && isValidIdentifier(id.Name) != 0 {
 			id.Expression = id.Name
 			id.Name = ""
 		}
-		ids = append(ids, id)
+		idc = append(idc, id)
 	}
-	return ids
+	return idc
 }
 
 // AppendConditions adds an expression with arguments. SubSelects are not yet
 // supported. You should use this function when arguments should be attached to
 // the expression, otherwise use the function AppendColumns*.
-func (ids identifiers) AppendConditions(expressions Conditions, args Arguments) (identifiers, Arguments) {
+func (idc ids) AppendConditions(expressions Conditions, args Arguments) (ids, Arguments) {
 	for _, e := range expressions {
-		idf := identifier{Name: e.Left, Aliased: e.Aliased}
+		idf := id{Name: e.Left, Aliased: e.Aliased}
 		if e.IsLeftExpression {
 			idf.Expression = idf.Name
 			idf.Name = ""
 		}
 
-		ids = append(ids, idf)
+		idc = append(idc, idf)
 		if e.Right.Argument.isSet {
 			args = append(args, e.Right.Argument)
 		}
 		args = append(args, e.Right.Arguments...)
 	}
-	return ids, args
+	return idc, args
 }
 
 // MysqlQuoter implements Mysql-specific quoting
