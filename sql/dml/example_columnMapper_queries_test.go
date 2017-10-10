@@ -144,3 +144,29 @@ func ExampleColumnMapper_insertEntitiesWithoutColumns() {
 	//Gopher',7,47.11,'1FE9983E|28E76FBC'),(12,'Fung Go
 	//Roo',7,28.94,'4FE7787E|15E59FBB|794EFDE8'),(13,'John Doe',6,138.54,'')
 }
+
+// ExampleColumnMapper_selectSalesOrdersFromSpecificCustomers this query should
+// return all sales orders from different customers which are loaded within a
+// collection. The challenge depict to map the customer_entity.entity_id column
+// to the sales_order_entity.customer_id column.
+func ExampleColumnMapper_selectSalesOrdersFromSpecificCustomers() {
+
+	// Column `customer_id` has been hard coded into the switch statement of the
+	// ColumnMapper in customerCollection and customerEntity. `customer_id` acts
+	// as an alias to `entity_id`.
+	q := dml.NewSelect("entity_id", "status", "increment_id", "grand_total", "tax_total").From("sales_order_entity").
+		Where(dml.Column("customer_id").In().PlaceHolder()).BindRecord(
+		dml.Qualify("", cmCustomers),
+	)
+
+	writeToSQLAndInterpolate(q)
+	// Output:
+	//Prepared Statement:
+	//SELECT `entity_id`, `status`, `increment_id`, `grand_total`, `tax_total` FROM
+	//`sales_order_entity` WHERE (`customer_id` IN (?))
+	//Arguments: [11 12 13]
+	//
+	//Interpolated Statement:
+	//SELECT `entity_id`, `status`, `increment_id`, `grand_total`, `tax_total` FROM
+	//`sales_order_entity` WHERE (`customer_id` IN (11,12,13))
+}

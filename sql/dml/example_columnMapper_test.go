@@ -69,7 +69,7 @@ func (p *customerEntity) MapColumns(cm *dml.ColumnMap) error {
 	}
 	for cm.Next() {
 		switch c := cm.Column(); c {
-		case "entity_id":
+		case "entity_id", "customer_id": // customer_id is an alias
 			cm.Uint64(&p.EntityID)
 		case "firstname":
 			cm.String(&p.Firstname)
@@ -116,7 +116,7 @@ func (cc *customerCollection) MapColumns(cm *dml.ColumnMap) error {
 	case dml.ColumnMapCollectionReadSet:
 		for cm.Next() {
 			switch c := cm.Column(); c {
-			case "entity_id":
+			case "entity_id", "customer_id":
 				cm.Args = cm.Args.Uint64s(cc.EntityIDs()...)
 			case "firstname":
 				cm.Args = cm.Args.Strings(cc.Firstnames()...)
