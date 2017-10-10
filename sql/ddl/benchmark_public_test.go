@@ -153,7 +153,7 @@ func BenchmarkColumnsJoinFields(b *testing.B) {
 }
 
 var benchmarkLoadColumns map[string]ddl.Columns
-var benchmarkLoadColumnsHashWant = []byte{0x95, 0x7d, 0x84, 0x3c, 0x1f, 0x8, 0x94, 0x2e}
+var benchmarkLoadColumnsHashWant = []byte{0x54, 0xb, 0x1f, 0x62, 0x99, 0x74, 0x65, 0xd1}
 
 func BenchmarkLoadColumns(b *testing.B) {
 	const tn = "eav_attribute"
