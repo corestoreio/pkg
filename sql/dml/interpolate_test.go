@@ -115,7 +115,7 @@ func TestInterpolateErrors(t *testing.T) {
 			Int64(3).Int64(-3).
 			Uint64(7).
 			Float64s(3.5, 4.4995)
-		assert.Exactly(t, "[dml] Arguments are imbalanced. Argument Index 4 is greater than argument count 3", ip.String())
+		assert.Exactly(t, "[dml] Interpolate: Arguments are imbalanced. Argument Index 4 is greater than argument count 3", ip.String())
 	})
 }
 

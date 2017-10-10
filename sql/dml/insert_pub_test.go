@@ -60,6 +60,7 @@ func (sr someRecord) MapColumns(cm *dml.ColumnMap) error {
 
 func TestInsert_Bind(t *testing.T) {
 	t.Parallel()
+
 	objs := []someRecord{{1, 88, false}, {2, 99, true}, {3, 101, true}}
 	wantArgs := []interface{}{int64(1), int64(88), false, int64(2), int64(99), true, int64(3), int64(101), true, int64(99)}
 
@@ -78,7 +79,7 @@ func TestInsert_Bind(t *testing.T) {
 			wantArgs...,
 		)
 	})
-	t.Run("without columns, all columns requested", func(t *testing.T) {
+	t.Run("without columns, all columns requested, with AddOnDuplicateKey", func(t *testing.T) {
 		compareToSQL(t,
 			dml.NewInsert("a").
 				SetRecordValueCount(3).
@@ -92,6 +93,24 @@ func TestInsert_Bind(t *testing.T) {
 			"INSERT INTO `a` VALUES (1,88,0),(2,99,1),(3,101,1) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
 			wantArgs...,
 		)
+	})
+	t.Run("without columns, all columns requested", func(t *testing.T) {
+
+		customers := []*customerEntity{
+			{EntityID: 11, Firstname: "Karl Gopher", StoreID: 0x7, LifetimeSales: dml.MakeNullFloat64(47.11), VoucherCodes: exampleStringSlice{"1FE9983E", "28E76FBC"}},
+			{EntityID: 12, Firstname: "Fung Go Roo", StoreID: 0x7, LifetimeSales: dml.MakeNullFloat64(28.94), VoucherCodes: exampleStringSlice{"4FE7787E", "15E59FBB", "794EFDE8"}},
+			{EntityID: 13, Firstname: "John Doe", StoreID: 0x6, LifetimeSales: dml.MakeNullFloat64(138.54), VoucherCodes: exampleStringSlice{""}},
+		}
+
+		compareToSQL(t,
+			dml.NewInsert("customer_entity").
+				SetRecordValueCount(5). // mandatory because no columns provided!
+				BindRecord(customers[0], customers[1], customers[2]).Interpolate(),
+			nil,
+			"INSERT INTO `customer_entity` VALUES (11,'Karl Gopher',7,47.11,'1FE9983E|28E76FBC'),(12,'Fung Go Roo',7,28.94,'4FE7787E|15E59FBB|794EFDE8'),(13,'John Doe',6,138.54,'')",
+			"",
+		)
+
 	})
 	t.Run("column not found", func(t *testing.T) {
 		objs := []someRecord{{1, 88, false}, {2, 99, true}}

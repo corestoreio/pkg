@@ -22,42 +22,7 @@ import (
 
 	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/csfw/util/strs"
-	"github.com/corestoreio/errors"
 )
-
-// iFaceToArgs unpacks the interface and creates an Argument slice. Just a
-// helper function for the examples.
-func iFaceToArgs(values ...interface{}) dml.Arguments {
-	args := make(dml.Arguments, 0, len(values))
-	for _, val := range values {
-		switch v := val.(type) {
-		case float64:
-			args = args.Float64(v)
-		case int64:
-			args = args.Int64(v)
-		case int:
-			args = args.Int(v)
-			args = args.Int(v)
-		case bool:
-			args = args.Bool(v)
-		case string:
-			args = args.String(v)
-		case []byte:
-			args = args.Bytes(v)
-		case time.Time:
-			args = args.Time(v)
-		case *time.Time:
-			if v != nil {
-				args = args.Time(*v)
-			}
-		case nil:
-			args = args.Null()
-		default:
-			panic(errors.NewNotSupportedf("[dml] iFaceToArgs type %#v not yet supported", v))
-		}
-	}
-	return args
-}
 
 func writeToSQLAndInterpolate(qb dml.QueryBuilder) {
 	sqlStr, args, err := qb.ToSQL()
@@ -74,21 +39,17 @@ func writeToSQLAndInterpolate(qb dml.QueryBuilder) {
 	if len(args) == 0 {
 		return
 	}
-	// iFaceToArgs is a hacky way, but works for examples, not in production!
-	sqlStr = dml.Interpolate(sqlStr).ArgUnions(iFaceToArgs(args...)).String()
-	fmt.Println("Interpolated Statement:")
-	strs.FwordWrap(os.Stdout, sqlStr, 80)
-}
 
-func writeToSQL(text string, qb dml.QueryBuilder) {
-	sqlStr, _, err := qb.ToSQL()
+	qb, reset := enableInterpolate(qb)
+	defer reset()
+
+	sqlStr, _, err = qb.ToSQL()
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		return
 	}
-	fmt.Println(text, "Statement:")
+	fmt.Println("Interpolated Statement:")
 	strs.FwordWrap(os.Stdout, sqlStr, 80)
-	fmt.Print("\n")
 }
 
 func ExampleNewInsert() {

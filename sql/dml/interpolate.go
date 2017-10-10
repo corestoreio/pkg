@@ -247,7 +247,7 @@ func writeInterpolate(buf *bytes.Buffer, sql []byte, args Arguments) error {
 				phCounter = 0 // next argument set starts
 				argIndex++
 				if argIndex >= len(args) {
-					return errors.NewNotValidf("[dml] Arguments are imbalanced. Argument Index %d is greater than argument count %d", argIndex, len(args)-1)
+					return errors.NewNotValidf("[dml] Interpolate: Arguments are imbalanced. Argument Index %d is greater than argument count %d", argIndex, len(args)-1)
 				}
 				argLength = 1
 				if args[argIndex].isSet {
@@ -284,7 +284,7 @@ func writeInterpolate(buf *bytes.Buffer, sql []byte, args Arguments) error {
 	}
 
 	if phTotals != argCount {
-		return errors.NewNotValidf("[dml] args are imbalanced. Placeholders: %d Current argument count: %d or %d", phTotals, argCount, len(args))
+		return errors.NewNotValidf("[dml] Interpolate: Arguments are imbalanced. Placeholder count: %d. Current argument count: %d or %d", phTotals, argCount, len(args))
 	}
 	return nil
 }

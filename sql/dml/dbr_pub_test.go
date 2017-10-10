@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"fmt"
 	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
@@ -117,31 +118,8 @@ func compareToSQL(
 		return
 	}
 
-	// If you care regarding the duplication ... send us a PR ;-)
-	// Enables Interpolate feature and resets it after the test has been
-	// executed.
-	switch dml := qb.(type) {
-	case *dml.Delete:
-		dml.Interpolate()
-		defer func() { dml.IsInterpolate = false }()
-	case *dml.Update:
-		dml.Interpolate()
-		defer func() { dml.IsInterpolate = false }()
-	case *dml.Insert:
-		dml.Interpolate()
-		defer func() { dml.IsInterpolate = false }()
-	case *dml.Select:
-		dml.Interpolate()
-		defer func() { dml.IsInterpolate = false }()
-	case *dml.Union:
-		dml.Interpolate()
-		defer func() { dml.IsInterpolate = false }()
-	case *dml.With:
-		dml.Interpolate()
-		defer func() { dml.IsInterpolate = false }()
-	default:
-		t.Fatalf("Type %#v not (yet) supported.", qb)
-	}
+	qb, reset := enableInterpolate(qb)
+	defer reset()
 
 	sqlStr, args, err = qb.ToSQL()
 	require.Nil(t, args, "Arguments should be nil when the SQL string gets interpolated")
@@ -151,4 +129,30 @@ func compareToSQL(
 		require.True(t, wantErr(err), "%+v")
 	}
 	require.Equal(t, wantSQLInterpolated, sqlStr, "Interpolated SQL strings do not match")
+}
+
+func enableInterpolate(qb dml.QueryBuilder) (_ dml.QueryBuilder, reset func()) {
+	switch cqb := qb.(type) {
+	case *dml.Delete:
+		cqb.Interpolate()
+		reset = func() { cqb.IsInterpolate = false }
+	case *dml.Update:
+		cqb.Interpolate()
+		reset = func() { cqb.IsInterpolate = false }
+	case *dml.Insert:
+		cqb.Interpolate()
+		reset = func() { cqb.IsInterpolate = false }
+	case *dml.Select:
+		cqb.Interpolate()
+		reset = func() { cqb.IsInterpolate = false }
+	case *dml.Union:
+		cqb.Interpolate()
+		reset = func() { cqb.IsInterpolate = false }
+	case *dml.With:
+		cqb.Interpolate()
+		reset = func() { cqb.IsInterpolate = false }
+	default:
+		panic(fmt.Sprintf("Type %#v not (yet) supported.", qb))
+	}
+	return qb, reset
 }
