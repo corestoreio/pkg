@@ -148,6 +148,11 @@ type ColumnMapper interface {
 	MapColumns(rc *ColumnMap) error
 }
 
+// Maybe add the following functions to ColumnMapper. Mostly useful
+// when dealing with INSERT statements.
+//FieldCount() int
+//Length() int
+
 // ColumnMap takes care that the table/view/identifiers are getting properly
 // mapped to ColumnMapper interface. ColumnMap has two run modes either collect
 // arguments from a type for running a SQL query OR to convert the sql.RawBytes

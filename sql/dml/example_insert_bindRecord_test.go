@@ -73,7 +73,7 @@ func ExampleInsert_BindRecord() {
 	writeToSQLAndInterpolate(i)
 
 	fmt.Print("\n\n")
-	i = dml.NewInsert("catalog_product_entity").SetRecordValueCount(5).BindRecord(objs[0]).BindRecord(objs[1])
+	i = dml.NewInsert("catalog_product_entity").SetRecordPlaceHolderCount(5).BindRecord(objs[0]).BindRecord(objs[1])
 	writeToSQLAndInterpolate(i)
 
 	// Output:

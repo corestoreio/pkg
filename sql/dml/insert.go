@@ -45,10 +45,10 @@ type Insert struct {
 	RowCount int // See SetRowCount()
 
 	Records []ColumnMapper
-	// RecordValueCount defines the number of place holders for each value
-	// within the brackets for each set. Must only be set when Records are set
+	// RecordPlaceHolderCount defines the number of place holders for each set
+	// within the brackets. Must only be set when Records have been applied
 	// and `Columns` field has been omitted.
-	RecordValueCount int
+	RecordPlaceHolderCount int
 	// Select used to create an "INSERT INTO `table` SELECT ..." statement.
 	Select *Select
 
@@ -160,9 +160,9 @@ func (b *Insert) Replace() *Insert {
 	return b
 }
 
-// AddColumns appends columns and increases the `RecordValueCount` variable.
+// AddColumns appends columns and increases the `RecordPlaceHolderCount` variable.
 func (b *Insert) AddColumns(columns ...string) *Insert {
-	b.RecordValueCount += len(columns)
+	b.RecordPlaceHolderCount += len(columns)
 	b.Columns = append(b.Columns, columns...)
 	return b
 }
@@ -215,14 +215,14 @@ func (b *Insert) BindRecord(recs ...ColumnMapper) *Insert {
 	return b
 }
 
-// SetRecordValueCount number of expected values within each set. Must be
-// applied if a call to AddColumns has been omitted and BindRecord gets called
-// or Records gets set in a different way.
+// SetRecordPlaceHolderCount number of expected place holders within each set.
+// Must be applied if a call to AddColumns has been omitted and BindRecord gets
+// called or Records gets set in a different way.
 //		INSERT INTO tableX (?,?,?)
-// SetRecordValueCount would now be 3 because of the three place holders.
-func (b *Insert) SetRecordValueCount(valueCount int) *Insert {
+// SetRecordPlaceHolderCount would now be 3 because of the three place holders.
+func (b *Insert) SetRecordPlaceHolderCount(valueCount int) *Insert {
 	// maybe we can do better and remove this method ...
-	b.RecordValueCount = valueCount
+	b.RecordPlaceHolderCount = valueCount
 	return b
 }
 
@@ -392,8 +392,8 @@ func (b *Insert) toSQL(buf *bytes.Buffer) error {
 		}
 	} else {
 		argCount0 = len(b.Columns)
-		if b.RecordValueCount > 0 {
-			argCount0 = b.RecordValueCount
+		if b.RecordPlaceHolderCount > 0 {
+			argCount0 = b.RecordPlaceHolderCount
 		}
 	}
 
@@ -459,7 +459,7 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 		return nil, nil
 	}
 
-	argCount0 := b.RecordValueCount
+	argCount0 := b.RecordPlaceHolderCount
 	if len(b.Values) > 0 && len(b.Columns) == 0 {
 		argCount0 = len(b.Values[0])
 	}
@@ -487,7 +487,7 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 			return nil, errors.WithStack(err)
 		}
 		if addedArgs := len(cm.Args) - alBefore; argCount0 > 0 && addedArgs%argCount0 != 0 {
-			return nil, errors.NewMismatchf("[dml] Insert.appendArgs RecordValueCount(%d) does not match the number of assembled arguments (%d)", b.RecordValueCount, addedArgs)
+			return nil, errors.NewMismatchf("[dml] Insert.appendArgs RecordPlaceHolderCount(%d) does not match the number of assembled arguments (%d)", b.RecordPlaceHolderCount, addedArgs)
 		}
 	}
 	args = cm.Args
@@ -542,7 +542,7 @@ func (b *Insert) Prepare(ctx context.Context) (*StmtInsert, error) {
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	cap := len(b.Columns) * b.RecordValueCount
+	cap := len(b.Columns) * b.RecordPlaceHolderCount
 	return &StmtInsert{
 		StmtBase: StmtBase{
 			id:        b.id,

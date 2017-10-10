@@ -82,7 +82,7 @@ func TestInsert_Bind(t *testing.T) {
 	t.Run("without columns, all columns requested, with AddOnDuplicateKey", func(t *testing.T) {
 		compareToSQL(t,
 			dml.NewInsert("a").
-				SetRecordValueCount(3).
+				SetRecordPlaceHolderCount(3).
 				BindRecord(objs[0]).BindRecord(objs[1], objs[2]).
 				AddOnDuplicateKey(
 					dml.Column("something_id").Int64(99),
@@ -104,7 +104,7 @@ func TestInsert_Bind(t *testing.T) {
 
 		compareToSQL(t,
 			dml.NewInsert("customer_entity").
-				SetRecordValueCount(5). // mandatory because no columns provided!
+				SetRecordPlaceHolderCount(5). // mandatory because no columns provided!
 				BindRecord(customers[0], customers[1], customers[2]).Interpolate(),
 			nil,
 			"INSERT INTO `customer_entity` VALUES (11,'Karl Gopher',7,47.11,'1FE9983E|28E76FBC'),(12,'Fung Go Roo',7,28.94,'4FE7787E|15E59FBB|794EFDE8'),(13,'John Doe',6,138.54,'')",

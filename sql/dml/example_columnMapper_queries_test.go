@@ -127,11 +127,29 @@ func ExampleColumnMapper_insertEntitiesWithColumns() {
 func ExampleColumnMapper_insertEntitiesWithoutColumns() {
 
 	q := dml.NewInsert("customer_entity").
-		// SetRecordValueCount mandatory because no columns provided!
+		// SetRecordPlaceHolderCount mandatory because no columns provided!
 		// customerEntity has five fields and all fields are requested. For
 		// now a hard coded 5.
-		SetRecordValueCount(5).
+		SetRecordPlaceHolderCount(5).
 		BindRecord(cmCustomers.Data[0], cmCustomers.Data[1], cmCustomers.Data[2])
+
+	writeToSQLAndInterpolate(q)
+	// Output:
+	//Prepared Statement:
+	//INSERT INTO `customer_entity` VALUES (?,?,?,?,?),(?,?,?,?,?),(?,?,?,?,?)
+	//Arguments: [11 Karl Gopher 7 47.11 1FE9983E|28E76FBC 12 Fung Go Roo 7 28.94 4FE7787E|15E59FBB|794EFDE8 13 John Doe 6 138.54 ]
+	//
+	//Interpolated Statement:
+	//INSERT INTO `customer_entity` VALUES (11,'Karl
+	//Gopher',7,47.11,'1FE9983E|28E76FBC'),(12,'Fung Go
+	//Roo',7,28.94,'4FE7787E|15E59FBB|794EFDE8'),(13,'John Doe',6,138.54,'')
+}
+
+func ExampleColumnMapper_insertCollectionWithoutColumns() {
+
+	q := dml.NewInsert("customer_entity"). //AddColumns("firstname", "lifetime_sales", "store_id", "voucher_codes").
+						SetRecordPlaceHolderCount(5).
+						SetRowCount(len(cmCustomers.Data)).BindRecord(cmCustomers)
 
 	writeToSQLAndInterpolate(q)
 	// Output:
