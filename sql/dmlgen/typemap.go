@@ -15,15 +15,18 @@
 package dmlgen
 
 import (
-	"github.com/corestoreio/csfw/sql/ddl"
-	"github.com/corestoreio/errors"
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/corestoreio/csfw/sql/ddl"
+	"github.com/corestoreio/errors"
 )
 
 const goTypeOptions = 4
 
+// These variables are mapping the un/signed and null/not-null types to the
+// appropriate Go type.
 var (
 	goTypeInt64 = [...]string{
 		"dml.NullInt64", // unsigned null
@@ -75,6 +78,7 @@ var (
 	}
 )
 
+// mysqlTypeToGo maps the MySql/MariaDB field type to the correct Go type.
 var mysqlTypeToGo = map[string][goTypeOptions]string{
 	"int":        goTypeInt,
 	"bigint":     goTypeInt64,

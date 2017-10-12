@@ -40,5 +40,7 @@ CREATE TABLE `dmlgen_types` (
   col_varchar_1             VARCHAR(1)           NOT NULL           DEFAULT '0',
   col_varchar_100           VARCHAR(100)                            DEFAULT NULL,
   col_varchar_16            VARCHAR(16)          NOT NULL           DEFAULT 'de_DE',
+  col_char_1                char(21)                                DEFAULT NULL,
+  col_char_2                char(17)             NOT NULL DEFAULT 'xchar',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

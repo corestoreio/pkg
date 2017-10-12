@@ -17,136 +17,90 @@ package dmlgen
 const TplEntity = `// {{.Entity}} represents a type for DB table {{.Tick}}{{.TableName}}{{.Tick}}
 // Generated via dmlgen.
 type {{.Entity}} struct {
-	rc dml.RowConvert
 	{{ range .Columns }}{{ToGoCamelCase .Field}} {{MySQLToGoType .}} {{ $.Tick }}json:"{{.Field}},omitempty"{{ $.Tick }} {{.GoComment}}
 {{ end }} }
+
+// New{{.Entity}} creates a new pointer with pre-initialized fields.
+func New{{.Entity}}() *{{.Entity}} {
+	return &{{.Entity}}{}
+}
 
 // AssignLastInsertID updates the increment ID field with the last inserted ID
 // from an INSERT operation. Implements dml.InsertIDAssigner
 func (e *{{.Entity}}) AssignLastInsertID(id int64) {
-	{{ range .Columns }}{{if .IsPK}} e.{{ToGoCamelCase .Field}} = {{MySQLToGoType .}}(id) {{end}}
-{{ end }}
+	{{ range .Columns }}{{if .IsPK}} e.{{ToGoCamelCase .Field}} = {{MySQLToGoType .}}(id) {{end}} {{ end }}
 }
 
-// RowScan loads a single row from a SELECT statement returning only one row.
-func (e *{{.Entity}}) RowScan(r *sql.Rows) error {
-	if err := e.rc.Scan(r); err != nil {
-		return errors.WithStack(err)
+// MapColumns implements interface ColumnMapper only partially.
+func (e *{{.Entity}}) MapColumns(cm *dml.ColumnMap) error {
+	if cm.Mode() == dml.ColumnMapEntityReadAll {
+		return cm{{range .Columns}}.{{GoTypeFuncName .}}(&e.{{ToGoCamelCase .Field}}){{end}}.Err()
 	}
-	return e.assign(&e.rc)
-}
-
-func (e *{{.Entity}}) assign(rc *dml.RowConvert) (err error) {
-	for i, c := range rc.Columns {
-		b := rc.Index(i)
-		switch c { {{ range .Columns }}
-			case "{{.Field }}":
-				e.{{ToGoCamelCase .Field}}, err = b.{{ GoTypeFuncName . }}(){{end}}
+	for cm.Next() {
+		switch c := cm.Column(); c { {{range .Columns}}
+		case "{{.Field }}"{{ range ColumnAliases .Field}},"{{.}}"{{end}}:
+			cm.{{GoTypeFuncName .}}(&e.{{ToGoCamelCase .Field}}){{end}}
 		default:
-			return errors.NewNotFoundf("[{{.Package}}] Column %q not found", c)
-		}
-		if err != nil {
-			return errors.WithStack(err)
+			return errors.NewNotFoundf("[{{.Package}}] {{.Entity}} Column %q not found", c)
 		}
 	}
-	return nil
+	return errors.WithStack(cm.Err())
 }
-
-func (e *{{.Entity}}) AppendArgs(args dml.Arguments, columns []string) (_ dml.Arguments, err error) {
-	l := len(columns)
-	if l == 1 {
-		return e.appendArgs(args, columns[0])
-	}
-	if l == 0 {
-		// This case gets executed when an INSERT statement doesn't contain any
-		// columns.
-		return args{{range .Columns}}.
-			{{GoTypeFuncName .}}(e.{{ToGoCamelCase .Field}}){{end}},
-			nil
-	}
-	// This case gets executed when an INSERT statement requests specific
-	// columns.
-	for _, col := range columns {
-		if args, err = e.appendArgs(args, col); err != nil {
-			return nil, errors.WithStack(err)
-		}
-	}
-	return args, err
-}
-
-func (e *{{.Entity}}) appendArgs(args dml.Arguments, column string) (_ dml.Arguments, err error) {
-	switch column { {{range .Columns}}
-	case "{{.Field }}":
-		args = args.{{GoTypeFuncName .}}(e.{{ToGoCamelCase .Field}}){{end}}
-	default:
-		return nil, errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", column)
-	}
-	return args, err
-}
-
 `
 
 const TplCollection = `// {{.Collection}} represents a collection type for DB table {{ .TableName }}
 // Generated via dmlgen.
 type {{.Collection}} struct {
-	rc        	   dml.RowConvert
 	Data           []*{{.Entity}}
-	EventAfterScan []func(*{{.Entity}})
+	BeforeMapColumns	func(uint64, *{{.Entity}}) error
+	AfterMapColumns 	func(uint64, *{{.Entity}}) error
 }
 
-func (c *{{.Collection}}) AppendArgs(args Arguments, columns []string) (_ Arguments, err error) {
-	if len(columns) != 1 {
-		// INSERT STATEMENT requesting all columns or specific columns
-		for _, p := range c.Data {
-			if args, err = p.AppendArgs(args, columns); err != nil {
-				return nil, errors.WithStack(err)
+// MapColumns implements dml.ColumnMapper interface
+func (cc *{{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
+	switch m := cm.Mode(); m {
+	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
+		for i, p := range cc.Data {
+			if err := cc.BeforeMapColumns(uint64(i), p); err != nil {
+				return errors.WithStack(err)
+			}
+			if err := p.MapColumns(cm); err != nil {
+				return errors.WithStack(err)
+			}
+			if err := cc.AfterMapColumns(uint64(i), p); err != nil {
+				return errors.WithStack(err)
 			}
 		}
-		return args, err
-	}
-
-	// SELECT, DELETE or UPDATE or INSERT with one column
-	column := columns[0]
-	var ids []uint64
-	var names []string
-	var emails []NullString
-	for _, p := range c.Data {
-		switch column {
-		case "id":
-			ids = append(ids, p.ID)
-		case "name":
-			names = append(names, p.Name)
-		case "email":
-			emails = append(emails, p.Email)
-			// case "key": don't add key, it triggers a test failure condition
-		default:
-			return nil, errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", column)
+	case dml.ColumnMapScan:
+		if cm.Count == 0 {
+			cc.Data = cc.Data[:0]
 		}
-	}
+		p := New{{.Entity}}()
 
-	switch column {
-	case "id":
-		args = args.Uint64s(ids...)
-	case "name":
-		args = args.Strings(names...)
-	case "email":
-		args = args.NullString(emails...)
-	}
+		if err := cc.BeforeMapColumns(cm.Count, p); err != nil {
+			return errors.WithStack(err)
+		}
+		if err := p.MapColumns(cm); err != nil {
+			return errors.WithStack(err)
+		}
+		if err := cc.AfterMapColumns(cm.Count, p); err != nil {
+			return errors.WithStack(err)
+		}
 
-	return args, nil
-}
-
-func (c *{{.Collection}}) RowScan(r *sql.Rows) error {
-	if err := c.rc.Scan(r); err != nil {
-		return errors.WithStack(err)
+		cc.Data = append(cc.Data, p)
+	case dml.ColumnMapCollectionReadSet:
+		for cm.Next() {
+			switch c := cm.Column(); c { {{range .Columns}}
+			case "{{.Field }}"{{ range ColumnAliases .Field}},"{{.}}"{{end}}:
+				cm.Args = cm.Args.{{GoTypeFuncName .}}(cc.{{ToGoCamelCase .Field}}s()...){{end}}
+			default:
+				return errors.NewNotFoundf("[{{.Package}}] {{.Collection}} Column %q not found", c)
+			}
+		}
+	default:
+		return errors.NewNotSupportedf("[dml] Unknown Mode: %q", string(m))
 	}
-
-	p := new(dmlPerson)
-	if err := p.assign(&c.rc); err != nil {
-		return errors.WithStack(err)
-	}
-	c.Data = append(c.Data, p)
-	return nil
+	return cm.Err()
 }
 
 `

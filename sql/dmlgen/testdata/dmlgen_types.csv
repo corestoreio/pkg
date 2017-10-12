@@ -39,3 +39,5 @@
 "dmlgen_types","col_varchar_1",38,"'0'","NO","varchar",1,NULL,NULL,"varchar(1)","","",""
 "dmlgen_types","col_varchar_100",39,"NULL","YES","varchar",100,NULL,NULL,"varchar(100)","","",""
 "dmlgen_types","col_varchar_16",40,"'de_DE'","NO","varchar",16,NULL,NULL,"varchar(16)","","",""
+"dmlgen_types","col_char_1",41,"NULL","YES","char",21,NULL,NULL,"char(21)","","",""
+"dmlgen_types","col_char_2",42,"'xchar'","NO","char",17,NULL,NULL,"char(17)","","",""

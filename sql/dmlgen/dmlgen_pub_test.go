@@ -17,14 +17,15 @@ package dmlgen_test
 import (
 	"context"
 	"fmt"
+	"io"
+	"os"
+	"testing"
+
 	"github.com/corestoreio/csfw/sql/ddl"
 	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/csfw/sql/dmlgen"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/stretchr/testify/require"
-	"io"
-	"os"
-	"testing"
 )
 
 /*
@@ -56,7 +57,7 @@ ORDER BY COLUMN_TYPE
 
 var _ io.WriterTo = (*dmlgen.Table)(nil)
 
-func writeHeader(w io.Writer, imports []string) {
+func writeGoFileHeader(w io.Writer, imports []string) {
 	w.Write([]byte("package testdata\n\nimport (\n"))
 	for _, i := range imports {
 		fmt.Fprintf(w, "\t%q\n", i)
@@ -67,7 +68,7 @@ func writeHeader(w io.Writer, imports []string) {
 func TestTable_WriteTo(t *testing.T) {
 	t.Parallel()
 
-	const outFile = "testdata/core_config_data.go"
+	const outFile = "testdata/core_config_data.gen.go"
 
 	os.Remove(outFile)
 
@@ -81,6 +82,9 @@ func TestTable_WriteTo(t *testing.T) {
 			&ddl.Column{Field: "path", Pos: 4, Default: dml.MakeNullString("'general'"), Null: "NO", DataType: "varchar", CharMaxLength: dml.MakeNullInt64(255), ColumnType: "varchar(255)", Comment: "Config Path"},
 			&ddl.Column{Field: "value", Pos: 5, Default: dml.MakeNullString("NULL"), Null: "YES", DataType: "text", CharMaxLength: dml.MakeNullInt64(65535), ColumnType: "text", Comment: "Config Value"},
 		},
+		ColumnAliases: map[string][]string{
+			"path": {"storage_location", "config_directory"}, // just some values
+		},
 	}
 	f, err := os.Create(outFile)
 	if err != nil {
@@ -88,11 +92,11 @@ func TestTable_WriteTo(t *testing.T) {
 	}
 	defer cstesting.Close(t, f)
 
-	writeHeader(f, dmlgen.Imports["table"])
+	writeGoFileHeader(f, dmlgen.Imports["table"])
 
 	_, err = tbl.WriteTo(f)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("%+v", err)
 	}
 }
 
@@ -109,7 +113,7 @@ func TestTable_WithAllTypes(t *testing.T) {
 	colMap, err := ddl.LoadColumns(context.Background(), db.DB, "dmlgen_types")
 	require.NoError(t, err)
 
-	const outFile = "testdata/dmlgen_types.go"
+	const outFile = "testdata/dmlgen_types.gen.go"
 	os.Remove(outFile)
 	f, err := os.Create(outFile)
 	if err != nil {
@@ -117,7 +121,7 @@ func TestTable_WithAllTypes(t *testing.T) {
 	}
 	defer cstesting.Close(t, f)
 
-	writeHeader(f, dmlgen.Imports["table"])
+	writeGoFileHeader(f, dmlgen.Imports["table"])
 	tbl := &dmlgen.Table{
 		Package: "testdata",
 		Name:    "dmlgen_types",

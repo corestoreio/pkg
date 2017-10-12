@@ -22,7 +22,8 @@ _testmain.go
 *.exe
 *.test
 
-*generated.go
+# CoreStore packages specific cspkg
+*.gen.go
 /tableToStruct
 /eavToStruct
 godepgraph.svg
