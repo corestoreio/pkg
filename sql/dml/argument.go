@@ -84,6 +84,8 @@ func (arg *argument) len() (l int) {
 		l = len(v)
 	case []uint64:
 		l = len(v)
+	case []uint:
+		l = len(v)
 	case []float64:
 		l = len(v)
 	case []bool:
@@ -131,6 +133,8 @@ func (arg argument) writeTo(w *bytes.Buffer, pos int) (err error) {
 		err = writeUint64(w, v)
 	case []uint64:
 		err = writeUint64(w, v[pos])
+	case []uint:
+		err = writeUint64(w, uint64(v[pos]))
 
 	case float64:
 		err = writeFloat64(w, v)
@@ -231,6 +235,8 @@ func (arg argument) GoString() string {
 		fmt.Fprintf(buf, ".Uint64(%d)", v)
 	case []uint64:
 		fmt.Fprintf(buf, ".Uint64s(%#v...)", v)
+	case []uint:
+		fmt.Fprintf(buf, ".Uints(%#v...)", v)
 
 	case float64:
 		fmt.Fprintf(buf, ".Float64(%f)", v)
@@ -437,10 +443,19 @@ func (a Arguments) Interfaces(args ...interface{}) []interface{} {
 			} else {
 				args = append(args, int64(vv))
 			}
+
 		case []uint64:
 			for _, v := range vv {
 				if v > maxInt64 {
 					args = append(args, strconv.AppendUint([]byte{}, v, 10))
+				} else {
+					args = append(args, int64(v))
+				}
+			}
+		case []uint:
+			for _, v := range vv {
+				if v > maxInt64 {
+					args = append(args, strconv.AppendUint([]byte{}, uint64(v), 10))
 				} else {
 					args = append(args, int64(v))
 				}
@@ -528,6 +543,7 @@ func (a Arguments) Ints(i ...int) Arguments                 { return a.add(i) }
 func (a Arguments) Int64(i int64) Arguments                 { return a.add(i) }
 func (a Arguments) Int64s(i ...int64) Arguments             { return a.add(i) }
 func (a Arguments) Uint(i uint) Arguments                   { return a.add(uint64(i)) }
+func (a Arguments) Uints(i ...uint) Arguments               { return a.add(i) }
 func (a Arguments) Uint64(i uint64) Arguments               { return a.add(i) }
 func (a Arguments) Uint64s(i ...uint64) Arguments           { return a.add(i) }
 func (a Arguments) Float64(f float64) Arguments             { return a.add(f) }
