@@ -14,7 +14,8 @@
 
 package dmlgen
 
-const TplEntity = `// {{.Entity}} represents a type for DB table {{.Tick}}{{.TableName}}{{.Tick}}
+// TplDBAC contains the template code = DataBaseAccessCode
+const TplDBAC = `// {{.Entity}} represents a type for DB table {{.Tick}}{{.TableName}}{{.Tick}}
 // Generated via dmlgen.
 type {{.Entity}} struct {
 	{{ range .Columns }}{{ToGoCamelCase .Field}} {{MySQLToGoType .}} {{ $.Tick }}json:"{{.Field}},omitempty"{{ $.Tick }} {{.GoComment}}
@@ -46,9 +47,13 @@ func (e *{{.Entity}}) MapColumns(cm *dml.ColumnMap) error {
 	}
 	return errors.WithStack(cm.Err())
 }
-`
 
-const TplCollection = `// {{.Collection}} represents a collection type for DB table {{ .TableName }}
+// Reset resets the struct to its empty fields. TODO implement.
+func (e *{{.Entity}}) Reset() *{{.Entity}} {
+	return e
+}
+
+// {{.Collection}} represents a collection type for DB table {{ .TableName }}
 // Generated via dmlgen.
 type {{.Collection}} struct {
 	Data           []*{{.Entity}}
@@ -56,18 +61,25 @@ type {{.Collection}} struct {
 	AfterMapColumns 	func(uint64, *{{.Entity}}) error
 }
 
+func (cc *{{.Collection}}) scanColumns(cm *dml.ColumnMap,e *{{.Entity}}, idx uint64) error {
+	if err := cc.BeforeMapColumns(idx, e); err != nil {
+		return errors.WithStack(err)
+	}
+	if err := e.MapColumns(cm); err != nil {
+		return errors.WithStack(err)
+	}
+	if err := cc.AfterMapColumns(idx, e); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
 // MapColumns implements dml.ColumnMapper interface
 func (cc *{{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
-		for i, p := range cc.Data {
-			if err := cc.BeforeMapColumns(uint64(i), p); err != nil {
-				return errors.WithStack(err)
-			}
-			if err := p.MapColumns(cm); err != nil {
-				return errors.WithStack(err)
-			}
-			if err := cc.AfterMapColumns(uint64(i), p); err != nil {
+		for i, e := range cc.Data {
+			if err := cc.scanColumns(cm, e, uint64(i)); err != nil {
 				return errors.WithStack(err)
 			}
 		}
@@ -75,24 +87,21 @@ func (cc *{{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
 		if cm.Count == 0 {
 			cc.Data = cc.Data[:0]
 		}
-		p := New{{.Entity}}()
-
-		if err := cc.BeforeMapColumns(cm.Count, p); err != nil {
+		e := New{{.Entity}}()
+		if err := cc.scanColumns(cm, e, cm.Count); err != nil {
 			return errors.WithStack(err)
 		}
-		if err := p.MapColumns(cm); err != nil {
-			return errors.WithStack(err)
-		}
-		if err := cc.AfterMapColumns(cm.Count, p); err != nil {
-			return errors.WithStack(err)
-		}
-
-		cc.Data = append(cc.Data, p)
+		cc.Data = append(cc.Data, e)
 	case dml.ColumnMapCollectionReadSet:
 		for cm.Next() {
-			switch c := cm.Column(); c { {{range .Columns}}
+			switch c := cm.Column(); c {
+			{{- range .SingleKeyColumns -}}
 			case "{{.Field }}"{{ range ColumnAliases .Field}},"{{.}}"{{end}}:
-				cm.Args = cm.Args.{{GoTypeFuncName .}}(cc.{{ToGoCamelCase .Field}}s()...){{end}}
+				cm.Args = cm.Args.{{GoTypeFuncName .}}s(cc.{{ToGoCamelCase .Field}}s()...)
+			{{- end}}
+			{{- range .DuplicateValueColumns}}
+			case "{{.Field }}"{{ range ColumnAliases .Field}},"{{.}}"{{end}}:
+				cm.Args = cm.Args.{{GoTypeFuncName .}}s(cc.{{ToGoCamelCase .Field}}s()...){{end}}
 			default:
 				return errors.NewNotFoundf("[{{.Package}}] {{.Collection}} Column %q not found", c)
 			}
@@ -102,5 +111,34 @@ func (cc *{{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
 	}
 	return cm.Err()
 }
+{{ range .SingleKeyColumns }}
+// {{ToGoCamelCase .Field}}s returns a slice or appends to a slice all values.
+func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{MySQLToGoType .}}) []{{MySQLToGoType .}} {
+	if ret == nil {
+		ret = make([]{{MySQLToGoType .}}, 0, len(cc.Data))
+	}
+	for _, e := range cc.Data {
+		ret = append(ret, e.{{ToGoCamelCase .Field}})
+	}
+	return ret
+} {{end}}
 
+{{- range .DuplicateValueColumns }}
+// {{ToGoCamelCase .Field}}s returns a slice or appends to a slice only unique
+// values.
+func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{MySQLToGoType .}}) []{{MySQLToGoType .}} {
+	if ret == nil {
+		ret = make([]{{MySQLToGoType .}}, 0, len(cc.Data))
+	}
+	// TODO: a reusable map and use different algorithms depending on the size
+	// of the cc.Data slice. Sometimes a for/for loop runs faster than a map.
+	dubCheck := make(map[{{MySQLToGoType .}}]struct{}, len(cc.Data))
+	for _, e := range cc.Data {
+		if _, ok := dubCheck[e.{{ToGoCamelCase .Field}}]; !ok {
+			ret = append(ret, e.{{ToGoCamelCase .Field}})
+			dubCheck[e.{{ToGoCamelCase .Field}}] = struct{}{}
+		}
+	}
+	return ret
+} {{end}}
 `

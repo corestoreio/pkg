@@ -15,13 +15,14 @@
 package dmlgen
 
 import (
+	"go/format"
+	"io"
+	"text/template"
+
 	"github.com/corestoreio/csfw/sql/ddl"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/strs"
 	"github.com/corestoreio/errors"
-	"go/format"
-	"io"
-	"text/template"
 )
 
 var Imports = map[string][]string{
@@ -44,6 +45,7 @@ type Table struct {
 	// The alias would be just: entity_id:[]string{"customer_id"}.
 	ColumnAliases map[string][]string
 	template.FuncMap
+	CharMaxLength int64 // default 256; all columns longer than 256 won't have a single function ...
 }
 
 // WriteTo implements io.WriterTo and writes the generated source code into w.
@@ -66,11 +68,7 @@ func (t *Table) WriteTo(w io.Writer) (n int64, err error) {
 		}
 	}
 
-	tplEntity, err := template.New("entity").Funcs(t.FuncMap).Parse(TplEntity)
-	if err != nil {
-		return 0, errors.WithStack(err)
-	}
-	tplCollection, err := template.New("collection").Funcs(t.FuncMap).Parse(TplCollection)
+	tplEntity, err := template.New("entity").Funcs(t.FuncMap).Parse(TplDBAC)
 	if err != nil {
 		return 0, errors.WithStack(err)
 	}
@@ -81,12 +79,14 @@ func (t *Table) WriteTo(w io.Writer) (n int64, err error) {
 	// to remove duplicate values.
 
 	data := struct {
-		Package    string
-		Collection string
-		Entity     string
-		TableName  string
-		Columns    ddl.Columns
-		Tick       string
+		Package               string
+		Collection            string
+		Entity                string
+		TableName             string
+		Columns               ddl.Columns
+		Tick                  string
+		SingleKeyColumns      ddl.Columns // contains a single PK and/or UNQ key
+		DuplicateValueColumns ddl.Columns // those columns have duplicate values
 	}{
 		Package:    t.Package,
 		Collection: strs.ToGoCamelCase(t.Name) + "Collection",
@@ -95,13 +95,33 @@ func (t *Table) WriteTo(w io.Writer) (n int64, err error) {
 		Columns:    t.Columns,
 		Tick:       "`",
 	}
+
+	if sk := t.Columns.PrimaryKeys(); len(sk) == 1 {
+		data.SingleKeyColumns = append(data.SingleKeyColumns, sk...)
+	} else {
+		data.DuplicateValueColumns = append(data.DuplicateValueColumns, sk...)
+	}
+	if sk := t.Columns.UniqueKeys(); len(sk) == 1 {
+		data.SingleKeyColumns = append(data.SingleKeyColumns, sk...)
+	} else {
+		data.DuplicateValueColumns = append(data.DuplicateValueColumns, sk...)
+	}
+
+	// possibility of duplicate entries in this slice.
+	data.DuplicateValueColumns = append(data.DuplicateValueColumns, t.Columns.ColumnsNoPK()...)
+
+	var charMaxLength int64 = 256
+	if t.CharMaxLength > 0 {
+		charMaxLength = t.CharMaxLength
+	}
+	data.DuplicateValueColumns = data.DuplicateValueColumns.Filter(func(c *ddl.Column) bool {
+		return !c.CharMaxLength.Valid || (c.CharMaxLength.Valid && c.CharMaxLength.Int64 < charMaxLength)
+	})
+
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 
 	if err := tplEntity.Execute(buf, data); err != nil {
-		return 0, errors.WithStack(err)
-	}
-	if err := tplCollection.Execute(buf, data); err != nil {
 		return 0, errors.WithStack(err)
 	}
 
