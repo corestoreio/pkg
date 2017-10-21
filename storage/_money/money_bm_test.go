@@ -20,38 +20,12 @@ import (
 	"github.com/corestoreio/csfw/storage/money"
 )
 
-type buf []byte
-
-// Write writes len(p) bytes from p to the Buffer.
-func (b *buf) Write(p []byte) (int, error) {
-	*b = append(*b, p...)
-	return len(p), nil
-}
-
-var benchBenchmarkNumberWriter string
-var bufferNumberWriter buf
-
-func Benchmark_NumberWriter(b *testing.B) {
-	var err error
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		c := money.New(money.WithPrecision(100)).Setf(-123456.789)
-		_, err = c.NumberWriter(&bufferNumberWriter)
-		if err != nil {
-			b.Error(err)
-		}
-		benchBenchmarkNumberWriter = string(bufferNumberWriter)
-		bufferNumberWriter = bufferNumberWriter[:0]
-	}
-}
-
 var benchmarkMoneyNewGetf float64
 
 func Benchmark_MoneyNewGetf(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		c := money.New(money.WithPrecision(100)).Setf(-123456.789)
+		c := money.New(-123456789, 3)
 		benchmarkMoneyNewGetf = c.Getf()
 	}
 }

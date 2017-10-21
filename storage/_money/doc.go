@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO: https://github.com/Rhymond/go-money
-
 /*
-Package money uses a fixed-length guard for precision arithmetic.
+Package money (deprecated) uses a fixed-length guard for precision arithmetic.
 Implements Un/Marshaller and Scan() method for database
 columns including null, optimized for decimal(12, 4) fields.
+
+=> Still rounding errors. Do not use this package
 
 Rounding is done on float64 to int64 by	the Rnd() function truncating
 at values less than (.5 + (1 / Guardf))	or greater than -(.5 + (1 / Guardf))

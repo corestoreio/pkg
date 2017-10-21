@@ -24,30 +24,19 @@ var (
 	nullString = []byte(`null`)
 )
 
-type (
-	// Encoder interface to encode money into bytes
-	Encoder interface {
-		Encode(*Money) ([]byte, error)
-	}
-	// Decoder interface to parse the byte slice into the money type.
-	Decoder interface {
-		Decode(*Money, []byte) error
-	}
-)
-
 // MarshalJSON generates JSON output depending on the Encoder.
 func (m Money) MarshalJSON() ([]byte, error) {
-	return m.Encode(&m)
+	return nil, nil
 }
 
 // UnmarshalJSON reads JSON and fills the money struct depending on the Decoder.
 func (m *Money) UnmarshalJSON(src []byte) error {
-	m.applyDefaults()
+
 	if src == nil {
 		m.m, m.Valid = 0, false
 		return nil
 	}
-	return m.Decode(m, src)
+	return nil
 }
 
 // Value implements the SQL driver Valuer interface.
@@ -62,7 +51,7 @@ func (m Money) Value() (driver.Value, error) {
 // Errors will be logged. Initial default settings are the guard and precision
 // value.
 func (m *Money) Scan(src interface{}) error {
-	m.applyDefaults()
+	// TODO type switch
 
 	if src == nil {
 		m.m, m.Valid = 0, false
