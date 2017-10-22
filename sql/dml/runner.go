@@ -441,6 +441,25 @@ func (b *ColumnMap) Float64(ptr *float64) *ColumnMap {
 	return b
 }
 
+func (b *ColumnMap) Decimal(ptr *Decimal) *ColumnMap {
+	if b.Args != nil {
+		if ptr == nil {
+			b.Args = b.Args.Null()
+		} else {
+			panic("TODO implement")
+			//b.Args = b.Args.Float64(*ptr)
+		}
+		return b
+	}
+	if b.scanErr == nil {
+		*ptr, b.scanErr = makeDecimal(b.current)
+		if b.scanErr != nil {
+			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		}
+	}
+	return b
+}
+
 // NullFloat64 reads a float64 value and appends it to the arguments slice or
 // assigns the float64 value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.

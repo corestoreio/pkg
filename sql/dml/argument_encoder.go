@@ -23,7 +23,8 @@ import (
 
 const argBytesCap = 8
 
-var bTextNull = []byte(`NULL`)
+var bTextNullUC = []byte(`NULL`)
+var bTextNullLC = []byte(`null`)
 
 // argEncoded multi dimensional and reusable data structure to encode primitive
 // types into byte slices and later write those byte slices somewhere into. The
@@ -100,9 +101,9 @@ func (ae argEncoded) appendNull() argEncoded {
 	c := ae.growOrNewContainer(1)
 	if cap(c[0]) >= nullLength {
 		c[0] = c[0][:nullLength]
-		copy(c[0], bTextNull)
+		copy(c[0], bTextNullUC)
 	} else {
-		c[0] = append(c[0], bTextNull...)
+		c[0] = append(c[0], bTextNullUC...)
 	}
 	return append(ae, c)
 }
@@ -219,7 +220,7 @@ func (ae argEncoded) appendNullString(args ...sql.NullString) argEncoded {
 		if a.Valid {
 			c[i] = append(c[i], []byte(a.String)...) // todo use copy
 		} else {
-			c[i] = append(c[i], bTextNull...) // todo use copy
+			c[i] = append(c[i], bTextNullUC...) // todo use copy
 		}
 	}
 	return append(ae, c)
@@ -231,7 +232,7 @@ func (ae argEncoded) appendNullFloat64(args ...sql.NullFloat64) argEncoded {
 		if a.Valid {
 			c[i] = strconv.AppendFloat(c[i], a.Float64, 'g', -1, 64)
 		} else {
-			c[i] = append(c[i], bTextNull...)
+			c[i] = append(c[i], bTextNullUC...)
 		}
 	}
 	return append(ae, c)
@@ -243,7 +244,7 @@ func (ae argEncoded) appendNullInt64(args ...sql.NullInt64) argEncoded {
 		if a.Valid {
 			c[i] = strconv.AppendInt(c[i], a.Int64, 10)
 		} else {
-			c[i] = append(c[i], bTextNull...)
+			c[i] = append(c[i], bTextNullUC...)
 		}
 	}
 	return append(ae, c)
@@ -259,7 +260,7 @@ func (ae argEncoded) appendNullBool(args ...sql.NullBool) argEncoded {
 			}
 			c[i] = append(c[i], val)
 		} else {
-			c[i] = append(c[i], bTextNull...)
+			c[i] = append(c[i], bTextNullUC...)
 		}
 	}
 	return append(ae, c)
@@ -271,7 +272,7 @@ func (ae argEncoded) appendNullTime(args ...NullTime) argEncoded {
 		if a.Valid {
 			c[i] = a.Time.AppendFormat(c[i], mysqlTimeFormat)
 		} else {
-			c[i] = append(c[i], bTextNull...)
+			c[i] = append(c[i], bTextNullUC...)
 		}
 	}
 	return append(ae, c)

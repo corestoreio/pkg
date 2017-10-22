@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"fmt"
+
 	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"

@@ -93,6 +93,7 @@ type baseTest struct {
 	NullString  dml.NullString
 	Time        time.Time
 	NullTime    dml.NullTime
+	Decimal     dml.Decimal
 }
 
 func (bt *baseTest) MapColumns(cm *dml.ColumnMap) error {
@@ -135,6 +136,8 @@ func (bt *baseTest) MapColumns(cm *dml.ColumnMap) error {
 			cm.Time(&bt.Time)
 		case "null_time":
 			cm.NullTime(&bt.NullTime)
+		case "decimal":
+			cm.Decimal(&bt.Decimal)
 		default:
 			return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", c)
 		}
@@ -199,6 +202,7 @@ func TestRowConvert(t *testing.T) {
 		"float64", "null_float64",
 		"uint", "uint8", "uint16", "uint32", "uint64",
 		"byte", "str", "null_string", "time", "null_time",
+		"decimal",
 	}
 
 	t.Run("scan with error", func(t *testing.T) {
@@ -207,7 +211,8 @@ func TestRowConvert(t *testing.T) {
 			1, 2, nil,
 			0.1, nil,
 			0, 8, 16, 32, 64,
-			nil, "", nil, time.Time{}, nil)
+			nil, "", nil, time.Time{}, nil,
+			nil)
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
 		tbl := new(baseTestCollection)
@@ -226,6 +231,7 @@ func TestRowConvert(t *testing.T) {
 			0, 8, 16, 32, 64,
 			"byte data", "I'm a string", nil,
 			now(), nil,
+			nil,
 		)
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
@@ -233,7 +239,7 @@ func TestRowConvert(t *testing.T) {
 		tbl.EventAfterScan = func(b *dml.ColumnMap, _ *baseTest) {
 			buf := new(bytes.Buffer)
 			require.NoError(t, b.Debug(buf))
-			assert.Exactly(t, "bool: \"1\"\nnull_bool: \"false\"\nint: \"-1\"\nint64: \"-64\"\nnull_int64: \"-128\"\nfloat64: \"0.1\"\nnull_float64: \"3.141\"\nuint: \"0\"\nuint8: \"8\"\nuint16: \"16\"\nuint32: \"32\"\nuint64: \"64\"\nbyte: \"byte data\"\nstr: \"I'm a string\"\nnull_string: <nil>\ntime: \"2006-01-02T15:04:05.000000002+00:00\"\nnull_time: <nil>", buf.String())
+			assert.Exactly(t, "bool: \"1\"\nnull_bool: \"false\"\nint: \"-1\"\nint64: \"-64\"\nnull_int64: \"-128\"\nfloat64: \"0.1\"\nnull_float64: \"3.141\"\nuint: \"0\"\nuint8: \"8\"\nuint16: \"16\"\nuint32: \"32\"\nuint64: \"64\"\nbyte: \"byte data\"\nstr: \"I'm a string\"\nnull_string: <nil>\ntime: \"2006-01-02T15:04:05.000000002+00:00\"\nnull_time: <nil>\ndecimal: <nil>", buf.String())
 		}
 
 		rc, err := dml.Load(context.TODO(), dbc.DB, tbl, tbl)
@@ -248,7 +254,7 @@ func TestRowConvert(t *testing.T) {
 			0.1, 3.141,
 			0, 8, 16, 32, 64,
 			"byte data", "I'm a string", "null_string",
-			now(), now(),
+			now(), now(), "2681.7000",
 		)
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
@@ -281,6 +287,11 @@ func TestRowConvert(t *testing.T) {
 				NullString:  dml.MakeNullString("null_string"),
 				Time:        now(),
 				NullTime:    dml.MakeNullTime(now()),
+				Decimal: dml.Decimal{
+					Precision: 26817000,
+					Scale:     4,
+					Valid:     true,
+				},
 			},
 			tbl.Data[0])
 	})
@@ -292,7 +303,7 @@ func TestRowConvert(t *testing.T) {
 			0.1, nil,
 			0, 8, 16, 32, 64,
 			nil, "I'm a string", nil,
-			now(), nil,
+			now(), nil, nil,
 		)
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
@@ -328,7 +339,7 @@ func TestRowConvert(t *testing.T) {
 			0.1, nil,
 			0, 8, 16, 32, 64,
 			nil, "aa\xe2", string([]byte{66, 250, 67}), // both are invalid
-			now(), nil)
+			now(), nil, nil)
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
 		tbl := new(baseTestCollection)
@@ -346,7 +357,7 @@ func TestRowConvert(t *testing.T) {
 			0.1, nil,
 			0, 8, 16, 32, 64,
 			nil, "aa", string([]byte{66, 250, 67}), // both are invalid
-			now(), nil)
+			now(), nil, nil)
 
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 

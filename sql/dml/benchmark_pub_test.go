@@ -743,3 +743,60 @@ func encodePlaceholder(args []interface{}, value interface{}) ([]interface{}, er
 	}
 	return args, errors.NewNotSupportedf("Type %#v not supported", value)
 }
+
+var benchmarkDecimal_String string
+
+func BenchmarkDecimal_String(b *testing.B) {
+
+	b.Run("123456789", func(b *testing.B) {
+		d := dml.Decimal{
+			Precision: 123456789,
+			Valid:     true,
+		}
+		for i := 0; i < b.N; i++ {
+			benchmarkDecimal_String = d.String()
+		}
+	})
+	b.Run("-123456789", func(b *testing.B) {
+		d := dml.Decimal{
+			Precision: 123456789,
+			Valid:     true,
+			Negative:  true,
+		}
+		for i := 0; i < b.N; i++ {
+			benchmarkDecimal_String = d.String()
+		}
+	})
+	b.Run("12345.6789", func(b *testing.B) {
+		d := dml.Decimal{
+			Precision: 123456789,
+			Scale:     4,
+			Valid:     true,
+		}
+		for i := 0; i < b.N; i++ {
+			benchmarkDecimal_String = d.String()
+		}
+	})
+	b.Run("-12345.6789", func(b *testing.B) {
+		d := dml.Decimal{
+			Precision: 123456789,
+			Valid:     true,
+			Scale:     4,
+			Negative:  true,
+		}
+		for i := 0; i < b.N; i++ {
+			benchmarkDecimal_String = d.String()
+		}
+	})
+	b.Run("-Scale140", func(b *testing.B) {
+		d := dml.Decimal{
+			Valid:     true,
+			Precision: math.MaxUint64,
+			Scale:     140,
+			Negative:  true,
+		}
+		for i := 0; i < b.N; i++ {
+			benchmarkDecimal_String = d.String()
+		}
+	})
+}
