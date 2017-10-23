@@ -27,7 +27,11 @@ import (
 	"github.com/corestoreio/errors"
 )
 
-// Decimal represents a MySQL/MariaDB data type for floating point calculation.
+// Decimal defines a container type for any MySQL/MariaDB
+// decimal/numeric/float/double data type and their representation in Go.
+// Decimal does not perform any kind of calculations. Helpful packages for
+// arbitrary precision calculations are github.com/ericlagergren/decimal or
+// gopkg.in/inf.v0 or github.com/shopspring/decimal or a future new Go type.
 // https://dev.mysql.com/doc/refman/5.7/en/precision-math-decimal-characteristics.html
 // https://dev.mysql.com/doc/refman/5.7/en/floating-point-types.html
 type Decimal struct {
@@ -35,7 +39,9 @@ type Decimal struct {
 	Scale     int32
 	Negative  bool
 	Valid     bool
-	Quote     bool
+	// Quote if true JSON marshaling will quote the returned number and creates
+	// a string. JavaScript floats are only 53 bits.
+	Quote bool
 }
 
 // Flags get binary encoded in the marshalers
@@ -68,6 +74,33 @@ func makeDecimal(b []byte) (ptr Decimal, err error) {
 	return ptr, err
 }
 
+// Int64 converts the underlying uint64 to an int64. Very useful for creating a
+// new 3rd party package type/object. If the Precision field overflows
+// math.MaxInt64 the return values are 0,0. If you want to aovid this use the
+// String function and create the 3rd party type via the string.
+func (d Decimal) Int64() (value int64, scale int32) {
+	if d.Precision > math.MaxInt64 {
+		return 0, 0 // Better solution instead of panicking?
+	}
+	value = int64(d.Precision)
+	scale = d.Scale
+	if d.Negative {
+		value *= -1
+	}
+	return value, scale
+}
+
+// Float64 converts the precision and the scale to a float64 value including the
+// usual float behaviour. Overflow will result in a weird float ...
+func (d Decimal) Float64() (value float64) {
+	value = float64(d.Precision)
+	value *= math.Pow10(-int(d.Scale))
+	if d.Negative {
+		value *= -1
+	}
+	return value
+}
+
 // String returns the string representation of the fixed with decimal. Returns
 // an empty string if the current value is not valid, for now.
 func (d Decimal) String() string {
@@ -76,6 +109,13 @@ func (d Decimal) String() string {
 	d.string(buf)
 	return buf.String()
 }
+
+//when needed
+//func (d Decimal) AppendString(b []byte) []byte {
+//	buf := bytes.NewBuffer(b)
+//	d.string(buf)
+//	return buf.Bytes()
+//}
 
 func (d Decimal) string(buf *bytes.Buffer) {
 	if !d.Valid {

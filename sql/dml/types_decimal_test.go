@@ -15,6 +15,7 @@
 package dml_test
 
 import (
+	"database/sql/driver"
 	"encoding"
 	"encoding/gob"
 	"encoding/json"
@@ -37,6 +38,7 @@ var _ encoding.TextMarshaler = (*dml.Decimal)(nil)
 var _ encoding.TextUnmarshaler = (*dml.Decimal)(nil)
 var _ gob.GobEncoder = (*dml.Decimal)(nil)
 var _ gob.GobDecoder = (*dml.Decimal)(nil)
+var _ driver.Valuer = (*dml.Decimal)(nil)
 
 func TestDecimal_GoString(t *testing.T) {
 	t.Parallel()
@@ -125,7 +127,10 @@ func TestDecimal_String(t *testing.T) {
 		}, "-0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000018446744073709551615"},
 	}
 	for i, test := range tests {
-		assert.Exactly(t, test.want, test.have.String(), "Index %d", i)
+		val, err := test.have.Value()
+		require.NoError(t, err, "Index %d", i)
+		assert.Exactly(t, test.want, val, "Index %d", i)
+
 	}
 }
 
@@ -282,5 +287,83 @@ func TestDecimal_GobEncode(t *testing.T) {
 		}
 		require.NoError(t, dNull.GobDecode([]byte("")))
 		assert.Exactly(t, dml.Decimal{}, dNull)
+	})
+}
+
+func TestDecimal_Int64(t *testing.T) {
+	t.Parallel()
+
+	t.Run("1234", func(t *testing.T) {
+		d := dml.Decimal{
+			Valid:     true,
+			Precision: 1234,
+			Scale:     2,
+		}
+		i, s := d.Int64()
+		assert.Exactly(t, int64(1234), i)
+		assert.Exactly(t, int32(2), s)
+	})
+	t.Run("-987654321", func(t *testing.T) {
+		d := dml.Decimal{
+			Valid:     true,
+			Precision: 987654321,
+			Scale:     5,
+			Negative:  true,
+		}
+		i, s := d.Int64()
+		assert.Exactly(t, int64(-987654321), i)
+		assert.Exactly(t, int32(5), s)
+	})
+	t.Run("overflow", func(t *testing.T) {
+		d := dml.Decimal{
+			Valid:     true,
+			Precision: math.MaxInt64 + 9876,
+			Scale:     5,
+			Negative:  true,
+		}
+		i, s := d.Int64()
+		assert.Exactly(t, int64(0), i)
+		assert.Exactly(t, int32(0), s)
+	})
+}
+
+func TestDecimal_Float64(t *testing.T) {
+	t.Parallel()
+
+	t.Run("0.0", func(t *testing.T) {
+		d := dml.Decimal{
+			Valid: true,
+		}
+		f := d.Float64()
+		assert.Exactly(t, 0.0, f)
+	})
+	t.Run("12.34", func(t *testing.T) {
+		d := dml.Decimal{
+			Valid:     true,
+			Precision: 1234,
+			Scale:     2,
+		}
+		f := d.Float64()
+		assert.Exactly(t, 12.34, f)
+	})
+	t.Run("-9876.54321", func(t *testing.T) {
+		d := dml.Decimal{
+			Valid:     true,
+			Precision: 987654321,
+			Scale:     5,
+			Negative:  true,
+		}
+		f := d.Float64()
+		assert.Exactly(t, -9876.543210000002, f)
+	})
+	t.Run("overflow", func(t *testing.T) {
+		d := dml.Decimal{
+			Valid:     true,
+			Precision: math.MaxInt64 + 9876,
+			Scale:     5,
+			Negative:  true,
+		}
+		f := d.Float64()
+		assert.Exactly(t, -9.223372036854788e+13, f)
 	})
 }
