@@ -50,7 +50,7 @@ func makeDecimal(b []byte) (ptr Decimal, err error) {
 	if len(b) == 0 {
 		return ptr, nil
 	}
-	dotPos := bytes.IndexByte(b, '.')
+
 	ptr.Valid = true
 	ptr.Negative = b[0] == '-'
 	if ptr.Negative || b[0] == '+' {
@@ -58,10 +58,10 @@ func makeDecimal(b []byte) (ptr Decimal, err error) {
 	}
 
 	digits := b
-	if dotPos > 0 { // 0.333 dotPos is min 1
-		ptr.Scale = int32(len(b) - dotPos)
+	if dotPos := bytes.IndexByte(digits, '.'); dotPos > 0 { // 0.333 dotPos is min 1
+		ptr.Scale = int32(len(b)-dotPos) - 1
 		// remove dot 2363.7800 => 23637800 => Scale=4
-		digits = append(digits[:dotPos-1], b[dotPos:]...)
+		digits = append(digits[:dotPos], b[dotPos+1:]...)
 	}
 
 	ptr.Precision, err = byteconv.ParseUint(digits, 10, 64)

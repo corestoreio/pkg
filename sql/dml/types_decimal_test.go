@@ -161,7 +161,7 @@ func TestDecimal_MarshalJSON(t *testing.T) {
 		Precision: math.MaxUint32,
 		Scale:     8, // large Scales not yet supported
 		Quote:     true,
-	}, "\"-1844674407370.9551615\""))
+	}, "\"42.94967295\""))
 
 	t.Run("unquoted", runner(dml.Decimal{
 		Valid:     true,
@@ -169,6 +169,19 @@ func TestDecimal_MarshalJSON(t *testing.T) {
 		Scale:     1,
 		Negative:  true,
 	}, "-123.4"))
+
+	t.Run("-0.073", runner(dml.Decimal{
+		Valid:     true,
+		Precision: 73,
+		Scale:     3,
+		Negative:  true,
+	}, "-0.073"))
+
+	t.Run("+9", runner(dml.Decimal{
+		Valid:     true,
+		Precision: 9,
+		Scale:     0,
+	}, "9"))
 
 	t.Run("Unmarshal null", func(t *testing.T) {
 		dNull := dml.Decimal{
