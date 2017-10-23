@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/byteconv"
 	"github.com/corestoreio/errors"
 )
@@ -42,6 +43,7 @@ const (
 	decimalFlagNegative = 1 << iota
 	decimalFlagValid
 	decimalFlagQuote
+	decimalBinaryVersion01
 )
 
 func makeDecimal(b []byte) (ptr Decimal, err error) {
@@ -69,18 +71,26 @@ func makeDecimal(b []byte) (ptr Decimal, err error) {
 // String returns the string representation of the fixed with decimal. Returns
 // an empty string if the current value is not valid, for now.
 func (d Decimal) String() string {
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	d.string(buf)
+	return buf.String()
+}
+
+func (d Decimal) string(buf *bytes.Buffer) {
 	if !d.Valid {
-		return ""
+		return
 	}
-	var fBuf [32]byte
-	buf := fBuf[:0]
+	prevLen := int32(buf.Len())
 	if d.Negative {
-		buf = append(buf, '-')
+		buf.WriteByte('-')
 	}
 
 	if d.Scale == 0 {
-		buf = strconv.AppendUint(buf, d.Precision, 10)
-		return string(buf)
+		raw := strconv.AppendUint(buf.Bytes(), d.Precision, 10)
+		buf.Reset()
+		buf.Write(raw)
+		return
 	}
 
 	digits := int32(math.Log10(float64(d.Precision)) + 1)
@@ -91,21 +101,25 @@ func (d Decimal) String() string {
 		const zeros = "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 		if leadingZeros >= zeroLen {
 			// slow path
-			buf = append(buf, strings.Repeat("0", int(leadingZeros))...)
+			buf.WriteString(strings.Repeat("0", int(leadingZeros)))
 		} else {
-			buf = append(buf, zeros[:leadingZeros]...)
+			buf.WriteString(zeros[:leadingZeros])
 		}
 		digits += leadingZeros
 	}
 
-	buf = strconv.AppendUint(buf, d.Precision, 10)
+	raw := strconv.AppendUint(buf.Bytes(), d.Precision, 10)
+	buf.Reset()
+	buf.Write(raw)
 
-	pos := digits - d.Scale
+	pos := digits - d.Scale + prevLen
 	if d.Negative {
 		pos++
 	}
-	buf = append(buf[:pos], append([]byte("."), buf[pos:]...)...)
-	return string(buf)
+	raw = buf.Bytes()
+	newRaw := append(raw[:pos], append([]byte("."), raw[pos:]...)...)
+	buf.Reset()
+	buf.Write(newRaw)
 }
 
 // GoString returns an optimized version of the Go representation of Decimal.
@@ -113,7 +127,8 @@ func (d Decimal) GoString() string {
 	if !d.Valid {
 		return "dml.Decimal{}"
 	}
-	var buf bytes.Buffer
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
 	buf.WriteString("dml.Decimal{")
 	if d.Precision > 0 {
 		buf.WriteString("Precision:")
@@ -130,13 +145,13 @@ func (d Decimal) GoString() string {
 		buf.WriteByte(',')
 	}
 	if d.Negative {
-		writeLabeledBool(&buf, "Negative")
+		writeLabeledBool(buf, "Negative")
 	}
 	if d.Valid {
-		writeLabeledBool(&buf, "Valid")
+		writeLabeledBool(buf, "Valid")
 	}
 	if d.Quote {
-		writeLabeledBool(&buf, "Quote")
+		writeLabeledBool(buf, "Quote")
 	}
 	buf.WriteByte('}')
 	return buf.String()
@@ -175,20 +190,31 @@ func (d *Decimal) UnmarshalJSON(b []byte) error {
 
 // MarshalJSON implements the json.Marshaler interface.
 func (d Decimal) MarshalJSON() ([]byte, error) {
-	var str string
-	if d.Quote {
-		str = "\"" + d.String() + "\""
-	} else {
-		str = d.String()
+	if !d.Valid {
+		return []byte(`null`), nil
 	}
-	return []byte(str), nil
+	buf := new(bytes.Buffer)
+	if d.Quote {
+		buf.WriteByte('"')
+	}
+	d.string(buf)
+	if d.Quote {
+		buf.WriteByte('"')
+	}
+
+	return buf.Bytes(), nil
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface. As a string representation
 // is already used when encoding to text, this method stores that string as []byte
 func (d *Decimal) UnmarshalBinary(data []byte) error {
 	const validLength = 14
-	if len(data) != validLength {
+	ld := len(data)
+	if ld == 0 {
+		*d = Decimal{}
+		return nil
+	}
+	if ld != validLength {
 		return errors.NewNotValidf("[dml] Decimal.UnmarshalBinary Invalid length of input data. Should be %d but have %d", validLength, len(data))
 	}
 	d.Precision = uint64(binary.BigEndian.Uint64(data[:8]))
@@ -204,12 +230,17 @@ func (d *Decimal) UnmarshalBinary(data []byte) error {
 	if flags&decimalFlagQuote != 0 {
 		d.Quote = true
 	}
+	if flags&decimalBinaryVersion01 == 0 {
+		return errors.NewNotValidf("[dml] Decimal.UnmarshalBinary invalid binary version")
+	}
 	return nil
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface.
 func (d Decimal) MarshalBinary() (data []byte, err error) {
-
+	if !d.Valid {
+		return nil, nil
+	}
 	var v0 [8]byte
 	binary.BigEndian.PutUint64(v0[:], d.Precision)
 
@@ -217,6 +248,7 @@ func (d Decimal) MarshalBinary() (data []byte, err error) {
 	binary.BigEndian.PutUint32(v1[:], uint32(d.Scale))
 
 	var flags uint16
+	flags |= decimalBinaryVersion01
 	if d.Negative {
 		flags |= decimalFlagNegative
 	}
@@ -226,6 +258,7 @@ func (d Decimal) MarshalBinary() (data []byte, err error) {
 	if d.Quote {
 		flags |= decimalFlagQuote
 	}
+
 	var v2 [2]byte
 	binary.BigEndian.PutUint16(v2[:], flags)
 
@@ -244,8 +277,11 @@ func (d Decimal) Value() (driver.Value, error) {
 // UnmarshalText implements the encoding.TextUnmarshaler interface for XML
 // deserialization.
 func (d *Decimal) UnmarshalText(text []byte) error {
+	if len(text) == 0 {
+		*d = Decimal{}
+		return nil
+	}
 	dec, err := makeDecimal(text)
-
 	*d = dec
 	if err != nil {
 		return errors.NewNotValidf("[dml] Decoding failed of %q with error: %s", text, err)
@@ -254,9 +290,12 @@ func (d *Decimal) UnmarshalText(text []byte) error {
 }
 
 // MarshalText implements the encoding.TextMarshaler interface for XML
-// serialization.
+// serialization. Does not support quoting. An invalid type returns an empty
+// string.
 func (d Decimal) MarshalText() (text []byte, err error) {
-	return []byte(d.String()), nil
+	buf := new(bytes.Buffer)
+	d.string(buf)
+	return buf.Bytes(), nil
 }
 
 // GobEncode implements the gob.GobEncoder interface for gob serialization.

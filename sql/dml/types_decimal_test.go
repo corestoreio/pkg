@@ -131,6 +131,7 @@ func TestDecimal_String(t *testing.T) {
 
 func TestDecimal_MarshalJSON(t *testing.T) {
 	t.Parallel()
+
 	runner := func(d dml.Decimal, want string) func(*testing.T) {
 		return func(t *testing.T) {
 			raw, err := d.MarshalJSON()
@@ -145,11 +146,20 @@ func TestDecimal_MarshalJSON(t *testing.T) {
 
 	// TODO: Fuzzy testing
 
-	t.Run("quoted", runner(dml.Decimal{
+	t.Run("not valid", runner(dml.Decimal{}, "null"))
+
+	t.Run("quoted minus", runner(dml.Decimal{
 		Valid:     true,
 		Precision: math.MaxUint64,
 		Scale:     7, // large Scales not yet supported
 		Negative:  true,
+		Quote:     true,
+	}, "\"-1844674407370.9551615\""))
+
+	t.Run("quoted plus", runner(dml.Decimal{
+		Valid:     true,
+		Precision: math.MaxUint32,
+		Scale:     8, // large Scales not yet supported
 		Quote:     true,
 	}, "\"-1844674407370.9551615\""))
 
@@ -167,6 +177,97 @@ func TestDecimal_MarshalJSON(t *testing.T) {
 			Scale:     2,
 		}
 		require.NoError(t, dNull.UnmarshalJSON([]byte("null")))
+		assert.Exactly(t, dml.Decimal{}, dNull)
+	})
+}
+
+func TestDecimal_MarshalText(t *testing.T) {
+	t.Parallel()
+
+	runner := func(d dml.Decimal, want string) func(*testing.T) {
+		return func(t *testing.T) {
+			raw, err := d.MarshalText()
+			require.NoError(t, err, t.Name())
+			assert.Exactly(t, want, string(raw), t.Name())
+			d.Quote = false
+
+			var d2 dml.Decimal
+			require.NoError(t, d2.UnmarshalText(raw), t.Name())
+			assert.Exactly(t, d, d2, t.Name())
+		}
+	}
+
+	// TODO: Fuzzy testing
+
+	t.Run("not valid", runner(dml.Decimal{}, ""))
+
+	t.Run("quoted", runner(dml.Decimal{
+		Valid:     true,
+		Precision: math.MaxUint64,
+		Scale:     7, // large Scales not yet supported
+		Negative:  true,
+		Quote:     true,
+	}, "-1844674407370.9551615")) // does not quote
+
+	t.Run("unquoted", runner(dml.Decimal{
+		Valid:     true,
+		Precision: 1234,
+		Scale:     1,
+		Negative:  true,
+	}, "-123.4"))
+
+	t.Run("Unmarshal emty", func(t *testing.T) {
+		dNull := dml.Decimal{
+			Valid:     true,
+			Precision: 1234,
+			Scale:     2,
+		}
+		require.NoError(t, dNull.UnmarshalText([]byte("")))
+		assert.Exactly(t, dml.Decimal{}, dNull)
+	})
+}
+
+func TestDecimal_GobEncode(t *testing.T) {
+	t.Parallel()
+
+	runner := func(d dml.Decimal, want []byte) func(*testing.T) {
+		return func(t *testing.T) {
+			raw, err := d.GobEncode()
+			require.NoError(t, err, t.Name())
+			assert.Exactly(t, want, raw, t.Name())
+
+			var d2 dml.Decimal
+			require.NoError(t, d2.GobDecode(raw), t.Name())
+			assert.Exactly(t, d, d2, t.Name())
+		}
+	}
+
+	// TODO: Fuzzy testing
+
+	t.Run("not valid", runner(dml.Decimal{}, nil))
+
+	t.Run("quoted", runner(dml.Decimal{
+		Valid:     true,
+		Precision: math.MaxUint64 - 987654,
+		Scale:     7, // large Scales not yet supported
+		Negative:  true,
+		Quote:     true,
+	}, []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xf0, 0xed, 0xf9, 0x0, 0x0, 0x0, 0x7, 0x0, 0xf})) // does not quote
+
+	t.Run("unquoted", runner(dml.Decimal{
+		Valid:     true,
+		Precision: 1234,
+		Scale:     2,
+		Negative:  true,
+	}, []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x4, 0xd2, 0x0, 0x0, 0x0, 0x2, 0x0, 0xb}))
+
+	t.Run("GobDecode nil", func(t *testing.T) {
+		dNull := dml.Decimal{
+			Valid:     true,
+			Precision: 1234,
+			Scale:     2,
+		}
+		require.NoError(t, dNull.GobDecode([]byte("")))
 		assert.Exactly(t, dml.Decimal{}, dNull)
 	})
 }
