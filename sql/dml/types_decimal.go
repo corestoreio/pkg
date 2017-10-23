@@ -241,11 +241,10 @@ func (d Decimal) MarshalBinary() (data []byte, err error) {
 	if !d.Valid {
 		return nil, nil
 	}
-	var v0 [8]byte
-	binary.BigEndian.PutUint64(v0[:], d.Precision)
+	var v0 [14]byte
+	binary.BigEndian.PutUint64(v0[:8], d.Precision)
 
-	var v1 [4]byte
-	binary.BigEndian.PutUint32(v1[:], uint32(d.Scale))
+	binary.BigEndian.PutUint32(v0[8:12], uint32(d.Scale))
 
 	var flags uint16
 	flags |= decimalBinaryVersion01
@@ -259,13 +258,9 @@ func (d Decimal) MarshalBinary() (data []byte, err error) {
 		flags |= decimalFlagQuote
 	}
 
-	var v2 [2]byte
-	binary.BigEndian.PutUint16(v2[:], flags)
+	binary.BigEndian.PutUint16(v0[12:14], flags)
 
-	// Return the byte array
-	data = append(v0[:], v1[:]...)
-	data = append(data, v2[:]...)
-	return
+	return v0[:], nil
 }
 
 // Value implements the driver.Valuer interface for database serialization. It

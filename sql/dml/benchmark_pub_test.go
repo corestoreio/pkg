@@ -800,3 +800,33 @@ func BenchmarkDecimal_String(b *testing.B) {
 		}
 	})
 }
+
+var benchmarkDecimal_MarshalBinary []byte
+
+func BenchmarkDecimal_Binary(b *testing.B) {
+
+	b.Run("Marshal", func(b *testing.B) {
+		d := dml.Decimal{
+			Precision: 123456789,
+			Valid:     true,
+			Scale:     4,
+			Negative:  true,
+		}
+		for i := 0; i < b.N; i++ {
+			var err error
+			benchmarkDecimal_MarshalBinary, err = d.MarshalBinary()
+			if err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+
+	var dUn dml.Decimal
+	b.Run("Unmarshal", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			if err := dUn.UnmarshalBinary(benchmarkDecimal_MarshalBinary); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+}
