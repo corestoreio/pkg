@@ -94,7 +94,7 @@ func (p *dmlPerson) MapColumns(cm *ColumnMap) error {
 			cm.NullString(&p.Email)
 		case "key":
 			cm.NullString(&p.Key)
-		case "store_id", "created_at", "total_income":
+		case "store_id", "created_at", "total_income", "avg_income":
 			// noop don't trigger the default case
 		default:
 			return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", c)
@@ -191,11 +191,12 @@ type nullTypedRecord struct {
 	Float64Val NullFloat64
 	TimeVal    NullTime
 	BoolVal    NullBool
+	DecimalVal Decimal
 }
 
 func (p *nullTypedRecord) MapColumns(cm *ColumnMap) error {
 	if cm.Mode() == ColumnMapEntityReadAll {
-		return cm.Int64(&p.ID).NullString(&p.StringVal).NullInt64(&p.Int64Val).NullFloat64(&p.Float64Val).NullTime(&p.TimeVal).NullBool(&p.BoolVal).Err()
+		return cm.Int64(&p.ID).NullString(&p.StringVal).NullInt64(&p.Int64Val).NullFloat64(&p.Float64Val).NullTime(&p.TimeVal).NullBool(&p.BoolVal).Decimal(&p.DecimalVal).Err()
 	}
 	for cm.Next() {
 		c := cm.Column()
@@ -212,6 +213,8 @@ func (p *nullTypedRecord) MapColumns(cm *ColumnMap) error {
 			cm.NullTime(&p.TimeVal)
 		case "bool_val":
 			cm.NullBool(&p.BoolVal)
+		case "decimal_val":
+			cm.Decimal(&p.DecimalVal)
 		default:
 			return errors.NewNotFoundf("[dml_test] Column %q not found", c)
 		}
@@ -232,32 +235,34 @@ func installFixtures(db *sql.DB, c *installFixturesConfig) {
 			%s varchar(255),
 			store_id smallint(5) unsigned DEFAULT 0 COMMENT 'Store Id',
 			created_at timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' COMMENT 'Created At',
-			total_income decimal(12,4) NOT NULL DEFAULT 0.0000 COMMENT 'Total Income Amount'
+			total_income decimal(12,4) NOT NULL DEFAULT 0.0000 COMMENT 'Used as float64',
+			avg_income decimal(12,5) NOT NULL DEFAULT 0.00000 COMMENT 'Used as dml.Decimal'
 		)
 	`, "`key`")
 
 	createNullTypesTable := `
-		CREATE TABLE null_types (
+		CREATE TABLE dml_null_types (
 			id int(11) NOT NULL auto_increment PRIMARY KEY,
 			string_val varchar(255) NULL,
 			int64_val int(11) NULL,
 			float64_val float NULL,
 			time_val datetime NULL,
-			bool_val bool NULL
+			bool_val bool NULL,
+			decimal_val decimal(5,3) NULL
 		)
 	`
 	// see also test case "LoadUint64 max Uint64 found"
 	sqlToRun := []string{
-		"DROP TABLE IF EXISTS dml_people",
+		"DROP TABLE IF EXISTS `dml_people`",
 		createPeopleTable,
 		"INSERT INTO dml_people (name,email) VALUES ('Jonathan', 'jonathan@uservoice.com')",
 		"INSERT INTO dml_people (name,email) VALUES ('Dmitri', 'zavorotni@jadius.com')",
 
-		"DROP TABLE IF EXISTS null_types",
+		"DROP TABLE IF EXISTS `dml_null_types`",
 		createNullTypesTable,
 	}
 	if c != nil && c.AddPeopleWithMaxUint64 {
-		sqlToRun = append(sqlToRun, "INSERT INTO dml_people (id,name,email) VALUES (18446744073700551613,'Cyrill', 'firstname@lastname.fm')")
+		sqlToRun = append(sqlToRun, "INSERT INTO `dml_people` (id,name,email) VALUES (18446744073700551613,'Cyrill', 'firstname@lastname.fm')")
 	}
 
 	for _, v := range sqlToRun {

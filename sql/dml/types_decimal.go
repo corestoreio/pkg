@@ -53,7 +53,8 @@ const (
 )
 
 func makeDecimal(b []byte) (ptr Decimal, err error) {
-	if len(b) == 0 {
+	// maybe use string comparison but run benchmarks
+	if len(b) == 0 || bytes.Equal(b, bTextNullLC) || bytes.Equal(b, bTextNullUC) {
 		return ptr, nil
 	}
 
@@ -102,7 +103,7 @@ func (d Decimal) Float64() (value float64) {
 }
 
 // String returns the string representation of the fixed with decimal. Returns
-// an empty string if the current value is not valid, for now.
+// the word `NULL` if the current value is not valid, for now.
 func (d Decimal) String() string {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
@@ -119,6 +120,7 @@ func (d Decimal) String() string {
 
 func (d Decimal) string(buf *bytes.Buffer) {
 	if !d.Valid {
+		buf.WriteString("NULL")
 		return
 	}
 	prevLen := int32(buf.Len())
@@ -204,8 +206,8 @@ func writeLabeledBool(buf *bytes.Buffer, label string) {
 
 func unquoteIfQuoted(b []byte) (_ []byte, isQuoted bool) {
 	// If the amount is quoted, strip the quotes
-	if len(b) > 2 && b[0] == '"' && b[len(b)-1] == '"' {
-		b = b[1 : len(b)-1]
+	if lb := len(b); lb > 2 && b[0] == '"' && b[lb-1] == '"' {
+		b = b[1 : lb-1]
 		isQuoted = true
 	}
 	return b, isQuoted
@@ -213,11 +215,6 @@ func unquoteIfQuoted(b []byte) (_ []byte, isQuoted bool) {
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
 func (d *Decimal) UnmarshalJSON(b []byte) error {
-	if bytes.Equal(b, bTextNullLC) || bytes.Equal(b, bTextNullUC) { // maybe use string comparison but run benchmarks
-		*d = Decimal{}
-		return nil
-	}
-
 	b, isQuoted := unquoteIfQuoted(b)
 	dec, err := makeDecimal(b)
 	dec.Quote = isQuoted
@@ -312,10 +309,6 @@ func (d Decimal) Value() (driver.Value, error) {
 // UnmarshalText implements the encoding.TextUnmarshaler interface for XML
 // deserialization.
 func (d *Decimal) UnmarshalText(text []byte) error {
-	if len(text) == 0 {
-		*d = Decimal{}
-		return nil
-	}
 	dec, err := makeDecimal(text)
 	*d = dec
 	if err != nil {

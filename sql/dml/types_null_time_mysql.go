@@ -10,6 +10,7 @@ package dml
 
 import (
 	"database/sql/driver"
+	"strings"
 	"time"
 
 	"github.com/corestoreio/errors"
@@ -78,15 +79,18 @@ func (nt NullTime) Value() (driver.Value, error) {
 }
 
 func parseDateTime(str string, loc *time.Location) (t time.Time, err error) {
-	base := "0000-00-00 00:00:00.000000000+00:00"
-	// 		"2006-01-02T15:04:05.000000002+00:00"
-	// 		"2006-01-02T15:04:05.999999999Z07:00"
-	switch len(str) {
+	zeroBase := "0000-00-00 00:00:00.000000000+00:00"
+	base := "2006-01-02 15:04:05.999999999 07:00"
+	if strings.IndexByte(str, 'T') > 0 {
+		base = time.RFC3339Nano
+	}
+
+	switch lStr := len(str); lStr {
 	case 10, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29, 35: // up to "YYYY-MM-DD HH:MM:SS.MMMMMMM+HH:II"
-		if str == base[:len(str)] {
+		if str == zeroBase[:lStr] {
 			return
 		}
-		t, err = time.Parse(time.RFC3339Nano[:len(str)], str)
+		t, err = time.Parse(base[:lStr], str) // time.RFC3339Nano cannot be used due to the T
 	default:
 		err = errors.NewNotValidf("invalid time string: %s", str)
 		return

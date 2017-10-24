@@ -76,7 +76,7 @@ func TestDecimal_String(t *testing.T) {
 		have dml.Decimal
 		want string
 	}{
-		{dml.Decimal{}, ""},
+		{dml.Decimal{}, "NULL"},
 		{dml.Decimal{
 			Valid:     true,
 			Precision: math.MaxUint64,
@@ -217,7 +217,7 @@ func TestDecimal_MarshalText(t *testing.T) {
 
 	// TODO: Fuzzy testing
 
-	t.Run("not valid", runner(dml.Decimal{}, ""))
+	t.Run("not valid", runner(dml.Decimal{}, "NULL"))
 
 	t.Run("quoted", runner(dml.Decimal{
 		Valid:     true,

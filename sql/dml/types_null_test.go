@@ -38,28 +38,28 @@ func TestNullTypeScanning(t *testing.T) {
 			record: &nullTypedRecord{ID: 1},
 			valid:  false,
 		},
-		//{
-		//	record: newNullTypedRecordWithData(),
-		//	valid:  true,
-		//},
+		{
+			record: newNullTypedRecordWithData(),
+			valid:  true,
+		},
 	}
 
 	for _, test := range tests {
 		// Create the record in the db
-		res, err := s.InsertInto("null_types").
-			AddColumns("string_val", "int64_val", "float64_val", "time_val", "bool_val").
+		res, err := s.InsertInto("dml_null_types").
+			AddColumns("string_val", "int64_val", "float64_val", "time_val", "bool_val", "decimal_val").
 			BindRecord(test.record).Exec(context.TODO())
 		require.NoError(t, err)
 		id, err := res.LastInsertId()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Scan it back and check that all fields are of the correct validity and are
 		// equal to the reference record
 		nullTypeSet := &nullTypedRecord{}
-		_, err = s.SelectFrom("null_types").Star().Where(
+		_, err = s.SelectFrom("dml_null_types").Star().Where(
 			Expr("id = ?").Int64(id),
 		).Load(context.TODO(), nullTypeSet)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, test.record, nullTypeSet)
 		assert.Equal(t, test.valid, nullTypeSet.StringVal.Valid)
@@ -67,6 +67,7 @@ func TestNullTypeScanning(t *testing.T) {
 		assert.Equal(t, test.valid, nullTypeSet.Float64Val.Valid)
 		assert.Equal(t, test.valid, nullTypeSet.TimeVal.Valid)
 		assert.Equal(t, test.valid, nullTypeSet.BoolVal.Valid)
+		assert.Equal(t, test.valid, nullTypeSet.DecimalVal.Valid)
 
 		nullTypeSet.StringVal.String = "newStringVal"
 		assert.NotEqual(t, test.record, nullTypeSet)
@@ -83,11 +84,11 @@ func TestNullTypeJSONMarshal(t *testing.T) {
 	tests := []nullTypeJSONTest{
 		{
 			record:       &nullTypedRecord{},
-			expectedJSON: []byte(`{"ID":0,"StringVal":null,"Int64Val":null,"Float64Val":null,"TimeVal":null,"BoolVal":null}`),
+			expectedJSON: []byte("{\"ID\":0,\"StringVal\":null,\"Int64Val\":null,\"Float64Val\":null,\"TimeVal\":null,\"BoolVal\":null,\"DecimalVal\":null}"),
 		},
 		{
 			record:       newNullTypedRecordWithData(),
-			expectedJSON: []byte(`{"ID":2,"StringVal":"wow","Int64Val":42,"Float64Val":1.618,"TimeVal":"2009-01-03T18:15:05Z","BoolVal":true}`),
+			expectedJSON: []byte("{\"ID\":2,\"StringVal\":\"wow\",\"Int64Val\":42,\"Float64Val\":1.618,\"TimeVal\":\"2009-01-03T18:15:05Z\",\"BoolVal\":true,\"DecimalVal\":12.345}"),
 		},
 	}
 
@@ -113,5 +114,6 @@ func newNullTypedRecordWithData() *nullTypedRecord {
 		Float64Val: NullFloat64{NullFloat64: sql.NullFloat64{Float64: 1.618, Valid: true}},
 		TimeVal:    NullTime{Time: time.Date(2009, 1, 3, 18, 15, 5, 0, time.UTC), Valid: true},
 		BoolVal:    NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}},
+		DecimalVal: Decimal{Precision: 12345, Scale: 3, Valid: true},
 	}
 }

@@ -180,9 +180,12 @@ type ColumnMap struct {
 	CheckValidUTF8 bool
 	scanArgs       []interface{} // could be a sync.Pool but check it in benchmarks.
 	scanRaw        []*sql.RawBytes
-	scanErr        error // delayed error and also to avoid `if err != nil`
-	index          int
-	current        []byte
+	// scanErr is a delayed error and also used to avoid `if err != nil` in
+	// generated code. This reduces the boiler plate code a lot! A trade off
+	// between chainable API and too verbose error checking.
+	scanErr error
+	index   int
+	current []byte
 }
 
 func newColumnMap(args Arguments, columns ...string) *ColumnMap {
@@ -441,13 +444,15 @@ func (b *ColumnMap) Float64(ptr *float64) *ColumnMap {
 	return b
 }
 
+// Decimal reads a Decimal value and appends it to the arguments slice or
+// assigns the numeric value stored in sql.RawBytes to the pointer. See the
+// documentation for function Scan.
 func (b *ColumnMap) Decimal(ptr *Decimal) *ColumnMap {
 	if b.Args != nil {
-		if ptr == nil {
+		if v := ptr.String(); ptr == nil || v == "NULL" {
 			b.Args = b.Args.Null()
 		} else {
-			panic("TODO implement")
-			//b.Args = b.Args.Float64(*ptr)
+			b.Args = b.Args.String(v)
 		}
 		return b
 	}
