@@ -63,6 +63,13 @@ func TestDecimal_GoString(t *testing.T) {
 			Scale:     8,
 			Negative:  true,
 		}, "dml.Decimal{Precision:65535,Scale:8,Negative:true,Valid:true,}"},
+		{dml.Decimal{
+			Valid:     true,
+			Precision: math.MaxUint16,
+			Scale:     8,
+			Negative:  true,
+			Quote:     true,
+		}, "dml.Decimal{Precision:65535,Scale:8,Negative:true,Valid:true,Quote:true,}"},
 	}
 	for i, test := range tests {
 		assert.Exactly(t, test.want, test.have.GoString(), "Index %d", i)
@@ -121,10 +128,10 @@ func TestDecimal_String(t *testing.T) {
 		{dml.Decimal{
 			Valid:     true,
 			Precision: math.MaxUint64,
-			Scale:     140,
+			Scale:     150,
 			Negative:  true,
-			// 18446744073709551615*10^-140
-		}, "-0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000018446744073709551615"},
+			// 18446744073709551615*10^-150
+		}, "-0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000018446744073709551615"},
 	}
 	for i, test := range tests {
 		val, err := test.have.Value()
