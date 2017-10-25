@@ -18,7 +18,7 @@ package dmlgen
 const TplDBAC = `// {{.Entity}} represents a type for DB table {{.Tick}}{{.TableName}}{{.Tick}}
 // Generated via dmlgen.
 type {{.Entity}} struct {
-	{{ range .Columns }}{{ToGoCamelCase .Field}} {{MySQLToGoType .}} {{ $.Tick }}json:"{{.Field}},omitempty"{{ $.Tick }} {{.GoComment}}
+	{{ range .Columns }}{{ToGoCamelCase .Field}} {{GoTypeNull .}} {{ $.Tick }}json:"{{.Field}},omitempty"{{ $.Tick }} {{.GoComment}}
 {{ end }} }
 
 // New{{.Entity}} creates a new pointer with pre-initialized fields.
@@ -29,18 +29,18 @@ func New{{.Entity}}() *{{.Entity}} {
 // AssignLastInsertID updates the increment ID field with the last inserted ID
 // from an INSERT operation. Implements dml.InsertIDAssigner
 func (e *{{.Entity}}) AssignLastInsertID(id int64) {
-	{{ range .Columns }}{{if .IsPK}} e.{{ToGoCamelCase .Field}} = {{MySQLToGoType .}}(id) {{end}} {{ end }}
+	{{ range .Columns }}{{if .IsPK}} e.{{ToGoCamelCase .Field}} = {{GoTypeNull .}}(id) {{end}} {{ end }}
 }
 
 // MapColumns implements interface ColumnMapper only partially.
 func (e *{{.Entity}}) MapColumns(cm *dml.ColumnMap) error {
 	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm{{range .Columns}}.{{GoTypeFuncName .}}(&e.{{ToGoCamelCase .Field}}){{end}}.Err()
+		return cm{{range .Columns}}.{{GoFuncNull .}}(&e.{{ToGoCamelCase .Field}}){{end}}.Err()
 	}
 	for cm.Next() {
 		switch c := cm.Column(); c { {{range .Columns}}
 		case "{{.Field }}"{{ range ColumnAliases .Field}},"{{.}}"{{end}}:
-			cm.{{GoTypeFuncName .}}(&e.{{ToGoCamelCase .Field}}){{end}}
+			cm.{{GoFuncNull .}}(&e.{{ToGoCamelCase .Field}}){{end}}
 		default:
 			return errors.NewNotFoundf("[{{.Package}}] {{.Entity}} Column %q not found", c)
 		}
@@ -97,11 +97,11 @@ func (cc *{{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
 			switch c := cm.Column(); c {
 			{{- range .SingleKeyColumns -}}
 			case "{{.Field }}"{{ range ColumnAliases .Field}},"{{.}}"{{end}}:
-				cm.Args = cm.Args.{{GoTypeFuncName .}}s(cc.{{ToGoCamelCase .Field}}s()...)
+				cm.Args = cm.Args.{{GoFuncNull .}}s(cc.{{ToGoCamelCase .Field}}s()...)
 			{{- end}}
 			{{- range .DuplicateValueColumns}}
 			case "{{.Field }}"{{ range ColumnAliases .Field}},"{{.}}"{{end}}:
-				cm.Args = cm.Args.{{GoTypeFuncName .}}s(cc.{{ToGoCamelCase .Field}}s()...){{end}}
+				cm.Args = cm.Args.{{GoFunc .}}s(cc.{{ToGoCamelCase .Field}}s()...){{end}}
 			default:
 				return errors.NewNotFoundf("[{{.Package}}] {{.Collection}} Column %q not found", c)
 			}
@@ -113,9 +113,9 @@ func (cc *{{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
 }
 {{ range .SingleKeyColumns }}
 // {{ToGoCamelCase .Field}}s returns a slice or appends to a slice all values.
-func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{MySQLToGoType .}}) []{{MySQLToGoType .}} {
+func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoTypeNull .}}) []{{GoTypeNull .}} {
 	if ret == nil {
-		ret = make([]{{MySQLToGoType .}}, 0, len(cc.Data))
+		ret = make([]{{GoTypeNull .}}, 0, len(cc.Data))
 	}
 	for _, e := range cc.Data {
 		ret = append(ret, e.{{ToGoCamelCase .Field}})
@@ -126,17 +126,19 @@ func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{MySQLToGoType .}}
 {{- range .DuplicateValueColumns }}
 // {{ToGoCamelCase .Field}}s returns a slice or appends to a slice only unique
 // values.
-func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{MySQLToGoType .}}) []{{MySQLToGoType .}} {
+func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoType .}}) []{{GoType .}} {
 	if ret == nil {
-		ret = make([]{{MySQLToGoType .}}, 0, len(cc.Data))
+		ret = make([]{{GoType .}}, 0, len(cc.Data))
 	}
-	// TODO: a reusable map and use different algorithms depending on the size
-	// of the cc.Data slice. Sometimes a for/for loop runs faster than a map.
-	dubCheck := make(map[{{MySQLToGoType .}}]struct{}, len(cc.Data))
+	{{/*
+		TODO: a reusable map and use different algorithms depending on the size
+		of the cc.Data slice. Sometimes a for/for loop runs faster than a map.
+	*/}}
+	dupCheck := make(map[{{GoType .}}]struct{}, len(cc.Data))
 	for _, e := range cc.Data {
-		if _, ok := dubCheck[e.{{ToGoCamelCase .Field}}]; !ok {
-			ret = append(ret, e.{{ToGoCamelCase .Field}})
-			dubCheck[e.{{ToGoCamelCase .Field}}] = struct{}{}
+		if _, ok := dupCheck[e.{{GoPrimitive .}}]; !ok {
+			ret = append(ret, e.{{GoPrimitive .}})
+			dupCheck[e.{{GoPrimitive .}}] = struct{}{}
 		}
 	}
 	return ret

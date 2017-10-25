@@ -21,6 +21,7 @@ import (
 
 	"github.com/corestoreio/csfw/sql/ddl"
 	"github.com/corestoreio/csfw/util/bufferpool"
+	"github.com/corestoreio/csfw/util/slices"
 	"github.com/corestoreio/csfw/util/strs"
 	"github.com/corestoreio/errors"
 )
@@ -29,7 +30,6 @@ var Imports = map[string][]string{
 	"table": {
 		"database/sql",
 		"github.com/corestoreio/csfw/sql/dml",
-		"github.com/corestoreio/csfw/storage/money",
 		"github.com/corestoreio/errors",
 		"time",
 	},
@@ -45,38 +45,53 @@ type Table struct {
 	// The alias would be just: entity_id:[]string{"customer_id"}.
 	ColumnAliases map[string][]string
 	template.FuncMap
-	CharMaxLength int64 // default 256; all columns longer than 256 won't have a single function ...
+	// CharMaxLength defines the maximal length a column can have to generate
+	// its own extractor function. You must list the column in
+	// AllowedDuplicateValueColumns. Default value 256.
+	CharMaxLength int64
+	// AllowedDuplicateValueColumns defines a list of column names for which a
+	// dedicated function gets generated to extract all values from the
+	// collection into its own primitive slice. Only non blob/text columns can
+	// be generated.
+	AllowedDuplicateValueColumns []string
 }
 
-// WriteTo implements io.WriterTo and writes the generated source code into w.
-func (t *Table) WriteTo(w io.Writer) (n int64, err error) {
-
+func (t *Table) initFuncMap() {
 	if t.FuncMap == nil {
-		t.FuncMap = make(template.FuncMap)
+		t.FuncMap = make(template.FuncMap, 10)
 	}
-	t.FuncMap["ToCamelCase"] = strs.ToCamelCase
-	t.FuncMap["ToGoCamelCase"] = strs.ToGoCamelCase
-	if _, ok := t.FuncMap["MySQLToGoType"]; !ok {
-		t.FuncMap["MySQLToGoType"] = MySQLToGoType
+
+	t.FuncMap["ToGoCamelCase"] = strs.ToGoCamelCase // net_http->NetHTTP entity_id->EntityID
+	if _, ok := t.FuncMap["GoTypeNull"]; !ok {
+		t.FuncMap["GoTypeNull"] = toGoTypeNull
 	}
-	if _, ok := t.FuncMap["GoTypeFuncName"]; !ok {
-		t.FuncMap["GoTypeFuncName"] = GoTypeFuncName
+	if _, ok := t.FuncMap["GoType"]; !ok {
+		t.FuncMap["GoType"] = toGoType
+	}
+	if _, ok := t.FuncMap["GoFuncNull"]; !ok {
+		t.FuncMap["GoFuncNull"] = toGoFuncNull
+	}
+	if _, ok := t.FuncMap["GoFunc"]; !ok {
+		t.FuncMap["GoFunc"] = toGoFunc
+	}
+	if _, ok := t.FuncMap["GoPrimitive"]; !ok {
+		t.FuncMap["GoPrimitive"] = toGoPrimitive
 	}
 	if _, ok := t.FuncMap["ColumnAliases"]; !ok {
 		t.FuncMap["ColumnAliases"] = func(columnName string) []string {
 			return t.ColumnAliases[columnName]
 		}
 	}
+}
+
+// WriteTo implements io.WriterTo and writes the generated source code into w.
+func (t *Table) WriteTo(w io.Writer) (int64, error) {
+	t.initFuncMap()
 
 	tplEntity, err := template.New("entity").Funcs(t.FuncMap).Parse(TplDBAC)
 	if err != nil {
 		return 0, errors.WithStack(err)
 	}
-
-	// TODO: to generate the  entity slice extractor function ESEF figure out
-	// which columns are PK and UNQ. But only use those which have a single
-	// column as PK or UNQ. All other non unique columns must have a possibility
-	// to remove duplicate values.
 
 	data := struct {
 		Package               string
@@ -96,15 +111,15 @@ func (t *Table) WriteTo(w io.Writer) (n int64, err error) {
 		Tick:       "`",
 	}
 
-	if sk := t.Columns.PrimaryKeys(); len(sk) == 1 {
-		data.SingleKeyColumns = append(data.SingleKeyColumns, sk...)
+	if pk := t.Columns.PrimaryKeys(); len(pk) == 1 {
+		data.SingleKeyColumns = append(data.SingleKeyColumns, pk...)
 	} else {
-		data.DuplicateValueColumns = append(data.DuplicateValueColumns, sk...)
+		data.DuplicateValueColumns = append(data.DuplicateValueColumns, pk...)
 	}
-	if sk := t.Columns.UniqueKeys(); len(sk) == 1 {
-		data.SingleKeyColumns = append(data.SingleKeyColumns, sk...)
+	if uk := t.Columns.UniqueKeys(); len(uk) == 1 {
+		data.SingleKeyColumns = append(data.SingleKeyColumns, uk...)
 	} else {
-		data.DuplicateValueColumns = append(data.DuplicateValueColumns, sk...)
+		data.DuplicateValueColumns = append(data.DuplicateValueColumns, uk...)
 	}
 
 	// possibility of duplicate entries in this slice.
@@ -115,7 +130,8 @@ func (t *Table) WriteTo(w io.Writer) (n int64, err error) {
 		charMaxLength = t.CharMaxLength
 	}
 	data.DuplicateValueColumns = data.DuplicateValueColumns.Filter(func(c *ddl.Column) bool {
-		return !c.CharMaxLength.Valid || (c.CharMaxLength.Valid && c.CharMaxLength.Int64 < charMaxLength)
+		return slices.String(t.AllowedDuplicateValueColumns).Contains(c.Field) && (!c.CharMaxLength.Valid ||
+			(c.CharMaxLength.Valid && c.CharMaxLength.Int64 < charMaxLength))
 	})
 
 	buf := bufferpool.Get()

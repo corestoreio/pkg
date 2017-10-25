@@ -20,6 +20,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/corestoreio/csfw/sql/ddl"
+	"github.com/corestoreio/csfw/util/strs"
 	"github.com/corestoreio/errors"
 )
 
@@ -36,9 +37,9 @@ var (
 	}
 	goTypeInt = [...]string{
 		"dml.NullInt64", // unsigned null
-		"uint",          // unsigned not null
+		"uint64",        // unsigned not null
 		"dml.NullInt64", // signed null
-		"int",           // signed not null
+		"int64",         // signed not null
 	}
 	goTypeFloat64 = [...]string{
 		"dml.NullFloat64", // unsigned null
@@ -64,11 +65,11 @@ var (
 		"dml.NullBool", // signed null
 		"bool",         // signed not null
 	}
-	goTypeMoney = [...]string{
-		"money.Money", // unsigned null
-		"money.Money", // unsigned not null
-		"money.Money", // signed null
-		"money.Money", // signed not null
+	goTypeDecimal = [...]string{
+		"dml.Decimal", // unsigned null
+		"dml.Decimal", // unsigned not null
+		"dml.Decimal", // signed null
+		"dml.Decimal", // signed not null
 	}
 	goTypeByte = [...]string{
 		"[]byte", // unsigned null
@@ -108,12 +109,18 @@ var mysqlTypeToGo = map[string][goTypeOptions]string{
 	"bit":        goTypeBool,
 }
 
-// MySQLToGoType calculates the data type of the field DataType. The
-// calculated result will be cached. For example bigint, smallint, tinyint will
-// result in "int". The returned string guarantees to be lower case. Available
-// returned types are: bool, bytes, date, float, int, money, string, time. Data
-// type money is special for the database schema. This function is thread safe.
-func MySQLToGoType(c *ddl.Column) string {
+func toGoTypeNull(c *ddl.Column) string {
+	return mySQLToGoType(c, true)
+}
+
+func toGoType(c *ddl.Column) string {
+	return mySQLToGoType(c, false)
+}
+
+// mySQLToGoType calculates the data type of the field DataType. For example
+// bigint, smallint, tinyint will result in "int". If withNull is true the
+// returned type can store a null value.
+func mySQLToGoType(c *ddl.Column, withNull bool) string {
 
 	goType, ok := mysqlTypeToGo[c.DataType]
 	if !ok {
@@ -126,30 +133,49 @@ func MySQLToGoType(c *ddl.Column) string {
 	case c.IsBool():
 		goType = goTypeBool
 	case c.IsFloat() && c.IsMoney():
-		goType = goTypeMoney
+		goType = goTypeDecimal
 	}
 
 	var t string
 	switch {
-	case c.IsUnsigned() && c.IsNull():
+	case c.IsUnsigned() && c.IsNull() && withNull:
 		t = goType[0] // unsigned null
-	case c.IsUnsigned() && !c.IsNull():
+	case c.IsUnsigned() && (!c.IsNull() || !withNull):
 		t = goType[1] // unsigned not null
-	case !c.IsUnsigned() && c.IsNull():
+	case !c.IsUnsigned() && c.IsNull() && withNull:
 		t = goType[2] // signed null
-	case !c.IsUnsigned() && !c.IsNull():
+	case !c.IsUnsigned() && (!c.IsNull() || !withNull):
 		t = goType[3] // signed not null
 	}
 
 	return t
 }
 
-func GoTypeFuncName(c *ddl.Column) string {
+// toGoPrimitive returns for Go type or structure the final primitive:
+// int->int but NullInt->.Int
+func toGoPrimitive(c *ddl.Column) string {
+	t := mySQLToGoType(c, true)
+	field := strs.ToGoCamelCase(c.Field)
+	if strings.HasPrefix(t, "dml.Null") {
+		t = field + "." + t[8:]
+	} else {
+		t = field
+	}
+	return t
+}
 
-	gt := MySQLToGoType(c)
+func toGoFuncNull(c *ddl.Column) string {
+	return mySQLToGoFunc(c, true)
+}
+
+func toGoFunc(c *ddl.Column) string {
+	return mySQLToGoFunc(c, false)
+}
+
+func mySQLToGoFunc(c *ddl.Column, withNull bool) string {
+
+	gt := mySQLToGoType(c, withNull)
 	switch gt {
-	case "money.Money":
-		return "NullFloat64" // TODO
 	case "[]byte":
 		return "Byte"
 	}

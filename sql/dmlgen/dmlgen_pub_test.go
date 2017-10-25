@@ -85,6 +85,7 @@ func TestTable_WriteTo(t *testing.T) {
 		ColumnAliases: map[string][]string{
 			"path": {"storage_location", "config_directory"}, // just some values
 		},
+		AllowedDuplicateValueColumns: []string{"path"},
 	}
 	f, err := os.Create(outFile)
 	if err != nil {
@@ -126,6 +127,7 @@ func TestTable_WithAllTypes(t *testing.T) {
 		Package: "testdata",
 		Name:    "dmlgen_types",
 		Columns: colMap["dmlgen_types"],
+		AllowedDuplicateValueColumns: []string{"col_longtext_2", "col_int_1", "col_int_2", "has_smallint_5", "col_date_2", "col_blob"},
 	}
 	_, err = tbl.WriteTo(f)
 	if err != nil {
