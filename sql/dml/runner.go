@@ -457,8 +457,7 @@ func (b *ColumnMap) Decimal(ptr *Decimal) *ColumnMap {
 		return b
 	}
 	if b.scanErr == nil {
-		*ptr, b.scanErr = makeDecimal(b.current)
-		if b.scanErr != nil {
+		if *ptr, b.scanErr = MakeDecimalBytes(b.current); b.scanErr != nil {
 			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
 		}
 	}

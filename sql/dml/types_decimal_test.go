@@ -26,6 +26,7 @@ import (
 	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"strconv"
 )
 
 var _ fmt.GoStringer = (*dml.Decimal)(nil)
@@ -39,6 +40,43 @@ var _ encoding.TextUnmarshaler = (*dml.Decimal)(nil)
 var _ gob.GobEncoder = (*dml.Decimal)(nil)
 var _ gob.GobDecoder = (*dml.Decimal)(nil)
 var _ driver.Valuer = (*dml.Decimal)(nil)
+
+func TestMakeDecimalInt64(t *testing.T) {
+	t.Parallel()
+	d := dml.MakeDecimalInt64(-math.MaxInt64, 13)
+	assert.True(t, d.Negative)
+	assert.Exactly(t, uint64(math.MaxInt64), d.Precision)
+	assert.Exactly(t, int32(13), d.Scale)
+}
+
+func TestMakeDecimalFloat64(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		have    float64
+		want    string
+		wantErr error
+	}{
+		{math.NaN(), "0", nil},
+		{math.Inf(1), "0", nil},
+		{math.Inf(-1), "-0", nil},
+		{.00000000000000001, "0.00000000000000001", nil},
+		{123.45678901234567, "123.45678901234567", nil},
+		{123.456789012345678, "123.45678901234568", nil},
+		{123.456789012345671, "123.45678901234567", nil},
+		{987, "987", nil},
+		{math.MaxFloat64, strconv.FormatUint(math.MaxUint64, 10), nil},
+		{math.Phi * 4.01 * 5 / 9.099999, "3.565009344993927", nil},
+	}
+	for i, test := range tests {
+		d, err := dml.MakeDecimalFloat64(test.have)
+		if test.wantErr != nil {
+			assert.EqualError(t, err, test.wantErr.Error())
+			assert.Exactly(t, dml.Decimal{}, d)
+			continue
+		}
+		assert.Exactly(t, test.want, d.String(), "Index %d", i)
+	}
+}
 
 func TestDecimal_GoString(t *testing.T) {
 	t.Parallel()
@@ -241,7 +279,7 @@ func TestDecimal_MarshalText(t *testing.T) {
 		Negative:  true,
 	}, "-123.4"))
 
-	t.Run("Unmarshal emty", func(t *testing.T) {
+	t.Run("Unmarshal empty", func(t *testing.T) {
 		dNull := dml.Decimal{
 			Valid:     true,
 			Precision: 1234,

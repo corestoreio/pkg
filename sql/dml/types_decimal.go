@@ -27,6 +27,14 @@ import (
 	"github.com/corestoreio/errors"
 )
 
+// Flags get binary encoded in the marshalers
+const (
+	decimalFlagNegative = 1 << iota
+	decimalFlagValid
+	decimalFlagQuote
+	decimalBinaryVersion01
+)
+
 // Decimal defines a container type for any MySQL/MariaDB
 // decimal/numeric/float/double data type and their representation in Go.
 // Decimal does not perform any kind of calculations. Helpful packages for
@@ -44,35 +52,67 @@ type Decimal struct {
 	Quote bool
 }
 
-// Flags get binary encoded in the marshalers
-const (
-	decimalFlagNegative = 1 << iota
-	decimalFlagValid
-	decimalFlagQuote
-	decimalBinaryVersion01
-)
+// MakeDecimalInt64 converts an int64 with the scale to a Decimal.
+func MakeDecimalInt64(value int64, scale int32) Decimal {
+	neg := false
+	if value < 0 {
+		neg = true
+		value *= -1
+	}
+	return Decimal{
+		Precision: uint64(value),
+		Scale:     scale,
+		Negative:  neg,
+		Valid:     true,
+	}
+}
 
-func makeDecimal(b []byte) (ptr Decimal, err error) {
-	// maybe use string comparison but run benchmarks
-	if len(b) == 0 || bytes.Equal(b, bTextNullLC) || bytes.Equal(b, bTextNullUC) {
-		return ptr, nil
+// MakeDecimalFloat64 converts a float64 to Decimal.
+//
+// Example:
+//
+//     MakeDecimalFloat64(123.45678901234567).String()  // output: "123.45678901234567"
+//     MakeDecimalFloat64(123.456789012345678).String() // output: "123.45678901234568"
+//     MakeDecimalFloat64(.00000000000000001).String() // output: "0.00000000000000001"
+//
+func MakeDecimalFloat64(value float64) (d Decimal, err error) {
+	floor := math.Floor(value)
+
+	// fast path, where float is an int
+	if floor == value && value <= math.MaxInt64 && value >= math.MinInt64 {
+		return MakeDecimalInt64(int64(value), 0), nil
 	}
 
-	ptr.Valid = true
-	ptr.Negative = b[0] == '-'
-	if ptr.Negative || b[0] == '+' {
+	// slow path
+	// this the slow hacky way for now because the logic to
+	// convert a base-2 float to base-10 properly is not trivial
+	str := strconv.AppendFloat([]byte(``), value, 'f', -1, 64)
+	return MakeDecimalBytes(str)
+}
+
+// MakeDecimalBytes parses b to create a new Decimal. b must contain ASCII
+// numbers. If b contains null/NULL the returned object represents that value.
+// This function can be used for big.Int.Bytes() or similar implementations.
+func MakeDecimalBytes(b []byte) (d Decimal, err error) {
+	// maybe use string comparison but run benchmarks
+	if len(b) == 0 || bytes.Equal(b, bTextNullLC) || bytes.Equal(b, bTextNullUC) {
+		return
+	}
+
+	d.Valid = true
+	d.Negative = b[0] == '-'
+	if d.Negative || b[0] == '+' {
 		b = b[1:]
 	}
 
 	digits := b
 	if dotPos := bytes.IndexByte(digits, '.'); dotPos > 0 { // 0.333 dotPos is min 1
-		ptr.Scale = int32(len(b)-dotPos) - 1
+		d.Scale = int32(len(b)-dotPos) - 1
 		// remove dot 2363.7800 => 23637800 => Scale=4
 		digits = append(digits[:dotPos], b[dotPos+1:]...)
 	}
-
-	ptr.Precision, err = byteconv.ParseUint(digits, 10, 64)
-	return ptr, err
+	d.Precision, err = byteconv.ParseUint(digits, 10, 64)
+	return
 }
 
 // Int64 converts the underlying uint64 to an int64. Very useful for creating a
@@ -92,7 +132,7 @@ func (d Decimal) Int64() (value int64, scale int32) {
 }
 
 // Float64 converts the precision and the scale to a float64 value including the
-// usual float behaviour. Overflow will result in a weird float ...
+// usual float behaviour. Overflow will result in an undefined float64.
 func (d Decimal) Float64() (value float64) {
 	value = float64(d.Precision)
 	value *= math.Pow10(-int(d.Scale))
@@ -214,14 +254,12 @@ func unquoteIfQuoted(b []byte) (_ []byte, isQuoted bool) {
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
-func (d *Decimal) UnmarshalJSON(b []byte) error {
+func (d *Decimal) UnmarshalJSON(b []byte) (err error) {
 	b, isQuoted := unquoteIfQuoted(b)
-	dec, err := makeDecimal(b)
-	dec.Quote = isQuoted
-	*d = dec
-	if err != nil {
-		return errors.NewNotValidf("[dml] Decoding failed of %q with error: %s", b, err)
+	if *d, err = MakeDecimalBytes(b); err != nil {
+		return errors.NewNotValidf("[dml] Decimal Decoding failed of %q with error: %s", b, err)
 	}
+	d.Quote = isQuoted
 	return nil
 }
 
@@ -308,11 +346,9 @@ func (d Decimal) Value() (driver.Value, error) {
 
 // UnmarshalText implements the encoding.TextUnmarshaler interface for XML
 // deserialization.
-func (d *Decimal) UnmarshalText(text []byte) error {
-	dec, err := makeDecimal(text)
-	*d = dec
-	if err != nil {
-		return errors.NewNotValidf("[dml] Decoding failed of %q with error: %s", text, err)
+func (d *Decimal) UnmarshalText(text []byte) (err error) {
+	if *d, err = MakeDecimalBytes(text); err != nil {
+		return errors.NewNotValidf("[dml] Decimal Decoding failed of %q with error: %s", text, err)
 	}
 	return nil
 }
