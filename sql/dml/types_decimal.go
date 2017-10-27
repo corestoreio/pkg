@@ -160,7 +160,7 @@ func (d Decimal) String() string {
 
 func (d Decimal) string(buf *bytes.Buffer) {
 	if !d.Valid {
-		buf.WriteString("NULL")
+		buf.WriteString(sqlStrNullUC)
 		return
 	}
 	prevLen := int32(buf.Len())
@@ -266,7 +266,7 @@ func (d *Decimal) UnmarshalJSON(b []byte) (err error) {
 // MarshalJSON implements the json.Marshaler interface.
 func (d Decimal) MarshalJSON() ([]byte, error) {
 	if !d.Valid {
-		return []byte(`null`), nil
+		return []byte(sqlStrNullLC), nil
 	}
 	buf := new(bytes.Buffer)
 	if d.Quote {

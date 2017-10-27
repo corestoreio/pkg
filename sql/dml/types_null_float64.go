@@ -88,7 +88,7 @@ func (a *NullFloat64) UnmarshalJSON(data []byte) error {
 // It will return an error if the input is not an integer, blank, or "null".
 func (a *NullFloat64) UnmarshalText(text []byte) error {
 	str := string(text)
-	if str == "" || str == "null" {
+	if str == "" || str == sqlStrNullLC {
 		a.Valid = false
 		return nil
 	}
@@ -102,7 +102,7 @@ func (a *NullFloat64) UnmarshalText(text []byte) error {
 // It will encode null if this NullFloat64 is null.
 func (a NullFloat64) MarshalJSON() ([]byte, error) {
 	if !a.Valid {
-		return []byte("null"), nil
+		return []byte(sqlStrNullLC), nil
 	}
 	return strconv.AppendFloat([]byte{}, a.Float64, 'f', -1, 64), nil
 }

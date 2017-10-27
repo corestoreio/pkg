@@ -214,7 +214,7 @@ func writeUint64(w *bytes.Buffer, i uint64) (err error) {
 func writeBytes(w *bytes.Buffer, p []byte) (err error) {
 	switch {
 	case p == nil:
-		_, err = w.WriteString(sqlStrNull)
+		_, err = w.WriteString(sqlStrNullUC)
 	case !utf8.Valid(p):
 		dialect.EscapeBinary(w, p)
 	default:

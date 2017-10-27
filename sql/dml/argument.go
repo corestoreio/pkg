@@ -28,8 +28,9 @@ import (
 // https://www.adampalmer.me/iodigitalsec/2013/08/18/mysql_real_escape_string-wont-magically-solve-your-sql-injection-problems/
 
 const (
-	sqlStrNull = "NULL"
-	sqlStar    = "*"
+	sqlStrNullUC = "NULL"
+	sqlStrNullLC = "null"
+	sqlStar      = "*"
 )
 
 // QualifiedRecord is a ColumnMapper with a qualifier. A QualifiedRecord gets
@@ -127,7 +128,7 @@ func (arg argument) writeTo(w *bytes.Buffer, pos int) (err error) {
 		if s := v[pos]; s.Valid {
 			return writeInt64(w, s.Int64)
 		}
-		_, err = w.WriteString(sqlStrNull)
+		_, err = w.WriteString(sqlStrNullUC)
 
 	case uint64:
 		err = writeUint64(w, v)
@@ -144,7 +145,7 @@ func (arg argument) writeTo(w *bytes.Buffer, pos int) (err error) {
 		if s := v[pos]; s.Valid {
 			return writeFloat64(w, s.Float64)
 		}
-		_, err = w.WriteString(sqlStrNull)
+		_, err = w.WriteString(sqlStrNullUC)
 
 	case bool:
 		dialect.EscapeBool(w, v)
@@ -155,7 +156,7 @@ func (arg argument) writeTo(w *bytes.Buffer, pos int) (err error) {
 			dialect.EscapeBool(w, s.Bool)
 			return nil
 		}
-		_, err = w.WriteString(sqlStrNull)
+		_, err = w.WriteString(sqlStrNullUC)
 
 		// TODO(CyS) Cut the printed string in errors if it's longer than XX chars
 	case string:
@@ -175,7 +176,7 @@ func (arg argument) writeTo(w *bytes.Buffer, pos int) (err error) {
 			}
 			dialect.EscapeString(w, s.String)
 		} else {
-			_, err = w.WriteString(sqlStrNull)
+			_, err = w.WriteString(sqlStrNullUC)
 		}
 
 	case []byte:
@@ -192,11 +193,11 @@ func (arg argument) writeTo(w *bytes.Buffer, pos int) (err error) {
 		if nt := v[pos]; nt.Valid {
 			dialect.EscapeTime(w, nt.Time)
 		} else {
-			_, err = w.WriteString(sqlStrNull)
+			_, err = w.WriteString(sqlStrNullUC)
 		}
 
 	case nil:
-		_, err = w.WriteString(sqlStrNull)
+		_, err = w.WriteString(sqlStrNullUC)
 	case placeHolder:
 		err = w.WriteByte(placeHolderRune)
 

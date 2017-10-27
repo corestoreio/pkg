@@ -47,7 +47,7 @@ func (nt NullTime) GoString() string {
 // It will encode null if this time is null.
 func (nt NullTime) MarshalJSON() ([]byte, error) {
 	if !nt.Valid {
-		return []byte("null"), nil
+		return []byte(sqlStrNullLC), nil
 	}
 	return nt.Time.MarshalJSON()
 }
@@ -86,7 +86,7 @@ func (nt *NullTime) UnmarshalJSON(data []byte) error {
 // MarshalText transforms the time type into a byte slice.
 func (nt NullTime) MarshalText() ([]byte, error) {
 	if !nt.Valid {
-		return []byte("null"), nil
+		return []byte(sqlStrNullLC), nil
 	}
 	return nt.Time.MarshalText()
 }
@@ -94,7 +94,7 @@ func (nt NullTime) MarshalText() ([]byte, error) {
 // UnmarshalText parses the byte slice to create a time type.
 func (nt *NullTime) UnmarshalText(text []byte) error {
 	str := string(text)
-	if str == "" || str == "null" {
+	if str == "" || str == sqlStrNullLC {
 		nt.Valid = false
 		return nil
 	}

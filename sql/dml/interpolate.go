@@ -257,7 +257,7 @@ func writeInterpolate(buf *bytes.Buffer, sql []byte, args Arguments) error {
 				}
 			}
 			if !args[argIndex].isSet {
-				buf.WriteString("NULL")
+				buf.WriteString(sqlStrNullUC)
 			} else if err := args[argIndex].writeTo(buf, phCounter); err != nil {
 				return errors.WithStack(err)
 			}

@@ -87,7 +87,7 @@ func TestTextUnmarshalBool(t *testing.T) {
 	assertNullBool(t, blank, "UnmarshalText() empty bool")
 
 	var null NullBool
-	err = null.UnmarshalText([]byte("null"))
+	err = null.UnmarshalText([]byte(sqlStrNullLC))
 	maybePanic(err)
 	assertNullBool(t, null, `UnmarshalText() "null"`)
 
@@ -116,7 +116,7 @@ func TestMarshalBool(t *testing.T) {
 	null := MakeNullBool(false, false)
 	data, err = json.Marshal(null)
 	maybePanic(err)
-	assertJSONEquals(t, data, "null", "null json marshal")
+	assertJSONEquals(t, data, sqlStrNullLC, "null json marshal")
 }
 
 func TestMarshalBoolText(t *testing.T) {

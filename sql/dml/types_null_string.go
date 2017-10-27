@@ -95,7 +95,7 @@ func (a *NullString) UnmarshalJSON(data []byte) error {
 // It will encode null if this NullString is dml.
 func (a NullString) MarshalJSON() ([]byte, error) {
 	if !a.Valid {
-		return []byte("null"), nil
+		return []byte(sqlStrNullLC), nil
 	}
 	return JSONMarshalFn(a.String)
 }

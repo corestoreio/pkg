@@ -552,6 +552,27 @@ func (c *Condition) Uint64s(i ...uint64) *Condition {
 	return c
 }
 
+// Add when needed
+//func (c *Condition) Decimals(d ...Decimal) *Condition {}
+
+func (c *Condition) Decimal(d Decimal) *Condition {
+	v := d.String()
+	if c.isExpression() {
+		if v == sqlStrNullUC {
+			c.Right.Arguments = c.Right.Arguments.Null()
+		} else {
+			c.Right.Arguments = c.Right.Arguments.String(v)
+		}
+		return c
+	}
+	if v == sqlStrNullUC {
+		c.Right.Argument.set(nil)
+	} else {
+		c.Right.Argument.set(v)
+	}
+	return c
+}
+
 func (c *Condition) Float64(f float64) *Condition {
 	if c.isExpression() {
 		c.Right.Arguments = c.Right.Arguments.Float64(f)

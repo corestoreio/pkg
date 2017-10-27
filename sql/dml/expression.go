@@ -68,7 +68,7 @@ func sqlIfNull(expression []string) string {
 
 	switch len(expression) {
 	case 1:
-		sqlIfNullQuote2(buf, expression[0], "NULL")
+		sqlIfNullQuote2(buf, expression[0], sqlStrNullUC)
 	case 2:
 		// Input:  dml.SQLIfNull(col1,col2)
 		// Output: IFNULL(`col1`, `col2`)

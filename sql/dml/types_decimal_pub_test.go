@@ -23,10 +23,11 @@ import (
 	"math"
 	"testing"
 
+	"strconv"
+
 	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"strconv"
 )
 
 var _ fmt.GoStringer = (*dml.Decimal)(nil)

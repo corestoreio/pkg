@@ -29,7 +29,7 @@ var (
 	blankStringJSON = []byte(`""`)
 	nullStringJSON  = []byte(`{"NullString":"test","Valid":true}`)
 
-	nullJSON    = []byte(`null`)
+	nullJSON    = []byte(sqlStrNullLC)
 	invalidJSON = []byte(`:)`)
 )
 

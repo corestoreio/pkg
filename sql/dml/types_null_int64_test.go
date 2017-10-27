@@ -127,7 +127,7 @@ func TestTextUnmarshalInt64(t *testing.T) {
 	assertNullInt64(t, blank, "UnmarshalText() empty int64")
 
 	var null NullInt64
-	err = null.UnmarshalText([]byte("null"))
+	err = null.UnmarshalText([]byte(sqlStrNullLC))
 	maybePanic(err)
 	assertNullInt64(t, null, `UnmarshalText() "null"`)
 }
@@ -143,7 +143,7 @@ func TestMarshalInt64(t *testing.T) {
 	null := MakeNullInt64(0, false)
 	data, err = json.Marshal(null)
 	maybePanic(err)
-	assertJSONEquals(t, data, "null", "null json marshal")
+	assertJSONEquals(t, data, sqlStrNullLC, "null json marshal")
 }
 
 func TestMarshalInt64Text(t *testing.T) {

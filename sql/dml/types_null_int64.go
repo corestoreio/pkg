@@ -16,9 +16,8 @@ package dml
 
 import (
 	"database/sql"
-	"strconv"
-
 	"database/sql/driver"
+	"strconv"
 
 	"github.com/corestoreio/errors"
 )
@@ -87,10 +86,10 @@ func (a *NullInt64) UnmarshalJSON(data []byte) error {
 
 // UnmarshalText implements encoding.TextUnmarshaler.
 // It will unmarshal to a null NullInt64 if the input is a blank or not an integer.
-// It will return an error if the input is not an integer, blank, or "null".
+// It will return an error if the input is not an integer, blank, or sqlStrNullLC.
 func (a *NullInt64) UnmarshalText(text []byte) error {
 	str := string(text)
-	if str == "" || str == "null" {
+	if str == "" || str == sqlStrNullLC {
 		a.Valid = false
 		return nil
 	}
@@ -104,7 +103,7 @@ func (a *NullInt64) UnmarshalText(text []byte) error {
 // It will encode null if this NullInt64 is null.
 func (a NullInt64) MarshalJSON() ([]byte, error) {
 	if !a.Valid {
-		return []byte("null"), nil
+		return []byte(sqlStrNullLC), nil
 	}
 	return strconv.AppendInt([]byte{}, a.Int64, 10), nil
 }

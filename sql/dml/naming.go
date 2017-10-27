@@ -339,7 +339,7 @@ func (mq MysqlQuoter) WriteIdentifier(w *bytes.Buffer, name string) {
 	switch {
 	case name == "":
 		return
-	case name == "NULL": // see calling func sqlIfNullQuote2
+	case name == sqlStrNullUC: // see calling func sqlIfNullQuote2
 		w.WriteString(name)
 		return
 	case strings.HasPrefix(name, quote) && strings.HasSuffix(name, quote): // not really secure

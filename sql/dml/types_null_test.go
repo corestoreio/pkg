@@ -25,6 +25,33 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestDecimal_Select_Integration(t *testing.T) {
+	s := createRealSessionWithFixtures(t, nil)
+
+	rec := newNullTypedRecordWithData()
+	in := s.InsertInto("dml_null_types").
+		AddColumns("id", "string_val", "int64_val", "float64_val", "time_val", "bool_val", "decimal_val")
+
+	res, err := in.BindRecord(rec).Exec(context.TODO())
+	require.NoError(t, err)
+	id, err := res.LastInsertId()
+	require.NoError(t, err)
+	assert.Exactly(t, int64(2), id)
+
+	nullTypeSet := &nullTypedRecord{}
+	dec := Decimal{Precision: 12345, Scale: 3, Valid: true}
+
+	sel := s.SelectFrom("dml_null_types").Star().Where(
+		Column("decimal_val").Decimal(dec),
+	)
+
+	rc, err := sel.Load(context.TODO(), nullTypeSet)
+	require.NoError(t, err)
+	assert.Exactly(t, uint64(1), rc)
+
+	assert.Exactly(t, rec, nullTypeSet)
+}
+
 func TestNullTypeScanning(t *testing.T) {
 	s := createRealSessionWithFixtures(t, nil)
 

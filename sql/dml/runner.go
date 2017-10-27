@@ -449,7 +449,7 @@ func (b *ColumnMap) Float64(ptr *float64) *ColumnMap {
 // documentation for function Scan.
 func (b *ColumnMap) Decimal(ptr *Decimal) *ColumnMap {
 	if b.Args != nil {
-		if v := ptr.String(); ptr == nil || v == "NULL" {
+		if v := ptr.String(); ptr == nil || v == sqlStrNullUC {
 			b.Args = b.Args.Null()
 		} else {
 			b.Args = b.Args.String(v)

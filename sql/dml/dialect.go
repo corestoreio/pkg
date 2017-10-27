@@ -61,7 +61,7 @@ func (d mysqlDialect) EscapeBool(w *bytes.Buffer, b bool) {
 
 func (d mysqlDialect) EscapeBinary(w *bytes.Buffer, b []byte) {
 	if b == nil {
-		w.WriteString("NULL")
+		w.WriteString(sqlStrNullUC)
 	} else {
 		// TODO(CyS) no idea if that at the correct way. do an RTFM
 		w.WriteString("0x")

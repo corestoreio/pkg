@@ -23,8 +23,8 @@ import (
 
 const argBytesCap = 8
 
-var bTextNullUC = []byte(`NULL`)
-var bTextNullLC = []byte(`null`)
+var bTextNullUC = []byte(sqlStrNullUC)
+var bTextNullLC = []byte(sqlStrNullLC)
 
 // argEncoded multi dimensional and reusable data structure to encode primitive
 // types into byte slices and later write those byte slices somewhere into. The

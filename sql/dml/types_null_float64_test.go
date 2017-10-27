@@ -87,7 +87,7 @@ func TestTextUnmarshalFloat64(t *testing.T) {
 	assertNullFloat64(t, blank, "UnmarshalText() empty float64")
 
 	var null NullFloat64
-	err = null.UnmarshalText([]byte("null"))
+	err = null.UnmarshalText([]byte(sqlStrNullLC))
 	maybePanic(err)
 	assertNullFloat64(t, null, `UnmarshalText() "null"`)
 }
@@ -102,7 +102,7 @@ func TestMarshalFloat64(t *testing.T) {
 	null := MakeNullFloat64(0, false)
 	data, err = json.Marshal(null)
 	maybePanic(err)
-	assertJSONEquals(t, data, "null", "null json marshal")
+	assertJSONEquals(t, data, sqlStrNullLC, "null json marshal")
 }
 
 func TestMarshalFloat64Text(t *testing.T) {

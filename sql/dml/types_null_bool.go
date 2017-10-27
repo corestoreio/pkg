@@ -87,7 +87,7 @@ func (a *NullBool) UnmarshalJSON(data []byte) error {
 func (a *NullBool) UnmarshalText(text []byte) error {
 	str := string(text)
 	switch str {
-	case "", "null":
+	case "", sqlStrNullLC:
 		a.Valid = false
 		return nil
 	case "true":
@@ -106,7 +106,7 @@ func (a *NullBool) UnmarshalText(text []byte) error {
 // It will encode null if this NullBool is null.
 func (a NullBool) MarshalJSON() ([]byte, error) {
 	if !a.Valid {
-		return []byte("null"), nil
+		return []byte(sqlStrNullLC), nil
 	}
 	if !a.Bool {
 		return []byte("false"), nil
