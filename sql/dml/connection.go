@@ -17,6 +17,7 @@ package dml
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"time"
 
 	"github.com/corestoreio/errors"
@@ -45,11 +46,8 @@ type logWithID struct {
 // events, errors, and timings to
 type ConnPool struct {
 	logWithID
-	DB *sql.DB
-	// dn internal driver name
-	dn string
-	// dsn Data Source Name
-	dsn *mysql.Config
+	DB  *sql.DB
+	dsn string
 }
 
 // Conn represents a single database session rather a pool of database sessions.
@@ -104,8 +102,8 @@ func WithLogger(l log.Logger, uniqueIDFn func() string) ConnPoolOption {
 	}
 }
 
-// WithDB sets the DB value to a connection. If set ignores the DSN values.
-// Mainly used for testing.
+// WithDB sets the DB value to an existing connection. Mainly used for testing.
+// Does not support DriverCallBack.
 func WithDB(db *sql.DB) ConnPoolOption {
 	return func(c *ConnPool) error {
 		c.DB = db
@@ -113,16 +111,46 @@ func WithDB(db *sql.DB) ConnPoolOption {
 	}
 }
 
-// WithDSN sets the data source name for a connection.
-func WithDSN(dsn string) ConnPoolOption {
+// WithUniqueIDFn applies a unique ID generator function without an applied
+// logger as in WithLogger. For more details see WithLogger function.
+func WithUniqueIDFn(uniqueIDFn func() string) ConnPoolOption {
 	return func(c *ConnPool) error {
-		myc, err := mysql.ParseDSN(dsn)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		c.dsn = myc
+		c.makeUniqueID = uniqueIDFn
 		return nil
 	}
+}
+
+// WithDSN sets the data source name for a connection.
+// Second argument DriverCallBack adds a low level call back function on MySQL driver level to
+// create a a new instrumented driver. No need to call `sql.Register`!
+func WithDSN(dsn string, cb ...DriverCallBack) ConnPoolOption {
+	if len(cb) > 1 {
+		panic(errors.NewNotImplementedf("[dml] Only one DriverCallBack function does currently work. You provided: %d", len(cb)))
+	}
+	return func(c *ConnPool) error {
+		c.dsn = dsn
+		var drv driver.Driver = mysql.MySQLDriver{}
+		if len(cb) == 1 {
+			drv = wrapDriver(drv, cb[0])
+		}
+		c.DB = sql.OpenDB(dsnConnector{dsn: dsn, driver: drv})
+		return nil
+	}
+}
+
+// dsnConnector implements a type to open a connection to the DB. It makes the
+// call to sql.Register superfluous.
+type dsnConnector struct {
+	dsn    string
+	driver driver.Driver
+}
+
+func (t dsnConnector) Connect(_ context.Context) (driver.Conn, error) {
+	return t.driver.Open(t.dsn)
+}
+
+func (t dsnConnector) Driver() driver.Driver {
+	return t.driver
 }
 
 // NewConnPool instantiates a ConnPool for a given database/sql connection
@@ -130,31 +158,15 @@ func WithDSN(dsn string) ConnPoolOption {
 // returned. You can either apply a DSN or a pre configured *sql.DB type. For
 // full UTF-8 support you must set the charset in the SQL driver to utf8mb4.
 func NewConnPool(opts ...ConnPoolOption) (*ConnPool, error) {
-	c := &ConnPool{
-		dn: DriverNameMySQL,
-	}
+	c := &ConnPool{}
 	if err := c.Options(opts...); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	switch c.dn {
-	case DriverNameMySQL:
-	default:
-		return nil, errors.NewNotImplementedf("[dml] unsupported driver: %q", c.dn)
-	}
 	if c.makeUniqueID == nil {
 		c.makeUniqueID = uniqueIDNoOp
 	}
-	if c.DB != nil || c.dsn == nil {
-		return c, nil
-	}
-
 	// validate that DSN contains the utf8mb4 setting
-
-	var err error
-	if c.DB, err = sql.Open(c.dn, c.dsn.FormatDSN()); err != nil {
-		return nil, errors.WithStack(err)
-	}
 
 	// TODO: Validate that we run with utf8mb4 the normal utf8 is only 3 bytes
 	// where utf8mb4 is full 4byte support.

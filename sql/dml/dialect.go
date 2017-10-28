@@ -38,9 +38,6 @@ type dialecter interface {
 
 const mysqlTimeFormat = "2006-01-02 15:04:05"
 
-// DriverNameMySQL name of the driver for usage in sql.Open function.
-const DriverNameMySQL = "mysql"
-
 type mysqlDialect struct {
 	identR *strings.Replacer
 }
