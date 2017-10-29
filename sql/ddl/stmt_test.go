@@ -208,7 +208,7 @@ func TestResurrectStmtRealDB(t *testing.T) {
 	}
 
 	dbc := cstesting.MustConnectDB(t)
-	defer func() { assert.NoError(t, dbc.Close()) }()
+	defer cstesting.Close(t, dbc)
 
 	tw := newTypeWriterReal(dbc.DB, l)
 	tw.Write.StartIdleChecker()

@@ -39,7 +39,7 @@ func TestLoadColumns_Mage21(t *testing.T) {
 	t.Parallel()
 
 	dbc := cstesting.MustConnectDB(t)
-	defer dbc.Close()
+	defer cstesting.Close(t, dbc)
 
 	tests := []struct {
 		table          string

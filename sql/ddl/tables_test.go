@@ -147,7 +147,7 @@ func TestTables_RowScan_Integration(t *testing.T) {
 	t.Parallel()
 
 	dbc := cstesting.MustConnectDB(t)
-	defer dbc.Close()
+	defer cstesting.Close(t, dbc)
 
 	tm0 := ddl.MustNewTables(
 		ddl.WithTable("admin_user"),

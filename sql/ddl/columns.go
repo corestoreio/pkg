@@ -229,10 +229,10 @@ func (cs Columns) UniqueKeys() Columns {
 }
 
 func colIsNotPK(c *Column) bool {
-	return !c.IsPK()
+	return !c.IsPK() && !c.IsUnique()
 }
 
-// ColumnsNoPK returns all non primary key columns
+// ColumnsNoPK returns all non primary key and non-unique key columns.
 func (cs Columns) ColumnsNoPK() Columns {
 	return cs.Filter(colIsNotPK)
 }
