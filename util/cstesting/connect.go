@@ -26,7 +26,7 @@ import (
 )
 
 // EnvDSN is the name of the environment variable
-const EnvDSN string = "CS_DSN"
+const EnvDSN = "CS_DSN"
 
 func getDSN(env string) (string, error) {
 	dsn := os.Getenv(env)
@@ -55,12 +55,10 @@ func MustConnectDB(t testing.TB, opts ...dml.ConnPoolOption) *dml.ConnPool {
 	if _, err := getDSN(EnvDSN); errors.IsNotFound(err) {
 		t.Skipf("%s", err)
 	}
-	cos := []dml.ConnPoolOption{dml.WithDSN(MustGetDSN())}
 	if len(opts) == 0 {
-		return dml.MustConnectAndVerify(cos...)
+		return dml.MustConnectAndVerify(dml.WithDSN(MustGetDSN()))
 	}
-	dbc := dml.MustConnectAndVerify(append(cos, opts...)...)
-	return dbc
+	return dml.MustConnectAndVerify(opts...)
 }
 
 // Close for usage in conjunction with defer.
