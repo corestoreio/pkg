@@ -82,11 +82,12 @@ func (c cbConn) PrepareContext(ctx context.Context, query string) (stmt driver.S
 	if stmt, err = c.Conn.PrepareContext(ctx, query); err != nil {
 		return nil, err
 	}
-	fStmt, ok := stmt.(fullStmter)
-	if !ok {
-		return nil, errors.NewNotSupportedf("[dml] Driver does not support all required interfaces (fullStmter)")
+	if fStmt, ok := stmt.(fullStmter); ok {
+		stmt = &cbStmt{Stmt: fStmt, cb: c.cb, query: query}
+	} else {
+		err = errors.NewNotSupportedf("[dml] Driver does not support all required interfaces (fullStmter)")
 	}
-	return &cbStmt{Stmt: fStmt, cb: c.cb, query: query}, nil
+	return stmt, err
 }
 
 func (c cbConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (res driver.Result, err error) {
@@ -121,11 +122,13 @@ func (c cbConn) Prepare(query string) (stmt driver.Stmt, err error) {
 	if stmt, err = c.Conn.Prepare(query); err != nil {
 		return nil, err
 	}
-	fStmt, ok := stmt.(fullStmter)
-	if !ok {
-		return nil, errors.NewNotSupportedf("[dml] Driver does not support all required interfaces (fullStmter)")
+
+	if fStmt, ok := stmt.(fullStmter); ok {
+		stmt = &cbStmt{Stmt: fStmt, cb: c.cb, query: query}
+	} else {
+		err = errors.NewNotSupportedf("[dml] Driver does not support all required interfaces (fullStmter)")
 	}
-	return &cbStmt{Stmt: fStmt, cb: c.cb, query: query}, nil
+	return stmt, err
 }
 
 func (c cbConn) Close() (err error) {
