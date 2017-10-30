@@ -16,7 +16,6 @@ package dmlgen_test
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"testing"
@@ -55,47 +54,34 @@ GROUP BY COLUMN_TYPE
 ORDER BY COLUMN_TYPE
 */
 
-var _ io.WriterTo = (*dmlgen.Table)(nil)
-
-func writeGoFileHeader(w io.Writer, imports []string) {
-	w.Write([]byte("package testdata\n\nimport (\n"))
-	for _, i := range imports {
-		fmt.Fprintf(w, "\t%q\n", i)
-	}
-	w.Write([]byte("\n)\n"))
-}
+var _ io.WriterTo = (*dmlgen.Tables)(nil)
 
 func TestTable_WriteTo(t *testing.T) {
 	t.Parallel()
 
 	const outFile = "testdata/core_config_data.gen.go"
-
 	os.Remove(outFile)
 
-	tbl := &dmlgen.Table{
-		Package: "testdata",
-		Name:    "core_config_data",
-		Columns: ddl.Columns{
+	ts, err := dmlgen.NewTables("testdata",
+		dmlgen.WithTable("core_config_data", ddl.Columns{
 			&ddl.Column{Field: "config_id", Pos: 1, Null: "NO", DataType: "int", Precision: dml.MakeNullInt64(10), Scale: dml.MakeNullInt64(0), ColumnType: "int(10) unsigned", Key: "PRI", Extra: "auto_increment", Comment: "Config Id"},
 			&ddl.Column{Field: "scope", Pos: 2, Default: dml.MakeNullString("'default'"), Null: "NO", DataType: "varchar", CharMaxLength: dml.MakeNullInt64(8), ColumnType: "varchar(8)", Key: "MUL", Comment: "Config Scope"},
 			&ddl.Column{Field: "scope_id", Pos: 3, Default: dml.MakeNullString("0"), Null: "NO", DataType: "int", Precision: dml.MakeNullInt64(10), Scale: dml.MakeNullInt64(0), ColumnType: "int(11)", Comment: "Config Scope Id"},
 			&ddl.Column{Field: "path", Pos: 4, Default: dml.MakeNullString("'general'"), Null: "NO", DataType: "varchar", CharMaxLength: dml.MakeNullInt64(255), ColumnType: "varchar(255)", Comment: "Config Path"},
 			&ddl.Column{Field: "value", Pos: 5, Default: dml.MakeNullString("NULL"), Null: "YES", DataType: "text", CharMaxLength: dml.MakeNullInt64(65535), ColumnType: "text", Comment: "Config Value"},
-		},
-		ColumnAliases: map[string][]string{
-			"path": {"storage_location", "config_directory"}, // just some values
-		},
-		AllowedDuplicateValueColumns: []string{"path"},
-	}
+		}),
+		dmlgen.WithColumnAliases("core_config_data", "path", "storage_location", "config_directory"),
+		dmlgen.WithUniquifiedColumns("core_config_data", "path"),
+	)
+	require.NoError(t, err)
+
 	f, err := os.Create(outFile)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer cstesting.Close(t, f)
 
-	writeGoFileHeader(f, dmlgen.Imports["table"])
-
-	_, err = tbl.WriteTo(f)
+	_, err = ts.WriteTo(f)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
@@ -111,9 +97,6 @@ func TestTable_WithAllTypes(t *testing.T) {
 		cstesting.WithFile("testdata/dmlgen_types.csv"),
 	))
 
-	colMap, err := ddl.LoadColumns(context.Background(), db.DB, "dmlgen_types")
-	require.NoError(t, err)
-
 	const outFile = "testdata/dmlgen_types.gen.go"
 	os.Remove(outFile)
 	f, err := os.Create(outFile)
@@ -122,14 +105,13 @@ func TestTable_WithAllTypes(t *testing.T) {
 	}
 	defer cstesting.Close(t, f)
 
-	writeGoFileHeader(f, dmlgen.Imports["table"])
-	tbl := &dmlgen.Table{
-		Package: "testdata",
-		Name:    "dmlgen_types",
-		Columns: colMap["dmlgen_types"],
-		AllowedDuplicateValueColumns: []string{"col_longtext_2", "col_int_1", "col_int_2", "has_smallint_5", "col_date_2", "col_blob"},
-	}
-	_, err = tbl.WriteTo(f)
+	ts, err := dmlgen.NewTables("testdata",
+		dmlgen.WithLoadColumns(context.Background(), db.DB, "dmlgen_types"),
+		dmlgen.WithUniquifiedColumns("dmlgen_types", "col_longtext_2", "col_int_1", "col_int_2", "has_smallint_5", "col_date_2", "col_blob"),
+	)
+	require.NoError(t, err)
+
+	_, err = ts.WriteTo(f)
 	if err != nil {
 		t.Fatal(err)
 	}

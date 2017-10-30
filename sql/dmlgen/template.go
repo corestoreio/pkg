@@ -95,11 +95,11 @@ func (cc *{{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
 	case dml.ColumnMapCollectionReadSet:
 		for cm.Next() {
 			switch c := cm.Column(); c {
-			{{- range .SingleKeyColumns -}}
+			{{- range .ExtractColumns -}}
 			case "{{.Field }}"{{ range ColumnAliases .Field}},"{{.}}"{{end}}:
 				cm.Args = cm.Args.{{GoFuncNull .}}s(cc.{{ToGoCamelCase .Field}}s()...)
 			{{- end}}
-			{{- range .DuplicateValueColumns}}
+			{{- range .ExtractUniquifiedColumns}}
 			case "{{.Field }}"{{ range ColumnAliases .Field}},"{{.}}"{{end}}:
 				cm.Args = cm.Args.{{GoFunc .}}s(cc.{{ToGoCamelCase .Field}}s()...){{end}}
 			default:
@@ -111,7 +111,7 @@ func (cc *{{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
 	}
 	return cm.Err()
 }
-{{ range .SingleKeyColumns }}
+{{ range .ExtractColumns }}
 // {{ToGoCamelCase .Field}}s returns a slice or appends to a slice all values.
 func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoTypeNull .}}) []{{GoTypeNull .}} {
 	if ret == nil {
@@ -123,7 +123,7 @@ func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoTypeNull .}}) [
 	return ret
 } {{end}}
 
-{{- range .DuplicateValueColumns }}
+{{- range .ExtractUniquifiedColumns }}
 // {{ToGoCamelCase .Field}}s returns a slice or appends to a slice only unique
 // values.
 func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoType .}}) []{{GoType .}} {

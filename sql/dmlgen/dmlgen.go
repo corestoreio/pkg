@@ -15,93 +15,222 @@
 package dmlgen
 
 import (
+	"bytes"
+	"context"
+	"fmt"
 	"go/format"
 	"io"
+	"path/filepath"
 	"text/template"
 
 	"github.com/corestoreio/csfw/sql/ddl"
+	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/slices"
 	"github.com/corestoreio/csfw/util/strs"
 	"github.com/corestoreio/errors"
 )
 
-var Imports = map[string][]string{
-	"table": {
-		"database/sql",
-		"github.com/corestoreio/csfw/sql/dml",
-		"github.com/corestoreio/errors",
-		"time",
-	},
-}
-
-// Table writes one database table into Go source code.
-type Table struct {
-	Package string
-	Name    string
-	Columns ddl.Columns
+type Tables struct {
+	Package     string // Name of the package
+	ImportPaths []string
+	Tables      []*table
+	template.FuncMap
 	// ColumnAliases holds for a given key, the column name, its multiple aliases.
 	// For example customer_entity.entity_id can also be sales_order.customer_id.
 	// The alias would be just: entity_id:[]string{"customer_id"}.
-	ColumnAliases map[string][]string
-	template.FuncMap
-	// CharMaxLength defines the maximal length a column can have to generate
-	// its own extractor function. You must list the column in
-	// AllowedDuplicateValueColumns. Default value 256.
-	CharMaxLength int64
-	// AllowedDuplicateValueColumns defines a list of column names for which a
+	// tableName[columnName][]Aliases
+	ColumnAliases map[string]map[string][]string
+	// UniquifiedColumns defines a list of column names for which a
 	// dedicated function gets generated to extract all values from the
 	// collection into its own primitive slice. Only non blob/text columns can
 	// be generated.
-	AllowedDuplicateValueColumns []string
+	UniquifiedColumns map[string][]string // tableName->column names
+	// UniquifiedColumnMaxLength defines the maximal length a column can have to generate
+	// its own extractor function. You must list the column in
+	// UniquifiedColumns. Default value 256.
+	UniquifiedColumnMaxLength int64 // columns longer than 255 characters won't have a dedicated method receiver
+	DisableFileHeader         bool
+	// tpl contains a parsed template to render a single table.
+	tpl *template.Template
 }
 
-func (t *Table) initFuncMap() {
-	if t.FuncMap == nil {
-		t.FuncMap = make(template.FuncMap, 10)
-	}
+type Option func(*Tables) error
 
-	t.FuncMap["ToGoCamelCase"] = strs.ToGoCamelCase // net_http->NetHTTP entity_id->EntityID
-	if _, ok := t.FuncMap["GoTypeNull"]; !ok {
-		t.FuncMap["GoTypeNull"] = toGoTypeNull
+func WithColumnAliases(tableName, columnName string, aliases ...string) Option {
+	return func(ts *Tables) error {
+		if ts.ColumnAliases == nil {
+			ts.ColumnAliases = make(map[string]map[string][]string)
+		}
+		if ts.ColumnAliases[tableName] == nil {
+			ts.ColumnAliases[tableName] = make(map[string][]string)
+		}
+		ts.ColumnAliases[tableName][columnName] = aliases
+		return nil
 	}
-	if _, ok := t.FuncMap["GoType"]; !ok {
-		t.FuncMap["GoType"] = toGoType
+}
+
+func WithUniquifiedColumns(tableName string, columnNames ...string) Option {
+	return func(ts *Tables) error {
+		if ts.UniquifiedColumns == nil {
+			ts.UniquifiedColumns = make(map[string][]string)
+		}
+		ts.UniquifiedColumns[tableName] = columnNames
+		return nil
 	}
-	if _, ok := t.FuncMap["GoFuncNull"]; !ok {
-		t.FuncMap["GoFuncNull"] = toGoFuncNull
+}
+
+func WithTable(tableName string, columns ddl.Columns) Option {
+	return func(ts *Tables) error {
+		ts.Tables = append(ts.Tables, &table{
+			Name:    tableName,
+			Columns: columns,
+		})
+		return nil
 	}
-	if _, ok := t.FuncMap["GoFunc"]; !ok {
-		t.FuncMap["GoFunc"] = toGoFunc
+}
+
+func WithLoadColumns(ctx context.Context, db dml.Querier, tables ...string) Option {
+	return func(ts *Tables) error {
+		tables, err := ddl.LoadColumns(ctx, db, tables...)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		// fight with the randomized map elements to retain the order from the
+		// SQL query for column loading.
+		sortedKeys := make(slices.String, 0, len(tables))
+		for k := range tables {
+			sortedKeys = append(sortedKeys, k)
+		}
+		sortedKeys.Sort()
+		for _, tblName := range sortedKeys {
+			ts.Tables = append(ts.Tables, &table{
+				Name:    tblName,
+				Columns: tables[tblName],
+			})
+		}
+		return nil
 	}
-	if _, ok := t.FuncMap["GoPrimitive"]; !ok {
-		t.FuncMap["GoPrimitive"] = toGoPrimitive
+}
+
+func NewTables(packageName string, opts ...Option) (ts *Tables, err error) {
+	ts = &Tables{
+		Package: packageName,
+		ImportPaths: []string{
+			"database/sql",
+			"github.com/corestoreio/csfw/sql/dml",
+			"github.com/corestoreio/errors",
+			"time",
+		},
+		FuncMap: make(template.FuncMap, 10),
 	}
-	if _, ok := t.FuncMap["ColumnAliases"]; !ok {
-		t.FuncMap["ColumnAliases"] = func(columnName string) []string {
-			return t.ColumnAliases[columnName]
+	ts.FuncMap["ToGoCamelCase"] = strs.ToGoCamelCase // net_http->NetHTTP entity_id->EntityID
+	ts.FuncMap["GoTypeNull"] = toGoTypeNull
+	ts.FuncMap["GoType"] = toGoType
+	ts.FuncMap["GoFuncNull"] = toGoFuncNull
+	ts.FuncMap["GoFunc"] = toGoFunc
+	ts.FuncMap["GoPrimitive"] = toGoPrimitive
+	ts.FuncMap["ColumnAliases"] = func(columnName string) []string {
+		return []string{"PLACEHOLDER"}
+	}
+	ts.tpl, err = template.New("entity").Funcs(ts.FuncMap).Parse(TplDBAC)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	for _, opt := range opts {
+		if err := opt(ts); err != nil {
+			return nil, errors.WithStack(err)
 		}
 	}
+
+	var charMaxLength int64 = 256
+	if ts.UniquifiedColumnMaxLength > 0 {
+		charMaxLength = ts.UniquifiedColumnMaxLength
+	}
+	for _, t := range ts.Tables {
+		t.ColumnAliases = ts.ColumnAliases[t.Name]
+		t.Package = ts.Package
+		t.FilterUniquifiedColumns = func(c *ddl.Column) bool {
+			// if slice UniquifiedColumns contains the column name X and is not
+			// longer than 256 chars or is not a text/blob field then allowed to
+			// generated the method receiver.
+			return slices.String(ts.UniquifiedColumns[t.Name]).Contains(c.Field) && (!c.CharMaxLength.Valid ||
+				(c.CharMaxLength.Valid && c.CharMaxLength.Int64 < charMaxLength))
+		}
+	}
+	return ts, nil
 }
 
-// WriteTo implements io.WriterTo and writes the generated source code into w.
-func (t *Table) WriteTo(w io.Writer) (int64, error) {
-	t.initFuncMap()
+// findUsedPackages poor mans Go file parsing by just checking if bytes.Contains
+// report true. should be rewritten to real go code parser because we ignore
+// here comments in checking, so false positive might get returned.
+func (ts *Tables) findUsedPackages(file []byte) []string {
+	ret := make([]string, 0, len(ts.ImportPaths))
+	for _, path := range ts.ImportPaths {
+		_, pkg := filepath.Split(path)
+		if bytes.Contains(file, append([]byte(pkg), '.')) {
+			ret = append(ret, path)
+		}
+	}
+	return ret
+}
 
-	tplEntity, err := template.New("entity").Funcs(t.FuncMap).Parse(TplDBAC)
+// WriteTo executes the template parser and writes the result into w.
+func (ts *Tables) WriteTo(w io.Writer) (int64, error) {
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+
+	for _, t := range ts.Tables {
+		ts.FuncMap["ColumnAliases"] = func(columnName string) []string {
+			return t.ColumnAliases[columnName]
+		}
+		if err := t.writeTo(buf, ts.tpl.Funcs(ts.FuncMap)); err != nil {
+			return 0, errors.NewWriteFailed(err, "[dmlgen] For Table %q", t.Name)
+		}
+	}
+
+	if !ts.DisableFileHeader {
+		// now figure out all used package names in the buffer.
+		fmt.Fprintf(w, "package %s\n\nimport (\n", ts.Package)
+		for _, path := range ts.findUsedPackages(buf.Bytes()) {
+			fmt.Fprintf(w, "\t%q\n", path)
+		}
+		fmt.Fprintf(w, "\n)\n")
+	}
+
+	fmted, err := format.Source(buf.Bytes())
 	if err != nil {
 		return 0, errors.WithStack(err)
 	}
+	buf.Reset()
+	buf.Write(fmted)
+	return buf.WriteTo(w)
+}
+
+// table writes one database table into Go source code.
+type table struct {
+	Package string      // Name of the package
+	Name    string      // Name of the table
+	Columns ddl.Columns // all columns of the table
+	// ColumnAliases holds for a given key, the column name, its multiple aliases.
+	// For example customer_entity.entity_id can also be sales_order.customer_id.
+	// The alias would be just: entity_id:[]string{"customer_id"}.
+	ColumnAliases           map[string][]string
+	FilterUniquifiedColumns func(*ddl.Column) bool
+}
+
+// WriteTo implements io.WriterTo and writes the generated source code into w.
+func (t *table) writeTo(w io.Writer, tpl *template.Template) error {
 
 	data := struct {
-		Package               string
-		Collection            string
-		Entity                string
-		TableName             string
-		Columns               ddl.Columns
-		Tick                  string
-		SingleKeyColumns      ddl.Columns // contains a single PK and/or UNQ key
-		DuplicateValueColumns ddl.Columns // those columns have duplicate values
+		Package                  string
+		Collection               string
+		Entity                   string
+		TableName                string
+		Columns                  ddl.Columns
+		Tick                     string
+		ExtractColumns           ddl.Columns // contains a single PK and/or UNQ key
+		ExtractUniquifiedColumns ddl.Columns // those columns have duplicate values and the dups get uniquified
 	}{
 		Package:    t.Package,
 		Collection: strs.ToGoCamelCase(t.Name) + "Collection",
@@ -112,40 +241,20 @@ func (t *Table) WriteTo(w io.Writer) (int64, error) {
 	}
 
 	if pk := t.Columns.PrimaryKeys(); len(pk) == 1 {
-		data.SingleKeyColumns = append(data.SingleKeyColumns, pk...)
+		data.ExtractColumns = append(data.ExtractColumns, pk...)
 	} else {
-		data.DuplicateValueColumns = append(data.DuplicateValueColumns, pk...)
+		data.ExtractUniquifiedColumns = append(data.ExtractUniquifiedColumns, pk...)
 	}
 	if uk := t.Columns.UniqueKeys(); len(uk) == 1 {
-		data.SingleKeyColumns = append(data.SingleKeyColumns, uk...)
+		data.ExtractColumns = append(data.ExtractColumns, uk...)
 	} else {
-		data.DuplicateValueColumns = append(data.DuplicateValueColumns, uk...)
+		data.ExtractUniquifiedColumns = append(data.ExtractUniquifiedColumns, uk...)
 	}
 
-	// possibility of duplicate entries in this slice.
-	data.DuplicateValueColumns = append(data.DuplicateValueColumns, t.Columns.ColumnsNoPK()...)
+	// possibility of duplicate entries in this slice which gets filtered out in
+	// the Filter call ;-)
+	data.ExtractUniquifiedColumns = append(data.ExtractUniquifiedColumns, t.Columns.ColumnsNoPK()...)
+	data.ExtractUniquifiedColumns = data.ExtractUniquifiedColumns.Filter(t.FilterUniquifiedColumns)
 
-	var charMaxLength int64 = 256
-	if t.CharMaxLength > 0 {
-		charMaxLength = t.CharMaxLength
-	}
-	data.DuplicateValueColumns = data.DuplicateValueColumns.Filter(func(c *ddl.Column) bool {
-		return slices.String(t.AllowedDuplicateValueColumns).Contains(c.Field) && (!c.CharMaxLength.Valid ||
-			(c.CharMaxLength.Valid && c.CharMaxLength.Int64 < charMaxLength))
-	})
-
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
-
-	if err := tplEntity.Execute(buf, data); err != nil {
-		return 0, errors.WithStack(err)
-	}
-
-	fmted, err := format.Source(buf.Bytes())
-	if err != nil {
-		return 0, errors.WithStack(err)
-	}
-	buf.Reset()
-	buf.Write(fmted)
-	return buf.WriteTo(w)
+	return tpl.Execute(w, data)
 }
