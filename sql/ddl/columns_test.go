@@ -20,8 +20,6 @@ import (
 	"sort"
 	"testing"
 
-	"hash/fnv"
-
 	"github.com/corestoreio/csfw/sql/ddl"
 	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/csfw/util/cstesting"
@@ -35,7 +33,7 @@ var _ fmt.GoStringer = (*ddl.Columns)(nil)
 var _ fmt.GoStringer = (*ddl.Column)(nil)
 var _ sort.Interface = (*ddl.Columns)(nil)
 
-func TestLoadColumns_Mage21(t *testing.T) {
+func TestLoadColumns_Integration_Mage(t *testing.T) {
 	t.Parallel()
 
 	dbc := cstesting.MustConnectDB(t)
@@ -126,10 +124,6 @@ func TestColumns(t *testing.T) {
 	assert.True(t, tableMap.MustTable("admin_user").Columns.First().IsPK())
 	emptyTS := &ddl.Table{}
 	assert.False(t, emptyTS.Columns.First().IsPK())
-
-	hash, err := tableMap.MustTable("catalog_category_anc_products_index_idx").Columns.Hash(fnv.New64a())
-	assert.NoError(t, err)
-	assert.Equal(t, []byte{0x3b, 0x72, 0x14, 0x1d, 0x3f, 0x61, 0xf, 0x5b}, hash)
 }
 
 func TestColumnsMap(t *testing.T) {
@@ -217,6 +211,10 @@ var adminUserColumns = ddl.Columns{
 	&ddl.Column{Field: "failures_num", Pos: 17, Default: dml.MakeNullString(`0`), Null: "YES", DataType: "smallint", CharMaxLength: dml.NullInt64{}, Precision: dml.MakeNullInt64(5), Scale: dml.MakeNullInt64(0), ColumnType: "smallint(6)", Key: "", Extra: "", Comment: "Failure Number"},
 	&ddl.Column{Field: "first_failure", Pos: 18, Default: dml.NullString{}, Null: "YES", DataType: "timestamp", CharMaxLength: dml.NullInt64{}, Precision: dml.NullInt64{}, Scale: dml.NullInt64{}, ColumnType: "timestamp", Key: "", Extra: "", Comment: "First Failure"},
 	&ddl.Column{Field: "lock_expires", Pos: 19, Default: dml.NullString{}, Null: "YES", DataType: "timestamp", CharMaxLength: dml.NullInt64{}, Precision: dml.NullInt64{}, Scale: dml.NullInt64{}, ColumnType: "timestamp", Key: "", Extra: "", Comment: "Expiration Lock Dates"},
+}
+
+func TestColumns_UniqueColumns(t *testing.T) {
+	assert.Exactly(t, []string{"user_id", "username"}, adminUserColumns.UniqueColumns().FieldNames())
 }
 
 func TestColumnsSort(t *testing.T) {

@@ -15,11 +15,8 @@
 package ddl_test
 
 import (
-	"bytes"
 	"context"
 	"testing"
-
-	"hash/fnv"
 
 	"github.com/corestoreio/csfw/sql/ddl"
 	"github.com/corestoreio/csfw/sql/dml"
@@ -153,7 +150,6 @@ func BenchmarkColumnsJoinFields(b *testing.B) {
 }
 
 var benchmarkLoadColumns map[string]ddl.Columns
-var benchmarkLoadColumnsHashWant = []byte{0x54, 0xb, 0x1f, 0x62, 0x99, 0x74, 0x65, 0xd1}
 
 func BenchmarkLoadColumns(b *testing.B) {
 	const tn = "eav_attribute"
@@ -172,13 +168,6 @@ func BenchmarkLoadColumns(b *testing.B) {
 			if err != nil {
 				b.Error(err)
 			}
-		}
-		hashHave, err := benchmarkLoadColumns[tn].Hash(fnv.New64a())
-		if err != nil {
-			b.Error(err)
-		}
-		if 0 != bytes.Compare(hashHave, benchmarkLoadColumnsHashWant) {
-			b.Errorf("\nHave %#v\nWant %#v\n", hashHave, benchmarkLoadColumnsHashWant)
 		}
 	})
 }

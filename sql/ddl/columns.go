@@ -19,10 +19,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strconv"
 	"strings"
-
-	"hash"
 
 	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/csfw/util/bufferpool"
@@ -62,6 +59,17 @@ type Column struct {
 	Key     string //`COLUMN_KEY` varchar(3) NOT NULL DEFAULT '',
 	Extra   string //`EXTRA` varchar(30) NOT NULL DEFAULT '',
 	Comment string //`COLUMN_COMMENT` varchar(1024) NOT NULL DEFAULT '',
+	// Aliases specifies different names used for this column. Mainly used when
+	// generating code for interface dml.ColumnMapper. For example
+	// customer_entity.entity_id can also be sales_order.customer_id. The alias
+	// would be just: entity_id:[]string{"customer_id"}.
+	Aliases []string
+	// Uniquified used when generating code to uniquify the values in a
+	// collection when the column is not a primary or unique key. The values get
+	// returned in its own primitive slice.
+	Uniquified bool
+	// StructTag  used in code generation and applies a custom struct tag.
+	StructTag string
 }
 
 // DMLLoadColumns specifies the data manipulation language for retrieving all
@@ -138,42 +146,6 @@ func LoadColumns(ctx context.Context, db dml.Querier, tables ...string) (map[str
 	return tc, err
 }
 
-// Hash calculates a non-cryptographic, fast and efficient hash value from all
-// columns.
-func (cs Columns) Hash(h hash.Hash) ([]byte, error) {
-	// TODO use encoding/binary
-	const tr = 't' // letter t for true
-	const fl = 'f' // letter f for false
-	var buf bytes.Buffer
-	for _, c := range cs {
-		_, _ = buf.WriteString(c.Field)
-
-		_, _ = buf.WriteString(strconv.Itoa(int(c.Pos)))
-		_, _ = buf.WriteString(c.Default.String)
-
-		if c.IsNull() {
-			_ = buf.WriteByte(tr)
-		} else {
-			_ = buf.WriteByte(fl)
-		}
-
-		_, _ = buf.WriteString(c.DataType)
-		_, _ = buf.WriteString(strconv.Itoa(int(c.CharMaxLength.Int64)))
-		_, _ = buf.WriteString(strconv.Itoa(int(c.Precision.Int64)))
-		_, _ = buf.WriteString(strconv.Itoa(int(c.Scale.Int64)))
-		_, _ = buf.WriteString(c.ColumnType)
-		_, _ = buf.WriteString(c.Key)
-		_, _ = buf.WriteString(c.Extra)
-		_, _ = buf.WriteString(c.Comment)
-	}
-
-	if _, err := h.Write(buf.Bytes()); err != nil {
-		return nil, err
-	}
-	buf.Reset()
-	return h.Sum(buf.Bytes()), nil
-}
-
 // Filter filters the columns by predicate f and appends the column pointers to
 // the optional argument `cols`.
 func (cs Columns) Filter(f func(*Column) bool, cols ...*Column) Columns {
@@ -214,26 +186,54 @@ func colIsPK(c *Column) bool {
 	return c.IsPK()
 }
 
-// PrimaryKeys returns all primary key columns
-func (cs Columns) PrimaryKeys() Columns {
-	return cs.Filter(colIsPK)
+// PrimaryKeys returns all primary key columns. It may append the columns to the
+// provided argument slice.
+func (cs Columns) PrimaryKeys(cols ...*Column) Columns {
+	return cs.Filter(colIsPK, cols...)
 }
 
 func colIsUnique(c *Column) bool {
 	return c.IsUnique()
 }
 
-// UniqueKeys returns all unique key columns
-func (cs Columns) UniqueKeys() Columns {
-	return cs.Filter(colIsUnique)
+// UniqueKeys returns all unique key columns. It may append the columns to the
+// provided argument slice.
+func (cs Columns) UniqueKeys(cols ...*Column) Columns {
+	return cs.Filter(colIsUnique, cols...)
+}
+
+// UniqueColumns returns all columns which are either a single primary key or a
+// single unique key. If a PK or UK consists of more than one column, then they
+// won't be included in the returned Columns slice. The result might be appended
+// to argument `cols`, if provided.
+func (cs Columns) UniqueColumns(cols ...*Column) Columns {
+	if cols == nil {
+		cols = make(Columns, 0, 3) // 3 is just a guess
+	}
+	pkCount, ukCount := 0, 0
+	for _, c := range cs {
+		if c.IsPK() {
+			pkCount++
+		}
+		if c.IsUnique() {
+			ukCount++
+		}
+	}
+	if pkCount == 1 {
+		cols = cs.PrimaryKeys(cols...)
+	}
+	if ukCount == 1 {
+		cols = cs.UniqueKeys(cols...)
+	}
+	return cols
 }
 
 func colIsNotPK(c *Column) bool {
 	return !c.IsPK() && !c.IsUnique()
 }
 
-// ColumnsNoPK returns all non primary key and non-unique key columns.
-func (cs Columns) ColumnsNoPK() Columns {
+// NonPrimaryColumns returns all non primary key and non-unique key columns.
+func (cs Columns) NonPrimaryColumns() Columns {
 	return cs.Filter(colIsNotPK)
 }
 
@@ -256,6 +256,16 @@ func (cs Columns) Contains(fieldName string) bool {
 		}
 	}
 	return false
+}
+
+func colIsNotUniquified(c *Column) bool {
+	return c.Uniquified
+}
+
+// UniquifiedColumns returns all columns which have the flag Uniquified set to
+// true. The result might be appended to argument `cols`, if provided.
+func (cs Columns) UniquifiedColumns(cols ...*Column) Columns {
+	return cs.Filter(colIsNotUniquified, cols...)
 }
 
 // ByField finds a column by its field name. Case sensitive. Guaranteed to
@@ -347,6 +357,19 @@ func NewColumn(rc *dml.ColumnMap) (c *Column, tableName string, err error) {
 			rc.String(&c.Extra)
 		case "COLUMN_COMMENT":
 			rc.String(&c.Comment)
+		case "aliases":
+			// TODO the query must be extendable for all three columns to attach any table from any DB.
+			if aliases := ""; rc.Mode() == dml.ColumnMapScan {
+				rc.String(&aliases)
+				c.Aliases = strings.Split(aliases, ",")
+			} else {
+				aliases = strings.Join(c.Aliases, ",")
+				rc.String(&aliases)
+			}
+		case "uniquified":
+			rc.Bool(&c.Uniquified)
+		case "struct_tag":
+			rc.String(&c.StructTag)
 		default:
 			return nil, "", errors.NewNotSupportedf("[ddl] Column %q not supported or alias not found", col)
 		}
