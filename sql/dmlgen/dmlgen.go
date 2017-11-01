@@ -21,6 +21,7 @@ import (
 	"go/format"
 	"io"
 	"path/filepath"
+	"sort"
 	"text/template"
 
 	"github.com/corestoreio/csfw/sql/ddl"
@@ -36,67 +37,116 @@ type Tables struct {
 	ImportPaths []string
 	Tables      []*table
 	template.FuncMap
-	// ColumnAliases holds for a given key, the column name, its multiple aliases.
-	// For example customer_entity.entity_id can also be sales_order.customer_id.
-	// The alias would be just: entity_id:[]string{"customer_id"}.
-	// tableName[columnName][]Aliases
-	ColumnAliases map[string]map[string][]string
-	// UniquifiedColumns defines a list of column names for which a
-	// dedicated function gets generated to extract all values from the
-	// collection into its own primitive slice. Only non blob/text columns can
-	// be generated.
-	UniquifiedColumns map[string][]string // tableName->column names
-	// UniquifiedColumnMaxLength defines the maximal length a column can have to generate
-	// its own extractor function. You must list the column in
-	// UniquifiedColumns. Default value 256.
-	UniquifiedColumnMaxLength int64 // columns longer than 255 characters won't have a dedicated method receiver
-	DisableFileHeader         bool
+	DisableFileHeader bool
 	// tpl contains a parsed template to render a single table.
 	tpl *template.Template
 }
 
-type Option func(*Tables) error
-
-func WithColumnAliases(tableName, columnName string, aliases ...string) Option {
-	return func(ts *Tables) error {
-		if ts.ColumnAliases == nil {
-			ts.ColumnAliases = make(map[string]map[string][]string)
-		}
-		if ts.ColumnAliases[tableName] == nil {
-			ts.ColumnAliases[tableName] = make(map[string][]string)
-		}
-		ts.ColumnAliases[tableName][columnName] = aliases
-		return nil
-	}
+// Option represents a sortable option for the NewTables function. Each option
+// function can be applied in a mixed order.
+type Option struct {
+	sortOrder int
+	fn        func(*Tables) error
 }
 
-func WithUniquifiedColumns(tableName string, columnNames ...string) Option {
-	return func(ts *Tables) error {
-		if ts.UniquifiedColumns == nil {
-			ts.UniquifiedColumns = make(map[string][]string)
-		}
-		ts.UniquifiedColumns[tableName] = columnNames
-		return nil
+// optionSorter to satisfy the sort.Slice function
+type optionSorter []Option
+
+func WithStructTags(tableName string, columnNameStructTag ...string) (opt Option) {
+	if len(columnNameStructTag)%2 == 1 {
+		panic(errors.NewFatalf("[dmlgen] WithStructTags: Argument columnNameStructTag must be a balanced slice."))
 	}
+	opt.sortOrder = 100
+	opt.fn = func(ts *Tables) (err error) {
+		var found int
+		for _, t := range ts.Tables {
+			if t.Name == tableName {
+				for _, c := range t.Columns {
+					for i := 0; i < len(columnNameStructTag); i = i + 2 {
+						if c.Field == columnNameStructTag[i] {
+							c.StructTag = columnNameStructTag[i+1]
+							found++
+						}
+					}
+				}
+			}
+		}
+		if found != len(columnNameStructTag)/2 {
+			err = errors.NewNotFoundf("[dmlgen] WithStructTags For table %q one column in %v cannot be found.", tableName, columnNameStructTag)
+		}
+		return err
+	}
+	return
 }
 
-func WithTable(tableName string, columns ddl.Columns) Option {
-	return func(ts *Tables) error {
+func WithColumnAliases(tableName, columnName string, aliases ...string) (opt Option) {
+	opt.sortOrder = 110
+	opt.fn = func(ts *Tables) (err error) {
+		found := false
+		for _, t := range ts.Tables {
+			if t.Name == tableName {
+				for _, c := range t.Columns {
+					if c.Field == columnName {
+						c.Aliases = aliases
+						found = true
+					}
+				}
+			}
+		}
+		if !found {
+			err = errors.NewNotFoundf("[dmlgen] WithColumnAliases: For table %q the column %q has not been found.", tableName, columnName)
+		}
+		return err
+	}
+	return
+}
+
+func WithUniquifiedColumns(tableName string, columnNames ...string) (opt Option) {
+	opt.sortOrder = 120
+	opt.fn = func(ts *Tables) (err error) {
+		var found int
+		// yay three for loops! But doesn't matter in this case as we're not
+		// in a performance critical code.
+		for _, t := range ts.Tables {
+			if t.Name == tableName {
+				for _, c := range t.Columns {
+					for _, cn := range columnNames {
+						if c.Field == cn {
+							c.Uniquified = true
+							found++
+						}
+					}
+				}
+			}
+		}
+		if len(columnNames) != found {
+			err = errors.NewNotFoundf("[dmlgen] WithUniquifiedColumns: For table %q one column of %v cannot been found.", tableName, columnNames)
+		}
+		return err
+	}
+	return
+}
+
+func WithTable(tableName string, columns ddl.Columns) (opt Option) {
+	opt.sortOrder = 10
+	opt.fn = func(ts *Tables) error {
 		ts.Tables = append(ts.Tables, &table{
 			Name:    tableName,
 			Columns: columns,
 		})
 		return nil
 	}
+	return
 }
 
-func WithLoadColumns(ctx context.Context, db dml.Querier, tables ...string) Option {
-	return func(ts *Tables) error {
+func WithLoadColumns(ctx context.Context, db dml.Querier, tables ...string) (opt Option) {
+	opt.sortOrder = 1
+	opt.fn = func(ts *Tables) error {
 		tables, err := ddl.LoadColumns(ctx, db, tables...)
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		// fight with the randomized map elements to retain the order from the
+		// fight with the randomized map elements to retain the sortOrder from the
 		// SQL query for column loading.
 		sortedKeys := make(slices.String, 0, len(tables))
 		for k := range tables {
@@ -111,6 +161,7 @@ func WithLoadColumns(ctx context.Context, db dml.Querier, tables ...string) Opti
 		}
 		return nil
 	}
+	return
 }
 
 func NewTables(packageName string, opts ...Option) (ts *Tables, err error) {
@@ -130,39 +181,30 @@ func NewTables(packageName string, opts ...Option) (ts *Tables, err error) {
 	ts.FuncMap["GoFuncNull"] = toGoFuncNull
 	ts.FuncMap["GoFunc"] = toGoFunc
 	ts.FuncMap["GoPrimitive"] = toGoPrimitive
-	ts.FuncMap["ColumnAliases"] = func(columnName string) []string {
-		return []string{"PLACEHOLDER"}
-	}
 	ts.tpl, err = template.New("entity").Funcs(ts.FuncMap).Parse(TplDBAC)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	for _, opt := range opts {
-		if err := opt(ts); err != nil {
+
+	sOpts := optionSorter(opts)
+	sort.Slice(sOpts, func(i, j int) bool {
+		return sOpts[i].sortOrder < sOpts[j].sortOrder // ascending a-z sorting ;-)
+	})
+
+	for _, opt := range sOpts {
+		if err := opt.fn(ts); err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}
 
-	var charMaxLength int64 = 256
-	if ts.UniquifiedColumnMaxLength > 0 {
-		charMaxLength = ts.UniquifiedColumnMaxLength
-	}
 	for _, t := range ts.Tables {
-		t.ColumnAliases = ts.ColumnAliases[t.Name]
 		t.Package = ts.Package
-		t.FilterUniquifiedColumns = func(c *ddl.Column) bool {
-			// if slice UniquifiedColumns contains the column name X and is not
-			// longer than 256 chars or is not a text/blob field then allowed to
-			// generated the method receiver.
-			return slices.String(ts.UniquifiedColumns[t.Name]).Contains(c.Field) && (!c.CharMaxLength.Valid ||
-				(c.CharMaxLength.Valid && c.CharMaxLength.Int64 < charMaxLength))
-		}
 	}
 	return ts, nil
 }
 
 // findUsedPackages poor mans Go file parsing by just checking if bytes.Contains
-// report true. should be rewritten to real go code parser because we ignore
+// report true. should be rewritten to a real go code parser because we ignore
 // here comments in checking, so false positive might get returned.
 func (ts *Tables) findUsedPackages(file []byte) []string {
 	ret := make([]string, 0, len(ts.ImportPaths))
@@ -181,9 +223,6 @@ func (ts *Tables) WriteTo(w io.Writer) (int64, error) {
 	defer bufferpool.Put(buf)
 
 	for _, t := range ts.Tables {
-		ts.FuncMap["ColumnAliases"] = func(columnName string) []string {
-			return t.ColumnAliases[columnName]
-		}
 		if err := t.writeTo(buf, ts.tpl.Funcs(ts.FuncMap)); err != nil {
 			return 0, errors.NewWriteFailed(err, "[dmlgen] For Table %q", t.Name)
 		}
@@ -191,11 +230,11 @@ func (ts *Tables) WriteTo(w io.Writer) (int64, error) {
 
 	if !ts.DisableFileHeader {
 		// now figure out all used package names in the buffer.
-		fmt.Fprintf(w, "package %s\n\nimport (\n", ts.Package)
+		fmt.Fprintf(w, "// Auto generated by dmlgen\n\npackage %s\n\nimport (\n", ts.Package)
 		for _, path := range ts.findUsedPackages(buf.Bytes()) {
 			fmt.Fprintf(w, "\t%q\n", path)
 		}
-		fmt.Fprintf(w, "\n)\n")
+		fmt.Fprint(w, "\n)\n")
 	}
 
 	fmted, err := format.Source(buf.Bytes())
@@ -212,25 +251,18 @@ type table struct {
 	Package string      // Name of the package
 	Name    string      // Name of the table
 	Columns ddl.Columns // all columns of the table
-	// ColumnAliases holds for a given key, the column name, its multiple aliases.
-	// For example customer_entity.entity_id can also be sales_order.customer_id.
-	// The alias would be just: entity_id:[]string{"customer_id"}.
-	ColumnAliases           map[string][]string
-	FilterUniquifiedColumns func(*ddl.Column) bool
 }
 
 // WriteTo implements io.WriterTo and writes the generated source code into w.
 func (t *table) writeTo(w io.Writer, tpl *template.Template) error {
 
 	data := struct {
-		Package                  string
-		Collection               string
-		Entity                   string
-		TableName                string
-		Columns                  ddl.Columns
-		Tick                     string
-		ExtractColumns           ddl.Columns // contains a single PK and/or UNQ key
-		ExtractUniquifiedColumns ddl.Columns // those columns have duplicate values and the dups get uniquified
+		Package    string
+		Collection string
+		Entity     string
+		TableName  string
+		Columns    ddl.Columns
+		Tick       string
 	}{
 		Package:    t.Package,
 		Collection: strs.ToGoCamelCase(t.Name) + "Collection",
@@ -239,22 +271,6 @@ func (t *table) writeTo(w io.Writer, tpl *template.Template) error {
 		Columns:    t.Columns,
 		Tick:       "`",
 	}
-
-	if pk := t.Columns.PrimaryKeys(); len(pk) == 1 {
-		data.ExtractColumns = append(data.ExtractColumns, pk...)
-	} else {
-		data.ExtractUniquifiedColumns = append(data.ExtractUniquifiedColumns, pk...)
-	}
-	if uk := t.Columns.UniqueKeys(); len(uk) == 1 {
-		data.ExtractColumns = append(data.ExtractColumns, uk...)
-	} else {
-		data.ExtractUniquifiedColumns = append(data.ExtractUniquifiedColumns, uk...)
-	}
-
-	// possibility of duplicate entries in this slice which gets filtered out in
-	// the Filter call ;-)
-	data.ExtractUniquifiedColumns = append(data.ExtractUniquifiedColumns, t.Columns.ColumnsNoPK()...)
-	data.ExtractUniquifiedColumns = data.ExtractUniquifiedColumns.Filter(t.FilterUniquifiedColumns)
 
 	return tpl.Execute(w, data)
 }

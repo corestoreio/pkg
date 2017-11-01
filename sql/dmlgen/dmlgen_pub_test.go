@@ -24,6 +24,8 @@ import (
 	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/csfw/sql/dmlgen"
 	"github.com/corestoreio/csfw/util/cstesting"
+	"github.com/corestoreio/errors"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -56,13 +58,19 @@ ORDER BY COLUMN_TYPE
 
 var _ io.WriterTo = (*dmlgen.Tables)(nil)
 
-func TestTable_WriteTo(t *testing.T) {
+func TestNewTables(t *testing.T) {
 	t.Parallel()
 
-	const outFile = "testdata/core_config_data.gen.go"
+	const outFile = "testdata/core_config_data_gen.go"
 	os.Remove(outFile)
 
 	ts, err := dmlgen.NewTables("testdata",
+		dmlgen.WithStructTags("core_config_data",
+			"path", `json:"x_path" xml:"y_path"`,
+			"scope_id", `json:"scope_id" xml:"scope_id"`,
+		),
+		dmlgen.WithColumnAliases("core_config_data", "path", "storage_location", "config_directory"),
+		dmlgen.WithUniquifiedColumns("core_config_data", "path"),
 		dmlgen.WithTable("core_config_data", ddl.Columns{
 			&ddl.Column{Field: "config_id", Pos: 1, Null: "NO", DataType: "int", Precision: dml.MakeNullInt64(10), Scale: dml.MakeNullInt64(0), ColumnType: "int(10) unsigned", Key: "PRI", Extra: "auto_increment", Comment: "Config Id"},
 			&ddl.Column{Field: "scope", Pos: 2, Default: dml.MakeNullString("'default'"), Null: "NO", DataType: "varchar", CharMaxLength: dml.MakeNullInt64(8), ColumnType: "varchar(8)", Key: "MUL", Comment: "Config Scope"},
@@ -70,8 +78,6 @@ func TestTable_WriteTo(t *testing.T) {
 			&ddl.Column{Field: "path", Pos: 4, Default: dml.MakeNullString("'general'"), Null: "NO", DataType: "varchar", CharMaxLength: dml.MakeNullInt64(255), ColumnType: "varchar(255)", Comment: "Config Path"},
 			&ddl.Column{Field: "value", Pos: 5, Default: dml.MakeNullString("NULL"), Null: "YES", DataType: "text", CharMaxLength: dml.MakeNullInt64(65535), ColumnType: "text", Comment: "Config Value"},
 		}),
-		dmlgen.WithColumnAliases("core_config_data", "path", "storage_location", "config_directory"),
-		dmlgen.WithUniquifiedColumns("core_config_data", "path"),
 	)
 	require.NoError(t, err)
 
@@ -87,7 +93,7 @@ func TestTable_WriteTo(t *testing.T) {
 	}
 }
 
-func TestTable_WithAllTypes(t *testing.T) {
+func TestTables_WithAllTypes(t *testing.T) {
 	t.Parallel()
 
 	db, mock := cstesting.MockDB(t)
@@ -97,7 +103,7 @@ func TestTable_WithAllTypes(t *testing.T) {
 		cstesting.WithFile("testdata/dmlgen_types.csv"),
 	))
 
-	const outFile = "testdata/dmlgen_types.gen.go"
+	const outFile = "testdata/dmlgen_types_gen.go"
 	os.Remove(outFile)
 	f, err := os.Create(outFile)
 	if err != nil {
@@ -106,8 +112,8 @@ func TestTable_WithAllTypes(t *testing.T) {
 	defer cstesting.Close(t, f)
 
 	ts, err := dmlgen.NewTables("testdata",
-		dmlgen.WithLoadColumns(context.Background(), db.DB, "dmlgen_types"),
 		dmlgen.WithUniquifiedColumns("dmlgen_types", "col_longtext_2", "col_int_1", "col_int_2", "has_smallint_5", "col_date_2", "col_blob"),
+		dmlgen.WithLoadColumns(context.Background(), db.DB, "dmlgen_types"),
 	)
 	require.NoError(t, err)
 
@@ -115,4 +121,21 @@ func TestTable_WithAllTypes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestWithStructTags(t *testing.T) {
+	t.Parallel()
+	defer func() {
+		if r := recover(); r != nil {
+			if err, ok := r.(error); ok {
+				assert.True(t, errors.IsFatal(err), "%s", err)
+			} else {
+				t.Errorf("Panic should contain an error but got:\n%+v", r)
+			}
+		} else {
+			t.Error("Expecting a panic but got nothing")
+		}
+	}()
+
+	dmlgen.WithStructTags("table", "unbalanced")
 }

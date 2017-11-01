@@ -15,10 +15,12 @@
 package dmlgen
 
 // TplDBAC contains the template code = DataBaseAccessCode
-const TplDBAC = `// {{.Entity}} represents a type for DB table {{.Tick}}{{.TableName}}{{.Tick}}
+const TplDBAC = `// {{.Entity}} represents a single row for DB table {{.Tick}}{{.TableName}}{{.Tick}}
 // Generated via dmlgen.
 type {{.Entity}} struct {
-	{{ range .Columns }}{{ToGoCamelCase .Field}} {{GoTypeNull .}} {{ $.Tick }}json:"{{.Field}},omitempty"{{ $.Tick }} {{.GoComment}}
+	{{ range .Columns }}{{ToGoCamelCase .Field}} {{GoTypeNull .}} {{ $.Tick -}}
+		{{if ne .StructTag "" -}} {{ .StructTag }} {{- else -}} json:"{{ .Field }},omitempty" {{- end }}
+	{{- $.Tick }} {{.GoComment}}
 {{ end }} }
 
 // New{{.Entity}} creates a new pointer with pre-initialized fields.
@@ -39,7 +41,7 @@ func (e *{{.Entity}}) MapColumns(cm *dml.ColumnMap) error {
 	}
 	for cm.Next() {
 		switch c := cm.Column(); c { {{range .Columns}}
-		case "{{.Field }}"{{ range ColumnAliases .Field}},"{{.}}"{{end}}:
+		case "{{.Field }}"{{ range .Aliases}},"{{.}}"{{end}}:
 			cm.{{GoFuncNull .}}(&e.{{ToGoCamelCase .Field}}){{end}}
 		default:
 			return errors.NewNotFoundf("[{{.Package}}] {{.Entity}} Column %q not found", c)
@@ -54,9 +56,9 @@ func (e *{{.Entity}}) Reset() *{{.Entity}} {
 }
 
 // {{.Collection}} represents a collection type for DB table {{ .TableName }}
-// Generated via dmlgen.
+// Not thread safe. Generated via dmlgen.
 type {{.Collection}} struct {
-	Data           []*{{.Entity}}
+	Data           		[]*{{.Entity}}
 	BeforeMapColumns	func(uint64, *{{.Entity}}) error
 	AfterMapColumns 	func(uint64, *{{.Entity}}) error
 }
@@ -95,12 +97,12 @@ func (cc *{{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
 	case dml.ColumnMapCollectionReadSet:
 		for cm.Next() {
 			switch c := cm.Column(); c {
-			{{- range .ExtractColumns -}}
-			case "{{.Field }}"{{ range ColumnAliases .Field}},"{{.}}"{{end}}:
+			{{- range .Columns.UniqueColumns -}}
+			case "{{.Field }}"{{ range .Aliases }},"{{.}}"{{end}}:
 				cm.Args = cm.Args.{{GoFuncNull .}}s(cc.{{ToGoCamelCase .Field}}s()...)
 			{{- end}}
-			{{- range .ExtractUniquifiedColumns}}
-			case "{{.Field }}"{{ range ColumnAliases .Field}},"{{.}}"{{end}}:
+			{{- range .Columns.UniquifiedColumns }}
+			case "{{.Field }}"{{ range .Aliases }},"{{.}}"{{end}}:
 				cm.Args = cm.Args.{{GoFunc .}}s(cc.{{ToGoCamelCase .Field}}s()...){{end}}
 			default:
 				return errors.NewNotFoundf("[{{.Package}}] {{.Collection}} Column %q not found", c)
@@ -111,7 +113,7 @@ func (cc *{{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
 	}
 	return cm.Err()
 }
-{{ range .ExtractColumns }}
+{{ range .Columns.UniqueColumns }}
 // {{ToGoCamelCase .Field}}s returns a slice or appends to a slice all values.
 func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoTypeNull .}}) []{{GoTypeNull .}} {
 	if ret == nil {
@@ -123,7 +125,7 @@ func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoTypeNull .}}) [
 	return ret
 } {{end}}
 
-{{- range .ExtractUniquifiedColumns }}
+{{- range .Columns.UniquifiedColumns }}
 // {{ToGoCamelCase .Field}}s returns a slice or appends to a slice only unique
 // values.
 func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoType .}}) []{{GoType .}} {
