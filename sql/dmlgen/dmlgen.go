@@ -15,10 +15,12 @@
 package dmlgen
 
 import (
-	"bytes"
 	"context"
 	"fmt"
+	"go/ast"
 	"go/format"
+	"go/parser"
+	"go/token"
 	"io"
 	"path/filepath"
 	"sort"
@@ -32,6 +34,8 @@ import (
 	"github.com/corestoreio/errors"
 )
 
+// Tables can generated Go source for for database tables once correctly
+// configured.
 type Tables struct {
 	Package     string // Name of the package
 	ImportPaths []string
@@ -52,7 +56,12 @@ type Option struct {
 // optionSorter to satisfy the sort.Slice function
 type optionSorter []Option
 
+// WithStructTags allows to specify custom struct tags for a specific column.
+// The argument `columnNameStructTag` must be a balanced slice where index i
+// sets to the column name and index i+1 to the desired struct tag.
+//		dmlgen.WithStructTags("table_name","column_a",`json: ",omitempty"`,"column_b","`xml:,omitempty`")
 func WithStructTags(tableName string, columnNameStructTag ...string) (opt Option) {
+	// Maybe create a new function option called WithStructTag(tableName string, json,xml,yaml,protobuf bool)
 	if len(columnNameStructTag)%2 == 1 {
 		panic(errors.NewFatalf("[dmlgen] WithStructTags: Argument columnNameStructTag must be a balanced slice."))
 	}
@@ -79,6 +88,9 @@ func WithStructTags(tableName string, columnNameStructTag ...string) (opt Option
 	return
 }
 
+// WithColumnAliases specifies different names used for a column. For example
+// customer_entity.entity_id can also be sales_order.customer_id, hence a
+// Foreign Key. The alias would be just: entity_id:[]string{"customer_id"}.
 func WithColumnAliases(tableName, columnName string, aliases ...string) (opt Option) {
 	opt.sortOrder = 110
 	opt.fn = func(ts *Tables) (err error) {
@@ -101,6 +113,9 @@ func WithColumnAliases(tableName, columnName string, aliases ...string) (opt Opt
 	return
 }
 
+// WithUniquifiedColumns specifies columns which are non primary/unique key one
+// but should have a dedicated function to extract their unique primitive values
+// as a slice.
 func WithUniquifiedColumns(tableName string, columnNames ...string) (opt Option) {
 	opt.sortOrder = 120
 	opt.fn = func(ts *Tables) (err error) {
@@ -127,6 +142,7 @@ func WithUniquifiedColumns(tableName string, columnNames ...string) (opt Option)
 	return
 }
 
+// WithTable sets a table and its columns.
 func WithTable(tableName string, columns ddl.Columns) (opt Option) {
 	opt.sortOrder = 10
 	opt.fn = func(ts *Tables) error {
@@ -139,6 +155,8 @@ func WithTable(tableName string, columns ddl.Columns) (opt Option) {
 	return
 }
 
+// WithLoadColumns queries the information_schema table and loads the column
+// definition of the provided `tables` slice.
 func WithLoadColumns(ctx context.Context, db dml.Querier, tables ...string) (opt Option) {
 	opt.sortOrder = 1
 	opt.fn = func(ts *Tables) error {
@@ -164,6 +182,7 @@ func WithLoadColumns(ctx context.Context, db dml.Querier, tables ...string) (opt
 	return
 }
 
+// NewTables creates a new instance of the SQL table code generator.
 func NewTables(packageName string, opts ...Option) (ts *Tables, err error) {
 	ts = &Tables{
 		Package: packageName,
@@ -181,7 +200,7 @@ func NewTables(packageName string, opts ...Option) (ts *Tables, err error) {
 	ts.FuncMap["GoFuncNull"] = toGoFuncNull
 	ts.FuncMap["GoFunc"] = toGoFunc
 	ts.FuncMap["GoPrimitive"] = toGoPrimitive
-	ts.tpl, err = template.New("entity").Funcs(ts.FuncMap).Parse(TplDBAC)
+	ts.tpl, err = template.New("entity").Funcs(ts.FuncMap).Parse(tplDBAC)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -203,14 +222,27 @@ func NewTables(packageName string, opts ...Option) (ts *Tables, err error) {
 	return ts, nil
 }
 
-// findUsedPackages poor mans Go file parsing by just checking if bytes.Contains
-// report true. should be rewritten to a real go code parser because we ignore
-// here comments in checking, so false positive might get returned.
+// findUsedPackages checks for needed packages which we must import.
 func (ts *Tables) findUsedPackages(file []byte) []string {
+
+	af, err := parser.ParseFile(token.NewFileSet(), "virtual_file.go", append([]byte("package temporarily_main\n\n"), file...), 0)
+	if err != nil {
+		panic(err)
+	}
+	idents := map[string]struct{}{}
+	ast.Inspect(af, func(n ast.Node) bool {
+		switch nt := n.(type) {
+		case *ast.Ident:
+			idents[nt.Name] = struct{}{} // will contain too much info
+			// we only need to know: pkg.TYPE
+		}
+		return true
+	})
+
 	ret := make([]string, 0, len(ts.ImportPaths))
 	for _, path := range ts.ImportPaths {
 		_, pkg := filepath.Split(path)
-		if bytes.Contains(file, append([]byte(pkg), '.')) {
+		if _, ok := idents[pkg]; ok {
 			ret = append(ret, path)
 		}
 	}

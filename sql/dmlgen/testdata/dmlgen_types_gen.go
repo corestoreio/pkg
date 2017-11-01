@@ -164,8 +164,9 @@ func (e *DmlgenTypes) MapColumns(cm *dml.ColumnMap) error {
 	return errors.WithStack(cm.Err())
 }
 
-// Reset resets the struct to its empty fields. TODO implement.
+// Reset resets the struct to its empty fields.
 func (e *DmlgenTypes) Reset() *DmlgenTypes {
+	*e = DmlgenTypes{}
 	return e
 }
 

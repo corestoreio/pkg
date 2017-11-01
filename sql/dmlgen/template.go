@@ -14,8 +14,8 @@
 
 package dmlgen
 
-// TplDBAC contains the template code = DataBaseAccessCode
-const TplDBAC = `// {{.Entity}} represents a single row for DB table {{.Tick}}{{.TableName}}{{.Tick}}
+// tplDBAC contains the template code = DataBaseAccessCode
+const tplDBAC = `// {{.Entity}} represents a single row for DB table {{.Tick}}{{.TableName}}{{.Tick}}
 // Generated via dmlgen.
 type {{.Entity}} struct {
 	{{ range .Columns }}{{ToGoCamelCase .Field}} {{GoTypeNull .}} {{ $.Tick -}}
@@ -50,8 +50,11 @@ func (e *{{.Entity}}) MapColumns(cm *dml.ColumnMap) error {
 	return errors.WithStack(cm.Err())
 }
 
-// Reset resets the struct to its empty fields. TODO implement.
-func (e *{{.Entity}}) Reset() *{{.Entity}} {
+// Reset resets the struct to its empty fields.
+func (e *{{.Entity}}) Reset() *{{.Entity}} { {{/*
+		TODO: maybe reset each field individually like https://github.com/mrsinham/goreset
+	*/}}
+	*e = {{.Entity}}{}
 	return e
 }
 
