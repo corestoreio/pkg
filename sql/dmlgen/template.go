@@ -18,9 +18,8 @@ package dmlgen
 const tplDBAC = `// {{.Entity}} represents a single row for DB table {{.Tick}}{{.TableName}}{{.Tick}}
 // Generated via dmlgen.
 type {{.Entity}} struct {
-	{{ range .Columns }}{{ToGoCamelCase .Field}} {{GoTypeNull .}} {{ $.Tick -}}
-		{{if ne .StructTag "" -}} {{ .StructTag }} {{- else -}} json:"{{ .Field }},omitempty" {{- end }}
-	{{- $.Tick }} {{.GoComment}}
+	{{ range .Columns }}{{ToGoCamelCase .Field}} {{GoTypeNull .}}
+		{{- if ne .StructTag "" -}}{{ $.Tick -}}{{ .StructTag }}{{ $.Tick }}{{- end }} {{.GoComment}}
 {{ end }} }
 
 // New{{.Entity}} creates a new pointer with pre-initialized fields.

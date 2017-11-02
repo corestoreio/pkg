@@ -65,10 +65,11 @@ func TestNewTables(t *testing.T) {
 	os.Remove(outFile)
 
 	ts, err := dmlgen.NewTables("testdata",
-		dmlgen.WithStructTags("core_config_data",
+		dmlgen.WithCustomStructTags("core_config_data",
 			"path", `json:"x_path" xml:"y_path"`,
 			"scope_id", `json:"scope_id" xml:"scope_id"`,
 		),
+		dmlgen.WithStructTags("core_config_data", "json"),
 		dmlgen.WithColumnAliases("core_config_data", "path", "storage_location", "config_directory"),
 		dmlgen.WithUniquifiedColumns("core_config_data", "path"),
 		dmlgen.WithTable("core_config_data", ddl.Columns{
@@ -112,6 +113,7 @@ func TestTables_WithAllTypes(t *testing.T) {
 	defer cstesting.Close(t, f)
 
 	ts, err := dmlgen.NewTables("testdata",
+		dmlgen.WithStructTags("dmlgen_types", "json", "xml"),
 		dmlgen.WithUniquifiedColumns("dmlgen_types", "col_longtext_2", "col_int_1", "col_int_2", "has_smallint_5", "col_date_2", "col_blob"),
 		dmlgen.WithLoadColumns(context.Background(), db.DB, "dmlgen_types"),
 	)
@@ -123,19 +125,137 @@ func TestTables_WithAllTypes(t *testing.T) {
 	}
 }
 
+func TestInfoSchemaForeignKeys(t *testing.T) {
+	db := cstesting.MustConnectDB(t)
+	defer cstesting.Close(t, db)
+
+	ts, err := dmlgen.NewTables("testdata",
+		dmlgen.WithUniquifiedColumns("KEY_COLUMN_USAGE", "TABLE_NAME"),
+		dmlgen.WithLoadColumns(context.Background(), db.DB, "KEY_COLUMN_USAGE"),
+	)
+	require.NoError(t, err)
+
+	const outFile = "testdata/KEY_COLUMN_USAGE_gen.go"
+	os.Remove(outFile)
+	f, err := os.Create(outFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cstesting.Close(t, f)
+
+	_, err = ts.WriteTo(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+}
+
+func TestWithCustomStructTags(t *testing.T) {
+	t.Parallel()
+	t.Run("unbalanced should panic", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r != nil {
+				if err, ok := r.(error); ok {
+					assert.True(t, errors.IsFatal(err), "%s", err)
+				} else {
+					t.Errorf("Panic should contain an error but got:\n%+v", r)
+				}
+			} else {
+				t.Error("Expecting a panic but got nothing")
+			}
+		}()
+		dmlgen.WithCustomStructTags("table", "unbalanced")
+	})
+
+	t.Run("table not found", func(t *testing.T) {
+		tbls, err := dmlgen.NewTables("test", dmlgen.WithCustomStructTags("tableNOTFOUND", "column", "db:..."))
+		require.Nil(t, tbls)
+		assert.True(t, errors.IsNotFound(err), "%+v", err)
+	})
+
+	t.Run("column not found", func(t *testing.T) {
+		tbls, err := dmlgen.NewTables("test",
+			dmlgen.WithCustomStructTags("core_config_data", "scope_id", "toml:..."),
+			dmlgen.WithTable("core_config_data", ddl.Columns{
+				&ddl.Column{Field: "config_id"},
+			}),
+		)
+		require.Nil(t, tbls)
+		assert.True(t, errors.IsNotFound(err), "%+v", err)
+	})
+}
+
 func TestWithStructTags(t *testing.T) {
 	t.Parallel()
-	defer func() {
-		if r := recover(); r != nil {
-			if err, ok := r.(error); ok {
-				assert.True(t, errors.IsFatal(err), "%s", err)
-			} else {
-				t.Errorf("Panic should contain an error but got:\n%+v", r)
-			}
-		} else {
-			t.Error("Expecting a panic but got nothing")
-		}
-	}()
 
-	dmlgen.WithStructTags("table", "unbalanced")
+	t.Run("table not found", func(t *testing.T) {
+		tbls, err := dmlgen.NewTables("test", dmlgen.WithStructTags("tableNOTFOUND", "unbalanced"))
+		require.Nil(t, tbls)
+		assert.True(t, errors.IsNotFound(err), "%+v", err)
+	})
+
+	t.Run("struct tag not supported", func(t *testing.T) {
+		tbls, err := dmlgen.NewTables("test",
+			dmlgen.WithStructTags("core_config_data", "hjson"),
+			dmlgen.WithTable("core_config_data", ddl.Columns{
+				&ddl.Column{Field: "config_id"},
+			}),
+		)
+		require.Nil(t, tbls)
+		assert.True(t, errors.IsNotSupported(err), "%+v", err)
+	})
+
+	t.Run("al available struct tags", func(t *testing.T) {
+		tbls, err := dmlgen.NewTables("test",
+			dmlgen.WithStructTags("core_config_data", "bson", "db", "env", "json", "toml", "yaml", "xml"),
+			dmlgen.WithTable("core_config_data", ddl.Columns{
+				&ddl.Column{Field: "config_id"},
+			}),
+		)
+		require.NoError(t, err)
+		have := tbls.Tables["core_config_data"].Columns.ByField("config_id").GoString()
+		assert.Exactly(t, "&ddl.Column{Field: \"config_id\", StructTag: \"bson:\\\"config_id,omitempty\\\" db:\\\"config_id\\\" env:\\\"config_id\\\" json:\\\"config_id,omitempty\\\" toml:\\\"config_id\\\" yaml:\\\"config_id,omitempty\\\" xml:\\\"config_id,omitempty\\\"\", }", have)
+	})
+}
+
+func TestWithColumnAliases(t *testing.T) {
+	t.Parallel()
+
+	t.Run("table not found", func(t *testing.T) {
+		tbls, err := dmlgen.NewTables("test", dmlgen.WithColumnAliases("tableNOTFOUND", "column", "alias"))
+		require.Nil(t, tbls)
+		assert.True(t, errors.IsNotFound(err), "%+v", err)
+	})
+
+	t.Run("column not found", func(t *testing.T) {
+		tbls, err := dmlgen.NewTables("test",
+			dmlgen.WithColumnAliases("core_config_data", "scope_id", "scopeID"),
+			dmlgen.WithTable("core_config_data", ddl.Columns{
+				&ddl.Column{Field: "config_id"},
+			}),
+		)
+		require.Nil(t, tbls)
+		assert.True(t, errors.IsNotFound(err), "%+v", err)
+	})
+}
+
+func TestWithUniquifiedColumns(t *testing.T) {
+	t.Parallel()
+
+	t.Run("table not found", func(t *testing.T) {
+		tbls, err := dmlgen.NewTables("test", dmlgen.WithUniquifiedColumns("tableNOTFOUND", "column", "alias"))
+		require.Nil(t, tbls)
+		assert.True(t, errors.IsNotFound(err), "%+v", err)
+	})
+
+	t.Run("column not found", func(t *testing.T) {
+		tbls, err := dmlgen.NewTables("test",
+			dmlgen.WithUniquifiedColumns("core_config_data", "scope_id", "scopeID"),
+			dmlgen.WithTable("core_config_data", ddl.Columns{
+				&ddl.Column{Field: "config_id"},
+			}),
+		)
+		require.Nil(t, tbls)
+		assert.True(t, errors.IsNotFound(err), "%+v", err)
+	})
 }

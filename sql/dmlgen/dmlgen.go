@@ -15,6 +15,7 @@
 package dmlgen
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"go/ast"
@@ -39,7 +40,8 @@ import (
 type Tables struct {
 	Package     string // Name of the package
 	ImportPaths []string
-	Tables      []*table
+	// Tables uses the table name as map key and the table description as value.
+	Tables map[string]*table
 	template.FuncMap
 	DisableFileHeader bool
 	// tpl contains a parsed template to render a single table.
@@ -56,32 +58,80 @@ type Option struct {
 // optionSorter to satisfy the sort.Slice function
 type optionSorter []Option
 
-// WithStructTags allows to specify custom struct tags for a specific column.
+// WithStructTags enables struct tags proactively for the whole struct. Allowed
+// values are: bson, db, env, json, toml, yaml and xml. For bson, json, yaml and
+// xml the omitempty attribute has been set. If you need a different struct tag
+// for a specifiv column you must set the option WithCustomStructTags. It
+// doesn't matter in which order you apply the options ;-)
+func WithStructTags(tableName string, tagNames ...string) (opt Option) {
+	opt.sortOrder = 90 // must run before custom struct tags
+	opt.fn = func(ts *Tables) (err error) {
+		if t, ok := ts.Tables[tableName]; ok {
+			for _, c := range t.Columns {
+				var buf bytes.Buffer // TODO use new string.Builder in Go 1.10 or 1.11
+				for i, tagName := range tagNames {
+					if i > 0 {
+						buf.WriteByte(' ')
+					}
+					// Maybe some types in the struct for a table don't need at
+					// all an omitempty so build in some logic which creates the
+					// tags more thoughtfully.
+					switch tagName {
+					case "bson":
+						fmt.Fprintf(&buf, `bson:"%s,omitempty"`, c.Field)
+					case "db":
+						fmt.Fprintf(&buf, `db:"%s"`, c.Field)
+					case "env":
+						fmt.Fprintf(&buf, `env:"%s"`, c.Field)
+					case "json":
+						fmt.Fprintf(&buf, `json:"%s,omitempty"`, c.Field)
+					case "toml":
+						fmt.Fprintf(&buf, `toml:"%s"`, c.Field)
+					case "yaml":
+						fmt.Fprintf(&buf, `yaml:"%s,omitempty"`, c.Field)
+					case "xml":
+						fmt.Fprintf(&buf, `xml:"%s,omitempty"`, c.Field)
+					default:
+						return errors.NewNotSupportedf("[dmlgen] WithStructTags: tag %q not supported", tagName)
+					}
+				}
+				c.StructTag = buf.String()
+			}
+		} else {
+			err = errors.NewNotFoundf("[dmlgen] WithStructTags: Table %q cannot be found.", tableName)
+		}
+		return err
+	}
+	return
+}
+
+// WithCustomStructTags allows to specify custom struct tags for a specific column.
 // The argument `columnNameStructTag` must be a balanced slice where index i
 // sets to the column name and index i+1 to the desired struct tag.
-//		dmlgen.WithStructTags("table_name","column_a",`json: ",omitempty"`,"column_b","`xml:,omitempty`")
-func WithStructTags(tableName string, columnNameStructTag ...string) (opt Option) {
+//		dmlgen.WithCustomStructTags("table_name","column_a",`json: ",omitempty"`,"column_b","`xml:,omitempty`")
+// It doesn't matter in which order you apply the options ;-)
+func WithCustomStructTags(tableName string, columnNameStructTag ...string) (opt Option) {
 	// Maybe create a new function option called WithStructTag(tableName string, json,xml,yaml,protobuf bool)
 	if len(columnNameStructTag)%2 == 1 {
-		panic(errors.NewFatalf("[dmlgen] WithStructTags: Argument columnNameStructTag must be a balanced slice."))
+		panic(errors.NewFatalf("[dmlgen] WithCustomStructTags: Argument columnNameStructTag must be a balanced slice."))
 	}
 	opt.sortOrder = 100
 	opt.fn = func(ts *Tables) (err error) {
-		var found int
-		for _, t := range ts.Tables {
-			if t.Name == tableName {
-				for _, c := range t.Columns {
-					for i := 0; i < len(columnNameStructTag); i = i + 2 {
-						if c.Field == columnNameStructTag[i] {
-							c.StructTag = columnNameStructTag[i+1]
-							found++
-						}
+		if t, ok := ts.Tables[tableName]; ok {
+			var found int
+			for _, c := range t.Columns {
+				for i := 0; i < len(columnNameStructTag); i = i + 2 {
+					if c.Field == columnNameStructTag[i] {
+						c.StructTag = columnNameStructTag[i+1]
+						found++
 					}
 				}
 			}
-		}
-		if found != len(columnNameStructTag)/2 {
-			err = errors.NewNotFoundf("[dmlgen] WithStructTags For table %q one column in %v cannot be found.", tableName, columnNameStructTag)
+			if found != len(columnNameStructTag)/2 {
+				err = errors.NewNotFoundf("[dmlgen] WithCustomStructTags: For table %q one column in %v cannot be found.", tableName, columnNameStructTag)
+			}
+		} else {
+			err = errors.NewNotFoundf("[dmlgen] WithCustomStructTags: Table %q cannot be found.", tableName)
 		}
 		return err
 	}
@@ -94,19 +144,19 @@ func WithStructTags(tableName string, columnNameStructTag ...string) (opt Option
 func WithColumnAliases(tableName, columnName string, aliases ...string) (opt Option) {
 	opt.sortOrder = 110
 	opt.fn = func(ts *Tables) (err error) {
-		found := false
-		for _, t := range ts.Tables {
-			if t.Name == tableName {
-				for _, c := range t.Columns {
-					if c.Field == columnName {
-						c.Aliases = aliases
-						found = true
-					}
+		if t, ok := ts.Tables[tableName]; ok {
+			found := false
+			for _, c := range t.Columns {
+				if c.Field == columnName {
+					c.Aliases = aliases
+					found = true
 				}
 			}
-		}
-		if !found {
-			err = errors.NewNotFoundf("[dmlgen] WithColumnAliases: For table %q the column %q has not been found.", tableName, columnName)
+			if !found {
+				err = errors.NewNotFoundf("[dmlgen] WithColumnAliases: For table %q the column %q has not been found.", tableName, columnName)
+			}
+		} else {
+			err = errors.NewNotFoundf("[dmlgen] WithColumnAliases: Table %q cannot be found.", tableName)
 		}
 		return err
 	}
@@ -119,37 +169,36 @@ func WithColumnAliases(tableName, columnName string, aliases ...string) (opt Opt
 func WithUniquifiedColumns(tableName string, columnNames ...string) (opt Option) {
 	opt.sortOrder = 120
 	opt.fn = func(ts *Tables) (err error) {
-		var found int
-		// yay three for loops! But doesn't matter in this case as we're not
-		// in a performance critical code.
-		for _, t := range ts.Tables {
-			if t.Name == tableName {
-				for _, c := range t.Columns {
-					for _, cn := range columnNames {
-						if c.Field == cn {
-							c.Uniquified = true
-							found++
-						}
+		if t, ok := ts.Tables[tableName]; ok {
+			var found int
+			for _, c := range t.Columns {
+				for _, cn := range columnNames {
+					if c.Field == cn {
+						c.Uniquified = true
+						found++
 					}
 				}
 			}
-		}
-		if len(columnNames) != found {
-			err = errors.NewNotFoundf("[dmlgen] WithUniquifiedColumns: For table %q one column of %v cannot been found.", tableName, columnNames)
+			if len(columnNames) != found {
+				err = errors.NewNotFoundf("[dmlgen] WithUniquifiedColumns: For table %q one column of %v cannot been found.", tableName, columnNames)
+			}
+		} else {
+			err = errors.NewNotFoundf("[dmlgen] WithColumnAliases: Table %q cannot be found.", tableName)
 		}
 		return err
 	}
 	return
 }
 
-// WithTable sets a table and its columns.
+// WithTable sets a table and its columns. Allows to overwrite a table fetched
+// with function WithLoadColumns.
 func WithTable(tableName string, columns ddl.Columns) (opt Option) {
 	opt.sortOrder = 10
 	opt.fn = func(ts *Tables) error {
-		ts.Tables = append(ts.Tables, &table{
+		ts.Tables[tableName] = &table{
 			Name:    tableName,
 			Columns: columns,
-		})
+		}
 		return nil
 	}
 	return
@@ -164,27 +213,30 @@ func WithLoadColumns(ctx context.Context, db dml.Querier, tables ...string) (opt
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		// fight with the randomized map elements to retain the sortOrder from the
-		// SQL query for column loading.
-		sortedKeys := make(slices.String, 0, len(tables))
-		for k := range tables {
-			sortedKeys = append(sortedKeys, k)
-		}
-		sortedKeys.Sort()
-		for _, tblName := range sortedKeys {
-			ts.Tables = append(ts.Tables, &table{
+		for tblName := range tables {
+			ts.Tables[tblName] = &table{
 				Name:    tblName,
 				Columns: tables[tblName],
-			})
+			}
 		}
 		return nil
 	}
 	return
 }
 
+func (ts *Tables) sortedTableNames() []string {
+	sortedKeys := make(slices.String, 0, len(ts.Tables))
+	for k := range ts.Tables {
+		sortedKeys = append(sortedKeys, k)
+	}
+	sortedKeys.Sort()
+	return sortedKeys
+}
+
 // NewTables creates a new instance of the SQL table code generator.
 func NewTables(packageName string, opts ...Option) (ts *Tables, err error) {
 	ts = &Tables{
+		Tables:  make(map[string]*table),
 		Package: packageName,
 		ImportPaths: []string{
 			"database/sql",
@@ -207,7 +259,7 @@ func NewTables(packageName string, opts ...Option) (ts *Tables, err error) {
 
 	sOpts := optionSorter(opts)
 	sort.Slice(sOpts, func(i, j int) bool {
-		return sOpts[i].sortOrder < sOpts[j].sortOrder // ascending a-z sorting ;-)
+		return sOpts[i].sortOrder < sOpts[j].sortOrder // ascending 0-9 sorting ;-)
 	})
 
 	for _, opt := range sOpts {
@@ -223,11 +275,11 @@ func NewTables(packageName string, opts ...Option) (ts *Tables, err error) {
 }
 
 // findUsedPackages checks for needed packages which we must import.
-func (ts *Tables) findUsedPackages(file []byte) []string {
+func (ts *Tables) findUsedPackages(file []byte) ([]string, error) {
 
 	af, err := parser.ParseFile(token.NewFileSet(), "virtual_file.go", append([]byte("package temporarily_main\n\n"), file...), 0)
 	if err != nil {
-		panic(err)
+		return nil, errors.WithStack(err)
 	}
 	idents := map[string]struct{}{}
 	ast.Inspect(af, func(n ast.Node) bool {
@@ -246,7 +298,7 @@ func (ts *Tables) findUsedPackages(file []byte) []string {
 			ret = append(ret, path)
 		}
 	}
-	return ret
+	return ret, nil
 }
 
 // WriteTo executes the template parser and writes the result into w.
@@ -254,7 +306,9 @@ func (ts *Tables) WriteTo(w io.Writer) (int64, error) {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 
-	for _, t := range ts.Tables {
+	// deal with random map to guarantee the persistent code generation.
+	for _, tblname := range ts.sortedTableNames() {
+		t := ts.Tables[tblname] // must panic if table name not found
 		if err := t.writeTo(buf, ts.tpl.Funcs(ts.FuncMap)); err != nil {
 			return 0, errors.NewWriteFailed(err, "[dmlgen] For Table %q", t.Name)
 		}
@@ -263,7 +317,11 @@ func (ts *Tables) WriteTo(w io.Writer) (int64, error) {
 	if !ts.DisableFileHeader {
 		// now figure out all used package names in the buffer.
 		fmt.Fprintf(w, "// Auto generated by dmlgen\n\npackage %s\n\nimport (\n", ts.Package)
-		for _, path := range ts.findUsedPackages(buf.Bytes()) {
+		pkgs, err := ts.findUsedPackages(buf.Bytes())
+		if err != nil {
+			return 0, errors.WithStack(err)
+		}
+		for _, path := range pkgs {
 			fmt.Fprintf(w, "\t%q\n", path)
 		}
 		fmt.Fprint(w, "\n)\n")
