@@ -433,6 +433,15 @@ func (c *Column) GoString() string {
 	if c.Comment != "" {
 		fmt.Fprintf(buf, "Comment: %q, ", c.Comment)
 	}
+	if len(c.Aliases) > 0 {
+		fmt.Fprintf(buf, "Aliases: %#v, ", c.Aliases)
+	}
+	if c.Uniquified {
+		fmt.Fprintf(buf, "Uniquified: %t, ", c.Uniquified)
+	}
+	if c.StructTag != "" {
+		fmt.Fprintf(buf, "StructTag: %q, ", c.StructTag)
+	}
 	_ = buf.WriteByte('}')
 	return buf.String()
 }

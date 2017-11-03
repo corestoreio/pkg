@@ -88,7 +88,7 @@ func TestColumns(t *testing.T) {
 			tableMap.MustTable("catalog_category_anc_categs_index_idx").Columns.PrimaryKeys().Len(),
 			0,
 			tableMap.MustTable("catalog_category_anc_categs_index_idx").Columns.GoString(),
-			"ddl.Columns{\n&ddl.Column{Field: \"category_id\", Default: dml.MakeNullString(\"0\"), ColumnType: \"int(10) unsigned\", Key: \"MUL\", },\n&ddl.Column{Field: \"path\", Null: \"YES\", ColumnType: \"varchar(255)\", Key: \"MUL\", },\n}",
+			"ddl.Columns{\n&ddl.Column{Field: \"category_id\", Default: dml.MakeNullString(\"0\"), ColumnType: \"int(10) unsigned\", Key: \"MUL\", Aliases: []string{\"entity_id\"}, Uniquified: true, StructTag: \"json:\\\",omitempty\\\"\", },\n&ddl.Column{Field: \"path\", Null: \"YES\", ColumnType: \"varchar(255)\", Key: \"MUL\", },\n}",
 		},
 		{
 			tableMap.MustTable("catalog_category_anc_categs_index_tmp").Columns.PrimaryKeys().Len(),

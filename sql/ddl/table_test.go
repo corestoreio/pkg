@@ -41,6 +41,9 @@ func init() {
 				Key:        "MUL",
 				Default:    dml.MakeNullString("0"),
 				Extra:      "",
+				Aliases:    []string{"entity_id"},
+				Uniquified: true,
+				StructTag:  `json:",omitempty"`,
 			},
 			&ddl.Column{
 				Field:      "path",
