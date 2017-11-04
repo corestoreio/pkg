@@ -128,8 +128,9 @@ func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoTypeNull .}}) [
 } {{end}}
 
 {{- range .Columns.UniquifiedColumns }}
-// {{ToGoCamelCase .Field}}s returns a slice or appends to a slice only unique
-// values.
+// {{ToGoCamelCase .Field}}s belongs to the column {{$.Tick}}{{.Field}}{{$.Tick}} and returns a
+// slice or appends to a slice only unique values of that column. The values
+// will be filtered internally in a Go map. No DB query gets executed.
 func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoType .}}) []{{GoType .}} {
 	if ret == nil {
 		ret = make([]{{GoType .}}, 0, len(cc.Data))

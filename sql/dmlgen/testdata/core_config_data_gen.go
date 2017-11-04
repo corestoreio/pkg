@@ -5,8 +5,8 @@ package testdata
 import (
 	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/errors"
-)
 
+)
 // CoreConfigData represents a single row for DB table `core_config_data`
 // Generated via dmlgen.
 type CoreConfigData struct {
@@ -125,8 +125,9 @@ func (cc *CoreConfigDataCollection) ConfigIDs(ret ...uint64) []uint64 {
 	return ret
 }
 
-// Paths returns a slice or appends to a slice only unique
-// values.
+// Paths belongs to the column `path` and returns a
+// slice or appends to a slice only unique values of that column. The values
+// will be filtered internally in a Go map. No DB query gets executed.
 func (cc *CoreConfigDataCollection) Paths(ret ...string) []string {
 	if ret == nil {
 		ret = make([]string, 0, len(cc.Data))
@@ -140,4 +141,4 @@ func (cc *CoreConfigDataCollection) Paths(ret ...string) []string {
 		}
 	}
 	return ret
-}
+} 

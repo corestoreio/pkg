@@ -126,11 +126,13 @@ func TestTables_WithAllTypes(t *testing.T) {
 }
 
 func TestInfoSchemaForeignKeys(t *testing.T) {
+	t.Skip("One time test. Use when needed to regenerate the code")
+
 	db := cstesting.MustConnectDB(t)
 	defer cstesting.Close(t, db)
 
 	ts, err := dmlgen.NewTables("testdata",
-		dmlgen.WithUniquifiedColumns("KEY_COLUMN_USAGE", "TABLE_NAME"),
+		dmlgen.WithUniquifiedColumns("KEY_COLUMN_USAGE", "TABLE_NAME", "COLUMN_NAME"),
 		dmlgen.WithLoadColumns(context.Background(), db.DB, "KEY_COLUMN_USAGE"),
 	)
 	require.NoError(t, err)
