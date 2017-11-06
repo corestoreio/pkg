@@ -77,7 +77,7 @@ type Column struct {
 const selTablesColumns = `SELECT
 	TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE,
 		DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE,
-		COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT	
+		COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT
 	 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN (?)
 	 ORDER BY TABLE_NAME, ORDINAL_POSITION`
 
@@ -88,10 +88,9 @@ const selAllTablesColumns = `SELECT
 	 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() ORDER BY TABLE_NAME, ORDINAL_POSITION`
 
 // LoadColumns returns all columns from a list of table names in the current
-// database. For now MySQL DSN must have set interpolateParams to true. Map key
-// contains the table name. Returns a NotFound error if the table is not
-// available. All columns from all tables gets selected when you don't provide
-// the argument `tables`.
+// database. Map key contains the table name. Returns a NotFound error if the
+// table is not available. All columns from all tables gets selected when you
+// don't provide the argument `tables`.
 func LoadColumns(ctx context.Context, db dml.Querier, tables ...string) (map[string]Columns, error) {
 	var rows *sql.Rows
 
@@ -115,7 +114,7 @@ func LoadColumns(ctx context.Context, db dml.Querier, tables ...string) (map[str
 	defer func() {
 		// Not testable with the sqlmock package :-(
 		if err2 := rows.Close(); err2 != nil && err == nil {
-			err = errors.Wrap(err2, "[dml] LoadColumns.Rows.Close")
+			err = errors.WithStack(err2)
 		}
 	}()
 
@@ -138,7 +137,7 @@ func LoadColumns(ctx context.Context, db dml.Querier, tables ...string) (map[str
 		tc[tn] = append(tc[tn], c)
 	}
 	if err = rows.Err(); err != nil {
-		return nil, errors.Wrapf(err, "[ddl] rows.Err Query")
+		return nil, errors.WithStack(err)
 	}
 	if len(tc) == 0 {
 		return nil, errors.NewNotFoundf("[ddl] Tables %v not found", tables)

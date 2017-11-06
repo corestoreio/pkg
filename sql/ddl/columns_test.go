@@ -214,17 +214,19 @@ var adminUserColumns = ddl.Columns{
 }
 
 func TestColumns_UniqueColumns(t *testing.T) {
+	t.Parallel()
 	assert.Exactly(t, []string{"user_id", "username"}, adminUserColumns.UniqueColumns().FieldNames())
 }
 
 func TestColumnsSort(t *testing.T) {
-	//t.Parallel() a slice is not thread safe ;-)
-	//sort.Reverse(adminUserColumns) doesn't work and not yet needed
+	t.Parallel()
 	sort.Sort(adminUserColumns)
 	assert.Exactly(t, `user_id`, adminUserColumns.First().Field)
 }
 
 func TestColumn_GoComment(t *testing.T) {
+	t.Parallel()
+
 	assert.Exactly(t, "// user_id int(10) unsigned NOT NULL PRI  auto_increment \"User ID\"",
 		adminUserColumns.First().GoComment())
 	assert.Exactly(t, "// firstname varchar(32) NULL    \"User First Name\"",

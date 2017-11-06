@@ -1,0 +1,96 @@
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package ddl_test
+
+import (
+	"context"
+	"encoding/json"
+	"testing"
+
+	"github.com/corestoreio/csfw/sql/ddl"
+	"github.com/corestoreio/csfw/sql/dml"
+	"github.com/corestoreio/csfw/util/cstesting"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func init() {
+	dml.JSONMarshalFn = json.Marshal
+}
+
+func TestLoadForeignKeys_Integration_Mage(t *testing.T) {
+	t.Parallel()
+
+	dbc := cstesting.MustConnectDB(t)
+	defer cstesting.Close(t, dbc)
+
+	t.Run("admin_user", func(t *testing.T) {
+		tc, err := ddl.LoadKeyColumnUsage(context.TODO(), dbc.DB, "admin_user")
+		require.NoError(t, err)
+		require.Len(t, tc, 1, "Number of returned entries should be as stated")
+
+		fkCols := tc["admin_user.user_id"]
+		require.NotNil(t, fkCols.Data)
+
+		dataJSON, err := json.Marshal(fkCols.Data)
+		require.NoError(t, err)
+		assert.Exactly(t,
+			"[{\"ConstraintCatalog\":\"def\",\"ConstraintSchema\":\"magento22\",\"ConstraintName\":\"ADMIN_PASSWORDS_USER_ID_ADMIN_USER_USER_ID\",\"TableCatalog\":\"def\",\"TableSchema\":\"magento22\",\"TableName\":\"admin_passwords\",\"ColumnName\":\"user_id\",\"OrdinalPosition\":1,\"PositionInUniqueConstraint\":1,\"ReferencedTableSchema\":\"magento22\",\"ReferencedTableName\":\"admin_user\",\"ReferencedColumnName\":\"user_id\"},{\"ConstraintCatalog\":\"def\",\"ConstraintSchema\":\"magento22\",\"ConstraintName\":\"ADMIN_USER_SESSION_USER_ID_ADMIN_USER_USER_ID\",\"TableCatalog\":\"def\",\"TableSchema\":\"magento22\",\"TableName\":\"admin_user_session\",\"ColumnName\":\"user_id\",\"OrdinalPosition\":1,\"PositionInUniqueConstraint\":1,\"ReferencedTableSchema\":\"magento22\",\"ReferencedTableName\":\"admin_user\",\"ReferencedColumnName\":\"user_id\"},{\"ConstraintCatalog\":\"def\",\"ConstraintSchema\":\"magento22\",\"ConstraintName\":\"OAUTH_TOKEN_ADMIN_ID_ADMIN_USER_USER_ID\",\"TableCatalog\":\"def\",\"TableSchema\":\"magento22\",\"TableName\":\"oauth_token\",\"ColumnName\":\"admin_id\",\"OrdinalPosition\":1,\"PositionInUniqueConstraint\":1,\"ReferencedTableSchema\":\"magento22\",\"ReferencedTableName\":\"admin_user\",\"ReferencedColumnName\":\"user_id\"},{\"ConstraintCatalog\":\"def\",\"ConstraintSchema\":\"magento22\",\"ConstraintName\":\"UI_BOOKMARK_USER_ID_ADMIN_USER_USER_ID\",\"TableCatalog\":\"def\",\"TableSchema\":\"magento22\",\"TableName\":\"ui_bookmark\",\"ColumnName\":\"user_id\",\"OrdinalPosition\":1,\"PositionInUniqueConstraint\":1,\"ReferencedTableSchema\":\"magento22\",\"ReferencedTableName\":\"admin_user\",\"ReferencedColumnName\":\"user_id\"}]",
+			string(dataJSON),
+		)
+	})
+
+	t.Run("cms_block and cms_page", func(t *testing.T) {
+		tc, err := ddl.LoadKeyColumnUsage(context.TODO(), dbc.DB, "cms_block", "cms_page")
+		require.NoError(t, err)
+		require.Len(t, tc, 2, "Number of returned entries should be as stated")
+
+		t.Logf("%#v", tc["cms_block.block_id"].Data)
+
+		dataJSON, err := json.Marshal(tc["cms_block.block_id"].Data)
+		require.NoError(t, err)
+		assert.Exactly(t,
+			"[{\"ConstraintCatalog\":\"def\",\"ConstraintSchema\":\"magento22\",\"ConstraintName\":\"CMS_BLOCK_STORE_BLOCK_ID_CMS_BLOCK_BLOCK_ID\",\"TableCatalog\":\"def\",\"TableSchema\":\"magento22\",\"TableName\":\"cms_block_store\",\"ColumnName\":\"block_id\",\"OrdinalPosition\":1,\"PositionInUniqueConstraint\":1,\"ReferencedTableSchema\":\"magento22\",\"ReferencedTableName\":\"cms_block\",\"ReferencedColumnName\":\"block_id\"}]",
+			string(dataJSON),
+		)
+
+		dataJSON, err = json.Marshal(tc["cms_page.page_id"].Data)
+		require.NoError(t, err)
+		assert.Exactly(t,
+			"page",
+			string(dataJSON),
+		)
+	})
+
+	t.Run("catalog_eav_attribute", func(t *testing.T) {
+		tc, err := ddl.LoadKeyColumnUsage(context.TODO(), dbc.DB, "catalog_eav_attribute")
+		require.NoError(t, err)
+		require.Len(t, tc, 0, "Number of returned entries should be as stated")
+
+		fkCols, ok := tc["catalog_eav_attribute.attribute_id"]
+		require.False(t, ok)
+		require.Nil(t, fkCols.Data)
+	})
+
+	t.Run("non_existent_table", func(t *testing.T) {
+		tc, err := ddl.LoadKeyColumnUsage(context.TODO(), dbc.DB, "catalog_eav_attribute")
+		require.NoError(t, err)
+		require.Len(t, tc, 0, "Number of returned entries should be as stated")
+
+		fkCols, ok := tc["non_existent_table.attribute_id"]
+		require.False(t, ok)
+		require.Nil(t, fkCols.Data)
+	})
+}
