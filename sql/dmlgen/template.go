@@ -65,7 +65,14 @@ type {{.Collection}} struct {
 	AfterMapColumns 	func(uint64, *{{.Entity}}) error
 }
 
-func (cc *{{.Collection}}) scanColumns(cm *dml.ColumnMap,e *{{.Entity}}, idx uint64) error {
+// Make{{.Collection}} creates a new initialized collection.
+func Make{{.Collection}}() {{.Collection}} {
+	return {{.Collection}}{
+		Data: make([]*{{.Entity}}, 0, 5),
+	}
+}
+
+func (cc {{.Collection}}) scanColumns(cm *dml.ColumnMap,e *{{.Entity}}, idx uint64) error {
 	if err := cc.BeforeMapColumns(idx, e); err != nil {
 		return errors.WithStack(err)
 	}
@@ -79,7 +86,7 @@ func (cc *{{.Collection}}) scanColumns(cm *dml.ColumnMap,e *{{.Entity}}, idx uin
 }
 
 // MapColumns implements dml.ColumnMapper interface
-func (cc *{{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
+func (cc {{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
 		for i, e := range cc.Data {
@@ -117,7 +124,7 @@ func (cc *{{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
 }
 {{ range .Columns.UniqueColumns }}
 // {{ToGoCamelCase .Field}}s returns a slice or appends to a slice all values.
-func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoTypeNull .}}) []{{GoTypeNull .}} {
+func (cc {{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoTypeNull .}}) []{{GoTypeNull .}} {
 	if ret == nil {
 		ret = make([]{{GoTypeNull .}}, 0, len(cc.Data))
 	}
@@ -131,7 +138,7 @@ func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoTypeNull .}}) [
 // {{ToGoCamelCase .Field}}s belongs to the column {{$.Tick}}{{.Field}}{{$.Tick}} and returns a
 // slice or appends to a slice only unique values of that column. The values
 // will be filtered internally in a Go map. No DB query gets executed.
-func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoType .}}) []{{GoType .}} {
+func (cc {{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoType .}}) []{{GoType .}} {
 	if ret == nil {
 		ret = make([]{{GoType .}}, 0, len(cc.Data))
 	}
@@ -148,4 +155,36 @@ func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoType .}}) []{{G
 	}
 	return ret
 } {{end}}
+
+{{ if .JsonMarshaler -}}
+func (cc *{{$.Collection}}) UnmarshalJSON(b []byte) (err error) {
+	// TODO: Replace with easyjson or ffjson
+	return json.Unmarshal(b, cc.Data)
+}
+
+func (cc *{{$.Collection}}) MarshalJSON() ([]byte, error) {
+	// TODO: Replace with easyjson or ffjson
+	return json.Marshal(cc.Data)
+}
+{{- end }}
+
+{{ if or .BinaryMarshaler .GobEncoding -}}
+func (cc *{{$.Collection}}) UnmarshalBinary(data []byte) error {
+	return errors.NewNotImplementedf("[{{.Package}}] binary encoding not yet implemented]")
+}
+
+func (cc *{{$.Collection}}) MarshalBinary() (data []byte, err error) {
+	return nil, errors.NewNotImplementedf("[{{.Package}}] binary encoding not yet implemented]")
+}
+{{ end }}
+
+{{ if .GobEncoding }}
+func (cc *{{$.Collection}}) GobDecode(data []byte) error {
+	return errors.NewNotImplementedf("[{{.Package}}] binary encoding not yet implemented]")
+}
+
+func (cc *{{$.Collection}}) GobEncode() ([]byte, error) {
+	return nil, errors.NewNotImplementedf("[{{.Package}}] binary encoding not yet implemented]")
+}
+{{ end }}
 `

@@ -3,11 +3,12 @@
 package testdata
 
 import (
+	"encoding/json"
 	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/errors"
 	"time"
-
 )
+
 // DmlgenTypes represents a single row for DB table `dmlgen_types`
 // Generated via dmlgen.
 type DmlgenTypes struct {
@@ -178,7 +179,14 @@ type DmlgenTypesCollection struct {
 	AfterMapColumns  func(uint64, *DmlgenTypes) error
 }
 
-func (cc *DmlgenTypesCollection) scanColumns(cm *dml.ColumnMap, e *DmlgenTypes, idx uint64) error {
+// MakeDmlgenTypesCollection creates a new initialized collection.
+func MakeDmlgenTypesCollection() DmlgenTypesCollection {
+	return DmlgenTypesCollection{
+		Data: make([]*DmlgenTypes, 0, 5),
+	}
+}
+
+func (cc DmlgenTypesCollection) scanColumns(cm *dml.ColumnMap, e *DmlgenTypes, idx uint64) error {
 	if err := cc.BeforeMapColumns(idx, e); err != nil {
 		return errors.WithStack(err)
 	}
@@ -192,7 +200,7 @@ func (cc *DmlgenTypesCollection) scanColumns(cm *dml.ColumnMap, e *DmlgenTypes, 
 }
 
 // MapColumns implements dml.ColumnMapper interface
-func (cc *DmlgenTypesCollection) MapColumns(cm *dml.ColumnMap) error {
+func (cc DmlgenTypesCollection) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
 		for i, e := range cc.Data {
@@ -237,7 +245,7 @@ func (cc *DmlgenTypesCollection) MapColumns(cm *dml.ColumnMap) error {
 }
 
 // IDs returns a slice or appends to a slice all values.
-func (cc *DmlgenTypesCollection) IDs(ret ...int64) []int64 {
+func (cc DmlgenTypesCollection) IDs(ret ...int64) []int64 {
 	if ret == nil {
 		ret = make([]int64, 0, len(cc.Data))
 	}
@@ -250,7 +258,7 @@ func (cc *DmlgenTypesCollection) IDs(ret ...int64) []int64 {
 // ColBlobs belongs to the column `col_blob` and returns a
 // slice or appends to a slice only unique values of that column. The values
 // will be filtered internally in a Go map. No DB query gets executed.
-func (cc *DmlgenTypesCollection) ColBlobs(ret ...string) []string {
+func (cc DmlgenTypesCollection) ColBlobs(ret ...string) []string {
 	if ret == nil {
 		ret = make([]string, 0, len(cc.Data))
 	}
@@ -268,7 +276,7 @@ func (cc *DmlgenTypesCollection) ColBlobs(ret ...string) []string {
 // ColDate2s belongs to the column `col_date_2` and returns a
 // slice or appends to a slice only unique values of that column. The values
 // will be filtered internally in a Go map. No DB query gets executed.
-func (cc *DmlgenTypesCollection) ColDate2s(ret ...time.Time) []time.Time {
+func (cc DmlgenTypesCollection) ColDate2s(ret ...time.Time) []time.Time {
 	if ret == nil {
 		ret = make([]time.Time, 0, len(cc.Data))
 	}
@@ -286,7 +294,7 @@ func (cc *DmlgenTypesCollection) ColDate2s(ret ...time.Time) []time.Time {
 // ColInt1s belongs to the column `col_int_1` and returns a
 // slice or appends to a slice only unique values of that column. The values
 // will be filtered internally in a Go map. No DB query gets executed.
-func (cc *DmlgenTypesCollection) ColInt1s(ret ...int64) []int64 {
+func (cc DmlgenTypesCollection) ColInt1s(ret ...int64) []int64 {
 	if ret == nil {
 		ret = make([]int64, 0, len(cc.Data))
 	}
@@ -304,7 +312,7 @@ func (cc *DmlgenTypesCollection) ColInt1s(ret ...int64) []int64 {
 // ColInt2s belongs to the column `col_int_2` and returns a
 // slice or appends to a slice only unique values of that column. The values
 // will be filtered internally in a Go map. No DB query gets executed.
-func (cc *DmlgenTypesCollection) ColInt2s(ret ...int64) []int64 {
+func (cc DmlgenTypesCollection) ColInt2s(ret ...int64) []int64 {
 	if ret == nil {
 		ret = make([]int64, 0, len(cc.Data))
 	}
@@ -322,7 +330,7 @@ func (cc *DmlgenTypesCollection) ColInt2s(ret ...int64) []int64 {
 // ColLongtext2s belongs to the column `col_longtext_2` and returns a
 // slice or appends to a slice only unique values of that column. The values
 // will be filtered internally in a Go map. No DB query gets executed.
-func (cc *DmlgenTypesCollection) ColLongtext2s(ret ...string) []string {
+func (cc DmlgenTypesCollection) ColLongtext2s(ret ...string) []string {
 	if ret == nil {
 		ret = make([]string, 0, len(cc.Data))
 	}
@@ -340,7 +348,7 @@ func (cc *DmlgenTypesCollection) ColLongtext2s(ret ...string) []string {
 // HasSmallint5s belongs to the column `has_smallint_5` and returns a
 // slice or appends to a slice only unique values of that column. The values
 // will be filtered internally in a Go map. No DB query gets executed.
-func (cc *DmlgenTypesCollection) HasSmallint5s(ret ...bool) []bool {
+func (cc DmlgenTypesCollection) HasSmallint5s(ret ...bool) []bool {
 	if ret == nil {
 		ret = make([]bool, 0, len(cc.Data))
 	}
@@ -353,4 +361,30 @@ func (cc *DmlgenTypesCollection) HasSmallint5s(ret ...bool) []bool {
 		}
 	}
 	return ret
-} 
+}
+
+func (cc *DmlgenTypesCollection) UnmarshalJSON(b []byte) (err error) {
+	// TODO: Replace with easyjson or ffjson
+	return json.Unmarshal(b, cc.Data)
+}
+
+func (cc *DmlgenTypesCollection) MarshalJSON() ([]byte, error) {
+	// TODO: Replace with easyjson or ffjson
+	return json.Marshal(cc.Data)
+}
+
+func (cc *DmlgenTypesCollection) UnmarshalBinary(data []byte) error {
+	return errors.NewNotImplementedf("[testdata] binary encoding not yet implemented]")
+}
+
+func (cc *DmlgenTypesCollection) MarshalBinary() (data []byte, err error) {
+	return nil, errors.NewNotImplementedf("[testdata] binary encoding not yet implemented]")
+}
+
+func (cc *DmlgenTypesCollection) GobDecode(data []byte) error {
+	return errors.NewNotImplementedf("[testdata] binary encoding not yet implemented]")
+}
+
+func (cc *DmlgenTypesCollection) GobEncode() ([]byte, error) {
+	return nil, errors.NewNotImplementedf("[testdata] binary encoding not yet implemented]")
+}

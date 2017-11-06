@@ -66,7 +66,14 @@ type CoreConfigDataCollection struct {
 	AfterMapColumns  func(uint64, *CoreConfigData) error
 }
 
-func (cc *CoreConfigDataCollection) scanColumns(cm *dml.ColumnMap, e *CoreConfigData, idx uint64) error {
+// MakeCoreConfigDataCollection creates a new initialized collection.
+func MakeCoreConfigDataCollection() CoreConfigDataCollection {
+	return CoreConfigDataCollection{
+		Data: make([]*CoreConfigData, 0, 5),
+	}
+}
+
+func (cc CoreConfigDataCollection) scanColumns(cm *dml.ColumnMap, e *CoreConfigData, idx uint64) error {
 	if err := cc.BeforeMapColumns(idx, e); err != nil {
 		return errors.WithStack(err)
 	}
@@ -80,7 +87,7 @@ func (cc *CoreConfigDataCollection) scanColumns(cm *dml.ColumnMap, e *CoreConfig
 }
 
 // MapColumns implements dml.ColumnMapper interface
-func (cc *CoreConfigDataCollection) MapColumns(cm *dml.ColumnMap) error {
+func (cc CoreConfigDataCollection) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
 		for i, e := range cc.Data {
@@ -115,7 +122,7 @@ func (cc *CoreConfigDataCollection) MapColumns(cm *dml.ColumnMap) error {
 }
 
 // ConfigIDs returns a slice or appends to a slice all values.
-func (cc *CoreConfigDataCollection) ConfigIDs(ret ...uint64) []uint64 {
+func (cc CoreConfigDataCollection) ConfigIDs(ret ...uint64) []uint64 {
 	if ret == nil {
 		ret = make([]uint64, 0, len(cc.Data))
 	}
@@ -128,7 +135,7 @@ func (cc *CoreConfigDataCollection) ConfigIDs(ret ...uint64) []uint64 {
 // Paths belongs to the column `path` and returns a
 // slice or appends to a slice only unique values of that column. The values
 // will be filtered internally in a Go map. No DB query gets executed.
-func (cc *CoreConfigDataCollection) Paths(ret ...string) []string {
+func (cc CoreConfigDataCollection) Paths(ret ...string) []string {
 	if ret == nil {
 		ret = make([]string, 0, len(cc.Data))
 	}
@@ -142,3 +149,9 @@ func (cc *CoreConfigDataCollection) Paths(ret ...string) []string {
 	}
 	return ret
 } 
+
+
+
+
+
+

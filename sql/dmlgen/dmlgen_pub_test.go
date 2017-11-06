@@ -113,6 +113,7 @@ func TestTables_WithAllTypes(t *testing.T) {
 	defer cstesting.Close(t, f)
 
 	ts, err := dmlgen.NewTables("testdata",
+		dmlgen.WithEncoder("dmlgen_types", "json", "binary", "gob"),
 		dmlgen.WithStructTags("dmlgen_types", "json", "xml"),
 		dmlgen.WithUniquifiedColumns("dmlgen_types", "col_longtext_2", "col_int_1", "col_int_2", "has_smallint_5", "col_date_2", "col_blob"),
 		dmlgen.WithLoadColumns(context.Background(), db.DB, "dmlgen_types"),
@@ -132,6 +133,7 @@ func TestInfoSchemaForeignKeys(t *testing.T) {
 	defer cstesting.Close(t, db)
 
 	ts, err := dmlgen.NewTables("testdata",
+		dmlgen.WithEncoder("KEY_COLUMN_USAGE", "json", "binary", "gob"),
 		dmlgen.WithUniquifiedColumns("KEY_COLUMN_USAGE", "TABLE_NAME", "COLUMN_NAME"),
 		dmlgen.WithLoadColumns(context.Background(), db.DB, "KEY_COLUMN_USAGE"),
 	)

@@ -58,6 +58,29 @@ type Option struct {
 // optionSorter to satisfy the sort.Slice function
 type optionSorter []Option
 
+func WithEncoder(tableName string, encoderNames ...string) (opt Option) {
+	opt.sortOrder = 90 // must run before custom struct tags
+	opt.fn = func(ts *Tables) (err error) {
+		if ts.Tables[tableName] == nil {
+			return errors.NewNotFoundf("[dmlgen] WithEncoder: Table %q not found.", tableName)
+		}
+		for _, enc := range encoderNames {
+			switch enc {
+			case "json":
+				ts.Tables[tableName].JsonMarshaler = true
+			case "binary":
+				ts.Tables[tableName].BinaryMarshaler = true
+			case "gob":
+				ts.Tables[tableName].GobEncoding = true
+			default:
+				return errors.NewNotSupportedf("[dmlgen] WithMarshaler: encoder %q not supported", enc)
+			}
+		}
+		return nil
+	}
+	return
+}
+
 // WithStructTags enables struct tags proactively for the whole struct. Allowed
 // values are: bson, db, env, json, toml, yaml and xml. For bson, json, yaml and
 // xml the omitempty attribute has been set. If you need a different struct tag
@@ -196,8 +219,8 @@ func WithTable(tableName string, columns ddl.Columns) (opt Option) {
 	opt.sortOrder = 10
 	opt.fn = func(ts *Tables) error {
 		ts.Tables[tableName] = &table{
-			Name:    tableName,
-			Columns: columns,
+			TableName: tableName,
+			Columns:   columns,
 		}
 		return nil
 	}
@@ -215,8 +238,8 @@ func WithLoadColumns(ctx context.Context, db dml.Querier, tables ...string) (opt
 		}
 		for tblName := range tables {
 			ts.Tables[tblName] = &table{
-				Name:    tblName,
-				Columns: tables[tblName],
+				TableName: tblName,
+				Columns:   tables[tblName],
 			}
 		}
 		return nil
@@ -240,6 +263,7 @@ func NewTables(packageName string, opts ...Option) (ts *Tables, err error) {
 		Package: packageName,
 		ImportPaths: []string{
 			"database/sql",
+			"encoding/json",
 			"github.com/corestoreio/csfw/sql/dml",
 			"github.com/corestoreio/errors",
 			"time",
@@ -310,7 +334,7 @@ func (ts *Tables) WriteTo(w io.Writer) (int64, error) {
 	for _, tblname := range ts.sortedTableNames() {
 		t := ts.Tables[tblname] // must panic if table name not found
 		if err := t.writeTo(buf, ts.tpl.Funcs(ts.FuncMap)); err != nil {
-			return 0, errors.NewWriteFailed(err, "[dmlgen] For Table %q", t.Name)
+			return 0, errors.NewWriteFailed(err, "[dmlgen] For Table %q", t.TableName)
 		}
 	}
 
@@ -338,27 +362,26 @@ func (ts *Tables) WriteTo(w io.Writer) (int64, error) {
 
 // table writes one database table into Go source code.
 type table struct {
-	Package string      // Name of the package
-	Name    string      // Name of the table
-	Columns ddl.Columns // all columns of the table
+	Package         string      // Name of the package
+	TableName       string      // Name of the table
+	Columns         ddl.Columns // all columns of the table
+	JsonMarshaler   bool
+	BinaryMarshaler bool
+	GobEncoding     bool
 }
 
 // WriteTo implements io.WriterTo and writes the generated source code into w.
 func (t *table) writeTo(w io.Writer, tpl *template.Template) error {
 
 	data := struct {
-		Package    string
+		table
 		Collection string
 		Entity     string
-		TableName  string
-		Columns    ddl.Columns
 		Tick       string
 	}{
-		Package:    t.Package,
-		Collection: strs.ToGoCamelCase(t.Name) + "Collection",
-		Entity:     strs.ToGoCamelCase(t.Name),
-		TableName:  t.Name,
-		Columns:    t.Columns,
+		table:      *t,
+		Collection: strs.ToGoCamelCase(t.TableName) + "Collection",
+		Entity:     strs.ToGoCamelCase(t.TableName),
 		Tick:       "`",
 	}
 
