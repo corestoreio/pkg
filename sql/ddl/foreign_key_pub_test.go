@@ -30,6 +30,8 @@ func init() {
 	dml.JSONMarshalFn = json.Marshal
 }
 
+// TestLoadForeignKeys_Integration_Mage expects a Mage >=2.2 database and checks
+// for correct loading of foreign keys.
 func TestLoadForeignKeys_Integration_Mage(t *testing.T) {
 	t.Parallel()
 
@@ -57,8 +59,6 @@ func TestLoadForeignKeys_Integration_Mage(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, tc, 2, "Number of returned entries should be as stated")
 
-		t.Logf("%#v", tc["cms_block.block_id"].Data)
-
 		dataJSON, err := json.Marshal(tc["cms_block.block_id"].Data)
 		require.NoError(t, err)
 		assert.Exactly(t,
@@ -69,7 +69,7 @@ func TestLoadForeignKeys_Integration_Mage(t *testing.T) {
 		dataJSON, err = json.Marshal(tc["cms_page.page_id"].Data)
 		require.NoError(t, err)
 		assert.Exactly(t,
-			"page",
+			"[{\"ConstraintCatalog\":\"def\",\"ConstraintSchema\":\"magento22\",\"ConstraintName\":\"CMS_PAGE_STORE_PAGE_ID_CMS_PAGE_PAGE_ID\",\"TableCatalog\":\"def\",\"TableSchema\":\"magento22\",\"TableName\":\"cms_page_store\",\"ColumnName\":\"page_id\",\"OrdinalPosition\":1,\"PositionInUniqueConstraint\":1,\"ReferencedTableSchema\":\"magento22\",\"ReferencedTableName\":\"cms_page\",\"ReferencedColumnName\":\"page_id\"}]",
 			string(dataJSON),
 		)
 	})
