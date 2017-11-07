@@ -25,11 +25,11 @@ import (
 	"io"
 	"path/filepath"
 	"sort"
+	"strings"
 	"text/template"
 
 	"github.com/corestoreio/csfw/sql/ddl"
 	"github.com/corestoreio/csfw/sql/dml"
-	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/slices"
 	"github.com/corestoreio/csfw/util/strs"
 	"github.com/corestoreio/errors"
@@ -44,20 +44,23 @@ type Tables struct {
 	Tables map[string]*table
 	template.FuncMap
 	DisableFileHeader bool
-	// tpl contains a parsed template to render a single table.
-	tpl *template.Template
+	// goTpl contains a parsed template to render a single table.
+	goTpl      *template.Template
+	protoTpl   *template.Template
+	writeProto bool
 }
 
 // Option represents a sortable option for the NewTables function. Each option
 // function can be applied in a mixed order.
 type Option struct {
+	// sortOrder specifies the precedence of an option.
 	sortOrder int
 	fn        func(*Tables) error
 }
 
-// optionSorter to satisfy the sort.Slice function
-type optionSorter []Option
-
+// WithEncoder adds method receivers compatible with the interface declarations
+// in the various encoding packages. Supported encoder names are: json, binary,
+// gob and proto. More to follow.
 func WithEncoder(tableName string, encoderNames ...string) (opt Option) {
 	opt.sortOrder = 90 // must run before custom struct tags
 	opt.fn = func(ts *Tables) (err error) {
@@ -72,6 +75,9 @@ func WithEncoder(tableName string, encoderNames ...string) (opt Option) {
 				ts.Tables[tableName].BinaryMarshaler = true
 			case "gob":
 				ts.Tables[tableName].GobEncoding = true
+			case "proto":
+				ts.writeProto = true
+				ts.Tables[tableName].Protobuf = true // for now leave it in. maybe later PB gets added to the struct tags.
 			default:
 				return errors.NewNotSupportedf("[dmlgen] WithMarshaler: encoder %q not supported", enc)
 			}
@@ -186,6 +192,48 @@ func WithColumnAliases(tableName, columnName string, aliases ...string) (opt Opt
 	return
 }
 
+// WithColumnAliasesFromForeignKeys extracts similar column names from foreign
+// key definitions. For the list of tables and their primary/unique keys, this
+// function searches the foreign keys to other tables and uses the column name
+// as the alias. For example the table `customer_entity` and its PK column
+// `entity_id` has a foreign key in table `sales_order` whose name is
+// `customer_id`. When generation code for customer_entity, the column entity_id
+// can be used additionally with the name customer_id, hence customer_id is the
+// alias.
+func WithColumnAliasesFromForeignKeys(ctx context.Context, db dml.Querier) (opt Option) {
+	opt.sortOrder = 200 // must run at the end or where the end is near ;-)
+	opt.fn = func(ts *Tables) error {
+
+		tblFks, err := ddl.LoadKeyColumnUsage(ctx, db, ts.sortedTableNames()...)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		for tblPkCol, kcuc := range tblFks {
+			// tblPkCol == REFERENCED_TABLE_NAME.REFERENCED_COLUMN_NAME
+			// REFERENCED_TABLE_NAME is contained in sortedTableNames()
+			dotPos := strings.IndexByte(tblPkCol, '.')
+			refTable := tblPkCol[:dotPos]
+			refColumn := tblPkCol[dotPos+1:]
+
+			t := ts.Tables[refTable]
+			for _, c := range t.Columns {
+				// TODO: optimize this and rethink method receivers like Each, on the collection.
+				if c.Field == refColumn {
+					unique := map[string]bool{refColumn: true} // refColumn already seen because field name
+					for _, kcu := range kcuc.Data {
+						if kcu.ReferencedColumnName.String == refColumn && !unique[kcu.ColumnName] {
+							c.Aliases = append(c.Aliases, kcu.ColumnName)
+							unique[kcu.ColumnName] = true
+						}
+					}
+				}
+			}
+		}
+		return nil
+	}
+	return
+}
+
 // WithUniquifiedColumns specifies columns which are non primary/unique key one
 // but should have a dedicated function to extract their unique primitive values
 // as a slice.
@@ -257,8 +305,8 @@ func (ts *Tables) sortedTableNames() []string {
 }
 
 // NewTables creates a new instance of the SQL table code generator.
-func NewTables(packageName string, opts ...Option) (ts *Tables, err error) {
-	ts = &Tables{
+func NewTables(packageName string, opts ...Option) (*Tables, error) {
+	ts := &Tables{
 		Tables:  make(map[string]*table),
 		Package: packageName,
 		ImportPaths: []string{
@@ -276,18 +324,26 @@ func NewTables(packageName string, opts ...Option) (ts *Tables, err error) {
 	ts.FuncMap["GoFuncNull"] = toGoFuncNull
 	ts.FuncMap["GoFunc"] = toGoFunc
 	ts.FuncMap["GoPrimitive"] = toGoPrimitive
-	ts.tpl, err = template.New("entity").Funcs(ts.FuncMap).Parse(tplDBAC)
+	ts.FuncMap["ProtoType"] = toProtoType
+	ts.FuncMap["ProtoCustomType"] = toProtoCustomType
+
+	sort.Slice(opts, func(i, j int) bool {
+		return opts[i].sortOrder < opts[j].sortOrder // ascending 0-9 sorting ;-)
+	})
+
+	for _, opt := range opts {
+		if err := opt.fn(ts); err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+	var err error
+	ts.goTpl, err = template.New("go_entity").Funcs(ts.FuncMap).Parse(tplDBAC)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-
-	sOpts := optionSorter(opts)
-	sort.Slice(sOpts, func(i, j int) bool {
-		return sOpts[i].sortOrder < sOpts[j].sortOrder // ascending 0-9 sorting ;-)
-	})
-
-	for _, opt := range sOpts {
-		if err := opt.fn(ts); err != nil {
+	if ts.writeProto {
+		ts.protoTpl, err = template.New("proto_entity").Funcs(ts.FuncMap).Parse(tplProto)
+		if err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}
@@ -325,25 +381,55 @@ func (ts *Tables) findUsedPackages(file []byte) ([]string, error) {
 	return ret, nil
 }
 
-// WriteTo executes the template parser and writes the result into w.
-func (ts *Tables) WriteTo(w io.Writer) (int64, error) {
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
+// WriteProto writes the protocol buffer specifications into `w`.
+func (ts *Tables) WriteProto(w io.Writer) error {
+	buf := new(bytes.Buffer)
+	if !ts.writeProto {
+		return errors.NewNotAcceptablef("[dmlgen] Protocol buffer generation not enabled.")
+	}
+
+	if !ts.DisableFileHeader {
+		fmt.Fprintf(buf, `// Auto generated via github.com/corestoreio/csfw/sql/dmlgen
+syntax = "proto3";
+package %s;
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
+option (gogoproto.typedecl_all) = false;
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.sizer_all) = true;
+
+`, ts.Package)
+	}
+
+	for _, tblname := range ts.sortedTableNames() {
+		t := ts.Tables[tblname] // must panic if table name not found
+		if err := t.writeTo(buf, ts.protoTpl.Funcs(ts.FuncMap)); err != nil {
+			return errors.NewWriteFailed(err, "[dmlgen] For Table %q", t.TableName)
+		}
+	}
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+// WriteGo writes the Go source code into `w`.
+func (ts *Tables) WriteGo(w io.Writer) error {
+	buf := new(bytes.Buffer)
 
 	// deal with random map to guarantee the persistent code generation.
 	for _, tblname := range ts.sortedTableNames() {
 		t := ts.Tables[tblname] // must panic if table name not found
-		if err := t.writeTo(buf, ts.tpl.Funcs(ts.FuncMap)); err != nil {
-			return 0, errors.NewWriteFailed(err, "[dmlgen] For Table %q", t.TableName)
+		if err := t.writeTo(buf, ts.goTpl.Funcs(ts.FuncMap)); err != nil {
+			return errors.NewWriteFailed(err, "[dmlgen] For Table %q", t.TableName)
 		}
 	}
 
 	if !ts.DisableFileHeader {
 		// now figure out all used package names in the buffer.
-		fmt.Fprintf(w, "// Auto generated by dmlgen\n\npackage %s\n\nimport (\n", ts.Package)
+		fmt.Fprintf(w, "// Auto generated via github.com/corestoreio/csfw/sql/dmlgen\n\npackage %s\n\nimport (\n", ts.Package)
 		pkgs, err := ts.findUsedPackages(buf.Bytes())
 		if err != nil {
-			return 0, errors.WithStack(err)
+			return errors.WithStack(err)
 		}
 		for _, path := range pkgs {
 			fmt.Fprintf(w, "\t%q\n", path)
@@ -353,11 +439,12 @@ func (ts *Tables) WriteTo(w io.Writer) (int64, error) {
 
 	fmted, err := format.Source(buf.Bytes())
 	if err != nil {
-		return 0, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
 	buf.Reset()
 	buf.Write(fmted)
-	return buf.WriteTo(w)
+	_, err = buf.WriteTo(w)
+	return err
 }
 
 // table writes one database table into Go source code.
@@ -368,6 +455,7 @@ type table struct {
 	JsonMarshaler   bool
 	BinaryMarshaler bool
 	GobEncoding     bool
+	Protobuf        bool
 }
 
 // WriteTo implements io.WriterTo and writes the generated source code into w.

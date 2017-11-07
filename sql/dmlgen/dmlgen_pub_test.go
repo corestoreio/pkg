@@ -16,7 +16,6 @@ package dmlgen_test
 
 import (
 	"context"
-	"io"
 	"os"
 	"testing"
 
@@ -27,6 +26,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"io"
 )
 
 /*
@@ -56,13 +56,15 @@ GROUP BY COLUMN_TYPE
 ORDER BY COLUMN_TYPE
 */
 
-var _ io.WriterTo = (*dmlgen.Tables)(nil)
+func writeFile(t *testing.T, outFile string, w func(io.Writer) error) {
+	f, err := os.Create(outFile)
+	require.NoError(t, err)
+	defer cstesting.Close(t, f)
+	require.NoError(t, w(f))
+}
 
 func TestNewTables(t *testing.T) {
 	t.Parallel()
-
-	const outFile = "testdata/core_config_data_gen.go"
-	os.Remove(outFile)
 
 	ts, err := dmlgen.NewTables("testdata",
 		dmlgen.WithCustomStructTags("core_config_data",
@@ -82,16 +84,7 @@ func TestNewTables(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	f, err := os.Create(outFile)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cstesting.Close(t, f)
-
-	_, err = ts.WriteTo(f)
-	if err != nil {
-		t.Fatalf("%+v", err)
-	}
+	writeFile(t, "testdata/core_config_data_gen.go", ts.WriteGo)
 }
 
 func TestTables_WithAllTypes(t *testing.T) {
@@ -104,14 +97,6 @@ func TestTables_WithAllTypes(t *testing.T) {
 		cstesting.WithFile("testdata/dmlgen_types.csv"),
 	))
 
-	const outFile = "testdata/dmlgen_types_gen.go"
-	os.Remove(outFile)
-	f, err := os.Create(outFile)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cstesting.Close(t, f)
-
 	ts, err := dmlgen.NewTables("testdata",
 		dmlgen.WithEncoder("dmlgen_types", "json", "binary", "gob"),
 		dmlgen.WithStructTags("dmlgen_types", "json", "xml"),
@@ -120,10 +105,7 @@ func TestTables_WithAllTypes(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	_, err = ts.WriteTo(f)
-	if err != nil {
-		t.Fatal(err)
-	}
+	writeFile(t, "testdata/dmlgen_types_gen.go", ts.WriteGo)
 }
 
 func TestInfoSchemaForeignKeys(t *testing.T) {
@@ -139,19 +121,29 @@ func TestInfoSchemaForeignKeys(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	const outFile = "testdata/KEY_COLUMN_USAGE_gen.go"
-	os.Remove(outFile)
-	f, err := os.Create(outFile)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cstesting.Close(t, f)
+	writeFile(t, "testdata/KEY_COLUMN_USAGE_gen.go", ts.WriteGo)
+}
 
-	_, err = ts.WriteTo(f)
-	if err != nil {
-		t.Fatal(err)
-	}
+// TestCustomerEntity writes a Go and Proto file to the testdata directory for
+// manual review. This test also analyzes the foreign keys pointing to
+// customer_entity. No tests are getting executed because API gets developed,
+// still.
+func TestCustomerEntity(t *testing.T) {
+	t.Parallel()
 
+	db := cstesting.MustConnectDB(t)
+	defer cstesting.Close(t, db)
+
+	ctx := context.Background()
+	ts, err := dmlgen.NewTables("testdata",
+		dmlgen.WithEncoder("customer_entity", "json", "proto"),
+		dmlgen.WithColumnAliasesFromForeignKeys(ctx, db.DB),
+		dmlgen.WithLoadColumns(ctx, db.DB, "customer_entity"),
+	)
+	require.NoError(t, err)
+
+	writeFile(t, "testdata/customer_entity_gen.go", ts.WriteGo)
+	writeFile(t, "testdata/customer_entity_gen.proto", ts.WriteProto)
 }
 
 func TestWithCustomStructTags(t *testing.T) {

@@ -15,25 +15,26 @@
 package dmlgen
 
 // tplDBAC contains the template code = DataBaseAccessCode
-const tplDBAC = `// {{.Entity}} represents a single row for DB table {{.Tick}}{{.TableName}}{{.Tick}}
-// Generated via dmlgen.
+const tplDBAC = `// {{.Entity}} represents a single row for DB table
+// {{.Tick}}{{.TableName}}{{.Tick}}. Auto generated.
 type {{.Entity}} struct {
 	{{ range .Columns }}{{ToGoCamelCase .Field}} {{GoTypeNull .}}
 		{{- if ne .StructTag "" -}}{{ $.Tick -}}{{ .StructTag }}{{ $.Tick }}{{- end }} {{.GoComment}}
 {{ end }} }
 
-// New{{.Entity}} creates a new pointer with pre-initialized fields.
+// New{{.Entity}} creates a new pointer with pre-initialized fields. Auto
+// generated.
 func New{{.Entity}}() *{{.Entity}} {
 	return &{{.Entity}}{}
 }
 
 // AssignLastInsertID updates the increment ID field with the last inserted ID
-// from an INSERT operation. Implements dml.InsertIDAssigner
+// from an INSERT operation. Implements dml.InsertIDAssigner. Auto generated.
 func (e *{{.Entity}}) AssignLastInsertID(id int64) {
 	{{ range .Columns }}{{if .IsPK}} e.{{ToGoCamelCase .Field}} = {{GoTypeNull .}}(id) {{end}} {{ end }}
 }
 
-// MapColumns implements interface ColumnMapper only partially.
+// MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *{{.Entity}}) MapColumns(cm *dml.ColumnMap) error {
 	if cm.Mode() == dml.ColumnMapEntityReadAll {
 		return cm{{range .Columns}}.{{GoFuncNull .}}(&e.{{ToGoCamelCase .Field}}){{end}}.Err()
@@ -49,23 +50,15 @@ func (e *{{.Entity}}) MapColumns(cm *dml.ColumnMap) error {
 	return errors.WithStack(cm.Err())
 }
 
-// Reset resets the struct to its empty fields.
-func (e *{{.Entity}}) Reset() *{{.Entity}} { {{/*
-		TODO: maybe reset each field individually like https://github.com/mrsinham/goreset
-	*/}}
-	*e = {{.Entity}}{}
-	return e
-}
-
 // {{.Collection}} represents a collection type for DB table {{ .TableName }}
-// Not thread safe. Generated via dmlgen.
+// Not thread safe. Auto generated.
 type {{.Collection}} struct {
 	Data           		[]*{{.Entity}}
 	BeforeMapColumns	func(uint64, *{{.Entity}}) error
 	AfterMapColumns 	func(uint64, *{{.Entity}}) error
 }
 
-// Make{{.Collection}} creates a new initialized collection.
+// Make{{.Collection}} creates a new initialized collection. Auto generated.
 func Make{{.Collection}}() {{.Collection}} {
 	return {{.Collection}}{
 		Data: make([]*{{.Entity}}, 0, 5),
@@ -85,7 +78,7 @@ func (cc {{.Collection}}) scanColumns(cm *dml.ColumnMap,e *{{.Entity}}, idx uint
 	return nil
 }
 
-// MapColumns implements dml.ColumnMapper interface
+// MapColumns implements dml.ColumnMapper interface. Auto generated.
 func (cc {{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
@@ -124,6 +117,7 @@ func (cc {{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
 }
 {{ range .Columns.UniqueColumns }}
 // {{ToGoCamelCase .Field}}s returns a slice or appends to a slice all values.
+// Auto generated.
 func (cc {{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoTypeNull .}}) []{{GoTypeNull .}} {
 	if ret == nil {
 		ret = make([]{{GoTypeNull .}}, 0, len(cc.Data))
@@ -135,9 +129,10 @@ func (cc {{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoTypeNull .}}) []
 } {{end}}
 
 {{- range .Columns.UniquifiedColumns }}
-// {{ToGoCamelCase .Field}}s belongs to the column {{$.Tick}}{{.Field}}{{$.Tick}} and returns a
-// slice or appends to a slice only unique values of that column. The values
-// will be filtered internally in a Go map. No DB query gets executed.
+// {{ToGoCamelCase .Field}}s belongs to the column {{$.Tick}}{{.Field}}{{$.Tick}}
+// and returns a slice or appends to a slice only unique values of that column.
+// The values will be filtered internally in a Go map. No DB query gets
+// executed. Auto generated.
 func (cc {{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoType .}}) []{{GoType .}} {
 	if ret == nil {
 		ret = make([]{{GoType .}}, 0, len(cc.Data))
@@ -174,6 +169,7 @@ func (cc *{{$.Collection}}) UnmarshalBinary(data []byte) error {
 }
 
 func (cc *{{$.Collection}}) MarshalBinary() (data []byte, err error) {
+	// TODO see the custom Marshalers in gogo-protobuf
 	return nil, errors.NewNotImplementedf("[{{.Package}}] binary encoding not yet implemented]")
 }
 {{ end }}
@@ -187,4 +183,17 @@ func (cc *{{$.Collection}}) GobEncode() ([]byte, error) {
 	return nil, errors.NewNotImplementedf("[{{.Package}}] binary encoding not yet implemented]")
 }
 {{ end }}
+`
+
+const tplProto = `
+// {{.Entity}} represents a single row for DB table {{.Tick}}{{.TableName}}{{.Tick}}. Auto generated.
+message {{.Entity}} {
+{{- range .Columns }}
+	{{ProtoType .}} {{ .Field }} = {{ .Pos }} [(gogoproto.customname) = "{{ToGoCamelCase .Field}}" {{- ProtoCustomType . }}];
+{{- end }}
+}
+
+message {{$.Collection}} {
+	repeated {{.Entity}} Data = 1;
+}
 `

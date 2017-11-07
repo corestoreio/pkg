@@ -186,3 +186,11 @@ func mySQLToGoFunc(c *ddl.Column, withNull bool) string {
 	r, n := utf8.DecodeRuneInString(gt)
 	return string(unicode.ToUpper(r)) + gt[n:]
 }
+
+func toProtoType(c *ddl.Column) string {
+	return "bytes"
+}
+
+func toProtoCustomType(c *ddl.Column) string {
+	return `,(gogoproto.customtype) = "github.com/gogo/protobuf/test.Uuid"`
+}
