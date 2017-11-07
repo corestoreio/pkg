@@ -66,7 +66,6 @@ func TestLoadColumns_Integration_Mage(t *testing.T) {
 		tc, err := ddl.LoadColumns(context.TODO(), dbc.DB, test.table)
 		cols1 := tc[test.table]
 		if test.wantErr != nil {
-			assert.Error(t, err, "Index %d", i)
 			assert.True(t, test.wantErr(err), "Index %d", i)
 		} else {
 			assert.NoError(t, err, "Index %d", i)
@@ -124,42 +123,6 @@ func TestColumns(t *testing.T) {
 	assert.True(t, tableMap.MustTable("admin_user").Columns.First().IsPK())
 	emptyTS := &ddl.Table{}
 	assert.False(t, emptyTS.Columns.First().IsPK())
-}
-
-func TestColumnsMap(t *testing.T) {
-	t.Parallel()
-	cols := ddl.Columns{
-		&ddl.Column{
-			Field:      `category_id131`,
-			ColumnType: `int(10) unsigned`,
-			Key:        `PRI`,
-			Default:    dml.MakeNullString(`0`),
-			Extra:      ``,
-		},
-		&ddl.Column{
-			Field:      `is_root_category180`,
-			ColumnType: `smallint(2) unsigned`,
-			Null:       "YES",
-			Key:        ``,
-			Default:    dml.MakeNullString(`0`),
-			Extra:      ``,
-		},
-	}
-	colsHave := cols.Map(func(c *ddl.Column) *ddl.Column {
-		c.Field = c.Field + "2"
-		return c
-	})
-
-	colsWant := ddl.Columns{
-		&ddl.Column{Field: `category_id1312`,
-			ColumnType: `int(10) unsigned`, Key: `PRI`,
-			Default: dml.MakeNullString(`0`), Extra: ``},
-		&ddl.Column{Field: `is_root_category1802`,
-			ColumnType: `smallint(2) unsigned`, Null: "YES",
-			Key: ``, Default: dml.MakeNullString(`0`), Extra: ``},
-	}
-
-	assert.Exactly(t, colsWant, colsHave)
 }
 
 func TestColumnsFilter(t *testing.T) {

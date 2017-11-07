@@ -156,29 +156,17 @@ func (cs Columns) Filter(f func(*Column) bool, cols ...*Column) Columns {
 	return cols
 }
 
-// Map will run function f on all items in Columns and returns a copy of the
-// slice and the item.
-func (cs Columns) Map(f func(*Column) *Column) Columns {
-	cols := make(Columns, cs.Len())
-	for i, c := range cs {
-		var c2 = new(Column)
-		*c2 = *c
-		// columns.go:161::error: assignment copies lock value to *c2: ddl.Column contains sync.RWMutex (vet)
-		// hmmm ...
-		cols[i] = f(c2)
+// FieldNames returns all column names and appends it to `fn`, if provided.
+func (cs Columns) FieldNames(fn ...string) []string {
+	if fn == nil {
+		fn = make([]string, 0, len(cs))
 	}
-	return cols
-}
-
-// FieldNames returns all column names
-func (cs Columns) FieldNames() []string {
-	fieldNames := make([]string, 0, len(cs))
 	for _, c := range cs {
 		if c.Field != "" {
-			fieldNames = append(fieldNames, c.Field)
+			fn = append(fn, c.Field)
 		}
 	}
-	return fieldNames
+	return fn
 }
 
 func colIsPK(c *Column) bool {

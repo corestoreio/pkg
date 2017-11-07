@@ -87,7 +87,6 @@ func TestGetParsedDSN(t *testing.T) {
 		haveURL, haveErr := GetParsedDSN()
 		if test.wantErr != nil {
 			assert.Nil(t, haveURL)
-			require.Error(t, haveErr, "Index %d", i)
 			assert.Contains(t, haveErr.Error(), test.wantErr.Error(), "Index %d => %+v", i, haveErr)
 			continue
 		}
