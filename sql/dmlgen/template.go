@@ -189,7 +189,7 @@ const tplProto = `
 // {{.Entity}} represents a single row for DB table {{.Tick}}{{.TableName}}{{.Tick}}. Auto generated.
 message {{.Entity}} {
 {{- range .Columns }}
-	{{ProtoType .}} {{ .Field }} = {{ .Pos }} [(gogoproto.customname) = "{{ToGoCamelCase .Field}}" {{- ProtoCustomType . }}];
+	{{ProtoType .}} {{ .Field }} = {{ .Pos }} [(gogoproto.customname)="{{ToGoCamelCase .Field}}" {{- ProtoCustomType . }}];
 {{- end }}
 }
 

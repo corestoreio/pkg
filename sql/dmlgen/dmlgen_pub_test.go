@@ -16,6 +16,7 @@ package dmlgen_test
 
 import (
 	"context"
+	"io"
 	"os"
 	"testing"
 
@@ -26,7 +27,6 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"io"
 )
 
 /*
@@ -98,17 +98,19 @@ func TestTables_WithAllTypes(t *testing.T) {
 	))
 
 	ts, err := dmlgen.NewTables("testdata",
-		dmlgen.WithEncoder("dmlgen_types", "json", "binary", "gob"),
-		dmlgen.WithStructTags("dmlgen_types", "json", "xml"),
+		dmlgen.WithEncoder("dmlgen_types", "json", "binary", "gob", "protobuf"),
+		dmlgen.WithStructTags("dmlgen_types", "json", "protobuf"),
 		dmlgen.WithUniquifiedColumns("dmlgen_types", "col_longtext_2", "col_int_1", "col_int_2", "has_smallint_5", "col_date_2", "col_blob"),
 		dmlgen.WithLoadColumns(context.Background(), db.DB, "dmlgen_types"),
 	)
 	require.NoError(t, err)
 
 	writeFile(t, "testdata/dmlgen_types_gen.go", ts.WriteGo)
+	writeFile(t, "testdata/dmlgen_types_gen.proto", ts.WriteProto)
 }
 
 func TestInfoSchemaForeignKeys(t *testing.T) {
+
 	t.Skip("One time test. Use when needed to regenerate the code")
 
 	db := cstesting.MustConnectDB(t)
@@ -136,7 +138,7 @@ func TestCustomerEntity(t *testing.T) {
 
 	ctx := context.Background()
 	ts, err := dmlgen.NewTables("testdata",
-		dmlgen.WithEncoder("customer_entity", "json", "proto"),
+		dmlgen.WithEncoder("customer_entity", "json", "protobuf"),
 		dmlgen.WithColumnAliasesFromForeignKeys(ctx, db.DB),
 		dmlgen.WithLoadColumns(ctx, db.DB, "customer_entity"),
 	)

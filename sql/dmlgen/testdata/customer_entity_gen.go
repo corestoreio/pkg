@@ -7,8 +7,8 @@ import (
 	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/errors"
 	"time"
-)
 
+)
 // CustomerEntity represents a single row for DB table
 // `customer_entity`. Auto generated.
 type CustomerEntity struct {
@@ -206,3 +206,7 @@ func (cc *CustomerEntityCollection) MarshalJSON() ([]byte, error) {
 	// TODO: Replace with easyjson or ffjson
 	return json.Marshal(cc.Data)
 }
+
+
+
+

@@ -60,7 +60,7 @@ type Option struct {
 
 // WithEncoder adds method receivers compatible with the interface declarations
 // in the various encoding packages. Supported encoder names are: json, binary,
-// gob and proto. More to follow.
+// gob and protobuf. More to follow.
 func WithEncoder(tableName string, encoderNames ...string) (opt Option) {
 	opt.sortOrder = 90 // must run before custom struct tags
 	opt.fn = func(ts *Tables) (err error) {
@@ -75,7 +75,8 @@ func WithEncoder(tableName string, encoderNames ...string) (opt Option) {
 				ts.Tables[tableName].BinaryMarshaler = true
 			case "gob":
 				ts.Tables[tableName].GobEncoding = true
-			case "proto":
+			case "protobuf":
+				// github.com/gogo/protobuf/protoc-gen-gogo/generator/generator.go#L1629 Generator.goTag
 				ts.writeProto = true
 				ts.Tables[tableName].Protobuf = true // for now leave it in. maybe later PB gets added to the struct tags.
 			default:
@@ -88,10 +89,11 @@ func WithEncoder(tableName string, encoderNames ...string) (opt Option) {
 }
 
 // WithStructTags enables struct tags proactively for the whole struct. Allowed
-// values are: bson, db, env, json, toml, yaml and xml. For bson, json, yaml and
-// xml the omitempty attribute has been set. If you need a different struct tag
-// for a specifiv column you must set the option WithCustomStructTags. It
-// doesn't matter in which order you apply the options ;-)
+// values are: bson, db, env, json, protobuf, toml, yaml and xml. For bson,
+// json, yaml and xml the omitempty attribute has been set. If you need a
+// different struct tag for a specifiv column you must set the option
+// WithCustomStructTags. It doesn't matter in which order you apply the options
+// ;-)
 func WithStructTags(tableName string, tagNames ...string) (opt Option) {
 	opt.sortOrder = 90 // must run before custom struct tags
 	opt.fn = func(ts *Tables) (err error) {
@@ -120,6 +122,26 @@ func WithStructTags(tableName string, tagNames ...string) (opt Option) {
 						fmt.Fprintf(&buf, `yaml:"%s,omitempty"`, c.Field)
 					case "xml":
 						fmt.Fprintf(&buf, `xml:"%s,omitempty"`, c.Field)
+					case "protobuf":
+						// github.com/gogo/protobuf/protoc-gen-gogo/generator/generator.go#L1629 Generator.goTag
+						// The tag is a string like "varint,2,opt,name=fieldname,def=7" that
+						// identifies details of the field for the protocol buffer marshaling and unmarshaling
+						// code.  The fields are:
+						//	wire encoding
+						//	protocol tag number
+						//	opt,req,rep for optional, required, or repeated
+						//	packed whether the encoding is "packed" (optional; repeated primitives only)
+						//	name= the original declared name
+						//	enum= the name of the enum type if it is an enum-typed field.
+						//	proto3 if this field is in a proto3 message
+						//	def= string representation of the default value, if any.
+						// The default value must be in a representation that can be used at run-time
+						// to generate the default value. Thus bools become 0 and 1, for instance.
+
+						// CYS: not quite sure if struct tags are really needed
+						//pbType := "TODO"
+						//customType := ",customtype=github.com/gogo/protobuf/test.TODO"
+						//fmt.Fprintf(&buf, `protobuf:"%s,%d,opt,name=%s%s"`, pbType, c.Pos, c.Field, customType)
 					default:
 						return errors.NewNotSupportedf("[dmlgen] WithStructTags: tag %q not supported", tagName)
 					}
@@ -389,17 +411,20 @@ func (ts *Tables) WriteProto(w io.Writer) error {
 	}
 
 	if !ts.DisableFileHeader {
+		// TODO: make the options configurable
 		fmt.Fprintf(buf, `// Auto generated via github.com/corestoreio/csfw/sql/dmlgen
 syntax = "proto3";
 package %s;
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-
+import "google/protobuf/timestamp.proto";
+option go_package = %q;
 option (gogoproto.typedecl_all) = false;
+option (gogoproto.goproto_getters_all) = false;
 option (gogoproto.unmarshaler_all) = true;
 option (gogoproto.marshaler_all) = true;
 option (gogoproto.sizer_all) = true;
 
-`, ts.Package)
+`, ts.Package, ts.Package)
 	}
 
 	for _, tblname := range ts.sortedTableNames() {

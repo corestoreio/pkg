@@ -19,67 +19,121 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"fmt"
+
 	"github.com/corestoreio/csfw/sql/ddl"
 	"github.com/corestoreio/csfw/util/strs"
 	"github.com/corestoreio/errors"
 )
 
-const goTypeOptions = 4
+const goTypeOptions = 8
+
+// These constants are used as slice indexes. The constance must start with zero.
+const (
+	idxMysqlUnsignedNull = iota
+	idxMysqlUnsignedNotNull
+	idxMysqlSignedNull
+	idxMysqlSignedNotNull
+	idxProtobufUnsignedNull
+	idxProtobufUnsignedNotNull
+	idxProtobufSignedNull
+	idxProtobufSignedNotNull
+)
 
 // These variables are mapping the un/signed and null/not-null types to the
 // appropriate Go type.
 var (
 	goTypeInt64 = [...]string{
-		"dml.NullInt64", // unsigned null
-		"uint64",        // unsigned not null
-		"dml.NullInt64", // signed null
-		"int64",         // signed not null
+		idxMysqlUnsignedNull:    "dml.NullInt64",
+		idxMysqlUnsignedNotNull: "uint64",
+		idxMysqlSignedNull:      "dml.NullInt64",
+		idxMysqlSignedNotNull:   "int64",
+
+		idxProtobufUnsignedNull:    "github.com/corestoreio/csfw/sql/dml.NullInt64",
+		idxProtobufUnsignedNotNull: "uint64",
+		idxProtobufSignedNull:      "github.com/corestoreio/csfw/sql/dml.NullInt64",
+		idxProtobufSignedNotNull:   "int64",
 	}
 	goTypeInt = [...]string{
-		"dml.NullInt64", // unsigned null
-		"uint64",        // unsigned not null
-		"dml.NullInt64", // signed null
-		"int64",         // signed not null
+		idxMysqlUnsignedNull:    "dml.NullInt64",
+		idxMysqlUnsignedNotNull: "uint64",
+		idxMysqlSignedNull:      "dml.NullInt64",
+		idxMysqlSignedNotNull:   "int64",
+
+		idxProtobufUnsignedNull:    "github.com/corestoreio/csfw/sql/dml.NullInt64",
+		idxProtobufUnsignedNotNull: "uint32",
+		idxProtobufSignedNull:      "github.com/corestoreio/csfw/sql/dml.NullInt64",
+		idxProtobufSignedNotNull:   "int32",
 	}
 	goTypeFloat64 = [...]string{
-		"dml.NullFloat64", // unsigned null
-		"float64",         // unsigned not null
-		"dml.NullFloat64", // signed null
-		"float64",         // signed not null
+		idxMysqlUnsignedNull:    "dml.NullFloat64",
+		idxMysqlUnsignedNotNull: "float64",
+		idxMysqlSignedNull:      "dml.NullFloat64",
+		idxMysqlSignedNotNull:   "float64",
+
+		idxProtobufUnsignedNull:    "github.com/corestoreio/csfw/sql/dml.NullFloat64",
+		idxProtobufUnsignedNotNull: "double",
+		idxProtobufSignedNull:      "github.com/corestoreio/csfw/sql/dml.NullFloat64",
+		idxProtobufSignedNotNull:   "double",
 	}
 	goTypeTime = [...]string{
-		"dml.NullTime", // unsigned null
-		"time.Time",    // unsigned not null
-		"dml.NullTime", // signed null
-		"time.Time",    // signed not null
+		idxMysqlUnsignedNull:    "dml.NullTime",
+		idxMysqlUnsignedNotNull: "time.Time",
+		idxMysqlSignedNull:      "dml.NullTime",
+		idxMysqlSignedNotNull:   "time.Time",
+
+		idxProtobufUnsignedNull:    "google.protobuf.Timestamp",
+		idxProtobufUnsignedNotNull: "google.protobuf.Timestamp",
+		idxProtobufSignedNull:      "google.protobuf.Timestamp",
+		idxProtobufSignedNotNull:   "google.protobuf.Timestamp",
 	}
 	goTypeString = [...]string{
-		"dml.NullString", // unsigned null
-		"string",         // unsigned not null
-		"dml.NullString", // signed null
-		"string",         // signed not null
+		idxMysqlUnsignedNull:    "dml.NullString",
+		idxMysqlUnsignedNotNull: "string",
+		idxMysqlSignedNull:      "dml.NullString",
+		idxMysqlSignedNotNull:   "string",
+
+		idxProtobufUnsignedNull:    "string",
+		idxProtobufUnsignedNotNull: "string",
+		idxProtobufSignedNull:      "string",
+		idxProtobufSignedNotNull:   "string",
 	}
 	goTypeBool = [...]string{
-		"dml.NullBool", // unsigned null
-		"bool",         // unsigned not null
-		"dml.NullBool", // signed null
-		"bool",         // signed not null
+		idxMysqlUnsignedNull:    "dml.NullBool",
+		idxMysqlUnsignedNotNull: "bool",
+		idxMysqlSignedNull:      "dml.NullBool",
+		idxMysqlSignedNotNull:   "bool",
+
+		idxProtobufUnsignedNull:    "github.com/corestoreio/csfw/sql/dml.NullBool",
+		idxProtobufUnsignedNotNull: "bool",
+		idxProtobufSignedNull:      "github.com/corestoreio/csfw/sql/dml.NullBool",
+		idxProtobufSignedNotNull:   "bool",
 	}
 	goTypeDecimal = [...]string{
-		"dml.Decimal", // unsigned null
-		"dml.Decimal", // unsigned not null
-		"dml.Decimal", // signed null
-		"dml.Decimal", // signed not null
+		idxMysqlUnsignedNull:    "dml.Decimal",
+		idxMysqlUnsignedNotNull: "dml.Decimal",
+		idxMysqlSignedNull:      "dml.Decimal",
+		idxMysqlSignedNotNull:   "dml.Decimal",
+
+		idxProtobufUnsignedNull:    "github.com/corestoreio/csfw/sql/dml.Decimal",
+		idxProtobufUnsignedNotNull: "github.com/corestoreio/csfw/sql/dml.Decimal",
+		idxProtobufSignedNull:      "github.com/corestoreio/csfw/sql/dml.Decimal",
+		idxProtobufSignedNotNull:   "github.com/corestoreio/csfw/sql/dml.Decimal",
 	}
 	goTypeByte = [...]string{
-		"[]byte", // unsigned null
-		"[]byte", // unsigned not null
-		"[]byte", // signed null
-		"[]byte", // signed not null
+		idxMysqlUnsignedNull:    "[]byte",
+		idxMysqlUnsignedNotNull: "[]byte",
+		idxMysqlSignedNull:      "[]byte",
+		idxMysqlSignedNotNull:   "[]byte",
+
+		idxProtobufUnsignedNull:    "bytes",
+		idxProtobufUnsignedNotNull: "bytes",
+		idxProtobufSignedNull:      "bytes",
+		idxProtobufSignedNotNull:   "bytes",
 	}
 )
 
-// mysqlTypeToGo maps the MySql/MariaDB field type to the correct Go type.
+// mysqlTypeToGo maps the MySql/MariaDB field type to the correct Go/protobuf type.
 var mysqlTypeToGo = map[string][goTypeOptions]string{
 	"int":        goTypeInt,
 	"bigint":     goTypeInt64,
@@ -139,13 +193,13 @@ func mySQLToGoType(c *ddl.Column, withNull bool) string {
 	var t string
 	switch {
 	case c.IsUnsigned() && c.IsNull() && withNull:
-		t = goType[0] // unsigned null
+		t = goType[idxMysqlUnsignedNull] // unsigned null
 	case c.IsUnsigned() && (!c.IsNull() || !withNull):
-		t = goType[1] // unsigned not null
+		t = goType[idxMysqlUnsignedNotNull] // unsigned not null
 	case !c.IsUnsigned() && c.IsNull() && withNull:
-		t = goType[2] // signed null
+		t = goType[idxMysqlSignedNull] // signed null
 	case !c.IsUnsigned() && (!c.IsNull() || !withNull):
-		t = goType[3] // signed not null
+		t = goType[idxMysqlSignedNotNull] // signed not null
 	}
 
 	return t
@@ -187,10 +241,56 @@ func mySQLToGoFunc(c *ddl.Column, withNull bool) string {
 	return string(unicode.ToUpper(r)) + gt[n:]
 }
 
+func toProto(c *ddl.Column, withNull bool) string {
+
+	goType, ok := mysqlTypeToGo[c.DataType]
+	if !ok {
+		panic(errors.NewNotFoundf("[dmlgen] MySQL type %q not found", c.DataType))
+	}
+
+	// The switch block overwrites the already retrieved goType by checking for
+	// bool columns and columns which contains a money unit.
+	switch {
+	case c.IsBool():
+		goType = goTypeBool
+	case c.IsFloat() && c.IsMoney():
+		goType = goTypeDecimal
+	}
+
+	var t string
+	switch {
+	case c.IsUnsigned() && c.IsNull() && withNull:
+		t = goType[idxProtobufUnsignedNull] // unsigned null
+	case c.IsUnsigned() && (!c.IsNull() || !withNull):
+		t = goType[idxProtobufUnsignedNotNull] // unsigned not null
+	case !c.IsUnsigned() && c.IsNull() && withNull:
+		t = goType[idxProtobufSignedNull] // signed null
+	case !c.IsUnsigned() && (!c.IsNull() || !withNull):
+		t = goType[idxProtobufSignedNotNull] // signed not null
+	}
+
+	return t
+}
+
 func toProtoType(c *ddl.Column) string {
-	return "bytes"
+	pt := toProto(c, true)
+	if strings.IndexByte(pt, '/') > 0 { // slash identifies an import path
+		return "bytes"
+	}
+	return pt
 }
 
 func toProtoCustomType(c *ddl.Column) string {
-	return `,(gogoproto.customtype) = "github.com/gogo/protobuf/test.Uuid"`
+	pt := toProto(c, true)
+	var buf strings.Builder
+	if strings.IndexByte(pt, '/') > 0 { // slash identifies an import path
+		fmt.Fprintf(&buf, `,(gogoproto.customtype)=%q`, pt)
+	}
+	if pt == "google.protobuf.Timestamp" {
+		fmt.Fprint(&buf, ",(gogoproto.stdtime)=true")
+	}
+	if c.IsNull() {
+		fmt.Fprint(&buf, ",(gogoproto.nullable)=true")
+	}
+	return buf.String()
 }

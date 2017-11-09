@@ -9,6 +9,11 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// TODO(CyS) investigate what would happen in case of transaction? should all
+// the events be gathered together once a transaction starts? because on
+// RollBack all events must be invalidated or better RowsEventHandler should not
+// be called at all.
+
 // RowsEventHandler calls your code when an event gets dispatched.
 type RowsEventHandler interface {
 	// Do function handles a RowsEvent bound to a specific database. If it
