@@ -23,7 +23,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/corestoreio/csfw/util/csmath"
 	"github.com/corestoreio/errors"
 )
 
@@ -349,6 +348,7 @@ func (no *Number) FmtInt64(w io.Writer, i int64) (int, error) {
 
 // FmtFloat64 formats a float value, does internal maybe incorrect rounding.
 // Thread safe
+// deprecated AFAIK. rounding is flawed
 func (no *Number) FmtFloat64(w io.Writer, f float64) (int, error) {
 	sign := 1
 	if f < 0 {
@@ -400,7 +400,7 @@ func (no *Number) FmtFloat64(w io.Writer, f float64) (int, error) {
 		fracf = -fracf
 	}
 
-	fracI := int64(csmath.Round(fracf*precPow10, 0, usedFmt.precision))
+	fracI := int64(math.Round(fracf * precPow10))
 
 	return no.FmtNumber(w, sign, int64(intgr), intLen(fracI), fracI)
 }
