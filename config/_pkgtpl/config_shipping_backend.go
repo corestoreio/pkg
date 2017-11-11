@@ -3,8 +3,8 @@
 package shipping
 
 import (
-	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/config/element"
+	"github.com/corestoreio/cspkg/config/cfgmodel"
+	"github.com/corestoreio/cspkg/config/element"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.

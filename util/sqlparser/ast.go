@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/corestoreio/csfw/util/sqlparser/dependency/sqltypes"
+	"github.com/corestoreio/cspkg/util/sqlparser/dependency/sqltypes"
 )
 
 // Instructions for creating new types: If a type

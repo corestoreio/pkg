@@ -19,7 +19,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/corestoreio/csfw/net/responseproxy"
+	"github.com/corestoreio/cspkg/net/responseproxy"
 	"github.com/corestoreio/log"
 	"github.com/stretchr/testify/assert"
 )

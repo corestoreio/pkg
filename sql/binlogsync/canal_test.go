@@ -22,9 +22,9 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/corestoreio/csfw/sql/binlogsync"
-	"github.com/corestoreio/csfw/sql/ddl"
-	"github.com/corestoreio/csfw/util/cstesting"
+	"github.com/corestoreio/cspkg/sql/binlogsync"
+	"github.com/corestoreio/cspkg/sql/ddl"
+	"github.com/corestoreio/cspkg/util/cstesting"
 	"github.com/corestoreio/errors"
 	"github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"

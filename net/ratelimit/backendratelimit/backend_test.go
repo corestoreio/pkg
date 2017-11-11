@@ -15,7 +15,7 @@
 package backendratelimit_test
 
 import (
-	"github.com/corestoreio/csfw/net/ratelimit/backendratelimit"
+	"github.com/corestoreio/cspkg/net/ratelimit/backendratelimit"
 )
 
 // backend overall backend models for all tests

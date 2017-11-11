@@ -19,8 +19,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/corestoreio/csfw/net/url"
-	"github.com/corestoreio/csfw/storage/transcache"
+	"github.com/corestoreio/cspkg/net/url"
+	"github.com/corestoreio/cspkg/storage/transcache"
 	"github.com/corestoreio/errors"
 	"github.com/garyburd/redigo/redis"
 )

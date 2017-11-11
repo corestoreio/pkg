@@ -22,8 +22,8 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/corestoreio/csfw/sql/dml"
-	"github.com/corestoreio/csfw/util/cstesting"
+	"github.com/corestoreio/cspkg/sql/dml"
+	"github.com/corestoreio/cspkg/util/cstesting"
 	"github.com/stretchr/testify/assert"
 )
 

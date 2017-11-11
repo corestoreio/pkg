@@ -24,8 +24,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/corestoreio/csfw/net/cors"
-	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/cspkg/net/cors"
+	"github.com/corestoreio/cspkg/store/scope"
 )
 
 func testHandler(fa interface {

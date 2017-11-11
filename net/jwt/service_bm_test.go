@@ -22,13 +22,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/net/jwt"
-	"github.com/corestoreio/csfw/storage/containable"
-	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/store/storemock"
-	"github.com/corestoreio/csfw/util/csjwt"
-	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
+	"github.com/corestoreio/cspkg/config/cfgmock"
+	"github.com/corestoreio/cspkg/net/jwt"
+	"github.com/corestoreio/cspkg/storage/containable"
+	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/cspkg/store/storemock"
+	"github.com/corestoreio/cspkg/util/csjwt"
+	"github.com/corestoreio/cspkg/util/csjwt/jwtclaim"
 )
 
 func bmWithToken(b *testing.B, opts ...jwt.Option) {

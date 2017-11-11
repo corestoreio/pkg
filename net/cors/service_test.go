@@ -27,11 +27,11 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/net/cors"
-	corstest "github.com/corestoreio/csfw/net/cors/internal"
-	"github.com/corestoreio/csfw/net/mw"
-	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/cspkg/config/cfgmock"
+	"github.com/corestoreio/cspkg/net/cors"
+	corstest "github.com/corestoreio/cspkg/net/cors/internal"
+	"github.com/corestoreio/cspkg/net/mw"
+	"github.com/corestoreio/cspkg/store/scope"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

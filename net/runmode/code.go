@@ -20,8 +20,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/cspkg/store"
+	"github.com/corestoreio/cspkg/store/scope"
 )
 
 // ProcessStoreCodeCookie can extract the store code from a cookie within an

@@ -14,7 +14,7 @@
 
 package custattr
 
-import "github.com/corestoreio/csfw/eav"
+import "github.com/corestoreio/cspkg/eav"
 
 // AddressSourceCountry retrieves slice of countries @todo
 // @see magento2/site/app/code/Magento/Customer/Model/Resource/Address/Attribute/Source/Country.php

@@ -19,10 +19,10 @@ import (
 	"io/ioutil"
 	"text/template"
 
-	"github.com/corestoreio/csfw/codegen"
-	"github.com/corestoreio/csfw/eav"
-	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/cspkg/codegen"
+	"github.com/corestoreio/cspkg/eav"
+	"github.com/corestoreio/cspkg/storage/dbr"
+	"github.com/corestoreio/cspkg/util"
 	"github.com/juju/errgo"
 )
 

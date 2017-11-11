@@ -22,7 +22,7 @@ package main
 const tplAttrImport = `
 package {{ .PackageName }}
     import (
-        "github.com/corestoreio/csfw/eav"
+        "github.com/corestoreio/cspkg/eav"
         "{{ .AttrPkgImp }}"
         {{ range .ImportPaths }}"{{ . }}"
         {{ end }} )

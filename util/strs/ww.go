@@ -28,7 +28,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/corestoreio/csfw/util/bufferpool"
+	"github.com/corestoreio/cspkg/util/bufferpool"
 )
 
 const nbsp = 0xA0

@@ -17,8 +17,8 @@ package diff_test
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/util/diff"
-	"github.com/corestoreio/csfw/util/sqlbeautifier"
+	"github.com/corestoreio/cspkg/util/diff"
+	"github.com/corestoreio/cspkg/util/sqlbeautifier"
 	"github.com/stretchr/testify/assert"
 )
 

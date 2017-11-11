@@ -14,7 +14,7 @@
 
 package cataloginventory
 
-import "github.com/corestoreio/csfw/eav"
+import "github.com/corestoreio/cspkg/eav"
 
 var (
 	_ eav.AttributeSourceModeller = (*todoASStock)(nil)

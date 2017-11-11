@@ -79,4 +79,4 @@ BenchmarkWithRunMode/Store_UK_GET-4                          	  500000	      313
 BenchmarkWithRunMode/Store_UK_GET-4                          	  500000	      3417 ns/op	    2709 B/op	      29 allocs/op
 BenchmarkWithRunMode/Store_UK_GET-4                          	  500000	      3468 ns/op	    2709 B/op	      29 allocs/op
 PASS
-ok  	github.com/corestoreio/csfw/net/runmode	150.101s
+ok  	github.com/corestoreio/cspkg/net/runmode	150.101s

@@ -14,7 +14,7 @@
 
 package backendcors_test
 
-import "github.com/corestoreio/csfw/net/cors/backendcors"
+import "github.com/corestoreio/cspkg/net/cors/backendcors"
 
 // backend overall backend models for all tests
 var backend *backendcors.Configuration

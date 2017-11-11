@@ -18,10 +18,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/corestoreio/csfw/net/mw"
-	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/csjwt"
-	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
+	"github.com/corestoreio/cspkg/net/mw"
+	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/cspkg/util/csjwt"
+	"github.com/corestoreio/cspkg/util/csjwt/jwtclaim"
 	"github.com/corestoreio/errors"
 )
 

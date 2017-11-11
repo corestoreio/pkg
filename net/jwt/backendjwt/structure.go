@@ -15,11 +15,11 @@
 package backendjwt
 
 import (
-	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/net/jwt"
-	"github.com/corestoreio/csfw/storage/text"
-	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/cspkg/config/cfgpath"
+	"github.com/corestoreio/cspkg/config/element"
+	"github.com/corestoreio/cspkg/net/jwt"
+	"github.com/corestoreio/cspkg/storage/text"
+	"github.com/corestoreio/cspkg/store/scope"
 )
 
 // NewConfigStructure global configuration structure for this package.

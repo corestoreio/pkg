@@ -17,7 +17,7 @@ package storemock_test
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/store/storemock"
+	"github.com/corestoreio/cspkg/store/storemock"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

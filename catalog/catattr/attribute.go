@@ -17,7 +17,7 @@
 package catattr
 
 import (
-	"github.com/corestoreio/csfw/eav"
+	"github.com/corestoreio/cspkg/eav"
 	"github.com/juju/errgo"
 )
 

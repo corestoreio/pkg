@@ -17,8 +17,8 @@ package eav_test
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/eav"
-	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/cspkg/eav"
+	"github.com/corestoreio/cspkg/storage/dbr"
 	"github.com/stretchr/testify/assert"
 )
 

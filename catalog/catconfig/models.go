@@ -15,10 +15,10 @@
 package catconfig
 
 import (
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/config/source"
-	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/cspkg/config"
+	"github.com/corestoreio/cspkg/config/cfgmodel"
+	"github.com/corestoreio/cspkg/config/source"
+	"github.com/corestoreio/cspkg/store/scope"
 	"github.com/juju/errors"
 )
 

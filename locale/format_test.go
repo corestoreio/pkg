@@ -16,7 +16,7 @@ package locale_test
 
 import "testing"
 import (
-	"github.com/corestoreio/csfw/locale"
+	"github.com/corestoreio/cspkg/locale"
 	"github.com/stretchr/testify/assert"
 )
 

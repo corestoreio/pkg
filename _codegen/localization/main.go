@@ -23,8 +23,8 @@ import (
 
 	"text/template"
 
-	"github.com/corestoreio/csfw/codegen"
-	"github.com/corestoreio/csfw/codegen/localization/gen"
+	"github.com/corestoreio/cspkg/codegen"
+	"github.com/corestoreio/cspkg/codegen/localization/gen"
 	"golang.org/x/text/unicode/cldr"
 )
 

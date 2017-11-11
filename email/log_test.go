@@ -17,8 +17,8 @@ package email_test
 import (
 	std "log"
 
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/util/log"
+	"github.com/corestoreio/cspkg/config"
+	"github.com/corestoreio/cspkg/util/log"
 )
 
 var debugLogBuf *log.MutexBuffer

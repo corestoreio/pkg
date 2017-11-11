@@ -23,7 +23,7 @@ import (
 
 	"path/filepath"
 
-	"github.com/corestoreio/csfw/util/sqlbeautifier"
+	"github.com/corestoreio/cspkg/util/sqlbeautifier"
 	"github.com/stretchr/testify/assert"
 )
 

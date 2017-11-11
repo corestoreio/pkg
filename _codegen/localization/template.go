@@ -48,7 +48,7 @@ const tplCode = `// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStor
 
 package {{ .Package }}
 
-import "github.com/corestoreio/csfw/i18n"
+import "github.com/corestoreio/cspkg/i18n"
 
 // Auto generated
 

@@ -17,7 +17,7 @@ package codegen
 import (
 	"database/sql"
 
-	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/cspkg/storage/csdb"
 	"github.com/corestoreio/errors"
 )
 

@@ -17,7 +17,7 @@ package geoip
 import (
 	"net/http"
 
-	"github.com/corestoreio/csfw/net/mw"
+	"github.com/corestoreio/cspkg/net/mw"
 )
 
 // DefaultAlternativeHandler gets called when detected Country cannot be found

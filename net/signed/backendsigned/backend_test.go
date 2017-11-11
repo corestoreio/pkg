@@ -15,8 +15,8 @@
 package backendsigned_test
 
 import (
-	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/net/signed/backendsigned"
+	"github.com/corestoreio/cspkg/config/cfgmodel"
+	"github.com/corestoreio/cspkg/net/signed/backendsigned"
 )
 
 // backend overall backend models for all tests

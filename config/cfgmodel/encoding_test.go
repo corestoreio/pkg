@@ -18,10 +18,10 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/cspkg/config/cfgmock"
+	"github.com/corestoreio/cspkg/config/cfgmodel"
+	"github.com/corestoreio/cspkg/config/cfgpath"
+	"github.com/corestoreio/cspkg/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 

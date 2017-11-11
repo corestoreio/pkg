@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/config/cfgsource"
-	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/cspkg/config"
+	"github.com/corestoreio/cspkg/config/cfgpath"
+	"github.com/corestoreio/cspkg/config/cfgsource"
+	"github.com/corestoreio/cspkg/config/element"
+	"github.com/corestoreio/cspkg/store/scope"
 	"github.com/corestoreio/errors"
 )
 

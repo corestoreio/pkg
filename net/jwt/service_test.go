@@ -18,12 +18,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/net/jwt"
-	"github.com/corestoreio/csfw/storage/text"
-	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/conv"
-	"github.com/corestoreio/csfw/util/csjwt"
-	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
+	"github.com/corestoreio/cspkg/net/jwt"
+	"github.com/corestoreio/cspkg/storage/text"
+	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/cspkg/util/conv"
+	"github.com/corestoreio/cspkg/util/csjwt"
+	"github.com/corestoreio/cspkg/util/csjwt/jwtclaim"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

@@ -17,7 +17,7 @@
 package cors
 
 import (
-	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/cspkg/store/scope"
 	"github.com/corestoreio/errors"
 )
 

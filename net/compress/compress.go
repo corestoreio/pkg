@@ -23,8 +23,8 @@ import (
 	"strings"
 	"sync"
 
-	csnet "github.com/corestoreio/csfw/net"
-	"github.com/corestoreio/csfw/net/mw"
+	csnet "github.com/corestoreio/cspkg/net"
+	"github.com/corestoreio/cspkg/net/mw"
 	"github.com/klauspost/compress/flate"
 	"github.com/klauspost/compress/gzip"
 )

@@ -12,7 +12,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/corestoreio/csfw/util/sqlparser/dependency/sqltypes"
+	"github.com/corestoreio/cspkg/util/sqlparser/dependency/sqltypes"
 )
 
 // GetTableName returns the table name from the SimpleTableExpr

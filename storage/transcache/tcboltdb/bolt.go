@@ -18,7 +18,7 @@ import (
 	"os"
 
 	"github.com/boltdb/bolt"
-	"github.com/corestoreio/csfw/storage/transcache"
+	"github.com/corestoreio/cspkg/storage/transcache"
 	"github.com/corestoreio/errors"
 )
 

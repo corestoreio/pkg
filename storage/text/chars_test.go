@@ -24,7 +24,7 @@ import (
 	"hash/fnv"
 	"testing"
 
-	"github.com/corestoreio/csfw/storage/text"
+	"github.com/corestoreio/cspkg/storage/text"
 	"github.com/stretchr/testify/assert"
 )
 

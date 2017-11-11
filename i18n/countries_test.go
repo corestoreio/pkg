@@ -17,7 +17,7 @@ package i18n_test
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/i18n"
+	"github.com/corestoreio/cspkg/i18n"
 	"github.com/stretchr/testify/assert"
 )
 

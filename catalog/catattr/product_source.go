@@ -14,7 +14,7 @@
 
 package catattr
 
-import "github.com/corestoreio/csfw/eav"
+import "github.com/corestoreio/cspkg/eav"
 
 // ProductSourceCountryOfManufacture @todo hand out price for longest name ;-)
 // @see magento2/site/app/code/Magento/Catalog/Model/Product/Attribute/Source/Countryofmanufacture.php

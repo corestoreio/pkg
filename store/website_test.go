@@ -17,10 +17,10 @@ package store_test
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/util/null"
-	"github.com/corestoreio/csfw/util/slices"
+	"github.com/corestoreio/cspkg/config/cfgmock"
+	"github.com/corestoreio/cspkg/store"
+	"github.com/corestoreio/cspkg/util/null"
+	"github.com/corestoreio/cspkg/util/slices"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

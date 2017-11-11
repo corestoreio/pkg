@@ -11,7 +11,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/corestoreio/csfw/util/sqlparser/dependency/hack"
+	"github.com/corestoreio/cspkg/util/sqlparser/dependency/hack"
 )
 
 // VerifyObject verifies kind to make sure it's

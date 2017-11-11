@@ -17,9 +17,9 @@ package jwt
 import (
 	"time"
 
-	"github.com/corestoreio/csfw/net/mw"
-	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/cspkg/net/mw"
+	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/cspkg/util/csjwt"
 	"github.com/corestoreio/errors"
 )
 

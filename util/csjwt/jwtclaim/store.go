@@ -17,14 +17,14 @@ package jwtclaim
 import (
 	"encoding/json"
 
-	"github.com/corestoreio/csfw/util/conv"
+	"github.com/corestoreio/cspkg/util/conv"
 	"github.com/corestoreio/errors"
 )
 
 //go:generate ffjson $GOFILE
 
 // Key.... are available claims in struct Store.
-// KeyStore is equal to github.com/corestoreio/csfw/store/storenet.ParamName
+// KeyStore is equal to github.com/corestoreio/cspkg/store/storenet.ParamName
 const (
 	KeyStore  = "store"
 	KeyUserID = "userid"

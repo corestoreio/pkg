@@ -14,7 +14,7 @@
 
 package transcache_test
 
-import "github.com/corestoreio/csfw/storage/transcache"
+import "github.com/corestoreio/cspkg/storage/transcache"
 
 var (
 	_ transcache.Codecer = transcache.XMLCodec{}

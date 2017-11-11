@@ -7,7 +7,7 @@ package sqlparser
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/util/sqlparser/dependency/sqltypes"
+	"github.com/corestoreio/cspkg/util/sqlparser/dependency/sqltypes"
 )
 
 func TestParsedQuery(t *testing.T) {

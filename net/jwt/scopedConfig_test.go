@@ -19,10 +19,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/storage/containable"
-	"github.com/corestoreio/csfw/util/csjwt"
-	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
-	"github.com/corestoreio/csfw/util/shortid"
+	"github.com/corestoreio/cspkg/storage/containable"
+	"github.com/corestoreio/cspkg/util/csjwt"
+	"github.com/corestoreio/cspkg/util/csjwt/jwtclaim"
+	"github.com/corestoreio/cspkg/util/shortid"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

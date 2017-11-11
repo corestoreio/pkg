@@ -19,9 +19,9 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/corestoreio/csfw/storage/text"
-	"github.com/corestoreio/csfw/util/csjwt"
-	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
+	"github.com/corestoreio/cspkg/storage/text"
+	"github.com/corestoreio/cspkg/util/csjwt"
+	"github.com/corestoreio/cspkg/util/csjwt/jwtclaim"
 	"github.com/stretchr/testify/assert"
 )
 

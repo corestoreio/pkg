@@ -21,8 +21,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/net/runmode"
-	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/cspkg/net/runmode"
+	"github.com/corestoreio/cspkg/store"
 	"github.com/stretchr/testify/assert"
 )
 

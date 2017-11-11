@@ -19,7 +19,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
-	"github.com/corestoreio/csfw/storage/money"
+	"github.com/corestoreio/cspkg/storage/money"
 )
 
 var (

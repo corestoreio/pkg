@@ -22,11 +22,11 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/corestoreio/csfw/codegen"
-	"github.com/corestoreio/csfw/eav"
-	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/cspkg/codegen"
+	"github.com/corestoreio/cspkg/eav"
+	"github.com/corestoreio/cspkg/storage/csdb"
+	"github.com/corestoreio/cspkg/storage/dbr"
+	"github.com/corestoreio/cspkg/store"
 )
 
 // materializeAttributes ...

@@ -17,7 +17,7 @@ package jwt
 import (
 	"context"
 
-	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/cspkg/util/csjwt"
 )
 
 type keyCtxToken struct{}

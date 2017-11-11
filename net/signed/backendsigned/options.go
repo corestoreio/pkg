@@ -15,8 +15,8 @@
 package backendsigned
 
 import (
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/net/signed"
+	"github.com/corestoreio/cspkg/config"
+	"github.com/corestoreio/cspkg/net/signed"
 	"github.com/corestoreio/errors"
 )
 

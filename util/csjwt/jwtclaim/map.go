@@ -18,7 +18,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/corestoreio/csfw/util/conv"
+	"github.com/corestoreio/cspkg/util/conv"
 	"github.com/corestoreio/errors"
 )
 

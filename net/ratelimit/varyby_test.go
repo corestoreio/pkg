@@ -19,8 +19,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/corestoreio/csfw/net"
-	"github.com/corestoreio/csfw/net/ratelimit"
+	"github.com/corestoreio/cspkg/net"
+	"github.com/corestoreio/cspkg/net/ratelimit"
 )
 
 func TestVaryBy_Key(t *testing.T) {

@@ -14,7 +14,7 @@
 
 package directory
 
-import "github.com/corestoreio/csfw/util/log"
+import "github.com/corestoreio/cspkg/util/log"
 
 // PkgLog global package based logger
 var PkgLog log.Logger = log.PkgLog

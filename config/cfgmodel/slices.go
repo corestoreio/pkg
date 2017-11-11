@@ -21,10 +21,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/corestoreio/csfw/util/slices"
+	"github.com/corestoreio/cspkg/config"
+	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/cspkg/util/bufferpool"
+	"github.com/corestoreio/cspkg/util/slices"
 	"github.com/corestoreio/errors"
 )
 

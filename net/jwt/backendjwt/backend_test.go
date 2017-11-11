@@ -15,8 +15,8 @@
 package backendjwt_test
 
 import (
-	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/net/jwt/backendjwt"
+	"github.com/corestoreio/cspkg/config/cfgmodel"
+	"github.com/corestoreio/cspkg/net/jwt/backendjwt"
 )
 
 // backend overall backend models for all tests

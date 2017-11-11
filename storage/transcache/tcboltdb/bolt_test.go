@@ -22,7 +22,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/corestoreio/csfw/storage/transcache"
+	"github.com/corestoreio/cspkg/storage/transcache"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

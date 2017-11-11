@@ -25,7 +25,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/util/cstesting"
+	"github.com/corestoreio/cspkg/util/cstesting"
 	"github.com/stretchr/testify/assert"
 )
 

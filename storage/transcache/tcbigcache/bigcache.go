@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/allegro/bigcache"
-	"github.com/corestoreio/csfw/storage/transcache"
+	"github.com/corestoreio/cspkg/storage/transcache"
 	"github.com/corestoreio/errors"
 )
 

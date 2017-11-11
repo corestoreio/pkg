@@ -20,9 +20,9 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/corestoreio/csfw/codegen"
-	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/cspkg/codegen"
+	"github.com/corestoreio/cspkg/storage/csdb"
+	"github.com/corestoreio/cspkg/util"
 )
 
 type OneTable struct {

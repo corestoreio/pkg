@@ -14,7 +14,7 @@
 
 package bundle
 
-import "github.com/corestoreio/csfw/eav"
+import "github.com/corestoreio/cspkg/eav"
 
 // AttributeSourcePriceView sorting @todo
 // @see magento2/site/app/code/Magento/Bundle/Model/Product/Attribute/Source/Price/View.php

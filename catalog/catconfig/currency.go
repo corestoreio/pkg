@@ -1,8 +1,8 @@
 package catconfig
 
 import (
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/directory"
+	"github.com/corestoreio/cspkg/config"
+	"github.com/corestoreio/cspkg/directory"
 	"github.com/corestoreio/errors"
 )
 

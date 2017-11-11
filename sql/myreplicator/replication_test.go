@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/sql/ddl"
+	"github.com/corestoreio/cspkg/sql/ddl"
 	"github.com/pingcap/check"
 	uuid "github.com/satori/go.uuid"
 	"github.com/siddontang/go-mysql/client"

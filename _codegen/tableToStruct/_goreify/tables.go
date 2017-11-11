@@ -14,7 +14,7 @@
 
 package store
 
-import "github.com/corestoreio/csfw/storage/csdb"
+import "github.com/corestoreio/cspkg/storage/csdb"
 
 var TableCollection *csdb.Tables
 

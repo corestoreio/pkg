@@ -17,7 +17,7 @@ package net_test
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/net"
+	"github.com/corestoreio/cspkg/net"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

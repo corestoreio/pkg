@@ -15,9 +15,9 @@
 package backendauth
 
 import (
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/net"
+	"github.com/corestoreio/cspkg/config"
+	"github.com/corestoreio/cspkg/config/cfgmodel"
+	"github.com/corestoreio/cspkg/net"
 	"github.com/corestoreio/errors"
 )
 

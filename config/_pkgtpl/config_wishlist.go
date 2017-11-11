@@ -3,8 +3,8 @@
 package wishlist
 
 import (
-	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/cspkg/config/element"
+	"github.com/corestoreio/cspkg/store/scope"
 )
 
 // ConfigStructure global configuration structure for this package.

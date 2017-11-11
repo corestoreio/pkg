@@ -15,8 +15,8 @@
 package jwt_test
 
 import (
-	"github.com/corestoreio/csfw/net/jwt"
-	"github.com/corestoreio/csfw/storage/containable"
+	"github.com/corestoreio/cspkg/net/jwt"
+	"github.com/corestoreio/cspkg/storage/containable"
 )
 
 var _ jwt.Blacklister = (*containable.InMemory)(nil)

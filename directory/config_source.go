@@ -17,8 +17,8 @@ package directory
 import (
 	"sync"
 
-	"github.com/corestoreio/csfw/config/source"
-	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/cspkg/config/source"
+	"github.com/corestoreio/cspkg/storage/dbr"
 	"golang.org/x/text/currency"
 )
 

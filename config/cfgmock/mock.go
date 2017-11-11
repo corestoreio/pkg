@@ -21,11 +21,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/corestoreio/csfw/util/conv"
+	"github.com/corestoreio/cspkg/config"
+	"github.com/corestoreio/cspkg/config/cfgpath"
+	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/cspkg/util/bufferpool"
+	"github.com/corestoreio/cspkg/util/conv"
 	"github.com/corestoreio/errors"
 )
 

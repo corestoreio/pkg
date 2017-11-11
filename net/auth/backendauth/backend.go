@@ -15,10 +15,10 @@
 package backendauth
 
 import (
-	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/config/cfgsource"
-	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/net/auth"
+	"github.com/corestoreio/cspkg/config/cfgmodel"
+	"github.com/corestoreio/cspkg/config/cfgsource"
+	"github.com/corestoreio/cspkg/config/element"
+	"github.com/corestoreio/cspkg/net/auth"
 )
 
 // Configuration just exported for the sake of documentation. See fields

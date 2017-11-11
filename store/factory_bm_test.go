@@ -17,7 +17,7 @@ package store
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/cspkg/config"
 )
 
 func mustNewFactory(cfg config.Getter, opts ...Option) *factory {

@@ -15,7 +15,7 @@
 package i18n
 
 import (
-	"github.com/corestoreio/csfw/util/slices"
+	"github.com/corestoreio/cspkg/util/slices"
 	"golang.org/x/text/language"
 	"golang.org/x/text/language/display"
 )

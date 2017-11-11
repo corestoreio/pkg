@@ -15,9 +15,9 @@
 package jwt
 
 import (
-	"github.com/corestoreio/csfw/util/conv"
-	"github.com/corestoreio/csfw/util/csjwt"
-	"github.com/corestoreio/csfw/util/shortid"
+	"github.com/corestoreio/cspkg/util/conv"
+	"github.com/corestoreio/cspkg/util/csjwt"
+	"github.com/corestoreio/cspkg/util/shortid"
 	"github.com/corestoreio/errors"
 )
 

@@ -17,9 +17,9 @@ package backend
 import (
 	"sync"
 
-	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/source"
+	"github.com/corestoreio/cspkg/config/cfgmodel"
+	"github.com/corestoreio/cspkg/config/element"
+	"github.com/corestoreio/cspkg/config/source"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.

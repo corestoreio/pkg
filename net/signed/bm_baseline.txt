@@ -3,4 +3,4 @@ BenchmarkHMAC_Parse-4        	10000000	       161 ns/op	      16 B/op	       1 a
 BenchmarkSignature_Write-4   	 3000000	       503 ns/op	     160 B/op	       4 allocs/op
 BenchmarkSignature_Parse-4   	 1000000	      1775 ns/op	     432 B/op	       5 allocs/op
 PASS
-ok  	github.com/corestoreio/csfw/net/signed	7.404s
+ok  	github.com/corestoreio/cspkg/net/signed	7.404s

@@ -21,8 +21,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/corestoreio/csfw/sql/dml"
-	"github.com/corestoreio/csfw/util/bufferpool"
+	"github.com/corestoreio/cspkg/sql/dml"
+	"github.com/corestoreio/cspkg/util/bufferpool"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 )

@@ -19,10 +19,10 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/storage/text"
-	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/naughtystrings"
+	"github.com/corestoreio/cspkg/config/cfgpath"
+	"github.com/corestoreio/cspkg/storage/text"
+	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/cspkg/util/naughtystrings"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

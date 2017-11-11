@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/storage/text"
+	"github.com/corestoreio/cspkg/config/cfgpath"
+	"github.com/corestoreio/cspkg/storage/text"
 	"github.com/corestoreio/errors"
 )
 

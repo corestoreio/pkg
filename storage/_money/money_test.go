@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/corestoreio/csfw/storage/money"
+	"github.com/corestoreio/cspkg/storage/money"
 )
 
 var _ fmt.Stringer = (*money.Money)(nil)

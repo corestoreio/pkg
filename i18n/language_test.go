@@ -18,7 +18,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/corestoreio/csfw/i18n"
+	"github.com/corestoreio/cspkg/i18n"
 	"github.com/stretchr/testify/assert"
 )
 

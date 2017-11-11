@@ -17,4 +17,4 @@ BenchmarkFmtFloat64_Non_Singleton_Pos-4        	  300000	      3718 ns/op	    15
 BenchmarkFmtFloat64_Non_Singleton_Neg-4        	  500000	      3884 ns/op	    1544 B/op	      35 allocs/op
 BenchmarkFmtFloat64_____Singleton_Pos-4        	 2000000	       792 ns/op	      24 B/op	       4 allocs/op
 BenchmarkFmtFloat64_____Singleton_Neg-4        	 2000000	       812 ns/op	      32 B/op	       4 allocs/op
-ok  	github.com/corestoreio/csfw/i18n	29.748s
+ok  	github.com/corestoreio/cspkg/i18n	29.748s

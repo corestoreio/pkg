@@ -26,9 +26,9 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/corestoreio/csfw/sql/ddl"
-	"github.com/corestoreio/csfw/sql/myreplicator"
-	"github.com/corestoreio/csfw/util/conv"
+	"github.com/corestoreio/cspkg/sql/ddl"
+	"github.com/corestoreio/cspkg/sql/myreplicator"
+	"github.com/corestoreio/cspkg/util/conv"
 )
 
 func main() {

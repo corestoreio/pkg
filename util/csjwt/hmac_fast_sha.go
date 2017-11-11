@@ -19,7 +19,7 @@ import (
 	"crypto/hmac"
 	"hash"
 
-	"github.com/corestoreio/csfw/util/hashpool"
+	"github.com/corestoreio/cspkg/util/hashpool"
 	"github.com/corestoreio/errors"
 )
 

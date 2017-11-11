@@ -18,7 +18,7 @@ Package mock implements mocking of the store.Service for tests.
 Please import this package as:
 
 	import (
-		"github.com/corestoreio/csfw/store/storemock"
+		"github.com/corestoreio/cspkg/store/storemock"
 	)
 
 To avoid confusion with other mock packages.

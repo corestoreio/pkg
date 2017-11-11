@@ -17,7 +17,7 @@ package user
 import (
 	"sync"
 
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/cspkg/config"
 )
 
 type Manager struct {

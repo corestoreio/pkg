@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/net/signed"
-	"github.com/corestoreio/csfw/storage/containable"
+	"github.com/corestoreio/cspkg/net/signed"
+	"github.com/corestoreio/cspkg/storage/containable"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/corestoreio/csfw/storage/transcache"
-	"github.com/corestoreio/csfw/storage/transcache/tcbigcache"
+	"github.com/corestoreio/cspkg/storage/transcache"
+	"github.com/corestoreio/cspkg/storage/transcache/tcbigcache"
 )
 
 type P struct {

@@ -24,7 +24,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/corestoreio/csfw/util/hashpool"
+	"github.com/corestoreio/cspkg/util/hashpool"
 	"github.com/corestoreio/errors"
 	"github.com/dchest/siphash"
 	"github.com/pierrec/xxHash/xxHash64"

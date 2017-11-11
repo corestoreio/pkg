@@ -17,8 +17,8 @@ package geoip
 import (
 	"net/http"
 
-	"github.com/corestoreio/csfw/net/mw"
-	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/cspkg/net/mw"
+	"github.com/corestoreio/cspkg/store/scope"
 	"github.com/corestoreio/errors"
 )
 

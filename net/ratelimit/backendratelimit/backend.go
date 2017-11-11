@@ -15,9 +15,9 @@
 package backendratelimit
 
 import (
-	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/net/ratelimit"
+	"github.com/corestoreio/cspkg/config/cfgmodel"
+	"github.com/corestoreio/cspkg/config/element"
+	"github.com/corestoreio/cspkg/net/ratelimit"
 )
 
 // Configuration just exported for the sake of documentation. See fields for more

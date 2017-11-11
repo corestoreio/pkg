@@ -18,7 +18,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/corestoreio/csfw/storage/money"
+	"github.com/corestoreio/cspkg/storage/money"
 )
 
 var benchmarkMoneyScan float64

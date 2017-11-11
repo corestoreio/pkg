@@ -15,10 +15,10 @@
 package backendratelimit
 
 import (
-	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/storage/text"
-	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/cspkg/config/cfgpath"
+	"github.com/corestoreio/cspkg/config/element"
+	"github.com/corestoreio/cspkg/storage/text"
+	"github.com/corestoreio/cspkg/store/scope"
 )
 
 // todo(CS): add config values and path for ratelimit.VaryBy type

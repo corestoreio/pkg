@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/util/sqlparser/dependency/bytes2"
+	"github.com/corestoreio/cspkg/util/sqlparser/dependency/bytes2"
 )
 
 type alltypes struct {

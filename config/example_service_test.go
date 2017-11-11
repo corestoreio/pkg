@@ -17,8 +17,8 @@ package config_test
 import (
 	"fmt"
 
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/cfgpath"
+	"github.com/corestoreio/cspkg/config"
+	"github.com/corestoreio/cspkg/config/cfgpath"
 	"github.com/corestoreio/errors"
 )
 

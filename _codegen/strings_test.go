@@ -245,14 +245,14 @@ func TestExtractPathType(t *testing.T) {
 			isErr:  false,
 		},
 		{
-			have:   "github.com/corestoreio/csfw/catalog.Product()",
-			wantIP: "github.com/corestoreio/csfw/catalog",
+			have:   "github.com/corestoreio/cspkg/catalog.Product()",
+			wantIP: "github.com/corestoreio/cspkg/catalog",
 			wantFT: "catalog.Product()",
 			isErr:  false,
 		},
 		{
-			have:   "github.com/corestoreio/csfw/catalog/catattr.NewHandler({{.EntityTypeID}})",
-			wantIP: "github.com/corestoreio/csfw/catalog/catattr",
+			have:   "github.com/corestoreio/cspkg/catalog/catattr.NewHandler({{.EntityTypeID}})",
+			wantIP: "github.com/corestoreio/cspkg/catalog/catattr",
 			wantFT: "catattr.NewHandler({{.EntityTypeID}})",
 			isErr:  false,
 		},

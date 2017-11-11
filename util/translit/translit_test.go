@@ -17,7 +17,7 @@ package translit_test
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/util/translit"
+	"github.com/corestoreio/cspkg/util/translit"
 	"github.com/stretchr/testify/assert"
 )
 

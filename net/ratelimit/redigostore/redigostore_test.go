@@ -17,11 +17,11 @@ package redigostore_test
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/net/ratelimit"
-	"github.com/corestoreio/csfw/net/ratelimit/backendratelimit"
-	"github.com/corestoreio/csfw/net/ratelimit/redigostore"
-	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/cspkg/config/cfgmock"
+	"github.com/corestoreio/cspkg/net/ratelimit"
+	"github.com/corestoreio/cspkg/net/ratelimit/backendratelimit"
+	"github.com/corestoreio/cspkg/net/ratelimit/redigostore"
+	"github.com/corestoreio/cspkg/store/scope"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

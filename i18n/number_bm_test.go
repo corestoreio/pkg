@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/corestoreio/csfw/i18n"
+	"github.com/corestoreio/cspkg/i18n"
 )
 
 var benchmarkFmtNumber string

@@ -9,7 +9,7 @@ package bson
 import (
 	"time"
 
-	"github.com/corestoreio/csfw/util/sqlparser/dependency/bytes2"
+	"github.com/corestoreio/cspkg/util/sqlparser/dependency/bytes2"
 )
 
 // EncodeInterface bson encodes an interface{}. Elements

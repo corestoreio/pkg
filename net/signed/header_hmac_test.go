@@ -21,7 +21,7 @@ import (
 
 	"strings"
 
-	"github.com/corestoreio/csfw/net/signed"
+	"github.com/corestoreio/cspkg/net/signed"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

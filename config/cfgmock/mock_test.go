@@ -21,10 +21,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/cspkg/config"
+	"github.com/corestoreio/cspkg/config/cfgmock"
+	"github.com/corestoreio/cspkg/config/cfgpath"
+	"github.com/corestoreio/cspkg/store/scope"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

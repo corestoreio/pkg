@@ -15,8 +15,8 @@
 package email
 
 import (
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/cspkg/config"
+	"github.com/corestoreio/cspkg/store/scope"
 )
 
 var PackageConfiguration = config.MustNewConfiguration(

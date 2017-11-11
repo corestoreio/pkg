@@ -17,7 +17,7 @@ package bufferpool_test
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/util/bufferpool"
+	"github.com/corestoreio/cspkg/util/bufferpool"
 	"github.com/stretchr/testify/assert"
 )
 

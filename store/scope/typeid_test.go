@@ -21,7 +21,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/cspkg/store/scope"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

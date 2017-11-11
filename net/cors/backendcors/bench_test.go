@@ -24,7 +24,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/cspkg/config/cfgmock"
 )
 
 func testHandler(fa interface {

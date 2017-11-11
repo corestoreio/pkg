@@ -10,7 +10,7 @@ import (
 
 	"crypto/tls"
 
-	"github.com/corestoreio/csfw/sql/ddl"
+	"github.com/corestoreio/cspkg/sql/ddl"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/siddontang/go-mysql/client"

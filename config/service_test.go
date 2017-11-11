@@ -18,9 +18,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/config/element"
+	"github.com/corestoreio/cspkg/config"
+	"github.com/corestoreio/cspkg/config/cfgpath"
+	"github.com/corestoreio/cspkg/config/element"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

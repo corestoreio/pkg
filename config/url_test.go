@@ -17,7 +17,7 @@ package config_test
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/cspkg/config"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

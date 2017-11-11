@@ -17,7 +17,7 @@ package ddl_test
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/sql/ddl"
+	"github.com/corestoreio/cspkg/sql/ddl"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

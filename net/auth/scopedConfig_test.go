@@ -21,9 +21,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/corestoreio/csfw/net/auth"
-	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/hashpool"
+	"github.com/corestoreio/cspkg/net/auth"
+	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/cspkg/util/hashpool"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

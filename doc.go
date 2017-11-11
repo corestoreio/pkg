@@ -72,7 +72,7 @@ CS_DSN the environment variable for the MySQL connection.
 Testing
 
 Setup two databases. One for Magento 1 and one for Magento 2 and fill them with
-the provided test data https://github.com/corestoreio/csfw/tree/master/testData
+the provided test data https://github.com/corestoreio/cspkg/tree/master/testData
 
 Create a DSN env var CS_DSN_TEST and point it to Magento 1 database. Run the tests.
 Change the env var to let it point to Magento 2 database. Rerun the tests.

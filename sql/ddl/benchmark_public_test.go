@@ -18,10 +18,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/corestoreio/csfw/sql/ddl"
-	"github.com/corestoreio/csfw/sql/dml"
-	"github.com/corestoreio/csfw/util/byteconv"
-	"github.com/corestoreio/csfw/util/cstesting"
+	"github.com/corestoreio/cspkg/sql/ddl"
+	"github.com/corestoreio/cspkg/sql/dml"
+	"github.com/corestoreio/cspkg/util/byteconv"
+	"github.com/corestoreio/cspkg/util/cstesting"
 )
 
 func BenchmarkTableName(b *testing.B) {

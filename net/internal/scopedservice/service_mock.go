@@ -14,7 +14,7 @@
 
 package scopedservice
 
-import "github.com/corestoreio/csfw/store/scope"
+import "github.com/corestoreio/cspkg/store/scope"
 
 const configDefaultString = "Hello Default Gophers"
 const configDefaultInt int = 42

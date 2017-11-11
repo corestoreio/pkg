@@ -23,7 +23,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/corestoreio/csfw/net/problem"
+	"github.com/corestoreio/cspkg/net/problem"
 	"github.com/corestoreio/errors"
 	"github.com/mailru/easyjson"
 	"github.com/stretchr/testify/assert"

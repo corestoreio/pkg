@@ -19,4 +19,4 @@ BenchmarkWithAlternativeRedirect/LocalFile_NoCache-4               	  100000	   
 BenchmarkWithAlternativeRedirect/LocalFile_NoCache-4               	  100000	     14432 ns/op	    5109 B/op	     143 allocs/op
 BenchmarkWithAlternativeRedirect/LocalFile_NoCache-4               	  100000	     15524 ns/op	    5109 B/op	     143 allocs/op
 PASS
-ok  	github.com/corestoreio/csfw/net/geoip/backendgeoip	31.773s
+ok  	github.com/corestoreio/cspkg/net/geoip/backendgeoip	31.773s

@@ -21,8 +21,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/net/jwt"
-	"github.com/corestoreio/csfw/storage/containable"
+	"github.com/corestoreio/cspkg/net/jwt"
+	"github.com/corestoreio/cspkg/storage/containable"
 	"github.com/stretchr/testify/assert"
 )
 
