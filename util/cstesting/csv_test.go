@@ -70,7 +70,7 @@ func TestLoadCSVReadError(t *testing.T) {
 	)
 	assert.Exactly(t, []string{"config_id", "scope", "scope_id", "path", "value"}, cols)
 	assert.Len(t, rows, 5)
-	assert.EqualError(t, err, "[cstesting] csvReader.Read: record on line 7; parse error on line 8, column 0: extraneous or missing \" in field")
+	assert.EqualError(t, err, "[cstesting] csvReader.Read: record on line 7; parse error on line 8, column 0: extraneous or missing \" in quoted-field")
 }
 
 func TestMockRowsError(t *testing.T) {

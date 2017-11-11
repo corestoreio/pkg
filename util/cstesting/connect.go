@@ -15,7 +15,6 @@
 package cstesting
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"testing"
@@ -38,10 +37,10 @@ func getDSN(env string) (string, error) {
 
 // MustGetDSN returns the data source name from an environment variable or
 // panics on error.
-func MustGetDSN() string {
+func MustGetDSN(t testing.TB) string {
 	d, err := getDSN(EnvDSN)
 	if err != nil {
-		panic(fmt.Sprintf("%+v", err))
+		t.Skip(err)
 	}
 	return d
 }
@@ -56,7 +55,7 @@ func MustConnectDB(t testing.TB, opts ...dml.ConnPoolOption) *dml.ConnPool {
 		t.Skipf("%s", err)
 	}
 	if len(opts) == 0 {
-		return dml.MustConnectAndVerify(dml.WithDSN(MustGetDSN()))
+		return dml.MustConnectAndVerify(dml.WithDSN(MustGetDSN(t)))
 	}
 	return dml.MustConnectAndVerify(opts...)
 }
