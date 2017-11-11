@@ -23,11 +23,11 @@ import (
 
 func init() {
 	now = func() time.Time {
-		return time.Date(2006, 1, 2, 15, 4, 5, 02, time.FixedZone("hardcoded", -7))
+		return time.Date(2006, 1, 2, 15, 4, 5, 02, time.FixedZone("UTC-4", -4*60*60))
 	}
 }
 
 func TestNowSentinel_String(t *testing.T) {
 	t.Parallel()
-	assert.Exactly(t, "2006-01-02 15:04:12", Now.String())
+	assert.Exactly(t, "2006-01-02 19:04:05", Now.String())
 }

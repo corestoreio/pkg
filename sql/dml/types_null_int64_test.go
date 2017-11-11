@@ -15,18 +15,41 @@
 package dml
 
 import (
+	"database/sql/driver"
+	"encoding"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"math"
 	"strconv"
 	"testing"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
 	int64JSON     = []byte(`9223372036854775806`)
 	nullInt64JSON = []byte(`{"NullInt64":9223372036854775806,"Valid":true}`)
+)
+
+var (
+	_ fmt.GoStringer             = (*NullInt64)(nil)
+	_ fmt.Stringer               = (*NullInt64)(nil)
+	_ json.Marshaler             = (*NullInt64)(nil)
+	_ json.Unmarshaler           = (*NullInt64)(nil)
+	_ encoding.BinaryMarshaler   = (*NullInt64)(nil)
+	_ encoding.BinaryUnmarshaler = (*NullInt64)(nil)
+	_ encoding.TextMarshaler     = (*NullInt64)(nil)
+	_ encoding.TextUnmarshaler   = (*NullInt64)(nil)
+	_ gob.GobEncoder             = (*NullInt64)(nil)
+	_ gob.GobDecoder             = (*NullInt64)(nil)
+	_ driver.Valuer              = (*NullInt64)(nil)
+	_ proto.Marshaler            = (*NullInt64)(nil)
+	_ proto.Unmarshaler          = (*NullInt64)(nil)
+	_ proto.Sizer                = (*NullInt64)(nil)
+	_ protoMarshalToer           = (*NullInt64)(nil)
 )
 
 func TestMakeNullInt64(t *testing.T) {
@@ -38,6 +61,13 @@ func TestMakeNullInt64(t *testing.T) {
 	if !zero.Valid {
 		t.Error("MakeNullInt64(0)", "is invalid, but should be valid")
 	}
+	assert.Exactly(t, "null", NullInt64{}.String())
+	assert.Exactly(t, 8, zero.Size())
+	assert.Exactly(t, 8, MakeNullInt64(125).Size())
+	assert.Exactly(t, 8, MakeNullInt64(128).Size())
+	assert.Exactly(t, "0", zero.String())
+	assert.Exactly(t, "9223372036854775806", i.String())
+	assert.Exactly(t, 0, NullInt64{}.Size())
 }
 
 func TestInt64_GoString(t *testing.T) {
@@ -56,7 +86,7 @@ func TestInt64_GoString(t *testing.T) {
 	}
 }
 
-func TestUnmarshalInt64(t *testing.T) {
+func TestNullInt64_JsonUnmarshal(t *testing.T) {
 	t.Parallel()
 	var i NullInt64
 	err := json.Unmarshal(int64JSON, &i)
@@ -88,7 +118,7 @@ func TestUnmarshalInt64(t *testing.T) {
 	assertNullInt64(t, invalid, "invalid json")
 }
 
-func TestUnmarshalNonIntegerNumber64(t *testing.T) {
+func TestNullInt64_JsonUnmarshalNonIntegerNumber(t *testing.T) {
 	t.Parallel()
 	var i NullInt64
 	err := json.Unmarshal(float64JSON, &i)
@@ -97,7 +127,7 @@ func TestUnmarshalNonIntegerNumber64(t *testing.T) {
 	}
 }
 
-func TestUnmarshalInt64Overflow(t *testing.T) {
+func TestNullInt64_JsonUnmarshalInt64Overflow(t *testing.T) {
 	t.Parallel()
 	int64Overflow := uint64(math.MaxInt64)
 
@@ -114,7 +144,7 @@ func TestUnmarshalInt64Overflow(t *testing.T) {
 	}
 }
 
-func TestTextUnmarshalInt64(t *testing.T) {
+func TestNullInt64_UnmarshalText(t *testing.T) {
 	t.Parallel()
 	var i NullInt64
 	err := i.UnmarshalText([]byte("9223372036854775806"))
@@ -132,7 +162,7 @@ func TestTextUnmarshalInt64(t *testing.T) {
 	assertNullInt64(t, null, `UnmarshalText() "null"`)
 }
 
-func TestMarshalInt64(t *testing.T) {
+func TestNullInt64_JsonMarshal(t *testing.T) {
 	t.Parallel()
 	i := MakeNullInt64(9223372036854775806)
 	data, err := json.Marshal(i)
@@ -146,7 +176,7 @@ func TestMarshalInt64(t *testing.T) {
 	assertJSONEquals(t, data, sqlStrNullLC, "null json marshal")
 }
 
-func TestMarshalInt64Text(t *testing.T) {
+func TestNullInt64_MarshalText(t *testing.T) {
 	t.Parallel()
 	i := MakeNullInt64(9223372036854775806)
 	data, err := i.MarshalText()
@@ -158,6 +188,32 @@ func TestMarshalInt64Text(t *testing.T) {
 	data, err = null.MarshalText()
 	maybePanic(err)
 	assertJSONEquals(t, data, "", "null text marshal")
+}
+
+func TestNullInt64_BinaryEncoding(t *testing.T) {
+	t.Parallel()
+	runner := func(b NullInt64, want []byte) func(*testing.T) {
+		return func(t *testing.T) {
+			data, err := b.GobEncode()
+			require.NoError(t, err)
+			require.Exactly(t, want, data, t.Name()+": GobEncode")
+			data, err = b.MarshalBinary()
+			require.NoError(t, err)
+			assert.Exactly(t, want, data, t.Name()+": MarshalBinary")
+			data, err = b.Marshal()
+			require.NoError(t, err)
+			assert.Exactly(t, want, data, t.Name()+": Marshal")
+
+			var decoded NullInt64
+			require.NoError(t, decoded.UnmarshalBinary(data), "UnmarshalBinary")
+			assert.Exactly(t, b, decoded)
+		}
+	}
+	t.Run("-987654321", runner(MakeNullInt64(-987654321), []byte{0x4f, 0x97, 0x21, 0xc5, 0xff, 0xff, 0xff, 0xff}))
+	t.Run("987654321", runner(MakeNullInt64(987654321), []byte{0xb1, 0x68, 0xde, 0x3a, 0x0, 0x0, 0x0, 0x0}))
+	t.Run("-maxInt64", runner(MakeNullInt64(-math.MaxInt64), []byte{0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x80}))
+	t.Run("maxInt64", runner(MakeNullInt64(math.MaxInt64), []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f}))
+	t.Run("null", runner(NullInt64{}, nil))
 }
 
 func TestInt64Pointer(t *testing.T) {

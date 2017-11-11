@@ -15,18 +15,21 @@
 package dml_test
 
 import (
+	"fmt"
 	"os"
 	"testing"
 	"time"
 
-	"fmt"
-
-	"github.com/corestoreio/csfw/sql/dml"
+	"github.com/corestoreio/cspkg/sql/dml"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+type protoMarshalToer interface {
+	MarshalTo(data []byte) (n int, err error)
+}
 
 var now = func() time.Time {
 	return time.Date(2006, 1, 2, 15, 4, 5, 02, time.FixedZone("hardcoded", -7))

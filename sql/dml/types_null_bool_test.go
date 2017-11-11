@@ -15,10 +15,16 @@
 package dml
 
 import (
+	"database/sql/driver"
+	"encoding"
+	"encoding/gob"
 	"encoding/json"
+	"fmt"
 	"testing"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -26,18 +32,41 @@ var (
 	nullBoolJSON = []byte(`{"NullBool":true,"Valid":true}`)
 )
 
+var (
+	_ fmt.GoStringer             = (*NullBool)(nil)
+	_ fmt.Stringer               = (*NullBool)(nil)
+	_ json.Marshaler             = (*NullBool)(nil)
+	_ json.Unmarshaler           = (*NullBool)(nil)
+	_ encoding.BinaryMarshaler   = (*NullBool)(nil)
+	_ encoding.BinaryUnmarshaler = (*NullBool)(nil)
+	_ encoding.TextMarshaler     = (*NullBool)(nil)
+	_ encoding.TextUnmarshaler   = (*NullBool)(nil)
+	_ gob.GobEncoder             = (*NullBool)(nil)
+	_ gob.GobDecoder             = (*NullBool)(nil)
+	_ driver.Valuer              = (*NullBool)(nil)
+	_ proto.Marshaler            = (*NullBool)(nil)
+	_ proto.Unmarshaler          = (*NullBool)(nil)
+	_ proto.Sizer                = (*NullBool)(nil)
+	_ protoMarshalToer           = (*NullBool)(nil)
+)
+
 func TestMakeNullBool(t *testing.T) {
 	t.Parallel()
 	b := MakeNullBool(true)
 	assertBool(t, b, "MakeNullBool()")
+	assert.Exactly(t, "true", b.String())
 
 	zero := MakeNullBool(false)
 	if !zero.Valid {
 		t.Error("MakeNullBool(false)", "is invalid, but should be valid")
 	}
+	assert.Exactly(t, "false", zero.String())
+	assert.Exactly(t, 1, zero.Size())
+	assert.Exactly(t, "null", NullBool{}.String())
+	assert.Exactly(t, 0, NullBool{}.Size())
 }
 
-func TestUnmarshalBool(t *testing.T) {
+func TestNullBool_UnmarshalJSON(t *testing.T) {
 	t.Parallel()
 	var b NullBool
 	err := json.Unmarshal(boolJSON, &b)
@@ -68,7 +97,7 @@ func TestUnmarshalBool(t *testing.T) {
 	}
 }
 
-func TestTextUnmarshalBool(t *testing.T) {
+func TestNullBool_UnmarshalText(t *testing.T) {
 	t.Parallel()
 
 	var b NullBool
@@ -99,7 +128,7 @@ func TestTextUnmarshalBool(t *testing.T) {
 	assertNullBool(t, invalid, "invalid json")
 }
 
-func TestMarshalBool(t *testing.T) {
+func TestNullBool_JsonMarshal(t *testing.T) {
 	t.Parallel()
 
 	b := MakeNullBool(true)
@@ -119,7 +148,7 @@ func TestMarshalBool(t *testing.T) {
 	assertJSONEquals(t, data, sqlStrNullLC, "null json marshal")
 }
 
-func TestMarshalBoolText(t *testing.T) {
+func TestNullBool_MarshalText(t *testing.T) {
 	t.Parallel()
 
 	b := MakeNullBool(true)
@@ -137,6 +166,49 @@ func TestMarshalBoolText(t *testing.T) {
 	data, err = null.MarshalText()
 	maybePanic(err)
 	assertJSONEquals(t, data, "", "null text marshal")
+}
+
+func TestNullBool_BinaryEncoding(t *testing.T) {
+	t.Parallel()
+	runner := func(b NullBool, want []byte) func(*testing.T) {
+		return func(t *testing.T) {
+			data, err := b.GobEncode()
+			require.NoError(t, err)
+			assert.Exactly(t, want, data, "GobEncode")
+			data, err = b.MarshalBinary()
+			require.NoError(t, err)
+			assert.Exactly(t, want, data, "MarshalBinary")
+			data, err = b.Marshal()
+			require.NoError(t, err)
+			assert.Exactly(t, want, data, "Marshal")
+
+			var decoded NullBool
+			require.NoError(t, decoded.UnmarshalBinary(data), "UnmarshalBinary")
+			assert.Exactly(t, b, decoded)
+		}
+	}
+	t.Run("true", runner(MakeNullBool(true), []byte{1}))
+	t.Run("false", runner(MakeNullBool(false), []byte{0}))
+	t.Run("null", runner(NullBool{}, nil))
+}
+
+func TestNullBool_BinaryDecoding(t *testing.T) {
+	t.Parallel()
+	runner := func(data []byte, want NullBool) func(*testing.T) {
+		return func(t *testing.T) {
+			var have NullBool
+			require.NoError(t, have.GobDecode(data), "GobDecode")
+			assert.Exactly(t, want, have, "GobDecode")
+			require.NoError(t, have.UnmarshalBinary(data), "UnmarshalBinary")
+			assert.Exactly(t, want, have, "UnmarshalBinary")
+			require.NoError(t, have.Unmarshal(data), "Unmarshal")
+			assert.Exactly(t, want, have, "Unmarshal")
+		}
+	}
+	t.Run("true", runner([]byte{1}, MakeNullBool(true)))
+	t.Run("false", runner([]byte{0}, MakeNullBool(false)))
+	t.Run("null", runner(nil, NullBool{}))
+	t.Run("junk", runner([]byte{2, 1, 3}, NullBool{}))
 }
 
 func TestBoolPointer(t *testing.T) {

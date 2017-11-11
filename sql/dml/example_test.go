@@ -20,8 +20,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/corestoreio/csfw/sql/dml"
-	"github.com/corestoreio/csfw/util/strs"
+	"github.com/corestoreio/cspkg/sql/dml"
+	"github.com/corestoreio/cspkg/util/strs"
 )
 
 func writeToSQLAndInterpolate(qb dml.QueryBuilder) {

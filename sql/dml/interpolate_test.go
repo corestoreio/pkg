@@ -150,7 +150,7 @@ func TestInterpolate_ArgValue(t *testing.T) {
 			DriverValue(aNil).
 			DriverValue(aNil).
 			String()
-		assert.Equal(t, "SELECT * FROM x WHERE a = 4711 AND b = 'Goph\\'er' AND c = 2.7182818 AND d = '2006-01-02 15:04:12' AND e = 1 AND f = 'BytyGophe\\'r' AND g = NULL AND h = NULL",
+		assert.Equal(t, "SELECT * FROM x WHERE a = 4711 AND b = 'Goph\\'er' AND c = 2.7182818 AND d = '2006-01-02 19:04:05' AND e = 1 AND f = 'BytyGophe\\'r' AND g = NULL AND h = NULL",
 			str)
 	})
 	t.Run("in", func(t *testing.T) {
@@ -158,7 +158,7 @@ func TestInterpolate_ArgValue(t *testing.T) {
 			DriverValue(aInt, aInt).DriverValue(aStr, aStr).DriverValue(aFlo, aFlo).
 			DriverValue(aTim, aTim).DriverValue(aBoo, aBoo).DriverValue(aByt, aByt).String()
 		assert.Equal(t,
-			"SELECT * FROM x WHERE a IN (4711,4711) AND b IN ('Goph\\'er','Goph\\'er') AND c IN (2.7182818,2.7182818) AND d IN ('2006-01-02 15:04:12','2006-01-02 15:04:12') AND e IN (1,1) AND f IN ('BytyGophe\\'r','BytyGophe\\'r')",
+			"SELECT * FROM x WHERE a IN (4711,4711) AND b IN ('Goph\\'er','Goph\\'er') AND c IN (2.7182818,2.7182818) AND d IN ('2006-01-02 19:04:05','2006-01-02 19:04:05') AND e IN (1,1) AND f IN ('BytyGophe\\'r','BytyGophe\\'r')",
 			str)
 	})
 	t.Run("type not supported", func(t *testing.T) {
@@ -489,7 +489,8 @@ func TestInterpolate(t *testing.T) {
 		str, _, err := Interpolate(test.sql).ArgUnions(test.Arguments).ToSQL()
 		if test.errBhf != nil {
 			if !test.errBhf(err) {
-				t.Errorf("IDX %d\ngot error: %v\nwant: %s", i, err, test.errBhf(err))
+				isErr := test.errBhf(err)
+				t.Errorf("IDX %d\ngot error: %v\nwant: %t", i, err, isErr)
 			}
 		}
 		//assert.NoError(t, err, "IDX %d", i)

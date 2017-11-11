@@ -22,10 +22,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/corestoreio/csfw/util/byteconv"
+	"github.com/corestoreio/cspkg/util/bufferpool"
+	"github.com/corestoreio/cspkg/util/byteconv"
 	"github.com/corestoreio/errors"
 )
+
+// TODO(cys): Remove GobEncoder, GobDecoder, MarshalJSON, UnmarshalJSON in Go 2.
+// The same semantics will be provided by the generic MarshalBinary,
+// MarshalText, UnmarshalBinary, UnmarshalText.
 
 // Flags get binary encoded in the marshalers
 const (
@@ -317,25 +321,8 @@ func (d Decimal) MarshalBinary() (data []byte, err error) {
 		return nil, nil
 	}
 	var v0 [14]byte
-	binary.BigEndian.PutUint64(v0[:8], d.Precision)
-
-	binary.BigEndian.PutUint32(v0[8:12], uint32(d.Scale))
-
-	var flags uint16
-	flags |= decimalBinaryVersion01
-	if d.Negative {
-		flags |= decimalFlagNegative
-	}
-	if d.Valid {
-		flags |= decimalFlagValid
-	}
-	if d.Quote {
-		flags |= decimalFlagQuote
-	}
-
-	binary.BigEndian.PutUint16(v0[12:14], flags)
-
-	return v0[:], nil
+	_, err = d.MarshalTo(v0[:])
+	return v0[:], err
 }
 
 // Value implements the driver.Valuer interface for database serialization. It
@@ -370,4 +357,50 @@ func (d Decimal) GobEncode() ([]byte, error) {
 // GobDecode implements the gob.GobDecoder interface for gob serialization.
 func (d *Decimal) GobDecode(data []byte) error {
 	return d.UnmarshalBinary(data)
+}
+
+// Marshal binary encoder for protocol buffers. Implements proto.Marshaler.
+func (d Decimal) Marshal() ([]byte, error) {
+	return d.MarshalBinary()
+}
+
+// Marshal binary encoder for protocol buffers which writes into data.
+func (d Decimal) MarshalTo(data []byte) (n int, err error) {
+	if !d.Valid {
+		return 0, nil
+	}
+
+	binary.BigEndian.PutUint64(data[:8], d.Precision)
+
+	binary.BigEndian.PutUint32(data[8:12], uint32(d.Scale))
+
+	var flags uint16
+	flags |= decimalBinaryVersion01
+	if d.Negative {
+		flags |= decimalFlagNegative
+	}
+	if d.Valid {
+		flags |= decimalFlagValid
+	}
+	if d.Quote {
+		flags |= decimalFlagQuote
+	}
+
+	binary.BigEndian.PutUint16(data[12:14], flags)
+
+	return 14, nil
+}
+
+// Unmarshal binary decoder for protocol buffers. Implements proto.Unmarshaler.
+func (d *Decimal) Unmarshal(data []byte) error {
+	return d.UnmarshalBinary(data)
+}
+
+// Size returns the size of the underlying type. If not valid, the size will be
+// 0. Implements proto.Sizer.
+func (d Decimal) Size() (s int) {
+	if d.Valid {
+		s = 14
+	}
+	return
 }

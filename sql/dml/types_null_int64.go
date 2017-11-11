@@ -17,10 +17,16 @@ package dml
 import (
 	"database/sql"
 	"database/sql/driver"
+	"encoding/binary"
 	"strconv"
 
+	"github.com/corestoreio/cspkg/util/byteconv"
 	"github.com/corestoreio/errors"
 )
+
+// TODO(cys): Remove GobEncoder, GobDecoder, MarshalJSON, UnmarshalJSON in Go 2.
+// The same semantics will be provided by the generic MarshalBinary,
+// MarshalText, UnmarshalBinary, UnmarshalText.
 
 // NullInt64 is a nullable int64. It does not consider zero values to be null.
 // It will decode to null, not zero, if null. NullInt64 implements interface
@@ -43,6 +49,14 @@ func MakeNullInt64(i int64, valid ...bool) NullInt64 {
 			Valid: v,
 		},
 	}
+}
+
+// String returns the string representation of the int or null.
+func (a NullInt64) String() string {
+	if !a.Valid {
+		return "null"
+	}
+	return strconv.FormatInt(a.Int64, 10)
 }
 
 // GoString prints an optimized Go representation. Takes are of backticks.
@@ -93,9 +107,8 @@ func (a *NullInt64) UnmarshalText(text []byte) error {
 		a.Valid = false
 		return nil
 	}
-	var err error
-	a.Int64, err = strconv.ParseInt(string(text), 10, 64)
-	a.Valid = err == nil
+	ni, err := byteconv.ParseNullInt64(text)
+	a.NullInt64 = ni
 	return err
 }
 
@@ -143,4 +156,64 @@ func (a NullInt64) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return a.Int64, nil
+}
+
+// GobEncode implements the gob.GobEncoder interface for gob serialization.
+func (a NullInt64) GobEncode() ([]byte, error) {
+	return a.Marshal()
+}
+
+// GobDecode implements the gob.GobDecoder interface for gob serialization.
+func (a *NullInt64) GobDecode(data []byte) error {
+	return a.Unmarshal(data)
+}
+
+// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
+func (a *NullInt64) UnmarshalBinary(data []byte) error {
+	return a.Unmarshal(data)
+}
+
+// MarshalBinary implements the encoding.BinaryMarshaler interface.
+func (a NullInt64) MarshalBinary() (data []byte, err error) {
+	return a.Marshal()
+}
+
+// Marshal binary encoder for protocol buffers. Implements proto.Marshaler.
+func (a NullInt64) Marshal() ([]byte, error) {
+	if !a.Valid {
+		return nil, nil
+	}
+	var buf [8]byte
+	_, err := a.MarshalTo(buf[:])
+	return buf[:], err
+}
+
+// Marshal binary encoder for protocol buffers which writes into data.
+func (a NullInt64) MarshalTo(data []byte) (n int, err error) {
+	if !a.Valid {
+		return 0, nil
+	}
+	binary.LittleEndian.PutUint64(data, uint64(a.Int64))
+	return 8, nil
+}
+
+// Unmarshal binary decoder for protocol buffers. Implements proto.Unmarshaler.
+func (a *NullInt64) Unmarshal(data []byte) error {
+	if len(data) < 8 {
+		a.Valid = false
+		return nil
+	}
+	ui := binary.LittleEndian.Uint64(data)
+	a.Int64 = int64(ui)
+	a.Valid = true
+	return nil
+}
+
+// Size returns the size of the underlying type. If not valid, the size will be
+// 0. Implements proto.Sizer.
+func (a NullInt64) Size() (s int) {
+	if a.Valid {
+		s = 8
+	}
+	return
 }

@@ -15,20 +15,44 @@
 package dml
 
 import (
+	"database/sql/driver"
+	"encoding"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"testing"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"math"
 )
 
 var (
-	_               fmt.GoStringer = (*NullFloat64)(nil)
-	float64JSON                    = []byte(`1.2345`)
-	nullFloat64JSON                = []byte(`{"NullFloat64":1.2345,"Valid":true}`)
+	float64JSON     = []byte(`1.2345`)
+	nullFloat64JSON = []byte(`{"NullFloat64":1.2345,"Valid":true}`)
+)
+
+var (
+	_ fmt.GoStringer             = (*NullFloat64)(nil)
+	_ fmt.Stringer               = (*NullFloat64)(nil)
+	_ json.Marshaler             = (*NullFloat64)(nil)
+	_ json.Unmarshaler           = (*NullFloat64)(nil)
+	_ encoding.BinaryMarshaler   = (*NullFloat64)(nil)
+	_ encoding.BinaryUnmarshaler = (*NullFloat64)(nil)
+	_ encoding.TextMarshaler     = (*NullFloat64)(nil)
+	_ encoding.TextUnmarshaler   = (*NullFloat64)(nil)
+	_ gob.GobEncoder             = (*NullFloat64)(nil)
+	_ gob.GobDecoder             = (*NullFloat64)(nil)
+	_ driver.Valuer              = (*NullFloat64)(nil)
+	_ proto.Marshaler            = (*NullFloat64)(nil)
+	_ proto.Unmarshaler          = (*NullFloat64)(nil)
+	_ proto.Sizer                = (*NullFloat64)(nil)
+	_ protoMarshalToer           = (*NullFloat64)(nil)
 )
 
 func TestFloat64From(t *testing.T) {
+	t.Parallel()
 	f := MakeNullFloat64(1.2345)
 	assertFloat64(t, f, "MakeNullFloat64()")
 
@@ -36,6 +60,11 @@ func TestFloat64From(t *testing.T) {
 	if !zero.Valid {
 		t.Error("MakeNullFloat64(0)", "is invalid, but should be valid")
 	}
+	assert.Exactly(t, "null", NullFloat64{}.String())
+	assert.Exactly(t, 8, zero.Size())
+	assert.Exactly(t, "0", zero.String())
+	assert.Exactly(t, "1.2345", f.String())
+	assert.Exactly(t, 0, NullFloat64{}.Size())
 }
 
 func TestNullFloat64_GoString(t *testing.T) {
@@ -45,7 +74,8 @@ func TestNullFloat64_GoString(t *testing.T) {
 	assert.Exactly(t, "dml.MakeNullFloat64(3.1415926)", f.GoString())
 }
 
-func TestUnmarshalFloat64(t *testing.T) {
+func TestNullFloat64_JsonUnmarshal(t *testing.T) {
+	t.Parallel()
 	var f NullFloat64
 	err := json.Unmarshal(float64JSON, &f)
 	maybePanic(err)
@@ -75,7 +105,8 @@ func TestUnmarshalFloat64(t *testing.T) {
 	}
 }
 
-func TestTextUnmarshalFloat64(t *testing.T) {
+func TestNullFloat64_UnmarshalText(t *testing.T) {
+	t.Parallel()
 	var f NullFloat64
 	err := f.UnmarshalText([]byte("1.2345"))
 	maybePanic(err)
@@ -92,7 +123,8 @@ func TestTextUnmarshalFloat64(t *testing.T) {
 	assertNullFloat64(t, null, `UnmarshalText() "null"`)
 }
 
-func TestMarshalFloat64(t *testing.T) {
+func TestNullFloat64_JsonMarshal(t *testing.T) {
+	t.Parallel()
 	f := MakeNullFloat64(1.2345)
 	data, err := json.Marshal(f)
 	maybePanic(err)
@@ -105,7 +137,8 @@ func TestMarshalFloat64(t *testing.T) {
 	assertJSONEquals(t, data, sqlStrNullLC, "null json marshal")
 }
 
-func TestMarshalFloat64Text(t *testing.T) {
+func TestNullFloat64_MarshalText(t *testing.T) {
+	t.Parallel()
 	f := MakeNullFloat64(1.2345)
 	data, err := f.MarshalText()
 	maybePanic(err)
@@ -116,6 +149,30 @@ func TestMarshalFloat64Text(t *testing.T) {
 	data, err = null.MarshalText()
 	maybePanic(err)
 	assertJSONEquals(t, data, "", "null text marshal")
+}
+
+func TestNullFloat64_BinaryEncoding(t *testing.T) {
+	t.Parallel()
+	runner := func(b NullFloat64, want []byte) func(*testing.T) {
+		return func(t *testing.T) {
+			data, err := b.GobEncode()
+			require.NoError(t, err)
+			assert.Exactly(t, want, data, t.Name()+": GobEncode")
+			data, err = b.MarshalBinary()
+			require.NoError(t, err)
+			assert.Exactly(t, want, data, t.Name()+": MarshalBinary")
+			data, err = b.Marshal()
+			require.NoError(t, err)
+			assert.Exactly(t, want, data, t.Name()+": Marshal")
+
+			var decoded NullFloat64
+			require.NoError(t, decoded.UnmarshalBinary(data), "UnmarshalBinary")
+			assert.Exactly(t, b, decoded)
+		}
+	}
+	t.Run("9.87654321", runner(MakeNullFloat64(9.87654321), []byte{0x33, 0xf6, 0x88, 0x45, 0xca, 0xc0, 0x23, 0x40}))
+	t.Run("maxfloat64", runner(MakeNullFloat64(math.MaxFloat64), []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xef, 0x7f}))
+	t.Run("null", runner(NullFloat64{}, nil))
 }
 
 func TestFloat64Pointer(t *testing.T) {

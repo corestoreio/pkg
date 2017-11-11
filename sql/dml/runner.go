@@ -24,7 +24,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/corestoreio/csfw/util/byteconv"
+	"github.com/corestoreio/cspkg/util/byteconv"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 )

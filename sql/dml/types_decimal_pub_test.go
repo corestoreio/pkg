@@ -21,26 +21,33 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strconv"
 	"testing"
 
-	"strconv"
-
-	"github.com/corestoreio/csfw/sql/dml"
+	"github.com/corestoreio/cspkg/sql/dml"
+	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-var _ fmt.GoStringer = (*dml.Decimal)(nil)
-var _ fmt.Stringer = (*dml.Decimal)(nil)
-var _ json.Marshaler = (*dml.Decimal)(nil)
-var _ json.Unmarshaler = (*dml.Decimal)(nil)
-var _ encoding.BinaryMarshaler = (*dml.Decimal)(nil)
-var _ encoding.BinaryUnmarshaler = (*dml.Decimal)(nil)
-var _ encoding.TextMarshaler = (*dml.Decimal)(nil)
-var _ encoding.TextUnmarshaler = (*dml.Decimal)(nil)
-var _ gob.GobEncoder = (*dml.Decimal)(nil)
-var _ gob.GobDecoder = (*dml.Decimal)(nil)
-var _ driver.Valuer = (*dml.Decimal)(nil)
+// Holy guacamole. Those are many interface implementations. Maybe too much but who knows.
+var (
+	_ fmt.GoStringer             = (*dml.Decimal)(nil)
+	_ fmt.Stringer               = (*dml.Decimal)(nil)
+	_ json.Marshaler             = (*dml.Decimal)(nil)
+	_ json.Unmarshaler           = (*dml.Decimal)(nil)
+	_ encoding.BinaryMarshaler   = (*dml.Decimal)(nil)
+	_ encoding.BinaryUnmarshaler = (*dml.Decimal)(nil)
+	_ encoding.TextMarshaler     = (*dml.Decimal)(nil)
+	_ encoding.TextUnmarshaler   = (*dml.Decimal)(nil)
+	_ gob.GobEncoder             = (*dml.Decimal)(nil)
+	_ gob.GobDecoder             = (*dml.Decimal)(nil)
+	_ driver.Valuer              = (*dml.Decimal)(nil)
+	_ proto.Marshaler            = (*dml.Decimal)(nil)
+	_ proto.Unmarshaler          = (*dml.Decimal)(nil)
+	_ proto.Sizer                = (*dml.Decimal)(nil)
+	_ protoMarshalToer           = (*dml.Decimal)(nil)
+)
 
 func TestMakeDecimalInt64(t *testing.T) {
 	t.Parallel()

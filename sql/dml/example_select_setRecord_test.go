@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/corestoreio/csfw/sql/dml"
+	"github.com/corestoreio/cspkg/sql/dml"
 	"github.com/corestoreio/errors"
 )
 

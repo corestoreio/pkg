@@ -28,6 +28,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func maybePanic(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+type protoMarshalToer interface {
+	MarshalTo(data []byte) (n int, err error)
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // TEST HELPERS
 ///////////////////////////////////////////////////////////////////////////////

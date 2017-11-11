@@ -16,10 +16,16 @@ package dml
 
 import (
 	"database/sql"
+	"encoding/binary"
+	"math"
 	"strconv"
 
 	"github.com/corestoreio/errors"
 )
+
+// TODO(cys): Remove GobEncoder, GobDecoder, MarshalJSON, UnmarshalJSON in Go 2.
+// The same semantics will be provided by the generic MarshalBinary,
+// MarshalText, UnmarshalBinary, UnmarshalText.
 
 // NullFloat64 is a nullable float64. It does not consider zero values to be null.
 // It will decode to null, not zero, if null. NullFloat64 implements interface
@@ -42,6 +48,14 @@ func MakeNullFloat64(f float64, valid ...bool) NullFloat64 {
 			Valid:   v,
 		},
 	}
+}
+
+// String returns the string representation of the float or null.
+func (a NullFloat64) String() string {
+	if !a.Valid {
+		return "null"
+	}
+	return strconv.FormatFloat(a.Float64, 'f', -1, 64)
 }
 
 // GoString prints an optimized Go representation.
@@ -134,4 +148,64 @@ func (a NullFloat64) Ptr() *float64 {
 // A non-null NullFloat64 with a 0 value will not be considered zero.
 func (a NullFloat64) IsZero() bool {
 	return !a.Valid
+}
+
+// GobEncode implements the gob.GobEncoder interface for gob serialization.
+func (a NullFloat64) GobEncode() ([]byte, error) {
+	return a.Marshal()
+}
+
+// GobDecode implements the gob.GobDecoder interface for gob serialization.
+func (a *NullFloat64) GobDecode(data []byte) error {
+	return a.Unmarshal(data)
+}
+
+// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
+func (a *NullFloat64) UnmarshalBinary(data []byte) error {
+	return a.Unmarshal(data)
+}
+
+// MarshalBinary implements the encoding.BinaryMarshaler interface.
+func (a NullFloat64) MarshalBinary() (data []byte, err error) {
+	return a.Marshal()
+}
+
+// Marshal binary encoder for protocol buffers. Implements proto.Marshaler.
+func (a NullFloat64) Marshal() ([]byte, error) {
+	if !a.Valid {
+		return nil, nil
+	}
+	var buf [8]byte
+	_, err := a.MarshalTo(buf[:])
+	return buf[:], err
+}
+
+// Marshal binary encoder for protocol buffers which writes into data.
+func (a NullFloat64) MarshalTo(data []byte) (n int, err error) {
+	if !a.Valid {
+		return 0, nil
+	}
+	binary.LittleEndian.PutUint64(data, math.Float64bits(a.Float64))
+	return 8, nil
+}
+
+// Unmarshal binary decoder for protocol buffers. Implements proto.Unmarshaler.
+func (a *NullFloat64) Unmarshal(data []byte) error {
+	if len(data) < 8 {
+		a.Valid = false
+		return nil
+	}
+
+	a.Float64 = math.Float64frombits(binary.LittleEndian.Uint64(data))
+	a.Valid = true
+	return nil
+}
+
+// Size returns the size of the underlying type. If not valid, the size will be
+// 0. Implements proto.Sizer.
+func (a NullFloat64) Size() (s int) {
+	if a.Valid {
+		s = 8
+	}
+	return
 }

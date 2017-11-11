@@ -22,6 +22,10 @@ import (
 	"github.com/corestoreio/errors"
 )
 
+// TODO(cys): Remove GobEncoder, GobDecoder, MarshalJSON, UnmarshalJSON in Go 2.
+// The same semantics will be provided by the generic MarshalBinary,
+// MarshalText, UnmarshalBinary, UnmarshalText.
+
 // NullString is a nullable string. It supports SQL and JSON serialization.
 // It will marshal to null if null. Blank string input will be considered null.
 // NullString implements interface Argument.
@@ -104,7 +108,7 @@ func (a NullString) MarshalJSON() ([]byte, error) {
 // It will encode a blank string when this NullString is dml.
 func (a NullString) MarshalText() ([]byte, error) {
 	if !a.Valid {
-		return []byte{}, nil
+		return nil, nil
 	}
 	return []byte(a.String), nil
 }
@@ -137,4 +141,49 @@ func (a NullString) Ptr() *string {
 // IsZero returns true for null strings, for potential future omitempty support.
 func (a NullString) IsZero() bool {
 	return !a.Valid
+}
+
+// GobEncode implements the gob.GobEncoder interface for gob serialization.
+func (a NullString) GobEncode() ([]byte, error) {
+	return a.Marshal()
+}
+
+// GobDecode implements the gob.GobDecoder interface for gob serialization.
+func (a *NullString) GobDecode(data []byte) error {
+	return a.Unmarshal(data)
+}
+
+// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
+func (a *NullString) UnmarshalBinary(data []byte) error {
+	return a.Unmarshal(data)
+}
+
+// MarshalBinary implements the encoding.BinaryMarshaler interface.
+func (a NullString) MarshalBinary() (data []byte, err error) {
+	return a.Marshal()
+}
+
+// Marshal binary encoder for protocol buffers. Implements proto.Marshaler.
+func (a NullString) Marshal() ([]byte, error) {
+	return a.MarshalText()
+}
+
+// Marshal binary encoder for protocol buffers which writes into data.
+func (a NullString) MarshalTo(data []byte) (n int, err error) {
+	if !a.Valid {
+		return 0, nil
+	}
+	n = copy(data, a.String)
+	return
+}
+
+// Unmarshal binary decoder for protocol buffers. Implements proto.Unmarshaler.
+func (a *NullString) Unmarshal(data []byte) error {
+	return a.UnmarshalText(data)
+}
+
+// Size returns the size of the underlying type. If not valid, the size will be
+// 0. Implements proto.Sizer.
+func (a NullString) Size() (s int) {
+	return len(a.String)
 }

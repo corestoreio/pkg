@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/corestoreio/csfw/sql/dml"
-	"github.com/corestoreio/csfw/util/cstesting"
+	"github.com/corestoreio/cspkg/sql/dml"
+	"github.com/corestoreio/cspkg/util/cstesting"
 	"github.com/corestoreio/errors"
 )
 
@@ -177,7 +177,7 @@ func ExampleColumnMapper() {
 	// Output:
 	//Result of "SELECT * FROM `customer_entity`" query:
 	//[entity_id firstname store_id lifetime_sales voucher_codes]
-	//{18446744073700551613 Karl Gopher 7 {{47.11 true}} [1FE9983E 28E76FBC]}
-	//{18446744073700551614 Fung Go Roo 7 {{28.94 true}} [4FE7787E 15E59FBB 794EFDE8]}
-	//{18446744073700551615 John Doe 6 {{138.54 true}} []}
+	//{18446744073700551613 Karl Gopher 7 47.11 [1FE9983E 28E76FBC]}
+	//{18446744073700551614 Fung Go Roo 7 28.94 [4FE7787E 15E59FBB 794EFDE8]}
+	//{18446744073700551615 John Doe 6 138.54 []}
 }

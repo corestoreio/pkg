@@ -15,34 +15,49 @@
 package dml
 
 import (
+	"database/sql/driver"
 	"encoding"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
-	_            json.Marshaler             = (*NullTime)(nil)
-	_            json.Unmarshaler           = (*NullTime)(nil)
-	_            encoding.TextMarshaler     = (*NullTime)(nil)
-	_            encoding.TextUnmarshaler   = (*NullTime)(nil)
-	_            encoding.BinaryMarshaler   = (*NullTime)(nil)
-	_            encoding.BinaryUnmarshaler = (*NullTime)(nil)
-	_            fmt.GoStringer             = (*NullTime)(nil)
-	intJSON                                 = []byte(`12345`)
-	timeString                              = "1977-05-25T20:21:21Z"
-	timeJSON                                = []byte(`"` + timeString + `"`)
-	nullTimeJSON                            = []byte(sqlStrNullLC)
-	timeValue, _                            = time.Parse(time.RFC3339, timeString)
-	timeObject                              = []byte(`{"Time":"1977-05-25T20:21:21Z","Valid":true}`)
-	nullObject                              = []byte(`{"Time":"0001-01-01T00:00:00Z","Valid":false}`)
-	badObject                               = []byte(`{"hello": "world"}`)
+	intJSON      = []byte(`12345`)
+	timeString   = "1977-05-25T20:21:21Z"
+	timeJSON     = []byte(`"` + timeString + `"`)
+	nullTimeJSON = []byte(sqlStrNullLC)
+	timeValue, _ = time.Parse(time.RFC3339, timeString)
+	timeObject   = []byte(`{"Time":"1977-05-25T20:21:21Z","Valid":true}`)
+	nullObject   = []byte(`{"Time":"0001-01-01T00:00:00Z","Valid":false}`)
+	badObject    = []byte(`{"hello": "world"}`)
 )
 
-func TestUnmarshalTimeJSON(t *testing.T) {
+var (
+	_ fmt.GoStringer             = (*NullTime)(nil)
+	_ fmt.Stringer               = (*NullTime)(nil)
+	_ json.Marshaler             = (*NullTime)(nil)
+	_ json.Unmarshaler           = (*NullTime)(nil)
+	_ encoding.BinaryMarshaler   = (*NullTime)(nil)
+	_ encoding.BinaryUnmarshaler = (*NullTime)(nil)
+	_ encoding.TextMarshaler     = (*NullTime)(nil)
+	_ encoding.TextUnmarshaler   = (*NullTime)(nil)
+	_ gob.GobEncoder             = (*NullTime)(nil)
+	_ gob.GobDecoder             = (*NullTime)(nil)
+	_ driver.Valuer              = (*NullTime)(nil)
+	_ proto.Marshaler            = (*NullTime)(nil)
+	_ proto.Unmarshaler          = (*NullTime)(nil)
+	_ proto.Sizer                = (*NullTime)(nil)
+	_ protoMarshalToer           = (*NullTime)(nil)
+)
+
+func TestNullTime_JsonUnmarshal(t *testing.T) {
 	t.Parallel()
 	var ti NullTime
 	err := json.Unmarshal(timeJSON, &ti)
@@ -86,7 +101,7 @@ func TestUnmarshalTimeJSON(t *testing.T) {
 	assertNullTime(t, wrongType, "wrong type object json")
 }
 
-func TestUnmarshalTimeText(t *testing.T) {
+func TestNullTime_UnmarshalText(t *testing.T) {
 	t.Parallel()
 	ti := MakeNullTime(timeValue)
 	txt, err := ti.MarshalText()
@@ -114,7 +129,7 @@ func TestUnmarshalTimeText(t *testing.T) {
 	assertNullTime(t, invalid, "bad string")
 }
 
-func TestMarshalTime(t *testing.T) {
+func TestNullTime_JsonMarshal(t *testing.T) {
 	t.Parallel()
 	ti := MakeNullTime(timeValue)
 	data, err := json.Marshal(ti)
@@ -125,6 +140,29 @@ func TestMarshalTime(t *testing.T) {
 	data, err = json.Marshal(ti)
 	maybePanic(err)
 	assertJSONEquals(t, data, string(nullJSON), "null json marshal")
+}
+
+func TestNullTime_BinaryEncoding(t *testing.T) {
+	t.Parallel()
+	runner := func(b NullTime, want []byte) func(*testing.T) {
+		return func(t *testing.T) {
+			data, err := b.GobEncode()
+			require.NoError(t, err)
+			require.Exactly(t, want, data, t.Name()+": GobEncode")
+			data, err = b.MarshalBinary()
+			require.NoError(t, err)
+			assert.Exactly(t, want, data, t.Name()+": MarshalBinary")
+			data, err = b.Marshal()
+			require.NoError(t, err)
+			assert.Exactly(t, want, data, t.Name()+": Marshal")
+
+			var decoded NullTime
+			require.NoError(t, decoded.UnmarshalBinary(data), "UnmarshalBinary")
+			assert.Exactly(t, b, decoded)
+		}
+	}
+	t.Run("now fixed", runner(MakeNullTime(now()), []byte{0x1, 0x0, 0x0, 0x0, 0xe, 0xbb, 0x4b, 0x70, 0x25, 0x0, 0x0, 0x0, 0x2, 0xff, 0x10}))
+	t.Run("null", runner(NullTime{}, nil))
 }
 
 func TestTimeFrom(t *testing.T) {

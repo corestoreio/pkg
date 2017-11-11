@@ -161,7 +161,7 @@ func TestArguments_DriverValue(t *testing.T) {
 			)
 		assert.Exactly(t,
 			[]interface{}{nil, []uint8(nil), int64(3), 2.7, true,
-				[]uint8{0x49, 0x6e, 0x76, 0x6f, 0x69, 0x63, 0x65}, "Creditmemo", "2006-01-02 15:04:12", now()},
+				[]uint8{0x49, 0x6e, 0x76, 0x6f, 0x69, 0x63, 0x65}, "Creditmemo", "2006-01-02 19:04:05", now()},
 			args.Interfaces())
 	})
 
@@ -179,7 +179,7 @@ func TestArguments_DriverValue(t *testing.T) {
 
 		assert.Exactly(t,
 			[]interface{}{nil, []uint8(nil), int64(3), 2.7, true,
-				[]uint8{0x49, 0x6e, 0x76, 0x6f, 0x69, 0x63, 0x65}, "Creditmemo", "2006-01-02 15:04:12", now()},
+				[]uint8{0x49, 0x6e, 0x76, 0x6f, 0x69, 0x63, 0x65}, "Creditmemo", "2006-01-02 19:04:05", now()},
 			args.Interfaces())
 	})
 

@@ -23,8 +23,8 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/corestoreio/csfw/sql/dml"
-	"github.com/corestoreio/csfw/util/cstesting"
+	"github.com/corestoreio/cspkg/sql/dml"
+	"github.com/corestoreio/cspkg/util/cstesting"
 	"github.com/stretchr/testify/require"
 )
 
@@ -36,7 +36,7 @@ func TestDriverCallBack(t *testing.T) {
 	db := cstesting.MustConnectDB(t,
 		dml.WithUniqueIDFn(func() string { return fmt.Sprintf("RANJID%d", atomic.AddInt32(counter, 1)) }),
 		dml.WithDSN(
-			cstesting.MustGetDSN(),
+			cstesting.MustGetDSN(t),
 			func(fnName string) func(error, string, []driver.NamedValue) error {
 				start := now()
 				return func(err error, query string, namedArgs []driver.NamedValue) error {

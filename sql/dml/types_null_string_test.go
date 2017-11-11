@@ -16,14 +16,35 @@ package dml
 
 import (
 	"bytes"
+	"database/sql/driver"
+	"encoding"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"testing"
 
 	"github.com/corestoreio/errors"
+	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
+var (
+	_ fmt.GoStringer             = (*NullString)(nil)
+	_ json.Marshaler             = (*NullString)(nil)
+	_ json.Unmarshaler           = (*NullString)(nil)
+	_ encoding.BinaryMarshaler   = (*NullString)(nil)
+	_ encoding.BinaryUnmarshaler = (*NullString)(nil)
+	_ encoding.TextMarshaler     = (*NullString)(nil)
+	_ encoding.TextUnmarshaler   = (*NullString)(nil)
+	_ gob.GobEncoder             = (*NullString)(nil)
+	_ gob.GobDecoder             = (*NullString)(nil)
+	_ driver.Valuer              = (*NullString)(nil)
+	_ proto.Marshaler            = (*NullString)(nil)
+	_ proto.Unmarshaler          = (*NullString)(nil)
+	_ proto.Sizer                = (*NullString)(nil)
+	_ protoMarshalToer           = (*NullString)(nil)
+)
 var (
 	stringJSON      = []byte(`"test"`)
 	blankStringJSON = []byte(`""`)
@@ -37,14 +58,16 @@ func TestStringFrom(t *testing.T) {
 	t.Parallel()
 	str := MakeNullString("test")
 	assertStr(t, str, "MakeNullString() string")
+	assert.Exactly(t, 4, str.Size())
 
 	zero := MakeNullString("")
 	if !zero.Valid {
 		t.Error("MakeNullString(0)", "is invalid, but should be valid")
 	}
+	assert.Exactly(t, 0, zero.Size())
 }
 
-func TestUnmarshalString(t *testing.T) {
+func TestNullString_JsonUnmarshal(t *testing.T) {
 	t.Parallel()
 	var str NullString
 	maybePanic(json.Unmarshal(stringJSON, &str))
@@ -79,7 +102,7 @@ func TestUnmarshalString(t *testing.T) {
 	assertNullStr(t, invalid, "invalid json")
 }
 
-func TestTextUnmarshalString(t *testing.T) {
+func TestNullString_TextUnmarshal(t *testing.T) {
 	t.Parallel()
 	var str NullString
 	err := str.UnmarshalText([]byte("test"))
@@ -96,7 +119,7 @@ func TestTextUnmarshalString(t *testing.T) {
 	assert.True(t, errors.IsNotValid(err), "%+v", err)
 }
 
-func TestMarshalString(t *testing.T) {
+func TestNullString_MarshalText(t *testing.T) {
 	t.Parallel()
 	str := MakeNullString("test")
 	data, err := json.Marshal(str)
@@ -118,7 +141,46 @@ func TestMarshalString(t *testing.T) {
 	zero.Valid = false
 	data, err = zero.MarshalText()
 	maybePanic(err)
-	assert.Exactly(t, []byte{}, data)
+	assert.Nil(t, data)
+}
+
+func TestNullString_BinaryEncoding(t *testing.T) {
+	t.Parallel()
+	runner := func(b NullString, want []byte) func(*testing.T) {
+		return func(t *testing.T) {
+			data, err := b.GobEncode()
+			require.NoError(t, err)
+			require.Exactly(t, want, data, t.Name()+": GobEncode")
+			data, err = b.MarshalBinary()
+			require.NoError(t, err)
+			assert.Exactly(t, want, data, t.Name()+": MarshalBinary")
+			data, err = b.Marshal()
+			require.NoError(t, err)
+			assert.Exactly(t, want, data, t.Name()+": Marshal")
+
+			var decoded NullString
+			require.NoError(t, decoded.UnmarshalBinary(data), "UnmarshalBinary")
+			assert.Exactly(t, b, decoded)
+		}
+	}
+	t.Run("HelloWorld", runner(MakeNullString("HelloWorld"), []byte{0x48, 0x65, 0x6c, 0x6c, 0x6f, 0xef, 0xa3, 0xbf, 0x57, 0x6f, 0x72, 0x6c, 0x64}))
+	t.Run("null", runner(NullString{}, nil))
+}
+
+func TestNullString_MarshalTo(t *testing.T) {
+	t.Parallel()
+	str := MakeNullString("HelloWorld")
+	var buf4 [4]byte
+	n, err := str.MarshalTo(buf4[:])
+	maybePanic(err)
+	assert.Exactly(t, 4, n)
+	assert.Exactly(t, []byte(`Hell`), buf4[:])
+
+	bufFit := make([]byte, str.Size())
+	n, err = str.MarshalTo(bufFit)
+	maybePanic(err)
+	assert.Exactly(t, 13, n)
+	assert.Exactly(t, []byte(`HelloWorld`), bufFit)
 }
 
 func TestStringPointer(t *testing.T) {
@@ -174,14 +236,6 @@ func TestStringScan(t *testing.T) {
 	maybePanic(err)
 	assertNullStr(t, null, "scanned null")
 }
-
-func maybePanic(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
-var _ fmt.GoStringer = (*NullString)(nil)
 
 func TestString_GoString(t *testing.T) {
 	t.Parallel()

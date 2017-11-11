@@ -14,7 +14,7 @@
 
 package dml_test
 
-import "github.com/corestoreio/csfw/sql/dml"
+import "github.com/corestoreio/cspkg/sql/dml"
 
 var cmCustomers = &customerCollection{
 	Data: []*customerEntity{
