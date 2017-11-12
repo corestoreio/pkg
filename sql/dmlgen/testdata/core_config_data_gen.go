@@ -1,14 +1,14 @@
-// Auto generated via github.com/corestoreio/csfw/sql/dmlgen
+// Auto generated via github.com/corestoreio/pkg/sql/dmlgen
 
 package testdata
 
 import (
-	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/errors"
-
+	"github.com/corestoreio/pkg/sql/dml"
 )
-// CoreConfigData represents a single row for DB table
-// `core_config_data`. Auto generated.
+
+// CoreConfigData represents a single row for DB table `core_config_data`.
+// Auto generated.
 type CoreConfigData struct {
 	ConfigID uint64         `json:"config_id,omitempty"`     // config_id int(10) unsigned NOT NULL PRI  auto_increment "Config Id"
 	Scope    string         `json:"scope,omitempty"`         // scope varchar(8) NOT NULL MUL DEFAULT ''default''  "Config Scope"
@@ -145,10 +145,4 @@ func (cc CoreConfigDataCollection) Paths(ret ...string) []string {
 		}
 	}
 	return ret
-} 
-
-
-
-
-
-
+}

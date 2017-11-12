@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"go/ast"
+	"go/build"
 	"go/format"
 	"go/parser"
 	"go/token"
@@ -28,12 +29,16 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/corestoreio/csfw/sql/ddl"
-	"github.com/corestoreio/csfw/sql/dml"
-	"github.com/corestoreio/csfw/util/slices"
-	"github.com/corestoreio/csfw/util/strs"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/sql/ddl"
+	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/util/slices"
+	"github.com/corestoreio/pkg/util/strs"
 )
+
+// Initial idea and prototyping for code generation.
+
+const pkgPath = `src/github.com/corestoreio/pkg/sql/dmlgen`
 
 // Tables can generated Go source for for database tables once correctly
 // configured.
@@ -45,8 +50,7 @@ type Tables struct {
 	template.FuncMap
 	DisableFileHeader bool
 	// goTpl contains a parsed template to render a single table.
-	goTpl      *template.Template
-	protoTpl   *template.Template
+	tpls       *template.Template
 	writeProto bool
 }
 
@@ -59,8 +63,8 @@ type Option struct {
 }
 
 // WithEncoder adds method receivers compatible with the interface declarations
-// in the various encoding packages. Supported encoder names are: json, binary,
-// gob and protobuf. More to follow.
+// in the various encoding packages. Supported encoder names are: text, binary,
+// and protobuf. Text includes JSON. Binary includes Gob.
 func WithEncoder(tableName string, encoderNames ...string) (opt Option) {
 	opt.sortOrder = 90 // must run before custom struct tags
 	opt.fn = func(ts *Tables) (err error) {
@@ -69,12 +73,10 @@ func WithEncoder(tableName string, encoderNames ...string) (opt Option) {
 		}
 		for _, enc := range encoderNames {
 			switch enc {
-			case "json":
-				ts.Tables[tableName].JsonMarshaler = true
+			case "text":
+				ts.Tables[tableName].TextMarshaler = true
 			case "binary":
 				ts.Tables[tableName].BinaryMarshaler = true
-			case "gob":
-				ts.Tables[tableName].GobEncoding = true
 			case "protobuf":
 				// github.com/gogo/protobuf/protoc-gen-gogo/generator/generator.go#L1629 Generator.goTag
 				ts.writeProto = true
@@ -162,29 +164,59 @@ func WithStructTags(tableName string, tagNames ...string) (opt Option) {
 //		dmlgen.WithCustomStructTags("table_name","column_a",`json: ",omitempty"`,"column_b","`xml:,omitempty`")
 // It doesn't matter in which order you apply the options ;-)
 func WithCustomStructTags(tableName string, columnNameStructTag ...string) (opt Option) {
-	// Maybe create a new function option called WithStructTag(tableName string, json,xml,yaml,protobuf bool)
 	if len(columnNameStructTag)%2 == 1 {
 		panic(errors.NewFatalf("[dmlgen] WithCustomStructTags: Argument columnNameStructTag must be a balanced slice."))
 	}
 	opt.sortOrder = 100
-	opt.fn = func(ts *Tables) (err error) {
-		if t, ok := ts.Tables[tableName]; ok {
-			var found int
-			for _, c := range t.Columns {
-				for i := 0; i < len(columnNameStructTag); i = i + 2 {
-					if c.Field == columnNameStructTag[i] {
-						c.StructTag = columnNameStructTag[i+1]
-						found++
-					}
+	opt.fn = func(ts *Tables) error {
+		t, ok := ts.Tables[tableName]
+		if !ok {
+			return errors.NewNotFoundf("[dmlgen] WithCustomStructTags: Table %q cannot be found.", tableName)
+		}
+		var found int
+		for _, c := range t.Columns {
+			for i := 0; i < len(columnNameStructTag); i = i + 2 {
+				if c.Field == columnNameStructTag[i] {
+					c.StructTag = columnNameStructTag[i+1]
+					found++
 				}
 			}
-			if found != len(columnNameStructTag)/2 {
-				err = errors.NewNotFoundf("[dmlgen] WithCustomStructTags: For table %q one column in %v cannot be found.", tableName, columnNameStructTag)
-			}
-		} else {
-			err = errors.NewNotFoundf("[dmlgen] WithCustomStructTags: Table %q cannot be found.", tableName)
 		}
-		return err
+		if found != len(columnNameStructTag)/2 {
+			return errors.NewNotFoundf("[dmlgen] WithCustomStructTags: For table %q one column in %v cannot be found.", tableName, columnNameStructTag)
+		}
+		return nil
+	}
+	return
+}
+
+// WithStructComment adds custom comments to each struct type. Useful when
+// relying on 3rd party JSON marshaler code generators like easyjson or ffjson.
+// If comment spans over multiple lines each line will be checked if it starts
+// with the comment identifier (//). If not the identifier will be prepended.
+func WithStructComment(tableNameComment ...string) (opt Option) {
+	if len(tableNameComment)%2 == 1 {
+		panic(errors.NewFatalf("[dmlgen] WithStructComment: Argument tableNameComment must be a balanced slice."))
+	}
+	opt.sortOrder = 105
+	opt.fn = func(ts *Tables) error {
+		for i := 0; i < len(tableNameComment); i = i + 2 {
+			tableName := tableNameComment[i]
+			t, ok := ts.Tables[tableName]
+			if !ok {
+				return errors.NewNotFoundf("[dmlgen] WithStructComment: Table %q cannot be found.", tableName)
+			}
+			var buf strings.Builder
+			for _, line := range strings.Split(tableNameComment[i+1], "\n") {
+				if !strings.HasPrefix(line, "//") {
+					buf.WriteString("// ")
+				}
+				buf.WriteString(line)
+				buf.WriteByte('\n')
+			}
+			t.Comment = buf.String()
+		}
+		return nil
 	}
 	return
 }
@@ -334,7 +366,7 @@ func NewTables(packageName string, opts ...Option) (*Tables, error) {
 		ImportPaths: []string{
 			"database/sql",
 			"encoding/json",
-			"github.com/corestoreio/csfw/sql/dml",
+			"github.com/corestoreio/pkg/sql/dml",
 			"github.com/corestoreio/errors",
 			"time",
 		},
@@ -359,15 +391,10 @@ func NewTables(packageName string, opts ...Option) (*Tables, error) {
 		}
 	}
 	var err error
-	ts.goTpl, err = template.New("go_entity").Funcs(ts.FuncMap).Parse(tplDBAC)
+	glob := filepath.Join(build.Default.GOPATH, pkgPath, "code_*.go.tpl")
+	ts.tpls, err = template.New("InitialParseGlob").Funcs(ts.FuncMap).ParseGlob(glob)
 	if err != nil {
 		return nil, errors.WithStack(err)
-	}
-	if ts.writeProto {
-		ts.protoTpl, err = template.New("proto_entity").Funcs(ts.FuncMap).Parse(tplProto)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
 	}
 
 	for _, t := range ts.Tables {
@@ -412,7 +439,7 @@ func (ts *Tables) WriteProto(w io.Writer) error {
 
 	if !ts.DisableFileHeader {
 		// TODO: make the options configurable
-		fmt.Fprintf(buf, `// Auto generated via github.com/corestoreio/csfw/sql/dmlgen
+		fmt.Fprintf(buf, `// Auto generated via github.com/corestoreio/pkg/sql/dmlgen
 syntax = "proto3";
 package %s;
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
@@ -429,7 +456,7 @@ option (gogoproto.sizer_all) = true;
 
 	for _, tblname := range ts.sortedTableNames() {
 		t := ts.Tables[tblname] // must panic if table name not found
-		if err := t.writeTo(buf, ts.protoTpl.Funcs(ts.FuncMap)); err != nil {
+		if err := t.writeTo(buf, ts.tpls.Lookup("code_proto.go.tpl").Funcs(ts.FuncMap)); err != nil {
 			return errors.NewWriteFailed(err, "[dmlgen] For Table %q", t.TableName)
 		}
 	}
@@ -444,14 +471,28 @@ func (ts *Tables) WriteGo(w io.Writer) error {
 	// deal with random map to guarantee the persistent code generation.
 	for _, tblname := range ts.sortedTableNames() {
 		t := ts.Tables[tblname] // must panic if table name not found
-		if err := t.writeTo(buf, ts.goTpl.Funcs(ts.FuncMap)); err != nil {
+
+		if err := t.writeTo(buf, ts.tpls.Lookup("code_entity.go.tpl").Funcs(ts.FuncMap)); err != nil {
 			return errors.NewWriteFailed(err, "[dmlgen] For Table %q", t.TableName)
+		}
+		if err := t.writeTo(buf, ts.tpls.Lookup("code_collection.go.tpl").Funcs(ts.FuncMap)); err != nil {
+			return errors.NewWriteFailed(err, "[dmlgen] For Table %q", t.TableName)
+		}
+		if t.TextMarshaler {
+			if err := t.writeTo(buf, ts.tpls.Lookup("code_text.go.tpl").Funcs(ts.FuncMap)); err != nil {
+				return errors.NewWriteFailed(err, "[dmlgen] For Table %q", t.TableName)
+			}
+		}
+		if t.BinaryMarshaler {
+			if err := t.writeTo(buf, ts.tpls.Lookup("code_binary.go.tpl").Funcs(ts.FuncMap)); err != nil {
+				return errors.NewWriteFailed(err, "[dmlgen] For Table %q", t.TableName)
+			}
 		}
 	}
 
 	if !ts.DisableFileHeader {
 		// now figure out all used package names in the buffer.
-		fmt.Fprintf(w, "// Auto generated via github.com/corestoreio/csfw/sql/dmlgen\n\npackage %s\n\nimport (\n", ts.Package)
+		fmt.Fprintf(w, "// Auto generated via github.com/corestoreio/pkg/sql/dmlgen\n\npackage %s\n\nimport (\n", ts.Package)
 		pkgs, err := ts.findUsedPackages(buf.Bytes())
 		if err != nil {
 			return errors.WithStack(err)
@@ -476,11 +517,11 @@ func (ts *Tables) WriteGo(w io.Writer) error {
 type table struct {
 	Package         string      // Name of the package
 	TableName       string      // Name of the table
-	Columns         ddl.Columns // all columns of the table
-	JsonMarshaler   bool
+	Comment         string      // Comment above the struct type declaration
+	Columns         ddl.Columns // all columns of a table
+	TextMarshaler   bool
 	BinaryMarshaler bool
-	GobEncoding     bool
-	Protobuf        bool
+	Protobuf        bool // writes the .proto file if true
 }
 
 // WriteTo implements io.WriterTo and writes the generated source code into w.
@@ -490,12 +531,10 @@ func (t *table) writeTo(w io.Writer, tpl *template.Template) error {
 		table
 		Collection string
 		Entity     string
-		Tick       string
 	}{
 		table:      *t,
 		Collection: strs.ToGoCamelCase(t.TableName) + "Collection",
 		Entity:     strs.ToGoCamelCase(t.TableName),
-		Tick:       "`",
 	}
 
 	return tpl.Execute(w, data)

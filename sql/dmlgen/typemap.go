@@ -15,15 +15,14 @@
 package dmlgen
 
 import (
+	"fmt"
 	"strings"
 	"unicode"
 	"unicode/utf8"
 
-	"fmt"
-
-	"github.com/corestoreio/csfw/sql/ddl"
-	"github.com/corestoreio/csfw/util/strs"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/sql/ddl"
+	"github.com/corestoreio/pkg/util/strs"
 )
 
 const goTypeOptions = 8
@@ -43,15 +42,16 @@ const (
 // These variables are mapping the un/signed and null/not-null types to the
 // appropriate Go type.
 var (
+	// TODO further optimize this mappings
 	goTypeInt64 = [...]string{
 		idxMysqlUnsignedNull:    "dml.NullInt64",
 		idxMysqlUnsignedNotNull: "uint64",
 		idxMysqlSignedNull:      "dml.NullInt64",
 		idxMysqlSignedNotNull:   "int64",
 
-		idxProtobufUnsignedNull:    "github.com/corestoreio/csfw/sql/dml.NullInt64",
+		idxProtobufUnsignedNull:    "github.com/corestoreio/pkg/sql/dml.NullInt64",
 		idxProtobufUnsignedNotNull: "uint64",
-		idxProtobufSignedNull:      "github.com/corestoreio/csfw/sql/dml.NullInt64",
+		idxProtobufSignedNull:      "github.com/corestoreio/pkg/sql/dml.NullInt64",
 		idxProtobufSignedNotNull:   "int64",
 	}
 	goTypeInt = [...]string{
@@ -60,10 +60,10 @@ var (
 		idxMysqlSignedNull:      "dml.NullInt64",
 		idxMysqlSignedNotNull:   "int64",
 
-		idxProtobufUnsignedNull:    "github.com/corestoreio/csfw/sql/dml.NullInt64",
-		idxProtobufUnsignedNotNull: "uint32",
-		idxProtobufSignedNull:      "github.com/corestoreio/csfw/sql/dml.NullInt64",
-		idxProtobufSignedNotNull:   "int32",
+		idxProtobufUnsignedNull:    "github.com/corestoreio/pkg/sql/dml.NullInt64",
+		idxProtobufUnsignedNotNull: "uint64",
+		idxProtobufSignedNull:      "github.com/corestoreio/pkg/sql/dml.NullInt64",
+		idxProtobufSignedNotNull:   "int64",
 	}
 	goTypeFloat64 = [...]string{
 		idxMysqlUnsignedNull:    "dml.NullFloat64",
@@ -71,9 +71,9 @@ var (
 		idxMysqlSignedNull:      "dml.NullFloat64",
 		idxMysqlSignedNotNull:   "float64",
 
-		idxProtobufUnsignedNull:    "github.com/corestoreio/csfw/sql/dml.NullFloat64",
+		idxProtobufUnsignedNull:    "github.com/corestoreio/pkg/sql/dml.NullFloat64",
 		idxProtobufUnsignedNotNull: "double",
-		idxProtobufSignedNull:      "github.com/corestoreio/csfw/sql/dml.NullFloat64",
+		idxProtobufSignedNull:      "github.com/corestoreio/pkg/sql/dml.NullFloat64",
 		idxProtobufSignedNotNull:   "double",
 	}
 	goTypeTime = [...]string{
@@ -82,9 +82,9 @@ var (
 		idxMysqlSignedNull:      "dml.NullTime",
 		idxMysqlSignedNotNull:   "time.Time",
 
-		idxProtobufUnsignedNull:    "google.protobuf.Timestamp",
+		idxProtobufUnsignedNull:    "github.com/corestoreio/pkg/sql/dml.NullTime",
 		idxProtobufUnsignedNotNull: "google.protobuf.Timestamp",
-		idxProtobufSignedNull:      "google.protobuf.Timestamp",
+		idxProtobufSignedNull:      "github.com/corestoreio/pkg/sql/dml.NullTime",
 		idxProtobufSignedNotNull:   "google.protobuf.Timestamp",
 	}
 	goTypeString = [...]string{
@@ -93,9 +93,9 @@ var (
 		idxMysqlSignedNull:      "dml.NullString",
 		idxMysqlSignedNotNull:   "string",
 
-		idxProtobufUnsignedNull:    "string",
+		idxProtobufUnsignedNull:    "github.com/corestoreio/pkg/sql/dml.NullString",
 		idxProtobufUnsignedNotNull: "string",
-		idxProtobufSignedNull:      "string",
+		idxProtobufSignedNull:      "github.com/corestoreio/pkg/sql/dml.NullString",
 		idxProtobufSignedNotNull:   "string",
 	}
 	goTypeBool = [...]string{
@@ -104,9 +104,9 @@ var (
 		idxMysqlSignedNull:      "dml.NullBool",
 		idxMysqlSignedNotNull:   "bool",
 
-		idxProtobufUnsignedNull:    "github.com/corestoreio/csfw/sql/dml.NullBool",
+		idxProtobufUnsignedNull:    "github.com/corestoreio/pkg/sql/dml.NullBool",
 		idxProtobufUnsignedNotNull: "bool",
-		idxProtobufSignedNull:      "github.com/corestoreio/csfw/sql/dml.NullBool",
+		idxProtobufSignedNull:      "github.com/corestoreio/pkg/sql/dml.NullBool",
 		idxProtobufSignedNotNull:   "bool",
 	}
 	goTypeDecimal = [...]string{
@@ -115,10 +115,10 @@ var (
 		idxMysqlSignedNull:      "dml.Decimal",
 		idxMysqlSignedNotNull:   "dml.Decimal",
 
-		idxProtobufUnsignedNull:    "github.com/corestoreio/csfw/sql/dml.Decimal",
-		idxProtobufUnsignedNotNull: "github.com/corestoreio/csfw/sql/dml.Decimal",
-		idxProtobufSignedNull:      "github.com/corestoreio/csfw/sql/dml.Decimal",
-		idxProtobufSignedNotNull:   "github.com/corestoreio/csfw/sql/dml.Decimal",
+		idxProtobufUnsignedNull:    "github.com/corestoreio/pkg/sql/dml.Decimal",
+		idxProtobufUnsignedNotNull: "github.com/corestoreio/pkg/sql/dml.Decimal",
+		idxProtobufSignedNull:      "github.com/corestoreio/pkg/sql/dml.Decimal",
+		idxProtobufSignedNotNull:   "github.com/corestoreio/pkg/sql/dml.Decimal",
 	}
 	goTypeByte = [...]string{
 		idxMysqlUnsignedNull:    "[]byte",
@@ -287,10 +287,14 @@ func toProtoCustomType(c *ddl.Column) string {
 		fmt.Fprintf(&buf, `,(gogoproto.customtype)=%q`, pt)
 	}
 	if pt == "google.protobuf.Timestamp" {
-		fmt.Fprint(&buf, ",(gogoproto.stdtime)=true")
+		fmt.Fprint(&buf, ",(gogoproto.stdtime)=true,(gogoproto.nullable)=false")
 	}
 	if c.IsNull() {
-		fmt.Fprint(&buf, ",(gogoproto.nullable)=true")
+		// Indeed nullable Go Types must be not-nullable in Protobuf because we
+		// have a non-pointer struct type which contains the field Valid.
+		// Protobuf treats nullable fields as pointer fields, but that is
+		// ridiculous.
+		fmt.Fprint(&buf, ",(gogoproto.nullable)=false")
 	}
 	return buf.String()
 }

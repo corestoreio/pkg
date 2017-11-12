@@ -17,8 +17,8 @@ package dmlgen
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/sql/ddl"
-	"github.com/corestoreio/csfw/sql/dml"
+	"github.com/corestoreio/pkg/sql/ddl"
+	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/stretchr/testify/require"
 )
 

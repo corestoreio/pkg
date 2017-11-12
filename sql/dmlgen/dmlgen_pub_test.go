@@ -20,11 +20,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/corestoreio/csfw/sql/ddl"
-	"github.com/corestoreio/csfw/sql/dml"
-	"github.com/corestoreio/csfw/sql/dmlgen"
-	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/sql/ddl"
+	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/sql/dmlgen"
+	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -98,8 +98,9 @@ func TestTables_WithAllTypes(t *testing.T) {
 	))
 
 	ts, err := dmlgen.NewTables("testdata",
-		dmlgen.WithEncoder("dmlgen_types", "json", "binary", "gob", "protobuf"),
+		dmlgen.WithEncoder("dmlgen_types", "text", "binary", "protobuf"),
 		dmlgen.WithStructTags("dmlgen_types", "json", "protobuf"),
+		dmlgen.WithStructComment("dmlgen_types", "Just another comment.\n//easyjson:json"),
 		dmlgen.WithUniquifiedColumns("dmlgen_types", "col_longtext_2", "col_int_1", "col_int_2", "has_smallint_5", "col_date_2", "col_blob"),
 		dmlgen.WithLoadColumns(context.Background(), db.DB, "dmlgen_types"),
 	)
@@ -117,7 +118,7 @@ func TestInfoSchemaForeignKeys(t *testing.T) {
 	defer cstesting.Close(t, db)
 
 	ts, err := dmlgen.NewTables("testdata",
-		dmlgen.WithEncoder("KEY_COLUMN_USAGE", "json", "binary", "gob"),
+		dmlgen.WithEncoder("KEY_COLUMN_USAGE", "text", "binary"),
 		dmlgen.WithUniquifiedColumns("KEY_COLUMN_USAGE", "TABLE_NAME", "COLUMN_NAME"),
 		dmlgen.WithLoadColumns(context.Background(), db.DB, "KEY_COLUMN_USAGE"),
 	)
@@ -138,7 +139,7 @@ func TestCustomerEntity(t *testing.T) {
 
 	ctx := context.Background()
 	ts, err := dmlgen.NewTables("testdata",
-		dmlgen.WithEncoder("customer_entity", "json", "protobuf"),
+		dmlgen.WithEncoder("customer_entity", "text", "protobuf"),
 		dmlgen.WithColumnAliasesFromForeignKeys(ctx, db.DB),
 		dmlgen.WithLoadColumns(ctx, db.DB, "customer_entity"),
 	)

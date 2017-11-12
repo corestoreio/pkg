@@ -1,16 +1,17 @@
-// Auto generated via github.com/corestoreio/csfw/sql/dmlgen
+// Auto generated via github.com/corestoreio/pkg/sql/dmlgen
 
 package testdata
 
 import (
 	"encoding/json"
-	"github.com/corestoreio/csfw/sql/dml"
-	"github.com/corestoreio/errors"
 	"time"
 
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/sql/dml"
 )
-// CustomerEntity represents a single row for DB table
-// `customer_entity`. Auto generated.
+
+// CustomerEntity represents a single row for DB table `customer_entity`.
+// Auto generated.
 type CustomerEntity struct {
 	EntityID               uint64         // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity Id"
 	WebsiteID              dml.NullInt64  // website_id smallint(5) unsigned NULL MUL DEFAULT 'NULL'  "Website Id"
@@ -197,16 +198,14 @@ func (cc CustomerEntityCollection) EntityIDs(ret ...uint64) []uint64 {
 	return ret
 }
 
+// UnmarshalJSON implements interface json.Unmarshaler.
 func (cc *CustomerEntityCollection) UnmarshalJSON(b []byte) (err error) {
-	// TODO: Replace with easyjson or ffjson
 	return json.Unmarshal(b, cc.Data)
 }
 
+// MarshalJSON implements interface json.Marshaler.
 func (cc *CustomerEntityCollection) MarshalJSON() ([]byte, error) {
-	// TODO: Replace with easyjson or ffjson
 	return json.Marshal(cc.Data)
 }
 
-
-
-
+// TODO add MarshalText and UnmarshalText.

@@ -1,16 +1,19 @@
-// Auto generated via github.com/corestoreio/csfw/sql/dmlgen
+// Auto generated via github.com/corestoreio/pkg/sql/dmlgen
 
 package testdata
 
 import (
 	"encoding/json"
-	"github.com/corestoreio/csfw/sql/dml"
-	"github.com/corestoreio/errors"
 	"time"
+
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/sql/dml"
 )
 
-// DmlgenTypes represents a single row for DB table
-// `dmlgen_types`. Auto generated.
+// DmlgenTypes represents a single row for DB table `dmlgen_types`.
+// Auto generated.
+// Just another comment.
+//easyjson:json
 type DmlgenTypes struct {
 	ID             int64           `json:"id,omitempty" `                // id int(11) NOT NULL PRI  auto_increment ""
 	ColBigint1     dml.NullInt64   `json:"col_bigint_1,omitempty" `      // col_bigint_1 bigint(20) NULL    ""
@@ -168,6 +171,8 @@ func (e *DmlgenTypes) MapColumns(cm *dml.ColumnMap) error {
 
 // DmlgenTypesCollection represents a collection type for DB table dmlgen_types
 // Not thread safe. Auto generated.
+// Just another comment.
+//easyjson:json
 type DmlgenTypesCollection struct {
 	Data             []*DmlgenTypes
 	BeforeMapColumns func(uint64, *DmlgenTypes) error
@@ -365,29 +370,35 @@ func (cc DmlgenTypesCollection) HasSmallint5s(ret ...bool) []bool {
 	return ret
 }
 
+// UnmarshalJSON implements interface json.Unmarshaler.
 func (cc *DmlgenTypesCollection) UnmarshalJSON(b []byte) (err error) {
-	// TODO: Replace with easyjson or ffjson
 	return json.Unmarshal(b, cc.Data)
 }
 
+// MarshalJSON implements interface json.Marshaler.
 func (cc *DmlgenTypesCollection) MarshalJSON() ([]byte, error) {
-	// TODO: Replace with easyjson or ffjson
 	return json.Marshal(cc.Data)
 }
 
+// TODO add MarshalText and UnmarshalText.
+// UnmarshalBinary implements encoding.BinaryUnmarshaler.
 func (cc *DmlgenTypesCollection) UnmarshalBinary(data []byte) error {
-	return errors.NewNotImplementedf("[testdata] binary encoding not yet implemented]")
+	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
 }
 
+// MarshalBinary implements encoding.BinaryMarshaler.
 func (cc *DmlgenTypesCollection) MarshalBinary() (data []byte, err error) {
-	// TODO see the custom Marshalers in gogo-protobuf
-	return nil, errors.NewNotImplementedf("[testdata] binary encoding not yet implemented]")
+	return cc.Marshal() // Implemented via github.com/gogo/protobuf
 }
 
+// GobDecode kept for Go 1 compatibility reasons.
+// deprecated in Go 2, use UnmarshalBinary
 func (cc *DmlgenTypesCollection) GobDecode(data []byte) error {
-	return errors.NewNotImplementedf("[testdata] binary encoding not yet implemented]")
+	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
 }
 
+// GobEncode kept for Go 1 compatibility reasons.
+// deprecated in Go 2, use MarshalBinary
 func (cc *DmlgenTypesCollection) GobEncode() ([]byte, error) {
-	return nil, errors.NewNotImplementedf("[testdata] binary encoding not yet implemented]")
+	return cc.Marshal() // Implemented via github.com/gogo/protobuf
 }
