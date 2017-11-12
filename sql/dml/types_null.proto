@@ -1,0 +1,64 @@
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package dml;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "CoreStore.Protobuf.NullType";
+option cc_enable_arenas = true;
+option go_package = "nulltype";
+option java_package = "com.corestore.protobuf";
+option java_outer_classname = "NullTypesProto";
+option java_multiple_files = true;
+option objc_class_prefix = "CSPB";
+
+// Decimal represents the MySQL/MariaDB decimal column type.
+message Decimal {
+	uint64	precision = 1;
+	int32	scale = 2; // Number of decimals after the radix
+	bool	negative = 3;
+	bool	valid = 4; // If false, null must be handled
+	// Quote if true JSON marshaling will quote the returned number and creates
+	// a string. JavaScript floats are only 53 bits.
+	bool	quote = 5;
+}
+
+message NullBool {
+	bool	bool = 1;
+	bool	valid = 2;
+}
+
+message NullFloat64 {
+	double	float64 = 1;
+	bool	valid = 2;
+}
+
+message NullInt64 {
+	int64	int64 = 1;
+	bool	valid = 2;
+}
+
+message NullString {
+	string	string = 1;
+	bool	valid = 2;
+}
+
+message NullTime {
+	google.protobuf.Timestamp time = 1 [(gogoproto.stdtime)=true,(gogoproto.nullable)=false];
+	bool	valid = 2;
+}

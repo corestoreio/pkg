@@ -47,8 +47,8 @@ const (
 // https://dev.mysql.com/doc/refman/5.7/en/precision-math-decimal-characteristics.html
 // https://dev.mysql.com/doc/refman/5.7/en/floating-point-types.html
 type Decimal struct {
-	Precision uint64
-	Scale     int32
+	Precision uint64 // The value itself
+	Scale     int32 // Number of digits
 	Negative  bool
 	Valid     bool
 	// Quote if true JSON marshaling will quote the returned number and creates
