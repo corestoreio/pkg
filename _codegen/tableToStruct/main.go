@@ -17,9 +17,9 @@ package main
 import (
 	"sync"
 
-	"github.com/corestoreio/cspkg/codegen"
-	"github.com/corestoreio/cspkg/storage/csdb"
-	"github.com/corestoreio/cspkg/storage/dbr"
+	"github.com/corestoreio/pkg/codegen"
+	"github.com/corestoreio/pkg/storage/csdb"
+	"github.com/corestoreio/pkg/storage/dbr"
 	"github.com/corestoreio/errors"
 )
 

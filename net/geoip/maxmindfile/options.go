@@ -17,9 +17,9 @@ package maxmindfile
 import (
 	"os"
 
-	"github.com/corestoreio/cspkg/config"
-	"github.com/corestoreio/cspkg/config/cfgmodel"
-	"github.com/corestoreio/cspkg/net/geoip"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/config/cfgmodel"
+	"github.com/corestoreio/pkg/net/geoip"
 	"github.com/corestoreio/errors"
 )
 

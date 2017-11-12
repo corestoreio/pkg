@@ -17,9 +17,9 @@ package backendjwt_test
 import (
 	"testing"
 
-	"github.com/corestoreio/cspkg/config/cfgmock"
-	"github.com/corestoreio/cspkg/net/jwt/backendjwt"
-	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/pkg/config/cfgmock"
+	"github.com/corestoreio/pkg/net/jwt/backendjwt"
+	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

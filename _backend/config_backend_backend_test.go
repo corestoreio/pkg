@@ -3,10 +3,10 @@ package backend_test
 import (
 	"testing"
 
-	"github.com/corestoreio/cspkg/backend"
-	"github.com/corestoreio/cspkg/config/cfgmock"
-	"github.com/corestoreio/cspkg/config/cfgmodel"
-	"github.com/corestoreio/cspkg/config/source"
+	"github.com/corestoreio/pkg/backend"
+	"github.com/corestoreio/pkg/config/cfgmock"
+	"github.com/corestoreio/pkg/config/cfgmodel"
+	"github.com/corestoreio/pkg/config/source"
 )
 
 // benchmarkGlobalStruct trick the compiler to not optimize anything

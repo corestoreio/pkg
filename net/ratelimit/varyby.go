@@ -18,8 +18,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/corestoreio/cspkg/net/request"
-	"github.com/corestoreio/cspkg/util/bufferpool"
+	"github.com/corestoreio/pkg/net/request"
+	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
 // VaryByer is called for each request to generate a key for the limiter. If it

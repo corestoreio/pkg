@@ -1,6 +1,6 @@
 goos: darwin
 goarch: amd64
-pkg: github.com/corestoreio/cspkg/util/csjwt
+pkg: github.com/corestoreio/pkg/util/csjwt
 BenchmarkVerificationGetMethod-4    	20000000	        94.8 ns/op	      16 B/op	       1 allocs/op
 BenchmarkVerificationGetMethod-4    	20000000	        94.8 ns/op	      16 B/op	       1 allocs/op
 BenchmarkVerificationGetMethod-4    	20000000	        94.1 ns/op	      16 B/op	       1 allocs/op
@@ -104,4 +104,4 @@ BenchmarkRS512Verify-4              	   50000	     37907 ns/op	    5810 B/op	   
 BenchmarkRS512Verify-4              	   50000	     38334 ns/op	    5810 B/op	      15 allocs/op
 BenchmarkRS512Verify-4              	   50000	     38323 ns/op	    5810 B/op	      15 allocs/op
 PASS
-ok  	github.com/corestoreio/cspkg/util/csjwt	181.351s
+ok  	github.com/corestoreio/pkg/util/csjwt	181.351s

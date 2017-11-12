@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/corestoreio/cspkg/sql/myreplicator"
+	"github.com/corestoreio/pkg/sql/myreplicator"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 )

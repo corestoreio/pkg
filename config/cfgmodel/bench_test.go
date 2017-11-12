@@ -18,8 +18,8 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/corestoreio/cspkg/config/cfgmock"
-	"github.com/corestoreio/cspkg/config/cfgmodel"
+	"github.com/corestoreio/pkg/config/cfgmock"
+	"github.com/corestoreio/pkg/config/cfgmodel"
 )
 
 var benchmarkStr string

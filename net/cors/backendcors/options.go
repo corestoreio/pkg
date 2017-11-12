@@ -17,8 +17,8 @@ package backendcors
 import (
 	"regexp"
 
-	"github.com/corestoreio/cspkg/config"
-	"github.com/corestoreio/cspkg/net/cors"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/net/cors"
 	"github.com/corestoreio/errors"
 )
 

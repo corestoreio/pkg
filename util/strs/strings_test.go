@@ -17,7 +17,7 @@ package strs_test
 import (
 	"testing"
 
-	"github.com/corestoreio/cspkg/util/strs"
+	"github.com/corestoreio/pkg/util/strs"
 	"github.com/stretchr/testify/assert"
 )
 

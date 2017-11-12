@@ -8,7 +8,7 @@ package naughtystrings
 import (
 	"encoding/json"
 
-	"github.com/corestoreio/cspkg/util/naughtystrings/internal"
+	"github.com/corestoreio/pkg/util/naughtystrings/internal"
 )
 
 var base64encoded, unencoded []string

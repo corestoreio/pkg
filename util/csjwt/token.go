@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/corestoreio/cspkg/util/conv"
+	"github.com/corestoreio/pkg/util/conv"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 )

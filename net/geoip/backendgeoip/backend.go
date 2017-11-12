@@ -15,10 +15,10 @@
 package backendgeoip
 
 import (
-	"github.com/corestoreio/cspkg/config/cfgmodel"
-	"github.com/corestoreio/cspkg/config/cfgsource"
-	"github.com/corestoreio/cspkg/config/element"
-	"github.com/corestoreio/cspkg/net/geoip"
+	"github.com/corestoreio/pkg/config/cfgmodel"
+	"github.com/corestoreio/pkg/config/cfgsource"
+	"github.com/corestoreio/pkg/config/element"
+	"github.com/corestoreio/pkg/net/geoip"
 )
 
 // Configuration just exported for the sake of documentation. See fields for more

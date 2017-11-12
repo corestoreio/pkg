@@ -21,8 +21,8 @@ package ccd
 // Auto generated via tableToStruct
 
 import (
-	"github.com/corestoreio/cspkg/storage/csdb"
-	"github.com/corestoreio/cspkg/util/null"
+	"github.com/corestoreio/pkg/storage/csdb"
+	"github.com/corestoreio/pkg/util/null"
 )
 
 // TableIndex... is the index to a table. These constants are guaranteed

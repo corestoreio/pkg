@@ -3,4 +3,4 @@ BenchmarkWithToken_HMAC_InMemoryBL-4                        	  200000	      7579
 BenchmarkWithToken_RSAGenerator_2048-4                      	   30000	     54919 ns/op	    9180 B/op	      92 allocs/op
 BenchmarkWithRunMode_MultiTokenAndScope-4                   	  200000	      8806 ns/op	    3620 B/op	      47 allocs/op
 PASS
-ok  	github.com/corestoreio/cspkg/net/jwt	17.968s
+ok  	github.com/corestoreio/pkg/net/jwt	17.968s

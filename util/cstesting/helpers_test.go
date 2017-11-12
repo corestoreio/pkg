@@ -19,7 +19,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/corestoreio/cspkg/util/cstesting"
+	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

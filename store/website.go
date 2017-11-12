@@ -17,7 +17,7 @@ package store
 import (
 	"encoding/json"
 
-	"github.com/corestoreio/cspkg/config"
+	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/errors"
 )
 

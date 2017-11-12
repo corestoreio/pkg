@@ -26,7 +26,7 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/corestoreio/cspkg/net/mw"
+	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/log"
 	loghttp "github.com/corestoreio/log/http"
 )

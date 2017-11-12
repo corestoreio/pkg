@@ -21,9 +21,9 @@ import (
 
 	"net/http/httptest"
 
-	csnet "github.com/corestoreio/cspkg/net"
-	"github.com/corestoreio/cspkg/net/auth"
-	"github.com/corestoreio/cspkg/net/request"
+	csnet "github.com/corestoreio/pkg/net"
+	"github.com/corestoreio/pkg/net/auth"
+	"github.com/corestoreio/pkg/net/request"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -17,10 +17,10 @@ package store_test
 import (
 	"testing"
 
-	"github.com/corestoreio/cspkg/storage/csdb"
-	"github.com/corestoreio/cspkg/store"
-	"github.com/corestoreio/cspkg/util/cstesting"
-	"github.com/corestoreio/cspkg/util/null"
+	"github.com/corestoreio/pkg/storage/csdb"
+	"github.com/corestoreio/pkg/store"
+	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/util/null"
 	"github.com/stretchr/testify/assert"
 )
 

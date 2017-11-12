@@ -24,9 +24,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/cspkg/net/geoip"
-	"github.com/corestoreio/cspkg/storage/transcache"
-	"github.com/corestoreio/cspkg/util/cstesting"
+	"github.com/corestoreio/pkg/net/geoip"
+	"github.com/corestoreio/pkg/storage/transcache"
+	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

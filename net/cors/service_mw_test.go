@@ -18,8 +18,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/corestoreio/cspkg/net/cors"
-	"github.com/corestoreio/cspkg/net/mw"
+	"github.com/corestoreio/pkg/net/cors"
+	"github.com/corestoreio/pkg/net/mw"
 )
 
 func TestService_WithCORS_MWAdapter(t *testing.T) {

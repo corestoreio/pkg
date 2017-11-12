@@ -22,9 +22,9 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/corestoreio/cspkg/net/mw"
-	"github.com/corestoreio/cspkg/net/request"
-	"github.com/corestoreio/cspkg/util/cstesting"
+	"github.com/corestoreio/pkg/net/mw"
+	"github.com/corestoreio/pkg/net/request"
+	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/stretchr/testify/assert"
 )
 

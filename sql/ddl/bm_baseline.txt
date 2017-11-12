@@ -1,6 +1,6 @@
 goos: darwin
 goarch: amd64
-pkg: github.com/corestoreio/cspkg/sql/ddl
+pkg: github.com/corestoreio/pkg/sql/ddl
 BenchmarkTableName/Short_with_prefix_suffix-4         	 3000000	       402 ns/op	      64 B/op	       2 allocs/op
 BenchmarkTableName/Short_with_prefix_suffix-4         	 3000000	       410 ns/op	      64 B/op	       2 allocs/op
 BenchmarkTableName/Short_with_prefix_suffix-4         	 5000000	       403 ns/op	      64 B/op	       2 allocs/op
@@ -50,4 +50,4 @@ BenchmarkVariables-4                                  	    2000	    935999 ns/op
 BenchmarkVariables-4                                  	    2000	    951638 ns/op	   19795 B/op	     755 allocs/op
 BenchmarkVariables-4                                  	    2000	    935709 ns/op	   19794 B/op	     755 allocs/op
 PASS
-ok  	github.com/corestoreio/cspkg/sql/ddl	94.912s
+ok  	github.com/corestoreio/pkg/sql/ddl	94.912s

@@ -21,10 +21,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/cspkg/config/cfgpath"
-	"github.com/corestoreio/cspkg/storage/dbr"
-	"github.com/corestoreio/cspkg/util"
-	"github.com/corestoreio/cspkg/util/cstesting"
+	"github.com/corestoreio/pkg/config/cfgpath"
+	"github.com/corestoreio/pkg/storage/dbr"
+	"github.com/corestoreio/pkg/util"
+	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -20,13 +20,13 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/corestoreio/cspkg/config/cfgmock"
-	"github.com/corestoreio/cspkg/net/geoip"
-	"github.com/corestoreio/cspkg/net/geoip/backendgeoip"
-	"github.com/corestoreio/cspkg/net/geoip/maxmindfile"
-	"github.com/corestoreio/cspkg/net/geoip/maxmindwebservice"
-	"github.com/corestoreio/cspkg/store/scope"
-	"github.com/corestoreio/cspkg/util/cstesting"
+	"github.com/corestoreio/pkg/config/cfgmock"
+	"github.com/corestoreio/pkg/net/geoip"
+	"github.com/corestoreio/pkg/net/geoip/backendgeoip"
+	"github.com/corestoreio/pkg/net/geoip/maxmindfile"
+	"github.com/corestoreio/pkg/net/geoip/maxmindwebservice"
+	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util/cstesting"
 )
 
 func BenchmarkWithAlternativeRedirect(b *testing.B) {

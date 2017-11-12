@@ -15,9 +15,9 @@
 package user
 
 import (
-	"github.com/corestoreio/cspkg/config"
-	"github.com/corestoreio/cspkg/storage/dbr"
-	"github.com/corestoreio/cspkg/util/crypto"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/storage/dbr"
+	"github.com/corestoreio/pkg/util/crypto"
 )
 
 // @todo app/code/Magento/User/Model/User.php

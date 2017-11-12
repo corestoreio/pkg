@@ -17,9 +17,9 @@ package runmode
 import (
 	"net/http"
 
-	"github.com/corestoreio/cspkg/net/mw"
-	"github.com/corestoreio/cspkg/store"
-	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/pkg/net/mw"
+	"github.com/corestoreio/pkg/store"
+	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	loghttp "github.com/corestoreio/log/http"

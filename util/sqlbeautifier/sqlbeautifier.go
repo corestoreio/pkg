@@ -19,7 +19,7 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/corestoreio/cspkg/util/sqlparser"
+	"github.com/corestoreio/pkg/util/sqlparser"
 )
 
 // FromReader reads data from the Reader interface and converts that data

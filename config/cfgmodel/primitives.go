@@ -15,9 +15,9 @@
 package cfgmodel
 
 import (
-	"github.com/corestoreio/cspkg/config"
-	"github.com/corestoreio/cspkg/store/scope"
-	"github.com/corestoreio/cspkg/util/conv"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util/conv"
 	"github.com/corestoreio/errors"
 )
 

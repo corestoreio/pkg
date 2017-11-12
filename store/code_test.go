@@ -17,7 +17,7 @@ package store_test
 import (
 	"testing"
 
-	"github.com/corestoreio/cspkg/store"
+	"github.com/corestoreio/pkg/store"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

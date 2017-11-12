@@ -14,7 +14,7 @@
 
 package directory_test
 
-import "github.com/corestoreio/cspkg/directory"
+import "github.com/corestoreio/pkg/directory"
 
 // backend overall backend models for all tests
 var backend *directory.PkgBackend

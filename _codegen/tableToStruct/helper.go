@@ -17,11 +17,11 @@ package main
 import (
 	"sync"
 
-	"github.com/corestoreio/cspkg/codegen"
-	"github.com/corestoreio/cspkg/storage/csdb"
-	"github.com/corestoreio/cspkg/storage/dbr"
-	"github.com/corestoreio/cspkg/util"
-	"github.com/corestoreio/cspkg/util/magento"
+	"github.com/corestoreio/pkg/codegen"
+	"github.com/corestoreio/pkg/storage/csdb"
+	"github.com/corestoreio/pkg/storage/dbr"
+	"github.com/corestoreio/pkg/util"
+	"github.com/corestoreio/pkg/util/magento"
 )
 
 const MethodRecvPrefix = "parent"

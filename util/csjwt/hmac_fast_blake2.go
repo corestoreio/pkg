@@ -19,7 +19,7 @@ import (
 	"crypto/hmac"
 	"hash"
 
-	"github.com/corestoreio/cspkg/util/hashpool"
+	"github.com/corestoreio/pkg/util/hashpool"
 	"github.com/corestoreio/errors"
 	_ "golang.org/x/crypto/blake2b"
 )

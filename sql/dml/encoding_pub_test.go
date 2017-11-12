@@ -17,7 +17,7 @@ package dml_test
 import (
 	"encoding/json"
 
-	"github.com/corestoreio/cspkg/sql/dml"
+	"github.com/corestoreio/pkg/sql/dml"
 )
 
 func init() {

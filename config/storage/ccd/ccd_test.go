@@ -21,11 +21,11 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/corestoreio/cspkg/config"
-	"github.com/corestoreio/cspkg/config/cfgpath"
-	"github.com/corestoreio/cspkg/config/storage/ccd"
-	"github.com/corestoreio/cspkg/store/scope"
-	"github.com/corestoreio/cspkg/util/cstesting"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/config/cfgpath"
+	"github.com/corestoreio/pkg/config/storage/ccd"
+	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/stretchr/testify/assert"
 )
 

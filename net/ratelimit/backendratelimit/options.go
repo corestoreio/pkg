@@ -15,8 +15,8 @@
 package backendratelimit
 
 import (
-	"github.com/corestoreio/cspkg/config"
-	"github.com/corestoreio/cspkg/net/ratelimit"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/net/ratelimit"
 	"github.com/corestoreio/errors"
 )
 

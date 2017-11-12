@@ -15,10 +15,10 @@
 package ccd
 
 import (
-	"github.com/corestoreio/cspkg/config"
-	"github.com/corestoreio/cspkg/config/cfgpath"
-	"github.com/corestoreio/cspkg/storage/dbr"
-	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/config/cfgpath"
+	"github.com/corestoreio/pkg/storage/dbr"
+	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 )

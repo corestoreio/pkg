@@ -18,7 +18,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/corestoreio/cspkg/util/naughtystrings"
+	"github.com/corestoreio/pkg/util/naughtystrings"
 )
 
 func TestEscapeWith_NaughtyStrings(t *testing.T) {

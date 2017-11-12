@@ -1,3 +1,3 @@
 BenchmarkWithCompressorGZIP_1024B-4   	   10000	    124327 ns/op	   11292 B/op	       4 allocs/op
 PASS
-ok  	github.com/corestoreio/cspkg/net/mw	3.348s
+ok  	github.com/corestoreio/pkg/net/mw	3.348s

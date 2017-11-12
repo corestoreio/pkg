@@ -49,4 +49,4 @@ Benchmark_SingleFloat64GetStore-4   	 1000000	      1461 ns/op	      32 B/op	   
 Benchmark_SingleFloat64GetStore-4   	 1000000	      1519 ns/op	      32 B/op	       1 allocs/op
 Benchmark_SingleFloat64GetStore-4   	 1000000	      1499 ns/op	      32 B/op	       1 allocs/op
 PASS
-ok  	github.com/corestoreio/cspkg/config/cfgmodel	87.766s
+ok  	github.com/corestoreio/pkg/config/cfgmodel	87.766s

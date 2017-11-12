@@ -3,7 +3,7 @@ package binlogsync
 import (
 	"context"
 
-	"github.com/corestoreio/cspkg/sql/ddl"
+	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"golang.org/x/sync/errgroup"

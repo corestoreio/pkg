@@ -14,7 +14,7 @@
 
 package catattr
 
-import "github.com/corestoreio/cspkg/eav"
+import "github.com/corestoreio/pkg/eav"
 
 // ProductFrontendImage @todo
 // @see magento2/site/app/code/Magento/Catalog/Model/Product/Attribute/Frontend/Image.php

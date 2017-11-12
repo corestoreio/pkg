@@ -21,9 +21,9 @@ import (
 	"io"
 	"time"
 
-	"github.com/corestoreio/cspkg/config"
-	"github.com/corestoreio/cspkg/util"
-	"github.com/corestoreio/cspkg/util/log"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/util"
+	"github.com/corestoreio/pkg/util/log"
 	"github.com/go-gomail/gomail"
 )
 

@@ -24,9 +24,9 @@ import (
 	"database/sql"
 	"sort"
 
-	"github.com/corestoreio/cspkg/storage/csdb"
-	"github.com/corestoreio/cspkg/storage/dbr"
-	"github.com/corestoreio/cspkg/util/null"
+	"github.com/corestoreio/pkg/storage/csdb"
+	"github.com/corestoreio/pkg/storage/dbr"
+	"github.com/corestoreio/pkg/util/null"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 )

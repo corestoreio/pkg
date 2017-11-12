@@ -18,7 +18,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/pkg/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 

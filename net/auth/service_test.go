@@ -23,7 +23,7 @@ package auth_test
 import (
 	"testing"
 
-	"github.com/corestoreio/cspkg/net/auth"
+	"github.com/corestoreio/pkg/net/auth"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

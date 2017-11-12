@@ -18,7 +18,7 @@ import (
 	"net"
 	"testing"
 
-	csnet "github.com/corestoreio/cspkg/net"
+	csnet "github.com/corestoreio/pkg/net"
 	"github.com/stretchr/testify/assert"
 )
 

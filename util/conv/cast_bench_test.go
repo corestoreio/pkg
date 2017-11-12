@@ -6,7 +6,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/corestoreio/cspkg/config/cfgpath"
+	"github.com/corestoreio/pkg/config/cfgpath"
 )
 
 var benchmarkToString string

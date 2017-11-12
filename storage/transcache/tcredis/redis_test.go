@@ -19,8 +19,8 @@ import (
 	"testing"
 
 	"github.com/alicebob/miniredis"
-	"github.com/corestoreio/cspkg/storage/transcache"
-	"github.com/corestoreio/cspkg/util"
+	"github.com/corestoreio/pkg/storage/transcache"
+	"github.com/corestoreio/pkg/util"
 	"github.com/corestoreio/errors"
 	"github.com/garyburd/redigo/redis"
 	"github.com/stretchr/testify/assert"

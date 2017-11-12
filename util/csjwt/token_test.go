@@ -19,8 +19,8 @@ import (
 
 	"bytes"
 
-	"github.com/corestoreio/cspkg/util/csjwt"
-	"github.com/corestoreio/cspkg/util/csjwt/jwtclaim"
+	"github.com/corestoreio/pkg/util/csjwt"
+	"github.com/corestoreio/pkg/util/csjwt/jwtclaim"
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/log/logw"
 	"github.com/stretchr/testify/assert"

@@ -14,7 +14,7 @@
 
 package cfgpath
 
-import "github.com/corestoreio/cspkg/util/bufferpool"
+import "github.com/corestoreio/pkg/util/bufferpool"
 
 // size of a route including scope and ID is: 255 (path) + 11 (ID) + 8 (strScope), see core_config_data table
 var bufPool = bufferpool.New(320)

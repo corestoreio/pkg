@@ -11,7 +11,7 @@ import (
 	"io"
 	"unicode/utf8"
 
-	"github.com/corestoreio/cspkg/util/sqlparser/dependency/hack"
+	"github.com/corestoreio/pkg/util/sqlparser/dependency/hack"
 )
 
 // ChunkedWriter has the same interface as bytes.Buffer's write functions.

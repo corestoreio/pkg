@@ -23,10 +23,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/corestoreio/cspkg/net/responseproxy"
-	"github.com/corestoreio/cspkg/store/scope"
-	"github.com/corestoreio/cspkg/util/bufferpool"
-	"github.com/corestoreio/cspkg/util/hashpool"
+	"github.com/corestoreio/pkg/net/responseproxy"
+	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util/bufferpool"
+	"github.com/corestoreio/pkg/util/hashpool"
 	"github.com/corestoreio/errors"
 )
 

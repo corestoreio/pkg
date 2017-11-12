@@ -3,8 +3,8 @@
 package googleoptimizer
 
 import (
-	"github.com/corestoreio/cspkg/config/element"
-	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/pkg/config/element"
+	"github.com/corestoreio/pkg/store/scope"
 )
 
 // ConfigStructure global configuration structure for this package.

@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/corestoreio/cspkg/config/cfgpath"
-	"github.com/corestoreio/cspkg/storage/csdb"
-	"github.com/corestoreio/cspkg/store/scope"
-	"github.com/corestoreio/cspkg/util/conv"
-	"github.com/corestoreio/cspkg/util/null"
+	"github.com/corestoreio/pkg/config/cfgpath"
+	"github.com/corestoreio/pkg/storage/csdb"
+	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util/conv"
+	"github.com/corestoreio/pkg/util/null"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 )

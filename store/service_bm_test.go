@@ -17,10 +17,10 @@ package store_test
 import (
 	"testing"
 
-	"github.com/corestoreio/cspkg/config/cfgmock"
-	"github.com/corestoreio/cspkg/store"
-	"github.com/corestoreio/cspkg/store/scope"
-	"github.com/corestoreio/cspkg/store/storemock"
+	"github.com/corestoreio/pkg/config/cfgmock"
+	"github.com/corestoreio/pkg/store"
+	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/store/storemock"
 )
 
 // benchmarkStoreService refactor and use a function which generates a huge

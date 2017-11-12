@@ -17,7 +17,7 @@ package dml_test
 import (
 	"testing"
 
-	"github.com/corestoreio/cspkg/sql/dml"
+	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

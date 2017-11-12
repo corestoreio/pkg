@@ -9,4 +9,4 @@ BenchmarkParseConnection-4   	  500000	      2923 ns/op	     784 B/op	      14 a
 BenchmarkParseConnection-4   	  500000	      2946 ns/op	     784 B/op	      14 allocs/op
 BenchmarkParseConnection-4   	  500000	      2984 ns/op	     784 B/op	      14 allocs/op
 PASS
-ok  	github.com/corestoreio/cspkg/net/url	14.937s
+ok  	github.com/corestoreio/pkg/net/url	14.937s

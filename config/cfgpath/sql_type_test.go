@@ -17,9 +17,9 @@
 package cfgpath_test
 
 import (
-	"github.com/corestoreio/cspkg/config/cfgpath"
-	"github.com/corestoreio/cspkg/storage/csdb"
-	"github.com/corestoreio/cspkg/util/null"
+	"github.com/corestoreio/pkg/config/cfgpath"
+	"github.com/corestoreio/pkg/storage/csdb"
+	"github.com/corestoreio/pkg/util/null"
 )
 
 const (

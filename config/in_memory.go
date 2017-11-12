@@ -17,7 +17,7 @@ package config
 import (
 	"sync"
 
-	"github.com/corestoreio/cspkg/config/cfgpath"
+	"github.com/corestoreio/pkg/config/cfgpath"
 	"github.com/corestoreio/errors"
 )
 

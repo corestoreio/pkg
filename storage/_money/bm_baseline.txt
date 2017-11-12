@@ -69,4 +69,4 @@ Benchmark_MoneyNewGetf-4                   	 3000000	       535 ns/op	     176 B
 Benchmark_MoneyNewGetf-4                   	 3000000	       531 ns/op	     176 B/op	       3 allocs/op
 Benchmark_MoneyNewGetf-4                   	 3000000	       528 ns/op	     176 B/op	       3 allocs/op
 PASS
-ok  	github.com/corestoreio/cspkg/storage/money	119.874s
+ok  	github.com/corestoreio/pkg/storage/money	119.874s

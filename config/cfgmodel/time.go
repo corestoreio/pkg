@@ -17,9 +17,9 @@ package cfgmodel
 import (
 	"time"
 
-	"github.com/corestoreio/cspkg/config"
-	"github.com/corestoreio/cspkg/store/scope"
-	"github.com/corestoreio/cspkg/util/conv"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util/conv"
 	"github.com/corestoreio/errors"
 )
 
@@ -35,7 +35,7 @@ func NewTime(path string, opts ...Option) Time {
 // *Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
 // Get is able to parse available time formats as defined in
-// github.com/corestoreio/cspkg/util/conv.StringToDate()
+// github.com/corestoreio/pkg/util/conv.StringToDate()
 func (t Time) Get(sg config.Scoped) (time.Time, error) {
 	// This code must be kept in sync with other Get() functions
 

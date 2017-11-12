@@ -15,11 +15,11 @@
 package backendstore
 
 import (
-	"github.com/corestoreio/cspkg/config"
-	"github.com/corestoreio/cspkg/config/cfgmodel"
-	"github.com/corestoreio/cspkg/config/cfgsource"
-	"github.com/corestoreio/cspkg/config/element"
-	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/config/cfgmodel"
+	"github.com/corestoreio/pkg/config/cfgsource"
+	"github.com/corestoreio/pkg/config/element"
+	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/errors"
 )
 

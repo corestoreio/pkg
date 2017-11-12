@@ -14,7 +14,7 @@
 
 package eav
 
-import "github.com/corestoreio/cspkg/util/bufferpool"
+import "github.com/corestoreio/pkg/util/bufferpool"
 
 // DefaultScopeNames specifies the name of the scopes used in all EAV* function
 // to generate scope based hierarchical fall backs.

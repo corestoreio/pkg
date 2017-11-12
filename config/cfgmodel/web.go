@@ -17,8 +17,8 @@ package cfgmodel
 import (
 	"net/url"
 
-	"github.com/corestoreio/cspkg/config"
-	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/errors"
 )
 

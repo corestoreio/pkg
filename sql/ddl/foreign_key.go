@@ -19,7 +19,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/corestoreio/cspkg/sql/dml"
+	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/errors"
 )
 

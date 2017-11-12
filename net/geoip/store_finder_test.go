@@ -15,9 +15,9 @@
 package geoip_test
 
 import (
-	"github.com/corestoreio/cspkg/net/geoip"
-	"github.com/corestoreio/cspkg/store"
-	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/pkg/net/geoip"
+	"github.com/corestoreio/pkg/store"
+	"github.com/corestoreio/pkg/store/scope"
 )
 
 type storeFinderMock struct{}

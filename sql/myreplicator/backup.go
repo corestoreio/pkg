@@ -7,7 +7,7 @@ import (
 	"path"
 	"time"
 
-	"github.com/corestoreio/cspkg/sql/ddl"
+	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/errors"
 )
 

@@ -4,4 +4,4 @@ BenchmarkSectionSliceFindFieldByID1-4            	 3000000	       456 ns/op	    
 BenchmarkSectionSliceFindFieldByID5-4            	  500000	      2774 ns/op	       0 B/op	       0 allocs/op
 BenchmarkSectionSliceFindFieldByID5_Parallel-4   	 1000000	      1304 ns/op	       0 B/op	       0 allocs/op
 PASS
-ok  	github.com/corestoreio/cspkg/config/_config_bm	8.562s
+ok  	github.com/corestoreio/pkg/config/_config_bm	8.562s

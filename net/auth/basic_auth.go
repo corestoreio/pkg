@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/corestoreio/cspkg/net/mw"
-	"github.com/corestoreio/cspkg/store/scope"
-	"github.com/corestoreio/cspkg/util/hashpool"
+	"github.com/corestoreio/pkg/net/mw"
+	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util/hashpool"
 	"github.com/corestoreio/errors"
 )
 

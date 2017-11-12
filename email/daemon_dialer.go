@@ -15,7 +15,7 @@
 package email
 
 import (
-	"github.com/corestoreio/cspkg/config"
+	"github.com/corestoreio/pkg/config"
 	"github.com/go-gomail/gomail"
 )
 

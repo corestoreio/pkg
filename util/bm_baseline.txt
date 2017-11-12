@@ -10,4 +10,4 @@ BenchmarkCamelCaseToUnderscore-4    	 2000000	       791 ns/op	     288 B/op	   
 BenchmarkCamelize-4                 	  500000	      2771 ns/op	     368 B/op	      15 allocs/op
 BenchmarkLintName-4                 	 1000000	      1429 ns/op	     144 B/op	       9 allocs/op
 BenchmarkRandAlnum_18-4             	  100000	     13222 ns/op	    5488 B/op	       3 allocs/op
-ok  	github.com/corestoreio/cspkg/util	19.472s
+ok  	github.com/corestoreio/pkg/util	19.472s

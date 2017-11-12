@@ -14,9 +14,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/corestoreio/cspkg/util/sqlparser/dependency/bson"
-	"github.com/corestoreio/cspkg/util/sqlparser/dependency/bytes2"
-	"github.com/corestoreio/cspkg/util/sqlparser/dependency/hack"
+	"github.com/corestoreio/pkg/util/sqlparser/dependency/bson"
+	"github.com/corestoreio/pkg/util/sqlparser/dependency/bytes2"
+	"github.com/corestoreio/pkg/util/sqlparser/dependency/hack"
 )
 
 var (

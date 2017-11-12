@@ -17,8 +17,8 @@ package store
 import (
 	"net/http"
 
-	"github.com/corestoreio/cspkg/store/scope"
-	"github.com/corestoreio/cspkg/util"
+	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util"
 	"github.com/corestoreio/errors"
 )
 

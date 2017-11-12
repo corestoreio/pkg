@@ -18,7 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/corestoreio/cspkg/config"
+	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 )

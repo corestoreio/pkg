@@ -19,10 +19,10 @@ package config_test
 // for CoreStore but are here to use for testing and benchmarking.
 
 import (
-	"github.com/corestoreio/cspkg/config/cfgpath"
-	"github.com/corestoreio/cspkg/config/element"
-	"github.com/corestoreio/cspkg/storage/text"
-	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/pkg/config/cfgpath"
+	"github.com/corestoreio/pkg/config/element"
+	"github.com/corestoreio/pkg/storage/text"
+	"github.com/corestoreio/pkg/store/scope"
 )
 
 var packageAllConfiguration = element.MustNewConfigurationMerge(

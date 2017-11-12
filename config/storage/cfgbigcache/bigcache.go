@@ -16,8 +16,8 @@ package cfgbigcache
 
 import (
 	"github.com/allegro/bigcache"
-	"github.com/corestoreio/cspkg/config/cfgpath"
-	"github.com/corestoreio/cspkg/util/conv"
+	"github.com/corestoreio/pkg/config/cfgpath"
+	"github.com/corestoreio/pkg/util/conv"
 	"github.com/corestoreio/errors"
 )
 

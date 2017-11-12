@@ -23,12 +23,12 @@ import (
 	"hash/fnv"
 	"testing"
 
-	"github.com/corestoreio/cspkg/config/cfgpath"
+	"github.com/corestoreio/pkg/config/cfgpath"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/corestoreio/cspkg/util/naughtystrings"
-	"github.com/corestoreio/cspkg/util/slices"
+	"github.com/corestoreio/pkg/util/naughtystrings"
+	"github.com/corestoreio/pkg/util/slices"
 )
 
 // These checks, if a type implements an interface, belong into the test package

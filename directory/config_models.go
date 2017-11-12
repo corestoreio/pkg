@@ -15,9 +15,9 @@
 package directory
 
 import (
-	"github.com/corestoreio/cspkg/config"
-	"github.com/corestoreio/cspkg/config/cfgmodel"
-	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/config/cfgmodel"
+	"github.com/corestoreio/pkg/store/scope"
 	"github.com/juju/errors"
 	"golang.org/x/text/currency"
 )

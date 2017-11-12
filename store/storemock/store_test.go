@@ -17,10 +17,10 @@ package storemock_test
 import (
 	"testing"
 
-	"github.com/corestoreio/cspkg/config/cfgmock"
-	"github.com/corestoreio/cspkg/config/cfgpath"
-	"github.com/corestoreio/cspkg/store/scope"
-	"github.com/corestoreio/cspkg/store/storemock"
+	"github.com/corestoreio/pkg/config/cfgmock"
+	"github.com/corestoreio/pkg/config/cfgpath"
+	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/store/storemock"
 	"github.com/stretchr/testify/assert"
 )
 

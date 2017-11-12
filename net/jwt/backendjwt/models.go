@@ -15,10 +15,10 @@
 package backendjwt
 
 import (
-	"github.com/corestoreio/cspkg/config"
-	"github.com/corestoreio/cspkg/config/cfgmodel"
-	"github.com/corestoreio/cspkg/net/jwt"
-	"github.com/corestoreio/cspkg/util/csjwt"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/config/cfgmodel"
+	"github.com/corestoreio/pkg/net/jwt"
+	"github.com/corestoreio/pkg/util/csjwt"
 	"github.com/corestoreio/errors"
 )
 

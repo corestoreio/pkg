@@ -17,9 +17,9 @@ package element
 import (
 	"sort"
 
-	"github.com/corestoreio/cspkg/config/cfgpath"
-	"github.com/corestoreio/cspkg/storage/text"
-	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/pkg/config/cfgpath"
+	"github.com/corestoreio/pkg/storage/text"
+	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/errors"
 )
 

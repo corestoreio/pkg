@@ -20,9 +20,9 @@ const Header = `
 import (
 	"sort"
     {{ if .HasTypeCodeValueTables }}
-	"github.com/corestoreio/cspkg/eav"{{end}}
-	"github.com/corestoreio/cspkg/storage/csdb"
-	"github.com/corestoreio/cspkg/storage/dbr"
+	"github.com/corestoreio/pkg/eav"{{end}}
+	"github.com/corestoreio/pkg/storage/csdb"
+	"github.com/corestoreio/pkg/storage/dbr"
 )
 
 // TableIndex... is the index to a table. These constants are guaranteed

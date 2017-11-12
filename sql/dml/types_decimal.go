@@ -22,8 +22,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/corestoreio/cspkg/util/bufferpool"
-	"github.com/corestoreio/cspkg/util/byteconv"
+	"github.com/corestoreio/pkg/util/bufferpool"
+	"github.com/corestoreio/pkg/util/byteconv"
 	"github.com/corestoreio/errors"
 )
 

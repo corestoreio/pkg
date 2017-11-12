@@ -17,8 +17,8 @@ package config
 import (
 	"time"
 
-	"github.com/corestoreio/cspkg/config/cfgpath"
-	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/pkg/config/cfgpath"
+	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/errors"
 )
 

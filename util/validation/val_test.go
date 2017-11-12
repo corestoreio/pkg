@@ -17,7 +17,7 @@ package validation_test
 import (
 	"testing"
 
-	"github.com/corestoreio/cspkg/util/validation"
+	"github.com/corestoreio/pkg/util/validation"
 	"github.com/stretchr/testify/assert"
 )
 

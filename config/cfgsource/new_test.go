@@ -17,7 +17,7 @@ package cfgsource_test
 import (
 	"testing"
 
-	"github.com/corestoreio/cspkg/config/cfgsource"
+	"github.com/corestoreio/pkg/config/cfgsource"
 	"github.com/corestoreio/errors"
 )
 

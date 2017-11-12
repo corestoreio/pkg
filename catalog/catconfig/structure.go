@@ -15,10 +15,10 @@
 package catconfig
 
 import (
-	"github.com/corestoreio/cspkg/config/cfgpath"
-	"github.com/corestoreio/cspkg/config/element"
-	"github.com/corestoreio/cspkg/storage/text"
-	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/pkg/config/cfgpath"
+	"github.com/corestoreio/pkg/config/element"
+	"github.com/corestoreio/pkg/storage/text"
+	"github.com/corestoreio/pkg/store/scope"
 )
 
 // MustNewConfigStructure same as NewConfigStructure() but panics on error.

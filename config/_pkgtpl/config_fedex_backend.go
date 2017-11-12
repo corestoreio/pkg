@@ -3,8 +3,8 @@
 package fedex
 
 import (
-	"github.com/corestoreio/cspkg/config/cfgmodel"
-	"github.com/corestoreio/cspkg/config/element"
+	"github.com/corestoreio/pkg/config/cfgmodel"
+	"github.com/corestoreio/pkg/config/element"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.

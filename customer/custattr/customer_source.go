@@ -14,7 +14,7 @@
 
 package custattr
 
-import "github.com/corestoreio/cspkg/eav"
+import "github.com/corestoreio/pkg/eav"
 
 var (
 	_ eav.AttributeSourceModeller = (*todoASG)(nil)

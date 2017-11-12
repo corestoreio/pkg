@@ -18,7 +18,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/corestoreio/cspkg/net/request"
+	"github.com/corestoreio/pkg/net/request"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	loghttp "github.com/corestoreio/log/http"

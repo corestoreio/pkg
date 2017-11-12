@@ -17,8 +17,8 @@ package directory_test
 import (
 	std "log"
 
-	"github.com/corestoreio/cspkg/directory"
-	"github.com/corestoreio/cspkg/util/log"
+	"github.com/corestoreio/pkg/directory"
+	"github.com/corestoreio/pkg/util/log"
 )
 
 var debugLogBuf *log.MutexBuffer

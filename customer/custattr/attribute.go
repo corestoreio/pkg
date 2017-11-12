@@ -15,7 +15,7 @@
 package custattr
 
 import (
-	"github.com/corestoreio/cspkg/eav"
+	"github.com/corestoreio/pkg/eav"
 	"github.com/juju/errgo"
 )
 

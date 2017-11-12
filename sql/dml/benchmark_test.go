@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/cspkg/util/bufferpool"
+	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
 var preprocessSink string

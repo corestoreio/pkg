@@ -17,10 +17,10 @@ package store_test
 import (
 	"testing"
 
-	"github.com/corestoreio/cspkg/storage/dbr"
-	"github.com/corestoreio/cspkg/store"
-	"github.com/corestoreio/cspkg/util/cstesting"
-	"github.com/corestoreio/cspkg/util/magento"
+	"github.com/corestoreio/pkg/storage/dbr"
+	"github.com/corestoreio/pkg/store"
+	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/util/magento"
 	"github.com/corestoreio/log"
 )
 

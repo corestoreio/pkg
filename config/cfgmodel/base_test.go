@@ -17,13 +17,13 @@ package cfgmodel
 import (
 	"testing"
 
-	"github.com/corestoreio/cspkg/config"
-	"github.com/corestoreio/cspkg/config/cfgmock"
-	"github.com/corestoreio/cspkg/config/cfgpath"
-	"github.com/corestoreio/cspkg/config/cfgsource"
-	"github.com/corestoreio/cspkg/config/element"
-	"github.com/corestoreio/cspkg/storage/text"
-	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/config/cfgmock"
+	"github.com/corestoreio/pkg/config/cfgpath"
+	"github.com/corestoreio/pkg/config/cfgsource"
+	"github.com/corestoreio/pkg/config/element"
+	"github.com/corestoreio/pkg/storage/text"
+	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

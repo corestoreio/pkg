@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"github.com/SchumacherFM/caddyesi/esitag"
-	"github.com/corestoreio/cspkg/net/url"
+	"github.com/corestoreio/pkg/net/url"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

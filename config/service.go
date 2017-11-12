@@ -17,8 +17,8 @@ package config
 import (
 	"time"
 
-	"github.com/corestoreio/cspkg/config/cfgpath"
-	"github.com/corestoreio/cspkg/util/conv"
+	"github.com/corestoreio/pkg/config/cfgpath"
+	"github.com/corestoreio/pkg/util/conv"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 )
@@ -248,7 +248,7 @@ func (s *Service) Int(p cfgpath.Path) (int, error) {
 
 // Time returns a date and time object from the Service. Example usage see
 // String. Time() is able to parse available time formats as defined in
-// github.com/corestoreio/cspkg/util/conv.StringToDate()
+// github.com/corestoreio/pkg/util/conv.StringToDate()
 func (s *Service) Time(p cfgpath.Path) (time.Time, error) {
 	vs, err := s.get(p)
 	if err != nil {

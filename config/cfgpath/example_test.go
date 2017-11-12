@@ -17,8 +17,8 @@ package cfgpath_test
 import (
 	"fmt"
 
-	"github.com/corestoreio/cspkg/config/cfgpath"
-	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/pkg/config/cfgpath"
+	"github.com/corestoreio/pkg/store/scope"
 )
 
 func Example() {

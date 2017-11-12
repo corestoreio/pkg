@@ -19,8 +19,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/corestoreio/cspkg/store/scope"
-	"github.com/corestoreio/cspkg/util/cstesting"
+	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/throttled/throttled.v2"

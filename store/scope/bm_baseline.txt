@@ -49,4 +49,4 @@ BenchmarkTypeIDs_TargetAndParents-4   	50000000	        37.2 ns/op	      16 B/op
 BenchmarkTypeIDs_TargetAndParents-4   	50000000	        38.1 ns/op	      16 B/op	       1 allocs/op
 BenchmarkTypeIDs_TargetAndParents-4   	50000000	        38.5 ns/op	      16 B/op	       1 allocs/op
 PASS
-ok  	github.com/corestoreio/cspkg/store/scope	102.973s
+ok  	github.com/corestoreio/pkg/store/scope	102.973s

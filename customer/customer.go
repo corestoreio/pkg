@@ -15,8 +15,8 @@
 package customer
 
 import (
-	"github.com/corestoreio/cspkg/eav"
-	"github.com/corestoreio/cspkg/storage/csdb"
+	"github.com/corestoreio/pkg/eav"
+	"github.com/corestoreio/pkg/storage/csdb"
 )
 
 type (

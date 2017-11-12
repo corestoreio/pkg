@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/corestoreio/cspkg/util/sqlparser/dependency/sqltypes"
+	"github.com/corestoreio/pkg/util/sqlparser/dependency/sqltypes"
 )
 
 const EOFCHAR = 0x100

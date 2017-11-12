@@ -18,7 +18,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/pkg/store/scope"
 )
 
 // Settings general settings for the cors service. Those settings will be

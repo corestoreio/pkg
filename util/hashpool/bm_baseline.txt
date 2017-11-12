@@ -1,6 +1,6 @@
 goos: darwin
 goarch: amd64
-pkg: github.com/corestoreio/cspkg/util/hashpool
+pkg: github.com/corestoreio/pkg/util/hashpool
 BenchmarkFnv64aWriteStr-4                 	20000000	        84.1 ns/op	       0 B/op	       0 allocs/op
 BenchmarkFnv64aWriteStr-4                 	20000000	        83.4 ns/op	       0 B/op	       0 allocs/op
 BenchmarkFnv64aWriteStr-4                 	20000000	        83.9 ns/op	       0 B/op	       0 allocs/op
@@ -26,4 +26,4 @@ BenchmarkTank_Hash64/siphash-4            	10000000	       143 ns/op	       0 B/
 BenchmarkTank_Hash64/siphash-4            	10000000	       141 ns/op	       0 B/op	       0 allocs/op
 BenchmarkTank_Hash64/siphash-4            	10000000	       141 ns/op	       0 B/op	       0 allocs/op
 PASS
-ok  	github.com/corestoreio/cspkg/util/hashpool	47.641s
+ok  	github.com/corestoreio/pkg/util/hashpool	47.641s

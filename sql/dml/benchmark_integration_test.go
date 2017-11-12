@@ -20,8 +20,8 @@ import (
 	"flag"
 	"testing"
 
-	"github.com/corestoreio/cspkg/sql/dml"
-	"github.com/corestoreio/cspkg/util/cstesting"
+	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/util/cstesting"
 )
 
 var runIntegration bool

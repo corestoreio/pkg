@@ -20,7 +20,7 @@ import (
 	"encoding/binary"
 	"strconv"
 
-	"github.com/corestoreio/cspkg/util/byteconv"
+	"github.com/corestoreio/pkg/util/byteconv"
 	"github.com/corestoreio/errors"
 )
 

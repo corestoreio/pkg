@@ -14,7 +14,7 @@
 
 package email
 
-import "github.com/corestoreio/cspkg/util/log"
+import "github.com/corestoreio/pkg/util/log"
 
 // PkgLog global package based logger
 var PkgLog log.Logger = log.PkgLog

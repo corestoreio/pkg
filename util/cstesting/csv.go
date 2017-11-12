@@ -24,7 +24,7 @@ import (
 	"strings"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/corestoreio/cspkg/storage/text"
+	"github.com/corestoreio/pkg/storage/text"
 	"github.com/corestoreio/errors"
 )
 

@@ -22,8 +22,8 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/corestoreio/cspkg/net/geoip"
-	"github.com/corestoreio/cspkg/sync/singleflight"
+	"github.com/corestoreio/pkg/net/geoip"
+	"github.com/corestoreio/pkg/sync/singleflight"
 	"github.com/corestoreio/errors"
 )
 

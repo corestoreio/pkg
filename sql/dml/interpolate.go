@@ -22,7 +22,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/corestoreio/cspkg/util/bufferpool"
+	"github.com/corestoreio/pkg/util/bufferpool"
 	"github.com/corestoreio/errors"
 )
 

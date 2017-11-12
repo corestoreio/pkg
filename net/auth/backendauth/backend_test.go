@@ -14,7 +14,7 @@
 
 package backendauth_test
 
-import "github.com/corestoreio/cspkg/net/auth/backendauth"
+import "github.com/corestoreio/pkg/net/auth/backendauth"
 
 // backend overall backend models for all tests
 var backend *backendauth.Configuration

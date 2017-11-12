@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"unicode/utf8"
 
-	"github.com/corestoreio/cspkg/storage/text"
+	"github.com/corestoreio/pkg/storage/text"
 	"github.com/corestoreio/errors"
 )
 

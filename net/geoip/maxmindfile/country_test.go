@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/corestoreio/cspkg/net/geoip"
+	"github.com/corestoreio/pkg/net/geoip"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

@@ -17,7 +17,7 @@ package slices_test
 import (
 	"testing"
 
-	"github.com/corestoreio/cspkg/util/slices"
+	"github.com/corestoreio/pkg/util/slices"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

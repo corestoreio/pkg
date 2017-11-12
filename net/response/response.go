@@ -44,8 +44,8 @@ import (
 	"net/http"
 	"path/filepath"
 
-	csnet "github.com/corestoreio/cspkg/net"
-	"github.com/corestoreio/cspkg/util/bufferpool"
+	csnet "github.com/corestoreio/pkg/net"
+	"github.com/corestoreio/pkg/util/bufferpool"
 	"github.com/corestoreio/errors"
 )
 

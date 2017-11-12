@@ -5,9 +5,9 @@ package csjwt_test
 //	"fmt"
 //	"time"
 //
-//	"github.com/corestoreio/cspkg/util/cserr"
-//	"github.com/corestoreio/cspkg/util/csjwt"
-//	"github.com/corestoreio/cspkg/util/csjwt/jwtclaim"
+//	"github.com/corestoreio/pkg/util/cserr"
+//	"github.com/corestoreio/pkg/util/csjwt"
+//	"github.com/corestoreio/pkg/util/csjwt/jwtclaim"
 //)
 //
 //func ExampleVerification(myToken []byte, myLookupKey func(interface{}) (csjwt.Key, error)) {

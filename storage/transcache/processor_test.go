@@ -22,8 +22,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/corestoreio/cspkg/storage/transcache"
-	"github.com/corestoreio/cspkg/storage/transcache/tcbigcache"
+	"github.com/corestoreio/pkg/storage/transcache"
+	"github.com/corestoreio/pkg/storage/transcache/tcbigcache"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

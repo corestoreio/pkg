@@ -17,10 +17,10 @@ package element_test
 import (
 	"testing"
 
-	"github.com/corestoreio/cspkg/config"
-	"github.com/corestoreio/cspkg/config/cfgpath"
-	"github.com/corestoreio/cspkg/config/element"
-	"github.com/corestoreio/cspkg/storage/text"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/config/cfgpath"
+	"github.com/corestoreio/pkg/config/element"
+	"github.com/corestoreio/pkg/storage/text"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

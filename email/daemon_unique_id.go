@@ -19,7 +19,7 @@ import (
 	"hash/fnv"
 	"strconv"
 
-	"github.com/corestoreio/cspkg/config"
+	"github.com/corestoreio/pkg/config"
 )
 
 type uniqueID struct {

@@ -25,7 +25,7 @@ const tplEav = `package {{ .Package }}
 // Package {{ .Package }} file is auto generated
 
 import (
-	"github.com/corestoreio/cspkg/eav"{{ range .ImportPaths }}
+	"github.com/corestoreio/pkg/eav"{{ range .ImportPaths }}
 	"{{ . }}"{{end}}
 )
 

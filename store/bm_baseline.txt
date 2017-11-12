@@ -19,4 +19,4 @@ Benchmark_Service_GetGroup-4                         	20000000	       102 ns/op	
 Benchmark_Service_GetWebsite-4                       	20000000	       112 ns/op	       0 B/op	       0 allocs/op
 BenchmarkScopeTree-4                                 	 1000000	      1338 ns/op	     608 B/op	       8 allocs/op
 PASS
-ok  	github.com/corestoreio/cspkg/store	35.801s
+ok  	github.com/corestoreio/pkg/store	35.801s

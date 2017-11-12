@@ -17,8 +17,8 @@ package storemock
 import (
 	"sync/atomic"
 
-	"github.com/corestoreio/cspkg/store"
-	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/pkg/store"
+	"github.com/corestoreio/pkg/store/scope"
 )
 
 var _ store.Finder = (*Find)(nil)

@@ -22,7 +22,7 @@ import (
 
 	"runtime"
 
-	"github.com/corestoreio/cspkg/i18n"
+	"github.com/corestoreio/pkg/i18n"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

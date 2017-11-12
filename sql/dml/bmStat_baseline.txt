@@ -1,6 +1,6 @@
 goos: darwin
 goarch: amd64
-pkg: github.com/corestoreio/cspkg/sql/dml
+pkg: github.com/corestoreio/pkg/sql/dml
 BenchmarkInterpolate-4                      	  500000	      2650 ns/op	     160 B/op	       1 allocs/op
 BenchmarkInterpolate-4                      	  500000	      2622 ns/op	     160 B/op	       1 allocs/op
 BenchmarkInterpolate-4                      	  500000	      2660 ns/op	     160 B/op	       1 allocs/op
@@ -202,4 +202,4 @@ BenchmarkArgUnion/args_numbers-4                              	 1000000	      12
 BenchmarkArgUnion/args_numbers-4                              	 1000000	      1243 ns/op	     688 B/op	      44 allocs/op
 BenchmarkArgUnion/args_numbers-4                              	 1000000	      1325 ns/op	     688 B/op	      44 allocs/op
 PASS
-ok  	github.com/corestoreio/cspkg/sql/dml	338.577s
+ok  	github.com/corestoreio/pkg/sql/dml	338.577s

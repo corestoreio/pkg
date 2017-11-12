@@ -18,10 +18,10 @@ import (
 	"testing"
 
 	"github.com/allegro/bigcache"
-	"github.com/corestoreio/cspkg/config"
-	"github.com/corestoreio/cspkg/config/cfgpath"
-	"github.com/corestoreio/cspkg/config/storage/cfgbigcache"
-	"github.com/corestoreio/cspkg/util/conv"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/config/cfgpath"
+	"github.com/corestoreio/pkg/config/storage/cfgbigcache"
+	"github.com/corestoreio/pkg/util/conv"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

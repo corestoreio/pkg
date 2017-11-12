@@ -18,9 +18,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/corestoreio/cspkg/config/cfgmock"
-	"github.com/corestoreio/cspkg/store"
-	"github.com/corestoreio/cspkg/util/null"
+	"github.com/corestoreio/pkg/config/cfgmock"
+	"github.com/corestoreio/pkg/store"
+	"github.com/corestoreio/pkg/util/null"
 	"github.com/stretchr/testify/assert"
 )
 

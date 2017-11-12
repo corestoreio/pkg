@@ -15,9 +15,9 @@
 package storemock
 
 import (
-	"github.com/corestoreio/cspkg/config"
-	"github.com/corestoreio/cspkg/store"
-	"github.com/corestoreio/cspkg/util/null"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/store"
+	"github.com/corestoreio/pkg/util/null"
 )
 
 // NewEurozzyService creates a fully initialized store.Service with 3 websites,

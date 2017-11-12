@@ -17,8 +17,8 @@
 package custattr_test
 
 import (
-	"github.com/corestoreio/cspkg/customer/custattr"
-	"github.com/corestoreio/cspkg/eav"
+	"github.com/corestoreio/pkg/customer/custattr"
+	"github.com/corestoreio/pkg/eav"
 )
 
 type (

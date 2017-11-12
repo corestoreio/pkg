@@ -18,11 +18,11 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/corestoreio/cspkg/codegen"
-	"github.com/corestoreio/cspkg/eav"
-	"github.com/corestoreio/cspkg/storage/csdb"
-	"github.com/corestoreio/cspkg/storage/dbr"
-	"github.com/corestoreio/cspkg/util/cstesting"
+	"github.com/corestoreio/pkg/codegen"
+	"github.com/corestoreio/pkg/eav"
+	"github.com/corestoreio/pkg/storage/csdb"
+	"github.com/corestoreio/pkg/storage/dbr"
+	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/corestoreio/errors"
 )
 

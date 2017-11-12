@@ -17,11 +17,11 @@ package redigostore
 import (
 	"time"
 
-	"github.com/corestoreio/cspkg/config"
-	"github.com/corestoreio/cspkg/config/cfgmodel"
-	"github.com/corestoreio/cspkg/net/ratelimit"
-	"github.com/corestoreio/cspkg/net/url"
-	"github.com/corestoreio/cspkg/store/scope"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/config/cfgmodel"
+	"github.com/corestoreio/pkg/net/ratelimit"
+	"github.com/corestoreio/pkg/net/url"
+	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/garyburd/redigo/redis"

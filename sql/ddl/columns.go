@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/corestoreio/cspkg/sql/dml"
-	"github.com/corestoreio/cspkg/util/bufferpool"
-	"github.com/corestoreio/cspkg/util/slices"
+	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/util/bufferpool"
+	"github.com/corestoreio/pkg/util/slices"
 	"github.com/corestoreio/errors"
 )
 

@@ -19,4 +19,4 @@ BenchmarkWithRequestID-4   	 5000000	       347 ns/op	      55 B/op	       3 all
 BenchmarkWithRequestID-4   	 5000000	       345 ns/op	      55 B/op	       3 allocs/op
 BenchmarkWithRequestID-4   	 5000000	       346 ns/op	      55 B/op	       3 allocs/op
 PASS
-ok  	github.com/corestoreio/cspkg/net/request	38.471s
+ok  	github.com/corestoreio/pkg/net/request	38.471s

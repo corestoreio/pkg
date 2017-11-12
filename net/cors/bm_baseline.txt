@@ -7,4 +7,4 @@ BenchmarkAllowedOrigin-4               	 1000000	      1032 ns/op	     112 B/op	
 BenchmarkPreflight-4                   	 1000000	      1143 ns/op	     272 B/op	       1 allocs/op
 BenchmarkPreflightHeader-4             	 1000000	      1109 ns/op	     272 B/op	       1 allocs/op
 PASS
-ok  	github.com/corestoreio/cspkg/net/cors	13.458s
+ok  	github.com/corestoreio/pkg/net/cors	13.458s

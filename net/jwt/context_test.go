@@ -19,7 +19,7 @@ import (
 
 	"context"
 
-	"github.com/corestoreio/cspkg/util/csjwt"
+	"github.com/corestoreio/pkg/util/csjwt"
 	"github.com/stretchr/testify/assert"
 )
 

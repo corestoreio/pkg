@@ -18,7 +18,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/corestoreio/cspkg/config"
+	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/errors"
 	"golang.org/x/sync/errgroup"
 )

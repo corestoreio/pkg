@@ -21,10 +21,10 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/corestoreio/cspkg/storage/transcache"
-	"github.com/corestoreio/cspkg/storage/transcache/tcbigcache"
-	"github.com/corestoreio/cspkg/storage/transcache/tcboltdb"
-	"github.com/corestoreio/cspkg/storage/transcache/tcredis"
+	"github.com/corestoreio/pkg/storage/transcache"
+	"github.com/corestoreio/pkg/storage/transcache/tcbigcache"
+	"github.com/corestoreio/pkg/storage/transcache/tcboltdb"
+	"github.com/corestoreio/pkg/storage/transcache/tcredis"
 	"github.com/ugorji/go/codec"
 )
 

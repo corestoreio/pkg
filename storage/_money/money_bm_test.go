@@ -17,7 +17,7 @@ package money_test
 import (
 	"testing"
 
-	"github.com/corestoreio/cspkg/storage/money"
+	"github.com/corestoreio/pkg/storage/money"
 )
 
 var benchmarkMoneyNewGetf float64

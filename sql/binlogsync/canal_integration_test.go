@@ -20,8 +20,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/cspkg/sql/binlogsync"
-	"github.com/corestoreio/cspkg/sql/ddl"
+	"github.com/corestoreio/pkg/sql/binlogsync"
+	"github.com/corestoreio/pkg/sql/ddl"
 )
 
 // TODO(CyS): Add more tests

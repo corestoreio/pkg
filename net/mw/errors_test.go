@@ -19,7 +19,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/corestoreio/cspkg/net/mw"
+	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

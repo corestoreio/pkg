@@ -17,8 +17,8 @@ package jwt
 import (
 	"testing"
 
-	"github.com/corestoreio/cspkg/util/csjwt"
-	"github.com/corestoreio/cspkg/util/csjwt/jwtclaim"
+	"github.com/corestoreio/pkg/util/csjwt"
+	"github.com/corestoreio/pkg/util/csjwt/jwtclaim"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )

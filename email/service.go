@@ -17,9 +17,9 @@ package email
 import (
 	"sync"
 
-	"github.com/corestoreio/cspkg/config"
-	"github.com/corestoreio/cspkg/store/scope"
-	"github.com/corestoreio/cspkg/util"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util"
 	"github.com/go-gomail/gomail"
 )
 

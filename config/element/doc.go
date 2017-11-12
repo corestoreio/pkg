@@ -62,7 +62,7 @@
 // Those three elements represents the tree in function NewConfigStructure()
 // which can be found in any package.
 //
-// Unclear: Your app which includes the csfw must merge all
+// Unclear: Your app which includes the cs must merge all
 // "PackageConfiguration"s into a single slice. You should submit all default
 // values (interface config.Sectioner) to the config.Service.ApplyDefaults()
 // function.
