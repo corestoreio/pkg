@@ -1,12 +1,12 @@
-# CoreStore packages | WIP (Work in Progress)
+# CoreStore: A standard library for e-commerce | WIP (Work in Progress)
 
-[![Build Status](https://travis-ci.org/corestoreio/csfw.svg?branch=master)](https://travis-ci.org/corestoreio/csfw) [![wercker status](https://app.wercker.com/status/d7d0bdda415d2228b6fb5bb01681b5c4/s/master "wercker status")](https://app.wercker.com/project/bykey/d7d0bdda415d2228b6fb5bb01681b5c4) [![Appveyor Build status](https://ci.appveyor.com/api/projects/status/lrlnbpcjdy585mg1/branch/master?svg=true)](https://ci.appveyor.com/project/SchumacherFM/cspkg/branch/master) [![GoDoc](http://godoc.org/github.com/corestoreio/csfw?status.svg)](http://godoc.org/github.com/corestoreio/csfw) [![Join the chat at https://gitter.im/corestoreio/csfw](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/corestoreio/csfw?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [goreportcard](http://goreportcard.com/report/Corestoreio/csfw)
+### based on an optimized Magento 2 database structure.
 
-eCommerce packages which is NOT compatible to a Magento 2 database schema but kinda.
+[![Build Status](https://travis-ci.org/corestoreio/cspkg.svg?branch=master)](https://travis-ci.org/corestoreio/cspkg) [![wercker status](https://app.wercker.com/status/d7d0bdda415d2228b6fb5bb01681b5c4/s/master "wercker status")](https://app.wercker.com/project/bykey/d7d0bdda415d2228b6fb5bb01681b5c4) [![Appveyor Build status](https://ci.appveyor.com/api/projects/status/lrlnbpcjdy585mg1/branch/master?svg=true)](https://ci.appveyor.com/project/SchumacherFM/cspkg/branch/master) [![GoDoc](http://godoc.org/github.com/corestoreio/cspkg?status.svg)](http://godoc.org/github.com/corestoreio/cspkg) [![Join the chat at https://gitter.im/corestoreio/cspkg](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/corestoreio/cspkg?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [goreportcard](http://goreportcard.com/report/Corestoreio/cspkg)
 
 Magento is a trademark of [MAGENTO, INC.](http://www.magentocommerce.com/license/).
 
-Min. Go Version: 1.9
+Min. Go Version: 1.11
 
 ## Usage
 
@@ -22,9 +22,9 @@ $ export CS_DSN='magento2:magento2@tcp(localhost:3306)/magento2'
 ```
 
 ```
-$ go get github.com/corestoreio/csfw
+$ go get github.com/corestoreio/cspkg
 $ export CS_DSN='see previous'
-$ cd $GOPATH/src/github.com/corestoreio/csfw
+$ cd $GOPATH/src/github.com/corestoreio/cspkg
 $ xgo run xcodegen/tableToStruct/*.go
 ```
 
