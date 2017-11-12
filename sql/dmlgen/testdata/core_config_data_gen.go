@@ -3,10 +3,10 @@
 package testdata
 
 import (
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
-)
+	"github.com/corestoreio/errors"
 
+)
 // CoreConfigData represents a single row for DB table `core_config_data`.
 // Auto generated.
 type CoreConfigData struct {
@@ -145,4 +145,4 @@ func (cc CoreConfigDataCollection) Paths(ret ...string) []string {
 		}
 	}
 	return ret
-}
+} 

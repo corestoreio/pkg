@@ -49,9 +49,9 @@ var (
 		idxMysqlSignedNull:      "dml.NullInt64",
 		idxMysqlSignedNotNull:   "int64",
 
-		idxProtobufUnsignedNull:    "github.com/corestoreio/pkg/sql/dml.NullInt64",
+		idxProtobufUnsignedNull:    "dml.NullInt64", // Proto package and its type, not the Go package!
 		idxProtobufUnsignedNotNull: "uint64",
-		idxProtobufSignedNull:      "github.com/corestoreio/pkg/sql/dml.NullInt64",
+		idxProtobufSignedNull:      "dml.NullInt64", // Proto package and its type, not the Go package!
 		idxProtobufSignedNotNull:   "int64",
 	}
 	goTypeInt = [...]string{
@@ -60,9 +60,9 @@ var (
 		idxMysqlSignedNull:      "dml.NullInt64",
 		idxMysqlSignedNotNull:   "int64",
 
-		idxProtobufUnsignedNull:    "github.com/corestoreio/pkg/sql/dml.NullInt64",
+		idxProtobufUnsignedNull:    "dml.NullInt64", // Proto package and its type, not the Go package!
 		idxProtobufUnsignedNotNull: "uint64",
-		idxProtobufSignedNull:      "github.com/corestoreio/pkg/sql/dml.NullInt64",
+		idxProtobufSignedNull:      "dml.NullInt64", // Proto package and its type, not the Go package!
 		idxProtobufSignedNotNull:   "int64",
 	}
 	goTypeFloat64 = [...]string{
@@ -71,9 +71,9 @@ var (
 		idxMysqlSignedNull:      "dml.NullFloat64",
 		idxMysqlSignedNotNull:   "float64",
 
-		idxProtobufUnsignedNull:    "github.com/corestoreio/pkg/sql/dml.NullFloat64",
+		idxProtobufUnsignedNull:    "dml.NullFloat64", // Proto package and its type, not the Go package!
 		idxProtobufUnsignedNotNull: "double",
-		idxProtobufSignedNull:      "github.com/corestoreio/pkg/sql/dml.NullFloat64",
+		idxProtobufSignedNull:      "dml.NullFloat64", // Proto package and its type, not the Go package!
 		idxProtobufSignedNotNull:   "double",
 	}
 	goTypeTime = [...]string{
@@ -82,9 +82,9 @@ var (
 		idxMysqlSignedNull:      "dml.NullTime",
 		idxMysqlSignedNotNull:   "time.Time",
 
-		idxProtobufUnsignedNull:    "github.com/corestoreio/pkg/sql/dml.NullTime",
+		idxProtobufUnsignedNull:    "dml.NullTime", // Proto package and its type, not the Go package!
 		idxProtobufUnsignedNotNull: "google.protobuf.Timestamp",
-		idxProtobufSignedNull:      "github.com/corestoreio/pkg/sql/dml.NullTime",
+		idxProtobufSignedNull:      "dml.NullTime", // Proto package and its type, not the Go package!
 		idxProtobufSignedNotNull:   "google.protobuf.Timestamp",
 	}
 	goTypeString = [...]string{
@@ -93,9 +93,9 @@ var (
 		idxMysqlSignedNull:      "dml.NullString",
 		idxMysqlSignedNotNull:   "string",
 
-		idxProtobufUnsignedNull:    "github.com/corestoreio/pkg/sql/dml.NullString",
+		idxProtobufUnsignedNull:    "dml.NullString", // Proto package and its type, not the Go package!
 		idxProtobufUnsignedNotNull: "string",
-		idxProtobufSignedNull:      "github.com/corestoreio/pkg/sql/dml.NullString",
+		idxProtobufSignedNull:      "dml.NullString", // Proto package and its type, not the Go package!
 		idxProtobufSignedNotNull:   "string",
 	}
 	goTypeBool = [...]string{
@@ -104,9 +104,9 @@ var (
 		idxMysqlSignedNull:      "dml.NullBool",
 		idxMysqlSignedNotNull:   "bool",
 
-		idxProtobufUnsignedNull:    "github.com/corestoreio/pkg/sql/dml.NullBool",
+		idxProtobufUnsignedNull:    "dml.NullBool", // Proto package and its type, not the Go package!
 		idxProtobufUnsignedNotNull: "bool",
-		idxProtobufSignedNull:      "github.com/corestoreio/pkg/sql/dml.NullBool",
+		idxProtobufSignedNull:      "dml.NullBool", // Proto package and its type, not the Go package!
 		idxProtobufSignedNotNull:   "bool",
 	}
 	goTypeDecimal = [...]string{
@@ -115,10 +115,10 @@ var (
 		idxMysqlSignedNull:      "dml.Decimal",
 		idxMysqlSignedNotNull:   "dml.Decimal",
 
-		idxProtobufUnsignedNull:    "github.com/corestoreio/pkg/sql/dml.Decimal",
-		idxProtobufUnsignedNotNull: "github.com/corestoreio/pkg/sql/dml.Decimal",
-		idxProtobufSignedNull:      "github.com/corestoreio/pkg/sql/dml.Decimal",
-		idxProtobufSignedNotNull:   "github.com/corestoreio/pkg/sql/dml.Decimal",
+		idxProtobufUnsignedNull:    "dml.Decimal", // Proto package and its type not the Go package!
+		idxProtobufUnsignedNotNull: "dml.Decimal", // Proto package and its type not the Go package!
+		idxProtobufSignedNull:      "dml.Decimal", // Proto package and its type not the Go package!
+		idxProtobufSignedNotNull:   "dml.Decimal", // Proto package and its type not the Go package!
 	}
 	goTypeByte = [...]string{
 		idxMysqlUnsignedNull:    "[]byte",
@@ -283,13 +283,10 @@ func toProtoType(c *ddl.Column) string {
 func toProtoCustomType(c *ddl.Column) string {
 	pt := toProto(c, true)
 	var buf strings.Builder
-	if strings.IndexByte(pt, '/') > 0 { // slash identifies an import path
-		fmt.Fprintf(&buf, `,(gogoproto.customtype)=%q`, pt)
-	}
 	if pt == "google.protobuf.Timestamp" {
-		fmt.Fprint(&buf, ",(gogoproto.stdtime)=true,(gogoproto.nullable)=false")
+		fmt.Fprint(&buf, ",(gogoproto.stdtime)=true")
 	}
-	if c.IsNull() {
+	if c.IsNull() || strings.IndexByte(pt, '.') > 0 /*whenever it is a custom type like dml.Null or google.proto.timestamp*/ {
 		// Indeed nullable Go Types must be not-nullable in Protobuf because we
 		// have a non-pointer struct type which contains the field Valid.
 		// Protobuf treats nullable fields as pointer fields, but that is

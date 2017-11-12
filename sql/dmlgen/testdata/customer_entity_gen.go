@@ -4,12 +4,11 @@ package testdata
 
 import (
 	"encoding/json"
+	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/errors"
 	"time"
 
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/pkg/sql/dml"
 )
-
 // CustomerEntity represents a single row for DB table `customer_entity`.
 // Auto generated.
 type CustomerEntity struct {

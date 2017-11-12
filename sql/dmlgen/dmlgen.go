@@ -444,6 +444,7 @@ syntax = "proto3";
 package %s;
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
+import "github.com/corestoreio/pkg/sql/dml/types_null.proto";
 option go_package = %q;
 option (gogoproto.typedecl_all) = false;
 option (gogoproto.goproto_getters_all) = false;

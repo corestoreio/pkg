@@ -4,10 +4,9 @@ package testdata
 
 import (
 	"encoding/json"
-	"time"
-
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
+	"time"
 )
 
 // DmlgenTypes represents a single row for DB table `dmlgen_types`.
