@@ -71,7 +71,7 @@ func TestArguments_Length_and_Stringer(t *testing.T) {
 
 		// like fmt.GoStringer
 		assert.Exactly(t,
-			"dml.MakeArgs(15).Null().Int(-1).Int64(1).Uint64(9898).Uint64(2).Float64(3.100000).Bool(true).String(\"eCom1\").Bytes([]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Time(time.Unix(1136214252,2)).NullString(dml.MakeNullString(`eCom3`)).NullInt64(dml.MakeNullInt64(4)).NullFloat64(dml.MakeNullFloat64(2.7)).NullBool(dml.MakeNullBool(true)).NullTime(dml.MakeNullTime(time.Unix(1136214252,2))",
+			"dml.MakeArgs(15).Null().Int(-1).Int64(1).Uint64(9898).Uint64(2).Float64(3.100000).Bool(true).String(\"eCom1\").Bytes([]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Time(time.Unix(1136228645,2)).NullString(dml.MakeNullString(`eCom3`)).NullInt64(dml.MakeNullInt64(4)).NullFloat64(dml.MakeNullFloat64(2.7)).NullBool(dml.MakeNullBool(true)).NullTime(dml.MakeNullTime(time.Unix(1136228645,2))",
 			fmt.Sprintf("%#v", args))
 	})
 
@@ -82,7 +82,7 @@ func TestArguments_Length_and_Stringer(t *testing.T) {
 			NullBool(MakeNullBool(true, false)).NullTime(MakeNullTime(now(), false))
 		assert.Exactly(t, 14, args.Len(), "Length mismatch")
 		assert.Exactly(t,
-			"dml.MakeArgs(14).Null().Int(-1).Int64(1).Uint64(2).Float64(3.100000).Bool(true).String(\"eCom1\").Bytes([]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Time(time.Unix(1136214252,2)).NullString(dml.NullString{}).NullInt64(dml.NullInt64{}).NullFloat64(dml.NullFloat64{}).NullBool(dml.NullBool{}).NullTime(dml.NullTime{})",
+			"dml.MakeArgs(14).Null().Int(-1).Int64(1).Uint64(2).Float64(3.100000).Bool(true).String(\"eCom1\").Bytes([]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Time(time.Unix(1136228645,2)).NullString(dml.NullString{}).NullInt64(dml.NullInt64{}).NullFloat64(dml.NullFloat64{}).NullBool(dml.NullBool{}).NullTime(dml.NullTime{})",
 			fmt.Sprintf("%#v", args))
 	})
 
@@ -93,7 +93,7 @@ func TestArguments_Length_and_Stringer(t *testing.T) {
 			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()), MakeNullTime(now()))
 		assert.Exactly(t, 26, args.Len(), "Length mismatch")
 		assert.Exactly(t,
-			"dml.MakeArgs(15).Null().Int(-1).Int64s([]int64{1, 2}...).Uints([]uint{0x237, 0x2fd}...).Uint64s([]uint64{0x2}...).Float64s([]float64{1.2, 3.1}...).Bools([]bool{false, true}...).Strings(\"eCom1\",\"eCom11\").BytesSlice([]byte(nil),[]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Times(time.Unix(1136214252,2),time.Unix(1136214252,2)).NullString(dml.MakeNullString(`eCom3`),dml.MakeNullString(`eCom3`)).NullInt64(dml.MakeNullInt64(4),dml.MakeNullInt64(4)).NullFloat64(dml.MakeNullFloat64(2.7),dml.MakeNullFloat64(2.7)).NullBool(dml.MakeNullBool(true)).NullTime(dml.MakeNullTime(time.Unix(1136214252,2),dml.MakeNullTime(time.Unix(1136214252,2))",
+			"dml.MakeArgs(15).Null().Int(-1).Int64s([]int64{1, 2}...).Uints([]uint{0x237, 0x2fd}...).Uint64s([]uint64{0x2}...).Float64s([]float64{1.2, 3.1}...).Bools([]bool{false, true}...).Strings(\"eCom1\",\"eCom11\").BytesSlice([]byte(nil),[]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Times(time.Unix(1136228645,2),time.Unix(1136228645,2)).NullString(dml.MakeNullString(`eCom3`),dml.MakeNullString(`eCom3`)).NullInt64(dml.MakeNullInt64(4),dml.MakeNullInt64(4)).NullFloat64(dml.MakeNullFloat64(2.7),dml.MakeNullFloat64(2.7)).NullBool(dml.MakeNullBool(true)).NullTime(dml.MakeNullTime(time.Unix(1136228645,2),dml.MakeNullTime(time.Unix(1136228645,2))",
 			fmt.Sprintf("%#v", args))
 	})
 }
@@ -389,7 +389,7 @@ func TestArguments_Named(t *testing.T) {
 			GoString())
 
 	assert.Exactly(t,
-		"dml.MakeArgs(4).Float64s([]float64{2.76, 3.141}...).Name(\"entity_id\").Int64(4).Name(\"store_id\").Uint64(5678).Time(time.Unix(1136214252,2))",
+		"dml.MakeArgs(4).Float64s([]float64{2.76, 3.141}...).Name(\"entity_id\").Int64(4).Name(\"store_id\").Uint64(5678).Time(time.Unix(1136228645,2))",
 		MakeArgs(2).
 			Float64s(2.76, 3.141).
 			Name("entity_id").Int64(4).
