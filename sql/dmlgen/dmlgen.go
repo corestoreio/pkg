@@ -49,6 +49,7 @@ type Tables struct {
 	Tables map[string]*table
 	template.FuncMap
 	DisableFileHeader bool
+	GogoProtoOptions  []string
 	// goTpl contains a parsed template to render a single table.
 	tpls       *template.Template
 	writeProto bool
@@ -381,6 +382,16 @@ func NewTables(packageName string, opts ...Option) (*Tables, error) {
 	ts.FuncMap["ProtoType"] = toProtoType
 	ts.FuncMap["ProtoCustomType"] = toProtoCustomType
 
+	if len(ts.GogoProtoOptions) == 0 {
+		ts.GogoProtoOptions = []string{
+			"(gogoproto.typedecl_all) = false",
+			"(gogoproto.goproto_getters_all) = false",
+			"(gogoproto.unmarshaler_all) = true",
+			"(gogoproto.marshaler_all) = true",
+			"(gogoproto.sizer_all) = true",
+		}
+	}
+
 	sort.Slice(opts, func(i, j int) bool {
 		return opts[i].sortOrder < opts[j].sortOrder // ascending 0-9 sorting ;-)
 	})
@@ -438,21 +449,7 @@ func (ts *Tables) WriteProto(w io.Writer) error {
 	}
 
 	if !ts.DisableFileHeader {
-		// TODO: make the options configurable
-		fmt.Fprintf(buf, `// Auto generated via github.com/corestoreio/pkg/sql/dmlgen
-syntax = "proto3";
-package %s;
-import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-import "google/protobuf/timestamp.proto";
-import "github.com/corestoreio/pkg/sql/dml/types_null.proto";
-option go_package = %q;
-option (gogoproto.typedecl_all) = false;
-option (gogoproto.goproto_getters_all) = false;
-option (gogoproto.unmarshaler_all) = true;
-option (gogoproto.marshaler_all) = true;
-option (gogoproto.sizer_all) = true;
-
-`, ts.Package, ts.Package)
+		ts.tpls.Funcs(ts.FuncMap).ExecuteTemplate(buf, "code_proto_header.go.tpl", ts)
 	}
 
 	for _, tblname := range ts.sortedTableNames() {
@@ -469,23 +466,24 @@ option (gogoproto.sizer_all) = true;
 func (ts *Tables) WriteGo(w io.Writer) error {
 	buf := new(bytes.Buffer)
 
+	tpl := ts.tpls.Funcs(ts.FuncMap)
 	// deal with random map to guarantee the persistent code generation.
 	for _, tblname := range ts.sortedTableNames() {
 		t := ts.Tables[tblname] // must panic if table name not found
 
-		if err := t.writeTo(buf, ts.tpls.Lookup("code_entity.go.tpl").Funcs(ts.FuncMap)); err != nil {
+		if err := t.writeTo(buf, tpl.Lookup("code_entity.go.tpl")); err != nil {
 			return errors.NewWriteFailed(err, "[dmlgen] For Table %q", t.TableName)
 		}
-		if err := t.writeTo(buf, ts.tpls.Lookup("code_collection.go.tpl").Funcs(ts.FuncMap)); err != nil {
+		if err := t.writeTo(buf, tpl.Lookup("code_collection.go.tpl")); err != nil {
 			return errors.NewWriteFailed(err, "[dmlgen] For Table %q", t.TableName)
 		}
 		if t.TextMarshaler {
-			if err := t.writeTo(buf, ts.tpls.Lookup("code_text.go.tpl").Funcs(ts.FuncMap)); err != nil {
+			if err := t.writeTo(buf, tpl.Lookup("code_text.go.tpl")); err != nil {
 				return errors.NewWriteFailed(err, "[dmlgen] For Table %q", t.TableName)
 			}
 		}
 		if t.BinaryMarshaler {
-			if err := t.writeTo(buf, ts.tpls.Lookup("code_binary.go.tpl").Funcs(ts.FuncMap)); err != nil {
+			if err := t.writeTo(buf, tpl.Lookup("code_binary.go.tpl")); err != nil {
 				return errors.NewWriteFailed(err, "[dmlgen] For Table %q", t.TableName)
 			}
 		}
