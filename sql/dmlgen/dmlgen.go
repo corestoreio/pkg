@@ -15,6 +15,7 @@
 package dmlgen
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -24,6 +25,8 @@ import (
 	"go/parser"
 	"go/token"
 	"io"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -537,4 +540,40 @@ func (t *table) writeTo(w io.Writer, tpl *template.Template) error {
 	}
 
 	return tpl.Execute(w, data)
+}
+
+// GenerateProto searches all *.proto files in the given path and calls protoc
+// to generate the Go source code.
+func GenerateProto(path string) error {
+
+	path = filepath.Clean(path)
+	if ps := string(os.PathSeparator); !strings.HasSuffix(path, ps) {
+		path += ps
+	}
+
+	protoFiles, err := filepath.Glob(path + "*.proto")
+	if err != nil {
+		return errors.Wrapf(err, "[dmlgen] Can't find proto files in path %q", path)
+	}
+
+	args := []string{
+		"--gogo_out", fmt.Sprintf("Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types:%s", path),
+		"--proto_path", fmt.Sprintf("%s/src/:%s/src/github.com/gogo/protobuf/protobuf/:.", build.Default.GOPATH, build.Default.GOPATH),
+	}
+	args = append(args, protoFiles...)
+
+	cmd := exec.Command("protoc", args...)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return errors.Wrapf(err, "[dmlgen] %s", out)
+	}
+
+	scanner := bufio.NewScanner(bytes.NewReader(out))
+	for scanner.Scan() {
+		text := scanner.Text()
+		if !strings.Contains(text, "WARNING") {
+			return errors.NewWriteFailedf("[dmlgen] protoc Error: %s", text)
+		}
+	}
+	return nil
 }

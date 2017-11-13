@@ -108,6 +108,9 @@ func TestTables_WithAllTypes(t *testing.T) {
 
 	writeFile(t, "testdata/dmlgen_types_gen.go", ts.WriteGo)
 	writeFile(t, "testdata/dmlgen_types_gen.proto", ts.WriteProto)
+
+	// Generates for all proto files the Go source code.
+	require.NoError(t, dmlgen.GenerateProto("testdata"))
 }
 
 func TestInfoSchemaForeignKeys(t *testing.T) {
