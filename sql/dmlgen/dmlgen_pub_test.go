@@ -63,10 +63,26 @@ func writeFile(t *testing.T, outFile string, w func(io.Writer) error) {
 	require.NoError(t, w(f))
 }
 
+// TestNewTables writes a Go and Proto file to the testdata directory for manual
+// review for different tables. This test also analyzes the foreign keys
+// pointing to customer_entity. No tests of the generated source code are
+// getting executed because API gets developed, still.
 func TestNewTables(t *testing.T) {
 	t.Parallel()
 
+	db, mock := cstesting.MockDB(t)
+	defer cstesting.MockClose(t, db, mock)
+
+	mock.ExpectQuery("SELECT.+information_schema.COLUMNS.+").WillReturnRows(cstesting.MustMockRows(
+		cstesting.WithFile("testdata/INFORMATION_SCHEMA.COLUMNS.csv"),
+	))
+	mock.ExpectQuery("SELECT.+information_schema.KEY_COLUMN_USAGE.+").WillReturnRows(cstesting.MustMockRows(
+		cstesting.WithFile("testdata/INFORMATION_SCHEMA.KEY_COLUMN_USAGE.csv"),
+	))
+
+	ctx := context.Background()
 	ts, err := dmlgen.NewTables("testdata",
+		//
 		dmlgen.WithCustomStructTags("core_config_data",
 			"path", `json:"x_path" xml:"y_path"`,
 			"scope_id", `json:"scope_id" xml:"scope_id"`,
@@ -81,36 +97,23 @@ func TestNewTables(t *testing.T) {
 			&ddl.Column{Field: "path", Pos: 4, Default: dml.MakeNullString("'general'"), Null: "NO", DataType: "varchar", CharMaxLength: dml.MakeNullInt64(255), ColumnType: "varchar(255)", Comment: "Config Path"},
 			&ddl.Column{Field: "value", Pos: 5, Default: dml.MakeNullString("NULL"), Null: "YES", DataType: "text", CharMaxLength: dml.MakeNullInt64(65535), ColumnType: "text", Comment: "Config Value"},
 		}),
-	)
-	require.NoError(t, err)
-
-	writeFile(t, "testdata/core_config_data_gen.go", ts.WriteGo)
-}
-
-func TestTables_WithAllTypes(t *testing.T) {
-	t.Parallel()
-
-	db, mock := cstesting.MockDB(t)
-	defer cstesting.MockClose(t, db, mock)
-
-	mock.ExpectQuery("SELECT.+").WillReturnRows(cstesting.MustMockRows(
-		cstesting.WithFile("testdata/dmlgen_types.csv"),
-	))
-
-	ts, err := dmlgen.NewTables("testdata",
+		//
 		dmlgen.WithEncoder("dmlgen_types", "text", "binary", "protobuf"),
 		dmlgen.WithStructTags("dmlgen_types", "json", "protobuf"),
 		dmlgen.WithStructComment("dmlgen_types", "Just another comment.\n//easyjson:json"),
 		dmlgen.WithUniquifiedColumns("dmlgen_types", "col_longtext_2", "col_int_1", "col_int_2", "has_smallint_5", "col_date_2", "col_blob"),
-		dmlgen.WithLoadColumns(context.Background(), db.DB, "dmlgen_types"),
+		//
+		dmlgen.WithLoadColumns(ctx, db.DB, "dmlgen_types", "customer_entity"),
+		//
+		dmlgen.WithEncoder("customer_entity", "text", "protobuf"),
+		dmlgen.WithColumnAliasesFromForeignKeys(ctx, db.DB),
 	)
 	require.NoError(t, err)
 
-	writeFile(t, "testdata/dmlgen_types_gen.go", ts.WriteGo)
-	writeFile(t, "testdata/dmlgen_types_gen.proto", ts.WriteProto)
-
+	writeFile(t, "testdata/output_gen.go", ts.WriteGo)
+	writeFile(t, "testdata/output_gen.proto", ts.WriteProto)
 	// Generates for all proto files the Go source code.
-	require.NoError(t, dmlgen.GenerateProto("testdata"))
+	require.NoError(t, dmlgen.GenerateProto("./testdata"))
 }
 
 func TestInfoSchemaForeignKeys(t *testing.T) {
@@ -128,28 +131,6 @@ func TestInfoSchemaForeignKeys(t *testing.T) {
 	require.NoError(t, err)
 
 	writeFile(t, "testdata/KEY_COLUMN_USAGE_gen.go", ts.WriteGo)
-}
-
-// TestCustomerEntity writes a Go and Proto file to the testdata directory for
-// manual review. This test also analyzes the foreign keys pointing to
-// customer_entity. No tests are getting executed because API gets developed,
-// still.
-func TestCustomerEntity(t *testing.T) {
-	t.Parallel()
-
-	db := cstesting.MustConnectDB(t)
-	defer cstesting.Close(t, db)
-
-	ctx := context.Background()
-	ts, err := dmlgen.NewTables("testdata",
-		dmlgen.WithEncoder("customer_entity", "text", "protobuf"),
-		dmlgen.WithColumnAliasesFromForeignKeys(ctx, db.DB),
-		dmlgen.WithLoadColumns(ctx, db.DB, "customer_entity"),
-	)
-	require.NoError(t, err)
-
-	writeFile(t, "testdata/customer_entity_gen.go", ts.WriteGo)
-	writeFile(t, "testdata/customer_entity_gen.proto", ts.WriteProto)
 }
 
 func TestWithCustomStructTags(t *testing.T) {

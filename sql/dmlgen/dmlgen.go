@@ -51,8 +51,9 @@ type Tables struct {
 	// Tables uses the table name as map key and the table description as value.
 	Tables map[string]*table
 	template.FuncMap
-	DisableFileHeader bool
-	GogoProtoOptions  []string
+	DisableFileHeader   bool
+	DisableTableSchemas bool
+	GogoProtoOptions    []string
 	// goTpl contains a parsed template to render a single table.
 	tpls       *template.Template
 	writeProto bool
@@ -371,6 +372,7 @@ func NewTables(packageName string, opts ...Option) (*Tables, error) {
 			"database/sql",
 			"encoding/json",
 			"github.com/corestoreio/pkg/sql/dml",
+			"github.com/corestoreio/pkg/sql/ddl",
 			"github.com/corestoreio/errors",
 			"time",
 		},
@@ -468,10 +470,30 @@ func (ts *Tables) WriteProto(w io.Writer) error {
 // WriteGo writes the Go source code into `w`.
 func (ts *Tables) WriteGo(w io.Writer) error {
 	buf := new(bytes.Buffer)
-
 	tpl := ts.tpls.Funcs(ts.FuncMap)
+
+	sortedTableNames := ts.sortedTableNames()
+	if !ts.DisableTableSchemas { // Writes the table DDL function
+		tables := make([]*table, len(ts.Tables))
+		for i, tblname := range sortedTableNames {
+			tables[i] = ts.Tables[tblname] // must panic if table name not found
+		}
+		data := struct {
+			Package    string // Name of the package
+			Tables     []*table
+			TableNames []string
+		}{
+			Package:    ts.Package,
+			Tables:     tables,
+			TableNames: sortedTableNames,
+		}
+		if err := tpl.ExecuteTemplate(buf, "code_tables.go.tpl", data); err != nil {
+			return errors.NewWriteFailed(err, "[dmlgen] For Tables %v", tables)
+		}
+	}
+
 	// deal with random map to guarantee the persistent code generation.
-	for _, tblname := range ts.sortedTableNames() {
+	for _, tblname := range sortedTableNames {
 		t := ts.Tables[tblname] // must panic if table name not found
 
 		if err := t.writeTo(buf, tpl.Lookup("code_entity.go.tpl")); err != nil {
@@ -557,7 +579,7 @@ func GenerateProto(path string) error {
 	}
 
 	args := []string{
-		"--gogo_out", fmt.Sprintf("Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types:%s", path),
+		"--gogo_out", "Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types:.",
 		"--proto_path", fmt.Sprintf("%s/src/:%s/src/github.com/gogo/protobuf/protobuf/:.", build.Default.GOPATH, build.Default.GOPATH),
 	}
 	args = append(args, protoFiles...)
