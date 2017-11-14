@@ -19,8 +19,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/sql/dml"
 )
 
 // @deprecated
@@ -33,10 +33,10 @@ const (
 // TableOption applies options and helper functions when creating a new table.
 // For example loading column definitions.
 type TableOption struct {
-	// priority takes care that the options gets applied in the correct order.
+	// sortOrder takes care that the options gets applied in the correct order.
 	// e.g. column loading can only happen when a table is present.
-	priority uint8
-	fn       func(*Tables) error
+	sortOrder uint8
+	fn        func(*Tables) error
 }
 
 // Tables handles all the tables defined for a package. Thread safe.
@@ -59,7 +59,7 @@ func WithTableOrViewFromQuery(ctx context.Context, db interface {
 	dml.Querier
 }, typ string, objectName string, query string, dropIfExists ...bool) TableOption {
 	return TableOption{
-		priority: 10,
+		sortOrder: 10,
 		fn: func(tm *Tables) error {
 
 			if err := dml.IsValidIdentifier(objectName); err != nil {
@@ -188,7 +188,7 @@ func WithTableNames(names ...string) TableOption {
 // the events will be copied to the new object.
 func WithTableDMLListeners(tableName string, events ...*dml.ListenerBucket) TableOption {
 	return TableOption{
-		priority: 254,
+		sortOrder: 254,
 		fn: func(tm *Tables) error {
 			tm.mu.Lock()
 			defer tm.mu.Unlock()
@@ -225,37 +225,12 @@ func MustNewTables(opts ...TableOption) *Tables {
 	return ts
 }
 
-// MustInitTables helper function in init() statements to initialize the global
-// table collection variable independent of knowing when this variable is nil.
-// We cannot assume the correct order, how all init() invocations are executed,
-// at least they don't run in parallel during packet initialization. Yes ... bad
-// practice to rely on init ... but for now it works very well.
-//
-//		func init() {
-//			TableCollection = ddl.MustInitTables(TableCollection,[Options])
-// 		}
-// TODO(CyS) rethink and refactor maybe.
-func MustInitTables(ts *Tables, opts ...TableOption) *Tables {
-	if ts == nil {
-		var err error
-		ts, err = NewTables()
-		if err != nil {
-			panic(err)
-		}
-	}
-	if err := ts.Options(opts...); err != nil {
-		panic(err)
-	}
-	return ts
-}
-
 // Options applies options to the Tables service.
 func (tm *Tables) Options(opts ...TableOption) error {
-
 	// SliceStable must be stable to maintain the order of all options where
-	// priority is zero.
+	// sortOrder is zero.
 	sort.SliceStable(opts, func(i, j int) bool {
-		return opts[i].priority < opts[j].priority
+		return opts[i].sortOrder < opts[j].sortOrder
 	})
 
 	for _, to := range opts {

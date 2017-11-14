@@ -21,10 +21,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/bufferpool"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
 // Table represents a table from a specific database.

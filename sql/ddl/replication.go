@@ -18,8 +18,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/sql/dml"
 )
 
 // MasterStatus provides status information about the binary log files of the

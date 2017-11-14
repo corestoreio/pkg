@@ -20,10 +20,10 @@ import (
 	"testing"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/util/cstesting"
-	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -186,31 +186,6 @@ func TestTables_RowScan_Mock(t *testing.T) {
 	table := tm0.MustTable("admin_user")
 	assert.Exactly(t, []string{"user_id", "firsname", "modified"}, table.Columns.FieldNames())
 	//t.Log(table.Columns.GoString())
-}
-
-func TestMustInitTables(t *testing.T) {
-	t.Parallel()
-
-	t.Run("ok", func(*testing.T) {
-		var ts *ddl.Tables
-		ts = ddl.MustInitTables(ts, ddl.WithTableNames("a3", "b5", "c7"))
-		require.NotNil(t, ts)
-		assert.Exactly(t, "a3", ts.MustTable("a3").Name)
-		assert.Exactly(t, "b5", ts.MustTable("b5").Name)
-		assert.Exactly(t, "c7", ts.MustTable("c7").Name)
-	})
-	t.Run("panic invalid table name", func(*testing.T) {
-		defer func() {
-			if r := recover(); r != nil {
-				err := r.(error)
-				assert.True(t, errors.IsNotValid(err), "%+v", err)
-			} else {
-				t.Error("Expecting a panic")
-			}
-		}()
-		var ts *ddl.Tables
-		ddl.MustInitTables(ts, ddl.WithTableNames("a˚3"))
-	})
 }
 
 func TestWithTableDMLListeners(t *testing.T) {

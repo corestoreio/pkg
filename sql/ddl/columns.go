@@ -21,10 +21,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/util/bufferpool"
 	"github.com/corestoreio/pkg/util/slices"
-	"github.com/corestoreio/errors"
 )
 
 // Helper constants to detect certain features of a table and or column.
