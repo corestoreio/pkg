@@ -265,16 +265,18 @@ func (tm *Tables) MustTable(name string) *Table {
 	return t
 }
 
-// Tables returns a list of all available table names, unsorted.
-func (tm *Tables) Tables() []string {
+// Tables returns a random list of all available table names. It can append the
+// names to the argument slice.
+func (tm *Tables) Tables(ret ...string) []string {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
-
-	ts := make([]string, 0, len(tm.tm))
-	for tn := range tm.tm {
-		ts = append(ts, tn)
+	if ret == nil {
+		ret = make([]string, 0, len(tm.tm))
 	}
-	return ts
+	for tn := range tm.tm {
+		ret = append(ret, tn)
+	}
+	return ret
 }
 
 // Len returns the number of all tables.
