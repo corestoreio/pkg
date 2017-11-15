@@ -57,6 +57,7 @@ type Tables struct {
 	// goTpl contains a parsed template to render a single table.
 	tpls       *template.Template
 	writeProto bool
+	lastError  error
 }
 
 // Option represents a sortable option for the NewTables function. Each option
@@ -467,10 +468,19 @@ func (ts *Tables) WriteProto(w io.Writer) error {
 	return err
 }
 
+func (ts *Tables) execTpl(w io.Writer, t *table, tplName string) {
+	if ts.lastError != nil {
+		return
+	}
+	if err := t.writeTo(w, ts.tpls.Lookup(tplName)); err != nil {
+		ts.lastError = errors.NewWriteFailed(err, "[dmlgen] With template %q for Table %q", tplName, t.TableName)
+	}
+}
+
 // WriteGo writes the Go source code into `w`.
 func (ts *Tables) WriteGo(w io.Writer) error {
 	buf := new(bytes.Buffer)
-	tpl := ts.tpls.Funcs(ts.FuncMap)
+	ts.tpls = ts.tpls.Funcs(ts.FuncMap)
 
 	sortedTableNames := ts.sortedTableNames()
 	if !ts.DisableTableSchemas { // Writes the table DDL function
@@ -487,7 +497,7 @@ func (ts *Tables) WriteGo(w io.Writer) error {
 			Tables:     tables,
 			TableNames: sortedTableNames,
 		}
-		if err := tpl.ExecuteTemplate(buf, "code_tables.go.tpl", data); err != nil {
+		if err := ts.tpls.ExecuteTemplate(buf, "code_tables.go.tpl", data); err != nil {
 			return errors.NewWriteFailed(err, "[dmlgen] For Tables %v", tables)
 		}
 	}
@@ -496,21 +506,19 @@ func (ts *Tables) WriteGo(w io.Writer) error {
 	for _, tblname := range sortedTableNames {
 		t := ts.Tables[tblname] // must panic if table name not found
 
-		if err := t.writeTo(buf, tpl.Lookup("code_entity.go.tpl")); err != nil {
-			return errors.NewWriteFailed(err, "[dmlgen] For Table %q", t.TableName)
-		}
-		if err := t.writeTo(buf, tpl.Lookup("code_collection.go.tpl")); err != nil {
-			return errors.NewWriteFailed(err, "[dmlgen] For Table %q", t.TableName)
+		ts.execTpl(buf, t, "code_entity.go.tpl")
+		ts.execTpl(buf, t, "code_collection.go.tpl")
+		if !t.DisableCollectionMethods {
+			ts.execTpl(buf, t, "code_collection_methods.go.tpl")
 		}
 		if t.TextMarshaler {
-			if err := t.writeTo(buf, tpl.Lookup("code_text.go.tpl")); err != nil {
-				return errors.NewWriteFailed(err, "[dmlgen] For Table %q", t.TableName)
-			}
+			ts.execTpl(buf, t, "code_text.go.tpl")
 		}
 		if t.BinaryMarshaler {
-			if err := t.writeTo(buf, tpl.Lookup("code_binary.go.tpl")); err != nil {
-				return errors.NewWriteFailed(err, "[dmlgen] For Table %q", t.TableName)
-			}
+			ts.execTpl(buf, t, "code_binary.go.tpl")
+		}
+		if ts.lastError != nil {
+			return ts.lastError
 		}
 	}
 
@@ -539,13 +547,14 @@ func (ts *Tables) WriteGo(w io.Writer) error {
 
 // table writes one database table into Go source code.
 type table struct {
-	Package         string      // Name of the package
-	TableName       string      // Name of the table
-	Comment         string      // Comment above the struct type declaration
-	Columns         ddl.Columns // all columns of a table
-	TextMarshaler   bool
-	BinaryMarshaler bool
-	Protobuf        bool // writes the .proto file if true
+	Package                  string      // Name of the package
+	TableName                string      // Name of the table
+	Comment                  string      // Comment above the struct type declaration
+	Columns                  ddl.Columns // all columns of a table
+	TextMarshaler            bool
+	BinaryMarshaler          bool
+	Protobuf                 bool // writes the .proto file if true
+	DisableCollectionMethods bool
 }
 
 // WriteTo implements io.WriterTo and writes the generated source code into w.
@@ -575,9 +584,11 @@ func GenerateProto(path string) error {
 
 	protoFiles, err := filepath.Glob(path + "*.proto")
 	if err != nil {
-		return errors.Wrapf(err, "[dmlgen] Can't find proto files in path %q", path)
+		return errors.Wrapf(err, "[dmlgen] Can't access proto files in path %q", path)
 	}
 
+	// To generate PHP Code replace `gogo_out` with `php_out`.
+	// Java bit similar. Java has ~15k LOC, Go ~3.7k
 	args := []string{
 		"--gogo_out", "Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types:.",
 		"--proto_path", fmt.Sprintf("%s/src/:%s/src/github.com/gogo/protobuf/protobuf/:.", build.Default.GOPATH, build.Default.GOPATH),

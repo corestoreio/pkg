@@ -22,6 +22,7 @@ import fmt "fmt"
 import math "math"
 import _ "github.com/gogo/protobuf/gogoproto"
 import _ "github.com/gogo/protobuf/types"
+import dml "github.com/corestoreio/pkg/sql/dml"
 
 import time "time"
 

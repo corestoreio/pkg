@@ -1,8 +1,12 @@
+// experimental, for now private but depends on later usage to make it public.
+type slice{{.Entity}} []*{{.Entity}}
+
 // {{.Collection}} represents a collection type for DB table {{ .TableName }}
 // Not thread safe. Auto generated.
 {{.Comment -}}
 type {{.Collection}} struct {
-	Data           		[]*{{.Entity}}
+	// Data contains a slice of []*{{.Entity}}
+	Data           		slice{{.Entity}}
 	BeforeMapColumns	func(uint64, *{{.Entity}}) error
 	AfterMapColumns 	func(uint64, *{{.Entity}}) error
 }
@@ -10,7 +14,7 @@ type {{.Collection}} struct {
 // Make{{.Collection}} creates a new initialized collection. Auto generated.
 func Make{{.Collection}}() {{.Collection}} {
 	return {{.Collection}}{
-		Data: make([]*{{.Entity}}, 0, 5),
+		Data: make(slice{{.Entity}}, 0, 5),
 	}
 }
 
