@@ -105,11 +105,9 @@ type TableOption struct {
 }
 
 func (to *TableOption) applyEncoders(ts *Tables, t *table) {
-	if to.lastErr != nil {
-		return
-	}
-	for _, enc := range to.Encoders {
-		switch enc {
+	for i := 0; i < len(to.Encoders) && to.lastErr == nil; i++ {
+		//for _, enc := range to.Encoders {
+		switch enc := to.Encoders[i]; enc {
 		case "text":
 			t.TextMarshaler = true
 		case "binary":
@@ -125,20 +123,17 @@ func (to *TableOption) applyEncoders(ts *Tables, t *table) {
 }
 
 func (to *TableOption) applyStructTags(t *table) {
-	if to.lastErr != nil {
-		return
-	}
-
-	for _, c := range t.Columns {
+	for h := 0; h < len(t.Columns) && to.lastErr == nil; h++ {
+		c := t.Columns[h]
 		var buf strings.Builder
-		for i, tagName := range to.StructTags {
+		for lst, i := len(to.StructTags), 0; i < lst && to.lastErr == nil; i++ {
 			if i > 0 {
 				buf.WriteByte(' ')
 			}
 			// Maybe some types in the struct for a table don't need at
 			// all an omitempty so build in some logic which creates the
 			// tags more thoughtfully.
-			switch tagName {
+			switch tagName := to.StructTags[i]; tagName {
 			case "bson":
 				fmt.Fprintf(&buf, `bson:"%s,omitempty"`, c.Field)
 			case "db":
@@ -182,10 +177,7 @@ func (to *TableOption) applyStructTags(t *table) {
 }
 
 func (to *TableOption) applyCustomStructTags(t *table) {
-	if to.lastErr != nil {
-		return
-	}
-	for i := 0; i < len(to.CustomStructTags); i = i + 2 {
+	for i := 0; i < len(to.CustomStructTags) && to.lastErr == nil; i = i + 2 {
 		found := false
 		for _, c := range t.Columns {
 			if c.Field == to.CustomStructTags[i] {
@@ -201,11 +193,10 @@ func (to *TableOption) applyCustomStructTags(t *table) {
 }
 
 func (to *TableOption) applyComments(t *table) {
-	if to.lastErr != nil || to.Comment == "" {
-		return
-	}
 	var buf strings.Builder
-	for _, line := range strings.Split(to.Comment, "\n") {
+	lines := strings.Split(to.Comment, "\n")
+	for i := 0; i < len(lines) && to.lastErr == nil && to.Comment != ""; i++ {
+		line := lines[i]
 		if !strings.HasPrefix(line, "//") {
 			buf.WriteString("// ")
 		}
@@ -234,15 +225,14 @@ func (to *TableOption) applyColumnAliases(t *table) {
 		if !found {
 			to.lastErr = errors.NewNotFoundf("[dmlgen] WithTableOption:ColumnAliases: For table %q the Column %q cannot be found.",
 				t.TableName, colName)
+			return
 		}
 	}
 }
 
 func (to *TableOption) applyUniquifiedColumns(t *table) {
-	if to.lastErr != nil {
-		return
-	}
-	for _, cn := range to.UniquifiedColumns {
+	for i := 0; i < len(to.UniquifiedColumns) && to.lastErr == nil; i++ {
+		cn := to.UniquifiedColumns[i]
 		found := false
 		for _, c := range t.Columns {
 			if c.Field == cn {
@@ -260,13 +250,12 @@ func (to *TableOption) applyUniquifiedColumns(t *table) {
 // WithTableOption applies options to a table, identified by the table name used
 // as map key.
 func WithTableOption(tableName string, opt *TableOption) (o Option) {
+	// Panic as early as possible.
+	if len(opt.CustomStructTags)%2 == 1 {
+		panic(errors.NewFatalf("[dmlgen] WithTableOption: Table %q option CustomStructTags must be a balanced slice.", tableName))
+	}
 	o.sortOrder = 150
 	o.fn = func(ts *Tables) (err error) {
-
-		if len(opt.CustomStructTags)%2 == 1 {
-			panic(errors.NewFatalf("[dmlgen] WithTableOption: Table %q option CustomStructTags must be a balanced slice.", tableName))
-		}
-
 		t, ok := ts.Tables[tableName]
 		if t == nil || !ok {
 			return errors.NewNotFoundf("[dmlgen] WithTableOption: Table %q not found.", tableName)
