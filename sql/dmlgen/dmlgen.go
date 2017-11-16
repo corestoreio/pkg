@@ -101,11 +101,165 @@ type TableOption struct {
 	// but should have a dedicated function to extract their unique primitive
 	// values as a slice.
 	UniquifiedColumns []string
+	lastErr           error
+}
+
+func (to *TableOption) applyEncoders(ts *Tables, t *table) {
+	if to.lastErr != nil {
+		return
+	}
+	for _, enc := range to.Encoders {
+		switch enc {
+		case "text":
+			t.TextMarshaler = true
+		case "binary":
+			t.BinaryMarshaler = true
+		case "protobuf":
+			// github.com/gogo/protobuf/protoc-gen-gogo/generator/generator.go#L1629 Generator.goTag
+			ts.writeProto = true
+			t.Protobuf = true // for now leave it in. maybe later PB gets added to the struct tags.
+		default:
+			to.lastErr = errors.NewNotSupportedf("[dmlgen] WithTableOption: Table %q Encoder %q not supported", t.TableName, enc)
+		}
+	}
+}
+
+func (to *TableOption) applyStructTags(t *table) {
+	if to.lastErr != nil {
+		return
+	}
+
+	for _, c := range t.Columns {
+		var buf strings.Builder
+		for i, tagName := range to.StructTags {
+			if i > 0 {
+				buf.WriteByte(' ')
+			}
+			// Maybe some types in the struct for a table don't need at
+			// all an omitempty so build in some logic which creates the
+			// tags more thoughtfully.
+			switch tagName {
+			case "bson":
+				fmt.Fprintf(&buf, `bson:"%s,omitempty"`, c.Field)
+			case "db":
+				fmt.Fprintf(&buf, `db:"%s"`, c.Field)
+			case "env":
+				fmt.Fprintf(&buf, `env:"%s"`, c.Field)
+			case "json":
+				fmt.Fprintf(&buf, `json:"%s,omitempty"`, c.Field)
+			case "toml":
+				fmt.Fprintf(&buf, `toml:"%s"`, c.Field)
+			case "yaml":
+				fmt.Fprintf(&buf, `yaml:"%s,omitempty"`, c.Field)
+			case "xml":
+				fmt.Fprintf(&buf, `xml:"%s,omitempty"`, c.Field)
+			case "protobuf":
+				// github.com/gogo/protobuf/protoc-gen-gogo/generator/generator.go#L1629 Generator.goTag
+				// The tag is a string like "varint,2,opt,name=fieldname,def=7" that
+				// identifies details of the field for the protocol buffer marshaling and unmarshaling
+				// code.  The fields are:
+				//	wire encoding
+				//	protocol tag number
+				//	opt,req,rep for optional, required, or repeated
+				//	packed whether the encoding is "packed" (optional; repeated primitives only)
+				//	name= the original declared name
+				//	enum= the name of the enum type if it is an enum-typed field.
+				//	proto3 if this field is in a proto3 message
+				//	def= string representation of the default value, if any.
+				// The default value must be in a representation that can be used at run-time
+				// to generate the default value. Thus bools become 0 and 1, for instance.
+
+				// CYS: not quite sure if struct tags are really needed
+				//pbType := "TODO"
+				//customType := ",customtype=github.com/gogo/protobuf/test.TODO"
+				//fmt.Fprintf(&buf, `protobuf:"%s,%d,opt,name=%s%s"`, pbType, c.Pos, c.Field, customType)
+			default:
+				to.lastErr = errors.NewNotSupportedf("[dmlgen] WithTableOption: Table %q Tag %q not supported", t.TableName, tagName)
+			}
+		}
+		c.StructTag = buf.String()
+	} // end Columns loop
+}
+
+func (to *TableOption) applyCustomStructTags(t *table) {
+	if to.lastErr != nil {
+		return
+	}
+	for i := 0; i < len(to.CustomStructTags); i = i + 2 {
+		found := false
+		for _, c := range t.Columns {
+			if c.Field == to.CustomStructTags[i] {
+				c.StructTag = to.CustomStructTags[i+1]
+				found = true
+			}
+		}
+		if !found {
+			to.lastErr = errors.NewNotFoundf("[dmlgen] WithTableOption:CustomStructTags: For table %q the Column %q cannot be found.",
+				t.TableName, to.CustomStructTags[i])
+		}
+	}
+}
+
+func (to *TableOption) applyComments(t *table) {
+	if to.lastErr != nil || to.Comment == "" {
+		return
+	}
+	var buf strings.Builder
+	for _, line := range strings.Split(to.Comment, "\n") {
+		if !strings.HasPrefix(line, "//") {
+			buf.WriteString("// ")
+		}
+		buf.WriteString(line)
+		buf.WriteByte('\n')
+	}
+	t.Comment = buf.String()
+}
+
+func (to *TableOption) applyColumnAliases(t *table) {
+	if to.lastErr != nil {
+		return
+	}
+	// With iteration looping it this way, we can easily proof if the
+	// developer has correctly written the column name. We might have
+	// more work here but the developer has a better experience when a
+	// column can't be found.
+	for colName, aliases := range to.ColumnAliases {
+		found := false
+		for _, col := range t.Columns {
+			if col.Field == colName {
+				found = true
+				col.Aliases = aliases
+			}
+		}
+		if !found {
+			to.lastErr = errors.NewNotFoundf("[dmlgen] WithTableOption:ColumnAliases: For table %q the Column %q cannot be found.",
+				t.TableName, colName)
+		}
+	}
+}
+
+func (to *TableOption) applyUniquifiedColumns(t *table) {
+	if to.lastErr != nil {
+		return
+	}
+	for _, cn := range to.UniquifiedColumns {
+		found := false
+		for _, c := range t.Columns {
+			if c.Field == cn {
+				c.Uniquified = true
+				found = true
+			}
+		}
+		if !found {
+			to.lastErr = errors.NewNotFoundf("[dmlgen] WithTableOption:UniquifiedColumns: For table %q the Column %q cannot be found.",
+				to.CustomStructTags, cn)
+		}
+	}
 }
 
 // WithTableOption applies options to a table, identified by the table name used
 // as map key.
-func WithTableOption(tableName string, opt TableOption) (o Option) {
+func WithTableOption(tableName string, opt *TableOption) (o Option) {
 	o.sortOrder = 150
 	o.fn = func(ts *Tables) (err error) {
 
@@ -117,131 +271,13 @@ func WithTableOption(tableName string, opt TableOption) (o Option) {
 		if t == nil || !ok {
 			return errors.NewNotFoundf("[dmlgen] WithTableOption: Table %q not found.", tableName)
 		}
-
-		for _, enc := range opt.Encoders {
-			switch enc {
-			case "text":
-				ts.Tables[tableName].TextMarshaler = true
-			case "binary":
-				ts.Tables[tableName].BinaryMarshaler = true
-			case "protobuf":
-				// github.com/gogo/protobuf/protoc-gen-gogo/generator/generator.go#L1629 Generator.goTag
-				ts.writeProto = true
-				ts.Tables[tableName].Protobuf = true // for now leave it in. maybe later PB gets added to the struct tags.
-			default:
-				return errors.NewNotSupportedf("[dmlgen] WithTableOption: Table %q Encoder %q not supported", tableName, enc)
-			}
-		}
-
-		for _, c := range t.Columns {
-			var buf strings.Builder
-			for i, tagName := range opt.StructTags {
-				if i > 0 {
-					buf.WriteByte(' ')
-				}
-				// Maybe some types in the struct for a table don't need at
-				// all an omitempty so build in some logic which creates the
-				// tags more thoughtfully.
-				switch tagName {
-				case "bson":
-					fmt.Fprintf(&buf, `bson:"%s,omitempty"`, c.Field)
-				case "db":
-					fmt.Fprintf(&buf, `db:"%s"`, c.Field)
-				case "env":
-					fmt.Fprintf(&buf, `env:"%s"`, c.Field)
-				case "json":
-					fmt.Fprintf(&buf, `json:"%s,omitempty"`, c.Field)
-				case "toml":
-					fmt.Fprintf(&buf, `toml:"%s"`, c.Field)
-				case "yaml":
-					fmt.Fprintf(&buf, `yaml:"%s,omitempty"`, c.Field)
-				case "xml":
-					fmt.Fprintf(&buf, `xml:"%s,omitempty"`, c.Field)
-				case "protobuf":
-					// github.com/gogo/protobuf/protoc-gen-gogo/generator/generator.go#L1629 Generator.goTag
-					// The tag is a string like "varint,2,opt,name=fieldname,def=7" that
-					// identifies details of the field for the protocol buffer marshaling and unmarshaling
-					// code.  The fields are:
-					//	wire encoding
-					//	protocol tag number
-					//	opt,req,rep for optional, required, or repeated
-					//	packed whether the encoding is "packed" (optional; repeated primitives only)
-					//	name= the original declared name
-					//	enum= the name of the enum type if it is an enum-typed field.
-					//	proto3 if this field is in a proto3 message
-					//	def= string representation of the default value, if any.
-					// The default value must be in a representation that can be used at run-time
-					// to generate the default value. Thus bools become 0 and 1, for instance.
-
-					// CYS: not quite sure if struct tags are really needed
-					//pbType := "TODO"
-					//customType := ",customtype=github.com/gogo/protobuf/test.TODO"
-					//fmt.Fprintf(&buf, `protobuf:"%s,%d,opt,name=%s%s"`, pbType, c.Pos, c.Field, customType)
-				default:
-					return errors.NewNotSupportedf("[dmlgen] WithTableOption: Table %q Tag %q not supported", tableName, tagName)
-				}
-			}
-			c.StructTag = buf.String()
-		} // end Columns loop
-
-		for i := 0; i < len(opt.CustomStructTags); i = i + 2 {
-			found := false
-			for _, c := range t.Columns {
-				if c.Field == opt.CustomStructTags[i] {
-					c.StructTag = opt.CustomStructTags[i+1]
-					found = true
-				}
-			}
-			if !found {
-				return errors.NewNotFoundf("[dmlgen] WithTableOption:CustomStructTags: For table %q the Column %q cannot be found.",
-					tableName, opt.CustomStructTags[i])
-			}
-		}
-
-		if opt.Comment != "" {
-			var buf strings.Builder
-			for _, line := range strings.Split(opt.Comment, "\n") {
-				if !strings.HasPrefix(line, "//") {
-					buf.WriteString("// ")
-				}
-				buf.WriteString(line)
-				buf.WriteByte('\n')
-			}
-			t.Comment = buf.String()
-		}
-
-		// With iteration looping it this way, we can easily proof if the
-		// developer has correctly written the column name. We might have
-		// more work here but the developer has a better experience when a
-		// column can't be found.
-		for colName, aliases := range opt.ColumnAliases {
-			found := false
-			for _, col := range t.Columns {
-				if col.Field == colName {
-					found = true
-					col.Aliases = aliases
-				}
-			}
-			if !found {
-				return errors.NewNotFoundf("[dmlgen] WithTableOption:ColumnAliases: For table %q the Column %q cannot be found.",
-					tableName, colName)
-			}
-		}
-
-		for _, cn := range opt.UniquifiedColumns {
-			found := false
-			for _, c := range t.Columns {
-				if c.Field == cn {
-					c.Uniquified = true
-					found = true
-				}
-			}
-			if !found {
-				return errors.NewNotFoundf("[dmlgen] WithTableOption:UniquifiedColumns: For table %q the Column %q cannot be found.",
-					tableName, cn)
-			}
-		}
-		return nil
+		opt.applyEncoders(ts, t)
+		opt.applyStructTags(t)
+		opt.applyCustomStructTags(t)
+		opt.applyComments(t)
+		opt.applyColumnAliases(t)
+		opt.applyUniquifiedColumns(t)
+		return opt.lastErr
 	}
 	return
 }
