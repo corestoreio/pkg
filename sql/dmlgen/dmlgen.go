@@ -68,16 +68,57 @@ type Option struct {
 	fn        func(*Tables) error
 }
 
-// WithEncoder adds method receivers compatible with the interface declarations
-// in the various encoding packages. Supported encoder names are: text, binary,
-// and protobuf. Text includes JSON. Binary includes Gob.
-func WithEncoder(tableName string, encoderNames ...string) (opt Option) {
-	opt.sortOrder = 90 // must run before custom struct tags
-	opt.fn = func(ts *Tables) (err error) {
-		if ts.Tables[tableName] == nil {
-			return errors.NewNotFoundf("[dmlgen] WithEncoder: Table %q not found.", tableName)
+// TableOption used in conjunction with WithTableOption to apply different
+// configurations for a generated struct and its struct collection.
+type TableOption struct {
+	// Encoders add method receivers for, each struct, compatible with the
+	// interface declarations in the various encoding packages. Supported
+	// encoder names are: text, binary, and protobuf. Text includes JSON. Binary
+	// includes Gob.
+	Encoders []string
+	// StructTags enables struct tags proactively for the whole struct. Allowed
+	// values are: bson, db, env, json, protobuf, toml, yaml and xml. For bson,
+	// json, yaml and xml the omitempty attribute has been set. If you need a
+	// different struct tag for a specifiv column you must set the option
+	// CustomStructTags.
+	StructTags []string
+	// CustomStructTags allows to specify custom struct tags for a specific
+	// column. The slice must be balanced, means index i sets to the column name
+	// and index i+1 to the desired struct tag.
+	//		[]string{"column_a",`json: ",omitempty"`,"column_b","`xml:,omitempty`"}
+	CustomStructTags []string // balanced slice
+	// Comment adds custom comments to each struct type. Useful when relying on
+	// 3rd party JSON marshaler code generators like easyjson or ffjson. If
+	// comment spans over multiple lines each line will be checked if it starts
+	// with the comment identifier (//). If not, the identifier will be
+	// prepended.
+	Comment string
+	// ColumnAliases specifies different names used for a column. For example
+	// customer_entity.entity_id can also be sales_order.customer_id, hence a
+	// Foreign Key. The alias would be just: entity_id:[]string{"customer_id"}.
+	ColumnAliases map[string][]string // key=column name value a list of aliases
+	// UniquifiedColumns specifies columns which are non primary/unique key one
+	// but should have a dedicated function to extract their unique primitive
+	// values as a slice.
+	UniquifiedColumns []string
+}
+
+// WithTableOption applies options to a table, identified by the table name used
+// as map key.
+func WithTableOption(tableName string, opt TableOption) (o Option) {
+	o.sortOrder = 150
+	o.fn = func(ts *Tables) (err error) {
+
+		if len(opt.CustomStructTags)%2 == 1 {
+			panic(errors.NewFatalf("[dmlgen] WithTableOption: Table %q option CustomStructTags must be a balanced slice.", tableName))
 		}
-		for _, enc := range encoderNames {
+
+		t, ok := ts.Tables[tableName]
+		if t == nil || !ok {
+			return errors.NewNotFoundf("[dmlgen] WithTableOption: Table %q not found.", tableName)
+		}
+
+		for _, enc := range opt.Encoders {
 			switch enc {
 			case "text":
 				ts.Tables[tableName].TextMarshaler = true
@@ -88,132 +129,78 @@ func WithEncoder(tableName string, encoderNames ...string) (opt Option) {
 				ts.writeProto = true
 				ts.Tables[tableName].Protobuf = true // for now leave it in. maybe later PB gets added to the struct tags.
 			default:
-				return errors.NewNotSupportedf("[dmlgen] WithMarshaler: encoder %q not supported", enc)
+				return errors.NewNotSupportedf("[dmlgen] WithTableOption: Table %q Encoder %q not supported", tableName, enc)
 			}
 		}
-		return nil
-	}
-	return
-}
 
-// WithStructTags enables struct tags proactively for the whole struct. Allowed
-// values are: bson, db, env, json, protobuf, toml, yaml and xml. For bson,
-// json, yaml and xml the omitempty attribute has been set. If you need a
-// different struct tag for a specifiv column you must set the option
-// WithCustomStructTags. It doesn't matter in which order you apply the options
-// ;-)
-func WithStructTags(tableName string, tagNames ...string) (opt Option) {
-	opt.sortOrder = 90 // must run before custom struct tags
-	opt.fn = func(ts *Tables) (err error) {
-		if t, ok := ts.Tables[tableName]; ok {
-			for _, c := range t.Columns {
-				var buf bytes.Buffer // TODO use new string.Builder in Go 1.10 or 1.11
-				for i, tagName := range tagNames {
-					if i > 0 {
-						buf.WriteByte(' ')
-					}
-					// Maybe some types in the struct for a table don't need at
-					// all an omitempty so build in some logic which creates the
-					// tags more thoughtfully.
-					switch tagName {
-					case "bson":
-						fmt.Fprintf(&buf, `bson:"%s,omitempty"`, c.Field)
-					case "db":
-						fmt.Fprintf(&buf, `db:"%s"`, c.Field)
-					case "env":
-						fmt.Fprintf(&buf, `env:"%s"`, c.Field)
-					case "json":
-						fmt.Fprintf(&buf, `json:"%s,omitempty"`, c.Field)
-					case "toml":
-						fmt.Fprintf(&buf, `toml:"%s"`, c.Field)
-					case "yaml":
-						fmt.Fprintf(&buf, `yaml:"%s,omitempty"`, c.Field)
-					case "xml":
-						fmt.Fprintf(&buf, `xml:"%s,omitempty"`, c.Field)
-					case "protobuf":
-						// github.com/gogo/protobuf/protoc-gen-gogo/generator/generator.go#L1629 Generator.goTag
-						// The tag is a string like "varint,2,opt,name=fieldname,def=7" that
-						// identifies details of the field for the protocol buffer marshaling and unmarshaling
-						// code.  The fields are:
-						//	wire encoding
-						//	protocol tag number
-						//	opt,req,rep for optional, required, or repeated
-						//	packed whether the encoding is "packed" (optional; repeated primitives only)
-						//	name= the original declared name
-						//	enum= the name of the enum type if it is an enum-typed field.
-						//	proto3 if this field is in a proto3 message
-						//	def= string representation of the default value, if any.
-						// The default value must be in a representation that can be used at run-time
-						// to generate the default value. Thus bools become 0 and 1, for instance.
-
-						// CYS: not quite sure if struct tags are really needed
-						//pbType := "TODO"
-						//customType := ",customtype=github.com/gogo/protobuf/test.TODO"
-						//fmt.Fprintf(&buf, `protobuf:"%s,%d,opt,name=%s%s"`, pbType, c.Pos, c.Field, customType)
-					default:
-						return errors.NewNotSupportedf("[dmlgen] WithStructTags: tag %q not supported", tagName)
-					}
-				}
-				c.StructTag = buf.String()
-			}
-		} else {
-			err = errors.NewNotFoundf("[dmlgen] WithStructTags: Table %q cannot be found.", tableName)
-		}
-		return err
-	}
-	return
-}
-
-// WithCustomStructTags allows to specify custom struct tags for a specific column.
-// The argument `columnNameStructTag` must be a balanced slice where index i
-// sets to the column name and index i+1 to the desired struct tag.
-//		dmlgen.WithCustomStructTags("table_name","column_a",`json: ",omitempty"`,"column_b","`xml:,omitempty`")
-// It doesn't matter in which order you apply the options ;-)
-func WithCustomStructTags(tableName string, columnNameStructTag ...string) (opt Option) {
-	if len(columnNameStructTag)%2 == 1 {
-		panic(errors.NewFatalf("[dmlgen] WithCustomStructTags: Argument columnNameStructTag must be a balanced slice."))
-	}
-	opt.sortOrder = 100
-	opt.fn = func(ts *Tables) error {
-		t, ok := ts.Tables[tableName]
-		if !ok {
-			return errors.NewNotFoundf("[dmlgen] WithCustomStructTags: Table %q cannot be found.", tableName)
-		}
-		var found int
 		for _, c := range t.Columns {
-			for i := 0; i < len(columnNameStructTag); i = i + 2 {
-				if c.Field == columnNameStructTag[i] {
-					c.StructTag = columnNameStructTag[i+1]
-					found++
+			var buf strings.Builder
+			for i, tagName := range opt.StructTags {
+				if i > 0 {
+					buf.WriteByte(' ')
+				}
+				// Maybe some types in the struct for a table don't need at
+				// all an omitempty so build in some logic which creates the
+				// tags more thoughtfully.
+				switch tagName {
+				case "bson":
+					fmt.Fprintf(&buf, `bson:"%s,omitempty"`, c.Field)
+				case "db":
+					fmt.Fprintf(&buf, `db:"%s"`, c.Field)
+				case "env":
+					fmt.Fprintf(&buf, `env:"%s"`, c.Field)
+				case "json":
+					fmt.Fprintf(&buf, `json:"%s,omitempty"`, c.Field)
+				case "toml":
+					fmt.Fprintf(&buf, `toml:"%s"`, c.Field)
+				case "yaml":
+					fmt.Fprintf(&buf, `yaml:"%s,omitempty"`, c.Field)
+				case "xml":
+					fmt.Fprintf(&buf, `xml:"%s,omitempty"`, c.Field)
+				case "protobuf":
+					// github.com/gogo/protobuf/protoc-gen-gogo/generator/generator.go#L1629 Generator.goTag
+					// The tag is a string like "varint,2,opt,name=fieldname,def=7" that
+					// identifies details of the field for the protocol buffer marshaling and unmarshaling
+					// code.  The fields are:
+					//	wire encoding
+					//	protocol tag number
+					//	opt,req,rep for optional, required, or repeated
+					//	packed whether the encoding is "packed" (optional; repeated primitives only)
+					//	name= the original declared name
+					//	enum= the name of the enum type if it is an enum-typed field.
+					//	proto3 if this field is in a proto3 message
+					//	def= string representation of the default value, if any.
+					// The default value must be in a representation that can be used at run-time
+					// to generate the default value. Thus bools become 0 and 1, for instance.
+
+					// CYS: not quite sure if struct tags are really needed
+					//pbType := "TODO"
+					//customType := ",customtype=github.com/gogo/protobuf/test.TODO"
+					//fmt.Fprintf(&buf, `protobuf:"%s,%d,opt,name=%s%s"`, pbType, c.Pos, c.Field, customType)
+				default:
+					return errors.NewNotSupportedf("[dmlgen] WithTableOption: Table %q Tag %q not supported", tableName, tagName)
 				}
 			}
-		}
-		if found != len(columnNameStructTag)/2 {
-			return errors.NewNotFoundf("[dmlgen] WithCustomStructTags: For table %q one column in %v cannot be found.", tableName, columnNameStructTag)
-		}
-		return nil
-	}
-	return
-}
+			c.StructTag = buf.String()
+		} // end Columns loop
 
-// WithStructComment adds custom comments to each struct type. Useful when
-// relying on 3rd party JSON marshaler code generators like easyjson or ffjson.
-// If comment spans over multiple lines each line will be checked if it starts
-// with the comment identifier (//). If not the identifier will be prepended.
-func WithStructComment(tableNameComment ...string) (opt Option) {
-	if len(tableNameComment)%2 == 1 {
-		panic(errors.NewFatalf("[dmlgen] WithStructComment: Argument tableNameComment must be a balanced slice."))
-	}
-	opt.sortOrder = 105
-	opt.fn = func(ts *Tables) error {
-		for i := 0; i < len(tableNameComment); i = i + 2 {
-			tableName := tableNameComment[i]
-			t, ok := ts.Tables[tableName]
-			if !ok {
-				return errors.NewNotFoundf("[dmlgen] WithStructComment: Table %q cannot be found.", tableName)
+		for i := 0; i < len(opt.CustomStructTags); i = i + 2 {
+			found := false
+			for _, c := range t.Columns {
+				if c.Field == opt.CustomStructTags[i] {
+					c.StructTag = opt.CustomStructTags[i+1]
+					found = true
+				}
 			}
+			if !found {
+				return errors.NewNotFoundf("[dmlgen] WithTableOption:CustomStructTags: For table %q the Column %q cannot be found.",
+					tableName, opt.CustomStructTags[i])
+			}
+		}
+
+		if opt.Comment != "" {
 			var buf strings.Builder
-			for _, line := range strings.Split(tableNameComment[i+1], "\n") {
+			for _, line := range strings.Split(opt.Comment, "\n") {
 				if !strings.HasPrefix(line, "//") {
 					buf.WriteString("// ")
 				}
@@ -222,32 +209,39 @@ func WithStructComment(tableNameComment ...string) (opt Option) {
 			}
 			t.Comment = buf.String()
 		}
-		return nil
-	}
-	return
-}
 
-// WithColumnAliases specifies different names used for a column. For example
-// customer_entity.entity_id can also be sales_order.customer_id, hence a
-// Foreign Key. The alias would be just: entity_id:[]string{"customer_id"}.
-func WithColumnAliases(tableName, columnName string, aliases ...string) (opt Option) {
-	opt.sortOrder = 110
-	opt.fn = func(ts *Tables) (err error) {
-		if t, ok := ts.Tables[tableName]; ok {
+		// With iteration looping it this way, we can easily proof if the
+		// developer has correctly written the column name. We might have
+		// more work here but the developer has a better experience when a
+		// column can't be found.
+		for colName, aliases := range opt.ColumnAliases {
+			found := false
+			for _, col := range t.Columns {
+				if col.Field == colName {
+					found = true
+					col.Aliases = aliases
+				}
+			}
+			if !found {
+				return errors.NewNotFoundf("[dmlgen] WithTableOption:ColumnAliases: For table %q the Column %q cannot be found.",
+					tableName, colName)
+			}
+		}
+
+		for _, cn := range opt.UniquifiedColumns {
 			found := false
 			for _, c := range t.Columns {
-				if c.Field == columnName {
-					c.Aliases = aliases
+				if c.Field == cn {
+					c.Uniquified = true
 					found = true
 				}
 			}
 			if !found {
-				err = errors.NewNotFoundf("[dmlgen] WithColumnAliases: For table %q the column %q has not been found.", tableName, columnName)
+				return errors.NewNotFoundf("[dmlgen] WithTableOption:UniquifiedColumns: For table %q the Column %q cannot be found.",
+					tableName, cn)
 			}
-		} else {
-			err = errors.NewNotFoundf("[dmlgen] WithColumnAliases: Table %q cannot be found.", tableName)
 		}
-		return err
+		return nil
 	}
 	return
 }
@@ -290,33 +284,6 @@ func WithColumnAliasesFromForeignKeys(ctx context.Context, db dml.Querier) (opt 
 			}
 		}
 		return nil
-	}
-	return
-}
-
-// WithUniquifiedColumns specifies columns which are non primary/unique key one
-// but should have a dedicated function to extract their unique primitive values
-// as a slice.
-func WithUniquifiedColumns(tableName string, columnNames ...string) (opt Option) {
-	opt.sortOrder = 120
-	opt.fn = func(ts *Tables) (err error) {
-		if t, ok := ts.Tables[tableName]; ok {
-			var found int
-			for _, c := range t.Columns {
-				for _, cn := range columnNames {
-					if c.Field == cn {
-						c.Uniquified = true
-						found++
-					}
-				}
-			}
-			if len(columnNames) != found {
-				err = errors.NewNotFoundf("[dmlgen] WithUniquifiedColumns: For table %q one column of %v cannot been found.", tableName, columnNames)
-			}
-		} else {
-			err = errors.NewNotFoundf("[dmlgen] WithColumnAliases: Table %q cannot be found.", tableName)
-		}
-		return err
 	}
 	return
 }

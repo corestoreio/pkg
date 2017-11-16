@@ -82,14 +82,30 @@ func TestNewTables(t *testing.T) {
 
 	ctx := context.Background()
 	ts, err := dmlgen.NewTables("testdata",
-		//
-		dmlgen.WithCustomStructTags("core_config_data",
-			"path", `json:"x_path" xml:"y_path"`,
-			"scope_id", `json:"scope_id" xml:"scope_id"`,
-		),
-		dmlgen.WithStructTags("core_config_data", "json"),
-		dmlgen.WithColumnAliases("core_config_data", "path", "storage_location", "config_directory"),
-		dmlgen.WithUniquifiedColumns("core_config_data", "path"),
+		dmlgen.WithTableOption(
+			"core_config_data", dmlgen.TableOption{
+				CustomStructTags: []string{
+					"path", `json:"x_path" xml:"y_path"`,
+					"scope_id", `json:"scope_id" xml:"scope_id"`,
+				},
+				StructTags: []string{"json"},
+				ColumnAliases: map[string][]string{
+					"path": {"storage_location", "config_directory"},
+				},
+				UniquifiedColumns: []string{"path"},
+			}),
+		dmlgen.WithTableOption(
+			"dmlgen_types", dmlgen.TableOption{
+				Encoders:          []string{"text", "binary", "protobuf"},
+				StructTags:        []string{"json", "protobuf"},
+				UniquifiedColumns: []string{"col_longtext_2", "col_int_1", "col_int_2", "has_smallint_5", "col_date_2", "col_blob"},
+				Comment:           "Just another comment.\n//easyjson:json",
+			}),
+		dmlgen.WithTableOption(
+			"customer_entity", dmlgen.TableOption{
+				Encoders: []string{"text", "protobuf"},
+			}),
+
 		dmlgen.WithTable("core_config_data", ddl.Columns{
 			&ddl.Column{Field: "config_id", Pos: 1, Null: "NO", DataType: "int", Precision: dml.MakeNullInt64(10), Scale: dml.MakeNullInt64(0), ColumnType: "int(10) unsigned", Key: "PRI", Extra: "auto_increment", Comment: "Config Id"},
 			&ddl.Column{Field: "scope", Pos: 2, Default: dml.MakeNullString("'default'"), Null: "NO", DataType: "varchar", CharMaxLength: dml.MakeNullInt64(8), ColumnType: "varchar(8)", Key: "MUL", Comment: "Config Scope"},
@@ -97,15 +113,9 @@ func TestNewTables(t *testing.T) {
 			&ddl.Column{Field: "path", Pos: 4, Default: dml.MakeNullString("'general'"), Null: "NO", DataType: "varchar", CharMaxLength: dml.MakeNullInt64(255), ColumnType: "varchar(255)", Comment: "Config Path"},
 			&ddl.Column{Field: "value", Pos: 5, Default: dml.MakeNullString("NULL"), Null: "YES", DataType: "text", CharMaxLength: dml.MakeNullInt64(65535), ColumnType: "text", Comment: "Config Value"},
 		}),
-		//
-		dmlgen.WithEncoder("dmlgen_types", "text", "binary", "protobuf"),
-		dmlgen.WithStructTags("dmlgen_types", "json", "protobuf"),
-		dmlgen.WithStructComment("dmlgen_types", "Just another comment.\n//easyjson:json"),
-		dmlgen.WithUniquifiedColumns("dmlgen_types", "col_longtext_2", "col_int_1", "col_int_2", "has_smallint_5", "col_date_2", "col_blob"),
-		//
+
 		dmlgen.WithLoadColumns(ctx, db.DB, "dmlgen_types", "customer_entity"),
-		//
-		dmlgen.WithEncoder("customer_entity", "text", "protobuf"),
+
 		dmlgen.WithColumnAliasesFromForeignKeys(ctx, db.DB),
 	)
 	require.NoError(t, err)
@@ -124,8 +134,10 @@ func TestInfoSchemaForeignKeys(t *testing.T) {
 	defer cstesting.Close(t, db)
 
 	ts, err := dmlgen.NewTables("testdata",
-		dmlgen.WithEncoder("KEY_COLUMN_USAGE", "text", "binary"),
-		dmlgen.WithUniquifiedColumns("KEY_COLUMN_USAGE", "TABLE_NAME", "COLUMN_NAME"),
+		dmlgen.WithTableOption("KEY_COLUMN_USAGE", dmlgen.TableOption{
+			Encoders:          []string{"text", "binary"},
+			UniquifiedColumns: []string{"TABLE_NAME", "COLUMN_NAME"},
+		}),
 		dmlgen.WithLoadColumns(context.Background(), db.DB, "KEY_COLUMN_USAGE"),
 	)
 	require.NoError(t, err)
@@ -147,18 +159,30 @@ func TestWithCustomStructTags(t *testing.T) {
 				t.Error("Expecting a panic but got nothing")
 			}
 		}()
-		dmlgen.WithCustomStructTags("table", "unbalanced")
+
+		dmlgen.NewTables("testdata",
+			dmlgen.WithTable("table", ddl.Columns{&ddl.Column{Field: "config_id"}}),
+			dmlgen.WithTableOption("table", dmlgen.TableOption{
+				CustomStructTags: []string{"unbalanced"},
+			}),
+		)
 	})
 
 	t.Run("table not found", func(t *testing.T) {
-		tbls, err := dmlgen.NewTables("test", dmlgen.WithCustomStructTags("tableNOTFOUND", "column", "db:..."))
+		tbls, err := dmlgen.NewTables("test",
+			dmlgen.WithTableOption("tableNOTFOUND", dmlgen.TableOption{
+				CustomStructTags: []string{"column", "db:..."},
+			}),
+		)
 		require.Nil(t, tbls)
 		assert.True(t, errors.IsNotFound(err), "%+v", err)
 	})
 
 	t.Run("column not found", func(t *testing.T) {
 		tbls, err := dmlgen.NewTables("test",
-			dmlgen.WithCustomStructTags("core_config_data", "scope_id", "toml:..."),
+			dmlgen.WithTableOption("core_config_data", dmlgen.TableOption{
+				CustomStructTags: []string{"scope_id", "toml:..."},
+			}),
 			dmlgen.WithTable("core_config_data", ddl.Columns{
 				&ddl.Column{Field: "config_id"},
 			}),
@@ -172,14 +196,20 @@ func TestWithStructTags(t *testing.T) {
 	t.Parallel()
 
 	t.Run("table not found", func(t *testing.T) {
-		tbls, err := dmlgen.NewTables("test", dmlgen.WithStructTags("tableNOTFOUND", "unbalanced"))
+		tbls, err := dmlgen.NewTables("test",
+			dmlgen.WithTableOption("tableNOTFOUND", dmlgen.TableOption{
+				StructTags: []string{"unbalanced"},
+			}),
+		)
 		require.Nil(t, tbls)
 		assert.True(t, errors.IsNotFound(err), "%+v", err)
 	})
 
 	t.Run("struct tag not supported", func(t *testing.T) {
 		tbls, err := dmlgen.NewTables("test",
-			dmlgen.WithStructTags("core_config_data", "hjson"),
+			dmlgen.WithTableOption("core_config_data", dmlgen.TableOption{
+				StructTags: []string{"hjson"},
+			}),
 			dmlgen.WithTable("core_config_data", ddl.Columns{
 				&ddl.Column{Field: "config_id"},
 			}),
@@ -190,7 +220,9 @@ func TestWithStructTags(t *testing.T) {
 
 	t.Run("al available struct tags", func(t *testing.T) {
 		tbls, err := dmlgen.NewTables("test",
-			dmlgen.WithStructTags("core_config_data", "bson", "db", "env", "json", "toml", "yaml", "xml"),
+			dmlgen.WithTableOption("core_config_data", dmlgen.TableOption{
+				StructTags: []string{"bson", "db", "env", "json", "toml", "yaml", "xml"},
+			}),
 			dmlgen.WithTable("core_config_data", ddl.Columns{
 				&ddl.Column{Field: "config_id"},
 			}),
@@ -205,14 +237,20 @@ func TestWithColumnAliases(t *testing.T) {
 	t.Parallel()
 
 	t.Run("table not found", func(t *testing.T) {
-		tbls, err := dmlgen.NewTables("test", dmlgen.WithColumnAliases("tableNOTFOUND", "column", "alias"))
+		tbls, err := dmlgen.NewTables("test",
+			dmlgen.WithTableOption("tableNOTFOUND", dmlgen.TableOption{
+				ColumnAliases: map[string][]string{"column": {"alias"}},
+			}),
+		)
 		require.Nil(t, tbls)
 		assert.True(t, errors.IsNotFound(err), "%+v", err)
 	})
 
 	t.Run("column not found", func(t *testing.T) {
 		tbls, err := dmlgen.NewTables("test",
-			dmlgen.WithColumnAliases("core_config_data", "scope_id", "scopeID"),
+			dmlgen.WithTableOption("tableNOTFOUND", dmlgen.TableOption{
+				ColumnAliases: map[string][]string{"scope_id": {"scopeID"}},
+			}),
 			dmlgen.WithTable("core_config_data", ddl.Columns{
 				&ddl.Column{Field: "config_id"},
 			}),
@@ -225,15 +263,12 @@ func TestWithColumnAliases(t *testing.T) {
 func TestWithUniquifiedColumns(t *testing.T) {
 	t.Parallel()
 
-	t.Run("table not found", func(t *testing.T) {
-		tbls, err := dmlgen.NewTables("test", dmlgen.WithUniquifiedColumns("tableNOTFOUND", "column", "alias"))
-		require.Nil(t, tbls)
-		assert.True(t, errors.IsNotFound(err), "%+v", err)
-	})
-
 	t.Run("column not found", func(t *testing.T) {
 		tbls, err := dmlgen.NewTables("test",
-			dmlgen.WithUniquifiedColumns("core_config_data", "scope_id", "scopeID"),
+			dmlgen.WithTableOption("core_config_data", dmlgen.TableOption{
+				UniquifiedColumns: []string{"scope_id", "scopeID"},
+			}),
+
 			dmlgen.WithTable("core_config_data", ddl.Columns{
 				&ddl.Column{Field: "config_id"},
 			}),
