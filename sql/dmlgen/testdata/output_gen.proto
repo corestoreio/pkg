@@ -72,13 +72,13 @@ message DmlgenTypes {
 	google.protobuf.Timestamp col_date_2 = 8 [(gogoproto.customname)="ColDate2",(gogoproto.stdtime)=true,(gogoproto.nullable)=false];
 	dml.NullTime col_datetime_1 = 9 [(gogoproto.customname)="ColDatetime1",(gogoproto.nullable)=false];
 	google.protobuf.Timestamp col_datetime_2 = 10 [(gogoproto.customname)="ColDatetime2",(gogoproto.stdtime)=true,(gogoproto.nullable)=false];
-	dml.NullFloat64 col_decimal_10_0 = 11 [(gogoproto.customname)="ColDecimal100",(gogoproto.nullable)=false];
-	dml.NullFloat64 col_decimal_12_4 = 12 [(gogoproto.customname)="ColDecimal124",(gogoproto.nullable)=false];
+	dml.Decimal col_decimal_10_0 = 11 [(gogoproto.customname)="ColDecimal100",(gogoproto.nullable)=false];
+	dml.Decimal col_decimal_12_4 = 12 [(gogoproto.customname)="ColDecimal124",(gogoproto.nullable)=false];
 	dml.Decimal price_12_4a = 13 [(gogoproto.customname)="Price124a",(gogoproto.nullable)=false];
 	dml.Decimal price_12_4b = 14 [(gogoproto.customname)="Price124b",(gogoproto.nullable)=false];
-	double col_decimal_12_3 = 15 [(gogoproto.customname)="ColDecimal123"];
-	double col_decimal_20_6 = 16 [(gogoproto.customname)="ColDecimal206"];
-	double col_decimal_24_12 = 17 [(gogoproto.customname)="ColDecimal2412"];
+	dml.Decimal col_decimal_12_3 = 15 [(gogoproto.customname)="ColDecimal123",(gogoproto.nullable)=false];
+	dml.Decimal col_decimal_20_6 = 16 [(gogoproto.customname)="ColDecimal206",(gogoproto.nullable)=false];
+	dml.Decimal col_decimal_24_12 = 17 [(gogoproto.customname)="ColDecimal2412",(gogoproto.nullable)=false];
 	double col_float = 18 [(gogoproto.customname)="ColFloat"];
 	dml.NullInt64 col_int_1 = 19 [(gogoproto.customname)="ColInt1",(gogoproto.nullable)=false];
 	int64 col_int_2 = 20 [(gogoproto.customname)="ColInt2"];

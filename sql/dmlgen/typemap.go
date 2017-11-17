@@ -39,102 +39,119 @@ const (
 	idxProtobufSignedNotNull
 )
 
+// TypeDef used in variable `MysqlTypeToGo` to map a MySQL/MariaDB type to its
+// appropriate Go or Protocol Buffer type. Those types are getting printed in
+// the generated files.
+type TypeDef struct {
+	MysqlUnsignedNull    string
+	MysqlUnsignedNotNull string
+	MysqlSignedNull      string
+	MysqlSignedNotNull   string
+
+	ProtobufUnsignedNull    string
+	ProtobufUnsignedNotNull string
+	ProtobufSignedNull      string
+	ProtobufSignedNotNull   string
+}
+
 // These variables are mapping the un/signed and null/not-null types to the
 // appropriate Go type.
 var (
 	// TODO further optimize this mappings
-	goTypeInt64 = [...]string{
-		idxMysqlUnsignedNull:    "dml.NullInt64",
-		idxMysqlUnsignedNotNull: "uint64",
-		idxMysqlSignedNull:      "dml.NullInt64",
-		idxMysqlSignedNotNull:   "int64",
+	goTypeInt64 = &TypeDef{
+		MysqlUnsignedNull:    "dml.NullInt64",
+		MysqlUnsignedNotNull: "uint64",
+		MysqlSignedNull:      "dml.NullInt64",
+		MysqlSignedNotNull:   "int64",
 
-		idxProtobufUnsignedNull:    "dml.NullInt64", // Proto package and its type, not the Go package!
-		idxProtobufUnsignedNotNull: "uint64",
-		idxProtobufSignedNull:      "dml.NullInt64", // Proto package and its type, not the Go package!
-		idxProtobufSignedNotNull:   "int64",
+		ProtobufUnsignedNull:    "dml.NullInt64", // Proto package and its type, not the Go package!
+		ProtobufUnsignedNotNull: "uint64",
+		ProtobufSignedNull:      "dml.NullInt64", // Proto package and its type, not the Go package!
+		ProtobufSignedNotNull:   "int64",
 	}
-	goTypeInt = [...]string{
-		idxMysqlUnsignedNull:    "dml.NullInt64",
-		idxMysqlUnsignedNotNull: "uint64",
-		idxMysqlSignedNull:      "dml.NullInt64",
-		idxMysqlSignedNotNull:   "int64",
+	goTypeInt = &TypeDef{
+		MysqlUnsignedNull:    "dml.NullInt64",
+		MysqlUnsignedNotNull: "uint64",
+		MysqlSignedNull:      "dml.NullInt64",
+		MysqlSignedNotNull:   "int64",
 
-		idxProtobufUnsignedNull:    "dml.NullInt64", // Proto package and its type, not the Go package!
-		idxProtobufUnsignedNotNull: "uint64",
-		idxProtobufSignedNull:      "dml.NullInt64", // Proto package and its type, not the Go package!
-		idxProtobufSignedNotNull:   "int64",
+		ProtobufUnsignedNull:    "dml.NullInt64", // Proto package and its type, not the Go package!
+		ProtobufUnsignedNotNull: "uint64",
+		ProtobufSignedNull:      "dml.NullInt64", // Proto package and its type, not the Go package!
+		ProtobufSignedNotNull:   "int64",
 	}
-	goTypeFloat64 = [...]string{
-		idxMysqlUnsignedNull:    "dml.NullFloat64",
-		idxMysqlUnsignedNotNull: "float64",
-		idxMysqlSignedNull:      "dml.NullFloat64",
-		idxMysqlSignedNotNull:   "float64",
+	goTypeFloat64 = &TypeDef{
+		MysqlUnsignedNull:    "dml.NullFloat64",
+		MysqlUnsignedNotNull: "float64",
+		MysqlSignedNull:      "dml.NullFloat64",
+		MysqlSignedNotNull:   "float64",
 
-		idxProtobufUnsignedNull:    "dml.NullFloat64", // Proto package and its type, not the Go package!
-		idxProtobufUnsignedNotNull: "double",
-		idxProtobufSignedNull:      "dml.NullFloat64", // Proto package and its type, not the Go package!
-		idxProtobufSignedNotNull:   "double",
+		ProtobufUnsignedNull:    "dml.NullFloat64", // Proto package and its type, not the Go package!
+		ProtobufUnsignedNotNull: "double",
+		ProtobufSignedNull:      "dml.NullFloat64", // Proto package and its type, not the Go package!
+		ProtobufSignedNotNull:   "double",
 	}
-	goTypeTime = [...]string{
-		idxMysqlUnsignedNull:    "dml.NullTime",
-		idxMysqlUnsignedNotNull: "time.Time",
-		idxMysqlSignedNull:      "dml.NullTime",
-		idxMysqlSignedNotNull:   "time.Time",
+	goTypeTime = &TypeDef{
+		MysqlUnsignedNull:    "dml.NullTime",
+		MysqlUnsignedNotNull: "time.Time",
+		MysqlSignedNull:      "dml.NullTime",
+		MysqlSignedNotNull:   "time.Time",
 
-		idxProtobufUnsignedNull:    "dml.NullTime", // Proto package and its type, not the Go package!
-		idxProtobufUnsignedNotNull: "google.protobuf.Timestamp",
-		idxProtobufSignedNull:      "dml.NullTime", // Proto package and its type, not the Go package!
-		idxProtobufSignedNotNull:   "google.protobuf.Timestamp",
+		ProtobufUnsignedNull:    "dml.NullTime", // Proto package and its type, not the Go package!
+		ProtobufUnsignedNotNull: "google.protobuf.Timestamp",
+		ProtobufSignedNull:      "dml.NullTime", // Proto package and its type, not the Go package!
+		ProtobufSignedNotNull:   "google.protobuf.Timestamp",
 	}
-	goTypeString = [...]string{
-		idxMysqlUnsignedNull:    "dml.NullString",
-		idxMysqlUnsignedNotNull: "string",
-		idxMysqlSignedNull:      "dml.NullString",
-		idxMysqlSignedNotNull:   "string",
+	goTypeString = &TypeDef{
+		MysqlUnsignedNull:    "dml.NullString",
+		MysqlUnsignedNotNull: "string",
+		MysqlSignedNull:      "dml.NullString",
+		MysqlSignedNotNull:   "string",
 
-		idxProtobufUnsignedNull:    "dml.NullString", // Proto package and its type, not the Go package!
-		idxProtobufUnsignedNotNull: "string",
-		idxProtobufSignedNull:      "dml.NullString", // Proto package and its type, not the Go package!
-		idxProtobufSignedNotNull:   "string",
+		ProtobufUnsignedNull:    "dml.NullString", // Proto package and its type, not the Go package!
+		ProtobufUnsignedNotNull: "string",
+		ProtobufSignedNull:      "dml.NullString", // Proto package and its type, not the Go package!
+		ProtobufSignedNotNull:   "string",
 	}
-	goTypeBool = [...]string{
-		idxMysqlUnsignedNull:    "dml.NullBool",
-		idxMysqlUnsignedNotNull: "bool",
-		idxMysqlSignedNull:      "dml.NullBool",
-		idxMysqlSignedNotNull:   "bool",
+	goTypeBool = &TypeDef{
+		MysqlUnsignedNull:    "dml.NullBool",
+		MysqlUnsignedNotNull: "bool",
+		MysqlSignedNull:      "dml.NullBool",
+		MysqlSignedNotNull:   "bool",
 
-		idxProtobufUnsignedNull:    "dml.NullBool", // Proto package and its type, not the Go package!
-		idxProtobufUnsignedNotNull: "bool",
-		idxProtobufSignedNull:      "dml.NullBool", // Proto package and its type, not the Go package!
-		idxProtobufSignedNotNull:   "bool",
+		ProtobufUnsignedNull:    "dml.NullBool", // Proto package and its type, not the Go package!
+		ProtobufUnsignedNotNull: "bool",
+		ProtobufSignedNull:      "dml.NullBool", // Proto package and its type, not the Go package!
+		ProtobufSignedNotNull:   "bool",
 	}
-	goTypeDecimal = [...]string{
-		idxMysqlUnsignedNull:    "dml.Decimal",
-		idxMysqlUnsignedNotNull: "dml.Decimal",
-		idxMysqlSignedNull:      "dml.Decimal",
-		idxMysqlSignedNotNull:   "dml.Decimal",
+	goTypeDecimal = &TypeDef{
+		MysqlUnsignedNull:    "dml.Decimal",
+		MysqlUnsignedNotNull: "dml.Decimal",
+		MysqlSignedNull:      "dml.Decimal",
+		MysqlSignedNotNull:   "dml.Decimal",
 
-		idxProtobufUnsignedNull:    "dml.Decimal", // Proto package and its type not the Go package!
-		idxProtobufUnsignedNotNull: "dml.Decimal", // Proto package and its type not the Go package!
-		idxProtobufSignedNull:      "dml.Decimal", // Proto package and its type not the Go package!
-		idxProtobufSignedNotNull:   "dml.Decimal", // Proto package and its type not the Go package!
+		ProtobufUnsignedNull:    "dml.Decimal", // Proto package and its type not the Go package!
+		ProtobufUnsignedNotNull: "dml.Decimal", // Proto package and its type not the Go package!
+		ProtobufSignedNull:      "dml.Decimal", // Proto package and its type not the Go package!
+		ProtobufSignedNotNull:   "dml.Decimal", // Proto package and its type not the Go package!
 	}
-	goTypeByte = [...]string{
-		idxMysqlUnsignedNull:    "[]byte",
-		idxMysqlUnsignedNotNull: "[]byte",
-		idxMysqlSignedNull:      "[]byte",
-		idxMysqlSignedNotNull:   "[]byte",
+	goTypeByte = &TypeDef{
+		MysqlUnsignedNull:    "[]byte",
+		MysqlUnsignedNotNull: "[]byte",
+		MysqlSignedNull:      "[]byte",
+		MysqlSignedNotNull:   "[]byte",
 
-		idxProtobufUnsignedNull:    "bytes",
-		idxProtobufUnsignedNotNull: "bytes",
-		idxProtobufSignedNull:      "bytes",
-		idxProtobufSignedNotNull:   "bytes",
+		ProtobufUnsignedNull:    "bytes",
+		ProtobufUnsignedNotNull: "bytes",
+		ProtobufSignedNull:      "bytes",
+		ProtobufSignedNotNull:   "bytes",
 	}
 )
 
-// mysqlTypeToGo maps the MySql/MariaDB field type to the correct Go/protobuf type.
-var mysqlTypeToGo = map[string][goTypeOptions]string{
+// MysqlTypeToGo maps the MySql/MariaDB field type to the correct Go/protobuf
+// type. See the type TypeDef for more details. This exported variable allows to
+// set custom types before code generation.
+var MysqlTypeToGo = map[string]*TypeDef{
 	"int":        goTypeInt,
 	"bigint":     goTypeInt64,
 	"smallint":   goTypeInt,
@@ -142,7 +159,7 @@ var mysqlTypeToGo = map[string][goTypeOptions]string{
 	"mediumint":  goTypeInt,
 	"double":     goTypeFloat64,
 	"float":      goTypeFloat64,
-	"decimal":    goTypeFloat64,
+	"decimal":    goTypeDecimal,
 	"date":       goTypeTime,
 	"datetime":   goTypeTime,
 	"timestamp":  goTypeTime,
@@ -171,12 +188,9 @@ func toGoType(c *ddl.Column) string {
 	return mySQLToGoType(c, false)
 }
 
-// mySQLToGoType calculates the data type of the field DataType. For example
-// bigint, smallint, tinyint will result in "int". If withNull is true the
-// returned type can store a null value.
-func mySQLToGoType(c *ddl.Column, withNull bool) string {
+func findType(c *ddl.Column) *TypeDef {
 
-	goType, ok := mysqlTypeToGo[c.DataType]
+	goType, ok := MysqlTypeToGo[c.DataType]
 	if !ok {
 		panic(errors.NewNotFoundf("[dmlgen] MySQL type %q not found", c.DataType))
 	}
@@ -185,21 +199,30 @@ func mySQLToGoType(c *ddl.Column, withNull bool) string {
 	// bool columns and columns which contains a money unit.
 	switch {
 	case c.IsBool():
-		goType = goTypeBool
+		goType = MysqlTypeToGo["bit"]
 	case c.IsFloat() && c.IsMoney():
-		goType = goTypeDecimal
+		goType = MysqlTypeToGo["decimal"]
 	}
+	return goType
+}
+
+// mySQLToGoType calculates the data type of the field DataType. For example
+// bigint, smallint, tinyint will result in "int". If withNull is true the
+// returned type can store a null value.
+func mySQLToGoType(c *ddl.Column, withNull bool) string {
+
+	goType := findType(c)
 
 	var t string
 	switch {
 	case c.IsUnsigned() && c.IsNull() && withNull:
-		t = goType[idxMysqlUnsignedNull] // unsigned null
+		t = goType.MysqlUnsignedNull // unsigned null
 	case c.IsUnsigned() && (!c.IsNull() || !withNull):
-		t = goType[idxMysqlUnsignedNotNull] // unsigned not null
+		t = goType.MysqlUnsignedNotNull // unsigned not null
 	case !c.IsUnsigned() && c.IsNull() && withNull:
-		t = goType[idxMysqlSignedNull] // signed null
+		t = goType.MysqlSignedNull // signed null
 	case !c.IsUnsigned() && (!c.IsNull() || !withNull):
-		t = goType[idxMysqlSignedNotNull] // signed not null
+		t = goType.MysqlSignedNotNull // signed not null
 	}
 
 	return t
@@ -243,30 +266,18 @@ func mySQLToGoFunc(c *ddl.Column, withNull bool) string {
 
 func toProto(c *ddl.Column, withNull bool) string {
 
-	goType, ok := mysqlTypeToGo[c.DataType]
-	if !ok {
-		panic(errors.NewNotFoundf("[dmlgen] MySQL type %q not found", c.DataType))
-	}
-
-	// The switch block overwrites the already retrieved goType by checking for
-	// bool columns and columns which contains a money unit.
-	switch {
-	case c.IsBool():
-		goType = goTypeBool
-	case c.IsFloat() && c.IsMoney():
-		goType = goTypeDecimal
-	}
+	goType := findType(c)
 
 	var t string
 	switch {
 	case c.IsUnsigned() && c.IsNull() && withNull:
-		t = goType[idxProtobufUnsignedNull] // unsigned null
+		t = goType.ProtobufUnsignedNull // unsigned null
 	case c.IsUnsigned() && (!c.IsNull() || !withNull):
-		t = goType[idxProtobufUnsignedNotNull] // unsigned not null
+		t = goType.ProtobufUnsignedNotNull // unsigned not null
 	case !c.IsUnsigned() && c.IsNull() && withNull:
-		t = goType[idxProtobufSignedNull] // signed null
+		t = goType.ProtobufSignedNull // signed null
 	case !c.IsUnsigned() && (!c.IsNull() || !withNull):
-		t = goType[idxProtobufSignedNotNull] // signed not null
+		t = goType.ProtobufSignedNotNull // signed not null
 	}
 
 	return t
