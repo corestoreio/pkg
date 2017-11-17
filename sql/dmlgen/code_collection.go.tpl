@@ -1,7 +1,7 @@
 // experimental, for now private but depends on later usage to make it public.
 type slice{{.Entity}} []*{{.Entity}}
 
-// {{.Collection}} represents a collection type for DB table {{ .TableName }}
+// {{.Collection}} represents a collection type for DB table {{.TableName}}
 // Not thread safe. Auto generated.
 {{.Comment -}}
 type {{.Collection}} struct {
@@ -53,11 +53,11 @@ func (cc {{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
 		for cm.Next() {
 			switch c := cm.Column(); c {
 			{{- range .Columns.UniqueColumns -}}
-			case "{{.Field }}"{{ range .Aliases }},"{{.}}"{{end}}:
+			case "{{.Field}}"{{range .Aliases}},"{{.}}"{{end}}:
 				cm.Args = cm.Args.{{GoFuncNull .}}s(cc.{{ToGoCamelCase .Field}}s()...)
 			{{- end}}
-			{{- range .Columns.UniquifiedColumns }}
-			case "{{.Field }}"{{ range .Aliases }},"{{.}}"{{end}}:
+			{{- range .Columns.UniquifiedColumns}}
+			case "{{.Field}}"{{range .Aliases}},"{{.}}"{{end}}:
 				cm.Args = cm.Args.{{GoFunc .}}s(cc.{{ToGoCamelCase .Field}}s()...){{end}}
 			default:
 				return errors.NewNotFoundf("[{{.Package}}] {{.Collection}} Column %q not found", c)
@@ -68,7 +68,7 @@ func (cc {{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
 	}
 	return cm.Err()
 }
-{{ range .Columns.UniqueColumns }}
+{{range .Columns.UniqueColumns}}
 // {{ToGoCamelCase .Field}}s returns a slice or appends to a slice all values.
 // Auto generated.
 func (cc {{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoTypeNull .}}) []{{GoTypeNull .}} {
@@ -81,7 +81,7 @@ func (cc {{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoTypeNull .}}) []
 	return ret
 } {{end}}
 
-{{- range .Columns.UniquifiedColumns }}
+{{- range .Columns.UniquifiedColumns}}
 // {{ToGoCamelCase .Field}}s belongs to the column `{{.Field}}`
 // and returns a slice or appends to a slice only unique values of that column.
 // The values will be filtered internally in a Go map. No DB query gets
