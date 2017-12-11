@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,10 +25,10 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log/logw"
+	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -128,6 +128,9 @@ func (p *TableCoreConfigData) MapColumns(cm *dml.ColumnMap) error {
 }
 
 func (ps *TableCoreConfigDataSlice) MapColumns(cm *dml.ColumnMap) error {
+	if ps.err != nil {
+		return ps.err
+	}
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapScan:
 		// case for scanning when loading certain rows, hence we write data from
@@ -145,7 +148,7 @@ func (ps *TableCoreConfigDataSlice) MapColumns(cm *dml.ColumnMap) error {
 	default:
 		return errors.NewNotSupportedf("[dml] Unknown Mode: %q", string(m))
 	}
-	return ps.err
+	return nil
 }
 
 func (ps *TableCoreConfigDataSlice) Close() error {
@@ -234,6 +237,22 @@ func TestSelect_Prepare(t *testing.T) {
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})
 
+	t.Run("Prepare IN", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer cstesting.MockClose(t, dbc, dbMock)
+
+		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("SELECT `id` FROM `tableX` WHERE (`id` IN (?,?))"))
+		prep.ExpectQuery().WithArgs(3739, 3740).
+			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(78))
+
+		sel := dml.NewSelect("id").From("tableX").Where(dml.Column("id").In().PlaceHolders(2)).WithDB(dbc.DB)
+		stmt, err := sel.Prepare(context.TODO())
+		require.NoError(t, err)
+		ints, err := stmt.WithArgs(3739, 3740).LoadInt64s(context.TODO())
+		require.NoError(t, err)
+		assert.Exactly(t, []int64{78}, ints)
+	})
+
 	t.Run("Query", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
 		defer cstesting.MockClose(t, dbc, dbMock)
@@ -309,7 +328,7 @@ func TestSelect_Prepare(t *testing.T) {
 			}
 		})
 
-		t.Run("WithRecords", func(t *testing.T) {
+		t.Run("WithRecords_OK", func(t *testing.T) {
 			for i := 0; i < iterations; i++ {
 				prep.ExpectQuery().WithArgs(6900).
 					WillReturnRows(sqlmock.NewRows([]string{"name", "email"}).AddRow("Peter Gopher2", "peter@gopher.go2"))
@@ -329,7 +348,7 @@ func TestSelect_Prepare(t *testing.T) {
 			}
 		})
 
-		t.Run("WithRecords Error", func(t *testing.T) {
+		t.Run("WithRecords_Error", func(t *testing.T) {
 			p := &TableCoreConfigDataSlice{err: errors.NewDuplicatedf("Found a duplicate")}
 			stmt.WithRecords(dml.Qualify("", p))
 			rows, err := stmt.Query(context.TODO())
@@ -344,7 +363,7 @@ func TestSelect_Prepare(t *testing.T) {
 			dbc, dbMock := cstesting.MockDB(t)
 			defer cstesting.MockClose(t, dbc, dbMock)
 
-			prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("SELECT `config_id`, `scope_id`, `path` FROM `core_config_data` WHERE (`config_id` IN (?))"))
+			prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("SELECT `config_id`, `scope_id`, `path` FROM `core_config_data` WHERE (`config_id` IN ?)"))
 
 			stmt, err := dml.NewSelect("config_id", "scope_id", "path").From("core_config_data").
 				Where(dml.Column("config_id").In().PlaceHolder()).
@@ -394,7 +413,7 @@ func TestSelect_Prepare(t *testing.T) {
 			dbc, dbMock := cstesting.MockDB(t)
 			defer cstesting.MockClose(t, dbc, dbMock)
 
-			prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("SELECT `scope_id` FROM `core_config_data` WHERE (`config_id` IN (?))"))
+			prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("SELECT `scope_id` FROM `core_config_data` WHERE (`config_id` IN ?)"))
 
 			stmt, err := dml.NewSelect("scope_id").From("core_config_data").
 				Where(dml.Column("config_id").In().PlaceHolder()).
@@ -433,143 +452,123 @@ func TestSelect_WithLogger(t *testing.T) {
 	require.NoError(t, rConn.Options(dml.WithLogger(lg, uniqueIDFunc)))
 
 	t.Run("ConnPool", func(t *testing.T) {
-		u := rConn.SelectFrom("dml_people").AddColumns("name", "email").Where(dml.Column("id").Greater().Int64(67896543123))
+		pplSel := rConn.SelectFrom("dml_people").AddColumns("email").Where(dml.Column("id").Greater().PlaceHolder())
+		pplSel.Interpolate()
 
+		t.Run("Query Error interpolation with iFace slice", func(t *testing.T) {
+			defer buf.Reset()
+			rows, err := pplSel.WithArgs(67896543123).Query(context.TODO())
+			require.Nil(t, rows)
+			require.True(t, errors.IsNotAllowed(err), "%s", err)
+		})
 		t.Run("Query", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				u.IsInterpolate = false
-			}()
-			rows, err := u.Interpolate().Query(context.TODO())
+			defer buf.Reset()
+			rows, err := pplSel.WithArguments(dml.MakeArgs(1).Int(67896543123)).Query(context.TODO())
 			require.NoError(t, err)
 			require.NoError(t, rows.Close())
 
-			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dml_people` WHERE (`id` > 67896543123)\"\n",
+			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\"\n",
 				buf.String())
 		})
 
 		t.Run("Load", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				u.IsInterpolate = false
-			}()
+			defer buf.Reset()
 			p := &dmlPerson{}
-			_, err := u.Interpolate().Load(context.TODO(), p)
+			_, err := pplSel.WithArguments(dml.MakeArgs(1).Int(67896543113)).Load(context.TODO(), p)
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dml_people` WHERE (`id` > 67896543123)\"\n",
+			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\"\n",
 				buf.String())
 		})
 
 		t.Run("LoadInt64", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				u.IsInterpolate = false
-			}()
-			_, err := u.Interpolate().LoadInt64(context.TODO())
+			pplSel.IsInterpolate = false
+
+			defer buf.Reset()
+			_, err := pplSel.WithArgs(67896543124).LoadInt64(context.TODO())
 			if !errors.IsNotFound(err) {
 				require.NoError(t, err)
 			}
 
-			assert.Exactly(t, "DEBUG LoadInt64 conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dml_people` WHERE (`id` > 67896543123)\"\n",
+			assert.Exactly(t, "DEBUG LoadInt64 conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\"\n",
 				buf.String())
 		})
 
-		t.Run("XXXXoadInt64s", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				u.IsInterpolate = false
-			}()
-			_, err := u.Interpolate().LoadInt64s(context.TODO())
+		t.Run("LoadInt64s", func(t *testing.T) {
+			defer buf.Reset()
+			_, err := pplSel.WithArgs(67896543125).LoadInt64s(context.TODO())
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG LoadInt64s conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 row_count: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dml_people` WHERE (`id` > 67896543123)\"\n",
+			assert.Exactly(t, "DEBUG LoadInt64s conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 row_count: 0 sql: \"SELECT /*ID:UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\"\n",
 				buf.String())
 		})
 
 		t.Run("LoadUint64", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				u.IsInterpolate = false
-			}()
-			_, err := u.Interpolate().LoadUint64(context.TODO())
+			defer buf.Reset()
+			_, err := pplSel.WithArgs(67896543126).LoadUint64(context.TODO())
 			if !errors.IsNotFound(err) {
 				require.NoError(t, err)
 			}
-			assert.Exactly(t, "DEBUG LoadUint64 conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dml_people` WHERE (`id` > 67896543123)\"\n",
+			assert.Exactly(t, "DEBUG LoadUint64 conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\"\n",
 				buf.String())
 		})
 
 		t.Run("LoadUint64s", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				u.IsInterpolate = false
-			}()
-			_, err := u.Interpolate().LoadUint64s(context.TODO())
+			defer buf.Reset()
+			_, err := pplSel.WithArgs(67896543127).LoadUint64s(context.TODO())
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG LoadUint64s conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 row_count: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dml_people` WHERE (`id` > 67896543123)\"\n",
+			assert.Exactly(t, "DEBUG LoadUint64s conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 row_count: 0 sql: \"SELECT /*ID:UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\"\n",
 				buf.String())
 		})
 
 		t.Run("LoadFloat64", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				u.IsInterpolate = false
-			}()
-			_, err := u.Interpolate().LoadFloat64(context.TODO())
+			defer buf.Reset()
+			_, err := pplSel.WithArgs(678965.43125).LoadFloat64(context.TODO())
 			if !errors.IsNotFound(err) {
 				require.NoError(t, err)
 			}
-			assert.Exactly(t, "DEBUG LoadFloat64 conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dml_people` WHERE (`id` > 67896543123)\"\n",
+			assert.Exactly(t, "DEBUG LoadFloat64 conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\"\n",
 				buf.String())
 		})
 
 		t.Run("LoadFloat64s", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				u.IsInterpolate = false
-			}()
-			_, err := u.Interpolate().LoadFloat64s(context.TODO())
+			defer buf.Reset()
+			_, err := pplSel.WithArgs(6789654.3125).LoadFloat64s(context.TODO())
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG LoadFloat64s conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dml_people` WHERE (`id` > 67896543123)\"\n",
+			assert.Exactly(t, "DEBUG LoadFloat64s conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\"\n",
 				buf.String())
 		})
 
 		t.Run("LoadString", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				u.IsInterpolate = false
-			}()
-			_, err := u.Interpolate().LoadString(context.TODO())
+			defer buf.Reset()
+			_, err := pplSel.WithArgs("hello").LoadString(context.TODO())
 			if !errors.IsNotFound(err) {
 				require.NoError(t, err)
 			}
 
-			assert.Exactly(t, "DEBUG LoadString conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dml_people` WHERE (`id` > 67896543123)\"\n",
+			assert.Exactly(t, "DEBUG LoadString conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\"\n",
 				buf.String())
 		})
 
 		t.Run("LoadStrings", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				u.IsInterpolate = false
-			}()
-			_, err := u.Interpolate().LoadStrings(context.TODO())
+			defer buf.Reset()
+
+			_, err := pplSel.LoadStrings(context.TODO())
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG LoadStrings conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 row_count: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dml_people` WHERE (`id` > 67896543123)\"\n",
+			assert.Exactly(t, "DEBUG LoadStrings conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 row_count: 0 sql: \"SELECT /*ID:UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\"\n",
 				buf.String())
 		})
 
 		t.Run("Prepare", func(t *testing.T) {
 			defer buf.Reset()
-			stmt, err := u.Prepare(context.TODO())
+			stmt, err := pplSel.Prepare(context.TODO())
 			require.NoError(t, err)
 			defer cstesting.Close(t, stmt)
 
-			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dml_people` WHERE (`id` > ?)\"\n",
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\"\n",
 				buf.String())
 		})
 
@@ -589,43 +588,37 @@ func TestSelect_WithLogger(t *testing.T) {
 		})
 	})
 
-	t.Run("Conn", func(t *testing.T) {
+	t.Run("ConnSingle", func(t *testing.T) {
 		conn, err := rConn.Conn(context.TODO())
 		defer cstesting.Close(t, conn)
 		require.NoError(t, err)
 
-		u := conn.SelectFrom("dml_people", "dp2").AddColumns("name", "email").Where(dml.Column("id").Less().Int64s(-3))
+		pplSel := conn.SelectFrom("dml_people", "dp2").AddColumns("name", "email").Where(dml.Column("id").Less().PlaceHolder())
 
 		t.Run("Query", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				u.IsInterpolate = false
-			}()
+			defer buf.Reset()
 
-			rows, err := u.Interpolate().Query(context.TODO())
+			rows, err := pplSel.WithArgs(-3).Query(context.TODO())
 			require.NoError(t, err)
 			cstesting.Close(t, rows)
 
-			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ06*/ `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` < -3)\"\n",
+			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ06*/ `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` < ?)\"\n",
 				buf.String())
 		})
 
 		t.Run("Load", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				u.IsInterpolate = false
-			}()
+			defer buf.Reset()
 			p := &dmlPerson{}
-			_, err := u.Interpolate().Load(context.TODO(), p)
+			_, err := pplSel.WithArgs(-2).Load(context.TODO(), p)
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ06*/ `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` < -3)\"\n",
+			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ06*/ `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` < ?)\"\n",
 				buf.String())
 		})
 
 		t.Run("Prepare", func(t *testing.T) {
 
-			stmt, err := u.Prepare(context.TODO())
+			stmt, err := pplSel.Prepare(context.TODO())
 			require.NoError(t, err)
 			defer cstesting.Close(t, stmt)
 			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ06*/ `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` < ?)\"\n",
@@ -636,7 +629,8 @@ func TestSelect_WithLogger(t *testing.T) {
 				defer buf.Reset()
 				rows := stmt.QueryRow(context.TODO(), -8)
 				var x string
-				require.True(t, rows.Scan(&x) == sql.ErrNoRows)
+				err := rows.Scan(&x)
+				require.True(t, errors.Cause(err) == sql.ErrNoRows, "but got this error: %#v", err)
 				_ = x
 
 				assert.Exactly(t, "DEBUG QueryRow conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" is_prepared: true duration: 0 arg_len: 1\n",
@@ -711,7 +705,7 @@ func TestSelect_WithLogger(t *testing.T) {
 				return rows.Close()
 			}))
 
-			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ09\"\nDEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ09\" select_id: \"UNIQ10\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ10*/ `name`, `email` FROM `dml_people` WHERE (`id` IN (?))\"\nDEBUG Rollback conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ09\" duration: 0\n",
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ09\"\nDEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ09\" select_id: \"UNIQ10\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ10*/ `name`, `email` FROM `dml_people` WHERE (`id` IN ?)\"\nDEBUG Rollback conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ09\" duration: 0\n",
 				buf.String())
 		})
 	})

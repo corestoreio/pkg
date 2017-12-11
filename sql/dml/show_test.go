@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -51,18 +51,37 @@ func TestShow(t *testing.T) {
 			"SHOW SESSION VARIABLES",
 		)
 	})
-	t.Run("variables LIKE", func(t *testing.T) {
+	t.Run("variables LIKE interpolated", func(t *testing.T) {
 		s := NewShow().Variable().Like(MakeArgs(1).String("aria%"))
 		compareToSQL(t, s, nil,
-			"SHOW VARIABLES LIKE ?",
 			"SHOW VARIABLES LIKE 'aria%'",
-			"aria%",
+			"SHOW VARIABLES LIKE 'aria%'",
 		)
 	})
-	t.Run("variables WHERE", func(t *testing.T) {
+	t.Run("variables LIKE place holder", func(t *testing.T) {
+		s := NewShow().Variable().
+			Where(Column("Variable_name").PlaceHolder()).
+			WithArguments(MakeArgs(1).String("aria%"))
+		compareToSQL(t, s, nil,
+			"SHOW VARIABLES WHERE (`Variable_name` = ?)",
+			"SHOW VARIABLES WHERE (`Variable_name` = 'aria%')",
+			"aria%",
+		)
+		assert.Exactly(t, []string{"Variable_name"}, s.qualifiedColumns)
+	})
+	t.Run("variables WHERE interpolate", func(t *testing.T) {
 		s := NewShow().Variable().Where(Column("Variable_name").In().Strs("basedir", "back_log"))
 		compareToSQL(t, s, nil,
-			"SHOW VARIABLES WHERE (`Variable_name` IN (?,?))",
+			"SHOW VARIABLES WHERE (`Variable_name` IN ('basedir','back_log'))",
+			"SHOW VARIABLES WHERE (`Variable_name` IN ('basedir','back_log'))",
+		)
+	})
+	t.Run("variables WHERE placeholder", func(t *testing.T) {
+		s := NewShow().Variable().
+			Where(Column("Variable_name").In().PlaceHolder()).
+			WithArguments(MakeArgs(1).Strings("basedir", "back_log"))
+		compareToSQL(t, s, nil,
+			"SHOW VARIABLES WHERE (`Variable_name` IN ?)",
 			"SHOW VARIABLES WHERE (`Variable_name` IN ('basedir','back_log'))",
 			"basedir",
 			"back_log",
@@ -88,28 +107,25 @@ func TestShow(t *testing.T) {
 	t.Run("status WHERE", func(t *testing.T) {
 		s := NewShow().Session().Status().Where(Column("Variable_name").Like().Str("%error%"))
 		compareToSQL(t, s, nil,
-			"SHOW SESSION STATUS WHERE (`Variable_name` LIKE ?)",
 			"SHOW SESSION STATUS WHERE (`Variable_name` LIKE '%error%')",
-			"%error%",
+			"SHOW SESSION STATUS WHERE (`Variable_name` LIKE '%error%')",
 		)
 	})
 
 	t.Run("table status WHERE", func(t *testing.T) {
-		s := NewShow().TableStatus().Where(Column("Name").Regexp().Str(".*catalog[_]+")).BuildCache()
+		s := NewShow().TableStatus().Where(Column("Name").Regexp().Str(".*catalog[_]+")).DisableBuildCache()
 		compareToSQL(t, s, nil,
-			"SHOW TABLE STATUS WHERE (`Name` REGEXP ?)",
 			"SHOW TABLE STATUS WHERE (`Name` REGEXP '.*catalog[_]+')",
-			".*catalog[_]+",
+			"SHOW TABLE STATUS WHERE (`Name` REGEXP '.*catalog[_]+')",
 		)
-		assert.Exactly(t, "SHOW TABLE STATUS WHERE (`Name` REGEXP ?)", string(s.cacheSQL))
+		assert.Empty(t, s.cacheSQL)
 		s.WhereFragments[0].Str("sales$") // set Equal on purpose ... because cache already written
 		// twice to test the build cache
 		compareToSQL(t, s, nil,
-			"SHOW TABLE STATUS WHERE (`Name` REGEXP ?)",
 			"SHOW TABLE STATUS WHERE (`Name` REGEXP 'sales$')",
-			"sales$",
+			"SHOW TABLE STATUS WHERE (`Name` REGEXP 'sales$')",
 		)
-		assert.Exactly(t, "SHOW TABLE STATUS WHERE (`Name` REGEXP ?)", string(s.cacheSQL))
+		assert.Empty(t, s.cacheSQL)
 	})
 
 }

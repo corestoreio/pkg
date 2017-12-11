@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,12 +27,13 @@ import (
 
 func TestDecimal_Select_Integration(t *testing.T) {
 	s := createRealSessionWithFixtures(t, nil)
+	defer testCloser(t, s)
 
 	rec := newNullTypedRecordWithData()
 	in := s.InsertInto("dml_null_types").
 		AddColumns("id", "string_val", "int64_val", "float64_val", "time_val", "bool_val", "decimal_val")
 
-	res, err := in.BindRecord(rec).Exec(context.TODO())
+	res, err := in.AddRecords(rec).Exec(context.TODO())
 	require.NoError(t, err)
 	id, err := res.LastInsertId()
 	require.NoError(t, err)
@@ -54,6 +55,7 @@ func TestDecimal_Select_Integration(t *testing.T) {
 
 func TestNullTypeScanning(t *testing.T) {
 	s := createRealSessionWithFixtures(t, nil)
+	defer testCloser(t, s)
 
 	type nullTypeScanningTest struct {
 		record *nullTypedRecord
@@ -75,7 +77,7 @@ func TestNullTypeScanning(t *testing.T) {
 		// Create the record in the db
 		res, err := s.InsertInto("dml_null_types").
 			AddColumns("string_val", "int64_val", "float64_val", "time_val", "bool_val", "decimal_val").
-			BindRecord(test.record).Exec(context.TODO())
+			AddRecords(test.record).Exec(context.TODO())
 		require.NoError(t, err)
 		id, err := res.LastInsertId()
 		require.NoError(t, err)

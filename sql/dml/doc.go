@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,8 +38,6 @@
 //
 // Practical Guide to SQL Transaction Isolation: https://begriffs.com/posts/2017-08-01-practical-guide-sql-isolation.html
 //
-// TODO(CyS) Add named parameter from GO1.8 to each query builder, partially
-// implemented in the Arguments type.
 //
 // TODO(CyS) think about named locks:
 // https://news.ycombinator.com/item?id=14907679
@@ -48,4 +46,9 @@
 // optimistic concurrency and use serializable isolation.
 //
 // TODO(CyS) refactor some parts of the code once Go implements generics ;-)
+//
+// TODO(CyS) implement usage of window functions:
+//    - https://mariadb.com/kb/en/library/window-functions/
+//    - https://dev.mysql.com/doc/refman/8.0/en/window-functions-usage.html
+//    - https://blog.statsbot.co/sql-window-functions-tutorial-b5075b87d129
 package dml

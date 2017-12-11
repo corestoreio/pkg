@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,12 +34,14 @@ const (
 )
 
 var (
-	sqlBytesNullUC = []byte(sqlStrNullUC)
-	sqlBytesNullLC = []byte(sqlStrNullLC)
+	sqlBytesNullUC  = []byte(sqlStrNullUC)
+	sqlBytesNullLC  = []byte(sqlStrNullLC)
+	sqlBytesFalseLC = []byte("false")
+	sqlBytesTrueLC  = []byte("true")
 )
 
 // QualifiedRecord is a ColumnMapper with a qualifier. A QualifiedRecord gets
-// used as arguments to ExecRecord or BindRecord in the SQL statement. If you
+// used as arguments to ExecRecord or WithRecords in the SQL statement. If you
 // use an alias for the main table/view you must set the alias as the qualifier.
 type QualifiedRecord struct {
 	_Named_Fields_Required struct{}
@@ -73,8 +75,6 @@ type argument struct {
 	value interface{}
 }
 
-type placeHolder int8
-
 func (arg *argument) set(v interface{}) {
 	arg.isSet = true
 	arg.value = v
@@ -82,7 +82,7 @@ func (arg *argument) set(v interface{}) {
 
 func (arg *argument) len() (l int) {
 	switch v := arg.value.(type) {
-	case nil, int, int64, uint64, float64, bool, string, []byte, time.Time, placeHolder:
+	case nil, int, int64, uint64, float64, bool, string, []byte, time.Time, NullString, NullInt64, NullFloat64, NullBool, NullTime:
 		l = 1
 	case []int:
 		l = len(v)
@@ -113,101 +113,248 @@ func (arg *argument) len() (l int) {
 	case []NullTime:
 		l = len(v)
 	default:
-		panic("Unsupported type")
+		panic(errors.NewNotSupportedf("[dml] Unsupported type: %T => %#v", v, v))
 	}
 	// default is 0
 	return
 }
 
-func (arg argument) writeTo(w *bytes.Buffer, pos int) (err error) {
+// writeTo mainly used in interpolate function
+func (arg argument) writeTo(w *bytes.Buffer, pos uint) (err error) {
+	if !arg.isSet {
+		return nil
+	}
+	var requestPos bool
+	if pos > 0 {
+		requestPos = true
+		pos-- // because we cannot use zero as index 0 when calling writeTo somewhere
+	}
 	switch v := arg.value.(type) {
 	case int:
 		err = writeInt64(w, int64(v))
 	case []int:
-		err = writeInt64(w, int64(v[pos]))
+		if requestPos {
+			err = writeInt64(w, int64(v[pos]))
+		} else {
+			w.WriteByte('(')
+			for l, i := len(v), 0; i < l && err == nil; i++ {
+				if i > 0 {
+					w.WriteByte(',')
+				}
+				err = writeInt64(w, int64(v[i]))
+			}
+			w.WriteByte(')')
+		}
 	case int64:
 		err = writeInt64(w, v)
 	case []int64:
-		err = writeInt64(w, v[pos])
-	case []NullInt64:
-		if s := v[pos]; s.Valid {
-			return writeInt64(w, s.Int64)
+		if requestPos {
+			err = writeInt64(w, v[pos])
+		} else {
+			w.WriteByte('(')
+			for l, i := len(v), 0; i < l && err == nil; i++ {
+				if i > 0 {
+					w.WriteByte(',')
+				}
+				err = writeInt64(w, v[i])
+			}
+			w.WriteByte(')')
 		}
-		_, err = w.WriteString(sqlStrNullUC)
-
+	case NullInt64:
+		err = v.writeTo(w)
+	case []NullInt64:
+		if requestPos {
+			err = v[pos].writeTo(w)
+		} else {
+			w.WriteByte('(')
+			for l, i := len(v), 0; i < l && err == nil; i++ {
+				if i > 0 {
+					w.WriteByte(',')
+				}
+				err = v[i].writeTo(w)
+			}
+			w.WriteByte(')')
+		}
 	case uint64:
 		err = writeUint64(w, v)
 	case []uint64:
-		err = writeUint64(w, v[pos])
+		if requestPos {
+			err = writeUint64(w, v[pos])
+		} else {
+			w.WriteByte('(')
+			for l, i := len(v), 0; i < l && err == nil; i++ {
+				if i > 0 {
+					w.WriteByte(',')
+				}
+				err = writeUint64(w, v[i])
+			}
+			w.WriteByte(')')
+		}
 	case []uint:
-		err = writeUint64(w, uint64(v[pos]))
-
+		if requestPos {
+			err = writeUint64(w, uint64(v[pos]))
+		} else {
+			w.WriteByte('(')
+			for l, i := len(v), 0; i < l && err == nil; i++ {
+				if i > 0 {
+					w.WriteByte(',')
+				}
+				err = writeUint64(w, uint64(v[i]))
+			}
+			w.WriteByte(')')
+		}
 	case float64:
 		err = writeFloat64(w, v)
 	case []float64:
-		err = writeFloat64(w, v[pos])
-	case []NullFloat64:
-		if s := v[pos]; s.Valid {
-			return writeFloat64(w, s.Float64)
+		if requestPos {
+			err = writeFloat64(w, v[pos])
+		} else {
+			w.WriteByte('(')
+			for l, i := len(v), 0; i < l && err == nil; i++ {
+				if i > 0 {
+					w.WriteByte(',')
+				}
+				err = writeFloat64(w, v[i])
+			}
+			w.WriteByte(')')
 		}
-		_, err = w.WriteString(sqlStrNullUC)
-
+	case NullFloat64:
+		err = v.writeTo(w)
+	case []NullFloat64:
+		if requestPos {
+			err = v[pos].writeTo(w)
+		} else {
+			w.WriteByte('(')
+			for l, i := len(v), 0; i < l && err == nil; i++ {
+				if i > 0 {
+					w.WriteByte(',')
+				}
+				err = v[i].writeTo(w)
+			}
+			w.WriteByte(')')
+		}
 	case bool:
 		dialect.EscapeBool(w, v)
 	case []bool:
-		dialect.EscapeBool(w, v[pos])
-	case []NullBool:
-		if s := v[pos]; s.Valid {
-			dialect.EscapeBool(w, s.Bool)
-			return nil
+		if requestPos {
+			dialect.EscapeBool(w, v[pos])
+		} else {
+			w.WriteByte('(')
+			for i, val := range v {
+				if i > 0 {
+					w.WriteByte(',')
+				}
+				dialect.EscapeBool(w, val)
+			}
+			w.WriteByte(')')
 		}
-		_, err = w.WriteString(sqlStrNullUC)
-
-		// TODO(CyS) Cut the printed string in errors if it's longer than XX chars
+	case NullBool:
+		v.writeTo(w)
+	case []NullBool:
+		if requestPos {
+			v[pos].writeTo(w)
+		} else {
+			w.WriteByte('(')
+			for l, i := len(v), 0; i < l && err == nil; i++ {
+				if i > 0 {
+					w.WriteByte(',')
+				}
+				err = v[i].writeTo(w)
+			}
+			w.WriteByte(')')
+		}
 	case string:
 		if !utf8.ValidString(v) {
 			return errors.NewNotValidf("[dml] Argument.WriteTo: String is not UTF-8: %q", v)
 		}
 		dialect.EscapeString(w, v)
 	case []string:
-		if !utf8.ValidString(v[pos]) {
-			return errors.NewNotValidf("[dml] Argument.WriteTo: String is not UTF-8: %q", v[pos])
-		}
-		dialect.EscapeString(w, v[pos])
-	case []NullString:
-		if s := v[pos]; s.Valid {
-			if !utf8.ValidString(s.String) {
-				return errors.NewNotValidf("[dml] Argument.WriteTo: String is not UTF-8: %q", s.String)
+		if requestPos {
+			if nv := v[pos]; utf8.ValidString(nv) {
+				dialect.EscapeString(w, nv)
+			} else {
+				err = errors.NewNotValidf("[dml] Argument.WriteTo: String is not UTF-8: %q", nv)
 			}
-			dialect.EscapeString(w, s.String)
 		} else {
-			_, err = w.WriteString(sqlStrNullUC)
+			w.WriteByte('(')
+			for l, i := len(v), 0; i < l && err == nil; i++ {
+				if i > 0 {
+					w.WriteByte(',')
+				}
+				if nv := v[i]; utf8.ValidString(nv) {
+					dialect.EscapeString(w, nv)
+				} else {
+					err = errors.NewNotValidf("[dml] Argument.WriteTo: String is not UTF-8: %q", nv)
+				}
+			}
+			w.WriteByte(')')
 		}
-
+	case NullString:
+		err = v.writeTo(w)
+	case []NullString:
+		if requestPos {
+			err = v[pos].writeTo(w)
+		} else {
+			w.WriteByte('(')
+			for l, i := len(v), 0; i < l && err == nil; i++ {
+				if i > 0 {
+					w.WriteByte(',')
+				}
+				err = v[i].writeTo(w)
+			}
+			w.WriteByte(')')
+		}
 	case []byte:
 		err = writeBytes(w, v)
 
 	case [][]byte:
-		err = writeBytes(w, v[pos])
-
+		if requestPos {
+			err = writeBytes(w, v[pos])
+		} else {
+			w.WriteByte('(')
+			for l, i := len(v), 0; i < l && err == nil; i++ {
+				if i > 0 {
+					w.WriteByte(',')
+				}
+				err = writeBytes(w, v[i])
+			}
+			w.WriteByte(')')
+		}
 	case time.Time:
 		dialect.EscapeTime(w, v)
 	case []time.Time:
-		dialect.EscapeTime(w, v[pos])
-	case []NullTime:
-		if nt := v[pos]; nt.Valid {
-			dialect.EscapeTime(w, nt.Time)
+		if requestPos {
+			dialect.EscapeTime(w, v[pos])
 		} else {
-			_, err = w.WriteString(sqlStrNullUC)
+			w.WriteByte('(')
+			for l, i := len(v), 0; i < l && err == nil; i++ {
+				if i > 0 {
+					err = w.WriteByte(',')
+				}
+				dialect.EscapeTime(w, v[i])
+			}
+			w.WriteByte(')')
 		}
-
+	case NullTime:
+		err = v.writeTo(w)
+	case []NullTime:
+		if requestPos {
+			err = v[pos].writeTo(w)
+		} else {
+			w.WriteByte('(')
+			for l, i := len(v), 0; i < l && err == nil; i++ {
+				if i > 0 {
+					w.WriteByte(',')
+				}
+				err = v[i].writeTo(w)
+			}
+			w.WriteByte(')')
+		}
 	case nil:
 		_, err = w.WriteString(sqlStrNullUC)
-	case placeHolder:
-		err = w.WriteByte(placeHolderRune)
 
 	default:
-		panic(errors.NewNotSupportedf("[dml] Unsupported field type: %d", arg.value))
+		panic(errors.NewNotSupportedf("[dml] Unsupported field type: %T => %#v", arg.value, arg.value))
 	}
 	return err
 }
@@ -227,15 +374,19 @@ func (arg argument) GoString() string {
 		fmt.Fprintf(buf, ".Int64(%d)", v)
 	case []int64:
 		fmt.Fprintf(buf, ".Int64s(%#v...)", v)
-	case []NullInt64:
+	case NullInt64:
 		buf.WriteString(".NullInt64(")
+		buf.WriteString(v.GoString())
+		buf.WriteByte(')')
+	case []NullInt64:
+		buf.WriteString(".NullInt64s(")
 		for i, nv := range v {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
 			buf.WriteString(nv.GoString())
 		}
-		buf.WriteString(")")
+		buf.WriteByte(')')
 
 	case uint64:
 		fmt.Fprintf(buf, ".Uint64(%d)", v)
@@ -248,29 +399,37 @@ func (arg argument) GoString() string {
 		fmt.Fprintf(buf, ".Float64(%f)", v)
 	case []float64:
 		fmt.Fprintf(buf, ".Float64s(%#v...)", v) // the lazy way; prints `[]float64{2.76, 3.141}...` but should `2.76, 3.141`
-	case []NullFloat64:
+	case NullFloat64:
 		buf.WriteString(".NullFloat64(")
+		buf.WriteString(v.GoString())
+		buf.WriteByte(')')
+	case []NullFloat64:
+		buf.WriteString(".NullFloat64s(")
 		for i, nv := range v {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
 			buf.WriteString(nv.GoString())
 		}
-		buf.WriteString(")")
+		buf.WriteByte(')')
 
 	case bool:
 		fmt.Fprintf(buf, ".Bool(%v)", v)
 	case []bool:
 		fmt.Fprintf(buf, ".Bools(%#v...)", v)
-	case []NullBool:
+	case NullBool:
 		buf.WriteString(".NullBool(")
+		buf.WriteString(v.GoString())
+		buf.WriteByte(')')
+	case []NullBool:
+		buf.WriteString(".NullBools(")
 		for i, nv := range v {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
 			buf.WriteString(nv.GoString())
 		}
-		buf.WriteString(")")
+		buf.WriteByte(')')
 
 	case string:
 		fmt.Fprintf(buf, ".String(%q)", v)
@@ -282,16 +441,20 @@ func (arg argument) GoString() string {
 			}
 			fmt.Fprintf(buf, "%q", nv)
 		}
-		buf.WriteString(")")
-	case []NullString:
+		buf.WriteByte(')')
+	case NullString:
 		buf.WriteString(".NullString(")
+		buf.WriteString(v.GoString())
+		buf.WriteByte(')')
+	case []NullString:
+		buf.WriteString(".NullStrings(")
 		for i, nv := range v {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
 			buf.WriteString(nv.GoString())
 		}
-		buf.WriteString(")")
+		buf.WriteByte(')')
 
 	case []byte:
 		fmt.Fprintf(buf, ".Bytes(%#v)", v)
@@ -303,7 +466,7 @@ func (arg argument) GoString() string {
 			}
 			fmt.Fprintf(buf, "%#v", nv)
 		}
-		buf.WriteString(")")
+		buf.WriteByte(')')
 
 	case time.Time:
 		fmt.Fprintf(buf, ".Time(time.Unix(%d,%d))", v.Unix(), v.Nanosecond())
@@ -315,21 +478,23 @@ func (arg argument) GoString() string {
 			}
 			fmt.Fprintf(buf, "time.Unix(%d,%d)", t.Unix(), t.Nanosecond())
 		}
-		buf.WriteString(")")
-	case []NullTime:
+		buf.WriteByte(')')
+	case NullTime:
 		buf.WriteString(".NullTime(")
+		buf.WriteString(v.GoString())
+		buf.WriteByte(')')
+	case []NullTime:
+		buf.WriteString(".NullTimes(")
 		for i, nv := range v {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
 			buf.WriteString(nv.GoString())
 		}
-		buf.WriteString(")")
+		buf.WriteByte(')')
 
 	case nil:
 		fmt.Fprint(buf, ".Null()")
-	case placeHolder:
-		// noop
 	default:
 		panic(errors.NewNotSupportedf("[dml] Unsupported field type: %T", arg.value))
 	}
@@ -343,6 +508,29 @@ type Arguments []argument
 // MakeArgs creates a new argument slice with the desired capacity.
 func MakeArgs(cap int) Arguments {
 	return make(Arguments, 0, cap)
+}
+
+// unnamedArgByPos returns an unnamed argument by its position.
+func (a Arguments) unnamedArgByPos(pos int) (argument, bool) {
+	unnamedCounter := 0
+	for _, arg := range a {
+		if arg.name == "" {
+			if unnamedCounter == pos {
+				return arg, true
+			}
+			unnamedCounter++
+		}
+	}
+	return argument{}, false
+}
+
+func (a Arguments) hasNamedArgs() bool {
+	for _, arg := range a {
+		if arg.name != "" {
+			return true
+		}
+	}
+	return false
 }
 
 // MapColumns allows to merge one argument slice with another depending on the
@@ -389,19 +577,21 @@ func (a Arguments) Len() int {
 
 // Write writes all arguments into buf and separates by a comma.
 func (a Arguments) Write(buf *bytes.Buffer) error {
-	buf.WriteByte('(')
+	if len(a) > 1 {
+		buf.WriteByte('(')
+	}
 	for j, arg := range a {
-		l := arg.len()
-		for i := 0; i < l; i++ {
-			if i > 0 || j > 0 {
-				buf.WriteByte(',')
-			}
-			if err := arg.writeTo(buf, i); err != nil {
-				return errors.Wrapf(err, "[dml] args write failed at pos %d with argument %#v", j, arg)
-			}
+		if j > 0 {
+			buf.WriteByte(',')
+		}
+		if err := arg.writeTo(buf, 0); err != nil {
+			return errors.Wrapf(err, "[dml] args write failed at pos %d with argument %#v", j, arg)
 		}
 	}
-	return buf.WriteByte(')')
+	if len(a) > 1 {
+		buf.WriteByte(')')
+	}
+	return nil
 }
 
 // Interfaces creates an interface slice with flatend values. Each type is one
@@ -432,13 +622,11 @@ func (a Arguments) Interfaces(args ...interface{}) []interface{} {
 			for _, v := range vv {
 				args = append(args, v)
 			}
+		case NullInt64:
+			args = vv.append(args)
 		case []NullInt64:
 			for _, v := range vv {
-				if v.Valid {
-					args = append(args, v.Int64)
-				} else {
-					args = append(args, nil)
-				}
+				args = v.append(args)
 			}
 
 			// Get send as text in a byte slice. The MySQL/MariaDB Server type
@@ -471,39 +659,33 @@ func (a Arguments) Interfaces(args ...interface{}) []interface{} {
 			for _, v := range vv {
 				args = append(args, v)
 			}
+		case NullFloat64:
+			args = vv.append(args)
 		case []NullFloat64:
 			for _, v := range vv {
-				if v.Valid {
-					args = append(args, v.Float64)
-				} else {
-					args = append(args, nil)
-				}
+				args = v.append(args)
 			}
 
 		case []bool:
 			for _, v := range vv {
 				args = append(args, v)
 			}
+		case NullBool:
+			args = vv.append(args)
 		case []NullBool:
 			for _, v := range vv {
-				if v.Valid {
-					args = append(args, v.Bool)
-				} else {
-					args = append(args, nil)
-				}
+				args = v.append(args)
 			}
 
 		case []string:
 			for _, v := range vv {
 				args = append(args, v)
 			}
+		case NullString:
+			args = vv.append(args)
 		case []NullString:
 			for _, v := range vv {
-				if v.Valid {
-					args = append(args, v.String)
-				} else {
-					args = append(args, nil)
-				}
+				args = v.append(args)
 			}
 
 		case [][]byte:
@@ -515,14 +697,14 @@ func (a Arguments) Interfaces(args ...interface{}) []interface{} {
 			for _, v := range vv {
 				args = append(args, v)
 			}
+		case NullTime:
+			args = vv.append(args)
 		case []NullTime:
 			for _, v := range vv {
-				if v.Valid {
-					args = append(args, v.Time)
-				} else {
-					args = append(args, nil)
-				}
+				args = v.append(args)
 			}
+		default:
+			panic(errors.NewNotSupportedf("[dml] Unsupported field type: %T", arg.value))
 		}
 	}
 	return args
@@ -542,36 +724,46 @@ func (a Arguments) add(v interface{}) Arguments {
 	}
 	return append(a, argument{isSet: true, value: v})
 }
-func (a Arguments) PlaceHolder() Arguments                  { return a.add(placeHolder(1)) }
-func (a Arguments) Null() Arguments                         { return a.add(nil) }
-func (a Arguments) Int(i int) Arguments                     { return a.add(i) }
-func (a Arguments) Ints(i ...int) Arguments                 { return a.add(i) }
-func (a Arguments) Int64(i int64) Arguments                 { return a.add(i) }
-func (a Arguments) Int64s(i ...int64) Arguments             { return a.add(i) }
-func (a Arguments) Uint(i uint) Arguments                   { return a.add(uint64(i)) }
-func (a Arguments) Uints(i ...uint) Arguments               { return a.add(i) }
-func (a Arguments) Uint64(i uint64) Arguments               { return a.add(i) }
-func (a Arguments) Uint64s(i ...uint64) Arguments           { return a.add(i) }
-func (a Arguments) Float64(f float64) Arguments             { return a.add(f) }
-func (a Arguments) Float64s(f ...float64) Arguments         { return a.add(f) }
-func (a Arguments) Bool(b bool) Arguments                   { return a.add(b) }
-func (a Arguments) Bools(b ...bool) Arguments               { return a.add(b) }
-func (a Arguments) String(s string) Arguments               { return a.add(s) }
-func (a Arguments) Strings(s ...string) Arguments           { return a.add(s) }
-func (a Arguments) Time(t time.Time) Arguments              { return a.add(t) }
-func (a Arguments) Times(t ...time.Time) Arguments          { return a.add(t) }
-func (a Arguments) Bytes(b []byte) Arguments                { return a.add(b) }
-func (a Arguments) BytesSlice(b ...[]byte) Arguments        { return a.add(b) }
-func (a Arguments) NullString(nv ...NullString) Arguments   { return a.add(nv) }
-func (a Arguments) NullFloat64(nv ...NullFloat64) Arguments { return a.add(nv) }
-func (a Arguments) NullInt64(nv ...NullInt64) Arguments     { return a.add(nv) }
-func (a Arguments) NullBool(nv ...NullBool) Arguments       { return a.add(nv) }
-func (a Arguments) NullTime(nv ...NullTime) Arguments       { return a.add(nv) }
 
-// Name sets the name for the following argument. Calling Name two time after
+func (a Arguments) Null() Arguments                          { return a.add(nil) }
+func (a Arguments) Unsafe(arg interface{}) Arguments         { return a.add(arg) }
+func (a Arguments) Int(i int) Arguments                      { return a.add(i) }
+func (a Arguments) Ints(i ...int) Arguments                  { return a.add(i) }
+func (a Arguments) Int64(i int64) Arguments                  { return a.add(i) }
+func (a Arguments) Int64s(i ...int64) Arguments              { return a.add(i) }
+func (a Arguments) Uint(i uint) Arguments                    { return a.add(uint64(i)) }
+func (a Arguments) Uints(i ...uint) Arguments                { return a.add(i) }
+func (a Arguments) Uint64(i uint64) Arguments                { return a.add(i) }
+func (a Arguments) Uint64s(i ...uint64) Arguments            { return a.add(i) }
+func (a Arguments) Float64(f float64) Arguments              { return a.add(f) }
+func (a Arguments) Float64s(f ...float64) Arguments          { return a.add(f) }
+func (a Arguments) Bool(b bool) Arguments                    { return a.add(b) }
+func (a Arguments) Bools(b ...bool) Arguments                { return a.add(b) }
+func (a Arguments) String(s string) Arguments                { return a.add(s) }
+func (a Arguments) Strings(s ...string) Arguments            { return a.add(s) }
+func (a Arguments) Time(t time.Time) Arguments               { return a.add(t) }
+func (a Arguments) Times(t ...time.Time) Arguments           { return a.add(t) }
+func (a Arguments) Bytes(b []byte) Arguments                 { return a.add(b) }
+func (a Arguments) BytesSlice(b ...[]byte) Arguments         { return a.add(b) }
+func (a Arguments) NullString(nv NullString) Arguments       { return a.add(nv) }
+func (a Arguments) NullStrings(nv ...NullString) Arguments   { return a.add(nv) }
+func (a Arguments) NullFloat64(nv NullFloat64) Arguments     { return a.add(nv) }
+func (a Arguments) NullFloat64s(nv ...NullFloat64) Arguments { return a.add(nv) }
+func (a Arguments) NullInt64(nv NullInt64) Arguments         { return a.add(nv) }
+func (a Arguments) NullInt64s(nv ...NullInt64) Arguments     { return a.add(nv) }
+func (a Arguments) NullBool(nv NullBool) Arguments           { return a.add(nv) }
+func (a Arguments) NullBools(nv ...NullBool) Arguments       { return a.add(nv) }
+func (a Arguments) NullTime(nv NullTime) Arguments           { return a.add(nv) }
+func (a Arguments) NullTimes(nv ...NullTime) Arguments       { return a.add(nv) }
+
+// Name sets the name for the following argument. Calling Name two times after
 // each other sets the first call to Name to a NULL value. A call to Name should
 // always follow a call to a function type like Int, Float64s or NullTime.
+// Name may contain the placeholder prefix colon.
 func (a Arguments) Name(n string) Arguments { return append(a, argument{name: n}) }
+
+// TODO: maybe use such a function to set the position, but then add a new field: pos int to the argument struct
+// func (a Arguments) Pos(n int) Arguments { return append(a, argument{name: n}) }
 
 // Reset resets the slice for new usage retaining the already allocated memory.
 func (a Arguments) Reset() Arguments { return a[:0] }
@@ -644,7 +836,9 @@ func (a Arguments) DriverValue(dvs ...driver.Valuer) Arguments {
 	return a
 }
 
-// DriverValues adds each driver.value as its own argument to the argument slice.
+// DriverValues adds each driver.Value as its own argument to the argument
+// slice. It panics if the underlying type is not one of the allowed of
+// interface driver.Valuer.
 func (a Arguments) DriverValues(dvs ...driver.Valuer) Arguments {
 	// value is a value that drivers must be able to handle.
 	// It is either nil or an instance of one of these types:
@@ -679,7 +873,7 @@ func (a Arguments) DriverValues(dvs ...driver.Valuer) Arguments {
 		case string:
 			a = a.String(t)
 		case time.Time:
-			a = a.Times(t)
+			a = a.Time(t)
 		default:
 			panic(errors.NewNotSupportedf("[dml] Type %#v not supported in value slice: %#v", t, dvs))
 		}

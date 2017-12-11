@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -72,9 +72,11 @@ func newDeleteFrom(db ExecPreparer, idFn uniqueIDFn, l log.Logger, from string) 
 	}
 	return &Delete{
 		BuilderBase: BuilderBase{
-			id:    id,
+			builderCommon: builderCommon{
+				id:  id,
+				Log: l,
+			},
 			Table: MakeIdentifier(from),
-			Log:   l,
 		},
 		BuilderConditional: BuilderConditional{
 			Wheres: make(Conditions, 0, 2),
@@ -119,28 +121,6 @@ func (b *Delete) Unsafe() *Delete {
 	return b
 }
 
-// BindRecord binds the qualified record to the main table/view, or any other
-// table/view/alias used in the query, for assembling and appending arguments. A
-// ColumnMapper gets called if it matches the qualifier, in this case the
-// current table name or its alias.
-func (b *Delete) BindRecord(records ...QualifiedRecord) *Delete {
-	b.bindRecord(records)
-	return b
-}
-
-func (b *Delete) bindRecord(records []QualifiedRecord) {
-	if b.QualifiedRecords == nil {
-		b.QualifiedRecords = make(map[string]ColumnMapper)
-	}
-	for _, rec := range records {
-		q := rec.Qualifier
-		if q == "" {
-			q = b.Table.mustQualifier()
-		}
-		b.QualifiedRecords[q] = rec.Record
-	}
-}
-
 // Where appends a WHERE clause to the statement whereSQLOrMap can be a string
 // or map. If it'ab a string, args wil replaces any places holders.
 func (b *Delete) Where(wf ...*Condition) *Delete {
@@ -183,98 +163,103 @@ func (b *Delete) Interpolate() *Delete {
 	return b
 }
 
-// ToSQL serialized the Delete to a SQL string
-// It returns the string with placeholders and a slice of query arguments
-func (b *Delete) ToSQL() (string, []interface{}, error) {
-	return toSQL(b, b.IsInterpolate, _isNotPrepared)
-}
-
-func (b *Delete) writeBuildCache(sql []byte) {
-	b.cacheSQL = sql
-}
-
-func (b *Delete) readBuildCache() (sql []byte, _ Arguments, err error) {
-	if b.cacheSQL == nil {
-		return nil, nil, nil
-	}
-	b.argPool, err = b.appendArgs(b.argPool[:0])
-	return b.cacheSQL, b.argPool, err
-}
-
-// BuildCache if `true` the final build query including place holders will be
-// cached in a private field. Each time a call to function ToSQL happens, the
-// arguments will be re-evaluated and returned or interpolated.
-func (b *Delete) BuildCache() *Delete {
-	b.IsBuildCache = true
+// ExpandPlaceHolders repeats the place holders with the provided argument
+// count. If the amount of arguments does not match the number of place holders,
+// a mismatch error gets returned.
+//		ExpandPlaceHolders("SELECT * FROM table WHERE id IN (?) AND status IN (?)", Int(myIntSlice...), String(myStrSlice...))
+// Gets converted to:
+//		SELECT * FROM table WHERE id IN (?,?) AND status IN (?,?,?)
+// The place holders are of course depending on the values in the Arg*
+// functions. This function should be generally used when dealing with prepared
+// statements or interpolation.
+func (b *Delete) ExpandPlaceHolders() *Delete {
+	b.IsExpandPlaceHolders = true
 	return b
 }
 
-func (b *Delete) hasBuildCache() bool {
-	return b.IsBuildCache
+// WithArgs sets the interfaced arguments for the execution with Query+. It
+// internally resets previously applied arguments. This function does not
+// support interpolation.
+func (b *Delete) WithArgs(args ...interface{}) *Delete {
+	b.withArgs(args)
+	return b
+}
+
+// WithArguments sets the arguments for the execution with Query+. It internally
+// resets previously applied arguments. This function supports interpolation.
+func (b *Delete) WithArguments(args Arguments) *Delete {
+	b.withArguments(args)
+	return b
+}
+
+// WithRecords binds the qualified record to the main table/view, or any other
+// table/view/alias used in the query, for assembling and appending arguments. A
+// ColumnMapper gets called if it matches the qualifier, in this case the
+// current table name or its alias.
+func (b *Delete) WithRecords(records ...QualifiedRecord) *Delete {
+	b.withRecords(records)
+	return b
+}
+
+// ToSQL generates the SQL string and might caches it internally, if not
+// disabled.
+func (b *Delete) ToSQL() (string, []interface{}, error) {
+	return b.buildArgsAndSQL(b)
+}
+
+func (b *Delete) writeBuildCache(sql []byte) {
+	b.BuilderConditional = BuilderConditional{}
+	b.cacheSQL = sql
+}
+
+func (b *Delete) readBuildCache() (sql []byte) {
+	return b.cacheSQL
+}
+
+// DisableBuildCache if enabled it does not cache the SQL string as a final
+// rendered byte slice. Allows you to rebuild the query with different
+// statements.
+func (b *Delete) DisableBuildCache() *Delete {
+	b.IsBuildCacheDisabled = true
+	return b
 }
 
 // ToSQL serialized the Delete to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Delete) toSQL(buf *bytes.Buffer) error {
+func (b *Delete) toSQL(w *bytes.Buffer, placeHolders []string) ([]string, error) {
+	b.defaultQualifier = b.Table.qualifier()
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
-		return errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 
 	if b.RawFullSQL != "" {
-		buf.WriteString(b.RawFullSQL)
-		return nil
+		_, err := w.WriteString(b.RawFullSQL)
+		return nil, err
 	}
 
 	if b.Table.Name == "" {
-		return errors.NewEmptyf("[dml] Delete: Table is missing")
+		return nil, errors.NewEmptyf("[dml] Delete: Table is missing")
 	}
 
-	buf.WriteString("DELETE ")
-	writeStmtID(buf, b.id)
-	buf.WriteString("FROM ")
-	b.Table.WriteQuoted(buf)
-
-	// TODO(CyS) add SQLStmtDeleteJoin
-
-	if err := b.Wheres.write(buf, 'w'); err != nil {
-		return errors.WithStack(err)
-	}
-
-	sqlWriteOrderBy(buf, b.OrderBys, false)
-	sqlWriteLimitOffset(buf, b.LimitValid, b.LimitCount, false, 0)
-
-	return nil
-}
-
-// ToSQL serialized the Delete to a SQL string
-// It returns the string with placeholders and a slice of query arguments
-func (b *Delete) appendArgs(args Arguments) (_ Arguments, err error) {
-
-	if b.RawFullSQL != "" {
-		return b.RawArguments, nil
-	}
-	if cap(args) == 0 {
-		args = make(Arguments, 0, len(b.Wheres))
-	}
-	args, err = b.Table.appendArgs(args)
+	w.WriteString("DELETE ")
+	writeStmtID(w, b.id)
+	w.WriteString("FROM ")
+	placeHolders, err := b.Table.writeQuoted(w, placeHolders)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	// TODO(CyS) add SQLStmtDeleteJoin
-	placeHolderColumns := make([]string, 0, len(b.Wheres)) // can be reused once we implement more features of the DELETE statement, like JOINs.
-
-	args, pap, err := b.Wheres.appendArgs(args, appendArgsWHERE)
+	placeHolders, err = b.Wheres.write(w, 'w', placeHolders)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if boundCols := b.Wheres.intersectConditions(placeHolderColumns); len(boundCols) > 0 {
-		if args, err = appendArgs(pap, b.QualifiedRecords, args, b.Table.mustQualifier(), boundCols); err != nil {
-			return nil, errors.WithStack(err)
-		}
-	}
-	return args, nil
+
+	sqlWriteOrderBy(w, b.OrderBys, false)
+	sqlWriteLimitOffset(w, b.LimitValid, b.LimitCount, false, 0)
+
+	return placeHolders, nil
 }
 
 // Exec executes the statement represented by the Delete. It returns the raw
@@ -305,12 +290,15 @@ func (b *Delete) Prepare(ctx context.Context) (*StmtDelete, error) {
 	cap := len(b.Wheres)
 	return &StmtDelete{
 		StmtBase: StmtBase{
-			id:         b.id,
-			stmt:       sqlStmt,
-			argsCache:  make(Arguments, 0, cap),
-			argsRaw:    make([]interface{}, 0, cap),
-			bindRecord: b.bindRecord,
-			log:        b.Log,
+			builderCommon: builderCommon{
+				id:               b.id,
+				argsArgs:         make(Arguments, 0, cap),
+				argsRaw:          make([]interface{}, 0, cap),
+				defaultQualifier: b.Table.qualifier(),
+				qualifiedColumns: b.qualifiedColumns,
+				Log:              b.Log,
+			},
+			stmt: sqlStmt,
 		},
 		del: b,
 	}, nil
@@ -335,6 +323,6 @@ func (st *StmtDelete) WithArguments(args Arguments) *StmtDelete {
 // WithRecords sets the records for the execution with Exec. It internally
 // resets previously applied arguments.
 func (st *StmtDelete) WithRecords(records ...QualifiedRecord) *StmtDelete {
-	st.withRecords(st.del.appendArgs, records...)
+	st.withRecords(records)
 	return st
 }

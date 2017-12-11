@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -71,128 +71,81 @@ func (o Op) String() string {
 	return string(o)
 }
 
-func writePlaceHolderList(w *bytes.Buffer, valLen int) {
-	w.WriteByte('(')
-	for j := 0; j < valLen; j++ {
-		if j > 0 {
-			w.WriteByte(',')
-		}
-		w.WriteByte(placeHolderRune)
+func (o Op) write(w *bytes.Buffer, args ...argument) (err error) {
+	var arg argument
+	if len(args) == 1 {
+		arg = args[0]
 	}
-	w.WriteByte(')')
-}
 
-func (o Op) write(w *bytes.Buffer, argLen int) (err error) {
-	// hasArgs value only used in cases where we have in the parent caller
-	// function a sub-select. sub-selects do not need a place holder.
-	hasArgs := argLen > 0
+	switch o {
+	case NotIn, NotLike, NotRegexp, NotBetween, NotExists:
+		w.WriteString(" NOT")
+	}
+
 	switch o {
 	case Null:
 		_, err = w.WriteString(" IS NULL")
 	case NotNull:
 		_, err = w.WriteString(" IS NOT NULL")
-	case In:
-		_, err = w.WriteString(" IN ")
-		if hasArgs {
-			writePlaceHolderList(w, argLen)
-		}
-	case NotIn:
-		_, err = w.WriteString(" NOT IN ")
-		if hasArgs {
-			writePlaceHolderList(w, argLen)
-		}
-	case Like:
-		_, err = w.WriteString(" LIKE ")
-		if hasArgs {
-			err = w.WriteByte(placeHolderRune)
-		}
-	case NotLike:
-		_, err = w.WriteString(" NOT LIKE ")
-		if hasArgs {
-			err = w.WriteByte(placeHolderRune)
-		}
-	case Regexp:
+	case In, NotIn:
+		w.WriteString(" IN ")
+		err = Arguments(args).Write(w)
+	case Like, NotLike:
+		w.WriteString(" LIKE ")
+		err = arg.writeTo(w, 0)
+	case Regexp, NotRegexp:
 		_, err = w.WriteString(" REGEXP ")
-		if hasArgs {
-			err = w.WriteByte(placeHolderRune)
+		err = arg.writeTo(w, 0)
+	case Between, NotBetween:
+		w.WriteString(" BETWEEN ")
+		if !arg.isSet {
+			w.WriteByte(placeHolderRune)
+			w.WriteString(" AND ") // don't write the last place holder as it gets written somewhere else
+		} else {
+			if err = arg.writeTo(w, 1); err != nil {
+				return errors.WithStack(err)
+			}
+			w.WriteString(" AND ")
+			if err = arg.writeTo(w, 2); err != nil {
+				return errors.WithStack(err)
+			}
 		}
-	case NotRegexp:
-		_, err = w.WriteString(" NOT REGEXP ")
-		if hasArgs {
-			err = w.WriteByte(placeHolderRune)
-		}
-	case Between:
-		_, err = w.WriteString(" BETWEEN ? AND ?")
-	case NotBetween:
-		_, err = w.WriteString(" NOT BETWEEN ? AND ?")
 	case Greatest:
-		_, err = w.WriteString(" GREATEST ")
-		writePlaceHolderList(w, argLen)
+		w.WriteString(" GREATEST ")
+		err = Arguments(args).Write(w)
 	case Least:
-		_, err = w.WriteString(" LEAST ")
-		writePlaceHolderList(w, argLen)
+		w.WriteString(" LEAST ")
+		err = Arguments(args).Write(w)
 	case Coalesce:
-		_, err = w.WriteString(" COALESCE ")
-		writePlaceHolderList(w, argLen)
+		w.WriteString(" COALESCE ")
+		err = Arguments(args).Write(w)
 	case Xor:
-		_, err = w.WriteString(" XOR ")
-		if hasArgs {
-			err = w.WriteByte(placeHolderRune)
-		}
-	case Exists:
-		_, err = w.WriteString(" EXISTS ")
-	case NotExists:
-		_, err = w.WriteString(" NOT EXISTS ")
-	case NotEqual:
-		_, err = w.WriteString(" != ")
-		if hasArgs {
-			err = w.WriteByte(placeHolderRune)
-		}
+		w.WriteString(" XOR ")
+		err = arg.writeTo(w, 0)
+	case Exists, NotExists:
+		w.WriteString(" EXISTS ")
+		err = Arguments(args).Write(w)
 	case Less:
-		_, err = w.WriteString(" < ")
-		if hasArgs {
-			err = w.WriteByte(placeHolderRune)
-		}
+		w.WriteString(" < ")
+		err = arg.writeTo(w, 0)
 	case Greater:
-		_, err = w.WriteString(" > ")
-		if hasArgs {
-			err = w.WriteByte(placeHolderRune)
-		}
+		w.WriteString(" > ")
+		err = arg.writeTo(w, 0)
 	case LessOrEqual:
-		_, err = w.WriteString(" <= ")
-		if hasArgs {
-			err = w.WriteByte(placeHolderRune)
-		}
+		w.WriteString(" <= ")
+		err = arg.writeTo(w, 0)
 	case GreaterOrEqual:
-		_, err = w.WriteString(" >= ")
-		if hasArgs {
-			err = w.WriteByte(placeHolderRune)
-		}
+		w.WriteString(" >= ")
+		err = arg.writeTo(w, 0)
 	case SpaceShip:
-		_, err = w.WriteString(" <=> ")
-		if hasArgs {
-			err = w.WriteByte(placeHolderRune)
-		}
+		w.WriteString(" <=> ")
+		err = arg.writeTo(w, 0)
+	case NotEqual:
+		w.WriteString(" != ")
+		err = arg.writeTo(w, 0)
 	default: // and case Equal
-		_, err = w.WriteString(" = ")
-		if hasArgs {
-			err = w.WriteByte(placeHolderRune)
-		}
-	}
-	return
-}
-
-// hasArgs returns true if the Operator requires arguments to compare with.
-func (o Op) hasArgs(argLen int) (addArg bool) {
-	// hasArg value only used in cases where we have in the parent caller
-	// function a sub-select. sub-selects do not need a place holder.
-	switch o {
-	case Null, NotNull:
-		addArg = false
-	case Like, NotLike, Regexp, NotRegexp, Between, NotBetween, Greatest, Least, Coalesce, Xor:
-		addArg = true
-	default:
-		addArg = argLen > 0
+		w.WriteString(" = ")
+		err = arg.writeTo(w, 0)
 	}
 	return
 }
@@ -212,10 +165,18 @@ type Condition struct {
 	Right struct {
 		// Column defines a column name to compare to. The column, with an
 		// optional qualifier, gets quoted, in case IsExpression is false.
-		Column    string
-		NamedArg  string
-		Argument  argument // Only set in case of no expression
-		Arguments Arguments
+		Column string
+		// PlaceHolder can be a :named or the MySQL/MariaDB place holder
+		// character `?`. If set, the current condition just acts as a place
+		// holder for a prepared statement or an interpolation. In case of a
+		// :named place holder for a prepared statement, the :named string gets
+		// replaced with the `?`. The allowed characters are unicode letters and
+		// digits.
+		PlaceHolder string
+		// arg gets written into the SQL string as a persistent argument
+		arg argument // Only set in case of no expression
+		// args same as arg but only used in case of an expression.
+		args Arguments
 		// Select adds a sub-select to the where statement. Column must be
 		// either a column name or anything else which can handle the result of
 		// a sub-select.
@@ -235,9 +196,6 @@ type Condition struct {
 	// Logical states how multiple WHERE statements will be connected.
 	// Default to AND. Possible values are a=AND, o=OR, x=XOR, n=NOT
 	Logical byte
-	// IsPlaceHolder true if the current WHERE condition just acts as a place
-	// holder for a prepared statement or an interpolation.
-	IsPlaceHolder bool
 	// Columns is a list of column names which get quoted during SQL statement
 	// creation in the JOIN part for the USING syntax. Additionally used in ON
 	// DUPLICATE KEY.
@@ -288,9 +246,9 @@ func (cs Conditions) intersectConditions(cols []string) []string {
 	// this calculates the intersection of the columns in Conditions which
 	// already have an value provided/assigned and those where the arguments
 	// must be retrieved from the interface ColumnMapper. If the arguments
-	// should be assembled from ColumnMapper the value IsPlaceHolder is true.
+	// should be assembled from ColumnMapper the value PlaceHolder is true.
 	for _, cnd := range cs {
-		if cnd.IsPlaceHolder {
+		if cnd.Right.PlaceHolder != "" {
 			cols = append(cols, cnd.Left)
 		}
 	}
@@ -464,19 +422,39 @@ func (c *Condition) Column(col string) *Condition {
 	return c
 }
 
-// NamedArg if set the MySQL/MariaDB placeholder `?` will be replaced with a
-// name. Records which implement ColumnMapper must also use this name.
+// NamedArg treats a condition as a place holder. If set the MySQL/MariaDB
+// placeholder `?` will be used and the provided name gets replaced. Records
+// which implement ColumnMapper must also use this name. NamedArg also supports
+// a qualified named argument, e.g. :alias.yourName where alias is the name of
+// the table or view or ...
 func (c *Condition) NamedArg(n string) *Condition {
-	c.Right.NamedArg = n
-	c.IsPlaceHolder = true
+	c.Right.PlaceHolder = n
 	return c
 }
 
-// PlaceHolder sets the database specific place holder character. Mostly used in
-// prepared statements and for interpolation.
+// PlaceHolder treats a condition as a placeholder. Sets the database specific
+// placeholder character "?". Mostly used in prepared statements and for
+// interpolation.
 func (c *Condition) PlaceHolder() *Condition {
-	c.Right.Argument.set(placeHolder(-7)) // value -7 does not matter
-	c.IsPlaceHolder = true
+	c.Right.PlaceHolder = placeHolderStr
+	return c
+}
+
+// PlaceHolder treats a condition as a placeholder. Sets the database specific
+// placeholder character "?" as many times as specified in variable count.
+// Mostly used in prepared statements and for interpolation and when using the
+// IN clause.
+func (c *Condition) PlaceHolders(count int) *Condition {
+	var buf strings.Builder
+	buf.WriteByte('(')
+	for i := 0; i < count; i++ {
+		if i > 0 {
+			buf.WriteByte(',')
+		}
+		buf.WriteByte(placeHolderRune)
+	}
+	buf.WriteByte(')')
+	c.Right.PlaceHolder = buf.String()
 	return c
 }
 
@@ -498,57 +476,66 @@ func (c *Condition) Expr(expression string) *Condition {
 	return c
 }
 
-func (c *Condition) Int(i int) *Condition {
+func (c *Condition) Unsafe(arg interface{}) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = c.Right.Arguments.Int64(int64(i))
+		c.Right.args = c.Right.args.Unsafe(arg)
 		return c
 	}
-	c.Right.Argument.set(i)
+	c.Right.arg.set(arg)
+	return c
+}
+
+func (c *Condition) Int(i int) *Condition {
+	if c.isExpression() {
+		c.Right.args = c.Right.args.Int64(int64(i))
+		return c
+	}
+	c.Right.arg.set(i)
 	return c
 }
 
 func (c *Condition) Ints(i ...int) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = c.Right.Arguments.Ints(i...)
+		c.Right.args = c.Right.args.Ints(i...)
 		return c
 	}
-	c.Right.Argument.set(i)
+	c.Right.arg.set(i)
 	return c
 }
 
 func (c *Condition) Int64(i int64) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = c.Right.Arguments.Int64(i)
+		c.Right.args = c.Right.args.Int64(i)
 		return c
 	}
-	c.Right.Argument.set(i)
+	c.Right.arg.set(i)
 	return c
 }
 
 func (c *Condition) Int64s(i ...int64) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = c.Right.Arguments.Int64s(i...)
+		c.Right.args = c.Right.args.Int64s(i...)
 		return c
 	}
-	c.Right.Argument.set(i)
+	c.Right.arg.set(i)
 	return c
 }
 
 func (c *Condition) Uint64(i uint64) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = c.Right.Arguments.Uint64(i)
+		c.Right.args = c.Right.args.Uint64(i)
 		return c
 	}
-	c.Right.Argument.set(i)
+	c.Right.arg.set(i)
 	return c
 }
 
 func (c *Condition) Uint64s(i ...uint64) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = c.Right.Arguments.Uint64s(i...)
+		c.Right.args = c.Right.args.Uint64s(i...)
 		return c
 	}
-	c.Right.Argument.set(i)
+	c.Right.arg.set(i)
 	return c
 }
 
@@ -559,69 +546,69 @@ func (c *Condition) Decimal(d Decimal) *Condition {
 	v := d.String()
 	if c.isExpression() {
 		if v == sqlStrNullUC {
-			c.Right.Arguments = c.Right.Arguments.Null()
+			c.Right.args = c.Right.args.Null()
 		} else {
-			c.Right.Arguments = c.Right.Arguments.String(v)
+			c.Right.args = c.Right.args.String(v)
 		}
 		return c
 	}
 	if v == sqlStrNullUC {
-		c.Right.Argument.set(nil)
+		c.Right.arg.set(nil)
 	} else {
-		c.Right.Argument.set(v)
+		c.Right.arg.set(v)
 	}
 	return c
 }
 
 func (c *Condition) Float64(f float64) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = c.Right.Arguments.Float64(f)
+		c.Right.args = c.Right.args.Float64(f)
 		return c
 	}
-	c.Right.Argument.set(f)
+	c.Right.arg.set(f)
 	return c
 }
 func (c *Condition) Float64s(f ...float64) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = c.Right.Arguments.Float64s(f...)
+		c.Right.args = c.Right.args.Float64s(f...)
 		return c
 	}
-	c.Right.Argument.set(f)
+	c.Right.arg.set(f)
 	return c
 }
 func (c *Condition) Str(s string) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = c.Right.Arguments.String(s)
+		c.Right.args = c.Right.args.String(s)
 		return c
 	}
-	c.Right.Argument.set(s)
+	c.Right.arg.set(s)
 	return c
 }
 
 func (c *Condition) Strs(s ...string) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = c.Right.Arguments.Strings(s...)
+		c.Right.args = c.Right.args.Strings(s...)
 		return c
 	}
-	c.Right.Argument.set(s)
+	c.Right.arg.set(s)
 	return c
 }
 
 func (c *Condition) Bool(b bool) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = c.Right.Arguments.Bool(b)
+		c.Right.args = c.Right.args.Bool(b)
 		return c
 	}
-	c.Right.Argument.set(b)
+	c.Right.arg.set(b)
 	return c
 }
 
 func (c *Condition) Bools(b ...bool) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = c.Right.Arguments.Bools(b...)
+		c.Right.args = c.Right.args.Bools(b...)
 		return c
 	}
-	c.Right.Argument.set(b)
+	c.Right.arg.set(b)
 	return c
 }
 
@@ -630,86 +617,131 @@ func (c *Condition) Bools(b ...bool) *Condition {
 // hex encoded.
 func (c *Condition) Bytes(p []byte) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = c.Right.Arguments.Bytes(p)
+		c.Right.args = c.Right.args.Bytes(p)
 		return c
 	}
-	c.Right.Argument.set(p)
+	c.Right.arg.set(p)
 	return c
 }
 
 func (c *Condition) BytesSlice(p ...[]byte) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = c.Right.Arguments.BytesSlice(p...)
+		c.Right.args = c.Right.args.BytesSlice(p...)
 		return c
 	}
-	c.Right.Argument.set(p)
+	c.Right.arg.set(p)
 	return c
 }
 
 func (c *Condition) Time(t time.Time) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = c.Right.Arguments.Time(t)
+		c.Right.args = c.Right.args.Time(t)
 		return c
 	}
-	c.Right.Argument.set(t)
+	c.Right.arg.set(t)
 	return c
 }
 
 func (c *Condition) Times(t ...time.Time) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = c.Right.Arguments.Times(t...)
+		c.Right.args = c.Right.args.Times(t...)
 		return c
 	}
-	c.Right.Argument.set(t)
+	c.Right.arg.set(t)
 	return c
 }
 
-func (c *Condition) NullString(nv ...NullString) *Condition {
+func (c *Condition) NullString(nv NullString) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = c.Right.Arguments.NullString(nv...)
+		c.Right.args = c.Right.args.NullString(nv)
 		return c
 	}
-	c.Right.Argument.set(nv)
+	c.Right.arg.set(nv)
 	return c
 }
 
-func (c *Condition) NullFloat64(nv ...NullFloat64) *Condition {
+func (c *Condition) NullStrings(nv ...NullString) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = c.Right.Arguments.NullFloat64(nv...)
+		c.Right.args = c.Right.args.NullStrings(nv...)
 		return c
 	}
-	c.Right.Argument.set(nv)
+	c.Right.arg.set(nv)
 	return c
 }
 
-func (c *Condition) NullInt64(nv ...NullInt64) *Condition {
+func (c *Condition) NullFloat64(nv NullFloat64) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = c.Right.Arguments.NullInt64(nv...)
+		c.Right.args = c.Right.args.NullFloat64(nv)
 		return c
 	}
-	c.Right.Argument.set(nv)
+	c.Right.arg.set(nv)
 	return c
 }
 
-func (c *Condition) NullBool(nv ...NullBool) *Condition {
+func (c *Condition) NullFloat64s(nv ...NullFloat64) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = c.Right.Arguments.NullBool(nv...)
+		c.Right.args = c.Right.args.NullFloat64s(nv...)
 		return c
 	}
-	c.Right.Argument.set(nv)
+	c.Right.arg.set(nv)
 	return c
 }
 
-func (c *Condition) NullTime(nv ...NullTime) *Condition {
+func (c *Condition) NullInt64(nv NullInt64) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = c.Right.Arguments.NullTime(nv...)
+		c.Right.args = c.Right.args.NullInt64(nv)
 		return c
 	}
-	c.Right.Argument.set(nv)
+	c.Right.arg.set(nv)
 	return c
 }
 
-// Values onlny usable in case for ON DUPLCIATE KEY to generate a statement like:
+func (c *Condition) NullInt64s(nv ...NullInt64) *Condition {
+	if c.isExpression() {
+		c.Right.args = c.Right.args.NullInt64s(nv...)
+		return c
+	}
+	c.Right.arg.set(nv)
+	return c
+}
+
+func (c *Condition) NullBool(nv NullBool) *Condition {
+	if c.isExpression() {
+		c.Right.args = c.Right.args.NullBool(nv)
+		return c
+	}
+	c.Right.arg.set(nv)
+	return c
+}
+
+func (c *Condition) NullBools(nv ...NullBool) *Condition {
+	if c.isExpression() {
+		c.Right.args = c.Right.args.NullBools(nv...)
+		return c
+	}
+	c.Right.arg.set(nv)
+	return c
+}
+
+func (c *Condition) NullTime(nv NullTime) *Condition {
+	if c.isExpression() {
+		c.Right.args = c.Right.args.NullTime(nv)
+		return c
+	}
+	c.Right.arg.set(nv)
+	return c
+}
+
+func (c *Condition) NullTimes(nv ...NullTime) *Condition {
+	if c.isExpression() {
+		c.Right.args = c.Right.args.NullTimes(nv...)
+		return c
+	}
+	c.Right.arg.set(nv)
+	return c
+}
+
+// Values only usable in case for ON DUPLICATE KEY to generate a statement like:
 //		column=VALUES(column)
 func (c *Condition) Values() *Condition {
 	// noop just to lower the cognitive overload when reading the code where
@@ -717,14 +749,15 @@ func (c *Condition) Values() *Condition {
 	return c
 }
 
-// DriverValue uses driver.Valuers for comparison. Named DriverValue to avoid
-// confusion with Values() function.
+// DriverValue uses driver.Valuers for DB comparison and injection
 func (c *Condition) DriverValue(dv ...driver.Valuer) *Condition {
-	c.Right.Arguments = c.Right.Arguments.DriverValue(dv...)
+	c.Right.args = c.Right.args.DriverValue(dv...)
 	return c
 }
+
+// DriverValues
 func (c *Condition) DriverValues(dv ...driver.Valuer) *Condition {
-	c.Right.Arguments = c.Right.Arguments.DriverValues(dv...)
+	c.Right.args = c.Right.args.DriverValues(dv...)
 	return c
 }
 
@@ -752,9 +785,9 @@ func (c *Condition) SQLIfNull(expression ...string) *Condition {
 
 // write writes the conditions for usage as restrictions in WHERE, HAVING or
 // JOIN clauses. conditionType enum of j=join, w=where, h=having
-func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
+func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []string) ( /*placeHolders*/ _ []string, err error) {
 	if len(cs) == 0 {
-		return nil
+		return placeHolders, nil
 	}
 
 	switch conditionType {
@@ -777,7 +810,7 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
 					Quoter.quote(w, c)
 				}
 				w.WriteByte(')')
-				return nil // done, only one USING allowed
+				return placeHolders, nil // done, only one USING allowed
 			}
 			if i == 0 {
 				w.WriteString(" ON ")
@@ -812,79 +845,109 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
 		}
 
 		w.WriteByte('(')
-		// Code is a bit duplicated but can be refactored later.
+		// Code is a bit duplicated but can be refactored later. The order of
+		// the `case`s has been carefully implemented.
 		switch {
 		case cnd.IsLeftExpression:
-			phCount, err := writeExpression(w, cnd.Left, cnd.Right.Arguments)
+			cnd.Left, placeHolders = extractReplaceNamedArgs(cnd.Left, placeHolders)
+			phCount, err := writeExpression(w, cnd.Left, cnd.Right.args)
 			if err != nil {
-				return errors.WithStack(err)
+				return nil, errors.WithStack(err)
 			}
 
 			// Only write the operator in case there is no place holder and we
 			// have one value.
-			if phCount == 0 && (len(cnd.Right.Arguments) == 1 || cnd.Right.Argument.isSet) && cnd.Operator > 0 {
-				eArg := cnd.Right.Argument
+			if phCount == 0 && (len(cnd.Right.args) == 1 || cnd.Right.arg.isSet) && cnd.Operator > 0 {
+				eArg := cnd.Right.arg
 				if !eArg.isSet {
-					eArg = cnd.Right.Arguments[0]
+					eArg = cnd.Right.args[0]
 				}
-				cnd.Operator.write(w, eArg.len())
+				cnd.Operator.write(w, eArg)
 			}
+
+			//else if len(cnd.Right.args) > 0 {
+			//	cnd.Operator.write(w, cnd.Right.args...)
+			//}
 			// TODO a case where left and right are expressions
 			// if cnd.Right.Expression.isset() {
 			// }
+
 		case cnd.Right.IsExpression:
 			Quoter.WriteIdentifier(w, cnd.Left)
-			cnd.Operator.write(w, 0) // must be zero because place holder get handled via repeatPlaceHolders function
-			writeExpression(w, cnd.Right.Column, cnd.Right.Arguments)
-
+			if err := cnd.Operator.write(w); err != nil {
+				return nil, errors.WithStack(err)
+			}
+			if _, err := writeExpression(w, cnd.Right.Column, cnd.Right.args); err != nil {
+				return nil, errors.WithStack(err)
+			}
 		case cnd.Right.Sub != nil:
 			Quoter.WriteIdentifier(w, cnd.Left)
-			cnd.Operator.write(w, 0)
+			if err := cnd.Operator.write(w); err != nil {
+				return nil, errors.WithStack(err)
+			}
 			w.WriteByte('(')
-			if err := cnd.Right.Sub.toSQL(w); err != nil {
-				return errors.Wrapf(err, "[dml] write failed SubSelect for table: %q", cnd.Right.Sub.Table.String())
+			placeHolders, err = cnd.Right.Sub.toSQL(w, placeHolders)
+			if err != nil {
+				return nil, errors.Wrapf(err, "[dml] write failed SubSelect for table: %q", cnd.Right.Sub.Table.String())
 			}
 			w.WriteByte(')')
 
-			// One Argument and no expression
-		case cnd.Right.Argument.isSet && cnd.Right.Arguments == nil:
+		case cnd.Right.arg.isSet && cnd.Right.args == nil: // One Argument and no expression
 			Quoter.WriteIdentifier(w, cnd.Left)
-			al := cnd.Right.Argument.len()
-			if cnd.IsPlaceHolder {
-				al = 1
-			}
-			if al > 1 && cnd.Operator == 0 { // no operator but slice applied, so creating an IN query.
+			if cnd.Right.arg.len() > 1 && cnd.Operator == 0 { // no operator but slice applied, so creating an IN query.
 				cnd.Operator = In
 			}
-			cnd.Operator.write(w, al)
-
-			// No Argument and expression arguments
-		case !cnd.Right.Argument.isSet && cnd.Right.Arguments != nil:
-			Quoter.WriteIdentifier(w, cnd.Left)
-			al := cnd.Right.Arguments.Len()
-
-			if cnd.IsPlaceHolder {
-				al = 1
+			if err := cnd.Operator.write(w, cnd.Right.arg); err != nil {
+				return nil, errors.WithStack(err)
 			}
-			if al > 1 && cnd.Operator == 0 { // no operator but slice applied, so creating an IN query.
+
+		case !cnd.Right.arg.isSet && cnd.Right.args != nil:
+			Quoter.WriteIdentifier(w, cnd.Left)
+			if cnd.Right.args.Len() > 1 && cnd.Operator == 0 { // no operator but slice applied, so creating an IN query.
 				cnd.Operator = In
 			}
-			cnd.Operator.write(w, al)
+			if err := cnd.Operator.write(w, cnd.Right.args...); err != nil {
+				return nil, errors.WithStack(err)
+			}
 
-			// compares the left column with the right column
-		case cnd.Right.Column != "":
+		case cnd.Right.Column != "": // compares the left column with the right column
 			Quoter.WriteIdentifier(w, cnd.Left)
-			cnd.Operator.write(w, 0)
+			if err := cnd.Operator.write(w); err != nil {
+				return nil, errors.WithStack(err)
+			}
 			Quoter.WriteIdentifier(w, cnd.Right.Column)
 
-			// No Argument at all, which kinda is the default case
-		case !cnd.Right.Argument.isSet && cnd.Right.Arguments == nil:
+		case cnd.Right.PlaceHolder != "":
+			Quoter.WriteIdentifier(w, cnd.Left)
+			if err := cnd.Operator.write(w); err != nil {
+				return nil, errors.WithStack(err)
+			}
+
+			switch {
+			case cnd.Right.PlaceHolder == placeHolderStr:
+				placeHolders = append(placeHolders, cnd.Left)
+				w.WriteByte(placeHolderRune)
+			case isNamedArg(cnd.Right.PlaceHolder):
+				w.WriteByte(placeHolderRune)
+				ph := cnd.Right.PlaceHolder
+				if !strings.HasPrefix(cnd.Right.PlaceHolder, namedArgStartStr) {
+					ph = namedArgStartStr + ph
+				}
+				placeHolders = append(placeHolders, ph)
+			default:
+				placeHolders = append(placeHolders, cnd.Left)
+				w.WriteString(cnd.Right.PlaceHolder)
+			}
+
+		case !cnd.Right.arg.isSet && cnd.Right.args == nil: // No Argument at all, which kinda is the default case
 			Quoter.WriteIdentifier(w, cnd.Left)
 			cOp := cnd.Operator
 			if cOp == 0 {
 				cOp = Null
 			}
-			cOp.write(w, 1)
+			if err := cOp.write(w); err != nil {
+				return nil, errors.WithStack(err)
+			}
 
 		default:
 			panic(errors.NewNotSupportedf("[dml] Multiple arguments for a column are not supported\nWhereFragment: %#v\n", cnd))
@@ -893,77 +956,10 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
 		w.WriteByte(')')
 		i++
 	}
-	return nil
+	return placeHolders, err
 }
 
-const (
-	appendArgsJOIN   = 'j'
-	appendArgsWHERE  = 'w'
-	appendArgsHAVING = 'h'
-	appendArgsSET    = 's'
-	appendArgsDUPKEY = 'd'
-)
-
-// conditionType enum of: see constants appendArgs
-func (cs Conditions) appendArgs(args Arguments, conditionType byte) (_ Arguments, pendingArgPos []int, err error) {
-	if len(cs) == 0 {
-		return args, pendingArgPos, nil
-	}
-
-	pendingArgPosCount := len(args)
-	i := 0
-	for _, cnd := range cs {
-
-		switch {
-		case conditionType == appendArgsJOIN && len(cnd.Columns) > 0:
-			return args, pendingArgPos, nil // done, only one USING allowed
-
-		case cnd.Left == ")":
-			continue
-
-		case cnd.Left == "(":
-			i = 0
-			continue
-		}
-
-		addArg := false
-		switch {
-		case cnd.isExpression():
-			addArg = cnd.Operator.hasArgs(len(cnd.Right.Arguments))
-		case cnd.IsPlaceHolder:
-			addArg = cnd.Operator.hasArgs(1) // always a length of one, see the `repeatPlaceHolders()` function
-			// By keeping addArg as it is and not setting
-			// addArg=false, this []int avoids
-			// https://en.wikipedia.org/wiki/Permutation Which would
-			// result in a Go Code like
-			// https://play.golang.org/p/rZvW0qW1N7 (C) Volker Dobler
-			// Because addArg=false does not add below the arguments and we must
-			// later swap the positions.
-			pendingArgPos = append(pendingArgPos, pendingArgPosCount)
-		case cnd.Right.Argument.isSet:
-			addArg = cnd.Operator.hasArgs(cnd.Right.Argument.len())
-		case cnd.Right.Arguments != nil:
-			addArg = cnd.Operator.hasArgs(cnd.Right.Arguments.Len())
-		case cnd.Right.Sub != nil:
-			args, err = cnd.Right.Sub.appendArgs(args)
-			if err != nil {
-				return nil, pendingArgPos, errors.Wrapf(err, "[dml] write failed SubSelect for table: %q", cnd.Right.Sub.Table.String())
-			}
-		}
-
-		if addArg {
-			if cnd.Right.Argument.isSet {
-				args = append(args, cnd.Right.Argument)
-			}
-			args = append(args, cnd.Right.Arguments...)
-			pendingArgPosCount++
-		}
-		i++
-	}
-	return args, pendingArgPos, nil
-}
-
-func (cs Conditions) writeSetClauses(w *bytes.Buffer) error {
+func (cs Conditions) writeSetClauses(w *bytes.Buffer, placeHolders []string) ([]string, error) {
 	for i, cnd := range cs {
 		if i > 0 {
 			w.WriteString(", ")
@@ -972,19 +968,26 @@ func (cs Conditions) writeSetClauses(w *bytes.Buffer) error {
 		w.WriteByte('=')
 
 		switch {
+		case cnd.Right.arg.isSet && cnd.Right.args == nil: // One Argument and no expression
+			cnd.Right.arg.writeTo(w, 0)
 		case cnd.Right.IsExpression: // maybe that case is superfluous
-			writeExpression(w, cnd.Right.Column, nil)
+			if _, err := writeExpression(w, cnd.Right.Column, cnd.Right.args); err != nil {
+				return nil, errors.WithStack(err)
+			}
+			placeHolders = append(placeHolders, cnd.Left)
 		case cnd.Right.Sub != nil:
 			w.WriteByte('(')
-			if err := cnd.Right.Sub.toSQL(w); err != nil {
-				return errors.WithStack(err)
+			var err error
+			if placeHolders, err = cnd.Right.Sub.toSQL(w, placeHolders); err != nil {
+				return nil, errors.WithStack(err)
 			}
 			w.WriteByte(')')
 		default:
+			placeHolders = append(placeHolders, cnd.Left)
 			w.WriteByte(placeHolderRune)
 		}
 	}
-	return nil
+	return placeHolders, nil
 }
 
 func writeValues(w *bytes.Buffer, column string) {
@@ -996,9 +999,9 @@ func writeValues(w *bytes.Buffer, column string) {
 // writeOnDuplicateKey writes the columns to `w` and appends the arguments to
 // `args` and returns `args`.
 // https://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html
-func (cs Conditions) writeOnDuplicateKey(w *bytes.Buffer) error {
+func (cs Conditions) writeOnDuplicateKey(w *bytes.Buffer, placeHolders []string) ([]string, error) {
 	if len(cs) == 0 {
-		return nil
+		return placeHolders, nil
 	}
 
 	w.WriteString(" ON DUPLICATE KEY UPDATE ")
@@ -1024,55 +1027,39 @@ func (cs Conditions) writeOnDuplicateKey(w *bytes.Buffer) error {
 
 		switch {
 		case cnd.Right.IsExpression: // maybe that case is superfluous
-			writeExpression(w, cnd.Right.Column, nil)
-		//case cnd.Right.Sub != nil:
-		//	w.WriteByte('(')
-		//	if err := cnd.Right.Sub.toSQL(w); err != nil {
-		//		return errors.WithStack(err)
-		//	}
-		//	w.WriteByte(')')
-		case !cnd.Right.Argument.isSet:
+			writeExpression(w, cnd.Right.Column, cnd.Right.args)
+
+		case cnd.Right.PlaceHolder != "":
+
+			switch {
+			case cnd.Right.PlaceHolder == placeHolderStr:
+				placeHolders = append(placeHolders, cnd.Left)
+				w.WriteByte(placeHolderRune)
+			case isNamedArg(cnd.Right.PlaceHolder):
+				w.WriteByte(placeHolderRune)
+				ph := cnd.Right.PlaceHolder
+				if !strings.HasPrefix(cnd.Right.PlaceHolder, namedArgStartStr) {
+					ph = namedArgStartStr + ph
+				}
+				placeHolders = append(placeHolders, ph)
+			default:
+				placeHolders = append(placeHolders, cnd.Left)
+				w.WriteString(cnd.Right.PlaceHolder)
+			}
+
+		case !cnd.Right.arg.isSet:
 			writeValues(w, cnd.Left)
+		case cnd.Right.arg.isSet:
+			if err := cnd.Right.arg.writeTo(w, 0); err != nil {
+				return nil, errors.WithStack(err)
+			}
+
 		default:
+			placeHolders = append(placeHolders, cnd.Left)
 			w.WriteByte(placeHolderRune)
 		}
 	}
-	return nil
-}
-
-func appendArgs(pendingArgPos []int, records map[string]ColumnMapper, args Arguments, defaultQualifier string, columns []string) (_ Arguments, err error) {
-	// arguments list above is a bit long, maybe later this function can be
-	// integrated into Conditions.appendArgs.
-	if records == nil {
-		return args, nil
-	}
-
-	lenBefore := len(args)
-	cm := newColumnMap(args, "")
-	for _, identifier := range columns {
-		qualifier, column := splitColumn(identifier)
-		if qualifier == "" {
-			qualifier = defaultQualifier
-		}
-		if rec, ok := records[qualifier]; ok {
-			cm.columns[0] = column // length is always one!
-			if err = rec.MapColumns(cm); err != nil {
-				return nil, errors.WithStack(err)
-			}
-		}
-	}
-	args = cm.Args
-	lenAfter := len(args)
-	if lenAfter > lenBefore {
-		j := 0
-		newLen := lenAfter - len(pendingArgPos)
-		for i := newLen; i < lenAfter; i++ {
-			args[pendingArgPos[j]], args[i] = args[i], args[pendingArgPos[j]]
-			j++
-		}
-		args = args[:newLen] // remove the appended placeHolderOp types after swapping
-	}
-	return args, nil
+	return placeHolders, nil
 }
 
 // splitColumn splits a string via its last dot into the qualifier and the
@@ -1085,4 +1072,12 @@ func splitColumn(identifier string) (qualifier, column string) {
 		return identifier[:dotIndex], identifier[dotIndex+1:]
 	}
 	return "", identifier
+}
+
+func cutPrefix(s, prefix string) (string, bool) {
+	lp := len(prefix)
+	if len(s) >= lp && s[0:lp] == prefix {
+		return s[lp:], true
+	}
+	return s, false
 }

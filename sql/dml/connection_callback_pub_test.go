@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,9 +57,9 @@ func TestDriverCallBack(t *testing.T) {
 		))
 
 	ctx := context.TODO()
-	sel := db.SelectFrom("dml_people").Star().Where(dml.Column("name").Equal().Str("Bernd"))
+	sel := db.SelectFrom("dml_people").Star().Where(dml.Column("name").PlaceHolder()).DisableBuildCache()
 	var ppl dmlPerson
-	_, err := sel.Load(ctx, &ppl)
+	_, err := sel.WithArguments(dml.MakeArgs(1).String("Bernd")).Load(ctx, &ppl)
 	require.NoError(t, err)
 
 	_, err = sel.Interpolate().SQLNoCache().Load(context.Background(), &ppl)
@@ -68,12 +68,11 @@ func TestDriverCallBack(t *testing.T) {
 	con, err := db.Conn(ctx)
 	require.NoError(t, err)
 
-	upd := con.Update("dml_people").Set(dml.Column("name").Str("Hugo"))
-	_, err = upd.Exec(ctx)
+	upd := con.Update("dml_people").Set(dml.Column("name").PlaceHolder())
+	_, err = upd.WithArgs("Hugo").Exec(ctx)
 	require.NoError(t, err)
 
-	upd.SetClauses[0].Str("Bernie")
-	_, err = upd.Interpolate().Exec(ctx)
+	_, err = upd.WithArguments(dml.MakeArgs(1).String("Bernie")).Interpolate().Exec(ctx)
 	require.NoError(t, err)
 
 	require.NoError(t, con.Close())

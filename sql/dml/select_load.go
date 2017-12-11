@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -61,12 +61,15 @@ func (b *Select) Prepare(ctx context.Context) (*StmtSelect, error) {
 	cap := b.argumentCapacity()
 	return &StmtSelect{
 		StmtBase: StmtBase{
-			id:         b.id,
-			stmt:       stmt,
-			argsCache:  make(Arguments, 0, cap),
-			argsRaw:    make([]interface{}, 0, cap),
-			bindRecord: b.bindRecord,
-			log:        l,
+			builderCommon: builderCommon{
+				id:               b.id,
+				argsArgs:         make(Arguments, 0, cap),
+				argsRaw:          make([]interface{}, 0, cap),
+				defaultQualifier: b.Table.qualifier(),
+				qualifiedColumns: b.qualifiedColumns,
+				Log:              l,
+			},
+			stmt: stmt,
 		},
 		sel: b,
 	}, nil
@@ -98,7 +101,7 @@ func (st *StmtSelect) WithArguments(args Arguments) *StmtSelect {
 // WithRecords sets the records for the execution with Query+. It internally
 // resets previously applied arguments.
 func (st *StmtSelect) WithRecords(records ...QualifiedRecord) *StmtSelect {
-	st.withRecords(st.sel.appendArgs, records...)
+	st.withRecords(records)
 	return st
 }
 

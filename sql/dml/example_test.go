@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,7 +30,10 @@ func writeToSQLAndInterpolate(qb dml.QueryBuilder) {
 		fmt.Printf("%+v\n", err)
 		return
 	}
-	fmt.Println("Prepared Statement:")
+	if len(args) > 0 {
+		fmt.Print("Prepared ")
+	}
+	fmt.Println("Statement:")
 	strs.FwordWrap(os.Stdout, sqlStr, 80)
 	fmt.Print("\n")
 	if len(args) > 0 {
@@ -55,8 +58,8 @@ func writeToSQLAndInterpolate(qb dml.QueryBuilder) {
 func ExampleNewInsert() {
 	i := dml.NewInsert("tableA").
 		AddColumns("b", "c", "d", "e").
-		AddValues(1, 2, "Three", nil).
-		AddValues(5, 6, "Seven", 3.14156)
+		AddValuesUnsafe(1, 2, "Three", nil).
+		AddValuesUnsafe(5, 6, "Seven", 3.14156)
 	writeToSQLAndInterpolate(i)
 
 	// Output:
@@ -71,9 +74,9 @@ func ExampleNewInsert() {
 
 func ExampleNewInsert_withoutColumns() {
 	i := dml.NewInsert("catalog_product_link").
-		AddValues(2046, 33, 3).
-		AddValues(2046, 34, 3).
-		AddValues(2046, 35, 3)
+		AddValuesUnsafe(2046, 33, 3).
+		AddValuesUnsafe(2046, 34, 3).
+		AddValuesUnsafe(2046, 35, 3)
 	writeToSQLAndInterpolate(i)
 
 	// Output:
@@ -86,20 +89,20 @@ func ExampleNewInsert_withoutColumns() {
 }
 
 func ExampleInsert_AddValues() {
-	// Without any columns you must for each row call AddValues. Here we insert
+	// Without any columns you must for each row call AddArgs. Here we insert
 	// three rows at once.
 	i := dml.NewInsert("catalog_product_link").
-		AddValues(2046, 33, 3).
-		AddValues(2046, 34, 3).
-		AddValues(2046, 35, 3)
+		AddValuesUnsafe(2046, 33, 3).
+		AddValuesUnsafe(2046, 34, 3).
+		AddValuesUnsafe(2046, 35, 3)
 	writeToSQLAndInterpolate(i)
 	fmt.Print("\n\n")
 
-	// Specifying columns allows to call only one time AddValues but inserting
+	// Specifying columns allows to call only one time AddArgs but inserting
 	// three rows at once. Of course you can also insert only one row ;-)
 	i = dml.NewInsert("catalog_product_link").
 		AddColumns("product_id", "linked_product_id", "link_type_id").
-		AddValues(
+		AddValuesUnsafe(
 			2046, 33, 3,
 			2046, 34, 3,
 			2046, 35, 3,
@@ -125,10 +128,12 @@ func ExampleInsert_AddValues() {
 	//(2046,33,3),(2046,34,3),(2046,35,3)
 }
 
+// ExampleInsert_AddOnDuplicateKey this example assumes you are not using a any
+// place holders. Be aware of SQL injections.
 func ExampleInsert_AddOnDuplicateKey() {
 	i := dml.NewInsert("dml_people").
 		AddColumns("id", "name", "email").
-		AddValues(1, "Pik'e", "pikes@peak.com").
+		AddValuesUnsafe(1, "Pik'e", "pikes@peak.com").
 		AddOnDuplicateKey(
 			dml.Column("name").Str("Pik3"),
 			dml.Column("email").Values(),
@@ -138,8 +143,8 @@ func ExampleInsert_AddOnDuplicateKey() {
 	// Output:
 	//Prepared Statement:
 	//INSERT INTO `dml_people` (`id`,`name`,`email`) VALUES (?,?,?) ON DUPLICATE KEY
-	//UPDATE `name`=?, `email`=VALUES(`email`)
-	//Arguments: [1 Pik'e pikes@peak.com Pik3]
+	//UPDATE `name`='Pik3', `email`=VALUES(`email`)
+	//Arguments: [1 Pik'e pikes@peak.com]
 	//
 	//Interpolated Statement:
 	//INSERT INTO `dml_people` (`id`,`name`,`email`) VALUES
@@ -154,12 +159,43 @@ func ExampleInsert_SetRowCount() {
 	writeToSQLAndInterpolate(i)
 
 	// Output:
-	//Prepared Statement:
+	//Statement:
 	//INSERT INTO `dml_people` (`id`,`name`,`email`) VALUES
 	//(?,?,?),(?,?,?),(?,?,?),(?,?,?)
 }
 
-func ExampleInsert_FromSelect() {
+func ExampleInsert_FromSelect_withPlaceHolders() {
+	ins := dml.NewInsert("tableA")
+
+	ins.FromSelect(
+		dml.NewSelect().AddColumns("something_id", "user_id").
+			AddColumns("other").
+			From("some_table").
+			Where(
+				dml.ParenthesisOpen(),
+				dml.Column("int64A").GreaterOrEqual().PlaceHolder(),
+				dml.Column("string").Str("wat").Or(),
+				dml.ParenthesisClose(),
+				dml.Column("int64B").In().NamedArg("i64BIn"),
+			).
+			OrderByDesc("id").
+			Paginate(1, 20),
+	).WithArguments(dml.MakeArgs(2).Int64(4).Name("i64BIn").Int64s(9, 8, 7))
+	writeToSQLAndInterpolate(ins)
+	// Output:
+	//Prepared Statement:
+	//INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table`
+	//WHERE ((`int64A` >= ?) OR (`string` = 'wat')) AND (`int64B` IN ?) ORDER BY `id`
+	//DESC LIMIT 20 OFFSET 0
+	//Arguments: [4 9 8 7]
+	//
+	//Interpolated Statement:
+	//INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table`
+	//WHERE ((`int64A` >= 4) OR (`string` = 'wat')) AND (`int64B` IN (9,8,7)) ORDER BY
+	//`id` DESC LIMIT 20 OFFSET 0
+}
+
+func ExampleInsert_FromSelect_withoutPlaceHolders() {
 	ins := dml.NewInsert("tableA")
 
 	ins.FromSelect(
@@ -178,13 +214,7 @@ func ExampleInsert_FromSelect() {
 	)
 	writeToSQLAndInterpolate(ins)
 	// Output:
-	//Prepared Statement:
-	//INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table`
-	//WHERE ((`int64A` >= ?) OR (`string` = ?)) AND (`int64B` IN (?,?,?)) ORDER BY
-	//`id` DESC LIMIT 20 OFFSET 0
-	//Arguments: [1 wat 1 2 3]
-	//
-	//Interpolated Statement:
+	//Statement:
 	//INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table`
 	//WHERE ((`int64A` >= 1) OR (`string` = 'wat')) AND (`int64B` IN (1,2,3)) ORDER BY
 	//`id` DESC LIMIT 20 OFFSET 0
@@ -223,12 +253,7 @@ func ExampleNewDelete() {
 		Limit(1).OrderBy("id")
 	writeToSQLAndInterpolate(d)
 	// Output:
-	//Prepared Statement:
-	//DELETE FROM `tableA` WHERE (`a` LIKE ?) AND (`b` IN (?,?,?,?)) ORDER BY `id`
-	//LIMIT 1
-	//Arguments: [b'% 3 4 5 6]
-	//
-	//Interpolated Statement:
+	//Statement:
 	//DELETE FROM `tableA` WHERE (`a` LIKE 'b\'%') AND (`b` IN (3,4,5,6)) ORDER BY
 	//`id` LIMIT 1
 }
@@ -258,19 +283,7 @@ func ExampleNewUnion() {
 	// table in MySQL.
 	writeToSQLAndInterpolate(u)
 	// Output:
-	//Prepared Statement:
-	//(SELECT `a1` AS `A`, `a2` AS `B`, 0 AS `_preserve_result_set` FROM `tableA`
-	//WHERE (`a1` = ?))
-	//UNION ALL
-	//(SELECT `b1` AS `A`, `b2` AS `B`, 1 AS `_preserve_result_set` FROM `tableB`
-	//WHERE (`b1` = ?))
-	//UNION ALL
-	//(SELECT concat(c1,?,c2) AS `A`, `c2` AS `B`, 2 AS `_preserve_result_set` FROM
-	//`tableC` WHERE (`c2` = ?))
-	//ORDER BY `_preserve_result_set`, `A`, `B` DESC
-	//Arguments: [3 4 - ArgForC2]
-	//
-	//Interpolated Statement:
+	//Statement:
 	//(SELECT `a1` AS `A`, `a2` AS `B`, 0 AS `_preserve_result_set` FROM `tableA`
 	//WHERE (`a1` = 3))
 	//UNION ALL
@@ -300,30 +313,7 @@ func ExampleNewUnion_template() {
 		All().OrderBy("attribute_id", "store_id")
 	writeToSQLAndInterpolate(u)
 	// Output:
-	//Prepared Statement:
-	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS
-	//`_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE
-	//(`entity_id` = ?) AND (`store_id` IN (?,?)))
-	//UNION ALL
-	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS
-	//`_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE
-	//(`entity_id` = ?) AND (`store_id` IN (?,?)))
-	//UNION ALL
-	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS
-	//`_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE
-	//(`entity_id` = ?) AND (`store_id` IN (?,?)))
-	//UNION ALL
-	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS
-	//`_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE
-	//(`entity_id` = ?) AND (`store_id` IN (?,?)))
-	//UNION ALL
-	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS
-	//`_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE
-	//(`entity_id` = ?) AND (`store_id` IN (?,?)))
-	//ORDER BY `_preserve_result_set`, `attribute_id`, `store_id`
-	//Arguments: [1561 1 0 1561 1 0 1561 1 0 1561 1 0 1561 1 0]
-	//
-	//Interpolated Statement:
+	//Statement:
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS
 	//`_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE
 	//(`entity_id` = 1561) AND (`store_id` IN (1,0)))
@@ -347,7 +337,7 @@ func ExampleNewUnion_template() {
 }
 
 func ExampleInterpolate() {
-	sqlStr := dml.Interpolate("SELECT * FROM x WHERE a IN (?) AND b IN (?) AND c NOT IN (?) AND d BETWEEN ? AND ?").
+	sqlStr := dml.Interpolate("SELECT * FROM x WHERE a IN ? AND b IN ? AND c NOT IN ? AND d BETWEEN ? AND ?").
 		Ints(1).
 		Ints(1, 2, 3).
 		Int64s(5, 6, 7).
@@ -365,7 +355,7 @@ func ExampleInterpolate() {
 
 func ExampleRepeat() {
 	args := dml.MakeArgs(2).Ints(5, 7, 9).Strings("a", "b", "c", "d", "e")
-	sqlStr, err := dml.Repeat("SELECT * FROM `table` WHERE id IN (?) AND name IN (?)", args)
+	sqlStr, err := dml.ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN ? AND name IN ?", args)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		return
@@ -420,24 +410,24 @@ func ExampleArguments() {
 	//Output:
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NOT NULL)"
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [2]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` = 2)"
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NOT NULL)"
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` IN (?,?,?))" Arguments: [7 8 9]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT IN (?,?,?))" Arguments: [10 11 12]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` BETWEEN ? AND ?)" Arguments: [13 14]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT BETWEEN ? AND ?)" Arguments: [15 16]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` GREATEST (?,?,?))" Arguments: [17 18 19]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` LEAST (?,?,?))" Arguments: [20 21 22]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [30]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` != ?)" Arguments: [31]
-	//"SELECT `a`, `b` FROM `c` WHERE (`alias`.`column` <=> ?)" Arguments: [3.14159]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` < ?)" Arguments: [32]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` > ?)" Arguments: [33]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` <= ?)" Arguments: [34]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` >= ?)" Arguments: [35]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` LIKE ?)" Arguments: [Goph%]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT LIKE ?)" Arguments: [Cat%]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` IN (7,8,9))"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT IN (10,11,12))"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` BETWEEN 13 AND 14)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT BETWEEN 15 AND 16)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` GREATEST (17,18,19))"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` LEAST (20,21,22))"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` = 30)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` != 31)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`alias`.`column` <=> 3.14159)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` < 32)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` > 33)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` <= 34)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` >= 35)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` LIKE 'Goph%')"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT LIKE 'Cat%')"
 }
 
 // ExampleColumn is a duplicate of ExampleArgument
@@ -469,24 +459,24 @@ func ExampleColumn() {
 	//Output:
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NOT NULL)"
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [2]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` = 2)"
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NOT NULL)"
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` IN (?,?,?))" Arguments: [7 8 9]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT IN (?,?,?))" Arguments: [10 11 12]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` BETWEEN ? AND ?)" Arguments: [13 14]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT BETWEEN ? AND ?)" Arguments: [15 16]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` GREATEST (?,?,?))" Arguments: [17 18 19]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` LEAST (?,?,?))" Arguments: [20 21 22]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [30]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` != ?)" Arguments: [31]
-	//"SELECT `a`, `b` FROM `c` WHERE (`alias`.`column` <=> ?)" Arguments: [3.14159]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` < ?)" Arguments: [32]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` > ?)" Arguments: [33]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` <= ?)" Arguments: [34]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` >= ?)" Arguments: [35]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` LIKE ?)" Arguments: [Goph%]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT LIKE ?)" Arguments: [Cat%]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` IN (7,8,9))"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT IN (10,11,12))"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` BETWEEN 13 AND 14)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT BETWEEN 15 AND 16)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` GREATEST (17,18,19))"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` LEAST (20,21,22))"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` = 30)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` != 31)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`alias`.`column` <=> 3.14159)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` < 32)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` > 33)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` <= 34)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` >= 35)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` LIKE 'Goph%')"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT LIKE 'Cat%')"
 }
 
 func ExampleCondition_Sub() {
@@ -498,12 +488,7 @@ func ExampleCondition_Sub() {
 		))
 	writeToSQLAndInterpolate(s)
 	// Output:
-	//Prepared Statement:
-	//SELECT `sku`, `type_id` FROM `catalog_product_entity` WHERE (`entity_id` IN
-	//(SELECT `entity_id` FROM `catalog_category_product` WHERE (`category_id` = ?)))
-	//Arguments: [234]
-	//
-	//Interpolated Statement:
+	//Statement:
 	//SELECT `sku`, `type_id` FROM `catalog_product_entity` WHERE (`entity_id` IN
 	//(SELECT `entity_id` FROM `catalog_category_product` WHERE (`category_id` =
 	//234)))
@@ -528,19 +513,7 @@ func ExampleNewSelectWithDerivedTable() {
 		OrderBy("t1.period", "t1.product_id")
 	writeToSQLAndInterpolate(sel1)
 	// Output:
-	//Prepared Statement:
-	//SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`,
-	//`t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT DATE_FORMAT(t3.period,
-	//'%Y-%m-01') AS `period`, `t3`.`store_id`, `t3`.`product_id`,
-	//`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`,
-	//SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS
-	//`t3` WHERE (`product_name` = ?) GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period,
-	//'%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` ORDER BY `t3`.`store_id`,
-	//DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty` DESC) AS `t1` WHERE
-	//(`product_name` = ?) ORDER BY `t1`.`period`, `t1`.`product_id`
-	//Arguments: [Canon% Sony%]
-	//
-	//Interpolated Statement:
+	//Statement:
 	//SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`,
 	//`t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT DATE_FORMAT(t3.period,
 	//'%Y-%m-01') AS `period`, `t3`.`store_id`, `t3`.`product_id`,
@@ -593,11 +566,7 @@ func ExampleSQLIf() {
 	writeToSQLAndInterpolate(s)
 
 	// Output:
-	//Prepared Statement:
-	//SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > ?)
-	//Arguments: [4711]
-	//
-	//Interpolated Statement:
+	//Statement:
 	//SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > 4711)
 }
 
@@ -607,7 +576,7 @@ func ExampleSQLCase_update() {
 			"3456", "qty+?",
 			"3457", "qty+?",
 			"3458", "qty+?",
-		).Ints(3, 4, 5)).
+		).Int(3).Int(4).Int(5)).
 		Where(
 			dml.Column("product_id").In().Int64s(345, 567, 897),
 			dml.Column("website_id").Int64(6),
@@ -615,13 +584,7 @@ func ExampleSQLCase_update() {
 	writeToSQLAndInterpolate(u)
 
 	// Output:
-	//Prepared Statement:
-	//UPDATE `cataloginventory_stock_item` SET `qty`=CASE `product_id` WHEN 3456 THEN
-	//qty+? WHEN 3457 THEN qty+? WHEN 3458 THEN qty+? ELSE qty END WHERE (`product_id`
-	//IN (?,?,?)) AND (`website_id` = ?)
-	//Arguments: [3 4 5 345 567 897 6]
-	//
-	//Interpolated Statement:
+	//Statement:
 	//UPDATE `cataloginventory_stock_item` SET `qty`=CASE `product_id` WHEN 3456 THEN
 	//qty+3 WHEN 3457 THEN qty+4 WHEN 3458 THEN qty+5 ELSE qty END WHERE (`product_id`
 	//IN (345,567,897)) AND (`website_id` = 6)
@@ -638,10 +601,11 @@ func ExampleSQLCase_select() {
 			dml.SQLCase("", "`closed`",
 				"date_start <= ? AND date_end >= ?", "`open`",
 				"date_start > ? AND date_end > ?", "`upcoming`",
-			).Alias("is_on_sale").Times(start, end, start, end),
+			).Alias("is_on_sale"),
 		).
 		From("catalog_promotions").Where(
-		dml.Column("promotion_id").NotIn().Ints(4711, 815, 42))
+		dml.Column("promotion_id").NotIn().PlaceHolders(3)).
+		WithArguments(dml.MakeArgs(5).Time(start).Time(end).Time(start).Time(end).Int(4711).Int(815).Int(42))
 	writeToSQLAndInterpolate(s)
 
 	// Output:
@@ -671,21 +635,14 @@ func ExampleSelect_AddColumnsConditions() {
 			dml.SQLCase("", "`closed`",
 				"date_start <= ? AND date_end >= ?", "`open`",
 				"date_start > ? AND date_end > ?", "`upcoming`",
-			).Alias("is_on_sale").Times(start, end, start, end),
+			).Alias("is_on_sale").Time(start).Time(end).Time(start).Time(end),
 		).
 		From("catalog_promotions").Where(
 		dml.Column("promotion_id").NotIn().Ints(4711, 815, 42))
 	writeToSQLAndInterpolate(s)
 
 	// Output:
-	//Prepared Statement:
-	//SELECT `price`, `sku`, `name`, `title`, `description`, CASE  WHEN date_start <=
-	//? AND date_end >= ? THEN `open` WHEN date_start > ? AND date_end > ? THEN
-	//`upcoming` ELSE `closed` END AS `is_on_sale` FROM `catalog_promotions` WHERE
-	//(`promotion_id` NOT IN (?,?,?))
-	//Arguments: [2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 4711 815 42]
-	//
-	//Interpolated Statement:
+	//Statement:
 	//SELECT `price`, `sku`, `name`, `title`, `description`, CASE  WHEN date_start <=
 	//'2009-11-11 00:00:00' AND date_end >= '2009-11-12 00:00:00' THEN `open` WHEN
 	//date_start > '2009-11-11 00:00:00' AND date_end > '2009-11-12 00:00:00' THEN
@@ -718,13 +675,7 @@ func ExampleParenthesisOpen() {
 	writeToSQLAndInterpolate(s)
 
 	// Output:
-	//Prepared Statement:
-	//SELECT DISTINCT `columnA`, `columnB` FROM `tableC` AS `ccc` WHERE ((`d` = ?) OR
-	//(`e` = ?)) AND (`f` = ?) GROUP BY `ab` HAVING (j = k) AND ((`m` = ?) OR (`n` =
-	//?)) ORDER BY `l` LIMIT 7 OFFSET 8
-	//Arguments: [1 wat 2 33 wh3r3]
-	//
-	//Interpolated Statement:
+	//Statement:
 	//SELECT DISTINCT `columnA`, `columnB` FROM `tableC` AS `ccc` WHERE ((`d` = 1) OR
 	//(`e` = 'wat')) AND (`f` = 2) GROUP BY `ab` HAVING (j = k) AND ((`m` = 33) OR
 	//(`n` = 'wh3r3')) ORDER BY `l` LIMIT 7 OFFSET 8
@@ -762,27 +713,13 @@ func ExampleWith_Union() {
 	//+-------+-------+-------+
 
 	// Output:
-	//Prepared Statement:
+	//Statement:
 	//WITH `sales_by_month` (`month`,`total`) AS (SELECT Month(day_of_sale),
-	//Sum(amount) FROM `sales_days` WHERE (Year(day_of_sale) = ?) GROUP BY
+	//Sum(amount) FROM `sales_days` WHERE (Year(day_of_sale) = 2015) GROUP BY
 	//Month(day_of_sale))),
 	//`best_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, "best" FROM
 	//`sales_by_month` WHERE (`total` = (SELECT Max(total) FROM `sales_by_month`))),
 	//`worst_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, "worst"
-	//FROM `sales_by_month` WHERE (`total` = (SELECT Min(total) FROM
-	//`sales_by_month`)))
-	//(SELECT * FROM `best_month`)
-	//UNION ALL
-	//(SELECT * FROM `worst_month`)
-	//Arguments: [2015]
-	//
-	//Interpolated Statement:
-	//WITH `sales_by_month` (`month`,`total`) AS (SELECT Month(day_of_sale),
-	//Sum(amount) FROM `sales_days` WHERE (Year(day_of_sale) = 2015) GROUP BY
-	//Month(day_of_sale))),
-	//`best_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, 'best' FROM
-	//`sales_by_month` WHERE (`total` = (SELECT Max(total) FROM `sales_by_month`))),
-	//`worst_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, 'worst'
 	//FROM `sales_by_month` WHERE (`total` = (SELECT Min(total) FROM
 	//`sales_by_month`)))
 	//(SELECT * FROM `best_month`)

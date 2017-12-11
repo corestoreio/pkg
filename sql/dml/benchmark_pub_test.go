@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/sql/dml"
 )
 
 var benchmarkGlobalVals []interface{}
@@ -78,7 +78,6 @@ var benchmarkSelectStr string
 // BenchmarkSelectBasicSQL-4   	  500000	      2937 ns/op	    2281 B/op	      20 allocs/op no pointers
 // BenchmarkSelectBasicSQL-4   	  500000	      2849 ns/op	    2257 B/op	      18 allocs/op
 func BenchmarkSelectBasicSQL(b *testing.B) {
-
 	// Do some allocations outside the loop so they don't affect the results
 
 	aVal := []int64{1, 2, 3}
@@ -151,7 +150,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 	})
 
 	b.Run("ToSQL Interpolate NoCache", func(b *testing.B) {
-		sqlObj.IsBuildCache = false
+		sqlObj.IsBuildCacheDisabled = true
 		for i := 0; i < b.N; i++ {
 			_, args, err := sqlObj.ToSQL()
 			if err != nil {
@@ -162,7 +161,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 	})
 
 	b.Run("ToSQL Interpolate Cache", func(b *testing.B) {
-		sqlObj.IsBuildCache = true
+		sqlObj.IsBuildCacheDisabled = false
 		for i := 0; i < b.N; i++ {
 			_, args, err := sqlObj.ToSQL()
 			if err != nil {
@@ -174,7 +173,6 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 }
 
 func BenchmarkSelect_Large_IN(b *testing.B) {
-
 	// This tests simulates selecting many varchar attribute values for specific products.
 	var entityIDs = make([]int64, 1024)
 	for i := 0; i < 1024; i++ {
@@ -308,7 +306,7 @@ func BenchmarkDeleteSQL(b *testing.B) {
 
 	sqlObj := dml.NewDelete("alpha").Where(dml.Column("a").Str("b")).Limit(1).OrderBy("id").Interpolate()
 	b.Run("ToSQL no cache", func(b *testing.B) {
-		sqlObj.IsBuildCache = false
+		sqlObj.IsBuildCacheDisabled = true
 		for i := 0; i < b.N; i++ {
 			_, args, err := sqlObj.ToSQL()
 			if err != nil {
@@ -319,7 +317,7 @@ func BenchmarkDeleteSQL(b *testing.B) {
 	})
 
 	b.Run("ToSQL with cache", func(b *testing.B) {
-		sqlObj.IsBuildCache = true
+		sqlObj.IsBuildCacheDisabled = false
 		for i := 0; i < b.N; i++ {
 			_, args, err := sqlObj.ToSQL()
 			if err != nil {
@@ -334,7 +332,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 
 	b.Run("NewInsert", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, args, err := dml.NewInsert("alpha").AddColumns("something_id", "user_id", "other").AddArguments(
+			_, args, err := dml.NewInsert("alpha").AddColumns("something_id", "user_id", "other").AddValues(
 				dml.MakeArgs(3).Int64(1).Int64(2).Bool(true),
 			).ToSQL()
 			if err != nil {
@@ -344,11 +342,11 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 		}
 	})
 
-	sqlObj := dml.NewInsert("alpha").AddColumns("something_id", "user_id", "other").AddArguments(
+	sqlObj := dml.NewInsert("alpha").AddColumns("something_id", "user_id", "other").AddValues(
 		dml.MakeArgs(3).Int64(1).Int64(2).Bool(true),
 	).Interpolate()
 	b.Run("ToSQL no cache", func(b *testing.B) {
-		sqlObj.IsBuildCache = false
+		sqlObj.IsBuildCacheDisabled = true
 		for i := 0; i < b.N; i++ {
 			_, args, err := sqlObj.ToSQL()
 			if err != nil {
@@ -359,7 +357,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	})
 
 	b.Run("ToSQL with cache", func(b *testing.B) {
-		sqlObj.BuildCache()
+		sqlObj.IsBuildCacheDisabled = false
 		for i := 0; i < b.N; i++ {
 			_, args, err := sqlObj.ToSQL()
 			if err != nil {
@@ -378,7 +376,7 @@ func BenchmarkInsertRecordsSQL(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, args, err := dml.NewInsert("alpha").
 			AddColumns("something_id", "user_id", "other").
-			BindRecord(obj).
+			AddRecords(obj).
 			ToSQL()
 		if err != nil {
 			b.Fatal(err)
@@ -395,7 +393,7 @@ func BenchmarkRepeat(b *testing.B) {
 		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?) AND name IN (?,?,?,?,?) AND status IN (?)"
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			s, err := dml.Repeat("SELECT * FROM `table` WHERE id IN (?) AND name IN (?) AND status IN (?)", args)
+			s, err := dml.ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN (?) AND name IN (?) AND status IN (?)", args)
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -410,7 +408,7 @@ func BenchmarkRepeat(b *testing.B) {
 		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?)"
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			s, err := dml.Repeat("SELECT * FROM `table` WHERE id IN (?)", args)
+			s, err := dml.ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN (?)", args)
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}

@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,11 +23,12 @@ import (
 
 func TestTransactionReal(t *testing.T) {
 	s := createRealSessionWithFixtures(t, nil)
+	defer testCloser(t, s)
 
 	tx, err := s.BeginTx(context.TODO(), nil)
 	assert.NoError(t, err)
 
-	res, err := tx.InsertInto("dml_people").AddColumns("name", "email").AddValues(
+	res, err := tx.InsertInto("dml_people").AddColumns("name", "email").AddValuesUnsafe(
 		"Barack", "obama@whitehouse.gov",
 		"Obama", "barack@whitehouse.gov",
 	).Exec(context.TODO())
@@ -57,6 +58,7 @@ func TestTransactionReal(t *testing.T) {
 func TestTransactionRollbackReal(t *testing.T) {
 	// Insert by specifying values
 	s := createRealSessionWithFixtures(t, nil)
+	defer testCloser(t, s)
 
 	tx, err := s.BeginTx(context.TODO(), nil)
 	assert.NoError(t, err)

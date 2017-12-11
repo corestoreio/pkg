@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -95,8 +95,10 @@ func (c *ConnPool) With(expressions ...WithCTE) *With {
 	id := c.makeUniqueID()
 	return &With{
 		BuilderBase: BuilderBase{
-			id:  id,
-			Log: withInitLog(c.Log, expressions, id),
+			builderCommon: builderCommon{
+				id:  id,
+				Log: withInitLog(c.Log, expressions, id),
+			},
 		},
 		Subclauses: expressions,
 		DB:         c.DB,
@@ -108,8 +110,10 @@ func (c *Conn) With(expressions ...WithCTE) *With {
 	id := c.makeUniqueID()
 	return &With{
 		BuilderBase: BuilderBase{
-			id:  id,
-			Log: withInitLog(c.Log, expressions, id),
+			builderCommon: builderCommon{
+				id:  id,
+				Log: withInitLog(c.Log, expressions, id),
+			},
 		},
 		Subclauses: expressions,
 		DB:         c.DB,
@@ -121,8 +125,10 @@ func (tx *Tx) With(expressions ...WithCTE) *With {
 	id := tx.makeUniqueID()
 	return &With{
 		BuilderBase: BuilderBase{
-			id:  id,
-			Log: withInitLog(tx.Log, expressions, id),
+			builderCommon: builderCommon{
+				id:  id,
+				Log: withInitLog(tx.Log, expressions, id),
+			},
 		},
 		Subclauses: expressions,
 		DB:         tx.DB,
@@ -180,36 +186,57 @@ func (b *With) Interpolate() *With {
 	return b
 }
 
-// ToSQL converts the select statement into a string and returns its arguments.
-func (b *With) ToSQL() (string, []interface{}, error) {
-	return toSQL(b, b.IsInterpolate, _isNotPrepared)
-}
-
-func (b *With) writeBuildCache(sql []byte) {
-	b.cacheSQL = sql
-}
-
-func (b *With) readBuildCache() (sql []byte, _ Arguments, err error) {
-	if b.cacheSQL == nil {
-		return nil, nil, nil
-	}
-	b.argPool, err = b.appendArgs(b.argPool[:0])
-	return b.cacheSQL, b.argPool, err
-}
-
-// BuildCache if `true` the final build query including place holders will be
-// cached in a private field. Each time a call to function ToSQL happens, the
-// arguments will be re-evaluated and returned or interpolated.
-func (b *With) BuildCache() *With {
-	b.IsBuildCache = true
+// WithArgs sets the interfaced arguments for the execution with Query+. It
+// internally resets previously applied arguments. This function does not
+// support interpolation.
+func (b *With) WithArgs(args ...interface{}) *With {
+	b.withArgs(args)
 	return b
 }
 
-func (b *With) hasBuildCache() bool {
-	return b.IsBuildCache
+// WithArguments sets the arguments for the execution with Query+. It internally
+// resets previously applied arguments. This function supports interpolation.
+func (b *With) WithArguments(args Arguments) *With {
+	b.withArguments(args)
+	return b
 }
 
-func (b *With) toSQL(w *bytes.Buffer) error {
+// WithRecords binds the qualified record to the main table/view, or any other
+// table/view/alias used in the query, for assembling and appending arguments. A
+// ColumnMapper gets called if it matches the qualifier, in this case the
+// current table name or its alias.
+func (b *With) WithRecords(records ...QualifiedRecord) *With {
+	b.withRecords(records)
+	return b
+}
+
+// ToSQL converts the select statement into a string and returns its arguments.
+func (b *With) ToSQL() (string, []interface{}, error) {
+	return b.buildArgsAndSQL(b)
+}
+
+func (b *With) writeBuildCache(sql []byte) {
+	b.Subclauses = nil
+	b.TopLevel.Select = nil
+	b.TopLevel.Union = nil
+	b.TopLevel.Update = nil
+	b.TopLevel.Delete = nil
+	b.cacheSQL = sql
+}
+
+func (b *With) readBuildCache() (sql []byte) {
+	return b.cacheSQL
+}
+
+// DisableBuildCache if enabled it does not cache the SQL string as a final
+// rendered byte slice. Allows you to rebuild the query with different
+// statements.
+func (b *With) DisableBuildCache() *With {
+	b.IsBuildCacheDisabled = true
+	return b
+}
+
+func (b *With) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err error) {
 
 	w.WriteString("WITH ")
 	writeStmtID(w, b.id)
@@ -217,6 +244,9 @@ func (b *With) toSQL(w *bytes.Buffer) error {
 		w.WriteString("RECURSIVE ")
 	}
 
+	//for i, ls := 0, len(b.Subclauses); i < ls && err == nil; i++ {
+	//	sc := b.Subclauses[i]
+	//	}
 	for i, sc := range b.Subclauses {
 		Quoter.quote(w, sc.Name)
 		if len(sc.Columns) > 0 {
@@ -234,15 +264,17 @@ func (b *With) toSQL(w *bytes.Buffer) error {
 		switch {
 		case sc.Select != nil:
 			sc.Select.IsInterpolate = b.IsInterpolate
-			sc.Select.IsBuildCache = b.IsBuildCache
-			if err := sc.Select.toSQL(w); err != nil {
-				return errors.WithStack(err)
+			sc.Select.IsBuildCacheDisabled = b.IsBuildCacheDisabled
+			placeHolders, err = sc.Select.toSQL(w, placeHolders)
+			if err != nil {
+				return nil, errors.WithStack(err)
 			}
 		case sc.Union != nil:
 			sc.Union.IsInterpolate = b.IsInterpolate
-			sc.Union.IsBuildCache = b.IsBuildCache
-			if err := sc.Union.toSQL(w); err != nil {
-				return errors.WithStack(err)
+			sc.Union.IsBuildCacheDisabled = b.IsBuildCacheDisabled
+			placeHolders, err = sc.Union.toSQL(w, placeHolders)
+			if err != nil {
+				return nil, errors.WithStack(err)
 			}
 		}
 		w.WriteRune(')')
@@ -255,49 +287,27 @@ func (b *With) toSQL(w *bytes.Buffer) error {
 	switch {
 	case b.TopLevel.Select != nil:
 		b.TopLevel.Select.IsInterpolate = b.IsInterpolate
-		b.TopLevel.Select.IsBuildCache = b.IsBuildCache
-		return errors.WithStack(b.TopLevel.Select.toSQL(w))
+		b.TopLevel.Select.IsBuildCacheDisabled = b.IsBuildCacheDisabled
+		placeHolders, err = b.TopLevel.Select.toSQL(w, placeHolders)
+		return placeHolders, errors.WithStack(err)
 
 	case b.TopLevel.Union != nil:
 		b.TopLevel.Union.IsInterpolate = b.IsInterpolate
-		b.TopLevel.Union.IsBuildCache = b.IsBuildCache
-		return errors.WithStack(b.TopLevel.Union.toSQL(w))
+		b.TopLevel.Union.IsBuildCacheDisabled = b.IsBuildCacheDisabled
+		placeHolders, err = b.TopLevel.Union.toSQL(w, placeHolders)
+		return placeHolders, errors.WithStack(err)
 
 	case b.TopLevel.Update != nil:
 		b.TopLevel.Update.IsInterpolate = b.IsInterpolate
-		b.TopLevel.Update.IsBuildCache = b.IsBuildCache
-		return errors.WithStack(b.TopLevel.Update.toSQL(w))
+		b.TopLevel.Update.IsBuildCacheDisabled = b.IsBuildCacheDisabled
+		placeHolders, err = b.TopLevel.Update.toSQL(w, placeHolders)
+		return placeHolders, errors.WithStack(err)
 
 	case b.TopLevel.Delete != nil:
 		b.TopLevel.Delete.IsInterpolate = b.IsInterpolate
-		b.TopLevel.Delete.IsBuildCache = b.IsBuildCache
-		return errors.WithStack(b.TopLevel.Delete.toSQL(w))
-	}
-	return errors.NewEmptyf("[dml] Type With misses a top level statement")
-}
-
-func (b *With) appendArgs(args Arguments) (_ Arguments, err error) {
-	for _, sc := range b.Subclauses {
-		switch {
-		case sc.Select != nil:
-			args, err = sc.Select.appendArgs(args)
-		case sc.Union != nil:
-			args, err = sc.Union.appendArgs(args)
-		}
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-	}
-
-	switch {
-	case b.TopLevel.Select != nil:
-		return b.TopLevel.Select.appendArgs(args)
-	case b.TopLevel.Union != nil:
-		return b.TopLevel.Union.appendArgs(args)
-	case b.TopLevel.Update != nil:
-		return b.TopLevel.Update.appendArgs(args)
-	case b.TopLevel.Delete != nil:
-		return b.TopLevel.Delete.appendArgs(args)
+		b.TopLevel.Delete.IsBuildCacheDisabled = b.IsBuildCacheDisabled
+		placeHolders, err = b.TopLevel.Delete.toSQL(w, placeHolders)
+		return placeHolders, errors.WithStack(err)
 	}
 	return nil, errors.NewEmptyf("[dml] Type With misses a top level statement")
 }
@@ -308,21 +318,21 @@ func (b *With) bindRecord(records []QualifiedRecord) {
 	for _, sc := range b.Subclauses {
 		switch {
 		case sc.Select != nil:
-			sc.Select.bindRecord(records)
+			sc.Select.withRecords(records)
 		case sc.Union != nil:
-			sc.Union.bindRecord(records)
+			sc.Union.withRecord(records)
 		}
 	}
 
 	switch {
 	case b.TopLevel.Select != nil:
-		b.TopLevel.Select.bindRecord(records)
+		b.TopLevel.Select.withRecords(records)
 	case b.TopLevel.Union != nil:
-		b.TopLevel.Union.bindRecord(records)
+		b.TopLevel.Union.withRecord(records)
 	case b.TopLevel.Update != nil:
-		b.TopLevel.Update.bindRecord(records)
+		b.TopLevel.Update.withRecords(records)
 	case b.TopLevel.Delete != nil:
-		b.TopLevel.Delete.bindRecord(records)
+		b.TopLevel.Delete.withRecords(records)
 	}
 }
 
@@ -358,11 +368,15 @@ func (b *With) Prepare(ctx context.Context) (*StmtWith, error) {
 	const cap = 10 // just a guess; needs to be more precise but later.
 	return &StmtWith{
 		StmtBase: StmtBase{
-			stmt:       stmt,
-			argsCache:  make(Arguments, 0, cap),
-			argsRaw:    make([]interface{}, 0, cap),
-			bindRecord: b.bindRecord,
-			log:        b.Log,
+			builderCommon: builderCommon{
+				id:               b.id,
+				argsArgs:         make(Arguments, 0, cap),
+				argsRaw:          make([]interface{}, 0, cap),
+				defaultQualifier: b.Table.qualifier(),
+				qualifiedColumns: b.qualifiedColumns,
+				Log:              b.Log,
+			},
+			stmt: stmt,
 		},
 		with: b,
 	}, nil
@@ -394,6 +408,6 @@ func (st *StmtWith) WithArguments(args Arguments) *StmtWith {
 // WithRecords sets the records for the execution with Query+. It internally
 // resets previously applied arguments.
 func (st *StmtWith) WithRecords(records ...QualifiedRecord) *StmtWith {
-	st.withRecords(st.with.appendArgs, records...)
+	st.withRecords(records)
 	return st
 }

@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -89,11 +89,11 @@ func TestArguments_Length_and_Stringer(t *testing.T) {
 	t.Run("slices, nulls valid", func(t *testing.T) {
 		args := MakeArgs(10).
 			Null().Int(-1).Int64s(1, 2).Uints(567, 765).Uint64s(2).Float64s(1.2, 3.1).Bools(false, true).Strings("eCom1", "eCom11").BytesSlice(nil, []byte(`eCom2`)).Times(now(), now()).
-			NullString(MakeNullString("eCom3"), MakeNullString("eCom3")).NullInt64(MakeNullInt64(4), MakeNullInt64(4)).NullFloat64(MakeNullFloat64(2.7), MakeNullFloat64(2.7)).
-			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()), MakeNullTime(now()))
+			NullStrings(MakeNullString("eCom3"), MakeNullString("eCom3")).NullInt64s(MakeNullInt64(4), MakeNullInt64(4)).NullFloat64s(MakeNullFloat64(2.7), MakeNullFloat64(2.7)).
+			NullBools(MakeNullBool(true)).NullTimes(MakeNullTime(now()), MakeNullTime(now()))
 		assert.Exactly(t, 26, args.Len(), "Length mismatch")
 		assert.Exactly(t,
-			"dml.MakeArgs(15).Null().Int(-1).Int64s([]int64{1, 2}...).Uints([]uint{0x237, 0x2fd}...).Uint64s([]uint64{0x2}...).Float64s([]float64{1.2, 3.1}...).Bools([]bool{false, true}...).Strings(\"eCom1\",\"eCom11\").BytesSlice([]byte(nil),[]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Times(time.Unix(1136228645,2),time.Unix(1136228645,2)).NullString(dml.MakeNullString(`eCom3`),dml.MakeNullString(`eCom3`)).NullInt64(dml.MakeNullInt64(4),dml.MakeNullInt64(4)).NullFloat64(dml.MakeNullFloat64(2.7),dml.MakeNullFloat64(2.7)).NullBool(dml.MakeNullBool(true)).NullTime(dml.MakeNullTime(time.Unix(1136228645,2),dml.MakeNullTime(time.Unix(1136228645,2))",
+			"dml.MakeArgs(15).Null().Int(-1).Int64s([]int64{1, 2}...).Uints([]uint{0x237, 0x2fd}...).Uint64s([]uint64{0x2}...).Float64s([]float64{1.2, 3.1}...).Bools([]bool{false, true}...).Strings(\"eCom1\",\"eCom11\").BytesSlice([]byte(nil),[]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Times(time.Unix(1136228645,2),time.Unix(1136228645,2)).NullStrings(dml.MakeNullString(`eCom3`),dml.MakeNullString(`eCom3`)).NullInt64s(dml.MakeNullInt64(4),dml.MakeNullInt64(4)).NullFloat64s(dml.MakeNullFloat64(2.7),dml.MakeNullFloat64(2.7)).NullBools(dml.MakeNullBool(true)).NullTimes(dml.MakeNullTime(time.Unix(1136228645,2),dml.MakeNullTime(time.Unix(1136228645,2))",
 			fmt.Sprintf("%#v", args))
 	})
 }
@@ -132,9 +132,9 @@ func TestArguments_Interfaces(t *testing.T) {
 		args := MakeArgs(10).
 			Null().Ints(-1, -2).Int64s(1, 2).Uints(568, 766).Uint64s(2).Float64s(1.2, 3.1).Bools(false, true).
 			Strings("eCom1", "eCom11").BytesSlice([]byte(`eCom2`)).Times(now(), now()).
-			NullString(MakeNullString("eCom3"), MakeNullString("eCom3")).NullInt64(MakeNullInt64(4), MakeNullInt64(4)).
-			NullFloat64(MakeNullFloat64(2.7), MakeNullFloat64(2.7)).
-			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()), MakeNullTime(now()))
+			NullStrings(MakeNullString("eCom3"), MakeNullString("eCom3")).NullInt64s(MakeNullInt64(4), MakeNullInt64(4)).
+			NullFloat64s(MakeNullFloat64(2.7), MakeNullFloat64(2.7)).
+			NullBools(MakeNullBool(true)).NullTimes(MakeNullTime(now()), MakeNullTime(now()))
 		assert.Exactly(t,
 			[]interface{}{nil, int64(-1), int64(-2), int64(1), int64(2), int64(568), int64(766), int64(2), 1.2, 3.1, false, true,
 				"eCom1", "eCom11", []uint8{0x65, 0x43, 0x6f, 0x6d, 0x32}, now(), now(),
@@ -257,42 +257,49 @@ func TestArguments_WriteTo(t *testing.T) {
 	t.Run("slices, nulls valid", func(t *testing.T) {
 		args := MakeArgs(10).
 			Null().Ints(-1, -2).Int64s(1, 2).Uint64s(2).Float64s(1.2, 3.1).Bools(false, true).Strings("eCom1", "eCom11").BytesSlice([]byte(`eCom2`)).Times(now(), now()).
-			NullString(MakeNullString("eCom3"), MakeNullString("eCom3")).NullInt64(MakeNullInt64(4), MakeNullInt64(5)).NullFloat64(MakeNullFloat64(2.71), MakeNullFloat64(2.72)).
-			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()), MakeNullTime(now()))
+			NullStrings(MakeNullString("eCom3"), MakeNullString("eCom3")).NullInt64s(MakeNullInt64(4), MakeNullInt64(5)).NullFloat64s(MakeNullFloat64(2.71), MakeNullFloat64(2.72)).
+			NullBools(MakeNullBool(true)).NullTimes(MakeNullTime(now()), MakeNullTime(now()))
 
 		buf := new(bytes.Buffer)
 		err := args.Write(buf)
 		require.NoError(t, err)
 		assert.Exactly(t,
-			"(NULL,-1,-2,1,2,2,1.2,3.1,0,1,'eCom1','eCom11','eCom2','2006-01-02 15:04:05','2006-01-02 15:04:05','eCom3','eCom3',4,5,2.71,2.72,1,'2006-01-02 15:04:05','2006-01-02 15:04:05')",
+			"(NULL,(-1,-2),(1,2),(2),(1.2,3.1),(0,1),('eCom1','eCom11'),('eCom2'),('2006-01-02 15:04:05','2006-01-02 15:04:05'),('eCom3','eCom3'),(4,5),(2.71,2.72),(1),('2006-01-02 15:04:05','2006-01-02 15:04:05'))",
 			buf.String())
 	})
 	t.Run("non-utf8 string", func(t *testing.T) {
 		args := MakeArgs(2).String("\xc0\x80")
 		buf := new(bytes.Buffer)
 		err := args.Write(buf)
-		assert.Exactly(t, `(`, buf.String())
+		assert.Empty(t, buf.String(), "Buffer should be empty")
 		assert.True(t, errors.IsNotValid(err), "Should have a not valid error behaviour %+v", err)
 	})
 	t.Run("non-utf8 strings", func(t *testing.T) {
 		args := MakeArgs(2).Strings("Go", "\xc0\x80")
 		buf := new(bytes.Buffer)
 		err := args.Write(buf)
-		assert.Exactly(t, `('Go',`, buf.String())
+		assert.Exactly(t, `('Go',)`, buf.String())
+		assert.True(t, errors.IsNotValid(err), "Should have a not valid error behaviour %+v", err)
+	})
+	t.Run("non-utf8 NullStrings", func(t *testing.T) {
+		args := MakeArgs(2).NullStrings(MakeNullString("Go2"), MakeNullString("Hello\xc0\x80World"))
+		buf := new(bytes.Buffer)
+		err := args.Write(buf)
+		assert.Exactly(t, "('Go2',)", buf.String())
 		assert.True(t, errors.IsNotValid(err), "Should have a not valid error behaviour %+v", err)
 	})
 	t.Run("non-utf8 NullString", func(t *testing.T) {
-		args := MakeArgs(2).NullString(MakeNullString("Go2"), MakeNullString("Hello\xc0\x80World"))
+		args := MakeArgs(2).NullString(MakeNullString("Hello\xc0\x80World"))
 		buf := new(bytes.Buffer)
 		err := args.Write(buf)
-		assert.Exactly(t, "('Go2',", buf.String())
+		assert.Empty(t, buf.String())
 		assert.True(t, errors.IsNotValid(err), "Should have a not valid error behaviour %+v", err)
 	})
 	t.Run("bytes as binary", func(t *testing.T) {
 		args := MakeArgs(2).Bytes([]byte("\xc0\x80"))
 		buf := new(bytes.Buffer)
 		require.NoError(t, args.Write(buf))
-		assert.Exactly(t, "(0xc080)", buf.String())
+		assert.Exactly(t, "0xc080", buf.String())
 	})
 	t.Run("bytesSlice as binary", func(t *testing.T) {
 		args := MakeArgs(2).BytesSlice([]byte(`Rusty`), []byte("Go\xc0\x80"))
@@ -313,7 +320,7 @@ func TestArguments_WriteTo(t *testing.T) {
 			}
 		}()
 
-		au := argument{value: complex64(1)}
+		au := argument{value: complex64(1), isSet: true}
 		buf := new(bytes.Buffer)
 		require.NoError(t, au.writeTo(buf, 0))
 		assert.Empty(t, buf.String(), "buffer should be empty")
@@ -396,6 +403,22 @@ func TestArguments_Named(t *testing.T) {
 			Name("store_id").Uint64(5678).
 			Time(now()).
 			GoString())
+}
+
+func TestArguments_HasNamedArgs(t *testing.T) {
+	t.Parallel()
+
+	a := MakeArgs(2).
+		Float64s(2.76, 3.141).
+		Name("entity_id").Int64(4).
+		Name("store_id").Uint64(5678)
+	assert.True(t, a.hasNamedArgs())
+
+	a = MakeArgs(2).
+		Float64s(2.76, 3.141).
+		Int64(4).
+		Uint64(5678)
+	assert.False(t, a.hasNamedArgs())
 }
 
 func TestArguments_MapColumns(t *testing.T) {

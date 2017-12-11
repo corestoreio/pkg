@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/corestoreio/pkg/util/bufferpool"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
 // Union represents a UNION SQL statement. UNION is used to combine the result
@@ -44,9 +44,8 @@ type Union struct {
 	IsExcept    bool // See Except()
 
 	// When using Union as a template, only one *Select is required.
-	oldNew    [][]string //use for string replacement with `repls` field
-	repls     []*strings.Replacer
-	stmtCount int
+	oldNew [][]string //use for string replacement with `repls` field
+	repls  []*strings.Replacer
 }
 
 // NewUnion creates a new Union object. If using as a template, only one *Select
@@ -73,8 +72,10 @@ func (c *ConnPool) Union(selects ...*Select) *Union {
 	id := c.makeUniqueID()
 	return &Union{
 		BuilderBase: BuilderBase{
-			id:  id,
-			Log: unionInitLog(c.Log, selects, id),
+			builderCommon: builderCommon{
+				id:  id,
+				Log: unionInitLog(c.Log, selects, id),
+			},
 		},
 		Selects: selects,
 		DB:      c.DB,
@@ -86,8 +87,10 @@ func (c *Conn) Union(selects ...*Select) *Union {
 	id := c.makeUniqueID()
 	return &Union{
 		BuilderBase: BuilderBase{
-			id:  id,
-			Log: unionInitLog(c.Log, selects, id),
+			builderCommon: builderCommon{
+				id:  id,
+				Log: unionInitLog(c.Log, selects, id),
+			},
 		},
 		Selects: selects,
 		DB:      c.DB,
@@ -100,8 +103,10 @@ func (tx *Tx) Union(selects ...*Select) *Union {
 	id := tx.makeUniqueID()
 	return &Union{
 		BuilderBase: BuilderBase{
-			id:  id,
-			Log: unionInitLog(tx.Log, selects, id),
+			builderCommon: builderCommon{
+				id:  id,
+				Log: unionInitLog(tx.Log, selects, id),
+			},
 		},
 		Selects: selects,
 		DB:      tx.DB,
@@ -152,7 +157,7 @@ func (u *Union) PreserveResultSet() *Union {
 	// Panics without any *Select in the slice. Programmer error.
 	u.Selects[0].AddColumnsConditions(Expr("{preserveResultSet}").Alias("_preserve_result_set"))
 	u.OrderBys = append(ids{MakeIdentifier("_preserve_result_set")}, u.OrderBys...)
-	for i := 0; i < u.stmtCount; i++ {
+	for i := 0; i < u.templateStmtCount; i++ {
 		u.oldNew[i] = append(u.oldNew[i], "{preserveResultSet}", strconv.Itoa(i))
 	}
 	return u
@@ -216,12 +221,12 @@ func (u *Union) StringReplace(key string, values ...string) *Union {
 	if len(u.Selects) > 1 {
 		return u
 	}
-	if u.stmtCount == 0 {
-		u.stmtCount = len(values)
-		u.oldNew = make([][]string, u.stmtCount)
-		u.repls = make([]*strings.Replacer, u.stmtCount)
+	if u.templateStmtCount == 0 {
+		u.templateStmtCount = len(values)
+		u.oldNew = make([][]string, u.templateStmtCount)
+		u.repls = make([]*strings.Replacer, u.templateStmtCount)
 	}
-	for i := 0; i < u.stmtCount; i++ {
+	for i := 0; i < u.templateStmtCount; i++ {
 		// The following block has been put on each line because the (index out of
 		// bound) stack trace will show exactly what you have made wrong =>
 		// Providing in the 2nd call of StringReplace too few `values`
@@ -232,70 +237,64 @@ func (u *Union) StringReplace(key string, values ...string) *Union {
 	return u
 }
 
-// MultiplyArguments is only applicable when using *Union as a template.
-// MultiplyArguments repeats the `args` variable n-times to match the number of
-// generated SELECT queries in the final UNION statement. It should be called
-// after all calls to `StringReplace` have been made.
-func (u *Union) MultiplyArguments(args Arguments) Arguments {
-	if len(u.Selects) > 1 {
-		return args
-	}
-	ret := make(Arguments, len(args)*u.stmtCount)
-	lArgs := len(args)
-	for i := 0; i < u.stmtCount; i++ {
-		copy(ret[i*lArgs:], args)
-	}
-	return ret
-}
-
-// BindRecord binds the qualified record to the main table/view, or any other
-// table/view/alias used in the query, for assembling and appending arguments. A
-// ColumnMapper gets called if it matches the qualifier, in this case the
-// current table name or its alias. Should be called once all selects have been
-// set.
-func (u *Union) BindRecord(records ...QualifiedRecord) *Union {
-	u.bindRecord(records)
+// WithArgs sets the interfaced arguments for the execution with Query+. It
+// internally resets previously applied arguments. This function does not
+// support interpolation.
+func (u *Union) WithArgs(args ...interface{}) *Union {
+	u.withArgs(args)
 	return u
 }
 
-func (u *Union) bindRecord(records []QualifiedRecord) {
+// WithArguments sets the arguments for the execution with Query+. It internally
+// resets previously applied arguments. This function supports interpolation.
+func (u *Union) WithArguments(args Arguments) *Union {
+	u.withArguments(args)
+	return u
+}
+
+func (u *Union) withRecord(records []QualifiedRecord) {
 	for _, sel := range u.Selects {
-		sel.bindRecord(records)
+		sel.withRecords(records)
 	}
+}
+
+// WithRecords binds the qualified record to the main table/view, or any other
+// table/view/alias used in the query, for assembling and appending arguments. A
+// ColumnMapper gets called if it matches the qualifier, in this case the
+// current table name or its alias.
+func (u *Union) WithRecords(records ...QualifiedRecord) *Union {
+	u.withRecords(records)
+	return u
 }
 
 // ToSQL converts the statements into a string and returns its arguments.
 func (u *Union) ToSQL() (string, []interface{}, error) {
-	return toSQL(u, u.IsInterpolate, _isNotPrepared)
+	return u.buildArgsAndSQL(u)
 }
 
 func (u *Union) writeBuildCache(sql []byte) {
+	u.Selects = nil
+	u.OrderBys = nil
+	u.oldNew = nil
+	u.repls = nil
 	u.cacheSQL = sql
 }
 
-func (u *Union) readBuildCache() (sql []byte, _ Arguments, err error) {
-	if u.cacheSQL == nil {
-		return nil, nil, nil
-	}
-	u.argPool, err = u.appendArgs(u.argPool[:0])
-	return u.cacheSQL, u.argPool, err
+func (u *Union) readBuildCache() (sql []byte) {
+	return u.cacheSQL
 }
 
-// BuildCache if `true` the final build query including place holders will be
-// cached in a private field. Each time a call to function ToSQL happens, the
-// arguments will be re-evaluated and returned or interpolated.
-func (u *Union) BuildCache() *Union {
-	u.IsBuildCache = true
-	return u
-}
-
-func (u *Union) hasBuildCache() bool {
-	return u.IsBuildCache
+// DisableBuildCache if enabled it does not cache the SQL string as a final
+// rendered byte slice. Allows you to rebuild the query with different
+// statements.
+func (b *Union) DisableBuildCache() *Union {
+	b.IsBuildCacheDisabled = true
+	return b
 }
 
 // ToSQL generates the SQL string and its arguments. Calls to this function are
 // idempotent.
-func (u *Union) toSQL(w *bytes.Buffer) error {
+func (u *Union) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err error) {
 
 	u.Selects[0].id = u.id
 
@@ -306,24 +305,25 @@ func (u *Union) toSQL(w *bytes.Buffer) error {
 			}
 			w.WriteByte('(')
 
-			if err := s.toSQL(w); err != nil {
-				return errors.Wrapf(err, "[dml] Union.ToSQL at Select index %d", i)
+			placeHolders, err = s.toSQL(w, placeHolders)
+			if err != nil {
+				return nil, errors.Wrapf(err, "[dml] Union.ToSQL at Select index %d", i)
 			}
 			w.WriteByte(')')
 		}
 		sqlWriteOrderBy(w, u.OrderBys, true)
-		return nil
+		return placeHolders, nil
 	}
 
 	bufSel0 := bufferpool.Get()
-	err := u.Selects[0].toSQL(bufSel0)
+	placeHolders, err = u.Selects[0].toSQL(bufSel0, placeHolders)
 	selStr := bufSel0.String()
 	bufferpool.Put(bufSel0)
 	if err != nil {
-		return errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 
-	for i := 0; i < u.stmtCount; i++ {
+	for i := 0; i < u.templateStmtCount; i++ {
 		repl := u.repls[i]
 		if repl == nil {
 			repl = strings.NewReplacer(u.oldNew[i]...)
@@ -337,7 +337,7 @@ func (u *Union) toSQL(w *bytes.Buffer) error {
 		w.WriteByte(')')
 	}
 	sqlWriteOrderBy(w, u.OrderBys, true)
-	return nil
+	return placeHolders, nil
 }
 
 func (u *Union) makeArguments() Arguments {
@@ -346,26 +346,6 @@ func (u *Union) makeArguments() Arguments {
 		argCap += s.argumentCapacity()
 	}
 	return make(Arguments, 0, len(u.Selects)*argCap)
-}
-
-func (u *Union) appendArgs(args Arguments) (_ Arguments, err error) {
-	if cap(args) == 0 {
-		args = u.makeArguments()
-	}
-	if len(u.Selects) > 1 {
-		for i, s := range u.Selects {
-			args, err = s.appendArgs(args)
-			if err != nil {
-				return nil, errors.Wrapf(err, "[dml] Union.ToSQL at Select index %d", i)
-			}
-		}
-		return args, nil
-	}
-	args, err = u.Selects[0].appendArgs(args)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	return u.MultiplyArguments(args), nil
 }
 
 // Query executes a query and returns many rows. If debug mode for logging has
@@ -403,12 +383,16 @@ func (u *Union) Prepare(ctx context.Context) (*StmtUnion, error) {
 	args := u.makeArguments()
 	return &StmtUnion{
 		StmtBase: StmtBase{
-			id:         u.id,
-			stmt:       stmt,
-			argsCache:  args,
-			argsRaw:    make([]interface{}, 0, len(args)),
-			bindRecord: u.bindRecord,
-			log:        u.Log,
+			builderCommon: builderCommon{
+				id:                u.id,
+				argsArgs:          args,
+				argsRaw:           make([]interface{}, 0, len(args)),
+				defaultQualifier:  "",
+				qualifiedColumns:  u.qualifiedColumns,
+				Log:               u.Log,
+				templateStmtCount: u.templateStmtCount,
+			},
+			stmt: stmt,
 		},
 		uni: u,
 	}, nil
@@ -440,6 +424,6 @@ func (st *StmtUnion) WithArguments(args Arguments) *StmtUnion {
 // WithRecords sets the records for the execution with Query+. It internally
 // resets previously applied arguments.
 func (st *StmtUnion) WithRecords(records ...QualifiedRecord) *StmtUnion {
-	st.withRecords(st.uni.appendArgs, records...)
+	st.withRecords(records)
 	return st
 }

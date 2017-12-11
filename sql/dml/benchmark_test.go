@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -80,7 +80,6 @@ func BenchmarkQuoteAlias(b *testing.B) {
 // BenchmarkConditions_writeOnDuplicateKey-4   	 5000000	       337 ns/o	       0 B/o	       0 allocs/o
 func BenchmarkConditions_writeOnDuplicateKey(b *testing.B) {
 	buf := new(bytes.Buffer)
-	args := MakeArgs(3)
 	dk := Conditions{
 		Column("name").Str("E0S 5D Mark III"),
 		Column("sku").Values(),
@@ -88,15 +87,10 @@ func BenchmarkConditions_writeOnDuplicateKey(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if err := dk.writeOnDuplicateKey(buf); err != nil {
-			b.Fatalf("%+v", err)
-		}
-		var err error
-		if args, _, err = dk.appendArgs(args, appendArgsDUPKEY); err != nil {
+		if _, err := dk.writeOnDuplicateKey(buf, nil); err != nil {
 			b.Fatalf("%+v", err)
 		}
 		buf.Reset()
-		args = args[:0]
 	}
 }
 

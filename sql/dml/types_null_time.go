@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 package dml
 
 import (
+	"bytes"
 	"fmt"
 	"time"
 
@@ -59,7 +60,7 @@ func (nt NullTime) GoString() string {
 // It will encode null if this time is null.
 func (nt NullTime) MarshalJSON() ([]byte, error) {
 	if !nt.Valid {
-		return []byte(sqlStrNullLC), nil
+		return sqlBytesNullLC, nil
 	}
 	return nt.Time.MarshalJSON()
 }
@@ -190,12 +191,12 @@ func (a *NullTime) Unmarshal(data []byte) error {
 
 // Size returns the size of the underlying type. If not valid, the size will be
 // 0. Implements proto.Sizer.
-func (m NullTime) Size() (n int) {
-	if !m.Valid {
+func (a NullTime) Size() (n int) {
+	if !a.Valid {
 		return 0
 	}
-	secs := m.Time.Unix()
-	nano := m.Time.Nanosecond()
+	secs := a.Time.Unix()
+	nano := a.Time.Nanosecond()
 	if secs != 0 {
 		n += 1 + uint64Size(uint64(secs))
 	}
@@ -203,6 +204,22 @@ func (m NullTime) Size() (n int) {
 		n += 1 + uint64Size(uint64(nano))
 	}
 	return n
+}
+
+func (a NullTime) writeTo(w *bytes.Buffer) (err error) {
+	if a.Valid {
+		dialect.EscapeTime(w, a.Time)
+	} else {
+		_, err = w.WriteString(sqlStrNullUC)
+	}
+	return
+}
+
+func (a NullTime) append(args []interface{}) []interface{} {
+	if a.Valid {
+		return append(args, a.Time)
+	}
+	return append(args, nil)
 }
 
 func uint64Size(x uint64) (n int) {

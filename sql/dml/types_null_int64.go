@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,8 +20,10 @@ import (
 	"encoding/binary"
 	"strconv"
 
-	"github.com/corestoreio/pkg/util/byteconv"
+	"bytes"
+
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/byteconv"
 )
 
 // TODO(cys): Remove GobEncoder, GobDecoder, MarshalJSON, UnmarshalJSON in Go 2.
@@ -116,7 +118,7 @@ func (a *NullInt64) UnmarshalText(text []byte) error {
 // It will encode null if this NullInt64 is null.
 func (a NullInt64) MarshalJSON() ([]byte, error) {
 	if !a.Valid {
-		return []byte(sqlStrNullLC), nil
+		return sqlBytesNullLC, nil
 	}
 	return strconv.AppendInt([]byte{}, a.Int64, 10), nil
 }
@@ -216,4 +218,19 @@ func (a NullInt64) Size() (s int) {
 		s = 8
 	}
 	return
+}
+
+func (a NullInt64) writeTo(w *bytes.Buffer) error {
+	if a.Valid {
+		return writeInt64(w, a.Int64)
+	}
+	_, err := w.WriteString(sqlStrNullUC)
+	return err
+}
+
+func (a NullInt64) append(args []interface{}) []interface{} {
+	if a.Valid {
+		return append(args, a.Int64)
+	}
+	return append(args, nil)
 }

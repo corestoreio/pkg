@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -66,9 +66,11 @@ func newUpdate(db ExecPreparer, idFn uniqueIDFn, l log.Logger, table string) *Up
 	}
 	return &Update{
 		BuilderBase: BuilderBase{
-			id:    id,
+			builderCommon: builderCommon{
+				id:  id,
+				Log: l,
+			},
 			Table: MakeIdentifier(table),
-			Log:   l,
 		},
 		DB: db,
 	}
@@ -124,28 +126,6 @@ func (b *Update) AddColumns(columnNames ...string) *Update {
 	return b
 }
 
-// BindRecord binds the qualified record to the main table/view, or any other
-// table/view/alias used in the query, for assembling and appending arguments.
-// The ColumnMapper gets called if it matches the qualifier, in this case the
-// current table name or its alias.
-func (b *Update) BindRecord(records ...QualifiedRecord) *Update {
-	b.bindRecord(records)
-	return b
-}
-
-func (b *Update) bindRecord(records []QualifiedRecord) {
-	if b.QualifiedRecords == nil {
-		b.QualifiedRecords = make(map[string]ColumnMapper)
-	}
-	for _, rec := range records {
-		q := rec.Qualifier
-		if q == "" {
-			q = b.Table.mustQualifier()
-		}
-		b.QualifiedRecords[q] = rec.Record
-	}
-}
-
 // Where appends a WHERE clause to the statement
 func (b *Update) Where(wf ...*Condition) *Update {
 	b.Wheres = append(b.Wheres, wf...)
@@ -187,125 +167,100 @@ func (b *Update) Interpolate() *Update {
 	return b
 }
 
-// ToSQL converts the select statement into a string and returns its arguments.
-func (b *Update) ToSQL() (string, []interface{}, error) {
-	return toSQL(b, b.IsInterpolate, _isNotPrepared)
-}
-
-func (b *Update) writeBuildCache(sql []byte) {
-	b.cacheSQL = sql
-}
-
-func (b *Update) readBuildCache() (sql []byte, _ Arguments, err error) {
-	if b.cacheSQL == nil {
-		return nil, nil, nil
-	}
-	b.argPool, err = b.appendArgs(b.argPool[:0])
-	return b.cacheSQL, b.argPool, err
-}
-
-// BuildCache if `true` the final build query including place holders will be
-// cached in a private field. Each time a call to function ToSQL happens, the
-// arguments will be re-evaluated and returned or interpolated.
-func (b *Update) BuildCache() *Update {
-	b.IsBuildCache = true
+// WithArgs sets the interfaced arguments for the execution with Query+. It
+// internally resets previously applied arguments. This function does not
+// support interpolation.
+func (b *Update) WithArgs(args ...interface{}) *Update {
+	b.withArgs(args)
 	return b
 }
 
-func (b *Update) hasBuildCache() bool {
-	return b.IsBuildCache
+// WithArguments sets the arguments for the execution with Query+. It internally
+// resets previously applied arguments. This function supports interpolation.
+func (b *Update) WithArguments(args Arguments) *Update {
+	b.withArguments(args)
+	return b
+}
+
+// WithRecords binds the qualified record to the main table/view, or any other
+// table/view/alias used in the query, for assembling and appending arguments.
+// The ColumnMapper gets called if it matches the qualifier, in this case the
+// current table name or its alias.
+func (b *Update) WithRecords(records ...QualifiedRecord) *Update {
+	b.withRecords(records)
+	return b
+}
+
+// ToSQL converts the select statement into a string and returns its arguments.
+func (b *Update) ToSQL() (string, []interface{}, error) {
+	return b.buildArgsAndSQL(b)
+}
+
+func (b *Update) writeBuildCache(sql []byte) {
+	b.BuilderConditional = BuilderConditional{}
+	b.SetClausAliases = nil
+	b.SetClauses = nil
+	b.cacheSQL = sql
+}
+
+func (b *Update) readBuildCache() (sql []byte) {
+	return b.cacheSQL
+}
+
+// DisableBuildCache if enabled it does not cache the SQL string as a final
+// rendered byte slice. Allows you to rebuild the query with different
+// statements.
+func (b *Update) DisableBuildCache() *Update {
+	b.IsBuildCacheDisabled = true
+	return b
 }
 
 // ToSQL serialized the Update to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Update) toSQL(buf *bytes.Buffer) error {
+func (b *Update) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, error) {
+	b.defaultQualifier = b.Table.qualifier()
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
-		return errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 
 	if b.RawFullSQL != "" {
 		buf.WriteString(b.RawFullSQL)
-		return nil
+		return placeHolders, nil
 	}
 
 	if len(b.Table.Name) == 0 {
-		return errors.NewEmptyf("[dml] Update: Table at empty")
+		return nil, errors.NewEmptyf("[dml] Update: Table at empty")
 	}
 	if len(b.SetClauses) == 0 {
-		return errors.NewEmptyf("[dml] Update: No columns specified")
+		return nil, errors.NewEmptyf("[dml] Update: No columns specified")
 	}
 
 	buf.WriteString("UPDATE ")
 	writeStmtID(buf, b.id)
-	b.Table.WriteQuoted(buf)
+	_, _ = b.Table.writeQuoted(buf, nil)
 	buf.WriteString(" SET ")
 
-	if err := b.SetClauses.writeSetClauses(buf); err != nil {
-		return errors.WithStack(err)
+	placeHolders, err := b.SetClauses.writeSetClauses(buf, placeHolders)
+	if err != nil {
+		return nil, errors.WithStack(err)
 	}
 
 	// Write WHERE clause if we have any fragments
-	if err := b.Wheres.write(buf, 'w'); err != nil {
-		return errors.WithStack(err)
+	placeHolders, err = b.Wheres.write(buf, 'w', placeHolders)
+	if err != nil {
+		return nil, errors.WithStack(err)
 	}
 
 	sqlWriteOrderBy(buf, b.OrderBys, false)
 	sqlWriteLimitOffset(buf, b.LimitValid, b.LimitCount, false, 0)
-	return nil
-}
-
-// ToSQL serialized the Update to a SQL string
-// It returns the string with placeholders and a slice of query arguments
-func (b *Update) appendArgs(args Arguments) (_ Arguments, err error) {
-
-	if b.RawFullSQL != "" {
-		return b.RawArguments, nil
-	}
-
-	if cap(args) == 0 {
-		args = make(Arguments, 0, len(b.SetClauses)+len(b.Wheres))
-	}
-
-	if b.QualifiedRecords != nil {
-		if len(b.SetClausAliases) == 0 {
-			b.SetClausAliases = b.SetClauses.leftHands(b.SetClausAliases)
-		}
-
-		qualifier := b.Table.mustQualifier() // if this panics, you have different problems.
-
-		if aa, ok := b.QualifiedRecords[qualifier]; ok {
-			cm := newColumnMap(args, "")
-			for _, col := range b.SetClausAliases {
-				cm.columns[0] = col
-				if err = aa.MapColumns(cm); err != nil {
-					return nil, errors.Wrapf(err, "[dml] Update.appendArgs.AppendArgs at qualifier %q and column %q", qualifier, col)
-				}
-			}
-			args = cm.Args
-		}
-	}
-
-	args, _, err = b.SetClauses.appendArgs(args, appendArgsSET)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	// Write WHERE clause if we have any fragments
-	args, pap, err := b.Wheres.appendArgs(args, appendArgsWHERE)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	placeHolderColumns := make([]string, 0, len(b.Wheres)) // can be reused once we implement more features of the DELETE statement, like JOINs.
-	if boundedCols := b.Wheres.intersectConditions(placeHolderColumns); len(boundedCols) > 0 {
-		if args, err = appendArgs(pap, b.QualifiedRecords, args, b.Table.mustQualifier(), boundedCols); err != nil {
-			return nil, errors.WithStack(err)
-		}
-	}
-	return args, nil
+	return placeHolders, nil
 }
 
 func (b *Update) validate() error {
+	if len(b.cacheSQL) > 1 { // already validated
+		return nil
+	}
 	if len(b.SetClauses) == 0 {
 		return errors.NewEmptyf("[dml] Update: Columns are empty")
 	}
@@ -347,12 +302,15 @@ func (b *Update) Prepare(ctx context.Context) (*StmtUpdate, error) {
 	cap := len(b.SetClauses) + len(b.Wheres)
 	return &StmtUpdate{
 		StmtBase: StmtBase{
-			id:         b.id,
-			stmt:       stmt,
-			argsCache:  make(Arguments, 0, cap),
-			argsRaw:    make([]interface{}, 0, cap),
-			bindRecord: b.bindRecord,
-			log:        b.Log,
+			builderCommon: builderCommon{
+				id:               b.id,
+				argsArgs:         make(Arguments, 0, cap),
+				argsRaw:          make([]interface{}, 0, cap),
+				defaultQualifier: b.Table.qualifier(),
+				qualifiedColumns: b.qualifiedColumns,
+				Log:              b.Log,
+			},
+			stmt: stmt,
 		},
 		upd: b,
 	}, nil
@@ -377,6 +335,6 @@ func (st *StmtUpdate) WithArguments(args Arguments) *StmtUpdate {
 // WithRecords sets the records for the execution with ExecContext. It
 // internally resets previously applied arguments.
 func (st *StmtUpdate) WithRecords(records ...QualifiedRecord) *StmtUpdate {
-	st.withRecords(st.upd.appendArgs, records...)
+	st.withRecords(records)
 	return st
 }

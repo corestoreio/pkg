@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
 // LastInsertIDAssigner assigns the last insert ID of an auto increment
@@ -40,11 +41,10 @@ type Insert struct {
 
 	Into    string
 	Columns []string
-	Values  []Arguments
 	// RowCount defines the number of expected rows.
 	RowCount int // See SetRowCount()
-
-	Records []ColumnMapper
+	Values   []Arguments
+	Records  []ColumnMapper
 	// RecordPlaceHolderCount defines the number of place holders for each set
 	// within the brackets. Must only be set when Records have been applied
 	// and `Columns` field has been omitted.
@@ -94,6 +94,7 @@ type Insert struct {
 	// Listeners allows to dispatch certain functions in different
 	// situations.
 	Listeners InsertListeners
+	argsPool  Arguments // only used during ToSQL
 }
 
 // NewInsert creates a new Insert object.
@@ -110,8 +111,10 @@ func newInsertInto(db ExecPreparer, idFn uniqueIDFn, l log.Logger, into string) 
 	}
 	return &Insert{
 		BuilderBase: BuilderBase{
-			id:  id,
-			Log: l,
+			builderCommon: builderCommon{
+				id:  id,
+				Log: l,
+			},
 		},
 		DB:   db,
 		Into: into,
@@ -167,16 +170,6 @@ func (b *Insert) AddColumns(columns ...string) *Insert {
 	return b
 }
 
-// TODO (CyS) maybe write an intermediate type which will be used to get rid of
-// AddValues and AddArguments. Maybe same pattern as Column() function.
-
-// AddValues appends a set of values to the statement. Each call of AddValues
-// creates a new set of values. Only primitive types are supported. Runtime type
-// safety only.
-func (b *Insert) AddValues(values ...interface{}) *Insert {
-	return b.AddArguments(iFaceToArgs(values...))
-}
-
 // SetRowCount defines the number of expected rows. Each set of place holders
 // within the brackets defines a row. This setting defaults to one. It gets
 // applied when fields `args` and `Records` have been left empty. For each
@@ -189,10 +182,17 @@ func (b *Insert) SetRowCount(rows int) *Insert {
 	return b
 }
 
-// AddArguments appends a set of values to the statement. Each call of
-// AddArguments creates a new set of values. Only primitive types are supported.
-// Runtime type safety only.
-func (b *Insert) AddArguments(args Arguments) *Insert {
+// AddValuesUnsafe appends a set of primitives, packed in interfaces, to the
+// statement. Each call of AddValuesUnsafe creates a new set of values. Only
+// primitive types are supported. Runtime type safety only. It panics for
+// unknown types.
+func (b *Insert) AddValuesUnsafe(args ...interface{}) *Insert {
+	return b.AddValues(iFaceToArgs(args...))
+}
+
+// AddValues appends a set of arguments to the statement. Each call of
+// AddValues creates a new set of values. Only primitive types are supported.
+func (b *Insert) AddValues(args Arguments) *Insert {
 	if lv, mod := len(args), len(b.Columns); mod > 0 && lv > mod && (lv%mod) == 0 {
 		// now we have more arguments than columns and we can assume that more
 		// rows gets inserted.
@@ -200,23 +200,52 @@ func (b *Insert) AddArguments(args Arguments) *Insert {
 			b.Values = append(b.Values, args[i:i+mod])
 		}
 	} else {
-		// each call to AddValues equals one row in a table.
+		// each call to AddValuesUnsafe equals one row in a table.
 		b.Values = append(b.Values, args)
 	}
 	return b
 }
 
-// BindRecord appends a new record for each INSERT VALUES (),[(...)...] case. A
+// AddRecords appends a new record for each INSERT VALUES (),[(...)...] case. A
 // record can also be e.g. a slice which appends all requested arguments at
 // once. Using a slice requires to call `SetRowCount` to tell the Insert object
 // the number of rows.
-func (b *Insert) BindRecord(recs ...ColumnMapper) *Insert {
+func (b *Insert) AddRecords(recs ...ColumnMapper) *Insert {
 	b.Records = append(b.Records, recs...)
 	return b
 }
 
+// WithArgs applies only in the case where place holders are used in the ON
+// DUPLICATE KEY part. It sets the interfaced arguments for the execution with
+// Query+. It internally resets previously applied arguments. This function does
+// not support interpolation.
+func (b *Insert) WithArgs(args ...interface{}) *Insert {
+	b.withArgs(args)
+	return b
+}
+
+// WithArguments applies only in the case where place holders are used in the ON
+// DUPLICATE KEY part. It sets the arguments for the execution with Query+. It
+// internally resets previously applied arguments. This function supports
+// interpolation.
+func (b *Insert) WithArguments(args Arguments) *Insert {
+	b.withArguments(args)
+	return b
+}
+
+// Reset resets the Records and Values slices to be reused. It sets the records
+// slice items to nil for the GC.
+func (b *Insert) Reset() *Insert {
+	for i := 0; i < len(b.Records); i++ {
+		b.Records[i] = nil // remove pointer, etc for GC
+	}
+	b.Records = b.Records[:0]
+	b.Values = b.Values[:0]
+	return b
+}
+
 // SetRecordPlaceHolderCount number of expected place holders within each set.
-// Must be applied if a call to AddColumns has been omitted and BindRecord gets
+// Must be applied if a call to AddColumns has been omitted and WithRecords gets
 // called or Records gets set in a different way.
 //		INSERT INTO tableX (?,?,?)
 // SetRecordPlaceHolderCount would now be 3 because of the three place holders.
@@ -269,14 +298,14 @@ func (b *Insert) Pair(cvs ...*Condition) *Insert {
 			if len(b.Values) == 0 {
 				b.Values = make([]Arguments, 1, 5)
 			}
-			b.Values[0] = append(b.Values[0], cv.Right.Argument)
+			b.Values[0] = append(b.Values[0], cv.Right.arg)
 
 		} else { // this is not an ELSEIF
 			if colPos == 0 { // create new slice
 				b.Values = append(b.Values, make(Arguments, len(b.Columns)))
 			}
 			pos := len(b.Values) - 1
-			b.Values[pos][colPos] = cv.Right.Argument
+			b.Values[pos][colPos] = cv.Right.arg
 		}
 	}
 	return b
@@ -300,46 +329,60 @@ func (b *Insert) Interpolate() *Insert {
 // ToSQL serialized the Insert to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Insert) ToSQL() (string, []interface{}, error) {
-	return toSQL(b, b.IsInterpolate, _isNotPrepared)
+	rawSQL, err := b.buildToSQL(b)
+	if err != nil {
+		return "", nil, errors.WithStack(err)
+	}
+	if b.argsPool == nil {
+		b.argsPool = make(Arguments, 0, b.totalArgCount())
+	}
+	b.argsPool = b.argsPool[:0]
+	b.argsPool, err = b.appendArgs(b.argsPool)
+	if err != nil {
+		return "", nil, errors.WithStack(err)
+	}
+
+	if b.IsInterpolate {
+		buf := bufferpool.Get()
+		err := writeInterpolate(buf, rawSQL, b.argsPool)
+		s := buf.String()
+		bufferpool.Put(buf)
+		return s, nil, err
+	}
+
+	return string(rawSQL), append(b.argsPool.Interfaces(), b.argsRaw...), nil
 }
 
 func (b *Insert) writeBuildCache(sql []byte) {
+	// think about resetting ...
 	b.cacheSQL = sql
 }
 
-func (b *Insert) readBuildCache() (sql []byte, _ Arguments, err error) {
-	if b.cacheSQL == nil {
-		return nil, nil, nil
-	}
-	b.argPool, err = b.appendArgs(b.argPool[:0])
-	return b.cacheSQL, b.argPool, err
+func (b *Insert) readBuildCache() (sql []byte) {
+	return b.cacheSQL
 }
 
-// BuildCache if `true` the final build query including place holders will be
-// cached in a private field. Each time a call to function ToSQL happens, the
-// arguments will be re-evaluated and returned or interpolated.
-func (b *Insert) BuildCache() *Insert {
-	b.IsBuildCache = true
+// DisableBuildCache if enabled it does not cache the SQL string as a final
+// rendered byte slice. Allows you to rebuild the query with different
+// statements.
+func (b *Insert) DisableBuildCache() *Insert {
+	b.IsBuildCacheDisabled = true
 	return b
 }
 
-func (b *Insert) hasBuildCache() bool {
-	return b.IsBuildCache
-}
-
-func (b *Insert) toSQL(buf *bytes.Buffer) error {
+func (b *Insert) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, error) {
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
-		return errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 
 	if b.RawFullSQL != "" {
 		buf.WriteString(b.RawFullSQL)
-		return nil
+		return placeHolders, nil
 	}
 
 	if len(b.Into) == 0 {
-		return errors.NewEmptyf("[dml] Inserted table is missing")
+		return nil, errors.NewEmptyf("[dml] Inserted table is missing")
 	}
 
 	ior := "INSERT "
@@ -357,7 +400,18 @@ func (b *Insert) toSQL(buf *bytes.Buffer) error {
 	buf.WriteByte(' ')
 
 	if b.Select != nil {
-		return errors.WithStack(b.Select.toSQL(buf))
+		if len(b.Columns) > 0 {
+			buf.WriteByte('(')
+			for i, c := range b.Columns {
+				if i > 0 {
+					buf.WriteByte(',')
+				}
+				Quoter.quote(buf, c)
+			}
+			buf.WriteString(") ")
+		}
+		placeHolders, err := b.Select.toSQL(buf, placeHolders)
+		return placeHolders, errors.WithStack(err)
 	}
 
 	if len(b.Columns) > 0 {
@@ -368,6 +422,7 @@ func (b *Insert) toSQL(buf *bytes.Buffer) error {
 			}
 			Quoter.quote(buf, c)
 		}
+		placeHolders = append(placeHolders, b.Columns...)
 		buf.WriteString(") ")
 	}
 	buf.WriteString("VALUES ")
@@ -432,7 +487,8 @@ func (b *Insert) toSQL(buf *bytes.Buffer) error {
 		}
 	}
 
-	return errors.Wrap(b.OnDuplicateKeys.writeOnDuplicateKey(buf), "[dml] Insert.toSQL.writeOnDuplicateKey\n")
+	placeHolders, err := b.OnDuplicateKeys.writeOnDuplicateKey(buf, placeHolders)
+	return placeHolders, errors.Wrap(err, "[dml] Insert.toSQL.writeOnDuplicateKey\n")
 }
 
 func strInSlice(search string, sl []string) bool {
@@ -444,19 +500,23 @@ func strInSlice(search string, sl []string) bool {
 	return false
 }
 
+func (b *Insert) totalArgCount() int {
+	argCount0 := b.RecordPlaceHolderCount
+	if len(b.Values) > 0 && len(b.Columns) == 0 {
+		argCount0 = len(b.Values[0])
+	}
+	if lc := len(b.Columns); argCount0 < 1 && lc > 0 {
+		argCount0 = lc
+	}
+
+	return len(b.Values) * argCount0
+}
+
 func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 
-	if b.RawFullSQL != "" {
-		return b.RawArguments, nil
-	}
-
-	if b.Select != nil {
-		args, err = b.Select.appendArgs(args)
+	if b.Select != nil && (b.Select.argsArgs != nil || b.Select.argsRecords != nil) {
+		args, err = b.Select.convertRecordsToArguments()
 		return args, errors.WithStack(err)
-	}
-
-	if lv := len(b.Values); b.Records == nil && (lv == 0 || (lv > 0 && len(b.Values[0]) == 0)) {
-		return nil, nil
 	}
 
 	argCount0 := b.RecordPlaceHolderCount
@@ -466,7 +526,6 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 	if lc := len(b.Columns); argCount0 < 1 && lc > 0 {
 		argCount0 = lc
 	}
-
 	totalArgCount := len(b.Values) * argCount0
 	if cap(args) == 0 {
 		args = make(Arguments, 0, totalArgCount+len(b.Records)+len(b.OnDuplicateKeys))
@@ -476,11 +535,11 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 	}
 
 	if b.Records == nil {
-		args, _, err = b.OnDuplicateKeys.appendArgs(args, appendArgsDUPKEY)
+		args = append(args, b.argsArgs...)
 		return args, errors.WithStack(err)
 	}
 
-	cm := newColumnMap(args, b.Columns...) // b.Columns can be nil
+	cm := newColumnMap(args, b.qualifiedColumns...) // b.Columns can be nil
 	for _, rec := range b.Records {
 		alBefore := len(cm.Args)
 		if err = rec.MapColumns(cm); err != nil {
@@ -492,9 +551,8 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 	}
 	args = cm.Args
 
-	if args, _, err = b.OnDuplicateKeys.appendArgs(args, appendArgsDUPKEY); err != nil {
-		return nil, errors.WithStack(err)
-	}
+	args = append(args, b.argsArgs...)
+
 	return args, nil
 }
 
@@ -545,11 +603,13 @@ func (b *Insert) Prepare(ctx context.Context) (*StmtInsert, error) {
 	cap := len(b.Columns) * b.RecordPlaceHolderCount
 	return &StmtInsert{
 		StmtBase: StmtBase{
-			id:        b.id,
-			stmt:      sqlStmt,
-			argsCache: make(Arguments, 0, cap),
-			argsRaw:   make([]interface{}, 0, cap),
-			log:       b.Log,
+			builderCommon: builderCommon{
+				id:       b.id,
+				argsArgs: make(Arguments, 0, cap),
+				argsRaw:  make([]interface{}, 0, cap),
+				Log:      b.Log,
+			},
+			stmt: sqlStmt,
 		},
 		ins: b,
 	}, nil
@@ -569,7 +629,7 @@ type StmtInsert struct {
 func (st *StmtInsert) WithArguments(args Arguments) *StmtInsert {
 	st.ins.Records = nil
 	st.ins.Values = st.ins.Values[:0]
-	st.argsCache = st.argsCache[:0]
+	st.argsArgs = st.argsArgs[:0]
 
 	if lv, mod := len(args), len(st.ins.Columns); mod > 0 && lv > mod && (lv%mod) == 0 {
 		// now we have more arguments than columns and we can assume that more
@@ -578,11 +638,11 @@ func (st *StmtInsert) WithArguments(args Arguments) *StmtInsert {
 			st.ins.Values = append(st.ins.Values, args[i:i+mod])
 		}
 	} else {
-		// each call to AddValues equals one row in a table.
+		// each call to AddValuesUnsafe equals one row in a table.
 		st.ins.Values = append(st.ins.Values, args)
 	}
 
-	st.argsCache, st.ärgErr = st.ins.appendArgs(st.argsCache)
+	st.argsArgs, st.ärgErr = st.ins.appendArgs(st.argsArgs)
 
 	return st
 }
@@ -590,10 +650,10 @@ func (st *StmtInsert) WithArguments(args Arguments) *StmtInsert {
 // WithRecords sets the records for the execution with Exec. It internally
 // resets previously applied arguments.
 func (st *StmtInsert) WithRecords(records ...ColumnMapper) *StmtInsert {
-	st.argsCache = st.argsCache[:0]
+	st.argsArgs = st.argsArgs[:0]
 	st.ins.Records = nil
-	st.ins.BindRecord(records...)
-	st.argsCache, st.ärgErr = st.ins.appendArgs(st.argsCache)
+	st.ins.AddRecords(records...)
+	st.argsArgs, st.ärgErr = st.ins.appendArgs(st.argsArgs)
 	return st
 }
 

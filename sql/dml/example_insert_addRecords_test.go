@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@ package dml_test
 import (
 	"fmt"
 
-	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/sql/dml"
 )
 
 // Make sure that type productEntity implements interface.
@@ -57,11 +57,11 @@ func (pe productEntity) MapColumns(cm *dml.ColumnMap) error {
 	return errors.WithStack(cm.Err())
 }
 
-// ExampleInsert_BindRecord inserts new data into table
+// ExampleInsert_AddRecords inserts new data into table
 // `catalog_product_entity`. First statement by specifying the exact column
 // names. In the second example all columns values are getting inserted and you
 // specify the number of place holders per record.
-func ExampleInsert_BindRecord() {
+func ExampleInsert_AddRecords() {
 
 	objs := []productEntity{
 		{1, 5, "simple", dml.MakeNullString("SOA9"), false},
@@ -69,11 +69,11 @@ func ExampleInsert_BindRecord() {
 	}
 
 	i := dml.NewInsert("catalog_product_entity").AddColumns("attribute_set_id", "type_id", "sku", "has_options").
-		BindRecord(objs[0]).BindRecord(objs[1])
+		AddRecords(objs[0]).AddRecords(objs[1])
 	writeToSQLAndInterpolate(i)
 
 	fmt.Print("\n\n")
-	i = dml.NewInsert("catalog_product_entity").SetRecordPlaceHolderCount(5).BindRecord(objs[0]).BindRecord(objs[1])
+	i = dml.NewInsert("catalog_product_entity").SetRecordPlaceHolderCount(5).AddRecords(objs[0]).AddRecords(objs[1])
 	writeToSQLAndInterpolate(i)
 
 	// Output:

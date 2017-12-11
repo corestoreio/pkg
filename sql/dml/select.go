@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -93,8 +93,10 @@ func newSelect(db QueryPreparer, idFn uniqueIDFn, l log.Logger, from []string) *
 	}
 	s := &Select{
 		BuilderBase: BuilderBase{
-			id:    id,
-			Log:   l,
+			builderCommon: builderCommon{
+				id:  id,
+				Log: l,
+			},
 			Table: MakeIdentifier(from[0]),
 		},
 		DB: db,
@@ -122,7 +124,7 @@ func (tx *Tx) SelectFrom(fromAlias ...string) *Select {
 }
 
 // SelectBySQL creates a new Select for the given SQL string and arguments.
-func (c *ConnPool) SelectBySQL(sql string, args Arguments) *Select {
+func (c *ConnPool) SelectBySQL(sql string) *Select {
 	id := c.makeUniqueID()
 	l := c.Log
 	if l != nil {
@@ -130,10 +132,11 @@ func (c *ConnPool) SelectBySQL(sql string, args Arguments) *Select {
 	}
 	return &Select{
 		BuilderBase: BuilderBase{
-			id:           id,
-			Log:          l,
-			RawFullSQL:   sql,
-			RawArguments: args,
+			builderCommon: builderCommon{
+				id:  id,
+				Log: l,
+			},
+			RawFullSQL: sql,
 		},
 		DB: c.DB,
 	}
@@ -141,16 +144,23 @@ func (c *ConnPool) SelectBySQL(sql string, args Arguments) *Select {
 
 // SelectBySQL creates a new Select for the given SQL string and arguments bound
 // to the transaction.
-//func (tx *Tx) SelectBySQL(sql string, args Arguments) *Select {
-//	return &Select{
-//		BuilderBase: BuilderBase{
-//			Log:          tx.Log,
-//			RawFullSQL:   sql,
-//			RawArguments: args,
-//		},
-//		DB: tx.DB,
-//	}
-//}
+func (tx *Tx) SelectBySQL(sql string) *Select {
+	id := tx.makeUniqueID()
+	l := tx.Log
+	if l != nil {
+		l = l.With(log.String("tx_select_id", id), log.String("sql", sql))
+	}
+	return &Select{
+		BuilderBase: BuilderBase{
+			builderCommon: builderCommon{
+				id:  id,
+				Log: l,
+			},
+			RawFullSQL: sql,
+		},
+		DB: tx.DB,
+	}
+}
 
 // WithDB sets the database query object.
 func (b *Select) WithDB(db QueryPreparer) *Select {
@@ -269,30 +279,8 @@ func (b *Select) AddColumnsAliases(columnAliases ...string) *Select {
 // RawArguments field to maintain the correct order of arguments.
 // 		AddColumnsConditions(Expr("(e.price*x.tax*t.weee)").Alias("final_price")) // (e.price*x.tax*t.weee) AS `final_price`
 func (b *Select) AddColumnsConditions(expressions ...*Condition) *Select {
-	b.Columns, b.RawArguments = b.Columns.AppendConditions(expressions, b.RawArguments)
+	b.Columns, b.ärgErr = b.Columns.appendConditions(expressions)
 	return b
-}
-
-// BindRecord binds the qualified record to the main table/view, or any other
-// table/view/alias used in the query, for assembling and appending arguments. A
-// ColumnMapper gets called if it matches the qualifier, in this case the
-// current table name or its alias.
-func (b *Select) BindRecord(records ...QualifiedRecord) *Select {
-	b.bindRecord(records)
-	return b
-}
-
-func (b *Select) bindRecord(records []QualifiedRecord) {
-	if b.QualifiedRecords == nil {
-		b.QualifiedRecords = make(map[string]ColumnMapper)
-	}
-	for _, rec := range records {
-		q := rec.Qualifier
-		if q == "" {
-			q = b.Table.mustQualifier()
-		}
-		b.QualifiedRecords[q] = rec.Record
-	}
 }
 
 // Where appends a WHERE clause to the statement for the given string and args
@@ -387,14 +375,6 @@ func (b *Select) Paginate(page, perPage uint64) *Select {
 	return b
 }
 
-// Interpolate if set stringyfies the arguments into the SQL string and returns
-// pre-processed SQL command when calling the function ToSQL. Not suitable for
-// prepared statements. ToSQLs second argument `args` will then be nil.
-func (b *Select) Interpolate() *Select {
-	b.IsInterpolate = true
-	return b
-}
-
 // Join creates an INNER join construct. By default, the onConditions are glued
 // together with AND.
 func (b *Select) Join(table id, onConditions ...*Condition) *Select {
@@ -430,56 +410,95 @@ func (b *Select) CrossJoin(table id, onConditions ...*Condition) *Select {
 	return b
 }
 
-// ToSQL converts the select statement into a string and returns its arguments.
-func (b *Select) ToSQL() (string, []interface{}, error) {
-	return toSQL(b, b.IsInterpolate, _isNotPrepared)
+// Interpolate if set stringyfies the arguments into the SQL string and returns
+// pre-processed SQL command when calling the function ToSQL. Not suitable for
+// prepared statements. ToSQLs second argument `args` will then be nil.
+func (b *Select) Interpolate() *Select {
+	b.IsInterpolate = true
+	return b
 }
 
-// argumentCapacity returns the total possible guessed size of a new args
-// slice. Use as the cap parameter in a call to `make`.
-func (b *Select) argumentCapacity() int {
-	return len(b.RawArguments) + (len(b.Joins)+len(b.Wheres))*2
+// ExpandPlaceHolders repeats the place holders with the provided argument
+// count. If the amount of arguments does not match the number of place holders,
+// a mismatch error gets returned.
+//		ExpandPlaceHolders("SELECT * FROM table WHERE id IN (?) AND status IN (?)", Int(myIntSlice...), String(myStrSlice...))
+// Gets converted to:
+//		SELECT * FROM table WHERE id IN (?,?) AND status IN (?,?,?)
+// The place holders are of course depending on the values in the Arg*
+// functions. This function should be generally used when dealing with prepared
+// statements. It does conflict with interpolation.
+func (b *Select) ExpandPlaceHolders() *Select {
+	b.IsExpandPlaceHolders = true
+	return b
+}
+
+// WithArgs sets the interfaced arguments for the execution with Query+. It
+// internally resets previously applied arguments. This function does not
+// support interpolation.
+func (b *Select) WithArgs(args ...interface{}) *Select {
+	b.withArgs(args)
+	return b
+}
+
+// WithArguments sets the arguments for the execution with Query+. It internally
+// resets previously applied arguments. This function supports interpolation.
+func (b *Select) WithArguments(args Arguments) *Select {
+	b.withArguments(args)
+	return b
+}
+
+// WithRecords binds the qualified record to the main table/view, or any other
+// table/view/alias used in the query, for assembling and appending arguments. A
+// ColumnMapper gets called if it matches the qualifier, in this case the
+// current table name or its alias.
+func (b *Select) WithRecords(records ...QualifiedRecord) *Select {
+	b.withRecords(records)
+	return b
+}
+
+// ToSQL generates the SQL string and might caches it internally, if not
+// disabled.
+func (b *Select) ToSQL() (string, []interface{}, error) {
+	return b.buildArgsAndSQL(b)
 }
 
 func (b *Select) writeBuildCache(sql []byte) {
 	b.cacheSQL = sql
+	// The data can be discarded as the query has been cached as byte slice.
+	b.BuilderConditional = BuilderConditional{}
+	b.Columns = nil
+	b.GroupBys = nil
+	b.Havings = nil
 }
 
-func (b *Select) readBuildCache() (sql []byte, _ Arguments, err error) {
-	if b.cacheSQL == nil {
-		return nil, nil, nil
-	}
-	b.argPool, err = b.appendArgs(b.argPool[:0])
-	return b.cacheSQL, b.argPool, err
+func (b *Select) readBuildCache() (sql []byte) {
+	return b.cacheSQL
 }
 
-// BuildCache enables that the final SQL string including place holders will be
-// cached in a private field. Each time a call to function ToSQL happens, the
-// arguments will be re-evaluated and returned or interpolated together with the
-// SQL string.
-func (b *Select) BuildCache() *Select {
-	b.IsBuildCache = true
+// DisableBuildCache if enabled it does not cache the SQL string as a final
+// rendered byte slice. Allows you to rebuild the query with different
+// statements.
+func (b *Select) DisableBuildCache() *Select {
+	b.IsBuildCacheDisabled = true
 	return b
-}
-
-func (b *Select) hasBuildCache() bool {
-	return b.IsBuildCache
 }
 
 // ToSQL serialized the Select to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Select) toSQL(w *bytes.Buffer) error {
+func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) ([]string, error) {
+	b.defaultQualifier = b.Table.qualifier()
+
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
-		return errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 
 	if b.RawFullSQL != "" {
 		_, err := w.WriteString(b.RawFullSQL)
-		return err
+		return nil, err
 	}
 
 	if len(b.Columns) == 0 && !b.IsCountStar && !b.IsStar {
-		return errors.NewEmptyf("[dml] Select: no columns specified")
+		return nil, errors.NewEmptyf("[dml] Select: no columns specified")
 	}
 
 	w.WriteString("SELECT ")
@@ -501,30 +520,35 @@ func (b *Select) toSQL(w *bytes.Buffer) error {
 		w.WriteString("COUNT(*) AS ")
 		Quoter.quote(w, "counted")
 	default:
-		if err := b.Columns.WriteQuoted(w); err != nil {
-			return errors.WithStack(err)
+		var err error
+		if placeHolders, err = b.Columns.writeQuoted(w, placeHolders); err != nil {
+			return nil, errors.WithStack(err)
 		}
 	}
 
 	if !b.Table.isEmpty() {
 		w.WriteString(" FROM ")
-		if err := b.Table.WriteQuoted(w); err != nil {
-			return errors.WithStack(err)
+		var err error
+		if placeHolders, err = b.Table.writeQuoted(w, placeHolders); err != nil {
+			return nil, errors.WithStack(err)
 		}
 	}
 
 	for _, f := range b.Joins {
-		w.WriteByte(' ')
+		err := w.WriteByte(' ')
 		w.WriteString(f.JoinType)
 		w.WriteString(" JOIN ")
-		f.Table.WriteQuoted(w)
-		if err := f.On.write(w, 'j'); err != nil {
-			return errors.WithStack(err)
+		if placeHolders, err = f.Table.writeQuoted(w, placeHolders); err != nil {
+			return nil, errors.WithStack(err)
+		}
+		if placeHolders, err = f.On.write(w, 'j', placeHolders); err != nil {
+			return nil, errors.WithStack(err)
 		}
 	}
 
-	if err := b.Wheres.write(w, 'w'); err != nil {
-		return errors.WithStack(err)
+	placeHolders, err := b.Wheres.write(w, 'w', placeHolders)
+	if err != nil {
+		return nil, errors.WithStack(err)
 	}
 
 	if len(b.GroupBys) > 0 {
@@ -533,14 +557,15 @@ func (b *Select) toSQL(w *bytes.Buffer) error {
 			if i > 0 {
 				w.WriteString(", ")
 			}
-			if err := c.WriteQuoted(w); err != nil {
-				return errors.WithStack(err)
+			if placeHolders, err = c.writeQuoted(w, placeHolders); err != nil {
+				return nil, errors.WithStack(err)
 			}
 		}
 	}
 
-	if err := b.Havings.write(w, 'h'); err != nil {
-		return errors.WithStack(err)
+	placeHolders, err = b.Havings.write(w, 'h', placeHolders)
+	if err != nil {
+		return nil, errors.WithStack(err)
 	}
 
 	if b.IsOrderByDeactivated {
@@ -556,73 +581,11 @@ func (b *Select) toSQL(w *bytes.Buffer) error {
 	case b.IsForUpdate:
 		w.WriteString(" FOR UPDATE")
 	}
-	return nil
+	return placeHolders, nil
 }
 
-// ToSQL serialized the Select to a SQL string
-// It returns the string with placeholders and a slice of query arguments
-func (b *Select) appendArgs(args Arguments) (_ Arguments, err error) {
-	if b.RawFullSQL != "" {
-		return b.RawArguments, nil
-	}
-
-	// not sure if copying is necessary but leaves at least b.args in pristine
-	// condition
-	if cap(args) == 0 {
-		args = make(Arguments, 0, b.argumentCapacity())
-	}
-	args = append(args, b.RawArguments...)
-
-	if args, err = b.Columns.appendArgs(args); err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	if args, err = b.Table.appendArgs(args); err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	placeHolderColumns := make([]string, 0, len(b.Joins)+len(b.Wheres)+len(b.Havings))
-	var pap []int
-	if len(b.Joins) > 0 {
-		for _, f := range b.Joins {
-			args, err = f.Table.appendArgs(args)
-			if err != nil {
-				return nil, errors.WithStack(err)
-			}
-
-			if args, pap, err = f.On.appendArgs(args, appendArgsJOIN); err != nil {
-				return nil, errors.WithStack(err)
-			}
-			// TODO: think about caching all calls to intersectConditions
-			if boundCols := f.On.intersectConditions(placeHolderColumns); len(boundCols) > 0 {
-				defaultQualifier := b.Table.mustQualifier()
-				if args, err = appendArgs(pap, b.QualifiedRecords, args, defaultQualifier, boundCols); err != nil {
-					return nil, errors.WithStack(err)
-				}
-			}
-		}
-		placeHolderColumns = placeHolderColumns[:0]
-	}
-
-	if args, pap, err = b.Wheres.appendArgs(args, appendArgsWHERE); err != nil {
-		return nil, errors.WithStack(err)
-	}
-	if boundCols := b.Wheres.intersectConditions(placeHolderColumns); len(boundCols) > 0 {
-		defaultQualifier := b.Table.mustQualifier()
-		if args, err = appendArgs(pap, b.QualifiedRecords, args, defaultQualifier, boundCols); err != nil {
-			return nil, errors.WithStack(err)
-		}
-		placeHolderColumns = placeHolderColumns[:0]
-	}
-
-	if args, pap, err = b.Havings.appendArgs(args, appendArgsHAVING); err != nil {
-		return nil, errors.WithStack(err)
-	}
-	if boundCols := b.Havings.intersectConditions(placeHolderColumns); len(boundCols) > 0 {
-		defaultQualifier := b.Table.mustQualifier()
-		if args, err = appendArgs(pap, b.QualifiedRecords, args, defaultQualifier, boundCols); err != nil {
-			return nil, errors.WithStack(err)
-		}
-	}
-	return args, nil
+// argumentCapacity returns the total possible guessed size of a new args
+// slice. Use as the cap parameter in a call to `make`.
+func (b *Select) argumentCapacity() int {
+	return (b.argsArgs.Len() + len(b.argsRecords) + len(b.argsRaw)) * 2
 }

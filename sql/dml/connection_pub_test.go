@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/util/cstesting"
-	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -34,13 +34,14 @@ func TestTx_Wrap(t *testing.T) {
 		defer cstesting.MockClose(t, dbc, dbMock)
 
 		dbMock.ExpectBegin()
-		dbMock.ExpectExec("UPDATE `tableX` SET `value`").WithArgs(5, "default").WillReturnResult(sqlmock.NewResult(0, 9))
+		dbMock.ExpectExec("UPDATE `tableX` SET `value`").WithArgs().WillReturnResult(sqlmock.NewResult(0, 9))
 		dbMock.ExpectCommit()
 
 		tx, err := dbc.BeginTx(context.TODO(), nil)
 		require.NoError(t, err)
 
 		require.NoError(t, tx.Wrap(func() error {
+			// this creates an interpolated statement
 			res, err := tx.Update("tableX").Set(dml.Column("value").Int(5)).Where(dml.Column("scope").Str("default")).Exec(context.TODO())
 			if err != nil {
 				return err
@@ -59,13 +60,14 @@ func TestTx_Wrap(t *testing.T) {
 		defer cstesting.MockClose(t, dbc, dbMock)
 
 		dbMock.ExpectBegin()
-		dbMock.ExpectExec("UPDATE `tableX` SET `value`").WithArgs(5, "default").WillReturnError(errors.NewAbortedf("Sorry dude"))
+		dbMock.ExpectExec("UPDATE `tableX` SET `value`").WithArgs().WillReturnError(errors.NewAbortedf("Sorry dude"))
 		dbMock.ExpectRollback()
 
 		tx, err := dbc.BeginTx(context.TODO(), nil)
 		require.NoError(t, err)
 
 		err = tx.Wrap(func() error {
+			// Interpolated statement
 			res, err := tx.Update("tableX").Set(dml.Column("value").Int(5)).Where(dml.Column("scope").Str("default")).Exec(context.TODO())
 			assert.Nil(t, res)
 			return err

@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,10 +22,10 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log/logw"
+	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -63,7 +63,7 @@ func TestUnion_Query(t *testing.T) {
 
 		smr := sqlmock.NewRows([]string{"value"}).AddRow("row1").AddRow("row2")
 		dbMock.ExpectQuery(
-			cstesting.SQLMockQuoteMeta("(SELECT `value` FROM `eavChar`) UNION (SELECT `value` FROM `eavInt` WHERE (`b` = ?))"),
+			cstesting.SQLMockQuoteMeta("(SELECT `value` FROM `eavChar`) UNION (SELECT `value` FROM `eavInt` WHERE (`b` = 3.14159))"),
 		).WillReturnRows(smr)
 
 		u.WithDB(dbc.DB)
@@ -95,7 +95,8 @@ func TestUnion_Load(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
 		defer cstesting.MockClose(t, dbc, dbMock)
 
-		dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("(SELECT `a`, `d` AS `b` FROM `tableAD`) UNION (SELECT `a`, `b` FROM `tableAB` WHERE (`b` = ?)) ORDER BY `a`, `b` DESC, concat(\"c\",b,\"d\")")).
+		dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta(
+			"(SELECT `a`, `d` AS `b` FROM `tableAD`) UNION (SELECT `a`, `b` FROM `tableAB` WHERE (`b` = 3.14159)) ORDER BY `a`, `b` DESC, concat(\"c\",b,\"d\")")).
 			WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
 
 		rows, err := u.WithDB(dbc.DB).Load(context.TODO(), nil)
@@ -122,7 +123,8 @@ func TestUnion_Prepare(t *testing.T) {
 		defer cstesting.MockClose(t, dbc, dbMock)
 
 		dbMock.ExpectPrepare(
-			cstesting.SQLMockQuoteMeta("(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`) UNION (SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = ?)) ORDER BY `_preserve_result_set`, `a`, `b` DESC, concat(\"c\",b,\"d\")"),
+			cstesting.SQLMockQuoteMeta(
+				"(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`) UNION (SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = 3.14159)) ORDER BY `_preserve_result_set`, `a`, `b` DESC, concat(\"c\",b,\"d\")"),
 		).
 			WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
 
@@ -132,7 +134,7 @@ func TestUnion_Prepare(t *testing.T) {
 		).
 			Unsafe().
 			OrderBy("a").OrderByDesc("b").OrderBy(`concat("c",b,"d")`).
-			PreserveResultSet().BuildCache().WithDB(dbc.DB)
+			PreserveResultSet().WithDB(dbc.DB)
 
 		stmt, err := u.Prepare(context.TODO())
 		require.Nil(t, stmt)
@@ -154,7 +156,7 @@ func TestUnion_Prepare(t *testing.T) {
 			dml.NewSelect("a").AddColumnsAliases("d", "b").From("tableAD"),
 			dml.NewSelect("a", "b").From("tableAB").Where(dml.Column("b").PlaceHolder()),
 		).
-			BuildCache().WithDB(dbc.DB).
+			WithDB(dbc.DB).
 			Prepare(context.TODO())
 		require.NoError(t, err, "failed creating a prepared statement")
 		defer func() {
@@ -194,13 +196,11 @@ func TestUnion_Prepare(t *testing.T) {
 			dml.NewSelect("name").AddColumnsAliases("d", "email").From("dml_people"),
 			dml.NewSelect("name", "email").From("dml_people2").Where(dml.Column("id").PlaceHolder()),
 		).
-			BuildCache().WithDB(dbc.DB).
+			WithDB(dbc.DB).
 			Prepare(context.TODO())
 
 		require.NoError(t, err, "failed creating a prepared statement")
-		defer func() {
-			require.NoError(t, stmt.Close(), "Close on a prepared statement")
-		}()
+		defer cstesting.Close(t, stmt)
 
 		const iterations = 3
 
@@ -225,7 +225,7 @@ func TestUnion_Prepare(t *testing.T) {
 
 		t.Run("WithRecords", func(t *testing.T) {
 			for i := 0; i < iterations; i++ {
-				prep.ExpectQuery().WithArgs(6900).
+				prep.ExpectQuery().
 					WillReturnRows(sqlmock.NewRows([]string{"name", "email"}).AddRow("Peter Gopher2", "peter@gopher.go2"))
 			}
 
@@ -245,8 +245,7 @@ func TestUnion_Prepare(t *testing.T) {
 
 		t.Run("WithRecords Error", func(t *testing.T) {
 			p := &TableCoreConfigDataSlice{err: errors.NewDuplicatedf("Found a duplicate")}
-			stmt.WithRecords(dml.Qualify("", p))
-			rows, err := stmt.Query(context.TODO())
+			rows, err := stmt.WithRecords(dml.Qualify("", p)).Query(context.TODO())
 			assert.True(t, errors.IsDuplicated(err), "%+v", err)
 			assert.Nil(t, rows)
 		})
@@ -308,7 +307,7 @@ func TestUnion_WithLogger(t *testing.T) {
 			require.NoError(t, err)
 			defer stmt.Close()
 
-			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ01\" union_id: \"UNIQ02\" tables: \"dml_people, dml_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ02*/ `name`, `email` AS `email` FROM `dml_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (?,?)))\"\n",
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ01\" union_id: \"UNIQ02\" tables: \"dml_people, dml_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ02*/ `name`, `email` AS `email` FROM `dml_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8)))\"\n",
 				buf.String())
 		})
 
@@ -372,7 +371,7 @@ func TestUnion_WithLogger(t *testing.T) {
 			require.NoError(t, err)
 			defer stmt.Close()
 
-			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" union_id: \"UNIQ06\" tables: \"dml_people, dml_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ06*/ `name`, `email` AS `email` FROM `dml_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (?,?)))\"\n",
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" union_id: \"UNIQ06\" tables: \"dml_people, dml_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ06*/ `name`, `email` AS `email` FROM `dml_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (61,81)))\"\n",
 				buf.String())
 		})
 
@@ -409,7 +408,7 @@ func TestUnion_WithLogger(t *testing.T) {
 				return rows.Close()
 			}))
 
-			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ09\"\nDEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ09\" union_id: \"UNIQ10\" tables: \"dml_people, dml_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ10*/ `name`, `email` AS `email` FROM `dml_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (?)))\"\nDEBUG Rollback conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ09\" duration: 0\n",
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ09\"\nDEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ09\" union_id: \"UNIQ10\" tables: \"dml_people, dml_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ10*/ `name`, `email` AS `email` FROM `dml_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN ?))\"\nDEBUG Rollback conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ09\" duration: 0\n",
 				buf.String())
 		})
 	})

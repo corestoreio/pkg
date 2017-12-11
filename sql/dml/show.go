@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -60,8 +60,10 @@ func (c *ConnPool) Show() *Show {
 	}
 	return &Show{
 		BuilderBase: BuilderBase{
-			id:  id,
-			Log: l,
+			builderCommon: builderCommon{
+				id:  id,
+				Log: l,
+			},
 		},
 		DB: c.DB,
 	}
@@ -76,8 +78,10 @@ func (c *Conn) Show() *Show {
 	}
 	return &Show{
 		BuilderBase: BuilderBase{
-			id:  id,
-			Log: l,
+			builderCommon: builderCommon{
+				id:  id,
+				Log: l,
+			},
 		},
 		DB: c.DB,
 	}
@@ -92,8 +96,10 @@ func (tx *Tx) Show() *Show {
 	}
 	return &Show{
 		BuilderBase: BuilderBase{
-			id:  id,
-			Log: l,
+			builderCommon: builderCommon{
+				id:  id,
+				Log: l,
+			},
 		},
 		DB: tx.DB,
 	}
@@ -167,6 +173,21 @@ func (b *Show) Where(wf ...*Condition) *Show {
 	return b
 }
 
+// WithArgs sets the interfaced arguments for the execution with Query+. It
+// internally resets previously applied arguments. This function does not
+// support interpolation.
+func (b *Show) WithArgs(args ...interface{}) *Show {
+	b.withArgs(args)
+	return b
+}
+
+// WithArguments sets the arguments for the execution with Query+. It internally
+// resets previously applied arguments. This function supports interpolation.
+func (b *Show) WithArguments(args Arguments) *Show {
+	b.withArguments(args)
+	return b
+}
+
 // Like sets the comparisons LIKE condition. Either WHERE or LIKE can be used.
 // Only the first argument supported.
 func (b *Show) Like(arg Arguments) *Show {
@@ -184,7 +205,7 @@ func (b *Show) Interpolate() *Show {
 
 // ToSQL converts the select statement into a string and returns its arguments.
 func (b *Show) ToSQL() (string, []interface{}, error) {
-	return toSQL(b, b.IsInterpolate, _isNotPrepared)
+	return b.buildArgsAndSQL(b)
 }
 
 // argumentCapacity returns the total possible guessed size of a new Arguments
@@ -197,29 +218,21 @@ func (b *Show) writeBuildCache(sql []byte) {
 	b.cacheSQL = sql
 }
 
-func (b *Show) readBuildCache() (sql []byte, _ Arguments, err error) {
-	if b.cacheSQL == nil {
-		return nil, nil, nil
-	}
-	b.argPool, err = b.appendArgs(b.argPool[:0])
-	return b.cacheSQL, b.argPool, err
+func (b *Show) readBuildCache() (sql []byte) {
+	return b.cacheSQL
 }
 
-// BuildCache if `true` the final build query including place holders will be
-// cached in a private field. Each time a call to function ToSQL happens, the
-// arguments will be re-evaluated and returned or interpolated.
-func (b *Show) BuildCache() *Show {
-	b.IsBuildCache = true
+// DisableBuildCache if enabled it does not cache the SQL string as a final
+// rendered byte slice. Allows you to rebuild the query with different
+// statements.
+func (b *Show) DisableBuildCache() *Show {
+	b.IsBuildCacheDisabled = true
 	return b
-}
-
-func (b *Show) hasBuildCache() bool {
-	return b.IsBuildCache
 }
 
 // ToSQL serialized the Show to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Show) toSQL(w *bytes.Buffer) error {
+func (b *Show) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err error) {
 
 	w.WriteString("SHOW ")
 
@@ -244,27 +257,13 @@ func (b *Show) toSQL(w *bytes.Buffer) error {
 	}
 
 	if len(b.LikeCondition) == 1 {
-		Like.write(w, 1)
-	} else if err := b.WhereFragments.write(w, 'w'); err != nil {
-		return errors.WithStack(err)
+		Like.write(w, b.LikeCondition...)
+	} else {
+		placeHolders, err = b.WhereFragments.write(w, 'w', placeHolders)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
 	}
 
-	return nil
-}
-
-// ToSQL serialized the Show to a SQL string
-// It returns the string with placeholders and a slice of query arguments
-func (b *Show) appendArgs(args Arguments) (_ Arguments, err error) {
-
-	if cap(args) == 0 {
-		args = make(Arguments, 0, b.argumentCapacity())
-	}
-
-	if len(b.LikeCondition) == 1 {
-		args = append(args, b.LikeCondition[0])
-	} else if args, _, err = b.WhereFragments.appendArgs(args, appendArgsWHERE); err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	return args, nil
+	return placeHolders, nil
 }

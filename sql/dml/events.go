@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@ package dml
 
 import (
 	"bytes"
-	"sync"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
@@ -101,8 +100,6 @@ func (lb *ListenerBucket) Merge(buckets ...*ListenerBucket) *ListenerBucket {
 type Listen struct {
 	// Name optionally set internal name to identify multiple different listeners.
 	Name string
-	// Once set to true to execute a listener only once per object
-	Once bool
 	// EventType defines when a listener gets called. Mandatory.
 	EventType
 
@@ -138,14 +135,6 @@ func makeSelectListen(idx int, sl Listen) selectListen {
 	}
 
 	nsl.SelectFunc = sl.SelectFunc
-	if sl.Once {
-		var onesie sync.Once
-		nsl.SelectFunc = func(b *Select) {
-			onesie.Do(func() {
-				sl.SelectFunc(b)
-			})
-		}
-	}
 	return nsl
 }
 
@@ -230,14 +219,6 @@ func makeInsertListen(idx int, sl Listen) insertListen {
 	}
 
 	nsl.InsertFunc = sl.InsertFunc
-	if sl.Once {
-		var onesie sync.Once
-		nsl.InsertFunc = func(b *Insert) {
-			onesie.Do(func() {
-				sl.InsertFunc(b)
-			})
-		}
-	}
 	return nsl
 }
 
@@ -320,14 +301,6 @@ func makeUpdateListen(idx int, sl Listen) updateListen {
 	}
 
 	nsl.UpdateFunc = sl.UpdateFunc
-	if sl.Once {
-		var onesie sync.Once
-		nsl.UpdateFunc = func(b *Update) {
-			onesie.Do(func() {
-				sl.UpdateFunc(b)
-			})
-		}
-	}
 	return nsl
 }
 
@@ -410,14 +383,6 @@ func makeDeleteListen(idx int, sl Listen) deleteListen {
 	}
 
 	nsl.DeleteFunc = sl.DeleteFunc
-	if sl.Once {
-		var onesie sync.Once
-		nsl.DeleteFunc = func(b *Delete) {
-			onesie.Do(func() {
-				sl.DeleteFunc(b)
-			})
-		}
-	}
 	return nsl
 }
 

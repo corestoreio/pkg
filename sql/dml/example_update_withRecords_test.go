@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/sql/dml"
 )
 
 // Make sure that type categoryEntity implements interface
@@ -68,20 +68,21 @@ func (pe *categoryEntity) MapColumns(cm *dml.ColumnMap) error {
 	return cm.Err()
 }
 
-// ExampleUpdate_BindRecord performs an UPDATE query in the table
+// ExampleUpdate_WithRecords performs an UPDATE query in the table
 // `catalog_category_entity` with the fix specified columns. The Go type
 // categoryEntity implements the dml.ColumnMapper interface and can provide the
 // required arguments.
-func ExampleUpdate_BindRecord() {
+func ExampleUpdate_WithRecords() {
 
 	ce := &categoryEntity{345, 6, "p123", dml.MakeNullString("4/5/6/7"), []string{"saleAutumn", "saleShoe"}}
 
 	// Updates all rows in the table because of missing WHERE statement.
 	u := dml.NewUpdate("catalog_category_entity").
 		AddColumns("attribute_set_id", "parent_id", "path", "teaser_id_s").
-		BindRecord(
+		WithRecords(
 			dml.Qualify("", ce), // qualifier can be empty because no alias and no additional tables.
 		)
+	u.DisableBuildCache()
 	writeToSQLAndInterpolate(u)
 
 	fmt.Print("\n\n")
@@ -89,11 +90,11 @@ func ExampleUpdate_BindRecord() {
 	ce = &categoryEntity{678, 6, "p456", dml.NullString{}, nil}
 
 	// Updates only one row in the table because of the WHERE clause. You can
-	// call BindRecord and Exec as often as you like. Each call to Exec will
+	// call WithRecords and Exec as often as you like. Each call to Exec will
 	// reassemble the arguments from the ColumnMapper, that means you can
-	// exchange BindRecord with different objects.
+	// exchange WithRecords with different objects.
 	u.
-		BindRecord(dml.Qualify("", ce)). // overwrites previously set default qualifier
+		WithRecords(dml.Qualify("", ce)). // overwrites previously set default qualifier
 		Where(dml.Column("entity_id").PlaceHolder())
 	writeToSQLAndInterpolate(u)
 

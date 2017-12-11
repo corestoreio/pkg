@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 package dml
 
 import (
-	"bytes"
 	"fmt"
 	"testing"
 
@@ -30,46 +29,50 @@ var _ fmt.Stringer = (*Insert)(nil)
 var _ fmt.Stringer = (*Update)(nil)
 var _ fmt.Stringer = (*Select)(nil)
 var _ fmt.Stringer = (*Union)(nil)
+var _ fmt.Stringer = (*With)(nil)
+var _ fmt.Stringer = (*Show)(nil)
 
 var _ QueryBuilder = (*Select)(nil)
 var _ QueryBuilder = (*Delete)(nil)
 var _ QueryBuilder = (*Update)(nil)
 var _ QueryBuilder = (*Insert)(nil)
-var _ queryBuilder = (*buildQueryMock)(nil)
+var _ QueryBuilder = (*Show)(nil)
+var _ QueryBuilder = (*Union)(nil)
+var _ QueryBuilder = (*With)(nil)
 
-type buildQueryMock struct{ error }
-
-func (m buildQueryMock) toSQL(*bytes.Buffer) error { return m.error }
-
-func (m buildQueryMock) appendArgs(Arguments) (Arguments, error) { return nil, m.error }
-func (m buildQueryMock) hasBuildCache() bool                     { return false }
-func (m buildQueryMock) writeBuildCache(sql []byte)              {}
-func (m buildQueryMock) readBuildCache() (sql []byte, args Arguments, err error) {
-	return nil, nil, m.error
-}
-
-func TestMakeSQL(t *testing.T) {
+func TestSqlObjToString(t *testing.T) {
 	t.Parallel()
 	t.Run("error", func(t *testing.T) {
-		s := makeSQL(buildQueryMock{errors.NewAbortedf("Canceled")}, false)
-		assert.Contains(t, s, "[dml] ToSQL Error: Canceled\n")
+		s := sqlObjToString(nil, errors.NewAbortedf("Query aborted"))
+		assert.Contains(t, s, "[dml] String Error: Query aborted\n")
 	})
 	t.Run("DELETE", func(t *testing.T) {
 		b := NewDelete("tableX").Where(Column("columnA").Greater().Int64(2))
-		assert.Exactly(t, "DELETE FROM `tableX` WHERE (`columnA` > ?)", b.String())
+		assert.Exactly(t, "DELETE FROM `tableX` WHERE (`columnA` > 2)", b.String())
 	})
 	t.Run("INSERT", func(t *testing.T) {
-		b := NewInsert("tableX").AddColumns("columnA", "columnB").AddValues(2, "Go")
+		b := NewInsert("tableX").AddColumns("columnA", "columnB").AddValuesUnsafe(2, "Go")
+		// keep the place holder for columnA,columnB because we're not using interpolation
 		assert.Exactly(t, "INSERT INTO `tableX` (`columnA`,`columnB`) VALUES (?,?)", b.String())
 	})
 	t.Run("SELECT", func(t *testing.T) {
 		b := NewSelect("columnA").FromAlias("tableX", "X").Where(Column("columnA").LessOrEqual().Float64(2.4))
-		assert.Exactly(t, "SELECT `columnA` FROM `tableX` AS `X` WHERE (`columnA` <= ?)", b.String())
+		assert.Exactly(t, "SELECT `columnA` FROM `tableX` AS `X` WHERE (`columnA` <= 2.4)", b.String())
 	})
 	t.Run("UPDATE", func(t *testing.T) {
 		b := NewUpdate("tableX").Set(
 			Column("columnA").Int64(4),
 		).Where(Column("columnB").Between().Ints(5, 7))
-		assert.Exactly(t, "UPDATE `tableX` SET `columnA`=? WHERE (`columnB` BETWEEN ? AND ?)", b.String())
+		// keep the place holder for columnA because we're not using interpolation
+		assert.Exactly(t, "UPDATE `tableX` SET `columnA`=4 WHERE (`columnB` BETWEEN 5 AND 7)", b.String())
+	})
+	t.Run("WITH", func(t *testing.T) {
+		b := NewWith(WithCTE{Name: "sel", Select: NewSelect().Unsafe().AddColumns("1")}).
+			Select(NewSelect().Star().From("sel"))
+		assert.Exactly(t, "WITH `sel` AS (SELECT 1)\nSELECT * FROM `sel`", b.String())
+	})
+	t.Run("SHOW", func(t *testing.T) {
+		b := NewShow().Variable().Like(MakeArgs(1).String("aria%"))
+		assert.Exactly(t, "SHOW VARIABLES LIKE 'aria%'", b.String())
 	})
 }

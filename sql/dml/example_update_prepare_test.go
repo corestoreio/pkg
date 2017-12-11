@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ import (
 	"fmt"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/util/cstesting"
-	"github.com/corestoreio/errors"
 )
 
 // Make sure that type salesOrder implements interface.
@@ -71,15 +71,15 @@ func ExampleUpdate_Prepare() {
 	defer cstesting.MockClose(nil, dbc, dbMock)
 
 	prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta(
-		"UPDATE `sales_order` SET `state`=?, `customer_id`=?, `grand_total`=? WHERE (`shipping_method` IN (?,?)) AND (`entity_id` = ?)",
+		"UPDATE `sales_order` SET `state`=?, `customer_id`=?, `grand_total`=? WHERE (`shipping_method` IN ('DHL','UPS')) AND (`entity_id` = ?)",
 	))
 
 	prep.ExpectExec().WithArgs(
-		"pending", int64(5678), 31.41459, "DHL", "UPS", 1).
+		"pending", int64(5678), 31.41459, 1).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	prep.ExpectExec().WithArgs(
-		"processing", int64(8912), nil, "DHL", "UPS", 2).
+		"processing", int64(8912), nil, 2).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	// </ignore_this>
 

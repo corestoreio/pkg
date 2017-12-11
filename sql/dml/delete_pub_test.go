@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,10 +22,10 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log/logw"
+	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -204,7 +204,7 @@ func TestDelete_WithLogger(t *testing.T) {
 			require.NoError(t, err)
 			defer stmt.Close()
 
-			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQUEID01\" delete_id: \"UNIQUEID02\" table: \"dml_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID02*/ FROM `dml_people` WHERE (`id` >= ?)\"\n",
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQUEID01\" delete_id: \"UNIQUEID02\" table: \"dml_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID02*/ FROM `dml_people` WHERE (`id` >= 34.56)\"\n",
 				buf.String())
 		})
 
@@ -225,17 +225,18 @@ func TestDelete_WithLogger(t *testing.T) {
 		conn, err := rConn.Conn(context.TODO())
 		require.NoError(t, err)
 
-		d := conn.DeleteFrom("dml_people").Where(dml.Column("id").GreaterOrEqual().Float64(39.56))
+		d := conn.DeleteFrom("dml_people").Where(dml.Column("id").GreaterOrEqual().PlaceHolder())
+
 		t.Run("Exec", func(t *testing.T) {
 			defer func() {
 				buf.Reset()
 				d.IsInterpolate = false
 			}()
 
-			_, err := d.Interpolate().Exec(context.TODO())
+			_, err := d.Interpolate().WithArguments(dml.MakeArgs(1).Float64(39.56)).Exec(context.TODO())
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQUEID01\" conn_id: \"UNIQUEID05\" delete_id: \"UNIQUEID06\" table: \"dml_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID06*/ FROM `dml_people` WHERE (`id` >= 39.56)\"\n",
+			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQUEID01\" conn_id: \"UNIQUEID05\" delete_id: \"UNIQUEID06\" table: \"dml_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID06*/ FROM `dml_people` WHERE (`id` >= ?)\"\n",
 				buf.String())
 		})
 

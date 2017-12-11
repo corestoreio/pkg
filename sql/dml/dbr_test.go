@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import (
 	"log"
 	"os"
 	"testing"
+
+	"io"
 
 	"github.com/corestoreio/errors"
 	_ "github.com/go-sql-driver/mysql"
@@ -69,6 +71,15 @@ func createRealSessionWithFixtures(t testing.TB, c *installFixturesConfig) *Conn
 	sess := createRealSession(t)
 	installFixtures(sess.DB, c)
 	return sess
+}
+
+// testCloser for usage in conjunction with defer.
+// 		defer testCloser(t,db)
+func testCloser(t testing.TB, c io.Closer) {
+	t.Helper()
+	if err := c.Close(); err != nil {
+		t.Errorf("%+v", err)
+	}
 }
 
 var _ ColumnMapper = (*dmlPerson)(nil)
@@ -146,7 +157,7 @@ func (ps *dmlPersons) MapColumns(cm *ColumnMap) error {
 			case "name":
 				cm.Args = cm.Args.Strings(ps.Names()...)
 			case "email":
-				cm.Args = cm.Args.NullString(ps.Emails()...)
+				cm.Args = cm.Args.NullStrings(ps.Emails()...)
 			default:
 				return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", c)
 			}
@@ -320,7 +331,6 @@ func compareToSQL(
 	wantSQLPlaceholders, wantSQLInterpolated string,
 	wantArgs ...interface{},
 ) {
-
 	sqlStr, args, err := qb.ToSQL()
 	if wantErr == nil {
 		require.NoError(t, err)
@@ -374,4 +384,21 @@ func compareToSQL(
 		require.True(t, wantErr(err), "%+v")
 	}
 	require.Equal(t, wantSQLInterpolated, sqlStr, "Interpolated SQL strings do not match")
+}
+
+// compareToSQL2 This function also exists in file dml_public_test.go to
+// avoid import cycles when using a single package dedicated for testing.
+func compareToSQL2(
+	t testing.TB, qb QueryBuilder, wantErr errors.BehaviourFunc,
+	wantSQL string, wantArgs ...interface{},
+) {
+	t.Helper()
+	sqlStr, args, err := qb.ToSQL()
+	if wantErr == nil {
+		require.NoError(t, err, "With SQL %q", wantSQL)
+	} else {
+		require.True(t, wantErr(err), "%+v", err)
+	}
+	assert.Exactly(t, wantSQL, sqlStr, "SQL strings do not match")
+	assert.Exactly(t, wantArgs, args, "Arguments do not match")
 }

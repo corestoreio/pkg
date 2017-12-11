@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,9 +19,6 @@ import (
 	"fmt"
 	"strconv"
 	"unicode/utf8"
-
-	"github.com/corestoreio/pkg/util/bufferpool"
-	"github.com/corestoreio/errors"
 )
 
 // QueryBuilder assembles a query and returns the raw SQL without parameter
@@ -31,123 +28,59 @@ type QueryBuilder interface {
 }
 
 type queryBuilder interface {
-	toSQL(*bytes.Buffer) error
-	// appendArgs appends the arguments to args and returns them. If
-	// argument `args` is nil, allocates new bytes
-	appendArgs(Arguments) (Arguments, error)
-	hasBuildCache() bool
+	toSQL(w *bytes.Buffer, placeHolders []string) ([]string, error)
 	writeBuildCache(sql []byte)
-	// readBuildCache returns the cached SQL string including its place holders.
-	readBuildCache() (sql []byte, args Arguments, err error)
+	// readBuildCache returns the cached SQL string
+	readBuildCache() (sql []byte)
 }
 
-// For the sake of readability within the source code, because boolean arguments
-// are terrible.
-const (
-	_isNotPrepared    = false
-	_isPrepared       = true
-	_isNotInterpolate = false
-)
-
-// toSQL generates the SQL string and its place holders. Takes care of caching
-// and interpolation. It returns the string with placeholders and a slice of
-// query arguments. With switched on interpolation, it only returns a string
-// including the stringyfied arguments. With an enabled cache, the arguments
-// gets regenerated each time a call to ToSQL happens.
-// _isPrepared if true skips assembling the arguments.
-func toSQL(b queryBuilder, isInterpolate, isPrepared bool) (string, []interface{}, error) {
-	var ipBuf *bytes.Buffer // ip = interpolate buffer
-	if isInterpolate {
-		ipBuf = bufferpool.Get()
-		defer bufferpool.Put(ipBuf)
-	}
-
-	useCache := b.hasBuildCache()
-	if useCache {
-		// TODO(CyS) Write a test which reuses the SQL part but updates the arguments
-		sql, args, err := b.readBuildCache()
-		if err != nil {
-			return "", nil, errors.WithStack(err)
-		}
-		if sql != nil {
-			if isInterpolate && !isPrepared {
-				err := writeInterpolate(ipBuf, sql, args)
-				return ipBuf.String(), nil, errors.WithStack(err)
-			}
-			return string(sql), args.Interfaces(), nil
-		}
-	}
-
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
-
-	if err := b.toSQL(buf); err != nil {
-		return "", nil, errors.WithStack(err)
-	}
-	if useCache {
-		sqlCopy := make([]byte, buf.Len())
-		copy(sqlCopy, buf.Bytes())
-		b.writeBuildCache(sqlCopy)
-	}
-	if isPrepared {
-		return buf.String(), nil, nil
-	}
-
-	// capacity of args gets handled in the concret implementation of `b`
-	args, err := b.appendArgs(Arguments{})
+func sqlObjToString(rawSQL []byte, err error) string {
 	if err != nil {
-		return "", nil, errors.WithStack(err)
+		return fmt.Sprintf("[dml] String Error: %+v", err)
 	}
-
-	if isInterpolate {
-		err := writeInterpolate(ipBuf, buf.Bytes(), args)
-		return ipBuf.String(), nil, errors.WithStack(err)
-	}
-	return buf.String(), args.Interfaces(), nil
-}
-
-func makeSQL(b queryBuilder, isInterpolate bool) string {
-	sRaw, _, err := toSQL(b, isInterpolate, _isNotPrepared)
-	if err != nil {
-		return fmt.Sprintf("[dml] ToSQL Error: %+v", err)
-	}
-	return sRaw
+	return string(rawSQL)
 }
 
 // String returns a string representing a preprocessed, interpolated, query.
 // On error, the error gets printed. Fulfills interface fmt.Stringer.
 func (b *Delete) String() string {
-	return makeSQL(b, b.IsInterpolate)
+	return sqlObjToString(b.buildToSQL(b))
 }
 
 // String returns a string representing a preprocessed, interpolated, query.
 // On error, the error gets printed. Fulfills interface fmt.Stringer.
 func (b *Insert) String() string {
-	return makeSQL(b, b.IsInterpolate)
+	return sqlObjToString(b.buildToSQL(b))
 }
 
 // String returns a string representing a preprocessed, interpolated, query.
 // On error, the error gets printed. Fulfills interface fmt.Stringer.
 func (b *Select) String() string {
-	return makeSQL(b, b.IsInterpolate)
+	return sqlObjToString(b.buildToSQL(b))
 }
 
 // String returns a string representing a preprocessed, interpolated, query.
 // On error, the error gets printed. Fulfills interface fmt.Stringer.
 func (b *Update) String() string {
-	return makeSQL(b, b.IsInterpolate)
+	return sqlObjToString(b.buildToSQL(b))
 }
 
 // String returns a string representing a preprocessed, interpolated, query.
 // On error, the error gets printed. Fulfills interface fmt.Stringer.
 func (u *Union) String() string {
-	return makeSQL(u, u.IsInterpolate)
+	return sqlObjToString(u.buildToSQL(u))
 }
 
 // String returns a string representing a preprocessed, interpolated, query.
 // On error, the error gets printed. Fulfills interface fmt.Stringer.
 func (b *With) String() string {
-	return makeSQL(b, b.IsInterpolate)
+	return sqlObjToString(b.buildToSQL(b))
+}
+
+// String returns a string representing a preprocessed, interpolated, query.
+// On error, the error gets printed. Fulfills interface fmt.Stringer.
+func (b *Show) String() string {
+	return sqlObjToString(b.buildToSQL(b))
 }
 
 func sqlWriteUnionAll(w *bytes.Buffer, isAll bool, isIntersect bool, isExcept bool) {
@@ -176,7 +109,7 @@ func sqlWriteOrderBy(w *bytes.Buffer, orderBys ids, br bool) {
 	}
 	w.WriteRune(brS)
 	w.WriteString("ORDER BY ")
-	orderBys.WriteQuoted(w)
+	orderBys.writeQuoted(w, nil)
 }
 
 func sqlWriteLimitOffset(w *bytes.Buffer, limitValid bool, limitCount uint64, offsetValid bool, offsetCount uint64) {

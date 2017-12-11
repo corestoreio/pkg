@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 package dml
 
 import (
+	"bytes"
 	"database/sql"
 	"strings"
 	"unicode/utf8"
@@ -99,7 +100,7 @@ func (a *NullString) UnmarshalJSON(data []byte) error {
 // It will encode null if this NullString is dml.
 func (a NullString) MarshalJSON() ([]byte, error) {
 	if !a.Valid {
-		return []byte(sqlStrNullLC), nil
+		return sqlBytesNullLC, nil
 	}
 	return JSONMarshalFn(a.String)
 }
@@ -186,4 +187,24 @@ func (a *NullString) Unmarshal(data []byte) error {
 // 0. Implements proto.Sizer.
 func (a NullString) Size() (s int) {
 	return len(a.String)
+}
+
+func (a NullString) writeTo(w *bytes.Buffer) (err error) {
+	if a.Valid {
+		if utf8.ValidString(a.String) {
+			dialect.EscapeString(w, a.String)
+		} else {
+			err = errors.NewNotValidf("[dml] NullString.writeTo: String is not UTF-8: %q", a.String)
+		}
+	} else {
+		_, err = w.WriteString(sqlStrNullUC)
+	}
+	return
+}
+
+func (a NullString) append(args []interface{}) []interface{} {
+	if a.Valid {
+		return append(args, a.String)
+	}
+	return append(args, nil)
 }

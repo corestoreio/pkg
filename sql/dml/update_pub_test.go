@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,10 +22,10 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log/logw"
+	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -226,15 +226,15 @@ func TestUpdate_SetClausAliases(t *testing.T) {
 	dbc, dbMock := cstesting.MockDB(t)
 
 	prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta(
-		"UPDATE `sales_invoice` SET `state`=?, `customer_id`=?, `grand_total`=? WHERE (`shipping_method` IN (?,?)) AND (`entity_id` = ?)",
+		"UPDATE `sales_invoice` SET `state`=?, `customer_id`=?, `grand_total`=? WHERE (`shipping_method` IN ('DHL','UPS')) AND (`entity_id` = ?)",
 	))
 
 	prep.ExpectExec().WithArgs(
-		"pending", int64(5678), 31.41459, "DHL", "UPS", 21).
+		"pending", int64(5678), 31.41459, 21).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	prep.ExpectExec().WithArgs(
-		"processing", int64(8912), nil, "DHL", "UPS", 32).
+		"processing", int64(8912), nil, 32).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	// </ignore_this>
 
@@ -284,7 +284,7 @@ func TestUpdate_BindRecord(t *testing.T) {
 	t.Run("1 WHERE", func(t *testing.T) {
 		u := dml.NewUpdate("catalog_category_entity").
 			AddColumns("attribute_set_id", "parent_id", "path").
-			BindRecord(dml.Qualify("", ce)).
+			WithRecords(dml.Qualify("", ce)).
 			Where(dml.Column("entity_id").Greater().PlaceHolder())
 
 		compareToSQL(t, u, nil,
@@ -297,30 +297,30 @@ func TestUpdate_BindRecord(t *testing.T) {
 	t.Run("2 WHERE", func(t *testing.T) {
 		u := dml.NewUpdate("catalog_category_entity").
 			AddColumns("attribute_set_id", "parent_id", "path").
-			BindRecord(dml.Qualify("", ce)).
+			WithRecords(dml.Qualify("", ce)).
 			Where(
 				dml.Column("x").In().Int64s(66, 77),
 				dml.Column("entity_id").Greater().PlaceHolder(),
 			)
 		compareToSQL(t, u, nil,
-			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`x` IN (?,?)) AND (`entity_id` > ?)",
+			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`x` IN (66,77)) AND (`entity_id` > ?)",
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`x` IN (66,77)) AND (`entity_id` > 678)",
-			int64(6), "p456", "3/4/5", int64(66), int64(77), int64(678),
+			int64(6), "p456", "3/4/5", int64(678),
 		)
 	})
 	t.Run("3 WHERE", func(t *testing.T) {
 		u := dml.NewUpdate("catalog_category_entity").
 			AddColumns("attribute_set_id", "parent_id", "path").
-			BindRecord(dml.Qualify("", ce)).
+			WithRecords(dml.Qualify("", ce)).
 			Where(
 				dml.Column("entity_id").Greater().PlaceHolder(),
 				dml.Column("x").In().Int64s(66, 77),
 				dml.Column("y").Greater().Int64(99),
 			)
 		compareToSQL(t, u, nil,
-			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`entity_id` > ?) AND (`x` IN (?,?)) AND (`y` > ?)",
+			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`entity_id` > ?) AND (`x` IN (66,77)) AND (`y` > 99)",
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`entity_id` > 678) AND (`x` IN (66,77)) AND (`y` > 99)",
-			int64(6), "p456", "3/4/5", int64(678), int64(66), int64(77), int64(99),
+			int64(6), "p456", "3/4/5", int64(678),
 		)
 	})
 
@@ -329,16 +329,16 @@ func TestUpdate_BindRecord(t *testing.T) {
 		// implementation.
 		u := dml.NewUpdate("catalog_category_entity").Alias("ce").
 			AddColumns("attribute_set_id", "parent_id", "path").
-			BindRecord(dml.Qualify("", ce), dml.Qualify("cpei", ce)).
+			WithRecords(dml.Qualify("", ce), dml.Qualify("cpei", ce)).
 			Where(
 				dml.Column("ce.entity_id").Greater().PlaceHolder(), //678
 				dml.Column("cpe.entity_id").In().Int64s(66, 77),
-				dml.Column("cpei.attribute_set_id").In().PlaceHolder(), //6
+				dml.Column("cpei.attribute_set_id").Equal().PlaceHolder(), //6
 			)
 		compareToSQL(t, u, nil,
-			"UPDATE `catalog_category_entity` AS `ce` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`ce`.`entity_id` > ?) AND (`cpe`.`entity_id` IN (?,?)) AND (`cpei`.`attribute_set_id` IN (?))",
-			"UPDATE `catalog_category_entity` AS `ce` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`ce`.`entity_id` > 678) AND (`cpe`.`entity_id` IN (66,77)) AND (`cpei`.`attribute_set_id` IN (6))",
-			int64(6), "p456", "3/4/5", int64(678), int64(66), int64(77), int64(6),
+			"UPDATE `catalog_category_entity` AS `ce` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`ce`.`entity_id` > ?) AND (`cpe`.`entity_id` IN (66,77)) AND (`cpei`.`attribute_set_id` = ?)",
+			"UPDATE `catalog_category_entity` AS `ce` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`ce`.`entity_id` > 678) AND (`cpe`.`entity_id` IN (66,77)) AND (`cpei`.`attribute_set_id` = 6)",
+			int64(6), "p456", "3/4/5", int64(678), int64(6),
 		)
 	})
 }
@@ -383,7 +383,7 @@ func TestUpdate_WithLogger(t *testing.T) {
 			require.NoError(t, err)
 			defer stmt.Close()
 
-			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ03\" update_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ06*/ `dml_people` SET `email`=? WHERE (`id` >= ?)\"\n",
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ03\" update_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ06*/ `dml_people` SET `email`='new@email.com' WHERE (`id` >= 78.31)\"\n",
 				buf.String())
 		})
 
@@ -430,7 +430,7 @@ func TestUpdate_WithLogger(t *testing.T) {
 			require.NoError(t, err)
 			defer stmt.Close()
 
-			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" update_id: \"UNIQ18\" table: \"dml_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ18*/ `dml_people` SET `email`=? WHERE (`id` >= ?)\"\n",
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" update_id: \"UNIQ18\" table: \"dml_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ18*/ `dml_people` SET `email`='new@email.com' WHERE (`id` >= 21.56)\"\n",
 				buf.String())
 		})
 
@@ -441,10 +441,10 @@ func TestUpdate_WithLogger(t *testing.T) {
 			require.NoError(t, err)
 			defer stmt.Close()
 
-			_, err = stmt.Exec(context.TODO(), "mail@e.de", 61.57)
+			_, err = stmt.Exec(context.TODO())
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" update_id: \"UNIQ18\" table: \"dml_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ18*/ `dml_people` SET `email`=? WHERE (`id` >= ?)\"\nDEBUG Exec conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" update_id: \"UNIQ18\" table: \"dml_people\" duration: 0 arg_len: 2\n",
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" update_id: \"UNIQ18\" table: \"dml_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ18*/ `dml_people` SET `email`='new@email.com' WHERE (`id` >= 21.56)\"\nDEBUG Exec conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" update_id: \"UNIQ18\" table: \"dml_people\" duration: 0 arg_len: 0\n",
 				buf.String())
 		})
 

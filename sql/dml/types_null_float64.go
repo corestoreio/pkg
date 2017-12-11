@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 package dml
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/binary"
 	"math"
@@ -116,7 +117,7 @@ func (a *NullFloat64) UnmarshalText(text []byte) error {
 // It will encode null if this NullFloat64 is null.
 func (a NullFloat64) MarshalJSON() ([]byte, error) {
 	if !a.Valid {
-		return []byte(sqlStrNullLC), nil
+		return sqlBytesNullLC, nil
 	}
 	return strconv.AppendFloat([]byte{}, a.Float64, 'f', -1, 64), nil
 }
@@ -208,4 +209,19 @@ func (a NullFloat64) Size() (s int) {
 		s = 8
 	}
 	return
+}
+
+func (a NullFloat64) writeTo(w *bytes.Buffer) error {
+	if a.Valid {
+		return writeFloat64(w, a.Float64)
+	}
+	_, err := w.WriteString(sqlStrNullUC)
+	return err
+}
+
+func (a NullFloat64) append(args []interface{}) []interface{} {
+	if a.Valid {
+		return append(args, a.Float64)
+	}
+	return append(args, nil)
 }

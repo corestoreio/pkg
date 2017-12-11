@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,13 +15,12 @@
 package dml
 
 import (
+	"bytes"
 	"database/sql"
 	"strconv"
 
-	"bytes"
-
-	"github.com/corestoreio/pkg/util/byteconv"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/byteconv"
 )
 
 // TODO(cys): Remove GobEncoder, GobDecoder, MarshalJSON, UnmarshalJSON in Go 2.
@@ -111,12 +110,12 @@ func (a *NullBool) UnmarshalText(text []byte) (err error) {
 // It will encode null if this NullBool is null.
 func (a NullBool) MarshalJSON() ([]byte, error) {
 	if !a.Valid {
-		return []byte(sqlStrNullLC), nil
+		return sqlBytesNullLC, nil
 	}
 	if !a.Bool {
-		return []byte("false"), nil
+		return sqlBytesFalseLC, nil
 	}
-	return []byte("true"), nil
+	return sqlBytesTrueLC, nil
 }
 
 // MarshalText implements encoding.TextMarshaler.
@@ -126,9 +125,9 @@ func (a NullBool) MarshalText() ([]byte, error) {
 		return []byte{}, nil
 	}
 	if !a.Bool {
-		return []byte("false"), nil
+		return sqlBytesFalseLC, nil
 	}
-	return []byte("true"), nil
+	return sqlBytesTrueLC, nil
 }
 
 // SetValid changes this NullBool's value and also sets it to be non-null.
@@ -212,4 +211,19 @@ func (a NullBool) Size() (s int) {
 		s = 1
 	}
 	return
+}
+
+func (a NullBool) writeTo(w *bytes.Buffer) (err error) {
+	if a.Valid {
+		dialect.EscapeBool(w, a.Bool)
+	} else {
+		_, err = w.WriteString(sqlStrNullUC)
+	}
+	return
+}
+func (a NullBool) append(args []interface{}) []interface{} {
+	if a.Valid {
+		return append(args, a.Bool)
+	}
+	return append(args, nil)
 }

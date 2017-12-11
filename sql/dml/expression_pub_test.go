@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@ package dml_test
 import (
 	"testing"
 
-	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -166,9 +166,8 @@ func TestSQLIf_Expression(t *testing.T) {
 			).Greater().Int(4711))
 
 		compareToSQL(t, s, nil,
-			"SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > ?)",
 			"SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > 4711)",
-			int64(4711),
+			"SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > 4711)",
 		)
 	})
 
@@ -178,9 +177,8 @@ func TestSQLIf_Expression(t *testing.T) {
 			dml.SQLIf("a > 0", "b", "c").Greater().Int(4711))
 
 		compareToSQL(t, s, nil,
-			"SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > ?)",
 			"SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > 4711)",
-			int64(4711),
+			"SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > 4711)",
 		)
 	})
 }
@@ -188,7 +186,7 @@ func TestSQLIf_Expression(t *testing.T) {
 func TestSQLCase(t *testing.T) {
 	t.Parallel()
 
-	t.Run("UPDATE in columns with args", func(t *testing.T) {
+	t.Run("UPDATE in columns with args and no place holders", func(t *testing.T) {
 		/*
 					UPDATE `cataloginventory_stock_item`
 					SET    `qty` = CASE product_id
@@ -206,16 +204,32 @@ func TestSQLCase(t *testing.T) {
 				"3456", "qty+?",
 				"3457", "qty+?",
 				"3458", "qty+?",
-			).Ints(3, 4, 5)).
+			).Int(3).Int(4).Int(5)).
 			Where(
 				dml.Column("product_id").In().Int64s(345, 567, 897),
 				dml.Column("website_id").Int64(6),
 			)
 
 		compareToSQL(t, u, nil,
-			"UPDATE `cataloginventory_stock_item` SET `qty`=CASE `product_id` WHEN 3456 THEN qty+? WHEN 3457 THEN qty+? WHEN 3458 THEN qty+? ELSE qty END WHERE (`product_id` IN (?,?,?)) AND (`website_id` = ?)",
 			"UPDATE `cataloginventory_stock_item` SET `qty`=CASE `product_id` WHEN 3456 THEN qty+3 WHEN 3457 THEN qty+4 WHEN 3458 THEN qty+5 ELSE qty END WHERE (`product_id` IN (345,567,897)) AND (`website_id` = 6)",
-			int64(3), int64(4), int64(5), int64(345), int64(567), int64(897), int64(6),
+			"UPDATE `cataloginventory_stock_item` SET `qty`=CASE `product_id` WHEN 3456 THEN qty+3 WHEN 3457 THEN qty+4 WHEN 3458 THEN qty+5 ELSE qty END WHERE (`product_id` IN (345,567,897)) AND (`website_id` = 6)",
+		)
+	})
+
+	t.Run("UPDATE in columns with args and with place holders", func(t *testing.T) {
+		u := dml.NewUpdate("cataloginventory_stock_item").
+			Set(dml.Column("qty").SQLCase("`product_id`", "qty",
+				"3456", "qty+?",
+				"3457", "qty+?",
+				"3458", "qty+?",
+			)).
+			Where(
+				dml.Column("website_id").Int64(6),
+			)
+
+		compareToSQL(t, u, nil,
+			"UPDATE `cataloginventory_stock_item` SET `qty`=CASE `product_id` WHEN 3456 THEN qty+? WHEN 3457 THEN qty+? WHEN 3458 THEN qty+? ELSE qty END WHERE (`website_id` = 6)",
+			"UPDATE `cataloginventory_stock_item` SET `qty`=CASE `product_id` WHEN 3456 THEN qty+? WHEN 3457 THEN qty+? WHEN 3458 THEN qty+? ELSE qty END WHERE (`website_id` = 6)",
 		)
 	})
 

@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/bufferpool"
 	"github.com/corestoreio/pkg/util/byteconv"
-	"github.com/corestoreio/errors"
 )
 
 // TODO(cys): Remove GobEncoder, GobDecoder, MarshalJSON, UnmarshalJSON in Go 2.
@@ -48,7 +48,7 @@ const (
 // https://dev.mysql.com/doc/refman/5.7/en/floating-point-types.html
 type Decimal struct {
 	Precision uint64 // The value itself
-	Scale     int32 // Number of digits
+	Scale     int32  // Number of digits
 	Negative  bool
 	Valid     bool
 	// Quote if true JSON marshaling will quote the returned number and creates

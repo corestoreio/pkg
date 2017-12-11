@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/sql/dml"
 )
 
 // Make sure that type catalogCategoryEntity implements interface
@@ -97,7 +97,7 @@ func (ts *tableStore) MapColumns(cm *dml.ColumnMap) error {
 	return cm.Err()
 }
 
-func ExampleSelect_BindRecord() {
+func ExampleSelect_WithRecords() {
 
 	ce := &catalogCategoryEntity{678, 6, 670, "2/13/670/678", 0, now()}
 	st := &tableStore{17, "ch-en", 2, 4, "Swiss EN Store"}
@@ -120,7 +120,7 @@ func ExampleSelect_BindRecord() {
 			dml.Column("t_d.store_id").Equal().SQLIfNull("t_s.store_id", "0"), // Just for testing
 			dml.Column("t_d.store_id").Equal().PlaceHolder(),                  // 17
 		).
-		BindRecord(dml.Qualify("e", ce), dml.Qualify("t_d", st))
+		WithRecords(dml.Qualify("e", ce), dml.Qualify("t_d", st))
 
 	writeToSQLAndInterpolate(s)
 	fmt.Print("\n\n")
@@ -132,10 +132,10 @@ func ExampleSelect_BindRecord() {
 	//`catalog_category_entity` AS `e` INNER JOIN `catalog_category_entity_varchar` AS
 	//`t_d` ON (`e`.`entity_id` = `t_d`.`entity_id`) LEFT JOIN
 	//`catalog_category_entity_varchar` AS `t_s` ON (`t_s`.`attribute_id` =
-	//`t_d`.`attribute_id`) WHERE (`e`.`entity_id` IN (?)) AND (`t_d`.`attribute_id`
-	//IN (?)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0)) AND
-	//(`t_d`.`store_id` = ?)
-	//Arguments: [678 45 17]
+	//`t_d`.`attribute_id`) WHERE (`e`.`entity_id` IN ?) AND (`t_d`.`attribute_id` IN
+	//(45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0)) AND (`t_d`.`store_id`
+	//= ?)
+	//Arguments: [678 17]
 	//
 	//Interpolated Statement:
 	//SELECT `t_d`.`attribute_id`, `e`.`entity_id`, `t_d`.`value` AS `default_value`,
@@ -143,7 +143,7 @@ func ExampleSelect_BindRecord() {
 	//`catalog_category_entity` AS `e` INNER JOIN `catalog_category_entity_varchar` AS
 	//`t_d` ON (`e`.`entity_id` = `t_d`.`entity_id`) LEFT JOIN
 	//`catalog_category_entity_varchar` AS `t_s` ON (`t_s`.`attribute_id` =
-	//`t_d`.`attribute_id`) WHERE (`e`.`entity_id` IN (678)) AND (`t_d`.`attribute_id`
+	//`t_d`.`attribute_id`) WHERE (`e`.`entity_id` IN 678) AND (`t_d`.`attribute_id`
 	//IN (45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0)) AND
 	//(`t_d`.`store_id` = 17)
 

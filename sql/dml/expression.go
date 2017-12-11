@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,35 +18,21 @@ import (
 	"bytes"
 	"strings"
 
-	"github.com/corestoreio/pkg/util/bufferpool"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
 // write writes the strings into `w` and correctly handles the place holder
 // repetition depending on the number of arguments.
 func writeExpression(w *bytes.Buffer, expression string, args Arguments) (phCount int, err error) {
-	phCount += strings.Count(expression, placeHolderStr)
-	if phCount == 0 {
+	phCount = strings.Count(expression, placeHolderStr)
+	if phCount == 0 || len(args) == 0 {
 		// fast path
 		_, err = w.WriteString(expression)
-		return phCount, err
-	}
-
-	eBuf := bufferpool.Get()
-	defer bufferpool.Put(eBuf)
-
-	if _, err = eBuf.WriteString(expression); err != nil {
-		return phCount, errors.Wrapf(err, "[dml] writeExpression: failed to write %q", expression)
-	}
-
-	if args != nil && phCount != args.Len() {
-		if err = repeatPlaceHolders(w, eBuf.Bytes(), args); err != nil {
-			return phCount, errors.WithStack(err)
-		}
 	} else {
-		_, err = eBuf.WriteTo(w)
+		err = writeInterpolate(w, []byte(expression), args)
 	}
-	return phCount, errors.WithStack(err)
+	return
 }
 
 // SQLIfNull creates an IFNULL expression. Argument count can be either 1, 2 or

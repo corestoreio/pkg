@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 package dml
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
@@ -24,9 +25,10 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/corestoreio/pkg/util/byteconv"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/util/bufferpool"
+	"github.com/corestoreio/pkg/util/byteconv"
 )
 
 // Exec executes the statement represented by the QueryBuilder. It returns the
@@ -52,18 +54,9 @@ func Exec(ctx context.Context, db Execer, b QueryBuilder) (sql.Result, error) {
 // dedicated database session) or a *sql.Tx (an in-progress database
 // transaction).
 func Prepare(ctx context.Context, db Preparer, b QueryBuilder) (*sql.Stmt, error) {
-	var sqlStr string
-	var err error
-	if qb, ok := b.(queryBuilder); ok { // Interface upgrade
-		sqlStr, _, err = toSQL(qb, _isNotInterpolate, _isPrepared)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-	} else {
-		sqlStr, _, err = b.ToSQL()
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
+	sqlStr, _, err := b.ToSQL()
+	if err != nil {
+		return nil, errors.WithStack(err)
 	}
 	stmt, err := db.PrepareContext(ctx, sqlStr)
 	return stmt, errors.Wrapf(err, "[dml] Prepare.PrepareContext with query %q", sqlStr)
@@ -236,7 +229,7 @@ func (b *ColumnMap) Mode() (m columnMapMode) {
 	case 0:
 		m = ColumnMapEntityReadAll // Entity: read all mode; Collection jump into loop and pass on to Entity
 	case 1:
-		m = ColumnMapCollectionReadSet // request certain column values as a slice. implemented in func condition.go:appendArgs.
+		m = ColumnMapCollectionReadSet // request certain column values as a slice.
 	default:
 		m = ColumnMapEntityReadSet // Entity: calls the for cm.Next loop; Collection jump into loop and pass on to Entity
 	}
@@ -729,52 +722,235 @@ func rangeError(fn, str string) *strconv.NumError {
 	return &strconv.NumError{Func: fn, Num: str, Err: strconv.ErrRange}
 }
 
-// BuilderBase contains fields which all SQL query builder have in common, the
-// same base. Exported for documentation reasons.
-type BuilderBase struct {
+// multiplyArguments is only applicable when using *Union as a template.
+// multiplyArguments repeats the `args` variable n-times to match the number of
+// generated SELECT queries in the final UNION statement. It should be called
+// after all calls to `StringReplace` have been made.
+func multiplyArguments(templateStmtCount int, args Arguments) Arguments {
+	if templateStmtCount == 1 {
+		return args
+	}
+	ret := make(Arguments, len(args)*templateStmtCount)
+	lArgs := len(args)
+	for i := 0; i < templateStmtCount; i++ {
+		copy(ret[i*lArgs:], args)
+	}
+	return ret
+}
+
+// builderCommon
+type builderCommon struct {
 	// ID of a statement. Used in logging. The ID gets generated with function
 	// signature `func() string`. This func gets applied to the logger when
 	// setting up a logger.
-	id           string
-	Log          log.Logger // Log optional logger
-	RawFullSQL   string
-	RawArguments Arguments // args used by RawFullSQL
+	id  string     // tracing ID
+	Log log.Logger // Log optional logger
 
-	Table id
+	argsRecords []QualifiedRecord
+	argsArgs    Arguments
+	argsRaw     []interface{}
+	// ärgErr represents an argument error caused in one of the three With
+	// functions.
+	ärgErr error // Sorry Germans for that terrible pun #notSorry
 
+	defaultQualifier string
+	// isWithInterfaces will be set to true if the raw interface arguments are
+	// getting applied.
+	isWithInterfaces bool
+	// qualifiedColumns gets collected before calling ToSQL, and clearing the all
+	// pointers, to know which columns need values from the QualifiedRecords
+	qualifiedColumns []string
+	// templateStmtCount only used in case a UNION statement acts as a template.
+	// Create one SELECT statement and by setting the data for
+	// Union.StringReplace function additional SELECT statements are getting
+	// created. Now the arguments must be multiplied by the number of new
+	// created SELECT statements. This value  gets stored in templateStmtCount.
+	// An example exists in TestUnionTemplate_ReuseArgs.
+	templateStmtCount int
+}
+
+func (bc builderCommon) convertRecordsToArguments() (Arguments, error) {
+	if bc.templateStmtCount == 0 {
+		bc.templateStmtCount = 1
+	}
+	if len(bc.argsArgs) == 0 && len(bc.argsRecords) == 0 {
+		return bc.argsArgs, nil
+	}
+
+	if len(bc.argsArgs) > 0 && len(bc.argsRecords) == 0 && false == bc.argsArgs.hasNamedArgs() {
+		return multiplyArguments(bc.templateStmtCount, bc.argsArgs), nil
+	}
+
+	cm := newColumnMap(make(Arguments, 0, len(bc.argsArgs)+len(bc.argsRecords)), "")
+	var unnamedCounter int
+	for tsc := 0; tsc < bc.templateStmtCount; tsc++ { // only in case of UNION statements in combination with a template SELECT, can be optimized later
+		for _, identifier := range bc.qualifiedColumns { // contains the correct order as the place holders appear in the SQL string
+			qualifier, column := splitColumn(identifier)
+			if qualifier == "" {
+				qualifier = bc.defaultQualifier
+			}
+			var cut bool
+			column, cut = cutPrefix(column, namedArgStartStr)
+			cm.columns[0] = column // length is always one!
+
+			if !cut { // if the colon : cannot be found then a simple place holder ? has been detected
+				if pArg, ok := bc.argsArgs.unnamedArgByPos(unnamedCounter); ok {
+					cm.Args = append(cm.Args, pArg)
+				}
+				unnamedCounter++
+				//continue
+			}
+			for _, qRec := range bc.argsRecords {
+				if qRec.Qualifier == "" {
+					qRec.Qualifier = bc.defaultQualifier
+				}
+				if qRec.Qualifier == qualifier {
+					if err := qRec.Record.MapColumns(cm); err != nil {
+						return nil, errors.WithStack(err)
+					}
+				}
+			}
+
+			if err := bc.argsArgs.MapColumns(cm); err != nil {
+				return nil, errors.WithStack(err)
+			}
+		}
+	}
+	if len(cm.Args) == 0 {
+		return append(cm.Args, bc.argsArgs...), nil
+	}
+	return cm.Args, nil
+}
+
+// BuilderBase contains fields which all SQL query builder have in common, the
+// same base. Exported for documentation reasons.
+type BuilderBase struct {
+	builderCommon
+	cacheSQL   []byte
+	RawFullSQL string
+	Table      id
 	// PropagationStopped set to true if you would like to interrupt the
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
-	PropagationStopped bool
-	IsInterpolate      bool // See Interpolate()
-	IsBuildCache       bool // see BuildCache()
+	PropagationStopped   bool
+	IsInterpolate        bool // See Interpolate()
+	IsBuildCacheDisabled bool // see DisableBuildCache()
+	IsExpandPlaceHolders bool // see ExpandPlaceHolders()
 	// IsUnsafe if set to true the functions AddColumn* will turn any
 	// non valid identifier (not `{a-z}[a-z0-9$_]+`i) into an expression.
 	IsUnsafe bool
-	cacheSQL []byte
-	argPool  Arguments // like a buffer, gets reused internally, so a pool.
 	// propagationStoppedAt position in the slice where the stopped propagation
 	// has been requested. for every new iteration the propagation must stop at
 	// this position.
 	propagationStoppedAt int
 }
 
+// hasBuildCache satisfies partially interface queryBuilder
+func (bb *BuilderBase) hasBuildCache() bool {
+	return !bb.IsBuildCacheDisabled
+}
+
+func (bb *BuilderBase) resetArgs() {
+	bb.argsArgs = bb.argsArgs[:0]
+	bb.argsRaw = bb.argsRaw[:0]
+	bb.argsRecords = bb.argsRecords[:0]
+}
+
+func (bb *BuilderBase) withArgs(args []interface{}) {
+	bb.resetArgs()
+	bb.argsRaw = args
+	bb.isWithInterfaces = true
+}
+
+func (bb *BuilderBase) withArguments(args Arguments) {
+	bb.resetArgs()
+	bb.argsArgs = args
+	bb.isWithInterfaces = false
+}
+
+func (bb *BuilderBase) withRecords(records []QualifiedRecord) {
+	bb.resetArgs()
+	bb.argsRecords = records
+	bb.isWithInterfaces = false
+}
+
+// buildToSQL builds the raw SQL string and caches it as a byte slice. It gets
+// called by toSQL.
+func (bb *BuilderBase) buildToSQL(qb queryBuilder) ([]byte, error) {
+	if bb.ärgErr != nil {
+		return nil, errors.WithStack(bb.ärgErr)
+	}
+	rawSQL := qb.readBuildCache()
+	if rawSQL == nil || bb.IsBuildCacheDisabled {
+		bb.qualifiedColumns = bb.qualifiedColumns[:0]
+		var buf bytes.Buffer
+		var err error
+		bb.qualifiedColumns, err = qb.toSQL(&buf, bb.qualifiedColumns)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		if !bb.IsBuildCacheDisabled {
+			qb.writeBuildCache(buf.Bytes())
+		}
+		rawSQL = buf.Bytes()
+	}
+	return rawSQL, nil
+}
+
+// buildArgsAndSQL generates the SQL string and its place holders. Takes care of
+// caching and interpolation. It returns the string with placeholders and a
+// slice of query arguments. With switched on interpolation, it only returns a
+// string including the stringyfied arguments. With an enabled cache, the
+// arguments gets regenerated each time a call to ToSQL happens.
+func (bb *BuilderBase) buildArgsAndSQL(qb queryBuilder) (string, []interface{}, error) {
+	rawSQL, err := bb.buildToSQL(qb)
+	if err != nil {
+		return "", nil, errors.WithStack(err)
+	}
+
+	args, err := bb.convertRecordsToArguments()
+	if err != nil {
+		return "", nil, errors.WithStack(err)
+	}
+
+	if bb.IsExpandPlaceHolders {
+		if phCount := bytes.Count(rawSQL, placeHolderBytes); phCount < args.Len() {
+			var buf bytes.Buffer
+			if err := expandPlaceHolders(&buf, rawSQL, args); err != nil {
+				return "", nil, errors.WithStack(err)
+			}
+			qb.writeBuildCache(buf.Bytes())
+			rawSQL = buf.Bytes()
+			bb.IsExpandPlaceHolders = false
+		}
+	}
+
+	if bb.IsInterpolate {
+		if len(args) == 0 && len(bb.argsRaw) > 0 {
+			return "", nil, errors.NewNotAllowedf("[dml] Interpolation does only work with an Arguments slice, but you provided an interface slice: %#v", bb.argsRaw)
+		}
+		buf := bufferpool.Get()
+		err := writeInterpolate(buf, rawSQL, args)
+		s := buf.String()
+		bufferpool.Put(buf)
+		return s, nil, err
+	}
+	if !bb.isWithInterfaces {
+		bb.argsRaw = bb.argsRaw[:0]
+	}
+	bb.argsRaw = append(bb.argsRaw, args.Interfaces()...) // TODO optimize
+	return string(rawSQL), bb.argsRaw, errors.WithStack(err)
+}
+
 // BuilderConditional defines base fields used in statements which can have
 // conditional constraints like WHERE, JOIN, ORDER, etc. Exported for
 // documentation reasons.
 type BuilderConditional struct {
-	// QualifiedRecords represents a map of ColumnMappers to retrieve the
-	// necessary arguments from the interface implementations of the types. The
-	// string key (the qualifier) can either be the table or object name or in
-	// cases, where an alias gets used, the string key must be the same as the
-	// alias. The map get called internally when the arguments are getting
-	// assembled.
-	QualifiedRecords map[string]ColumnMapper
-	Joins            Joins
-	Wheres           Conditions
-	OrderBys         ids
-	LimitCount       uint64
-	LimitValid       bool
+	Joins      Joins
+	Wheres     Conditions
+	OrderBys   ids
+	LimitCount uint64
+	LimitValid bool
 }
 
 func (b *BuilderConditional) join(j string, t id, on ...*Condition) {
@@ -791,46 +967,36 @@ func (b *BuilderConditional) join(j string, t id, on ...*Condition) {
 // not safe for concurrent use, despite the underlying *sql.Stmt is. Don't
 // forget to call Close!
 type StmtBase struct {
-	id   string // tracing ID
+	builderCommon
 	stmt *sql.Stmt
-	// argsCache can be a sync.Pool and when calling Close function the
-	// interface slice gets returned to the pool
-	argsCache Arguments
-	// argsRaw can be a sync.Pool and when calling Close function the interface
-	// slice gets returned to the pool
-	argsRaw []interface{}
-	// isWithInterfaces will be set to true if the raw interface arguments are
-	// getting applied.
-	isWithInterfaces bool
-	// ärgErr represents an argument error caused in one of the three With
-	// functions.
-	ärgErr     error // Sorry Germans for that terrible pun #notSorry
-	bindRecord func(records []QualifiedRecord)
-	log        log.Logger
 }
 
 // Close closes the underlying prepared statement.
 func (st *StmtBase) Close() error { return st.stmt.Close() }
 
-func (st *StmtBase) withArgs(args []interface{}) {
-	st.argsCache = st.argsCache[:0]
+func (st *StmtBase) resetArgs() {
+	st.argsArgs = st.argsArgs[:0]
 	st.argsRaw = st.argsRaw[:0]
-	st.argsRaw = append(st.argsRaw, args...)
+	st.argsRecords = st.argsRecords[:0]
+}
+
+func (st *StmtBase) withArgs(args []interface{}) {
+	st.resetArgs()
+	st.argsRaw = args
 	st.isWithInterfaces = true
 }
 
 func (st *StmtBase) withArguments(args Arguments) {
-	st.argsCache = st.argsCache[:0]
-	st.argsCache = append(st.argsCache, args...)
+	st.resetArgs()
+	st.argsArgs = args
 	st.isWithInterfaces = false
 }
 
 // withRecords sets the records for the execution with Query or Exec. It
 // internally resets previously applied arguments.
-func (st *StmtBase) withRecords(appendArgs func(Arguments) (Arguments, error), records ...QualifiedRecord) {
-	st.argsCache = st.argsCache[:0]
-	st.bindRecord(records)
-	st.argsCache, st.ärgErr = appendArgs(st.argsCache)
+func (st *StmtBase) withRecords(records []QualifiedRecord) {
+	st.resetArgs()
+	st.argsRecords = records
 	st.isWithInterfaces = false
 }
 
@@ -844,10 +1010,12 @@ func (st *StmtBase) prepareArgs(args ...interface{}) error {
 
 	if !st.isWithInterfaces {
 		st.argsRaw = st.argsRaw[:0]
-		st.argsRaw = st.argsCache.Interfaces(st.argsRaw...)
 	}
+
+	argsArgs, err := st.convertRecordsToArguments()
+	st.argsRaw = append(st.argsRaw, argsArgs.Interfaces()...)
 	st.argsRaw = append(st.argsRaw, args...)
-	return nil
+	return err
 }
 
 // Errors do not get logged in the next functions. Errors are getting handled.
@@ -863,8 +1031,8 @@ func (st *StmtBase) Exec(ctx context.Context, args ...interface{}) (sql.Result, 
 	if err := st.prepareArgs(args...); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if st.log != nil && st.log.IsDebug() {
-		defer log.WhenDone(st.log).Debug("Exec", log.Int("arg_len", len(st.argsRaw)))
+	if st.Log != nil && st.Log.IsDebug() {
+		defer log.WhenDone(st.Log).Debug("Exec", log.Int("arg_len", len(st.argsRaw)))
 	}
 	return st.stmt.ExecContext(ctx, st.argsRaw...)
 }
@@ -874,8 +1042,8 @@ func (st *StmtBase) Query(ctx context.Context, args ...interface{}) (*sql.Rows, 
 	if err := st.prepareArgs(args...); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if st.log != nil && st.log.IsDebug() {
-		defer log.WhenDone(st.log).Debug("Query", log.Int("arg_len", len(st.argsRaw)))
+	if st.Log != nil && st.Log.IsDebug() {
+		defer log.WhenDone(st.Log).Debug("Query", log.Int("arg_len", len(st.argsRaw)))
 	}
 	return st.stmt.QueryContext(ctx, st.argsRaw...)
 }
@@ -886,8 +1054,8 @@ func (st *StmtBase) QueryRow(ctx context.Context, args ...interface{}) *sql.Row 
 		_ = err
 		// Hmmm what should happen here?
 	}
-	if st.log != nil && st.log.IsDebug() {
-		defer log.WhenDone(st.log).Debug("QueryRow", log.Int("arg_len", len(st.argsRaw)))
+	if st.Log != nil && st.Log.IsDebug() {
+		defer log.WhenDone(st.Log).Debug("QueryRow", log.Int("arg_len", len(st.argsRaw)))
 	}
 	return st.stmt.QueryRowContext(ctx, st.argsRaw...)
 }
@@ -895,8 +1063,8 @@ func (st *StmtBase) QueryRow(ctx context.Context, args ...interface{}) *sql.Row 
 // Load loads data from a query into an object. You must set DB.QueryContext on
 // the Select object or it just panics. Load can load a single row or n-rows.
 func (st *StmtBase) Load(ctx context.Context, s ColumnMapper) (rowCount uint64, err error) {
-	if st.log != nil && st.log.IsDebug() {
-		defer log.WhenDone(st.log).Debug("Load", log.Uint64("row_count", rowCount), log.String("object_type", fmt.Sprintf("%T", s)))
+	if st.Log != nil && st.Log.IsDebug() {
+		defer log.WhenDone(st.Log).Debug("Load", log.Uint64("row_count", rowCount), log.String("object_type", fmt.Sprintf("%T", s)))
 	}
 	r, err := st.Query(ctx)
 	rowCount, err = load(r, err, s)
@@ -906,17 +1074,17 @@ func (st *StmtBase) Load(ctx context.Context, s ColumnMapper) (rowCount uint64, 
 // LoadInt64 executes the prepared statement and returns the value at an int64.
 // It returns a NotFound error if the query returns nothing.
 func (st *StmtBase) LoadInt64(ctx context.Context) (int64, error) {
-	if st.log != nil && st.log.IsDebug() {
-		defer log.WhenDone(st.log).Debug("LoadInt64")
+	if st.Log != nil && st.Log.IsDebug() {
+		defer log.WhenDone(st.Log).Debug("LoadInt64")
 	}
 	return loadInt64(st.Query(ctx))
 }
 
 // LoadInt64s executes the Select and returns the value as a slice of int64s.
 func (st *StmtBase) LoadInt64s(ctx context.Context) (ret []int64, err error) {
-	if st.log != nil && st.log.IsDebug() {
+	if st.Log != nil && st.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(st.log).Debug("LoadInt64s", log.Int("row_count", len(ret)))
+		defer log.WhenDone(st.Log).Debug("LoadInt64s", log.Int("row_count", len(ret)))
 	}
 	ret, err = loadInt64s(st.Query(ctx))
 	// Do not simplify it because we need ret in the defer. we don't log errors

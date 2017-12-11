@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,13 +35,13 @@ func ExampleColumnMapper_selectWhereInCollection() {
 			dml.Column("entity_id").In().PlaceHolder(),
 		).
 		// for variable customers see ExampleColumnMapper
-		BindRecord(dml.Qualify("", cmCustomers))
+		WithRecords(dml.Qualify("", cmCustomers))
 	writeToSQLAndInterpolate(q)
 
 	// Output:
 	//Prepared Statement:
 	//SELECT `entity_id`, `firstname`, `lifetime_sales` FROM `customer_entity` WHERE
-	//(`entity_id` IN (?))
+	//(`entity_id` IN ?)
 	//Arguments: [11 12 13]
 	//
 	//Interpolated Statement:
@@ -61,7 +61,7 @@ func ExampleColumnMapper_selectJoinCollection() {
 		Where(
 			dml.Column("ce.entity_id").In().PlaceHolder(),
 		).
-		BindRecord(dml.Qualify("ce", cmCustomers))
+		WithRecords(dml.Qualify("ce", cmCustomers))
 
 	writeToSQLAndInterpolate(q)
 
@@ -70,7 +70,7 @@ func ExampleColumnMapper_selectJoinCollection() {
 	//SELECT `ce`.`entity_id`, `ce`.`firstname`, `cg`.`customer_group_code`,
 	//`cg`.`tax_class_id` FROM `customer_entity` AS `ce` INNER JOIN `customer_group`
 	//AS `cg` ON (`ce`.`group_id` = `cg`.`customer_group_id`) WHERE (`ce`.`entity_id`
-	//IN (?))
+	//IN ?)
 	//Arguments: [11 12 13]
 	//
 	//Interpolated Statement:
@@ -84,7 +84,7 @@ func ExampleColumnMapper_selectJoinCollection() {
 func ExampleColumnMapper_updateEntity() {
 
 	q := dml.NewUpdate("customer_entity").AddColumns("firstname", "lifetime_sales", "voucher_codes").
-		BindRecord(dml.Qualify("", cmCustomers.Data[0])).
+		WithRecords(dml.Qualify("", cmCustomers.Data[0])).
 		Where(dml.Column("entity_id").Equal().PlaceHolder())
 
 	writeToSQLAndInterpolate(q)
@@ -104,7 +104,7 @@ func ExampleColumnMapper_updateEntity() {
 func ExampleColumnMapper_insertEntitiesWithColumns() {
 
 	q := dml.NewInsert("customer_entity").AddColumns("firstname", "lifetime_sales", "store_id", "voucher_codes").
-		BindRecord(cmCustomers.Data[0], cmCustomers.Data[1], cmCustomers.Data[2])
+		AddRecords(cmCustomers.Data[0], cmCustomers.Data[1], cmCustomers.Data[2])
 
 	writeToSQLAndInterpolate(q)
 	// Output:
@@ -131,7 +131,7 @@ func ExampleColumnMapper_insertEntitiesWithoutColumns() {
 		// customerEntity has five fields and all fields are requested. For
 		// now a hard coded 5.
 		SetRecordPlaceHolderCount(5).
-		BindRecord(cmCustomers.Data[0], cmCustomers.Data[1], cmCustomers.Data[2])
+		AddRecords(cmCustomers.Data[0], cmCustomers.Data[1], cmCustomers.Data[2])
 
 	writeToSQLAndInterpolate(q)
 	// Output:
@@ -149,7 +149,7 @@ func ExampleColumnMapper_insertCollectionWithoutColumns() {
 
 	q := dml.NewInsert("customer_entity"). //AddColumns("firstname", "lifetime_sales", "store_id", "voucher_codes").
 						SetRecordPlaceHolderCount(5).
-						SetRowCount(len(cmCustomers.Data)).BindRecord(cmCustomers)
+						SetRowCount(len(cmCustomers.Data)).AddRecords(cmCustomers)
 
 	writeToSQLAndInterpolate(q)
 	// Output:
@@ -168,12 +168,11 @@ func ExampleColumnMapper_insertCollectionWithoutColumns() {
 // collection. The challenge depict to map the customer_entity.entity_id column
 // to the sales_order_entity.customer_id column.
 func ExampleColumnMapper_selectSalesOrdersFromSpecificCustomers() {
-
 	// Column `customer_id` has been hard coded into the switch statement of the
 	// ColumnMapper in customerCollection and customerEntity. `customer_id` acts
 	// as an alias to `entity_id`.
 	q := dml.NewSelect("entity_id", "status", "increment_id", "grand_total", "tax_total").From("sales_order_entity").
-		Where(dml.Column("customer_id").In().PlaceHolder()).BindRecord(
+		Where(dml.Column("customer_id").In().PlaceHolder()).WithRecords(
 		dml.Qualify("", cmCustomers),
 	)
 
@@ -181,7 +180,7 @@ func ExampleColumnMapper_selectSalesOrdersFromSpecificCustomers() {
 	// Output:
 	//Prepared Statement:
 	//SELECT `entity_id`, `status`, `increment_id`, `grand_total`, `tax_total` FROM
-	//`sales_order_entity` WHERE (`customer_id` IN (?))
+	//`sales_order_entity` WHERE (`customer_id` IN ?)
 	//Arguments: [11 12 13]
 	//
 	//Interpolated Statement:
