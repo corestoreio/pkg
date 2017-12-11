@@ -296,9 +296,9 @@ func (d *Decimal) UnmarshalBinary(data []byte) error {
 	if ld != validLength {
 		return errors.NewNotValidf("[dml] Decimal.UnmarshalBinary Invalid length of input data. Should be %d but have %d", validLength, len(data))
 	}
-	d.Precision = uint64(binary.BigEndian.Uint64(data[:8]))
+	d.Precision = binary.BigEndian.Uint64(data[:8])
 	d.Scale = int32(binary.BigEndian.Uint32(data[8:12]))
-	flags := uint16(binary.BigEndian.Uint16(data[12:14]))
+	flags := binary.BigEndian.Uint16(data[12:14])
 
 	if flags&decimalFlagNegative != 0 {
 		d.Negative = true
@@ -364,7 +364,7 @@ func (d Decimal) Marshal() ([]byte, error) {
 	return d.MarshalBinary()
 }
 
-// Marshal binary encoder for protocol buffers which writes into data.
+// MarshalTo binary encoder for protocol buffers which writes into [14]data.
 func (d Decimal) MarshalTo(data []byte) (n int, err error) {
 	if !d.Valid {
 		return 0, nil

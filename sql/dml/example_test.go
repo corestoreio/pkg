@@ -353,7 +353,7 @@ func ExampleInterpolate() {
 	// SELECT * FROM x WHERE a IN (1) AND b IN (1,2,3) AND c NOT IN (5,6,7) AND d BETWEEN 'wat' AND 'ok'
 }
 
-func ExampleRepeat() {
+func ExampleExpandPlaceHolders() {
 	args := dml.MakeArgs(2).Ints(5, 7, 9).Strings("a", "b", "c", "d", "e")
 	sqlStr, err := dml.ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN ? AND name IN ?", args)
 	if err != nil {

@@ -169,7 +169,7 @@ func (a NullString) Marshal() ([]byte, error) {
 	return a.MarshalText()
 }
 
-// Marshal binary encoder for protocol buffers which writes into data.
+// MarshalTo binary encoder for protocol buffers which writes into data.
 func (a NullString) MarshalTo(data []byte) (n int, err error) {
 	if !a.Valid {
 		return 0, nil

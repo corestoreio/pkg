@@ -171,32 +171,32 @@ func (nt NullTime) Ptr() *time.Time {
 }
 
 // Marshal binary encoder for protocol buffers. Implements proto.Marshaler.
-func (a NullTime) Marshal() ([]byte, error) {
-	return a.MarshalBinary()
+func (nt NullTime) Marshal() ([]byte, error) {
+	return nt.MarshalBinary()
 }
 
-// Marshal binary encoder for protocol buffers which writes into data.
-func (a NullTime) MarshalTo(data []byte) (int, error) {
-	if !a.Valid {
+// MarshalTo binary encoder for protocol buffers which writes into data.
+func (nt NullTime) MarshalTo(data []byte) (int, error) {
+	if !nt.Valid {
 		return 0, nil
 	}
-	raw, err := a.Time.MarshalBinary()
+	raw, err := nt.Time.MarshalBinary()
 	return copy(data, raw), err
 }
 
 // Unmarshal binary decoder for protocol buffers. Implements proto.Unmarshaler.
-func (a *NullTime) Unmarshal(data []byte) error {
-	return a.UnmarshalBinary(data)
+func (nt *NullTime) Unmarshal(data []byte) error {
+	return nt.UnmarshalBinary(data)
 }
 
 // Size returns the size of the underlying type. If not valid, the size will be
 // 0. Implements proto.Sizer.
-func (a NullTime) Size() (n int) {
-	if !a.Valid {
+func (nt NullTime) Size() (n int) {
+	if !nt.Valid {
 		return 0
 	}
-	secs := a.Time.Unix()
-	nano := a.Time.Nanosecond()
+	secs := nt.Time.Unix()
+	nano := nt.Time.Nanosecond()
 	if secs != 0 {
 		n += 1 + uint64Size(uint64(secs))
 	}
@@ -206,18 +206,18 @@ func (a NullTime) Size() (n int) {
 	return n
 }
 
-func (a NullTime) writeTo(w *bytes.Buffer) (err error) {
-	if a.Valid {
-		dialect.EscapeTime(w, a.Time)
+func (nt NullTime) writeTo(w *bytes.Buffer) (err error) {
+	if nt.Valid {
+		dialect.EscapeTime(w, nt.Time)
 	} else {
 		_, err = w.WriteString(sqlStrNullUC)
 	}
 	return
 }
 
-func (a NullTime) append(args []interface{}) []interface{} {
-	if a.Valid {
-		return append(args, a.Time)
+func (nt NullTime) append(args []interface{}) []interface{} {
+	if nt.Valid {
+		return append(args, nt.Time)
 	}
 	return append(args, nil)
 }

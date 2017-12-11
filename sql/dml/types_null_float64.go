@@ -181,7 +181,7 @@ func (a NullFloat64) Marshal() ([]byte, error) {
 	return buf[:], err
 }
 
-// Marshal binary encoder for protocol buffers which writes into data.
+// MarshalTo binary encoder for protocol buffers which writes into data.
 func (a NullFloat64) MarshalTo(data []byte) (n int, err error) {
 	if !a.Valid {
 		return 0, nil

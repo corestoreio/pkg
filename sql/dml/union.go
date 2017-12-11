@@ -287,9 +287,9 @@ func (u *Union) readBuildCache() (sql []byte) {
 // DisableBuildCache if enabled it does not cache the SQL string as a final
 // rendered byte slice. Allows you to rebuild the query with different
 // statements.
-func (b *Union) DisableBuildCache() *Union {
-	b.IsBuildCacheDisabled = true
-	return b
+func (u *Union) DisableBuildCache() *Union {
+	u.IsBuildCacheDisabled = true
+	return u
 }
 
 // ToSQL generates the SQL string and its arguments. Calls to this function are

@@ -485,15 +485,15 @@ func (b *Select) DisableBuildCache() *Select {
 
 // ToSQL serialized the Select to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) ([]string, error) {
+func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err error) {
 	b.defaultQualifier = b.Table.qualifier()
 
-	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
+	if err = b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	if b.RawFullSQL != "" {
-		_, err := w.WriteString(b.RawFullSQL)
+		_, err = w.WriteString(b.RawFullSQL)
 		return nil, err
 	}
 
@@ -520,7 +520,6 @@ func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) ([]string, error)
 		w.WriteString("COUNT(*) AS ")
 		Quoter.quote(w, "counted")
 	default:
-		var err error
 		if placeHolders, err = b.Columns.writeQuoted(w, placeHolders); err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -528,14 +527,13 @@ func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) ([]string, error)
 
 	if !b.Table.isEmpty() {
 		w.WriteString(" FROM ")
-		var err error
 		if placeHolders, err = b.Table.writeQuoted(w, placeHolders); err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}
 
 	for _, f := range b.Joins {
-		err := w.WriteByte(' ')
+		w.WriteByte(' ')
 		w.WriteString(f.JoinType)
 		w.WriteString(" JOIN ")
 		if placeHolders, err = f.Table.writeQuoted(w, placeHolders); err != nil {
@@ -546,8 +544,7 @@ func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) ([]string, error)
 		}
 	}
 
-	placeHolders, err := b.Wheres.write(w, 'w', placeHolders)
-	if err != nil {
+	if placeHolders, err = b.Wheres.write(w, 'w', placeHolders); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
@@ -563,8 +560,7 @@ func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) ([]string, error)
 		}
 	}
 
-	placeHolders, err = b.Havings.write(w, 'h', placeHolders)
-	if err != nil {
+	if placeHolders, err = b.Havings.write(w, 'h', placeHolders); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
@@ -581,7 +577,7 @@ func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) ([]string, error)
 	case b.IsForUpdate:
 		w.WriteString(" FOR UPDATE")
 	}
-	return placeHolders, nil
+	return placeHolders, err
 }
 
 // argumentCapacity returns the total possible guessed size of a new args

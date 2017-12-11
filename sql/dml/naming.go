@@ -171,12 +171,12 @@ func (idc ids) AppendColumns(isUnsafe bool, columns ...string) ids {
 		idc = make(ids, 0, len(columns)*2)
 	}
 	for _, c := range columns {
-		id := id{Name: c}
+		ident := id{Name: c}
 		if isUnsafe && isValidIdentifier(c) != 0 {
-			id.Expression = id.Name
-			id.Name = ""
+			ident.Expression = ident.Name
+			ident.Name = ""
 		}
-		idc = append(idc, id)
+		idc = append(idc, ident)
 	}
 	return idc
 }
@@ -196,12 +196,12 @@ func (idc ids) AppendColumnsAliases(isUnsafe bool, columns ...string) ids {
 	}
 
 	for i := 0; i < len(columns); i = i + 2 {
-		id := id{Name: columns[i], Aliased: columns[i+1]}
-		if isUnsafe && isValidIdentifier(id.Name) != 0 {
-			id.Expression = id.Name
-			id.Name = ""
+		ident := id{Name: columns[i], Aliased: columns[i+1]}
+		if isUnsafe && isValidIdentifier(ident.Name) != 0 {
+			ident.Expression = ident.Name
+			ident.Name = ""
 		}
-		idc = append(idc, id)
+		idc = append(idc, ident)
 	}
 	return idc
 }

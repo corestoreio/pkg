@@ -269,14 +269,14 @@ func extractReplaceNamedArgs(sql string, qualifiedColumns []string) (string, []s
 			foundColon = true
 			buf.WriteByte(namedArgStartByte)
 			newSQL.WriteByte(placeHolderRune)
-		case isNotNamedArgSeperator(r) && foundColon == true: // character class can be changed to allow more, like emojis
+		case isNotNamedArgSeperator(r) && foundColon: // character class can be changed to allow more, like emojis
 			foundColon = false
 			if s := buf.String(); buf.Len() > 1 {
 				qualifiedColumns = append(qualifiedColumns, s)
 			}
 			buf.Reset()
 			newSQL.WriteRune(r)
-		case foundColon == true:
+		case foundColon:
 			buf.WriteRune(r)
 		default:
 			newSQL.WriteRune(r)

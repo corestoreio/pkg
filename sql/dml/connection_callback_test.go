@@ -39,9 +39,11 @@ var _ fullStmter = (*cbStmt)(nil)
 func TestWrapDriver_Connection_Error(t *testing.T) {
 	t.Parallel()
 
-	getCon := func(t *testing.T, errCon SqlErrDriverCon) driver.Conn {
+	ctx := context.TODO()
+
+	getCon := func(t *testing.T, errCon SQLErrDriverCon) driver.Conn {
 		wrappedDrv := wrapDriver(
-			SqlErrDriver{Con: errCon}, // AirCon ;-)
+			SQLErrDriver{Con: errCon}, // AirCon ;-)
 			func(fnName string) func(error, string, []driver.NamedValue) error {
 				return func(error, string, []driver.NamedValue) error {
 					return errors.NewAlreadyClosedf("Connection closed")
@@ -53,57 +55,57 @@ func TestWrapDriver_Connection_Error(t *testing.T) {
 	}
 
 	t.Run("PrepareContext", func(t *testing.T) {
-		con := getCon(t, SqlErrDriverCon{})
-		_, err := con.(driver.ConnPrepareContext).PrepareContext(nil, "")
+		con := getCon(t, SQLErrDriverCon{})
+		_, err := con.(driver.ConnPrepareContext).PrepareContext(ctx, "")
 		assert.True(t, errors.IsAlreadyClosed(err), "%s", err)
 	})
 	t.Run("PrepareContext Original Error", func(t *testing.T) {
-		con := getCon(t, SqlErrDriverCon{
+		con := getCon(t, SQLErrDriverCon{
 			PrepareError: errors.NewWriteFailedf("Should not get overwritten"),
 		})
-		_, err := con.(driver.ConnPrepareContext).PrepareContext(nil, "")
+		_, err := con.(driver.ConnPrepareContext).PrepareContext(ctx, "")
 		assert.True(t, errors.IsWriteFailed(err), "%s", err)
 	})
 	t.Run("Prepare", func(t *testing.T) {
-		con := getCon(t, SqlErrDriverCon{})
+		con := getCon(t, SQLErrDriverCon{})
 		_, err := con.Prepare("")
 		assert.True(t, errors.IsAlreadyClosed(err), "%s", err)
 	})
 	t.Run("Close", func(t *testing.T) {
-		con := getCon(t, SqlErrDriverCon{})
+		con := getCon(t, SQLErrDriverCon{})
 		err := con.Close()
 		assert.True(t, errors.IsAlreadyClosed(err), "%s", err)
 	})
 	t.Run("Begin", func(t *testing.T) {
-		con := getCon(t, SqlErrDriverCon{})
+		con := getCon(t, SQLErrDriverCon{})
 		_, err := con.Begin()
 		assert.True(t, errors.IsAlreadyClosed(err), "%s", err)
 	})
 	t.Run("BeginTx", func(t *testing.T) {
-		con := getCon(t, SqlErrDriverCon{})
-		_, err := con.(driver.ConnBeginTx).BeginTx(nil, driver.TxOptions{})
+		con := getCon(t, SQLErrDriverCon{})
+		_, err := con.(driver.ConnBeginTx).BeginTx(ctx, driver.TxOptions{})
 		assert.True(t, errors.IsAlreadyClosed(err), "%s", err)
 	})
 	t.Run("Ping", func(t *testing.T) {
-		con := getCon(t, SqlErrDriverCon{})
-		err := con.(driver.Pinger).Ping(nil)
+		con := getCon(t, SQLErrDriverCon{})
+		err := con.(driver.Pinger).Ping(ctx)
 		assert.True(t, errors.IsAlreadyClosed(err), "%s", err)
 	})
 	t.Run("ExecContext", func(t *testing.T) {
-		con := getCon(t, SqlErrDriverCon{})
-		_, err := con.(driver.ExecerContext).ExecContext(nil, "", nil)
+		con := getCon(t, SQLErrDriverCon{})
+		_, err := con.(driver.ExecerContext).ExecContext(ctx, "", nil)
 		assert.True(t, errors.IsAlreadyClosed(err), "%s", err)
 	})
 	t.Run("ExecContext Original Error", func(t *testing.T) {
-		con := getCon(t, SqlErrDriverCon{
+		con := getCon(t, SQLErrDriverCon{
 			ExecError: errors.NewWriteFailedf("Should not get overwritten"),
 		})
-		_, err := con.(driver.ExecerContext).ExecContext(nil, "", nil)
+		_, err := con.(driver.ExecerContext).ExecContext(ctx, "", nil)
 		assert.True(t, errors.IsWriteFailed(err), "%s", err)
 	})
 	t.Run("QueryContext", func(t *testing.T) {
-		con := getCon(t, SqlErrDriverCon{})
-		_, err := con.(driver.QueryerContext).QueryContext(nil, "", nil)
+		con := getCon(t, SQLErrDriverCon{})
+		_, err := con.(driver.QueryerContext).QueryContext(ctx, "", nil)
 		assert.True(t, errors.IsAlreadyClosed(err), "%s", err)
 	})
 }
@@ -112,7 +114,7 @@ func TestWrapDriver_Stmt_Error(t *testing.T) {
 	t.Parallel()
 
 	getStmt := func(t *testing.T) driver.Stmt {
-		wrappedDrv := wrapDriver(SqlErrDriver{}, func(fnName string) func(error, string, []driver.NamedValue) error {
+		wrappedDrv := wrapDriver(SQLErrDriver{}, func(fnName string) func(error, string, []driver.NamedValue) error {
 			return func(err error, _ string, _ []driver.NamedValue) error {
 				if strings.HasPrefix(fnName, "Stmt.") {
 					err = errors.NewAbortedf("Connection closed")
@@ -126,6 +128,8 @@ func TestWrapDriver_Stmt_Error(t *testing.T) {
 		require.NoError(t, err)
 		return stmt
 	}
+
+	ctx := context.TODO()
 
 	t.Run("Exec", func(t *testing.T) {
 		con := getStmt(t)
@@ -145,28 +149,28 @@ func TestWrapDriver_Stmt_Error(t *testing.T) {
 
 	t.Run("ExecContext", func(t *testing.T) {
 		con := getStmt(t)
-		_, err := con.(driver.StmtExecContext).ExecContext(nil, nil)
+		_, err := con.(driver.StmtExecContext).ExecContext(ctx, nil)
 		assert.True(t, errors.IsAborted(err), "%s", err)
 	})
 	t.Run("QueryContext", func(t *testing.T) {
 		con := getStmt(t)
-		_, err := con.(driver.StmtQueryContext).QueryContext(nil, nil)
+		_, err := con.(driver.StmtQueryContext).QueryContext(ctx, nil)
 		assert.True(t, errors.IsAborted(err), "%s", err)
 	})
 }
 
 // The next structs can be migrated to the cstesting package once needed.
 
-type SqlErrDriver struct {
+type SQLErrDriver struct {
 	OpenError error
-	Con       SqlErrDriverCon
+	Con       SQLErrDriverCon
 }
 
-func (md SqlErrDriver) Open(name string) (driver.Conn, error) {
+func (md SQLErrDriver) Open(name string) (driver.Conn, error) {
 	return md.Con, md.OpenError
 }
 
-type SqlErrDriverCon struct {
+type SQLErrDriverCon struct {
 	PrepareError  error
 	ExecError     error
 	QueryError    error
@@ -175,54 +179,54 @@ type SqlErrDriverCon struct {
 	BeginError    error
 	TxCommitErr   error
 	TxRollbackErr error
-	Stmt          SqlErrDriverStmt
-	Tx            SqlErrDriverTx
+	Stmt          SQLErrDriverStmt
+	Tx            SQLErrDriverTx
 }
 
-func (mc SqlErrDriverCon) Prepare(query string) (driver.Stmt, error) {
+func (mc SQLErrDriverCon) Prepare(query string) (driver.Stmt, error) {
 	return mc.Stmt, mc.PrepareError
 }
 
-func (mc SqlErrDriverCon) PrepareContext(ctx context.Context, query string) (driver.Stmt, error) {
+func (mc SQLErrDriverCon) PrepareContext(ctx context.Context, query string) (driver.Stmt, error) {
 	return mc.Stmt, mc.PrepareError
 }
-func (mc SqlErrDriverCon) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
+func (mc SQLErrDriverCon) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
 	return nil, mc.ExecError
 }
-func (mc SqlErrDriverCon) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
+func (mc SQLErrDriverCon) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
 	return nil, mc.QueryError
 }
-func (mc SqlErrDriverCon) Ping(ctx context.Context) (err error) {
+func (mc SQLErrDriverCon) Ping(ctx context.Context) (err error) {
 	return mc.PingError
 }
 
-func (mc SqlErrDriverCon) Close() error              { return mc.CloseError }
-func (mc SqlErrDriverCon) Begin() (driver.Tx, error) { return mc.Tx, mc.BeginError }
-func (mc SqlErrDriverCon) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, error) {
+func (mc SQLErrDriverCon) Close() error              { return mc.CloseError }
+func (mc SQLErrDriverCon) Begin() (driver.Tx, error) { return mc.Tx, mc.BeginError }
+func (mc SQLErrDriverCon) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, error) {
 	return mc.Tx, mc.BeginError
 }
 
-type SqlErrDriverTx struct {
+type SQLErrDriverTx struct {
 	CommitErr   error
 	RollbackErr error
 }
 
-func (mt SqlErrDriverTx) Commit() error   { return mt.CommitErr }
-func (mt SqlErrDriverTx) Rollback() error { return mt.RollbackErr }
+func (mt SQLErrDriverTx) Commit() error   { return mt.CommitErr }
+func (mt SQLErrDriverTx) Rollback() error { return mt.RollbackErr }
 
-type SqlErrDriverStmt struct {
+type SQLErrDriverStmt struct {
 	CloseError error
 	ExecError  error
 	QueryError error
 }
 
-func (mt SqlErrDriverStmt) Close() error                                    { return mt.CloseError }
-func (mt SqlErrDriverStmt) NumInput() int                                   { return 0 }
-func (mt SqlErrDriverStmt) Exec(args []driver.Value) (driver.Result, error) { return nil, mt.ExecError }
-func (mt SqlErrDriverStmt) ExecContext(ctx context.Context, args []driver.NamedValue) (res driver.Result, err error) {
+func (mt SQLErrDriverStmt) Close() error                                    { return mt.CloseError }
+func (mt SQLErrDriverStmt) NumInput() int                                   { return 0 }
+func (mt SQLErrDriverStmt) Exec(args []driver.Value) (driver.Result, error) { return nil, mt.ExecError }
+func (mt SQLErrDriverStmt) ExecContext(ctx context.Context, args []driver.NamedValue) (res driver.Result, err error) {
 	return nil, mt.ExecError
 }
-func (mt SqlErrDriverStmt) Query(args []driver.Value) (driver.Rows, error) { return nil, mt.QueryError }
-func (mt SqlErrDriverStmt) QueryContext(ctx context.Context, args []driver.NamedValue) (rws driver.Rows, err error) {
+func (mt SQLErrDriverStmt) Query(args []driver.Value) (driver.Rows, error) { return nil, mt.QueryError }
+func (mt SQLErrDriverStmt) QueryContext(ctx context.Context, args []driver.NamedValue) (rws driver.Rows, err error) {
 	return nil, mt.QueryError
 }

@@ -208,12 +208,6 @@ func (b *Show) ToSQL() (string, []interface{}, error) {
 	return b.buildArgsAndSQL(b)
 }
 
-// argumentCapacity returns the total possible guessed size of a new Arguments
-// slice. Use as the cap parameter in a call to `make`.
-func (b *Show) argumentCapacity() int {
-	return len(b.WhereFragments)
-}
-
 func (b *Show) writeBuildCache(sql []byte) {
 	b.cacheSQL = sql
 }

@@ -410,8 +410,8 @@ func (b *Insert) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 			}
 			buf.WriteString(") ")
 		}
-		placeHolders, err := b.Select.toSQL(buf, placeHolders)
-		return placeHolders, errors.WithStack(err)
+		ph, err := b.Select.toSQL(buf, placeHolders)
+		return ph, errors.WithStack(err)
 	}
 
 	if len(b.Columns) > 0 {

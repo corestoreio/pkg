@@ -770,7 +770,8 @@ func (a Arguments) Reset() Arguments { return a[:0] }
 
 // DriverValue adds multiple of the same underlying values to the argument
 // slice. When using different values, the last applied value wins and gets
-// added to the argument slice.
+// added to the argument slice. For example driver.Values of type `int` will
+// result in []int.
 func (a Arguments) DriverValue(dvs ...driver.Valuer) Arguments {
 	// value is a value that drivers must be able to handle.
 	// It is either nil or an instance of one of these types:

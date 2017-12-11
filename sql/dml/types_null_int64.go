@@ -15,15 +15,13 @@
 package dml
 
 import (
+	"bytes"
 	"database/sql"
 	"database/sql/driver"
 	"encoding/binary"
-	"strconv"
-
-	"bytes"
-
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/byteconv"
+	"strconv"
 )
 
 // TODO(cys): Remove GobEncoder, GobDecoder, MarshalJSON, UnmarshalJSON in Go 2.
@@ -190,7 +188,7 @@ func (a NullInt64) Marshal() ([]byte, error) {
 	return buf[:], err
 }
 
-// Marshal binary encoder for protocol buffers which writes into data.
+// MarshalTo binary encoder for protocol buffers which writes into data.
 func (a NullInt64) MarshalTo(data []byte) (n int, err error) {
 	if !a.Valid {
 		return 0, nil

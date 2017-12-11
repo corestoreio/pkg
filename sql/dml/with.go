@@ -312,30 +312,6 @@ func (b *With) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err er
 	return nil, errors.NewEmptyf("[dml] Type With misses a top level statement")
 }
 
-func (b *With) bindRecord(records []QualifiedRecord) {
-	// Current pattern: To whom it may concern.
-
-	for _, sc := range b.Subclauses {
-		switch {
-		case sc.Select != nil:
-			sc.Select.withRecords(records)
-		case sc.Union != nil:
-			sc.Union.withRecord(records)
-		}
-	}
-
-	switch {
-	case b.TopLevel.Select != nil:
-		b.TopLevel.Select.withRecords(records)
-	case b.TopLevel.Union != nil:
-		b.TopLevel.Union.withRecord(records)
-	case b.TopLevel.Update != nil:
-		b.TopLevel.Update.withRecords(records)
-	case b.TopLevel.Delete != nil:
-		b.TopLevel.Delete.withRecords(records)
-	}
-}
-
 // Query executes a query and returns many rows.
 func (b *With) Query(ctx context.Context) (*sql.Rows, error) {
 	if b.Log != nil && b.Log.IsDebug() {

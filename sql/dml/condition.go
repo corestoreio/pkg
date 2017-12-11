@@ -94,7 +94,7 @@ func (o Op) write(w *bytes.Buffer, args ...argument) (err error) {
 		w.WriteString(" LIKE ")
 		err = arg.writeTo(w, 0)
 	case Regexp, NotRegexp:
-		_, err = w.WriteString(" REGEXP ")
+		w.WriteString(" REGEXP ")
 		err = arg.writeTo(w, 0)
 	case Between, NotBetween:
 		w.WriteString(" BETWEEN ")
@@ -238,29 +238,6 @@ func (c *Condition) Or() *Condition {
 
 func (c *Condition) isExpression() bool {
 	return c.IsLeftExpression || c.Right.IsExpression
-}
-
-// intersectConditions iterates over each WHERE fragment and appends all
-// conditions aka column names to the slice c.
-func (cs Conditions) intersectConditions(cols []string) []string {
-	// this calculates the intersection of the columns in Conditions which
-	// already have an value provided/assigned and those where the arguments
-	// must be retrieved from the interface ColumnMapper. If the arguments
-	// should be assembled from ColumnMapper the value PlaceHolder is true.
-	for _, cnd := range cs {
-		if cnd.Right.PlaceHolder != "" {
-			cols = append(cols, cnd.Left)
-		}
-	}
-	return cols
-}
-
-// leftHands appends all Left strings to c. Use to get a list of all columns.
-func (cs Conditions) leftHands(columns []string) []string {
-	for _, cnd := range cs {
-		columns = append(columns, cnd.Left)
-	}
-	return columns
 }
 
 // Columns add syntactic sugar to a JOIN or ON DUPLICATE KEY statement: In case
@@ -440,10 +417,10 @@ func (c *Condition) PlaceHolder() *Condition {
 	return c
 }
 
-// PlaceHolder treats a condition as a placeholder. Sets the database specific
-// placeholder character "?" as many times as specified in variable count.
-// Mostly used in prepared statements and for interpolation and when using the
-// IN clause.
+// PlaceHolders treats a condition as a string with multiple placeholders. Sets
+// the database specific placeholder character "?" as many times as specified in
+// variable count. Mostly used in prepared statements and for interpolation and
+// when using the IN clause.
 func (c *Condition) PlaceHolders(count int) *Condition {
 	var buf strings.Builder
 	buf.WriteByte('(')
@@ -749,13 +726,18 @@ func (c *Condition) Values() *Condition {
 	return c
 }
 
-// DriverValue uses driver.Valuers for DB comparison and injection
+// DriverValue adds multiple of the same underlying values to the argument
+// slice. When using different values, the last applied value wins and gets
+// added to the argument slice. For example driver.Values of type `int` will
+// result in []int.
 func (c *Condition) DriverValue(dv ...driver.Valuer) *Condition {
 	c.Right.args = c.Right.args.DriverValue(dv...)
 	return c
 }
 
-// DriverValues
+// DriverValues adds each driver.Value as its own argument to the argument
+// slice. It panics if the underlying type is not one of the allowed of
+// interface driver.Valuer.
 func (c *Condition) DriverValues(dv ...driver.Valuer) *Condition {
 	c.Right.args = c.Right.args.DriverValues(dv...)
 	return c
@@ -849,8 +831,9 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 		// the `case`s has been carefully implemented.
 		switch {
 		case cnd.IsLeftExpression:
+			var phCount int
 			cnd.Left, placeHolders = extractReplaceNamedArgs(cnd.Left, placeHolders)
-			phCount, err := writeExpression(w, cnd.Left, cnd.Right.args)
+			phCount, err = writeExpression(w, cnd.Left, cnd.Right.args)
 			if err != nil {
 				return nil, errors.WithStack(err)
 			}
@@ -874,15 +857,15 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 
 		case cnd.Right.IsExpression:
 			Quoter.WriteIdentifier(w, cnd.Left)
-			if err := cnd.Operator.write(w); err != nil {
+			if err = cnd.Operator.write(w); err != nil {
 				return nil, errors.WithStack(err)
 			}
-			if _, err := writeExpression(w, cnd.Right.Column, cnd.Right.args); err != nil {
+			if _, err = writeExpression(w, cnd.Right.Column, cnd.Right.args); err != nil {
 				return nil, errors.WithStack(err)
 			}
 		case cnd.Right.Sub != nil:
 			Quoter.WriteIdentifier(w, cnd.Left)
-			if err := cnd.Operator.write(w); err != nil {
+			if err = cnd.Operator.write(w); err != nil {
 				return nil, errors.WithStack(err)
 			}
 			w.WriteByte('(')
@@ -897,7 +880,7 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 			if cnd.Right.arg.len() > 1 && cnd.Operator == 0 { // no operator but slice applied, so creating an IN query.
 				cnd.Operator = In
 			}
-			if err := cnd.Operator.write(w, cnd.Right.arg); err != nil {
+			if err = cnd.Operator.write(w, cnd.Right.arg); err != nil {
 				return nil, errors.WithStack(err)
 			}
 
@@ -906,20 +889,20 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 			if cnd.Right.args.Len() > 1 && cnd.Operator == 0 { // no operator but slice applied, so creating an IN query.
 				cnd.Operator = In
 			}
-			if err := cnd.Operator.write(w, cnd.Right.args...); err != nil {
+			if err = cnd.Operator.write(w, cnd.Right.args...); err != nil {
 				return nil, errors.WithStack(err)
 			}
 
 		case cnd.Right.Column != "": // compares the left column with the right column
 			Quoter.WriteIdentifier(w, cnd.Left)
-			if err := cnd.Operator.write(w); err != nil {
+			if err = cnd.Operator.write(w); err != nil {
 				return nil, errors.WithStack(err)
 			}
 			Quoter.WriteIdentifier(w, cnd.Right.Column)
 
 		case cnd.Right.PlaceHolder != "":
 			Quoter.WriteIdentifier(w, cnd.Left)
-			if err := cnd.Operator.write(w); err != nil {
+			if err = cnd.Operator.write(w); err != nil {
 				return nil, errors.WithStack(err)
 			}
 
@@ -945,7 +928,7 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 			if cOp == 0 {
 				cOp = Null
 			}
-			if err := cOp.write(w); err != nil {
+			if err = cOp.write(w); err != nil {
 				return nil, errors.WithStack(err)
 			}
 
@@ -956,7 +939,7 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 		w.WriteByte(')')
 		i++
 	}
-	return placeHolders, err
+	return placeHolders, errors.WithStack(err)
 }
 
 func (cs Conditions) writeSetClauses(w *bytes.Buffer, placeHolders []string) ([]string, error) {

@@ -777,7 +777,7 @@ func (bc builderCommon) convertRecordsToArguments() (Arguments, error) {
 		return bc.argsArgs, nil
 	}
 
-	if len(bc.argsArgs) > 0 && len(bc.argsRecords) == 0 && false == bc.argsArgs.hasNamedArgs() {
+	if len(bc.argsArgs) > 0 && len(bc.argsRecords) == 0 && !bc.argsArgs.hasNamedArgs() {
 		return multiplyArguments(bc.templateStmtCount, bc.argsArgs), nil
 	}
 
@@ -916,7 +916,7 @@ func (bb *BuilderBase) buildArgsAndSQL(qb queryBuilder) (string, []interface{}, 
 	if bb.IsExpandPlaceHolders {
 		if phCount := bytes.Count(rawSQL, placeHolderBytes); phCount < args.Len() {
 			var buf bytes.Buffer
-			if err := expandPlaceHolders(&buf, rawSQL, args); err != nil {
+			if err = expandPlaceHolders(&buf, rawSQL, args); err != nil {
 				return "", nil, errors.WithStack(err)
 			}
 			qb.writeBuildCache(buf.Bytes())
@@ -930,10 +930,10 @@ func (bb *BuilderBase) buildArgsAndSQL(qb queryBuilder) (string, []interface{}, 
 			return "", nil, errors.NewNotAllowedf("[dml] Interpolation does only work with an Arguments slice, but you provided an interface slice: %#v", bb.argsRaw)
 		}
 		buf := bufferpool.Get()
-		err := writeInterpolate(buf, rawSQL, args)
+		err = writeInterpolate(buf, rawSQL, args)
 		s := buf.String()
 		bufferpool.Put(buf)
-		return s, nil, err
+		return s, nil, errors.WithStack(err)
 	}
 	if !bb.isWithInterfaces {
 		bb.argsRaw = bb.argsRaw[:0]
