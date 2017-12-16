@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -72,7 +72,7 @@ func TestNewHttpTrip_Ok(t *testing.T) {
 
 func TestNewHttpTrip_Error(t *testing.T) {
 	t.Parallel()
-	tr := cstesting.NewHTTPTrip(501, "Hello Error", errors.NewNotValidf("test not valid"))
+	tr := cstesting.NewHTTPTrip(501, "Hello Error", errors.NotValid.Newf("test not valid"))
 	cl := &http.Client{
 		Transport: tr,
 	}
@@ -87,7 +87,7 @@ func TestNewHttpTrip_Error(t *testing.T) {
 				t.Fatal("NewRequest", err)
 			}
 			resp, err := cl.Do(getReq)
-			assert.True(t, errors.IsNotValid(err.(*url.Error).Err), "ErrorDo: %#v", err)
+			assert.True(t, errors.NotValid.Match(err.(*url.Error).Err), "ErrorDo: %#v", err)
 			assert.Nil(t, resp)
 		}(&wg)
 	}
@@ -107,7 +107,7 @@ func TestNewHttpTrip_Error_FromFile(t *testing.T) {
 		t.Fatal("NewRequest", err)
 	}
 	resp, err := cl.Do(getReq)
-	assert.True(t, errors.IsNotFound(err.(*url.Error).Err), "ErrorDo: %#v", err)
+	assert.True(t, errors.NotFound.Match(err.(*url.Error).Err), "ErrorDo: %#v", err)
 	assert.Nil(t, resp)
 
 	tr.RequestsCount(t, 1)
