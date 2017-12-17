@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cstesting
+package dmltest
 
 import (
 	"database/sql/driver"
@@ -24,8 +24,8 @@ import (
 	"strings"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/corestoreio/pkg/storage/text"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/storage/text"
 )
 
 // CSVOptions applies options to the CSV reader
@@ -124,7 +124,7 @@ func LoadCSV(opts ...csvOptions) (columns []string, rows [][]driver.Value, err e
 			err = errors.Wrap(err, "[cstesting] csvReader.Read")
 			return
 		case res == nil:
-			err = errors.NewFatalf("[cstesting] Cannot read from csv %q", cfg.path)
+			err = errors.Fatal.Newf("[cstesting] Cannot read from csv %q", cfg.path)
 			return
 		}
 		if j == 0 {
@@ -182,12 +182,12 @@ func MustMockRows(opts ...csvOptions) *sqlmock.Rows {
 	return r
 }
 
-var whiteSpaceRemover = regexp.MustCompile("\\s+")
+var whiteSpaceRemover = regexp.MustCompile(`\s+`)
 
 // SQLMockQuoteMeta hacky work around to remove multiple \s via regexp and
 // replace them with a single whitespace. Because the SQL Mock driver creates
 // from a multi line string a single line string.
 func SQLMockQuoteMeta(s string) string {
 	s = regexp.QuoteMeta(s)
-	return whiteSpaceRemover.ReplaceAllString(s, " ")
+	return whiteSpaceRemover.ReplaceAllString(s, ` `)
 }

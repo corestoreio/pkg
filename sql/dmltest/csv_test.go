@@ -12,21 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cstesting_test
+package dmltest_test
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestLoadCSVWithFile(t *testing.T) {
 	t.Parallel()
-	cols, rows, err := cstesting.LoadCSV(
-		cstesting.WithFile("testdata", "core_config_data1.csv"),
-		cstesting.WithTestMode(),
+	cols, rows, err := dmltest.LoadCSV(
+		dmltest.WithFile("testdata", "core_config_data1.csv"),
+		dmltest.WithTestMode(),
 	)
 	assert.NoError(t, err)
 	assert.Exactly(t, []string{"config_id", "scope", "scope_id", "path", "value"}, cols)
@@ -38,10 +38,10 @@ func TestLoadCSVWithFile(t *testing.T) {
 
 func TestLoadCSVWithReaderConfig(t *testing.T) {
 	t.Parallel()
-	cols, rows, err := cstesting.LoadCSV(
-		cstesting.WithTestMode(),
-		cstesting.WithFile("testdata", "core_config_data3.csv"),
-		cstesting.WithReaderConfig(cstesting.CSVConfig{Comma: '|'}),
+	cols, rows, err := dmltest.LoadCSV(
+		dmltest.WithTestMode(),
+		dmltest.WithFile("testdata", "core_config_data3.csv"),
+		dmltest.WithReaderConfig(dmltest.CSVConfig{Comma: '|'}),
 	)
 	assert.NoError(t, err)
 	assert.Exactly(t, []string{"config_id", "scope", "scope_id", "path", "value"}, cols)
@@ -53,9 +53,9 @@ func TestLoadCSVWithReaderConfig(t *testing.T) {
 
 func TestLoadCSVFileError(t *testing.T) {
 	t.Parallel()
-	cols, rows, err := cstesting.LoadCSV(
-		cstesting.WithTestMode(),
-		cstesting.WithFile("testdata", "core_config_dataXX.csv"),
+	cols, rows, err := dmltest.LoadCSV(
+		dmltest.WithTestMode(),
+		dmltest.WithFile("testdata", "core_config_dataXX.csv"),
 	)
 	assert.Nil(t, cols)
 	assert.Nil(t, rows)
@@ -64,9 +64,9 @@ func TestLoadCSVFileError(t *testing.T) {
 
 func TestLoadCSVReadError(t *testing.T) {
 	t.Parallel()
-	cols, rows, err := cstesting.LoadCSV(
-		cstesting.WithFile("testdata", "core_config_data2.csv"),
-		cstesting.WithTestMode(),
+	cols, rows, err := dmltest.LoadCSV(
+		dmltest.WithFile("testdata", "core_config_data2.csv"),
+		dmltest.WithTestMode(),
 	)
 	assert.Exactly(t, []string{"config_id", "scope", "scope_id", "path", "value"}, cols)
 	assert.Len(t, rows, 5)
@@ -75,17 +75,17 @@ func TestLoadCSVReadError(t *testing.T) {
 
 func TestMockRowsError(t *testing.T) {
 	t.Parallel()
-	r, err := cstesting.MockRows(cstesting.WithFile("non", "existent.csv"))
+	r, err := dmltest.MockRows(dmltest.WithFile("non", "existent.csv"))
 	assert.Nil(t, r)
 	assert.Contains(t, err.Error(), "non/existent.csv: no such file or directory")
 }
 
 func TestMockRowsLoaded(t *testing.T) {
 	t.Parallel()
-	rows, err := cstesting.MockRows(
-		cstesting.WithReaderConfig(cstesting.CSVConfig{Comma: '|'}),
-		cstesting.WithFile("testdata", "core_config_data3.csv"),
-		cstesting.WithTestMode(),
+	rows, err := dmltest.MockRows(
+		dmltest.WithReaderConfig(dmltest.CSVConfig{Comma: '|'}),
+		dmltest.WithFile("testdata", "core_config_data3.csv"),
+		dmltest.WithTestMode(),
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, rows)
@@ -104,6 +104,6 @@ func TestMustMockRows(t *testing.T) {
 		}
 	}()
 
-	r := cstesting.MustMockRows(cstesting.WithFile("non", "existent.csv"))
+	r := dmltest.MustMockRows(dmltest.WithFile("non", "existent.csv"))
 	assert.Nil(t, r)
 }

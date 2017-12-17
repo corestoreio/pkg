@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cstesting
+package dmltest
 
 import (
 	"io"
@@ -20,8 +20,8 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/sql/dml"
 )
 
 // EnvDSN is the name of the environment variable
@@ -30,7 +30,7 @@ const EnvDSN = "CS_DSN"
 func getDSN(env string) (string, error) {
 	dsn := os.Getenv(env)
 	if dsn == "" {
-		return "", errors.NewNotFoundf("DSN in environment variable %q not found.", EnvDSN)
+		return "", errors.NotFound.Newf("DSN in environment variable %q not found.", EnvDSN)
 	}
 	return dsn, nil
 }
@@ -51,7 +51,7 @@ func MustGetDSN(t testing.TB) string {
 // Argument t specified usually the *testing.T/B struct.
 func MustConnectDB(t testing.TB, opts ...dml.ConnPoolOption) *dml.ConnPool {
 	t.Helper()
-	if _, err := getDSN(EnvDSN); errors.IsNotFound(err) {
+	if _, err := getDSN(EnvDSN); errors.NotFound.Match(err) {
 		t.Skipf("%s", err)
 	}
 	if len(opts) == 0 {
@@ -99,6 +99,18 @@ func MockClose(t testing.TB, c io.Closer, m sqlmock.Sqlmock) {
 	if err := m.ExpectationsWereMet(); err != nil {
 		if t != nil {
 			t.Fatalf("There were unfulfilled expectations:\n%+v", err)
+		} else {
+			panic(err)
+		}
+	}
+}
+
+// fatalIfError fails the tests if an unexpected error occurred. If the error is
+// gift wrapped prints the location.
+func fatalIfError(t testing.TB, err error) {
+	if err != nil {
+		if t != nil {
+			t.Fatalf("%+v", err)
 		} else {
 			panic(err)
 		}

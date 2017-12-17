@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cstesting_test
+package dmltest_test
 
 import (
 	"testing"
 
-	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMockDB(t *testing.T) {
-	dbc, mockDB := cstesting.MockDB(t)
-	defer cstesting.MockClose(t, dbc, mockDB)
+	dbc, mockDB := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, dbc, mockDB)
 	assert.NotNil(t, dbc)
 	assert.NotNil(t, mockDB)
 }
@@ -37,6 +37,6 @@ func TestMustConnectDB(t *testing.T) {
 		}
 	}()
 
-	db := cstesting.MustConnectDB(t)
+	db := dmltest.MustConnectDB(t)
 	assert.NotNil(t, db)
 }
