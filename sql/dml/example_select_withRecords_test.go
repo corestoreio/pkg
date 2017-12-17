@@ -57,7 +57,7 @@ func (ce *catalogCategoryEntity) MapColumns(cm *dml.ColumnMap) error {
 		case "created_at":
 			cm.Time(&ce.CreatedAt)
 		default:
-			return errors.NewNotFoundf("[dml_test] %T: Column %q not found", ce, c)
+			return errors.NotFound.Newf("[dml_test] %T: Column %q not found", ce, c)
 		}
 	}
 	return cm.Err()
@@ -91,7 +91,7 @@ func (ts *tableStore) MapColumns(cm *dml.ColumnMap) error {
 		case "name":
 			cm.String(&ts.Name)
 		default:
-			return errors.NewNotFoundf("[dml_test] %T: Column %q not found", ts, c)
+			return errors.NotFound.Newf("[dml_test] %T: Column %q not found", ts, c)
 		}
 	}
 	return cm.Err()

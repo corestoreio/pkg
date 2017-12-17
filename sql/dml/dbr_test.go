@@ -118,7 +118,7 @@ func (p *dmlPerson) MapColumns(cm *ColumnMap) error {
 		case "store_id", "created_at", "total_income", "avg_income":
 			// noop don't trigger the default case
 		default:
-			return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", c)
+			return errors.NotFound.Newf("[dml_test] dmlPerson Column %q not found", c)
 		}
 	}
 	return errors.WithStack(cm.Err())
@@ -159,11 +159,11 @@ func (ps *dmlPersons) MapColumns(cm *ColumnMap) error {
 			case "email":
 				cm.Args = cm.Args.NullStrings(ps.Emails()...)
 			default:
-				return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", c)
+				return errors.NotFound.Newf("[dml_test] dmlPerson Column %q not found", c)
 			}
 		}
 	default:
-		return errors.NewNotSupportedf("[dml] Unknown Mode: %q", string(m))
+		return errors.NotSupported.Newf("[dml] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }
@@ -237,7 +237,7 @@ func (p *nullTypedRecord) MapColumns(cm *ColumnMap) error {
 		case "decimal_val":
 			cm.Decimal(&p.DecimalVal)
 		default:
-			return errors.NewNotFoundf("[dml_test] Column %q not found", c)
+			return errors.NotFound.Newf("[dml_test] Column %q not found", c)
 		}
 	}
 	return cm.Err()
@@ -327,15 +327,15 @@ func (pm dbMock) ExecContext(ctx context.Context, query string, args ...interfac
 // interpolated string. This function also exists in file dml_public_test.go to
 // avoid import cycles when using a single package dedicated for testing.
 func compareToSQL(
-	t testing.TB, qb QueryBuilder, wantErr errors.BehaviourFunc,
+	t testing.TB, qb QueryBuilder, wantErrKind errors.Kind,
 	wantSQLPlaceholders, wantSQLInterpolated string,
 	wantArgs ...interface{},
 ) {
 	sqlStr, args, err := qb.ToSQL()
-	if wantErr == nil {
+	if wantErrKind.Empty() {
 		require.NoError(t, err)
 	} else {
-		require.True(t, wantErr(err), "%+v", err)
+		require.True(t, wantErrKind.Match(err), "%+v", err)
 	}
 
 	if wantSQLPlaceholders != "" {
@@ -378,10 +378,10 @@ func compareToSQL(
 
 	sqlStr, args, err = qb.ToSQL() // Call with enabled interpolation
 	require.Nil(t, args, "Arguments should be nil when the SQL string gets interpolated")
-	if wantErr == nil {
+	if wantErrKind.Empty() {
 		require.NoError(t, err)
 	} else {
-		require.True(t, wantErr(err), "%+v")
+		require.True(t, wantErrKind.Match(err), "%+v")
 	}
 	require.Equal(t, wantSQLInterpolated, sqlStr, "Interpolated SQL strings do not match")
 }
@@ -389,15 +389,15 @@ func compareToSQL(
 // compareToSQL2 This function also exists in file dml_public_test.go to
 // avoid import cycles when using a single package dedicated for testing.
 func compareToSQL2(
-	t testing.TB, qb QueryBuilder, wantErr errors.BehaviourFunc,
+	t testing.TB, qb QueryBuilder, wantErrKind errors.Kind,
 	wantSQL string, wantArgs ...interface{},
 ) {
 	t.Helper()
 	sqlStr, args, err := qb.ToSQL()
-	if wantErr == nil {
+	if wantErrKind.Empty() {
 		require.NoError(t, err, "With SQL %q", wantSQL)
 	} else {
-		require.True(t, wantErr(err), "%+v", err)
+		require.True(t, wantErrKind.Match(err), "%+v", err)
 	}
 	assert.Exactly(t, wantSQL, sqlStr, "SQL strings do not match")
 	assert.Exactly(t, wantArgs, args, "Arguments do not match")

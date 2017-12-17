@@ -21,7 +21,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,8 +30,8 @@ func TestTx_Wrap(t *testing.T) {
 	t.Parallel()
 
 	t.Run("commit", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
 		dbMock.ExpectBegin()
 		dbMock.ExpectExec("UPDATE `tableX` SET `value`").WithArgs().WillReturnResult(sqlmock.NewResult(0, 9))
@@ -56,11 +56,11 @@ func TestTx_Wrap(t *testing.T) {
 	})
 
 	t.Run("rollback", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
 		dbMock.ExpectBegin()
-		dbMock.ExpectExec("UPDATE `tableX` SET `value`").WithArgs().WillReturnError(errors.NewAbortedf("Sorry dude"))
+		dbMock.ExpectExec("UPDATE `tableX` SET `value`").WithArgs().WillReturnError(errors.Aborted.Newf("Sorry dude"))
 		dbMock.ExpectRollback()
 
 		tx, err := dbc.BeginTx(context.TODO(), nil)
@@ -72,6 +72,6 @@ func TestTx_Wrap(t *testing.T) {
 			assert.Nil(t, res)
 			return err
 		})
-		assert.True(t, errors.IsAborted(err))
+		assert.True(t, errors.Aborted.Match(err))
 	})
 }

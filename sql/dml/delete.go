@@ -239,7 +239,7 @@ func (b *Delete) toSQL(w *bytes.Buffer, placeHolders []string) ([]string, error)
 	}
 
 	if b.Table.Name == "" {
-		return nil, errors.NewEmptyf("[dml] Delete: Table is missing")
+		return nil, errors.Empty.Newf("[dml] Delete: Table is missing")
 	}
 
 	w.WriteString("DELETE ")

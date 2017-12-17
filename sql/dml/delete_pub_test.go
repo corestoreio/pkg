@@ -25,7 +25,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log/logw"
 	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -34,7 +34,7 @@ func TestDelete_Prepare(t *testing.T) {
 	t.Parallel()
 
 	t.Run("ToSQL Error", func(t *testing.T) {
-		compareToSQL(t, dml.NewDelete("").Where(dml.Column("a").Int64(1)), errors.IsEmpty, "", "")
+		compareToSQL(t, dml.NewDelete("").Where(dml.Column("a").Int64(1)), errors.Empty, "", "")
 	})
 
 	t.Run("Prepare Error", func(t *testing.T) {
@@ -44,19 +44,19 @@ func TestDelete_Prepare(t *testing.T) {
 			},
 		}
 		d.DB = dbMock{
-			error: errors.NewAlreadyClosedf("Who closed myself?"),
+			error: errors.AlreadyClosed.Newf("Who closed myself?"),
 		}
 		d.Where(dml.Column("a").Int(1))
 		stmt, err := d.Prepare(context.TODO())
 		assert.Nil(t, stmt)
-		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	})
 
 	t.Run("ExecArgs One Row", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("DELETE FROM `customer_entity` WHERE (`email` = ?) AND (`group_id` = ?)"))
+		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("DELETE FROM `customer_entity` WHERE (`email` = ?) AND (`group_id` = ?)"))
 		prep.ExpectExec().WithArgs("a@b.c", 33).WillReturnResult(sqlmock.NewResult(0, 1))
 		prep.ExpectExec().WithArgs("x@y.z", 44).WillReturnResult(sqlmock.NewResult(0, 2))
 
@@ -95,10 +95,10 @@ func TestDelete_Prepare(t *testing.T) {
 	})
 
 	t.Run("ExecRecord One Row", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("DELETE FROM `dml_person` WHERE (`name` = ?) AND (`email` = ?)"))
+		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("DELETE FROM `dml_person` WHERE (`name` = ?) AND (`email` = ?)"))
 		prep.ExpectExec().WithArgs("Peter Gopher", "peter@gopher.go").WillReturnResult(sqlmock.NewResult(0, 4))
 		prep.ExpectExec().WithArgs("John Doe", "john@doe.go").WillReturnResult(sqlmock.NewResult(0, 5))
 
@@ -140,10 +140,10 @@ func TestDelete_Prepare(t *testing.T) {
 	})
 
 	t.Run("ExecContext", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("DELETE FROM `dml_person` WHERE (`name` = ?) AND (`email` = ?)"))
+		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("DELETE FROM `dml_person` WHERE (`name` = ?) AND (`email` = ?)"))
 		prep.ExpectExec().WithArgs("Peter Gopher", "peter@gopher.go").WillReturnResult(sqlmock.NewResult(0, 4))
 
 		stmt, err := dml.NewDelete("dml_person").
@@ -169,7 +169,7 @@ func TestDelete_Prepare(t *testing.T) {
 func TestDelete_WithLogger(t *testing.T) {
 	uniID := new(int32)
 	rConn := createRealSession(t)
-	defer cstesting.Close(t, rConn)
+	defer dmltest.Close(t, rConn)
 
 	var uniqueIDFunc = func() string {
 		return fmt.Sprintf("UNIQUEID%02d", atomic.AddInt32(uniID, 1))

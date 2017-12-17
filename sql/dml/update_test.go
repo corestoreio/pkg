@@ -31,33 +31,33 @@ func TestUpdate_Basics(t *testing.T) {
 		qb := NewUpdate("a").Set(
 			Column("b").Int64(1),
 			Column("c").Int(2))
-		compareToSQL(t, qb, nil, "UPDATE `a` SET `b`=1, `c`=2", "")
+		compareToSQL(t, qb, errors.NoKind, "UPDATE `a` SET `b`=1, `c`=2", "")
 	})
 	t.Run("single row", func(t *testing.T) {
 		compareToSQL(t, NewUpdate("a").
 			Set(
 				Column("b").Int(1), Column("c").Int(2),
 			).Where(Column("id").Int(1)),
-			nil,
+			errors.NoKind,
 			"UPDATE `a` SET `b`=1, `c`=2 WHERE (`id` = 1)",
 			"UPDATE `a` SET `b`=1, `c`=2 WHERE (`id` = 1)")
 	})
 	t.Run("order by", func(t *testing.T) {
 		qb := NewUpdate("a").Set(Column("b").Int(1), Column("c").Int(2)).
 			OrderBy("col1", "col2").OrderByDesc("col2", "col3").Unsafe().OrderBy("concat(1,2,3)")
-		compareToSQL(t, qb, nil,
+		compareToSQL(t, qb, errors.NoKind,
 			"UPDATE `a` SET `b`=1, `c`=2 ORDER BY `col1`, `col2`, `col2` DESC, `col3` DESC, concat(1,2,3)",
 			"UPDATE `a` SET `b`=1, `c`=2 ORDER BY `col1`, `col2`, `col2` DESC, `col3` DESC, concat(1,2,3)")
 	})
 	t.Run("limit offset", func(t *testing.T) {
 		compareToSQL(t, NewUpdate("a").Set(Column("b").Int(1)).Limit(10),
-			nil,
+			errors.NoKind,
 			"UPDATE `a` SET `b`=1 LIMIT 10",
 			"UPDATE `a` SET `b`=1 LIMIT 10")
 	})
 	t.Run("same column name in SET and WHERE", func(t *testing.T) {
 		compareToSQL(t, NewUpdate("dml_people").Set(Column("key").Str("6-revoked")).Where(Column("key").Str("6")),
-			nil,
+			errors.NoKind,
 			"UPDATE `dml_people` SET `key`='6-revoked' WHERE (`key` = '6')",
 			"UPDATE `dml_people` SET `key`='6-revoked' WHERE (`key` = '6')")
 	})
@@ -67,7 +67,7 @@ func TestUpdate_Basics(t *testing.T) {
 			Column("key").PlaceHolder(),
 		).Where(Column("key").Str("6")).WithArguments(MakeArgs(1).String("Ke' --yX"))
 		compareToSQL(t, u,
-			nil,
+			errors.NoKind,
 			"UPDATE `dml_people` SET `key`=? WHERE (`key` = '6')",
 			"UPDATE `dml_people` SET `key`='Ke\\' --yX' WHERE (`key` = '6')",
 			"Ke' --yX")
@@ -83,7 +83,7 @@ func TestUpdate_SetExprToSQL(t *testing.T) {
 				Column("foo").Int(1),
 				Column("bar").Expr("COALESCE(bar, 0) + 1"),
 			).Where(Column("id").Int(9)),
-			nil,
+			errors.NoKind,
 			"UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 1 WHERE (`id` = 9)",
 			"UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 1 WHERE (`id` = 9)",
 		)
@@ -95,7 +95,7 @@ func TestUpdate_SetExprToSQL(t *testing.T) {
 				Column("foo").Int(1),
 				Column("bar").Expr("COALESCE(bar, 0) + 1"),
 			).Where(Column("id").In().Int64s(10, 11)),
-			nil,
+			errors.NoKind,
 			"UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 1 WHERE (`id` IN (10,11))",
 			"UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 1 WHERE (`id` IN (10,11))",
 		)
@@ -109,7 +109,7 @@ func TestUpdate_SetExprToSQL(t *testing.T) {
 			).
 			Where(Column("id").Int(9)).
 			WithArguments(MakeArgs(2).NullString(NullString{}).Uint(99))
-		compareToSQL(t, u, nil,
+		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `a` SET `fooNULL`=?, `bar99`=COALESCE(bar, 0) + ? WHERE (`id` = 9)",
 			"", //"UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = 9)",
 			nil, int64(99))
@@ -180,20 +180,20 @@ func TestUpdate_Prepare(t *testing.T) {
 		in.Set(Column("a").Int(1))
 		stmt, err := in.Prepare(context.TODO())
 		assert.Nil(t, stmt)
-		assert.True(t, errors.IsEmpty(err))
+		assert.True(t, errors.Empty.Match(err))
 	})
 
 	t.Run("Prepare Error", func(t *testing.T) {
 		u := &Update{}
 		u.DB = dbMock{
-			error: errors.NewAlreadyClosedf("Who closed myself?"),
+			error: errors.AlreadyClosed.Newf("Who closed myself?"),
 		}
 		u.Table.Name = "tableY"
 		u.Set(Column("a").Int(1))
 
 		stmt, err := u.Prepare(context.TODO())
 		assert.Nil(t, stmt)
-		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	})
 }
 
@@ -202,7 +202,7 @@ func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 	t.Run("with condition values", func(t *testing.T) {
 		u := NewUpdate("catalog_product_entity").AddColumns("sku", "updated_at")
 		u.Where(Column("entity_id").In().Int64s(1, 2, 3))
-		compareToSQL(t, u, nil,
+		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `catalog_product_entity` SET `sku`=?, `updated_at`=? WHERE (`entity_id` IN (1,2,3))",
 			"",
 		)
@@ -211,7 +211,7 @@ func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 		u := NewUpdate("catalog_product_entity").AddColumns("sku", "updated_at")
 		u.Where(Column("entity_id").In().PlaceHolder())
 
-		compareToSQL(t, u, nil,
+		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `catalog_product_entity` SET `sku`=?, `updated_at`=? WHERE (`entity_id` IN ?)",
 			"",
 		)
@@ -250,7 +250,7 @@ func TestUpdate_Events(t *testing.T) {
 				},
 			},
 		)
-		compareToSQL(t, d, nil,
+		compareToSQL(t, d, errors.NoKind,
 			"UPDATE `tableA` SET `y`=25, `z`=26, `a`=1, `b`=1",
 			"UPDATE `tableA` SET `y`=25, `z`=26, `a`=1, `b`=1", // each call ToSQL appends more columns
 		)
@@ -268,7 +268,7 @@ func TestUpdate_Events(t *testing.T) {
 				},
 			},
 		)
-		compareToSQL(t, up, errors.IsEmpty,
+		compareToSQL(t, up, errors.Empty,
 			"",
 			"",
 		)
@@ -301,7 +301,7 @@ func TestUpdate_Events(t *testing.T) {
 				u.Set(Column("e").Str("e"))
 			},
 		})
-		compareToSQL(t, up, nil,
+		compareToSQL(t, up, errors.NoKind,
 			"UPDATE `tableA` SET `a`=1, `b`=1, `c`=3.14159, `d`='d', `e`='e'",
 			"UPDATE `tableA` SET `a`=1, `b`=1, `c`=3.14159, `d`='d', `e`='e'", // each call ToSQL appends more columns
 		)
@@ -320,7 +320,7 @@ func TestUpdate_SetRecord(t *testing.T) {
 
 	t.Run("without where", func(t *testing.T) {
 		u := NewUpdate("dml_person").AddColumns("name", "email").WithRecords(Qualify("", pRec))
-		compareToSQL(t, u, nil,
+		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `dml_person` SET `name`=?, `email`=?",
 			"UPDATE `dml_person` SET `name`='Gopher', `email`='gopher@g00gle.c0m'",
 			"Gopher", "gopher@g00gle.c0m",
@@ -329,7 +329,7 @@ func TestUpdate_SetRecord(t *testing.T) {
 	t.Run("with where", func(t *testing.T) {
 		u := NewUpdate("dml_person").AddColumns("name", "email").WithRecords(Qualify("", pRec)).
 			Where(Column("id").PlaceHolder())
-		compareToSQL(t, u, nil,
+		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `dml_person` SET `name`=?, `email`=? WHERE (`id` = ?)",
 			"UPDATE `dml_person` SET `name`='Gopher', `email`='gopher@g00gle.c0m' WHERE (`id` = 12345)",
 			"Gopher", "gopher@g00gle.c0m", int64(12345),
@@ -341,7 +341,7 @@ func TestUpdate_SetRecord(t *testing.T) {
 			Set(Column("keyXXX").PlaceHolder()).
 			Where(Column("id").PlaceHolder()).
 			WithRecords(Qualify("", pRec))
-		compareToSQL(t, u, errors.IsNotFound,
+		compareToSQL(t, u, errors.NotFound,
 			"",
 			"",
 		)
@@ -362,7 +362,7 @@ func TestUpdate_DisableBuildCache(t *testing.T) {
 	const cachedSQLPlaceHolder = "UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = ?)"
 	t.Run("without interpolate", func(t *testing.T) {
 		for i := 0; i < 3; i++ {
-			compareToSQL(t, up, nil,
+			compareToSQL(t, up, errors.NoKind,
 				cachedSQLPlaceHolder,
 				"",
 				int64(987654321),
@@ -376,7 +376,7 @@ func TestUpdate_DisableBuildCache(t *testing.T) {
 
 		const cachedSQLInterpolated = "UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = 987654321)"
 		for i := 0; i < 3; i++ {
-			compareToSQL(t, up, nil,
+			compareToSQL(t, up, errors.NoKind,
 				cachedSQLPlaceHolder,
 				cachedSQLInterpolated,
 				int64(987654321),

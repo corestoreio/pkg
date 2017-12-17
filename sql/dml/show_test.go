@@ -17,6 +17,7 @@ package dml
 import (
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,35 +26,35 @@ func TestShow(t *testing.T) {
 
 	t.Run("variables", func(t *testing.T) {
 		s := NewShow().Variable()
-		compareToSQL(t, s, nil,
+		compareToSQL(t, s, errors.NoKind,
 			"SHOW VARIABLES",
 			"SHOW VARIABLES",
 		)
 	})
 	t.Run("variables global", func(t *testing.T) {
 		s := NewShow().Variable().Global()
-		compareToSQL(t, s, nil,
+		compareToSQL(t, s, errors.NoKind,
 			"SHOW GLOBAL VARIABLES",
 			"SHOW GLOBAL VARIABLES",
 		)
 	})
 	t.Run("variables session", func(t *testing.T) {
 		s := NewShow().Variable().Session()
-		compareToSQL(t, s, nil,
+		compareToSQL(t, s, errors.NoKind,
 			"SHOW SESSION VARIABLES",
 			"SHOW SESSION VARIABLES",
 		)
 	})
 	t.Run("variables global session", func(t *testing.T) {
 		s := NewShow().Variable().Session().Global()
-		compareToSQL(t, s, nil,
+		compareToSQL(t, s, errors.NoKind,
 			"SHOW SESSION VARIABLES",
 			"SHOW SESSION VARIABLES",
 		)
 	})
 	t.Run("variables LIKE interpolated", func(t *testing.T) {
 		s := NewShow().Variable().Like(MakeArgs(1).String("aria%"))
-		compareToSQL(t, s, nil,
+		compareToSQL(t, s, errors.NoKind,
 			"SHOW VARIABLES LIKE 'aria%'",
 			"SHOW VARIABLES LIKE 'aria%'",
 		)
@@ -62,7 +63,7 @@ func TestShow(t *testing.T) {
 		s := NewShow().Variable().
 			Where(Column("Variable_name").PlaceHolder()).
 			WithArguments(MakeArgs(1).String("aria%"))
-		compareToSQL(t, s, nil,
+		compareToSQL(t, s, errors.NoKind,
 			"SHOW VARIABLES WHERE (`Variable_name` = ?)",
 			"SHOW VARIABLES WHERE (`Variable_name` = 'aria%')",
 			"aria%",
@@ -71,7 +72,7 @@ func TestShow(t *testing.T) {
 	})
 	t.Run("variables WHERE interpolate", func(t *testing.T) {
 		s := NewShow().Variable().Where(Column("Variable_name").In().Strs("basedir", "back_log"))
-		compareToSQL(t, s, nil,
+		compareToSQL(t, s, errors.NoKind,
 			"SHOW VARIABLES WHERE (`Variable_name` IN ('basedir','back_log'))",
 			"SHOW VARIABLES WHERE (`Variable_name` IN ('basedir','back_log'))",
 		)
@@ -80,7 +81,7 @@ func TestShow(t *testing.T) {
 		s := NewShow().Variable().
 			Where(Column("Variable_name").In().PlaceHolder()).
 			WithArguments(MakeArgs(1).Strings("basedir", "back_log"))
-		compareToSQL(t, s, nil,
+		compareToSQL(t, s, errors.NoKind,
 			"SHOW VARIABLES WHERE (`Variable_name` IN ?)",
 			"SHOW VARIABLES WHERE (`Variable_name` IN ('basedir','back_log'))",
 			"basedir",
@@ -90,7 +91,7 @@ func TestShow(t *testing.T) {
 
 	t.Run("master status", func(t *testing.T) {
 		s := NewShow().MasterStatus()
-		compareToSQL(t, s, nil,
+		compareToSQL(t, s, errors.NoKind,
 			"SHOW MASTER STATUS",
 			"SHOW MASTER STATUS",
 		)
@@ -98,7 +99,7 @@ func TestShow(t *testing.T) {
 
 	t.Run("binary log", func(t *testing.T) {
 		s := NewShow().BinaryLog()
-		compareToSQL(t, s, nil,
+		compareToSQL(t, s, errors.NoKind,
 			"SHOW BINARY LOG",
 			"SHOW BINARY LOG",
 		)
@@ -106,7 +107,7 @@ func TestShow(t *testing.T) {
 
 	t.Run("status WHERE", func(t *testing.T) {
 		s := NewShow().Session().Status().Where(Column("Variable_name").Like().Str("%error%"))
-		compareToSQL(t, s, nil,
+		compareToSQL(t, s, errors.NoKind,
 			"SHOW SESSION STATUS WHERE (`Variable_name` LIKE '%error%')",
 			"SHOW SESSION STATUS WHERE (`Variable_name` LIKE '%error%')",
 		)
@@ -114,14 +115,14 @@ func TestShow(t *testing.T) {
 
 	t.Run("table status WHERE", func(t *testing.T) {
 		s := NewShow().TableStatus().Where(Column("Name").Regexp().Str(".*catalog[_]+")).DisableBuildCache()
-		compareToSQL(t, s, nil,
+		compareToSQL(t, s, errors.NoKind,
 			"SHOW TABLE STATUS WHERE (`Name` REGEXP '.*catalog[_]+')",
 			"SHOW TABLE STATUS WHERE (`Name` REGEXP '.*catalog[_]+')",
 		)
 		assert.Empty(t, s.cacheSQL)
 		s.WhereFragments[0].Str("sales$") // set Equal on purpose ... because cache already written
 		// twice to test the build cache
-		compareToSQL(t, s, nil,
+		compareToSQL(t, s, errors.NoKind,
 			"SHOW TABLE STATUS WHERE (`Name` REGEXP 'sales$')",
 			"SHOW TABLE STATUS WHERE (`Name` REGEXP 'sales$')",
 		)

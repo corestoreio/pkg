@@ -189,7 +189,7 @@ func (idc ids) AppendColumns(isUnsafe bool, columns ...string) ids {
 func (idc ids) AppendColumnsAliases(isUnsafe bool, columns ...string) ids {
 	if (len(columns) % 2) == 1 {
 		// A programmer made an error
-		panic(errors.NewMismatchf("[dml] Expecting a balanced slice! Got: %v", columns))
+		panic(errors.Mismatch.Newf("[dml] Expecting a balanced slice! Got: %v", columns))
 	}
 	if cap(idc) == 0 {
 		idc = make(ids, 0, len(columns)/2)
@@ -377,7 +377,7 @@ const dummyQualifier = "X" // just a dummy value, can be optimized later
 // http://dev.mysql.com/doc/refman/5.7/en/identifiers.html
 func IsValidIdentifier(objectName string) (err error) {
 	if v := isValidIdentifier(objectName); v != 0 {
-		err = errors.NewNotValidf("[dml] Invalid identifier %q (Case %d)", objectName, v)
+		err = errors.NotValid.Newf("[dml] Invalid identifier %q (Case %d)", objectName, v)
 	}
 	return
 }

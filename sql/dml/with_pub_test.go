@@ -25,7 +25,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log/logw"
 	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -34,18 +34,18 @@ func TestWith_Query(t *testing.T) {
 	t.Parallel()
 
 	t.Run("error", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("WITH `sel` AS (SELECT 1) SELECT * FROM `sel`")).
-			WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
+		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("WITH `sel` AS (SELECT 1) SELECT * FROM `sel`")).
+			WillReturnError(errors.AlreadyClosed.Newf("Who closed myself?"))
 
 		sel := dml.NewWith(dml.WithCTE{Name: "sel", Select: dml.NewSelect().Unsafe().AddColumns("1")}).
 			Select(dml.NewSelect().Star().From("sel")).
 			WithDB(dbc.DB)
 		rows, err := sel.Query(context.TODO())
 		assert.Nil(t, rows)
-		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 
 	})
 }
@@ -54,18 +54,18 @@ func TestWith_Load(t *testing.T) {
 	t.Parallel()
 
 	t.Run("error", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("WITH `sel` AS (SELECT 1) SELECT * FROM `sel`")).
-			WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
+		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("WITH `sel` AS (SELECT 1) SELECT * FROM `sel`")).
+			WillReturnError(errors.AlreadyClosed.Newf("Who closed myself?"))
 
 		sel := dml.NewWith(dml.WithCTE{Name: "sel", Select: dml.NewSelect().Unsafe().AddColumns("1")}).
 			Select(dml.NewSelect().Star().From("sel")).
 			WithDB(dbc.DB)
 		rows, err := sel.Load(context.TODO(), nil)
 		assert.Exactly(t, uint64(0), rows)
-		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	})
 }
 
@@ -76,7 +76,7 @@ func TestNewWith(t *testing.T) {
 		cte := dml.NewWith(
 			dml.WithCTE{Name: "one", Select: dml.NewSelect().Unsafe().AddColumns("1")},
 		).Select(dml.NewSelect().Star().From("one"))
-		compareToSQL(t, cte, nil,
+		compareToSQL(t, cte, errors.NoKind,
 			"WITH `one` AS (SELECT 1)\nSELECT * FROM `one`",
 			"WITH `one` AS (SELECT 1)\nSELECT * FROM `one`",
 		)
@@ -92,7 +92,7 @@ func TestNewWith(t *testing.T) {
 				).All(),
 			},
 		).Recursive().Select(dml.NewSelect().Star().From("cte"))
-		compareToSQL(t, cte, nil,
+		compareToSQL(t, cte, errors.NoKind,
 			"WITH RECURSIVE `cte` (`n`) AS ((SELECT 1)\nUNION ALL\n(SELECT n+1 FROM `cte` WHERE (`n` < 5)))\nSELECT * FROM `cte`",
 			"WITH RECURSIVE `cte` (`n`) AS ((SELECT 1)\nUNION ALL\n(SELECT n+1 FROM `cte` WHERE (`n` < 5)))\nSELECT * FROM `cte`",
 		)
@@ -103,7 +103,7 @@ func TestNewWith(t *testing.T) {
 			dml.WithCTE{Name: "intermed", Select: dml.NewSelect().Star().From("test").Where(dml.Column("x").GreaterOrEqual().Int(5))},
 			dml.WithCTE{Name: "derived", Select: dml.NewSelect().Star().From("intermed").Where(dml.Column("x").Less().Int(10))},
 		).Select(dml.NewSelect().Star().From("derived"))
-		compareToSQL(t, cte, nil,
+		compareToSQL(t, cte, errors.NoKind,
 			"WITH `intermed` AS (SELECT * FROM `test` WHERE (`x` >= 5)),\n`derived` AS (SELECT * FROM `intermed` WHERE (`x` < 10))\nSELECT * FROM `derived`",
 			"WITH `intermed` AS (SELECT * FROM `test` WHERE (`x` >= 5)),\n`derived` AS (SELECT * FROM `intermed` WHERE (`x` < 10))\nSELECT * FROM `derived`",
 		)
@@ -112,7 +112,7 @@ func TestNewWith(t *testing.T) {
 		cte := dml.NewWith(
 			dml.WithCTE{Name: "multi", Columns: []string{"x", "y"}, Select: dml.NewSelect().Unsafe().AddColumns("1", "2")},
 		).Select(dml.NewSelect("x", "y").From("multi"))
-		compareToSQL(t, cte, nil,
+		compareToSQL(t, cte, errors.NoKind,
 			"WITH `multi` (`x`,`y`) AS (SELECT 1, 2)\nSELECT `x`, `y` FROM `multi`",
 			"",
 		)
@@ -123,7 +123,7 @@ func TestNewWith(t *testing.T) {
 			dml.WithCTE{Name: "check_vals", Columns: []string{"val"}, Select: dml.NewSelect().Unsafe().AddColumns("123")},
 		).Delete(dml.NewDelete("test").Where(dml.Column("val").In().Sub(dml.NewSelect("val").From("check_vals"))))
 
-		compareToSQL(t, cte, nil,
+		compareToSQL(t, cte, errors.NoKind,
 			"WITH `check_vals` (`val`) AS (SELECT 123)\nDELETE FROM `test` WHERE (`val` IN (SELECT `val` FROM `check_vals`))",
 			"WITH `check_vals` (`val`) AS (SELECT 123)\nDELETE FROM `test` WHERE (`val` IN (SELECT `val` FROM `check_vals`))",
 		)
@@ -138,7 +138,7 @@ func TestNewWith(t *testing.T) {
 		).Update(dml.NewUpdate("numbers").Set(dml.Column("n").Int(0)).Where(dml.Expr("n=my_cte.n*my_cte.n"))).
 			Recursive()
 
-		compareToSQL(t, cte, nil,
+		compareToSQL(t, cte, errors.NoKind,
 			"WITH RECURSIVE `my_cte` (`n`) AS ((SELECT 1)\nUNION ALL\n(SELECT 1+n FROM `my_cte` WHERE (`n` < 6)))\nUPDATE `numbers` SET `n`=0 WHERE (n=my_cte.n*my_cte.n)",
 			"WITH RECURSIVE `my_cte` (`n`) AS ((SELECT 1)\nUNION ALL\n(SELECT 1+n FROM `my_cte` WHERE (`n` < 6)))\nUPDATE `numbers` SET `n`=0 WHERE (n=my_cte.n*my_cte.n)",
 		)
@@ -159,7 +159,7 @@ func TestNewWith(t *testing.T) {
 		cte := dml.NewWith(
 			dml.WithCTE{Name: "check_vals", Columns: []string{"val"}, Select: dml.NewSelect().AddColumns("123")},
 		)
-		compareToSQL(t, cte, errors.IsEmpty,
+		compareToSQL(t, cte, errors.Empty,
 			"",
 			"",
 		)
@@ -170,25 +170,25 @@ func TestWith_Prepare(t *testing.T) {
 	t.Parallel()
 
 	t.Run("error", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("WITH `sel` AS (SELECT 1) SELECT * FROM `sel`")).
-			WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
+		dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("WITH `sel` AS (SELECT 1) SELECT * FROM `sel`")).
+			WillReturnError(errors.AlreadyClosed.Newf("Who closed myself?"))
 
 		sel := dml.NewWith(dml.WithCTE{Name: "sel", Select: dml.NewSelect().Unsafe().AddColumns("1")}).
 			Select(dml.NewSelect().Star().From("sel")).
 			WithDB(dbc.DB)
 		stmt, err := sel.Prepare(context.TODO())
 		assert.Nil(t, stmt)
-		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	})
 
 	t.Run("Query", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("WITH RECURSIVE `cte` (`n`) AS ((SELECT `a`, `d` AS `b` FROM `tableAD`) UNION ALL (SELECT `a`, `b` FROM `tableAB` WHERE (`b` = ?))) SELECT * FROM `cte`"))
+		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("WITH RECURSIVE `cte` (`n`) AS ((SELECT `a`, `d` AS `b` FROM `tableAD`) UNION ALL (SELECT `a`, `b` FROM `tableAB` WHERE (`b` = ?))) SELECT * FROM `cte`"))
 		prep.ExpectQuery().WithArgs(6889).
 			WillReturnRows(sqlmock.NewRows([]string{"a", "b"}).AddRow("Peter Gopher", "peter@gopher.go"))
 
@@ -239,10 +239,10 @@ func TestWith_Prepare(t *testing.T) {
 	})
 
 	t.Run("Exec", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("WITH RECURSIVE `cte` (`n`) AS ((SELECT `name`, `d` AS `email` FROM `dml_person`) UNION ALL (SELECT `name`, `email` FROM `dml_person2` WHERE (`id` = ?))) SELECT * FROM `cte`"))
+		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("WITH RECURSIVE `cte` (`n`) AS ((SELECT `name`, `d` AS `email` FROM `dml_person`) UNION ALL (SELECT `name`, `email` FROM `dml_person2` WHERE (`id` = ?))) SELECT * FROM `cte`"))
 
 		stmt, err := dml.NewWith(
 			dml.WithCTE{
@@ -306,10 +306,10 @@ func TestWith_Prepare(t *testing.T) {
 		})
 
 		t.Run("WithRecords Error", func(t *testing.T) {
-			p := &TableCoreConfigDataSlice{err: errors.NewDuplicatedf("Found a duplicate")}
+			p := &TableCoreConfigDataSlice{err: errors.Duplicated.Newf("Found a duplicate")}
 			stmt.WithRecords(dml.Qualify("", p))
 			rows, err := stmt.Query(context.TODO())
-			assert.True(t, errors.IsDuplicated(err), "%+v", err)
+			assert.True(t, errors.Duplicated.Match(err), "%+v", err)
 			assert.Nil(t, rows)
 		})
 	})
@@ -318,7 +318,7 @@ func TestWith_Prepare(t *testing.T) {
 func TestWith_WithLogger(t *testing.T) {
 	uniID := new(int32)
 	rConn := createRealSession(t)
-	defer cstesting.Close(t, rConn)
+	defer dmltest.Close(t, rConn)
 
 	var uniqueIDFunc = func() string {
 		return fmt.Sprintf("UNIQ%02d", atomic.AddInt32(uniID, 2))

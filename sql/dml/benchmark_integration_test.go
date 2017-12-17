@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/sql/dmltest"
 )
 
 var runIntegration bool
@@ -51,7 +51,7 @@ func BenchmarkSelect_Integration_Scanner(b *testing.B) {
 	const coreConfigDataRowCount = 2007
 
 	c := createRealSession(b)
-	defer cstesting.Close(b, c)
+	defer dmltest.Close(b, c)
 
 	s := c.SelectFrom("core_config_data112").Star()
 	ctx := context.TODO()
@@ -84,7 +84,7 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 	c := createRealSession(b)
 	defer func() {
 		truncate(c.DB)
-		cstesting.Close(b, c)
+		dmltest.Close(b, c)
 	}()
 	truncate(c.DB)
 

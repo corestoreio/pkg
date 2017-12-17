@@ -116,7 +116,7 @@ func TestNullString_TextUnmarshal(t *testing.T) {
 
 	var iv NullString
 	err = iv.UnmarshalText([]byte{0x44, 0xff, 0x01})
-	assert.True(t, errors.IsNotValid(err), "%+v", err)
+	assert.True(t, errors.NotValid.Match(err), "%+v", err)
 }
 
 func TestNullString_MarshalText(t *testing.T) {

@@ -43,7 +43,7 @@ var _ QueryBuilder = (*With)(nil)
 func TestSqlObjToString(t *testing.T) {
 	t.Parallel()
 	t.Run("error", func(t *testing.T) {
-		s := sqlObjToString(nil, errors.NewAbortedf("Query aborted"))
+		s := sqlObjToString(nil, errors.Aborted.Newf("Query aborted"))
 		assert.Contains(t, s, "[dml] String Error: Query aborted\n")
 	})
 	t.Run("DELETE", func(t *testing.T) {

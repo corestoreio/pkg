@@ -646,7 +646,7 @@ func (b *ColumnMap) String(ptr *string) *ColumnMap {
 		return b
 	}
 	if b.CheckValidUTF8 && !utf8.Valid(b.current) {
-		b.scanErr = errors.NewNotValidf("[dml] Column %q at position %d contains invalid UTF-8 characters", b.Column(), b.Count)
+		b.scanErr = errors.NotValid.Newf("[dml] Column %q at position %d contains invalid UTF-8 characters", b.Column(), b.Count)
 	}
 	if b.scanErr == nil {
 		*ptr = string(b.current)
@@ -667,7 +667,7 @@ func (b *ColumnMap) NullString(ptr *NullString) *ColumnMap {
 		return b
 	}
 	if b.CheckValidUTF8 && !utf8.Valid(b.current) {
-		b.scanErr = errors.NewNotValidf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
+		b.scanErr = errors.NotValid.Newf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
 	}
 	if b.scanErr == nil {
 		*ptr = NullString{NullString: byteconv.ParseNullString(b.current)}
@@ -712,7 +712,7 @@ func (b *ColumnMap) NullTime(ptr *NullTime) *ColumnMap {
 	}
 	if b.scanErr == nil {
 		if err := ptr.Scan(b.current); err != nil {
-			b.scanErr = errors.NewNotValidf("[dml] ColumnMap NullTime: Invalid time string: %q with error %s", string(b.current), err)
+			b.scanErr = errors.NotValid.Newf("[dml] ColumnMap NullTime: Invalid time string: %q with error %s", string(b.current), err)
 		}
 	}
 	return b
@@ -927,7 +927,7 @@ func (bb *BuilderBase) buildArgsAndSQL(qb queryBuilder) (string, []interface{}, 
 
 	if bb.IsInterpolate {
 		if len(args) == 0 && len(bb.argsRaw) > 0 {
-			return "", nil, errors.NewNotAllowedf("[dml] Interpolation does only work with an Arguments slice, but you provided an interface slice: %#v", bb.argsRaw)
+			return "", nil, errors.NotAllowed.Newf("[dml] Interpolation does only work with an Arguments slice, but you provided an interface slice: %#v", bb.argsRaw)
 		}
 		buf := bufferpool.Get()
 		err = writeInterpolate(buf, rawSQL, args)

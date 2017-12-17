@@ -21,7 +21,7 @@ import (
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/sql/dmltest"
 )
 
 // Make sure that type salesOrder implements interface.
@@ -53,7 +53,7 @@ func (so *salesOrder) MapColumns(cm *dml.ColumnMap) error {
 		case "grand_total":
 			cm.NullFloat64(&so.GrandTotal)
 		default:
-			return errors.NewNotFoundf("[dml_test] Column %q not found", c)
+			return errors.NotFound.Newf("[dml_test] Column %q not found", c)
 		}
 		if cm.Err() != nil {
 			return cm.Err()
@@ -67,10 +67,10 @@ func (so *salesOrder) MapColumns(cm *dml.ColumnMap) error {
 // statement acts as a template.
 func ExampleUpdate_Prepare() {
 	// <ignore_this>
-	dbc, dbMock := cstesting.MockDB(nil)
-	defer cstesting.MockClose(nil, dbc, dbMock)
+	dbc, dbMock := dmltest.MockDB(nil)
+	defer dmltest.MockClose(nil, dbc, dbMock)
 
-	prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta(
+	prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta(
 		"UPDATE `sales_order` SET `state`=?, `customer_id`=?, `grand_total`=? WHERE (`shipping_method` IN ('DHL','UPS')) AND (`entity_id` = ?)",
 	))
 

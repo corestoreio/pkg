@@ -17,6 +17,7 @@ package dml
 import (
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -41,7 +42,7 @@ func TestSQLCase_PlaceHolders(t *testing.T) {
 				MakeArgs(5).Int64(start).Int64(end).Int64(start).Int64(end).Ints(4711, 815, 42),
 			)
 
-		compareToSQL(t, s, nil,
+		compareToSQL(t, s, errors.NoKind,
 			"SELECT `price`, `sku`, `name`, `title`, `description`, CASE  WHEN date_start <= ? AND date_end >= ? THEN `open` WHEN date_start > ? AND date_end > ? THEN `upcoming` ELSE `closed` END AS `is_on_sale` FROM `catalog_promotions` WHERE (`promotion_id` NOT IN ?)",
 			"",
 			start, end, start, end, int64(4711), int64(815), int64(42),

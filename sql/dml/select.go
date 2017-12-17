@@ -498,7 +498,7 @@ func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err 
 	}
 
 	if len(b.Columns) == 0 && !b.IsCountStar && !b.IsStar {
-		return nil, errors.NewEmptyf("[dml] Select: no columns specified")
+		return nil, errors.Empty.Newf("[dml] Select: no columns specified")
 	}
 
 	w.WriteString("SELECT ")

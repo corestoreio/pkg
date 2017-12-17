@@ -125,7 +125,7 @@ func WithUniqueIDFn(uniqueIDFn func() string) ConnPoolOption {
 // create a a new instrumented driver. No need to call `sql.Register`!
 func WithDSN(dsn string, cb ...DriverCallBack) ConnPoolOption {
 	if len(cb) > 1 {
-		panic(errors.NewNotImplementedf("[dml] Only one DriverCallBack function does currently work. You provided: %d", len(cb)))
+		panic(errors.NotImplemented.Newf("[dml] Only one DriverCallBack function does currently work. You provided: %d", len(cb)))
 	}
 	return func(c *ConnPool) error {
 		c.dsn = dsn

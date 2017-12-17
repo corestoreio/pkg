@@ -49,7 +49,7 @@ func ExpandPlaceHolders(sql string, args Arguments) (string, error) {
 
 	phCount := strings.Count(sql, placeHolderStr)
 	if want := len(args); phCount != want || want == 0 {
-		return "", errors.NewMismatchf("[dml] ExpandPlaceHolders: Number of %s:%d do not match the number of repetitions: %d", placeHolderStr, phCount, want)
+		return "", errors.Mismatch.Newf("[dml] ExpandPlaceHolders: Number of %s:%d do not match the number of repetitions: %d", placeHolderStr, phCount, want)
 	}
 
 	buf := bufferpool.Get()
@@ -201,7 +201,7 @@ func writeInterpolate(buf *bytes.Buffer, sql []byte, args Arguments) error {
 
 	phCount, argCount := bytes.Count(sql, bTextPlaceholder), len(args)
 	if argCount > 0 && phCount != argCount {
-		return errors.NewMismatchf("[dml] Number of place holders (%d) vs number of arguments (%d) do not match.", phCount, argCount)
+		return errors.Mismatch.Newf("[dml] Number of place holders (%d) vs number of arguments (%d) do not match.", phCount, argCount)
 	}
 
 	var phCounter int

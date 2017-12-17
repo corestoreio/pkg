@@ -933,7 +933,7 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 			}
 
 		default:
-			panic(errors.NewNotSupportedf("[dml] Multiple arguments for a column are not supported\nWhereFragment: %#v\n", cnd))
+			panic(errors.NotSupported.Newf("[dml] Multiple arguments for a column are not supported\nWhereFragment: %#v\n", cnd))
 		}
 
 		w.WriteByte(')')

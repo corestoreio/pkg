@@ -17,6 +17,7 @@ package dml
 import (
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -31,7 +32,7 @@ func TestUnion_Basics(t *testing.T) {
 		u.Append(
 			NewSelect("c", "d").From("tableCD").Where(Column("d").Str("e")),
 		)
-		compareToSQL(t, u, nil,
+		compareToSQL(t, u, errors.NoKind,
 			"(SELECT `a`, `b` FROM `tableAB` WHERE (`a` = 3))\nUNION\n(SELECT `c`, `d` FROM `tableCD` WHERE (`d` = 'e'))",
 			"(SELECT `a`, `b` FROM `tableAB` WHERE (`a` = 3))\nUNION\n(SELECT `c`, `d` FROM `tableCD` WHERE (`d` = 'e'))",
 		)
@@ -42,7 +43,7 @@ func TestUnion_Basics(t *testing.T) {
 			NewSelect("c", "d").From("tableCD").Where(Column("d").Str("e")),
 			NewSelect("a", "b").From("tableAB").Where(Column("a").Int64(3)),
 		).All()
-		compareToSQL(t, u, nil,
+		compareToSQL(t, u, errors.NoKind,
 			"(SELECT `c`, `d` FROM `tableCD` WHERE (`d` = 'e'))\nUNION ALL\n(SELECT `a`, `b` FROM `tableAB` WHERE (`a` = 3))",
 			"(SELECT `c`, `d` FROM `tableCD` WHERE (`d` = 'e'))\nUNION ALL\n(SELECT `a`, `b` FROM `tableAB` WHERE (`a` = 3))",
 		)
@@ -54,7 +55,7 @@ func TestUnion_Basics(t *testing.T) {
 			NewSelect("a", "b").From("tableAB").Where(Column("a").Int64(3)),
 		).All().OrderBy("a").OrderByDesc("b")
 
-		compareToSQL(t, u, nil,
+		compareToSQL(t, u, errors.NoKind,
 			"(SELECT `a`, `d` AS `b` FROM `tableAD` WHERE (`d` = 'f'))\nUNION ALL\n(SELECT `a`, `b` FROM `tableAB` WHERE (`a` = 3))\nORDER BY `a`, `b` DESC",
 			"(SELECT `a`, `d` AS `b` FROM `tableAD` WHERE (`d` = 'f'))\nUNION ALL\n(SELECT `a`, `b` FROM `tableAB` WHERE (`a` = 3))\nORDER BY `a`, `b` DESC",
 		)
@@ -68,7 +69,7 @@ func TestUnion_Basics(t *testing.T) {
 
 		// testing idempotent function ToSQL
 		for i := 0; i < 3; i++ {
-			compareToSQL(t, u, nil,
+			compareToSQL(t, u, errors.NoKind,
 				"(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`c` BETWEEN 3 AND 5))\nORDER BY `_preserve_result_set`, `a`, `b` DESC",
 				"(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`c` BETWEEN 3 AND 5))\nORDER BY `_preserve_result_set`, `a`, `b` DESC",
 			)
@@ -81,7 +82,7 @@ func TestUnion_Basics(t *testing.T) {
 		).All().Intersect().OrderBy("a").OrderByDesc("b")
 		// All gets ignored
 
-		compareToSQL(t, u, nil,
+		compareToSQL(t, u, errors.NoKind,
 			"(SELECT `a` FROM `tableAD`)\nINTERSECT\n(SELECT `b` FROM `tableAB`)\nORDER BY `a`, `b` DESC",
 			"(SELECT `a` FROM `tableAD`)\nINTERSECT\n(SELECT `b` FROM `tableAB`)\nORDER BY `a`, `b` DESC",
 		)
@@ -93,7 +94,7 @@ func TestUnion_Basics(t *testing.T) {
 		).All().Except()
 		// All gets ignored
 
-		compareToSQL(t, u, nil,
+		compareToSQL(t, u, errors.NoKind,
 			"(SELECT `a` FROM `tableAD`)\nEXCEPT\n(SELECT `b` FROM `tableAB`)",
 			"(SELECT `a` FROM `tableAD`)\nEXCEPT\n(SELECT `b` FROM `tableAB`)",
 		)
@@ -110,7 +111,7 @@ func TestUnion_Basics(t *testing.T) {
 		// used NamedArg.
 		// testing idempotent function ToSQL
 		for i := 0; i < 3; i++ {
-			compareToSQL(t, u, nil,
+			compareToSQL(t, u, errors.NoKind,
 				"(SELECT `a`, `b`, 0 AS `_preserve_result_set` FROM `tableAD` WHERE (`a` LIKE ?))\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`c` BETWEEN ? AND ?))\nORDER BY `_preserve_result_set`, `a`, `b` DESC",
 				"(SELECT `a`, `b`, 0 AS `_preserve_result_set` FROM `tableAD` WHERE (`a` LIKE 'XMEEN'))\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`c` BETWEEN 3.141 AND 6.283))\nORDER BY `_preserve_result_set`, `a`, `b` DESC",
 				"XMEEN", 3.141, 6.283,
@@ -139,7 +140,7 @@ func TestUnion_DisableBuildCache(t *testing.T) {
 		"ORDER BY `_preserve_result_set`, `a`, `b` DESC, concat(\"c\",b,\"d\")"
 	t.Run("without interpolate", func(t *testing.T) {
 		for i := 0; i < 3; i++ {
-			compareToSQL(t, u, nil,
+			compareToSQL(t, u, errors.NoKind,
 				cachedSQLPlaceHolder,
 				"",
 			)
@@ -152,7 +153,7 @@ func TestUnion_DisableBuildCache(t *testing.T) {
 
 		const cachedSQLInterpolated = "(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = 3.14159))\nORDER BY `_preserve_result_set`, `a`, `b` DESC, concat('c',b,'d')"
 		for i := 0; i < 3; i++ {
-			compareToSQL(t, u, nil,
+			compareToSQL(t, u, errors.NoKind,
 				cachedSQLPlaceHolder,
 				cachedSQLInterpolated,
 			)
@@ -215,7 +216,7 @@ func TestNewUnionTemplate(t *testing.T) {
 
 		// testing idempotent function ToSQL
 		for i := 0; i < 3; i++ {
-			compareToSQL2(t, u, nil,
+			compareToSQL2(t, u, errors.NoKind,
 				"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`varcharX` AS `col_type`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)) ORDER BY `t`.`varcharX_store_id` DESC)\n"+
 					"UNION ALL\n"+
 					"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`intX` AS `col_type`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)) ORDER BY `t`.`intX_store_id` DESC)\n"+
@@ -247,7 +248,7 @@ func TestNewUnionTemplate(t *testing.T) {
 
 		// testing idempotent function ToSQL
 		for i := 0; i < 3; i++ {
-			compareToSQL(t, u, nil,
+			compareToSQL(t, u, errors.NoKind,
 				"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`varcharX` AS `col_type`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN ?) ORDER BY `t`.`varcharX_store_id` DESC)\n"+
 					"UNION ALL\n"+
 					"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`intX` AS `col_type`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN ?) ORDER BY `t`.`intX_store_id` DESC)\n"+
@@ -300,7 +301,7 @@ func TestNewUnionTemplate(t *testing.T) {
 		).
 			StringReplace("$type$", "varchar", "int", "decimal", "datetime", "text").
 			StringReplace("$column$", "varcharX", "intX", "decimalX", "datetimeX", "textX", "bytesX")
-		compareToSQL(t, u, nil,
+		compareToSQL(t, u, errors.NoKind,
 			"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`varcharX` AS `col_type` FROM `catalog_product_entity_varchar` AS `t`)\nUNION\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`intX` AS `col_type` FROM `catalog_product_entity_int` AS `t`)\nUNION\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`decimalX` AS `col_type` FROM `catalog_product_entity_decimal` AS `t`)\nUNION\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`datetimeX` AS `col_type` FROM `catalog_product_entity_datetime` AS `t`)\nUNION\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`textX` AS `col_type` FROM `catalog_product_entity_text` AS `t`)",
 			"",
 		)
@@ -332,7 +333,7 @@ func TestNewUnionTemplate(t *testing.T) {
 			PreserveResultSet().
 			All().OrderBy("attribute_id", "store_id").
 			Interpolate()
-		compareToSQL(t, u, nil,
+		compareToSQL(t, u, errors.NoKind,
 			"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS `_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS `_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS `_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nORDER BY `_preserve_result_set`, `attribute_id`, `store_id`",
 			"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS `_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS `_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS `_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nORDER BY `_preserve_result_set`, `attribute_id`, `store_id`",
 		)
@@ -353,7 +354,7 @@ func TestUnionTemplate_DisableBuildCache(t *testing.T) {
 	const cachedSQLPlaceHolder = "(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS `_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS `_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS `_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nORDER BY `_preserve_result_set`, `attribute_id`, `store_id`"
 	t.Run("without interpolate", func(t *testing.T) {
 		for i := 0; i < 3; i++ {
-			compareToSQL(t, u, nil,
+			compareToSQL(t, u, errors.NoKind,
 				cachedSQLPlaceHolder,
 				"",
 			)
@@ -365,7 +366,7 @@ func TestUnionTemplate_DisableBuildCache(t *testing.T) {
 
 		const cachedSQLInterpolated = "(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS `_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS `_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS `_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nORDER BY `_preserve_result_set`, `attribute_id`, `store_id`"
 		for i := 0; i < 3; i++ {
-			compareToSQL(t, u, nil,
+			compareToSQL(t, u, errors.NoKind,
 				cachedSQLPlaceHolder,
 				cachedSQLInterpolated,
 			)
@@ -399,7 +400,7 @@ func TestUnionTemplate_ReuseArgs(t *testing.T) {
 		"ORDER BY `_preserve_result_set`, `attribute_id`, `store_id`"
 
 	t.Run("run1", func(t *testing.T) {
-		compareToSQL(t, u.WithArguments(args), nil,
+		compareToSQL(t, u.WithArguments(args), errors.NoKind,
 			wantSQLPH,
 			"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 5) AND (`store_id` IN (4,6)))\n"+
 				"UNION ALL\n"+
@@ -423,7 +424,7 @@ func TestUnionTemplate_ReuseArgs(t *testing.T) {
 
 	t.Run("with interpolate", func(t *testing.T) {
 		args = args.Reset().Name("entityID").Int(4).Name("storeID").Int64s(8, 11)
-		compareToSQL(t, u.WithArguments(args), nil,
+		compareToSQL(t, u.WithArguments(args), errors.NoKind,
 			wantSQLPH,
 			"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 4) AND (`store_id` IN (8,11)))\n"+
 				"UNION ALL\n"+

@@ -131,7 +131,7 @@ func makeSelectListen(idx int, sl Listen) selectListen {
 		EventType: sl.EventType,
 	}
 	if nsl.EventType == 0 {
-		nsl.error = errors.NewEmptyf("[dml] Eventype at empty for %q; index %d", nsl.name, idx)
+		nsl.error = errors.Empty.Newf("[dml] Eventype at empty for %q; index %d", nsl.name, idx)
 	}
 
 	nsl.SelectFunc = sl.SelectFunc
@@ -215,7 +215,7 @@ func makeInsertListen(idx int, sl Listen) insertListen {
 		EventType: sl.EventType,
 	}
 	if nsl.EventType == 0 {
-		nsl.error = errors.NewEmptyf("[dml] Eventype at empty for %q; index %d", nsl.name, idx)
+		nsl.error = errors.Empty.Newf("[dml] Eventype at empty for %q; index %d", nsl.name, idx)
 	}
 
 	nsl.InsertFunc = sl.InsertFunc
@@ -297,7 +297,7 @@ func makeUpdateListen(idx int, sl Listen) updateListen {
 		EventType: sl.EventType,
 	}
 	if nsl.EventType == 0 {
-		nsl.error = errors.NewEmptyf("[dml] Eventype at empty for %q; index %d", nsl.name, idx)
+		nsl.error = errors.Empty.Newf("[dml] Eventype at empty for %q; index %d", nsl.name, idx)
 	}
 
 	nsl.UpdateFunc = sl.UpdateFunc
@@ -379,7 +379,7 @@ func makeDeleteListen(idx int, sl Listen) deleteListen {
 		EventType: sl.EventType,
 	}
 	if nsl.EventType == 0 {
-		nsl.error = errors.NewEmptyf("[dml] Eventype at empty for %q; index %d", nsl.name, idx)
+		nsl.error = errors.Empty.Newf("[dml] Eventype at empty for %q; index %d", nsl.name, idx)
 	}
 
 	nsl.DeleteFunc = sl.DeleteFunc

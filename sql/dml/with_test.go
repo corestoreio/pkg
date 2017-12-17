@@ -17,6 +17,7 @@ package dml
 import (
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,7 +39,7 @@ func TestWith_Placeholder(t *testing.T) {
 
 		cte.WithArguments(MakeArgs(1).Name("nArg2").String("hello%").NullString(MakeNullString("arg1")).Float64(2.7182))
 
-		compareToSQL(t, cte, nil,
+		compareToSQL(t, cte, errors.NoKind,
 			"WITH RECURSIVE `cte` (`n`) AS ((SELECT `a`, `d` AS `b` FROM `tableAD` WHERE (`b` = ?))\nUNION ALL\n(SELECT `a`, `b` FROM `tableAB` WHERE (`b` LIKE ?)))\nSELECT * FROM `cte` WHERE (`a` >= ?)",
 			"WITH RECURSIVE `cte` (`n`) AS ((SELECT `a`, `d` AS `b` FROM `tableAD` WHERE (`b` = 'arg1'))\nUNION ALL\n(SELECT `a`, `b` FROM `tableAB` WHERE (`b` LIKE 'hello%')))\nSELECT * FROM `cte` WHERE (`a` >= 2.7182)",
 			"arg1", "hello%", 2.7182,
@@ -102,12 +103,12 @@ func TestWith_ToSQL(t *testing.T) {
 			NewSelect().Star().From("worst_month"),
 		).All())
 
-		compareToSQL(t, cte, nil,
+		compareToSQL(t, cte, errors.NoKind,
 			"WITH `sales_by_month` (`month`,`total`) AS (SELECT Month(day_of_sale), Sum(amount) FROM `sales_days` WHERE (Year(day_of_sale) = 2015) GROUP BY Month(day_of_sale))),\n`best_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, \"best\" FROM `sales_by_month` WHERE (`total` = (SELECT Max(total) FROM `sales_by_month`))),\n`worst_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, \"worst\" FROM `sales_by_month` WHERE (`total` = (SELECT Min(total) FROM `sales_by_month`)))\n(SELECT * FROM `best_month`)\nUNION ALL\n(SELECT * FROM `worst_month`)",
 			"WITH `sales_by_month` (`month`,`total`) AS (SELECT Month(day_of_sale), Sum(amount) FROM `sales_days` WHERE (Year(day_of_sale) = 2015) GROUP BY Month(day_of_sale))),\n`best_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, 'best' FROM `sales_by_month` WHERE (`total` = (SELECT Max(total) FROM `sales_by_month`))),\n`worst_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, 'worst' FROM `sales_by_month` WHERE (`total` = (SELECT Min(total) FROM `sales_by_month`)))\n(SELECT * FROM `best_month`)\nUNION ALL\n(SELECT * FROM `worst_month`)",
 		)
 		// call it twice
-		compareToSQL(t, cte, nil,
+		compareToSQL(t, cte, errors.NoKind,
 			"WITH `sales_by_month` (`month`,`total`) AS (SELECT Month(day_of_sale), Sum(amount) FROM `sales_days` WHERE (Year(day_of_sale) = 2015) GROUP BY Month(day_of_sale))),\n`best_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, \"best\" FROM `sales_by_month` WHERE (`total` = (SELECT Max(total) FROM `sales_by_month`))),\n`worst_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, \"worst\" FROM `sales_by_month` WHERE (`total` = (SELECT Min(total) FROM `sales_by_month`)))\n(SELECT * FROM `best_month`)\nUNION ALL\n(SELECT * FROM `worst_month`)",
 			"WITH `sales_by_month` (`month`,`total`) AS (SELECT Month(day_of_sale), Sum(amount) FROM `sales_days` WHERE (Year(day_of_sale) = 2015) GROUP BY Month(day_of_sale))),\n`best_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, 'best' FROM `sales_by_month` WHERE (`total` = (SELECT Max(total) FROM `sales_by_month`))),\n`worst_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, 'worst' FROM `sales_by_month` WHERE (`total` = (SELECT Min(total) FROM `sales_by_month`)))\n(SELECT * FROM `best_month`)\nUNION ALL\n(SELECT * FROM `worst_month`)",
 		)

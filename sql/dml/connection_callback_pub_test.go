@@ -24,7 +24,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/require"
 )
 
@@ -33,10 +33,10 @@ func TestDriverCallBack(t *testing.T) {
 	var counter = new(int32)
 
 	buf := new(bytes.Buffer)
-	db := cstesting.MustConnectDB(t,
+	db := dmltest.MustConnectDB(t,
 		dml.WithUniqueIDFn(func() string { return fmt.Sprintf("RANJID%d", atomic.AddInt32(counter, 1)) }),
 		dml.WithDSN(
-			cstesting.MustGetDSN(t),
+			dmltest.MustGetDSN(t),
 			func(fnName string) func(error, string, []driver.NamedValue) error {
 				start := now()
 				return func(err error, query string, namedArgs []driver.NamedValue) error {
@@ -77,7 +77,7 @@ func TestDriverCallBack(t *testing.T) {
 
 	require.NoError(t, con.Close())
 
-	cstesting.Close(t, db)
+	dmltest.Close(t, db)
 	//t.Log(buf.String())
 	//ioutil.WriteFile("testdata/TestDriverCallBack.want.txt", buf.Bytes(), 0644)
 	wantLog, err := ioutil.ReadFile("testdata/TestDriverCallBack.want.txt")

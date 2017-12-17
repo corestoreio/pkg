@@ -382,7 +382,7 @@ func (b *Insert) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 	}
 
 	if len(b.Into) == 0 {
-		return nil, errors.NewEmptyf("[dml] Inserted table is missing")
+		return nil, errors.Empty.Newf("[dml] Inserted table is missing")
 	}
 
 	ior := "INSERT "
@@ -546,7 +546,7 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 			return nil, errors.WithStack(err)
 		}
 		if addedArgs := len(cm.Args) - alBefore; argCount0 > 0 && addedArgs%argCount0 != 0 {
-			return nil, errors.NewMismatchf("[dml] Insert.appendArgs RecordPlaceHolderCount(%d) does not match the number of assembled arguments (%d)", b.RecordPlaceHolderCount, addedArgs)
+			return nil, errors.Mismatch.Newf("[dml] Insert.appendArgs RecordPlaceHolderCount(%d) does not match the number of assembled arguments (%d)", b.RecordPlaceHolderCount, addedArgs)
 		}
 	}
 	args = cm.Args

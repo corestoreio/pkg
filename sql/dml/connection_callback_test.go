@@ -46,7 +46,7 @@ func TestWrapDriver_Connection_Error(t *testing.T) {
 			SQLErrDriver{Con: errCon}, // AirCon ;-)
 			func(fnName string) func(error, string, []driver.NamedValue) error {
 				return func(error, string, []driver.NamedValue) error {
-					return errors.NewAlreadyClosedf("Connection closed")
+					return errors.AlreadyClosed.Newf("Connection closed")
 				}
 			})
 		con, err := wrappedDrv.Open("nvr mind")
@@ -57,56 +57,56 @@ func TestWrapDriver_Connection_Error(t *testing.T) {
 	t.Run("PrepareContext", func(t *testing.T) {
 		con := getCon(t, SQLErrDriverCon{})
 		_, err := con.(driver.ConnPrepareContext).PrepareContext(ctx, "")
-		assert.True(t, errors.IsAlreadyClosed(err), "%s", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%s", err)
 	})
 	t.Run("PrepareContext Original Error", func(t *testing.T) {
 		con := getCon(t, SQLErrDriverCon{
-			PrepareError: errors.NewWriteFailedf("Should not get overwritten"),
+			PrepareError: errors.WriteFailed.Newf("Should not get overwritten"),
 		})
 		_, err := con.(driver.ConnPrepareContext).PrepareContext(ctx, "")
-		assert.True(t, errors.IsWriteFailed(err), "%s", err)
+		assert.True(t, errors.WriteFailed.Match(err), "%s", err)
 	})
 	t.Run("Prepare", func(t *testing.T) {
 		con := getCon(t, SQLErrDriverCon{})
 		_, err := con.Prepare("")
-		assert.True(t, errors.IsAlreadyClosed(err), "%s", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%s", err)
 	})
 	t.Run("Close", func(t *testing.T) {
 		con := getCon(t, SQLErrDriverCon{})
 		err := con.Close()
-		assert.True(t, errors.IsAlreadyClosed(err), "%s", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%s", err)
 	})
 	t.Run("Begin", func(t *testing.T) {
 		con := getCon(t, SQLErrDriverCon{})
 		_, err := con.Begin()
-		assert.True(t, errors.IsAlreadyClosed(err), "%s", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%s", err)
 	})
 	t.Run("BeginTx", func(t *testing.T) {
 		con := getCon(t, SQLErrDriverCon{})
 		_, err := con.(driver.ConnBeginTx).BeginTx(ctx, driver.TxOptions{})
-		assert.True(t, errors.IsAlreadyClosed(err), "%s", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%s", err)
 	})
 	t.Run("Ping", func(t *testing.T) {
 		con := getCon(t, SQLErrDriverCon{})
 		err := con.(driver.Pinger).Ping(ctx)
-		assert.True(t, errors.IsAlreadyClosed(err), "%s", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%s", err)
 	})
 	t.Run("ExecContext", func(t *testing.T) {
 		con := getCon(t, SQLErrDriverCon{})
 		_, err := con.(driver.ExecerContext).ExecContext(ctx, "", nil)
-		assert.True(t, errors.IsAlreadyClosed(err), "%s", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%s", err)
 	})
 	t.Run("ExecContext Original Error", func(t *testing.T) {
 		con := getCon(t, SQLErrDriverCon{
-			ExecError: errors.NewWriteFailedf("Should not get overwritten"),
+			ExecError: errors.WriteFailed.Newf("Should not get overwritten"),
 		})
 		_, err := con.(driver.ExecerContext).ExecContext(ctx, "", nil)
-		assert.True(t, errors.IsWriteFailed(err), "%s", err)
+		assert.True(t, errors.WriteFailed.Match(err), "%s", err)
 	})
 	t.Run("QueryContext", func(t *testing.T) {
 		con := getCon(t, SQLErrDriverCon{})
 		_, err := con.(driver.QueryerContext).QueryContext(ctx, "", nil)
-		assert.True(t, errors.IsAlreadyClosed(err), "%s", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%s", err)
 	})
 }
 
@@ -117,7 +117,7 @@ func TestWrapDriver_Stmt_Error(t *testing.T) {
 		wrappedDrv := wrapDriver(SQLErrDriver{}, func(fnName string) func(error, string, []driver.NamedValue) error {
 			return func(err error, _ string, _ []driver.NamedValue) error {
 				if strings.HasPrefix(fnName, "Stmt.") {
-					err = errors.NewAbortedf("Connection closed")
+					err = errors.Aborted.Newf("Connection closed")
 				}
 				return err
 			}
@@ -134,28 +134,28 @@ func TestWrapDriver_Stmt_Error(t *testing.T) {
 	t.Run("Exec", func(t *testing.T) {
 		con := getStmt(t)
 		_, err := con.Exec(nil)
-		assert.True(t, errors.IsAborted(err), "%s", err)
+		assert.True(t, errors.Aborted.Match(err), "%s", err)
 	})
 	t.Run("Query", func(t *testing.T) {
 		con := getStmt(t)
 		_, err := con.Query(nil)
-		assert.True(t, errors.IsAborted(err), "%s", err)
+		assert.True(t, errors.Aborted.Match(err), "%s", err)
 	})
 	t.Run("Close", func(t *testing.T) {
 		con := getStmt(t)
 		err := con.Close()
-		assert.True(t, errors.IsAborted(err), "%s", err)
+		assert.True(t, errors.Aborted.Match(err), "%s", err)
 	})
 
 	t.Run("ExecContext", func(t *testing.T) {
 		con := getStmt(t)
 		_, err := con.(driver.StmtExecContext).ExecContext(ctx, nil)
-		assert.True(t, errors.IsAborted(err), "%s", err)
+		assert.True(t, errors.Aborted.Match(err), "%s", err)
 	})
 	t.Run("QueryContext", func(t *testing.T) {
 		con := getStmt(t)
 		_, err := con.(driver.StmtQueryContext).QueryContext(ctx, nil)
-		assert.True(t, errors.IsAborted(err), "%s", err)
+		assert.True(t, errors.Aborted.Match(err), "%s", err)
 	})
 }
 

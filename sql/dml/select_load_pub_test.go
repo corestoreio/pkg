@@ -28,7 +28,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log/logw"
 	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -39,7 +39,7 @@ func TestSelect_Rows(t *testing.T) {
 		sel := &dml.Select{}
 		rows, err := sel.Query(context.TODO())
 		assert.Nil(t, rows)
-		assert.True(t, errors.IsEmpty(err))
+		assert.True(t, errors.Empty.Match(err))
 	})
 
 	t.Run("Error", func(t *testing.T) {
@@ -50,17 +50,17 @@ func TestSelect_Rows(t *testing.T) {
 		}
 		sel.AddColumns("a", "b")
 		sel.DB = dbMock{
-			error: errors.NewAlreadyClosedf("Who closed myself?"),
+			error: errors.AlreadyClosed.Newf("Who closed myself?"),
 		}
 
 		rows, err := sel.Query(context.TODO())
 		assert.Nil(t, rows)
-		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
 		smr := sqlmock.NewRows([]string{"a"}).AddRow("row1").AddRow("row2")
 		dbMock.ExpectQuery("SELECT `a` FROM `tableX`").WillReturnRows(smr)
@@ -69,7 +69,7 @@ func TestSelect_Rows(t *testing.T) {
 		sel.DB = dbc.DB
 		rows, err := sel.Query(context.TODO())
 		require.NoError(t, err, "%+v", err)
-		defer cstesting.Close(t, rows)
+		defer dmltest.Close(t, rows)
 
 		var xx []string
 		for rows.Next() {
@@ -121,7 +121,7 @@ func (p *TableCoreConfigData) MapColumns(cm *dml.ColumnMap) error {
 		case "value":
 			cm.NullString(&p.Value)
 		default:
-			return errors.NewNotFoundf("[dml] Field %q not found", c)
+			return errors.NotFound.Newf("[dml] Field %q not found", c)
 		}
 	}
 	return cm.Err()
@@ -146,7 +146,7 @@ func (ps *TableCoreConfigDataSlice) MapColumns(cm *dml.ColumnMap) error {
 	case dml.ColumnMapCollectionReadSet, dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
 		// noop not needed
 	default:
-		return errors.NewNotSupportedf("[dml] Unknown Mode: %q", string(m))
+		return errors.NotSupported.Newf("[dml] Unknown Mode: %q", string(m))
 	}
 	return nil
 }
@@ -159,10 +159,10 @@ func TestSelect_Load(t *testing.T) {
 	t.Parallel()
 
 	t.Run("success", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		dbMock.ExpectQuery("SELECT").WillReturnRows(cstesting.MustMockRows(cstesting.WithFile("testdata/core_config_data.csv")))
+		dbMock.ExpectQuery("SELECT").WillReturnRows(dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data.csv")))
 		s := dml.NewSelect("*").From("core_config_data")
 		s.DB = dbc.DB
 
@@ -184,23 +184,23 @@ func TestSelect_Load(t *testing.T) {
 	})
 
 	t.Run("row error", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
 		r := sqlmock.NewRows([]string{"config_id"}).FromCSVString("222\n333\n").
-			RowError(1, errors.NewConnectionFailedf("Con failed"))
+			RowError(1, errors.ConnectionFailed.Newf("Con failed"))
 		dbMock.ExpectQuery("SELECT").WillReturnRows(r)
 		s := dml.NewSelect("config_id").From("core_config_data")
 		s.DB = dbc.DB
 
 		ccd := &TableCoreConfigDataSlice{}
 		_, err := s.Load(context.TODO(), ccd)
-		assert.True(t, errors.IsConnectionFailed(err), "%+v", err)
+		assert.True(t, errors.ConnectionFailed.Match(err), "%+v", err)
 	})
 
 	t.Run("ioClose error", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
 		r := sqlmock.NewRows([]string{"config_id"}).FromCSVString("222\n333\n").AddRow("3456")
 		dbMock.ExpectQuery("SELECT").WillReturnRows(r)
@@ -208,10 +208,10 @@ func TestSelect_Load(t *testing.T) {
 		s.DB = dbc.DB
 
 		ccd := &TableCoreConfigDataSlice{
-			err: errors.NewDuplicatedf("Somewhere exists a duplicate entry"),
+			err: errors.Duplicated.Newf("Somewhere exists a duplicate entry"),
 		}
 		_, err := s.Load(context.TODO(), ccd)
-		assert.True(t, errors.IsDuplicated(err), "%+v", err)
+		assert.True(t, errors.Duplicated.Match(err), "%+v", err)
 	})
 }
 
@@ -222,26 +222,26 @@ func TestSelect_Prepare(t *testing.T) {
 		sel := dml.NewSelect()
 		stmt, err := sel.Prepare(context.TODO())
 		assert.Nil(t, stmt)
-		assert.True(t, errors.IsEmpty(err))
+		assert.True(t, errors.Empty.Match(err))
 	})
 
 	t.Run("Prepare Error", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		dbMock.ExpectPrepare("SELECT `a`, `b` FROM `tableX`").WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
+		dbMock.ExpectPrepare("SELECT `a`, `b` FROM `tableX`").WillReturnError(errors.AlreadyClosed.Newf("Who closed myself?"))
 
 		sel := dml.NewSelect("a", "b").From("tableX").WithDB(dbc.DB)
 		stmt, err := sel.Prepare(context.TODO())
 		assert.Nil(t, stmt)
-		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	})
 
 	t.Run("Prepare IN", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("SELECT `id` FROM `tableX` WHERE (`id` IN (?,?))"))
+		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `id` FROM `tableX` WHERE (`id` IN (?,?))"))
 		prep.ExpectQuery().WithArgs(3739, 3740).
 			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(78))
 
@@ -254,10 +254,10 @@ func TestSelect_Prepare(t *testing.T) {
 	})
 
 	t.Run("Query", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("SELECT `name`, `email` FROM `dml_person` WHERE (`id` = ?)"))
+		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `name`, `email` FROM `dml_person` WHERE (`id` = ?)"))
 		prep.ExpectQuery().WithArgs(6789).
 			WillReturnRows(sqlmock.NewRows([]string{"name", "email"}).AddRow("Peter Gopher", "peter@gopher.go"))
 
@@ -269,13 +269,13 @@ func TestSelect_Prepare(t *testing.T) {
 			WithDB(dbc.DB).
 			Prepare(context.TODO())
 		require.NoError(t, err, "failed creating a prepared statement")
-		defer cstesting.Close(t, stmt)
+		defer dmltest.Close(t, stmt)
 
 		t.Run("Context", func(t *testing.T) {
 
 			rows, err := stmt.Query(context.TODO(), 6789)
 			require.NoError(t, err)
-			defer cstesting.Close(t, rows)
+			defer dmltest.Close(t, rows)
 
 			cols, err := rows.Columns()
 			require.NoError(t, err)
@@ -295,17 +295,17 @@ func TestSelect_Prepare(t *testing.T) {
 	})
 
 	t.Run("Exec", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("SELECT `name`, `email` FROM `dml_person` WHERE (`id` = ?)"))
+		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `name`, `email` FROM `dml_person` WHERE (`id` = ?)"))
 
 		stmt, err := dml.NewSelect("name", "email").From("dml_person").
 			Where(dml.Column("id").PlaceHolder()).
 			WithDB(dbc.DB).
 			Prepare(context.TODO())
 		require.NoError(t, err, "failed creating a prepared statement")
-		defer cstesting.Close(t, stmt)
+		defer dmltest.Close(t, stmt)
 
 		const iterations = 3
 
@@ -324,7 +324,7 @@ func TestSelect_Prepare(t *testing.T) {
 				cols, err := rows.Columns()
 				require.NoError(t, err)
 				assert.Exactly(t, []string{"name", "email"}, cols)
-				cstesting.Close(t, rows)
+				dmltest.Close(t, rows)
 			}
 		})
 
@@ -344,15 +344,15 @@ func TestSelect_Prepare(t *testing.T) {
 				cols, err := rows.Columns()
 				require.NoError(t, err)
 				assert.Exactly(t, []string{"name", "email"}, cols)
-				cstesting.Close(t, rows)
+				dmltest.Close(t, rows)
 			}
 		})
 
 		t.Run("WithRecords_Error", func(t *testing.T) {
-			p := &TableCoreConfigDataSlice{err: errors.NewDuplicatedf("Found a duplicate")}
+			p := &TableCoreConfigDataSlice{err: errors.Duplicated.Newf("Found a duplicate")}
 			stmt.WithRecords(dml.Qualify("", p))
 			rows, err := stmt.Query(context.TODO())
-			assert.True(t, errors.IsDuplicated(err), "%+v", err)
+			assert.True(t, errors.Duplicated.Match(err), "%+v", err)
 			assert.Nil(t, rows)
 		})
 	})
@@ -360,17 +360,17 @@ func TestSelect_Prepare(t *testing.T) {
 	t.Run("Load", func(t *testing.T) {
 
 		t.Run("multi rows", func(t *testing.T) {
-			dbc, dbMock := cstesting.MockDB(t)
-			defer cstesting.MockClose(t, dbc, dbMock)
+			dbc, dbMock := dmltest.MockDB(t)
+			defer dmltest.MockClose(t, dbc, dbMock)
 
-			prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("SELECT `config_id`, `scope_id`, `path` FROM `core_config_data` WHERE (`config_id` IN ?)"))
+			prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `config_id`, `scope_id`, `path` FROM `core_config_data` WHERE (`config_id` IN ?)"))
 
 			stmt, err := dml.NewSelect("config_id", "scope_id", "path").From("core_config_data").
 				Where(dml.Column("config_id").In().PlaceHolder()).
 				WithDB(dbc.DB).
 				Prepare(context.TODO())
 			require.NoError(t, err, "failed creating a prepared statement")
-			defer cstesting.Close(t, stmt)
+			defer dmltest.Close(t, stmt)
 
 			columns := []string{"config_id", "scope_id", "path"}
 
@@ -388,17 +388,17 @@ func TestSelect_Prepare(t *testing.T) {
 		})
 
 		t.Run("Int64", func(t *testing.T) {
-			dbc, dbMock := cstesting.MockDB(t)
-			defer cstesting.MockClose(t, dbc, dbMock)
+			dbc, dbMock := dmltest.MockDB(t)
+			defer dmltest.MockClose(t, dbc, dbMock)
 
-			prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("SELECT `scope_id` FROM `core_config_data` WHERE (`config_id` = ?)"))
+			prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `scope_id` FROM `core_config_data` WHERE (`config_id` = ?)"))
 
 			stmt, err := dml.NewSelect("scope_id").From("core_config_data").
 				Where(dml.Column("config_id").PlaceHolder()).
 				WithDB(dbc.DB).
 				Prepare(context.TODO())
 			require.NoError(t, err, "failed creating a prepared statement")
-			defer cstesting.Close(t, stmt)
+			defer dmltest.Close(t, stmt)
 
 			columns := []string{"scope_id"}
 
@@ -410,17 +410,17 @@ func TestSelect_Prepare(t *testing.T) {
 		})
 
 		t.Run("Int64s", func(t *testing.T) {
-			dbc, dbMock := cstesting.MockDB(t)
-			defer cstesting.MockClose(t, dbc, dbMock)
+			dbc, dbMock := dmltest.MockDB(t)
+			defer dmltest.MockClose(t, dbc, dbMock)
 
-			prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("SELECT `scope_id` FROM `core_config_data` WHERE (`config_id` IN ?)"))
+			prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `scope_id` FROM `core_config_data` WHERE (`config_id` IN ?)"))
 
 			stmt, err := dml.NewSelect("scope_id").From("core_config_data").
 				Where(dml.Column("config_id").In().PlaceHolder()).
 				WithDB(dbc.DB).
 				Prepare(context.TODO())
 			require.NoError(t, err, "failed creating a prepared statement")
-			defer cstesting.Close(t, stmt)
+			defer dmltest.Close(t, stmt)
 
 			columns := []string{"scope_id"}
 
@@ -437,7 +437,7 @@ func TestSelect_Prepare(t *testing.T) {
 func TestSelect_WithLogger(t *testing.T) {
 	uniID := new(int32)
 	rConn := createRealSession(t)
-	defer cstesting.Close(t, rConn)
+	defer dmltest.Close(t, rConn)
 
 	var uniqueIDFunc = func() string {
 		return fmt.Sprintf("UNIQ%02d", atomic.AddInt32(uniID, 1))
@@ -459,7 +459,7 @@ func TestSelect_WithLogger(t *testing.T) {
 			defer buf.Reset()
 			rows, err := pplSel.WithArgs(67896543123).Query(context.TODO())
 			require.Nil(t, rows)
-			require.True(t, errors.IsNotAllowed(err), "%s", err)
+			require.True(t, errors.NotAllowed.Match(err), "%s", err)
 		})
 		t.Run("Query", func(t *testing.T) {
 			defer buf.Reset()
@@ -486,7 +486,7 @@ func TestSelect_WithLogger(t *testing.T) {
 
 			defer buf.Reset()
 			_, err := pplSel.WithArgs(67896543124).LoadInt64(context.TODO())
-			if !errors.IsNotFound(err) {
+			if !errors.NotFound.Match(err) {
 				require.NoError(t, err)
 			}
 
@@ -506,7 +506,7 @@ func TestSelect_WithLogger(t *testing.T) {
 		t.Run("LoadUint64", func(t *testing.T) {
 			defer buf.Reset()
 			_, err := pplSel.WithArgs(67896543126).LoadUint64(context.TODO())
-			if !errors.IsNotFound(err) {
+			if !errors.NotFound.Match(err) {
 				require.NoError(t, err)
 			}
 			assert.Exactly(t, "DEBUG LoadUint64 conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\"\n",
@@ -525,7 +525,7 @@ func TestSelect_WithLogger(t *testing.T) {
 		t.Run("LoadFloat64", func(t *testing.T) {
 			defer buf.Reset()
 			_, err := pplSel.WithArgs(678965.43125).LoadFloat64(context.TODO())
-			if !errors.IsNotFound(err) {
+			if !errors.NotFound.Match(err) {
 				require.NoError(t, err)
 			}
 			assert.Exactly(t, "DEBUG LoadFloat64 conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\"\n",
@@ -544,7 +544,7 @@ func TestSelect_WithLogger(t *testing.T) {
 		t.Run("LoadString", func(t *testing.T) {
 			defer buf.Reset()
 			_, err := pplSel.WithArgs("hello").LoadString(context.TODO())
-			if !errors.IsNotFound(err) {
+			if !errors.NotFound.Match(err) {
 				require.NoError(t, err)
 			}
 
@@ -566,7 +566,7 @@ func TestSelect_WithLogger(t *testing.T) {
 			defer buf.Reset()
 			stmt, err := pplSel.Prepare(context.TODO())
 			require.NoError(t, err)
-			defer cstesting.Close(t, stmt)
+			defer dmltest.Close(t, stmt)
 
 			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\"\n",
 				buf.String())
@@ -590,7 +590,7 @@ func TestSelect_WithLogger(t *testing.T) {
 
 	t.Run("ConnSingle", func(t *testing.T) {
 		conn, err := rConn.Conn(context.TODO())
-		defer cstesting.Close(t, conn)
+		defer dmltest.Close(t, conn)
 		require.NoError(t, err)
 
 		pplSel := conn.SelectFrom("dml_people", "dp2").AddColumns("name", "email").Where(dml.Column("id").Less().PlaceHolder())
@@ -600,7 +600,7 @@ func TestSelect_WithLogger(t *testing.T) {
 
 			rows, err := pplSel.WithArgs(-3).Query(context.TODO())
 			require.NoError(t, err)
-			cstesting.Close(t, rows)
+			dmltest.Close(t, rows)
 
 			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ06*/ `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` < ?)\"\n",
 				buf.String())
@@ -620,7 +620,7 @@ func TestSelect_WithLogger(t *testing.T) {
 
 			stmt, err := pplSel.Prepare(context.TODO())
 			require.NoError(t, err)
-			defer cstesting.Close(t, stmt)
+			defer dmltest.Close(t, stmt)
 			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ06*/ `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` < ?)\"\n",
 				buf.String())
 			buf.Reset()
@@ -641,7 +641,7 @@ func TestSelect_WithLogger(t *testing.T) {
 				defer buf.Reset()
 				rows, err := stmt.Query(context.TODO(), -4)
 				require.NoError(t, err)
-				cstesting.Close(t, rows)
+				dmltest.Close(t, rows)
 				assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" is_prepared: true duration: 0 arg_len: 1\n",
 					buf.String())
 			})
@@ -658,7 +658,7 @@ func TestSelect_WithLogger(t *testing.T) {
 			t.Run("LoadInt64", func(t *testing.T) {
 				defer buf.Reset()
 				_, err := stmt.WithArgs(-7).LoadInt64(context.TODO())
-				if !errors.IsNotFound(err) {
+				if !errors.NotFound.Match(err) {
 					require.NoError(t, err)
 				}
 				assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" is_prepared: true duration: 0 arg_len: 1\nDEBUG LoadInt64 conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" is_prepared: true duration: 0\n",

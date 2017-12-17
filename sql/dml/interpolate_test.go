@@ -35,17 +35,17 @@ func TestRepeat(t *testing.T) {
 	t.Run("MisMatch", func(t *testing.T) {
 		s, err := ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN (?)", nil)
 		assert.Empty(t, s)
-		assert.True(t, errors.IsMismatch(err), "%+v", err)
+		assert.True(t, errors.Mismatch.Match(err), "%+v", err)
 	})
 	t.Run("MisMatch length reps", func(t *testing.T) {
 		s, err := ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN (?)", MakeArgs(2).Int64s(1, 2).Strings("d", "3"))
 		assert.Empty(t, s)
-		assert.True(t, errors.IsMismatch(err), "%+v", err)
+		assert.True(t, errors.Mismatch.Match(err), "%+v", err)
 	})
 	t.Run("MisMatch qMarks", func(t *testing.T) {
 		s, err := ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN(!)", MakeArgs(1).Int64(3))
 		assert.Empty(t, s)
-		assert.True(t, errors.IsMismatch(err), "%+v", err)
+		assert.True(t, errors.Mismatch.Match(err), "%+v", err)
 	})
 	t.Run("one arg with one value", func(t *testing.T) {
 		args := MakeArgs(1).Int64(1)
@@ -97,27 +97,27 @@ func TestInterpolate_Errors(t *testing.T) {
 	t.Run("non utf8", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a = ?").Str(string([]byte{0x34, 0xFF, 0xFE})),
-			errors.IsNotValid,
+			errors.NotValid,
 			"",
 		)
 	})
 	t.Run("too few qmarks", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a = ?").Int(3).Int(4),
-			errors.IsMismatch,
+			errors.Mismatch,
 			"",
 		)
 	})
 	t.Run("too many qmarks", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a = ? OR b = ? or c = ?").Ints(3, 4),
-			errors.IsMismatch,
+			errors.Mismatch,
 			"",
 		)
 	})
 	t.Run("way too many qmarks", func(t *testing.T) {
 		_, _, err := Interpolate("SELECT * FROM x WHERE a IN ? OR b = ? OR c = ? AND d = ?").Ints(3, 4).Int64(2).ToSQL()
-		assert.True(t, errors.IsMismatch(err), "%+v", err)
+		assert.True(t, errors.Mismatch.Match(err), "%+v", err)
 	})
 	t.Run("print error into String", func(t *testing.T) {
 		ip := Interpolate("SELECT * FROM x WHERE a IN (?) AND b BETWEEN ? AND ? AND c = ? AND d IN (?,?)").
@@ -132,7 +132,7 @@ type argValUint16 uint16
 
 func (u argValUint16) Value() (driver.Value, error) {
 	if u > 0 {
-		return nil, errors.NewAbortedf("Not in the mood today")
+		return nil, errors.Aborted.Newf("Not in the mood today")
 	}
 	return uint16(0), nil
 }
@@ -159,7 +159,7 @@ func TestInterpolate_ArgValue(t *testing.T) {
 				DriverValue(aByt).
 				DriverValue(aNil).
 				DriverValue(aNil),
-			nil,
+			errors.NoKind,
 			"SELECT * FROM x WHERE a = (4711) AND b = ('Goph\\'er') AND c = (2.7182818) AND d = ('2006-01-02 19:04:05') AND e = (1) AND f = ('BytyGophe\\'r') AND g = (NULL) AND h = (NULL)",
 		)
 	})
@@ -168,7 +168,7 @@ func TestInterpolate_ArgValue(t *testing.T) {
 			Interpolate("SELECT * FROM x WHERE a IN ? AND b IN ? AND c IN ? AND d IN ? AND e IN ? AND f IN ?").
 				DriverValue(aInt, aInt).DriverValue(aStr, aStr).DriverValue(aFlo, aFlo).
 				DriverValue(aTim, aTim).DriverValue(aBoo, aBoo).DriverValue(aByt, aByt),
-			nil,
+			errors.NoKind,
 			"SELECT * FROM x WHERE a IN (4711,4711) AND b IN ('Goph\\'er','Goph\\'er') AND c IN (2.7182818,2.7182818) AND d IN ('2006-01-02 19:04:05','2006-01-02 19:04:05') AND e IN (1,1) AND f IN ('BytyGophe\\'r','BytyGophe\\'r')",
 		)
 	})
@@ -176,7 +176,7 @@ func TestInterpolate_ArgValue(t *testing.T) {
 		defer func() {
 			if r := recover(); r != nil {
 				if err, ok := r.(error); ok {
-					assert.True(t, errors.IsNotSupported(err), "%+v", err)
+					assert.True(t, errors.NotSupported.Match(err), "%+v", err)
 				} else {
 					t.Errorf("Panic should contain an error but got:\n%+v", r)
 				}
@@ -191,7 +191,7 @@ func TestInterpolate_ArgValue(t *testing.T) {
 			if r := recover(); r != nil {
 				if err, ok := r.(error); ok {
 					err = errors.Cause(err)
-					assert.True(t, errors.IsAborted(err), "%+v", err)
+					assert.True(t, errors.Aborted.Match(err), "%+v", err)
 				} else {
 					t.Errorf("Panic should contain an error but got:\n%+v", r)
 				}
@@ -233,7 +233,7 @@ func TestInterpolate_Int64(t *testing.T) {
 					sql.Named(":ArgX", 3),
 					sql.Named("@ArgY", 3.14159),
 				),
-			nil,
+			errors.NoKind,
 			"SELECT * FROM x WHERE a = (3) AND b > 3.14159",
 		)
 	})
@@ -241,14 +241,14 @@ func TestInterpolate_Int64(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a = ? AND b = ? AND c = ?").
 				Int64(1).Int64(-2).Int64(3),
-			nil,
+			errors.NoKind,
 			"SELECT * FROM x WHERE a = 1 AND b = -2 AND c = 3",
 		)
 	})
 	t.Run("in", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a IN ?").Int64s(1, -2, 3, 4, 5, 6, 7, 8, 9, 10),
-			nil,
+			errors.NoKind,
 			"SELECT * FROM x WHERE a IN (1,-2,3,4,5,6,7,8,9,10)",
 		)
 	})
@@ -264,7 +264,7 @@ func TestInterpolate_Int64(t *testing.T) {
 				Int64(11).
 				Int64s(12, 13).
 				Int64(-14),
-			nil,
+			errors.NoKind,
 			`SELECT * FROM x WHERE a = 1 AND b = -2 AND c = 3 AND h = 4 AND i = 5 AND j = 6 AND k = 11 AND m IN (12,13) OR n = -14`,
 		)
 	})
@@ -276,7 +276,7 @@ func TestInterpolate_Bools(t *testing.T) {
 	t.Run("single args", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a = ? AND b = ?").Bool(true).Bool(false),
-			nil,
+			errors.NoKind,
 			"SELECT * FROM x WHERE a = 1 AND b = 0",
 		)
 	})
@@ -284,7 +284,7 @@ func TestInterpolate_Bools(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a IN ? AND b = ? OR c = ?").
 				Bools(true, false).Bool(true).Bool(false),
-			nil,
+			errors.NoKind,
 			"SELECT * FROM x WHERE a IN (1,0) AND b = 1 OR c = 0",
 		)
 	})
@@ -298,21 +298,21 @@ func TestInterpolate_Bytes(t *testing.T) {
 	t.Run("UTF8 valid: single args", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a = ? AND b = ?").Bytes(b1).Bytes(b2),
-			nil,
+			errors.NoKind,
 			"SELECT * FROM x WHERE a = 'Go' AND b = 'Further'",
 		)
 	})
 	t.Run("UTF8 valid: IN args", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a IN ?").BytesSlice(b1, b2),
-			nil,
+			errors.NoKind,
 			"SELECT * FROM x WHERE a IN ('Go','Further')",
 		)
 	})
 	t.Run("empty arg triggers no error", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a IN ?").BytesSlice(),
-			nil,
+			errors.NoKind,
 			"SELECT * FROM x WHERE a IN ()",
 		)
 	})
@@ -320,7 +320,7 @@ func TestInterpolate_Bytes(t *testing.T) {
 		bin := []byte{66, 250, 67}
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a = ?").Bytes(bin),
-			nil,
+			errors.NoKind,
 			"SELECT * FROM x WHERE a = 0x42fa43",
 		)
 	})
@@ -335,21 +335,21 @@ func TestInterpolate_Time(t *testing.T) {
 	t.Run("single args", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a = ? AND b = ?").Time(t1).Time(t2),
-			nil,
+			errors.NoKind,
 			"SELECT * FROM x WHERE a = '2006-01-02 15:04:05' AND b = '2006-01-02 15:05:05'",
 		)
 	})
 	t.Run("IN args", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a IN ?").Times(t1, t2),
-			nil,
+			errors.NoKind,
 			"SELECT * FROM x WHERE a IN ('2006-01-02 15:04:05','2006-01-02 15:05:05')",
 		)
 	})
 	t.Run("empty arg", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a IN ? ?").Times(),
-			errors.IsMismatch,
+			errors.Mismatch,
 			"",
 		)
 	})
@@ -360,21 +360,21 @@ func TestInterpolate_Floats(t *testing.T) {
 	t.Run("single args", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a = ? AND b = ?").Float64(3.14159).Float64(2.7182818),
-			nil,
+			errors.NoKind,
 			"SELECT * FROM x WHERE a = 3.14159 AND b = 2.7182818",
 		)
 	})
 	t.Run("IN args", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a IN ? AND b = ?").Float64s(3.14159, 2.7182818).Float64(0.815),
-			nil,
+			errors.NoKind,
 			"SELECT * FROM x WHERE a IN (3.14159,2.7182818) AND b = 0.815",
 		)
 	})
 	t.Run("IN args reverse", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE b = ? AND a IN ?").Float64(0.815).Float64s(3.14159, 2.7182818),
-			nil,
+			errors.NoKind,
 			"SELECT * FROM x WHERE b = 0.815 AND a IN (3.14159,2.7182818)",
 		)
 	})
@@ -387,7 +387,7 @@ func TestInterpolate_Slices_Strings_Between(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a IN ? AND b IN ? AND c NOT IN ? AND d BETWEEN ? AND ?").
 				ArgUnions(MakeArgs(5).Ints(1).Ints(1, 2, 3).Int64s(5, 6, 7).String("wat").String("ok")),
-			nil,
+			errors.NoKind,
 			"SELECT * FROM x WHERE a IN (1) AND b IN (1,2,3) AND c NOT IN (5,6,7) AND d BETWEEN 'wat' AND 'ok'",
 		)
 	})
@@ -395,7 +395,7 @@ func TestInterpolate_Slices_Strings_Between(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a IN ? AND b IN ? AND d BETWEEN ? AND ? AND c NOT IN ?").
 				ArgUnions(MakeArgs(5).Ints(1).Ints(1, 2, 3).String("wat").String("ok").Int64s(5, 6, 7)),
-			nil,
+			errors.NoKind,
 			"SELECT * FROM x WHERE a IN (1) AND b IN (1,2,3) AND d BETWEEN 'wat' AND 'ok' AND c NOT IN (5,6,7)",
 		)
 	})
@@ -403,14 +403,14 @@ func TestInterpolate_Slices_Strings_Between(t *testing.T) {
 	t.Run("single args", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a = ? AND b = ? AND c = ?").Str("a'b").Str("c`d").Str("\"hello's \\ world\" \n\r\x00\x1a"),
-			nil,
+			errors.NoKind,
 			"SELECT * FROM x WHERE a = 'a\\'b' AND b = 'c`d' AND c = '\\\"hello\\'s \\\\ world\\\" \\n\\r\\x00\\x1a'",
 		)
 	})
 	t.Run("IN args", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a IN ? AND b = ?").Strs("a'b", "c`d").Strs("1' or '1' = '1'))/*"),
-			nil,
+			errors.NoKind,
 			"SELECT * FROM x WHERE a IN ('a\\'b','c`d') AND b = ('1\\' or \\'1\\' = \\'1\\'))/*')",
 		)
 	})
@@ -418,7 +418,7 @@ func TestInterpolate_Slices_Strings_Between(t *testing.T) {
 		var sl = make([]string, 0, 2)
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a IN ? AND b = ? OR c = ?").Strs("a", "b").Str("c").Strs(sl...),
-			nil,
+			errors.NoKind,
 			"SELECT * FROM x WHERE a IN ('a','b') AND b = 'c' OR c = ()",
 		)
 	})
@@ -430,7 +430,7 @@ func TestInterpolate_Slices_Strings_Between(t *testing.T) {
 				Int64s(5, 6, 7).
 				Strs("wat", "ok").
 				Int(8),
-			nil,
+			errors.NoKind,
 			"SELECT * FROM x WHERE a = (1) AND b = (1,2,3) AND c = (5,6,7) AND d = ('wat','ok') AND e = 8",
 		)
 	})
@@ -441,47 +441,47 @@ func TestInterpolate_Different(t *testing.T) {
 	tests := []struct {
 		sql string
 		Arguments
-		expSQL string
-		errBhf errors.BehaviourFunc
+		expSQL  string
+		errKind errors.Kind
 	}{
 		// NULL
 		{"SELECT * FROM x WHERE a = ?", MakeArgs(1).Null(),
-			"SELECT * FROM x WHERE a = NULL", nil},
+			"SELECT * FROM x WHERE a = NULL", errors.NoKind},
 
 		// integers
 		{
 			`SELECT * FROM x WHERE a = ? AND b = ?`,
 			MakeArgs(1).Int(1).Int(-2),
-			`SELECT * FROM x WHERE a = 1 AND b = -2`, nil,
+			`SELECT * FROM x WHERE a = 1 AND b = -2`, errors.NoKind,
 		},
 		{
 			`SELECT * FROM x WHERE a IN ?`,
 			MakeArgs(1).Ints(1, -2, 3, 4, 5, 6, 7, 8, 9, 10),
-			`SELECT * FROM x WHERE a IN (1,-2,3,4,5,6,7,8,9,10)`, nil,
+			`SELECT * FROM x WHERE a IN (1,-2,3,4,5,6,7,8,9,10)`, errors.NoKind,
 		},
 		{
 			`SELECT * FROM x WHERE a IN ?`,
 			MakeArgs(1).Int64s(1, -2, 3, 4, 5, 6, 7, 8, 9, 10),
-			`SELECT * FROM x WHERE a IN (1,-2,3,4,5,6,7,8,9,10)`, nil,
+			`SELECT * FROM x WHERE a IN (1,-2,3,4,5,6,7,8,9,10)`, errors.NoKind,
 		},
 
 		// boolean
 		{"SELECT * FROM x WHERE a = ? AND b = ?", MakeArgs(2).Bool(true).Bool(false),
-			"SELECT * FROM x WHERE a = 1 AND b = 0", nil},
+			"SELECT * FROM x WHERE a = 1 AND b = 0", errors.NoKind},
 		{"SELECT * FROM x WHERE a IN ?", MakeArgs(1).Bools(true, false),
-			"SELECT * FROM x WHERE a IN (1,0)", nil},
+			"SELECT * FROM x WHERE a IN (1,0)", errors.NoKind},
 
 		// floats
 		{"SELECT * FROM x WHERE a = ? AND b = ?", MakeArgs(2).Float64(0.15625).Float64(3.14159),
-			"SELECT * FROM x WHERE a = 0.15625 AND b = 3.14159", nil},
+			"SELECT * FROM x WHERE a = 0.15625 AND b = 3.14159", errors.NoKind},
 		{"SELECT * FROM x WHERE a IN ?", MakeArgs(1).Float64s(0.15625, 3.14159),
-			"SELECT * FROM x WHERE a IN (0.15625,3.14159)", nil},
+			"SELECT * FROM x WHERE a IN (0.15625,3.14159)", errors.NoKind},
 		{"SELECT * FROM x WHERE a = ? AND b = ? and C = ?", MakeArgs(1).Float64s(0.15625, 3.14159),
-			"", errors.IsMismatch},
+			"", errors.Mismatch},
 		{
 			`SELECT * FROM x WHERE a IN ?`,
 			MakeArgs(1).Float64s(1.1, -2.2, 3.3),
-			`SELECT * FROM x WHERE a IN (1.1,-2.2,3.3)`, nil,
+			`SELECT * FROM x WHERE a IN (1.1,-2.2,3.3)`, errors.NoKind,
 		},
 
 		// strings
@@ -490,23 +490,23 @@ func TestInterpolate_Different(t *testing.T) {
 			AND b = ?`,
 			MakeArgs(2).String("hello").String("\"hello's \\ world\" \n\r\x00\x1a"),
 			`SELECT * FROM x WHERE a = 'hello'
-			AND b = '\"hello\'s \\ world\" \n\r\x00\x1a'`, nil,
+			AND b = '\"hello\'s \\ world\" \n\r\x00\x1a'`, errors.NoKind,
 		},
 		{
 			`SELECT * FROM x WHERE a IN ?`,
 			MakeArgs(1).Strings("a'a", "bb"),
-			`SELECT * FROM x WHERE a IN ('a\'a','bb')`, nil,
+			`SELECT * FROM x WHERE a IN ('a\'a','bb')`, errors.NoKind,
 		},
 		{
 			`SELECT * FROM x WHERE a IN ?`,
 			MakeArgs(1).Strings("a'a", "bb"),
-			`SELECT * FROM x WHERE a IN ('a\'a','bb')`, nil,
+			`SELECT * FROM x WHERE a IN ('a\'a','bb')`, errors.NoKind,
 		},
 
 		// slices
 		{"SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ?",
 			MakeArgs(4).Int(1).Ints(1, 2, 3).Ints(5, 6, 7).Strings("wat", "ok"),
-			"SELECT * FROM x WHERE a = 1 AND b = (1,2,3) AND c = (5,6,7) AND d = ('wat','ok')", nil},
+			"SELECT * FROM x WHERE a = 1 AND b = (1,2,3) AND c = (5,6,7) AND d = ('wat','ok')", errors.NoKind},
 		//
 		////// TODO valuers
 		////{"SELECT * FROM x WHERE a = ? AND b = ?",
@@ -515,37 +515,37 @@ func TestInterpolate_Different(t *testing.T) {
 
 		// errors
 		{"SELECT * FROM x WHERE a = ? AND b = ?", MakeArgs(1).Int64(1),
-			"", errors.IsMismatch},
+			"", errors.Mismatch},
 
 		{"SELECT * FROM x WHERE", MakeArgs(1).Int(1),
-			"", errors.IsMismatch},
+			"", errors.Mismatch},
 
 		{"SELECT * FROM x WHERE a = ?", MakeArgs(1).String(string([]byte{0x34, 0xFF, 0xFE})),
-			"", errors.IsNotValid},
+			"", errors.NotValid},
 
 		// String() without arguments is equal to empty interface in the previous version.
-		{"SELECT 'hello", MakeArgs(1).String(""), "", errors.IsMismatch},
-		{`SELECT "hello`, MakeArgs(1).String(""), "", errors.IsMismatch},
-		{`SELECT ? "hello`, MakeArgs(1).String(""), "SELECT '' 'hello", nil},
+		{"SELECT 'hello", MakeArgs(1).String(""), "", errors.Mismatch},
+		{`SELECT "hello`, MakeArgs(1).String(""), "", errors.Mismatch},
+		{`SELECT ? "hello`, MakeArgs(1).String(""), "SELECT '' 'hello", errors.NoKind},
 
 		// preprocessing
-		{"SELECT '?'", nil, "SELECT '?'", nil},
-		{"SELECT `?`", nil, "SELECT `?`", nil},
-		{"SELECT [?]", nil, "SELECT `?`", nil},
-		{"SELECT [?]", nil, "SELECT `?`", nil},
-		{"SELECT [name] FROM [user]", nil, "SELECT `name` FROM `user`", nil},
-		{"SELECT [u.name] FROM [user] [u]", nil, "SELECT `u`.`name` FROM `user` `u`", nil},
-		{"SELECT [u.na`me] FROM [user] [u]", nil, "SELECT `u`.`na``me` FROM `user` `u`", nil},
-		{"SELECT * FROM [user] WHERE [name] = '[nick]'", nil, "SELECT * FROM `user` WHERE `name` = '[nick]'", nil},
-		{`SELECT * FROM [user] WHERE [name] = "nick[]"`, nil, "SELECT * FROM `user` WHERE `name` = 'nick[]'", nil},
-		{"SELECT * FROM [user] WHERE [name] = 'Hello`s World'", nil, "SELECT * FROM `user` WHERE `name` = 'Hello`s World'", nil},
+		{"SELECT '?'", nil, "SELECT '?'", errors.NoKind},
+		{"SELECT `?`", nil, "SELECT `?`", errors.NoKind},
+		{"SELECT [?]", nil, "SELECT `?`", errors.NoKind},
+		{"SELECT [?]", nil, "SELECT `?`", errors.NoKind},
+		{"SELECT [name] FROM [user]", nil, "SELECT `name` FROM `user`", errors.NoKind},
+		{"SELECT [u.name] FROM [user] [u]", nil, "SELECT `u`.`name` FROM `user` `u`", errors.NoKind},
+		{"SELECT [u.na`me] FROM [user] [u]", nil, "SELECT `u`.`na``me` FROM `user` `u`", errors.NoKind},
+		{"SELECT * FROM [user] WHERE [name] = '[nick]'", nil, "SELECT * FROM `user` WHERE `name` = '[nick]'", errors.NoKind},
+		{`SELECT * FROM [user] WHERE [name] = "nick[]"`, nil, "SELECT * FROM `user` WHERE `name` = 'nick[]'", errors.NoKind},
+		{"SELECT * FROM [user] WHERE [name] = 'Hello`s World'", nil, "SELECT * FROM `user` WHERE `name` = 'Hello`s World'", errors.NoKind},
 	}
 
 	for _, test := range tests {
 		str, _, err := Interpolate(test.sql).ArgUnions(test.Arguments).ToSQL()
-		if test.errBhf != nil {
-			if !test.errBhf(err) {
-				isErr := test.errBhf(err)
+		if !test.errKind.Empty() {
+			if !test.errKind.Match(err) {
+				isErr := test.errKind.Match(err)
 				t.Errorf("IDX %q\ngot error: %v\nwant: %t", test.sql, err, isErr)
 			}
 		}

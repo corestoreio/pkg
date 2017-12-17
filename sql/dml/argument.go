@@ -113,7 +113,7 @@ func (arg *argument) len() (l int) {
 	case []NullTime:
 		l = len(v)
 	default:
-		panic(errors.NewNotSupportedf("[dml] Unsupported type: %T => %#v", v, v))
+		panic(errors.NotSupported.Newf("[dml] Unsupported type: %T => %#v", v, v))
 	}
 	// default is 0
 	return
@@ -265,7 +265,7 @@ func (arg argument) writeTo(w *bytes.Buffer, pos uint) (err error) {
 		}
 	case string:
 		if !utf8.ValidString(v) {
-			return errors.NewNotValidf("[dml] Argument.WriteTo: String is not UTF-8: %q", v)
+			return errors.NotValid.Newf("[dml] Argument.WriteTo: String is not UTF-8: %q", v)
 		}
 		dialect.EscapeString(w, v)
 	case []string:
@@ -273,7 +273,7 @@ func (arg argument) writeTo(w *bytes.Buffer, pos uint) (err error) {
 			if nv := v[pos]; utf8.ValidString(nv) {
 				dialect.EscapeString(w, nv)
 			} else {
-				err = errors.NewNotValidf("[dml] Argument.WriteTo: String is not UTF-8: %q", nv)
+				err = errors.NotValid.Newf("[dml] Argument.WriteTo: String is not UTF-8: %q", nv)
 			}
 		} else {
 			w.WriteByte('(')
@@ -284,7 +284,7 @@ func (arg argument) writeTo(w *bytes.Buffer, pos uint) (err error) {
 				if nv := v[i]; utf8.ValidString(nv) {
 					dialect.EscapeString(w, nv)
 				} else {
-					err = errors.NewNotValidf("[dml] Argument.WriteTo: String is not UTF-8: %q", nv)
+					err = errors.NotValid.Newf("[dml] Argument.WriteTo: String is not UTF-8: %q", nv)
 				}
 			}
 			w.WriteByte(')')
@@ -354,7 +354,7 @@ func (arg argument) writeTo(w *bytes.Buffer, pos uint) (err error) {
 		_, err = w.WriteString(sqlStrNullUC)
 
 	default:
-		panic(errors.NewNotSupportedf("[dml] Unsupported field type: %T => %#v", arg.value, arg.value))
+		panic(errors.NotSupported.Newf("[dml] Unsupported field type: %T => %#v", arg.value, arg.value))
 	}
 	return err
 }
@@ -496,7 +496,7 @@ func (arg argument) GoString() string {
 	case nil:
 		fmt.Fprint(buf, ".Null()")
 	default:
-		panic(errors.NewNotSupportedf("[dml] Unsupported field type: %T", arg.value))
+		panic(errors.NotSupported.Newf("[dml] Unsupported field type: %T", arg.value))
 	}
 	return buf.String()
 }
@@ -704,7 +704,7 @@ func (a Arguments) Interfaces(args ...interface{}) []interface{} {
 				args = v.append(args)
 			}
 		default:
-			panic(errors.NewNotSupportedf("[dml] Unsupported field type: %T", arg.value))
+			panic(errors.NotSupported.Newf("[dml] Unsupported field type: %T", arg.value))
 		}
 	}
 	return args
@@ -794,7 +794,7 @@ func (a Arguments) DriverValue(dvs ...driver.Valuer) Arguments {
 		v, err := dv.Value()
 		if err != nil {
 			// TODO: Either keep panic or delay the error until another function gets called which also returns an error.
-			panic(errors.NewFatal(err, "[dml] Driver.value error for %#v", dv))
+			panic(errors.Fatal.New(err, "[dml] Driver.value error for %#v", dv))
 		}
 
 		switch t := v.(type) {
@@ -812,7 +812,7 @@ func (a Arguments) DriverValue(dvs ...driver.Valuer) Arguments {
 		case time.Time:
 			times = append(times, t)
 		default:
-			panic(errors.NewNotSupportedf("[dml] Type %#v not supported in value slice: %#v", t, dvs))
+			panic(errors.NotSupported.Newf("[dml] Type %#v not supported in value slice: %#v", t, dvs))
 		}
 	}
 
@@ -858,7 +858,7 @@ func (a Arguments) DriverValues(dvs ...driver.Valuer) Arguments {
 		v, err := dv.Value()
 		if err != nil {
 			// TODO: Either keep panic or delay the error until another function gets called which also returns an error.
-			panic(errors.NewFatal(err, "[dml] Driver.value error for %#v", dv))
+			panic(errors.Fatal.New(err, "[dml] Driver.value error for %#v", dv))
 		}
 		switch t := v.(type) {
 		case nil:
@@ -876,7 +876,7 @@ func (a Arguments) DriverValues(dvs ...driver.Valuer) Arguments {
 		case time.Time:
 			a = a.Time(t)
 		default:
-			panic(errors.NewNotSupportedf("[dml] Type %#v not supported in value slice: %#v", t, dvs))
+			panic(errors.NotSupported.Newf("[dml] Type %#v not supported in value slice: %#v", t, dvs))
 		}
 	}
 	return a
@@ -921,7 +921,7 @@ func iFaceToArgs(values ...interface{}) Arguments {
 		case nil:
 			args = args.Null()
 		default:
-			panic(errors.NewNotSupportedf("[dml] iFaceToArgs type %#v not yet supported", v))
+			panic(errors.NotSupported.Newf("[dml] iFaceToArgs type %#v not yet supported", v))
 		}
 	}
 	return args

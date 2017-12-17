@@ -720,7 +720,7 @@ func encodePlaceholder(args []interface{}, value interface{}) ([]interface{}, er
 		}
 		if v.Len() == 0 {
 			// FIXME: support zero-length slice
-			return args, errors.NewNotValidf("invalid slice length")
+			return args, errors.NotValid.Newf("invalid slice length")
 		}
 
 		for n := 0; n < v.Len(); n++ {
@@ -739,7 +739,7 @@ func encodePlaceholder(args []interface{}, value interface{}) ([]interface{}, er
 		return encodePlaceholder(args, v.Elem().Interface())
 
 	}
-	return args, errors.NewNotSupportedf("Type %#v not supported", value)
+	return args, errors.NotSupported.Newf("Type %#v not supported", value)
 }
 
 var benchmarkDecimal_String string

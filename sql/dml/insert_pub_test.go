@@ -26,7 +26,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log/logw"
 	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -52,7 +52,7 @@ func (sr someRecord) MapColumns(cm *dml.ColumnMap) error {
 		case "other":
 			cm.Bool(&sr.Other)
 		default:
-			return errors.NewNotFoundf("[dml_test] Column %q not found", c)
+			return errors.NotFound.Newf("[dml_test] Column %q not found", c)
 		}
 	}
 	return cm.Err()
@@ -73,7 +73,7 @@ func TestInsert_Bind(t *testing.T) {
 					dml.Column("something_id").Int64(99),
 					dml.Column("user_id").Values(),
 				),
-			nil,
+			errors.NoKind,
 			"INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?),(?,?,?) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
 			"INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (1,88,0),(2,99,1),(3,101,1) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
 			wantArgs...,
@@ -88,7 +88,7 @@ func TestInsert_Bind(t *testing.T) {
 					dml.Column("something_id").Int64(99),
 					dml.Column("user_id").Values(),
 				),
-			nil,
+			errors.NoKind,
 			"INSERT INTO `a` VALUES (?,?,?),(?,?,?),(?,?,?) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
 			"INSERT INTO `a` VALUES (1,88,0),(2,99,1),(3,101,1) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
 			wantArgs...,
@@ -106,7 +106,7 @@ func TestInsert_Bind(t *testing.T) {
 			dml.NewInsert("customer_entity").
 				SetRecordPlaceHolderCount(5). // mandatory because no columns provided!
 				AddRecords(customers[0], customers[1], customers[2]),
-			nil,
+			errors.NoKind,
 			"INSERT INTO `customer_entity` VALUES (?,?,?,?,?),(?,?,?,?,?),(?,?,?,?,?)",
 			"INSERT INTO `customer_entity` VALUES (11,'Karl Gopher',7,47.11,'1FE9983E|28E76FBC'),(12,'Fung Go Roo',7,28.94,'4FE7787E|15E59FBB|794EFDE8'),(13,'John Doe',6,138.54,'')",
 			int64(11), "Karl Gopher", int64(7), 47.11, "1FE9983E|28E76FBC", int64(12), "Fung Go Roo", int64(7), 28.94, "4FE7787E|15E59FBB|794EFDE8", int64(13), "John Doe", int64(6), 138.54, "",
@@ -117,7 +117,7 @@ func TestInsert_Bind(t *testing.T) {
 		objs := []someRecord{{1, 88, false}, {2, 99, true}}
 		compareToSQL(t,
 			dml.NewInsert("a").AddColumns("something_it", "user_id", "other").AddRecords(objs[0]).AddRecords(objs[1]),
-			errors.IsNotFound,
+			errors.NotFound,
 			"",
 			"",
 		)
@@ -132,7 +132,7 @@ func TestInsert_Prepare(t *testing.T) {
 		in.AddColumns("a", "b")
 		stmt, err := in.Prepare(context.TODO())
 		assert.Nil(t, stmt)
-		assert.True(t, errors.IsEmpty(err))
+		assert.True(t, errors.Empty.Match(err))
 	})
 
 	t.Run("DB Error", func(t *testing.T) {
@@ -140,20 +140,20 @@ func TestInsert_Prepare(t *testing.T) {
 			Into: "table",
 		}
 		in.DB = dbMock{
-			error: errors.NewAlreadyClosedf("Who closed myself?"),
+			error: errors.AlreadyClosed.Newf("Who closed myself?"),
 		}
 		in.AddColumns("a", "b").AddValuesUnsafe(1, true)
 
 		stmt, err := in.Prepare(context.TODO())
 		assert.Nil(t, stmt)
-		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	})
 
 	t.Run("ExecArgs One Row", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("INSERT INTO `customer_entity` (`email`,`group_id`,`created_at`) VALUES (?,?,?)"))
+		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("INSERT INTO `customer_entity` (`email`,`group_id`,`created_at`) VALUES (?,?,?)"))
 		prep.ExpectExec().WithArgs("a@b.c", 33, now()).WillReturnResult(sqlmock.NewResult(4, 0))
 		prep.ExpectExec().WithArgs("x@y.z", 44, now().Add(time.Minute)).WillReturnResult(sqlmock.NewResult(5, 0))
 
@@ -195,10 +195,10 @@ func TestInsert_Prepare(t *testing.T) {
 	})
 
 	t.Run("ExecArgs Multi Row", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("INSERT INTO `customer_entity` (`email`,`group_id`) VALUES (?,?),(?,?)"))
+		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("INSERT INTO `customer_entity` (`email`,`group_id`) VALUES (?,?),(?,?)"))
 		prep.ExpectExec().WithArgs("a@b.c", 33, "d@e.f", 33).WillReturnResult(sqlmock.NewResult(6, 0))
 		prep.ExpectExec().WithArgs("x@y.z", 44, "u@v.w", 44).WillReturnResult(sqlmock.NewResult(7, 0))
 
@@ -242,10 +242,10 @@ func TestInsert_Prepare(t *testing.T) {
 	})
 
 	t.Run("ExecRecord One Row", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("INSERT INTO `dml_person` (`name`,`email`) VALUES (?,?)"))
+		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("INSERT INTO `dml_person` (`name`,`email`) VALUES (?,?)"))
 		prep.ExpectExec().WithArgs("Peter Gopher", "peter@gopher.go").WillReturnResult(sqlmock.NewResult(4, 0))
 		prep.ExpectExec().WithArgs("John Doe", "john@doe.go").WillReturnResult(sqlmock.NewResult(5, 0))
 
@@ -288,10 +288,10 @@ func TestInsert_Prepare(t *testing.T) {
 	})
 
 	t.Run("ExecContext", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("INSERT INTO `dml_person` (`name`,`email`) VALUES (?,?)"))
+		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("INSERT INTO `dml_person` (`name`,`email`) VALUES (?,?)"))
 		prep.ExpectExec().WithArgs("Peter Gopher", "peter@gopher.go").WillReturnResult(sqlmock.NewResult(4, 0))
 
 		stmt, err := dml.NewInsert("dml_person").
@@ -317,7 +317,7 @@ func TestInsert_Prepare(t *testing.T) {
 func TestInsert_WithLogger(t *testing.T) {
 	uniID := new(int32)
 	rConn := createRealSession(t)
-	defer cstesting.Close(t, rConn)
+	defer dmltest.Close(t, rConn)
 
 	var uniqueIDFunc = func() string {
 		return fmt.Sprintf("UNIQ%02d", atomic.AddInt32(uniID, 4))

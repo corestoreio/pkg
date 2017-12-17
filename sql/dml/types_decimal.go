@@ -261,7 +261,7 @@ func unquoteIfQuoted(b []byte) (_ []byte, isQuoted bool) {
 func (d *Decimal) UnmarshalJSON(b []byte) (err error) {
 	b, isQuoted := unquoteIfQuoted(b)
 	if *d, err = MakeDecimalBytes(b); err != nil {
-		return errors.NewNotValidf("[dml] Decimal Decoding failed of %q with error: %s", b, err)
+		return errors.NotValid.Newf("[dml] Decimal Decoding failed of %q with error: %s", b, err)
 	}
 	d.Quote = isQuoted
 	return nil
@@ -294,7 +294,7 @@ func (d *Decimal) UnmarshalBinary(data []byte) error {
 		return nil
 	}
 	if ld != validLength {
-		return errors.NewNotValidf("[dml] Decimal.UnmarshalBinary Invalid length of input data. Should be %d but have %d", validLength, len(data))
+		return errors.NotValid.Newf("[dml] Decimal.UnmarshalBinary Invalid length of input data. Should be %d but have %d", validLength, len(data))
 	}
 	d.Precision = binary.BigEndian.Uint64(data[:8])
 	d.Scale = int32(binary.BigEndian.Uint32(data[8:12]))
@@ -310,7 +310,7 @@ func (d *Decimal) UnmarshalBinary(data []byte) error {
 		d.Quote = true
 	}
 	if flags&decimalBinaryVersion01 == 0 {
-		return errors.NewNotValidf("[dml] Decimal.UnmarshalBinary invalid binary version")
+		return errors.NotValid.Newf("[dml] Decimal.UnmarshalBinary invalid binary version")
 	}
 	return nil
 }
@@ -335,7 +335,7 @@ func (d Decimal) Value() (driver.Value, error) {
 // deserialization.
 func (d *Decimal) UnmarshalText(text []byte) (err error) {
 	if *d, err = MakeDecimalBytes(text); err != nil {
-		return errors.NewNotValidf("[dml] Decimal Decoding failed of %q with error: %s", text, err)
+		return errors.NotValid.Newf("[dml] Decimal Decoding failed of %q with error: %s", text, err)
 	}
 	return nil
 }

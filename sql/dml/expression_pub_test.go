@@ -135,7 +135,7 @@ func TestSQLIfNull(t *testing.T) {
 		defer func() {
 			if r := recover(); r != nil {
 				if err, ok := r.(error); ok {
-					assert.True(t, errors.IsNotValid(err), "%+v", err)
+					assert.True(t, errors.NotValid.Match(err), "%+v", err)
 				} else {
 					t.Errorf("Panic should contain an error but got:\n%+v", r)
 				}
@@ -165,7 +165,7 @@ func TestSQLIf_Expression(t *testing.T) {
 				"IF((a > 0), b, c) > ?",
 			).Greater().Int(4711))
 
-		compareToSQL(t, s, nil,
+		compareToSQL(t, s, errors.NoKind,
 			"SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > 4711)",
 			"SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > 4711)",
 		)
@@ -176,7 +176,7 @@ func TestSQLIf_Expression(t *testing.T) {
 			From("table1").Where(
 			dml.SQLIf("a > 0", "b", "c").Greater().Int(4711))
 
-		compareToSQL(t, s, nil,
+		compareToSQL(t, s, errors.NoKind,
 			"SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > 4711)",
 			"SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > 4711)",
 		)
@@ -210,7 +210,7 @@ func TestSQLCase(t *testing.T) {
 				dml.Column("website_id").Int64(6),
 			)
 
-		compareToSQL(t, u, nil,
+		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `cataloginventory_stock_item` SET `qty`=CASE `product_id` WHEN 3456 THEN qty+3 WHEN 3457 THEN qty+4 WHEN 3458 THEN qty+5 ELSE qty END WHERE (`product_id` IN (345,567,897)) AND (`website_id` = 6)",
 			"UPDATE `cataloginventory_stock_item` SET `qty`=CASE `product_id` WHEN 3456 THEN qty+3 WHEN 3457 THEN qty+4 WHEN 3458 THEN qty+5 ELSE qty END WHERE (`product_id` IN (345,567,897)) AND (`website_id` = 6)",
 		)
@@ -227,7 +227,7 @@ func TestSQLCase(t *testing.T) {
 				dml.Column("website_id").Int64(6),
 			)
 
-		compareToSQL(t, u, nil,
+		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `cataloginventory_stock_item` SET `qty`=CASE `product_id` WHEN 3456 THEN qty+? WHEN 3457 THEN qty+? WHEN 3458 THEN qty+? ELSE qty END WHERE (`website_id` = 6)",
 			"UPDATE `cataloginventory_stock_item` SET `qty`=CASE `product_id` WHEN 3456 THEN qty+? WHEN 3457 THEN qty+? WHEN 3458 THEN qty+? ELSE qty END WHERE (`website_id` = 6)",
 		)
@@ -266,7 +266,7 @@ func TestSQLCase(t *testing.T) {
 		defer func() {
 			if r := recover(); r != nil {
 				if err, ok := r.(error); ok {
-					assert.True(t, errors.IsFatal(err))
+					assert.True(t, errors.Fatal.Match(err))
 				} else {
 					t.Errorf("Panic should contain an error but got:\n%+v", r)
 				}

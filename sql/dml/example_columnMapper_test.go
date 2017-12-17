@@ -21,7 +21,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/sql/dmltest"
 )
 
 // Make sure that type customerEntity implements interface.
@@ -87,7 +87,7 @@ func (p *customerEntity) MapColumns(cm *dml.ColumnMap) error {
 				cm.String(&voucherCodes)
 			}
 		default:
-			return errors.NewNotFoundf("[dml_test] customerEntity Column %q not found", c)
+			return errors.NotFound.Newf("[dml_test] customerEntity Column %q not found", c)
 		}
 	}
 	return cm.Err()
@@ -121,11 +121,11 @@ func (cc *customerCollection) MapColumns(cm *dml.ColumnMap) error {
 			case "firstname":
 				cm.Args = cm.Args.Strings(cc.Firstnames()...)
 			default:
-				return errors.NewNotFoundf("[dml_test] customerCollection Column %q not found", c)
+				return errors.NotFound.Newf("[dml_test] customerCollection Column %q not found", c)
 			}
 		}
 	default:
-		return errors.NewNotSupportedf("[dml] Unknown Mode: %q", string(m))
+		return errors.NotSupported.Newf("[dml] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }
@@ -154,11 +154,11 @@ func (ps *customerCollection) Firstnames(ret ...string) []string {
 // and loading/scanning rows from a database mock.
 func ExampleColumnMapper() {
 	// <ignore_this>
-	dbc, dbMock := cstesting.MockDB(nil)
-	defer cstesting.MockClose(nil, dbc, dbMock)
+	dbc, dbMock := dmltest.MockDB(nil)
+	defer dmltest.MockClose(nil, dbc, dbMock)
 
-	r := cstesting.MustMockRows(cstesting.WithFile("testdata", "customer_entity_example.csv"))
-	dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SELECT * FROM `customer_entity`")).WillReturnRows(r)
+	r := dmltest.MustMockRows(dmltest.WithFile("testdata", "customer_entity_example.csv"))
+	dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT * FROM `customer_entity`")).WillReturnRows(r)
 	// </ignore_this>
 
 	customers := new(customerCollection)

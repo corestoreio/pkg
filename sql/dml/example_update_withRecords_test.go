@@ -62,7 +62,7 @@ func (pe *categoryEntity) MapColumns(cm *dml.ColumnMap) error {
 			panic("TODO")
 			//cm.Strings(pe.TeaserIDs...)
 		default:
-			return errors.NewNotFoundf("[dml_test] Column %q not found", c)
+			return errors.NotFound.Newf("[dml_test] Column %q not found", c)
 		}
 	}
 	return cm.Err()

@@ -309,7 +309,7 @@ func (b *With) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err er
 		placeHolders, err = b.TopLevel.Delete.toSQL(w, placeHolders)
 		return placeHolders, errors.WithStack(err)
 	}
-	return nil, errors.NewEmptyf("[dml] Type With misses a top level statement")
+	return nil, errors.Empty.Newf("[dml] Type With misses a top level statement")
 }
 
 // Query executes a query and returns many rows.

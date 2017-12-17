@@ -67,7 +67,7 @@ func sqlIfNull(expression []string) string {
 		// Output: IFNULL(`table1`.`col1`, `table2`.`col2`)
 		sqlIfNullQuote4(buf, expression...)
 	default:
-		panic(errors.NewNotValidf("[dml] Invalid number of arguments. Max 4 arguments allowed, got: %v", expression))
+		panic(errors.NotValid.Newf("[dml] Invalid number of arguments. Max 4 arguments allowed, got: %v", expression))
 
 	}
 	ret := buf.String()
@@ -128,7 +128,7 @@ func SQLCase(value, defaultValue string, compareResult ...string) *Condition {
 
 func sqlCase(value, defaultValue string, compareResult ...string) string {
 	if len(compareResult) < 2 {
-		panic(errors.NewFatalf("[dml] SQLCase error incorrect length for compareResult: %v", compareResult))
+		panic(errors.Fatal.Newf("[dml] SQLCase error incorrect length for compareResult: %v", compareResult))
 	}
 	buf := bufferpool.Get()
 

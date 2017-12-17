@@ -52,7 +52,7 @@ func (drv cbDriver) Open(name string) (driver.Conn, error) {
 	}
 	fc, ok := conn.(fullConner)
 	if !ok {
-		return nil, errors.NewNotSupportedf("[dml] Driver does not support all required interfaces (fullConner)")
+		return nil, errors.NotSupported.Newf("[dml] Driver does not support all required interfaces (fullConner)")
 	}
 	return cbConn{fc, drv.cb}, nil
 }
@@ -85,7 +85,7 @@ func (c cbConn) PrepareContext(ctx context.Context, query string) (stmt driver.S
 	if fStmt, ok := stmt.(fullStmter); ok {
 		stmt = &cbStmt{Stmt: fStmt, cb: c.cb, query: query}
 	} else {
-		err = errors.NewNotSupportedf("[dml] Driver does not support all required interfaces (fullStmter)")
+		err = errors.NotSupported.Newf("[dml] Driver does not support all required interfaces (fullStmter)")
 	}
 	return stmt, err
 }
@@ -126,7 +126,7 @@ func (c cbConn) Prepare(query string) (stmt driver.Stmt, err error) {
 	if fStmt, ok := stmt.(fullStmter); ok {
 		stmt = &cbStmt{Stmt: fStmt, cb: c.cb, query: query}
 	} else {
-		err = errors.NewNotSupportedf("[dml] Driver does not support all required interfaces (fullStmter)")
+		err = errors.NotSupported.Newf("[dml] Driver does not support all required interfaces (fullStmter)")
 	}
 	return stmt, err
 }

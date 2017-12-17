@@ -146,7 +146,7 @@ func loadInt64(rows *sql.Rows, errIn error) (value int64, err error) {
 		return 0, errors.WithStack(err)
 	}
 	if !found {
-		err = errors.NewNotFoundf("[dml] LoadInt64 value not found")
+		err = errors.NotFound.Newf("[dml] LoadInt64 value not found")
 	}
 	return value, err
 }
@@ -224,7 +224,7 @@ func (b *Select) LoadUint64(ctx context.Context) (_ uint64, err error) {
 		return 0, errors.WithStack(err)
 	}
 	if !found {
-		err = errors.NewNotFoundf("[dml] LoadUint64 value not found")
+		err = errors.NotFound.Newf("[dml] LoadUint64 value not found")
 	}
 	return value, err
 }
@@ -298,7 +298,7 @@ func (b *Select) LoadFloat64(ctx context.Context) (_ float64, err error) {
 		return 0, errors.WithStack(err)
 	}
 	if !found {
-		err = errors.NewNotFoundf("[dml] LoadFloat64 value not found")
+		err = errors.NotFound.Newf("[dml] LoadFloat64 value not found")
 	}
 	return value, err
 }
@@ -372,7 +372,7 @@ func (b *Select) LoadString(ctx context.Context) (_ string, err error) {
 		return "", errors.WithStack(err)
 	}
 	if !found {
-		err = errors.NewNotFoundf("[dml] LoadInt64 value not found")
+		err = errors.NotFound.Newf("[dml] LoadInt64 value not found")
 	}
 	return value, err
 }

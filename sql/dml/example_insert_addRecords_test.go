@@ -51,7 +51,7 @@ func (pe productEntity) MapColumns(cm *dml.ColumnMap) error {
 		case "has_options":
 			cm.Bool(&pe.HasOptions)
 		default:
-			return errors.NewNotFoundf("[dml_test] Column %q not found", c)
+			return errors.NotFound.Newf("[dml_test] Column %q not found", c)
 		}
 	}
 	return errors.WithStack(cm.Err())

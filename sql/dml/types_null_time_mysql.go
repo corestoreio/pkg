@@ -64,7 +64,7 @@ func (nt *NullTime) Scan(value interface{}) (err error) {
 		}
 		nt.Time, err = parseDateTime(v, time.UTC)
 	default:
-		err = errors.NewNotValidf("[dml] Can't convert %T to time.Time. Maybe not yet implemented.", value)
+		err = errors.NotValid.Newf("[dml] Can't convert %T to time.Time. Maybe not yet implemented.", value)
 	}
 	nt.Valid = err == nil
 	return
@@ -92,7 +92,7 @@ func parseDateTime(str string, loc *time.Location) (t time.Time, err error) {
 		}
 		t, err = time.Parse(base[:lStr], str) // time.RFC3339Nano cannot be used due to the T
 	default:
-		err = errors.NewNotValidf("invalid time string: %s", str)
+		err = errors.NotValid.Newf("invalid time string: %s", str)
 		return
 	}
 

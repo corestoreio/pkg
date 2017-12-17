@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -92,7 +93,7 @@ func TestOpRune(t *testing.T) {
 			Column("a402").SpaceShip().NullString(NullString{}),
 			Column("a403").SpaceShip().NullString(MakeNullString("NullString")),
 		)
-	compareToSQL(t, s, nil,
+	compareToSQL(t, s, errors.NoKind,
 		"SELECT `a`, `b` FROM `tableA` WHERE (`a1` LIKE 'H_ll_') AND (`a1` LIKE NULL) AND (`a1` LIKE 'NullString') AND (`a1` LIKE 2.718281) AND (`a1` LIKE NULL) AND (`a1` LIKE -2.718281) AND (`a1` LIKE 2718281) AND (`a1` LIKE NULL) AND (`a1` LIKE -987) AND (`a1` LIKE 2718281) AND (`a1` LIKE 1) AND (`a1` LIKE NULL) AND (`a1` LIKE 0) AND (`a1` LIKE '2006-01-02 15:04:05') AND (`a1` LIKE '2006-01-02 15:05:05') AND (`a1` IS NULL) AND (`a1` LIKE 'H3llo') AND (`a1` LIKE (2345)) AND (`a2` NOT LIKE 'H_ll_') AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE 'NullString') AND (`a2` NOT LIKE 2.718281) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE -2.718281) AND (`a2` NOT LIKE 2718281) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE -987) AND (`a2` NOT LIKE 2718281) AND (`a2` NOT LIKE 1) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE 0) AND (`a2` NOT LIKE '2006-01-02 15:04:05') AND (`a2` NOT LIKE '2006-01-02 15:05:05') AND (`a2` IS NULL) AND (`a2` NOT LIKE 'H3llo') AND (`a2` NOT LIKE (2345)) AND (`a301` IN ('Go1','Go2')) AND (`a303` IN 'NullXString') AND (`a302` IN (NULL,NULL)) AND (`a304` IN (2.718281,3.14159)) AND (`a305` IN NULL) AND (`a306` IN (-2.718281,-3.14159)) AND (`a307` IN (2718281,314159)) AND (`a308` IN NULL) AND (`a309` IN (-987,-654)) AND (`a310` IN (2718281,314159)) AND (`a311` IN (1,0)) AND (`a312` IN NULL) AND (`a313` IN (1)) AND (`a314` IN ('2006-01-02 15:04:05','2006-01-02 15:04:05')) AND (`a315a` IN '2006-01-02 15:05:05') AND (`a315b` IN ('2006-01-02 15:05:05','2006-01-02 15:06:05')) AND (`a316` IS NULL) AND (`a317` IN 'H3llo1') AND (`a320` IN (674589,3.14159)) AND (`a401` <=> 'H_ll_') AND (`a402` <=> NULL) AND (`a403` <=> 'NullString')",
 		"SELECT `a`, `b` FROM `tableA` WHERE (`a1` LIKE 'H_ll_') AND (`a1` LIKE NULL) AND (`a1` LIKE 'NullString') AND (`a1` LIKE 2.718281) AND (`a1` LIKE NULL) AND (`a1` LIKE -2.718281) AND (`a1` LIKE 2718281) AND (`a1` LIKE NULL) AND (`a1` LIKE -987) AND (`a1` LIKE 2718281) AND (`a1` LIKE 1) AND (`a1` LIKE NULL) AND (`a1` LIKE 0) AND (`a1` LIKE '2006-01-02 15:04:05') AND (`a1` LIKE '2006-01-02 15:05:05') AND (`a1` IS NULL) AND (`a1` LIKE 'H3llo') AND (`a1` LIKE (2345)) AND (`a2` NOT LIKE 'H_ll_') AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE 'NullString') AND (`a2` NOT LIKE 2.718281) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE -2.718281) AND (`a2` NOT LIKE 2718281) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE -987) AND (`a2` NOT LIKE 2718281) AND (`a2` NOT LIKE 1) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE 0) AND (`a2` NOT LIKE '2006-01-02 15:04:05') AND (`a2` NOT LIKE '2006-01-02 15:05:05') AND (`a2` IS NULL) AND (`a2` NOT LIKE 'H3llo') AND (`a2` NOT LIKE (2345)) AND (`a301` IN ('Go1','Go2')) AND (`a303` IN 'NullXString') AND (`a302` IN (NULL,NULL)) AND (`a304` IN (2.718281,3.14159)) AND (`a305` IN NULL) AND (`a306` IN (-2.718281,-3.14159)) AND (`a307` IN (2718281,314159)) AND (`a308` IN NULL) AND (`a309` IN (-987,-654)) AND (`a310` IN (2718281,314159)) AND (`a311` IN (1,0)) AND (`a312` IN NULL) AND (`a313` IN (1)) AND (`a314` IN ('2006-01-02 15:04:05','2006-01-02 15:04:05')) AND (`a315a` IN '2006-01-02 15:05:05') AND (`a315b` IN ('2006-01-02 15:05:05','2006-01-02 15:06:05')) AND (`a316` IS NULL) AND (`a317` IN 'H3llo1') AND (`a320` IN (674589,3.14159)) AND (`a401` <=> 'H_ll_') AND (`a402` <=> NULL) AND (`a403` <=> 'NullString')",
 	)
@@ -115,7 +116,7 @@ func TestOpArgs(t *testing.T) {
 				Column("a317").Regexp().PlaceHolder(),
 				Column("a317").NotRegexp().PlaceHolder(),
 			),
-			nil,
+			errors.NoKind,
 			"SELECT `a`, `b` FROM `t1` WHERE (`a315` IS NULL) AND (`a316` IN ?) AND (`a317` REGEXP ?) AND (`a317` NOT REGEXP ?)",
 			"SELECT `a`, `b` FROM `t1` WHERE (`a315` IS NULL) AND (`a316` IN ?) AND (`a317` REGEXP ?) AND (`a317` NOT REGEXP ?)",
 		)
@@ -131,7 +132,7 @@ func TestOpArgs(t *testing.T) {
 				Column("a315").In().Str(`Go1`),   // Wrong SQL
 				Column("a316").In().BytesSlice([]byte(`Go`), []byte(`Rust`)),
 			),
-			nil,
+			errors.NoKind,
 			"SELECT `a`, `b` FROM `t1` WHERE (`a311` XOR 9) AND (`a313` IN 3.3) AND (`a314` IN 33) AND (`a312` IN 44) AND (`a315` IN 'Go1') AND (`a316` IN ('Go','Rust'))",
 			"SELECT `a`, `b` FROM `t1` WHERE (`a311` XOR 9) AND (`a313` IN 3.3) AND (`a314` IN 33) AND (`a312` IN 44) AND (`a315` IN 'Go1') AND (`a316` IN ('Go','Rust'))",
 		)
@@ -142,7 +143,7 @@ func TestOpArgs(t *testing.T) {
 			NewSelect("a", "b").From("t1").Where(
 				Column("a316").Between().BytesSlice([]byte(`Go`), []byte(`Rust`)),
 			),
-			nil,
+			errors.NoKind,
 			"SELECT `a`, `b` FROM `t1` WHERE (`a316` BETWEEN 'Go' AND 'Rust')",
 			"SELECT `a`, `b` FROM `t1` WHERE (`a316` BETWEEN 'Go' AND 'Rust')",
 		)
@@ -153,7 +154,7 @@ func TestOpArgs(t *testing.T) {
 			NewSelect("a", "b").From("t1").Where(
 				Column("a316").In().BytesSlice([]byte{66, 250, 67}, []byte(`Rust`), []byte("\xFB\xBF\xBF\xBF\xBF")),
 			),
-			nil,
+			errors.NoKind,
 			"SELECT `a`, `b` FROM `t1` WHERE (`a316` IN (0x42fa43,'Rust',0xfbbfbfbfbf))",
 			"SELECT `a`, `b` FROM `t1` WHERE (`a316` IN (0x42fa43,'Rust',0xfbbfbfbfbf))",
 		)
@@ -170,7 +171,7 @@ func TestOpArgs(t *testing.T) {
 					driverValueBytes([]byte("x\x00\xff")),
 				),
 			),
-			nil,
+			errors.NoKind,
 			"SELECT `a`, `b` FROM `t1` WHERE (`a3419` IN (3.141,'G\\'o',0x42fa43,'2006-01-02 15:04:05',0x7800ff))",
 			"SELECT `a`, `b` FROM `t1` WHERE (`a3419` IN (3.141,'G\\'o',0x42fa43,'2006-01-02 15:04:05',0x7800ff))",
 		)
@@ -181,7 +182,7 @@ func TestOpArgs(t *testing.T) {
 			NewSelect("a", "b").From("t1").Where(
 				Column("a319").Between().DriverValues(MakeNullFloat64(3.141), MakeNullString("G'o")),
 			),
-			nil,
+			errors.NoKind,
 			"SELECT `a`, `b` FROM `t1` WHERE (`a319` BETWEEN ? AND )",
 			"",
 		)
@@ -194,7 +195,7 @@ func TestColumn(t *testing.T) {
 			Column("a").Int(111),
 			Expr("b=c"),
 		)
-		compareToSQL2(t, s, nil, "SELECT `a`, `b` FROM `c` WHERE (`a` = 111) AND (b=c)")
+		compareToSQL2(t, s, errors.NoKind, "SELECT `a`, `b` FROM `c` WHERE (`a` = 111) AND (b=c)")
 	})
 
 	t.Run("valid column name", func(t *testing.T) {
@@ -203,7 +204,7 @@ func TestColumn(t *testing.T) {
 			Column("b").Null(),
 			Column("d").Between().Float64s(2.5, 2.7),
 		)
-		compareToSQL2(t, s, nil, "SELECT `a`, `b` FROM `c` WHERE (`a` IN (111,222)) AND (`b` IS NULL) AND (`d` BETWEEN 2.5 AND 2.7)")
+		compareToSQL2(t, s, errors.NoKind, "SELECT `a`, `b` FROM `c` WHERE (`a` IN (111,222)) AND (`b` IS NULL) AND (`d` BETWEEN 2.5 AND 2.7)")
 	})
 }
 
@@ -267,7 +268,7 @@ func TestExpr_Arguments(t *testing.T) {
 					Float64(4.51).Float64s(5.41, 6.66666),
 			)
 
-		compareToSQL(t, sel, nil,
+		compareToSQL(t, sel, errors.NoKind,
 			"SELECT `a` FROM `c` WHERE (`g` = 3) AND (i1 = 1 AND i2 IN (2,3) AND i64_1 = 4 AND i64_2 IN (5,6) AND ui64 > 7 AND f64_1 = 4.51 AND f64_2 IN (5.41,6.66666))",
 			"SELECT `a` FROM `c` WHERE (`g` = 3) AND (i1 = 1 AND i2 IN (2,3) AND i64_1 = 4 AND i64_2 IN (5,6) AND ui64 > 7 AND f64_1 = 4.51 AND f64_2 IN (5.41,6.66666))",
 		)
@@ -279,7 +280,7 @@ func TestExpr_Arguments(t *testing.T) {
 				Column("h").In().Int64s(1, 2, 3),
 				Expr("l NOT IN ?").Strs("xx", "yy"),
 			)
-		compareToSQL(t, sel, nil,
+		compareToSQL(t, sel, errors.NoKind,
 			"SELECT `a` FROM `c` WHERE (`h` IN (1,2,3)) AND (l NOT IN ('xx','yy'))",
 			"SELECT `a` FROM `c` WHERE (`h` IN (1,2,3)) AND (l NOT IN ('xx','yy'))",
 		)
@@ -295,7 +296,7 @@ func TestExpr_Arguments(t *testing.T) {
 					Bytes([]byte(`Gopher`)).BytesSlice([]byte(`Go1`), []byte(`Go2`)),
 			)
 
-		compareToSQL(t, sel, nil,
+		compareToSQL(t, sel, errors.NoKind,
 			"SELECT `a` FROM `c` WHERE (`h` IN (1,2,3)) AND (l = 'xx' AND m IN ('aa','bb','cc') AND n = 1 AND o IN (1,0,1) AND p = 'Gopher' AND q IN ('Go1','Go2'))",
 			"SELECT `a` FROM `c` WHERE (`h` IN (1,2,3)) AND (l = 'xx' AND m IN ('aa','bb','cc') AND n = 1 AND o IN (1,0,1) AND p = 'Gopher' AND q IN ('Go1','Go2'))",
 		)
@@ -315,7 +316,7 @@ func TestExpr_Arguments(t *testing.T) {
 					NullTime(MakeNullTime(now())),
 			)
 
-		compareToSQL(t, sel, nil,
+		compareToSQL(t, sel, errors.NoKind,
 			"SELECT `a` FROM `c` WHERE (`h` IN (1,2,3)) AND (t1 = '2006-01-02 15:04:05' AND t2 IN ('2006-01-02 15:04:05','2006-01-02 15:04:05') AND ns = 'Goph3r' OR nf = 2.7182 OR ni = 27182 OR nb = 1 AND nt = '2006-01-02 15:04:05')",
 			"SELECT `a` FROM `c` WHERE (`h` IN (1,2,3)) AND (t1 = '2006-01-02 15:04:05' AND t2 IN ('2006-01-02 15:04:05','2006-01-02 15:04:05') AND ns = 'Goph3r' OR nf = 2.7182 OR ni = 27182 OR nb = 1 AND nt = '2006-01-02 15:04:05')",
 		)
@@ -343,7 +344,7 @@ func TestCondition_Column(t *testing.T) {
 			Column("t_d.store_id").Equal().SQLIfNull("t_s.store_id", "0"),
 		)
 
-	compareToSQL(t, sel, nil,
+	compareToSQL(t, sel, errors.NoKind,
 		"SELECT `t_d`.`attribute_id`, `e`.`entity_id`, `t_d`.`value` AS `default_value`, IF((t_s.value_id IS NULL), t_d.value, t_s.value) AS `value`, IF((2.718281 IS NULL), t_d.value, t_s.value) AS `value` FROM `catalog_category_entity` AS `e` INNER JOIN `catalog_category_entity_varchar` AS `t_d` ON (`e`.`entity_id` = `t_d`.`entity_id`) LEFT JOIN `catalog_category_entity_varchar` AS `t_s` ON (`t_s`.`attribute_id` >= `t_d`.`attribute_id`) WHERE (`e`.`entity_id` IN (28,16,25,17)) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0))",
 		"SELECT `t_d`.`attribute_id`, `e`.`entity_id`, `t_d`.`value` AS `default_value`, IF((t_s.value_id IS NULL), t_d.value, t_s.value) AS `value`, IF((2.718281 IS NULL), t_d.value, t_s.value) AS `value` FROM `catalog_category_entity` AS `e` INNER JOIN `catalog_category_entity_varchar` AS `t_d` ON (`e`.`entity_id` = `t_d`.`entity_id`) LEFT JOIN `catalog_category_entity_varchar` AS `t_s` ON (`t_s`.`attribute_id` >= `t_d`.`attribute_id`) WHERE (`e`.`entity_id` IN (28,16,25,17)) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0))",
 	)
@@ -353,7 +354,7 @@ func TestExpr(t *testing.T) {
 	t.Parallel()
 	t.Run("quoted string", func(t *testing.T) {
 		s := NewSelect().AddColumns("month", "total").AddColumnsConditions(Expr(`"best"`)).From("sales_by_month")
-		compareToSQL(t, s, nil,
+		compareToSQL(t, s, errors.NoKind,
 			"SELECT `month`, `total`, \"best\" FROM `sales_by_month`",
 			"",
 		)
@@ -403,7 +404,7 @@ func TestAppendArgs(t *testing.T) {
 			).
 			WithRecords(Qualify("e", appendInt(678)), Qualify("t_d", appendInt(17)))
 
-		compareToSQL(t, s, nil,
+		compareToSQL(t, s, errors.NoKind,
 			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = ?) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0)) AND (`t_d`.`store_id` = ?)",
 			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = 678) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0)) AND (`t_d`.`store_id` = 17)",
 			int64(678), int64(17),
@@ -420,7 +421,7 @@ func TestAppendArgs(t *testing.T) {
 			).
 			WithRecords(Qualify("e", appendInt(678)), Qualify("t_d", appendInt(17)))
 
-		compareToSQL(t, s, nil,
+		compareToSQL(t, s, errors.NoKind,
 			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = ?) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = ?)",
 			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = 678) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = 17)",
 			int64(678), int64(17),

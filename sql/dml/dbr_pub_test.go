@@ -77,7 +77,7 @@ func (p *dmlPerson) MapColumns(cm *dml.ColumnMap) error {
 		case "total_income":
 			cm.Float64(&p.TotalIncome)
 		default:
-			return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", c)
+			return errors.NotFound.Newf("[dml_test] dmlPerson Column %q not found", c)
 		}
 	}
 	return cm.Err()
@@ -101,16 +101,16 @@ func createRealSession(t testing.TB) *dml.ConnPool {
 // interpolated string. This function also exists in file dml_public_test.go to
 // avoid import cycles when using a single package dedicated for testing.
 func compareToSQL(
-	t testing.TB, qb dml.QueryBuilder, wantErr errors.BehaviourFunc,
+	t testing.TB, qb dml.QueryBuilder, wantErrKind errors.Kind,
 	wantSQLPlaceholders, wantSQLInterpolated string,
 	wantArgs ...interface{},
 ) {
 
 	sqlStr, args, err := qb.ToSQL()
-	if wantErr == nil {
+	if wantErrKind.Empty() {
 		require.NoError(t, err)
 	} else {
-		require.True(t, wantErr(err), "%+v", err)
+		require.True(t, wantErrKind.Match(err), "%+v", err)
 	}
 
 	if wantSQLPlaceholders != "" {
@@ -127,10 +127,10 @@ func compareToSQL(
 
 	sqlStr, args, err = qb.ToSQL()
 	require.Nil(t, args, "Arguments should be nil when the SQL string gets interpolated")
-	if wantErr == nil {
+	if wantErrKind.Empty() {
 		require.NoError(t, err)
 	} else {
-		require.True(t, wantErr(err), "%+v")
+		require.True(t, wantErrKind.Match(err), "%+v")
 	}
 	require.Equal(t, wantSQLInterpolated, sqlStr, "Interpolated SQL strings do not match")
 }

@@ -28,20 +28,20 @@ import (
 func TestDeleteAllToSQL(t *testing.T) {
 	t.Parallel()
 
-	compareToSQL2(t, NewDelete("a"), nil, "DELETE FROM `a`")
-	compareToSQL2(t, NewDelete("a").Alias("b"), nil, "DELETE FROM `a` AS `b`")
+	compareToSQL2(t, NewDelete("a"), errors.NoKind, "DELETE FROM `a`")
+	compareToSQL2(t, NewDelete("a").Alias("b"), errors.NoKind, "DELETE FROM `a` AS `b`")
 }
 
 func TestDeleteSingleToSQL(t *testing.T) {
 	t.Parallel()
 
 	qb := NewDelete("a").Where(Column("id").Int(1))
-	compareToSQL2(t, qb, nil,
+	compareToSQL2(t, qb, errors.NoKind,
 		"DELETE FROM `a` WHERE (`id` = 1)",
 	)
 
 	// test for being idempotent
-	compareToSQL2(t, qb, nil,
+	compareToSQL2(t, qb, errors.NoKind,
 		"DELETE FROM `a` WHERE (`id` = 1)",
 	)
 }
@@ -49,17 +49,17 @@ func TestDeleteSingleToSQL(t *testing.T) {
 func TestDelete_OrderBy(t *testing.T) {
 	t.Parallel()
 	t.Run("expr", func(t *testing.T) {
-		compareToSQL2(t, NewDelete("a").Unsafe().OrderBy("b=c").OrderByDesc("d"), nil,
+		compareToSQL2(t, NewDelete("a").Unsafe().OrderBy("b=c").OrderByDesc("d"), errors.NoKind,
 			"DELETE FROM `a` ORDER BY b=c, `d` DESC",
 		)
 	})
 	t.Run("asc", func(t *testing.T) {
-		compareToSQL2(t, NewDelete("a").OrderBy("b").OrderBy("c"), nil,
+		compareToSQL2(t, NewDelete("a").OrderBy("b").OrderBy("c"), errors.NoKind,
 			"DELETE FROM `a` ORDER BY `b`, `c`",
 		)
 	})
 	t.Run("desc", func(t *testing.T) {
-		compareToSQL2(t, NewDelete("a").OrderBy("b").OrderByDesc("c").OrderBy("d").OrderByDesc("e", "f").OrderBy("g"), nil,
+		compareToSQL2(t, NewDelete("a").OrderBy("b").OrderByDesc("c").OrderBy("d").OrderByDesc("e", "f").OrderBy("g"), errors.NoKind,
 			"DELETE FROM `a` ORDER BY `b`, `c` DESC, `d`, `e` DESC, `f` DESC, `g`",
 		)
 	})
@@ -67,7 +67,7 @@ func TestDelete_OrderBy(t *testing.T) {
 
 func TestDelete_Limit_Offset(t *testing.T) {
 	t.Parallel()
-	compareToSQL2(t, NewDelete("a").Limit(10).OrderBy("id"), nil,
+	compareToSQL2(t, NewDelete("a").Limit(10).OrderBy("id"), errors.NoKind,
 		"DELETE FROM `a` ORDER BY `id` LIMIT 10",
 	)
 }
@@ -81,7 +81,7 @@ func TestDelete_Interpolate(t *testing.T) {
 			Column("colB").In().Ints(1, 2, 3, 45),
 			Column("colC").Str("Hello"),
 		).
-		Limit(10).OrderBy("id"), nil,
+		Limit(10).OrderBy("id"), errors.NoKind,
 		"DELETE FROM `tableA` WHERE (`colA` >= 3.14159) AND (`colB` IN (1,2,3,45)) AND (`colC` = 'Hello') ORDER BY `id` LIMIT 10",
 	)
 
@@ -90,7 +90,7 @@ func TestDelete_Interpolate(t *testing.T) {
 			Column("colA").GreaterOrEqual().Float64(3.14159),
 			Column("colB").In().NamedArg("colB2"),
 		).Interpolate().
-		Limit(10).OrderBy("id").WithArguments(MakeArgs(1).Name("colB2").Int64s(3, 4, 7, 8)), nil,
+		Limit(10).OrderBy("id").WithArguments(MakeArgs(1).Name("colB2").Int64s(3, 4, 7, 8)), errors.NoKind,
 		"DELETE FROM `tableA` WHERE (`colA` >= 3.14159) AND (`colB` IN (3,4,7,8)) ORDER BY `id` LIMIT 10",
 	)
 
@@ -155,7 +155,7 @@ func TestDelete_Events(t *testing.T) {
 				},
 			},
 		)
-		compareToSQL2(t, d, nil,
+		compareToSQL2(t, d, errors.NoKind,
 			"DELETE FROM `tableA` AS `main_table` ORDER BY `col1` DESC, `col2` DESC",
 		)
 	})
@@ -172,7 +172,7 @@ func TestDelete_Events(t *testing.T) {
 				},
 			},
 		)
-		compareToSQL2(t, d, errors.IsEmpty,
+		compareToSQL2(t, d, errors.Empty,
 			"",
 		)
 	})
@@ -208,7 +208,7 @@ func TestDelete_Events(t *testing.T) {
 				},
 			},
 		)
-		compareToSQL2(t, d, nil,
+		compareToSQL2(t, d, errors.NoKind,
 			"DELETE FROM `tableA` AS `main_table` WHERE (`store_id` = 1) AND (`repetitive` = 3) ORDER BY `col2`, `col1` DESC",
 		)
 		assert.Exactly(t, `col1; storeid; repetitive`, d.Listeners.String())
@@ -269,7 +269,7 @@ func TestDelete_Bind(t *testing.T) {
 			).
 			WithRecords(Qualify("", p)).OrderBy("id")
 
-		compareToSQL2(t, del, nil,
+		compareToSQL2(t, del, errors.NoKind,
 			"DELETE FROM `dml_people` WHERE (`idI64` > 4) AND (`id` = ?) AND (`float64_pi` = 3.14159) AND (`email` = ?) AND (`int_e` = 2718281) ORDER BY `id`",
 			int64(5555), "hans@wurst.com",
 		)
@@ -281,7 +281,7 @@ func TestDelete_Bind(t *testing.T) {
 			).
 			WithRecords(Qualify("", p)).OrderBy("id")
 
-		compareToSQL2(t, del, nil,
+		compareToSQL2(t, del, errors.NoKind,
 			"DELETE FROM `dml_people` WHERE (`id` = ?) ORDER BY `id`",
 			int64(5555),
 		)
@@ -294,7 +294,7 @@ func TestDelete_Bind(t *testing.T) {
 			).
 			WithRecords(Qualify("dmlPpl", p)).OrderBy("id")
 
-		compareToSQL(t, del, nil,
+		compareToSQL(t, del, errors.NoKind,
 			"DELETE FROM `dml_people` AS `dmlPpl` WHERE (`id` = ?) ORDER BY `id`",
 			"DELETE FROM `dml_people` AS `dmlPpl` WHERE (`id` = 5555) ORDER BY `id`",
 			int64(5555),
@@ -315,7 +315,7 @@ func TestDelete_Bind(t *testing.T) {
 			).
 			WithRecords(Qualify("", ntr)).OrderBy("id")
 
-		compareToSQL2(t, del, nil,
+		compareToSQL2(t, del, errors.NoKind,
 			"DELETE FROM `null_type_table` WHERE (`string_val` = ?) AND (`int64_val` = ?) AND (`float64_val` = ?) AND (`random1` BETWEEN 1.2 AND 3.4) AND (`time_val` = ?) AND (`bool_val` = ?) ORDER BY `id`",
 			"wow", int64(42), 1.618, time.Date(2009, 1, 3, 18, 15, 5, 0, time.UTC), true,
 		)

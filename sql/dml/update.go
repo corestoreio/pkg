@@ -230,10 +230,10 @@ func (b *Update) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 	}
 
 	if len(b.Table.Name) == 0 {
-		return nil, errors.NewEmptyf("[dml] Update: Table at empty")
+		return nil, errors.Empty.Newf("[dml] Update: Table at empty")
 	}
 	if len(b.SetClauses) == 0 {
-		return nil, errors.NewEmptyf("[dml] Update: No columns specified")
+		return nil, errors.Empty.Newf("[dml] Update: No columns specified")
 	}
 
 	buf.WriteString("UPDATE ")
@@ -262,10 +262,10 @@ func (b *Update) validate() error {
 		return nil
 	}
 	if len(b.SetClauses) == 0 {
-		return errors.NewEmptyf("[dml] Update: Columns are empty")
+		return errors.Empty.Newf("[dml] Update: Columns are empty")
 	}
 	if len(b.SetClausAliases) > 0 && len(b.SetClausAliases) != len(b.SetClauses) {
-		return errors.NewMismatchf("[dml] Update: ColumnAliases slice and Columns slice must have the same length")
+		return errors.Mismatch.Newf("[dml] Update: ColumnAliases slice and Columns slice must have the same length")
 	}
 	return nil
 }

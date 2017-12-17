@@ -39,7 +39,7 @@ func (l *Strings) Scan(src interface{}) error {
 	case string:
 		str = t
 	default:
-		return errors.NewNotValidf("[slices] String.Scan Unknown type or not yet implemented: %#v", src)
+		return errors.NotValid.Newf("[slices] String.Scan Unknown type or not yet implemented: %#v", src)
 	}
 
 	// change quote escapes for csv parser
@@ -59,7 +59,7 @@ func (l *Strings) Scan(src interface{}) error {
 	cr := csv.NewReader(strings.NewReader(str))
 	slice, err := cr.Read()
 	if err != nil {
-		return errors.NewNotValidf("[slices] String.Scan CSV read error: %s", err)
+		return errors.NotValid.Newf("[slices] String.Scan CSV read error: %s", err)
 	}
 
 	*l = Strings(slice)

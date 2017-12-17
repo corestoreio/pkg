@@ -15,13 +15,13 @@
 package dml
 
 import (
-	"bytes"
 	"database/sql"
 	"database/sql/driver"
 	"encoding/binary"
+	"strconv"
+	"bytes"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/byteconv"
-	"strconv"
 )
 
 // TODO(cys): Remove GobEncoder, GobDecoder, MarshalJSON, UnmarshalJSON in Go 2.
@@ -92,7 +92,7 @@ func (a *NullInt64) UnmarshalJSON(data []byte) error {
 		a.Valid = false
 		return nil
 	default:
-		err = errors.NewNotValidf("[null] json: cannot unmarshal %#v into Go value of type null.NullInt64", v)
+		err = errors.NotValid.Newf("[null] json: cannot unmarshal %#v into Go value of type null.NullInt64", v)
 	}
 	a.Valid = err == nil
 	return err

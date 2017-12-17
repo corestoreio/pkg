@@ -25,7 +25,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log/logw"
 	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -40,7 +40,7 @@ func TestUnion_Query(t *testing.T) {
 		)
 		rows, err := u.Query(context.TODO())
 		assert.Nil(t, rows)
-		assert.True(t, errors.IsEmpty(err))
+		assert.True(t, errors.Empty.Match(err))
 	})
 
 	u := dml.NewUnion(
@@ -50,20 +50,20 @@ func TestUnion_Query(t *testing.T) {
 
 	t.Run("Error", func(t *testing.T) {
 		u.WithDB(dbMock{
-			error: errors.NewConnectionFailedf("Who closed myself?"),
+			error: errors.ConnectionFailed.Newf("Who closed myself?"),
 		})
 		rows, err := u.Query(context.TODO())
 		assert.Nil(t, rows)
-		assert.True(t, errors.IsConnectionFailed(err), "%+v", err)
+		assert.True(t, errors.ConnectionFailed.Match(err), "%+v", err)
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
 		smr := sqlmock.NewRows([]string{"value"}).AddRow("row1").AddRow("row2")
 		dbMock.ExpectQuery(
-			cstesting.SQLMockQuoteMeta("(SELECT `value` FROM `eavChar`) UNION (SELECT `value` FROM `eavInt` WHERE (`b` = 3.14159))"),
+			dmltest.SQLMockQuoteMeta("(SELECT `value` FROM `eavChar`) UNION (SELECT `value` FROM `eavInt` WHERE (`b` = 3.14159))"),
 		).WillReturnRows(smr)
 
 		u.WithDB(dbc.DB)
@@ -92,16 +92,16 @@ func TestUnion_Load(t *testing.T) {
 		OrderBy("a").OrderByDesc("b").OrderBy(`concat("c",b,"d")`)
 
 	t.Run("error", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta(
+		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta(
 			"(SELECT `a`, `d` AS `b` FROM `tableAD`) UNION (SELECT `a`, `b` FROM `tableAB` WHERE (`b` = 3.14159)) ORDER BY `a`, `b` DESC, concat(\"c\",b,\"d\")")).
-			WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
+			WillReturnError(errors.AlreadyClosed.Newf("Who closed myself?"))
 
 		rows, err := u.WithDB(dbc.DB).Load(context.TODO(), nil)
 		assert.Exactly(t, uint64(0), rows)
-		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	})
 }
 
@@ -115,18 +115,18 @@ func TestUnion_Prepare(t *testing.T) {
 		)
 		stmt, err := u.Prepare(context.TODO())
 		assert.Nil(t, stmt)
-		assert.True(t, errors.IsEmpty(err))
+		assert.True(t, errors.Empty.Match(err))
 	})
 
 	t.Run("Error", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
 		dbMock.ExpectPrepare(
-			cstesting.SQLMockQuoteMeta(
+			dmltest.SQLMockQuoteMeta(
 				"(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`) UNION (SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = 3.14159)) ORDER BY `_preserve_result_set`, `a`, `b` DESC, concat(\"c\",b,\"d\")"),
 		).
-			WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
+			WillReturnError(errors.AlreadyClosed.Newf("Who closed myself?"))
 
 		u := dml.NewUnion(
 			dml.NewSelect("a").AddColumnsAliases("d", "b").From("tableAD"),
@@ -138,14 +138,14 @@ func TestUnion_Prepare(t *testing.T) {
 
 		stmt, err := u.Prepare(context.TODO())
 		require.Nil(t, stmt)
-		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	})
 
 	t.Run("Query", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("(SELECT `a`, `d` AS `b` FROM `tableAD`) UNION (SELECT `a`, `b` FROM `tableAB` WHERE (`b` = ?))"))
+		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("(SELECT `a`, `d` AS `b` FROM `tableAD`) UNION (SELECT `a`, `b` FROM `tableAB` WHERE (`b` = ?))"))
 		prep.ExpectQuery().WithArgs(6889).
 			WillReturnRows(sqlmock.NewRows([]string{"a", "b"}).AddRow("Peter Gopher", "peter@gopher.go"))
 
@@ -187,10 +187,10 @@ func TestUnion_Prepare(t *testing.T) {
 	})
 
 	t.Run("Exec", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("(SELECT `name`, `d` AS `email` FROM `dml_people`) UNION (SELECT `name`, `email` FROM `dml_people2` WHERE (`id` = ?))"))
+		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("(SELECT `name`, `d` AS `email` FROM `dml_people`) UNION (SELECT `name`, `email` FROM `dml_people2` WHERE (`id` = ?))"))
 
 		stmt, err := dml.NewUnion(
 			dml.NewSelect("name").AddColumnsAliases("d", "email").From("dml_people"),
@@ -200,7 +200,7 @@ func TestUnion_Prepare(t *testing.T) {
 			Prepare(context.TODO())
 
 		require.NoError(t, err, "failed creating a prepared statement")
-		defer cstesting.Close(t, stmt)
+		defer dmltest.Close(t, stmt)
 
 		const iterations = 3
 
@@ -244,9 +244,9 @@ func TestUnion_Prepare(t *testing.T) {
 		})
 
 		t.Run("WithRecords Error", func(t *testing.T) {
-			p := &TableCoreConfigDataSlice{err: errors.NewDuplicatedf("Found a duplicate")}
+			p := &TableCoreConfigDataSlice{err: errors.Duplicated.Newf("Found a duplicate")}
 			rows, err := stmt.WithRecords(dml.Qualify("", p)).Query(context.TODO())
-			assert.True(t, errors.IsDuplicated(err), "%+v", err)
+			assert.True(t, errors.Duplicated.Match(err), "%+v", err)
 			assert.Nil(t, rows)
 		})
 	})
@@ -255,7 +255,7 @@ func TestUnion_Prepare(t *testing.T) {
 func TestUnion_WithLogger(t *testing.T) {
 	uniID := new(int32)
 	rConn := createRealSession(t)
-	defer cstesting.Close(t, rConn)
+	defer dmltest.Close(t, rConn)
 
 	var uniqueIDFunc = func() string {
 		return fmt.Sprintf("UNIQ%02d", atomic.AddInt32(uniID, 1))

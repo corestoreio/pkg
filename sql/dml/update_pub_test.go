@@ -25,7 +25,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log/logw"
 	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -38,7 +38,7 @@ func TestUpdate_Prepare(t *testing.T) {
 
 		res, err := mu.Exec(context.TODO())
 		assert.Nil(t, res)
-		assert.True(t, errors.IsEmpty(err), "%+v", err)
+		assert.True(t, errors.Empty.Match(err), "%+v", err)
 	})
 
 	t.Run("alias mismatch Exec", func(t *testing.T) {
@@ -48,7 +48,7 @@ func TestUpdate_Prepare(t *testing.T) {
 		mu.SetClausAliases = []string{"update_sku"}
 		res, err := mu.Exec(context.TODO())
 		assert.Nil(t, res)
-		assert.True(t, errors.IsMismatch(err), "%+v", err)
+		assert.True(t, errors.Mismatch.Match(err), "%+v", err)
 	})
 
 	t.Run("alias mismatch Prepare", func(t *testing.T) {
@@ -58,23 +58,23 @@ func TestUpdate_Prepare(t *testing.T) {
 		mu.SetClausAliases = []string{"update_sku"}
 		stmt, err := mu.Prepare(context.TODO())
 		assert.Nil(t, stmt)
-		assert.True(t, errors.IsMismatch(err), "%+v", err)
+		assert.True(t, errors.Mismatch.Match(err), "%+v", err)
 	})
 
 	t.Run("empty Records and RecordChan", func(t *testing.T) {
 		mu := dml.NewUpdate("catalog_product_entity").AddColumns("sku", "updated_at").
 			Where(dml.Column("entity_id").In().PlaceHolder()).WithDB(dbMock{
-			error: errors.NewAlreadyClosedf("Who closed myself?"),
+			error: errors.AlreadyClosed.Newf("Who closed myself?"),
 		})
 
 		res, err := mu.Exec(context.TODO())
 		assert.Nil(t, res)
-		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	})
 
 	t.Run("prepared success", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
 		records := []*dmlPerson{
 			{
@@ -96,7 +96,7 @@ func TestUpdate_Prepare(t *testing.T) {
 			WithDB(dbc.DB).
 			Interpolate() // gets ignored
 
-		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`=?, `email`=? WHERE (`id` = ?)"))
+		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`=?, `email`=? WHERE (`id` = ?)"))
 		prep.ExpectExec().WithArgs("Alf", "alf@m') -- el.mac", 1).WillReturnResult(sqlmock.NewResult(0, 1))
 		prep.ExpectExec().WithArgs("John", "john@doe.com", 2).WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -114,10 +114,10 @@ func TestUpdate_Prepare(t *testing.T) {
 	})
 
 	t.Run("ExecContext", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`=?, `email`=? WHERE (`id` = ?)"))
+		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`=?, `email`=? WHERE (`id` = ?)"))
 		prep.ExpectExec().WithArgs("Peter Gopher", "peter@gopher.go", 3456).WillReturnResult(sqlmock.NewResult(0, 9))
 
 		stmt, err := dml.NewUpdate("customer_entity").Alias("ce").
@@ -140,10 +140,10 @@ func TestUpdate_Prepare(t *testing.T) {
 	})
 
 	t.Run("ExecArgs One Row", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`=?, `email`=? WHERE (`id` = ?)"))
+		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`=?, `email`=? WHERE (`id` = ?)"))
 		prep.ExpectExec().WithArgs("Peter Gopher", "peter@gopher.go", 3456).WillReturnResult(sqlmock.NewResult(0, 11))
 		prep.ExpectExec().WithArgs("Petra Gopher", "petra@gopher.go", 3457).WillReturnResult(sqlmock.NewResult(0, 21))
 
@@ -214,7 +214,7 @@ func (so *salesInvoice) MapColumns(cm *dml.ColumnMap) error {
 		case "grand_total":
 			cm.NullFloat64(&so.GrandTotal)
 		default:
-			return errors.NewNotFoundf("[dml_test] Column %q not found", c)
+			return errors.NotFound.Newf("[dml_test] Column %q not found", c)
 		}
 	}
 	return cm.Err()
@@ -223,9 +223,9 @@ func (so *salesInvoice) MapColumns(cm *dml.ColumnMap) error {
 func TestUpdate_SetClausAliases(t *testing.T) {
 	t.Parallel()
 
-	dbc, dbMock := cstesting.MockDB(t)
+	dbc, dbMock := dmltest.MockDB(t)
 
-	prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta(
+	prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta(
 		"UPDATE `sales_invoice` SET `state`=?, `customer_id`=?, `grand_total`=? WHERE (`shipping_method` IN ('DHL','UPS')) AND (`entity_id` = ?)",
 	))
 
@@ -287,7 +287,7 @@ func TestUpdate_BindRecord(t *testing.T) {
 			WithRecords(dml.Qualify("", ce)).
 			Where(dml.Column("entity_id").Greater().PlaceHolder())
 
-		compareToSQL(t, u, nil,
+		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`entity_id` > ?)",
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`entity_id` > 678)",
 			int64(6), "p456", "3/4/5", int64(678),
@@ -302,7 +302,7 @@ func TestUpdate_BindRecord(t *testing.T) {
 				dml.Column("x").In().Int64s(66, 77),
 				dml.Column("entity_id").Greater().PlaceHolder(),
 			)
-		compareToSQL(t, u, nil,
+		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`x` IN (66,77)) AND (`entity_id` > ?)",
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`x` IN (66,77)) AND (`entity_id` > 678)",
 			int64(6), "p456", "3/4/5", int64(678),
@@ -317,7 +317,7 @@ func TestUpdate_BindRecord(t *testing.T) {
 				dml.Column("x").In().Int64s(66, 77),
 				dml.Column("y").Greater().Int64(99),
 			)
-		compareToSQL(t, u, nil,
+		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`entity_id` > ?) AND (`x` IN (66,77)) AND (`y` > 99)",
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`entity_id` > 678) AND (`x` IN (66,77)) AND (`y` > 99)",
 			int64(6), "p456", "3/4/5", int64(678),
@@ -335,7 +335,7 @@ func TestUpdate_BindRecord(t *testing.T) {
 				dml.Column("cpe.entity_id").In().Int64s(66, 77),
 				dml.Column("cpei.attribute_set_id").Equal().PlaceHolder(), //6
 			)
-		compareToSQL(t, u, nil,
+		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `catalog_category_entity` AS `ce` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`ce`.`entity_id` > ?) AND (`cpe`.`entity_id` IN (66,77)) AND (`cpei`.`attribute_set_id` = ?)",
 			"UPDATE `catalog_category_entity` AS `ce` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`ce`.`entity_id` > 678) AND (`cpe`.`entity_id` IN (66,77)) AND (`cpei`.`attribute_set_id` = 6)",
 			int64(6), "p456", "3/4/5", int64(678), int64(6),
@@ -346,7 +346,7 @@ func TestUpdate_BindRecord(t *testing.T) {
 func TestUpdate_WithLogger(t *testing.T) {
 	uniID := new(int32)
 	rConn := createRealSession(t)
-	defer cstesting.Close(t, rConn)
+	defer dmltest.Close(t, rConn)
 
 	var uniqueIDFunc = func() string {
 		return fmt.Sprintf("UNIQ%02d", atomic.AddInt32(uniID, 3))

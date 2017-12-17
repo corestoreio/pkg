@@ -90,7 +90,7 @@ func (a *NullString) UnmarshalJSON(data []byte) error {
 		a.Valid = false
 		return nil
 	default:
-		err = errors.NewNotValidf("[dml] json: cannot unmarshal %#v into Go value of type dml.NullString", v)
+		err = errors.NotValid.Newf("[dml] json: cannot unmarshal %#v into Go value of type dml.NullString", v)
 	}
 	a.Valid = err == nil
 	return err
@@ -118,7 +118,7 @@ func (a NullString) MarshalText() ([]byte, error) {
 // It will unmarshal to a null NullString if the input is a blank string.
 func (a *NullString) UnmarshalText(text []byte) error {
 	if !utf8.Valid(text) {
-		return errors.NewNotValidf("[dml] Input bytes are not valid UTF-8 encoded.")
+		return errors.NotValid.Newf("[dml] Input bytes are not valid UTF-8 encoded.")
 	}
 	a.String = string(text)
 	a.Valid = a.String != ""
@@ -194,7 +194,7 @@ func (a NullString) writeTo(w *bytes.Buffer) (err error) {
 		if utf8.ValidString(a.String) {
 			dialect.EscapeString(w, a.String)
 		} else {
-			err = errors.NewNotValidf("[dml] NullString.writeTo: String is not UTF-8: %q", a.String)
+			err = errors.NotValid.Newf("[dml] NullString.writeTo: String is not UTF-8: %q", a.String)
 		}
 	} else {
 		_, err = w.WriteString(sqlStrNullUC)

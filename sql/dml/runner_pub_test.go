@@ -23,7 +23,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -40,33 +40,33 @@ func (m myToSQL) ToSQL() (string, []interface{}, error) {
 
 func TestExec(t *testing.T) {
 	t.Parallel()
-	haveErr := errors.NewAlreadyClosedf("Who closed myself?")
+	haveErr := errors.AlreadyClosed.Newf("Who closed myself?")
 
 	t.Run("ToSQL error", func(t *testing.T) {
 		stmt, err := dml.Exec(context.TODO(), nil, myToSQL{error: haveErr})
 		assert.Nil(t, stmt)
-		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	})
 }
 
 func TestPrepare(t *testing.T) {
 	t.Parallel()
-	haveErr := errors.NewAlreadyClosedf("Who closed myself?")
+	haveErr := errors.AlreadyClosed.Newf("Who closed myself?")
 
 	t.Run("ToSQL error", func(t *testing.T) {
 		stmt, err := dml.Prepare(context.TODO(), nil, myToSQL{error: haveErr})
 		assert.Nil(t, stmt)
-		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	})
 	t.Run("ToSQL prepare error", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
 		dbMock.ExpectPrepare("SELECT `a` FROM `b`").WillReturnError(haveErr)
 
 		stmt, err := dml.Prepare(context.TODO(), dbc.DB, myToSQL{sql: "SELECT `a` FROM `b`"})
 		assert.Nil(t, stmt)
-		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	})
 }
 
@@ -139,7 +139,7 @@ func (bt *baseTest) MapColumns(cm *dml.ColumnMap) error {
 		case "decimal":
 			cm.Decimal(&bt.Decimal)
 		default:
-			return errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", c)
+			return errors.NotFound.Newf("[dml_test] dmlPerson Column %q not found", c)
 		}
 	}
 	return cm.Err()
@@ -183,7 +183,7 @@ func (vs *baseTestCollection) MapColumns(cm *dml.ColumnMap) error {
 	case 'r':
 		panic("not needed")
 	default:
-		return errors.NewNotSupportedf("[dml] Unknown Mode: %q", string(m))
+		return errors.NotSupported.Newf("[dml] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }
@@ -191,8 +191,8 @@ func (vs *baseTestCollection) MapColumns(cm *dml.ColumnMap) error {
 func TestRowConvert(t *testing.T) {
 	t.Parallel()
 
-	dbc, dbMock := cstesting.MockDB(t)
-	defer cstesting.MockClose(t, dbc, dbMock)
+	dbc, dbMock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, dbc, dbMock)
 
 	// TODO(CyS) check that RowMap.Byte() returns a copy
 
@@ -347,7 +347,7 @@ func TestRowConvert(t *testing.T) {
 
 		rc, err := dml.Load(context.TODO(), dbc.DB, tbl, tbl)
 		assert.Exactly(t, uint64(0), rc)
-		assert.True(t, errors.IsNotValid(err), "%+v", err)
+		assert.True(t, errors.NotValid.Match(err), "%+v", err)
 	})
 	t.Run("invalid UTF8 NullStr", func(t *testing.T) {
 
@@ -366,7 +366,7 @@ func TestRowConvert(t *testing.T) {
 
 		rc, err := dml.Load(context.TODO(), dbc.DB, tbl, tbl)
 		assert.Exactly(t, uint64(0), rc)
-		assert.True(t, errors.IsNotValid(err), "%+v", err)
+		assert.True(t, errors.NotValid.Match(err), "%+v", err)
 
 	})
 }
