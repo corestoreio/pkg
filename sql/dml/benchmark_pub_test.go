@@ -276,7 +276,7 @@ func BenchmarkSelect_SQLCase(b *testing.B) {
 				dml.SQLCase("", "`closed`",
 					"date_start <= ? AND date_end >= ?", "`open`",
 					"date_start > ? AND date_end > ?", "`upcoming`",
-				).Alias("is_on_sale").Times(start, end, start, end),
+				).Alias("is_on_sale").Time(start).Time(end).Time(start).Time(end),
 			).
 			From("catalog_promotions").
 			Where(
@@ -393,7 +393,7 @@ func BenchmarkRepeat(b *testing.B) {
 		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?) AND name IN (?,?,?,?,?) AND status IN (?)"
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			s, err := dml.ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN (?) AND name IN (?) AND status IN (?)", args)
+			s, err := dml.ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN ? AND name IN ? AND status IN (?)", args)
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -408,7 +408,7 @@ func BenchmarkRepeat(b *testing.B) {
 		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?)"
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			s, err := dml.ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN (?)", args)
+			s, err := dml.ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN ?", args)
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
