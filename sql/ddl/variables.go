@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@ func NewVariables(names ...string) *Variables {
 		Data: make(map[string]string),
 		Show: dml.NewShow().Variable().Interpolate(),
 	}
-	vs.Show.IsBuildCache = true
 	if len(names) > 1 {
 		vs.Show.Where(dml.Column("Variable_name").In().Strs(names...))
 	} else if len(names) == 1 {
@@ -145,7 +144,7 @@ func (vs *Variables) MapColumns(rc *dml.ColumnMap) error {
 		case "Value":
 			rc.String(&value)
 		default:
-			return errors.NewNotFoundf("[ddl] Column %q not found in SHOW VARIABLES", col)
+			return errors.NotFound.Newf("[ddl] Column %q not found in SHOW VARIABLES", col)
 		}
 	}
 	vs.Data[name] = value

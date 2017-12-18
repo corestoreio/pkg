@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import (
 
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -35,8 +35,8 @@ func init() {
 func TestLoadForeignKeys_Integration_Mage(t *testing.T) {
 	t.Parallel()
 
-	dbc := cstesting.MustConnectDB(t)
-	defer cstesting.Close(t, dbc)
+	dbc := dmltest.MustConnectDB(t)
+	defer dmltest.Close(t, dbc)
 
 	t.Run("admin_user", func(t *testing.T) {
 		tc, err := ddl.LoadKeyColumnUsage(context.TODO(), dbc.DB, "admin_user")

@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -50,7 +50,7 @@ func TestNewTableServicePanic(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
-			assert.True(t, errors.IsNotValid(err), "%+v", err)
+			assert.True(t, errors.NotValid.Match(err), "%+v", err)
 		} else {
 			t.Error("Expecting a panic")
 		}
@@ -113,7 +113,7 @@ func TestTables_MustTable(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
-			assert.True(t, errors.IsNotFound(err), "%+v", err)
+			assert.True(t, errors.NotFound.Match(err), "%+v", err)
 		} else {
 			t.Error("Expecting a panic")
 		}
@@ -138,7 +138,7 @@ func TestWithTableNames(t *testing.T) {
 
 	t.Run("Invalid Identifier", func(t *testing.T) {
 		err := ts.Options(ddl.WithTableNames("x1"))
-		assert.True(t, errors.IsNotValid(err), "%+v", err)
+		assert.True(t, errors.NotValid.Match(err), "%+v", err)
 		assert.Contains(t, err.Error(), `identifier "x\uf8ff1" (Case 2)`)
 	})
 }
@@ -146,8 +146,8 @@ func TestWithTableNames(t *testing.T) {
 func TestTables_RowScan_Integration(t *testing.T) {
 	t.Parallel()
 
-	dbc := cstesting.MustConnectDB(t)
-	defer cstesting.Close(t, dbc)
+	dbc := dmltest.MustConnectDB(t)
+	defer dmltest.Close(t, dbc)
 
 	tm0 := ddl.MustNewTables(
 		ddl.WithTable("admin_user"),
@@ -164,8 +164,8 @@ func TestTables_RowScan_Integration(t *testing.T) {
 func TestTables_RowScan_Mock(t *testing.T) {
 	t.Parallel()
 
-	dbc, dbMock := cstesting.MockDB(t)
-	defer cstesting.MockClose(t, dbc, dbMock)
+	dbc, dbMock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, dbc, dbMock)
 
 	rows := sqlmock.NewRows([]string{"TABLE_NAME", "COLUMN_NAME", "ORDINAL_POSITION", "COLUMN_DEFAULT", "IS_NULLABLE", "DATA_TYPE", "CHARACTER_MAXIMUM_LENGTH", "NUMERIC_PRECISION", "NUMERIC_SCALE", "COLUMN_TYPE", "COLUMN_KEY", "EXTRA", "COLUMN_COMMENT"}).
 		FromCSVString(
@@ -174,7 +174,7 @@ func TestTables_RowScan_Mock(t *testing.T) {
 "admin_user","modified",8,"CURRENT_TIMESTAMP","NO","timestamp",0,0,0,"timestamp","","on update CURRENT_TIMESTAMP","User Modified Time"
 `)
 
-	dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SELECT TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE, COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ('admin_user') ORDER BY TABLE_NAME, ORDINAL_POSITION")).
+	dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE\\(\\) AND TABLE_NAME.+").
 		WillReturnRows(rows)
 
 	tm0 := ddl.MustNewTables(
@@ -243,13 +243,13 @@ func TestWithTableLoadColumns(t *testing.T) {
 	t.Run("Invalid Identifier", func(t *testing.T) {
 		tbls, err := ddl.NewTables(ddl.WithTableLoadColumns(context.TODO(), nil, "H€llo"))
 		assert.Nil(t, tbls)
-		assert.True(t, errors.IsNotValid(err), "%+v", err)
+		assert.True(t, errors.NotValid.Match(err), "%+v", err)
 	})
 
 	t.Run("Ok", func(t *testing.T) {
 
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
 		rows := sqlmock.NewRows([]string{"TABLE_NAME", "COLUMN_NAME", "ORDINAL_POSITION", "COLUMN_DEFAULT", "IS_NULLABLE", "DATA_TYPE", "CHARACTER_MAXIMUM_LENGTH", "NUMERIC_PRECISION", "NUMERIC_SCALE", "COLUMN_TYPE", "COLUMN_KEY", "EXTRA", "COLUMN_COMMENT"}).
 			FromCSVString(
@@ -258,7 +258,7 @@ func TestWithTableLoadColumns(t *testing.T) {
 "admin_user","modified",8,"CURRENT_TIMESTAMP","NO","timestamp",0,0,0,"timestamp","","on update CURRENT_TIMESTAMP","User Modified Time"
 `)
 
-		dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SELECT TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE, COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ('admin_user') ORDER BY TABLE_NAME, ORDINAL_POSITION")).
+		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE\\(\\) AND TABLE_NAME.+").
 			WillReturnRows(rows)
 
 		tm0 := ddl.MustNewTables(
@@ -277,66 +277,66 @@ func TestWithTableOrViewFromQuery(t *testing.T) {
 	t.Run("Invalid type", func(t *testing.T) {
 		tbls, err := ddl.NewTables(ddl.WithTableOrViewFromQuery(context.TODO(), nil, "proc", "asdasd", "SELECT * from"))
 		assert.Nil(t, tbls)
-		assert.True(t, errors.IsUnavailable(err), "%+v", err)
+		assert.True(t, errors.Unavailable.Match(err), "%+v", err)
 	})
 
 	t.Run("Invalid object name", func(t *testing.T) {
 		tbls, err := ddl.NewTables(ddl.WithTableOrViewFromQuery(context.TODO(), nil, "proc", "asdasd", "SELECT * from"))
 		assert.Nil(t, tbls)
-		assert.True(t, errors.IsNotValid(err), "%+v", err)
+		assert.True(t, errors.NotValid.Match(err), "%+v", err)
 	})
 
 	t.Run("drop table fails", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		xErr := errors.NewAlreadyClosedf("Connection already closed")
+		xErr := errors.AlreadyClosed.Newf("Connection already closed")
 		dbMock.ExpectExec("DROP TABLE IF EXISTS `testTable`").WillReturnError(xErr)
 
 		tbls, err := ddl.NewTables(ddl.WithTableOrViewFromQuery(context.TODO(), dbc.DB, "table", "testTable", "SELECT * FROM catalog_product_entity", true))
 		assert.Nil(t, tbls)
-		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	})
 
 	t.Run("create table fails", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		xErr := errors.NewAlreadyClosedf("Connection already closed")
-		dbMock.ExpectExec(cstesting.SQLMockQuoteMeta("CREATE TABLE `testTable` AS SELECT * FROM catalog_product_entity")).WillReturnError(xErr)
+		xErr := errors.AlreadyClosed.Newf("Connection already closed")
+		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("CREATE TABLE `testTable` AS SELECT * FROM catalog_product_entity")).WillReturnError(xErr)
 
 		tbls, err := ddl.NewTables(ddl.WithTableOrViewFromQuery(context.TODO(), dbc.DB, "table", "testTable", "SELECT * FROM catalog_product_entity", false))
 		assert.Nil(t, tbls)
-		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	})
 
 	t.Run("load columns fails", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
-		xErr := errors.NewAlreadyClosedf("Connection already closed")
+		xErr := errors.AlreadyClosed.Newf("Connection already closed")
 		dbMock.
-			ExpectExec(cstesting.SQLMockQuoteMeta("CREATE TABLE `testTable` AS SELECT * FROM catalog_product_entity")).
+			ExpectExec(dmltest.SQLMockQuoteMeta("CREATE TABLE `testTable` AS SELECT * FROM catalog_product_entity")).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
 		dbMock.ExpectQuery("SELEC.+\\s+FROM\\s+information_schema\\.COLUMNS").WillReturnError(xErr)
 
 		tbls, err := ddl.NewTables(ddl.WithTableOrViewFromQuery(context.TODO(), dbc.DB, "table", "testTable", "SELECT * FROM catalog_product_entity", false))
 		assert.Nil(t, tbls)
-		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	})
 
 	t.Run("create view", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
 		dbMock.
-			ExpectExec(cstesting.SQLMockQuoteMeta("CREATE VIEW `testTable` AS SELECT * FROM core_config_data")).
+			ExpectExec(dmltest.SQLMockQuoteMeta("CREATE VIEW `testTable` AS SELECT * FROM core_config_data")).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
 		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS WHERE").
 			WillReturnRows(
-				cstesting.MustMockRows(cstesting.WithFile("testdata/core_config_data_columns.csv")))
+				dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_columns.csv")))
 
 		tbls, err := ddl.NewTables(ddl.WithTableOrViewFromQuery(context.TODO(), dbc.DB, "view", "testTable", "SELECT * FROM core_config_data", false))
 		if err != nil {

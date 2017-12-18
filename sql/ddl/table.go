@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -61,8 +61,8 @@ func (t *Table) update() *Table {
 	}
 
 	t.selectAllCache = &dml.Select{
-	// Columns: t.AllColumnAliasQuote(MainTable), // TODO refactor
-	//Table: dml.MakeIdentifier(t.Name, MainTable),
+		// Columns: t.AllColumnAliasQuote(MainTable), // TODO refactor
+		//Table: dml.MakeIdentifier(t.Name, MainTable),
 	}
 
 	return t
@@ -369,5 +369,5 @@ func (t *Table) LoadDataInfile(ctx context.Context, db dml.Execer, filePath stri
 	}
 
 	_, err := db.ExecContext(ctx, buf.String())
-	return errors.NewFatal(err, "[csb] Infile for table %q failed with query: %q", t.Name, buf.String())
+	return errors.Fatal.New(err, "[csb] Infile for table %q failed with query: %q", t.Name, buf.String())
 }

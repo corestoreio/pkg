@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import (
 	"github.com/corestoreio/log/logw"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -39,7 +39,7 @@ type typeWriter struct {
 
 var (
 	sqlStmtInsert         = dml.NewInsert("xtable").AddColumns("path", "value").SetRowCount(1)
-	expectedInsertPrepare = cstesting.SQLMockQuoteMeta("INSERT INTO `xtable` (`path`,`value`) VALUES (?,?)")
+	expectedInsertPrepare = dmltest.SQLMockQuoteMeta("INSERT INTO `xtable` (`path`,`value`) VALUES (?,?)")
 	sqlStmtReplace        = dml.NewInsert("core_config_data").Replace().AddColumns("path", "value").SetRowCount(1)
 )
 
@@ -203,12 +203,12 @@ func TestResurrectStmtRealDB(t *testing.T) {
 		logw.WithLevel(logw.LevelDebug),
 	)
 
-	if _, err := ddl.GetDSN(); errors.IsNotFound(err) {
+	if _, err := ddl.GetDSN(); errors.NotFound.Match(err) {
 		t.Skip("Skipping because no DSN found.")
 	}
 
-	dbc := cstesting.MustConnectDB(t)
-	defer cstesting.Close(t, dbc)
+	dbc := dmltest.MustConnectDB(t)
+	defer dmltest.Close(t, dbc)
 
 	tw := newTypeWriterReal(dbc.DB, l)
 	tw.Write.StartIdleChecker()

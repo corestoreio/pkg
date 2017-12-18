@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ func (ms *MasterStatus) MapColumns(rc *dml.ColumnMap) error {
 		case "Executed_Gtid_Set":
 			rc.String(&ms.ExecutedGTIDSet)
 		default:
-			return errors.NewNotFoundf("[ddl] Column %q not found in SHOW MASTER STATUS", col)
+			return errors.NotFound.Newf("[ddl] Column %q not found in SHOW MASTER STATUS", col)
 		}
 	}
 	return errors.WithStack(rc.Err())
@@ -99,12 +99,12 @@ func (ms MasterStatus) String() string {
 func (ms *MasterStatus) FromString(str string) error {
 	c := strings.IndexByte(str, ';')
 	if c < 1 {
-		return errors.NewNotFoundf("[ddl] MasterStatus FromString: Delimiter semi-colon not found.")
+		return errors.NotFound.Newf("[ddl] MasterStatus FromString: Delimiter semi-colon not found.")
 	}
 
 	pos, err := strconv.ParseUint(str[c+1:], 10, 32)
 	if err != nil {
-		return errors.NewNotValidf("[ddl] MasterStatus FromString: %s", err)
+		return errors.NotValid.Newf("[ddl] MasterStatus FromString: %s", err)
 	}
 	ms.File = str[:c]
 	ms.Position = uint(pos)

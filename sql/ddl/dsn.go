@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ func getDSN(env string, err error) (string, error) {
 
 // GetDSN returns the data source name from an environment variable or an error
 func GetDSN() (string, error) {
-	return getDSN(EnvDSN, errors.NewNotFoundf("DSN in environment variable %q not found.", EnvDSN))
+	return getDSN(EnvDSN, errors.NotFound.Newf("DSN in environment variable %q not found.", EnvDSN))
 }
 
 // MustGetDSN returns the data source name from an environment variable or

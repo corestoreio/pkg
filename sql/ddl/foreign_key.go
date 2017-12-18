@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -77,7 +77,7 @@ func (e *KeyColumnUsage) MapColumns(cm *dml.ColumnMap) error {
 		case "REFERENCED_COLUMN_NAME":
 			cm.NullString(&e.ReferencedColumnName)
 		default:
-			return errors.NewNotFoundf("[testdata] KeyColumnUsage Column %q not found", c)
+			return errors.NotFound.Newf("[testdata] KeyColumnUsage Column %q not found", c)
 		}
 	}
 	return errors.WithStack(cm.Err())
@@ -143,11 +143,11 @@ func (cc KeyColumnUsageCollection) MapColumns(cm *dml.ColumnMap) error {
 			case "COLUMN_NAME":
 				cm.Args = cm.Args.Strings(cc.ColumnNames()...)
 			default:
-				return errors.NewNotFoundf("[testdata] KeyColumnUsageCollection Column %q not found", c)
+				return errors.NotFound.Newf("[testdata] KeyColumnUsageCollection Column %q not found", c)
 			}
 		}
 	default:
-		return errors.NewNotSupportedf("[dml] Unknown Mode: %q", string(m))
+		return errors.NotSupported.Newf("[dml] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }
@@ -194,7 +194,7 @@ func (cc KeyColumnUsageCollection) ColumnNames(ret ...string) []string {
 // gets selected when you don't provide the argument `tables`.
 func LoadKeyColumnUsage(ctx context.Context, db dml.Querier, tables ...string) (map[string]KeyColumnUsageCollection, error) {
 
-	const selFkWhere = ` AND REFERENCED_TABLE_NAME IN (?)`
+	const selFkWhere = ` AND REFERENCED_TABLE_NAME IN ?`
 	const selFkOrderBy = ` ORDER BY TABLE_SCHEMA,TABLE_NAME,ORDINAL_POSITION, COLUMN_NAME`
 
 	const selFkTablesColumns = `SELECT
@@ -220,8 +220,9 @@ func LoadKeyColumnUsage(ctx context.Context, db dml.Querier, tables ...string) (
 	} else {
 		sqlStr, _, err := dml.Interpolate(selFkTablesColumns).Strs(tables...).ToSQL()
 		if err != nil {
-			return nil, errors.Wrapf(err, "[ddl] LoadKeyColumnUsage dml.Repeat for tables %v", tables)
+			return nil, errors.Wrapf(err, "[ddl] LoadKeyColumnUsage dml.ExpandPlaceHolders for tables %v", tables)
 		}
+		println("sqlStr", sqlStr)
 		rows, err = db.QueryContext(ctx, sqlStr)
 		if err != nil {
 			return nil, errors.Wrapf(err, "[ddl] LoadKeyColumnUsage QueryContext for tables %v with WHERE clause", tables)
@@ -246,7 +247,7 @@ func LoadKeyColumnUsage(ctx context.Context, db dml.Querier, tables ...string) (
 			return nil, errors.WithStack(err)
 		}
 		if !kcu.ReferencedTableName.Valid || !kcu.ReferencedColumnName.Valid {
-			return nil, errors.NewFatalf("[ddl] LoadKeyColumnUsage: The columns ReferencedTableName or ReferencedColumnName cannot be null: %#v", kcu)
+			return nil, errors.Fatal.Newf("[ddl] LoadKeyColumnUsage: The columns ReferencedTableName or ReferencedColumnName cannot be null: %#v", kcu)
 		}
 		key := fmt.Sprintf("%s.%s", kcu.ReferencedTableName.String, kcu.ReferencedColumnName.String)
 		if _, ok := tc[key]; !ok {

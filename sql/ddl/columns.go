@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -103,7 +103,7 @@ func LoadColumns(ctx context.Context, db dml.Querier, tables ...string) (map[str
 	} else {
 		sqlStr, _, err := dml.Interpolate(selTablesColumns).Strs(tables...).ToSQL()
 		if err != nil {
-			return nil, errors.Wrapf(err, "[ddl] LoadColumns dml.Repeat for tables %v", tables)
+			return nil, errors.Wrapf(err, "[ddl] LoadColumns dml.ExpandPlaceHolders for tables %v", tables)
 		}
 		rows, err = db.QueryContext(ctx, sqlStr)
 		if err != nil {
@@ -140,7 +140,7 @@ func LoadColumns(ctx context.Context, db dml.Querier, tables ...string) (map[str
 		return nil, errors.WithStack(err)
 	}
 	if len(tc) == 0 {
-		return nil, errors.NewNotFoundf("[ddl] Tables %v not found", tables)
+		return nil, errors.NotFound.Newf("[ddl] Tables %v not found", tables)
 	}
 	return tc, err
 }
@@ -358,7 +358,7 @@ func NewColumn(rc *dml.ColumnMap) (c *Column, tableName string, err error) {
 		case "struct_tag":
 			rc.String(&c.StructTag)
 		default:
-			return nil, "", errors.NewNotSupportedf("[ddl] Column %q not supported or alias not found", col)
+			return nil, "", errors.NotSupported.Newf("[ddl] Column %q not supported or alias not found", col)
 		}
 	}
 	return c, tableName, errors.WithStack(rc.Err())

@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -73,7 +73,7 @@ func WithTableOrViewFromQuery(ctx context.Context, db interface {
 			case "table":
 				viewOrTable = "TABLE"
 			default:
-				return errors.NewUnavailablef("[ddl] Option %q for variable typ not available. Only `view` or `table`", typ)
+				return errors.Unavailable.Newf("[ddl] Option %q for variable typ not available. Only `view` or `table`", typ)
 			}
 
 			vnq := dml.Quoter.Name(objectName)
@@ -195,7 +195,7 @@ func WithTableDMLListeners(tableName string, events ...*dml.ListenerBucket) Tabl
 
 			t, ok := tm.tm[tableName]
 			if !ok {
-				return errors.NewNotFoundf("[ddl] Table %q not found", tableName)
+				return errors.NotFound.Newf("[ddl] Table %q not found", tableName)
 			}
 			t.Listeners.Merge(events...)
 			tm.tm[tableName] = t
@@ -252,7 +252,7 @@ func (tm *Tables) Table(name string) (*Table, error) {
 	if t, ok := tm.tm[name]; ok {
 		return t, nil
 	}
-	return nil, errors.NewNotFoundf("[ddl] Table %q not found.", name)
+	return nil, errors.NotFound.Newf("[ddl] Table %q not found.", name)
 }
 
 // MustTable same as Table function but panics when the table cannot be found or

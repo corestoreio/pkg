@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -50,8 +50,8 @@ func TestMasterStatus_Compare(t *testing.T) {
 func TestShowMasterStatus(t *testing.T) {
 	t.Parallel()
 
-	dbc, dbMock := cstesting.MockDB(t)
-	defer cstesting.MockClose(t, dbc, dbMock)
+	dbc, dbMock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, dbc, dbMock)
 
 	var mockedRows = sqlmock.NewRows([]string{"File", "Position", "Binlog_Do_DB", "Binlog_Ignore_DB", "Executed_Gtid_Set"}).
 		FromCSVString("mysql-bin.000001,3581378,test,mysql,123-456-789")
@@ -74,18 +74,18 @@ func TestMasterStatus_FromString(t *testing.T) {
 		in           string
 		wantFile     string
 		wantPosition uint
-		wantErr      errors.BehaviourFunc
+		wantErrKind  errors.Kind
 		wantString   string
 	}{
-		{"mysql-bin.000004;545460", "mysql-bin.000004", 545460, nil, "mysql-bin.000004;545460"},
-		{"mysql-bin.000004;", "", 0, errors.IsNotValid, ""},
-		{"mysql-bin.000004", "", 0, errors.IsNotFound, ""},
+		{"mysql-bin.000004;545460", "mysql-bin.000004", 545460, errors.NoKind, "mysql-bin.000004;545460"},
+		{"mysql-bin.000004;", "", 0, errors.NotValid, ""},
+		{"mysql-bin.000004", "", 0, errors.NotFound, ""},
 	}
 	for i, test := range tests {
 		var haveMS = &ddl.MasterStatus{}
 		haveErr := haveMS.FromString(test.in)
-		if test.wantErr != nil {
-			assert.True(t, test.wantErr(haveErr), "Index %d: %+v", i, haveErr)
+		if !test.wantErrKind.Empty() {
+			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d: %+v", i, haveErr)
 			assert.Empty(t, haveMS.File, "Index %d", i)
 			assert.Empty(t, haveMS.Position, "Index %d", i)
 			assert.Empty(t, haveMS.String(), "Index %d", i)

@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,28 +36,28 @@ var _ sort.Interface = (*ddl.Columns)(nil)
 func TestLoadColumns_Integration_Mage(t *testing.T) {
 	t.Parallel()
 
-	dbc := cstesting.MustConnectDB(t)
-	defer cstesting.Close(t, dbc)
+	dbc := dmltest.MustConnectDB(t)
+	defer dmltest.Close(t, dbc)
 
 	tests := []struct {
 		table          string
 		want           string
-		wantErr        errors.BehaviourFunc
+		wantErrKind    errors.Kind
 		wantJoinFields string
 	}{
 		{"core_config_data",
 			"ddl.Columns{\n&ddl.Column{Field: \"config_id\", Pos: 1, Null: \"NO\", DataType: \"int\", Precision: dml.MakeNullInt64(10), Scale: dml.MakeNullInt64(0), ColumnType: \"int(10) unsigned\", Key: \"PRI\", Extra: \"auto_increment\", Comment: \"Config Id\", },\n&ddl.Column{Field: \"scope\", Pos: 2, Default: dml.MakeNullString(\"'default'\"), Null: \"NO\", DataType: \"varchar\", CharMaxLength: dml.MakeNullInt64(8), ColumnType: \"varchar(8)\", Key: \"MUL\", Comment: \"Config Scope\", },\n&ddl.Column{Field: \"scope_id\", Pos: 3, Default: dml.MakeNullString(\"0\"), Null: \"NO\", DataType: \"int\", Precision: dml.MakeNullInt64(10), Scale: dml.MakeNullInt64(0), ColumnType: \"int(11)\", Comment: \"Config Scope Id\", },\n&ddl.Column{Field: \"path\", Pos: 4, Default: dml.MakeNullString(\"'general'\"), Null: \"NO\", DataType: \"varchar\", CharMaxLength: dml.MakeNullInt64(255), ColumnType: \"varchar(255)\", Comment: \"Config Path\", },\n&ddl.Column{Field: \"value\", Pos: 5, Default: dml.MakeNullString(\"NULL\"), Null: \"YES\", DataType: \"text\", CharMaxLength: dml.MakeNullInt64(65535), ColumnType: \"text\", Comment: \"Config Value\", },\n}\n",
-			nil,
+			errors.NoKind,
 			"config_id_scope_scope_id_path_value",
 		},
 		{"catalog_category_product",
 			"ddl.Columns{\n&ddl.Column{Field: \"entity_id\", Pos: 1, Null: \"NO\", DataType: \"int\", Precision: dml.MakeNullInt64(10), Scale: dml.MakeNullInt64(0), ColumnType: \"int(11)\", Key: \"PRI\", Extra: \"auto_increment\", Comment: \"Entity ID\", },\n&ddl.Column{Field: \"category_id\", Pos: 2, Default: dml.MakeNullString(\"0\"), Null: \"NO\", DataType: \"int\", Precision: dml.MakeNullInt64(10), Scale: dml.MakeNullInt64(0), ColumnType: \"int(10) unsigned\", Key: \"PRI\", Comment: \"Category ID\", },\n&ddl.Column{Field: \"product_id\", Pos: 3, Default: dml.MakeNullString(\"0\"), Null: \"NO\", DataType: \"int\", Precision: dml.MakeNullInt64(10), Scale: dml.MakeNullInt64(0), ColumnType: \"int(10) unsigned\", Key: \"PRI\", Comment: \"Product ID\", },\n&ddl.Column{Field: \"position\", Pos: 4, Default: dml.MakeNullString(\"0\"), Null: \"NO\", DataType: \"int\", Precision: dml.MakeNullInt64(10), Scale: dml.MakeNullInt64(0), ColumnType: \"int(11)\", Comment: \"Position\", },\n}\n",
-			nil,
+			errors.NoKind,
 			"entity_id_category_id_product_id_position",
 		},
 		{"non_existent_table",
 			"",
-			errors.IsNotFound,
+			errors.NotFound,
 			"",
 		},
 	}
@@ -65,8 +65,8 @@ func TestLoadColumns_Integration_Mage(t *testing.T) {
 	for i, test := range tests {
 		tc, err := ddl.LoadColumns(context.TODO(), dbc.DB, test.table)
 		cols1 := tc[test.table]
-		if test.wantErr != nil {
-			assert.True(t, test.wantErr(err), "Index %d", i)
+		if !test.wantErrKind.Empty() {
+			assert.True(t, test.wantErrKind.Match(err), "Index %d", i)
 		} else {
 			assert.NoError(t, err, "Index %d", i)
 			assert.Equal(t, test.want, fmt.Sprintf("%#v\n", cols1), "Index %d", i)

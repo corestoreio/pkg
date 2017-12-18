@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,8 +33,8 @@ var _ dml.QueryBuilder = (*Variables)(nil)
 func TestNewVariables_Integration(t *testing.T) {
 	t.Parallel()
 
-	db := cstesting.MustConnectDB(t)
-	defer cstesting.Close(t, db)
+	db := dmltest.MustConnectDB(t)
+	defer dmltest.Close(t, db)
 
 	vs := NewVariables()
 	_, err := dml.Load(context.TODO(), db.DB, vs, vs)
@@ -48,14 +48,14 @@ func TestNewVariables_Integration(t *testing.T) {
 func TestNewVariables_Mock(t *testing.T) {
 	t.Parallel()
 
-	dbc, dbMock := cstesting.MockDB(t)
-	defer cstesting.MockClose(t, dbc, dbMock)
+	dbc, dbMock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, dbc, dbMock)
 
 	t.Run("one with LIKE", func(t *testing.T) {
 		var mockedRows = sqlmock.NewRows([]string{"Variable_name", "Value"}).
 			FromCSVString("keyVal11,helloAustralia")
 
-		dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SHOW VARIABLES WHERE (`Variable_name` LIKE 'keyVal11')")).
+		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SHOW VARIABLES WHERE (`Variable_name` LIKE 'keyVal11')")).
 			WillReturnRows(mockedRows)
 
 		vs := NewVariables("keyVal11")
@@ -73,7 +73,7 @@ func TestNewVariables_Mock(t *testing.T) {
 		var mockedRows = sqlmock.NewRows([]string{"Variable_name", "Value"}).
 			FromCSVString("keyVal11,helloAustralia\nkeyVal22,helloNewZealand")
 
-		dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SHOW VARIABLES WHERE (`Variable_name` IN ('keyVal11','keyVal22'))")).
+		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SHOW VARIABLES WHERE (`Variable_name` IN ('keyVal11','keyVal22'))")).
 			WillReturnRows(mockedRows)
 
 		vs := NewVariables("keyVal11", "keyVal22")
