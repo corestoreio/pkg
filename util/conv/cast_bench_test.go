@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"math"
 	"testing"
-
-	"github.com/corestoreio/pkg/config/cfgpath"
 )
 
 var benchmarkToString string
@@ -62,10 +60,6 @@ func BenchmarkToString_Float64(b *testing.B) {
 }
 func BenchmarkToString_Int(b *testing.B) {
 	var val = int(math.MaxInt16)
-	benchmarkToStringF(b, val)
-}
-func BenchmarkToString_CfgPathPath(b *testing.B) {
-	val := cfgpath.MustNewByParts("aa/bb/cc").BindStore(33)
 	benchmarkToStringF(b, val)
 }
 func BenchmarkToString_Error(b *testing.B) {

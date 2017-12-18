@@ -12,9 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/pkg/config/cfgpath"
-	"github.com/corestoreio/pkg/storage/text"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/storage/text"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,46 +43,46 @@ func TestToInt64(t *testing.T) {
 
 func TestToUint(t *testing.T) {
 	tests := []struct {
-		raw    interface{}
-		want   uint
-		errBhf errors.BehaviourFunc
+		raw         interface{}
+		want        uint
+		wantErrKind errors.Kind
 	}{
-		0:  {int(8), 8, nil},
-		1:  {int(-8), 0, errors.IsNotValid},
-		2:  {int64(8), 8, nil},
-		3:  {int64(math.MaxInt64), math.MaxInt64, nil},
-		4:  {int64(-8), 0, errors.IsNotValid},
-		5:  {int32(8), 8, nil},
-		6:  {int32(-8), 0, errors.IsNotValid},
-		7:  {int16(8), 8, nil},
-		8:  {int16(-8), 0, errors.IsNotValid},
-		9:  {int8(8), 8, nil},
-		10: {int8(-8), 0, errors.IsNotValid},
-		11: {-1, 0, errors.IsNotValid},
-		12: {uint(8), 8, nil},
-		13: {uint64(8), 8, nil},
-		14: {uint32(8), 8, nil},
-		15: {uint16(8), 8, nil},
-		16: {uint8(8), 8, nil},
-		17: {"8", 8, nil},
-		18: {"-8", 0, errors.IsNotValid},
-		19: {"f", 0, errors.IsNotValid},
-		20: {float64(-8), 0, errors.IsNotValid},
-		21: {float64(math.MaxFloat64), 0, errors.IsNotValid},
-		22: {float32(-8), 0, errors.IsNotValid},
-		23: {float32(8), 8, nil},
-		24: {float32(math.MaxFloat32), 0, errors.IsNotValid},
-		25: {true, 1, nil},
-		26: {false, 0, nil},
-		27: {nil, 0, nil},
-		28: {make(chan struct{}), 0, errors.IsNotValid},
+		0:  {int(8), 8, errors.NoKind},
+		1:  {int(-8), 0, errors.NotValid},
+		2:  {int64(8), 8, errors.NoKind},
+		3:  {int64(math.MaxInt64), math.MaxInt64, errors.NoKind},
+		4:  {int64(-8), 0, errors.NotValid},
+		5:  {int32(8), 8, errors.NoKind},
+		6:  {int32(-8), 0, errors.NotValid},
+		7:  {int16(8), 8, errors.NoKind},
+		8:  {int16(-8), 0, errors.NotValid},
+		9:  {int8(8), 8, errors.NoKind},
+		10: {int8(-8), 0, errors.NotValid},
+		11: {-1, 0, errors.NotValid},
+		12: {uint(8), 8, errors.NoKind},
+		13: {uint64(8), 8, errors.NoKind},
+		14: {uint32(8), 8, errors.NoKind},
+		15: {uint16(8), 8, errors.NoKind},
+		16: {uint8(8), 8, errors.NoKind},
+		17: {"8", 8, errors.NoKind},
+		18: {"-8", 0, errors.NotValid},
+		19: {"f", 0, errors.NotValid},
+		20: {float64(-8), 0, errors.NotValid},
+		21: {float64(math.MaxFloat64), 0, errors.NotValid},
+		22: {float32(-8), 0, errors.NotValid},
+		23: {float32(8), 8, errors.NoKind},
+		24: {float32(math.MaxFloat32), 0, errors.NotValid},
+		25: {true, 1, errors.NoKind},
+		26: {false, 0, errors.NoKind},
+		27: {nil, 0, errors.NoKind},
+		28: {make(chan struct{}), 0, errors.NotValid},
 	}
 	for i, test := range tests {
 
 		haveUint, haveErr := ToUintE(test.raw)
 
-		if test.errBhf != nil {
-			assert.True(t, test.errBhf(haveErr), "IDX %d: %+v", i, haveErr)
+		if !test.wantErrKind.Empty() {
+			assert.True(t, test.wantErrKind.Match(haveErr), "IDX %d: %+v", i, haveErr)
 			assert.Empty(t, haveUint, "IDX %d", i)
 			continue
 		}
@@ -121,7 +120,7 @@ func TestToFloat64(t *testing.T) {
 	for i, test := range tests {
 		gotF64, gotErr := ToFloat64E(test.have)
 		if test.wantErr {
-			assert.True(t, errors.IsNotValid(gotErr), "Index %d => %s", i, gotErr)
+			assert.True(t, errors.NotValid.Match(gotErr), "Index %d => %s", i, gotErr)
 			assert.Exactly(t, float64(0), gotF64, "Index %d", i)
 			continue
 		}
@@ -139,12 +138,10 @@ func TestToString(t *testing.T) {
 	assert.Equal(t, ToString(template.HTML("one time")), "one time")
 	assert.Equal(t, ToString(template.URL("http://somehost.foo")), "http://somehost.foo")
 	assert.Equal(t, ToString(text.Chars("http://somehost.foo")), "http://somehost.foo")
-	assert.Equal(t, ToString(cfgpath.NewRoute("http://somehost.foo")), "http://somehost.foo")
 	assert.Equal(t, ToString(foo), "one more time")
 	assert.Equal(t, ToString(nil), "")
 	assert.Equal(t, ToString(true), "true")
 	assert.Equal(t, ToString(false), "false")
-	assert.Equal(t, ToString(cfgpath.MustNewByParts("aa/bb/cc").BindStore(33)), "stores/33/aa/bb/cc")
 }
 
 func TestToByte(t *testing.T) {
@@ -157,16 +154,14 @@ func TestToByte(t *testing.T) {
 	assert.Equal(t, ToByte(template.HTML("one time")), []byte("one time"))
 	assert.Equal(t, ToByte(template.URL("http://somehost.foo")), []byte("http://somehost.foo"))
 	assert.Equal(t, ToByte(text.Chars("http://somehost.foo")), []byte("http://somehost.foo"))
-	assert.Equal(t, ToByte(cfgpath.NewRoute("http://somehost.foo")), []byte("http://somehost.foo"))
 	assert.Equal(t, ToByte(foo), []byte("one more time"))
 	assert.Equal(t, ToByte(nil), []byte(nil))
 	assert.Equal(t, ToByte(true), []byte("true"))
 	assert.Equal(t, ToByte(false), []byte("false"))
-	assert.Equal(t, ToByte(cfgpath.MustNewByParts("aa/bb/cc").BindStore(33)), []byte("stores/33/aa/bb/cc"))
 
 	b, err := ToByteE(uint8(1))
 	assert.Nil(t, b)
-	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+	assert.True(t, errors.NotValid.Match(err), "Error: %s", err)
 }
 
 type foo struct {
@@ -288,70 +283,70 @@ func (tb toBool) ToBool() bool { return tb.bool }
 
 func TestToBool(t *testing.T) {
 	tests := []struct {
-		raw    interface{}
-		want   bool
-		errBhf errors.BehaviourFunc
+		raw         interface{}
+		want        bool
+		wantErrKind errors.Kind
 	}{
-		0:  {"f", false, nil},
-		1:  {"F", false, nil},
-		2:  {"t", true, nil},
-		3:  {"T", true, nil},
-		4:  {int(0), false, nil},
-		5:  {int(8), true, nil},
-		6:  {int(-8), true, nil},
-		7:  {int64(0), false, nil},
-		8:  {int64(8), true, nil},
-		9:  {int64(math.MaxInt64), true, nil},
-		10: {int64(-8), true, nil},
-		11: {int32(0), false, nil},
-		12: {int32(8), true, nil},
-		13: {int32(-8), true, nil},
-		14: {int16(0), false, nil},
-		15: {int16(8), true, nil},
-		16: {int16(-8), true, nil},
-		17: {int8(8), true, nil},
-		18: {int8(0), false, nil},
-		19: {int8(-8), true, nil},
-		20: {-1, true, nil},
-		21: {0, false, nil},
-		22: {uint(0), false, nil},
-		23: {uint(8), true, nil},
-		24: {uint64(0), false, nil},
-		25: {uint64(8), true, nil},
-		26: {uint32(0), false, nil},
-		27: {uint32(8), true, nil},
-		28: {uint16(0), false, nil},
-		29: {uint16(8), true, nil},
-		30: {uint8(0), false, nil},
-		31: {uint8(8), true, nil},
-		32: {"8", false, errors.IsNotValid},
-		33: {"-8", false, errors.IsNotValid},
-		34: {"f", false, nil},
-		35: {"t", true, nil},
-		36: {"YES", true, nil},
-		37: {"yes", true, nil},
-		38: {"no", false, nil},
-		39: {"NO", false, nil},
-		40: {float64(0), false, nil},
-		41: {float64(-8), false, nil},
-		42: {float64(math.MaxFloat64), true, nil},
-		43: {float32(0), false, nil},
-		44: {float32(-8), false, nil},
-		45: {float32(8), true, nil},
-		46: {float32(math.MaxFloat32), true, nil},
-		47: {true, true, nil},
-		48: {false, false, nil},
-		49: {nil, false, nil},
-		50: {make(chan struct{}), false, errors.IsNotValid},
-		51: {toBool{true}, true, nil},
-		52: {toBool{false}, false, nil},
+		0:  {"f", false, errors.NoKind},
+		1:  {"F", false, errors.NoKind},
+		2:  {"t", true, errors.NoKind},
+		3:  {"T", true, errors.NoKind},
+		4:  {int(0), false, errors.NoKind},
+		5:  {int(8), true, errors.NoKind},
+		6:  {int(-8), true, errors.NoKind},
+		7:  {int64(0), false, errors.NoKind},
+		8:  {int64(8), true, errors.NoKind},
+		9:  {int64(math.MaxInt64), true, errors.NoKind},
+		10: {int64(-8), true, errors.NoKind},
+		11: {int32(0), false, errors.NoKind},
+		12: {int32(8), true, errors.NoKind},
+		13: {int32(-8), true, errors.NoKind},
+		14: {int16(0), false, errors.NoKind},
+		15: {int16(8), true, errors.NoKind},
+		16: {int16(-8), true, errors.NoKind},
+		17: {int8(8), true, errors.NoKind},
+		18: {int8(0), false, errors.NoKind},
+		19: {int8(-8), true, errors.NoKind},
+		20: {-1, true, errors.NoKind},
+		21: {0, false, errors.NoKind},
+		22: {uint(0), false, errors.NoKind},
+		23: {uint(8), true, errors.NoKind},
+		24: {uint64(0), false, errors.NoKind},
+		25: {uint64(8), true, errors.NoKind},
+		26: {uint32(0), false, errors.NoKind},
+		27: {uint32(8), true, errors.NoKind},
+		28: {uint16(0), false, errors.NoKind},
+		29: {uint16(8), true, errors.NoKind},
+		30: {uint8(0), false, errors.NoKind},
+		31: {uint8(8), true, errors.NoKind},
+		32: {"8", false, errors.NotValid},
+		33: {"-8", false, errors.NotValid},
+		34: {"f", false, errors.NoKind},
+		35: {"t", true, errors.NoKind},
+		36: {"YES", true, errors.NoKind},
+		37: {"yes", true, errors.NoKind},
+		38: {"no", false, errors.NoKind},
+		39: {"NO", false, errors.NoKind},
+		40: {float64(0), false, errors.NoKind},
+		41: {float64(-8), false, errors.NoKind},
+		42: {float64(math.MaxFloat64), true, errors.NoKind},
+		43: {float32(0), false, errors.NoKind},
+		44: {float32(-8), false, errors.NoKind},
+		45: {float32(8), true, errors.NoKind},
+		46: {float32(math.MaxFloat32), true, errors.NoKind},
+		47: {true, true, errors.NoKind},
+		48: {false, false, errors.NoKind},
+		49: {nil, false, errors.NoKind},
+		50: {make(chan struct{}), false, errors.NotValid},
+		51: {toBool{true}, true, errors.NoKind},
+		52: {toBool{false}, false, errors.NoKind},
 	}
 	for i, test := range tests {
 
 		haveUint, haveErr := ToBoolE(test.raw)
 
-		if test.errBhf != nil {
-			assert.True(t, test.errBhf(haveErr), "IDX %d: %+v", i, haveErr)
+		if !test.wantErrKind.Empty() {
+			assert.True(t, test.wantErrKind.Match(haveErr), "IDX %d: %+v", i, haveErr)
 			assert.Empty(t, haveUint, "IDX %d", i)
 			continue
 		}
@@ -434,7 +429,7 @@ func TestToTimeE(t *testing.T) {
 	for i, test := range tests {
 		haveT, haveErr := ToTimeE(test.arg)
 		if test.wantErr {
-			assert.True(t, errors.IsNotValid(haveErr), "Index %d => %s", i, haveErr)
+			assert.True(t, errors.NotValid.Match(haveErr), "Index %d => %s", i, haveErr)
 			continue
 		}
 		if haveErr != nil {
