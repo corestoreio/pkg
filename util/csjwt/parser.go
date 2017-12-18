@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -61,11 +61,11 @@ func NewVerification(availableSigners ...Signer) *Verification {
 func (vf *Verification) Parse(dst *Token, rawToken []byte, keyFunc Keyfunc) error {
 	pos, valid := dotPositions(rawToken)
 	if !valid {
-		return errors.NewNotValidf(errTokenInvalidSegmentCounts)
+		return errors.NotValid.Newf(errTokenInvalidSegmentCounts)
 	}
 
 	if dst.Header == nil || dst.Claims == nil {
-		return errors.NewNotValidf(errTokenBaseNil)
+		return errors.NotValid.Newf(errTokenBaseNil)
 	}
 
 	dec := vf.Deserializer
@@ -76,17 +76,17 @@ func (vf *Verification) Parse(dst *Token, rawToken []byte, keyFunc Keyfunc) erro
 	dst.Raw = rawToken
 
 	if startsWithBearer(dst.Raw) {
-		return errors.NewNotValidf(errTokenShouldNotContainBearer)
+		return errors.NotValid.Newf(errTokenShouldNotContainBearer)
 	}
 
 	// parse Header
 	if err := dec.Deserialize(dst.Raw[:pos[0]], dst.Header); err != nil {
-		return errors.NewNotValidf(errTokenMalformed, err)
+		return errors.NotValid.Newf(errTokenMalformed, err)
 	}
 
 	// parse Claims
 	if err := dec.Deserialize(dst.Raw[pos[0]+1:pos[1]], dst.Claims); err != nil {
-		return errors.NewNotValidf(errTokenMalformed, err)
+		return errors.NotValid.Newf(errTokenMalformed, err)
 	}
 
 	// validate Claims
@@ -96,11 +96,11 @@ func (vf *Verification) Parse(dst *Token, rawToken []byte, keyFunc Keyfunc) erro
 
 	// Lookup key
 	if keyFunc == nil {
-		return errors.NewEmptyf(errMissingKeyFunc)
+		return errors.Empty.Newf(errMissingKeyFunc)
 	}
 	key, err := keyFunc(dst)
 	if err != nil {
-		return errors.NewNotValidf(errTokenUnverifiable, err)
+		return errors.NotValid.Newf(errTokenUnverifiable, err)
 	}
 
 	// Lookup signature method
@@ -112,7 +112,7 @@ func (vf *Verification) Parse(dst *Token, rawToken []byte, keyFunc Keyfunc) erro
 	// Perform validation
 	dst.Signature = dst.Raw[pos[1]+1:]
 	if err := method.Verify(dst.Raw[:pos[1]], dst.Signature, key); err != nil {
-		return errors.NewNotValidf(errSignatureInvalid, err, dst)
+		return errors.NotValid.Newf(errSignatureInvalid, err, dst)
 	}
 
 	dst.Valid = true
@@ -122,12 +122,12 @@ func (vf *Verification) Parse(dst *Token, rawToken []byte, keyFunc Keyfunc) erro
 func (vf *Verification) getMethod(t *Token) (Signer, error) {
 
 	if len(vf.Methods) == 0 {
-		return nil, errors.NewEmptyf(errVerificationMethodsEmpty)
+		return nil, errors.Empty.Newf(errVerificationMethodsEmpty)
 	}
 
 	alg := t.Alg()
 	if alg == "" {
-		return nil, errors.NewEmptyf(errAlgorithmEmpty, t.Header)
+		return nil, errors.Empty.Newf(errAlgorithmEmpty, t.Header)
 	}
 
 	for _, m := range vf.Methods {
@@ -135,7 +135,7 @@ func (vf *Verification) getMethod(t *Token) (Signer, error) {
 			return m, nil
 		}
 	}
-	return nil, errors.NewNotFoundf(errAlgorithmNotFound, alg, vf.Methods)
+	return nil, errors.NotFound.Newf(errAlgorithmNotFound, alg, vf.Methods)
 }
 
 // ParseFromRequest same as Parse but extracts the token from a request. First
@@ -166,7 +166,7 @@ func (vf *Verification) ParseFromRequest(dst *Token, keyFunc Keyfunc, req *http.
 		return vf.parseForm(dst, keyFunc, req)
 	}
 
-	return errors.NewNotFoundf(errTokenNotInRequest)
+	return errors.NotFound.Newf(errTokenNotInRequest)
 }
 
 func (vf *Verification) parseCookie(dst *Token, keyFunc Keyfunc, req *http.Request) error {
@@ -182,7 +182,7 @@ func (vf *Verification) parseForm(dst *Token, keyFunc Keyfunc, req *http.Request
 	if tokStr := req.Form.Get(vf.FormInputName); tokStr != "" {
 		return vf.Parse(dst, []byte(tokStr), keyFunc)
 	}
-	return errors.NewNotFoundf(errTokenNotInRequest)
+	return errors.NotFound.Newf(errTokenNotInRequest)
 }
 
 // SplitForVerify splits the token into two parts: the payload and the
@@ -191,7 +191,7 @@ func (vf *Verification) parseForm(dst *Token, keyFunc Keyfunc, req *http.Request
 func SplitForVerify(rawToken []byte) (signingString, signature []byte, err error) {
 	pos, valid := dotPositions(rawToken)
 	if !valid {
-		return nil, nil, errors.NewNotValidf(errTokenInvalidSegmentCounts)
+		return nil, nil, errors.NotValid.Newf(errTokenInvalidSegmentCounts)
 	}
 	return rawToken[:pos[1]], rawToken[pos[1]+1:], nil
 }

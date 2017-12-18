@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ func TestMustSigningMethodFactory(t *testing.T) {
 			if !ok {
 				t.Fatalf("Missing error interface: %#v", r)
 			}
-			assert.True(t, errors.IsNotSupported(err), "Error: %s", err)
+			assert.True(t, errors.NotSupported.Match(err), "Error: %s", err)
 		} else {
 			t.Fatal("Missing a panic!")
 		}

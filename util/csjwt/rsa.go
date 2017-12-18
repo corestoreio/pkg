@@ -45,7 +45,7 @@ func (m *SigningMethodRSA) Verify(signingString, signature []byte, key Key) erro
 		return errors.Wrap(key.Error, "[csjwt] SigningMethodRSA.Verify.key")
 	}
 	if key.rsaKeyPub == nil {
-		return errors.NewEmptyf(errRSAPublicKeyEmpty)
+		return errors.Empty.Newf(errRSAPublicKeyEmpty)
 	}
 
 	// Decode the signature
@@ -56,15 +56,15 @@ func (m *SigningMethodRSA) Verify(signingString, signature []byte, key Key) erro
 
 	// Create hasher
 	if !m.Hash.Available() {
-		return errors.NewNotImplementedf(errRSAHashUnavailable)
+		return errors.NotImplemented.Newf(errRSAHashUnavailable)
 	}
 	hasher := m.Hash.New()
 	if _, err := hasher.Write(signingString); err != nil {
-		return errors.NewWriteFailed(err, "[csjwt] SigningMethodRSA.Verify.hasher.Write")
+		return errors.WriteFailed.New(err, "[csjwt] SigningMethodRSA.Verify.hasher.Write")
 	}
 
 	// Verify the signature
-	return errors.NewNotValid(rsa.VerifyPKCS1v15(key.rsaKeyPub, m.Hash, hasher.Sum(nil), sig), "[csjwt] SigningMethodRSA.Verify.VerifyPKCS1v15")
+	return errors.NotValid.New(rsa.VerifyPKCS1v15(key.rsaKeyPub, m.Hash, hasher.Sum(nil), sig), "[csjwt] SigningMethodRSA.Verify.VerifyPKCS1v15")
 }
 
 // Sign implements the Sign method from SigningMethod interface. For the key you
@@ -75,23 +75,23 @@ func (m *SigningMethodRSA) Sign(signingString []byte, key Key) ([]byte, error) {
 		return nil, errors.Wrap(key.Error, "[csjwt] SigningMethodRSA.Sign.key")
 	}
 	if key.rsaKeyPriv == nil {
-		return nil, errors.NewEmptyf(errRSAPrivateKeyEmpty)
+		return nil, errors.Empty.Newf(errRSAPrivateKeyEmpty)
 	}
 
 	// Create the hasher
 	if !m.Hash.Available() {
-		return nil, errors.NewNotImplementedf(errRSAHashUnavailable)
+		return nil, errors.NotImplemented.Newf(errRSAHashUnavailable)
 	}
 
 	hasher := m.Hash.New()
 	if _, err := hasher.Write(signingString); err != nil {
-		return nil, errors.NewWriteFailed(err, "[csjwt] SigningMethodRSA.Sign.hasher.Write")
+		return nil, errors.WriteFailed.New(err, "[csjwt] SigningMethodRSA.Sign.hasher.Write")
 	}
 
 	// Sign the string and return the encoded bytes
 	sigBytes, err := rsa.SignPKCS1v15(rand.Reader, key.rsaKeyPriv, m.Hash, hasher.Sum(nil))
 	if err != nil {
-		return nil, errors.NewNotValid(err, "[csjwt] SigningMethodRSA.Sign.SignPKCS1v15")
+		return nil, errors.NotValid.New(err, "[csjwt] SigningMethodRSA.Sign.SignPKCS1v15")
 	}
 	return EncodeSegment(sigBytes), nil
 }

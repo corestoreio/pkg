@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import (
 	"crypto/hmac"
 	"hash"
 
-	"github.com/corestoreio/pkg/util/hashpool"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/hashpool"
 )
 
 // SigningMethodHSFast implements the HMAC-SHA family of pre-warmed signing
@@ -36,11 +36,11 @@ func newHSFast(a string, h crypto.Hash, key Key) (Signer, error) {
 		return nil, errors.Wrap(key.Error, "[csjwt] newHMACFast.key")
 	}
 	if len(key.hmacPassword) == 0 {
-		return nil, errors.NewEmptyf(errHmacPasswordEmpty)
+		return nil, errors.Empty.Newf(errHmacPasswordEmpty)
 	}
 	// Can we use the specified hashing method?
 	if !h.Available() {
-		return nil, errors.NewNotImplementedf(errHmacHashUnavailable)
+		return nil, errors.NotImplemented.Newf(errHmacHashUnavailable)
 	}
 	return &SigningMethodHSFast{
 		Name: a,
@@ -89,11 +89,11 @@ func (m *SigningMethodHSFast) Verify(signingString, signature []byte, _ Key) err
 	defer m.ht.Put(hasher)
 
 	if _, err := hasher.Write(signingString); err != nil {
-		return errors.NewWriteFailed(err, "[csjwt] SigningMethodHMACFast.Verify.hasher.Write")
+		return errors.WriteFailed.New(err, "[csjwt] SigningMethodHMACFast.Verify.hasher.Write")
 	}
 
 	if !hmac.Equal(sig, hasher.Sum(nil)) {
-		return errors.NewNotValidf(errHmacSignatureInvalid)
+		return errors.NotValid.Newf(errHmacSignatureInvalid)
 	}
 
 	// No validation errors.  Signature is good.
@@ -108,7 +108,7 @@ func (m *SigningMethodHSFast) Sign(signingString []byte, _ Key) ([]byte, error) 
 	defer m.ht.Put(hasher)
 
 	if _, err := hasher.Write(signingString); err != nil {
-		return nil, errors.NewWriteFailed(err, "[csjwt] SigningMethodHMACFast.Sign.hasher.Write")
+		return nil, errors.WriteFailed.New(err, "[csjwt] SigningMethodHMACFast.Sign.hasher.Write")
 	}
 
 	return EncodeSegment(hasher.Sum(nil)), nil

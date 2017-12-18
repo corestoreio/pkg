@@ -54,7 +54,7 @@ func (m *SigningMethodECDSA) Verify(signingString, signature []byte, key Key) er
 		return errors.Wrap(key.Error, "[csjwt] SigningMethodECDSA.Verify.key")
 	}
 	if key.ecdsaKeyPub == nil {
-		return errors.NewEmptyf(errECDSAPublicKeyEmpty)
+		return errors.Empty.Newf(errECDSAPublicKeyEmpty)
 	}
 
 	// Decode the signature
@@ -64,7 +64,7 @@ func (m *SigningMethodECDSA) Verify(signingString, signature []byte, key Key) er
 	}
 
 	if len(sig) != 2*m.KeySize {
-		return errors.NewNotValidf(errECDSAVerification)
+		return errors.NotValid.Newf(errECDSAVerification)
 	}
 
 	r := big.NewInt(0).SetBytes(sig[:m.KeySize])
@@ -72,17 +72,17 @@ func (m *SigningMethodECDSA) Verify(signingString, signature []byte, key Key) er
 
 	// Create hasher
 	if !m.Hash.Available() {
-		return errors.NewNotImplementedf(errECDSAHashUnavailable)
+		return errors.NotImplemented.Newf(errECDSAHashUnavailable)
 	}
 
 	hasher := m.Hash.New()
 	if _, err := hasher.Write(signingString); err != nil {
-		return errors.NewWriteFailed(err, "[csjwt] SigningMethodECDSA.Verify.hasher.Write")
+		return errors.WriteFailed.New(err, "[csjwt] SigningMethodECDSA.Verify.hasher.Write")
 	}
 
 	// Verify the signature
 	if !ecdsa.Verify(key.ecdsaKeyPub, hasher.Sum(nil), r, s) {
-		return errors.NewNotValidf(errECDSAVerification)
+		return errors.NotValid.Newf(errECDSAVerification)
 	}
 	return nil
 }
@@ -95,29 +95,29 @@ func (m *SigningMethodECDSA) Sign(signingString []byte, key Key) ([]byte, error)
 		return nil, errors.Wrap(key.Error, "[csjwt] SigningMethodECDSA.Sign.key")
 	}
 	if key.ecdsaKeyPriv == nil {
-		return nil, errors.NewEmptyf(errECDSAPrivateKeyEmpty)
+		return nil, errors.Empty.Newf(errECDSAPrivateKeyEmpty)
 	}
 
 	// Create the hasher
 	if !m.Hash.Available() {
-		return nil, errors.NewNotImplementedf(errECDSAHashUnavailable)
+		return nil, errors.NotImplemented.Newf(errECDSAHashUnavailable)
 	}
 
 	hasher := m.Hash.New()
 	if _, err := hasher.Write(signingString); err != nil {
-		return nil, errors.NewWriteFailed(err, "[csjwt] SigningMethodECDSA.Sign.hasher.Write")
+		return nil, errors.WriteFailed.New(err, "[csjwt] SigningMethodECDSA.Sign.hasher.Write")
 	}
 
 	// Sign the string and return r, s
 	r, s, err := ecdsa.Sign(rand.Reader, key.ecdsaKeyPriv, hasher.Sum(nil))
 	if err != nil {
-		return nil, errors.NewNotValid(err, "[csjwt] SigningMethodECDSA.Sign.ecdsa.Sign")
+		return nil, errors.NotValid.New(err, "[csjwt] SigningMethodECDSA.Sign.ecdsa.Sign")
 	}
 
 	curveBits := key.ecdsaKeyPriv.Curve.Params().BitSize
 
 	if m.CurveBits != curveBits {
-		return nil, errors.NewNotValidf(errECDSAPrivateInvalidBits)
+		return nil, errors.NotValid.Newf(errECDSAPrivateInvalidBits)
 	}
 
 	keyBytes := curveBits / 8

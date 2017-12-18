@@ -87,7 +87,7 @@ func (s *HeadSegments) Set(key, value string) (err error) {
 	case HeaderTyp:
 		s.Type = value
 	default:
-		return errors.NewNotSupportedf(errHeaderKeyNotSupported, key)
+		return errors.NotSupported.Newf(errHeaderKeyNotSupported, key)
 	}
 	return err
 }
@@ -101,5 +101,5 @@ func (s *HeadSegments) Get(key string) (value string, err error) {
 	case HeaderTyp:
 		return s.Type, nil
 	}
-	return "", errors.NewNotSupportedf(errHeaderKeyNotSupported, key)
+	return "", errors.NotSupported.Newf(errHeaderKeyNotSupported, key)
 }

@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/csjwt"
 	"github.com/corestoreio/pkg/util/csjwt/jwtclaim"
-	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -75,9 +75,9 @@ func TestHeadSetGet(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Exactly(t, "JWE", g)
 
-	assert.True(t, errors.IsNotSupported(h.Set("x", "y")))
+	assert.True(t, errors.NotSupported.Match(h.Set("x", "y")))
 	g, err = h.Get("x")
-	assert.True(t, errors.IsNotSupported(err))
+	assert.True(t, errors.NotSupported.Match(err))
 	assert.Empty(t, g)
 }
 
@@ -87,21 +87,21 @@ func TestMergeClaims(t *testing.T) {
 		dst               csjwt.Token
 		srcs              csjwt.Claimer
 		wantSigningString string
-		wantErrBhf        errors.BehaviourFunc
+		wantErrKind       errors.Kind
 	}{
-		{csjwt.NewToken(nil), nil, `eyJ0eXAiOiJKV1QifQo.bnVsbAo`, nil},
-		{csjwt.NewToken(jwtclaim.Map{}), claimMock{getErr: errors.NewFatalf("claimMerge get error")}, ``, errors.IsFatal},
-		{csjwt.NewToken(jwtclaim.Map{"k1": "v1"}), jwtclaim.Map{"k2": 2}, `eyJ0eXAiOiJKV1QifQo.eyJrMSI6InYxIiwiazIiOjJ9Cg`, nil},
-		{csjwt.NewToken(jwtclaim.NewStore()), jwtclaim.Map{"k2": 2}, ``, errors.IsNotSupported},
+		{csjwt.NewToken(nil), nil, `eyJ0eXAiOiJKV1QifQo.bnVsbAo`, errors.NoKind},
+		{csjwt.NewToken(jwtclaim.Map{}), claimMock{getErr: errors.Fatal.Newf("claimMerge get error")}, ``, errors.Fatal},
+		{csjwt.NewToken(jwtclaim.Map{"k1": "v1"}), jwtclaim.Map{"k2": 2}, `eyJ0eXAiOiJKV1QifQo.eyJrMSI6InYxIiwiazIiOjJ9Cg`, errors.NoKind},
+		{csjwt.NewToken(jwtclaim.NewStore()), jwtclaim.Map{"k2": 2}, ``, errors.NotSupported},
 		{csjwt.NewToken(&jwtclaim.Standard{}), &jwtclaim.Store{
 			Standard: &jwtclaim.Standard{},
 			UserID:   "Gopher",
-		}, ``, errors.IsNotSupported},
+		}, ``, errors.NotSupported},
 	}
 	for i, test := range tests {
 		haveErr := csjwt.MergeClaims(test.dst.Claims, test.srcs)
-		if test.wantErrBhf != nil {
-			assert.True(t, test.wantErrBhf(haveErr), "Index %d => %s", i, haveErr)
+		if !test.wantErrKind.Empty() {
+			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => %s", i, haveErr)
 			continue
 		}
 		if haveErr != nil {
@@ -138,7 +138,7 @@ func TestClaimExpiresSkew(t *testing.T) {
 		},
 	})
 	parsedErr := vrf.Parse(&parsedTK, token, csjwt.NewKeyFunc(hs256, pwKey))
-	assert.True(t, errors.IsNotValid(parsedErr), "Error: %s", parsedErr)
+	assert.True(t, errors.NotValid.Match(parsedErr), "Error: %s", parsedErr)
 	assert.False(t, parsedTK.Valid, "Token must be not valid")
 
 	// now adjust skew

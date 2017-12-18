@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,17 +27,17 @@ import (
 func parseRSAPrivateKeyFromPEM(privateKey []byte, password ...[]byte) (*rsa.PrivateKey, error) {
 	var prKeyPEM *pem.Block
 	if prKeyPEM, _ = pem.Decode(privateKey); prKeyPEM == nil {
-		return nil, errors.NewNotSupportedf(errKeyMustBePEMEncoded)
+		return nil, errors.NotSupported.Newf(errKeyMustBePEMEncoded)
 	}
 
 	var block []byte
 	if x509.IsEncryptedPEMBlock(prKeyPEM) {
 		if len(password) != 1 || len(password[0]) == 0 {
-			return nil, errors.NewEmptyf(errKeyMissingPassword)
+			return nil, errors.Empty.Newf(errKeyMissingPassword)
 		}
 		var errPEM error
 		if block, errPEM = x509.DecryptPEMBlock(prKeyPEM, password[0]); errPEM != nil {
-			return nil, errors.NewNotValidf(errKeyDecryptPEMBlockFailed, errPEM)
+			return nil, errors.NotValid.Newf(errKeyDecryptPEMBlockFailed, errPEM)
 		}
 	} else {
 		block = prKeyPEM.Bytes
@@ -47,14 +47,14 @@ func parseRSAPrivateKeyFromPEM(privateKey []byte, password ...[]byte) (*rsa.Priv
 	var parsedKey interface{}
 	if parsedKey, err = x509.ParsePKCS1PrivateKey(block); err != nil {
 		if parsedKey, err = x509.ParsePKCS8PrivateKey(block); err != nil {
-			return nil, errors.NewNotValidf(errKeyParsePKCS8PrivateKeyFailed, err)
+			return nil, errors.NotValid.Newf(errKeyParsePKCS8PrivateKeyFailed, err)
 		}
 	}
 
 	var pkey *rsa.PrivateKey
 	var ok bool
 	if pkey, ok = parsedKey.(*rsa.PrivateKey); !ok {
-		return nil, errors.NewNotValidf(errKeyNonRSAPrivateKey)
+		return nil, errors.NotValid.Newf(errKeyNonRSAPrivateKey)
 	}
 
 	return pkey, nil
@@ -67,7 +67,7 @@ func parseRSAPublicKeyFromPEM(key []byte) (*rsa.PublicKey, error) {
 	// Parse PEM block
 	var block *pem.Block
 	if block, _ = pem.Decode(key); block == nil {
-		return nil, errors.NewNotSupportedf(errKeyMustBePEMEncoded)
+		return nil, errors.NotSupported.Newf(errKeyMustBePEMEncoded)
 	}
 
 	// Parse the key
@@ -76,14 +76,14 @@ func parseRSAPublicKeyFromPEM(key []byte) (*rsa.PublicKey, error) {
 		if cert, err := x509.ParseCertificate(block.Bytes); err == nil {
 			parsedKey = cert.PublicKey
 		} else {
-			return nil, errors.NewNotValidf(errKeyParseCertificateFailed, err)
+			return nil, errors.NotValid.Newf(errKeyParseCertificateFailed, err)
 		}
 	}
 
 	var pkey *rsa.PublicKey
 	var ok bool
 	if pkey, ok = parsedKey.(*rsa.PublicKey); !ok {
-		return nil, errors.NewNotValidf(errKeyNonRSAPrivateKey)
+		return nil, errors.NotValid.Newf(errKeyNonRSAPrivateKey)
 	}
 
 	return pkey, nil

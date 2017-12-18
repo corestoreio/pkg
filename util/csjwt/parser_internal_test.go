@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,21 +27,21 @@ func TestVerificationGetMethod(t *testing.T) {
 		vf           *Verification
 		token        *Token
 		wantSigner   Signer
-		wantErrBhf   errors.BehaviourFunc
+		wantErrKind  errors.Kind
 		haveLastUsed uint32
 	}{
 		{
 			&Verification{},
 			nil,
 			nil,
-			errors.IsEmpty,
+			errors.Empty,
 			0,
 		},
 		{
 			NewVerification(NewSigningMethodHS256()),
 			&Token{},
 			nil,
-			errors.IsEmpty,
+			errors.Empty,
 			0,
 		},
 		{
@@ -50,7 +50,7 @@ func TestVerificationGetMethod(t *testing.T) {
 				Header: NewHead("RS4"),
 			},
 			nil,
-			errors.IsNotFound,
+			errors.NotFound,
 			0,
 		},
 		{
@@ -59,14 +59,14 @@ func TestVerificationGetMethod(t *testing.T) {
 				Header: NewHead(HS512),
 			},
 			NewSigningMethodHS512(),
-			nil,
+			errors.NoKind,
 			2,
 		},
 	}
 	for i, test := range tests {
 		haveSigner, haveErr := test.vf.getMethod(test.token)
-		if test.wantErrBhf != nil {
-			assert.True(t, test.wantErrBhf(haveErr), "Index %d => %s", i, haveErr)
+		if !test.wantErrKind.Empty() {
+			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => %s", i, haveErr)
 			assert.Nil(t, haveSigner, "Index %d", i)
 			continue
 		}

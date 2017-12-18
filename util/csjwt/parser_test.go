@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/conv"
 	"github.com/corestoreio/pkg/util/csjwt"
 	"github.com/corestoreio/pkg/util/csjwt/jwtclaim"
-	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,7 +31,7 @@ var jwtTestData = []struct {
 	keyfunc     csjwt.Keyfunc
 	claims      jwtclaim.Map
 	valid       bool
-	wantErrBhf  errors.BehaviourFunc
+	wantErrKind errors.Kind
 	parser      *csjwt.Verification
 }{
 	{
@@ -40,7 +40,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwtclaim.Map{"foo": "bar"},
 		true,
-		nil,
+		errors.NoKind,
 		csjwt.NewVerification(csjwt.NewSigningMethodRS256()),
 	},
 	{
@@ -49,7 +49,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwtclaim.Map{"foo": "bar", "exp": float64(time.Now().Unix() - 100)},
 		false,
-		errors.IsNotValid,
+		errors.NotValid,
 		csjwt.NewVerification(),
 	},
 	{
@@ -58,7 +58,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwtclaim.Map{"foo": "bar", "nbf": float64(time.Now().Unix() + 100)},
 		false,
-		errors.IsNotValid,
+		errors.NotValid,
 		csjwt.NewVerification(),
 	},
 	{
@@ -67,7 +67,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwtclaim.Map{"foo": "bar", "nbf": float64(time.Now().Unix() + 100), "exp": float64(time.Now().Unix() - 100)},
 		false,
-		errors.IsNotValid,
+		errors.NotValid,
 		csjwt.NewVerification(),
 	},
 	{
@@ -76,7 +76,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwtclaim.Map{"foo": "bar"},
 		false,
-		errors.IsNotValid,
+		errors.NotValid,
 		csjwt.NewVerification(csjwt.NewSigningMethodRS256()),
 	},
 	{
@@ -85,7 +85,7 @@ var jwtTestData = []struct {
 		nilKeyFunc,
 		jwtclaim.Map{"foo": "bar"},
 		false,
-		errors.IsEmpty,
+		errors.Empty,
 		csjwt.NewVerification(csjwt.NewSigningMethodRS256()),
 	},
 	{
@@ -94,7 +94,7 @@ var jwtTestData = []struct {
 		emptyKeyFunc,
 		jwtclaim.Map{"foo": "bar"},
 		false,
-		errors.IsNotValid,
+		errors.NotValid,
 		csjwt.NewVerification(csjwt.NewSigningMethodRS256()),
 	},
 	{
@@ -103,7 +103,7 @@ var jwtTestData = []struct {
 		errorKeyFunc,
 		jwtclaim.Map{"foo": "bar"},
 		false,
-		errors.IsNotValid,
+		errors.NotValid,
 		csjwt.NewVerification(csjwt.NewSigningMethodRS256()),
 	},
 	{
@@ -112,7 +112,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		map[string]interface{}{"foo": "bar"},
 		false,
-		errors.IsNotFound,
+		errors.NotFound,
 		csjwt.NewVerification(csjwt.NewSigningMethodHS256()),
 	},
 	{
@@ -121,7 +121,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		map[string]interface{}{"foo": "bar"},
 		true,
-		nil,
+		errors.NoKind,
 		csjwt.NewVerification(csjwt.NewSigningMethodES256(), csjwt.NewSigningMethodRS256()),
 	},
 }
@@ -153,12 +153,12 @@ func TestVerification_ParseFromRequest_WithMap(t *testing.T) {
 		if !data.valid && err == nil {
 			t.Errorf("[%v] Invalid token passed validation", data.name)
 		}
-		if data.wantErrBhf != nil {
+		if !data.wantErrKind.Empty() {
 			if err == nil {
 				t.Errorf("[%v] Expecting error.  Didn't get one.", data.name)
 			} else {
 
-				if !data.wantErrBhf(err) {
+				if !data.wantErrKind.Match(err) {
 					t.Errorf("[%v] Errors don't match expectation: %s\n", data.name, err)
 				}
 			}
@@ -246,7 +246,7 @@ func TestVerification_Parse_BearerInHeader(t *testing.T) {
 	assert.NotNil(t, haveToken)
 	assert.NotNil(t, haveToken.Claims)
 	assert.Exactly(t, haveToken.Raw, token)
-	assert.True(t, errors.IsNotValid(haveErr), "Error: %s", haveErr)
+	assert.True(t, errors.NotValid.Match(haveErr), "Error: %s", haveErr)
 	assert.True(t, bytes.Contains(haveToken.Raw, token))
 }
 
@@ -254,7 +254,7 @@ func TestVerification_Parse_InvalidSegments(t *testing.T) {
 	token := csjwt.NewToken(nil)
 	haveErr := csjwt.NewVerification().Parse(&token, []byte(`hello.gopher`), nil)
 	assert.False(t, token.Valid)
-	assert.True(t, errors.IsNotValid(haveErr), "Error: %s", haveErr)
+	assert.True(t, errors.NotValid.Match(haveErr), "Error: %s", haveErr)
 }
 
 func TestVerification_ParseFromRequest_Cookie(t *testing.T) {
@@ -335,7 +335,7 @@ func TestVerification_ParseFromRequest_NoTokenInRequest(t *testing.T) {
 	pubKey := csjwt.WithRSAPublicKeyFromFile("test/sample_key.pub")
 	haveToken := csjwt.NewToken(&jwtclaim.Map{})
 	haveErr := vf.ParseFromRequest(&haveToken, csjwt.NewKeyFunc(rs256, pubKey), r)
-	assert.True(t, errors.IsNotFound(haveErr), "Error: %s", haveErr)
+	assert.True(t, errors.NotFound.Match(haveErr), "Error: %s", haveErr)
 	assert.Empty(t, haveToken.Raw)
 	assert.False(t, haveToken.Valid)
 }
@@ -346,31 +346,31 @@ func TestSplitForVerify(t *testing.T) {
 		rawToken      []byte
 		signingString []byte
 		signature     []byte
-		wantErrBhf    errors.BehaviourFunc
+		wantErrKind   errors.Kind
 	}{
 		{
 			[]byte(`Hello.World.Gophers`),
 			[]byte(`Hello.World`),
 			[]byte(`Gophers`),
-			nil,
+			errors.NoKind,
 		},
 		{
 			[]byte(`Hello.WorldGophers`),
 			nil,
 			nil,
-			errors.IsNotValid,
+			errors.NotValid,
 		},
 		{
 			[]byte(`Hello.World.Gop.hers`),
 			nil,
 			nil,
-			errors.IsNotValid,
+			errors.NotValid,
 		},
 	}
 	for i, test := range tests {
 		haveSS, haveSig, haveErr := csjwt.SplitForVerify(test.rawToken)
-		if test.wantErrBhf != nil {
-			assert.True(t, test.wantErrBhf(haveErr), "Index %d => %s", i, haveErr)
+		if !test.wantErrKind.Empty() {
+			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => %s", i, haveErr)
 		} else {
 			assert.NoError(t, haveErr, "Index %d", i)
 		}

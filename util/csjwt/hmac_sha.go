@@ -50,7 +50,7 @@ func (m *SigningMethodHMAC) Verify(signingString, signature []byte, key Key) err
 		return errors.Wrap(key.Error, "[csjwt] SigningMethodHMAC.Verify.key")
 	}
 	if len(key.hmacPassword) == 0 {
-		return errors.NewEmptyf(errHmacPasswordEmpty)
+		return errors.Empty.Newf(errHmacPasswordEmpty)
 	}
 
 	// Decode signature, for comparison
@@ -61,7 +61,7 @@ func (m *SigningMethodHMAC) Verify(signingString, signature []byte, key Key) err
 
 	// Can we use the specified hashing method?
 	if !m.Hash.Available() {
-		return errors.NewNotImplementedf(errHmacHashUnavailable)
+		return errors.NotImplemented.Newf(errHmacHashUnavailable)
 	}
 
 	// This signing method is symmetric, so we validate the signature by
@@ -69,11 +69,11 @@ func (m *SigningMethodHMAC) Verify(signingString, signature []byte, key Key) err
 	// that against the provided signature.
 	hasher := hmac.New(m.Hash.New, key.hmacPassword)
 	if _, err := hasher.Write(signingString); err != nil {
-		return errors.NewWriteFailed(err, "[csjwt] SigningMethodHMAC.Verify.hasher.Write")
+		return errors.WriteFailed.New(err, "[csjwt] SigningMethodHMAC.Verify.hasher.Write")
 	}
 
 	if !hmac.Equal(sig, hasher.Sum(nil)) {
-		return errors.NewNotValidf(errHmacSignatureInvalid)
+		return errors.NotValid.Newf(errHmacSignatureInvalid)
 	}
 
 	// No validation errors.  Signature is good.
@@ -89,16 +89,16 @@ func (m *SigningMethodHMAC) Sign(signingString []byte, key Key) ([]byte, error) 
 		return nil, errors.Wrap(key.Error, "[csjwt] SigningMethodHMAC.Sign.key")
 	}
 	if key.hmacPassword == nil {
-		return nil, errors.NewEmptyf(errHmacPasswordEmpty)
+		return nil, errors.Empty.Newf(errHmacPasswordEmpty)
 	}
 
 	if !m.Hash.Available() {
-		return nil, errors.NewNotImplementedf(errHmacHashUnavailable)
+		return nil, errors.NotImplemented.Newf(errHmacHashUnavailable)
 	}
 
 	hasher := hmac.New(m.Hash.New, key.hmacPassword)
 	if _, err := hasher.Write(signingString); err != nil {
-		return nil, errors.NewWriteFailed(err, "[csjwt] SigningMethodHMAC.Sign.hasher.Write")
+		return nil, errors.WriteFailed.New(err, "[csjwt] SigningMethodHMAC.Sign.hasher.Write")
 	}
 
 	return EncodeSegment(hasher.Sum(nil)), nil

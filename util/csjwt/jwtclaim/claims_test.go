@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/csjwt"
 	"github.com/corestoreio/pkg/util/csjwt/jwtclaim"
-	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -64,45 +64,45 @@ func TestStandardClaimsParseJSON(t *testing.T) {
 
 func TestClaimsValid(t *testing.T) {
 	tests := []struct {
-		sc         csjwt.Claimer
-		wantErrBhf errors.BehaviourFunc
+		sc          csjwt.Claimer
+		wantErrKind errors.Kind
 	}{
-		{&jwtclaim.Standard{}, nil},
-		{&jwtclaim.Standard{ExpiresAt: time.Now().Add(time.Second).Unix()}, nil},
-		{&jwtclaim.Standard{ExpiresAt: time.Now().Add(-time.Second).Unix()}, errors.IsNotValid},
-		{&jwtclaim.Standard{IssuedAt: time.Now().Add(-time.Second).Unix()}, nil},
-		{&jwtclaim.Standard{IssuedAt: time.Now().Add(time.Second * 5).Unix()}, errors.IsNotValid},
-		{&jwtclaim.Standard{NotBefore: time.Now().Add(-time.Second).Unix()}, nil},
-		{&jwtclaim.Standard{NotBefore: time.Now().Add(time.Second * 5).Unix()}, errors.IsNotValid},
+		{&jwtclaim.Standard{}, errors.NoKind},
+		{&jwtclaim.Standard{ExpiresAt: time.Now().Add(time.Second).Unix()}, errors.NoKind},
+		{&jwtclaim.Standard{ExpiresAt: time.Now().Add(-time.Second).Unix()}, errors.NotValid},
+		{&jwtclaim.Standard{IssuedAt: time.Now().Add(-time.Second).Unix()}, errors.NoKind},
+		{&jwtclaim.Standard{IssuedAt: time.Now().Add(time.Second * 5).Unix()}, errors.NotValid},
+		{&jwtclaim.Standard{NotBefore: time.Now().Add(-time.Second).Unix()}, errors.NoKind},
+		{&jwtclaim.Standard{NotBefore: time.Now().Add(time.Second * 5).Unix()}, errors.NotValid},
 		{
 			&jwtclaim.Standard{
 				ExpiresAt: time.Now().Add(-time.Second).Unix(),
 				IssuedAt:  time.Now().Add(time.Second * 5).Unix(),
 				NotBefore: time.Now().Add(time.Second * 5).Unix(),
 			},
-			errors.IsNotValid,
+			errors.NotValid,
 		},
 
-		{jwtclaim.Map{}, errors.IsNotValid},                                               // 7
-		{jwtclaim.Map{"exp": time.Now().Add(time.Second).Unix()}, nil},                    // 8
-		{jwtclaim.Map{"exp": time.Now().Add(-time.Second * 2).Unix()}, errors.IsNotValid}, // 9
-		{jwtclaim.Map{"iat": time.Now().Add(-time.Second).Unix()}, nil},                   // 10
-		{jwtclaim.Map{"iat": time.Now().Add(time.Second * 5).Unix()}, errors.IsNotValid},
-		{jwtclaim.Map{"nbf": time.Now().Add(-time.Second).Unix()}, nil},
-		{jwtclaim.Map{"nbf": time.Now().Add(time.Second * 5).Unix()}, errors.IsNotValid},
+		{jwtclaim.Map{}, errors.NotValid},                                               // 7
+		{jwtclaim.Map{"exp": time.Now().Add(time.Second).Unix()}, errors.NoKind},        // 8
+		{jwtclaim.Map{"exp": time.Now().Add(-time.Second * 2).Unix()}, errors.NotValid}, // 9
+		{jwtclaim.Map{"iat": time.Now().Add(-time.Second).Unix()}, errors.NoKind},       // 10
+		{jwtclaim.Map{"iat": time.Now().Add(time.Second * 5).Unix()}, errors.NotValid},
+		{jwtclaim.Map{"nbf": time.Now().Add(-time.Second).Unix()}, errors.NoKind},
+		{jwtclaim.Map{"nbf": time.Now().Add(time.Second * 5).Unix()}, errors.NotValid},
 		{
 			jwtclaim.Map{
 				"exp": time.Now().Add(-time.Second).Unix(),
 				"iat": time.Now().Add(time.Second * 5).Unix(),
 				"nbf": time.Now().Add(time.Second * 5).Unix(),
 			},
-			errors.IsNotValid,
+			errors.NotValid,
 		},
 	}
 	for i, test := range tests {
-		if test.wantErrBhf != nil {
+		if !test.wantErrKind.Empty() {
 			err := test.sc.Valid()
-			assert.True(t, test.wantErrBhf(err), "Index %d => %s", i, err)
+			assert.True(t, test.wantErrKind.Match(err), "Index %d => %s", i, err)
 		} else {
 			assert.NoError(t, test.sc.Valid(), "Index %d", i)
 		}
@@ -114,37 +114,37 @@ func TestClaimsGetSet(t *testing.T) {
 		sc            csjwt.Claimer
 		key           string
 		val           interface{}
-		wantSetErrBhf errors.BehaviourFunc
-		wantGetErrBhf errors.BehaviourFunc
+		wantSetErrBhf errors.Kind
+		wantGetErrBhf errors.Kind
 	}{
-		{&jwtclaim.Standard{}, jwtclaim.KeyAudience, '', errors.IsNotValid, nil},
-		{&jwtclaim.Standard{}, jwtclaim.KeyAudience, "Go", nil, nil},
-		{&jwtclaim.Standard{}, jwtclaim.KeyExpiresAt, time.Now().Unix(), nil, nil},
-		{&jwtclaim.Standard{}, "Not Supported", time.Now().Unix(), errors.IsNotSupported, errors.IsNotSupported},
+		{&jwtclaim.Standard{}, jwtclaim.KeyAudience, '', errors.NotValid, errors.NoKind},
+		{&jwtclaim.Standard{}, jwtclaim.KeyAudience, "Go", errors.NoKind, errors.NoKind},
+		{&jwtclaim.Standard{}, jwtclaim.KeyExpiresAt, time.Now().Unix(), errors.NoKind, errors.NoKind},
+		{&jwtclaim.Standard{}, "Not Supported", time.Now().Unix(), errors.NotSupported, errors.NotSupported},
 
-		{jwtclaim.Map{}, jwtclaim.KeyAudience, "Go", nil, nil},
-		{jwtclaim.Map{}, jwtclaim.KeyExpiresAt, time.Now().Unix(), nil, nil},
-		{jwtclaim.Map{}, "Not Supported", math.Pi, nil, nil},
-		{&jwtclaim.Store{}, jwtclaim.KeyStore, "xde", nil, nil},
+		{jwtclaim.Map{}, jwtclaim.KeyAudience, "Go", errors.NoKind, errors.NoKind},
+		{jwtclaim.Map{}, jwtclaim.KeyExpiresAt, time.Now().Unix(), errors.NoKind, errors.NoKind},
+		{jwtclaim.Map{}, "Not Supported", math.Pi, errors.NoKind, errors.NoKind},
+		{&jwtclaim.Store{}, jwtclaim.KeyStore, "xde", errors.NoKind, errors.NoKind},
 	}
 	for i, test := range tests {
 
 		haveSetErr := test.sc.Set(test.key, test.val)
-		if test.wantSetErrBhf != nil {
-			assert.True(t, test.wantSetErrBhf(haveSetErr), "Index %d => %s", i, haveSetErr)
+		if !test.wantSetErrBhf.Empty() {
+			assert.True(t, test.wantSetErrBhf.Match(haveSetErr), "Index %d => %s", i, haveSetErr)
 		} else {
 			assert.NoError(t, haveSetErr, "Index %d", i)
 		}
 
 		haveVal, haveGetErr := test.sc.Get(test.key)
-		if test.wantGetErrBhf != nil {
-			assert.True(t, test.wantGetErrBhf(haveGetErr), "Index %d => %s", i, haveGetErr)
+		if !test.wantGetErrBhf.Empty() {
+			assert.True(t, test.wantGetErrBhf.Match(haveGetErr), "Index %d => %s", i, haveGetErr)
 			continue
 		} else {
 			assert.NoError(t, haveGetErr, "Index %d", i)
 		}
 
-		if test.wantSetErrBhf == nil {
+		if test.wantSetErrBhf.Empty() {
 			assert.Exactly(t, test.val, haveVal, "Index %d", i)
 		}
 	}
@@ -194,7 +194,7 @@ func TestClaimsExpiresSkew(t *testing.T) {
 			t.Fatalf("%+v", err)
 		}
 		err := test.sc.Valid()
-		assert.Exactly(t, !test.isValid, errors.IsNotValid(err), "Index %d => %s", i, err)
+		assert.Exactly(t, !test.isValid, errors.NotValid.Match(err), "Index %d => %s", i, err)
 	}
 }
 
@@ -221,7 +221,7 @@ func TestClaimsNotBeforeSkew(t *testing.T) {
 			t.Fatalf("%+v", err)
 		}
 		err := test.sc.Valid()
-		assert.Exactly(t, !test.isValid, errors.IsNotValid(err), "Index %d => %s", i, err)
+		assert.Exactly(t, !test.isValid, errors.NotValid.Match(err), "Index %d => %s", i, err)
 	}
 }
 

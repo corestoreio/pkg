@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/corestoreio/pkg/util/conv"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/util/conv"
 )
 
 // ContentTypeJWT defines the content type of a token. At the moment only JWT is
@@ -87,10 +87,10 @@ func (t Token) SignedString(method Signer, key Key) ([]byte, error) {
 	}
 
 	if _, err := buf.WriteRune('.'); err != nil {
-		return nil, errors.NewWriteFailed(err, "[csjwt] Token.SignedString.WriteRune")
+		return nil, errors.WriteFailed.New(err, "[csjwt] Token.SignedString.WriteRune")
 	}
 	if _, err := buf.Write(sig); err != nil {
-		return nil, errors.NewWriteFailed(err, "[csjwt] Token.SignedString.Write")
+		return nil, errors.WriteFailed.New(err, "[csjwt] Token.SignedString.Write")
 	}
 	return buf.Bytes(), nil
 }
@@ -113,11 +113,11 @@ func (t Token) SigningString() (buf bytes.Buffer, err error) {
 		return
 	}
 	if _, err = buf.Write(j); err != nil {
-		err = errors.NewWriteFailed(err, "[csjwt] Token.SigningString.Write")
+		err = errors.WriteFailed.New(err, "[csjwt] Token.SigningString.Write")
 		return
 	}
 	if _, err = buf.WriteRune('.'); err != nil {
-		err = errors.NewWriteFailed(err, "[csjwt] Token.SigningString.Write")
+		err = errors.WriteFailed.New(err, "[csjwt] Token.SigningString.Write")
 		return
 	}
 	j, err = ser.Serialize(t.Claims)
@@ -126,7 +126,7 @@ func (t Token) SigningString() (buf bytes.Buffer, err error) {
 		return
 	}
 	if _, err = buf.Write(j); err != nil {
-		err = errors.NewWriteFailed(err, "[csjwt] Token.SigningString.Write")
+		err = errors.WriteFailed.New(err, "[csjwt] Token.SigningString.Write")
 		return
 	}
 	return

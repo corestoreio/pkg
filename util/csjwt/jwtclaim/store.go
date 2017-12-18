@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@ package jwtclaim
 import (
 	"encoding/json"
 
-	"github.com/corestoreio/pkg/util/conv"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/conv"
 )
 
 //go:generate ffjson $GOFILE
@@ -91,7 +91,7 @@ func (s *Store) Keys() []string {
 func (s *Store) String() string {
 	b, err := json.Marshal(s)
 	if err != nil {
-		return errors.NewFatalf("[jwtclaim] Store.String(): json.Marshal Error: %s", err).Error()
+		return errors.Fatal.Newf("[jwtclaim] Store.String(): json.Marshal Error: %s", err).Error()
 	}
 	return string(b)
 }

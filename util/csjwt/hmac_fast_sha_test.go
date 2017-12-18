@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/corestoreio/pkg/util/csjwt"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/csjwt"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -127,7 +127,7 @@ func TestHMACVerifyFast(t *testing.T) {
 		}
 
 		err = data.method.Verify(signing, signature, csjwt.Key{})
-		if err != nil && !errors.IsNotValid(err) {
+		if err != nil && !errors.NotValid.Match(err) {
 			t.Errorf("[%v] Expecting a not valid error behaviour : %+v", data.name, err)
 		}
 		if data.valid && err != nil {
@@ -161,24 +161,24 @@ func TestHMACSignFast(t *testing.T) {
 
 func TestNewBlake2b256(t *testing.T) {
 	s, err := csjwt.NewSigningMethodBlake2b256(csjwt.Key{
-		Error: errors.NewAlreadyClosedf("Registration"),
+		Error: errors.AlreadyClosed.Newf("Registration"),
 	})
 	assert.Nil(t, s)
-	assert.True(t, errors.IsAlreadyClosed(err))
+	assert.True(t, errors.AlreadyClosed.Match(err))
 
 	s, err = csjwt.NewSigningMethodBlake2b256(csjwt.Key{})
 	assert.Nil(t, s)
-	assert.True(t, errors.IsEmpty(err))
+	assert.True(t, errors.Empty.Match(err))
 }
 
 func TestNewBlake2b512(t *testing.T) {
 	s, err := csjwt.NewSigningMethodBlake2b512(csjwt.Key{
-		Error: errors.NewAlreadyClosedf("Registration"),
+		Error: errors.AlreadyClosed.Newf("Registration"),
 	})
 	assert.Nil(t, s)
-	assert.True(t, errors.IsAlreadyClosed(err))
+	assert.True(t, errors.AlreadyClosed.Match(err))
 
 	s, err = csjwt.NewSigningMethodBlake2b512(csjwt.Key{})
 	assert.Nil(t, s)
-	assert.True(t, errors.IsEmpty(err))
+	assert.True(t, errors.Empty.Match(err))
 }

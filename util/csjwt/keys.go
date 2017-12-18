@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ func NewKeyFunc(s Signer, key Key) Keyfunc {
 		if a := s.Alg(); a != "" && a == t.Header.Alg() {
 			return key, nil
 		}
-		return Key{}, errors.NewNotValidf(errTokenUnverifiable)
+		return Key{}, errors.NotValid.Newf(errTokenUnverifiable)
 	}
 }
 
@@ -102,7 +102,7 @@ func (k Key) Algorithm() (a string) {
 func WithPassword(password []byte) Key {
 	var err error
 	if len(password) == 0 {
-		err = errors.NewEmptyf(errKeyEmptyPassword)
+		err = errors.Empty.Newf(errKeyEmptyPassword)
 	}
 	return Key{
 		hmacPassword: password,
@@ -131,7 +131,7 @@ func WithPasswordFromFile(pathToFile string) Key {
 	var err error
 	k.hmacPassword, err = ioutil.ReadFile(pathToFile)
 	if err != nil {
-		k.Error = errors.NewNotValidf("[csjwt] WithPasswordFromFile: %s with file %s", err, pathToFile)
+		k.Error = errors.NotValid.Newf("[csjwt] WithPasswordFromFile: %s with file %s", err, pathToFile)
 	}
 	return k
 }
@@ -147,7 +147,7 @@ func WithRSAPublicKeyFromPEM(publicKey []byte) (k Key) {
 func WithRSAPublicKeyFromFile(pathToFile string) (k Key) {
 	pk, err := ioutil.ReadFile(pathToFile)
 	if err != nil {
-		k.Error = errors.NewNotValidf("[csjwt] WithRSAPublicKeyFromFile: %s with file %s", err, pathToFile)
+		k.Error = errors.NotValid.Newf("[csjwt] WithRSAPublicKeyFromFile: %s with file %s", err, pathToFile)
 		return k
 	}
 	return WithRSAPublicKeyFromPEM(pk)
@@ -176,7 +176,7 @@ func WithRSAPrivateKeyFromPEM(privateKey []byte, password ...[]byte) (k Key) {
 func WithRSAPrivateKeyFromFile(pathToFile string, password ...[]byte) (k Key) {
 	pk, err := ioutil.ReadFile(pathToFile)
 	if err != nil {
-		k.Error = errors.NewNotValidf("[csjwt] WithRSAPrivateKeyFromFile: %s with file %s", err, pathToFile)
+		k.Error = errors.NotValid.Newf("[csjwt] WithRSAPrivateKeyFromFile: %s with file %s", err, pathToFile)
 		return k
 	}
 	return WithRSAPrivateKeyFromPEM(pk, password...)
@@ -215,7 +215,7 @@ func WithECPublicKeyFromPEM(publicKey []byte) (k Key) {
 func WithECPublicKeyFromFile(pathToFile string) (k Key) {
 	pk, err := ioutil.ReadFile(pathToFile)
 	if err != nil {
-		k.Error = errors.NewNotValidf("[csjwt] WithECPublicKeyFromFile: %s with file %s", err, pathToFile)
+		k.Error = errors.NotValid.Newf("[csjwt] WithECPublicKeyFromFile: %s with file %s", err, pathToFile)
 		return k
 	}
 	k.ecdsaKeyPub, k.Error = parseECPublicKeyFromPEM(pk)
@@ -246,7 +246,7 @@ func WithECPrivateKeyFromPEM(privateKey []byte, password ...[]byte) (k Key) {
 func WithECPrivateKeyFromFile(pathToFile string, password ...[]byte) (k Key) {
 	pk, err := ioutil.ReadFile(pathToFile)
 	if err != nil {
-		k.Error = errors.NewNotValidf("[csjwt] WithECPrivateKeyFromFile: %s with file %s", err, pathToFile)
+		k.Error = errors.NotValid.Newf("[csjwt] WithECPrivateKeyFromFile: %s with file %s", err, pathToFile)
 		return k
 	}
 	return WithECPrivateKeyFromPEM(pk, password...)

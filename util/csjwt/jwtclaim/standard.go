@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/corestoreio/pkg/util/conv"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/conv"
 )
 
 //go:generate ffjson $GOFILE
@@ -82,16 +82,16 @@ func (s *Standard) Valid() error {
 
 	switch {
 	//case s.ExpiresAt == 0 && s.IssuedAt == 0 && s.NotBefore == 0:
-	//	return errors.NewNotValidf(`[jwtclaim] token claims validation failed`)
+	//	return errors.NotValid.Newf(`[jwtclaim] token claims validation failed`)
 
 	case !s.VerifyExpiresAt(now, false):
-		return errors.NewNotValidf(`[jwtclaim] token is expired %s ago`, TimeFunc().Sub(time.Unix(s.ExpiresAt, 0)))
+		return errors.NotValid.Newf(`[jwtclaim] token is expired %s ago`, TimeFunc().Sub(time.Unix(s.ExpiresAt, 0)))
 
 	case !s.VerifyIssuedAt(now, false):
-		return errors.NewNotValidf(`[jwtclaim] token used before issued, clock skew issue? Diff %s`, time.Unix(s.IssuedAt, 0).Sub(TimeFunc()))
+		return errors.NotValid.Newf(`[jwtclaim] token used before issued, clock skew issue? Diff %s`, time.Unix(s.IssuedAt, 0).Sub(TimeFunc()))
 
 	case !s.VerifyNotBefore(now, false):
-		return errors.NewNotValidf(`[jwtclaim] token is not valid yet. Diff %s`, time.Unix(s.NotBefore, 0).Sub(TimeFunc()))
+		return errors.NotValid.Newf(`[jwtclaim] token is not valid yet. Diff %s`, time.Unix(s.NotBefore, 0).Sub(TimeFunc()))
 	}
 
 	return nil
@@ -126,7 +126,7 @@ func (s *Standard) Set(key string, value interface{}) (err error) {
 		s.TimeSkew, err = conv.ToDurationE(value)
 		err = errors.Wrap(err, "[jwtclaim] ToDurationE")
 	default:
-		return errors.NewNotSupportedf(errClaimKeyNotSupported, key)
+		return errors.NotSupported.Newf(errClaimKeyNotSupported, key)
 	}
 	return err
 }
@@ -152,7 +152,7 @@ func (s *Standard) Get(key string) (interface{}, error) {
 	case KeyTimeSkew:
 		return s.TimeSkew, nil
 	}
-	return nil, errors.NewNotSupportedf(errClaimKeyNotSupported, key)
+	return nil, errors.NotSupported.Newf(errClaimKeyNotSupported, key)
 }
 
 // Expires duration when a token expires.
@@ -205,7 +205,7 @@ func (s *Standard) VerifyNotBefore(cmp int64, req bool) bool {
 func (s *Standard) String() string {
 	b, err := json.Marshal(s)
 	if err != nil {
-		return errors.NewFatalf("[jwtclaim] Standard.String(): json.Marshal Error: %s", err).Error()
+		return errors.Fatal.Newf("[jwtclaim] Standard.String(): json.Marshal Error: %s", err).Error()
 	}
 	return string(b)
 }

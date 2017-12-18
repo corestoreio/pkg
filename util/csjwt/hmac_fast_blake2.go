@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import (
 	"crypto/hmac"
 	"hash"
 
-	"github.com/corestoreio/pkg/util/hashpool"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/hashpool"
 	_ "golang.org/x/crypto/blake2b"
 )
 
@@ -32,7 +32,7 @@ func NewSigningMethodBlake2b256(key Key) (Signer, error) {
 		return nil, errors.Wrap(key.Error, "[csjwt] NewBlake2b256.key")
 	}
 	if len(key.hmacPassword) == 0 {
-		return nil, errors.NewEmptyf(errHmacPasswordEmpty)
+		return nil, errors.Empty.Newf(errHmacPasswordEmpty)
 	}
 
 	return &SigningMethodHSFast{
@@ -51,7 +51,7 @@ func NewSigningMethodBlake2b512(key Key) (Signer, error) {
 		return nil, errors.Wrap(key.Error, "[csjwt] NewBlake2b512.key")
 	}
 	if len(key.hmacPassword) == 0 {
-		return nil, errors.NewEmptyf(errHmacPasswordEmpty)
+		return nil, errors.Empty.Newf(errHmacPasswordEmpty)
 	}
 
 	return &SigningMethodHSFast{

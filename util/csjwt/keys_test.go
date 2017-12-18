@@ -16,19 +16,19 @@ var _ fmt.Stringer = (*Key)(nil)
 func TestNewKeyFunc(t *testing.T) {
 
 	tests := []struct {
-		s          Signer
-		key        Key
-		token      Token
-		wantKey    Key
-		wantErrBhf errors.BehaviourFunc
+		s           Signer
+		key         Key
+		token       Token
+		wantKey     Key
+		wantErrKind errors.Kind
 	}{
-		{nil, Key{Error: errors.NewAlreadyClosedf("idx1")}, Token{}, Key{}, errors.IsAlreadyClosed},
+		{nil, Key{Error: errors.AlreadyClosed.Newf("idx1")}, Token{}, Key{}, errors.AlreadyClosed},
 		{
 			&SigningMethodHMAC{Name: "Rost"},
 			WithPasswordRandom(),
 			NewToken(nil),
 			Key{},
-			errors.IsNotValid,
+			errors.NotValid,
 		},
 		{
 			NewSigningMethodHS256(),
@@ -37,14 +37,14 @@ func TestNewKeyFunc(t *testing.T) {
 				Header: &Head{Algorithm: HS256},
 			},
 			WithPassword([]byte(`123456`)),
-			nil,
+			errors.NoKind,
 		},
 	}
 	for i, test := range tests {
 		haveKey, haveErr := NewKeyFunc(test.s, test.key)(&test.token)
 		assert.Exactly(t, test.wantKey, haveKey, "Index %d", i)
-		if test.wantErrBhf != nil {
-			assert.True(t, test.wantErrBhf(haveErr), "Index %d => %s", i, haveErr)
+		if !test.wantErrKind.Empty() {
+			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => %s", i, haveErr)
 			continue
 		}
 		assert.NoError(t, haveErr, "Index %d", i)
@@ -57,43 +57,43 @@ func TestKeyParsing(t *testing.T) {
 	tests := []struct {
 		key        Key
 		wantAlg    string
-		wantErrBhf errors.BehaviourFunc
+		wantErrBhf errors.Kind
 		wantKey    interface{}
 	}{
-		{WithPassword(badKey), HS, nil, []byte{}},
-		{WithPassword(nil), "", errors.IsEmpty, nil},
-		{WithPasswordFromFile("test/hmacTestKey"), HS, nil, []byte{}},
-		{WithPasswordFromFile("test/hmacTestKeyNONEXIST"), "", errors.IsNotValid, nil},
+		{WithPassword(badKey), HS, errors.NoKind, []byte{}},
+		{WithPassword(nil), "", errors.Empty, nil},
+		{WithPasswordFromFile("test/hmacTestKey"), HS, errors.NoKind, []byte{}},
+		{WithPasswordFromFile("test/hmacTestKeyNONEXIST"), "", errors.NotValid, nil},
 
-		{WithRSAPrivateKey(new(rsa.PrivateKey)), RS, nil, new(rsa.PrivateKey)},
-		{WithRSAPrivateKeyFromFile("test/sample_keyOFF"), "", errors.IsNotValid, nil},
-		{WithRSAPrivateKeyFromFile("test/sample_key"), RS, nil, new(rsa.PrivateKey)},
-		{WithRSAPrivateKeyFromFile("test/test_rsa", []byte("cccamp")), RS, nil, new(rsa.PrivateKey)},
-		{WithRSAPrivateKeyFromFile("test/test_rsa", []byte("cCcamp")), "", errors.IsNotValid, nil},
-		{WithRSAPrivateKeyFromFile("test/test_rsa"), "", errors.IsEmpty, nil},
-		{WithRSAPrivateKeyFromFile("test/sample_key.pub"), "", errors.IsNotValid, nil},
-		{WithRSAPrivateKeyFromPEM(badKey), "", errors.IsNotSupported, nil},
+		{WithRSAPrivateKey(new(rsa.PrivateKey)), RS, errors.NoKind, new(rsa.PrivateKey)},
+		{WithRSAPrivateKeyFromFile("test/sample_keyOFF"), "", errors.NotValid, nil},
+		{WithRSAPrivateKeyFromFile("test/sample_key"), RS, errors.NoKind, new(rsa.PrivateKey)},
+		{WithRSAPrivateKeyFromFile("test/test_rsa", []byte("cccamp")), RS, errors.NoKind, new(rsa.PrivateKey)},
+		{WithRSAPrivateKeyFromFile("test/test_rsa", []byte("cCcamp")), "", errors.NotValid, nil},
+		{WithRSAPrivateKeyFromFile("test/test_rsa"), "", errors.Empty, nil},
+		{WithRSAPrivateKeyFromFile("test/sample_key.pub"), "", errors.NotValid, nil},
+		{WithRSAPrivateKeyFromPEM(badKey), "", errors.NotSupported, nil},
 
-		{WithRSAPublicKeyFromFile("test/sample_key.pubOFF"), "", errors.IsNotValid, nil},
-		{WithRSAPublicKeyFromFile("test/sample_key.pub"), RS, nil, new(rsa.PublicKey)},
-		{WithRSAPublicKeyFromFile("test/sample_key"), "", errors.IsNotValid, nil},
-		{WithRSAPublicKeyFromPEM(badKey), "", errors.IsNotSupported, nil},
-		{WithRSAPublicKey(new(rsa.PublicKey)), RS, nil, new(rsa.PublicKey)},
+		{WithRSAPublicKeyFromFile("test/sample_key.pubOFF"), "", errors.NotValid, nil},
+		{WithRSAPublicKeyFromFile("test/sample_key.pub"), RS, errors.NoKind, new(rsa.PublicKey)},
+		{WithRSAPublicKeyFromFile("test/sample_key"), "", errors.NotValid, nil},
+		{WithRSAPublicKeyFromPEM(badKey), "", errors.NotSupported, nil},
+		{WithRSAPublicKey(new(rsa.PublicKey)), RS, errors.NoKind, new(rsa.PublicKey)},
 
-		{WithECPublicKeyFromPEM(badKey), "", errors.IsNotSupported, nil}, // 17
-		{WithECPublicKey(new(ecdsa.PublicKey)), ES, nil, new(ecdsa.PublicKey)},
-		{WithECPublicKeyFromFile("test/nothingecdsa"), "", errors.IsNotValid, nil},
-		{WithECPublicKeyFromFile("test/ec512-public.pem"), ES, nil, new(ecdsa.PublicKey)},
+		{WithECPublicKeyFromPEM(badKey), "", errors.NotSupported, nil}, // 17
+		{WithECPublicKey(new(ecdsa.PublicKey)), ES, errors.NoKind, new(ecdsa.PublicKey)},
+		{WithECPublicKeyFromFile("test/nothingecdsa"), "", errors.NotValid, nil},
+		{WithECPublicKeyFromFile("test/ec512-public.pem"), ES, errors.NoKind, new(ecdsa.PublicKey)},
 
-		{WithECPrivateKeyFromPEM(badKey), "", errors.IsNotSupported, nil},
-		{WithECPrivateKey(new(ecdsa.PrivateKey)), ES, nil, new(ecdsa.PrivateKey)},
-		{WithECPrivateKeyFromFile("test/nothingecdsa"), "", errors.IsNotValid, nil},
-		{WithECPrivateKeyFromFile("test/ec512-private.pem"), ES, nil, new(ecdsa.PrivateKey)},
+		{WithECPrivateKeyFromPEM(badKey), "", errors.NotSupported, nil},
+		{WithECPrivateKey(new(ecdsa.PrivateKey)), ES, errors.NoKind, new(ecdsa.PrivateKey)},
+		{WithECPrivateKeyFromFile("test/nothingecdsa"), "", errors.NotValid, nil},
+		{WithECPrivateKeyFromFile("test/ec512-private.pem"), ES, errors.NoKind, new(ecdsa.PrivateKey)},
 	}
 	for i, test := range tests {
 
-		if test.wantErrBhf != nil {
-			assert.True(t, test.wantErrBhf(test.key.Error), "Index %d => %+v\n", i, test.key.Error)
+		if !test.wantErrBhf.Empty() {
+			assert.True(t, test.wantErrBhf.Match(test.key.Error), "Index %d => %+v\n", i, test.key.Error)
 		} else {
 			assert.NoError(t, test.key.Error, "Index %d", i)
 		}

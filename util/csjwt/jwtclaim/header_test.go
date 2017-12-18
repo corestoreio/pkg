@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/csjwt"
 	"github.com/corestoreio/pkg/util/csjwt/jwtclaim"
-	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -55,34 +55,34 @@ func TestHeadSegmentsAlgTyp(t *testing.T) {
 
 func TestHeadSegmentsGetSet(t *testing.T) {
 	tests := []struct {
-		sc            csjwt.Header
-		key           string
-		val           string
-		wantSetErrBhf errors.BehaviourFunc
-		wantGetErrBhf errors.BehaviourFunc
+		sc             csjwt.Header
+		key            string
+		val            string
+		wantSetErrKind errors.Kind
+		wantGetErrKind errors.Kind
 	}{
-		{&jwtclaim.HeadSegments{}, jwtclaim.HeaderAlg, "", nil, nil},
-		{&jwtclaim.HeadSegments{}, jwtclaim.HeaderTyp, "Go", nil, nil},
-		{&jwtclaim.HeadSegments{}, "ext", "Test", errors.IsNotSupported, errors.IsNotSupported},
+		{&jwtclaim.HeadSegments{}, jwtclaim.HeaderAlg, "", errors.NoKind, errors.NoKind},
+		{&jwtclaim.HeadSegments{}, jwtclaim.HeaderTyp, "Go", errors.NoKind, errors.NoKind},
+		{&jwtclaim.HeadSegments{}, "ext", "Test", errors.NotSupported, errors.NotSupported},
 	}
 	for i, test := range tests {
 
 		haveSetErr := test.sc.Set(test.key, test.val)
-		if test.wantSetErrBhf != nil {
-			assert.True(t, test.wantSetErrBhf(haveSetErr), "Index %d => %s", i, haveSetErr)
+		if !test.wantSetErrKind.Empty() {
+			assert.True(t, test.wantSetErrKind.Match(haveSetErr), "Index %d => %s", i, haveSetErr)
 		} else {
 			assert.NoError(t, haveSetErr, "Index %d", i)
 		}
 
 		haveVal, haveGetErr := test.sc.Get(test.key)
-		if test.wantGetErrBhf != nil {
-			assert.True(t, test.wantGetErrBhf(haveGetErr), "Index %d => %s", i, haveGetErr)
+		if !test.wantGetErrKind.Empty() {
+			assert.True(t, test.wantGetErrKind.Match(haveGetErr), "Index %d => %s", i, haveGetErr)
 			continue
 		} else {
 			assert.NoError(t, haveGetErr, "Index %d", i)
 		}
 
-		if test.wantSetErrBhf == nil {
+		if test.wantSetErrKind.Empty() {
 			assert.Exactly(t, test.val, haveVal, "Index %d", i)
 		}
 	}

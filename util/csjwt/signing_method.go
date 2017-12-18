@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -88,7 +88,7 @@ func SigningMethodFactory(alg string) (s Signer, err error) {
 
 	}
 	if s == nil {
-		err = errors.NewNotSupportedf("[csjwt] Unknown signing algorithm %q", alg)
+		err = errors.NotSupported.Newf("[csjwt] Unknown signing algorithm %q", alg)
 	}
 	return s, err
 }
