@@ -17,8 +17,8 @@ package slices_test
 import (
 	"testing"
 
-	"github.com/corestoreio/pkg/util/slices"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/slices"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -79,11 +79,11 @@ func BenchmarkStringSliceReduceContains(b *testing.B) {
 func TestStringSliceUpdate(t *testing.T) {
 
 	tests := []struct {
-		haveSL slices.String
-		haveD  string
-		haveI  int
-		err    errors.BehaviourFunc
-		want   []string
+		haveSL  slices.String
+		haveD   string
+		haveI   int
+		errKind errors.Kind
+		want    []string
 	}{
 		{
 			haveSL: slices.String{
@@ -92,9 +92,9 @@ func TestStringSliceUpdate(t *testing.T) {
 				"IFNULL(`scope_table`.`default_value`, `main_table`.`default_value`) AS `default_value`",
 				"IFNULL(`scope_table`.`multiline_count`, `additional_table`.`multiline_count`) AS `multiline_count`",
 			},
-			haveD: "default_value",
-			haveI: 1,
-			err:   nil,
+			haveD:   "default_value",
+			haveI:   1,
+			errKind: errors.NoKind,
 			want: []string{
 				"IFNULL(`scope_table`.`is_visible`, `additional_table`.`is_visible`) AS `is_visible`",
 				"default_value",
@@ -109,9 +109,9 @@ func TestStringSliceUpdate(t *testing.T) {
 				"IFNULL(`scope_table`.`default_value`, `main_table`.`default_value`) AS `default_value`",
 				"IFNULL(`scope_table`.`multiline_count`, `additional_table`.`multiline_count`) AS `multiline_count`",
 			},
-			haveD: "default_value",
-			haveI: 6,
-			err:   errors.IsFatal,
+			haveD:   "default_value",
+			haveI:   6,
+			errKind: errors.OutofRange,
 			want: []string{
 				"IFNULL(`scope_table`.`is_visible`, `additional_table`.`is_visible`) AS `is_visible`",
 				"IFNULL(`scope_table`.`is_required`, `main_table`.`is_required`) AS `is_required`",
@@ -123,8 +123,8 @@ func TestStringSliceUpdate(t *testing.T) {
 
 	for i, test := range tests {
 		err := test.haveSL.Update(test.haveI, test.haveD)
-		if test.err != nil {
-			assert.True(t, test.err(err))
+		if !test.errKind.Empty() {
+			assert.True(t, test.errKind.Match(err))
 		}
 		assert.Equal(t, test.want, test.haveSL.ToString(), "Index %d", i)
 	}
@@ -156,11 +156,10 @@ func TestStringSliceDelete(t *testing.T) {
 	assert.Equal(t, []string{"Maybe", "should"}, l.ToString())
 	assert.NoError(t, l.Delete(1))
 	assert.Equal(t, []string{"Maybe"}, l.ToString())
-	assert.True(t, errors.IsFatal(l.Delete(1)))
+	assert.True(t, errors.OutofRange.Match(l.Delete(1)))
 }
 
 func TestStringSliceReduce(t *testing.T) {
-
 	l := slices.String{"Maybe", "GoLang", "should"}
 	assert.EqualValues(t, []string{"GoLang"}, l.Reduce(func(s string) bool {
 		return s == "GoLang"

@@ -17,8 +17,8 @@ package slices_test
 import (
 	"testing"
 
-	"github.com/corestoreio/pkg/util/slices"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/slices"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -41,7 +41,7 @@ func TestInt64Update(t *testing.T) {
 	is := slices.Int64{-29, 30, -1}
 	assert.NoError(t, is.Update(1, 31))
 	assert.EqualValues(t, 31, is[1])
-	assert.True(t, errors.IsFatal(is.Update(100, 2)))
+	assert.True(t, errors.OutofRange.Match(is.Update(100, 2)))
 }
 
 func TestInt64Delete(t *testing.T) {
@@ -49,7 +49,7 @@ func TestInt64Delete(t *testing.T) {
 	is := slices.Int64{-29, 30, -1}
 	assert.NoError(t, is.Delete(1))
 	assert.EqualValues(t, []int64{-29, -1}, is.ToInt64())
-	assert.True(t, errors.IsFatal(is.Delete(100)))
+	assert.True(t, errors.OutofRange.Match(is.Delete(100)))
 }
 
 func TestInt64Index(t *testing.T) {

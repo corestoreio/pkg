@@ -20,8 +20,6 @@ import (
 	"github.com/corestoreio/errors"
 )
 
-var errOutOfRange = errors.NewFatalf("[slices] Index out of range")
-
 // Int64Slice contains Map/Filter/Reduce/Sort/Unique/etc method receivers for
 // []int64.
 // @todo think about the necessary gen functions
@@ -56,7 +54,7 @@ func (l *Int64) Append(s ...int64) Int64 {
 // error behaviour.
 func (l *Int64) Update(i int, s int64) error {
 	if i > l.Len() || i < 0 {
-		return errOutOfRange
+		return errors.OutofRange.Newf("[slices] Index %d is out of range", i)
 	}
 	(*l)[i] = s
 	return nil
@@ -65,7 +63,7 @@ func (l *Int64) Update(i int, s int64) error {
 // Delete removes index i from slice
 func (l *Int64) Delete(i int) error {
 	if i > l.Len()-1 || i < 0 {
-		return errOutOfRange
+		return errors.OutofRange.Newf("[slices] Index %d is out of range", i)
 	}
 	*l = append((*l)[:i], (*l)[i+1:]...)
 	return nil

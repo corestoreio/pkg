@@ -18,6 +18,8 @@ import (
 	"math/rand"
 	"sort"
 	"strings"
+
+	"github.com/corestoreio/errors"
 )
 
 // String contains Map/Filter/Reduce/Sort/Unique/etc method receivers for
@@ -49,7 +51,7 @@ func (l *String) Append(s ...string) String {
 // error behaviour.
 func (l *String) Update(i int, s string) error {
 	if i > l.Len() || i < 0 {
-		return errOutOfRange
+		return errors.OutofRange.Newf("[slices] Index %d is out of range", i)
 	}
 	(*l)[i] = s
 	return nil
@@ -58,7 +60,7 @@ func (l *String) Update(i int, s string) error {
 // Delete removes index i from slice
 func (l *String) Delete(i int) error {
 	if i > l.Len()-1 || i < 0 {
-		return errOutOfRange
+		return errors.OutofRange.Newf("[slices] Index %d is out of range", i)
 	}
 	*l = append((*l)[:i], (*l)[i+1:]...)
 	return nil
