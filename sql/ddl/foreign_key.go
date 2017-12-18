@@ -222,7 +222,6 @@ func LoadKeyColumnUsage(ctx context.Context, db dml.Querier, tables ...string) (
 		if err != nil {
 			return nil, errors.Wrapf(err, "[ddl] LoadKeyColumnUsage dml.ExpandPlaceHolders for tables %v", tables)
 		}
-		println("sqlStr", sqlStr)
 		rows, err = db.QueryContext(ctx, sqlStr)
 		if err != nil {
 			return nil, errors.Wrapf(err, "[ddl] LoadKeyColumnUsage QueryContext for tables %v with WHERE clause", tables)
