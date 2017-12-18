@@ -21,8 +21,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -341,29 +341,29 @@ func TestTypeID_ValidParent(t *testing.T) {
 func TestTypeIDes_Lowest(t *testing.T) {
 	tests := []struct {
 		scope.TypeIDs
-		wantTypeID scope.TypeID
-		wantErrBhf errors.BehaviourFunc
+		wantTypeID  scope.TypeID
+		wantErrKind errors.Kind
 	}{
-		0:  {scope.TypeIDs{scope.Store.Pack(1)}, scope.Store.Pack(1), nil},
-		1:  {scope.TypeIDs{scope.Store.Pack(1), scope.Store.Pack(2)}, 0, errors.IsNotValid},
-		2:  {scope.TypeIDs{scope.Website.Pack(1), scope.Store.Pack(2)}, scope.Store.Pack(2), nil},
-		3:  {scope.TypeIDs{scope.Website.Pack(1), scope.Store.Pack(2), scope.Store.Pack(2)}, scope.Store.Pack(2), nil},
-		4:  {scope.TypeIDs{scope.Website.Pack(667), scope.Store.Pack(889), scope.Website.Pack(667), scope.Store.Pack(889)}, scope.Store.Pack(889), nil},
-		5:  {scope.TypeIDs{scope.Store.Pack(2), scope.Website.Pack(345), scope.Website.Pack(346), scope.Store.Pack(2)}, scope.Store.Pack(2), nil},
-		6:  {scope.TypeIDs{scope.Store.Pack(333), scope.Website.Pack(345), scope.Website.Pack(345), scope.Store.Pack(333)}, scope.Store.Pack(333), nil},
-		7:  {scope.TypeIDs{scope.Store.Pack(3), scope.DefaultTypeID, scope.Store.Pack(3)}, scope.Store.Pack(3), nil},
-		8:  {scope.TypeIDs{scope.Website.Pack(3), scope.DefaultTypeID, scope.Website.Pack(3)}, scope.Website.Pack(3), nil},
-		9:  {scope.TypeIDs{scope.DefaultTypeID}, scope.DefaultTypeID, nil},
-		10: {scope.TypeIDs{0, 1, 2}, scope.DefaultTypeID, nil},
-		11: {nil, scope.DefaultTypeID, nil},
-		12: {scope.TypeIDs{scope.MakeTypeID(55, 1), scope.MakeTypeID(55, 2), scope.MakeTypeID(56, 3)}, 0, errors.IsNotValid},
-		13: {scope.TypeIDs{scope.MakeTypeID(55, 1), scope.MakeTypeID(55, 2), scope.MakeTypeID(55, 0)}, 0, errors.IsNotValid},
+		0:  {scope.TypeIDs{scope.Store.Pack(1)}, scope.Store.Pack(1), errors.NoKind},
+		1:  {scope.TypeIDs{scope.Store.Pack(1), scope.Store.Pack(2)}, 0, errors.NotValid},
+		2:  {scope.TypeIDs{scope.Website.Pack(1), scope.Store.Pack(2)}, scope.Store.Pack(2), errors.NoKind},
+		3:  {scope.TypeIDs{scope.Website.Pack(1), scope.Store.Pack(2), scope.Store.Pack(2)}, scope.Store.Pack(2), errors.NoKind},
+		4:  {scope.TypeIDs{scope.Website.Pack(667), scope.Store.Pack(889), scope.Website.Pack(667), scope.Store.Pack(889)}, scope.Store.Pack(889), errors.NoKind},
+		5:  {scope.TypeIDs{scope.Store.Pack(2), scope.Website.Pack(345), scope.Website.Pack(346), scope.Store.Pack(2)}, scope.Store.Pack(2), errors.NoKind},
+		6:  {scope.TypeIDs{scope.Store.Pack(333), scope.Website.Pack(345), scope.Website.Pack(345), scope.Store.Pack(333)}, scope.Store.Pack(333), errors.NoKind},
+		7:  {scope.TypeIDs{scope.Store.Pack(3), scope.DefaultTypeID, scope.Store.Pack(3)}, scope.Store.Pack(3), errors.NoKind},
+		8:  {scope.TypeIDs{scope.Website.Pack(3), scope.DefaultTypeID, scope.Website.Pack(3)}, scope.Website.Pack(3), errors.NoKind},
+		9:  {scope.TypeIDs{scope.DefaultTypeID}, scope.DefaultTypeID, errors.NoKind},
+		10: {scope.TypeIDs{0, 1, 2}, scope.DefaultTypeID, errors.NoKind},
+		11: {nil, scope.DefaultTypeID, errors.NoKind},
+		12: {scope.TypeIDs{scope.MakeTypeID(55, 1), scope.MakeTypeID(55, 2), scope.MakeTypeID(56, 3)}, 0, errors.NotValid},
+		13: {scope.TypeIDs{scope.MakeTypeID(55, 1), scope.MakeTypeID(55, 2), scope.MakeTypeID(55, 0)}, 0, errors.NotValid},
 	}
 	for i, test := range tests {
 		haveTypeID, haveErr := test.TypeIDs.Lowest()
 		assert.Exactly(t, test.wantTypeID, haveTypeID, "Index %d", i)
-		if test.wantErrBhf != nil {
-			assert.True(t, test.wantErrBhf(haveErr), "(IDX %d) %+v", i, haveErr)
+		if !test.wantErrKind.Empty() {
+			assert.True(t, test.wantErrKind.Match(haveErr), "(IDX %d) %+v", i, haveErr)
 			continue
 		}
 		assert.NoError(t, haveErr, "(IDX %d) %+v", i, haveErr)

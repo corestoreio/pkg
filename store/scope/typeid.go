@@ -19,8 +19,8 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/corestoreio/pkg/util/bufferpool"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
 // MaxID maximum allowed ID which can be packed into a TypeID. The ID relates to
@@ -264,21 +264,21 @@ func (t TypeIDs) Lowest() (TypeID, error) {
 	switch pick.Type() {
 	case Website:
 		if float64(pick.ID()) != wIDs/wC {
-			return 0, errors.NewNotValidf("[scope] Invalid TypeID: %s in slice.", pick)
+			return 0, errors.NotValid.Newf("[scope] Invalid TypeID: %s in slice.", pick)
 		}
 	case Group:
 		if float64(pick.ID()) != gIDs/gC {
-			return 0, errors.NewNotValidf("[scope] Invalid TypeID: %s in slice.", pick)
+			return 0, errors.NotValid.Newf("[scope] Invalid TypeID: %s in slice.", pick)
 		}
 	case Store:
 		if float64(pick.ID()) != sIDs/sC {
-			return 0, errors.NewNotValidf("[scope] Invalid TypeID: %s in slice.", pick)
+			return 0, errors.NotValid.Newf("[scope] Invalid TypeID: %s in slice.", pick)
 		}
 	case Default, Absent:
 		// do nothing
 	default:
 		// todo implement scope independent solution ...
-		return 0, errors.NewNotValidf("[scope] Invalid TypeID: %s in slice.", pick)
+		return 0, errors.NotValid.Newf("[scope] Invalid TypeID: %s in slice.", pick)
 
 	}
 
