@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ func TestMustFromRegister(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
 			if err, ok := r.(error); ok {
-				assert.True(t, errors.IsNotFound(err), "%+v", err)
+				assert.True(t, errors.NotFound.Match(err), "%+v", err)
 			} else {
 				t.Errorf("Expecting an error but got %#v", r)
 			}
@@ -76,7 +76,7 @@ func TestMustFromRegister(t *testing.T) {
 func TestRegisterDeregister(t *testing.T) {
 	assert.NoError(t, Register("sha256", crypto.SHA256.New))
 
-	assert.True(t, errors.IsAlreadyExists(Register("sha256", nil)))
+	assert.True(t, errors.AlreadyExists.Match(Register("sha256", nil)))
 
 	h, err := FromRegistry("sha256")
 	assert.NoError(t, err)
@@ -84,13 +84,13 @@ func TestRegisterDeregister(t *testing.T) {
 
 	Deregister("sha256")
 	h, err = FromRegistry("sha256")
-	assert.True(t, errors.IsNotFound(err), "%+v", err)
+	assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	assert.Exactly(t, Tank{}, h)
 }
 
 func TestFromRegistryHMAC_Error(t *testing.T) {
 	s512t, err := FromRegistryHMAC("sha512", []byte(`pw123456`))
-	assert.True(t, errors.IsNotFound(err), "%+v", err)
+	assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	assert.Exactly(t, Tank{}, s512t)
 }
 
@@ -110,11 +110,11 @@ func TestFromRegistryHMAC(t *testing.T) {
 
 	Deregister("sha512")
 	s512t, err = FromRegistryHMAC("sha512", []byte(`pw123456`))
-	assert.True(t, errors.IsNotFound(err), "%+v", err)
+	assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	assert.Exactly(t, Tank{}, s512t)
 
 	s512t2, err2 = FromRegistryHMAC("sha512", []byte(`pwABCDEFGH`))
-	assert.True(t, errors.IsNotFound(err2), "%+v", err2)
+	assert.True(t, errors.NotFound.Match(err2), "%+v", err2)
 	assert.Exactly(t, Tank{}, s512t2)
 	assert.Len(t, db.ht, 0)
 }

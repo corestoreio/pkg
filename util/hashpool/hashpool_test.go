@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/corestoreio/pkg/util/hashpool"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/hashpool"
 	"github.com/dchest/siphash"
 	"github.com/pierrec/xxHash/xxHash64"
 	"github.com/stretchr/testify/assert"
@@ -76,7 +76,7 @@ func TestTank_EqualReader_Error(t *testing.T) {
 	mac, err := hex.DecodeString(dataSHA256)
 	assert.NoError(t, err)
 	isEqual, err := hp.EqualReader(readerError{}, mac)
-	assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+	assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	assert.False(t, isEqual)
 }
 
@@ -128,7 +128,7 @@ func BenchmarkTank_EqualPairs_SHA256_4args(b *testing.B) {
 type readerError struct{}
 
 func (readerError) Read(p []byte) (int, error) {
-	return 0, errors.NewAlreadyClosedf("Reader already closed")
+	return 0, errors.AlreadyClosed.Newf("Reader already closed")
 }
 
 func TestTank_SumHex(t *testing.T) {

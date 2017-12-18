@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import (
 	"io"
 	"sync"
 
-	"github.com/corestoreio/pkg/util/bufferpool"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
 // Hash64Mock allows to use a hash.Hash as an argument to the Hash64 Tank.

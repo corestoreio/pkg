@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -94,7 +94,7 @@ func Register(name string, hh func() hash.Hash) error {
 	db.Lock()
 	defer db.Unlock()
 	if _, ok := db.ht[index]; ok {
-		return errors.NewAlreadyExistsf("[hashpool] %q has already been registered", name)
+		return errors.AlreadyExists.Newf("[hashpool] %q has already been registered", name)
 	}
 	db.ht[index] = makeHtVal(index, hh)
 	return nil
@@ -122,7 +122,7 @@ func FromRegistry(name string) (Tank, error) {
 	defer db.RUnlock()
 	ht, ok := db.ht[hash64(0).writeStr(name)]
 	if !ok {
-		return Tank{}, errors.NewNotFoundf("[hashpool] Unknown Hash %q. Not yet registered?", name)
+		return Tank{}, errors.NotFound.Newf("[hashpool] Unknown Hash %q. Not yet registered?", name)
 	}
 	return ht.Tank, nil
 }
@@ -145,7 +145,7 @@ func FromRegistryHMAC(name string, key []byte) (Tank, error) {
 
 	hashTnk, ok := db.ht[nameIndex]
 	if !ok {
-		return Tank{}, errors.NewNotFoundf("[hashpool] Unknown Hash %q. Not yet registered?", name)
+		return Tank{}, errors.NotFound.Newf("[hashpool] Unknown Hash %q. Not yet registered?", name)
 	}
 
 	index := nameIndex.writeBytes(key)
