@@ -60,11 +60,11 @@ func (cc {{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
 			case "{{.Field}}"{{range .Aliases}},"{{.}}"{{end}}:
 				cm.Args = cm.Args.{{GoFunc .}}s(cc.{{ToGoCamelCase .Field}}s()...){{end}}
 			default:
-				return errors.NewNotFoundf("[{{.Package}}] {{.Collection}} Column %q not found", c)
+				return errors.NotFound.Newf("[{{.Package}}] {{.Collection}} Column %q not found", c)
 			}
 		}
 	default:
-		return errors.NewNotSupportedf("[dml] Unknown Mode: %q", string(m))
+		return errors.NotSupported.Newf("[dml] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }

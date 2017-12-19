@@ -117,7 +117,7 @@ func (to *TableOption) applyEncoders(ts *Tables, t *table) {
 			ts.writeProto = true
 			t.Protobuf = true // for now leave it in. maybe later PB gets added to the struct tags.
 		default:
-			to.lastErr = errors.NewNotSupportedf("[dmlgen] WithTableOption: Table %q Encoder %q not supported", t.TableName, enc)
+			to.lastErr = errors.NotSupported.Newf("[dmlgen] WithTableOption: Table %q Encoder %q not supported", t.TableName, enc)
 		}
 	}
 }
@@ -169,7 +169,7 @@ func (to *TableOption) applyStructTags(t *table) {
 				//customType := ",customtype=github.com/gogo/protobuf/test.TODO"
 				//fmt.Fprintf(&buf, `protobuf:"%s,%d,opt,name=%s%s"`, pbType, c.Pos, c.Field, customType)
 			default:
-				to.lastErr = errors.NewNotSupportedf("[dmlgen] WithTableOption: Table %q Tag %q not supported", t.TableName, tagName)
+				to.lastErr = errors.NotSupported.Newf("[dmlgen] WithTableOption: Table %q Tag %q not supported", t.TableName, tagName)
 			}
 		}
 		c.StructTag = buf.String()
@@ -186,7 +186,7 @@ func (to *TableOption) applyCustomStructTags(t *table) {
 			}
 		}
 		if !found {
-			to.lastErr = errors.NewNotFoundf("[dmlgen] WithTableOption:CustomStructTags: For table %q the Column %q cannot be found.",
+			to.lastErr = errors.NotFound.Newf("[dmlgen] WithTableOption:CustomStructTags: For table %q the Column %q cannot be found.",
 				t.TableName, to.CustomStructTags[i])
 		}
 	}
@@ -223,7 +223,7 @@ func (to *TableOption) applyColumnAliases(t *table) {
 			}
 		}
 		if !found {
-			to.lastErr = errors.NewNotFoundf("[dmlgen] WithTableOption:ColumnAliases: For table %q the Column %q cannot be found.",
+			to.lastErr = errors.NotFound.Newf("[dmlgen] WithTableOption:ColumnAliases: For table %q the Column %q cannot be found.",
 				t.TableName, colName)
 			return
 		}
@@ -241,7 +241,7 @@ func (to *TableOption) applyUniquifiedColumns(t *table) {
 			}
 		}
 		if !found {
-			to.lastErr = errors.NewNotFoundf("[dmlgen] WithTableOption:UniquifiedColumns: For table %q the Column %q cannot be found.",
+			to.lastErr = errors.NotFound.Newf("[dmlgen] WithTableOption:UniquifiedColumns: For table %q the Column %q cannot be found.",
 				to.CustomStructTags, cn)
 		}
 	}
@@ -252,13 +252,13 @@ func (to *TableOption) applyUniquifiedColumns(t *table) {
 func WithTableOption(tableName string, opt *TableOption) (o Option) {
 	// Panic as early as possible.
 	if len(opt.CustomStructTags)%2 == 1 {
-		panic(errors.NewFatalf("[dmlgen] WithTableOption: Table %q option CustomStructTags must be a balanced slice.", tableName))
+		panic(errors.Fatal.Newf("[dmlgen] WithTableOption: Table %q option CustomStructTags must be a balanced slice.", tableName))
 	}
 	o.sortOrder = 150
 	o.fn = func(ts *Tables) (err error) {
 		t, ok := ts.Tables[tableName]
 		if t == nil || !ok {
-			return errors.NewNotFoundf("[dmlgen] WithTableOption: Table %q not found.", tableName)
+			return errors.NotFound.Newf("[dmlgen] WithTableOption: Table %q not found.", tableName)
 		}
 		opt.applyEncoders(ts, t)
 		opt.applyStructTags(t)
@@ -443,17 +443,19 @@ func (ts *Tables) findUsedPackages(file []byte) ([]string, error) {
 func (ts *Tables) WriteProto(w io.Writer) error {
 	buf := new(bytes.Buffer)
 	if !ts.writeProto {
-		return errors.NewNotAcceptablef("[dmlgen] Protocol buffer generation not enabled.")
+		return errors.NotAcceptable.Newf("[dmlgen] Protocol buffer generation not enabled.")
 	}
 
 	if !ts.DisableFileHeader {
-		ts.tpls.Funcs(ts.FuncMap).ExecuteTemplate(buf, "code_proto_header.go.tpl", ts)
+		if err := ts.tpls.Funcs(ts.FuncMap).ExecuteTemplate(buf, "code_proto_header.go.tpl", ts); err != nil {
+			return errors.WriteFailed.New(err, "[dmlgen] For file header")
+		}
 	}
 
-	for _, tblname := range ts.sortedTableNames() {
-		t := ts.Tables[tblname] // must panic if table name not found
+	for _, tblName := range ts.sortedTableNames() {
+		t := ts.Tables[tblName] // must panic if table name not found
 		if err := t.writeTo(buf, ts.tpls.Lookup("code_proto.go.tpl").Funcs(ts.FuncMap)); err != nil {
-			return errors.NewWriteFailed(err, "[dmlgen] For Table %q", t.TableName)
+			return errors.WriteFailed.New(err, "[dmlgen] For Table %q", t.TableName)
 		}
 	}
 	_, err := buf.WriteTo(w)
@@ -465,7 +467,7 @@ func (ts *Tables) execTpl(w io.Writer, t *table, tplName string) {
 		return
 	}
 	if err := t.writeTo(w, ts.tpls.Lookup(tplName)); err != nil {
-		ts.lastError = errors.NewWriteFailed(err, "[dmlgen] With template %q for Table %q", tplName, t.TableName)
+		ts.lastError = errors.WriteFailed.New(err, "[dmlgen] With template %q for Table %q", tplName, t.TableName)
 	}
 }
 
@@ -490,7 +492,7 @@ func (ts *Tables) WriteGo(w io.Writer) error {
 			TableNames: sortedTableNames,
 		}
 		if err := ts.tpls.ExecuteTemplate(buf, "code_tables.go.tpl", data); err != nil {
-			return errors.NewWriteFailed(err, "[dmlgen] For Tables %v", tables)
+			return errors.WriteFailed.New(err, "[dmlgen] For Tables %v", tables)
 		}
 	}
 
@@ -597,7 +599,7 @@ func GenerateProto(path string) error {
 	for scanner.Scan() {
 		text := scanner.Text()
 		if !strings.Contains(text, "WARNING") {
-			return errors.NewWriteFailedf("[dmlgen] protoc Error: %s", text)
+			return errors.WriteFailed.Newf("[dmlgen] protoc Error: %s", text)
 		}
 	}
 	return nil

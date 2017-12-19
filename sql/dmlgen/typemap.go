@@ -25,20 +25,6 @@ import (
 	"github.com/corestoreio/pkg/util/strs"
 )
 
-const goTypeOptions = 8
-
-// These constants are used as slice indexes. The constance must start with zero.
-const (
-	idxMysqlUnsignedNull = iota
-	idxMysqlUnsignedNotNull
-	idxMysqlSignedNull
-	idxMysqlSignedNotNull
-	idxProtobufUnsignedNull
-	idxProtobufUnsignedNotNull
-	idxProtobufSignedNull
-	idxProtobufSignedNotNull
-)
-
 // TypeDef used in variable `MysqlTypeToGo` to map a MySQL/MariaDB type to its
 // appropriate Go or Protocol Buffer type. Those types are getting printed in
 // the generated files.
@@ -192,7 +178,7 @@ func findType(c *ddl.Column) *TypeDef {
 
 	goType, ok := MysqlTypeToGo[c.DataType]
 	if !ok {
-		panic(errors.NewNotFoundf("[dmlgen] MySQL type %q not found", c.DataType))
+		panic(errors.NotFound.Newf("[dmlgen] MySQL type %q not found", c.DataType))
 	}
 
 	// The switch block overwrites the already retrieved goType by checking for

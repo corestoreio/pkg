@@ -24,7 +24,7 @@ import (
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmlgen"
-	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -59,7 +59,7 @@ ORDER BY COLUMN_TYPE
 func writeFile(t *testing.T, outFile string, w func(io.Writer) error) {
 	f, err := os.Create(outFile)
 	require.NoError(t, err)
-	defer cstesting.Close(t, f)
+	defer dmltest.Close(t, f)
 	require.NoError(t, w(f))
 }
 
@@ -70,14 +70,14 @@ func writeFile(t *testing.T, outFile string, w func(io.Writer) error) {
 func TestNewTables(t *testing.T) {
 	t.Parallel()
 
-	db, mock := cstesting.MockDB(t)
-	defer cstesting.MockClose(t, db, mock)
+	db, mock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, db, mock)
 
-	mock.ExpectQuery("SELECT.+information_schema.COLUMNS.+").WillReturnRows(cstesting.MustMockRows(
-		cstesting.WithFile("testdata/INFORMATION_SCHEMA.COLUMNS.csv"),
+	mock.ExpectQuery("SELECT.+information_schema.COLUMNS.+").WillReturnRows(dmltest.MustMockRows(
+		dmltest.WithFile("testdata/INFORMATION_SCHEMA.COLUMNS.csv"),
 	))
-	mock.ExpectQuery("SELECT.+information_schema.KEY_COLUMN_USAGE.+").WillReturnRows(cstesting.MustMockRows(
-		cstesting.WithFile("testdata/INFORMATION_SCHEMA.KEY_COLUMN_USAGE.csv"),
+	mock.ExpectQuery("SELECT.+information_schema.KEY_COLUMN_USAGE.+").WillReturnRows(dmltest.MustMockRows(
+		dmltest.WithFile("testdata/INFORMATION_SCHEMA.KEY_COLUMN_USAGE.csv"),
 	))
 
 	ctx := context.Background()
@@ -130,8 +130,8 @@ func TestInfoSchemaForeignKeys(t *testing.T) {
 
 	t.Skip("One time test. Use when needed to regenerate the code")
 
-	db := cstesting.MustConnectDB(t)
-	defer cstesting.Close(t, db)
+	db := dmltest.MustConnectDB(t)
+	defer dmltest.Close(t, db)
 
 	ts, err := dmlgen.NewTables("testdata",
 		dmlgen.WithTableOption("KEY_COLUMN_USAGE", &dmlgen.TableOption{
@@ -151,7 +151,7 @@ func TestWithCustomStructTags(t *testing.T) {
 		defer func() {
 			if r := recover(); r != nil {
 				if err, ok := r.(error); ok {
-					assert.True(t, errors.IsFatal(err), "%s", err)
+					assert.True(t, errors.Fatal.Match(err), "%s", err)
 				} else {
 					t.Errorf("Panic should contain an error but got:\n%+v", r)
 				}
@@ -175,7 +175,7 @@ func TestWithCustomStructTags(t *testing.T) {
 			}),
 		)
 		require.Nil(t, tbls)
-		assert.True(t, errors.IsNotFound(err), "%+v", err)
+		assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	})
 
 	t.Run("column not found", func(t *testing.T) {
@@ -188,7 +188,7 @@ func TestWithCustomStructTags(t *testing.T) {
 			}),
 		)
 		require.Nil(t, tbls)
-		assert.True(t, errors.IsNotFound(err), "%+v", err)
+		assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	})
 }
 
@@ -202,7 +202,7 @@ func TestWithStructTags(t *testing.T) {
 			}),
 		)
 		require.Nil(t, tbls)
-		assert.True(t, errors.IsNotFound(err), "%+v", err)
+		assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	})
 
 	t.Run("struct tag not supported", func(t *testing.T) {
@@ -215,7 +215,7 @@ func TestWithStructTags(t *testing.T) {
 			}),
 		)
 		require.Nil(t, tbls)
-		assert.True(t, errors.IsNotSupported(err), "%+v", err)
+		assert.True(t, errors.NotSupported.Match(err), "%+v", err)
 	})
 
 	t.Run("al available struct tags", func(t *testing.T) {
@@ -243,7 +243,7 @@ func TestWithColumnAliases(t *testing.T) {
 			}),
 		)
 		require.Nil(t, tbls)
-		assert.True(t, errors.IsNotFound(err), "%+v", err)
+		assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	})
 
 	t.Run("column not found", func(t *testing.T) {
@@ -256,7 +256,7 @@ func TestWithColumnAliases(t *testing.T) {
 			}),
 		)
 		require.Nil(t, tbls)
-		assert.True(t, errors.IsNotFound(err), "%+v", err)
+		assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	})
 }
 
@@ -274,6 +274,6 @@ func TestWithUniquifiedColumns(t *testing.T) {
 			}),
 		)
 		require.Nil(t, tbls)
-		assert.True(t, errors.IsNotFound(err), "%+v", err)
+		assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	})
 }

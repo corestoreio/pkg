@@ -147,7 +147,7 @@ func (e *CoreConfigData) MapColumns(cm *dml.ColumnMap) error {
 		case "value":
 			cm.NullString(&e.Value)
 		default:
-			return errors.NewNotFoundf("[testdata] CoreConfigData Column %q not found", c)
+			return errors.NotFound.Newf("[testdata] CoreConfigData Column %q not found", c)
 		}
 	}
 	return errors.WithStack(cm.Err())
@@ -211,11 +211,11 @@ func (cc CoreConfigDataCollection) MapColumns(cm *dml.ColumnMap) error {
 			case "path", "storage_location", "config_directory":
 				cm.Args = cm.Args.Strings(cc.Paths()...)
 			default:
-				return errors.NewNotFoundf("[testdata] CoreConfigDataCollection Column %q not found", c)
+				return errors.NotFound.Newf("[testdata] CoreConfigDataCollection Column %q not found", c)
 			}
 		}
 	default:
-		return errors.NewNotSupportedf("[dml] Unknown Mode: %q", string(m))
+		return errors.NotSupported.Newf("[dml] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }
@@ -443,7 +443,7 @@ func (e *CustomerEntity) MapColumns(cm *dml.ColumnMap) error {
 		case "lock_expires":
 			cm.NullTime(&e.LockExpires)
 		default:
-			return errors.NewNotFoundf("[testdata] CustomerEntity Column %q not found", c)
+			return errors.NotFound.Newf("[testdata] CustomerEntity Column %q not found", c)
 		}
 	}
 	return errors.WithStack(cm.Err())
@@ -505,11 +505,11 @@ func (cc CustomerEntityCollection) MapColumns(cm *dml.ColumnMap) error {
 			case "entity_id", "customer_id", "parent_id":
 				cm.Args = cm.Args.Uint64s(cc.EntityIDs()...)
 			default:
-				return errors.NewNotFoundf("[testdata] CustomerEntityCollection Column %q not found", c)
+				return errors.NotFound.Newf("[testdata] CustomerEntityCollection Column %q not found", c)
 			}
 		}
 	default:
-		return errors.NewNotSupportedf("[dml] Unknown Mode: %q", string(m))
+		return errors.NotSupported.Newf("[dml] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }
@@ -773,7 +773,7 @@ func (e *DmlgenTypes) MapColumns(cm *dml.ColumnMap) error {
 		case "col_char_2":
 			cm.String(&e.ColChar2)
 		default:
-			return errors.NewNotFoundf("[testdata] DmlgenTypes Column %q not found", c)
+			return errors.NotFound.Newf("[testdata] DmlgenTypes Column %q not found", c)
 		}
 	}
 	return errors.WithStack(cm.Err())
@@ -849,11 +849,11 @@ func (cc DmlgenTypesCollection) MapColumns(cm *dml.ColumnMap) error {
 			case "has_smallint_5":
 				cm.Args = cm.Args.Bools(cc.HasSmallint5s()...)
 			default:
-				return errors.NewNotFoundf("[testdata] DmlgenTypesCollection Column %q not found", c)
+				return errors.NotFound.Newf("[testdata] DmlgenTypesCollection Column %q not found", c)
 			}
 		}
 	default:
-		return errors.NewNotSupportedf("[dml] Unknown Mode: %q", string(m))
+		return errors.NotSupported.Newf("[dml] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }

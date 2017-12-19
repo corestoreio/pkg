@@ -28,7 +28,7 @@ func (e *{{.Entity}}) MapColumns(cm *dml.ColumnMap) error {
 			case "{{.Field}}"{{range .Aliases}},"{{.}}"{{end}}:
 				cm.{{GoFuncNull .}}(&e.{{ToGoCamelCase .Field}}){{end}}
 			default:
-				return errors.NewNotFoundf("[{{.Package}}] {{.Entity}} Column %q not found", c)
+				return errors.NotFound.Newf("[{{.Package}}] {{.Entity}} Column %q not found", c)
 		}
 	}
 	return errors.WithStack(cm.Err())
