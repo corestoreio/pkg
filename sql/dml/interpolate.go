@@ -251,7 +251,7 @@ func extractReplaceNamedArgs(sql string, qualifiedColumns []string) (string, []s
 		return sql, qualifiedColumns
 	}
 	foundColon := false
-	var buf bytes.Buffer
+	buf := bufferpool.Get()
 	var newSQL strings.Builder
 	quoteStart := false
 	for _, r := range sql {
@@ -282,6 +282,7 @@ func extractReplaceNamedArgs(sql string, qualifiedColumns []string) (string, []s
 			newSQL.WriteRune(r)
 		}
 	}
+	bufferpool.Put(buf)
 	return newSQL.String(), qualifiedColumns
 }
 

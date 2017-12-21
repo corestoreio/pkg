@@ -925,16 +925,16 @@ func (bb *BuilderBase) buildArgsAndSQL(qb queryBuilder) (string, []interface{}, 
 		}
 	}
 
-	if bb.IsInterpolate {
-		if len(args) == 0 && len(bb.argsRaw) > 0 {
-			return "", nil, errors.NotAllowed.Newf("[dml] Interpolation does only work with an Arguments slice, but you provided an interface slice: %#v", bb.argsRaw)
-		}
+	if lArgs := len(args); bb.IsInterpolate && lArgs > 0 {
 		buf := bufferpool.Get()
 		err = writeInterpolate(buf, rawSQL, args)
 		s := buf.String()
 		bufferpool.Put(buf)
 		return s, nil, errors.WithStack(err)
+	} else if bb.IsInterpolate && lArgs == 0 && len(bb.argsRaw) > 0 {
+		return "", nil, errors.NotAllowed.Newf("[dml] Interpolation does only work with an Arguments slice, but you provided an interface slice: %#v", bb.argsRaw)
 	}
+
 	if !bb.isWithInterfaces {
 		bb.argsRaw = bb.argsRaw[:0]
 	}
