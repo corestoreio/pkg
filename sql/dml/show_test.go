@@ -17,8 +17,8 @@ package dml
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/corestoreio/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestShow(t *testing.T) {

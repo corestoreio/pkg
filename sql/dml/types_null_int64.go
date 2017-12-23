@@ -15,11 +15,12 @@
 package dml
 
 import (
+	"bytes"
 	"database/sql"
 	"database/sql/driver"
 	"encoding/binary"
 	"strconv"
-	"bytes"
+
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/byteconv"
 )
