@@ -184,14 +184,15 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 
 	b.Run("SQL", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = dml.NewSelect("entity_id", "attribute_id", "value").
+			sel := dml.NewSelect("entity_id", "attribute_id", "value").
 				From("catalog_product_entity_varchar").
 				Where(dml.Column("entity_type_id").Int64(4)).
 				Where(dml.Column("entity_id").In().Int64s(entityIDs...)).
 				Where(dml.Column("attribute_id").In().Int64s(174, 175)).
-				Where(dml.Column("store_id").Int(0)).
-				ToSQL()
+				Where(dml.Column("store_id").Int(0))
+			sel.EstimatedCachedSQLSize = 10240
+			var err error
+			benchmarkSelectStr, benchmarkGlobalVals, err = sel.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -204,16 +205,16 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 	b.Run("interpolate", func(b *testing.B) {
 		args := dml.MakeArgs(3).Int64(4).Int64s(entityIDs...).Int64s(174, 175).Int(0)
 		for i := 0; i < b.N; i++ {
-			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = dml.NewSelect("entity_id", "attribute_id", "value").
+			sel := dml.NewSelect("entity_id", "attribute_id", "value").
 				From("catalog_product_entity_varchar").
 				Where(dml.Column("entity_type_id").PlaceHolder()).
 				Where(dml.Column("entity_id").In().PlaceHolder()).
 				Where(dml.Column("attribute_id").In().PlaceHolder()).
 				Where(dml.Column("store_id").PlaceHolder()).
-				Interpolate().
-				WithArguments(args).
-				ToSQL()
+				Interpolate()
+			sel.EstimatedCachedSQLSize = 8192
+			var err error
+			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithArguments(args).ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -230,16 +231,16 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 			Name("AttributeId").Int64s(174, 175).
 			Name("StoreId").Int(0)
 		for i := 0; i < b.N; i++ {
-			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = dml.NewSelect("entity_id", "attribute_id", "value").
+			sel := dml.NewSelect("entity_id", "attribute_id", "value").
 				From("catalog_product_entity_varchar").
 				Where(dml.Column("entity_type_id").NamedArg("EntityTypeId")).
 				Where(dml.Column("entity_id").In().NamedArg("EntityId")).
 				Where(dml.Column("attribute_id").In().NamedArg("AttributeId")).
 				Where(dml.Column("store_id").NamedArg("StoreId")).
-				Interpolate().
-				WithArguments(args).
-				ToSQL()
+				Interpolate()
+			sel.EstimatedCachedSQLSize = 8192
+			var err error
+			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithArguments(args).ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}

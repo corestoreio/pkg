@@ -200,11 +200,11 @@ func (b *Update) writeBuildCache(sql []byte) {
 	b.BuilderConditional = BuilderConditional{}
 	b.SetClausAliases = nil
 	b.SetClauses = nil
-	b.cacheSQL = sql
+	b.cachedSQL = sql
 }
 
 func (b *Update) readBuildCache() (sql []byte) {
-	return b.cacheSQL
+	return b.cachedSQL
 }
 
 // DisableBuildCache if enabled it does not cache the SQL string as a final
@@ -258,7 +258,7 @@ func (b *Update) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 }
 
 func (b *Update) validate() error {
-	if len(b.cacheSQL) > 1 { // already validated
+	if len(b.cachedSQL) > 1 { // already validated
 		return nil
 	}
 	if len(b.SetClauses) == 0 {

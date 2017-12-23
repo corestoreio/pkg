@@ -221,11 +221,11 @@ func (b *With) writeBuildCache(sql []byte) {
 	b.TopLevel.Union = nil
 	b.TopLevel.Update = nil
 	b.TopLevel.Delete = nil
-	b.cacheSQL = sql
+	b.cachedSQL = sql
 }
 
 func (b *With) readBuildCache() (sql []byte) {
-	return b.cacheSQL
+	return b.cachedSQL
 }
 
 // DisableBuildCache if enabled it does not cache the SQL string as a final

@@ -17,8 +17,8 @@ package dml
 import (
 	"testing"
 
-	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/errors"
 )
 
 func TestShow(t *testing.T) {
@@ -119,14 +119,14 @@ func TestShow(t *testing.T) {
 			"SHOW TABLE STATUS WHERE (`Name` REGEXP '.*catalog[_]+')",
 			"SHOW TABLE STATUS WHERE (`Name` REGEXP '.*catalog[_]+')",
 		)
-		assert.Empty(t, s.cacheSQL)
+		assert.Empty(t, s.cachedSQL)
 		s.WhereFragments[0].Str("sales$") // set Equal on purpose ... because cache already written
 		// twice to test the build cache
 		compareToSQL(t, s, errors.NoKind,
 			"SHOW TABLE STATUS WHERE (`Name` REGEXP 'sales$')",
 			"SHOW TABLE STATUS WHERE (`Name` REGEXP 'sales$')",
 		)
-		assert.Empty(t, s.cacheSQL)
+		assert.Empty(t, s.cachedSQL)
 	})
 
 }

@@ -355,11 +355,11 @@ func (b *Insert) ToSQL() (string, []interface{}, error) {
 
 func (b *Insert) writeBuildCache(sql []byte) {
 	// think about resetting ...
-	b.cacheSQL = sql
+	b.cachedSQL = sql
 }
 
 func (b *Insert) readBuildCache() (sql []byte) {
-	return b.cacheSQL
+	return b.cachedSQL
 }
 
 // DisableBuildCache if enabled it does not cache the SQL string as a final

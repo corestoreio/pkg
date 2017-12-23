@@ -463,7 +463,7 @@ func (b *Select) ToSQL() (string, []interface{}, error) {
 }
 
 func (b *Select) writeBuildCache(sql []byte) {
-	b.cacheSQL = sql
+	b.cachedSQL = sql
 	// The data can be discarded as the query has been cached as byte slice.
 	b.BuilderConditional = BuilderConditional{}
 	b.Columns = nil
@@ -472,7 +472,7 @@ func (b *Select) writeBuildCache(sql []byte) {
 }
 
 func (b *Select) readBuildCache() (sql []byte) {
-	return b.cacheSQL
+	return b.cachedSQL
 }
 
 // DisableBuildCache if enabled it does not cache the SQL string as a final

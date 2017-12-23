@@ -367,12 +367,12 @@ func TestUpdate_DisableBuildCache(t *testing.T) {
 				"",
 				int64(987654321),
 			)
-			assert.Empty(t, up.cacheSQL)
+			assert.Empty(t, up.cachedSQL)
 		}
 	})
 
 	t.Run("with interpolate", func(t *testing.T) {
-		up.cacheSQL = nil
+		up.cachedSQL = nil
 
 		const cachedSQLInterpolated = "UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = 987654321)"
 		for i := 0; i < 3; i++ {
@@ -381,7 +381,7 @@ func TestUpdate_DisableBuildCache(t *testing.T) {
 				cachedSQLInterpolated,
 				int64(987654321),
 			)
-			assert.Empty(t, up.cacheSQL)
+			assert.Empty(t, up.cachedSQL)
 		}
 	})
 }

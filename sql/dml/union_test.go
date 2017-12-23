@@ -144,20 +144,20 @@ func TestUnion_DisableBuildCache(t *testing.T) {
 				cachedSQLPlaceHolder,
 				"",
 			)
-			require.Empty(t, u.cacheSQL)
+			require.Empty(t, u.cachedSQL)
 		}
 	})
 
 	t.Run("with interpolate", func(t *testing.T) {
-		u.cacheSQL = nil
+		u.cachedSQL = nil
 
-		const cachedSQLInterpolated = "(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = 3.14159))\nORDER BY `_preserve_result_set`, `a`, `b` DESC, concat('c',b,'d')"
+		const cachedSQLInterpolated = "(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = 3.14159))\nORDER BY `_preserve_result_set`, `a`, `b` DESC, concat(\"c\",b,\"d\")"
 		for i := 0; i < 3; i++ {
 			compareToSQL(t, u, errors.NoKind,
 				cachedSQLPlaceHolder,
 				cachedSQLInterpolated,
 			)
-			require.Empty(t, u.cacheSQL)
+			require.Empty(t, u.cachedSQL)
 		}
 	})
 }
@@ -358,7 +358,7 @@ func TestUnionTemplate_DisableBuildCache(t *testing.T) {
 				cachedSQLPlaceHolder,
 				"",
 			)
-			assert.Empty(t, u.cacheSQL)
+			assert.Empty(t, u.cachedSQL)
 		}
 	})
 
@@ -370,7 +370,7 @@ func TestUnionTemplate_DisableBuildCache(t *testing.T) {
 				cachedSQLPlaceHolder,
 				cachedSQLInterpolated,
 			)
-			assert.Empty(t, u.cacheSQL)
+			assert.Empty(t, u.cachedSQL)
 		}
 	})
 }

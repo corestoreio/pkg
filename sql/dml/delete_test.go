@@ -233,18 +233,18 @@ func TestDelete_BuildCacheDisabled(t *testing.T) {
 			require.NoError(t, err, "%+v", err)
 			require.Equal(t, cachedSQLPlaceHolder, sql)
 			assert.Nil(t, args, "No arguments provided but got some")
-			assert.Nil(t, del.cacheSQL, "cache []byte should be nil")
+			assert.Nil(t, del.cachedSQL, "cache []byte should be nil")
 		}
 	})
 
 	t.Run("with interpolate", func(t *testing.T) {
 		del.Interpolate().WithArguments(MakeArgs(1).Int64(3333))
-		del.cacheSQL = nil
+		del.cachedSQL = nil
 
 		const cachedSQLInterpolated = "DELETE FROM `alpha` WHERE (`a` = 'b') AND (`b` = 3333) ORDER BY `id` LIMIT 1"
 		for i := 0; i < iterations; i++ {
 			sql, args, err := del.ToSQL()
-			assert.Nil(t, del.cacheSQL, "cache []byte should be nil")
+			assert.Nil(t, del.cachedSQL, "cache []byte should be nil")
 			require.NoError(t, err, "%+v", err)
 			require.Equal(t, cachedSQLInterpolated, sql)
 			assert.Nil(t, args)

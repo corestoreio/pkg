@@ -209,11 +209,11 @@ func (b *Show) ToSQL() (string, []interface{}, error) {
 }
 
 func (b *Show) writeBuildCache(sql []byte) {
-	b.cacheSQL = sql
+	b.cachedSQL = sql
 }
 
 func (b *Show) readBuildCache() (sql []byte) {
-	return b.cacheSQL
+	return b.cachedSQL
 }
 
 // DisableBuildCache if enabled it does not cache the SQL string as a final

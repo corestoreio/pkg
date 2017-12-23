@@ -822,13 +822,23 @@ func (bc builderCommon) convertRecordsToArguments() (Arguments, error) {
 	return cm.Args, nil
 }
 
+// estimatedCachedSQLSize 1024 bytes value got retrieved by analyzing and
+// reviewing some M2 SQL queries.
+const estimatedCachedSQLSize = 1024
+
 // BuilderBase contains fields which all SQL query builder have in common, the
 // same base. Exported for documentation reasons.
 type BuilderBase struct {
 	builderCommon
-	cacheSQL   []byte
-	RawFullSQL string
-	Table      id
+	// cachedSQL contains the final SQL string which gets send to the server.
+	cachedSQL []byte
+	// EstimatedCachedSQLSize specifies the estimated size in bytes of the final
+	// SQL string. This value gets used during SQL string building process to
+	// reduce the allocations and speed up the process. Default Value is xxxx
+	// Bytes.
+	EstimatedCachedSQLSize uint16
+	RawFullSQL             string
+	Table                  id
 	// PropagationStopped set to true if you would like to interrupt the
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
@@ -883,9 +893,15 @@ func (bb *BuilderBase) buildToSQL(qb queryBuilder) ([]byte, error) {
 	rawSQL := qb.readBuildCache()
 	if rawSQL == nil || bb.IsBuildCacheDisabled {
 		bb.qualifiedColumns = bb.qualifiedColumns[:0]
-		var buf bytes.Buffer
+		// Pre allocating that with a decent size, can speed up writing due to
+		// less re-slicing / buffer.Grow.
+		size := bb.EstimatedCachedSQLSize
+		if size == 0 {
+			size = estimatedCachedSQLSize
+		}
+		buf := bytes.NewBuffer(make([]byte, 0, size))
 		var err error
-		bb.qualifiedColumns, err = qb.toSQL(&buf, bb.qualifiedColumns)
+		bb.qualifiedColumns, err = qb.toSQL(buf, bb.qualifiedColumns)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}

@@ -277,11 +277,11 @@ func (u *Union) writeBuildCache(sql []byte) {
 	u.OrderBys = nil
 	u.oldNew = nil
 	u.repls = nil
-	u.cacheSQL = sql
+	u.cachedSQL = sql
 }
 
 func (u *Union) readBuildCache() (sql []byte) {
-	return u.cacheSQL
+	return u.cachedSQL
 }
 
 // DisableBuildCache if enabled it does not cache the SQL string as a final

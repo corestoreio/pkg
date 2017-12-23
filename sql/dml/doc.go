@@ -38,6 +38,7 @@
 //
 // Practical Guide to SQL Transaction Isolation: https://begriffs.com/posts/2017-08-01-practical-guide-sql-isolation.html
 //
+// NetSPI SQL Injection Wiki: https://sqlwiki.netspi.com/
 //
 // TODO(CyS) think about named locks:
 // https://news.ycombinator.com/item?id=14907679
