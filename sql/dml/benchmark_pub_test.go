@@ -27,7 +27,10 @@ import (
 	"github.com/corestoreio/pkg/sql/dml"
 )
 
-var benchmarkGlobalVals []interface{}
+var (
+	benchmarkGlobalVals []interface{}
+	benchmarkSelectStr  string
+)
 
 type benchMockQuerier struct{}
 
@@ -67,8 +70,6 @@ func BenchmarkSelect_Rows(b *testing.B) {
 	}
 }
 
-var benchmarkSelectStr string
-
 // BenchmarkSelectBasicSQL-4 	  500000	      2542 ns/op	    1512 B/op	      18 allocs/op
 // BenchmarkSelectBasicSQL-4     1000000	      2395 ns/op	    1664 B/op	      17 allocs/op <== arg value ?
 // BenchmarkSelectBasicSQL-4      500000	      3060 ns/op	    2089 B/op	      22 allocs/op <== Builder Structs
@@ -84,7 +85,8 @@ func BenchmarkSelectBasicSQL(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, args, err := dml.NewSelect("something_id", "user_id", "other").
+		var err error
+		benchmarkSelectStr, benchmarkGlobalVals, err = dml.NewSelect("something_id", "user_id", "other").
 			From("some_table").
 			Where(
 				dml.Expr("d = ? OR e = ?").Int64(1).Str("wat"),
@@ -96,7 +98,6 @@ func BenchmarkSelectBasicSQL(b *testing.B) {
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
-		benchmarkGlobalVals = args
 	}
 }
 
@@ -166,7 +167,8 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 	// BenchmarkSelectFullSQL/NewSelect-4         	  200000	      6268 ns/op	    5443 B/op	      37 allocs/op
 	b.Run("NewSelect", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, args, err := dml.NewSelect("a", "b", "z", "y", "x").From("c").
+			var err error
+			benchmarkSelectStr, benchmarkGlobalVals, err = dml.NewSelect("a", "b", "z", "y", "x").From("c").
 				Distinct().
 				Where(
 					dml.Expr("`d` = ? OR `e` = ?").Int64(1).Str("wat"),
@@ -184,29 +186,28 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkGlobalVals = args
 		}
 	})
 
 	b.Run("ToSQL Interpolate NoCache", func(b *testing.B) {
 		sqlObj.IsBuildCacheDisabled = true
 		for i := 0; i < b.N; i++ {
-			_, args, err := sqlObj.ToSQL()
+			var err error
+			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkGlobalVals = args
 		}
 	})
 
 	b.Run("ToSQL Interpolate Cache", func(b *testing.B) {
 		sqlObj.IsBuildCacheDisabled = false
 		for i := 0; i < b.N; i++ {
-			_, args, err := sqlObj.ToSQL()
+			var err error
+			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkGlobalVals = args
 		}
 	})
 }
@@ -379,22 +380,22 @@ func BenchmarkDeleteSQL(b *testing.B) {
 	b.Run("ToSQL no cache", func(b *testing.B) {
 		sqlObj.IsBuildCacheDisabled = true
 		for i := 0; i < b.N; i++ {
-			_, args, err := sqlObj.ToSQL()
+			var err error
+			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkGlobalVals = args
 		}
 	})
 
 	b.Run("ToSQL with cache", func(b *testing.B) {
 		sqlObj.IsBuildCacheDisabled = false
 		for i := 0; i < b.N; i++ {
-			_, args, err := sqlObj.ToSQL()
+			var err error
+			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkGlobalVals = args
 		}
 	})
 }
@@ -403,13 +404,13 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 
 	b.Run("NewInsert", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, args, err := dml.NewInsert("alpha").AddColumns("something_id", "user_id", "other").AddValues(
+			var err error
+			benchmarkSelectStr, benchmarkGlobalVals, err = dml.NewInsert("alpha").AddColumns("something_id", "user_id", "other").AddValues(
 				dml.MakeArgs(3).Int64(1).Int64(2).Bool(true),
 			).ToSQL()
 			if err != nil {
 				b.Fatal(err)
 			}
-			benchmarkGlobalVals = args
 		}
 	})
 
@@ -419,22 +420,22 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	b.Run("ToSQL no cache", func(b *testing.B) {
 		sqlObj.IsBuildCacheDisabled = true
 		for i := 0; i < b.N; i++ {
-			_, args, err := sqlObj.ToSQL()
+			var err error
+			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkGlobalVals = args
 		}
 	})
 
 	b.Run("ToSQL with cache", func(b *testing.B) {
 		sqlObj.IsBuildCacheDisabled = false
 		for i := 0; i < b.N; i++ {
-			_, args, err := sqlObj.ToSQL()
+			var err error
+			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkGlobalVals = args
 		}
 	})
 }
@@ -445,15 +446,14 @@ func BenchmarkInsertRecordsSQL(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, args, err := dml.NewInsert("alpha").
+		var err error
+		benchmarkSelectStr, benchmarkGlobalVals, err = dml.NewInsert("alpha").
 			AddColumns("something_id", "user_id", "other").
 			AddRecords(obj).
 			ToSQL()
 		if err != nil {
 			b.Fatal(err)
 		}
-		benchmarkGlobalVals = args
-		// ifaces = args.Interfaces()
 	}
 }
 
@@ -605,42 +605,60 @@ func BenchmarkUnion(b *testing.B) {
 	b.Run("5 SELECTs", func(b *testing.B) {
 		u := newUnion5()
 		for i := 0; i < b.N; i++ {
-			_, args, err := u.ToSQL()
+			var err error
+			benchmarkSelectStr, benchmarkGlobalVals, err = u.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkGlobalVals = args
+		}
+	})
+	b.Run("5 SELECTs not cached", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			var err error
+			benchmarkSelectStr, benchmarkGlobalVals, err = newUnion5().ToSQL()
+			if err != nil {
+				b.Fatalf("%+v", err)
+			}
 		}
 	})
 	b.Run("5 SELECTs interpolated", func(b *testing.B) {
 		u := newUnion5()
 		u.Interpolate()
 		for i := 0; i < b.N; i++ {
-			_, args, err := u.ToSQL()
+			var err error
+			benchmarkSelectStr, benchmarkGlobalVals, err = u.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkGlobalVals = args
 		}
 	})
 	b.Run("Template", func(b *testing.B) {
 		u := newUnionTpl()
 		for i := 0; i < b.N; i++ {
-			_, args, err := u.ToSQL()
+			var err error
+			benchmarkSelectStr, benchmarkGlobalVals, err = u.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkGlobalVals = args
+		}
+	})
+	b.Run("Template not cached", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			var err error
+			benchmarkSelectStr, benchmarkGlobalVals, err = newUnionTpl().ToSQL()
+			if err != nil {
+				b.Fatalf("%+v", err)
+			}
 		}
 	})
 	b.Run("Template interpolated", func(b *testing.B) {
 		u := newUnionTpl().Interpolate()
 		for i := 0; i < b.N; i++ {
-			_, args, err := u.ToSQL()
+			var err error
+			benchmarkSelectStr, benchmarkGlobalVals, err = u.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkGlobalVals = args
 		}
 	})
 }
@@ -648,7 +666,8 @@ func BenchmarkUnion(b *testing.B) {
 func BenchmarkUpdateValuesSQL(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, args, err := dml.NewUpdate("alpha").
+		var err error
+		benchmarkSelectStr, benchmarkGlobalVals, err = dml.NewUpdate("alpha").
 			Set(
 				dml.Column("something_id").Int64(1),
 			).Where(
@@ -657,7 +676,6 @@ func BenchmarkUpdateValuesSQL(b *testing.B) {
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
-		benchmarkGlobalVals = args
 	}
 }
 
