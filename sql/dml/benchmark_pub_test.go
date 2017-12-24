@@ -100,6 +100,45 @@ func BenchmarkSelectBasicSQL(b *testing.B) {
 	}
 }
 
+// Type Condition is not a pointer. The GC pressure is much less but he program
+// is a bit slower due to copying.
+// BenchmarkSelectExcessConditions-4   	  200000	      7055 ns/op	    4984 B/op	      26 allocs/op
+// BenchmarkSelectExcessConditions-4   	  200000	      7118 ns/op	    4984 B/op	      26 allocs/op
+// The next line gives the results for the implementation when using type
+// Condition as a pointer. We have more allocs, more pressure on the GC but it's
+// a bit faster.
+// BenchmarkSelectExcessConditions-4   	  200000	      6297 ns/op	    4920 B/op	      35 allocs/op
+// For now we stick with the pointers. Reason: the SQL statement gets only
+// created once and not in a loop.
+func BenchmarkSelectExcessConditions(b *testing.B) {
+	i64Vals := []int64{1, 2, 3}
+	b.ResetTimer()
+	var err error
+	for i := 0; i < b.N; i++ {
+		benchmarkSelectStr, benchmarkGlobalVals, err = dml.NewSelect("entity_id", "name", "q.total_sum").
+			FromAlias("customer", "c").
+			Join(dml.MakeIdentifier("quote").Alias("q"),
+				dml.Column("c.entity_id").Column("q.customer_id"),
+				dml.Column("c.group_id").Column("q.group_id"),
+				dml.Column("c.shop_id").NotEqual().PlaceHolders(10),
+			).
+			Where(
+				dml.Expr("d = ? OR e = ?").Int64(1).Str("wat"),
+				dml.Column("a").In().PlaceHolder(),
+				dml.Column("q.product_id").In().Int64s(i64Vals...),
+				dml.Column("q.sub_total").NotBetween().Float64s(3.141, 6.2831),
+				dml.Column("q.qty").GreaterOrEqual().PlaceHolder(),
+				dml.Column("q.coupon_code").SpaceShip().Str("400EA8BBE4"),
+			).
+			OrderByDesc("id").
+			Paginate(1, 20).
+			ToSQL()
+		if err != nil {
+			b.Fatalf("%+v", err)
+		}
+	}
+}
+
 func BenchmarkSelectFullSQL(b *testing.B) {
 
 	sqlObj := dml.NewSelect("a", "b", "z", "y", "x").From("c").
