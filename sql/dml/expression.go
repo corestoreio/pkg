@@ -50,7 +50,7 @@ func SQLIfNull(expression ...string) *Condition {
 }
 
 func sqlIfNull(expression []string) string {
-	buf := bufferpool.Get()
+	buf := bufferpool.Get() // way faster than strings.Builder
 
 	switch len(expression) {
 	case 1:
