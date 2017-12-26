@@ -83,6 +83,7 @@ type builderCommon struct {
 	// created SELECT statements. This value  gets stored in templateStmtCount.
 	// An example exists in TestUnionTemplate_ReuseArgs.
 	templateStmtCount int
+	colMap            ColumnMap
 }
 
 func (bc builderCommon) convertRecordsToArguments() (Arguments, error) {

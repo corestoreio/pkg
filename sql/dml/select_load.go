@@ -37,8 +37,16 @@ func (b *Select) Load(ctx context.Context, s ColumnMapper) (rowCount uint64, err
 	if b.Log != nil && b.Log.IsDebug() {
 		defer log.WhenDone(b.Log).Debug("Load", log.Stringer("sql", b))
 	}
-	rowCount, err = Load(ctx, b.DB, b, s)
-	return rowCount, errors.WithStack(err)
+	sqlStr, args, err := b.ToSQL()
+	if err != nil {
+		return 0, errors.WithStack(err)
+	}
+	rows, err := b.DB.QueryContext(ctx, sqlStr, args...)
+	rowCount, err = load(rows, err, s, &b.colMap)
+	if err != nil {
+		return 0, errors.Wrapf(err, "[dml] Load.QueryContext with query %q", sqlStr)
+	}
+	return rowCount, nil
 }
 
 // Prepare executes the statement represented by the Select to create a prepared

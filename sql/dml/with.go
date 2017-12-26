@@ -327,8 +327,16 @@ func (b *With) Load(ctx context.Context, s ColumnMapper) (rowCount uint64, err e
 	if b.Log != nil && b.Log.IsDebug() {
 		defer log.WhenDone(b.Log).Debug("Load", log.Uint64("row_count", rowCount), log.Stringer("sql", b))
 	}
-	rowCount, err = Load(ctx, b.DB, b, s)
-	return rowCount, errors.WithStack(err)
+	sqlStr, args, err := b.ToSQL()
+	if err != nil {
+		return 0, errors.WithStack(err)
+	}
+	rows, err := b.DB.QueryContext(ctx, sqlStr, args...)
+	rowCount, err = load(rows, err, s, &b.colMap)
+	if err != nil {
+		return 0, errors.Wrapf(err, "[dml] Load.QueryContext with query %q", sqlStr)
+	}
+	return rowCount, nil
 }
 
 // Prepare prepares a SQL statement. Sets IsInterpolate to false.

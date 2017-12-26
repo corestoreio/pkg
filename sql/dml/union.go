@@ -366,8 +366,16 @@ func (u *Union) Load(ctx context.Context, s ColumnMapper) (rowCount uint64, err 
 	if u.Log != nil && u.Log.IsDebug() {
 		defer log.WhenDone(u.Log).Debug("Load", log.Uint64("row_count", rowCount), log.Stringer("sql", u))
 	}
-	rowCount, err = Load(ctx, u.DB, u, s)
-	return rowCount, errors.WithStack(err)
+	sqlStr, args, err := u.ToSQL()
+	if err != nil {
+		return 0, errors.WithStack(err)
+	}
+	rows, err := u.DB.QueryContext(ctx, sqlStr, args...)
+	rowCount, err = load(rows, err, s, &u.colMap)
+	if err != nil {
+		return 0, errors.Wrapf(err, "[dml] Load.QueryContext with query %q", sqlStr)
+	}
+	return rowCount, nil
 }
 
 // Prepare prepares a SQL statement. Sets IsInterpolate to false. If debug mode

@@ -88,14 +88,14 @@ func Load(ctx context.Context, db Querier, b QueryBuilder, s ColumnMapper) (rowC
 		return 0, errors.WithStack(err)
 	}
 	rows, err := db.QueryContext(ctx, sqlStr, args...)
-	rowCount, err = load(rows, err, s)
+	rowCount, err = load(rows, err, s, new(ColumnMap))
 	if err != nil {
 		return 0, errors.Wrapf(err, "[dml] Load.QueryContext with query %q", sqlStr)
 	}
 	return rowCount, nil
 }
 
-func load(r *sql.Rows, errIn error, s ColumnMapper) (rowCount uint64, err error) {
+func load(r *sql.Rows, errIn error, s ColumnMapper, cm *ColumnMap) (rowCount uint64, err error) {
 	if errIn != nil {
 		return 0, errors.WithStack(errIn)
 	}
@@ -111,22 +111,21 @@ func load(r *sql.Rows, errIn error, s ColumnMapper) (rowCount uint64, err error)
 		}
 	}()
 
-	rm := new(ColumnMap) // TODO(CyS) use sync.Pool, but first benchmark it.
 	for r.Next() {
-		if err = rm.Scan(r); err != nil {
+		if err = cm.Scan(r); err != nil {
 			return 0, errors.WithStack(err)
 		}
-		if err = s.MapColumns(rm); err != nil {
+		if err = s.MapColumns(cm); err != nil {
 			return 0, errors.WithStack(err)
 		}
 	}
 	if err = r.Err(); err != nil {
 		return 0, errors.WithStack(err)
 	}
-	if rm.HasRows {
-		rm.Count++ // because first row is zero but we want the actual row number
+	if cm.HasRows {
+		cm.Count++ // because first row is zero but we want the actual row number
 	}
-	return rm.Count, err
+	return cm.Count, err
 }
 
 // ColumnMapper allows a type to load data from database query into its fields
@@ -825,7 +824,7 @@ func (st *StmtBase) Load(ctx context.Context, s ColumnMapper) (rowCount uint64, 
 		defer log.WhenDone(st.Log).Debug("Load", log.Uint64("row_count", rowCount), log.String("object_type", fmt.Sprintf("%T", s)))
 	}
 	r, err := st.Query(ctx)
-	rowCount, err = load(r, err, s)
+	rowCount, err = load(r, err, s, &st.colMap)
 	return rowCount, errors.WithStack(err)
 }
 
