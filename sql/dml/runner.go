@@ -677,7 +677,7 @@ func (b *ColumnMap) NullString(ptr *NullString) *ColumnMap {
 
 // Time reads a time.Time value and appends it to the arguments slice or assigns
 // the time.Time value stored in sql.RawBytes to the pointer. See the
-// documentation for function Scan.
+// documentation for function Scan. It supports all MySQL/MariaDB date/time types.
 func (b *ColumnMap) Time(ptr *time.Time) *ColumnMap {
 	if b.Args != nil {
 		if ptr == nil {
@@ -688,7 +688,7 @@ func (b *ColumnMap) Time(ptr *time.Time) *ColumnMap {
 		return b
 	}
 	if b.scanErr == nil {
-		*ptr, b.scanErr = time.Parse(time.RFC3339Nano, string(b.current))
+		*ptr, b.scanErr = parseDateTime(string(b.current), time.UTC) // time.Location can be merged into ColumnMap but then change NullTime method receiver.
 		if b.scanErr != nil {
 			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
 		}

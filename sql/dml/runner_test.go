@@ -126,7 +126,8 @@ func TestColumnMap_Scan_Empty_Bytes(t *testing.T) {
 	})
 	t.Run("Time", func(t *testing.T) {
 		var v time.Time
-		assert.EqualError(t, cm.Time(&v).Err(), "[dml] Column \"SomeColumn\": parsing time \"\" as \"2006-01-02T15:04:05.999999999Z07:00\": cannot parse \"\" as \"2006\"")
+		assert.EqualError(t, cm.Time(&v).Err(),
+			"[dml] Column \"SomeColumn\": invalid time string: \"\"")
 		assert.Empty(t, v)
 		cm.scanErr = nil
 	})

@@ -92,7 +92,7 @@ func parseDateTime(str string, loc *time.Location) (t time.Time, err error) {
 		}
 		t, err = time.Parse(base[:lStr], str) // time.RFC3339Nano cannot be used due to the T
 	default:
-		err = errors.NotValid.Newf("invalid time string: %s", str)
+		err = errors.NotValid.Newf("invalid time string: %q", str)
 		return
 	}
 
