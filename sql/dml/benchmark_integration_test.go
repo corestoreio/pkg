@@ -18,8 +18,11 @@ import (
 	"context"
 	"database/sql"
 	"flag"
+	"math/rand"
 	"testing"
+	"time"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 )
@@ -180,5 +183,195 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 			}
 		}
 	})
+}
 
+type fakePerson struct {
+	Id         int
+	FirstName  string
+	LastName   string
+	Sex        string
+	BirthDate  time.Time
+	Weight     int
+	Height     int
+	UpdateTime time.Time
+}
+
+// MapColumns implements interface ColumnMapper only partially.
+func (p *fakePerson) MapColumns(cm *dml.ColumnMap) error {
+	for cm.Next() {
+		switch c := cm.Column(); c {
+		case "id":
+			cm.Int(&p.Id)
+		case "first_name":
+			cm.String(&p.FirstName)
+		case "last_name":
+			cm.String(&p.LastName)
+		case "sex":
+			cm.String(&p.Sex)
+		case "birth_date":
+			cm.Time(&p.BirthDate)
+		case "weight":
+			cm.Int(&p.Weight)
+		case "height":
+			cm.Int(&p.Height)
+		case "update_time":
+			cm.Time(&p.UpdateTime)
+		default:
+			return errors.NotFound.Newf("[dml_test] fakePerson Column %q not found", c)
+		}
+	}
+	return cm.Err()
+}
+
+type fakePersons struct {
+	Data []fakePerson
+}
+
+func (cc *fakePersons) MapColumns(cm *dml.ColumnMap) error {
+	switch m := cm.Mode(); m {
+
+	case dml.ColumnMapScan:
+		if cm.Count == 0 {
+			cc.Data = cc.Data[:0]
+		}
+		var p fakePerson
+		if err := p.MapColumns(cm); err != nil {
+			return errors.WithStack(err)
+		}
+		cc.Data = append(cc.Data, p)
+
+	default:
+		return errors.NotSupported.Newf("[dml] Unknown Mode: %q", string(m))
+	}
+	return cm.Err()
+}
+
+// https://github.com/jackc/go_db_bench/blob/master/bench_test.go#L542
+// https://gist.github.com/jackc/4996e8648a0c59839bff644f49d6e434#file-results-txt-L15
+func BenchmarkJackC_GoDBBench(b *testing.B) {
+	if !runIntegration {
+		b.Skip("Skipped. To enable use -integration=1. Please also run the script: testdata/person_ffaker.sql")
+	}
+	const maxSelectID = 24
+	c := createRealSession(b)
+	defer dmltest.Close(b, c)
+
+	// prepared statement:
+	// select id, first_name, last_name, sex, birth_date, weight, height, update_time
+	// from dml_fake_person where id between ? and ? + 24
+	stmt, err := c.SelectFrom("dml_fake_person").AddColumns("id", "first_name", "last_name", "sex", "birth_date", "weight", "height", "update_time").
+		Where(
+			dml.Column("id").Between().PlaceHolder(),
+		).Prepare(context.Background())
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer dmltest.Close(b, stmt)
+
+	randPersonIDs := shuffledInts(10000)
+
+	b.ResetTimer()
+
+	b.Run("SelectMultipleRowsCollect Arguments", func(b *testing.B) {
+		ctx := context.Background()
+		args := dml.MakeArgs(2)
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			id := randPersonIDs[i%len(randPersonIDs)]
+			var fp fakePersons
+			if _, err := stmt.WithArguments(args.Int(id).Int(id+maxSelectID)).Load(ctx, &fp); err != nil {
+				b.Fatalf("%+v", err)
+			}
+			for i := range fp.Data {
+				checkPersonWasFilled(b, fp.Data[i])
+			}
+			args.Reset()
+		}
+	})
+	b.Run("SelectMultipleRowsCollect Interfaces", func(b *testing.B) {
+		ctx := context.Background()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			id := randPersonIDs[i%len(randPersonIDs)]
+			var fp fakePersons
+			if _, err := stmt.WithArgs(id, id+maxSelectID).Load(ctx, &fp); err != nil {
+				b.Fatalf("%+v", err)
+			}
+			for i := range fp.Data {
+				checkPersonWasFilled(b, fp.Data[i])
+			}
+		}
+	})
+
+	b.Run("SelectMultipleRowsEntity Arguments", func(b *testing.B) {
+		ctx := context.Background()
+		args := dml.MakeArgs(2)
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			id := randPersonIDs[i%len(randPersonIDs)]
+			var fp fakePerson
+			if _, err := stmt.WithArguments(args.Int(id).Int(id+maxSelectID)).Load(ctx, &fp); err != nil {
+				b.Fatalf("%+v", err)
+			}
+			checkPersonWasFilled(b, fp)
+			args.Reset()
+		}
+	})
+	b.Run("SelectMultipleRowsEntity Interface", func(b *testing.B) {
+		ctx := context.Background()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			id := randPersonIDs[i%len(randPersonIDs)]
+			var fp fakePerson
+			if _, err := stmt.WithArgs(id, id+maxSelectID).Load(ctx, &fp); err != nil {
+				b.Fatalf("%+v", err)
+			}
+			checkPersonWasFilled(b, fp)
+		}
+	})
+}
+
+func shuffledInts(size int) []int {
+	randPersonIDs := make([]int, size)
+	for i := range randPersonIDs {
+		randPersonIDs[i] = i
+	}
+
+	vals := randPersonIDs
+	r := rand.New(rand.NewSource(time.Now().Unix()))
+	for len(vals) > 0 {
+		n := len(vals)
+		randIndex := r.Intn(n)
+		vals[n-1], vals[randIndex] = vals[randIndex], vals[n-1]
+		vals = vals[:n-1]
+	}
+	return randPersonIDs
+}
+
+func checkPersonWasFilled(b *testing.B, p fakePerson) {
+	if p.Id == 0 {
+		b.Fatal("id was 0")
+	}
+	if len(p.FirstName) == 0 {
+		b.Fatal("FirstName was empty")
+	}
+	if len(p.LastName) == 0 {
+		b.Fatal("LastName was empty")
+	}
+	if len(p.Sex) == 0 {
+		b.Fatal("Sex was empty")
+	}
+	var zeroTime time.Time
+	if p.BirthDate == zeroTime {
+		b.Fatal("BirthDate was zero time")
+	}
+	if p.Weight == 0 {
+		b.Fatal("Weight was 0")
+	}
+	if p.Height == 0 {
+		b.Fatal("Height was 0")
+	}
+	if p.UpdateTime == zeroTime {
+		b.Fatal("UpdateTime was zero time")
+	}
 }
