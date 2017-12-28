@@ -121,6 +121,13 @@ func WithUniqueIDFn(uniqueIDFn func() string) ConnPoolOption {
 	}
 }
 
+//func WithPrepareStatements(stmts map[string]QueryBuilder) ConnPoolOption {
+//	return func(c *ConnPool) error {
+//
+//		return nil
+//	}
+//}
+
 // WithDSN sets the data source name for a connection.
 // Second argument DriverCallBack adds a low level call back function on MySQL driver level to
 // create a a new instrumented driver. No need to call `sql.Register`!
@@ -249,6 +256,10 @@ func (c *ConnPool) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error
 		},
 		DB: dbTx,
 	}, nil
+}
+
+func (c *ConnPool) Stmt(name string) (Stmter, error) {
+	return nil, nil
 }
 
 // Conn returns a single connection by either opening a new connection

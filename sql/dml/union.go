@@ -378,9 +378,13 @@ func (u *Union) Load(ctx context.Context, s ColumnMapper) (rowCount uint64, err 
 	return rowCount, nil
 }
 
-// Prepare prepares a SQL statement. Sets IsInterpolate to false. If debug mode
-// for logging has been enabled it logs the duration taken and the SQL string.
-func (u *Union) Prepare(ctx context.Context) (*StmtUnion, error) {
+// Prepare executes the statement represented by the Union to create a prepared
+// statement. It returns a custom statement type or an error if there was one.
+// Provided arguments or records in the Union are getting ignored. The provided
+// context is used for the preparation of the statement, not for the execution
+// of the statement. The returned Stmter is not safe for concurrent use, despite
+// the underlying *sql.Stmt is.
+func (u *Union) Prepare(ctx context.Context) (Stmter, error) {
 	if u.Log != nil && u.Log.IsDebug() {
 		defer log.WhenDone(u.Log).Debug("Prepare", log.Stringer("sql", u))
 	}
@@ -389,49 +393,17 @@ func (u *Union) Prepare(ctx context.Context) (*StmtUnion, error) {
 		return nil, errors.WithStack(err)
 	}
 	args := u.makeArguments()
-	return &StmtUnion{
-		StmtBase: StmtBase{
-			builderCommon: builderCommon{
-				id:                u.id,
-				argsArgs:          args,
-				argsRaw:           make([]interface{}, 0, len(args)),
-				defaultQualifier:  "",
-				qualifiedColumns:  u.qualifiedColumns,
-				Log:               u.Log,
-				templateStmtCount: u.templateStmtCount,
-			},
-			stmt: stmt,
+	return &stmtBase{
+		builderCommon: builderCommon{
+			id:                u.id,
+			argsArgs:          args,
+			argsRaw:           make([]interface{}, 0, len(args)),
+			defaultQualifier:  "",
+			qualifiedColumns:  u.qualifiedColumns,
+			Log:               u.Log,
+			templateStmtCount: u.templateStmtCount,
 		},
-		uni: u,
+		source: dmlTypeUnion,
+		stmt:   stmt,
 	}, nil
-}
-
-// StmtUnion wraps a *sql.Stmt with a specific SQL query. To create a
-// StmtUnion call the Prepare function of type Union. StmtUnion is not safe
-// for concurrent use, despite the underlying *sql.Stmt is. Don't forget to call
-// Close!
-type StmtUnion struct {
-	StmtBase
-	uni *Union
-}
-
-// WithArgs sets the interfaced arguments for the execution with Query+. It
-// internally resets previously applied arguments.
-func (st *StmtUnion) WithArgs(args ...interface{}) *StmtUnion {
-	st.withArgs(args)
-	return st
-}
-
-// WithArguments sets the arguments for the execution with Query+. It internally
-// resets previously applied arguments.
-func (st *StmtUnion) WithArguments(args Arguments) *StmtUnion {
-	st.withArguments(args)
-	return st
-}
-
-// WithRecords sets the records for the execution with Query+. It internally
-// resets previously applied arguments.
-func (st *StmtUnion) WithRecords(records ...QualifiedRecord) *StmtUnion {
-	st.withRecords(records)
-	return st
 }

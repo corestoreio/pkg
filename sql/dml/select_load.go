@@ -53,8 +53,9 @@ func (b *Select) Load(ctx context.Context, s ColumnMapper) (rowCount uint64, err
 // statement. It returns a custom statement type or an error if there was one.
 // Provided arguments or records in the Select are getting ignored. The provided
 // context is used for the preparation of the statement, not for the execution
-// of the statement.
-func (b *Select) Prepare(ctx context.Context) (*StmtSelect, error) {
+// of the statement. The returned Stmter is not safe for concurrent use, despite
+// the underlying *sql.Stmt is.
+func (b *Select) Prepare(ctx context.Context) (Stmter, error) {
 	if b.Log != nil && b.Log.IsDebug() {
 		defer log.WhenDone(b.Log).Debug("Prepare", log.Stringer("sql", b))
 	}
@@ -67,50 +68,18 @@ func (b *Select) Prepare(ctx context.Context) (*StmtSelect, error) {
 		l = b.Log.With(log.Bool("is_prepared", true))
 	}
 	cap := b.argumentCapacity()
-	return &StmtSelect{
-		StmtBase: StmtBase{
-			builderCommon: builderCommon{
-				id:               b.id,
-				argsArgs:         make(Arguments, 0, cap),
-				argsRaw:          make([]interface{}, 0, cap),
-				defaultQualifier: b.Table.qualifier(),
-				qualifiedColumns: b.qualifiedColumns,
-				Log:              l,
-			},
-			stmt: stmt,
+	return &stmtBase{
+		builderCommon: builderCommon{
+			id:               b.id,
+			argsArgs:         make(Arguments, 0, cap),
+			argsRaw:          make([]interface{}, 0, cap),
+			defaultQualifier: b.Table.qualifier(),
+			qualifiedColumns: b.qualifiedColumns,
+			Log:              l,
 		},
-		sel: b,
+		source: dmlTypeSelect,
+		stmt:   stmt,
 	}, nil
-}
-
-// StmtSelect wraps a *sql.Stmt with a specific SQL query. To create a
-// StmtSelect call the Prepare function of type Select. StmtSelect is not safe
-// for concurrent use, despite the underlying *sql.Stmt is. Don't forget to call
-// Close!
-type StmtSelect struct {
-	StmtBase
-	sel *Select
-}
-
-// WithArgs sets the interfaced arguments for the execution with Query+. It
-// internally resets previously applied arguments.
-func (st *StmtSelect) WithArgs(args ...interface{}) *StmtSelect {
-	st.withArgs(args)
-	return st
-}
-
-// WithArguments sets the arguments for the execution with Query+. It internally
-// resets previously applied arguments.
-func (st *StmtSelect) WithArguments(args Arguments) *StmtSelect {
-	st.withArguments(args)
-	return st
-}
-
-// WithRecords sets the records for the execution with Query+. It internally
-// resets previously applied arguments.
-func (st *StmtSelect) WithRecords(records ...QualifiedRecord) *StmtSelect {
-	st.withRecords(records)
-	return st
 }
 
 // The partially duplicated code in the Load[a-z0-9]+ functions can be optimized

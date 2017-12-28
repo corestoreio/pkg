@@ -278,8 +278,9 @@ func (b *Delete) Exec(ctx context.Context) (sql.Result, error) {
 // Provided arguments or records in the Delete are getting ignored. The provided
 // context is used for the preparation of the statement, not for the execution
 // of the statement. If debug mode for logging has been enabled it logs the
-// duration taken and the SQL string.
-func (b *Delete) Prepare(ctx context.Context) (*StmtDelete, error) {
+// duration taken and the SQL string. The returned Stmter is not safe for
+// concurrent use, despite the underlying *sql.Stmt is.
+func (b *Delete) Prepare(ctx context.Context) (Stmter, error) {
 	if b.Log != nil && b.Log.IsDebug() {
 		defer log.WhenDone(b.Log).Debug("Prepare", log.Stringer("sql", b))
 	}
@@ -288,41 +289,16 @@ func (b *Delete) Prepare(ctx context.Context) (*StmtDelete, error) {
 		return nil, errors.WithStack(err)
 	}
 	cap := len(b.Wheres)
-	return &StmtDelete{
-		StmtBase: StmtBase{
-			builderCommon: builderCommon{
-				id:               b.id,
-				argsArgs:         make(Arguments, 0, cap),
-				argsRaw:          make([]interface{}, 0, cap),
-				defaultQualifier: b.Table.qualifier(),
-				qualifiedColumns: b.qualifiedColumns,
-				Log:              b.Log,
-			},
-			stmt: sqlStmt,
+	return &stmtBase{
+		builderCommon: builderCommon{
+			id:               b.id,
+			argsArgs:         make(Arguments, 0, cap),
+			argsRaw:          make([]interface{}, 0, cap),
+			defaultQualifier: b.Table.qualifier(),
+			qualifiedColumns: b.qualifiedColumns,
+			Log:              b.Log,
 		},
-		del: b,
+		source: dmlTypeDelete,
+		stmt:   sqlStmt,
 	}, nil
-}
-
-// StmtDelete wraps a *sql.Stmt with a specific SQL query. To create a
-// StmtDelete call the Prepare function of type Delete. StmtDelete is not safe
-// for concurrent use, despite the underlying *sql.Stmt is. Don't forget to call
-// Close!
-type StmtDelete struct {
-	StmtBase
-	del *Delete
-}
-
-// WithArguments sets the arguments for the execution with Exec. It internally resets
-// previously applied arguments.
-func (st *StmtDelete) WithArguments(args Arguments) *StmtDelete {
-	st.withArguments(args)
-	return st
-}
-
-// WithRecords sets the records for the execution with Exec. It internally
-// resets previously applied arguments.
-func (st *StmtDelete) WithRecords(records ...QualifiedRecord) *StmtDelete {
-	st.withRecords(records)
-	return st
 }

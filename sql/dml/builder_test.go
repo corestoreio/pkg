@@ -39,6 +39,7 @@ var _ QueryBuilder = (*Insert)(nil)
 var _ QueryBuilder = (*Show)(nil)
 var _ QueryBuilder = (*Union)(nil)
 var _ QueryBuilder = (*With)(nil)
+var _ QueryBuilder = (*QuerySQL)(nil)
 
 func TestSqlObjToString(t *testing.T) {
 	t.Parallel()

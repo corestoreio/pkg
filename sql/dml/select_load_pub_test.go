@@ -651,7 +651,7 @@ func TestSelect_WithLogger(t *testing.T) {
 				p := &dmlPerson{}
 				_, err := stmt.WithArgs(-6).Load(context.TODO(), p)
 				require.NoError(t, err)
-				assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" is_prepared: true duration: 0 arg_len: 1\nDEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" is_prepared: true duration: 0 row_count: 0x0 object_type: \"*dml_test.dmlPerson\"\n",
+				assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" is_prepared: true duration: 0 arg_len: 1\nDEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" is_prepared: true duration: 0 row_count: 0x0 object_type: \"*dml_test.dmlPerson\" error: \"<nil>\"\n",
 					buf.String())
 			})
 
@@ -670,7 +670,7 @@ func TestSelect_WithLogger(t *testing.T) {
 				iSl, err := stmt.WithArgs(-7).LoadInt64s(context.TODO())
 				require.NoError(t, err)
 				assert.Exactly(t, []int64{}, iSl)
-				assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" is_prepared: true duration: 0 arg_len: 1\nDEBUG LoadInt64s conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" is_prepared: true duration: 0 row_count: 0\n",
+				assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" is_prepared: true duration: 0 arg_len: 1\nDEBUG LoadInt64s conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" is_prepared: true duration: 0 row_count: 0 error: \"<nil>\"\n",
 					buf.String())
 			})
 

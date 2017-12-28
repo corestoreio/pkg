@@ -287,8 +287,9 @@ func (b *Update) Exec(ctx context.Context) (sql.Result, error) {
 // statement. It returns a custom statement type or an error if there was one.
 // Provided arguments or records in the Update are getting ignored. The provided
 // context is used for the preparation of the statement, not for the execution
-// of the statement.
-func (b *Update) Prepare(ctx context.Context) (*StmtUpdate, error) {
+// of the statement. The returned Stmter is not safe for concurrent use, despite
+// the underlying *sql.Stmt is.
+func (b *Update) Prepare(ctx context.Context) (Stmter, error) {
 	if b.Log != nil && b.Log.IsDebug() {
 		defer log.WhenDone(b.Log).Debug("Prepare", log.Stringer("sql", b))
 	}
@@ -300,41 +301,16 @@ func (b *Update) Prepare(ctx context.Context) (*StmtUpdate, error) {
 		return nil, errors.WithStack(err)
 	}
 	cap := len(b.SetClauses) + len(b.Wheres)
-	return &StmtUpdate{
-		StmtBase: StmtBase{
-			builderCommon: builderCommon{
-				id:               b.id,
-				argsArgs:         make(Arguments, 0, cap),
-				argsRaw:          make([]interface{}, 0, cap),
-				defaultQualifier: b.Table.qualifier(),
-				qualifiedColumns: b.qualifiedColumns,
-				Log:              b.Log,
-			},
-			stmt: stmt,
+	return &stmtBase{
+		builderCommon: builderCommon{
+			id:               b.id,
+			argsArgs:         make(Arguments, 0, cap),
+			argsRaw:          make([]interface{}, 0, cap),
+			defaultQualifier: b.Table.qualifier(),
+			qualifiedColumns: b.qualifiedColumns,
+			Log:              b.Log,
 		},
-		upd: b,
+		source: dmlTypeUpdate,
+		stmt:   stmt,
 	}, nil
-}
-
-// StmtUpdate wraps a *sql.Stmt with a specific SQL query. To create a
-// StmtUpdate call the Prepare function of type Update. StmtUpdate is not safe
-// for concurrent use, despite the underlying *sql.Stmt is. Don't forget to call
-// Close!
-type StmtUpdate struct {
-	StmtBase
-	upd *Update
-}
-
-// WithArguments sets the arguments for the execution with ExecContext. It
-// internally resets previously applied arguments.
-func (st *StmtUpdate) WithArguments(args Arguments) *StmtUpdate {
-	st.withArguments(args)
-	return st
-}
-
-// WithRecords sets the records for the execution with ExecContext. It
-// internally resets previously applied arguments.
-func (st *StmtUpdate) WithRecords(records ...QualifiedRecord) *StmtUpdate {
-	st.withRecords(records)
-	return st
 }

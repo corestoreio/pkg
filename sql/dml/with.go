@@ -339,8 +339,13 @@ func (b *With) Load(ctx context.Context, s ColumnMapper) (rowCount uint64, err e
 	return rowCount, nil
 }
 
-// Prepare prepares a SQL statement. Sets IsInterpolate to false.
-func (b *With) Prepare(ctx context.Context) (*StmtWith, error) {
+// Prepare executes the statement represented by the `With` to create a prepared
+// statement. It returns a custom statement type or an error if there was one.
+// Provided arguments or records in the `With` are getting ignored. The provided
+// context is used for the preparation of the statement, not for the execution
+// of the statement. The returned Stmter is not safe for concurrent use, despite
+// the underlying *sql.Stmt is.
+func (b *With) Prepare(ctx context.Context) (Stmter, error) {
 	if b.Log != nil && b.Log.IsDebug() {
 		defer log.WhenDone(b.Log).Debug("Prepare", log.Stringer("sql", b))
 	}
@@ -350,48 +355,16 @@ func (b *With) Prepare(ctx context.Context) (*StmtWith, error) {
 	}
 
 	const cap = 10 // just a guess; needs to be more precise but later.
-	return &StmtWith{
-		StmtBase: StmtBase{
-			builderCommon: builderCommon{
-				id:               b.id,
-				argsArgs:         make(Arguments, 0, cap),
-				argsRaw:          make([]interface{}, 0, cap),
-				defaultQualifier: b.Table.qualifier(),
-				qualifiedColumns: b.qualifiedColumns,
-				Log:              b.Log,
-			},
-			stmt: stmt,
+	return &stmtBase{
+		builderCommon: builderCommon{
+			id:               b.id,
+			argsArgs:         make(Arguments, 0, cap),
+			argsRaw:          make([]interface{}, 0, cap),
+			defaultQualifier: b.Table.qualifier(),
+			qualifiedColumns: b.qualifiedColumns,
+			Log:              b.Log,
 		},
-		with: b,
+		source: dmlTypeWith,
+		stmt:   stmt,
 	}, nil
-}
-
-// StmtWith wraps a *sql.Stmt with a specific SQL query. To create a
-// StmtWith call the Prepare function of type Union. StmtWith is not safe
-// for concurrent use, despite the underlying *sql.Stmt is. Don't forget to call
-// Close!
-type StmtWith struct {
-	StmtBase
-	with *With
-}
-
-// WithArgs sets the interfaced arguments for the execution with Query+. It
-// internally resets previously applied arguments.
-func (st *StmtWith) WithArgs(args ...interface{}) *StmtWith {
-	st.withArgs(args)
-	return st
-}
-
-// WithArguments sets the arguments for the execution with Query+. It internally
-// resets previously applied arguments.
-func (st *StmtWith) WithArguments(args Arguments) *StmtWith {
-	st.withArguments(args)
-	return st
-}
-
-// WithRecords sets the records for the execution with Query+. It internally
-// resets previously applied arguments.
-func (st *StmtWith) WithRecords(records ...QualifiedRecord) *StmtWith {
-	st.withRecords(records)
-	return st
 }

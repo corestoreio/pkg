@@ -1023,31 +1023,76 @@ func (b *ColumnMap) NullTime(ptr *NullTime) *ColumnMap {
 	return b
 }
 
-// StmtBase wraps a *sql.Stmt (a prepared statement) with a specific SQL query.
-// To create a StmtBase call the Prepare function of type Select. StmtBase is
+// Stmter represents a prepared statement. It wraps a *sql.Stmt with a specific
+// SQL query. To create a Stmter call the Prepare function of a type DML type.
+// For now Stmter is not safe for concurrent use, despite the underlying
+// *sql.Stmt is. Don't forget to call Close!
+type Stmter interface {
+	// Stmt returns the raw prepared statement for your convenience.
+	Stmt() *sql.Stmt
+	// Close closes the underlying prepared statement.
+	Close() error
+	// WithArgs sets the interfaced arguments for the execution with Query+. It
+	// internally resets previously applied arguments.
+	WithArgs(args ...interface{}) Stmter
+	// WithArguments sets the arguments for the execution with Query+. It
+	// internally resets previously applied arguments.
+	WithArguments(args Arguments) Stmter
+	// WithRecords sets the records for the execution with Query+. It internally
+	// resets previously applied arguments.
+	WithRecords(records ...QualifiedRecord) Stmter
+	// Exec supports both either the traditional way or passing arguments or
+	// in combination with the previously called WithArguments, WithRecords or
+	// WithArgs functions. If you want to call it multiple times with the same
+	// arguments, do not use the `args` variable, instead use the With+ functions.
+	// Calling any of the With+ function and additionally setting the `args`, will
+	// append the `args` at the end to the previously set or generated arguments.
+	// This function is not thread safe.
+	Exec(ctx context.Context, args ...interface{}) (sql.Result, error)
+	// Query traditional way, allocation heavy.
+	Query(ctx context.Context, args ...interface{}) (*sql.Rows, error)
+	// QueryRow traditional way, allocation heavy.
+	QueryRow(ctx context.Context, args ...interface{}) *sql.Row
+	// Load loads data from a query into an object. Load can load a single row
+	// or n-rows.
+	Load(ctx context.Context, s ColumnMapper) (rowCount uint64, err error)
+	// LoadInt64 executes the prepared statement and returns the value as an
+	// int64. It returns a NotFound error if the query returns nothing.
+	LoadInt64(ctx context.Context) (int64, error)
+	// LoadInt64s executes the Select and returns the value as a slice of
+	// int64s.
+	LoadInt64s(ctx context.Context) (ret []int64, err error)
+}
+
+// stmtBase wraps a *sql.Stmt (a prepared statement) with a specific SQL query.
+// To create a stmtBase call the Prepare function of type Select. stmtBase is
 // not safe for concurrent use, despite the underlying *sql.Stmt is. Don't
 // forget to call Close!
-type StmtBase struct {
+type stmtBase struct {
+	source byte
 	builderCommon
 	stmt *sql.Stmt
 }
 
-// Close closes the underlying prepared statement.
-func (st *StmtBase) Close() error { return st.stmt.Close() }
+func (st *stmtBase) Stmt() *sql.Stmt                               { return st.stmt }
+func (st *stmtBase) Close() error                                  { return st.stmt.Close() }
+func (st *stmtBase) WithArgs(args ...interface{}) Stmter           { st.withArgs(args); return st }
+func (st *stmtBase) WithArguments(args Arguments) Stmter           { st.withArguments(args); return st }
+func (st *stmtBase) WithRecords(records ...QualifiedRecord) Stmter { st.withRecords(records); return st }
 
-func (st *StmtBase) resetArgs() {
+func (st *stmtBase) resetArgs() {
 	st.argsArgs = st.argsArgs[:0]
 	st.argsRaw = st.argsRaw[:0]
 	st.argsRecords = st.argsRecords[:0]
 }
 
-func (st *StmtBase) withArgs(args []interface{}) {
+func (st *stmtBase) withArgs(args []interface{}) {
 	st.resetArgs()
 	st.argsRaw = args
 	st.isWithInterfaces = true
 }
 
-func (st *StmtBase) withArguments(args Arguments) {
+func (st *stmtBase) withArguments(args Arguments) {
 	st.resetArgs()
 	st.argsArgs = args
 	st.isWithInterfaces = false
@@ -1055,7 +1100,7 @@ func (st *StmtBase) withArguments(args Arguments) {
 
 // withRecords sets the records for the execution with Query or Exec. It
 // internally resets previously applied arguments.
-func (st *StmtBase) withRecords(records []QualifiedRecord) {
+func (st *stmtBase) withRecords(records []QualifiedRecord) {
 	st.resetArgs()
 	st.argsRecords = records
 	st.isWithInterfaces = false
@@ -1064,7 +1109,7 @@ func (st *StmtBase) withRecords(records []QualifiedRecord) {
 // prepareArgs transforms mainly the Arguments into []interface{} but also
 // appends the `args` from the Exec+ or Query+ function.
 // All method receivers are not thread safe.
-func (st *StmtBase) prepareArgs(args ...interface{}) error {
+func (st *stmtBase) prepareArgs(args ...interface{}) error {
 	if st.ärgErr != nil {
 		return st.ärgErr
 	}
@@ -1079,16 +1124,7 @@ func (st *StmtBase) prepareArgs(args ...interface{}) error {
 	return err
 }
 
-// Errors do not get logged in the next functions. Errors are getting handled.
-
-// Exec supports both either the traditional way or passing arguments or
-// in combination with the previously called WithArguments, WithRecords or
-// WithArgs functions. If you want to call it multiple times with the same
-// arguments, do not use the `args` variable, instead use the With+ functions.
-// Calling any of the With+ function and additionally setting the `args`, will
-// append the `args` at the end to the previously set or generated arguments.
-// This function is not thread safe.
-func (st *StmtBase) Exec(ctx context.Context, args ...interface{}) (sql.Result, error) {
+func (st *stmtBase) Exec(ctx context.Context, args ...interface{}) (sql.Result, error) {
 	if err := st.prepareArgs(args...); err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -1098,8 +1134,7 @@ func (st *StmtBase) Exec(ctx context.Context, args ...interface{}) (sql.Result, 
 	return st.stmt.ExecContext(ctx, st.argsRaw...)
 }
 
-// Query traditional way, allocation heavy.
-func (st *StmtBase) Query(ctx context.Context, args ...interface{}) (*sql.Rows, error) {
+func (st *stmtBase) Query(ctx context.Context, args ...interface{}) (*sql.Rows, error) {
 	if err := st.prepareArgs(args...); err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -1109,8 +1144,7 @@ func (st *StmtBase) Query(ctx context.Context, args ...interface{}) (*sql.Rows, 
 	return st.stmt.QueryContext(ctx, st.argsRaw...)
 }
 
-// QueryRow traditional way, allocation heavy.
-func (st *StmtBase) QueryRow(ctx context.Context, args ...interface{}) *sql.Row {
+func (st *stmtBase) QueryRow(ctx context.Context, args ...interface{}) *sql.Row {
 	if err := st.prepareArgs(args...); err != nil {
 		_ = err
 		// Hmmm what should happen here?
@@ -1121,31 +1155,26 @@ func (st *StmtBase) QueryRow(ctx context.Context, args ...interface{}) *sql.Row 
 	return st.stmt.QueryRowContext(ctx, st.argsRaw...)
 }
 
-// Load loads data from a query into an object. You must set DB.QueryContext on
-// the Select object or it just panics. Load can load a single row or n-rows.
-func (st *StmtBase) Load(ctx context.Context, s ColumnMapper) (rowCount uint64, err error) {
+func (st *stmtBase) Load(ctx context.Context, s ColumnMapper) (rowCount uint64, err error) {
 	if st.Log != nil && st.Log.IsDebug() {
-		defer log.WhenDone(st.Log).Debug("Load", log.Uint64("row_count", rowCount), log.String("object_type", fmt.Sprintf("%T", s)))
+		defer log.WhenDone(st.Log).Debug("Load", log.Uint64("row_count", rowCount), log.String("object_type", fmt.Sprintf("%T", s)), log.Err(err))
 	}
 	r, err := st.Query(ctx)
 	rowCount, err = load(r, err, s, &st.ColumnMap)
 	return rowCount, errors.WithStack(err)
 }
 
-// LoadInt64 executes the prepared statement and returns the value at an int64.
-// It returns a NotFound error if the query returns nothing.
-func (st *StmtBase) LoadInt64(ctx context.Context) (int64, error) {
+func (st *stmtBase) LoadInt64(ctx context.Context) (int64, error) {
 	if st.Log != nil && st.Log.IsDebug() {
 		defer log.WhenDone(st.Log).Debug("LoadInt64")
 	}
 	return loadInt64(st.Query(ctx))
 }
 
-// LoadInt64s executes the Select and returns the value as a slice of int64s.
-func (st *StmtBase) LoadInt64s(ctx context.Context) (ret []int64, err error) {
+func (st *stmtBase) LoadInt64s(ctx context.Context) (ret []int64, err error) {
 	if st.Log != nil && st.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(st.Log).Debug("LoadInt64s", log.Int("row_count", len(ret)))
+		defer log.WhenDone(st.Log).Debug("LoadInt64s", log.Int("row_count", len(ret)), log.Err(err))
 	}
 	ret, err = loadInt64s(st.Query(ctx))
 	// Do not simplify it because we need ret in the defer. we don't log errors

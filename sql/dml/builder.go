@@ -25,10 +25,26 @@ import (
 	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
+const (
+	dmlTypeSelect = 's'
+	dmlTypeInsert = 'i'
+	dmlTypeUpdate = 'u'
+	dmlTypeDelete = 'd'
+	dmlTypeWith   = 'w'
+	dmlTypeUnion  = 'n'
+	// dmlTypeShow   = 'h'
+)
+
 // QueryBuilder assembles a query and returns the raw SQL without parameter
 // substitution and the arguments.
 type QueryBuilder interface {
 	ToSQL() (string, []interface{}, error)
+}
+
+type QuerySQL string
+
+func (s QuerySQL) ToSQL() (string, []interface{}, error) {
+	return string(s), nil, nil
 }
 
 type queryBuilder interface {

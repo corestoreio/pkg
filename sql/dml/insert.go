@@ -591,8 +591,9 @@ func (b *Insert) Exec(ctx context.Context) (sql.Result, error) {
 // statement. It returns a custom statement type or an error if there was one.
 // Provided arguments or records in the Insert are getting ignored. The provided
 // context is used for the preparation of the statement, not for the execution
-// of the statement.
-func (b *Insert) Prepare(ctx context.Context) (*StmtInsert, error) {
+// of the statement. The returned Stmter is not safe for concurrent use, despite
+// the underlying *sql.Stmt is.
+func (b *Insert) Prepare(ctx context.Context) (Stmter, error) {
 	if b.Log != nil && b.Log.IsDebug() {
 		defer log.WhenDone(b.Log).Debug("Prepare", log.Stringer("sql", b))
 	}
@@ -601,32 +602,33 @@ func (b *Insert) Prepare(ctx context.Context) (*StmtInsert, error) {
 		return nil, errors.WithStack(err)
 	}
 	cap := len(b.Columns) * b.RecordPlaceHolderCount
-	return &StmtInsert{
-		StmtBase: StmtBase{
+	return &stmtInsert{
+		stmtBase: stmtBase{
 			builderCommon: builderCommon{
 				id:       b.id,
 				argsArgs: make(Arguments, 0, cap),
 				argsRaw:  make([]interface{}, 0, cap),
 				Log:      b.Log,
 			},
-			stmt: sqlStmt,
+			source: dmlTypeInsert,
+			stmt:   sqlStmt,
 		},
 		ins: b,
 	}, nil
 }
 
-// StmtInsert wraps a *sql.Stmt with a specific SQL query. To create a
-// StmtInsert call the Prepare function of type Insert. StmtInsert is not safe
+// stmtInsert wraps a *sql.Stmt with a specific SQL query. To create a
+// stmtInsert call the Prepare function of type Insert. stmtInsert is not safe
 // for concurrent use, despite the underlying *sql.Stmt is. Don't forget to call
 // Close!
-type StmtInsert struct {
-	StmtBase
+type stmtInsert struct {
+	stmtBase
 	ins *Insert
 }
 
 // WithArguments sets the arguments for the execution with Exec. It internally resets
 // previously applied arguments.
-func (st *StmtInsert) WithArguments(args Arguments) *StmtInsert {
+func (st *stmtInsert) WithArguments(args Arguments) Stmter {
 	st.ins.Records = nil
 	st.ins.Values = st.ins.Values[:0]
 	st.argsArgs = st.argsArgs[:0]
@@ -649,22 +651,26 @@ func (st *StmtInsert) WithArguments(args Arguments) *StmtInsert {
 
 // WithRecords sets the records for the execution with Exec. It internally
 // resets previously applied arguments.
-func (st *StmtInsert) WithRecords(records ...ColumnMapper) *StmtInsert {
+func (st *stmtInsert) WithRecords(records ...QualifiedRecord) Stmter {
 	st.argsArgs = st.argsArgs[:0]
 	st.ins.Records = nil
-	st.ins.AddRecords(records...)
+	recs := make([]ColumnMapper, len(records))
+	for i, r := range records {
+		recs[i] = r.Record
+	}
+	st.ins.AddRecords(recs...)
 	st.argsArgs, st.ärgErr = st.ins.appendArgs(st.argsArgs)
 	return st
 }
 
-// ExecContext executes a query with the previous set arguments or records or
+// Exec executes a query with the previous set arguments or records or
 // without arguments. It does not reset the internal arguments, so multiple
 // executions with the same arguments/records are possible. Number of previously
 // applied arguments or records must be the same as in the defined SQL but
 // With*().ExecContext() can be called in a loop, both are not thread safe.
-func (st *StmtInsert) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
+func (st *stmtInsert) Exec(ctx context.Context, args ...interface{}) (sql.Result, error) {
 
-	result, err := st.StmtBase.Exec(ctx, args...)
+	result, err := st.stmtBase.Exec(ctx, args...)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

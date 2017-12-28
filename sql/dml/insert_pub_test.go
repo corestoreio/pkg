@@ -182,7 +182,7 @@ func TestInsert_Prepare(t *testing.T) {
 
 			res, err := stmt.
 				WithArguments(args.String(test.email).Int(test.groupID).Time(test.created_at)).
-				ExecContext(context.TODO())
+				Exec(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -229,7 +229,7 @@ func TestInsert_Prepare(t *testing.T) {
 
 			res, err := stmt.
 				WithArguments(args.String(test.email1).Int(test.groupID1).String(test.email2).Int(test.groupID2)).
-				ExecContext(context.TODO())
+				Exec(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -274,7 +274,7 @@ func TestInsert_Prepare(t *testing.T) {
 				Email: dml.MakeNullString(test.email),
 			}
 
-			res, err := stmt.WithRecords(p).ExecContext(context.TODO())
+			res, err := stmt.WithRecords(dml.Qualify("", p)).Exec(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -303,7 +303,7 @@ func TestInsert_Prepare(t *testing.T) {
 			require.NoError(t, stmt.Close(), "Close on a prepared statement")
 		}()
 
-		res, err := stmt.ExecContext(context.TODO(), "Peter Gopher", "peter@gopher.go")
+		res, err := stmt.Exec(context.TODO(), "Peter Gopher", "peter@gopher.go")
 		require.NoError(t, err, "failed to execute ExecContext")
 
 		lid, err := res.LastInsertId()
