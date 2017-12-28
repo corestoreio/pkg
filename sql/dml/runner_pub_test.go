@@ -17,6 +17,8 @@ package dml_test
 import (
 	"bytes"
 	"context"
+	"database/sql/driver"
+	"encoding"
 	"testing"
 	"time"
 
@@ -71,9 +73,59 @@ func TestPrepare(t *testing.T) {
 }
 
 var (
-	_ dml.ColumnMapper = (*baseTest)(nil)
-	_ dml.ColumnMapper = (*baseTestCollection)(nil)
+	_ dml.ColumnMapper           = (*baseTest)(nil)
+	_ dml.ColumnMapper           = (*baseTestCollection)(nil)
+	_ encoding.TextMarshaler     = (*textBinaryEncoder)(nil)
+	_ encoding.TextUnmarshaler   = (*textBinaryEncoder)(nil)
+	_ encoding.BinaryMarshaler   = (*textBinaryEncoder)(nil)
+	_ encoding.BinaryUnmarshaler = (*textBinaryEncoder)(nil)
 )
+
+func TestColumnMap_BinaryText(t *testing.T) {
+	cm := new(dml.ColumnMap)
+	cm.Args = dml.MakeArgs(5)
+
+	require.NoError(t, cm.Binary(&textBinaryEncoder{data: []byte(`BinaryTest`)}).Err())
+	assert.Exactly(t, "dml.MakeArgs(1).Bytes([]byte{0x42, 0x69, 0x6e, 0x61, 0x72, 0x79, 0x54, 0x65, 0x73, 0x74})", cm.Args.GoString())
+	require.NoError(t, cm.Text(&textBinaryEncoder{data: []byte(`TextTest`)}).Err())
+	assert.Exactly(t, "dml.MakeArgs(2).Bytes([]byte{0x42, 0x69, 0x6e, 0x61, 0x72, 0x79, 0x54, 0x65, 0x73, 0x74}).Bytes([]byte{0x54, 0x65, 0x78, 0x74, 0x54, 0x65, 0x73, 0x74})", cm.Args.GoString())
+
+	cm.CheckValidUTF8 = true
+	err := cm.Text(&textBinaryEncoder{data: []byte("\xc0\x80")}).Err()
+	assert.True(t, errors.Is(err, errors.NotValid), "Want errors.NotValid; Got %s\n%+v", errors.UnwrapKind(err), err)
+
+}
+
+type textBinaryEncoder struct {
+	data []byte
+}
+
+func (be textBinaryEncoder) MarshalBinary() (data []byte, err error) {
+	if bytes.Equal(be.data, []byte(`error`)) {
+		return nil, errors.DecryptionFailed.Newf("decryption failed test error")
+	}
+	return be.data, nil
+}
+func (be *textBinaryEncoder) UnmarshalBinary(data []byte) error {
+	if bytes.Equal(data, []byte(`error`)) {
+		return errors.Empty.Newf("test error empty")
+	}
+	be.data = append(be.data, data...)
+	return nil
+}
+func (be textBinaryEncoder) MarshalText() (text []byte, err error) {
+	if bytes.Equal(be.data, []byte(`error`)) {
+		return nil, errors.DecryptionFailed.Newf("internal validation failed test error")
+	}
+	return be.data, nil
+}
+func (be *textBinaryEncoder) UnmarshalText(text []byte) error {
+	if bytes.Equal(text, []byte(`error`)) {
+		return errors.Empty.Newf("test error empty")
+	}
+	be.data = append(be.data, text...)
+	return nil
+}
 
 type baseTest struct {
 	Bool        bool
@@ -94,6 +146,8 @@ type baseTest struct {
 	Time        time.Time
 	NullTime    dml.NullTime
 	Decimal     dml.Decimal
+	Text        textBinaryEncoder
+	Binary      textBinaryEncoder
 }
 
 func (bt *baseTest) MapColumns(cm *dml.ColumnMap) error {
@@ -138,6 +192,10 @@ func (bt *baseTest) MapColumns(cm *dml.ColumnMap) error {
 			cm.NullTime(&bt.NullTime)
 		case "decimal":
 			cm.Decimal(&bt.Decimal)
+		case "text":
+			cm.Text(&bt.Text)
+		case "binary":
+			cm.Binary(&bt.Binary)
 		default:
 			return errors.NotFound.Newf("[dml_test] dmlPerson Column %q not found", c)
 		}
@@ -188,7 +246,7 @@ func (vs *baseTestCollection) MapColumns(cm *dml.ColumnMap) error {
 	return cm.Err()
 }
 
-func TestRowConvert(t *testing.T) {
+func TestColumnMap_Query(t *testing.T) {
 	t.Parallel()
 
 	dbc, dbMock := dmltest.MockDB(t)
@@ -203,6 +261,7 @@ func TestRowConvert(t *testing.T) {
 		"uint", "uint8", "uint16", "uint32", "uint64",
 		"byte", "str", "null_string", "time", "null_time",
 		"decimal",
+		"text", "binary",
 	}
 
 	t.Run("scan with error", func(t *testing.T) {
@@ -212,26 +271,26 @@ func TestRowConvert(t *testing.T) {
 			0.1, nil,
 			0, 8, 16, 32, 64,
 			nil, "", nil, time.Time{}, nil,
-			nil)
+			nil, nil, nil)
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
 		tbl := new(baseTestCollection)
 
 		rc, err := dml.Load(context.TODO(), dbc.DB, tbl, tbl)
 		assert.Exactly(t, uint64(0), rc)
-		assert.Contains(t, err.Error(), "sql: Scan error on column index 0: unsupported Scan, storing driver.Value type chan int into type *sql.RawBytes")
+		assert.Contains(t, err.Error(), "sql: Scan error on column index 0: [dml] ColumnMap.Scan does not yet support type chan int with value")
 	})
 
 	t.Run("fmt.Stringer", func(t *testing.T) {
 
 		r := sqlmock.NewRows(columns).AddRow(
 			"1", "false",
-			-1, -64, -128,
+			-13, int64(-64), -128,
 			0.1, 3.141,
 			0, 8, 16, 32, 64,
 			"byte data", "I'm a string", nil,
 			now(), nil,
-			nil,
+			nil, nil, nil,
 		)
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
@@ -239,7 +298,8 @@ func TestRowConvert(t *testing.T) {
 		tbl.EventAfterScan = func(b *dml.ColumnMap, _ *baseTest) {
 			buf := new(bytes.Buffer)
 			require.NoError(t, b.Debug(buf))
-			assert.Exactly(t, "bool: \"1\"\nnull_bool: \"false\"\nint: \"-1\"\nint64: \"-64\"\nnull_int64: \"-128\"\nfloat64: \"0.1\"\nnull_float64: \"3.141\"\nuint: \"0\"\nuint8: \"8\"\nuint16: \"16\"\nuint32: \"32\"\nuint64: \"64\"\nbyte: \"byte data\"\nstr: \"I'm a string\"\nnull_string: <nil>\ntime: \"2006-01-02T15:04:05.000000002+00:00\"\nnull_time: <nil>\ndecimal: <nil>", buf.String())
+			assert.Exactly(t, "bool: \"1\"\nnull_bool: \"false\"\nint: \"-13\"\nint64: \"-64\"\nnull_int64: \"-128\"\nfloat64: \"0.1\"\nnull_float64: \"3.141\"\nuint: \"0\"\nuint8: \"8\"\nuint16: \"16\"\nuint32: \"32\"\nuint64: \"64\"\nbyte: \"byte data\"\nstr: \"I'm a string\"\nnull_string: <nil>\ntime: \"2006-01-02 15:04:05.000000002 +0000 hardcoded\"\nnull_time: <nil>\ndecimal: <nil>\ntext: <nil>\nbinary: <nil>",
+				buf.String())
 		}
 
 		rc, err := dml.Load(context.TODO(), dbc.DB, tbl, tbl)
@@ -254,7 +314,7 @@ func TestRowConvert(t *testing.T) {
 			0.1, 3.141,
 			0, 8, 16, 32, 64,
 			"byte data", "I'm a string", "null_string",
-			now(), now(), "2681.7000",
+			now(), now(), "2681.7000", []byte(`Hello Text`), []byte(`Hello Binary`),
 		)
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
@@ -292,6 +352,8 @@ func TestRowConvert(t *testing.T) {
 					Scale:     4,
 					Valid:     true,
 				},
+				Text:   textBinaryEncoder{data: []byte(`Hello Text`)},
+				Binary: textBinaryEncoder{data: []byte(`Hello Binary`)},
 			},
 			tbl.Data[0])
 	})
@@ -304,6 +366,7 @@ func TestRowConvert(t *testing.T) {
 			0, 8, 16, 32, 64,
 			nil, "I'm a string", nil,
 			now(), nil, nil,
+			nil, nil,
 		)
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
@@ -339,7 +402,8 @@ func TestRowConvert(t *testing.T) {
 			0.1, nil,
 			0, 8, 16, 32, 64,
 			nil, "aa\xe2", string([]byte{66, 250, 67}), // both are invalid
-			now(), nil, nil)
+			now(), nil, nil,
+			nil, nil)
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
 		tbl := new(baseTestCollection)
@@ -349,6 +413,7 @@ func TestRowConvert(t *testing.T) {
 		assert.Exactly(t, uint64(0), rc)
 		assert.True(t, errors.NotValid.Match(err), "%+v", err)
 	})
+
 	t.Run("invalid UTF8 NullStr", func(t *testing.T) {
 
 		r := sqlmock.NewRows(columns).AddRow(
@@ -357,7 +422,8 @@ func TestRowConvert(t *testing.T) {
 			0.1, nil,
 			0, 8, 16, 32, 64,
 			nil, "aa", string([]byte{66, 250, 67}), // both are invalid
-			now(), nil, nil)
+			now(), nil, nil,
+			nil, nil)
 
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
@@ -369,4 +435,500 @@ func TestRowConvert(t *testing.T) {
 		assert.True(t, errors.NotValid.Match(err), "%+v", err)
 
 	})
+}
+
+func TestColumnMap_Prepared(t *testing.T) {
+	t.Parallel()
+
+	dbc, dbMock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, dbc, dbMock)
+
+	columns := []string{
+		"bool", "null_bool",
+		"int", "int64", "null_int64",
+		"float64", "null_float64",
+		"uint", "uint8", "uint16", "uint32", "uint64",
+		"byte", "str", "null_string", "time", "null_time",
+		"decimal",
+		"text", "binary",
+	}
+
+	runner := func(scanErrWantKind errors.Kind, want string, values ...driver.Value) func(*testing.T) {
+		return func(t *testing.T) {
+			r := sqlmock.NewRows(columns).AddRow(values...)
+			dbMock.ExpectPrepare("SELECT \\* FROM `test`").ExpectQuery().WillReturnRows(r)
+			tbl := new(baseTestCollection)
+			tbl.CheckValidUTF8 = true
+			tbl.EventAfterScan = func(b *dml.ColumnMap, _ *baseTest) {
+				buf := new(bytes.Buffer)
+				require.NoError(t, b.Debug(buf))
+				assert.Exactly(t, want, buf.String())
+			}
+			stmt, err := dbc.SelectFrom("test").Star().Prepare(context.TODO())
+			require.NoError(t, err)
+
+			rc, err := stmt.Load(context.TODO(), tbl)
+			if scanErrWantKind != errors.NoKind {
+				assert.True(t, errors.Is(err, scanErrWantKind), "Should be Error Kind %s; Got: %s\n%+v", scanErrWantKind, errors.UnwrapKind(err), err)
+			} else {
+				require.NoError(t, err)
+				assert.Exactly(t, uint64(1), rc, "Should return one loaded row")
+			}
+		}
+	}
+	t.Run("native bool", runner(
+		errors.NoKind,
+		"bool: \"true\"\nnull_bool: \"false\"\nint: \"1\"\nint64: \"2\"\nnull_int64: <nil>\nfloat64: \"0.1\"\nnull_float64: <nil>\nuint: \"0\"\nuint8: \"8\"\nuint16: \"16\"\nuint32: \"32\"\nuint64: \"64\"\nbyte: <nil>\nstr: \"\"\nnull_string: <nil>\ntime: \"0001-01-01 00:00:00 +0000 UTC\"\nnull_time: <nil>\ndecimal: <nil>\ntext: <nil>\nbinary: <nil>",
+		true, false, // "bool", "null_bool"
+		1, 2, nil, // "int", "int64", "null_int64"
+		0.1, nil, // "float64", "null_float64",
+		0, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		nil, "", nil, time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		nil,      //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("int bool", runner(
+		errors.NoKind,
+		"bool: \"1\"\nnull_bool: \"1\"\nint: \"1\"\nint64: \"2\"\nnull_int64: <nil>\nfloat64: \"0.1\"\nnull_float64: <nil>\nuint: \"0\"\nuint8: \"8\"\nuint16: \"16\"\nuint32: \"32\"\nuint64: \"64\"\nbyte: <nil>\nstr: \"\"\nnull_string: <nil>\ntime: \"0001-01-01 00:00:00 +0000 UTC\"\nnull_time: <nil>\ndecimal: <nil>\ntext: <nil>\nbinary: <nil>",
+		1, 1,
+		1, 2, nil,
+		0.1, nil,
+		0, 8, 16, 32, 64,
+		nil, "", nil, time.Time{}, nil,
+		nil,
+		nil, nil, // "text", "binary",
+	))
+	t.Run("float64 bool error", runner(
+		errors.NotSupported,
+		"",
+		float64(1), 1,
+		1, 2, nil,
+		0.1, nil,
+		0, 8, 16, 32, 64,
+		nil, "", nil, time.Time{}, nil,
+		nil,
+		nil, nil, // "text", "binary",
+	))
+	t.Run("string bool error", runner(
+		errors.BadEncoding,
+		"",
+		"ok", 1,
+		1, 2, nil,
+		0.1, nil,
+		0, 8, 16, 32, 64,
+		nil, "", nil, time.Time{}, nil,
+		nil,
+		nil, nil, // "text", "binary",
+	))
+	t.Run("null bool empty string", runner(
+		errors.NoKind,
+		"bool: \"1\"\nnull_bool: \"\"\nint: \"1\"\nint64: \"2\"\nnull_int64: <nil>\nfloat64: \"0.1\"\nnull_float64: <nil>\nuint: \"0\"\nuint8: \"8\"\nuint16: \"16\"\nuint32: \"32\"\nuint64: \"64\"\nbyte: <nil>\nstr: \"\"\nnull_string: <nil>\ntime: \"0001-01-01 00:00:00 +0000 UTC\"\nnull_time: <nil>\ndecimal: <nil>\ntext: <nil>\nbinary: <nil>",
+		1, "",
+		1, 2, nil,
+		0.1, nil,
+		0, 8, 16, 32, 64,
+		nil, "", nil, time.Time{}, nil,
+		nil,
+		nil, nil, // "text", "binary",
+	))
+	t.Run("null bool float64 error", runner(
+		errors.NotSupported,
+		"",
+		1, float64(1),
+		1, 2, nil,
+		0.1, nil,
+		0, 8, 16, 32, 64,
+		nil, "", nil, time.Time{}, nil,
+		nil,
+		nil, nil, // "text", "binary",
+	))
+	t.Run("null bool byte error", runner(
+		errors.BadEncoding,
+		"",
+		1, []byte(`ok`),
+		1, 2, nil,
+		0.1, nil,
+		0, 8, 16, 32, 64,
+		nil, "", nil, time.Time{}, nil,
+		nil,
+		nil, nil, // "text", "binary",
+	))
+	t.Run("null bool string error", runner(
+		errors.BadEncoding,
+		"",
+		1, `ok`,
+		1, 2, nil,
+		0.1, nil,
+		0, 8, 16, 32, 64,
+		nil, "", nil, time.Time{}, nil,
+		nil,
+		nil, nil, // "text", "binary",
+	))
+	t.Run("int string error", runner(
+		errors.NotSupported,
+		"",
+		true, false, // "bool", "null_bool"
+		"1", 2, nil, // "int", "int64", "null_int64"
+		0.1, nil, // "float64", "null_float64",
+		0, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		nil, "", nil, time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		nil,      //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("int byte error", runner(
+		errors.BadEncoding,
+		"",
+		true, false, // "bool", "null_bool"
+		[]byte("1.0"), 2, nil, // "int", "int64", "null_int64"
+		0.1, nil, // "float64", "null_float64",
+		0, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		nil, "", nil, time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		nil,      //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+
+	t.Run("int64 string error", runner(
+		errors.NotSupported,
+		"",
+		true, false, // "bool", "null_bool"
+		1, "2", nil, // "int", "int64", "null_int64"
+		0.1, nil, // "float64", "null_float64",
+		0, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		nil, "", nil, time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		nil,      //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("int64 byte error", runner(
+		errors.BadEncoding,
+		"",
+		true, false, // "bool", "null_bool"
+		1, []byte("2.0"), nil, // "int", "int64", "null_int64"
+		0.1, nil, // "float64", "null_float64",
+		0, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		nil, "", nil, time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		nil,      //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("null int64 byte error", runner(
+		errors.BadEncoding,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, []byte("2.0"), // "int", "int64", "null_int64"
+		0.1, nil, // "float64", "null_float64",
+		0, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		nil, "", nil, time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		nil,      //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("null int64 float error", runner(
+		errors.NotSupported,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 2.0, // "int", "int64", "null_int64"
+		0.1, nil, // "float64", "null_float64",
+		0, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		nil, "", nil, time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		nil,      //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("float64 as int error", runner(
+		errors.NotSupported,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		64, nil, // "float64", "null_float64",
+		0, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		nil, "", nil, time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		nil,      //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("float64 as byte error", runner(
+		errors.BadEncoding,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		[]byte(`6,4`), nil, // "float64", "null_float64",
+		0, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		nil, "", nil, time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		nil,      //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("null float64 as byte error", runner(
+		errors.BadEncoding,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, []byte(`6,4`), // "float64", "null_float64",
+		0, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		nil, "", nil, time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		nil,      //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("null float64 as int error", runner(
+		errors.NotSupported,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, 64, // "float64", "null_float64",
+		0, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		nil, "", nil, time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		nil,      //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("decimal no error", runner(
+		errors.NoKind,
+		"bool: \"true\"\nnull_bool: \"false\"\nint: \"1\"\nint64: \"2\"\nnull_int64: \"3\"\nfloat64: \"6.4\"\nnull_float64: <nil>\nuint: \"0\"\nuint8: \"8\"\nuint16: \"16\"\nuint32: \"32\"\nuint64: \"64\"\nbyte: <nil>\nstr: \"\"\nnull_string: <nil>\ntime: \"0001-01-01 00:00:00 +0000 UTC\"\nnull_time: <nil>\ndecimal: \"48.98\"\ntext: <nil>\nbinary: <nil>",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, nil, // "float64", "null_float64",
+		0, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		nil, "", nil, time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		48.98,    //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("decimal int error", runner(
+		errors.NotSupported,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, nil, // "float64", "null_float64",
+		0, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		nil, "", nil, time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		4898,     //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("uint float error", runner(
+		errors.NotSupported,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, nil, // "float64", "null_float64",
+		0.1, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		nil, "", nil, time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		48.98,    //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("uint8 float error", runner(
+		errors.NotSupported,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, nil, // "float64", "null_float64",
+		1, 8.1, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		nil, "", nil, time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		48.98,    //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("uint16 float error", runner(
+		errors.NotSupported,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, nil, // "float64", "null_float64",
+		1, 8, 1.6, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		nil, "", nil, time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		48.98,    //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("uint32 float error", runner(
+		errors.NotSupported,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, nil, // "float64", "null_float64",
+		1, 8, 16, 3.2, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		nil, "", nil, time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		48.98,    //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("uint64 float error", runner(
+		errors.NotSupported,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, nil, // "float64", "null_float64",
+		1, 8, 16, 32, 6.4, // "uint", "uint8", "uint16", "uint32", "uint64"
+		nil, "", nil, time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		48.98,    //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("byte as float error", runner(
+		errors.NotSupported,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, nil, // "float64", "null_float64",
+		1, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		4.5678, "", nil, time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		48.98,    //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("string as float error", runner(
+		errors.NotSupported,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, nil, // "float64", "null_float64",
+		1, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		[]byte(`Hi`), 12.8, nil, time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		48.98,    //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("string as invalid utf8 string error", runner(
+		errors.NotValid,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, nil, // "float64", "null_float64",
+		1, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		[]byte(`Hi`), string("\xc0\x80"), nil, time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		48.98,    //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("string as invalid utf8 byte error", runner(
+		errors.NotValid,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, nil, // "float64", "null_float64",
+		1, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		[]byte(`Hi`), []byte("\xc0\x80"), nil, time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		48.98,    //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("null string as invalid utf8 byte error", runner(
+		errors.NotValid,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, nil, // "float64", "null_float64",
+		1, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		[]byte(`Hi`), "x", []byte("\xc0\x80"), time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		48.98,    //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("null string as invalid int error", runner(
+		errors.NotSupported,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, nil, // "float64", "null_float64",
+		1, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		[]byte(`Hi`), "x", 8767, time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		48.98,    //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("time as invalid int error", runner(
+		errors.NotSupported,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, nil, // "float64", "null_float64",
+		1, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		[]byte(`Hi`), "x", "y", 123456789, nil, // "byte", "str", "null_string", "time", "null_time",
+		48.98,    //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("null time as invalid int error", runner(
+		errors.NotSupported,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, nil, // "float64", "null_float64",
+		1, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		[]byte(`Hi`), "x", "y", time.Time{}, 123456789, // "byte", "str", "null_string", "time", "null_time",
+		48.98,    //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("null time as invalid string error", runner(
+		errors.NotValid,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, nil, // "float64", "null_float64",
+		1, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		[]byte(`Hi`), "x", "y", time.Time{}, "hello", // "byte", "str", "null_string", "time", "null_time",
+		48.98,    //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+	t.Run("null time as invalid byte error", runner(
+		errors.NotValid,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, nil, // "float64", "null_float64",
+		1, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		[]byte(`Hi`), "x", "y", time.Time{}, []byte("hello"), // "byte", "str", "null_string", "time", "null_time",
+		48.98,    //	"decimal",
+		nil, nil, // "text", "binary",
+	))
+
+	t.Run("text/binary valid", runner(
+		errors.NoKind,
+		"bool: \"true\"\nnull_bool: \"false\"\nint: \"1\"\nint64: \"2\"\nnull_int64: \"3\"\nfloat64: \"6.4\"\nnull_float64: <nil>\nuint: \"1\"\nuint8: \"8\"\nuint16: \"16\"\nuint32: \"32\"\nuint64: \"64\"\nbyte: \"Hi\"\nstr: \"x\"\nnull_string: \"y\"\ntime: \"0001-01-01 00:00:00 +0000 UTC\"\nnull_time: <nil>\ndecimal: \"48.98\"\ntext: \"Hello World Text\"\nbinary: \"Hello Binary\"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, nil, // "float64", "null_float64",
+		1, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		[]byte(`Hi`), "x", "y", time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		48.98, //	"decimal",
+		[]byte(`Hello World Text`), []byte("Hello Binary"), // "text", "binary",
+	))
+	t.Run("text invalid UTF8", runner(
+		errors.NotValid,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, nil, // "float64", "null_float64",
+		1, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		[]byte(`Hi`), "x", "y", time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		48.98, //	"decimal",
+		[]byte("hello \xc0\x80"), []byte("Hello Binary"), // "text", "binary",
+	))
+	t.Run("text type error", runner(
+		errors.NotSupported,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, nil, // "float64", "null_float64",
+		1, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		[]byte(`Hi`), "x", "y", time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		48.98,                                    //	"decimal",
+		"hello \xc0\x80", []byte("Hello Binary"), // "text", "binary",
+	))
+	t.Run("binary type error", runner(
+		errors.NotSupported,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, nil, // "float64", "null_float64",
+		1, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		[]byte(`Hi`), "x", "y", time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		48.98,               //	"decimal",
+		nil, "Hello Binary", // "text", "binary",
+	))
+
+	t.Run("text marshal error", runner(
+		errors.Empty,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, nil, // "float64", "null_float64",
+		1, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		[]byte(`Hi`), "x", "y", time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		48.98,                //	"decimal",
+		[]byte("error"), nil, // "text", "binary",
+	))
+	t.Run("binary marshal error", runner(
+		errors.Empty,
+		"",
+		true, false, // "bool", "null_bool"
+		1, 2, 3, // "int", "int64", "null_int64"
+		6.4, nil, // "float64", "null_float64",
+		1, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
+		[]byte(`Hi`), "x", "y", time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
+		48.98,                //	"decimal",
+		nil, []byte("error"), // "text", "binary",
+	))
+
 }

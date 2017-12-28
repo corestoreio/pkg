@@ -43,32 +43,74 @@ func init() {
 // BenchmarkSelect_Integration_Load-4   	     500	   3461720 ns/op	  752234 B/op	   21882 allocs/op <- switch
 
 // BenchmarkSelect_Integration_LScanner-4   	 500	   3425029 ns/op	  755206 B/op	   21878 allocs/op
-// BenchmarkSelect_Integration_Scanner-4   	     500	   3288291 ns/op	  784423 B/op	   23890 allocs/op <- iFace with Scan function
-// BenchmarkSelect_Integration_Scanner-4   	     500	   3001319 ns/op	  784290 B/op	   23888 allocs/op Go 1.9 with new Scanner iFace
-// BenchmarkSelect_Integration_Scanner-4   	    1000	   1947410 ns/op	  743693 B/op	   17876 allocs/op Go 1.9 with RowConvert type and sql.RawBytes
-// BenchmarkSelect_Integration_Scanner-4   	    1000	   2014803 ns/op	  743507 B/op	   17876 allocs/op Go 1.10 beta1
-func BenchmarkSelect_Integration_Scanner(b *testing.B) {
+// BenchmarkSelectRows2007-4   	     500	   3288291 ns/op	  784423 B/op	   23890 allocs/op <- iFace with Scan function
+// BenchmarkSelectRows2007-4   	     500	   3001319 ns/op	  784290 B/op	   23888 allocs/op Go 1.9 with new Scanner iFace
+// BenchmarkSelectRows2007-4   	    1000	   1947410 ns/op	  743693 B/op	   17876 allocs/op Go 1.9 with RowConvert type and sql.RawBytes
+// BenchmarkSelectRows2007-4   	    1000	   2014803 ns/op	  743507 B/op	   17876 allocs/op Go 1.10 beta1 MariaDB 10.2
+// BenchmarkSelectRows2007/Query-4         	     500	   2869035 ns/op	  743026 B/op	   17868 allocs/op MariaDB 10.3.2
+// BenchmarkSelectRows2007/Prepared-4      	     500	   2572352 ns/op	  629875 B/op	   16383 allocs/op MariaDB 10.3.2
+func BenchmarkSelectRows2007(b *testing.B) {
 	if !runIntegration {
 		b.Skip("Skipped. To enable use -integration=1")
 	}
-
 	const coreConfigDataRowCount = 2007
-
 	c := createRealSession(b)
 	defer dmltest.Close(b, c)
 
-	s := c.SelectFrom("core_config_data112").Star()
-	ctx := context.TODO()
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		var ccd TableCoreConfigDataSlice
-		if _, err := s.Load(ctx, &ccd); err != nil {
-			b.Fatalf("%+v", err)
+	b.Run("Query", func(b *testing.B) {
+		s := c.SelectFrom("core_config_data112").Star()
+		ctx := context.TODO()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			var ccd TableCoreConfigDataSlice
+			if _, err := s.Load(ctx, &ccd); err != nil {
+				b.Fatalf("%+v", err)
+			}
+			if len(ccd.Data) != coreConfigDataRowCount {
+				b.Fatal("Length mismatch")
+			}
 		}
-		if len(ccd.Data) != coreConfigDataRowCount {
-			b.Fatal("Length mismatch")
+	})
+
+	b.Run("Prepared,noSliceReuse", func(b *testing.B) {
+		stmt, err := c.SelectFrom("core_config_data112").Star().Prepare(context.Background())
+		if err != nil {
+			b.Fatal(err)
 		}
-	}
+		ctx := context.TODO()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			var ccd TableCoreConfigDataSlice
+			if _, err := stmt.Load(ctx, &ccd); err != nil {
+				b.Fatalf("%+v", err)
+			}
+			if len(ccd.Data) != coreConfigDataRowCount {
+				b.Fatal("Length mismatch")
+			}
+		}
+	})
+	b.Run("Prepared,SliceReuse", func(b *testing.B) {
+		stmt, err := c.SelectFrom("core_config_data112").Star().Prepare(context.Background())
+		if err != nil {
+			b.Fatal(err)
+		}
+		ctx := context.TODO()
+		ccd := &TableCoreConfigDataSlice{
+			Data: make([]*TableCoreConfigData, 0, coreConfigDataRowCount),
+		}
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			if _, err := stmt.Load(ctx, ccd); err != nil {
+				b.Fatalf("%+v", err)
+			}
+			if len(ccd.Data) != coreConfigDataRowCount {
+				b.Fatal("Length mismatch")
+			}
+			ccd.Data = ccd.Data[:0]
+		}
+	})
+
 }
 
 //BenchmarkInsert_Prepared/ExecRecord-4        	    5000	    320371 ns/op	     512 B/op	      12 allocs/op
@@ -98,11 +140,8 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	defer func() {
-		if err := stmt.Close(); err != nil {
-			b.Fatal(err)
-		}
-	}()
+	defer dmltest.Close(b, stmt)
+
 	const totalIncome = 4.3215
 	const storeID = 12345
 	ctx := context.TODO()

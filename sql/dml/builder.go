@@ -83,7 +83,9 @@ type builderCommon struct {
 	// created SELECT statements. This value  gets stored in templateStmtCount.
 	// An example exists in TestUnionTemplate_ReuseArgs.
 	templateStmtCount int
-	colMap            ColumnMap
+	// ColumnMap internal intermediate typ which scans into its own optimized
+	// types to avoid lots of allocations. It can also verify UTF8 strings.
+	ColumnMap ColumnMap
 }
 
 func (bc builderCommon) convertRecordsToArguments() (Arguments, error) {

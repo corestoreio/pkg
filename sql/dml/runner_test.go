@@ -15,11 +15,16 @@
 package dml
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
+	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+var _ fmt.Stringer = (*scannedColumn)(nil)
 
 func TestColumnMap_Nil_Pointers(t *testing.T) {
 	t.Parallel()
@@ -51,15 +56,81 @@ func TestColumnMap_Nil_Pointers(t *testing.T) {
 		cm.Args.GoString())
 }
 
+func TestScannedColumn_String(t *testing.T) {
+	t.Parallel()
+	sc := scannedColumn{
+		field:   'b',
+		bool:    true,
+		int64:   -17,
+		float64: 3.14159,
+		string:  "",
+		time:    now(),
+		byte:    []byte(`Håi`),
+	}
+	assert.Exactly(t, "true", sc.String())
+	sc.field = 'i'
+	assert.Exactly(t, "-17", sc.String())
+	sc.field = 'f'
+	assert.Exactly(t, "3.14159", sc.String())
+	sc.field = 's'
+	assert.Exactly(t, "", sc.String())
+	sc.field = 't'
+	assert.Exactly(t, "2006-01-02 15:04:05.000000002 -0400 UTC-4", sc.String())
+	sc.field = 'y'
+	assert.Exactly(t, "Håi", sc.String())
+	sc.field = 0
+	assert.Exactly(t, "Field Type '\\x00' not supported", sc.String())
+}
+
+func TestScannedColumn_Scan(t *testing.T) {
+	t.Parallel()
+	sc := scannedColumn{}
+
+	require.NoError(t, sc.Scan(int64(4711)))
+	assert.Exactly(t, "4711", sc.String())
+
+	require.NoError(t, sc.Scan(int(4711)))
+	assert.Exactly(t, "4711", sc.String())
+
+	require.NoError(t, sc.Scan(float32(47.11)))
+	assert.Exactly(t, "47.11000061035156", sc.String())
+
+	require.NoError(t, sc.Scan(float64(47.11)))
+	assert.Exactly(t, "47.11", sc.String())
+
+	require.NoError(t, sc.Scan(true))
+	assert.Exactly(t, "true", sc.String())
+	require.NoError(t, sc.Scan(false))
+	assert.Exactly(t, "false", sc.String())
+
+	require.NoError(t, sc.Scan([]byte(`@`)))
+	assert.Exactly(t, "@", sc.String())
+
+	require.NoError(t, sc.Scan(`@`))
+	assert.Exactly(t, "@", sc.String())
+
+	require.NoError(t, sc.Scan(now()))
+	assert.Exactly(t, "2006-01-02 15:04:05.000000002 -0400 UTC-4", sc.String())
+
+	require.NoError(t, sc.Scan(nil))
+	assert.Exactly(t, "<nil>", sc.String())
+
+	err := sc.Scan(uint8(1))
+	require.True(t, errors.Is(err, errors.NotSupported), "Should be error kind NotSupported")
+
+}
+
 func TestColumnMap_Scan_Empty_Bytes(t *testing.T) {
 	t.Parallel()
 
 	cm := newColumnMap(nil)
 	cm.index = 0
-	cm.current = []byte(nil)
 	cm.columns = []string{"SomeColumn"}
+	cm.scanCol = make([]scannedColumn, 1)
+	cm.scanCol[0].field = 'y'
 
 	t.Run("Bool", func(t *testing.T) {
+
 		var v bool
 		assert.EqualError(t, cm.Bool(&v).Err(), "[dml] Column \"SomeColumn\": strconv.ParseBool: parsing \"\": invalid syntax")
 		cm.scanErr = nil
@@ -133,31 +204,31 @@ func TestColumnMap_Scan_Empty_Bytes(t *testing.T) {
 	})
 	t.Run("Uint", func(t *testing.T) {
 		var v uint
-		assert.NoError(t, cm.Uint(&v).Err())
+		assert.EqualError(t, cm.Uint(&v).Err(), "[dml] Column \"SomeColumn\": strconv.ParseUint: parsing \"\": invalid syntax")
 		assert.Empty(t, v)
 		cm.scanErr = nil
 	})
 	t.Run("Uint8", func(t *testing.T) {
 		var v uint8
-		assert.NoError(t, cm.Uint8(&v).Err())
+		assert.EqualError(t, cm.Uint8(&v).Err(), "[dml] Column \"SomeColumn\": strconv.ParseUint: parsing \"\": invalid syntax")
 		assert.Empty(t, v)
 		cm.scanErr = nil
 	})
 	t.Run("Uint16", func(t *testing.T) {
 		var v uint16
-		assert.NoError(t, cm.Uint16(&v).Err())
+		assert.EqualError(t, cm.Uint16(&v).Err(), "[dml] Column \"SomeColumn\": strconv.ParseUint: parsing \"\": invalid syntax")
 		assert.Empty(t, v)
 		cm.scanErr = nil
 	})
 	t.Run("Uint32", func(t *testing.T) {
 		var v uint32
-		assert.NoError(t, cm.Uint32(&v).Err())
+		assert.EqualError(t, cm.Uint32(&v).Err(), "[dml] Column \"SomeColumn\": strconv.ParseUint: parsing \"\": invalid syntax")
 		assert.Empty(t, v)
 		cm.scanErr = nil
 	})
 	t.Run("Uint64", func(t *testing.T) {
 		var v uint64
-		assert.NoError(t, cm.Uint64(&v).Err())
+		assert.EqualError(t, cm.Uint64(&v).Err(), "[dml] Column \"SomeColumn\": strconv.ParseUint: parsing \"\": invalid syntax")
 		assert.Empty(t, v)
 		cm.scanErr = nil
 	})

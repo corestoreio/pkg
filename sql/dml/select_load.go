@@ -42,7 +42,7 @@ func (b *Select) Load(ctx context.Context, s ColumnMapper) (rowCount uint64, err
 		return 0, errors.WithStack(err)
 	}
 	rows, err := b.DB.QueryContext(ctx, sqlStr, args...)
-	rowCount, err = load(rows, err, s, &b.colMap)
+	rowCount, err = load(rows, err, s, &b.ColumnMap)
 	if err != nil {
 		return 0, errors.Wrapf(err, "[dml] Load.QueryContext with query %q", sqlStr)
 	}

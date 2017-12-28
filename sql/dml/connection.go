@@ -18,6 +18,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"strings"
 	"time"
 
 	"github.com/corestoreio/errors"
@@ -128,6 +129,9 @@ func WithDSN(dsn string, cb ...DriverCallBack) ConnPoolOption {
 		panic(errors.NotImplemented.Newf("[dml] Only one DriverCallBack function does currently work. You provided: %d", len(cb)))
 	}
 	return func(c *ConnPool) error {
+		if !strings.Contains(dsn, "parseTime") {
+			return errors.NotImplemented.Newf("[dml] The DSN for go-sql-driver/mysql must contain the parameters `?parseTime=true[&loc=YourTimeZone]`")
+		}
 		c.dsn = dsn
 		var drv driver.Driver = mysql.MySQLDriver{}
 		if len(cb) == 1 {

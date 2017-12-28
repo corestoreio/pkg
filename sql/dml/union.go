@@ -371,7 +371,7 @@ func (u *Union) Load(ctx context.Context, s ColumnMapper) (rowCount uint64, err 
 		return 0, errors.WithStack(err)
 	}
 	rows, err := u.DB.QueryContext(ctx, sqlStr, args...)
-	rowCount, err = load(rows, err, s, &u.colMap)
+	rowCount, err = load(rows, err, s, &u.ColumnMap)
 	if err != nil {
 		return 0, errors.Wrapf(err, "[dml] Load.QueryContext with query %q", sqlStr)
 	}

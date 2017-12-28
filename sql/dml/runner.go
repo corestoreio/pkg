@@ -17,9 +17,9 @@ package dml
 import (
 	"context"
 	"database/sql"
+	"encoding"
 	"fmt"
 	"io"
-	"math"
 	"strconv"
 	"time"
 	"unicode/utf8"
@@ -155,27 +155,26 @@ type ColumnMapper interface {
 type ColumnMap struct {
 	Args Arguments // in case we collect arguments
 
-	// HasRows set to true if at least one row has been found.
-	HasRows bool
-	// Count increments on call to Scan.
-	Count uint64
-	// Columns contains the names of the column returned from the query. One
-	// should only read from the slice. Never modify it.
-	columns    []string
-	columnsLen int
 	// initialized gets set to true after the first call to Scan to initialize
 	// the internal slices.
 	initialized bool
 	// CheckValidUTF8 if enabled checks if strings contains valid UTF-8 characters.
 	CheckValidUTF8 bool
-	scanArgs       []interface{} // could be a sync.Pool but check it in benchmarks.
-	scanRaw        []*sql.RawBytes
+	// HasRows set to true if at least one row has been found.
+	HasRows bool
+	// Count increments on call to Scan.
+	Count    uint64
+	scanArgs []interface{} // could be a sync.Pool but check it in benchmarks.
+	scanCol  []scannedColumn
+	// Columns contains the names of the column returned from the query. One
+	// should only read from the slice. Never modify it.
+	columns    []string
+	columnsLen int
 	// scanErr is a delayed error and also used to avoid `if err != nil` in
 	// generated code. This reduces the boiler plate code a lot! A trade off
 	// between chainable API and too verbose error checking.
 	scanErr error
 	index   int
-	current []byte
 }
 
 func newColumnMap(args Arguments, columns ...string) *ColumnMap {
@@ -233,6 +232,82 @@ func (b *ColumnMap) Mode() (m columnMapMode) {
 	return m
 }
 
+// scannedColumn represents an intermediate type (or DTO) to scan the
+// driver.Values into. It supports the private types textRows and binaryRows in
+// go-sql-driver/mysql. TextRows gets used during a normal query to read its
+// result set and binaryRows gets used when a prepared statement gets executed
+// and returns a result set. TextRows contains only byte slices whereas
+// binaryRows contains already decoded types as defined in driver.Value. Avoids
+// the reflection soup in database/sql.convertAssign.
+// The supported data types depend on the this function:
+// github.com/go-sql-driver/mysql/packets.go:1133 `func (rows *binaryRows) readRow(dest []driver.Value) error`
+// Then all the type functions (Int,String,Uint8, etc) in type ColumnMap can
+// support all of the MySQL protocol field types. Hence we can support
+// fieldTypeGeometry, fieldTypeJSON with custom decoders.
+type scannedColumn struct {
+	field   byte      // i,f,b,y,s,t, n == null; nothing equals null of nil/empty
+	bool    bool      // b
+	int64   int64     // i
+	float64 float64   // f double type
+	string  string    // s
+	time    time.Time // t
+	byte    []byte    // y
+}
+
+func (s scannedColumn) String() string {
+	switch s.field {
+	case 'i':
+		return strconv.FormatInt(s.int64, 10)
+	case 'f':
+		return strconv.FormatFloat(s.float64, 'f', -1, 64)
+	case 'b':
+		return strconv.FormatBool(s.bool)
+	case 'y':
+		return string(s.byte)
+	case 's':
+		return s.string
+	case 't':
+		return s.time.String()
+	case 'n':
+		return "<nil>"
+	}
+	return fmt.Sprintf("Field Type %q not supported", s.field)
+}
+
+func (s *scannedColumn) Scan(src interface{}) (err error) {
+	switch val := src.(type) {
+	case int64:
+		s.field = 'i'
+		s.int64 = val
+	case int: // sqlmock package requires this
+		s.field = 'i'
+		s.int64 = int64(val)
+	case float32:
+		s.field = 'f'
+		s.float64 = float64(val)
+	case float64:
+		s.field = 'f'
+		s.float64 = val
+	case bool:
+		s.field = 'b'
+		s.bool = val
+	case []byte:
+		s.field = 'y'
+		s.byte = val
+	case string:
+		s.field = 's'
+		s.string = val
+	case time.Time:
+		s.field = 't'
+		s.time = val
+	case nil:
+		s.field = 'n'
+	default:
+		err = errors.NotSupported.Newf("[dml] ColumnMap.Scan does not yet support type %T with value: %#v", val, val)
+	}
+	return err
+}
+
 // Scan calls rows.Scan and builds an internal stack of sql.RawBytes for further
 // processing and type conversion.
 //
@@ -248,12 +323,10 @@ func (b *ColumnMap) Scan(r *sql.Rows) error {
 			return errors.WithStack(err)
 		}
 		b.setColumns(cols...)
-		b.scanRaw = make([]*sql.RawBytes, b.columnsLen)
+		b.scanCol = make([]scannedColumn, b.columnsLen)
 		b.scanArgs = make([]interface{}, b.columnsLen)
 		for i := 0; i < b.columnsLen; i++ {
-			rb := new(sql.RawBytes)
-			b.scanRaw[i] = rb
-			b.scanArgs[i] = rb
+			b.scanArgs[i] = &b.scanCol[i]
 		}
 		b.initialized = true
 		b.Count = 0
@@ -283,9 +356,6 @@ func (b *ColumnMap) Column() string {
 func (b *ColumnMap) Next() bool {
 	b.index++
 	ok := b.index < b.columnsLen && b.scanErr == nil
-	if ok && b.scanRaw != nil {
-		b.current = *b.scanRaw[b.index]
-	}
 	if !ok && b.scanErr == nil {
 		// reset because the next row from the result-set will start or the next
 		// Record/ColumnMapper collects the arguments. Only reset the index in
@@ -309,9 +379,24 @@ func (b *ColumnMap) Bool(ptr *bool) *ColumnMap {
 		return b
 	}
 	if b.scanErr == nil {
-		*ptr, b.scanErr = byteconv.ParseBool(b.current)
-		if b.scanErr != nil {
-			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		// TODO benchmark if b.scanCol[b.index].field is faster than copying the struct in all type functions of ColumnMap
+		switch v := b.scanCol[b.index]; v.field {
+		case 'b':
+			*ptr = v.bool // probably not implemented by go-sql-driver/mysql but to keep to compatibility reason for driver.Value
+		case 'i':
+			*ptr = v.int64 == 1
+		case 'y':
+			*ptr, b.scanErr = byteconv.ParseBool(v.byte)
+			if b.scanErr != nil {
+				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			}
+		case 's':
+			*ptr, b.scanErr = strconv.ParseBool(v.string)
+			if b.scanErr != nil {
+				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			}
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -330,11 +415,34 @@ func (b *ColumnMap) NullBool(ptr *NullBool) *ColumnMap {
 		return b
 	}
 	if b.scanErr == nil {
-		var nv sql.NullBool
-		nv, b.scanErr = byteconv.ParseNullBool(b.current)
-		*ptr = NullBool{NullBool: nv}
-		if b.scanErr != nil {
-			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		switch v := b.scanCol[b.index]; v.field {
+		case 'b':
+			ptr.Bool = v.bool
+			ptr.Valid = true
+		case 'n':
+			ptr.Bool = false
+			ptr.Valid = false
+		case 'i':
+			ptr.Bool = v.int64 == 1
+			ptr.Valid = true
+		case 'y':
+			ptr.NullBool, b.scanErr = byteconv.ParseNullBool(v.byte)
+			if b.scanErr != nil {
+				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			}
+		case 's':
+			if v.string != "" {
+				ptr.Bool, b.scanErr = strconv.ParseBool(v.string)
+				if b.scanErr != nil {
+					b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+				}
+				ptr.Valid = b.scanErr == nil
+			} else {
+				ptr.Bool = false
+				ptr.Valid = false
+			}
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -353,15 +461,19 @@ func (b *ColumnMap) Int(ptr *int) *ColumnMap {
 		return b
 	}
 	if b.scanErr == nil {
-		var i64 int64
-		i64, b.scanErr = byteconv.ParseInt(b.current)
-		if b.scanErr == nil && strconv.IntSize == 32 && (i64 < -math.MaxInt32 || i64 > math.MaxInt32) { // hmm rethink that depending on goarch
-			b.scanErr = rangeError("ColumnMap.Int", string(b.current))
+		switch v := b.scanCol[b.index]; v.field {
+		case 'i':
+			*ptr = int(v.int64)
+		case 'y':
+			var i64 int64
+			i64, b.scanErr = byteconv.ParseInt(v.byte)
+			*ptr = int(i64)
+			if b.scanErr != nil {
+				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			}
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
-		if b.scanErr != nil {
-			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
-		}
-		*ptr = int(i64)
 	}
 	return b
 }
@@ -379,12 +491,16 @@ func (b *ColumnMap) Int64(ptr *int64) *ColumnMap {
 		return b
 	}
 	if b.scanErr == nil {
-		*ptr, b.scanErr = byteconv.ParseInt(b.current)
-		if i64 := *ptr; b.scanErr == nil && strconv.IntSize == 32 && (i64 < -math.MaxInt32 || i64 > math.MaxInt32) { // hmm rethink that depending on goarch
-			b.scanErr = rangeError("ColumnMap.Int", string(b.current))
-		}
-		if b.scanErr != nil {
-			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		switch v := b.scanCol[b.index]; v.field {
+		case 'i':
+			*ptr = v.int64
+		case 'y':
+			*ptr, b.scanErr = byteconv.ParseInt(v.byte)
+			if b.scanErr != nil {
+				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			}
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -403,11 +519,20 @@ func (b *ColumnMap) NullInt64(ptr *NullInt64) *ColumnMap {
 		return b
 	}
 	if b.scanErr == nil {
-		var nv sql.NullInt64
-		nv, b.scanErr = byteconv.ParseNullInt64(b.current)
-		*ptr = NullInt64{NullInt64: nv}
-		if b.scanErr != nil {
-			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		switch v := b.scanCol[b.index]; v.field {
+		case 'i':
+			ptr.Int64 = v.int64
+			ptr.Valid = true
+		case 'n':
+			ptr.Int64 = 0
+			ptr.Valid = false
+		case 'y':
+			ptr.NullInt64, b.scanErr = byteconv.ParseNullInt64(v.byte)
+			if b.scanErr != nil {
+				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			}
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -426,9 +551,16 @@ func (b *ColumnMap) Float64(ptr *float64) *ColumnMap {
 		return b
 	}
 	if b.scanErr == nil {
-		*ptr, b.scanErr = byteconv.ParseFloat(b.current)
-		if b.scanErr != nil {
-			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		switch v := b.scanCol[b.index]; v.field {
+		case 'f':
+			*ptr = v.float64
+		case 'y':
+			*ptr, b.scanErr = byteconv.ParseFloat(v.byte)
+			if b.scanErr != nil {
+				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			}
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -447,8 +579,17 @@ func (b *ColumnMap) Decimal(ptr *Decimal) *ColumnMap {
 		return b
 	}
 	if b.scanErr == nil {
-		if *ptr, b.scanErr = MakeDecimalBytes(b.current); b.scanErr != nil {
-			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		switch v := b.scanCol[b.index]; v.field {
+		case 'f':
+			*ptr, b.scanErr = MakeDecimalFloat64(v.float64)
+		case 'y':
+			*ptr, b.scanErr = MakeDecimalBytes(v.byte)
+		case 's':
+			*ptr, b.scanErr = MakeDecimalBytes([]byte(v.string)) // mostly used for testing
+		case 'n':
+			ptr.Valid = false
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -467,11 +608,19 @@ func (b *ColumnMap) NullFloat64(ptr *NullFloat64) *ColumnMap {
 		return b
 	}
 	if b.scanErr == nil {
-		var nv sql.NullFloat64
-		nv, b.scanErr = byteconv.ParseNullFloat64(b.current)
-		*ptr = NullFloat64{NullFloat64: nv}
-		if b.scanErr != nil {
-			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		switch v := b.scanCol[b.index]; v.field {
+		case 'f':
+			ptr.Float64 = v.float64
+			ptr.Valid = true
+		case 'y':
+			ptr.NullFloat64, b.scanErr = byteconv.ParseNullFloat64(v.byte)
+			if b.scanErr != nil {
+				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			}
+		case 'n':
+			ptr.Valid = false
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -490,11 +639,18 @@ func (b *ColumnMap) Uint(ptr *uint) *ColumnMap {
 		return b
 	}
 	if b.scanErr == nil {
-		var u64 uint64
-		u64, _, b.scanErr = byteconv.ParseUintSQL(b.current, 10, strconv.IntSize)
-		*ptr = uint(u64)
-		if b.scanErr != nil {
-			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		switch v := b.scanCol[b.index]; v.field {
+		case 'i':
+			*ptr = uint(v.int64)
+		case 'y':
+			var u64 uint64
+			u64, b.scanErr = byteconv.ParseUint(v.byte, 10, strconv.IntSize)
+			*ptr = uint(u64)
+			if b.scanErr != nil {
+				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			}
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -513,11 +669,18 @@ func (b *ColumnMap) Uint8(ptr *uint8) *ColumnMap {
 		return b
 	}
 	if b.scanErr == nil {
-		var u64 uint64
-		u64, _, b.scanErr = byteconv.ParseUintSQL(b.current, 10, 8)
-		*ptr = uint8(u64)
-		if b.scanErr != nil {
-			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		switch v := b.scanCol[b.index]; v.field {
+		case 'i':
+			*ptr = uint8(v.int64)
+		case 'y':
+			var u64 uint64
+			u64, b.scanErr = byteconv.ParseUint(v.byte, 10, 8)
+			*ptr = uint8(u64)
+			if b.scanErr != nil {
+				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			}
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -536,11 +699,18 @@ func (b *ColumnMap) Uint16(ptr *uint16) *ColumnMap {
 		return b
 	}
 	if b.scanErr == nil {
-		var u64 uint64
-		u64, _, b.scanErr = byteconv.ParseUintSQL(b.current, 10, 16)
-		*ptr = uint16(u64)
-		if b.scanErr != nil {
-			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		switch v := b.scanCol[b.index]; v.field {
+		case 'i':
+			*ptr = uint16(v.int64)
+		case 'y':
+			var u64 uint64
+			u64, b.scanErr = byteconv.ParseUint(v.byte, 10, 16)
+			*ptr = uint16(u64)
+			if b.scanErr != nil {
+				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			}
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -559,11 +729,18 @@ func (b *ColumnMap) Uint32(ptr *uint32) *ColumnMap {
 		return b
 	}
 	if b.scanErr == nil {
-		var u64 uint64
-		u64, _, b.scanErr = byteconv.ParseUintSQL(b.current, 10, 32)
-		*ptr = uint32(u64)
-		if b.scanErr != nil {
-			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		switch v := b.scanCol[b.index]; v.field {
+		case 'i':
+			*ptr = uint32(v.int64)
+		case 'y':
+			var u64 uint64
+			u64, b.scanErr = byteconv.ParseUint(v.byte, 10, 32)
+			*ptr = uint32(u64)
+			if b.scanErr != nil {
+				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			}
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -582,9 +759,16 @@ func (b *ColumnMap) Uint64(ptr *uint64) *ColumnMap {
 		return b
 	}
 	if b.scanErr == nil {
-		*ptr, _, b.scanErr = byteconv.ParseUintSQL(b.current, 10, strconv.IntSize)
-		if b.scanErr != nil {
-			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		switch v := b.scanCol[b.index]; v.field {
+		case 'i':
+			*ptr = uint64(v.int64)
+		case 'y':
+			*ptr, b.scanErr = byteconv.ParseUint(v.byte, 10, strconv.IntSize)
+			if b.scanErr != nil {
+				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			}
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -600,11 +784,11 @@ func (b *ColumnMap) Debug(w io.Writer) (err error) {
 			_, _ = w.Write(nl)
 		}
 		_, _ = w.Write([]byte(c))
-		b := *b.scanRaw[i]
-		if b == nil {
+		b := b.scanCol[i]
+		if b.field == 'n' {
 			_, _ = w.Write(tNil)
 		} else {
-			if _, err = fmt.Fprintf(w, ": %q", string(b)); err != nil {
+			if _, err = fmt.Fprintf(w, ": %q", b); err != nil {
 				return errors.WithStack(err)
 			}
 		}
@@ -625,7 +809,79 @@ func (b *ColumnMap) Byte(ptr *[]byte) *ColumnMap {
 		return b
 	}
 	if b.scanErr == nil {
-		*ptr = append((*ptr)[:0], b.current...)
+		switch v := b.scanCol[b.index]; v.field {
+		case 's':
+			*ptr = append((*ptr)[:0], v.string...)
+		case 'y':
+			*ptr = append((*ptr)[:0], v.byte...)
+		case 'n':
+			*ptr = nil
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+		}
+	}
+	return b
+}
+
+// Text allows to encode an object to its text representation when arguments are
+// requested and to decode a byte slice into its object when data is retrieved
+// from the server. Use this function for JSON, XML, YAML, etc formats. This
+// function can check for valid UTF8 characters, see field CheckValidUTF8.
+func (b *ColumnMap) Text(enc interface {
+	encoding.TextMarshaler
+	encoding.TextUnmarshaler
+}) *ColumnMap {
+	if b.scanErr != nil {
+		return b
+	}
+	if b.Args != nil {
+		var data []byte
+		data, b.scanErr = enc.MarshalText()
+		if b.CheckValidUTF8 && !utf8.Valid(data) {
+			b.scanErr = errors.NotValid.Newf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
+		} else {
+			b.Args = b.Args.Bytes(data)
+		}
+		return b
+	}
+
+	switch v := b.scanCol[b.index]; v.field {
+	case 'y', 'n':
+		if b.CheckValidUTF8 && !utf8.Valid(v.byte) {
+			b.scanErr = errors.NotValid.Newf("[dml] Column %q contains invalid UTF-8 characters", b.Column(), b.Count)
+		} else if b.scanErr = enc.UnmarshalText(v.byte); b.scanErr != nil {
+			b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+		}
+	default:
+		b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+	}
+	return b
+}
+
+// Text allows to encode an object to its binary representation when arguments are
+// requested and to decode a byte slice into its object when data is retrieved
+// from the server. Use this function for GOB, Protocol Buffers, etc formats.
+func (b *ColumnMap) Binary(enc interface {
+	encoding.BinaryMarshaler
+	encoding.BinaryUnmarshaler
+}) *ColumnMap {
+	if b.scanErr != nil {
+		return b
+	}
+	if b.Args != nil {
+		var data []byte
+		data, b.scanErr = enc.MarshalBinary()
+		b.Args = b.Args.Bytes(data)
+		return b
+	}
+
+	switch v := b.scanCol[b.index]; v.field {
+	case 'y', 'n':
+		if b.scanErr = enc.UnmarshalBinary(v.byte); b.scanErr != nil {
+			b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+		}
+	default:
+		b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 	}
 	return b
 }
@@ -642,11 +898,24 @@ func (b *ColumnMap) String(ptr *string) *ColumnMap {
 		}
 		return b
 	}
-	if b.CheckValidUTF8 && !utf8.Valid(b.current) {
-		b.scanErr = errors.NotValid.Newf("[dml] Column %q at position %d contains invalid UTF-8 characters", b.Column(), b.Count)
-	}
+
 	if b.scanErr == nil {
-		*ptr = string(b.current)
+		switch v := b.scanCol[b.index]; v.field {
+		case 's':
+			if b.CheckValidUTF8 && !utf8.ValidString(v.string) {
+				b.scanErr = errors.NotValid.Newf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
+			} else {
+				*ptr = v.string
+			}
+		case 'y':
+			if b.CheckValidUTF8 && !utf8.Valid(v.byte) {
+				b.scanErr = errors.NotValid.Newf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
+			} else {
+				*ptr = string(v.byte)
+			}
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+		}
 	}
 	return b
 }
@@ -663,14 +932,31 @@ func (b *ColumnMap) NullString(ptr *NullString) *ColumnMap {
 		}
 		return b
 	}
-	if b.CheckValidUTF8 && !utf8.Valid(b.current) {
-		b.scanErr = errors.NotValid.Newf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
-	}
+
 	if b.scanErr == nil {
-		*ptr = NullString{NullString: byteconv.ParseNullString(b.current)}
-	} else {
-		b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		switch v := b.scanCol[b.index]; v.field {
+		case 's':
+			if b.CheckValidUTF8 && !utf8.ValidString(v.string) {
+				b.scanErr = errors.NotValid.Newf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
+			} else {
+				ptr.String = v.string
+				ptr.Valid = true
+			}
+		case 'y':
+			if b.CheckValidUTF8 && !utf8.Valid(v.byte) {
+				b.scanErr = errors.NotValid.Newf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
+			} else {
+				ptr.String = string(v.byte)
+				ptr.Valid = v.byte != nil
+			}
+		case 'n':
+			ptr.String = ""
+			ptr.Valid = false
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+		}
 	}
+
 	return b
 }
 
@@ -687,9 +973,16 @@ func (b *ColumnMap) Time(ptr *time.Time) *ColumnMap {
 		return b
 	}
 	if b.scanErr == nil {
-		*ptr, b.scanErr = parseDateTime(string(b.current), time.UTC) // time.Location can be merged into ColumnMap but then change NullTime method receiver.
-		if b.scanErr != nil {
-			b.scanErr = errors.Wrapf(b.scanErr, "[dml] Column %q", b.Column())
+		switch v := b.scanCol[b.index]; v.field {
+		case 't':
+			*ptr = v.time
+		case 'y':
+			*ptr, b.scanErr = parseDateTime(string(v.byte), time.UTC) // time.Location can be merged into ColumnMap but then change NullTime method receiver.
+			if b.scanErr != nil {
+				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			}
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -708,15 +1001,26 @@ func (b *ColumnMap) NullTime(ptr *NullTime) *ColumnMap {
 		return b
 	}
 	if b.scanErr == nil {
-		if err := ptr.Scan(b.current); err != nil {
-			b.scanErr = errors.NotValid.Newf("[dml] ColumnMap NullTime: Invalid time string: %q with error %s", string(b.current), err)
+		switch v := b.scanCol[b.index]; v.field {
+		case 't':
+			ptr.Time = v.time
+			ptr.Valid = true
+		case 's':
+			if err := ptr.Scan(v.string); err != nil {
+				b.scanErr = errors.NotValid.Newf("[dml] ColumnMap NullTime: Invalid time string: %q with error %s", v.string, err)
+			}
+		case 'y':
+			if err := ptr.Scan(v.byte); err != nil {
+				b.scanErr = errors.NotValid.Newf("[dml] ColumnMap NullTime: Invalid time string: %q with error %s", v.byte, err)
+			}
+		case 'n':
+			ptr.Time = time.Time{}
+			ptr.Valid = false
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
-}
-
-func rangeError(fn, str string) *strconv.NumError {
-	return &strconv.NumError{Func: fn, Num: str, Err: strconv.ErrRange}
 }
 
 // StmtBase wraps a *sql.Stmt (a prepared statement) with a specific SQL query.
@@ -824,7 +1128,7 @@ func (st *StmtBase) Load(ctx context.Context, s ColumnMapper) (rowCount uint64, 
 		defer log.WhenDone(st.Log).Debug("Load", log.Uint64("row_count", rowCount), log.String("object_type", fmt.Sprintf("%T", s)))
 	}
 	r, err := st.Query(ctx)
-	rowCount, err = load(r, err, s, &st.colMap)
+	rowCount, err = load(r, err, s, &st.ColumnMap)
 	return rowCount, errors.WithStack(err)
 }
 
