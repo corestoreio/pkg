@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dml
+package dmltype
 
 import (
+	"bytes"
 	"database/sql/driver"
 	"encoding/csv"
 	"regexp"
@@ -23,15 +24,16 @@ import (
 	"github.com/corestoreio/errors"
 )
 
-// Strings contains several functions for data moving. You can use package
-// slices.String for further modifications of this slice type.
-type Strings []string
+// CSV represents an unmerged slice of strings. You can use package
+// slices.String for further modifications of this slice type. It also
+// implements Text Marshalers for usage in dml.ColumnMap.Text.
+type CSV []string
 
 // quoteEscapeRegex is the regex to match escaped characters in a string.
 var quoteEscapeRegex = regexp.MustCompile(`([^\\]([\\]{2})*)\\"`)
 
-// Scan satisfies the sql.Scanner interface for String.
-func (l *Strings) Scan(src interface{}) error {
+// Scan satisfies the sql.Scanner interface for CSV.
+func (l *CSV) Scan(src interface{}) error {
 	var str string
 	switch t := src.(type) {
 	case []byte:
@@ -39,7 +41,7 @@ func (l *Strings) Scan(src interface{}) error {
 	case string:
 		str = t
 	default:
-		return errors.NotValid.Newf("[slices] String.Scan Unknown type or not yet implemented: %#v", src)
+		return errors.NotValid.Newf("[dmltype] CSV.Scan Unknown type or not yet implemented: %#v", src)
 	}
 
 	// change quote escapes for csv parser
@@ -51,7 +53,7 @@ func (l *Strings) Scan(src interface{}) error {
 
 	// bail if only one
 	if len(str) == 0 {
-		*l = Strings([]string{})
+		*l = CSV([]string{})
 		return nil
 	}
 
@@ -59,19 +61,39 @@ func (l *Strings) Scan(src interface{}) error {
 	cr := csv.NewReader(strings.NewReader(str))
 	slice, err := cr.Read()
 	if err != nil {
-		return errors.NotValid.Newf("[slices] String.Scan CSV read error: %s", err)
+		return errors.NotValid.Newf("[dmltype] CSV.Scan CSV read error: %s", err)
 	}
 
-	*l = Strings(slice)
+	*l = CSV(slice)
 
 	return nil
 }
 
-// Value satisfies the driver.Valuer interface for String.
-func (l Strings) Value() (driver.Value, error) {
-	v := make([]string, len(l))
+func (l CSV) MarshalText() (text []byte, err error) {
+	return l.Bytes(), nil
+}
+
+func (l *CSV) UnmarshalText(text []byte) error {
+	return l.Scan(text)
+}
+
+// Value satisfies the driver.Valuer interface for CSV.
+func (l CSV) Value() (driver.Value, error) {
+	return string(l.Bytes()), nil
+}
+
+func (l CSV) Bytes() []byte {
+	buf := bytes.NewBuffer(make([]byte, 0, 128))
+
+	buf.WriteByte('{')
 	for i, s := range l {
-		v[i] = `"` + strings.Replace(strings.Replace(s, `\`, `\\\`, -1), `"`, `\"`, -1) + `"`
+		if i > 0 {
+			buf.WriteByte(',')
+		}
+		buf.WriteByte('"')
+		buf.WriteString(strings.Replace(strings.Replace(s, `\`, `\\\`, -1), `"`, `\"`, -1)) // optimize this
+		buf.WriteByte('"')
 	}
-	return "{" + strings.Join(v, ",") + "}", nil
+	buf.WriteByte('}')
+	return buf.Bytes()
 }

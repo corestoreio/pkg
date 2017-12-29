@@ -12,9 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dml
+package dmltype
 
-import "testing"
+import (
+	"database/sql"
+	"database/sql/driver"
+	"encoding"
+	"testing"
+)
+
+var (
+	_ sql.Scanner              = (*CSV)(nil)
+	_ driver.Valuer            = (*CSV)(nil)
+	_ encoding.TextMarshaler   = (*CSV)(nil)
+	_ encoding.TextUnmarshaler = (*CSV)(nil)
+)
 
 func TestStrings_Scan(t *testing.T) {
 	t.Skip("todo")
