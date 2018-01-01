@@ -47,7 +47,7 @@ type Update struct {
 	SetClauses Conditions
 	// Listeners allows to dispatch certain functions in different
 	// situations.
-	Listeners UpdateListeners
+	Listeners ListenersUpdate
 }
 
 // NewUpdate creates a new Update object.

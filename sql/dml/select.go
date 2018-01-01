@@ -55,7 +55,7 @@ type Select struct {
 	OffsetCount          uint64
 	// Listeners allows to dispatch certain functions in different
 	// situations.
-	Listeners SelectListeners
+	Listeners ListenersSelect
 }
 
 // NewSelect creates a new Select object.

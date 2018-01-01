@@ -135,14 +135,14 @@ func TestDelete_Events(t *testing.T) {
 			Listen{
 				Name:      "listener1",
 				EventType: OnBeforeToSQL,
-				DeleteFunc: func(b *Delete) {
+				ListenDeleteFn: func(b *Delete) {
 					b.OrderByDesc("col1")
 				},
 			},
 			Listen{
 				Name:      "listener2",
 				EventType: OnBeforeToSQL,
-				DeleteFunc: func(b *Delete) {
+				ListenDeleteFn: func(b *Delete) {
 					b.OrderByDesc("col2")
 					b.PropagationStopped = true
 				},
@@ -150,7 +150,7 @@ func TestDelete_Events(t *testing.T) {
 			Listen{
 				Name:      "listener3",
 				EventType: OnBeforeToSQL,
-				DeleteFunc: func(b *Delete) {
+				ListenDeleteFn: func(b *Delete) {
 					panic("Should not get called")
 				},
 			},
@@ -167,7 +167,7 @@ func TestDelete_Events(t *testing.T) {
 		d.Listeners.Add(
 			Listen{
 				Name: "col1",
-				DeleteFunc: func(b *Delete) {
+				ListenDeleteFn: func(b *Delete) {
 					b.OrderByDesc("col1")
 				},
 			},
@@ -186,14 +186,14 @@ func TestDelete_Events(t *testing.T) {
 			Listen{
 				Name:      "col1",
 				EventType: OnBeforeToSQL,
-				DeleteFunc: func(b *Delete) {
+				ListenDeleteFn: func(b *Delete) {
 					b.OrderByDesc("col1")
 				},
 			},
 			Listen{
 				Name:      "storeid",
 				EventType: OnBeforeToSQL,
-				DeleteFunc: func(b *Delete) {
+				ListenDeleteFn: func(b *Delete) {
 					b.Where(Column("store_id").Int64(1))
 				},
 			},
@@ -203,7 +203,7 @@ func TestDelete_Events(t *testing.T) {
 			Listen{
 				Name:      "repetitive",
 				EventType: OnBeforeToSQL,
-				DeleteFunc: func(b *Delete) {
+				ListenDeleteFn: func(b *Delete) {
 					b.Where(Column("repetitive").Int(3))
 				},
 			},

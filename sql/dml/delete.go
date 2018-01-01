@@ -50,7 +50,7 @@ type Delete struct {
 	DB ExecPreparer
 	// Listeners allows to dispatch certain functions in different
 	// situations.
-	Listeners DeleteListeners
+	Listeners ListenersDelete
 }
 
 // NewDelete creates a new Delete object.

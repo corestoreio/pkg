@@ -93,7 +93,7 @@ type Insert struct {
 	IsIgnore bool
 	// Listeners allows to dispatch certain functions in different
 	// situations.
-	Listeners InsertListeners
+	Listeners ListenersInsert
 	argsPool  Arguments // only used during ToSQL
 }
 

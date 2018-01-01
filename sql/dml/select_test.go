@@ -870,14 +870,14 @@ func TestSelect_Events(t *testing.T) {
 			Listen{
 				Name:      "listener1",
 				EventType: OnBeforeToSQL,
-				SelectFunc: func(b *Select) {
+				ListenSelectFn: func(b *Select) {
 					b.OrderByDesc("col1")
 				},
 			},
 			Listen{
 				Name:      "listener2",
 				EventType: OnBeforeToSQL,
-				SelectFunc: func(b *Select) {
+				ListenSelectFn: func(b *Select) {
 					b.OrderByDesc("col2")
 					b.PropagationStopped = true
 				},
@@ -885,7 +885,7 @@ func TestSelect_Events(t *testing.T) {
 			Listen{
 				Name:      "listener3",
 				EventType: OnBeforeToSQL,
-				SelectFunc: func(b *Select) {
+				ListenSelectFn: func(b *Select) {
 					panic("Should not get called")
 				},
 			},
@@ -904,7 +904,7 @@ func TestSelect_Events(t *testing.T) {
 		s.OrderBy("col3")
 		s.Listeners.Add(Listen{
 			Name: "a col1",
-			SelectFunc: func(s2 *Select) {
+			ListenSelectFn: func(s2 *Select) {
 				s2.Where(Column("a").Float64(3.14159))
 				s2.OrderByDesc("col1")
 			},
@@ -920,7 +920,7 @@ func TestSelect_Events(t *testing.T) {
 		s.Listeners.Add(Listen{
 			Name:      "a col1",
 			EventType: OnBeforeToSQL,
-			SelectFunc: func(s2 *Select) {
+			ListenSelectFn: func(s2 *Select) {
 				s2.Where(Column("a").Float64(3.14159))
 				s2.OrderByDesc("col1")
 			},
@@ -928,7 +928,7 @@ func TestSelect_Events(t *testing.T) {
 		s.Listeners.Add(Listen{
 			Name:      "b col2",
 			EventType: OnBeforeToSQL,
-			SelectFunc: func(s2 *Select) {
+			ListenSelectFn: func(s2 *Select) {
 				s2.OrderByDesc("col2").
 					Where(Column("b").Str("a"))
 			},

@@ -37,10 +37,10 @@ const (
 // manipulating the SQL. Not an interface because interfaces are named with
 // verbs ;-) Not yet thread safe.
 type ListenerBucket struct {
-	Select SelectListeners
-	Insert InsertListeners
-	Update UpdateListeners
-	Delete DeleteListeners
+	Select ListenersSelect
+	Insert ListenersInsert
+	Update ListenersUpdate
+	Delete ListenersDelete
 }
 
 // NewListenerBucket creates a new event container to which multiple listeners
@@ -104,24 +104,24 @@ type Listen struct {
 	EventType
 
 	// Listeners. Set at least one listener.
-	SelectFunc
-	InsertFunc
-	UpdateFunc
-	DeleteFunc
+	ListenSelectFn
+	ListenInsertFn
+	ListenUpdateFn
+	ListenDeleteFn
 }
 
 // <-------------------------COPY------------------------->
 
-// SelectFunc receives the Select object pointer for modification when an event
+// ListenSelectFn receives the Select object pointer for modification when an event
 // gets dispatched.
-type SelectFunc func(*Select)
+type ListenSelectFn func(*Select)
 
 // selectListen wrapper struct because we might wrap the SelectReceiverFn from
 // the SelectListen struct.
 type selectListen struct {
 	name string
 	EventType
-	SelectFunc
+	ListenSelectFn
 	error
 }
 
@@ -134,45 +134,45 @@ func makeSelectListen(idx int, sl Listen) selectListen {
 		nsl.error = errors.Empty.Newf("[dml] Eventype at empty for %q; index %d", nsl.name, idx)
 	}
 
-	nsl.SelectFunc = sl.SelectFunc
+	nsl.ListenSelectFn = sl.ListenSelectFn
 	return nsl
 }
 
-// SelectListeners contains multiple select event listener
-type SelectListeners []selectListen
+// ListenersSelect contains multiple select event listener
+type ListenersSelect []selectListen
 
 // Add adds multiple listener to the listener stack and transforms the listener
 // functions according to the configuration.
-func (se *SelectListeners) Add(sls ...Listen) SelectListeners {
+func (se *ListenersSelect) Add(sls ...Listen) ListenersSelect {
 	for idx, sl := range sls {
-		if sl.SelectFunc != nil {
+		if sl.ListenSelectFn != nil {
 			*se = append(*se, makeSelectListen(idx, sl))
 		}
 	}
 	return *se
 }
 
-// Merge merges other SelectListeners into the current listeners.
-func (se *SelectListeners) Merge(sls ...SelectListeners) SelectListeners {
+// Merge merges other ListenersSelect into the current listeners.
+func (se *ListenersSelect) Merge(sls ...ListenersSelect) ListenersSelect {
 	for _, sl := range sls {
 		*se = append(*se, sl...)
 	}
 	return *se
 }
 
-func (se SelectListeners) dispatch(et EventType, b *Select) error {
+func (se ListenersSelect) dispatch(et EventType, b *Select) error {
 	for i, s := range se {
 		switch {
 		case s.error != nil:
-			return errors.Wrapf(s.error, "[dml] SelectListeners.dispatch Index %d EventType: %s", i, et)
+			return errors.Wrapf(s.error, "[dml] ListenersSelect.dispatch Index %d EventType: %s", i, et)
 		case s.EventType == et && !(b.PropagationStopped && i > b.propagationStoppedAt):
-			s.SelectFunc(b)
+			s.ListenSelectFn(b)
 			if b.propagationStoppedAt == 0 && b.PropagationStopped {
 				b.propagationStoppedAt = i
 			}
 		case s.EventType == et:
 			if b.Log.IsDebug() {
-				b.Log.Debug("dml.SelectListeners.Dispatch.PropagationStopped",
+				b.Log.Debug("dml.ListenersSelect.Dispatch.PropagationStopped",
 					log.String("listener_name", s.name), log.Err(s.error), log.Stringer("event_type", s.EventType),
 					log.Bool("propagation_stopped", b.PropagationStopped), log.Int("propagation_stopped_at", b.propagationStoppedAt),
 				)
@@ -183,7 +183,7 @@ func (se SelectListeners) dispatch(et EventType, b *Select) error {
 }
 
 // String returns a list of all named event listeners.
-func (se SelectListeners) String() string {
+func (se ListenersSelect) String() string {
 	var buf bytes.Buffer
 	for i, li := range se {
 		_, _ = buf.WriteString(li.name)
@@ -196,16 +196,16 @@ func (se SelectListeners) String() string {
 
 // <-------------------------/COPY------------------------->
 
-// InsertFunc receives the Insert object pointer for modification when an event
+// ListenInsertFn receives the Insert object pointer for modification when an event
 // gets dispatched.
-type InsertFunc func(*Insert)
+type ListenInsertFn func(*Insert)
 
 // insertListen wrapper struct because we might wrap the InsertReceiverFn from
 // the InsertListen struct.
 type insertListen struct {
 	name string
 	EventType
-	InsertFunc
+	ListenInsertFn
 	error
 }
 
@@ -218,45 +218,45 @@ func makeInsertListen(idx int, sl Listen) insertListen {
 		nsl.error = errors.Empty.Newf("[dml] Eventype at empty for %q; index %d", nsl.name, idx)
 	}
 
-	nsl.InsertFunc = sl.InsertFunc
+	nsl.ListenInsertFn = sl.ListenInsertFn
 	return nsl
 }
 
-// InsertListeners contains multiple insert event listener
-type InsertListeners []insertListen
+// ListenersInsert contains multiple insert event listener
+type ListenersInsert []insertListen
 
 // Add adds multiple listener to the listener stack and transforms the listener
 // functions according to the configuration.
-func (se *InsertListeners) Add(sls ...Listen) InsertListeners {
+func (se *ListenersInsert) Add(sls ...Listen) ListenersInsert {
 	for idx, sl := range sls {
-		if sl.InsertFunc != nil {
+		if sl.ListenInsertFn != nil {
 			*se = append(*se, makeInsertListen(idx, sl))
 		}
 	}
 	return *se
 }
 
-// Merge merges other InsertListeners into the current listeners.
-func (se *InsertListeners) Merge(sls ...InsertListeners) InsertListeners {
+// Merge merges other ListenersInsert into the current listeners.
+func (se *ListenersInsert) Merge(sls ...ListenersInsert) ListenersInsert {
 	for _, sl := range sls {
 		*se = append(*se, sl...)
 	}
 	return *se
 }
 
-func (se InsertListeners) dispatch(et EventType, b *Insert) error {
+func (se ListenersInsert) dispatch(et EventType, b *Insert) error {
 	for i, s := range se {
 		switch {
 		case s.error != nil:
-			return errors.Wrapf(s.error, "[dml] InsertListeners.dispatch Index %d EventType: %s", i, et)
+			return errors.Wrapf(s.error, "[dml] ListenersInsert.dispatch Index %d EventType: %s", i, et)
 		case s.EventType == et && !(b.PropagationStopped && i > b.propagationStoppedAt):
-			s.InsertFunc(b)
+			s.ListenInsertFn(b)
 			if b.propagationStoppedAt == 0 && b.PropagationStopped {
 				b.propagationStoppedAt = i
 			}
 		case s.EventType == et:
 			if b.Log.IsDebug() {
-				b.Log.Debug("dml.InsertListeners.Dispatch.PropagationStopped",
+				b.Log.Debug("dml.ListenersInsert.Dispatch.PropagationStopped",
 					log.String("listener_name", s.name), log.Err(s.error), log.Stringer("event_type", s.EventType),
 					log.Bool("propagation_stopped", b.PropagationStopped), log.Int("propagation_stopped_at", b.propagationStoppedAt),
 				)
@@ -267,7 +267,7 @@ func (se InsertListeners) dispatch(et EventType, b *Insert) error {
 }
 
 // String returns a list of all named event listeners.
-func (se InsertListeners) String() string {
+func (se ListenersInsert) String() string {
 	var buf bytes.Buffer
 	for i, li := range se {
 		_, _ = buf.WriteString(li.name)
@@ -278,16 +278,16 @@ func (se InsertListeners) String() string {
 	return buf.String()
 }
 
-// UpdateFunc receives the Update object pointer for modification when an event
+// ListenUpdateFn receives the Update object pointer for modification when an event
 // gets dispatched.
-type UpdateFunc func(*Update)
+type ListenUpdateFn func(*Update)
 
 // updateListen wrapper struct because we might wrap the UpdateReceiverFn from
 // the UpdateListen struct.
 type updateListen struct {
 	name string
 	EventType
-	UpdateFunc
+	ListenUpdateFn
 	error
 }
 
@@ -300,45 +300,45 @@ func makeUpdateListen(idx int, sl Listen) updateListen {
 		nsl.error = errors.Empty.Newf("[dml] Eventype at empty for %q; index %d", nsl.name, idx)
 	}
 
-	nsl.UpdateFunc = sl.UpdateFunc
+	nsl.ListenUpdateFn = sl.ListenUpdateFn
 	return nsl
 }
 
-// UpdateListeners contains multiple update event listener
-type UpdateListeners []updateListen
+// ListenersUpdate contains multiple update event listener
+type ListenersUpdate []updateListen
 
 // Add adds multiple listener to the listener stack and transforms the listener
 // functions according to the configuration.
-func (se *UpdateListeners) Add(sls ...Listen) UpdateListeners {
+func (se *ListenersUpdate) Add(sls ...Listen) ListenersUpdate {
 	for idx, sl := range sls {
-		if sl.UpdateFunc != nil {
+		if sl.ListenUpdateFn != nil {
 			*se = append(*se, makeUpdateListen(idx, sl))
 		}
 	}
 	return *se
 }
 
-// Merge merges other UpdateListeners into the current listeners.
-func (se *UpdateListeners) Merge(sls ...UpdateListeners) UpdateListeners {
+// Merge merges other ListenersUpdate into the current listeners.
+func (se *ListenersUpdate) Merge(sls ...ListenersUpdate) ListenersUpdate {
 	for _, sl := range sls {
 		*se = append(*se, sl...)
 	}
 	return *se
 }
 
-func (se UpdateListeners) dispatch(et EventType, b *Update) error {
+func (se ListenersUpdate) dispatch(et EventType, b *Update) error {
 	for i, s := range se {
 		switch {
 		case s.error != nil:
-			return errors.Wrapf(s.error, "[dml] UpdateListeners.dispatch Index %d EventType: %s", i, et)
+			return errors.Wrapf(s.error, "[dml] ListenersUpdate.dispatch Index %d EventType: %s", i, et)
 		case s.EventType == et && !(b.PropagationStopped && i > b.propagationStoppedAt):
-			s.UpdateFunc(b)
+			s.ListenUpdateFn(b)
 			if b.propagationStoppedAt == 0 && b.PropagationStopped {
 				b.propagationStoppedAt = i
 			}
 		case s.EventType == et:
 			if b.Log.IsDebug() {
-				b.Log.Debug("dml.UpdateListeners.Dispatch.PropagationStopped",
+				b.Log.Debug("dml.ListenersUpdate.Dispatch.PropagationStopped",
 					log.String("listener_name", s.name), log.Err(s.error), log.Stringer("event_type", s.EventType),
 					log.Bool("propagation_stopped", b.PropagationStopped), log.Int("propagation_stopped_at", b.propagationStoppedAt),
 				)
@@ -349,7 +349,7 @@ func (se UpdateListeners) dispatch(et EventType, b *Update) error {
 }
 
 // String returns a list of all named event listeners.
-func (se UpdateListeners) String() string {
+func (se ListenersUpdate) String() string {
 	var buf bytes.Buffer
 	for i, li := range se {
 		_, _ = buf.WriteString(li.name)
@@ -360,16 +360,16 @@ func (se UpdateListeners) String() string {
 	return buf.String()
 }
 
-// DeleteFunc receives the Delete object pointer for modification when an event
+// ListenDeleteFn receives the Delete object pointer for modification when an event
 // gets dispatched.
-type DeleteFunc func(*Delete)
+type ListenDeleteFn func(*Delete)
 
 // deleteListen wrapper struct because we might wrap the DeleteReceiverFn from
 // the DeleteListen struct.
 type deleteListen struct {
 	name string
 	EventType
-	DeleteFunc
+	ListenDeleteFn
 	error
 }
 
@@ -382,45 +382,45 @@ func makeDeleteListen(idx int, sl Listen) deleteListen {
 		nsl.error = errors.Empty.Newf("[dml] Eventype at empty for %q; index %d", nsl.name, idx)
 	}
 
-	nsl.DeleteFunc = sl.DeleteFunc
+	nsl.ListenDeleteFn = sl.ListenDeleteFn
 	return nsl
 }
 
-// DeleteListeners contains multiple delete event listener
-type DeleteListeners []deleteListen
+// ListenersDelete contains multiple delete event listener
+type ListenersDelete []deleteListen
 
 // Add adds multiple listener to the listener stack and transforms the listener
 // functions according to the configuration.
-func (se *DeleteListeners) Add(sls ...Listen) DeleteListeners {
+func (se *ListenersDelete) Add(sls ...Listen) ListenersDelete {
 	for idx, sl := range sls {
-		if sl.DeleteFunc != nil {
+		if sl.ListenDeleteFn != nil {
 			*se = append(*se, makeDeleteListen(idx, sl))
 		}
 	}
 	return *se
 }
 
-// Merge merges other DeleteListeners into the current listeners.
-func (se *DeleteListeners) Merge(sls ...DeleteListeners) DeleteListeners {
+// Merge merges other ListenersDelete into the current listeners.
+func (se *ListenersDelete) Merge(sls ...ListenersDelete) ListenersDelete {
 	for _, sl := range sls {
 		*se = append(*se, sl...)
 	}
 	return *se
 }
 
-func (se DeleteListeners) dispatch(et EventType, b *Delete) error {
+func (se ListenersDelete) dispatch(et EventType, b *Delete) error {
 	for i, s := range se {
 		switch {
 		case s.error != nil:
-			return errors.Wrapf(s.error, "[dml] DeleteListeners.dispatch Index %d EventType: %s", i, et)
+			return errors.Wrapf(s.error, "[dml] ListenersDelete.dispatch Index %d EventType: %s", i, et)
 		case s.EventType == et && !(b.PropagationStopped && i > b.propagationStoppedAt):
-			s.DeleteFunc(b)
+			s.ListenDeleteFn(b)
 			if b.propagationStoppedAt == 0 && b.PropagationStopped {
 				b.propagationStoppedAt = i
 			}
 		case s.EventType == et:
 			if b.Log.IsDebug() {
-				b.Log.Debug("dml.DeleteListeners.Dispatch.PropagationStopped",
+				b.Log.Debug("dml.ListenersDelete.Dispatch.PropagationStopped",
 					log.String("listener_name", s.name), log.Err(s.error), log.Stringer("event_type", s.EventType),
 					log.Bool("propagation_stopped", b.PropagationStopped), log.Int("propagation_stopped_at", b.propagationStoppedAt),
 				)
@@ -431,7 +431,7 @@ func (se DeleteListeners) dispatch(et EventType, b *Delete) error {
 }
 
 // String returns a list of all named event listeners.
-func (se DeleteListeners) String() string {
+func (se ListenersDelete) String() string {
 	var buf bytes.Buffer
 	for i, li := range se {
 		_, _ = buf.WriteString(li.name)

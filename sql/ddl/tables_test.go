@@ -194,14 +194,14 @@ func TestWithTableDMLListeners(t *testing.T) {
 	counter := 0
 	ev := dml.MustNewListenerBucket(
 		dml.Listen{
-			Name:       "l1",
-			EventType:  dml.OnBeforeToSQL,
-			SelectFunc: func(_ *dml.Select) { counter++ },
+			Name:           "l1",
+			EventType:      dml.OnBeforeToSQL,
+			ListenSelectFn: func(_ *dml.Select) { counter++ },
 		},
 		dml.Listen{
-			Name:       "l2",
-			EventType:  dml.OnBeforeToSQL,
-			SelectFunc: func(_ *dml.Select) { counter++ },
+			Name:           "l2",
+			EventType:      dml.OnBeforeToSQL,
+			ListenSelectFn: func(_ *dml.Select) { counter++ },
 		},
 	)
 

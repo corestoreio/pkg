@@ -230,14 +230,14 @@ func TestUpdate_Events(t *testing.T) {
 			Listen{
 				Name:      "listener1",
 				EventType: OnBeforeToSQL,
-				UpdateFunc: func(b *Update) {
+				ListenUpdateFn: func(b *Update) {
 					b.Set(Column("a").Int(1))
 				},
 			},
 			Listen{
 				Name:      "listener2",
 				EventType: OnBeforeToSQL,
-				UpdateFunc: func(b *Update) {
+				ListenUpdateFn: func(b *Update) {
 					b.Set(Column("b").Int(1))
 					b.PropagationStopped = true
 				},
@@ -245,7 +245,7 @@ func TestUpdate_Events(t *testing.T) {
 			Listen{
 				Name:      "listener3",
 				EventType: OnBeforeToSQL,
-				UpdateFunc: func(b *Update) {
+				ListenUpdateFn: func(b *Update) {
 					panic("Should not get called")
 				},
 			},
@@ -263,7 +263,7 @@ func TestUpdate_Events(t *testing.T) {
 		up.Listeners.Add(
 			Listen{
 				Name: "c=pi",
-				UpdateFunc: func(u *Update) {
+				ListenUpdateFn: func(u *Update) {
 					u.Set(Column("c").Float64(3.14159))
 				},
 			},
@@ -281,14 +281,14 @@ func TestUpdate_Events(t *testing.T) {
 			Listen{
 				Name:      "c=pi",
 				EventType: OnBeforeToSQL,
-				UpdateFunc: func(u *Update) {
+				ListenUpdateFn: func(u *Update) {
 					u.Set(Column("c").Float64(3.14159))
 				},
 			},
 			Listen{
 				Name:      "d=d",
 				EventType: OnBeforeToSQL,
-				UpdateFunc: func(u *Update) {
+				ListenUpdateFn: func(u *Update) {
 					u.Set(Column("d").Str("d"))
 				},
 			},
@@ -297,7 +297,7 @@ func TestUpdate_Events(t *testing.T) {
 		up.Listeners.Add(Listen{
 			Name:      "e",
 			EventType: OnBeforeToSQL,
-			UpdateFunc: func(u *Update) {
+			ListenUpdateFn: func(u *Update) {
 				u.Set(Column("e").Str("e"))
 			},
 		})

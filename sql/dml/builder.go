@@ -41,8 +41,12 @@ type QueryBuilder interface {
 	ToSQL() (string, []interface{}, error)
 }
 
+// QuerySQL a helper type to transform a string into a QueryBuilder compatible
+// type.
 type QuerySQL string
 
+// ToSQL satisfies interface QueryBuilder and returns always nil arguments and
+// nil error.
 func (s QuerySQL) ToSQL() (string, []interface{}, error) {
 	return string(s), nil, nil
 }

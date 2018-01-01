@@ -22,34 +22,34 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var _ fmt.Stringer = (*SelectListeners)(nil)
-var _ fmt.Stringer = (*InsertListeners)(nil)
-var _ fmt.Stringer = (*UpdateListeners)(nil)
-var _ fmt.Stringer = (*DeleteListeners)(nil)
+var _ fmt.Stringer = (*ListenersSelect)(nil)
+var _ fmt.Stringer = (*ListenersInsert)(nil)
+var _ fmt.Stringer = (*ListenersUpdate)(nil)
+var _ fmt.Stringer = (*ListenersDelete)(nil)
 
 func TestNewListenerBucket(t *testing.T) {
 
 	t.Run("Merge Many", func(t *testing.T) {
 		lbOld := MustNewListenerBucket(
 			Listen{
-				Name:       "Select",
-				EventType:  OnBeforeToSQL,
-				SelectFunc: func(b *Select) {},
+				Name:           "Select",
+				EventType:      OnBeforeToSQL,
+				ListenSelectFn: func(b *Select) {},
 			},
 			Listen{
-				Name:       "Insert",
-				EventType:  OnBeforeToSQL,
-				InsertFunc: func(b *Insert) {},
+				Name:           "Insert",
+				EventType:      OnBeforeToSQL,
+				ListenInsertFn: func(b *Insert) {},
 			},
 			Listen{
-				Name:       "Update",
-				EventType:  OnBeforeToSQL,
-				UpdateFunc: func(b *Update) {},
+				Name:           "Update",
+				EventType:      OnBeforeToSQL,
+				ListenUpdateFn: func(b *Update) {},
 			},
 			Listen{
-				Name:       "Delete",
-				EventType:  OnBeforeToSQL,
-				DeleteFunc: func(b *Delete) {},
+				Name:           "Delete",
+				EventType:      OnBeforeToSQL,
+				ListenDeleteFn: func(b *Delete) {},
 			},
 		)
 
@@ -67,12 +67,12 @@ func TestNewListenerBucket(t *testing.T) {
 	t.Run("Merge One", func(t *testing.T) {
 		lbOld := MustNewListenerBucket(
 			Listen{
-				Name:       "Logger",
-				EventType:  OnBeforeToSQL,
-				SelectFunc: func(b *Select) {},
-				InsertFunc: func(b *Insert) {},
-				UpdateFunc: func(b *Update) {},
-				DeleteFunc: func(b *Delete) {},
+				Name:           "Logger",
+				EventType:      OnBeforeToSQL,
+				ListenSelectFn: func(b *Select) {},
+				ListenInsertFn: func(b *Insert) {},
+				ListenUpdateFn: func(b *Update) {},
+				ListenDeleteFn: func(b *Delete) {},
 			},
 		)
 
@@ -96,33 +96,33 @@ func TestNewListenerBucket(t *testing.T) {
 			}
 		}()
 		_ = MustNewListenerBucket(Listen{
-			SelectFunc: func(*Select) {},
+			ListenSelectFn: func(*Select) {},
 		})
 	})
 	t.Run("Error Select", func(t *testing.T) {
 		lb, err := NewListenerBucket(Listen{
-			SelectFunc: func(*Select) {},
+			ListenSelectFn: func(*Select) {},
 		})
 		assert.Nil(t, lb)
 		assert.True(t, errors.Empty.Match(err), "%+v", err)
 	})
 	t.Run("Error Insert", func(t *testing.T) {
 		lb, err := NewListenerBucket(Listen{
-			InsertFunc: func(*Insert) {},
+			ListenInsertFn: func(*Insert) {},
 		})
 		assert.Nil(t, lb)
 		assert.True(t, errors.Empty.Match(err), "%+v", err)
 	})
 	t.Run("Error Update", func(t *testing.T) {
 		lb, err := NewListenerBucket(Listen{
-			UpdateFunc: func(*Update) {},
+			ListenUpdateFn: func(*Update) {},
 		})
 		assert.Nil(t, lb)
 		assert.True(t, errors.Empty.Match(err), "%+v", err)
 	})
 	t.Run("Error Delete", func(t *testing.T) {
 		lb, err := NewListenerBucket(Listen{
-			DeleteFunc: func(*Delete) {},
+			ListenDeleteFn: func(*Delete) {},
 		})
 		assert.Nil(t, lb)
 		assert.True(t, errors.Empty.Match(err), "%+v", err)
@@ -132,7 +132,7 @@ func TestNewListenerBucket(t *testing.T) {
 		lb := MustNewListenerBucket(Listen{
 			Name:      "Select",
 			EventType: OnBeforeToSQL,
-			SelectFunc: func(b *Select) {
+			ListenSelectFn: func(b *Select) {
 				called++
 			},
 		})
@@ -149,7 +149,7 @@ func TestNewListenerBucket(t *testing.T) {
 		lb := MustNewListenerBucket(Listen{
 			Name:      "Insert",
 			EventType: OnBeforeToSQL,
-			InsertFunc: func(b *Insert) {
+			ListenInsertFn: func(b *Insert) {
 				called++
 			},
 		})
@@ -166,7 +166,7 @@ func TestNewListenerBucket(t *testing.T) {
 		lb, err := NewListenerBucket(Listen{
 			Name:      "Update",
 			EventType: OnBeforeToSQL,
-			UpdateFunc: func(b *Update) {
+			ListenUpdateFn: func(b *Update) {
 				called++
 			},
 		})
@@ -184,7 +184,7 @@ func TestNewListenerBucket(t *testing.T) {
 		lb, err := NewListenerBucket(Listen{
 			Name:      "Delete",
 			EventType: OnBeforeToSQL,
-			DeleteFunc: func(b *Delete) {
+			ListenDeleteFn: func(b *Delete) {
 				called++
 			},
 		})
@@ -199,69 +199,69 @@ func TestNewListenerBucket(t *testing.T) {
 	})
 
 	t.Run("Select Merge", func(t *testing.T) {
-		var l1 SelectListeners
+		var l1 ListenersSelect
 		l1.Add(
 			Listen{
-				Name:       "col1",
-				SelectFunc: func(b *Select) {},
+				Name:           "col1",
+				ListenSelectFn: func(b *Select) {},
 			},
 		)
-		var l2 SelectListeners
+		var l2 ListenersSelect
 		l2.Add(
 			Listen{
-				Name:       "col2",
-				SelectFunc: func(b *Select) {},
+				Name:           "col2",
+				ListenSelectFn: func(b *Select) {},
 			},
 		)
 		assert.Exactly(t, `col1; col2`, l1.Merge(l2).String())
 	})
 	t.Run("Insert Merge", func(t *testing.T) {
-		var l1 InsertListeners
+		var l1 ListenersInsert
 		l1.Add(
 			Listen{
-				Name:       "col1",
-				InsertFunc: func(b *Insert) {},
+				Name:           "col1",
+				ListenInsertFn: func(b *Insert) {},
 			},
 		)
-		var l2 InsertListeners
+		var l2 ListenersInsert
 		l2.Add(
 			Listen{
-				Name:       "col2",
-				InsertFunc: func(b *Insert) {},
+				Name:           "col2",
+				ListenInsertFn: func(b *Insert) {},
 			},
 		)
 		assert.Exactly(t, `col1; col2`, l1.Merge(l2).String())
 	})
 	t.Run("Update Merge", func(t *testing.T) {
-		var l1 UpdateListeners
+		var l1 ListenersUpdate
 		l1.Add(
 			Listen{
-				Name:       "col1",
-				UpdateFunc: func(b *Update) {},
+				Name:           "col1",
+				ListenUpdateFn: func(b *Update) {},
 			},
 		)
-		var l2 UpdateListeners
+		var l2 ListenersUpdate
 		l2.Add(
 			Listen{
-				Name:       "col2",
-				UpdateFunc: func(b *Update) {},
+				Name:           "col2",
+				ListenUpdateFn: func(b *Update) {},
 			},
 		)
 		assert.Exactly(t, `col1; col2`, l1.Merge(l2).String())
 	})
 	t.Run("Delete Merge", func(t *testing.T) {
-		var l1 DeleteListeners
+		var l1 ListenersDelete
 		l1.Add(
 			Listen{
-				Name:       "col1",
-				DeleteFunc: func(b *Delete) {},
+				Name:           "col1",
+				ListenDeleteFn: func(b *Delete) {},
 			},
 		)
-		var l2 DeleteListeners
+		var l2 ListenersDelete
 		l2.Add(
 			Listen{
-				Name:       "col2",
-				DeleteFunc: func(b *Delete) {},
+				Name:           "col2",
+				ListenDeleteFn: func(b *Delete) {},
 			},
 		)
 		assert.Exactly(t, `col1; col2`, l1.Merge(l2).String())

@@ -184,14 +184,14 @@ func TestInsert_Events(t *testing.T) {
 			Listen{
 				Name:      "listener1",
 				EventType: OnBeforeToSQL,
-				InsertFunc: func(b *Insert) {
+				ListenInsertFn: func(b *Insert) {
 					b.Pair(Column("col1").Str("X1"))
 				},
 			},
 			Listen{
 				Name:      "listener2",
 				EventType: OnBeforeToSQL,
-				InsertFunc: func(b *Insert) {
+				ListenInsertFn: func(b *Insert) {
 					b.Pair(Column("col2").Str("X2"))
 					b.PropagationStopped = true
 				},
@@ -199,7 +199,7 @@ func TestInsert_Events(t *testing.T) {
 			Listen{
 				Name:      "listener3",
 				EventType: OnBeforeToSQL,
-				InsertFunc: func(b *Insert) {
+				ListenInsertFn: func(b *Insert) {
 					panic("Should not get called")
 				},
 			},
@@ -225,7 +225,7 @@ func TestInsert_Events(t *testing.T) {
 		ins.Listeners.Add(
 			Listen{
 				Name: "colC",
-				InsertFunc: func(i *Insert) {
+				ListenInsertFn: func(i *Insert) {
 					i.Pair(Column("colC").Str("X1"))
 				},
 			},
@@ -245,14 +245,14 @@ func TestInsert_Events(t *testing.T) {
 			Listen{
 				EventType: OnBeforeToSQL,
 				Name:      "colA",
-				InsertFunc: func(i *Insert) {
+				ListenInsertFn: func(i *Insert) {
 					i.Pair(Column("colA").Float64(3.14159))
 				},
 			},
 			Listen{
 				EventType: OnBeforeToSQL,
 				Name:      "colB",
-				InsertFunc: func(i *Insert) {
+				ListenInsertFn: func(i *Insert) {
 					i.Pair(Column("colB").Float64(2.7182))
 				},
 			},
@@ -265,7 +265,7 @@ func TestInsert_Events(t *testing.T) {
 				// gets called with Pair.
 				EventType: OnBeforeToSQL,
 				Name:      "colC",
-				InsertFunc: func(i *Insert) {
+				ListenInsertFn: func(i *Insert) {
 					i.Pair(Column("colC").Str("X1"))
 				},
 			},

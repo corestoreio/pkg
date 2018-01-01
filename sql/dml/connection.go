@@ -18,7 +18,9 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/corestoreio/errors"
@@ -49,6 +51,9 @@ type ConnPool struct {
 	logWithID
 	DB  *sql.DB
 	dsn string
+
+	rwmu          sync.RWMutex
+	preparedStmts map[string]*resurrectStmt
 }
 
 // Conn represents a single database session rather a pool of database sessions.
@@ -82,7 +87,10 @@ type Tx struct {
 
 // ConnPoolOption can be used at an argument in NewConnPool to configure a
 // connection.
-type ConnPoolOption func(*ConnPool) error
+type ConnPoolOption struct {
+	sortOrder uint8
+	fn        func(*ConnPool) error
+}
 
 // WithLogger sets the customer logger to be used across the package. The logger
 // gets inherited to type Conn and Tx and also to all statement types. Each
@@ -96,37 +104,68 @@ type ConnPoolOption func(*ConnPool) error
 // LIST. The returned string must not contain the comment-end-termination
 // pattern: `*/`. The `uniqueIDFn` must be thread safe.
 func WithLogger(l log.Logger, uniqueIDFn func() string) ConnPoolOption {
-	return func(c *ConnPool) error {
-		c.makeUniqueID = uniqueIDFn
-		c.Log = l.With(log.String("conn_pool_id", c.makeUniqueID()))
-		return nil
+	return ConnPoolOption{
+		sortOrder: 10,
+		fn: func(c *ConnPool) error {
+			c.makeUniqueID = uniqueIDFn
+			c.Log = l.With(log.String("conn_pool_id", c.makeUniqueID()))
+			return nil
+		},
 	}
 }
 
 // WithDB sets the DB value to an existing connection. Mainly used for testing.
 // Does not support DriverCallBack.
 func WithDB(db *sql.DB) ConnPoolOption {
-	return func(c *ConnPool) error {
-		c.DB = db
-		return nil
+	return ConnPoolOption{
+		sortOrder: 1,
+		fn: func(c *ConnPool) error {
+			c.DB = db
+			return nil
+		},
 	}
 }
 
 // WithUniqueIDFn applies a unique ID generator function without an applied
 // logger as in WithLogger. For more details see WithLogger function.
 func WithUniqueIDFn(uniqueIDFn func() string) ConnPoolOption {
-	return func(c *ConnPool) error {
-		c.makeUniqueID = uniqueIDFn
-		return nil
+	return ConnPoolOption{
+		sortOrder: 8,
+		fn: func(c *ConnPool) error {
+			c.makeUniqueID = uniqueIDFn
+			return nil
+		},
 	}
 }
 
-//func WithPrepareStatements(stmts map[string]QueryBuilder) ConnPoolOption {
-//	return func(c *ConnPool) error {
-//
-//		return nil
-//	}
-//}
+func WithPreparedStatement(name string, qb QueryBuilder, idleTime time.Duration) ConnPoolOption {
+	return ConnPoolOption{
+		sortOrder: 200,
+		fn: func(c *ConnPool) error {
+			c.rwmu.Lock()
+			defer c.rwmu.Unlock()
+			if c.preparedStmts == nil {
+				c.preparedStmts = make(map[string]*resurrectStmt, 20)
+			}
+
+			if rs, ok := c.preparedStmts[name]; ok {
+				if err := rs.Close(); err != nil {
+					return errors.Wrapf(err, "[dml] WithPrepareStatements failed for %q", name)
+				}
+			}
+
+			rs, err := newResurrectStmt(c.DB, name, qb, idleTime, c.Log)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			c.preparedStmts[name] = rs
+			// check max_prepared_stmt_count and con count
+			// TODO(CyS) consider: http://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html#sysvar_max_prepared_stmt_count
+
+			return nil
+		},
+	}
+}
 
 // WithDSN sets the data source name for a connection.
 // Second argument DriverCallBack adds a low level call back function on MySQL driver level to
@@ -135,17 +174,20 @@ func WithDSN(dsn string, cb ...DriverCallBack) ConnPoolOption {
 	if len(cb) > 1 {
 		panic(errors.NotImplemented.Newf("[dml] Only one DriverCallBack function does currently work. You provided: %d", len(cb)))
 	}
-	return func(c *ConnPool) error {
-		if !strings.Contains(dsn, "parseTime") {
-			return errors.NotImplemented.Newf("[dml] The DSN for go-sql-driver/mysql must contain the parameters `?parseTime=true[&loc=YourTimeZone]`")
-		}
-		c.dsn = dsn
-		var drv driver.Driver = mysql.MySQLDriver{}
-		if len(cb) == 1 {
-			drv = wrapDriver(drv, cb[0])
-		}
-		c.DB = sql.OpenDB(dsnConnector{dsn: dsn, driver: drv})
-		return nil
+	return ConnPoolOption{
+		sortOrder: 0,
+		fn: func(c *ConnPool) error {
+			if !strings.Contains(dsn, "parseTime") {
+				return errors.NotImplemented.Newf("[dml] The DSN for go-sql-driver/mysql must contain the parameters `?parseTime=true[&loc=YourTimeZone]`")
+			}
+			c.dsn = dsn
+			var drv driver.Driver = mysql.MySQLDriver{}
+			if len(cb) == 1 {
+				drv = wrapDriver(drv, cb[0])
+			}
+			c.DB = sql.OpenDB(dsnConnector{dsn: dsn, driver: drv})
+			return nil
+		},
 	}
 }
 
@@ -202,8 +244,14 @@ func MustConnectAndVerify(opts ...ConnPoolOption) *ConnPool {
 
 // Options applies options to a connection
 func (c *ConnPool) Options(opts ...ConnPoolOption) error {
+	// SliceStable must be stable to maintain the order of all options where
+	// sortOrder is zero.
+	sort.SliceStable(opts, func(i, j int) bool {
+		return opts[i].sortOrder < opts[j].sortOrder
+	})
+
 	for _, opt := range opts {
-		if err := opt(c); err != nil {
+		if err := opt.fn(c); err != nil {
 			return errors.WithStack(err)
 		}
 	}
@@ -218,6 +266,13 @@ func (c *ConnPool) Options(opts ...ConnPoolOption) error {
 func (c *ConnPool) Close() error {
 	if c.Log != nil && c.Log.IsDebug() {
 		defer c.Log.Debug("Close", log.Duration("duration", now().Sub(c.start)))
+	}
+	c.rwmu.Lock()
+	defer c.rwmu.Unlock()
+	for _, rs := range c.preparedStmts {
+		if err := rs.Close(); err != nil {
+			return errors.WithStack(err)
+		}
 	}
 	return c.DB.Close() // no stack wrap otherwise error is hard to compare
 }
@@ -259,7 +314,27 @@ func (c *ConnPool) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error
 }
 
 func (c *ConnPool) Stmt(name string) (Stmter, error) {
-	return nil, nil
+	c.rwmu.RLock()
+	defer c.rwmu.RUnlock()
+
+	rs, ok := c.preparedStmts[name]
+	if !ok {
+		return nil, errors.NotFound.Newf("[dml] Stmt %q not found", name)
+	}
+
+	return rs, nil
+}
+
+func (c *ConnPool) StmtPrepare(name string, qb QueryBuilder, idleTime time.Duration) (Stmter, error) {
+	c.rwmu.RLock()
+	_, ok := c.preparedStmts[name]
+	c.rwmu.RUnlock()
+	if !ok {
+		if err := c.Options(WithPreparedStatement(name, qb, idleTime)); err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+	return c.Stmt(name)
 }
 
 // Conn returns a single connection by either opening a new connection
