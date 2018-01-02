@@ -54,14 +54,11 @@ func MustConnectDB(t testing.TB, opts ...dml.ConnPoolOption) *dml.ConnPool {
 	if _, err := getDSN(EnvDSN); errors.NotFound.Match(err) {
 		t.Skipf("%s", err)
 	}
-	if len(opts) == 0 {
-		return dml.MustConnectAndVerify(dml.WithDSN(MustGetDSN(t)))
-	}
-	return dml.MustConnectAndVerify(opts...)
+	return dml.MustConnectAndVerify(append(opts, dml.WithDSN(MustGetDSN(t)))...)
 }
 
 // Close for usage in conjunction with defer.
-// 		defer cstesting.Close(t,db)
+// 		defer dmltest.Close(t, db)
 func Close(t testing.TB, c io.Closer) {
 	t.Helper()
 	if err := c.Close(); err != nil {
@@ -70,44 +67,31 @@ func Close(t testing.TB, c io.Closer) {
 }
 
 // MockDB creates a mocked database connection. Fatals on error.
-func MockDB(t testing.TB) (*dml.ConnPool, sqlmock.Sqlmock) {
+func MockDB(t testing.TB, opts ...dml.ConnPoolOption) (*dml.ConnPool, sqlmock.Sqlmock) {
 	if t != nil { // t can be nil in Example functions
 		t.Helper()
 	}
 	db, sm, err := sqlmock.New()
-	fatalIfError(t, err)
-
-	dbc, err := dml.NewConnPool(dml.WithDB(db))
-	fatalIfError(t, err)
+	FatalIfError(t, err)
+	dbc, err := dml.NewConnPool(append(opts, dml.WithDB(db))...)
+	FatalIfError(t, err)
 	return dbc, sm
 }
 
 // MockClose for usage in conjunction with defer.
-// 		defer cstesting.MockClose(t,db,dbMock)
+// 		defer dmltest.MockClose(t, db, dbMock)
 func MockClose(t testing.TB, c io.Closer, m sqlmock.Sqlmock) {
 	if t != nil { // t can be nil in Example functions
 		t.Helper()
 	}
 	m.ExpectClose()
-	if err := c.Close(); err != nil {
-		if t != nil {
-			t.Fatalf("%+v", err)
-		} else {
-			panic(err)
-		}
-	}
-	if err := m.ExpectationsWereMet(); err != nil {
-		if t != nil {
-			t.Fatalf("There were unfulfilled expectations:\n%+v", err)
-		} else {
-			panic(err)
-		}
-	}
+	FatalIfError(t, c.Close())
+	FatalIfError(t, m.ExpectationsWereMet())
 }
 
-// fatalIfError fails the tests if an unexpected error occurred. If the error is
-// gift wrapped prints the location.
-func fatalIfError(t testing.TB, err error) {
+// FatalIfError fails the tests if an unexpected error occurred. If the error is
+// gift wrapped, it prints the location. If `t` is nil, this function panics.
+func FatalIfError(t testing.TB, err error) {
 	if err != nil {
 		if t != nil {
 			t.Fatalf("%+v", err)
