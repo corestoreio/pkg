@@ -186,8 +186,8 @@ func (st *stmtBase) LoadInt64s(ctx context.Context) (ret []int64, err error) {
 
 // More Load* functions can be added later
 
-func newResurrectStmt(db *sql.DB, name string, qb QueryBuilder, idleTime time.Duration, l log.Logger) (*resurrectStmt, error) {
-	rs := &resurrectStmt{
+func newReduxStmt(db *sql.DB, name string, qb QueryBuilder, idleTime time.Duration, l log.Logger) (*reduxStmt, error) {
+	rs := &reduxStmt{
 		name:            name,
 		db:              db,
 		qb:              qb,
@@ -197,13 +197,21 @@ func newResurrectStmt(db *sql.DB, name string, qb QueryBuilder, idleTime time.Du
 	}
 	rs.stmtBase.Log = l
 	if err := rs.rePrepare(); err != nil {
-		return nil, errors.Wrapf(err, "[dml] newResurrectStmt failed for %q", name)
+		return nil, errors.Wrapf(err, "[dml] newReduxStmt failed for %q", name)
 	}
-	go rs.startIdleChecker()
+	go rs.idleDaemon()
 	return rs, nil
 }
 
-type resurrectStmt struct {
+// reduxStmt represents a prepared statement which can resurrect/redux and is
+// bound to a single connection. After an idle time the statement and the
+// connection gets closed and resources on the DB server freed. Once the
+// statement will be used again, it reduxes, gets re-prepared, via its dedicated
+// connection. If there are no more connections available, it waits until it can
+// connect. Due to the connection handling implementation of database/sql/DB
+// object we must grab a dedicated connection. A later aim would that multiple
+// prepared statements can share a single connection.
+type reduxStmt struct {
 	stmtBase
 	name string
 	db   *sql.DB   // to get a new con
@@ -220,53 +228,57 @@ type resurrectStmt struct {
 	status   byte      // c=closed, p=prepared, 0 = nothing
 }
 
-func (rs *resurrectStmt) Stmt() *sql.Stmt {
+func (rs *reduxStmt) Stmt() *sql.Stmt {
 	panic(errors.NotSupported.Newf("[dml] returning the raw sql.Stmt is not yet supported (%q", rs.name))
 }
 
-func (rs *resurrectStmt) closeStmtCon() (err error) {
+func (rs *reduxStmt) closeStmtCon() (err error) {
 	rs.mu.Lock()
 	defer func() {
 		rs.status = 'c'
-		rs.mu.Unlock()
 		if err2 := rs.con.Close(); err == nil && err2 != nil {
-			err = errors.Wrapf(err2, "[dml] resurrectStmt.closeStmtCon.con name: %q", rs.name)
+			err = errors.Wrapf(err2, "[dml] reduxStmt.closeStmtCon.con name: %q", rs.name)
 		}
 		rs.con = nil
 		if rs.Log != nil && rs.Log.IsDebug() {
-			rs.Log.Debug("resurrectStmt.closeStmtCon.con.close", log.String("name", rs.name), log.Time("last_used", rs.lastUsed))
+			rs.Log.Debug("reduxStmt.closeStmtCon.con.close", log.String("name", rs.name), log.Time("last_used", rs.lastUsed))
 		}
+		rs.mu.Unlock()
+
 	}()
 	if rs.stmt != nil {
-		if err := rs.stmt.Close(); err != nil {
-			return errors.Wrapf(err, "[ddl] resurrectStmt.stmt.close name: %q", rs.name)
+		if err = rs.stmt.Close(); err != nil {
+			err = errors.Wrapf(err, "[ddl] reduxStmt.stmt.close name: %q", rs.name)
 		}
 		if rs.Log != nil && rs.Log.IsDebug() {
-			rs.Log.Debug("resurrectStmt.closeStmtCon.stmt.close", log.String("name", rs.name), log.Time("last_used", rs.lastUsed))
+			rs.Log.Debug("reduxStmt.closeStmtCon.stmt.close", log.String("name", rs.name), log.Time("last_used", rs.lastUsed))
 		}
 	}
-	return nil
+	return err
 }
 
-func (rs *resurrectStmt) Close() error {
+func (rs *reduxStmt) Close() error {
+	if rs.status == 'c' {
+		return nil
+	}
 	rs.stopIdleChecker <- struct{}{}
 	return rs.closeStmtCon()
 }
 
-func (rs *resurrectStmt) rePrepare() (err error) {
+func (rs *reduxStmt) rePrepare() (err error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
 
 	if rs.status == 'p' {
 		rs.lastUsed = time.Now()
 		if rs.Log != nil && rs.Log.IsDebug() {
-			rs.Log.Debug("resurrectStmt.rePrepare.stmt.prepared", log.String("name", rs.name), log.Time("last_used", rs.lastUsed))
+			rs.Log.Debug("reduxStmt.rePrepare.stmt.prepared", log.String("name", rs.name), log.Time("last_used", rs.lastUsed))
 		}
 		return nil
 	}
 	ctx := context.Background() // for now, can be changed later
 
-	// get a fresh connection
+	// get a fresh connection; TODO wait if max connections has been reached. use max tries and back off ... etc
 	if rs.con, err = rs.db.Conn(ctx); err != nil {
 		return errors.WithStack(err)
 	}
@@ -281,12 +293,12 @@ func (rs *resurrectStmt) rePrepare() (err error) {
 	}
 	rs.status = 'p'
 	if rs.Log != nil && rs.Log.IsDebug() {
-		rs.Log.Debug("resurrectStmt.rePrepare.stmt.preparing", log.String("name", rs.name), log.Time("last_used", rs.lastUsed), log.String("query", qry))
+		rs.Log.Debug("reduxStmt.rePrepare.stmt.preparing", log.String("name", rs.name), log.Time("last_used", rs.lastUsed), log.String("query", qry))
 	}
 	return nil
 }
 
-func (rs *resurrectStmt) startIdleChecker() {
+func (rs *reduxStmt) idleDaemon() {
 	ticker := time.NewTicker(rs.idleTime)
 	for {
 		select {
@@ -294,79 +306,78 @@ func (rs *resurrectStmt) startIdleChecker() {
 			if !ok {
 				return
 			}
-
 			if rs.canClose(t) {
 				// stmt has not been used within the last x seconds. so close
 				// the stmt and release the resources in the DB. And also close
 				// the connection!
-				if err := rs.Close(); err != nil {
+				if err := rs.closeStmtCon(); err != nil {
 					if rs.Log != nil && rs.Log.IsInfo() {
-						rs.Log.Info("dml.resurrectStmt.close", log.Err(err), log.String("name", rs.name))
+						rs.Log.Info("dml.reduxStmt.close", log.Err(err), log.String("name", rs.name))
 					}
 				}
 				if rs.Log != nil && rs.Log.IsDebug() {
-					rs.Log.Debug("resurrectStmt.startIdleChecker.stmt.closing", log.String("name", rs.name), log.Time("last_used", rs.lastUsed))
+					rs.Log.Debug("reduxStmt.idleDaemon.stmt.closing", log.String("name", rs.name), log.Time("last_used", rs.lastUsed))
 				}
 			}
 		case <-rs.stopIdleChecker:
 			ticker.Stop()
 			if rs.Log != nil && rs.Log.IsDebug() {
-				rs.Log.Debug("resurrectStmt.startIdleChecker.ticker.stopped", log.String("name", rs.name), log.Time("last_used", rs.lastUsed))
+				rs.Log.Debug("reduxStmt.idleDaemon.ticker.stopped", log.String("name", rs.name), log.Time("last_used", rs.lastUsed))
 			}
 			return
 		}
 	}
 }
 
-func (rs *resurrectStmt) canClose(t time.Time) bool {
+func (rs *reduxStmt) canClose(t time.Time) bool {
 	rs.mu.RLock()
 	ok := t.After(rs.lastUsed) && rs.status == 'p'
 	rs.mu.RUnlock()
 	return ok
 }
 
-func (rs *resurrectStmt) Exec(ctx context.Context, args ...interface{}) (sql.Result, error) {
+func (rs *reduxStmt) Exec(ctx context.Context, args ...interface{}) (sql.Result, error) {
 	if err := rs.rePrepare(); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	res, err := rs.stmtBase.Exec(ctx, args...)
 	if err != nil {
-		return nil, errors.Wrapf(err, "[dml] resurrectStmt.Exec with name %q", rs.name)
+		return nil, errors.Wrapf(err, "[dml] reduxStmt.Exec with name %q", rs.name)
 	}
 	return res, nil
 }
 
 // Query traditional way, allocation heavy.
-func (rs *resurrectStmt) Query(ctx context.Context, args ...interface{}) (*sql.Rows, error) {
+func (rs *reduxStmt) Query(ctx context.Context, args ...interface{}) (*sql.Rows, error) {
 	if err := rs.rePrepare(); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	rows, err := rs.stmtBase.Query(ctx, args...)
 	if err != nil {
-		return nil, errors.Wrapf(err, "[dml] resurrectStmt.Query with name %q", rs.name)
+		return nil, errors.Wrapf(err, "[dml] reduxStmt.Query with name %q", rs.name)
 	}
 	return rows, nil
 }
 
 // QueryRow traditional way, allocation heavy.
-func (rs *resurrectStmt) QueryRow(ctx context.Context, args ...interface{}) *sql.Row {
+func (rs *reduxStmt) QueryRow(ctx context.Context, args ...interface{}) *sql.Row {
 	return nil
 }
 
 // Load loads data from a query into an object. Load can load a single row
 // or n-rows.
-func (rs *resurrectStmt) Load(ctx context.Context, s ColumnMapper) (rowCount uint64, err error) {
+func (rs *reduxStmt) Load(ctx context.Context, s ColumnMapper) (rowCount uint64, err error) {
 	return 0, nil
 }
 
 // LoadInt64 executes the prepared statement and returns the value as an
 // int64. It returns a NotFound error if the query returns nothing.
-func (rs *resurrectStmt) LoadInt64(ctx context.Context) (int64, error) {
+func (rs *reduxStmt) LoadInt64(ctx context.Context) (int64, error) {
 	return 0, nil
 }
 
 // LoadInt64s executes the Select and returns the value as a slice of
 // int64s.
-func (rs *resurrectStmt) LoadInt64s(ctx context.Context) (ret []int64, err error) {
+func (rs *reduxStmt) LoadInt64s(ctx context.Context) (ret []int64, err error) {
 	return nil, nil
 }

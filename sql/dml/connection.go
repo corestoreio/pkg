@@ -53,7 +53,7 @@ type ConnPool struct {
 	dsn string
 
 	rwmu          sync.RWMutex
-	preparedStmts map[string]*resurrectStmt
+	preparedStmts map[string]*reduxStmt
 }
 
 // Conn represents a single database session rather a pool of database sessions.
@@ -138,14 +138,24 @@ func WithUniqueIDFn(uniqueIDFn func() string) ConnPoolOption {
 	}
 }
 
+// WithPreparedStatement uses the name as unique identifier to create a
+// redux/resurrectable prepared statement. This prepared statement is bound to a
+// single connection. After an idle time the statement and the connection gets
+// closed and resources on the DB server freed. Once the statement will be used
+// again, it reduxes, gets re-prepared, via its dedicated connection. If there
+// are no more connections available, it waits until it can connect. Due to the
+// connection handling implementation of database/sql/DB object we must grab a
+// dedicated connection. To call this statement use function ConnPool.Stmt.
 func WithPreparedStatement(name string, qb QueryBuilder, idleTime time.Duration) ConnPoolOption {
+	// last parameter of above API signature might turn into a config struct
+	// because we will have more options for newReduxStmt.
 	return ConnPoolOption{
 		sortOrder: 200,
 		fn: func(c *ConnPool) error {
 			c.rwmu.Lock()
 			defer c.rwmu.Unlock()
 			if c.preparedStmts == nil {
-				c.preparedStmts = make(map[string]*resurrectStmt, 20)
+				c.preparedStmts = make(map[string]*reduxStmt, 20)
 			}
 
 			if rs, ok := c.preparedStmts[name]; ok {
@@ -154,7 +164,7 @@ func WithPreparedStatement(name string, qb QueryBuilder, idleTime time.Duration)
 				}
 			}
 
-			rs, err := newResurrectStmt(c.DB, name, qb, idleTime, c.Log)
+			rs, err := newReduxStmt(c.DB, name, qb, idleTime, c.Log)
 			if err != nil {
 				return errors.WithStack(err)
 			}
