@@ -54,7 +54,8 @@ func MustConnectDB(t testing.TB, opts ...dml.ConnPoolOption) *dml.ConnPool {
 	if _, err := getDSN(EnvDSN); errors.NotFound.Match(err) {
 		t.Skipf("%s", err)
 	}
-	return dml.MustConnectAndVerify(append(opts, dml.WithDSN(MustGetDSN(t)))...)
+	cfg := []dml.ConnPoolOption{dml.WithDSN(MustGetDSN(t))}
+	return dml.MustConnectAndVerify(append(cfg, opts...)...)
 }
 
 // Close for usage in conjunction with defer.
@@ -73,7 +74,8 @@ func MockDB(t testing.TB, opts ...dml.ConnPoolOption) (*dml.ConnPool, sqlmock.Sq
 	}
 	db, sm, err := sqlmock.New()
 	FatalIfError(t, err)
-	dbc, err := dml.NewConnPool(append(opts, dml.WithDB(db))...)
+	cfg := []dml.ConnPoolOption{dml.WithDB(db)}
+	dbc, err := dml.NewConnPool(append(cfg, opts...)...)
 	FatalIfError(t, err)
 	return dbc, sm
 }
