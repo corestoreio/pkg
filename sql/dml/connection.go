@@ -323,6 +323,15 @@ func (c *ConnPool) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error
 	}, nil
 }
 
+// Stmt returns a redux prepared statement. The object represents a prepared
+// statement which can resurrect/redux and is bound to a single connection.
+// After an idle time the statement and the connection gets closed and resources
+// on the DB server freed. Once the statement will be used again, it reduxes,
+// gets re-prepared, via its dedicated connection. If there are no more
+// connections available, it waits until it can connect. Due to the connection
+// handling implementation of database/sql/DB object we must grab a dedicated
+// connection. A later aim would that multiple prepared statements can share a
+// single connection.
 func (c *ConnPool) Stmt(name string) (Stmter, error) {
 	c.rwmu.RLock()
 	defer c.rwmu.RUnlock()
@@ -335,12 +344,14 @@ func (c *ConnPool) Stmt(name string) (Stmter, error) {
 	return rs, nil
 }
 
+// StmtPrepare same as functional option WithPreparedStatement but returns the
+// lazy prepared Stmter.
 func (c *ConnPool) StmtPrepare(name string, qb QueryBuilder, idleTime time.Duration) (Stmter, error) {
 	c.rwmu.RLock()
 	_, ok := c.preparedStmts[name]
 	c.rwmu.RUnlock()
 	if !ok {
-		if err := c.Options(WithPreparedStatement(name, qb, idleTime)); err != nil {
+		if err := WithPreparedStatement(name, qb, idleTime).fn(c); err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}

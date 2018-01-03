@@ -188,17 +188,14 @@ func (st *stmtBase) LoadInt64s(ctx context.Context) (ret []int64, err error) {
 
 func newReduxStmt(db *sql.DB, name string, qb QueryBuilder, idleTime time.Duration, l log.Logger) (*reduxStmt, error) {
 	rs := &reduxStmt{
-		name:            name,
-		db:              db,
-		qb:              qb,
-		stopIdleChecker: make(chan struct{}),
-		idleTime:        idleTime,
-		lastUsed:        time.Now(),
+		name:           name,
+		db:             db,
+		qb:             qb,
+		stopIdleDaemon: make(chan struct{}),
+		idleDuration:   idleTime,
+		lastUsed:       time.Now(),
 	}
 	rs.stmtBase.Log = l
-	if err := rs.rePrepare(); err != nil {
-		return nil, errors.Wrapf(err, "[dml] newReduxStmt failed for %q", name)
-	}
 	go rs.idleDaemon()
 	return rs, nil
 }
@@ -214,16 +211,16 @@ func newReduxStmt(db *sql.DB, name string, qb QueryBuilder, idleTime time.Durati
 type reduxStmt struct {
 	stmtBase
 	name string
-	db   *sql.DB   // to get a new con
-	con  *sql.Conn // stmt bound to this con, gets recreated each time a query gets reprepared
+	db   *sql.DB // to get a new con
 	qb   QueryBuilder
 
-	// idleTime defines the duration how long to wait until no query will be
+	// idleDuration defines the duration how long to wait until no query will be
 	// executed and the prepared statement deallocated.
-	idleTime        time.Duration
-	stopIdleChecker chan struct{} // tells the ticker to stop and close the stmt and con
+	idleDuration   time.Duration
+	stopIdleDaemon chan struct{} // tells the ticker to stop and closes the stmt and the con
 
 	mu       sync.RWMutex
+	con      *sql.Conn // stmt bound to this con, gets recreated each time a query gets re-prepared
 	lastUsed time.Time // time when the stmt has last been used
 	status   byte      // c=closed, p=prepared, 0 = nothing
 }
@@ -232,10 +229,25 @@ func (rs *reduxStmt) Stmt() *sql.Stmt {
 	panic(errors.NotSupported.Newf("[dml] returning the raw sql.Stmt is not yet supported (%q", rs.name))
 }
 
+func (rs *reduxStmt) Close() error {
+	rs.mu.RLock()
+	s := rs.status
+	rs.mu.RUnlock()
+	if s == 'c' {
+		return nil
+	}
+	close(rs.stopIdleDaemon)
+	return rs.closeStmtCon()
+}
+
 func (rs *reduxStmt) closeStmtCon() (err error) {
 	rs.mu.Lock()
+	if rs.status == 'c' {
+		rs.mu.Unlock()
+		return nil
+	}
+	rs.status = 'c'
 	defer func() {
-		rs.status = 'c'
 		if err2 := rs.con.Close(); err == nil && err2 != nil {
 			err = errors.Wrapf(err2, "[dml] reduxStmt.closeStmtCon.con name: %q", rs.name)
 		}
@@ -243,8 +255,10 @@ func (rs *reduxStmt) closeStmtCon() (err error) {
 		if rs.Log != nil && rs.Log.IsDebug() {
 			rs.Log.Debug("reduxStmt.closeStmtCon.con.close", log.String("name", rs.name), log.Time("last_used", rs.lastUsed))
 		}
+		if err == nil && rs.ärgErr != nil {
+			err = rs.ärgErr
+		}
 		rs.mu.Unlock()
-
 	}()
 	if rs.stmt != nil {
 		if err = rs.stmt.Close(); err != nil {
@@ -257,28 +271,21 @@ func (rs *reduxStmt) closeStmtCon() (err error) {
 	return err
 }
 
-func (rs *reduxStmt) Close() error {
-	if rs.status == 'c' {
-		return nil
-	}
-	rs.stopIdleChecker <- struct{}{}
-	return rs.closeStmtCon()
-}
-
 func (rs *reduxStmt) rePrepare() (err error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-
+	// optimization to remove the lock can be to rely on sync/atomic. store the
+	// time as nano second and status aus an int value. Via CAS or Store/Load
+	// operations performance should improve.
+	rs.lastUsed = time.Now()
 	if rs.status == 'p' {
-		rs.lastUsed = time.Now()
 		if rs.Log != nil && rs.Log.IsDebug() {
 			rs.Log.Debug("reduxStmt.rePrepare.stmt.prepared", log.String("name", rs.name), log.Time("last_used", rs.lastUsed))
 		}
 		return nil
 	}
 	ctx := context.Background() // for now, can be changed later
-
-	// get a fresh connection; TODO wait if max connections has been reached. use max tries and back off ... etc
+	// get a fresh connection; maybe use max tries and back off ... etc
 	if rs.con, err = rs.db.Conn(ctx); err != nil {
 		return errors.WithStack(err)
 	}
@@ -299,31 +306,30 @@ func (rs *reduxStmt) rePrepare() (err error) {
 }
 
 func (rs *reduxStmt) idleDaemon() {
-	ticker := time.NewTicker(rs.idleTime)
+	ticker := time.NewTicker(rs.idleDuration)
 	for {
 		select {
 		case t, ok := <-ticker.C:
 			if !ok {
 				return
 			}
+			t = t.Add(-rs.idleDuration)
 			if rs.canClose(t) {
-				// stmt has not been used within the last x seconds. so close
+				// stmt has not been used within the last duration. so close
 				// the stmt and release the resources in the DB. And also close
-				// the connection!
-				if err := rs.closeStmtCon(); err != nil {
-					if rs.Log != nil && rs.Log.IsInfo() {
-						rs.Log.Info("dml.reduxStmt.close", log.Err(err), log.String("name", rs.name))
-					}
+				// the dedicated connection!
+				if err := rs.closeStmtCon(); err != nil && rs.Log != nil && rs.Log.IsInfo() {
+					rs.Log.Info("dml.reduxStmt.close.error", log.Err(err), log.String("name", rs.name))
 				}
 				if rs.Log != nil && rs.Log.IsDebug() {
-					rs.Log.Debug("reduxStmt.idleDaemon.stmt.closing", log.String("name", rs.name), log.Time("last_used", rs.lastUsed))
+					rs.Log.Debug("reduxStmt.idleDaemon.stmt.closing", log.String("name", rs.name), log.Time("last_used", rs.lastUsed), log.Time("current", t))
 				}
 			}
-		case <-rs.stopIdleChecker:
-			ticker.Stop()
+		case <-rs.stopIdleDaemon:
 			if rs.Log != nil && rs.Log.IsDebug() {
 				rs.Log.Debug("reduxStmt.idleDaemon.ticker.stopped", log.String("name", rs.name), log.Time("last_used", rs.lastUsed))
 			}
+			ticker.Stop()
 			return
 		}
 	}
@@ -361,23 +367,47 @@ func (rs *reduxStmt) Query(ctx context.Context, args ...interface{}) (*sql.Rows,
 
 // QueryRow traditional way, allocation heavy.
 func (rs *reduxStmt) QueryRow(ctx context.Context, args ...interface{}) *sql.Row {
-	return nil
+	if err := rs.rePrepare(); err != nil {
+		rs.ärgErr = errors.WithStack(err)
+	}
+	return rs.stmtBase.QueryRow(ctx, args...)
 }
 
 // Load loads data from a query into an object. Load can load a single row
 // or n-rows.
 func (rs *reduxStmt) Load(ctx context.Context, s ColumnMapper) (rowCount uint64, err error) {
-	return 0, nil
+	if err = rs.rePrepare(); err != nil {
+		return 0, errors.WithStack(err)
+	}
+	rowCount, err = rs.stmtBase.Load(ctx, s)
+	if err != nil {
+		err = errors.Wrapf(err, "[dml] reduxStmt.Load with name %q", rs.name)
+	}
+	return
 }
 
 // LoadInt64 executes the prepared statement and returns the value as an
 // int64. It returns a NotFound error if the query returns nothing.
-func (rs *reduxStmt) LoadInt64(ctx context.Context) (int64, error) {
-	return 0, nil
+func (rs *reduxStmt) LoadInt64(ctx context.Context) (value int64, err error) {
+	if err = rs.rePrepare(); err != nil {
+		return 0, errors.WithStack(err)
+	}
+	value, err = rs.stmtBase.LoadInt64(ctx)
+	if err != nil {
+		err = errors.Wrapf(err, "[dml] reduxStmt.LoadInt64 with name %q", rs.name)
+	}
+	return
 }
 
 // LoadInt64s executes the Select and returns the value as a slice of
 // int64s.
-func (rs *reduxStmt) LoadInt64s(ctx context.Context) (ret []int64, err error) {
-	return nil, nil
+func (rs *reduxStmt) LoadInt64s(ctx context.Context) (values []int64, err error) {
+	if err := rs.rePrepare(); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	values, err = rs.stmtBase.LoadInt64s(ctx)
+	if err != nil {
+		err = errors.Wrapf(err, "[dml] reduxStmt.LoadInt64s with name %q", rs.name)
+	}
+	return
 }
