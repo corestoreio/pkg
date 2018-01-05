@@ -46,4 +46,7 @@
 // https://dadario.com.br/revoking-json-web-tokens/
 //
 // TODO(CyS) move RSA and ECDSA into its own subpackage ...
+//
+// TODO(CyS) Consider PAST (Platform-Agnostic Security Tokens)
+// https://news.ycombinator.com/item?id=16070394 https://github.com/paragonie/past
 package csjwt
