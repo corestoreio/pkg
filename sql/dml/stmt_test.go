@@ -23,6 +23,8 @@ import (
 	"testing"
 	"time"
 
+	"sync"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
@@ -67,14 +69,14 @@ func TestReduxStmt_Query_Execution(t *testing.T) {
 		dml.WithPreparedStatement("sleep1", dml.QuerySQL("SELECT SLEEP(1)"), 10*time.Millisecond),
 	))
 
-	stmt, err := dbCon.Stmt("NotFound")
+	stmt, err := dbCon.StmtRedux("NotFound")
 	assert.Nil(t, stmt, "stmt should be nil")
 	require.True(t, errors.Is(err, errors.NotFound), "Should be a NotFound error, got: %+v", err)
 
-	stmt, err = dbCon.Stmt("sleep1")
+	stmt, err = dbCon.StmtRedux("sleep1")
 	require.NoError(t, err)
 	for i := 1; i <= 2; i++ {
-		rows, err := stmt.Query(context.TODO())
+		rows, err := stmt.QueryContext(context.TODO())
 		require.NoError(t, err, "iteration %d", i)
 		dmltest.Close(t, rows)
 		require.NoError(t, rows.Err())
@@ -108,17 +110,17 @@ func TestReduxStmt_Query_Resurrect(t *testing.T) {
 		dml.WithPreparedStatement("sleep2", dml.QuerySQL("SELECT SLEEP(2)"), 3*time.Millisecond),
 	))
 
-	stmt, err := dbCon.Stmt("sleep2")
+	stmt, err := dbCon.StmtRedux("sleep2")
 	require.NoError(t, err)
 
-	rows, err := stmt.Query(context.TODO())
+	rows, err := stmt.QueryContext(context.TODO())
 	require.NoError(t, err)
 	require.NoError(t, rows.Err())
 	dmltest.Close(t, rows)
 
 	time.Sleep(100 * time.Millisecond) // until idleDaemon closes the statement due to inactivity
 
-	rows, err = stmt.Query(context.TODO())
+	rows, err = stmt.QueryContext(context.TODO())
 	require.NoError(t, err)
 	require.NoError(t, rows.Err())
 	dmltest.Close(t, rows)
@@ -171,9 +173,9 @@ func TestReduxStmt_Stmt(t *testing.T) {
 		dml.WithPreparedStatement("sleep3", dml.QuerySQL("SELECT SLEEP(3)"), 3*time.Millisecond),
 	))
 
-	stmt, err := dbCon.Stmt("sleep3")
+	stmt, err := dbCon.StmtRedux("sleep3")
 	require.NoError(t, err)
-	_ = stmt.Stmt()
+	_ = stmt
 }
 
 func TestRedux_ConnPool_StmtPrepare_LoadInt64(t *testing.T) {
@@ -186,9 +188,9 @@ func TestRedux_ConnPool_StmtPrepare_LoadInt64(t *testing.T) {
 	dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT 4")).
 		ExpectQuery().WithArgs().WillReturnRows(r)
 
-	stmt, err := dbCon.StmtPrepare("select4", dml.QuerySQL("SELECT 4"), 50*time.Millisecond)
+	stmt, err := dbCon.StmtReduxPrepare("select4", dml.QuerySQL("SELECT 4"), 50*time.Millisecond)
 	require.NoError(t, err)
-	val, err := stmt.LoadInt64(context.TODO())
+	val, err := stmt.WithArgs().LoadInt64(context.TODO())
 	require.NoError(t, err)
 	assert.Exactly(t, int64(4), val)
 }
@@ -205,9 +207,9 @@ func TestRedux_ConnPool_StmtPrepare_Exec(t *testing.T) {
 	haveErr := errors.NotExists.Newf("Flat earth")
 	prep.ExpectExec().WillReturnError(haveErr)
 
-	stmt, err := dbCon.StmtPrepare("select4", dml.QuerySQL("SELECT 4"), 50*time.Millisecond)
+	stmt, err := dbCon.StmtReduxPrepare("select4", dml.QuerySQL("SELECT 4"), 50*time.Millisecond)
 	require.NoError(t, err)
-	val, err := stmt.Exec(context.TODO())
+	val, err := stmt.WithArgs().ExecContext(context.TODO())
 	require.NoError(t, err)
 
 	id, err := val.LastInsertId()
@@ -218,7 +220,7 @@ func TestRedux_ConnPool_StmtPrepare_Exec(t *testing.T) {
 	require.NoError(t, err)
 	assert.Exactly(t, int64(33), id)
 
-	val, err = stmt.Exec(context.TODO())
+	val, err = stmt.WithArgs().ExecContext(context.TODO())
 	assert.Nil(t, val)
 	assert.True(t, errors.Is(err, errors.NotExists), "Want errors.NotExists\n%+v", err)
 }
@@ -236,13 +238,13 @@ func TestRedux_ConnPool_StmtPrepare_LoadInt64s(t *testing.T) {
 	haveErr := errors.NotExists.Newf("Flat earth")
 	prep.ExpectQuery().WithArgs().WillReturnError(haveErr)
 
-	stmt, err := dbCon.StmtPrepare("select4", dml.QuerySQL("SELECT 4"), 50*time.Millisecond)
+	stmt, err := dbCon.StmtReduxPrepare("select4", dml.QuerySQL("SELECT 4"), 50*time.Millisecond)
 	require.NoError(t, err)
-	val, err := stmt.LoadInt64s(context.TODO())
+	val, err := stmt.WithArgs().LoadInt64s(context.TODO())
 	require.NoError(t, err)
 	assert.Exactly(t, []int64{4, 5}, val)
 
-	val, err = stmt.LoadInt64s(context.TODO())
+	val, err = stmt.WithArgs().LoadInt64s(context.TODO())
 	assert.Nil(t, val)
 	assert.True(t, errors.Is(err, errors.NotExists), "Want errors.NotExists\n%+v", err)
 }
@@ -257,10 +259,59 @@ func TestRedux_ConnPool_StmtPrepare_LoadInt64s_Error(t *testing.T) {
 	dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT 4")).
 		ExpectQuery().WithArgs().WillReturnError(haveErr)
 
-	stmt, err := dbCon.StmtPrepare("select4", dml.QuerySQL("SELECT 4"), 50*time.Millisecond)
+	stmt, err := dbCon.StmtReduxPrepare("select4", dml.QuerySQL("SELECT 4"), 50*time.Millisecond)
 	require.NoError(t, err)
-	val, err := stmt.LoadInt64s(context.TODO())
+	val, err := stmt.WithArgs().LoadInt64s(context.TODO())
 	assert.Nil(t, val)
 	assert.True(t, errors.Is(err, errors.NotExists), "Want errors.NotExists\n%+v", err)
+}
+
+func TestReduxStmt_Load_Integration(t *testing.T) {
+	db := createRealSession(t,
+		dml.WithPreparedStatement("selectDMLPpl1",
+			dml.NewSelect("id", "name", "email").From("dml_people").Where(dml.Column("id").Equal().PlaceHolder()),
+			10*time.Millisecond),
+	)
+	defer dmltest.Close(t, db)
+
+	// No fixtures installed because relying on other tests ... maybe fix that later
+
+	stmt, err := db.StmtRedux("selectDMLPpl1")
+	require.NoError(t, err)
+
+	const queryIterations = 4
+	const concurrency = 2
+	var wg sync.WaitGroup
+	wg.Add(concurrency)
+	for i := 0; i < concurrency; i++ {
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
+
+			stmtA := stmt.WithArgs()
+			for j := 1; j <= queryIterations; j++ {
+
+				var ppl dmlPerson
+
+				rc, err := stmtA.Int64(1).Load(context.Background(), &ppl)
+				require.NoError(t, err)
+				require.Exactly(t, int64(1), int64(rc), "Row Count")
+				assert.Exactly(t, dmlPerson{
+					ID: 1, Name: "Jonathan", Email: dml.MakeNullString(`jonathan@uservoice.com`),
+				}, ppl)
+
+				rc, err = stmtA.Int64(2).Load(context.Background(), &ppl) // TODO: that is ugly with args.Reset ...
+				require.NoError(t, err)
+				require.Exactly(t, int64(1), int64(rc), "Row Count")
+				assert.Exactly(t, dmlPerson{
+					ID: 2, Name: "Dmitri", Email: dml.MakeNullString(`zavorotni@jadius.com`),
+				}, ppl)
+
+				time.Sleep(20 * time.Millisecond)
+				stmtA.Reset()
+			}
+
+		}(&wg)
+	}
+	wg.Wait()
 
 }

@@ -32,8 +32,6 @@ const (
 	placeHolderStr  = `?`
 )
 
-var placeHolderBytes = []byte(placeHolderStr)
-
 // ExpandPlaceHolders takes a SQL string and repeats the question marks with the provided
 // arguments. If the amount of arguments does not match the number of questions
 // marks, a Mismatch error gets returned. The arguments are getting converted to
@@ -45,31 +43,31 @@ var placeHolderBytes = []byte(placeHolderStr)
 // The questions marks are of course depending on the values in the Arg*
 // functions. This function should be generally used when dealing with prepared
 // statements.
-func ExpandPlaceHolders(sql string, args Arguments) (string, error) {
+func ExpandPlaceHolders(sql string, args *Arguments) (string, error) {
 
 	phCount := strings.Count(sql, placeHolderStr)
-	if want := len(args); phCount != want || want == 0 {
+	if want := len(args.args); phCount != want || want == 0 {
 		return "", errors.Mismatch.Newf("[dml] ExpandPlaceHolders: Number of %s:%d do not match the number of repetitions: %d", placeHolderStr, phCount, want)
 	}
 
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
-	err := expandPlaceHolders(buf, []byte(sql), args)
+	var buf strings.Builder
+	buf.Grow(len(sql) * 3 / 2) // *1.5
+	err := expandPlaceHolders(buf, sql, args)
 	return buf.String(), errors.WithStack(err)
 }
 
 // expandPlaceHolders multiplies the place holder with the arguments internal len.
-func expandPlaceHolders(buf *bytes.Buffer, sql []byte, args Arguments) error {
+func expandPlaceHolders(buf strings.Builder, sql string, args *Arguments) error {
 	i := 0
 	pos := 0
 	for pos < len(sql) {
-		r, w := utf8.DecodeRune(sql[pos:])
+		r, w := utf8.DecodeRuneInString(sql[pos:])
 		pos += w
 
 		switch r {
 		case placeHolderRune:
-			if i < len(args) {
-				reps := args[i].len()
+			if i < len(args.args) {
+				reps := args.args[i].len()
 				if reps > 1 {
 					buf.WriteByte('(')
 				}
@@ -94,8 +92,8 @@ func expandPlaceHolders(buf *bytes.Buffer, sql []byte, args Arguments) error {
 // ip handles the interpolation of the SQL string and uses an internal argument
 // pool for optimal slice usage.
 type ip struct {
-	queryCache []byte
-	args       Arguments
+	queryCache string
+	args       *Arguments
 }
 
 // Interpolate takes a SQL byte slice with placeholders and a list of arguments
@@ -104,7 +102,7 @@ type ip struct {
 // function.
 func Interpolate(sql string) *ip {
 	return &ip{
-		queryCache: []byte(sql),
+		queryCache: sql,
 		args:       MakeArgs(8),
 	}
 }
@@ -140,7 +138,7 @@ func (in *ip) ToSQL() (_ string, alwaysNil []interface{}, _ error) {
 
 // Reset resets the internal argument cache for reuse. Avoids lots of
 // allocations.
-func (in *ip) Reset() *ip                 { in.args = in.args[:0]; return in }
+func (in *ip) Reset() *ip                 { in.args.args = in.args.args[:0]; return in }
 func (in *ip) Null() *ip                  { in.args = in.args.Null(); return in }
 func (in *ip) Unsafe(arg interface{}) *ip { in.args = in.args.Unsafe(arg); return in }
 func (in *ip) Int(i int) *ip              { in.args = in.args.Int(i); return in }
@@ -174,32 +172,29 @@ func (in *ip) NullBools(nv ...NullBool) *ip         { in.args = in.args.NullBool
 func (in *ip) NullTime(nv NullTime) *ip             { in.args = in.args.NullTime(nv); return in }
 func (in *ip) NullTimes(nv ...NullTime) *ip         { in.args = in.args.NullTimes(nv...); return in }
 func (in *ip) DriverValue(dvs ...driver.Valuer) *ip { in.args = in.args.DriverValue(dvs...); return in }
-func (in *ip) ArgUnions(args Arguments) *ip         { in.args = args; return in }
+func (in *ip) ArgUnions(args *Arguments) *ip        { in.args = args; return in }
 
 // Named uses the NamedArg for string replacement. Replaces the names with place
 // holder character. TODO(CyS) Slices in NamedArg.Value are not yet supported.
 func (in *ip) Named(nArgs ...sql.NamedArg) *ip {
 	// for now this unoptimized version with a stupid string replacement and
 	// converting between bytes and string.
-	sqlStr := string(in.queryCache)
+
 	for _, na := range nArgs {
-		sqlStr = strings.Replace(sqlStr, na.Name, "?", -1) // TODO optimize
+		in.queryCache = strings.Replace(in.queryCache, na.Name, "?", -1) // TODO optimize
 		// BUG: depending on the position of the named argument the append function below creates the bug for not
-		// poisitioning correctly the arguments.
-		in.args = append(in.args, iFaceToArgs(na.Value)...)
+		// positioning correctly the arguments.
+		in.args.args = append(in.args.args, iFaceToArgs(na.Value).args...)
 	}
-	in.queryCache = []byte(sqlStr)
 	return in
 }
 
-var bTextPlaceholder = []byte("?")
-
 // writeInterpolate merges `args` into `sql` and writes the result into `buf`. `sql`
 // stays unchanged.
-func writeInterpolate(buf *bytes.Buffer, sql []byte, args Arguments) error {
+func writeInterpolate(buf *bytes.Buffer, sql string, args *Arguments) error {
 	// TODO support :name identifier and the name field in argument
 
-	phCount, argCount := bytes.Count(sql, bTextPlaceholder), len(args)
+	phCount, argCount := strings.Count(sql, placeHolderStr), len(args.args)
 	if argCount > 0 && phCount != argCount {
 		return errors.Mismatch.Newf("[dml] Number of place holders (%d) vs number of arguments (%d) do not match.", phCount, argCount)
 	}
@@ -207,30 +202,30 @@ func writeInterpolate(buf *bytes.Buffer, sql []byte, args Arguments) error {
 	var phCounter int
 	pos := 0
 	for pos < len(sql) {
-		r, w := utf8.DecodeRune(sql[pos:])
+		r, w := utf8.DecodeRuneInString(sql[pos:])
 		pos += w
 
 		switch {
 		case r == placeHolderRune && argCount > 0:
 			if phCounter < argCount { // protect for index out of bounds
-				if err := args[phCounter].writeTo(buf, 0); err != nil {
+				if err := args.args[phCounter].writeTo(buf, 0); err != nil {
 					return errors.WithStack(err)
 				}
 			}
 			phCounter++
 		case r == '`', r == '\'', r == '"':
-			p := bytes.IndexRune(sql[pos:], r)
+			p := strings.IndexRune(sql[pos:], r)
 			if r == '"' {
 				r = '\''
 			}
 			buf.WriteRune(r)
 			if p > -1 {
-				buf.Write(sql[pos : pos+p])
+				buf.WriteString(sql[pos : pos+p])
 				buf.WriteRune(r)
 			}
 			pos += p + 1
 		case r == '[':
-			w := bytes.IndexRune(sql[pos:], ']')
+			w := strings.IndexRune(sql[pos:], ']')
 			col := sql[pos : pos+w]
 			dialect.EscapeIdent(buf, string(col))
 			pos += w + 1 // size of ']'

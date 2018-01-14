@@ -17,7 +17,6 @@ package dml
 import (
 	"bytes"
 	"context"
-	"database/sql"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
@@ -58,7 +57,7 @@ type With struct {
 	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
 	// dedicated database session) or a *sql.Tx (an in-progress database
 	// transaction).
-	DB QueryPreparer
+	DB QueryExecPreparer
 
 	Subclauses []WithCTE
 	// TopLevel a union type which allows only one of the fields to be set.
@@ -136,7 +135,7 @@ func (tx *Tx) With(expressions ...WithCTE) *With {
 }
 
 // WithDB sets the database query object.
-func (b *With) WithDB(db QueryPreparer) *With {
+func (b *With) WithDB(db QueryExecPreparer) *With {
 	b.DB = db
 	return b
 }
@@ -178,41 +177,19 @@ func (b *With) Recursive() *With {
 	return b
 }
 
-// Interpolate if set stringyfies the arguments into the SQL string and returns
-// pre-processed SQL command when calling the function ToSQL. Not suitable for
-// prepared statements. ToSQLs second argument `args` will then be nil.
-func (b *With) Interpolate() *With {
-	b.IsInterpolate = true
-	return b
-}
-
-// WithArgs sets the interfaced arguments for the execution with Query+. It
-// internally resets previously applied arguments. This function does not
-// support interpolation.
-func (b *With) WithArgs(args ...interface{}) *With {
-	b.withArgs(args)
-	return b
-}
-
-// WithArguments sets the arguments for the execution with Query+. It internally
-// resets previously applied arguments. This function supports interpolation.
-func (b *With) WithArguments(args Arguments) *With {
-	b.withArguments(args)
-	return b
-}
-
-// WithRecords binds the qualified record to the main table/view, or any other
-// table/view/alias used in the query, for assembling and appending arguments. A
-// ColumnMapper gets called if it matches the qualifier, in this case the
-// current table name or its alias.
-func (b *With) WithRecords(records ...QualifiedRecord) *With {
-	b.withRecords(records)
-	return b
+// WithArgs builds the SQL string and sets the optional interfaced arguments for
+// the later execution. It copies the underlying connection and structs.
+func (b *With) WithArgs(args ...interface{}) *Arguments {
+	return b.withArgs(b, args...)
 }
 
 // ToSQL converts the select statement into a string and returns its arguments.
 func (b *With) ToSQL() (string, []interface{}, error) {
-	return b.buildArgsAndSQL(b)
+	rawSQL, err := b.buildToSQL(b)
+	if err != nil {
+		return "", nil, errors.WithStack(err)
+	}
+	return string(rawSQL), nil, nil
 }
 
 func (b *With) writeBuildCache(sql []byte) {
@@ -263,14 +240,12 @@ func (b *With) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err er
 		w.WriteString(" AS (")
 		switch {
 		case sc.Select != nil:
-			sc.Select.IsInterpolate = b.IsInterpolate
 			sc.Select.IsBuildCacheDisabled = b.IsBuildCacheDisabled
 			placeHolders, err = sc.Select.toSQL(w, placeHolders)
 			if err != nil {
 				return nil, errors.WithStack(err)
 			}
 		case sc.Union != nil:
-			sc.Union.IsInterpolate = b.IsInterpolate
 			sc.Union.IsBuildCacheDisabled = b.IsBuildCacheDisabled
 			placeHolders, err = sc.Union.toSQL(w, placeHolders)
 			if err != nil {
@@ -286,25 +261,21 @@ func (b *With) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err er
 
 	switch {
 	case b.TopLevel.Select != nil:
-		b.TopLevel.Select.IsInterpolate = b.IsInterpolate
 		b.TopLevel.Select.IsBuildCacheDisabled = b.IsBuildCacheDisabled
 		placeHolders, err = b.TopLevel.Select.toSQL(w, placeHolders)
 		return placeHolders, errors.WithStack(err)
 
 	case b.TopLevel.Union != nil:
-		b.TopLevel.Union.IsInterpolate = b.IsInterpolate
 		b.TopLevel.Union.IsBuildCacheDisabled = b.IsBuildCacheDisabled
 		placeHolders, err = b.TopLevel.Union.toSQL(w, placeHolders)
 		return placeHolders, errors.WithStack(err)
 
 	case b.TopLevel.Update != nil:
-		b.TopLevel.Update.IsInterpolate = b.IsInterpolate
 		b.TopLevel.Update.IsBuildCacheDisabled = b.IsBuildCacheDisabled
 		placeHolders, err = b.TopLevel.Update.toSQL(w, placeHolders)
 		return placeHolders, errors.WithStack(err)
 
 	case b.TopLevel.Delete != nil:
-		b.TopLevel.Delete.IsInterpolate = b.IsInterpolate
 		b.TopLevel.Delete.IsBuildCacheDisabled = b.IsBuildCacheDisabled
 		placeHolders, err = b.TopLevel.Delete.toSQL(w, placeHolders)
 		return placeHolders, errors.WithStack(err)
@@ -312,59 +283,12 @@ func (b *With) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err er
 	return nil, errors.Empty.Newf("[dml] Type With misses a top level statement")
 }
 
-// Query executes a query and returns many rows.
-func (b *With) Query(ctx context.Context) (*sql.Rows, error) {
-	if b.Log != nil && b.Log.IsDebug() {
-		defer log.WhenDone(b.Log).Debug("Query", log.Stringer("sql", b))
-	}
-	rows, err := Query(ctx, b.DB, b)
-	return rows, errors.WithStack(err)
-}
-
-// Load loads data from a query into an object. You must set DB.QueryContext on
-// the With object or it just panics. Load can load a single row or n-rows.
-func (b *With) Load(ctx context.Context, s ColumnMapper) (rowCount uint64, err error) {
-	if b.Log != nil && b.Log.IsDebug() {
-		defer log.WhenDone(b.Log).Debug("Load", log.Uint64("row_count", rowCount), log.Stringer("sql", b))
-	}
-	sqlStr, args, err := b.ToSQL()
-	if err != nil {
-		return 0, errors.WithStack(err)
-	}
-	rows, err := b.DB.QueryContext(ctx, sqlStr, args...)
-	rowCount, err = load(rows, err, s, &b.ColumnMap)
-	if err != nil {
-		return 0, errors.Wrapf(err, "[dml] Load.QueryContext with query %q", sqlStr)
-	}
-	return rowCount, nil
-}
-
 // Prepare executes the statement represented by the `With` to create a prepared
 // statement. It returns a custom statement type or an error if there was one.
-// Provided arguments or records in the `With` are getting ignored. The provided
+// Provided arguments or recs in the `With` are getting ignored. The provided
 // context is used for the preparation of the statement, not for the execution
 // of the statement. The returned Stmter is not safe for concurrent use, despite
 // the underlying *sql.Stmt is.
-func (b *With) Prepare(ctx context.Context) (Stmter, error) {
-	if b.Log != nil && b.Log.IsDebug() {
-		defer log.WhenDone(b.Log).Debug("Prepare", log.Stringer("sql", b))
-	}
-	stmt, err := Prepare(ctx, b.DB, b)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	const cap = 10 // just a guess; needs to be more precise but later.
-	return &stmtBase{
-		builderCommon: builderCommon{
-			id:               b.id,
-			argsArgs:         make(Arguments, 0, cap),
-			argsRaw:          make([]interface{}, 0, cap),
-			defaultQualifier: b.Table.qualifier(),
-			qualifiedColumns: b.qualifiedColumns,
-			Log:              b.Log,
-		},
-		source: dmlTypeWith,
-		stmt:   stmt,
-	}, nil
+func (b *With) Prepare(ctx context.Context) (*Stmt, error) {
+	return b.prepare(ctx, b.DB, b, dmlSourceWith)
 }

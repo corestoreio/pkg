@@ -440,7 +440,7 @@ func TestInterpolate_Different(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		sql string
-		Arguments
+		*Arguments
 		expSQL  string
 		errKind errors.Kind
 	}{

@@ -28,25 +28,18 @@ func TestTransactionReal(t *testing.T) {
 	tx, err := s.BeginTx(context.TODO(), nil)
 	assert.NoError(t, err)
 
-	res, err := tx.InsertInto("dml_people").AddColumns("name", "email").AddValuesUnsafe(
+	txIns := tx.InsertInto("dml_people").AddColumns("name", "email").WithArgs(
 		"Barack", "obama@whitehouse.gov",
 		"Obama", "barack@whitehouse.gov",
-	).Exec(context.TODO())
+	)
 
-	assert.NoError(t, err)
-	id, err := res.LastInsertId()
-	assert.NoError(t, err)
-	rowsAff, err := res.RowsAffected()
-	assert.NoError(t, err)
-
-	assert.True(t, id > 0)
-	assert.Equal(t, int64(2), rowsAff)
+	lastID, _ := compareExecContext(t, txIns, 3, 2)
 
 	var person dmlPerson
-	_, err = tx.SelectFrom("dml_people").Star().Where(Column("id").Int64(id)).Load(context.TODO(), &person)
+	_, err = tx.SelectFrom("dml_people").Star().Where(Column("lastID").Int64(lastID)).WithArgs().Load(context.TODO(), &person)
 	assert.NoError(t, err)
 
-	assert.Equal(t, id, int64(person.ID))
+	assert.Equal(t, lastID, int64(person.ID))
 	assert.Equal(t, "Barack", person.Name)
 	assert.Equal(t, true, person.Email.Valid)
 	assert.Equal(t, "obama@whitehouse.gov", person.Email.String)
@@ -64,7 +57,7 @@ func TestTransactionRollbackReal(t *testing.T) {
 	assert.NoError(t, err)
 
 	var person dmlPerson
-	_, err = tx.SelectFrom("dml_people").Star().Where(Column("email").Str("jonathan@uservoice.com")).Load(context.TODO(), &person)
+	_, err = tx.SelectFrom("dml_people").Star().Where(Column("email").PlaceHolder()).WithArgs().Load(context.TODO(), &person, "jonathan@uservoice.com")
 	assert.NoError(t, err)
 	assert.Equal(t, "Jonathan", person.Name)
 

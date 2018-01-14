@@ -35,16 +35,11 @@ const (
 // Show represents the SHOW syntax
 type Show struct {
 	BuilderBase
-	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
-	// dedicated database session) or a *sql.Tx (an in-progress database
-	// transaction).
-	DB QueryPreparer
-
 	// Type bitwise flag containing the type of the SHOW statement.
 	Type uint
-	// LikeCondition supports only one argument. Either LIKE or WHERE can be
-	// set.
-	LikeCondition  Arguments
+	// LikeCondition supports only one argument. Either `LikeCondition` or
+	// `WhereFragments` can be set.
+	LikeCondition  bool
 	WhereFragments Conditions
 }
 
@@ -63,9 +58,9 @@ func (c *ConnPool) Show() *Show {
 			builderCommon: builderCommon{
 				id:  id,
 				Log: l,
+				DB:  c.DB,
 			},
 		},
-		DB: c.DB,
 	}
 }
 
@@ -81,9 +76,9 @@ func (c *Conn) Show() *Show {
 			builderCommon: builderCommon{
 				id:  id,
 				Log: l,
+				DB:  c.DB,
 			},
 		},
-		DB: c.DB,
 	}
 }
 
@@ -99,14 +94,14 @@ func (tx *Tx) Show() *Show {
 			builderCommon: builderCommon{
 				id:  id,
 				Log: l,
+				DB:  tx.DB,
 			},
 		},
-		DB: tx.DB,
 	}
 }
 
 // WithDB sets the database query object.
-func (b *Show) WithDB(db QueryPreparer) *Show {
+func (b *Show) WithDB(db QueryExecPreparer) *Show {
 	b.DB = db
 	return b
 }
@@ -173,39 +168,26 @@ func (b *Show) Where(wf ...*Condition) *Show {
 	return b
 }
 
-// WithArgs sets the interfaced arguments for the execution with Query+. It
-// internally resets previously applied arguments. This function does not
-// support interpolation.
-func (b *Show) WithArgs(args ...interface{}) *Show {
-	b.withArgs(args)
-	return b
-}
-
-// WithArguments sets the arguments for the execution with Query+. It internally
-// resets previously applied arguments. This function supports interpolation.
-func (b *Show) WithArguments(args Arguments) *Show {
-	b.withArguments(args)
-	return b
-}
-
 // Like sets the comparisons LIKE condition. Either WHERE or LIKE can be used.
 // Only the first argument supported.
-func (b *Show) Like(arg Arguments) *Show {
-	b.LikeCondition = arg
+func (b *Show) Like() *Show {
+	b.LikeCondition = true
 	return b
 }
 
-// Interpolate if set stringyfies the arguments into the SQL string and returns
-// pre-processed SQL command when calling the function ToSQL. Not suitable for
-// prepared statements. ToSQLs second argument `Arguments` will then be nil.
-func (b *Show) Interpolate() *Show {
-	b.IsInterpolate = true
-	return b
+// WithArgs builds the SQL string and sets the optional interfaced arguments for
+// the later execution. It copies the underlying connection and structs.
+func (b *Show) WithArgs(args ...interface{}) *Arguments {
+	return b.withArgs(b, args...)
 }
 
 // ToSQL converts the select statement into a string and returns its arguments.
 func (b *Show) ToSQL() (string, []interface{}, error) {
-	return b.buildArgsAndSQL(b)
+	rawSQL, err := b.buildToSQL(b)
+	if err != nil {
+		return "", nil, errors.WithStack(err)
+	}
+	return string(rawSQL), nil, nil
 }
 
 func (b *Show) writeBuildCache(sql []byte) {
@@ -250,8 +232,8 @@ func (b *Show) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err er
 		w.WriteString("BINARY LOG")
 	}
 
-	if len(b.LikeCondition) == 1 {
-		Like.write(w, b.LikeCondition...)
+	if b.LikeCondition {
+		Like.write(w)
 	} else {
 		placeHolders, err = b.WhereFragments.write(w, 'w', placeHolders)
 		if err != nil {

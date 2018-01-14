@@ -22,8 +22,6 @@ import (
 	"os"
 	"testing"
 
-	"io"
-
 	"github.com/corestoreio/errors"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
@@ -75,7 +73,7 @@ func createRealSessionWithFixtures(t testing.TB, c *installFixturesConfig) *Conn
 
 // testCloser for usage in conjunction with defer.
 // 		defer testCloser(t,db)
-func testCloser(t testing.TB, c io.Closer) {
+func testCloser(t testing.TB, c ioCloser) {
 	t.Helper()
 	if err := c.Close(); err != nil {
 		t.Errorf("%+v", err)
@@ -351,27 +349,10 @@ func compareToSQL(
 	// Enables Interpolate feature and resets it after the test has been
 	// executed.
 	switch dml := qb.(type) {
-	case *Delete:
-		dml.Interpolate()
-		defer func() { dml.IsInterpolate = false }()
-	case *Update:
-		dml.Interpolate()
-		defer func() { dml.IsInterpolate = false }()
-	case *Insert:
-		dml.Interpolate()
-		defer func() { dml.IsInterpolate = false }()
-	case *Select:
-		dml.Interpolate()
-		defer func() { dml.IsInterpolate = false }()
-	case *Union:
-		dml.Interpolate()
-		defer func() { dml.IsInterpolate = false }()
-	case *With:
-		dml.Interpolate()
-		defer func() { dml.IsInterpolate = false }()
-	case *Show:
-		dml.Interpolate()
-		defer func() { dml.IsInterpolate = false }()
+	case *Arguments:
+		prev := dml.Options
+		qb = dml.Interpolate()
+		defer func() { dml.Options = prev; qb = dml }()
 	default:
 		t.Fatalf("func compareToSQL: the type %#v is not (yet) supported.", qb)
 	}
@@ -401,4 +382,23 @@ func compareToSQL2(
 	}
 	assert.Exactly(t, wantSQL, sqlStr, "SQL strings do not match")
 	assert.Exactly(t, wantArgs, args, "Arguments do not match")
+}
+
+func compareExecContext(t testing.TB, ex StmtExecer, lastInsertID, rowsAffected int64) (retLastInsertID, retRowsAffected int64) {
+
+	res, err := ex.ExecContext(context.Background())
+	require.NotNil(t, res)
+	require.NoError(t, err)
+
+	if lastInsertID > 0 {
+		retLastInsertID, err = res.LastInsertId()
+		require.NoError(t, err)
+		assert.Exactly(t, lastInsertID, retLastInsertID, "Last insert ID do not match")
+	}
+	if rowsAffected > 0 {
+		retRowsAffected, err = res.RowsAffected()
+		require.NoError(t, err)
+		assert.Exactly(t, rowsAffected, retRowsAffected, "Affected rows do not match")
+	}
+	return
 }

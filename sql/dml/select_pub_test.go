@@ -37,7 +37,7 @@ func TestSelect_Rows(t *testing.T) {
 
 	t.Run("ToSQL Error", func(t *testing.T) {
 		sel := &dml.Select{}
-		rows, err := sel.Query(context.TODO())
+		rows, err := sel.WithArgs().QueryContext(context.TODO())
 		assert.Nil(t, rows)
 		assert.True(t, errors.Empty.Match(err))
 	})
@@ -53,7 +53,7 @@ func TestSelect_Rows(t *testing.T) {
 			error: errors.AlreadyClosed.Newf("Who closed myself?"),
 		}
 
-		rows, err := sel.Query(context.TODO())
+		rows, err := sel.WithArgs().QueryContext(context.TODO())
 		assert.Nil(t, rows)
 		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	})
@@ -67,7 +67,7 @@ func TestSelect_Rows(t *testing.T) {
 
 		sel := dml.NewSelect("a").From("tableX")
 		sel.DB = dbc.DB
-		rows, err := sel.Query(context.TODO())
+		rows, err := sel.WithArgs().QueryContext(context.TODO())
 		require.NoError(t, err, "%+v", err)
 		defer dmltest.Close(t, rows)
 
@@ -168,7 +168,7 @@ func TestSelect_Load(t *testing.T) {
 
 		ccd := &TableCoreConfigDataSlice{}
 
-		_, err := s.Load(context.TODO(), ccd)
+		_, err := s.WithArgs().Load(context.TODO(), ccd)
 		assert.NoError(t, err, "%+v", err)
 
 		buf := new(bytes.Buffer)
@@ -194,7 +194,7 @@ func TestSelect_Load(t *testing.T) {
 		s.DB = dbc.DB
 
 		ccd := &TableCoreConfigDataSlice{}
-		_, err := s.Load(context.TODO(), ccd)
+		_, err := s.WithArgs().Load(context.TODO(), ccd)
 		assert.True(t, errors.ConnectionFailed.Match(err), "%+v", err)
 	})
 
@@ -210,7 +210,7 @@ func TestSelect_Load(t *testing.T) {
 		ccd := &TableCoreConfigDataSlice{
 			err: errors.Duplicated.Newf("Somewhere exists a duplicate entry"),
 		}
-		_, err := s.Load(context.TODO(), ccd)
+		_, err := s.WithArgs().Load(context.TODO(), ccd)
 		assert.True(t, errors.Duplicated.Match(err), "%+v", err)
 	})
 }
@@ -273,7 +273,7 @@ func TestSelect_Prepare(t *testing.T) {
 
 		t.Run("Context", func(t *testing.T) {
 
-			rows, err := stmt.Query(context.TODO(), 6789)
+			rows, err := stmt.WithArgs().QueryContext(context.TODO(), 6789)
 			require.NoError(t, err)
 			defer dmltest.Close(t, rows)
 
@@ -284,7 +284,7 @@ func TestSelect_Prepare(t *testing.T) {
 
 		t.Run("RowContext", func(t *testing.T) {
 
-			row := stmt.QueryRow(context.TODO(), 6790)
+			row := stmt.WithArgs().QueryRowContext(context.TODO(), 6790)
 			require.NoError(t, err)
 			n, e := "", ""
 			require.NoError(t, row.Scan(&n, &e))
@@ -315,10 +315,10 @@ func TestSelect_Prepare(t *testing.T) {
 					WillReturnRows(sqlmock.NewRows([]string{"name", "email"}).AddRow("Peter Gopher", "peter@gopher.go"))
 			}
 			// use loop with Query+ and add args before
-			stmt.WithArguments(dml.MakeArgs(1).Int(6899))
+			stmtA := stmt.WithArgs().Int(6899)
 
 			for i := 0; i < iterations; i++ {
-				rows, err := stmt.Query(context.TODO())
+				rows, err := stmtA.QueryContext(context.TODO())
 				require.NoError(t, err)
 
 				cols, err := rows.Columns()
@@ -335,10 +335,10 @@ func TestSelect_Prepare(t *testing.T) {
 			}
 
 			p := &dmlPerson{ID: 6900}
-			stmt.WithRecords(dml.Qualify("", p))
+			stmtA := stmt.WithArgs().Record("", p)
 
 			for i := 0; i < iterations; i++ {
-				rows, err := stmt.Query(context.TODO())
+				rows, err := stmtA.QueryContext(context.TODO())
 				require.NoError(t, err)
 
 				cols, err := rows.Columns()
@@ -350,8 +350,8 @@ func TestSelect_Prepare(t *testing.T) {
 
 		t.Run("WithRecords_Error", func(t *testing.T) {
 			p := &TableCoreConfigDataSlice{err: errors.Duplicated.Newf("Found a duplicate")}
-			stmt.WithRecords(dml.Qualify("", p))
-			rows, err := stmt.Query(context.TODO())
+			stmtA := stmt.WithArgs().Record("", p)
+			rows, err := stmtA.QueryContext(context.TODO())
 			assert.True(t, errors.Duplicated.Match(err), "%+v", err)
 			assert.Nil(t, rows)
 		})
@@ -404,7 +404,7 @@ func TestSelect_Prepare(t *testing.T) {
 
 			prep.ExpectQuery().WithArgs(346).WillReturnRows(sqlmock.NewRows(columns).AddRow(35))
 
-			val, err := stmt.WithArguments(dml.MakeArgs(1).Int64(346)).LoadInt64(context.TODO())
+			val, err := stmt.WithArgs().Int64(346).LoadInt64(context.TODO())
 			require.NoError(t, err)
 			assert.Exactly(t, int64(35), val)
 		})
@@ -426,7 +426,7 @@ func TestSelect_Prepare(t *testing.T) {
 
 			prep.ExpectQuery().WithArgs(346, 347).WillReturnRows(sqlmock.NewRows(columns).AddRow(36).AddRow(37))
 
-			val, err := stmt.WithArguments(dml.MakeArgs(1).Int64s(346, 347)).LoadInt64s(context.TODO())
+			val, err := stmt.WithArgs().Int64s(346, 347).LoadInt64s(context.TODO())
 			require.NoError(t, err)
 			assert.Exactly(t, []int64{36, 37}, val)
 		})
@@ -453,17 +453,16 @@ func TestSelect_WithLogger(t *testing.T) {
 
 	t.Run("ConnPool", func(t *testing.T) {
 		pplSel := rConn.SelectFrom("dml_people").AddColumns("email").Where(dml.Column("id").Greater().PlaceHolder())
-		pplSel.Interpolate()
 
 		t.Run("Query Error interpolation with iFace slice", func(t *testing.T) {
 			defer buf.Reset()
-			rows, err := pplSel.WithArgs(67896543123).Query(context.TODO())
+			rows, err := pplSel.WithArgs(67896543123).QueryContext(context.TODO())
 			require.Nil(t, rows)
 			require.True(t, errors.NotAllowed.Match(err), "%s", err)
 		})
 		t.Run("Query", func(t *testing.T) {
 			defer buf.Reset()
-			rows, err := pplSel.WithArguments(dml.MakeArgs(1).Int(67896543123)).Query(context.TODO())
+			rows, err := pplSel.WithArgs().Int(67896543123).QueryContext(context.TODO())
 			require.NoError(t, err)
 			require.NoError(t, rows.Close())
 
@@ -474,7 +473,7 @@ func TestSelect_WithLogger(t *testing.T) {
 		t.Run("Load", func(t *testing.T) {
 			defer buf.Reset()
 			p := &dmlPerson{}
-			_, err := pplSel.WithArguments(dml.MakeArgs(1).Int(67896543113)).Load(context.TODO(), p)
+			_, err := pplSel.WithArgs().Int(67896543113).Load(context.TODO(), p)
 			require.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\"\n",
@@ -482,7 +481,6 @@ func TestSelect_WithLogger(t *testing.T) {
 		})
 
 		t.Run("LoadInt64", func(t *testing.T) {
-			pplSel.IsInterpolate = false
 
 			defer buf.Reset()
 			_, err := pplSel.WithArgs(67896543124).LoadInt64(context.TODO())
@@ -555,7 +553,7 @@ func TestSelect_WithLogger(t *testing.T) {
 		t.Run("LoadStrings", func(t *testing.T) {
 			defer buf.Reset()
 
-			_, err := pplSel.LoadStrings(context.TODO())
+			_, err := pplSel.WithArgs().LoadStrings(context.TODO())
 			require.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG LoadStrings conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 row_count: 0 sql: \"SELECT /*ID:UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\"\n",
@@ -579,7 +577,7 @@ func TestSelect_WithLogger(t *testing.T) {
 			require.NoError(t, tx.Wrap(func() error {
 				rows, err := tx.SelectFrom("dml_people").
 					AddColumns("name", "email").Where(dml.Column("id").In().Int64s(7, 9)).
-					Interpolate().Query(context.TODO())
+					WithArgs().QueryContext(context.TODO())
 				require.NoError(t, err)
 				return rows.Close()
 			}))
@@ -598,7 +596,7 @@ func TestSelect_WithLogger(t *testing.T) {
 		t.Run("Query", func(t *testing.T) {
 			defer buf.Reset()
 
-			rows, err := pplSel.WithArgs(-3).Query(context.TODO())
+			rows, err := pplSel.WithArgs(-3).QueryContext(context.TODO())
 			require.NoError(t, err)
 			dmltest.Close(t, rows)
 
@@ -627,7 +625,7 @@ func TestSelect_WithLogger(t *testing.T) {
 
 			t.Run("QueryRow", func(t *testing.T) {
 				defer buf.Reset()
-				rows := stmt.QueryRow(context.TODO(), -8)
+				rows := stmt.WithArgs().QueryRowContext(context.TODO(), -8)
 				var x string
 				err := rows.Scan(&x)
 				require.True(t, errors.Cause(err) == sql.ErrNoRows, "but got this error: %#v", err)
@@ -639,7 +637,7 @@ func TestSelect_WithLogger(t *testing.T) {
 
 			t.Run("Query", func(t *testing.T) {
 				defer buf.Reset()
-				rows, err := stmt.Query(context.TODO(), -4)
+				rows, err := stmt.WithArgs().QueryContext(context.TODO(), -4)
 				require.NoError(t, err)
 				dmltest.Close(t, rows)
 				assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" is_prepared: true duration: 0 arg_len: 1\n",
@@ -682,7 +680,7 @@ func TestSelect_WithLogger(t *testing.T) {
 			require.NoError(t, err)
 			require.NoError(t, tx.Wrap(func() error {
 				rows, err := tx.SelectFrom("dml_people").AddColumns("name", "email").Where(dml.Column("id").In().Int64s(71, 91)).
-					Interpolate().Query(context.TODO())
+					WithArgs().QueryContext(context.TODO())
 				if err != nil {
 					return err
 				}
@@ -698,7 +696,7 @@ func TestSelect_WithLogger(t *testing.T) {
 			require.NoError(t, err)
 			require.Error(t, tx.Wrap(func() error {
 				rows, err := tx.SelectFrom("dml_people").AddColumns("name", "email").Where(dml.Column("id").In().PlaceHolder()).
-					Interpolate().Query(context.TODO())
+					WithArgs().QueryContext(context.TODO())
 				if err != nil {
 					return err
 				}

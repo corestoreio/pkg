@@ -36,7 +36,7 @@ func TestUpdate_Prepare(t *testing.T) {
 	t.Run("no columns provided", func(t *testing.T) {
 		mu := dml.NewUpdate("catalog_product_entity").Where(dml.Column("entity_id").In().PlaceHolder())
 
-		res, err := mu.Exec(context.TODO())
+		res, err := mu.WithArgs().ExecContext(context.TODO())
 		assert.Nil(t, res)
 		assert.True(t, errors.Empty.Match(err), "%+v", err)
 	})
@@ -46,7 +46,7 @@ func TestUpdate_Prepare(t *testing.T) {
 			AddColumns("sku", "updated_at").
 			Where(dml.Column("entity_id").In().PlaceHolder()).WithDB(dbMock{})
 		mu.SetClausAliases = []string{"update_sku"}
-		res, err := mu.Exec(context.TODO())
+		res, err := mu.WithArgs().ExecContext(context.TODO())
 		assert.Nil(t, res)
 		assert.True(t, errors.Mismatch.Match(err), "%+v", err)
 	})
@@ -67,7 +67,7 @@ func TestUpdate_Prepare(t *testing.T) {
 			error: errors.AlreadyClosed.Newf("Who closed myself?"),
 		})
 
-		res, err := mu.Exec(context.TODO())
+		res, err := mu.WithArgs().ExecContext(context.TODO())
 		assert.Nil(t, res)
 		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	})
@@ -93,8 +93,7 @@ func TestUpdate_Prepare(t *testing.T) {
 		mu := dml.NewUpdate("customer_entity").Alias("ce").
 			AddColumns("name", "email").
 			Where(dml.Column("id").Equal().PlaceHolder()).
-			WithDB(dbc.DB).
-			Interpolate() // gets ignored
+			WithDB(dbc.DB)
 
 		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`=?, `email`=? WHERE (`id` = ?)"))
 		prep.ExpectExec().WithArgs("Alf", "alf@m') -- el.mac", 1).WillReturnResult(sqlmock.NewResult(0, 1))
@@ -103,7 +102,7 @@ func TestUpdate_Prepare(t *testing.T) {
 		stmt, err := mu.Prepare(context.TODO())
 		require.NoError(t, err)
 		for i, record := range records {
-			results, err := stmt.WithRecords(dml.Qualify("ce", record)).Exec(context.TODO())
+			results, err := stmt.WithArgs().Record("ce", record).ExecContext(context.TODO())
 			require.NoError(t, err)
 			aff, err := results.RowsAffected()
 			if err != nil {
@@ -129,7 +128,7 @@ func TestUpdate_Prepare(t *testing.T) {
 			require.NoError(t, stmt.Close(), "Close on a prepared statement")
 		}()
 
-		res, err := stmt.Exec(context.TODO(), "Peter Gopher", "peter@gopher.go", 3456)
+		res, err := stmt.WithArgs().ExecContext(context.TODO(), "Peter Gopher", "peter@gopher.go", 3456)
 		require.NoError(t, err, "failed to execute ExecContext")
 
 		ra, err := res.RowsAffected()
@@ -166,11 +165,8 @@ func TestUpdate_Prepare(t *testing.T) {
 			{"Petra Gopher", "petra@gopher.go", 3457, 21},
 		}
 
-		args := dml.MakeArgs(3)
 		for i, test := range tests {
-			args = args[:0]
-
-			res, err := stmt.WithArguments(args.String(test.name).String(test.email).Int(test.id)).Exec(context.TODO())
+			res, err := stmt.WithArgs().String(test.name).String(test.email).Int(test.id).ExecContext(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -260,7 +256,7 @@ func TestUpdate_SetClausAliases(t *testing.T) {
 	require.NoError(t, err)
 
 	for i, record := range collection {
-		results, err := stmt.WithRecords(dml.Qualify("sales_invoice", record)).Exec(context.TODO())
+		results, err := stmt.WithArgs().Record("sales_invoice", record).ExecContext(context.TODO())
 		require.NoError(t, err)
 		ra, err := results.RowsAffected()
 		require.NoError(t, err, "Index %d", i)
@@ -284,8 +280,8 @@ func TestUpdate_BindRecord(t *testing.T) {
 	t.Run("1 WHERE", func(t *testing.T) {
 		u := dml.NewUpdate("catalog_category_entity").
 			AddColumns("attribute_set_id", "parent_id", "path").
-			WithRecords(dml.Qualify("", ce)).
-			Where(dml.Column("entity_id").Greater().PlaceHolder())
+			Where(dml.Column("entity_id").Greater().PlaceHolder()).
+			WithArgs().Record("", ce)
 
 		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`entity_id` > ?)",
@@ -297,11 +293,10 @@ func TestUpdate_BindRecord(t *testing.T) {
 	t.Run("2 WHERE", func(t *testing.T) {
 		u := dml.NewUpdate("catalog_category_entity").
 			AddColumns("attribute_set_id", "parent_id", "path").
-			WithRecords(dml.Qualify("", ce)).
 			Where(
 				dml.Column("x").In().Int64s(66, 77),
 				dml.Column("entity_id").Greater().PlaceHolder(),
-			)
+			).WithArgs().Record("", ce)
 		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`x` IN (66,77)) AND (`entity_id` > ?)",
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`x` IN (66,77)) AND (`entity_id` > 678)",
@@ -311,12 +306,11 @@ func TestUpdate_BindRecord(t *testing.T) {
 	t.Run("3 WHERE", func(t *testing.T) {
 		u := dml.NewUpdate("catalog_category_entity").
 			AddColumns("attribute_set_id", "parent_id", "path").
-			WithRecords(dml.Qualify("", ce)).
 			Where(
 				dml.Column("entity_id").Greater().PlaceHolder(),
 				dml.Column("x").In().Int64s(66, 77),
 				dml.Column("y").Greater().Int64(99),
-			)
+			).WithArgs().Record("", ce)
 		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`entity_id` > ?) AND (`x` IN (66,77)) AND (`y` > 99)",
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`entity_id` > 678) AND (`x` IN (66,77)) AND (`y` > 99)",
@@ -329,12 +323,11 @@ func TestUpdate_BindRecord(t *testing.T) {
 		// implementation.
 		u := dml.NewUpdate("catalog_category_entity").Alias("ce").
 			AddColumns("attribute_set_id", "parent_id", "path").
-			WithRecords(dml.Qualify("", ce), dml.Qualify("cpei", ce)).
 			Where(
 				dml.Column("ce.entity_id").Greater().PlaceHolder(), //678
 				dml.Column("cpe.entity_id").In().Int64s(66, 77),
 				dml.Column("cpei.attribute_set_id").Equal().PlaceHolder(), //6
-			)
+			).WithArgs().Records(dml.Qualify("", ce), dml.Qualify("cpei", ce))
 		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `catalog_category_entity` AS `ce` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`ce`.`entity_id` > ?) AND (`cpe`.`entity_id` IN (66,77)) AND (`cpei`.`attribute_set_id` = ?)",
 			"UPDATE `catalog_category_entity` AS `ce` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`ce`.`entity_id` > 678) AND (`cpe`.`entity_id` IN (66,77)) AND (`cpei`.`attribute_set_id` = 6)",
@@ -366,11 +359,8 @@ func TestUpdate_WithLogger(t *testing.T) {
 		).Where(dml.Column("id").GreaterOrEqual().Float64(78.31))
 
 		t.Run("Exec", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				d.IsInterpolate = false
-			}()
-			_, err := d.Interpolate().Exec(context.TODO())
+			defer buf.Reset()
+			_, err := d.WithArgs().ExecContext(context.TODO())
 			require.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQ03\" update_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ06*/ `dml_people` SET `email`='new@email.com' WHERE (`id` >= 78.31)\"\n",
@@ -394,7 +384,7 @@ func TestUpdate_WithLogger(t *testing.T) {
 			require.NoError(t, tx.Wrap(func() error {
 				_, err := tx.Update("dml_people").Set(
 					dml.Column("email").Str("new@email.com"),
-				).Where(dml.Column("id").GreaterOrEqual().Float64(36.56)).Interpolate().Exec(context.TODO())
+				).Where(dml.Column("id").GreaterOrEqual().Float64(36.56)).WithArgs().ExecContext(context.TODO())
 				return err
 			}))
 			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ03\" tx_id: \"UNIQ09\"\nDEBUG Exec conn_pool_id: \"UNIQ03\" tx_id: \"UNIQ09\" update_id: \"UNIQ12\" table: \"dml_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ12*/ `dml_people` SET `email`='new@email.com' WHERE (`id` >= 36.56)\"\nDEBUG Commit conn_pool_id: \"UNIQ03\" tx_id: \"UNIQ09\" duration: 0\n",
@@ -411,12 +401,9 @@ func TestUpdate_WithLogger(t *testing.T) {
 		).Where(dml.Column("id").GreaterOrEqual().Float64(21.56))
 
 		t.Run("Exec", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				d.IsInterpolate = false
-			}()
+			defer buf.Reset()
 
-			_, err := d.Interpolate().Exec(context.TODO())
+			_, err := d.WithArgs().ExecContext(context.TODO())
 			require.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" update_id: \"UNIQ18\" table: \"dml_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ18*/ `dml_people` SET `email`='new@email.com' WHERE (`id` >= 21.56)\"\n",
@@ -441,7 +428,7 @@ func TestUpdate_WithLogger(t *testing.T) {
 			require.NoError(t, err)
 			defer stmt.Close()
 
-			_, err = stmt.Exec(context.TODO())
+			_, err = stmt.WithArgs().ExecContext(context.TODO())
 			require.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" update_id: \"UNIQ18\" table: \"dml_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ18*/ `dml_people` SET `email`='new@email.com' WHERE (`id` >= 21.56)\"\nDEBUG Exec conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" update_id: \"UNIQ18\" table: \"dml_people\" duration: 0 arg_len: 0\n",
@@ -455,7 +442,7 @@ func TestUpdate_WithLogger(t *testing.T) {
 			require.NoError(t, tx.Wrap(func() error {
 				_, err := tx.Update("dml_people").Set(
 					dml.Column("email").Str("new@email.com"),
-				).Where(dml.Column("id").GreaterOrEqual().Float64(39.56)).Interpolate().Exec(context.TODO())
+				).Where(dml.Column("id").GreaterOrEqual().Float64(39.56)).WithArgs().ExecContext(context.TODO())
 				return err
 			}))
 
@@ -470,7 +457,7 @@ func TestUpdate_WithLogger(t *testing.T) {
 			require.Error(t, tx.Wrap(func() error {
 				_, err := tx.Update("dml_people").Set(
 					dml.Column("email").Str("new@email.com"),
-				).Where(dml.Column("id").GreaterOrEqual().PlaceHolder()).Interpolate().Exec(context.TODO())
+				).Where(dml.Column("id").GreaterOrEqual().PlaceHolder()).WithArgs().ExecContext(context.TODO())
 				return err
 			}))
 

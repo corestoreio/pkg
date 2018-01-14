@@ -43,8 +43,14 @@ func writeToSQLAndInterpolate(qb dml.QueryBuilder) {
 		return
 	}
 
-	qb, reset := enableInterpolate(qb)
-	defer reset()
+	switch dmlArg := qb.(type) {
+	case *dml.Arguments:
+		prev := dmlArg.Options
+		qb = dmlArg.Interpolate()
+		defer func() { dmlArg.Options = prev; qb = dmlArg }()
+	default:
+		panic(fmt.Sprintf("func compareToSQL: the type %#v is not (yet) supported.", qb))
+	}
 
 	sqlStr, _, err = qb.ToSQL()
 	if err != nil {
@@ -57,9 +63,10 @@ func writeToSQLAndInterpolate(qb dml.QueryBuilder) {
 
 func ExampleNewInsert() {
 	i := dml.NewInsert("tableA").
-		AddColumns("b", "c", "d", "e").
-		AddValuesUnsafe(1, 2, "Three", nil).
-		AddValuesUnsafe(5, 6, "Seven", 3.14156)
+		AddColumns("b", "c", "d", "e").WithArgs(
+		1, 2, "Three", nil,
+		5, 6, "Seven", 3.14156,
+	)
 	writeToSQLAndInterpolate(i)
 
 	// Output:
@@ -72,11 +79,12 @@ func ExampleNewInsert() {
 	//(1,2,'Three',NULL),(5,6,'Seven',3.14156)
 }
 
-func ExampleNewInsert_withoutColumns() {
-	i := dml.NewInsert("catalog_product_link").
-		AddValuesUnsafe(2046, 33, 3).
-		AddValuesUnsafe(2046, 34, 3).
-		AddValuesUnsafe(2046, 35, 3)
+func ExampleNewInsert_SetRowCount() {
+	i := dml.NewInsert("catalog_product_link").SetRowCount(3).WithArgs(
+		2046, 33, 3,
+		2046, 34, 3,
+		2046, 35, 3,
+	)
 	writeToSQLAndInterpolate(i)
 
 	// Output:
@@ -91,10 +99,11 @@ func ExampleNewInsert_withoutColumns() {
 func ExampleInsert_AddValues() {
 	// Without any columns you must for each row call AddArgs. Here we insert
 	// three rows at once.
-	i := dml.NewInsert("catalog_product_link").
-		AddValuesUnsafe(2046, 33, 3).
-		AddValuesUnsafe(2046, 34, 3).
-		AddValuesUnsafe(2046, 35, 3)
+	i := dml.NewInsert("catalog_product_link").WithArgs(
+		2046, 33, 3,
+		2046, 34, 3,
+		2046, 35, 3,
+	)
 	writeToSQLAndInterpolate(i)
 	fmt.Print("\n\n")
 
@@ -102,11 +111,10 @@ func ExampleInsert_AddValues() {
 	// three rows at once. Of course you can also insert only one row ;-)
 	i = dml.NewInsert("catalog_product_link").
 		AddColumns("product_id", "linked_product_id", "link_type_id").
-		AddValuesUnsafe(
-			2046, 33, 3,
-			2046, 34, 3,
-			2046, 35, 3,
-		)
+		WithArgs().Raw(
+		2046, 33, 3,
+		2046, 34, 3,
+		2046, 35, 3)
 	writeToSQLAndInterpolate(i)
 
 	// Output:
@@ -133,11 +141,10 @@ func ExampleInsert_AddValues() {
 func ExampleInsert_AddOnDuplicateKey() {
 	i := dml.NewInsert("dml_people").
 		AddColumns("id", "name", "email").
-		AddValuesUnsafe(1, "Pik'e", "pikes@peak.com").
 		AddOnDuplicateKey(
 			dml.Column("name").Str("Pik3"),
 			dml.Column("email").Values(),
-		)
+		).WithArgs().Int(1).String("Pik'e").String("pikes@peak.com")
 	writeToSQLAndInterpolate(i)
 
 	// Output:
@@ -180,7 +187,7 @@ func ExampleInsert_FromSelect_withPlaceHolders() {
 			).
 			OrderByDesc("id").
 			Paginate(1, 20),
-	).WithArguments(dml.MakeArgs(2).Int64(4).Name("i64BIn").Int64s(9, 8, 7))
+	).WithArgs().Int64(4).Name("i64BIn").Int64s(9, 8, 7)
 	writeToSQLAndInterpolate(ins)
 	// Output:
 	//Prepared Statement:
@@ -222,7 +229,7 @@ func ExampleInsert_FromSelect_withoutPlaceHolders() {
 
 func ExampleInsert_Pair() {
 	ins := dml.NewInsert("catalog_product_link").
-		Pair(
+		WithPairs(
 			// First row
 			dml.Column("product_id").Int64(2046),
 			dml.Column("linked_product_id").Int64(33),
@@ -605,7 +612,7 @@ func ExampleSQLCase_select() {
 		).
 		From("catalog_promotions").Where(
 		dml.Column("promotion_id").NotIn().PlaceHolders(3)).
-		WithArguments(dml.MakeArgs(5).Time(start).Time(end).Time(start).Time(end).Int(4711).Int(815).Int(42))
+		WithArgs().Time(start).Time(end).Time(start).Time(end).Int(4711).Int(815).Int(42)
 	writeToSQLAndInterpolate(s)
 
 	// Output:

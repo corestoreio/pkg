@@ -190,6 +190,8 @@ func TestOpArgs(t *testing.T) {
 }
 
 func TestColumn(t *testing.T) {
+	t.Parallel()
+
 	t.Run("invalid column name", func(t *testing.T) {
 		s := NewSelect("a", "b").From("c").Where(
 			Column("a").Int(111),
@@ -209,6 +211,7 @@ func TestColumn(t *testing.T) {
 }
 
 func TestConditions_writeOnDuplicateKey(t *testing.T) {
+	t.Parallel()
 
 	runner := func(cnds Conditions, wantSQL string, wantArgs ...interface{}) func(*testing.T) {
 		return func(t *testing.T) {
@@ -256,6 +259,7 @@ func TestConditions_writeOnDuplicateKey(t *testing.T) {
 }
 
 func TestExpr_Arguments(t *testing.T) {
+	t.Parallel()
 
 	t.Run("ints", func(t *testing.T) {
 		sel := NewSelect("a").From("c").
@@ -401,10 +405,10 @@ func TestAppendArgs(t *testing.T) {
 				Column("t_d.attribute_id").In().Int64s(45),                    // 45
 				Column("t_d.store_id").Equal().SQLIfNull("t_s.store_id", "0"), // Does not make sense this WHERE condition ;-)
 				Column("t_d.store_id").Equal().PlaceHolder(),                  // 17
-			).
-			WithRecords(Qualify("e", appendInt(678)), Qualify("t_d", appendInt(17)))
+			)
 
-		compareToSQL(t, s, errors.NoKind,
+		compareToSQL(t, s.WithArgs().Records(Qualify("e", appendInt(678)), Qualify("t_d", appendInt(17))),
+			errors.NoKind,
 			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = ?) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0)) AND (`t_d`.`store_id` = ?)",
 			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = 678) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0)) AND (`t_d`.`store_id` = 17)",
 			int64(678), int64(17),
@@ -418,10 +422,10 @@ func TestAppendArgs(t *testing.T) {
 				Column("e.entity_id").PlaceHolder(),          // 678
 				Column("t_d.attribute_id").In().Int64s(45),   // 45
 				Column("t_d.store_id").Equal().PlaceHolder(), // 17
-			).
-			WithRecords(Qualify("e", appendInt(678)), Qualify("t_d", appendInt(17)))
+			)
 
-		compareToSQL(t, s, errors.NoKind,
+		compareToSQL(t, s.WithArgs().Records(Qualify("e", appendInt(678)), Qualify("t_d", appendInt(17))),
+			errors.NoKind,
 			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = ?) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = ?)",
 			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = 678) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = 17)",
 			int64(678), int64(17),

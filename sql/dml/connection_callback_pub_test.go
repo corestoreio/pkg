@@ -59,20 +59,20 @@ func TestDriverCallBack(t *testing.T) {
 	ctx := context.TODO()
 	sel := db.SelectFrom("dml_people").Star().Where(dml.Column("name").PlaceHolder()).DisableBuildCache()
 	var ppl dmlPerson
-	_, err := sel.WithArguments(dml.MakeArgs(1).String("Bernd")).Load(ctx, &ppl)
+	_, err := sel.WithArgs().String("Bernd").Load(ctx, &ppl)
 	require.NoError(t, err)
 
-	_, err = sel.Interpolate().SQLNoCache().Load(context.Background(), &ppl)
+	_, err = sel.SQLNoCache().WithArgs().Load(context.Background(), &ppl)
 	require.NoError(t, err)
 
 	con, err := db.Conn(ctx)
 	require.NoError(t, err)
 
 	upd := con.Update("dml_people").Set(dml.Column("name").PlaceHolder())
-	_, err = upd.WithArgs("Hugo").Exec(ctx)
+	_, err = upd.WithArgs("Hugo").ExecContext(ctx)
 	require.NoError(t, err)
 
-	_, err = upd.WithArguments(dml.MakeArgs(1).String("Bernie")).Interpolate().Exec(ctx)
+	_, err = upd.WithArgs().String("Bernie").Interpolate().ExecContext(ctx)
 	require.NoError(t, err)
 
 	require.NoError(t, con.Close())

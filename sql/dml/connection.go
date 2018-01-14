@@ -53,7 +53,7 @@ type ConnPool struct {
 	dsn string
 
 	rwmu          sync.RWMutex
-	preparedStmts map[string]*reduxStmt
+	preparedStmts map[string]*StmtRedux
 }
 
 // Conn represents a single database session rather a pool of database sessions.
@@ -155,7 +155,7 @@ func WithPreparedStatement(name string, qb QueryBuilder, idleTime time.Duration)
 			c.rwmu.Lock()
 			defer c.rwmu.Unlock()
 			if c.preparedStmts == nil {
-				c.preparedStmts = make(map[string]*reduxStmt, 20)
+				c.preparedStmts = make(map[string]*StmtRedux, 20)
 			}
 
 			if rs, ok := c.preparedStmts[name]; ok {
@@ -323,16 +323,30 @@ func (c *ConnPool) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error
 	}, nil
 }
 
-// Stmt returns a redux prepared statement. The object represents a prepared
-// statement which can resurrect/redux and is bound to a single connection.
-// After an idle time the statement and the connection gets closed and resources
-// on the DB server freed. Once the statement will be used again, it reduxes,
-// gets re-prepared, via its dedicated connection. If there are no more
-// connections available, it waits until it can connect. Due to the connection
-// handling implementation of database/sql/DB object we must grab a dedicated
-// connection. A later aim would that multiple prepared statements can share a
-// single connection.
-func (c *ConnPool) Stmt(name string) (Stmter, error) {
+// TOOD add this to all connection types, like Conn and Tx
+func (c *ConnPool) WithQueryBuilder(qb QueryBuilder) *Arguments {
+	var args [5]argument // TODO check benchmarks if worth!
+	return &Arguments{
+		base: builderCommon{
+			Log: c.Log,
+			id:  c.makeUniqueID(),
+			DB:  c.DB,
+		},
+		qb:   qb,
+		args: args[:0],
+	}
+}
+
+// StmtRedux returns a redux prepared statement. The object represents a
+// prepared statement which can resurrect/redux and is bound to a single
+// connection. After an idle time the statement and the connection gets closed
+// and resources on the DB server freed. Once the statement will be used again,
+// it reduxes, gets re-prepared, via its dedicated connection. If there are no
+// more connections available, it waits until it can connect. Due to the
+// connection handling implementation of database/sql/DB object we must grab a
+// dedicated connection. A later aim would that multiple prepared statements can
+// share a single connection.
+func (c *ConnPool) StmtRedux(name string) (*StmtRedux, error) {
 	c.rwmu.RLock()
 	defer c.rwmu.RUnlock()
 
@@ -344,9 +358,9 @@ func (c *ConnPool) Stmt(name string) (Stmter, error) {
 	return rs, nil
 }
 
-// StmtPrepare same as functional option WithPreparedStatement but returns the
-// lazy prepared Stmter.
-func (c *ConnPool) StmtPrepare(name string, qb QueryBuilder, idleTime time.Duration) (Stmter, error) {
+// StmtReduxPrepare same as functional option WithPreparedStatement but returns
+// the lazy prepared Stmter.
+func (c *ConnPool) StmtReduxPrepare(name string, qb QueryBuilder, idleTime time.Duration) (*StmtRedux, error) {
 	c.rwmu.RLock()
 	_, ok := c.preparedStmts[name]
 	c.rwmu.RUnlock()
@@ -355,7 +369,7 @@ func (c *ConnPool) StmtPrepare(name string, qb QueryBuilder, idleTime time.Durat
 			return nil, errors.WithStack(err)
 		}
 	}
-	return c.Stmt(name)
+	return c.StmtRedux(name)
 }
 
 // Conn returns a single connection by either opening a new connection

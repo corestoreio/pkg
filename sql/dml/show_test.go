@@ -53,7 +53,7 @@ func TestShow(t *testing.T) {
 		)
 	})
 	t.Run("variables LIKE interpolated", func(t *testing.T) {
-		s := NewShow().Variable().Like(MakeArgs(1).String("aria%"))
+		s := NewShow().Variable().Like().WithArgs().String("aria%")
 		compareToSQL(t, s, errors.NoKind,
 			"SHOW VARIABLES LIKE 'aria%'",
 			"SHOW VARIABLES LIKE 'aria%'",
@@ -62,13 +62,13 @@ func TestShow(t *testing.T) {
 	t.Run("variables LIKE place holder", func(t *testing.T) {
 		s := NewShow().Variable().
 			Where(Column("Variable_name").PlaceHolder()).
-			WithArguments(MakeArgs(1).String("aria%"))
+			WithArgs().String("aria%")
 		compareToSQL(t, s, errors.NoKind,
 			"SHOW VARIABLES WHERE (`Variable_name` = ?)",
 			"SHOW VARIABLES WHERE (`Variable_name` = 'aria%')",
 			"aria%",
 		)
-		assert.Exactly(t, []string{"Variable_name"}, s.qualifiedColumns)
+		assert.Exactly(t, []string{"Variable_name"}, s.base.qualifiedColumns)
 	})
 	t.Run("variables WHERE interpolate", func(t *testing.T) {
 		s := NewShow().Variable().Where(Column("Variable_name").In().Strs("basedir", "back_log"))
@@ -80,7 +80,7 @@ func TestShow(t *testing.T) {
 	t.Run("variables WHERE placeholder", func(t *testing.T) {
 		s := NewShow().Variable().
 			Where(Column("Variable_name").In().PlaceHolder()).
-			WithArguments(MakeArgs(1).Strings("basedir", "back_log"))
+			WithArgs().Strings("basedir", "back_log")
 		compareToSQL(t, s, errors.NoKind,
 			"SHOW VARIABLES WHERE (`Variable_name` IN ?)",
 			"SHOW VARIABLES WHERE (`Variable_name` IN ('basedir','back_log'))",

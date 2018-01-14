@@ -17,7 +17,6 @@ package dml
 import (
 	"bytes"
 	"context"
-	"database/sql"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
@@ -27,10 +26,6 @@ import (
 type Update struct {
 	BuilderBase
 	BuilderConditional
-	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
-	// dedicated database session) or a *sql.Tx (an in-progress database
-	// transaction).
-	DB ExecPreparer
 
 	// TODO: add UPDATE JOINS SQLStmtUpdateJoin
 
@@ -59,7 +54,7 @@ func NewUpdate(table string) *Update {
 	}
 }
 
-func newUpdate(db ExecPreparer, idFn uniqueIDFn, l log.Logger, table string) *Update {
+func newUpdate(db QueryExecPreparer, idFn uniqueIDFn, l log.Logger, table string) *Update {
 	id := idFn()
 	if l != nil {
 		l = l.With(log.String("update_id", id), log.String("table", table))
@@ -69,10 +64,10 @@ func newUpdate(db ExecPreparer, idFn uniqueIDFn, l log.Logger, table string) *Up
 			builderCommon: builderCommon{
 				id:  id,
 				Log: l,
+				DB:  db,
 			},
 			Table: MakeIdentifier(table),
 		},
-		DB: db,
 	}
 }
 
@@ -99,7 +94,7 @@ func (b *Update) Alias(alias string) *Update {
 }
 
 // WithDB sets the database query object.
-func (b *Update) WithDB(db ExecPreparer) *Update {
+func (b *Update) WithDB(db QueryExecPreparer) *Update {
 	b.DB = db
 	return b
 }
@@ -159,41 +154,19 @@ func (b *Update) Limit(limit uint64) *Update {
 	return b
 }
 
-// Interpolate if set stringyfies the arguments into the SQL string and returns
-// pre-processed SQL command when calling the function ToSQL. Not suitable for
-// prepared statements. ToSQLs second argument `args` will then be nil.
-func (b *Update) Interpolate() *Update {
-	b.IsInterpolate = true
-	return b
-}
-
-// WithArgs sets the interfaced arguments for the execution with Query+. It
-// internally resets previously applied arguments. This function does not
-// support interpolation.
-func (b *Update) WithArgs(args ...interface{}) *Update {
-	b.withArgs(args)
-	return b
-}
-
-// WithArguments sets the arguments for the execution with Query+. It internally
-// resets previously applied arguments. This function supports interpolation.
-func (b *Update) WithArguments(args Arguments) *Update {
-	b.withArguments(args)
-	return b
-}
-
-// WithRecords binds the qualified record to the main table/view, or any other
-// table/view/alias used in the query, for assembling and appending arguments.
-// The ColumnMapper gets called if it matches the qualifier, in this case the
-// current table name or its alias.
-func (b *Update) WithRecords(records ...QualifiedRecord) *Update {
-	b.withRecords(records)
-	return b
+// WithArgs builds the SQL string and sets the optional interfaced arguments for
+// the later execution. It copies the underlying connection and structs.
+func (b *Update) WithArgs(args ...interface{}) *Arguments {
+	return b.withArgs(b, args...)
 }
 
 // ToSQL converts the select statement into a string and returns its arguments.
 func (b *Update) ToSQL() (string, []interface{}, error) {
-	return b.buildArgsAndSQL(b)
+	rawSQL, err := b.buildToSQL(b)
+	if err != nil {
+		return "", nil, errors.WithStack(err)
+	}
+	return string(rawSQL), nil, nil
 }
 
 func (b *Update) writeBuildCache(sql []byte) {
@@ -270,47 +243,15 @@ func (b *Update) validate() error {
 	return nil
 }
 
-// Exec interpolates and executes the statement represented by the Update
-// object. It returns the raw database/sql Result and an error if there was one.
-func (b *Update) Exec(ctx context.Context) (sql.Result, error) {
-	if b.Log != nil && b.Log.IsDebug() {
-		defer log.WhenDone(b.Log).Debug("Exec", log.Stringer("sql", b))
-	}
-	if err := b.validate(); err != nil {
-		return nil, errors.WithStack(err)
-	}
-	result, err := Exec(ctx, b.DB, b)
-	return result, errors.WithStack(err)
-}
-
 // Prepare executes the statement represented by the Update to create a prepared
 // statement. It returns a custom statement type or an error if there was one.
 // Provided arguments or records in the Update are getting ignored. The provided
 // context is used for the preparation of the statement, not for the execution
 // of the statement. The returned Stmter is not safe for concurrent use, despite
 // the underlying *sql.Stmt is.
-func (b *Update) Prepare(ctx context.Context) (Stmter, error) {
-	if b.Log != nil && b.Log.IsDebug() {
-		defer log.WhenDone(b.Log).Debug("Prepare", log.Stringer("sql", b))
-	}
+func (b *Update) Prepare(ctx context.Context) (*Stmt, error) {
 	if err := b.validate(); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	stmt, err := Prepare(ctx, b.DB, b)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	cap := len(b.SetClauses) + len(b.Wheres)
-	return &stmtBase{
-		builderCommon: builderCommon{
-			id:               b.id,
-			argsArgs:         make(Arguments, 0, cap),
-			argsRaw:          make([]interface{}, 0, cap),
-			defaultQualifier: b.Table.qualifier(),
-			qualifiedColumns: b.qualifiedColumns,
-			Log:              b.Log,
-		},
-		source: dmlTypeUpdate,
-		stmt:   stmt,
-	}, nil
+	return b.prepare(ctx, b.DB, b, dmlSourceUpdate)
 }

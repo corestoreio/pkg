@@ -38,7 +38,7 @@ func TestUnion_Query(t *testing.T) {
 			dml.NewSelect(),
 			dml.NewSelect(),
 		)
-		rows, err := u.Query(context.TODO())
+		rows, err := u.WithArgs().QueryContext(context.TODO())
 		assert.Nil(t, rows)
 		assert.True(t, errors.Empty.Match(err))
 	})
@@ -52,7 +52,7 @@ func TestUnion_Query(t *testing.T) {
 		u.WithDB(dbMock{
 			error: errors.ConnectionFailed.Newf("Who closed myself?"),
 		})
-		rows, err := u.Query(context.TODO())
+		rows, err := u.WithArgs().QueryContext(context.TODO())
 		assert.Nil(t, rows)
 		assert.True(t, errors.ConnectionFailed.Match(err), "%+v", err)
 	})
@@ -68,7 +68,7 @@ func TestUnion_Query(t *testing.T) {
 
 		u.WithDB(dbc.DB)
 
-		rows, err := u.Query(context.TODO())
+		rows, err := u.WithArgs().QueryContext(context.TODO())
 		require.NoError(t, err, "%+v", err)
 
 		var xx []string
@@ -99,7 +99,7 @@ func TestUnion_Load(t *testing.T) {
 			"(SELECT `a`, `d` AS `b` FROM `tableAD`) UNION (SELECT `a`, `b` FROM `tableAB` WHERE (`b` = 3.14159)) ORDER BY `a`, `b` DESC, concat(\"c\",b,\"d\")")).
 			WillReturnError(errors.AlreadyClosed.Newf("Who closed myself?"))
 
-		rows, err := u.WithDB(dbc.DB).Load(context.TODO(), nil)
+		rows, err := u.WithDB(dbc.DB).WithArgs().Load(context.TODO(), nil)
 		assert.Exactly(t, uint64(0), rows)
 		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	})
@@ -165,7 +165,7 @@ func TestUnion_Prepare(t *testing.T) {
 
 		t.Run("Context", func(t *testing.T) {
 
-			rows, err := stmt.Query(context.TODO(), 6889)
+			rows, err := stmt.WithArgs().QueryContext(context.TODO(), 6889)
 			require.NoError(t, err)
 			defer rows.Close()
 
@@ -176,7 +176,7 @@ func TestUnion_Prepare(t *testing.T) {
 
 		t.Run("RowContext", func(t *testing.T) {
 
-			row := stmt.QueryRow(context.TODO(), 6890)
+			row := stmt.WithArgs().QueryRowContext(context.TODO(), 6890)
 			require.NoError(t, err)
 			n, e := "", ""
 			require.NoError(t, row.Scan(&n, &e))
@@ -210,10 +210,10 @@ func TestUnion_Prepare(t *testing.T) {
 					WillReturnRows(sqlmock.NewRows([]string{"name", "email"}).AddRow("Peter Gopher", "peter@gopher.go"))
 			}
 			// use loop with Query and add args before
-			stmt.WithArguments(dml.MakeArgs(1).Int(6899))
+			stmtA := stmt.WithArgs().Int(6899)
 
 			for i := 0; i < iterations; i++ {
-				rows, err := stmt.Query(context.TODO())
+				rows, err := stmtA.QueryContext(context.TODO())
 				require.NoError(t, err)
 
 				cols, err := rows.Columns()
@@ -230,10 +230,10 @@ func TestUnion_Prepare(t *testing.T) {
 			}
 
 			p := &dmlPerson{ID: 6900}
-			stmt.WithRecords(dml.Qualify("", p))
+			stmtA := stmt.WithArgs().Record("", p)
 
 			for i := 0; i < iterations; i++ {
-				rows, err := stmt.Query(context.TODO())
+				rows, err := stmtA.QueryContext(context.TODO())
 				require.NoError(t, err)
 
 				cols, err := rows.Columns()
@@ -245,7 +245,7 @@ func TestUnion_Prepare(t *testing.T) {
 
 		t.Run("WithRecords Error", func(t *testing.T) {
 			p := &TableCoreConfigDataSlice{err: errors.Duplicated.Newf("Found a duplicate")}
-			rows, err := stmt.WithRecords(dml.Qualify("", p)).Query(context.TODO())
+			rows, err := stmt.WithArgs().Record("", p).QueryContext(context.TODO())
 			assert.True(t, errors.Duplicated.Match(err), "%+v", err)
 			assert.Nil(t, rows)
 		})
@@ -276,11 +276,8 @@ func TestUnion_WithLogger(t *testing.T) {
 		)
 
 		t.Run("Query", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				u.IsInterpolate = false
-			}()
-			rows, err := u.Interpolate().Query(context.TODO())
+			defer buf.Reset()
+			rows, err := u.WithArgs().QueryContext(context.TODO())
 			require.NoError(t, err)
 			require.NoError(t, rows.Close())
 
@@ -289,12 +286,9 @@ func TestUnion_WithLogger(t *testing.T) {
 		})
 
 		t.Run("Load", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				u.IsInterpolate = false
-			}()
+			defer buf.Reset()
 			p := &dmlPerson{}
-			_, err := u.Interpolate().Load(context.TODO(), p)
+			_, err := u.WithArgs().Interpolate().Load(context.TODO(), p)
 			require.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ01\" union_id: \"UNIQ02\" tables: \"dml_people, dml_people\" duration: 0 row_count: 0x0 sql: \"(SELECT /*ID:UNIQ02*/ `name`, `email` AS `email` FROM `dml_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8)))\"\n",
@@ -319,7 +313,7 @@ func TestUnion_WithLogger(t *testing.T) {
 				rows, err := tx.Union(
 					dml.NewSelect("name").AddColumnsAliases("email", "email").From("dml_people"),
 					dml.NewSelect("name", "email").FromAlias("dml_people", "dp2").Where(dml.Column("id").In().Int64s(7, 9)),
-				).Interpolate().Query(context.TODO())
+				).WithArgs().Interpolate().QueryContext(context.TODO())
 
 				require.NoError(t, rows.Close())
 				return err
@@ -338,12 +332,9 @@ func TestUnion_WithLogger(t *testing.T) {
 			dml.NewSelect("name", "email").FromAlias("dml_people", "dp2").Where(dml.Column("id").In().Int64s(61, 81)),
 		)
 		t.Run("Query", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				u.IsInterpolate = false
-			}()
+			defer buf.Reset()
 
-			rows, err := u.Interpolate().Query(context.TODO())
+			rows, err := u.WithArgs().Interpolate().QueryContext(context.TODO())
 			require.NoError(t, err)
 			require.NoError(t, rows.Close())
 
@@ -352,12 +343,9 @@ func TestUnion_WithLogger(t *testing.T) {
 		})
 
 		t.Run("Load", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				u.IsInterpolate = false
-			}()
+			defer buf.Reset()
 			p := &dmlPerson{}
-			_, err := u.Interpolate().Load(context.TODO(), p)
+			_, err := u.WithArgs().Load(context.TODO(), p)
 			require.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" union_id: \"UNIQ06\" tables: \"dml_people, dml_people\" duration: 0 row_count: 0x0 sql: \"(SELECT /*ID:UNIQ06*/ `name`, `email` AS `email` FROM `dml_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (61,81)))\"\n",
@@ -383,7 +371,7 @@ func TestUnion_WithLogger(t *testing.T) {
 				rows, err := tx.Union(
 					dml.NewSelect("name").AddColumnsAliases("email", "email").From("dml_people"),
 					dml.NewSelect("name", "email").FromAlias("dml_people", "dp2").Where(dml.Column("id").In().Int64s(71, 91)),
-				).Interpolate().Query(context.TODO())
+				).WithArgs().Interpolate().QueryContext(context.TODO())
 				if err != nil {
 					return err
 				}
@@ -401,7 +389,7 @@ func TestUnion_WithLogger(t *testing.T) {
 				rows, err := tx.Union(
 					dml.NewSelect("name").AddColumnsAliases("email", "email").From("dml_people"),
 					dml.NewSelect("name", "email").FromAlias("dml_people", "dp2").Where(dml.Column("id").In().PlaceHolder()),
-				).Interpolate().Query(context.TODO())
+				).WithArgs().Interpolate().QueryContext(context.TODO())
 				if err != nil {
 					return err
 				}

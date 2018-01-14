@@ -164,7 +164,7 @@ func ExampleColumnMapper() {
 	customers := new(customerCollection)
 
 	s := dml.NewSelect("*").From("customer_entity").WithDB(dbc.DB)
-	_, err := s.Load(context.TODO(), customers)
+	_, err := s.WithArgs().Load(context.TODO(), customers)
 	if err != nil {
 		panic(err)
 	}

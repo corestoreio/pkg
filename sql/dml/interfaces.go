@@ -17,6 +17,8 @@ package dml
 import (
 	"context"
 	"database/sql"
+
+	"github.com/corestoreio/errors"
 )
 
 // Preparer prepares a query in the server. The underlying type can be either a
@@ -40,13 +42,10 @@ type Execer interface {
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 }
 
-// ExecPreparer a composite interface which can execute and prepare a query. The
-// underlying type can be either a *sql.DB (connection pool), a *sql.Conn (a
-// single dedicated database session) or a *sql.Tx (an in-progress database
-// transaction).
-type ExecPreparer interface {
-	Preparer
-	Execer
+// StmtExecer executes a prepared statement.
+type StmtExecer interface {
+	// ExecContext executes a query that doesn't return rows.
+	ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error)
 }
 
 // Querier can execute a returning query. The underlying type can be either a
@@ -58,11 +57,39 @@ type Querier interface {
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
-// QueryPreparer can execute a returning query and prepare a returning query.
+// StmtQuerier executes a prepared statement query.
+type StmtQuerier interface {
+	// QueryContext executes a query that returns rows, typically a SELECT. The
+	// args are for any placeholder parameters in the query.
+	QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error)
+}
+
+// QueryExecPreparer can execute a returning query and prepare a returning query.
 // The underlying type can be either a *sql.DB (connection pool), a *sql.Conn (a
 // single dedicated database session) or a *sql.Tx (an in-progress database
 // transaction).
-type QueryPreparer interface {
+// ExecPreparer a composite interface which can execute and prepare a query. The
+// underlying type can be either a *sql.DB (connection pool), a *sql.Conn (a
+// single dedicated database session) or a *sql.Tx (an in-progress database
+// transaction).
+type QueryExecPreparer interface {
 	Preparer
 	Querier
+	Execer
+}
+
+type stmtWrapper struct {
+	stmt *sql.Stmt
+}
+
+func (sw stmtWrapper) PrepareContext(_ context.Context, _ string) (*sql.Stmt, error) {
+	return nil, errors.NotImplemented.Newf("[dml] A *sql.Stmt cannot prepare anything")
+}
+
+func (sw stmtWrapper) ExecContext(ctx context.Context, _ string, args ...interface{}) (sql.Result, error) {
+	return sw.stmt.ExecContext(ctx, args...)
+}
+
+func (sw stmtWrapper) QueryContext(ctx context.Context, _ string, args ...interface{}) (*sql.Rows, error) {
+	return sw.stmt.QueryContext(ctx, args...)
 }

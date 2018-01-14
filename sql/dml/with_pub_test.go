@@ -43,7 +43,7 @@ func TestWith_Query(t *testing.T) {
 		sel := dml.NewWith(dml.WithCTE{Name: "sel", Select: dml.NewSelect().Unsafe().AddColumns("1")}).
 			Select(dml.NewSelect().Star().From("sel")).
 			WithDB(dbc.DB)
-		rows, err := sel.Query(context.TODO())
+		rows, err := sel.WithArgs().QueryContext(context.TODO())
 		assert.Nil(t, rows)
 		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 
@@ -63,7 +63,7 @@ func TestWith_Load(t *testing.T) {
 		sel := dml.NewWith(dml.WithCTE{Name: "sel", Select: dml.NewSelect().Unsafe().AddColumns("1")}).
 			Select(dml.NewSelect().Star().From("sel")).
 			WithDB(dbc.DB)
-		rows, err := sel.Load(context.TODO(), nil)
+		rows, err := sel.WithArgs().Load(context.TODO(), nil)
 		assert.Exactly(t, uint64(0), rows)
 		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	})
@@ -217,7 +217,7 @@ func TestWith_Prepare(t *testing.T) {
 
 		t.Run("Context", func(t *testing.T) {
 
-			rows, err := stmt.Query(context.TODO(), 6889)
+			rows, err := stmt.WithArgs().QueryContext(context.TODO(), 6889)
 			require.NoError(t, err)
 			defer rows.Close()
 
@@ -228,7 +228,7 @@ func TestWith_Prepare(t *testing.T) {
 
 		t.Run("RowContext", func(t *testing.T) {
 
-			row := stmt.QueryRow(context.TODO(), 6890)
+			row := stmt.WithArgs().QueryRowContext(context.TODO(), 6890)
 			require.NoError(t, err)
 			n, e := "", ""
 			require.NoError(t, row.Scan(&n, &e))
@@ -272,10 +272,10 @@ func TestWith_Prepare(t *testing.T) {
 					WillReturnRows(sqlmock.NewRows([]string{"name", "email"}).AddRow("Peter Gopher", "peter@gopher.go"))
 			}
 			// use loop with Query and add args before
-			stmt.WithArguments(dml.MakeArgs(1).Int(6899))
+			stmtA := stmt.WithArgs().Int(6899)
 
 			for i := 0; i < iterations; i++ {
-				rows, err := stmt.Query(context.TODO())
+				rows, err := stmtA.QueryContext(context.TODO())
 				require.NoError(t, err)
 
 				cols, err := rows.Columns()
@@ -292,10 +292,10 @@ func TestWith_Prepare(t *testing.T) {
 			}
 
 			p := &dmlPerson{ID: 6900}
-			stmt.WithRecords(dml.Qualify("", p))
+			stmtA := stmt.WithArgs().Record("", p)
 
 			for i := 0; i < iterations; i++ {
-				rows, err := stmt.Query(context.TODO())
+				rows, err := stmtA.QueryContext(context.TODO())
 				require.NoError(t, err)
 
 				cols, err := rows.Columns()
@@ -307,8 +307,9 @@ func TestWith_Prepare(t *testing.T) {
 
 		t.Run("WithRecords Error", func(t *testing.T) {
 			p := &TableCoreConfigDataSlice{err: errors.Duplicated.Newf("Found a duplicate")}
-			stmt.WithRecords(dml.Qualify("", p))
-			rows, err := stmt.Query(context.TODO())
+
+			stmtA := stmt.WithArgs().Record("", p)
+			rows, err := stmtA.QueryContext(context.TODO())
 			assert.True(t, errors.Duplicated.Match(err), "%+v", err)
 			assert.Nil(t, rows)
 		})
@@ -347,11 +348,8 @@ func TestWith_WithLogger(t *testing.T) {
 		u := rConn.With(cte).Select(cteSel)
 
 		t.Run("Query", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				u.IsInterpolate = false
-			}()
-			rows, err := u.Interpolate().Query(context.TODO())
+			defer buf.Reset()
+			rows, err := u.WithArgs().Interpolate().QueryContext(context.TODO())
 			require.NoError(t, err)
 			require.NoError(t, rows.Close())
 
@@ -360,12 +358,9 @@ func TestWith_WithLogger(t *testing.T) {
 		})
 
 		t.Run("Load", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				u.IsInterpolate = false
-			}()
+			defer buf.Reset()
 			p := &dmlPerson{}
-			_, err := u.Interpolate().Load(context.TODO(), p)
+			_, err := u.WithArgs().Interpolate().Load(context.TODO(), p)
 			require.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ02\" with_cte_id: \"UNIQ04\" tables: \"zehTeEh\" duration: 0 row_count: 0x0 sql: \"WITH /*ID:UNIQ04*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dml_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\"\n",
@@ -398,7 +393,7 @@ func TestWith_WithLogger(t *testing.T) {
 						).All(),
 					},
 				).Recursive().
-					Select(dml.NewSelect().Star().From("zehTeEh")).Interpolate().Query(context.TODO())
+					Select(dml.NewSelect().Star().From("zehTeEh")).WithArgs().Interpolate().QueryContext(context.TODO())
 
 				require.NoError(t, err)
 				return rows.Close()
@@ -415,12 +410,9 @@ func TestWith_WithLogger(t *testing.T) {
 		u := conn.With(cte).Select(cteSel)
 
 		t.Run("Query", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				u.IsInterpolate = false
-			}()
+			defer buf.Reset()
 
-			rows, err := u.Interpolate().Query(context.TODO())
+			rows, err := u.WithArgs().Interpolate().QueryContext(context.TODO())
 			require.NoError(t, err)
 			require.NoError(t, rows.Close())
 
@@ -429,12 +421,9 @@ func TestWith_WithLogger(t *testing.T) {
 		})
 
 		t.Run("Load", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				u.IsInterpolate = false
-			}()
+			defer buf.Reset()
 			p := &dmlPerson{}
-			_, err := u.Interpolate().Load(context.TODO(), p)
+			_, err := u.WithArgs().Load(context.TODO(), p)
 			require.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" with_cte_id: \"UNIQ12\" tables: \"zehTeEh\" duration: 0 row_count: 0x0 sql: \"WITH /*ID:UNIQ12*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dml_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\"\n",
@@ -457,7 +446,7 @@ func TestWith_WithLogger(t *testing.T) {
 			tx, err := conn.BeginTx(context.TODO(), nil)
 			require.NoError(t, err)
 			require.NoError(t, tx.Wrap(func() error {
-				rows, err := tx.With(cte).Select(cteSel).Interpolate().Query(context.TODO())
+				rows, err := tx.With(cte).Select(cteSel).WithArgs().QueryContext(context.TODO())
 				if err != nil {
 					return err
 				}
@@ -472,7 +461,7 @@ func TestWith_WithLogger(t *testing.T) {
 			tx, err := conn.BeginTx(context.TODO(), nil)
 			require.NoError(t, err)
 			require.Error(t, tx.Wrap(func() error {
-				rows, err := tx.With(cte).Select(cteSel.Where(dml.Column("email").In().PlaceHolder())).Interpolate().Query(context.TODO())
+				rows, err := tx.With(cte).Select(cteSel.Where(dml.Column("email").In().PlaceHolder())).WithArgs().QueryContext(context.TODO())
 				if err != nil {
 					return err
 				}

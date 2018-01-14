@@ -17,6 +17,8 @@ package dml
 import (
 	"bytes"
 
+	"context"
+
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 )
@@ -27,10 +29,6 @@ import (
 type Select struct {
 	BuilderBase
 	BuilderConditional
-	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
-	// dedicated database session) or a *sql.Tx (an in-progress database
-	// transaction).
-	DB QueryPreparer
 
 	// Columns represents a slice of names and its optional identifiers. Wildcard
 	// `SELECT *` statements are not really supported:
@@ -86,7 +84,7 @@ func NewSelectWithDerivedTable(subSelect *Select, aliasName string) *Select {
 	}
 }
 
-func newSelect(db QueryPreparer, idFn uniqueIDFn, l log.Logger, from []string) *Select {
+func newSelect(db QueryExecPreparer, idFn uniqueIDFn, l log.Logger, from []string) *Select {
 	id := idFn()
 	if l != nil {
 		l = l.With(log.String("select_id", id), log.String("table", from[0]))
@@ -96,10 +94,10 @@ func newSelect(db QueryPreparer, idFn uniqueIDFn, l log.Logger, from []string) *
 			builderCommon: builderCommon{
 				id:  id,
 				Log: l,
+				DB:  db,
 			},
 			Table: MakeIdentifier(from[0]),
 		},
-		DB: db,
 	}
 	if len(from) > 1 {
 		s.Table = s.Table.Alias(from[1])
@@ -135,10 +133,10 @@ func (c *ConnPool) SelectBySQL(sql string) *Select {
 			builderCommon: builderCommon{
 				id:  id,
 				Log: l,
+				DB:  c.DB,
 			},
 			RawFullSQL: sql,
 		},
-		DB: c.DB,
 	}
 }
 
@@ -155,15 +153,15 @@ func (tx *Tx) SelectBySQL(sql string) *Select {
 			builderCommon: builderCommon{
 				id:  id,
 				Log: l,
+				DB:  tx.DB,
 			},
 			RawFullSQL: sql,
 		},
-		DB: tx.DB,
 	}
 }
 
 // WithDB sets the database query object.
-func (b *Select) WithDB(db QueryPreparer) *Select {
+func (b *Select) WithDB(db QueryExecPreparer) *Select {
 	b.DB = db
 	return b
 }
@@ -410,56 +408,20 @@ func (b *Select) CrossJoin(table id, onConditions ...*Condition) *Select {
 	return b
 }
 
-// Interpolate if set stringyfies the arguments into the SQL string and returns
-// pre-processed SQL command when calling the function ToSQL. Not suitable for
-// prepared statements. ToSQLs second argument `args` will then be nil.
-func (b *Select) Interpolate() *Select {
-	b.IsInterpolate = true
-	return b
-}
-
-// ExpandPlaceHolders repeats the place holders with the provided argument
-// count. If the amount of arguments does not match the number of place holders,
-// a mismatch error gets returned.
-//		ExpandPlaceHolders("SELECT * FROM table WHERE id IN (?) AND status IN (?)", Int(myIntSlice...), String(myStrSlice...))
-// Gets converted to:
-//		SELECT * FROM table WHERE id IN (?,?) AND status IN (?,?,?)
-// The place holders are of course depending on the values in the Arg*
-// functions. This function should be generally used when dealing with prepared
-// statements. It does conflict with interpolation.
-func (b *Select) ExpandPlaceHolders() *Select {
-	b.IsExpandPlaceHolders = true
-	return b
-}
-
-// WithArgs sets the interfaced arguments for the execution with Query+. It
-// internally resets previously applied arguments. This function does not
-// support interpolation.
-func (b *Select) WithArgs(args ...interface{}) *Select {
-	b.withArgs(args)
-	return b
-}
-
-// WithArguments sets the arguments for the execution with Query+. It internally
-// resets previously applied arguments. This function supports interpolation.
-func (b *Select) WithArguments(args Arguments) *Select {
-	b.withArguments(args)
-	return b
-}
-
-// WithRecords binds the qualified record to the main table/view, or any other
-// table/view/alias used in the query, for assembling and appending arguments. A
-// ColumnMapper gets called if it matches the qualifier, in this case the
-// current table name or its alias.
-func (b *Select) WithRecords(records ...QualifiedRecord) *Select {
-	b.withRecords(records)
-	return b
+// WithArgs builds the SQL string and sets the optional interfaced arguments for
+// the later execution. It copies the underlying connection.
+func (b *Select) WithArgs(args ...interface{}) *Arguments {
+	return b.withArgs(b, args...)
 }
 
 // ToSQL generates the SQL string and might caches it internally, if not
 // disabled.
 func (b *Select) ToSQL() (string, []interface{}, error) {
-	return b.buildArgsAndSQL(b)
+	rawSQL, err := b.buildToSQL(b)
+	if err != nil {
+		return "", nil, errors.WithStack(err)
+	}
+	return string(rawSQL), nil, nil
 }
 
 func (b *Select) writeBuildCache(sql []byte) {
@@ -580,8 +542,12 @@ func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err 
 	return placeHolders, err
 }
 
-// argumentCapacity returns the total possible guessed size of a new args
-// slice. Use as the cap parameter in a call to `make`.
-func (b *Select) argumentCapacity() int {
-	return (b.argsArgs.Len() + len(b.argsRecords) + len(b.argsRaw)) * 2
+// Prepare executes the statement represented by the Select to create a prepared
+// statement. It returns a custom statement type or an error if there was one.
+// Provided arguments or records in the Select are getting ignored. The provided
+// context is used for the preparation of the statement, not for the execution
+// of the statement. The returned Stmter is not safe for concurrent use, despite
+// the underlying *sql.Stmt is.
+func (b *Select) Prepare(ctx context.Context) (*Stmt, error) {
+	return b.prepare(ctx, b.DB, b, dmlSourceSelect)
 }

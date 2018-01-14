@@ -17,7 +17,6 @@ package dml
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"strconv"
 	"strings"
 
@@ -32,11 +31,6 @@ import (
 // UNION and all based on a common template.
 type Union struct {
 	BuilderBase
-	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
-	// dedicated database session) or a *sql.Tx (an in-progress database
-	// transaction).
-	DB QueryPreparer
-
 	Selects     []*Select
 	OrderBys    ids
 	IsAll       bool // IsAll enables UNION ALL
@@ -75,10 +69,10 @@ func (c *ConnPool) Union(selects ...*Select) *Union {
 			builderCommon: builderCommon{
 				id:  id,
 				Log: unionInitLog(c.Log, selects, id),
+				DB:  c.DB,
 			},
 		},
 		Selects: selects,
-		DB:      c.DB,
 	}
 }
 
@@ -90,10 +84,10 @@ func (c *Conn) Union(selects ...*Select) *Union {
 			builderCommon: builderCommon{
 				id:  id,
 				Log: unionInitLog(c.Log, selects, id),
+				DB:  c.DB,
 			},
 		},
 		Selects: selects,
-		DB:      c.DB,
 	}
 }
 
@@ -106,15 +100,15 @@ func (tx *Tx) Union(selects ...*Select) *Union {
 			builderCommon: builderCommon{
 				id:  id,
 				Log: unionInitLog(tx.Log, selects, id),
+				DB:  tx.DB,
 			},
 		},
 		Selects: selects,
-		DB:      tx.DB,
 	}
 }
 
 // WithDB sets the database query object.
-func (u *Union) WithDB(db QueryPreparer) *Union {
+func (u *Union) WithDB(db QueryExecPreparer) *Union {
 	u.DB = db
 	return u
 }
@@ -183,14 +177,6 @@ func (u *Union) OrderByDesc(columns ...string) *Union {
 	return u
 }
 
-// Interpolate if set stringifies the arguments into the SQL string and returns
-// pre-processed SQL command when calling the function ToSQL. Not suitable for
-// prepared statements. ToSQLs second argument `args` will then be nil.
-func (u *Union) Interpolate() *Union {
-	u.IsInterpolate = true
-	return u
-}
-
 // Intersect switches the query type from UNION to INTERSECT. The result of an
 // intersect is the intersection of right and left SELECT results, i.e. only
 // records that are present in both result sets will be included in the result
@@ -237,39 +223,19 @@ func (u *Union) StringReplace(key string, values ...string) *Union {
 	return u
 }
 
-// WithArgs sets the interfaced arguments for the execution with Query+. It
-// internally resets previously applied arguments. This function does not
-// support interpolation.
-func (u *Union) WithArgs(args ...interface{}) *Union {
-	u.withArgs(args)
-	return u
-}
-
-// WithArguments sets the arguments for the execution with Query+. It internally
-// resets previously applied arguments. This function supports interpolation.
-func (u *Union) WithArguments(args Arguments) *Union {
-	u.withArguments(args)
-	return u
-}
-
-func (u *Union) withRecord(records []QualifiedRecord) {
-	for _, sel := range u.Selects {
-		sel.withRecords(records)
-	}
-}
-
-// WithRecords binds the qualified record to the main table/view, or any other
-// table/view/alias used in the query, for assembling and appending arguments. A
-// ColumnMapper gets called if it matches the qualifier, in this case the
-// current table name or its alias.
-func (u *Union) WithRecords(records ...QualifiedRecord) *Union {
-	u.withRecords(records)
-	return u
+// WithArgs builds the SQL string and sets the optional interfaced arguments for
+// the later execution. It copies the underlying connection and structs.
+func (u *Union) WithArgs(args ...interface{}) *Arguments {
+	return u.withArgs(u, args...)
 }
 
 // ToSQL converts the statements into a string and returns its arguments.
 func (u *Union) ToSQL() (string, []interface{}, error) {
-	return u.buildArgsAndSQL(u)
+	rawSQL, err := u.buildToSQL(u)
+	if err != nil {
+		return "", nil, errors.WithStack(err)
+	}
+	return string(rawSQL), nil, nil
 }
 
 func (u *Union) writeBuildCache(sql []byte) {
@@ -340,70 +306,12 @@ func (u *Union) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err e
 	return placeHolders, nil
 }
 
-func (u *Union) makeArguments() Arguments {
-	var argCap int
-	for _, s := range u.Selects {
-		argCap += s.argumentCapacity()
-	}
-	return make(Arguments, 0, len(u.Selects)*argCap)
-}
-
-// Query executes a query and returns many rows. If debug mode for logging has
-// been enabled it logs the duration taken and the SQL string.
-func (u *Union) Query(ctx context.Context) (*sql.Rows, error) {
-	if u.Log != nil && u.Log.IsDebug() {
-		defer log.WhenDone(u.Log).Debug("Query", log.Stringer("sql", u))
-	}
-	rows, err := Query(ctx, u.DB, u)
-	return rows, errors.WithStack(err)
-}
-
-// Load loads data from a query into an object. You must set DB.QueryContext on
-// the Union object or it just panics. Load can load a single row or n-rows. If
-// debug mode for logging has been enabled it logs the duration taken and the
-// SQL string.
-func (u *Union) Load(ctx context.Context, s ColumnMapper) (rowCount uint64, err error) {
-	if u.Log != nil && u.Log.IsDebug() {
-		defer log.WhenDone(u.Log).Debug("Load", log.Uint64("row_count", rowCount), log.Stringer("sql", u))
-	}
-	sqlStr, args, err := u.ToSQL()
-	if err != nil {
-		return 0, errors.WithStack(err)
-	}
-	rows, err := u.DB.QueryContext(ctx, sqlStr, args...)
-	rowCount, err = load(rows, err, s, &u.ColumnMap)
-	if err != nil {
-		return 0, errors.Wrapf(err, "[dml] Load.QueryContext with query %q", sqlStr)
-	}
-	return rowCount, nil
-}
-
 // Prepare executes the statement represented by the Union to create a prepared
 // statement. It returns a custom statement type or an error if there was one.
 // Provided arguments or records in the Union are getting ignored. The provided
 // context is used for the preparation of the statement, not for the execution
 // of the statement. The returned Stmter is not safe for concurrent use, despite
 // the underlying *sql.Stmt is.
-func (u *Union) Prepare(ctx context.Context) (Stmter, error) {
-	if u.Log != nil && u.Log.IsDebug() {
-		defer log.WhenDone(u.Log).Debug("Prepare", log.Stringer("sql", u))
-	}
-	stmt, err := Prepare(ctx, u.DB, u)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	args := u.makeArguments()
-	return &stmtBase{
-		builderCommon: builderCommon{
-			id:                u.id,
-			argsArgs:          args,
-			argsRaw:           make([]interface{}, 0, len(args)),
-			defaultQualifier:  "",
-			qualifiedColumns:  u.qualifiedColumns,
-			Log:               u.Log,
-			templateStmtCount: u.templateStmtCount,
-		},
-		source: dmlTypeUnion,
-		stmt:   stmt,
-	}, nil
+func (u *Union) Prepare(ctx context.Context) (*Stmt, error) {
+	return u.prepare(ctx, u.DB, u, dmlSourceUnion)
 }

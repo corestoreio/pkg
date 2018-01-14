@@ -15,11 +15,9 @@
 package dml
 
 import (
-	"context"
 	"database/sql"
 	"encoding"
 	"fmt"
-	"io"
 	"strconv"
 	"time"
 	"unicode/utf8"
@@ -27,105 +25,6 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/byteconv"
 )
-
-// Exec executes the statement represented by the QueryBuilder. It returns the
-// raw database/sql Result or an error if there was one. Regarding
-// LastInsertID(): If you insert multiple rows using a single INSERT statement,
-// LAST_INSERT_ID() returns the value generated for the first inserted row only.
-// The reason for this is to make it possible to reproduce easily the same
-// INSERT statement against some other server.
-// `db` can be either a *sql.DB (connection pool), a *sql.Conn (a single
-// dedicated database session) or a *sql.Tx (an in-progress database
-// transaction).
-func Exec(ctx context.Context, db Execer, b QueryBuilder) (sql.Result, error) {
-	sqlStr, args, err := b.ToSQL()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	result, err := db.ExecContext(ctx, sqlStr, args...)
-	return result, errors.Wrapf(err, "[dml] Exec.ExecContext with query %q", sqlStr)
-}
-
-// Prepare prepares a SQL statement. Sets IsInterpolate to false.
-// `db` can be either a *sql.DB (connection pool), a *sql.Conn (a single
-// dedicated database session) or a *sql.Tx (an in-progress database
-// transaction).
-func Prepare(ctx context.Context, db Preparer, b QueryBuilder) (*sql.Stmt, error) {
-	sqlStr, _, err := b.ToSQL()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	stmt, err := db.PrepareContext(ctx, sqlStr)
-	return stmt, errors.Wrapf(err, "[dml] Prepare.PrepareContext with query %q", sqlStr)
-}
-
-// Query executes a query and returns many rows.
-// `db` can be either a *sql.DB (connection pool), a *sql.Conn (a single
-// dedicated database session) or a *sql.Tx (an in-progress database
-// transaction).
-func Query(ctx context.Context, db Querier, b QueryBuilder) (*sql.Rows, error) {
-	sqlStr, args, err := b.ToSQL()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	rows, err := db.QueryContext(ctx, sqlStr, args...)
-	return rows, errors.Wrapf(err, "[dml] Query.QueryContext with query %q", sqlStr)
-}
-
-// Load loads data from a query into `s`. Load supports loading of up to n-rows.
-// Load checks if a type implements io.Closer interface. `db` can be either a
-// *sql.DB (connection pool), a *sql.Conn (a single dedicated database session)
-// or a *sql.Tx (an in-progress database transaction).
-//
-// If ColumnMapper `s` implements io.Closer, the Close() function gets called in
-// the defer function after rows.Close. `s.Close` function allows to implement
-// features like unlocking a mutex or updating internal structures or closing a
-// connection.
-func Load(ctx context.Context, db Querier, b QueryBuilder, s ColumnMapper) (rowCount uint64, err error) {
-	sqlStr, args, err := b.ToSQL()
-	if err != nil {
-		return 0, errors.WithStack(err)
-	}
-	rows, err := db.QueryContext(ctx, sqlStr, args...)
-	rowCount, err = load(rows, err, s, new(ColumnMap))
-	if err != nil {
-		return 0, errors.Wrapf(err, "[dml] Load.QueryContext with query %q", sqlStr)
-	}
-	return rowCount, nil
-}
-
-func load(r *sql.Rows, errIn error, s ColumnMapper, cm *ColumnMap) (rowCount uint64, err error) {
-	if errIn != nil {
-		return 0, errors.WithStack(errIn)
-	}
-	defer func() {
-		// Not testable with the sqlmock package :-(
-		if err2 := r.Close(); err2 != nil && err == nil {
-			err = errors.Wrap(err2, "[dml] Load.QueryContext.Rows.Close")
-		}
-		if rc, ok := s.(io.Closer); ok {
-			if err2 := rc.Close(); err2 != nil && err == nil {
-				err = errors.Wrap(err2, "[dml] Load.QueryContext.ColumnMapper.Close")
-			}
-		}
-	}()
-
-	for r.Next() {
-		if err = cm.Scan(r); err != nil {
-			return 0, errors.WithStack(err)
-		}
-		if err = s.MapColumns(cm); err != nil {
-			return 0, errors.WithStack(err)
-		}
-	}
-	if err = r.Err(); err != nil {
-		return 0, errors.WithStack(err)
-	}
-	if cm.HasRows {
-		cm.Count++ // because first row is zero but we want the actual row number
-	}
-	return cm.Count, err
-}
 
 // ColumnMapper allows a type to load data from database query into its fields
 // or return the fields values as arguments for a query. It's used in the
@@ -152,7 +51,7 @@ type ColumnMapper interface {
 // database/sql does :-(  The method receiver functions have the same names as
 // in type ColumnMap.
 type ColumnMap struct {
-	Args Arguments // in case we collect arguments
+	Args *Arguments // in case we collect arguments
 
 	// initialized gets set to true after the first call to Scan to initialize
 	// the internal slices.
@@ -173,13 +72,19 @@ type ColumnMap struct {
 	// generated code. This reduces the boiler plate code a lot! A trade off
 	// between chainable API and too verbose error checking.
 	scanErr error
-	index   int
+	index   int // current column index
 }
 
-func newColumnMap(args Arguments, columns ...string) *ColumnMap {
+func newColumnMap(args *Arguments, columns ...string) *ColumnMap {
 	cm := &ColumnMap{Args: args}
 	cm.setColumns(columns...)
 	return cm
+}
+
+func (b *ColumnMap) reset() {
+	b.HasRows = false
+	b.Count = 0
+	b.scanErr = nil
 }
 
 func (b *ColumnMap) setColumns(cols ...string) {
@@ -219,7 +124,7 @@ func (b *ColumnMap) Mode() (m columnMapMode) {
 		return ColumnMapScan // assign the column values from the DB to the structs and create new structs in a slice.
 	}
 
-	// case b.Args != nil
+	// case !b.Args.isEmpty()
 	switch b.columnsLen {
 	case 0:
 		m = ColumnMapEntityReadAll // Entity: read all mode; Collection jump into loop and pass on to Entity
@@ -369,7 +274,7 @@ func (b *ColumnMap) Next() bool {
 // bool value stored in sql.RawBytes to the pointer. See the documentation for
 // function Scan.
 func (b *ColumnMap) Bool(ptr *bool) *ColumnMap {
-	if b.Args != nil {
+	if !b.Args.isEmpty() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -405,7 +310,7 @@ func (b *ColumnMap) Bool(ptr *bool) *ColumnMap {
 // bool value stored in sql.RawBytes to the pointer. See the documentation for
 // function Scan.
 func (b *ColumnMap) NullBool(ptr *NullBool) *ColumnMap {
-	if b.Args != nil {
+	if !b.Args.isEmpty() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -451,7 +356,7 @@ func (b *ColumnMap) NullBool(ptr *NullBool) *ColumnMap {
 // int value stored in sql.RawBytes to the pointer. See the documentation for
 // function Scan.
 func (b *ColumnMap) Int(ptr *int) *ColumnMap {
-	if b.Args != nil {
+	if !b.Args.isEmpty() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -481,7 +386,7 @@ func (b *ColumnMap) Int(ptr *int) *ColumnMap {
 // the int64 value stored in sql.RawBytes to the pointer. See the documentation
 // for function Scan.
 func (b *ColumnMap) Int64(ptr *int64) *ColumnMap {
-	if b.Args != nil {
+	if !b.Args.isEmpty() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -509,7 +414,7 @@ func (b *ColumnMap) Int64(ptr *int64) *ColumnMap {
 // assigns the int64 value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
 func (b *ColumnMap) NullInt64(ptr *NullInt64) *ColumnMap {
-	if b.Args != nil {
+	if !b.Args.isEmpty() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -541,7 +446,7 @@ func (b *ColumnMap) NullInt64(ptr *NullInt64) *ColumnMap {
 // assigns the float64 value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
 func (b *ColumnMap) Float64(ptr *float64) *ColumnMap {
-	if b.Args != nil {
+	if !b.Args.isEmpty() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -569,7 +474,7 @@ func (b *ColumnMap) Float64(ptr *float64) *ColumnMap {
 // assigns the numeric value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
 func (b *ColumnMap) Decimal(ptr *Decimal) *ColumnMap {
-	if b.Args != nil {
+	if !b.Args.isEmpty() {
 		if v := ptr.String(); ptr == nil || v == sqlStrNullUC {
 			b.Args = b.Args.Null()
 		} else {
@@ -598,7 +503,7 @@ func (b *ColumnMap) Decimal(ptr *Decimal) *ColumnMap {
 // assigns the float64 value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
 func (b *ColumnMap) NullFloat64(ptr *NullFloat64) *ColumnMap {
-	if b.Args != nil {
+	if !b.Args.isEmpty() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -629,7 +534,7 @@ func (b *ColumnMap) NullFloat64(ptr *NullFloat64) *ColumnMap {
 // uint value stored in sql.RawBytes to the pointer. See the documentation for
 // function Scan.
 func (b *ColumnMap) Uint(ptr *uint) *ColumnMap {
-	if b.Args != nil {
+	if !b.Args.isEmpty() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -659,7 +564,7 @@ func (b *ColumnMap) Uint(ptr *uint) *ColumnMap {
 // the uint8 value stored in sql.RawBytes to the pointer. See the documentation
 // for function Scan.
 func (b *ColumnMap) Uint8(ptr *uint8) *ColumnMap {
-	if b.Args != nil {
+	if !b.Args.isEmpty() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -689,7 +594,7 @@ func (b *ColumnMap) Uint8(ptr *uint8) *ColumnMap {
 // the uint16 value stored in sql.RawBytes to the pointer. See the documentation
 // for function Scan.
 func (b *ColumnMap) Uint16(ptr *uint16) *ColumnMap {
-	if b.Args != nil {
+	if !b.Args.isEmpty() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -719,7 +624,7 @@ func (b *ColumnMap) Uint16(ptr *uint16) *ColumnMap {
 // the uint32 value stored in sql.RawBytes to the pointer. See the documentation
 // for function Scan.
 func (b *ColumnMap) Uint32(ptr *uint32) *ColumnMap {
-	if b.Args != nil {
+	if !b.Args.isEmpty() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -749,7 +654,7 @@ func (b *ColumnMap) Uint32(ptr *uint32) *ColumnMap {
 // the uint64 value stored in sql.RawBytes to the pointer. See the documentation
 // for function Scan.
 func (b *ColumnMap) Uint64(ptr *uint64) *ColumnMap {
-	if b.Args != nil {
+	if !b.Args.isEmpty() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -773,9 +678,13 @@ func (b *ColumnMap) Uint64(ptr *uint64) *ColumnMap {
 	return b
 }
 
+type ioWriter interface {
+	Write(p []byte) (n int, err error)
+}
+
 // Debug writes the column names with their values into `w`. The output format
 // might change.
-func (b *ColumnMap) Debug(w io.Writer) (err error) {
+func (b *ColumnMap) Debug(w ioWriter) (err error) {
 	nl := []byte("\n")
 	tNil := []byte(": <nil>")
 	for i, c := range b.columns {
@@ -799,7 +708,7 @@ func (b *ColumnMap) Debug(w io.Writer) (err error) {
 // the []byte value stored in sql.RawBytes to the pointer. See the documentation
 // for function Scan.
 func (b *ColumnMap) Byte(ptr *[]byte) *ColumnMap {
-	if b.Args != nil {
+	if !b.Args.isEmpty() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -833,7 +742,7 @@ func (b *ColumnMap) Text(enc interface {
 	if b.scanErr != nil {
 		return b
 	}
-	if b.Args != nil {
+	if !b.Args.isEmpty() {
 		var data []byte
 		data, b.scanErr = enc.MarshalText()
 		if b.CheckValidUTF8 && !utf8.Valid(data) {
@@ -867,7 +776,7 @@ func (b *ColumnMap) Binary(enc interface {
 	if b.scanErr != nil {
 		return b
 	}
-	if b.Args != nil {
+	if !b.Args.isEmpty() {
 		var data []byte
 		data, b.scanErr = enc.MarshalBinary()
 		b.Args = b.Args.Bytes(data)
@@ -889,7 +798,7 @@ func (b *ColumnMap) Binary(enc interface {
 // the string value stored in sql.RawBytes to the pointer. See the documentation
 // for function Scan.
 func (b *ColumnMap) String(ptr *string) *ColumnMap {
-	if b.Args != nil {
+	if !b.Args.isEmpty() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -923,7 +832,7 @@ func (b *ColumnMap) String(ptr *string) *ColumnMap {
 // assigns the string value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
 func (b *ColumnMap) NullString(ptr *NullString) *ColumnMap {
-	if b.Args != nil {
+	if !b.Args.isEmpty() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -963,7 +872,7 @@ func (b *ColumnMap) NullString(ptr *NullString) *ColumnMap {
 // the time.Time value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan. It supports all MySQL/MariaDB date/time types.
 func (b *ColumnMap) Time(ptr *time.Time) *ColumnMap {
-	if b.Args != nil {
+	if !b.Args.isEmpty() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -991,7 +900,7 @@ func (b *ColumnMap) Time(ptr *time.Time) *ColumnMap {
 // the NullTime value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
 func (b *ColumnMap) NullTime(ptr *NullTime) *ColumnMap {
-	if b.Args != nil {
+	if !b.Args.isEmpty() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {

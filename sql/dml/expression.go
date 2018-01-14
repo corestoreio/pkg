@@ -24,13 +24,13 @@ import (
 
 // write writes the strings into `w` and correctly handles the place holder
 // repetition depending on the number of arguments.
-func writeExpression(w *bytes.Buffer, expression string, args Arguments) (phCount int, err error) {
+func writeExpression(w *bytes.Buffer, expression string, args *Arguments) (phCount int, err error) {
 	phCount = strings.Count(expression, placeHolderStr)
-	if phCount == 0 || len(args) == 0 {
+	if phCount == 0 || args.isEmpty() {
 		// fast path
 		_, err = w.WriteString(expression)
 	} else {
-		err = writeInterpolate(w, []byte(expression), args)
+		err = writeInterpolate(w, expression, args)
 	}
 	return
 }

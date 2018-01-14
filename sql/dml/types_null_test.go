@@ -33,7 +33,7 @@ func TestDecimal_Select_Integration(t *testing.T) {
 	in := s.InsertInto("dml_null_types").
 		AddColumns("id", "string_val", "int64_val", "float64_val", "time_val", "bool_val", "decimal_val")
 
-	res, err := in.AddRecords(rec).Exec(context.TODO())
+	res, err := in.WithArgs().Record("", rec).ExecContext(context.TODO())
 	require.NoError(t, err)
 	id, err := res.LastInsertId()
 	require.NoError(t, err)
@@ -46,7 +46,7 @@ func TestDecimal_Select_Integration(t *testing.T) {
 		Column("decimal_val").Decimal(dec),
 	)
 
-	rc, err := sel.Load(context.TODO(), nullTypeSet)
+	rc, err := sel.WithArgs().Load(context.TODO(), nullTypeSet)
 	require.NoError(t, err)
 	assert.Exactly(t, uint64(1), rc)
 
@@ -77,7 +77,7 @@ func TestNullTypeScanning(t *testing.T) {
 		// Create the record in the db
 		res, err := s.InsertInto("dml_null_types").
 			AddColumns("string_val", "int64_val", "float64_val", "time_val", "bool_val", "decimal_val").
-			AddRecords(test.record).Exec(context.TODO())
+			WithArgs().Record("", test.record).ExecContext(context.TODO())
 		require.NoError(t, err)
 		id, err := res.LastInsertId()
 		require.NoError(t, err)
@@ -87,7 +87,7 @@ func TestNullTypeScanning(t *testing.T) {
 		nullTypeSet := &nullTypedRecord{}
 		_, err = s.SelectFrom("dml_null_types").Star().Where(
 			Expr("id = ?").Int64(id),
-		).Load(context.TODO(), nullTypeSet)
+		).WithArgs().Load(context.TODO(), nullTypeSet)
 		require.NoError(t, err)
 
 		assert.Equal(t, test.record, nullTypeSet)

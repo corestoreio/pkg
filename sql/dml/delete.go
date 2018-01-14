@@ -16,8 +16,8 @@ package dml
 
 import (
 	"bytes"
+
 	"context"
-	"database/sql"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
@@ -44,13 +44,11 @@ import (
 type Delete struct {
 	BuilderBase
 	BuilderConditional
-	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
-	// dedicated database session) or a *sql.Tx (an in-progress database
-	// transaction).
-	DB ExecPreparer
 	// Listeners allows to dispatch certain functions in different
 	// situations.
 	Listeners ListenersDelete
+	// Select used in case a DELETE statement should be build from a SELECT.
+	Select *Select
 }
 
 // NewDelete creates a new Delete object.
@@ -65,7 +63,7 @@ func NewDelete(from string) *Delete {
 	}
 }
 
-func newDeleteFrom(db ExecPreparer, idFn uniqueIDFn, l log.Logger, from string) *Delete {
+func newDeleteFrom(db QueryExecPreparer, idFn uniqueIDFn, l log.Logger, from string) *Delete {
 	id := idFn()
 	if l != nil {
 		l = l.With(log.String("delete_id", id), log.String("table", from))
@@ -75,13 +73,13 @@ func newDeleteFrom(db ExecPreparer, idFn uniqueIDFn, l log.Logger, from string) 
 			builderCommon: builderCommon{
 				id:  id,
 				Log: l,
+				DB:  db,
 			},
 			Table: MakeIdentifier(from),
 		},
 		BuilderConditional: BuilderConditional{
 			Wheres: make(Conditions, 0, 2),
 		},
-		DB: db,
 	}
 }
 
@@ -102,14 +100,32 @@ func (tx *Tx) DeleteFrom(from string) *Delete {
 	return newDeleteFrom(tx.DB, tx.makeUniqueID, tx.Log, from)
 }
 
+// FromSelect derives a DELETE with a SELECT statement. It supports the multi
+// table syntax. Tables argument can be the actual table names or their aliases.
+func (b *Delete) FromSelect(s *Select, tables ...string) *Delete {
+	panic("TODO implement")
+	//DELETE [LOW_PRIORITY] [QUICK] [IGNORE]
+	//tbl_name[.*] [, tbl_name[.*]] ...
+	//FROM table_references
+	//[WHERE where_condition]
+	//
+	//DELETE [LOW_PRIORITY] [QUICK] [IGNORE]
+	//FROM tbl_name[.*] [, tbl_name[.*]] ...
+	//USING table_references
+	//[WHERE where_condition]
+	return b
+}
+
 // Alias sets an alias for the table name.
 func (b *Delete) Alias(alias string) *Delete {
 	b.Table.Aliased = alias
 	return b
 }
 
-// WithDB sets the database query object.
-func (b *Delete) WithDB(db ExecPreparer) *Delete {
+// WithDB sets the database query object. DB can be either a *sql.DB (connection
+// pool), a *sql.Conn (a single dedicated database session) or a *sql.Tx (an
+// in-progress database transaction).
+func (b *Delete) WithDB(db QueryExecPreparer) *Delete {
 	b.DB = db
 	return b
 }
@@ -155,56 +171,20 @@ func (b *Delete) Limit(limit uint64) *Delete {
 	return b
 }
 
-// Interpolate if set stringyfies the arguments into the SQL string and returns
-// pre-processed SQL command when calling the function ToSQL. Not suitable for
-// prepared statements. ToSQLs second argument `args` will then be nil.
-func (b *Delete) Interpolate() *Delete {
-	b.IsInterpolate = true
-	return b
-}
-
-// ExpandPlaceHolders repeats the place holders with the provided argument
-// count. If the amount of arguments does not match the number of place holders,
-// a mismatch error gets returned.
-//		ExpandPlaceHolders("SELECT * FROM table WHERE id IN (?) AND status IN (?)", Int(myIntSlice...), String(myStrSlice...))
-// Gets converted to:
-//		SELECT * FROM table WHERE id IN (?,?) AND status IN (?,?,?)
-// The place holders are of course depending on the values in the Arg*
-// functions. This function should be generally used when dealing with prepared
-// statements or interpolation.
-func (b *Delete) ExpandPlaceHolders() *Delete {
-	b.IsExpandPlaceHolders = true
-	return b
-}
-
-// WithArgs sets the interfaced arguments for the execution with Query+. It
-// internally resets previously applied arguments. This function does not
-// support interpolation.
-func (b *Delete) WithArgs(args ...interface{}) *Delete {
-	b.withArgs(args)
-	return b
-}
-
-// WithArguments sets the arguments for the execution with Query+. It internally
-// resets previously applied arguments. This function supports interpolation.
-func (b *Delete) WithArguments(args Arguments) *Delete {
-	b.withArguments(args)
-	return b
-}
-
-// WithRecords binds the qualified record to the main table/view, or any other
-// table/view/alias used in the query, for assembling and appending arguments. A
-// ColumnMapper gets called if it matches the qualifier, in this case the
-// current table name or its alias.
-func (b *Delete) WithRecords(records ...QualifiedRecord) *Delete {
-	b.withRecords(records)
-	return b
+// WithArgs builds the SQL string and sets the optional interfaced arguments for
+// the later execution. It copies the underlying connection and structs.
+func (b *Delete) WithArgs(args ...interface{}) *Arguments {
+	return b.withArgs(b, args...)
 }
 
 // ToSQL generates the SQL string and might caches it internally, if not
-// disabled.
+// disabled. The returned interface slice is always nil.
 func (b *Delete) ToSQL() (string, []interface{}, error) {
-	return b.buildArgsAndSQL(b)
+	rawSQL, err := b.buildToSQL(b)
+	if err != nil {
+		return "", nil, errors.WithStack(err)
+	}
+	return string(rawSQL), nil, nil
 }
 
 func (b *Delete) writeBuildCache(sql []byte) {
@@ -262,17 +242,6 @@ func (b *Delete) toSQL(w *bytes.Buffer, placeHolders []string) ([]string, error)
 	return placeHolders, nil
 }
 
-// Exec executes the statement represented by the Delete. It returns the raw
-// database/sql Result and an error if there was one. If info mode for logging
-// has been enabled it logs the duration taken. In debug mode the SQL string.
-func (b *Delete) Exec(ctx context.Context) (sql.Result, error) {
-	if b.Log != nil && b.Log.IsDebug() {
-		defer log.WhenDone(b.Log).Debug("Exec", log.Stringer("sql", b))
-	}
-	r, err := Exec(ctx, b.DB, b)
-	return r, errors.WithStack(err)
-}
-
 // Prepare executes the statement represented by the Delete to create a prepared
 // statement. It returns a custom statement type or an error if there was one.
 // Provided arguments or records in the Delete are getting ignored. The provided
@@ -280,25 +249,6 @@ func (b *Delete) Exec(ctx context.Context) (sql.Result, error) {
 // of the statement. If debug mode for logging has been enabled it logs the
 // duration taken and the SQL string. The returned Stmter is not safe for
 // concurrent use, despite the underlying *sql.Stmt is.
-func (b *Delete) Prepare(ctx context.Context) (Stmter, error) {
-	if b.Log != nil && b.Log.IsDebug() {
-		defer log.WhenDone(b.Log).Debug("Prepare", log.Stringer("sql", b))
-	}
-	sqlStmt, err := Prepare(ctx, b.DB, b)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	cap := len(b.Wheres)
-	return &stmtBase{
-		builderCommon: builderCommon{
-			id:               b.id,
-			argsArgs:         make(Arguments, 0, cap),
-			argsRaw:          make([]interface{}, 0, cap),
-			defaultQualifier: b.Table.qualifier(),
-			qualifiedColumns: b.qualifiedColumns,
-			Log:              b.Log,
-		},
-		source: dmlTypeDelete,
-		stmt:   sqlStmt,
-	}, nil
+func (b *Delete) Prepare(ctx context.Context) (*Stmt, error) {
+	return b.prepare(ctx, b.DB, b, dmlSourceDelete)
 }

@@ -30,48 +30,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type myToSQL struct {
-	sql  string
-	args []interface{}
-	error
-}
-
-func (m myToSQL) ToSQL() (string, []interface{}, error) {
-	return m.sql, m.args, m.error
-}
-
-func TestExec(t *testing.T) {
-	t.Parallel()
-	haveErr := errors.AlreadyClosed.Newf("Who closed myself?")
-
-	t.Run("ToSQL error", func(t *testing.T) {
-		stmt, err := dml.Exec(context.TODO(), nil, myToSQL{error: haveErr})
-		assert.Nil(t, stmt)
-		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
-	})
-}
-
-func TestPrepare(t *testing.T) {
-	t.Parallel()
-	haveErr := errors.AlreadyClosed.Newf("Who closed myself?")
-
-	t.Run("ToSQL error", func(t *testing.T) {
-		stmt, err := dml.Prepare(context.TODO(), nil, myToSQL{error: haveErr})
-		assert.Nil(t, stmt)
-		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
-	})
-	t.Run("ToSQL prepare error", func(t *testing.T) {
-		dbc, dbMock := dmltest.MockDB(t)
-		defer dmltest.MockClose(t, dbc, dbMock)
-
-		dbMock.ExpectPrepare("SELECT `a` FROM `b`").WillReturnError(haveErr)
-
-		stmt, err := dml.Prepare(context.TODO(), dbc.DB, myToSQL{sql: "SELECT `a` FROM `b`"})
-		assert.Nil(t, stmt)
-		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
-	})
-}
-
 var (
 	_ dml.ColumnMapper           = (*baseTest)(nil)
 	_ dml.ColumnMapper           = (*baseTestCollection)(nil)
@@ -276,7 +234,7 @@ func TestColumnMap_Query(t *testing.T) {
 
 		tbl := new(baseTestCollection)
 
-		rc, err := dml.Load(context.TODO(), dbc.DB, tbl, tbl)
+		rc, err := dbc.WithQueryBuilder(tbl).Load(context.TODO(), tbl)
 		assert.Exactly(t, uint64(0), rc)
 		assert.Contains(t, err.Error(), "sql: Scan error on column index 0: [dml] ColumnMap.Scan does not yet support type chan int with value")
 	})
@@ -302,7 +260,7 @@ func TestColumnMap_Query(t *testing.T) {
 				buf.String())
 		}
 
-		rc, err := dml.Load(context.TODO(), dbc.DB, tbl, tbl)
+		rc, err := dbc.WithQueryBuilder(tbl).Load(context.TODO(), tbl)
 		assert.Exactly(t, uint64(1), rc)
 		require.NoError(t, err)
 	})
@@ -320,7 +278,7 @@ func TestColumnMap_Query(t *testing.T) {
 
 		tbl := new(baseTestCollection)
 
-		rc, err := dml.Load(context.TODO(), dbc.DB, tbl, tbl)
+		rc, err := dbc.WithQueryBuilder(tbl).Load(context.TODO(), tbl)
 		require.NoError(t, err)
 
 		assert.Exactly(t, uint64(1), rc)
@@ -372,7 +330,7 @@ func TestColumnMap_Query(t *testing.T) {
 
 		tbl := new(baseTestCollection)
 
-		rc, err := dml.Load(context.TODO(), dbc.DB, tbl, tbl)
+		rc, err := dbc.WithQueryBuilder(tbl).Load(context.TODO(), tbl)
 		assert.Exactly(t, uint64(1), rc)
 		require.NoError(t, err)
 		require.Len(t, tbl.Data, 1)
@@ -409,7 +367,7 @@ func TestColumnMap_Query(t *testing.T) {
 		tbl := new(baseTestCollection)
 		tbl.CheckValidUTF8 = true
 
-		rc, err := dml.Load(context.TODO(), dbc.DB, tbl, tbl)
+		rc, err := dbc.WithQueryBuilder(tbl).Load(context.TODO(), tbl)
 		assert.Exactly(t, uint64(0), rc)
 		assert.True(t, errors.NotValid.Match(err), "%+v", err)
 	})
@@ -430,7 +388,7 @@ func TestColumnMap_Query(t *testing.T) {
 		tbl := new(baseTestCollection)
 		tbl.CheckValidUTF8 = true
 
-		rc, err := dml.Load(context.TODO(), dbc.DB, tbl, tbl)
+		rc, err := dbc.WithQueryBuilder(tbl).Load(context.TODO(), tbl)
 		assert.Exactly(t, uint64(0), rc)
 		assert.True(t, errors.NotValid.Match(err), "%+v", err)
 
@@ -467,7 +425,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 			stmt, err := dbc.SelectFrom("test").Star().Prepare(context.TODO())
 			require.NoError(t, err)
 
-			rc, err := stmt.Load(context.TODO(), tbl)
+			rc, err := stmt.WithArgs().Load(context.TODO(), tbl)
 			if scanErrWantKind != errors.NoKind {
 				assert.True(t, errors.Is(err, scanErrWantKind), "Should be Error Kind %s; Got: %s\n%+v", scanErrWantKind, errors.UnwrapKind(err), err)
 			} else {

@@ -89,8 +89,8 @@ func TestDelete_Interpolate(t *testing.T) {
 		Where(
 			Column("colA").GreaterOrEqual().Float64(3.14159),
 			Column("colB").In().NamedArg("colB2"),
-		).Interpolate().
-		Limit(10).OrderBy("id").WithArguments(MakeArgs(1).Name("colB2").Int64s(3, 4, 7, 8)), errors.NoKind,
+		).
+		Limit(10).OrderBy("id").WithArgs().Name("colB2").Int64s(3, 4, 7, 8).Interpolate(), errors.NoKind,
 		"DELETE FROM `tableA` WHERE (`colA` >= 3.14159) AND (`colB` IN (3,4,7,8)) ORDER BY `id` LIMIT 10",
 	)
 
@@ -101,7 +101,7 @@ func TestDeleteReal(t *testing.T) {
 	defer testCloser(t, s)
 	// Insert a Barack
 	res, err := s.InsertInto("dml_people").AddColumns("name", "email").
-		AddValuesUnsafe("Barack", "barack@whitehouse.gov").Exec(context.TODO())
+		WithArgs("Barack", "barack@whitehouse.gov").ExecContext(context.TODO())
 	require.NoError(t, err)
 	if res == nil {
 		t.Fatal("result should not be nil. See previous error")
@@ -112,7 +112,7 @@ func TestDeleteReal(t *testing.T) {
 	require.NoError(t, err, "LastInsertId")
 
 	// Delete Barack
-	res, err = s.DeleteFrom("dml_people").Where(Column("id").Int64(id)).Exec(context.TODO())
+	res, err = s.DeleteFrom("dml_people").Where(Column("id").Int64(id)).WithArgs().ExecContext(context.TODO())
 	require.NoError(t, err, "DeleteFrom")
 
 	// Ensure we only reflected one row and that the id no longer exists
@@ -120,7 +120,7 @@ func TestDeleteReal(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), rowsAff, "RowsAffected")
 
-	count, err := s.SelectFrom("dml_people").Count().Where(Column("id").Int64(id)).LoadInt64(context.TODO())
+	count, err := s.SelectFrom("dml_people").Count().Where(Column("id").PlaceHolder()).WithArgs().Int64(id).LoadInt64(context.TODO())
 	require.NoError(t, err)
 	assert.Equal(t, int64(0), count, "count")
 }
@@ -238,7 +238,7 @@ func TestDelete_BuildCacheDisabled(t *testing.T) {
 	})
 
 	t.Run("with interpolate", func(t *testing.T) {
-		del.Interpolate().WithArguments(MakeArgs(1).Int64(3333))
+		del.WithArgs().Int64(3333).Interpolate()
 		del.cachedSQL = nil
 
 		const cachedSQLInterpolated = "DELETE FROM `alpha` WHERE (`a` = 'b') AND (`b` = 3333) ORDER BY `id` LIMIT 1"
@@ -266,8 +266,8 @@ func TestDelete_Bind(t *testing.T) {
 				Column("float64_pi").Float64(3.14159),
 				Column("email").PlaceHolder(),
 				Column("int_e").Int(2718281),
-			).
-			WithRecords(Qualify("", p)).OrderBy("id")
+			).OrderBy("id").
+			WithArgs().Records(Qualify("", p))
 
 		compareToSQL2(t, del, errors.NoKind,
 			"DELETE FROM `dml_people` WHERE (`idI64` > 4) AND (`id` = ?) AND (`float64_pi` = 3.14159) AND (`email` = ?) AND (`int_e` = 2718281) ORDER BY `id`",
@@ -278,28 +278,28 @@ func TestDelete_Bind(t *testing.T) {
 		del := NewDelete("dml_people").
 			Where(
 				Column("id").PlaceHolder(),
-			).
-			WithRecords(Qualify("", p)).OrderBy("id")
+			).OrderBy("id").
+			WithArgs().Records(Qualify("", p))
 
 		compareToSQL2(t, del, errors.NoKind,
 			"DELETE FROM `dml_people` WHERE (`id` = ?) ORDER BY `id`",
 			int64(5555),
 		)
-		assert.Exactly(t, []string{"id"}, del.qualifiedColumns)
+		assert.Exactly(t, []string{"id"}, del.base.qualifiedColumns)
 	})
 	t.Run("single arg from Record qualified", func(t *testing.T) {
 		del := NewDelete("dml_people").Alias("dmlPpl").
 			Where(
 				Column("id").PlaceHolder(),
-			).
-			WithRecords(Qualify("dmlPpl", p)).OrderBy("id")
+			).OrderBy("id").
+			WithArgs().Records(Qualify("dmlPpl", p))
 
 		compareToSQL(t, del, errors.NoKind,
 			"DELETE FROM `dml_people` AS `dmlPpl` WHERE (`id` = ?) ORDER BY `id`",
 			"DELETE FROM `dml_people` AS `dmlPpl` WHERE (`id` = 5555) ORDER BY `id`",
 			int64(5555),
 		)
-		assert.Exactly(t, []string{"id"}, del.qualifiedColumns)
+		assert.Exactly(t, []string{"id"}, del.base.qualifiedColumns)
 	})
 	t.Run("null type records", func(t *testing.T) {
 		ntr := newNullTypedRecordWithData()
@@ -312,8 +312,7 @@ func TestDelete_Bind(t *testing.T) {
 				Column("random1").Between().Float64s(1.2, 3.4),
 				Column("time_val").PlaceHolder(),
 				Column("bool_val").PlaceHolder(),
-			).
-			WithRecords(Qualify("", ntr)).OrderBy("id")
+			).OrderBy("id").WithArgs().Record("", ntr)
 
 		compareToSQL2(t, del, errors.NoKind,
 			"DELETE FROM `null_type_table` WHERE (`string_val` = ?) AND (`int64_val` = ?) AND (`float64_val` = ?) AND (`random1` BETWEEN 1.2 AND 3.4) AND (`time_val` = ?) AND (`bool_val` = ?) ORDER BY `id`",

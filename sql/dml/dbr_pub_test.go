@@ -15,7 +15,6 @@
 package dml_test
 
 import (
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -83,16 +82,16 @@ func (p *dmlPerson) MapColumns(cm *dml.ColumnMap) error {
 	return cm.Err()
 }
 
-func createRealSession(t testing.TB) *dml.ConnPool {
+func createRealSession(t testing.TB, opts ...dml.ConnPoolOption) *dml.ConnPool {
 	dsn := os.Getenv("CS_DSN")
 	if dsn == "" {
 		t.Skip("Environment variable CS_DSN not found. Skipping ...")
 	}
 	cxn, err := dml.NewConnPool(
-		dml.WithDSN(dsn),
+		append([]dml.ConnPoolOption{dml.WithDSN(dsn)}, opts...)...,
 	)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 	return cxn
 }
@@ -105,7 +104,6 @@ func compareToSQL(
 	wantSQLPlaceholders, wantSQLInterpolated string,
 	wantArgs ...interface{},
 ) {
-
 	sqlStr, args, err := qb.ToSQL()
 	if wantErrKind.Empty() {
 		require.NoError(t, err)
@@ -122,10 +120,19 @@ func compareToSQL(
 		return
 	}
 
-	qb, reset := enableInterpolate(qb)
-	defer reset()
+	// If you care regarding the duplication ... send us a PR ;-)
+	// Enables Interpolate feature and resets it after the test has been
+	// executed.
+	switch dmlArg := qb.(type) {
+	case *dml.Arguments:
+		prev := dmlArg.Options
+		qb = dmlArg.Interpolate()
+		defer func() { dmlArg.Options = prev; qb = dmlArg }()
+	default:
+		t.Fatalf("func compareToSQL: the type %#v is not (yet) supported.", qb)
+	}
 
-	sqlStr, args, err = qb.ToSQL()
+	sqlStr, args, err = qb.ToSQL() // Call with enabled interpolation
 	require.Nil(t, args, "Arguments should be nil when the SQL string gets interpolated")
 	if wantErrKind.Empty() {
 		require.NoError(t, err)
@@ -133,30 +140,4 @@ func compareToSQL(
 		require.True(t, wantErrKind.Match(err), "%+v")
 	}
 	require.Equal(t, wantSQLInterpolated, sqlStr, "Interpolated SQL strings do not match")
-}
-
-func enableInterpolate(qb dml.QueryBuilder) (_ dml.QueryBuilder, reset func()) {
-	switch cqb := qb.(type) {
-	case *dml.Delete:
-		cqb.Interpolate()
-		reset = func() { cqb.IsInterpolate = false }
-	case *dml.Update:
-		cqb.Interpolate()
-		reset = func() { cqb.IsInterpolate = false }
-	case *dml.Insert:
-		cqb.Interpolate()
-		reset = func() { cqb.IsInterpolate = false }
-	case *dml.Select:
-		cqb.Interpolate()
-		reset = func() { cqb.IsInterpolate = false }
-	case *dml.Union:
-		cqb.Interpolate()
-		reset = func() { cqb.IsInterpolate = false }
-	case *dml.With:
-		cqb.Interpolate()
-		reset = func() { cqb.IsInterpolate = false }
-	default:
-		panic(fmt.Sprintf("Type %#v not (yet) supported.", qb))
-	}
-	return qb, reset
 }

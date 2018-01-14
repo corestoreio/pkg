@@ -59,7 +59,7 @@ func BenchmarkSelectRows2007(b *testing.B) {
 
 	b.ResetTimer()
 	b.Run("Query", func(b *testing.B) {
-		s := c.SelectFrom("core_config_data112").Star()
+		s := c.SelectFrom("core_config_data112").Star().WithArgs()
 		ctx := context.TODO()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -79,10 +79,11 @@ func BenchmarkSelectRows2007(b *testing.B) {
 			b.Fatal(err)
 		}
 		ctx := context.TODO()
+		stmtA := stmt.WithArgs()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			var ccd TableCoreConfigDataSlice
-			if _, err := stmt.Load(ctx, &ccd); err != nil {
+			if _, err := stmtA.Load(ctx, &ccd); err != nil {
 				b.Fatalf("%+v", err)
 			}
 			if len(ccd.Data) != coreConfigDataRowCount {
@@ -99,9 +100,10 @@ func BenchmarkSelectRows2007(b *testing.B) {
 		ccd := &TableCoreConfigDataSlice{
 			Data: make([]*TableCoreConfigData, 0, coreConfigDataRowCount),
 		}
+		stmtA := stmt.WithArgs()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			if _, err := stmt.Load(ctx, ccd); err != nil {
+			if _, err := stmtA.Load(ctx, ccd); err != nil {
 				b.Fatalf("%+v", err)
 			}
 			if len(ccd.Data) != coreConfigDataRowCount {
@@ -157,10 +159,11 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 			TotalIncome: totalIncome,
 		}
 
+		argStmt := stmt.WithArgs().Record("", p)
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			p.TotalIncome = totalIncome * float64(i)
-			res, err := stmt.WithRecords(dml.Qualify("", p)).Exec(ctx)
+			res, err := argStmt.ExecContext(ctx) // TODO verify how the DB table looks like
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -176,16 +179,12 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 
 	b.Run("ExecArgs", func(b *testing.B) {
 		truncate(c.DB)
-		args := dml.MakeArgs(5)
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			args = args[:0]
 
-			res, err := stmt.WithArguments(args.
-				String("Maria Gopher ExecArgs").NullString(dml.MakeNullString("maria@gopherExecArgs.go")).
-				Int64(storeID).Time(now()).Float64(totalIncome * float64(i)),
-			).Exec(ctx)
+			res, err := stmt.WithArgs().String("Maria Gopher ExecArgs").NullString(dml.MakeNullString("maria@gopherExecArgs.go")).
+				Int64(storeID).Time(now()).Float64(totalIncome * float64(i)).ExecContext(ctx)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -199,17 +198,15 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 		}
 	})
 
-	b.Run("ExecContext", func(b *testing.B) {
+	b.Run("ExecContext", func(b *testing.B) { // TODO rewrite this in many different ways.
 		truncate(c.DB)
 		name := "Maria Gopher ExecContext"
 		email := sql.NullString{String: "maria@gopherExecContext.go", Valid: true}
-
-		stmt.WithArguments(nil) // reset or arguments get doubled
-
+		stmtA := stmt.WithArgs()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 
-			res, err := stmt.Exec(ctx, name, email, storeID, now(), totalIncome*float64(i))
+			res, err := stmtA.ExecContext(ctx, name, email, storeID, now(), totalIncome*float64(i))
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -313,18 +310,16 @@ func BenchmarkJackC_GoDBBench(b *testing.B) {
 
 	b.Run("SelectMultipleRowsCollect Arguments", func(b *testing.B) {
 		ctx := context.Background()
-		args := dml.MakeArgs(2)
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			id := randPersonIDs[i%len(randPersonIDs)]
 			var fp fakePersons
-			if _, err := stmt.WithArguments(args.Int(id).Int(id+maxSelectID)).Load(ctx, &fp); err != nil {
+			if _, err := stmt.WithArgs().Int(id).Int(id+maxSelectID).Load(ctx, &fp); err != nil {
 				b.Fatalf("%+v", err)
 			}
 			for i := range fp.Data {
 				checkPersonWasFilled(b, fp.Data[i])
 			}
-			args.Reset()
 		}
 	})
 	b.Run("SelectMultipleRowsCollect Interfaces", func(b *testing.B) {
@@ -349,7 +344,7 @@ func BenchmarkJackC_GoDBBench(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			id := randPersonIDs[i%len(randPersonIDs)]
 			var fp fakePerson
-			if _, err := stmt.WithArguments(args.Int(id).Int(id+maxSelectID)).Load(ctx, &fp); err != nil {
+			if _, err := stmt.WithArgs().Int(id).Int(id+maxSelectID).Load(ctx, &fp); err != nil {
 				b.Fatalf("%+v", err)
 			}
 			checkPersonWasFilled(b, fp)

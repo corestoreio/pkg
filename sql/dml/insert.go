@@ -17,12 +17,9 @@ package dml
 import (
 	"bytes"
 	"context"
-	"database/sql"
-	"strings"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
-	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
 // LastInsertIDAssigner assigns the last insert ID of an auto increment
@@ -34,24 +31,18 @@ type LastInsertIDAssigner interface {
 // Insert contains the clauses for an INSERT statement
 type Insert struct {
 	BuilderBase
-	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
-	// dedicated database session) or a *sql.Tx (an in-progress database
-	// transaction).
-	DB ExecPreparer
-
 	Into    string
 	Columns []string
 	// RowCount defines the number of expected rows.
 	RowCount int // See SetRowCount()
-	Values   []Arguments
-	Records  []ColumnMapper
+	//Records  []ColumnMapper
 	// RecordPlaceHolderCount defines the number of place holders for each set
 	// within the brackets. Must only be set when Records have been applied
 	// and `Columns` field has been omitted.
 	RecordPlaceHolderCount int
 	// Select used to create an "INSERT INTO `table` SELECT ..." statement.
 	Select *Select
-
+	Pairs  Conditions
 	// OnDuplicateKeys updates the referenced columns. See documentation for type
 	// `Conditions`. For more details
 	// https://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html
@@ -104,7 +95,7 @@ func NewInsert(into string) *Insert {
 	}
 }
 
-func newInsertInto(db ExecPreparer, idFn uniqueIDFn, l log.Logger, into string) *Insert {
+func newInsertInto(db QueryExecPreparer, idFn uniqueIDFn, l log.Logger, into string) *Insert {
 	id := idFn()
 	if l != nil {
 		l = l.With(log.String("insert_id", id), log.String("table", into))
@@ -114,9 +105,9 @@ func newInsertInto(db ExecPreparer, idFn uniqueIDFn, l log.Logger, into string) 
 			builderCommon: builderCommon{
 				id:  id,
 				Log: l,
+				DB:  db,
 			},
 		},
-		DB:   db,
 		Into: into,
 	}
 }
@@ -137,7 +128,7 @@ func (tx *Tx) InsertInto(into string) *Insert {
 }
 
 // WithDB sets the database query object.
-func (b *Insert) WithDB(db ExecPreparer) *Insert {
+func (b *Insert) WithDB(db QueryExecPreparer) *Insert {
 	b.DB = db
 	return b
 }
@@ -182,68 +173,6 @@ func (b *Insert) SetRowCount(rows int) *Insert {
 	return b
 }
 
-// AddValuesUnsafe appends a set of primitives, packed in interfaces, to the
-// statement. Each call of AddValuesUnsafe creates a new set of values. Only
-// primitive types are supported. Runtime type safety only. It panics for
-// unknown types.
-func (b *Insert) AddValuesUnsafe(args ...interface{}) *Insert {
-	return b.AddValues(iFaceToArgs(args...))
-}
-
-// AddValues appends a set of arguments to the statement. Each call of
-// AddValues creates a new set of values. Only primitive types are supported.
-func (b *Insert) AddValues(args Arguments) *Insert {
-	if lv, mod := len(args), len(b.Columns); mod > 0 && lv > mod && (lv%mod) == 0 {
-		// now we have more arguments than columns and we can assume that more
-		// rows gets inserted.
-		for i := 0; i < len(args); i = i + mod {
-			b.Values = append(b.Values, args[i:i+mod])
-		}
-	} else {
-		// each call to AddValuesUnsafe equals one row in a table.
-		b.Values = append(b.Values, args)
-	}
-	return b
-}
-
-// AddRecords appends a new record for each INSERT VALUES (),[(...)...] case. A
-// record can also be e.g. a slice which appends all requested arguments at
-// once. Using a slice requires to call `SetRowCount` to tell the Insert object
-// the number of rows.
-func (b *Insert) AddRecords(recs ...ColumnMapper) *Insert {
-	b.Records = append(b.Records, recs...)
-	return b
-}
-
-// WithArgs applies only in the case where place holders are used in the ON
-// DUPLICATE KEY part. It sets the interfaced arguments for the execution with
-// Query+. It internally resets previously applied arguments. This function does
-// not support interpolation.
-func (b *Insert) WithArgs(args ...interface{}) *Insert {
-	b.withArgs(args)
-	return b
-}
-
-// WithArguments applies only in the case where place holders are used in the ON
-// DUPLICATE KEY part. It sets the arguments for the execution with Query+. It
-// internally resets previously applied arguments. This function supports
-// interpolation.
-func (b *Insert) WithArguments(args Arguments) *Insert {
-	b.withArguments(args)
-	return b
-}
-
-// Reset resets the Records and Values slices to be reused. It sets the records
-// slice items to nil for the GC.
-func (b *Insert) Reset() *Insert {
-	for i := 0; i < len(b.Records); i++ {
-		b.Records[i] = nil // remove pointer, etc for GC
-	}
-	b.Records = b.Records[:0]
-	b.Values = b.Values[:0]
-	return b
-}
-
 // SetRecordPlaceHolderCount number of expected place holders within each set.
 // Must be applied if a call to AddColumns has been omitted and WithRecords gets
 // called or Records gets set in a different way.
@@ -280,34 +209,11 @@ func (b *Insert) OnDuplicateKey() *Insert {
 	return b
 }
 
-// Pair appends a column/value pair to the statement. Calling this function
+// WithPairs appends a column/value pair to the statement. Calling this function
 // multiple times with the same column name produces invalid SQL. Slice values
 // and right/left side expressions are not supported and ignored.
-func (b *Insert) Pair(cvs ...*Condition) *Insert {
-	// TODO(CyS) support right side expressions, requires some internal refactoring
-	for _, cv := range cvs {
-		colPos := -1
-		for i, c := range b.Columns {
-			if strings.EqualFold(c, cv.Left) {
-				colPos = i
-				break
-			}
-		}
-		if colPos == -1 {
-			b.Columns = append(b.Columns, cv.Left)
-			if len(b.Values) == 0 {
-				b.Values = make([]Arguments, 1, 5)
-			}
-			b.Values[0] = append(b.Values[0], cv.Right.arg)
-
-		} else { // this is not an ELSEIF
-			if colPos == 0 { // create new slice
-				b.Values = append(b.Values, make(Arguments, len(b.Columns)))
-			}
-			pos := len(b.Values) - 1
-			b.Values[pos][colPos] = cv.Right.arg
-		}
-	}
+func (b *Insert) WithPairs(cvs ...*Condition) *Insert {
+	b.Pairs = cvs
 	return b
 }
 
@@ -318,12 +224,19 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 	return b
 }
 
-// Interpolate if set stringyfies the arguments into the SQL string and returns
-// pre-processed SQL command when calling the function ToSQL. Not suitable for
-// prepared statements. ToSQLs second argument `args` will then be nil.
-func (b *Insert) Interpolate() *Insert {
-	b.IsInterpolate = true
-	return b
+// WithArgs builds the SQL string and sets the optional interfaced arguments for
+// the later execution. It copies the underlying connection and structs.
+func (b *Insert) WithArgs(args ...interface{}) *Arguments {
+	// TODO(CyS) support right side expressions, requires some internal refactoring
+	a := b.withArgs(b, args...)
+	for _, cv := range b.Pairs {
+		b.Columns = append(b.Columns, cv.Left)
+		a.args = append(a.args, cv.Right.arg)
+	}
+
+	a.insertColumnCount = uint(len(b.Columns))
+	a.insertRowCount = uint(b.RowCount)
+	return a
 }
 
 // ToSQL serialized the Insert to a SQL string
@@ -333,24 +246,7 @@ func (b *Insert) ToSQL() (string, []interface{}, error) {
 	if err != nil {
 		return "", nil, errors.WithStack(err)
 	}
-	if b.argsPool == nil {
-		b.argsPool = make(Arguments, 0, b.totalArgCount())
-	}
-	b.argsPool = b.argsPool[:0]
-	b.argsPool, err = b.appendArgs(b.argsPool)
-	if err != nil {
-		return "", nil, errors.WithStack(err)
-	}
-
-	if b.IsInterpolate {
-		buf := bufferpool.Get()
-		err := writeInterpolate(buf, rawSQL, b.argsPool)
-		s := buf.String()
-		bufferpool.Put(buf)
-		return s, nil, err
-	}
-
-	return string(rawSQL), append(b.argsPool.Interfaces(), b.argsRaw...), nil
+	return string(rawSQL), nil, nil
 }
 
 func (b *Insert) writeBuildCache(sql []byte) {
@@ -427,45 +323,30 @@ func (b *Insert) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 	}
 	buf.WriteString("VALUES ")
 
-	rowCount := 1
-	if lr := len(b.Records); lr > 0 {
-		rowCount = lr
-	}
-	if b.RowCount > 0 { // no switch statement
-		rowCount = b.RowCount
-	}
+	if argCount0 := len(b.Columns); argCount0 > 0 {
+		rowCount := 1
+		if b.RowCount > 0 {
+			rowCount = b.RowCount
+		}
 
-	var argCount0 int
-	if b.Records == nil {
-		argCount0 = len(b.Columns)
-		lv := len(b.Values)
-		if lv > 0 {
-			rowCount = lv
-		}
-		if argCount0 == 0 && lv > 0 {
-			argCount0 = len(b.Values[0])
-		}
-	} else {
-		argCount0 = len(b.Columns)
 		if b.RecordPlaceHolderCount > 0 {
 			argCount0 = b.RecordPlaceHolderCount
 		}
-	}
-
-	// write the place holders: (?,?,?)[,(?,?,?)...]
-	for vc := 0; vc < rowCount; vc++ {
-		if vc > 0 {
-			buf.WriteByte(',')
-		}
-		buf.WriteByte('(')
-		for i := 0; i < argCount0; i++ {
-			if i > 0 {
+		for vc := 0; vc < rowCount; vc++ {
+			if vc > 0 {
 				buf.WriteByte(',')
 			}
-			buf.WriteByte(placeHolderRune)
+			buf.WriteByte('(')
+			for i := 0; i < argCount0; i++ {
+				if i > 0 {
+					buf.WriteByte(',')
+				}
+				buf.WriteByte(placeHolderRune)
+			}
+			buf.WriteByte(')')
 		}
-		buf.WriteByte(')')
 	}
+
 	if len(b.OnDuplicateKeyExclude) > 0 || b.IsOnDuplicateKey {
 		if len(b.OnDuplicateKeys) == 0 {
 			b.OnDuplicateKeys = append(b.OnDuplicateKeys, &Condition{})
@@ -500,192 +381,95 @@ func strInSlice(search string, sl []string) bool {
 	return false
 }
 
-func (b *Insert) totalArgCount() int {
-	argCount0 := b.RecordPlaceHolderCount
-	if len(b.Values) > 0 && len(b.Columns) == 0 {
-		argCount0 = len(b.Values[0])
-	}
-	if lc := len(b.Columns); argCount0 < 1 && lc > 0 {
-		argCount0 = lc
-	}
-
-	return len(b.Values) * argCount0
-}
-
-func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
-
-	if b.Select != nil && (b.Select.argsArgs != nil || b.Select.argsRecords != nil) {
-		args, err = b.Select.convertRecordsToArguments()
-		return args, errors.WithStack(err)
-	}
-
-	argCount0 := b.RecordPlaceHolderCount
-	if len(b.Values) > 0 && len(b.Columns) == 0 {
-		argCount0 = len(b.Values[0])
-	}
-	if lc := len(b.Columns); argCount0 < 1 && lc > 0 {
-		argCount0 = lc
-	}
-	totalArgCount := len(b.Values) * argCount0
-	if cap(args) == 0 {
-		args = make(Arguments, 0, totalArgCount+len(b.Records)+len(b.OnDuplicateKeys))
-	}
-	for _, v := range b.Values {
-		args = append(args, v...)
-	}
-
-	if b.Records == nil {
-		args = append(args, b.argsArgs...)
-		return args, errors.WithStack(err)
-	}
-
-	cm := newColumnMap(args, b.qualifiedColumns...) // b.Columns can be nil
-	for _, rec := range b.Records {
-		alBefore := len(cm.Args)
-		if err = rec.MapColumns(cm); err != nil {
-			return nil, errors.WithStack(err)
-		}
-		if addedArgs := len(cm.Args) - alBefore; argCount0 > 0 && addedArgs%argCount0 != 0 {
-			return nil, errors.Mismatch.Newf("[dml] Insert.appendArgs RecordPlaceHolderCount(%d) does not match the number of assembled arguments (%d)", b.RecordPlaceHolderCount, addedArgs)
-		}
-	}
-	args = cm.Args
-
-	args = append(args, b.argsArgs...)
-
-	return args, nil
-}
-
-// Exec executes the statement represented by the Insert object. It returns the
-// raw database/sql Result or an error if there was one. Regarding
-// LastInsertID(): If you insert multiple rows using a single INSERT statement,
-// LAST_INSERT_ID() returns the value generated for the first inserted row only.
-// The reason for this at to make it possible to reproduce easily the same
-// INSERT statement against some other server. If a record resp. and object
-// implements the interface LastInsertIDAssigner then the LastInsertID gets
-// assigned incrementally to the objects.
-func (b *Insert) Exec(ctx context.Context) (sql.Result, error) {
-	if b.Log != nil && b.Log.IsDebug() {
-		defer log.WhenDone(b.Log).Debug("Exec", log.Stringer("sql", b))
-	}
-	result, err := Exec(ctx, b.DB, b)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	if b.Records == nil {
-		return result, nil
-	}
-	lID, err := result.LastInsertId()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	for i, rec := range b.Records {
-		if a, ok := rec.(LastInsertIDAssigner); ok {
-			a.AssignLastInsertID(lID + int64(i))
-		}
-	}
-	return result, nil
-}
+//func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
+//
+//	if b.Select != nil && (b.Select.argsArgs != nil || b.Select.argsRecords != nil) {
+//		args, err = b.Select.convertRecordsToArguments()
+//		return args, errors.WithStack(err)
+//	}
+//
+//	argCount0 := b.RecordPlaceHolderCount
+//	if len(b.Values) > 0 && len(b.Columns) == 0 {
+//		argCount0 = len(b.Values[0])
+//	}
+//	if lc := len(b.Columns); argCount0 < 1 && lc > 0 {
+//		argCount0 = lc
+//	}
+//	totalArgCount := len(b.Values) * argCount0
+//	if cap(args) == 0 {
+//		args = make(Arguments, 0, totalArgCount+len(b.Records)+len(b.OnDuplicateKeys))
+//	}
+//	for _, v := range b.Values {
+//		args = append(args, v...)
+//	}
+//
+//	if b.Records == nil {
+//		args = append(args, b.argsArgs...)
+//		return args, errors.WithStack(err)
+//	}
+//
+//	cm := newColumnMap(args, b.qualifiedColumns...) // b.Columns can be nil
+//	for _, rec := range b.Records {
+//		alBefore := len(cm.Args)
+//		if err = rec.MapColumns(cm); err != nil {
+//			return nil, errors.WithStack(err)
+//		}
+//		if addedArgs := len(cm.Args) - alBefore; argCount0 > 0 && addedArgs%argCount0 != 0 {
+//			return nil, errors.Mismatch.Newf("[dml] Insert.appendArgs RecordPlaceHolderCount(%d) does not match the number of assembled arguments (%d)", b.RecordPlaceHolderCount, addedArgs)
+//		}
+//	}
+//	args = cm.Args
+//
+//	args = append(args, b.argsArgs...)
+//
+//	return args, nil
+//}
 
 // Prepare executes the statement represented by the Insert to create a prepared
 // statement. It returns a custom statement type or an error if there was one.
-// Provided arguments or records in the Insert are getting ignored. The provided
+// Provided arguments or recs in the Insert are getting ignored. The provided
 // context is used for the preparation of the statement, not for the execution
 // of the statement. The returned Stmter is not safe for concurrent use, despite
 // the underlying *sql.Stmt is.
-func (b *Insert) Prepare(ctx context.Context) (Stmter, error) {
-	if b.Log != nil && b.Log.IsDebug() {
-		defer log.WhenDone(b.Log).Debug("Prepare", log.Stringer("sql", b))
-	}
-	sqlStmt, err := Prepare(ctx, b.DB, b)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	cap := len(b.Columns) * b.RecordPlaceHolderCount
-	return &stmtInsert{
-		stmtBase: stmtBase{
-			builderCommon: builderCommon{
-				id:       b.id,
-				argsArgs: make(Arguments, 0, cap),
-				argsRaw:  make([]interface{}, 0, cap),
-				Log:      b.Log,
-			},
-			source: dmlTypeInsert,
-			stmt:   sqlStmt,
-		},
-		ins: b,
-	}, nil
-}
-
-// stmtInsert wraps a *sql.Stmt with a specific SQL query. To create a
-// stmtInsert call the Prepare function of type Insert. stmtInsert is not safe
-// for concurrent use, despite the underlying *sql.Stmt is. Don't forget to call
-// Close!
-type stmtInsert struct {
-	stmtBase
-	ins *Insert
+func (b *Insert) Prepare(ctx context.Context) (*Stmt, error) {
+	return b.prepare(ctx, b.DB, b, dmlSourceInsert)
 }
 
 // WithArguments sets the arguments for the execution with Exec. It internally resets
 // previously applied arguments.
-func (st *stmtInsert) WithArguments(args Arguments) Stmter {
-	st.ins.Records = nil
-	st.ins.Values = st.ins.Values[:0]
-	st.argsArgs = st.argsArgs[:0]
+// TODO remove function
+//func (st *stmtInsert) WithArguments(args Arguments) Stmter {
+//	st.ins.Records = nil
+//	st.ins.Values = st.ins.Values[:0]
+//	st.argsArgs = st.argsArgs[:0]
+//
+//	if lv, mod := len(args), len(st.ins.Columns); mod > 0 && lv > mod && (lv%mod) == 0 {
+//		// now we have more arguments than columns and we can assume that more
+//		// rows gets inserted.
+//		for i := 0; i < len(args); i = i + mod {
+//			st.ins.Values = append(st.ins.Values, args[i:i+mod])
+//		}
+//	} else {
+//		// each call to AddValuesUnsafe equals one row in a table.
+//		st.ins.Values = append(st.ins.Values, args)
+//	}
+//
+//	st.argsArgs, st.ärgErr = st.ins.appendArgs(st.argsArgs)
+//
+//	return st
+//}
 
-	if lv, mod := len(args), len(st.ins.Columns); mod > 0 && lv > mod && (lv%mod) == 0 {
-		// now we have more arguments than columns and we can assume that more
-		// rows gets inserted.
-		for i := 0; i < len(args); i = i + mod {
-			st.ins.Values = append(st.ins.Values, args[i:i+mod])
-		}
-	} else {
-		// each call to AddValuesUnsafe equals one row in a table.
-		st.ins.Values = append(st.ins.Values, args)
-	}
-
-	st.argsArgs, st.ärgErr = st.ins.appendArgs(st.argsArgs)
-
-	return st
-}
-
-// WithRecords sets the records for the execution with Exec. It internally
+// WithRecords sets the recs for the execution with Exec. It internally
 // resets previously applied arguments.
-func (st *stmtInsert) WithRecords(records ...QualifiedRecord) Stmter {
-	st.argsArgs = st.argsArgs[:0]
-	st.ins.Records = nil
-	recs := make([]ColumnMapper, len(records))
-	for i, r := range records {
-		recs[i] = r.Record
-	}
-	st.ins.AddRecords(recs...)
-	st.argsArgs, st.ärgErr = st.ins.appendArgs(st.argsArgs)
-	return st
-}
-
-// Exec executes a query with the previous set arguments or records or
-// without arguments. It does not reset the internal arguments, so multiple
-// executions with the same arguments/records are possible. Number of previously
-// applied arguments or records must be the same as in the defined SQL but
-// With*().ExecContext() can be called in a loop, both are not thread safe.
-func (st *stmtInsert) Exec(ctx context.Context, args ...interface{}) (sql.Result, error) {
-
-	result, err := st.stmtBase.Exec(ctx, args...)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	if st.ins.Records == nil {
-		return result, nil
-	}
-
-	lID, err := result.LastInsertId()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	for i, rec := range st.ins.Records {
-		if a, ok := rec.(LastInsertIDAssigner); ok {
-			a.AssignLastInsertID(lID + int64(i))
-		}
-	}
-	return result, nil
-}
+// TODO remove function
+//func (st *stmtInsert) WithRecords(records ...QualifiedRecord) Stmter {
+//	st.argsArgs = st.argsArgs[:0]
+//	st.ins.Records = nil
+//	recs := make([]ColumnMapper, len(records))
+//	for i, r := range records {
+//		recs[i] = r.Record
+//	}
+//	st.ins.AddRecords(recs...)
+//	st.argsArgs, st.ärgErr = st.ins.appendArgs(st.argsArgs)
+//	return st
+//}

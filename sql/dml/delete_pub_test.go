@@ -43,9 +43,10 @@ func TestDelete_Prepare(t *testing.T) {
 				Table: dml.MakeIdentifier("table"),
 			},
 		}
-		d.DB = dbMock{
+		d.WithDB(dbMock{
 			error: errors.AlreadyClosed.Newf("Who closed myself?"),
-		}
+		})
+
 		d.Where(dml.Column("a").Int(1))
 		stmt, err := d.Prepare(context.TODO())
 		assert.Nil(t, stmt)
@@ -65,9 +66,7 @@ func TestDelete_Prepare(t *testing.T) {
 			WithDB(dbc.DB).
 			Prepare(context.TODO())
 		require.NoError(t, err, "failed creating a prepared statement")
-		defer func() {
-			require.NoError(t, stmt.Close(), "Close on a prepared statement")
-		}()
+		defer dmltest.Close(t, stmt)
 
 		tests := []struct {
 			email   string
@@ -80,9 +79,9 @@ func TestDelete_Prepare(t *testing.T) {
 
 		args := dml.MakeArgs(3)
 		for i, test := range tests {
-			args = args[:0]
+			args = args.Reset()
 
-			res, err := stmt.WithArguments(args.String(test.email).Int(test.groupID)).Exec(context.TODO())
+			res, err := stmt.WithArgs().String(test.email).Int(test.groupID).ExecContext(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -127,7 +126,7 @@ func TestDelete_Prepare(t *testing.T) {
 				Email: dml.MakeNullString(test.email),
 			}
 
-			res, err := stmt.WithRecords(dml.Qualify("", p)).Exec(context.TODO())
+			res, err := stmt.WithArgs().Record("", p).ExecContext(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -155,7 +154,7 @@ func TestDelete_Prepare(t *testing.T) {
 			require.NoError(t, stmt.Close(), "Close on a prepared statement")
 		}()
 
-		res, err := stmt.Exec(context.TODO(), "Peter Gopher", "peter@gopher.go")
+		res, err := stmt.WithArgs().ExecContext(context.TODO(), "Peter Gopher", "peter@gopher.go")
 		require.NoError(t, err, "failed to execute ExecContext")
 
 		lid, err := res.RowsAffected()
@@ -189,9 +188,8 @@ func TestDelete_WithLogger(t *testing.T) {
 		t.Run("Exec", func(t *testing.T) {
 			defer func() {
 				buf.Reset()
-				d.IsInterpolate = false
 			}()
-			_, err := d.Interpolate().Exec(context.TODO())
+			_, err := d.WithArgs().Interpolate().ExecContext(context.TODO())
 			require.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQUEID01\" delete_id: \"UNIQUEID02\" table: \"dml_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID02*/ FROM `dml_people` WHERE (`id` >= 34.56)\"\n",
@@ -213,7 +211,7 @@ func TestDelete_WithLogger(t *testing.T) {
 			tx, err := rConn.BeginTx(context.TODO(), nil)
 			require.NoError(t, err)
 			require.NoError(t, tx.Wrap(func() error {
-				_, err := tx.DeleteFrom("dml_people").Where(dml.Column("id").GreaterOrEqual().Float64(36.56)).Interpolate().Exec(context.TODO())
+				_, err := tx.DeleteFrom("dml_people").Where(dml.Column("id").GreaterOrEqual().Float64(36.56)).WithArgs().Interpolate().ExecContext(context.TODO())
 				return err
 			}))
 			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQUEID01\" tx_id: \"UNIQUEID03\"\nDEBUG Exec conn_pool_id: \"UNIQUEID01\" tx_id: \"UNIQUEID03\" delete_id: \"UNIQUEID04\" table: \"dml_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID04*/ FROM `dml_people` WHERE (`id` >= 36.56)\"\nDEBUG Commit conn_pool_id: \"UNIQUEID01\" tx_id: \"UNIQUEID03\" duration: 0\n",
@@ -230,10 +228,9 @@ func TestDelete_WithLogger(t *testing.T) {
 		t.Run("Exec", func(t *testing.T) {
 			defer func() {
 				buf.Reset()
-				d.IsInterpolate = false
 			}()
 
-			_, err := d.Interpolate().WithArguments(dml.MakeArgs(1).Float64(39.56)).Exec(context.TODO())
+			_, err := d.WithArgs().Float64(39.56).Interpolate().ExecContext(context.TODO())
 			require.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQUEID01\" conn_id: \"UNIQUEID05\" delete_id: \"UNIQUEID06\" table: \"dml_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID06*/ FROM `dml_people` WHERE (`id` >= ?)\"\n",
@@ -258,7 +255,7 @@ func TestDelete_WithLogger(t *testing.T) {
 			require.NoError(t, err)
 			defer stmt.Close()
 
-			_, err = stmt.Exec(context.TODO(), 41.57)
+			_, err = stmt.WithArgs().ExecContext(context.TODO(), 41.57)
 			require.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQUEID01\" conn_id: \"UNIQUEID05\" delete_id: \"UNIQUEID06\" table: \"dml_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID06*/ FROM `dml_people` WHERE (`id` >= ?)\"\nDEBUG Exec conn_pool_id: \"UNIQUEID01\" conn_id: \"UNIQUEID05\" delete_id: \"UNIQUEID06\" table: \"dml_people\" duration: 0 arg_len: 1\n",
@@ -270,7 +267,7 @@ func TestDelete_WithLogger(t *testing.T) {
 			tx, err := conn.BeginTx(context.TODO(), nil)
 			require.NoError(t, err)
 			require.NoError(t, tx.Wrap(func() error {
-				_, err := tx.DeleteFrom("dml_people").Where(dml.Column("id").GreaterOrEqual().Float64(37.56)).Interpolate().Exec(context.TODO())
+				_, err := tx.DeleteFrom("dml_people").Where(dml.Column("id").GreaterOrEqual().Float64(37.56)).WithArgs().Interpolate().ExecContext(context.TODO())
 				return err
 			}))
 
@@ -283,7 +280,7 @@ func TestDelete_WithLogger(t *testing.T) {
 			tx, err := conn.BeginTx(context.TODO(), nil)
 			require.NoError(t, err)
 			require.Error(t, tx.Wrap(func() error {
-				_, err := tx.DeleteFrom("dml_people").Where(dml.Column("id").GreaterOrEqual().PlaceHolder()).Interpolate().Exec(context.TODO())
+				_, err := tx.DeleteFrom("dml_people").Where(dml.Column("id").GreaterOrEqual().PlaceHolder()).WithArgs().Interpolate().ExecContext(context.TODO())
 				return err
 			}))
 

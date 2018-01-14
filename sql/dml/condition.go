@@ -89,7 +89,7 @@ func (o Op) write(w *bytes.Buffer, args ...argument) (err error) {
 		_, err = w.WriteString(" IS NOT NULL")
 	case In, NotIn:
 		w.WriteString(" IN ")
-		err = Arguments(args).Write(w)
+		err = Arguments{args: args}.Write(w)
 	case Like, NotLike:
 		w.WriteString(" LIKE ")
 		err = arg.writeTo(w, 0)
@@ -112,19 +112,19 @@ func (o Op) write(w *bytes.Buffer, args ...argument) (err error) {
 		}
 	case Greatest:
 		w.WriteString(" GREATEST ")
-		err = Arguments(args).Write(w)
+		err = Arguments{args: args}.Write(w)
 	case Least:
 		w.WriteString(" LEAST ")
-		err = Arguments(args).Write(w)
+		err = Arguments{args: args}.Write(w)
 	case Coalesce:
 		w.WriteString(" COALESCE ")
-		err = Arguments(args).Write(w)
+		err = Arguments{args: args}.Write(w)
 	case Xor:
 		w.WriteString(" XOR ")
 		err = arg.writeTo(w, 0)
 	case Exists, NotExists:
 		w.WriteString(" EXISTS ")
-		err = Arguments(args).Write(w)
+		err = Arguments{args: args}.Write(w)
 	case Less:
 		w.WriteString(" < ")
 		err = arg.writeTo(w, 0)
@@ -176,7 +176,7 @@ type Condition struct {
 		// arg gets written into the SQL string as a persistent argument
 		arg argument // Only set in case of no expression
 		// args same as arg but only used in case of an expression.
-		args Arguments
+		args *Arguments
 		// Select adds a sub-select to the where statement. Column must be
 		// either a column name or anything else which can handle the result of
 		// a sub-select.
@@ -840,10 +840,10 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 
 			// Only write the operator in case there is no place holder and we
 			// have one value.
-			if phCount == 0 && (len(cnd.Right.args) == 1 || cnd.Right.arg.isSet) && cnd.Operator > 0 {
+			if phCount == 0 && (len(cnd.Right.args.args) == 1 || cnd.Right.arg.isSet) && cnd.Operator > 0 {
 				eArg := cnd.Right.arg
 				if !eArg.isSet {
-					eArg = cnd.Right.args[0]
+					eArg = cnd.Right.args.args[0]
 				}
 				cnd.Operator.write(w, eArg)
 			}
@@ -875,7 +875,7 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 			}
 			w.WriteByte(')')
 
-		case cnd.Right.arg.isSet && cnd.Right.args == nil: // One Argument and no expression
+		case cnd.Right.arg.isSet && cnd.Right.args.isEmpty(): // One Argument and no expression
 			Quoter.WriteIdentifier(w, cnd.Left)
 			if cnd.Right.arg.len() > 1 && cnd.Operator == 0 { // no operator but slice applied, so creating an IN query.
 				cnd.Operator = In
@@ -884,12 +884,12 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 				return nil, errors.WithStack(err)
 			}
 
-		case !cnd.Right.arg.isSet && cnd.Right.args != nil:
+		case !cnd.Right.arg.isSet && !cnd.Right.args.isEmpty():
 			Quoter.WriteIdentifier(w, cnd.Left)
 			if cnd.Right.args.Len() > 1 && cnd.Operator == 0 { // no operator but slice applied, so creating an IN query.
 				cnd.Operator = In
 			}
-			if err = cnd.Operator.write(w, cnd.Right.args...); err != nil {
+			if err = cnd.Operator.write(w, cnd.Right.args.args...); err != nil {
 				return nil, errors.WithStack(err)
 			}
 
@@ -922,7 +922,7 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 				w.WriteString(cnd.Right.PlaceHolder)
 			}
 
-		case !cnd.Right.arg.isSet && cnd.Right.args == nil: // No Argument at all, which kinda is the default case
+		case !cnd.Right.arg.isSet && cnd.Right.args.isEmpty(): // No Argument at all, which kinda is the default case
 			Quoter.WriteIdentifier(w, cnd.Left)
 			cOp := cnd.Operator
 			if cOp == 0 {
@@ -951,7 +951,7 @@ func (cs Conditions) writeSetClauses(w *bytes.Buffer, placeHolders []string) ([]
 		w.WriteByte('=')
 
 		switch {
-		case cnd.Right.arg.isSet && cnd.Right.args == nil: // One Argument and no expression
+		case cnd.Right.arg.isSet && cnd.Right.args.isEmpty(): // One Argument and no expression
 			cnd.Right.arg.writeTo(w, 0)
 		case cnd.Right.IsExpression: // maybe that case is superfluous
 			if _, err := writeExpression(w, cnd.Right.Column, cnd.Right.args); err != nil {

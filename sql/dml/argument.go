@@ -16,13 +16,19 @@ package dml
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"database/sql/driver"
 	"fmt"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
 // https://www.adampalmer.me/iodigitalsec/2013/08/18/mysql_real_escape_string-wont-magically-solve-your-sql-injection-problems/
@@ -501,19 +507,210 @@ func (arg argument) GoString() string {
 	return buf.String()
 }
 
-// Arguments a collection of primitive types or slices of primitive types. The
-// method receiver functions have the same names as in type RowConvert.
-type Arguments []argument
+const (
+	argOptionExpandPlaceholder = 1 << iota
+	argOptionInterpolate
+)
+
+// Arguments a collection of primitive types or slices of primitive types.
+// It acts as some kind of prepared statement.
+type Arguments struct {
+	insertColumnCount uint
+	insertRowCount    uint
+	base              builderCommon
+	Options           uint
+	qb                QueryBuilder
+	raw               []interface{}
+	args              []argument
+	recs              []QualifiedRecord
+}
+
+func (a *Arguments) ToSQL() (string, []interface{}, error) {
+	return a.prepareArgs(false)
+}
+
+func (a *Arguments) toSQLAppendArgs(args ...interface{}) (string, []interface{}, error) {
+	sqlStr, tArgs, err := a.qb.ToSQL()
+	if err != nil {
+		return "", nil, errors.WithStack(err)
+	}
+	args = append(args, tArgs...)
+	return sqlStr, append(args, a.raw...), nil
+}
+
+// Interpolate if set stringyfies the arguments into the SQL string and returns
+// pre-processed SQL command when calling the function ToSQL. Not suitable for
+// prepared statements. ToSQLs second argument `args` will then be nil.
+func (a *Arguments) Interpolate() *Arguments {
+	a.Options |= argOptionInterpolate
+	return a
+}
+
+// ExpandPlaceHolders repeats the place holders with the provided argument
+// count. If the amount of arguments does not match the number of place holders,
+// a mismatch error gets returned.
+//		ExpandPlaceHolders("SELECT * FROM table WHERE id IN (?) AND status IN (?)", Int(myIntSlice...), String(myStrSlice...))
+// Gets converted to:
+//		SELECT * FROM table WHERE id IN (?,?) AND status IN (?,?,?)
+// The place holders are of course depending on the values in the Arg*
+// functions. This function should be generally used when dealing with prepared
+// statements or interpolation.
+func (a *Arguments) ExpandPlaceHolders() *Arguments {
+	a.Options |= argOptionExpandPlaceholder
+	return a
+}
 
 // MakeArgs creates a new argument slice with the desired capacity.
-func MakeArgs(cap int) Arguments {
-	return make(Arguments, 0, cap)
+func MakeArgs(cap int) *Arguments { return &Arguments{args: make([]argument, 0, cap)} }
+
+// https://github.com/golang/go/issues/16323 benchmark will show the results if a pool is a good fit.
+var iFaceSlicePool = sync.Pool{
+	New: func() interface{} {
+		return make([]interface{}, 0, 5)
+	},
+}
+
+func iFaceSlicePoolGet() []interface{} {
+	return iFaceSlicePool.Get().([]interface{})
+}
+
+func iFaceSlicePoolPut(v []interface{}) {
+	iFaceSlicePool.Put(v[:0])
+}
+
+func (a *Arguments) isEmpty() bool {
+	if a == nil {
+		return true
+	}
+	return len(a.raw) == 0 && len(a.args) == 0 && len(a.recs) == 0
+}
+
+func (a *Arguments) hasArgs() bool {
+	if a == nil {
+		return false
+	}
+	return len(a.args) > 0
+}
+
+// multiplyArguments is only applicable when using *Union as a template.
+// multiplyArguments repeats the `args` variable n-times to match the number of
+// generated SELECT queries in the final UNION statement. It should be called
+// after all calls to `StringReplace` have been made.
+func (a *Arguments) multiplyArguments(factor int) *Arguments {
+	if a == nil || factor < 2 {
+		return a
+	}
+	newA := MakeArgs(len(a.args) * factor)
+	lArgs := len(a.args)
+	for i := 0; i < factor; i++ {
+		copy(newA.args[i*lArgs:], a.args)
+	}
+	return newA
+}
+
+// prepareArgs transforms mainly the Arguments into []interface{} but also
+// appends the `args` from the Exec+ or Query+ function.
+// All method receivers are not thread safe.
+func (a *Arguments) prepareArgs(usePool bool) (_ string, iFaces []interface{}, _ error) {
+	sqlStr, args, err := a.qb.ToSQL()
+	if err != nil {
+		return "", nil, errors.WithStack(err)
+	}
+
+	if a.isEmpty() {
+		return sqlStr, args, nil
+	}
+
+	if usePool {
+		iFaces = iFaceSlicePoolGet()
+	}
+	argsArgs, err := a.convertRecordsToArguments()
+
+	switch {
+	case a.Options > 0 && len(a.raw) > 0 && len(a.recs) == 0 && len(a.args) == 0:
+		return "", nil, errors.NotAllowed.Newf("[dml] ExpandPlaceholders supports only Records and Arguments and not an interface slice.")
+	case a.Options&argOptionExpandPlaceholder != 0:
+		if phCount := strings.Count(sqlStr, placeHolderStr); phCount < a.Len() {
+			var buf strings.Builder
+			buf.Grow(len(sqlStr))
+			if err = expandPlaceHolders(buf, sqlStr, a); err != nil {
+				return "", nil, errors.WithStack(err)
+			}
+			sqlStr = buf.String()
+		}
+	case a.Options&argOptionInterpolate != 0:
+		buf := bufferpool.Get()
+		if err := writeInterpolate(buf, sqlStr, a); err != nil {
+			bufferpool.Put(buf)
+			return "", nil, errors.WithStack(err)
+		}
+		sqlStr = buf.String()
+		bufferpool.Put(buf)
+	}
+
+	iFaces = argsArgs.Interfaces(iFaces)
+	iFaces = append(iFaces, a.raw...)
+	iFaces = append(iFaces, args...)
+	return sqlStr, iFaces, err
+}
+
+func (a *Arguments) convertRecordsToArguments() (*Arguments, error) {
+	if a.base.templateStmtCount == 0 {
+		a.base.templateStmtCount = 1
+	}
+	if len(a.args) == 0 && len(a.recs) == 0 {
+		return a, nil
+	}
+
+	if len(a.args) > 0 && len(a.recs) == 0 && a.base.templateStmtCount > 1 && !a.hasNamedArgs() {
+		return a.multiplyArguments(a.base.templateStmtCount), nil
+	}
+
+	cm := newColumnMap(MakeArgs(len(a.args)+len(a.recs)), "") // can use an arg pool Arguments
+	var unnamedCounter int
+	for tsc := 0; tsc < a.base.templateStmtCount; tsc++ { // only in case of UNION statements in combination with a template SELECT, can be optimized later
+		for _, identifier := range a.base.qualifiedColumns { // contains the correct order as the place holders appear in the SQL string
+			qualifier, column := splitColumn(identifier)
+			if qualifier == "" {
+				qualifier = a.base.defaultQualifier
+			}
+			var cut bool
+			column, cut = cutPrefix(column, namedArgStartStr)
+			cm.columns[0] = column // length is always one!
+
+			if !cut { // if the colon : cannot be found then a simple place holder ? has been detected
+				if pArg, ok := a.unnamedArgByPos(unnamedCounter); ok {
+					cm.Args.args = append(cm.Args.args, pArg)
+				}
+				unnamedCounter++
+				//continue
+			}
+			for _, qRec := range a.recs {
+				if qRec.Qualifier == "" {
+					qRec.Qualifier = a.base.defaultQualifier
+				}
+				if qRec.Qualifier == qualifier {
+					if err := qRec.Record.MapColumns(cm); err != nil {
+						return a, errors.WithStack(err)
+					}
+				}
+			}
+
+			if err := a.MapColumns(cm); err != nil {
+				return a, errors.WithStack(err)
+			}
+		}
+	}
+	if len(cm.Args.args) == 0 {
+		cm.Args.args = append(cm.Args.args, a.args...)
+	}
+	return cm.Args, nil
 }
 
 // unnamedArgByPos returns an unnamed argument by its position.
-func (a Arguments) unnamedArgByPos(pos int) (argument, bool) {
+func (a *Arguments) unnamedArgByPos(pos int) (argument, bool) {
 	unnamedCounter := 0
-	for _, arg := range a {
+	for _, arg := range a.args {
 		if arg.name == "" {
 			if unnamedCounter == pos {
 				return arg, true
@@ -524,8 +721,8 @@ func (a Arguments) unnamedArgByPos(pos int) (argument, bool) {
 	return argument{}, false
 }
 
-func (a Arguments) hasNamedArgs() bool {
-	for _, arg := range a {
+func (a *Arguments) hasNamedArgs() bool {
+	for _, arg := range a.args {
 		if arg.name != "" {
 			return true
 		}
@@ -536,9 +733,9 @@ func (a Arguments) hasNamedArgs() bool {
 // MapColumns allows to merge one argument slice with another depending on the
 // matched columns. Each argument in the slice must be a named argument.
 // Implements interface ColumnMapper.
-func (a Arguments) MapColumns(cm *ColumnMap) error {
+func (a *Arguments) MapColumns(cm *ColumnMap) error {
 	if cm.Mode() == ColumnMapEntityReadAll {
-		cm.Args = append(cm.Args, a...)
+		cm.Args.args = append(cm.Args.args, a.args...)
 		return cm.Err()
 	}
 	for cm.Next() {
@@ -546,10 +743,10 @@ func (a Arguments) MapColumns(cm *ColumnMap) error {
 		// access, but first benchmark it. This for loop can be the 3rd one in the
 		// overall chain.
 		c := cm.Column()
-		for _, arg := range a {
+		for _, arg := range a.args {
 			// Case sensitive comparison
 			if c != "" && arg.name == c {
-				cm.Args = append(cm.Args, arg)
+				cm.Args.args = append(cm.Args.args, arg)
 				break
 			}
 		}
@@ -557,19 +754,19 @@ func (a Arguments) MapColumns(cm *ColumnMap) error {
 	return cm.Err()
 }
 
-func (a Arguments) GoString() string {
+func (a *Arguments) GoString() string {
 	buf := new(bytes.Buffer)
-	fmt.Fprintf(buf, "dml.MakeArgs(%d)", len(a))
-	for _, arg := range a {
+	fmt.Fprintf(buf, "dml.MakeArgs(%d)", len(a.args))
+	for _, arg := range a.args {
 		buf.WriteString(arg.GoString())
 	}
 	return buf.String()
 }
 
 // Len returns the total length of all arguments.
-func (a Arguments) Len() int {
+func (a *Arguments) Len() int {
 	var l int
-	for _, arg := range a {
+	for _, arg := range a.args {
 		l += arg.len()
 	}
 	return l
@@ -577,10 +774,10 @@ func (a Arguments) Len() int {
 
 // Write writes all arguments into buf and separates by a comma.
 func (a Arguments) Write(buf *bytes.Buffer) error {
-	if len(a) > 1 {
+	if len(a.args) > 1 {
 		buf.WriteByte('(')
 	}
-	for j, arg := range a {
+	for j, arg := range a.args {
 		if j > 0 {
 			buf.WriteByte(',')
 		}
@@ -588,24 +785,25 @@ func (a Arguments) Write(buf *bytes.Buffer) error {
 			return errors.Wrapf(err, "[dml] args write failed at pos %d with argument %#v", j, arg)
 		}
 	}
-	if len(a) > 1 {
+	if len(a.args) > 1 {
 		buf.WriteByte(')')
 	}
 	return nil
 }
 
 // Interfaces creates an interface slice with flatend values. Each type is one
-// of the allowed types in driver.Value.
-func (a Arguments) Interfaces(args ...interface{}) []interface{} {
+// of the allowed types in driver.Value. It appends its values to the `args`
+// slice.
+func (a *Arguments) Interfaces(args ...interface{}) []interface{} {
 	const maxInt64 = 1<<63 - 1
-	if len(a) == 0 {
+	if len(a.args) == 0 {
 		return nil
 	}
 	if args == nil {
-		args = make([]interface{}, 0, 2*len(a))
+		args = make([]interface{}, 0, 2*len(a.args))
 	}
 
-	for _, arg := range a {
+	for _, arg := range a.args {
 		switch vv := arg.value.(type) {
 
 		case bool, string, []byte, time.Time, float64, int64, nil:
@@ -710,69 +908,90 @@ func (a Arguments) Interfaces(args ...interface{}) []interface{} {
 	return args
 }
 
-func (a Arguments) add(v interface{}) Arguments {
-	if l := len(a); l > 0 {
+func (a *Arguments) add(v interface{}) *Arguments {
+	if l := len(a.args); l > 0 {
 		// look back if there might be a name.
-		if arg := a[l-1]; !arg.isSet {
+		if arg := a.args[l-1]; !arg.isSet {
 			// The previous call Name() has set the name and now we set the
 			// value, but don't append a new entry.
 			arg.isSet = true
 			arg.value = v
-			a[l-1] = arg
+			a.args[l-1] = arg
 			return a
 		}
 	}
-	return append(a, argument{isSet: true, value: v})
+	a.args = append(a.args, argument{isSet: true, value: v})
+	return a
 }
 
-func (a Arguments) Null() Arguments                          { return a.add(nil) }
-func (a Arguments) Unsafe(arg interface{}) Arguments         { return a.add(arg) }
-func (a Arguments) Int(i int) Arguments                      { return a.add(i) }
-func (a Arguments) Ints(i ...int) Arguments                  { return a.add(i) }
-func (a Arguments) Int64(i int64) Arguments                  { return a.add(i) }
-func (a Arguments) Int64s(i ...int64) Arguments              { return a.add(i) }
-func (a Arguments) Uint(i uint) Arguments                    { return a.add(uint64(i)) }
-func (a Arguments) Uints(i ...uint) Arguments                { return a.add(i) }
-func (a Arguments) Uint64(i uint64) Arguments                { return a.add(i) }
-func (a Arguments) Uint64s(i ...uint64) Arguments            { return a.add(i) }
-func (a Arguments) Float64(f float64) Arguments              { return a.add(f) }
-func (a Arguments) Float64s(f ...float64) Arguments          { return a.add(f) }
-func (a Arguments) Bool(b bool) Arguments                    { return a.add(b) }
-func (a Arguments) Bools(b ...bool) Arguments                { return a.add(b) }
-func (a Arguments) String(s string) Arguments                { return a.add(s) }
-func (a Arguments) Strings(s ...string) Arguments            { return a.add(s) }
-func (a Arguments) Time(t time.Time) Arguments               { return a.add(t) }
-func (a Arguments) Times(t ...time.Time) Arguments           { return a.add(t) }
-func (a Arguments) Bytes(b []byte) Arguments                 { return a.add(b) }
-func (a Arguments) BytesSlice(b ...[]byte) Arguments         { return a.add(b) }
-func (a Arguments) NullString(nv NullString) Arguments       { return a.add(nv) }
-func (a Arguments) NullStrings(nv ...NullString) Arguments   { return a.add(nv) }
-func (a Arguments) NullFloat64(nv NullFloat64) Arguments     { return a.add(nv) }
-func (a Arguments) NullFloat64s(nv ...NullFloat64) Arguments { return a.add(nv) }
-func (a Arguments) NullInt64(nv NullInt64) Arguments         { return a.add(nv) }
-func (a Arguments) NullInt64s(nv ...NullInt64) Arguments     { return a.add(nv) }
-func (a Arguments) NullBool(nv NullBool) Arguments           { return a.add(nv) }
-func (a Arguments) NullBools(nv ...NullBool) Arguments       { return a.add(nv) }
-func (a Arguments) NullTime(nv NullTime) Arguments           { return a.add(nv) }
-func (a Arguments) NullTimes(nv ...NullTime) Arguments       { return a.add(nv) }
+// TODO QualifiedRecord can be removed because we can use Arguments.Name function to qualify a record.
+
+func (a *Arguments) Record(qualifier string, record ColumnMapper) *Arguments {
+	a.recs = append(a.recs, Qualify(qualifier, record))
+	return a
+}
+
+// Arguments sets the internal arguments slice to the provided argument.
+func (a *Arguments) Arguments(args *Arguments) *Arguments {
+	a.args = args.args
+	a.recs = args.recs
+	a.raw = args.raw
+	return a
+}
+func (a *Arguments) Records(records ...QualifiedRecord) *Arguments { a.recs = records; return a }
+func (a *Arguments) Raw(raw ...interface{}) *Arguments             { a.raw = raw; return a }
+
+func (a *Arguments) Null() *Arguments                          { return a.add(nil) }
+func (a *Arguments) Unsafe(arg interface{}) *Arguments         { return a.add(arg) }
+func (a *Arguments) Int(i int) *Arguments                      { return a.add(i) }
+func (a *Arguments) Ints(i ...int) *Arguments                  { return a.add(i) }
+func (a *Arguments) Int64(i int64) *Arguments                  { return a.add(i) }
+func (a *Arguments) Int64s(i ...int64) *Arguments              { return a.add(i) }
+func (a *Arguments) Uint(i uint) *Arguments                    { return a.add(uint64(i)) }
+func (a *Arguments) Uints(i ...uint) *Arguments                { return a.add(i) }
+func (a *Arguments) Uint64(i uint64) *Arguments                { return a.add(i) }
+func (a *Arguments) Uint64s(i ...uint64) *Arguments            { return a.add(i) }
+func (a *Arguments) Float64(f float64) *Arguments              { return a.add(f) }
+func (a *Arguments) Float64s(f ...float64) *Arguments          { return a.add(f) }
+func (a *Arguments) Bool(b bool) *Arguments                    { return a.add(b) }
+func (a *Arguments) Bools(b ...bool) *Arguments                { return a.add(b) }
+func (a *Arguments) String(s string) *Arguments                { return a.add(s) }
+func (a *Arguments) Strings(s ...string) *Arguments            { return a.add(s) }
+func (a *Arguments) Time(t time.Time) *Arguments               { return a.add(t) }
+func (a *Arguments) Times(t ...time.Time) *Arguments           { return a.add(t) }
+func (a *Arguments) Bytes(b []byte) *Arguments                 { return a.add(b) }
+func (a *Arguments) BytesSlice(b ...[]byte) *Arguments         { return a.add(b) }
+func (a *Arguments) NullString(nv NullString) *Arguments       { return a.add(nv) }
+func (a *Arguments) NullStrings(nv ...NullString) *Arguments   { return a.add(nv) }
+func (a *Arguments) NullFloat64(nv NullFloat64) *Arguments     { return a.add(nv) }
+func (a *Arguments) NullFloat64s(nv ...NullFloat64) *Arguments { return a.add(nv) }
+func (a *Arguments) NullInt64(nv NullInt64) *Arguments         { return a.add(nv) }
+func (a *Arguments) NullInt64s(nv ...NullInt64) *Arguments     { return a.add(nv) }
+func (a *Arguments) NullBool(nv NullBool) *Arguments           { return a.add(nv) }
+func (a *Arguments) NullBools(nv ...NullBool) *Arguments       { return a.add(nv) }
+func (a *Arguments) NullTime(nv NullTime) *Arguments           { return a.add(nv) }
+func (a *Arguments) NullTimes(nv ...NullTime) *Arguments       { return a.add(nv) }
 
 // Name sets the name for the following argument. Calling Name two times after
 // each other sets the first call to Name to a NULL value. A call to Name should
 // always follow a call to a function type like Int, Float64s or NullTime.
 // Name may contain the placeholder prefix colon.
-func (a Arguments) Name(n string) Arguments { return append(a, argument{name: n}) }
+func (a *Arguments) Name(n string) *Arguments {
+	a.args = append(a.args, argument{name: n})
+	return a
+}
 
 // TODO: maybe use such a function to set the position, but then add a new field: pos int to the argument struct
-// func (a Arguments) Pos(n int) Arguments { return append(a, argument{name: n}) }
+// func (a *Arguments) Pos(n int) *Arguments { return append(a, argument{name: n}) }
 
 // Reset resets the slice for new usage retaining the already allocated memory.
-func (a Arguments) Reset() Arguments { return a[:0] }
+func (a *Arguments) Reset() *Arguments { a.args = a.args[:0]; return a }
 
 // DriverValue adds multiple of the same underlying values to the argument
 // slice. When using different values, the last applied value wins and gets
 // added to the argument slice. For example driver.Values of type `int` will
 // result in []int.
-func (a Arguments) DriverValue(dvs ...driver.Valuer) Arguments {
+func (a *Arguments) DriverValue(dvs ...driver.Valuer) *Arguments {
 	// value is a value that drivers must be able to handle.
 	// It is either nil or an instance of one of these types:
 	//
@@ -833,14 +1052,14 @@ func (a Arguments) DriverValue(dvs ...driver.Valuer) Arguments {
 		arg.value = times
 	}
 
-	a = append(a, arg)
+	a.args = append(a.args, arg)
 	return a
 }
 
 // DriverValues adds each driver.Value as its own argument to the argument
 // slice. It panics if the underlying type is not one of the allowed of
 // interface driver.Valuer.
-func (a Arguments) DriverValues(dvs ...driver.Valuer) Arguments {
+func (a *Arguments) DriverValues(dvs ...driver.Valuer) *Arguments {
 	// value is a value that drivers must be able to handle.
 	// It is either nil or an instance of one of these types:
 	//
@@ -882,8 +1101,8 @@ func (a Arguments) DriverValues(dvs ...driver.Valuer) Arguments {
 	return a
 }
 
-func iFaceToArgs(values ...interface{}) Arguments {
-	args := make(Arguments, 0, len(values))
+func iFaceToArgs(values ...interface{}) *Arguments {
+	args := MakeArgs(len(values))
 	for _, val := range values {
 		switch v := val.(type) {
 		case float32:
@@ -925,4 +1144,422 @@ func iFaceToArgs(values ...interface{}) Arguments {
 		}
 	}
 	return args
+}
+
+// WithDB sets the database query object.
+func (a *Arguments) WithDB(db QueryExecPreparer) *Arguments {
+	a.base.DB = db
+	return a
+}
+
+// Exec executes the statement represented by the Insert object. It returns the
+// raw database/sql Result or an error if there was one. Regarding
+// LastInsertID(): If you insert multiple rows using a single INSERT statement,
+// LAST_INSERT_ID() returns the value generated for the first inserted row only.
+// The reason for this at to make it possible to reproduce easily the same
+// INSERT statement against some other server. If a record resp. and object
+// implements the interface LastInsertIDAssigner then the LastInsertID gets
+// assigned incrementally to the objects.
+func (a *Arguments) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
+	return a.exec(ctx, args...)
+}
+
+func (a *Arguments) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error) {
+	return a.query(ctx, args...)
+}
+
+// QueryRow traditional way, allocation heavy.
+func (a *Arguments) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row {
+	panic(errors.NotImplemented.Newf("TODO implement"))
+	return nil
+}
+
+// Load loads data from a query into an object. Load can load a single row
+// or n-rows.
+func (a *Arguments) Load(ctx context.Context, s ColumnMapper, args ...interface{}) (rowCount uint64, err error) {
+	if a.base.Log != nil && a.base.Log.IsDebug() {
+		defer log.WhenDone(a.base.Log).Debug("Load", log.Uint64("row_count", rowCount), log.String("object_type", fmt.Sprintf("%T", s)), log.Err(err))
+	}
+	r, err := a.query(ctx, args...)
+	rowCount, err = load(r, err, s, &ColumnMap{}) // sync.Pool would be useful for ColumnMap
+	return rowCount, errors.WithStack(err)
+}
+
+// LoadInt64 executes the prepared statement and returns the value as an
+// int64. It returns a NotFound error if the query returns nothing.
+func (a *Arguments) LoadInt64(ctx context.Context, args ...interface{}) (int64, error) {
+	if a.base.Log != nil && a.base.Log.IsDebug() {
+		defer log.WhenDone(a.base.Log).Debug("LoadInt64")
+	}
+	return loadInt64(a.query(ctx, args...))
+}
+
+// LoadInt64s executes the Select and returns the value as a slice of
+// int64s.
+func (a *Arguments) LoadInt64s(ctx context.Context, args ...interface{}) (ret []int64, err error) {
+	if a.base.Log != nil && a.base.Log.IsDebug() {
+		// do not use fullSQL because we might log sensitive data
+		defer log.WhenDone(a.base.Log).Debug("LoadInt64s", log.Int("row_count", len(ret)), log.Err(err))
+	}
+	ret, err = loadInt64s(a.query(ctx, args...))
+	// Do not simplify it because we need ret in the defer. we don't log errors
+	// because they get handled.
+	return ret, err
+}
+
+// LoadUint64 executes the Select and returns the value at an uint64. It returns
+// a NotFound error if the query returns nothing. This function comes in handy
+// when performing a COUNT(*) query. See function `Select.Count`.
+func (a *Arguments) LoadUint64(ctx context.Context, args ...interface{}) (_ uint64, err error) {
+	if a.base.Log != nil && a.base.Log.IsDebug() {
+		// do not use fullSQL because we might log sensitive data
+		defer log.WhenDone(a.base.Log).Debug("LoadUint64", log.String("id", a.base.id), log.Err(err))
+	}
+
+	rows, err := a.query(ctx, args...)
+	if err != nil {
+		return 0, errors.WithStack(err)
+	}
+	defer func() {
+		if errC := rows.Close(); err == nil && errC != nil {
+			err = errors.WithStack(errC)
+		}
+	}()
+
+	var value uint64
+	found := false
+	for rows.Next() {
+		if err = rows.Scan(&value); err != nil {
+			return 0, errors.WithStack(err)
+		}
+		found = true
+	}
+	if err = rows.Err(); err != nil {
+		return 0, errors.WithStack(err)
+	}
+	if !found {
+		err = errors.NotFound.Newf("[dml] LoadUint64 value not found")
+	}
+	return value, err
+}
+
+// LoadUint64s executes the Select and returns the value at a slice of uint64s.
+func (a *Arguments) LoadUint64s(ctx context.Context, args ...interface{}) (values []uint64, err error) {
+	if a.base.Log != nil && a.base.Log.IsDebug() {
+		// do not use fullSQL because we might log sensitive data
+		defer log.WhenDone(a.base.Log).Debug("LoadUint64s", log.Int("row_count", len(values)), log.String("id", a.base.id), log.Err(err))
+	}
+
+	rows, err := a.query(ctx, args...)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	defer func() {
+		if errC := rows.Close(); err == nil && errC != nil {
+			err = errors.WithStack(errC)
+		}
+	}()
+
+	values = make([]uint64, 0, 10)
+	for rows.Next() {
+		var value uint64
+		if err = rows.Scan(&value); err != nil {
+			return nil, errors.WithStack(err)
+		}
+		values = append(values, value)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return values, nil
+}
+
+// LoadFloat64 executes the Select and returns the value at an float64. It
+// returns a NotFound error if the query returns nothing.
+func (a *Arguments) LoadFloat64(ctx context.Context, args ...interface{}) (_ float64, err error) {
+	if a.base.Log != nil && a.base.Log.IsDebug() {
+		// do not use fullSQL because we might log sensitive data
+		defer log.WhenDone(a.base.Log).Debug("LoadFloat64", log.String("id", a.base.id), log.Err(err))
+	}
+
+	rows, err := a.query(ctx, args...)
+	if err != nil {
+		return 0, errors.WithStack(err)
+	}
+	defer func() {
+		if errC := rows.Close(); err == nil && errC != nil {
+			err = errors.WithStack(errC)
+		}
+	}()
+
+	var value float64
+	found := false
+	for rows.Next() {
+		if err = rows.Scan(&value); err != nil {
+			return 0, errors.WithStack(err)
+		}
+		found = true
+	}
+	if err = rows.Err(); err != nil {
+		return 0, errors.WithStack(err)
+	}
+	if !found {
+		err = errors.NotFound.Newf("[dml] LoadFloat64 value not found")
+	}
+	return value, err
+}
+
+// LoadFloat64s executes the Select and returns the value at a slice of float64s.
+func (a *Arguments) LoadFloat64s(ctx context.Context, args ...interface{}) (_ []float64, err error) {
+	if a.base.Log != nil && a.base.Log.IsDebug() {
+		// do not use fullSQL because we might log sensitive data
+		defer log.WhenDone(a.base.Log).Debug("LoadFloat64s", log.String("id", a.base.id), log.Err(err))
+	}
+
+	rows, err := a.query(ctx, args...)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	defer func() {
+		if errC := rows.Close(); err == nil && errC != nil {
+			err = errors.WithStack(errC)
+		}
+	}()
+
+	values := make([]float64, 0, 10)
+	for rows.Next() {
+		var value float64
+		if err = rows.Scan(&value); err != nil {
+			return nil, errors.WithStack(err)
+		}
+		values = append(values, value)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return values, err
+}
+
+// LoadString executes the Select and returns the value as a string. It
+// returns a NotFound error if the row amount is not equal one.
+func (a *Arguments) LoadString(ctx context.Context, args ...interface{}) (_ string, err error) {
+	if a.base.Log != nil && a.base.Log.IsDebug() {
+		// do not use fullSQL because we might log sensitive data
+		defer log.WhenDone(a.base.Log).Debug("LoadString", log.String("id", a.base.id), log.Err(err))
+	}
+
+	rows, err := a.query(ctx, args...)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	defer func() {
+		if errC := rows.Close(); err == nil && errC != nil {
+			err = errors.WithStack(errC)
+		}
+	}()
+
+	var value string
+	found := false
+	for rows.Next() {
+		if err = rows.Scan(&value); err != nil {
+			return "", errors.WithStack(err)
+		}
+		found = true
+	}
+	if err = rows.Err(); err != nil {
+		return "", errors.WithStack(err)
+	}
+	if !found {
+		err = errors.NotFound.Newf("[dml] LoadInt64 value not found")
+	}
+	return value, err
+}
+
+// LoadStrings executes the Select and returns a slice of strings.
+func (a *Arguments) LoadStrings(ctx context.Context, args ...interface{}) (values []string, err error) {
+	if a.base.Log != nil && a.base.Log.IsDebug() {
+		// do not use fullSQL because we might log sensitive data
+		defer log.WhenDone(a.base.Log).Debug("LoadStrings", log.Int("row_count", len(values)), log.String("id", a.base.id), log.Err(err))
+	}
+
+	rows, err := a.query(ctx, args...)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	defer func() {
+		if errC := rows.Close(); err == nil && errC != nil {
+			err = errors.WithStack(errC)
+		}
+	}()
+
+	values = make([]string, 0, 10)
+	for rows.Next() {
+		var value string
+		if err = rows.Scan(&value); err != nil {
+			return nil, errors.WithStack(err)
+		}
+		values = append(values, value)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return values, err
+}
+
+func (a *Arguments) query(ctx context.Context, args ...interface{}) (rows *sql.Rows, err error) {
+	var sqlStr string
+	if a.base.Log != nil && a.base.Log.IsDebug() {
+		defer log.WhenDone(a.base.Log).Debug("Query", log.String("id", a.base.id), log.Err(err), log.String("sql", sqlStr), log.String("source", string(a.base.source)))
+	}
+	var rawArgs []interface{}
+	sqlStr, rawArgs, err = a.prepareArgs(true)
+	defer iFaceSlicePoolPut(rawArgs)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	rows, err = a.base.DB.QueryContext(ctx, sqlStr, rawArgs...)
+	if err != nil {
+		err = errors.Wrapf(err, "[dml] Query.QueryContext with query %q", sqlStr)
+	}
+	return
+}
+
+func (a *Arguments) load(ctx context.Context, cm ColumnMapper, args ...interface{}) (rowCount uint64, err error) {
+	if a.base.Log != nil && a.base.Log.IsDebug() {
+		defer log.WhenDone(a.base.Log).Debug("Load", log.String("id", a.base.id), log.Err(err))
+	}
+
+	rows, err := a.query(ctx, args...)
+	if err != nil {
+		err = errors.Wrapf(err, "[dml] Load.QueryContext with query ID %q", a.base.id)
+		return
+	}
+	rowCount, err = load(rows, err, cm, &ColumnMap{}) // sync.Pool can be used for ColumnMap
+	if err != nil {
+		err = errors.Wrapf(err, "[dml] Load.QueryContext with query ID %q", a.base.id)
+	}
+	return
+}
+
+type ioCloser interface {
+	Close() error
+}
+
+func load(r *sql.Rows, errIn error, s ColumnMapper, cm *ColumnMap) (rowCount uint64, err error) {
+	if errIn != nil {
+		return 0, errors.WithStack(errIn)
+	}
+	cm.reset()
+	defer func() {
+		// Not testable with the sqlmock package :-(
+		if err2 := r.Close(); err2 != nil && err == nil {
+			err = errors.Wrap(err2, "[dml] Load.QueryContext.Rows.Close")
+		}
+		if rc, ok := s.(ioCloser); ok {
+			if err2 := rc.Close(); err2 != nil && err == nil {
+				err = errors.Wrap(err2, "[dml] Load.QueryContext.ColumnMapper.Close")
+			}
+		}
+	}()
+
+	for r.Next() {
+		if err = cm.Scan(r); err != nil {
+			return 0, errors.WithStack(err)
+		}
+		if err = s.MapColumns(cm); err != nil {
+			return 0, errors.WithStack(err)
+		}
+	}
+	if err = r.Err(); err != nil {
+		return 0, errors.WithStack(err)
+	}
+	if cm.HasRows {
+		cm.Count++ // because first row is zero but we want the actual row number
+	}
+	return cm.Count, err
+}
+
+func loadInt64(rows *sql.Rows, errIn error) (value int64, err error) {
+	if errIn != nil {
+		return 0, errors.WithStack(errIn)
+	}
+
+	defer func() {
+		if cErr := rows.Close(); err == nil && cErr != nil {
+			err = errors.WithStack(cErr)
+		}
+	}()
+
+	found := false
+	for rows.Next() {
+		if err = rows.Scan(&value); err != nil {
+			return 0, errors.WithStack(err)
+		}
+		found = true
+	}
+	if err = rows.Err(); err != nil {
+		return 0, errors.WithStack(err)
+	}
+	if !found {
+		err = errors.NotFound.Newf("[dml] LoadInt64 value not found")
+	}
+	return value, err
+}
+
+func loadInt64s(rows *sql.Rows, errIn error) (_ []int64, err error) {
+	if errIn != nil {
+		return nil, errors.WithStack(errIn)
+	}
+	defer func() {
+		if cErr := rows.Close(); err == nil && cErr != nil {
+			err = errors.WithStack(cErr)
+		}
+	}()
+
+	values := make([]int64, 0, 16)
+	for rows.Next() {
+		var value int64
+		if err = rows.Scan(&value); err != nil {
+			return nil, errors.WithStack(err)
+		}
+		values = append(values, value)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return values, nil
+}
+
+func (a *Arguments) exec(ctx context.Context, args ...interface{}) (result sql.Result, err error) {
+	var sqlStr string
+	if a.base.Log != nil && a.base.Log.IsDebug() {
+		defer log.WhenDone(a.base.Log).Debug("Exec", log.String("id", a.base.id), log.Err(err), log.String("sql", sqlStr), log.String("source", string(a.base.source)))
+	}
+	var rawArgs []interface{}
+	sqlStr, rawArgs, err = a.prepareArgs(true)
+	defer iFaceSlicePoolPut(rawArgs)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	rawArgs = append(rawArgs, args...)
+	result, err = a.base.DB.ExecContext(ctx, sqlStr, rawArgs...)
+	if err != nil {
+		err = errors.Wrapf(err, "[dml] ExecContext with query %q", sqlStr)
+	}
+
+	if a.recs == nil {
+		return result, nil
+	}
+	lID, err := result.LastInsertId()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	for i, rec := range a.recs {
+		if a, ok := rec.Record.(LastInsertIDAssigner); ok {
+			a.AssignLastInsertID(lID + int64(i))
+		}
+	}
+	return
 }

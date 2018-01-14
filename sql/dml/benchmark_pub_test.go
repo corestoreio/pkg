@@ -30,6 +30,7 @@ import (
 var (
 	benchmarkGlobalVals []interface{}
 	benchmarkSelectStr  string
+	_                   dml.QueryExecPreparer = (*benchMockQuerier)(nil)
 )
 
 type benchMockQuerier struct{}
@@ -39,6 +40,9 @@ func (benchMockQuerier) QueryContext(ctx context.Context, query string, args ...
 }
 func (benchMockQuerier) PrepareContext(ctx context.Context, query string) (*sql.Stmt, error) {
 	return new(sql.Stmt), nil
+}
+func (benchMockQuerier) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+	return nil, nil
 }
 
 // BenchmarkSelect_Rows-4   	 1000000	      2188 ns/op	    1354 B/op	      19 allocs/op old
@@ -57,10 +61,10 @@ func BenchmarkSelect_Rows(b *testing.B) {
 			Where(dml.Expr(`TABLE_SCHEMA=DATABASE()`)).WithDB(db)
 
 		if len(tables) > 0 {
-			sel.Where(dml.Column("TABLE_NAME IN ?").In().Strs(tables...))
+			sel.Where(dml.Column("TABLE_NAME IN ?").In().PlaceHolder())
 		}
 
-		rows, err := sel.Query(ctx)
+		rows, err := sel.WithArgs().Strings(tables...).QueryContext(ctx)
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
@@ -155,7 +159,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 		Having(dml.Expr("j = k"), dml.Column("jj").Int64(1)).
 		Having(dml.Column("jjj").Int64(2)).
 		OrderBy("l1").OrderBy("l2").OrderBy("l3").
-		Limit(7).Offset(8).Interpolate()
+		Limit(7).Offset(8)
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -250,11 +254,11 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 				Where(dml.Column("entity_type_id").PlaceHolder()).
 				Where(dml.Column("entity_id").In().PlaceHolder()).
 				Where(dml.Column("attribute_id").In().PlaceHolder()).
-				Where(dml.Column("store_id").PlaceHolder()).
-				Interpolate()
+				Where(dml.Column("store_id").PlaceHolder())
+
 			sel.EstimatedCachedSQLSize = 8192
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithArguments(args).ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithArgs().Arguments(args).ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -276,11 +280,11 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 				Where(dml.Column("entity_type_id").NamedArg("EntityTypeId")).
 				Where(dml.Column("entity_id").In().NamedArg("EntityId")).
 				Where(dml.Column("attribute_id").In().NamedArg("AttributeId")).
-				Where(dml.Column("store_id").NamedArg("StoreId")).
-				Interpolate()
+				Where(dml.Column("store_id").NamedArg("StoreId"))
+
 			sel.EstimatedCachedSQLSize = 8192
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithArguments(args).ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithArgs().Arguments(args).ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -376,7 +380,7 @@ func BenchmarkDeleteSQL(b *testing.B) {
 		}
 	})
 
-	sqlObj := dml.NewDelete("alpha").Where(dml.Column("a").Str("b")).Limit(1).OrderBy("id").Interpolate()
+	sqlObj := dml.NewDelete("alpha").Where(dml.Column("a").Str("b")).Limit(1).OrderBy("id")
 	b.Run("ToSQL no cache", func(b *testing.B) {
 		sqlObj.IsBuildCacheDisabled = true
 		for i := 0; i < b.N; i++ {
@@ -405,23 +409,21 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	b.Run("NewInsert", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = dml.NewInsert("alpha").AddColumns("something_id", "user_id", "other").AddValues(
-				dml.MakeArgs(3).Int64(1).Int64(2).Bool(true),
-			).ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = dml.NewInsert("alpha").AddColumns("something_id", "user_id", "other").
+				WithArgs().Int64(1).Int64(2).Bool(true).ToSQL()
 			if err != nil {
 				b.Fatal(err)
 			}
 		}
 	})
 
-	sqlObj := dml.NewInsert("alpha").AddColumns("something_id", "user_id", "other").AddValues(
-		dml.MakeArgs(3).Int64(1).Int64(2).Bool(true),
-	).Interpolate()
+	sqlObj := dml.NewInsert("alpha").AddColumns("something_id", "user_id", "other")
 	b.Run("ToSQL no cache", func(b *testing.B) {
 		sqlObj.IsBuildCacheDisabled = true
+		sqlObjA := sqlObj.WithArgs().Int64(1).Int64(2).Bool(true)
 		for i := 0; i < b.N; i++ {
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObjA.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -430,9 +432,10 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 
 	b.Run("ToSQL with cache", func(b *testing.B) {
 		sqlObj.IsBuildCacheDisabled = false
+		sqlObjA := sqlObj.WithArgs().Int64(1).Int64(2).Bool(true)
 		for i := 0; i < b.N; i++ {
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObjA.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -449,8 +452,7 @@ func BenchmarkInsertRecordsSQL(b *testing.B) {
 		var err error
 		benchmarkSelectStr, benchmarkGlobalVals, err = dml.NewInsert("alpha").
 			AddColumns("something_id", "user_id", "other").
-			AddRecords(obj).
-			ToSQL()
+			WithArgs().Record("", obj).ToSQL()
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -623,7 +625,6 @@ func BenchmarkUnion(b *testing.B) {
 	})
 	b.Run("5 SELECTs interpolated", func(b *testing.B) {
 		u := newUnion5()
-		u.Interpolate()
 		for i := 0; i < b.N; i++ {
 			var err error
 			benchmarkSelectStr, benchmarkGlobalVals, err = u.ToSQL()
@@ -652,7 +653,7 @@ func BenchmarkUnion(b *testing.B) {
 		}
 	})
 	b.Run("Template interpolated", func(b *testing.B) {
-		u := newUnionTpl().Interpolate()
+		u := newUnionTpl()
 		for i := 0; i < b.N; i++ {
 			var err error
 			benchmarkSelectStr, benchmarkGlobalVals, err = u.ToSQL()
@@ -729,7 +730,7 @@ func BenchmarkArgUnion(b *testing.B) {
 
 			finalArgs = argUnion.Interfaces(finalArgs...)
 			//b.Fatal("%#v", finalArgs)
-			argUnion = argUnion[:0]
+			argUnion = argUnion.Reset()
 			finalArgs = finalArgs[:0]
 		}
 	})
@@ -765,7 +766,7 @@ func BenchmarkArgUnion(b *testing.B) {
 
 			finalArgs = argUnion.Interfaces(finalArgs...)
 			//b.Fatal("%#v", finalArgs)
-			argUnion = argUnion[:0]
+			argUnion = argUnion.Reset()
 			finalArgs = finalArgs[:0]
 		}
 	})

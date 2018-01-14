@@ -16,23 +16,23 @@ package dml
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"strconv"
 	"unicode/utf8"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
-	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
 const (
-	dmlTypeSelect = 's'
-	dmlTypeInsert = 'i'
-	dmlTypeUpdate = 'u'
-	dmlTypeDelete = 'd'
-	dmlTypeWith   = 'w'
-	dmlTypeUnion  = 'n'
-	// dmlTypeShow   = 'h'
+	dmlSourceSelect = 's'
+	dmlSourceInsert = 'i'
+	dmlSourceUpdate = 'u'
+	dmlSourceDelete = 'd'
+	dmlSourceWith   = 'w'
+	dmlSourceUnion  = 'n'
+	// dmlSourceShow   = 'h'
 )
 
 // QueryBuilder assembles a query and returns the raw SQL without parameter
@@ -58,33 +58,24 @@ type queryBuilder interface {
 	readBuildCache() (sql []byte)
 }
 
-// multiplyArguments is only applicable when using *Union as a template.
-// multiplyArguments repeats the `args` variable n-times to match the number of
-// generated SELECT queries in the final UNION statement. It should be called
-// after all calls to `StringReplace` have been made.
-func multiplyArguments(templateStmtCount int, args Arguments) Arguments {
-	if templateStmtCount == 1 {
-		return args
-	}
-	ret := make(Arguments, len(args)*templateStmtCount)
-	lArgs := len(args)
-	for i := 0; i < templateStmtCount; i++ {
-		copy(ret[i*lArgs:], args)
-	}
-	return ret
-}
-
 // builderCommon
 type builderCommon struct {
+	// cachedSQL contains the final SQL string which gets send to the server.
+	cachedSQL []byte
+	// EstimatedCachedSQLSize specifies the estimated size in bytes of the final
+	// SQL string. This value gets used during SQL string building process to
+	// reduce the allocations and speed up the process. Default Value is xxxx
+	// Bytes.
+	EstimatedCachedSQLSize uint16
+	// source defines with which DML statement the builderCommon struct has been initialized.
+	// Constants are `dmlType*`
+	source byte
 	// ID of a statement. Used in logging. The ID gets generated with function
 	// signature `func() string`. This func gets applied to the logger when
 	// setting up a logger.
 	id  string     // tracing ID
 	Log log.Logger // Log optional logger
 
-	argsRecords []QualifiedRecord
-	argsArgs    Arguments
-	argsRaw     []interface{}
 	// ärgErr represents an argument error caused in one of the three With
 	// functions.
 	ärgErr error // Sorry Germans for that terrible pun #notSorry
@@ -103,62 +94,34 @@ type builderCommon struct {
 	// created SELECT statements. This value  gets stored in templateStmtCount.
 	// An example exists in TestUnionTemplate_ReuseArgs.
 	templateStmtCount int
-	// ColumnMap internal intermediate typ which scans into its own optimized
-	// types to avoid lots of allocations. It can also verify UTF8 strings.
-	ColumnMap ColumnMap
+	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
+	// dedicated database session) or a *sql.Tx (an in-progress database
+	// transaction).
+	DB QueryExecPreparer
 }
 
-func (bc builderCommon) convertRecordsToArguments() (Arguments, error) {
-	if bc.templateStmtCount == 0 {
-		bc.templateStmtCount = 1
+func (b *builderCommon) prepare(ctx context.Context, db QueryExecPreparer, qb QueryBuilder, source byte) (_ *Stmt, err error) {
+	var sqlStr string
+	if b.Log != nil && b.Log.IsDebug() {
+		defer log.WhenDone(b.Log).Debug("Prepare", log.String("id", b.id), log.Err(err), log.String("sql", sqlStr))
 	}
-	if len(bc.argsArgs) == 0 && len(bc.argsRecords) == 0 {
-		return bc.argsArgs, nil
+	sqlStr, _, err = qb.ToSQL()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	sqlStmt, err := db.PrepareContext(ctx, sqlStr)
+	if err != nil {
+		return nil, errors.Wrapf(err, "[dml] Prepare.PrepareContext with query %q", sqlStr)
 	}
 
-	if len(bc.argsArgs) > 0 && len(bc.argsRecords) == 0 && !bc.argsArgs.hasNamedArgs() {
-		return multiplyArguments(bc.templateStmtCount, bc.argsArgs), nil
+	stmt := &Stmt{
+		base: *b,
+		Stmt: sqlStmt,
 	}
+	stmt.base.DB = stmtWrapper{stmt: sqlStmt}
+	stmt.base.source = source
+	return stmt, nil
 
-	cm := newColumnMap(make(Arguments, 0, len(bc.argsArgs)+len(bc.argsRecords)), "")
-	var unnamedCounter int
-	for tsc := 0; tsc < bc.templateStmtCount; tsc++ { // only in case of UNION statements in combination with a template SELECT, can be optimized later
-		for _, identifier := range bc.qualifiedColumns { // contains the correct order as the place holders appear in the SQL string
-			qualifier, column := splitColumn(identifier)
-			if qualifier == "" {
-				qualifier = bc.defaultQualifier
-			}
-			var cut bool
-			column, cut = cutPrefix(column, namedArgStartStr)
-			cm.columns[0] = column // length is always one!
-
-			if !cut { // if the colon : cannot be found then a simple place holder ? has been detected
-				if pArg, ok := bc.argsArgs.unnamedArgByPos(unnamedCounter); ok {
-					cm.Args = append(cm.Args, pArg)
-				}
-				unnamedCounter++
-				//continue
-			}
-			for _, qRec := range bc.argsRecords {
-				if qRec.Qualifier == "" {
-					qRec.Qualifier = bc.defaultQualifier
-				}
-				if qRec.Qualifier == qualifier {
-					if err := qRec.Record.MapColumns(cm); err != nil {
-						return nil, errors.WithStack(err)
-					}
-				}
-			}
-
-			if err := bc.argsArgs.MapColumns(cm); err != nil {
-				return nil, errors.WithStack(err)
-			}
-		}
-	}
-	if len(cm.Args) == 0 {
-		return append(cm.Args, bc.argsArgs...), nil
-	}
-	return cm.Args, nil
 }
 
 // estimatedCachedSQLSize 1024 bytes value got retrieved by analyzing and
@@ -169,22 +132,13 @@ const estimatedCachedSQLSize = 1024
 // same base. Exported for documentation reasons.
 type BuilderBase struct {
 	builderCommon
-	// cachedSQL contains the final SQL string which gets send to the server.
-	cachedSQL []byte
-	// EstimatedCachedSQLSize specifies the estimated size in bytes of the final
-	// SQL string. This value gets used during SQL string building process to
-	// reduce the allocations and speed up the process. Default Value is xxxx
-	// Bytes.
-	EstimatedCachedSQLSize uint16
-	RawFullSQL             string
-	Table                  id
+	RawFullSQL string
+	Table      id
 	// PropagationStopped set to true if you would like to interrupt the
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
 	PropagationStopped   bool
-	IsInterpolate        bool // See Interpolate()
 	IsBuildCacheDisabled bool // see DisableBuildCache()
-	IsExpandPlaceHolders bool // see ExpandPlaceHolders()
 	// IsUnsafe if set to true the functions AddColumn* will turn any
 	// non valid identifier (not `{a-z}[a-z0-9$_]+`i) into an expression.
 	IsUnsafe bool
@@ -194,37 +148,27 @@ type BuilderBase struct {
 	propagationStoppedAt int
 }
 
+// WithArgs sets the optional interfaced arguments for the later execution.
+func (bb *BuilderBase) withArgs(qb QueryBuilder, rawArgs ...interface{}) *Arguments {
+	var args [5]argument // TODO check in benchmarks if worth
+	a := Arguments{
+		base: bb.builderCommon, // might be a source of a possible race condition, fix later
+		qb:   qb,
+		raw:  rawArgs,
+		args: args[:0],
+	}
+	return &a
+}
+
 // hasBuildCache satisfies partially interface queryBuilder
 func (bb *BuilderBase) hasBuildCache() bool {
 	return !bb.IsBuildCacheDisabled
 }
 
-func (bb *BuilderBase) resetArgs() {
-	bb.argsArgs = bb.argsArgs[:0]
-	bb.argsRaw = bb.argsRaw[:0]
-	bb.argsRecords = bb.argsRecords[:0]
-}
-
-func (bb *BuilderBase) withArgs(args []interface{}) {
-	bb.resetArgs()
-	bb.argsRaw = args
-	bb.isWithInterfaces = true
-}
-
-func (bb *BuilderBase) withArguments(args Arguments) {
-	bb.resetArgs()
-	bb.argsArgs = args
-	bb.isWithInterfaces = false
-}
-
-func (bb *BuilderBase) withRecords(records []QualifiedRecord) {
-	bb.resetArgs()
-	bb.argsRecords = records
-	bb.isWithInterfaces = false
-}
-
 // buildToSQL builds the raw SQL string and caches it as a byte slice. It gets
 // called by toSQL.
+// buildArgsAndSQL generates the SQL string and its place holders. Takes care of
+// caching. It returns the string with placeholders.
 func (bb *BuilderBase) buildToSQL(qb queryBuilder) ([]byte, error) {
 	if bb.ärgErr != nil {
 		return nil, errors.WithStack(bb.ärgErr)
@@ -250,51 +194,6 @@ func (bb *BuilderBase) buildToSQL(qb queryBuilder) ([]byte, error) {
 		rawSQL = buf.Bytes()
 	}
 	return rawSQL, nil
-}
-
-// buildArgsAndSQL generates the SQL string and its place holders. Takes care of
-// caching and interpolation. It returns the string with placeholders and a
-// slice of query arguments. With switched on interpolation, it only returns a
-// string including the stringyfied arguments. With an enabled cache, the
-// arguments gets regenerated each time a call to ToSQL happens.
-func (bb *BuilderBase) buildArgsAndSQL(qb queryBuilder) (string, []interface{}, error) {
-	rawSQL, err := bb.buildToSQL(qb)
-	if err != nil {
-		return "", nil, errors.WithStack(err)
-	}
-
-	args, err := bb.convertRecordsToArguments()
-	if err != nil {
-		return "", nil, errors.WithStack(err)
-	}
-
-	if bb.IsExpandPlaceHolders {
-		if phCount := bytes.Count(rawSQL, placeHolderBytes); phCount < args.Len() {
-			var buf bytes.Buffer
-			if err = expandPlaceHolders(&buf, rawSQL, args); err != nil {
-				return "", nil, errors.WithStack(err)
-			}
-			qb.writeBuildCache(buf.Bytes())
-			rawSQL = buf.Bytes()
-			bb.IsExpandPlaceHolders = false
-		}
-	}
-
-	if lArgs := len(args); bb.IsInterpolate && lArgs > 0 {
-		buf := bufferpool.Get()
-		err = writeInterpolate(buf, rawSQL, args)
-		s := buf.String()
-		bufferpool.Put(buf)
-		return s, nil, errors.WithStack(err)
-	} else if bb.IsInterpolate && lArgs == 0 && len(bb.argsRaw) > 0 {
-		return "", nil, errors.NotAllowed.Newf("[dml] Interpolation does only work with an Arguments slice, but you provided an interface slice: %#v", bb.argsRaw)
-	}
-
-	if !bb.isWithInterfaces {
-		bb.argsRaw = bb.argsRaw[:0]
-	}
-	bb.argsRaw = append(bb.argsRaw, args.Interfaces()...) // TODO optimize
-	return string(rawSQL), bb.argsRaw, errors.WithStack(err)
 }
 
 // BuilderConditional defines base fields used in statements which can have

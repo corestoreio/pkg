@@ -42,7 +42,7 @@ func TestTx_Wrap(t *testing.T) {
 
 		require.NoError(t, tx.Wrap(func() error {
 			// this creates an interpolated statement
-			res, err := tx.Update("tableX").Set(dml.Column("value").Int(5)).Where(dml.Column("scope").Str("default")).Exec(context.TODO())
+			res, err := tx.Update("tableX").Set(dml.Column("value").Int(5)).Where(dml.Column("scope").Str("default")).WithArgs().ExecContext(context.TODO())
 			if err != nil {
 				return err
 			}
@@ -68,7 +68,7 @@ func TestTx_Wrap(t *testing.T) {
 
 		err = tx.Wrap(func() error {
 			// Interpolated statement
-			res, err := tx.Update("tableX").Set(dml.Column("value").Int(5)).Where(dml.Column("scope").Str("default")).Exec(context.TODO())
+			res, err := tx.Update("tableX").Set(dml.Column("value").Int(5)).Where(dml.Column("scope").Str("default")).WithArgs().ExecContext(context.TODO())
 			assert.Nil(t, res)
 			return err
 		})

@@ -68,11 +68,10 @@ func TestInsert_Bind(t *testing.T) {
 		compareToSQL(t,
 			dml.NewInsert("a").
 				AddColumns("something_id", "user_id", "other").
-				AddRecords(objs[0]).AddRecords(objs[1], objs[2]).
 				AddOnDuplicateKey(
 					dml.Column("something_id").Int64(99),
 					dml.Column("user_id").Values(),
-				),
+				).WithArgs().Record("", objs[0]).Record("", objs[1]).Record("", objs[2]),
 			errors.NoKind,
 			"INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?),(?,?,?) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
 			"INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (1,88,0),(2,99,1),(3,101,1) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
@@ -83,11 +82,10 @@ func TestInsert_Bind(t *testing.T) {
 		compareToSQL(t,
 			dml.NewInsert("a").
 				SetRecordPlaceHolderCount(3).
-				AddRecords(objs[0]).AddRecords(objs[1], objs[2]).
 				AddOnDuplicateKey(
 					dml.Column("something_id").Int64(99),
 					dml.Column("user_id").Values(),
-				),
+				).WithArgs().Record("", objs[0]).Record("", objs[1]).Record("", objs[2]),
 			errors.NoKind,
 			"INSERT INTO `a` VALUES (?,?,?),(?,?,?),(?,?,?) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
 			"INSERT INTO `a` VALUES (1,88,0),(2,99,1),(3,101,1) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
@@ -105,7 +103,7 @@ func TestInsert_Bind(t *testing.T) {
 		compareToSQL(t,
 			dml.NewInsert("customer_entity").
 				SetRecordPlaceHolderCount(5). // mandatory because no columns provided!
-				AddRecords(customers[0], customers[1], customers[2]),
+				WithArgs().Record("", customers[0]).Record("", customers[1]).Record("", customers[2]),
 			errors.NoKind,
 			"INSERT INTO `customer_entity` VALUES (?,?,?,?,?),(?,?,?,?,?),(?,?,?,?,?)",
 			"INSERT INTO `customer_entity` VALUES (11,'Karl Gopher',7,47.11,'1FE9983E|28E76FBC'),(12,'Fung Go Roo',7,28.94,'4FE7787E|15E59FBB|794EFDE8'),(13,'John Doe',6,138.54,'')",
@@ -116,7 +114,7 @@ func TestInsert_Bind(t *testing.T) {
 	t.Run("column not found", func(t *testing.T) {
 		objs := []someRecord{{1, 88, false}, {2, 99, true}}
 		compareToSQL(t,
-			dml.NewInsert("a").AddColumns("something_it", "user_id", "other").AddRecords(objs[0]).AddRecords(objs[1]),
+			dml.NewInsert("a").AddColumns("something_it", "user_id", "other").WithArgs().Record("", objs[0]).Record("", objs[1]),
 			errors.NotFound,
 			"",
 			"",
@@ -142,7 +140,7 @@ func TestInsert_Prepare(t *testing.T) {
 		in.DB = dbMock{
 			error: errors.AlreadyClosed.Newf("Who closed myself?"),
 		}
-		in.AddColumns("a", "b").AddValuesUnsafe(1, true)
+		in.AddColumns("a", "b").WithArgs(1, true)
 
 		stmt, err := in.Prepare(context.TODO())
 		assert.Nil(t, stmt)
@@ -176,13 +174,9 @@ func TestInsert_Prepare(t *testing.T) {
 			{"x@y.z", 44, now().Add(time.Minute), 5},
 		}
 
-		args := dml.MakeArgs(3)
+		stmtA := stmt.WithArgs()
 		for i, test := range tests {
-			args = args[:0]
-
-			res, err := stmt.
-				WithArguments(args.String(test.email).Int(test.groupID).Time(test.created_at)).
-				Exec(context.TODO())
+			res, err := stmtA.String(test.email).Int(test.groupID).Time(test.created_at).ExecContext(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -191,6 +185,7 @@ func TestInsert_Prepare(t *testing.T) {
 				t.Fatalf("Result index %d with error: %s", i, err)
 			}
 			assert.Exactly(t, test.insertID, lid, "Index %d has different LastInsertIDs", i)
+			stmtA.Reset()
 		}
 	})
 
@@ -223,13 +218,11 @@ func TestInsert_Prepare(t *testing.T) {
 			{"x@y.z", 44, "u@v.w", 44, 7},
 		}
 
-		args := dml.MakeArgs(4)
+		stmtA := stmt.WithArgs()
 		for i, test := range tests {
-			args = args[:0]
 
-			res, err := stmt.
-				WithArguments(args.String(test.email1).Int(test.groupID1).String(test.email2).Int(test.groupID2)).
-				Exec(context.TODO())
+			res, err := stmtA.String(test.email1).Int(test.groupID1).String(test.email2).Int(test.groupID2).
+				ExecContext(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -238,6 +231,7 @@ func TestInsert_Prepare(t *testing.T) {
 				t.Fatalf("Result index %d with error: %s", i, err)
 			}
 			assert.Exactly(t, test.insertID, lid, "Index %d has different LastInsertIDs", i)
+			stmtA.Reset()
 		}
 	})
 
@@ -274,7 +268,7 @@ func TestInsert_Prepare(t *testing.T) {
 				Email: dml.MakeNullString(test.email),
 			}
 
-			res, err := stmt.WithRecords(dml.Qualify("", p)).Exec(context.TODO())
+			res, err := stmt.WithArgs().Record("", p).ExecContext(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -303,7 +297,7 @@ func TestInsert_Prepare(t *testing.T) {
 			require.NoError(t, stmt.Close(), "Close on a prepared statement")
 		}()
 
-		res, err := stmt.Exec(context.TODO(), "Peter Gopher", "peter@gopher.go")
+		res, err := stmt.WithArgs().ExecContext(context.TODO(), "Peter Gopher", "peter@gopher.go")
 		require.NoError(t, err, "failed to execute ExecContext")
 
 		lid, err := res.LastInsertId()
@@ -332,14 +326,11 @@ func TestInsert_WithLogger(t *testing.T) {
 	require.NoError(t, rConn.Options(dml.WithLogger(lg, uniqueIDFunc)))
 
 	t.Run("ConnPool", func(t *testing.T) {
-		d := rConn.InsertInto("dml_people").Replace().AddColumns("email", "name").AddValuesUnsafe("a@b.c", "John")
+		d := rConn.InsertInto("dml_people").Replace().AddColumns("email", "name")
 
 		t.Run("Exec", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				d.IsInterpolate = false
-			}()
-			_, err := d.Interpolate().Exec(context.TODO())
+			defer buf.Reset()
+			_, err := d.WithArgs("a@b.c", "John").Interpolate().ExecContext(context.TODO())
 			require.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQ04\" insert_id: \"UNIQ08\" table: \"dml_people\" duration: 0 sql: \"REPLACE /*ID:UNIQ08*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\"\n",
@@ -361,7 +352,7 @@ func TestInsert_WithLogger(t *testing.T) {
 			tx, err := rConn.BeginTx(context.TODO(), nil)
 			require.NoError(t, err)
 			require.NoError(t, tx.Wrap(func() error {
-				_, err := tx.InsertInto("dml_people").Replace().AddColumns("email", "name").AddValuesUnsafe("a@b.c", "John").Interpolate().Exec(context.TODO())
+				_, err := tx.InsertInto("dml_people").Replace().AddColumns("email", "name").WithArgs("a@b.c", "John").Interpolate().ExecContext(context.TODO())
 				return err
 			}))
 			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ04\" tx_id: \"UNIQ12\"\nDEBUG Exec conn_pool_id: \"UNIQ04\" tx_id: \"UNIQ12\" insert_id: \"UNIQ16\" table: \"dml_people\" duration: 0 sql: \"REPLACE /*ID:UNIQ16*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\"\nDEBUG Commit conn_pool_id: \"UNIQ04\" tx_id: \"UNIQ12\" duration: 0\n",
@@ -373,15 +364,11 @@ func TestInsert_WithLogger(t *testing.T) {
 		conn, err := rConn.Conn(context.TODO())
 		require.NoError(t, err)
 
-		d := conn.InsertInto("dml_people").Replace().AddColumns("email", "name").AddValuesUnsafe("a@b.zeh", "J0hn")
+		d := conn.InsertInto("dml_people").Replace().AddColumns("email", "name")
 
 		t.Run("Exec", func(t *testing.T) {
-			defer func() {
-				buf.Reset()
-				d.IsInterpolate = false
-			}()
-
-			_, err := d.Interpolate().Exec(context.TODO())
+			defer buf.Reset()
+			_, err := d.WithArgs("a@b.zeh", "J0hn").Interpolate().ExecContext(context.TODO())
 			require.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" insert_id: \"UNIQ24\" table: \"dml_people\" duration: 0 sql: \"REPLACE /*ID:UNIQ24*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\"\n",
@@ -406,7 +393,7 @@ func TestInsert_WithLogger(t *testing.T) {
 			require.NoError(t, err)
 			defer stmt.Close()
 
-			_, err = stmt.Exec(context.TODO(), "mail@e.de", "Hans")
+			_, err = stmt.WithArgs().ExecContext(context.TODO(), "mail@e.de", "Hans")
 			require.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" insert_id: \"UNIQ24\" table: \"dml_people\" duration: 0 sql: \"REPLACE /*ID:UNIQ24*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\"\nDEBUG Exec conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" insert_id: \"UNIQ24\" table: \"dml_people\" duration: 0 arg_len: 2\n",
@@ -418,7 +405,7 @@ func TestInsert_WithLogger(t *testing.T) {
 			tx, err := conn.BeginTx(context.TODO(), nil)
 			require.NoError(t, err)
 			require.NoError(t, tx.Wrap(func() error {
-				_, err := tx.InsertInto("dml_people").Replace().AddColumns("email", "name").AddValuesUnsafe("a@b.c", "John").Interpolate().Exec(context.TODO())
+				_, err := tx.InsertInto("dml_people").Replace().AddColumns("email", "name").WithArgs("a@b.c", "John").Interpolate().ExecContext(context.TODO())
 				return err
 			}))
 
@@ -432,7 +419,7 @@ func TestInsert_WithLogger(t *testing.T) {
 			require.NoError(t, err)
 			require.Error(t, tx.Wrap(func() error {
 				_, err := tx.InsertInto("dml_people").Replace().AddColumns("email", "name").
-					AddValues(dml.MakeArgs(1).String("only one arg provided")).Interpolate().Exec(context.TODO())
+					WithArgs().String("only one arg provided").Interpolate().ExecContext(context.TODO())
 				return err
 			}))
 

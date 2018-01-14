@@ -105,7 +105,7 @@ func TestUnion_Basics(t *testing.T) {
 			NewSelect("a", "b").From("tableAD").Where(Column("a").Like().PlaceHolder()),
 			NewSelect("a", "b").From("tableAB").Where(Column("c").Between().PlaceHolder()),
 		).All().OrderBy("a").OrderByDesc("b").PreserveResultSet().
-			WithArguments(MakeArgs(3).String("XMEEN").Float64(3.141).Float64(6.283))
+			WithArgs().String("XMEEN").Float64(3.141).Float64(6.283)
 		// TODO(CYS) there is a small bug when using BETWEEN operator together
 		// with named arguments. fix it. write a 2nd test function like this
 		// used NamedArg.
@@ -117,7 +117,7 @@ func TestUnion_Basics(t *testing.T) {
 				"XMEEN", 3.141, 6.283,
 			)
 		}
-		assert.Exactly(t, []string{"a", "c"}, u.qualifiedColumns)
+		assert.Exactly(t, []string{"a", "c"}, u.base.qualifiedColumns)
 	})
 }
 
@@ -244,7 +244,7 @@ func TestNewUnionTemplate(t *testing.T) {
 			All().
 			OrderByDesc("col_type")
 
-		u.WithArguments(MakeArgs(2).Int(1563).Ints(3, 4))
+		u.WithArgs().Int(1563).Ints(3, 4)
 
 		// testing idempotent function ToSQL
 		for i := 0; i < 3; i++ {
@@ -331,8 +331,7 @@ func TestNewUnionTemplate(t *testing.T) {
 		).
 			StringReplace("$type$", "varchar", "int", "decimal", "datetime", "text").
 			PreserveResultSet().
-			All().OrderBy("attribute_id", "store_id").
-			Interpolate()
+			All().OrderBy("attribute_id", "store_id")
 		compareToSQL(t, u, errors.NoKind,
 			"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS `_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS `_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS `_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nORDER BY `_preserve_result_set`, `attribute_id`, `store_id`",
 			"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS `_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS `_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS `_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nORDER BY `_preserve_result_set`, `attribute_id`, `store_id`",
@@ -400,7 +399,7 @@ func TestUnionTemplate_ReuseArgs(t *testing.T) {
 		"ORDER BY `_preserve_result_set`, `attribute_id`, `store_id`"
 
 	t.Run("run1", func(t *testing.T) {
-		compareToSQL(t, u.WithArguments(args), errors.NoKind,
+		compareToSQL(t, u.WithArgs().Arguments(args), errors.NoKind,
 			wantSQLPH,
 			"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 5) AND (`store_id` IN (4,6)))\n"+
 				"UNION ALL\n"+
@@ -419,12 +418,11 @@ func TestUnionTemplate_ReuseArgs(t *testing.T) {
 			int64(5), int64(4), int64(6), // text
 		)
 		assert.Exactly(t, []string{":entityID", ":storeID"}, u.qualifiedColumns)
-
 	})
 
 	t.Run("with interpolate", func(t *testing.T) {
 		args = args.Reset().Name("entityID").Int(4).Name("storeID").Int64s(8, 11)
-		compareToSQL(t, u.WithArguments(args), errors.NoKind,
+		compareToSQL(t, u.WithArgs().Arguments(args), errors.NoKind,
 			wantSQLPH,
 			"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 4) AND (`store_id` IN (8,11)))\n"+
 				"UNION ALL\n"+

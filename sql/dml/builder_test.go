@@ -52,7 +52,7 @@ func TestSqlObjToString(t *testing.T) {
 		assert.Exactly(t, "DELETE FROM `tableX` WHERE (`columnA` > 2)", b.String())
 	})
 	t.Run("INSERT", func(t *testing.T) {
-		b := NewInsert("tableX").AddColumns("columnA", "columnB").AddValuesUnsafe(2, "Go")
+		b := NewInsert("tableX").AddColumns("columnA", "columnB")
 		// keep the place holder for columnA,columnB because we're not using interpolation
 		assert.Exactly(t, "INSERT INTO `tableX` (`columnA`,`columnB`) VALUES (?,?)", b.String())
 	})
@@ -73,7 +73,7 @@ func TestSqlObjToString(t *testing.T) {
 		assert.Exactly(t, "WITH `sel` AS (SELECT 1)\nSELECT * FROM `sel`", b.String())
 	})
 	t.Run("SHOW", func(t *testing.T) {
-		b := NewShow().Variable().Like(MakeArgs(1).String("aria%"))
-		assert.Exactly(t, "SHOW VARIABLES LIKE 'aria%'", b.String())
+		b := NewShow().Variable().Like().String()
+		assert.Exactly(t, "SHOW VARIABLES LIKE ?", b)
 	})
 }
