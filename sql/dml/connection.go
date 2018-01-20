@@ -90,6 +90,14 @@ type Tx struct {
 type ConnPoolOption struct {
 	sortOrder uint8
 	fn        func(*ConnPool) error
+	// WithUniqueIDFn applies a unique ID generator function without an applied
+	// logger as in WithLogger. For more details see WithLogger function.
+	// Sort Order 8.
+	UniqueIDFn func() string
+	// TableNameMapper maps the old name in the DML query to a new name. E.g.
+	// for adding a prefix and/or a suffix.
+	// TODO implement TableNameMapper
+	TableNameMapper func(oldName string) (newName string)
 }
 
 // WithLogger sets the customer logger to be used across the package. The logger
@@ -121,18 +129,6 @@ func WithDB(db *sql.DB) ConnPoolOption {
 		sortOrder: 1,
 		fn: func(c *ConnPool) error {
 			c.DB = db
-			return nil
-		},
-	}
-}
-
-// WithUniqueIDFn applies a unique ID generator function without an applied
-// logger as in WithLogger. For more details see WithLogger function.
-func WithUniqueIDFn(uniqueIDFn func() string) ConnPoolOption {
-	return ConnPoolOption{
-		sortOrder: 8,
-		fn: func(c *ConnPool) error {
-			c.makeUniqueID = uniqueIDFn
 			return nil
 		},
 	}
@@ -254,6 +250,18 @@ func MustConnectAndVerify(opts ...ConnPoolOption) *ConnPool {
 
 // Options applies options to a connection
 func (c *ConnPool) Options(opts ...ConnPoolOption) error {
+
+	for i, opt := range opts {
+		if opt.UniqueIDFn != nil {
+			opts[i].sortOrder = 8
+			opt := opt
+			opts[i].fn = func(cp *ConnPool) error {
+				cp.makeUniqueID = opt.UniqueIDFn
+				return nil
+			}
+		}
+	}
+
 	// SliceStable must be stable to maintain the order of all options where
 	// sortOrder is zero.
 	sort.SliceStable(opts, func(i, j int) bool {
@@ -325,14 +333,17 @@ func (c *ConnPool) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error
 
 // TOOD add this to all connection types, like Conn and Tx
 func (c *ConnPool) WithQueryBuilder(qb QueryBuilder) *Arguments {
-	var args [5]argument // TODO check benchmarks if worth!
+	sqlStr, argsRaw, err := qb.ToSQL()
+	var args [defaultArgumentsCapacity]argument
 	return &Arguments{
 		base: builderCommon{
-			Log: c.Log,
-			id:  c.makeUniqueID(),
-			DB:  c.DB,
+			cachedSQL: []byte(sqlStr),
+			Log:       c.Log,
+			id:        c.makeUniqueID(),
+			DB:        c.DB,
+			ärgErr:    errors.WithStack(err),
 		},
-		qb:   qb,
+		raw:  argsRaw,
 		args: args[:0],
 	}
 }

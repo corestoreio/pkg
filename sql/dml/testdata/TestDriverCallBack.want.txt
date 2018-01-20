@@ -2,39 +2,39 @@
 
 "Conn.QueryContext" Took: 0s
 Error: driver: skip fast-path; continue as if unimplemented
-Query: "SELECT /*ID:RANJID1*/ * FROM `dml_people` WHERE (`name` = ?)"
+Query: "SELECT /*ID$RANJID1*/ * FROM `dml_people` WHERE (`name` = ?)"
 NamedArgs: []driver.NamedValue{driver.NamedValue{Name:"", Ordinal:1, Value:"Bernd"}}
 
 "Conn.PrepareContext" Took: 0s
-Query: "SELECT /*ID:RANJID1*/ * FROM `dml_people` WHERE (`name` = ?)"
+Query: "SELECT /*ID$RANJID1*/ * FROM `dml_people` WHERE (`name` = ?)"
 
 "Stmt.QueryContext" Took: 0s
-Query: "SELECT /*ID:RANJID1*/ * FROM `dml_people` WHERE (`name` = ?)"
+Query: "SELECT /*ID$RANJID1*/ * FROM `dml_people` WHERE (`name` = ?)"
 NamedArgs: []driver.NamedValue{driver.NamedValue{Name:"", Ordinal:1, Value:"Bernd"}}
 
 "Stmt.Close" Took: 0s
-Query: "SELECT /*ID:RANJID1*/ * FROM `dml_people` WHERE (`name` = ?)"
+Query: "SELECT /*ID$RANJID1*/ * FROM `dml_people` WHERE (`name` = ?)"
 
 "Conn.QueryContext" Took: 0s
-Query: "SELECT /*ID:RANJID1*/ SQL_NO_CACHE * FROM `dml_people` WHERE (`name` = 'Bernd')"
+Query: "SELECT /*ID$RANJID1*/ SQL_NO_CACHE * FROM `dml_people` WHERE (`name` = 'Das Brot')"
 
 "Conn.ExecContext" Took: 0s
 Error: driver: skip fast-path; continue as if unimplemented
-Query: "UPDATE /*ID:RANJID2*/ `dml_people` SET `name`=?"
+Query: "UPDATE /*ID$RANJID2*/ `dml_people` SET `name`=?"
 NamedArgs: []driver.NamedValue{driver.NamedValue{Name:"", Ordinal:1, Value:"Hugo"}}
 
 "Conn.PrepareContext" Took: 0s
-Query: "UPDATE /*ID:RANJID2*/ `dml_people` SET `name`=?"
+Query: "UPDATE /*ID$RANJID2*/ `dml_people` SET `name`=?"
 
 "Stmt.ExecContext" Took: 0s
-Query: "UPDATE /*ID:RANJID2*/ `dml_people` SET `name`=?"
+Query: "UPDATE /*ID$RANJID2*/ `dml_people` SET `name`=?"
 NamedArgs: []driver.NamedValue{driver.NamedValue{Name:"", Ordinal:1, Value:"Hugo"}}
 
 "Stmt.Close" Took: 0s
-Query: "UPDATE /*ID:RANJID2*/ `dml_people` SET `name`=?"
+Query: "UPDATE /*ID$RANJID2*/ `dml_people` SET `name`=?"
 
 "Conn.ExecContext" Took: 0s
-Query: "UPDATE /*ID:RANJID2*/ `dml_people` SET `name`='Bernie'"
+Query: "UPDATE /*ID$RANJID2*/ `dml_people` SET `name`='Bernie'"
 
 "Conn.Close" Took: 0s
 

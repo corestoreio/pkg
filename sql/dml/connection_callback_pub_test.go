@@ -34,7 +34,7 @@ func TestDriverCallBack(t *testing.T) {
 
 	buf := new(bytes.Buffer)
 	db := dmltest.MustConnectDB(t,
-		dml.WithUniqueIDFn(func() string { return fmt.Sprintf("RANJID%d", atomic.AddInt32(counter, 1)) }),
+		dml.ConnPoolOption{UniqueIDFn: func() string { return fmt.Sprintf("RANJID%d", atomic.AddInt32(counter, 1)) }},
 		dml.WithDSN(
 			dmltest.MustGetDSN(t),
 			func(fnName string) func(error, string, []driver.NamedValue) error {
@@ -62,7 +62,7 @@ func TestDriverCallBack(t *testing.T) {
 	_, err := sel.WithArgs().String("Bernd").Load(ctx, &ppl)
 	require.NoError(t, err)
 
-	_, err = sel.SQLNoCache().WithArgs().Load(context.Background(), &ppl)
+	_, err = sel.SQLNoCache().WithArgs().Interpolate().String("Das Brot").Load(context.Background(), &ppl)
 	require.NoError(t, err)
 
 	con, err := db.Conn(ctx)
