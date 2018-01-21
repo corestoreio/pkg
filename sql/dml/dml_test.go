@@ -292,7 +292,7 @@ func installFixtures(db *sql.DB, c *installFixturesConfig) {
 	}
 }
 
-var _ Querier = (*dbMock)(nil)
+var _ QueryExecPreparer = (*dbMock)(nil)
 var _ Execer = (*dbMock)(nil)
 
 type dbMock struct {
@@ -312,6 +312,10 @@ func (pm dbMock) QueryContext(ctx context.Context, query string, args ...interfa
 		return nil, pm.error
 	}
 	return nil, nil
+}
+
+func (pm dbMock) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
+	return new(sql.Row)
 }
 
 func (pm dbMock) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
@@ -345,26 +349,20 @@ func compareToSQL(
 		return
 	}
 
-	// If you care regarding the duplication ... send us a PR ;-)
-	// Enables Interpolate feature and resets it after the test has been
-	// executed.
-	switch dml := qb.(type) {
-	case *Arguments:
+	if dml, ok := qb.(*Arguments); ok {
 		prev := dml.Options
 		qb = dml.Interpolate()
 		defer func() { dml.Options = prev; qb = dml }()
-	default:
-		t.Fatalf("func compareToSQL: the type %#v is not (yet) supported.", qb)
 	}
 
 	sqlStr, args, err = qb.ToSQL() // Call with enabled interpolation
-	require.Nil(t, args, "Arguments should be nil when the SQL string gets interpolated")
 	if wantErrKind.Empty() {
 		require.NoError(t, err)
 	} else {
 		require.True(t, wantErrKind.Match(err), "%+v")
 	}
 	require.Equal(t, wantSQLInterpolated, sqlStr, "Interpolated SQL strings do not match")
+	require.Nil(t, args, "Arguments should be nil when the SQL string gets interpolated")
 }
 
 // compareToSQL2 This function also exists in file dml_public_test.go to
@@ -387,8 +385,8 @@ func compareToSQL2(
 func compareExecContext(t testing.TB, ex StmtExecer, lastInsertID, rowsAffected int64) (retLastInsertID, retRowsAffected int64) {
 
 	res, err := ex.ExecContext(context.Background())
-	require.NotNil(t, res)
 	require.NoError(t, err)
+	require.NotNil(t, res, "Returned result from ExecContext should not be nil")
 
 	if lastInsertID > 0 {
 		retLastInsertID, err = res.LastInsertId()

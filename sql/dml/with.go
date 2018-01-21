@@ -180,11 +180,13 @@ func (b *With) Recursive() *With {
 // WithArgs builds the SQL string and sets the optional interfaced arguments for
 // the later execution. It copies the underlying connection and structs.
 func (b *With) WithArgs(args ...interface{}) *Arguments {
+	b.source = dmlSourceWith
 	return b.withArgs(b, args...)
 }
 
 // ToSQL converts the select statement into a string and returns its arguments.
 func (b *With) ToSQL() (string, []interface{}, error) {
+	b.source = dmlSourceWith
 	rawSQL, err := b.buildToSQL(b)
 	if err != nil {
 		return "", nil, errors.WithStack(err)

@@ -411,12 +411,14 @@ func (b *Select) CrossJoin(table id, onConditions ...*Condition) *Select {
 // WithArgs builds the SQL string and sets the optional interfaced arguments for
 // the later execution. It copies the underlying connection.
 func (b *Select) WithArgs(args ...interface{}) *Arguments {
+	b.source = dmlSourceSelect
 	return b.withArgs(b, args...)
 }
 
 // ToSQL generates the SQL string and might caches it internally, if not
 // disabled.
 func (b *Select) ToSQL() (string, []interface{}, error) {
+	b.source = dmlSourceSelect
 	rawSQL, err := b.buildToSQL(b)
 	if err != nil {
 		return "", nil, errors.WithStack(err)

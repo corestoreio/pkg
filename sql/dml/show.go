@@ -178,11 +178,13 @@ func (b *Show) Like() *Show {
 // WithArgs builds the SQL string and sets the optional interfaced arguments for
 // the later execution. It copies the underlying connection and structs.
 func (b *Show) WithArgs(args ...interface{}) *Arguments {
+	b.source = dmlSourceShow
 	return b.withArgs(b, args...)
 }
 
 // ToSQL converts the select statement into a string and returns its arguments.
 func (b *Show) ToSQL() (string, []interface{}, error) {
+	b.source = dmlSourceShow
 	rawSQL, err := b.buildToSQL(b)
 	if err != nil {
 		return "", nil, errors.WithStack(err)

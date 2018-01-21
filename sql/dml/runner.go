@@ -81,10 +81,13 @@ func newColumnMap(args *Arguments, columns ...string) *ColumnMap {
 	return cm
 }
 
+// reset gets called when returning into the pool
 func (b *ColumnMap) reset() {
 	b.HasRows = false
 	b.Count = 0
 	b.scanErr = nil
+	b.initialized = false
+	// b.Args = nil not yet sure if this is needed
 }
 
 func (b *ColumnMap) setColumns(cols ...string) {
@@ -227,10 +230,15 @@ func (b *ColumnMap) Scan(r *sql.Rows) error {
 			return errors.WithStack(err)
 		}
 		b.setColumns(cols...)
-		b.scanCol = make([]scannedColumn, b.columnsLen)
-		b.scanArgs = make([]interface{}, b.columnsLen)
-		for i := 0; i < b.columnsLen; i++ {
-			b.scanArgs[i] = &b.scanCol[i]
+		if cap(b.scanCol) >= b.columnsLen { // reuse from pool!
+			b.scanCol = b.scanCol[:b.columnsLen-1]
+			b.scanArgs = b.scanArgs[:b.columnsLen-1]
+		} else {
+			b.scanCol = make([]scannedColumn, b.columnsLen)
+			b.scanArgs = make([]interface{}, b.columnsLen)
+			for i := 0; i < b.columnsLen; i++ {
+				b.scanArgs[i] = &b.scanCol[i]
+			}
 		}
 		b.initialized = true
 		b.Count = 0

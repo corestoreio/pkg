@@ -226,11 +226,13 @@ func (u *Union) StringReplace(key string, values ...string) *Union {
 // WithArgs builds the SQL string and sets the optional interfaced arguments for
 // the later execution. It copies the underlying connection and structs.
 func (u *Union) WithArgs(args ...interface{}) *Arguments {
+	u.source = dmlSourceUnion
 	return u.withArgs(u, args...)
 }
 
 // ToSQL converts the statements into a string and returns its arguments.
 func (u *Union) ToSQL() (string, []interface{}, error) {
+	u.source = dmlSourceUnion
 	rawSQL, err := u.buildToSQL(u)
 	if err != nil {
 		return "", nil, errors.WithStack(err)

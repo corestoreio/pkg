@@ -21,10 +21,10 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"strconv"
-	"strings"
-	"sync"
 	"time"
 	"unicode/utf8"
+
+	"sync"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
@@ -34,9 +34,10 @@ import (
 // https://www.adampalmer.me/iodigitalsec/2013/08/18/mysql_real_escape_string-wont-magically-solve-your-sql-injection-problems/
 
 const (
-	sqlStrNullUC = "NULL"
-	sqlStrNullLC = "null"
-	sqlStar      = "*"
+	sqlStrNullUC             = "NULL"
+	sqlStrNullLC             = "null"
+	sqlStar                  = "*"
+	defaultArgumentsCapacity = 5
 )
 
 var (
@@ -515,34 +516,30 @@ const (
 // Arguments a collection of primitive types or slices of primitive types.
 // It acts as some kind of prepared statement.
 type Arguments struct {
+	base              builderCommon
 	insertColumnCount uint
 	insertRowCount    uint
-	base              builderCommon
 	Options           uint
-	qb                QueryBuilder
-	raw               []interface{}
-	args              []argument
-	recs              []QualifiedRecord
+	// hasNamedArgs checks if the SQL string in the cachedSQL field contains named arguments.
+	// 0 not yet checked, 1=does not contain, 2 = yes
+	hasNamedArgs uint8 // 0 not checked, 1=no, 2=yes
+	raw          []interface{}
+	args         []argument
+	recs         []QualifiedRecord
+	// finalArgs contains the final arguments
+	argsPrepared bool
 }
 
+// ToSQL the returned interface slice is owned by the callee.
 func (a *Arguments) ToSQL() (string, []interface{}, error) {
-	return a.prepareArgs(false)
-}
-
-func (a *Arguments) toSQLAppendArgs(args ...interface{}) (string, []interface{}, error) {
-	sqlStr, tArgs, err := a.qb.ToSQL()
-	if err != nil {
-		return "", nil, errors.WithStack(err)
-	}
-	args = append(args, tArgs...)
-	return sqlStr, append(args, a.raw...), nil
+	return a.prepareArgs()
 }
 
 // Interpolate if set stringyfies the arguments into the SQL string and returns
 // pre-processed SQL command when calling the function ToSQL. Not suitable for
 // prepared statements. ToSQLs second argument `args` will then be nil.
 func (a *Arguments) Interpolate() *Arguments {
-	a.Options |= argOptionInterpolate
+	a.Options = a.Options | argOptionInterpolate
 	return a
 }
 
@@ -556,27 +553,12 @@ func (a *Arguments) Interpolate() *Arguments {
 // functions. This function should be generally used when dealing with prepared
 // statements or interpolation.
 func (a *Arguments) ExpandPlaceHolders() *Arguments {
-	a.Options |= argOptionExpandPlaceholder
+	a.Options = a.Options | argOptionExpandPlaceholder
 	return a
 }
 
 // MakeArgs creates a new argument slice with the desired capacity.
 func MakeArgs(cap int) *Arguments { return &Arguments{args: make([]argument, 0, cap)} }
-
-// https://github.com/golang/go/issues/16323 benchmark will show the results if a pool is a good fit.
-var iFaceSlicePool = sync.Pool{
-	New: func() interface{} {
-		return make([]interface{}, 0, 5)
-	},
-}
-
-func iFaceSlicePoolGet() []interface{} {
-	return iFaceSlicePool.Get().([]interface{})
-}
-
-func iFaceSlicePoolPut(v []interface{}) {
-	iFaceSlicePool.Put(v[:0])
-}
 
 func (a *Arguments) isEmpty() bool {
 	if a == nil {
@@ -585,85 +567,130 @@ func (a *Arguments) isEmpty() bool {
 	return len(a.raw) == 0 && len(a.args) == 0 && len(a.recs) == 0
 }
 
-func (a *Arguments) hasArgs() bool {
+func (a *Arguments) argsCount() int {
 	if a == nil {
-		return false
+		return 0
 	}
-	return len(a.args) > 0
+	return len(a.args)
 }
 
 // multiplyArguments is only applicable when using *Union as a template.
 // multiplyArguments repeats the `args` variable n-times to match the number of
 // generated SELECT queries in the final UNION statement. It should be called
 // after all calls to `StringReplace` have been made.
-func (a *Arguments) multiplyArguments(factor int) *Arguments {
+func (a *Arguments) multiplyArguments() {
+	factor := a.base.templateStmtCount
 	if a == nil || factor < 2 {
-		return a
+		return
 	}
-	newA := MakeArgs(len(a.args) * factor)
+	newA := make([]argument, len(a.args)*factor)
 	lArgs := len(a.args)
 	for i := 0; i < factor; i++ {
-		copy(newA.args[i*lArgs:], a.args)
+		copy(newA[i*lArgs:], a.args)
 	}
-	return newA
+	a.args = newA
+	return
 }
 
 // prepareArgs transforms mainly the Arguments into []interface{} but also
 // appends the `args` from the Exec+ or Query+ function.
 // All method receivers are not thread safe.
-func (a *Arguments) prepareArgs(usePool bool) (_ string, iFaces []interface{}, _ error) {
-	sqlStr, args, err := a.qb.ToSQL()
-	if err != nil {
+func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, error) {
+	if len(a.base.cachedSQL) == 0 {
+		return "", nil, errors.Empty.Newf("[dml] Arguments: The SQL string is empty.")
+	}
+	if a.isEmpty() {
+		a.hasNamedArgs = 1
+		return string(a.base.cachedSQL), nil, nil
+	}
+
+	if a.hasNamedArgs == 0 {
+		found := false
+		a.base.cachedSQL, a.base.qualifiedColumns, found = extractReplaceNamedArgs(a.base.cachedSQL, a.base.qualifiedColumns)
+		a.hasNamedArgs = 1
+		if found {
+			a.hasNamedArgs = 2
+		}
+	}
+
+	a.raw = append(a.raw, fncArgs...)
+	if err := a.appendConvertedRecordsToArguments(); err != nil {
 		return "", nil, errors.WithStack(err)
 	}
 
-	if a.isEmpty() {
-		return sqlStr, args, nil
+	sqlBuf := bufferpool.Get()
+	defer bufferpool.Put(sqlBuf)
+	if _, err := sqlBuf.Write(a.base.cachedSQL); err != nil {
+		return "", nil, errors.WithStack(err)
 	}
 
-	if usePool {
-		iFaces = iFaceSlicePoolGet()
-	}
-	argsArgs, err := a.convertRecordsToArguments()
+	if a.base.source == dmlSourceInsert {
 
-	switch {
-	case a.Options > 0 && len(a.raw) > 0 && len(a.recs) == 0 && len(a.args) == 0:
-		return "", nil, errors.NotAllowed.Newf("[dml] ExpandPlaceholders supports only Records and Arguments and not an interface slice.")
-	case a.Options&argOptionExpandPlaceholder != 0:
-		if phCount := strings.Count(sqlStr, placeHolderStr); phCount < a.Len() {
-			var buf strings.Builder
-			buf.Grow(len(sqlStr))
-			if err = expandPlaceHolders(buf, sqlStr, a); err != nil {
+		totalArgLen := uint(len(a.args) + len(a.raw))
+		// buildInsertPlaceHolders(sqlBuf, totalArgLen, b.RowCount, b.RecordPlaceHolderCount)
+		if a.insertRowCount > 0 {
+			columnCount := totalArgLen / a.insertRowCount
+			writeInsertPlaceholders(sqlBuf, a.insertRowCount, columnCount)
+
+		} else if a.insertColumnCount > 0 {
+			rowCount := totalArgLen / a.insertColumnCount
+			writeInsertPlaceholders(sqlBuf, rowCount, a.insertColumnCount)
+		}
+
+		fmt.Printf("a.insertRowCount %d\na.insertColumnCount %d\n%q\n\n", a.insertRowCount, a.insertColumnCount, sqlBuf.String())
+	}
+
+	// `switch` statement no suitable.
+	if a.Options > 0 && len(a.raw) > 0 && len(a.recs) == 0 && len(a.args) == 0 {
+		return "", nil, errors.NotAllowed.Newf("[dml] ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
+	}
+	var tmpBuf *bytes.Buffer
+	if a.Options > 0 {
+		tmpBuf = bufferpool.Get()
+		defer bufferpool.Put(tmpBuf)
+	}
+	if a.Options&argOptionExpandPlaceholder != 0 {
+		if phCount := bytes.Count(sqlBuf.Bytes(), placeHolderByte); phCount < a.Len() {
+			tmpBuf.Grow(sqlBuf.Len() * 5 / 4)
+			tmpBuf.Reset()
+			if err := expandPlaceHolders(tmpBuf, sqlBuf.Bytes(), a); err != nil {
 				return "", nil, errors.WithStack(err)
 			}
-			sqlStr = buf.String()
+			sqlBuf.Reset()
+			if _, err := tmpBuf.WriteTo(sqlBuf); err != nil {
+				return "", nil, errors.WithStack(err)
+			}
+			tmpBuf.Reset()
 		}
-	case a.Options&argOptionInterpolate != 0:
-		buf := bufferpool.Get()
-		if err := writeInterpolate(buf, sqlStr, a); err != nil {
-			bufferpool.Put(buf)
-			return "", nil, errors.WithStack(err)
+	}
+	if a.Options&argOptionInterpolate != 0 {
+		if err := writeInterpolateBytes(tmpBuf, sqlBuf.Bytes(), a); err != nil {
+			return "", nil, errors.Wrapf(err, "[dml] Interpolation failed: %q", sqlBuf.String())
 		}
-		sqlStr = buf.String()
-		bufferpool.Put(buf)
+		a.Reset()
+		return tmpBuf.String(), nil, nil
 	}
 
-	iFaces = argsArgs.Interfaces(iFaces)
-	iFaces = append(iFaces, a.raw...)
-	iFaces = append(iFaces, args...)
-	return sqlStr, iFaces, err
+	a.raw = a.Interfaces(a.raw...) // assign back to retain the whole cap of the slice.
+	a.argsPrepared = true
+	return sqlBuf.String(), a.raw, nil
 }
 
-func (a *Arguments) convertRecordsToArguments() (*Arguments, error) {
+func (a *Arguments) appendConvertedRecordsToArguments() error {
 	if a.base.templateStmtCount == 0 {
 		a.base.templateStmtCount = 1
 	}
 	if len(a.args) == 0 && len(a.recs) == 0 {
-		return a, nil
+		return nil
 	}
 
-	if len(a.args) > 0 && len(a.recs) == 0 && a.base.templateStmtCount > 1 && !a.hasNamedArgs() {
-		return a.multiplyArguments(a.base.templateStmtCount), nil
+	if len(a.args) > 0 && len(a.recs) == 0 && a.base.templateStmtCount > 1 && a.hasNamedArgs < 2 {
+		a.multiplyArguments()
+		return nil
+	}
+
+	if a.argsPrepared {
+		return nil
 	}
 
 	cm := newColumnMap(MakeArgs(len(a.args)+len(a.recs)), "") // can use an arg pool Arguments
@@ -685,26 +712,30 @@ func (a *Arguments) convertRecordsToArguments() (*Arguments, error) {
 				unnamedCounter++
 				//continue
 			}
+
 			for _, qRec := range a.recs {
 				if qRec.Qualifier == "" {
 					qRec.Qualifier = a.base.defaultQualifier
 				}
 				if qRec.Qualifier == qualifier {
 					if err := qRec.Record.MapColumns(cm); err != nil {
-						return a, errors.WithStack(err)
+						return errors.WithStack(err)
 					}
 				}
 			}
 
 			if err := a.MapColumns(cm); err != nil {
-				return a, errors.WithStack(err)
+				return errors.WithStack(err)
 			}
 		}
 	}
-	if len(cm.Args.args) == 0 {
-		cm.Args.args = append(cm.Args.args, a.args...)
+
+	if len(cm.Args.args) > 0 {
+		//a.args = append(a.args, cm.Args.args...)
+		a.args = cm.Args.args
 	}
-	return cm.Args, nil
+
+	return nil
 }
 
 // unnamedArgByPos returns an unnamed argument by its position.
@@ -719,15 +750,6 @@ func (a *Arguments) unnamedArgByPos(pos int) (argument, bool) {
 		}
 	}
 	return argument{}, false
-}
-
-func (a *Arguments) hasNamedArgs() bool {
-	for _, arg := range a.args {
-		if arg.name != "" {
-			return true
-		}
-	}
-	return false
 }
 
 // MapColumns allows to merge one argument slice with another depending on the
@@ -763,8 +785,18 @@ func (a *Arguments) GoString() string {
 	return buf.String()
 }
 
+func (a *Arguments) sliceArgumentLen() int {
+	if a == nil {
+		return 0
+	}
+	return len(a.args)
+}
+
 // Len returns the total length of all arguments.
 func (a *Arguments) Len() int {
+	if a == nil {
+		return 0
+	}
 	var l int
 	for _, arg := range a.args {
 		l += arg.len()
@@ -797,7 +829,7 @@ func (a Arguments) Write(buf *bytes.Buffer) error {
 func (a *Arguments) Interfaces(args ...interface{}) []interface{} {
 	const maxInt64 = 1<<63 - 1
 	if len(a.args) == 0 {
-		return nil
+		return args
 	}
 	if args == nil {
 		args = make([]interface{}, 0, 2*len(a.args))
@@ -909,6 +941,9 @@ func (a *Arguments) Interfaces(args ...interface{}) []interface{} {
 }
 
 func (a *Arguments) add(v interface{}) *Arguments {
+	if a == nil {
+		a = MakeArgs(defaultArgumentsCapacity)
+	}
 	if l := len(a.args); l > 0 {
 		// look back if there might be a name.
 		if arg := a.args[l-1]; !arg.isSet {
@@ -931,13 +966,15 @@ func (a *Arguments) Record(qualifier string, record ColumnMapper) *Arguments {
 	return a
 }
 
-// Arguments sets the internal arguments slice to the provided argument.
+// Arguments sets the internal arguments slice to the provided argument. Those
+// are the slices Arguments, records and raw.
 func (a *Arguments) Arguments(args *Arguments) *Arguments {
 	a.args = args.args
 	a.recs = args.recs
 	a.raw = args.raw
 	return a
 }
+
 func (a *Arguments) Records(records ...QualifiedRecord) *Arguments { a.recs = records; return a }
 func (a *Arguments) Raw(raw ...interface{}) *Arguments             { a.raw = raw; return a }
 
@@ -976,16 +1013,22 @@ func (a *Arguments) NullTimes(nv ...NullTime) *Arguments       { return a.add(nv
 // each other sets the first call to Name to a NULL value. A call to Name should
 // always follow a call to a function type like Int, Float64s or NullTime.
 // Name may contain the placeholder prefix colon.
-func (a *Arguments) Name(n string) *Arguments {
-	a.args = append(a.args, argument{name: n})
-	return a
-}
+func (a *Arguments) Name(n string) *Arguments { a.args = append(a.args, argument{name: n}); return a }
 
 // TODO: maybe use such a function to set the position, but then add a new field: pos int to the argument struct
 // func (a *Arguments) Pos(n int) *Arguments { return append(a, argument{name: n}) }
 
 // Reset resets the slice for new usage retaining the already allocated memory.
-func (a *Arguments) Reset() *Arguments { a.args = a.args[:0]; return a }
+func (a *Arguments) Reset() *Arguments {
+	for i := range a.recs {
+		a.recs[i].Qualifier = ""
+		a.recs[i].Record = nil
+	}
+	a.recs = a.recs[:0]
+	a.args = a.args[:0]
+	a.raw = a.raw[:0]
+	return a
+}
 
 // DriverValue adds multiple of the same underlying values to the argument
 // slice. When using different values, the last applied value wins and gets
@@ -1152,6 +1195,25 @@ func (a *Arguments) WithDB(db QueryExecPreparer) *Arguments {
 	return a
 }
 
+/*********************************************
+	LOAD / QUERY and EXEC functions
+*********************************************/
+
+var poolColumnMap = sync.Pool{
+	New: func() interface{} {
+		return new(ColumnMap)
+	},
+}
+
+func poolColumnMapGet() *ColumnMap {
+	return poolColumnMap.Get().(*ColumnMap)
+}
+
+func poolColumnMapPut(cm *ColumnMap) {
+	cm.reset()
+	poolColumnMap.Put(cm)
+}
+
 // Exec executes the statement represented by the Insert object. It returns the
 // raw database/sql Result or an error if there was one. Regarding
 // LastInsertID(): If you insert multiple rows using a single INSERT statement,
@@ -1170,19 +1232,95 @@ func (a *Arguments) QueryContext(ctx context.Context, args ...interface{}) (*sql
 
 // QueryRow traditional way, allocation heavy.
 func (a *Arguments) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row {
-	panic(errors.NotImplemented.Newf("TODO implement"))
-	return nil
+	sqlStr, rawArgs, err := a.prepareArgs(args...)
+	if a.base.Log != nil && a.base.Log.IsDebug() {
+		defer log.WhenDone(a.base.Log).Debug("QueryRowContext", log.String("sql", sqlStr), log.String("source", string(a.base.source)), log.Err(err))
+	}
+	return a.base.DB.QueryRowContext(ctx, sqlStr, append(rawArgs, args...)...)
 }
 
-// Load loads data from a query into an object. Load can load a single row
-// or n-rows.
+// Iterate iterates over the result set by loading only one row each iteration
+// and then discarding it. Handles records one by one. Even if there are no rows
+// in the query, the callBack function gets executed with a ColumnMap argument
+// that indicates ColumnMap.HasRows equals false.
+func (a *Arguments) Iterate(ctx context.Context, callBack func(*ColumnMap) error, args ...interface{}) (err error) {
+	if a.base.Log != nil && a.base.Log.IsDebug() {
+		defer log.WhenDone(a.base.Log).Debug("Iterate", log.String("id", a.base.id), log.Err(err))
+	}
+
+	r, err := a.query(ctx, args...)
+	if err != nil {
+		err = errors.Wrapf(err, "[dml] Iterate.Query with query ID %q", a.base.id)
+		return
+	}
+	cmr := poolColumnMapGet()
+	defer func() {
+		// Not testable with the sqlmock package :-(
+		if err2 := r.Close(); err2 != nil && err == nil {
+			err = errors.Wrap(err2, "[dml] Iterate.QueryContext.Rows.Close")
+		}
+		poolColumnMapPut(cmr)
+	}()
+
+	for r.Next() {
+		if err = cmr.Scan(r); err != nil {
+			err = errors.WithStack(err)
+			return
+		}
+		if err = callBack(cmr); err != nil {
+			err = errors.WithStack(err)
+			return
+		}
+	}
+	err = errors.WithStack(r.Err())
+	if !cmr.HasRows && err == nil {
+		err = errors.WithStack(callBack(cmr))
+	}
+	return
+}
+
+// Load loads data from a query into an object. Load can load a single row or
+// muliple-rows. It checks on top if ColumnMapper `s` implements io.Closer, to
+// call the custom close function. This is useful for e.g. unlocking a mutex.
 func (a *Arguments) Load(ctx context.Context, s ColumnMapper, args ...interface{}) (rowCount uint64, err error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {
-		defer log.WhenDone(a.base.Log).Debug("Load", log.Uint64("row_count", rowCount), log.String("object_type", fmt.Sprintf("%T", s)), log.Err(err))
+		defer log.WhenDone(a.base.Log).Debug("Load", log.String("id", a.base.id), log.Err(err), log.ObjectTypeOf("ColumnMapper", s))
 	}
+
 	r, err := a.query(ctx, args...)
-	rowCount, err = load(r, err, s, &ColumnMap{}) // sync.Pool would be useful for ColumnMap
-	return rowCount, errors.WithStack(err)
+	if err != nil {
+		err = errors.Wrapf(err, "[dml] Load.QueryContext with query ID %q", a.base.id)
+		return
+	}
+	cm := poolColumnMapGet()
+	defer func() {
+		// Not testable with the sqlmock package :-(
+		if err2 := r.Close(); err2 != nil && err == nil {
+			err = errors.Wrap(err2, "[dml] Load.QueryContext.Rows.Close")
+		}
+		if rc, ok := s.(ioCloser); ok {
+			if err2 := rc.Close(); err2 != nil && err == nil {
+				err = errors.Wrap(err2, "[dml] Load.QueryContext.ColumnMapper.Close")
+			}
+		}
+		poolColumnMapPut(cm)
+	}()
+
+	for r.Next() {
+		if err = cm.Scan(r); err != nil {
+			return 0, errors.WithStack(err)
+		}
+		if err = s.MapColumns(cm); err != nil {
+			return 0, errors.WithStack(err)
+		}
+	}
+	if err = r.Err(); err != nil {
+		return 0, errors.WithStack(err)
+	}
+	if cm.HasRows {
+		cm.Count++ // because first row is zero but we want the actual row number
+	}
+	return cm.Count, err
 }
 
 // LoadInt64 executes the prepared statement and returns the value as an
@@ -1408,12 +1546,11 @@ func (a *Arguments) LoadStrings(ctx context.Context, args ...interface{}) (value
 
 func (a *Arguments) query(ctx context.Context, args ...interface{}) (rows *sql.Rows, err error) {
 	var sqlStr string
-	if a.base.Log != nil && a.base.Log.IsDebug() {
-		defer log.WhenDone(a.base.Log).Debug("Query", log.String("id", a.base.id), log.Err(err), log.String("sql", sqlStr), log.String("source", string(a.base.source)))
-	}
 	var rawArgs []interface{}
-	sqlStr, rawArgs, err = a.prepareArgs(true)
-	defer iFaceSlicePoolPut(rawArgs)
+	sqlStr, rawArgs, err = a.prepareArgs(args...)
+	if a.base.Log != nil && a.base.Log.IsDebug() {
+		defer log.WhenDone(a.base.Log).Debug("Query", log.String("sql", sqlStr), log.String("source", string(a.base.source)), log.Err(err))
+	}
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -1423,61 +1560,6 @@ func (a *Arguments) query(ctx context.Context, args ...interface{}) (rows *sql.R
 		err = errors.Wrapf(err, "[dml] Query.QueryContext with query %q", sqlStr)
 	}
 	return
-}
-
-func (a *Arguments) load(ctx context.Context, cm ColumnMapper, args ...interface{}) (rowCount uint64, err error) {
-	if a.base.Log != nil && a.base.Log.IsDebug() {
-		defer log.WhenDone(a.base.Log).Debug("Load", log.String("id", a.base.id), log.Err(err))
-	}
-
-	rows, err := a.query(ctx, args...)
-	if err != nil {
-		err = errors.Wrapf(err, "[dml] Load.QueryContext with query ID %q", a.base.id)
-		return
-	}
-	rowCount, err = load(rows, err, cm, &ColumnMap{}) // sync.Pool can be used for ColumnMap
-	if err != nil {
-		err = errors.Wrapf(err, "[dml] Load.QueryContext with query ID %q", a.base.id)
-	}
-	return
-}
-
-type ioCloser interface {
-	Close() error
-}
-
-func load(r *sql.Rows, errIn error, s ColumnMapper, cm *ColumnMap) (rowCount uint64, err error) {
-	if errIn != nil {
-		return 0, errors.WithStack(errIn)
-	}
-	cm.reset()
-	defer func() {
-		// Not testable with the sqlmock package :-(
-		if err2 := r.Close(); err2 != nil && err == nil {
-			err = errors.Wrap(err2, "[dml] Load.QueryContext.Rows.Close")
-		}
-		if rc, ok := s.(ioCloser); ok {
-			if err2 := rc.Close(); err2 != nil && err == nil {
-				err = errors.Wrap(err2, "[dml] Load.QueryContext.ColumnMapper.Close")
-			}
-		}
-	}()
-
-	for r.Next() {
-		if err = cm.Scan(r); err != nil {
-			return 0, errors.WithStack(err)
-		}
-		if err = s.MapColumns(cm); err != nil {
-			return 0, errors.WithStack(err)
-		}
-	}
-	if err = r.Err(); err != nil {
-		return 0, errors.WithStack(err)
-	}
-	if cm.HasRows {
-		cm.Count++ // because first row is zero but we want the actual row number
-	}
-	return cm.Count, err
 }
 
 func loadInt64(rows *sql.Rows, errIn error) (value int64, err error) {
@@ -1533,20 +1615,19 @@ func loadInt64s(rows *sql.Rows, errIn error) (_ []int64, err error) {
 
 func (a *Arguments) exec(ctx context.Context, args ...interface{}) (result sql.Result, err error) {
 	var sqlStr string
-	if a.base.Log != nil && a.base.Log.IsDebug() {
-		defer log.WhenDone(a.base.Log).Debug("Exec", log.String("id", a.base.id), log.Err(err), log.String("sql", sqlStr), log.String("source", string(a.base.source)))
-	}
 	var rawArgs []interface{}
-	sqlStr, rawArgs, err = a.prepareArgs(true)
-	defer iFaceSlicePoolPut(rawArgs)
+	sqlStr, rawArgs, err = a.prepareArgs(args...)
+	if a.base.Log != nil && a.base.Log.IsDebug() {
+		defer log.WhenDone(a.base.Log).Debug("Exec", log.String("sql", sqlStr), log.String("source", string(a.base.source)), log.Err(err))
+	}
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	rawArgs = append(rawArgs, args...)
 	result, err = a.base.DB.ExecContext(ctx, sqlStr, rawArgs...)
 	if err != nil {
-		err = errors.Wrapf(err, "[dml] ExecContext with query %q", sqlStr)
+		err = errors.Wrapf(err, "[dml] ExecContext with query %q", sqlStr) // err gets catched by the defer
+		return
 	}
 
 	if a.recs == nil {
@@ -1554,7 +1635,8 @@ func (a *Arguments) exec(ctx context.Context, args ...interface{}) (result sql.R
 	}
 	lID, err := result.LastInsertId()
 	if err != nil {
-		return nil, errors.WithStack(err)
+		err = errors.WithStack(err)
+		return
 	}
 	for i, rec := range a.recs {
 		if a, ok := rec.Record.(LastInsertIDAssigner); ok {

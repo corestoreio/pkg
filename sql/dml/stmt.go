@@ -41,10 +41,9 @@ type Stmt struct {
 // WithArgs works the same as the other WithArgs implementations and guarantees
 // in this case that a sql.Stmt can be used across multiple goroutines.
 func (st *Stmt) WithArgs(rawArgs ...interface{}) *Arguments {
-	var args [5]argument // TODO check benchmarks if worth!
+	var args [defaultArgumentsCapacity]argument
 	return &Arguments{
 		base: st.base,
-		qb:   QuerySQL(""),
 		raw:  rawArgs,
 		args: args[:0],
 	}
@@ -112,10 +111,9 @@ func (rs *StmtRedux) Close() error {
 
 func (st *StmtRedux) WithArgs(rawArgs ...interface{}) *Arguments {
 	// todo: correct implementation
-	var args [5]argument // TODO check benchmarks if worth!
+	var args [defaultArgumentsCapacity]argument
 	return &Arguments{
 		base: st.stmt.base,
-		qb:   QuerySQL(""),
 		raw:  rawArgs,
 		args: args[:0],
 	}

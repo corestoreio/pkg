@@ -23,9 +23,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/coopernurse/gorp"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/modl"
 )
 
 type uniqueIDFn func() string
@@ -98,6 +100,14 @@ type ConnPoolOption struct {
 	// for adding a prefix and/or a suffix.
 	// TODO implement TableNameMapper
 	TableNameMapper func(oldName string) (newName string)
+	// OptimisticLock is enabled all queries with Exec will have a `version` field.
+	// UPDATE user SET ..., version = version + 1 WHERE id = ? AND version = ?
+	// TODO implement OptimisticLock
+	OptimisticLock bool
+	// OptimisticLockFieldName custom global column name, defaults to `version uint64`
+	OptimisticLockColumnName string
+	A                        gorp.OptimisticLockError
+	B                        modl.OptimisticLockError
 }
 
 // WithLogger sets the customer logger to be used across the package. The logger
@@ -495,3 +505,43 @@ func (tx *Tx) Wrap(fns ...func() error) error {
 	}
 	return errors.WithStack(tx.Commit())
 }
+
+// Architecture bug in this function
+//func (tx *Tx) WrapBuilder(bldrs ...QueryBuilder) (err error) {
+//	defer func() {
+//		if err != nil {
+//			if rErr := tx.Rollback(); rErr != nil {
+//				err = errors.Wrapf(rErr, "[dml] transaction.wrap.Rollback.error")
+//			}
+//		}
+//	}()
+//	for i := 0; i < len(bldrs) && err == nil; i++ {
+//		bldr := bldrs[i]
+//		switch b := bldr.(type) {
+//		case *Arguments:
+//			b.WithDB(tx.DB)
+//		case *Delete:
+//			b.WithDB(tx.DB)
+//		case *Insert:
+//			b.WithDB(tx.DB)
+//		case *Update:
+//			b.WithDB(tx.DB)
+//		case *Select:
+//			b.WithDB(tx.DB)
+//		case *Union:
+//			b.WithDB(tx.DB)
+//		case *With:
+//			b.WithDB(tx.DB)
+//		//case *Stmt:
+//		//	b.Stmt = tx.DB.Stmt(b.Stmt)
+//		//	b.base.DB = stmtWrapper{stmt: b.Stmt}
+//		default:
+//			err = errors.NotSupported.Newf("[dml] WrapBuilder does not support this type: %T", bldr)
+//		}
+//
+//	}
+//	if err == nil {
+//		err = errors.WithStack(tx.Commit())
+//	}
+//	return
+//}

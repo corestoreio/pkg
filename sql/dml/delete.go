@@ -174,12 +174,14 @@ func (b *Delete) Limit(limit uint64) *Delete {
 // WithArgs builds the SQL string and sets the optional interfaced arguments for
 // the later execution. It copies the underlying connection and structs.
 func (b *Delete) WithArgs(args ...interface{}) *Arguments {
+	b.source = dmlSourceDelete
 	return b.withArgs(b, args...)
 }
 
 // ToSQL generates the SQL string and might caches it internally, if not
 // disabled. The returned interface slice is always nil.
 func (b *Delete) ToSQL() (string, []interface{}, error) {
+	b.source = dmlSourceDelete
 	rawSQL, err := b.buildToSQL(b)
 	if err != nil {
 		return "", nil, errors.WithStack(err)

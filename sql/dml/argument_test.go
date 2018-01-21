@@ -408,17 +408,40 @@ func TestArguments_Named(t *testing.T) {
 func TestArguments_HasNamedArgs(t *testing.T) {
 	t.Parallel()
 
-	a := MakeArgs(2).
-		Float64s(2.76, 3.141).
-		Name("entity_id").Int64(4).
-		Name("store_id").Uint64(5678)
-	assert.True(t, a.hasNamedArgs())
-
-	a = MakeArgs(2).
-		Float64s(2.76, 3.141).
-		Int64(4).
-		Uint64(5678)
-	assert.False(t, a.hasNamedArgs())
+	t.Run("hasNamedArgs in expression", func(t *testing.T) {
+		a := NewSelect().
+			AddColumnsConditions(
+				Expr("?").Alias("n").Int64(1),
+				Expr("CAST(:abc AS CHAR(20))").Alias("str"),
+			).WithArgs().Record("", MakeArgs(1).Name("abc").String("a'bc"))
+		_, _, err := a.ToSQL()
+		require.NoError(t, err)
+		assert.Exactly(t, uint8(2), a.hasNamedArgs)
+	})
+	t.Run("hasNamedArgs in condition, no args", func(t *testing.T) {
+		a := NewSelect("a", "b").From("c").Where(
+			Column("id").Greater().PlaceHolder(),
+			Column("email").Like().NamedArg("ema1l")).WithArgs()
+		_, _, err := a.ToSQL()
+		require.NoError(t, err)
+		assert.Exactly(t, uint8(1), a.hasNamedArgs)
+	})
+	t.Run("hasNamedArgs in condition, with args", func(t *testing.T) {
+		a := NewSelect("a", "b").From("c").Where(
+			Column("id").Greater().PlaceHolder(),
+			Column("email").Like().NamedArg("ema1l")).WithArgs().String("my@email.org")
+		_, _, err := a.ToSQL()
+		require.NoError(t, err)
+		assert.Exactly(t, uint8(1), a.hasNamedArgs)
+	})
+	t.Run("hasNamedArgs none", func(t *testing.T) {
+		a := NewSelect("a", "b").From("c").Where(
+			Column("id").Greater().Int(221),
+			Column("email").Like().Str("em@1l.de")).WithArgs()
+		_, _, err := a.ToSQL()
+		require.NoError(t, err)
+		assert.Exactly(t, uint8(1), a.hasNamedArgs)
+	})
 }
 
 func TestArguments_MapColumns(t *testing.T) {

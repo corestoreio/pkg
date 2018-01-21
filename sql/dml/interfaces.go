@@ -76,6 +76,7 @@ type QueryExecPreparer interface {
 	Preparer
 	Querier
 	Execer
+	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
 }
 
 type stmtWrapper struct {
@@ -92,4 +93,12 @@ func (sw stmtWrapper) ExecContext(ctx context.Context, _ string, args ...interfa
 
 func (sw stmtWrapper) QueryContext(ctx context.Context, _ string, args ...interface{}) (*sql.Rows, error) {
 	return sw.stmt.QueryContext(ctx, args...)
+}
+
+func (sw stmtWrapper) QueryRowContext(ctx context.Context, _ string, args ...interface{}) *sql.Row {
+	return sw.stmt.QueryRowContext(ctx, args...)
+}
+
+type ioCloser interface {
+	Close() error
 }

@@ -29,7 +29,7 @@ import (
 var _ fmt.Stringer = (*ip)(nil)
 var _ QueryBuilder = (*ip)(nil)
 
-func TestRepeat(t *testing.T) {
+func TestExpandPlaceHolders(t *testing.T) {
 	t.Parallel()
 
 	t.Run("MisMatch", func(t *testing.T) {
@@ -569,8 +569,8 @@ func TestExtractNamedArgs(t *testing.T) {
 
 	runner := func(haveSQL, wantSQL string, wantQualifiedColumns ...string) func(*testing.T) {
 		return func(t *testing.T) {
-			gotSQL, qualifiedColumns := extractReplaceNamedArgs(haveSQL, nil)
-			assert.Exactly(t, wantSQL, gotSQL)
+			gotSQL, qualifiedColumns, _ := extractReplaceNamedArgs([]byte(haveSQL), nil)
+			assert.Exactly(t, wantSQL, string(gotSQL))
 			assert.Exactly(t, wantQualifiedColumns, qualifiedColumns)
 		}
 	}

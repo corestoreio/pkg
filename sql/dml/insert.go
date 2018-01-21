@@ -35,7 +35,6 @@ type Insert struct {
 	Columns []string
 	// RowCount defines the number of expected rows.
 	RowCount int // See SetRowCount()
-	//Records  []ColumnMapper
 	// RecordPlaceHolderCount defines the number of place holders for each set
 	// within the brackets. Must only be set when Records have been applied
 	// and `Columns` field has been omitted.
@@ -84,8 +83,8 @@ type Insert struct {
 	IsIgnore bool
 	// Listeners allows to dispatch certain functions in different
 	// situations.
-	Listeners ListenersInsert
-	argsPool  Arguments // only used during ToSQL
+	Listeners        ListenersInsert
+	doNotBuildValues bool
 }
 
 // NewInsert creates a new Insert object.
@@ -227,14 +226,22 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 // WithArgs builds the SQL string and sets the optional interfaced arguments for
 // the later execution. It copies the underlying connection and structs.
 func (b *Insert) WithArgs(args ...interface{}) *Arguments {
-	// TODO(CyS) support right side expressions, requires some internal refactoring
+	// TODO(CyS) support right side expressions, requires some internal
+	// refactoring
+
+	b.source = dmlSourceInsert
+	b.doNotBuildValues = true
 	a := b.withArgs(b, args...)
+	b.doNotBuildValues = false
 	for _, cv := range b.Pairs {
 		b.Columns = append(b.Columns, cv.Left)
 		a.args = append(a.args, cv.Right.arg)
 	}
 
 	a.insertColumnCount = uint(len(b.Columns))
+	if b.RecordPlaceHolderCount > 0 {
+		a.insertColumnCount = uint(b.RecordPlaceHolderCount)
+	}
 	a.insertRowCount = uint(b.RowCount)
 	return a
 }
@@ -242,6 +249,7 @@ func (b *Insert) WithArgs(args ...interface{}) *Arguments {
 // ToSQL serialized the Insert to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Insert) ToSQL() (string, []interface{}, error) {
+	b.source = dmlSourceInsert
 	rawSQL, err := b.buildToSQL(b)
 	if err != nil {
 		return "", nil, errors.WithStack(err)
@@ -323,7 +331,7 @@ func (b *Insert) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 	}
 	buf.WriteString("VALUES ")
 
-	if argCount0 := len(b.Columns); argCount0 > 0 {
+	if argCount0 := len(b.Columns); argCount0 > 0 && !b.doNotBuildValues {
 		rowCount := 1
 		if b.RowCount > 0 {
 			rowCount = b.RowCount
@@ -384,7 +392,7 @@ func strInSlice(search string, sl []string) bool {
 //func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 //
 //	if b.Select != nil && (b.Select.argsArgs != nil || b.Select.argsRecords != nil) {
-//		args, err = b.Select.convertRecordsToArguments()
+//		args, err = b.Select.appendConvertedRecordsToArguments()
 //		return args, errors.WithStack(err)
 //	}
 //

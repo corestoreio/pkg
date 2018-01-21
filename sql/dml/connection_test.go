@@ -32,6 +32,7 @@ func TestTransactionReal(t *testing.T) {
 		"Barack", "obama@whitehouse.gov",
 		"Obama", "barack@whitehouse.gov",
 	)
+	t.Logf("%#v", txIns)
 
 	lastID, _ := compareExecContext(t, txIns, 3, 2)
 

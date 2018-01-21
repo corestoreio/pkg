@@ -29,8 +29,7 @@ func TestSelect_BasicToSQL(t *testing.T) {
 
 	t.Run("no table no args", func(t *testing.T) {
 		sel := NewSelect().AddColumnsConditions(Expr("1").Alias("n")).AddColumnsAliases("abc", "str")
-		compareToSQL(t, sel, errors.NoKind,
-			"SELECT 1 AS `n`, `abc` AS `str`",
+		compareToSQL2(t, sel, errors.NoKind,
 			"SELECT 1 AS `n`, `abc` AS `str`",
 		)
 	})
@@ -40,8 +39,7 @@ func TestSelect_BasicToSQL(t *testing.T) {
 				Expr("?").Alias("n").Int64(1),
 				Expr("CAST(? AS CHAR(20))").Alias("str").Str("a'bc"),
 			)
-		compareToSQL(t, sel, errors.NoKind,
-			"SELECT 1 AS `n`, CAST('a\\'bc' AS CHAR(20)) AS `str`",
+		compareToSQL2(t, sel, errors.NoKind,
 			"SELECT 1 AS `n`, CAST('a\\'bc' AS CHAR(20)) AS `str`",
 		)
 	})
@@ -134,12 +132,19 @@ func TestSelect_BasicToSQL(t *testing.T) {
 			Column("name").NotIn().PlaceHolder(),
 		)
 
-		sel.WithArgs().ExpandPlaceHolders().Ints(3, 4, 5).NullStrings(MakeNullString("A1"), NullString{}, MakeNullString("A2"))
+		selA := sel.WithArgs().ExpandPlaceHolders().Ints(3, 4, 5).NullStrings(MakeNullString("A1"), NullString{}, MakeNullString("A2"))
 
-		compareToSQL(t, sel, errors.NoKind,
+		compareToSQL(t, selA, errors.NoKind,
 			"SELECT `sku`, `name` FROM `products` WHERE (`id` IN (?,?,?)) AND (`name` NOT IN (?,?,?))",
 			"",
 			int64(3), int64(4), int64(5), "A1", nil, "A2",
+		)
+
+		selA.Reset().Ints(3, 4, 5, 6, 7).NullStrings(NullString{}, MakeNullString("A2"))
+		compareToSQL(t, selA, errors.NoKind,
+			"SELECT `sku`, `name` FROM `products` WHERE (`id` IN (?,?,?,?,?)) AND (`name` NOT IN (?,?))",
+			"",
+			int64(3), int64(4), int64(5), int64(6), int64(7), nil, "A2",
 		)
 	})
 
@@ -591,7 +596,7 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 	t.Run("Scan string into arg UINT returns error", func(t *testing.T) {
 		var people dmlPersons
 		rc, err := s.SelectFrom("dml_people").AddColumnsAliases("email", "id", "name", "email").WithArgs().Load(context.TODO(), &people)
-		require.EqualError(t, err, "[dml] Load.QueryContext with query \"SELECT `email` AS `id`, `name` AS `email` FROM `dml_people`\": [dml] Column \"id\": strconv.ParseUint: parsing \"jonathan@uservoice.com\": invalid syntax")
+		require.EqualError(t, err, "[dml] Arguments.Load failed with query \"SELECT `email` AS `id`, `name` AS `email` FROM `dml_people`\": [dml] Column \"id\": strconv.ParseUint: parsing \"jonathan@uservoice.com\": invalid syntax")
 		assert.EqualError(t, errors.Cause(err), "strconv.ParseUint: parsing \"jonathan@uservoice.com\": invalid syntax")
 		assert.Empty(t, rc)
 	})

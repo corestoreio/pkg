@@ -32,6 +32,8 @@ const (
 	placeHolderStr  = `?`
 )
 
+var placeHolderByte = []byte(placeHolderStr)
+
 // ExpandPlaceHolders takes a SQL string and repeats the question marks with the provided
 // arguments. If the amount of arguments does not match the number of questions
 // marks, a Mismatch error gets returned. The arguments are getting converted to
@@ -46,22 +48,22 @@ const (
 func ExpandPlaceHolders(sql string, args *Arguments) (string, error) {
 
 	phCount := strings.Count(sql, placeHolderStr)
-	if want := len(args.args); phCount != want || want == 0 {
+	if want := args.sliceArgumentLen(); phCount != want || want == 0 {
 		return "", errors.Mismatch.Newf("[dml] ExpandPlaceHolders: Number of %s:%d do not match the number of repetitions: %d", placeHolderStr, phCount, want)
 	}
 
 	var buf strings.Builder
 	buf.Grow(len(sql) * 3 / 2) // *1.5
-	err := expandPlaceHolders(buf, sql, args)
+	err := expandPlaceHolders(&buf, []byte(sql), args)
 	return buf.String(), errors.WithStack(err)
 }
 
 // expandPlaceHolders multiplies the place holder with the arguments internal len.
-func expandPlaceHolders(buf strings.Builder, sql string, args *Arguments) error {
+func expandPlaceHolders(buf writer, sql []byte, args *Arguments) error {
 	i := 0
 	pos := 0
 	for pos < len(sql) {
-		r, w := utf8.DecodeRuneInString(sql[pos:])
+		r, w := utf8.DecodeRune(sql[pos:])
 		pos += w
 
 		switch r {
@@ -83,7 +85,7 @@ func expandPlaceHolders(buf strings.Builder, sql string, args *Arguments) error 
 			}
 			i++
 		default:
-			buf.WriteRune(r)
+			buf.Write(sql[pos-w : pos])
 		}
 	}
 	return nil
@@ -194,7 +196,7 @@ func (in *ip) Named(nArgs ...sql.NamedArg) *ip {
 func writeInterpolate(buf *bytes.Buffer, sql string, args *Arguments) error {
 	// TODO support :name identifier and the name field in argument
 
-	phCount, argCount := strings.Count(sql, placeHolderStr), len(args.args)
+	phCount, argCount := strings.Count(sql, placeHolderStr), args.sliceArgumentLen()
 	if argCount > 0 && phCount != argCount {
 		return errors.Mismatch.Newf("[dml] Number of place holders (%d) vs number of arguments (%d) do not match.", phCount, argCount)
 	}
@@ -230,7 +232,55 @@ func writeInterpolate(buf *bytes.Buffer, sql string, args *Arguments) error {
 			dialect.EscapeIdent(buf, string(col))
 			pos += w + 1 // size of ']'
 		default:
+			buf.WriteString(sql[pos-w : pos])
+		}
+	}
+
+	return nil
+}
+
+// writeInterpolateByte same as writeInterpolate. Maybe package unsafe can do
+// here some magic to avoid duplicate code, but for now we stick with a copy of
+// the above original function writeInterpolateByte.
+func writeInterpolateBytes(buf *bytes.Buffer, sql []byte, args *Arguments) error {
+
+	phCount, argCount := bytes.Count(sql, placeHolderByte), len(args.args)
+	if argCount > 0 && phCount != argCount {
+		return errors.Mismatch.Newf("[dml] Number of place holders (%d) vs number of arguments (%d) do not match.", phCount, argCount)
+	}
+
+	var phCounter int
+	pos := 0
+	for pos < len(sql) {
+		r, w := utf8.DecodeRune(sql[pos:])
+		pos += w
+
+		switch {
+		case r == placeHolderRune && argCount > 0:
+			if phCounter < argCount { // protect for index out of bounds
+				if err := args.args[phCounter].writeTo(buf, 0); err != nil {
+					return errors.WithStack(err)
+				}
+			}
+			phCounter++
+		case r == '`', r == '\'', r == '"':
+			p := bytes.IndexRune(sql[pos:], r)
+			if r == '"' {
+				r = '\''
+			}
 			buf.WriteRune(r)
+			if p > -1 {
+				buf.Write(sql[pos : pos+p])
+				buf.WriteRune(r)
+			}
+			pos += p + 1
+		case r == '[':
+			w := bytes.IndexByte(sql[pos:], ']')
+			col := sql[pos : pos+w]
+			dialect.EscapeIdent(buf, string(col))
+			pos += w + 1 // size of ']'
+		default:
+			buf.Write(sql[pos-w : pos])
 		}
 	}
 
@@ -241,15 +291,20 @@ func writeInterpolate(buf *bytes.Buffer, sql string, args *Arguments) error {
 // replaces them with a ? placeholder. It does not remove duplicates because
 // those are needed for the amount of arguments to get. The extracted strings
 // get appended to qualifiedColumns argument.
-func extractReplaceNamedArgs(sql string, qualifiedColumns []string) (string, []string) {
-	if strings.IndexByte(sql, namedArgStartByte) == -1 {
-		return sql, qualifiedColumns
+func extractReplaceNamedArgs(sql []byte, qualifiedColumns []string) (_ []byte, _ []string, found bool) {
+	if bytes.IndexByte(sql, namedArgStartByte) == -1 {
+		return sql, qualifiedColumns, found
 	}
+	lSQL := len(sql)
 	foundColon := false
 	buf := bufferpool.Get()
-	var newSQL strings.Builder
+	newSQL := bytes.NewBuffer(make([]byte, 0, lSQL))
 	quoteStart := false
-	for _, r := range sql {
+	pos := 0
+	for pos < len(sql) {
+		r, w := utf8.DecodeRune(sql[pos:])
+		pos += w
+
 		switch {
 		case r == '\'' && !quoteStart:
 			quoteStart = true
@@ -268,6 +323,7 @@ func extractReplaceNamedArgs(sql string, qualifiedColumns []string) (string, []s
 			foundColon = false
 			if s := buf.String(); buf.Len() > 1 {
 				qualifiedColumns = append(qualifiedColumns, s)
+				found = true
 			}
 			buf.Reset()
 			newSQL.WriteRune(r)
@@ -278,7 +334,7 @@ func extractReplaceNamedArgs(sql string, qualifiedColumns []string) (string, []s
 		}
 	}
 	bufferpool.Put(buf)
-	return newSQL.String(), qualifiedColumns
+	return newSQL.Bytes(), qualifiedColumns, found
 }
 
 func isNamedArg(placeHolder string) (ret bool) {

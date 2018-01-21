@@ -157,11 +157,13 @@ func (b *Update) Limit(limit uint64) *Update {
 // WithArgs builds the SQL string and sets the optional interfaced arguments for
 // the later execution. It copies the underlying connection and structs.
 func (b *Update) WithArgs(args ...interface{}) *Arguments {
+	b.source = dmlSourceUpdate
 	return b.withArgs(b, args...)
 }
 
 // ToSQL converts the select statement into a string and returns its arguments.
 func (b *Update) ToSQL() (string, []interface{}, error) {
+	b.source = dmlSourceUpdate
 	rawSQL, err := b.buildToSQL(b)
 	if err != nil {
 		return "", nil, errors.WithStack(err)

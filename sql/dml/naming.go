@@ -115,7 +115,6 @@ func (a id) writeQuoted(w *bytes.Buffer, placeHolders []string) (_ []string, err
 	}
 
 	if a.Expression != "" {
-		a.Expression, placeHolders = extractReplaceNamedArgs(a.Expression, placeHolders)
 		writeExpression(w, a.Expression, nil)
 	} else {
 		Quoter.WriteIdentifier(w, a.Name)
@@ -217,7 +216,7 @@ func (idc ids) appendConditions(expressions Conditions) (ids, error) {
 			idf.Expression = idf.Name
 			idf.Name = ""
 
-			if e.Right.args.hasArgs() {
+			if e.Right.args.argsCount() > 0 {
 				if err := writeInterpolate(buf, idf.Expression, e.Right.args); err != nil {
 					bufferpool.Put(buf)
 					return nil, errors.Wrapf(err, "[dml] ids.appendConditions with expression: %q", idf.Expression)

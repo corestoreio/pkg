@@ -32,8 +32,14 @@ const (
 	dmlSourceDelete = 'd'
 	dmlSourceWith   = 'w'
 	dmlSourceUnion  = 'n'
-	// dmlSourceShow   = 'h'
+	dmlSourceShow   = 'h'
 )
+
+type writer interface {
+	WriteByte(c byte) error
+	WriteRune(r rune) (int, error)
+	Write(p []byte) (int, error)
+}
 
 // QueryBuilder assembles a query and returns the raw SQL without parameter
 // substitution and the arguments.
@@ -69,7 +75,7 @@ type builderCommon struct {
 	EstimatedCachedSQLSize uint16
 	// source defines with which DML statement the builderCommon struct has been initialized.
 	// Constants are `dmlType*`
-	source byte
+	source rune
 	// ID of a statement. Used in logging. The ID gets generated with function
 	// signature `func() string`. This func gets applied to the logger when
 	// setting up a logger.
@@ -100,12 +106,12 @@ type builderCommon struct {
 	DB QueryExecPreparer
 }
 
-func (b *builderCommon) prepare(ctx context.Context, db QueryExecPreparer, qb QueryBuilder, source byte) (_ *Stmt, err error) {
+func (b *builderCommon) prepare(ctx context.Context, db QueryExecPreparer, qb QueryBuilder, source rune) (_ *Stmt, err error) {
 	var sqlStr string
-	if b.Log != nil && b.Log.IsDebug() {
-		defer log.WhenDone(b.Log).Debug("Prepare", log.String("id", b.id), log.Err(err), log.String("sql", sqlStr))
-	}
 	sqlStr, _, err = qb.ToSQL()
+	if b.Log != nil && b.Log.IsDebug() {
+		defer log.WhenDone(b.Log).Debug("Prepare", log.Err(err), log.String("sql", sqlStr))
+	}
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -150,13 +156,15 @@ type BuilderBase struct {
 
 // WithArgs sets the optional interfaced arguments for the later execution.
 func (bb *BuilderBase) withArgs(qb QueryBuilder, rawArgs ...interface{}) *Arguments {
-	var args [5]argument // TODO check in benchmarks if worth
+	sqlStr, argsRaw, err := qb.ToSQL()
+	var args [defaultArgumentsCapacity]argument
 	a := Arguments{
 		base: bb.builderCommon, // might be a source of a possible race condition, fix later
-		qb:   qb,
-		raw:  rawArgs,
+		raw:  append(rawArgs, argsRaw...),
 		args: args[:0],
 	}
+	a.base.cachedSQL = []byte(sqlStr)
+	a.base.ärgErr = errors.WithStack(err)
 	return &a
 }
 
@@ -340,8 +348,66 @@ func writeBytes(w *bytes.Buffer, p []byte) (err error) {
 
 func writeStmtID(w *bytes.Buffer, id string) {
 	if id != "" {
-		w.WriteString("/*ID:")
+		w.WriteString("/*ID$") // colon not possible because used for named arguments.
 		w.WriteString(id)
 		w.WriteString("*/ ")
 	}
+}
+
+const insertTemplate = `(?)(?,?)(?,?,?)(?,?,?,?)(?,?,?,?,?)(?,?,?,?,?,?)(?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?,?)`
+
+// i = 1 => pos = 0:3 | 1 + 0 + 2
+// i = 2 => pos = 3:8 | 2 + 1 + 2
+// i = 3 => pos = 8:15 | 3 + 2 + 2
+// i = 4 => pos = 15:24 | 4 + 3 + 2
+// i = 5 => pos = 24:35 | 5 + 4 + 2 <= 5 = number of placeholders; 4 number of columns; 2 number of brackets
+const insertTemplateCount = 10
+
+func calcInsertTemplatePlaceholderPos(columnCount uint) (start, end uint) {
+	var colons uint
+	for i := uint(1); i <= columnCount; i++ {
+		colons = i - 1
+		start = end
+		end = colons + start + (start + i) + 2
+		println("end", colons, start, (start + i), 2)
+	}
+	if columnCount == 1 {
+		start = 0
+	}
+	return
+}
+
+func writeInsertPlaceholders(buf *bytes.Buffer, rowCount, columnCount uint) {
+	start, end := calcInsertTemplatePlaceholderPos(columnCount)
+	println("columnCount", columnCount, "start:end", start, end)
+	for r := uint(0); r < rowCount; r++ {
+		if r > 0 {
+			buf.WriteByte(',')
+		}
+		if columnCount <= insertTemplateCount {
+			buf.WriteString(insertTemplate[start:end])
+		} else {
+			buf.WriteByte('(')
+			for c := uint(0); c < columnCount; c++ {
+				if c > 0 {
+					buf.WriteByte(',')
+				}
+				buf.WriteByte('?')
+			}
+			buf.WriteByte(')')
+		}
+	}
+	//for r := uint(0); r < rowCount; r++ {
+	//	if r > 0 {
+	//		buf.WriteByte(',')
+	//	}
+	//	buf.WriteByte('(')
+	//	for c := uint(0); c < columnCount; c++ {
+	//		if c > 0 {
+	//			buf.WriteByte(',')
+	//		}
+	//		buf.WriteByte('?')
+	//	}
+	//	buf.WriteByte(')')
+	//}
 }

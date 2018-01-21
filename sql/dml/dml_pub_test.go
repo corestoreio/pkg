@@ -120,16 +120,10 @@ func compareToSQL(
 		return
 	}
 
-	// If you care regarding the duplication ... send us a PR ;-)
-	// Enables Interpolate feature and resets it after the test has been
-	// executed.
-	switch dmlArg := qb.(type) {
-	case *dml.Arguments:
-		prev := dmlArg.Options
-		qb = dmlArg.Interpolate()
-		defer func() { dmlArg.Options = prev; qb = dmlArg }()
-	default:
-		t.Fatalf("func compareToSQL: the type %#v is not (yet) supported.", qb)
+	if dmlArgs, ok := qb.(*dml.Arguments); ok {
+		prev := dmlArgs.Options
+		qb = dmlArgs.Interpolate()
+		defer func() { dmlArgs.Options = prev; qb = dmlArgs }()
 	}
 
 	sqlStr, args, err = qb.ToSQL() // Call with enabled interpolation

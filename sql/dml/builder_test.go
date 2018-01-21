@@ -18,8 +18,10 @@ import (
 	"fmt"
 	"testing"
 
+	"bytes"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // check if the types implement the interfaces
@@ -76,4 +78,24 @@ func TestSqlObjToString(t *testing.T) {
 		b := NewShow().Variable().Like().String()
 		assert.Exactly(t, "SHOW VARIABLES LIKE ?", b)
 	})
+}
+
+func TestWriteInsertPlaceholders(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		rowCount    uint
+		columnCount uint
+		want        string
+	}{
+		{1, 0, ""},
+		{1, 1, "(?)"},
+		{1, 2, "(?,?)"},
+	}
+
+	for i, test := range tests {
+		var buf bytes.Buffer
+		writeInsertPlaceholders(&buf, test.rowCount, test.columnCount)
+		require.Exactly(t, test.want, buf.String(), "Index %d", i)
+	}
 }

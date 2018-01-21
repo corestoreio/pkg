@@ -453,15 +453,6 @@ func (c *Condition) Expr(expression string) *Condition {
 	return c
 }
 
-func (c *Condition) Unsafe(arg interface{}) *Condition {
-	if c.isExpression() {
-		c.Right.args = c.Right.args.Unsafe(arg)
-		return c
-	}
-	c.Right.arg.set(arg)
-	return c
-}
-
 func (c *Condition) Int(i int) *Condition {
 	if c.isExpression() {
 		c.Right.args = c.Right.args.Int64(int64(i))
@@ -832,7 +823,6 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 		switch {
 		case cnd.IsLeftExpression:
 			var phCount int
-			cnd.Left, placeHolders = extractReplaceNamedArgs(cnd.Left, placeHolders)
 			phCount, err = writeExpression(w, cnd.Left, cnd.Right.args)
 			if err != nil {
 				return nil, errors.WithStack(err)
@@ -840,7 +830,7 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 
 			// Only write the operator in case there is no place holder and we
 			// have one value.
-			if phCount == 0 && (len(cnd.Right.args.args) == 1 || cnd.Right.arg.isSet) && cnd.Operator > 0 {
+			if phCount == 0 && (cnd.Right.args.argsCount() == 1 || cnd.Right.arg.isSet) && cnd.Operator > 0 {
 				eArg := cnd.Right.arg
 				if !eArg.isSet {
 					eArg = cnd.Right.args.args[0]

@@ -175,7 +175,6 @@ func TestUnion_Prepare(t *testing.T) {
 		})
 
 		t.Run("RowContext", func(t *testing.T) {
-
 			row := stmt.WithArgs().QueryRowContext(context.TODO(), 6890)
 			require.NoError(t, err)
 			n, e := "", ""

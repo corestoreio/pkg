@@ -44,3 +44,7 @@ func (pm dbMock) ExecContext(ctx context.Context, query string, args ...interfac
 	}
 	return nil, nil
 }
+
+func (pm dbMock) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
+	return new(sql.Row)
+}

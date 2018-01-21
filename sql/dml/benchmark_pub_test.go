@@ -44,6 +44,9 @@ func (benchMockQuerier) PrepareContext(ctx context.Context, query string) (*sql.
 func (benchMockQuerier) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
 	return nil, nil
 }
+func (benchMockQuerier) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
+	return new(sql.Row)
+}
 
 // BenchmarkSelect_Rows-4   	 1000000	      2188 ns/op	    1354 B/op	      19 allocs/op old
 // BenchmarkSelect_Rows-4   	 1000000	      2223 ns/op	    1386 B/op	      20 allocs/op new
