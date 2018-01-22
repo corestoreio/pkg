@@ -32,15 +32,14 @@ func TestTransactionReal(t *testing.T) {
 		"Barack", "obama@whitehouse.gov",
 		"Obama", "barack@whitehouse.gov",
 	)
-	t.Logf("%#v", txIns)
 
-	lastID, _ := compareExecContext(t, txIns, 3, 2)
+	lastInsertID, _ := compareExecContext(t, txIns, 3, 2)
 
 	var person dmlPerson
-	_, err = tx.SelectFrom("dml_people").Star().Where(Column("lastID").Int64(lastID)).WithArgs().Load(context.TODO(), &person)
+	_, err = tx.SelectFrom("dml_people").Star().Where(Column("id").Int64(lastInsertID)).WithArgs().Load(context.TODO(), &person)
 	assert.NoError(t, err)
 
-	assert.Equal(t, lastID, int64(person.ID))
+	assert.Equal(t, lastInsertID, int64(person.ID))
 	assert.Equal(t, "Barack", person.Name)
 	assert.Equal(t, true, person.Email.Valid)
 	assert.Equal(t, "obama@whitehouse.gov", person.Email.String)

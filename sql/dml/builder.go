@@ -354,22 +354,23 @@ func writeStmtID(w *bytes.Buffer, id string) {
 	}
 }
 
-const insertTemplate = `(?)(?,?)(?,?,?)(?,?,?,?)(?,?,?,?,?)(?,?,?,?,?,?)(?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?,?)`
+const (
+	insertTemplate      = `(?)(?,?)(?,?,?)(?,?,?,?)(?,?,?,?,?)(?,?,?,?,?,?)(?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+	insertTemplateCount = 15
+)
 
 // i = 1 => pos = 0:3 | 1 + 0 + 2
 // i = 2 => pos = 3:8 | 2 + 1 + 2
 // i = 3 => pos = 8:15 | 3 + 2 + 2
 // i = 4 => pos = 15:24 | 4 + 3 + 2
-// i = 5 => pos = 24:35 | 5 + 4 + 2 <= 5 = number of placeholders; 4 number of columns; 2 number of brackets
-const insertTemplateCount = 10
+// i = 5 => pos = 24:35 | 5 + 4 + 2 <= 5 = number of placeholders; 4 number of colons; 2 number of brackets
 
 func calcInsertTemplatePlaceholderPos(columnCount uint) (start, end uint) {
 	var colons uint
 	for i := uint(1); i <= columnCount; i++ {
 		colons = i - 1
 		start = end
-		end = colons + start + (start + i) + 2
-		println("end", colons, start, (start + i), 2)
+		end = colons + start + i + 2
 	}
 	if columnCount == 1 {
 		start = 0
@@ -379,7 +380,6 @@ func calcInsertTemplatePlaceholderPos(columnCount uint) (start, end uint) {
 
 func writeInsertPlaceholders(buf *bytes.Buffer, rowCount, columnCount uint) {
 	start, end := calcInsertTemplatePlaceholderPos(columnCount)
-	println("columnCount", columnCount, "start:end", start, end)
 	for r := uint(0); r < rowCount; r++ {
 		if r > 0 {
 			buf.WriteByte(',')
@@ -397,17 +397,4 @@ func writeInsertPlaceholders(buf *bytes.Buffer, rowCount, columnCount uint) {
 			buf.WriteByte(')')
 		}
 	}
-	//for r := uint(0); r < rowCount; r++ {
-	//	if r > 0 {
-	//		buf.WriteByte(',')
-	//	}
-	//	buf.WriteByte('(')
-	//	for c := uint(0); c < columnCount; c++ {
-	//		if c > 0 {
-	//			buf.WriteByte(',')
-	//		}
-	//		buf.WriteByte('?')
-	//	}
-	//	buf.WriteByte(')')
-	//}
 }
