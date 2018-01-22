@@ -224,11 +224,10 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 }
 
 // WithArgs builds the SQL string and sets the optional interfaced arguments for
-// the later execution. It copies the underlying connection and structs.
+// the later execution. It copies the underlying connection and structs. This
+// case of WithArgs figures automatically out how the VALUES section must look
+// like depending on the number of arguments.
 func (b *Insert) WithArgs(args ...interface{}) *Arguments {
-	// TODO(CyS) support right side expressions, requires some internal
-	// refactoring
-
 	b.source = dmlSourceInsert
 	b.doNotBuildValues = true
 	a := b.withArgs(b, args...)

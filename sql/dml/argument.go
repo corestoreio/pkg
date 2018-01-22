@@ -601,7 +601,7 @@ func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, 
 	}
 	if a.isEmpty() {
 		a.hasNamedArgs = 1
-		return string(a.base.cachedSQL), nil, nil
+		return string(a.base.cachedSQL), fncArgs, nil
 	}
 
 	if a.hasNamedArgs == 0 {
@@ -625,9 +625,7 @@ func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, 
 	}
 
 	if a.base.source == dmlSourceInsert {
-
 		totalArgLen := uint(len(a.args) + len(a.raw))
-		// buildInsertPlaceHolders(sqlBuf, totalArgLen, b.RowCount, b.RecordPlaceHolderCount)
 		if a.insertRowCount > 0 {
 			columnCount := totalArgLen / a.insertRowCount
 			writeInsertPlaceholders(sqlBuf, a.insertRowCount, columnCount)
@@ -636,8 +634,6 @@ func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, 
 			rowCount := totalArgLen / a.insertColumnCount
 			writeInsertPlaceholders(sqlBuf, rowCount, a.insertColumnCount)
 		}
-
-		fmt.Printf("a.insertRowCount %d\na.insertColumnCount %d\n%q\n\n", a.insertRowCount, a.insertColumnCount, sqlBuf.String())
 	}
 
 	// `switch` statement no suitable.
