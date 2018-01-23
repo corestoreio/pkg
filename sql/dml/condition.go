@@ -969,6 +969,8 @@ func writeValues(w *bytes.Buffer, column string) {
 	w.WriteByte(')')
 }
 
+var onDuplicateKeyPart = []byte(` ON DUPLICATE KEY UPDATE `)
+
 // writeOnDuplicateKey writes the columns to `w` and appends the arguments to
 // `args` and returns `args`.
 // https://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html
@@ -977,7 +979,7 @@ func (cs Conditions) writeOnDuplicateKey(w *bytes.Buffer, placeHolders []string)
 		return placeHolders, nil
 	}
 
-	w.WriteString(" ON DUPLICATE KEY UPDATE ")
+	w.Write(onDuplicateKeyPart)
 	for i, cnd := range cs {
 		addColon := false
 		for j, col := range cnd.Columns {

@@ -83,11 +83,16 @@ func newColumnMap(args *Arguments, columns ...string) *ColumnMap {
 
 // reset gets called when returning into the pool
 func (b *ColumnMap) reset() {
+	b.Args = nil // not yet sure if this is needed
+	b.initialized = false
 	b.HasRows = false
 	b.Count = 0
+	b.scanArgs = b.scanArgs[:0]
+	b.scanCol = b.scanCol[:0]
+	b.columns = b.columns[:0]
+	b.columnsLen = 0
 	b.scanErr = nil
-	b.initialized = false
-	// b.Args = nil not yet sure if this is needed
+	b.index = 0
 }
 
 func (b *ColumnMap) setColumns(cols ...string) {
@@ -127,7 +132,6 @@ func (b *ColumnMap) Mode() (m columnMapMode) {
 		return ColumnMapScan // assign the column values from the DB to the structs and create new structs in a slice.
 	}
 
-	// case !b.Args.isEmpty()
 	switch b.columnsLen {
 	case 0:
 		m = ColumnMapEntityReadAll // Entity: read all mode; Collection jump into loop and pass on to Entity
@@ -229,10 +233,11 @@ func (b *ColumnMap) Scan(r *sql.Rows) error {
 		if err != nil {
 			return errors.WithStack(err)
 		}
+
 		b.setColumns(cols...)
 		if cap(b.scanCol) >= b.columnsLen { // reuse from pool!
-			b.scanCol = b.scanCol[:b.columnsLen-1]
-			b.scanArgs = b.scanArgs[:b.columnsLen-1]
+			b.scanCol = b.scanCol[:b.columnsLen]
+			b.scanArgs = b.scanArgs[:b.columnsLen]
 		} else {
 			b.scanCol = make([]scannedColumn, b.columnsLen)
 			b.scanArgs = make([]interface{}, b.columnsLen)
@@ -282,7 +287,7 @@ func (b *ColumnMap) Next() bool {
 // bool value stored in sql.RawBytes to the pointer. See the documentation for
 // function Scan.
 func (b *ColumnMap) Bool(ptr *bool) *ColumnMap {
-	if !b.Args.isEmpty() {
+	if b.Args != nil {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -318,7 +323,7 @@ func (b *ColumnMap) Bool(ptr *bool) *ColumnMap {
 // bool value stored in sql.RawBytes to the pointer. See the documentation for
 // function Scan.
 func (b *ColumnMap) NullBool(ptr *NullBool) *ColumnMap {
-	if !b.Args.isEmpty() {
+	if b.Args != nil {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -364,7 +369,7 @@ func (b *ColumnMap) NullBool(ptr *NullBool) *ColumnMap {
 // int value stored in sql.RawBytes to the pointer. See the documentation for
 // function Scan.
 func (b *ColumnMap) Int(ptr *int) *ColumnMap {
-	if !b.Args.isEmpty() {
+	if b.Args != nil {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -394,7 +399,7 @@ func (b *ColumnMap) Int(ptr *int) *ColumnMap {
 // the int64 value stored in sql.RawBytes to the pointer. See the documentation
 // for function Scan.
 func (b *ColumnMap) Int64(ptr *int64) *ColumnMap {
-	if !b.Args.isEmpty() {
+	if b.Args != nil {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -422,7 +427,7 @@ func (b *ColumnMap) Int64(ptr *int64) *ColumnMap {
 // assigns the int64 value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
 func (b *ColumnMap) NullInt64(ptr *NullInt64) *ColumnMap {
-	if !b.Args.isEmpty() {
+	if b.Args != nil {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -454,7 +459,7 @@ func (b *ColumnMap) NullInt64(ptr *NullInt64) *ColumnMap {
 // assigns the float64 value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
 func (b *ColumnMap) Float64(ptr *float64) *ColumnMap {
-	if !b.Args.isEmpty() {
+	if b.Args != nil {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -482,7 +487,7 @@ func (b *ColumnMap) Float64(ptr *float64) *ColumnMap {
 // assigns the numeric value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
 func (b *ColumnMap) Decimal(ptr *Decimal) *ColumnMap {
-	if !b.Args.isEmpty() {
+	if b.Args != nil {
 		if v := ptr.String(); ptr == nil || v == sqlStrNullUC {
 			b.Args = b.Args.Null()
 		} else {
@@ -511,7 +516,7 @@ func (b *ColumnMap) Decimal(ptr *Decimal) *ColumnMap {
 // assigns the float64 value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
 func (b *ColumnMap) NullFloat64(ptr *NullFloat64) *ColumnMap {
-	if !b.Args.isEmpty() {
+	if b.Args != nil {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -542,7 +547,7 @@ func (b *ColumnMap) NullFloat64(ptr *NullFloat64) *ColumnMap {
 // uint value stored in sql.RawBytes to the pointer. See the documentation for
 // function Scan.
 func (b *ColumnMap) Uint(ptr *uint) *ColumnMap {
-	if !b.Args.isEmpty() {
+	if b.Args != nil {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -572,7 +577,7 @@ func (b *ColumnMap) Uint(ptr *uint) *ColumnMap {
 // the uint8 value stored in sql.RawBytes to the pointer. See the documentation
 // for function Scan.
 func (b *ColumnMap) Uint8(ptr *uint8) *ColumnMap {
-	if !b.Args.isEmpty() {
+	if b.Args != nil {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -602,7 +607,7 @@ func (b *ColumnMap) Uint8(ptr *uint8) *ColumnMap {
 // the uint16 value stored in sql.RawBytes to the pointer. See the documentation
 // for function Scan.
 func (b *ColumnMap) Uint16(ptr *uint16) *ColumnMap {
-	if !b.Args.isEmpty() {
+	if b.Args != nil {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -632,7 +637,7 @@ func (b *ColumnMap) Uint16(ptr *uint16) *ColumnMap {
 // the uint32 value stored in sql.RawBytes to the pointer. See the documentation
 // for function Scan.
 func (b *ColumnMap) Uint32(ptr *uint32) *ColumnMap {
-	if !b.Args.isEmpty() {
+	if b.Args != nil {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -662,7 +667,7 @@ func (b *ColumnMap) Uint32(ptr *uint32) *ColumnMap {
 // the uint64 value stored in sql.RawBytes to the pointer. See the documentation
 // for function Scan.
 func (b *ColumnMap) Uint64(ptr *uint64) *ColumnMap {
-	if !b.Args.isEmpty() {
+	if b.Args != nil {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -716,7 +721,7 @@ func (b *ColumnMap) Debug(w ioWriter) (err error) {
 // the []byte value stored in sql.RawBytes to the pointer. See the documentation
 // for function Scan.
 func (b *ColumnMap) Byte(ptr *[]byte) *ColumnMap {
-	if !b.Args.isEmpty() {
+	if b.Args != nil {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -750,7 +755,7 @@ func (b *ColumnMap) Text(enc interface {
 	if b.scanErr != nil {
 		return b
 	}
-	if !b.Args.isEmpty() {
+	if b.Args != nil {
 		var data []byte
 		data, b.scanErr = enc.MarshalText()
 		if b.CheckValidUTF8 && !utf8.Valid(data) {
@@ -784,7 +789,7 @@ func (b *ColumnMap) Binary(enc interface {
 	if b.scanErr != nil {
 		return b
 	}
-	if !b.Args.isEmpty() {
+	if b.Args != nil {
 		var data []byte
 		data, b.scanErr = enc.MarshalBinary()
 		b.Args = b.Args.Bytes(data)
@@ -806,7 +811,7 @@ func (b *ColumnMap) Binary(enc interface {
 // the string value stored in sql.RawBytes to the pointer. See the documentation
 // for function Scan.
 func (b *ColumnMap) String(ptr *string) *ColumnMap {
-	if !b.Args.isEmpty() {
+	if b.Args != nil {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -840,7 +845,7 @@ func (b *ColumnMap) String(ptr *string) *ColumnMap {
 // assigns the string value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
 func (b *ColumnMap) NullString(ptr *NullString) *ColumnMap {
-	if !b.Args.isEmpty() {
+	if b.Args != nil {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -880,7 +885,7 @@ func (b *ColumnMap) NullString(ptr *NullString) *ColumnMap {
 // the time.Time value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan. It supports all MySQL/MariaDB date/time types.
 func (b *ColumnMap) Time(ptr *time.Time) *ColumnMap {
-	if !b.Args.isEmpty() {
+	if b.Args != nil {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -908,7 +913,7 @@ func (b *ColumnMap) Time(ptr *time.Time) *ColumnMap {
 // the NullTime value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
 func (b *ColumnMap) NullTime(ptr *NullTime) *ColumnMap {
-	if !b.Args.isEmpty() {
+	if b.Args != nil {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {

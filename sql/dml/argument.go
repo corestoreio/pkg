@@ -526,7 +526,9 @@ type Arguments struct {
 	raw          []interface{}
 	args         []argument
 	recs         []QualifiedRecord
-	// finalArgs contains the final arguments
+	// rawReturn will be filled with the final primitives which gets returned
+	// in the ToSQL function. It gets reset in every call.
+	rawReturn    []interface{}
 	argsPrepared bool
 }
 
@@ -593,8 +595,8 @@ func (a *Arguments) multiplyArguments() {
 }
 
 // prepareArgs transforms mainly the Arguments into []interface{} but also
-// appends the `args` from the Exec+ or Query+ function.
-// All method receivers are not thread safe.
+// appends the `args` from the Exec+ or Query+ function. All method receivers
+// are not thread safe. The returned interface slce belongs to the callee.
 func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, error) {
 	if len(a.base.cachedSQL) == 0 {
 		return "", nil, errors.Empty.Newf("[dml] Arguments: The SQL string is empty.")
@@ -612,20 +614,32 @@ func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, 
 			a.hasNamedArgs = 2
 		}
 	}
-
 	a.raw = append(a.raw, fncArgs...)
 	if err := a.appendConvertedRecordsToArguments(); err != nil {
 		return "", nil, errors.WithStack(err)
 	}
 
+	// Make a copy of the original SQL statement because it gets modified in the
+	// worst case. Best case would be no modification and hence we don't need a
+	// bytes.Buffer from the pool! TODO(CYS) optimize this and only acquire a
+	// buffer from the pool in the worse case.
 	sqlBuf := bufferpool.Get()
 	defer bufferpool.Put(sqlBuf)
 	if _, err := sqlBuf.Write(a.base.cachedSQL); err != nil {
 		return "", nil, errors.WithStack(err)
 	}
 
+	// This IF block calculates dynamically the amount of placeholders in an
+	// INSERT query depending on the number of arguments.
 	if a.base.source == dmlSourceInsert {
 		totalArgLen := uint(len(a.args) + len(a.raw))
+
+		odkPos := bytes.Index(a.base.cachedSQL, []byte(onDuplicateKeyPart))
+		if odkPos > 0 {
+			sqlBuf.Reset()
+			sqlBuf.Write(a.base.cachedSQL[:odkPos])
+		}
+
 		if a.insertRowCount > 0 {
 			columnCount := totalArgLen / a.insertRowCount
 			writeInsertPlaceholders(sqlBuf, a.insertRowCount, columnCount)
@@ -634,11 +648,15 @@ func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, 
 			rowCount := totalArgLen / a.insertColumnCount
 			writeInsertPlaceholders(sqlBuf, rowCount, a.insertColumnCount)
 		}
+
+		if odkPos > 0 {
+			sqlBuf.Write(a.base.cachedSQL[odkPos:])
+		}
 	}
 
 	// `switch` statement no suitable.
 	if a.Options > 0 && len(a.raw) > 0 && len(a.recs) == 0 && len(a.args) == 0 {
-		return "", nil, errors.NotAllowed.Newf("[dml] ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
+		return "", nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
 	}
 	var tmpBuf *bytes.Buffer
 	if a.Options > 0 {
@@ -663,13 +681,14 @@ func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, 
 		if err := writeInterpolateBytes(tmpBuf, sqlBuf.Bytes(), a); err != nil {
 			return "", nil, errors.Wrapf(err, "[dml] Interpolation failed: %q", sqlBuf.String())
 		}
-		a.Reset()
+		//a.Reset() TOOD why is this needed?
 		return tmpBuf.String(), nil, nil
 	}
 
-	a.raw = a.Interfaces(a.raw...) // assign back to retain the whole cap of the slice.
+	a.rawReturn = a.rawReturn[:0]
+	a.rawReturn = a.Interfaces(a.raw...) // TODO investigate ret
 	a.argsPrepared = true
-	return sqlBuf.String(), a.raw, nil
+	return sqlBuf.String(), a.rawReturn, nil
 }
 
 func (a *Arguments) appendConvertedRecordsToArguments() error {
@@ -690,25 +709,28 @@ func (a *Arguments) appendConvertedRecordsToArguments() error {
 	}
 
 	cm := newColumnMap(MakeArgs(len(a.args)+len(a.recs)), "") // can use an arg pool Arguments
-	var unnamedCounter int
+	cm.Args = new(Arguments)                                  // TODO for now a new pointer, later should be `a` or sync.Pool or just []argument
+	//var unnamedCounter int
 	for tsc := 0; tsc < a.base.templateStmtCount; tsc++ { // only in case of UNION statements in combination with a template SELECT, can be optimized later
 		for _, identifier := range a.base.qualifiedColumns { // contains the correct order as the place holders appear in the SQL string
 			qualifier, column := splitColumn(identifier)
 			if qualifier == "" {
 				qualifier = a.base.defaultQualifier
 			}
-			var cut bool
-			column, cut = cutPrefix(column, namedArgStartStr)
+
+			column, _ = cutPrefix(column, namedArgStartStr)
+			//if !cut { if there would be a prefix then it states a named column
+			//	continue
+			//}
 			cm.columns[0] = column // length is always one!
-
-			if !cut { // if the colon : cannot be found then a simple place holder ? has been detected
-				if pArg, ok := a.unnamedArgByPos(unnamedCounter); ok {
-					cm.Args.args = append(cm.Args.args, pArg)
-				}
-				unnamedCounter++
-				//continue
-			}
-
+			// TODO think about either supporting in a query only named arguments or just placeholders, but not both.
+			//if !cut { // if the colon : cannot be found then a simple place holder ? has been detected
+			//	if pArg, ok := a.unnamedArgByPos(unnamedCounter); ok {
+			//		cm.Args.args = append(cm.Args.args, pArg)
+			//	}
+			//	unnamedCounter++
+			//	//continue
+			//}
 			for _, qRec := range a.recs {
 				if qRec.Qualifier == "" {
 					qRec.Qualifier = a.base.defaultQualifier
@@ -719,16 +741,16 @@ func (a *Arguments) appendConvertedRecordsToArguments() error {
 					}
 				}
 			}
-
-			if err := a.MapColumns(cm); err != nil {
-				return errors.WithStack(err)
-			}
+			// not needed because named args are already in argument slice
+			//if err := a.MapColumns(cm); err != nil {
+			//	return errors.WithStack(err)
+			//}
 		}
 	}
 
 	if len(cm.Args.args) > 0 {
-		//a.args = append(a.args, cm.Args.args...)
-		a.args = cm.Args.args
+		a.args = append(a.args, cm.Args.args...)
+		//a.args = cm.Args.args
 	}
 
 	return nil

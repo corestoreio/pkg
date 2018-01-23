@@ -54,6 +54,7 @@ func (st *Stmt) Close() error { return st.Stmt.Close() }
 
 // More Load* functions can be added later
 
+// Queueing https://github.com/eapache/queue/blob/master/queue.go but maybe a lock can enough.
 func newReduxStmt(db *sql.DB, name string, qb QueryBuilder, idleTime time.Duration, l log.Logger) (*StmtRedux, error) {
 	query, _, err := qb.ToSQL()
 	if err != nil {
