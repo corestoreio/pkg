@@ -19,10 +19,25 @@ import (
 	"testing"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestInsert_NoArguments(t *testing.T) {
+	t.Parallel()
+
+	t.Run("ToSQL", func(t *testing.T) {
+		ins := NewInsert("tableA").AddColumns("a", "b")
+		compareToSQL2(t, ins, errors.NoKind,
+			"INSERT INTO `tableA` (`a`,`b`) VALUES (?,?)")
+	})
+	t.Run("WithArgs.ToSQL", func(t *testing.T) {
+		ins := NewInsert("tableA").AddColumns("a", "b").WithArgs()
+		compareToSQL2(t, ins, errors.NoKind,
+			"INSERT INTO `tableA` (`a`,`b`) VALUES (?,?)")
+	})
+
+}
 
 func TestInsert_SetValuesCount(t *testing.T) {
 	t.Parallel()
@@ -161,23 +176,21 @@ func TestInsert_Events(t *testing.T) {
 	t.Parallel()
 
 	t.Run("Stop Propagation", func(t *testing.T) {
-		d := NewInsert("tableA")
-		d.AddColumns("a", "b").WithArgs(1, true)
+		d := NewInsert("tableA").AddColumns("a", "b")
 
-		d.Log = log.BlackHole{EnableInfo: true, EnableDebug: true}
 		d.Listeners.Add(
 			Listen{
 				Name:      "listener1",
 				EventType: OnBeforeToSQL,
 				ListenInsertFn: func(b *Insert) {
-					b.WithPairs(Column("col1").Str("X1"))
+					b.AddColumns("col1")
 				},
 			},
 			Listen{
 				Name:      "listener2",
 				EventType: OnBeforeToSQL,
 				ListenInsertFn: func(b *Insert) {
-					b.WithPairs(Column("col2").Str("X2"))
+					b.AddColumns("col2")
 					b.PropagationStopped = true
 				},
 			},
@@ -190,22 +203,25 @@ func TestInsert_Events(t *testing.T) {
 			},
 		)
 
-		sqlStr, args, err := d.WithArgs().Interpolate().ToSQL()
+		da := d.WithArgs().Int(1).Bool(true).String("X1").String("X2")
+		sqlStr, args, err := da.Interpolate().ToSQL()
 		require.NoError(t, err)
 		assert.Nil(t, args)
 		assert.Exactly(t, "INSERT INTO `tableA` (`a`,`b`,`col1`,`col2`) VALUES (1,1,'X1','X2')", sqlStr)
 
+		da.Options = 0
+
 		// call it twice (4x) to test for being NOT idempotent
-		compareToSQL(t, d, errors.NoKind,
+		compareToSQL(t, da, errors.NoKind,
+			"INSERT INTO `tableA` (`a`,`b`,`col1`,`col2`) VALUES (?,?,?,?)",
 			"INSERT INTO `tableA` (`a`,`b`,`col1`,`col2`) VALUES (1,1,'X1','X2')",
-			"",
+			int64(1), true, "X1", "X2",
 		)
 
 	})
 
 	t.Run("Missing EventType", func(t *testing.T) {
-		ins := NewInsert("tableA")
-		ins.AddColumns("a", "b").WithArgs(1, true)
+		ins := NewInsert("tableA").AddColumns("a", "b")
 
 		ins.Listeners.Add(
 			Listen{
@@ -222,23 +238,21 @@ func TestInsert_Events(t *testing.T) {
 	})
 
 	t.Run("Should Dispatch", func(t *testing.T) {
-		ins := NewInsert("tableA")
-
-		ins.AddColumns("a", "b").WithArgs(1, true)
+		ins := NewInsert("tableA").AddColumns("a", "b")
 
 		ins.Listeners.Add(
 			Listen{
 				EventType: OnBeforeToSQL,
 				Name:      "colA",
 				ListenInsertFn: func(i *Insert) {
-					i.WithPairs(Column("colA").Float64(3.14159))
+					i.AddColumns("colA")
 				},
 			},
 			Listen{
 				EventType: OnBeforeToSQL,
 				Name:      "colB",
 				ListenInsertFn: func(i *Insert) {
-					i.WithPairs(Column("colB").Float64(2.7182))
+					i.AddColumns("colB")
 				},
 			},
 		)
@@ -251,18 +265,14 @@ func TestInsert_Events(t *testing.T) {
 				EventType: OnBeforeToSQL,
 				Name:      "colC",
 				ListenInsertFn: func(i *Insert) {
-					i.WithPairs(Column("colC").Str("X1"))
+					i.AddColumns("colC")
 				},
 			},
 		)
-		sqlStr, args, err := ins.WithArgs().Interpolate().ToSQL()
-		require.NoError(t, err)
-		assert.Nil(t, args)
-		assert.Exactly(t, "INSERT INTO `tableA` (`a`,`b`,`colA`,`colB`,`colC`) VALUES (1,1,3.14159,2.7182,'X1')", sqlStr)
-
-		compareToSQL(t, ins, errors.NoKind,
-			"INSERT INTO `tableA` (`a`,`b`,`colA`,`colB`,`colC`) VALUES (1,1,3.14159,2.7182,'X1')",
-			"",
+		compareToSQL2(t, ins.WithArgs(), errors.NoKind,
+			"INSERT INTO `tableA` (`a`,`b`,`colA`,`colB`,`colC`) VALUES (?,?,?,?,?)")
+		compareToSQL2(t, ins, errors.NoKind,
+			"INSERT INTO `tableA` (`a`,`b`,`colA`,`colB`,`colC`) VALUES ",
 		)
 
 		assert.Exactly(t, `colA; colB; colC`, ins.Listeners.String())
@@ -272,10 +282,29 @@ func TestInsert_Events(t *testing.T) {
 func TestInsert_FromSelect(t *testing.T) {
 	t.Parallel()
 
+	t.Run("ON DUPLICATE KEY", func(t *testing.T) {
+		ins := NewInsert("tableA").AddColumns("a", "b").OnDuplicateKey()
+
+		compareToSQL(t, ins.FromSelect(NewSelect("something_id", "user_id").
+			From("some_table").
+			Where(
+				Column("d").PlaceHolder(),
+				Column("e").Str("wat"),
+			).
+			OrderByDesc("id"),
+		).
+			WithArgs().Int(897),
+			errors.NoKind,
+			"INSERT INTO `tableA` (`a`,`b`) SELECT `something_id`, `user_id` FROM `some_table` WHERE (`d` = ?) AND (`e` = 'wat') ORDER BY `id` DESC ON DUPLICATE KEY UPDATE `a`=VALUES(`a`), `b`=VALUES(`b`)",
+			"INSERT INTO `tableA` (`a`,`b`) SELECT `something_id`, `user_id` FROM `some_table` WHERE (`d` = 897) AND (`e` = 'wat') ORDER BY `id` DESC ON DUPLICATE KEY UPDATE `a`=VALUES(`a`), `b`=VALUES(`b`)",
+			int64(897),
+		)
+		assert.Exactly(t, []string{"d"}, ins.qualifiedColumns)
+
+	})
+
 	t.Run("Arguments on sub select", func(t *testing.T) {
-		ins := NewInsert("tableA")
-		// columns and args just to check that they get ignored
-		ins.AddColumns("a", "b").WithArgs(1, true)
+		ins := NewInsert("tableA").AddColumns("a", "b", "c")
 
 		compareToSQL(t, ins.FromSelect(NewSelect("something_id", "user_id", "other").
 			From("some_table").
@@ -291,8 +320,8 @@ func TestInsert_FromSelect(t *testing.T) {
 		).
 			WithArgs().Int(4444),
 			errors.NoKind,
-			"INSERT INTO `tableA` (`a`,`b`) SELECT `something_id`, `user_id`, `other` FROM `some_table` WHERE ((`d` = ?) OR (`e` = 'wat')) AND (`a` IN (1,2,3)) ORDER BY `id` DESC LIMIT 20 OFFSET 0",
-			"INSERT INTO `tableA` (`a`,`b`) SELECT `something_id`, `user_id`, `other` FROM `some_table` WHERE ((`d` = 4444) OR (`e` = 'wat')) AND (`a` IN (1,2,3)) ORDER BY `id` DESC LIMIT 20 OFFSET 0",
+			"INSERT INTO `tableA` (`a`,`b`,`c`) SELECT `something_id`, `user_id`, `other` FROM `some_table` WHERE ((`d` = ?) OR (`e` = 'wat')) AND (`a` IN (1,2,3)) ORDER BY `id` DESC LIMIT 20 OFFSET 0",
+			"INSERT INTO `tableA` (`a`,`b`,`c`) SELECT `something_id`, `user_id`, `other` FROM `some_table` WHERE ((`d` = 4444) OR (`e` = 'wat')) AND (`a` IN (1,2,3)) ORDER BY `id` DESC LIMIT 20 OFFSET 0",
 			int64(4444),
 		)
 		assert.Exactly(t, []string{"d"}, ins.qualifiedColumns)
@@ -327,7 +356,7 @@ func TestInsert_Replace_Ignore(t *testing.T) {
 	compareToSQL(t, NewInsert("a").
 		Replace().Ignore().
 		AddColumns("b", "c").
-		WithArgs(1, 2, 3, 4),
+		WithArgs().Int(1).Int(2).Int(3).Int(4),
 		errors.NoKind,
 		"REPLACE IGNORE INTO `a` (`b`,`c`) VALUES (?,?),(?,?)",
 		"REPLACE IGNORE INTO `a` (`b`,`c`) VALUES (1,2),(3,4)",
@@ -340,7 +369,7 @@ func TestInsert_WithoutColumns(t *testing.T) {
 
 	t.Run("each column in its own Arg", func(t *testing.T) {
 		compareToSQL(t, NewInsert("catalog_product_link").SetRowCount(3).
-			WithArgs(2046, 33, 3, 2046, 34, 3, 2046, 35, 3),
+			WithArgs().Int(2046).Int(33).Int(3).Int(2046).Int(34).Int(3).Int(2046).Int(35).Int(3),
 			errors.NoKind,
 			"INSERT INTO `catalog_product_link` VALUES (?,?,?),(?,?,?),(?,?,?)",
 			"INSERT INTO `catalog_product_link` VALUES (2046,33,3),(2046,34,3),(2046,35,3)",
@@ -358,7 +387,7 @@ func TestInsert_Pair(t *testing.T) {
 				Column("product_id").Int64(2046),
 				Column("linked_product_id").Int64(33),
 				Column("link_type_id").Int64(3),
-			),
+			).WithArgs(),
 			errors.NoKind,
 			"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (?,?,?)",
 			"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (2046,33,3)",
@@ -391,7 +420,7 @@ func TestInsert_Pair(t *testing.T) {
 				Column("product_id").Int64(2046),
 				Column("linked_product_id").Int64(34),
 				Column("link_type_id").Int64(3),
-			),
+			).WithArgs(),
 			errors.NoKind,
 			"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (?,?,?),(?,?,?)",
 			"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (2046,33,3),(2046,34,3)",
@@ -404,56 +433,42 @@ func TestInsert_DisableBuildCache(t *testing.T) {
 	t.Parallel()
 
 	ins := NewInsert("a").AddColumns("b", "c").
-		OnDuplicateKey().DisableBuildCache()
+		OnDuplicateKey().DisableBuildCache().WithArgs()
 
 	const cachedSQLPlaceHolder = "INSERT INTO `a` (`b`,`c`) VALUES (?,?),(?,?),(?,?) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)"
 	t.Run("without interpolate", func(t *testing.T) {
 		for i := 0; i < 3; i++ {
-			sql, args, err := ins.ToSQL()
+			sql, args, err := ins.Raw(1, 2, 3, 4, 5, 6).ToSQL()
 			require.NoError(t, err, "%+v", err)
 			require.Equal(t, cachedSQLPlaceHolder, sql)
-			assert.Equal(t, []interface{}{int64(1), int64(2), int64(3), int64(4), int64(5), int64(6)}, args)
-			assert.Equal(t, "", string(ins.cachedSQL))
+			require.Equal(t, []interface{}{1, 2, 3, 4, 5, 6}, args)
+			require.Equal(t, "INSERT INTO `a` (`b`,`c`) VALUES  ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)",
+				string(ins.base.cachedSQL))
+			ins.Reset()
 		}
 	})
 
 	t.Run("with interpolate", func(t *testing.T) {
-		insA := ins.WithArgs(
-			1, 2,
-			3, 4,
-			5, 6,
-		).Interpolate()
+		insA := ins.Reset().Interpolate()
+		insA.Int(1).Int(2).Int(3).Int(4).Int(5).Int(6)
 
 		const cachedSQLInterpolated = "INSERT INTO `a` (`b`,`c`) VALUES (1,2),(3,4),(5,6) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)"
 		for i := 0; i < 3; i++ {
 			sql, args, err := insA.ToSQL()
 			require.NoError(t, err, "%+v", err)
 			require.Equal(t, cachedSQLInterpolated, sql)
-			assert.Nil(t, args)
-			assert.Equal(t, "", string(ins.cachedSQL))
+			require.Nil(t, args)
+			assert.Equal(t, "INSERT INTO `a` (`b`,`c`) VALUES  ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)", string(ins.base.cachedSQL))
 		}
 	})
 }
 
 func TestInsert_AddArguments(t *testing.T) {
 	t.Parallel()
-	t.Run("WithArgs error", func(t *testing.T) {
-		defer func() {
-			if r := recover(); r != nil {
-				if err, ok := r.(error); ok {
-					assert.True(t, errors.NotSupported.Match(err), "%+v", err)
-				} else {
-					t.Errorf("Panic should contain an error but got:\n%+v", r)
-				}
-			} else {
-				t.Error("Expecting a panic but got nothing")
-			}
-		}()
-		NewInsert("a").AddColumns("b").WithArgs(make(chan int))
-	})
+
 	t.Run("single WithArgs", func(t *testing.T) {
 		compareToSQL(t,
-			NewInsert("a").AddColumns("b", "c").WithArgs(1, 2),
+			NewInsert("a").AddColumns("b", "c").WithArgs().Int(1).Int(2),
 			errors.NoKind,
 			"INSERT INTO `a` (`b`,`c`) VALUES (?,?)",
 			"INSERT INTO `a` (`b`,`c`) VALUES (1,2)",
@@ -464,11 +479,7 @@ func TestInsert_AddArguments(t *testing.T) {
 		compareToSQL(t,
 			NewInsert("a").AddColumns("b", "c").
 				OnDuplicateKey().
-				WithArgs(
-					1, 2,
-					3, 4,
-					5, 6,
-				),
+				WithArgs().Int(1).Int(2).Int(3).Int(4).Int(5).Int(6),
 			errors.NoKind,
 			"INSERT INTO `a` (`b`,`c`) VALUES (?,?),(?,?),(?,?) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)",
 			"INSERT INTO `a` (`b`,`c`) VALUES (1,2),(3,4),(5,6) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)",

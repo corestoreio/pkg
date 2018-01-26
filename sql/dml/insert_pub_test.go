@@ -326,16 +326,7 @@ func TestInsert_WithLogger(t *testing.T) {
 	require.NoError(t, rConn.Options(dml.WithLogger(lg, uniqueIDFunc)))
 
 	t.Run("ConnPool", func(t *testing.T) {
-		d := rConn.InsertInto("dml_people").Replace().AddColumns("email", "name")
-
-		t.Run("Exec", func(t *testing.T) {
-			defer buf.Reset()
-			_, err := d.WithArgs("a@b.c", "John").Interpolate().ExecContext(context.TODO())
-			require.NoError(t, err)
-
-			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQ04\" insert_id: \"UNIQ08\" table: \"dml_people\" duration: 0 sql: \"REPLACE /*ID:UNIQ08*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\"\n",
-				buf.String())
-		})
+		d := rConn.InsertInto("dml_people").Replace().AddColumns("email", "name").DisableBuildCache()
 
 		t.Run("Prepare", func(t *testing.T) {
 			defer buf.Reset()
@@ -343,7 +334,16 @@ func TestInsert_WithLogger(t *testing.T) {
 			require.NoError(t, err)
 			defer stmt.Close()
 
-			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ04\" insert_id: \"UNIQ08\" table: \"dml_people\" duration: 0 sql: \"REPLACE /*ID:UNIQ08*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\"\n",
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ04\" insert_id: \"UNIQ08\" table: \"dml_people\" duration: 0 error: \"<nil>\" sql: \"REPLACE /*ID$UNIQ08*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\"\n",
+				buf.String())
+		})
+
+		t.Run("Exec", func(t *testing.T) {
+			defer buf.Reset()
+			_, err := d.WithArgs().String("a@b.c").String("John").Interpolate().ExecContext(context.TODO())
+			require.NoError(t, err)
+
+			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQ04\" insert_id: \"UNIQ08\" table: \"dml_people\" duration: 0 sql: \"REPLACE /*ID$UNIQ08*/ INTO `dml_people` (`email`,`name`) VALUES ('a@b.c','John')\" source: \"i\" error: \"<nil>\"\n",
 				buf.String())
 		})
 
@@ -352,10 +352,10 @@ func TestInsert_WithLogger(t *testing.T) {
 			tx, err := rConn.BeginTx(context.TODO(), nil)
 			require.NoError(t, err)
 			require.NoError(t, tx.Wrap(func() error {
-				_, err := tx.InsertInto("dml_people").Replace().AddColumns("email", "name").WithArgs("a@b.c", "John").Interpolate().ExecContext(context.TODO())
+				_, err := tx.InsertInto("dml_people").Replace().AddColumns("email", "name").WithArgs("a@b.c", "John").ExecContext(context.TODO())
 				return err
 			}))
-			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ04\" tx_id: \"UNIQ12\"\nDEBUG Exec conn_pool_id: \"UNIQ04\" tx_id: \"UNIQ12\" insert_id: \"UNIQ16\" table: \"dml_people\" duration: 0 sql: \"REPLACE /*ID:UNIQ16*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\"\nDEBUG Commit conn_pool_id: \"UNIQ04\" tx_id: \"UNIQ12\" duration: 0\n",
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ04\" tx_id: \"UNIQ12\"\nDEBUG Exec conn_pool_id: \"UNIQ04\" tx_id: \"UNIQ12\" insert_id: \"UNIQ16\" table: \"dml_people\" duration: 0 sql: \"REPLACE /*ID$UNIQ16*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\" source: \"i\" error: \"<nil>\"\nDEBUG Commit conn_pool_id: \"UNIQ04\" tx_id: \"UNIQ12\" duration: 0\n",
 				buf.String())
 		})
 	})
@@ -364,31 +364,29 @@ func TestInsert_WithLogger(t *testing.T) {
 		conn, err := rConn.Conn(context.TODO())
 		require.NoError(t, err)
 
-		d := conn.InsertInto("dml_people").Replace().AddColumns("email", "name")
+		d := conn.InsertInto("dml_people").Replace().AddColumns("email", "name").DisableBuildCache()
 
 		t.Run("Exec", func(t *testing.T) {
 			defer buf.Reset()
-			_, err := d.WithArgs("a@b.zeh", "J0hn").Interpolate().ExecContext(context.TODO())
+			_, err := d.WithArgs().String("a@b.zeh").String("J0hn").Interpolate().ExecContext(context.TODO())
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" insert_id: \"UNIQ24\" table: \"dml_people\" duration: 0 sql: \"REPLACE /*ID:UNIQ24*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\"\n",
+			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" insert_id: \"UNIQ24\" table: \"dml_people\" duration: 0 sql: \"REPLACE /*ID$UNIQ24*/ INTO `dml_people` (`email`,`name`) VALUES ('a@b.zeh','J0hn')\" source: \"i\" error: \"<nil>\"\n",
 				buf.String())
 		})
 
 		t.Run("Prepare", func(t *testing.T) {
 			defer buf.Reset()
-
 			stmt, err := d.Prepare(context.TODO())
 			require.NoError(t, err)
 			defer stmt.Close()
 
-			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" insert_id: \"UNIQ24\" table: \"dml_people\" duration: 0 sql: \"REPLACE /*ID:UNIQ24*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\"\n",
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" insert_id: \"UNIQ24\" table: \"dml_people\" duration: 0 error: \"<nil>\" sql: \"REPLACE /*ID$UNIQ24*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\"\n",
 				buf.String())
 		})
 
 		t.Run("Prepare Exec", func(t *testing.T) {
 			defer buf.Reset()
-
 			stmt, err := d.Prepare(context.TODO())
 			require.NoError(t, err)
 			defer stmt.Close()
@@ -396,7 +394,7 @@ func TestInsert_WithLogger(t *testing.T) {
 			_, err = stmt.WithArgs().ExecContext(context.TODO(), "mail@e.de", "Hans")
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" insert_id: \"UNIQ24\" table: \"dml_people\" duration: 0 sql: \"REPLACE /*ID:UNIQ24*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\"\nDEBUG Exec conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" insert_id: \"UNIQ24\" table: \"dml_people\" duration: 0 arg_len: 2\n",
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" insert_id: \"UNIQ24\" table: \"dml_people\" duration: 0 error: \"<nil>\" sql: \"REPLACE /*ID$UNIQ24*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\"\nDEBUG Exec conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" insert_id: \"UNIQ24\" table: \"dml_people\" duration: 0 sql: \"REPLACE /*ID$UNIQ24*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\" source: \"i\" error: \"<nil>\"\n",
 				buf.String())
 		})
 
@@ -405,11 +403,11 @@ func TestInsert_WithLogger(t *testing.T) {
 			tx, err := conn.BeginTx(context.TODO(), nil)
 			require.NoError(t, err)
 			require.NoError(t, tx.Wrap(func() error {
-				_, err := tx.InsertInto("dml_people").Replace().AddColumns("email", "name").WithArgs("a@b.c", "John").Interpolate().ExecContext(context.TODO())
+				_, err := tx.InsertInto("dml_people").Replace().AddColumns("email", "name").WithArgs("a@b.c", "John").ExecContext(context.TODO())
 				return err
 			}))
 
-			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ28\"\nDEBUG Exec conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ28\" insert_id: \"UNIQ32\" table: \"dml_people\" duration: 0 sql: \"REPLACE /*ID:UNIQ32*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\"\nDEBUG Commit conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ28\" duration: 0\n",
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ28\"\nDEBUG Exec conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ28\" insert_id: \"UNIQ32\" table: \"dml_people\" duration: 0 sql: \"REPLACE /*ID$UNIQ32*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\" source: \"i\" error: \"<nil>\"\nDEBUG Commit conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ28\" duration: 0\n",
 				buf.String())
 		})
 
@@ -423,7 +421,7 @@ func TestInsert_WithLogger(t *testing.T) {
 				return err
 			}))
 
-			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ36\"\nDEBUG Exec conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ36\" insert_id: \"UNIQ40\" table: \"dml_people\" duration: 0 sql: \"REPLACE /*ID:UNIQ40*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\"\nDEBUG Rollback conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ36\" duration: 0\n",
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ36\"\nDEBUG Exec conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ36\" insert_id: \"UNIQ40\" table: \"dml_people\" duration: 0 sql: \"\" source: \"i\" error: \"[dml] Interpolation failed: \\\"REPLACE /*ID$UNIQ40*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\\\": [dml] Number of place holders (2) vs number of arguments (1) do not match.\"\nDEBUG Rollback conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ36\" duration: 0\n",
 				buf.String())
 		})
 	})

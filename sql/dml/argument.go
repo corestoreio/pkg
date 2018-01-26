@@ -603,6 +603,16 @@ func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, 
 	}
 	if a.isEmpty() {
 		a.hasNamedArgs = 1
+		if a.base.source == dmlSourceInsert {
+			// TODO optimize this
+			sqlBuf := bufferpool.Get()
+			defer bufferpool.Put(sqlBuf)
+			if _, err := sqlBuf.Write(a.base.cachedSQL); err != nil {
+				return "", nil, errors.WithStack(err)
+			}
+			a.writeInsertPlaceholderValues(sqlBuf)
+			return sqlBuf.String(), fncArgs, nil
+		}
 		return string(a.base.cachedSQL), fncArgs, nil
 	}
 
@@ -628,31 +638,7 @@ func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, 
 	if _, err := sqlBuf.Write(a.base.cachedSQL); err != nil {
 		return "", nil, errors.WithStack(err)
 	}
-
-	// This IF block calculates dynamically the amount of placeholders in an
-	// INSERT query depending on the number of arguments.
-	if a.base.source == dmlSourceInsert {
-		totalArgLen := uint(len(a.args) + len(a.raw))
-
-		odkPos := bytes.Index(a.base.cachedSQL, []byte(onDuplicateKeyPart))
-		if odkPos > 0 {
-			sqlBuf.Reset()
-			sqlBuf.Write(a.base.cachedSQL[:odkPos])
-		}
-
-		if a.insertRowCount > 0 {
-			columnCount := totalArgLen / a.insertRowCount
-			writeInsertPlaceholders(sqlBuf, a.insertRowCount, columnCount)
-
-		} else if a.insertColumnCount > 0 {
-			rowCount := totalArgLen / a.insertColumnCount
-			writeInsertPlaceholders(sqlBuf, rowCount, a.insertColumnCount)
-		}
-
-		if odkPos > 0 {
-			sqlBuf.Write(a.base.cachedSQL[odkPos:])
-		}
-	}
+	a.writeInsertPlaceholderValues(sqlBuf)
 
 	// `switch` statement no suitable.
 	if a.Options > 0 && len(a.raw) > 0 && len(a.recs) == 0 && len(a.args) == 0 {
@@ -691,6 +677,39 @@ func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, 
 	return sqlBuf.String(), a.rawReturn, nil
 }
 
+func (a *Arguments) writeInsertPlaceholderValues(sqlBuf *bytes.Buffer) {
+	// This IF block calculates dynamically the amount of placeholders in an
+	// INSERT query depending on the number of arguments.
+	if a.base.source != dmlSourceInsert {
+		return
+	}
+
+	totalArgLen := uint(len(a.args) + len(a.raw))
+
+	odkPos := bytes.Index(a.base.cachedSQL, []byte(onDuplicateKeyPart))
+	if odkPos > 0 {
+		sqlBuf.Reset()
+		sqlBuf.Write(a.base.cachedSQL[:odkPos])
+	}
+
+	if a.insertRowCount > 0 {
+		columnCount := totalArgLen / a.insertRowCount
+		writeInsertPlaceholders(sqlBuf, a.insertRowCount, columnCount)
+
+	} else if a.insertColumnCount > 0 {
+		rowCount := totalArgLen / a.insertColumnCount
+		if rowCount == 0 {
+			rowCount = 1
+		}
+		writeInsertPlaceholders(sqlBuf, rowCount, a.insertColumnCount)
+	}
+
+	if odkPos > 0 {
+		sqlBuf.Write(a.base.cachedSQL[odkPos:])
+	}
+
+}
+
 func (a *Arguments) appendConvertedRecordsToArguments() error {
 	if a.base.templateStmtCount == 0 {
 		a.base.templateStmtCount = 1
@@ -708,43 +727,63 @@ func (a *Arguments) appendConvertedRecordsToArguments() error {
 		return nil
 	}
 
+	// TODO refactor prototype and make it beautiful code
+
 	cm := newColumnMap(MakeArgs(len(a.args)+len(a.recs)), "") // can use an arg pool Arguments
 	cm.Args = new(Arguments)                                  // TODO for now a new pointer, later should be `a` or sync.Pool or just []argument
 	//var unnamedCounter int
 	for tsc := 0; tsc < a.base.templateStmtCount; tsc++ { // only in case of UNION statements in combination with a template SELECT, can be optimized later
-		for _, identifier := range a.base.qualifiedColumns { // contains the correct order as the place holders appear in the SQL string
-			qualifier, column := splitColumn(identifier)
-			if qualifier == "" {
-				qualifier = a.base.defaultQualifier
+
+		if a.base.source == dmlSourceInsert {
+			// might not work with an INSERT INTO ... SELECT * FROM ... or the columns in the SELECT needs to be qualified.
+			cm.setColumns(a.base.qualifiedColumns...)
+			for _, qRec := range a.recs {
+				//if qRec.Qualifier == "" {
+				//	qRec.Qualifier = a.base.defaultQualifier
+				//}
+				//if qRec.Qualifier == qualifier {
+				if err := qRec.Record.MapColumns(cm); err != nil {
+					return errors.WithStack(err)
+				}
+				//}
 			}
 
-			column, _ = cutPrefix(column, namedArgStartStr)
-			//if !cut { if there would be a prefix then it states a named column
-			//	continue
-			//}
-			cm.columns[0] = column // length is always one!
-			// TODO think about either supporting in a query only named arguments or just placeholders, but not both.
-			//if !cut { // if the colon : cannot be found then a simple place holder ? has been detected
-			//	if pArg, ok := a.unnamedArgByPos(unnamedCounter); ok {
-			//		cm.Args.args = append(cm.Args.args, pArg)
-			//	}
-			//	unnamedCounter++
-			//	//continue
-			//}
-			for _, qRec := range a.recs {
-				if qRec.Qualifier == "" {
-					qRec.Qualifier = a.base.defaultQualifier
+		} else {
+			for _, identifier := range a.base.qualifiedColumns { // contains the correct order as the place holders appear in the SQL string
+				qualifier, column := splitColumn(identifier)
+				if qualifier == "" {
+					qualifier = a.base.defaultQualifier
 				}
-				if qRec.Qualifier == qualifier {
-					if err := qRec.Record.MapColumns(cm); err != nil {
-						return errors.WithStack(err)
+
+				column, _ = cutPrefix(column, namedArgStartStr)
+				//if !cut { if there would be a prefix then it states a named column
+				//	continue
+				//}
+
+				cm.columns[0] = column // length is always one!
+				// TODO think about either supporting in a query only named arguments or just placeholders, but not both.
+				//if !cut { // if the colon : cannot be found then a simple place holder ? has been detected
+				//	if pArg, ok := a.unnamedArgByPos(unnamedCounter); ok {
+				//		cm.Args.args = append(cm.Args.args, pArg)
+				//	}
+				//	unnamedCounter++
+				//	//continue
+				//}
+				for _, qRec := range a.recs {
+					if qRec.Qualifier == "" {
+						qRec.Qualifier = a.base.defaultQualifier
+					}
+					if qRec.Qualifier == qualifier {
+						if err := qRec.Record.MapColumns(cm); err != nil {
+							return errors.WithStack(err)
+						}
 					}
 				}
+				// not needed because named args are already in argument slice
+				//if err := a.MapColumns(cm); err != nil {
+				//	return errors.WithStack(err)
+				//}
 			}
-			// not needed because named args are already in argument slice
-			//if err := a.MapColumns(cm); err != nil {
-			//	return errors.WithStack(err)
-			//}
 		}
 	}
 

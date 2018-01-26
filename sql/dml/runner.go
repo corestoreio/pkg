@@ -64,8 +64,9 @@ type ColumnMap struct {
 	Count    uint64
 	scanArgs []interface{} // could be a sync.Pool but check it in benchmarks.
 	scanCol  []scannedColumn
-	// Columns contains the names of the column returned from the query. One
-	// should only read from the slice. Never modify it.
+	// Columns contains the names of the column returned from the query or
+	// needed to build a query aka reading the arguments in the ColumnMapper
+	// interface. One should only read from the slice. Never modify it.
 	columns    []string
 	columnsLen int
 	// scanErr is a delayed error and also used to avoid `if err != nil` in

@@ -67,7 +67,8 @@ type queryBuilder interface {
 // builderCommon
 type builderCommon struct {
 	// cachedSQL contains the final SQL string which gets send to the server.
-	cachedSQL []byte
+	cachedSQL            []byte
+	IsBuildCacheDisabled bool // see DisableBuildCache()
 	// EstimatedCachedSQLSize specifies the estimated size in bytes of the final
 	// SQL string. This value gets used during SQL string building process to
 	// reduce the allocations and speed up the process. Default Value is xxxx
@@ -106,28 +107,64 @@ type builderCommon struct {
 	DB QueryExecPreparer
 }
 
-func (b *builderCommon) prepare(ctx context.Context, db QueryExecPreparer, qb QueryBuilder, source rune) (_ *Stmt, err error) {
-	var sqlStr string
-	sqlStr, _, err = qb.ToSQL()
+// hasBuildCache satisfies partially interface queryBuilder
+func (b *builderCommon) hasBuildCache() bool {
+	return !b.IsBuildCacheDisabled
+}
+
+// buildToSQL builds the raw SQL string and caches it as a byte slice. It gets
+// called by toSQL.
+// buildArgsAndSQL generates the SQL string and its place holders. Takes care of
+// caching. It returns the string with placeholders.
+func (b *builderCommon) buildToSQL(qb queryBuilder) ([]byte, error) {
+	if b.ärgErr != nil {
+		return nil, errors.WithStack(b.ärgErr)
+	}
+	rawSQL := qb.readBuildCache()
+	if rawSQL == nil || b.IsBuildCacheDisabled {
+		b.qualifiedColumns = b.qualifiedColumns[:0]
+		// Pre allocating that with a decent size, can speed up writing due to
+		// less re-slicing / buffer.Grow.
+		size := b.EstimatedCachedSQLSize
+		if size == 0 {
+			size = estimatedCachedSQLSize
+		}
+		buf := bytes.NewBuffer(make([]byte, 0, size))
+		var err error
+		b.qualifiedColumns, err = qb.toSQL(buf, b.qualifiedColumns)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		if !b.IsBuildCacheDisabled {
+			qb.writeBuildCache(buf.Bytes())
+		}
+		rawSQL = buf.Bytes()
+	}
+	return rawSQL, nil
+}
+
+func (b *builderCommon) prepare(ctx context.Context, db QueryExecPreparer, qb queryBuilder, source rune) (_ *Stmt, err error) {
+	var rawQuery []byte
+	rawQuery, err = b.buildToSQL(qb)
 	if b.Log != nil && b.Log.IsDebug() {
-		defer log.WhenDone(b.Log).Debug("Prepare", log.Err(err), log.String("sql", sqlStr))
+		defer log.WhenDone(b.Log).Debug("Prepare", log.Err(err), log.String("sql", string(rawQuery)))
 	}
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	sqlStmt, err := db.PrepareContext(ctx, sqlStr)
+	sqlStmt, err := db.PrepareContext(ctx, string(rawQuery))
 	if err != nil {
-		return nil, errors.Wrapf(err, "[dml] Prepare.PrepareContext with query %q", sqlStr)
+		return nil, errors.Wrapf(err, "[dml] Prepare.PrepareContext with query %q", rawQuery)
 	}
 
 	stmt := &Stmt{
 		base: *b,
 		Stmt: sqlStmt,
 	}
+	stmt.base.cachedSQL = rawQuery
 	stmt.base.DB = stmtWrapper{stmt: sqlStmt}
 	stmt.base.source = source
 	return stmt, nil
-
 }
 
 // estimatedCachedSQLSize 1024 bytes value got retrieved by analyzing and
@@ -143,8 +180,7 @@ type BuilderBase struct {
 	// PropagationStopped set to true if you would like to interrupt the
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
-	PropagationStopped   bool
-	IsBuildCacheDisabled bool // see DisableBuildCache()
+	PropagationStopped bool
 	// IsUnsafe if set to true the functions AddColumn* will turn any
 	// non valid identifier (not `{a-z}[a-z0-9$_]+`i) into an expression.
 	IsUnsafe bool
@@ -155,53 +191,17 @@ type BuilderBase struct {
 }
 
 // WithArgs sets the optional interfaced arguments for the later execution.
-func (bb *BuilderBase) withArgs(qb QueryBuilder, rawArgs ...interface{}) *Arguments {
-	sqlStr, argsRaw, err := qb.ToSQL()
+func (bb *BuilderBase) withArgs(qb queryBuilder, rawArgs ...interface{}) *Arguments {
+	sqlBytes, err := bb.buildToSQL(qb) // sqlBytes owned by buildToSQL
 	var args [defaultArgumentsCapacity]argument
 	a := Arguments{
 		base: bb.builderCommon, // might be a source of a possible race condition, fix later
-		raw:  append(rawArgs, argsRaw...),
+		raw:  rawArgs,
 		args: args[:0],
 	}
-	a.base.cachedSQL = []byte(sqlStr)
+	a.base.cachedSQL = sqlBytes
 	a.base.ärgErr = errors.WithStack(err)
 	return &a
-}
-
-// hasBuildCache satisfies partially interface queryBuilder
-func (bb *BuilderBase) hasBuildCache() bool {
-	return !bb.IsBuildCacheDisabled
-}
-
-// buildToSQL builds the raw SQL string and caches it as a byte slice. It gets
-// called by toSQL.
-// buildArgsAndSQL generates the SQL string and its place holders. Takes care of
-// caching. It returns the string with placeholders.
-func (bb *BuilderBase) buildToSQL(qb queryBuilder) ([]byte, error) {
-	if bb.ärgErr != nil {
-		return nil, errors.WithStack(bb.ärgErr)
-	}
-	rawSQL := qb.readBuildCache()
-	if rawSQL == nil || bb.IsBuildCacheDisabled {
-		bb.qualifiedColumns = bb.qualifiedColumns[:0]
-		// Pre allocating that with a decent size, can speed up writing due to
-		// less re-slicing / buffer.Grow.
-		size := bb.EstimatedCachedSQLSize
-		if size == 0 {
-			size = estimatedCachedSQLSize
-		}
-		buf := bytes.NewBuffer(make([]byte, 0, size))
-		var err error
-		bb.qualifiedColumns, err = qb.toSQL(buf, bb.qualifiedColumns)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-		if !bb.IsBuildCacheDisabled {
-			qb.writeBuildCache(buf.Bytes())
-		}
-		rawSQL = buf.Bytes()
-	}
-	return rawSQL, nil
 }
 
 // BuilderConditional defines base fields used in statements which can have

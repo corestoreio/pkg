@@ -148,6 +148,7 @@ func (ps *dmlPersons) MapColumns(cm *ColumnMap) error {
 		ps.Data = append(ps.Data, p)
 	case ColumnMapCollectionReadSet: // See Test in select_test.go:TestSelect_SetRecord
 		// SELECT, DELETE or UPDATE or INSERT with n columns
+		// TODO in some INSERT statements this slice building code might not be needed.
 		for cm.Next() {
 			switch c := cm.Column(); c {
 			case "id":

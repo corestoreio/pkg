@@ -171,7 +171,7 @@ func (se ListenersSelect) dispatch(et EventType, b *Select) error {
 				b.propagationStoppedAt = i
 			}
 		case s.EventType == et:
-			if b.Log.IsDebug() {
+			if b.Log != nil && b.Log.IsDebug() {
 				b.Log.Debug("dml.ListenersSelect.Dispatch.PropagationStopped",
 					log.String("listener_name", s.name), log.Err(s.error), log.Stringer("event_type", s.EventType),
 					log.Bool("propagation_stopped", b.PropagationStopped), log.Int("propagation_stopped_at", b.propagationStoppedAt),
@@ -255,7 +255,7 @@ func (se ListenersInsert) dispatch(et EventType, b *Insert) error {
 				b.propagationStoppedAt = i
 			}
 		case s.EventType == et:
-			if b.Log.IsDebug() {
+			if b.Log != nil && b.Log.IsDebug() {
 				b.Log.Debug("dml.ListenersInsert.Dispatch.PropagationStopped",
 					log.String("listener_name", s.name), log.Err(s.error), log.Stringer("event_type", s.EventType),
 					log.Bool("propagation_stopped", b.PropagationStopped), log.Int("propagation_stopped_at", b.propagationStoppedAt),
@@ -337,7 +337,7 @@ func (se ListenersUpdate) dispatch(et EventType, b *Update) error {
 				b.propagationStoppedAt = i
 			}
 		case s.EventType == et:
-			if b.Log.IsDebug() {
+			if b.Log != nil && b.Log.IsDebug() {
 				b.Log.Debug("dml.ListenersUpdate.Dispatch.PropagationStopped",
 					log.String("listener_name", s.name), log.Err(s.error), log.Stringer("event_type", s.EventType),
 					log.Bool("propagation_stopped", b.PropagationStopped), log.Int("propagation_stopped_at", b.propagationStoppedAt),
@@ -419,7 +419,7 @@ func (se ListenersDelete) dispatch(et EventType, b *Delete) error {
 				b.propagationStoppedAt = i
 			}
 		case s.EventType == et:
-			if b.Log.IsDebug() {
+			if b.Log != nil && b.Log.IsDebug() {
 				b.Log.Debug("dml.ListenersDelete.Dispatch.PropagationStopped",
 					log.String("listener_name", s.name), log.Err(s.error), log.Stringer("event_type", s.EventType),
 					log.Bool("propagation_stopped", b.PropagationStopped), log.Int("propagation_stopped_at", b.propagationStoppedAt),

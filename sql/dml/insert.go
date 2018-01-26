@@ -209,10 +209,11 @@ func (b *Insert) OnDuplicateKey() *Insert {
 }
 
 // WithPairs appends a column/value pair to the statement. Calling this function
-// multiple times with the same column name produces invalid SQL. Slice values
-// and right/left side expressions are not supported and ignored.
+// multiple times with the same column name produces next rows for insertion.
+// Slice values and right/left side expressions are not supported and ignored.
+// You must call WithArgs afterwards to activate the `Pairs`.
 func (b *Insert) WithPairs(cvs ...*Condition) *Insert {
-	b.Pairs = cvs
+	b.Pairs = append(b.Pairs, cvs...)
 	return b
 }
 
@@ -229,11 +230,16 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 // like depending on the number of arguments.
 func (b *Insert) WithArgs(args ...interface{}) *Arguments {
 	b.source = dmlSourceInsert
+
 	b.doNotBuildValues = true
 	a := b.withArgs(b, args...)
 	b.doNotBuildValues = false
+
+	if b.Select != nil {
+		return a
+	}
+
 	for _, cv := range b.Pairs {
-		b.Columns = append(b.Columns, cv.Left)
 		a.args = append(a.args, cv.Right.arg)
 	}
 
@@ -274,9 +280,14 @@ func (b *Insert) DisableBuildCache() *Insert {
 }
 
 func (b *Insert) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, error) {
-
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return nil, errors.WithStack(err)
+	}
+
+	for _, cv := range b.Pairs {
+		if !strInSlice(cv.Left, b.Columns) {
+			b.Columns = append(b.Columns, cv.Left)
+		}
 	}
 
 	if b.RawFullSQL != "" {
@@ -314,7 +325,10 @@ func (b *Insert) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 			buf.WriteString(") ")
 		}
 		ph, err := b.Select.toSQL(buf, placeHolders)
-		return ph, errors.WithStack(err)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		return b.writeOnDuplicateKey(buf, ph)
 	}
 
 	if len(b.Columns) > 0 {
@@ -335,25 +349,16 @@ func (b *Insert) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 		if b.RowCount > 0 {
 			rowCount = b.RowCount
 		}
-
 		if b.RecordPlaceHolderCount > 0 {
 			argCount0 = b.RecordPlaceHolderCount
 		}
-		for vc := 0; vc < rowCount; vc++ {
-			if vc > 0 {
-				buf.WriteByte(',')
-			}
-			buf.WriteByte('(')
-			for i := 0; i < argCount0; i++ {
-				if i > 0 {
-					buf.WriteByte(',')
-				}
-				buf.WriteByte(placeHolderRune)
-			}
-			buf.WriteByte(')')
-		}
+		writeInsertPlaceholders(buf, uint(rowCount), uint(argCount0))
 	}
 
+	return b.writeOnDuplicateKey(buf, placeHolders)
+}
+
+func (b *Insert) writeOnDuplicateKey(buf *bytes.Buffer, placeHolders []string) ([]string, error) {
 	if len(b.OnDuplicateKeyExclude) > 0 || b.IsOnDuplicateKey {
 		if len(b.OnDuplicateKeys) == 0 {
 			b.OnDuplicateKeys = append(b.OnDuplicateKeys, &Condition{})
@@ -375,8 +380,7 @@ func (b *Insert) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 		}
 	}
 
-	placeHolders, err := b.OnDuplicateKeys.writeOnDuplicateKey(buf, placeHolders)
-	return placeHolders, errors.Wrap(err, "[dml] Insert.toSQL.writeOnDuplicateKey\n")
+	return b.OnDuplicateKeys.writeOnDuplicateKey(buf, placeHolders)
 }
 
 func strInSlice(search string, sl []string) bool {
@@ -388,50 +392,6 @@ func strInSlice(search string, sl []string) bool {
 	return false
 }
 
-//func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
-//
-//	if b.Select != nil && (b.Select.argsArgs != nil || b.Select.argsRecords != nil) {
-//		args, err = b.Select.appendConvertedRecordsToArguments()
-//		return args, errors.WithStack(err)
-//	}
-//
-//	argCount0 := b.RecordPlaceHolderCount
-//	if len(b.Values) > 0 && len(b.Columns) == 0 {
-//		argCount0 = len(b.Values[0])
-//	}
-//	if lc := len(b.Columns); argCount0 < 1 && lc > 0 {
-//		argCount0 = lc
-//	}
-//	totalArgCount := len(b.Values) * argCount0
-//	if cap(args) == 0 {
-//		args = make(Arguments, 0, totalArgCount+len(b.Records)+len(b.OnDuplicateKeys))
-//	}
-//	for _, v := range b.Values {
-//		args = append(args, v...)
-//	}
-//
-//	if b.Records == nil {
-//		args = append(args, b.argsArgs...)
-//		return args, errors.WithStack(err)
-//	}
-//
-//	cm := newColumnMap(args, b.qualifiedColumns...) // b.Columns can be nil
-//	for _, rec := range b.Records {
-//		alBefore := len(cm.Args)
-//		if err = rec.MapColumns(cm); err != nil {
-//			return nil, errors.WithStack(err)
-//		}
-//		if addedArgs := len(cm.Args) - alBefore; argCount0 > 0 && addedArgs%argCount0 != 0 {
-//			return nil, errors.Mismatch.Newf("[dml] Insert.appendArgs RecordPlaceHolderCount(%d) does not match the number of assembled arguments (%d)", b.RecordPlaceHolderCount, addedArgs)
-//		}
-//	}
-//	args = cm.Args
-//
-//	args = append(args, b.argsArgs...)
-//
-//	return args, nil
-//}
-
 // Prepare executes the statement represented by the Insert to create a prepared
 // statement. It returns a custom statement type or an error if there was one.
 // Provided arguments or recs in the Insert are getting ignored. The provided
@@ -441,42 +401,3 @@ func strInSlice(search string, sl []string) bool {
 func (b *Insert) Prepare(ctx context.Context) (*Stmt, error) {
 	return b.prepare(ctx, b.DB, b, dmlSourceInsert)
 }
-
-// WithArguments sets the arguments for the execution with Exec. It internally resets
-// previously applied arguments.
-// TODO remove function
-//func (st *stmtInsert) WithArguments(args Arguments) Stmter {
-//	st.ins.Records = nil
-//	st.ins.Values = st.ins.Values[:0]
-//	st.argsArgs = st.argsArgs[:0]
-//
-//	if lv, mod := len(args), len(st.ins.Columns); mod > 0 && lv > mod && (lv%mod) == 0 {
-//		// now we have more arguments than columns and we can assume that more
-//		// rows gets inserted.
-//		for i := 0; i < len(args); i = i + mod {
-//			st.ins.Values = append(st.ins.Values, args[i:i+mod])
-//		}
-//	} else {
-//		// each call to AddValuesUnsafe equals one row in a table.
-//		st.ins.Values = append(st.ins.Values, args)
-//	}
-//
-//	st.argsArgs, st.ärgErr = st.ins.appendArgs(st.argsArgs)
-//
-//	return st
-//}
-
-// WithRecords sets the recs for the execution with Exec. It internally
-// resets previously applied arguments.
-// TODO remove function
-//func (st *stmtInsert) WithRecords(records ...QualifiedRecord) Stmter {
-//	st.argsArgs = st.argsArgs[:0]
-//	st.ins.Records = nil
-//	recs := make([]ColumnMapper, len(records))
-//	for i, r := range records {
-//		recs[i] = r.Record
-//	}
-//	st.ins.AddRecords(recs...)
-//	st.argsArgs, st.ärgErr = st.ins.appendArgs(st.argsArgs)
-//	return st
-//}
