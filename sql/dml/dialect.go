@@ -22,8 +22,9 @@ import (
 )
 
 const (
-	namedArgStartStr  = ":"
-	namedArgStartByte = ':'
+	namedArgStartStr    = ":"
+	namedArgStartStrLen = 1
+	namedArgStartByte   = ':'
 )
 
 var dialect dialecter = mysqlDialect{
@@ -123,4 +124,12 @@ func (d mysqlDialect) ApplyLimitAndOffset(w *bytes.Buffer, limit, offset uint64)
 		w.WriteString(" OFFSET ")
 		writeUint64(w, offset)
 	}
+}
+
+func cutNamedArgStartStr(s string) (string, bool) {
+	lp := namedArgStartStrLen
+	if len(s) >= lp && s[0:lp] == namedArgStartStr {
+		return s[lp:], true
+	}
+	return s, false
 }

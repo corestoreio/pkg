@@ -731,7 +731,7 @@ func (a *Arguments) appendConvertedRecordsToArguments() error {
 
 	cm := newColumnMap(MakeArgs(len(a.args)+len(a.recs)), "") // can use an arg pool Arguments
 	cm.Args = new(Arguments)                                  // TODO for now a new pointer, later should be `a` or sync.Pool or just []argument
-	//var unnamedCounter int
+
 	for tsc := 0; tsc < a.base.templateStmtCount; tsc++ { // only in case of UNION statements in combination with a template SELECT, can be optimized later
 
 		if a.base.source == dmlSourceInsert {
@@ -749,26 +749,28 @@ func (a *Arguments) appendConvertedRecordsToArguments() error {
 			}
 
 		} else {
+
+			var unnamedCounter int
 			for _, identifier := range a.base.qualifiedColumns { // contains the correct order as the place holders appear in the SQL string
 				qualifier, column := splitColumn(identifier)
 				if qualifier == "" {
 					qualifier = a.base.defaultQualifier
 				}
-
-				column, _ = cutPrefix(column, namedArgStartStr)
-				//if !cut { if there would be a prefix then it states a named column
-				//	continue
-				//}
+				var isNamedArg bool
+				column, isNamedArg = cutNamedArgStartStr(column)
 
 				cm.columns[0] = column // length is always one!
 				// TODO think about either supporting in a query only named arguments or just placeholders, but not both.
-				//if !cut { // if the colon : cannot be found then a simple place holder ? has been detected
-				//	if pArg, ok := a.unnamedArgByPos(unnamedCounter); ok {
-				//		cm.Args.args = append(cm.Args.args, pArg)
-				//	}
-				//	unnamedCounter++
-				//	//continue
-				//}
+				if isNamedArg { // if the colon : cannot be found then a simple place holder ? has been detected
+					if err := a.MapColumns(cm); err != nil {
+						return errors.WithStack(err)
+					}
+				} else if a.recs == nil {
+					if pArg, ok := a.unnamedArgByPos(unnamedCounter); ok {
+						cm.Args.args = append(cm.Args.args, pArg)
+					}
+					unnamedCounter++
+				}
 				for _, qRec := range a.recs {
 					if qRec.Qualifier == "" {
 						qRec.Qualifier = a.base.defaultQualifier
@@ -779,17 +781,14 @@ func (a *Arguments) appendConvertedRecordsToArguments() error {
 						}
 					}
 				}
-				// not needed because named args are already in argument slice
-				//if err := a.MapColumns(cm); err != nil {
-				//	return errors.WithStack(err)
-				//}
+
 			}
 		}
 	}
 
 	if len(cm.Args.args) > 0 {
-		a.args = append(a.args, cm.Args.args...)
-		//a.args = cm.Args.args
+		//a.args = append(a.args, cm.Args.args...)
+		a.args = cm.Args.args
 	}
 
 	return nil
@@ -1026,6 +1025,7 @@ func (a *Arguments) Record(qualifier string, record ColumnMapper) *Arguments {
 // Arguments sets the internal arguments slice to the provided argument. Those
 // are the slices Arguments, records and raw.
 func (a *Arguments) Arguments(args *Arguments) *Arguments {
+	// maybe deprecated this function.
 	a.args = args.args
 	a.recs = args.recs
 	a.raw = args.raw
@@ -1084,6 +1084,7 @@ func (a *Arguments) Reset() *Arguments {
 	a.recs = a.recs[:0]
 	a.args = a.args[:0]
 	a.raw = a.raw[:0]
+	a.argsPrepared = false
 	return a
 }
 
@@ -1151,7 +1152,9 @@ func (a *Arguments) DriverValue(dvs ...driver.Valuer) *Arguments {
 	case len(times) > 0:
 		arg.value = times
 	}
-
+	if a == nil {
+		a = MakeArgs(len(dvs))
+	}
 	a.args = append(a.args, arg)
 	return a
 }
@@ -1160,6 +1163,9 @@ func (a *Arguments) DriverValue(dvs ...driver.Valuer) *Arguments {
 // slice. It panics if the underlying type is not one of the allowed of
 // interface driver.Valuer.
 func (a *Arguments) DriverValues(dvs ...driver.Valuer) *Arguments {
+	if a == nil {
+		a = MakeArgs(len(dvs))
+	}
 	// value is a value that drivers must be able to handle.
 	// It is either nil or an instance of one of these types:
 	//
@@ -1293,7 +1299,7 @@ func (a *Arguments) QueryRowContext(ctx context.Context, args ...interface{}) *s
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug("QueryRowContext", log.String("sql", sqlStr), log.String("source", string(a.base.source)), log.Err(err))
 	}
-	return a.base.DB.QueryRowContext(ctx, sqlStr, append(rawArgs, args...)...)
+	return a.base.DB.QueryRowContext(ctx, sqlStr, rawArgs...)
 }
 
 // Iterate iterates over the result set by loading only one row each iteration
@@ -1346,18 +1352,18 @@ func (a *Arguments) Load(ctx context.Context, s ColumnMapper, args ...interface{
 
 	r, err := a.query(ctx, args...)
 	if err != nil {
-		err = errors.Wrapf(err, "[dml] Load.QueryContext with query ID %q", a.base.id)
+		err = errors.Wrapf(err, "[dml] Arguments.Load.QueryContext failed with queryID %q and ColumnMapper %T", a.base.id, s)
 		return
 	}
 	cm := poolColumnMapGet()
 	defer func() {
 		// Not testable with the sqlmock package :-(
 		if err2 := r.Close(); err2 != nil && err == nil {
-			err = errors.Wrap(err2, "[dml] Load.QueryContext.Rows.Close")
+			err = errors.Wrap(err2, "[dml] Arguments.Load.Rows.Close")
 		}
 		if rc, ok := s.(ioCloser); ok {
 			if err2 := rc.Close(); err2 != nil && err == nil {
-				err = errors.Wrap(err2, "[dml] Load.QueryContext.ColumnMapper.Close")
+				err = errors.Wrap(err2, "[dml] Arguments.Load.ColumnMapper.Close")
 			}
 		}
 		poolColumnMapPut(cm)
@@ -1368,7 +1374,7 @@ func (a *Arguments) Load(ctx context.Context, s ColumnMapper, args ...interface{
 			return 0, errors.WithStack(err)
 		}
 		if err = s.MapColumns(cm); err != nil {
-			return 0, errors.WithStack(err)
+			return 0, errors.Wrapf(err, "[dml] Arguments.Load failed with queryID %q and ColumnMapper %T", a.base.id, s)
 		}
 	}
 	if err = r.Err(); err != nil {

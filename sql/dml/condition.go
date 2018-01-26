@@ -1048,11 +1048,3 @@ func splitColumn(identifier string) (qualifier, column string) {
 	}
 	return "", identifier
 }
-
-func cutPrefix(s, prefix string) (string, bool) {
-	lp := len(prefix)
-	if len(s) >= lp && s[0:lp] == prefix {
-		return s[lp:], true
-	}
-	return s, false
-}

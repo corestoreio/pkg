@@ -43,12 +43,12 @@ func TestSelect_BasicToSQL(t *testing.T) {
 			"SELECT 1 AS `n`, CAST('a\\'bc' AS CHAR(20)) AS `str`",
 		)
 	})
-	t.Run("no table with placeholders", func(t *testing.T) {
+	t.Run("no table with placeholders Args as Records", func(t *testing.T) {
 		sel := NewSelect().
 			AddColumnsConditions(
 				Expr("?").Alias("n").Int64(1),
 				Expr("CAST(:abc AS CHAR(20))").Alias("str"),
-			).WithArgs().Record("", MakeArgs(1).Name("abc").String("a'bc"))
+			).WithArgs().Record("", MakeArgs(2).Name("abc").String("a'bc"))
 
 		compareToSQL(t, sel, errors.NoKind,
 			"SELECT 1 AS `n`, CAST(? AS CHAR(20)) AS `str`",
@@ -596,7 +596,7 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 	t.Run("Scan string into arg UINT returns error", func(t *testing.T) {
 		var people dmlPersons
 		rc, err := s.SelectFrom("dml_people").AddColumnsAliases("email", "id", "name", "email").WithArgs().Load(context.TODO(), &people)
-		require.EqualError(t, err, "[dml] Arguments.Load failed with query \"SELECT `email` AS `id`, `name` AS `email` FROM `dml_people`\": [dml] Column \"id\": strconv.ParseUint: parsing \"jonathan@uservoice.com\": invalid syntax")
+		require.EqualError(t, err, "[dml] Arguments.Load failed with queryID \"\" and ColumnMapper *dml.dmlPersons: [dml] Column \"id\": strconv.ParseUint: parsing \"jonathan@uservoice.com\": invalid syntax")
 		assert.EqualError(t, errors.Cause(err), "strconv.ParseUint: parsing \"jonathan@uservoice.com\": invalid syntax")
 		assert.Empty(t, rc)
 	})
@@ -1311,21 +1311,23 @@ func TestSelect_DisableBuildCache(t *testing.T) {
 
 	sel.DisableBuildCache()
 
-	compareToSQL(t, sel.WithArgs().Int(87654), errors.NoKind, run1,
+	compareToSQL(t, sel.WithArgs().Int(87654), errors.NoKind,
+		run1,
 		"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 87654) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8",
 		int64(87654))
+
 	sel.Where(
 		Column("added_col").Float64(3.14159),
 	)
-	compareToSQL(t, sel, errors.NoKind, run2, "", int64(87654))
+	compareToSQL(t, sel.WithArgs().Int(87654), errors.NoKind, run2, "", int64(87654))
 	sel.IsBuildCacheDisabled = false
-	compareToSQL(t, sel, errors.NoKind, run2, "", int64(87654))
-	compareToSQL(t, sel, errors.NoKind, run2,
+	compareToSQL(t, sel.WithArgs().Int(87654), errors.NoKind, run2, "", int64(87654))
+	compareToSQL(t, sel.WithArgs().Int(87654), errors.NoKind, run2,
 		"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 87654) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) AND (`added_col` = 3.14159) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8",
 		int64(87654))
 }
 
-func TestSelect_Arguments(t *testing.T) {
+func TestSelect_NamedArguments(t *testing.T) {
 	t.Parallel()
 
 	sel := NewSelect("config_id", "value").
@@ -1337,21 +1339,21 @@ func TestSelect_Arguments(t *testing.T) {
 			Column("value").Like().PlaceHolder(),
 		)
 
-	inArgs := MakeArgs(2).Name("configID").Int(3).String("Gopher")
+	selArgs := sel.WithArgs().Name("configID").Int(3).String("GopherValue")
 
 	t.Run("With ID 3", func(t *testing.T) {
-
-		compareToSQL2(t, sel.WithArgs().Arguments(inArgs), errors.NoKind,
+		compareToSQL2(t, selArgs, errors.NoKind,
 			"SELECT `config_id`, `value` FROM `core_config_data` WHERE (`config_id1` < ?) AND (`config_id2` > ?) AND (`scope_id` > 5) AND (`value` LIKE ?)",
-			int64(3), int64(3), "Gopher",
+			int64(3), int64(3), "GopherValue",
 		)
 		assert.Exactly(t, []string{":configID", ":configID", "value"}, sel.qualifiedColumns, "qualifiedColumns should match")
 	})
 	t.Run("With ID 6", func(t *testing.T) {
-		inArgs.Reset().String("G0pher").Name("configID").Int(6)
-		compareToSQL2(t, sel.WithArgs().Arguments(inArgs), errors.NoKind,
+		// Here positions are switched
+		selArgs.Reset().String("G0pherValue").Name("configID").Int(6)
+		compareToSQL2(t, selArgs, errors.NoKind,
 			"SELECT `config_id`, `value` FROM `core_config_data` WHERE (`config_id1` < ?) AND (`config_id2` > ?) AND (`scope_id` > 5) AND (`value` LIKE ?)",
-			int64(6), int64(6), "G0pher",
+			int64(6), int64(6), "G0pherValue",
 		)
 		assert.Exactly(t, []string{":configID", ":configID", "value"}, sel.qualifiedColumns, "qualifiedColumns should match")
 	})
