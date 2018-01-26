@@ -238,16 +238,12 @@ func TestDelete_BuildCacheDisabled(t *testing.T) {
 	})
 
 	t.Run("with interpolate", func(t *testing.T) {
-		del.WithArgs().Int64(3333).Interpolate()
+		delA := del.WithArgs().Int64(3333).Interpolate()
 		del.cachedSQL = nil
-
 		const cachedSQLInterpolated = "DELETE FROM `alpha` WHERE (`a` = 'b') AND (`b` = 3333) ORDER BY `id` LIMIT 1"
 		for i := 0; i < iterations; i++ {
-			sql, args, err := del.ToSQL()
+			compareToSQL2(t, delA, errors.NoKind, cachedSQLInterpolated)
 			assert.Nil(t, del.cachedSQL, "cache []byte should be nil")
-			require.NoError(t, err, "%+v", err)
-			require.Equal(t, cachedSQLInterpolated, sql)
-			assert.Nil(t, args)
 		}
 	})
 }
