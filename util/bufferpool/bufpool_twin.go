@@ -16,6 +16,7 @@ package bufferpool
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"sync"
 )
@@ -25,6 +26,11 @@ var twinBufferPool = NewTwin(256) // estimated *cough* average size
 type twinBuffer struct {
 	First  *bytes.Buffer
 	Second *bytes.Buffer
+}
+
+// String prints the buffers content for debug purposes.
+func (tw twinBuffer) String() string {
+	return fmt.Sprintf("%q\n%q", tw.First.String(), tw.Second.String())
 }
 
 func (tw twinBuffer) Write(p []byte) (n int, err error) {
@@ -37,6 +43,24 @@ func (tw twinBuffer) Write(p []byte) (n int, err error) {
 	}
 	n, err = tw.Second.Write(p)
 	return n, err
+}
+
+// CopyFirstToSecond resets the second buffer and copies the content from the
+// first buffer to the second buffer. First buffer gets eventually reset.
+func (tw twinBuffer) CopyFirstToSecond() (n int64, err error) {
+	tw.Second.Reset()
+	n, err = tw.First.WriteTo(tw.Second)
+	tw.First.Reset()
+	return
+}
+
+// CopySecondToFirst resets the first buffer and copies the content from the
+// second buffer to the first buffer. Second buffer gets eventually reset.
+func (tw twinBuffer) CopySecondToFirst() (n int64, err error) {
+	tw.First.Reset()
+	n, err = tw.Second.WriteTo(tw.First)
+	tw.Second.Reset()
+	return
 }
 
 // GetTwin returns a buffer containing two buffers, `First` and `Second`, from the pool.
