@@ -22,7 +22,7 @@ import (
 // TODO: https://github.com/thejerf/gomempool
 // TODO: https://github.com/valyala/bytebufferpool/blob/master/pool.go => self calibrating buffer pool
 
-var bufferPool = New(64) // estimated *cough* average size
+var bufferPool = New(256) // estimated *cough* average size
 
 // Get returns a buffer from the pool.
 func Get() *bytes.Buffer {
@@ -35,13 +35,13 @@ func Put(buf *bytes.Buffer) {
 	bufferPool.Put(buf)
 }
 
-// Tank implements a sync.Pool for bytes.Buffer
-type Tank struct {
+// tank implements a sync.Pool for bytes.Buffer
+type tank struct {
 	p *sync.Pool
 }
 
 // Get returns type safe a buffer
-func (t Tank) Get() *bytes.Buffer {
+func (t tank) Get() *bytes.Buffer {
 	return t.p.Get().(*bytes.Buffer)
 }
 
@@ -56,20 +56,18 @@ func (t Tank) Get() *bytes.Buffer {
 // If you use Bytes() function to return bytes make sure you copy the data
 // away otherwise your returned byte slice will be empty.
 // For using String() no copying is required.
-func (t Tank) Put(buf *bytes.Buffer) {
+func (t tank) Put(buf *bytes.Buffer) {
 	buf.Reset()
 	t.p.Put(buf)
 }
 
 // New instantiates a new bytes.Buffer pool with a custom
 // pre-allocated buffer size.
-func New(size int) Tank {
-	return Tank{
+func New(size int) tank {
+	return tank{
 		p: &sync.Pool{
 			New: func() interface{} {
-				b := bytes.NewBuffer(make([]byte, size))
-				b.Reset()
-				return b
+				return bytes.NewBuffer(make([]byte, 0, size))
 			},
 		},
 	}

@@ -22,21 +22,30 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var singleBuf = bufferpool.New(4096)
+var twinBuf = bufferpool.NewTwin(4096)
 
-func TestBufferPoolSize(t *testing.T) {
+func TestBufferPoolMultiSize(t *testing.T) {
 	t.Parallel()
 
-	const iterations = 10
+	const iterations = 30
 	var wg sync.WaitGroup
 	wg.Add(iterations)
 	for i := 0; i < iterations; i++ {
 		go func(wg *sync.WaitGroup) {
-			b := singleBuf.Get()
-			defer func() { singleBuf.Put(b); wg.Done() }()
+			buf := twinBuf.Get()
+			defer twinBuf.PutCallBack(buf, wg.Done)
 
-			assert.Exactly(t, 4096, b.Cap())
-			assert.Exactly(t, 0, b.Len())
+			assert.Exactly(t, 4096, buf.First.Cap())
+			assert.Exactly(t, 4096, buf.Second.Cap())
+			assert.Exactly(t, 0, buf.First.Len())
+			assert.Exactly(t, 0, buf.Second.Len())
+
+			have := []byte(`Unless required by applicable law or agreed to in writing, software`)
+			n, err := buf.Write(have)
+			assert.NoError(t, err)
+			assert.Exactly(t, n, len(have))
+			assert.Exactly(t, string(have), buf.First.String())
+			assert.Exactly(t, string(have), buf.Second.String())
 
 		}(&wg)
 	}
