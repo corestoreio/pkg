@@ -490,6 +490,57 @@ func TestArguments_MapColumns(t *testing.T) {
 	})
 }
 
+func TestArguments_NextUnnamedArg(t *testing.T) {
+	t.Parallel()
+
+	t.Run("three occurrences", func(t *testing.T) {
+		args := MakeArgs(5).Name("colZ").Int64(3).Uint64(6).Name("colB").Float64(2.2).String("c").Name("colA").Strings("a", "b")
+
+		a, ok := args.nextUnnamedArg()
+		require.True(t, ok, "Should find an unnamed argument")
+		assert.Empty(t, a.name)
+		assert.Exactly(t, uint64(6), a.value)
+
+		a, ok = args.nextUnnamedArg()
+		require.True(t, ok, "Should find an unnamed argument")
+		assert.Empty(t, a.name)
+		assert.Exactly(t, "c", a.value)
+
+		a, ok = args.nextUnnamedArg()
+		require.False(t, ok, "Should NOT find an unnamed argument")
+		assert.Exactly(t, argument{}, a)
+
+		args.Reset().Float64(3.14159).Name("price").Float64(2.7182).Time(now())
+
+		a, ok = args.nextUnnamedArg()
+		require.True(t, ok, "Should find an unnamed argument")
+		assert.Empty(t, a.name)
+		assert.Exactly(t, 3.14159, a.value)
+
+		a, ok = args.nextUnnamedArg()
+		require.True(t, ok, "Should find an unnamed argument")
+		assert.Empty(t, a.name)
+		assert.Exactly(t, now(), a.value)
+
+		a, ok = args.nextUnnamedArg()
+		require.False(t, ok, "Should NOT find an unnamed argument")
+		assert.Exactly(t, argument{}, a)
+	})
+
+	t.Run("zero occurrences", func(t *testing.T) {
+		args := MakeArgs(5).Name("colZ").Int64(3).Name("colB").Float64(2.2).Name("colA").Strings("a", "b")
+
+		a, ok := args.nextUnnamedArg()
+		require.False(t, ok, "Should NOT find an unnamed argument")
+		assert.Exactly(t, argument{}, a)
+
+		a, ok = args.nextUnnamedArg()
+		require.False(t, ok, "Should NOT find an unnamed argument")
+		assert.Exactly(t, argument{}, a)
+	})
+
+}
+
 type myToSQL struct {
 	sql  string
 	args []interface{}

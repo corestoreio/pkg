@@ -398,3 +398,10 @@ func writeInsertPlaceholders(buf *bytes.Buffer, rowCount, columnCount uint) {
 		}
 	}
 }
+
+func bufTrySizeByResliceOrNew(buf []byte, size int) []byte {
+	if size <= cap(buf) {
+		return buf[:size]
+	}
+	return make([]byte, size)
+}

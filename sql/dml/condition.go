@@ -401,9 +401,8 @@ func (c *Condition) Column(col string) *Condition {
 
 // NamedArg treats a condition as a place holder. If set the MySQL/MariaDB
 // placeholder `?` will be used and the provided name gets replaced. Records
-// which implement ColumnMapper must also use this name. NamedArg also supports
-// a qualified named argument, e.g. :alias.yourName where alias is the name of
-// the table or view or ...
+// which implement ColumnMapper must also use this name. A dot in the name (for
+// e.g. setting a qualifier) is not allowed.
 func (c *Condition) NamedArg(n string) *Condition {
 	c.Right.PlaceHolder = n
 	return c

@@ -230,6 +230,12 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 // like depending on the number of arguments.
 func (b *Insert) WithArgs(args ...interface{}) *Arguments {
 	b.source = dmlSourceInsert
+	if b.Select != nil {
+		// Must change to this source because to trigger a different argument
+		// collector in Arguments.prepareArgs. It is not a real INSERT statement
+		// anymore.
+		b.source = dmlSourceSelect
+	}
 
 	b.doNotBuildValues = true
 	a := b.withArgs(b, args...)

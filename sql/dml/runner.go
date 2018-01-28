@@ -78,7 +78,7 @@ type ColumnMap struct {
 
 func newColumnMap(args *Arguments, columns ...string) *ColumnMap {
 	cm := &ColumnMap{Args: args}
-	cm.setColumns(columns...)
+	cm.setColumns(columns)
 	return cm
 }
 
@@ -96,7 +96,7 @@ func (b *ColumnMap) reset() {
 	b.index = 0
 }
 
-func (b *ColumnMap) setColumns(cols ...string) {
+func (b *ColumnMap) setColumns(cols []string) {
 	b.columns = cols
 	b.columnsLen = len(cols)
 	b.index = -1
@@ -235,7 +235,7 @@ func (b *ColumnMap) Scan(r *sql.Rows) error {
 			return errors.WithStack(err)
 		}
 
-		b.setColumns(cols...)
+		b.setColumns(cols)
 		if cap(b.scanCol) >= b.columnsLen { // reuse from pool!
 			b.scanCol = b.scanCol[:b.columnsLen]
 			b.scanArgs = b.scanArgs[:b.columnsLen]

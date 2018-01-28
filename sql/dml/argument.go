@@ -516,16 +516,20 @@ const (
 // Arguments a collection of primitive types or slices of primitive types.
 // It acts as some kind of prepared statement.
 type Arguments struct {
-	base              builderCommon
+	base builderCommon
+	// insertCachedSQL contains the final build SQL string with the correct
+	// amount of placeholders.
+	insertCachedSQL   []byte
 	insertColumnCount uint
 	insertRowCount    uint
 	Options           uint
-	// hasNamedArgs checks if the SQL string in the cachedSQL field contains named arguments.
-	// 0 not yet checked, 1=does not contain, 2 = yes
-	hasNamedArgs uint8 // 0 not checked, 1=no, 2=yes
-	raw          []interface{}
-	args         []argument
-	recs         []QualifiedRecord
+	// hasNamedArgs checks if the SQL string in the cachedSQL field contains
+	// named arguments. 0 not yet checked, 1=does not contain, 2 = yes
+	hasNamedArgs      uint8 // 0 not checked, 1=no, 2=yes
+	nextUnnamedArgPos int
+	raw               []interface{}
+	args              []argument
+	recs              []QualifiedRecord
 	// rawReturn will be filled with the final primitives which gets returned
 	// in the ToSQL function. It gets reset in every call.
 	rawReturn    []interface{}
@@ -601,18 +605,13 @@ func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, 
 	if len(a.base.cachedSQL) == 0 {
 		return "", nil, errors.Empty.Newf("[dml] Arguments: The SQL string is empty.")
 	}
+
+	if a.base.source == dmlSourceInsert {
+		return a.prepareArgsInsert(fncArgs...)
+	}
+
 	if a.isEmpty() {
 		a.hasNamedArgs = 1
-		if a.base.source == dmlSourceInsert {
-			// TODO optimize this
-			sqlBuf := bufferpool.Get()
-			defer bufferpool.Put(sqlBuf)
-			if _, err := sqlBuf.Write(a.base.cachedSQL); err != nil {
-				return "", nil, errors.WithStack(err)
-			}
-			a.writeInsertPlaceholderValues(sqlBuf)
-			return sqlBuf.String(), fncArgs, nil
-		}
 		return string(a.base.cachedSQL), fncArgs, nil
 	}
 
@@ -638,7 +637,6 @@ func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, 
 	if _, err := sqlBuf.Write(a.base.cachedSQL); err != nil {
 		return "", nil, errors.WithStack(err)
 	}
-	a.writeInsertPlaceholderValues(sqlBuf)
 
 	// `switch` statement no suitable.
 	if a.Options > 0 && len(a.raw) > 0 && len(a.recs) == 0 && len(a.args) == 0 {
@@ -667,7 +665,7 @@ func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, 
 		if err := writeInterpolateBytes(tmpBuf, sqlBuf.Bytes(), a); err != nil {
 			return "", nil, errors.Wrapf(err, "[dml] Interpolation failed: %q", sqlBuf.String())
 		}
-		//a.Reset() TOOD why is this needed?
+		//a.Reset() TODO why is this needed?
 		return tmpBuf.String(), nil, nil
 	}
 
@@ -677,37 +675,103 @@ func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, 
 	return sqlBuf.String(), a.rawReturn, nil
 }
 
-func (a *Arguments) writeInsertPlaceholderValues(sqlBuf *bytes.Buffer) {
-	// This IF block calculates dynamically the amount of placeholders in an
-	// INSERT query depending on the number of arguments.
-	if a.base.source != dmlSourceInsert {
-		return
+func (a *Arguments) prepareArgsInsert(fncArgs ...interface{}) (string, []interface{}, error) {
+	if a.argsPrepared {
+		if a.Options > 0 {
+			if len(a.raw) > 0 && len(a.recs) == 0 && len(a.args) == 0 {
+				return "", nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
+			}
+
+			if a.Options&argOptionInterpolate != 0 {
+				sqlBuf := bufferpool.Get()
+				defer bufferpool.Put(sqlBuf)
+
+				if err := writeInterpolateBytes(sqlBuf, a.insertCachedSQL, a); err != nil {
+					return "", nil, errors.Wrapf(err, "[dml] Interpolation failed: %q", sqlBuf.String())
+				}
+				return sqlBuf.String(), nil, nil
+			}
+		}
+
+		a.raw = append(a.raw, fncArgs...)
+		a.rawReturn = a.rawReturn[:0]
+		a.rawReturn = a.Interfaces(a.raw...)
+		return string(a.insertCachedSQL), a.rawReturn, nil
+	}
+
+	a.argsPrepared = true
+
+	sqlBuf := bufferpool.GetTwin()
+	defer bufferpool.PutTwin(sqlBuf)
+
+	if _, err := sqlBuf.First.Write(a.base.cachedSQL); err != nil {
+		return "", nil, errors.WithStack(err)
+	}
+
+	{ // Extract arguments from ColumnMapper and append them to `a.args`.
+		cm := newColumnMap(MakeArgs(len(a.recs)*5/4), "") // TODO get it from sync.Pool
+		// inserting multiple rows retrieved from a collection. There is no qualifier.
+		cm.setColumns(a.base.qualifiedColumns)
+		for _, qRec := range a.recs {
+			if qRec.Qualifier != "" {
+				return "", nil, errors.Fatal.Newf("[dml] Qualifier in %T is not supported and not needed.", qRec)
+			}
+			if err := qRec.Record.MapColumns(cm); err != nil {
+				return "", nil, errors.WithStack(err)
+			}
+		}
+		if len(cm.Args.args) > 0 {
+			a.args = cm.Args.args // copy fom pool into a.args
+		}
 	}
 
 	totalArgLen := uint(len(a.args) + len(a.raw))
-
-	odkPos := bytes.Index(a.base.cachedSQL, []byte(onDuplicateKeyPart))
-	if odkPos > 0 {
-		sqlBuf.Reset()
-		sqlBuf.Write(a.base.cachedSQL[:odkPos])
-	}
-
-	if a.insertRowCount > 0 {
-		columnCount := totalArgLen / a.insertRowCount
-		writeInsertPlaceholders(sqlBuf, a.insertRowCount, columnCount)
-
-	} else if a.insertColumnCount > 0 {
-		rowCount := totalArgLen / a.insertColumnCount
-		if rowCount == 0 {
-			rowCount = 1
+	{ // Write placeholder list e.g. "VALUES (?,?),(?,?)"
+		odkPos := bytes.Index(a.base.cachedSQL, []byte(onDuplicateKeyPart))
+		if odkPos > 0 {
+			sqlBuf.First.Reset()
+			sqlBuf.First.Write(a.base.cachedSQL[:odkPos])
 		}
-		writeInsertPlaceholders(sqlBuf, rowCount, a.insertColumnCount)
+
+		if a.insertRowCount > 0 {
+			columnCount := totalArgLen / a.insertRowCount
+			writeInsertPlaceholders(sqlBuf.First, a.insertRowCount, columnCount)
+
+		} else if a.insertColumnCount > 0 {
+			rowCount := totalArgLen / a.insertColumnCount
+			if rowCount == 0 {
+				rowCount = 1
+			}
+			writeInsertPlaceholders(sqlBuf.First, rowCount, a.insertColumnCount)
+		}
+		if odkPos > 0 {
+			sqlBuf.First.Write(a.base.cachedSQL[odkPos:])
+		}
+		a.insertCachedSQL = bufTrySizeByResliceOrNew(a.insertCachedSQL, sqlBuf.First.Len())
+		copy(a.insertCachedSQL, sqlBuf.First.Bytes())
+
 	}
 
-	if odkPos > 0 {
-		sqlBuf.Write(a.base.cachedSQL[odkPos:])
+	if a.Options > 0 {
+		if len(a.raw) > 0 && len(a.recs) == 0 && len(a.args) == 0 {
+			return "", nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
+		}
+
+		if a.Options&argOptionInterpolate != 0 {
+			if err := writeInterpolateBytes(sqlBuf.Second, sqlBuf.First.Bytes(), a); err != nil {
+				return "", nil, errors.Wrapf(err, "[dml] Interpolation failed: %q", sqlBuf.First.String())
+			}
+			//a.Reset() TODO why is this needed?
+			return sqlBuf.Second.String(), nil, nil
+		}
 	}
 
+	// TODO this interface creation process can be further optimized
+	a.raw = append(a.raw, fncArgs...)
+	a.rawReturn = a.rawReturn[:0]
+	a.rawReturn = a.Interfaces(a.raw...)
+
+	return sqlBuf.First.String(), a.rawReturn, nil
 }
 
 func (a *Arguments) appendConvertedRecordsToArguments() error {
@@ -723,54 +787,34 @@ func (a *Arguments) appendConvertedRecordsToArguments() error {
 		return nil
 	}
 
-	if a.argsPrepared {
+	if a.argsPrepared { // || a.hasNamedArgs == 1
 		return nil
 	}
 
-	// TODO refactor prototype and make it beautiful code
+	// TODO refactor prototype and make it performant and beautiful code
 
 	cm := newColumnMap(MakeArgs(len(a.args)+len(a.recs)), "") // can use an arg pool Arguments
 	cm.Args = new(Arguments)                                  // TODO for now a new pointer, later should be `a` or sync.Pool or just []argument
 
 	for tsc := 0; tsc < a.base.templateStmtCount; tsc++ { // only in case of UNION statements in combination with a template SELECT, can be optimized later
 
-		if a.base.source == dmlSourceInsert {
-			// might not work with an INSERT INTO ... SELECT * FROM ... or the columns in the SELECT needs to be qualified.
-			cm.setColumns(a.base.qualifiedColumns...)
-			for _, qRec := range a.recs {
-				//if qRec.Qualifier == "" {
-				//	qRec.Qualifier = a.base.defaultQualifier
-				//}
-				//if qRec.Qualifier == qualifier {
-				if err := qRec.Record.MapColumns(cm); err != nil {
+		// `qualifiedColumns` contains the correct order as the place holders
+		// appear in the SQL string.
+		for _, identifier := range a.base.qualifiedColumns {
+			// identifier can be either: column or qualifier.column or :column
+			qualifier, column := splitColumn(identifier)
+			// a.base.defaultQualifier is empty in case of INSERT statements
+
+			column, isNamedArg := cutNamedArgStartStr(column) // removes the colon for named arguments
+			cm.columns[0] = column                            // length is always one, as created in newColumnMap
+
+			if isNamedArg {
+				// if the colon : cannot be found then a simple place holder ? has been detected
+				if err := a.MapColumns(cm); err != nil {
 					return errors.WithStack(err)
 				}
-				//}
-			}
-
-		} else {
-
-			var unnamedCounter int
-			for _, identifier := range a.base.qualifiedColumns { // contains the correct order as the place holders appear in the SQL string
-				qualifier, column := splitColumn(identifier)
-				if qualifier == "" {
-					qualifier = a.base.defaultQualifier
-				}
-				var isNamedArg bool
-				column, isNamedArg = cutNamedArgStartStr(column)
-
-				cm.columns[0] = column // length is always one!
-				// TODO think about either supporting in a query only named arguments or just placeholders, but not both.
-				if isNamedArg { // if the colon : cannot be found then a simple place holder ? has been detected
-					if err := a.MapColumns(cm); err != nil {
-						return errors.WithStack(err)
-					}
-				} else if a.recs == nil {
-					if pArg, ok := a.unnamedArgByPos(unnamedCounter); ok {
-						cm.Args.args = append(cm.Args.args, pArg)
-					}
-					unnamedCounter++
-				}
+			} else {
+				found := false
 				for _, qRec := range a.recs {
 					if qRec.Qualifier == "" {
 						qRec.Qualifier = a.base.defaultQualifier
@@ -779,32 +823,39 @@ func (a *Arguments) appendConvertedRecordsToArguments() error {
 						if err := qRec.Record.MapColumns(cm); err != nil {
 							return errors.WithStack(err)
 						}
+						found = true
 					}
 				}
-
+				if !found {
+					if pArg, ok := a.nextUnnamedArg(); ok {
+						cm.Args.args = append(cm.Args.args, pArg)
+					}
+				}
 			}
 		}
 	}
 
 	if len(cm.Args.args) > 0 {
-		//a.args = append(a.args, cm.Args.args...)
 		a.args = cm.Args.args
 	}
 
 	return nil
 }
 
-// unnamedArgByPos returns an unnamed argument by its position.
-func (a *Arguments) unnamedArgByPos(pos int) (argument, bool) {
-	unnamedCounter := 0
-	for _, arg := range a.args {
-		if arg.name == "" {
-			if unnamedCounter == pos {
+// nextUnnamedArg returns an unnamed argument by its position.
+func (a *Arguments) nextUnnamedArg() (argument, bool) {
+	var unnamedCounter int
+	lenArg := len(a.args)
+	for i := 0; i < lenArg && a.nextUnnamedArgPos >= 0; i++ {
+		if arg := a.args[i]; arg.name == "" {
+			if unnamedCounter == a.nextUnnamedArgPos {
+				a.nextUnnamedArgPos++
 				return arg, true
 			}
 			unnamedCounter++
 		}
 	}
+	a.nextUnnamedArgPos = -1 // nothing found, so no need to further iterate through the []argument slice.
 	return argument{}, false
 }
 
@@ -1085,6 +1136,7 @@ func (a *Arguments) Reset() *Arguments {
 	a.args = a.args[:0]
 	a.raw = a.raw[:0]
 	a.argsPrepared = false
+	a.nextUnnamedArgPos = 0
 	return a
 }
 

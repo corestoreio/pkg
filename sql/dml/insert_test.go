@@ -282,7 +282,7 @@ func TestInsert_Events(t *testing.T) {
 func TestInsert_FromSelect(t *testing.T) {
 	t.Parallel()
 
-	t.Run("ON DUPLICATE KEY", func(t *testing.T) {
+	t.Run("One Placeholder, ON DUPLICATE KEY", func(t *testing.T) {
 		ins := NewInsert("tableA").AddColumns("a", "b").OnDuplicateKey()
 
 		compareToSQL(t, ins.FromSelect(NewSelect("something_id", "user_id").
@@ -303,7 +303,7 @@ func TestInsert_FromSelect(t *testing.T) {
 
 	})
 
-	t.Run("Arguments on sub select", func(t *testing.T) {
+	t.Run("one PH, complex SELECT", func(t *testing.T) {
 		ins := NewInsert("tableA").AddColumns("a", "b", "c")
 
 		compareToSQL(t, ins.FromSelect(NewSelect("something_id", "user_id", "other").
@@ -327,10 +327,8 @@ func TestInsert_FromSelect(t *testing.T) {
 		assert.Exactly(t, []string{"d"}, ins.qualifiedColumns)
 	})
 
-	t.Run("Arguments on Insert", func(t *testing.T) {
-		ins := NewInsert("tableA")
-		// columns and args just to check that they get ignored
-		ins.AddColumns("a", "b")
+	t.Run("Two placeholders", func(t *testing.T) {
+		ins := NewInsert("tableA").AddColumns("a", "b")
 
 		compareToSQL(t, ins.FromSelect(NewSelect("something_id", "user_id").
 			From("some_table").
@@ -346,6 +344,62 @@ func TestInsert_FromSelect(t *testing.T) {
 			"Guys!", int64(4444),
 		)
 		assert.Exactly(t, []string{"d", "e"}, ins.qualifiedColumns)
+	})
+
+	t.Run("Record Simple,no select", func(t *testing.T) {
+		p := &dmlPerson{
+			Name:  "Pike",
+			Email: MakeNullString("pikes@peak.co"),
+		}
+
+		ins := NewInsert("dml_people").AddColumns("name", "email").
+			WithArgs().Record("", p)
+		compareToSQL(t, ins, errors.NoKind,
+			"INSERT INTO `dml_people` (`name`,`email`) VALUES (?,?)",
+			"INSERT INTO `dml_people` (`name`,`email`) VALUES ('Pike','pikes@peak.co')",
+			"Pike", "pikes@peak.co",
+		)
+	})
+
+	t.Run("Record Complex", func(t *testing.T) {
+		p := &dmlPerson{
+			ID:    20180128,
+			Name:  "Hans Wurst",
+			Email: MakeNullString("hans@wurst.com"),
+		}
+
+		sel := NewSelect("a", "b").
+			FromAlias("dml_person", "dp").
+			Join(MakeIdentifier("dml_group").Alias("dg"), Column("dp.id").PlaceHolder()).
+			Where(
+				Column("dg.dob").Greater().PlaceHolder(),
+				Column("age").Less().Int(56),
+				Column("size").Greater().NamedArg("xSize"),
+				ParenthesisOpen(),
+				Column("dp.name").PlaceHolder(),
+				Column("e").Str("wat").Or(),
+				ParenthesisClose(),
+				Column("fPlaceholder").LessOrEqual().PlaceHolder(),
+				Column("g").Greater().Int(3),
+				Column("h").In().Int64s(4, 5, 6),
+			).
+			GroupBy("ab").
+			Having(
+				Column("dp.email").PlaceHolder(),
+				Column("n").Str("wh3r3"),
+			).
+			OrderBy("l")
+
+		ins := NewInsert("tableA").AddColumns("a", "b").FromSelect(sel).WithArgs().Records(
+			Qualify("dp", p),
+			Qualify("dg", MakeArgs(1).Name("dob").Int(1970)),
+		).Name("xSize").Int(678).Float64( /*fPlaceholder*/ 3.14159)
+
+		compareToSQL(t, ins, errors.NoKind,
+			"INSERT INTO `tableA` (`a`,`b`) SELECT `a`, `b` FROM `dml_person` AS `dp` INNER JOIN `dml_group` AS `dg` ON (`dp`.`id` = ?) WHERE (`dg`.`dob` > ?) AND (`age` < 56) AND (`size` > ?) AND ((`dp`.`name` = ?) OR (`e` = 'wat')) AND (`fPlaceholder` <= ?) AND (`g` > 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING (`dp`.`email` = ?) AND (`n` = 'wh3r3') ORDER BY `l`",
+			"INSERT INTO `tableA` (`a`,`b`) SELECT `a`, `b` FROM `dml_person` AS `dp` INNER JOIN `dml_group` AS `dg` ON (`dp`.`id` = 20180128) WHERE (`dg`.`dob` > 1970) AND (`age` < 56) AND (`size` > 678) AND ((`dp`.`name` = 'Hans Wurst') OR (`e` = 'wat')) AND (`fPlaceholder` <= 3.14159) AND (`g` > 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING (`dp`.`email` = 'hans@wurst.com') AND (`n` = 'wh3r3') ORDER BY `l`",
+			int64(20180128), int64(1970), int64(678), "Hans Wurst", 3.14159, "hans@wurst.com",
+		)
 	})
 }
 
@@ -613,13 +667,14 @@ func TestInsert_Bind_Slice(t *testing.T) {
 		},
 	}
 
-	compareToSQL(t,
-		NewInsert("dml_person").
-			AddColumns("name", "email").
-			SetRowCount(len(persons.Data)).WithArgs().Record("", persons),
-		errors.NoKind,
-		"INSERT INTO `dml_person` (`name`,`email`) VALUES (?,?),(?,?),(?,?)",
-		"INSERT INTO `dml_person` (`name`,`email`) VALUES ('Muffin Hat','Muffin@Hat.head'),('Marianne Phyllis Finch','marianne@phyllis.finch'),('Daphne Augusta Perry','daphne@augusta.perry')",
-		wantArgs...,
+	insA := NewInsert("dml_person").AddColumns("name", "email").
+		SetRowCount(len(persons.Data)).WithArgs().Record("", persons)
+
+	const (
+		wantPH = "INSERT INTO `dml_person` (`name`,`email`) VALUES (?,?),(?,?),(?,?)"
+		wantIP = "INSERT INTO `dml_person` (`name`,`email`) VALUES ('Muffin Hat','Muffin@Hat.head'),('Marianne Phyllis Finch','marianne@phyllis.finch'),('Daphne Augusta Perry','daphne@augusta.perry')"
 	)
+	compareToSQL(t, insA, errors.NoKind, wantPH, wantIP, wantArgs...)
+	insA.Reset().Record("", persons)
+	compareToSQL(t, insA, errors.NoKind, wantPH, wantIP, wantArgs...)
 }
