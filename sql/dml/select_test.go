@@ -1373,7 +1373,8 @@ func TestSelect_SetRecord(t *testing.T) {
 			FromAlias("dml_person", "dp").
 			Join(MakeIdentifier("dml_group").Alias("dg"), Column("dp.id").PlaceHolder()).
 			Where(
-				Column("dob").Greater().NamedArg("dg.dob"),
+				Column("dg.dob").Greater().PlaceHolder(),
+				Column("dg.size").Less().NamedArg("dbSIZE"),
 				Column("age").Less().Int(56),
 				ParenthesisOpen(),
 				Column("dp.name").PlaceHolder(),
@@ -1392,11 +1393,11 @@ func TestSelect_SetRecord(t *testing.T) {
 			WithArgs().Records(
 			Qualify("dp", p),
 			Qualify("dg", MakeArgs(1).Name("dob").Int(1970)),
-		)
+		).Name("dbSIZE").Uint(201801)
 
 		compareToSQL2(t, sel, errors.NoKind,
-			"SELECT `a`, `b` FROM `dml_person` AS `dp` INNER JOIN `dml_group` AS `dg` ON (`dp`.`id` = ?) WHERE (`dob` > ?) AND (`age` < 56) AND ((`dp`.`name` = ?) OR (`e` = 'wat')) AND (`f` <= 2) AND (`g` > 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING (`dp`.`email` = ?) AND (`n` = 'wh3r3') ORDER BY `l`",
-			1970, int64(6666), "Hans Wurst", "hans@wurst.com",
+			"SELECT `a`, `b` FROM `dml_person` AS `dp` INNER JOIN `dml_group` AS `dg` ON (`dp`.`id` = ?) WHERE (`dg`.`dob` > ?) AND (`dg`.`size` < ?) AND (`age` < 56) AND ((`dp`.`name` = ?) OR (`e` = 'wat')) AND (`f` <= 2) AND (`g` > 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING (`dp`.`email` = ?) AND (`n` = 'wh3r3') ORDER BY `l`",
+			int64(6666), int64(1970), int64(201801), "Hans Wurst", "hans@wurst.com",
 		)
 	})
 	t.Run("single arg JOIN", func(t *testing.T) {

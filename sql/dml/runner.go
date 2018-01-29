@@ -19,10 +19,12 @@ import (
 	"encoding"
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 	"unicode/utf8"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/bufferpool"
 	"github.com/corestoreio/pkg/util/byteconv"
 )
 
@@ -36,10 +38,21 @@ type ColumnMapper interface {
 	MapColumns(rc *ColumnMap) error
 }
 
-// Maybe add the following functions to ColumnMapper. Mostly useful
-// when dealing with INSERT statements.
-//FieldCount() int
-//Length() int
+var pooledColumnMap = sync.Pool{
+	New: func() interface{} {
+		return newColumnMap(MakeArgs(12), "")
+	},
+}
+
+func pooledColumnMapGet() *ColumnMap {
+	return pooledColumnMap.Get().(*ColumnMap)
+}
+
+func pooledBufferColumnMapPut(cm *ColumnMap, buf *bufferpool.TwinBuffer) {
+	cm.reset()
+	pooledColumnMap.Put(cm)
+	bufferpool.PutTwin(buf)
+}
 
 // ColumnMap takes care that the table/view/identifiers are getting properly
 // mapped to ColumnMapper interface. ColumnMap has two run modes either collect
@@ -84,7 +97,9 @@ func newColumnMap(args *Arguments, columns ...string) *ColumnMap {
 
 // reset gets called when returning into the pool
 func (b *ColumnMap) reset() {
-	b.Args = nil // not yet sure if this is needed
+	if b.Args != nil {
+		b.Args.Reset()
+	}
 	b.initialized = false
 	b.HasRows = false
 	b.Count = 0
