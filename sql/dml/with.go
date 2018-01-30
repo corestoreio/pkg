@@ -54,11 +54,6 @@ type WithCTE struct {
 // Supported in: MySQL >=8.0.1 and MariaDb >=10.2
 type With struct {
 	BuilderBase
-	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
-	// dedicated database session) or a *sql.Tx (an in-progress database
-	// transaction).
-	DB QueryExecPreparer
-
 	Subclauses []WithCTE
 	// TopLevel a union type which allows only one of the fields to be set.
 	TopLevel struct {
@@ -97,10 +92,10 @@ func (c *ConnPool) With(expressions ...WithCTE) *With {
 			builderCommon: builderCommon{
 				id:  id,
 				Log: withInitLog(c.Log, expressions, id),
+				DB:  c.DB,
 			},
 		},
 		Subclauses: expressions,
-		DB:         c.DB,
 	}
 }
 
@@ -112,10 +107,10 @@ func (c *Conn) With(expressions ...WithCTE) *With {
 			builderCommon: builderCommon{
 				id:  id,
 				Log: withInitLog(c.Log, expressions, id),
+				DB:  c.DB,
 			},
 		},
 		Subclauses: expressions,
-		DB:         c.DB,
 	}
 }
 
@@ -127,10 +122,10 @@ func (tx *Tx) With(expressions ...WithCTE) *With {
 			builderCommon: builderCommon{
 				id:  id,
 				Log: withInitLog(tx.Log, expressions, id),
+				DB:  tx.DB,
 			},
 		},
 		Subclauses: expressions,
-		DB:         tx.DB,
 	}
 }
 

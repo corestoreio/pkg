@@ -37,9 +37,9 @@ func TestWith_Placeholder(t *testing.T) {
 			Recursive().
 			Select(NewSelect().Star().From("cte").Where(Column("a").GreaterOrEqual().PlaceHolder()))
 
-		cte.WithArgs().Name("nArg2").String("hello%").NullString(MakeNullString("arg1")).Float64(2.7182)
-
-		compareToSQL(t, cte, errors.NoKind,
+		compareToSQL(t,
+			cte.WithArgs().Name("nArg2").String("hello%").NullString(MakeNullString("arg1")).Float64(2.7182),
+			errors.NoKind,
 			"WITH RECURSIVE `cte` (`n`) AS ((SELECT `a`, `d` AS `b` FROM `tableAD` WHERE (`b` = ?))\nUNION ALL\n(SELECT `a`, `b` FROM `tableAB` WHERE (`b` LIKE ?)))\nSELECT * FROM `cte` WHERE (`a` >= ?)",
 			"WITH RECURSIVE `cte` (`n`) AS ((SELECT `a`, `d` AS `b` FROM `tableAD` WHERE (`b` = 'arg1'))\nUNION ALL\n(SELECT `a`, `b` FROM `tableAB` WHERE (`b` LIKE 'hello%')))\nSELECT * FROM `cte` WHERE (`a` >= 2.7182)",
 			"arg1", "hello%", 2.7182,
