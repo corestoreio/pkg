@@ -600,6 +600,9 @@ func (a *Arguments) multiplyArguments() {
 // appends the `args` from the Exec+ or Query+ function. All method receivers
 // are not thread safe. The returned interface slce belongs to the callee.
 func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, error) {
+	if a.base.ärgErr != nil {
+		return "", nil, errors.WithStack(a.base.ärgErr)
+	}
 	if len(a.base.cachedSQL) == 0 {
 		return "", nil, errors.Empty.Newf("[dml] Arguments: The SQL string is empty.")
 	}
@@ -1654,20 +1657,13 @@ func (a *Arguments) LoadStrings(ctx context.Context, args ...interface{}) (value
 }
 
 func (a *Arguments) query(ctx context.Context, args ...interface{}) (rows *sql.Rows, err error) {
-	var sqlStr string
+	sqlStr, rawArgs, err2 := a.prepareArgs(args...)
+	err = err2
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug("Query", log.String("sql", sqlStr), log.String("source", string(a.base.source)), log.Err(err))
 	}
-	if a.base.ärgErr != nil {
-		err = a.base.ärgErr
-		return
-	}
-
-	var rawArgs []interface{}
-	sqlStr, rawArgs, err = a.prepareArgs(args...)
 	if err != nil {
-		err = errors.WithStack(err)
-		return
+		return nil, errors.WithStack(err)
 	}
 
 	rows, err = a.base.DB.QueryContext(ctx, sqlStr, rawArgs...)
@@ -1729,20 +1725,13 @@ func loadInt64s(rows *sql.Rows, errIn error) (_ []int64, err error) {
 }
 
 func (a *Arguments) exec(ctx context.Context, args ...interface{}) (result sql.Result, err error) {
-	var sqlStr string
+	sqlStr, rawArgs, err2 := a.prepareArgs(args...)
+	err = err2
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug("Exec", log.String("sql", sqlStr), log.String("source", string(a.base.source)), log.Err(err))
 	}
-	if a.base.ärgErr != nil {
-		err = a.base.ärgErr
-		return
-	}
-
-	var rawArgs []interface{}
-	sqlStr, rawArgs, err = a.prepareArgs(args...)
 	if err != nil {
-		err = errors.WithStack(err)
-		return
+		return nil, errors.WithStack(err)
 	}
 
 	result, err = a.base.DB.ExecContext(ctx, sqlStr, rawArgs...)

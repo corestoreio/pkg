@@ -459,7 +459,7 @@ func TestSelect_WithLogger(t *testing.T) {
 			require.Nil(t, rows)
 			require.True(t, errors.NotAllowed.Match(err), "%s", err)
 		})
-		t.Run("Query", func(t *testing.T) {
+		t.Run("Query Correct", func(t *testing.T) {
 			defer buf.Reset()
 			rows, err := pplSel.WithArgs().Int(67896543123).QueryContext(context.TODO())
 			require.NoError(t, err)
@@ -475,7 +475,7 @@ func TestSelect_WithLogger(t *testing.T) {
 			_, err := pplSel.WithArgs().Int(67896543113).Load(context.TODO(), p)
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID$UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\" source: \"s\" error: \"<nil>\"\nDEBUG Load conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 id: \"UNIQ02\" error: \"<nil>\" ColumnMapper: \"*dml_test.dmlPerson\"\n",
+			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID$UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\" source: \"s\" error: \"<nil>\"\nDEBUG Load conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 id: \"UNIQ02\" error: \"<nil>\" ColumnMapper: \"*dml_test.dmlPerson\" row_count: 0x0\n",
 				buf.String())
 		})
 
@@ -609,7 +609,7 @@ func TestSelect_WithLogger(t *testing.T) {
 			_, err := pplSel.WithArgs(-2).Load(context.TODO(), p)
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID$UNIQ06*/ `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` < ?)\" source: \"s\" error: \"<nil>\"\nDEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 id: \"UNIQ06\" error: \"<nil>\" ColumnMapper: \"*dml_test.dmlPerson\"\n",
+			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID$UNIQ06*/ `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` < ?)\" source: \"s\" error: \"<nil>\"\nDEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 id: \"UNIQ06\" error: \"<nil>\" ColumnMapper: \"*dml_test.dmlPerson\" row_count: 0x0\n",
 				buf.String())
 		})
 
@@ -648,7 +648,7 @@ func TestSelect_WithLogger(t *testing.T) {
 				p := &dmlPerson{}
 				_, err := stmt.WithArgs(-6).Load(context.TODO(), p)
 				require.NoError(t, err)
-				assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID$UNIQ06*/ `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` < ?)\" source: \"s\" error: \"<nil>\"\nDEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 id: \"UNIQ06\" error: \"<nil>\" ColumnMapper: \"*dml_test.dmlPerson\"\n",
+				assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID$UNIQ06*/ `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` < ?)\" source: \"s\" error: \"<nil>\"\nDEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 id: \"UNIQ06\" error: \"<nil>\" ColumnMapper: \"*dml_test.dmlPerson\" row_count: 0x0\n",
 					buf.String())
 			})
 
