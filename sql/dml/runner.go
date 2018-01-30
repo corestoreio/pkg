@@ -48,10 +48,15 @@ func pooledColumnMapGet() *ColumnMap {
 	return pooledColumnMap.Get().(*ColumnMap)
 }
 
-func pooledBufferColumnMapPut(cm *ColumnMap, buf *bufferpool.TwinBuffer) {
+func pooledBufferColumnMapPut(cm *ColumnMap, buf *bufferpool.TwinBuffer, fn func()) {
 	cm.reset()
 	pooledColumnMap.Put(cm)
-	bufferpool.PutTwin(buf)
+	if buf != nil {
+		bufferpool.PutTwin(buf)
+	}
+	if fn != nil {
+		fn()
+	}
 }
 
 // ColumnMap takes care that the table/view/identifiers are getting properly

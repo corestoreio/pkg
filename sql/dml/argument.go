@@ -21,7 +21,6 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"strconv"
-	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -616,12 +615,22 @@ func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, 
 
 	if a.hasNamedArgs == 0 {
 		found := false
-		a.base.cachedSQL, a.base.qualifiedColumns, found = extractReplaceNamedArgs(a.base.cachedSQL, a.base.qualifiedColumns)
 		a.hasNamedArgs = 1
-		if found {
+		a.base.cachedSQL, a.base.qualifiedColumns, found = extractReplaceNamedArgs(a.base.cachedSQL, a.base.qualifiedColumns)
+
+		switch la := len(a.args); true {
+		case found:
 			a.hasNamedArgs = 2
+		case !found && len(a.recs) == 0 && la > 0:
+			for _, arg := range a.args {
+				if arg.name != "" {
+					a.hasNamedArgs = 2
+					break
+				}
+			}
 		}
 	}
+
 	a.raw = append(a.raw, fncArgs...)
 	if err := a.appendConvertedRecordsToArguments(); err != nil {
 		return "", nil, errors.WithStack(err)
@@ -660,7 +669,7 @@ func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, 
 	}
 
 	a.rawReturn = a.rawReturn[:0]
-	a.rawReturn = a.Interfaces(a.raw...) // TODO investigate ret
+	a.rawReturn = a.Interfaces(a.raw...) // TODO investigate return
 	a.argsPrepared = true
 	return sqlBuf.First.String(), a.rawReturn, nil
 }
@@ -673,12 +682,17 @@ func (a *Arguments) appendConvertedRecordsToArguments() error {
 		return nil
 	}
 
-	if len(a.args) > 0 && len(a.recs) == 0 && a.base.templateStmtCount > 1 && a.hasNamedArgs < 2 {
-		a.multiplyArguments()
+	if len(a.args) > 0 && len(a.recs) == 0 && a.hasNamedArgs < 2 {
+		if a.base.templateStmtCount > 1 {
+			a.multiplyArguments()
+		}
+		// This is also a case where there are no records and only arguments and
+		// those arguments do not contain any name. Then we can skip the column
+		// mapper and ignore the qualifiedColumns.
 		return nil
 	}
 
-	if a.argsPrepared { // || a.hasNamedArgs == 1
+	if a.argsPrepared {
 		return nil
 	}
 
@@ -766,7 +780,7 @@ func (a *Arguments) prepareArgsInsert(fncArgs ...interface{}) (string, []interfa
 
 	sqlBuf := bufferpool.GetTwin()
 	cm := pooledColumnMapGet()
-	defer pooledBufferColumnMapPut(cm, sqlBuf)
+	defer pooledBufferColumnMapPut(cm, sqlBuf, nil)
 
 	if _, err := sqlBuf.First.Write(a.base.cachedSQL); err != nil {
 		return "", nil, errors.WithStack(err)
@@ -1310,21 +1324,6 @@ func (a *Arguments) WithDB(db QueryExecPreparer) *Arguments {
 	LOAD / QUERY and EXEC functions
 *********************************************/
 
-var poolColumnMap = sync.Pool{
-	New: func() interface{} {
-		return new(ColumnMap)
-	},
-}
-
-func poolColumnMapGet() *ColumnMap {
-	return poolColumnMap.Get().(*ColumnMap)
-}
-
-func poolColumnMapPut(cm *ColumnMap) {
-	cm.reset()
-	poolColumnMap.Put(cm)
-}
-
 // Exec executes the statement represented by the Insert object. It returns the
 // raw database/sql Result or an error if there was one. Regarding
 // LastInsertID(): If you insert multiple rows using a single INSERT statement,
@@ -1364,14 +1363,13 @@ func (a *Arguments) Iterate(ctx context.Context, callBack func(*ColumnMap) error
 		err = errors.Wrapf(err, "[dml] Iterate.Query with query ID %q", a.base.id)
 		return
 	}
-	cmr := poolColumnMapGet()
-	defer func() {
+	cmr := pooledColumnMapGet()
+	defer pooledBufferColumnMapPut(cmr, nil, func() {
 		// Not testable with the sqlmock package :-(
 		if err2 := r.Close(); err2 != nil && err == nil {
 			err = errors.Wrap(err2, "[dml] Iterate.QueryContext.Rows.Close")
 		}
-		poolColumnMapPut(cmr)
-	}()
+	})
 
 	for r.Next() {
 		if err = cmr.Scan(r); err != nil {
@@ -1395,7 +1393,7 @@ func (a *Arguments) Iterate(ctx context.Context, callBack func(*ColumnMap) error
 // call the custom close function. This is useful for e.g. unlocking a mutex.
 func (a *Arguments) Load(ctx context.Context, s ColumnMapper, args ...interface{}) (rowCount uint64, err error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {
-		defer log.WhenDone(a.base.Log).Debug("Load", log.String("id", a.base.id), log.Err(err), log.ObjectTypeOf("ColumnMapper", s))
+		defer log.WhenDone(a.base.Log).Debug("Load", log.String("id", a.base.id), log.Err(err), log.ObjectTypeOf("ColumnMapper", s), log.Uint64("row_count", rowCount))
 	}
 
 	r, err := a.query(ctx, args...)
@@ -1403,8 +1401,8 @@ func (a *Arguments) Load(ctx context.Context, s ColumnMapper, args ...interface{
 		err = errors.Wrapf(err, "[dml] Arguments.Load.QueryContext failed with queryID %q and ColumnMapper %T", a.base.id, s)
 		return
 	}
-	cm := poolColumnMapGet()
-	defer func() {
+	cm := pooledColumnMapGet()
+	defer pooledBufferColumnMapPut(cm, nil, func() {
 		// Not testable with the sqlmock package :-(
 		if err2 := r.Close(); err2 != nil && err == nil {
 			err = errors.Wrap(err2, "[dml] Arguments.Load.Rows.Close")
@@ -1414,8 +1412,7 @@ func (a *Arguments) Load(ctx context.Context, s ColumnMapper, args ...interface{
 				err = errors.Wrap(err2, "[dml] Arguments.Load.ColumnMapper.Close")
 			}
 		}
-		poolColumnMapPut(cm)
-	}()
+	})
 
 	for r.Next() {
 		if err = cm.Scan(r); err != nil {
@@ -1431,7 +1428,8 @@ func (a *Arguments) Load(ctx context.Context, s ColumnMapper, args ...interface{
 	if cm.HasRows {
 		cm.Count++ // because first row is zero but we want the actual row number
 	}
-	return cm.Count, err
+	rowCount = cm.Count
+	return
 }
 
 // LoadInt64 executes the prepared statement and returns the value as an
@@ -1453,7 +1451,7 @@ func (a *Arguments) LoadInt64s(ctx context.Context, args ...interface{}) (ret []
 	ret, err = loadInt64s(a.query(ctx, args...))
 	// Do not simplify it because we need ret in the defer. we don't log errors
 	// because they get handled.
-	return ret, err
+	return
 }
 
 // LoadUint64 executes the Select and returns the value at an uint64. It returns
@@ -1520,7 +1518,7 @@ func (a *Arguments) LoadUint64s(ctx context.Context, args ...interface{}) (value
 	if err = rows.Err(); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return values, nil
+	return
 }
 
 // LoadFloat64 executes the Select and returns the value at an float64. It
