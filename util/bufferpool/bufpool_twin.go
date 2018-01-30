@@ -23,17 +23,19 @@ import (
 
 var twinBufferPool = NewTwin(256) // estimated *cough* average size
 
-type twinBuffer struct {
+// TwinBuffer contains two buffers.
+type TwinBuffer struct {
 	First  *bytes.Buffer
 	Second *bytes.Buffer
 }
 
 // String prints the buffers content for debug purposes.
-func (tw twinBuffer) String() string {
+func (tw *TwinBuffer) String() string {
 	return fmt.Sprintf("%q\n%q", tw.First.String(), tw.Second.String())
 }
 
-func (tw twinBuffer) Write(p []byte) (n int, err error) {
+// Write writes to both buffers one after another.
+func (tw *TwinBuffer) Write(p []byte) (n int, err error) {
 	n, err = tw.First.Write(p)
 	if err != nil {
 		return
@@ -47,7 +49,7 @@ func (tw twinBuffer) Write(p []byte) (n int, err error) {
 
 // CopyFirstToSecond resets the second buffer and copies the content from the
 // first buffer to the second buffer. First buffer gets eventually reset.
-func (tw twinBuffer) CopyFirstToSecond() (n int64, err error) {
+func (tw *TwinBuffer) CopyFirstToSecond() (n int64, err error) {
 	tw.Second.Reset()
 	n, err = tw.First.WriteTo(tw.Second)
 	tw.First.Reset()
@@ -56,7 +58,7 @@ func (tw twinBuffer) CopyFirstToSecond() (n int64, err error) {
 
 // CopySecondToFirst resets the first buffer and copies the content from the
 // second buffer to the first buffer. Second buffer gets eventually reset.
-func (tw twinBuffer) CopySecondToFirst() (n int64, err error) {
+func (tw *TwinBuffer) CopySecondToFirst() (n int64, err error) {
 	tw.First.Reset()
 	n, err = tw.Second.WriteTo(tw.First)
 	tw.Second.Reset()
@@ -64,13 +66,13 @@ func (tw twinBuffer) CopySecondToFirst() (n int64, err error) {
 }
 
 // GetTwin returns a buffer containing two buffers, `First` and `Second`, from the pool.
-func GetTwin() *twinBuffer {
+func GetTwin() *TwinBuffer {
 	return twinBufferPool.Get()
 }
 
 // PutTwin returns a twin buffer to the pool. The buffers get reset before they
 // are put back into circulation.
-func PutTwin(buf *twinBuffer) {
+func PutTwin(buf *TwinBuffer) {
 	twinBufferPool.Put(buf)
 }
 
@@ -78,18 +80,18 @@ func PutTwin(buf *twinBuffer) {
 // into the pool.
 //		buf := twinBuf.Get()
 //		defer twinBuf.PutCallBack(buf, wg.Done)
-func PutTwinCallBack(buf *twinBuffer, fn func()) {
+func PutTwinCallBack(buf *TwinBuffer, fn func()) {
 	twinBufferPool.PutCallBack(buf, fn)
 }
 
-// twinTank implements a sync.Pool for twinBuffer
+// twinTank implements a sync.Pool for TwinBuffer
 type twinTank struct {
 	p *sync.Pool
 }
 
 // Get returns type safe a buffer
-func (t twinTank) Get() *twinBuffer {
-	return t.p.Get().(*twinBuffer)
+func (t twinTank) Get() *TwinBuffer {
+	return t.p.Get().(*TwinBuffer)
 }
 
 // Put empties the buffer and returns it back to the pool.
@@ -103,7 +105,7 @@ func (t twinTank) Get() *twinBuffer {
 // If you use Bytes() function to return bytes make sure you copy the data
 // away otherwise your returned byte slice will be empty.
 // For using String() no copying is required.
-func (t twinTank) Put(buf *twinBuffer) {
+func (t twinTank) Put(buf *TwinBuffer) {
 	buf.First.Reset()
 	buf.Second.Reset()
 	t.p.Put(buf)
@@ -111,20 +113,20 @@ func (t twinTank) Put(buf *twinBuffer) {
 
 // PutCallBack same as Put but executes fn after buf has been returned into the
 // pool. Good use case when you might have multiple defers in your code.
-func (t twinTank) PutCallBack(buf *twinBuffer, fn func()) {
+func (t twinTank) PutCallBack(buf *TwinBuffer, fn func()) {
 	buf.First.Reset()
 	buf.Second.Reset()
 	t.p.Put(buf)
 	fn()
 }
 
-// NewTwin instantiates a new twinBuffer pool with a custom pre-allocated
+// NewTwin instantiates a new TwinBuffer pool with a custom pre-allocated
 // buffer size. The fields `First` and `Second` will have the same size.
 func NewTwin(size int) twinTank {
 	return twinTank{
 		p: &sync.Pool{
 			New: func() interface{} {
-				return &twinBuffer{
+				return &TwinBuffer{
 					First:  bytes.NewBuffer(make([]byte, 0, size)),
 					Second: bytes.NewBuffer(make([]byte, 0, size)),
 				}
