@@ -55,8 +55,9 @@ func TestShow(t *testing.T) {
 	t.Run("variables LIKE interpolated", func(t *testing.T) {
 		s := NewShow().Variable().Like().WithArgs().String("aria%")
 		compareToSQL(t, s, errors.NoKind,
+			"SHOW VARIABLES LIKE ?",
 			"SHOW VARIABLES LIKE 'aria%'",
-			"SHOW VARIABLES LIKE 'aria%'",
+			"aria%",
 		)
 	})
 	t.Run("variables LIKE place holder", func(t *testing.T) {

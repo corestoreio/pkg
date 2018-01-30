@@ -236,6 +236,7 @@ func (b *Show) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err er
 
 	if b.LikeCondition {
 		Like.write(w)
+		w.WriteByte(placeHolderRune)
 	} else {
 		placeHolders, err = b.WhereFragments.write(w, 'w', placeHolders)
 		if err != nil {
