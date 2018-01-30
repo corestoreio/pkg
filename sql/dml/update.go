@@ -30,12 +30,13 @@ type Update struct {
 	// TODO: add UPDATE JOINS SQLStmtUpdateJoin
 
 	// SetClausAliases only applicable in case when field QualifiedRecords has
-	// been set or ExecMulti gets used. `SetClausAliases` contains the lis of
+	// been set. `SetClausAliases` contains the lis of
 	// column names which gets passed to the ColumnMapper. If empty,
 	// `SetClausAliases` collects the column names from the `SetClauses`. The
 	// alias slice must have the same length as the columns slice. Despite
 	// setting `SetClausAliases` the SetClauses.Columns must be provided to
 	// create a valid SQL statement.
+	// TODO reimplement SetClausAliases
 	SetClausAliases []string
 	// SetClauses contains the column/argument association. For each column
 	// there must be one argument.
@@ -210,6 +211,9 @@ func (b *Update) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 	if len(b.SetClauses) == 0 {
 		return nil, errors.Empty.Newf("[dml] Update: No columns specified")
 	}
+	if len(b.SetClausAliases) > 0 && len(b.SetClausAliases) != len(b.SetClauses) {
+		return nil, errors.Mismatch.Newf("[dml] Update: ColumnAliases slice and Columns slice must have the same length")
+	}
 
 	buf.WriteString("UPDATE ")
 	writeStmtID(buf, b.id)
@@ -232,19 +236,6 @@ func (b *Update) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 	return placeHolders, nil
 }
 
-func (b *Update) validate() error {
-	if len(b.cachedSQL) > 1 { // already validated
-		return nil
-	}
-	if len(b.SetClauses) == 0 {
-		return errors.Empty.Newf("[dml] Update: Columns are empty")
-	}
-	if len(b.SetClausAliases) > 0 && len(b.SetClausAliases) != len(b.SetClauses) {
-		return errors.Mismatch.Newf("[dml] Update: ColumnAliases slice and Columns slice must have the same length")
-	}
-	return nil
-}
-
 // Prepare executes the statement represented by the Update to create a prepared
 // statement. It returns a custom statement type or an error if there was one.
 // Provided arguments or records in the Update are getting ignored. The provided
@@ -252,8 +243,5 @@ func (b *Update) validate() error {
 // of the statement. The returned Stmter is not safe for concurrent use, despite
 // the underlying *sql.Stmt is.
 func (b *Update) Prepare(ctx context.Context) (*Stmt, error) {
-	if err := b.validate(); err != nil {
-		return nil, errors.WithStack(err)
-	}
 	return b.prepare(ctx, b.DB, b, dmlSourceUpdate)
 }

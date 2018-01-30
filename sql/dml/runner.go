@@ -69,7 +69,7 @@ func pooledBufferColumnMapPut(cm *ColumnMap, buf *bufferpool.TwinBuffer, fn func
 // database/sql does :-(  The method receiver functions have the same names as
 // in type ColumnMap.
 type ColumnMap struct {
-	Args *Arguments // in case we collect arguments
+	Args *Arguments
 
 	// initialized gets set to true after the first call to Scan to initialize
 	// the internal slices.
@@ -240,6 +240,10 @@ func (s *scannedColumn) Scan(src interface{}) (err error) {
 	return err
 }
 
+func (b *ColumnMap) shouldCollectArgs() bool {
+	return len(b.scanArgs) == 0
+}
+
 // Scan calls rows.Scan and builds an internal stack of sql.RawBytes for further
 // processing and type conversion.
 //
@@ -308,7 +312,7 @@ func (b *ColumnMap) Next() bool {
 // bool value stored in sql.RawBytes to the pointer. See the documentation for
 // function Scan.
 func (b *ColumnMap) Bool(ptr *bool) *ColumnMap {
-	if b.Args != nil {
+	if b.shouldCollectArgs() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -344,7 +348,7 @@ func (b *ColumnMap) Bool(ptr *bool) *ColumnMap {
 // bool value stored in sql.RawBytes to the pointer. See the documentation for
 // function Scan.
 func (b *ColumnMap) NullBool(ptr *NullBool) *ColumnMap {
-	if b.Args != nil {
+	if b.shouldCollectArgs() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -390,7 +394,7 @@ func (b *ColumnMap) NullBool(ptr *NullBool) *ColumnMap {
 // int value stored in sql.RawBytes to the pointer. See the documentation for
 // function Scan.
 func (b *ColumnMap) Int(ptr *int) *ColumnMap {
-	if b.Args != nil {
+	if b.shouldCollectArgs() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -420,7 +424,7 @@ func (b *ColumnMap) Int(ptr *int) *ColumnMap {
 // the int64 value stored in sql.RawBytes to the pointer. See the documentation
 // for function Scan.
 func (b *ColumnMap) Int64(ptr *int64) *ColumnMap {
-	if b.Args != nil {
+	if b.shouldCollectArgs() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -448,7 +452,7 @@ func (b *ColumnMap) Int64(ptr *int64) *ColumnMap {
 // assigns the int64 value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
 func (b *ColumnMap) NullInt64(ptr *NullInt64) *ColumnMap {
-	if b.Args != nil {
+	if b.shouldCollectArgs() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -480,7 +484,7 @@ func (b *ColumnMap) NullInt64(ptr *NullInt64) *ColumnMap {
 // assigns the float64 value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
 func (b *ColumnMap) Float64(ptr *float64) *ColumnMap {
-	if b.Args != nil {
+	if b.shouldCollectArgs() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -508,7 +512,7 @@ func (b *ColumnMap) Float64(ptr *float64) *ColumnMap {
 // assigns the numeric value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
 func (b *ColumnMap) Decimal(ptr *Decimal) *ColumnMap {
-	if b.Args != nil {
+	if b.shouldCollectArgs() {
 		if v := ptr.String(); ptr == nil || v == sqlStrNullUC {
 			b.Args = b.Args.Null()
 		} else {
@@ -537,7 +541,7 @@ func (b *ColumnMap) Decimal(ptr *Decimal) *ColumnMap {
 // assigns the float64 value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
 func (b *ColumnMap) NullFloat64(ptr *NullFloat64) *ColumnMap {
-	if b.Args != nil {
+	if b.shouldCollectArgs() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -568,7 +572,7 @@ func (b *ColumnMap) NullFloat64(ptr *NullFloat64) *ColumnMap {
 // uint value stored in sql.RawBytes to the pointer. See the documentation for
 // function Scan.
 func (b *ColumnMap) Uint(ptr *uint) *ColumnMap {
-	if b.Args != nil {
+	if b.shouldCollectArgs() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -598,7 +602,7 @@ func (b *ColumnMap) Uint(ptr *uint) *ColumnMap {
 // the uint8 value stored in sql.RawBytes to the pointer. See the documentation
 // for function Scan.
 func (b *ColumnMap) Uint8(ptr *uint8) *ColumnMap {
-	if b.Args != nil {
+	if b.shouldCollectArgs() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -628,7 +632,7 @@ func (b *ColumnMap) Uint8(ptr *uint8) *ColumnMap {
 // the uint16 value stored in sql.RawBytes to the pointer. See the documentation
 // for function Scan.
 func (b *ColumnMap) Uint16(ptr *uint16) *ColumnMap {
-	if b.Args != nil {
+	if b.shouldCollectArgs() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -658,7 +662,7 @@ func (b *ColumnMap) Uint16(ptr *uint16) *ColumnMap {
 // the uint32 value stored in sql.RawBytes to the pointer. See the documentation
 // for function Scan.
 func (b *ColumnMap) Uint32(ptr *uint32) *ColumnMap {
-	if b.Args != nil {
+	if b.shouldCollectArgs() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -688,7 +692,7 @@ func (b *ColumnMap) Uint32(ptr *uint32) *ColumnMap {
 // the uint64 value stored in sql.RawBytes to the pointer. See the documentation
 // for function Scan.
 func (b *ColumnMap) Uint64(ptr *uint64) *ColumnMap {
-	if b.Args != nil {
+	if b.shouldCollectArgs() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -742,7 +746,7 @@ func (b *ColumnMap) Debug(w ioWriter) (err error) {
 // the []byte value stored in sql.RawBytes to the pointer. See the documentation
 // for function Scan.
 func (b *ColumnMap) Byte(ptr *[]byte) *ColumnMap {
-	if b.Args != nil {
+	if b.shouldCollectArgs() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -776,7 +780,7 @@ func (b *ColumnMap) Text(enc interface {
 	if b.scanErr != nil {
 		return b
 	}
-	if b.Args != nil {
+	if b.shouldCollectArgs() {
 		var data []byte
 		data, b.scanErr = enc.MarshalText()
 		if b.CheckValidUTF8 && !utf8.Valid(data) {
@@ -810,7 +814,7 @@ func (b *ColumnMap) Binary(enc interface {
 	if b.scanErr != nil {
 		return b
 	}
-	if b.Args != nil {
+	if b.shouldCollectArgs() {
 		var data []byte
 		data, b.scanErr = enc.MarshalBinary()
 		b.Args = b.Args.Bytes(data)
@@ -832,7 +836,7 @@ func (b *ColumnMap) Binary(enc interface {
 // the string value stored in sql.RawBytes to the pointer. See the documentation
 // for function Scan.
 func (b *ColumnMap) String(ptr *string) *ColumnMap {
-	if b.Args != nil {
+	if b.shouldCollectArgs() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -866,7 +870,7 @@ func (b *ColumnMap) String(ptr *string) *ColumnMap {
 // assigns the string value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
 func (b *ColumnMap) NullString(ptr *NullString) *ColumnMap {
-	if b.Args != nil {
+	if b.shouldCollectArgs() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -906,7 +910,7 @@ func (b *ColumnMap) NullString(ptr *NullString) *ColumnMap {
 // the time.Time value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan. It supports all MySQL/MariaDB date/time types.
 func (b *ColumnMap) Time(ptr *time.Time) *ColumnMap {
-	if b.Args != nil {
+	if b.shouldCollectArgs() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {
@@ -934,7 +938,7 @@ func (b *ColumnMap) Time(ptr *time.Time) *ColumnMap {
 // the NullTime value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
 func (b *ColumnMap) NullTime(ptr *NullTime) *ColumnMap {
-	if b.Args != nil {
+	if b.shouldCollectArgs() {
 		if ptr == nil {
 			b.Args = b.Args.Null()
 		} else {

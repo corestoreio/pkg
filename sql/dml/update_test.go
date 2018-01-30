@@ -136,7 +136,8 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	assert.Equal(t, int64(1), rowsAff)
 
 	var person dmlPerson
-	_, err = s.SelectFrom("dml_people").Star().Where(Column("email").Str("ben@whitehouse.gov")).WithArgs().Load(context.TODO(), &person)
+	_, err = s.SelectFrom("dml_people").AddColumns("id", "name", "key").
+		Where(Column("email").Str("ben@whitehouse.gov")).WithArgs().Load(context.TODO(), &person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "Benjamin", person.Name)
@@ -359,28 +360,15 @@ func TestUpdate_DisableBuildCache(t *testing.T) {
 		DisableBuildCache()
 
 	const cachedSQLPlaceHolder = "UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = ?)"
-	t.Run("without interpolate", func(t *testing.T) {
-		for i := 0; i < 3; i++ {
-			compareToSQL(t, up.WithArgs().Uint(987654321), errors.NoKind,
-				cachedSQLPlaceHolder,
-				"",
-				int64(987654321),
-			)
-			assert.Empty(t, up.cachedSQL)
-		}
-	})
+	const cachedSQLInterpolated = "UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = 987654321)"
 
-	t.Run("with interpolate", func(t *testing.T) {
-		up.cachedSQL = nil
+	for i := 0; i < 3; i++ {
+		compareToSQL(t, up.WithArgs().Uint(987654321), errors.NoKind,
+			cachedSQLPlaceHolder,
+			cachedSQLInterpolated,
+			int64(987654321),
+		)
+		assert.Empty(t, up.cachedSQL)
+	}
 
-		const cachedSQLInterpolated = "UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = 987654321)"
-		for i := 0; i < 3; i++ {
-			compareToSQL(t, up, errors.NoKind,
-				cachedSQLPlaceHolder,
-				cachedSQLInterpolated,
-				int64(987654321),
-			)
-			assert.Empty(t, up.cachedSQL)
-		}
-	})
 }

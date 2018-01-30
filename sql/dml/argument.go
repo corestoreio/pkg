@@ -1655,13 +1655,19 @@ func (a *Arguments) LoadStrings(ctx context.Context, args ...interface{}) (value
 
 func (a *Arguments) query(ctx context.Context, args ...interface{}) (rows *sql.Rows, err error) {
 	var sqlStr string
-	var rawArgs []interface{}
-	sqlStr, rawArgs, err = a.prepareArgs(args...)
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug("Query", log.String("sql", sqlStr), log.String("source", string(a.base.source)), log.Err(err))
 	}
+	if a.base.ärgErr != nil {
+		err = a.base.ärgErr
+		return
+	}
+
+	var rawArgs []interface{}
+	sqlStr, rawArgs, err = a.prepareArgs(args...)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		err = errors.WithStack(err)
+		return
 	}
 
 	rows, err = a.base.DB.QueryContext(ctx, sqlStr, rawArgs...)
@@ -1724,13 +1730,19 @@ func loadInt64s(rows *sql.Rows, errIn error) (_ []int64, err error) {
 
 func (a *Arguments) exec(ctx context.Context, args ...interface{}) (result sql.Result, err error) {
 	var sqlStr string
-	var rawArgs []interface{}
-	sqlStr, rawArgs, err = a.prepareArgs(args...)
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug("Exec", log.String("sql", sqlStr), log.String("source", string(a.base.source)), log.Err(err))
 	}
+	if a.base.ärgErr != nil {
+		err = a.base.ärgErr
+		return
+	}
+
+	var rawArgs []interface{}
+	sqlStr, rawArgs, err = a.prepareArgs(args...)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		err = errors.WithStack(err)
+		return
 	}
 
 	result, err = a.base.DB.ExecContext(ctx, sqlStr, rawArgs...)

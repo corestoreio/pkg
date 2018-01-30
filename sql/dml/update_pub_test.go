@@ -30,7 +30,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUpdate_Prepare(t *testing.T) {
+func TestUpdate_WithArgs(t *testing.T) {
 	t.Parallel()
 
 	t.Run("no columns provided", func(t *testing.T) {
@@ -337,6 +337,9 @@ func TestUpdate_BindRecord(t *testing.T) {
 }
 
 func TestUpdate_WithLogger(t *testing.T) {
+
+	t.Skip("TODO Check if duplicated by other WithLogger tests and then remove")
+
 	uniID := new(int32)
 	rConn := createRealSession(t)
 	defer dmltest.Close(t, rConn)
