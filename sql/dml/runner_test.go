@@ -130,7 +130,6 @@ func TestColumnMap_Scan_Empty_Bytes(t *testing.T) {
 	cm.scanCol[0].field = 'y'
 
 	t.Run("Bool", func(t *testing.T) {
-
 		var v bool
 		assert.EqualError(t, cm.Bool(&v).Err(), "[dml] Column \"SomeColumn\": strconv.ParseBool: parsing \"\": invalid syntax")
 		cm.scanErr = nil

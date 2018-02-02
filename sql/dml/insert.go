@@ -83,8 +83,11 @@ type Insert struct {
 	IsIgnore bool
 	// Listeners allows to dispatch certain functions in different
 	// situations.
-	Listeners        ListenersInsert
-	doNotBuildValues bool
+	Listeners ListenersInsert
+	// IsBuildValues if true the VALUES part gets build when calling ToSQL.
+	// VALUES do not need to get build by default because mostly WithArgs gets
+	// called to build the VALUES part dynamically.
+	IsBuildValues bool
 }
 
 // NewInsert creates a new Insert object.
@@ -150,6 +153,11 @@ func (b *Insert) Ignore() *Insert {
 // https://dev.mysql.com/doc/refman/5.7/en/replace.html
 func (b *Insert) Replace() *Insert {
 	b.IsReplace = true
+	return b
+}
+
+func (b *Insert) BuildValues() *Insert {
+	b.IsBuildValues = true
 	return b
 }
 
@@ -229,17 +237,15 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 // case of WithArgs figures automatically out how the VALUES section must look
 // like depending on the number of arguments.
 func (b *Insert) WithArgs(args ...interface{}) *Arguments {
-	b.source = dmlSourceInsert
+
+	a := b.withArgs(b, args...)
+	a.base.source = dmlSourceInsert
 	if b.Select != nil {
 		// Must change to this source because to trigger a different argument
 		// collector in Arguments.prepareArgs. It is not a real INSERT statement
 		// anymore.
-		b.source = dmlSourceSelect
+		a.base.source = dmlSourceSelect
 	}
-
-	b.doNotBuildValues = true
-	a := b.withArgs(b, args...)
-	b.doNotBuildValues = false
 
 	if b.Select != nil {
 		return a
@@ -268,13 +274,19 @@ func (b *Insert) ToSQL() (string, []interface{}, error) {
 	return string(rawSQL), nil, nil
 }
 
-func (b *Insert) writeBuildCache(sql []byte) {
+func (b *Insert) writeBuildCache(sql []byte, qualifiedColumns []string) {
 	// think about resetting ...
+	b.rwmu.Lock()
 	b.cachedSQL = sql
+	b.qualifiedColumns = qualifiedColumns
+	b.rwmu.Unlock()
 }
 
 func (b *Insert) readBuildCache() (sql []byte) {
-	return b.cachedSQL
+	b.rwmu.RLock()
+	sql = b.cachedSQL
+	b.rwmu.RUnlock()
+	return sql
 }
 
 // DisableBuildCache if enabled it does not cache the SQL string as a final
@@ -350,7 +362,7 @@ func (b *Insert) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 	}
 	buf.WriteString("VALUES ")
 
-	if argCount0 := len(b.Columns); argCount0 > 0 && !b.doNotBuildValues {
+	if argCount0 := len(b.Columns); argCount0 > 0 && b.IsBuildValues {
 		rowCount := 1
 		if b.RowCount > 0 {
 			rowCount = b.RowCount

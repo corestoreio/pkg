@@ -341,7 +341,7 @@ func (c *ConnPool) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error
 	}, nil
 }
 
-// TOOD add this to all connection types, like Conn and Tx
+// TODO add this to all connection types, like Conn and Tx
 func (c *ConnPool) WithQueryBuilder(qb QueryBuilder) *Arguments {
 	sqlStr, argsRaw, err := qb.ToSQL()
 	var args [defaultArgumentsCapacity]argument

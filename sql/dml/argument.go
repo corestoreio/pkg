@@ -530,8 +530,7 @@ type Arguments struct {
 	recs              []QualifiedRecord
 	// rawReturn will be filled with the final primitives which gets returned
 	// in the ToSQL function. It gets reset in every call.
-	rawReturn    []interface{}
-	argsPrepared bool
+	rawReturn []interface{}
 }
 
 // ToSQL the returned interface slice is owned by the callee.
@@ -673,7 +672,6 @@ func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, 
 
 	a.rawReturn = a.rawReturn[:0]
 	a.rawReturn = a.Interfaces(a.raw...) // TODO investigate return
-	a.argsPrepared = true
 	return sqlBuf.First.String(), a.rawReturn, nil
 }
 
@@ -692,10 +690,6 @@ func (a *Arguments) appendConvertedRecordsToArguments() error {
 		// This is also a case where there are no records and only arguments and
 		// those arguments do not contain any name. Then we can skip the column
 		// mapper and ignore the qualifiedColumns.
-		return nil
-	}
-
-	if a.argsPrepared {
 		return nil
 	}
 
@@ -756,42 +750,21 @@ func (a *Arguments) appendConvertedRecordsToArguments() error {
 }
 
 func (a *Arguments) prepareArgsInsert(fncArgs ...interface{}) (string, []interface{}, error) {
-	if a.argsPrepared {
-		if a.Options > 0 {
-			if len(a.raw) > 0 && len(a.recs) == 0 && len(a.args) == 0 {
-				return "", nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
-			}
-
-			if a.Options&argOptionInterpolate != 0 {
-				sqlBuf := bufferpool.Get()
-				defer bufferpool.Put(sqlBuf)
-
-				if err := writeInterpolateBytes(sqlBuf, a.insertCachedSQL, a); err != nil {
-					return "", nil, errors.Wrapf(err, "[dml] Interpolation failed: %q", sqlBuf.String())
-				}
-				return sqlBuf.String(), nil, nil
-			}
-		}
-
-		a.raw = append(a.raw, fncArgs...)
-		a.rawReturn = a.rawReturn[:0]
-		a.rawReturn = a.Interfaces(a.raw...)
-		return string(a.insertCachedSQL), a.rawReturn, nil
-	}
-
-	a.argsPrepared = true
 
 	sqlBuf := bufferpool.GetTwin()
 	cm := pooledColumnMapGet()
+	cm.setColumns(a.base.qualifiedColumns)
 	defer pooledBufferColumnMapPut(cm, sqlBuf, nil)
+	//defer bufferpool.PutTwin(sqlBuf)
+	{
+		if _, err := sqlBuf.First.Write(a.base.cachedSQL); err != nil {
+			return "", nil, errors.WithStack(err)
+		}
 
-	if _, err := sqlBuf.First.Write(a.base.cachedSQL); err != nil {
-		return "", nil, errors.WithStack(err)
-	}
-
-	{ // Extract arguments from ColumnMapper and append them to `a.args`.
+		// Extract arguments from ColumnMapper and append them to `a.args`.
 		// inserting multiple rows retrieved from a collection. There is no qualifier.
-		cm.setColumns(a.base.qualifiedColumns)
+		//cm := newColumnMap(MakeArgs(len(a.base.qualifiedColumns)*5/4), a.base.qualifiedColumns...)
+
 		for _, qRec := range a.recs {
 			if qRec.Qualifier != "" {
 				return "", nil, errors.Fatal.Newf("[dml] Qualifier in %T is not supported and not needed.", qRec)
@@ -801,12 +774,18 @@ func (a *Arguments) prepareArgsInsert(fncArgs ...interface{}) (string, []interfa
 			}
 		}
 		if len(cm.Args.args) > 0 {
+			if len(cm.Args.args) > 6 { // TODO remove this because of fixing a bug in INSERT tests
+				panic(fmt.Sprintf("%#v\n\n", cm))
+			}
 			a.args = a.args[:0]
 			a.args = append(a.args, cm.Args.args...) // copy fom pool into a.args, maybe this can lead to a bug.
 		}
 	}
 
 	totalArgLen := uint(len(a.args) + len(a.raw))
+
+	// println("totalArgLen", totalArgLen)
+
 	{ // Write placeholder list e.g. "VALUES (?,?),(?,?)"
 		odkPos := bytes.Index(a.base.cachedSQL, []byte(onDuplicateKeyPart))
 		if odkPos > 0 {
@@ -830,7 +809,6 @@ func (a *Arguments) prepareArgsInsert(fncArgs ...interface{}) (string, []interfa
 		}
 		a.insertCachedSQL = bufTrySizeByResliceOrNew(a.insertCachedSQL, sqlBuf.First.Len())
 		copy(a.insertCachedSQL, sqlBuf.First.Bytes())
-
 	}
 
 	if a.Options > 0 {
@@ -848,10 +826,9 @@ func (a *Arguments) prepareArgsInsert(fncArgs ...interface{}) (string, []interfa
 	}
 
 	// TODO this interface creation process can be further optimized
-	a.raw = append(a.raw, fncArgs...)
 	a.rawReturn = a.rawReturn[:0]
-	a.rawReturn = a.Interfaces(a.raw...)
-
+	a.rawReturn = append(a.raw, fncArgs...)
+	a.rawReturn = a.Interfaces(a.rawReturn...)
 	return sqlBuf.First.String(), a.rawReturn, nil
 }
 
@@ -1148,7 +1125,6 @@ func (a *Arguments) Reset() *Arguments {
 	a.recs = a.recs[:0]
 	a.args = a.args[:0]
 	a.raw = a.raw[:0]
-	a.argsPrepared = false
 	a.nextUnnamedArgPos = 0
 	return a
 }

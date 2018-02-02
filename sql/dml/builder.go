@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"sync"
 	"unicode/utf8"
 
 	"github.com/corestoreio/errors"
@@ -57,23 +58,16 @@ func (s QuerySQL) ToSQL() (string, []interface{}, error) {
 	return string(s), nil, nil
 }
 
+// queryBuilder must support thread safety when writing and reading the cache.
 type queryBuilder interface {
 	toSQL(w *bytes.Buffer, placeHolders []string) ([]string, error)
-	writeBuildCache(sql []byte)
+	writeBuildCache(sql []byte, qualifiedColumns []string)
 	// readBuildCache returns the cached SQL string
 	readBuildCache() (sql []byte)
 }
 
 // builderCommon
 type builderCommon struct {
-	// cachedSQL contains the final SQL string which gets send to the server.
-	cachedSQL            []byte
-	IsBuildCacheDisabled bool // see DisableBuildCache()
-	// EstimatedCachedSQLSize specifies the estimated size in bytes of the final
-	// SQL string. This value gets used during SQL string building process to
-	// reduce the allocations and speed up the process. Default Value is xxxx
-	// Bytes.
-	EstimatedCachedSQLSize uint16
 	// source defines with which DML statement the builderCommon struct has been initialized.
 	// Constants are `dmlType*`
 	source rune
@@ -91,9 +85,6 @@ type builderCommon struct {
 	// isWithInterfaces will be set to true if the raw interface arguments are
 	// getting applied.
 	isWithInterfaces bool
-	// qualifiedColumns gets collected before calling ToSQL, and clearing the all
-	// pointers, to know which columns need values from the QualifiedRecords
-	qualifiedColumns []string
 	// templateStmtCount only used in case a UNION statement acts as a template.
 	// Create one SELECT statement and by setting the data for
 	// Union.StringReplace function additional SELECT statements are getting
@@ -105,6 +96,20 @@ type builderCommon struct {
 	// dedicated database session) or a *sql.Tx (an in-progress database
 	// transaction).
 	DB QueryExecPreparer
+	// IsBuildCacheDisabled disable the caching and destroying of the DML statement objects
+	IsBuildCacheDisabled bool // see DisableBuildCache()
+	// EstimatedCachedSQLSize specifies the estimated size in bytes of the final
+	// SQL string. This value gets used during SQL string building process to
+	// reduce the allocations and speed up the process. Default Value is xxxx
+	// Bytes.
+	EstimatedCachedSQLSize uint16
+
+	rwmu sync.RWMutex
+	// cachedSQL contains the final SQL string which gets send to the server.
+	cachedSQL []byte
+	// qualifiedColumns gets collected before calling ToSQL, and clearing the all
+	// pointers, to know which columns need values from the QualifiedRecords
+	qualifiedColumns []string
 }
 
 // hasBuildCache satisfies partially interface queryBuilder
@@ -122,7 +127,7 @@ func (b *builderCommon) buildToSQL(qb queryBuilder) ([]byte, error) {
 	}
 	rawSQL := qb.readBuildCache()
 	if rawSQL == nil || b.IsBuildCacheDisabled {
-		b.qualifiedColumns = b.qualifiedColumns[:0]
+
 		// Pre allocating that with a decent size, can speed up writing due to
 		// less re-slicing / buffer.Grow.
 		size := b.EstimatedCachedSQLSize
@@ -130,13 +135,12 @@ func (b *builderCommon) buildToSQL(qb queryBuilder) ([]byte, error) {
 			size = estimatedCachedSQLSize
 		}
 		buf := bytes.NewBuffer(make([]byte, 0, size))
-		var err error
-		b.qualifiedColumns, err = qb.toSQL(buf, b.qualifiedColumns)
+		qualifiedColumns, err := qb.toSQL(buf, []string{})
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if !b.IsBuildCacheDisabled {
-			qb.writeBuildCache(buf.Bytes())
+			qb.writeBuildCache(buf.Bytes(), qualifiedColumns)
 		}
 		rawSQL = buf.Bytes()
 	}

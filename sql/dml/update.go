@@ -172,11 +172,12 @@ func (b *Update) ToSQL() (string, []interface{}, error) {
 	return string(rawSQL), nil, nil
 }
 
-func (b *Update) writeBuildCache(sql []byte) {
+func (b *Update) writeBuildCache(sql []byte, qualifiedColumns []string) {
 	b.BuilderConditional = BuilderConditional{}
 	b.SetClausAliases = nil
 	b.SetClauses = nil
 	b.cachedSQL = sql
+	b.qualifiedColumns = qualifiedColumns
 }
 
 func (b *Update) readBuildCache() (sql []byte) {

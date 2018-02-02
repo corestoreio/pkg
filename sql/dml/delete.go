@@ -189,8 +189,9 @@ func (b *Delete) ToSQL() (string, []interface{}, error) {
 	return string(rawSQL), nil, nil
 }
 
-func (b *Delete) writeBuildCache(sql []byte) {
+func (b *Delete) writeBuildCache(sql []byte, qualifiedColumns []string) {
 	b.BuilderConditional = BuilderConditional{}
+	b.qualifiedColumns = qualifiedColumns
 	b.cachedSQL = sql
 }
 

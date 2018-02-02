@@ -192,7 +192,8 @@ func (b *Show) ToSQL() (string, []interface{}, error) {
 	return string(rawSQL), nil, nil
 }
 
-func (b *Show) writeBuildCache(sql []byte) {
+func (b *Show) writeBuildCache(sql []byte, qualifiedColumns []string) {
+	b.qualifiedColumns = qualifiedColumns
 	b.cachedSQL = sql
 }
 

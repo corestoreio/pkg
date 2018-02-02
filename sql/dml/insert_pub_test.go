@@ -309,6 +309,7 @@ func TestInsert_Prepare(t *testing.T) {
 }
 
 func TestInsert_WithLogger(t *testing.T) {
+	// TODO remove this duplicated code and use maybe only TestSelect_WithLogger
 	uniID := new(int32)
 	rConn := createRealSession(t)
 	defer dmltest.Close(t, rConn)

@@ -16,6 +16,7 @@ package dml
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	"github.com/corestoreio/errors"
@@ -667,14 +668,27 @@ func TestInsert_Bind_Slice(t *testing.T) {
 		},
 	}
 
-	insA := NewInsert("dml_person").AddColumns("name", "email").
-		SetRowCount(len(persons.Data)).WithArgs().Record("", persons)
+	ins := NewInsert("dml_personXXX").AddColumns("name", "email").
+		SetRowCount(len(persons.Data))
 
 	const (
-		wantPH = "INSERT INTO `dml_person` (`name`,`email`) VALUES (?,?),(?,?),(?,?)"
-		wantIP = "INSERT INTO `dml_person` (`name`,`email`) VALUES ('Muffin Hat','Muffin@Hat.head'),('Marianne Phyllis Finch','marianne@phyllis.finch'),('Daphne Augusta Perry','daphne@augusta.perry')"
+		wantPH = "INSERT INTO `dml_personXXX` (`name`,`email`) VALUES (?,?),(?,?),(?,?)"
+		wantIP = "INSERT INTO `dml_personXXX` (`name`,`email`) VALUES ('Muffin Hat','Muffin@Hat.head'),('Marianne Phyllis Finch','marianne@phyllis.finch'),('Daphne Augusta Perry','daphne@augusta.perry')"
 	)
-	compareToSQL(t, insA, errors.NoKind, wantPH, wantIP, wantArgs...)
-	insA.Reset().Record("", persons)
-	compareToSQL(t, insA, errors.NoKind, wantPH, wantIP, wantArgs...)
+
+	const iterations = 5
+	var wg sync.WaitGroup
+	wg.Add(iterations)
+	for i := 0; i < iterations; i++ {
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
+			insA := ins.WithArgs().Record("", persons)
+
+			compareToSQL(t, insA, errors.NoKind, wantPH, wantIP, wantArgs...)
+			insA.Reset().Record("", persons)
+			compareToSQL(t, insA, errors.NoKind, wantPH, wantIP, wantArgs...)
+		}(&wg)
+	}
+	wg.Wait()
+
 }

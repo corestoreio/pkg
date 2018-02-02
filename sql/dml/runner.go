@@ -109,6 +109,9 @@ func (b *ColumnMap) reset() {
 	b.HasRows = false
 	b.Count = 0
 	b.scanArgs = b.scanArgs[:0]
+	for i := range b.scanCol {
+		b.scanCol[i].reset()
+	}
 	b.scanCol = b.scanCol[:0]
 	b.columns = b.columns[:0]
 	b.columnsLen = 0
@@ -206,6 +209,16 @@ func (s scannedColumn) String() string {
 	return fmt.Sprintf("Field Type %q not supported", s.field)
 }
 
+func (s *scannedColumn) reset() {
+	s.field = 0
+	s.bool = false
+	s.int64 = 0
+	s.float64 = 0
+	s.string = ""
+	s.time = time.Time{}
+	s.byte = s.byte[:0]
+}
+
 func (s *scannedColumn) Scan(src interface{}) (err error) {
 	switch val := src.(type) {
 	case int64:
@@ -241,7 +254,7 @@ func (s *scannedColumn) Scan(src interface{}) (err error) {
 }
 
 func (b *ColumnMap) shouldCollectArgs() bool {
-	return len(b.scanArgs) == 0
+	return len(b.scanArgs) == 0 && b.Args != nil
 }
 
 // Scan calls rows.Scan and builds an internal stack of sql.RawBytes for further

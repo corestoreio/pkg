@@ -240,12 +240,13 @@ func (u *Union) ToSQL() (string, []interface{}, error) {
 	return string(rawSQL), nil, nil
 }
 
-func (u *Union) writeBuildCache(sql []byte) {
+func (u *Union) writeBuildCache(sql []byte, qualifiedColumns []string) {
 	u.Selects = nil
 	u.OrderBys = nil
 	u.oldNew = nil
 	u.repls = nil
 	u.cachedSQL = sql
+	u.qualifiedColumns = qualifiedColumns
 }
 
 func (u *Union) readBuildCache() (sql []byte) {

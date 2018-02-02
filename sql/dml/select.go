@@ -426,8 +426,9 @@ func (b *Select) ToSQL() (string, []interface{}, error) {
 	return string(rawSQL), nil, nil
 }
 
-func (b *Select) writeBuildCache(sql []byte) {
+func (b *Select) writeBuildCache(sql []byte, qualifiedColumns []string) {
 	b.cachedSQL = sql
+	b.qualifiedColumns = qualifiedColumns
 	// The data can be discarded as the query has been cached as byte slice.
 	b.BuilderConditional = BuilderConditional{}
 	b.Columns = nil

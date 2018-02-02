@@ -189,13 +189,14 @@ func (b *With) ToSQL() (string, []interface{}, error) {
 	return string(rawSQL), nil, nil
 }
 
-func (b *With) writeBuildCache(sql []byte) {
+func (b *With) writeBuildCache(sql []byte, qualifiedColumns []string) {
 	b.Subclauses = nil
 	b.TopLevel.Select = nil
 	b.TopLevel.Union = nil
 	b.TopLevel.Update = nil
 	b.TopLevel.Delete = nil
 	b.cachedSQL = sql
+	b.qualifiedColumns = qualifiedColumns
 }
 
 func (b *With) readBuildCache() (sql []byte) {
