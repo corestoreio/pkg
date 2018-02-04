@@ -152,11 +152,11 @@ func (ps *dmlPersons) MapColumns(cm *ColumnMap) error {
 		for cm.Next() {
 			switch c := cm.Column(); c {
 			case "id":
-				cm.Args = cm.Args.Uint64s(ps.IDs()...)
+				cm.Uint64s(ps.IDs()...)
 			case "name":
-				cm.Args = cm.Args.Strings(ps.Names()...)
+				cm.Strings(ps.Names()...)
 			case "email":
-				cm.Args = cm.Args.NullStrings(ps.Emails()...)
+				cm.NullStrings(ps.Emails()...)
 			default:
 				return errors.NotFound.Newf("[dml_test] dmlPerson Column %q not found", c)
 			}

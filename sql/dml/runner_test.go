@@ -29,9 +29,7 @@ var _ fmt.Stringer = (*scannedColumn)(nil)
 func TestColumnMap_Nil_Pointers(t *testing.T) {
 	t.Parallel()
 
-	args := MakeArgs(17)
-	cm := newColumnMap(args)
-
+	cm := NewColumnMap(20)
 	cm.
 		Bool(nil).
 		Byte(nil).
@@ -53,7 +51,7 @@ func TestColumnMap_Nil_Pointers(t *testing.T) {
 
 	assert.Exactly(t,
 		"dml.MakeArgs(17).Null().Null().Null().Null().Null().Null().Null().Null().Null().Null().Null().Null().Null().Null().Null().Null().Null()",
-		cm.Args.GoString())
+		cm.arguments.GoString())
 }
 
 func TestScannedColumn_String(t *testing.T) {
@@ -123,9 +121,8 @@ func TestScannedColumn_Scan(t *testing.T) {
 func TestColumnMap_Scan_Empty_Bytes(t *testing.T) {
 	t.Parallel()
 
-	cm := newColumnMap(nil)
+	cm := NewColumnMap(0, "SomeColumn")
 	cm.index = 0
-	cm.columns = []string{"SomeColumn"}
 	cm.scanCol = make([]scannedColumn, 1)
 	cm.scanCol[0].field = 'y'
 

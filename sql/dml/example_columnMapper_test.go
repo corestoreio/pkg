@@ -117,9 +117,9 @@ func (cc *customerCollection) MapColumns(cm *dml.ColumnMap) error {
 		for cm.Next() {
 			switch c := cm.Column(); c {
 			case "entity_id", "customer_id":
-				cm.Args = cm.Args.Uint64s(cc.EntityIDs()...)
+				cm.Uint64s(cc.EntityIDs()...)
 			case "firstname":
-				cm.Args = cm.Args.Strings(cc.Firstnames()...)
+				cm.Strings(cc.Firstnames()...)
 			default:
 				return errors.NotFound.Newf("[dml_test] customerCollection Column %q not found", c)
 			}

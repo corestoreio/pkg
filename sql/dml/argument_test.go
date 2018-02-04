@@ -184,45 +184,20 @@ func TestArguments_DriverValue(t *testing.T) {
 	})
 
 	t.Run("Driver.Values panics because not supported", func(t *testing.T) {
-		defer func() {
-			if r := recover(); r != nil {
-				if err, ok := r.(error); ok {
-					assert.True(t, errors.NotSupported.Match(err), "Should be a not supported error; got %+v", err)
-				} else {
-					t.Errorf("Panic should contain an error but got:\n%+v", r)
-				}
-			} else {
-				t.Error("Expecting a panic but got nothing")
-			}
-		}()
-
-		args := MakeArgs(10).
+		_, _, err := MakeArgs(10).
 			DriverValue(
 				driverValueNotSupported(4),
-			)
-		assert.Nil(t, args)
+			).ToSQL()
+		assert.True(t, errors.Is(err, errors.NotSupported), "Should have behaviour errors.NotSupported")
 	})
 
 	t.Run("Driver.Values panics because Value error", func(t *testing.T) {
-		defer func() {
-			if r := recover(); r != nil {
-				if err, ok := r.(error); ok {
-					assert.True(t, errors.Fatal.Match(err), "Should be a fatal error; got %+v", err)
-				} else {
-					t.Errorf("Panic should contain an error but got:\n%+v", r)
-				}
-			} else {
-				t.Error("Expecting a panic but got nothing")
-			}
-		}()
-
-		args := MakeArgs(10).
+		_, _, err := MakeArgs(10).
 			DriverValue(
 				driverValueError(0),
-			)
-		assert.Nil(t, args)
+			).ToSQL()
+		assert.True(t, errors.Is(err, errors.Fatal), "Should have behaviour errors.Fatal")
 	})
-
 }
 
 func TestArguments_WriteTo(t *testing.T) {
@@ -448,46 +423,39 @@ func TestArguments_HasNamedArgs(t *testing.T) {
 func TestArguments_MapColumns(t *testing.T) {
 	t.Parallel()
 
-	to := MakeArgs(4)
 	from := MakeArgs(3)
 
 	t.Run("len=1", func(t *testing.T) {
-
 		from = from.Reset().Int64(3).Float64(2.2).Name("colA").Strings("a", "b")
-		rm := newColumnMap(to.Reset(), "colA")
-		if err := from.MapColumns(rm); err != nil {
+		cm := NewColumnMap(1, "colA")
+		if err := from.MapColumns(cm); err != nil {
 			t.Fatal(err)
 		}
-		to = rm.Args
 		assert.Exactly(t,
 			"dml.MakeArgs(1).Name(\"colA\").Strings(\"a\",\"b\")",
-			to.GoString())
+			cm.arguments.GoString())
 	})
 
 	t.Run("len=0", func(t *testing.T) {
-
 		from = from.Reset().Name("colZ").Int64(3).Float64(2.2).Name("colA").Strings("a", "b")
-		rm := newColumnMap(to.Reset())
-		if err := from.MapColumns(rm); err != nil {
+		cm := NewColumnMap(1)
+		if err := from.MapColumns(cm); err != nil {
 			t.Fatal(err)
 		}
-		to = rm.Args
 		assert.Exactly(t,
 			"dml.MakeArgs(3).Name(\"colZ\").Int64(3).Float64(2.200000).Name(\"colA\").Strings(\"a\",\"b\")",
-			to.GoString())
+			cm.arguments.GoString())
 	})
 
 	t.Run("len>1", func(t *testing.T) {
-
 		from = from.Reset().Name("colZ").Int64(3).Uint64(6).Name("colB").Float64(2.2).String("c").Name("colA").Strings("a", "b")
-		rm := newColumnMap(to.Reset(), "colA", "colB")
-		if err := from.MapColumns(rm); err != nil {
+		cm := NewColumnMap(1, "colA", "colB")
+		if err := from.MapColumns(cm); err != nil {
 			t.Fatal(err)
 		}
-		to = rm.Args
 		assert.Exactly(t,
 			"dml.MakeArgs(2).Name(\"colA\").Strings(\"a\",\"b\").Name(\"colB\").Float64(2.200000)",
-			to.GoString())
+			cm.arguments.GoString())
 	})
 }
 

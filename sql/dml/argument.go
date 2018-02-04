@@ -181,7 +181,15 @@ func (arg argument) writeTo(w *bytes.Buffer, pos uint) (err error) {
 			w.WriteByte(')')
 		}
 	case uint64:
-		err = writeUint64(w, v)
+		err = writeUint64(w, uint64(v))
+	case uint:
+		err = writeUint64(w, uint64(v))
+	case uint8:
+		err = writeUint64(w, uint64(v))
+	case uint16:
+		err = writeUint64(w, uint64(v))
+	case uint32:
+		err = writeUint64(w, uint64(v))
 	case []uint64:
 		if requestPos {
 			err = writeUint64(w, v[pos])
@@ -693,7 +701,7 @@ func (a *Arguments) appendConvertedRecordsToArguments(collectedArgs arguments) (
 
 	// TODO refactor prototype and make it performant and beautiful code
 	// collectedArgs
-	cm := newColumnMap(MakeArgs(len(a.arguments)+len(a.recs)), "") // can use an arg pool Arguments sync.Pool
+	cm := NewColumnMap(len(a.arguments)+len(a.recs), "") // can use an arg pool Arguments sync.Pool
 
 	for tsc := 0; tsc < a.base.templateStmtCount; tsc++ { // only in case of UNION statements in combination with a template SELECT, can be optimized later
 
@@ -705,7 +713,7 @@ func (a *Arguments) appendConvertedRecordsToArguments(collectedArgs arguments) (
 			// a.base.defaultQualifier is empty in case of INSERT statements
 
 			column, isNamedArg := cutNamedArgStartStr(column) // removes the colon for named arguments
-			cm.columns[0] = column                            // length is always one, as created in newColumnMap
+			cm.columns[0] = column                            // length is always one, as created in NewColumnMap
 
 			if isNamedArg && len(a.arguments) > 0 {
 				// if the colon : cannot be found then a simple place holder ? has been detected
@@ -733,15 +741,15 @@ func (a *Arguments) appendConvertedRecordsToArguments(collectedArgs arguments) (
 					// If the argument cannot be found in the records then we assume the argument
 					// has a numerical position and we grab just the next unnamed argument.
 					if pArg, ok := a.nextUnnamedArg(); ok {
-						cm.Args.arguments = append(cm.Args.arguments, pArg)
+						cm.arguments = append(cm.arguments, pArg)
 					}
 				}
 			}
 		}
 		a.nextUnnamedArgPos = 0
 	}
-	if len(cm.Args.arguments) > 0 {
-		collectedArgs = cm.Args.arguments
+	if len(cm.arguments) > 0 {
+		collectedArgs = cm.arguments
 	}
 
 	return collectedArgs, nil
@@ -755,10 +763,10 @@ func (a *Arguments) prepareArgsInsert(extArgs ...interface{}) (string, []interfa
 	sqlBuf := bufferpool.GetTwin()
 	defer bufferpool.PutTwin(sqlBuf)
 
-	cm := newColumnMap(MakeArgs(10))
+	cm := NewColumnMap(16)
 	cm.setColumns(a.base.qualifiedColumns)
 	//defer bufferpool.PutTwin(sqlBuf)
-	cm.Args.arguments = append(cm.Args.arguments, a.arguments...)
+	cm.arguments = append(cm.arguments, a.arguments...)
 	{
 		if _, err := sqlBuf.First.Write(a.base.cachedSQL); err != nil {
 			return "", nil, errors.WithStack(err)
@@ -766,7 +774,7 @@ func (a *Arguments) prepareArgsInsert(extArgs ...interface{}) (string, []interfa
 
 		// Extract arguments from ColumnMapper and append them to `a.args`.
 		// inserting multiple rows retrieved from a collection. There is no qualifier.
-		//cm := newColumnMap(MakeArgs(len(a.base.qualifiedColumns)*5/4), a.base.qualifiedColumns...)
+		//cm := NewColumnMap(MakeArgs(len(a.base.qualifiedColumns)*5/4), a.base.qualifiedColumns...)
 
 		for _, qRec := range a.recs {
 			if qRec.Qualifier != "" {
@@ -777,14 +785,10 @@ func (a *Arguments) prepareArgsInsert(extArgs ...interface{}) (string, []interfa
 				return "", nil, errors.WithStack(err)
 			}
 		}
-		//if len(cm.Args.arguments) > 0 {
-		//	//finalArgs = finalArgs[:0]
-		//	//finalArgs = append(a.args, cm.Args.args...) // copy fom pool into a.args, maybe this can lead to a bug.
-		//}
 	}
 
 	extArgs = append(extArgs, a.raw...)
-	totalArgLen := uint(len(cm.Args.arguments) + len(extArgs))
+	totalArgLen := uint(len(cm.arguments) + len(extArgs))
 
 	// println("totalArgLen", totalArgLen)
 
@@ -800,7 +804,7 @@ func (a *Arguments) prepareArgsInsert(extArgs ...interface{}) (string, []interfa
 			//if columnCount == 0 {
 			//  // TODO remove debug code
 			//	fmt.Printf("extArgs: %#v\n", extArgs)
-			//	fmt.Printf("cm.Args.arguments: %#v\n\n", cm.Args.arguments)
+			//	fmt.Printf("cm.arguments: %#v\n\n", cm.arguments)
 			//	panic(fmt.Sprintf("totalArgLen:%d a.insertRowCount:%d\n%q\n", totalArgLen, a.insertRowCount, a.base.cachedSQL))
 			//}
 			writeInsertPlaceholders(sqlBuf.First, a.insertRowCount, columnCount)
@@ -823,22 +827,20 @@ func (a *Arguments) prepareArgsInsert(extArgs ...interface{}) (string, []interfa
 	}
 
 	if a.Options > 0 {
-		if len(extArgs) > 0 && len(a.recs) == 0 && len(cm.Args.arguments) == 0 {
+		if len(extArgs) > 0 && len(a.recs) == 0 && len(cm.arguments) == 0 {
 			return "", nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
 		}
 
 		if a.Options&argOptionInterpolate != 0 {
-			if err := writeInterpolateBytes(sqlBuf.Second, sqlBuf.First.Bytes(), cm.Args.arguments); err != nil {
+			if err := writeInterpolateBytes(sqlBuf.Second, sqlBuf.First.Bytes(), cm.arguments); err != nil {
 				return "", nil, errors.Wrapf(err, "[dml] Interpolation failed: %q", sqlBuf.First.String())
 			}
 			//a.Reset() TODO why is this needed?
 			return sqlBuf.Second.String(), nil, nil
 		}
 	}
-	xargs := make(arguments, len(cm.Args.arguments))
-	copy(xargs, cm.Args.arguments)
 
-	return sqlBuf.First.String(), xargs.Interfaces(extArgs...), nil
+	return sqlBuf.First.String(), cm.arguments.Interfaces(extArgs...), nil
 }
 
 // nextUnnamedArg returns an unnamed argument by its position.
@@ -863,7 +865,7 @@ func (a *Arguments) nextUnnamedArg() (argument, bool) {
 // Implements interface ColumnMapper.
 func (a *Arguments) MapColumns(cm *ColumnMap) error {
 	if cm.Mode() == ColumnMapEntityReadAll {
-		cm.Args.arguments = append(cm.Args.arguments, a.arguments...)
+		cm.arguments = append(cm.arguments, a.arguments...)
 		return cm.Err()
 	}
 	for cm.Next() {
@@ -874,7 +876,7 @@ func (a *Arguments) MapColumns(cm *ColumnMap) error {
 		for _, arg := range a.arguments {
 			// Case sensitive comparison
 			if c != "" && arg.name == c {
-				cm.Args.arguments = append(cm.Args.arguments, arg)
+				cm.arguments = append(cm.arguments, arg)
 				break
 			}
 		}
@@ -882,10 +884,10 @@ func (a *Arguments) MapColumns(cm *ColumnMap) error {
 	return cm.Err()
 }
 
-func (a *Arguments) GoString() string {
+func (as arguments) GoString() string {
 	buf := new(bytes.Buffer)
-	fmt.Fprintf(buf, "dml.MakeArgs(%d)", len(a.arguments))
-	for _, arg := range a.arguments {
+	fmt.Fprintf(buf, "dml.MakeArgs(%d)", len(as))
+	for _, arg := range as {
 		buf.WriteString(arg.GoString())
 	}
 	return buf.String()
@@ -963,6 +965,19 @@ func (as arguments) Interfaces(args ...interface{}) []interface{} {
 			} else {
 				args = append(args, int64(vv))
 			}
+		case uint:
+			if vv > maxInt64 {
+				args = append(args, strconv.AppendUint([]byte{}, uint64(vv), 10))
+			} else {
+				args = append(args, int64(vv))
+			}
+
+		case uint8:
+			args = append(args, int64(vv))
+		case uint16:
+			args = append(args, int64(vv))
+		case uint32:
+			args = append(args, int64(vv))
 
 		case []uint64:
 			for _, v := range vv {
@@ -1119,9 +1134,6 @@ func (a *Arguments) Name(n string) *Arguments {
 	return a
 }
 
-// TODO: maybe use such a function to set the position, but then add a new field: pos int to the argument struct
-// func (a *Arguments) Pos(n int) *Arguments { return append(a, argument{name: n}) }
-
 // Reset resets the slice for new usage retaining the already allocated memory.
 func (a *Arguments) Reset() *Arguments {
 	for i := range a.recs {
@@ -1146,6 +1158,7 @@ func (a *Arguments) DriverValue(dvs ...driver.Valuer) *Arguments {
 	a.arguments, a.base.ärgErr = driverValue(a.arguments, dvs...)
 	return a
 }
+
 func driverValue(appendTo arguments, dvs ...driver.Valuer) (arguments, error) {
 	// value is a value that drivers must be able to handle.
 	// It is either nil or an instance of one of these types:
@@ -1218,6 +1231,7 @@ func (a *Arguments) DriverValues(dvs ...driver.Valuer) *Arguments {
 	a.arguments, a.base.ärgErr = driverValues(a.arguments, dvs...)
 	return a
 }
+
 func driverValues(appendToArgs arguments, dvs ...driver.Valuer) (arguments, error) {
 	// value is a value that drivers must be able to handle.
 	// It is either nil or an instance of one of these types:
