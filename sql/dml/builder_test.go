@@ -15,10 +15,9 @@
 package dml
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
-
-	"bytes"
 
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
@@ -55,7 +54,7 @@ func TestSqlObjToString(t *testing.T) {
 		assert.Exactly(t, "DELETE FROM `tableX` WHERE (`columnA` > 2)", b.String())
 	})
 	t.Run("INSERT", func(t *testing.T) {
-		b := NewInsert("tableX").AddColumns("columnA", "columnB")
+		b := NewInsert("tableX").AddColumns("columnA", "columnB").BuildValues()
 		// keep the place holder for columnA,columnB because we're not using interpolation
 		assert.Exactly(t, "INSERT INTO `tableX` (`columnA`,`columnB`) VALUES (?,?)", b.String())
 	})

@@ -305,18 +305,8 @@ func TestArguments_WriteTo(t *testing.T) {
 func TestIFaceToArgs(t *testing.T) {
 	t.Parallel()
 	t.Run("not supported", func(t *testing.T) {
-		defer func() {
-			if r := recover(); r != nil {
-				if err, ok := r.(error); ok {
-					assert.True(t, errors.NotSupported.Match(err), "%+v", err)
-				} else {
-					t.Errorf("Panic should contain an error but got:\n%+v", r)
-				}
-			} else {
-				t.Error("Expecting a panic but got nothing")
-			}
-		}()
-		_, _ = iFaceToArgs(arguments{}, time.Minute)
+		_, err := iFaceToArgs(arguments{}, time.Minute)
+		assert.True(t, errors.Is(err, errors.NotSupported), "err should have kind errors.NotSupported")
 	})
 	t.Run("all types", func(t *testing.T) {
 		nt := now()

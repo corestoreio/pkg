@@ -46,15 +46,19 @@ var placeHolderByte = []byte(placeHolderStr)
 // functions. This function should be generally used when dealing with prepared
 // statements.
 func ExpandPlaceHolders(sql string, args *Arguments) (string, error) {
+	var a arguments
+	if args != nil {
+		a = args.arguments
+	}
 
 	phCount := strings.Count(sql, placeHolderStr)
-	if want := len(args.arguments); phCount != want || want == 0 {
+	if want := len(a); phCount != want || want == 0 {
 		return "", errors.Mismatch.Newf("[dml] ExpandPlaceHolders: Number of %s:%d do not match the number of repetitions: %d", placeHolderStr, phCount, want)
 	}
 
 	var buf strings.Builder
 	buf.Grow(len(sql) * 3 / 2) // *1.5
-	err := expandPlaceHolders(&buf, []byte(sql), args.arguments)
+	err := expandPlaceHolders(&buf, []byte(sql), a)
 	return buf.String(), errors.WithStack(err)
 }
 

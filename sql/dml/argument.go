@@ -760,8 +760,10 @@ func (a *Arguments) appendConvertedRecordsToArguments(collectedArgs arguments) (
 // external arguments.
 func (a *Arguments) prepareArgsInsert(extArgs ...interface{}) (string, []interface{}, error) {
 
+	//cm := pooledColumnMapGet()
 	sqlBuf := bufferpool.GetTwin()
 	defer bufferpool.PutTwin(sqlBuf)
+	//defer pooledBufferColumnMapPut(cm, sqlBuf, nil)
 
 	cm := NewColumnMap(16)
 	cm.setColumns(a.base.qualifiedColumns)
@@ -1360,7 +1362,7 @@ func (a *Arguments) Iterate(ctx context.Context, callBack func(*ColumnMap) error
 		err = errors.Wrapf(err, "[dml] Iterate.Query with query ID %q", a.base.id)
 		return
 	}
-	cmr := pooledColumnMapGet()
+	cmr := pooledColumnMapGet() // this sync.Pool might not work correctly, write a complex test.
 	defer pooledBufferColumnMapPut(cmr, nil, func() {
 		// Not testable with the sqlmock package :-(
 		if err2 := r.Close(); err2 != nil && err == nil {

@@ -154,7 +154,8 @@ func (o Op) write(w *bytes.Buffer, args arguments) (err error) {
 // DUPLICATE KEY UPDATE. Please use the helper functions instead of using this
 // type directly.
 type Condition struct {
-	Aliased string
+	previousErr error
+	Aliased     string
 	// Left can contain either a valid identifier or an expression. Set field
 	// `IsLeftExpression` to true to avoid quoting of the this field. Left can also
 	// contain a string in the format `qualifier.identifier`.
@@ -721,7 +722,10 @@ func (c *Condition) Values() *Condition {
 // added to the argument slice. For example driver.Values of type `int` will
 // result in []int.
 func (c *Condition) DriverValue(dv ...driver.Valuer) *Condition {
-	c.Right.args = c.Right.args.add(dv)
+	if c.previousErr != nil {
+		return c
+	}
+	c.Right.args, c.previousErr = driverValue(c.Right.args, dv...)
 	return c
 }
 
@@ -729,8 +733,10 @@ func (c *Condition) DriverValue(dv ...driver.Valuer) *Condition {
 // slice. It panics if the underlying type is not one of the allowed of
 // interface driver.Valuer.
 func (c *Condition) DriverValues(dv ...driver.Valuer) *Condition {
-	// TODO the type must be marked if func DriverValue or DriverValues, only mark this one, the other is default
-	c.Right.args = c.Right.args.add(dv)
+	if c.previousErr != nil {
+		return c
+	}
+	c.Right.args, c.previousErr = driverValues(c.Right.args, dv...)
 	return c
 }
 
@@ -772,7 +778,9 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 
 	i := 0
 	for _, cnd := range cs {
-
+		if cnd.previousErr != nil {
+			return nil, errors.WithStack(cnd.previousErr)
+		}
 		if conditionType == 'j' {
 			if len(cnd.Columns) > 0 {
 				w.WriteString(" USING (")

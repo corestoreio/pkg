@@ -45,6 +45,8 @@ var pooledColumnMap = sync.Pool{
 }
 
 func pooledColumnMapGet() *ColumnMap {
+	// TODO(CYS) to use this correctly the field `arguments` in type ColumnMap must be a
+	// pointer to the slice, I think.
 	return pooledColumnMap.Get().(*ColumnMap)
 }
 
