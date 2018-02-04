@@ -244,11 +244,11 @@ func TestNewUnionTemplate(t *testing.T) {
 			All().
 			OrderByDesc("col_type")
 
-		u.WithArgs().Int(1563).Ints(3, 4)
+		ua := u.WithArgs().Int(1563).Ints(3, 4)
 
 		// testing idempotent function ToSQL
 		for i := 0; i < 3; i++ {
-			compareToSQL(t, u, errors.NoKind,
+			compareToSQL(t, ua, errors.NoKind,
 				"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`varcharX` AS `col_type`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN ?) ORDER BY `t`.`varcharX_store_id` DESC)\n"+
 					"UNION ALL\n"+
 					"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`intX` AS `col_type`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN ?) ORDER BY `t`.`intX_store_id` DESC)\n"+

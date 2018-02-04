@@ -19,12 +19,10 @@ import (
 	"encoding"
 	"fmt"
 	"strconv"
-	"sync"
 	"time"
 	"unicode/utf8"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/pkg/util/bufferpool"
 	"github.com/corestoreio/pkg/util/byteconv"
 )
 
@@ -36,29 +34,6 @@ type ColumnMapper interface {
 	// RowScan implementation must use function `Scan` to scan the values of the
 	// query into its own type. See database/sql package for examples.
 	MapColumns(rc *ColumnMap) error
-}
-
-var pooledColumnMap = sync.Pool{
-	New: func() interface{} {
-		return NewColumnMap(20, "")
-	},
-}
-
-func pooledColumnMapGet() *ColumnMap {
-	// TODO(CYS) to use this correctly the field `arguments` in type ColumnMap must be a
-	// pointer to the slice, I think.
-	return pooledColumnMap.Get().(*ColumnMap)
-}
-
-func pooledBufferColumnMapPut(cm *ColumnMap, buf *bufferpool.TwinBuffer, fn func()) {
-	if buf != nil {
-		bufferpool.PutTwin(buf)
-	}
-	if fn != nil {
-		fn()
-	}
-	cm.reset()
-	pooledColumnMap.Put(cm)
 }
 
 // ColumnMap takes care that the table/view/identifiers are getting properly

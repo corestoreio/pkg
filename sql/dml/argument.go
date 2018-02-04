@@ -21,6 +21,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -516,6 +517,25 @@ func (arg argument) GoString() string {
 
 type arguments []argument
 
+var pooledArguments = sync.Pool{
+	New: func() interface{} {
+		var a [32]argument
+		return arguments(a[:0])
+	},
+}
+
+func pooledArgumentsGet() arguments {
+	return pooledArguments.Get().(arguments)
+}
+
+func pooledArgumentsPut(a arguments, buf *bufferpool.TwinBuffer) {
+	a = a[:0]
+	pooledArguments.Put(a)
+	if buf != nil {
+		bufferpool.PutTwin(buf)
+	}
+}
+
 const (
 	argOptionExpandPlaceholder = 1 << iota
 	argOptionInterpolate
@@ -640,7 +660,13 @@ func (a *Arguments) prepareArgs(extArgs ...interface{}) (_ string, _ []interface
 		}
 	}
 
-	var collectedArgs = append(arguments{}, a.arguments...) // TODO sync.Pool
+	//var collectedArgs = append(arguments{}, a.arguments...) // TODO sync.Pool or not, investigate via benchmark, Tests are succeeding `-count=99 -race`
+
+	sqlBuf := bufferpool.GetTwin()
+	collectedArgs := pooledArgumentsGet()
+	defer pooledArgumentsPut(collectedArgs, sqlBuf)
+	collectedArgs = append(collectedArgs, a.arguments...)
+
 	extArgs = append(extArgs, a.raw...)
 	if collectedArgs, err = a.appendConvertedRecordsToArguments(collectedArgs); err != nil {
 		return "", nil, errors.WithStack(err)
@@ -650,8 +676,6 @@ func (a *Arguments) prepareArgs(extArgs ...interface{}) (_ string, _ []interface
 	// worst case. Best case would be no modification and hence we don't need a
 	// bytes.Buffer from the pool! TODO(CYS) optimize this and only acquire a
 	// buffer from the pool in the worse case.
-	sqlBuf := bufferpool.GetTwin()
-	defer bufferpool.PutTwin(sqlBuf)
 	if _, err := sqlBuf.First.Write(a.base.cachedSQL); err != nil {
 		return "", nil, errors.WithStack(err)
 	}
@@ -700,8 +724,7 @@ func (a *Arguments) appendConvertedRecordsToArguments(collectedArgs arguments) (
 	}
 
 	// TODO refactor prototype and make it performant and beautiful code
-	// collectedArgs
-	cm := NewColumnMap(len(a.arguments)+len(a.recs), "") // can use an arg pool Arguments sync.Pool
+	cm := NewColumnMap(len(a.arguments)+len(a.recs), "") // can use an arg pool Arguments sync.Pool, nope.
 
 	for tsc := 0; tsc < a.base.templateStmtCount; tsc++ { // only in case of UNION statements in combination with a template SELECT, can be optimized later
 
@@ -792,8 +815,6 @@ func (a *Arguments) prepareArgsInsert(extArgs ...interface{}) (string, []interfa
 	extArgs = append(extArgs, a.raw...)
 	totalArgLen := uint(len(cm.arguments) + len(extArgs))
 
-	// println("totalArgLen", totalArgLen)
-
 	{ // Write placeholder list e.g. "VALUES (?,?),(?,?)"
 		odkPos := bytes.Index(a.base.cachedSQL, []byte(onDuplicateKeyPart))
 		if odkPos > 0 {
@@ -803,22 +824,12 @@ func (a *Arguments) prepareArgsInsert(extArgs ...interface{}) (string, []interfa
 
 		if a.insertRowCount > 0 {
 			columnCount := totalArgLen / a.insertRowCount
-			//if columnCount == 0 {
-			//  // TODO remove debug code
-			//	fmt.Printf("extArgs: %#v\n", extArgs)
-			//	fmt.Printf("cm.arguments: %#v\n\n", cm.arguments)
-			//	panic(fmt.Sprintf("totalArgLen:%d a.insertRowCount:%d\n%q\n", totalArgLen, a.insertRowCount, a.base.cachedSQL))
-			//}
 			writeInsertPlaceholders(sqlBuf.First, a.insertRowCount, columnCount)
-
 		} else if a.insertColumnCount > 0 {
 			rowCount := totalArgLen / a.insertColumnCount
 			if rowCount == 0 {
 				rowCount = 1
 			}
-			//if a.insertColumnCount == 0 { // TODO remove debug
-			//	panic("a.insertColumnCount")
-			//}
 			writeInsertPlaceholders(sqlBuf.First, rowCount, a.insertColumnCount)
 		}
 		if odkPos > 0 {
@@ -837,7 +848,6 @@ func (a *Arguments) prepareArgsInsert(extArgs ...interface{}) (string, []interfa
 			if err := writeInterpolateBytes(sqlBuf.Second, sqlBuf.First.Bytes(), cm.arguments); err != nil {
 				return "", nil, errors.Wrapf(err, "[dml] Interpolation failed: %q", sqlBuf.First.String())
 			}
-			//a.Reset() TODO why is this needed?
 			return sqlBuf.Second.String(), nil, nil
 		}
 	}
@@ -1075,8 +1085,6 @@ func (a *Arguments) add(v interface{}) *Arguments {
 	a.arguments = a.arguments.add(v)
 	return a
 }
-
-// TODO QualifiedRecord can be removed because we can use Arguments.Name function to qualify a record.
 
 func (a *Arguments) Record(qualifier string, record ColumnMapper) *Arguments {
 	a.recs = append(a.recs, Qualify(qualifier, record))
@@ -1322,6 +1330,29 @@ func (a *Arguments) WithDB(db QueryExecPreparer) *Arguments {
 /*********************************************
 	LOAD / QUERY and EXEC functions
 *********************************************/
+
+var pooledColumnMap = sync.Pool{
+	New: func() interface{} {
+		return NewColumnMap(20, "")
+	},
+}
+
+func pooledColumnMapGet() *ColumnMap {
+	// TODO(CYS) to use this correctly the field `arguments` in type ColumnMap must be a
+	// pointer to the slice, I think.
+	return pooledColumnMap.Get().(*ColumnMap)
+}
+
+func pooledBufferColumnMapPut(cm *ColumnMap, buf *bufferpool.TwinBuffer, fn func()) {
+	if buf != nil {
+		bufferpool.PutTwin(buf)
+	}
+	if fn != nil {
+		fn()
+	}
+	cm.reset()
+	pooledColumnMap.Put(cm)
+}
 
 // Exec executes the statement represented by the Insert object. It returns the
 // raw database/sql Result or an error if there was one. Regarding
