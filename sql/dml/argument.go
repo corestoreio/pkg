@@ -506,6 +506,8 @@ func (arg argument) GoString() string {
 	return buf.String()
 }
 
+type arguments []argument
+
 const (
 	argOptionExpandPlaceholder = 1 << iota
 	argOptionInterpolate
@@ -526,11 +528,8 @@ type Arguments struct {
 	hasNamedArgs      uint8 // 0 not checked, 1=no, 2=yes
 	nextUnnamedArgPos int
 	raw               []interface{}
-	args              []argument
-	recs              []QualifiedRecord
-	// rawReturn will be filled with the final primitives which gets returned
-	// in the ToSQL function. It gets reset in every call.
-	rawReturn []interface{}
+	arguments
+	recs []QualifiedRecord
 }
 
 // ToSQL the returned interface slice is owned by the callee.
@@ -561,44 +560,44 @@ func (a *Arguments) ExpandPlaceHolders() *Arguments {
 }
 
 // MakeArgs creates a new argument slice with the desired capacity.
-func MakeArgs(cap int) *Arguments { return &Arguments{args: make([]argument, 0, cap)} }
+func MakeArgs(cap int) *Arguments { return &Arguments{arguments: make(arguments, 0, cap)} }
 
 func (a *Arguments) isEmpty() bool {
 	if a == nil {
 		return true
 	}
-	return len(a.raw) == 0 && len(a.args) == 0 && len(a.recs) == 0
+	return len(a.raw) == 0 && len(a.arguments) == 0 && len(a.recs) == 0
 }
 
 func (a *Arguments) argsCount() int {
 	if a == nil {
 		return 0
 	}
-	return len(a.args)
+	return len(a.arguments)
 }
 
 // multiplyArguments is only applicable when using *Union as a template.
 // multiplyArguments repeats the `args` variable n-times to match the number of
 // generated SELECT queries in the final UNION statement. It should be called
 // after all calls to `StringReplace` have been made.
-func (a *Arguments) multiplyArguments() {
-	factor := a.base.templateStmtCount
-	if a == nil || factor < 2 {
-		return
+func (as arguments) multiplyArguments(factor int) arguments {
+	if factor < 2 {
+		return as
 	}
-	newA := make([]argument, len(a.args)*factor)
-	lArgs := len(a.args)
+	lArgs := len(as)
+	newA := make(arguments, lArgs*factor)
 	for i := 0; i < factor; i++ {
-		copy(newA[i*lArgs:], a.args)
+		copy(newA[i*lArgs:], as)
 	}
-	a.args = newA
-	return
+	return newA
 }
 
-// prepareArgs transforms mainly the Arguments into []interface{} but also
-// appends the `args` from the Exec+ or Query+ function. All method receivers
-// are not thread safe. The returned interface slce belongs to the callee.
-func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, error) {
+// prepareArgs transforms mainly the Arguments into []interface{}. It appends
+// its arguments to the `extArgs` arguments from the Exec+ or Query+ function.
+// This allows for a developer to reuse the interface slice and save
+// allocations. All method receivers are not thread safe. The returned interface
+// slice is the same as `extArgs`.
+func (a *Arguments) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}, err error) {
 	if a.base.ärgErr != nil {
 		return "", nil, errors.WithStack(a.base.ärgErr)
 	}
@@ -607,12 +606,12 @@ func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, 
 	}
 
 	if a.base.source == dmlSourceInsert {
-		return a.prepareArgsInsert(fncArgs...)
+		return a.prepareArgsInsert(extArgs...)
 	}
 
 	if a.isEmpty() {
 		a.hasNamedArgs = 1
-		return string(a.base.cachedSQL), fncArgs, nil
+		return string(a.base.cachedSQL), extArgs, nil
 	}
 
 	if a.hasNamedArgs == 0 {
@@ -620,11 +619,11 @@ func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, 
 		a.hasNamedArgs = 1
 		a.base.cachedSQL, a.base.qualifiedColumns, found = extractReplaceNamedArgs(a.base.cachedSQL, a.base.qualifiedColumns)
 
-		switch la := len(a.args); true {
+		switch la := len(a.arguments); true {
 		case found:
 			a.hasNamedArgs = 2
 		case !found && len(a.recs) == 0 && la > 0:
-			for _, arg := range a.args {
+			for _, arg := range a.arguments {
 				if arg.name != "" {
 					a.hasNamedArgs = 2
 					break
@@ -633,8 +632,9 @@ func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, 
 		}
 	}
 
-	a.raw = append(a.raw, fncArgs...)
-	if err := a.appendConvertedRecordsToArguments(); err != nil {
+	var collectedArgs = append(arguments{}, a.arguments...) // TODO sync.Pool
+	extArgs = append(extArgs, a.raw...)
+	if collectedArgs, err = a.appendConvertedRecordsToArguments(collectedArgs); err != nil {
 		return "", nil, errors.WithStack(err)
 	}
 
@@ -649,13 +649,13 @@ func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, 
 	}
 
 	// `switch` statement no suitable.
-	if a.Options > 0 && len(a.raw) > 0 && len(a.recs) == 0 && len(a.args) == 0 {
+	if a.Options > 0 && len(extArgs) > 0 && len(a.recs) == 0 && len(a.arguments) == 0 {
 		return "", nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
 	}
 
 	if a.Options&argOptionExpandPlaceholder != 0 {
 		if phCount := bytes.Count(sqlBuf.First.Bytes(), placeHolderByte); phCount < a.Len() {
-			if err := expandPlaceHolders(sqlBuf.Second, sqlBuf.First.Bytes(), a); err != nil {
+			if err := expandPlaceHolders(sqlBuf.Second, sqlBuf.First.Bytes(), collectedArgs); err != nil {
 				return "", nil, errors.WithStack(err)
 			}
 			if _, err := sqlBuf.CopySecondToFirst(); err != nil {
@@ -664,38 +664,36 @@ func (a *Arguments) prepareArgs(fncArgs ...interface{}) (string, []interface{}, 
 		}
 	}
 	if a.Options&argOptionInterpolate != 0 {
-		if err := writeInterpolateBytes(sqlBuf.Second, sqlBuf.First.Bytes(), a); err != nil {
+		if err := writeInterpolateBytes(sqlBuf.Second, sqlBuf.First.Bytes(), collectedArgs); err != nil {
 			return "", nil, errors.Wrapf(err, "[dml] Interpolation failed: %q", sqlBuf.String())
 		}
 		return sqlBuf.Second.String(), nil, nil
 	}
 
-	a.rawReturn = a.rawReturn[:0]
-	a.rawReturn = a.Interfaces(a.raw...) // TODO investigate return
-	return sqlBuf.First.String(), a.rawReturn, nil
+	return sqlBuf.First.String(), collectedArgs.Interfaces(extArgs...), nil
 }
 
-func (a *Arguments) appendConvertedRecordsToArguments() error {
+func (a *Arguments) appendConvertedRecordsToArguments(collectedArgs arguments) (arguments, error) {
 	if a.base.templateStmtCount == 0 {
 		a.base.templateStmtCount = 1
 	}
-	if len(a.args) == 0 && len(a.recs) == 0 {
-		return nil
+	if len(a.arguments) == 0 && len(a.recs) == 0 {
+		return collectedArgs, nil
 	}
 
-	if len(a.args) > 0 && len(a.recs) == 0 && a.hasNamedArgs < 2 {
+	if len(a.arguments) > 0 && len(a.recs) == 0 && a.hasNamedArgs < 2 {
 		if a.base.templateStmtCount > 1 {
-			a.multiplyArguments()
+			collectedArgs = a.multiplyArguments(a.base.templateStmtCount)
 		}
 		// This is also a case where there are no records and only arguments and
 		// those arguments do not contain any name. Then we can skip the column
 		// mapper and ignore the qualifiedColumns.
-		return nil
+		return collectedArgs, nil
 	}
 
 	// TODO refactor prototype and make it performant and beautiful code
-
-	cm := newColumnMap(MakeArgs(len(a.args)+len(a.recs)), "") // can use an arg pool Arguments sync.Pool
+	// collectedArgs
+	cm := newColumnMap(MakeArgs(len(a.arguments)+len(a.recs)), "") // can use an arg pool Arguments sync.Pool
 
 	for tsc := 0; tsc < a.base.templateStmtCount; tsc++ { // only in case of UNION statements in combination with a template SELECT, can be optimized later
 
@@ -709,10 +707,10 @@ func (a *Arguments) appendConvertedRecordsToArguments() error {
 			column, isNamedArg := cutNamedArgStartStr(column) // removes the colon for named arguments
 			cm.columns[0] = column                            // length is always one, as created in newColumnMap
 
-			if isNamedArg && len(a.args) > 0 {
+			if isNamedArg && len(a.arguments) > 0 {
 				// if the colon : cannot be found then a simple place holder ? has been detected
 				if err := a.MapColumns(cm); err != nil {
-					return errors.WithStack(err)
+					return collectedArgs, errors.WithStack(err)
 				}
 			} else {
 				found := false
@@ -726,7 +724,7 @@ func (a *Arguments) appendConvertedRecordsToArguments() error {
 
 					if qRec.Qualifier == qualifier {
 						if err := qRec.Record.MapColumns(cm); err != nil {
-							return errors.WithStack(err)
+							return collectedArgs, errors.WithStack(err)
 						}
 						found = true
 					}
@@ -735,27 +733,32 @@ func (a *Arguments) appendConvertedRecordsToArguments() error {
 					// If the argument cannot be found in the records then we assume the argument
 					// has a numerical position and we grab just the next unnamed argument.
 					if pArg, ok := a.nextUnnamedArg(); ok {
-						cm.Args.args = append(cm.Args.args, pArg)
+						cm.Args.arguments = append(cm.Args.arguments, pArg)
 					}
 				}
 			}
 		}
+		a.nextUnnamedArgPos = 0
+	}
+	if len(cm.Args.arguments) > 0 {
+		collectedArgs = cm.Args.arguments
 	}
 
-	if len(cm.Args.args) > 0 {
-		a.args = cm.Args.args
-	}
-
-	return nil
+	return collectedArgs, nil
 }
 
-func (a *Arguments) prepareArgsInsert(fncArgs ...interface{}) (string, []interface{}, error) {
+// prepareArgsInsert prepares the special arguments for an INSERT statement. The
+// returned interface slice is the same as the `extArgs` slice. extArgs =
+// external arguments.
+func (a *Arguments) prepareArgsInsert(extArgs ...interface{}) (string, []interface{}, error) {
 
 	sqlBuf := bufferpool.GetTwin()
-	cm := pooledColumnMapGet()
+	defer bufferpool.PutTwin(sqlBuf)
+
+	cm := newColumnMap(MakeArgs(10))
 	cm.setColumns(a.base.qualifiedColumns)
-	defer pooledBufferColumnMapPut(cm, sqlBuf, nil)
 	//defer bufferpool.PutTwin(sqlBuf)
+	cm.Args.arguments = append(cm.Args.arguments, a.arguments...)
 	{
 		if _, err := sqlBuf.First.Write(a.base.cachedSQL); err != nil {
 			return "", nil, errors.WithStack(err)
@@ -769,20 +772,19 @@ func (a *Arguments) prepareArgsInsert(fncArgs ...interface{}) (string, []interfa
 			if qRec.Qualifier != "" {
 				return "", nil, errors.Fatal.Newf("[dml] Qualifier in %T is not supported and not needed.", qRec)
 			}
+
 			if err := qRec.Record.MapColumns(cm); err != nil {
 				return "", nil, errors.WithStack(err)
 			}
 		}
-		if len(cm.Args.args) > 0 {
-			if len(cm.Args.args) > 6 { // TODO remove this because of fixing a bug in INSERT tests
-				panic(fmt.Sprintf("%#v\n\n", cm))
-			}
-			a.args = a.args[:0]
-			a.args = append(a.args, cm.Args.args...) // copy fom pool into a.args, maybe this can lead to a bug.
-		}
+		//if len(cm.Args.arguments) > 0 {
+		//	//finalArgs = finalArgs[:0]
+		//	//finalArgs = append(a.args, cm.Args.args...) // copy fom pool into a.args, maybe this can lead to a bug.
+		//}
 	}
 
-	totalArgLen := uint(len(a.args) + len(a.raw))
+	extArgs = append(extArgs, a.raw...)
+	totalArgLen := uint(len(cm.Args.arguments) + len(extArgs))
 
 	// println("totalArgLen", totalArgLen)
 
@@ -795,6 +797,12 @@ func (a *Arguments) prepareArgsInsert(fncArgs ...interface{}) (string, []interfa
 
 		if a.insertRowCount > 0 {
 			columnCount := totalArgLen / a.insertRowCount
+			//if columnCount == 0 {
+			//  // TODO remove debug code
+			//	fmt.Printf("extArgs: %#v\n", extArgs)
+			//	fmt.Printf("cm.Args.arguments: %#v\n\n", cm.Args.arguments)
+			//	panic(fmt.Sprintf("totalArgLen:%d a.insertRowCount:%d\n%q\n", totalArgLen, a.insertRowCount, a.base.cachedSQL))
+			//}
 			writeInsertPlaceholders(sqlBuf.First, a.insertRowCount, columnCount)
 
 		} else if a.insertColumnCount > 0 {
@@ -802,6 +810,9 @@ func (a *Arguments) prepareArgsInsert(fncArgs ...interface{}) (string, []interfa
 			if rowCount == 0 {
 				rowCount = 1
 			}
+			//if a.insertColumnCount == 0 { // TODO remove debug
+			//	panic("a.insertColumnCount")
+			//}
 			writeInsertPlaceholders(sqlBuf.First, rowCount, a.insertColumnCount)
 		}
 		if odkPos > 0 {
@@ -812,32 +823,30 @@ func (a *Arguments) prepareArgsInsert(fncArgs ...interface{}) (string, []interfa
 	}
 
 	if a.Options > 0 {
-		if len(a.raw) > 0 && len(a.recs) == 0 && len(a.args) == 0 {
+		if len(extArgs) > 0 && len(a.recs) == 0 && len(cm.Args.arguments) == 0 {
 			return "", nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
 		}
 
 		if a.Options&argOptionInterpolate != 0 {
-			if err := writeInterpolateBytes(sqlBuf.Second, sqlBuf.First.Bytes(), a); err != nil {
+			if err := writeInterpolateBytes(sqlBuf.Second, sqlBuf.First.Bytes(), cm.Args.arguments); err != nil {
 				return "", nil, errors.Wrapf(err, "[dml] Interpolation failed: %q", sqlBuf.First.String())
 			}
 			//a.Reset() TODO why is this needed?
 			return sqlBuf.Second.String(), nil, nil
 		}
 	}
+	xargs := make(arguments, len(cm.Args.arguments))
+	copy(xargs, cm.Args.arguments)
 
-	// TODO this interface creation process can be further optimized
-	a.rawReturn = a.rawReturn[:0]
-	a.rawReturn = append(a.raw, fncArgs...)
-	a.rawReturn = a.Interfaces(a.rawReturn...)
-	return sqlBuf.First.String(), a.rawReturn, nil
+	return sqlBuf.First.String(), xargs.Interfaces(extArgs...), nil
 }
 
 // nextUnnamedArg returns an unnamed argument by its position.
 func (a *Arguments) nextUnnamedArg() (argument, bool) {
 	var unnamedCounter int
-	lenArg := len(a.args)
+	lenArg := len(a.arguments)
 	for i := 0; i < lenArg && a.nextUnnamedArgPos >= 0; i++ {
-		if arg := a.args[i]; arg.name == "" {
+		if arg := a.arguments[i]; arg.name == "" {
 			if unnamedCounter == a.nextUnnamedArgPos {
 				a.nextUnnamedArgPos++
 				return arg, true
@@ -854,7 +863,7 @@ func (a *Arguments) nextUnnamedArg() (argument, bool) {
 // Implements interface ColumnMapper.
 func (a *Arguments) MapColumns(cm *ColumnMap) error {
 	if cm.Mode() == ColumnMapEntityReadAll {
-		cm.Args.args = append(cm.Args.args, a.args...)
+		cm.Args.arguments = append(cm.Args.arguments, a.arguments...)
 		return cm.Err()
 	}
 	for cm.Next() {
@@ -862,10 +871,10 @@ func (a *Arguments) MapColumns(cm *ColumnMap) error {
 		// access, but first benchmark it. This for loop can be the 3rd one in the
 		// overall chain.
 		c := cm.Column()
-		for _, arg := range a.args {
+		for _, arg := range a.arguments {
 			// Case sensitive comparison
 			if c != "" && arg.name == c {
-				cm.Args.args = append(cm.Args.args, arg)
+				cm.Args.arguments = append(cm.Args.arguments, arg)
 				break
 			}
 		}
@@ -875,38 +884,28 @@ func (a *Arguments) MapColumns(cm *ColumnMap) error {
 
 func (a *Arguments) GoString() string {
 	buf := new(bytes.Buffer)
-	fmt.Fprintf(buf, "dml.MakeArgs(%d)", len(a.args))
-	for _, arg := range a.args {
+	fmt.Fprintf(buf, "dml.MakeArgs(%d)", len(a.arguments))
+	for _, arg := range a.arguments {
 		buf.WriteString(arg.GoString())
 	}
 	return buf.String()
 }
 
-func (a *Arguments) sliceArgumentLen() int {
-	if a == nil {
-		return 0
-	}
-	return len(a.args)
-}
-
 // Len returns the total length of all arguments.
-func (a *Arguments) Len() int {
-	if a == nil {
-		return 0
-	}
+func (as arguments) Len() int {
 	var l int
-	for _, arg := range a.args {
+	for _, arg := range as {
 		l += arg.len()
 	}
 	return l
 }
 
 // Write writes all arguments into buf and separates by a comma.
-func (a Arguments) Write(buf *bytes.Buffer) error {
-	if len(a.args) > 1 {
+func (as arguments) Write(buf *bytes.Buffer) error {
+	if len(as) > 1 {
 		buf.WriteByte('(')
 	}
-	for j, arg := range a.args {
+	for j, arg := range as {
 		if j > 0 {
 			buf.WriteByte(',')
 		}
@@ -914,7 +913,7 @@ func (a Arguments) Write(buf *bytes.Buffer) error {
 			return errors.Wrapf(err, "[dml] args write failed at pos %d with argument %#v", j, arg)
 		}
 	}
-	if len(a.args) > 1 {
+	if len(as) > 1 {
 		buf.WriteByte(')')
 	}
 	return nil
@@ -923,16 +922,16 @@ func (a Arguments) Write(buf *bytes.Buffer) error {
 // Interfaces creates an interface slice with flatend values. Each type is one
 // of the allowed types in driver.Value. It appends its values to the `args`
 // slice.
-func (a *Arguments) Interfaces(args ...interface{}) []interface{} {
+func (as arguments) Interfaces(args ...interface{}) []interface{} {
 	const maxInt64 = 1<<63 - 1
-	if len(a.args) == 0 {
+	if len(as) == 0 {
 		return args
 	}
 	if args == nil {
-		args = make([]interface{}, 0, 2*len(a.args))
+		args = make([]interface{}, 0, 2*len(as))
 	}
 
-	for _, arg := range a.args {
+	for _, arg := range as {
 		switch vv := arg.value.(type) {
 
 		case bool, string, []byte, time.Time, float64, int64, nil:
@@ -1037,22 +1036,26 @@ func (a *Arguments) Interfaces(args ...interface{}) []interface{} {
 	return args
 }
 
-func (a *Arguments) add(v interface{}) *Arguments {
-	if a == nil {
-		a = MakeArgs(defaultArgumentsCapacity)
-	}
-	if l := len(a.args); l > 0 {
+func (as arguments) add(v interface{}) arguments {
+	if l := len(as); l > 0 {
 		// look back if there might be a name.
-		if arg := a.args[l-1]; !arg.isSet {
+		if arg := as[l-1]; !arg.isSet {
 			// The previous call Name() has set the name and now we set the
 			// value, but don't append a new entry.
 			arg.isSet = true
 			arg.value = v
-			a.args[l-1] = arg
-			return a
+			as[l-1] = arg
+			return as
 		}
 	}
-	a.args = append(a.args, argument{isSet: true, value: v})
+	return append(as, argument{isSet: true, value: v})
+}
+
+func (a *Arguments) add(v interface{}) *Arguments {
+	if a == nil {
+		a = MakeArgs(defaultArgumentsCapacity)
+	}
+	a.arguments = a.arguments.add(v)
 	return a
 }
 
@@ -1067,7 +1070,7 @@ func (a *Arguments) Record(qualifier string, record ColumnMapper) *Arguments {
 // are the slices Arguments, records and raw.
 func (a *Arguments) Arguments(args *Arguments) *Arguments {
 	// maybe deprecated this function.
-	a.args = args.args
+	a.arguments = args.arguments
 	a.recs = args.recs
 	a.raw = args.raw
 	return a
@@ -1111,7 +1114,10 @@ func (a *Arguments) NullTimes(nv ...NullTime) *Arguments       { return a.add(nv
 // each other sets the first call to Name to a NULL value. A call to Name should
 // always follow a call to a function type like Int, Float64s or NullTime.
 // Name may contain the placeholder prefix colon.
-func (a *Arguments) Name(n string) *Arguments { a.args = append(a.args, argument{name: n}); return a }
+func (a *Arguments) Name(n string) *Arguments {
+	a.arguments = append(a.arguments, argument{name: n})
+	return a
+}
 
 // TODO: maybe use such a function to set the position, but then add a new field: pos int to the argument struct
 // func (a *Arguments) Pos(n int) *Arguments { return append(a, argument{name: n}) }
@@ -1123,7 +1129,7 @@ func (a *Arguments) Reset() *Arguments {
 		a.recs[i].Record = nil
 	}
 	a.recs = a.recs[:0]
-	a.args = a.args[:0]
+	a.arguments = a.arguments[:0]
 	a.raw = a.raw[:0]
 	a.nextUnnamedArgPos = 0
 	return a
@@ -1134,6 +1140,13 @@ func (a *Arguments) Reset() *Arguments {
 // added to the argument slice. For example driver.Values of type `int` will
 // result in []int.
 func (a *Arguments) DriverValue(dvs ...driver.Valuer) *Arguments {
+	if a == nil {
+		a = MakeArgs(len(dvs))
+	}
+	a.arguments, a.base.ärgErr = driverValue(a.arguments, dvs...)
+	return a
+}
+func driverValue(appendTo arguments, dvs ...driver.Valuer) (arguments, error) {
 	// value is a value that drivers must be able to handle.
 	// It is either nil or an instance of one of these types:
 	//
@@ -1154,8 +1167,7 @@ func (a *Arguments) DriverValue(dvs ...driver.Valuer) *Arguments {
 		// dv cannot be nil
 		v, err := dv.Value()
 		if err != nil {
-			// TODO: Either keep panic or delay the error until another function gets called which also returns an error.
-			panic(errors.Fatal.New(err, "[dml] Driver.value error for %#v", dv))
+			return nil, errors.Fatal.New(err, "[dml] Driver.value error for %#v", dv)
 		}
 
 		switch t := v.(type) {
@@ -1173,7 +1185,7 @@ func (a *Arguments) DriverValue(dvs ...driver.Valuer) *Arguments {
 		case time.Time:
 			times = append(times, t)
 		default:
-			panic(errors.NotSupported.Newf("[dml] Type %#v not supported in value slice: %#v", t, dvs))
+			return nil, errors.NotSupported.Newf("[dml] Type %#v not supported in value slice: %#v", t, dvs)
 		}
 	}
 
@@ -1193,11 +1205,7 @@ func (a *Arguments) DriverValue(dvs ...driver.Valuer) *Arguments {
 	case len(times) > 0:
 		arg.value = times
 	}
-	if a == nil {
-		a = MakeArgs(len(dvs))
-	}
-	a.args = append(a.args, arg)
-	return a
+	return append(appendTo, arg), nil
 }
 
 // DriverValues adds each driver.Value as its own argument to the argument
@@ -1207,6 +1215,10 @@ func (a *Arguments) DriverValues(dvs ...driver.Valuer) *Arguments {
 	if a == nil {
 		a = MakeArgs(len(dvs))
 	}
+	a.arguments, a.base.ärgErr = driverValues(a.arguments, dvs...)
+	return a
+}
+func driverValues(appendToArgs arguments, dvs ...driver.Valuer) (arguments, error) {
 	// value is a value that drivers must be able to handle.
 	// It is either nil or an instance of one of these types:
 	//
@@ -1218,79 +1230,71 @@ func (a *Arguments) DriverValues(dvs ...driver.Valuer) *Arguments {
 	//   time.Time
 	for _, dv := range dvs {
 		if dv == nil {
-			a = a.Null()
+			var a argument
+			a.set(nil)
+			appendToArgs = append(appendToArgs, a)
 			continue
 		}
 		v, err := dv.Value()
 		if err != nil {
-			// TODO: Either keep panic or delay the error until another function gets called which also returns an error.
-			panic(errors.Fatal.New(err, "[dml] Driver.value error for %#v", dv))
+			return nil, errors.Fatal.New(err, "[dml] Driver.Values error for %#v", dv)
 		}
+		var a argument
 		switch t := v.(type) {
 		case nil:
-			a = a.Null()
-		case int64:
-			a = a.Int64(t)
-		case float64:
-			a = a.Float64(t)
-		case bool:
-			a = a.Bool(t)
-		case []byte:
-			a = a.Bytes(t)
-		case string:
-			a = a.String(t)
-		case time.Time:
-			a = a.Time(t)
+			a.set(nil)
+		case int64, float64, bool, []byte, string, time.Time:
+			a.set(t)
 		default:
-			panic(errors.NotSupported.Newf("[dml] Type %#v not supported in value slice: %#v", t, dvs))
+			panic(errors.NotSupported.Newf("[dml] Type %#v not supported in Driver.Values slice: %#v", t, dvs))
 		}
+		appendToArgs = append(appendToArgs, a)
 	}
-	return a
+	return appendToArgs, nil
 }
 
-func iFaceToArgs(values ...interface{}) *Arguments {
-	args := MakeArgs(len(values))
+func iFaceToArgs(args arguments, values ...interface{}) (arguments, error) {
 	for _, val := range values {
 		switch v := val.(type) {
 		case float32:
-			args = args.Float64(float64(v))
+			args = args.add(float64(v))
 		case float64:
-			args = args.Float64(v)
+			args = args.add(v)
 		case int64:
-			args = args.Int64(v)
+			args = args.add(v)
 		case int:
-			args = args.Int64(int64(v))
+			args = args.add(int64(v))
 		case int32:
-			args = args.Int64(int64(v))
+			args = args.add(int64(v))
 		case int16:
-			args = args.Int64(int64(v))
+			args = args.add(int64(v))
 		case int8:
-			args = args.Int64(int64(v))
+			args = args.add(int64(v))
 		case uint32:
-			args = args.Int64(int64(v))
+			args = args.add(int64(v))
 		case uint16:
-			args = args.Int64(int64(v))
+			args = args.add(int64(v))
 		case uint8:
-			args = args.Int64(int64(v))
+			args = args.add(int64(v))
 		case bool:
-			args = args.Bool(v)
+			args = args.add(v)
 		case string:
-			args = args.String(v)
+			args = args.add(v)
 		case []byte:
-			args = args.Bytes(v)
+			args = args.add(v)
 		case time.Time:
-			args = args.Time(v)
+			args = args.add(v)
 		case *time.Time:
 			if v != nil {
-				args = args.Time(*v)
+				args = args.add(*v)
 			}
 		case nil:
-			args = args.Null()
+			args = args.add(nil)
 		default:
-			panic(errors.NotSupported.Newf("[dml] iFaceToArgs type %#v not yet supported", v))
+			return nil, errors.NotSupported.Newf("[dml] iFaceToArgs type %#v not yet supported", v)
 		}
 	}
-	return args
+	return args, nil
 }
 
 // WithDB sets the database query object.
@@ -1321,11 +1325,11 @@ func (a *Arguments) QueryContext(ctx context.Context, args ...interface{}) (*sql
 
 // QueryRow traditional way, allocation heavy.
 func (a *Arguments) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row {
-	sqlStr, rawArgs, err := a.prepareArgs(args...)
+	sqlStr, args, err := a.prepareArgs(args...)
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug("QueryRowContext", log.String("sql", sqlStr), log.String("source", string(a.base.source)), log.Err(err))
 	}
-	return a.base.DB.QueryRowContext(ctx, sqlStr, rawArgs...)
+	return a.base.DB.QueryRowContext(ctx, sqlStr, args...)
 }
 
 // Iterate iterates over the result set by loading only one row each iteration
@@ -1633,7 +1637,7 @@ func (a *Arguments) LoadStrings(ctx context.Context, args ...interface{}) (value
 }
 
 func (a *Arguments) query(ctx context.Context, args ...interface{}) (rows *sql.Rows, err error) {
-	sqlStr, rawArgs, err2 := a.prepareArgs(args...)
+	sqlStr, args, err2 := a.prepareArgs(args...)
 	err = err2
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug("Query", log.String("sql", sqlStr), log.String("source", string(a.base.source)), log.Err(err))
@@ -1642,7 +1646,7 @@ func (a *Arguments) query(ctx context.Context, args ...interface{}) (rows *sql.R
 		return nil, errors.WithStack(err)
 	}
 
-	rows, err = a.base.DB.QueryContext(ctx, sqlStr, rawArgs...)
+	rows, err = a.base.DB.QueryContext(ctx, sqlStr, args...)
 	if err != nil {
 		err = errors.Wrapf(err, "[dml] Query.QueryContext with query %q", sqlStr)
 	}
@@ -1701,7 +1705,7 @@ func loadInt64s(rows *sql.Rows, errIn error) (_ []int64, err error) {
 }
 
 func (a *Arguments) exec(ctx context.Context, args ...interface{}) (result sql.Result, err error) {
-	sqlStr, rawArgs, err2 := a.prepareArgs(args...)
+	sqlStr, args, err2 := a.prepareArgs(args...)
 	err = err2
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug("Exec", log.String("sql", sqlStr), log.String("source", string(a.base.source)), log.Err(err))
@@ -1710,7 +1714,7 @@ func (a *Arguments) exec(ctx context.Context, args ...interface{}) (result sql.R
 		return nil, errors.WithStack(err)
 	}
 
-	result, err = a.base.DB.ExecContext(ctx, sqlStr, rawArgs...)
+	result, err = a.base.DB.ExecContext(ctx, sqlStr, args...)
 	if err != nil {
 		err = errors.Wrapf(err, "[dml] ExecContext with query %q", sqlStr) // err gets catched by the defer
 		return

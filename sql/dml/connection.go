@@ -353,8 +353,8 @@ func (c *ConnPool) WithQueryBuilder(qb QueryBuilder) *Arguments {
 			DB:        c.DB,
 			ärgErr:    errors.WithStack(err),
 		},
-		raw:  argsRaw,
-		args: args[:0],
+		raw:       argsRaw,
+		arguments: args[:0],
 	}
 }
 

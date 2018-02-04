@@ -40,9 +40,9 @@ func BenchmarkInterpolate(b *testing.B) {
 		Int(1).Int(-2).Int(3).Int(4).Int(5).Int(6).Int(7).Int(8).Int(9).Int(10).
 		String("Hello").
 		Bool(true)
-
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if err := writeInterpolate(ipBuf, sqlBytes, args); err != nil {
+		if err := writeInterpolate(ipBuf, sqlBytes, args.arguments); err != nil {
 			b.Fatal(err)
 		}
 		preprocessSink = ipBuf.String()

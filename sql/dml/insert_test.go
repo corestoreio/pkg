@@ -28,7 +28,7 @@ func TestInsert_NoArguments(t *testing.T) {
 	t.Parallel()
 
 	t.Run("ToSQL", func(t *testing.T) {
-		ins := NewInsert("tableA").AddColumns("a", "b")
+		ins := NewInsert("tableA").AddColumns("a", "b").BuildValues()
 		compareToSQL2(t, ins, errors.NoKind,
 			"INSERT INTO `tableA` (`a`,`b`) VALUES (?,?)")
 	})
@@ -43,8 +43,15 @@ func TestInsert_NoArguments(t *testing.T) {
 func TestInsert_SetValuesCount(t *testing.T) {
 	t.Parallel()
 
-	t.Run("not set", func(t *testing.T) {
+	t.Run("No BuildValues", func(t *testing.T) {
 		ins := NewInsert("a").AddColumns("b", "c")
+		compareToSQL2(t, ins, errors.NoKind,
+			"INSERT INTO `a` (`b`,`c`) VALUES ",
+		)
+		assert.Exactly(t, []string{"b", "c"}, ins.qualifiedColumns)
+	})
+	t.Run("BuildValues", func(t *testing.T) {
+		ins := NewInsert("a").AddColumns("b", "c").BuildValues()
 		compareToSQL2(t, ins, errors.NoKind,
 			"INSERT INTO `a` (`b`,`c`) VALUES (?,?)",
 		)
@@ -52,7 +59,7 @@ func TestInsert_SetValuesCount(t *testing.T) {
 	})
 	t.Run("set to two", func(t *testing.T) {
 		compareToSQL2(t,
-			NewInsert("a").AddColumns("b", "c").SetRowCount(2),
+			NewInsert("a").AddColumns("b", "c").SetRowCount(2).BuildValues(),
 			errors.NoKind,
 			"INSERT INTO `a` (`b`,`c`) VALUES (?,?),(?,?)",
 		)

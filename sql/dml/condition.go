@@ -71,7 +71,7 @@ func (o Op) String() string {
 	return string(o)
 }
 
-func (o Op) write(w *bytes.Buffer, args ...argument) (err error) {
+func (o Op) write(w *bytes.Buffer, args arguments) (err error) {
 	var arg argument
 	if len(args) == 1 {
 		arg = args[0]
@@ -89,7 +89,7 @@ func (o Op) write(w *bytes.Buffer, args ...argument) (err error) {
 		_, err = w.WriteString(" IS NOT NULL")
 	case In, NotIn:
 		w.WriteString(" IN ")
-		err = Arguments{args: args}.Write(w)
+		err = args.Write(w)
 	case Like, NotLike:
 		w.WriteString(" LIKE ")
 		err = arg.writeTo(w, 0)
@@ -112,19 +112,19 @@ func (o Op) write(w *bytes.Buffer, args ...argument) (err error) {
 		}
 	case Greatest:
 		w.WriteString(" GREATEST ")
-		err = Arguments{args: args}.Write(w)
+		err = args.Write(w)
 	case Least:
 		w.WriteString(" LEAST ")
-		err = Arguments{args: args}.Write(w)
+		err = args.Write(w)
 	case Coalesce:
 		w.WriteString(" COALESCE ")
-		err = Arguments{args: args}.Write(w)
+		err = args.Write(w)
 	case Xor:
 		w.WriteString(" XOR ")
 		err = arg.writeTo(w, 0)
 	case Exists, NotExists:
 		w.WriteString(" EXISTS ")
-		err = Arguments{args: args}.Write(w)
+		err = args.Write(w)
 	case Less:
 		w.WriteString(" < ")
 		err = arg.writeTo(w, 0)
@@ -176,7 +176,7 @@ type Condition struct {
 		// arg gets written into the SQL string as a persistent argument
 		arg argument // Only set in case of no expression
 		// args same as arg but only used in case of an expression.
-		args *Arguments
+		args arguments
 		// Select adds a sub-select to the where statement. Column must be
 		// either a column name or anything else which can handle the result of
 		// a sub-select.
@@ -454,7 +454,7 @@ func (c *Condition) Expr(expression string) *Condition {
 
 func (c *Condition) Int(i int) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.Int64(int64(i))
+		c.Right.args = c.Right.args.add(int64(i))
 		return c
 	}
 	c.Right.arg.set(i)
@@ -463,7 +463,7 @@ func (c *Condition) Int(i int) *Condition {
 
 func (c *Condition) Ints(i ...int) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.Ints(i...)
+		c.Right.args = c.Right.args.add(i)
 		return c
 	}
 	c.Right.arg.set(i)
@@ -472,7 +472,7 @@ func (c *Condition) Ints(i ...int) *Condition {
 
 func (c *Condition) Int64(i int64) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.Int64(i)
+		c.Right.args = c.Right.args.add(i)
 		return c
 	}
 	c.Right.arg.set(i)
@@ -481,7 +481,7 @@ func (c *Condition) Int64(i int64) *Condition {
 
 func (c *Condition) Int64s(i ...int64) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.Int64s(i...)
+		c.Right.args = c.Right.args.add(i)
 		return c
 	}
 	c.Right.arg.set(i)
@@ -490,7 +490,7 @@ func (c *Condition) Int64s(i ...int64) *Condition {
 
 func (c *Condition) Uint64(i uint64) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.Uint64(i)
+		c.Right.args = c.Right.args.add(i)
 		return c
 	}
 	c.Right.arg.set(i)
@@ -499,7 +499,7 @@ func (c *Condition) Uint64(i uint64) *Condition {
 
 func (c *Condition) Uint64s(i ...uint64) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.Uint64s(i...)
+		c.Right.args = c.Right.args.add(i)
 		return c
 	}
 	c.Right.arg.set(i)
@@ -513,9 +513,9 @@ func (c *Condition) Decimal(d Decimal) *Condition {
 	v := d.String()
 	if c.isExpression() {
 		if v == sqlStrNullUC {
-			c.Right.args = c.Right.args.Null()
+			c.Right.args = c.Right.args.add(nil)
 		} else {
-			c.Right.args = c.Right.args.String(v)
+			c.Right.args = c.Right.args.add(v)
 		}
 		return c
 	}
@@ -529,7 +529,7 @@ func (c *Condition) Decimal(d Decimal) *Condition {
 
 func (c *Condition) Float64(f float64) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.Float64(f)
+		c.Right.args = c.Right.args.add(f)
 		return c
 	}
 	c.Right.arg.set(f)
@@ -537,7 +537,7 @@ func (c *Condition) Float64(f float64) *Condition {
 }
 func (c *Condition) Float64s(f ...float64) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.Float64s(f...)
+		c.Right.args = c.Right.args.add(f)
 		return c
 	}
 	c.Right.arg.set(f)
@@ -545,7 +545,7 @@ func (c *Condition) Float64s(f ...float64) *Condition {
 }
 func (c *Condition) Str(s string) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.String(s)
+		c.Right.args = c.Right.args.add(s)
 		return c
 	}
 	c.Right.arg.set(s)
@@ -554,7 +554,7 @@ func (c *Condition) Str(s string) *Condition {
 
 func (c *Condition) Strs(s ...string) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.Strings(s...)
+		c.Right.args = c.Right.args.add(s)
 		return c
 	}
 	c.Right.arg.set(s)
@@ -563,7 +563,7 @@ func (c *Condition) Strs(s ...string) *Condition {
 
 func (c *Condition) Bool(b bool) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.Bool(b)
+		c.Right.args = c.Right.args.add(b)
 		return c
 	}
 	c.Right.arg.set(b)
@@ -572,7 +572,7 @@ func (c *Condition) Bool(b bool) *Condition {
 
 func (c *Condition) Bools(b ...bool) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.Bools(b...)
+		c.Right.args = c.Right.args.add(b)
 		return c
 	}
 	c.Right.arg.set(b)
@@ -584,7 +584,7 @@ func (c *Condition) Bools(b ...bool) *Condition {
 // hex encoded.
 func (c *Condition) Bytes(p []byte) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.Bytes(p)
+		c.Right.args = c.Right.args.add(p)
 		return c
 	}
 	c.Right.arg.set(p)
@@ -593,7 +593,7 @@ func (c *Condition) Bytes(p []byte) *Condition {
 
 func (c *Condition) BytesSlice(p ...[]byte) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.BytesSlice(p...)
+		c.Right.args = c.Right.args.add(p)
 		return c
 	}
 	c.Right.arg.set(p)
@@ -602,7 +602,7 @@ func (c *Condition) BytesSlice(p ...[]byte) *Condition {
 
 func (c *Condition) Time(t time.Time) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.Time(t)
+		c.Right.args = c.Right.args.add(t)
 		return c
 	}
 	c.Right.arg.set(t)
@@ -611,7 +611,7 @@ func (c *Condition) Time(t time.Time) *Condition {
 
 func (c *Condition) Times(t ...time.Time) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.Times(t...)
+		c.Right.args = c.Right.args.add(t)
 		return c
 	}
 	c.Right.arg.set(t)
@@ -620,7 +620,7 @@ func (c *Condition) Times(t ...time.Time) *Condition {
 
 func (c *Condition) NullString(nv NullString) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.NullString(nv)
+		c.Right.args = c.Right.args.add(nv)
 		return c
 	}
 	c.Right.arg.set(nv)
@@ -629,7 +629,7 @@ func (c *Condition) NullString(nv NullString) *Condition {
 
 func (c *Condition) NullStrings(nv ...NullString) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.NullStrings(nv...)
+		c.Right.args = c.Right.args.add(nv)
 		return c
 	}
 	c.Right.arg.set(nv)
@@ -638,7 +638,7 @@ func (c *Condition) NullStrings(nv ...NullString) *Condition {
 
 func (c *Condition) NullFloat64(nv NullFloat64) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.NullFloat64(nv)
+		c.Right.args = c.Right.args.add(nv)
 		return c
 	}
 	c.Right.arg.set(nv)
@@ -647,7 +647,7 @@ func (c *Condition) NullFloat64(nv NullFloat64) *Condition {
 
 func (c *Condition) NullFloat64s(nv ...NullFloat64) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.NullFloat64s(nv...)
+		c.Right.args = c.Right.args.add(nv)
 		return c
 	}
 	c.Right.arg.set(nv)
@@ -656,7 +656,7 @@ func (c *Condition) NullFloat64s(nv ...NullFloat64) *Condition {
 
 func (c *Condition) NullInt64(nv NullInt64) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.NullInt64(nv)
+		c.Right.args = c.Right.args.add(nv)
 		return c
 	}
 	c.Right.arg.set(nv)
@@ -665,7 +665,7 @@ func (c *Condition) NullInt64(nv NullInt64) *Condition {
 
 func (c *Condition) NullInt64s(nv ...NullInt64) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.NullInt64s(nv...)
+		c.Right.args = c.Right.args.add(nv)
 		return c
 	}
 	c.Right.arg.set(nv)
@@ -674,7 +674,7 @@ func (c *Condition) NullInt64s(nv ...NullInt64) *Condition {
 
 func (c *Condition) NullBool(nv NullBool) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.NullBool(nv)
+		c.Right.args = c.Right.args.add(nv)
 		return c
 	}
 	c.Right.arg.set(nv)
@@ -683,7 +683,7 @@ func (c *Condition) NullBool(nv NullBool) *Condition {
 
 func (c *Condition) NullBools(nv ...NullBool) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.NullBools(nv...)
+		c.Right.args = c.Right.args.add(nv)
 		return c
 	}
 	c.Right.arg.set(nv)
@@ -692,7 +692,7 @@ func (c *Condition) NullBools(nv ...NullBool) *Condition {
 
 func (c *Condition) NullTime(nv NullTime) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.NullTime(nv)
+		c.Right.args = c.Right.args.add(nv)
 		return c
 	}
 	c.Right.arg.set(nv)
@@ -701,7 +701,7 @@ func (c *Condition) NullTime(nv NullTime) *Condition {
 
 func (c *Condition) NullTimes(nv ...NullTime) *Condition {
 	if c.isExpression() {
-		c.Right.args = c.Right.args.NullTimes(nv...)
+		c.Right.args = c.Right.args.add(nv)
 		return c
 	}
 	c.Right.arg.set(nv)
@@ -721,7 +721,7 @@ func (c *Condition) Values() *Condition {
 // added to the argument slice. For example driver.Values of type `int` will
 // result in []int.
 func (c *Condition) DriverValue(dv ...driver.Valuer) *Condition {
-	c.Right.args = c.Right.args.DriverValue(dv...)
+	c.Right.args = c.Right.args.add(dv)
 	return c
 }
 
@@ -729,7 +729,8 @@ func (c *Condition) DriverValue(dv ...driver.Valuer) *Condition {
 // slice. It panics if the underlying type is not one of the allowed of
 // interface driver.Valuer.
 func (c *Condition) DriverValues(dv ...driver.Valuer) *Condition {
-	c.Right.args = c.Right.args.DriverValues(dv...)
+	// TODO the type must be marked if func DriverValue or DriverValues, only mark this one, the other is default
+	c.Right.args = c.Right.args.add(dv)
 	return c
 }
 
@@ -819,7 +820,7 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 		w.WriteByte('(')
 		// Code is a bit duplicated but can be refactored later. The order of
 		// the `case`s has been carefully implemented.
-		switch {
+		switch lenArgs := len(cnd.Right.args); true {
 		case cnd.IsLeftExpression:
 			var phCount int
 			phCount, err = writeExpression(w, cnd.Left, cnd.Right.args)
@@ -829,12 +830,12 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 
 			// Only write the operator in case there is no place holder and we
 			// have one value.
-			if phCount == 0 && (cnd.Right.args.argsCount() == 1 || cnd.Right.arg.isSet) && cnd.Operator > 0 {
+			if phCount == 0 && (lenArgs == 1 || cnd.Right.arg.isSet) && cnd.Operator > 0 {
 				eArg := cnd.Right.arg
 				if !eArg.isSet {
-					eArg = cnd.Right.args.args[0]
+					eArg = cnd.Right.args[0]
 				}
-				cnd.Operator.write(w, eArg)
+				cnd.Operator.write(w, arguments{eArg})
 			}
 
 			//else if len(cnd.Right.args) > 0 {
@@ -846,7 +847,7 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 
 		case cnd.Right.IsExpression:
 			Quoter.WriteIdentifier(w, cnd.Left)
-			if err = cnd.Operator.write(w); err != nil {
+			if err = cnd.Operator.write(w, nil); err != nil {
 				return nil, errors.WithStack(err)
 			}
 			if _, err = writeExpression(w, cnd.Right.Column, cnd.Right.args); err != nil {
@@ -854,7 +855,7 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 			}
 		case cnd.Right.Sub != nil:
 			Quoter.WriteIdentifier(w, cnd.Left)
-			if err = cnd.Operator.write(w); err != nil {
+			if err = cnd.Operator.write(w, nil); err != nil {
 				return nil, errors.WithStack(err)
 			}
 			w.WriteByte('(')
@@ -864,34 +865,34 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 			}
 			w.WriteByte(')')
 
-		case cnd.Right.arg.isSet && cnd.Right.args.isEmpty(): // One Argument and no expression
+		case cnd.Right.arg.isSet && lenArgs == 0: // One Argument and no expression
 			Quoter.WriteIdentifier(w, cnd.Left)
 			if cnd.Right.arg.len() > 1 && cnd.Operator == 0 { // no operator but slice applied, so creating an IN query.
 				cnd.Operator = In
 			}
-			if err = cnd.Operator.write(w, cnd.Right.arg); err != nil {
+			if err = cnd.Operator.write(w, arguments{cnd.Right.arg}); err != nil {
 				return nil, errors.WithStack(err)
 			}
 
-		case !cnd.Right.arg.isSet && !cnd.Right.args.isEmpty():
+		case !cnd.Right.arg.isSet && lenArgs > 0:
 			Quoter.WriteIdentifier(w, cnd.Left)
 			if cnd.Right.args.Len() > 1 && cnd.Operator == 0 { // no operator but slice applied, so creating an IN query.
 				cnd.Operator = In
 			}
-			if err = cnd.Operator.write(w, cnd.Right.args.args...); err != nil {
+			if err = cnd.Operator.write(w, cnd.Right.args); err != nil {
 				return nil, errors.WithStack(err)
 			}
 
 		case cnd.Right.Column != "": // compares the left column with the right column
 			Quoter.WriteIdentifier(w, cnd.Left)
-			if err = cnd.Operator.write(w); err != nil {
+			if err = cnd.Operator.write(w, nil); err != nil {
 				return nil, errors.WithStack(err)
 			}
 			Quoter.WriteIdentifier(w, cnd.Right.Column)
 
 		case cnd.Right.PlaceHolder != "":
 			Quoter.WriteIdentifier(w, cnd.Left)
-			if err = cnd.Operator.write(w); err != nil {
+			if err = cnd.Operator.write(w, nil); err != nil {
 				return nil, errors.WithStack(err)
 			}
 
@@ -911,13 +912,13 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 				w.WriteString(cnd.Right.PlaceHolder)
 			}
 
-		case !cnd.Right.arg.isSet && cnd.Right.args.isEmpty(): // No Argument at all, which kinda is the default case
+		case !cnd.Right.arg.isSet && lenArgs == 0: // No Argument at all, which kinda is the default case
 			Quoter.WriteIdentifier(w, cnd.Left)
 			cOp := cnd.Operator
 			if cOp == 0 {
 				cOp = Null
 			}
-			if err = cOp.write(w); err != nil {
+			if err = cOp.write(w, nil); err != nil {
 				return nil, errors.WithStack(err)
 			}
 
@@ -940,7 +941,7 @@ func (cs Conditions) writeSetClauses(w *bytes.Buffer, placeHolders []string) ([]
 		w.WriteByte('=')
 
 		switch {
-		case cnd.Right.arg.isSet && cnd.Right.args.isEmpty(): // One Argument and no expression
+		case cnd.Right.arg.isSet && len(cnd.Right.args) == 0: // One Argument and no expression
 			cnd.Right.arg.writeTo(w, 0)
 		case cnd.Right.IsExpression: // maybe that case is superfluous
 			if _, err := writeExpression(w, cnd.Right.Column, cnd.Right.args); err != nil {

@@ -156,7 +156,7 @@ func TestInsert_Prepare(t *testing.T) {
 		prep.ExpectExec().WithArgs("x@y.z", 44, now().Add(time.Minute)).WillReturnResult(sqlmock.NewResult(5, 0))
 
 		stmt, err := dml.NewInsert("customer_entity").
-			AddColumns("email", "group_id", "created_at").
+			AddColumns("email", "group_id", "created_at").BuildValues().
 			WithDB(dbc.DB).
 			Prepare(context.TODO())
 		require.NoError(t, err, "failed creating a prepared statement")
@@ -199,6 +199,7 @@ func TestInsert_Prepare(t *testing.T) {
 
 		stmt, err := dml.NewInsert("customer_entity").
 			AddColumns("email", "group_id").
+			BuildValues().
 			SetRowCount(2).
 			WithDB(dbc.DB).
 			Prepare(context.TODO())
@@ -245,6 +246,7 @@ func TestInsert_Prepare(t *testing.T) {
 
 		stmt, err := dml.NewInsert("dml_person").
 			AddColumns("name", "email").
+			BuildValues().
 			WithDB(dbc.DB).
 			Prepare(context.TODO())
 		require.NoError(t, err, "failed creating a prepared statement")
@@ -290,6 +292,7 @@ func TestInsert_Prepare(t *testing.T) {
 
 		stmt, err := dml.NewInsert("dml_person").
 			AddColumns("name", "email").
+			BuildValues().
 			WithDB(dbc.DB).
 			Prepare(context.TODO())
 		require.NoError(t, err, "failed creating a prepared statement")
@@ -331,9 +334,10 @@ func TestInsert_WithLogger(t *testing.T) {
 
 		t.Run("Prepare", func(t *testing.T) {
 			defer buf.Reset()
-			stmt, err := d.Prepare(context.TODO())
+			stmt, err := d.BuildValues().Prepare(context.TODO())
 			require.NoError(t, err)
-			defer stmt.Close()
+			defer dmltest.Close(t, stmt)
+			d.IsBuildValues = false
 
 			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ04\" insert_id: \"UNIQ08\" table: \"dml_people\" duration: 0 error: \"<nil>\" sql: \"REPLACE /*ID$UNIQ08*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\"\n",
 				buf.String())
@@ -378,7 +382,8 @@ func TestInsert_WithLogger(t *testing.T) {
 
 		t.Run("Prepare", func(t *testing.T) {
 			defer buf.Reset()
-			stmt, err := d.Prepare(context.TODO())
+			stmt, err := d.BuildValues().Prepare(context.TODO())
+			d.IsBuildValues = false
 			require.NoError(t, err)
 			defer stmt.Close()
 
@@ -388,7 +393,8 @@ func TestInsert_WithLogger(t *testing.T) {
 
 		t.Run("Prepare Exec", func(t *testing.T) {
 			defer buf.Reset()
-			stmt, err := d.Prepare(context.TODO())
+			stmt, err := d.BuildValues().Prepare(context.TODO())
+			d.IsBuildValues = false
 			require.NoError(t, err)
 			defer stmt.Close()
 

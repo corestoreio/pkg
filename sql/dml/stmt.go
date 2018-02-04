@@ -43,9 +43,9 @@ type Stmt struct {
 func (st *Stmt) WithArgs(rawArgs ...interface{}) *Arguments {
 	var args [defaultArgumentsCapacity]argument
 	return &Arguments{
-		base: st.base,
-		raw:  rawArgs,
-		args: args[:0],
+		base:      st.base,
+		raw:       rawArgs,
+		arguments: args[:0],
 	}
 }
 
@@ -114,9 +114,9 @@ func (st *StmtRedux) WithArgs(rawArgs ...interface{}) *Arguments {
 	// todo: correct implementation
 	var args [defaultArgumentsCapacity]argument
 	return &Arguments{
-		base: st.stmt.base,
-		raw:  rawArgs,
-		args: args[:0],
+		base:      st.stmt.base,
+		raw:       rawArgs,
+		arguments: args[:0],
 	}
 }
 

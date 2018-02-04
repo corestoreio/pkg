@@ -341,17 +341,18 @@ func TestIFaceToArgs(t *testing.T) {
 				t.Error("Expecting a panic but got nothing")
 			}
 		}()
-		_ = iFaceToArgs(time.Minute)
+		_, _ = iFaceToArgs(arguments{}, time.Minute)
 	})
 	t.Run("all types", func(t *testing.T) {
 		nt := now()
-		args := iFaceToArgs(
+		args, err := iFaceToArgs(arguments{},
 			float32(2.3), float64(2.2),
 			int64(5), int(6), int32(7), int16(8), int8(9),
 			uint32(math.MaxUint32), uint16(math.MaxUint16), uint8(math.MaxUint8),
 			true, "Gopher", []byte(`Hello`),
 			now(), &nt, nil,
 		)
+		require.NoError(t, err)
 
 		assert.Exactly(t, []interface{}{
 			float64(2.299999952316284), float64(2.2),

@@ -77,8 +77,8 @@ type builderCommon struct {
 	id  string     // tracing ID
 	Log log.Logger // Log optional logger
 
-	// ärgErr represents an argument error caused in one of the three With
-	// functions.
+	// ärgErr represents an argument error caused in any of the other functions.
+	// A stack has been attached to the error to identify properly the source.
 	ärgErr error // Sorry Germans for that terrible pun #notSorry
 
 	defaultQualifier string
@@ -104,7 +104,6 @@ type builderCommon struct {
 	// Bytes.
 	EstimatedCachedSQLSize uint16
 
-	rwmu sync.RWMutex
 	// cachedSQL contains the final SQL string which gets send to the server.
 	cachedSQL []byte
 	// qualifiedColumns gets collected before calling ToSQL, and clearing the all
@@ -178,7 +177,6 @@ const estimatedCachedSQLSize = 1024
 // BuilderBase contains fields which all SQL query builder have in common, the
 // same base. Exported for documentation reasons.
 type BuilderBase struct {
-	builderCommon
 	RawFullSQL string
 	Table      id
 	// PropagationStopped set to true if you would like to interrupt the
@@ -192,17 +190,22 @@ type BuilderBase struct {
 	// has been requested. for every new iteration the propagation must stop at
 	// this position.
 	propagationStoppedAt int
+
+	rwmu sync.RWMutex
+	builderCommon
 }
 
 // WithArgs sets the optional interfaced arguments for the later execution.
 func (bb *BuilderBase) withArgs(qb queryBuilder, rawArgs ...interface{}) *Arguments {
 	sqlBytes, err := bb.buildToSQL(qb) // sqlBytes owned by buildToSQL
+	bb.rwmu.Lock()
 	var args [defaultArgumentsCapacity]argument
 	a := Arguments{
-		base: bb.builderCommon, // might be a source of a possible race condition, fix later
-		raw:  rawArgs,
-		args: args[:0],
+		base:      bb.builderCommon, // might be a source of a possible race condition, fix later
+		raw:       rawArgs,
+		arguments: args[:0],
 	}
+	bb.rwmu.Unlock()
 	a.base.cachedSQL = sqlBytes
 	a.base.ärgErr = errors.WithStack(err)
 	return &a

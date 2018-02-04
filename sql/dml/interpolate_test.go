@@ -151,16 +151,16 @@ func TestInterpolate_ArgValue(t *testing.T) {
 	t.Run("equal", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ? AND e = ? AND f = ? AND g = ? AND h = ?").
-				DriverValue(aInt).
-				DriverValue(aStr).
-				DriverValue(aFlo).
-				DriverValue(aTim).
-				DriverValue(aBoo).
-				DriverValue(aByt).
-				DriverValue(aNil).
-				DriverValue(aNil),
+				DriverValues(aInt).
+				DriverValues(aStr).
+				DriverValues(aFlo).
+				DriverValues(aTim).
+				DriverValues(aBoo).
+				DriverValues(aByt).
+				DriverValues(aNil).
+				DriverValues(aNil),
 			errors.NoKind,
-			"SELECT * FROM x WHERE a = (4711) AND b = ('Goph\\'er') AND c = (2.7182818) AND d = ('2006-01-02 19:04:05') AND e = (1) AND f = ('BytyGophe\\'r') AND g = (NULL) AND h = (NULL)",
+			"SELECT * FROM x WHERE a = 4711 AND b = 'Goph\\'er' AND c = 2.7182818 AND d = '2006-01-02 19:04:05' AND e = 1 AND f = 'BytyGophe\\'r' AND g = NULL AND h = NULL",
 		)
 	})
 	t.Run("in", func(t *testing.T) {
@@ -184,22 +184,11 @@ func TestInterpolate_ArgValue(t *testing.T) {
 				t.Error("Expecting a panic but got nothing")
 			}
 		}()
-		_, _, _ = Interpolate("SELECT * FROM x WHERE a = ?").DriverValue(argValUint16(0)).ToSQL()
+		_, _, _ = Interpolate("SELECT * FROM x WHERE a = ?").DriverValues(argValUint16(0)).ToSQL()
 	})
 	t.Run("valuer error", func(t *testing.T) {
-		defer func() {
-			if r := recover(); r != nil {
-				if err, ok := r.(error); ok {
-					err = errors.Cause(err)
-					assert.True(t, errors.Aborted.Match(err), "%+v", err)
-				} else {
-					t.Errorf("Panic should contain an error but got:\n%+v", r)
-				}
-			} else {
-				t.Error("Expecting a panic but got nothing")
-			}
-		}()
-		_, _, _ = Interpolate("SELECT * FROM x WHERE a = ?").DriverValue(argValUint16(1)).ToSQL()
+		_, _, err := Interpolate("SELECT * FROM x WHERE a = ?").DriverValues(argValUint16(1)).ToSQL()
+		assert.True(t, errors.Is(err, errors.Aborted), "error should have kind aborted")
 	})
 }
 
@@ -386,7 +375,7 @@ func TestInterpolate_Slices_Strings_Between(t *testing.T) {
 	t.Run("BETWEEN at the end", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a IN ? AND b IN ? AND c NOT IN ? AND d BETWEEN ? AND ?").
-				ArgUnions(MakeArgs(5).Ints(1).Ints(1, 2, 3).Int64s(5, 6, 7).String("wat").String("ok")),
+				Arguments(MakeArgs(5).Ints(1).Ints(1, 2, 3).Int64s(5, 6, 7).String("wat").String("ok")),
 			errors.NoKind,
 			"SELECT * FROM x WHERE a IN (1) AND b IN (1,2,3) AND c NOT IN (5,6,7) AND d BETWEEN 'wat' AND 'ok'",
 		)
@@ -394,7 +383,7 @@ func TestInterpolate_Slices_Strings_Between(t *testing.T) {
 	t.Run("BETWEEN in the middle", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a IN ? AND b IN ? AND d BETWEEN ? AND ? AND c NOT IN ?").
-				ArgUnions(MakeArgs(5).Ints(1).Ints(1, 2, 3).String("wat").String("ok").Int64s(5, 6, 7)),
+				Arguments(MakeArgs(5).Ints(1).Ints(1, 2, 3).String("wat").String("ok").Int64s(5, 6, 7)),
 			errors.NoKind,
 			"SELECT * FROM x WHERE a IN (1) AND b IN (1,2,3) AND d BETWEEN 'wat' AND 'ok' AND c NOT IN (5,6,7)",
 		)
@@ -542,7 +531,7 @@ func TestInterpolate_Different(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		str, _, err := Interpolate(test.sql).ArgUnions(test.Arguments).ToSQL()
+		str, _, err := Interpolate(test.sql).Arguments(test.Arguments).ToSQL()
 		if !test.errKind.Empty() {
 			if !test.errKind.Match(err) {
 				isErr := test.errKind.Match(err)
@@ -558,7 +547,7 @@ func TestInterpolate_Different(t *testing.T) {
 
 func TestInterpolate_MultipleSingleQuotes(t *testing.T) {
 	const rawSQL = "DELETE FROM `tableA` WHERE (`colA` >= 3.14159) AND (`colB` IN ?) AND (`colC` = 'He\\'llo') ORDER BY `id` LIMIT 10"
-	str, args, err := Interpolate(rawSQL).ArgUnions(MakeArgs(1).Float64s(3.1, 2.4)).ToSQL()
+	str, args, err := Interpolate(rawSQL).Arguments(MakeArgs(1).Float64s(3.1, 2.4)).ToSQL()
 	assert.NoError(t, err)
 	assert.Nil(t, args)
 	assert.Exactly(t, "DELETE FROM `tableA` WHERE (`colA` >= 3.14159) AND (`colB` IN (3.1,2.4)) AND (`colC` = 'He\\'llo') ORDER BY `id` LIMIT 10", str)

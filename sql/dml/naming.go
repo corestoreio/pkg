@@ -216,7 +216,7 @@ func (idc ids) appendConditions(expressions Conditions) (ids, error) {
 			idf.Expression = idf.Name
 			idf.Name = ""
 
-			if e.Right.args.argsCount() > 0 {
+			if len(e.Right.args) > 0 {
 				if err := writeInterpolate(buf, idf.Expression, e.Right.args); err != nil {
 					bufferpool.Put(buf)
 					return nil, errors.Wrapf(err, "[dml] ids.appendConditions with expression: %q", idf.Expression)

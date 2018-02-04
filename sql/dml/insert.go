@@ -252,7 +252,7 @@ func (b *Insert) WithArgs(args ...interface{}) *Arguments {
 	}
 
 	for _, cv := range b.Pairs {
-		a.args = append(a.args, cv.Right.arg)
+		a.arguments = append(a.arguments, cv.Right.arg)
 	}
 
 	a.insertColumnCount = uint(len(b.Columns))
