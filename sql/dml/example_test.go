@@ -79,7 +79,19 @@ func ExampleNewInsert() {
 	//(1,2,'Three',NULL),(5,6,'Seven',3.14156)
 }
 
-func ExampleNewInsert_SetRowCount() {
+func ExampleInsert_SetRowCount() {
+	// RowCount of 4 allows to insert four rows with a single INSERT query.
+	// Useful when creating prepared statements.
+	i := dml.NewInsert("dml_people").AddColumns("id", "name", "email").SetRowCount(4).BuildValues()
+	writeToSQLAndInterpolate(i)
+
+	// Output:
+	//Statement:
+	//INSERT INTO `dml_people` (`id`,`name`,`email`) VALUES
+	//(?,?,?),(?,?,?),(?,?,?),(?,?,?)
+}
+
+func ExampleInsert_SetRowCount_withdata() {
 	i := dml.NewInsert("catalog_product_link").SetRowCount(3).WithArgs(
 		2046, 33, 3,
 		2046, 34, 3,
@@ -96,7 +108,7 @@ func ExampleNewInsert_SetRowCount() {
 	//INSERT INTO `catalog_product_link` VALUES (2046,33,3),(2046,34,3),(2046,35,3)
 }
 
-func ExampleInsert_AddValues() {
+func ExampleInsert_WithArgs_rawData() {
 	// Without any columns you must for each row call AddArgs. Here we insert
 	// three rows at once.
 	i := dml.NewInsert("catalog_product_link").WithArgs(
@@ -159,18 +171,6 @@ func ExampleInsert_AddOnDuplicateKey() {
 	//`email`=VALUES(`email`)
 }
 
-func ExampleInsert_SetRowCount() {
-	// RowCount of 4 allows to insert four rows with a single INSERT query.
-	// Useful when creating prepared statements.
-	i := dml.NewInsert("dml_people").AddColumns("id", "name", "email").SetRowCount(4)
-	writeToSQLAndInterpolate(i)
-
-	// Output:
-	//Statement:
-	//INSERT INTO `dml_people` (`id`,`name`,`email`) VALUES
-	//(?,?,?),(?,?,?),(?,?,?),(?,?,?)
-}
-
 func ExampleInsert_FromSelect_withPlaceHolders() {
 	ins := dml.NewInsert("tableA")
 
@@ -227,7 +227,7 @@ func ExampleInsert_FromSelect_withoutPlaceHolders() {
 	//`id` DESC LIMIT 20 OFFSET 0
 }
 
-func ExampleInsert_Pair() {
+func ExampleInsert_WithPairs() {
 	ins := dml.NewInsert("catalog_product_link").
 		WithPairs(
 			// First row

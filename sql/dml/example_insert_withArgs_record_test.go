@@ -61,7 +61,7 @@ func (pe productEntity) MapColumns(cm *dml.ColumnMap) error {
 // `catalog_product_entity`. First statement by specifying the exact column
 // names. In the second example all columns values are getting inserted and you
 // specify the number of place holders per record.
-func ExampleInsert_WithArgsRecord() {
+func ExampleInsert_WithArgs_record() {
 
 	objs := []productEntity{
 		{1, 5, "simple", dml.MakeNullString("SOA9"), false},

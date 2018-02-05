@@ -97,7 +97,7 @@ func (ts *tableStore) MapColumns(cm *dml.ColumnMap) error {
 	return cm.Err()
 }
 
-func ExampleSelect_WithRecords() {
+func ExampleSelect_WithArgs_record() {
 
 	ce := &catalogCategoryEntity{678, 6, 670, "2/13/670/678", 0, now()}
 	st := &tableStore{17, "ch-en", 2, 4, "Swiss EN Store"}

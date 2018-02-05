@@ -146,7 +146,7 @@ func (b *builderCommon) buildToSQL(qb queryBuilder) ([]byte, error) {
 	return rawSQL, nil
 }
 
-func (b *builderCommon) prepare(ctx context.Context, db QueryExecPreparer, qb queryBuilder, source rune) (_ *Stmt, err error) {
+func (b *builderCommon) prepare(ctx context.Context, db Preparer, qb queryBuilder, source rune) (_ *Stmt, err error) {
 	var rawQuery []byte
 	rawQuery, err = b.buildToSQL(qb)
 	if b.Log != nil && b.Log.IsDebug() {

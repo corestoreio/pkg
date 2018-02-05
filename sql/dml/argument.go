@@ -597,13 +597,6 @@ func (a *Arguments) isEmpty() bool {
 	return len(a.raw) == 0 && len(a.arguments) == 0 && len(a.recs) == 0
 }
 
-func (a *Arguments) argsCount() int {
-	if a == nil {
-		return 0
-	}
-	return len(a.arguments)
-}
-
 // multiplyArguments is only applicable when using *Union as a template.
 // multiplyArguments repeats the `args` variable n-times to match the number of
 // generated SELECT queries in the final UNION statement. It should be called
@@ -660,7 +653,7 @@ func (a *Arguments) prepareArgs(extArgs ...interface{}) (_ string, _ []interface
 		}
 	}
 
-	//var collectedArgs = append(arguments{}, a.arguments...) // TODO sync.Pool or not, investigate via benchmark, Tests are succeeding `-count=99 -race`
+	//var collectedArgs = append(arguments{}, a.arguments...) // TODO sync.Pool or not, investigate via benchmark, Tests are succeeding `-count=99 [-race]`
 
 	sqlBuf := bufferpool.GetTwin()
 	collectedArgs := pooledArgumentsGet()
@@ -1338,8 +1331,6 @@ var pooledColumnMap = sync.Pool{
 }
 
 func pooledColumnMapGet() *ColumnMap {
-	// TODO(CYS) to use this correctly the field `arguments` in type ColumnMap must be a
-	// pointer to the slice, I think.
 	return pooledColumnMap.Get().(*ColumnMap)
 }
 

@@ -72,7 +72,7 @@ func (pe *categoryEntity) MapColumns(cm *dml.ColumnMap) error {
 // `catalog_category_entity` with the fix specified columns. The Go type
 // categoryEntity implements the dml.ColumnMapper interface and can provide the
 // required arguments.
-func ExampleUpdate_WithRecords() {
+func ExampleUpdate_WithArgs_record() {
 
 	ce := &categoryEntity{345, 6, "p123", dml.MakeNullString("4/5/6/7"), []string{"saleAutumn", "saleShoe"}}
 
