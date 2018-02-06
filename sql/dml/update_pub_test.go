@@ -17,6 +17,7 @@ package dml_test
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"fmt"
 	"sync/atomic"
 	"testing"
@@ -42,23 +43,31 @@ func TestUpdate_WithArgs(t *testing.T) {
 	})
 
 	t.Run("alias mismatch Exec", func(t *testing.T) {
-		mu := dml.NewUpdate("catalog_product_entity").
+
+		res, err := dml.NewUpdate("catalog_product_entity").
 			AddColumns("sku", "updated_at").
-			Where(dml.Column("entity_id").In().PlaceHolder()).WithDB(dbMock{})
-		mu.SetClausAliases = []string{"update_sku"}
-		res, err := mu.WithArgs().ExecContext(context.TODO())
+			Where(dml.Column("entity_id").In().PlaceHolder()).WithDB(dbMock{
+			prepareFn: func(query string) (*sql.Stmt, error) {
+				return nil, nil
+			},
+		}).
+			WithArgs().WithQualifiedColumnsAliases("update_sku").
+			Record("", nil).ExecContext(context.TODO())
 		assert.Nil(t, res)
-		assert.True(t, errors.Mismatch.Match(err), "%+v", err)
+		assert.True(t, errors.Mismatch.Match(err), "Should be of kind errors.Mismatch %+v", err)
 	})
 
 	t.Run("alias mismatch Prepare", func(t *testing.T) {
 		mu := dml.NewUpdate("catalog_product_entity").
 			AddColumns("sku", "updated_at").
 			Where(dml.Column("entity_id").In().PlaceHolder()).WithDB(dbMock{})
-		mu.SetClausAliases = []string{"update_sku"}
+
 		stmt, err := mu.Prepare(context.TODO())
-		assert.Nil(t, stmt)
+		require.NoError(t, err)
+
+		res, err := stmt.WithArgs().WithQualifiedColumnsAliases("update_sku").ExecContext(context.TODO())
 		assert.True(t, errors.Mismatch.Match(err), "%+v", err)
+		assert.Nil(t, res, "No result is expected")
 	})
 
 	t.Run("empty Records and RecordChan", func(t *testing.T) {
@@ -216,7 +225,7 @@ func (so *salesInvoice) MapColumns(cm *dml.ColumnMap) error {
 	return cm.Err()
 }
 
-func TestUpdate_SetClausAliases(t *testing.T) {
+func TestArguments_WithQualifiedColumnsAliases(t *testing.T) {
 	t.Parallel()
 
 	dbc, dbMock := dmltest.MockDB(t)
@@ -243,24 +252,24 @@ func TestUpdate_SetClausAliases(t *testing.T) {
 	}
 
 	// Create the multi update statement
-	um := dml.NewUpdate("sales_invoice").
+	stmt, err := dbc.Update("sales_invoice").
 		AddColumns("state", "customer_id", "grand_total").
 		Where(
 			dml.Column("shipping_method").In().Strs("DHL", "UPS"), // For all clauses the same restriction
 			dml.Column("entity_id").PlaceHolder(),                 // Int64() acts as a place holder
-		).WithDB(dbc.DB)
-
-	um.SetClausAliases = []string{"state", "alias_customer_id", "grand_total"}
-
-	stmt, err := um.Prepare(context.TODO())
+		).
+		Prepare(context.TODO())
 	require.NoError(t, err)
 
+	stmtExec := stmt.WithArgs().WithQualifiedColumnsAliases("state", "alias_customer_id", "grand_total", "entity_id")
+
 	for i, record := range collection {
-		results, err := stmt.WithArgs().Record("sales_invoice", record).ExecContext(context.TODO())
+		results, err := stmtExec.Record("sales_invoice", record).ExecContext(context.TODO())
 		require.NoError(t, err)
 		ra, err := results.RowsAffected()
 		require.NoError(t, err, "Index %d", i)
 		assert.Exactly(t, int64(1), ra, "Index %d", i)
+		stmtExec.Reset()
 	}
 
 	dbMock.ExpectClose()

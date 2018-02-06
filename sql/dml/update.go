@@ -22,22 +22,11 @@ import (
 	"github.com/corestoreio/log"
 )
 
-// Update contains the clauses for an UPDATE statement
+// Update contains the logic for an UPDATE statement.
+// TODO: add UPDATE JOINS
 type Update struct {
 	BuilderBase
 	BuilderConditional
-
-	// TODO: add UPDATE JOINS SQLStmtUpdateJoin
-
-	// SetClausAliases only applicable in case when field QualifiedRecords has
-	// been set. `SetClausAliases` contains the lis of
-	// column names which gets passed to the ColumnMapper. If empty,
-	// `SetClausAliases` collects the column names from the `SetClauses`. The
-	// alias slice must have the same length as the columns slice. Despite
-	// setting `SetClausAliases` the SetClauses.Columns must be provided to
-	// create a valid SQL statement.
-	// TODO reimplement SetClausAliases
-	SetClausAliases []string
 	// SetClauses contains the column/argument association. For each column
 	// there must be one argument.
 	SetClauses Conditions
@@ -174,7 +163,6 @@ func (b *Update) ToSQL() (string, []interface{}, error) {
 
 func (b *Update) writeBuildCache(sql []byte, qualifiedColumns []string) {
 	b.BuilderConditional = BuilderConditional{}
-	b.SetClausAliases = nil
 	b.SetClauses = nil
 	b.cachedSQL = sql
 	b.qualifiedColumns = qualifiedColumns
@@ -211,9 +199,6 @@ func (b *Update) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 	}
 	if len(b.SetClauses) == 0 {
 		return nil, errors.Empty.Newf("[dml] Update: No columns specified")
-	}
-	if len(b.SetClausAliases) > 0 && len(b.SetClausAliases) != len(b.SetClauses) {
-		return nil, errors.Mismatch.Newf("[dml] Update: ColumnAliases slice and Columns slice must have the same length")
 	}
 
 	buf.WriteString("UPDATE ")

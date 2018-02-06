@@ -545,6 +545,14 @@ const (
 // It acts as some kind of prepared statement.
 type Arguments struct {
 	base builderCommon
+	// QualifiedColumnsAliases allows to overwrite the internal qualified
+	// columns slice with custom names. Especially in the use case when records
+	// are applied. The list of column names in `QualifiedColumnsAliases` gets
+	// passed to the ColumnMapper and back to the provided object. The
+	// `QualifiedColumnsAliases` slice must have the same length as the
+	// qualified columns slice. The order of the alias names must be in the same
+	// order as the qualified columns or as the placeholders occur.
+	QualifiedColumnsAliases []string
 	// insertCachedSQL contains the final build SQL string with the correct
 	// amount of placeholders.
 	insertCachedSQL   []byte
@@ -558,6 +566,13 @@ type Arguments struct {
 	raw               []interface{}
 	arguments
 	recs []QualifiedRecord
+}
+
+// WithQualifiedColumnsAliases for documentation please see:
+// Arguments.QualifiedColumnsAliases.
+func (a *Arguments) WithQualifiedColumnsAliases(aliases ...string) *Arguments {
+	a.QualifiedColumnsAliases = aliases
+	return a
 }
 
 // ToSQL the returned interface slice is owned by the callee.
@@ -716,6 +731,14 @@ func (a *Arguments) appendConvertedRecordsToArguments(collectedArgs arguments) (
 		return collectedArgs, nil
 	}
 
+	qualifiedColumns := a.base.qualifiedColumns
+	if lqca := len(a.QualifiedColumnsAliases); lqca > 0 {
+		if lqca != len(a.base.qualifiedColumns) {
+			return nil, errors.Mismatch.Newf("[dml] Argument.Record: QualifiedColumnsAliases slice %v and qualifiedColumns slice %v must have the same length", a.QualifiedColumnsAliases, a.base.qualifiedColumns)
+		}
+		qualifiedColumns = a.QualifiedColumnsAliases
+	}
+
 	// TODO refactor prototype and make it performant and beautiful code
 	cm := NewColumnMap(len(a.arguments)+len(a.recs), "") // can use an arg pool Arguments sync.Pool, nope.
 
@@ -723,7 +746,7 @@ func (a *Arguments) appendConvertedRecordsToArguments(collectedArgs arguments) (
 
 		// `qualifiedColumns` contains the correct order as the place holders
 		// appear in the SQL string.
-		for _, identifier := range a.base.qualifiedColumns {
+		for _, identifier := range qualifiedColumns {
 			// identifier can be either: column or qualifier.column or :column
 			qualifier, column := splitColumn(identifier)
 			// a.base.defaultQualifier is empty in case of INSERT statements
