@@ -16,7 +16,6 @@ package dml
 
 import (
 	"bytes"
-
 	"context"
 
 	"github.com/corestoreio/errors"
@@ -190,13 +189,13 @@ func (b *Delete) ToSQL() (string, []interface{}, error) {
 }
 
 func (b *Delete) writeBuildCache(sql []byte, qualifiedColumns []string) {
-	b.BuilderConditional = BuilderConditional{}
+	b.rwmu.Lock()
 	b.qualifiedColumns = qualifiedColumns
-	b.cachedSQL = sql
-}
-
-func (b *Delete) readBuildCache() (sql []byte) {
-	return b.cachedSQL
+	if !b.IsBuildCacheDisabled {
+		b.BuilderConditional = BuilderConditional{}
+		b.cachedSQL = sql
+	}
+	b.rwmu.Unlock()
 }
 
 // DisableBuildCache if enabled it does not cache the SQL string as a final

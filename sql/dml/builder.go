@@ -61,8 +61,12 @@ func (s QuerySQL) ToSQL() (string, []interface{}, error) {
 // queryBuilder must support thread safety when writing and reading the cache.
 type queryBuilder interface {
 	toSQL(w *bytes.Buffer, placeHolders []string) ([]string, error)
+	// writeBuildCache gets called even when `sql` is nil, because
+	// qualifiedColumns might contain columns.
+	// Maybe this should be an io.Writer, but the overhead is pretty huge.
 	writeBuildCache(sql []byte, qualifiedColumns []string)
-	// readBuildCache returns the cached SQL string
+	// readBuildCache returns the cached SQL string.
+	// Maybe this should be an io.Reader, but the overhead is pretty huge.
 	readBuildCache() (sql []byte)
 }
 
@@ -138,9 +142,11 @@ func (b *builderCommon) buildToSQL(qb queryBuilder) ([]byte, error) {
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
+		var writeCacheSQL []byte
 		if !b.IsBuildCacheDisabled {
-			qb.writeBuildCache(buf.Bytes(), qualifiedColumns)
+			writeCacheSQL = buf.Bytes()
 		}
+		qb.writeBuildCache(writeCacheSQL, qualifiedColumns)
 		rawSQL = buf.Bytes()
 	}
 	return rawSQL, nil
@@ -193,6 +199,13 @@ type BuilderBase struct {
 
 	rwmu sync.RWMutex
 	builderCommon
+}
+
+func (bb *BuilderBase) readBuildCache() (sql []byte) {
+	bb.rwmu.RLock()
+	sql = bb.cachedSQL
+	bb.rwmu.RUnlock()
+	return sql
 }
 
 // WithArgs sets the optional interfaced arguments for the later execution.

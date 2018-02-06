@@ -15,16 +15,12 @@
 package dml_test
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
-	"fmt"
-	"sync/atomic"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log/logw"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
@@ -58,14 +54,24 @@ func TestUpdate_WithArgs(t *testing.T) {
 	})
 
 	t.Run("alias mismatch Prepare", func(t *testing.T) {
-		mu := dml.NewUpdate("catalog_product_entity").
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		_ = dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("UPDATE `catalog_product_entity` SET `sku`=?, `updated_at`=? WHERE (`entity_id` IN ?)"))
+
+		mu := dbc.Update("catalog_product_entity").
 			AddColumns("sku", "updated_at").
-			Where(dml.Column("entity_id").In().PlaceHolder()).WithDB(dbMock{})
+			Where(dml.Column("entity_id").In().PlaceHolder())
 
 		stmt, err := mu.Prepare(context.TODO())
 		require.NoError(t, err)
 
-		res, err := stmt.WithArgs().WithQualifiedColumnsAliases("update_sku").ExecContext(context.TODO())
+		p := &dmlPerson{
+			ID:    1,
+			Name:  "Alf",
+			Email: dml.MakeNullString("alf@m') -- el.mac"),
+		}
+		res, err := stmt.WithArgs().Record("", p).WithQualifiedColumnsAliases("update_sku").ExecContext(context.TODO())
 		assert.True(t, errors.Mismatch.Match(err), "%+v", err)
 		assert.Nil(t, res, "No result is expected")
 	})
@@ -342,139 +348,5 @@ func TestUpdate_BindRecord(t *testing.T) {
 			"UPDATE `catalog_category_entity` AS `ce` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`ce`.`entity_id` > 678) AND (`cpe`.`entity_id` IN (66,77)) AND (`cpei`.`attribute_set_id` = 6)",
 			int64(6), "p456", "3/4/5", int64(678), int64(6),
 		)
-	})
-}
-
-func TestUpdate_WithLogger(t *testing.T) {
-
-	t.Skip("TODO Check if duplicated by other WithLogger tests and then remove")
-
-	uniID := new(int32)
-	rConn := createRealSession(t)
-	defer dmltest.Close(t, rConn)
-
-	var uniqueIDFunc = func() string {
-		return fmt.Sprintf("UNIQ%02d", atomic.AddInt32(uniID, 3))
-	}
-
-	buf := new(bytes.Buffer)
-	lg := logw.NewLog(
-		logw.WithLevel(logw.LevelDebug),
-		logw.WithWriter(buf),
-		logw.WithFlag(0), // no flags at all
-	)
-	require.NoError(t, rConn.Options(dml.WithLogger(lg, uniqueIDFunc)))
-
-	t.Run("ConnPool", func(t *testing.T) {
-		d := rConn.Update("dml_people").Set(
-			dml.Column("email").Str("new@email.com"),
-		).Where(dml.Column("id").GreaterOrEqual().Float64(78.31))
-
-		t.Run("Exec", func(t *testing.T) {
-			defer buf.Reset()
-			_, err := d.WithArgs().ExecContext(context.TODO())
-			require.NoError(t, err)
-
-			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQ03\" update_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ06*/ `dml_people` SET `email`='new@email.com' WHERE (`id` >= 78.31)\"\n",
-				buf.String())
-		})
-
-		t.Run("Prepare", func(t *testing.T) {
-			defer buf.Reset()
-			stmt, err := d.Prepare(context.TODO())
-			require.NoError(t, err)
-			defer stmt.Close()
-
-			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ03\" update_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ06*/ `dml_people` SET `email`='new@email.com' WHERE (`id` >= 78.31)\"\n",
-				buf.String())
-		})
-
-		t.Run("Tx Commit", func(t *testing.T) {
-			defer buf.Reset()
-			tx, err := rConn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.NoError(t, tx.Wrap(func() error {
-				_, err := tx.Update("dml_people").Set(
-					dml.Column("email").Str("new@email.com"),
-				).Where(dml.Column("id").GreaterOrEqual().Float64(36.56)).WithArgs().ExecContext(context.TODO())
-				return err
-			}))
-			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ03\" tx_id: \"UNIQ09\"\nDEBUG Exec conn_pool_id: \"UNIQ03\" tx_id: \"UNIQ09\" update_id: \"UNIQ12\" table: \"dml_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ12*/ `dml_people` SET `email`='new@email.com' WHERE (`id` >= 36.56)\"\nDEBUG Commit conn_pool_id: \"UNIQ03\" tx_id: \"UNIQ09\" duration: 0\n",
-				buf.String())
-		})
-	})
-
-	t.Run("Conn", func(t *testing.T) {
-		conn, err := rConn.Conn(context.TODO())
-		require.NoError(t, err)
-
-		d := conn.Update("dml_people").Set(
-			dml.Column("email").Str("new@email.com"),
-		).Where(dml.Column("id").GreaterOrEqual().Float64(21.56))
-
-		t.Run("Exec", func(t *testing.T) {
-			defer buf.Reset()
-
-			_, err := d.WithArgs().ExecContext(context.TODO())
-			require.NoError(t, err)
-
-			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" update_id: \"UNIQ18\" table: \"dml_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ18*/ `dml_people` SET `email`='new@email.com' WHERE (`id` >= 21.56)\"\n",
-				buf.String())
-		})
-
-		t.Run("Prepare", func(t *testing.T) {
-			defer buf.Reset()
-
-			stmt, err := d.Prepare(context.TODO())
-			require.NoError(t, err)
-			defer stmt.Close()
-
-			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" update_id: \"UNIQ18\" table: \"dml_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ18*/ `dml_people` SET `email`='new@email.com' WHERE (`id` >= 21.56)\"\n",
-				buf.String())
-		})
-
-		t.Run("Prepare Exec", func(t *testing.T) {
-			defer buf.Reset()
-
-			stmt, err := d.Prepare(context.TODO())
-			require.NoError(t, err)
-			defer stmt.Close()
-
-			_, err = stmt.WithArgs().ExecContext(context.TODO())
-			require.NoError(t, err)
-
-			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" update_id: \"UNIQ18\" table: \"dml_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ18*/ `dml_people` SET `email`='new@email.com' WHERE (`id` >= 21.56)\"\nDEBUG Exec conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" update_id: \"UNIQ18\" table: \"dml_people\" duration: 0 arg_len: 0\n",
-				buf.String())
-		})
-
-		t.Run("Tx Commit", func(t *testing.T) {
-			defer buf.Reset()
-			tx, err := conn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.NoError(t, tx.Wrap(func() error {
-				_, err := tx.Update("dml_people").Set(
-					dml.Column("email").Str("new@email.com"),
-				).Where(dml.Column("id").GreaterOrEqual().Float64(39.56)).WithArgs().ExecContext(context.TODO())
-				return err
-			}))
-
-			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" tx_id: \"UNIQ21\"\nDEBUG Exec conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" tx_id: \"UNIQ21\" update_id: \"UNIQ24\" table: \"dml_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ24*/ `dml_people` SET `email`='new@email.com' WHERE (`id` >= 39.56)\"\nDEBUG Commit conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" tx_id: \"UNIQ21\" duration: 0\n",
-				buf.String())
-		})
-
-		t.Run("Tx Rollback", func(t *testing.T) {
-			defer buf.Reset()
-			tx, err := conn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.Error(t, tx.Wrap(func() error {
-				_, err := tx.Update("dml_people").Set(
-					dml.Column("email").Str("new@email.com"),
-				).Where(dml.Column("id").GreaterOrEqual().PlaceHolder()).WithArgs().ExecContext(context.TODO())
-				return err
-			}))
-
-			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" tx_id: \"UNIQ27\"\nDEBUG Exec conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" tx_id: \"UNIQ27\" update_id: \"UNIQ30\" table: \"dml_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ30*/ `dml_people` SET `email`='new@email.com' WHERE (`id` >= ?)\"\nDEBUG Rollback conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" tx_id: \"UNIQ27\" duration: 0\n",
-				buf.String())
-		})
 	})
 }

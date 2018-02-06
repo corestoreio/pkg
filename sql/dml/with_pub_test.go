@@ -15,15 +15,11 @@
 package dml_test
 
 import (
-	"bytes"
 	"context"
-	"fmt"
-	"sync/atomic"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log/logw"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
@@ -312,163 +308,6 @@ func TestWith_Prepare(t *testing.T) {
 			rows, err := stmtA.QueryContext(context.TODO())
 			assert.True(t, errors.Duplicated.Match(err), "%+v", err)
 			assert.Nil(t, rows)
-		})
-	})
-}
-
-func TestWith_WithLogger(t *testing.T) {
-	uniID := new(int32)
-	rConn := createRealSession(t)
-	defer dmltest.Close(t, rConn)
-
-	var uniqueIDFunc = func() string {
-		return fmt.Sprintf("UNIQ%02d", atomic.AddInt32(uniID, 2))
-	}
-
-	buf := new(bytes.Buffer)
-	lg := logw.NewLog(
-		logw.WithLevel(logw.LevelDebug),
-		logw.WithWriter(buf),
-		logw.WithFlag(0), // no flags at all
-	)
-	require.NoError(t, rConn.Options(dml.WithLogger(lg, uniqueIDFunc)))
-
-	cte := dml.WithCTE{
-		Name:    "zehTeEh",
-		Columns: []string{"name2", "email2"},
-		Union: dml.NewUnion(
-			dml.NewSelect("name").AddColumnsAliases("email", "email").From("dml_people"),
-			dml.NewSelect("name", "email").FromAlias("dml_people", "dp2").Where(dml.Column("id").In().Int64s(6, 8)),
-		).All(),
-	}
-	cteSel := dml.NewSelect().Star().From("zehTeEh")
-
-	t.Run("ConnPool", func(t *testing.T) {
-
-		wth := rConn.With(cte).Select(cteSel)
-
-		t.Run("Query", func(t *testing.T) {
-			defer buf.Reset()
-			rows, err := wth.WithArgs().Interpolate().QueryContext(context.TODO())
-			require.NoError(t, err)
-			require.NoError(t, rows.Close())
-
-			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ02\" with_cte_id: \"UNIQ04\" tables: \"zehTeEh\" duration: 0 sql: \"WITH /*ID$UNIQ04*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dml_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\" source: \"w\" error: \"<nil>\"\n",
-				buf.String())
-		})
-
-		t.Run("Load", func(t *testing.T) {
-			defer buf.Reset()
-			p := &dmlPerson{}
-			_, err := wth.WithArgs().Interpolate().Load(context.TODO(), p)
-			require.NoError(t, err)
-
-			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ02\" with_cte_id: \"UNIQ04\" tables: \"zehTeEh\" duration: 0 sql: \"WITH /*ID$UNIQ04*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dml_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\" source: \"w\" error: \"<nil>\"\nDEBUG Load conn_pool_id: \"UNIQ02\" with_cte_id: \"UNIQ04\" tables: \"zehTeEh\" duration: 0 id: \"UNIQ04\" error: \"<nil>\" ColumnMapper: \"*dml_test.dmlPerson\" row_count: 0x0\n",
-				buf.String())
-		})
-
-		t.Run("Prepare", func(t *testing.T) {
-			defer buf.Reset()
-			stmt, err := wth.Prepare(context.TODO())
-			require.NoError(t, err)
-			defer stmt.Close()
-
-			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ02\" with_cte_id: \"UNIQ04\" tables: \"zehTeEh\" duration: 0 error: \"<nil>\" sql: \"WITH /*ID$UNIQ04*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dml_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\"\n",
-				buf.String())
-		})
-
-		t.Run("Tx Commit", func(t *testing.T) {
-			defer buf.Reset()
-			tx, err := rConn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.NoError(t, tx.Wrap(func() error {
-				rows, err := tx.With(
-					dml.WithCTE{
-						Name:    "zehTeEh",
-						Columns: []string{"name2", "email2"},
-						Union: dml.NewUnion(
-							dml.NewSelect("name").AddColumnsAliases("email", "email").From("dml_people"),
-							dml.NewSelect("name", "email").FromAlias("dml_people", "dp2").Where(dml.Column("id").In().Int64s(6, 8)),
-						).All(),
-					},
-				).Recursive().
-					Select(dml.NewSelect().Star().From("zehTeEh")).WithArgs().Interpolate().QueryContext(context.TODO())
-
-				require.NoError(t, err)
-				return rows.Close()
-			}))
-			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ02\" tx_id: \"UNIQ06\"\nDEBUG Query conn_pool_id: \"UNIQ02\" tx_id: \"UNIQ06\" with_cte_id: \"UNIQ08\" tables: \"zehTeEh\" duration: 0 sql: \"WITH /*ID$UNIQ08*/ RECURSIVE `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dml_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\" source: \"w\" error: \"<nil>\"\nDEBUG Commit conn_pool_id: \"UNIQ02\" tx_id: \"UNIQ06\" duration: 0\n",
-				buf.String())
-		})
-	})
-
-	t.Run("Conn", func(t *testing.T) {
-		conn, err := rConn.Conn(context.TODO())
-		require.NoError(t, err)
-
-		u := conn.With(cte).Select(cteSel)
-
-		t.Run("Query", func(t *testing.T) {
-			defer buf.Reset()
-
-			rows, err := u.WithArgs().Interpolate().QueryContext(context.TODO())
-			require.NoError(t, err)
-			require.NoError(t, rows.Close())
-
-			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" with_cte_id: \"UNIQ12\" tables: \"zehTeEh\" duration: 0 sql: \"WITH /*ID$UNIQ12*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dml_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\" source: \"w\" error: \"<nil>\"\n",
-				buf.String())
-		})
-
-		t.Run("Load", func(t *testing.T) {
-			defer buf.Reset()
-			p := &dmlPerson{}
-			_, err := u.WithArgs().Load(context.TODO(), p)
-			require.NoError(t, err)
-
-			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" with_cte_id: \"UNIQ12\" tables: \"zehTeEh\" duration: 0 sql: \"WITH /*ID$UNIQ12*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dml_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\" source: \"w\" error: \"<nil>\"\nDEBUG Load conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" with_cte_id: \"UNIQ12\" tables: \"zehTeEh\" duration: 0 id: \"UNIQ12\" error: \"<nil>\" ColumnMapper: \"*dml_test.dmlPerson\" row_count: 0x0\n",
-				buf.String())
-		})
-
-		t.Run("Prepare", func(t *testing.T) {
-			defer buf.Reset()
-
-			stmt, err := u.Prepare(context.TODO())
-			require.NoError(t, err)
-			defer stmt.Close()
-
-			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" with_cte_id: \"UNIQ12\" tables: \"zehTeEh\" duration: 0 error: \"<nil>\" sql: \"WITH /*ID$UNIQ12*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dml_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\"\n",
-				buf.String())
-		})
-
-		t.Run("Tx Commit", func(t *testing.T) {
-			defer buf.Reset()
-			tx, err := conn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.NoError(t, tx.Wrap(func() error {
-				rows, err := tx.With(cte).Select(cteSel).WithArgs().QueryContext(context.TODO())
-				if err != nil {
-					return err
-				}
-				return rows.Close()
-			}))
-			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" tx_id: \"UNIQ14\"\nDEBUG Query conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" tx_id: \"UNIQ14\" with_cte_id: \"UNIQ16\" tables: \"zehTeEh\" duration: 0 sql: \"WITH /*ID$UNIQ16*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dml_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\" source: \"w\" error: \"<nil>\"\nDEBUG Commit conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" tx_id: \"UNIQ14\" duration: 0\n",
-				buf.String())
-		})
-
-		t.Run("Tx Rollback", func(t *testing.T) {
-			defer buf.Reset()
-			tx, err := conn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.Error(t, tx.Wrap(func() error {
-				rows, err := tx.With(cte).Select(cteSel.Where(dml.Column("email").In().PlaceHolder())).WithArgs().QueryContext(context.TODO())
-				if err != nil {
-					return err
-				}
-				return rows.Close()
-			}))
-
-			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" tx_id: \"UNIQ18\"\nDEBUG Query conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" tx_id: \"UNIQ18\" with_cte_id: \"UNIQ20\" tables: \"zehTeEh\" duration: 0 sql: \"WITH /*ID$UNIQ20*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dml_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh` WHERE (`email` IN ?)\" source: \"w\" error: \"<nil>\"\nDEBUG Rollback conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" tx_id: \"UNIQ18\" duration: 0\n",
-				buf.String())
 		})
 	})
 }

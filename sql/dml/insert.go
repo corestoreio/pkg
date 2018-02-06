@@ -238,23 +238,24 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 // like depending on the number of arguments.
 func (b *Insert) WithArgs(args ...interface{}) *Arguments {
 
+	isSelect := b.Select != nil // b.withArgs unsets the Select field if caching is enabled
+	var pairArgs arguments
+	for _, cv := range b.Pairs {
+		pairArgs = append(pairArgs, cv.Right.arg)
+	}
+
 	a := b.withArgs(b, args...)
 	a.base.source = dmlSourceInsert
-	if b.Select != nil {
+
+	if isSelect {
 		// Must change to this source because to trigger a different argument
 		// collector in Arguments.prepareArgs. It is not a real INSERT statement
 		// anymore.
 		a.base.source = dmlSourceSelect
-	}
-
-	if b.Select != nil {
 		return a
 	}
 
-	for _, cv := range b.Pairs {
-		a.arguments = append(a.arguments, cv.Right.arg)
-	}
-
+	a.arguments = append(a.arguments, pairArgs...)
 	a.insertColumnCount = uint(len(b.Columns))
 	if b.RecordPlaceHolderCount > 0 {
 		a.insertColumnCount = uint(b.RecordPlaceHolderCount)
@@ -275,18 +276,16 @@ func (b *Insert) ToSQL() (string, []interface{}, error) {
 }
 
 func (b *Insert) writeBuildCache(sql []byte, qualifiedColumns []string) {
-	// think about resetting ...
 	b.rwmu.Lock()
-	b.cachedSQL = sql
+	if !b.IsBuildCacheDisabled {
+		b.cachedSQL = sql
+		b.Select = nil
+		b.Pairs = nil
+		b.OnDuplicateKeys = nil
+		b.OnDuplicateKeyExclude = nil
+	}
 	b.qualifiedColumns = qualifiedColumns
 	b.rwmu.Unlock()
-}
-
-func (b *Insert) readBuildCache() (sql []byte) {
-	b.rwmu.RLock()
-	sql = b.cachedSQL
-	b.rwmu.RUnlock()
-	return sql
 }
 
 // DisableBuildCache if enabled it does not cache the SQL string as a final

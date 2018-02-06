@@ -241,16 +241,16 @@ func (u *Union) ToSQL() (string, []interface{}, error) {
 }
 
 func (u *Union) writeBuildCache(sql []byte, qualifiedColumns []string) {
-	u.Selects = nil
-	u.OrderBys = nil
-	u.oldNew = nil
-	u.repls = nil
-	u.cachedSQL = sql
+	u.rwmu.Lock()
 	u.qualifiedColumns = qualifiedColumns
-}
-
-func (u *Union) readBuildCache() (sql []byte) {
-	return u.cachedSQL
+	if !u.IsBuildCacheDisabled {
+		u.Selects = nil
+		u.OrderBys = nil
+		u.oldNew = nil
+		u.repls = nil
+		u.cachedSQL = sql
+	}
+	u.rwmu.Unlock()
 }
 
 // DisableBuildCache if enabled it does not cache the SQL string as a final

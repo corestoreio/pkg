@@ -39,9 +39,6 @@ func writeToSQLAndInterpolate(qb dml.QueryBuilder) {
 	if len(args) > 0 {
 		fmt.Printf("Arguments: %v\n\n", args)
 	}
-	if len(args) == 0 {
-		return
-	}
 
 	switch dmlArg := qb.(type) {
 	case *dml.Arguments:
@@ -52,10 +49,13 @@ func writeToSQLAndInterpolate(qb dml.QueryBuilder) {
 		panic(fmt.Sprintf("func compareToSQL: the type %#v is not (yet) supported.", qb))
 	}
 
-	sqlStr, _, err = qb.ToSQL()
+	sqlStr, args, err = qb.ToSQL()
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		return
+	}
+	if len(args) > 0 {
+		panic(fmt.Sprintf("func compareToSQL should not return arguments when interpolation is enabled, got: %#v\n\n", args))
 	}
 	fmt.Println("Interpolated Statement:")
 	strs.FwordWrap(os.Stdout, sqlStr, 80)

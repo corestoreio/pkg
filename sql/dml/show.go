@@ -193,12 +193,12 @@ func (b *Show) ToSQL() (string, []interface{}, error) {
 }
 
 func (b *Show) writeBuildCache(sql []byte, qualifiedColumns []string) {
+	b.rwmu.Lock()
 	b.qualifiedColumns = qualifiedColumns
-	b.cachedSQL = sql
-}
-
-func (b *Show) readBuildCache() (sql []byte) {
-	return b.cachedSQL
+	if !b.IsBuildCacheDisabled {
+		b.cachedSQL = sql
+	}
+	b.rwmu.Unlock()
 }
 
 // DisableBuildCache if enabled it does not cache the SQL string as a final

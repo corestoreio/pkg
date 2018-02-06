@@ -546,8 +546,8 @@ const (
 type Arguments struct {
 	base builderCommon
 	// QualifiedColumnsAliases allows to overwrite the internal qualified
-	// columns slice with custom names. Especially in the use case when records
-	// are applied. The list of column names in `QualifiedColumnsAliases` gets
+	// columns slice with custom names. Only in the use case when records are
+	// applied. The list of column names in `QualifiedColumnsAliases` gets
 	// passed to the ColumnMapper and back to the provided object. The
 	// `QualifiedColumnsAliases` slice must have the same length as the
 	// qualified columns slice. The order of the alias names must be in the same
