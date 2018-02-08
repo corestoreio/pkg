@@ -697,5 +697,78 @@ func TestInsert_Bind_Slice(t *testing.T) {
 		}(&wg)
 	}
 	wg.Wait()
+}
+
+func TestInsert_Expressions_In_Values(t *testing.T) {
+	t.Parallel()
+
+	t.Run("1 string expression one row", func(t *testing.T) {
+		ins := NewInsert("catalog_product_customer_relation").
+			AddColumns("product_id", "sort_order").
+			WithPairs(
+				Column("customer_id").Expr("IFNULL(SELECT entity_id FROM customer_entity WHERE email like ?,0)"),
+			).BuildValues()
+
+		compareToSQL2(t, ins, errors.NoKind,
+			"INSERT INTO `catalog_product_customer_relation` (`product_id`,`sort_order`,`customer_id`) VALUES (?,?,IFNULL(SELECT entity_id FROM customer_entity WHERE email like ?,0))",
+		)
+	})
+	// Not yet supported. some calculations necessary in Insert.toSQL
+	//t.Run("2 string expression multiple rows", func(t *testing.T) {
+	//	ins := NewInsert("catalog_product_customer_relation").
+	//		AddColumns("product_id", "sort_order").
+	//		WithPairs(
+	//			Column("customer_id").Expr("IFNULL(SELECT entity_id FROM customer_entity WHERE email like ?,0)"),
+	//			Column("customer_id").Expr("IFNULL(SELECT entity_id FROM customer_entity WHERE email like ?,0)"),
+	//		).BuildValues()
+	//
+	//	compareToSQL2(t, ins, errors.NoKind,
+	//		"INSERT INTO `catalog_product_customer_relation` (`product_id`,`sort_order`,`customer_id`) VALUES (?,?,IFNULL(SELECT entity_id FROM customer_entity WHERE email like ?,0)),(?,?,IFNULL(SELECT entity_id FROM customer_entity WHERE email like ?,0))",
+	//	)
+	//})
+
+	t.Run("sub select", func(t *testing.T) {
+		// do not use such a construct like the test query. use such a construct:
+		/*
+			INSERT INTO catalog_product_customer_relation (product_id, sort_order, group_id)
+			  SELECT
+					? AS product_id,
+					? AS sort_order,
+					group_id
+					FROM customer_group
+					WHERE name = ?;
+		*/
+
+		ins := NewInsert("catalog_product_customer_relation").
+			AddColumns("product_id", "sort_order").
+			WithPairs(
+				Column("group_id").Sub(
+					NewSelect("group_id").From("customer_group").Where(
+						Column("name").Equal().PlaceHolder(),
+					),
+				),
+			).BuildValues()
+		compareToSQL(t, ins, errors.NoKind,
+			"INSERT INTO `catalog_product_customer_relation` (`product_id`,`sort_order`,`group_id`) VALUES (?,?,(SELECT `group_id` FROM `customer_group` WHERE (`name` = ?)))",
+			"",
+		)
+	})
+
+	t.Run("all possibilities", func(t *testing.T) {
+		ins := NewInsert("catalog_product_customer_relation").
+			AddColumns("product_id", "sort_order").
+			WithPairs(
+				Column("customer_id").Expr("IFNULL(SELECT entity_id FROM customer_entity WHERE email like ?,0)"),
+				Column("group_id").Sub(
+					NewSelect("group_id").From("customer_group").Where(
+						Column("name").Equal().PlaceHolder(),
+					),
+				),
+			).BuildValues()
+		compareToSQL(t, ins, errors.NoKind,
+			"INSERT INTO `catalog_product_customer_relation` (`product_id`,`sort_order`,`customer_id`,`group_id`) VALUES (?,?,IFNULL(SELECT entity_id FROM customer_entity WHERE email like ?,0),(SELECT `group_id` FROM `customer_group` WHERE (`name` = ?)))",
+			"",
+		)
+	})
 
 }

@@ -17,6 +17,7 @@ package dml
 import (
 	"bytes"
 	"context"
+	"fmt"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
@@ -232,10 +233,14 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 	return b
 }
 
-// WithArgs builds the SQL string and sets the optional interfaced arguments for
-// the later execution. It copies the underlying connection and structs. This
-// case of WithArgs figures automatically out how the VALUES section must look
-// like depending on the number of arguments.
+// WithArgs returns a new type to support multiple executions of the underlying
+// SQL statement and reuse of memory allocations for the arguments. WithArgs
+// builds the SQL string and sets the optional raw interfaced arguments for the
+// later execution. It copies the underlying connection from the DML type but
+// the query executor can still be overwritten. In case of INSERT statement,
+// WithArgs figures automatically out how the VALUES section must look like
+// depending on the number of arguments. In some cases type Insert needs to know
+// the RowCount to build the appropriate amount of placeholders.
 func (b *Insert) WithArgs(args ...interface{}) *Arguments {
 
 	isSelect := b.Select != nil // b.withArgs unsets the Select field if caching is enabled
@@ -369,7 +374,44 @@ func (b *Insert) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 		if b.RecordPlaceHolderCount > 0 {
 			argCount0 = b.RecordPlaceHolderCount
 		}
-		writeInsertPlaceholders(buf, uint(rowCount), uint(argCount0))
+
+		if lPairs := len(b.Pairs); lPairs > 0 { // monster IF, must be refactored
+			if argCount0 > 0 {
+				rowCount = argCount0
+			}
+			buf.WriteByte('(')
+
+			for i := 0; i < argCount0; i++ {
+				buf.WriteString("?,")
+			}
+
+			for i, cv := range b.Pairs {
+				if i > 0 && i%rowCount == 0 {
+					buf.WriteString("),(")
+				} else if i > 0 {
+					buf.WriteByte(',')
+				}
+				switch {
+				case cv.Right.arg.isSet:
+					cv.Right.arg.writeTo(buf, 0)
+				case cv.Right.IsExpression:
+					buf.WriteString(cv.Right.Column)
+				case cv.Right.Sub != nil:
+					var err error
+					buf.WriteByte('(')
+					placeHolders, err = cv.Right.Sub.toSQL(buf, placeHolders)
+					if err != nil {
+						return nil, errors.WithStack(err)
+					}
+					buf.WriteByte(')')
+				default:
+					fmt.Printf("%#v\n\n", cv.Right)
+				}
+			}
+			buf.WriteByte(')')
+		} else {
+			writeInsertPlaceholders(buf, uint(rowCount), uint(argCount0))
+		}
 	}
 
 	return b.writeOnDuplicateKey(buf, placeHolders)
