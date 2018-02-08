@@ -243,7 +243,9 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 // the RowCount to build the appropriate amount of placeholders.
 func (b *Insert) WithArgs(args ...interface{}) *Arguments {
 
+	b.rwmu.RLock()
 	isSelect := b.Select != nil // b.withArgs unsets the Select field if caching is enabled
+	b.rwmu.RUnlock()
 	var pairArgs arguments
 	for _, cv := range b.Pairs {
 		pairArgs = append(pairArgs, cv.Right.arg)

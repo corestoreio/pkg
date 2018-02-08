@@ -659,7 +659,9 @@ func TestInsert_OnDuplicateKey(t *testing.T) {
 	})
 }
 
-func TestInsert_Bind_Slice(t *testing.T) {
+// TestInsert_Parallel_Bind_Slice is a tough test because first a complex SQL
+// statement from a collection and second it runs in parallel.
+func TestInsert_Parallel_Bind_Slice(t *testing.T) {
 	t.Parallel()
 
 	wantArgs := []interface{}{
