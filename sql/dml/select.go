@@ -407,8 +407,13 @@ func (b *Select) CrossJoin(table id, onConditions ...*Condition) *Select {
 	return b
 }
 
-// WithArgs builds the SQL string and sets the optional interfaced arguments for
-// the later execution. It copies the underlying connection.
+// WithArgs returns a new type to support multiple executions of the underlying
+// SQL statement and reuse of memory allocations for the arguments. WithArgs
+// builds the SQL string and sets the optional raw interfaced arguments for the
+// later execution. It copies the underlying connection and settings from the
+// current DML type (Delete, Insert, Select, Update, Union, With, etc.). The
+// query executor can still be overwritten. Interpolation does not support the
+// raw interfaces.
 func (b *Select) WithArgs(args ...interface{}) *Arguments {
 	b.source = dmlSourceSelect
 	return b.withArgs(b, args...)

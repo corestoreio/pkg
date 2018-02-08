@@ -38,8 +38,6 @@ type Stmt struct {
 	Stmt *sql.Stmt
 }
 
-// WithArgs works the same as the other WithArgs implementations and guarantees
-// in this case that a sql.Stmt can be used across multiple goroutines.
 func (st *Stmt) WithArgs(rawArgs ...interface{}) *Arguments {
 	var args [defaultArgumentsCapacity]argument
 	return &Arguments{
@@ -110,6 +108,13 @@ func (rs *StmtRedux) Close() error {
 	return rs.closeStmtCon()
 }
 
+// WithArgs returns a new type to support multiple executions of the underlying
+// SQL statement and reuse of memory allocations for the arguments. WithArgs
+// builds the SQL string and sets the optional raw interfaced arguments for the
+// later execution. It copies the underlying connection and settings from the
+// current DML type (Delete, Insert, Select, Update, Union, With, etc.). The
+// query executor can still be overwritten. Interpolation does not support the
+// raw interfaces.
 func (st *StmtRedux) WithArgs(rawArgs ...interface{}) *Arguments {
 	// todo: correct implementation
 	var args [defaultArgumentsCapacity]argument
