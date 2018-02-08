@@ -51,6 +51,8 @@ type WithCTE struct {
 //
 // http://mysqlserverteam.com/mysql-8-0-labs-recursive-common-table-expressions-in-mysql-ctes/
 //
+// http://dankleiman.com/2018/02/06/3-ways-to-level-up-your-sql-as-a-software-engineer/
+//
 // Supported in: MySQL >=8.0.1 and MariaDb >=10.2
 type With struct {
 	BuilderBase
