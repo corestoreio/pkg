@@ -713,7 +713,7 @@ func TestInsert_Expressions_In_Values(t *testing.T) {
 			"INSERT INTO `catalog_product_customer_relation` (`product_id`,`sort_order`,`customer_id`) VALUES (?,?,IFNULL(SELECT entity_id FROM customer_entity WHERE email like ?,0))",
 		)
 	})
-	// Not yet supported. some calculations necessary in Insert.toSQL
+	// TODO Not yet supported. some calculations necessary in Insert.toSQL
 	//t.Run("2 string expression multiple rows", func(t *testing.T) {
 	//	ins := NewInsert("catalog_product_customer_relation").
 	//		AddColumns("product_id", "sort_order").

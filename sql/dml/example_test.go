@@ -303,7 +303,9 @@ func ExampleInsert_expressionInVALUES() {
 	// Output:
 	//Statement:
 	//INSERT INTO `catalog_product_customer_relation`
-	//(`product_id`,`sort_order`,`customer_id`) VALUES ()
+	//(`product_id`,`sort_order`,`customer_id`,`group_id`) VALUES (?,?,IFNULL(SELECT
+	//entity_id FROM customer_entity WHERE email like ?,0),(SELECT `group_id` FROM
+	//`customer_group` WHERE (`name` = ?)))
 }
 
 func ExampleNewDelete() {

@@ -380,8 +380,7 @@ func (b *Insert) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 				rowCount = argCount0
 			}
 			buf.WriteByte('(')
-
-			for i := 0; i < argCount0; i++ {
+			for i := 0; i < argCount0 && lPairs <= rowCount; i++ {
 				buf.WriteString("?,")
 			}
 
