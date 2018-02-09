@@ -230,6 +230,7 @@ func (u *Union) StringReplace(key string, values ...string) *Union {
 // current DML type (Delete, Insert, Select, Update, Union, With, etc.). The
 // query executor can still be overwritten. Interpolation does not support the
 // raw interfaces.
+// It's an architecture bug to use WithArgs inside a loop.
 func (u *Union) WithArgs(args ...interface{}) *Arguments {
 	u.source = dmlSourceUnion
 	return u.withArgs(u, args...)

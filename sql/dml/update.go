@@ -151,6 +151,7 @@ func (b *Update) Limit(limit uint64) *Update {
 // current DML type (Delete, Insert, Select, Update, Union, With, etc.). The
 // query executor can still be overwritten. Interpolation does not support the
 // raw interfaces.
+// It's an architecture bug to use WithArgs inside a loop.
 func (b *Update) WithArgs(args ...interface{}) *Arguments {
 	b.source = dmlSourceUpdate
 	return b.withArgs(b, args...)

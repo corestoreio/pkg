@@ -50,8 +50,6 @@ var (
 // used as arguments to ExecRecord or WithRecords in the SQL statement. If you
 // use an alias for the main table/view you must set the alias as the qualifier.
 type QualifiedRecord struct {
-	_Named_Fields_Required struct{}
-
 	// Qualifier is the name of the table or view or procedure or can be their
 	// alias. It must be a valid MySQL/MariaDB identifier.
 	//
@@ -182,7 +180,7 @@ func (arg argument) writeTo(w *bytes.Buffer, pos uint) (err error) {
 			w.WriteByte(')')
 		}
 	case uint64:
-		err = writeUint64(w, uint64(v))
+		err = writeUint64(w, v)
 	case uint:
 		err = writeUint64(w, uint64(v))
 	case uint8:
@@ -652,7 +650,7 @@ func (a *Arguments) prepareArgs(extArgs ...interface{}) (_ string, _ []interface
 	}
 
 	if a.hasNamedArgs == 0 {
-		found := false
+		var found bool
 		a.hasNamedArgs = 1
 		a.base.cachedSQL, a.base.qualifiedColumns, found = extractReplaceNamedArgs(a.base.cachedSQL, a.base.qualifiedColumns)
 
@@ -668,8 +666,6 @@ func (a *Arguments) prepareArgs(extArgs ...interface{}) (_ string, _ []interface
 			}
 		}
 	}
-
-	//var collectedArgs = append(arguments{}, a.arguments...) // TODO sync.Pool or not, investigate via benchmark, Tests are succeeding `-count=99 [-race]`
 
 	sqlBuf := bufferpool.GetTwin()
 	collectedArgs := pooledArgumentsGet()
@@ -834,7 +830,7 @@ func (a *Arguments) prepareArgsInsert(extArgs ...interface{}) (string, []interfa
 	totalArgLen := uint(len(cm.arguments) + len(extArgs))
 
 	if !a.insertIsBuildValues && lenInsertCachedSQL == 0 { // Write placeholder list e.g. "VALUES (?,?),(?,?)"
-		odkPos := bytes.Index(a.base.cachedSQL, []byte(onDuplicateKeyPart))
+		odkPos := bytes.Index(a.base.cachedSQL, onDuplicateKeyPart)
 		if odkPos > 0 {
 			sqlBuf.First.Reset()
 			sqlBuf.First.Write(a.base.cachedSQL[:odkPos])
@@ -1392,11 +1388,12 @@ func (a *Arguments) ExecContext(ctx context.Context, args ...interface{}) (sql.R
 	return a.exec(ctx, args...)
 }
 
+// QueryContext traditional way of the databasel/sql package.
 func (a *Arguments) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error) {
 	return a.query(ctx, args...)
 }
 
-// QueryRow traditional way, allocation heavy.
+// QueryRowContext traditional way of the databasel/sql package.
 func (a *Arguments) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row {
 	sqlStr, args, err := a.prepareArgs(args...)
 	if a.base.Log != nil && a.base.Log.IsDebug() {

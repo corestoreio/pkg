@@ -24,20 +24,16 @@ import (
 	"github.com/corestoreio/log"
 )
 
-// Stmter represents a prepared statement. It wraps a *sql.Stmt with a specific
-// SQL query. To create a Stmter call the Prepare function of a type DML type.
-// Stmter is not safe for concurrent use, you must call for each goroutine the Clone function, to create
-// a dedicated instance. Don't forget to call Close!
-
-// Stmt wraps a *sql.Stmt (a prepared statement) with a specific SQL query.
-// To create a Stmt call the Prepare function of type Select. Stmt is
-// not safe for concurrent use, despite the underlying *sql.Stmt is. Don't
+// Stmt wraps a *sql.Stmt (a prepared statement) with a specific SQL query. To
+// create a Stmt call the Prepare function of a specific DML type. Stmt is not
+// yet safe for concurrent use, despite the underlying *sql.Stmt is. Don't
 // forget to call Close!
 type Stmt struct {
 	base builderCommon
 	Stmt *sql.Stmt
 }
 
+// WithArgs creates a new argument handler.
 func (st *Stmt) WithArgs(rawArgs ...interface{}) *Arguments {
 	var args [defaultArgumentsCapacity]argument
 	return &Arguments{
@@ -47,7 +43,7 @@ func (st *Stmt) WithArgs(rawArgs ...interface{}) *Arguments {
 	}
 }
 
-// Closes closes the statement in the database and frees its resources.
+// Close closes the statement in the database and frees its resources.
 func (st *Stmt) Close() error { return st.Stmt.Close() }
 
 // More Load* functions can be added later
@@ -97,6 +93,7 @@ type StmtRedux struct {
 	inUse    bool
 }
 
+// Close the statement and terminates the internal goroutine.
 func (rs *StmtRedux) Close() error {
 	rs.mu.RLock()
 	s := rs.status
@@ -115,11 +112,11 @@ func (rs *StmtRedux) Close() error {
 // current DML type (Delete, Insert, Select, Update, Union, With, etc.). The
 // query executor can still be overwritten. Interpolation does not support the
 // raw interfaces.
-func (st *StmtRedux) WithArgs(rawArgs ...interface{}) *Arguments {
+func (rs *StmtRedux) WithArgs(rawArgs ...interface{}) *Arguments {
 	// todo: correct implementation
 	var args [defaultArgumentsCapacity]argument
 	return &Arguments{
-		base:      st.stmt.base,
+		base:      rs.stmt.base,
 		raw:       rawArgs,
 		arguments: args[:0],
 	}
@@ -234,6 +231,7 @@ func (rs *StmtRedux) unlock() {
 	rs.mu.Unlock()
 }
 
+// ExecContext executes the underlying query.
 func (rs *StmtRedux) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
 	rs.lock()
 	defer rs.unlock()
@@ -248,7 +246,7 @@ func (rs *StmtRedux) ExecContext(ctx context.Context, args ...interface{}) (sql.
 	return res, nil
 }
 
-// Query traditional way, allocation heavy.
+// QueryContext traditional way, allocation heavy.
 func (rs *StmtRedux) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error) {
 	rs.lock()
 	defer rs.unlock()
@@ -262,7 +260,7 @@ func (rs *StmtRedux) QueryContext(ctx context.Context, args ...interface{}) (*sq
 	return rows, nil
 }
 
-// QueryRow traditional way, allocation heavy.
+// QueryRowContext traditional way, allocation heavy.
 func (rs *StmtRedux) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row {
 	rs.lock()
 	defer rs.unlock()

@@ -177,6 +177,7 @@ func (b *Delete) Limit(limit uint64) *Delete {
 // current DML type (Delete, Insert, Select, Update, Union, With, etc.). The
 // query executor can still be overwritten. Interpolation does not support the
 // raw interfaces.
+// It's an architecture bug to use WithArgs inside a loop.
 func (b *Delete) WithArgs(args ...interface{}) *Arguments {
 	b.source = dmlSourceDelete
 	return b.withArgs(b, args...)

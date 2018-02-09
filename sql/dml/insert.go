@@ -82,13 +82,13 @@ type Insert struct {
 	IsReplace bool
 	// IsIgnore ignores error. See function Ignore().
 	IsIgnore bool
-	// Listeners allows to dispatch certain functions in different
-	// situations.
-	Listeners ListenersInsert
 	// IsBuildValues if true the VALUES part gets build when calling ToSQL.
 	// VALUES do not need to get build by default because mostly WithArgs gets
 	// called to build the VALUES part dynamically.
 	IsBuildValues bool
+	// Listeners allows to dispatch certain functions in different
+	// situations.
+	Listeners ListenersInsert
 }
 
 // NewInsert creates a new Insert object.
@@ -157,6 +157,7 @@ func (b *Insert) Replace() *Insert {
 	return b
 }
 
+// BuildValues see IsBuildValues.
 func (b *Insert) BuildValues() *Insert {
 	b.IsBuildValues = true
 	return b
@@ -241,6 +242,7 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 // WithArgs figures automatically out how the VALUES section must look like
 // depending on the number of arguments. In some cases type Insert needs to know
 // the RowCount to build the appropriate amount of placeholders.
+// It's an architecture bug to use WithArgs inside a loop.
 func (b *Insert) WithArgs(args ...interface{}) *Arguments {
 
 	b.rwmu.RLock()

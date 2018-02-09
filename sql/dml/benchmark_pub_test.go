@@ -452,11 +452,12 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	})
 
 	sqlObj := dml.NewInsert("alpha").AddColumns("something_id", "user_id", "other")
+
 	b.Run("ToSQL no cache", func(b *testing.B) {
 		sqlObj.IsBuildCacheDisabled = true
-		sqlObjA := sqlObj.WithArgs().Int64(1).Int64(2).Bool(true)
 		for i := 0; i < b.N; i++ {
 			var err error
+			sqlObjA := sqlObj.WithArgs().Int64(1).Int64(2).Bool(true)
 			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObjA.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
@@ -466,13 +467,26 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 
 	b.Run("ToSQL with cache", func(b *testing.B) {
 		sqlObj.IsBuildCacheDisabled = false
-		sqlObjA := sqlObj.WithArgs().Int64(1).Int64(2).Bool(true)
 		for i := 0; i < b.N; i++ {
 			var err error
+			sqlObjA := sqlObj.WithArgs().Int64(1).Int64(2).Bool(true)
 			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObjA.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
+		}
+	})
+
+	b.Run("ToSQL optimized", func(b *testing.B) {
+		sqlObj.IsBuildCacheDisabled = false
+		sqlObjA := sqlObj.WithArgs().Int64(1).Int64(2).Bool(true).Reset()
+		for i := 0; i < b.N; i++ {
+			var err error
+			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObjA.Int64(1).Int64(2).Bool(true).ToSQL()
+			if err != nil {
+				b.Fatalf("%+v", err)
+			}
+			sqlObjA.Reset()
 		}
 	})
 }
@@ -492,7 +506,6 @@ func BenchmarkInsertRecordsSQL(b *testing.B) {
 			b.Fatal(err)
 		}
 		insA.Reset()
-		b.Fatal(benchmarkSelectStr)
 	}
 }
 
@@ -660,8 +673,9 @@ func BenchmarkUnion(b *testing.B) {
 			}
 		}
 	})
-	b.Run("5 SELECTs interpolated", func(b *testing.B) {
-		u := newUnion5()
+	b.Run("5 SELECTs WithArgs", func(b *testing.B) {
+		u := newUnion5().WithArgs()
+		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			var err error
 			benchmarkSelectStr, benchmarkGlobalVals, err = u.ToSQL()

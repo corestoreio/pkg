@@ -182,6 +182,7 @@ func (b *Show) Like() *Show {
 // current DML type (Delete, Insert, Select, Update, Union, With, etc.). The
 // query executor can still be overwritten. Interpolation does not support the
 // raw interfaces.
+// It's an architecture bug to use WithArgs inside a loop.
 func (b *Show) WithArgs(args ...interface{}) *Arguments {
 	b.source = dmlSourceShow
 	return b.withArgs(b, args...)

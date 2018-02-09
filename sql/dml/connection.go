@@ -23,11 +23,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/coopernurse/gorp"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/modl"
 )
 
 type uniqueIDFn func() string
@@ -104,10 +102,10 @@ type ConnPoolOption struct {
 	// UPDATE user SET ..., version = version + 1 WHERE id = ? AND version = ?
 	// TODO implement OptimisticLock
 	OptimisticLock bool
-	// OptimisticLockFieldName custom global column name, defaults to `version uint64`
+	// OptimisticLockFieldName custom global column name, defaults to `version
+	// uint64`.
+	// TODO implement OptimisticLock
 	OptimisticLockColumnName string
-	A                        gorp.OptimisticLockError
-	B                        modl.OptimisticLockError
 }
 
 // WithLogger sets the customer logger to be used across the package. The logger
@@ -341,7 +339,9 @@ func (c *ConnPool) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error
 	}, nil
 }
 
-// TODO add this to all connection types, like Conn and Tx
+// WithQueryBuilder creates a new Argument with the assigned connection and
+// builds the SQL string. The returned arguments and errors of the QueryBuilder
+// will be forwarded to the Arguments type.
 func (c *ConnPool) WithQueryBuilder(qb QueryBuilder) *Arguments {
 	sqlStr, argsRaw, err := qb.ToSQL()
 	var args [defaultArgumentsCapacity]argument
@@ -462,6 +462,25 @@ func (c *Conn) Close() error {
 	return c.DB.Close() // no stack wrap otherwise error is hard to compare
 }
 
+// WithQueryBuilder creates a new Argument with the assigned connection and
+// builds the SQL string. The returned arguments and errors of the QueryBuilder
+// will be forwarded to the Arguments type.
+func (c *Conn) WithQueryBuilder(qb QueryBuilder) *Arguments {
+	sqlStr, argsRaw, err := qb.ToSQL()
+	var args [defaultArgumentsCapacity]argument
+	return &Arguments{
+		base: builderCommon{
+			cachedSQL: []byte(sqlStr),
+			Log:       c.Log,
+			id:        c.makeUniqueID(),
+			DB:        c.DB,
+			ärgErr:    errors.WithStack(err),
+		},
+		raw:       argsRaw,
+		arguments: args[:0],
+	}
+}
+
 // Commit finishes the transaction. It logs the time taken, if a logger has been
 // set with Info logging enabled.
 func (tx *Tx) Commit() error {
@@ -504,6 +523,25 @@ func (tx *Tx) Wrap(fns ...func() error) error {
 		}
 	}
 	return errors.WithStack(tx.Commit())
+}
+
+// WithQueryBuilder creates a new Argument with the assigned connection and
+// builds the SQL string. The returned arguments and errors of the QueryBuilder
+// will be forwarded to the Arguments type.
+func (tx *Tx) WithQueryBuilder(qb QueryBuilder) *Arguments {
+	sqlStr, argsRaw, err := qb.ToSQL()
+	var args [defaultArgumentsCapacity]argument
+	return &Arguments{
+		base: builderCommon{
+			cachedSQL: []byte(sqlStr),
+			Log:       tx.Log,
+			id:        tx.makeUniqueID(),
+			DB:        tx.DB,
+			ärgErr:    errors.WithStack(err),
+		},
+		raw:       argsRaw,
+		arguments: args[:0],
+	}
 }
 
 // Architecture bug in this function

@@ -181,6 +181,7 @@ func (b *With) Recursive() *With {
 // current DML type (Delete, Insert, Select, Update, Union, With, etc.). The
 // query executor can still be overwritten. Interpolation does not support the
 // raw interfaces.
+// It's an architecture bug to use WithArgs inside a loop.
 func (b *With) WithArgs(args ...interface{}) *Arguments {
 	b.source = dmlSourceWith
 	return b.withArgs(b, args...)

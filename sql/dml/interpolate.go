@@ -268,9 +268,9 @@ func writeInterpolate(buf *bytes.Buffer, sql string, args arguments) error {
 			}
 			pos += p + 1
 		case r == '[':
-			w := strings.IndexRune(sql[pos:], ']')
+			w = strings.IndexRune(sql[pos:], ']')
 			col := sql[pos : pos+w]
-			dialect.EscapeIdent(buf, string(col))
+			dialect.EscapeIdent(buf, col)
 			pos += w + 1 // size of ']'
 		default:
 			buf.WriteString(sql[pos-w : pos])
@@ -316,7 +316,7 @@ func writeInterpolateBytes(buf *bytes.Buffer, sql []byte, args arguments) error 
 			}
 			pos += p + 1
 		case r == '[':
-			w := bytes.IndexByte(sql[pos:], ']')
+			w = bytes.IndexByte(sql[pos:], ']')
 			col := sql[pos : pos+w]
 			dialect.EscapeIdent(buf, string(col))
 			pos += w + 1 // size of ']'

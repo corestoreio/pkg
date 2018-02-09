@@ -72,23 +72,18 @@ type queryBuilder interface {
 
 // builderCommon
 type builderCommon struct {
-	// source defines with which DML statement the builderCommon struct has been initialized.
-	// Constants are `dmlType*`
-	source rune
+	defaultQualifier string
 	// ID of a statement. Used in logging. The ID gets generated with function
 	// signature `func() string`. This func gets applied to the logger when
 	// setting up a logger.
-	id  string     // tracing ID
-	Log log.Logger // Log optional logger
-
+	id string // tracing ID
 	// ärgErr represents an argument error caused in any of the other functions.
 	// A stack has been attached to the error to identify properly the source.
 	ärgErr error // Sorry Germans for that terrible pun #notSorry
-
-	defaultQualifier string
-	// isWithInterfaces will be set to true if the raw interface arguments are
-	// getting applied.
-	isWithInterfaces bool
+	// source defines with which DML statement the builderCommon struct has been initialized.
+	// Constants are `dmlType*`
+	source rune
+	Log    log.Logger // Log optional logger
 	// templateStmtCount only used in case a UNION statement acts as a template.
 	// Create one SELECT statement and by setting the data for
 	// Union.StringReplace function additional SELECT statements are getting
@@ -113,11 +108,6 @@ type builderCommon struct {
 	// qualifiedColumns gets collected before calling ToSQL, and clearing the all
 	// pointers, to know which columns need values from the QualifiedRecords
 	qualifiedColumns []string
-}
-
-// hasBuildCache satisfies partially interface queryBuilder
-func (b *builderCommon) hasBuildCache() bool {
-	return !b.IsBuildCacheDisabled
 }
 
 // buildToSQL builds the raw SQL string and caches it as a byte slice. It gets
