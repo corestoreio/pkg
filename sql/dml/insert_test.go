@@ -772,5 +772,4 @@ func TestInsert_Expressions_In_Values(t *testing.T) {
 			"",
 		)
 	})
-
 }

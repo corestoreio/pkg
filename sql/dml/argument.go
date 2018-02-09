@@ -555,10 +555,11 @@ type Arguments struct {
 	QualifiedColumnsAliases []string
 	// insertCachedSQL contains the final build SQL string with the correct
 	// amount of placeholders.
-	insertCachedSQL   []byte
-	insertColumnCount uint
-	insertRowCount    uint
-	Options           uint
+	insertCachedSQL     []byte
+	insertIsBuildValues bool
+	insertColumnCount   uint
+	insertRowCount      uint
+	Options             uint
 	// hasNamedArgs checks if the SQL string in the cachedSQL field contains
 	// named arguments. 0 not yet checked, 1=does not contain, 2 = yes
 	hasNamedArgs      uint8 // 0 not checked, 1=no, 2=yes
@@ -808,14 +809,15 @@ func (a *Arguments) prepareArgsInsert(extArgs ...interface{}) (string, []interfa
 	cm.setColumns(a.base.qualifiedColumns)
 	//defer bufferpool.PutTwin(sqlBuf)
 	cm.arguments = append(cm.arguments, a.arguments...)
+	lenInsertCachedSQL := len(a.insertCachedSQL)
 	{
-		if _, err := sqlBuf.First.Write(a.base.cachedSQL); err != nil {
+		cachedSQL := a.base.cachedSQL
+		if lenInsertCachedSQL > 0 {
+			cachedSQL = a.insertCachedSQL
+		}
+		if _, err := sqlBuf.First.Write(cachedSQL); err != nil {
 			return "", nil, errors.WithStack(err)
 		}
-
-		// Extract arguments from ColumnMapper and append them to `a.args`.
-		// inserting multiple rows retrieved from a collection. There is no qualifier.
-		//cm := NewColumnMap(MakeArgs(len(a.base.qualifiedColumns)*5/4), a.base.qualifiedColumns...)
 
 		for _, qRec := range a.recs {
 			if qRec.Qualifier != "" {
@@ -831,7 +833,7 @@ func (a *Arguments) prepareArgsInsert(extArgs ...interface{}) (string, []interfa
 	extArgs = append(extArgs, a.raw...)
 	totalArgLen := uint(len(cm.arguments) + len(extArgs))
 
-	{ // Write placeholder list e.g. "VALUES (?,?),(?,?)"
+	if !a.insertIsBuildValues && lenInsertCachedSQL == 0 { // Write placeholder list e.g. "VALUES (?,?),(?,?)"
 		odkPos := bytes.Index(a.base.cachedSQL, []byte(onDuplicateKeyPart))
 		if odkPos > 0 {
 			sqlBuf.First.Reset()
@@ -1161,6 +1163,7 @@ func (a *Arguments) Name(n string) *Arguments {
 }
 
 // Reset resets the slice for new usage retaining the already allocated memory.
+// It does not reset the Options field.
 func (a *Arguments) Reset() *Arguments {
 	for i := range a.recs {
 		a.recs[i].Qualifier = ""
@@ -1171,6 +1174,15 @@ func (a *Arguments) Reset() *Arguments {
 	a.raw = a.raw[:0]
 	a.nextUnnamedArgPos = 0
 	return a
+}
+
+// ResetInsert same as Reset but only applicable with INSERT statements and
+// triggers a new build of the VALUES part. This function must be called when
+// the number of argument changes.
+func (a *Arguments) ResetInsert() *Arguments {
+	a.insertIsBuildValues = false
+	a.insertCachedSQL = a.insertCachedSQL[:0]
+	return a.Reset()
 }
 
 // DriverValue adds multiple of the same underlying values to the argument

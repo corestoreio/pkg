@@ -306,3 +306,39 @@ func TestInsert_Prepare(t *testing.T) {
 		assert.Exactly(t, int64(4), lid, "Different LastInsertIDs")
 	})
 }
+
+func TestInsert_BuildValues(t *testing.T) {
+	t.Parallel()
+
+	t.Run("WithArgs", func(t *testing.T) {
+
+		p := &dmlPerson{
+			Name:  "Pike",
+			Email: dml.MakeNullString("pikes@peak.co"),
+		}
+
+		insA := dml.NewInsert("alpha").
+			AddColumns("name", "email").BuildValues().
+			WithArgs()
+
+		// bug
+
+		compareToSQL(t, insA.Record("", p), errors.NoKind,
+			"INSERT INTO `alpha` (`name`,`email`) VALUES (?,?)",
+			"",
+			"Pike", "pikes@peak.co",
+		)
+	})
+
+	t.Run("WithoutArgs", func(t *testing.T) {
+
+		ins := dml.NewInsert("alpha").
+			AddColumns("name", "email").BuildValues()
+
+		compareToSQL(t, ins, errors.NoKind,
+			"INSERT INTO `alpha` (`name`,`email`) VALUES (?,?)",
+			"",
+		)
+	})
+
+}

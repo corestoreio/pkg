@@ -251,6 +251,8 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 
 	b.Run("interpolate", func(b *testing.B) {
 		args := dml.MakeArgs(3).Int64(4).Int64s(entityIDs...).Int64s(174, 175).Int(0)
+
+		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			sel := dml.NewSelect("entity_id", "attribute_id", "value").
 				From("catalog_product_entity_varchar").
@@ -261,7 +263,7 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 
 			sel.EstimatedCachedSQLSize = 8192
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithArgs().Arguments(args).ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithArgs().Interpolate().Arguments(args).ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -287,7 +289,7 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 
 			sel.EstimatedCachedSQLSize = 8192
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithArgs().Arguments(args).ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithArgs().Interpolate().Arguments(args).ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -296,6 +298,35 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 			}
 		}
 	})
+
+	b.Run("interpolate optimized", func(b *testing.B) {
+		args := dml.MakeArgs(3).Int64(4).Int64s(entityIDs...).Int64s(174, 175).Int(0)
+
+		sel := dml.NewSelect("entity_id", "attribute_id", "value").
+			From("catalog_product_entity_varchar").
+			Where(dml.Column("entity_type_id").PlaceHolder()).
+			Where(dml.Column("entity_id").In().PlaceHolder()).
+			Where(dml.Column("attribute_id").In().PlaceHolder()).
+			Where(dml.Column("store_id").PlaceHolder())
+		sel.EstimatedCachedSQLSize = 8192
+
+		selA := sel.WithArgs().Interpolate()
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			var err error
+			// the generated string benchmarkSelectStr is 5300 characters long
+			benchmarkSelectStr, benchmarkGlobalVals, err = selA.Arguments(args).ToSQL()
+			if err != nil {
+				b.Fatalf("%+v", err)
+			}
+			if benchmarkGlobalVals != nil {
+				b.Fatal("Args should be nil")
+			}
+			selA.Reset()
+		}
+	})
+
 }
 
 func BenchmarkSelect_ComplexAddColumns(b *testing.B) {
@@ -449,16 +480,19 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 func BenchmarkInsertRecordsSQL(b *testing.B) {
 
 	obj := someRecord{SomethingID: 1, UserID: 99, Other: false}
+	insA := dml.NewInsert("alpha").
+		AddColumns("something_id", "user_id", "other").
+		WithArgs()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkSelectStr, benchmarkGlobalVals, err = dml.NewInsert("alpha").
-			AddColumns("something_id", "user_id", "other").
-			WithArgs().Record("", obj).ToSQL()
+		benchmarkSelectStr, benchmarkGlobalVals, err = insA.Record("", obj).ToSQL()
 		if err != nil {
 			b.Fatal(err)
 		}
+		insA.Reset()
+		b.Fatal(benchmarkSelectStr)
 	}
 }
 

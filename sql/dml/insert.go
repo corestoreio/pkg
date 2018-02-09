@@ -268,6 +268,7 @@ func (b *Insert) WithArgs(args ...interface{}) *Arguments {
 		a.insertColumnCount = uint(b.RecordPlaceHolderCount)
 	}
 	a.insertRowCount = uint(b.RowCount)
+	a.insertIsBuildValues = b.IsBuildValues
 	return a
 }
 
