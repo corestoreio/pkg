@@ -308,7 +308,7 @@ func ExampleInsert_expressionInVALUES() {
 	//`customer_group` WHERE (`name` = ?)))
 }
 
-func ExampleNewDelete() {
+func ExampleDelete() {
 	d := dml.NewDelete("tableA").Where(
 		dml.Column("a").Like().Str("b'%"),
 		dml.Column("b").In().Ints(3, 4, 5, 6),
@@ -319,6 +319,30 @@ func ExampleNewDelete() {
 	//Statement:
 	//DELETE FROM `tableA` WHERE (`a` LIKE 'b\'%') AND (`b` IN (3,4,5,6)) ORDER BY
 	//`id` LIMIT 1
+}
+
+func ExampleDelete_FromTables() {
+	d := dml.NewDelete("customer_entity").Alias("ce").
+		FromTables("customer_address", "customer_company").
+		Join(
+			dml.MakeIdentifier("customer_company").Alias("cc"),
+			dml.Columns("ce.entity_id", "cc.customer_id"),
+		).
+		RightJoin(
+			dml.MakeIdentifier("customer_address").Alias("ca"),
+			dml.Column("ce.entity_id").Equal().Column("ca.parent_id"),
+		).
+		Where(
+			dml.Column("ce.created_at").Less().PlaceHolder(),
+		).
+		Limit(1).OrderBy("id")
+	writeToSQLAndInterpolate(d)
+	// Output:
+	//Statement:
+	//DELETE `ce`,`customer_address`,`customer_company` FROM `customer_entity` AS `ce`
+	//INNER JOIN `customer_company` AS `cc` USING (`ce.entity_id`,`cc.customer_id`)
+	//RIGHT JOIN `customer_address` AS `ca` ON (`ce`.`entity_id` = `ca`.`parent_id`)
+	//WHERE (`ce`.`created_at` < ?) ORDER BY `id` LIMIT 1
 }
 
 // ExampleNewUnion constructs a UNION with three SELECTs. It preserves the

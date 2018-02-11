@@ -160,3 +160,117 @@ func TestDelete_Prepare(t *testing.T) {
 		assert.Exactly(t, int64(4), lid, "Different RowsAffected")
 	})
 }
+
+func TestDelete_Join(t *testing.T) {
+	t.Parallel()
+
+	del1 := dml.NewDelete("customer_entity").Alias("ce").
+		FromTables("customer_address", "customer_company").
+		Join(
+			dml.MakeIdentifier("customer_company").Alias("cc"),
+			dml.Columns("ce.entity_id", "cc.customer_id"),
+		).
+		RightJoin(
+			dml.MakeIdentifier("customer_address").Alias("ca"),
+			dml.Columns("ce.entity_id", "ca.parent_id"),
+		).
+		Where(
+			dml.Column("ce.created_at").Less().PlaceHolder(),
+		)
+
+	t.Run("JOIN USING with alias", func(t *testing.T) {
+		compareToSQL(t, del1, errors.NoKind,
+			"DELETE `ce`,`customer_address`,`customer_company` FROM `customer_entity` AS `ce` INNER JOIN `customer_company` AS `cc` USING (`ce.entity_id`,`cc.customer_id`) RIGHT JOIN `customer_address` AS `ca` USING (`ce.entity_id`,`ca.parent_id`) WHERE (`ce`.`created_at` < ?)",
+			"",
+		)
+	})
+
+	t.Run("JOIN USING with alias WithArgs", func(t *testing.T) {
+		compareToSQL(t, del1.WithArgs().Time(now()), errors.NoKind,
+			"DELETE `ce`,`customer_address`,`customer_company` FROM `customer_entity` AS `ce` INNER JOIN `customer_company` AS `cc` USING (`ce.entity_id`,`cc.customer_id`) RIGHT JOIN `customer_address` AS `ca` USING (`ce.entity_id`,`ca.parent_id`) WHERE (`ce`.`created_at` < ?)",
+			"DELETE `ce`,`customer_address`,`customer_company` FROM `customer_entity` AS `ce` INNER JOIN `customer_company` AS `cc` USING (`ce.entity_id`,`cc.customer_id`) RIGHT JOIN `customer_address` AS `ca` USING (`ce.entity_id`,`ca.parent_id`) WHERE (`ce`.`created_at` < '2006-01-02 15:04:05')",
+			now(),
+		)
+	})
+
+	t.Run("LeftJoin USING without alias", func(t *testing.T) {
+
+		del := dml.NewDelete("customer_entity").
+			FromTables("customer_address").
+			LeftJoin(
+				dml.MakeIdentifier("customer_address").Alias("ca"),
+				dml.Columns("ce.entity_id", "ca.parent_id"),
+			).
+			Where(
+				dml.Column("ce.created_at").Less().PlaceHolder(),
+			)
+
+		compareToSQL(t, del, errors.NoKind,
+			"DELETE `customer_entity`,`customer_address` FROM `customer_entity` LEFT JOIN `customer_address` AS `ca` USING (`ce.entity_id`,`ca.parent_id`) WHERE (`ce`.`created_at` < ?)",
+			"",
+		)
+	})
+
+	t.Run("OuterJoin USING without alias", func(t *testing.T) {
+
+		del := dml.NewDelete("customer_entity").
+			FromTables("customer_address").
+			OuterJoin(
+				dml.MakeIdentifier("customer_address").Alias("ca"),
+				dml.Columns("ce.entity_id", "ca.parent_id"),
+			)
+
+		compareToSQL(t, del, errors.NoKind,
+			"DELETE `customer_entity`,`customer_address` FROM `customer_entity` OUTER JOIN `customer_address` AS `ca` USING (`ce.entity_id`,`ca.parent_id`)",
+			"",
+		)
+	})
+
+	t.Run("JOIN USING without FromTables", func(t *testing.T) {
+
+		del := dml.NewDelete("customer_entity").
+			CrossJoin(
+				dml.MakeIdentifier("customer_address").Alias("ca"),
+				dml.Column("ce.entity_id").Equal().Column("ca.parent_id"),
+			).
+			Where(
+				dml.Column("ce.created_at").Less().PlaceHolder(),
+			)
+
+		compareToSQL(t, del, errors.NoKind,
+			"DELETE FROM `customer_entity` CROSS JOIN `customer_address` AS `ca` ON (`ce`.`entity_id` = `ca`.`parent_id`) WHERE (`ce`.`created_at` < ?)",
+			"",
+		)
+	})
+}
+
+func TestDelete_Returning(t *testing.T) {
+	t.Parallel()
+
+	t.Run("not allowed", func(t *testing.T) {
+		del := dml.NewDelete("customer_entity").
+			FromTables("customer_address").
+			OuterJoin(
+				dml.MakeIdentifier("customer_address").Alias("ca"),
+				dml.Columns("ce.entity_id", "ca.parent_id"),
+			)
+		del.Returning = dml.NewSelect()
+		compareToSQL(t, del, errors.NotAllowed,
+			"",
+			"",
+		)
+	})
+
+	t.Run("return delete rows", func(t *testing.T) {
+		del := dml.NewDelete("customer_entity").
+			Where(
+				dml.Column("ce.entity_id").GreaterOrEqual().PlaceHolder(),
+			)
+		del.Returning = dml.NewSelect("entity_id", "created_at").From("customer_entity")
+		compareToSQL(t, del, errors.NoKind,
+			"DELETE FROM `customer_entity` WHERE (`ce`.`entity_id` >= ?) RETURNING SELECT `entity_id`, `created_at` FROM `customer_entity`",
+			"",
+		)
+	})
+
+}

@@ -43,11 +43,20 @@ import (
 type Delete struct {
 	BuilderBase
 	BuilderConditional
+	// MultiTables specifies the additional tables to delete from. Use function
+	// `FromTables` to conveniently set it.
+	MultiTables ids
+	// Returning allows from MariaDB 10.0.5, it is possible to return a
+	// resultset of the deleted rows for a single table to the client by using
+	// the syntax DELETE ... RETURNING select_expr [, select_expr2 ...]] Any of
+	// SQL expression that can be calculated from a single row fields is
+	// allowed. Subqueries are allowed. The AS keyword is allowed, so it is
+	// possible to use aliases. The use of aggregate functions is not allowed.
+	// RETURNING cannot be used in multi-table DELETEs.
+	Returning *Select
 	// Listeners allows to dispatch certain functions in different
 	// situations.
 	Listeners ListenersDelete
-	// Select used in case a DELETE statement should be build from a SELECT.
-	Select *Select
 }
 
 // NewDelete creates a new Delete object.
@@ -99,19 +108,53 @@ func (tx *Tx) DeleteFrom(from string) *Delete {
 	return newDeleteFrom(tx.DB, tx.makeUniqueID, tx.Log, from)
 }
 
-// FromSelect derives a DELETE with a SELECT statement. It supports the multi
-// table syntax. Tables argument can be the actual table names or their aliases.
-func (b *Delete) FromSelect(s *Select, tables ...string) *Delete {
-	panic("TODO implement")
+// FromTables specifies additional tables to delete from besides the default table.
+func (b *Delete) FromTables(tables ...string) *Delete {
 	//DELETE [LOW_PRIORITY] [QUICK] [IGNORE]
-	//tbl_name[.*] [, tbl_name[.*]] ...
+	//tbl_name[.*] [, tbl_name[.*]] ...	<-- MultiTables/FromTables
 	//FROM table_references
 	//[WHERE where_condition]
-	//
-	//DELETE [LOW_PRIORITY] [QUICK] [IGNORE]
-	//FROM tbl_name[.*] [, tbl_name[.*]] ...
-	//USING table_references
-	//[WHERE where_condition]
+	for _, t := range tables {
+		b.MultiTables = append(b.MultiTables, MakeIdentifier(t))
+	}
+	return b
+}
+
+// Join creates an INNER join construct. By default, the onConditions are glued
+// together with AND. Same Source and Target Table: Until MariaDB 10.3.1,
+// deleting from a table with the same source and target was not possible. From
+// MariaDB 10.3.1, this is now possible. For example:
+//		DELETE FROM t1 WHERE c1 IN (SELECT b.c1 FROM t1 b WHERE b.c2=0);
+func (b *Delete) Join(table id, onConditions ...*Condition) *Delete {
+	b.join("INNER", table, onConditions...)
+	return b
+}
+
+// LeftJoin creates a LEFT join construct. By default, the onConditions are
+// glued together with AND.
+func (b *Delete) LeftJoin(table id, onConditions ...*Condition) *Delete {
+	b.join("LEFT", table, onConditions...)
+	return b
+}
+
+// RightJoin creates a RIGHT join construct. By default, the onConditions are
+// glued together with AND.
+func (b *Delete) RightJoin(table id, onConditions ...*Condition) *Delete {
+	b.join("RIGHT", table, onConditions...)
+	return b
+}
+
+// OuterJoin creates an OUTER join construct. By default, the onConditions are
+// glued together with AND.
+func (b *Delete) OuterJoin(table id, onConditions ...*Condition) *Delete {
+	b.join("OUTER", table, onConditions...)
+	return b
+}
+
+// CrossJoin creates a CROSS join construct. By default, the onConditions are
+// glued together with AND.
+func (b *Delete) CrossJoin(table id, onConditions ...*Condition) *Delete {
+	b.join("CROSS", table, onConditions...)
 	return b
 }
 
@@ -214,10 +257,10 @@ func (b *Delete) DisableBuildCache() *Delete {
 
 // ToSQL serialized the Delete to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Delete) toSQL(w *bytes.Buffer, placeHolders []string) ([]string, error) {
+func (b *Delete) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err error) {
 	b.defaultQualifier = b.Table.qualifier()
 
-	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
+	if err = b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
@@ -232,13 +275,49 @@ func (b *Delete) toSQL(w *bytes.Buffer, placeHolders []string) ([]string, error)
 
 	w.WriteString("DELETE ")
 	writeStmtID(w, b.id)
+
+	for i, mt := range b.MultiTables {
+		if i == 0 {
+			if b.Table.Aliased != "" {
+				Quoter.WriteIdentifier(w, b.Table.Aliased)
+			} else {
+				Quoter.WriteIdentifier(w, b.Table.Name)
+			}
+			w.WriteByte(',')
+		}
+		if i > 0 {
+			w.WriteByte(',')
+		}
+		placeHolders, err = mt.writeQuoted(w, placeHolders)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+	if len(b.MultiTables) > 0 {
+		w.WriteByte(' ')
+		if b.Returning != nil {
+			return nil, errors.NotAllowed.Newf("[dml] MariaDB does not support RETURNING in multi-table DELETEs")
+		}
+	}
+
 	w.WriteString("FROM ")
-	placeHolders, err := b.Table.writeQuoted(w, placeHolders)
+	placeHolders, err = b.Table.writeQuoted(w, placeHolders)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	// TODO(CyS) add SQLStmtDeleteJoin
+	for _, f := range b.Joins {
+		w.WriteByte(' ')
+		w.WriteString(f.JoinType)
+		w.WriteString(" JOIN ")
+		if placeHolders, err = f.Table.writeQuoted(w, placeHolders); err != nil {
+			return nil, errors.WithStack(err)
+		}
+		if placeHolders, err = f.On.write(w, 'j', placeHolders); err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+
 	placeHolders, err = b.Wheres.write(w, 'w', placeHolders)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -246,6 +325,14 @@ func (b *Delete) toSQL(w *bytes.Buffer, placeHolders []string) ([]string, error)
 
 	sqlWriteOrderBy(w, b.OrderBys, false)
 	sqlWriteLimitOffset(w, b.LimitValid, b.LimitCount, false, 0)
+
+	if b.Returning != nil {
+		w.WriteString(" RETURNING ")
+		placeHolders, err = b.Returning.toSQL(w, placeHolders)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
 
 	return placeHolders, nil
 }
