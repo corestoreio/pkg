@@ -37,10 +37,7 @@ func TestTx_Wrap(t *testing.T) {
 		dbMock.ExpectExec("UPDATE `tableX` SET `value`").WithArgs().WillReturnResult(sqlmock.NewResult(0, 9))
 		dbMock.ExpectCommit()
 
-		tx, err := dbc.BeginTx(context.TODO(), nil)
-		require.NoError(t, err)
-
-		require.NoError(t, tx.Wrap(func() error {
+		require.NoError(t, dbc.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
 			// this creates an interpolated statement
 			res, err := tx.Update("tableX").Set(dml.Column("value").Int(5)).Where(dml.Column("scope").Str("default")).WithArgs().ExecContext(context.TODO())
 			if err != nil {
@@ -63,10 +60,7 @@ func TestTx_Wrap(t *testing.T) {
 		dbMock.ExpectExec("UPDATE `tableX` SET `value`").WithArgs().WillReturnError(errors.Aborted.Newf("Sorry dude"))
 		dbMock.ExpectRollback()
 
-		tx, err := dbc.BeginTx(context.TODO(), nil)
-		require.NoError(t, err)
-
-		err = tx.Wrap(func() error {
+		err := dbc.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
 			// Interpolated statement
 			res, err := tx.Update("tableX").Set(dml.Column("value").Int(5)).Where(dml.Column("scope").Str("default")).WithArgs().ExecContext(context.TODO())
 			assert.Nil(t, res)

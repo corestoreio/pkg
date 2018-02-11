@@ -260,7 +260,7 @@ func (b *Insert) WithArgs(args ...interface{}) *Arguments {
 		// Must change to this source because to trigger a different argument
 		// collector in Arguments.prepareArgs. It is not a real INSERT statement
 		// anymore.
-		a.base.source = dmlSourceSelect
+		a.base.source = dmlSourceInsertSelect
 		return a
 	}
 

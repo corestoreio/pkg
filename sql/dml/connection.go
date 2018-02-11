@@ -339,6 +339,40 @@ func (c *ConnPool) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error
 	}, nil
 }
 
+// Transaction is a helper method that will automatically BEGIN a transaction
+// and COMMIT or ROLLBACK once the supplied functions are done executing.
+//
+//      if err := con.Transaction(
+// 			func(tx *dml.Tx) error {
+//          	// SQL
+// 		        return nil
+//      	}[,
+// 			func(tx *dml.Tx) error {
+//          	// more SQL
+// 		        return nil
+//      	},]
+// 		); err != nil{
+//           panic(err.Error()) // you could gracefully handle the error also
+//      }
+// It logs the time taken, if a logger has been set with Debug logging enabled.
+// The provided context gets used only for starting the transaction.
+func (c *ConnPool) Transaction(ctx context.Context, opts *sql.TxOptions, fns ...func(*Tx) error) error {
+	tx, err := c.BeginTx(ctx, opts)
+	if err != nil {
+		return err
+	}
+	for i, f := range fns {
+		if err := f(tx); err != nil {
+			err = errors.Wrapf(err, "[dml] ConnPool.Transaction.error at index %d", i)
+			if rErr := tx.Rollback(); rErr != nil {
+				err = errors.Wrapf(rErr, "[dml] ConnPool.Transaction.Rollback.error at index %d", i)
+			}
+			return err
+		}
+	}
+	return errors.WithStack(tx.Commit())
+}
+
 // WithQueryBuilder creates a new Argument with the assigned connection and
 // builds the SQL string. The returned arguments and errors of the QueryBuilder
 // will be forwarded to the Arguments type.
@@ -450,6 +484,40 @@ func (c *Conn) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 	}, nil
 }
 
+// Transaction is a helper method that will automatically BEGIN a transaction
+// and COMMIT or ROLLBACK once the supplied functions are done executing.
+//
+//      if err := con.Transaction(
+// 			func(tx *dml.Tx) error {
+//          	// SQL
+// 		        return nil
+//      	}[,
+// 			func(tx *dml.Tx) error {
+//          	// more SQL
+// 		        return nil
+//      	},]
+// 		); err != nil{
+//           panic(err.Error()) // you could gracefully handle the error also
+//      }
+// It logs the time taken, if a logger has been set with Debug logging enabled.
+// The provided context gets used only for starting the transaction.
+func (c *Conn) Transaction(ctx context.Context, opts *sql.TxOptions, fns ...func(*Tx) error) error {
+	tx, err := c.BeginTx(ctx, opts)
+	if err != nil {
+		return err
+	}
+	for i, f := range fns {
+		if err := f(tx); err != nil {
+			err = errors.Wrapf(err, "[dml] ConnPool.Transaction.error at index %d", i)
+			if rErr := tx.Rollback(); rErr != nil {
+				err = errors.Wrapf(rErr, "[dml] ConnPool.Transaction.Rollback.error at index %d", i)
+			}
+			return err
+		}
+	}
+	return errors.WithStack(tx.Commit())
+}
+
 // Close returns the connection to the connection pool. All operations after a
 // Close will return with ErrConnDone. Close is safe to call concurrently with
 // other operations and will block until all other operations finish. It may be
@@ -499,32 +567,6 @@ func (tx *Tx) Rollback() error {
 	return tx.DB.Rollback()
 }
 
-// Wrap is a helper method that will automatically COMMIT or ROLLBACK once the
-// supplied functions are done executing.
-//
-//      tx, err := db.Begin()
-//      if err != nil{
-//           panic(err.Error()) // you could gracefully handle the error also
-//      }
-//      if err := tx.Wrap(func() error {
-//          // SQL
-//          return nil
-//      }); err != nil{
-//           panic(err.Error()) // you could gracefully handle the error also
-//      }
-// It logs the time taken, if a logger has been set with Info logging enabled.
-func (tx *Tx) Wrap(fns ...func() error) error {
-	for i, f := range fns {
-		if err := f(); err != nil {
-			if rErr := tx.Rollback(); rErr != nil {
-				return errors.Wrapf(rErr, "[dml] transaction.wrap.Rollback.error at index %d", i)
-			}
-			return errors.Wrapf(err, "[dml] transaction.wrap.error at index %d", i)
-		}
-	}
-	return errors.WithStack(tx.Commit())
-}
-
 // WithQueryBuilder creates a new Argument with the assigned connection and
 // builds the SQL string. The returned arguments and errors of the QueryBuilder
 // will be forwarded to the Arguments type.
@@ -543,43 +585,3 @@ func (tx *Tx) WithQueryBuilder(qb QueryBuilder) *Arguments {
 		arguments: args[:0],
 	}
 }
-
-// Architecture bug in this function
-//func (tx *Tx) WrapBuilder(bldrs ...QueryBuilder) (err error) {
-//	defer func() {
-//		if err != nil {
-//			if rErr := tx.Rollback(); rErr != nil {
-//				err = errors.Wrapf(rErr, "[dml] transaction.wrap.Rollback.error")
-//			}
-//		}
-//	}()
-//	for i := 0; i < len(bldrs) && err == nil; i++ {
-//		bldr := bldrs[i]
-//		switch b := bldr.(type) {
-//		case *Arguments:
-//			b.WithDB(tx.DB)
-//		case *Delete:
-//			b.WithDB(tx.DB)
-//		case *Insert:
-//			b.WithDB(tx.DB)
-//		case *Update:
-//			b.WithDB(tx.DB)
-//		case *Select:
-//			b.WithDB(tx.DB)
-//		case *Union:
-//			b.WithDB(tx.DB)
-//		case *With:
-//			b.WithDB(tx.DB)
-//		//case *Stmt:
-//		//	b.Stmt = tx.DB.Stmt(b.Stmt)
-//		//	b.base.DB = stmtWrapper{stmt: b.Stmt}
-//		default:
-//			err = errors.NotSupported.Newf("[dml] WrapBuilder does not support this type: %T", bldr)
-//		}
-//
-//	}
-//	if err == nil {
-//		err = errors.WithStack(tx.Commit())
-//	}
-//	return
-//}

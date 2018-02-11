@@ -73,12 +73,11 @@ func TestWithLogger_Insert(t *testing.T) {
 
 		t.Run("Tx Commit", func(t *testing.T) {
 			defer buf.Reset()
-			tx, err := rConn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.NoError(t, tx.Wrap(func() error {
+			err := rConn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
 				_, err := tx.InsertInto("dml_people").Replace().AddColumns("email", "name").WithArgs("a@b.c", "John").ExecContext(context.TODO())
 				return err
-			}))
+			})
+			require.NoError(t, err)
 			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ04\" tx_id: \"UNIQ12\"\nDEBUG Exec conn_pool_id: \"UNIQ04\" tx_id: \"UNIQ12\" insert_id: \"UNIQ16\" table: \"dml_people\" duration: 0 sql: \"REPLACE /*ID$UNIQ16*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\" source: \"i\" error: \"<nil>\"\nDEBUG Commit conn_pool_id: \"UNIQ04\" tx_id: \"UNIQ12\" duration: 0\n",
 				buf.String())
 		})
@@ -88,11 +87,11 @@ func TestWithLogger_Insert(t *testing.T) {
 		conn, err := rConn.Conn(context.TODO())
 		require.NoError(t, err)
 
-		d := conn.InsertInto("dml_people").Replace().AddColumns("email", "name").DisableBuildCache()
+		oIns := conn.InsertInto("dml_people").Replace().AddColumns("email", "name").DisableBuildCache()
 
 		t.Run("Exec", func(t *testing.T) {
 			defer buf.Reset()
-			_, err := d.WithArgs().String("a@b.zeh").String("J0hn").Interpolate().ExecContext(context.TODO())
+			_, err := oIns.WithArgs().String("a@b.zeh").String("J0hn").Interpolate().ExecContext(context.TODO())
 			require.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" insert_id: \"UNIQ24\" table: \"dml_people\" duration: 0 sql: \"REPLACE /*ID$UNIQ24*/ INTO `dml_people` (`email`,`name`) VALUES ('a@b.zeh','J0hn')\" source: \"i\" error: \"<nil>\"\n",
@@ -101,8 +100,8 @@ func TestWithLogger_Insert(t *testing.T) {
 
 		t.Run("Prepare", func(t *testing.T) {
 			defer buf.Reset()
-			stmt, err := d.BuildValues().Prepare(context.TODO())
-			d.IsBuildValues = false
+			stmt, err := oIns.BuildValues().Prepare(context.TODO())
+			oIns.IsBuildValues = false
 			require.NoError(t, err)
 			defer stmt.Close()
 
@@ -112,8 +111,8 @@ func TestWithLogger_Insert(t *testing.T) {
 
 		t.Run("Prepare Exec", func(t *testing.T) {
 			defer buf.Reset()
-			stmt, err := d.BuildValues().Prepare(context.TODO())
-			d.IsBuildValues = false
+			stmt, err := oIns.BuildValues().Prepare(context.TODO())
+			oIns.IsBuildValues = false
 			require.NoError(t, err)
 			defer stmt.Close()
 
@@ -126,12 +125,12 @@ func TestWithLogger_Insert(t *testing.T) {
 
 		t.Run("Tx Commit", func(t *testing.T) {
 			defer buf.Reset()
-			tx, err := conn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.NoError(t, tx.Wrap(func() error {
+
+			err := conn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
 				_, err := tx.InsertInto("dml_people").Replace().AddColumns("email", "name").WithArgs("a@b.c", "John").ExecContext(context.TODO())
 				return err
-			}))
+			})
+			require.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ28\"\nDEBUG Exec conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ28\" insert_id: \"UNIQ32\" table: \"dml_people\" duration: 0 sql: \"REPLACE /*ID$UNIQ32*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\" source: \"i\" error: \"<nil>\"\nDEBUG Commit conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ28\" duration: 0\n",
 				buf.String())
@@ -139,9 +138,8 @@ func TestWithLogger_Insert(t *testing.T) {
 
 		t.Run("Tx Rollback", func(t *testing.T) {
 			defer buf.Reset()
-			tx, err := conn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.Error(t, tx.Wrap(func() error {
+
+			require.Error(t, conn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
 				_, err := tx.InsertInto("dml_people").Replace().AddColumns("email", "name").
 					WithArgs().String("only one arg provided").Interpolate().ExecContext(context.TODO())
 				return err
@@ -150,6 +148,23 @@ func TestWithLogger_Insert(t *testing.T) {
 			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ36\"\nDEBUG Exec conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ36\" insert_id: \"UNIQ40\" table: \"dml_people\" duration: 0 sql: \"\" source: \"i\" error: \"[dml] Interpolation failed: \\\"REPLACE /*ID$UNIQ40*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\\\": [dml] Number of place holders (2) vs number of arguments (1) do not match.\"\nDEBUG Rollback conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ36\" duration: 0\n",
 				buf.String())
 		})
+
+		t.Run("Tx WithArgs", func(t *testing.T) {
+			defer buf.Reset()
+
+			// This INSERT statement does not have an ID as the others above.
+			insA := dml.NewInsert("dml_people").Replace().AddColumns("email", "name").WithArgs()
+
+			err := conn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
+				_, err := insA.WithTx(tx).String("a@b.c").String("John").ExecContext(context.TODO())
+				return err
+			})
+			require.NoError(t, err)
+
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ44\"\nDEBUG Exec conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ44\" duration: 0 sql: \"REPLACE INTO `dml_people` (`email`,`name`) VALUES (?,?)\" source: \"i\" error: \"<nil>\"\nDEBUG Commit conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ44\" duration: 0\n",
+				buf.String())
+		})
+
 	})
 }
 
@@ -196,9 +211,7 @@ func TestWithLogger_Delete(t *testing.T) {
 
 		t.Run("Tx Commit", func(t *testing.T) {
 			defer buf.Reset()
-			tx, err := rConn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.NoError(t, tx.Wrap(func() error {
+			require.NoError(t, rConn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
 				_, err := tx.DeleteFrom("dml_people").Where(dml.Column("id").GreaterOrEqual().Float64(36.56)).WithArgs().Interpolate().ExecContext(context.TODO())
 				return err
 			}))
@@ -252,10 +265,10 @@ func TestWithLogger_Delete(t *testing.T) {
 
 		t.Run("Tx Commit", func(t *testing.T) {
 			defer buf.Reset()
-			tx, err := conn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.NoError(t, tx.Wrap(func() error {
-				_, err := tx.DeleteFrom("dml_people").Where(dml.Column("id").GreaterOrEqual().Float64(37.56)).WithArgs().Interpolate().ExecContext(context.TODO())
+
+			require.NoError(t, conn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
+				_, err := tx.DeleteFrom("dml_people").Where(dml.Column("id").GreaterOrEqual().Float64(37.56)).
+					WithArgs().Interpolate().ExecContext(context.TODO())
 				return err
 			}))
 
@@ -265,9 +278,8 @@ func TestWithLogger_Delete(t *testing.T) {
 
 		t.Run("Tx Rollback", func(t *testing.T) {
 			defer buf.Reset()
-			tx, err := conn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.Error(t, tx.Wrap(func() error {
+
+			require.Error(t, conn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
 				_, err := tx.DeleteFrom("dml_people").Where(dml.Column("id").GreaterOrEqual().PlaceHolder()).WithArgs().Interpolate().ExecContext(context.TODO())
 				return err
 			}))
@@ -416,9 +428,7 @@ func TestWithLogger_Select(t *testing.T) {
 
 		t.Run("Tx Commit", func(t *testing.T) {
 			defer buf.Reset()
-			tx, err := rConn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.NoError(t, tx.Wrap(func() error {
+			require.NoError(t, rConn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
 				rows, err := tx.SelectFrom("dml_people").
 					AddColumns("name", "email").Where(dml.Column("id").In().Int64s(7, 9)).
 					WithArgs().QueryContext(context.TODO())
@@ -520,9 +530,7 @@ func TestWithLogger_Select(t *testing.T) {
 
 		t.Run("Tx Commit", func(t *testing.T) {
 			defer buf.Reset()
-			tx, err := conn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.NoError(t, tx.Wrap(func() error {
+			require.NoError(t, conn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
 				rows, err := tx.SelectFrom("dml_people").AddColumns("name", "email").Where(dml.Column("id").In().Int64s(71, 91)).
 					WithArgs().QueryContext(context.TODO())
 				if err != nil {
@@ -536,9 +544,7 @@ func TestWithLogger_Select(t *testing.T) {
 
 		t.Run("Tx Rollback", func(t *testing.T) {
 			defer buf.Reset()
-			tx, err := conn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.Error(t, tx.Wrap(func() error {
+			require.Error(t, conn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
 				rows, err := tx.SelectFrom("dml_people").AddColumns("name", "email").Where(dml.Column("id").In().PlaceHolder()).
 					WithArgs().QueryContext(context.TODO())
 				if err != nil {
@@ -609,9 +615,7 @@ func TestWithLogger_Union(t *testing.T) {
 
 		t.Run("Tx Commit", func(t *testing.T) {
 			defer buf.Reset()
-			tx, err := rConn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.NoError(t, tx.Wrap(func() error {
+			require.NoError(t, rConn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
 				rows, err := tx.Union(
 					dml.NewSelect("name").AddColumnsAliases("email", "email").From("dml_people"),
 					dml.NewSelect("name", "email").FromAlias("dml_people", "dp2").Where(dml.Column("id").In().Int64s(7, 9)),
@@ -667,9 +671,7 @@ func TestWithLogger_Union(t *testing.T) {
 
 		t.Run("Tx Commit", func(t *testing.T) {
 			defer buf.Reset()
-			tx, err := conn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.NoError(t, tx.Wrap(func() error {
+			require.NoError(t, conn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
 				rows, err := tx.Union(
 					dml.NewSelect("name").AddColumnsAliases("email", "email").From("dml_people"),
 					dml.NewSelect("name", "email").FromAlias("dml_people", "dp2").Where(dml.Column("id").In().Int64s(71, 91)),
@@ -685,9 +687,7 @@ func TestWithLogger_Union(t *testing.T) {
 
 		t.Run("Tx Rollback", func(t *testing.T) {
 			defer buf.Reset()
-			tx, err := conn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.Error(t, tx.Wrap(func() error {
+			require.Error(t, conn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
 				rows, err := tx.Union(
 					dml.NewSelect("name").AddColumnsAliases("email", "email").From("dml_people"),
 					dml.NewSelect("name", "email").FromAlias("dml_people", "dp2").Where(dml.Column("id").In().PlaceHolder()),
@@ -748,9 +748,7 @@ func TestWithLogger_Update(t *testing.T) {
 
 		t.Run("Tx Commit", func(t *testing.T) {
 			defer buf.Reset()
-			tx, err := rConn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.NoError(t, tx.Wrap(func() error {
+			require.NoError(t, rConn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
 				_, err := tx.Update("dml_people").Set(
 					dml.Column("email").Str("new@email.com"),
 				).Where(dml.Column("id").GreaterOrEqual().Float64(36.56)).WithArgs().ExecContext(context.TODO())
@@ -806,9 +804,7 @@ func TestWithLogger_Update(t *testing.T) {
 
 		t.Run("Tx Commit", func(t *testing.T) {
 			defer buf.Reset()
-			tx, err := conn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.NoError(t, tx.Wrap(func() error {
+			require.NoError(t, conn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
 				_, err := tx.Update("dml_people").Set(
 					dml.Column("email").Str("new@email.com"),
 				).Where(dml.Column("id").GreaterOrEqual().Float64(39.56)).WithArgs().ExecContext(context.TODO())
@@ -821,9 +817,7 @@ func TestWithLogger_Update(t *testing.T) {
 
 		t.Run("Tx Rollback", func(t *testing.T) {
 			defer buf.Reset()
-			tx, err := conn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.Error(t, tx.Wrap(func() error {
+			require.Error(t, conn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
 				_, err := tx.Update("dml_people").Set(
 					dml.Column("email").Str("new@email.com"),
 				).Where(dml.Column("id").GreaterOrEqual().PlaceHolder()).WithArgs().ExecContext(context.TODO())
@@ -899,9 +893,7 @@ func TestWithLogger_WithCTE(t *testing.T) {
 
 		t.Run("Tx Commit", func(t *testing.T) {
 			defer buf.Reset()
-			tx, err := rConn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.NoError(t, tx.Wrap(func() error {
+			require.NoError(t, rConn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
 				rows, err := tx.With(
 					dml.WithCTE{
 						Name:    "zehTeEh",
@@ -962,9 +954,7 @@ func TestWithLogger_WithCTE(t *testing.T) {
 
 		t.Run("Tx Commit", func(t *testing.T) {
 			defer buf.Reset()
-			tx, err := conn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.NoError(t, tx.Wrap(func() error {
+			require.NoError(t, conn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
 				rows, err := tx.With(cte).Select(cteSel).WithArgs().QueryContext(context.TODO())
 				if err != nil {
 					return err
@@ -977,9 +967,7 @@ func TestWithLogger_WithCTE(t *testing.T) {
 
 		t.Run("Tx Rollback", func(t *testing.T) {
 			defer buf.Reset()
-			tx, err := conn.BeginTx(context.TODO(), nil)
-			require.NoError(t, err)
-			require.Error(t, tx.Wrap(func() error {
+			require.Error(t, conn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
 				rows, err := tx.With(cte).Select(cteSel.Where(dml.Column("email").In().PlaceHolder())).WithArgs().QueryContext(context.TODO())
 				if err != nil {
 					return err

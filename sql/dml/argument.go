@@ -1351,6 +1351,17 @@ func (a *Arguments) WithDB(db QueryExecPreparer) *Arguments {
 	return a
 }
 
+// WithTx sets the transaction query executor and the logger to run this query
+// within a transaction.
+func (a *Arguments) WithTx(tx *Tx) *Arguments {
+	if a.base.id == "" {
+		a.base.id = tx.makeUniqueID()
+	}
+	a.base.Log = tx.Log
+	a.base.DB = tx.DB
+	return a
+}
+
 /*********************************************
 	LOAD / QUERY and EXEC functions
 *********************************************/

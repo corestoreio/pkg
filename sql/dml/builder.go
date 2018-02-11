@@ -27,13 +27,14 @@ import (
 )
 
 const (
-	dmlSourceSelect = 's'
-	dmlSourceInsert = 'i'
-	dmlSourceUpdate = 'u'
-	dmlSourceDelete = 'd'
-	dmlSourceWith   = 'w'
-	dmlSourceUnion  = 'n'
-	dmlSourceShow   = 'h'
+	dmlSourceSelect       = 's'
+	dmlSourceInsert       = 'i'
+	dmlSourceInsertSelect = 'I'
+	dmlSourceUpdate       = 'u'
+	dmlSourceDelete       = 'd'
+	dmlSourceWith         = 'w'
+	dmlSourceUnion        = 'n'
+	dmlSourceShow         = 'h'
 )
 
 type writer interface {
