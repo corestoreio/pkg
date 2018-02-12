@@ -222,7 +222,7 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 }
 
 type fakePerson struct {
-	Id         int
+	ID         int
 	FirstName  string
 	LastName   string
 	Sex        string
@@ -237,7 +237,7 @@ func (p *fakePerson) MapColumns(cm *dml.ColumnMap) error {
 	for cm.Next() {
 		switch c := cm.Column(); c {
 		case "id":
-			cm.Int(&p.Id)
+			cm.Int(&p.ID)
 		case "first_name":
 			cm.String(&p.FirstName)
 		case "last_name":
@@ -383,7 +383,7 @@ func shuffledInts(size int) []int {
 }
 
 func checkPersonWasFilled(b *testing.B, p fakePerson) {
-	if p.Id == 0 {
+	if p.ID == 0 {
 		b.Fatal("id was 0")
 	}
 	if len(p.FirstName) == 0 {

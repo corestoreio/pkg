@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sync"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -426,6 +427,95 @@ func TestSelect_Prepare(t *testing.T) {
 			require.NoError(t, err)
 			assert.Exactly(t, []int64{36, 37}, val)
 		})
+
+	})
+}
+
+func TestSelect_Argument_Iterate(t *testing.T) {
+	dbc := createRealSession(t)
+	defer dmltest.Close(t, dbc)
+
+	rowCount, err := dbc.SelectFrom("dml_fake_person").Count().WithArgs().LoadInt64(context.Background())
+	require.NoError(t, err)
+	if rowCount < 10000 {
+		t.Fatalf("dml_fake_person table contains less than 10k items, seems not to be installed. Got %d items", rowCount)
+	}
+
+	t.Run("error in mapper", func(t *testing.T) {
+		err := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
+			Limit(5).
+			OrderBy("id").WithArgs().Iterate(context.Background(), func(cm *dml.ColumnMap) error {
+			return errors.Blocked.Newf("Mapping blocked")
+		})
+		assert.True(t, errors.Is(err, errors.Blocked), "Error should have kind errors.Blocked")
+	})
+
+	t.Run("no rows but callback gets called", func(t *testing.T) {
+		err := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
+			Where(dml.Column("id").Int(-1000)).
+			OrderBy("id").WithArgs().Iterate(context.Background(), func(cm *dml.ColumnMap) error {
+			return errors.NotAcceptable.Newf("Mapping blocked")
+		})
+		assert.True(t, errors.Is(err, errors.NotAcceptable), "Error should have kind errors.NotAcceptable")
+	})
+
+	t.Run("iterate serial serial", func(t *testing.T) {
+		selExec := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
+			Limit(500).OrderBy("id").WithArgs()
+
+		err := selExec.Iterate(context.Background(), func(cm *dml.ColumnMap) error {
+
+			fp := &fakePerson{}
+			if err := fp.MapColumns(cm); err != nil {
+				return err
+			}
+
+			if fp.Weight < 1 || fp.Height < 1 || fp.ID < 0 || fp.UpdateTime.IsZero() {
+				return errors.NotValid.Newf("failed to load fakePerson: one of the four fields (id,weight,height,update_time) is empty: %#v", fp)
+			}
+
+			return nil
+		})
+		require.NoError(t, err)
+	})
+
+	t.Run("iterate serial parallel WG (query)", func(t *testing.T) {
+		const limit = 5
+		sel := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
+			Where(
+				dml.Column("id").Between().PlaceHolder(),
+			).
+			Limit(limit).OrderBy("id")
+
+		const iterations = 10
+		var wg sync.WaitGroup
+		wg.Add(iterations)
+		for i := 0; i < iterations; i++ {
+
+			go func(wg *sync.WaitGroup, i int) {
+				defer wg.Done()
+
+				err := sel.WithArgs().Int(i).Int(i+5).Iterate(context.Background(), func(cm *dml.ColumnMap) error {
+
+					fp := &fakePerson{}
+					if err := fp.MapColumns(cm); err != nil {
+						return err
+					}
+					fmt.Printf("%d: %#v\n", i, fp)
+					if fp.Weight < 1 || fp.Height < 1 || fp.ID < i || fp.UpdateTime.IsZero() {
+						return errors.NotValid.Newf("failed to load fakePerson: one of the four fields (id,weight,height,update_time) is empty: %#v", fp)
+					}
+
+					return nil
+				})
+				require.NoError(t, err)
+
+			}(&wg, i*10)
+		}
+		wg.Wait()
+	})
+
+	t.Run("iterate serial parallel WG (prepared)", func(t *testing.T) {
 
 	})
 }

@@ -73,6 +73,7 @@ func createRealSessionWithFixtures(t testing.TB, c *installFixturesConfig) *Conn
 
 // testCloser for usage in conjunction with defer.
 // 		defer testCloser(t,db)
+// Cannot use dmltest.Close because of circular dependency.
 func testCloser(t testing.TB, c ioCloser) {
 	t.Helper()
 	if err := c.Close(); err != nil {

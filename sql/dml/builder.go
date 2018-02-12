@@ -111,62 +111,6 @@ type builderCommon struct {
 	qualifiedColumns []string
 }
 
-// buildToSQL builds the raw SQL string and caches it as a byte slice. It gets
-// called by toSQL.
-// buildArgsAndSQL generates the SQL string and its place holders. Takes care of
-// caching. It returns the string with placeholders.
-func (b *builderCommon) buildToSQL(qb queryBuilder) ([]byte, error) {
-	if b.ärgErr != nil {
-		return nil, errors.WithStack(b.ärgErr)
-	}
-	rawSQL := qb.readBuildCache()
-	if rawSQL == nil || b.IsBuildCacheDisabled {
-
-		// Pre allocating that with a decent size, can speed up writing due to
-		// less re-slicing / buffer.Grow.
-		size := b.EstimatedCachedSQLSize
-		if size == 0 {
-			size = estimatedCachedSQLSize
-		}
-		buf := bytes.NewBuffer(make([]byte, 0, size))
-		qualifiedColumns, err := qb.toSQL(buf, []string{})
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-		var writeCacheSQL []byte
-		if !b.IsBuildCacheDisabled {
-			writeCacheSQL = buf.Bytes()
-		}
-		qb.writeBuildCache(writeCacheSQL, qualifiedColumns)
-		rawSQL = buf.Bytes()
-	}
-	return rawSQL, nil
-}
-
-func (b *builderCommon) prepare(ctx context.Context, db Preparer, qb queryBuilder, source rune) (_ *Stmt, err error) {
-	var rawQuery []byte
-	rawQuery, err = b.buildToSQL(qb)
-	if b.Log != nil && b.Log.IsDebug() {
-		defer log.WhenDone(b.Log).Debug("Prepare", log.Err(err), log.String("sql", string(rawQuery)))
-	}
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	sqlStmt, err := db.PrepareContext(ctx, string(rawQuery))
-	if err != nil {
-		return nil, errors.Wrapf(err, "[dml] Prepare.PrepareContext with query %q", rawQuery)
-	}
-
-	stmt := &Stmt{
-		base: *b,
-		Stmt: sqlStmt,
-	}
-	stmt.base.cachedSQL = rawQuery
-	stmt.base.DB = stmtWrapper{stmt: sqlStmt}
-	stmt.base.source = source
-	return stmt, nil
-}
-
 // estimatedCachedSQLSize 1024 bytes value got retrieved by analyzing and
 // reviewing some M2 SQL queries.
 const estimatedCachedSQLSize = 1024
@@ -192,20 +136,74 @@ type BuilderBase struct {
 	builderCommon
 }
 
+// buildToSQL builds the raw SQL string and caches it as a byte slice. It gets
+// called by toSQL.
+// buildArgsAndSQL generates the SQL string and its place holders. Takes care of
+// caching. It returns the string with placeholders.
+func (bb *BuilderBase) buildToSQL(qb queryBuilder) ([]byte, error) {
+	if bb.ärgErr != nil {
+		return nil, errors.WithStack(bb.ärgErr)
+	}
+	rawSQL := qb.readBuildCache()
+	if rawSQL == nil || bb.IsBuildCacheDisabled {
+
+		// Pre allocating that with a decent size, can speed up writing due to
+		// less re-slicing / buffer.Grow.
+		size := bb.EstimatedCachedSQLSize
+		if size == 0 {
+			size = estimatedCachedSQLSize
+		}
+		buf := bytes.NewBuffer(make([]byte, 0, size))
+		qualifiedColumns, err := qb.toSQL(buf, []string{})
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		var writeCacheSQL []byte
+		if !bb.IsBuildCacheDisabled {
+			writeCacheSQL = buf.Bytes()
+		}
+		qb.writeBuildCache(writeCacheSQL, qualifiedColumns)
+		rawSQL = buf.Bytes()
+	}
+	return rawSQL, nil
+}
+
+func (bb *BuilderBase) prepare(ctx context.Context, db Preparer, qb queryBuilder, source rune) (_ *Stmt, err error) {
+	var rawQuery []byte
+	rawQuery, err = bb.buildToSQL(qb)
+	if bb.Log != nil && bb.Log.IsDebug() {
+		defer log.WhenDone(bb.Log).Debug("Prepare", log.Err(err), log.String("sql", string(rawQuery)))
+	}
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	sqlStmt, err := db.PrepareContext(ctx, string(rawQuery))
+	if err != nil {
+		return nil, errors.Wrapf(err, "[dml] Prepare.PrepareContext with query %q", rawQuery)
+	}
+
+	stmt := &Stmt{
+		base: bb.builderCommon,
+		Stmt: sqlStmt,
+	}
+	stmt.base.cachedSQL = rawQuery
+	stmt.base.DB = stmtWrapper{stmt: sqlStmt}
+	stmt.base.source = source
+	return stmt, nil
+}
+
 func (bb *BuilderBase) readBuildCache() (sql []byte) {
-	bb.rwmu.RLock()
 	sql = bb.cachedSQL
-	bb.rwmu.RUnlock()
 	return sql
 }
 
-// WithArgs sets the optional interfaced arguments for the later execution.
+// withArgs sets the optional interfaced arguments for the later execution.
 func (bb *BuilderBase) withArgs(qb queryBuilder, rawArgs ...interface{}) *Arguments {
-	sqlBytes, err := bb.buildToSQL(qb) // sqlBytes owned by buildToSQL
-	bb.rwmu.Lock()
 	var args [defaultArgumentsCapacity]argument
+	bb.rwmu.Lock()
+	sqlBytes, err := bb.buildToSQL(qb) // sqlBytes owned by buildToSQL
 	a := Arguments{
-		base:      bb.builderCommon, // might be a source of a possible race condition, fix later
+		base:      bb.builderCommon,
 		raw:       rawArgs,
 		arguments: args[:0],
 	}

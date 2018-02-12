@@ -414,25 +414,21 @@ func (b *Select) CrossJoin(table id, onConditions ...*Condition) *Select {
 // current DML type (Delete, Insert, Select, Update, Union, With, etc.). The
 // query executor can still be overwritten. Interpolation does not support the
 // raw interfaces.
-// It's an architecture bug to use WithArgs inside a loop.
+// It's an architecture bug to use WithArgs inside a loop. WithArgs does
+// support thread safety and can be used in parallel. Each goroutine must
+// have its own dedicated *Arguments pointer.
 func (b *Select) WithArgs(args ...interface{}) *Arguments {
-	b.source = dmlSourceSelect
 	return b.withArgs(b, args...)
 }
 
 // ToSQL generates the SQL string and might caches it internally, if not
 // disabled.
 func (b *Select) ToSQL() (string, []interface{}, error) {
-	b.source = dmlSourceSelect
 	rawSQL, err := b.buildToSQL(b)
-	if err != nil {
-		return "", nil, errors.WithStack(err)
-	}
-	return string(rawSQL), nil, nil
+	return string(rawSQL), nil, err
 }
 
 func (b *Select) writeBuildCache(sql []byte, qualifiedColumns []string) {
-	b.rwmu.Lock()
 	b.qualifiedColumns = qualifiedColumns
 	if !b.IsBuildCacheDisabled {
 		b.cachedSQL = sql
@@ -442,7 +438,6 @@ func (b *Select) writeBuildCache(sql []byte, qualifiedColumns []string) {
 		b.GroupBys = nil
 		b.Havings = nil
 	}
-	b.rwmu.Unlock()
 }
 
 // DisableBuildCache if enabled it does not cache the SQL string as a final
@@ -456,6 +451,7 @@ func (b *Select) DisableBuildCache() *Select {
 // ToSQL serialized the Select to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err error) {
+	b.source = dmlSourceSelect
 	b.defaultQualifier = b.Table.qualifier()
 
 	if err = b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
