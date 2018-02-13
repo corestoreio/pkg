@@ -16,7 +16,9 @@ package bgwork
 
 import "sync"
 
-// Wait is a better pattern around using sync.WaitGroup.
+// Wait is a better pattern around using sync.WaitGroup. For returning errors
+// while working on a subtask of a common task, consider using package
+// x/errgroup.
 func Wait(length int, block func(index int)) {
 	var w sync.WaitGroup
 	w.Add(length)
