@@ -16,7 +16,6 @@ package cstesting
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -60,7 +59,7 @@ func NewHTTPTripFromFile(code int, filename string) *HTTPTrip {
 				Body:       fp,
 			}
 		},
-		Err:          errors.NotFound.New(err, fmt.Sprintf("File %q loading error", filename)),
+		Err:          errors.NotFound.New(err, "File %q loading error", filename),
 		RequestCache: make(map[*http.Request]struct{}),
 	}
 }
