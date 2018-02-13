@@ -39,7 +39,6 @@ import (
 //	DROP TABLE t_old;
 // No other sessions can access the tables involved while RENAME TABLE executes,
 // so the rename operation is not subject to concurrency problems.
-// TODO(CyS) add DELETE ... JOIN ... statement SQLStmtDeleteJoin
 type Delete struct {
 	BuilderBase
 	BuilderConditional
@@ -222,7 +221,6 @@ func (b *Delete) Limit(limit uint64) *Delete {
 // raw interfaces.
 // It's an architecture bug to use WithArgs inside a loop.
 func (b *Delete) WithArgs(args ...interface{}) *Arguments {
-	b.source = dmlSourceDelete
 	return b.withArgs(b, args...)
 }
 
@@ -238,13 +236,11 @@ func (b *Delete) ToSQL() (string, []interface{}, error) {
 }
 
 func (b *Delete) writeBuildCache(sql []byte, qualifiedColumns []string) {
-	b.rwmu.Lock()
 	b.qualifiedColumns = qualifiedColumns
 	if !b.IsBuildCacheDisabled {
 		b.BuilderConditional = BuilderConditional{}
 		b.cachedSQL = sql
 	}
-	b.rwmu.Unlock()
 }
 
 // DisableBuildCache if enabled it does not cache the SQL string as a final
@@ -258,6 +254,7 @@ func (b *Delete) DisableBuildCache() *Delete {
 // ToSQL serialized the Delete to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Delete) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err error) {
+	b.source = dmlSourceDelete
 	b.defaultQualifier = b.Table.qualifier()
 
 	if err = b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {

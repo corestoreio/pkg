@@ -20,13 +20,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"sync"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
+	"github.com/corestoreio/pkg/sync/bgwork"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -487,16 +487,14 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 			WithArgs(args ...interface{}) *dml.Arguments
 		}
 
-		processFakePerson := func(t testing.TB, wg *sync.WaitGroup, selProc processor, i int) {
-			defer wg.Done()
+		processFakePerson := func(t testing.TB, selProc processor, i int) {
+			fp := &fakePerson{}
 
 			err := selProc.WithArgs().Int(i).Int(i+5).Iterate(context.Background(), func(cm *dml.ColumnMap) error {
-
-				fp := &fakePerson{}
 				if err := fp.MapColumns(cm); err != nil {
 					return err
 				}
-				fmt.Printf("%d: %#v\n", i, fp)
+				//fmt.Printf("%d: %#v\n", i, fp)
 				if fp.Weight < 1 || fp.Height < 1 || fp.ID < i || fp.UpdateTime.IsZero() {
 					return errors.NotValid.Newf("failed to load fakePerson: one of the four fields (id,weight,height,update_time) is empty: %#v", fp)
 				}
@@ -509,6 +507,7 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 		}
 
 		const limit = 5
+		const concurrencyLevel = 10
 
 		fpSel := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
 			Where(
@@ -519,13 +518,9 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 		t.Run("WG01 (query, conn pool)", func(t *testing.T) {
 			// serial refers to the internal implementation of *Arguments.Iterate
 
-			const iterations = 10
-			var wg sync.WaitGroup
-			wg.Add(iterations)
-			for i := 0; i < iterations; i++ {
-				go processFakePerson(t, &wg, fpSel, i*10)
-			}
-			wg.Wait()
+			bgwork.Wait(concurrencyLevel, func(index int) {
+				processFakePerson(t, fpSel, index*concurrencyLevel)
+			})
 		})
 
 		t.Run("WG02 (prepared,single conn)", func(t *testing.T) {
@@ -535,13 +530,9 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 			require.NoError(t, err)
 			defer dmltest.Close(t, stmt)
 
-			const iterations = 10
-			var wg sync.WaitGroup
-			wg.Add(iterations)
-			for i := 0; i < iterations; i++ {
-				go processFakePerson(t, &wg, stmt, i*10)
-			}
-			wg.Wait()
+			bgwork.Wait(concurrencyLevel, func(index int) {
+				processFakePerson(t, stmt, index*concurrencyLevel)
+			})
 		})
 	})
 }

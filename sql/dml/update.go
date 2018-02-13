@@ -153,7 +153,6 @@ func (b *Update) Limit(limit uint64) *Update {
 // raw interfaces.
 // It's an architecture bug to use WithArgs inside a loop.
 func (b *Update) WithArgs(args ...interface{}) *Arguments {
-	b.source = dmlSourceUpdate
 	return b.withArgs(b, args...)
 }
 
@@ -168,14 +167,12 @@ func (b *Update) ToSQL() (string, []interface{}, error) {
 }
 
 func (b *Update) writeBuildCache(sql []byte, qualifiedColumns []string) {
-	b.rwmu.Lock()
 	b.qualifiedColumns = qualifiedColumns
 	if !b.IsBuildCacheDisabled {
 		b.BuilderConditional = BuilderConditional{}
 		b.SetClauses = nil
 		b.cachedSQL = sql
 	}
-	b.rwmu.Unlock()
 }
 
 // DisableBuildCache if enabled it does not cache the SQL string as a final
@@ -190,7 +187,7 @@ func (b *Update) DisableBuildCache() *Update {
 // It returns the string with placeholders and a slice of query arguments
 func (b *Update) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, error) {
 	b.defaultQualifier = b.Table.qualifier()
-
+	b.source = dmlSourceUpdate
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return nil, errors.WithStack(err)
 	}

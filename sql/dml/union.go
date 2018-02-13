@@ -232,7 +232,6 @@ func (u *Union) StringReplace(key string, values ...string) *Union {
 // raw interfaces.
 // It's an architecture bug to use WithArgs inside a loop.
 func (u *Union) WithArgs(args ...interface{}) *Arguments {
-	u.source = dmlSourceUnion
 	return u.withArgs(u, args...)
 }
 
@@ -247,7 +246,6 @@ func (u *Union) ToSQL() (string, []interface{}, error) {
 }
 
 func (u *Union) writeBuildCache(sql []byte, qualifiedColumns []string) {
-	u.rwmu.Lock()
 	u.qualifiedColumns = qualifiedColumns
 	if !u.IsBuildCacheDisabled {
 		u.Selects = nil
@@ -256,7 +254,6 @@ func (u *Union) writeBuildCache(sql []byte, qualifiedColumns []string) {
 		u.repls = nil
 		u.cachedSQL = sql
 	}
-	u.rwmu.Unlock()
 }
 
 // DisableBuildCache if enabled it does not cache the SQL string as a final
@@ -270,7 +267,7 @@ func (u *Union) DisableBuildCache() *Union {
 // ToSQL generates the SQL string and its arguments. Calls to this function are
 // idempotent.
 func (u *Union) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err error) {
-
+	u.source = dmlSourceUnion
 	u.Selects[0].id = u.id
 
 	if len(u.Selects) > 1 {

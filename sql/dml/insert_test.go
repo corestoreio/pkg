@@ -16,10 +16,10 @@ package dml
 
 import (
 	"context"
-	"sync"
 	"testing"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/sync/bgwork"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -685,20 +685,17 @@ func TestInsert_Parallel_Bind_Slice(t *testing.T) {
 		wantIP = "INSERT INTO `dml_personXXX` (`name`,`email`) VALUES ('Muffin Hat','Muffin@Hat.head'),('Marianne Phyllis Finch','marianne@phyllis.finch'),('Daphne Augusta Perry','daphne@augusta.perry')"
 	)
 
-	const iterations = 5
-	var wg sync.WaitGroup
-	wg.Add(iterations)
-	for i := 0; i < iterations; i++ {
-		go func(wg *sync.WaitGroup) {
-			defer wg.Done()
-			insA := ins.WithArgs().Record("", persons)
+	const concurrencyLevel = 10
+	bgwork.Wait(concurrencyLevel, func(index int) {
+		// Don't use such a construct in production code!
 
-			compareToSQL(t, insA, errors.NoKind, wantPH, wantIP, wantArgs...)
-			insA.Reset().Record("", persons)
-			compareToSQL(t, insA, errors.NoKind, wantPH, wantIP, wantArgs...)
-		}(&wg)
-	}
-	wg.Wait()
+		insA := ins.WithArgs().Record("", persons)
+
+		compareToSQL(t, insA, errors.NoKind, wantPH, wantIP, wantArgs...)
+		insA.Reset().Record("", persons)
+		compareToSQL(t, insA, errors.NoKind, wantPH, wantIP, wantArgs...)
+	})
+
 }
 
 func TestInsert_Expressions_In_Values(t *testing.T) {

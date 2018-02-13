@@ -245,13 +245,13 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 // It's an architecture bug to use WithArgs inside a loop.
 func (b *Insert) WithArgs(args ...interface{}) *Arguments {
 
+	var pairArgs arguments
 	b.rwmu.RLock()
 	isSelect := b.Select != nil // b.withArgs unsets the Select field if caching is enabled
-	b.rwmu.RUnlock()
-	var pairArgs arguments
 	for _, cv := range b.Pairs {
 		pairArgs = append(pairArgs, cv.Right.arg)
 	}
+	b.rwmu.RUnlock()
 
 	a := b.withArgs(b, args...)
 	a.base.source = dmlSourceInsert
@@ -286,7 +286,6 @@ func (b *Insert) ToSQL() (string, []interface{}, error) {
 }
 
 func (b *Insert) writeBuildCache(sql []byte, qualifiedColumns []string) {
-	b.rwmu.Lock()
 	if !b.IsBuildCacheDisabled {
 		b.cachedSQL = sql
 		b.Select = nil
@@ -295,7 +294,6 @@ func (b *Insert) writeBuildCache(sql []byte, qualifiedColumns []string) {
 		b.OnDuplicateKeyExclude = nil
 	}
 	b.qualifiedColumns = qualifiedColumns
-	b.rwmu.Unlock()
 }
 
 // DisableBuildCache if enabled it does not cache the SQL string as a final

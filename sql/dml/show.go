@@ -184,7 +184,6 @@ func (b *Show) Like() *Show {
 // raw interfaces.
 // It's an architecture bug to use WithArgs inside a loop.
 func (b *Show) WithArgs(args ...interface{}) *Arguments {
-	b.source = dmlSourceShow
 	return b.withArgs(b, args...)
 }
 
@@ -199,12 +198,10 @@ func (b *Show) ToSQL() (string, []interface{}, error) {
 }
 
 func (b *Show) writeBuildCache(sql []byte, qualifiedColumns []string) {
-	b.rwmu.Lock()
 	b.qualifiedColumns = qualifiedColumns
 	if !b.IsBuildCacheDisabled {
 		b.cachedSQL = sql
 	}
-	b.rwmu.Unlock()
 }
 
 // DisableBuildCache if enabled it does not cache the SQL string as a final
@@ -218,7 +215,7 @@ func (b *Show) DisableBuildCache() *Show {
 // ToSQL serialized the Show to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Show) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err error) {
-
+	b.source = dmlSourceShow
 	w.WriteString("SHOW ")
 
 	switch {

@@ -132,7 +132,7 @@ type BuilderBase struct {
 	// this position.
 	propagationStoppedAt int
 
-	mu sync.Mutex // also protects the whole SQL string building process
+	rwmu sync.RWMutex // also protects the whole SQL string building process
 	builderCommon
 }
 
@@ -200,14 +200,14 @@ func (bb *BuilderBase) readBuildCache() (sql []byte) {
 // withArgs sets the optional interfaced arguments for the later execution.
 func (bb *BuilderBase) withArgs(qb queryBuilder, rawArgs ...interface{}) *Arguments {
 	var args [defaultArgumentsCapacity]argument
-	bb.mu.Lock()
+	bb.rwmu.Lock()
 	sqlBytes, err := bb.buildToSQL(qb) // sqlBytes owned by buildToSQL
 	a := Arguments{
 		base:      bb.builderCommon,
 		raw:       rawArgs,
 		arguments: args[:0],
 	}
-	bb.mu.Unlock()
+	bb.rwmu.Unlock()
 	a.base.cachedSQL = sqlBytes
 	a.base.ärgErr = errors.WithStack(err)
 	return &a

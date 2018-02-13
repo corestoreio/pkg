@@ -183,7 +183,6 @@ func (b *With) Recursive() *With {
 // raw interfaces.
 // It's an architecture bug to use WithArgs inside a loop.
 func (b *With) WithArgs(args ...interface{}) *Arguments {
-	b.source = dmlSourceWith
 	return b.withArgs(b, args...)
 }
 
@@ -198,7 +197,6 @@ func (b *With) ToSQL() (string, []interface{}, error) {
 }
 
 func (b *With) writeBuildCache(sql []byte, qualifiedColumns []string) {
-	b.rwmu.Lock()
 	b.qualifiedColumns = qualifiedColumns
 	if !b.IsBuildCacheDisabled {
 		b.Subclauses = nil
@@ -208,7 +206,6 @@ func (b *With) writeBuildCache(sql []byte, qualifiedColumns []string) {
 		b.TopLevel.Delete = nil
 		b.cachedSQL = sql
 	}
-	b.rwmu.Unlock()
 }
 
 // DisableBuildCache if enabled it does not cache the SQL string as a final
@@ -220,7 +217,7 @@ func (b *With) DisableBuildCache() *With {
 }
 
 func (b *With) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err error) {
-
+	b.source = dmlSourceWith
 	w.WriteString("WITH ")
 	writeStmtID(w, b.id)
 	if b.IsRecursive {
