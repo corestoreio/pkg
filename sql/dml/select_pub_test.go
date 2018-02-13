@@ -479,43 +479,69 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("iterate serial parallel WG (query)", func(t *testing.T) {
+	t.Run("iterate serial parallel", func(t *testing.T) {
+
+		// Do not run such a construct in production.
+
+		type processor interface {
+			WithArgs(args ...interface{}) *dml.Arguments
+		}
+
+		processFakePerson := func(t testing.TB, wg *sync.WaitGroup, selProc processor, i int) {
+			defer wg.Done()
+
+			err := selProc.WithArgs().Int(i).Int(i+5).Iterate(context.Background(), func(cm *dml.ColumnMap) error {
+
+				fp := &fakePerson{}
+				if err := fp.MapColumns(cm); err != nil {
+					return err
+				}
+				fmt.Printf("%d: %#v\n", i, fp)
+				if fp.Weight < 1 || fp.Height < 1 || fp.ID < i || fp.UpdateTime.IsZero() {
+					return errors.NotValid.Newf("failed to load fakePerson: one of the four fields (id,weight,height,update_time) is empty: %#v", fp)
+				}
+
+				// validate and safe ...
+
+				return nil
+			})
+			require.NoError(t, err)
+		}
+
 		const limit = 5
-		sel := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
+
+		fpSel := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
 			Where(
 				dml.Column("id").Between().PlaceHolder(),
 			).
 			Limit(limit).OrderBy("id")
 
-		const iterations = 10
-		var wg sync.WaitGroup
-		wg.Add(iterations)
-		for i := 0; i < iterations; i++ {
+		t.Run("WG01 (query, conn pool)", func(t *testing.T) {
+			// serial refers to the internal implementation of *Arguments.Iterate
 
-			go func(wg *sync.WaitGroup, i int) {
-				defer wg.Done()
+			const iterations = 10
+			var wg sync.WaitGroup
+			wg.Add(iterations)
+			for i := 0; i < iterations; i++ {
+				go processFakePerson(t, &wg, fpSel, i*10)
+			}
+			wg.Wait()
+		})
 
-				err := sel.WithArgs().Int(i).Int(i+5).Iterate(context.Background(), func(cm *dml.ColumnMap) error {
+		t.Run("WG02 (prepared,single conn)", func(t *testing.T) {
+			// serial refers to the internal implementation of *Arguments.Iterate
 
-					fp := &fakePerson{}
-					if err := fp.MapColumns(cm); err != nil {
-						return err
-					}
-					fmt.Printf("%d: %#v\n", i, fp)
-					if fp.Weight < 1 || fp.Height < 1 || fp.ID < i || fp.UpdateTime.IsZero() {
-						return errors.NotValid.Newf("failed to load fakePerson: one of the four fields (id,weight,height,update_time) is empty: %#v", fp)
-					}
+			stmt, err := fpSel.Prepare(context.Background())
+			require.NoError(t, err)
+			defer dmltest.Close(t, stmt)
 
-					return nil
-				})
-				require.NoError(t, err)
-
-			}(&wg, i*10)
-		}
-		wg.Wait()
-	})
-
-	t.Run("iterate serial parallel WG (prepared)", func(t *testing.T) {
-
+			const iterations = 10
+			var wg sync.WaitGroup
+			wg.Add(iterations)
+			for i := 0; i < iterations; i++ {
+				go processFakePerson(t, &wg, stmt, i*10)
+			}
+			wg.Wait()
+		})
 	})
 }
