@@ -485,7 +485,7 @@ func TestSelect_FakeSessionBySQL(t *testing.T) {
 		"SELECT * FROM users WHERE x = 9 AND y IN (5,6,7)",
 	)
 	compareToSQL2(t,
-		s.SelectBySQL("wat").WithArgs(9, 5, 6, 7),
+		s.SelectBySQL("wat").WithArgs().Raw(9, 5, 6, 7),
 		errors.NoKind,
 		"wat",
 		9, 5, 6, 7,

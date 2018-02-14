@@ -328,7 +328,7 @@ func BenchmarkJackC_GoDBBench(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			id := randPersonIDs[i%len(randPersonIDs)]
 			var fp fakePersons
-			if _, err := stmt.WithArgs(id, id+maxSelectID).Load(ctx, &fp); err != nil {
+			if _, err := stmt.WithArgs().Load(ctx, &fp, id, id+maxSelectID); err != nil {
 				b.Fatalf("%+v", err)
 			}
 			for i := range fp.Data {
@@ -353,11 +353,15 @@ func BenchmarkJackC_GoDBBench(b *testing.B) {
 	})
 	b.Run("SelectMultipleRowsEntity Interface", func(b *testing.B) {
 		ctx := context.Background()
+		var args [2]interface{}
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			id := randPersonIDs[i%len(randPersonIDs)]
+			args[0] = id
+			args[1] = id + maxSelectID
+			argss := args[:]
 			var fp fakePerson
-			if _, err := stmt.WithArgs(id, id+maxSelectID).Load(ctx, &fp); err != nil {
+			if _, err := stmt.WithArgs().Load(ctx, &fp, argss...); err != nil {
 				b.Fatalf("%+v", err)
 			}
 			checkPersonWasFilled(b, fp)

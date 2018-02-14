@@ -198,13 +198,12 @@ func (bb *BuilderBase) readBuildCache() (sql []byte) {
 }
 
 // withArgs sets the optional interfaced arguments for the later execution.
-func (bb *BuilderBase) withArgs(qb queryBuilder, rawArgs ...interface{}) *Arguments {
+func (bb *BuilderBase) withArgs(qb queryBuilder) *Arguments {
 	var args [defaultArgumentsCapacity]argument
 	bb.rwmu.Lock()
 	sqlBytes, err := bb.buildToSQL(qb) // sqlBytes owned by buildToSQL
 	a := Arguments{
 		base:      bb.builderCommon,
-		raw:       rawArgs,
 		arguments: args[:0],
 	}
 	bb.rwmu.Unlock()

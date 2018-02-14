@@ -409,16 +409,15 @@ func (b *Select) CrossJoin(table id, onConditions ...*Condition) *Select {
 
 // WithArgs returns a new type to support multiple executions of the underlying
 // SQL statement and reuse of memory allocations for the arguments. WithArgs
-// builds the SQL string and sets the optional raw interfaced arguments for the
-// later execution. It copies the underlying connection and settings from the
-// current DML type (Delete, Insert, Select, Update, Union, With, etc.). The
-// query executor can still be overwritten. Interpolation does not support the
-// raw interfaces.
-// It's an architecture bug to use WithArgs inside a loop. WithArgs does
-// support thread safety and can be used in parallel. Each goroutine must
-// have its own dedicated *Arguments pointer.
-func (b *Select) WithArgs(args ...interface{}) *Arguments {
-	return b.withArgs(b, args...)
+// builds the SQL string in a thread safe way. It copies the underlying
+// connection and settings from the current DML type (Delete, Insert, Select,
+// Update, Union, With, etc.). The field DB can still be overwritten.
+// Interpolation does not support the raw interfaces. It's an architecture bug
+// to use WithArgs inside a loop. WithArgs does support thread safety and can be
+// used in parallel. Each goroutine must have its own dedicated *Arguments
+// pointer.
+func (b *Select) WithArgs() *Arguments {
+	return b.withArgs(b)
 }
 
 // ToSQL generates the SQL string and might caches it internally, if not

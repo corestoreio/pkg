@@ -66,7 +66,7 @@ func TestInsert_SetValuesCount(t *testing.T) {
 	})
 	t.Run("with values", func(t *testing.T) {
 		ins := NewInsert("dml_people").AddColumns("name", "key")
-		inA := ins.WithArgs("Barack", "44")
+		inA := ins.WithArgs().Raw("Barack", "44")
 		compareToSQL2(t, inA, errors.NoKind, "INSERT INTO `dml_people` (`name`,`key`) VALUES (?,?)",
 			"Barack", "44",
 		)
@@ -89,7 +89,7 @@ func TestInsertKeywordColumnName(t *testing.T) {
 	// Insert a column whose name is reserved
 	s := createRealSessionWithFixtures(t, nil)
 	defer testCloser(t, s)
-	ins := s.InsertInto("dml_people").AddColumns("name", "key").WithArgs("Barack", "44")
+	ins := s.InsertInto("dml_people").AddColumns("name", "key").WithArgs().Raw("Barack", "44")
 
 	compareExecContext(t, ins, 0, 1)
 }
@@ -98,7 +98,7 @@ func TestInsertReal(t *testing.T) {
 	// Insert by specifying values
 	s := createRealSessionWithFixtures(t, nil)
 	defer testCloser(t, s)
-	ins := s.InsertInto("dml_people").AddColumns("name", "email").WithArgs("Barack", "obama@whitehouse.gov")
+	ins := s.InsertInto("dml_people").AddColumns("name", "email").WithArgs().Raw("Barack", "obama@whitehouse.gov")
 	lastInsertID, _ := compareExecContext(t, ins, 3, 0)
 	validateInsertingBarack(t, s, lastInsertID)
 

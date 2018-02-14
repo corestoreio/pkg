@@ -34,11 +34,10 @@ type Stmt struct {
 }
 
 // WithArgs creates a new argument handler.
-func (st *Stmt) WithArgs(rawArgs ...interface{}) *Arguments {
+func (st *Stmt) WithArgs() *Arguments {
 	var args [defaultArgumentsCapacity]argument
 	return &Arguments{
 		base:      st.base,
-		raw:       rawArgs,
 		arguments: args[:0],
 	}
 }
@@ -107,17 +106,16 @@ func (rs *StmtRedux) Close() error {
 
 // WithArgs returns a new type to support multiple executions of the underlying
 // SQL statement and reuse of memory allocations for the arguments. WithArgs
-// builds the SQL string and sets the optional raw interfaced arguments for the
-// later execution. It copies the underlying connection and settings from the
-// current DML type (Delete, Insert, Select, Update, Union, With, etc.). The
-// query executor can still be overwritten. Interpolation does not support the
-// raw interfaces.
-func (rs *StmtRedux) WithArgs(rawArgs ...interface{}) *Arguments {
+// builds the SQL string in a thread safe way. It copies the underlying
+// connection and settings from the current DML type (Delete, Insert, Select,
+// Update, Union, With, etc.). The field DB can still be overwritten.
+// Interpolation does not support the raw interfaces. It's an architecture bug
+// to use WithArgs inside a loop.
+func (rs *StmtRedux) WithArgs() *Arguments {
 	// todo: correct implementation
 	var args [defaultArgumentsCapacity]argument
 	return &Arguments{
 		base:      rs.stmt.base,
-		raw:       rawArgs,
 		arguments: args[:0],
 	}
 }

@@ -246,7 +246,7 @@ func TestSelect_Prepare(t *testing.T) {
 		sel := dml.NewSelect("id").From("tableX").Where(dml.Column("id").In().PlaceHolders(2)).WithDB(dbc.DB)
 		stmt, err := sel.Prepare(context.TODO())
 		require.NoError(t, err)
-		ints, err := stmt.WithArgs(3739, 3740).LoadInt64s(context.TODO())
+		ints, err := stmt.WithArgs().LoadInt64s(context.TODO(), 3739, 3740)
 		require.NoError(t, err)
 		assert.Exactly(t, []int64{78}, ints)
 	})
@@ -376,7 +376,7 @@ func TestSelect_Prepare(t *testing.T) {
 
 			ccd := &TableCoreConfigDataSlice{}
 
-			rc, err := stmt.WithArgs(345).Load(context.TODO(), ccd)
+			rc, err := stmt.WithArgs().Load(context.TODO(), ccd, 345)
 			require.NoError(t, err)
 			assert.Exactly(t, uint64(2), rc)
 
@@ -484,7 +484,7 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 		// Do not run such a construct in production.
 
 		type processor interface {
-			WithArgs(args ...interface{}) *dml.Arguments
+			WithArgs() *dml.Arguments
 		}
 
 		processFakePerson := func(t testing.TB, selProc processor, i int) {

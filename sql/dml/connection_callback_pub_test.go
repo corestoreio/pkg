@@ -69,7 +69,7 @@ func TestDriverCallBack(t *testing.T) {
 	require.NoError(t, err)
 
 	upd := con.Update("dml_people").Set(dml.Column("name").PlaceHolder())
-	_, err = upd.WithArgs("Hugo").ExecContext(ctx)
+	_, err = upd.WithArgs().ExecContext(ctx, "Hugo")
 	require.NoError(t, err)
 
 	_, err = upd.WithArgs().String("Bernie").Interpolate().ExecContext(ctx)

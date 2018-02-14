@@ -225,14 +225,15 @@ func (u *Union) StringReplace(key string, values ...string) *Union {
 
 // WithArgs returns a new type to support multiple executions of the underlying
 // SQL statement and reuse of memory allocations for the arguments. WithArgs
-// builds the SQL string and sets the optional raw interfaced arguments for the
-// later execution. It copies the underlying connection and settings from the
-// current DML type (Delete, Insert, Select, Update, Union, With, etc.). The
-// query executor can still be overwritten. Interpolation does not support the
-// raw interfaces.
-// It's an architecture bug to use WithArgs inside a loop.
-func (u *Union) WithArgs(args ...interface{}) *Arguments {
-	return u.withArgs(u, args...)
+// builds the SQL string in a thread safe way. It copies the underlying
+// connection and settings from the current DML type (Delete, Insert, Select,
+// Update, Union, With, etc.). The field DB can still be overwritten.
+// Interpolation does not support the raw interfaces. It's an architecture bug
+// to use WithArgs inside a loop. WithArgs does support thread safety and can be
+// used in parallel. Each goroutine must have its own dedicated *Arguments
+// pointer.
+func (u *Union) WithArgs() *Arguments {
+	return u.withArgs(u)
 }
 
 // ToSQL converts the statements into a string and returns its arguments.

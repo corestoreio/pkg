@@ -136,7 +136,7 @@ func TestInsert_Prepare(t *testing.T) {
 		in.DB = dbMock{
 			error: errors.AlreadyClosed.Newf("Who closed myself?"),
 		}
-		in.AddColumns("a", "b").WithArgs(1, true)
+		in.AddColumns("a", "b")
 
 		stmt, err := in.Prepare(context.TODO())
 		assert.Nil(t, stmt)

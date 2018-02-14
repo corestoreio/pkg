@@ -123,7 +123,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 
 	// Insert a user with a key
 	_, err := s.InsertInto("dml_people").AddColumns("name", "email", "key").
-		WithArgs("Benjamin", "ben@whitehouse.gov", "6").ExecContext(context.TODO())
+		WithArgs().Raw("Benjamin", "ben@whitehouse.gov", "6").ExecContext(context.TODO())
 	assert.NoError(t, err)
 
 	// Update the key

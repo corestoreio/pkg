@@ -130,7 +130,7 @@ func ExampleInsert_SetRowCount_withdata() {
 func ExampleInsert_WithArgs_rawData() {
 	// Without any columns you must for each row call AddArgs. Here we insert
 	// three rows at once.
-	i := dml.NewInsert("catalog_product_link").SetRowCount(3).WithArgs(
+	i := dml.NewInsert("catalog_product_link").SetRowCount(3).WithArgs().Raw(
 		2046, 33, 3,
 		2046, 34, 3,
 		2046, 35, 3,

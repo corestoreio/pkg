@@ -101,7 +101,7 @@ func TestDeleteReal(t *testing.T) {
 	defer testCloser(t, s)
 	// Insert a Barack
 	res, err := s.InsertInto("dml_people").AddColumns("name", "email").
-		WithArgs("Barack", "barack@whitehouse.gov").ExecContext(context.TODO())
+		WithArgs().ExecContext(context.TODO(), "Barack", "barack@whitehouse.gov")
 	require.NoError(t, err)
 	if res == nil {
 		t.Fatal("result should not be nil. See previous error")

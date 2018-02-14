@@ -28,7 +28,7 @@ func TestTransactionReal(t *testing.T) {
 	tx, err := s.BeginTx(context.TODO(), nil)
 	assert.NoError(t, err)
 
-	txIns := tx.InsertInto("dml_people").AddColumns("name", "email").WithArgs(
+	txIns := tx.InsertInto("dml_people").AddColumns("name", "email").WithArgs().Raw(
 		"Barack", "obama@whitehouse.gov",
 		"Obama", "barack@whitehouse.gov",
 	)

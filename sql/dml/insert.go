@@ -236,14 +236,16 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 
 // WithArgs returns a new type to support multiple executions of the underlying
 // SQL statement and reuse of memory allocations for the arguments. WithArgs
-// builds the SQL string and sets the optional raw interfaced arguments for the
-// later execution. It copies the underlying connection from the DML type but
-// the query executor can still be overwritten. In case of INSERT statement,
-// WithArgs figures automatically out how the VALUES section must look like
-// depending on the number of arguments. In some cases type Insert needs to know
-// the RowCount to build the appropriate amount of placeholders.
-// It's an architecture bug to use WithArgs inside a loop.
-func (b *Insert) WithArgs(args ...interface{}) *Arguments {
+// builds the SQL string in a thread safe way. It copies the underlying
+// connection and settings from the current DML type (Delete, Insert, Select,
+// Update, Union, With, etc.). The field DB can still be overwritten.
+// Interpolation does not support the raw interfaces. It's an architecture bug
+// to use WithArgs inside a loop.
+// In case of INSERT statement, WithArgs figures automatically out how the
+// VALUES section must look like depending on the number of arguments. In some
+// cases type Insert needs to know the RowCount to build the appropriate amount
+// of placeholders.
+func (b *Insert) WithArgs() *Arguments {
 
 	var pairArgs arguments
 	b.rwmu.RLock()
@@ -253,7 +255,7 @@ func (b *Insert) WithArgs(args ...interface{}) *Arguments {
 	}
 	b.rwmu.RUnlock()
 
-	a := b.withArgs(b, args...)
+	a := b.withArgs(b)
 	a.base.source = dmlSourceInsert
 
 	if isSelect {
