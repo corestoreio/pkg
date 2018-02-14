@@ -173,18 +173,8 @@ func TestInterpolate_ArgValue(t *testing.T) {
 		)
 	})
 	t.Run("type not supported", func(t *testing.T) {
-		defer func() {
-			if r := recover(); r != nil {
-				if err, ok := r.(error); ok {
-					assert.True(t, errors.NotSupported.Match(err), "%+v", err)
-				} else {
-					t.Errorf("Panic should contain an error but got:\n%+v", r)
-				}
-			} else {
-				t.Error("Expecting a panic but got nothing")
-			}
-		}()
-		_, _, _ = Interpolate("SELECT * FROM x WHERE a = ?").DriverValues(argValUint16(0)).ToSQL()
+		_, _, err := Interpolate("SELECT * FROM x WHERE a = ?").DriverValues(argValUint16(0)).ToSQL()
+		assert.True(t, errors.NotSupported.Match(err), "error should have kind errors.NotSupported: %+v", err)
 	})
 	t.Run("valuer error", func(t *testing.T) {
 		_, _, err := Interpolate("SELECT * FROM x WHERE a = ?").DriverValues(argValUint16(1)).ToSQL()
