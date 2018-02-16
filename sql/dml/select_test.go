@@ -226,6 +226,18 @@ func TestSelect_ComplexExpr(t *testing.T) {
 	})
 }
 
+func TestSelect_OrderByRandom(t *testing.T) {
+	t.Parallel()
+	compareToSQL2(t,
+		NewSelect("id", "first_name", "last_name").
+			From("dml_fake_person").
+			OrderByRandom("id", 25),
+		errors.NoKind,
+		"SELECT `id`, `first_name`, `last_name` FROM `dml_fake_person`  JOIN (SELECT `id` FROM `dml_fake_person` WHERE RAND() < (SELECT ((25 / COUNT(*)) * 10) FROM `dml_fake_person`) ORDER BY RAND() LIMIT 25) AS `tableRandom` USING (`id`)",
+	)
+
+}
+
 func TestSelect_Paginate(t *testing.T) {
 	t.Parallel()
 

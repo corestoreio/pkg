@@ -17,6 +17,7 @@ package dml
 import (
 	"bytes"
 	"context"
+	"fmt"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
@@ -350,6 +351,19 @@ func (b *Select) OrderByDesc(columns ...string) *Select {
 	return b
 }
 
+// OrderByRandom sorts the table randomly by not using ORDER BY RAND() rather
+// using a JOIN with the single primary key column. This function overwrites
+// previously set ORDER BY statements and the field LimitCount. The generated
+// SQL by this function is about 3-4 times faster than ORDER BY RAND(). The
+// generated SQL does not work for all queries. The underlying SQL statement
+// might change without notice.
+func (b *Select) OrderByRandom(idColumnName string, limit uint64) *Select {
+	// Source https://stackoverflow.com/a/36013954 ;-)
+	b.OrderByRand = idColumnName
+	b.LimitCount = limit
+	return b
+}
+
 // Limit sets a limit for the statement; overrides any existing LIMIT
 func (b *Select) Limit(limit uint64) *Select {
 	b.LimitCount = limit
@@ -496,8 +510,27 @@ func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err 
 			return nil, errors.WithStack(err)
 		}
 	}
+	joins := b.Joins
+	if b.OrderByRand != "" {
+		jf := &join{
+			Table: id{
+				// This can be further optimized
+				Expression: fmt.Sprintf(
+					"(SELECT `%s` FROM `%s` WHERE RAND() < (SELECT ((%d / COUNT(*)) * 10) FROM `%s`) ORDER BY RAND() LIMIT %d)",
+					b.OrderByRand,
+					b.Table.Name,
+					b.LimitCount,
+					b.Table.Name,
+					b.LimitCount,
+				),
+				Aliased: "tableRandom",
+			},
+			On: Conditions{Columns(b.OrderByRand)},
+		}
+		joins = append(joins, jf)
+	}
 
-	for _, f := range b.Joins {
+	for _, f := range joins {
 		w.WriteByte(' ')
 		w.WriteString(f.JoinType)
 		w.WriteString(" JOIN ")
