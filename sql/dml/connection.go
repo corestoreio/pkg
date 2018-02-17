@@ -20,7 +20,6 @@ import (
 	"database/sql/driver"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/corestoreio/errors"
@@ -51,9 +50,6 @@ type ConnPool struct {
 	logWithID
 	DB  *sql.DB
 	dsn string
-
-	rwmu          sync.RWMutex
-	preparedStmts map[string]*StmtRedux
 }
 
 // Conn represents a single database session rather a pool of database sessions.
@@ -137,45 +133,6 @@ func WithDB(db *sql.DB) ConnPoolOption {
 		sortOrder: 1,
 		fn: func(c *ConnPool) error {
 			c.DB = db
-			return nil
-		},
-	}
-}
-
-// WithPreparedStatement uses the name as unique identifier to create a
-// redux/resurrectable prepared statement. This prepared statement is bound to a
-// single connection. After an idle time the statement and the connection gets
-// closed and resources on the DB server freed. Once the statement will be used
-// again, it reduxes, gets re-prepared, via its dedicated connection. If there
-// are no more connections available, it waits until it can connect. Due to the
-// connection handling implementation of database/sql/DB object we must grab a
-// dedicated connection. To call this statement use function ConnPool.Stmt.
-func WithPreparedStatement(name string, qb QueryBuilder, idleTime time.Duration) ConnPoolOption {
-	// last parameter of above API signature might turn into a config struct
-	// because we will have more options for newReduxStmt.
-	return ConnPoolOption{
-		sortOrder: 200,
-		fn: func(c *ConnPool) error {
-			c.rwmu.Lock()
-			defer c.rwmu.Unlock()
-			if c.preparedStmts == nil {
-				c.preparedStmts = make(map[string]*StmtRedux, 20)
-			}
-
-			if rs, ok := c.preparedStmts[name]; ok {
-				if err := rs.Close(); err != nil {
-					return errors.Wrapf(err, "[dml] WithPrepareStatements failed for %q", name)
-				}
-			}
-
-			rs, err := newReduxStmt(c.DB, name, qb, idleTime, c.Log)
-			if err != nil {
-				return errors.WithStack(err)
-			}
-			c.preparedStmts[name] = rs
-			// check max_prepared_stmt_count and con count
-			// TODO(CyS) consider: http://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html#sysvar_max_prepared_stmt_count
-
 			return nil
 		},
 	}
@@ -293,13 +250,6 @@ func (c *ConnPool) Close() error {
 	if c.Log != nil && c.Log.IsDebug() {
 		defer c.Log.Debug("Close", log.Duration("duration", now().Sub(c.start)))
 	}
-	c.rwmu.Lock()
-	defer c.rwmu.Unlock()
-	for _, rs := range c.preparedStmts {
-		if err := rs.Close(); err != nil {
-			return errors.WithStack(err)
-		}
-	}
 	return c.DB.Close() // no stack wrap otherwise error is hard to compare
 }
 
@@ -390,41 +340,6 @@ func (c *ConnPool) WithQueryBuilder(qb QueryBuilder) *Arguments {
 		raw:       argsRaw,
 		arguments: args[:0],
 	}
-}
-
-// StmtRedux returns a redux prepared statement. The object represents a
-// prepared statement which can resurrect/redux and is bound to a single
-// connection. After an idle time the statement and the connection gets closed
-// and resources on the DB server freed. Once the statement will be used again,
-// it reduxes, gets re-prepared, via its dedicated connection. If there are no
-// more connections available, it waits until it can connect. Due to the
-// connection handling implementation of database/sql/DB object we must grab a
-// dedicated connection. A later aim would that multiple prepared statements can
-// share a single connection.
-func (c *ConnPool) StmtRedux(name string) (*StmtRedux, error) {
-	c.rwmu.RLock()
-	defer c.rwmu.RUnlock()
-
-	rs, ok := c.preparedStmts[name]
-	if !ok {
-		return nil, errors.NotFound.Newf("[dml] Stmt %q not found", name)
-	}
-
-	return rs, nil
-}
-
-// StmtReduxPrepare same as functional option WithPreparedStatement but returns
-// the lazy prepared Stmter.
-func (c *ConnPool) StmtReduxPrepare(name string, qb QueryBuilder, idleTime time.Duration) (*StmtRedux, error) {
-	c.rwmu.RLock()
-	_, ok := c.preparedStmts[name]
-	c.rwmu.RUnlock()
-	if !ok {
-		if err := WithPreparedStatement(name, qb, idleTime).fn(c); err != nil {
-			return nil, errors.WithStack(err)
-		}
-	}
-	return c.StmtRedux(name)
 }
 
 // Conn returns a single connection by either opening a new connection
