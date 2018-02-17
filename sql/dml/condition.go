@@ -838,20 +838,25 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 
 			// Only write the operator in case there is no place holder and we
 			// have one value.
-			if phCount == 0 && (lenArgs == 1 || cnd.Right.arg.isSet) && cnd.Operator > 0 {
+			switch {
+			case phCount == 0 && (lenArgs == 1 || cnd.Right.arg.isSet) && cnd.Operator > 0:
 				eArg := cnd.Right.arg
 				if !eArg.isSet {
 					eArg = cnd.Right.args[0]
 				}
 				cnd.Operator.write(w, arguments{eArg})
-			}
 
-			//else if len(cnd.Right.args) > 0 {
-			//	cnd.Operator.write(w, cnd.Right.args...)
-			//}
-			// TODO a case where left and right are expressions
-			// if cnd.Right.Expression.isset() {
-			// }
+			case cnd.Right.Sub != nil:
+				if err = cnd.Operator.write(w, nil); err != nil {
+					return nil, errors.WithStack(err)
+				}
+				w.WriteByte('(')
+				placeHolders, err = cnd.Right.Sub.toSQL(w, placeHolders)
+				if err != nil {
+					return nil, errors.Wrapf(err, "[dml] write failed SubSelect for table: %q", cnd.Right.Sub.Table.String())
+				}
+				w.WriteByte(')')
+			}
 
 		case cnd.Right.IsExpression:
 			Quoter.WriteIdentifier(w, cnd.Left)

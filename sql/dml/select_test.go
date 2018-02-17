@@ -235,7 +235,18 @@ func TestSelect_OrderByRandom_Strings(t *testing.T) {
 				From("dml_fake_person").
 				OrderByRandom("id", 25),
 			errors.NoKind,
-			"SELECT `id`, `first_name`, `last_name` FROM `dml_fake_person`  JOIN (SELECT `id` FROM `dml_fake_person` WHERE RAND() < (SELECT ((25 / COUNT(*)) * 10) FROM `dml_fake_person`) ORDER BY RAND() LIMIT 25) AS `tableRandom` USING (`id`)",
+			"SELECT `id`, `first_name`, `last_name` FROM `dml_fake_person`  JOIN (SELECT `id` FROM `dml_fake_person` WHERE (RAND() < (SELECT ((25 / COUNT(*)) * 10) FROM `dml_fake_person`)) ORDER BY RAND() LIMIT 25) AS `randdml_fake_person` USING (`id`)",
+		)
+	})
+
+	t.Run("WHERE condition", func(t *testing.T) {
+		compareToSQL2(t,
+			NewSelect("id", "first_name", "last_name").
+				From("dml_fake_person").
+				Where(Column("id").LessOrEqual().Int(30)).
+				OrderByRandom("id", 25),
+			errors.NoKind,
+			"SELECT `id`, `first_name`, `last_name` FROM `dml_fake_person`  JOIN (SELECT `id` FROM `dml_fake_person` WHERE (RAND() < (SELECT ((25 / COUNT(*)) * 10) FROM `dml_fake_person` WHERE (`id` <= 30))) AND (`id` <= 30) ORDER BY RAND() LIMIT 25) AS `randdml_fake_person` USING (`id`) WHERE (`id` <= 30)",
 		)
 	})
 
@@ -249,7 +260,7 @@ func TestSelect_OrderByRandom_Strings(t *testing.T) {
 			).OrderByRandom("id", 100)
 
 		compareToSQL2(t, sqlObj, errors.NoKind,
-			"SELECT DISTINCT STRAIGHT_JOIN SQL_NO_CACHE `p1`.*, `p2`.* FROM `dml_people` AS `p1` INNER JOIN `dml_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = 142)  JOIN (SELECT `id` FROM `dml_people` WHERE RAND() < (SELECT ((100 / COUNT(*)) * 10) FROM `dml_people`) ORDER BY RAND() LIMIT 100) AS `tableRandom` USING (`id`)",
+			"SELECT DISTINCT STRAIGHT_JOIN SQL_NO_CACHE `p1`.*, `p2`.* FROM `dml_people` AS `p1` INNER JOIN `dml_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = 142)  JOIN (SELECT `id` FROM `dml_people` WHERE (RAND() < (SELECT ((100 / COUNT(*)) * 10) FROM `dml_people`)) ORDER BY RAND() LIMIT 100) AS `randdml_people` USING (`id`)",
 		)
 	})
 }

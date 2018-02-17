@@ -49,7 +49,7 @@ type Select struct {
 	IsForUpdate          bool // See ForUpdate()
 	IsLockInShareMode    bool // See LockInShareMode()
 	IsOrderByDeactivated bool // See OrderByDeactivated()
-	IsOrderByRand        bool // enables original slow ORDER BY RAND() clause
+	IsOrderByRand        bool // enables the original slow ORDER BY RAND() clause
 	OffsetValid          bool
 	OffsetCount          uint64
 	// Listeners allows to dispatch certain functions in different
@@ -360,7 +360,7 @@ func (b *Select) OrderByDesc(columns ...string) *Select {
 // might change without notice.
 func (b *Select) OrderByRandom(idColumnName string, limit uint64) *Select {
 	// Source https://stackoverflow.com/a/36013954 ;-)
-	b.OrderByRand = idColumnName
+	b.OrderByRandColumnName = idColumnName
 	b.LimitCount = limit
 	return b
 }
@@ -512,23 +512,26 @@ func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err 
 		}
 	}
 	joins := b.Joins
-	if b.OrderByRand != "" {
-		jf := &join{
+	if b.OrderByRandColumnName != "" {
+		// This ORDER BY RAND() statement enables a 3-4 better processing in the
+		// server.
+		countSel := NewSelect().AddColumnsConditions(
+			Expr(fmt.Sprintf("((%d / COUNT(*)) * 10)", b.LimitCount)),
+		).From(b.Table.Name).Where(b.Wheres...)
+
+		idSel := NewSelect(b.OrderByRandColumnName).From(b.Table.Name).
+			Where(Expr("RAND()").Less().Sub(countSel)).
+			Where(b.Wheres...).
+			Limit(b.LimitCount)
+		idSel.IsOrderByRand = true
+
+		joins = append(joins, &join{
 			Table: id{
-				// This can be further optimized and it must include any WHERE condition from the root SELECT.
-				Expression: fmt.Sprintf(
-					"(SELECT `%s` FROM `%s` WHERE RAND() < (SELECT ((%d / COUNT(*)) * 10) FROM `%s`) ORDER BY RAND() LIMIT %d)",
-					b.OrderByRand,
-					b.Table.Name,
-					b.LimitCount,
-					b.Table.Name,
-					b.LimitCount,
-				),
-				Aliased: "tableRandom",
+				DerivedTable: idSel,
+				Aliased:      "rand" + b.Table.Name,
 			},
-			On: Conditions{Columns(b.OrderByRand)},
-		}
-		joins = append(joins, jf)
+			On: Conditions{Columns(b.OrderByRandColumnName)},
+		})
 	}
 
 	for _, f := range joins {
