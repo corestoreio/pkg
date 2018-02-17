@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sync/atomic"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -431,39 +432,33 @@ func TestSelect_Prepare(t *testing.T) {
 	})
 }
 
-func TestSelect_Argument_Iterate(t *testing.T) {
+func TestSelect_Argument_IterateSerial(t *testing.T) {
 	dbc := createRealSession(t)
 	defer dmltest.Close(t, dbc)
 
 	rowCount, err := dbc.SelectFrom("dml_fake_person").Count().WithArgs().LoadInt64(context.Background())
 	require.NoError(t, err)
 	if rowCount < 10000 {
-		t.Fatalf("dml_fake_person table contains less than 10k items, seems not to be installed. Got %d items", rowCount)
+		t.Skipf("dml_fake_person table contains less than 10k items, seems not to be installed. Got %d items", rowCount)
 	}
 
 	t.Run("error in mapper", func(t *testing.T) {
 		err := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
 			Limit(5).
-			OrderBy("id").WithArgs().Iterate(context.Background(), func(cm *dml.ColumnMap) error {
+			OrderBy("id").WithArgs().IterateSerial(context.Background(), func(cm *dml.ColumnMap) error {
 			return errors.Blocked.Newf("Mapping blocked")
 		})
 		assert.True(t, errors.Is(err, errors.Blocked), "Error should have kind errors.Blocked")
 	})
 
-	t.Run("no rows but callback gets called", func(t *testing.T) {
-		err := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
-			Where(dml.Column("id").Int(-1000)).
-			OrderBy("id").WithArgs().Iterate(context.Background(), func(cm *dml.ColumnMap) error {
-			return errors.NotAcceptable.Newf("Mapping blocked")
-		})
-		assert.True(t, errors.Is(err, errors.NotAcceptable), "Error should have kind errors.NotAcceptable")
-	})
-
-	t.Run("iterate serial serial", func(t *testing.T) {
+	t.Run("serial serial", func(t *testing.T) {
+		const rowCount = 500
 		selExec := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
-			Limit(500).OrderBy("id").WithArgs()
+			OrderByRandom("id", rowCount).
+			WithArgs()
 
-		err := selExec.Iterate(context.Background(), func(cm *dml.ColumnMap) error {
+		var counter int
+		err := selExec.IterateSerial(context.Background(), func(cm *dml.ColumnMap) error {
 
 			fp := &fakePerson{}
 			if err := fp.MapColumns(cm); err != nil {
@@ -473,24 +468,29 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 			if fp.Weight < 1 || fp.Height < 1 || fp.ID < 0 || fp.UpdateTime.IsZero() {
 				return errors.NotValid.Newf("failed to load fakePerson: one of the four fields (id,weight,height,update_time) is empty: %#v", fp)
 			}
-
+			counter++
 			return nil
 		})
 		require.NoError(t, err)
+		assert.Exactly(t, rowCount, counter, "Should have loaded %d rows", rowCount)
 	})
 
-	t.Run("iterate serial parallel", func(t *testing.T) {
+	t.Run("serial parallel", func(t *testing.T) {
 
 		// Do not run such a construct in production.
 
 		type processor interface {
 			WithArgs() *dml.Arguments
 		}
+		const limit = 5
+		const concurrencyLevel = 10
 
-		processFakePerson := func(t testing.TB, selProc processor, i int) {
+		processFakePerson := func(selProc processor, i int) {
+			// testing.T does not work in parallel context, so we use panic :-(
+
 			fp := &fakePerson{}
-
-			err := selProc.WithArgs().Int(i).Int(i+5).Iterate(context.Background(), func(cm *dml.ColumnMap) error {
+			var counter int
+			err := selProc.WithArgs().Interpolate().Int(i).Int(i+5).IterateSerial(context.Background(), func(cm *dml.ColumnMap) error {
 				if err := fp.MapColumns(cm); err != nil {
 					return err
 				}
@@ -498,16 +498,12 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 				if fp.Weight < 1 || fp.Height < 1 || fp.ID < i || fp.UpdateTime.IsZero() {
 					return errors.NotValid.Newf("failed to load fakePerson: one of the four fields (id,weight,height,update_time) is empty: %#v", fp)
 				}
-
-				// validate and safe ...
-
+				counter++
 				return nil
 			})
-			require.NoError(t, err)
+			ifErrPanic(err)
+			ifNotEqualPanic(counter, limit, "Should have loaded this amount of rows")
 		}
-
-		const limit = 5
-		const concurrencyLevel = 10
 
 		fpSel := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
 			Where(
@@ -516,23 +512,110 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 			Limit(limit).OrderBy("id")
 
 		t.Run("WG01 (query, conn pool)", func(t *testing.T) {
-			// serial refers to the internal implementation of *Arguments.Iterate
 
 			bgwork.Wait(concurrencyLevel, func(index int) {
-				processFakePerson(t, fpSel, index*concurrencyLevel)
+				// Every goroutine creates its own underlying connection to the
+				// SQL server. This makes sense because each dataset is unique.
+				processFakePerson(fpSel, index*concurrencyLevel)
 			})
 		})
 
-		t.Run("WG02 (prepared,single conn)", func(t *testing.T) {
-			// serial refers to the internal implementation of *Arguments.Iterate
+		t.Run("WG02 (prepared,multi conn)", func(t *testing.T) {
 
 			stmt, err := fpSel.Prepare(context.Background())
 			require.NoError(t, err)
 			defer dmltest.Close(t, stmt)
 
 			bgwork.Wait(concurrencyLevel, func(index int) {
-				processFakePerson(t, stmt, index*concurrencyLevel)
+				// Every goroutine creates its own underlying connection to the
+				// SQL server and prepares its own statement in the SQL server
+				// despite having one single pointer to *sql.Stmt.
+				processFakePerson(stmt, index*concurrencyLevel)
 			})
 		})
 	})
+}
+
+func TestSelect_Argument_IterateParallel(t *testing.T) {
+	dbc := createRealSession(t)
+	defer dmltest.Close(t, dbc)
+
+	const concurrencyLevel = 4
+
+	rowCount, err := dbc.SelectFrom("dml_fake_person").Count().WithArgs().LoadInt64(context.Background())
+	require.NoError(t, err)
+	if rowCount < 10000 {
+		t.Fatalf("dml_fake_person table contains less than 10k items, seems not to be installed. Got %d items", rowCount)
+	}
+
+	t.Run("error wrong concurrency level", func(t *testing.T) {
+		err := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
+			Limit(50).
+			OrderBy("id").WithArgs().IterateParallel(context.Background(), 0, func(cm *dml.ColumnMap) error {
+			return nil
+		})
+		assert.True(t, errors.Is(err, errors.OutofRange), "Error should have kind errors.OutofRange")
+	})
+
+	t.Run("error in mapper of all workers", func(t *testing.T) {
+		err := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
+			Limit(50).
+			OrderBy("id").WithArgs().IterateParallel(context.Background(), concurrencyLevel, func(cm *dml.ColumnMap) error {
+			return errors.Blocked.Newf("Mapping blocked error")
+		})
+
+		// this is a bit flaky sometimes ...
+		switch err.(type) {
+		case *errors.MultiErr:
+			assert.True(t, errors.MultiErrMatchAll(err, errors.Blocked), "MultiErr should have all errors of kind errors.Blocked")
+		default:
+			assert.True(t, errors.Is(err, errors.Blocked), "Error should be kind errors.Blocked, got: %+v", err)
+		}
+	})
+
+	t.Run("successful 40 rows fibonacci", func(t *testing.T) {
+
+		fpSel := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
+			Where(dml.Column("id").LessOrEqual().Int(60)).
+			Limit(40)
+		fpSel.IsOrderByRand = true
+
+		var rowsLoadedCounter = new(int32)
+		err := fpSel.WithArgs().IterateParallel(context.Background(), concurrencyLevel, func(cm *dml.ColumnMap) error {
+			var fp fakePerson
+
+			if err := fp.MapColumns(cm); err != nil {
+				return err
+			}
+
+			if fp.Weight < 1 || fp.Height < 1 || fp.ID < 1 || fp.UpdateTime.IsZero() {
+				return errors.NotValid.Newf("failed to load fakePerson: one of the four fields (id,weight,height,update_time) is empty: %#v", fp)
+			}
+
+			if fp.ID < 41 {
+				_ = fib(uint(fp.ID))
+				//fi := fib(uint(fp.ID))
+				//println("a 591", int(cm.Count), fp.ID, fi)
+			} else {
+				//println("a 597", int(cm.Count), fp.ID)
+			}
+
+			//fmt.Printf("%d: FIB:%d: fakePerson ID %d\n", cm.Count, fib(uint(fp.ID)), fp.ID)
+			atomic.AddInt32(rowsLoadedCounter, 1)
+			return nil
+		})
+		require.NoError(t, err)
+		assert.Exactly(t, int32(40), *rowsLoadedCounter, "Should load this amount of rows from the database server.")
+	})
+
+}
+
+func fib(n uint) uint {
+	if n == 0 {
+		return 0
+	} else if n == 1 {
+		return 1
+	} else {
+		return fib(n-1) + fib(n-2)
+	}
 }

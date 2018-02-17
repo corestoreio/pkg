@@ -15,7 +15,10 @@
 package dml_test
 
 import (
+	"fmt"
 	"os"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -134,4 +137,18 @@ func compareToSQL(
 		require.True(t, wantErrKind.Match(err), "%+v")
 	}
 	require.Equal(t, wantSQLInterpolated, sqlStr, "Interpolated SQL strings do not match")
+}
+
+func ifNotEqualPanic(have, want interface{}, msg ...string) {
+	// The reason for this function is that I have no idea why testing.T is
+	// blocking inside the bgwork.Wait function.
+	if !reflect.DeepEqual(have, want) {
+		panic(fmt.Sprintf("%q\nHave: %#v\nWant: %#v\n\n", strings.Join(msg, ""), have, want))
+	}
+}
+
+func ifErrPanic(err error) {
+	if err != nil {
+		panic(fmt.Sprintf("%+v", err))
+	}
 }

@@ -49,6 +49,7 @@ type Select struct {
 	IsForUpdate          bool // See ForUpdate()
 	IsLockInShareMode    bool // See LockInShareMode()
 	IsOrderByDeactivated bool // See OrderByDeactivated()
+	IsOrderByRand        bool // enables original slow ORDER BY RAND() clause
 	OffsetValid          bool
 	OffsetCount          uint64
 	// Listeners allows to dispatch certain functions in different
@@ -514,7 +515,7 @@ func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err 
 	if b.OrderByRand != "" {
 		jf := &join{
 			Table: id{
-				// This can be further optimized
+				// This can be further optimized and it must include any WHERE condition from the root SELECT.
 				Expression: fmt.Sprintf(
 					"(SELECT `%s` FROM `%s` WHERE RAND() < (SELECT ((%d / COUNT(*)) * 10) FROM `%s`) ORDER BY RAND() LIMIT %d)",
 					b.OrderByRand,
@@ -562,13 +563,17 @@ func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err 
 		return nil, errors.WithStack(err)
 	}
 
-	if b.IsOrderByDeactivated {
+	switch {
+	case b.IsOrderByDeactivated:
 		w.WriteString(" ORDER BY NULL")
-	} else {
+	case b.IsOrderByRand:
+		w.WriteString(" ORDER BY RAND()")
+	default:
 		sqlWriteOrderBy(w, b.OrderBys, false)
 	}
 
 	sqlWriteLimitOffset(w, b.LimitValid, b.LimitCount, b.OffsetValid, b.OffsetCount)
+
 	switch {
 	case b.IsLockInShareMode:
 		w.WriteString(" LOCK IN SHARE MODE")

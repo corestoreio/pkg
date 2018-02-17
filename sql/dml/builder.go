@@ -216,11 +216,12 @@ func (bb *BuilderBase) withArgs(qb queryBuilder) *Arguments {
 // conditional constraints like WHERE, JOIN, ORDER, etc. Exported for
 // documentation reasons.
 type BuilderConditional struct {
-	Joins      Joins
-	Wheres     Conditions
-	OrderBys   ids
-	LimitCount uint64
-	LimitValid bool
+	Joins       Joins
+	Wheres      Conditions
+	OrderBys    ids
+	OrderByRand string // column name of the single primary key
+	LimitCount  uint64
+	LimitValid  bool
 }
 
 func (b *BuilderConditional) join(j string, t id, on ...*Condition) {

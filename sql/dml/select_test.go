@@ -226,16 +226,45 @@ func TestSelect_ComplexExpr(t *testing.T) {
 	})
 }
 
-func TestSelect_OrderByRandom(t *testing.T) {
+func TestSelect_OrderByRandom_Strings(t *testing.T) {
 	t.Parallel()
-	compareToSQL2(t,
-		NewSelect("id", "first_name", "last_name").
-			From("dml_fake_person").
-			OrderByRandom("id", 25),
-		errors.NoKind,
-		"SELECT `id`, `first_name`, `last_name` FROM `dml_fake_person`  JOIN (SELECT `id` FROM `dml_fake_person` WHERE RAND() < (SELECT ((25 / COUNT(*)) * 10) FROM `dml_fake_person`) ORDER BY RAND() LIMIT 25) AS `tableRandom` USING (`id`)",
-	)
 
+	t.Run("simple select", func(t *testing.T) {
+		compareToSQL2(t,
+			NewSelect("id", "first_name", "last_name").
+				From("dml_fake_person").
+				OrderByRandom("id", 25),
+			errors.NoKind,
+			"SELECT `id`, `first_name`, `last_name` FROM `dml_fake_person`  JOIN (SELECT `id` FROM `dml_fake_person` WHERE RAND() < (SELECT ((25 / COUNT(*)) * 10) FROM `dml_fake_person`) ORDER BY RAND() LIMIT 25) AS `tableRandom` USING (`id`)",
+		)
+	})
+
+	t.Run("one join", func(t *testing.T) {
+		sqlObj := NewSelect("p1.*", "p2.*").FromAlias("dml_people", "p1").
+			Distinct().StraightJoin().SQLNoCache().
+			Join(
+				MakeIdentifier("dml_people").Alias("p2"),
+				Expr("`p2`.`id` = `p1`.`id`"),
+				Column("p1.id").Int(142),
+			).OrderByRandom("id", 100)
+
+		compareToSQL2(t, sqlObj, errors.NoKind,
+			"SELECT DISTINCT STRAIGHT_JOIN SQL_NO_CACHE `p1`.*, `p2`.* FROM `dml_people` AS `p1` INNER JOIN `dml_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = 142)  JOIN (SELECT `id` FROM `dml_people` WHERE RAND() < (SELECT ((100 / COUNT(*)) * 10) FROM `dml_people`) ORDER BY RAND() LIMIT 100) AS `tableRandom` USING (`id`)",
+		)
+	})
+}
+
+func TestSelect_OrderByRandom_Integration(t *testing.T) {
+	s := createRealSessionWithFixtures(t, nil)
+	defer testCloser(t, s)
+
+	sel := s.SelectFrom("dml_people").AddColumns("id").OrderByRandom("id", 10)
+
+	t.Run("Load IDs", func(t *testing.T) {
+		ids, err := sel.WithArgs().LoadUint64s(context.TODO())
+		require.NoError(t, err)
+		assert.Len(t, ids, 2)
+	})
 }
 
 func TestSelect_Paginate(t *testing.T) {
@@ -683,7 +712,7 @@ func TestSelect_LoadType_Single(t *testing.T) {
 	})
 }
 
-func TestSelect_LoadUint64(t *testing.T) {
+func TestSelect_WithArgs_LoadUint64(t *testing.T) {
 	s := createRealSessionWithFixtures(t, &installFixturesConfig{
 		AddPeopleWithMaxUint64: true,
 	})
@@ -706,10 +735,9 @@ func TestSelect_LoadUint64(t *testing.T) {
 		require.NoError(t, err)
 		assert.Exactly(t, bigID, id)
 	})
-
 }
 
-func TestSelect_LoadType_Slices(t *testing.T) {
+func TestSelect_WithArgs_LoadType_Slices(t *testing.T) {
 	s := createRealSessionWithFixtures(t, nil)
 	defer testCloser(t, s)
 	t.Run("LoadStrings", func(t *testing.T) {

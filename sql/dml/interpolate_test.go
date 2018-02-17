@@ -92,6 +92,46 @@ func TestInterpolate_Nil(t *testing.T) {
 	})
 }
 
+func TestInterpolate_AllTypes(t *testing.T) {
+	t.Parallel()
+
+	sqlStr, args, err := Interpolate(`SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?`).
+		Null().
+		Unsafe(`Unsafe`).
+		Int(2).
+		Ints(3, 4).
+		Int64(5).
+		Int64s(6, 7).
+		Uint64(8).
+		Uint64s(9, 10).
+		Float64(11.1).
+		Float64s(12.12, 13.13).
+		Str("14").
+		Strs("15", "16").
+		Bool(true).
+		Bools(false, true, false).
+		Bytes([]byte(`17-18`)).
+		BytesSlice([]byte(`19-20`), nil, []byte(`21`)).
+		Time(now()).
+		Times(now(), now()).
+		NullString(MakeNullString("22")).
+		NullStrings(MakeNullString("23"), NullString{}, MakeNullString("24")).
+		NullFloat64(MakeNullFloat64(25.25)).
+		NullFloat64s(MakeNullFloat64(26.26), NullFloat64{}, MakeNullFloat64(27.27)).
+		NullInt64(MakeNullInt64(28)).
+		NullInt64s(MakeNullInt64(29), NullInt64{}, MakeNullInt64(30)).
+		NullBool(MakeNullBool(true)).
+		NullBools(MakeNullBool(true), NullBool{}, MakeNullBool(false)).
+		NullTime(MakeNullTime(now())).
+		NullTimes(MakeNullTime(now()), NullTime{}, MakeNullTime(now())).
+		ToSQL()
+	require.NoError(t, err)
+	assert.Nil(t, args)
+	assert.Exactly(t,
+		"SELECT NULL,'Unsafe',2,(3,4),5,(6,7),8,(9,10),11.1,(12.12,13.13),'14',('15','16'),1,(0,1,0),'17-18',('19-20',NULL,'21'),'2006-01-02 15:04:05',('2006-01-02 15:04:05','2006-01-02 15:04:05'),'22',('23',NULL,'24'),25.25,(26.26,NULL,27.27),28,(29,NULL,30),1,(1,NULL,0),'2006-01-02 15:04:05',('2006-01-02 15:04:05',NULL,'2006-01-02 15:04:05')",
+		sqlStr)
+}
+
 func TestInterpolate_Errors(t *testing.T) {
 	t.Parallel()
 	t.Run("non utf8", func(t *testing.T) {

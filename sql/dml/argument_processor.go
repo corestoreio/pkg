@@ -42,10 +42,12 @@ type Arguments struct {
 	// insertCachedSQL contains the final build SQL string with the correct
 	// amount of placeholders.
 	insertCachedSQL     []byte
-	insertIsBuildValues bool
 	insertColumnCount   uint
 	insertRowCount      uint
-	Options             uint
+	insertIsBuildValues bool
+	// isPrepared if true the cachedSQL field in base gets ignored
+	isPrepared bool
+	Options    uint
 	// hasNamedArgs checks if the SQL string in the cachedSQL field contains
 	// named arguments. 0 not yet checked, 1=does not contain, 2 = yes
 	hasNamedArgs      uint8 // 0 not checked, 1=no, 2=yes
@@ -110,7 +112,7 @@ func (a *Arguments) prepareArgs(extArgs ...interface{}) (_ string, _ []interface
 	if a.base.ärgErr != nil {
 		return "", nil, errors.WithStack(a.base.ärgErr)
 	}
-	if len(a.base.cachedSQL) == 0 {
+	if !a.isPrepared && len(a.base.cachedSQL) == 0 {
 		return "", nil, errors.Empty.Newf("[dml] Arguments: The SQL string is empty.")
 	}
 
@@ -120,10 +122,13 @@ func (a *Arguments) prepareArgs(extArgs ...interface{}) (_ string, _ []interface
 
 	if a.isEmpty() {
 		a.hasNamedArgs = 1
+		if a.isPrepared {
+			return "", extArgs, nil
+		}
 		return string(a.base.cachedSQL), extArgs, nil
 	}
 
-	if a.hasNamedArgs == 0 {
+	if !a.isPrepared && a.hasNamedArgs == 0 {
 		var found bool
 		a.hasNamedArgs = 1
 		a.base.cachedSQL, a.base.qualifiedColumns, found = extractReplaceNamedArgs(a.base.cachedSQL, a.base.qualifiedColumns)
@@ -149,6 +154,10 @@ func (a *Arguments) prepareArgs(extArgs ...interface{}) (_ string, _ []interface
 	extArgs = append(extArgs, a.raw...)
 	if collectedArgs, err = a.appendConvertedRecordsToArguments(collectedArgs); err != nil {
 		return "", nil, errors.WithStack(err)
+	}
+
+	if a.isPrepared {
+		return "", collectedArgs.Interfaces(extArgs...), nil
 	}
 
 	// Make a copy of the original SQL statement because it gets modified in the
@@ -298,6 +307,11 @@ func (a *Arguments) prepareArgsInsert(extArgs ...interface{}) (string, []interfa
 				return "", nil, errors.WithStack(err)
 			}
 		}
+	}
+
+	if a.isPrepared {
+		// TODO above construct can be more optimized when using prepared statements
+		return "", cm.arguments.Interfaces(extArgs...), nil
 	}
 
 	extArgs = append(extArgs, a.raw...)
@@ -583,25 +597,24 @@ func (a *Arguments) QueryRowContext(ctx context.Context, args ...interface{}) *s
 	return a.base.DB.QueryRowContext(ctx, sqlStr, args...)
 }
 
-// Iterate iterates over the result set by loading only one row each iteration
-// and then discarding it. Handles records one by one. Even if there are no rows
-// in the query, the callBack function gets executed with a ColumnMap argument
-// that indicates ColumnMap.HasRows equals false.
-func (a *Arguments) Iterate(ctx context.Context, callBack func(*ColumnMap) error, args ...interface{}) (err error) {
+// IterateSerial iterates in serial order over the result set by loading one row each
+// iteration and then discarding it. Handles records one by one. The context
+// gets only used in the Query function.
+func (a *Arguments) IterateSerial(ctx context.Context, callBack func(*ColumnMap) error, args ...interface{}) (err error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {
-		defer log.WhenDone(a.base.Log).Debug("Iterate", log.String("id", a.base.id), log.Err(err))
+		defer log.WhenDone(a.base.Log).Debug("IterateSerial", log.String("id", a.base.id), log.Err(err))
 	}
 
 	r, err := a.query(ctx, args...)
 	if err != nil {
-		err = errors.Wrapf(err, "[dml] Iterate.Query with query ID %q", a.base.id)
+		err = errors.Wrapf(err, "[dml] IterateSerial.Query with query ID %q", a.base.id)
 		return
 	}
 	cmr := pooledColumnMapGet() // this sync.Pool might not work correctly, write a complex test.
 	defer pooledBufferColumnMapPut(cmr, nil, func() {
 		// Not testable with the sqlmock package :-(
 		if err2 := r.Close(); err2 != nil && err == nil {
-			err = errors.Wrap(err2, "[dml] Iterate.QueryContext.Rows.Close")
+			err = errors.Wrap(err2, "[dml] IterateSerial.QueryContext.Rows.Close")
 		}
 	})
 
@@ -616,8 +629,97 @@ func (a *Arguments) Iterate(ctx context.Context, callBack func(*ColumnMap) error
 		}
 	}
 	err = errors.WithStack(r.Err())
-	if !cmr.HasRows && err == nil {
-		err = errors.WithStack(callBack(cmr))
+	return
+}
+
+// iterateParallelForNextLoop has been extracted from IterateParallel to not
+// mess around with closing channels in different locations of the source code
+// when an error occurs.
+func iterateParallelForNextLoop(r *sql.Rows, rowChan chan<- *ColumnMap, errChan <-chan error) (err error) {
+	defer func() {
+		if err2 := r.Err(); err2 != nil && err == nil {
+			err = errors.WithStack(err)
+		}
+		if err2 := r.Close(); err2 != nil && err == nil {
+			err = errors.Wrap(err2, "[dml] IterateParallel.QueryContext.Rows.Close")
+		}
+	}()
+
+	var idx uint64
+	for r.Next() {
+		var cm ColumnMap // must be empty because we're not collecting data
+		if errS := cm.Scan(r); errS != nil {
+			err = errors.WithStack(errS)
+			return
+		}
+		cm.Count = idx
+		select {
+		case rowChan <- &cm:
+		case errC := <-errChan:
+			if errC != nil {
+				err = errC
+			}
+			return
+		}
+		idx++
+	}
+	return
+}
+
+// IterateParallel starts a number of workers as defined by variable
+// concurrencyLevel and executes the query. Each database row gets evenly
+// distributed to the workers. The callback function gets called within a
+// worker. concurrencyLevel should be the number of CPUs.
+func (a *Arguments) IterateParallel(ctx context.Context, concurrencyLevel int, callBack func(*ColumnMap) error, args ...interface{}) (err error) {
+	if a.base.Log != nil && a.base.Log.IsDebug() {
+		defer log.WhenDone(a.base.Log).Debug("IterateParallel", log.String("id", a.base.id), log.Err(err))
+	}
+	if concurrencyLevel < 1 {
+		return errors.OutofRange.Newf("[dml] Arguments.IterateParallel concurrencyLevel %d for query ID %q cannot be smaller zero.", concurrencyLevel, a.base.id)
+	}
+
+	r, err := a.query(ctx, args...)
+	if err != nil {
+		err = errors.Wrapf(err, "[dml] IterateParallel.Query with query ID %q", a.base.id)
+		return
+	}
+
+	// start workers and a channel for communicating
+	rowChan := make(chan *ColumnMap)
+	errChan := make(chan error, concurrencyLevel)
+	var wg sync.WaitGroup
+	for i := 0; i < concurrencyLevel; i++ {
+		wg.Add(1)
+		//i := i
+		go func(wg *sync.WaitGroup, rowChan <-chan *ColumnMap, errChan chan<- error) {
+			defer wg.Done()
+			for cmr := range rowChan {
+				if cbErr := callBack(cmr); cbErr != nil {
+					errChan <- errors.WithStack(cbErr)
+					return
+				}
+			}
+		}(&wg, rowChan, errChan)
+	}
+
+	if err2 := iterateParallelForNextLoop(r, rowChan, errChan); err2 != nil {
+		err = err2
+	}
+	close(rowChan)
+	wg.Wait()
+	close(errChan)
+
+	var multiErr *errors.MultiErr
+	i := 0
+	for errC2 := range errChan {
+		if i == 0 && err != nil {
+			multiErr = multiErr.AppendErrors(err)
+		}
+		multiErr = multiErr.AppendErrors(errC2)
+		i++
+	}
+	if multiErr != nil {
+		err = multiErr
 	}
 	return
 }
