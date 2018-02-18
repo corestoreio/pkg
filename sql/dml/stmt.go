@@ -67,9 +67,9 @@ type Stmt struct {
 }
 
 // WithArgs creates a new argument handler.
-func (st *Stmt) WithArgs() *Arguments {
+func (st *Stmt) WithArgs() *Artisan {
 	var args [defaultArgumentsCapacity]argument
-	a := &Arguments{
+	a := &Artisan{
 		base:       st.base,
 		arguments:  args[:0],
 		isPrepared: true,

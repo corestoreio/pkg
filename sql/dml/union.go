@@ -230,10 +230,10 @@ func (u *Union) StringReplace(key string, values ...string) *Union {
 // Update, Union, With, etc.). The field DB can still be overwritten.
 // Interpolation does not support the raw interfaces. It's an architecture bug
 // to use WithArgs inside a loop. WithArgs does support thread safety and can be
-// used in parallel. Each goroutine must have its own dedicated *Arguments
+// used in parallel. Each goroutine must have its own dedicated *Artisan
 // pointer.
-func (u *Union) WithArgs() *Arguments {
-	return u.withArgs(u)
+func (u *Union) WithArgs() *Artisan {
+	return u.withArtisan(u)
 }
 
 // ToSQL converts the statements into a string and returns its arguments.

@@ -60,7 +60,7 @@ func writeToSQLAndInterpolate(qb dml.QueryBuilder) {
 	}
 
 	switch dmlArg := qb.(type) {
-	case *dml.Arguments:
+	case *dml.Artisan:
 		prev := dmlArg.Options
 		qb = dmlArg.Interpolate()
 		defer func() { dmlArg.Options = prev; qb = dmlArg }()

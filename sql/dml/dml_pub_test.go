@@ -123,14 +123,14 @@ func compareToSQL(
 		return
 	}
 
-	if dmlArgs, ok := qb.(*dml.Arguments); ok {
+	if dmlArgs, ok := qb.(*dml.Artisan); ok {
 		prev := dmlArgs.Options
 		qb = dmlArgs.Interpolate()
 		defer func() { dmlArgs.Options = prev; qb = dmlArgs }()
 	}
 
 	sqlStr, args, err = qb.ToSQL() // Call with enabled interpolation
-	require.Nil(t, args, "Arguments should be nil when the SQL string gets interpolated")
+	require.Nil(t, args, "Artisan should be nil when the SQL string gets interpolated")
 	if wantErrKind.Empty() {
 		require.NoError(t, err)
 	} else {

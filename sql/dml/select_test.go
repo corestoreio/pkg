@@ -648,7 +648,7 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 	t.Run("Scan string into arg UINT returns error", func(t *testing.T) {
 		var people dmlPersons
 		rc, err := s.SelectFrom("dml_people").AddColumnsAliases("email", "id", "name", "email").WithArgs().Load(context.TODO(), &people)
-		require.EqualError(t, err, "[dml] Arguments.Load failed with queryID \"\" and ColumnMapper *dml.dmlPersons: [dml] Column \"id\": strconv.ParseUint: parsing \"jonathan@uservoice.com\": invalid syntax")
+		require.EqualError(t, err, "[dml] Artisan.Load failed with queryID \"\" and ColumnMapper *dml.dmlPersons: [dml] Column \"id\": strconv.ParseUint: parsing \"jonathan@uservoice.com\": invalid syntax")
 		assert.EqualError(t, errors.Cause(err), "strconv.ParseUint: parsing \"jonathan@uservoice.com\": invalid syntax")
 		assert.Empty(t, rc)
 	})

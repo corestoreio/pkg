@@ -274,7 +274,7 @@ func (b *Select) AddColumnsAliases(columnAliases ...string) *Select {
 }
 
 // AddColumnsConditions adds a condition as a column to the statement. The
-// operator field gets ignored. Arguments in the condition gets applied to the
+// operator field gets ignored. Artisan in the condition gets applied to the
 // RawArguments field to maintain the correct order of arguments.
 // 		AddColumnsConditions(Expr("(e.price*x.tax*t.weee)").Alias("final_price")) // (e.price*x.tax*t.weee) AS `final_price`
 func (b *Select) AddColumnsConditions(expressions ...*Condition) *Select {
@@ -429,10 +429,10 @@ func (b *Select) CrossJoin(table id, onConditions ...*Condition) *Select {
 // Update, Union, With, etc.). The field DB can still be overwritten.
 // Interpolation does not support the raw interfaces. It's an architecture bug
 // to use WithArgs inside a loop. WithArgs does support thread safety and can be
-// used in parallel. Each goroutine must have its own dedicated *Arguments
+// used in parallel. Each goroutine must have its own dedicated *Artisan
 // pointer.
-func (b *Select) WithArgs() *Arguments {
-	return b.withArgs(b)
+func (b *Select) WithArgs() *Artisan {
+	return b.withArtisan(b)
 }
 
 // ToSQL generates the SQL string and might caches it internally, if not

@@ -480,7 +480,7 @@ func TestSelect_Argument_IterateSerial(t *testing.T) {
 		// Do not run such a construct in production.
 
 		type processor interface {
-			WithArgs() *dml.Arguments
+			WithArgs() *dml.Artisan
 		}
 		const limit = 5
 		const concurrencyLevel = 10

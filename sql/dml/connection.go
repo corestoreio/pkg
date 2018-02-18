@@ -323,13 +323,13 @@ func (c *ConnPool) Transaction(ctx context.Context, opts *sql.TxOptions, fns ...
 	return errors.WithStack(tx.Commit())
 }
 
-// WithQueryBuilder creates a new Argument with the assigned connection and
-// builds the SQL string. The returned arguments and errors of the QueryBuilder
-// will be forwarded to the Arguments type.
-func (c *ConnPool) WithQueryBuilder(qb QueryBuilder) *Arguments {
+// WithQueryBuilder creates a new Artisan for handling the arguments with the
+// assigned connection and builds the SQL string. The returned arguments and
+// errors of the QueryBuilder will be forwarded to the Artisan type.
+func (c *ConnPool) WithQueryBuilder(qb QueryBuilder) *Artisan {
 	sqlStr, argsRaw, err := qb.ToSQL()
 	var args [defaultArgumentsCapacity]argument
-	return &Arguments{
+	return &Artisan{
 		base: builderCommon{
 			cachedSQL: []byte(sqlStr),
 			Log:       c.Log,
@@ -445,13 +445,13 @@ func (c *Conn) Close() error {
 	return c.DB.Close() // no stack wrap otherwise error is hard to compare
 }
 
-// WithQueryBuilder creates a new Argument with the assigned connection and
-// builds the SQL string. The returned arguments and errors of the QueryBuilder
-// will be forwarded to the Arguments type.
-func (c *Conn) WithQueryBuilder(qb QueryBuilder) *Arguments {
+// WithQueryBuilder creates a new Artisan for handling the arguments with the
+// assigned connection and builds the SQL string. The returned arguments and
+// errors of the QueryBuilder will be forwarded to the Artisan type.
+func (c *Conn) WithQueryBuilder(qb QueryBuilder) *Artisan {
 	sqlStr, argsRaw, err := qb.ToSQL()
 	var args [defaultArgumentsCapacity]argument
-	return &Arguments{
+	return &Artisan{
 		base: builderCommon{
 			cachedSQL: []byte(sqlStr),
 			Log:       c.Log,
@@ -482,13 +482,13 @@ func (tx *Tx) Rollback() error {
 	return tx.DB.Rollback()
 }
 
-// WithQueryBuilder creates a new Argument with the assigned connection and
-// builds the SQL string. The returned arguments and errors of the QueryBuilder
-// will be forwarded to the Arguments type.
-func (tx *Tx) WithQueryBuilder(qb QueryBuilder) *Arguments {
+// WithQueryBuilder creates a new Artisan for handling the arguments with the
+// assigned connection and builds the SQL string. The returned arguments and
+// errors of the QueryBuilder will be forwarded to the Artisan type.
+func (tx *Tx) WithQueryBuilder(qb QueryBuilder) *Artisan {
 	sqlStr, argsRaw, err := qb.ToSQL()
 	var args [defaultArgumentsCapacity]argument
-	return &Arguments{
+	return &Artisan{
 		base: builderCommon{
 			cachedSQL: []byte(sqlStr),
 			Log:       tx.Log,

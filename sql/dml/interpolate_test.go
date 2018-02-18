@@ -459,7 +459,7 @@ func TestInterpolate_Different(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		sql string
-		*Arguments
+		*Artisan
 		expSQL  string
 		errKind errors.Kind
 	}{
@@ -561,7 +561,7 @@ func TestInterpolate_Different(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		str, _, err := Interpolate(test.sql).Arguments(test.Arguments).ToSQL()
+		str, _, err := Interpolate(test.sql).Arguments(test.Artisan).ToSQL()
 		if !test.errKind.Empty() {
 			if !test.errKind.Match(err) {
 				isErr := test.errKind.Match(err)

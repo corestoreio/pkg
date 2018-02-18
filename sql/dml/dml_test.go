@@ -351,7 +351,7 @@ func compareToSQL(
 		return
 	}
 
-	if dml, ok := qb.(*Arguments); ok {
+	if dml, ok := qb.(*Artisan); ok {
 		prev := dml.Options
 		qb = dml.Interpolate()
 		defer func() { dml.Options = prev; qb = dml }()
@@ -364,7 +364,7 @@ func compareToSQL(
 		require.True(t, wantErrKind.Match(err), "%+v")
 	}
 	require.Equal(t, wantSQLInterpolated, sqlStr, "Interpolated SQL strings do not match")
-	require.Nil(t, args, "Arguments should be nil when the SQL string gets interpolated")
+	require.Nil(t, args, "Artisan should be nil when the SQL string gets interpolated")
 }
 
 // compareToSQL2 This function also exists in file dml_public_test.go to

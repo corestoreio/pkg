@@ -234,9 +234,9 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 	return b
 }
 
-// WithArgs returns a new type to support multiple executions of the underlying
-// SQL statement and reuse of memory allocations for the arguments. WithArgs
-// builds the SQL string in a thread safe way. It copies the underlying
+// WithArgs returns a new Artisan type to support multiple executions of the
+// underlying SQL statement and reuse of memory allocations for the arguments.
+// WithArgs builds the SQL string in a thread safe way. It copies the underlying
 // connection and settings from the current DML type (Delete, Insert, Select,
 // Update, Union, With, etc.). The field DB can still be overwritten.
 // Interpolation does not support the raw interfaces. It's an architecture bug
@@ -245,22 +245,22 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 // VALUES section must look like depending on the number of arguments. In some
 // cases type Insert needs to know the RowCount to build the appropriate amount
 // of placeholders.
-func (b *Insert) WithArgs() *Arguments {
+func (b *Insert) WithArgs() *Artisan {
 
 	var pairArgs arguments
 	b.rwmu.RLock()
-	isSelect := b.Select != nil // b.withArgs unsets the Select field if caching is enabled
+	isSelect := b.Select != nil // b.withArtisan unsets the Select field if caching is enabled
 	for _, cv := range b.Pairs {
 		pairArgs = append(pairArgs, cv.Right.arg)
 	}
 	b.rwmu.RUnlock()
 
-	a := b.withArgs(b)
+	a := b.withArtisan(b)
 	a.base.source = dmlSourceInsert
 
 	if isSelect {
 		// Must change to this source because to trigger a different argument
-		// collector in Arguments.prepareArgs. It is not a real INSERT statement
+		// collector in Artisan.prepareArgs. It is not a real INSERT statement
 		// anymore.
 		a.base.source = dmlSourceInsertSelect
 		return a

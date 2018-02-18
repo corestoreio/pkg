@@ -212,17 +212,17 @@ func (b *Delete) Limit(limit uint64) *Delete {
 	return b
 }
 
-// WithArgs returns a new type to support multiple executions of the underlying
-// SQL statement and reuse of memory allocations for the arguments. WithArgs
-// builds the SQL string in a thread safe way. It copies the underlying
+// WithArgs returns a new Artisan type to support multiple executions of the
+// underlying SQL statement and reuse of memory allocations for the arguments.
+// WithArgs builds the SQL string in a thread safe way. It copies the underlying
 // connection and settings from the current DML type (Delete, Insert, Select,
 // Update, Union, With, etc.). The field DB can still be overwritten.
 // Interpolation does not support the raw interfaces. It's an architecture bug
 // to use WithArgs inside a loop. WithArgs does support thread safety and can be
-// used in parallel. Each goroutine must have its own dedicated *Arguments
+// used in parallel. Each goroutine must have its own dedicated *Artisan
 // pointer.
-func (b *Delete) WithArgs() *Arguments {
-	return b.withArgs(b)
+func (b *Delete) WithArgs() *Artisan {
+	return b.withArtisan(b)
 }
 
 // ToSQL generates the SQL string and might caches it internally, if not

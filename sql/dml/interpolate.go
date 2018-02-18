@@ -45,7 +45,7 @@ var placeHolderByte = []byte(placeHolderStr)
 // The questions marks are of course depending on the values in the Arg*
 // functions. This function should be generally used when dealing with prepared
 // statements.
-func ExpandPlaceHolders(sql string, args *Arguments) (string, error) {
+func ExpandPlaceHolders(sql string, args *Artisan) (string, error) {
 	var a arguments
 	if args != nil {
 		a = args.arguments
@@ -206,7 +206,7 @@ func (in *ip) DriverValue(dvs ...driver.Valuer) *ip {
 
 // Arguments sets the internal arguments slice and nothing else. It overwrites
 // previously set arguments.
-func (in *ip) Arguments(args *Arguments) *ip {
+func (in *ip) Arguments(args *Artisan) *ip {
 	if args != nil {
 		in.args = args.arguments
 	}

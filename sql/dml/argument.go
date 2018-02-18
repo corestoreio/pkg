@@ -509,7 +509,7 @@ func (arg argument) GoString() string {
 }
 
 // MakeArgs creates a new argument slice with the desired capacity.
-func MakeArgs(cap int) *Arguments { return &Arguments{arguments: make(arguments, 0, cap)} }
+func MakeArgs(cap int) *Artisan { return &Artisan{arguments: make(arguments, 0, cap)} }
 
 type arguments []argument
 

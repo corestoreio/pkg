@@ -182,10 +182,10 @@ func (b *Show) Like() *Show {
 // Update, Union, With, etc.). The field DB can still be overwritten.
 // Interpolation does not support the raw interfaces. It's an architecture bug
 // to use WithArgs inside a loop. WithArgs does support thread safety and can be
-// used in parallel. Each goroutine must have its own dedicated *Arguments
+// used in parallel. Each goroutine must have its own dedicated *Artisan
 // pointer.
-func (b *Show) WithArgs() *Arguments {
-	return b.withArgs(b)
+func (b *Show) WithArgs() *Artisan {
+	return b.withArtisan(b)
 }
 
 // ToSQL converts the select statement into a string and returns its arguments.

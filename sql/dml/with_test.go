@@ -23,7 +23,7 @@ import (
 
 func TestWith_Placeholder(t *testing.T) {
 	t.Parallel()
-	t.Run("placeholder Arguments", func(t *testing.T) {
+	t.Run("placeholder Artisan", func(t *testing.T) {
 		cte := NewWith(
 			WithCTE{
 				Name:    "cte",

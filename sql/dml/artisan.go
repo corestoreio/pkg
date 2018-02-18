@@ -27,9 +27,13 @@ import (
 	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
-// Arguments a collection of primitive types or slices of primitive types.
-// It acts as some kind of prepared statement.
-type Arguments struct {
+// Artisan prepares the SQL string from a DML type, collects and build a list of
+// arguments for later sending and execution in the database server. Arguments
+// are collections of primitive types or slices of primitive types. An Artisan
+// type acts like a prepared statement. In fact it can contain under the hood
+// different connection types. Artisan is optimized for reuse and allow saving
+// memory allocations.
+type Artisan struct {
 	base builderCommon
 	// QualifiedColumnsAliases allows to overwrite the internal qualified
 	// columns slice with custom names. Only in the use case when records are
@@ -63,21 +67,21 @@ const (
 )
 
 // WithQualifiedColumnsAliases for documentation please see:
-// Arguments.QualifiedColumnsAliases.
-func (a *Arguments) WithQualifiedColumnsAliases(aliases ...string) *Arguments {
+// Artisan.QualifiedColumnsAliases.
+func (a *Artisan) WithQualifiedColumnsAliases(aliases ...string) *Artisan {
 	a.QualifiedColumnsAliases = aliases
 	return a
 }
 
 // ToSQL the returned interface slice is owned by the callee.
-func (a *Arguments) ToSQL() (string, []interface{}, error) {
+func (a *Artisan) ToSQL() (string, []interface{}, error) {
 	return a.prepareArgs()
 }
 
 // Interpolate if set stringyfies the arguments into the SQL string and returns
 // pre-processed SQL command when calling the function ToSQL. Not suitable for
 // prepared statements. ToSQLs second argument `args` will then be nil.
-func (a *Arguments) Interpolate() *Arguments {
+func (a *Artisan) Interpolate() *Artisan {
 	a.Options = a.Options | argOptionInterpolate
 	return a
 }
@@ -91,29 +95,29 @@ func (a *Arguments) Interpolate() *Arguments {
 // The place holders are of course depending on the values in the Arg*
 // functions. This function should be generally used when dealing with prepared
 // statements or interpolation.
-func (a *Arguments) ExpandPlaceHolders() *Arguments {
+func (a *Artisan) ExpandPlaceHolders() *Artisan {
 	a.Options = a.Options | argOptionExpandPlaceholder
 	return a
 }
 
-func (a *Arguments) isEmpty() bool {
+func (a *Artisan) isEmpty() bool {
 	if a == nil {
 		return true
 	}
 	return len(a.raw) == 0 && len(a.arguments) == 0 && len(a.recs) == 0
 }
 
-// prepareArgs transforms mainly the Arguments into []interface{}. It appends
+// prepareArgs transforms mainly the Artisan into []interface{}. It appends
 // its arguments to the `extArgs` arguments from the Exec+ or Query+ function.
 // This allows for a developer to reuse the interface slice and save
 // allocations. All method receivers are not thread safe. The returned interface
 // slice is the same as `extArgs`.
-func (a *Arguments) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}, err error) {
+func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}, err error) {
 	if a.base.ärgErr != nil {
 		return "", nil, errors.WithStack(a.base.ärgErr)
 	}
 	if !a.isPrepared && len(a.base.cachedSQL) == 0 {
-		return "", nil, errors.Empty.Newf("[dml] Arguments: The SQL string is empty.")
+		return "", nil, errors.Empty.Newf("[dml] Artisan: The SQL string is empty.")
 	}
 
 	if a.base.source == dmlSourceInsert {
@@ -193,7 +197,7 @@ func (a *Arguments) prepareArgs(extArgs ...interface{}) (_ string, _ []interface
 	return sqlBuf.First.String(), collectedArgs.Interfaces(extArgs...), nil
 }
 
-func (a *Arguments) appendConvertedRecordsToArguments(collectedArgs arguments) (arguments, error) {
+func (a *Artisan) appendConvertedRecordsToArguments(collectedArgs arguments) (arguments, error) {
 	if a.base.templateStmtCount == 0 {
 		a.base.templateStmtCount = 1
 	}
@@ -220,7 +224,7 @@ func (a *Arguments) appendConvertedRecordsToArguments(collectedArgs arguments) (
 	}
 
 	// TODO refactor prototype and make it performant and beautiful code
-	cm := NewColumnMap(len(a.arguments)+len(a.recs), "") // can use an arg pool Arguments sync.Pool, nope.
+	cm := NewColumnMap(len(a.arguments)+len(a.recs), "") // can use an arg pool Artisan sync.Pool, nope.
 
 	for tsc := 0; tsc < a.base.templateStmtCount; tsc++ { // only in case of UNION statements in combination with a template SELECT, can be optimized later
 
@@ -277,7 +281,7 @@ func (a *Arguments) appendConvertedRecordsToArguments(collectedArgs arguments) (
 // prepareArgsInsert prepares the special arguments for an INSERT statement. The
 // returned interface slice is the same as the `extArgs` slice. extArgs =
 // external arguments.
-func (a *Arguments) prepareArgsInsert(extArgs ...interface{}) (string, []interface{}, error) {
+func (a *Artisan) prepareArgsInsert(extArgs ...interface{}) (string, []interface{}, error) {
 
 	//cm := pooledColumnMapGet()
 	sqlBuf := bufferpool.GetTwin()
@@ -358,7 +362,7 @@ func (a *Arguments) prepareArgsInsert(extArgs ...interface{}) (string, []interfa
 }
 
 // nextUnnamedArg returns an unnamed argument by its position.
-func (a *Arguments) nextUnnamedArg() (argument, bool) {
+func (a *Artisan) nextUnnamedArg() (argument, bool) {
 	var unnamedCounter int
 	lenArg := len(a.arguments)
 	for i := 0; i < lenArg && a.nextUnnamedArgPos >= 0; i++ {
@@ -377,7 +381,7 @@ func (a *Arguments) nextUnnamedArg() (argument, bool) {
 // MapColumns allows to merge one argument slice with another depending on the
 // matched columns. Each argument in the slice must be a named argument.
 // Implements interface ColumnMapper.
-func (a *Arguments) MapColumns(cm *ColumnMap) error {
+func (a *Artisan) MapColumns(cm *ColumnMap) error {
 	if cm.Mode() == ColumnMapEntityReadAll {
 		cm.arguments = append(cm.arguments, a.arguments...)
 		return cm.Err()
@@ -398,7 +402,7 @@ func (a *Arguments) MapColumns(cm *ColumnMap) error {
 	return cm.Err()
 }
 
-func (a *Arguments) add(v interface{}) *Arguments {
+func (a *Artisan) add(v interface{}) *Artisan {
 	if a == nil {
 		a = MakeArgs(defaultArgumentsCapacity)
 	}
@@ -406,14 +410,14 @@ func (a *Arguments) add(v interface{}) *Arguments {
 	return a
 }
 
-func (a *Arguments) Record(qualifier string, record ColumnMapper) *Arguments {
+func (a *Artisan) Record(qualifier string, record ColumnMapper) *Artisan {
 	a.recs = append(a.recs, Qualify(qualifier, record))
 	return a
 }
 
-// Arguments sets the internal arguments slice to the provided argument. Those
-// are the slices Arguments, records and raw.
-func (a *Arguments) Arguments(args *Arguments) *Arguments {
+// Artisan sets the internal arguments slice to the provided argument. Those
+// are the slices Artisan, records and raw.
+func (a *Artisan) Arguments(args *Artisan) *Artisan {
 	// maybe deprecated this function.
 	a.arguments = args.arguments
 	a.recs = args.recs
@@ -421,52 +425,52 @@ func (a *Arguments) Arguments(args *Arguments) *Arguments {
 	return a
 }
 
-func (a *Arguments) Records(records ...QualifiedRecord) *Arguments { a.recs = records; return a }
-func (a *Arguments) Raw(raw ...interface{}) *Arguments             { a.raw = raw; return a }
+func (a *Artisan) Records(records ...QualifiedRecord) *Artisan { a.recs = records; return a }
+func (a *Artisan) Raw(raw ...interface{}) *Artisan             { a.raw = raw; return a }
 
-func (a *Arguments) Null() *Arguments                          { return a.add(nil) }
-func (a *Arguments) Unsafe(arg interface{}) *Arguments         { return a.add(arg) }
-func (a *Arguments) Int(i int) *Arguments                      { return a.add(i) }
-func (a *Arguments) Ints(i ...int) *Arguments                  { return a.add(i) }
-func (a *Arguments) Int64(i int64) *Arguments                  { return a.add(i) }
-func (a *Arguments) Int64s(i ...int64) *Arguments              { return a.add(i) }
-func (a *Arguments) Uint(i uint) *Arguments                    { return a.add(uint64(i)) }
-func (a *Arguments) Uints(i ...uint) *Arguments                { return a.add(i) }
-func (a *Arguments) Uint64(i uint64) *Arguments                { return a.add(i) }
-func (a *Arguments) Uint64s(i ...uint64) *Arguments            { return a.add(i) }
-func (a *Arguments) Float64(f float64) *Arguments              { return a.add(f) }
-func (a *Arguments) Float64s(f ...float64) *Arguments          { return a.add(f) }
-func (a *Arguments) Bool(b bool) *Arguments                    { return a.add(b) }
-func (a *Arguments) Bools(b ...bool) *Arguments                { return a.add(b) }
-func (a *Arguments) String(s string) *Arguments                { return a.add(s) }
-func (a *Arguments) Strings(s ...string) *Arguments            { return a.add(s) }
-func (a *Arguments) Time(t time.Time) *Arguments               { return a.add(t) }
-func (a *Arguments) Times(t ...time.Time) *Arguments           { return a.add(t) }
-func (a *Arguments) Bytes(b []byte) *Arguments                 { return a.add(b) }
-func (a *Arguments) BytesSlice(b ...[]byte) *Arguments         { return a.add(b) }
-func (a *Arguments) NullString(nv NullString) *Arguments       { return a.add(nv) }
-func (a *Arguments) NullStrings(nv ...NullString) *Arguments   { return a.add(nv) }
-func (a *Arguments) NullFloat64(nv NullFloat64) *Arguments     { return a.add(nv) }
-func (a *Arguments) NullFloat64s(nv ...NullFloat64) *Arguments { return a.add(nv) }
-func (a *Arguments) NullInt64(nv NullInt64) *Arguments         { return a.add(nv) }
-func (a *Arguments) NullInt64s(nv ...NullInt64) *Arguments     { return a.add(nv) }
-func (a *Arguments) NullBool(nv NullBool) *Arguments           { return a.add(nv) }
-func (a *Arguments) NullBools(nv ...NullBool) *Arguments       { return a.add(nv) }
-func (a *Arguments) NullTime(nv NullTime) *Arguments           { return a.add(nv) }
-func (a *Arguments) NullTimes(nv ...NullTime) *Arguments       { return a.add(nv) }
+func (a *Artisan) Null() *Artisan                          { return a.add(nil) }
+func (a *Artisan) Unsafe(arg interface{}) *Artisan         { return a.add(arg) }
+func (a *Artisan) Int(i int) *Artisan                      { return a.add(i) }
+func (a *Artisan) Ints(i ...int) *Artisan                  { return a.add(i) }
+func (a *Artisan) Int64(i int64) *Artisan                  { return a.add(i) }
+func (a *Artisan) Int64s(i ...int64) *Artisan              { return a.add(i) }
+func (a *Artisan) Uint(i uint) *Artisan                    { return a.add(uint64(i)) }
+func (a *Artisan) Uints(i ...uint) *Artisan                { return a.add(i) }
+func (a *Artisan) Uint64(i uint64) *Artisan                { return a.add(i) }
+func (a *Artisan) Uint64s(i ...uint64) *Artisan            { return a.add(i) }
+func (a *Artisan) Float64(f float64) *Artisan              { return a.add(f) }
+func (a *Artisan) Float64s(f ...float64) *Artisan          { return a.add(f) }
+func (a *Artisan) Bool(b bool) *Artisan                    { return a.add(b) }
+func (a *Artisan) Bools(b ...bool) *Artisan                { return a.add(b) }
+func (a *Artisan) String(s string) *Artisan                { return a.add(s) }
+func (a *Artisan) Strings(s ...string) *Artisan            { return a.add(s) }
+func (a *Artisan) Time(t time.Time) *Artisan               { return a.add(t) }
+func (a *Artisan) Times(t ...time.Time) *Artisan           { return a.add(t) }
+func (a *Artisan) Bytes(b []byte) *Artisan                 { return a.add(b) }
+func (a *Artisan) BytesSlice(b ...[]byte) *Artisan         { return a.add(b) }
+func (a *Artisan) NullString(nv NullString) *Artisan       { return a.add(nv) }
+func (a *Artisan) NullStrings(nv ...NullString) *Artisan   { return a.add(nv) }
+func (a *Artisan) NullFloat64(nv NullFloat64) *Artisan     { return a.add(nv) }
+func (a *Artisan) NullFloat64s(nv ...NullFloat64) *Artisan { return a.add(nv) }
+func (a *Artisan) NullInt64(nv NullInt64) *Artisan         { return a.add(nv) }
+func (a *Artisan) NullInt64s(nv ...NullInt64) *Artisan     { return a.add(nv) }
+func (a *Artisan) NullBool(nv NullBool) *Artisan           { return a.add(nv) }
+func (a *Artisan) NullBools(nv ...NullBool) *Artisan       { return a.add(nv) }
+func (a *Artisan) NullTime(nv NullTime) *Artisan           { return a.add(nv) }
+func (a *Artisan) NullTimes(nv ...NullTime) *Artisan       { return a.add(nv) }
 
 // Name sets the name for the following argument. Calling Name two times after
 // each other sets the first call to Name to a NULL value. A call to Name should
 // always follow a call to a function type like Int, Float64s or NullTime.
 // Name may contain the placeholder prefix colon.
-func (a *Arguments) Name(n string) *Arguments {
+func (a *Artisan) Name(n string) *Artisan {
 	a.arguments = append(a.arguments, argument{name: n})
 	return a
 }
 
 // Reset resets the slice for new usage retaining the already allocated memory.
 // It does not reset the Options field.
-func (a *Arguments) Reset() *Arguments {
+func (a *Artisan) Reset() *Artisan {
 	for i := range a.recs {
 		a.recs[i].Qualifier = ""
 		a.recs[i].Record = nil
@@ -481,7 +485,7 @@ func (a *Arguments) Reset() *Arguments {
 // ResetInsert same as Reset but only applicable with INSERT statements and
 // triggers a new build of the VALUES part. This function must be called when
 // the number of argument changes.
-func (a *Arguments) ResetInsert() *Arguments {
+func (a *Artisan) ResetInsert() *Artisan {
 	a.insertIsBuildValues = false
 	a.insertCachedSQL = a.insertCachedSQL[:0]
 	return a.Reset()
@@ -491,7 +495,7 @@ func (a *Arguments) ResetInsert() *Arguments {
 // slice. When using different values, the last applied value wins and gets
 // added to the argument slice. For example driver.Values of type `int` will
 // result in []int.
-func (a *Arguments) DriverValue(dvs ...driver.Valuer) *Arguments {
+func (a *Artisan) DriverValue(dvs ...driver.Valuer) *Artisan {
 	if a == nil {
 		a = MakeArgs(len(dvs))
 	}
@@ -502,7 +506,7 @@ func (a *Arguments) DriverValue(dvs ...driver.Valuer) *Arguments {
 // DriverValues adds each driver.Value as its own argument to the argument
 // slice. It panics if the underlying type is not one of the allowed of
 // interface driver.Valuer.
-func (a *Arguments) DriverValues(dvs ...driver.Valuer) *Arguments {
+func (a *Artisan) DriverValues(dvs ...driver.Valuer) *Artisan {
 	if a == nil {
 		a = MakeArgs(len(dvs))
 	}
@@ -511,14 +515,14 @@ func (a *Arguments) DriverValues(dvs ...driver.Valuer) *Arguments {
 }
 
 // WithDB sets the database query object.
-func (a *Arguments) WithDB(db QueryExecPreparer) *Arguments {
+func (a *Artisan) WithDB(db QueryExecPreparer) *Artisan {
 	a.base.DB = db
 	return a
 }
 
 // WithTx sets the transaction query executor and the logger to run this query
 // within a transaction.
-func (a *Arguments) WithTx(tx *Tx) *Arguments {
+func (a *Artisan) WithTx(tx *Tx) *Artisan {
 	if a.base.id == "" {
 		a.base.id = tx.makeUniqueID()
 	}
@@ -571,25 +575,25 @@ func pooledArgumentsPut(a arguments, buf *bufferpool.TwinBuffer) {
 	}
 }
 
-// Exec executes the statement represented by the Insert object. It returns the
-// raw database/sql Result or an error if there was one. Regarding
-// LastInsertID(): If you insert multiple rows using a single INSERT statement,
-// LAST_INSERT_ID() returns the value generated for the first inserted row only.
-// The reason for this at to make it possible to reproduce easily the same
-// INSERT statement against some other server. If a record resp. and object
-// implements the interface LastInsertIDAssigner then the LastInsertID gets
-// assigned incrementally to the objects.
-func (a *Arguments) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
+// ExecContext executes the statement represented by the Update/Insert object.
+// It returns the raw database/sql Result or an error if there was one.
+// Regarding LastInsertID(): If you insert multiple rows using a single INSERT
+// statement, LAST_INSERT_ID() returns the value generated for the first
+// inserted row only. The reason for this at to make it possible to reproduce
+// easily the same INSERT statement against some other server. If a record resp.
+// and object implements the interface LastInsertIDAssigner then the
+// LastInsertID gets assigned incrementally to the objects.
+func (a *Artisan) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
 	return a.exec(ctx, args...)
 }
 
 // QueryContext traditional way of the databasel/sql package.
-func (a *Arguments) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error) {
+func (a *Artisan) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error) {
 	return a.query(ctx, args...)
 }
 
 // QueryRowContext traditional way of the databasel/sql package.
-func (a *Arguments) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row {
+func (a *Artisan) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row {
 	sqlStr, args, err := a.prepareArgs(args...)
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug("QueryRowContext", log.String("sql", sqlStr), log.String("source", string(a.base.source)), log.Err(err))
@@ -600,7 +604,7 @@ func (a *Arguments) QueryRowContext(ctx context.Context, args ...interface{}) *s
 // IterateSerial iterates in serial order over the result set by loading one row each
 // iteration and then discarding it. Handles records one by one. The context
 // gets only used in the Query function.
-func (a *Arguments) IterateSerial(ctx context.Context, callBack func(*ColumnMap) error, args ...interface{}) (err error) {
+func (a *Artisan) IterateSerial(ctx context.Context, callBack func(*ColumnMap) error, args ...interface{}) (err error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug("IterateSerial", log.String("id", a.base.id), log.Err(err))
 	}
@@ -669,13 +673,15 @@ func iterateParallelForNextLoop(r *sql.Rows, rowChan chan<- *ColumnMap, errChan 
 // IterateParallel starts a number of workers as defined by variable
 // concurrencyLevel and executes the query. Each database row gets evenly
 // distributed to the workers. The callback function gets called within a
-// worker. concurrencyLevel should be the number of CPUs.
-func (a *Arguments) IterateParallel(ctx context.Context, concurrencyLevel int, callBack func(*ColumnMap) error, args ...interface{}) (err error) {
+// worker. concurrencyLevel should be the number of CPUs. You should use this
+// function when you expect to process large amount of rows returned from a
+// query.
+func (a *Artisan) IterateParallel(ctx context.Context, concurrencyLevel int, callBack func(*ColumnMap) error, args ...interface{}) (err error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug("IterateParallel", log.String("id", a.base.id), log.Err(err))
 	}
 	if concurrencyLevel < 1 {
-		return errors.OutofRange.Newf("[dml] Arguments.IterateParallel concurrencyLevel %d for query ID %q cannot be smaller zero.", concurrencyLevel, a.base.id)
+		return errors.OutofRange.Newf("[dml] Artisan.IterateParallel concurrencyLevel %d for query ID %q cannot be smaller zero.", concurrencyLevel, a.base.id)
 	}
 
 	r, err := a.query(ctx, args...)
@@ -727,25 +733,25 @@ func (a *Arguments) IterateParallel(ctx context.Context, concurrencyLevel int, c
 // Load loads data from a query into an object. Load can load a single row or
 // muliple-rows. It checks on top if ColumnMapper `s` implements io.Closer, to
 // call the custom close function. This is useful for e.g. unlocking a mutex.
-func (a *Arguments) Load(ctx context.Context, s ColumnMapper, args ...interface{}) (rowCount uint64, err error) {
+func (a *Artisan) Load(ctx context.Context, s ColumnMapper, args ...interface{}) (rowCount uint64, err error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug("Load", log.String("id", a.base.id), log.Err(err), log.ObjectTypeOf("ColumnMapper", s), log.Uint64("row_count", rowCount))
 	}
 
 	r, err := a.query(ctx, args...)
 	if err != nil {
-		err = errors.Wrapf(err, "[dml] Arguments.Load.QueryContext failed with queryID %q and ColumnMapper %T", a.base.id, s)
+		err = errors.Wrapf(err, "[dml] Artisan.Load.QueryContext failed with queryID %q and ColumnMapper %T", a.base.id, s)
 		return
 	}
 	cm := pooledColumnMapGet()
 	defer pooledBufferColumnMapPut(cm, nil, func() {
 		// Not testable with the sqlmock package :-(
 		if err2 := r.Close(); err2 != nil && err == nil {
-			err = errors.Wrap(err2, "[dml] Arguments.Load.Rows.Close")
+			err = errors.Wrap(err2, "[dml] Artisan.Load.Rows.Close")
 		}
 		if rc, ok := s.(ioCloser); ok {
 			if err2 := rc.Close(); err2 != nil && err == nil {
-				err = errors.Wrap(err2, "[dml] Arguments.Load.ColumnMapper.Close")
+				err = errors.Wrap(err2, "[dml] Artisan.Load.ColumnMapper.Close")
 			}
 		}
 	})
@@ -755,7 +761,7 @@ func (a *Arguments) Load(ctx context.Context, s ColumnMapper, args ...interface{
 			return 0, errors.WithStack(err)
 		}
 		if err = s.MapColumns(cm); err != nil {
-			return 0, errors.Wrapf(err, "[dml] Arguments.Load failed with queryID %q and ColumnMapper %T", a.base.id, s)
+			return 0, errors.Wrapf(err, "[dml] Artisan.Load failed with queryID %q and ColumnMapper %T", a.base.id, s)
 		}
 	}
 	if err = r.Err(); err != nil {
@@ -770,7 +776,7 @@ func (a *Arguments) Load(ctx context.Context, s ColumnMapper, args ...interface{
 
 // LoadInt64 executes the prepared statement and returns the value as an
 // int64. It returns a NotFound error if the query returns nothing.
-func (a *Arguments) LoadInt64(ctx context.Context, args ...interface{}) (int64, error) {
+func (a *Artisan) LoadInt64(ctx context.Context, args ...interface{}) (int64, error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug("LoadInt64")
 	}
@@ -779,7 +785,7 @@ func (a *Arguments) LoadInt64(ctx context.Context, args ...interface{}) (int64, 
 
 // LoadInt64s executes the Select and returns the value as a slice of
 // int64s.
-func (a *Arguments) LoadInt64s(ctx context.Context, args ...interface{}) (ret []int64, err error) {
+func (a *Artisan) LoadInt64s(ctx context.Context, args ...interface{}) (ret []int64, err error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
 		defer log.WhenDone(a.base.Log).Debug("LoadInt64s", log.Int("row_count", len(ret)), log.Err(err))
@@ -793,7 +799,7 @@ func (a *Arguments) LoadInt64s(ctx context.Context, args ...interface{}) (ret []
 // LoadUint64 executes the Select and returns the value at an uint64. It returns
 // a NotFound error if the query returns nothing. This function comes in handy
 // when performing a COUNT(*) query. See function `Select.Count`.
-func (a *Arguments) LoadUint64(ctx context.Context, args ...interface{}) (_ uint64, err error) {
+func (a *Artisan) LoadUint64(ctx context.Context, args ...interface{}) (_ uint64, err error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
 		defer log.WhenDone(a.base.Log).Debug("LoadUint64", log.String("id", a.base.id), log.Err(err))
@@ -827,7 +833,7 @@ func (a *Arguments) LoadUint64(ctx context.Context, args ...interface{}) (_ uint
 }
 
 // LoadUint64s executes the Select and returns the value at a slice of uint64s.
-func (a *Arguments) LoadUint64s(ctx context.Context, args ...interface{}) (values []uint64, err error) {
+func (a *Artisan) LoadUint64s(ctx context.Context, args ...interface{}) (values []uint64, err error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
 		defer log.WhenDone(a.base.Log).Debug("LoadUint64s", log.Int("row_count", len(values)), log.String("id", a.base.id), log.Err(err))
@@ -859,7 +865,7 @@ func (a *Arguments) LoadUint64s(ctx context.Context, args ...interface{}) (value
 
 // LoadFloat64 executes the Select and returns the value at an float64. It
 // returns a NotFound error if the query returns nothing.
-func (a *Arguments) LoadFloat64(ctx context.Context, args ...interface{}) (_ float64, err error) {
+func (a *Artisan) LoadFloat64(ctx context.Context, args ...interface{}) (_ float64, err error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
 		defer log.WhenDone(a.base.Log).Debug("LoadFloat64", log.String("id", a.base.id), log.Err(err))
@@ -893,7 +899,7 @@ func (a *Arguments) LoadFloat64(ctx context.Context, args ...interface{}) (_ flo
 }
 
 // LoadFloat64s executes the Select and returns the value at a slice of float64s.
-func (a *Arguments) LoadFloat64s(ctx context.Context, args ...interface{}) (_ []float64, err error) {
+func (a *Artisan) LoadFloat64s(ctx context.Context, args ...interface{}) (_ []float64, err error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
 		defer log.WhenDone(a.base.Log).Debug("LoadFloat64s", log.String("id", a.base.id), log.Err(err))
@@ -925,7 +931,7 @@ func (a *Arguments) LoadFloat64s(ctx context.Context, args ...interface{}) (_ []
 
 // LoadString executes the Select and returns the value as a string. It
 // returns a NotFound error if the row amount is not equal one.
-func (a *Arguments) LoadString(ctx context.Context, args ...interface{}) (_ string, err error) {
+func (a *Artisan) LoadString(ctx context.Context, args ...interface{}) (_ string, err error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
 		defer log.WhenDone(a.base.Log).Debug("LoadString", log.String("id", a.base.id), log.Err(err))
@@ -959,7 +965,7 @@ func (a *Arguments) LoadString(ctx context.Context, args ...interface{}) (_ stri
 }
 
 // LoadStrings executes the Select and returns a slice of strings.
-func (a *Arguments) LoadStrings(ctx context.Context, args ...interface{}) (values []string, err error) {
+func (a *Artisan) LoadStrings(ctx context.Context /* , result []string */, args ...interface{}) (values []string, err error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
 		defer log.WhenDone(a.base.Log).Debug("LoadStrings", log.Int("row_count", len(values)), log.String("id", a.base.id), log.Err(err))
@@ -989,7 +995,7 @@ func (a *Arguments) LoadStrings(ctx context.Context, args ...interface{}) (value
 	return values, err
 }
 
-func (a *Arguments) query(ctx context.Context, args ...interface{}) (rows *sql.Rows, err error) {
+func (a *Artisan) query(ctx context.Context, args ...interface{}) (rows *sql.Rows, err error) {
 	sqlStr, args, err2 := a.prepareArgs(args...)
 	err = err2
 	if a.base.Log != nil && a.base.Log.IsDebug() {
@@ -1057,7 +1063,7 @@ func loadInt64s(rows *sql.Rows, errIn error) (_ []int64, err error) {
 	return values, nil
 }
 
-func (a *Arguments) exec(ctx context.Context, args ...interface{}) (result sql.Result, err error) {
+func (a *Artisan) exec(ctx context.Context, args ...interface{}) (result sql.Result, err error) {
 	sqlStr, args, err2 := a.prepareArgs(args...)
 	err = err2
 	if a.base.Log != nil && a.base.Log.IsDebug() {

@@ -600,7 +600,7 @@ func TestInsert_OnDuplicateKey(t *testing.T) {
 		)
 	})
 
-	t.Run("Exclude plus default place holder, Arguments", func(t *testing.T) {
+	t.Run("Exclude plus default place holder, Artisan", func(t *testing.T) {
 		ins := NewInsert("customer_gr1d_flat").
 			AddColumns("entity_id", "name", "email", "group_id", "created_at", "website_id").
 			AddOnDuplicateKeyExclude("entity_id").

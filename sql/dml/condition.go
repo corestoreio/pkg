@@ -183,7 +183,7 @@ type Condition struct {
 		// a sub-select.
 		Sub *Select
 		// IsExpression if true field `Column` gets treated as an expression.
-		// Additionally the field Right.Arguments will be read to extract any
+		// Additionally the field Right.args will be read to extract any
 		// given args.
 		IsExpression bool
 	}
@@ -191,7 +191,7 @@ type Condition struct {
 	// defaults to EQUAL.
 	Operator Op
 	// IsLeftExpression if set to true, the field Left won't get quoted and
-	// treated as an expression. Additionally the field Right.Arguments will be
+	// treated as an expression. Additionally the field Right.args will be
 	// read to extract any given args.
 	IsLeftExpression bool
 	// Logical states how multiple WHERE statements will be connected.

@@ -24,8 +24,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var _ ColumnMapper = (*Arguments)(nil)
-var _ fmt.GoStringer = (*Arguments)(nil)
+var _ ColumnMapper = (*Artisan)(nil)
+var _ fmt.GoStringer = (*Artisan)(nil)
 var _ fmt.GoStringer = (*argument)(nil)
 
 func TestArguments_Interfaces(t *testing.T) {

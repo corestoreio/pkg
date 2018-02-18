@@ -197,12 +197,13 @@ func (bb *BuilderBase) readBuildCache() (sql []byte) {
 	return sql
 }
 
-// withArgs sets the optional interfaced arguments for the later execution.
-func (bb *BuilderBase) withArgs(qb queryBuilder) *Arguments {
+// withArtisan builds the SQl string and creates a new Artisan object for
+// collecting arguments and later querying.
+func (bb *BuilderBase) withArtisan(qb queryBuilder) *Artisan {
 	var args [defaultArgumentsCapacity]argument
 	bb.rwmu.Lock()
 	sqlBytes, err := bb.buildToSQL(qb) // sqlBytes owned by buildToSQL
-	a := Arguments{
+	a := Artisan{
 		base:      bb.builderCommon,
 		arguments: args[:0],
 	}
