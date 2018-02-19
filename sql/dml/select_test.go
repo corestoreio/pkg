@@ -272,10 +272,12 @@ func TestSelect_OrderByRandom_Integration(t *testing.T) {
 	sel := s.SelectFrom("dml_people").AddColumns("id").OrderByRandom("id", 10)
 
 	t.Run("Load IDs", func(t *testing.T) {
-		ids, err := sel.WithArgs().LoadUint64s(context.TODO())
+		ids, err := sel.WithArgs().LoadUint64s(context.TODO(), nil)
 		require.NoError(t, err)
 		assert.Len(t, ids, 2)
 	})
+
+	// TODO test this when in a column is one row NULL ... then it should fail scanning
 }
 
 func TestSelect_Paginate(t *testing.T) {
@@ -635,13 +637,13 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 
 	t.Run("IN Clause", func(t *testing.T) {
 		ids, err := s.SelectFrom("dml_people").AddColumns("id").
-			Where(Column("id").In().Int64s(1, 2, 3)).WithArgs().LoadInt64s(context.TODO())
+			Where(Column("id").In().Int64s(1, 2, 3)).WithArgs().LoadInt64s(context.TODO(), nil)
 		require.NoError(t, err)
 		assert.Exactly(t, []int64{1, 2}, ids)
 	})
 	t.Run("NOT IN Clause", func(t *testing.T) {
 		ids, err := s.SelectFrom("dml_people").AddColumns("id").
-			Where(Column("id").NotIn().Int64s(2, 3)).WithArgs().LoadInt64s(context.TODO())
+			Where(Column("id").NotIn().Int64s(2, 3)).WithArgs().LoadInt64s(context.TODO(), nil)
 		require.NoError(t, err)
 		assert.Exactly(t, []int64{1}, ids)
 	})
@@ -657,69 +659,81 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 func TestSelect_LoadType_Single(t *testing.T) {
 	s := createRealSessionWithFixtures(t, nil)
 	defer testCloser(t, s)
-	t.Run("LoadString", func(t *testing.T) {
-		name, err := s.SelectFrom("dml_people").AddColumns("name").Where(Column("email").PlaceHolder()).
-			WithArgs().String("jonathan@uservoice.com").LoadString(context.TODO())
+	t.Run("LoadNullString", func(t *testing.T) {
+		name, found, err := s.SelectFrom("dml_people").AddColumns("name").Where(Column("email").PlaceHolder()).
+			WithArgs().String("jonathan@uservoice.com").LoadNullString(context.TODO())
 		require.NoError(t, err)
-		assert.Equal(t, "Jonathan", name)
+		assert.True(t, found)
+		assert.Exactly(t, MakeNullString("Jonathan"), name)
 	})
-	t.Run("LoadString too many columns", func(t *testing.T) {
-		name, err := s.SelectFrom("dml_people").AddColumns("name", "email").Where(Expr("email = 'jonathan@uservoice.com'")).WithArgs().LoadString(context.TODO())
+	t.Run("LoadNullString too many columns", func(t *testing.T) {
+		name, found, err := s.SelectFrom("dml_people").AddColumns("name", "email").Where(Expr("email = 'jonathan@uservoice.com'")).WithArgs().LoadNullString(context.TODO())
 		require.Error(t, err)
-		assert.Empty(t, name)
+		assert.False(t, found)
+		assert.Empty(t, name.String)
 	})
-	t.Run("LoadString not found", func(t *testing.T) {
-		name, err := s.SelectFrom("dml_people").AddColumns("name").Where(Expr("email = 'notfound@example.com'")).WithArgs().LoadString(context.TODO())
-		assert.True(t, errors.NotFound.Match(err), "%+v", err)
-		assert.Empty(t, name)
+	t.Run("LoadNullString not found", func(t *testing.T) {
+		name, found, err := s.SelectFrom("dml_people").AddColumns("name").Where(Expr("email = 'notfound@example.com'")).WithArgs().LoadNullString(context.TODO())
+		require.NoError(t, err)
+		assert.False(t, found)
+		assert.Exactly(t, NullString{}, name)
 	})
 
-	t.Run("LoadInt64", func(t *testing.T) {
-		id, err := s.SelectFrom("dml_people").AddColumns("id").Limit(1).WithArgs().LoadInt64(context.TODO())
+	t.Run("LoadNullInt64", func(t *testing.T) {
+		id, found, err := s.SelectFrom("dml_people").AddColumns("id").Limit(1).WithArgs().LoadNullInt64(context.TODO())
 		require.NoError(t, err)
-		assert.True(t, id > 0)
+		assert.True(t, found)
+		assert.True(t, id.Int64 > 0)
 	})
-	t.Run("LoadInt64 too many columns", func(t *testing.T) {
-		id, err := s.SelectFrom("dml_people").AddColumns("id", "email").Limit(1).WithArgs().LoadInt64(context.TODO())
+	t.Run("LoadNullInt64 too many columns", func(t *testing.T) {
+		id, found, err := s.SelectFrom("dml_people").AddColumns("id", "email").Limit(1).WithArgs().LoadNullInt64(context.TODO())
 		require.Error(t, err)
-		assert.Empty(t, id)
+		assert.False(t, found)
+		assert.Exactly(t, NullInt64{}, id)
 	})
-	t.Run("LoadInt64 not found", func(t *testing.T) {
-		id, err := s.SelectFrom("dml_people").AddColumns("id").Where(Expr("id=236478326")).WithArgs().LoadInt64(context.TODO())
-		assert.True(t, errors.NotFound.Match(err), "%+v", err)
-		assert.Empty(t, id)
+	t.Run("LoadNullInt64 not found", func(t *testing.T) {
+		id, found, err := s.SelectFrom("dml_people").AddColumns("id").Where(Expr("id=236478326")).WithArgs().LoadNullInt64(context.TODO())
+		require.NoError(t, err)
+		assert.False(t, found)
+		assert.Exactly(t, NullInt64{}, id)
 	})
 
-	t.Run("LoadUint64", func(t *testing.T) {
-		id, err := s.SelectFrom("dml_people").AddColumns("id").Limit(1).WithArgs().LoadUint64(context.TODO())
+	t.Run("LoadNullUint64", func(t *testing.T) {
+		id, found, err := s.SelectFrom("dml_people").AddColumns("id").Limit(1).WithArgs().LoadNullUint64(context.TODO())
 		require.NoError(t, err)
-		assert.True(t, id > 0)
+		assert.True(t, found)
+		assert.True(t, id.Uint64 > 0)
 	})
-	t.Run("LoadUint64 too many columns", func(t *testing.T) {
-		id, err := s.SelectFrom("dml_people").AddColumns("id", "email").Limit(1).WithArgs().LoadUint64(context.TODO())
+	t.Run("LoadNullUint64 too many columns", func(t *testing.T) {
+		id, found, err := s.SelectFrom("dml_people").AddColumns("id", "email").Limit(1).WithArgs().LoadNullUint64(context.TODO())
 		require.Error(t, err)
-		assert.Empty(t, id)
+		assert.False(t, found)
+		assert.Exactly(t, NullUint64{}, id)
 	})
-	t.Run("LoadUint64 not found", func(t *testing.T) {
-		id, err := s.SelectFrom("dml_people").AddColumns("id").Where(Expr("id=236478326")).WithArgs().LoadUint64(context.TODO())
-		assert.True(t, errors.NotFound.Match(err), "%+v", err)
-		assert.Empty(t, id)
+	t.Run("LoadNullUint64 not found", func(t *testing.T) {
+		id, found, err := s.SelectFrom("dml_people").AddColumns("id").Where(Expr("id=236478326")).WithArgs().LoadNullUint64(context.TODO())
+		require.NoError(t, err)
+		assert.False(t, found)
+		assert.Exactly(t, NullUint64{}, id)
 	})
 
-	t.Run("LoadFloat64", func(t *testing.T) {
-		id, err := s.SelectFrom("dml_people").AddColumns("id").Limit(1).WithArgs().LoadFloat64(context.TODO())
+	t.Run("LoadNullFloat64", func(t *testing.T) {
+		id, found, err := s.SelectFrom("dml_people").AddColumns("id").Limit(1).WithArgs().LoadNullFloat64(context.TODO())
 		require.NoError(t, err)
-		assert.True(t, id > 0)
+		assert.True(t, found)
+		assert.True(t, id.Float64 > 0)
 	})
-	t.Run("LoadFloat64 too many columns", func(t *testing.T) {
-		id, err := s.SelectFrom("dml_people").AddColumns("id", "email").Limit(1).WithArgs().LoadFloat64(context.TODO())
+	t.Run("LoadNullFloat64 too many columns", func(t *testing.T) {
+		id, found, err := s.SelectFrom("dml_people").AddColumns("id", "email").Limit(1).WithArgs().LoadNullFloat64(context.TODO())
 		require.Error(t, err)
-		assert.Empty(t, id)
+		assert.False(t, found)
+		assert.Exactly(t, NullFloat64{}, id)
 	})
-	t.Run("LoadFloat64 not found", func(t *testing.T) {
-		id, err := s.SelectFrom("dml_people").AddColumns("id").Where(Expr("id=236478326")).WithArgs().LoadFloat64(context.TODO())
-		assert.True(t, errors.NotFound.Match(err), "%+v", err)
-		assert.Empty(t, id)
+	t.Run("LoadNullFloat64 not found", func(t *testing.T) {
+		id, found, err := s.SelectFrom("dml_people").AddColumns("id").Where(Expr("id=236478326")).WithArgs().LoadNullFloat64(context.TODO())
+		require.NoError(t, err)
+		assert.False(t, found)
+		assert.Exactly(t, NullFloat64{}, id)
 	})
 }
 
@@ -737,14 +751,16 @@ func TestSelect_WithArgs_LoadUint64(t *testing.T) {
 	sel := s.SelectFrom("dml_people").AddColumns("id").Where(Column("id").Uint64(bigID))
 
 	t.Run("MaxUint64 prepared stmt o:equal", func(t *testing.T) {
-		id, err := sel.WithArgs().LoadUint64(context.TODO())
+		id, found, err := sel.WithArgs().LoadNullUint64(context.TODO())
 		require.NoError(t, err)
-		assert.Exactly(t, bigID, id)
+		assert.True(t, found)
+		assert.Exactly(t, MakeNullUint64(bigID), id)
 	})
 	t.Run("MaxUint64 interpolated o:equal", func(t *testing.T) {
-		id, err := sel.WithArgs().Interpolate().LoadUint64(context.TODO())
+		id, found, err := sel.WithArgs().Interpolate().LoadNullUint64(context.TODO())
 		require.NoError(t, err)
-		assert.Exactly(t, bigID, id)
+		assert.True(t, found)
+		assert.Exactly(t, MakeNullUint64(bigID), id)
 	})
 }
 
@@ -752,67 +768,67 @@ func TestSelect_WithArgs_LoadType_Slices(t *testing.T) {
 	s := createRealSessionWithFixtures(t, nil)
 	defer testCloser(t, s)
 	t.Run("LoadStrings", func(t *testing.T) {
-		names, err := s.SelectFrom("dml_people").AddColumns("name").WithArgs().LoadStrings(context.TODO())
+		names, err := s.SelectFrom("dml_people").AddColumns("name").WithArgs().LoadStrings(context.TODO(), nil)
 		require.NoError(t, err)
 		assert.Equal(t, []string{"Jonathan", "Dmitri"}, names)
 	})
 	t.Run("LoadStrings too many columns", func(t *testing.T) {
-		vals, err := s.SelectFrom("dml_people").AddColumns("name", "email").WithArgs().LoadStrings(context.TODO())
+		vals, err := s.SelectFrom("dml_people").AddColumns("name", "email").WithArgs().LoadStrings(context.TODO(), nil)
 		require.Error(t, err)
 		assert.Exactly(t, []string(nil), vals)
 	})
 	t.Run("LoadStrings not found", func(t *testing.T) {
-		names, err := s.SelectFrom("dml_people").AddColumns("name").Where(Expr("name ='jdhsjdf'")).WithArgs().LoadStrings(context.TODO())
+		names, err := s.SelectFrom("dml_people").AddColumns("name").Where(Expr("name ='jdhsjdf'")).WithArgs().LoadStrings(context.TODO(), nil)
 		require.NoError(t, err)
-		assert.Equal(t, []string{}, names)
+		assert.Nil(t, names)
 	})
 
 	t.Run("LoadInt64s", func(t *testing.T) {
-		names, err := s.SelectFrom("dml_people").AddColumns("id").WithArgs().LoadInt64s(context.TODO())
+		names, err := s.SelectFrom("dml_people").AddColumns("id").WithArgs().LoadInt64s(context.TODO(), nil)
 		require.NoError(t, err)
 		assert.Equal(t, []int64{1, 2}, names)
 	})
 	t.Run("LoadInt64s too many columns", func(t *testing.T) {
-		vals, err := s.SelectFrom("dml_people").AddColumns("id", "email").WithArgs().LoadInt64s(context.TODO())
+		vals, err := s.SelectFrom("dml_people").AddColumns("id", "email").WithArgs().LoadInt64s(context.TODO(), nil)
 		require.Error(t, err)
 		assert.Exactly(t, []int64(nil), vals)
 	})
 	t.Run("LoadInt64s not found", func(t *testing.T) {
-		names, err := s.SelectFrom("dml_people").AddColumns("id").Where(Expr("name ='jdhsjdf'")).WithArgs().LoadInt64s(context.TODO())
+		names, err := s.SelectFrom("dml_people").AddColumns("id").Where(Expr("name ='jdhsjdf'")).WithArgs().LoadInt64s(context.TODO(), nil)
 		require.NoError(t, err)
-		assert.Equal(t, []int64{}, names)
+		assert.Nil(t, names)
 	})
 
 	t.Run("LoadUint64s", func(t *testing.T) {
-		names, err := s.SelectFrom("dml_people").AddColumns("id").WithArgs().LoadUint64s(context.TODO())
+		names, err := s.SelectFrom("dml_people").AddColumns("id").WithArgs().LoadUint64s(context.TODO(), nil)
 		require.NoError(t, err)
 		assert.Equal(t, []uint64{1, 2}, names)
 	})
 	t.Run("LoadUint64s too many columns", func(t *testing.T) {
-		vals, err := s.SelectFrom("dml_people").AddColumns("id", "email").WithArgs().LoadUint64s(context.TODO())
+		vals, err := s.SelectFrom("dml_people").AddColumns("id", "email").WithArgs().LoadUint64s(context.TODO(), nil)
 		require.Error(t, err)
 		assert.Exactly(t, []uint64(nil), vals)
 	})
 	t.Run("LoadUint64s not found", func(t *testing.T) {
-		names, err := s.SelectFrom("dml_people").AddColumns("id").Where(Expr("name ='jdhsjdf'")).WithArgs().LoadUint64s(context.TODO())
+		names, err := s.SelectFrom("dml_people").AddColumns("id").Where(Expr("name ='jdhsjdf'")).WithArgs().LoadUint64s(context.TODO(), nil)
 		require.NoError(t, err)
-		assert.Equal(t, []uint64{}, names)
+		assert.Nil(t, names)
 	})
 
 	t.Run("LoadFloat64s", func(t *testing.T) {
-		names, err := s.SelectFrom("dml_people").AddColumns("id").WithArgs().LoadFloat64s(context.TODO())
+		names, err := s.SelectFrom("dml_people").AddColumns("id").WithArgs().LoadFloat64s(context.TODO(), nil)
 		require.NoError(t, err)
 		assert.Equal(t, []float64{1, 2}, names)
 	})
 	t.Run("LoadFloat64s too many columns", func(t *testing.T) {
-		vals, err := s.SelectFrom("dml_people").AddColumns("id", "email").WithArgs().LoadFloat64s(context.TODO())
+		vals, err := s.SelectFrom("dml_people").AddColumns("id", "email").WithArgs().LoadFloat64s(context.TODO(), nil)
 		require.Error(t, err)
 		assert.Exactly(t, []float64(nil), vals)
 	})
 	t.Run("LoadFloat64s not found", func(t *testing.T) {
-		names, err := s.SelectFrom("dml_people").AddColumns("id").Where(Expr("name ='jdhsjdf'")).WithArgs().LoadFloat64s(context.TODO())
+		names, err := s.SelectFrom("dml_people").AddColumns("id").Where(Expr("name ='jdhsjdf'")).WithArgs().LoadFloat64s(context.TODO(), nil)
 		require.NoError(t, err)
-		assert.Equal(t, []float64{}, names)
+		assert.Nil(t, names)
 	})
 
 }

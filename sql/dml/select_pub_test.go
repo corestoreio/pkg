@@ -247,7 +247,7 @@ func TestSelect_Prepare(t *testing.T) {
 		sel := dml.NewSelect("id").From("tableX").Where(dml.Column("id").In().PlaceHolders(2)).WithDB(dbc.DB)
 		stmt, err := sel.Prepare(context.TODO())
 		require.NoError(t, err)
-		ints, err := stmt.WithArgs().LoadInt64s(context.TODO(), 3739, 3740)
+		ints, err := stmt.WithArgs().LoadInt64s(context.TODO(), nil, 3739, 3740)
 		require.NoError(t, err)
 		assert.Exactly(t, []int64{78}, ints)
 	})
@@ -402,9 +402,10 @@ func TestSelect_Prepare(t *testing.T) {
 
 			prep.ExpectQuery().WithArgs(346).WillReturnRows(sqlmock.NewRows(columns).AddRow(35))
 
-			val, err := stmt.WithArgs().Int64(346).LoadInt64(context.TODO())
+			val, found, err := stmt.WithArgs().Int64(346).LoadNullInt64(context.TODO())
 			require.NoError(t, err)
-			assert.Exactly(t, int64(35), val)
+			assert.True(t, found)
+			assert.Exactly(t, dml.MakeNullInt64(35), val)
 		})
 
 		t.Run("Int64s", func(t *testing.T) {
@@ -424,7 +425,7 @@ func TestSelect_Prepare(t *testing.T) {
 
 			prep.ExpectQuery().WithArgs(346, 347).WillReturnRows(sqlmock.NewRows(columns).AddRow(36).AddRow(37))
 
-			val, err := stmt.WithArgs().Int64s(346, 347).LoadInt64s(context.TODO())
+			val, err := stmt.WithArgs().Int64s(346, 347).LoadInt64s(context.TODO(), nil)
 			require.NoError(t, err)
 			assert.Exactly(t, []int64{36, 37}, val)
 		})
@@ -436,10 +437,11 @@ func TestSelect_Argument_IterateSerial(t *testing.T) {
 	dbc := createRealSession(t)
 	defer dmltest.Close(t, dbc)
 
-	rowCount, err := dbc.SelectFrom("dml_fake_person").Count().WithArgs().LoadInt64(context.Background())
+	rowCount, found, err := dbc.SelectFrom("dml_fake_person").Count().WithArgs().LoadNullInt64(context.Background())
 	require.NoError(t, err)
-	if rowCount < 10000 {
-		t.Skipf("dml_fake_person table contains less than 10k items, seems not to be installed. Got %d items", rowCount)
+	assert.True(t, found)
+	if rowCount.Int64 < 10000 {
+		t.Skipf("dml_fake_person table contains less than 10k items, seems not to be installed. Got %d items", rowCount.Int64)
 	}
 
 	t.Run("error in mapper", func(t *testing.T) {
@@ -542,10 +544,10 @@ func TestSelect_Argument_IterateParallel(t *testing.T) {
 
 	const concurrencyLevel = 4
 
-	rowCount, err := dbc.SelectFrom("dml_fake_person").Count().WithArgs().LoadInt64(context.Background())
+	rowCount, _, err := dbc.SelectFrom("dml_fake_person").Count().WithArgs().LoadNullInt64(context.Background())
 	require.NoError(t, err)
-	if rowCount < 10000 {
-		t.Fatalf("dml_fake_person table contains less than 10k items, seems not to be installed. Got %d items", rowCount)
+	if rowCount.Int64 < 10000 {
+		t.Fatalf("dml_fake_person table contains less than 10k items, seems not to be installed. Got %d items", rowCount.Int64)
 	}
 
 	t.Run("error wrong concurrency level", func(t *testing.T) {

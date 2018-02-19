@@ -339,18 +339,18 @@ func TestWithLogger_Select(t *testing.T) {
 		t.Run("LoadInt64", func(t *testing.T) {
 
 			defer buf.Reset()
-			_, err := pplSel.WithArgs().Raw(67896543124).LoadInt64(context.TODO())
+			_, _, err := pplSel.WithArgs().Raw(67896543124).LoadNullInt64(context.TODO())
 			if !errors.NotFound.Match(err) {
 				require.NoError(t, err)
 			}
 
-			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID$UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\" source: \"s\" error: \"<nil>\"\nDEBUG LoadInt64 conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0\n",
+			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID$UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\" source: \"s\" error: \"<nil>\"\nDEBUG LoadPrimitive conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 id: \"UNIQ02\" error: \"<nil>\" ptr_type: \"*dml.NullInt64\"\n",
 				buf.String())
 		})
 
 		t.Run("LoadInt64s", func(t *testing.T) {
 			defer buf.Reset()
-			_, err := pplSel.WithArgs().LoadInt64s(context.TODO(), 67896543125)
+			_, err := pplSel.WithArgs().LoadInt64s(context.TODO(), nil, 67896543125)
 			require.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID$UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\" source: \"s\" error: \"<nil>\"\nDEBUG LoadInt64s conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 row_count: 0 error: \"<nil>\"\n",
@@ -359,17 +359,17 @@ func TestWithLogger_Select(t *testing.T) {
 
 		t.Run("LoadUint64", func(t *testing.T) {
 			defer buf.Reset()
-			_, err := pplSel.WithArgs().LoadUint64(context.TODO(), 67896543126)
+			_, _, err := pplSel.WithArgs().LoadNullUint64(context.TODO(), 67896543126)
 			if !errors.NotFound.Match(err) {
 				require.NoError(t, err)
 			}
-			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID$UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\" source: \"s\" error: \"<nil>\"\nDEBUG LoadUint64 conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 id: \"UNIQ02\" error: \"<nil>\"\n",
+			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID$UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\" source: \"s\" error: \"<nil>\"\nDEBUG LoadPrimitive conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 id: \"UNIQ02\" error: \"<nil>\" ptr_type: \"*dml.NullUint64\"\n",
 				buf.String())
 		})
 
 		t.Run("LoadUint64s", func(t *testing.T) {
 			defer buf.Reset()
-			_, err := pplSel.WithArgs().LoadUint64s(context.TODO(), 67896543127)
+			_, err := pplSel.WithArgs().LoadUint64s(context.TODO(), nil, 67896543127)
 			require.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID$UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\" source: \"s\" error: \"<nil>\"\nDEBUG LoadUint64s conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 row_count: 0 id: \"UNIQ02\" error: \"<nil>\"\n",
@@ -378,17 +378,17 @@ func TestWithLogger_Select(t *testing.T) {
 
 		t.Run("LoadFloat64", func(t *testing.T) {
 			defer buf.Reset()
-			_, err := pplSel.WithArgs().LoadFloat64(context.TODO(), 678965.43125)
+			_, _, err := pplSel.WithArgs().LoadNullFloat64(context.TODO(), 678965.43125)
 			if !errors.NotFound.Match(err) {
 				require.NoError(t, err)
 			}
-			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID$UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\" source: \"s\" error: \"<nil>\"\nDEBUG LoadFloat64 conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 id: \"UNIQ02\" error: \"<nil>\"\n",
+			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID$UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\" source: \"s\" error: \"<nil>\"\nDEBUG LoadPrimitive conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 id: \"UNIQ02\" error: \"<nil>\" ptr_type: \"*dml.NullFloat64\"\n",
 				buf.String())
 		})
 
 		t.Run("LoadFloat64s", func(t *testing.T) {
 			defer buf.Reset()
-			_, err := pplSel.WithArgs().LoadFloat64s(context.TODO(), 6789654.3125)
+			_, err := pplSel.WithArgs().LoadFloat64s(context.TODO(), nil, 6789654.3125)
 			require.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID$UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\" source: \"s\" error: \"<nil>\"\nDEBUG LoadFloat64s conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 id: \"UNIQ02\" error: \"<nil>\"\n",
@@ -397,19 +397,19 @@ func TestWithLogger_Select(t *testing.T) {
 
 		t.Run("LoadString", func(t *testing.T) {
 			defer buf.Reset()
-			_, err := pplSel.WithArgs().LoadString(context.TODO(), "hello")
+			_, _, err := pplSel.WithArgs().LoadNullString(context.TODO(), "hello")
 			if !errors.NotFound.Match(err) {
 				require.NoError(t, err)
 			}
 
-			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID$UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\" source: \"s\" error: \"<nil>\"\nDEBUG LoadString conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 id: \"UNIQ02\" error: \"<nil>\"\n",
+			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID$UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\" source: \"s\" error: \"<nil>\"\nDEBUG LoadPrimitive conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 id: \"UNIQ02\" error: \"<nil>\" ptr_type: \"*dml.NullString\"\n",
 				buf.String())
 		})
 
 		t.Run("LoadStrings", func(t *testing.T) {
 			defer buf.Reset()
 
-			_, err := pplSel.WithArgs().LoadStrings(context.TODO(), 99987)
+			_, err := pplSel.WithArgs().LoadStrings(context.TODO(), nil, 99987)
 			require.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID$UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\" source: \"s\" error: \"<nil>\"\nDEBUG LoadStrings conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 row_count: 0 id: \"UNIQ02\" error: \"<nil>\"\n",
@@ -509,19 +509,19 @@ func TestWithLogger_Select(t *testing.T) {
 
 			t.Run("LoadInt64", func(t *testing.T) {
 				defer buf.Reset()
-				_, err := stmt.WithArgs().LoadInt64(context.TODO(), -7)
+				_, _, err := stmt.WithArgs().LoadNullInt64(context.TODO(), -7)
 				if !errors.NotFound.Match(err) {
 					require.NoError(t, err)
 				}
-				assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"\" source: \"s\" error: \"<nil>\"\nDEBUG LoadInt64 conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0\n",
+				assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"\" source: \"s\" error: \"<nil>\"\nDEBUG LoadPrimitive conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 id: \"UNIQ06\" error: \"<nil>\" ptr_type: \"*dml.NullInt64\"\n",
 					buf.String())
 			})
 
 			t.Run("LoadInt64s", func(t *testing.T) {
 				defer buf.Reset()
-				iSl, err := stmt.WithArgs().LoadInt64s(context.TODO(), -7)
+				iSl, err := stmt.WithArgs().LoadInt64s(context.TODO(), nil, -7)
 				require.NoError(t, err)
-				assert.Exactly(t, []int64{}, iSl)
+				assert.Nil(t, iSl)
 				assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"\" source: \"s\" error: \"<nil>\"\nDEBUG LoadInt64s conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 row_count: 0 error: \"<nil>\"\n",
 					buf.String())
 			})

@@ -120,9 +120,10 @@ func TestDeleteReal(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), rowsAff, "RowsAffected")
 
-	count, err := s.SelectFrom("dml_people").Count().Where(Column("id").PlaceHolder()).WithArgs().Int64(id).LoadInt64(context.TODO())
+	count, found, err := s.SelectFrom("dml_people").Count().Where(Column("id").PlaceHolder()).WithArgs().Int64(id).LoadNullInt64(context.TODO())
 	require.NoError(t, err)
-	assert.Equal(t, int64(0), count, "count")
+	require.True(t, found, "should have found a row")
+	assert.Equal(t, int64(0), count.Int64, "count")
 }
 
 func TestDelete_Events(t *testing.T) {

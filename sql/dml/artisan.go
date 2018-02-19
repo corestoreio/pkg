@@ -774,40 +774,60 @@ func (a *Artisan) Load(ctx context.Context, s ColumnMapper, args ...interface{})
 	return
 }
 
-// LoadInt64 executes the prepared statement and returns the value as an
-// int64. It returns a NotFound error if the query returns nothing.
-func (a *Artisan) LoadInt64(ctx context.Context, args ...interface{}) (int64, error) {
-	if a.base.Log != nil && a.base.Log.IsDebug() {
-		defer log.WhenDone(a.base.Log).Debug("LoadInt64")
-	}
-	return loadInt64(a.query(ctx, args...))
-}
-
-// LoadInt64s executes the Select and returns the value as a slice of
-// int64s.
-func (a *Artisan) LoadInt64s(ctx context.Context, args ...interface{}) (ret []int64, err error) {
-	if a.base.Log != nil && a.base.Log.IsDebug() {
-		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(a.base.Log).Debug("LoadInt64s", log.Int("row_count", len(ret)), log.Err(err))
-	}
-	ret, err = loadInt64s(a.query(ctx, args...))
-	// Do not simplify it because we need ret in the defer. we don't log errors
-	// because they get handled.
+// LoadNullInt64 executes the query and returns the first row parsed into the
+// current type. `Found` might be false if there are no matching rows.
+func (a *Artisan) LoadNullInt64(ctx context.Context, args ...interface{}) (nv NullInt64, found bool, err error) {
+	found, err = a.loadPrimitive(ctx, &nv, args...)
 	return
 }
 
-// LoadUint64 executes the Select and returns the value at an uint64. It returns
-// a NotFound error if the query returns nothing. This function comes in handy
-// when performing a COUNT(*) query. See function `Select.Count`.
-func (a *Artisan) LoadUint64(ctx context.Context, args ...interface{}) (_ uint64, err error) {
+// LoadNullUint64 executes the query and returns the first row parsed into the
+// current type. `Found` might be false if there are no matching rows.
+// This function with ptr type uint64 comes in handy when performing
+// a COUNT(*) query. See function `Select.Count`.
+func (a *Artisan) LoadNullUint64(ctx context.Context, args ...interface{}) (nv NullUint64, found bool, err error) {
+	found, err = a.loadPrimitive(ctx, &nv, args...)
+	return
+}
+
+// LoadNullFloat64 executes the query and returns the first row parsed into the
+// current type. `Found` might be false if there are no matching rows.
+func (a *Artisan) LoadNullFloat64(ctx context.Context, args ...interface{}) (nv NullFloat64, found bool, err error) {
+	found, err = a.loadPrimitive(ctx, &nv, args...)
+	return
+}
+
+// LoadNullString executes the query and returns the first row parsed into the
+// current type. `Found` might be false if there are no matching rows.
+func (a *Artisan) LoadNullString(ctx context.Context, args ...interface{}) (nv NullString, found bool, err error) {
+	found, err = a.loadPrimitive(ctx, &nv, args...)
+	return
+}
+
+// LoadNullTime executes the query and returns the first row parsed into the
+// current type. `Found` might be false if there are no matching rows.
+func (a *Artisan) LoadNullTime(ctx context.Context, args ...interface{}) (nv NullTime, found bool, err error) {
+	found, err = a.loadPrimitive(ctx, &nv, args...)
+	return
+}
+
+// LoadDecimal executes the query and returns the first row parsed into the
+// current type. `Found` might be false if there are no matching rows.
+func (a *Artisan) LoadDecimal(ctx context.Context, args ...interface{}) (nv Decimal, found bool, err error) {
+	found, err = a.loadPrimitive(ctx, &nv, args...)
+	return
+}
+
+func (a *Artisan) loadPrimitive(ctx context.Context, ptr interface{}, args ...interface{}) (found bool, err error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(a.base.Log).Debug("LoadUint64", log.String("id", a.base.id), log.Err(err))
+		defer log.WhenDone(a.base.Log).Debug("LoadPrimitive", log.String("id", a.base.id), log.Err(err), log.ObjectTypeOf("ptr_type", ptr))
 	}
-
-	rows, err := a.query(ctx, args...)
+	var rows *sql.Rows
+	rows, err = a.query(ctx, args...)
 	if err != nil {
-		return 0, errors.WithStack(err)
+		err = errors.WithStack(err)
+		return
 	}
 	defer func() {
 		if errC := rows.Close(); err == nil && errC != nil {
@@ -815,184 +835,161 @@ func (a *Artisan) LoadUint64(ctx context.Context, args ...interface{}) (_ uint64
 		}
 	}()
 
-	var value uint64
-	found := false
-	for rows.Next() {
-		if err = rows.Scan(&value); err != nil {
-			return 0, errors.WithStack(err)
+	for rows.Next() && !found {
+		if err = rows.Scan(ptr); err != nil {
+			err = errors.WithStack(err)
+			return
 		}
 		found = true
 	}
 	if err = rows.Err(); err != nil {
-		return 0, errors.WithStack(err)
-	}
-	if !found {
-		err = errors.NotFound.Newf("[dml] LoadUint64 value not found")
-	}
-	return value, err
-}
-
-// LoadUint64s executes the Select and returns the value at a slice of uint64s.
-func (a *Artisan) LoadUint64s(ctx context.Context, args ...interface{}) (values []uint64, err error) {
-	if a.base.Log != nil && a.base.Log.IsDebug() {
-		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(a.base.Log).Debug("LoadUint64s", log.Int("row_count", len(values)), log.String("id", a.base.id), log.Err(err))
-	}
-
-	rows, err := a.query(ctx, args...)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	defer func() {
-		if errC := rows.Close(); err == nil && errC != nil {
-			err = errors.WithStack(errC)
-		}
-	}()
-
-	values = make([]uint64, 0, 10)
-	for rows.Next() {
-		var value uint64
-		if err = rows.Scan(&value); err != nil {
-			return nil, errors.WithStack(err)
-		}
-		values = append(values, value)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, errors.WithStack(err)
+		err = errors.WithStack(err)
 	}
 	return
 }
 
-// LoadFloat64 executes the Select and returns the value at an float64. It
-// returns a NotFound error if the query returns nothing.
-func (a *Artisan) LoadFloat64(ctx context.Context, args ...interface{}) (_ float64, err error) {
+// LoadInt64s executes the query and returns the values appended to slice
+// dest.
+func (a *Artisan) LoadInt64s(ctx context.Context, dest []int64, args ...interface{}) (_ []int64, err error) {
+	var rowCount int
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(a.base.Log).Debug("LoadFloat64", log.String("id", a.base.id), log.Err(err))
+		defer log.WhenDone(a.base.Log).Debug("LoadInt64s", log.Int("row_count", rowCount), log.Err(err))
+	}
+	var r *sql.Rows
+	r, err = a.query(ctx, args...)
+	if err != nil {
+		err = errors.WithStack(err)
+		return
+	}
+	defer func() {
+		if cErr := r.Close(); err == nil && cErr != nil {
+			err = errors.WithStack(cErr)
+		}
+	}()
+	for r.Next() {
+		var value int64
+		if err = r.Scan(&value); err != nil {
+			err = errors.WithStack(err)
+			return
+		}
+		dest = append(dest, value)
+	}
+	if err = r.Err(); err != nil {
+		err = errors.WithStack(err)
+		return
+	}
+
+	rowCount = len(dest)
+	return dest, err
+}
+
+// LoadUint64s executes the query and returns the values appended to slice
+// dest. It ignores and skips NULL values.
+func (a *Artisan) LoadUint64s(ctx context.Context, dest []uint64, args ...interface{}) (_ []uint64, err error) {
+	var rowCount int
+	if a.base.Log != nil && a.base.Log.IsDebug() {
+		// do not use fullSQL because we might log sensitive data
+		defer log.WhenDone(a.base.Log).Debug("LoadUint64s", log.Int("row_count", rowCount), log.String("id", a.base.id), log.Err(err))
 	}
 
 	rows, err := a.query(ctx, args...)
 	if err != nil {
-		return 0, errors.WithStack(err)
+		err = errors.WithStack(err)
+		return
 	}
 	defer func() {
-		if errC := rows.Close(); err == nil && errC != nil {
+		if errC := rows.Close(); errC != nil && err == nil {
 			err = errors.WithStack(errC)
 		}
 	}()
 
-	var value float64
-	found := false
 	for rows.Next() {
-		if err = rows.Scan(&value); err != nil {
-			return 0, errors.WithStack(err)
+		var nv NullUint64
+		if err = rows.Scan(&nv); err != nil {
+			err = errors.WithStack(err)
+			return
 		}
-		found = true
+		if nv.Valid {
+			dest = append(dest, nv.Uint64)
+		}
 	}
 	if err = rows.Err(); err != nil {
-		return 0, errors.WithStack(err)
+		err = errors.WithStack(err)
+		return
 	}
-	if !found {
-		err = errors.NotFound.Newf("[dml] LoadFloat64 value not found")
-	}
-	return value, err
+	rowCount = len(dest)
+	return dest, err
 }
 
-// LoadFloat64s executes the Select and returns the value at a slice of float64s.
-func (a *Artisan) LoadFloat64s(ctx context.Context, args ...interface{}) (_ []float64, err error) {
+// LoadFloat64s executes the query and returns the values appended to slice
+// dest.
+func (a *Artisan) LoadFloat64s(ctx context.Context, dest []float64, args ...interface{}) (_ []float64, err error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
 		defer log.WhenDone(a.base.Log).Debug("LoadFloat64s", log.String("id", a.base.id), log.Err(err))
 	}
 
-	rows, err := a.query(ctx, args...)
-	if err != nil {
-		return nil, errors.WithStack(err)
+	var rows *sql.Rows
+	if rows, err = a.query(ctx, args...); err != nil {
+		err = errors.WithStack(err)
+		return
 	}
 	defer func() {
-		if errC := rows.Close(); err == nil && errC != nil {
+		if errC := rows.Close(); errC != nil && err == nil {
 			err = errors.WithStack(errC)
 		}
 	}()
 
-	values := make([]float64, 0, 10)
 	for rows.Next() {
 		var value float64
 		if err = rows.Scan(&value); err != nil {
-			return nil, errors.WithStack(err)
+			err = errors.WithStack(err)
+			return
 		}
-		values = append(values, value)
+		dest = append(dest, value)
 	}
 	if err = rows.Err(); err != nil {
-		return nil, errors.WithStack(err)
+		err = errors.WithStack(err)
+		return
 	}
-	return values, err
+	return dest, err
 }
 
-// LoadString executes the Select and returns the value as a string. It
-// returns a NotFound error if the row amount is not equal one.
-func (a *Artisan) LoadString(ctx context.Context, args ...interface{}) (_ string, err error) {
+// LoadStrings executes the query and returns the values appended to slice
+// dest.
+func (a *Artisan) LoadStrings(ctx context.Context, dest []string, args ...interface{}) (_ []string, err error) {
+	var rowCount int
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(a.base.Log).Debug("LoadString", log.String("id", a.base.id), log.Err(err))
+		defer log.WhenDone(a.base.Log).Debug("LoadStrings", log.Int("row_count", rowCount), log.String("id", a.base.id), log.Err(err))
 	}
 
 	rows, err := a.query(ctx, args...)
 	if err != nil {
-		return "", errors.WithStack(err)
+		err = errors.WithStack(err)
+		return
 	}
 	defer func() {
-		if errC := rows.Close(); err == nil && errC != nil {
+		if errC := rows.Close(); errC != nil && err == nil {
 			err = errors.WithStack(errC)
 		}
 	}()
 
-	var value string
-	found := false
-	for rows.Next() {
-		if err = rows.Scan(&value); err != nil {
-			return "", errors.WithStack(err)
-		}
-		found = true
-	}
-	if err = rows.Err(); err != nil {
-		return "", errors.WithStack(err)
-	}
-	if !found {
-		err = errors.NotFound.Newf("[dml] LoadInt64 value not found")
-	}
-	return value, err
-}
-
-// LoadStrings executes the Select and returns a slice of strings.
-func (a *Artisan) LoadStrings(ctx context.Context /* , result []string */, args ...interface{}) (values []string, err error) {
-	if a.base.Log != nil && a.base.Log.IsDebug() {
-		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(a.base.Log).Debug("LoadStrings", log.Int("row_count", len(values)), log.String("id", a.base.id), log.Err(err))
-	}
-
-	rows, err := a.query(ctx, args...)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	defer func() {
-		if errC := rows.Close(); err == nil && errC != nil {
-			err = errors.WithStack(errC)
-		}
-	}()
-
-	values = make([]string, 0, 10)
 	for rows.Next() {
 		var value string
 		if err = rows.Scan(&value); err != nil {
-			return nil, errors.WithStack(err)
+			err = errors.WithStack(err)
+			return
 		}
-		values = append(values, value)
+		dest = append(dest, value)
 	}
 	if err = rows.Err(); err != nil {
-		return nil, errors.WithStack(err)
+		err = errors.WithStack(err)
+		return
 	}
-	return values, err
+	rowCount = len(dest)
+	return dest, err
 }
 
 func (a *Artisan) query(ctx context.Context, args ...interface{}) (rows *sql.Rows, err error) {
@@ -1010,57 +1007,6 @@ func (a *Artisan) query(ctx context.Context, args ...interface{}) (rows *sql.Row
 		err = errors.Wrapf(err, "[dml] Query.QueryContext with query %q", sqlStr)
 	}
 	return
-}
-
-func loadInt64(rows *sql.Rows, errIn error) (value int64, err error) {
-	if errIn != nil {
-		return 0, errors.WithStack(errIn)
-	}
-
-	defer func() {
-		if cErr := rows.Close(); err == nil && cErr != nil {
-			err = errors.WithStack(cErr)
-		}
-	}()
-
-	found := false
-	for rows.Next() {
-		if err = rows.Scan(&value); err != nil {
-			return 0, errors.WithStack(err)
-		}
-		found = true
-	}
-	if err = rows.Err(); err != nil {
-		return 0, errors.WithStack(err)
-	}
-	if !found {
-		err = errors.NotFound.Newf("[dml] LoadInt64 value not found")
-	}
-	return value, err
-}
-
-func loadInt64s(rows *sql.Rows, errIn error) (_ []int64, err error) {
-	if errIn != nil {
-		return nil, errors.WithStack(errIn)
-	}
-	defer func() {
-		if cErr := rows.Close(); err == nil && cErr != nil {
-			err = errors.WithStack(cErr)
-		}
-	}()
-
-	values := make([]int64, 0, 16)
-	for rows.Next() {
-		var value int64
-		if err = rows.Scan(&value); err != nil {
-			return nil, errors.WithStack(err)
-		}
-		values = append(values, value)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, errors.WithStack(err)
-	}
-	return values, nil
 }
 
 func (a *Artisan) exec(ctx context.Context, args ...interface{}) (result sql.Result, err error) {
