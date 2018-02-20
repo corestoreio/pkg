@@ -15,6 +15,7 @@
 package dml
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding"
 	"encoding/gob"
@@ -24,6 +25,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -50,6 +52,7 @@ var (
 	_ proto.Unmarshaler          = (*NullInt64)(nil)
 	_ proto.Sizer                = (*NullInt64)(nil)
 	_ protoMarshalToer           = (*NullInt64)(nil)
+	_ sql.Scanner                = (*NullInt64)(nil)
 )
 
 func TestMakeNullInt64(t *testing.T) {
@@ -293,4 +296,25 @@ func TestNewNullInt64(t *testing.T) {
 	v, err := MakeNullInt64(1257894000).Value()
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1257894000, v)
+}
+
+func TestNullInt64_Scan(t *testing.T) {
+	t.Parallel()
+
+	t.Run("nil", func(t *testing.T) {
+		var nv NullInt64
+		require.NoError(t, nv.Scan(nil))
+		assert.Exactly(t, NullInt64{}, nv)
+	})
+	t.Run("[]byte", func(t *testing.T) {
+		var nv NullInt64
+		require.NoError(t, nv.Scan([]byte(`-1234567`)))
+		assert.Exactly(t, MakeNullInt64(-1234567), nv)
+	})
+	t.Run("string unsupported", func(t *testing.T) {
+		var nv NullInt64
+		err := nv.Scan(`-1234567`)
+		assert.True(t, errors.Is(err, errors.NotSupported), "Error behaviour should be errors.NotSupported")
+		assert.Exactly(t, NullInt64{}, nv)
+	})
 }

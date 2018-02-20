@@ -50,16 +50,17 @@ func MakeNullUint64(i uint64, valid ...bool) NullUint64 {
 	}
 }
 
-// Scan implements the Scanner interface.
+// Scan implements the Scanner interface. Approx. >3x times faster than
+// database/sql.convertAssign
 func (n *NullUint64) Scan(value interface{}) (err error) {
 	if value == nil {
 		n.Uint64, n.Valid = 0, false
 		return nil
 	}
-	n.Valid = true
 	switch v := value.(type) {
 	case []byte:
 		n.Uint64, n.Valid, err = byteconv.ParseUintSQL(v, 10, 64)
+		n.Valid = err == nil
 	default:
 		err = errors.NotSupported.Newf("[dml] Type %T not supported in NullUint64.Scan", value)
 	}

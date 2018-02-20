@@ -224,17 +224,25 @@ func TestStringSetValid(t *testing.T) {
 	assertStr(t, change, "SetValid()")
 }
 
-func TestStringScan(t *testing.T) {
+func TestNullString_Scan(t *testing.T) {
 	t.Parallel()
-	var str NullString
-	err := str.Scan("test")
-	maybePanic(err)
-	assertStr(t, str, "scanned string")
 
-	var null NullString
-	err = null.Scan(nil)
-	maybePanic(err)
-	assertNullStr(t, null, "scanned null")
+	t.Run("nil", func(t *testing.T) {
+		var nv NullString
+		require.NoError(t, nv.Scan(nil))
+		assert.Exactly(t, NullString{}, nv)
+	})
+	t.Run("[]byte", func(t *testing.T) {
+		var nv NullString
+		require.NoError(t, nv.Scan([]byte(`12345678910`)))
+		assert.Exactly(t, MakeNullString(`12345678910`), nv)
+	})
+	t.Run("string unsupported", func(t *testing.T) {
+		var nv NullString
+		err := nv.Scan(`1234567`)
+		assert.True(t, errors.Is(err, errors.NotSupported), "Error behaviour should be errors.NotSupported")
+		assert.Exactly(t, NullString{}, nv)
+	})
 }
 
 func TestString_GoString(t *testing.T) {

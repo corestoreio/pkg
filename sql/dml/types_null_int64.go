@@ -52,7 +52,24 @@ func MakeNullInt64(i int64, valid ...bool) NullInt64 {
 	}
 }
 
-// TODO implement custom Scan method after benchmarking it
+// Scan implements the Scanner interface. Approx. >3x times faster than
+//// database/sql.convertAssign.
+func (n *NullInt64) Scan(value interface{}) (err error) {
+	// this version BenchmarkSQLScanner/NullInt64_[]byte-4         	20000000	        65.0 ns/op	      32 B/op	       1 allocs/op
+	// std lib 		BenchmarkSQLScanner/NullInt64_[]byte-4         	 5000000	       244 ns/op	      56 B/op	       3 allocs/op
+	if value == nil {
+		n.Int64, n.Valid = 0, false
+		return nil
+	}
+	switch v := value.(type) {
+	case []byte:
+		n.NullInt64, err = byteconv.ParseNullInt64(v)
+		n.Valid = err == nil
+	default:
+		err = errors.NotSupported.Newf("[dml] Type %T not yet supported in NullInt64.Scan", value)
+	}
+	return
+}
 
 // String returns the string representation of the int or null.
 func (a NullInt64) String() string {

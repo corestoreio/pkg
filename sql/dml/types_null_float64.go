@@ -22,6 +22,7 @@ import (
 	"strconv"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/byteconv"
 )
 
 // TODO(cys): Remove GobEncoder, GobDecoder, MarshalJSON, UnmarshalJSON in Go 2.
@@ -49,6 +50,25 @@ func MakeNullFloat64(f float64, valid ...bool) NullFloat64 {
 			Valid:   v,
 		},
 	}
+}
+
+// Scan implements the Scanner interface. Approx. >3x times faster than
+//// database/sql.convertAssign.
+func (n *NullFloat64) Scan(value interface{}) (err error) {
+	// this version BenchmarkSQLScanner/NullFloat64_[]byte-4       	20000000	        79.0 ns/op	      32 B/op	       1 allocs/op
+	// std lib 		BenchmarkSQLScanner/NullFloat64_[]byte-4       	 5000000	       266 ns/op	      64 B/op	       3 allocs/op
+	if value == nil {
+		n.Float64, n.Valid = 0, false
+		return nil
+	}
+	switch v := value.(type) {
+	case []byte:
+		n.NullFloat64, err = byteconv.ParseNullFloat64(v)
+		n.Valid = err == nil
+	default:
+		err = errors.NotSupported.Newf("[dml] Type %T not yet supported in NullFloat64.Scan", value)
+	}
+	return
 }
 
 // String returns the string representation of the float or null.

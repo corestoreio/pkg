@@ -262,3 +262,78 @@ func BenchmarkArgumentEncoding(b *testing.B) {
 		}
 	})
 }
+
+func BenchmarkSQLScanner(b *testing.B) {
+	var valInt64 int64
+	var valFloat64 float64
+	var valUint64 uint64
+	var valString string
+	var valTime time.Time
+	b.Run("NullInt64", func(b *testing.B) {
+		val := []byte(`12345678`)
+		for i := 0; i < b.N; i++ {
+			var nv NullInt64
+			if err := nv.Scan(val); err != nil {
+				b.Fatal(err)
+			}
+			if nv.Int64 != 12345678 {
+				b.Fatalf("Have %d Want %d", nv.Int64, 12345678)
+			}
+			valInt64 = nv.Int64
+		}
+	})
+	b.Run("NullFloat64", func(b *testing.B) {
+		val := []byte(`-1234.5678`)
+		for i := 0; i < b.N; i++ {
+			var nv NullFloat64
+			if err := nv.Scan(val); err != nil {
+				b.Fatal(err)
+			}
+			if nv.Float64 != -1234.5678 {
+				b.Fatalf("Have %d Want %d", nv.Float64, -1234.5678)
+			}
+			valFloat64 = nv.Float64
+		}
+	})
+	b.Run("NullUint64", func(b *testing.B) {
+		val := []byte(`12345678910`)
+		for i := 0; i < b.N; i++ {
+			var nv NullUint64
+			if err := nv.Scan(val); err != nil {
+				b.Fatal(err)
+			}
+			if nv.Uint64 != 12345678910 {
+				b.Fatalf("Have %d Want %d", nv.Uint64, 12345678910)
+			}
+			valUint64 = nv.Uint64
+		}
+	})
+	b.Run("NullString", func(b *testing.B) {
+		const want = `12345678910`
+		val := []byte(want)
+		for i := 0; i < b.N; i++ {
+			var nv NullString
+			if err := nv.Scan(val); err != nil {
+				b.Fatal(err)
+			}
+			if nv.String != want {
+				b.Fatalf("Have %q Want %q", nv.String, want)
+			}
+			valString = nv.String
+		}
+	})
+	b.Run("NullTime", func(b *testing.B) {
+		const want = `2006-01-02 19:04:05`
+		val := []byte(want)
+		for i := 0; i < b.N; i++ {
+			var nv NullTime
+			if err := nv.Scan(val); err != nil {
+				b.Fatal(err)
+			}
+			if nv.Time.IsZero() {
+				b.Fatalf("Time cannot be zero %s", nv.String())
+			}
+			valTime = nv.Time
+		}
+	})
+}
