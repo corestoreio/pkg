@@ -849,7 +849,7 @@ func (a *Artisan) loadPrimitive(ctx context.Context, ptr interface{}, args ...in
 }
 
 // LoadInt64s executes the query and returns the values appended to slice
-// dest.
+// dest. It ignores and skips NULL values.
 func (a *Artisan) LoadInt64s(ctx context.Context, dest []int64, args ...interface{}) (_ []int64, err error) {
 	var rowCount int
 	if a.base.Log != nil && a.base.Log.IsDebug() {
@@ -868,12 +868,14 @@ func (a *Artisan) LoadInt64s(ctx context.Context, dest []int64, args ...interfac
 		}
 	}()
 	for r.Next() {
-		var value int64
-		if err = r.Scan(&value); err != nil {
+		var nv NullInt64
+		if err = r.Scan(&nv); err != nil {
 			err = errors.WithStack(err)
 			return
 		}
-		dest = append(dest, value)
+		if nv.Valid {
+			dest = append(dest, nv.Int64)
+		}
 	}
 	if err = r.Err(); err != nil {
 		err = errors.WithStack(err)
@@ -923,7 +925,7 @@ func (a *Artisan) LoadUint64s(ctx context.Context, dest []uint64, args ...interf
 }
 
 // LoadFloat64s executes the query and returns the values appended to slice
-// dest.
+// dest. It ignores and skips NULL values.
 func (a *Artisan) LoadFloat64s(ctx context.Context, dest []float64, args ...interface{}) (_ []float64, err error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
@@ -942,12 +944,14 @@ func (a *Artisan) LoadFloat64s(ctx context.Context, dest []float64, args ...inte
 	}()
 
 	for rows.Next() {
-		var value float64
-		if err = rows.Scan(&value); err != nil {
+		var nv NullFloat64
+		if err = rows.Scan(&nv); err != nil {
 			err = errors.WithStack(err)
 			return
 		}
-		dest = append(dest, value)
+		if nv.Valid {
+			dest = append(dest, nv.Float64)
+		}
 	}
 	if err = rows.Err(); err != nil {
 		err = errors.WithStack(err)
@@ -957,7 +961,7 @@ func (a *Artisan) LoadFloat64s(ctx context.Context, dest []float64, args ...inte
 }
 
 // LoadStrings executes the query and returns the values appended to slice
-// dest.
+// dest. It ignores and skips NULL values.
 func (a *Artisan) LoadStrings(ctx context.Context, dest []string, args ...interface{}) (_ []string, err error) {
 	var rowCount int
 	if a.base.Log != nil && a.base.Log.IsDebug() {
@@ -977,12 +981,14 @@ func (a *Artisan) LoadStrings(ctx context.Context, dest []string, args ...interf
 	}()
 
 	for rows.Next() {
-		var value string
+		var value NullString
 		if err = rows.Scan(&value); err != nil {
 			err = errors.WithStack(err)
 			return
 		}
-		dest = append(dest, value)
+		if value.Valid {
+			dest = append(dest, value.String)
+		}
 	}
 	if err = rows.Err(); err != nil {
 		err = errors.WithStack(err)

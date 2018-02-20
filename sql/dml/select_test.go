@@ -834,7 +834,6 @@ func TestSelect_WithArgs_LoadType_Slices(t *testing.T) {
 }
 
 func TestSelect_Join(t *testing.T) {
-	t.Parallel()
 	s := createRealSessionWithFixtures(t, nil)
 	defer testCloser(t, s)
 
@@ -1566,5 +1565,49 @@ func TestSelect_SetRecord(t *testing.T) {
 				int64(33), int64(44), int64(55),
 			)
 		})
+	})
+}
+
+func TestSelect_Artisan_Load_Slices_Null(t *testing.T) {
+	s := createRealSessionWithFixtures(t, nil)
+	defer testCloser(t, s)
+
+	inA := s.InsertInto("dml_null_types").AddColumns("string_val", "int64_val", "float64_val", "time_val", "bool_val", "decimal_val").WithArgs()
+	inA.String("A1").Int64(11).Float64(11.11).Time(now()).Bool(true).Float64(11.111)
+	inA.Null().Null().Null().Null().Null().Null()
+	inA.String("A2").Int64(22).Float64(22.22).Time(now()).Bool(false).Float64(22.222)
+	inA.Null().Null().Null().Null().Null().Null()
+	inA.String("-A3").Int64(-33).Float64(-33.33).Time(now()).Bool(true).Float64(-33.333)
+	res, err := inA.ExecContext(context.Background())
+	require.NoError(t, err)
+	lid, err := res.LastInsertId()
+	require.NoError(t, err)
+	assert.Exactly(t, int64(1), lid)
+
+	t.Run("LoadFloat64s", func(t *testing.T) {
+		vals := []float64{}
+		vals, err := s.SelectFrom("dml_null_types").AddColumns("float64_val").OrderBy("id").WithArgs().LoadFloat64s(context.Background(), vals)
+		require.NoError(t, err)
+		assert.Exactly(t, []float64{11.11, 22.22, -33.33}, vals)
+	})
+
+	t.Run("LoadInt64s", func(t *testing.T) {
+		vals := []int64{}
+		vals, err := s.SelectFrom("dml_null_types").AddColumns("int64_val").OrderBy("id").WithArgs().LoadInt64s(context.Background(), vals)
+		require.NoError(t, err)
+		assert.Exactly(t, []int64{11, 22, -33}, vals)
+	})
+
+	t.Run("LoadUint64s", func(t *testing.T) {
+		vals := []uint64{}
+		vals, err := s.SelectFrom("dml_null_types").AddColumns("int64_val").Where(Column("int64_val").GreaterOrEqual().Int(0)).OrderBy("id").WithArgs().LoadUint64s(context.Background(), vals)
+		require.NoError(t, err)
+		assert.Exactly(t, []uint64{11, 22}, vals)
+	})
+	t.Run("LoadUint64s", func(t *testing.T) {
+		vals := []string{}
+		vals, err := s.SelectFrom("dml_null_types").AddColumns("string_val").OrderBy("id").WithArgs().LoadStrings(context.Background(), vals)
+		require.NoError(t, err)
+		assert.Exactly(t, []string{"A1", "A2", "-A3"}, vals)
 	})
 }
