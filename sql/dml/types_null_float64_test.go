@@ -267,6 +267,11 @@ func TestNullFloat64_Scan(t *testing.T) {
 		require.NoError(t, nv.Scan([]byte(`-1234.567`)))
 		assert.Exactly(t, MakeNullFloat64(-1234.567), nv)
 	})
+	t.Run("float64", func(t *testing.T) {
+		var nv NullFloat64
+		require.NoError(t, nv.Scan(-1234.569))
+		assert.Exactly(t, MakeNullFloat64(-1234.569), nv)
+	})
 	t.Run("string unsupported", func(t *testing.T) {
 		var nv NullFloat64
 		err := nv.Scan(`-123.4567`)

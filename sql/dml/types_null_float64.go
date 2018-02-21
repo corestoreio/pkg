@@ -65,6 +65,9 @@ func (n *NullFloat64) Scan(value interface{}) (err error) {
 	case []byte:
 		n.NullFloat64, err = byteconv.ParseNullFloat64(v)
 		n.Valid = err == nil
+	case float64:
+		n.Float64 = v
+		n.Valid = true
 	default:
 		err = errors.NotSupported.Newf("[dml] Type %T not yet supported in NullFloat64.Scan", value)
 	}

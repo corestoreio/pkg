@@ -289,6 +289,16 @@ func TestNullUint64_Scan(t *testing.T) {
 		require.NoError(t, nv.Scan([]byte(`12345678910`)))
 		assert.Exactly(t, MakeNullUint64(12345678910), nv)
 	})
+	t.Run("int64", func(t *testing.T) {
+		var nv NullUint64
+		require.NoError(t, nv.Scan(int64(12345678911)))
+		assert.Exactly(t, MakeNullUint64(12345678911), nv)
+	})
+	t.Run("int", func(t *testing.T) {
+		var nv NullUint64
+		require.NoError(t, nv.Scan(int(12345678912)))
+		assert.Exactly(t, MakeNullUint64(12345678912), nv)
+	})
 	t.Run("string unsupported", func(t *testing.T) {
 		var nv NullUint64
 		err := nv.Scan(`1234567`)

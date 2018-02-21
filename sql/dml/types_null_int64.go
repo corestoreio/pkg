@@ -65,6 +65,12 @@ func (n *NullInt64) Scan(value interface{}) (err error) {
 	case []byte:
 		n.NullInt64, err = byteconv.ParseNullInt64(v)
 		n.Valid = err == nil
+	case int64:
+		n.Int64 = v
+		n.Valid = true
+	case int:
+		n.Int64 = int64(v)
+		n.Valid = true
 	default:
 		err = errors.NotSupported.Newf("[dml] Type %T not yet supported in NullInt64.Scan", value)
 	}
