@@ -510,42 +510,6 @@ func TestSelect_WhereNULL(t *testing.T) {
 	})
 }
 
-func TestSelect_FakeSessionBySQL(t *testing.T) {
-	t.Parallel()
-
-	s := createFakeSession()
-
-	compareToSQL2(t,
-		s.SelectBySQL("SELECT * FROM users WHERE x = ? AND y IN (?,?,?)").WithArgs().Int(9).Int(5).Int(6).Int(7),
-		errors.NoKind,
-		"SELECT * FROM users WHERE x = ? AND y IN (?,?,?)",
-		int64(9), int64(5), int64(6), int64(7),
-	)
-
-	compareToSQL2(t,
-		s.SelectBySQL("SELECT * FROM users WHERE x = 1"),
-		errors.NoKind,
-		"SELECT * FROM users WHERE x = 1",
-	)
-	compareToSQL2(t,
-		s.SelectBySQL("SELECT * FROM users WHERE x = ? AND y IN ?").WithArgs().ExpandPlaceHolders().Int(9).Ints(5, 6, 7),
-		errors.NoKind,
-		"SELECT * FROM users WHERE x = ? AND y IN (?,?,?)",
-		int64(9), int64(5), int64(6), int64(7),
-	)
-	compareToSQL2(t,
-		s.SelectBySQL("SELECT * FROM users WHERE x = ? AND y IN ?").WithArgs().Interpolate().Int(9).Ints(5, 6, 7),
-		errors.NoKind,
-		"SELECT * FROM users WHERE x = 9 AND y IN (5,6,7)",
-	)
-	compareToSQL2(t,
-		s.SelectBySQL("wat").WithArgs().Raw(9, 5, 6, 7),
-		errors.NoKind,
-		"wat",
-		9, 5, 6, 7,
-	)
-}
-
 func TestSelect_Varieties(t *testing.T) {
 	t.Parallel()
 
@@ -622,8 +586,8 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 
 	t.Run("single slice item", func(t *testing.T) {
 		var people dmlPersons
-		count, err := s.SelectBySQL("SELECT name FROM dml_people WHERE email = ?").
-			WithArgs().String("jonathan@uservoice.com").Load(context.TODO(), &people)
+		count, err := s.WithRawSQL("SELECT `name` FROM `dml_people` WHERE `email` = ?").
+			String("jonathan@uservoice.com").Load(context.TODO(), &people)
 
 		require.NoError(t, err)
 		assert.Equal(t, uint64(1), count)

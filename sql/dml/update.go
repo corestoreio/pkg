@@ -193,11 +193,6 @@ func (b *Update) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 		return nil, errors.WithStack(err)
 	}
 
-	if b.RawFullSQL != "" {
-		buf.WriteString(b.RawFullSQL)
-		return placeHolders, nil
-	}
-
 	if len(b.Table.Name) == 0 {
 		return nil, errors.Empty.Newf("[dml] Update: Table at empty")
 	}

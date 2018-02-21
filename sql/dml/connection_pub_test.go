@@ -69,3 +69,93 @@ func TestTx_Wrap(t *testing.T) {
 		assert.True(t, errors.Aborted.Match(err))
 	})
 }
+
+func TestWithRawSQL(t *testing.T) {
+	t.Parallel()
+
+	dbc, mock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, dbc, mock)
+
+	t.Run("ConnPool", func(t *testing.T) {
+
+		compareToSQL(t,
+			dbc.WithRawSQL("SELECT * FROM users WHERE x = ? AND y IN (?,?,?)").Int(9).Int(5).Int(6).Int(7),
+			errors.NoKind,
+			"SELECT * FROM users WHERE x = ? AND y IN (?,?,?)",
+			"",
+			int64(9), int64(5), int64(6), int64(7),
+		)
+
+		compareToSQL(t,
+			dbc.WithRawSQL("SELECT * FROM users WHERE x = 1"),
+			errors.NoKind,
+			"SELECT * FROM users WHERE x = 1",
+			"",
+		)
+		compareToSQL(t,
+			dbc.WithRawSQL("SELECT * FROM users WHERE x = ? AND y IN ?").ExpandPlaceHolders().Int(9).Ints(5, 6, 7),
+			errors.NoKind,
+			"SELECT * FROM users WHERE x = ? AND y IN (?,?,?)",
+			"",
+			int64(9), int64(5), int64(6), int64(7),
+		)
+		compareToSQL(t,
+			dbc.WithRawSQL("SELECT * FROM users WHERE x = ? AND y IN ?").Interpolate().Int(9).Ints(5, 6, 7),
+			errors.NoKind,
+			"SELECT * FROM users WHERE x = 9 AND y IN (5,6,7)",
+			"",
+		)
+		compareToSQL(t,
+			dbc.WithRawSQL("wat").Raw(9, 5, 6, 7),
+			errors.NoKind,
+			"wat",
+			"",
+			9, 5, 6, 7,
+		)
+	})
+
+	t.Run("ConnSingle", func(t *testing.T) {
+		c, err := dbc.Conn(context.TODO())
+		defer dmltest.Close(t, c)
+		if err != nil {
+			t.Fatal(err)
+		}
+		compareToSQL(t,
+			c.WithRawSQL("SELECT * FROM users WHERE x = ? AND y IN ?").Interpolate().Int(9).Ints(5, 6, 7),
+			errors.NoKind,
+			"SELECT * FROM users WHERE x = 9 AND y IN (5,6,7)",
+			"",
+		)
+		compareToSQL(t,
+			c.WithRawSQL("wat").Raw(9, 5, 6, 7),
+			errors.NoKind,
+			"wat",
+			"",
+			9, 5, 6, 7,
+		)
+	})
+
+	t.Run("Tx", func(t *testing.T) {
+		mock.ExpectBegin()
+		mock.ExpectCommit()
+
+		tx, err := dbc.BeginTx(context.TODO(), nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() { assert.NoError(t, tx.Commit()) }()
+		compareToSQL(t,
+			tx.WithRawSQL("SELECT * FROM users WHERE x = ? AND y IN ?").Interpolate().Int(9).Ints(5, 6, 7),
+			errors.NoKind,
+			"SELECT * FROM users WHERE x = 9 AND y IN (5,6,7)",
+			"",
+		)
+		compareToSQL(t,
+			tx.WithRawSQL("wat").Raw(9, 5, 6, 7),
+			errors.NoKind,
+			"wat",
+			"",
+			9, 5, 6, 7,
+		)
+	})
+}

@@ -118,8 +118,7 @@ const estimatedCachedSQLSize = 1024
 // BuilderBase contains fields which all SQL query builder have in common, the
 // same base. Exported for documentation reasons.
 type BuilderBase struct {
-	RawFullSQL string
-	Table      id
+	Table id
 	// PropagationStopped set to true if you would like to interrupt the
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.

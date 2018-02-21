@@ -122,45 +122,6 @@ func (tx *Tx) SelectFrom(fromAlias ...string) *Select {
 	return newSelect(tx.DB, tx.makeUniqueID, tx.Log, fromAlias)
 }
 
-// SelectBySQL creates a new Select for the given SQL string and arguments.
-func (c *ConnPool) SelectBySQL(sql string) *Select {
-	id := c.makeUniqueID()
-	l := c.Log
-	if l != nil {
-		l = l.With(log.String("select_id", id), log.String("sql", sql))
-	}
-	return &Select{
-		BuilderBase: BuilderBase{
-			builderCommon: builderCommon{
-				id:  id,
-				Log: l,
-				DB:  c.DB,
-			},
-			RawFullSQL: sql,
-		},
-	}
-}
-
-// SelectBySQL creates a new Select for the given SQL string and arguments bound
-// to the transaction.
-func (tx *Tx) SelectBySQL(sql string) *Select {
-	id := tx.makeUniqueID()
-	l := tx.Log
-	if l != nil {
-		l = l.With(log.String("tx_select_id", id), log.String("sql", sql))
-	}
-	return &Select{
-		BuilderBase: BuilderBase{
-			builderCommon: builderCommon{
-				id:  id,
-				Log: l,
-				DB:  tx.DB,
-			},
-			RawFullSQL: sql,
-		},
-	}
-}
-
 // WithDB sets the database query object.
 func (b *Select) WithDB(db QueryExecPreparer) *Select {
 	b.DB = db
@@ -470,11 +431,6 @@ func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err 
 
 	if err = b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return nil, errors.WithStack(err)
-	}
-
-	if b.RawFullSQL != "" {
-		_, err = w.WriteString(b.RawFullSQL)
-		return nil, err
 	}
 
 	if len(b.Columns) == 0 && !b.IsCountStar && !b.IsStar {

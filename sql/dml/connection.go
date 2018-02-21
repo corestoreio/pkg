@@ -365,6 +365,25 @@ func (c *ConnPool) Conn(ctx context.Context) (*Conn, error) {
 	}, errors.WithStack(err)
 }
 
+// WithRawSQL creates a new Artisan for the given SQL string.
+func (c *ConnPool) WithRawSQL(sql string) *Artisan {
+	id := c.makeUniqueID()
+	l := c.Log
+	if l != nil {
+		l = l.With(log.String("conn_pool_raw_sql_id", id), log.String("sql", sql))
+	}
+	var args [defaultArgumentsCapacity]argument
+	return &Artisan{
+		base: builderCommon{
+			cachedSQL: []byte(sql),
+			Log:       l,
+			id:        id,
+			DB:        c.DB,
+		},
+		arguments: args[:0],
+	}
+}
+
 // BeginTx starts a transaction.
 //
 // The provided context is used until the transaction is committed or rolled back.
@@ -450,16 +469,61 @@ func (c *Conn) Close() error {
 // errors of the QueryBuilder will be forwarded to the Artisan type.
 func (c *Conn) WithQueryBuilder(qb QueryBuilder) *Artisan {
 	sqlStr, argsRaw, err := qb.ToSQL()
+	id := c.makeUniqueID()
+	l := c.Log
+	if l != nil {
+		l = l.With(log.String("query_builder_id", id), log.String("sql", sqlStr))
+	}
 	var args [defaultArgumentsCapacity]argument
 	return &Artisan{
 		base: builderCommon{
 			cachedSQL: []byte(sqlStr),
-			Log:       c.Log,
-			id:        c.makeUniqueID(),
+			Log:       l,
+			id:        id,
 			DB:        c.DB,
 			ärgErr:    errors.WithStack(err),
 		},
 		raw:       argsRaw,
+		arguments: args[:0],
+	}
+}
+
+// WithRawSQL creates a new Artisan for the given SQL string in the current
+// connection.
+func (c *Conn) WithRawSQL(sql string) *Artisan {
+	id := c.makeUniqueID()
+	l := c.Log
+	if l != nil {
+		l = l.With(log.String("conn_pool_raw_sql_id", id), log.String("sql", sql))
+	}
+	var args [defaultArgumentsCapacity]argument
+	return &Artisan{
+		base: builderCommon{
+			cachedSQL: []byte(sql),
+			Log:       l,
+			id:        id,
+			DB:        c.DB,
+		},
+		arguments: args[:0],
+	}
+}
+
+// WithRawSQL creates a new Artisan for the given SQL string in the current
+// transaction.
+func (tx *Tx) WithRawSQL(sql string) *Artisan {
+	id := tx.makeUniqueID()
+	l := tx.Log
+	if l != nil {
+		l = l.With(log.String("tx_raw_sql_id", id), log.String("sql", sql))
+	}
+	var args [defaultArgumentsCapacity]argument
+	return &Artisan{
+		base: builderCommon{
+			cachedSQL: []byte(sql),
+			Log:       l,
+			id:        id,
+			DB:        tx.DB,
+		},
 		arguments: args[:0],
 	}
 }

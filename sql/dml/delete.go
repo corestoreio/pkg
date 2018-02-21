@@ -262,11 +262,6 @@ func (b *Delete) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err 
 		return nil, errors.WithStack(err)
 	}
 
-	if b.RawFullSQL != "" {
-		_, err := w.WriteString(b.RawFullSQL)
-		return nil, err
-	}
-
 	if b.Table.Name == "" {
 		return nil, errors.Empty.Newf("[dml] Delete: Table is missing")
 	}
