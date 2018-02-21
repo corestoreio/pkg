@@ -798,9 +798,10 @@ func (b *ColumnMap) Text(enc interface {
 	return b
 }
 
-// Text allows to encode an object to its binary representation when arguments are
-// requested and to decode a byte slice into its object when data is retrieved
-// from the server. Use this function for GOB, Protocol Buffers, etc formats.
+// Binary allows to encode an object to its binary representation when arguments
+// are requested and to decode a byte slice into its object when data is
+// retrieved from the server. Use this function for GOB, Protocol Buffers, etc
+// formats.
 func (b *ColumnMap) Binary(enc interface {
 	encoding.BinaryMarshaler
 	encoding.BinaryUnmarshaler

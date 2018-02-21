@@ -468,8 +468,8 @@ func argPrinter(wf *dml.Condition) {
 	}
 }
 
-// ExampleArguments is duplicate of ExampleColumn
-func ExampleArguments() {
+// ExampleCondition is duplicate of ExampleColumn
+func ExampleCondition() {
 
 	argPrinter(dml.Column("d").Null())
 	argPrinter(dml.Column("d").NotNull())
@@ -517,7 +517,7 @@ func ExampleArguments() {
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT LIKE 'Cat%')"
 }
 
-// ExampleColumn is a duplicate of ExampleArgument
+// ExampleColumn is a duplicate of ExampleCondition
 func ExampleColumn() {
 
 	argPrinter(dml.Column("d").Null())

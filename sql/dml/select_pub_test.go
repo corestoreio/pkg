@@ -598,9 +598,9 @@ func TestSelect_Argument_IterateParallel(t *testing.T) {
 				_ = fib(uint(fp.ID))
 				//fi := fib(uint(fp.ID))
 				//println("a 591", int(cm.Count), fp.ID, fi)
-			} else {
-				//println("a 597", int(cm.Count), fp.ID)
-			}
+			} /* else {
+				println("a 597", int(cm.Count), fp.ID)
+			} */
 
 			//fmt.Printf("%d: FIB:%d: fakePerson ID %d\n", cm.Count, fib(uint(fp.ID)), fp.ID)
 			atomic.AddInt32(rowsLoadedCounter, 1)

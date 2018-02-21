@@ -415,8 +415,8 @@ func (a *Artisan) Record(qualifier string, record ColumnMapper) *Artisan {
 	return a
 }
 
-// Artisan sets the internal arguments slice to the provided argument. Those
-// are the slices Artisan, records and raw.
+// Arguments sets the internal arguments slice to the provided `args`. Those are
+// the slices arguments, records and raw.
 func (a *Artisan) Arguments(args *Artisan) *Artisan {
 	// maybe deprecated this function.
 	a.arguments = args.arguments
@@ -429,7 +429,6 @@ func (a *Artisan) Records(records ...QualifiedRecord) *Artisan { a.recs = record
 func (a *Artisan) Raw(raw ...interface{}) *Artisan             { a.raw = raw; return a }
 
 func (a *Artisan) Null() *Artisan                          { return a.add(nil) }
-func (a *Artisan) Unsafe(arg interface{}) *Artisan         { return a.add(arg) }
 func (a *Artisan) Int(i int) *Artisan                      { return a.add(i) }
 func (a *Artisan) Ints(i ...int) *Artisan                  { return a.add(i) }
 func (a *Artisan) Int64(i int64) *Artisan                  { return a.add(i) }

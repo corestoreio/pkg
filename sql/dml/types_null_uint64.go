@@ -15,7 +15,6 @@
 package dml
 
 import (
-	"bytes"
 	"database/sql/driver"
 	"encoding/binary"
 	"strconv"
@@ -52,21 +51,21 @@ func MakeNullUint64(i uint64, valid ...bool) NullUint64 {
 
 // Scan implements the Scanner interface. Approx. >3x times faster than
 // database/sql.convertAssign
-func (n *NullUint64) Scan(value interface{}) (err error) {
+func (a *NullUint64) Scan(value interface{}) (err error) {
 	if value == nil {
-		n.Uint64, n.Valid = 0, false
+		a.Uint64, a.Valid = 0, false
 		return nil
 	}
 	switch v := value.(type) {
 	case []byte:
-		n.Uint64, n.Valid, err = byteconv.ParseUintSQL(v, 10, 64)
-		n.Valid = err == nil
+		a.Uint64, a.Valid, err = byteconv.ParseUintSQL(v, 10, 64)
+		a.Valid = err == nil
 	case int64:
-		n.Uint64 = uint64(v)
-		n.Valid = true
+		a.Uint64 = uint64(v)
+		a.Valid = true
 	case int:
-		n.Uint64 = uint64(v)
-		n.Valid = true
+		a.Uint64 = uint64(v)
+		a.Valid = true
 	default:
 		err = errors.NotSupported.Newf("[dml] Type %T not supported in NullUint64.Scan", value)
 	}
@@ -218,7 +217,7 @@ func (a NullUint64) MarshalTo(data []byte) (n int, err error) {
 	if !a.Valid {
 		return 0, nil
 	}
-	binary.LittleEndian.PutUint64(data, uint64(a.Uint64))
+	binary.LittleEndian.PutUint64(data, a.Uint64)
 	return 8, nil
 }
 
@@ -240,19 +239,4 @@ func (a NullUint64) Size() (s int) {
 		s = 8
 	}
 	return
-}
-
-func (a NullUint64) writeTo(w *bytes.Buffer) error {
-	if a.Valid {
-		return writeUint64(w, a.Uint64)
-	}
-	_, err := w.WriteString(sqlStrNullUC)
-	return err
-}
-
-func (a NullUint64) append(args []interface{}) []interface{} {
-	if a.Valid {
-		return append(args, a.Uint64)
-	}
-	return append(args, nil)
 }

@@ -54,20 +54,20 @@ func MakeNullFloat64(f float64, valid ...bool) NullFloat64 {
 
 // Scan implements the Scanner interface. Approx. >3x times faster than
 //// database/sql.convertAssign.
-func (n *NullFloat64) Scan(value interface{}) (err error) {
+func (a *NullFloat64) Scan(value interface{}) (err error) {
 	// this version BenchmarkSQLScanner/NullFloat64_[]byte-4       	20000000	        79.0 ns/op	      32 B/op	       1 allocs/op
 	// std lib 		BenchmarkSQLScanner/NullFloat64_[]byte-4       	 5000000	       266 ns/op	      64 B/op	       3 allocs/op
 	if value == nil {
-		n.Float64, n.Valid = 0, false
+		a.Float64, a.Valid = 0, false
 		return nil
 	}
 	switch v := value.(type) {
 	case []byte:
-		n.NullFloat64, err = byteconv.ParseNullFloat64(v)
-		n.Valid = err == nil
+		a.NullFloat64, err = byteconv.ParseNullFloat64(v)
+		a.Valid = err == nil
 	case float64:
-		n.Float64 = v
-		n.Valid = true
+		a.Float64 = v
+		a.Valid = true
 	default:
 		err = errors.NotSupported.Newf("[dml] Type %T not yet supported in NullFloat64.Scan", value)
 	}

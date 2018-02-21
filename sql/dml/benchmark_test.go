@@ -290,7 +290,7 @@ func BenchmarkSQLScanner(b *testing.B) {
 				b.Fatal(err)
 			}
 			if nv.Float64 != -1234.5678 {
-				b.Fatalf("Have %d Want %d", nv.Float64, -1234.5678)
+				b.Fatalf("Have %f Want %f", nv.Float64, -1234.5678)
 			}
 			valFloat64 = nv.Float64
 		}
@@ -336,4 +336,10 @@ func BenchmarkSQLScanner(b *testing.B) {
 			valTime = nv.Time
 		}
 	})
+	_ = valInt64
+	_ = valFloat64
+	_ = valUint64
+	_ = valString
+	_ = valTime
+
 }

@@ -15,6 +15,7 @@
 package dml
 
 import (
+	"context"
 	"testing"
 
 	"github.com/corestoreio/errors"
@@ -38,7 +39,7 @@ func TestStmtWrapper(t *testing.T) {
 		}()
 
 		sw := stmtWrapper{}
-		sw.PrepareContext(nil, "SELECT X")
+		sw.PrepareContext(context.TODO(), "SELECT X")
 	})
 
 	t.Run("ExecContext", func(t *testing.T) {
@@ -55,7 +56,7 @@ func TestStmtWrapper(t *testing.T) {
 		}()
 
 		sw := stmtWrapper{}
-		sw.ExecContext(nil, "SELECT X")
+		sw.ExecContext(context.TODO(), "SELECT X")
 	})
 
 	t.Run("QueryContext", func(t *testing.T) {
@@ -72,7 +73,7 @@ func TestStmtWrapper(t *testing.T) {
 		}()
 
 		sw := stmtWrapper{}
-		sw.QueryContext(nil, "SELECT X")
+		sw.QueryContext(context.TODO(), "SELECT X")
 	})
 
 	t.Run("QueryRowContext", func(t *testing.T) {
@@ -89,6 +90,6 @@ func TestStmtWrapper(t *testing.T) {
 		}()
 
 		sw := stmtWrapper{}
-		sw.QueryRowContext(nil, "SELECT X")
+		sw.QueryRowContext(context.TODO(), "SELECT X")
 	})
 }

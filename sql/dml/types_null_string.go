@@ -52,17 +52,17 @@ func MakeNullString(s string, valid ...bool) NullString {
 
 // Scan implements the Scanner interface. Approx. >2x times faster than
 // database/sql.convertAssign.
-func (n *NullString) Scan(value interface{}) (err error) {
+func (a *NullString) Scan(value interface{}) (err error) {
 	// stdlib		BenchmarkSQLScanner/NullString-4        	10000000	       117 ns/op	      80 B/op	       3 allocs/op
 	// this code	BenchmarkSQLScanner/NullString-4        	20000000	        78.5 ns/op	      48 B/op	       2 allocs/op
 	if value == nil {
-		n.String, n.Valid = "", false
+		a.String, a.Valid = "", false
 		return nil
 	}
 	switch v := value.(type) {
 	case []byte:
-		n.String = string(v) // must be copied
-		n.Valid = err == nil
+		a.String = string(v) // must be copied
+		a.Valid = err == nil
 	default:
 		err = errors.NotSupported.Newf("[dml] Type %T not supported in NullString.Scan", value)
 	}

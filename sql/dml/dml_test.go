@@ -42,15 +42,6 @@ type protoMarshalToer interface {
 // TEST HELPERS
 ///////////////////////////////////////////////////////////////////////////////
 
-// Returns a session that's not backed by a database
-func createFakeSession() *ConnPool {
-	cxn, err := NewConnPool()
-	if err != nil {
-		panic(err)
-	}
-	return cxn
-}
-
 func createRealSession(t testing.TB) *ConnPool {
 	dsn := os.Getenv("CS_DSN")
 	if dsn == "" {
