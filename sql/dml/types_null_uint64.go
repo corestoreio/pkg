@@ -98,11 +98,11 @@ func (a *NullUint64) UnmarshalJSON(data []byte) error {
 		err = JSONUnMarshalFn(data, &a.Uint64)
 	case map[string]interface{}:
 		dto := &struct {
-			NullInt64 int64
-			Valid     bool
+			NullUint64 int64
+			Valid      bool
 		}{}
 		err = JSONUnMarshalFn(data, dto)
-		a.Uint64 = uint64(dto.NullInt64)
+		a.Uint64 = uint64(dto.NullUint64)
 		a.Valid = dto.Valid
 	case nil:
 		a.Valid = false
