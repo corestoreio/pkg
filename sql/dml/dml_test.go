@@ -257,7 +257,7 @@ func installFixtures(db *sql.DB, c *installFixturesConfig) {
 			store_id smallint(5) unsigned DEFAULT 0 COMMENT 'Store Id',
 			created_at timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' COMMENT 'Created At',
 			total_income decimal(12,4) NOT NULL DEFAULT 0.0000 COMMENT 'Used as float64',
-			avg_income decimal(12,5) NOT NULL DEFAULT 0.00000 COMMENT 'Used as dml.Decimal'
+			avg_income decimal(12,5) COMMENT 'Used as dml.Decimal'
 		)
 	`, "`key`")
 
@@ -276,7 +276,7 @@ func installFixtures(db *sql.DB, c *installFixturesConfig) {
 	sqlToRun := []string{
 		"DROP TABLE IF EXISTS `dml_people`",
 		createPeopleTable,
-		"INSERT INTO dml_people (name,email) VALUES ('Jonathan', 'jonathan@uservoice.com')",
+		"INSERT INTO dml_people (name,email,avg_income) VALUES ('Sir George', 'SirGeorge@GoIsland.com',333.66677)",
 		"INSERT INTO dml_people (name,email) VALUES ('Dmitri', 'zavorotni@jadius.com')",
 
 		"DROP TABLE IF EXISTS `dml_null_types`",

@@ -15,15 +15,16 @@
 package dml_test
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding"
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"math"
-	"strconv"
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
@@ -47,6 +48,7 @@ var (
 	_ proto.Unmarshaler          = (*dml.Decimal)(nil)
 	_ proto.Sizer                = (*dml.Decimal)(nil)
 	_ protoMarshalToer           = (*dml.Decimal)(nil)
+	_ sql.Scanner                = (*dml.Decimal)(nil)
 )
 
 func TestMakeDecimalInt64(t *testing.T) {
@@ -64,25 +66,26 @@ func TestMakeDecimalFloat64(t *testing.T) {
 		want    string
 		wantErr error
 	}{
-		{math.NaN(), "0", nil},
-		{math.Inf(1), "0", nil},
-		{math.Inf(-1), "-0", nil},
+		{math.NaN(), "0", errors.New(`strconv.ParseUint: parsing "NaN": invalid syntax`)},
+		{math.Inf(1), "0", errors.New(`strconv.ParseUint: parsing "Inf": invalid syntax`)},
+		{math.Inf(-1), "-0", errors.New(`strconv.ParseUint: parsing "Inf": invalid syntax`)},
 		{.00000000000000001, "0.00000000000000001", nil},
 		{123.45678901234567, "123.45678901234567", nil},
 		{123.456789012345678, "123.45678901234568", nil},
 		{123.456789012345671, "123.45678901234567", nil},
 		{987, "987", nil},
-		{math.MaxFloat64, strconv.FormatUint(math.MaxUint64, 10), nil},
 		{math.Phi * 4.01 * 5 / 9.099999, "3.565009344993927", nil},
 	}
 	for i, test := range tests {
 		d, err := dml.MakeDecimalFloat64(test.have)
 		if test.wantErr != nil {
-			assert.EqualError(t, err, test.wantErr.Error())
-			assert.Exactly(t, dml.Decimal{}, d)
-			continue
+			assert.EqualError(t, err, test.wantErr.Error(), "Index %d", i)
+			d.Negative = false
+			assert.Exactly(t, dml.Decimal{}, d, "Index %d", i)
+		} else {
+			assert.NoError(t, err, "Index %d", i)
+			assert.Exactly(t, test.want, d.String(), "Index %d", i)
 		}
-		assert.Exactly(t, test.want, d.String(), "Index %d", i)
 	}
 }
 
@@ -418,5 +421,31 @@ func TestDecimal_Float64(t *testing.T) {
 		}
 		f := d.Float64()
 		assert.Exactly(t, -9.223372036854788e+13, f)
+	})
+}
+
+func TestDecimal_Scan(t *testing.T) {
+	t.Parallel()
+
+	t.Run("nil", func(t *testing.T) {
+		var nv dml.Decimal
+		require.NoError(t, nv.Scan(nil))
+		assert.Exactly(t, dml.Decimal{}, nv)
+	})
+	t.Run("[]byte", func(t *testing.T) {
+		var nv dml.Decimal
+		require.NoError(t, nv.Scan([]byte(`-1234.567`)))
+		assert.Exactly(t, dml.MakeDecimalInt64(-1234567, 3), nv)
+	})
+	t.Run("float64", func(t *testing.T) {
+		var nv dml.Decimal
+		require.NoError(t, nv.Scan(-1234.569))
+		assert.Exactly(t, dml.MakeDecimalInt64(-1234569, 3), nv)
+	})
+	t.Run("string unsupported", func(t *testing.T) {
+		var nv dml.Decimal
+		err := nv.Scan(`-123.4567`)
+		assert.True(t, errors.Is(err, errors.NotSupported), "Error behaviour should be errors.NotSupported")
+		assert.Exactly(t, dml.Decimal{}, nv)
 	})
 }

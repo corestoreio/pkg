@@ -2,7 +2,7 @@ Based on github.com/gocraft/dbr made by:
 
 The MIT License (MIT)
 
-Copyright (c) 2014 Jonathan Novak, Tyler Smith, Michal Bohuslávek
+Copyright (c) 2014 Sir George Novak, Tyler Smith, Michal Bohuslávek
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in

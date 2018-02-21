@@ -103,7 +103,6 @@ func MakeDecimalBytes(b []byte) (d Decimal, err error) {
 		return
 	}
 
-	d.Valid = true
 	d.Negative = b[0] == '-'
 	if d.Negative || b[0] == '+' {
 		b = b[1:]
@@ -116,6 +115,25 @@ func MakeDecimalBytes(b []byte) (d Decimal, err error) {
 		digits = append(digits[:dotPos], b[dotPos+1:]...)
 	}
 	d.Precision, err = byteconv.ParseUint(digits, 10, 64)
+	d.Valid = err == nil
+	return
+}
+
+// Scan implements the Scanner interface. Approx. >3x times faster than
+//// database/sql.convertAssign.
+func (d *Decimal) Scan(value interface{}) (err error) {
+	if value == nil {
+		d.Precision, d.Scale, d.Negative, d.Valid = 0, 0, false, false
+		return nil
+	}
+	switch v := value.(type) {
+	case []byte:
+		*d, err = MakeDecimalBytes(v)
+	case float64:
+		*d, err = MakeDecimalFloat64(v)
+	default:
+		err = errors.NotSupported.Newf("[dml] Type %T not yet supported in Decimal.Scan", value)
+	}
 	return
 }
 
@@ -210,9 +228,6 @@ func (d Decimal) string(buf *bytes.Buffer) {
 
 // GoString returns an optimized version of the Go representation of Decimal.
 func (d Decimal) GoString() string {
-	if !d.Valid {
-		return "dml.Decimal{}"
-	}
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 	buf.WriteString("dml.Decimal{")

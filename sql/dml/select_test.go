@@ -545,9 +545,9 @@ func TestSelect_Load_Slice_Scanner(t *testing.T) {
 		assert.True(t, people.Data[0].ID > 0)
 		assert.True(t, people.Data[1].ID > people.Data[0].ID)
 
-		assert.Equal(t, "Jonathan", people.Data[0].Name)
+		assert.Equal(t, "Sir George", people.Data[0].Name)
 		assert.True(t, people.Data[0].Email.Valid)
-		assert.Equal(t, "jonathan@uservoice.com", people.Data[0].Email.String)
+		assert.Equal(t, "SirGeorge@GoIsland.com", people.Data[0].Email.String)
 		assert.Equal(t, "Dmitri", people.Data[1].Name)
 		assert.True(t, people.Data[1].Email.Valid)
 		assert.Equal(t, "zavorotni@jadius.com", people.Data[1].Email.String)
@@ -561,12 +561,12 @@ func TestSelect_Load_Rows(t *testing.T) {
 	t.Run("found", func(t *testing.T) {
 		var person dmlPerson
 		_, err := s.SelectFrom("dml_people").AddColumns("id", "name", "email").
-			Where(Column("email").Str("jonathan@uservoice.com")).WithArgs().Load(context.TODO(), &person)
+			Where(Column("email").Str("SirGeorge@GoIsland.com")).WithArgs().Load(context.TODO(), &person)
 		require.NoError(t, err)
 		assert.True(t, person.ID > 0)
-		assert.Equal(t, "Jonathan", person.Name)
+		assert.Equal(t, "Sir George", person.Name)
 		assert.True(t, person.Email.Valid)
-		assert.Equal(t, "jonathan@uservoice.com", person.Email.String)
+		assert.Equal(t, "SirGeorge@GoIsland.com", person.Email.String)
 	})
 
 	t.Run("not found", func(t *testing.T) {
@@ -587,12 +587,12 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 	t.Run("single slice item", func(t *testing.T) {
 		var people dmlPersons
 		count, err := s.WithRawSQL("SELECT `name` FROM `dml_people` WHERE `email` = ?").
-			String("jonathan@uservoice.com").Load(context.TODO(), &people)
+			String("SirGeorge@GoIsland.com").Load(context.TODO(), &people)
 
 		require.NoError(t, err)
 		assert.Equal(t, uint64(1), count)
 		if len(people.Data) == 1 {
-			assert.Equal(t, "Jonathan", people.Data[0].Name)
+			assert.Equal(t, "Sir George", people.Data[0].Name)
 			assert.Equal(t, uint64(0), people.Data[0].ID)      // not set
 			assert.Equal(t, false, people.Data[0].Email.Valid) // not set
 			assert.Equal(t, "", people.Data[0].Email.String)   // not set
@@ -614,8 +614,8 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 	t.Run("Scan string into arg UINT returns error", func(t *testing.T) {
 		var people dmlPersons
 		rc, err := s.SelectFrom("dml_people").AddColumnsAliases("email", "id", "name", "email").WithArgs().Load(context.TODO(), &people)
-		require.EqualError(t, err, "[dml] Artisan.Load failed with queryID \"\" and ColumnMapper *dml.dmlPersons: [dml] Column \"id\": strconv.ParseUint: parsing \"jonathan@uservoice.com\": invalid syntax")
-		assert.EqualError(t, errors.Cause(err), "strconv.ParseUint: parsing \"jonathan@uservoice.com\": invalid syntax")
+		require.EqualError(t, err, "[dml] Artisan.Load failed with queryID \"\" and ColumnMapper *dml.dmlPersons: [dml] Column \"id\": strconv.ParseUint: parsing \"SirGeorge@GoIsland.com\": invalid syntax")
+		assert.EqualError(t, errors.Cause(err), "strconv.ParseUint: parsing \"SirGeorge@GoIsland.com\": invalid syntax")
 		assert.Empty(t, rc)
 	})
 }
@@ -623,15 +623,16 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 func TestSelect_LoadType_Single(t *testing.T) {
 	s := createRealSessionWithFixtures(t, nil)
 	defer testCloser(t, s)
+
 	t.Run("LoadNullString", func(t *testing.T) {
 		name, found, err := s.SelectFrom("dml_people").AddColumns("name").Where(Column("email").PlaceHolder()).
-			WithArgs().String("jonathan@uservoice.com").LoadNullString(context.TODO())
+			WithArgs().String("SirGeorge@GoIsland.com").LoadNullString(context.TODO())
 		require.NoError(t, err)
 		assert.True(t, found)
-		assert.Exactly(t, MakeNullString("Jonathan"), name)
+		assert.Exactly(t, MakeNullString("Sir George"), name)
 	})
 	t.Run("LoadNullString too many columns", func(t *testing.T) {
-		name, found, err := s.SelectFrom("dml_people").AddColumns("name", "email").Where(Expr("email = 'jonathan@uservoice.com'")).WithArgs().LoadNullString(context.TODO())
+		name, found, err := s.SelectFrom("dml_people").AddColumns("name", "email").Where(Expr("email = 'SirGeorge@GoIsland.com'")).WithArgs().LoadNullString(context.TODO())
 		require.Error(t, err)
 		assert.False(t, found)
 		assert.Empty(t, name.String)
@@ -699,6 +700,14 @@ func TestSelect_LoadType_Single(t *testing.T) {
 		assert.False(t, found)
 		assert.Exactly(t, NullFloat64{}, id)
 	})
+
+	t.Run("LoadDecimal", func(t *testing.T) {
+		income, found, err := s.SelectFrom("dml_people").AddColumns("avg_income").Where(Column("email").Like().Str(`SirGeorge@GoIsland.com`)).
+			WithArgs().LoadDecimal(context.TODO())
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.Exactly(t, MakeDecimalInt64(33366677, 5), income)
+	})
 }
 
 func TestSelect_WithArgs_LoadUint64(t *testing.T) {
@@ -734,7 +743,7 @@ func TestSelect_WithArgs_LoadType_Slices(t *testing.T) {
 	t.Run("LoadStrings", func(t *testing.T) {
 		names, err := s.SelectFrom("dml_people").AddColumns("name").WithArgs().LoadStrings(context.TODO(), nil)
 		require.NoError(t, err)
-		assert.Equal(t, []string{"Jonathan", "Dmitri"}, names)
+		assert.Equal(t, []string{"Sir George", "Dmitri"}, names)
 	})
 	t.Run("LoadStrings too many columns", func(t *testing.T) {
 		vals, err := s.SelectFrom("dml_people").AddColumns("name", "email").WithArgs().LoadStrings(context.TODO(), nil)
