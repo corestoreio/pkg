@@ -29,7 +29,8 @@ import (
 
 type uniqueIDFn func() string
 
-func uniqueIDNoOp() string { return "" }
+func uniqueIDNoOp() string             { return "" }
+func mapTableNameNoOp(n string) string { return n }
 
 type logWithID struct {
 	start time.Time
@@ -48,8 +49,9 @@ type logWithID struct {
 // events, errors, and timings to
 type ConnPool struct {
 	logWithID
-	DB  *sql.DB
-	dsn string
+	DB           *sql.DB
+	mapTableName func(oldName string) (newName string)
+	dsn          string
 }
 
 // Conn represents a single database session rather a pool of database sessions.
@@ -63,7 +65,8 @@ type ConnPool struct {
 // ErrConnDone.
 type Conn struct {
 	logWithID
-	DB *sql.Conn
+	DB           *sql.Conn
+	mapTableName func(oldName string) (newName string)
 }
 
 // Tx is an in-progress database transaction.
@@ -75,10 +78,12 @@ type Conn struct {
 //
 // The statements prepared for a transaction by calling the transaction's
 // Prepare or Stmt methods are closed by the call to Commit or Rollback.
-// Practical Guide to SQL Transaction Isolation: https://begriffs.com/posts/2017-08-01-practical-guide-sql-isolation.html
+// Practical Guide to SQL Transaction Isolation:
+// https://begriffs.com/posts/2017-08-01-practical-guide-sql-isolation.html
 type Tx struct {
 	logWithID
-	DB *sql.Tx
+	DB           *sql.Tx
+	mapTableName func(oldName string) (newName string)
 }
 
 // ConnPoolOption can be used at an argument in NewConnPool to configure a
@@ -92,7 +97,6 @@ type ConnPoolOption struct {
 	UniqueIDFn func() string
 	// TableNameMapper maps the old name in the DML query to a new name. E.g.
 	// for adding a prefix and/or a suffix.
-	// TODO implement TableNameMapper
 	TableNameMapper func(oldName string) (newName string)
 	// OptimisticLock is enabled all queries with Exec will have a `version` field.
 	// UPDATE user SET ..., version = version + 1 WHERE id = ? AND version = ?
@@ -190,6 +194,9 @@ func NewConnPool(opts ...ConnPoolOption) (*ConnPool, error) {
 	if c.makeUniqueID == nil {
 		c.makeUniqueID = uniqueIDNoOp
 	}
+	if c.mapTableName == nil {
+		c.mapTableName = mapTableNameNoOp
+	}
 	// validate that DSN contains the utf8mb4 setting
 
 	// TODO: Validate that we run with utf8mb4 the normal utf8 is only 3 bytes
@@ -218,10 +225,18 @@ func (c *ConnPool) Options(opts ...ConnPoolOption) error {
 
 	for i, opt := range opts {
 		if opt.UniqueIDFn != nil {
-			opts[i].sortOrder = 8
+			opts[i].sortOrder = 8 // must be this number
 			opt := opt
 			opts[i].fn = func(cp *ConnPool) error {
 				cp.makeUniqueID = opt.UniqueIDFn
+				return nil
+			}
+		}
+		if opt.TableNameMapper != nil {
+			opts[i].sortOrder = 20 // just a number
+			opt := opt
+			opts[i].fn = func(cp *ConnPool) error {
+				cp.mapTableName = opt.TableNameMapper
 				return nil
 			}
 		}
@@ -285,7 +300,8 @@ func (c *ConnPool) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error
 			Log:          l,
 			makeUniqueID: c.makeUniqueID,
 		},
-		DB: dbTx,
+		DB:           dbTx,
+		mapTableName: c.mapTableName,
 	}, nil
 }
 
@@ -361,7 +377,8 @@ func (c *ConnPool) Conn(ctx context.Context) (*Conn, error) {
 			Log:          l,
 			makeUniqueID: c.makeUniqueID,
 		},
-		DB: dbc,
+		DB:           dbc,
+		mapTableName: c.mapTableName,
 	}, errors.WithStack(err)
 }
 
@@ -414,7 +431,8 @@ func (c *Conn) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 			Log:          l,
 			makeUniqueID: c.makeUniqueID,
 		},
-		DB: dbTx,
+		DB:           dbTx,
+		mapTableName: c.mapTableName,
 	}, nil
 }
 

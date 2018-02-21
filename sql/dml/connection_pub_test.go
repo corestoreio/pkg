@@ -16,6 +16,7 @@ package dml_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -25,6 +26,94 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestTableNameMapper(t *testing.T) {
+	t.Parallel()
+	dbc, dbMock := dmltest.MockDB(t, dml.ConnPoolOption{
+		TableNameMapper: func(old string) string { return fmt.Sprintf("prefix_%s", old) },
+	})
+	defer dmltest.MockClose(t, dbc, dbMock)
+
+	t.Run("ConnPool", func(t *testing.T) {
+
+		t.Run("DELETE", func(t *testing.T) {
+			dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("DELETE FROM `prefix_tableZ`")).WillReturnResult(sqlmock.NewResult(0, 0))
+			_, err := dbc.DeleteFrom("tableZ").WithArgs().ExecContext(context.TODO())
+			require.NoError(t, err)
+		})
+		t.Run("INSERT", func(t *testing.T) {
+			dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("INSERT INTO `prefix_tableZ` (`a`) VALUES (?)")).WillReturnResult(sqlmock.NewResult(0, 0))
+			_, err := dbc.InsertInto("tableZ").AddColumns("a").WithArgs().ExecContext(context.TODO())
+			require.NoError(t, err)
+		})
+		t.Run("UPDATE", func(t *testing.T) {
+			dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("UPDATE `prefix_tableZ` SET `a`=?")).WillReturnResult(sqlmock.NewResult(0, 0))
+			_, err := dbc.Update("tableZ").AddColumns("a").WithArgs().ExecContext(context.TODO())
+			require.NoError(t, err)
+		})
+		t.Run("SELECT", func(t *testing.T) {
+			dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT `a` FROM `prefix_tableZ`")).WillReturnRows(sqlmock.NewRows([]string{"a"}).AddRow(1))
+			_, _, err := dbc.SelectFrom("tableZ").AddColumns("a").WithArgs().LoadNullInt64(context.TODO())
+			require.NoError(t, err)
+		})
+	})
+
+	t.Run("Conn", func(t *testing.T) {
+		con, err := dbc.Conn(context.TODO())
+		require.NoError(t, err)
+		defer dmltest.Close(t, con)
+
+		t.Run("DELETE", func(t *testing.T) {
+			dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("DELETE FROM `prefix_tableZ`")).WillReturnResult(sqlmock.NewResult(0, 0))
+			_, err := con.DeleteFrom("tableZ").WithArgs().ExecContext(context.TODO())
+			require.NoError(t, err)
+		})
+		t.Run("INSERT", func(t *testing.T) {
+			dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("INSERT INTO `prefix_tableZ` (`a`) VALUES (?)")).WillReturnResult(sqlmock.NewResult(0, 0))
+			_, err := con.InsertInto("tableZ").AddColumns("a").WithArgs().ExecContext(context.TODO())
+			require.NoError(t, err)
+		})
+		t.Run("UPDATE", func(t *testing.T) {
+			dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("UPDATE `prefix_tableZ` SET `a`=?")).WillReturnResult(sqlmock.NewResult(0, 0))
+			_, err := con.Update("tableZ").AddColumns("a").WithArgs().ExecContext(context.TODO())
+			require.NoError(t, err)
+		})
+		t.Run("SELECT", func(t *testing.T) {
+			dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT `a` FROM `prefix_tableZ`")).WillReturnRows(sqlmock.NewRows([]string{"a"}).AddRow(1))
+			_, _, err := con.SelectFrom("tableZ").AddColumns("a").WithArgs().LoadNullInt64(context.TODO())
+			require.NoError(t, err)
+		})
+	})
+
+	t.Run("Tx", func(t *testing.T) {
+		dbMock.ExpectBegin()
+		tx, err := dbc.BeginTx(context.TODO(), nil)
+		require.NoError(t, err)
+		defer func() { dbMock.ExpectCommit(); require.NoError(t, tx.Commit()) }()
+
+		t.Run("DELETE", func(t *testing.T) {
+			dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("DELETE FROM `prefix_tableZ`")).WillReturnResult(sqlmock.NewResult(0, 0))
+			_, err := tx.DeleteFrom("tableZ").WithArgs().ExecContext(context.TODO())
+			require.NoError(t, err)
+		})
+		t.Run("INSERT", func(t *testing.T) {
+			dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("INSERT INTO `prefix_tableZ` (`a`) VALUES (?)")).WillReturnResult(sqlmock.NewResult(0, 0))
+			_, err := tx.InsertInto("tableZ").AddColumns("a").WithArgs().ExecContext(context.TODO())
+			require.NoError(t, err)
+		})
+		t.Run("UPDATE", func(t *testing.T) {
+			dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("UPDATE `prefix_tableZ` SET `a`=?")).WillReturnResult(sqlmock.NewResult(0, 0))
+			_, err := tx.Update("tableZ").AddColumns("a").WithArgs().ExecContext(context.TODO())
+			require.NoError(t, err)
+		})
+		t.Run("SELECT", func(t *testing.T) {
+			dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT `a` FROM `prefix_tableZ`")).WillReturnRows(sqlmock.NewRows([]string{"a"}).AddRow(1))
+			_, _, err := tx.SelectFrom("tableZ").AddColumns("a").WithArgs().LoadNullInt64(context.TODO())
+			require.NoError(t, err)
+		})
+	})
+
+}
 
 func TestTx_Wrap(t *testing.T) {
 	t.Parallel()

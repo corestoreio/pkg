@@ -106,19 +106,24 @@ func newSelect(db QueryExecPreparer, idFn uniqueIDFn, l log.Logger, from []strin
 	return s
 }
 
-// SelectFrom creates a new Select with a connection from the pool.
+// SelectFrom creates a new Select with a connection from the pool. Mapping of
+// the table name is supported.
 func (c *ConnPool) SelectFrom(fromAlias ...string) *Select {
+	fromAlias[0] = c.mapTableName(fromAlias[0])
 	return newSelect(c.DB, c.makeUniqueID, c.Log, fromAlias)
 }
 
-// SelectFrom creates a new Select in a dedicated connection.
+// SelectFrom creates a new Select in a dedicated connection. Mapping of the
+// table name is supported.
 func (c *Conn) SelectFrom(fromAlias ...string) *Select {
+	fromAlias[0] = c.mapTableName(fromAlias[0])
 	return newSelect(c.DB, c.makeUniqueID, c.Log, fromAlias)
 }
 
 // SelectFrom creates a new Select that select that given columns bound to the
-// transaction.
+// transaction. Mapping of the table name is supported.
 func (tx *Tx) SelectFrom(fromAlias ...string) *Select {
+	fromAlias[0] = tx.mapTableName(fromAlias[0])
 	return newSelect(tx.DB, tx.makeUniqueID, tx.Log, fromAlias)
 }
 

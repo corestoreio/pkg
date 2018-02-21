@@ -115,19 +115,22 @@ func newInsertInto(db QueryExecPreparer, idFn uniqueIDFn, l log.Logger, into str
 	}
 }
 
-// InsertInto instantiates a Insert for the given table
+// InsertInto instantiates a Insert for the given table. Mapping the table name
+// is supported.
 func (c *ConnPool) InsertInto(into string) *Insert {
-	return newInsertInto(c.DB, c.makeUniqueID, c.Log, into)
+	return newInsertInto(c.DB, c.makeUniqueID, c.Log, c.mapTableName(into))
 }
 
-// InsertInto instantiates a Insert for the given table
+// InsertInto instantiates a Insert for the given table. Mapping the table name
+// is supported.
 func (c *Conn) InsertInto(into string) *Insert {
-	return newInsertInto(c.DB, c.makeUniqueID, c.Log, into)
+	return newInsertInto(c.DB, c.makeUniqueID, c.Log, c.mapTableName(into))
 }
 
-// InsertInto instantiates a Insert for the given table bound to a transaction
+// InsertInto instantiates a Insert for the given table bound to a transaction.
+// Mapping the table name is supported.
 func (tx *Tx) InsertInto(into string) *Insert {
-	return newInsertInto(tx.DB, tx.makeUniqueID, tx.Log, into)
+	return newInsertInto(tx.DB, tx.makeUniqueID, tx.Log, tx.mapTableName(into))
 }
 
 // WithDB sets the database query object.

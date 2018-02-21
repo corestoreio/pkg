@@ -90,21 +90,22 @@ func newDeleteFrom(db QueryExecPreparer, idFn uniqueIDFn, l log.Logger, from str
 	}
 }
 
-// DeleteFrom creates a new Delete for the given table
+// DeleteFrom creates a new Delete for the given table. Mapping the table name
+// is supported.
 func (c *ConnPool) DeleteFrom(from string) *Delete {
-	return newDeleteFrom(c.DB, c.makeUniqueID, c.Log, from)
+	return newDeleteFrom(c.DB, c.makeUniqueID, c.Log, c.mapTableName(from))
 }
 
-// DeleteFrom creates a new Delete for the given table
-// in the context for a single database connection.
+// DeleteFrom creates a new Delete for the given table in the context for a
+// single database connection. Mapping the table name is supported.
 func (c *Conn) DeleteFrom(from string) *Delete {
-	return newDeleteFrom(c.DB, c.makeUniqueID, c.Log, from)
+	return newDeleteFrom(c.DB, c.makeUniqueID, c.Log, c.mapTableName(from))
 }
 
-// DeleteFrom creates a new Delete for the given table
-// in the context for a transaction
+// DeleteFrom creates a new Delete for the given table in the context for a
+// transaction. Mapping the table name is supported.
 func (tx *Tx) DeleteFrom(from string) *Delete {
-	return newDeleteFrom(tx.DB, tx.makeUniqueID, tx.Log, from)
+	return newDeleteFrom(tx.DB, tx.makeUniqueID, tx.Log, tx.mapTableName(from))
 }
 
 // FromTables specifies additional tables to delete from besides the default table.

@@ -64,17 +64,17 @@ func newUpdate(db QueryExecPreparer, idFn uniqueIDFn, l log.Logger, table string
 // Update creates a new Update for the given table with a random connection from
 // the pool.
 func (c *ConnPool) Update(table string) *Update {
-	return newUpdate(c.DB, c.makeUniqueID, c.Log, table)
+	return newUpdate(c.DB, c.makeUniqueID, c.Log, c.mapTableName(table))
 }
 
 // Update creates a new Update for the given table bound to a single connection.
 func (c *Conn) Update(table string) *Update {
-	return newUpdate(c.DB, c.makeUniqueID, c.Log, table)
+	return newUpdate(c.DB, c.makeUniqueID, c.Log, c.mapTableName(table))
 }
 
 // Update creates a new Update for the given table bound to a transaction.
 func (tx *Tx) Update(table string) *Update {
-	return newUpdate(tx.DB, tx.makeUniqueID, tx.Log, table)
+	return newUpdate(tx.DB, tx.makeUniqueID, tx.Log, tx.mapTableName(table))
 }
 
 // Alias sets an alias for the table name.
