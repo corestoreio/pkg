@@ -32,7 +32,7 @@ type uniqueIDFn func() string
 func uniqueIDNoOp() string             { return "" }
 func mapTableNameNoOp(n string) string { return n }
 
-type logWithID struct {
+type connCommon struct {
 	start time.Time
 	Log   log.Logger
 	// makeUniqueID generates for each call a new unique ID. Those IDs will be
@@ -43,15 +43,15 @@ type logWithID struct {
 	// into the SQL string. The returned string must not contain the
 	// comment-end-termination pattern: `*/`.
 	makeUniqueID uniqueIDFn
+	mapTableName func(oldName string) (newName string)
 }
 
 // ConnPool at a connection to the database with an EventReceiver to send
 // events, errors, and timings to
 type ConnPool struct {
-	logWithID
-	DB           *sql.DB
-	mapTableName func(oldName string) (newName string)
-	dsn          string
+	connCommon
+	DB  *sql.DB
+	dsn string
 }
 
 // Conn represents a single database session rather a pool of database sessions.
@@ -64,9 +64,8 @@ type ConnPool struct {
 // After a call to Close, all operations on the connection fail with
 // ErrConnDone.
 type Conn struct {
-	logWithID
-	DB           *sql.Conn
-	mapTableName func(oldName string) (newName string)
+	connCommon
+	DB *sql.Conn
 }
 
 // Tx is an in-progress database transaction.
@@ -81,9 +80,8 @@ type Conn struct {
 // Practical Guide to SQL Transaction Isolation:
 // https://begriffs.com/posts/2017-08-01-practical-guide-sql-isolation.html
 type Tx struct {
-	logWithID
-	DB           *sql.Tx
-	mapTableName func(oldName string) (newName string)
+	connCommon
+	DB *sql.Tx
 }
 
 // ConnPoolOption can be used at an argument in NewConnPool to configure a
@@ -295,13 +293,13 @@ func (c *ConnPool) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error
 		}
 	}
 	return &Tx{
-		logWithID: logWithID{
+		connCommon: connCommon{
 			start:        start,
 			Log:          l,
 			makeUniqueID: c.makeUniqueID,
+			mapTableName: c.mapTableName,
 		},
-		DB:           dbTx,
-		mapTableName: c.mapTableName,
+		DB: dbTx,
 	}, nil
 }
 
@@ -372,13 +370,13 @@ func (c *ConnPool) Conn(ctx context.Context) (*Conn, error) {
 		l = c.Log.With(log.String("conn_id", c.makeUniqueID()))
 	}
 	return &Conn{
-		logWithID: logWithID{
+		connCommon: connCommon{
 			start:        now(),
 			Log:          l,
 			makeUniqueID: c.makeUniqueID,
+			mapTableName: c.mapTableName,
 		},
-		DB:           dbc,
-		mapTableName: c.mapTableName,
+		DB: dbc,
 	}, errors.WithStack(err)
 }
 
@@ -426,13 +424,13 @@ func (c *Conn) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 		}
 	}
 	return &Tx{
-		logWithID: logWithID{
+		connCommon: connCommon{
 			start:        start,
 			Log:          l,
 			makeUniqueID: c.makeUniqueID,
+			mapTableName: c.mapTableName,
 		},
-		DB:           dbTx,
-		mapTableName: c.mapTableName,
+		DB: dbTx,
 	}, nil
 }
 

@@ -85,8 +85,10 @@ func NewSelectWithDerivedTable(subSelect *Select, aliasName string) *Select {
 	}
 }
 
-func newSelect(db QueryExecPreparer, idFn uniqueIDFn, l log.Logger, from []string) *Select {
-	id := idFn()
+func newSelect(db QueryExecPreparer, cCom *connCommon, from []string) *Select {
+	id := cCom.makeUniqueID()
+	from[0] = cCom.mapTableName(from[0])
+	l := cCom.Log
 	if l != nil {
 		l = l.With(log.String("select_id", id), log.String("table", from[0]))
 	}
@@ -109,22 +111,19 @@ func newSelect(db QueryExecPreparer, idFn uniqueIDFn, l log.Logger, from []strin
 // SelectFrom creates a new Select with a connection from the pool. Mapping of
 // the table name is supported.
 func (c *ConnPool) SelectFrom(fromAlias ...string) *Select {
-	fromAlias[0] = c.mapTableName(fromAlias[0])
-	return newSelect(c.DB, c.makeUniqueID, c.Log, fromAlias)
+	return newSelect(c.DB, &c.connCommon, fromAlias)
 }
 
 // SelectFrom creates a new Select in a dedicated connection. Mapping of the
 // table name is supported.
 func (c *Conn) SelectFrom(fromAlias ...string) *Select {
-	fromAlias[0] = c.mapTableName(fromAlias[0])
-	return newSelect(c.DB, c.makeUniqueID, c.Log, fromAlias)
+	return newSelect(c.DB, &c.connCommon, fromAlias)
 }
 
 // SelectFrom creates a new Select that select that given columns bound to the
 // transaction. Mapping of the table name is supported.
 func (tx *Tx) SelectFrom(fromAlias ...string) *Select {
-	fromAlias[0] = tx.mapTableName(fromAlias[0])
-	return newSelect(tx.DB, tx.makeUniqueID, tx.Log, fromAlias)
+	return newSelect(tx.DB, &tx.connCommon, fromAlias)
 }
 
 // WithDB sets the database query object.
