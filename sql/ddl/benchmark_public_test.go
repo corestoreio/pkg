@@ -184,18 +184,21 @@ func BenchmarkVariables(b *testing.B) {
 	defer dmltest.Close(b, db)
 
 	vars := ddl.NewVariables("innodb%")
+	qba := db.WithQueryBuilder(vars)
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := dml.Load(ctx, db.DB, vars, vars)
+		_, err := qba.Load(ctx, vars)
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
+		qba.Reset()
 	}
 
-	if "Barracuda" != vars.Data["innodb_file_format"] {
-		b.Fatalf("storage_engine variable should be Barracuda, got: %q", vars.Data["innodb_file_format"])
+	if "ib_buffer_pool" != vars.Data["innodb_buffer_pool_filename"] {
+		b.Fatalf("storage_engine variable should be ib_buffer_pool, got: %q", vars.Data["innodb_buffer_pool_filename"])
 	}
-	if ld := len(vars.Data); 186 != ld {
+	if ld := len(vars.Data); ld <= 150 { // MySQL 186
 		b.Fatalf("InnoDB Variables should count 186 but found %d", ld)
 	}
 }

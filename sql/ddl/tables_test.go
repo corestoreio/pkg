@@ -152,7 +152,7 @@ func TestTables_RowScan_Integration(t *testing.T) {
 	tm0 := ddl.MustNewTables(
 		ddl.WithTable("admin_user"),
 	)
-	_, err := dml.Load(context.TODO(), dbc.DB, tm0, tm0)
+	_, err := dbc.WithQueryBuilder(tm0).Load(context.TODO(), tm0)
 	require.NoError(t, err)
 
 	table := tm0.MustTable("admin_user")
@@ -180,7 +180,7 @@ func TestTables_RowScan_Mock(t *testing.T) {
 	tm0 := ddl.MustNewTables(
 		ddl.WithTable("admin_user"),
 	)
-	_, err := dml.Load(context.TODO(), dbc.DB, tm0, tm0)
+	_, err := dbc.WithQueryBuilder(tm0).Load(context.TODO(), tm0)
 	require.NoError(t, err)
 
 	table := tm0.MustTable("admin_user")

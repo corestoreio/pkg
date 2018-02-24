@@ -60,10 +60,10 @@ func (t *Table) update() *Table {
 		return t
 	}
 
-	t.selectAllCache = &dml.Select{
-		// Columns: t.AllColumnAliasQuote(MainTable), // TODO refactor
-		//Table: dml.MakeIdentifier(t.Name, MainTable),
-	}
+	//t.selectAllCache = &dml.Select{
+	//	// Columns: t.AllColumnAliasQuote(MainTable), // TODO refactor
+	//	//Table: dml.MakeIdentifier(t.Name, MainTable),
+	//}
 
 	return t
 }
@@ -80,7 +80,8 @@ func (t *Table) resetColumns() {
 	t.Columns = t.Columns[:0]
 }
 
-// MapColumns implements dml.ColumnMapper interface.
+// MapColumns implements dml.ColumnMapper interface to read column values from a
+// query with table information_schema.COLUMNS.
 func (t *Table) MapColumns(rc *dml.ColumnMap) error {
 	if rc.Count == 0 {
 		t.resetColumns()
@@ -96,12 +97,6 @@ func (t *Table) MapColumns(rc *dml.ColumnMap) error {
 	}
 
 	t.Columns = append(t.Columns, c)
-	return nil
-}
-
-// ScanClose closes the RowScan. ScanClose gets called automatically.
-func (t *Table) ScanClose() error {
-	t.update()
 	return nil
 }
 
@@ -194,17 +189,15 @@ func (t *Table) Drop(ctx context.Context, execer dml.Execer) error {
 	return errors.Wrapf(err, "[ddl] failed to drop table %q", t.Name)
 }
 
-// Load performs a SELECT * FROM `tableName` query and puts the results
-// into the pointer slice `dest`. Returns the number of loaded rows and nil or 0
-// and an error. The variadic third arguments can modify the SQL query.
-func (t *Table) Load(ctx context.Context, db dml.Querier, dest interface{}, listeners ...dml.Listen) (int, error) {
-	//sb := t.Select()
-	//sb.DB.Querier = db
-	//sb.Listeners.Merge(t.Listeners.Select)
-	//sb.Listeners.Add(listeners...)
-	//return sb.LoadStructs(ctx, dest)
-	return 0, nil
-}
+//func (t *Table) UpdateOrCreate() *dml.Artisan {
+//	// TODO rethink this and the overall concept of the Listeners
+//	//sb := t.Select()
+//	//sb.DB.Querier = db
+//	//sb.Listeners.Merge(t.Listeners.Select)
+//	//sb.Listeners.Add(listeners...)
+//	//return sb.LoadStructs(ctx, dest)
+//	return nil
+//}
 
 // InfileOptions provides options for the function LoadDataInfile. Some columns
 // are self-describing.

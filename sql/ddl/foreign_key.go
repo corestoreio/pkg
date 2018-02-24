@@ -139,9 +139,9 @@ func (cc KeyColumnUsageCollection) MapColumns(cm *dml.ColumnMap) error {
 		for cm.Next() {
 			switch c := cm.Column(); c {
 			case "TABLE_NAME":
-				cm.Args = cm.Args.Strings(cc.TableNames()...)
+				cm.Strings(cc.TableNames()...)
 			case "COLUMN_NAME":
-				cm.Args = cm.Args.Strings(cc.ColumnNames()...)
+				cm.Strings(cc.ColumnNames()...)
 			default:
 				return errors.NotFound.Newf("[testdata] KeyColumnUsageCollection Column %q not found", c)
 			}

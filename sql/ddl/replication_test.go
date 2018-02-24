@@ -59,7 +59,7 @@ func TestShowMasterStatus(t *testing.T) {
 	dbMock.ExpectQuery("SHOW MASTER STATUS").WillReturnRows(mockedRows)
 
 	v := new(ddl.MasterStatus)
-	_, err := dml.Load(context.TODO(), dbc.DB, v, v)
+	_, err := dbc.WithQueryBuilder(v).Load(context.TODO(), v)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}

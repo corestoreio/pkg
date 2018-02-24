@@ -270,6 +270,9 @@ func (tm *Tables) MustTable(name string) *Table {
 func (tm *Tables) Tables(ret ...string) []string {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
+	if len(tm.tm) == 0 {
+		return ret
+	}
 	if ret == nil {
 		ret = make([]string, 0, len(tm.tm))
 	}
@@ -375,18 +378,8 @@ func (tm *Tables) Close() error {
 // ToSQL returns the SQL string for loading the column definitions of either all
 // tables or of the already created Table objects.
 func (tm *Tables) ToSQL() (string, []interface{}, error) {
-	tm.mu.Lock()
-	defer tm.mu.Unlock()
-
-	query := selAllTablesColumns
-	var arg dml.Arguments
-	if ltm := len(tm.tm); ltm > 0 {
-		query = selTablesColumns
-		tables := make([]string, 0, ltm)
-		for name := range tm.tm {
-			tables = append(tables, name)
-		}
-		arg = arg.Strings(tables...)
+	if tn := tm.Tables(); len(tn) > 0 {
+		return dml.Interpolate(selTablesColumns).Strs(tn...).ToSQL()
 	}
-	return dml.Interpolate(query).ArgUnions(arg).ToSQL()
+	return dml.QuerySQL(selAllTablesColumns).ToSQL()
 }

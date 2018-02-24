@@ -34,7 +34,7 @@ type Variables struct {
 func NewVariables(names ...string) *Variables {
 	vs := &Variables{
 		Data: make(map[string]string),
-		Show: dml.NewShow().Variable().Interpolate(),
+		Show: dml.NewShow().Variable(),
 	}
 	if len(names) > 1 {
 		vs.Show.Where(dml.Column("Variable_name").In().Strs(names...))

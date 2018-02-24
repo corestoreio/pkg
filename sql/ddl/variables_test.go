@@ -37,7 +37,7 @@ func TestNewVariables_Integration(t *testing.T) {
 	defer dmltest.Close(t, db)
 
 	vs := NewVariables()
-	_, err := dml.Load(context.TODO(), db.DB, vs, vs)
+	_, err := db.WithQueryBuilder(vs).Load(context.TODO(), vs)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
@@ -59,7 +59,7 @@ func TestNewVariables_Mock(t *testing.T) {
 			WillReturnRows(mockedRows)
 
 		vs := NewVariables("keyVal11")
-		rc, err := dml.Load(context.TODO(), dbc.DB, vs, vs)
+		rc, err := dbc.WithQueryBuilder(vs).Load(context.TODO(), vs)
 		if err != nil {
 			t.Fatalf("%+v", err)
 		}
@@ -77,7 +77,7 @@ func TestNewVariables_Mock(t *testing.T) {
 			WillReturnRows(mockedRows)
 
 		vs := NewVariables("keyVal11", "keyVal22")
-		rc, err := dml.Load(context.TODO(), dbc.DB, vs, vs)
+		rc, err := dbc.WithQueryBuilder(vs).Load(context.TODO(), vs)
 		if err != nil {
 			t.Fatalf("%+v", err)
 		}
