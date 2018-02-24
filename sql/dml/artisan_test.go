@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -400,5 +401,20 @@ func TestArguments_NextUnnamedArg(t *testing.T) {
 		require.False(t, ok, "Should NOT find an unnamed argument")
 		assert.Exactly(t, argument{}, a)
 	})
+}
+
+func TestArtisan_Clone(t *testing.T) {
+	t.Parallel()
+	sel := NewSelect("a", "b").From("c").WithDB(dbMock{})
+	sel.qualifiedColumns = []string{"x", "y"}
+	selA := sel.WithArgs()
+	selA.base.Log = log.BlackHole{}
+
+	selB := selA.Clone()
+	assert.Nil(t, selB.base.DB)
+	assert.Exactly(t, selA.base.Log, selB.base.Log)
+	assert.Exactly(t, selA.base.cachedSQL, selB.base.cachedSQL)
+
+	assert.Exactly(t, selA.QualifiedColumnsAliases, selB.QualifiedColumnsAliases)
 
 }

@@ -530,6 +530,21 @@ func (a *Artisan) WithTx(tx *Tx) *Artisan {
 	return a
 }
 
+// Clone creates a shallow clone of the current pointer and sets the field `DB`
+// to nil. The logger gets copied. Some underlying slices for the cached SQL
+// statements are still referring to the source Artisan object.
+func (a *Artisan) Clone() *Artisan {
+	c := new(Artisan)
+	*c = *a
+
+	c.raw = nil
+	c.arguments = make(arguments, 0, len(a.arguments))
+	c.recs = nil
+	c.base.DB = nil
+
+	return c
+}
+
 /*****************************************************************************************************
 	LOAD / QUERY and EXEC functions
 *****************************************************************************************************/
