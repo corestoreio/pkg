@@ -65,6 +65,14 @@ func MakeIdentifier(name string) id { return id{Name: name} }
 // Alias sets the aliased name for the `Name` field.
 func (a id) Alias(alias string) id { a.Aliased = alias; return a }
 
+// Clone creates a new object and takes care of a cloned DerivedTable field.
+func (a id) Clone() id {
+	if nil != a.DerivedTable {
+		a.DerivedTable = a.DerivedTable.Clone()
+	}
+	return a
+}
+
 // uncomment this functions and its test once needed
 // MakeExpressionAlias creates a new unquoted expression with an optional alias
 // `a`, which can be empty.
@@ -135,6 +143,17 @@ func (a id) writeQuoted(w *bytes.Buffer, placeHolders []string) (_ []string, err
 
 // ids is a slice of identifiers. `idc` in the receiver means id-collection.
 type ids []id
+
+func (idc ids) Clone() ids {
+	if idc == nil {
+		return nil
+	}
+	c := make(ids, len(idc))
+	for idx, ido := range idc {
+		c[idx] = ido.Clone()
+	}
+	return c
+}
 
 // writeQuoted writes all identifiers comma separated and quoted into w.
 func (idc ids) writeQuoted(w *bytes.Buffer, placeHolders []string) (_ []string, err error) {
@@ -437,4 +456,13 @@ func mapAlNum(r rune) bool {
 		ok = true
 	}
 	return ok
+}
+
+func cloneStringSlice(sl []string) []string {
+	if sl == nil {
+		return nil
+	}
+	c := make([]string, len(sl))
+	copy(c, sl)
+	return c
 }

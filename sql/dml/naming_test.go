@@ -109,3 +109,26 @@ func TestIsValidIdentifier2(t *testing.T) {
 	assert.True(t, errors.NotValid.Match(IsValidIdentifier("DATE_FORMAT(t3.period, '%Y-%m-01')")))
 	assert.NoError(t, IsValidIdentifier("table.col"))
 }
+
+func TestIds_Clone(t *testing.T) {
+	t.Parallel()
+
+	t.Run("non-nil", func(t *testing.T) {
+		c := MakeIdentifier("c")
+		c.DerivedTable = NewSelect("x", "y").From("z")
+		names := ids{
+			MakeIdentifier("a"),
+			MakeIdentifier("b").Alias("b2"),
+			c,
+		}
+		names2 := names.Clone()
+		notEqualPointers(t, names, names2)
+		notEqualPointers(t, names[2].DerivedTable, names2[2].DerivedTable)
+	})
+
+	t.Run("nil", func(t *testing.T) {
+		var names ids
+		names2 := names.Clone()
+		assert.Nil(t, names2)
+	})
+}

@@ -449,3 +449,62 @@ func TestCondition_Sub(t *testing.T) {
 		"SELECT `id`, `first_name`, `last_name` FROM `dml_fake_person` WHERE (RAND() < (SELECT ((? / COUNT(*)) * 10) FROM `dml_fake_person`)) ORDER BY RAND() LIMIT 40",
 	)
 }
+
+func TestConditions_Clone(t *testing.T) {
+	t.Parallel()
+
+	t.Run("non-nil", func(t *testing.T) {
+		cnd := Conditions{
+			Column("a").Equal().Float64(3.141),
+			Column("b").Sub(NewSelect("x", "y").From("z")),
+			Columns("g", "h", "i"),
+			nil,
+		}
+		cnd2 := cnd.Clone()
+
+		notEqualPointers(t, cnd, cnd2)
+		assert.NotEqual(t, fmt.Sprintf("%#v", cnd), fmt.Sprintf("%#v", cnd2))
+		// A weird case is that reflect.DeepEqual does execute ToSQL and hence fills
+		// the internal cache field `cachedSQL`. Panicing before writing to field
+		// `cachedSQL` does not work because of an internal recover in
+		// reflect.DeepEqual.
+		notEqualPointers(t, cnd[1].Right.Sub, cnd2[1].Right.Sub)
+
+		assert.Exactly(t, cnd[2].Columns, cnd2[2].Columns)
+		cnd2[2].Columns = cnd2[2].Columns[:0]
+		cnd2[2].Columns = append(cnd2[2].Columns, "j", "k")
+
+		assert.Exactly(t, []string{"g", "h", "i"}, cnd[2].Columns)
+		assert.Exactly(t, []string{"j", "k"}, cnd2[2].Columns)
+	})
+
+	t.Run("nil", func(t *testing.T) {
+		var cnd Conditions
+		cnd2 := cnd.Clone()
+		assert.Nil(t, cnd2)
+	})
+}
+
+func TestJoins_Clone(t *testing.T) {
+	t.Parallel()
+
+	jn := Joins{
+		&join{
+			JoinType: "LEFT",
+			Table:    MakeIdentifier("tableX"),
+			On: Conditions{
+				Column("a").Equal().Float64(3.141),
+				Columns("g", "h", "i"),
+			},
+		},
+		nil,
+	}
+	jn2 := jn.Clone()
+
+	assert.Exactly(t, jn, jn2)
+
+	notEqualPointers(t, jn[0], jn2[0])
+	notEqualPointers(t, jn[0].On[0], jn2[0].On[0])
+	notEqualPointers(t, jn[0].On[1].Columns, jn2[0].On[1].Columns)
+
+}

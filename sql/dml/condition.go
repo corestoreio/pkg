@@ -150,6 +150,56 @@ func (o Op) write(w *bytes.Buffer, args arguments) (err error) {
 	return
 }
 
+// Conditions provides a list where the left hand side gets an assignment from
+// the right hand side. Mostly used in
+type Conditions []*Condition
+
+// Clone creates a clone of the current object.
+func (cs Conditions) Clone() Conditions {
+	if cs == nil {
+		return nil
+	}
+	cs2 := make(Conditions, len(cs))
+	for i, c := range cs {
+		cs2[i] = c.Clone()
+	}
+	return cs2
+}
+
+// Joins defines multiple join conditions.
+type Joins []*join
+
+func (js Joins) Clone() Joins {
+	if js == nil {
+		return nil
+	}
+	c := make(Joins, len(js))
+	for i, j := range js {
+		c[i] = j.Clone()
+	}
+	return c
+}
+
+type join struct {
+	// JoinType can be LEFT, RIGHT, INNER, OUTER, CROSS or another word.
+	JoinType string
+	// Table name and alias of the table
+	Table id
+	// On join on those conditions
+	On Conditions
+}
+
+// Clone creates a new copy of the current object.
+func (j *join) Clone() *join {
+	if j == nil {
+		return nil
+	}
+	c := *j
+	c.Table = j.Table.Clone()
+	c.On = j.On.Clone()
+	return &c
+}
+
 // Condition implements a single condition often used in WHERE, ON, SET and ON
 // DUPLICATE KEY UPDATE. Please use the helper functions instead of using this
 // type directly.
@@ -203,20 +253,17 @@ type Condition struct {
 	Columns []string
 }
 
-// Conditions provides a list where the left hand side gets an assignment from
-// the right hand side. Mostly used in
-type Conditions []*Condition
-
-// Joins defines multiple join conditions.
-type Joins []*join
-
-type join struct {
-	// JoinType can be LEFT, RIGHT, INNER, OUTER, CROSS or another word.
-	JoinType string
-	// Table name and alias of the table
-	Table id
-	// On join on those conditions
-	On Conditions
+// Alias assigns an alias name to the condition.
+func (c *Condition) Clone() *Condition {
+	if c == nil {
+		return nil
+	}
+	c2 := *c
+	c2.previousErr = nil
+	c2.Right.args = c.Right.args.Clone()
+	c2.Right.Sub = c.Right.Sub.Clone()
+	c2.Columns = cloneStringSlice(c.Columns)
+	return &c2
 }
 
 // Alias assigns an alias name to the condition.
