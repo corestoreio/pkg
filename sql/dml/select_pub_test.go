@@ -25,6 +25,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/sync/bgwork"
@@ -620,4 +621,46 @@ func fib(n uint) uint {
 	} else {
 		return fib(n-1) + fib(n-2)
 	}
+}
+
+func TestSelect_Clone(t *testing.T) {
+	t.Parallel()
+
+	dbc, dbMock := dmltest.MockDB(t, dml.WithLogger(log.BlackHole{}, func() string { return "uniqueID" }))
+	defer dmltest.MockClose(t, dbc, dbMock)
+
+	t.Run("nil", func(t *testing.T) {
+		var s *dml.Select
+		s2 := s.Clone()
+		assert.Nil(t, s)
+		assert.Nil(t, s2)
+	})
+
+	t.Run("non-nil", func(t *testing.T) {
+		s := dbc.
+			SelectFrom("dml_people", "p1").AddColumns("p1.*").
+			AddColumnsAliases("p2.name", "p2Name", "p2.email", "p2Email").
+			RightJoin(
+				dml.MakeIdentifier("dml_people").Alias("p2"),
+				dml.Columns("id", "email"),
+			).
+			Where(
+				dml.Column("name").Like().PlaceHolder(),
+			).
+			OrderBy("email").
+			GroupBy("last_name").
+			Having(
+				dml.Column("income").LessOrEqual().PlaceHolder(),
+			)
+
+		s2 := s.Clone()
+		notEqualPointers(t, s, s2)
+		notEqualPointers(t, s.BuilderConditional.Wheres, s2.BuilderConditional.Wheres)
+		notEqualPointers(t, s.BuilderConditional.Joins, s2.BuilderConditional.Joins)
+		notEqualPointers(t, s.BuilderConditional.OrderBys, s2.BuilderConditional.OrderBys)
+		notEqualPointers(t, s.GroupBys, s2.GroupBys)
+		notEqualPointers(t, s.Havings, s2.Havings)
+		assert.Exactly(t, s.DB, s2.DB)
+		assert.Exactly(t, s.Log, s2.Log)
+	})
 }

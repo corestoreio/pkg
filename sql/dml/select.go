@@ -555,3 +555,18 @@ func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err 
 func (b *Select) Prepare(ctx context.Context) (*Stmt, error) {
 	return b.prepare(ctx, b.DB, b, dmlSourceSelect)
 }
+
+// Clone creates a clone of the current object, leaving fields DB and Log
+// untouched.
+func (b *Select) Clone() *Select {
+	if b == nil {
+		return nil
+	}
+	c := *b
+	c.BuilderBase = b.BuilderBase.Clone()
+	c.BuilderConditional = b.BuilderConditional.Clone()
+	c.Columns = b.Columns.Clone()
+	c.GroupBys = b.GroupBys.Clone()
+	c.Havings = b.Havings.Clone()
+	return &c
+}

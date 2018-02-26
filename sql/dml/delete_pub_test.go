@@ -20,6 +20,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
@@ -272,5 +273,34 @@ func TestDelete_Returning(t *testing.T) {
 			"",
 		)
 	})
+}
 
+func TestDelete_Clone(t *testing.T) {
+	t.Parallel()
+
+	dbc, dbMock := dmltest.MockDB(t, dml.WithLogger(log.BlackHole{}, func() string { return "uniqueID" }))
+	defer dmltest.MockClose(t, dbc, dbMock)
+
+	t.Run("nil", func(t *testing.T) {
+		var d *dml.Delete
+		d2 := d.Clone()
+		assert.Nil(t, d)
+		assert.Nil(t, d2)
+	})
+
+	t.Run("non-nil", func(t *testing.T) {
+		d := dbc.DeleteFrom("dml_people").Alias("dmlPpl").FromTables("a1", "b2").
+			Where(
+				dml.Column("id").PlaceHolder(),
+			).OrderBy("id")
+		d2 := d.Clone()
+		notEqualPointers(t, d, d2)
+		notEqualPointers(t, d, d2)
+		notEqualPointers(t, d.BuilderConditional.Wheres, d2.BuilderConditional.Wheres)
+		notEqualPointers(t, d.BuilderConditional.OrderBys, d2.BuilderConditional.OrderBys)
+		notEqualPointers(t, d.MultiTables, d2.MultiTables)
+		assert.Exactly(t, d.DB, d2.DB)
+		assert.Exactly(t, d.Log, d2.Log)
+
+	})
 }
