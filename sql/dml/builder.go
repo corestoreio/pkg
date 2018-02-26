@@ -115,6 +115,15 @@ type builderCommon struct {
 // reviewing some M2 SQL queries.
 const estimatedCachedSQLSize = 1024
 
+// rwLocker exists only to avoid complaints of `go vet`. It throws false positive
+// warnings. Fix later, somehow.
+type rwLocker interface {
+	RLock()
+	RUnlock()
+	Lock()
+	Unlock()
+}
+
 // BuilderBase contains fields which all SQL query builder have in common, the
 // same base. Exported for documentation reasons.
 type BuilderBase struct {
@@ -131,8 +140,17 @@ type BuilderBase struct {
 	// this position.
 	propagationStoppedAt int
 
-	rwmu sync.RWMutex // also protects the whole SQL string building process
+	rwmu rwLocker // also protects the whole SQL string building process
 	builderCommon
+}
+
+// Clone creates a clone of the current object.
+func (bb BuilderBase) Clone() BuilderBase {
+	cc := bb
+	cc.Table = bb.Table.Clone()
+	cc.rwmu = &sync.RWMutex{}
+	cc.builderCommon.qualifiedColumns = cloneStringSlice(bb.builderCommon.qualifiedColumns)
+	return cc
 }
 
 // buildToSQL builds the raw SQL string and caches it as a byte slice. It gets
@@ -200,6 +218,9 @@ func (bb *BuilderBase) readBuildCache() (sql []byte) {
 // collecting arguments and later querying.
 func (bb *BuilderBase) withArtisan(qb queryBuilder) *Artisan {
 	var args [defaultArgumentsCapacity]argument
+	if bb.rwmu == nil {
+		bb.rwmu = &sync.RWMutex{}
+	}
 	bb.rwmu.Lock()
 	sqlBytes, err := bb.buildToSQL(qb) // sqlBytes owned by buildToSQL
 	a := Artisan{
@@ -224,6 +245,14 @@ type BuilderConditional struct {
 	OrderByRandColumnName string
 	LimitCount            uint64
 	LimitValid            bool
+}
+
+func (b BuilderConditional) Clone() BuilderConditional {
+	c := b
+	c.Joins = b.Joins.Clone()
+	c.Wheres = b.Wheres.Clone()
+	c.OrderBys = b.OrderBys.Clone()
+	return c
 }
 
 func (b *BuilderConditional) join(j string, t id, on ...*Condition) {
