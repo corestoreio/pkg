@@ -317,3 +317,25 @@ func TestDelete_Bind(t *testing.T) {
 		)
 	})
 }
+
+func TestDelete_Clone(t *testing.T) {
+	t.Parallel()
+
+	t.Run("nil", func(t *testing.T) {
+		var d *Delete
+		d2 := d.Clone()
+		assert.Nil(t, d)
+		assert.Nil(t, d2)
+	})
+	t.Run("non-nil", func(t *testing.T) {
+		d := NewDelete("dml_people").Alias("dmlPpl").FromTables("a1", "b2").
+			Where(
+				Column("id").PlaceHolder(),
+			).OrderBy("id")
+		d2 := d.Clone()
+		notEqualPointers(t, d, d2)
+		notEqualPointers(t, d, d2)
+		notEqualPointers(t, d.BuilderConditional.Wheres, d2.BuilderConditional.Wheres)
+		notEqualPointers(t, d.MultiTables, d2.MultiTables)
+	})
+}
