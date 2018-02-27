@@ -94,7 +94,11 @@ type Insert struct {
 
 // NewInsert creates a new Insert object.
 func NewInsert(into string) *Insert {
+	var rwmu sync.RWMutex
 	return &Insert{
+		BuilderBase: BuilderBase{
+			rwmu: &rwmu,
+		},
 		Into: into,
 	}
 }
@@ -106,8 +110,10 @@ func newInsertInto(db QueryExecPreparer, cCom *connCommon, into string) *Insert 
 	if l != nil {
 		l = l.With(log.String("insert_id", id), log.String("table", into))
 	}
+	var rwmu sync.RWMutex
 	return &Insert{
 		BuilderBase: BuilderBase{
+			rwmu: &rwmu,
 			builderCommon: builderCommon{
 				id:  id,
 				Log: l,
@@ -252,9 +258,6 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 // cases type Insert needs to know the RowCount to build the appropriate amount
 // of placeholders.
 func (b *Insert) WithArgs() *Artisan {
-	if b.rwmu == nil {
-		b.rwmu = &sync.RWMutex{}
-	}
 	var pairArgs arguments
 	b.rwmu.RLock()
 	isSelect := b.Select != nil // b.withArtisan unsets the Select field if caching is enabled

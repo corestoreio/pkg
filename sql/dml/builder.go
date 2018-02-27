@@ -146,9 +146,10 @@ type BuilderBase struct {
 
 // Clone creates a clone of the current object.
 func (bb BuilderBase) Clone() BuilderBase {
+	var rwmu sync.RWMutex
 	cc := bb
 	cc.Table = bb.Table.Clone()
-	cc.rwmu = &sync.RWMutex{}
+	cc.rwmu = &rwmu
 	cc.builderCommon.qualifiedColumns = cloneStringSlice(bb.builderCommon.qualifiedColumns)
 	return cc
 }
@@ -219,7 +220,8 @@ func (bb *BuilderBase) readBuildCache() (sql []byte) {
 func (bb *BuilderBase) withArtisan(qb queryBuilder) *Artisan {
 	var args [defaultArgumentsCapacity]argument
 	if bb.rwmu == nil {
-		bb.rwmu = &sync.RWMutex{}
+		var rwmu sync.RWMutex
+		bb.rwmu = &rwmu
 	}
 	bb.rwmu.Lock()
 	sqlBytes, err := bb.buildToSQL(qb) // sqlBytes owned by buildToSQL
