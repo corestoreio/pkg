@@ -21,6 +21,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
@@ -340,5 +341,59 @@ func TestInsert_BuildValues(t *testing.T) {
 			"",
 		)
 	})
+}
 
+func TestInsert_Clone(t *testing.T) {
+	t.Parallel()
+
+	dbc, dbMock := dmltest.MockDB(t, dml.WithLogger(log.BlackHole{}, func() string { return "uniqueID" }))
+	defer dmltest.MockClose(t, dbc, dbMock)
+
+	t.Run("nil", func(t *testing.T) {
+		var i *dml.Insert
+		i2 := i.Clone()
+		assert.Nil(t, i)
+		assert.Nil(t, i2)
+	})
+
+	t.Run("non-nil AddColumns", func(t *testing.T) {
+		i := dbc.InsertInto("dml_people").AddColumns("name", "email")
+
+		i2 := i.Clone()
+		notEqualPointers(t, i, i2)
+		notEqualPointers(t, i.Columns, i2.Columns)
+		assert.Exactly(t, i.Pairs, i2.Pairs)
+		assert.Exactly(t, i.RecordPlaceHolderCount, i2.RecordPlaceHolderCount)
+		assert.Exactly(t, i.DB, i2.DB)
+		assert.Exactly(t, i.Log, i2.Log)
+	})
+	t.Run("non-nil AddColumns", func(t *testing.T) {
+		i := dbc.InsertInto("dml_people").WithPairs(
+			dml.Column("name").Str("Hans"),
+			dml.Column("age").Int(79),
+		)
+
+		i2 := i.Clone()
+		notEqualPointers(t, i, i2)
+		assert.Exactly(t, i.Columns, i2.Columns)
+		notEqualPointers(t, i.Pairs, i2.Pairs)
+		assert.Exactly(t, i.RecordPlaceHolderCount, i2.RecordPlaceHolderCount)
+		assert.Exactly(t, i.DB, i2.DB)
+		assert.Exactly(t, i.Log, i2.Log)
+	})
+	t.Run("non-nil OnDulicateKey", func(t *testing.T) {
+
+		i := dml.NewInsert("a").
+			AddColumns("something_id", "user_id", "other").
+			AddOnDuplicateKey(
+				dml.Column("something_id").Int64(99),
+				dml.Column("user_id").Values(),
+			)
+		i2 := i.Clone()
+		notEqualPointers(t, i, i2)
+		assert.Exactly(t, i.Columns, i2.Columns)
+		assert.False(t, i2.IsOnDuplicateKey, "Should be false i2.IsOnDuplicateKey")
+		assert.Exactly(t, i.IsOnDuplicateKey, i2.IsOnDuplicateKey)
+		notEqualPointers(t, i.OnDuplicateKeys, i2.OnDuplicateKeys)
+	})
 }

@@ -513,6 +513,15 @@ func MakeArgs(cap int) *Artisan { return &Artisan{arguments: make(arguments, 0, 
 
 type arguments []argument
 
+func (as arguments) Clone() arguments {
+	if as == nil {
+		return nil
+	}
+	c := make(arguments, len(as))
+	copy(c, as)
+	return c
+}
+
 // multiplyArguments is only applicable when using *Union as a template.
 // multiplyArguments repeats the `args` variable n-times to match the number of
 // generated SELECT queries in the final UNION statement. It should be called

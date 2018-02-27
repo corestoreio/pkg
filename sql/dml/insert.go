@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
@@ -251,7 +252,9 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 // cases type Insert needs to know the RowCount to build the appropriate amount
 // of placeholders.
 func (b *Insert) WithArgs() *Artisan {
-
+	if b.rwmu == nil {
+		b.rwmu = &sync.RWMutex{}
+	}
 	var pairArgs arguments
 	b.rwmu.RLock()
 	isSelect := b.Select != nil // b.withArtisan unsets the Select field if caching is enabled
@@ -463,4 +466,20 @@ func strInSlice(search string, sl []string) bool {
 // the underlying *sql.Stmt is.
 func (b *Insert) Prepare(ctx context.Context) (*Stmt, error) {
 	return b.prepare(ctx, b.DB, b, dmlSourceInsert)
+}
+
+// Clone creates a clone of the current object, leaving fields DB and Log
+// untouched.
+func (b *Insert) Clone() *Insert {
+	if b == nil {
+		return nil
+	}
+	c := *b
+	c.BuilderBase = b.BuilderBase.Clone()
+	c.Columns = cloneStringSlice(b.Columns)
+	c.OnDuplicateKeyExclude = cloneStringSlice(b.OnDuplicateKeyExclude)
+	c.OnDuplicateKeys = b.OnDuplicateKeys.Clone()
+	c.Select = b.Select.Clone()
+	c.Pairs = b.Pairs.Clone()
+	return &c
 }

@@ -152,3 +152,12 @@ func ifErrPanic(err error) {
 		panic(fmt.Sprintf("%+v", err))
 	}
 }
+
+func notEqualPointers(t *testing.T, o1, o2 interface{}, msgAndArgs ...interface{}) {
+	p1 := reflect.ValueOf(o1)
+	p2 := reflect.ValueOf(o2)
+	if len(msgAndArgs) == 0 {
+		msgAndArgs = []interface{}{"Pointers for type o1:%T o2:%T should not be equal", o1, o2}
+	}
+	assert.NotEqual(t, p1.Pointer(), p2.Pointer(), msgAndArgs...)
+}

@@ -119,3 +119,15 @@ func TestIFaceToArgs(t *testing.T) {
 		}, args.Interfaces())
 	})
 }
+
+func TestArguments_Clone(t *testing.T) {
+	t.Parallel()
+
+	args := MakeArgs(2).Int64(1).String("S1").arguments
+	args2 := args.Clone()
+	args2[0].value = int(1)
+	args2[1].value = "S1a"
+
+	assert.Exactly(t, "dml.MakeArgs(2).Int64(1).String(\"S1\")", args.GoString())
+	assert.Exactly(t, "dml.MakeArgs(2).Int(1).String(\"S1a\")", args2.GoString())
+}
