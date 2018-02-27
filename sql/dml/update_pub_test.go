@@ -21,6 +21,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
@@ -348,5 +349,36 @@ func TestUpdate_BindRecord(t *testing.T) {
 			"UPDATE `catalog_category_entity` AS `ce` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`ce`.`entity_id` > 678) AND (`cpe`.`entity_id` IN (66,77)) AND (`cpei`.`attribute_set_id` = 6)",
 			int64(6), "p456", "3/4/5", int64(678), int64(6),
 		)
+	})
+}
+
+func TestUpdate_Clone(t *testing.T) {
+	t.Parallel()
+
+	dbc, dbMock := dmltest.MockDB(t, dml.WithLogger(log.BlackHole{}, func() string { return "uniqueID" }))
+	defer dmltest.MockClose(t, dbc, dbMock)
+
+	t.Run("nil", func(t *testing.T) {
+		var d *dml.Update
+		d2 := d.Clone()
+		assert.Nil(t, d)
+		assert.Nil(t, d2)
+	})
+
+	t.Run("non-nil", func(t *testing.T) {
+		d := dbc.Update("catalog_category_entity").Alias("ce").
+			AddColumns("attribute_set_id", "parent_id", "path").
+			Where(
+				dml.Column("ce.entity_id").Greater().PlaceHolder(), //678
+				dml.Column("cpe.entity_id").In().Int64s(66, 77),
+				dml.Column("cpei.attribute_set_id").Equal().PlaceHolder(), //6
+			)
+		d2 := d.Clone()
+		notEqualPointers(t, d, d2)
+		notEqualPointers(t, d, d2)
+		notEqualPointers(t, d.BuilderConditional.Wheres, d2.BuilderConditional.Wheres)
+		notEqualPointers(t, d.SetClauses, d2.SetClauses)
+		assert.Exactly(t, d.DB, d2.DB)
+		assert.Exactly(t, d.Log, d2.Log)
 	})
 }

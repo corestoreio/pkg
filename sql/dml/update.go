@@ -232,3 +232,16 @@ func (b *Update) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 func (b *Update) Prepare(ctx context.Context) (*Stmt, error) {
 	return b.prepare(ctx, b.DB, b, dmlSourceUpdate)
 }
+
+// Clone creates a clone of the current object, leaving fields DB and Log
+// untouched.
+func (b *Update) Clone() *Update {
+	if b == nil {
+		return nil
+	}
+	c := *b
+	c.BuilderBase = b.BuilderBase.Clone()
+	c.BuilderConditional = b.BuilderConditional.Clone()
+	c.SetClauses = b.SetClauses.Clone()
+	return &c
+}
