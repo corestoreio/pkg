@@ -193,11 +193,10 @@ func TestSelect_FullToSQL(t *testing.T) {
 			Expr("j = k"),
 		).
 		OrderBy("l").
-		Limit(7).
-		Offset(8)
+		Limit(8, 7)
 
 	compareToSQL2(t, sel, errors.NoKind,
-		"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 1) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8",
+		"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 1) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 8,7",
 	)
 }
 
@@ -216,11 +215,10 @@ func TestSelect_ComplexExpr(t *testing.T) {
 			Having(Expr("j = k"), Column("jj").Int64(1)).
 			Having(Column("jjj").Int64(2)).
 			OrderBy("l1").OrderBy("l2").OrderBy("l3").
-			Limit(7).Offset(8)
+			Limit(8, 7)
 
 		compareToSQL2(t, sel, errors.NoKind,
-			//"SELECT DISTINCT `a`, `b`, `z`, `y`, `x` FROM `c` WHERE (`d` = ? OR `e` = ?) AND (`g` = ?) AND (`h` IN (?,?,?)) GROUP BY `ab`, `ii`, `iii` HAVING (j = k) AND (`jj` = ?) AND (`jjj` = ?) ORDER BY `l1`, `l2`, `l3` LIMIT 7 OFFSET 8",
-			"SELECT DISTINCT `a`, `b`, `z`, `y`, `x` FROM `c` WHERE (`d` = 1 OR `e` = 'wat') AND (`g` = 3) AND (`h` IN (1,2,3)) GROUP BY `ab`, `ii`, `iii` HAVING (j = k) AND (`jj` = 1) AND (`jjj` = 2) ORDER BY `l1`, `l2`, `l3` LIMIT 7 OFFSET 8",
+			"SELECT DISTINCT `a`, `b`, `z`, `y`, `x` FROM `c` WHERE (`d` = 1 OR `e` = 'wat') AND (`g` = 3) AND (`h` IN (1,2,3)) GROUP BY `ab`, `ii`, `iii` HAVING (j = k) AND (`jj` = 1) AND (`jjj` = 2) ORDER BY `l1`, `l2`, `l3` LIMIT 8,7",
 			//int64(1), "wat", int64(3), int64(1), int64(2), int64(3), int64(1), int64(2),
 		)
 	})
@@ -235,7 +233,7 @@ func TestSelect_OrderByRandom_Strings(t *testing.T) {
 				From("dml_fake_person").
 				OrderByRandom("id", 25),
 			errors.NoKind,
-			"SELECT `id`, `first_name`, `last_name` FROM `dml_fake_person`  JOIN (SELECT `id` FROM `dml_fake_person` WHERE (RAND() < (SELECT ((25 / COUNT(*)) * 10) FROM `dml_fake_person`)) ORDER BY RAND() LIMIT 25) AS `randdml_fake_person` USING (`id`)",
+			"SELECT `id`, `first_name`, `last_name` FROM `dml_fake_person`  JOIN (SELECT `id` FROM `dml_fake_person` WHERE (RAND() < (SELECT ((25 / COUNT(*)) * 10) FROM `dml_fake_person`)) ORDER BY RAND() LIMIT 0,25) AS `randdml_fake_person` USING (`id`)",
 		)
 	})
 
@@ -246,7 +244,7 @@ func TestSelect_OrderByRandom_Strings(t *testing.T) {
 				Where(Column("id").LessOrEqual().Int(30)).
 				OrderByRandom("id", 25),
 			errors.NoKind,
-			"SELECT `id`, `first_name`, `last_name` FROM `dml_fake_person`  JOIN (SELECT `id` FROM `dml_fake_person` WHERE (RAND() < (SELECT ((25 / COUNT(*)) * 10) FROM `dml_fake_person` WHERE (`id` <= 30))) AND (`id` <= 30) ORDER BY RAND() LIMIT 25) AS `randdml_fake_person` USING (`id`) WHERE (`id` <= 30)",
+			"SELECT `id`, `first_name`, `last_name` FROM `dml_fake_person`  JOIN (SELECT `id` FROM `dml_fake_person` WHERE (RAND() < (SELECT ((25 / COUNT(*)) * 10) FROM `dml_fake_person` WHERE (`id` <= 30))) AND (`id` <= 30) ORDER BY RAND() LIMIT 0,25) AS `randdml_fake_person` USING (`id`) WHERE (`id` <= 30)",
 		)
 	})
 
@@ -260,7 +258,7 @@ func TestSelect_OrderByRandom_Strings(t *testing.T) {
 			).OrderByRandom("id", 100)
 
 		compareToSQL2(t, sqlObj, errors.NoKind,
-			"SELECT DISTINCT STRAIGHT_JOIN SQL_NO_CACHE `p1`.*, `p2`.* FROM `dml_people` AS `p1` INNER JOIN `dml_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = 142)  JOIN (SELECT `id` FROM `dml_people` WHERE (RAND() < (SELECT ((100 / COUNT(*)) * 10) FROM `dml_people`)) ORDER BY RAND() LIMIT 100) AS `randdml_people` USING (`id`)",
+			"SELECT DISTINCT STRAIGHT_JOIN SQL_NO_CACHE `p1`.*, `p2`.* FROM `dml_people` AS `p1` INNER JOIN `dml_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = 142)  JOIN (SELECT `id` FROM `dml_people` WHERE (RAND() < (SELECT ((100 / COUNT(*)) * 10) FROM `dml_people`)) ORDER BY RAND() LIMIT 0,100) AS `randdml_people` USING (`id`)",
 		)
 	})
 }
@@ -291,7 +289,7 @@ func TestSelect_Paginate(t *testing.T) {
 				Paginate(3, 30).
 				OrderBy("id"),
 			errors.NoKind,
-			"SELECT `a`, `b` FROM `c` WHERE (`d` = 1) ORDER BY `id` LIMIT 30 OFFSET 60",
+			"SELECT `a`, `b` FROM `c` WHERE (`d` = 1) ORDER BY `id` LIMIT 60,30",
 		)
 	})
 	t.Run("desc", func(t *testing.T) {
@@ -302,7 +300,7 @@ func TestSelect_Paginate(t *testing.T) {
 				Paginate(1, 20).
 				OrderByDesc("id"),
 			errors.NoKind,
-			"SELECT `a`, `b` FROM `c` WHERE (`d` = 1) ORDER BY `id` DESC LIMIT 20 OFFSET 0",
+			"SELECT `a`, `b` FROM `c` WHERE (`d` = 1) ORDER BY `id` DESC LIMIT 0,20",
 		)
 	})
 }
@@ -645,13 +643,13 @@ func TestSelect_LoadType_Single(t *testing.T) {
 	})
 
 	t.Run("LoadNullInt64", func(t *testing.T) {
-		id, found, err := s.SelectFrom("dml_people").AddColumns("id").Limit(1).WithArgs().LoadNullInt64(context.TODO())
+		id, found, err := s.SelectFrom("dml_people").AddColumns("id").Limit(0, 1).WithArgs().LoadNullInt64(context.TODO())
 		require.NoError(t, err)
 		assert.True(t, found)
 		assert.True(t, id.Int64 > 0)
 	})
 	t.Run("LoadNullInt64 too many columns", func(t *testing.T) {
-		id, found, err := s.SelectFrom("dml_people").AddColumns("id", "email").Limit(1).WithArgs().LoadNullInt64(context.TODO())
+		id, found, err := s.SelectFrom("dml_people").AddColumns("id", "email").Limit(0, 1).WithArgs().LoadNullInt64(context.TODO())
 		require.Error(t, err)
 		assert.False(t, found)
 		assert.Exactly(t, NullInt64{}, id)
@@ -664,13 +662,13 @@ func TestSelect_LoadType_Single(t *testing.T) {
 	})
 
 	t.Run("LoadNullUint64", func(t *testing.T) {
-		id, found, err := s.SelectFrom("dml_people").AddColumns("id").Limit(1).WithArgs().LoadNullUint64(context.TODO())
+		id, found, err := s.SelectFrom("dml_people").AddColumns("id").Limit(0, 1).WithArgs().LoadNullUint64(context.TODO())
 		require.NoError(t, err)
 		assert.True(t, found)
 		assert.True(t, id.Uint64 > 0)
 	})
 	t.Run("LoadNullUint64 too many columns", func(t *testing.T) {
-		id, found, err := s.SelectFrom("dml_people").AddColumns("id", "email").Limit(1).WithArgs().LoadNullUint64(context.TODO())
+		id, found, err := s.SelectFrom("dml_people").AddColumns("id", "email").Limit(0, 1).WithArgs().LoadNullUint64(context.TODO())
 		require.Error(t, err)
 		assert.False(t, found)
 		assert.Exactly(t, NullUint64{}, id)
@@ -683,13 +681,13 @@ func TestSelect_LoadType_Single(t *testing.T) {
 	})
 
 	t.Run("LoadNullFloat64", func(t *testing.T) {
-		id, found, err := s.SelectFrom("dml_people").AddColumns("id").Limit(1).WithArgs().LoadNullFloat64(context.TODO())
+		id, found, err := s.SelectFrom("dml_people").AddColumns("id").Limit(0, 1).WithArgs().LoadNullFloat64(context.TODO())
 		require.NoError(t, err)
 		assert.True(t, found)
 		assert.True(t, id.Float64 > 0)
 	})
 	t.Run("LoadNullFloat64 too many columns", func(t *testing.T) {
-		id, found, err := s.SelectFrom("dml_people").AddColumns("id", "email").Limit(1).WithArgs().LoadNullFloat64(context.TODO())
+		id, found, err := s.SelectFrom("dml_people").AddColumns("id", "email").Limit(0, 1).WithArgs().LoadNullFloat64(context.TODO())
 		require.Error(t, err)
 		assert.False(t, found)
 		assert.Exactly(t, NullFloat64{}, id)
@@ -1342,17 +1340,16 @@ func TestSelect_DisableBuildCache(t *testing.T) {
 			Expr("j = k"),
 		).
 		OrderBy("l").
-		Limit(7).
-		Offset(8)
+		Limit(8, 7)
 
-	const run1 = "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8"
-	const run2 = "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) AND (`added_col` = 3.14159) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8"
+	const run1 = "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 8,7"
+	const run2 = "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) AND (`added_col` = 3.14159) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 8,7"
 
 	sel.DisableBuildCache()
 
 	compareToSQL(t, sel.WithArgs().Int(87654), errors.NoKind,
 		run1,
-		"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 87654) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8",
+		"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 87654) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 8,7",
 		int64(87654))
 
 	sel.Where(
@@ -1362,7 +1359,7 @@ func TestSelect_DisableBuildCache(t *testing.T) {
 	sel.IsBuildCacheDisabled = false
 	compareToSQL(t, sel.WithArgs().Int(87654), errors.NoKind, run2, "", int64(87654))
 	compareToSQL(t, sel.WithArgs().Int(87654), errors.NoKind, run2,
-		"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 87654) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) AND (`added_col` = 3.14159) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8",
+		"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 87654) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) AND (`added_col` = 3.14159) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 8,7",
 		int64(87654))
 }
 

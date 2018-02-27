@@ -169,6 +169,7 @@ func (cs Conditions) Clone() Conditions {
 // Joins defines multiple join conditions.
 type Joins []*join
 
+// Clone creates a new clone of the current object.
 func (js Joins) Clone() Joins {
 	if js == nil {
 		return nil
@@ -189,7 +190,7 @@ type join struct {
 	On Conditions
 }
 
-// Clone creates a new copy of the current object.
+// Clone creates a new clone of the current object.
 func (j *join) Clone() *join {
 	if j == nil {
 		return nil
@@ -253,7 +254,8 @@ type Condition struct {
 	Columns []string
 }
 
-// Alias assigns an alias name to the condition.
+// Clone creates a new clone of the current object. It resets the internal error
+// field.
 func (c *Condition) Clone() *Condition {
 	if c == nil {
 		return nil

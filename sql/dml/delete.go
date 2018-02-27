@@ -320,7 +320,7 @@ func (b *Delete) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err 
 	}
 
 	sqlWriteOrderBy(w, b.OrderBys, false)
-	sqlWriteLimitOffset(w, b.LimitValid, b.LimitCount, false, 0)
+	sqlWriteLimitOffset(w, b.LimitValid, false, 0, b.LimitCount)
 
 	if b.Returning != nil {
 		w.WriteString(" RETURNING ")

@@ -202,13 +202,13 @@ func ExampleInsert_FromSelect_withPlaceHolders() {
 	//Prepared Statement:
 	//INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table`
 	//WHERE ((`int64A` >= ?) OR (`string` = 'wat')) AND (`int64B` IN ?) ORDER BY `id`
-	//DESC LIMIT 20 OFFSET 0
+	//DESC LIMIT 0,20
 	//Arguments: [4 9 8 7]
 	//
 	//Interpolated Statement:
 	//INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table`
 	//WHERE ((`int64A` >= 4) OR (`string` = 'wat')) AND (`int64B` IN (9,8,7)) ORDER BY
-	//`id` DESC LIMIT 20 OFFSET 0
+	//`id` DESC LIMIT 0,20
 }
 
 func ExampleInsert_FromSelect_withoutPlaceHolders() {
@@ -233,7 +233,7 @@ func ExampleInsert_FromSelect_withoutPlaceHolders() {
 	//Statement:
 	//INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table`
 	//WHERE ((`int64A` >= 1) OR (`string` = 'wat')) AND (`int64B` IN (1,2,3)) ORDER BY
-	//`id` DESC LIMIT 20 OFFSET 0
+	//`id` DESC LIMIT 0,20
 }
 
 // ExampleInsert_WithPairs this example uses WithArgs to build the final SQL
@@ -757,15 +757,14 @@ func ExampleParenthesisOpen() {
 			dml.ParenthesisClose(),
 		).
 		OrderBy("l").
-		Limit(7).
-		Offset(8)
+		Limit(8, 7)
 	writeToSQLAndInterpolate(s)
 
 	// Output:
 	//Statement:
 	//SELECT DISTINCT `columnA`, `columnB` FROM `tableC` AS `ccc` WHERE ((`d` = 1) OR
 	//(`e` = 'wat')) AND (`f` = 2) GROUP BY `ab` HAVING (j = k) AND ((`m` = 33) OR
-	//(`n` = 'wh3r3')) ORDER BY `l` LIMIT 7 OFFSET 8
+	//(`n` = 'wh3r3')) ORDER BY `l` LIMIT 8,7
 }
 
 func ExampleWith_Union() {

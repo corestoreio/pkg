@@ -416,5 +416,50 @@ func TestArtisan_Clone(t *testing.T) {
 	assert.Exactly(t, selA.base.cachedSQL, selB.base.cachedSQL)
 
 	assert.Exactly(t, selA.QualifiedColumnsAliases, selB.QualifiedColumnsAliases)
+}
 
+func TestArtisan_OrderByLimit(t *testing.T) {
+	t.Parallel()
+
+	t.Run("WithoutArgs", func(t *testing.T) {
+		a := NewSelect("a", "b").From("c").Where(
+			Column("id").Greater().Int(221),
+			Column("email").Like().Str("em@1l.de")).WithArgs().Limit(44, 55)
+
+		t.Run("ASC", func(t *testing.T) {
+			a.OrderBy("email", "id")
+			compareToSQL2(t, a, errors.NoKind,
+				"SELECT `a`, `b` FROM `c` WHERE (`id` > 221) AND (`email` LIKE 'em@1l.de') ORDER BY `email`, `id` LIMIT 44,55",
+			)
+		})
+		t.Run("DESC", func(t *testing.T) {
+			a.OrderBys = a.OrderBys[:1]
+			a.OrderByDesc("firstname")
+			compareToSQL2(t, a, errors.NoKind,
+				"SELECT `a`, `b` FROM `c` WHERE (`id` > 221) AND (`email` LIKE 'em@1l.de') ORDER BY `email`, `firstname` DESC LIMIT 44,55",
+			)
+		})
+	})
+
+	t.Run("WithArgs", func(t *testing.T) {
+		a := NewSelect("a", "b").From("c").Where(
+			Column("id").Greater().PlaceHolder(),
+			Column("email").Like().Str("em@1l.de")).WithArgs().Int(87653).Limit(44, 55)
+
+		t.Run("ASC", func(t *testing.T) {
+			a.OrderBy("email", "id")
+			compareToSQL2(t, a, errors.NoKind,
+				"SELECT `a`, `b` FROM `c` WHERE (`id` > ?) AND (`email` LIKE 'em@1l.de') ORDER BY `email`, `id` LIMIT 44,55",
+				int64(87653),
+			)
+		})
+		t.Run("DESC", func(t *testing.T) {
+			a.OrderBys = a.OrderBys[:1]
+			a.OrderByDesc("firstname")
+			compareToSQL2(t, a, errors.NoKind,
+				"SELECT `a`, `b` FROM `c` WHERE (`id` > ?) AND (`email` LIKE 'em@1l.de') ORDER BY `email`, `firstname` DESC LIMIT 44,55",
+				int64(87653),
+			)
+		})
+	})
 }

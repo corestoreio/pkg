@@ -219,7 +219,7 @@ func (b *Update) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 	}
 
 	sqlWriteOrderBy(buf, b.OrderBys, false)
-	sqlWriteLimitOffset(buf, b.LimitValid, b.LimitCount, false, 0)
+	sqlWriteLimitOffset(buf, b.LimitValid, false, 0, b.LimitCount)
 	return placeHolders, nil
 }
 

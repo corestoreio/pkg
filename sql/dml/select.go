@@ -50,7 +50,6 @@ type Select struct {
 	IsLockInShareMode    bool // See LockInShareMode()
 	IsOrderByDeactivated bool // See OrderByDeactivated()
 	IsOrderByRand        bool // enables the original slow ORDER BY RAND() clause
-	OffsetValid          bool
 	OffsetCount          uint64
 	// Listeners allows to dispatch certain functions in different
 	// situations.
@@ -331,24 +330,17 @@ func (b *Select) OrderByRandom(idColumnName string, limit uint64) *Select {
 }
 
 // Limit sets a limit for the statement; overrides any existing LIMIT
-func (b *Select) Limit(limit uint64) *Select {
+func (b *Select) Limit(offset uint64, limit uint64) *Select {
+	b.OffsetCount = offset
 	b.LimitCount = limit
 	b.LimitValid = true
-	return b
-}
-
-// Offset sets an offset for the statement; overrides any existing OFFSET
-func (b *Select) Offset(offset uint64) *Select {
-	b.OffsetCount = offset
-	b.OffsetValid = true
 	return b
 }
 
 // Paginate sets LIMIT/OFFSET for the statement based on the given page/perPage
 // Assumes page/perPage are valid. Page and perPage must be >= 1
 func (b *Select) Paginate(page, perPage uint64) *Select {
-	b.Limit(perPage)
-	b.Offset((page - 1) * perPage)
+	b.Limit((page-1)*perPage, perPage)
 	return b
 }
 
@@ -482,7 +474,7 @@ func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err 
 		idSel := NewSelect(b.OrderByRandColumnName).From(b.Table.Name).
 			Where(Expr("RAND()").Less().Sub(countSel)).
 			Where(b.Wheres...).
-			Limit(b.LimitCount)
+			Limit(0, b.LimitCount)
 		idSel.IsOrderByRand = true
 
 		joins = append(joins, &join{
@@ -535,7 +527,7 @@ func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err 
 		sqlWriteOrderBy(w, b.OrderBys, false)
 	}
 
-	sqlWriteLimitOffset(w, b.LimitValid, b.LimitCount, b.OffsetValid, b.OffsetCount)
+	sqlWriteLimitOffset(w, b.LimitValid, true, b.OffsetCount, b.LimitCount)
 
 	switch {
 	case b.IsLockInShareMode:

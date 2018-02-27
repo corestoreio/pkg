@@ -447,7 +447,7 @@ func TestSelect_Argument_IterateSerial(t *testing.T) {
 
 	t.Run("error in mapper", func(t *testing.T) {
 		err := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
-			Limit(5).
+			Limit(0, 5).
 			OrderBy("id").WithArgs().IterateSerial(context.Background(), func(cm *dml.ColumnMap) error {
 			return errors.Blocked.Newf("Mapping blocked")
 		})
@@ -512,7 +512,7 @@ func TestSelect_Argument_IterateSerial(t *testing.T) {
 			Where(
 				dml.Column("id").Between().PlaceHolder(),
 			).
-			Limit(limit).OrderBy("id")
+			Limit(0, limit).OrderBy("id")
 
 		t.Run("WG01 (query, conn pool)", func(t *testing.T) {
 
@@ -553,7 +553,7 @@ func TestSelect_Argument_IterateParallel(t *testing.T) {
 
 	t.Run("error wrong concurrency level", func(t *testing.T) {
 		err := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
-			Limit(50).
+			Limit(0, 50).
 			OrderBy("id").WithArgs().IterateParallel(context.Background(), 0, func(cm *dml.ColumnMap) error {
 			return nil
 		})
@@ -562,7 +562,7 @@ func TestSelect_Argument_IterateParallel(t *testing.T) {
 
 	t.Run("error in mapper of all workers", func(t *testing.T) {
 		err := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
-			Limit(50).
+			Limit(0, 50).
 			OrderBy("id").WithArgs().IterateParallel(context.Background(), concurrencyLevel, func(cm *dml.ColumnMap) error {
 			return errors.Blocked.Newf("Mapping blocked error")
 		})
@@ -580,7 +580,7 @@ func TestSelect_Argument_IterateParallel(t *testing.T) {
 
 		fpSel := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
 			Where(dml.Column("id").LessOrEqual().Int(60)).
-			Limit(40)
+			Limit(0, 40)
 		fpSel.IsOrderByRand = true
 
 		var rowsLoadedCounter = new(int32)

@@ -162,7 +162,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 		Having(dml.Expr("j = k"), dml.Column("jj").Int64(1)).
 		Having(dml.Column("jjj").Int64(2)).
 		OrderBy("l1").OrderBy("l2").OrderBy("l3").
-		Limit(7).Offset(8)
+		Limit(8, 7)
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -188,7 +188,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 				Having(dml.Expr("j = k"), dml.Column("jj").Int64(1)).
 				Having(dml.Column("jjj").Int64(2)).
 				OrderBy("l1").OrderBy("l2").OrderBy("l3").
-				Limit(7).Offset(8).
+				Limit(8, 7).
 				ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)

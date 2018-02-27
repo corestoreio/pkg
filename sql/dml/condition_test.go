@@ -442,11 +442,11 @@ func TestCondition_Sub(t *testing.T) {
 
 	idSel := NewSelect("id", "first_name", "last_name").From("dml_fake_person").Where(
 		Expr("RAND()").Less().Sub(countSel),
-	).Limit(40)
+	).Limit(0, 40)
 	idSel.IsOrderByRand = true
 
 	compareToSQL2(t, idSel, errors.NoKind,
-		"SELECT `id`, `first_name`, `last_name` FROM `dml_fake_person` WHERE (RAND() < (SELECT ((? / COUNT(*)) * 10) FROM `dml_fake_person`)) ORDER BY RAND() LIMIT 40",
+		"SELECT `id`, `first_name`, `last_name` FROM `dml_fake_person` WHERE (RAND() < (SELECT ((? / COUNT(*)) * 10) FROM `dml_fake_person`)) ORDER BY RAND() LIMIT 0,40",
 	)
 }
 

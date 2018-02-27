@@ -249,6 +249,7 @@ type BuilderConditional struct {
 	LimitValid            bool
 }
 
+// Clone creates a new clone of the current object.
 func (b BuilderConditional) Clone() BuilderConditional {
 	c := b
 	c.Joins = b.Joins.Clone()
@@ -344,14 +345,17 @@ func sqlWriteOrderBy(w *bytes.Buffer, orderBys ids, br bool) {
 	orderBys.writeQuoted(w, nil)
 }
 
-func sqlWriteLimitOffset(w *bytes.Buffer, limitValid bool, limitCount uint64, offsetValid bool, offsetCount uint64) {
+// LIMIT 0,0 quickly returns an empty set. This can be useful for checking the
+// validity of a query. When using one of the MySQL APIs, it can also be
+// employed for obtaining the types of the result columns.
+func sqlWriteLimitOffset(w *bytes.Buffer, limitValid, offsetValid bool, offsetCount, limitCount uint64) {
 	if limitValid {
 		w.WriteString(" LIMIT ")
+		if offsetValid {
+			writeUint64(w, offsetCount)
+			w.WriteByte(',')
+		}
 		writeUint64(w, limitCount)
-	}
-	if offsetValid {
-		w.WriteString(" OFFSET ")
-		writeUint64(w, offsetCount)
 	}
 }
 

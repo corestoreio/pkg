@@ -43,12 +43,18 @@ type Artisan struct {
 	// qualified columns slice. The order of the alias names must be in the same
 	// order as the qualified columns or as the placeholders occur.
 	QualifiedColumnsAliases []string
+	OrderBys                ids
+	LimitValid              bool
+	OffsetValid             bool
+	LimitCount              uint64
+	OffsetCount             uint64
 	// insertCachedSQL contains the final build SQL string with the correct
 	// amount of placeholders.
 	insertCachedSQL     []byte
 	insertColumnCount   uint
 	insertRowCount      uint
 	insertIsBuildValues bool
+	//LimitValid            bool
 	// isPrepared if true the cachedSQL field in base gets ignored
 	isPrepared bool
 	Options    uint
@@ -65,6 +71,45 @@ const (
 	argOptionExpandPlaceholder = 1 << iota
 	argOptionInterpolate
 )
+
+// OrderBy appends columns to the ORDER BY statement for ascending sorting. A
+// column gets always quoted if it is a valid identifier otherwise it will be
+// treated as an expression. This ORDER BY clause gets appended to the current
+// internal cached SQL string independently if the SQL statement supports it or
+// not or if there exists already an ORDER BY clause.
+func (a *Artisan) OrderBy(columns ...string) *Artisan {
+	a.OrderBys = a.OrderBys.AppendColumns(false, columns...)
+	return a
+}
+
+// OrderByDesc appends columns to the ORDER BY statement for descending sorting.
+// A column gets always quoted if it is a valid identifier otherwise it will be
+// treated as an expression. This ORDER BY clause gets appended to the current
+// internal cached SQL string independently if the SQL statement supports it or
+// not or if there exists already an ORDER BY clause.
+func (a *Artisan) OrderByDesc(columns ...string) *Artisan {
+	a.OrderBys = a.OrderBys.AppendColumns(false, columns...).applySort(len(columns), sortDescending)
+	return a
+}
+
+// Limit sets a LIMIT clause for the statement; overrides any existing LIMIT.
+// This LIMIT clause gets appended to the current internal cached SQL string
+// independently if the SQL statement supports it or not or if there exists
+// already a LIMIT clause.
+func (a *Artisan) Limit(offset uint64, limit uint64) *Artisan {
+	a.OffsetCount = offset
+	a.LimitCount = limit
+	a.OffsetValid = true
+	a.LimitValid = true
+	return a
+}
+
+// Paginate sets LIMIT/OFFSET for the statement based on the given page/perPage
+// Assumes page/perPage are valid. Page and perPage must be >= 1
+func (a *Artisan) Paginate(page, perPage uint64) *Artisan {
+	a.Limit((page-1)*perPage, perPage)
+	return a
+}
 
 // WithQualifiedColumnsAliases for documentation please see:
 // Artisan.QualifiedColumnsAliases.
@@ -124,12 +169,20 @@ func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}
 		return a.prepareArgsInsert(extArgs...)
 	}
 
-	if a.isEmpty() {
+	if a.isEmpty() { // no arguments provided
 		a.hasNamedArgs = 1
 		if a.isPrepared {
 			return "", extArgs, nil
 		}
-		return string(a.base.cachedSQL), extArgs, nil
+		if len(a.OrderBys) == 0 && !a.LimitValid {
+			return string(a.base.cachedSQL), extArgs, nil
+		}
+		buf := bufferpool.Get()
+		defer bufferpool.Put(buf)
+		buf.Write(a.base.cachedSQL)
+		sqlWriteOrderBy(buf, a.OrderBys, false)
+		sqlWriteLimitOffset(buf, a.LimitValid, a.OffsetValid, a.OffsetCount, a.LimitCount)
+		return buf.String(), extArgs, nil
 	}
 
 	if !a.isPrepared && a.hasNamedArgs == 0 {
@@ -171,6 +224,9 @@ func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}
 	if _, err := sqlBuf.First.Write(a.base.cachedSQL); err != nil {
 		return "", nil, errors.WithStack(err)
 	}
+
+	sqlWriteOrderBy(sqlBuf.First, a.OrderBys, false)
+	sqlWriteLimitOffset(sqlBuf.First, a.LimitValid, a.OffsetValid, a.OffsetCount, a.LimitCount)
 
 	// `switch` statement no suitable.
 	if a.Options > 0 && len(extArgs) > 0 && len(a.recs) == 0 && len(a.arguments) == 0 {
