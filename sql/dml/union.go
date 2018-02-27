@@ -322,3 +322,23 @@ func (u *Union) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err e
 func (u *Union) Prepare(ctx context.Context) (*Stmt, error) {
 	return u.prepare(ctx, u.DB, u, dmlSourceUnion)
 }
+
+// Clone creates a clone of the current object, leaving fields DB and Log
+// untouched. Additionally the fields for replacing strings also won't get
+// copied.
+func (u *Union) Clone() *Union {
+	if u == nil {
+		return nil
+	}
+
+	c := *u
+	c.BuilderBase = u.BuilderBase.Clone()
+	if ls := len(u.Selects); ls > 0 {
+		c.Selects = make([]*Select, ls)
+		for i, s := range u.Selects {
+			c.Selects[i] = s.Clone()
+		}
+	}
+	c.OrderBys = u.OrderBys.Clone()
+	return &c
+}

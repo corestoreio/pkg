@@ -20,6 +20,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
@@ -244,5 +245,36 @@ func TestUnion_Prepare(t *testing.T) {
 			assert.True(t, errors.Duplicated.Match(err), "%+v", err)
 			assert.Nil(t, rows)
 		})
+	})
+}
+
+func TestUnion_Clone(t *testing.T) {
+	t.Parallel()
+
+	dbc, dbMock := dmltest.MockDB(t, dml.WithLogger(log.BlackHole{}, func() string { return "uniqueID" }))
+	defer dmltest.MockClose(t, dbc, dbMock)
+
+	t.Run("nil", func(t *testing.T) {
+		var d *dml.Union
+		d2 := d.Clone()
+		assert.Nil(t, d)
+		assert.Nil(t, d2)
+	})
+
+	t.Run("non-nil", func(t *testing.T) {
+		u := dml.NewUnion(
+			dml.NewSelect("a", "b").From("tableAD").Where(dml.Column("a").Like().PlaceHolder()),
+			dml.NewSelect("a", "b").From("tableAB").Where(dml.Column("c").Between().PlaceHolder()),
+		).All().OrderBy("a").OrderByDesc("b").PreserveResultSet()
+
+		u2 := u.Clone()
+		notEqualPointers(t, u, u2)
+		notEqualPointers(t, u, u2)
+		notEqualPointers(t, u.Selects, u2.Selects)
+		notEqualPointers(t, u.OrderBys, u2.OrderBys)
+		notEqualPointers(t, u.Selects[0], u2.Selects[0])
+		notEqualPointers(t, u.Selects[1], u2.Selects[1])
+		assert.Exactly(t, u.DB, u2.DB)
+		assert.Exactly(t, u.Log, u2.Log)
 	})
 }
