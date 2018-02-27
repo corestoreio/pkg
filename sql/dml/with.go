@@ -35,6 +35,14 @@ type WithCTE struct {
 	Union *Union
 }
 
+// Clone creates a cloned object of the current one.
+func (cte WithCTE) Clone() WithCTE {
+	cte.Columns = cloneStringSlice(cte.Columns)
+	cte.Select = cte.Select.Clone()
+	cte.Union = cte.Union.Clone()
+	return cte
+}
+
 // With represents a common table expression. Common Table Expressions (CTEs)
 // are a standard SQL feature, and are essentially temporary named result sets.
 // Non-recursive CTES are basically 'query-local VIEWs'. One CTE can refer to
@@ -295,4 +303,26 @@ func (b *With) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err er
 // the underlying *sql.Stmt is.
 func (b *With) Prepare(ctx context.Context) (*Stmt, error) {
 	return b.prepare(ctx, b.DB, b, dmlSourceWith)
+}
+
+// Clone creates a clone of the current object, leaving fields DB and Log
+// untouched.
+func (b *With) Clone() *With {
+	if b == nil {
+		return nil
+	}
+
+	c := *b
+	c.BuilderBase = b.BuilderBase.Clone()
+	if ls := len(b.Subclauses); ls > 0 {
+		c.Subclauses = make([]WithCTE, ls)
+		for i, s := range b.Subclauses {
+			c.Subclauses[i] = s.Clone()
+		}
+	}
+	c.TopLevel.Select = b.TopLevel.Select.Clone()
+	c.TopLevel.Union = b.TopLevel.Union.Clone()
+	c.TopLevel.Update = b.TopLevel.Update.Clone()
+	c.TopLevel.Delete = b.TopLevel.Delete.Clone()
+	return &c
 }

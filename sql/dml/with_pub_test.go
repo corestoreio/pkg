@@ -20,6 +20,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
@@ -310,4 +311,48 @@ func TestWith_Prepare(t *testing.T) {
 			assert.Nil(t, rows)
 		})
 	})
+}
+
+func TestWith_Clone(t *testing.T) {
+	t.Parallel()
+
+	dbc, dbMock := dmltest.MockDB(t, dml.WithLogger(log.BlackHole{}, func() string { return "uniqueID" }))
+	defer dmltest.MockClose(t, dbc, dbMock)
+
+	t.Run("nil", func(t *testing.T) {
+		var d *dml.With
+		d2 := d.Clone()
+		assert.Nil(t, d)
+		assert.Nil(t, d2)
+	})
+
+	t.Run("non-nil Union", func(t *testing.T) {
+		cte := dml.NewWith(
+			dml.WithCTE{
+				Name:    "cte",
+				Columns: []string{"n"},
+				Union: dml.NewUnion(
+					dml.NewSelect("a").AddColumnsAliases("d", "b").From("tableAD").Where(dml.Column("b").PlaceHolder()),
+					dml.NewSelect("a", "b").From("tableAB").Where(dml.Column("b").Like().NamedArg("nArg2")),
+				).All(),
+			},
+		).
+			Recursive().
+			Select(dml.NewSelect().Star().From("cte").Where(dml.Column("a").GreaterOrEqual().PlaceHolder()))
+
+		cte2 := cte.Clone()
+		notEqualPointers(t, cte, cte2)
+		notEqualPointers(t, cte.Subclauses, cte2.Subclauses)
+		notEqualPointers(t, cte.Subclauses[0].Union, cte2.Subclauses[0].Union)
+		notEqualPointers(t, cte.Subclauses[0].Columns, cte2.Subclauses[0].Columns)
+		notEqualPointers(t, cte.TopLevel.Select, cte2.TopLevel.Select)
+		assert.Nil(t, cte2.Subclauses[0].Select)
+		assert.Nil(t, cte2.TopLevel.Update)
+		assert.Nil(t, cte2.TopLevel.Delete)
+		assert.Nil(t, cte2.TopLevel.Union)
+
+		assert.Exactly(t, cte.DB, cte2.DB)
+		assert.Exactly(t, cte.Log, cte2.Log)
+	})
+	// Add more tests for the different fields ... one day.
 }
