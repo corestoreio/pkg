@@ -192,7 +192,7 @@ func (cc KeyColumnUsageCollection) ColumnNames(ret ...string) []string {
 // the current database. Map key contains
 // REFERENCED_TABLE_NAME.REFERENCED_COLUMN_NAME. All columns from all tables
 // gets selected when you don't provide the argument `tables`.
-func LoadKeyColumnUsage(ctx context.Context, db dml.Querier, tables ...string) (map[string]KeyColumnUsageCollection, error) {
+func LoadKeyColumnUsage(ctx context.Context, db dml.Querier, tables ...string) (tc map[string]KeyColumnUsageCollection, err error) {
 
 	const selFkWhere = ` AND REFERENCED_TABLE_NAME IN ?`
 	const selFkOrderBy = ` ORDER BY TABLE_SCHEMA,TABLE_NAME,ORDINAL_POSITION, COLUMN_NAME`
@@ -210,9 +210,7 @@ func LoadKeyColumnUsage(ctx context.Context, db dml.Querier, tables ...string) (
 	 FROM information_schema.KEY_COLUMN_USAGE WHERE REFERENCED_TABLE_SCHEMA = DATABASE()` + selFkOrderBy
 
 	var rows *sql.Rows
-
 	if len(tables) == 0 {
-		var err error
 		rows, err = db.QueryContext(ctx, selFkAllTablesColumns)
 		if err != nil {
 			return nil, errors.Wrapf(err, "[ddl] LoadKeyColumnUsage QueryContext for tables %v", tables)
@@ -227,7 +225,7 @@ func LoadKeyColumnUsage(ctx context.Context, db dml.Querier, tables ...string) (
 			return nil, errors.Wrapf(err, "[ddl] LoadKeyColumnUsage QueryContext for tables %v with WHERE clause", tables)
 		}
 	}
-	var err error
+
 	defer func() {
 		// Not testable with the sqlmock package :-(
 		if err2 := rows.Close(); err2 != nil && err == nil {
@@ -235,18 +233,21 @@ func LoadKeyColumnUsage(ctx context.Context, db dml.Querier, tables ...string) (
 		}
 	}()
 
-	tc := make(map[string]KeyColumnUsageCollection)
+	tc = make(map[string]KeyColumnUsageCollection)
 	rc := new(dml.ColumnMap)
 	for rows.Next() {
 		if err = rc.Scan(rows); err != nil {
-			return nil, errors.Wrapf(err, "[ddl] LoadKeyColumnUsage Scan Query for tables: %v", tables)
+			err = errors.Wrapf(err, "[ddl] LoadKeyColumnUsage Scan Query for tables: %v", tables) // due to the defer
+			return
 		}
 		kcu := NewKeyColumnUsage()
-		if err := kcu.MapColumns(rc); err != nil {
-			return nil, errors.WithStack(err)
+		if err = kcu.MapColumns(rc); err != nil {
+			err = errors.WithStack(err)
+			return
 		}
 		if !kcu.ReferencedTableName.Valid || !kcu.ReferencedColumnName.Valid {
-			return nil, errors.Fatal.Newf("[ddl] LoadKeyColumnUsage: The columns ReferencedTableName or ReferencedColumnName cannot be null: %#v", kcu)
+			err = errors.Fatal.Newf("[ddl] LoadKeyColumnUsage: The columns ReferencedTableName or ReferencedColumnName cannot be null: %#v", kcu)
+			return
 		}
 		key := fmt.Sprintf("%s.%s", kcu.ReferencedTableName.String, kcu.ReferencedColumnName.String)
 		if _, ok := tc[key]; !ok {
@@ -258,7 +259,7 @@ func LoadKeyColumnUsage(ctx context.Context, db dml.Querier, tables ...string) (
 		tc[key] = kcuc
 	}
 	if err = rows.Err(); err != nil {
-		return nil, errors.Wrapf(err, "[ddl] rows.Err Query")
+		err = errors.Wrapf(err, "[ddl] rows.Err Query")
 	}
-	return tc, err
+	return
 }

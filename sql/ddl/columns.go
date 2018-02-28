@@ -124,17 +124,19 @@ func LoadColumns(ctx context.Context, db dml.Querier, tables ...string) (map[str
 		if err = rc.Scan(rows); err != nil {
 			return nil, errors.Wrapf(err, "[ddl] Scan Query for tables: %v", tables)
 		}
-		c, tn, err := NewColumn(rc)
+		var c *Column
+		var tableName string
+		c, tableName, err = NewColumn(rc)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
 
-		if _, ok := tc[tn]; !ok {
-			tc[tn] = make(Columns, 0, 10)
+		if _, ok := tc[tableName]; !ok {
+			tc[tableName] = make(Columns, 0, 10)
 		}
 
 		c.DataType = strings.ToLower(c.DataType)
-		tc[tn] = append(tc[tn], c)
+		tc[tableName] = append(tc[tableName], c)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, errors.WithStack(err)

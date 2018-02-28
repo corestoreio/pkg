@@ -91,7 +91,11 @@ func (ms MasterStatus) String() string {
 	if ms.File == "" {
 		return ""
 	}
-	return ms.File + ";" + strconv.FormatUint(uint64(ms.Position), 10)
+	var str strings.Builder
+	str.WriteString(ms.File)
+	str.WriteByte(';')
+	str.WriteString(strconv.FormatUint(uint64(ms.Position), 10))
+	return str.String()
 }
 
 // FromString parses as string in the format: mysql-bin.000002;236423 means

@@ -24,6 +24,7 @@ import (
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var _ dml.QueryBuilder = (*ddl.Table)(nil)
@@ -107,6 +108,13 @@ func init() {
 			Field:      "email",
 			ColumnType: "varchar(128)",
 			Null:       "YES",
+			Key:        "",
+			Extra:      "",
+		},
+		&ddl.Column{
+			Field:      "first_name",
+			ColumnType: "varchar(255)",
+			Null:       "",
 			Key:        "",
 			Extra:      "",
 		},
@@ -246,7 +254,7 @@ func TestTable_LoadDataInfile(t *testing.T) {
 		dbc, dbMock := dmltest.MockDB(t)
 		defer dmltest.MockClose(t, dbc, dbMock)
 
-		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("LOAD DATA LOCAL INFILE 'non-existent.csv' INTO TABLE `admin_user` (user_id,email,username) ;")).
+		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("LOAD DATA LOCAL INFILE 'non-existent.csv' INTO TABLE `admin_user` (user_id,email,first_name,username) ;")).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
 		err := tableMap.MustTable("admin_user").LoadDataInfile(context.TODO(), dbc.DB, "non-existent.csv", ddl.InfileOptions{})
@@ -257,7 +265,7 @@ func TestTable_LoadDataInfile(t *testing.T) {
 		dbc, dbMock := dmltest.MockDB(t)
 		defer dmltest.MockClose(t, dbc, dbMock)
 
-		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("LOAD DATA LOCAL INFILE 'non-existent.csv' REPLACE  INTO TABLE `admin_user` FIELDS TERMINATED BY '|' OPTIONALLY  ENCLOSED BY '+' ESCAPED BY '\"'\n LINES  TERMINATED BY '\r\n' STARTING BY '###'\nIGNORE 1 LINES\n (user_id,@email,@username)\nSET username=UPPER(@username),\nemail=UPPER(@email);")).
+		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("LOAD DATA LOCAL INFILE 'non-existent.csv' REPLACE INTO TABLE `admin_user` FIELDS TERMINATED BY '|' OPTIONALLY ENCLOSED BY '+' ESCAPED BY '\"' LINES TERMINATED BY ' ' STARTING BY '###' IGNORE 1 LINES (user_id,@email,@username,) SET username=UPPER(@username), email=UPPER(@email);")).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 		err := tableMap.MustTable("admin_user").LoadDataInfile(context.TODO(), dbc.DB, "non-existent.csv", ddl.InfileOptions{
 			Replace:                    true,
@@ -272,6 +280,80 @@ func TestTable_LoadDataInfile(t *testing.T) {
 			Set:                        []string{"username", "UPPER(@username)", "email", "UPPER(@email)"},
 		})
 		assert.NoError(t, err, "%+v", err)
+	})
+}
+
+func TestTable_Artisan_Methods(t *testing.T) {
+	t.Parallel()
+
+	dbc, dbMock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, dbc, dbMock)
+
+	tblAdmUser := tableMap.MustTable("admin_user")
+	tblAdmUser.DB = dbc.DB
+
+	t.Run("Insert", func(t *testing.T) {
+		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("INSERT INTO `admin_user` (`email`,`first_name`) VALUES (?,?),(?,?)")).
+			WithArgs("a@b.c", "Franz", "d@e.f", "Sissi").
+			WillReturnResult(sqlmock.NewResult(11, 0))
+
+		res, err := tblAdmUser.Insert().WithArgs().
+			String("a@b.c").String("Franz").
+			String("d@e.f").String("Sissi").
+			ExecContext(context.Background())
+		require.NoError(t, err)
+		id, err := res.LastInsertId()
+		require.NoError(t, err)
+		assert.Exactly(t, int64(11), id)
+	})
+
+	t.Run("DeleteByPK", func(t *testing.T) {
+		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("DELETE FROM `admin_user` WHERE (`user_id` IN ?)")).
+			WithArgs("a@b.c", "d@e.f").
+			WillReturnResult(sqlmock.NewResult(0, 2))
+
+		res, err := tblAdmUser.DeleteByPK().WithArgs().
+			String("a@b.c").String("d@e.f").
+			ExecContext(context.Background())
+		require.NoError(t, err)
+		id, err := res.RowsAffected()
+		require.NoError(t, err)
+		assert.Exactly(t, int64(2), id)
+	})
+
+	t.Run("SelectByPK", func(t *testing.T) {
+		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT `user_id`, `email`, `first_name`, `username` FROM `admin_user` AS `main_table` WHERE (`user_id` IN ?)")).
+			WithArgs(int64(234)).
+			WillReturnRows(sqlmock.NewRows([]string{"user_id", "email", "first_name", "username"}))
+
+		rows, err := tblAdmUser.SelectByPK().WithArgs().Int64(234).QueryContext(context.Background())
+		require.NoError(t, err)
+		require.NoError(t, rows.Close())
+	})
+
+	t.Run("SelectAll", func(t *testing.T) {
+		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT `user_id`, `email`, `first_name`, `username` FROM `admin_user` AS `main_table`")).
+			WithArgs().
+			WillReturnRows(sqlmock.NewRows([]string{"user_id", "email", "first_name", "username"}))
+
+		rows, err := tblAdmUser.SelectAll().WithArgs().QueryContext(context.Background())
+		require.NoError(t, err)
+		require.NoError(t, rows.Close())
+	})
+
+	t.Run("UpdateByPK", func(t *testing.T) {
+		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("UPDATE `admin_user` SET `email`=?, `first_name`=? WHERE (`user_id` = ?)")).
+			WithArgs("a@b.c", "Franz", int64(3)).
+			WillReturnResult(sqlmock.NewResult(0, 1))
+
+		res, err := tblAdmUser.UpdateByPK().WithArgs().
+			String("a@b.c").String("Franz").
+			Int64(3).
+			ExecContext(context.Background())
+		require.NoError(t, err)
+		id, err := res.RowsAffected()
+		require.NoError(t, err)
+		assert.Exactly(t, int64(1), id)
 	})
 
 }

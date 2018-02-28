@@ -98,7 +98,7 @@ func TestColumns(t *testing.T) {
 		{
 			tableMap.MustTable("admin_user").Columns.UniqueKeys().Len(), 1,
 			tableMap.MustTable("admin_user").Columns.GoString(),
-			"ddl.Columns{\n&ddl.Column{Field: \"user_id\", ColumnType: \"int(10) unsigned\", Key: \"PRI\", Extra: \"auto_increment\", },\n&ddl.Column{Field: \"email\", Null: \"YES\", ColumnType: \"varchar(128)\", },\n&ddl.Column{Field: \"username\", Null: \"YES\", ColumnType: \"varchar(40)\", Key: \"UNI\", },\n}",
+			"ddl.Columns{\n&ddl.Column{Field: \"user_id\", ColumnType: \"int(10) unsigned\", Key: \"PRI\", Extra: \"auto_increment\", },\n&ddl.Column{Field: \"email\", Null: \"YES\", ColumnType: \"varchar(128)\", },\n&ddl.Column{Field: \"first_name\", ColumnType: \"varchar(255)\", },\n&ddl.Column{Field: \"username\", Null: \"YES\", ColumnType: \"varchar(40)\", Key: \"UNI\", },\n}",
 		},
 		{tableMap.MustTable("admin_user").Columns.PrimaryKeys().Len(), 1, "", ""},
 	}

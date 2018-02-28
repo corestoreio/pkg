@@ -29,6 +29,7 @@ import (
 
 // Table represents a table from a specific database.
 type Table struct {
+	DB dml.QueryExecPreparer
 	// Schema represents the name of the database. Might be empty.
 	Schema string
 	// Name of the table
@@ -39,10 +40,10 @@ type Table struct {
 	// DML statement (SELECT, INSERT, UPDATE or DELETE).
 	Listeners dml.ListenerBucket
 	// IsView set to true to mark if the table is a view
-	IsView bool
-
-	// selectAllCache no quite sure about this one .... maybe remove it
-	selectAllCache *dml.Select
+	IsView       bool
+	columnsPK    []string
+	columnsNonPK []string
+	columnsAll   []string
 }
 
 // NewTable initializes a new table structure
@@ -59,13 +60,69 @@ func (t *Table) update() *Table {
 	if len(t.Columns) == 0 {
 		return t
 	}
+	t.columnsNonPK = t.columnsNonPK[:0]
+	t.columnsNonPK = t.Columns.NonPrimaryColumns().FieldNames(t.columnsNonPK...)
 
-	//t.selectAllCache = &dml.Select{
-	//	// Columns: t.AllColumnAliasQuote(MainTable), // TODO refactor
-	//	//Table: dml.MakeIdentifier(t.Name, MainTable),
-	//}
+	t.columnsPK = t.columnsPK[:0]
+	t.columnsPK = t.Columns.PrimaryKeys().FieldNames(t.columnsPK...)
+
+	t.columnsAll = t.columnsAll[:0]
+	t.columnsAll = t.Columns.FieldNames(t.columnsAll...)
 
 	return t
+}
+
+// Insert creates a new INSERT statement with all non primary key columns. If
+// OnDuplicateKey() gets called, the INSERT can be used as an update or create
+// statement. Adding multiple VALUES section is allowed.
+func (t *Table) Insert() *dml.Insert {
+	i := dml.NewInsert(t.Name).AddColumns(t.columnsNonPK...)
+	i.RecordPlaceHolderCount = len(i.Columns)
+	i.Listeners = i.Listeners.Merge(t.Listeners.Insert)
+	return i.WithDB(t.DB)
+}
+
+// SelectAll creates a new `SELECT * FROM table` without a WHERE clause.
+func (t *Table) SelectAll() *dml.Select {
+	s := dml.NewSelect(t.columnsAll...).
+		FromAlias(t.Name, MainTable)
+	s.Listeners = s.Listeners.Merge(t.Listeners.Select)
+	return s.WithDB(t.DB)
+}
+
+// SelectByPK creates a new `SELECT * FROM table WHERE id IN (?)`
+func (t *Table) SelectByPK() *dml.Select {
+	s := dml.NewSelect(t.columnsAll...).FromAlias(t.Name, MainTable)
+	s.Wheres = t.whereByPK(dml.In)
+	s.Listeners = s.Listeners.Merge(t.Listeners.Select)
+	return s.WithDB(t.DB)
+}
+
+// DeleteByPK creates a new `DELETE FROM table WHERE id IN (?)`
+func (t *Table) DeleteByPK() *dml.Delete {
+	d := dml.NewDelete(t.Name)
+	d.Wheres = t.whereByPK(dml.In)
+	d.Listeners = d.Listeners.Merge(t.Listeners.Delete)
+	return d.WithDB(t.DB)
+}
+
+// UpdateByPK creates a new `UPDATE table SET ... WHERE id = ?`. The SET clause
+// contains all non primary columns.
+func (t *Table) UpdateByPK() *dml.Update {
+	u := dml.NewUpdate(t.Name).AddColumns(t.columnsNonPK...)
+	u.Wheres = t.whereByPK(dml.Equal)
+	u.Listeners = u.Listeners.Merge(t.Listeners.Update)
+	return u.WithDB(t.DB)
+}
+
+func (t *Table) whereByPK(op dml.Op) dml.Conditions {
+	cnds := make(dml.Conditions, 0, 1)
+	for _, pk := range t.columnsPK {
+		c := dml.Column(pk).PlaceHolder()
+		c.Operator = op
+		cnds = append(cnds, c)
+	}
+	return cnds
 }
 
 func (t *Table) resetColumns() {
@@ -97,6 +154,7 @@ func (t *Table) MapColumns(rc *dml.ColumnMap) error {
 	}
 
 	t.Columns = append(t.Columns, c)
+	t.update()
 	return nil
 }
 
@@ -189,16 +247,6 @@ func (t *Table) Drop(ctx context.Context, execer dml.Execer) error {
 	return errors.Wrapf(err, "[ddl] failed to drop table %q", t.Name)
 }
 
-//func (t *Table) UpdateOrCreate() *dml.Artisan {
-//	// TODO rethink this and the overall concept of the Listeners
-//	//sb := t.Select()
-//	//sb.DB.Querier = db
-//	//sb.Listeners.Merge(t.Listeners.Select)
-//	//sb.Listeners.Add(listeners...)
-//	//return sb.LoadStructs(ctx, dest)
-//	return nil
-//}
-
 // InfileOptions provides options for the function LoadDataInfile. Some columns
 // are self-describing.
 type InfileOptions struct {
@@ -213,13 +261,13 @@ type InfileOptions struct {
 	Replace bool
 	// Ignore, rows that duplicate an existing row on a unique key value are
 	// discarded.
-	Ignore             bool
-	FieldsTerminatedBy string
+	Ignore bool
 	// FieldsOptionallyEnclosedBy set true if not all columns are enclosed.
 	FieldsOptionallyEnclosedBy bool
 	FieldsEnclosedBy           rune
 	FieldsEscapedBy            rune
 	LinesTerminatedBy          string
+	FieldsTerminatedBy         string
 	// LinesStartingBy: If all the lines you want to read in have a common
 	// prefix that you want to ignore, you can use LINES STARTING BY
 	// 'prefix_string' to skip over the prefix, and anything before it. If a
