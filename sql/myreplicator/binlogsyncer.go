@@ -2,23 +2,21 @@ package myreplicator
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/binary"
 	"fmt"
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/sql/ddl"
+	"github.com/siddontang/go-mysql/client"
+	"github.com/siddontang/go-mysql/mysql"
 	"os"
 	"sync"
 	"time"
-
-	"crypto/tls"
-
-	"github.com/corestoreio/pkg/sql/ddl"
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
-	"github.com/siddontang/go-mysql/client"
-	"github.com/siddontang/go-mysql/mysql"
 )
 
 var (
-	errSyncRunning = errors.NewAlreadyExistsf("[myreplicator] Sync is already running. You should close it first.")
+	errSyncRunning = errors.AlreadyExists.Newf("[myreplicator] Sync is already running. You should close it first.")
 )
 
 // BinlogSyncerConfig is the configuration for BinlogSyncer.
@@ -82,13 +80,11 @@ func NewBinlogSyncer(cfg *BinlogSyncerConfig) *BinlogSyncer {
 		cfg.Log.Debug("NewBinlogSyncer.BinlogSyncerConfig", log.Object("config", cfg))
 	}
 
-	b := new(BinlogSyncer)
-
-	b.cfg = cfg
-	b.parser = NewBinlogParser()
+	b := &BinlogSyncer{
+		cfg:    cfg,
+		parser: NewBinlogParser(),
+	}
 	b.parser.SetRawMode(b.cfg.RawModeEanbled)
-
-	b.running = false
 	b.ctx, b.cancel = context.WithCancel(context.Background())
 
 	return b
@@ -232,7 +228,7 @@ func (b *BinlogSyncer) enableSemiSync() error {
 
 func (b *BinlogSyncer) prepare() error {
 	if b.isClosed() {
-		return errors.NewAlreadyClosedf("[myreplicator] Syncer already closed")
+		return errors.AlreadyClosed.Newf("[myreplicator] Syncer already closed")
 	}
 
 	if err := b.registerSlave(); err != nil {
@@ -505,7 +501,7 @@ func (b *BinlogSyncer) prepareSyncPos(pos ddl.MasterStatus) error {
 func (b *BinlogSyncer) onStream(s *BinlogStreamer) {
 	defer func() {
 		if e := recover(); e != nil {
-			s.closeWithError(errors.NewFatalf("[myreplicator] onStream.Recovered with error: %v", e))
+			s.closeWithError(errors.Fatal.Newf("[myreplicator] onStream.Recovered with error: %v", e))
 		}
 		b.wg.Done()
 	}()

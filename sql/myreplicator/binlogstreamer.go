@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	errSyncAlreadyClosed = errors.NewAlreadyClosedf("[myreplicator] Sync was closed")
+	errSyncAlreadyClosed = errors.AlreadyClosed.Newf("[myreplicator] Sync was closed")
 )
 
 // BinlogStreamer gets the streaming event.
@@ -24,7 +24,7 @@ type BinlogStreamer struct {
 // Returns a temporary error behaviour
 func (s *BinlogStreamer) GetEvent(ctx context.Context) (*BinlogEvent, error) {
 	if s.err != nil {
-		return nil, errors.NewTemporaryf("[myreplicator] Last sync error or closed, try sync and get event again")
+		return nil, errors.Temporary.Newf("[myreplicator] Last sync error or closed, try sync and get event again")
 	}
 
 	select {

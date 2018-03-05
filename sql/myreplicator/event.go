@@ -87,7 +87,7 @@ func (h *EventHeader) Decode(data []byte) error {
 	pos += 2
 
 	if h.EventSize < uint32(EventHeaderSize) {
-		return errors.NewNotSupportedf("[myreplicator] invalid event size %d, must >= 19", h.EventSize)
+		return errors.NotSupported.Newf("[myreplicator] invalid event size %d, must >= 19", h.EventSize)
 	}
 
 	return nil

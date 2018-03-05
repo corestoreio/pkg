@@ -123,7 +123,7 @@ func (d *jsonBinaryDecoder) decodeValue(tp byte, data []byte) interface{} {
 	case JSONB_OPAQUE:
 		return d.decodeOpaque(data)
 	default:
-		d.err = errors.NewNotValidf("[myreplicator] invalid json type %d", tp)
+		d.err = errors.NotValid.Newf("[myreplicator] invalid json type %d", tp)
 	}
 
 	return nil
@@ -152,7 +152,7 @@ func (d *jsonBinaryDecoder) decodeObjectOrArray(data []byte, isSmall bool, isObj
 	}
 
 	if headerSize > size {
-		d.err = errors.NewNotValidf("[myreplicator] header size %d > size %d", headerSize, size)
+		d.err = errors.NotValid.Newf("[myreplicator] header size %d > size %d", headerSize, size)
 		return nil
 	}
 
@@ -167,7 +167,7 @@ func (d *jsonBinaryDecoder) decodeObjectOrArray(data []byte, isSmall bool, isObj
 
 			// Key must start after value entry
 			if keyOffset < headerSize {
-				d.err = errors.NewNotValidf("[myreplicator] invalid key offset %d, must > %d", keyOffset, headerSize)
+				d.err = errors.NotValid.Newf("[myreplicator] invalid key offset %d, must > %d", keyOffset, headerSize)
 				return nil
 			}
 
@@ -250,7 +250,7 @@ func (d *jsonBinaryDecoder) decodeLiteral(data []byte) interface{} {
 		return false
 	}
 
-	d.err = errors.NewNotValidf("[myreplicator] invalid literal %c", tp)
+	d.err = errors.NotValid.Newf("[myreplicator] invalid literal %c", tp)
 
 	return nil
 }
@@ -261,7 +261,7 @@ func (d *jsonBinaryDecoder) isDataShort(data []byte, expected int) bool {
 	}
 
 	if len(data) < expected {
-		d.err = errors.NewNotValidf("[myreplicator] data len %d < expected %d", len(data), expected)
+		d.err = errors.NotValid.Newf("[myreplicator] data len %d < expected %d", len(data), expected)
 	}
 
 	return d.err != nil
@@ -462,7 +462,7 @@ func (d *jsonBinaryDecoder) decodeVariableLength(data []byte) (int, int) {
 
 		if v&0x80 == 0 {
 			if length > math.MaxUint32 {
-				d.err = errors.NewNotValidf("[myreplicator] variable length %d must <= %d", length, math.MaxUint32)
+				d.err = errors.NotValid.Newf("[myreplicator] variable length %d must <= %d", length, math.MaxUint32)
 				return 0, 0
 			}
 
@@ -472,7 +472,7 @@ func (d *jsonBinaryDecoder) decodeVariableLength(data []byte) (int, int) {
 		}
 	}
 
-	d.err = errors.NewFatalf("[myreplicator] decode variable length failed")
+	d.err = errors.Fatal.Newf("[myreplicator] decode variable length failed")
 
 	return 0, 0
 }
