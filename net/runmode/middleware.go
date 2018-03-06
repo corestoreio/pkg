@@ -17,12 +17,12 @@ package runmode
 import (
 	"net/http"
 
-	"github.com/corestoreio/pkg/net/mw"
-	"github.com/corestoreio/pkg/store"
-	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	loghttp "github.com/corestoreio/log/http"
+	"github.com/corestoreio/pkg/net/mw"
+	"github.com/corestoreio/pkg/store"
+	"github.com/corestoreio/pkg/store/scope"
 )
 
 // WithValidateBaseURL is a middleware which checks if the request base URL is
@@ -101,10 +101,10 @@ type Options struct {
 	UnauthorizedHandler mw.ErrorHandler
 	// Log can be nil, defaults to black hole.
 	Log log.Logger
-	// RunModeCalculater optional custom runMode otherwise falls back to
-	// scope.DefaultRunMode which selects the default website with its default
+	// Calculater optional custom runMode otherwise falls back to
+	// scope.Default which selects the default website with its default
 	// store. To use the admin area enable scope.Store and ID 0.
-	scope.RunModeCalculater
+	Calculater
 	// StoreCodeProcessor extracts the store code from an HTTP requests.
 	// Optional. Defaults to type ProcessStoreCodeCookie.
 	store.CodeProcessor
@@ -144,15 +144,15 @@ func WithRunMode(sf store.Finder, o Options) mw.Middleware {
 			procCode = &ProcessStoreCodeCookie{}
 		}
 	}
-	if o.RunModeCalculater == nil {
-		o.RunModeCalculater = scope.DefaultRunMode
+	if o.Calculater == nil {
+		o.Calculater = Default
 	}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 			// set run mode
 			runMode := o.CalculateRunMode(r)
-			r = r.WithContext(scope.WithContextRunMode(r.Context(), runMode))
+			r = r.WithContext(WithContextRunMode(r.Context(), runMode))
 
 			// find the default store ID for the runMode
 			storeID, websiteID, err := sf.DefaultStoreID(runMode)
