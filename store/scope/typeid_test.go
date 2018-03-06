@@ -27,9 +27,8 @@ import (
 )
 
 var (
-	_ fmt.Stringer            = (*scope.TypeID)(nil)
-	_ fmt.GoStringer          = (*scope.TypeID)(nil)
-	_ scope.RunModeCalculater = (*scope.TypeID)(nil)
+	_ fmt.Stringer   = (*scope.TypeID)(nil)
+	_ fmt.GoStringer = (*scope.TypeID)(nil)
 )
 
 var benchmarkTypeIDString string

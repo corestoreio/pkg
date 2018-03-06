@@ -15,7 +15,6 @@
 package scope
 
 import (
-	"net/http"
 	"sort"
 	"strconv"
 
@@ -141,17 +140,6 @@ func (t TypeID) ValidParent(parent TypeID) bool {
 		(p == Default && pID == 0 && c == Default && cID == 0) ||
 		(p == Default && pID == 0 && c == Website && cID >= 0) ||
 		(p == Website && pID >= 0 && c == Store && cID >= 0)
-}
-
-// CalculateRunMode transforms the Hash into a runMode. On an invalid Hash (the
-// Type is < Website or Type > Store) it falls back to the default run mode,
-// which is a zero Hash. Implements interface RunModeCalculater.
-func (t TypeID) CalculateRunMode(_ *http.Request) TypeID {
-	if s := t.Type(); s < Website || s > Store {
-		// fall back to default because only Website, Group and Store are allowed.
-		t = DefaultRunMode
-	}
-	return t
 }
 
 // TypeIDMaxSegments maximum supported segments or also known as shards. This
