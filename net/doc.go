@@ -22,4 +22,5 @@
 // - context Package: https://twitter.com/peterbourgon/status/752022730812317696
 // - Sessions: https://github.com/alexedwards/scs
 // - Form decoding https://github.com/monoculum/formam
+// - Kerberos github.com/jcmturner/gokrb5
 package net
