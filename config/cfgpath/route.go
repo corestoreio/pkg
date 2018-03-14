@@ -15,11 +15,10 @@
 package cfgpath
 
 import (
-	"bytes"
-	"fmt"
+	"strings"
+	"unicode"
 	"unicode/utf8"
 
-	"github.com/corestoreio/pkg/storage/text"
 	"github.com/corestoreio/errors"
 )
 
@@ -27,11 +26,8 @@ import (
 // (See constant Separator). A route can be seen as a tree.
 // Route example: catalog/product/scope or websites/1/catalog/product/scope
 type Route struct {
-	// Sum32 is a fnv 32a hash for comparison and maybe later integrity checks.
-	// Sum32 will be automatically updated when using New*() functions.
-	// If you set yourself Chars then update Sum32 on your own with Hash32().
-	Sum32 uint32
-	text.Chars
+	Data  string
+	Valid bool
 }
 
 // SelfRouter represents a crappy work around because of omitempty in json.Marshal
@@ -42,37 +38,12 @@ type SelfRouter interface {
 	SelfRoute() Route
 }
 
-// NewRoute creates a new rout from sub paths resp. path parts.
-// Parts gets merged via Separator
-func NewRoute(parts ...string) Route {
-	l := 0
-	for _, p := range parts {
-		l += len(p)
-		l += 1 // len(sSeparator)
+// MakeRoute creates a new rout from a path.
+func MakeRoute(path string) Route {
+	return Route{
+		Data:  path,
+		Valid: true,
 	}
-	l -= 1 // remove last slash
-
-	if l < 1 {
-		return Route{}
-	}
-
-	c := make(text.Chars, l, l)
-	pos := 0
-	for i, p := range parts {
-		pos += copy(c[pos:pos+len(p)], p)
-		if i < len(parts)-1 {
-			pos += copy(c[pos:pos+1], sSeparator)
-		}
-	}
-	return newRoute(c)
-}
-
-func newRoute(b []byte) Route {
-	r := Route{
-		Chars: b,
-	}
-	r.Sum32 = r.Hash32()
-	return r
 }
 
 // SelfRoute implements the SelfRouter interface. See description of the
@@ -81,43 +52,35 @@ func (r Route) SelfRoute() Route {
 	return r
 }
 
-// GoString returns the Go type of the Route including the underlying bytes.
-func (r Route) GoString() string {
-	if r.IsEmpty() {
-		return "cfgpath.Route{}"
+func (r Route) String() string {
+	if !r.Valid {
+		return "<nil>"
 	}
-	return fmt.Sprintf("cfgpath.Route{Chars:[]byte(`%s`)}", r)
+	return r.Data
 }
 
 // Validate checks if the route contains valid runes and is not empty.
 // Error behaviour: Empty and NotValid.
 func (r Route) Validate() error {
-	if r.IsEmpty() {
+	if !r.Valid || len(r.Data) == 0 {
 		return errRouteEmpty
 	}
 
-	if r.Separators() == len(r.Chars) {
-		return errors.NewNotValidf(errIncorrectPathTpl, r.String())
+	if r.Separators() == len(r.Data) {
+		return errors.NotValid.Newf(errIncorrectPathTpl, r.Data)
 	}
 
-	if false == utf8.Valid(r.Chars) {
-		return errors.NewNotValidf(errRouteInvalidBytesTpl, r.String())
+	if !utf8.ValidString(r.Data) {
+		return errors.NotValid.Newf(errRouteInvalidBytesTpl, r.Data)
 	}
-
-	i := 0
-	for i < len(r.Chars) {
-		var ru rune
-		if r.Chars[i] < utf8.RuneSelf {
-			ru = rune(r.Chars[i])
-			i++
-		} else {
-			dr, _ := utf8.DecodeRune(r.Chars[i:])
-			return errors.NewNotValidf("[cfgpath]: Invalid character %q in Route %q", string(dr), r)
-		}
-
-		// TODO(cs) think about if it's worth to extend the allowed characters
-		if !isToken(ru) {
-			return errors.NewNotValidf("[cfgpath]: Invalid character %q in Route %q", string(ru), r)
+	for _, rn := range r.Data {
+		switch {
+		case rn == rune(Separator), rn == '_':
+			// ok
+		case unicode.IsDigit(rn), unicode.IsLetter(rn), unicode.IsNumber(rn):
+			// ok
+		default:
+			return errors.NotValid.Newf("[cfgpath] Route %q contains invalid character %q.", r.Data, rn)
 		}
 	}
 	return nil
@@ -125,20 +88,11 @@ func (r Route) Validate() error {
 
 // Equal compares the Sum32 of both routes
 func (r Route) Equal(b Route) bool {
-	return r.Sum32 == b.Sum32
-	//if r.Sum32 == b.Sum32 {
-	//	return true
-	//}
-	//return r.Chars.Equal(b.Chars) // takes longer
-}
-
-// Clone returns a new allocated route with copied data.
-func (r Route) Clone() Route {
-	return newRoute(r.Chars.Clone())
+	return r.Valid == b.Valid && r.Data == b.Data
 }
 
 // Append adds other partial routes with a Separator between. After the partial
-// routes have been added a validation check will be done.
+// routes have been added a validation check will NOT be done.
 // Internally it creates a new byte slice.
 //
 //		a := cfgpath.Route(`catalog/product`)
@@ -148,77 +102,48 @@ func (r Route) Clone() Route {
 //		}
 //		println(a.String())
 //		// Should print: catalog/product/enable_flat_tables
-func (r *Route) Append(routes ...Route) error {
+func (r Route) Append(routes ...Route) Route {
 
-	if i1, i2 := bytes.LastIndexByte((*r).Chars, Separator), len((*r).Chars)-1; i1 > 0 && i2 > 0 && i1 == i2 {
-		(*r).Chars = (*r).Chars[:len((*r).Chars)-1] // strip last Separator
+	if i1, i2 := strings.LastIndexByte(r.Data, Separator), len(r.Data)-1; i1 > 0 && i2 > 0 && i1 == i2 {
+		r.Data = r.Data[:len(r.Data)-1] // strip last Separator
 	}
 
-	// calculate new buffer size
-	size := len((*r).Chars)
+	var buf strings.Builder
+	if r.Valid {
+		buf.WriteString(r.Data)
+	}
 
-	rsLen := len(routes) - 1
 	i := 0
 	for _, route := range routes {
-		if route.Chars.IsEmpty() {
-			rsLen -= 1
-			continue
+		if route.Valid {
+			if len(r.Data) > 0 && len(route.Data) > 0 && route.Data[0] != Separator {
+				buf.WriteByte(Separator)
+			}
+			buf.WriteString(route.Data)
+			i++
 		}
-		if i == 0 {
-			size++ // Separator
-		}
-		size += len(route.Chars)
-		if len(route.Chars) > 0 && i < len(routes)-1 {
-			size++ // Separator
-		}
-		i++
 	}
 
-	var buf = make([]byte, size, size)
-	var pos int
-	if len((*r).Chars) > 0 {
-		pos += copy(buf[pos:], (*r).Chars)
+	return Route{
+		Data:  buf.String(),
+		Valid: true,
 	}
+}
 
-	i = 0
-	for _, route := range routes {
-		if route.Chars.IsEmpty() {
-			continue
-		}
-		if i == 0 && len((*r).Chars) > 0 && route.Chars[0] != Separator {
-			pos += copy(buf[pos:], bSeparator)
-		}
-		pos += copy(buf[pos:], route.Chars)
-		if i < rsLen {
-			pos += copy(buf[pos:], bSeparator)
-		}
-		i++
-	}
-
-	if pos := bytes.IndexByte(buf, 0x00); pos >= 1 {
-		buf = buf[:pos] // strip everything after the null byte
-	}
-
-	(*r) = newRoute(buf)
-	if err := r.Validate(); err != nil {
-		return errors.Wrap(err, "[cfgpath] Append.Validate")
-	}
-	return nil
+// MarshalText implements interface encoding.TextMarshaler.
+func (r Route) MarshalText() (text []byte, err error) {
+	return []byte(r.Data), nil
 }
 
 // UnmarshalText transforms the text into a route with performed validation
-// checks.
+// checks. Implements encoding.TextUnmarshaler.
 // Error behaviour: NotValid, Empty.
 func (r *Route) UnmarshalText(txt []byte) error {
-	var c text.Chars
-	if err := c.UnmarshalText(txt); err != nil {
-		return errors.Wrap(err, "[cfgpath] UnmarshalText.UnmarshalText")
-	}
-	(*r) = newRoute(c)
-	if err := r.Validate(); err != nil {
-		return errors.Wrap(err, "[cfgpath] UnmarshalText.Validate")
-	}
-	return nil
+	r.Data = string(txt)
+	r.Valid = true
+	err := r.Validate()
+	r.Valid = err == nil
+	return err
 }
 
 // Level returns a hierarchical based route depending on the depth.
@@ -234,7 +159,7 @@ func (r Route) Level(depth int) (Route, error) {
 		return Route{}, errors.Wrap(err, "[cfgpath] Level.Validate")
 	}
 
-	lp := len(r.Chars)
+	lp := len(r.Data)
 	switch {
 	case depth < 0:
 		return r, nil
@@ -247,14 +172,14 @@ func (r Route) Level(depth int) (Route, error) {
 	pos := 0
 	i := 1
 	for pos <= lp {
-		sc := bytes.IndexByte(r.Chars[pos:], Separator)
+		sc := strings.IndexByte(r.Data[pos:], Separator)
 		if sc == -1 {
 			return r, nil
 		}
 		pos += sc + 1
 
 		if i == depth {
-			return newRoute(r.Chars[:pos-1]), nil
+			return Route{Data: r.Data[:pos-1], Valid: true}, nil
 		}
 		i++
 	}
@@ -268,7 +193,7 @@ const (
 
 // Hash same as Level() but returns a fnv32a value or an error if the route is
 // invalid. 32 has been chosen because routes consume not that much space as
-// a text.Chars.
+// a []byte.
 //
 // Copyright 2011 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
@@ -278,13 +203,15 @@ const (
 // created by Glenn Fowler, Landon Curt Noll, and Phong Vo.
 // See
 // http://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function.
+//
+// Usage as map key.
 func (r Route) Hash(depth int) (uint32, error) {
 	r2, err := r.Level(depth)
 	if err != nil {
 		return 0, errors.Wrap(err, "[cfgpath] Hash.Level")
 	}
 	var hash uint32 = offset32
-	for _, c := range r2.Chars {
+	for _, c := range r2.Data {
 		hash ^= uint32(c)
 		hash *= prime32
 	}
@@ -292,7 +219,7 @@ func (r Route) Hash(depth int) (uint32, error) {
 }
 
 // Hash32 returns a fnv32a value of the route. 32 has been chosen because
-// routes consume not that much space as a text.Chars.
+// routes consume not that much space as a []byte.
 //
 // Copyright 2011 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
@@ -302,9 +229,11 @@ func (r Route) Hash(depth int) (uint32, error) {
 // created by Glenn Fowler, Landon Curt Noll, and Phong Vo.
 // See
 // http://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function.
+//
+// Usage as map key.
 func (r Route) Hash32() uint32 {
 	var hash uint32 = offset32
-	for _, c := range r.Chars {
+	for _, c := range r.Data {
 		hash ^= uint32(c)
 		hash *= prime32
 	}
@@ -313,8 +242,8 @@ func (r Route) Hash32() uint32 {
 
 // Separators returns the number of separators
 func (r Route) Separators() (count int) {
-	for _, b := range r.Chars {
-		if b == Separator {
+	for _, b := range r.Data {
+		if b == rune(Separator) {
 			count++
 		}
 	}
@@ -334,7 +263,7 @@ func (r Route) Separators() (count int) {
 func (r Route) Part(pos int) (Route, error) {
 
 	if pos < 1 {
-		return Route{}, errors.NewNotValidf(errIncorrectPositionTpl, pos)
+		return Route{}, errors.NotValid.Newf(errIncorrectPositionTpl, pos)
 	}
 
 	sepCount := r.Separators()
@@ -342,36 +271,36 @@ func (r Route) Part(pos int) (Route, error) {
 		return r, nil
 	}
 	if pos > sepCount+1 {
-		return Route{}, errors.NewNotValidf(errIncorrectPositionTpl, pos)
+		return Route{}, errors.NotValid.Newf(errIncorrectPositionTpl, pos)
 	}
 
 	var sepPos [maxLevels]int
 	sp := 0
-	for i, b := range r.Chars {
-		if b == Separator && sp < maxLevels {
+	for i, b := range r.Data {
+		if b == rune(Separator) && sp < maxLevels {
 			sepPos[sp] = i + 1 // positions of the separators in the slice
 			sp++
 		}
 	}
 
-	pos -= 1
+	pos--
 	min := 0
 	for i := 0; i < maxLevels; i++ {
 		if sepPos[i] == 0 { // no more separators found
-			return newRoute(r.Chars[min:]), nil
+			return Route{Data: r.Data[min:], Valid: true}, nil
 		}
 		max := sepPos[i]
 		if i == pos {
-			return newRoute(r.Chars[min : max-1]), nil
+			return Route{Data: r.Data[min : max-1], Valid: true}, nil
 		}
 		min = max
 	}
-	return newRoute(r.Chars[min:]), nil
+	return Route{Data: r.Data[min:], Valid: true}, nil
 }
 
 // Split splits the route into its three parts. Does not run Validate()
 // Example:
-// 		routes := cfgpath.NewRoute("aa/bb/cc")
+// 		routes := cfgpath.MakeRoute("aa/bb/cc")
 //		rs, err := routes.Split()
 //		rs[0].String() == "aa"
 //		rs[1].String() == "bb"
@@ -383,14 +312,14 @@ func (r Route) Split() (ret [Levels]Route, err error) {
 	const sepCount = Levels - 1 // only two separators supported
 	var sepPos [sepCount]int
 	sp := 0
-	for i, b := range r.Chars {
-		if b == Separator && sp < sepCount {
+	for i, b := range r.Data {
+		if b == rune(Separator) && sp < sepCount {
 			sepPos[sp] = i // positions of the separators in the slice
 			sp++
 		}
 	}
 	if sp < 1 {
-		err = errors.NewNotValidf(errIncorrectPathTpl, r.String())
+		err = errors.NotValid.Newf(errIncorrectPathTpl, r.Data)
 		return
 	}
 
@@ -400,9 +329,9 @@ func (r Route) Split() (ret [Levels]Route, err error) {
 		if i < sepCount && sepPos[i] > 0 {
 			max = sepPos[i]
 		} else {
-			max = len(r.Chars)
+			max = len(r.Data)
 		}
-		ret[i] = newRoute(r.Chars[min:max])
+		ret[i] = Route{Data: r.Data[min:max], Valid: true}
 		if i < sepCount && sepPos[i] == 0 {
 			return
 		}

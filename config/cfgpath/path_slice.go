@@ -15,7 +15,6 @@
 package cfgpath
 
 import (
-	"bytes"
 	"sort"
 )
 
@@ -28,7 +27,7 @@ type PathSlice []Path
 // It must match ID, Scope and Route.
 func (ps PathSlice) Contains(p Path) bool {
 	for _, pps := range ps {
-		if pps.ScopeID == p.ScopeID && pps.Sum32 == pps.Sum32 {
+		if pps.ScopeID == p.ScopeID && pps.Route.Data == p.Route.Data {
 			return true
 		}
 	}
@@ -37,7 +36,7 @@ func (ps PathSlice) Contains(p Path) bool {
 
 func (ps PathSlice) Len() int { return len(ps) }
 func (ps PathSlice) Less(i, j int) bool {
-	return bytes.Compare(ps[i].Route.Chars, ps[j].Route.Chars) == -1
+	return ps[i].Route.Data < ps[j].Route.Data
 }
 func (ps PathSlice) Swap(i, j int) { ps[i], ps[j] = ps[j], ps[i] }
 

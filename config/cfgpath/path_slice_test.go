@@ -35,18 +35,18 @@ func TestPathSlice_Contains(t *testing.T) {
 	}{
 		{
 			cfgpath.PathSlice{
-				0: cfgpath.MustNewByParts("aa/bb/cc").BindWebsite(3),
-				1: cfgpath.MustNewByParts("aa/bb/cc").BindWebsite(2),
+				0: cfgpath.MustMakeByString("aa/bb/cc").BindWebsite(3),
+				1: cfgpath.MustMakeByString("aa/bb/cc").BindWebsite(2),
 			},
-			cfgpath.MustNewByParts("aa/bb/cc").BindWebsite(2),
+			cfgpath.MustMakeByString("aa/bb/cc").BindWebsite(2),
 			true,
 		},
 		{
 			cfgpath.PathSlice{
-				0: cfgpath.MustNewByParts("aa/bb/cc").BindWebsite(3),
-				1: cfgpath.MustNewByParts("aa/bb/cc").BindWebsite(2),
+				0: cfgpath.MustMakeByString("aa/bb/cc").BindWebsite(3),
+				1: cfgpath.MustMakeByString("aa/bb/cc").BindWebsite(2),
 			},
-			cfgpath.MustNewByParts("aa/bb/cc").BindStore(2),
+			cfgpath.MustMakeByString("aa/bb/cc").BindStore(2),
 			false,
 		},
 	}
@@ -58,15 +58,15 @@ func TestPathSlice_Contains(t *testing.T) {
 func TestPathSlice_Sort(t *testing.T) {
 
 	ps := cfgpath.PathSlice{
-		cfgpath.MustNewByParts("bb/cc/dd"),
-		cfgpath.MustNewByParts("xx/yy/zz"),
-		cfgpath.MustNewByParts("aa/bb/cc"),
+		cfgpath.MustMakeByString("bb/cc/dd"),
+		cfgpath.MustMakeByString("xx/yy/zz"),
+		cfgpath.MustMakeByString("aa/bb/cc"),
 	}
 	ps.Sort()
 	want := cfgpath.PathSlice{
-		cfgpath.Path{Route: cfgpath.NewRoute(`aa/bb/cc`), ScopeID: scope.DefaultTypeID},
-		cfgpath.Path{Route: cfgpath.NewRoute(`bb/cc/dd`), ScopeID: scope.DefaultTypeID},
-		cfgpath.Path{Route: cfgpath.NewRoute(`xx/yy/zz`), ScopeID: scope.DefaultTypeID},
+		cfgpath.Path{Route: cfgpath.MakeRoute(`aa/bb/cc`), ScopeID: scope.DefaultTypeID},
+		cfgpath.Path{Route: cfgpath.MakeRoute(`bb/cc/dd`), ScopeID: scope.DefaultTypeID},
+		cfgpath.Path{Route: cfgpath.MakeRoute(`xx/yy/zz`), ScopeID: scope.DefaultTypeID},
 	}
 	assert.Exactly(t, want, ps)
 }
@@ -78,12 +78,12 @@ func BenchmarkPathSlice_Sort(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		ps := cfgpath.PathSlice{
-			cfgpath.MustNewByParts("rr/ss/tt"),
-			cfgpath.MustNewByParts("bb/cc/dd"),
-			cfgpath.MustNewByParts("xx/yy/zz"),
-			cfgpath.MustNewByParts("aa/bb/cc"),
-			cfgpath.MustNewByParts("ff/gg/hh"),
-			cfgpath.MustNewByParts("cc/dd/ee"),
+			cfgpath.MustMakeByString("rr/ss/tt"),
+			cfgpath.MustMakeByString("bb/cc/dd"),
+			cfgpath.MustMakeByString("xx/yy/zz"),
+			cfgpath.MustMakeByString("aa/bb/cc"),
+			cfgpath.MustMakeByString("ff/gg/hh"),
+			cfgpath.MustMakeByString("cc/dd/ee"),
 		}
 		ps.Sort()
 		if len(ps) != 6 {

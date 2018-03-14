@@ -15,66 +15,109 @@
 package cfgpath_test
 
 import (
-	"database/sql"
-	"database/sql/driver"
+	"context"
+	"fmt"
 	"strconv"
 	"testing"
 	"time"
 
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config/cfgpath"
-	"github.com/corestoreio/pkg/storage/dbr"
-	"github.com/corestoreio/pkg/util"
-	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/corestoreio/pkg/sql/ddl"
+	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/sql/dmltest"
+	"github.com/corestoreio/pkg/util/strs"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-var _ sql.Scanner = (*cfgpath.Route)(nil)
-var _ driver.Valuer = (*cfgpath.Route)(nil)
+var tableCollection *ddl.Tables
 
+const (
+	TableNameCoreConfigData = `core_config_data`
+)
+
+func init() {
+	tableCollection = ddl.MustNewTables(
+		ddl.WithTable(
+			TableNameCoreConfigData,
+			&ddl.Column{Field: `config_id`, ColumnType: `int(10) unsigned`, Null: `NO`, Key: `PRI`, Extra: `auto_increment`},
+			&ddl.Column{Field: `scope`, ColumnType: `varchar(8)`, Null: `NO`, Key: `MUL`, Default: dml.MakeNullString(`default`), Extra: ``},
+			&ddl.Column{Field: `scope_id`, ColumnType: `int(11)`, Null: `NO`, Key: ``, Default: dml.MakeNullString(`0`), Extra: ``},
+			&ddl.Column{Field: `path`, ColumnType: `varchar(255)`, Null: `NO`, Key: ``, Default: dml.MakeNullString(`general`), Extra: ``},
+			&ddl.Column{Field: `value`, ColumnType: `text`, Null: `YES`, Key: ``, Extra: ``},
+		),
+	)
+}
+
+// TableCoreConfigData represents a type for DB table core_config_data
+// Generated via tableToStruct.
+type TableCoreConfigData struct {
+	ConfigID uint64         `json:",omitempty"` // config_id int(10) unsigned NOT NULL PRI  auto_increment
+	Scope    string         `json:",omitempty"` // scope varchar(8) NOT NULL MUL DEFAULT 'default'
+	ScopeID  int64          `json:",omitempty"` // scope_id int(11) NOT NULL  DEFAULT '0'
+	Path     cfgpath.Route  `json:",omitempty"` // path varchar(255) NOT NULL  DEFAULT 'general'
+	Value    dml.NullString `json:",omitempty"` // value text NULL
+}
+
+// MapColumns implements interface ColumnMapper only partially.
+func (p *TableCoreConfigData) MapColumns(cm *dml.ColumnMap) error {
+	if cm.Mode() == dml.ColumnMapEntityReadAll {
+		// bug check for null in Path
+		var pth dml.NullString
+		pth.String = p.Path.Data
+		pth.Valid = p.Path.Valid
+		return cm.Uint64(&p.ConfigID).String(&p.Scope).Int64(&p.ScopeID).NullString(&pth).NullString(&p.Value).Err()
+	}
+	for cm.Next() {
+		switch c := cm.Column(); c {
+		case "config_id": // customer_id is an alias
+			cm.Uint64(&p.ConfigID)
+		case "scope":
+			cm.String(&p.Scope)
+		case "scope_id":
+			cm.Int64(&p.ScopeID)
+		case "path":
+			var pth dml.NullString
+			cm.NullString(&pth)
+			p.Path.Data = pth.String
+			p.Path.Valid = pth.Valid
+		case "value":
+			cm.NullString(&p.Value)
+
+		default:
+			return errors.NotFound.Newf("[dml_test] customerEntity Column %q not found", c)
+		}
+	}
+	return cm.Err()
+}
+
+// TestIntegrationSQLType is not a real test for the type Route
 func TestIntegrationSQLType(t *testing.T) {
 
-	dbCon, version := cstesting.MustConnectDB()
-	if version < 0 {
-		t.Skip("Environment DB DSN not found")
-	}
-	defer func() { assert.NoError(t, dbCon.Close()) }()
+	dbCon, dbMock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, dbCon, dbMock)
 
-	var testPath = `system/full_page_cache/varnish/` + util.RandAlnum(5)
-	var insPath = cfgpath.NewRoute(testPath)
+	var testPath = `system/full_page_cache/varnish/` + strs.RandAlnum(5)
+	//var insPath = cfgpath.MakeRoute(testPath)
 	var insVal = time.Now().Unix()
 
-	// just for testing! TODO refactor test
-	stmt, err := dbCon.DB.Prepare("INSERT INTO `" + tableCollection.Name(tableIndexCoreConfigData) + "` (path,value) values (?,?)")
-	if false == assert.NoError(t, err) {
-		t.Fatal("Stopping ...")
-	}
+	dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT `config_id`, `scope`, `scope_id`, `path`, `value` FROM `core_config_data` AS `main_table`")).
+		WithArgs(testPath).
+		WillReturnRows(
+			sqlmock.NewRows([]string{"config_id", "scope", "scope_id", "path", "value"}).
+				AddRow(1, "default", 0, testPath, fmt.Sprintf("%d", insVal)),
+		)
 
-	// yay! writing bytes instead of boring slow strings!
-	res, err := stmt.Exec(insPath.Bytes(), insVal)
-	if false == assert.NoError(t, err) {
-		t.Fatal("Stopping ...")
-	}
+	var ccd TableCoreConfigData
+	tbl := tableCollection.MustTable(TableNameCoreConfigData)
+	rc, err := tbl.SelectAll().WithDB(dbCon.DB).WithArgs().String(testPath).Load(context.TODO(), &ccd)
+	require.NoError(t, err)
+	assert.Exactly(t, uint64(1), rc)
 
-	id, err := res.LastInsertId()
-	assert.NoError(t, err)
-	assert.NotEmpty(t, id)
-
-	var ccds TableCoreConfigDataSlice
-	tbl := tableCollection.MustTable(tableIndexCoreConfigData)
-	rows, err := tbl.Load(dbCon.NewSession(), &ccds, func(sb *dbr.Select) *dbr.Select {
-		sb.Where(dbr.Condition("config_id=?", id))
-		return sb
-	})
-
-	assert.NoError(t, err)
-	assert.NotEmpty(t, rows)
-
-	if false == assert.Exactly(t, int(1), rows) {
-		t.Fatal("No rows loaded from the database!")
-	}
-
-	assert.Exactly(t, testPath, ccds[0].Path.String())
-	haveI64, err := strconv.ParseInt(ccds[0].Value.String, 10, 64)
+	assert.Exactly(t, testPath, ccd.Path.String())
+	haveI64, err := strconv.ParseInt(ccd.Value.String, 10, 64)
 	assert.NoError(t, err)
 	assert.Exactly(t, insVal, haveI64)
 }

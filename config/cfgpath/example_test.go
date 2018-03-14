@@ -23,24 +23,24 @@ import (
 
 func Example() {
 
-	fmt.Println(cfgpath.MustNew(cfgpath.NewRoute("system/smtp/host")).String())
-	fmt.Println(cfgpath.MustNewByParts("system", "smtp", "host").BindWebsite(1).String())
+	fmt.Println(cfgpath.MustNew(cfgpath.MakeRoute("system/smtp/host")).String())
+	fmt.Println(cfgpath.MustMakeByString("system/smtp/host").BindWebsite(1).String())
 	// alternative way
-	fmt.Println(cfgpath.MustNewByParts("system/smtp/host").BindWebsite(1).String())
+	fmt.Println(cfgpath.MustMakeByString("system/smtp/host").BindWebsite(1).String())
 
-	fmt.Println(cfgpath.MustNewByParts("system/smtp/host").BindStore(3).String())
+	fmt.Println(cfgpath.MustMakeByString("system/smtp/host").BindStore(3).String())
 	// alternative way
-	fmt.Println(cfgpath.MustNewByParts("system/smtp/host").BindStore(3).String())
+	fmt.Println(cfgpath.MustMakeByString("system/smtp/host").BindStore(3).String())
 	// Group is not supported and falls back to default
-	fmt.Println(cfgpath.MustNewByParts("system/smtp/host").Bind(scope.Group.Pack(4)).String())
+	fmt.Println(cfgpath.MustMakeByString("system/smtp/host").Bind(scope.Group.Pack(4)).String())
 
-	p, err := cfgpath.NewByParts("system", "smtp", "host")
+	p, err := cfgpath.MakeByString("system/smtp/host")
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}
 	fmt.Println(p.String())
 
-	routes := cfgpath.NewRoute("dev/css/merge_css_files")
+	routes := cfgpath.MakeRoute("dev/css/merge_css_files")
 	rs, err := routes.Split()
 	if err != nil {
 		fmt.Printf("%s\n", err)

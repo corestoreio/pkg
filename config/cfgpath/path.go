@@ -19,25 +19,25 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
-	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
 // Levels defines how many parts are at least in a path.
 // Like a/b/c for 3 parts. And 5 for a fully qualified path.
-const Levels int = 3
+const Levels = 3
 
 // realLevels maximum numbers of supported separators. used as array initializer.
-const maxLevels int = 8 // up to 8. just a guess
+const maxLevels = 8 // up to 8. just a guess
 
 // Separator used in the database table core_config_data and in config.Service
 // to separate the path parts.
 const Separator byte = '/'
 
 const sSeparator = "/"
-
-var bSeparator = []byte(sSeparator)
 
 // Path represents a configuration path bound to a scope.
 type Path struct {
@@ -51,8 +51,8 @@ type Path struct {
 	routeValidated bool
 }
 
-// New creates a new validated Path. Scope is assigned to Default.
-func New(rs ...Route) (Path, error) {
+// Make creates a new validated Path. Scope is assigned to Default.
+func Make(rs ...Route) (Path, error) {
 	p := Path{
 		ScopeID: scope.DefaultTypeID,
 	}
@@ -61,34 +61,31 @@ func New(rs ...Route) (Path, error) {
 	} else {
 		p.Route.Append(rs...)
 	}
-	if p.Route.Sum32 == 0 {
-		p.Route.Sum32 = p.Route.Hash32()
-	}
 	if err := p.IsValid(); err != nil {
 		return Path{}, errors.Wrapf(err, "[cfgpath] Route %q", p.Route)
 	}
 	return p, nil
 }
 
-// MustNew same as New but panics on error.
+// MustNew same as Make but panics on error.
 func MustNew(rs ...Route) Path {
-	p, err := New(rs...)
+	p, err := Make(rs...)
 	if err != nil {
 		panic(err)
 	}
 	return p
 }
 
-// NewByParts creates a new Path from path part strings.
+// MakeByString creates a new Path from path part strings.
 // Parts gets merged via Separator.
-//		p := NewByParts("catalog","product",")
-func NewByParts(parts ...string) (Path, error) {
-	return New(NewRoute(parts...))
+//		p := MakeByString("catalog","product",")
+func MakeByString(path string) (Path, error) {
+	return Make(MakeRoute(path))
 }
 
-// MustNewByParts same as NewByParts but panics on error.
-func MustNewByParts(parts ...string) Path {
-	p, err := NewByParts(parts...)
+// MustMakeByString same as MakeByString but panics on error.
+func MustMakeByString(path string) Path {
+	p, err := MakeByString(path)
 	if err != nil {
 		panic(err)
 	}
@@ -116,21 +113,12 @@ func (p Path) BindStore(id int64) Path {
 	return p
 }
 
-// Clone returns a new allocated Path with copied data. Clone is not needed if
-// you before or after the assignment to a new variable use Path.Append() or the
-// classic append(Path.Chars,[]byte() ....) to also allocate a new slice.
-func (p Path) Clone() Path {
-	p2 := p
-	p2.Route = p.Route.Clone()
-	return p2
-}
-
 // String returns a fully qualified path. Errors get logged if debug mode
 // is enabled. String starts with `[cfgpath] Error:` on error.
 // Error behaviour: NotValid, Empty or WriteFailed
 func (p Path) String() string {
-	buf := bufPool.Get()
-	defer bufPool.Put(buf)
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
 	if err := p.fq(buf); err != nil {
 		return fmt.Sprintf("[cfgpath] Error: %+v", err)
 	}
@@ -139,7 +127,7 @@ func (p Path) String() string {
 
 // GoString returns the internal representation of Path
 func (p Path) GoString() string {
-	return fmt.Sprintf("cfgpath.Path{ Route:cfgpath.NewRoute(`%s`), ScopeHash: %d }", p.Route, p.ScopeID)
+	return fmt.Sprintf("cfgpath.Path{ Route:cfgpath.MakeRoute(%q), ScopeHash: %d }", p.Route.Data, p.ScopeID)
 }
 
 // FQ returns the fully qualified route. Safe for further processing of the
@@ -151,7 +139,7 @@ func (p Path) FQ() (Route, error) {
 	// and bufPool truncates the slice, so return would a zero slice.
 	var buf bytes.Buffer
 	err := p.fq(&buf)
-	return newRoute(buf.Bytes()), err
+	return Route{Data: buf.String(), Valid: err == nil}, err
 }
 
 // Level returns a hierarchical based route depending on the depth.
@@ -187,17 +175,17 @@ func (p Path) Level(depth int) (_ Route, err error) {
 func (p Path) Hash(depth int) (uint32, error) {
 	p.routeValidated = true
 
-	buf := bufPool.Get()
-	defer bufPool.Put(buf)
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
 	err := p.fq(buf)
 	if err != nil {
 		return 0, err
 	}
-	r := newRoute(buf.Bytes())
-	if depth < 0 {
-		return r.Sum32, nil
+	r := Route{Data: buf.String(), Valid: err == nil}
+	if depth >= 0 {
+		depth += 2
 	}
-	return r.Hash(depth + 2)
+	return r.Hash(depth)
 }
 
 // Error behaviour: NotValid or WriteFailed
@@ -212,24 +200,15 @@ func (p Path) fq(buf *bytes.Buffer) error {
 		id = 0
 	}
 
-	if _, err := buf.Write(scp.StrBytes()); err != nil {
-		return errors.NewWriteFailed(err, "[cfgpath] buf.Write")
-	}
-	if err := buf.WriteByte(Separator); err != nil {
-		return errors.NewWriteFailed(err, "[cfgpath] buf.Write")
-	}
+	buf.Write(scp.StrBytes())
+	buf.WriteByte(Separator)
+
 	bufRaw := buf.Bytes()
 	bufRaw = strconv.AppendInt(bufRaw, id, 10)
 	buf.Reset()
-	if _, err := buf.Write(bufRaw); err != nil {
-		return errors.NewWriteFailed(err, "[cfgpath] buf.Write")
-	}
-	if err := buf.WriteByte(Separator); err != nil {
-		return errors.NewWriteFailed(err, "[cfgpath] buf.Write")
-	}
-	if _, err := buf.Write(p.Route.Chars); err != nil {
-		return errors.NewWriteFailed(err, "[cfgpath] buf.Write")
-	}
+	buf.Write(bufRaw)
+	buf.WriteByte(Separator)
+	buf.WriteString(p.Route.Data)
 	return nil
 }
 
@@ -251,7 +230,7 @@ func (p Path) Part(pos int) (r Route, err error) {
 	return p.Route.Part(pos)
 }
 
-// SplitFQPath takes a fully qualified path and splits it into its parts.
+// SplitFQ takes a fully qualified path and splits it into its parts.
 // 	Input: stores/5/catalog/frontend/list_allow_all
 //	=>
 //		scope: 		stores
@@ -263,15 +242,15 @@ func SplitFQ(fqPath string) (Path, error) {
 	// this is the most fast version I come up with.
 	// moving from strings to bytes was even slower despite inline
 	// th parse int64 function
-	if false == (strings.Count(fqPath, sSeparator) >= Levels+1) {
-		return Path{}, errors.NewNotValidf("[cfgpath] Incorrect fully qualified path: %q. Expecting: strScope/ID/%s", fqPath, fqPath)
+	if !(strings.Count(fqPath, sSeparator) >= Levels+1) {
+		return Path{}, errors.NotValid.Newf("[cfgpath] Incorrect fully qualified path: %q. Expecting: strScope/ID/%s", fqPath, fqPath)
 	}
 
 	fi := strings.Index(fqPath, sSeparator)
 	scopeStr := fqPath[:fi]
 
-	if false == scope.Valid(scopeStr) {
-		return Path{}, errors.NewNotSupportedf("[cfgpath] Unknown Scope: %q", scopeStr)
+	if !scope.Valid(scopeStr) {
+		return Path{}, errors.NotSupported.Newf("[cfgpath] Unknown Scope: %q", scopeStr)
 	}
 
 	fqPath = fqPath[fi+1:]
@@ -279,9 +258,9 @@ func SplitFQ(fqPath string) (Path, error) {
 	scopeID, err := strconv.ParseInt(fqPath[:fi], 10, 64)
 
 	return Path{
-		Route:   NewRoute(fqPath[fi+1:]),
+		Route:   MakeRoute(fqPath[fi+1:]),
 		ScopeID: scope.MakeTypeID(scope.FromString(scopeStr), scopeID),
-	}, errors.NewNotValid(err, "[cfgpath] ParseInt")
+	}, errors.NotValid.New(err, "[cfgpath] ParseInt")
 }
 
 // BenchmarkSplitFQ-4  	 2000000	       761 ns/op	      32 B/op	       1 allocs/op
@@ -289,7 +268,7 @@ func SplitFQ(fqPath string) (Path, error) {
 // reasons. maybe some one can speed it more up than the above string version.
 //
 // ErrInvalidScopeID when parsing the scope ID fails.
-// var ErrInvalidScopeID = errors.New("Scope ID contains invalid bytes. Cannot extract an integer value.")
+// var ErrInvalidScopeID = errors.Make("Scope ID contains invalid bytes. Cannot extract an integer value.")
 //func SplitFQ(fqPath Route) (Path, error) {
 //	if false == (bytes.Count(fqPath, Separator) >= Levels+1) || false == fqPath.Valid() {
 //		return Path{}, fmt.Errorf("Incorrect fully qualified path: %q", fqPath)
@@ -371,8 +350,8 @@ func (p Path) IsValid() error {
 	if p.RouteLevelValid {
 		return nil
 	}
-	if p.Route.Separators() < Levels-1 || p.Route.RuneCount() < 8 /*aa/bb/cc*/ {
-		return errors.NewNotValidf(errIncorrectPathTpl, p.Route.String())
+	if p.Route.Separators() < Levels-1 || utf8.RuneCountInString(p.Route.Data) < 8 /*aa/bb/cc*/ {
+		return errors.NotValid.Newf(errIncorrectPathTpl, p.Route)
 	}
 	return nil
 }
