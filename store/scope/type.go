@@ -23,9 +23,8 @@ const maxUint8 = 1<<8 - 1
 
 // Type or also known as Scope defines the hierarchy of the overall CoreStore
 // library. The hierarchy chain travels from Default->Website->Group->Store. The
-// type relates to the database tables `core_website`, `core_store_group` and
-// `core_store` OR `website`, `store_group` and `store` depending on the
-// database schema (M1 or M2) you are using. Type is a part of type Perm.
+// type relates to the database tables `website`, `store_group` and `store`.
+// Type is a part of type Perm.
 type Type uint8
 
 // Those constants define the overall scopes. The hierarchical order is always:

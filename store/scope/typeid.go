@@ -25,18 +25,17 @@ import (
 // MaxID maximum allowed ID which can be packed into a TypeID. The ID relates to
 // an auto_increment column in the database. Doesn't matter whether we have a
 // website, group or store scope. int24 (8388607) size at the moment.
-const MaxID int64 = 1<<23 - 1
+const MaxID = 1<<23 - 1
 
 // DefaultTypeID default Hash value for Default Scope and ID 0. Avoids typing
 // 		scope.NewHash(DefaultID,0)
-const DefaultTypeID TypeID = TypeID(Default)<<24 | 0
+const DefaultTypeID = TypeID(Default)<<24 | 0
 
 // TypeID defines a merged Scope with its ID. The first 8 bit represents the
 // Type: Default, Website, Group or Store. The last 24 bit represents the
 // assigned ID. This ID relates to the database table in M2 to `website`,
-// `store` or `store_group` and for M1 to `core_website`, `core_store` and
-// `core_store_group`. The maximum ID which can be used is defined in constant
-// MaxID.
+// `store` or `store_group`. The maximum ID which can be used is defined in
+// constant MaxID.
 type TypeID uint32
 
 // If we have need for more store IDs then we can change the underlying types here.
