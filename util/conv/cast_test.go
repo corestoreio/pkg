@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/pkg/storage/text"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -137,7 +136,6 @@ func TestToString(t *testing.T) {
 	assert.Equal(t, ToString([]byte("one time")), "one time")
 	assert.Equal(t, ToString(template.HTML("one time")), "one time")
 	assert.Equal(t, ToString(template.URL("http://somehost.foo")), "http://somehost.foo")
-	assert.Equal(t, ToString(text.Chars("http://somehost.foo")), "http://somehost.foo")
 	assert.Equal(t, ToString(foo), "one more time")
 	assert.Equal(t, ToString(nil), "")
 	assert.Equal(t, ToString(true), "true")
@@ -153,7 +151,6 @@ func TestToByte(t *testing.T) {
 	assert.Equal(t, ToByte([]byte("one time")), []byte("one time"))
 	assert.Equal(t, ToByte(template.HTML("one time")), []byte("one time"))
 	assert.Equal(t, ToByte(template.URL("http://somehost.foo")), []byte("http://somehost.foo"))
-	assert.Equal(t, ToByte(text.Chars("http://somehost.foo")), []byte("http://somehost.foo"))
 	assert.Equal(t, ToByte(foo), []byte("one more time"))
 	assert.Equal(t, ToByte(nil), []byte(nil))
 	assert.Equal(t, ToByte(true), []byte("true"))

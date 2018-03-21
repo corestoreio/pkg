@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/pkg/storage/text"
 )
 
 // ToTimeE casts an empty interface to time.Time.
@@ -384,8 +383,6 @@ func ToStringE(i interface{}) (string, error) {
 		return strconv.FormatInt(int64(i.(int)), 10), nil
 	case []byte:
 		return string(s), nil
-	case text.Chars:
-		return s.String(), nil
 	case template.HTML:
 		return string(s), nil
 	case template.URL:
@@ -422,8 +419,6 @@ func ToByteE(i interface{}) ([]byte, error) {
 	case int64:
 		var empty = make([]byte, 0, 8)
 		return strconv.AppendInt(empty, i.(int64), 10), nil
-	case text.Chars:
-		return s.Bytes(), nil
 	case template.HTML:
 		return []byte(s), nil
 	case template.URL:
