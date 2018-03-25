@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package scope
 import (
 	"bytes"
 	"fmt"
+
+	"github.com/corestoreio/errors"
 )
 
 const maxUint8 = 1<<8 - 1
@@ -107,6 +109,15 @@ func (s Type) StrBytes() []byte {
 // containing the Type and its ID ;-).
 func (s Type) Pack(id int64) TypeID {
 	return MakeTypeID(s, id)
+}
+
+// IsValid checks if the type is within the scope Defaut, Website, Group or
+// Store.
+func (s Type) IsValid() error {
+	if s >= maxType {
+		return errors.NotValid.Newf("[scope] Invalid Type: %s", s)
+	}
+	return nil
 }
 
 // TypeStr represents a string Type from table `core_config_data` column scope

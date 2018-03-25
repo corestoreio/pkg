@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 package scope
 
 import (
+	"encoding/binary"
 	"sort"
 	"strconv"
 
@@ -73,6 +74,47 @@ func (t TypeID) GoString() string {
 // ToUint64 converts the hash
 func (t TypeID) ToUint64() uint64 {
 	return uint64(t)
+}
+
+// ToIntString converts the TypeID to a stringyfied number representation.
+func (t TypeID) ToIntString() string {
+	return strconv.FormatUint(t.ToUint64(), 10)
+}
+
+// AppendBytes appends the uint32 to the destination bytes `dst`.
+func (t TypeID) AppendBytes(dst []byte) (text []byte) {
+	return strconv.AppendUint(dst, t.ToUint64(), 10)
+}
+
+// MarshalText implements encoding.TextMarshaler
+func (t TypeID) MarshalText() (text []byte, err error) {
+	return strconv.AppendUint([]byte{}, t.ToUint64(), 10), nil
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler
+func (t *TypeID) UnmarshalText(text []byte) error {
+	u64, err := strconv.ParseUint(string(text), 10, 32)
+	if err != nil {
+		return errors.Wrapf(err, "[scope] TypeID.UnmarshalText with text %q", text)
+	}
+	*t = TypeID(u64)
+	return nil
+}
+
+// MarshalBinary implements encoding.BinaryMarshaler
+func (t TypeID) MarshalBinary() (data []byte, err error) {
+	var buf [4]byte
+	binary.LittleEndian.PutUint32(buf[:], uint32(t))
+	return buf[:], nil
+}
+
+// UnmarshalBinary implements encoding.BinaryUnmarshaler
+func (t *TypeID) UnmarshalBinary(data []byte) error {
+	if len(data) < 4 {
+		return errors.BadEncoding.Newf("[scope] Bad encoding for TypeID in data %q", data)
+	}
+	*t = TypeID(binary.LittleEndian.Uint32(data))
+	return nil
 }
 
 // Unpack extracts a Scope and its ID from a hash. Returned ID can be -1 when
@@ -143,9 +185,9 @@ func (t TypeID) ValidParent(parent TypeID) bool {
 
 // TypeIDMaxSegments maximum supported segments or also known as shards. This
 // constant can be used to create the segmented array in other packages.
-const TypeIDMaxSegments uint16 = 256
+const TypeIDMaxSegments = 256
 
-const hashBitAnd TypeID = TypeID(TypeIDMaxSegments) - 1
+const hashBitAnd = TypeID(TypeIDMaxSegments) - 1
 
 // Segment generates an 0 < ID <= 255 from a TypeID. Only used within an array
 // index to optimize map[] usage in high concurrent situations. Also known as
@@ -161,14 +203,25 @@ func (t TypeID) Segment() uint8 {
 // MakeTypeID creates a new merged value of a Type and its ID. An error is equal
 // to returning 0. An error occurs when id is greater than MaxStoreID or smaller
 // 0. An errors occurs when the Scope is Default and ID anything else than 0.
-func MakeTypeID(s Type, id int64) TypeID {
-	if id > MaxID || (s > Default && id < 0) {
+func MakeTypeID(t Type, id int64) TypeID {
+	if id > MaxID || (t > Default && id < 0) {
 		return 0
 	}
-	if s < Website {
+	if t < Website {
 		id = 0
 	}
-	return TypeID(s)<<24 | TypeID(id)
+	return TypeID(t)<<24 | TypeID(id)
+}
+
+// MakeTypeIDString creates a TypeID from a numbered string.
+func MakeTypeIDString(s string) (TypeID, error) {
+	u64, err := strconv.ParseUint(s, 10, 32)
+	if err != nil {
+		return 0, errors.Wrapf(err, "[scope] MakeTypeIDString with text %q", s)
+	}
+	tid := TypeID(u64)
+	t, _ := tid.Unpack()
+	return tid, t.IsValid()
 }
 
 // TypeIDs collection of multiple TypeID values.
@@ -266,7 +319,6 @@ func (t TypeIDs) Lowest() (TypeID, error) {
 	default:
 		// todo implement scope independent solution ...
 		return 0, errors.NotValid.Newf("[scope] Invalid TypeID: %s in slice.", pick)
-
 	}
 
 	return pick, nil

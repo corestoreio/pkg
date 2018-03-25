@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -268,4 +269,11 @@ func TestType_Pack(t *testing.T) {
 	for i, test := range tests {
 		assert.Exactly(t, test.want, test.s.Pack(test.id), "Index %d", i)
 	}
+}
+
+func TestType_IsValid(t *testing.T) {
+	t1 := Store
+	assert.NoError(t, t1.IsValid())
+	t2 := Type(234)
+	assert.True(t, errors.NotValid.Match(t2.IsValid()), "Should have error kind NotValid")
 }

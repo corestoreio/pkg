@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 package scope_test
 
 import (
+	"encoding"
 	"fmt"
 	"math"
 	"sort"
@@ -24,11 +25,16 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
-	_ fmt.Stringer   = (*scope.TypeID)(nil)
-	_ fmt.GoStringer = (*scope.TypeID)(nil)
+	_ fmt.Stringer               = (*scope.TypeID)(nil)
+	_ fmt.GoStringer             = (*scope.TypeID)(nil)
+	_ encoding.TextMarshaler     = (*scope.TypeID)(nil)
+	_ encoding.TextUnmarshaler   = (*scope.TypeID)(nil)
+	_ encoding.BinaryMarshaler   = (*scope.TypeID)(nil)
+	_ encoding.BinaryUnmarshaler = (*scope.TypeID)(nil)
 )
 
 var benchmarkTypeIDString string
@@ -424,4 +430,46 @@ func TestTypeIDs_String(t *testing.T) {
 	for i, test := range tests {
 		assert.Exactly(t, test.want, test.TypeIDs.String(), "Index %d", i)
 	}
+}
+
+func TestTypeID_Marshal(t *testing.T) {
+	id := scope.MakeTypeID(scope.Store, 2)
+
+	t.Run("binary", func(t *testing.T) {
+		bin, err := id.MarshalBinary()
+		require.NoError(t, err)
+		var idBin scope.TypeID
+		require.NoError(t, idBin.UnmarshalBinary(bin))
+		assert.Exactly(t, id, idBin)
+
+	})
+	t.Run("text", func(t *testing.T) {
+		txt, err := id.MarshalText()
+		require.NoError(t, err)
+
+		var idTxt scope.TypeID
+		require.NoError(t, idTxt.UnmarshalText(txt))
+		assert.Exactly(t, id, idTxt)
+	})
+	t.Run("UnmarshalText error", func(t *testing.T) {
+		var idTxt scope.TypeID
+		require.EqualError(t, idTxt.UnmarshalText([]byte(`-1`)), "[scope] TypeID.UnmarshalText with text \"-1\": strconv.ParseUint: parsing \"-1\": invalid syntax")
+	})
+	t.Run("UnmarshalBinary error", func(t *testing.T) {
+		var idTxt scope.TypeID
+		assert.True(t, errors.BadEncoding.Match(idTxt.UnmarshalBinary([]byte(`x`))), "Error should have kind BadEncoding")
+	})
+	t.Run("ToIntString", func(t *testing.T) {
+		assert.Exactly(t, "67108866", id.ToIntString())
+	})
+	t.Run("AppendBytes", func(t *testing.T) {
+		data := []byte(`ID:`)
+		assert.Exactly(t, []byte(`ID:67108866`), id.AppendBytes(data))
+	})
+}
+
+func TestMakeTypeIDString(t *testing.T) {
+	tid, err := scope.MakeTypeIDString("-1")
+	assert.Exactly(t, scope.TypeID(0), tid)
+	assert.EqualError(t, err, "[scope] MakeTypeIDString with text \"-1\": strconv.ParseUint: parsing \"-1\": invalid syntax")
 }
