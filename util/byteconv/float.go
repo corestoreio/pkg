@@ -31,7 +31,6 @@
 package byteconv
 
 import (
-	"database/sql"
 	"math"
 	"strconv"
 )
@@ -42,21 +41,16 @@ var float64pow10 = []float64{
 	1e20, 1e21, 1e22,
 }
 
-// ParseNullFloat64 same as ParseFloat
-func ParseNullFloat64(b []byte) (val sql.NullFloat64, err error) {
+// Float parses a byte-slice and returns the float it represents.
+// If an invalid character is encountered, it will stop there.
+func ParseFloat(b []byte) (v float64, ok bool, err error) {
 	if len(b) == 0 {
 		return
 	}
-	val.Float64, err = ParseFloat(b)
-	val.Valid = err == nil
-	return
-}
-
-// Float parses a byte-slice and returns the float it represents.
-// If an invalid character is encountered, it will stop there.
-func ParseFloat(b []byte) (float64, error) {
 	if UseStdLib {
-		return strconv.ParseFloat(string(b), 64)
+		v, err = strconv.ParseFloat(string(b), 64)
+		ok = err == nil
+		return
 	}
 
 	i := 0
@@ -86,7 +80,7 @@ func ParseFloat(b []byte) (float64, error) {
 			if c == 'e' || c == 'E' {
 				break
 			}
-			return 0, syntaxError("ParseFloat", string(b))
+			return 0, false, syntaxError("ParseFloat", string(b))
 		}
 	}
 
@@ -107,18 +101,18 @@ func ParseFloat(b []byte) (float64, error) {
 	expExp := int64(0)
 	if i < len(b) && (b[i] == 'e' || b[i] == 'E') {
 		i++
-		if e, err := ParseInt(b[i:]); err == nil {
+		if e, ok, err := ParseInt(b[i:]); ok && err == nil {
 			expExp = e
 			i += LenInt(e)
 		} else {
-			return 0, syntaxError("ParseFloat", string(b))
+			return 0, false, syntaxError("ParseFloat", string(b))
 		}
 	}
 	exp := expExp - mantExp
 
 	// copied from strconv/atof.go
 	if exp == 0 {
-		return f, nil
+		return f, true, nil
 	} else if exp > 0 && exp <= 15+22 { // int * 10^k
 		// If exponent is big but number of digits is not,
 		// can move a few zeros into the integer part.
@@ -127,11 +121,11 @@ func ParseFloat(b []byte) (float64, error) {
 			exp = 22
 		}
 		if f <= 1e15 && f >= -1e15 {
-			return f * float64pow10[exp], nil
+			return f * float64pow10[exp], true, nil
 		}
 	} else if exp < 0 && exp >= -22 { // int / 10^k
-		return f / float64pow10[-exp], nil
+		return f / float64pow10[-exp], true, nil
 	}
 	f *= math.Pow10(int(-mantExp))
-	return f * math.Pow10(int(expExp)), nil
+	return f * math.Pow10(int(expExp)), true, nil
 }

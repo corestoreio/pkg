@@ -30,13 +30,14 @@ func TestParseNullBool(t *testing.T) {
 			if have == "NULL" {
 				b = nil
 			}
-			bv, err := ParseNullBool(b)
+			bv, ok, err := ParseBool(b)
 			if wantErr {
 				assert.Error(t, err, "%q", have)
 				return
 			}
-			require.NoError(t, err, "%q", have)
-			assert.Exactly(t, want, bv, t.Name())
+			require.NoError(t, err, "%s %q", t.Name(), have)
+			assert.Exactly(t, want.Valid, ok)
+			assert.Exactly(t, want.Bool, bv, t.Name())
 		}
 	}
 	t.Run("NULL is false and invalid", runner("NULL", sql.NullBool{}, false))
@@ -66,13 +67,13 @@ func BenchmarkParseBool(b *testing.B) {
 	b.Run("no-std-map", func(b *testing.B) {
 		UseStdLib = false
 		for i := 0; i < b.N; i++ {
-			benchmarkParseBool, err = ParseBool(true)
+			benchmarkParseBool, _, err = ParseBool(true)
 		}
 	})
 	b.Run("with-stdlib", func(b *testing.B) {
 		UseStdLib = tr
 		for i := 0; i < b.N; i++ {
-			benchmarkParseBool, err = ParseBool(true)
+			benchmarkParseBool, _, err = ParseBool(true)
 		}
 	})
 }

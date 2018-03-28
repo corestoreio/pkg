@@ -24,26 +24,20 @@
 package byteconv
 
 import (
-	"database/sql"
 	"math"
 	"strconv"
 )
 
-// ParseNullInt64 same as ParseInt
-func ParseNullInt64(b []byte) (val sql.NullInt64, err error) {
+// ParseInt parses a byte-slice and returns the integer it represents. If an
+// invalid character is encountered, it returns a syntax error.
+func ParseInt(b []byte) (v int64, ok bool, err error) {
 	if len(b) == 0 {
 		return
 	}
-	val.Int64, err = ParseInt(b)
-	val.Valid = err == nil
-	return
-}
-
-// ParseInt parses a byte-slice and returns the integer it represents. If an
-// invalid character is encountered, it returns a syntax error.
-func ParseInt(b []byte) (int64, error) {
 	if UseStdLib {
-		return strconv.ParseInt(string(b), 10, 64)
+		v, err = strconv.ParseInt(string(b), 10, 64)
+		ok = err == nil
+		return
 	}
 
 	i := 0
@@ -56,7 +50,7 @@ func ParseInt(b []byte) (int64, error) {
 	for i < len(b) {
 		c := b[i]
 		if n > math.MaxUint64/10 {
-			return 0, rangeError("ParseInt", string(b))
+			return 0, false, rangeError("ParseInt", string(b))
 		} else if c >= '0' && c <= '9' {
 			n *= 10
 			n += uint64(c - '0')
@@ -66,14 +60,14 @@ func ParseInt(b []byte) (int64, error) {
 		i++
 	}
 	if !neg && n > uint64(math.MaxInt64) || n > uint64(math.MaxInt64)+1 {
-		return 0, rangeError("ParseInt", string(b))
+		return 0, false, rangeError("ParseInt", string(b))
 	} else if neg {
-		return -int64(n), nil
+		return -int64(n), true, nil
 	}
 	if len(b) != i {
-		return 0, syntaxError("ParseInt", string(b))
+		return 0, false, syntaxError("ParseInt", string(b))
 	}
-	return int64(n), nil
+	return int64(n), true, nil
 }
 
 func LenInt(i int64) int {

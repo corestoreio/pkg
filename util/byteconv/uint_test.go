@@ -42,12 +42,15 @@ func TestParseUint(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		have, err := ParseUint(test.raw, test.base, test.bitSize)
+		have, ok, err := ParseUint(test.raw, test.base, test.bitSize)
 		if test.wantErr != "" {
-			assert.EqualError(t, err, test.wantErr)
+			assert.EqualError(t, err, test.wantErr, "Index %d", i)
 			continue
 		} else if err != nil {
 			t.Fatalf("Index %d: %s", i, err)
+		}
+		if !ok {
+			t.Fatalf("must be true Index %d: Have:%d Want:%d", i, have, test.want)
 		}
 		if have != test.want {
 			t.Fatalf("Index %d: Have:%d Want:%d", i, have, test.want)
@@ -63,7 +66,7 @@ func BenchmarkParseUint(b *testing.B) {
 	const want uint64 = 123456789
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkParseUint, err = ParseUint(data, 10, 64)
+		benchmarkParseUint, _, err = ParseUint(data, 10, 64)
 		if err != nil {
 			b.Fatal(err)
 		}

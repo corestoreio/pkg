@@ -14,37 +14,29 @@
 
 package byteconv
 
-import (
-	"database/sql"
-	"strconv"
-)
-
-// ParseNullBool same as strconv.ParseBool but has no allocations.
-func ParseNullBool(b []byte) (val sql.NullBool, err error) {
-	if b == nil {
-		return
-	}
-	val.Bool, err = ParseBool(b)
-	val.Valid = err == nil
-	return
-}
+import "strconv"
 
 var bools = map[string]bool{
-	"1": true, "t": true, "T": true, "true": true, "TRUE": true, "True": true,
-	"0": false, "f": false, "F": false, "false": false, "FALSE": false, "False": false,
+	"1": true, "t": true, "T": true, "true": true, "TRUE": true, "True": true, "yes": true, "YES": true,
+	"0": false, "f": false, "F": false, "false": false, "FALSE": false, "False": false, "NULL": false, "null": false, "nil": false, "no": false, "NO": false,
 }
 
 // ParseBool same as strconv.ParseBool but faster and no allocations.
-func ParseBool(b []byte) (bool, error) {
+// Use err == nil to check if a bool value is valid.
+func ParseBool(b []byte) (v bool, ok bool, err error) {
 	// The only difference between using stdlib or the map access is, that
 	// stdlib does one allocation where the string(b) map access has no
 	// overhead, but both have the same speed.
+	if b == nil {
+		return
+	}
 	if UseStdLib {
-		return strconv.ParseBool(string(b))
+		v, err = strconv.ParseBool(string(b))
+		ok = err == nil
+		return
 	}
-
 	if t, ok := bools[string(b)]; ok { // compiler optimizes the byte to string conversion
-		return t, nil
+		return t, ok, nil
 	}
-	return false, syntaxError("ParseBool", string(b))
+	return false, false, syntaxError("ParseBool", string(b))
 }

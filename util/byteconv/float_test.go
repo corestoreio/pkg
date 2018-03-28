@@ -39,13 +39,14 @@ func TestParseNullFloatSQL_ParseFloatSQL(t *testing.T) {
 			if have == "NULL" {
 				b = nil
 			}
-			nf, err := ParseNullFloat64(b)
+			nf, ok, err := ParseFloat(b)
 			if wantErr {
 				assert.Error(t, err, "err: For number %q", have)
 				return
 			}
 			require.NoError(t, err, t.Name())
-			assert.Exactly(t, want, nf, t.Name())
+			assert.Exactly(t, want.Valid, ok, "Valid for %s", t.Name())
+			assert.Exactly(t, want.Float64, nf, t.Name())
 		}
 	}
 	t.Run("NULL is 0 and invalid", runner("NULL", sql.NullFloat64{}, false))
@@ -79,9 +80,12 @@ func TestParseFloat(t *testing.T) {
 		// {"4.9406564584124e-308", 4.9406564584124e-308)
 	}
 	for i, tt := range floatTests {
-		f, err := ParseFloat([]byte(tt.f))
+		f, ok, err := ParseFloat([]byte(tt.f))
 		if err != nil {
 			t.Fatalf("Index %d invalid length for %q with error %s", i, tt.f, err)
+		}
+		if !ok {
+			t.Fatalf("must be true for Index %d\nHave %f\nWant %f", i, f, tt.expected)
 		}
 		if f != tt.expected {
 			t.Fatalf("Index %d\nHave %f\nWant %f", i, f, tt.expected)

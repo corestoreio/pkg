@@ -22,19 +22,15 @@ import (
 	"github.com/corestoreio/errors"
 )
 
-// ParseUintSQL like ParseUint
-func ParseUintSQL(b []byte, base int, bitSize int) (n uint64, valid bool, err error) {
-	if len(b) == 0 {
-		return 0, false, nil
-	}
-	n, err = ParseUint(b, base, bitSize)
-	return n, err == nil, err
-}
-
 // ParseUint is like strconv.ParseUint, but using a []byte.
-func ParseUint(s []byte, base int, bitSize int) (n uint64, err error) {
+func ParseUint(s []byte, base int, bitSize int) (n uint64, ok bool, err error) {
+	if s == nil {
+		return
+	}
 	if UseStdLib {
-		return strconv.ParseUint(string(s), 10, bitSize)
+		n, err = strconv.ParseUint(string(s), 10, bitSize)
+		ok = err == nil
+		return
 	}
 	var cutoff, maxVal uint64
 	if bitSize == 0 {
@@ -114,10 +110,10 @@ func ParseUint(s []byte, base int, bitSize int) (n uint64, err error) {
 		n = n1
 	}
 
-	return n, nil
+	return n, true, nil
 
 Error:
-	return n, &strconv.NumError{Func: "ParseUint", Num: string(s0), Err: err}
+	return n, false, &strconv.NumError{Func: "ParseUint", Num: string(s0), Err: err}
 }
 
 // Return the first number n such that n*base >= 1<<64.

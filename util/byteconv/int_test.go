@@ -39,9 +39,10 @@ func TestParseNullInt64SQL_ParseIntSQL(t *testing.T) {
 			if have == "NULL" {
 				b = nil
 			}
-			ni, err := ParseNullInt64(b)
+			ni, ok, err := ParseInt(b)
 
-			assert.Exactly(t, want, ni, t.Name())
+			assert.Exactly(t, want.Valid, ok, t.Name())
+			assert.Exactly(t, want.Int64, ni, t.Name())
 
 			if wantErr {
 				assert.Error(t, err, "For %q", have)
@@ -81,7 +82,7 @@ func TestParseInt(t *testing.T) {
 		{"a", 0},
 	}
 	for _, tt := range intTests {
-		i, _ := ParseInt([]byte(tt.i))
+		i, _, _ := ParseInt([]byte(tt.i))
 		if i != tt.expected {
 			t.Fatalf("Have %d Want %d", i, tt.expected)
 		}
