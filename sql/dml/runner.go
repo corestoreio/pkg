@@ -322,7 +322,7 @@ func (b *ColumnMap) Bool(ptr *bool) *ColumnMap {
 		case 'i':
 			*ptr = v.int64 == 1
 		case 'y':
-			*ptr, b.scanErr = byteconv.ParseBool(v.byte)
+			*ptr, _, b.scanErr = byteconv.ParseBool(v.byte)
 			if b.scanErr != nil {
 				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
 			}
@@ -362,7 +362,7 @@ func (b *ColumnMap) NullBool(ptr *NullBool) *ColumnMap {
 			ptr.Bool = v.int64 == 1
 			ptr.Valid = true
 		case 'y':
-			ptr.NullBool, b.scanErr = byteconv.ParseNullBool(v.byte)
+			ptr.NullBool.Bool, ptr.NullBool.Valid, b.scanErr = byteconv.ParseBool(v.byte)
 			if b.scanErr != nil {
 				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
 			}
@@ -402,7 +402,7 @@ func (b *ColumnMap) Int(ptr *int) *ColumnMap {
 			*ptr = int(v.int64)
 		case 'y':
 			var i64 int64
-			i64, b.scanErr = byteconv.ParseInt(v.byte)
+			i64, _, b.scanErr = byteconv.ParseInt(v.byte)
 			*ptr = int(i64)
 			if b.scanErr != nil {
 				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
@@ -431,7 +431,7 @@ func (b *ColumnMap) Int64(ptr *int64) *ColumnMap {
 		case 'i':
 			*ptr = v.int64
 		case 'y':
-			*ptr, b.scanErr = byteconv.ParseInt(v.byte)
+			*ptr, _, b.scanErr = byteconv.ParseInt(v.byte)
 			if b.scanErr != nil {
 				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
 			}
@@ -463,7 +463,7 @@ func (b *ColumnMap) NullInt64(ptr *NullInt64) *ColumnMap {
 			ptr.Int64 = 0
 			ptr.Valid = false
 		case 'y':
-			ptr.NullInt64, b.scanErr = byteconv.ParseNullInt64(v.byte)
+			ptr.NullInt64.Int64, ptr.NullInt64.Valid, b.scanErr = byteconv.ParseInt(v.byte)
 			if b.scanErr != nil {
 				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
 			}
@@ -491,7 +491,7 @@ func (b *ColumnMap) Float64(ptr *float64) *ColumnMap {
 		case 'f':
 			*ptr = v.float64
 		case 'y':
-			*ptr, b.scanErr = byteconv.ParseFloat(v.byte)
+			*ptr, _, b.scanErr = byteconv.ParseFloat(v.byte)
 			if b.scanErr != nil {
 				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
 			}
@@ -549,7 +549,7 @@ func (b *ColumnMap) NullFloat64(ptr *NullFloat64) *ColumnMap {
 			ptr.Float64 = v.float64
 			ptr.Valid = true
 		case 'y':
-			ptr.NullFloat64, b.scanErr = byteconv.ParseNullFloat64(v.byte)
+			ptr.NullFloat64.Float64, ptr.NullFloat64.Valid, b.scanErr = byteconv.ParseFloat(v.byte)
 			if b.scanErr != nil {
 				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
 			}
@@ -580,7 +580,7 @@ func (b *ColumnMap) Uint(ptr *uint) *ColumnMap {
 			*ptr = uint(v.int64)
 		case 'y':
 			var u64 uint64
-			u64, b.scanErr = byteconv.ParseUint(v.byte, 10, strconv.IntSize)
+			u64, _, b.scanErr = byteconv.ParseUint(v.byte, 10, strconv.IntSize)
 			*ptr = uint(u64)
 			if b.scanErr != nil {
 				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
@@ -610,7 +610,7 @@ func (b *ColumnMap) Uint8(ptr *uint8) *ColumnMap {
 			*ptr = uint8(v.int64)
 		case 'y':
 			var u64 uint64
-			u64, b.scanErr = byteconv.ParseUint(v.byte, 10, 8)
+			u64, _, b.scanErr = byteconv.ParseUint(v.byte, 10, 8)
 			*ptr = uint8(u64)
 			if b.scanErr != nil {
 				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
@@ -640,7 +640,7 @@ func (b *ColumnMap) Uint16(ptr *uint16) *ColumnMap {
 			*ptr = uint16(v.int64)
 		case 'y':
 			var u64 uint64
-			u64, b.scanErr = byteconv.ParseUint(v.byte, 10, 16)
+			u64, _, b.scanErr = byteconv.ParseUint(v.byte, 10, 16)
 			*ptr = uint16(u64)
 			if b.scanErr != nil {
 				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
@@ -670,7 +670,7 @@ func (b *ColumnMap) Uint32(ptr *uint32) *ColumnMap {
 			*ptr = uint32(v.int64)
 		case 'y':
 			var u64 uint64
-			u64, b.scanErr = byteconv.ParseUint(v.byte, 10, 32)
+			u64, _, b.scanErr = byteconv.ParseUint(v.byte, 10, 32)
 			*ptr = uint32(u64)
 			if b.scanErr != nil {
 				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
@@ -699,7 +699,7 @@ func (b *ColumnMap) Uint64(ptr *uint64) *ColumnMap {
 		case 'i':
 			*ptr = uint64(v.int64)
 		case 'y':
-			*ptr, b.scanErr = byteconv.ParseUint(v.byte, 10, strconv.IntSize)
+			*ptr, _, b.scanErr = byteconv.ParseUint(v.byte, 10, strconv.IntSize)
 			if b.scanErr != nil {
 				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
 			}

@@ -140,6 +140,17 @@ func WithDB(db *sql.DB) ConnPoolOption {
 	}
 }
 
+// WithVerifyConnection checks if the connection to the server is valid and can
+// be established.
+func WithVerifyConnection() ConnPoolOption {
+	return ConnPoolOption{
+		sortOrder: 255,
+		fn: func(c *ConnPool) error {
+			return errors.WithStack(c.DB.Ping())
+		},
+	}
+}
+
 // WithDSN sets the data source name for a connection.
 // Second argument DriverCallBack adds a low level call back function on MySQL driver level to
 // create a a new instrumented driver. No need to call `sql.Register`!
@@ -212,7 +223,7 @@ func MustConnectAndVerify(opts ...ConnPoolOption) *ConnPool {
 	if err != nil {
 		panic(err)
 	}
-	if err := c.DB.Ping(); err != nil {
+	if err := c.Options(WithVerifyConnection()); err != nil {
 		panic(err)
 	}
 	return c

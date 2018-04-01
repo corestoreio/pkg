@@ -128,7 +128,7 @@ func TestColumnMap_Scan_Empty_Bytes(t *testing.T) {
 
 	t.Run("Bool", func(t *testing.T) {
 		var v bool
-		assert.EqualError(t, cm.Bool(&v).Err(), "[dml] Column \"SomeColumn\": strconv.ParseBool: parsing \"\": invalid syntax")
+		assert.NoError(t, cm.Bool(&v).Err())
 		cm.scanErr = nil
 	})
 	t.Run("Byte", func(t *testing.T) {
@@ -193,38 +193,37 @@ func TestColumnMap_Scan_Empty_Bytes(t *testing.T) {
 	})
 	t.Run("Time", func(t *testing.T) {
 		var v time.Time
-		assert.EqualError(t, cm.Time(&v).Err(),
-			"[dml] Column \"SomeColumn\": invalid time string: \"\"")
+		assert.EqualError(t, cm.Time(&v).Err(), "[dml] Column \"SomeColumn\": invalid time string: \"\"")
 		assert.Empty(t, v)
 		cm.scanErr = nil
 	})
 	t.Run("Uint", func(t *testing.T) {
 		var v uint
-		assert.EqualError(t, cm.Uint(&v).Err(), "[dml] Column \"SomeColumn\": strconv.ParseUint: parsing \"\": invalid syntax")
+		assert.NoError(t, cm.Uint(&v).Err())
 		assert.Empty(t, v)
 		cm.scanErr = nil
 	})
 	t.Run("Uint8", func(t *testing.T) {
 		var v uint8
-		assert.EqualError(t, cm.Uint8(&v).Err(), "[dml] Column \"SomeColumn\": strconv.ParseUint: parsing \"\": invalid syntax")
+		assert.NoError(t, cm.Uint8(&v).Err())
 		assert.Empty(t, v)
 		cm.scanErr = nil
 	})
 	t.Run("Uint16", func(t *testing.T) {
 		var v uint16
-		assert.EqualError(t, cm.Uint16(&v).Err(), "[dml] Column \"SomeColumn\": strconv.ParseUint: parsing \"\": invalid syntax")
+		assert.NoError(t, cm.Uint16(&v).Err())
 		assert.Empty(t, v)
 		cm.scanErr = nil
 	})
 	t.Run("Uint32", func(t *testing.T) {
 		var v uint32
-		assert.EqualError(t, cm.Uint32(&v).Err(), "[dml] Column \"SomeColumn\": strconv.ParseUint: parsing \"\": invalid syntax")
+		assert.NoError(t, cm.Uint32(&v).Err())
 		assert.Empty(t, v)
 		cm.scanErr = nil
 	})
 	t.Run("Uint64", func(t *testing.T) {
 		var v uint64
-		assert.EqualError(t, cm.Uint64(&v).Err(), "[dml] Column \"SomeColumn\": strconv.ParseUint: parsing \"\": invalid syntax")
+		assert.NoError(t, cm.Uint64(&v).Err())
 		assert.Empty(t, v)
 		cm.scanErr = nil
 	})

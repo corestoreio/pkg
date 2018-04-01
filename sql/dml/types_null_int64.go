@@ -53,7 +53,7 @@ func MakeNullInt64(i int64, valid ...bool) NullInt64 {
 }
 
 // Scan implements the Scanner interface. Approx. >3x times faster than
-//// database/sql.convertAssign.
+// database/sql.convertAssign.
 func (a *NullInt64) Scan(value interface{}) (err error) {
 	// this version BenchmarkSQLScanner/NullInt64_[]byte-4         	20000000	        65.0 ns/op	      32 B/op	       1 allocs/op
 	// std lib 		BenchmarkSQLScanner/NullInt64_[]byte-4         	 5000000	       244 ns/op	      56 B/op	       3 allocs/op
@@ -63,8 +63,7 @@ func (a *NullInt64) Scan(value interface{}) (err error) {
 	}
 	switch v := value.(type) {
 	case []byte:
-		a.NullInt64, err = byteconv.ParseNullInt64(v)
-		a.Valid = err == nil
+		a.NullInt64.Int64, a.NullInt64.Valid, err = byteconv.ParseInt(v)
 	case int64:
 		a.Int64 = v
 		a.Valid = true
@@ -133,8 +132,9 @@ func (a *NullInt64) UnmarshalText(text []byte) error {
 		a.Valid = false
 		return nil
 	}
-	ni, err := byteconv.ParseNullInt64(text)
-	a.NullInt64 = ni
+	ni, ok, err := byteconv.ParseInt(text)
+	a.NullInt64.Int64 = ni
+	a.NullInt64.Valid = ok
 	return err
 }
 

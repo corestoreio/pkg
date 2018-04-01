@@ -58,7 +58,7 @@ func (a *NullUint64) Scan(value interface{}) (err error) {
 	}
 	switch v := value.(type) {
 	case []byte:
-		a.Uint64, a.Valid, err = byteconv.ParseUintSQL(v, 10, 64)
+		a.Uint64, a.Valid, err = byteconv.ParseUint(v, 10, 64)
 		a.Valid = err == nil
 	case int64:
 		a.Uint64 = uint64(v)
@@ -128,7 +128,7 @@ func (a *NullUint64) UnmarshalText(text []byte) (err error) {
 		a.Valid = false
 		return nil
 	}
-	a.Uint64, a.Valid, err = byteconv.ParseUintSQL(text, 10, 64)
+	a.Uint64, a.Valid, err = byteconv.ParseUint(text, 10, 64)
 	return
 }
 

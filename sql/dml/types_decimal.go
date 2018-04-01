@@ -114,8 +114,7 @@ func MakeDecimalBytes(b []byte) (d Decimal, err error) {
 		// remove dot 2363.7800 => 23637800 => Scale=4
 		digits = append(digits[:dotPos], b[dotPos+1:]...)
 	}
-	d.Precision, err = byteconv.ParseUint(digits, 10, 64)
-	d.Valid = err == nil
+	d.Precision, d.Valid, err = byteconv.ParseUint(digits, 10, 64)
 	return
 }
 

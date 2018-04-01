@@ -102,7 +102,7 @@ func (a *NullBool) UnmarshalText(text []byte) (err error) {
 		a.Valid = false
 		return nil
 	}
-	a.NullBool, err = byteconv.ParseNullBool(text)
+	a.NullBool.Bool, a.NullBool.Valid, err = byteconv.ParseBool(text)
 	return
 }
 

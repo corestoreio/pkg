@@ -53,7 +53,7 @@ func MakeNullFloat64(f float64, valid ...bool) NullFloat64 {
 }
 
 // Scan implements the Scanner interface. Approx. >3x times faster than
-//// database/sql.convertAssign.
+// database/sql.convertAssign.
 func (a *NullFloat64) Scan(value interface{}) (err error) {
 	// this version BenchmarkSQLScanner/NullFloat64_[]byte-4       	20000000	        79.0 ns/op	      32 B/op	       1 allocs/op
 	// std lib 		BenchmarkSQLScanner/NullFloat64_[]byte-4       	 5000000	       266 ns/op	      64 B/op	       3 allocs/op
@@ -63,8 +63,7 @@ func (a *NullFloat64) Scan(value interface{}) (err error) {
 	}
 	switch v := value.(type) {
 	case []byte:
-		a.NullFloat64, err = byteconv.ParseNullFloat64(v)
-		a.Valid = err == nil
+		a.NullFloat64.Float64, a.NullFloat64.Valid, err = byteconv.ParseFloat(v)
 	case float64:
 		a.Float64 = v
 		a.Valid = true
