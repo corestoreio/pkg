@@ -71,9 +71,10 @@ CurrencyFraction: Digits are important when your currency has a different amount
 of decimal places as specified in the format. E.g. Japanese Yen has Digits 0
 despite the format is #,##0.00 ¤.
 
-@todo: Rounding refers to the Swedish rounding and are a todo in this i18n package. Use the money.Currency type for Swedish rounding.
-@todo: CashDigits and CashRounding are currently not implemented.
-@todo: something like https://github.com/maximilien/i18n4go
+TODO: Rounding refers to the Swedish rounding and are a todo in this i18n package. Use the money.Currency type for Swedish rounding.
+TODO: CashDigits and CashRounding are currently not implemented.
+TODO: something like https://github.com/maximilien/i18n4go
+TODO: https://go-macaron.com/docs/middlewares/i18n
 
 Currency Format
 
