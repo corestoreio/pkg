@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package config
 import (
 	"sync"
 
-	"github.com/corestoreio/pkg/config/cfgpath"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 )
@@ -33,7 +32,7 @@ type MessageReceiver interface {
 	// may contains up to three levels. For more details see the Subscriber
 	// interface of this package. If an error will be returned, the subscriber
 	// gets unsubscribed/removed.
-	MessageConfig(cfgpath.Path) error
+	MessageConfig(Path) error
 }
 
 // Subscriber represents the overall service to receive subscriptions from
@@ -48,7 +47,7 @@ type Subscriber interface {
 	// a topic in a PubSub system. Path cannot be empty means you cannot listen
 	// to all changes. Returns a unique identifier for the Subscriber for later
 	// removal, or an error.
-	Subscribe(cfgpath.Route, MessageReceiver) (subscriptionID int, err error)
+	Subscribe(Path, MessageReceiver) (subscriptionID int, err error)
 }
 
 // pubSub embedded pointer struct into the Service
@@ -59,7 +58,7 @@ type pubSub struct {
 	subMap     map[uint32]map[int]MessageReceiver
 	subAutoInc int // subAutoInc increased whenever a Subscriber has been added
 	mu         sync.RWMutex
-	pubPath    chan cfgpath.Path
+	pubPath    chan Path
 	stop       chan struct{} // terminates the goroutine
 	closeErr   chan error    // this one tells us that the go routine has really been terminated
 	closed     bool          // if Close() has been called the config.Service can still Write() without panic
@@ -73,7 +72,7 @@ func (s *pubSub) Close() error {
 		return nil
 	}
 	if s.closed {
-		return errors.NewAlreadyClosedf("[config] PubSub Service already closed")
+		return errors.AlreadyClosed.Newf("[config] PubSub Service already closed")
 	}
 	defer func() { close(s.closeErr) }() // last close(s.closeErr) does not work and panics
 	s.closed = true
@@ -93,16 +92,16 @@ func (s *pubSub) Close() error {
 //		- currency/options/base
 //		- currency/options
 //		- currency
-func (s *pubSub) Subscribe(r cfgpath.Route, mr MessageReceiver) (subscriptionID int, err error) {
-	if r.IsEmpty() {
-		return 0, errors.NewEmptyf("[config] pubSub.Subscribe %q", r)
+func (s *pubSub) Subscribe(p Path, mr MessageReceiver) (subscriptionID int, err error) {
+	if p.IsEmpty() {
+		return 0, errors.Empty.Newf("[config] pubSub.Subscribe %q", p)
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.subAutoInc++
 	subscriptionID = s.subAutoInc
 
-	hashPath := r.Hash32()
+	hashPath := p.Hash32()
 
 	if _, ok := s.subMap[hashPath]; !ok {
 		s.subMap[hashPath] = make(map[int]MessageReceiver)
@@ -130,7 +129,7 @@ func (s *pubSub) Unsubscribe(subscriptionID int) error {
 }
 
 // sendMsg sends the arg into the channel
-func (s *pubSub) sendMsg(p cfgpath.Path) {
+func (s *pubSub) sendMsg(p Path) {
 	if false == s.closed {
 		s.pubPath <- p
 	}
@@ -177,7 +176,7 @@ func (s *pubSub) publish() {
 	}
 }
 
-func (s *pubSub) readMapAndSend(p cfgpath.Path, level int) (evict []int) {
+func (s *pubSub) readMapAndSend(p Path, level int) (evict []int) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -189,7 +188,7 @@ func (s *pubSub) readMapAndSend(p cfgpath.Path, level int) (evict []int) {
 		evict = append(evict, s.sendMsgs(subs, p)...)
 	}
 
-	h, err = p.Route.Hash(level) // without scope and scopeID and route only
+	h, err = p.Hash(level) // without scope and scopeID and route only
 	if err != nil && s.log.IsDebug() {
 		s.log.Debug("config.pubSub.publish.RouteHash.err", log.Err(err), log.Stringer("path", p))
 	}
@@ -200,7 +199,7 @@ func (s *pubSub) readMapAndSend(p cfgpath.Path, level int) (evict []int) {
 	return
 }
 
-func (s *pubSub) sendMsgs(subs map[int]MessageReceiver, p cfgpath.Path) (evict []int) {
+func (s *pubSub) sendMsgs(subs map[int]MessageReceiver, p Path) (evict []int) {
 	for id, sub := range subs {
 		if err := s.sendMsgRecoverable(id, sub, p); err != nil {
 			if s.log.IsDebug() {
@@ -212,7 +211,7 @@ func (s *pubSub) sendMsgs(subs map[int]MessageReceiver, p cfgpath.Path) (evict [
 	return
 }
 
-func (s *pubSub) sendMsgRecoverable(id int, sl MessageReceiver, p cfgpath.Path) (err error) {
+func (s *pubSub) sendMsgRecoverable(id int, sl MessageReceiver, p Path) (err error) {
 	defer func() { // protect ... you'll never know
 		if r := recover(); r != nil {
 			if recErr, ok := r.(error); ok {
@@ -233,7 +232,7 @@ func (s *pubSub) sendMsgRecoverable(id int, sl MessageReceiver, p cfgpath.Path) 
 func newPubSub(l log.Logger) *pubSub {
 	return &pubSub{
 		subMap:   make(map[uint32]map[int]MessageReceiver),
-		pubPath:  make(chan cfgpath.Path),
+		pubPath:  make(chan Path),
 		stop:     make(chan struct{}),
 		closeErr: make(chan error),
 		log:      l,

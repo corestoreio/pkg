@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
 package cfgmodel
 
 import (
-	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/config"
 )
 
 // MapIntResolver maps an integer value into a string value. The passed
@@ -33,7 +33,7 @@ type MapIntStr struct {
 }
 
 // NewMapIntStr creates a new integer to string mapper type. It will panic while
-// calling later Get() when the MapIntResolver has not been set.
+// calling later Value() when the MapIntResolver has not been set.
 func NewMapIntStr(path string, opts ...Option) MapIntStr {
 	return MapIntStr{
 		Int: NewInt(path, opts...),
@@ -42,8 +42,8 @@ func NewMapIntStr(path string, opts ...Option) MapIntStr {
 
 // Get returns an encrypted value decrypted. Panics if Encryptor interface is
 // nil.
-func (p MapIntStr) Get(sg config.Scoped) (string, error) {
-	i, err := p.Int.Get(sg)
+func (p MapIntStr) Value(sg config.Scoped) (string, error) {
+	i, err := p.Int.Value(sg)
 	if err != nil {
 		return "", errors.Wrap(err, "[cfgmodel] MapIntStr.Byte.Get")
 	}

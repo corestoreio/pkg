@@ -9,19 +9,19 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID: "payment",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "authorizenet_directpost",
 					Label:     `Authorize.net Direct Post`,
 					SortOrder: 34,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/authorizenet_directpost/active
 							ID:        "active",
@@ -267,10 +267,10 @@ func init() {
 		// Hidden Configuration, may be visible somewhere else ...
 		element.Section{
 			ID: "payment",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "authorizenet_directpost",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/authorizenet_directpost/merchant_email
 							ID:      `merchant_email`,

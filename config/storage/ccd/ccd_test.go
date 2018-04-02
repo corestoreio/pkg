@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -56,12 +56,12 @@ func TestDBStorageOneStmt(t *testing.T) {
 		wantNil   bool
 		wantValue string
 	}{
-		{cfgpath.MustNewByParts("testDBStorage/secure/base_url").BindStore(1), "http://corestore.io", false, "http://corestore.io"},
-		{cfgpath.MustNewByParts("testDBStorage/log/active").BindStore(2), 1, false, "1"},
-		{cfgpath.MustNewByParts("testDBStorage/log/clean").BindStore(99999), 19.999, false, "19.999"},
-		{cfgpath.MustNewByParts("testDBStorage/log/clean").BindStore(99999), 29.999, false, "29.999"},
-		{cfgpath.MustNewByParts("testDBStorage/catalog/purge").Bind(scope.DefaultTypeID), true, false, "true"},
-		{cfgpath.MustNewByParts("testDBStorage/catalog/clean").Bind(scope.DefaultTypeID), 0, false, "0"},
+		{cfgpath.MustMakeByString("testDBStorage/secure/base_url").BindStore(1), "http://corestore.io", false, "http://corestore.io"},
+		{cfgpath.MustMakeByString("testDBStorage/log/active").BindStore(2), 1, false, "1"},
+		{cfgpath.MustMakeByString("testDBStorage/log/clean").BindStore(99999), 19.999, false, "19.999"},
+		{cfgpath.MustMakeByString("testDBStorage/log/clean").BindStore(99999), 29.999, false, "29.999"},
+		{cfgpath.MustMakeByString("testDBStorage/catalog/purge").Bind(scope.DefaultTypeID), true, false, "true"},
+		{cfgpath.MustMakeByString("testDBStorage/catalog/clean").Bind(scope.DefaultTypeID), 0, false, "0"},
 	}
 
 	prepIns := dbMock.ExpectPrepare("INSERT INTO `[^`]+` \\(.+\\) VALUES \\(\\?,\\?,\\?,\\?\\) ON DUPLICATE KEY UPDATE `value`=\\?")
@@ -92,11 +92,11 @@ func TestDBStorageOneStmt(t *testing.T) {
 		).WillReturnRows(sqlmock.NewRows([]string{"value"}).FromCSVString(test.wantValue))
 
 		if test.wantNil {
-			g, err := sdb.Get(test.key)
+			g, err := sdb.Value(test.key)
 			assert.NoError(t, err, "Index %d", i)
 			assert.Nil(t, g, "Index %d", i)
 		} else {
-			g, err := sdb.Get(test.key)
+			g, err := sdb.Value(test.key)
 			assert.NoError(t, err, "Index %d", i)
 			assert.Exactly(t, test.wantValue, g, "Index %d", i)
 		}
@@ -126,12 +126,12 @@ var dbStorageMultiTests = []struct {
 	value     interface{}
 	wantValue string
 }{
-	{cfgpath.MustNewByParts("testDBStorage/secure/base_url").BindWebsite(10), "http://corestore.io", "http://corestore.io"},
-	{cfgpath.MustNewByParts("testDBStorage/log/active").BindWebsite(10), 1, "1"},
-	{cfgpath.MustNewByParts("testDBStorage/log/clean").BindWebsite(20), 19.999, "19.999"},
-	{cfgpath.MustNewByParts("testDBStorage/product/shipping").BindWebsite(20), 29.999, "29.999"},
-	{cfgpath.MustNewByParts("testDBStorage/checkout/multishipping"), false, "false"},
-	{cfgpath.MustNewByParts("testDBStorage/shipping/rate").BindStore(321), 3.14159, "3.14159"},
+	{cfgpath.MustMakeByString("testDBStorage/secure/base_url").BindWebsite(10), "http://corestore.io", "http://corestore.io"},
+	{cfgpath.MustMakeByString("testDBStorage/log/active").BindWebsite(10), 1, "1"},
+	{cfgpath.MustMakeByString("testDBStorage/log/clean").BindWebsite(20), 19.999, "19.999"},
+	{cfgpath.MustMakeByString("testDBStorage/product/shipping").BindWebsite(20), 29.999, "29.999"},
+	{cfgpath.MustMakeByString("testDBStorage/checkout/multishipping"), false, "false"},
+	{cfgpath.MustMakeByString("testDBStorage/shipping/rate").BindStore(321), 3.14159, "3.14159"},
 }
 
 func TestDBStorageMultipleStmt_Set(t *testing.T) {
@@ -211,7 +211,7 @@ func TestDBStorageMultipleStmt_Get(t *testing.T) {
 			driver.Value(test.key.Bytes()),
 		).WillReturnRows(sqlmock.NewRows([]string{"value"}).FromCSVString(test.wantValue))
 
-		g, err := sdb.Get(test.key)
+		g, err := sdb.Value(test.key)
 		assert.NoError(t, err, "Index %d", i)
 		assert.Exactly(t, test.wantValue, g, "Index %d", i)
 
@@ -269,4 +269,33 @@ func TestDBStorageMultipleStmt_All(t *testing.T) {
 	}
 	assert.NoError(t, sdb.Stop())
 
+}
+
+// TestIntegrationSQLType is not a real test for the type Route
+func TestIntegrationSQLType(t *testing.T) {
+
+	dbCon, dbMock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, dbCon, dbMock)
+
+	var testPath = `system/full_page_cache/varnish/` + strs.RandAlnum(5)
+	//var insPath = cfgpath.MakeRoute(testPath)
+	var insVal = time.Now().Unix()
+
+	dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT `config_id`, `scope`, `scope_id`, `path`, `value` FROM `core_config_data` AS `main_table`")).
+		WithArgs(testPath).
+		WillReturnRows(
+			sqlmock.NewRows([]string{"config_id", "scope", "scope_id", "path", "value"}).
+				AddRow(1, "default", 0, testPath, fmt.Sprintf("%d", insVal)),
+		)
+
+	var ccd ccd.TableCoreConfigData
+	tbl := tableCollection.MustTable(TableNameCoreConfigData)
+	rc, err := tbl.SelectAll().WithDB(dbCon.DB).WithArgs().String(testPath).Load(context.TODO(), &ccd)
+	require.NoError(t, err)
+	assert.Exactly(t, uint64(1), rc)
+
+	assert.Exactly(t, testPath, ccd.Path.String())
+	haveI64, err := strconv.ParseInt(ccd.Value.String, 10, 64)
+	assert.NoError(t, err)
+	assert.Exactly(t, insVal, haveI64)
 }

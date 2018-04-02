@@ -9,19 +9,19 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID: "catalog",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "productalert",
 					Label:     `Product Alerts`,
 					SortOrder: 250,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: catalog/productalert/allow_price
 							ID:        "allow_price",
@@ -91,7 +91,7 @@ func init() {
 					Label:     `Product Alerts Run Settings`,
 					SortOrder: 260,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: catalog/productalert_cron/frequency
 							ID:        "frequency",
@@ -156,10 +156,10 @@ func init() {
 		// Hidden Configuration, may be visible somewhere else ...
 		element.Section{
 			ID: "catalog",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "productalert_cron",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: catalog/productalert_cron/error_email
 							ID:      `error_email`,

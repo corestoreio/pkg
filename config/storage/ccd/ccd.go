@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,18 +19,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/corestoreio/pkg/config/cfgpath"
-	"github.com/corestoreio/pkg/storage/csdb"
-	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/pkg/util/conv"
-	"github.com/corestoreio/pkg/util/null"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util/conv"
 )
-
-// TableCollection handles all tables and its columns. init() in generated Go
-// file will set the value.
-var TableCollection *csdb.Tables
 
 // DBStorage connects the MySQL DB with the config.Service type. Implements
 // interface config.Storager.
@@ -50,7 +45,7 @@ type DBStorage struct {
 //
 // All has an idle time of 15s. Read an idle time of 10s. Write an idle time of
 // 30s. Implements interface config.Storager.
-func NewDBStorage(p csdb.Preparer) (*DBStorage, error) {
+func NewDBStorage(p dml.Preparer) (*DBStorage, error) {
 	// todo: instead of logging the error we may write it into an
 	// error channel and the gopher who calls NewDBStorage is responsible
 	// for continuously reading from the error channel. or we accept an error channel
@@ -126,7 +121,7 @@ func (dbs *DBStorage) Stop() error {
 
 // Set sets a value with its key. Database errors get logged as Info message.
 // Enabled debug level logs the insert ID or rows affected.
-func (dbs *DBStorage) Set(key cfgpath.Path, value interface{}) error {
+func (dbs *DBStorage) Set(key config.Path, value interface{}) error {
 	// update lastUsed at the end because there might be the slight chance that
 	// a statement gets closed despite we're waiting for the result from the
 	// server.
@@ -173,7 +168,7 @@ func (dbs *DBStorage) Set(key cfgpath.Path, value interface{}) error {
 // Get returns a value from the database by its key. It is guaranteed that the
 // type in the empty interface is a string. It returns nil on error but errors
 // get logged as info message. Error behaviour: NotFound
-func (dbs *DBStorage) Get(key cfgpath.Path) (interface{}, error) {
+func (dbs *DBStorage) Value(key config.Path) (interface{}, error) {
 	// update lastUsed at the end because there might be the slight chance that
 	// a statement gets closed despite we're waiting for the result from the
 	// server.
@@ -205,7 +200,7 @@ func (dbs *DBStorage) Get(key cfgpath.Path) (interface{}, error) {
 var errKeyNotFound = errors.NewNotFoundf(`[ccd] Key not found`) // todo add test
 
 // AllKeys returns all available keys. Database errors get logged as info message.
-func (dbs *DBStorage) AllKeys() (cfgpath.PathSlice, error) {
+func (dbs *DBStorage) AllKeys() (config.PathSlice, error) {
 	// update lastUsed at the end because there might be the slight chance
 	// that a statement gets closed despite we're waiting for the result
 	// from the server.
@@ -224,7 +219,7 @@ func (dbs *DBStorage) AllKeys() (cfgpath.PathSlice, error) {
 	defer rows.Close()
 
 	const maxCap = 750 // Just a guess the 750
-	var ret = make(cfgpath.PathSlice, 0, maxCap)
+	var ret = make(config.PathSlice, 0, maxCap)
 	var sqlScope null.String
 	var sqlScopeID null.Int64
 	var sqlPath null.String
@@ -234,9 +229,9 @@ func (dbs *DBStorage) AllKeys() (cfgpath.PathSlice, error) {
 			return nil, errors.Wrapf(err, "[ccd] AllKeys.rows.Scan. SQL: %q", dbs.All.sqlRaw)
 		}
 		if sqlPath.Valid {
-			p, err := cfgpath.NewByParts(sqlPath.String)
+			p, err := config.MakeByString(sqlPath.String)
 			if err != nil {
-				return ret, errors.Wrapf(err, "[ccd] AllKeys.rows.cfgpath.NewByParts. SQL: %q: Path: %q", dbs.All.sqlRaw, sqlPath.String)
+				return ret, errors.Wrapf(err, "[ccd] AllKeys.rows.config.MakeByString. SQL: %q: Path: %q", dbs.All.sqlRaw, sqlPath.String)
 			}
 			ret = append(ret, p.Bind(scope.FromString(sqlScope.String).Pack(sqlScopeID.Int64)))
 		}

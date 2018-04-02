@@ -9,23 +9,23 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID:        "contact",
 			Label:     `Contacts`,
 			SortOrder: 100,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Contact::contact
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "contact",
 					Label:     `Contact Us`,
 					SortOrder: 10,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: contact/contact/enabled
 							ID:        "enabled",
@@ -46,7 +46,7 @@ func init() {
 					Label:     `Email Options`,
 					SortOrder: 50,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: contact/email/recipient_email
 							ID:        "recipient_email",

@@ -9,16 +9,16 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID: "web",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "default",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: web/default/cms_home_page
 							ID:        "cms_home_page",
@@ -74,7 +74,7 @@ func init() {
 					Label:     `Browser Capabilities Detection`,
 					SortOrder: 200,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: web/browser_capabilities/cookies
 							ID:        "cookies",
@@ -117,13 +117,13 @@ func init() {
 			SortOrder: 1001,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Cms::config_cms
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "wysiwyg",
 					Label:     `WYSIWYG Options`,
 					SortOrder: 100,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: cms/wysiwyg/enabled
 							ID:        "enabled",
@@ -143,10 +143,10 @@ func init() {
 		// Hidden Configuration, may be visible somewhere else ...
 		element.Section{
 			ID: "web",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "default",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: web/default/front
 							ID:      `front`,
@@ -168,10 +168,10 @@ func init() {
 		},
 		element.Section{
 			ID: "system",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "media_storage_configuration",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: system/media_storage_configuration/allowed_resources
 							ID:      `allowed_resources`,

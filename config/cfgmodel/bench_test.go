@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ func Benchmark_ParallelStrGetDefault(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			var err error
-			benchmarkStr, err = p1.Get(sg)
+			benchmarkStr, err = p1.Value(sg)
 			if err != nil {
 				b.Error(err)
 			}
@@ -58,7 +58,7 @@ func Benchmark_SingleStrGetDefault(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkStr, err = p1.Get(sg)
+		benchmarkStr, err = p1.Value(sg)
 		if err != nil {
 			b.Error(err)
 		}
@@ -82,7 +82,7 @@ func Benchmark_SingleStrGetWebsite(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkStr, err = p1.Get(sg)
+		benchmarkStr, err = p1.Value(sg)
 		if err != nil {
 			b.Error(err)
 		}
@@ -107,7 +107,7 @@ func Benchmark_SingleByteGetDefault(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkByte, err = p1.Get(sg)
+		benchmarkByte, err = p1.Value(sg)
 		if err != nil {
 			b.Error(err)
 		}
@@ -136,7 +136,7 @@ func Benchmark_SingleFloat64GetStore(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmark_SingleFloat64GetStore, err = p1.Get(sg)
+		benchmark_SingleFloat64GetStore, err = p1.Value(sg)
 		if err != nil {
 			b.Error(err)
 		}

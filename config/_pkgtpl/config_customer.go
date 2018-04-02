@@ -9,24 +9,24 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID:        "customer",
 			Label:     `Customer Configuration`,
 			SortOrder: 130,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Customer::config_customer
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:                    "account_share",
 					Label:                 `Account Sharing Options`,
 					SortOrder:             10,
 					Scopes:                scope.PermDefault,
 					HideInSingleStoreMode: true,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: customer/account_share/scope
 							ID:        "scope",
@@ -47,7 +47,7 @@ func init() {
 					Label:     `Create New Account Options`,
 					SortOrder: 20,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: customer/create_account/auto_group_assign
 							ID:        "auto_group_assign",
@@ -268,7 +268,7 @@ func init() {
 					Label:     `Password Options`,
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: customer/password/forgot_email_template
 							ID:        "forgot_email_template",
@@ -340,7 +340,7 @@ func init() {
 					Label:     `Name and Address Options`,
 					SortOrder: 40,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: customer/address/street_lines
 							ID:        "street_lines",
@@ -458,7 +458,7 @@ func init() {
 					Label:     `Login Options`,
 					SortOrder: 90,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: customer/startup/redirect_dashboard
 							ID:        "redirect_dashboard",
@@ -479,7 +479,7 @@ func init() {
 					Label:     `Address Templates`,
 					SortOrder: 100,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: customer/address_templates/text
 							ID:        "text",
@@ -564,7 +564,7 @@ T: {{var telephone}}
 					Label:     `Online Customers Options`,
 					SortOrder: 10,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: customer/online_customers/online_minutes_interval
 							ID:        "online_minutes_interval",
@@ -581,10 +581,10 @@ T: {{var telephone}}
 		},
 		element.Section{
 			ID: "general",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "store_information",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: general/store_information/validate_vat_number
 							ID:        "validate_vat_number",
@@ -598,7 +598,7 @@ T: {{var telephone}}
 
 				element.Group{
 					ID: "restriction",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: general/restriction/autocomplete_on_storefront
 							ID:        "autocomplete_on_storefront",
@@ -618,10 +618,10 @@ T: {{var telephone}}
 		// Hidden Configuration, may be visible somewhere else ...
 		element.Section{
 			ID: "customer",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "default",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: customer/default/group
 							ID:      `group`,
@@ -634,7 +634,7 @@ T: {{var telephone}}
 
 				element.Group{
 					ID: "address",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: customer/address/prefix_show
 							ID:      `prefix_show`,

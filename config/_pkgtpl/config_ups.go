@@ -9,19 +9,19 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID: "carriers",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "ups",
 					Label:     `UPS`,
 					SortOrder: 100,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: carriers/ups/access_license_number
 							ID:        "access_license_number",
@@ -434,10 +434,10 @@ func init() {
 		// Hidden Configuration, may be visible somewhere else ...
 		element.Section{
 			ID: "carriers",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "ups",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: carriers/ups/cutoff_cost
 							ID:      `cutoff_cost`,

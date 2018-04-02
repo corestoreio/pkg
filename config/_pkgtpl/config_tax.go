@@ -9,23 +9,23 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID:        "tax",
 			Label:     `Tax`,
 			SortOrder: 303,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Tax::config_tax
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "classes",
 					Label:     `Tax Classes`,
 					SortOrder: 10,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: tax/classes/shipping_tax_class
 							ID:        "shipping_tax_class",
@@ -70,7 +70,7 @@ func init() {
 					Label:     `Calculation Settings`,
 					SortOrder: 20,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: tax/calculation/algorithm
 							ID:        "algorithm",
@@ -182,7 +182,7 @@ func init() {
 					Label:     `Default Tax Destination Calculation`,
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: tax/defaults/country
 							ID:        "country",
@@ -224,7 +224,7 @@ func init() {
 					Label:     `Price Display Settings`,
 					SortOrder: 40,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: tax/display/type
 							ID:        "type",
@@ -258,7 +258,7 @@ func init() {
 					Label:     `Shopping Cart Display Settings`,
 					SortOrder: 50,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: tax/cart_display/price
 							ID:        "price",
@@ -341,7 +341,7 @@ func init() {
 					Label:     `Orders, Invoices, Credit Memos Display Settings`,
 					SortOrder: 60,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: tax/sales_display/price
 							ID:        "price",
@@ -424,10 +424,10 @@ func init() {
 		// Hidden Configuration, may be visible somewhere else ...
 		element.Section{
 			ID: "tax",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "cart_display",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: tax/cart_display/discount
 							ID:      `discount`,
@@ -440,7 +440,7 @@ func init() {
 
 				element.Group{
 					ID: "sales_display",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: tax/sales_display/discount
 							ID:      `discount`,
@@ -453,7 +453,7 @@ func init() {
 
 				element.Group{
 					ID: "notification",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: tax/notification/info_url
 							ID:      `info_url`,

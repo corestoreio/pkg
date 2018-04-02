@@ -9,23 +9,23 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID:        "sitemap",
 			Label:     `XML Sitemap`,
 			SortOrder: 70,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Sitemap::config_sitemap
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "category",
 					Label:     `Categories Options`,
 					SortOrder: 1,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: sitemap/category/changefreq
 							ID:        "changefreq",
@@ -58,7 +58,7 @@ func init() {
 					Label:     `Products Options`,
 					SortOrder: 2,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: sitemap/product/changefreq
 							ID:        "changefreq",
@@ -103,7 +103,7 @@ func init() {
 					Label:     `CMS Pages Options`,
 					SortOrder: 3,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: sitemap/page/changefreq
 							ID:        "changefreq",
@@ -136,7 +136,7 @@ func init() {
 					Label:     `Generation Settings`,
 					SortOrder: 4,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: sitemap/generate/enabled
 							ID:        "enabled",
@@ -213,7 +213,7 @@ func init() {
 					Label:     `Sitemap File Limits`,
 					SortOrder: 5,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: sitemap/limit/max_lines
 							ID:        "max_lines",
@@ -244,7 +244,7 @@ func init() {
 					Label:     `Search Engine Submission Settings`,
 					SortOrder: 6,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: sitemap/search_engines/submission_robots
 							ID:        "submission_robots",
@@ -264,10 +264,10 @@ func init() {
 		// Hidden Configuration, may be visible somewhere else ...
 		element.Section{
 			ID: "sitemap",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "generate",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: sitemap/generate/error_email
 							ID:      `error_email`,
@@ -279,7 +279,7 @@ func init() {
 
 				element.Group{
 					ID: "file",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: sitemap/file/valid_paths
 							ID:      `valid_paths`,

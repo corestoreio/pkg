@@ -25,24 +25,24 @@ import (
 // Used in frontend (to display the user all the settings) and in
 // backend (scope checks and default values). See the source code
 // of this function for the overall available sections, groups and fields.
-func NewConfigStructure() (element.SectionSlice, error) {
-	return element.NewConfiguration(
+func NewConfigStructure() (element.Sections, error) {
+	return element.MakeSectionsValidated(
 		element.Section{
-			ID:        cfgpath.NewRoute("currency"),
+			ID:        cfgpath.MakeRoute("currency"),
 			Label:     text.Chars(`Currency Setup`),
 			SortOrder: 60,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Backend::currency
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
-					ID:        cfgpath.NewRoute("options"),
+					ID:        cfgpath.MakeRoute("options"),
 					Label:     text.Chars(`Currency Options`),
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: currency/options/base
-							ID:        cfgpath.NewRoute("base"),
+							ID:        cfgpath.MakeRoute("base"),
 							Label:     text.Chars(`Base Currency`),
 							Comment:   text.Chars(`Base currency is used for all online payment transactions. If you have more than one store view, the base currency scope is defined by the catalog price scope ("Catalog" > "Price" > "Catalog Price Scope").`),
 							Type:      element.TypeSelect,
@@ -56,7 +56,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: currency/options/default
-							ID:        cfgpath.NewRoute("default"),
+							ID:        cfgpath.MakeRoute("default"),
 							Label:     text.Chars(`Default Display Currency`),
 							Type:      element.TypeSelect,
 							SortOrder: 2,
@@ -69,7 +69,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: currency/options/allow
-							ID:         cfgpath.NewRoute("allow"),
+							ID:         cfgpath.MakeRoute("allow"),
 							Label:      text.Chars(`Allowed Currencies`),
 							Type:       element.TypeMultiselect,
 							SortOrder:  3,
@@ -84,14 +84,14 @@ func NewConfigStructure() (element.SectionSlice, error) {
 				},
 
 				element.Group{
-					ID:        cfgpath.NewRoute("webservicex"),
+					ID:        cfgpath.MakeRoute("webservicex"),
 					Label:     text.Chars(`Webservicex`),
 					SortOrder: 40,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: currency/webservicex/timeout
-							ID:      cfgpath.NewRoute("timeout"),
+							ID:      cfgpath.MakeRoute("timeout"),
 							Label:   text.Chars(`Connection Timeout in Seconds`),
 							Type:    element.TypeText,
 							Visible: element.VisibleYes,
@@ -102,14 +102,14 @@ func NewConfigStructure() (element.SectionSlice, error) {
 				},
 
 				element.Group{
-					ID:        cfgpath.NewRoute("import"),
+					ID:        cfgpath.MakeRoute("import"),
 					Label:     text.Chars(`Scheduled Import Settings`),
 					SortOrder: 50,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: currency/import/enabled
-							ID:        cfgpath.NewRoute("enabled"),
+							ID:        cfgpath.MakeRoute("enabled"),
 							Label:     text.Chars(`Enabled`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
@@ -121,7 +121,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: currency/import/error_email
-							ID:        cfgpath.NewRoute("error_email"),
+							ID:        cfgpath.MakeRoute("error_email"),
 							Label:     text.Chars(`Error Email Recipient`),
 							Type:      element.TypeText,
 							SortOrder: 5,
@@ -131,7 +131,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: currency/import/error_email_identity
-							ID:        cfgpath.NewRoute("error_email_identity"),
+							ID:        cfgpath.MakeRoute("error_email_identity"),
 							Label:     text.Chars(`Error Email Sender`),
 							Type:      element.TypeSelect,
 							SortOrder: 6,
@@ -143,7 +143,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: currency/import/error_email_template
-							ID:        cfgpath.NewRoute("error_email_template"),
+							ID:        cfgpath.MakeRoute("error_email_template"),
 							Label:     text.Chars(`Error Email Template`),
 							Comment:   text.Chars(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
@@ -156,7 +156,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: currency/import/frequency
-							ID:        cfgpath.NewRoute("frequency"),
+							ID:        cfgpath.MakeRoute("frequency"),
 							Label:     text.Chars(`Frequency`),
 							Type:      element.TypeSelect,
 							SortOrder: 4,
@@ -167,7 +167,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: currency/import/service
-							ID:        cfgpath.NewRoute("service"),
+							ID:        cfgpath.MakeRoute("service"),
 							Label:     text.Chars(`Service`),
 							Type:      element.TypeSelect,
 							SortOrder: 2,
@@ -179,7 +179,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: currency/import/time
-							ID:        cfgpath.NewRoute("time"),
+							ID:        cfgpath.MakeRoute("time"),
 							Label:     text.Chars(`Start Time`),
 							Type:      element.TypeTime,
 							SortOrder: 3,
@@ -191,17 +191,17 @@ func NewConfigStructure() (element.SectionSlice, error) {
 			),
 		},
 		element.Section{
-			ID: cfgpath.NewRoute("system"),
-			Groups: element.NewGroupSlice(
+			ID: cfgpath.MakeRoute("system"),
+			Groups: element.MakeGroups(
 				element.Group{
-					ID:        cfgpath.NewRoute("currency"),
+					ID:        cfgpath.MakeRoute("currency"),
 					Label:     text.Chars(`Currency`),
 					SortOrder: 50,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: system/currency/installed
-							ID:         cfgpath.NewRoute("installed"),
+							ID:         cfgpath.MakeRoute("installed"),
 							Label:      text.Chars(`Installed Currencies`),
 							Type:       element.TypeMultiselect,
 							SortOrder:  1,
@@ -217,17 +217,17 @@ func NewConfigStructure() (element.SectionSlice, error) {
 			),
 		},
 		element.Section{
-			ID: cfgpath.NewRoute("general"),
-			Groups: element.NewGroupSlice(
+			ID: cfgpath.MakeRoute("general"),
+			Groups: element.MakeGroups(
 				element.Group{
-					ID:        cfgpath.NewRoute("country"),
+					ID:        cfgpath.MakeRoute("country"),
 					Label:     text.Chars(`Country Options`),
 					SortOrder: 1,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: general/country/allow
-							ID:         cfgpath.NewRoute("allow"),
+							ID:         cfgpath.MakeRoute("allow"),
 							Label:      text.Chars(`Allow Countries`),
 							Type:       element.TypeMultiselect,
 							SortOrder:  2,
@@ -240,7 +240,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: general/country/default
-							ID:        cfgpath.NewRoute("default"),
+							ID:        cfgpath.MakeRoute("default"),
 							Label:     text.Chars(`Default Country`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
@@ -251,7 +251,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: general/country/eu_countries
-							ID:        cfgpath.NewRoute("eu_countries"),
+							ID:        cfgpath.MakeRoute("eu_countries"),
 							Label:     text.Chars(`European Union Countries`),
 							Type:      element.TypeMultiselect,
 							SortOrder: 30,
@@ -262,7 +262,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: general/country/destinations
-							ID:        cfgpath.NewRoute("destinations"),
+							ID:        cfgpath.MakeRoute("destinations"),
 							Label:     text.Chars(`Top destinations`),
 							Comment:   text.Chars(`Contains codes of the most used countries. Such countries can be shown on the top of the country list.`),
 							Type:      element.TypeMultiselect,
@@ -273,7 +273,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 						},
 						element.Field{
 							// Path: general/country/optional_zip_countries
-							ID:         cfgpath.NewRoute("optional_zip_countries"),
+							ID:         cfgpath.MakeRoute("optional_zip_countries"),
 							Label:      text.Chars(`Zip/Postal Code is Optional for`),
 							Type:       element.TypeMultiselect,
 							SortOrder:  3,
@@ -287,14 +287,14 @@ func NewConfigStructure() (element.SectionSlice, error) {
 				},
 
 				element.Group{
-					ID:        cfgpath.NewRoute("locale"),
+					ID:        cfgpath.MakeRoute("locale"),
 					Label:     text.Chars(`Locale Options`),
 					SortOrder: 8,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: general/locale/timezone
-							ID:        cfgpath.NewRoute("timezone"),
+							ID:        cfgpath.MakeRoute("timezone"),
 							Label:     text.Chars(`Timezone`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
@@ -307,7 +307,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: general/locale/code
-							ID:        cfgpath.NewRoute("code"),
+							ID:        cfgpath.MakeRoute("code"),
 							Label:     text.Chars(`Locale`),
 							Type:      element.TypeSelect,
 							SortOrder: 5,
@@ -319,7 +319,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: general/locale/firstday
-							ID:        cfgpath.NewRoute("firstday"),
+							ID:        cfgpath.MakeRoute("firstday"),
 							Label:     text.Chars(`First Day of Week`),
 							Type:      element.TypeSelect,
 							SortOrder: 10,
@@ -330,7 +330,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: general/locale/weekend
-							ID:         cfgpath.NewRoute("weekend"),
+							ID:         cfgpath.MakeRoute("weekend"),
 							Label:      text.Chars(`Weekend Days`),
 							Type:       element.TypeMultiselect,
 							SortOrder:  15,
@@ -341,7 +341,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 						},
 						element.Field{
 							// Path: general/locale/weight_unit
-							ID:        cfgpath.NewRoute("weight_unit"),
+							ID:        cfgpath.MakeRoute("weight_unit"),
 							Label:     text.Chars(`Weight Unit`),
 							Type:      element.TypeSelect,
 							SortOrder: 7,
@@ -353,14 +353,14 @@ func NewConfigStructure() (element.SectionSlice, error) {
 					),
 				},
 				element.Group{
-					ID:        cfgpath.NewRoute("region"),
+					ID:        cfgpath.MakeRoute("region"),
 					Label:     text.Chars(`State Options`),
 					SortOrder: 4,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: general/region/state_required
-							ID:        cfgpath.NewRoute("state_required"),
+							ID:        cfgpath.MakeRoute("state_required"),
 							Label:     text.Chars(`State is Required for`),
 							Type:      element.TypeMultiselect,
 							SortOrder: 1,
@@ -371,7 +371,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: general/region/display_all
-							ID:        cfgpath.NewRoute("display_all"),
+							ID:        cfgpath.MakeRoute("display_all"),
 							Label:     text.Chars(`Allow to Choose State if It is Optional for Country`),
 							Type:      element.TypeSelect,
 							SortOrder: 8,
@@ -386,14 +386,14 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 		// Hidden Configuration, may be visible somewhere else ...
 		element.Section{
-			ID: cfgpath.NewRoute("general"),
-			Groups: element.NewGroupSlice(
+			ID: cfgpath.MakeRoute("general"),
+			Groups: element.MakeGroups(
 				element.Group{
-					ID: cfgpath.NewRoute("locale"),
-					Fields: element.NewFieldSlice(
+					ID: cfgpath.MakeRoute("locale"),
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: general/locale/datetime_format_long
-							ID:      cfgpath.NewRoute("datetime_format_long"),
+							ID:      cfgpath.MakeRoute("datetime_format_long"),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `%A, %B %e %Y [%I:%M %p]`,
@@ -401,7 +401,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: general/locale/datetime_format_medium
-							ID:      cfgpath.NewRoute("datetime_format_medium"),
+							ID:      cfgpath.MakeRoute("datetime_format_medium"),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `%a, %b %e %Y [%I:%M %p]`,
@@ -409,7 +409,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: general/locale/datetime_format_short
-							ID:      cfgpath.NewRoute("datetime_format_short"),
+							ID:      cfgpath.MakeRoute("datetime_format_short"),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `%m/%d/%y [%I:%M %p]`,
@@ -417,7 +417,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: general/locale/date_format_long
-							ID:      cfgpath.NewRoute("date_format_long"),
+							ID:      cfgpath.MakeRoute("date_format_long"),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `%A, %B %e %Y`,
@@ -425,7 +425,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: general/locale/date_format_medium
-							ID:      cfgpath.NewRoute("date_format_medium"),
+							ID:      cfgpath.MakeRoute("date_format_medium"),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `%a, %b %e %Y`,
@@ -433,7 +433,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: general/locale/date_format_short
-							ID:      cfgpath.NewRoute("date_format_short"),
+							ID:      cfgpath.MakeRoute("date_format_short"),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `%m/%d/%y`,
@@ -441,7 +441,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: general/locale/language
-							ID:      cfgpath.NewRoute("language"),
+							ID:      cfgpath.MakeRoute("language"),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `en`,

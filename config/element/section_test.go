@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,28 +17,28 @@ package element_test
 import (
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/cfgpath"
 	"github.com/corestoreio/pkg/config/element"
 	"github.com/corestoreio/pkg/storage/text"
-	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-var _ element.Sectioner = (*element.SectionSlice)(nil)
+var _ element.Sectioner = (*element.Sections)(nil)
 
 func TestSectionValidateDuplicate(t *testing.T) {
 	// for benchmark tests see package config_bm
 
-	ss := element.NewSectionSlice(
+	ss := element.MakeSections(
 		element.Section{
-			ID: cfgpath.NewRoute(`aa`),
-			Groups: element.NewGroupSlice(
+			ID: cfgpath.MakeRoute(`aa`),
+			Groups: element.MakeGroups(
 				element.Group{
-					ID: cfgpath.NewRoute(`bb`),
-					Fields: element.NewFieldSlice(
-						element.Field{ID: cfgpath.NewRoute(`cc`)},
-						element.Field{ID: cfgpath.NewRoute(`cc`)},
+					ID: cfgpath.MakeRoute(`bb`),
+					Fields: element.MakeFields(
+						element.Field{ID: cfgpath.MakeRoute(`cc`)},
+						element.Field{ID: cfgpath.MakeRoute(`cc`)},
 					),
 				},
 			),
@@ -49,15 +49,15 @@ func TestSectionValidateDuplicate(t *testing.T) {
 
 func TestSectionValidateShortPath(t *testing.T) {
 
-	ss := element.NewSectionSlice(
+	ss := element.MakeSections(
 		element.Section{
-			//ID: cfgpath.NewRoute(`aa`),
-			Groups: element.NewGroupSlice(
+			//ID: cfgpath.MakeRoute(`aa`),
+			Groups: element.MakeGroups(
 				element.Group{
-					//ID: cfgpath.NewRoute(`b`),
-					Fields: element.NewFieldSlice(
-						element.Field{ID: cfgpath.NewRoute(`ca`)},
-						element.Field{ID: cfgpath.NewRoute(`cb`)},
+					//ID: cfgpath.MakeRoute(`b`),
+					Fields: element.MakeFields(
+						element.Field{ID: cfgpath.MakeRoute(`ca`)},
+						element.Field{ID: cfgpath.MakeRoute(`cb`)},
 						element.Field{},
 					),
 				},
@@ -71,22 +71,22 @@ func TestSectionValidateShortPath(t *testing.T) {
 
 func TestSectionUpdateField(t *testing.T) {
 
-	ss := element.NewSectionSlice(
+	ss := element.MakeSections(
 		element.Section{
-			ID: cfgpath.NewRoute(`aa`),
-			Groups: element.NewGroupSlice(
+			ID: cfgpath.MakeRoute(`aa`),
+			Groups: element.MakeGroups(
 				element.Group{
-					ID: cfgpath.NewRoute(`bb`),
-					Fields: element.NewFieldSlice(
-						element.Field{ID: cfgpath.NewRoute(`ca`)},
-						element.Field{ID: cfgpath.NewRoute(`cb`)},
+					ID: cfgpath.MakeRoute(`bb`),
+					Fields: element.MakeFields(
+						element.Field{ID: cfgpath.MakeRoute(`ca`)},
+						element.Field{ID: cfgpath.MakeRoute(`cb`)},
 					),
 				},
 			),
 		},
 	)
 
-	fr := cfgpath.NewRoute(`aa/bb/ca`)
+	fr := cfgpath.MakeRoute(`aa/bb/ca`)
 	if err := ss.UpdateField(fr, element.Field{
 		Label: text.Chars("ca New Label"),
 	}); err != nil {
@@ -99,16 +99,16 @@ func TestSectionUpdateField(t *testing.T) {
 	}
 	assert.Exactly(t, `ca New Label`, f.Label.String())
 
-	err1 := ss.UpdateField(cfgpath.NewRoute(`a/b/c`), element.Field{})
-	assert.True(t, errors.IsNotFound(err1), "Error: %s", err1)
+	err1 := ss.UpdateField(cfgpath.MakeRoute(`a/b/c`), element.Field{})
+	assert.True(t, errors.NotFound.Match(err1), "Error: %s", err1)
 
-	err2 := ss.UpdateField(cfgpath.NewRoute(`aa/b/c`), element.Field{})
-	assert.True(t, errors.IsNotFound(err2), "Error: %s", err2)
+	err2 := ss.UpdateField(cfgpath.MakeRoute(`aa/b/c`), element.Field{})
+	assert.True(t, errors.NotFound.Match(err2), "Error: %s", err2)
 
-	err3 := ss.UpdateField(cfgpath.NewRoute(`aa/bb/c`), element.Field{})
-	assert.True(t, errors.IsNotFound(err3), "Error: %s", err3)
+	err3 := ss.UpdateField(cfgpath.MakeRoute(`aa/bb/c`), element.Field{})
+	assert.True(t, errors.NotFound.Match(err3), "Error: %s", err3)
 
-	err4 := ss.UpdateField(cfgpath.NewRoute(`aa_bb_c`), element.Field{})
+	err4 := ss.UpdateField(cfgpath.MakeRoute(`aa_bb_c`), element.Field{})
 	assert.True(t, errors.IsNotValid(err4), "Error: %s", err4)
 
 }
@@ -118,36 +118,36 @@ var _ config.Writer = (*config.Service)(nil)
 
 func TestService_ApplyDefaults(t *testing.T) {
 
-	pkgCfg := element.MustNewConfiguration(
+	pkgCfg := element.MustMakeSectionsValidate(
 		element.Section{
-			ID: cfgpath.NewRoute("contact"),
-			Groups: element.NewGroupSlice(
+			ID: cfgpath.MakeRoute("contact"),
+			Groups: element.MakeGroups(
 				element.Group{
-					ID: cfgpath.NewRoute("contact"),
-					Fields: element.NewFieldSlice(
+					ID: cfgpath.MakeRoute("contact"),
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: `contact/contact/enabled`,
-							ID:      cfgpath.NewRoute("enabled"),
+							ID:      cfgpath.MakeRoute("enabled"),
 							Default: true,
 						},
 					),
 				},
 				element.Group{
-					ID: cfgpath.NewRoute("email"),
-					Fields: element.NewFieldSlice(
+					ID: cfgpath.MakeRoute("email"),
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: `contact/email/recipient_email`,
-							ID:      cfgpath.NewRoute("recipient_email"),
+							ID:      cfgpath.MakeRoute("recipient_email"),
 							Default: `hello@example.com`,
 						},
 						element.Field{
 							// Path: `contact/email/sender_email_identity`,
-							ID:      cfgpath.NewRoute("sender_email_identity"),
+							ID:      cfgpath.MakeRoute("sender_email_identity"),
 							Default: 2.7182818284590452353602874713527,
 						},
 						element.Field{
 							// Path: `contact/email/email_template`,
-							ID:      cfgpath.NewRoute("email_template"),
+							ID:      cfgpath.MakeRoute("email_template"),
 							Default: 4711,
 						},
 					),
@@ -159,11 +159,11 @@ func TestService_ApplyDefaults(t *testing.T) {
 	if _, err := pkgCfg.ApplyDefaults(s); err != nil {
 		t.Fatal(err)
 	}
-	cer, _, err := pkgCfg.FindField(cfgpath.NewRoute("contact", "email", "recipient_email"))
+	cer, _, err := pkgCfg.FindField(cfgpath.MakeRoute("contact", "email", "recipient_email"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	email, err := s.String(cfgpath.MustNewByParts("contact/email/recipient_email")) // default scope
+	email, err := s.String(cfgpath.MustMakeByString("contact/email/recipient_email")) // default scope
 	assert.NoError(t, err)
 	assert.Exactly(t, cer.Default.(string), email)
 	assert.NoError(t, s.Close())

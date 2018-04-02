@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,51 +15,46 @@
 package config_test
 
 import (
+	"sort"
 	"testing"
 
-	"github.com/corestoreio/pkg/config"
-	"github.com/corestoreio/pkg/config/cfgpath"
-	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/config"
 	"github.com/stretchr/testify/assert"
 )
 
 var _ config.Storager = config.NewInMemoryStore()
 
 func TestSimpleStorage(t *testing.T) {
+	t.Parallel()
 
+	const path = "aa/bb/cc"
 	sp := config.NewInMemoryStore()
 
-	p1 := cfgpath.MustNewByParts("aa/bb/cc")
-
-	assert.NoError(t, sp.Set(p1, 19.99))
-	f, err := sp.Get(p1)
+	assert.NoError(t, sp.Set(0, "aa/bb/cc", []byte(`19.99`)))
+	vb, ok, err := sp.Value(0, path)
 	assert.NoError(t, err)
-	assert.Exactly(t, 19.99, f.(float64))
+	assert.True(t, ok)
+	assert.Exactly(t, []byte(`19.99`), vb)
 
-	p2 := cfgpath.MustNewByParts("xx/yy/zz").BindStore(2)
-
-	assert.NoError(t, sp.Set(p2, 4711))
-	i, err := sp.Get(p2)
-	assert.NoError(t, err)
-	assert.Exactly(t, 4711, i.(int))
-
-	ni, err := sp.Get(cfgpath.Path{})
-	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+	ni, ok, err := sp.Value(0, "")
+	assert.True(t, errors.NotValid.Match(err), "Error: %s", err)
 	assert.Nil(t, ni)
 
-	keys, err := sp.AllKeys()
+	scps, paths, err := sp.AllKeys()
 	assert.NoError(t, err)
-	keys.Sort()
+	sort.Strings(paths)
 
-	wantKeys := cfgpath.PathSlice{
-		cfgpath.Path{Route: cfgpath.NewRoute(`aa/bb/cc`), ScopeID: scope.DefaultTypeID},
-		cfgpath.Path{Route: cfgpath.NewRoute(`xx/yy/zz`), ScopeID: scope.MakeTypeID(scope.Store, 2)},
+	assert.Exactly(t, "x TODO xx", scps.String())
+
+	wantKeys := config.PathSlice{
+		config.MustMakePath(`aa/bb/cc`),
+		config.MustMakePath(`xx/yy/zz`).BindStore(2),
 	}
-	assert.Exactly(t, wantKeys, keys)
+	assert.Exactly(t, wantKeys, paths)
 
-	p3 := cfgpath.MustNewByParts("rr/ss/tt").BindStore(1)
-	ni, err = sp.Get(p3)
-	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
+	ni, ok, err = sp.Value(0, "rr/ss/tt")
+	assert.True(t, errors.NotFound.Match(err), "Error: %s", err)
+	assert.False(t, ok)
 	assert.Nil(t, ni)
 }

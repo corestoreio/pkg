@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,13 +17,12 @@ package config_test
 import (
 	"fmt"
 
-	"github.com/corestoreio/pkg/config"
-	"github.com/corestoreio/pkg/config/cfgpath"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/config"
 )
 
 // We focus here on type String() other primitive types are of course also available.
-var pathString = cfgpath.MustNewByParts("scope/test/string") // panics on incorrect argument.
+var pathString = config.MustMakePath("scope/test/string") // panics on incorrect argument.
 
 // Default storage engine with build-in in-memory map.
 // the NewService gets only instantiated once during app start up.
@@ -39,56 +38,56 @@ func ExampleService() {
 	// supported, but we do ;-)
 
 	// scope default:
-	if err := configSrv.Write(pathString, "DefaultGopher"); err != nil {
+	if err := configSrv.Write(pathString, []byte("DefaultGopher")); err != nil {
 		fmt.Printf("Write Error: %s", err)
 		return
 	}
 
 	// scope website. The number 3 is made up and comes usually from DB table
 	// (M1) core_website or (M2) store_website.
-	if err := configSrv.Write(pathString.BindWebsite(3), "WebsiteGopher"); err != nil {
+	if err := configSrv.Write(pathString.BindWebsite(3), []byte("WebsiteGopher")); err != nil {
 		fmt.Printf("Write Error: %s", err)
 		return
 	}
 
 	// scope store. The number 2 is made up and comes usually from DB table
 	// (M1) core_store or (M2) store.
-	if err := configSrv.Write(pathString.BindStore(2), "StoreGopher"); err != nil {
+	if err := configSrv.Write(pathString.BindStore(2), []byte("StoreGopher")); err != nil {
 		fmt.Printf("Write Error: %s", err)
 		return
 	}
 
 	// Scope1
-	val, err := configSrv.String(pathString)
+	val, ok, err := configSrv.Value(pathString)
 	if err != nil {
 		fmt.Printf("srvString Error: %s", err)
 		return
 	}
-	fmt.Println("Scope1:", val)
+	fmt.Println("Scope1:", ok, val)
 
 	// Scope2
-	val, err = configSrv.String(pathString.BindWebsite(3))
+	val, ok, err = configSrv.Value(pathString.BindWebsite(3))
 	if err != nil {
 		fmt.Printf("srvString Error: %s", err)
 		return
 	}
-	fmt.Println("Scope2:", val)
+	fmt.Println("Scope2:", ok, val)
 
 	// Scope3
-	val, err = configSrv.String(pathString.BindStore(2))
+	val, ok, err = configSrv.Value(pathString.BindStore(2))
 	if err != nil {
 		fmt.Printf("srvString Error: %s", err)
 		return
 	}
-	fmt.Println("Scope3:", val)
+	fmt.Println("Scope3:", ok, val)
 
 	// Scope4
-	_, err = configSrv.String(pathString.BindStore(3)) // different scope ID
+	_, _, err = configSrv.Value(pathString.BindStore(3)) // different scope ID
 	if err != nil {
 		fmt.Printf("Scope4a: srvString Error: %s\n", err)
-		fmt.Printf("Scope4b: srvString Error: %v\n", err) // Use %+v to show the full path! :-)
+		fmt.Printf("Scope4b: srvString Error: %v\n", err) // Use %+v to show the full route! :-)
 	}
-	fmt.Printf("Scope4: Is KeyNotFound %t\n", errors.IsNotFound(err))
+	fmt.Printf("Scope4: Is KeyNotFound %t\n", errors.NotFound.Match(err))
 
 	// Output:
 	// Scope1: DefaultGopher

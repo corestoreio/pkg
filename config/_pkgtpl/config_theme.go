@@ -9,19 +9,19 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID: "design",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "head",
 					Label:     `HTML Head`,
 					SortOrder: 20,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: design/head/shortcut_icon
 							ID:        "shortcut_icon",
@@ -113,7 +113,7 @@ func init() {
 					Label:     `Search Engine Robots`,
 					SortOrder: 25,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: design/search_engine_robots/default_robots
 							ID:        "default_robots",
@@ -156,7 +156,7 @@ func init() {
 					Label:     `Header`,
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: design/header/logo_src
 							ID:        "logo_src",
@@ -216,7 +216,7 @@ func init() {
 					Label:     `Footer`,
 					SortOrder: 40,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: design/footer/copyright
 							ID:        "copyright",
@@ -245,10 +245,10 @@ func init() {
 		// Hidden Configuration, may be visible somewhere else ...
 		element.Section{
 			ID: "design",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "invalid_caches",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: design/invalid_caches/block_html
 							ID:      `block_html`,
@@ -274,7 +274,7 @@ func init() {
 
 				element.Group{
 					ID: "head",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: design/head/_value
 							ID:      `_value`,
@@ -295,7 +295,7 @@ func init() {
 
 				element.Group{
 					ID: "search_engine_robots",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: design/search_engine_robots/default_custom_instructions
 							ID:      `default_custom_instructions`,
@@ -324,7 +324,7 @@ Disallow: /*SID=
 
 				element.Group{
 					ID: "header",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: design/header/_value
 							ID:      `_value`,
@@ -345,7 +345,7 @@ Disallow: /*SID=
 
 				element.Group{
 					ID: "footer",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: design/footer/_value
 							ID:      `_value`,
@@ -367,10 +367,10 @@ Disallow: /*SID=
 		},
 		element.Section{
 			ID: "theme",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "customization",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: theme/customization/custom_css
 							ID:      `custom_css`,
@@ -384,10 +384,10 @@ Disallow: /*SID=
 		},
 		element.Section{
 			ID: "system",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "media_storage_configuration",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: system/media_storage_configuration/allowed_resources
 							ID:      `allowed_resources`,

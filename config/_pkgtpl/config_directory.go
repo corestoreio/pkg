@@ -9,23 +9,23 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID:        "currency",
 			Label:     `Currency Setup`,
 			SortOrder: 60,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Backend::currency
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "options",
 					Label:     `Currency Options`,
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: currency/options/base
 							ID:        "base",
@@ -74,7 +74,7 @@ func init() {
 					Label:     `Webservicex`,
 					SortOrder: 40,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: currency/webservicex/timeout
 							ID:      "timeout",
@@ -92,7 +92,7 @@ func init() {
 					Label:     `Scheduled Import Settings`,
 					SortOrder: 50,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: currency/import/enabled
 							ID:        "enabled",
@@ -178,13 +178,13 @@ func init() {
 		},
 		element.Section{
 			ID: "system",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "currency",
 					Label:     `Currency`,
 					SortOrder: 50,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: system/currency/installed
 							ID:         "installed",
@@ -204,10 +204,10 @@ func init() {
 		},
 		element.Section{
 			ID: "general",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "country",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: general/country/optional_zip_countries
 							ID:         "optional_zip_countries",
@@ -228,7 +228,7 @@ func init() {
 					Label:     `State Options`,
 					SortOrder: 4,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: general/region/state_required
 							ID:        "state_required",
@@ -255,7 +255,7 @@ func init() {
 
 				element.Group{
 					ID: "locale",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: general/locale/weight_unit
 							ID:        "weight_unit",
@@ -275,10 +275,10 @@ func init() {
 		// Hidden Configuration, may be visible somewhere else ...
 		element.Section{
 			ID: "currency",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "import",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: currency/import/error_email
 							ID:      `error_email`,
@@ -291,10 +291,10 @@ func init() {
 		},
 		element.Section{
 			ID: "general",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "country",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: general/country/allow
 							ID:      `allow`,
@@ -315,7 +315,7 @@ func init() {
 
 				element.Group{
 					ID: "locale",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: general/locale/datetime_format_long
 							ID:      `datetime_format_long`,

@@ -9,19 +9,19 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID: "admin",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "captcha",
 					Label:     `CAPTCHA`,
 					SortOrder: 50,
 					Scopes:    scope.PermWebsite,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: admin/captcha/enable
 							ID:        "enable",
@@ -134,13 +134,13 @@ func init() {
 		},
 		element.Section{
 			ID: "customer",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "captcha",
 					Label:     `CAPTCHA`,
 					SortOrder: 110,
 					Scopes:    scope.PermWebsite,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: customer/captcha/enable
 							ID:        "enable",
@@ -256,10 +256,10 @@ func init() {
 		// Hidden Configuration, may be visible somewhere else ...
 		element.Section{
 			ID: "system",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "media_storage_configuration",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: system/media_storage_configuration/allowed_resources
 							ID:      `allowed_resources`,
@@ -273,10 +273,10 @@ func init() {
 		},
 		element.Section{
 			ID: "admin",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "captcha",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: admin/captcha/type
 							ID:      `type`,
@@ -313,10 +313,10 @@ func init() {
 		},
 		element.Section{
 			ID: "customer",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "captcha",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: customer/captcha/type
 							ID:      `type`,
@@ -354,10 +354,10 @@ func init() {
 		},
 		element.Section{
 			ID: "captcha",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "_value",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: captcha/_value/fonts
 							ID:      `fonts`,
@@ -386,7 +386,7 @@ func init() {
 
 				element.Group{
 					ID: "_attribute",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: captcha/_attribute/translate
 							ID:      `translate`,

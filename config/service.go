@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,37 +15,28 @@
 package config
 
 import (
-	"time"
-
-	"github.com/corestoreio/pkg/config/cfgpath"
-	"github.com/corestoreio/pkg/util/conv"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/store/scope"
 )
 
 // LeftDelim and RightDelim are used withing the core_config_data.value field to
 // allow the replacement of the placeholder in exchange with the current value.
+// deprecated gets not refactored
 const (
 	LeftDelim  = "{{"
 	RightDelim = "}}"
 )
 
 // Getter implements how to receive thread-safe a configuration value from an
-// underlying backend service. The provided cfgpath.Path as an argument does not
-// make any assumptions if the scope of the cfgpath.Path is allowed to retrieve
-// the value. The NewScoped() function binds a cfgpath.Route to a scope.Scope
+// underlying backend service. The provided route as an argument does not
+// make any assumptions if the scope of the Path is allowed to retrieve
+// the value. The NewScoped() function binds a route to a scope.Scope
 // and gives you the possibility to fallback the hierarchy levels. If a value
-// cannot be found it must return an error of behaviour not NotFound.
+// cannot be found, it must return false as the 2nd return argument.
 type Getter interface {
 	NewScoped(websiteID, storeID int64) Scoped
-	Byte(cfgpath.Path) ([]byte, error)
-	String(cfgpath.Path) (string, error)
-	Bool(cfgpath.Path) (bool, error)
-	Float64(cfgpath.Path) (float64, error)
-	Int(cfgpath.Path) (int, error)
-	Time(cfgpath.Path) (time.Time, error)
-	Duration(cfgpath.Path) (time.Duration, error)
-	// maybe add compare and swap function
+	Value(Path) (v Value, ok bool, err error)
 }
 
 // GetterPubSuber implements a configuration Getter and a Subscriber for Publish
@@ -59,7 +50,7 @@ type GetterPubSuber interface {
 // scopes.
 type Writer interface {
 	// Write writes a configuration entry and may return an error
-	Write(p cfgpath.Path, value interface{}) error
+	Write(p Path, value []byte) error
 }
 
 // Storager is the underlying data storage for holding the keys and its values.
@@ -71,16 +62,18 @@ type Writer interface {
 type Storager interface {
 	// Set sets a key with a value and returns on success nil or
 	// ErrKeyOverwritten, on failure any other error
-	Set(key cfgpath.Path, value interface{}) error
-	// Get returns the raw value on success or may return a NotFound error
-	// behaviour if an entry cannot be found or does not exists. Any other error
-	// can also occur.
-	Get(key cfgpath.Path) (interface{}, error)
+	Set(scp scope.TypeID, path string, value []byte) error
+	// Get returns the raw value `v` on success and sets `ok` to true because
+	// the value has been found. If the value cannot be found for the desired
+	// path, return value `ok` must be false. A nil value `v` indicates also a
+	// value and hence `ok` is true, if found.
+	Value(scp scope.TypeID, path string) (v []byte, ok bool, err error)
 	// AllKeys returns the fully qualified keys
-	AllKeys() (cfgpath.PathSlice, error)
+	AllKeys() (scps scope.TypeIDs, paths []string, err error)
 }
 
-// Service main configuration provider. Please use the NewService() function
+// Service main configuration provider. Please use the NewService() function.
+// TODO build in to support different environments for the same keys. E.g. different API credentials for external APIs (staging, production, etc).
 type Service struct {
 	// backend is the underlying data holding provider. Only access it if you
 	// know exactly what you are doing.
@@ -97,6 +90,8 @@ type Service struct {
 	// package to log within functional option calls. For example in
 	// config/storage/ccd.
 	Log log.Logger
+
+	// TODO auto detect unmarhaller and get one from a pool pass the correct unmarshaler to the Value.
 }
 
 // NewService creates the main new configuration for all scopes: default,
@@ -114,14 +109,6 @@ func NewService(backend Storager, opts ...Option) (*Service, error) {
 				// terminate publisher go routine and prevent leaking
 				return nil, errors.Wrap(err2, "[config] Service.Option.Close")
 			}
-		}
-		return nil, errors.Wrap(err, "[config] Service.Option")
-	}
-
-	p := cfgpath.MustNewByParts(PathCSBaseURL)
-	if err := s.backend.Set(p, CSBaseURL); err != nil {
-		if err2 := s.Close(); err2 != nil { // terminate publisher go routine and prevent leaking
-			return nil, errors.Wrap(err2, "[config] Service.Storage.Close")
 		}
 		return nil, errors.Wrap(err, "[config] Service.Option")
 	}
@@ -157,7 +144,7 @@ func (s *Service) NewScoped(websiteID, storeID int64) Scoped {
 
 // Write puts a value back into the Service. Example usage:
 //		// Default Scope
-//		p, err := cfgpath.NewByParts("currency/option/base") // or use cfgpath.MustNewByParts( ... )
+//		p, err := cfgpath.MakeByString("currency/option/base") // or use cfgpath.MustMakeByString( ... )
 // 		err := Write(p, "USD")
 //
 //		// Website Scope
@@ -167,12 +154,12 @@ func (s *Service) NewScoped(websiteID, storeID int64) Scoped {
 //		// Store Scope
 //		// 6 for example comes from core_store/store database table
 //		err := Write(p.Bind(scope.StoreID, 6), "CHF")
-func (s *Service) Write(p cfgpath.Path, v interface{}) error {
+func (s *Service) Write(p Path, v []byte) error {
 	if s.Log.IsDebug() {
-		s.Log.Debug("config.Service.Write", log.Stringer("path", p), log.Object("val", v))
+		s.Log.Debug("config.Service.Write", log.Stringer("path", p))
 	}
 
-	if err := s.backend.Set(p, v); err != nil {
+	if err := s.backend.Set(p.ScopeID, p.route, v); err != nil {
 		return errors.Wrap(err, "[config] sStorage.Set")
 	}
 	if s.pubSub != nil {
@@ -181,18 +168,10 @@ func (s *Service) Write(p cfgpath.Path, v interface{}) error {
 	return nil
 }
 
-// get generic getter ... not sure if this should be public ...
-func (s *Service) get(p cfgpath.Path) (interface{}, error) {
-	if s.Log.IsDebug() {
-		s.Log.Debug("config.Service.get", log.Stringer("path", p))
-	}
-	return s.backend.Get(p)
-}
-
 // String returns a string from the Service. Example usage:
 //
 //		// Default Scope
-//		p, err := cfgpath.NewByParts("general/locale/timezone") // or use cfgpath.MustNewByParts( ... )
+//		p, err := cfgpath.MakeByString("general/locale/timezone") // or use cfgpath.MustMakeByString( ... )
 // 		s, err := String(p)
 //
 //		// Website Scope
@@ -202,80 +181,146 @@ func (s *Service) get(p cfgpath.Path) (interface{}, error) {
 //		// Store Scope
 //		// 6 for example comes from core_store/store database table
 //		s, err := String(p.Bind(scope.StoreID, 6))
-func (s *Service) String(p cfgpath.Path) (string, error) {
-	vs, err := s.get(p)
-	if err != nil {
-		return "", errors.Wrap(err, "[config] Storage.String.get")
+func (s *Service) Value(p Path) (v Value, ok bool, err error) {
+	if s.Log.IsDebug() {
+		defer log.WhenDone(s.Log).Debug("config.Service.get", log.Stringer("path", p), log.Bool("found", ok), log.Err(err))
 	}
-	return conv.ToStringE(vs)
-}
 
-// Byte returns a byte slice from the Service. Example usage see String.
-func (s *Service) Byte(p cfgpath.Path) ([]byte, error) {
-	vs, err := s.get(p)
-	if err != nil {
-		return nil, errors.Wrap(err, "[config] Storage.Byte.get")
-	}
-	return conv.ToByteE(vs)
-}
-
-// Bool returns bool from the Service. Example usage see String.
-func (s *Service) Bool(p cfgpath.Path) (bool, error) {
-	vs, err := s.get(p)
-	if err != nil {
-		return false, errors.Wrap(err, "[config] Storage.Bool.get")
-	}
-	return conv.ToBoolE(vs)
-}
-
-// Float64 returns a float64 from the Service. Example usage see String.
-func (s *Service) Float64(p cfgpath.Path) (float64, error) {
-	vs, err := s.get(p)
-	if err != nil {
-		return 0, errors.Wrap(err, "[config] Storage.Float64.get")
-	}
-	return conv.ToFloat64E(vs)
-}
-
-// Int returns an int from the Service. Example usage see String.
-func (s *Service) Int(p cfgpath.Path) (int, error) {
-	vs, err := s.get(p)
-	if err != nil {
-		return 0, errors.Wrap(err, "[config] Storage.Int.get")
-	}
-	return conv.ToIntE(vs)
-}
-
-// Time returns a date and time object from the Service. Example usage see
-// String. Time() is able to parse available time formats as defined in
-// github.com/corestoreio/pkg/util/conv.StringToDate()
-func (s *Service) Time(p cfgpath.Path) (time.Time, error) {
-	vs, err := s.get(p)
-	if err != nil {
-		return time.Time{}, errors.Wrap(err, "[config] Storage.Time.get")
-	}
-	return conv.ToTimeE(vs)
-}
-
-// Duration returns a duration from the Service. Example usage see String.
-func (s *Service) Duration(p cfgpath.Path) (time.Duration, error) {
-	vs, err := s.get(p)
-	if err != nil {
-		return 0, errors.Wrap(err, "[config] Storage.Duration.get")
-	}
-	return conv.ToDurationE(vs)
+	v.data, ok, err = s.backend.Value(p.ScopeID, p.route)
+	return
 }
 
 // IsSet checks if a key is in the configuration. Returns false on error. Errors
 // will be logged in Debug mode. Does not check if the value can be asserted to
 // the desired type.
-func (s *Service) IsSet(p cfgpath.Path) bool {
-	v, err := s.backend.Get(p)
-	if err != nil {
-		if s.Log.IsDebug() {
-			s.Log.Debug("config.Service.IsSet.Storage.Get", log.Err(err), log.Stringer("path", p))
-		}
-		return false
+func (s *Service) IsSet(p Path) bool {
+	_, ok, err := s.Value(p)
+	return err == nil && ok
+}
+
+// think about that segregation
+//type ScopedStringer interface {
+//  Parent() (scope.Scope, int64)
+//	scope.Scoper
+//	Bind(scope.Scope) ScopedGetter
+//	String(p config.Path, s scope.Scope) (string, error)
+//}
+// and so on ...
+
+// Scoped is equal to Getter but not an interface and the underlying
+// implementation takes care of providing the correct scope: default, website or
+// store and bubbling up the scope chain from store -> website -> default if a
+// value won't get found in the desired scope. The Path for each primitive type
+// represents always a path like "section/group/element" without the scope
+// string and scope ID.
+//
+// To restrict bubbling up you can provide a second argument scope.Scope. You
+// can restrict a configuration path to be only used with the default, website
+// or store scope. See the examples. This second argument will mainly be used by
+// the cfgmodel package to use a defined scope in a config.Structure. If you
+// access the ScopedGetter from a store.Store, store.Website type the second
+// argument must already be internally pre-filled.
+//
+// WebsiteID and StoreID must be in a relation like enforced in the database
+// tables via foreign keys. Empty storeID triggers the website scope. Empty
+// websiteID and empty storeID are triggering the default scope.
+//
+// You can use the function NewScoped() to create a new object but not
+// mandatory. Returned error has mostly the behaviour of NotFound. Debug logging
+// can be implemented in the config.Getter.
+type Scoped struct {
+	// Root holds the main functions for retrieving values by paths from the
+	// storage.
+	Root      Getter
+	WebsiteID int64
+	StoreID   int64
+}
+
+// NewScopedService instantiates a ScopedGetter implementation.  Getter
+// specifies the root Getter which does not know about any scope.
+func NewScoped(r Getter, websiteID, storeID int64) Scoped {
+	return Scoped{
+		Root:      r,
+		WebsiteID: websiteID,
+		StoreID:   storeID,
 	}
-	return v != nil
+}
+
+// IsValid checks if the object has been set up correctly.
+func (ss Scoped) IsValid() bool {
+	return ss.Root != nil && ((ss.WebsiteID == 0 && ss.StoreID == 0) ||
+		(ss.WebsiteID > 0 && ss.StoreID == 0) ||
+		(ss.WebsiteID > 0 && ss.StoreID > 0))
+}
+
+// ParentID tells you the parent underlying scope and its ID. Store falls back
+// to website and website falls back to default.
+func (ss Scoped) ParentID() scope.TypeID {
+	if ss.StoreID > 0 {
+		return scope.Website.Pack(ss.WebsiteID)
+	}
+	return scope.DefaultTypeID
+}
+
+// ScopeID tells you the current underlying scope and its ID to which this
+// configuration has been bound to.
+func (ss Scoped) ScopeID() scope.TypeID {
+	if ss.StoreID > 0 {
+		return scope.Store.Pack(ss.StoreID)
+	}
+	if ss.WebsiteID > 0 {
+		return scope.Website.Pack(ss.WebsiteID)
+	}
+	return scope.DefaultTypeID
+}
+
+// ScopeIDs returns the hierarchical order of the scopes containing ScopeID() on
+// position zero and ParentID() on position one. This function guarantees that
+// the returned slice contains at least two entries.
+func (ss Scoped) ScopeIDs() scope.TypeIDs {
+	var ids = [2]scope.TypeID{
+		ss.ScopeID(),
+		ss.ParentID(),
+	}
+	return ids[:]
+}
+
+func (ss Scoped) isAllowedStore(s scope.Type) bool {
+	scp := ss.ScopeID().Type()
+	if s > scope.Absent {
+		scp = s
+	}
+	return ss.StoreID > 0 && scope.PermStoreReverse.Has(scp)
+}
+
+func (ss Scoped) isAllowedWebsite(s scope.Type) bool {
+	scp := ss.ScopeID().Type()
+	if s > scope.Absent {
+		scp = s
+	}
+	return ss.WebsiteID > 0 && scope.PermWebsiteReverse.Has(scp)
+}
+
+// Byte traverses through the scopes store->website->default to find
+// a matching byte slice value.
+func (ss Scoped) Value(s scope.Type, route string) (v Value, ok bool, err error) {
+	// fallback to next parent scope if value does not exists
+	p := Path{
+		route:   route,
+		ScopeID: scope.DefaultTypeID,
+	}
+	if ss.isAllowedStore(s) {
+		v, ok, err := ss.Root.Value(p.BindStore(ss.StoreID))
+		if ok || err != nil {
+			// value found or err is not a NotFound error
+			return v, ok, errors.WithStack(err)
+		}
+	}
+	if ss.isAllowedWebsite(s) {
+		v, ok, err := ss.Root.Value(p.BindWebsite(ss.WebsiteID))
+		if ok || err != nil {
+			return v, ok, errors.WithStack(err)
+		}
+	}
+	return ss.Root.Value(p)
 }

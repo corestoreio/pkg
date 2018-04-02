@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/cfgmock"
 	"github.com/corestoreio/pkg/config/cfgmodel"
@@ -25,7 +26,6 @@ import (
 	"github.com/corestoreio/pkg/config/element"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/conv"
-	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,7 +43,7 @@ func TestTimeGetWithCfgStruct(t *testing.T) {
 	tm := cfgmodel.NewTime("web/cors/time", cfgmodel.WithFieldFromSectionSlice(configStructure))
 	assert.Empty(t, tm.Options())
 
-	wantPath := cfgpath.MustNewByParts(pathWebCorsTime).BindWebsite(10)
+	wantPath := cfgpath.MustMakeByString(pathWebCorsTime).BindWebsite(10)
 	defaultTime := mustParseTime("2012-08-23 09:20:13")
 	tests := []struct {
 		sg      config.Scoped
@@ -61,7 +61,7 @@ func TestTimeGetWithCfgStruct(t *testing.T) {
 		}).NewScoped(10, 11), scope.TypeIDs{scope.Store.Pack(11)}, defaultTime.Add(time.Second * 6)},
 	}
 	for i, test := range tests {
-		gb, err := tm.Get(test.sg)
+		gb, err := tm.Value(test.sg)
 		if err != nil {
 			t.Fatal("Index", i, err)
 		}
@@ -76,7 +76,7 @@ func TestTimeGetWithoutCfgStruct(t *testing.T) {
 	b := cfgmodel.NewTime(pathWebCorsTime)
 	assert.Empty(t, b.Options())
 
-	wantPath := cfgpath.MustNewByParts(pathWebCorsTime).BindWebsite(10)
+	wantPath := cfgpath.MustMakeByString(pathWebCorsTime).BindWebsite(10)
 	defaultTime := mustParseTime("2012-08-23 09:20:13")
 	tests := []struct {
 		sg      config.Scoped
@@ -93,7 +93,7 @@ func TestTimeGetWithoutCfgStruct(t *testing.T) {
 		}).NewScoped(10, 11), typeIDsDefault, defaultTime.Add(time.Second * 5)},
 	}
 	for i, test := range tests {
-		gb, err := b.Get(test.sg)
+		gb, err := b.Value(test.sg)
 		if err != nil {
 			t.Fatal("Index", i, err)
 		}
@@ -112,7 +112,7 @@ func TestTimeGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 			return time.Time{}, errors.NewFatalf("Unexpected error")
 		},
 	}
-	gb, haveErr := b.Get(sm.NewScoped(1, 1))
+	gb, haveErr := b.Value(sm.NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
 	assert.Exactly(t, typeIDsDefault, sm.TimeInvokes().ScopeIDs())
@@ -122,7 +122,7 @@ func TestTimeIgnoreNilDefaultValues(t *testing.T) {
 
 	b := cfgmodel.NewTime("web/cors/time", cfgmodel.WithField(&element.Field{}))
 	sm := cfgmock.NewService()
-	gb, err := b.Get(sm.NewScoped(1, 1))
+	gb, err := b.Value(sm.NewScoped(1, 1))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +133,7 @@ func TestTimeIgnoreNilDefaultValues(t *testing.T) {
 func TestTimeWrite(t *testing.T) {
 
 	const pathWebCorsF64 = "web/cors/time"
-	wantPath := cfgpath.MustNewByParts(pathWebCorsF64).BindWebsite(10)
+	wantPath := cfgpath.MustMakeByString(pathWebCorsF64).BindWebsite(10)
 	haveTime := mustParseTime("2000-08-23 09:20:13")
 
 	b := cfgmodel.NewTime("web/cors/time", cfgmodel.WithFieldFromSectionSlice(configStructure))
@@ -161,7 +161,7 @@ func TestDurationGetWithCfgStruct(t *testing.T) {
 	tm := cfgmodel.NewDuration("web/cors/duration", cfgmodel.WithFieldFromSectionSlice(configStructure))
 	assert.Empty(t, tm.Options())
 
-	wantPath := cfgpath.MustNewByParts(pathWebCorsDuration).BindWebsite(10)
+	wantPath := cfgpath.MustMakeByString(pathWebCorsDuration).BindWebsite(10)
 	defaultDuration := mustParseDuration("1h45m") // default as in the configStructure slice
 
 	tests := []struct {
@@ -180,7 +180,7 @@ func TestDurationGetWithCfgStruct(t *testing.T) {
 		}).NewScoped(10, 11), scope.TypeIDs{scope.Store.Pack(11)}, defaultDuration * (time.Second * 6)},
 	}
 	for i, test := range tests {
-		gb, err := tm.Get(test.sg)
+		gb, err := tm.Value(test.sg)
 		if err != nil {
 			t.Fatal("Index", i, err)
 		}
@@ -196,7 +196,7 @@ func TestDurationGetWithoutCfgStruct(t *testing.T) {
 	b := cfgmodel.NewDuration(pathWebCorsDuration)
 	assert.Empty(t, b.Options())
 
-	wantPath := cfgpath.MustNewByParts(pathWebCorsDuration).BindWebsite(10)
+	wantPath := cfgpath.MustMakeByString(pathWebCorsDuration).BindWebsite(10)
 	defaultDuration := mustParseDuration("2h44m")
 	tests := []struct {
 		sg      config.Scoped
@@ -213,7 +213,7 @@ func TestDurationGetWithoutCfgStruct(t *testing.T) {
 		}).NewScoped(10, 11), typeIDsDefault, defaultDuration * (time.Second * 5)},
 	}
 	for i, test := range tests {
-		gb, err := b.Get(test.sg)
+		gb, err := b.Value(test.sg)
 		if err != nil {
 			t.Fatal("Index", i, err)
 		}
@@ -232,7 +232,7 @@ func TestDurationGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 			return 0, errors.NewFatalf("Unexpected error")
 		},
 	}
-	gb, haveErr := b.Get(sm.NewScoped(1, 1))
+	gb, haveErr := b.Value(sm.NewScoped(1, 1))
 	assert.Exactly(t, time.Duration(0), gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
 	assert.Exactly(t, typeIDsDefault, sm.DurationInvokes().ScopeIDs())
@@ -242,7 +242,7 @@ func TestDurationIgnoreNilDefaultValues(t *testing.T) {
 
 	b := cfgmodel.NewDuration("web/cors/duration", cfgmodel.WithField(nil))
 	sm := cfgmock.NewService()
-	gb, err := b.Get(sm.NewScoped(1, 1))
+	gb, err := b.Value(sm.NewScoped(1, 1))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -253,7 +253,7 @@ func TestDurationIgnoreNilDefaultValues(t *testing.T) {
 func TestDurationWrite(t *testing.T) {
 
 	const pathWebCorsF64 = "web/cors/duration"
-	wantPath := cfgpath.MustNewByParts(pathWebCorsF64).BindWebsite(10)
+	wantPath := cfgpath.MustMakeByString(pathWebCorsF64).BindWebsite(10)
 	haveDuration := mustParseDuration("4h33m")
 
 	b := cfgmodel.NewDuration("web/cors/duration", cfgmodel.WithFieldFromSectionSlice(configStructure))

@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package cfgmodel_test
 import (
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/cfgmock"
 	"github.com/corestoreio/pkg/config/cfgmodel"
@@ -25,7 +26,6 @@ import (
 	"github.com/corestoreio/pkg/config/element"
 	"github.com/corestoreio/pkg/storage/text"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,19 +33,19 @@ var typeIDsDefault = scope.TypeIDs{scope.DefaultTypeID}
 
 // configStructure might be a duplicate of base_test but note that the
 // test package names are different.
-var configStructure = element.MustNewConfiguration(
+var configStructure = element.MustMakeSectionsValidate(
 	element.Section{
-		ID: cfgpath.NewRoute("web"),
-		Groups: element.NewGroupSlice(
+		ID: cfgpath.MakeRoute("web"),
+		Groups: element.MakeGroups(
 			element.Group{
-				ID:        cfgpath.NewRoute("cors"),
+				ID:        cfgpath.MakeRoute("cors"),
 				Label:     text.Chars(`CORS Cross Origin Resource Sharing`),
 				SortOrder: 150,
 				Scopes:    scope.PermDefault,
-				Fields: element.NewFieldSlice(
+				Fields: element.MakeFields(
 					element.Field{
 						// Path: `web/cors/exposed_headers`,
-						ID:        cfgpath.NewRoute("exposed_headers"),
+						ID:        cfgpath.MakeRoute("exposed_headers"),
 						Label:     text.Chars(`Exposed Headers`),
 						Comment:   text.Chars(`Indicates which headers are safe to expose to the API of a CORS API specification. Separate via line break`),
 						Type:      element.TypeTextarea,
@@ -56,7 +56,7 @@ var configStructure = element.MustNewConfiguration(
 					},
 					element.Field{
 						// Path: `web/cors/allowed_origins`,
-						ID:        cfgpath.NewRoute("allowed_origins"),
+						ID:        cfgpath.MakeRoute("allowed_origins"),
 						Label:     text.Chars(`Allowed Origins`),
 						Comment:   text.Chars(`Is a list of origins a cross-domain request can be executed from.`),
 						Type:      element.TypeTextarea,
@@ -67,7 +67,7 @@ var configStructure = element.MustNewConfiguration(
 					},
 					element.Field{
 						// Path: `web/cors/allow_credentials`,
-						ID:        cfgpath.NewRoute("allow_credentials"),
+						ID:        cfgpath.MakeRoute("allow_credentials"),
 						Label:     text.Chars(`Allowed Credentials`),
 						Type:      element.TypeSelect,
 						SortOrder: 30,
@@ -77,7 +77,7 @@ var configStructure = element.MustNewConfiguration(
 					},
 					element.Field{
 						// Path: `web/cors/int`,
-						ID:        cfgpath.NewRoute("int"),
+						ID:        cfgpath.MakeRoute("int"),
 						Type:      element.TypeText,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
@@ -86,7 +86,7 @@ var configStructure = element.MustNewConfiguration(
 					},
 					element.Field{
 						// Path: `web/cors/int_slice`,
-						ID:        cfgpath.NewRoute("int_slice"),
+						ID:        cfgpath.MakeRoute("int_slice"),
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
@@ -95,7 +95,7 @@ var configStructure = element.MustNewConfiguration(
 					},
 					element.Field{
 						// Path: `web/cors/float64`,
-						ID:        cfgpath.NewRoute("float64"),
+						ID:        cfgpath.MakeRoute("float64"),
 						Type:      element.TypeText,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
@@ -104,7 +104,7 @@ var configStructure = element.MustNewConfiguration(
 					},
 					element.Field{
 						// Path: `web/cors/time`,
-						ID:        cfgpath.NewRoute("time"),
+						ID:        cfgpath.MakeRoute("time"),
 						Type:      element.TypeText,
 						SortOrder: 90,
 						Visible:   element.VisibleYes,
@@ -113,7 +113,7 @@ var configStructure = element.MustNewConfiguration(
 					},
 					element.Field{
 						// Path: `web/cors/duration`,
-						ID:        cfgpath.NewRoute("duration"),
+						ID:        cfgpath.MakeRoute("duration"),
 						Type:      element.TypeText,
 						SortOrder: 100,
 						Visible:   element.VisibleYes,
@@ -122,7 +122,7 @@ var configStructure = element.MustNewConfiguration(
 					},
 					element.Field{
 						// Path: `web/cors/byte`,
-						ID:        cfgpath.NewRoute("byte"),
+						ID:        cfgpath.MakeRoute("byte"),
 						Type:      element.TypeText,
 						SortOrder: 110,
 						Visible:   element.VisibleYes,
@@ -131,7 +131,7 @@ var configStructure = element.MustNewConfiguration(
 					},
 					element.Field{
 						// Path: `web/cors/csv`,
-						ID:        cfgpath.NewRoute("csv"),
+						ID:        cfgpath.MakeRoute("csv"),
 						Type:      element.TypeTextarea,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
@@ -143,7 +143,7 @@ var configStructure = element.MustNewConfiguration(
 					},
 					element.Field{
 						// Path: `web/cors/float64_store`,
-						ID:        cfgpath.NewRoute("float64_store"),
+						ID:        cfgpath.MakeRoute("float64_store"),
 						Type:      element.TypeText,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
@@ -154,15 +154,15 @@ var configStructure = element.MustNewConfiguration(
 			},
 
 			element.Group{
-				ID:        cfgpath.NewRoute("unsecure"),
+				ID:        cfgpath.MakeRoute("unsecure"),
 				Label:     text.Chars(`Base URLs`),
 				Comment:   text.Chars(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`),
 				SortOrder: 10,
 				Scopes:    scope.PermStore,
-				Fields: element.NewFieldSlice(
+				Fields: element.MakeFields(
 					element.Field{
 						// Path: `web/unsecure/url`,
-						ID:        cfgpath.NewRoute("url"),
+						ID:        cfgpath.MakeRoute("url"),
 						Label:     text.Chars(`Just an URL`),
 						Type:      element.TypeText,
 						SortOrder: 9,
@@ -172,7 +172,7 @@ var configStructure = element.MustNewConfiguration(
 					},
 					element.Field{
 						// Path: `web/unsecure/base_url`,
-						ID:        cfgpath.NewRoute("base_url"),
+						ID:        cfgpath.MakeRoute("base_url"),
 						Label:     text.Chars(`Base URL`),
 						Comment:   text.Chars(`Specify URL or {{base_url}} placeholder.`),
 						Type:      element.TypeText,
@@ -185,7 +185,7 @@ var configStructure = element.MustNewConfiguration(
 
 					element.Field{
 						// Path: `web/unsecure/base_link_url`,
-						ID:        cfgpath.NewRoute("base_link_url"),
+						ID:        cfgpath.MakeRoute("base_link_url"),
 						Label:     text.Chars(`Base Link URL`),
 						Comment:   text.Chars(`May start with {{unsecure_base_url}} placeholder.`),
 						Type:      element.TypeText,
@@ -198,7 +198,7 @@ var configStructure = element.MustNewConfiguration(
 
 					element.Field{
 						// Path: `web/unsecure/base_static_url`,
-						ID:        cfgpath.NewRoute("base_static_url"),
+						ID:        cfgpath.MakeRoute("base_static_url"),
 						Label:     text.Chars(`Base URL for Static View Files`),
 						Comment:   text.Chars(`May be empty or start with {{unsecure_base_url}} placeholder.`),
 						Type:      element.TypeText,
@@ -217,7 +217,7 @@ var configStructure = element.MustNewConfiguration(
 func TestBoolGetWithCfgStruct(t *testing.T) {
 
 	const pathWebCorsCred = "web/cors/allow_credentials"
-	wantPath := cfgpath.MustNewByParts(pathWebCorsCred).BindWebsite(3)
+	wantPath := cfgpath.MustMakeByString(pathWebCorsCred).BindWebsite(3)
 	b := cfgmodel.NewBool(pathWebCorsCred, cfgmodel.WithFieldFromSectionSlice(configStructure), cfgmodel.WithSource(cfgsource.YesNo))
 
 	assert.Exactly(t, cfgsource.YesNo, b.Options())
@@ -233,7 +233,7 @@ func TestBoolGetWithCfgStruct(t *testing.T) {
 		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): 0}).NewScoped(3, 5), scope.TypeIDs{scope.Website.Pack(3)}, false},
 	}
 	for i, test := range tests {
-		gb, err := b.Get(test.sg)
+		gb, err := b.Value(test.sg)
 		if err != nil {
 			t.Fatal("Index", i, err)
 		}
@@ -246,7 +246,7 @@ func TestBoolGetWithCfgStruct(t *testing.T) {
 func TestBoolGetWithoutCfgStruct(t *testing.T) {
 
 	const pathWebCorsCred = "web/cors/allow_credentials"
-	wantPath := cfgpath.MustNewByParts(pathWebCorsCred).BindWebsite(4)
+	wantPath := cfgpath.MustMakeByString(pathWebCorsCred).BindWebsite(4)
 	b := cfgmodel.NewBool(pathWebCorsCred)
 
 	tests := []struct {
@@ -260,7 +260,7 @@ func TestBoolGetWithoutCfgStruct(t *testing.T) {
 		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.DefaultTypeID).String(): 1}).NewScoped(4, 0), typeIDsDefault, true},
 	}
 	for i, test := range tests {
-		gb, err := b.Get(test.sg)
+		gb, err := b.Value(test.sg)
 		if err != nil {
 			t.Fatal("Index", i, err)
 		}
@@ -279,7 +279,7 @@ func TestBoolGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 			return false, errors.NewFatalf("Unexpected error")
 		},
 	}
-	gb, haveErr := b.Get(sm.NewScoped(1, 1))
+	gb, haveErr := b.Value(sm.NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
 	assert.Exactly(t, typeIDsDefault, sm.BoolInvokes().ScopeIDs())
@@ -289,7 +289,7 @@ func TestBoolIgnoreNilDefaultValues(t *testing.T) {
 
 	b := cfgmodel.NewBool("web/cors/bool", cfgmodel.WithField(nil))
 	sm := cfgmock.NewService()
-	gb, err := b.Get(sm.NewScoped(0, 0))
+	gb, err := b.Value(sm.NewScoped(0, 0))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -300,7 +300,7 @@ func TestBoolIgnoreNilDefaultValues(t *testing.T) {
 func TestBoolWrite(t *testing.T) {
 
 	const pathWebCorsCred = "web/cors/allow_credentials"
-	wantPath := cfgpath.MustNewByParts(pathWebCorsCred).BindWebsite(3)
+	wantPath := cfgpath.MustMakeByString(pathWebCorsCred).BindWebsite(3)
 	b := cfgmodel.NewBool(pathWebCorsCred, cfgmodel.WithFieldFromSectionSlice(configStructure), cfgmodel.WithSource(cfgsource.YesNo))
 
 	mw := &cfgmock.Write{}
@@ -318,7 +318,7 @@ func TestByteGetWithCfgStruct(t *testing.T) {
 	b := cfgmodel.NewByte(pathWebCorsByte, cfgmodel.WithFieldFromSectionSlice(configStructure))
 	assert.Empty(t, b.Options())
 
-	wantPath := cfgpath.MustNewByParts(pathWebCorsByte)
+	wantPath := cfgpath.MustMakeByString(pathWebCorsByte)
 	tests := []struct {
 		sg      config.Scoped
 		wantIDs scope.TypeIDs
@@ -340,7 +340,7 @@ func TestByteGetWithCfgStruct(t *testing.T) {
 		}).NewScoped(33, 43), scope.TypeIDs{scope.Website.Pack(33)}, []byte("X-Gopher33")},
 	}
 	for i, test := range tests {
-		gb, err := b.Get(test.sg)
+		gb, err := b.Value(test.sg)
 		if err != nil {
 			t.Fatal("Index", i, err)
 		}
@@ -355,7 +355,7 @@ func TestByteGetWithoutCfgStruct(t *testing.T) {
 	b := cfgmodel.NewByte(pathWebCorsHeaders)
 	assert.Empty(t, b.Options())
 
-	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders)
+	wantPath := cfgpath.MustMakeByString(pathWebCorsHeaders)
 	tests := []struct {
 		sg      config.Scoped
 		wantIDs scope.TypeIDs
@@ -366,7 +366,7 @@ func TestByteGetWithoutCfgStruct(t *testing.T) {
 		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): []byte(`Hello Dud€`)}).NewScoped(0, 0), typeIDsDefault, []byte(`Hello Dud€`)},
 	}
 	for i, test := range tests {
-		gb, err := b.Get(test.sg)
+		gb, err := b.Value(test.sg)
 		if err != nil {
 			t.Fatal("Index", i, err)
 		}
@@ -386,7 +386,7 @@ func TestByteGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 		},
 	}
 
-	gb, haveErr := b.Get(sm.NewScoped(1, 1))
+	gb, haveErr := b.Value(sm.NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
 	assert.Exactly(t, typeIDsDefault, sm.ByteInvokes().ScopeIDs())
@@ -396,7 +396,7 @@ func TestByteIgnoreNilDefaultValues(t *testing.T) {
 
 	b := cfgmodel.NewByte("web/cors/byte", cfgmodel.WithField(&element.Field{}))
 	sm := cfgmock.NewService()
-	gb, err := b.Get(sm.NewScoped(0, 0))
+	gb, err := b.Value(sm.NewScoped(0, 0))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -406,7 +406,7 @@ func TestByteIgnoreNilDefaultValues(t *testing.T) {
 func TestByteWrite(t *testing.T) {
 
 	const pathWebCorsHeaders = "web/cors/byte"
-	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders)
+	wantPath := cfgpath.MustMakeByString(pathWebCorsHeaders)
 	b := cfgmodel.NewByte(pathWebCorsHeaders, cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	mw := &cfgmock.Write{}
@@ -421,7 +421,7 @@ func TestStrGetWithCfgStruct(t *testing.T) {
 	b := cfgmodel.NewStr(pathWebCorsHeaders, cfgmodel.WithFieldFromSectionSlice(configStructure))
 	assert.Empty(t, b.Options())
 
-	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders)
+	wantPath := cfgpath.MustMakeByString(pathWebCorsHeaders)
 	tests := []struct {
 		sg      config.Scoped
 		wantIDs scope.TypeIDs
@@ -443,7 +443,7 @@ func TestStrGetWithCfgStruct(t *testing.T) {
 		}).NewScoped(33, 43), scope.TypeIDs{scope.Website.Pack(33)}, "X-Gopher33"},
 	}
 	for i, test := range tests {
-		gb, err := b.Get(test.sg)
+		gb, err := b.Value(test.sg)
 		if err != nil {
 			t.Fatal("Index", i, err)
 		}
@@ -458,7 +458,7 @@ func TestStrGetWithoutCfgStruct(t *testing.T) {
 	b := cfgmodel.NewStr(pathWebCorsHeaders)
 	assert.Empty(t, b.Options())
 
-	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders)
+	wantPath := cfgpath.MustMakeByString(pathWebCorsHeaders)
 	tests := []struct {
 		sg      config.Scoped
 		wantIDs scope.TypeIDs
@@ -469,7 +469,7 @@ func TestStrGetWithoutCfgStruct(t *testing.T) {
 		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): "X-Gopher"}).NewScoped(0, 0), typeIDsDefault, "X-Gopher"},
 	}
 	for i, test := range tests {
-		gb, err := b.Get(test.sg)
+		gb, err := b.Value(test.sg)
 		if err != nil {
 			t.Fatal("Index", i, err)
 		}
@@ -488,7 +488,7 @@ func TestStrGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 			return "", errors.NewFatalf("Unexpected error")
 		},
 	}
-	gb, haveErr := b.Get(sm.NewScoped(1, 1))
+	gb, haveErr := b.Value(sm.NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
 	assert.Exactly(t, typeIDsDefault, sm.StringInvokes().ScopeIDs())
@@ -498,7 +498,7 @@ func TestStrIgnoreNilDefaultValues(t *testing.T) {
 
 	b := cfgmodel.NewStr("web/cors/str", cfgmodel.WithField(nil))
 	sm := cfgmock.NewService()
-	gb, err := b.Get(sm.NewScoped(0, 0))
+	gb, err := b.Value(sm.NewScoped(0, 0))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -508,7 +508,7 @@ func TestStrIgnoreNilDefaultValues(t *testing.T) {
 func TestStrWrite(t *testing.T) {
 
 	const pathWebCorsHeaders = "web/cors/exposed_headers"
-	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders)
+	wantPath := cfgpath.MustMakeByString(pathWebCorsHeaders)
 	b := cfgmodel.NewStr(pathWebCorsHeaders, cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	mw := &cfgmock.Write{}
@@ -523,7 +523,7 @@ func TestIntGetWithCfgStruct(t *testing.T) {
 	b := cfgmodel.NewInt(pathWebCorsInt, cfgmodel.WithFieldFromSectionSlice(configStructure))
 	assert.Empty(t, b.Options())
 
-	wantPath := cfgpath.MustNewByParts(pathWebCorsInt)
+	wantPath := cfgpath.MustMakeByString(pathWebCorsInt)
 	tests := []struct {
 		sg      config.Scoped
 		wantIDs scope.TypeIDs
@@ -545,7 +545,7 @@ func TestIntGetWithCfgStruct(t *testing.T) {
 		}).NewScoped(10, 11), scope.TypeIDs{scope.Website.Pack(10)}, 4018},
 	}
 	for i, test := range tests {
-		gb, err := b.Get(test.sg)
+		gb, err := b.Value(test.sg)
 		if err != nil {
 			t.Fatal("Index", i, err)
 		}
@@ -560,7 +560,7 @@ func TestIntGetWithoutCfgStruct(t *testing.T) {
 	b := cfgmodel.NewInt(pathWebCorsInt) // no *element.Field has been set. So Default Scope will be enforced
 	assert.Empty(t, b.Options())
 
-	wantPath := cfgpath.MustNewByParts(pathWebCorsInt)
+	wantPath := cfgpath.MustMakeByString(pathWebCorsInt)
 	tests := []struct {
 		sg      config.Scoped
 		wantIDs scope.TypeIDs
@@ -571,7 +571,7 @@ func TestIntGetWithoutCfgStruct(t *testing.T) {
 		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.DefaultTypeID).String(): 2019}).NewScoped(10, 0), typeIDsDefault, 2019},
 	}
 	for i, test := range tests {
-		gb, err := b.Get(test.sg)
+		gb, err := b.Value(test.sg)
 		if err != nil {
 			t.Fatal("Index", i, err)
 		}
@@ -589,7 +589,7 @@ func TestIntGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 			return 0, errors.NewFatalf("Unexpected error")
 		},
 	}
-	gb, haveErr := b.Get(sm.NewScoped(1, 1))
+	gb, haveErr := b.Value(sm.NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
 	assert.Exactly(t, typeIDsDefault, sm.IntInvokes().ScopeIDs())
@@ -599,7 +599,7 @@ func TestIntIgnoreNilDefaultValues(t *testing.T) {
 
 	b := cfgmodel.NewInt("web/cors/int", cfgmodel.WithField(&element.Field{}))
 	sm := cfgmock.NewService()
-	gb, err := b.Get(sm.NewScoped(0, 0))
+	gb, err := b.Value(sm.NewScoped(0, 0))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -610,7 +610,7 @@ func TestIntIgnoreNilDefaultValues(t *testing.T) {
 func TestIntWrite(t *testing.T) {
 
 	const pathWebCorsInt = "web/cors/int"
-	wantPath := cfgpath.MustNewByParts(pathWebCorsInt).BindWebsite(10)
+	wantPath := cfgpath.MustMakeByString(pathWebCorsInt).BindWebsite(10)
 	b := cfgmodel.NewInt(pathWebCorsInt, cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	mw := &cfgmock.Write{}
@@ -625,7 +625,7 @@ func TestFloat64GetWithCfgStruct(t *testing.T) {
 	b := cfgmodel.NewFloat64("web/cors/float64", cfgmodel.WithFieldFromSectionSlice(configStructure))
 	assert.Empty(t, b.Options())
 
-	wantPath := cfgpath.MustNewByParts(pathWebCorsF64).BindWebsite(10)
+	wantPath := cfgpath.MustMakeByString(pathWebCorsF64).BindWebsite(10)
 	tests := []struct {
 		sg      config.Scoped
 		wantIDs scope.TypeIDs
@@ -647,7 +647,7 @@ func TestFloat64GetWithCfgStruct(t *testing.T) {
 		}).NewScoped(13, 11), scope.TypeIDs{scope.Website.Pack(13)}, 2018.2000001},
 	}
 	for i, test := range tests {
-		gb, err := b.Get(test.sg)
+		gb, err := b.Value(test.sg)
 		if err != nil {
 			t.Fatal("Index", i, err)
 		}
@@ -662,7 +662,7 @@ func TestFloat64GetWithoutCfgStruct(t *testing.T) {
 	b := cfgmodel.NewFloat64(pathWebCorsF64) // no *element.Field has been set. So Default Scope will be enforced
 	assert.Empty(t, b.Options())
 
-	wantPath := cfgpath.MustNewByParts(pathWebCorsF64).BindWebsite(10)
+	wantPath := cfgpath.MustMakeByString(pathWebCorsF64).BindWebsite(10)
 	tests := []struct {
 		sg      config.Scoped
 		wantIDs scope.TypeIDs
@@ -673,7 +673,7 @@ func TestFloat64GetWithoutCfgStruct(t *testing.T) {
 		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.DefaultTypeID).String(): 2016.1000001}).NewScoped(10, 0), typeIDsDefault, 2016.1000001},
 	}
 	for i, test := range tests {
-		gb, err := b.Get(test.sg)
+		gb, err := b.Value(test.sg)
 		if err != nil {
 			t.Fatal("Index", i, err)
 		}
@@ -691,7 +691,7 @@ func TestFloat64GetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 			return 0, errors.NewFatalf("Unexpected error")
 		},
 	}
-	gb, haveErr := b.Get(sm.NewScoped(1, 1))
+	gb, haveErr := b.Value(sm.NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
 	assert.Exactly(t, typeIDsDefault, sm.Float64Invokes().ScopeIDs())
@@ -701,7 +701,7 @@ func TestFloat64IgnoreNilDefaultValues(t *testing.T) {
 
 	b := cfgmodel.NewFloat64("web/cors/float64", cfgmodel.WithField(&element.Field{}))
 	sm := cfgmock.NewService()
-	gb, err := b.Get(sm.NewScoped(0, 0))
+	gb, err := b.Value(sm.NewScoped(0, 0))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -712,7 +712,7 @@ func TestFloat64IgnoreNilDefaultValues(t *testing.T) {
 func TestFloat64Write(t *testing.T) {
 
 	const pathWebCorsF64 = "web/cors/float64"
-	wantPath := cfgpath.MustNewByParts(pathWebCorsF64).BindWebsite(10)
+	wantPath := cfgpath.MustMakeByString(pathWebCorsF64).BindWebsite(10)
 	b := cfgmodel.NewFloat64("web/cors/float64", cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	mw := &cfgmock.Write{}
@@ -742,27 +742,27 @@ func TestBaseValue_LastError(t *testing.T) {
 
 	b := cfgmodel.NewBool("a/b/c")
 	b.LastError = wantErr
-	_, haveErr := b.Get(config.Scoped{})
+	_, haveErr := b.Value(config.Scoped{})
 	assert.True(t, errors.IsNotImplemented(haveErr))
 
 	by := cfgmodel.NewByte(`a/b/c`)
 	by.LastError = wantErr
-	_, haveErr = by.Get(config.Scoped{})
+	_, haveErr = by.Value(config.Scoped{})
 	assert.True(t, errors.IsNotImplemented(haveErr))
 
 	str := cfgmodel.NewStr(`a/b/c`)
 	str.LastError = wantErr
-	_, haveErr = str.Get(config.Scoped{})
+	_, haveErr = str.Value(config.Scoped{})
 	assert.True(t, errors.IsNotImplemented(haveErr))
 
 	i := cfgmodel.NewInt(`a/b/c`)
 	i.LastError = wantErr
-	_, haveErr = i.Get(config.Scoped{})
+	_, haveErr = i.Value(config.Scoped{})
 	assert.True(t, errors.IsNotImplemented(haveErr))
 
 	f := cfgmodel.NewFloat64(`a/b/c`)
 	f.LastError = wantErr
-	_, haveErr = f.Get(config.Scoped{})
+	_, haveErr = f.Value(config.Scoped{})
 	assert.True(t, errors.IsNotImplemented(haveErr))
 
 }

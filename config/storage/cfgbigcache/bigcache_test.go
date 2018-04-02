@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,11 +18,11 @@ import (
 	"testing"
 
 	"github.com/allegro/bigcache"
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/cfgpath"
 	"github.com/corestoreio/pkg/config/storage/cfgbigcache"
 	"github.com/corestoreio/pkg/util/conv"
-	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,7 +43,7 @@ func TestCacheGet(t *testing.T) {
 		wantSetErr error
 		wantGetErr error
 	}{
-		{cfgpath.MustNewByParts("aa/bb/cc"), 12345, nil, nil},
+		{cfgpath.MustMakeByString("aa/bb/cc"), 12345, nil, nil},
 	}
 	for idx, test := range tests {
 
@@ -54,7 +54,7 @@ func TestCacheGet(t *testing.T) {
 			assert.NoError(t, haveSetErr, "Index %d", idx)
 		}
 
-		haveVal, haveGetErr := sc.Get(test.key)
+		haveVal, haveGetErr := sc.Value(test.key)
 		if test.wantGetErr != nil {
 			assert.EqualError(t, haveGetErr, test.wantGetErr.Error(), "Index %d", idx)
 		} else {
@@ -72,8 +72,8 @@ func TestCacheGetNotFound(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	haveVal, haveGetErr := sc.Get(cfgpath.MustNewByParts("aa/bb/cc"))
-	assert.True(t, errors.IsNotFound(haveGetErr), "Error: %s", haveGetErr)
+	haveVal, haveGetErr := sc.Value(cfgpath.MustMakeByString("aa/bb/cc"))
+	assert.True(t, errors.NotFound.Match(haveGetErr), "Error: %s", haveGetErr)
 	assert.Empty(t, haveVal)
 }
 

@@ -100,11 +100,11 @@ type PkgBackend struct {
 }
 
 // NewBackend initializes the global Backend variable. See init()
-func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
+func NewBackend(cfgStruct element.Sections) *PkgBackend {
 	return (&PkgBackend{}).init(cfgStruct)
 }
 
-func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
+func (pp *PkgBackend) init(cfgStruct element.Sections) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
 	pp.SitemapCategoryChangefreq = cfgmodel.NewStr(`sitemap/category/changefreq`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))

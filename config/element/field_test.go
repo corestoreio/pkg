@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@ package element_test
 import (
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config/cfgpath"
 	"github.com/corestoreio/pkg/config/element"
-	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,11 +33,11 @@ func TestFieldRouteHash(t *testing.T) {
 		wantHash   uint64
 		wantErrBhf errors.BehaviourFunc
 	}{
-		{[]cfgpath.Route{cfgpath.NewRoute("aa"), cfgpath.NewRoute("b")}, &element.Field{ID: cfgpath.NewRoute("ca")}, 5676413504385759347, nil},
-		{[]cfgpath.Route{cfgpath.NewRoute("aa"), cfgpath.NewRoute("b")}, &element.Field{ID: cfgpath.NewRoute("cb")}, 5676414603897387558, nil},
-		{nil, &element.Field{ID: cfgpath.NewRoute("cb")}, 622143294520562096, nil},
+		{[]cfgpath.Route{cfgpath.MakeRoute("aa"), cfgpath.MakeRoute("b")}, &element.Field{ID: cfgpath.MakeRoute("ca")}, 5676413504385759347, nil},
+		{[]cfgpath.Route{cfgpath.MakeRoute("aa"), cfgpath.MakeRoute("b")}, &element.Field{ID: cfgpath.MakeRoute("cb")}, 5676414603897387558, nil},
+		{nil, &element.Field{ID: cfgpath.MakeRoute("cb")}, 622143294520562096, nil},
 		{nil, &element.Field{}, 0, errors.IsEmpty},
-		{[]cfgpath.Route{{}, {}}, &element.Field{ID: cfgpath.NewRoute("ca")}, 622146593055446729, nil},
+		{[]cfgpath.Route{{}, {}}, &element.Field{ID: cfgpath.MakeRoute("ca")}, 622146593055446729, nil},
 	}
 	for i, test := range tests {
 		haveHash, haveErr := test.field.RouteHash(test.preRoutes...)
@@ -59,11 +59,11 @@ func TestFieldRoute(t *testing.T) {
 		wantR      string
 		wantErrBhf errors.BehaviourFunc
 	}{
-		{[]cfgpath.Route{cfgpath.NewRoute("aa"), cfgpath.NewRoute("b")}, &element.Field{ID: cfgpath.NewRoute("ca")}, "aa/b/ca", errors.IsNotValid},
-		{[]cfgpath.Route{cfgpath.NewRoute("aa"), cfgpath.NewRoute("bb")}, &element.Field{ID: cfgpath.NewRoute("ca")}, "aa/bb/ca", nil},
-		{nil, &element.Field{ID: cfgpath.NewRoute("cb")}, "cb", errors.IsNotValid},
+		{[]cfgpath.Route{cfgpath.MakeRoute("aa"), cfgpath.MakeRoute("b")}, &element.Field{ID: cfgpath.MakeRoute("ca")}, "aa/b/ca", errors.IsNotValid},
+		{[]cfgpath.Route{cfgpath.MakeRoute("aa"), cfgpath.MakeRoute("bb")}, &element.Field{ID: cfgpath.MakeRoute("ca")}, "aa/bb/ca", nil},
+		{nil, &element.Field{ID: cfgpath.MakeRoute("cb")}, "cb", errors.IsNotValid},
 		{nil, &element.Field{}, "", errors.IsEmpty},
-		{[]cfgpath.Route{{}, {}}, &element.Field{ID: cfgpath.NewRoute("ca")}, "", errors.IsNotValid},
+		{[]cfgpath.Route{{}, {}}, &element.Field{ID: cfgpath.MakeRoute("ca")}, "", errors.IsNotValid},
 	}
 	for i, test := range tests {
 		haveR, haveErr := test.field.Route(test.preRoutes...)

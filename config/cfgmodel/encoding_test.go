@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -51,11 +51,11 @@ func TestEncode(t *testing.T) {
 		cfgmodel.WithDecoder(cfgmodel.DecodeFunc(json.Unmarshal)),
 		cfgmodel.WithScopeStore(),
 	)
-	wantPath := cfgpath.MustNewByParts(cfgPath).String() // Default Scope
+	wantPath := cfgpath.MustMakeByString(cfgPath).String() // Default Scope
 
 	haveTT := &tt{}
 
-	haveErr := b.Get(cfgmock.NewService(
+	haveErr := b.Value(cfgmock.NewService(
 		cfgmock.PathValue{
 			wantPath: wantJSON,
 		}).NewScoped(34, 4), haveTT)

@@ -9,23 +9,23 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID:        "newrelicreporting",
 			Label:     `New Relic Reporting`,
 			SortOrder: 1100,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_NewRelicReporting::config_newrelicreporting
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "general",
 					Label:     `General`,
 					SortOrder: 1,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: newrelicreporting/general/enable
 							ID:        "enable",
@@ -125,7 +125,7 @@ func init() {
 					Label:     `Cron`,
 					SortOrder: 2,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: newrelicreporting/cron/enable_cron
 							ID:        "enable_cron",

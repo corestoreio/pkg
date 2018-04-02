@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import "github.com/corestoreio/errors"
 // Error behaviour: NotValid.
 func NewByString(vl ...string) (Slice, error) {
 	if len(vl)%2 != 0 {
-		return nil, errors.NewNotValidf("[source] Imbalanced Pairs: %v", vl)
+		return nil, errors.NotValid.Newf("[source] Imbalanced Pairs: %v", vl)
 	}
 	vls := make(Slice, len(vl)/2)
 	j := 0

@@ -196,16 +196,16 @@ type PkgBackend struct {
 
 // NewBackend initializes the global configuration models containing the
 // cfgpath.Route variable to the appropriate entry.
-// The function Load() will be executed to apply the SectionSlice
+// The function Load() will be executed to apply the Sections
 // to all models. See Load() for more details.
-func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
+func NewBackend(cfgStruct element.Sections) *PkgBackend {
 	return (&PkgBackend{}).Load(cfgStruct)
 }
 
 // Load creates the configuration models for each PkgBackend field.
 // Internal mutex will protect the fields during loading.
-// The argument SectionSlice will be applied to all models.
-func (pp *PkgBackend) Load(cfgStruct element.SectionSlice) *PkgBackend {
+// The argument Sections will be applied to all models.
+func (pp *PkgBackend) Load(cfgStruct element.Sections) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
 

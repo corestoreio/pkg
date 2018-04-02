@@ -86,9 +86,9 @@ type Configuration struct {
 }
 
 // New initializes the backend configuration models containing the cfgpath.Route
-// variable to the appropriate entries in the storage. The argument SectionSlice
+// variable to the appropriate entries in the storage. The argument Sections
 // and opts will be applied to all models.
-func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Configuration {
+func New(cfgStruct element.Sections, opts ...cfgmodel.Option) *Configuration {
 	be := &Configuration{
 		OptionFactories: cors.NewOptionFactories(),
 	}

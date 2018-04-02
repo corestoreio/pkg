@@ -9,20 +9,20 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID: "payment",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "braintreetwo_section",
 					Label:     `BraintreeTwo`,
 					Comment:   text.Long(`Accept credit/debit cards and PayPal in your Magento store. No setup or monthly fees and your customers never leave your store to complete the purchase.`),
 					SortOrder: 2,
 					Scopes:    scope.PermStore,
-					Fields:    element.NewFieldSlice(),
+					Fields:    element.MakeFields(),
 				},
 			),
 		},
@@ -30,10 +30,10 @@ func init() {
 		// Hidden Configuration, may be visible somewhere else ...
 		element.Section{
 			ID: "payment",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "braintreetwo",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/braintreetwo/cfgmodel
 							ID:      `model`,

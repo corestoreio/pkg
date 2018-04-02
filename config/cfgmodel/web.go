@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@ package cfgmodel
 import (
 	"net/url"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/errors"
 )
 
 // Placeholder constants and their values can occur in the table core_config_data.
@@ -39,8 +39,8 @@ func NewURL(path string, opts ...Option) URL {
 }
 
 // Get returns an URL. If the underlying value is empty returns nil,nil.
-func (p URL) Get(sg config.Scoped) (*url.URL, error) {
-	rawurl, err := p.Str.Get(sg)
+func (p URL) Value(sg config.Scoped) (*url.URL, error) {
+	rawurl, err := p.Str.Value(sg)
 	if err != nil {
 		return nil, errors.Wrap(err, "[cfgmodel] URL.Str.Get")
 	}
@@ -73,8 +73,8 @@ func NewBaseURL(path string, opts ...Option) BaseURL {
 }
 
 // Get returns a base URL
-func (p BaseURL) Get(sg config.Scoped) (string, error) {
-	return p.Str.Get(sg)
+func (p BaseURL) Value(sg config.Scoped) (string, error) {
+	return p.Str.Value(sg)
 }
 
 // Write writes a new base URL and validates it before saving. @TODO

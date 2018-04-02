@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,14 +21,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/bufferpool"
 	"github.com/corestoreio/pkg/util/slices"
-	"github.com/corestoreio/errors"
 )
 
-// CSVComma separates CSV values. Default value.
+// CSVColumnSeparator separates CSV values. Default value.
 const CSVComma = ','
 
 // WithCSVComma applies a custom CSV separator to the types StringCSV or IntCSV
@@ -51,12 +51,12 @@ func WithCSVComma(sep rune) Option {
 // not a multi line string!
 type StringCSV struct {
 	Str
-	// Comma is your custom separator, default is constant CSVComma
+	// Comma is your custom separator, default is constant CSVColumnSeparator
 	Comma rune
 }
 
 // NewStringCSV creates a new CSV string type. Acts as a multiselect. Default
-// separator: constant CSVComma. It represents not a multi line string! An error
+// separator: constant CSVColumnSeparator. It represents not a multi line string! An error
 // occurred in the options gets added to the field OptionError which you can
 // check.
 func NewStringCSV(path string, opts ...Option) StringCSV {
@@ -87,8 +87,8 @@ func (str *StringCSV) Option(opts ...Option) error {
 // Get returns a string slice. Splits the stored string by comma. Can return
 // nil,nil. Empty values will be discarded. Returns a slice containing unique
 // entries. No validation will be made.
-func (str StringCSV) Get(sg config.Scoped) ([]string, error) {
-	s, err := str.Str.Get(sg)
+func (str StringCSV) Value(sg config.Scoped) ([]string, error) {
+	s, err := str.Str.Value(sg)
 	if err != nil {
 		return nil, errors.Wrap(err, "[cfgmodel] Str.Get")
 	}
@@ -117,7 +117,7 @@ type IntCSV struct {
 	Str
 	// Lenient ignores errors in parsing integers
 	Lenient bool
-	// Separator is your custom separator, default is constant CSVComma
+	// Separator is your custom separator, default is constant CSVColumnSeparator
 	Separator rune
 }
 
@@ -152,8 +152,8 @@ func (ic *IntCSV) Option(opts ...Option) error {
 // Get returns an int slice. Int string gets splited by comma. Can return
 // nil,nil. If multiple values cannot be casted to int then the last known error
 // gets returned.
-func (ic IntCSV) Get(sg config.Scoped) ([]int, error) {
-	s, err := ic.Str.Get(sg)
+func (ic IntCSV) Value(sg config.Scoped) ([]int, error) {
+	s, err := ic.Str.Value(sg)
 	if err != nil {
 		return nil, errors.Wrap(err, "[cfgmodel] Str.Get")
 	}
@@ -170,7 +170,7 @@ func (ic IntCSV) Get(sg config.Scoped) ([]int, error) {
 		if line != "" {
 			v, err := strconv.Atoi(line)
 			if err != nil && false == ic.Lenient {
-				return ret, errors.NewNotValidf(errIntCSVFailedToConvertToInt, line, err)
+				return ret, errors.NotValid.Newf(errIntCSVFailedToConvertToInt, line, err)
 			}
 			if err == nil {
 				ret = append(ret, v)
@@ -216,7 +216,7 @@ type CSV struct {
 }
 
 // NewCSV creates a new CSV string type which can parse multi line strings with
-// a separator. Default separator: constant CSVComma. An error occurred in the
+// a separator. Default separator: constant CSVColumnSeparator. An error occurred in the
 // options gets added to the field OptionError which you can check.
 func NewCSV(path string, opts ...Option) CSV {
 	ret := CSV{
@@ -248,8 +248,8 @@ func (c *CSV) Option(opts ...Option) error {
 
 // Get returns a string slice. Splits the stored string by comma and new lines
 // by \r and/or \n. Can return nil,nil. Error behaviour: NotValid
-func (c CSV) Get(sg config.Scoped) ([][]string, error) {
-	s, err := c.Str.Get(sg)
+func (c CSV) Value(sg config.Scoped) ([][]string, error) {
+	s, err := c.Str.Value(sg)
 	if err != nil {
 		return nil, errors.Wrap(err, "[cfgmodel] Str.Get")
 	}
@@ -261,7 +261,7 @@ func (c CSV) Get(sg config.Scoped) ([][]string, error) {
 	r.Comment = c.Comment // not possible to set currently the comment
 	res, err := r.ReadAll()
 	if err != nil {
-		return nil, errors.NewNotValidf("[cfgmodel] CSV.NewReader.ReadAll: %v", err)
+		return nil, errors.NotValid.Newf("[cfgmodel] CSV.NewReader.ReadAll: %v", err)
 	}
 	return res, nil
 }
@@ -275,7 +275,7 @@ func (c CSV) Write(w config.Writer, csv [][]string, h scope.TypeID) error {
 	cw := c.NewWriter(buf)
 	cw.Comma = c.Comma
 	if err := cw.WriteAll(csv); err != nil {
-		return errors.NewNotValidf("[cfgmodel] CSV.NewWriter.WriteAll: %v", err)
+		return errors.NotValid.Newf("[cfgmodel] CSV.NewWriter.WriteAll: %v", err)
 	}
 
 	return c.baseValue.Write(w, buf.String(), h)

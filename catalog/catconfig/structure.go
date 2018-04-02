@@ -22,7 +22,7 @@ import (
 )
 
 // MustNewConfigStructure same as NewConfigStructure() but panics on error.
-func MustNewConfigStructure() element.SectionSlice {
+func MustNewConfigStructure() element.Sections {
 	ss, err := NewConfigStructure()
 	if err != nil {
 		panic(err)
@@ -34,24 +34,24 @@ func MustNewConfigStructure() element.SectionSlice {
 // Used in frontend (to display the user all the settings) and in
 // backend (scope checks and default values). See the source code
 // of this function for the overall available sections, groups and fields.
-func NewConfigStructure() (element.SectionSlice, error) {
-	return element.NewConfiguration(
+func NewConfigStructure() (element.Sections, error) {
+	return element.MakeSectionsValidated(
 		element.Section{
-			ID:        cfgpath.NewRoute("catalog"),
+			ID:        cfgpath.MakeRoute("catalog"),
 			Label:     text.Chars(`Catalog`),
 			SortOrder: 40,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Catalog::config_catalog
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
-					ID:        cfgpath.NewRoute("fields_masks"),
+					ID:        cfgpath.MakeRoute("fields_masks"),
 					Label:     text.Chars(`Product Fields Auto-Generation`),
 					SortOrder: 90,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: catalog/fields_masks/sku
-							ID:        cfgpath.NewRoute("sku"),
+							ID:        cfgpath.MakeRoute("sku"),
 							Label:     text.Chars(`Mask for SKU`),
 							Comment:   text.Chars(`Use {{name}} as Product Name placeholder`),
 							Type:      element.TypeText,
@@ -63,7 +63,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: catalog/fields_masks/meta_title
-							ID:        cfgpath.NewRoute("meta_title"),
+							ID:        cfgpath.MakeRoute("meta_title"),
 							Label:     text.Chars(`Mask for Meta Title`),
 							Comment:   text.Chars(`Use {{name}} as Product Name placeholder`),
 							Type:      element.TypeText,
@@ -75,7 +75,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: catalog/fields_masks/meta_keyword
-							ID:        cfgpath.NewRoute("meta_keyword"),
+							ID:        cfgpath.MakeRoute("meta_keyword"),
 							Label:     text.Chars(`Mask for Meta Keywords`),
 							Comment:   text.Chars(`Use {{name}} as Product Name or {{sku}} as Product SKU placeholders`),
 							Type:      element.TypeText,
@@ -87,7 +87,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: catalog/fields_masks/meta_description
-							ID:        cfgpath.NewRoute("meta_description"),
+							ID:        cfgpath.MakeRoute("meta_description"),
 							Label:     text.Chars(`Mask for Meta Description`),
 							Comment:   text.Chars(`Use {{name}} and {{description}} as Product Name and Product Description placeholders`),
 							Type:      element.TypeText,
@@ -100,14 +100,14 @@ func NewConfigStructure() (element.SectionSlice, error) {
 				},
 
 				element.Group{
-					ID:        cfgpath.NewRoute("frontend"),
+					ID:        cfgpath.MakeRoute("frontend"),
 					Label:     text.Chars(`Storefront`),
 					SortOrder: 100,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: catalog/frontend/list_mode
-							ID:        cfgpath.NewRoute("list_mode"),
+							ID:        cfgpath.MakeRoute("list_mode"),
 							Label:     text.Chars(`List Mode`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
@@ -119,7 +119,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: catalog/frontend/grid_per_page_values
-							ID:        cfgpath.NewRoute("grid_per_page_values"),
+							ID:        cfgpath.MakeRoute("grid_per_page_values"),
 							Label:     text.Chars(`Products per Page on Grid Allowed Values`),
 							Comment:   text.Chars(`Comma-separated.`),
 							Type:      element.TypeText,
@@ -131,7 +131,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: catalog/frontend/grid_per_page
-							ID:        cfgpath.NewRoute("grid_per_page"),
+							ID:        cfgpath.MakeRoute("grid_per_page"),
 							Label:     text.Chars(`Products per Page on Grid Default Value`),
 							Comment:   text.Chars(`Must be in the allowed values list`),
 							Type:      element.TypeText,
@@ -143,7 +143,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: catalog/frontend/list_per_page_values
-							ID:        cfgpath.NewRoute("list_per_page_values"),
+							ID:        cfgpath.MakeRoute("list_per_page_values"),
 							Label:     text.Chars(`Products per Page on List Allowed Values`),
 							Comment:   text.Chars(`Comma-separated.`),
 							Type:      element.TypeText,
@@ -155,7 +155,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: catalog/frontend/list_per_page
-							ID:        cfgpath.NewRoute("list_per_page"),
+							ID:        cfgpath.MakeRoute("list_per_page"),
 							Label:     text.Chars(`Products per Page on List Default Value`),
 							Comment:   text.Chars(`Must be in the allowed values list`),
 							Type:      element.TypeText,
@@ -167,7 +167,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: catalog/frontend/flat_catalog_category
-							ID:        cfgpath.NewRoute("flat_catalog_category"),
+							ID:        cfgpath.MakeRoute("flat_catalog_category"),
 							Label:     text.Chars(`Use Flat Catalog Category`),
 							Type:      element.TypeSelect,
 							SortOrder: 100,
@@ -180,7 +180,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: catalog/frontend/flat_catalog_product
-							ID:        cfgpath.NewRoute("flat_catalog_product"),
+							ID:        cfgpath.MakeRoute("flat_catalog_product"),
 							Label:     text.Chars(`Use Flat Catalog Product`),
 							Type:      element.TypeSelect,
 							SortOrder: 100,
@@ -192,7 +192,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: catalog/frontend/default_sort_by
-							ID:        cfgpath.NewRoute("default_sort_by"),
+							ID:        cfgpath.MakeRoute("default_sort_by"),
 							Label:     text.Chars(`Product Listing Sort by`),
 							Type:      element.TypeSelect,
 							SortOrder: 6,
@@ -204,7 +204,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: catalog/frontend/list_allow_all
-							ID:        cfgpath.NewRoute("list_allow_all"),
+							ID:        cfgpath.MakeRoute("list_allow_all"),
 							Label:     text.Chars(`Allow All Products per Page`),
 							Comment:   text.Chars(`Whether to show "All" option in the "Show X Per Page" dropdown`),
 							Type:      element.TypeSelect,
@@ -216,7 +216,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: catalog/frontend/parse_url_directives
-							ID:        cfgpath.NewRoute("parse_url_directives"),
+							ID:        cfgpath.MakeRoute("parse_url_directives"),
 							Label:     text.Chars(`Allow Dynamic Media URLs in Products and Categories`),
 							Comment:   text.Chars(`E.g. {{media url="path/to/image.jpg"}} {{skin url="path/to/picture.gif"}}. Dynamic directives parsing impacts catalog performance.`),
 							Type:      element.TypeSelect,
@@ -230,14 +230,14 @@ func NewConfigStructure() (element.SectionSlice, error) {
 				},
 
 				element.Group{
-					ID:        cfgpath.NewRoute("placeholder"),
+					ID:        cfgpath.MakeRoute("placeholder"),
 					Label:     text.Chars(`Product Image Placeholders`),
 					SortOrder: 300,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: catalog/placeholder/placeholder
-							ID:        cfgpath.NewRoute("placeholder"),
+							ID:        cfgpath.MakeRoute("placeholder"),
 							Type:      element.TypeImage,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -248,14 +248,14 @@ func NewConfigStructure() (element.SectionSlice, error) {
 				},
 
 				element.Group{
-					ID:        cfgpath.NewRoute("seo"),
+					ID:        cfgpath.MakeRoute("seo"),
 					Label:     text.Chars(`Search Engine Optimization`),
 					SortOrder: 500,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: catalog/seo/title_separator
-							ID:        cfgpath.NewRoute("title_separator"),
+							ID:        cfgpath.MakeRoute("title_separator"),
 							Label:     text.Chars(`Page Title Separator`),
 							Type:      element.TypeText,
 							SortOrder: 6,
@@ -266,7 +266,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: catalog/seo/category_canonical_tag
-							ID:        cfgpath.NewRoute("category_canonical_tag"),
+							ID:        cfgpath.MakeRoute("category_canonical_tag"),
 							Label:     text.Chars(`Use Canonical Link Meta Tag For Categories`),
 							Type:      element.TypeSelect,
 							SortOrder: 7,
@@ -278,7 +278,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: catalog/seo/product_canonical_tag
-							ID:        cfgpath.NewRoute("product_canonical_tag"),
+							ID:        cfgpath.MakeRoute("product_canonical_tag"),
 							Label:     text.Chars(`Use Canonical Link Meta Tag For Products`),
 							Type:      element.TypeSelect,
 							SortOrder: 8,
@@ -291,14 +291,14 @@ func NewConfigStructure() (element.SectionSlice, error) {
 				},
 
 				element.Group{
-					ID:        cfgpath.NewRoute("price"),
+					ID:        cfgpath.MakeRoute("price"),
 					Label:     text.Chars(`Price`),
 					SortOrder: 400,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: catalog/price/scope
-							ID:        cfgpath.NewRoute("scope"),
+							ID:        cfgpath.MakeRoute("scope"),
 							Label:     text.Chars(`Catalog Price Scope`),
 							Comment:   text.Chars(`This defines the base currency scope ("Currency Setup" > "Currency Options" > "Base Currency").`),
 							Type:      element.TypeSelect,
@@ -312,14 +312,14 @@ func NewConfigStructure() (element.SectionSlice, error) {
 				},
 
 				element.Group{
-					ID:        cfgpath.NewRoute("navigation"),
+					ID:        cfgpath.MakeRoute("navigation"),
 					Label:     text.Chars(`Category Top Navigation`),
 					SortOrder: 500,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: catalog/navigation/max_depth
-							ID:        cfgpath.NewRoute("max_depth"),
+							ID:        cfgpath.MakeRoute("max_depth"),
 							Label:     text.Chars(`Maximal Depth`),
 							Type:      element.TypeText,
 							SortOrder: 1,
@@ -330,14 +330,14 @@ func NewConfigStructure() (element.SectionSlice, error) {
 				},
 
 				element.Group{
-					ID:        cfgpath.NewRoute("custom_options"),
+					ID:        cfgpath.MakeRoute("custom_options"),
 					Label:     text.Chars(`Date & Time Custom Options`),
 					SortOrder: 700,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: catalog/custom_options/use_calendar
-							ID:        cfgpath.NewRoute("use_calendar"),
+							ID:        cfgpath.MakeRoute("use_calendar"),
 							Label:     text.Chars(`Use JavaScript Calendar`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
@@ -348,7 +348,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: catalog/custom_options/date_fields_order
-							ID:        cfgpath.NewRoute("date_fields_order"),
+							ID:        cfgpath.MakeRoute("date_fields_order"),
 							Label:     text.Chars(`Date Fields Order`),
 							Type:      element.TypeSelect,
 							SortOrder: 2,
@@ -359,7 +359,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: catalog/custom_options/time_format
-							ID:        cfgpath.NewRoute("time_format"),
+							ID:        cfgpath.MakeRoute("time_format"),
 							Label:     text.Chars(`Time Format`),
 							Type:      element.TypeSelect,
 							SortOrder: 3,
@@ -371,7 +371,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: catalog/custom_options/year_range
-							ID:        cfgpath.NewRoute("year_range"),
+							ID:        cfgpath.MakeRoute("year_range"),
 							Label:     text.Chars(`Year Range`),
 							Comment:   text.Chars(`Please use a four-digit year format.`),
 							Type:      element.TypeText,
@@ -384,17 +384,17 @@ func NewConfigStructure() (element.SectionSlice, error) {
 			),
 		},
 		element.Section{
-			ID: cfgpath.NewRoute("design"),
-			Groups: element.NewGroupSlice(
+			ID: cfgpath.MakeRoute("design"),
+			Groups: element.MakeGroups(
 				element.Group{
-					ID:        cfgpath.NewRoute("watermark"),
+					ID:        cfgpath.MakeRoute("watermark"),
 					Label:     text.Chars(`Product Image Watermarks`),
 					SortOrder: 400,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: design/watermark/size
-							ID:        cfgpath.NewRoute("size"),
+							ID:        cfgpath.MakeRoute("size"),
 							Label:     text.Chars(`Watermark Default Size`),
 							Comment:   text.Chars(`Example format: 200x300.`),
 							Type:      element.TypeText,
@@ -405,7 +405,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: design/watermark/imageOpacity
-							ID:        cfgpath.NewRoute("imageOpacity"),
+							ID:        cfgpath.MakeRoute("imageOpacity"),
 							Label:     text.Chars(`Watermark Opacity, Percent`),
 							Type:      element.TypeText,
 							SortOrder: 150,
@@ -415,7 +415,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: design/watermark/image
-							ID:        cfgpath.NewRoute("image"),
+							ID:        cfgpath.MakeRoute("image"),
 							Label:     text.Chars(`Watermark`),
 							Comment:   text.Chars(`Allowed file types: jpeg, gif, png.`),
 							Type:      element.TypeImage,
@@ -427,7 +427,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: design/watermark/position
-							ID:        cfgpath.NewRoute("position"),
+							ID:        cfgpath.MakeRoute("position"),
 							Label:     text.Chars(`Watermark Position`),
 							Type:      element.TypeSelect,
 							SortOrder: 300,
@@ -440,14 +440,14 @@ func NewConfigStructure() (element.SectionSlice, error) {
 			),
 		},
 		element.Section{
-			ID: cfgpath.NewRoute("cms"),
-			Groups: element.NewGroupSlice(
+			ID: cfgpath.MakeRoute("cms"),
+			Groups: element.MakeGroups(
 				element.Group{
-					ID: cfgpath.NewRoute("wysiwyg"),
-					Fields: element.NewFieldSlice(
+					ID: cfgpath.MakeRoute("wysiwyg"),
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: cms/wysiwyg/use_static_urls_in_catalog
-							ID:        cfgpath.NewRoute("use_static_urls_in_catalog"),
+							ID:        cfgpath.MakeRoute("use_static_urls_in_catalog"),
 							Label:     text.Chars(`Use Static URLs for Media Content in WYSIWYG for Catalog`),
 							Comment:   text.Chars(`This applies only to catalog products and categories. Media content will be inserted into the editor as a static URL. Media content is not updated if the system configuration base URL changes.`),
 							Type:      element.TypeSelect,
@@ -461,17 +461,17 @@ func NewConfigStructure() (element.SectionSlice, error) {
 			),
 		},
 		element.Section{
-			ID: cfgpath.NewRoute("rss"),
-			Groups: element.NewGroupSlice(
+			ID: cfgpath.MakeRoute("rss"),
+			Groups: element.MakeGroups(
 				element.Group{
-					ID:        cfgpath.NewRoute("catalog"),
+					ID:        cfgpath.MakeRoute("catalog"),
 					Label:     text.Chars(`Catalog`),
 					SortOrder: 3,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: rss/catalog/new
-							ID:        cfgpath.NewRoute("new"),
+							ID:        cfgpath.MakeRoute("new"),
 							Label:     text.Chars(`New Products`),
 							Type:      element.TypeSelect,
 							SortOrder: 10,
@@ -482,7 +482,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: rss/catalog/special
-							ID:        cfgpath.NewRoute("special"),
+							ID:        cfgpath.MakeRoute("special"),
 							Label:     text.Chars(`Special Products`),
 							Type:      element.TypeSelect,
 							SortOrder: 11,
@@ -493,7 +493,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: rss/catalog/category
-							ID:        cfgpath.NewRoute("category"),
+							ID:        cfgpath.MakeRoute("category"),
 							Label:     text.Chars(`Top Level Category`),
 							Type:      element.TypeSelect,
 							SortOrder: 14,
@@ -508,14 +508,14 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 		// Hidden Configuration, may be visible somewhere else ...
 		element.Section{
-			ID: cfgpath.NewRoute("catalog"),
-			Groups: element.NewGroupSlice(
+			ID: cfgpath.MakeRoute("catalog"),
+			Groups: element.MakeGroups(
 				element.Group{
-					ID: cfgpath.NewRoute("product"),
-					Fields: element.NewFieldSlice(
+					ID: cfgpath.MakeRoute("product"),
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: catalog/product/flat
-							ID:      cfgpath.NewRoute(`flat`),
+							ID:      cfgpath.MakeRoute(`flat`),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `{"max_index_count":"64"}`,
@@ -523,7 +523,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: catalog/product/default_tax_group
-							ID:      cfgpath.NewRoute(`default_tax_group`),
+							ID:      cfgpath.MakeRoute(`default_tax_group`),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: 2,
@@ -532,11 +532,11 @@ func NewConfigStructure() (element.SectionSlice, error) {
 				},
 
 				element.Group{
-					ID: cfgpath.NewRoute("seo"),
-					Fields: element.NewFieldSlice(
+					ID: cfgpath.MakeRoute("seo"),
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: catalog/seo/product_url_suffix
-							ID:      cfgpath.NewRoute(`product_url_suffix`),
+							ID:      cfgpath.MakeRoute(`product_url_suffix`),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `.html`,
@@ -544,7 +544,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: catalog/seo/category_url_suffix
-							ID:      cfgpath.NewRoute(`category_url_suffix`),
+							ID:      cfgpath.MakeRoute(`category_url_suffix`),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `.html`,
@@ -552,7 +552,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: catalog/seo/product_use_categories
-							ID:      cfgpath.NewRoute(`product_use_categories`),
+							ID:      cfgpath.MakeRoute(`product_use_categories`),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: false,
@@ -560,7 +560,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: catalog/seo/save_rewrites_history
-							ID:      cfgpath.NewRoute(`save_rewrites_history`),
+							ID:      cfgpath.MakeRoute(`save_rewrites_history`),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: true,
@@ -569,11 +569,11 @@ func NewConfigStructure() (element.SectionSlice, error) {
 				},
 
 				element.Group{
-					ID: cfgpath.NewRoute("custom_options"),
-					Fields: element.NewFieldSlice(
+					ID: cfgpath.MakeRoute("custom_options"),
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: catalog/custom_options/forbidden_extensions
-							ID:      cfgpath.NewRoute(`forbidden_extensions`),
+							ID:      cfgpath.MakeRoute(`forbidden_extensions`),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `php,exe`,
@@ -583,14 +583,14 @@ func NewConfigStructure() (element.SectionSlice, error) {
 			),
 		},
 		element.Section{
-			ID: cfgpath.NewRoute("system"),
-			Groups: element.NewGroupSlice(
+			ID: cfgpath.MakeRoute("system"),
+			Groups: element.MakeGroups(
 				element.Group{
-					ID: cfgpath.NewRoute("media_storage_configuration"),
-					Fields: element.NewFieldSlice(
+					ID: cfgpath.MakeRoute("media_storage_configuration"),
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: system/media_storage_configuration/allowed_resources
-							ID:      cfgpath.NewRoute(`allowed_resources`),
+							ID:      cfgpath.MakeRoute(`allowed_resources`),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `{"tmp_images_folder":"tmp","catalog_images_folder":"catalog","product_custom_options_fodler":"custom_options"}`,

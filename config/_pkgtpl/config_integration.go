@@ -9,23 +9,23 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID:        "oauth",
 			Label:     `OAuth`,
 			SortOrder: 300,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Integration::config_oauth
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "cleanup",
 					Label:     `Cleanup Settings`,
 					SortOrder: 300,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: oauth/cleanup/cleanup_probability
 							ID:        "cleanup_probability",
@@ -57,7 +57,7 @@ func init() {
 					Label:     `Consumer Settings`,
 					SortOrder: 400,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: oauth/consumer/expiration_period
 							ID:        "expiration_period",

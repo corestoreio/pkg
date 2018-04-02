@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/cfgpath"
 	"github.com/corestoreio/pkg/config/cfgsource"
 	"github.com/corestoreio/pkg/config/element"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/errors"
 )
 
 // optionBox groups different types into one struct to allow multiple option
@@ -44,13 +44,13 @@ type Option func(*optionBox) error
 // WithFieldFromSectionSlice extracts the element.Field from the global
 // PackageConfiguration for retrieving the default value of a underlying type
 // and for scope permission checking.
-func WithFieldFromSectionSlice(cfgStruct element.SectionSlice) Option {
+func WithFieldFromSectionSlice(cfgStruct element.Sections) Option {
 	return func(b *optionBox) error {
 		f, _, err := cfgStruct.FindField(b.route)
 		if err != nil {
 			return errors.Wrap(err, "[cfgmodel] cfgStruct.FindField")
 		}
-		b.Field = &f
+		b.Field = f
 		return nil
 	}
 }
@@ -117,7 +117,7 @@ type baseValue struct {
 	route cfgpath.Route
 
 	// Scopes defaults to scope.Default and is used as an initial value for
-	// triggering the hierarchical fallback in the Get() functions. This value
+	// triggering the hierarchical fallback in the Value() functions. This value
 	// gets overwritten when the field *Field below gets set.
 	Scopes scope.Perm
 
@@ -133,7 +133,7 @@ type baseValue struct {
 	Source cfgsource.Slice
 	// LastError might contain an error when an applied functional option
 	// returns an error in any New*() constructor. Exported for testing reasons.
-	// Every Get() function in a primitive type checks for this error.
+	// Every Value() function in a primitive type checks for this error.
 	LastError error
 }
 
@@ -141,7 +141,7 @@ type baseValue struct {
 // Those options can also be set via the structs direct field.
 func newBaseValue(path string, opts ...Option) baseValue {
 	b := baseValue{
-		route: cfgpath.NewRoute(path),
+		route: cfgpath.MakeRoute(path),
 	}
 	b.LastError = (&b).Option(opts...)
 	return b
@@ -165,7 +165,7 @@ func (bv *baseValue) Option(opts ...Option) error {
 // HasField returns true if the Field has been set and the Fields ID is not
 // empty.
 func (bv baseValue) HasField() bool {
-	return bv.Field != nil && bv.Field.ID.IsEmpty() == false
+	return bv.Field != nil && bv.Field.ID != ""
 }
 
 func (bv baseValue) initScope() (p scope.Perm) {
@@ -200,18 +200,16 @@ func (bv baseValue) String() string {
 // If you need a string returned, consider calling FQ() or
 // MustFQ*(). FQ = fully qualified path. The returned route in the
 // path is owned by the callee.
-func (bv baseValue) ToPath(h ...scope.TypeID) (cfgpath.Path, error) {
-	t := scope.DefaultTypeID
-	if len(h) == 1 {
-		t = h[0]
-	}
+func (bv baseValue) ToPath(h scope.TypeID) (cfgpath.Path, error) {
+	//t := scope.DefaultTypeID
+	t := h
 	if err := bv.inScope(t); err != nil {
 		return cfgpath.Path{}, errors.Wrap(err, "[cfgmodel] ToPath")
 	}
 
-	p, err := cfgpath.New(bv.route)
+	p, err := cfgpath.Make(bv.route)
 	if err != nil {
-		return cfgpath.Path{}, errors.Wrapf(err, "[cfgmodel] cfgpath.New: %q %s", bv.route, t)
+		return cfgpath.Path{}, errors.Wrapf(err, "[cfgmodel] cfgpath.Make: %q %s", bv.route, t)
 	}
 	p.ScopeID = t
 	return p, nil
@@ -219,7 +217,7 @@ func (bv baseValue) ToPath(h ...scope.TypeID) (cfgpath.Path, error) {
 
 // Route returns a copy of the underlying route.
 func (bv baseValue) Route() cfgpath.Route {
-	return bv.route.Clone()
+	return bv.route
 }
 
 // InScope checks if a field from a path is allowed for current scope. Returns
@@ -302,9 +300,9 @@ func (bv baseValue) ValidateString(v string) (err error) {
 	if bv.Source != nil && false == bv.Source.ContainsValString(v) {
 		jv, jErr := bv.Source.ToJSON()
 		if jErr != nil {
-			return errors.NewFatal(err, fmt.Sprintf("[cfgmodel] Source: %#v", bv.Source))
+			return errors.Fatal.New(err, fmt.Sprintf("[cfgmodel] Source: %#v", bv.Source))
 		}
-		err = errors.NewNotValidf(errValueNotFoundInOptions, v, jv)
+		err = errors.NotValid.Newf(errValueNotFoundInOptions, v, jv)
 	}
 	return
 }
@@ -315,9 +313,9 @@ func (bv baseValue) ValidateInt(v int) (err error) {
 	if bv.Source != nil && false == bv.Source.ContainsValInt(v) {
 		jv, jErr := bv.Source.ToJSON()
 		if jErr != nil {
-			return errors.NewFatal(err, fmt.Sprintf("[cfgmodel] Source: %#v", bv.Source))
+			return errors.Fatal.New(err, fmt.Sprintf("[cfgmodel] Source: %#v", bv.Source))
 		}
-		err = errors.NewNotValidf("[cfgmodel] The value '%d' cannot be found within the allowed Options():\n%s", v, jv)
+		err = errors.NotValid.Newf("[cfgmodel] The value '%d' cannot be found within the allowed Options():\n%s", v, jv)
 	}
 	return
 }
@@ -328,9 +326,9 @@ func (bv baseValue) ValidateFloat64(v float64) (err error) {
 	if bv.Source != nil && false == bv.Source.ContainsValFloat64(v) {
 		jv, jErr := bv.Source.ToJSON()
 		if jErr != nil {
-			return errors.NewFatal(err, fmt.Sprintf("[cfgmodel] Source: %#v", bv.Source))
+			return errors.Fatal.New(err, fmt.Sprintf("[cfgmodel] Source: %#v", bv.Source))
 		}
-		err = errors.NewNotValidf("[cfgmodel] The value '%.14f' cannot be found within the allowed Options():\n%s", v, jv)
+		err = errors.NotValid.Newf("[cfgmodel] The value '%.14f' cannot be found within the allowed Options():\n%s", v, jv)
 	}
 	return
 }
@@ -342,9 +340,9 @@ func (bv baseValue) ValidateTime(v time.Time) (err error) {
 	//if bv.Source != nil && false == bv.Source.ContainsValFloat64(v) {
 	//jv, jErr := bv.Source.ToJSON()
 	//if jErr != nil {
-	//	return errors.NewFatal(err, fmt.Sprintf("[cfgmodel] Source: %#v", bv.Source))
+	//	return errors.Fatal.New(err, fmt.Sprintf("[cfgmodel] Source: %#v", bv.Source))
 	//}
-	//err = errors.NewNotValidf("[cfgmodel] The value '%s' cannot be found within the allowed Options():\n%s", v, jv)
+	//err = errors.NotValid.Newf("[cfgmodel] The value '%s' cannot be found within the allowed Options():\n%s", v, jv)
 	//}
-	return errors.NewNotValidf("[cfgmodel] @todo once someone requires this feature")
+	return errors.NotValid.Newf("[cfgmodel] @todo once someone requires this feature")
 }

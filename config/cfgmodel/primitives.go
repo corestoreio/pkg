@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
 package cfgmodel
 
 import (
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/conv"
-	"github.com/corestoreio/errors"
 )
 
 // Bool represents a path in config.Getter which handles bool values.
@@ -34,8 +34,8 @@ func NewBool(path string, opts ...Option) Bool {
 // Get returns a bool value from ScopedGetter, if empty the
 // *Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
-func (b Bool) Get(sg config.Scoped) (bool, error) {
-	// This code must be kept in sync with other Get() functions
+func (b Bool) Value(sg config.Scoped) (bool, error) {
+	// This code must be kept in sync with other Value() functions
 
 	if b.LastError != nil {
 		return false, errors.Wrap(b.LastError, "[cfgmodel] Bool.Get.LastError")
@@ -48,7 +48,7 @@ func (b Bool) Get(sg config.Scoped) (bool, error) {
 		var err error
 		v, err = conv.ToBoolE(b.Field.Default)
 		if err != nil {
-			return false, errors.NewNotValidf("[cfgmodel] ToBoolE: %v", err)
+			return false, errors.NotValid.Newf("[cfgmodel] ToBoolE: %v", err)
 		}
 	}
 
@@ -56,7 +56,7 @@ func (b Bool) Get(sg config.Scoped) (bool, error) {
 	switch {
 	case err == nil: // we found the value in the config service
 		v = val
-	case !errors.IsNotFound(err):
+	case !errors.NotFound.Match(err):
 		err = errors.Wrapf(err, "[cfgmodel] Route %q", b.route)
 	default:
 		// use default value v because sg found nothing
@@ -83,8 +83,8 @@ func NewByte(path string, opts ...Option) Byte {
 // scope.DefaultID will be enforced if *element.Field.Scopes is empty.
 // The slice is owned by this function. You must copy it away for
 // further modifications.
-func (bt Byte) Get(sg config.Scoped) ([]byte, error) {
-	// This code must be kept in sync with other Get() functions
+func (bt Byte) Value(sg config.Scoped) ([]byte, error) {
+	// This code must be kept in sync with other Value() functions
 
 	if bt.LastError != nil {
 		return nil, errors.Wrap(bt.LastError, "[cfgmodel] Byte.Get.LastError")
@@ -97,7 +97,7 @@ func (bt Byte) Get(sg config.Scoped) ([]byte, error) {
 		var err error
 		v, err = conv.ToByteE(bt.Field.Default)
 		if err != nil {
-			return nil, errors.NewNotValidf("[cfgmodel] ToByteE: %v", err)
+			return nil, errors.NotValid.Newf("[cfgmodel] ToByteE: %v", err)
 		}
 	}
 
@@ -105,7 +105,7 @@ func (bt Byte) Get(sg config.Scoped) ([]byte, error) {
 	switch {
 	case err == nil: // we found the value in the config service
 		v = val
-	case !errors.IsNotFound(err):
+	case !errors.NotFound.Match(err):
 		err = errors.Wrapf(err, "[cfgmodel] Route %q", bt.route)
 	default:
 		// use default value v because sg found nothing
@@ -132,8 +132,8 @@ func NewStr(path string, opts ...Option) Str {
 // Get returns a string value from ScopedGetter, if empty the
 // *element.Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *element.Field.Scopes is empty.
-func (str Str) Get(sg config.Scoped) (string, error) {
-	// This code must be kept in sync with other Get() functions
+func (str Str) Value(sg config.Scoped) (string, error) {
+	// This code must be kept in sync with other Value() functions
 
 	if str.LastError != nil {
 		return "", errors.Wrap(str.LastError, "[cfgmodel] Str.Get.LastError")
@@ -146,7 +146,7 @@ func (str Str) Get(sg config.Scoped) (string, error) {
 		var err error
 		v, err = conv.ToStringE(str.Field.Default)
 		if err != nil {
-			return "", errors.NewNotValidf("[cfgmodel] ToStringE: %v", err)
+			return "", errors.NotValid.Newf("[cfgmodel] ToStringE: %v", err)
 		}
 	}
 
@@ -154,7 +154,7 @@ func (str Str) Get(sg config.Scoped) (string, error) {
 	switch {
 	case err == nil: // we found the value in the config service
 		v = val
-	case !errors.IsNotFound(err):
+	case !errors.NotFound.Match(err):
 		err = errors.Wrapf(err, "[cfgmodel] Route %q", str.route)
 	default:
 		// use default value v because sg found nothing
@@ -179,8 +179,8 @@ func NewInt(path string, opts ...Option) Int {
 // Get returns an int value from ScopedGetter, if empty the
 // *Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
-func (i Int) Get(sg config.Scoped) (int, error) {
-	// This code must be kept in sync with other Get() functions
+func (i Int) Value(sg config.Scoped) (int, error) {
+	// This code must be kept in sync with other Value() functions
 
 	if i.LastError != nil {
 		return 0, errors.Wrap(i.LastError, "[cfgmodel] Int.Get.LastError")
@@ -193,7 +193,7 @@ func (i Int) Get(sg config.Scoped) (int, error) {
 		var err error
 		v, err = conv.ToIntE(i.Field.Default)
 		if err != nil {
-			return 0, errors.NewNotValidf("[cfgmodel] ToIntE: %v", err)
+			return 0, errors.NotValid.Newf("[cfgmodel] ToIntE: %v", err)
 		}
 	}
 
@@ -201,7 +201,7 @@ func (i Int) Get(sg config.Scoped) (int, error) {
 	switch {
 	case err == nil: // we found the value in the config service
 		v = val
-	case !errors.IsNotFound(err):
+	case !errors.NotFound.Match(err):
 		err = errors.Wrapf(err, "[cfgmodel] Route %q", i.route)
 	default:
 		// use default value v because sg found nothing
@@ -226,8 +226,8 @@ func NewFloat64(path string, opts ...Option) Float64 {
 // Get returns a float64 value from ScopedGetter, if empty the
 // *Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
-func (f Float64) Get(sg config.Scoped) (float64, error) {
-	// This code must be kept in sync with other Get() functions
+func (f Float64) Value(sg config.Scoped) (float64, error) {
+	// This code must be kept in sync with other Value() functions
 
 	if f.LastError != nil {
 		return 0, errors.Wrap(f.LastError, "[cfgmodel] Float64.Get.LastError")
@@ -241,7 +241,7 @@ func (f Float64) Get(sg config.Scoped) (float64, error) {
 			var err error
 			v, err = conv.ToFloat64E(d)
 			if err != nil {
-				return 0, errors.NewNotValidf("[cfgmodel] ToFloat64E: %v", err)
+				return 0, errors.NotValid.Newf("[cfgmodel] ToFloat64E: %v", err)
 			}
 		}
 	}
@@ -250,7 +250,7 @@ func (f Float64) Get(sg config.Scoped) (float64, error) {
 	switch {
 	case err == nil: // we found the value in the config service
 		v = val
-	case !errors.IsNotFound(err):
+	case !errors.NotFound.Match(err):
 		err = errors.Wrapf(err, "[cfgmodel] Route %q", f.route)
 	default:
 		// use default value v because sg found nothing

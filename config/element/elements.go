@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,6 +13,28 @@
 // limitations under the License.
 
 package element
+
+import (
+	"strings"
+)
+
+// Separator used in the database table core_config_data and in config.Service
+// to separate the path parts.
+const Separator byte = '/'
+
+const sSeparator = "/"
+
+// JoinRoutes joins multiple strings with the Separator constant.
+func JoinRoutes(paths ...string) string {
+	var buf strings.Builder
+	for i, p := range paths {
+		if i > 0 {
+			buf.WriteByte(Separator)
+		}
+		buf.WriteString(p)
+	}
+	return buf.String()
+}
 
 // Sectioner at the moment only for testing
 type Sectioner interface {

@@ -9,23 +9,23 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID:        "multishipping",
 			Label:     `Multishipping Settings`,
 			SortOrder: 311,
 			Scopes:    scope.PermWebsite,
 			Resource:  0, // Magento_Multishipping::config_multishipping
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "options",
 					Label:     `Options`,
 					SortOrder: 2,
 					Scopes:    scope.PermWebsite,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: multishipping/options/checkout_multiple
 							ID:        "checkout_multiple",

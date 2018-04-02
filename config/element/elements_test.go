@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,18 +18,18 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config/cfgpath"
 	"github.com/corestoreio/pkg/config/element"
 	"github.com/corestoreio/pkg/storage/text"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewConfiguration(t *testing.T) {
 
 	tests := []struct {
-		have       element.SectionSlice
+		have       element.Sections
 		wantErrBhf errors.BehaviourFunc
 		wantLen    int
 	}{
@@ -38,22 +38,22 @@ func TestNewConfiguration(t *testing.T) {
 			wantErrBhf: errors.IsNotValid,
 		},
 		1: {
-			have: element.NewSectionSlice(
+			have: element.MakeSections(
 				element.Section{
-					ID: cfgpath.NewRoute(`web`),
-					Groups: element.NewGroupSlice(
+					ID: cfgpath.MakeRoute(`web`),
+					Groups: element.MakeGroups(
 						element.Group{
-							ID:     cfgpath.NewRoute(`default`),
-							Fields: element.NewFieldSlice(element.Field{ID: cfgpath.NewRoute(`front`)}, element.Field{ID: cfgpath.NewRoute(`no_route`)}),
+							ID:     cfgpath.MakeRoute(`default`),
+							Fields: element.MakeFields(element.Field{ID: cfgpath.MakeRoute(`front`)}, element.Field{ID: cfgpath.MakeRoute(`no_route`)}),
 						},
 					),
 				},
 				element.Section{
-					ID: cfgpath.NewRoute(`system`),
-					Groups: element.NewGroupSlice(
+					ID: cfgpath.MakeRoute(`system`),
+					Groups: element.MakeGroups(
 						element.Group{
-							ID:     cfgpath.NewRoute(`media_storage_configuration`),
-							Fields: element.NewFieldSlice(element.Field{ID: cfgpath.NewRoute(`allowed_resources`)}),
+							ID:     cfgpath.MakeRoute(`media_storage_configuration`),
+							Fields: element.MakeFields(element.Field{ID: cfgpath.MakeRoute(`allowed_resources`)}),
 						},
 					),
 				},
@@ -62,21 +62,21 @@ func TestNewConfiguration(t *testing.T) {
 			wantLen:    3,
 		},
 		2: {
-			have:       element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`aa`), Groups: element.NewGroupSlice()}),
+			have:       element.MakeSections(element.Section{ID: cfgpath.MakeRoute(`aa`), Groups: element.MakeGroups()}),
 			wantErrBhf: nil,
 		},
 		3: {
-			have:       element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`aa`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`bb`), Fields: nil})}),
+			have:       element.MakeSections(element.Section{ID: cfgpath.MakeRoute(`aa`), Groups: element.MakeGroups(element.Group{ID: cfgpath.MakeRoute(`bb`), Fields: nil})}),
 			wantErrBhf: nil,
 		},
 		4: {
-			have: element.NewSectionSlice(
+			have: element.MakeSections(
 				element.Section{
-					ID: cfgpath.NewRoute(`aa`),
-					Groups: element.NewGroupSlice(
+					ID: cfgpath.MakeRoute(`aa`),
+					Groups: element.MakeGroups(
 						element.Group{
-							ID:     cfgpath.NewRoute(`bb`),
-							Fields: element.NewFieldSlice(element.Field{ID: cfgpath.NewRoute(`cc`)}, element.Field{ID: cfgpath.NewRoute(`cc`)}),
+							ID:     cfgpath.MakeRoute(`bb`),
+							Fields: element.MakeFields(element.Field{ID: cfgpath.MakeRoute(`cc`)}, element.Field{ID: cfgpath.MakeRoute(`cc`)}),
 						},
 					),
 				},
@@ -86,7 +86,7 @@ func TestNewConfiguration(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		func(t *testing.T, have element.SectionSlice, wantErr errors.BehaviourFunc) {
+		func(t *testing.T, have element.Sections, wantErr errors.BehaviourFunc) {
 			defer func() {
 				if r := recover(); r != nil {
 					if err, ok := r.(error); ok {
@@ -99,7 +99,7 @@ func TestNewConfiguration(t *testing.T) {
 				}
 			}()
 
-			haveSlice := element.MustNewConfiguration(have...)
+			haveSlice := element.MustMakeSectionsValidate(have...)
 			if wantErr != nil {
 				assert.Nil(t, haveSlice, "Index %d", i)
 			} else {
@@ -113,36 +113,36 @@ func TestNewConfiguration(t *testing.T) {
 
 func TestSectionSliceDefaults(t *testing.T) {
 
-	pkgCfg := element.MustNewConfiguration(
+	pkgCfg := element.MustMakeSectionsValidate(
 		element.Section{
-			ID: cfgpath.NewRoute(`contact`),
-			Groups: element.NewGroupSlice(
+			ID: cfgpath.MakeRoute(`contact`),
+			Groups: element.MakeGroups(
 				element.Group{
-					ID: cfgpath.NewRoute(`contact`),
-					Fields: element.NewFieldSlice(
+					ID: cfgpath.MakeRoute(`contact`),
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: `contact/contact/enabled`,
-							ID:      cfgpath.NewRoute(`enabled`),
+							ID:      cfgpath.MakeRoute(`enabled`),
 							Default: true,
 						},
 					),
 				},
 				element.Group{
-					ID: cfgpath.NewRoute(`email`),
-					Fields: element.NewFieldSlice(
+					ID: cfgpath.MakeRoute(`email`),
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: `contact/email/recipient_email`,
-							ID:      cfgpath.NewRoute(`recipient_email`),
+							ID:      cfgpath.MakeRoute(`recipient_email`),
 							Default: `hello@example.com`,
 						},
 						element.Field{
 							// Path: `contact/email/sender_email_identity`,
-							ID:      cfgpath.NewRoute(`sender_email_identity`),
+							ID:      cfgpath.MakeRoute(`sender_email_identity`),
 							Default: 2.7182818284590452353602874713527,
 						},
 						element.Field{
 							// Path: `contact/email/email_template`,
-							ID:      cfgpath.NewRoute(`email_template`),
+							ID:      cfgpath.MakeRoute(`email_template`),
 							Default: 4711,
 						},
 					),
@@ -166,20 +166,20 @@ func TestSectionSliceMerge(t *testing.T) {
 	// Use a Webservice to compare the JSON output!
 
 	tests := []struct {
-		have       []element.SectionSlice
+		have       []element.Sections
 		wantErr    string
 		want       string
 		fieldCount int
 	}{
 		{
-			have: []element.SectionSlice{
+			have: []element.Sections{
 				{
 					element.Section{
-						ID: cfgpath.NewRoute(`a`),
+						ID: cfgpath.MakeRoute(`a`),
 					},
 				},
 				{
-					element.Section{ID: cfgpath.NewRoute(`a`), Label: text.Chars(`LabelA`), Groups: nil},
+					element.Section{ID: cfgpath.MakeRoute(`a`), Label: text.Chars(`LabelA`), Groups: nil},
 				},
 			},
 			wantErr:    "",
@@ -187,28 +187,28 @@ func TestSectionSliceMerge(t *testing.T) {
 			fieldCount: 0,
 		},
 		{
-			have: []element.SectionSlice{
+			have: []element.Sections{
 				{
 					element.Section{
-						ID: cfgpath.NewRoute(`a`),
-						Groups: element.NewGroupSlice(
+						ID: cfgpath.MakeRoute(`a`),
+						Groups: element.MakeGroups(
 							element.Group{
-								ID: cfgpath.NewRoute(`b`),
-								Fields: element.NewFieldSlice(
-									element.Field{ID: cfgpath.NewRoute(`c`), Default: `c`},
+								ID: cfgpath.MakeRoute(`b`),
+								Fields: element.MakeFields(
+									element.Field{ID: cfgpath.MakeRoute(`c`), Default: `c`},
 								),
 							},
 							element.Group{
-								ID: cfgpath.NewRoute(`b`),
-								Fields: element.NewFieldSlice(
-									element.Field{ID: cfgpath.NewRoute(`d`), Default: `d`},
+								ID: cfgpath.MakeRoute(`b`),
+								Fields: element.MakeFields(
+									element.Field{ID: cfgpath.MakeRoute(`d`), Default: `d`},
 								),
 							},
 						),
 					},
 				},
 				{
-					element.Section{ID: cfgpath.NewRoute(`a`), Label: text.Chars(`LabelA`), Groups: nil},
+					element.Section{ID: cfgpath.MakeRoute(`a`), Label: text.Chars(`LabelA`), Groups: nil},
 				},
 			},
 			wantErr:    "",
@@ -216,17 +216,17 @@ func TestSectionSliceMerge(t *testing.T) {
 			fieldCount: 2,
 		},
 		{
-			have: []element.SectionSlice{
+			have: []element.Sections{
 				{
 					element.Section{
-						ID:    cfgpath.NewRoute(`a`),
+						ID:    cfgpath.MakeRoute(`a`),
 						Label: text.Chars(`SectionLabelA`),
-						Groups: element.NewGroupSlice(
+						Groups: element.MakeGroups(
 							element.Group{
-								ID:     cfgpath.NewRoute(`b`),
+								ID:     cfgpath.MakeRoute(`b`),
 								Scopes: scope.PermDefault,
-								Fields: element.NewFieldSlice(
-									element.Field{ID: cfgpath.NewRoute(`c`), Default: `c`},
+								Fields: element.MakeFields(
+									element.Field{ID: cfgpath.MakeRoute(`c`), Default: `c`},
 								),
 							},
 						),
@@ -234,15 +234,15 @@ func TestSectionSliceMerge(t *testing.T) {
 				},
 				{
 					element.Section{
-						ID:     cfgpath.NewRoute(`a`),
+						ID:     cfgpath.MakeRoute(`a`),
 						Scopes: scope.PermWebsite,
-						Groups: element.NewGroupSlice(
-							element.Group{ID: cfgpath.NewRoute(`b`), Label: text.Chars(`GroupLabelB1`)},
-							element.Group{ID: cfgpath.NewRoute(`b`), Label: text.Chars(`GroupLabelB2`)},
+						Groups: element.MakeGroups(
+							element.Group{ID: cfgpath.MakeRoute(`b`), Label: text.Chars(`GroupLabelB1`)},
+							element.Group{ID: cfgpath.MakeRoute(`b`), Label: text.Chars(`GroupLabelB2`)},
 							element.Group{
-								ID: cfgpath.NewRoute(`b2`),
-								Fields: element.NewFieldSlice(
-									element.Field{ID: cfgpath.NewRoute(`d`), Default: `d`},
+								ID: cfgpath.MakeRoute(`b2`),
+								Fields: element.MakeFields(
+									element.Field{ID: cfgpath.MakeRoute(`d`), Default: `d`},
 								),
 							},
 						),
@@ -254,26 +254,26 @@ func TestSectionSliceMerge(t *testing.T) {
 			fieldCount: 2,
 		},
 		{
-			have: []element.SectionSlice{
+			have: []element.Sections{
 				{
-					element.Section{ID: cfgpath.NewRoute(`a`), Label: text.Chars(`SectionLabelA`), SortOrder: 20, Resource: 22},
+					element.Section{ID: cfgpath.MakeRoute(`a`), Label: text.Chars(`SectionLabelA`), SortOrder: 20, Resource: 22},
 				},
 				{
-					element.Section{ID: cfgpath.NewRoute(`a`), Scopes: scope.PermWebsite, SortOrder: 10, Resource: 3},
+					element.Section{ID: cfgpath.MakeRoute(`a`), Scopes: scope.PermWebsite, SortOrder: 10, Resource: 3},
 				},
 			},
 			wantErr: "",
 			want:    `[{"ID":"a","Label":"SectionLabelA","Scopes":["Default","Website"],"SortOrder":10,"Resource":3,"Groups":null}]` + "\n",
 		},
 		{
-			have: []element.SectionSlice{
+			have: []element.Sections{
 				{
 					element.Section{
-						ID:    cfgpath.NewRoute(`a`),
+						ID:    cfgpath.MakeRoute(`a`),
 						Label: text.Chars(`SectionLabelA`),
-						Groups: element.NewGroupSlice(
+						Groups: element.MakeGroups(
 							element.Group{
-								ID:      cfgpath.NewRoute(`b`),
+								ID:      cfgpath.MakeRoute(`b`),
 								Label:   text.Chars(`SectionAGroupB`),
 								Comment: text.Chars("SectionAGroupBComment"),
 								Scopes:  scope.PermDefault,
@@ -283,13 +283,13 @@ func TestSectionSliceMerge(t *testing.T) {
 				},
 				{
 					element.Section{
-						ID:        cfgpath.NewRoute(`a`),
+						ID:        cfgpath.MakeRoute(`a`),
 						SortOrder: 1000,
 						Scopes:    scope.PermWebsite,
-						Groups: element.NewGroupSlice(
-							element.Group{ID: cfgpath.NewRoute(`b`), Label: text.Chars(`GroupLabelB1`), Scopes: scope.PermStore},
-							element.Group{ID: cfgpath.NewRoute(`b`), Label: text.Chars(`GroupLabelB2`), Comment: text.Chars("Section2AGroup3BComment"), SortOrder: 100},
-							element.Group{ID: cfgpath.NewRoute(`b2`)},
+						Groups: element.MakeGroups(
+							element.Group{ID: cfgpath.MakeRoute(`b`), Label: text.Chars(`GroupLabelB1`), Scopes: scope.PermStore},
+							element.Group{ID: cfgpath.MakeRoute(`b`), Label: text.Chars(`GroupLabelB2`), Comment: text.Chars("Section2AGroup3BComment"), SortOrder: 100},
+							element.Group{ID: cfgpath.MakeRoute(`b2`)},
 						),
 					},
 				},
@@ -298,24 +298,24 @@ func TestSectionSliceMerge(t *testing.T) {
 			want:    `[{"ID":"a","Label":"SectionLabelA","Scopes":["Default","Website"],"SortOrder":1000,"Groups":[{"ID":"b","Label":"GroupLabelB2","Comment":"Section2AGroup3BComment","Scopes":["Default","Website","Store"],"SortOrder":100,"Fields":null},{"ID":"b2","Fields":null}]}]` + "\n",
 		},
 		{
-			have: []element.SectionSlice{
+			have: []element.Sections{
 				{
 					element.Section{
-						ID: cfgpath.NewRoute(`a`),
-						Groups: element.NewGroupSlice(
+						ID: cfgpath.MakeRoute(`a`),
+						Groups: element.MakeGroups(
 							element.Group{
-								ID:    cfgpath.NewRoute(`b`),
+								ID:    cfgpath.MakeRoute(`b`),
 								Label: text.Chars(`b1`),
-								Fields: element.NewFieldSlice(
-									element.Field{ID: cfgpath.NewRoute(`c`), Default: `c`, Type: element.TypeMultiselect, SortOrder: 1001},
+								Fields: element.MakeFields(
+									element.Field{ID: cfgpath.MakeRoute(`c`), Default: `c`, Type: element.TypeMultiselect, SortOrder: 1001},
 								),
 							},
 							element.Group{
-								ID:    cfgpath.NewRoute(`b`),
+								ID:    cfgpath.MakeRoute(`b`),
 								Label: text.Chars(`b2`),
-								Fields: element.NewFieldSlice(
-									element.Field{ID: cfgpath.NewRoute(`d`), Default: `d`, Comment: text.Chars("Ring of fire"), Type: element.TypeObscure},
-									element.Field{ID: cfgpath.NewRoute(`c`), Default: `haha`, Type: element.TypeSelect, Scopes: scope.PermWebsite},
+								Fields: element.MakeFields(
+									element.Field{ID: cfgpath.MakeRoute(`d`), Default: `d`, Comment: text.Chars("Ring of fire"), Type: element.TypeObscure},
+									element.Field{ID: cfgpath.MakeRoute(`c`), Default: `haha`, Type: element.TypeSelect, Scopes: scope.PermWebsite},
 								),
 							},
 						),
@@ -323,14 +323,14 @@ func TestSectionSliceMerge(t *testing.T) {
 				},
 				{
 					element.Section{
-						ID: cfgpath.NewRoute(`a`),
-						Groups: element.NewGroupSlice(
+						ID: cfgpath.MakeRoute(`a`),
+						Groups: element.MakeGroups(
 							element.Group{
-								ID:    cfgpath.NewRoute(`b`),
+								ID:    cfgpath.MakeRoute(`b`),
 								Label: text.Chars(`b3`),
-								Fields: element.NewFieldSlice(
-									element.Field{ID: cfgpath.NewRoute(`d`), Default: `overriddenD`, Label: text.Chars(`Sect2Group2Label4`), Comment: text.Chars("LOTR")},
-									element.Field{ID: cfgpath.NewRoute(`c`), Default: `overriddenHaha`, Type: element.TypeHidden},
+								Fields: element.MakeFields(
+									element.Field{ID: cfgpath.MakeRoute(`d`), Default: `overriddenD`, Label: text.Chars(`Sect2Group2Label4`), Comment: text.Chars("LOTR")},
+									element.Field{ID: cfgpath.MakeRoute(`c`), Default: `overriddenHaha`, Type: element.TypeHidden},
 								),
 							},
 						),
@@ -342,16 +342,16 @@ func TestSectionSliceMerge(t *testing.T) {
 			fieldCount: 2,
 		},
 		{
-			have: []element.SectionSlice{
+			have: []element.Sections{
 				{
 					element.Section{
-						ID: cfgpath.NewRoute(`a`),
-						Groups: element.NewGroupSlice(
+						ID: cfgpath.MakeRoute(`a`),
+						Groups: element.MakeGroups(
 							element.Group{
-								ID: cfgpath.NewRoute(`b`),
-								Fields: element.NewFieldSlice(
+								ID: cfgpath.MakeRoute(`b`),
+								Fields: element.MakeFields(
 									element.Field{
-										ID:      cfgpath.NewRoute(`c`),
+										ID:      cfgpath.MakeRoute(`c`),
 										Default: `c`,
 										Type:    element.TypeMultiselect,
 									},
@@ -362,13 +362,13 @@ func TestSectionSliceMerge(t *testing.T) {
 				},
 				{
 					element.Section{
-						ID: cfgpath.NewRoute(`a`),
-						Groups: element.NewGroupSlice(
+						ID: cfgpath.MakeRoute(`a`),
+						Groups: element.MakeGroups(
 							element.Group{
-								ID: cfgpath.NewRoute(`b`),
-								Fields: element.NewFieldSlice(
+								ID: cfgpath.MakeRoute(`b`),
+								Fields: element.MakeFields(
 									element.Field{
-										ID:        cfgpath.NewRoute(`c`),
+										ID:        cfgpath.MakeRoute(`c`),
 										Default:   `overridenC`,
 										Type:      element.TypeSelect,
 										Label:     text.Chars(`Sect2Group2Label4`),
@@ -394,7 +394,7 @@ func TestSectionSliceMerge(t *testing.T) {
 			test.want = "null\n"
 		}
 
-		var baseSl element.SectionSlice
+		var baseSl element.Sections
 		haveErr := baseSl.MergeMultiple(test.have...)
 		if test.wantErr != "" {
 			assert.Len(t, baseSl, 0)
@@ -414,30 +414,30 @@ func TestSectionSliceMerge(t *testing.T) {
 func TestFieldSliceMerge(t *testing.T) {
 
 	tests := []struct {
-		have    element.FieldSlice
+		have    element.Fields
 		wantErr error
 		want    string
 	}{
 		{
-			have: element.NewFieldSlice(
-				element.Field{ID: cfgpath.NewRoute(`d`), Default: `overrideMeD`, Comment: text.Chars("Ring of fire"), Type: element.TypeObscure},
+			have: element.MakeFields(
+				element.Field{ID: cfgpath.MakeRoute(`d`), Default: `overrideMeD`, Comment: text.Chars("Ring of fire"), Type: element.TypeObscure},
 			),
 			wantErr: nil,
 			want:    `[{"ID":"d","Type":"obscure","Comment":"Ring of fire","Default":"overrideMeD"}]`,
 		},
 		{
-			have: element.NewFieldSlice(
-				element.Field{ID: cfgpath.NewRoute(`d`), Default: `overrideMeD`, Comment: text.Chars("Ring of fire"), Type: element.TypeObscure},
-				element.Field{ID: cfgpath.NewRoute(`c`), Default: `overrideMeC`, Type: element.TypeSelect, Scopes: scope.PermWebsite},
+			have: element.MakeFields(
+				element.Field{ID: cfgpath.MakeRoute(`d`), Default: `overrideMeD`, Comment: text.Chars("Ring of fire"), Type: element.TypeObscure},
+				element.Field{ID: cfgpath.MakeRoute(`c`), Default: `overrideMeC`, Type: element.TypeSelect, Scopes: scope.PermWebsite},
 			),
 			wantErr: nil,
 			want:    `[{"ID":"d","Type":"obscure","Comment":"Ring of fire","Default":"overrideMeD"},{"ID":"c","Type":"select","Scopes":["Default","Website"],"Default":"overrideMeC"}]`,
 		},
 		{
-			have: element.NewFieldSlice(
-				element.Field{ID: cfgpath.NewRoute(`d`), Default: `overrideMeD`, Comment: text.Chars("Ring of fire"), Type: element.TypeObscure},
-				element.Field{ID: cfgpath.NewRoute(`c`), Default: `overrideMeC`, Type: element.TypeSelect, Scopes: scope.PermWebsite},
-				element.Field{ID: cfgpath.NewRoute(`d`), Default: `overrideMeE`, Type: element.TypeMultiselect},
+			have: element.MakeFields(
+				element.Field{ID: cfgpath.MakeRoute(`d`), Default: `overrideMeD`, Comment: text.Chars("Ring of fire"), Type: element.TypeObscure},
+				element.Field{ID: cfgpath.MakeRoute(`c`), Default: `overrideMeC`, Type: element.TypeSelect, Scopes: scope.PermWebsite},
+				element.Field{ID: cfgpath.MakeRoute(`d`), Default: `overrideMeE`, Type: element.TypeMultiselect},
 			),
 			wantErr: nil,
 			want:    `[{"ID":"d","Type":"multiselect","Comment":"Ring of fire","Default":"overrideMeE"},{"ID":"c","Type":"select","Scopes":["Default","Website"],"Default":"overrideMeC"}]`,
@@ -450,7 +450,7 @@ func TestFieldSliceMerge(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		var baseFsl element.FieldSlice
+		var baseFsl element.Fields
 		haveErr := baseFsl.Merge(test.have...)
 		if test.wantErr != nil {
 			assert.Len(t, baseFsl, 0)
@@ -472,30 +472,30 @@ func TestFieldSliceMerge(t *testing.T) {
 func TestGroupSliceMerge(t *testing.T) {
 
 	tests := []struct {
-		have    element.GroupSlice
+		have    element.Groups
 		wantErr error
 		want    string
 	}{
 		{
-			have: element.NewGroupSlice(
+			have: element.MakeGroups(
 				element.Group{
-					ID: cfgpath.NewRoute(`b`),
-					Fields: element.NewFieldSlice(
-						element.Field{ID: cfgpath.NewRoute(`c`), Default: `c`, Type: element.TypeMultiselect},
+					ID: cfgpath.MakeRoute(`b`),
+					Fields: element.MakeFields(
+						element.Field{ID: cfgpath.MakeRoute(`c`), Default: `c`, Type: element.TypeMultiselect},
 					),
 				},
 				element.Group{
-					ID: cfgpath.NewRoute(`b`),
-					Fields: element.NewFieldSlice(
-						element.Field{ID: cfgpath.NewRoute(`d`), Default: `overrideMeD`, Comment: text.Chars("Ring of fire"), Type: element.TypeObscure},
-						element.Field{ID: cfgpath.NewRoute(`c`), Default: `overrideMeC`, Type: element.TypeSelect, Scopes: scope.PermWebsite},
+					ID: cfgpath.MakeRoute(`b`),
+					Fields: element.MakeFields(
+						element.Field{ID: cfgpath.MakeRoute(`d`), Default: `overrideMeD`, Comment: text.Chars("Ring of fire"), Type: element.TypeObscure},
+						element.Field{ID: cfgpath.MakeRoute(`c`), Default: `overrideMeC`, Type: element.TypeSelect, Scopes: scope.PermWebsite},
 					),
 				},
 				element.Group{
-					ID: cfgpath.NewRoute(`b`),
-					Fields: element.NewFieldSlice(
-						element.Field{ID: cfgpath.NewRoute(`d`), Default: `overriddenD`, Label: text.Chars(`Sect2Group2Label4`), Comment: text.Chars("LOTR")},
-						element.Field{ID: cfgpath.NewRoute(`c`), Default: `overriddenC`, Type: element.TypeHidden},
+					ID: cfgpath.MakeRoute(`b`),
+					Fields: element.MakeFields(
+						element.Field{ID: cfgpath.MakeRoute(`d`), Default: `overriddenD`, Label: text.Chars(`Sect2Group2Label4`), Comment: text.Chars("LOTR")},
+						element.Field{ID: cfgpath.MakeRoute(`c`), Default: `overriddenC`, Type: element.TypeHidden},
 					),
 				},
 			),
@@ -503,12 +503,12 @@ func TestGroupSliceMerge(t *testing.T) {
 			want:    `[{"ID":"b","Fields":[{"ID":"c","Type":"hidden","Scopes":["Default","Website"],"Default":"overriddenC"},{"ID":"d","Type":"obscure","Label":"Sect2Group2Label4","Comment":"LOTR","Default":"overriddenD"}]}]` + "\n",
 		},
 		{
-			have: element.NewGroupSlice(
+			have: element.MakeGroups(
 				element.Group{
-					ID:    cfgpath.NewRoute(`b`),
+					ID:    cfgpath.MakeRoute(`b`),
 					Label: text.Chars(`Single Field`),
-					Fields: element.NewFieldSlice(
-						element.Field{ID: cfgpath.NewRoute(`c`), Default: `c`, Type: element.TypeMultiselect},
+					Fields: element.MakeFields(
+						element.Field{ID: cfgpath.MakeRoute(`c`), Default: `c`, Type: element.TypeMultiselect},
 					),
 				},
 			),
@@ -516,19 +516,19 @@ func TestGroupSliceMerge(t *testing.T) {
 			want:    `[{"ID":"b","Label":"Single Field","Fields":[{"ID":"c","Type":"multiselect","Default":"c"}]}]` + "\n",
 		},
 		{
-			have: element.NewGroupSlice(
+			have: element.MakeGroups(
 				element.Group{
-					ID:    cfgpath.NewRoute(`b`),
+					ID:    cfgpath.MakeRoute(`b`),
 					Label: text.Chars(`Single Field`),
-					Fields: element.NewFieldSlice(
-						element.Field{ID: cfgpath.NewRoute(`c`), Default: `c`, Type: element.TypeMultiselect},
+					Fields: element.MakeFields(
+						element.Field{ID: cfgpath.MakeRoute(`c`), Default: `c`, Type: element.TypeMultiselect},
 					),
 				},
 				element.Group{
-					ID:    cfgpath.NewRoute(`b`),
+					ID:    cfgpath.MakeRoute(`b`),
 					Label: text.Chars(`Single Field2`),
-					Fields: element.NewFieldSlice(
-						element.Field{ID: cfgpath.NewRoute(`c`), Default: `c`, Type: element.TypeMultiselect},
+					Fields: element.MakeFields(
+						element.Field{ID: cfgpath.MakeRoute(`c`), Default: `c`, Type: element.TypeMultiselect},
 					),
 				},
 			),
@@ -536,19 +536,19 @@ func TestGroupSliceMerge(t *testing.T) {
 			want:    `[{"ID":"b","Label":"Single Field2","Fields":[{"ID":"c","Type":"multiselect","Default":"c"}]}]` + "\n",
 		},
 		{
-			have: element.NewGroupSlice(
+			have: element.MakeGroups(
 				element.Group{
-					ID:    cfgpath.NewRoute(`b`),
+					ID:    cfgpath.MakeRoute(`b`),
 					Label: text.Chars(`Single Field`),
-					Fields: element.NewFieldSlice(
-						element.Field{ID: cfgpath.NewRoute(`c`), Default: `c`, Type: element.TypeMultiselect},
+					Fields: element.MakeFields(
+						element.Field{ID: cfgpath.MakeRoute(`c`), Default: `c`, Type: element.TypeMultiselect},
 					),
 				},
 				element.Group{
-					ID:    cfgpath.NewRoute(`b`),
+					ID:    cfgpath.MakeRoute(`b`),
 					Label: text.Chars(`Single Field2`),
-					Fields: element.NewFieldSlice(
-						element.Field{ID: cfgpath.NewRoute(`c`), Default: `c2`, Type: element.TypeTextarea},
+					Fields: element.MakeFields(
+						element.Field{ID: cfgpath.MakeRoute(`c`), Default: `c2`, Type: element.TypeTextarea},
 					),
 				},
 			),
@@ -556,18 +556,18 @@ func TestGroupSliceMerge(t *testing.T) {
 			want:    `[{"ID":"b","Label":"Single Field2","Fields":[{"ID":"c","Type":"textarea","Default":"c2"}]}]` + "\n",
 		},
 		{
-			have: element.NewGroupSlice(
+			have: element.MakeGroups(
 				element.Group{
-					ID:    cfgpath.NewRoute(`b`),
+					ID:    cfgpath.MakeRoute(`b`),
 					Label: text.Chars(`Single Field`),
-					Fields: element.NewFieldSlice(
-						element.Field{ID: cfgpath.NewRoute(`c`), Default: `c`, Type: element.TypeMultiselect},
+					Fields: element.MakeFields(
+						element.Field{ID: cfgpath.MakeRoute(`c`), Default: `c`, Type: element.TypeMultiselect},
 					),
 				},
 				element.Group{
-					ID: cfgpath.NewRoute(`b`),
-					Fields: element.NewFieldSlice(
-						element.Field{ID: cfgpath.NewRoute(`d`), Default: `d`, Type: element.TypeText},
+					ID: cfgpath.MakeRoute(`b`),
+					Fields: element.MakeFields(
+						element.Field{ID: cfgpath.MakeRoute(`d`), Default: `d`, Type: element.TypeText},
 					),
 				},
 			),
@@ -582,7 +582,7 @@ func TestGroupSliceMerge(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		var baseGsl element.GroupSlice
+		var baseGsl element.Groups
 		haveErr := baseGsl.Merge(test.have...)
 		if test.wantErr != nil {
 			assert.Len(t, baseGsl, 0)
@@ -601,38 +601,38 @@ func TestGroupSliceMerge(t *testing.T) {
 func TestSectionSliceFindGroupByID(t *testing.T) {
 
 	tests := []struct {
-		haveSlice  element.SectionSlice
+		haveSlice  element.Sections
 		haveRoute  cfgpath.Route
 		wantGID    string
 		wantErrBhf errors.BehaviourFunc
 	}{
 		{
-			haveSlice:  element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
-			haveRoute:  cfgpath.NewRoute("a/b"),
+			haveSlice:  element.MakeSections(element.Section{ID: cfgpath.MakeRoute(`a`), Groups: element.MakeGroups(element.Group{ID: cfgpath.MakeRoute(`b`)}, element.Group{ID: cfgpath.MakeRoute(`bb`)})}),
+			haveRoute:  cfgpath.MakeRoute("a/b"),
 			wantGID:    "b",
 			wantErrBhf: nil,
 		},
 		{
-			haveSlice:  element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
-			haveRoute:  cfgpath.NewRoute("a/bc"),
+			haveSlice:  element.MakeSections(element.Section{ID: cfgpath.MakeRoute(`a`), Groups: element.MakeGroups(element.Group{ID: cfgpath.MakeRoute(`b`)}, element.Group{ID: cfgpath.MakeRoute(`bb`)})}),
+			haveRoute:  cfgpath.MakeRoute("a/bc"),
 			wantGID:    "b",
 			wantErrBhf: errors.IsNotFound,
 		},
 		{
-			haveSlice:  element.SectionSlice{},
+			haveSlice:  element.Sections{},
 			haveRoute:  cfgpath.Route{},
 			wantGID:    "b",
 			wantErrBhf: errors.IsNotFound,
 		},
 		{
-			haveSlice:  element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
-			haveRoute:  cfgpath.NewRoute("a", "bb", "cc"),
+			haveSlice:  element.MakeSections(element.Section{ID: cfgpath.MakeRoute(`a`), Groups: element.MakeGroups(element.Group{ID: cfgpath.MakeRoute(`b`)}, element.Group{ID: cfgpath.MakeRoute(`bb`)})}),
+			haveRoute:  cfgpath.MakeRoute("a", "bb", "cc"),
 			wantGID:    "bb",
 			wantErrBhf: nil,
 		},
 		{
-			haveSlice:  element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
-			haveRoute:  cfgpath.NewRoute("xa", "bb", "cc"),
+			haveSlice:  element.MakeSections(element.Section{ID: cfgpath.MakeRoute(`a`), Groups: element.MakeGroups(element.Group{ID: cfgpath.MakeRoute(`b`)}, element.Group{ID: cfgpath.MakeRoute(`bb`)})}),
+			haveRoute:  cfgpath.MakeRoute("xa", "bb", "cc"),
 			wantGID:    "",
 			wantErrBhf: errors.IsNotFound,
 		},
@@ -656,50 +656,50 @@ func TestSectionSliceFindGroupByID(t *testing.T) {
 func TestSectionSliceFindFieldByID(t *testing.T) {
 
 	tests := []struct {
-		haveSlice  element.SectionSlice
+		haveSlice  element.Sections
 		haveRoute  cfgpath.Route
 		wantFID    string
 		wantErrBhf errors.BehaviourFunc
 	}{
 		{
-			haveSlice:  element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`aa`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`bb`)}, element.Group{ID: cfgpath.NewRoute(`cc`)})}),
+			haveSlice:  element.MakeSections(element.Section{ID: cfgpath.MakeRoute(`aa`), Groups: element.MakeGroups(element.Group{ID: cfgpath.MakeRoute(`bb`)}, element.Group{ID: cfgpath.MakeRoute(`cc`)})}),
 			haveRoute:  cfgpath.Route{},
 			wantFID:    "",
 			wantErrBhf: errors.IsNotValid,
 		},
 		{
-			haveSlice:  element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
-			haveRoute:  cfgpath.NewRoute("a/b"),
+			haveSlice:  element.MakeSections(element.Section{ID: cfgpath.MakeRoute(`a`), Groups: element.MakeGroups(element.Group{ID: cfgpath.MakeRoute(`b`)}, element.Group{ID: cfgpath.MakeRoute(`bb`)})}),
+			haveRoute:  cfgpath.MakeRoute("a/b"),
 			wantFID:    "b",
 			wantErrBhf: errors.IsNotFound,
 		},
 		{
-			haveSlice:  element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
-			haveRoute:  cfgpath.NewRoute("a/bc"),
+			haveSlice:  element.MakeSections(element.Section{ID: cfgpath.MakeRoute(`a`), Groups: element.MakeGroups(element.Group{ID: cfgpath.MakeRoute(`b`)}, element.Group{ID: cfgpath.MakeRoute(`bb`)})}),
+			haveRoute:  cfgpath.MakeRoute("a/bc"),
 			wantFID:    "b",
 			wantErrBhf: errors.IsNotFound,
 		},
 		{
-			haveSlice:  element.NewSectionSlice(),
+			haveSlice:  element.MakeSections(),
 			haveRoute:  cfgpath.Route{},
 			wantFID:    "",
 			wantErrBhf: errors.IsNotValid,
 		},
 		{
-			haveSlice:  element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
-			haveRoute:  cfgpath.NewRoute("a", "bb", "cc"),
+			haveSlice:  element.MakeSections(element.Section{ID: cfgpath.MakeRoute(`a`), Groups: element.MakeGroups(element.Group{ID: cfgpath.MakeRoute(`b`)}, element.Group{ID: cfgpath.MakeRoute(`bb`)})}),
+			haveRoute:  cfgpath.MakeRoute("a", "bb", "cc"),
 			wantFID:    "bb",
 			wantErrBhf: errors.IsNotFound,
 		},
 		{
-			haveSlice:  element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
-			haveRoute:  cfgpath.NewRoute("xa", "bb", "cc"),
+			haveSlice:  element.MakeSections(element.Section{ID: cfgpath.MakeRoute(`a`), Groups: element.MakeGroups(element.Group{ID: cfgpath.MakeRoute(`b`)}, element.Group{ID: cfgpath.MakeRoute(`bb`)})}),
+			haveRoute:  cfgpath.MakeRoute("xa", "bb", "cc"),
 			wantFID:    "",
 			wantErrBhf: errors.IsNotFound,
 		},
 		{
-			haveSlice:  element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a1`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b1`), Fields: element.NewFieldSlice(element.Field{ID: cfgpath.NewRoute(`c1`)})})}),
-			haveRoute:  cfgpath.NewRoute("a1", "b1", "c1"),
+			haveSlice:  element.MakeSections(element.Section{ID: cfgpath.MakeRoute(`a1`), Groups: element.MakeGroups(element.Group{ID: cfgpath.MakeRoute(`b1`), Fields: element.MakeFields(element.Field{ID: cfgpath.MakeRoute(`c1`)})})}),
+			haveRoute:  cfgpath.MakeRoute("a1", "b1", "c1"),
 			wantFID:    "c1",
 			wantErrBhf: nil,
 		},
@@ -722,12 +722,12 @@ func TestSectionSliceFindFieldByID(t *testing.T) {
 func TestFieldSliceSort(t *testing.T) {
 
 	want := []int{-10, 1, 10, 11, 20}
-	fs := element.NewFieldSlice(
-		element.Field{ID: cfgpath.NewRoute(`aa`), SortOrder: 20},
-		element.Field{ID: cfgpath.NewRoute(`bb`), SortOrder: -10},
-		element.Field{ID: cfgpath.NewRoute(`cc`), SortOrder: 10},
-		element.Field{ID: cfgpath.NewRoute(`dd`), SortOrder: 11},
-		element.Field{ID: cfgpath.NewRoute(`ee`), SortOrder: 1},
+	fs := element.MakeFields(
+		element.Field{ID: cfgpath.MakeRoute(`aa`), SortOrder: 20},
+		element.Field{ID: cfgpath.MakeRoute(`bb`), SortOrder: -10},
+		element.Field{ID: cfgpath.MakeRoute(`cc`), SortOrder: 10},
+		element.Field{ID: cfgpath.MakeRoute(`dd`), SortOrder: 11},
+		element.Field{ID: cfgpath.MakeRoute(`ee`), SortOrder: 1},
 	)
 
 	for i, f := range fs.Sort() {
@@ -738,12 +738,12 @@ func TestFieldSliceSort(t *testing.T) {
 func TestGroupSliceSort(t *testing.T) {
 
 	want := []int{-10, 1, 10, 11, 20}
-	gs := element.NewGroupSlice(
-		element.Group{ID: cfgpath.NewRoute(`aa`), SortOrder: 20},
-		element.Group{ID: cfgpath.NewRoute(`bb`), SortOrder: -10},
-		element.Group{ID: cfgpath.NewRoute(`cc`), SortOrder: 10},
-		element.Group{ID: cfgpath.NewRoute(`dd`), SortOrder: 11},
-		element.Group{ID: cfgpath.NewRoute(`ee`), SortOrder: 1},
+	gs := element.MakeGroups(
+		element.Group{ID: cfgpath.MakeRoute(`aa`), SortOrder: 20},
+		element.Group{ID: cfgpath.MakeRoute(`bb`), SortOrder: -10},
+		element.Group{ID: cfgpath.MakeRoute(`cc`), SortOrder: 10},
+		element.Group{ID: cfgpath.MakeRoute(`dd`), SortOrder: 11},
+		element.Group{ID: cfgpath.MakeRoute(`ee`), SortOrder: 1},
 	)
 	for i, f := range gs.Sort() {
 		assert.EqualValues(t, want[i], f.SortOrder)
@@ -752,12 +752,12 @@ func TestGroupSliceSort(t *testing.T) {
 func TestSectionSliceSort(t *testing.T) {
 
 	want := []int{-10, 1, 10, 11, 20}
-	ss := element.NewSectionSlice(
-		element.Section{ID: cfgpath.NewRoute(`aa`), SortOrder: 20},
-		element.Section{ID: cfgpath.NewRoute(`bb`), SortOrder: -10},
-		element.Section{ID: cfgpath.NewRoute(`cc`), SortOrder: 10},
-		element.Section{ID: cfgpath.NewRoute(`dd`), SortOrder: 11},
-		element.Section{ID: cfgpath.NewRoute(`ee`), SortOrder: 1},
+	ss := element.MakeSections(
+		element.Section{ID: cfgpath.MakeRoute(`aa`), SortOrder: 20},
+		element.Section{ID: cfgpath.MakeRoute(`bb`), SortOrder: -10},
+		element.Section{ID: cfgpath.MakeRoute(`cc`), SortOrder: 10},
+		element.Section{ID: cfgpath.MakeRoute(`dd`), SortOrder: 11},
+		element.Section{ID: cfgpath.MakeRoute(`ee`), SortOrder: 1},
 	)
 	for i, f := range ss.Sort() {
 		assert.EqualValues(t, want[i], f.SortOrder)
@@ -768,46 +768,46 @@ func TestSectionSliceSort(t *testing.T) {
 func TestSectionSliceSortAll(t *testing.T) {
 
 	want := `[{"ID":"bb","SortOrder":-10,"Groups":null},{"ID":"ee","SortOrder":1,"Groups":null},{"ID":"cc","SortOrder":10,"Groups":null},{"ID":"aa","SortOrder":20,"Groups":[{"ID":"bb","SortOrder":-10,"Fields":[{"ID":"bb","SortOrder":-10},{"ID":"ee","SortOrder":1},{"ID":"cc","SortOrder":10},{"ID":"dd","SortOrder":11},{"ID":"aa","SortOrder":20}]},{"ID":"ee","SortOrder":1,"Fields":null},{"ID":"dd","SortOrder":11,"Fields":[{"ID":"bb","SortOrder":-10},{"ID":"ee","SortOrder":1},{"ID":"cc","SortOrder":10},{"ID":"dd","SortOrder":11},{"ID":"aa","SortOrder":20}]},{"ID":"aa","SortOrder":20,"Fields":[{"ID":"bb","SortOrder":-10},{"ID":"ee","SortOrder":1},{"ID":"cc","SortOrder":10},{"ID":"dd","SortOrder":11},{"ID":"aa","SortOrder":20}]}]}]` + "\n"
-	ss := element.MustNewConfiguration(
-		element.Section{ID: cfgpath.NewRoute(`aa`), SortOrder: 20, Groups: element.NewGroupSlice(
+	ss := element.MustMakeSectionsValidate(
+		element.Section{ID: cfgpath.MakeRoute(`aa`), SortOrder: 20, Groups: element.MakeGroups(
 			element.Group{
-				ID:        cfgpath.NewRoute(`aa`),
+				ID:        cfgpath.MakeRoute(`aa`),
 				SortOrder: 20,
-				Fields: element.NewFieldSlice(
-					element.Field{ID: cfgpath.NewRoute(`aa`), SortOrder: 20},
-					element.Field{ID: cfgpath.NewRoute(`bb`), SortOrder: -10},
-					element.Field{ID: cfgpath.NewRoute(`cc`), SortOrder: 10},
-					element.Field{ID: cfgpath.NewRoute(`dd`), SortOrder: 11},
-					element.Field{ID: cfgpath.NewRoute(`ee`), SortOrder: 1},
+				Fields: element.MakeFields(
+					element.Field{ID: cfgpath.MakeRoute(`aa`), SortOrder: 20},
+					element.Field{ID: cfgpath.MakeRoute(`bb`), SortOrder: -10},
+					element.Field{ID: cfgpath.MakeRoute(`cc`), SortOrder: 10},
+					element.Field{ID: cfgpath.MakeRoute(`dd`), SortOrder: 11},
+					element.Field{ID: cfgpath.MakeRoute(`ee`), SortOrder: 1},
 				),
 			},
 			element.Group{
-				ID:        cfgpath.NewRoute(`bb`),
+				ID:        cfgpath.MakeRoute(`bb`),
 				SortOrder: -10,
-				Fields: element.NewFieldSlice(
-					element.Field{ID: cfgpath.NewRoute(`aa`), SortOrder: 20},
-					element.Field{ID: cfgpath.NewRoute(`bb`), SortOrder: -10},
-					element.Field{ID: cfgpath.NewRoute(`cc`), SortOrder: 10},
-					element.Field{ID: cfgpath.NewRoute(`dd`), SortOrder: 11},
-					element.Field{ID: cfgpath.NewRoute(`ee`), SortOrder: 1},
+				Fields: element.MakeFields(
+					element.Field{ID: cfgpath.MakeRoute(`aa`), SortOrder: 20},
+					element.Field{ID: cfgpath.MakeRoute(`bb`), SortOrder: -10},
+					element.Field{ID: cfgpath.MakeRoute(`cc`), SortOrder: 10},
+					element.Field{ID: cfgpath.MakeRoute(`dd`), SortOrder: 11},
+					element.Field{ID: cfgpath.MakeRoute(`ee`), SortOrder: 1},
 				),
 			},
 			element.Group{
-				ID:        cfgpath.NewRoute(`dd`),
+				ID:        cfgpath.MakeRoute(`dd`),
 				SortOrder: 11,
-				Fields: element.NewFieldSlice(
-					element.Field{ID: cfgpath.NewRoute(`aa`), SortOrder: 20},
-					element.Field{ID: cfgpath.NewRoute(`bb`), SortOrder: -10},
-					element.Field{ID: cfgpath.NewRoute(`cc`), SortOrder: 10},
-					element.Field{ID: cfgpath.NewRoute(`dd`), SortOrder: 11},
-					element.Field{ID: cfgpath.NewRoute(`ee`), SortOrder: 1},
+				Fields: element.MakeFields(
+					element.Field{ID: cfgpath.MakeRoute(`aa`), SortOrder: 20},
+					element.Field{ID: cfgpath.MakeRoute(`bb`), SortOrder: -10},
+					element.Field{ID: cfgpath.MakeRoute(`cc`), SortOrder: 10},
+					element.Field{ID: cfgpath.MakeRoute(`dd`), SortOrder: 11},
+					element.Field{ID: cfgpath.MakeRoute(`ee`), SortOrder: 1},
 				),
 			},
-			element.Group{ID: cfgpath.NewRoute(`ee`), SortOrder: 1},
+			element.Group{ID: cfgpath.MakeRoute(`ee`), SortOrder: 1},
 		)},
-		element.Section{ID: cfgpath.NewRoute(`bb`), SortOrder: -10},
-		element.Section{ID: cfgpath.NewRoute(`cc`), SortOrder: 10},
-		element.Section{ID: cfgpath.NewRoute(`ee`), SortOrder: 1},
+		element.Section{ID: cfgpath.MakeRoute(`bb`), SortOrder: -10},
+		element.Section{ID: cfgpath.MakeRoute(`cc`), SortOrder: 10},
+		element.Section{ID: cfgpath.MakeRoute(`ee`), SortOrder: 1},
 	)
 	assert.Exactly(t, 15, ss.TotalFields())
 	ss.SortAll()
@@ -820,21 +820,21 @@ func TestSectionSliceSortAll(t *testing.T) {
 func TestSectionSliceAppendFields(t *testing.T) {
 
 	want := `[{"ID":"aa","Groups":[{"ID":"aa","Fields":[{"ID":"aa"},{"ID":"bb"},{"ID":"cc"}]}]}]` + "\n"
-	ss := element.MustNewConfiguration(
+	ss := element.MustMakeSectionsValidate(
 		element.Section{
-			ID: cfgpath.NewRoute(`aa`),
-			Groups: element.NewGroupSlice(
-				element.Group{ID: cfgpath.NewRoute(`aa`),
-					Fields: element.NewFieldSlice(
-						element.Field{ID: cfgpath.NewRoute(`aa`)},
-						element.Field{ID: cfgpath.NewRoute(`bb`)},
+			ID: cfgpath.MakeRoute(`aa`),
+			Groups: element.MakeGroups(
+				element.Group{ID: cfgpath.MakeRoute(`aa`),
+					Fields: element.MakeFields(
+						element.Field{ID: cfgpath.MakeRoute(`aa`)},
+						element.Field{ID: cfgpath.MakeRoute(`bb`)},
 					),
 				},
 			)},
 	)
-	assert.True(t, errors.IsNotFound(ss.AppendFields(cfgpath.NewRoute("aa/XX"))))
+	assert.True(t, errors.NotFound.Match(ss.AppendFields(cfgpath.MakeRoute("aa/XX"))))
 
-	assert.NoError(t, ss.AppendFields(cfgpath.NewRoute("aa/aa"), element.Field{ID: cfgpath.NewRoute(`cc`)}))
+	assert.NoError(t, ss.AppendFields(cfgpath.MakeRoute("aa/aa"), element.Field{ID: cfgpath.MakeRoute(`cc`)}))
 	have := ss.ToJSON()
 	if want != have {
 		t.Errorf("\nWant: %s\nHave: %s\n", want, have)

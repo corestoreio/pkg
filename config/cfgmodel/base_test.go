@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package cfgmodel
 import (
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/cfgmock"
 	"github.com/corestoreio/pkg/config/cfgpath"
@@ -24,7 +25,6 @@ import (
 	"github.com/corestoreio/pkg/config/element"
 	"github.com/corestoreio/pkg/storage/text"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,19 +32,19 @@ var _ cfgsource.Optioner = (*baseValue)(nil)
 
 // configStructure might be a duplicate of primitives_test but note that the
 // test package names are different.
-var configStructure = element.MustNewConfiguration(
+var configStructure = element.MustMakeSectionsValidate(
 	element.Section{
-		ID: cfgpath.NewRoute("web"),
-		Groups: element.NewGroupSlice(
+		ID: cfgpath.MakeRoute("web"),
+		Groups: element.MakeGroups(
 			element.Group{
-				ID:        cfgpath.NewRoute("cors"),
+				ID:        cfgpath.MakeRoute("cors"),
 				Label:     text.Chars(`CORS Cross Origin Resource Sharing`),
 				SortOrder: 150,
 				Scopes:    scope.PermDefault,
-				Fields: element.NewFieldSlice(
+				Fields: element.MakeFields(
 					element.Field{
 						// Path: `web/cors/exposed_headers`,
-						ID:        cfgpath.NewRoute("exposed_headers"),
+						ID:        cfgpath.MakeRoute("exposed_headers"),
 						Label:     text.Chars(`Exposed Headers`),
 						Comment:   text.Chars(`Indicates which headers are safe to expose to the API of a CORS API specification. Separate via line break`),
 						Type:      element.TypeTextarea,
@@ -55,7 +55,7 @@ var configStructure = element.MustNewConfiguration(
 					},
 					element.Field{
 						// Path: `web/cors/allow_credentials`,
-						ID:        cfgpath.NewRoute("allow_credentials"),
+						ID:        cfgpath.MakeRoute("allow_credentials"),
 						Label:     text.Chars(`Allowed Credentials`),
 						Type:      element.TypeSelect,
 						SortOrder: 30,
@@ -65,7 +65,7 @@ var configStructure = element.MustNewConfiguration(
 					},
 					element.Field{
 						// Path: `web/cors/int`,
-						ID:        cfgpath.NewRoute("int"),
+						ID:        cfgpath.MakeRoute("int"),
 						Type:      element.TypeText,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
@@ -74,7 +74,7 @@ var configStructure = element.MustNewConfiguration(
 					},
 					element.Field{
 						// Path: `web/cors/float64`,
-						ID:        cfgpath.NewRoute("float64"),
+						ID:        cfgpath.MakeRoute("float64"),
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
@@ -94,7 +94,7 @@ func TestBaseValueString(t *testing.T) {
 	assert.Exactly(t, pathWebCorsHeaders, p1.String())
 
 	wantWebsiteID := int64(2) // This number 2 is usually stored in core_website/store_website table in column website_id
-	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders).BindWebsite(wantWebsiteID)
+	wantPath := cfgpath.MustMakeByString(pathWebCorsHeaders).BindWebsite(wantWebsiteID)
 
 	mw := new(cfgmock.Write)
 	err := p1.Write(mw, "314159", scope.Website.Pack(wantWebsiteID))
@@ -104,7 +104,7 @@ func TestBaseValueString(t *testing.T) {
 	assert.Exactly(t, "314159", mw.ArgValue.(string))
 
 	sg := cfgmock.NewService().NewScoped(wantWebsiteID, 0)
-	defaultStr, err := p1.Get(sg)
+	defaultStr, err := p1.Value(sg)
 	assert.NoError(t, err)
 	assert.Exactly(t, "Content-Type,X-CoreStore-ID", defaultStr)
 
@@ -112,7 +112,7 @@ func TestBaseValueString(t *testing.T) {
 		wantPath.String(): "X-CoreStore-TOKEN",
 	}).NewScoped(wantWebsiteID, 0)
 
-	customStr, err := p1.Get(sg)
+	customStr, err := p1.Value(sg)
 	assert.NoError(t, err)
 	assert.Exactly(t, "X-CoreStore-TOKEN", customStr)
 
@@ -128,7 +128,7 @@ func TestBaseValueString(t *testing.T) {
 	// update p1 to apply the change field data
 	p1.Option(WithFieldFromSectionSlice(configStructure))
 
-	ws, err := p1.Get(cfgmock.NewService().NewScoped(wantWebsiteID, 0))
+	ws, err := p1.Value(cfgmock.NewService().NewScoped(wantWebsiteID, 0))
 	assert.NoError(t, err)
 	assert.Exactly(t, "Content-Size,Y-CoreStore-ID", ws)
 }
@@ -168,7 +168,7 @@ func TestBaseValue_InScope(t *testing.T) {
 	}
 	for i, test := range tests {
 		p1 := newBaseValue("a/b/c", WithField(&element.Field{
-			ID:     cfgpath.NewRoute(`c`),
+			ID:     cfgpath.MakeRoute(`c`),
 			Scopes: test.p,
 		}))
 		haveErr := p1.InScope(test.sg.ScopeID())
@@ -201,7 +201,7 @@ func TestBaseValue_FQ(t *testing.T) {
 	p := newBaseValue(pth, WithScopeStore())
 	fq, err := p.FQ(scope.Store.Pack(4))
 	assert.NoError(t, err, "%+v", err)
-	assert.Exactly(t, cfgpath.MustNewByParts(pth).BindStore(4).String(), fq)
+	assert.Exactly(t, cfgpath.MustMakeByString(pth).BindStore(4).String(), fq)
 }
 
 func TestBaseValueMustFQPanic(t *testing.T) {
@@ -220,9 +220,9 @@ func TestBaseValueMustFQPanic(t *testing.T) {
 }
 
 func TestBaseValueToPath(t *testing.T) {
-	t.Run("Valid Route", testBaseValueToPath(cfgpath.NewRoute("aa/bb/cc"), scope.Website.Pack(23), nil))
-	t.Run("Invalid Route", testBaseValueToPath(cfgpath.NewRoute("a/bb/cc"), scope.Website.Pack(23), errors.IsNotValid))
-	t.Run("Unauthorized Route", testBaseValueToPath(cfgpath.NewRoute("aa/bb/cc"), scope.Store.Pack(22), errors.IsUnauthorized))
+	t.Run("Valid Route", testBaseValueToPath(cfgpath.MakeRoute("aa/bb/cc"), scope.Website.Pack(23), nil))
+	t.Run("Invalid Route", testBaseValueToPath(cfgpath.MakeRoute("a/bb/cc"), scope.Website.Pack(23), errors.IsNotValid))
+	t.Run("Unauthorized Route", testBaseValueToPath(cfgpath.MakeRoute("aa/bb/cc"), scope.Store.Pack(22), errors.IsUnauthorized))
 }
 
 func testBaseValueToPath(route cfgpath.Route, h scope.TypeID, wantErrBhf errors.BehaviourFunc) func(*testing.T) {
@@ -230,7 +230,7 @@ func testBaseValueToPath(route cfgpath.Route, h scope.TypeID, wantErrBhf errors.
 		bv := newBaseValue(route.String())
 
 		bv.Field = &element.Field{
-			ID:     cfgpath.NewRoute("cc"),
+			ID:     cfgpath.MakeRoute("cc"),
 			Scopes: scope.PermWebsite, // only scope default and website are allowed
 		}
 

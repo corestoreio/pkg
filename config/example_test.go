@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,40 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cfgpath_test
+package config
 
 import (
 	"fmt"
 
-	"github.com/corestoreio/pkg/config/cfgpath"
 	"github.com/corestoreio/pkg/store/scope"
 )
 
 func Example() {
 
-	fmt.Println(cfgpath.MustNew(cfgpath.MakeRoute("system/smtp/host")).String())
-	fmt.Println(cfgpath.MustMakeByString("system/smtp/host").BindWebsite(1).String())
+	fmt.Println(MustMakePath("system/smtp/host").String())
+	fmt.Println(MustMakePath("system/smtp/host").BindWebsite(1).String())
 	// alternative way
-	fmt.Println(cfgpath.MustMakeByString("system/smtp/host").BindWebsite(1).String())
+	fmt.Println(MustMakePath("system/smtp/host").BindWebsite(1).String())
 
-	fmt.Println(cfgpath.MustMakeByString("system/smtp/host").BindStore(3).String())
+	fmt.Println(MustMakePath("system/smtp/host").BindStore(3).String())
 	// alternative way
-	fmt.Println(cfgpath.MustMakeByString("system/smtp/host").BindStore(3).String())
+	fmt.Println(MustMakePath("system/smtp/host").BindStore(3).String())
 	// Group is not supported and falls back to default
-	fmt.Println(cfgpath.MustMakeByString("system/smtp/host").Bind(scope.Group.Pack(4)).String())
+	fmt.Println(MustMakePath("system/smtp/host").Bind(scope.Group.Pack(4)).String())
 
-	p, err := cfgpath.MakeByString("system/smtp/host")
+	p, err := MakePath("system/smtp/host")
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}
 	fmt.Println(p.String())
 
-	routes := cfgpath.MakeRoute("dev/css/merge_css_files")
+	routes := MustMakePath("dev/css/merge_css_files")
 	rs, err := routes.Split()
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}
-	fmt.Println("dev/css/merge_css_files => ", rs[0].String(), rs[1].String(), rs[2].String())
+	fmt.Println("dev/css/merge_css_files => ", rs[0], rs[1], rs[2])
 
 	// Output:
 	//default/0/system/smtp/host

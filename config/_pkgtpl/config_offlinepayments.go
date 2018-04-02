@@ -9,21 +9,21 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID:        "payment",
 			SortOrder: 400,
 			Scopes:    scope.PermStore,
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "checkmo",
 					Label:     `Check / Money Order`,
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/checkmo/active
 							ID:        "active",
@@ -147,7 +147,7 @@ func init() {
 					Label:     `Purchase Order`,
 					SortOrder: 32,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/purchaseorder/active
 							ID:        "active",
@@ -251,7 +251,7 @@ func init() {
 					Label:     `Bank Transfer Payment`,
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/banktransfer/active
 							ID:        "active",
@@ -357,7 +357,7 @@ func init() {
 					Label:     `Cash On Delivery Payment`,
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/cashondelivery/active
 							ID:        "active",
@@ -463,7 +463,7 @@ func init() {
 					Label:     `Zero Subtotal Checkout`,
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/free/active
 							ID:        "active",
@@ -554,10 +554,10 @@ func init() {
 		// Hidden Configuration, may be visible somewhere else ...
 		element.Section{
 			ID: "payment",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "checkmo",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/checkmo/group
 							ID:      `group`,
@@ -570,7 +570,7 @@ func init() {
 
 				element.Group{
 					ID: "purchaseorder",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/purchaseorder/group
 							ID:      `group`,
@@ -583,7 +583,7 @@ func init() {
 
 				element.Group{
 					ID: "banktransfer",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/banktransfer/cfgmodel
 							ID:      `model`,
@@ -604,7 +604,7 @@ func init() {
 
 				element.Group{
 					ID: "cashondelivery",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/cashondelivery/cfgmodel
 							ID:      `model`,
@@ -625,7 +625,7 @@ func init() {
 
 				element.Group{
 					ID: "free",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/free/group
 							ID:      `group`,

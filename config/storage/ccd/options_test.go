@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -70,9 +70,9 @@ func Test_WithCoreConfigData(t *testing.T) {
 	)
 	defer func() { assert.NoError(t, s.Close()) }()
 
-	assert.NoError(t, s.Write(cfgpath.MustNewByParts("web/secure/offloader_header"), "SSL_OFFLOADED"))
+	assert.NoError(t, s.Write(cfgpath.MustMakeByString("web/secure/offloader_header"), "SSL_OFFLOADED"))
 
-	h, err := s.String(cfgpath.MustNewByParts("web/secure/offloader_header"))
+	h, err := s.String(cfgpath.MustMakeByString("web/secure/offloader_header"))
 	assert.NoError(t, err)
 	assert.Exactly(t, "SSL_OFFLOADED", h)
 

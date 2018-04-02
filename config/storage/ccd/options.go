@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,12 +15,12 @@
 package ccd
 
 import (
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/cfgpath"
 	"github.com/corestoreio/pkg/storage/dbr"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 )
 
 // WithCoreConfigData reads the table core_config_data into the Service and
@@ -42,13 +42,13 @@ func WithCoreConfigData(dbrSess dbr.SessionRunner) config.Option {
 		for _, cd := range ccd {
 			if cd.Value.Valid {
 				var p cfgpath.Path
-				p, err = cfgpath.NewByParts(cd.Path)
+				p, err = cfgpath.MakeByString(cd.Path)
 				if err != nil {
-					return errors.Wrapf(err, "[ccd] cfgpath.NewByParts Path %q", cd.Path)
+					return errors.Wrapf(err, "[ccd] cfgpath.MakeByString Path %q", cd.Path)
 				}
 
 				if err = s.Write(p.Bind(scope.FromString(cd.Scope).Pack(cd.ScopeID)), cd.Value.String); err != nil {
-					return errors.Wrapf(err, "[ccd] cfgpath.NewByParts Path %q Scope: %q ID: %d Value: %q", cd.Path, cd.Scope, cd.ScopeID, cd.Value.String)
+					return errors.Wrapf(err, "[ccd] cfgpath.MakeByString Path %q Scope: %q ID: %d Value: %q", cd.Path, cd.Scope, cd.ScopeID, cd.Value.String)
 				}
 				writtenRows++
 			}

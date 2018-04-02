@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ func TestNewMapIntStr(t *testing.T) {
 		m.MustFQStore(5): 33,
 	})
 
-	val, err := m.Get(s.NewScoped(2, 5))
+	val, err := m.Value(s.NewScoped(2, 5))
 	assert.NoError(t, err, "%+v", err)
 	assert.Exactly(t, scope.TypeIDs{scope.Store.Pack(5)}, s.IntInvokes().ScopeIDs())
 	assert.Exactly(t, `Parent: Type(Website) ID(2) => Current: Type(Store) ID(5) => Value: 33`, val)

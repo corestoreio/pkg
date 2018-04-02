@@ -9,23 +9,23 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID:        "cataloginventory",
 			Label:     `Inventory`,
 			SortOrder: 50,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_CatalogInventory::cataloginventory
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "options",
 					Label:     `Stock Options`,
 					SortOrder: 1,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: cataloginventory/options/can_subtract
 							ID:        "can_subtract",
@@ -94,7 +94,7 @@ func init() {
 					Comment:   text.Long(`Please note that these settings apply to individual items in the cart, not to the entire cart.`),
 					SortOrder: 10,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: cataloginventory/item_options/manage_stock
 							ID:        "manage_stock",

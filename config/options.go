@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,12 +41,11 @@ func WithLogger(l log.Logger) Option {
 func WithPubSub() Option {
 	return func(s *Service) error {
 		if s.pubSub != nil && !s.pubSub.closed {
-			return errors.NewAlreadyExistsf("[config] PubSub Service already exists and is running.")
+			return errors.AlreadyExists.Newf("[config] PubSub Service already exists and is running.")
 		}
 
 		s.pubSub = newPubSub(s.Log)
 
-		// todo: remove this go ... and the programmer must call it. like Serve() function in http.
 		go s.publish() // yes we know how to quit this goroutine, just call Service.Close()
 
 		return nil

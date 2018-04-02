@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@ package cfgbigcache
 
 import (
 	"github.com/allegro/bigcache"
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config/cfgpath"
 	"github.com/corestoreio/pkg/util/conv"
-	"github.com/corestoreio/errors"
 )
 
 var errKeyNotFound = errors.NewNotFoundf(`[cfgbigcache] Key not found`)
@@ -35,7 +35,7 @@ type Storage struct {
 func New(config bigcache.Config) (*Storage, error) {
 	bc, err := bigcache.NewBigCache(config)
 	if err != nil {
-		return nil, errors.NewFatal(err, "[bigcache] NewBigCache")
+		return nil, errors.Fatal.New(err, "[bigcache] NewBigCache")
 	}
 	return &Storage{
 		Cache: bc,
@@ -57,12 +57,12 @@ func (s *Storage) Set(key cfgpath.Path, value interface{}) error {
 }
 
 // Get may return a ErrKeyNotFound error
-func (s *Storage) Get(key cfgpath.Path) (interface{}, error) {
+func (s *Storage) Value(key cfgpath.Path) (interface{}, error) {
 	fq, err := key.FQ()
 	if err != nil {
 		return nil, err
 	}
-	val, err := s.Cache.Get(fq.String())
+	val, err := s.Cache.Value(fq.String())
 	_, isNotFound := (err).(*bigcache.EntryNotFoundError)
 	if err != nil && !isNotFound {
 		return nil, err

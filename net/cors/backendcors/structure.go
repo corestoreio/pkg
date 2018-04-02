@@ -25,13 +25,13 @@ import (
 // Used in frontend (to display the user all the settings) and in
 // backend (scope checks and default values). See the source code
 // of this function for the overall available sections, groups and fields.
-func NewConfigStructure() (element.SectionSlice, error) {
-	return element.NewConfiguration(
+func NewConfigStructure() (element.Sections, error) {
+	return element.MakeSectionsValidated(
 		element.Section{
-			ID: cfgpath.NewRoute(`net`),
-			Groups: element.NewGroupSlice(
+			ID: cfgpath.MakeRoute(`net`),
+			Groups: element.MakeGroups(
 				element.Group{
-					ID:    cfgpath.NewRoute(`cors`),
+					ID:    cfgpath.MakeRoute(`cors`),
 					Label: text.Chars(`CORS Cross Origin Resource Sharing`),
 					Comment: text.Chars(`CORS describes the CrossOriginResourceSharing
 which is used to create a Container Filter that implements CORS. Cross-origin
@@ -41,10 +41,10 @@ from.`),
 					MoreURL:   text.Chars(`http://en.wikipedia.org/wiki/Cross-origin_resource_sharing|http://enable-cors.org/server.html|http://www.html5rocks.com/en/tutorials/cors/#toc-handling-a-not-so-simple-request`),
 					SortOrder: 160,
 					Scopes:    scope.PermWebsite,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: `net/cors/exposed_headers`,
-							ID:    cfgpath.NewRoute(`exposed_headers`),
+							ID:    cfgpath.MakeRoute(`exposed_headers`),
 							Label: text.Chars(`Exposed Headers`),
 							Comment: text.Chars(`Indicates which headers are safe to
 expose to the API of a CORS API specification. Separate via line break (\n)`),
@@ -55,7 +55,7 @@ expose to the API of a CORS API specification. Separate via line break (\n)`),
 						},
 						element.Field{
 							// Path: `net/cors/allowed_origins`,
-							ID:    cfgpath.NewRoute(`allowed_origins`),
+							ID:    cfgpath.MakeRoute(`allowed_origins`),
 							Label: text.Chars(`Allowed Origins`),
 							Comment: text.Chars(`Is a list of origins a cross-domain request
 can be executed from. If the special "*" value is present in the list, all origins
@@ -70,7 +70,7 @@ Only one wildcard can be used per origin. Default value is ["*"]. Separate via l
 						},
 						element.Field{
 							// Path: `net/cors/allow_origin_regex`,
-							ID:        cfgpath.NewRoute(`allow_origin_regex`),
+							ID:        cfgpath.MakeRoute(`allow_origin_regex`),
 							Label:     text.Chars(`Allowed Origin Regex`),
 							Comment:   text.Chars(`Same as Allowed Origins but uses a PERL regular expression.`),
 							Type:      element.TypeText,
@@ -80,7 +80,7 @@ Only one wildcard can be used per origin. Default value is ["*"]. Separate via l
 						},
 						element.Field{
 							// Path: `net/cors/allowed_methods`,
-							ID:    cfgpath.NewRoute(`allowed_methods`),
+							ID:    cfgpath.MakeRoute(`allowed_methods`),
 							Label: text.Chars(`Allowed Methods`),
 							Comment: text.Chars(`A list of methods the client is allowed to
 use with cross-domain requests. Default value is simple methods (GET and POST). Separate via line break (\n)`),
@@ -92,7 +92,7 @@ use with cross-domain requests. Default value is simple methods (GET and POST). 
 						},
 						element.Field{
 							// Path: `net/cors/allowed_headers`,
-							ID:    cfgpath.NewRoute(`allowed_headers`),
+							ID:    cfgpath.MakeRoute(`allowed_headers`),
 							Label: text.Chars(`Allowed Headers`),
 							Comment: text.Chars(`A list of non simple headers the client is
 allowed to use with cross-domain requests. If the special "*" value is present
@@ -106,7 +106,7 @@ always appended to the list. Separate via line break (\n)`),
 						},
 						element.Field{
 							// Path: `net/cors/allow_credentials`,
-							ID:    cfgpath.NewRoute(`allow_credentials`),
+							ID:    cfgpath.MakeRoute(`allow_credentials`),
 							Label: text.Chars(`Allow Credentials`),
 							Comment: text.Chars(`Indicates whether the request can include
 user credentials like cookies, HTTP authentication or client side SSL certificates.`),
@@ -118,7 +118,7 @@ user credentials like cookies, HTTP authentication or client side SSL certificat
 						},
 						element.Field{
 							// Path: `net/cors/options_passthrough`,
-							ID:    cfgpath.NewRoute(`options_passthrough`),
+							ID:    cfgpath.MakeRoute(`options_passthrough`),
 							Label: text.Chars(`Options Passthrough`),
 							Comment: text.Chars(`OptionsPassthrough instructs preflight to let other potential next handlers to
 process the OPTIONS method. Turn this on if your application handles OPTIONS.`),
@@ -130,7 +130,7 @@ process the OPTIONS method. Turn this on if your application handles OPTIONS.`),
 						},
 						element.Field{
 							// Path: `net/cors/max_age`,
-							ID:    cfgpath.NewRoute(`max_age`),
+							ID:    cfgpath.MakeRoute(`max_age`),
 							Label: text.Chars(`Max Age`),
 							Comment: text.Chars(`Indicates how long (in seconds) the results
 of a preflight request can be cached.`),

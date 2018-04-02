@@ -9,23 +9,23 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID:        "shipping",
 			Label:     `Shipping Settings`,
 			SortOrder: 310,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Shipping::config_shipping
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "origin",
 					Label:     `Origin`,
 					SortOrder: 1,
 					Scopes:    scope.PermWebsite,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: shipping/origin/country_id
 							ID:        "country_id",
@@ -97,7 +97,7 @@ func init() {
 					Label:     `Shipping Policy Parameters`,
 					SortOrder: 120,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: shipping/shipping_policy/enable_shipping_policy
 							ID:        "enable_shipping_policy",
@@ -128,7 +128,7 @@ func init() {
 			SortOrder: 320,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Shipping::carriers
-			Groups:    element.NewGroupSlice(),
+			Groups:    element.MakeGroups(),
 		},
 	)
 	Backend = NewBackend(ConfigStructure)

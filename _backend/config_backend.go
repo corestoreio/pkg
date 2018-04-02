@@ -15,187 +15,185 @@
 package backend
 
 import (
-	"github.com/corestoreio/pkg/config/cfgpath"
 	"github.com/corestoreio/pkg/config/element"
-	"github.com/corestoreio/pkg/storage/text"
 	"github.com/corestoreio/pkg/store/scope"
 )
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 // TODO: during development move each of this config stuff into its own package.
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
-		element.Section{
-			ID:        cfgpath.NewRoute("advanced"),
-			Label:     text.Chars(`Advanced`),
+	ConfigStructure = element.MustMakeSectionsValidate(
+		&element.Section{
+			ID:        "advanced",
+			Label:     `Advanced`,
 			SortOrder: 910,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Backend::advanced
-			Groups: element.NewGroupSlice(
-				element.Group{
-					ID:        cfgpath.NewRoute("modules_disable_output"),
-					Label:     text.Chars(`Disable Modules Output`),
+			Groups: element.MakeGroups(
+				&element.Group{
+					ID:        "modules_disable_output",
+					Label:     `Disable Modules Output`,
 					SortOrder: 2,
 					Scopes:    scope.PermStore,
-					Fields:    element.NewFieldSlice(),
+					Fields:    element.MakeFields(),
 				},
 			),
 		},
-		element.Section{
-			ID:        cfgpath.NewRoute("trans_email"),
-			Label:     text.Chars(`Store Email Addresses`),
+		&element.Section{
+			ID:        "trans_email",
+			Label:     `Store Email Addresses`,
 			SortOrder: 90,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Backend::trans_email
-			Groups: element.NewGroupSlice(
-				element.Group{
-					ID:        cfgpath.NewRoute("ident_custom1"),
-					Label:     text.Chars(`Custom Email 1`),
+			Groups: element.MakeGroups(
+				&element.Group{
+					ID:        "ident_custom1",
+					Label:     `Custom Email 1`,
 					SortOrder: 4,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: trans_email/ident_custom1/email
-							ID:        cfgpath.NewRoute("email"),
-							Label:     text.Chars(`Sender Email`),
+							ID:        "email",
+							Label:     `Sender Email`,
 							Type:      element.TypeText,
 							SortOrder: 2,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Address
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: trans_email/ident_custom1/name
-							ID:        cfgpath.NewRoute("name"),
-							Label:     text.Chars(`Sender Name`),
+							ID:        "name",
+							Label:     `Sender Name`,
 							Type:      element.TypeText,
 							SortOrder: 1,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Sender
 						},
 					),
 				},
 
-				element.Group{
-					ID:        cfgpath.NewRoute("ident_custom2"),
-					Label:     text.Chars(`Custom Email 2`),
+				&element.Group{
+					ID:        "ident_custom2",
+					Label:     `Custom Email 2`,
 					SortOrder: 5,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: trans_email/ident_custom2/email
-							ID:        cfgpath.NewRoute("email"),
-							Label:     text.Chars(`Sender Email`),
+							ID:        "email",
+							Label:     `Sender Email`,
 							Type:      element.TypeText,
 							SortOrder: 2,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Address
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: trans_email/ident_custom2/name
-							ID:        cfgpath.NewRoute("name"),
-							Label:     text.Chars(`Sender Name`),
+							ID:        "name",
+							Label:     `Sender Name`,
 							Type:      element.TypeText,
 							SortOrder: 1,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Sender
 						},
 					),
 				},
 
-				element.Group{
-					ID:        cfgpath.NewRoute("ident_general"),
-					Label:     text.Chars(`General Contact`),
+				&element.Group{
+					ID:        "ident_general",
+					Label:     `General Contact`,
 					SortOrder: 1,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: trans_email/ident_general/email
-							ID:        cfgpath.NewRoute("email"),
-							Label:     text.Chars(`Sender Email`),
+							ID:        "email",
+							Label:     `Sender Email`,
 							Type:      element.TypeText,
 							SortOrder: 2,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Address
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: trans_email/ident_general/name
-							ID:        cfgpath.NewRoute("name"),
-							Label:     text.Chars(`Sender Name`),
+							ID:        "name",
+							Label:     `Sender Name`,
 							Type:      element.TypeText,
 							SortOrder: 1,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Sender
 						},
 					),
 				},
 
-				element.Group{
-					ID:        cfgpath.NewRoute("ident_sales"),
-					Label:     text.Chars(`Sales Representative`),
+				&element.Group{
+					ID:        "ident_sales",
+					Label:     `Sales Representative`,
 					SortOrder: 2,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: trans_email/ident_sales/email
-							ID:        cfgpath.NewRoute("email"),
-							Label:     text.Chars(`Sender Email`),
+							ID:        "email",
+							Label:     `Sender Email`,
 							Type:      element.TypeText,
 							SortOrder: 2,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Address
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: trans_email/ident_sales/name
-							ID:        cfgpath.NewRoute("name"),
-							Label:     text.Chars(`Sender Name`),
+							ID:        "name",
+							Label:     `Sender Name`,
 							Type:      element.TypeText,
 							SortOrder: 1,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Sender
 						},
 					),
 				},
 
-				element.Group{
-					ID:        cfgpath.NewRoute("ident_support"),
-					Label:     text.Chars(`Customer Support`),
+				&element.Group{
+					ID:        "ident_support",
+					Label:     `Customer Support`,
 					SortOrder: 3,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: trans_email/ident_support/email
-							ID:        cfgpath.NewRoute("email"),
-							Label:     text.Chars(`Sender Email`),
+							ID:        "email",
+							Label:     `Sender Email`,
 							Type:      element.TypeText,
 							SortOrder: 2,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Address
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: trans_email/ident_support/name
-							ID:        cfgpath.NewRoute("name"),
-							Label:     text.Chars(`Sender Name`),
+							ID:        "name",
+							Label:     `Sender Name`,
 							Type:      element.TypeText,
 							SortOrder: 1,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Sender
 						},
@@ -203,173 +201,173 @@ func init() {
 				},
 			),
 		},
-		element.Section{
-			ID:        cfgpath.NewRoute("design"),
-			Label:     text.Chars(`Design`),
+		&element.Section{
+			ID:        "design",
+			Label:     `Design`,
 			SortOrder: 30,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Config::config_design
-			Groups: element.NewGroupSlice(
-				element.Group{
-					ID:        cfgpath.NewRoute("theme"),
-					Label:     text.Chars(`Design Theme`),
+			Groups: element.MakeGroups(
+				&element.Group{
+					ID:        "theme",
+					Label:     `Design Theme`,
 					SortOrder: 1,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: design/theme/theme_id
-							ID:        cfgpath.NewRoute("theme_id"),
-							Label:     text.Chars(`Design Theme`),
-							Comment:   text.Chars(`If no value is specified, the system default will be used. The system default may be modified by third party extensions.`),
+							ID:        "theme_id",
+							Label:     `Design Theme`,
+							Comment:   `If no value is specified, the system default will be used. The system default may be modified by third party extensions.`,
 							Type:      element.TypeSelect,
 							SortOrder: 1,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Theme\Model\Design\Backend\Theme
 							// SourceModel: Magento\Framework\View\Design\Theme\Label::getLabelsCollectionForSystemConfiguration
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: design/theme/ua_regexp
-							ID:        cfgpath.NewRoute("ua_regexp"),
-							Label:     text.Chars(`User-Agent Exceptions`),
-							Comment:   text.Chars(`Search strings are either normal strings or regular exceptions (PCRE). They are matched in the same order as entered. Examples:<br /><span style="font-family:monospace">Firefox<br />/^mozilla/i</span>`),
-							Tooltip:   text.Chars(`Find a string in client user-agent header and switch to specific design theme for that browser.`),
+							ID:        "ua_regexp",
+							Label:     `User-Agent Exceptions`,
+							Comment:   `Search strings are either normal strings or regular exceptions (PCRE. They are matched in the same order as entered. Examples:<br /><span style="font-family:monospace">Firefox<br />/^mozilla/i</span>` ,
+							Tooltip:   `Find a string in client user-agent header and switch to specific design theme for that browser.`,
 							Type:      element.TypeText,
 							SortOrder: 2,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermWebsite,
 							// BackendModel: Magento\Theme\Model\Design\Backend\Exceptions
 						},
 					),
 				},
 
-				element.Group{
-					ID:        cfgpath.NewRoute("pagination"),
-					Label:     text.Chars(`Pagination`),
+				&element.Group{
+					ID:        "pagination",
+					Label:     `Pagination`,
 					SortOrder: 500,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: design/pagination/pagination_frame
-							ID:        cfgpath.NewRoute("pagination_frame"),
-							Label:     text.Chars(`Pagination Frame`),
-							Comment:   text.Chars(`How many links to display at once.`),
+							ID:        "pagination_frame",
+							Label:     `Pagination Frame`,
+							Comment:   `How many links to display at once.`,
 							Type:      element.TypeText,
 							SortOrder: 7,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: design/pagination/pagination_frame_skip
-							ID:        cfgpath.NewRoute("pagination_frame_skip"),
-							Label:     text.Chars(`Pagination Frame Skip`),
-							Comment:   text.Chars(`If the current frame position does not cover utmost pages, will render link to current position plus/minus this value.`),
+							ID:        "pagination_frame_skip",
+							Label:     `Pagination Frame Skip`,
+							Comment:   `If the current frame position does not cover utmost pages, will render link to current position plus/minus this value.`,
 							Type:      element.TypeText,
 							SortOrder: 8,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: design/pagination/anchor_text_for_previous
-							ID:        cfgpath.NewRoute("anchor_text_for_previous"),
-							Label:     text.Chars(`Anchor Text for Previous`),
-							Comment:   text.Chars(`Alternative text for previous link in pagination menu. If empty, default arrow image will used.`),
+							ID:        "anchor_text_for_previous",
+							Label:     `Anchor Text for Previous`,
+							Comment:   `Alternative text for previous link in pagination menu. If empty, default arrow image will used.`,
 							Type:      element.TypeText,
 							SortOrder: 9,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: design/pagination/anchor_text_for_next
-							ID:        cfgpath.NewRoute("anchor_text_for_next"),
-							Label:     text.Chars(`Anchor Text for Next`),
-							Comment:   text.Chars(`Alternative text for next link in pagination menu. If empty, default arrow image will used.`),
+							ID:        "anchor_text_for_next",
+							Label:     `Anchor Text for Next`,
+							Comment:   `Alternative text for next link in pagination menu. If empty, default arrow image will used.`,
 							Type:      element.TypeText,
 							SortOrder: 10,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 						},
 					),
 				},
 			),
 		},
-		element.Section{
-			ID:        cfgpath.NewRoute("dev"),
-			Label:     text.Chars(`Developer`),
+		&element.Section{
+			ID:        "dev",
+			Label:     `Developer`,
 			SortOrder: 920,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Backend::dev
-			Groups: element.NewGroupSlice(
-				element.Group{
-					ID:        cfgpath.NewRoute("debug"),
-					Label:     text.Chars(`Debug`),
+			Groups: element.MakeGroups(
+				&element.Group{
+					ID:        "debug",
+					Label:     `Debug`,
 					SortOrder: 20,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: dev/debug/template_hints_storefront
-							ID:        cfgpath.NewRoute("template_hints_storefront"),
-							Label:     text.Chars(`Enabled Template Path Hints for Storefront`),
+							ID:        "template_hints_storefront",
+							Label:     `Enabled Template Path Hints for Storefront`,
 							Type:      element.TypeSelect,
 							SortOrder: 20,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: dev/debug/template_hints_admin
-							ID:        cfgpath.NewRoute("template_hints_admin"),
-							Label:     text.Chars(`Enabled Template Path Hints for Admin`),
+							ID:        "template_hints_admin",
+							Label:     `Enabled Template Path Hints for Admin`,
 							Type:      element.TypeSelect,
 							SortOrder: 20,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: dev/debug/template_hints_blocks
-							ID:        cfgpath.NewRoute("template_hints_blocks"),
-							Label:     text.Chars(`Add Block Names to Hints`),
+							ID:        "template_hints_blocks",
+							Label:     `Add Block Names to Hints`,
 							Type:      element.TypeSelect,
 							SortOrder: 21,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
 
-				element.Group{
-					ID:        cfgpath.NewRoute("template"),
-					Label:     text.Chars(`Template Settings`),
+				&element.Group{
+					ID:        "template",
+					Label:     `Template Settings`,
 					SortOrder: 25,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: dev/template/allow_symlink
-							ID:        cfgpath.NewRoute("allow_symlink"),
-							Label:     text.Chars(`Allow Symlinks`),
-							Comment:   text.Chars(`Warning! Enabling this feature is not recommended on production environments because it represents a potential security risk.`),
+							ID:        "allow_symlink",
+							Label:     `Allow Symlinks`,
+							Comment:   `Warning! Enabling this feature is not recommended on production environments because it represents a potential security risk.`,
 							Type:      element.TypeSelect,
 							SortOrder: 10,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: dev/template/minify_html
-							ID:        cfgpath.NewRoute("minify_html"),
-							Label:     text.Chars(`Minify Html`),
+							ID:        "minify_html",
+							Label:     `Minify Html`,
 							Type:      element.TypeSelect,
 							SortOrder: 25,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
@@ -377,32 +375,32 @@ func init() {
 					),
 				},
 
-				element.Group{
-					ID:        cfgpath.NewRoute("translate_inline"),
-					Label:     text.Chars(`Translate Inline`),
+				&element.Group{
+					ID:        "translate_inline",
+					Label:     `Translate Inline`,
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: dev/translate_inline/active
-							ID:        cfgpath.NewRoute("active"),
-							Label:     text.Chars(`Enabled for Storefront`),
+							ID:        "active",
+							Label:     `Enabled for Storefront`,
 							Type:      element.TypeSelect,
 							SortOrder: 10,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Translate
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: dev/translate_inline/active_admin
-							ID:        cfgpath.NewRoute("active_admin"),
-							Label:     text.Chars(`Enabled for Admin`),
-							Comment:   text.Chars(`Translate, blocks and other output caches should be disabled for both Storefront and Admin inline translations.`),
+							ID:        "active_admin",
+							Label:     `Enabled for Admin`,
+							Comment:   `Translate, blocks and other output caches should be disabled for both Storefront and Admin inline translations.`,
 							Type:      element.TypeSelect,
 							SortOrder: 20,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// BackendModel: Magento\Config\Model\Config\Backend\Translate
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
@@ -410,91 +408,91 @@ func init() {
 					),
 				},
 
-				element.Group{
-					ID:        cfgpath.NewRoute("js"),
-					Label:     text.Chars(`JavaScript Settings`),
+				&element.Group{
+					ID:        "js",
+					Label:     `JavaScript Settings`,
 					SortOrder: 100,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: dev/js/merge_files
-							ID:        cfgpath.NewRoute("merge_files"),
-							Label:     text.Chars(`Merge JavaScript Files`),
+							ID:        "merge_files",
+							Label:     `Merge JavaScript Files`,
 							Type:      element.TypeSelect,
 							SortOrder: 10,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: dev/js/enable_js_bundling
-							ID:        cfgpath.NewRoute("enable_js_bundling"),
-							Label:     text.Chars(`Enable JavaScript Bundling`),
+							ID:        "enable_js_bundling",
+							Label:     `Enable JavaScript Bundling`,
 							Type:      element.TypeSelect,
 							SortOrder: 10,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: dev/js/minify_files
-							ID:        cfgpath.NewRoute("minify_files"),
-							Label:     text.Chars(`Minify JavaScript Files`),
+							ID:        "minify_files",
+							Label:     `Minify JavaScript Files`,
 							Type:      element.TypeSelect,
 							SortOrder: 20,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
 
-				element.Group{
-					ID:        cfgpath.NewRoute("css"),
-					Label:     text.Chars(`CSS Settings`),
+				&element.Group{
+					ID:        "css",
+					Label:     `CSS Settings`,
 					SortOrder: 110,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: dev/css/merge_css_files
-							ID:        cfgpath.NewRoute("merge_css_files"),
-							Label:     text.Chars(`Merge CSS Files`),
+							ID:        "merge_css_files",
+							Label:     `Merge CSS Files`,
 							Type:      element.TypeSelect,
 							SortOrder: 10,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: dev/css/minify_files
-							ID:        cfgpath.NewRoute("minify_files"),
-							Label:     text.Chars(`Minify CSS Files`),
+							ID:        "minify_files",
+							Label:     `Minify CSS Files`,
 							Type:      element.TypeSelect,
 							SortOrder: 20,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
 
-				element.Group{
-					ID:        cfgpath.NewRoute("image"),
-					Label:     text.Chars(`Image Processing Settings`),
+				&element.Group{
+					ID:        "image",
+					Label:     `Image Processing Settings`,
 					SortOrder: 120,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: dev/image/default_adapter
-							ID:        cfgpath.NewRoute("default_adapter"),
-							Label:     text.Chars(`Image Adapter`),
-							Comment:   text.Chars(`When the adapter was changed, please flush Catalog Images Cache.`),
+							ID:        "default_adapter",
+							Label:     `Image Adapter`,
+							Comment:   `When the adapter was changed, please flush Catalog Images Cache.`,
 							Type:      element.TypeSelect,
 							SortOrder: 10,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// BackendModel: Magento\Config\Model\Config\Backend\Image\Adapter
 							// SourceModel: Magento\Config\Model\Config\Source\Image\Adapter
@@ -502,19 +500,19 @@ func init() {
 					),
 				},
 
-				element.Group{
-					ID:        cfgpath.NewRoute("static"),
-					Label:     text.Chars(`Static Files Settings`),
+				&element.Group{
+					ID:        "static",
+					Label:     `Static Files Settings`,
 					SortOrder: 130,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: dev/static/sign
-							ID:        cfgpath.NewRoute("sign"),
-							Label:     text.Chars(`Sign Static Files`),
+							ID:        "sign",
+							Label:     `Sign Static Files`,
 							Type:      element.TypeSelect,
 							SortOrder: 10,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -523,70 +521,70 @@ func init() {
 			),
 		},
 
-		element.Section{
-			ID:        cfgpath.NewRoute("system"),
-			Label:     text.Chars(`System`),
+		&element.Section{
+			ID:        "system",
+			Label:     `System`,
 			SortOrder: 900,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Config::config_system
-			Groups: element.NewGroupSlice(
-				element.Group{
-					ID:        cfgpath.NewRoute("smtp"),
-					Label:     text.Chars(`Mail Sending Settings`),
+			Groups: element.MakeGroups(
+				&element.Group{
+					ID:        "smtp",
+					Label:     `Mail Sending Settings`,
 					SortOrder: 20,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: system/smtp/disable
-							ID:        cfgpath.NewRoute("disable"),
-							Label:     text.Chars(`Disable Email Communications`),
+							ID:        "disable",
+							Label:     `Disable Email Communications`,
 							Type:      element.TypeSelect,
 							SortOrder: 10,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: system/smtp/host
-							ID:        cfgpath.NewRoute("host"),
-							Label:     text.Chars(`Host`),
-							Comment:   text.Chars(`For Windows server only.`),
+							ID:        "host",
+							Label:     `Host`,
+							Comment:   `For Windows server only.`,
 							Type:      element.TypeText,
 							SortOrder: 20,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: system/smtp/port
-							ID:        cfgpath.NewRoute("port"),
-							Label:     text.Chars(`Port (25)`),
-							Comment:   text.Chars(`For Windows server only.`),
+							ID:        "port",
+							Label:     `Port (25)` ,
+							Comment:   `For Windows server only.`,
 							Type:      element.TypeText,
 							SortOrder: 30,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: system/smtp/set_return_path
-							ID:        cfgpath.NewRoute("set_return_path"),
-							Label:     text.Chars(`Set Return-Path`),
+							ID:        "set_return_path",
+							Label:     `Set Return-Path`,
 							Type:      element.TypeSelect,
 							SortOrder: 70,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesnocustom
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: system/smtp/return_path_email
-							ID:        cfgpath.NewRoute("return_path_email"),
-							Label:     text.Chars(`Return-Path Email`),
+							ID:        "return_path_email",
+							Label:     `Return-Path Email`,
 							Type:      element.TypeText,
 							SortOrder: 80,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Address
 						},
@@ -594,186 +592,186 @@ func init() {
 				},
 			),
 		},
-		element.Section{
-			ID:        cfgpath.NewRoute("admin"),
-			Label:     text.Chars(`Admin`),
+		&element.Section{
+			ID:        "admin",
+			Label:     `Admin`,
 			SortOrder: 20,
 			Scopes:    scope.PermDefault,
 			Resource:  0, // Magento_Config::config_admin
-			Groups: element.NewGroupSlice(
-				element.Group{
-					ID:        cfgpath.NewRoute("emails"),
-					Label:     text.Chars(`Admin User Emails`),
+			Groups: element.MakeGroups(
+				&element.Group{
+					ID:        "emails",
+					Label:     `Admin User Emails`,
 					SortOrder: 10,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: admin/emails/forgot_email_template
-							ID:        cfgpath.NewRoute("forgot_email_template"),
-							Label:     text.Chars(`Forgot Password Email Template`),
-							Comment:   text.Chars(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							ID:        "forgot_email_template",
+							Label:     `Forgot Password Email Template`,
+							Comment:   `Email template chosen based on theme fallback when "Default" option is selected.`,
 							Type:      element.TypeSelect,
 							SortOrder: 10,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: admin/emails/forgot_email_identity
-							ID:        cfgpath.NewRoute("forgot_email_identity"),
-							Label:     text.Chars(`Forgot and Reset Email Sender`),
+							ID:        "forgot_email_identity",
+							Label:     `Forgot and Reset Email Sender`,
 							Type:      element.TypeSelect,
 							SortOrder: 20,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: admin/emails/password_reset_link_expiration_period
-							ID:        cfgpath.NewRoute("password_reset_link_expiration_period"),
-							Label:     text.Chars(`Recovery Link Expiration Period (days)`),
-							Comment:   text.Chars(`Please enter a number 1 or greater in this field.`),
+							ID:        "password_reset_link_expiration_period",
+							Label:     `Recovery Link Expiration Period (days)` ,
+							Comment:   `Please enter a number 1 or greater in this field.`,
 							Type:      element.TypeText,
 							SortOrder: 30,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// BackendModel: Magento\Config\Model\Config\Backend\Admin\Password\Link\Expirationperiod
 						},
 					),
 				},
 
-				element.Group{
-					ID:        cfgpath.NewRoute("startup"),
-					Label:     text.Chars(`Startup Page`),
+				&element.Group{
+					ID:        "startup",
+					Label:     `Startup Page`,
 					SortOrder: 20,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: admin/startup/menu_item_id
-							ID:        cfgpath.NewRoute("menu_item_id"),
-							Label:     text.Chars(`Startup Page`),
+							ID:        "menu_item_id",
+							Label:     `Startup Page`,
 							Type:      element.TypeSelect,
 							SortOrder: 1,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Admin\Page
 						},
 					),
 				},
 
-				element.Group{
-					ID:        cfgpath.NewRoute("url"),
-					Label:     text.Chars(`Admin Base URL`),
+				&element.Group{
+					ID:        "url",
+					Label:     `Admin Base URL`,
 					SortOrder: 30,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: admin/url/use_custom
-							ID:        cfgpath.NewRoute("use_custom"),
-							Label:     text.Chars(`Use Custom Admin URL`),
+							ID:        "use_custom",
+							Label:     `Use Custom Admin URL`,
 							Type:      element.TypeSelect,
 							SortOrder: 1,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// BackendModel: Magento\Config\Model\Config\Backend\Admin\Usecustom
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: admin/url/custom
-							ID:        cfgpath.NewRoute("custom"),
-							Label:     text.Chars(`Custom Admin URL`),
-							Comment:   text.Chars(`Make sure that base URL ends with '/' (slash), e.g. http://yourdomain/magento/`),
+							ID:        "custom",
+							Label:     `Custom Admin URL`,
+							Comment:   `Make sure that base URL ends with '/' (slash, e.g. http://yourdomain/magento/`),
 							Type:      element.TypeText,
 							SortOrder: 2,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// BackendModel: Magento\Config\Model\Config\Backend\Admin\Custom
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: admin/url/use_custom_path
-							ID:        cfgpath.NewRoute("use_custom_path"),
-							Label:     text.Chars(`Use Custom Admin Path`),
+							ID:        "use_custom_path",
+							Label:     `Use Custom Admin Path`,
 							Type:      element.TypeSelect,
 							SortOrder: 3,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// BackendModel: Magento\Config\Model\Config\Backend\Admin\Custompath
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: admin/url/custom_path
-							ID:        cfgpath.NewRoute("custom_path"),
-							Label:     text.Chars(`Custom Admin Path`),
-							Comment:   text.Chars(`You will have to sign in after you save your custom admin cfgpath.`),
+							ID:        "custom_path",
+							Label:     `Custom Admin Path`,
+							Comment:   `You will have to sign in after you save your custom admin cfgpath.`,
 							Type:      element.TypeText,
 							SortOrder: 4,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// BackendModel: Magento\Config\Model\Config\Backend\Admin\Custompath
 						},
 					),
 				},
 
-				element.Group{
-					ID:        cfgpath.NewRoute("security"),
-					Label:     text.Chars(`Security`),
+				&element.Group{
+					ID:        "security",
+					Label:     `Security`,
 					SortOrder: 35,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: admin/security/use_form_key
-							ID:        cfgpath.NewRoute("use_form_key"),
-							Label:     text.Chars(`Add Secret Key to URLs`),
+							ID:        "use_form_key",
+							Label:     `Add Secret Key to URLs`,
 							Type:      element.TypeSelect,
 							SortOrder: 1,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// BackendModel: Magento\Config\Model\Config\Backend\Admin\Usesecretkey
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: admin/security/use_case_sensitive_login
-							ID:        cfgpath.NewRoute("use_case_sensitive_login"),
-							Label:     text.Chars(`Login is Case Sensitive`),
+							ID:        "use_case_sensitive_login",
+							Label:     `Login is Case Sensitive`,
 							Type:      element.TypeSelect,
 							SortOrder: 1,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: admin/security/session_lifetime
-							ID:        cfgpath.NewRoute("session_lifetime"),
-							Label:     text.Chars(`Admin Session Lifetime (seconds)`),
-							Comment:   text.Chars(`Values less than 60 are ignored.`),
+							ID:        "session_lifetime",
+							Label:     `Admin Session Lifetime (seconds)`,
+							Comment:   `Values less than 60 are ignored.`,
 							Type:      element.TypeText,
 							SortOrder: 3,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 						},
 					),
 				},
 
-				element.Group{
-					ID:        cfgpath.NewRoute("dashboard"),
-					Label:     text.Chars(`Dashboard`),
+				&element.Group{
+					ID:        "dashboard",
+					Label:     `Dashboard`,
 					SortOrder: 40,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: admin/dashboard/enable_charts
-							ID:        cfgpath.NewRoute("enable_charts"),
-							Label:     text.Chars(`Enable Charts`),
+							ID:        "enable_charts",
+							Label:     `Enable Charts`,
 							Type:      element.TypeSelect,
 							SortOrder: 1,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -781,41 +779,41 @@ func init() {
 				},
 			),
 		},
-		element.Section{
-			ID:        cfgpath.NewRoute("web"),
-			Label:     text.Chars(`Web`),
+		&element.Section{
+			ID:        "web",
+			Label:     `Web`,
 			SortOrder: 20,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Backend::web
-			Groups: element.NewGroupSlice(
-				element.Group{
-					ID:        cfgpath.NewRoute("url"),
-					Label:     text.Chars(`Url Options`),
+			Groups: element.MakeGroups(
+				&element.Group{
+					ID:        "url",
+					Label:     `Url Options`,
 					SortOrder: 3,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: web/url/use_store
-							ID:        cfgpath.NewRoute("use_store"),
-							Label:     text.Chars(`Add Store Code to Urls`),
-							Comment:   text.Chars(`<strong style="color:red">Warning!</strong> When using Store Code in URLs, in some cases system may not work properly if URLs without Store Codes are specified in the third party services (e.g. PayPal etc.).`),
+							ID:        "use_store",
+							Label:     `Add Store Code to Urls`,
+							Comment:   `<strong style="color:red">Warning!</strong> When using Store Code in URLs, in some cases system may not work properly if URLs without Store Codes are specified in the third party services (e.g. PayPal etc..`),
 							Type:      element.TypeSelect,
 							SortOrder: 10,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							Default:   false,
 							// BackendModel: Magento\Config\Model\Config\Backend\Store
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: web/url/redirect_to_base
-							ID:        cfgpath.NewRoute("redirect_to_base"),
-							Label:     text.Chars(`Auto-redirect to Base URL`),
-							Comment:   text.Chars(`I.e. redirect from http://example.com/store/ to http://www.example.com/store/`),
+							ID:        "redirect_to_base",
+							Label:     `Auto-redirect to Base URL`,
+							Comment:   `I.e. redirect from http://example.com/store/ to http://www.example.com/store/`,
 							Type:      element.TypeSelect,
 							SortOrder: 20,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							Default:   1,
 							// SourceModel: Magento\Config\Model\Config\Source\Web\Redirect
@@ -823,19 +821,19 @@ func init() {
 					),
 				},
 
-				element.Group{
-					ID:        cfgpath.NewRoute("seo"),
-					Label:     text.Chars(`Search Engine Optimization`),
+				&element.Group{
+					ID:        "seo",
+					Label:     `Search Engine Optimization`,
 					SortOrder: 5,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: web/seo/use_rewrites
-							ID:        cfgpath.NewRoute("use_rewrites"),
-							Label:     text.Chars(`Use Web Server Rewrites`),
+							ID:        "use_rewrites",
+							Label:     `Use Web Server Rewrites`,
 							Type:      element.TypeSelect,
 							SortOrder: 10,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
@@ -843,268 +841,268 @@ func init() {
 					),
 				},
 
-				element.Group{
-					ID:        cfgpath.NewRoute("unsecure"),
-					Label:     text.Chars(`Base URLs`),
-					Comment:   text.Chars(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`),
+				&element.Group{
+					ID:        "unsecure",
+					Label:     `Base URLs`,
+					Comment:   `Any of the fields allow fully qualified URLs that end with '/' (slash e.g. http://example.com/magento/`),
 					SortOrder: 10,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: web/unsecure/base_url
-							ID:        cfgpath.NewRoute("base_url"),
-							Label:     text.Chars(`Base URL`),
-							Comment:   text.Chars(`Specify URL or {{base_url}} placeholder.`),
+							ID:        "base_url",
+							Label:     `Base URL`,
+							Comment:   `Specify URL or {{base_url}} placeholder.`,
 							Type:      element.TypeText,
 							SortOrder: 10,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: web/unsecure/base_link_url
-							ID:        cfgpath.NewRoute("base_link_url"),
-							Label:     text.Chars(`Base Link URL`),
-							Comment:   text.Chars(`May start with {{unsecure_base_url}} placeholder.`),
+							ID:        "base_link_url",
+							Label:     `Base Link URL`,
+							Comment:   `May start with {{unsecure_base_url}} placeholder.`,
 							Type:      element.TypeText,
 							SortOrder: 20,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: web/unsecure/base_static_url
-							ID:        cfgpath.NewRoute("base_static_url"),
-							Label:     text.Chars(`Base URL for Static View Files`),
-							Comment:   text.Chars(`May be empty or start with {{unsecure_base_url}} placeholder.`),
+							ID:        "base_static_url",
+							Label:     `Base URL for Static View Files`,
+							Comment:   `May be empty or start with {{unsecure_base_url}} placeholder.`,
 							Type:      element.TypeText,
 							SortOrder: 25,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: web/unsecure/base_media_url
-							ID:        cfgpath.NewRoute("base_media_url"),
-							Label:     text.Chars(`Base URL for User Media Files`),
-							Comment:   text.Chars(`May be empty or start with {{unsecure_base_url}} placeholder.`),
+							ID:        "base_media_url",
+							Label:     `Base URL for User Media Files`,
+							Comment:   `May be empty or start with {{unsecure_base_url}} placeholder.`,
 							Type:      element.TypeText,
 							SortOrder: 40,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 						},
 					),
 				},
 
-				element.Group{
-					ID:        cfgpath.NewRoute("secure"),
-					Label:     text.Chars(`Base URLs (Secure)`),
-					Comment:   text.Chars(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. https://example.com/magento/`),
+				&element.Group{
+					ID:        "secure",
+					Label:     `Base URLs (Secure`),
+					Comment:   `Any of the fields allow fully qualified URLs that end with '/' (slash e.g. https://example.com/magento/`),
 					SortOrder: 20,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: web/secure/base_url
-							ID:        cfgpath.NewRoute("base_url"),
-							Label:     text.Chars(`Secure Base URL`),
-							Comment:   text.Chars(`Specify URL or {{base_url}}, or {{unsecure_base_url}} placeholder.`),
+							ID:        "base_url",
+							Label:     `Secure Base URL`,
+							Comment:   `Specify URL or {{base_url}}, or {{unsecure_base_url}} placeholder.`,
 							Type:      element.TypeText,
 							SortOrder: 10,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: web/secure/base_link_url
-							ID:        cfgpath.NewRoute("base_link_url"),
-							Label:     text.Chars(`Secure Base Link URL`),
-							Comment:   text.Chars(`May start with {{secure_base_url}} or {{unsecure_base_url}} placeholder.`),
+							ID:        "base_link_url",
+							Label:     `Secure Base Link URL`,
+							Comment:   `May start with {{secure_base_url}} or {{unsecure_base_url}} placeholder.`,
 							Type:      element.TypeText,
 							SortOrder: 20,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: web/secure/base_static_url
-							ID:        cfgpath.NewRoute("base_static_url"),
-							Label:     text.Chars(`Secure Base URL for Static View Files`),
-							Comment:   text.Chars(`May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}} placeholder.`),
+							ID:        "base_static_url",
+							Label:     `Secure Base URL for Static View Files`,
+							Comment:   `May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}} placeholder.`,
 							Type:      element.TypeText,
 							SortOrder: 25,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: web/secure/base_media_url
-							ID:        cfgpath.NewRoute("base_media_url"),
-							Label:     text.Chars(`Secure Base URL for User Media Files`),
-							Comment:   text.Chars(`May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}} placeholder.`),
+							ID:        "base_media_url",
+							Label:     `Secure Base URL for User Media Files`,
+							Comment:   `May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}} placeholder.`,
 							Type:      element.TypeText,
 							SortOrder: 40,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: web/secure/use_in_frontend
-							ID:        cfgpath.NewRoute("use_in_frontend"),
-							Label:     text.Chars(`Use Secure URLs on Storefront`),
-							Comment:   text.Chars(`Enter https protocol to use Secure URLs on Storefront.`),
+							ID:        "use_in_frontend",
+							Label:     `Use Secure URLs on Storefront`,
+							Comment:   `Enter https protocol to use Secure URLs on Storefront.`,
 							Type:      element.TypeSelect,
 							SortOrder: 50,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Secure
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: web/secure/use_in_adminhtml
-							ID:        cfgpath.NewRoute("use_in_adminhtml"),
-							Label:     text.Chars(`Use Secure URLs in Admin`),
-							Comment:   text.Chars(`Enter https protocol to use Secure URLs in Admin.`),
+							ID:        "use_in_adminhtml",
+							Label:     `Use Secure URLs in Admin`,
+							Comment:   `Enter https protocol to use Secure URLs in Admin.`,
 							Type:      element.TypeSelect,
 							SortOrder: 60,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// BackendModel: Magento\Config\Model\Config\Backend\Secure
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: web/secure/enable_hsts
-							ID:        cfgpath.NewRoute("enable_hsts"),
-							Label:     text.Chars(`Enable HTTP Strict Transport Security (HSTS)`),
-							Comment:   text.Chars(`See <a href="https://www.owasp.org/index.php/HTTP_Strict_Transport_Security" target="_blank">HTTP Strict Transport Security</a> page for details.`),
+							ID:        "enable_hsts",
+							Label:     `Enable HTTP Strict Transport Security (HSTS`),
+							Comment:   `See <a href="https://www.owasp.org/index.php/HTTP_Strict_Transport_Security" target="_blank">HTTP Strict Transport Security</a> page for details.`,
 							Type:      element.TypeSelect,
 							SortOrder: 70,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Secure
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: web/secure/enable_upgrade_insecure
-							ID:        cfgpath.NewRoute("enable_upgrade_insecure"),
-							Label:     text.Chars(`Upgrade Insecure Requests`),
-							Comment:   text.Chars(`See <a href="http://www.w3.org/TR/upgrade-insecure-requests/" target="_blank">Upgrade Insecure Requests</a> page for details.`),
+							ID:        "enable_upgrade_insecure",
+							Label:     `Upgrade Insecure Requests`,
+							Comment:   `See <a href="http://www.w3.org/TR/upgrade-insecure-requests/" target="_blank">Upgrade Insecure Requests</a> page for details.`,
 							Type:      element.TypeSelect,
 							SortOrder: 80,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Secure
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: web/secure/offloader_header
-							ID:        cfgpath.NewRoute("offloader_header"),
-							Label:     text.Chars(`Offloader header`),
+							ID:        "offloader_header",
+							Label:     `Offloader header`,
 							Type:      element.TypeText,
 							SortOrder: 90,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 						},
 					),
 				},
 
-				element.Group{
-					ID:        cfgpath.NewRoute("default"),
-					Label:     text.Chars(`Default Pages`),
+				&element.Group{
+					ID:        "default",
+					Label:     `Default Pages`,
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: web/default/front
-							ID:        cfgpath.NewRoute("front"),
-							Label:     text.Chars(`Default Web URL`),
+							ID:        "front",
+							Label:     `Default Web URL`,
 							Type:      element.TypeText,
 							SortOrder: 1,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: web/default/no_route
-							ID:        cfgpath.NewRoute("no_route"),
-							Label:     text.Chars(`Default No-route URL`),
+							ID:        "no_route",
+							Label:     `Default No-route URL`,
 							Type:      element.TypeText,
 							SortOrder: 2,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 						},
 					),
 				},
 
-				element.Group{
-					ID:        cfgpath.NewRoute("session"),
-					Label:     text.Chars(`Session Validation Settings`),
+				&element.Group{
+					ID:        "session",
+					Label:     `Session Validation Settings`,
 					SortOrder: 60,
 					Scopes:    scope.PermWebsite,
-					Fields: element.NewFieldSlice(
-						element.Field{
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: web/session/use_remote_addr
-							ID:        cfgpath.NewRoute("use_remote_addr"),
-							Label:     text.Chars(`Validate REMOTE_ADDR`),
+							ID:        "use_remote_addr",
+							Label:     `Validate REMOTE_ADDR`,
 							Type:      element.TypeSelect,
 							SortOrder: 1,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: web/session/use_http_via
-							ID:        cfgpath.NewRoute("use_http_via"),
-							Label:     text.Chars(`Validate HTTP_VIA`),
+							ID:        "use_http_via",
+							Label:     `Validate HTTP_VIA`,
 							Type:      element.TypeSelect,
 							SortOrder: 20,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: web/session/use_http_x_forwarded_for
-							ID:        cfgpath.NewRoute("use_http_x_forwarded_for"),
-							Label:     text.Chars(`Validate HTTP_X_FORWARDED_FOR`),
+							ID:        "use_http_x_forwarded_for",
+							Label:     `Validate HTTP_X_FORWARDED_FOR`,
 							Type:      element.TypeSelect,
 							SortOrder: 30,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: web/session/use_http_user_agent
-							ID:        cfgpath.NewRoute("use_http_user_agent"),
-							Label:     text.Chars(`Validate HTTP_USER_AGENT`),
+							ID:        "use_http_user_agent",
+							Label:     `Validate HTTP_USER_AGENT`,
 							Type:      element.TypeSelect,
 							SortOrder: 40,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: web/session/use_frontend_sid
-							ID:        cfgpath.NewRoute("use_frontend_sid"),
-							Label:     text.Chars(`Use SID on Storefront`),
-							Comment:   text.Chars(`Allows customers to stay logged in when switching between different stores.`),
+							ID:        "use_frontend_sid",
+							Label:     `Use SID on Storefront`,
+							Comment:   `Allows customers to stay logged in when switching between different stores.`,
 							Type:      element.TypeSelect,
 							SortOrder: 50,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermWebsite,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -1114,69 +1112,64 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		element.Section{
-			ID: cfgpath.NewRoute("system"),
-			Groups: element.NewGroupSlice(
-				element.Group{
-					ID: cfgpath.NewRoute("media_storage_configuration"),
-					Fields: element.NewFieldSlice(
-						element.Field{
+		&element.Section{
+			ID: "system",
+			Groups: element.MakeGroups(
+				&element.Group{
+					ID: "media_storage_configuration",
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: system/media_storage_configuration/allowed_resources
-							ID:      cfgpath.NewRoute(`allowed_resources`),
+							ID:      `allowed_resources`,
 							Type:    element.TypeHidden,
-							Visible: element.VisibleNo,
-							Default: `{"email_folder":"email"}`,
+														Default: `{"email_folder":"email"}`,
 						},
 					),
 				},
 
-				element.Group{
-					ID: cfgpath.NewRoute("emails"),
-					Fields: element.NewFieldSlice(
-						element.Field{
+				&element.Group{
+					ID: "emails",
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: system/emails/forgot_email_template
-							ID:      cfgpath.NewRoute(`forgot_email_template`),
-							Type:    element.TypeHidden,
-							Visible: element.VisibleNo,
-							Default: `system_emails_forgot_email_template`,
+							ID:      `forgot_email_template`,
+							Type:    element.TypeHidden,	
+														Default: `system_emails_forgot_email_template`,
 						},
 
-						element.Field{
+						&element.Field{
 							// Path: system/emails/forgot_email_identity
-							ID:      cfgpath.NewRoute(`forgot_email_identity`),
+							ID:      `forgot_email_identity`,
 							Type:    element.TypeHidden,
-							Visible: element.VisibleNo,
-							Default: `general`,
+														Default: `general`,
 						},
 					),
 				},
 
-				element.Group{
-					ID: cfgpath.NewRoute("dashboard"),
-					Fields: element.NewFieldSlice(
-						element.Field{
+				&element.Group{
+					ID: "dashboard",
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: system/dashboard/enable_charts
-							ID:      cfgpath.NewRoute(`enable_charts`),
+							ID:      `enable_charts`,
 							Type:    element.TypeHidden,
-							Visible: element.VisibleNo,
-							Default: true,
+														Default: true,
 						},
 					),
 				},
 			),
 		},
-		element.Section{
-			ID: cfgpath.NewRoute("general"),
-			Groups: element.NewGroupSlice(
-				element.Group{
-					ID: cfgpath.NewRoute("validator_data"),
-					Fields: element.NewFieldSlice(
-						element.Field{
+		&element.Section{
+			ID: "general",
+			Groups: element.MakeGroups(
+				&element.Group{
+					ID: "validator_data",
+					Fields: element.MakeFields(
+						&element.Field{
 							// Path: general/validator_data/input_types
-							ID:      cfgpath.NewRoute(`input_types`),
+							ID:      `input_types`,
 							Type:    element.TypeHidden,
-							Visible: element.VisibleNo,
-							Default: `{"price":"price","media_image":"media_image","gallery":"gallery"}`,
+														Default: `{"price":"price","media_image":"media_image","gallery":"gallery"}`,
 						},
 					),
 				},

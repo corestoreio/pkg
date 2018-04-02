@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,51 +19,49 @@ package config_test
 // for CoreStore but are here to use for testing and benchmarking.
 
 import (
-	"github.com/corestoreio/pkg/config/cfgpath"
 	"github.com/corestoreio/pkg/config/element"
-	"github.com/corestoreio/pkg/storage/text"
 	"github.com/corestoreio/pkg/store/scope"
 )
 
-var packageAllConfiguration = element.MustNewConfigurationMerge(
-	element.Section{
-		ID: cfgpath.NewRoute("system"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("adminnotification"),
-				Label:     text.Chars(`Notifications`),
+var packageAllConfiguration = element.MustMakeSectionsMerged(
+	&element.Section{
+		ID: "system",
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "adminnotification",
+				Label:     `Notifications`,
 				SortOrder: 250,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `system/adminnotification/use_https`,
-						ID:        cfgpath.NewRoute("use_https"),
-						Label:     text.Chars(`Use HTTPS to Get Feed`),
+						ID:        "use_https",
+						Label:     `Use HTTPS to Get Feed`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/adminnotification/frequency`,
-						ID:        cfgpath.NewRoute("frequency"),
-						Label:     text.Chars(`Update Frequency`),
+						ID:        "frequency",
+						Label:     `Update Frequency`,
 						Type:      element.TypeSelect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/adminnotification/last_update`,
-						ID:        cfgpath.NewRoute("last_update"),
-						Label:     text.Chars(`Last Update`),
+						ID:        "last_update",
+						Label:     `Last Update`,
 						Type:      element.TypeLabel,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   0,
 					},
@@ -73,35 +71,32 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("system"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("adminnotification"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "system",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "adminnotification",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `system/adminnotification/feed_url`,
-						ID:      cfgpath.NewRoute("feed_url"),
+						ID:      "feed_url",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `notifications.magentocommerce.com/magento2/community/notifications.rss`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/adminnotification/popup_url`,
-						ID:      cfgpath.NewRoute("popup_url"),
+						ID:      "popup_url",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `widgets.magentocommerce.com/notificationPopup`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/adminnotification/severity_icons_url`,
-						ID:      cfgpath.NewRoute("severity_icons_url"),
+						ID:      "severity_icons_url",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `widgets.magentocommerce.com/%s/%s.gif`,
 					},
@@ -109,171 +104,171 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("advanced"),
-		Label:     text.Chars("Advanced"),
+	&element.Section{
+		ID:        "advanced",
+		Label:     `Advanced`,
 		SortOrder: 910,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("modules_disable_output"),
-				Label:     text.Chars(`Disable Modules Output`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "modules_disable_output",
+				Label:     `Disable Modules Output`,
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
-				Fields:    element.FieldSlice{},
+				Fields:    element.Fields{},
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("trans_email"),
-		Label:     text.Chars("Store Email Addresses"),
+	&element.Section{
+		ID:        "trans_email",
+		Label:     `Store Email Addresses`,
 		SortOrder: 90,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("ident_custom1"),
-				Label:     text.Chars(`Custom Email 1`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "ident_custom1",
+				Label:     `Custom Email 1`,
 				SortOrder: 4,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `trans_email/ident_custom1/email`,
-						ID:        cfgpath.NewRoute("email"),
-						Label:     text.Chars(`Sender Email`),
+						ID:        "email",
+						Label:     `Sender Email`,
 						Type:      element.TypeText,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `trans_email/ident_custom1/name`,
-						ID:        cfgpath.NewRoute("name"),
-						Label:     text.Chars(`Sender Name`),
+						ID:        "name",
+						Label:     `Sender Name`,
 						Type:      element.TypeText,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("ident_custom2"),
-				Label:     text.Chars(`Custom Email 2`),
+			&element.Group{
+				ID:        "ident_custom2",
+				Label:     `Custom Email 2`,
 				SortOrder: 5,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `trans_email/ident_custom2/email`,
-						ID:        cfgpath.NewRoute("email"),
-						Label:     text.Chars(`Sender Email`),
+						ID:        "email",
+						Label:     `Sender Email`,
 						Type:      element.TypeText,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `trans_email/ident_custom2/name`,
-						ID:        cfgpath.NewRoute("name"),
-						Label:     text.Chars(`Sender Name`),
+						ID:        "name",
+						Label:     `Sender Name`,
 						Type:      element.TypeText,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("ident_general"),
-				Label:     text.Chars(`General Contact`),
+			&element.Group{
+				ID:        "ident_general",
+				Label:     `General Contact`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `trans_email/ident_general/email`,
-						ID:        cfgpath.NewRoute("email"),
-						Label:     text.Chars(`Sender Email`),
+						ID:        "email",
+						Label:     `Sender Email`,
 						Type:      element.TypeText,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `trans_email/ident_general/name`,
-						ID:        cfgpath.NewRoute("name"),
-						Label:     text.Chars(`Sender Name`),
+						ID:        "name",
+						Label:     `Sender Name`,
 						Type:      element.TypeText,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("ident_sales"),
-				Label:     text.Chars(`Sales Representative`),
+			&element.Group{
+				ID:        "ident_sales",
+				Label:     `Sales Representative`,
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `trans_email/ident_sales/email`,
-						ID:        cfgpath.NewRoute("email"),
-						Label:     text.Chars(`Sender Email`),
+						ID:        "email",
+						Label:     `Sender Email`,
 						Type:      element.TypeText,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `trans_email/ident_sales/name`,
-						ID:        cfgpath.NewRoute("name"),
-						Label:     text.Chars(`Sender Name`),
+						ID:        "name",
+						Label:     `Sender Name`,
 						Type:      element.TypeText,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("ident_support"),
-				Label:     text.Chars(`Customer Support`),
+			&element.Group{
+				ID:        "ident_support",
+				Label:     `Customer Support`,
 				SortOrder: 3,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `trans_email/ident_support/email`,
-						ID:        cfgpath.NewRoute("email"),
-						Label:     text.Chars(`Sender Email`),
+						ID:        "email",
+						Label:     `Sender Email`,
 						Type:      element.TypeText,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `trans_email/ident_support/name`,
-						ID:        cfgpath.NewRoute("name"),
-						Label:     text.Chars(`Sender Name`),
+						ID:        "name",
+						Label:     `Sender Name`,
 						Type:      element.TypeText,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
@@ -281,125 +276,125 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("design"),
-		Label:     text.Chars("Design"),
+	&element.Section{
+		ID:        "design",
+		Label:     `Design`,
 		SortOrder: 30,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("theme"),
-				Label:     text.Chars(`Design Theme`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "theme",
+				Label:     `Design Theme`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `design/theme/theme_id`,
-						ID:        cfgpath.NewRoute("theme_id"),
-						Label:     text.Chars(`Design Theme`),
-						Comment:   text.Chars(`If no value is specified, the system default will be used. The system default may be modified by third party extensions.`),
+						ID:        "theme_id",
+						Label:     `Design Theme`,
+						Comment:   `If no value is specified, the system default will be used. The system default may be modified by third party extensions.`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `design/theme/ua_regexp`,
-						ID:        cfgpath.NewRoute("ua_regexp"),
-						Label:     text.Chars(`User-Agent Exceptions`),
-						Comment:   text.Chars(`Search strings are either normal strings or regular exceptions (PCRE). They are matched in the same order as entered. Examples:<br /><span style="font-family:monospace">Firefox<br />/^mozilla/i</span>`),
+						ID:        "ua_regexp",
+						Label:     `User-Agent Exceptions`,
+						Comment:   `Search strings are either normal strings or regular exceptions (PCRE). They are matched in the same order as entered. Examples:<br /><span style="font-family:monospace">Firefox<br />/^mozilla/i</span>`,
 						Type:      element.TypeText,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("pagination"),
-				Label:     text.Chars(`Pagination`),
+			&element.Group{
+				ID:        "pagination",
+				Label:     `Pagination`,
 				SortOrder: 500,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `design/pagination/pagination_frame`,
-						ID:        cfgpath.NewRoute("pagination_frame"),
-						Label:     text.Chars(`Pagination Frame`),
-						Comment:   text.Chars(`How many links to display at once.`),
+						ID:        "pagination_frame",
+						Label:     `Pagination Frame`,
+						Comment:   `How many links to display at once.`,
 						Type:      element.TypeText,
 						SortOrder: 7,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `design/pagination/pagination_frame_skip`,
-						ID:        cfgpath.NewRoute("pagination_frame_skip"),
-						Label:     text.Chars(`Pagination Frame Skip`),
-						Comment:   text.Chars(`If the current frame position does not cover utmost pages, will render link to current position plus/minus this value.`),
+						ID:        "pagination_frame_skip",
+						Label:     `Pagination Frame Skip`,
+						Comment:   `If the current frame position does not cover utmost pages, will render link to current position plus/minus this value.`,
 						Type:      element.TypeText,
 						SortOrder: 8,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `design/pagination/anchor_text_for_previous`,
-						ID:        cfgpath.NewRoute("anchor_text_for_previous"),
-						Label:     text.Chars(`Anchor Text for Previous`),
-						Comment:   text.Chars(`Alternative text for previous link in pagination menu. If empty, default arrow image will used.`),
+						ID:        "anchor_text_for_previous",
+						Label:     `Anchor Text for Previous`,
+						Comment:   `Alternative text for previous link in pagination menu. If empty, default arrow image will used.`,
 						Type:      element.TypeText,
 						SortOrder: 9,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `design/pagination/anchor_text_for_next`,
-						ID:        cfgpath.NewRoute("anchor_text_for_next"),
-						Label:     text.Chars(`Anchor Text for Next`),
-						Comment:   text.Chars(`Alternative text for next link in pagination menu. If empty, default arrow image will used.`),
+						ID:        "anchor_text_for_next",
+						Label:     `Anchor Text for Next`,
+						Comment:   `Alternative text for next link in pagination menu. If empty, default arrow image will used.`,
 						Type:      element.TypeText,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("email"),
-				Label:     text.Chars(`Transactional Emails`),
+			&element.Group{
+				ID:        "email",
+				Label:     `Transactional Emails`,
 				SortOrder: 510,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `design/email/logo`,
-						ID:        cfgpath.NewRoute("logo"),
-						Label:     text.Chars(`Logo Image`),
-						Comment:   text.Chars(`Allowed file types: jpg, jpeg, gif, png`),
+						ID:        "logo",
+						Label:     `Logo Image`,
+						Comment:   `Allowed file types: jpg, jpeg, gif, png`,
 						Type:      element.TypeImage,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `design/email/logo_alt`,
-						ID:        cfgpath.NewRoute("logo_alt"),
-						Label:     text.Chars(`Logo Image Alt`),
+						ID:        "logo_alt",
+						Label:     `Logo Image Alt`,
 						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
@@ -407,208 +402,208 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("dev"),
-		Label:     text.Chars("Developer"),
+	&element.Section{
+		ID:        "dev",
+		Label:     `Developer`,
 		SortOrder: 920,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("debug"),
-				Label:     text.Chars(`Debug`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "debug",
+				Label:     `Debug`,
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `dev/debug/template_hints`,
-						ID:        cfgpath.NewRoute("template_hints"),
-						Label:     text.Chars(`Template Path Hints`),
+						ID:        "template_hints",
+						Label:     `Template Path Hints`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `dev/debug/template_hints_blocks`,
-						ID:        cfgpath.NewRoute("template_hints_blocks"),
-						Label:     text.Chars(`Add Block Names to Hints`),
+						ID:        "template_hints_blocks",
+						Label:     `Add Block Names to Hints`,
 						Type:      element.TypeSelect,
 						SortOrder: 21,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("template"),
-				Label:     text.Chars(`Template Settings`),
+			&element.Group{
+				ID:        "template",
+				Label:     `Template Settings`,
 				SortOrder: 25,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `dev/template/allow_symlink`,
-						ID:        cfgpath.NewRoute("allow_symlink"),
-						Label:     text.Chars(`Allow Symlinks`),
-						Comment:   text.Chars(`Warning! Enabling this feature is not recommended on production environments because it represents a potential security risk.`),
+						ID:        "allow_symlink",
+						Label:     `Allow Symlinks`,
+						Comment:   `Warning! Enabling this feature is not recommended on production environments because it represents a potential security risk.`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `dev/template/minify_html`,
-						ID:        cfgpath.NewRoute("minify_html"),
-						Label:     text.Chars(`Minify Html`),
+						ID:        "minify_html",
+						Label:     `Minify Html`,
 						Type:      element.TypeSelect,
 						SortOrder: 25,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   false,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("translate_inline"),
-				Label:     text.Chars(`Translate Inline`),
+			&element.Group{
+				ID:        "translate_inline",
+				Label:     `Translate Inline`,
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `dev/translate_inline/active`,
-						ID:        cfgpath.NewRoute("active"),
-						Label:     text.Chars(`Enabled for Frontend`),
+						ID:        "active",
+						Label:     `Enabled for Frontend`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `dev/translate_inline/active_admin`,
-						ID:        cfgpath.NewRoute("active_admin"),
-						Label:     text.Chars(`Enabled for Admin`),
-						Comment:   text.Chars(`Translate, blocks and other output caches should be disabled for both frontend and admin inline translations.`),
+						ID:        "active_admin",
+						Label:     `Enabled for Admin`,
+						Comment:   `Translate, blocks and other output caches should be disabled for both frontend and admin inline translations.`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("js"),
-				Label:     text.Chars(`JavaScript Settings`),
+			&element.Group{
+				ID:        "js",
+				Label:     `JavaScript Settings`,
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `dev/js/merge_files`,
-						ID:        cfgpath.NewRoute("merge_files"),
-						Label:     text.Chars(`Merge JavaScript Files`),
+						ID:        "merge_files",
+						Label:     `Merge JavaScript Files`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `dev/js/enable_js_bundling`,
-						ID:        cfgpath.NewRoute("enable_js_bundling"),
-						Label:     text.Chars(`Enable Javascript Bundling`),
+						ID:        "enable_js_bundling",
+						Label:     `Enable Javascript Bundling`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `dev/js/minify_files`,
-						ID:        cfgpath.NewRoute("minify_files"),
-						Label:     text.Chars(`Minify JavaScript Files`),
+						ID:        "minify_files",
+						Label:     `Minify JavaScript Files`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("css"),
-				Label:     text.Chars(`CSS Settings`),
+			&element.Group{
+				ID:        "css",
+				Label:     `CSS Settings`,
 				SortOrder: 110,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `dev/css/merge_css_files`,
-						ID:        cfgpath.NewRoute("merge_css_files"),
-						Label:     text.Chars(`Merge CSS Files`),
+						ID:        "merge_css_files",
+						Label:     `Merge CSS Files`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `dev/css/minify_files`,
-						ID:        cfgpath.NewRoute("minify_files"),
-						Label:     text.Chars(`Minify CSS Files`),
+						ID:        "minify_files",
+						Label:     `Minify CSS Files`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("image"),
-				Label:     text.Chars(`Image Processing Settings`),
+			&element.Group{
+				ID:        "image",
+				Label:     `Image Processing Settings`,
 				SortOrder: 120,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `dev/image/default_adapter`,
-						ID:        cfgpath.NewRoute("default_adapter"),
-						Label:     text.Chars(`Image Adapter`),
-						Comment:   text.Chars(`When the adapter was changed, please, flush Catalog Images Cache.`),
+						ID:        "default_adapter",
+						Label:     `Image Adapter`,
+						Comment:   `When the adapter was changed, please, flush Catalog Images Cache.`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("static"),
-				Label:     text.Chars(`Static Files Settings`),
+			&element.Group{
+				ID:        "static",
+				Label:     `Static Files Settings`,
 				SortOrder: 130,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `dev/static/sign`,
-						ID:        cfgpath.NewRoute("sign"),
-						Label:     text.Chars(`Sign Static Files`),
+						ID:        "sign",
+						Label:     `Sign Static Files`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
@@ -616,226 +611,226 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("general"),
-		Label:     text.Chars("General"),
+	&element.Section{
+		ID:        "general",
+		Label:     `General`,
 		SortOrder: 10,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("country"),
-				Label:     text.Chars(`Country Options`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "country",
+				Label:     `Country Options`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `general/country/allow`,
-						ID:        cfgpath.NewRoute("allow"),
-						Label:     text.Chars(`Allow Countries`),
+						ID:        "allow",
+						Label:     `Allow Countries`,
 						Type:      element.TypeMultiselect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `general/country/default`,
-						ID:        cfgpath.NewRoute("default"),
-						Label:     text.Chars(`Default Country`),
+						ID:        "default",
+						Label:     `Default Country`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `general/country/eu_countries`,
-						ID:        cfgpath.NewRoute("eu_countries"),
-						Label:     text.Chars(`European Union Countries`),
+						ID:        "eu_countries",
+						Label:     `European Union Countries`,
 						Type:      element.TypeMultiselect,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("locale"),
-				Label:     text.Chars(`Locale Options`),
+			&element.Group{
+				ID:        "locale",
+				Label:     `Locale Options`,
 				SortOrder: 8,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `general/locale/timezone`,
-						ID:        cfgpath.NewRoute("timezone"),
-						Label:     text.Chars(`Timezone`),
+						ID:        "timezone",
+						Label:     `Timezone`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `general/locale/code`,
-						ID:        cfgpath.NewRoute("code"),
-						Label:     text.Chars(`Locale`),
+						ID:        "code",
+						Label:     `Locale`,
 						Type:      element.TypeSelect,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `general/locale/firstday`,
-						ID:        cfgpath.NewRoute("firstday"),
-						Label:     text.Chars(`First Day of Week`),
+						ID:        "firstday",
+						Label:     `First Day of Week`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `general/locale/weekend`,
-						ID:        cfgpath.NewRoute("weekend"),
-						Label:     text.Chars(`Weekend Days`),
+						ID:        "weekend",
+						Label:     `Weekend Days`,
 						Type:      element.TypeMultiselect,
 						SortOrder: 15,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("store_information"),
-				Label:     text.Chars(`Store Information`),
+			&element.Group{
+				ID:        "store_information",
+				Label:     `Store Information`,
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `general/store_information/name`,
-						ID:        cfgpath.NewRoute("name"),
-						Label:     text.Chars(`Store Name`),
+						ID:        "name",
+						Label:     `Store Name`,
 						Type:      element.TypeText,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `general/store_information/phone`,
-						ID:        cfgpath.NewRoute("phone"),
-						Label:     text.Chars(`Store Phone Number`),
+						ID:        "phone",
+						Label:     `Store Phone Number`,
 						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `general/store_information/country_id`,
-						ID:        cfgpath.NewRoute("country_id"),
-						Label:     text.Chars(`Country`),
+						ID:        "country_id",
+						Label:     `Country`,
 						Type:      element.TypeSelect,
 						SortOrder: 25,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `general/store_information/region_id`,
-						ID:        cfgpath.NewRoute("region_id"),
-						Label:     text.Chars(`Region/State`),
+						ID:        "region_id",
+						Label:     `Region/State`,
 						Type:      element.TypeText,
 						SortOrder: 27,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `general/store_information/postcode`,
-						ID:        cfgpath.NewRoute("postcode"),
-						Label:     text.Chars(`ZIP/Postal Code`),
+						ID:        "postcode",
+						Label:     `ZIP/Postal Code`,
 						Type:      element.TypeText,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `general/store_information/city`,
-						ID:        cfgpath.NewRoute("city"),
-						Label:     text.Chars(`City`),
+						ID:        "city",
+						Label:     `City`,
 						Type:      element.TypeText,
 						SortOrder: 45,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `general/store_information/street_line1`,
-						ID:        cfgpath.NewRoute("street_line1"),
-						Label:     text.Chars(`Street Address`),
+						ID:        "street_line1",
+						Label:     `Street Address`,
 						Type:      element.TypeText,
 						SortOrder: 55,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `general/store_information/street_line2`,
-						ID:        cfgpath.NewRoute("street_line2"),
-						Label:     text.Chars(`Street Address Line 2`),
+						ID:        "street_line2",
+						Label:     `Street Address Line 2`,
 						Type:      element.TypeText,
 						SortOrder: 60,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `general/store_information/merchant_vat_number`,
-						ID:        cfgpath.NewRoute("merchant_vat_number"),
-						Label:     text.Chars(`VAT Number`),
+						ID:        "merchant_vat_number",
+						Label:     `VAT Number`,
 						Type:      element.TypeText,
 						SortOrder: 61,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("single_store_mode"),
-				Label:     text.Chars(`Single-Store Mode`),
+			&element.Group{
+				ID:        "single_store_mode",
+				Label:     `Single-Store Mode`,
 				SortOrder: 150,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `general/single_store_mode/enabled`,
-						ID:        cfgpath.NewRoute("enabled"),
-						Label:     text.Chars(`Enable Single-Store Mode`),
-						Comment:   text.Chars(`This setting will not be taken into account if system has more than one store view.`),
+						ID:        "enabled",
+						Label:     `Enable Single-Store Mode`,
+						Comment:   `This setting will not be taken into account if system has more than one store view.`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
@@ -843,71 +838,71 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("system"),
-		Label:     text.Chars("System"),
+	&element.Section{
+		ID:        "system",
+		Label:     `System`,
 		SortOrder: 900,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("smtp"),
-				Label:     text.Chars(`Mail Sending Settings`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "smtp",
+				Label:     `Mail Sending Settings`,
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `system/smtp/disable`,
-						ID:        cfgpath.NewRoute("disable"),
-						Label:     text.Chars(`Disable Email Communications`),
+						ID:        "disable",
+						Label:     `Disable Email Communications`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/smtp/host`,
-						ID:        cfgpath.NewRoute("host"),
-						Label:     text.Chars(`Host`),
-						Comment:   text.Chars(`For Windows server only.`),
+						ID:        "host",
+						Label:     `Host`,
+						Comment:   `For Windows server only.`,
 						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/smtp/port`,
-						ID:        cfgpath.NewRoute("port"),
-						Label:     text.Chars(`Port (25)`),
-						Comment:   text.Chars(`For Windows server only.`),
+						ID:        "port",
+						Label:     `Port (25)`,
+						Comment:   `For Windows server only.`,
 						Type:      element.TypeText,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/smtp/set_return_path`,
-						ID:        cfgpath.NewRoute("set_return_path"),
-						Label:     text.Chars(`Set Return-Path`),
+						ID:        "set_return_path",
+						Label:     `Set Return-Path`,
 						Type:      element.TypeSelect,
 						SortOrder: 70,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/smtp/return_path_email`,
-						ID:        cfgpath.NewRoute("return_path_email"),
-						Label:     text.Chars(`Return-Path Email`),
+						ID:        "return_path_email",
+						Label:     `Return-Path Email`,
 						Type:      element.TypeText,
 						SortOrder: 80,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
@@ -915,182 +910,182 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("admin"),
-		Label:     text.Chars("Admin"),
+	&element.Section{
+		ID:        "admin",
+		Label:     `Admin`,
 		SortOrder: 20,
 		Scopes:    scope.PermDefault,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("emails"),
-				Label:     text.Chars(`Admin User Emails`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "emails",
+				Label:     `Admin User Emails`,
 				SortOrder: 10,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `admin/emails/forgot_email_template`,
-						ID:        cfgpath.NewRoute("forgot_email_template"),
-						Label:     text.Chars(`Forgot Password Email Template`),
+						ID:        "forgot_email_template",
+						Label:     `Forgot Password Email Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `admin/emails/forgot_email_identity`,
-						ID:        cfgpath.NewRoute("forgot_email_identity"),
-						Label:     text.Chars(`Forgot and Reset Email Sender`),
+						ID:        "forgot_email_identity",
+						Label:     `Forgot and Reset Email Sender`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `admin/emails/password_reset_link_expiration_period`,
-						ID:        cfgpath.NewRoute("password_reset_link_expiration_period"),
-						Label:     text.Chars(`Recovery Link Expiration Period (days)`),
-						Comment:   text.Chars(`Please enter a number 1 or greater in this field.`),
+						ID:        "password_reset_link_expiration_period",
+						Label:     `Recovery Link Expiration Period (days)`,
+						Comment:   `Please enter a number 1 or greater in this field.`,
 						Type:      element.TypeText,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("startup"),
-				Label:     text.Chars(`Startup Page`),
+			&element.Group{
+				ID:        "startup",
+				Label:     `Startup Page`,
 				SortOrder: 20,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `admin/startup/menu_item_id`,
-						ID:        cfgpath.NewRoute("menu_item_id"),
-						Label:     text.Chars(`Startup Page`),
+						ID:        "menu_item_id",
+						Label:     `Startup Page`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("url"),
-				Label:     text.Chars(`Admin Base URL`),
+			&element.Group{
+				ID:        "url",
+				Label:     `Admin Base URL`,
 				SortOrder: 30,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `admin/url/use_custom`,
-						ID:        cfgpath.NewRoute("use_custom"),
-						Label:     text.Chars(`Use Custom Admin URL`),
+						ID:        "use_custom",
+						Label:     `Use Custom Admin URL`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `admin/url/custom`,
-						ID:        cfgpath.NewRoute("custom"),
-						Label:     text.Chars(`Custom Admin URL`),
-						Comment:   text.Chars(`Make sure that base URL ends with '/' (slash), e.g. http://yourdomain/magento/`),
+						ID:        "custom",
+						Label:     `Custom Admin URL`,
+						Comment:   `Make sure that base URL ends with '/' (slash), e.g. http://yourdomain/magento/`,
 						Type:      element.TypeText,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `admin/url/use_custom_path`,
-						ID:        cfgpath.NewRoute("use_custom_path"),
-						Label:     text.Chars(`Use Custom Admin Path`),
+						ID:        "use_custom_path",
+						Label:     `Use Custom Admin Path`,
 						Type:      element.TypeSelect,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `admin/url/custom_path`,
-						ID:        cfgpath.NewRoute("custom_path"),
-						Label:     text.Chars(`Custom Admin Path`),
-						Comment:   text.Chars(`You will have to log in after you save your custom admin cfgpath.`),
+						ID:        "custom_path",
+						Label:     `Custom Admin Path`,
+						Comment:   `You will have to log in after you save your custom admin cfgpath.`,
 						Type:      element.TypeText,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("security"),
-				Label:     text.Chars(`Security`),
+			&element.Group{
+				ID:        "security",
+				Label:     `Security`,
 				SortOrder: 35,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `admin/security/use_form_key`,
-						ID:        cfgpath.NewRoute("use_form_key"),
-						Label:     text.Chars(`Add Secret Key to URLs`),
+						ID:        "use_form_key",
+						Label:     `Add Secret Key to URLs`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `admin/security/use_case_sensitive_login`,
-						ID:        cfgpath.NewRoute("use_case_sensitive_login"),
-						Label:     text.Chars(`Login is Case Sensitive`),
+						ID:        "use_case_sensitive_login",
+						Label:     `Login is Case Sensitive`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `admin/security/session_lifetime`,
-						ID:        cfgpath.NewRoute("session_lifetime"),
-						Label:     text.Chars(`Admin Session Lifetime (seconds)`),
-						Comment:   text.Chars(`Values less than 60 are ignored.`),
+						ID:        "session_lifetime",
+						Label:     `Admin Session Lifetime (seconds)`,
+						Comment:   `Values less than 60 are ignored.`,
 						Type:      element.TypeText,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("dashboard"),
-				Label:     text.Chars(`Dashboard`),
+			&element.Group{
+				ID:        "dashboard",
+				Label:     `Dashboard`,
 				SortOrder: 40,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `admin/dashboard/enable_charts`,
-						ID:        cfgpath.NewRoute("enable_charts"),
-						Label:     text.Chars(`Enable Charts`),
+						ID:        "enable_charts",
+						Label:     `Enable Charts`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
@@ -1098,300 +1093,300 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("web"),
-		Label:     text.Chars("Web"),
+	&element.Section{
+		ID:        "web",
+		Label:     `Web`,
 		SortOrder: 20,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("url"),
-				Label:     text.Chars(`Url Options`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "url",
+				Label:     `Url Options`,
 				SortOrder: 3,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `web/url/use_store`,
-						ID:        cfgpath.NewRoute("use_store"),
-						Label:     text.Chars(`Add Store Code to Urls`),
-						Comment:   text.Chars(`<strong style="color:red">Warning!</strong> When using Store Code in URLs, in some cases system may not work properly if URLs without Store Codes are specified in the third party services (e.g. PayPal etc.).`),
+						ID:        "use_store",
+						Label:     `Add Store Code to Urls`,
+						Comment:   `<strong style="color:red">Warning!</strong> When using Store Code in URLs, in some cases system may not work properly if URLs without Store Codes are specified in the third party services (e.g. PayPal etc.).`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/url/redirect_to_base`,
-						ID:        cfgpath.NewRoute("redirect_to_base"),
-						Label:     text.Chars(`Auto-redirect to Base URL`),
-						Comment:   text.Chars(`I.e. redirect from http://example.com/store/ to http://www.example.com/store/`),
+						ID:        "redirect_to_base",
+						Label:     `Auto-redirect to Base URL`,
+						Comment:   `I.e. redirect from http://example.com/store/ to http://www.example.com/store/`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("seo"),
-				Label:     text.Chars(`Search Engine Optimization`),
+			&element.Group{
+				ID:        "seo",
+				Label:     `Search Engine Optimization`,
 				SortOrder: 5,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `web/seo/use_rewrites`,
-						ID:        cfgpath.NewRoute("use_rewrites"),
-						Label:     text.Chars(`Use Web Server Rewrites`),
+						ID:        "use_rewrites",
+						Label:     `Use Web Server Rewrites`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   false,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("unsecure"),
-				Label:     text.Chars(`Base URLs`),
-				Comment:   text.Chars(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`),
+			&element.Group{
+				ID:        "unsecure",
+				Label:     `Base URLs`,
+				Comment:   `Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`,
 				SortOrder: 10,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `web/unsecure/base_url`,
-						ID:        cfgpath.NewRoute("base_url"),
-						Label:     text.Chars(`Base URL`),
-						Comment:   text.Chars(`Specify URL or {{base_url}} placeholder.`),
+						ID:        "base_url",
+						Label:     `Base URL`,
+						Comment:   `Specify URL or {{base_url}} placeholder.`,
 						Type:      element.TypeText,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/unsecure/base_link_url`,
-						ID:        cfgpath.NewRoute("base_link_url"),
-						Label:     text.Chars(`Base Link URL`),
-						Comment:   text.Chars(`May start with {{unsecure_base_url}} placeholder.`),
+						ID:        "base_link_url",
+						Label:     `Base Link URL`,
+						Comment:   `May start with {{unsecure_base_url}} placeholder.`,
 						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/unsecure/base_static_url`,
-						ID:        cfgpath.NewRoute("base_static_url"),
-						Label:     text.Chars(`Base URL for Static View Files`),
-						Comment:   text.Chars(`May be empty or start with {{unsecure_base_url}} placeholder.`),
+						ID:        "base_static_url",
+						Label:     `Base URL for Static View Files`,
+						Comment:   `May be empty or start with {{unsecure_base_url}} placeholder.`,
 						Type:      element.TypeText,
 						SortOrder: 25,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/unsecure/base_media_url`,
-						ID:        cfgpath.NewRoute("base_media_url"),
-						Label:     text.Chars(`Base URL for User Media Files`),
-						Comment:   text.Chars(`May be empty or start with {{unsecure_base_url}} placeholder.`),
+						ID:        "base_media_url",
+						Label:     `Base URL for User Media Files`,
+						Comment:   `May be empty or start with {{unsecure_base_url}} placeholder.`,
 						Type:      element.TypeText,
 						SortOrder: 40,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("secure"),
-				Label:     text.Chars(`Base URLs (Secure)`),
-				Comment:   text.Chars(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. https://example.com/magento/`),
+			&element.Group{
+				ID:        "secure",
+				Label:     `Base URLs (Secure)`,
+				Comment:   `Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. https://example.com/magento/`,
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `web/secure/base_url`,
-						ID:        cfgpath.NewRoute("base_url"),
-						Label:     text.Chars(`Secure Base URL`),
-						Comment:   text.Chars(`Specify URL or {{base_url}}, or {{unsecure_base_url}} placeholder.`),
+						ID:        "base_url",
+						Label:     `Secure Base URL`,
+						Comment:   `Specify URL or {{base_url}}, or {{unsecure_base_url}} placeholder.`,
 						Type:      element.TypeText,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/secure/base_link_url`,
-						ID:        cfgpath.NewRoute("base_link_url"),
-						Label:     text.Chars(`Secure Base Link URL`),
-						Comment:   text.Chars(`May start with {{secure_base_url}} or {{unsecure_base_url}} placeholder.`),
+						ID:        "base_link_url",
+						Label:     `Secure Base Link URL`,
+						Comment:   `May start with {{secure_base_url}} or {{unsecure_base_url}} placeholder.`,
 						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/secure/base_static_url`,
-						ID:        cfgpath.NewRoute("base_static_url"),
-						Label:     text.Chars(`Secure Base URL for Static View Files`),
-						Comment:   text.Chars(`May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}} placeholder.`),
+						ID:        "base_static_url",
+						Label:     `Secure Base URL for Static View Files`,
+						Comment:   `May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}} placeholder.`,
 						Type:      element.TypeText,
 						SortOrder: 25,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/secure/base_media_url`,
-						ID:        cfgpath.NewRoute("base_media_url"),
-						Label:     text.Chars(`Secure Base URL for User Media Files`),
-						Comment:   text.Chars(`May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}} placeholder.`),
+						ID:        "base_media_url",
+						Label:     `Secure Base URL for User Media Files`,
+						Comment:   `May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}} placeholder.`,
 						Type:      element.TypeText,
 						SortOrder: 40,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/secure/use_in_frontend`,
-						ID:        cfgpath.NewRoute("use_in_frontend"),
-						Label:     text.Chars(`Use Secure URLs in Frontend`),
-						Comment:   text.Chars(`Enter https protocol to use Secure URLs in Frontend.`),
+						ID:        "use_in_frontend",
+						Label:     `Use Secure URLs in Frontend`,
+						Comment:   `Enter https protocol to use Secure URLs in Frontend.`,
 						Type:      element.TypeSelect,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/secure/use_in_adminhtml`,
-						ID:        cfgpath.NewRoute("use_in_adminhtml"),
-						Label:     text.Chars(`Use Secure URLs in Admin`),
-						Comment:   text.Chars(`Enter https protocol to use Secure URLs in Admin.`),
+						ID:        "use_in_adminhtml",
+						Label:     `Use Secure URLs in Admin`,
+						Comment:   `Enter https protocol to use Secure URLs in Admin.`,
 						Type:      element.TypeSelect,
 						SortOrder: 60,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/secure/offloader_header`,
-						ID:        cfgpath.NewRoute("offloader_header"),
-						Label:     text.Chars(`Offloader header`),
+						ID:        "offloader_header",
+						Label:     `Offloader header`,
 						Type:      element.TypeText,
 						SortOrder: 70,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("default"),
-				Label:     text.Chars(`Default Pages`),
+			&element.Group{
+				ID:        "default",
+				Label:     `Default Pages`,
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `web/default/front`,
-						ID:        cfgpath.NewRoute("front"),
-						Label:     text.Chars(`Default Web URL`),
+						ID:        "front",
+						Label:     `Default Web URL`,
 						Type:      element.TypeText,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/default/no_route`,
-						ID:        cfgpath.NewRoute("no_route"),
-						Label:     text.Chars(`Default No-route URL`),
+						ID:        "no_route",
+						Label:     `Default No-route URL`,
 						Type:      element.TypeText,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("session"),
-				Label:     text.Chars(`Session Validation Settings`),
+			&element.Group{
+				ID:        "session",
+				Label:     `Session Validation Settings`,
 				SortOrder: 60,
 				Scopes:    scope.PermWebsite,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `web/session/use_remote_addr`,
-						ID:        cfgpath.NewRoute("use_remote_addr"),
-						Label:     text.Chars(`Validate REMOTE_ADDR`),
+						ID:        "use_remote_addr",
+						Label:     `Validate REMOTE_ADDR`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/session/use_http_via`,
-						ID:        cfgpath.NewRoute("use_http_via"),
-						Label:     text.Chars(`Validate HTTP_VIA`),
+						ID:        "use_http_via",
+						Label:     `Validate HTTP_VIA`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/session/use_http_x_forwarded_for`,
-						ID:        cfgpath.NewRoute("use_http_x_forwarded_for"),
-						Label:     text.Chars(`Validate HTTP_X_FORWARDED_FOR`),
+						ID:        "use_http_x_forwarded_for",
+						Label:     `Validate HTTP_X_FORWARDED_FOR`,
 						Type:      element.TypeSelect,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/session/use_http_user_agent`,
-						ID:        cfgpath.NewRoute("use_http_user_agent"),
-						Label:     text.Chars(`Validate HTTP_USER_AGENT`),
+						ID:        "use_http_user_agent",
+						Label:     `Validate HTTP_USER_AGENT`,
 						Type:      element.TypeSelect,
 						SortOrder: 40,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/session/use_frontend_sid`,
-						ID:        cfgpath.NewRoute("use_frontend_sid"),
-						Label:     text.Chars(`Use SID on Frontend`),
-						Comment:   text.Chars(`Allows customers to stay logged in when switching between different stores.`),
+						ID:        "use_frontend_sid",
+						Label:     `Use SID on Frontend`,
+						Comment:   `Allows customers to stay logged in when switching between different stores.`,
 						Type:      element.TypeSelect,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
@@ -1401,54 +1396,50 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("system"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("media_storage_configuration"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "system",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "media_storage_configuration",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `system/media_storage_configuration/allowed_resources`,
-						ID:      cfgpath.NewRoute("allowed_resources"),
+						ID:      "allowed_resources",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"email_folder":"email"}`,
 					},
 				},
 			},
 
-			element.Group{
-				ID: cfgpath.NewRoute("emails"),
-				Fields: element.FieldSlice{
-					element.Field{
+			&element.Group{
+				ID: "emails",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `system/emails/forgot_email_template`,
-						ID:      cfgpath.NewRoute("forgot_email_template"),
+						ID:      "forgot_email_template",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `system_emails_forgot_email_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/emails/forgot_email_identity`,
-						ID:      cfgpath.NewRoute("forgot_email_identity"),
+						ID:      "forgot_email_identity",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `general`,
 					},
 				},
 			},
 
-			element.Group{
-				ID: cfgpath.NewRoute("dashboard"),
-				Fields: element.FieldSlice{
-					element.Field{
+			&element.Group{
+				ID: "dashboard",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `system/dashboard/enable_charts`,
-						ID:      cfgpath.NewRoute("enable_charts"),
+						ID:      "enable_charts",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: true,
 					},
@@ -1456,17 +1447,16 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	element.Section{
-		ID: cfgpath.NewRoute("general"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("validator_data"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "general",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "validator_data",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `general/validator_data/input_types`,
-						ID:      cfgpath.NewRoute("input_types"),
+						ID:      "input_types",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"price":"price","media_image":"media_image","gallery":"gallery"}`,
 					},
@@ -1474,70 +1464,70 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("system"),
+	&element.Section{
+		ID:        "system",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("backup"),
-				Label:     text.Chars(`Scheduled Backup Settings`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "backup",
+				Label:     `Scheduled Backup Settings`,
 				SortOrder: 500,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `system/backup/enabled`,
-						ID:        cfgpath.NewRoute("enabled"),
-						Label:     text.Chars(`Enable Scheduled Backup`),
+						ID:        "enabled",
+						Label:     `Enable Scheduled Backup`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/backup/type`,
-						ID:        cfgpath.NewRoute("type"),
-						Label:     text.Chars(`Backup Type`),
+						ID:        "type",
+						Label:     `Backup Type`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/backup/time`,
-						ID:        cfgpath.NewRoute("time"),
-						Label:     text.Chars(`Start Time`),
+						ID:        "time",
+						Label:     `Start Time`,
 						Type:      element.TypeTime,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/backup/frequency`,
-						ID:        cfgpath.NewRoute("frequency"),
-						Label:     text.Chars(`Frequency`),
+						ID:        "frequency",
+						Label:     `Frequency`,
 						Type:      element.TypeSelect,
 						SortOrder: 40,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/backup/maintenance`,
-						ID:        cfgpath.NewRoute("maintenance"),
-						Label:     text.Chars(`Maintenance Mode`),
-						Comment:   text.Chars(`Please put your store into maintenance mode during backup.`),
+						ID:        "maintenance",
+						Label:     `Maintenance Mode`,
+						Comment:   `Please put your store into maintenance mode during backup.`,
 						Type:      element.TypeSelect,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
@@ -1545,116 +1535,116 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("admin"),
+	&element.Section{
+		ID:        "admin",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("captcha"),
-				Label:     text.Chars(`CAPTCHA`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "captcha",
+				Label:     `CAPTCHA`,
 				SortOrder: 50,
 				Scopes:    scope.PermWebsite,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `admin/captcha/enable`,
-						ID:        cfgpath.NewRoute("enable"),
-						Label:     text.Chars(`Enable CAPTCHA in Admin`),
+						ID:        "enable",
+						Label:     `Enable CAPTCHA in Admin`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `admin/captcha/font`,
-						ID:        cfgpath.NewRoute("font"),
-						Label:     text.Chars(`Font`),
+						ID:        "font",
+						Label:     `Font`,
 						Type:      element.TypeSelect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `linlibertine`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `admin/captcha/forms`,
-						ID:        cfgpath.NewRoute("forms"),
-						Label:     text.Chars(`Forms`),
+						ID:        "forms",
+						Label:     `Forms`,
 						Type:      element.TypeMultiselect,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `backend_forgotpassword`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `admin/captcha/mode`,
-						ID:        cfgpath.NewRoute("mode"),
-						Label:     text.Chars(`Displaying Mode`),
+						ID:        "mode",
+						Label:     `Displaying Mode`,
 						Type:      element.TypeSelect,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `after_fail`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `admin/captcha/failed_attempts_login`,
-						ID:        cfgpath.NewRoute("failed_attempts_login"),
-						Label:     text.Chars(`Number of Unsuccessful Attempts to Login`),
-						Comment:   text.Chars(`If 0 is specified, CAPTCHA on the Login form will be always available.`),
+						ID:        "failed_attempts_login",
+						Label:     `Number of Unsuccessful Attempts to Login`,
+						Comment:   `If 0 is specified, CAPTCHA on the Login form will be always available.`,
 						Type:      element.TypeText,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   3,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `admin/captcha/timeout`,
-						ID:        cfgpath.NewRoute("timeout"),
-						Label:     text.Chars(`CAPTCHA Timeout (minutes)`),
+						ID:        "timeout",
+						Label:     `CAPTCHA Timeout (minutes)`,
 						Type:      element.TypeText,
 						SortOrder: 6,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   7,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `admin/captcha/length`,
-						ID:        cfgpath.NewRoute("length"),
-						Label:     text.Chars(`Number of Symbols`),
-						Comment:   text.Chars(`Please specify 8 symbols at the most. Range allowed (e.g. 3-5)`),
+						ID:        "length",
+						Label:     `Number of Symbols`,
+						Comment:   `Please specify 8 symbols at the most. Range allowed (e.g. 3-5)`,
 						Type:      element.TypeText,
 						SortOrder: 7,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `4-5`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `admin/captcha/symbols`,
-						ID:        cfgpath.NewRoute("symbols"),
-						Label:     text.Chars(`Symbols Used in CAPTCHA`),
-						Comment:   text.Chars(`Please use only letters (a-z or A-Z) or numbers (0-9) in this field. No spaces or other characters are allowed.<br />Similar looking characters (e.g. "i", "l", "1") decrease chance of correct recognition by customer.`),
+						ID:        "symbols",
+						Label:     `Symbols Used in CAPTCHA`,
+						Comment:   `Please use only letters (a-z or A-Z) or numbers (0-9) in this field. No spaces or other characters are allowed.<br />Similar looking characters (e.g. "i", "l", "1") decrease chance of correct recognition by customer.`,
 						Type:      element.TypeText,
 						SortOrder: 8,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `ABCDEFGHJKMnpqrstuvwxyz23456789`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `admin/captcha/case_sensitive`,
-						ID:        cfgpath.NewRoute("case_sensitive"),
-						Label:     text.Chars(`Case Sensitive`),
+						ID:        "case_sensitive",
+						Label:     `Case Sensitive`,
 						Type:      element.TypeSelect,
 						SortOrder: 9,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   false,
 					},
@@ -1662,117 +1652,117 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("customer"),
+	&element.Section{
+		ID:        "customer",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("captcha"),
-				Label:     text.Chars(`CAPTCHA`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "captcha",
+				Label:     `CAPTCHA`,
 				SortOrder: 110,
 				Scopes:    scope.PermWebsite,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `customer/captcha/enable`,
-						ID:        cfgpath.NewRoute("enable"),
-						Label:     text.Chars(`Enable CAPTCHA on Frontend`),
+						ID:        "enable",
+						Label:     `Enable CAPTCHA on Frontend`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/captcha/font`,
-						ID:        cfgpath.NewRoute("font"),
-						Label:     text.Chars(`Font`),
+						ID:        "font",
+						Label:     `Font`,
 						Type:      element.TypeSelect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `linlibertine`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/captcha/forms`,
-						ID:        cfgpath.NewRoute("forms"),
-						Label:     text.Chars(`Forms`),
-						Comment:   text.Chars(`CAPTCHA for "Create user" and "Forgot password" forms is always enabled if chosen.`),
+						ID:        "forms",
+						Label:     `Forms`,
+						Comment:   `CAPTCHA for "Create user" and "Forgot password" forms is always enabled if chosen.`,
 						Type:      element.TypeMultiselect,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `user_forgotpassword`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/captcha/mode`,
-						ID:        cfgpath.NewRoute("mode"),
-						Label:     text.Chars(`Displaying Mode`),
+						ID:        "mode",
+						Label:     `Displaying Mode`,
 						Type:      element.TypeSelect,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `after_fail`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/captcha/failed_attempts_login`,
-						ID:        cfgpath.NewRoute("failed_attempts_login"),
-						Label:     text.Chars(`Number of Unsuccessful Attempts to Login`),
-						Comment:   text.Chars(`If 0 is specified, CAPTCHA on the Login form will be always available.`),
+						ID:        "failed_attempts_login",
+						Label:     `Number of Unsuccessful Attempts to Login`,
+						Comment:   `If 0 is specified, CAPTCHA on the Login form will be always available.`,
 						Type:      element.TypeText,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   3,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/captcha/timeout`,
-						ID:        cfgpath.NewRoute("timeout"),
-						Label:     text.Chars(`CAPTCHA Timeout (minutes)`),
+						ID:        "timeout",
+						Label:     `CAPTCHA Timeout (minutes)`,
 						Type:      element.TypeText,
 						SortOrder: 6,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   7,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/captcha/length`,
-						ID:        cfgpath.NewRoute("length"),
-						Label:     text.Chars(`Number of Symbols`),
-						Comment:   text.Chars(`Please specify 8 symbols at the most. Range allowed (e.g. 3-5)`),
+						ID:        "length",
+						Label:     `Number of Symbols`,
+						Comment:   `Please specify 8 symbols at the most. Range allowed (e.g. 3-5)`,
 						Type:      element.TypeText,
 						SortOrder: 7,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `4-5`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/captcha/symbols`,
-						ID:        cfgpath.NewRoute("symbols"),
-						Label:     text.Chars(`Symbols Used in CAPTCHA`),
-						Comment:   text.Chars(`Please use only letters (a-z or A-Z) or numbers (0-9) in this field. No spaces or other characters are allowed.<br />Similar looking characters (e.g. "i", "l", "1") decrease chance of correct recognition by customer.`),
+						ID:        "symbols",
+						Label:     `Symbols Used in CAPTCHA`,
+						Comment:   `Please use only letters (a-z or A-Z) or numbers (0-9) in this field. No spaces or other characters are allowed.<br />Similar looking characters (e.g. "i", "l", "1") decrease chance of correct recognition by customer.`,
 						Type:      element.TypeText,
 						SortOrder: 8,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `ABCDEFGHJKMnpqrstuvwxyz23456789`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/captcha/case_sensitive`,
-						ID:        cfgpath.NewRoute("case_sensitive"),
-						Label:     text.Chars(`Case Sensitive`),
+						ID:        "case_sensitive",
+						Label:     `Case Sensitive`,
 						Type:      element.TypeSelect,
 						SortOrder: 9,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
@@ -1782,17 +1772,16 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("system"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("media_storage_configuration"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "system",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "media_storage_configuration",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `system/media_storage_configuration/allowed_resources`,
-						ID:      cfgpath.NewRoute("allowed_resources"),
+						ID:      "allowed_resources",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"captcha_folder":"captcha"}`,
 					},
@@ -1800,44 +1789,40 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	element.Section{
-		ID: cfgpath.NewRoute("admin"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("captcha"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "admin",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "captcha",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `admin/captcha/type`,
-						ID:      cfgpath.NewRoute("type"),
+						ID:      "type",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `default`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `admin/captcha/failed_attempts_ip`,
-						ID:      cfgpath.NewRoute("failed_attempts_ip"),
+						ID:      "failed_attempts_ip",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: 1000,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `admin/captcha/shown_to_logged_in_user`,
-						ID:      cfgpath.NewRoute("shown_to_logged_in_user"),
+						ID:      "shown_to_logged_in_user",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `admin/captcha/always_for`,
-						ID:      cfgpath.NewRoute("always_for"),
+						ID:      "always_for",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"backend_forgotpassword":"1"}`,
 					},
@@ -1845,44 +1830,40 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	element.Section{
-		ID: cfgpath.NewRoute("customer"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("captcha"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "customer",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "captcha",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `customer/captcha/type`,
-						ID:      cfgpath.NewRoute("type"),
+						ID:      "type",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `default`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/captcha/failed_attempts_ip`,
-						ID:      cfgpath.NewRoute("failed_attempts_ip"),
+						ID:      "failed_attempts_ip",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: 1000,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/captcha/shown_to_logged_in_user`,
-						ID:      cfgpath.NewRoute("shown_to_logged_in_user"),
+						ID:      "shown_to_logged_in_user",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"contact_us":"1"}`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/captcha/always_for`,
-						ID:      cfgpath.NewRoute("always_for"),
+						ID:      "always_for",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"user_create":"1","user_forgotpassword":"1","guest_checkout":"1","register_during_checkout":"1","contact_us":"1"}`,
 					},
@@ -1890,49 +1871,45 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	element.Section{
-		ID: cfgpath.NewRoute("captcha"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("_value"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "captcha",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "_value",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `captcha/_value/fonts`,
-						ID:      cfgpath.NewRoute("fonts"),
+						ID:      "fonts",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"linlibertine":{"label":"LinLibertine","path":"LinLibertineFont\/LinLibertine_Bd-2.8.1.ttf"}}`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `captcha/_value/frontend`,
-						ID:      cfgpath.NewRoute("frontend"),
+						ID:      "frontend",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"areas":{"user_create":{"label":"Create user"},"user_login":{"label":"Login"},"user_forgotpassword":{"label":"Forgot password"},"guest_checkout":{"label":"Checkout as Guest"},"register_during_checkout":{"label":"Register during Checkout"},"contact_us":{"label":"Contact Us"}}}`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `captcha/_value/backend`,
-						ID:      cfgpath.NewRoute("backend"),
+						ID:      "backend",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"areas":{"backend_login":{"label":"Admin Login"},"backend_forgotpassword":{"label":"Admin Forgot Password"}}}`,
 					},
 				},
 			},
 
-			element.Group{
-				ID: cfgpath.NewRoute("_attribute"),
-				Fields: element.FieldSlice{
-					element.Field{
+			&element.Group{
+				ID: "_attribute",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `captcha/_attribute/translate`,
-						ID:      cfgpath.NewRoute("translate"),
+						ID:      "translate",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `label`,
 					},
@@ -1941,338 +1918,338 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("catalog"),
-		Label:     text.Chars("Catalog"),
+	&element.Section{
+		ID:        "catalog",
+		Label:     `Catalog`,
 		SortOrder: 40,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("fields_masks"),
-				Label:     text.Chars(`Product Fields Auto-Generation`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "fields_masks",
+				Label:     `Product Fields Auto-Generation`,
 				SortOrder: 90,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `catalog/fields_masks/sku`,
-						ID:        cfgpath.NewRoute("sku"),
-						Label:     text.Chars(`Mask for SKU`),
-						Comment:   text.Chars(`Use {{name}} as Product Name placeholder`),
+						ID:        "sku",
+						Label:     `Mask for SKU`,
+						Comment:   `Use {{name}} as Product Name placeholder`,
 						Type:      element.TypeText,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `{{name}}`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/fields_masks/meta_title`,
-						ID:        cfgpath.NewRoute("meta_title"),
-						Label:     text.Chars(`Mask for Meta Title`),
-						Comment:   text.Chars(`Use {{name}} as Product Name placeholder`),
+						ID:        "meta_title",
+						Label:     `Mask for Meta Title`,
+						Comment:   `Use {{name}} as Product Name placeholder`,
 						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `{{name}}`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/fields_masks/meta_keyword`,
-						ID:        cfgpath.NewRoute("meta_keyword"),
-						Label:     text.Chars(`Mask for Meta Keywords`),
-						Comment:   text.Chars(`Use {{name}} as Product Name or {{sku}} as Product SKU placeholders`),
+						ID:        "meta_keyword",
+						Label:     `Mask for Meta Keywords`,
+						Comment:   `Use {{name}} as Product Name or {{sku}} as Product SKU placeholders`,
 						Type:      element.TypeText,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `{{name}}`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/fields_masks/meta_description`,
-						ID:        cfgpath.NewRoute("meta_description"),
-						Label:     text.Chars(`Mask for Meta Description`),
-						Comment:   text.Chars(`Use {{name}} and {{description}} as Product Name and Product Description placeholders`),
+						ID:        "meta_description",
+						Label:     `Mask for Meta Description`,
+						Comment:   `Use {{name}} and {{description}} as Product Name and Product Description placeholders`,
 						Type:      element.TypeText,
 						SortOrder: 40,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `{{name}} {{description}}`,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("frontend"),
-				Label:     text.Chars(`Frontend`),
+			&element.Group{
+				ID:        "frontend",
+				Label:     `Frontend`,
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `catalog/frontend/list_mode`,
-						ID:        cfgpath.NewRoute("list_mode"),
-						Label:     text.Chars(`List Mode`),
+						ID:        "list_mode",
+						Label:     `List Mode`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `grid-list`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/frontend/grid_per_page_values`,
-						ID:        cfgpath.NewRoute("grid_per_page_values"),
-						Label:     text.Chars(`Products per Page on Grid Allowed Values`),
-						Comment:   text.Chars(`Comma-separated.`),
+						ID:        "grid_per_page_values",
+						Label:     `Products per Page on Grid Allowed Values`,
+						Comment:   `Comma-separated.`,
 						Type:      element.TypeText,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `9,15,30`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/frontend/grid_per_page`,
-						ID:        cfgpath.NewRoute("grid_per_page"),
-						Label:     text.Chars(`Products per Page on Grid Default Value`),
-						Comment:   text.Chars(`Must be in the allowed values list`),
+						ID:        "grid_per_page",
+						Label:     `Products per Page on Grid Default Value`,
+						Comment:   `Must be in the allowed values list`,
 						Type:      element.TypeText,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   9,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/frontend/list_per_page_values`,
-						ID:        cfgpath.NewRoute("list_per_page_values"),
-						Label:     text.Chars(`Products per Page on List Allowed Values`),
-						Comment:   text.Chars(`Comma-separated.`),
+						ID:        "list_per_page_values",
+						Label:     `Products per Page on List Allowed Values`,
+						Comment:   `Comma-separated.`,
 						Type:      element.TypeText,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `5,10,15,20,25`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/frontend/list_per_page`,
-						ID:        cfgpath.NewRoute("list_per_page"),
-						Label:     text.Chars(`Products per Page on List Default Value`),
-						Comment:   text.Chars(`Must be in the allowed values list`),
+						ID:        "list_per_page",
+						Label:     `Products per Page on List Default Value`,
+						Comment:   `Must be in the allowed values list`,
 						Type:      element.TypeText,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   10,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/frontend/flat_catalog_category`,
-						ID:        cfgpath.NewRoute("flat_catalog_category"),
-						Label:     text.Chars(`Use Flat Catalog Category`),
+						ID:        "flat_catalog_category",
+						Label:     `Use Flat Catalog Category`,
 						Type:      element.TypeSelect,
 						SortOrder: 100,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/frontend/flat_catalog_product`,
-						ID:        cfgpath.NewRoute("flat_catalog_product"),
-						Label:     text.Chars(`Use Flat Catalog Product`),
+						ID:        "flat_catalog_product",
+						Label:     `Use Flat Catalog Product`,
 						Type:      element.TypeSelect,
 						SortOrder: 100,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/frontend/default_sort_by`,
-						ID:        cfgpath.NewRoute("default_sort_by"),
-						Label:     text.Chars(`Product Listing Sort by`),
+						ID:        "default_sort_by",
+						Label:     `Product Listing Sort by`,
 						Type:      element.TypeSelect,
 						SortOrder: 6,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `position`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/frontend/list_allow_all`,
-						ID:        cfgpath.NewRoute("list_allow_all"),
-						Label:     text.Chars(`Allow All Products per Page`),
-						Comment:   text.Chars(`Whether to show "All" option in the "Show X Per Page" dropdown`),
+						ID:        "list_allow_all",
+						Label:     `Allow All Products per Page`,
+						Comment:   `Whether to show "All" option in the "Show X Per Page" dropdown`,
 						Type:      element.TypeSelect,
 						SortOrder: 6,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/frontend/parse_url_directives`,
-						ID:        cfgpath.NewRoute("parse_url_directives"),
-						Label:     text.Chars(`Allow Dynamic Media URLs in Products and Categories`),
-						Comment:   text.Chars(`E.g. {{media url="path/to/image.jpg"}} {{skin url="path/to/picture.gif"}}. Dynamic directives parsing impacts catalog performance.`),
+						ID:        "parse_url_directives",
+						Label:     `Allow Dynamic Media URLs in Products and Categories`,
+						Comment:   `E.g. {{media url="path/to/image.jpg"}} {{skin url="path/to/picture.gif"}}. Dynamic directives parsing impacts catalog performance.`,
 						Type:      element.TypeSelect,
 						SortOrder: 200,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("placeholder"),
-				Label:     text.Chars(`Product Image Placeholders`),
+			&element.Group{
+				ID:        "placeholder",
+				Label:     `Product Image Placeholders`,
 				SortOrder: 300,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `catalog/placeholder/placeholder`,
-						ID:        cfgpath.NewRoute("placeholder"),
+						ID:        "placeholder",
 						Label:     nil,
 						Type:      element.TypeImage,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("seo"),
-				Label:     text.Chars(`Search Engine Optimization`),
+			&element.Group{
+				ID:        "seo",
+				Label:     `Search Engine Optimization`,
 				SortOrder: 500,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `catalog/seo/title_separator`,
-						ID:        cfgpath.NewRoute("title_separator"),
-						Label:     text.Chars(`Page Title Separator`),
+						ID:        "title_separator",
+						Label:     `Page Title Separator`,
 						Type:      element.TypeText,
 						SortOrder: 6,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `-`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/seo/category_canonical_tag`,
-						ID:        cfgpath.NewRoute("category_canonical_tag"),
-						Label:     text.Chars(`Use Canonical Link Meta Tag For Categories`),
+						ID:        "category_canonical_tag",
+						Label:     `Use Canonical Link Meta Tag For Categories`,
 						Type:      element.TypeSelect,
 						SortOrder: 7,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/seo/product_canonical_tag`,
-						ID:        cfgpath.NewRoute("product_canonical_tag"),
-						Label:     text.Chars(`Use Canonical Link Meta Tag For Products`),
+						ID:        "product_canonical_tag",
+						Label:     `Use Canonical Link Meta Tag For Products`,
 						Type:      element.TypeSelect,
 						SortOrder: 8,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   false,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("price"),
-				Label:     text.Chars(`Price`),
+			&element.Group{
+				ID:        "price",
+				Label:     `Price`,
 				SortOrder: 400,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `catalog/price/scope`,
-						ID:        cfgpath.NewRoute("scope"),
-						Label:     text.Chars(`Catalog Price Scope`),
-						Comment:   text.Chars(`This defines the base currency scope ("Currency Setup" > "Currency Options" > "Base Currency").`),
+						ID:        "scope",
+						Label:     `Catalog Price Scope`,
+						Comment:   `This defines the base currency scope ("Currency Setup" > "Currency Options" > "Base Currency").`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("navigation"),
-				Label:     text.Chars(`Category Top Navigation`),
+			&element.Group{
+				ID:        "navigation",
+				Label:     `Category Top Navigation`,
 				SortOrder: 500,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `catalog/navigation/max_depth`,
-						ID:        cfgpath.NewRoute("max_depth"),
-						Label:     text.Chars(`Maximal Depth`),
+						ID:        "max_depth",
+						Label:     `Maximal Depth`,
 						Type:      element.TypeText,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   0,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("custom_options"),
-				Label:     text.Chars(`Date & Time Custom Options`),
+			&element.Group{
+				ID:        "custom_options",
+				Label:     `Date & Time Custom Options`,
 				SortOrder: 700,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `catalog/custom_options/use_calendar`,
-						ID:        cfgpath.NewRoute("use_calendar"),
-						Label:     text.Chars(`Use JavaScript Calendar`),
+						ID:        "use_calendar",
+						Label:     `Use JavaScript Calendar`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/custom_options/date_fields_order`,
-						ID:        cfgpath.NewRoute("date_fields_order"),
-						Label:     text.Chars(`Date Fields Order`),
+						ID:        "date_fields_order",
+						Label:     `Date Fields Order`,
 						Type:      element.TypeSelect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `m,d,y`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/custom_options/time_format`,
-						ID:        cfgpath.NewRoute("time_format"),
-						Label:     text.Chars(`Time Format`),
+						ID:        "time_format",
+						Label:     `Time Format`,
 						Type:      element.TypeSelect,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `12h`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/custom_options/year_range`,
-						ID:        cfgpath.NewRoute("year_range"),
-						Label:     text.Chars(`Year Range`),
-						Comment:   text.Chars(`Please use a four-digit year format.`),
+						ID:        "year_range",
+						Label:     `Year Range`,
+						Comment:   `Please use a four-digit year format.`,
 						Type:      element.TypeText,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
@@ -2280,60 +2257,60 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("design"),
+	&element.Section{
+		ID:        "design",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("watermark"),
-				Label:     text.Chars(`Product Image Watermarks`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "watermark",
+				Label:     `Product Image Watermarks`,
 				SortOrder: 400,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `design/watermark/size`,
-						ID:        cfgpath.NewRoute("size"),
-						Label:     text.Chars(`Watermark Default Size`),
-						Comment:   text.Chars(`Example format: 200x300.`),
+						ID:        "size",
+						Label:     `Watermark Default Size`,
+						Comment:   `Example format: 200x300.`,
 						Type:      element.TypeText,
 						SortOrder: 100,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `design/watermark/imageOpacity`,
-						ID:        cfgpath.NewRoute("imageOpacity"),
-						Label:     text.Chars(`Watermark Opacity, Percent`),
+						ID:        "imageOpacity",
+						Label:     `Watermark Opacity, Percent`,
 						Type:      element.TypeText,
 						SortOrder: 150,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `design/watermark/image`,
-						ID:        cfgpath.NewRoute("image"),
-						Label:     text.Chars(`Watermark`),
-						Comment:   text.Chars(`Allowed file types: jpeg, gif, png.`),
+						ID:        "image",
+						Label:     `Watermark`,
+						Comment:   `Allowed file types: jpeg, gif, png.`,
 						Type:      element.TypeImage,
 						SortOrder: 200,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `design/watermark/position`,
-						ID:        cfgpath.NewRoute("position"),
-						Label:     text.Chars(`Watermark Position`),
+						ID:        "position",
+						Label:     `Watermark Position`,
 						Type:      element.TypeSelect,
 						SortOrder: 300,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
@@ -2341,26 +2318,26 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("cms"),
+	&element.Section{
+		ID:        "cms",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("wysiwyg"),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "wysiwyg",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `cms/wysiwyg/use_static_urls_in_catalog`,
-						ID:        cfgpath.NewRoute("use_static_urls_in_catalog"),
-						Label:     text.Chars(`Use Static URLs for Media Content in WYSIWYG for Catalog`),
-						Comment:   text.Chars(`This applies only to catalog products and categories. Media content will be inserted into the editor as a static URL. Media content is not updated if the system configuration base URL changes.`),
+						ID:        "use_static_urls_in_catalog",
+						Label:     `Use Static URLs for Media Content in WYSIWYG for Catalog`,
+						Comment:   `This applies only to catalog products and categories. Media content will be inserted into the editor as a static URL. Media content is not updated if the system configuration base URL changes.`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
@@ -2368,47 +2345,47 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("rss"),
+	&element.Section{
+		ID:        "rss",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("catalog"),
-				Label:     text.Chars(`Catalog`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "catalog",
+				Label:     `Catalog`,
 				SortOrder: 3,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `rss/catalog/new`,
-						ID:        cfgpath.NewRoute("new"),
-						Label:     text.Chars(`New Products`),
+						ID:        "new",
+						Label:     `New Products`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `rss/catalog/special`,
-						ID:        cfgpath.NewRoute("special"),
-						Label:     text.Chars(`Special Products`),
+						ID:        "special",
+						Label:     `Special Products`,
 						Type:      element.TypeSelect,
 						SortOrder: 11,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `rss/catalog/category`,
-						ID:        cfgpath.NewRoute("category"),
-						Label:     text.Chars(`Top Level Category`),
+						ID:        "category",
+						Label:     `Top Level Category`,
 						Type:      element.TypeSelect,
 						SortOrder: 14,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
@@ -2418,81 +2395,74 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("catalog"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("product"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "catalog",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "product",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `catalog/product/flat`,
-						ID:      cfgpath.NewRoute("flat"),
+						ID:      "flat",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"max_index_count":"64"}`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/product/default_tax_group`,
-						ID:      cfgpath.NewRoute("default_tax_group"),
+						ID:      "default_tax_group",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: 2,
 					},
 				},
 			},
 
-			element.Group{
-				ID: cfgpath.NewRoute("seo"),
-				Fields: element.FieldSlice{
-					element.Field{
+			&element.Group{
+				ID: "seo",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `catalog/seo/product_url_suffix`,
-						ID:      cfgpath.NewRoute("product_url_suffix"),
+						ID:      "product_url_suffix",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `.html`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/seo/category_url_suffix`,
-						ID:      cfgpath.NewRoute("category_url_suffix"),
+						ID:      "category_url_suffix",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `.html`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/seo/product_use_categories`,
-						ID:      cfgpath.NewRoute("product_use_categories"),
+						ID:      "product_use_categories",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/seo/save_rewrites_history`,
-						ID:      cfgpath.NewRoute("save_rewrites_history"),
+						ID:      "save_rewrites_history",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: true,
 					},
 				},
 			},
 
-			element.Group{
-				ID: cfgpath.NewRoute("custom_options"),
-				Fields: element.FieldSlice{
-					element.Field{
+			&element.Group{
+				ID: "custom_options",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `catalog/custom_options/forbidden_extensions`,
-						ID:      cfgpath.NewRoute("forbidden_extensions"),
+						ID:      "forbidden_extensions",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `php,exe`,
 					},
@@ -2500,17 +2470,16 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	element.Section{
-		ID: cfgpath.NewRoute("system"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("media_storage_configuration"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "system",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "media_storage_configuration",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `system/media_storage_configuration/allowed_resources`,
-						ID:      cfgpath.NewRoute("allowed_resources"),
+						ID:      "allowed_resources",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"catalog_images_folder":"catalog","product_custom_options_fodler":"custom_options"}`,
 					},
@@ -2519,180 +2488,180 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("cataloginventory"),
-		Label:     text.Chars("Inventory"),
+	&element.Section{
+		ID:        "cataloginventory",
+		Label:     `Inventory`,
 		SortOrder: 50,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("options"),
-				Label:     text.Chars(`Stock Options`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "options",
+				Label:     `Stock Options`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `cataloginventory/options/can_subtract`,
-						ID:        cfgpath.NewRoute("can_subtract"),
-						Label:     text.Chars(`Decrease Stock When Order is Placed`),
+						ID:        "can_subtract",
+						Label:     `Decrease Stock When Order is Placed`,
 						Type:      element.TypeSelect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `cataloginventory/options/can_back_in_stock`,
-						ID:        cfgpath.NewRoute("can_back_in_stock"),
-						Label:     text.Chars(`Set Items' Status to be In Stock When Order is Cancelled`),
+						ID:        "can_back_in_stock",
+						Label:     `Set Items' Status to be In Stock When Order is Cancelled`,
 						Type:      element.TypeSelect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `cataloginventory/options/show_out_of_stock`,
-						ID:        cfgpath.NewRoute("show_out_of_stock"),
-						Label:     text.Chars(`Display Out of Stock Products`),
-						Comment:   text.Chars(`Products will still be shown by direct product URLs.`),
+						ID:        "show_out_of_stock",
+						Label:     `Display Out of Stock Products`,
+						Comment:   `Products will still be shown by direct product URLs.`,
 						Type:      element.TypeSelect,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `cataloginventory/options/stock_threshold_qty`,
-						ID:        cfgpath.NewRoute("stock_threshold_qty"),
-						Label:     text.Chars(`Only X left Threshold`),
+						ID:        "stock_threshold_qty",
+						Label:     `Only X left Threshold`,
 						Type:      element.TypeText,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   0,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `cataloginventory/options/display_product_stock_status`,
-						ID:        cfgpath.NewRoute("display_product_stock_status"),
-						Label:     text.Chars(`Display products availability in stock in the frontend`),
+						ID:        "display_product_stock_status",
+						Label:     `Display products availability in stock in the frontend`,
 						Type:      element.TypeSelect,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("item_options"),
-				Label:     text.Chars(`Product Stock Options`),
-				Comment:   text.Chars(`Please note that these settings apply to individual items in the cart, not to the entire cart.`),
+			&element.Group{
+				ID:        "item_options",
+				Label:     `Product Stock Options`,
+				Comment:   `Please note that these settings apply to individual items in the cart, not to the entire cart.`,
 				SortOrder: 10,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `cataloginventory/item_options/manage_stock`,
-						ID:        cfgpath.NewRoute("manage_stock"),
-						Label:     text.Chars(`Manage Stock`),
-						Comment:   text.Chars(`Changing can take some time due to processing whole catalog.`),
+						ID:        "manage_stock",
+						Label:     `Manage Stock`,
+						Comment:   `Changing can take some time due to processing whole catalog.`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `cataloginventory/item_options/backorders`,
-						ID:        cfgpath.NewRoute("backorders"),
-						Label:     text.Chars(`Backorders`),
-						Comment:   text.Chars(`Changing can take some time due to processing whole catalog.`),
+						ID:        "backorders",
+						Label:     `Backorders`,
+						Comment:   `Changing can take some time due to processing whole catalog.`,
 						Type:      element.TypeSelect,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `cataloginventory/item_options/max_sale_qty`,
-						ID:        cfgpath.NewRoute("max_sale_qty"),
-						Label:     text.Chars(`Maximum Qty Allowed in Shopping Cart`),
+						ID:        "max_sale_qty",
+						Label:     `Maximum Qty Allowed in Shopping Cart`,
 						Type:      element.TypeText,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   10000,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `cataloginventory/item_options/min_qty`,
-						ID:        cfgpath.NewRoute("min_qty"),
-						Label:     text.Chars(`Qty for Item's Status to Become Out of Stock`),
+						ID:        "min_qty",
+						Label:     `Qty for Item's Status to Become Out of Stock`,
 						Type:      element.TypeText,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   0,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `cataloginventory/item_options/min_sale_qty`,
-						ID:        cfgpath.NewRoute("min_sale_qty"),
-						Label:     text.Chars(`Minimum Qty Allowed in Shopping Cart`),
+						ID:        "min_sale_qty",
+						Label:     `Minimum Qty Allowed in Shopping Cart`,
 						Type:      element.TypeText,
 						SortOrder: 6,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   1,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `cataloginventory/item_options/notify_stock_qty`,
-						ID:        cfgpath.NewRoute("notify_stock_qty"),
-						Label:     text.Chars(`Notify for Quantity Below`),
+						ID:        "notify_stock_qty",
+						Label:     `Notify for Quantity Below`,
 						Type:      element.TypeText,
 						SortOrder: 7,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   1,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `cataloginventory/item_options/auto_return`,
-						ID:        cfgpath.NewRoute("auto_return"),
-						Label:     text.Chars(`Automatically Return Credit Memo Item to Stock`),
+						ID:        "auto_return",
+						Label:     `Automatically Return Credit Memo Item to Stock`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `cataloginventory/item_options/enable_qty_increments`,
-						ID:        cfgpath.NewRoute("enable_qty_increments"),
-						Label:     text.Chars(`Enable Qty Increments`),
+						ID:        "enable_qty_increments",
+						Label:     `Enable Qty Increments`,
 						Type:      element.TypeSelect,
 						SortOrder: 8,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `cataloginventory/item_options/qty_increments`,
-						ID:        cfgpath.NewRoute("qty_increments"),
-						Label:     text.Chars(`Qty Increments`),
+						ID:        "qty_increments",
+						Label:     `Qty Increments`,
 						Type:      element.TypeText,
 						SortOrder: 9,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   1,
 					},
@@ -2701,78 +2670,78 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("catalog"),
+	&element.Section{
+		ID:        "catalog",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("seo"),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "seo",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `catalog/seo/search_terms`,
-						ID:        cfgpath.NewRoute("search_terms"),
-						Label:     text.Chars(`Popular Search Terms`),
+						ID:        "search_terms",
+						Label:     `Popular Search Terms`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("search"),
-				Label:     text.Chars(`Catalog Search`),
+			&element.Group{
+				ID:        "search",
+				Label:     `Catalog Search`,
 				SortOrder: 500,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `catalog/search/engine`,
-						ID:        cfgpath.NewRoute("engine"),
+						ID:        "engine",
 						Label:     nil,
 						Type:      element.TypeText,
 						SortOrder: 0,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `mysql`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/search/min_query_length`,
-						ID:        cfgpath.NewRoute("min_query_length"),
-						Label:     text.Chars(`Minimal Query Length`),
+						ID:        "min_query_length",
+						Label:     `Minimal Query Length`,
 						Type:      element.TypeText,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   1,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/search/max_query_length`,
-						ID:        cfgpath.NewRoute("max_query_length"),
-						Label:     text.Chars(`Maximum Query Length`),
+						ID:        "max_query_length",
+						Label:     `Maximum Query Length`,
 						Type:      element.TypeText,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   128,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/search/use_layered_navigation_count`,
-						ID:        cfgpath.NewRoute("use_layered_navigation_count"),
-						Label:     text.Chars(`Apply Layered Navigation if Search Results are Less Than`),
-						Comment:   text.Chars(`Enter "0" to enable layered navigation for any number of results.`),
+						ID:        "use_layered_navigation_count",
+						Label:     `Apply Layered Navigation if Search Results are Less Than`,
+						Comment:   `Enter "0" to enable layered navigation for any number of results.`,
 						Type:      element.TypeText,
 						SortOrder: 25,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   0,
 					},
@@ -2781,60 +2750,60 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("catalog"),
+	&element.Section{
+		ID:        "catalog",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("seo"),
-				Label:     text.Chars(`Search Engine Optimization`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "seo",
+				Label:     `Search Engine Optimization`,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `catalog/seo/category_url_suffix`,
-						ID:        cfgpath.NewRoute("category_url_suffix"),
-						Label:     text.Chars(`Category URL Suffix`),
-						Comment:   text.Chars(`You need to refresh the cache.`),
+						ID:        "category_url_suffix",
+						Label:     `Category URL Suffix`,
+						Comment:   `You need to refresh the cache.`,
 						Type:      element.TypeText,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/seo/product_url_suffix`,
-						ID:        cfgpath.NewRoute("product_url_suffix"),
-						Label:     text.Chars(`Product URL Suffix`),
-						Comment:   text.Chars(`You need to refresh the cache.`),
+						ID:        "product_url_suffix",
+						Label:     `Product URL Suffix`,
+						Comment:   `You need to refresh the cache.`,
 						Type:      element.TypeText,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/seo/product_use_categories`,
-						ID:        cfgpath.NewRoute("product_use_categories"),
-						Label:     text.Chars(`Use Categories Path for Product URLs`),
+						ID:        "product_use_categories",
+						Label:     `Use Categories Path for Product URLs`,
 						Type:      element.TypeSelect,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/seo/save_rewrites_history`,
-						ID:        cfgpath.NewRoute("save_rewrites_history"),
-						Label:     text.Chars(`Create Permanent Redirect for URLs if URL Key Changed`),
+						ID:        "save_rewrites_history",
+						Label:     `Create Permanent Redirect for URLs if URL Key Changed`,
 						Type:      element.TypeSelect,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
@@ -2843,70 +2812,70 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("payment_services"),
-		Label:     text.Chars("Payment Services"),
+	&element.Section{
+		ID:        "payment_services",
+		Label:     `Payment Services`,
 		SortOrder: 450,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("centinel"),
-				Label:     text.Chars(`3D Secure Credit Card Validation`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "centinel",
+				Label:     `3D Secure Credit Card Validation`,
 				SortOrder: 1,
 				Scopes:    scope.PermWebsite,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `payment_services/centinel/processor_id`,
-						ID:        cfgpath.NewRoute("processor_id"),
-						Label:     text.Chars(`Processor ID`),
+						ID:        "processor_id",
+						Label:     `Processor ID`,
 						Type:      element.TypeText,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment_services/centinel/merchant_id`,
-						ID:        cfgpath.NewRoute("merchant_id"),
-						Label:     text.Chars(`Merchant ID`),
+						ID:        "merchant_id",
+						Label:     `Merchant ID`,
 						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment_services/centinel/password`,
-						ID:        cfgpath.NewRoute("password"),
-						Label:     text.Chars(`Password`),
+						ID:        "password",
+						Label:     `Password`,
 						Type:      element.TypeObscure,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment_services/centinel/test_mode`,
-						ID:        cfgpath.NewRoute("test_mode"),
-						Label:     text.Chars(`Test Mode`),
-						Comment:   text.Chars(`This overrides any API URL that may be specified by a payment method.`),
+						ID:        "test_mode",
+						Label:     `Test Mode`,
+						Comment:   `This overrides any API URL that may be specified by a payment method.`,
 						Type:      element.TypeSelect,
 						SortOrder: 40,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment_services/centinel/debug`,
-						ID:        cfgpath.NewRoute("debug"),
-						Label:     text.Chars(`Debug Mode`),
+						ID:        "debug",
+						Label:     `Debug Mode`,
 						Type:      element.TypeSelect,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
@@ -2915,190 +2884,190 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("checkout"),
-		Label:     text.Chars("Checkout"),
+	&element.Section{
+		ID:        "checkout",
+		Label:     `Checkout`,
 		SortOrder: 305,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("options"),
-				Label:     text.Chars(`Checkout Options`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "options",
+				Label:     `Checkout Options`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `checkout/options/onepage_checkout_enabled`,
-						ID:        cfgpath.NewRoute("onepage_checkout_enabled"),
-						Label:     text.Chars(`Enable Onepage Checkout`),
+						ID:        "onepage_checkout_enabled",
+						Label:     `Enable Onepage Checkout`,
 						Type:      element.TypeSelect,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `checkout/options/guest_checkout`,
-						ID:        cfgpath.NewRoute("guest_checkout"),
-						Label:     text.Chars(`Allow Guest Checkout`),
+						ID:        "guest_checkout",
+						Label:     `Allow Guest Checkout`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `checkout/options/customer_must_be_logged`,
-						ID:        cfgpath.NewRoute("customer_must_be_logged"),
-						Label:     text.Chars(`Require Customer To Be Logged In To Checkout`),
+						ID:        "customer_must_be_logged",
+						Label:     `Require Customer To Be Logged In To Checkout`,
 						Type:      element.TypeSelect,
 						SortOrder: 15,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("cart"),
-				Label:     text.Chars(`Shopping Cart`),
+			&element.Group{
+				ID:        "cart",
+				Label:     `Shopping Cart`,
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `checkout/cart/delete_quote_after`,
-						ID:        cfgpath.NewRoute("delete_quote_after"),
-						Label:     text.Chars(`Quote Lifetime (days)`),
+						ID:        "delete_quote_after",
+						Label:     `Quote Lifetime (days)`,
 						Type:      element.TypeText,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   30,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `checkout/cart/redirect_to_cart`,
-						ID:        cfgpath.NewRoute("redirect_to_cart"),
-						Label:     text.Chars(`After Adding a Product Redirect to Shopping Cart`),
+						ID:        "redirect_to_cart",
+						Label:     `After Adding a Product Redirect to Shopping Cart`,
 						Type:      element.TypeSelect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   false,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("cart_link"),
-				Label:     text.Chars(`My Cart Link`),
+			&element.Group{
+				ID:        "cart_link",
+				Label:     `My Cart Link`,
 				SortOrder: 3,
 				Scopes:    scope.PermWebsite,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `checkout/cart_link/use_qty`,
-						ID:        cfgpath.NewRoute("use_qty"),
-						Label:     text.Chars(`Display Cart Summary`),
+						ID:        "use_qty",
+						Label:     `Display Cart Summary`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   true,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("sidebar"),
-				Label:     text.Chars(`Shopping Cart Sidebar`),
+			&element.Group{
+				ID:        "sidebar",
+				Label:     `Shopping Cart Sidebar`,
 				SortOrder: 4,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `checkout/sidebar/display`,
-						ID:        cfgpath.NewRoute("display"),
-						Label:     text.Chars(`Display Shopping Cart Sidebar`),
+						ID:        "display",
+						Label:     `Display Shopping Cart Sidebar`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `checkout/sidebar/count`,
-						ID:        cfgpath.NewRoute("count"),
-						Label:     text.Chars(`Maximum Display Recently Added Item(s)`),
+						ID:        "count",
+						Label:     `Maximum Display Recently Added Item(s)`,
 						Type:      element.TypeText,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   5,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("payment_failed"),
-				Label:     text.Chars(`Payment Failed Emails`),
+			&element.Group{
+				ID:        "payment_failed",
+				Label:     `Payment Failed Emails`,
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `checkout/payment_failed/identity`,
-						ID:        cfgpath.NewRoute("identity"),
-						Label:     text.Chars(`Payment Failed Email Sender`),
+						ID:        "identity",
+						Label:     `Payment Failed Email Sender`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `general`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `checkout/payment_failed/receiver`,
-						ID:        cfgpath.NewRoute("receiver"),
-						Label:     text.Chars(`Payment Failed Email Receiver`),
+						ID:        "receiver",
+						Label:     `Payment Failed Email Receiver`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `general`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `checkout/payment_failed/template`,
-						ID:        cfgpath.NewRoute("template"),
-						Label:     text.Chars(`Payment Failed Template`),
+						ID:        "template",
+						Label:     `Payment Failed Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `checkout_payment_failed_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `checkout/payment_failed/copy_to`,
-						ID:        cfgpath.NewRoute("copy_to"),
-						Label:     text.Chars(`Send Payment Failed Email Copy To`),
-						Comment:   text.Chars(`Separate by ",".`),
+						ID:        "copy_to",
+						Label:     `Send Payment Failed Email Copy To`,
+						Comment:   `Separate by ",".`,
 						Type:      element.TypeText,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `checkout/payment_failed/copy_method`,
-						ID:        cfgpath.NewRoute("copy_method"),
-						Label:     text.Chars(`Send Payment Failed Email Copy Method`),
+						ID:        "copy_method",
+						Label:     `Send Payment Failed Email Copy Method`,
 						Type:      element.TypeSelect,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
@@ -3107,25 +3076,25 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("checkout"),
+	&element.Section{
+		ID:        "checkout",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("options"),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "options",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `checkout/options/enable_agreements`,
-						ID:        cfgpath.NewRoute("enable_agreements"),
-						Label:     text.Chars(`Enable Terms and Conditions`),
+						ID:        "enable_agreements",
+						Label:     `Enable Terms and Conditions`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
@@ -3134,99 +3103,99 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("web"),
+	&element.Section{
+		ID:        "web",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("default"),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "default",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `web/default/cms_home_page`,
-						ID:        cfgpath.NewRoute("cms_home_page"),
-						Label:     text.Chars(`CMS Home Page`),
+						ID:        "cms_home_page",
+						Label:     `CMS Home Page`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `home`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/default/cms_no_route`,
-						ID:        cfgpath.NewRoute("cms_no_route"),
-						Label:     text.Chars(`CMS No Route Page`),
+						ID:        "cms_no_route",
+						Label:     `CMS No Route Page`,
 						Type:      element.TypeSelect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `no-route`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/default/cms_no_cookies`,
-						ID:        cfgpath.NewRoute("cms_no_cookies"),
-						Label:     text.Chars(`CMS No Cookies Page`),
+						ID:        "cms_no_cookies",
+						Label:     `CMS No Cookies Page`,
 						Type:      element.TypeSelect,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `enable-cookies`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/default/show_cms_breadcrumbs`,
-						ID:        cfgpath.NewRoute("show_cms_breadcrumbs"),
-						Label:     text.Chars(`Show Breadcrumbs for CMS Pages`),
+						ID:        "show_cms_breadcrumbs",
+						Label:     `Show Breadcrumbs for CMS Pages`,
 						Type:      element.TypeSelect,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("browser_capabilities"),
-				Label:     text.Chars(`Browser Capabilities Detection`),
+			&element.Group{
+				ID:        "browser_capabilities",
+				Label:     `Browser Capabilities Detection`,
 				SortOrder: 200,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `web/browser_capabilities/cookies`,
-						ID:        cfgpath.NewRoute("cookies"),
-						Label:     text.Chars(`Redirect to CMS-page if Cookies are Disabled`),
+						ID:        "cookies",
+						Label:     `Redirect to CMS-page if Cookies are Disabled`,
 						Type:      element.TypeSelect,
 						SortOrder: 100,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/browser_capabilities/javascript`,
-						ID:        cfgpath.NewRoute("javascript"),
-						Label:     text.Chars(`Show Notice if JavaScript is Disabled`),
+						ID:        "javascript",
+						Label:     `Show Notice if JavaScript is Disabled`,
 						Type:      element.TypeSelect,
 						SortOrder: 200,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/browser_capabilities/local_storage`,
-						ID:        cfgpath.NewRoute("local_storage"),
-						Label:     text.Chars(`Show Notice if Local Storage is Disabled`),
+						ID:        "local_storage",
+						Label:     `Show Notice if Local Storage is Disabled`,
 						Type:      element.TypeSelect,
 						SortOrder: 300,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
@@ -3234,25 +3203,25 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("cms"),
-		Label:     text.Chars("Content Management"),
+	&element.Section{
+		ID:        "cms",
+		Label:     `Content Management`,
 		SortOrder: 1001,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("wysiwyg"),
-				Label:     text.Chars(`WYSIWYG Options`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "wysiwyg",
+				Label:     `WYSIWYG Options`,
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `cms/wysiwyg/enabled`,
-						ID:        cfgpath.NewRoute("enabled"),
-						Label:     text.Chars(`Enable WYSIWYG Editor`),
+						ID:        "enabled",
+						Label:     `Enable WYSIWYG Editor`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `enabled`,
 					},
@@ -3262,26 +3231,24 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("web"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("default"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "web",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "default",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `web/default/front`,
-						ID:      cfgpath.NewRoute("front"),
+						ID:      "front",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `cms`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/default/no_route`,
-						ID:      cfgpath.NewRoute("no_route"),
+						ID:      "no_route",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `cms/noroute/index`,
 					},
@@ -3289,17 +3256,16 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	element.Section{
-		ID: cfgpath.NewRoute("system"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("media_storage_configuration"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "system",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "media_storage_configuration",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `system/media_storage_configuration/allowed_resources`,
-						ID:      cfgpath.NewRoute("allowed_resources"),
+						ID:      "allowed_resources",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"wysiwyg_image_folder":"wysiwyg"}`,
 					},
@@ -3308,25 +3274,25 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("checkout"),
+	&element.Section{
+		ID:        "checkout",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("cart"),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "cart",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `checkout/cart/configurable_product_image`,
-						ID:        cfgpath.NewRoute("configurable_product_image"),
-						Label:     text.Chars(`Configurable Product Image`),
+						ID:        "configurable_product_image",
+						Label:     `Configurable Product Image`,
 						Type:      element.TypeSelect,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `parent`,
 					},
@@ -3335,66 +3301,66 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("contact"),
-		Label:     text.Chars("Contacts"),
+	&element.Section{
+		ID:        "contact",
+		Label:     `Contacts`,
 		SortOrder: 100,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("contact"),
-				Label:     text.Chars(`Contact Us`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "contact",
+				Label:     `Contact Us`,
 				SortOrder: 10,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `contact/contact/enabled`,
-						ID:        cfgpath.NewRoute("enabled"),
-						Label:     text.Chars(`Enable Contact Us`),
+						ID:        "enabled",
+						Label:     `Enable Contact Us`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("email"),
-				Label:     text.Chars(`Email Options`),
+			&element.Group{
+				ID:        "email",
+				Label:     `Email Options`,
 				SortOrder: 50,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `contact/email/recipient_email`,
-						ID:        cfgpath.NewRoute("recipient_email"),
-						Label:     text.Chars(`Send Emails To`),
+						ID:        "recipient_email",
+						Label:     `Send Emails To`,
 						Type:      element.TypeText,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `hello@example.com`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `contact/email/sender_email_identity`,
-						ID:        cfgpath.NewRoute("sender_email_identity"),
-						Label:     text.Chars(`Email Sender`),
+						ID:        "sender_email_identity",
+						Label:     `Email Sender`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `custom2`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `contact/email/email_template`,
-						ID:        cfgpath.NewRoute("email_template"),
-						Label:     text.Chars(`Email Template`),
+						ID:        "email_template",
+						Label:     `Email Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `contact_email_email_template`,
 					},
@@ -3403,70 +3369,70 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("web"),
+	&element.Section{
+		ID:        "web",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("cookie"),
-				Label:     text.Chars(`Default Cookie Settings`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "cookie",
+				Label:     `Default Cookie Settings`,
 				SortOrder: 50,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `web/cookie/cookie_lifetime`,
-						ID:        cfgpath.NewRoute("cookie_lifetime"),
-						Label:     text.Chars(`Cookie Lifetime`),
+						ID:        "cookie_lifetime",
+						Label:     `Cookie Lifetime`,
 						Type:      element.TypeText,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   3600,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/cookie/cookie_path`,
-						ID:        cfgpath.NewRoute("cookie_path"),
-						Label:     text.Chars(`Cookie Path`),
+						ID:        "cookie_path",
+						Label:     `Cookie Path`,
 						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/cookie/cookie_domain`,
-						ID:        cfgpath.NewRoute("cookie_domain"),
-						Label:     text.Chars(`Cookie Domain`),
+						ID:        "cookie_domain",
+						Label:     `Cookie Domain`,
 						Type:      element.TypeText,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/cookie/cookie_httponly`,
-						ID:        cfgpath.NewRoute("cookie_httponly"),
-						Label:     text.Chars(`Use HTTP Only`),
-						Comment:   text.Chars(`<strong style="color:red">Warning</strong>:  Do not set to "No". User security could be compromised.`),
+						ID:        "cookie_httponly",
+						Label:     `Use HTTP Only`,
+						Comment:   `<strong style="color:red">Warning</strong>:  Do not set to "No". User security could be compromised.`,
 						Type:      element.TypeSelect,
 						SortOrder: 40,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `web/cookie/cookie_restriction`,
-						ID:        cfgpath.NewRoute("cookie_restriction"),
-						Label:     text.Chars(`Cookie Restriction Mode`),
+						ID:        "cookie_restriction",
+						Label:     `Cookie Restriction Mode`,
 						Type:      element.TypeSelect,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
@@ -3476,17 +3442,16 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("web"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("cookie"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "web",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "cookie",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `web/cookie/cookie_restriction_lifetime`,
-						ID:      cfgpath.NewRoute("cookie_restriction_lifetime"),
+						ID:      "cookie_restriction_lifetime",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: 31536000,
 					},
@@ -3495,455 +3460,455 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("system"),
+	&element.Section{
+		ID:        "system",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("cron"),
-				Label:     text.Chars(`Cron (Scheduled Tasks) - all the times are in minutes`),
-				Comment:   text.Chars(`For correct URLs generated during cron runs please make sure that Web > Secure and Unsecure Base URLs are explicitly set.`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "cron",
+				Label:     `Cron (Scheduled Tasks) - all the times are in minutes`,
+				Comment:   `For correct URLs generated during cron runs please make sure that Web > Secure and Unsecure Base URLs are explicitly set.`,
 				SortOrder: 15,
 				Scopes:    scope.PermDefault,
-				Fields:    element.FieldSlice{},
+				Fields:    element.Fields{},
 			},
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("customer"),
-		Label:     text.Chars("Customer Configuration"),
+	&element.Section{
+		ID:        "customer",
+		Label:     `Customer Configuration`,
 		SortOrder: 130,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("account_share"),
-				Label:     text.Chars(`Account Sharing Options`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "account_share",
+				Label:     `Account Sharing Options`,
 				SortOrder: 10,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `customer/account_share/scope`,
-						ID:        cfgpath.NewRoute("scope"),
-						Label:     text.Chars(`Share Customer Accounts`),
+						ID:        "scope",
+						Label:     `Share Customer Accounts`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   true,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("create_account"),
-				Label:     text.Chars(`Create New Account Options`),
+			&element.Group{
+				ID:        "create_account",
+				Label:     `Create New Account Options`,
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `customer/create_account/auto_group_assign`,
-						ID:        cfgpath.NewRoute("auto_group_assign"),
-						Label:     text.Chars(`Enable Automatic Assignment to Customer Group`),
+						ID:        "auto_group_assign",
+						Label:     `Enable Automatic Assignment to Customer Group`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/create_account/tax_calculation_address_type`,
-						ID:        cfgpath.NewRoute("tax_calculation_address_type"),
-						Label:     text.Chars(`Tax Calculation Based On`),
+						ID:        "tax_calculation_address_type",
+						Label:     `Tax Calculation Based On`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `billing`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/create_account/default_group`,
-						ID:        cfgpath.NewRoute("default_group"),
-						Label:     text.Chars(`Default Group`),
+						ID:        "default_group",
+						Label:     `Default Group`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/create_account/viv_domestic_group`,
-						ID:        cfgpath.NewRoute("viv_domestic_group"),
-						Label:     text.Chars(`Group for Valid VAT ID - Domestic`),
+						ID:        "viv_domestic_group",
+						Label:     `Group for Valid VAT ID - Domestic`,
 						Type:      element.TypeSelect,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/create_account/viv_intra_union_group`,
-						ID:        cfgpath.NewRoute("viv_intra_union_group"),
-						Label:     text.Chars(`Group for Valid VAT ID - Intra-Union`),
+						ID:        "viv_intra_union_group",
+						Label:     `Group for Valid VAT ID - Intra-Union`,
 						Type:      element.TypeSelect,
 						SortOrder: 40,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/create_account/viv_invalid_group`,
-						ID:        cfgpath.NewRoute("viv_invalid_group"),
-						Label:     text.Chars(`Group for Invalid VAT ID`),
+						ID:        "viv_invalid_group",
+						Label:     `Group for Invalid VAT ID`,
 						Type:      element.TypeSelect,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/create_account/viv_error_group`,
-						ID:        cfgpath.NewRoute("viv_error_group"),
-						Label:     text.Chars(`Validation Error Group`),
+						ID:        "viv_error_group",
+						Label:     `Validation Error Group`,
 						Type:      element.TypeSelect,
 						SortOrder: 55,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/create_account/viv_on_each_transaction`,
-						ID:        cfgpath.NewRoute("viv_on_each_transaction"),
-						Label:     text.Chars(`Validate on Each Transaction`),
+						ID:        "viv_on_each_transaction",
+						Label:     `Validate on Each Transaction`,
 						Type:      element.TypeSelect,
 						SortOrder: 56,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/create_account/viv_disable_auto_group_assign_default`,
-						ID:        cfgpath.NewRoute("viv_disable_auto_group_assign_default"),
-						Label:     text.Chars(`Default Value for Disable Automatic Group Changes Based on VAT ID`),
+						ID:        "viv_disable_auto_group_assign_default",
+						Label:     `Default Value for Disable Automatic Group Changes Based on VAT ID`,
 						Type:      element.TypeSelect,
 						SortOrder: 57,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/create_account/vat_frontend_visibility`,
-						ID:        cfgpath.NewRoute("vat_frontend_visibility"),
-						Label:     text.Chars(`Show VAT Number on Frontend`),
-						Comment:   text.Chars(`To show VAT number on frontend, set Show VAT Number on Frontend option to Yes.`),
+						ID:        "vat_frontend_visibility",
+						Label:     `Show VAT Number on Frontend`,
+						Comment:   `To show VAT number on frontend, set Show VAT Number on Frontend option to Yes.`,
 						Type:      element.TypeSelect,
 						SortOrder: 58,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/create_account/email_domain`,
-						ID:        cfgpath.NewRoute("email_domain"),
-						Label:     text.Chars(`Default Email Domain`),
+						ID:        "email_domain",
+						Label:     `Default Email Domain`,
 						Type:      element.TypeText,
 						SortOrder: 60,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `example.com`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/create_account/email_template`,
-						ID:        cfgpath.NewRoute("email_template"),
-						Label:     text.Chars(`Default Welcome Email`),
+						ID:        "email_template",
+						Label:     `Default Welcome Email`,
 						Type:      element.TypeSelect,
 						SortOrder: 70,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `customer_create_account_email_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/create_account/email_identity`,
-						ID:        cfgpath.NewRoute("email_identity"),
-						Label:     text.Chars(`Email Sender`),
+						ID:        "email_identity",
+						Label:     `Email Sender`,
 						Type:      element.TypeSelect,
 						SortOrder: 80,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `general`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/create_account/confirm`,
-						ID:        cfgpath.NewRoute("confirm"),
-						Label:     text.Chars(`Require Emails Confirmation`),
+						ID:        "confirm",
+						Label:     `Require Emails Confirmation`,
 						Type:      element.TypeSelect,
 						SortOrder: 90,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/create_account/email_confirmation_template`,
-						ID:        cfgpath.NewRoute("email_confirmation_template"),
-						Label:     text.Chars(`Confirmation Link Email`),
+						ID:        "email_confirmation_template",
+						Label:     `Confirmation Link Email`,
 						Type:      element.TypeSelect,
 						SortOrder: 100,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `customer_create_account_email_confirmation_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/create_account/email_confirmed_template`,
-						ID:        cfgpath.NewRoute("email_confirmed_template"),
-						Label:     text.Chars(`Welcome Email`),
-						Comment:   text.Chars(`This email will be sent instead of default welcome email, after account confirmation.`),
+						ID:        "email_confirmed_template",
+						Label:     `Welcome Email`,
+						Comment:   `This email will be sent instead of default welcome email, after account confirmation.`,
 						Type:      element.TypeSelect,
 						SortOrder: 110,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `customer_create_account_email_confirmed_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/create_account/generate_human_friendly_id`,
-						ID:        cfgpath.NewRoute("generate_human_friendly_id"),
-						Label:     text.Chars(`Generate Human-Friendly Customer ID`),
+						ID:        "generate_human_friendly_id",
+						Label:     `Generate Human-Friendly Customer ID`,
 						Type:      element.TypeSelect,
 						SortOrder: 120,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("password"),
-				Label:     text.Chars(`Password Options`),
+			&element.Group{
+				ID:        "password",
+				Label:     `Password Options`,
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `customer/password/forgot_email_template`,
-						ID:        cfgpath.NewRoute("forgot_email_template"),
-						Label:     text.Chars(`Forgot Email Template`),
+						ID:        "forgot_email_template",
+						Label:     `Forgot Email Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `customer_password_forgot_email_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/password/remind_email_template`,
-						ID:        cfgpath.NewRoute("remind_email_template"),
-						Label:     text.Chars(`Remind Email Template`),
+						ID:        "remind_email_template",
+						Label:     `Remind Email Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `customer_password_remind_email_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/password/reset_password_template`,
-						ID:        cfgpath.NewRoute("reset_password_template"),
-						Label:     text.Chars(`Reset Password Template`),
+						ID:        "reset_password_template",
+						Label:     `Reset Password Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `customer_password_reset_password_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/password/forgot_email_identity`,
-						ID:        cfgpath.NewRoute("forgot_email_identity"),
-						Label:     text.Chars(`Password Template Email Sender`),
+						ID:        "forgot_email_identity",
+						Label:     `Password Template Email Sender`,
 						Type:      element.TypeSelect,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `support`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/password/reset_link_expiration_period`,
-						ID:        cfgpath.NewRoute("reset_link_expiration_period"),
-						Label:     text.Chars(`Recovery Link Expiration Period (days)`),
-						Comment:   text.Chars(`Please enter a number 1 or greater in this field.`),
+						ID:        "reset_link_expiration_period",
+						Label:     `Recovery Link Expiration Period (days)`,
+						Comment:   `Please enter a number 1 or greater in this field.`,
 						Type:      element.TypeText,
 						SortOrder: 60,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   1,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("address"),
-				Label:     text.Chars(`Name and Address Options`),
+			&element.Group{
+				ID:        "address",
+				Label:     `Name and Address Options`,
 				SortOrder: 40,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `customer/address/street_lines`,
-						ID:        cfgpath.NewRoute("street_lines"),
-						Label:     text.Chars(`Number of Lines in a Street Address`),
-						Comment:   text.Chars(`Leave empty for default (2). Valid range: 1-4`),
+						ID:        "street_lines",
+						Label:     `Number of Lines in a Street Address`,
+						Comment:   `Leave empty for default (2). Valid range: 1-4`,
 						Type:      element.TypeText,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   2,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/address/prefix_show`,
-						ID:        cfgpath.NewRoute("prefix_show"),
-						Label:     text.Chars(`Show Prefix`),
-						Comment:   text.Chars(`The title that goes before name (Mr., Mrs., etc.)`),
+						ID:        "prefix_show",
+						Label:     `Show Prefix`,
+						Comment:   `The title that goes before name (Mr., Mrs., etc.)`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/address/prefix_options`,
-						ID:        cfgpath.NewRoute("prefix_options"),
-						Label:     text.Chars(`Prefix Dropdown Options`),
-						Comment:   text.Chars(`Semicolon (;) separated values.<br/>Put semicolon in the beginning for empty first option.<br/>Leave empty for open text field.`),
+						ID:        "prefix_options",
+						Label:     `Prefix Dropdown Options`,
+						Comment:   `Semicolon (;) separated values.<br/>Put semicolon in the beginning for empty first option.<br/>Leave empty for open text field.`,
 						Type:      element.TypeText,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/address/middlename_show`,
-						ID:        cfgpath.NewRoute("middlename_show"),
-						Label:     text.Chars(`Show Middle Name (initial)`),
-						Comment:   text.Chars(`Always optional.`),
+						ID:        "middlename_show",
+						Label:     `Show Middle Name (initial)`,
+						Comment:   `Always optional.`,
 						Type:      element.TypeSelect,
 						SortOrder: 40,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/address/suffix_show`,
-						ID:        cfgpath.NewRoute("suffix_show"),
-						Label:     text.Chars(`Show Suffix`),
-						Comment:   text.Chars(`The suffix that goes after name (Jr., Sr., etc.)`),
+						ID:        "suffix_show",
+						Label:     `Show Suffix`,
+						Comment:   `The suffix that goes after name (Jr., Sr., etc.)`,
 						Type:      element.TypeSelect,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/address/suffix_options`,
-						ID:        cfgpath.NewRoute("suffix_options"),
-						Label:     text.Chars(`Suffix Dropdown Options`),
-						Comment:   text.Chars(`Semicolon (;) separated values.<br/>Put semicolon in the beginning for empty first option.<br/>Leave empty for open text field.`),
+						ID:        "suffix_options",
+						Label:     `Suffix Dropdown Options`,
+						Comment:   `Semicolon (;) separated values.<br/>Put semicolon in the beginning for empty first option.<br/>Leave empty for open text field.`,
 						Type:      element.TypeText,
 						SortOrder: 60,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/address/dob_show`,
-						ID:        cfgpath.NewRoute("dob_show"),
-						Label:     text.Chars(`Show Date of Birth`),
+						ID:        "dob_show",
+						Label:     `Show Date of Birth`,
 						Type:      element.TypeSelect,
 						SortOrder: 70,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/address/taxvat_show`,
-						ID:        cfgpath.NewRoute("taxvat_show"),
-						Label:     text.Chars(`Show Tax/VAT Number`),
+						ID:        "taxvat_show",
+						Label:     `Show Tax/VAT Number`,
 						Type:      element.TypeSelect,
 						SortOrder: 80,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/address/gender_show`,
-						ID:        cfgpath.NewRoute("gender_show"),
-						Label:     text.Chars(`Show Gender`),
+						ID:        "gender_show",
+						Label:     `Show Gender`,
 						Type:      element.TypeSelect,
 						SortOrder: 90,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("startup"),
-				Label:     text.Chars(`Login Options`),
+			&element.Group{
+				ID:        "startup",
+				Label:     `Login Options`,
 				SortOrder: 90,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `customer/startup/redirect_dashboard`,
-						ID:        cfgpath.NewRoute("redirect_dashboard"),
-						Label:     text.Chars(`Redirect Customer to Account Dashboard after Logging in`),
-						Comment:   text.Chars(`Customer will stay on the current page if "No" is selected.`),
+						ID:        "redirect_dashboard",
+						Label:     `Redirect Customer to Account Dashboard after Logging in`,
+						Comment:   `Customer will stay on the current page if "No" is selected.`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   true,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("address_templates"),
-				Label:     text.Chars(`Address Templates`),
+			&element.Group{
+				ID:        "address_templates",
+				Label:     `Address Templates`,
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `customer/address_templates/text`,
-						ID:        cfgpath.NewRoute("text"),
-						Label:     text.Chars(`Text`),
+						ID:        "text",
+						Label:     `Text`,
 						Type:      element.TypeTextarea,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default: `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}
 {{depend company}}{{var company}}{{/depend}}
@@ -3959,24 +3924,24 @@ T: {{var telephone}}
 {{depend vat_id}}VAT: {{var vat_id}}{{/depend}}`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/address_templates/oneline`,
-						ID:        cfgpath.NewRoute("oneline"),
-						Label:     text.Chars(`Text One Line`),
+						ID:        "oneline",
+						Label:     `Text One Line`,
 						Type:      element.TypeTextarea,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}, {{var street}}, {{var city}}, {{var region}} {{var postcode}}, {{var country}}`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/address_templates/html`,
-						ID:        cfgpath.NewRoute("html"),
-						Label:     text.Chars(`HTML`),
+						ID:        "html",
+						Label:     `HTML`,
 						Type:      element.TypeTextarea,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default: `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}{{depend firstname}}<br/>{{/depend}}
 {{depend company}}{{var company}}<br />{{/depend}}
@@ -3991,13 +3956,13 @@ T: {{var telephone}}
 {{depend vat_id}}<br/>VAT: {{var vat_id}}{{/depend}}`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/address_templates/pdf`,
-						ID:        cfgpath.NewRoute("pdf"),
-						Label:     text.Chars(`PDF`),
+						ID:        "pdf",
+						Label:     `PDF`,
 						Type:      element.TypeTextarea,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default: `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}|
 {{depend company}}{{var company}}|{{/depend}}
@@ -4017,25 +3982,25 @@ T: {{var telephone}}
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("general"),
+	&element.Section{
+		ID:        "general",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("store_information"),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "store_information",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `general/store_information/validate_vat_number`,
-						ID:        cfgpath.NewRoute("validate_vat_number"),
+						ID:        "validate_vat_number",
 						Label:     nil,
 						Type:      element.TypeText,
 						SortOrder: 62,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
@@ -4045,85 +4010,77 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("customer"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("default"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "customer",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "default",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `customer/default/group`,
-						ID:      cfgpath.NewRoute("group"),
+						ID:      "group",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: true,
 					},
 				},
 			},
 
-			element.Group{
-				ID: cfgpath.NewRoute("address"),
-				Fields: element.FieldSlice{
-					element.Field{
+			&element.Group{
+				ID: "address",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `customer/address/prefix_show`,
-						ID:      cfgpath.NewRoute("prefix_show"),
+						ID:      "prefix_show",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/address/prefix_options`,
-						ID:      cfgpath.NewRoute("prefix_options"),
+						ID:      "prefix_options",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/address/middlename_show`,
-						ID:      cfgpath.NewRoute("middlename_show"),
+						ID:      "middlename_show",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/address/suffix_show`,
-						ID:      cfgpath.NewRoute("suffix_show"),
+						ID:      "suffix_show",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/address/suffix_options`,
-						ID:      cfgpath.NewRoute("suffix_options"),
+						ID:      "suffix_options",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/address/dob_show`,
-						ID:      cfgpath.NewRoute("dob_show"),
+						ID:      "dob_show",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `customer/address/gender_show`,
-						ID:      cfgpath.NewRoute("gender_show"),
+						ID:      "gender_show",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: nil,
 					},
@@ -4132,46 +4089,46 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("dev"),
+	&element.Section{
+		ID:        "dev",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("front_end_development_workflow"),
-				Label:     text.Chars(`Front-end development workflow`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "front_end_development_workflow",
+				Label:     `Front-end development workflow`,
 				SortOrder: 8,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `dev/front_end_development_workflow/type`,
-						ID:        cfgpath.NewRoute("type"),
-						Label:     text.Chars(`Workflow type`),
-						Comment:   text.Chars(`Not available in production mode`),
+						ID:        "type",
+						Label:     `Workflow type`,
+						Comment:   `Not available in production mode`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `server_side_compilation`,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("restrict"),
-				Label:     text.Chars(`Developer Client Restrictions`),
+			&element.Group{
+				ID:        "restrict",
+				Label:     `Developer Client Restrictions`,
 				SortOrder: 10,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `dev/restrict/allow_ips`,
-						ID:        cfgpath.NewRoute("allow_ips"),
-						Label:     text.Chars(`Allowed IPs (comma separated)`),
-						Comment:   text.Chars(`Leave empty for access from any location.`),
+						ID:        "allow_ips",
+						Label:     `Allowed IPs (comma separated)`,
+						Comment:   `Leave empty for access from any location.`,
 						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
@@ -4181,17 +4138,16 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("dev"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("restrict"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "dev",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "restrict",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `dev/restrict/allow_ips`,
-						ID:      cfgpath.NewRoute("allow_ips"),
+						ID:      "allow_ips",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: nil,
 					},
@@ -4200,336 +4156,336 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("carriers"),
+	&element.Section{
+		ID:        "carriers",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("dhl"),
-				Label:     text.Chars(`DHL`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "dhl",
+				Label:     `DHL`,
 				SortOrder: 140,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `carriers/dhl/active`,
-						ID:        cfgpath.NewRoute("active"),
-						Label:     text.Chars(`Enabled for Checkout`),
+						ID:        "active",
+						Label:     `Enabled for Checkout`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/gateway_url`,
-						ID:        cfgpath.NewRoute("gateway_url"),
-						Label:     text.Chars(`Gateway URL`),
+						ID:        "gateway_url",
+						Label:     `Gateway URL`,
 						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `https://xmlpi-ea.dhl.com/XMLShippingServlet`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/title`,
-						ID:        cfgpath.NewRoute("title"),
-						Label:     text.Chars(`Title`),
+						ID:        "title",
+						Label:     `Title`,
 						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `DHL`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/id`,
-						ID:        cfgpath.NewRoute("id"),
-						Label:     text.Chars(`Access ID`),
+						ID:        "id",
+						Label:     `Access ID`,
 						Type:      element.TypeObscure,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/password`,
-						ID:        cfgpath.NewRoute("password"),
-						Label:     text.Chars(`Password`),
+						ID:        "password",
+						Label:     `Password`,
 						Type:      element.TypeObscure,
 						SortOrder: 60,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/account`,
-						ID:        cfgpath.NewRoute("account"),
-						Label:     text.Chars(`Account Number`),
+						ID:        "account",
+						Label:     `Account Number`,
 						Type:      element.TypeText,
 						SortOrder: 70,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/content_type`,
-						ID:        cfgpath.NewRoute("content_type"),
-						Label:     text.Chars(`Content Type`),
+						ID:        "content_type",
+						Label:     `Content Type`,
 						Type:      element.TypeSelect,
 						SortOrder: 90,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `N`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/handling_type`,
-						ID:        cfgpath.NewRoute("handling_type"),
-						Label:     text.Chars(`Calculate Handling Fee`),
+						ID:        "handling_type",
+						Label:     `Calculate Handling Fee`,
 						Type:      element.TypeSelect,
 						SortOrder: 100,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `F`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/handling_action`,
-						ID:        cfgpath.NewRoute("handling_action"),
-						Label:     text.Chars(`Handling Applied`),
-						Comment:   text.Chars(`"Per Order" allows a single handling fee for the entire order. "Per Package" allows an individual handling fee for each package.`),
+						ID:        "handling_action",
+						Label:     `Handling Applied`,
+						Comment:   `"Per Order" allows a single handling fee for the entire order. "Per Package" allows an individual handling fee for each package.`,
 						Type:      element.TypeSelect,
 						SortOrder: 110,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `O`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/handling_fee`,
-						ID:        cfgpath.NewRoute("handling_fee"),
-						Label:     text.Chars(`Handling Fee`),
+						ID:        "handling_fee",
+						Label:     `Handling Fee`,
 						Type:      element.TypeText,
 						SortOrder: 120,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/divide_order_weight`,
-						ID:        cfgpath.NewRoute("divide_order_weight"),
-						Label:     text.Chars(`Divide Order Weight`),
-						Comment:   text.Chars(`This allows breaking total order weight into smaller pieces if it exeeds 70 kg to ensure accurate calculation of shipping charges.`),
+						ID:        "divide_order_weight",
+						Label:     `Divide Order Weight`,
+						Comment:   `This allows breaking total order weight into smaller pieces if it exeeds 70 kg to ensure accurate calculation of shipping charges.`,
 						Type:      element.TypeSelect,
 						SortOrder: 130,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/unit_of_measure`,
-						ID:        cfgpath.NewRoute("unit_of_measure"),
-						Label:     text.Chars(`Weight Unit`),
+						ID:        "unit_of_measure",
+						Label:     `Weight Unit`,
 						Type:      element.TypeSelect,
 						SortOrder: 140,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `K`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/size`,
-						ID:        cfgpath.NewRoute("size"),
-						Label:     text.Chars(`Size`),
+						ID:        "size",
+						Label:     `Size`,
 						Type:      element.TypeSelect,
 						SortOrder: 150,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `R`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/height`,
-						ID:        cfgpath.NewRoute("height"),
-						Label:     text.Chars(`Height`),
+						ID:        "height",
+						Label:     `Height`,
 						Type:      element.TypeText,
 						SortOrder: 151,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/depth`,
-						ID:        cfgpath.NewRoute("depth"),
-						Label:     text.Chars(`Depth`),
+						ID:        "depth",
+						Label:     `Depth`,
 						Type:      element.TypeText,
 						SortOrder: 152,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/width`,
-						ID:        cfgpath.NewRoute("width"),
-						Label:     text.Chars(`Width`),
+						ID:        "width",
+						Label:     `Width`,
 						Type:      element.TypeText,
 						SortOrder: 153,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/doc_methods`,
-						ID:        cfgpath.NewRoute("doc_methods"),
-						Label:     text.Chars(`Allowed Methods`),
+						ID:        "doc_methods",
+						Label:     `Allowed Methods`,
 						Type:      element.TypeMultiselect,
 						SortOrder: 170,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `2,5,6,7,9,B,C,D,U,K,L,G,W,I,N,O,R,S,T,X`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/nondoc_methods`,
-						ID:        cfgpath.NewRoute("nondoc_methods"),
-						Label:     text.Chars(`Allowed Methods`),
+						ID:        "nondoc_methods",
+						Label:     `Allowed Methods`,
 						Type:      element.TypeMultiselect,
 						SortOrder: 170,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `1,3,4,8,P,Q,E,F,H,J,M,V,Y`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/ready_time`,
-						ID:        cfgpath.NewRoute("ready_time"),
-						Label:     text.Chars(`Ready time`),
-						Comment:   text.Chars(` time after order submission (in hours)`),
+						ID:        "ready_time",
+						Label:     `Ready time`,
+						Comment:   ` time after order submission (in hours)`,
 						Type:      element.TypeText,
 						SortOrder: 180,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/specificerrmsg`,
-						ID:        cfgpath.NewRoute("specificerrmsg"),
-						Label:     text.Chars(`Displayed Error Message`),
+						ID:        "specificerrmsg",
+						Label:     `Displayed Error Message`,
 						Type:      element.TypeTextarea,
 						SortOrder: 800,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/free_method_doc`,
-						ID:        cfgpath.NewRoute("free_method_doc"),
-						Label:     text.Chars(`Free Method`),
+						ID:        "free_method_doc",
+						Label:     `Free Method`,
 						Type:      element.TypeSelect,
 						SortOrder: 1200,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/free_method_nondoc`,
-						ID:        cfgpath.NewRoute("free_method_nondoc"),
-						Label:     text.Chars(`Free Method`),
+						ID:        "free_method_nondoc",
+						Label:     `Free Method`,
 						Type:      element.TypeSelect,
 						SortOrder: 1200,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/free_shipping_enable`,
-						ID:        cfgpath.NewRoute("free_shipping_enable"),
-						Label:     text.Chars(`Free Shipping Amount Threshold`),
+						ID:        "free_shipping_enable",
+						Label:     `Free Shipping Amount Threshold`,
 						Type:      element.TypeSelect,
 						SortOrder: 1210,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/free_shipping_subtotal`,
-						ID:        cfgpath.NewRoute("free_shipping_subtotal"),
-						Label:     text.Chars(`Free Shipping Amount Threshold`),
+						ID:        "free_shipping_subtotal",
+						Label:     `Free Shipping Amount Threshold`,
 						Type:      element.TypeText,
 						SortOrder: 1220,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/sallowspecific`,
-						ID:        cfgpath.NewRoute("sallowspecific"),
-						Label:     text.Chars(`Ship to Applicable Countries`),
+						ID:        "sallowspecific",
+						Label:     `Ship to Applicable Countries`,
 						Type:      element.TypeSelect,
 						SortOrder: 1900,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/specificcountry`,
-						ID:        cfgpath.NewRoute("specificcountry"),
-						Label:     text.Chars(`Ship to Specific Countries`),
+						ID:        "specificcountry",
+						Label:     `Ship to Specific Countries`,
 						Type:      element.TypeMultiselect,
 						SortOrder: 1910,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/showmethod`,
-						ID:        cfgpath.NewRoute("showmethod"),
-						Label:     text.Chars(`Show Method if Not Applicable`),
+						ID:        "showmethod",
+						Label:     `Show Method if Not Applicable`,
 						Type:      element.TypeSelect,
 						SortOrder: 1940,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/sort_order`,
-						ID:        cfgpath.NewRoute("sort_order"),
-						Label:     text.Chars(`Sort Order`),
+						ID:        "sort_order",
+						Label:     `Sort Order`,
 						Type:      element.TypeText,
 						SortOrder: 2000,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/debug`,
-						ID:        cfgpath.NewRoute("debug"),
-						Label:     text.Chars(`Debug`),
+						ID:        "debug",
+						Label:     `Debug`,
 						Type:      element.TypeSelect,
 						SortOrder: 1950,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
@@ -4539,17 +4495,16 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("system"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("media_storage_configuration"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "system",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "media_storage_configuration",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `system/media_storage_configuration/allowed_resources`,
-						ID:      cfgpath.NewRoute("allowed_resources"),
+						ID:      "allowed_resources",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"dhl_folder":"dhl"}`,
 					},
@@ -4557,62 +4512,56 @@ T: {{var telephone}}
 			},
 		},
 	},
-	element.Section{
-		ID: cfgpath.NewRoute("carriers"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("dhl"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "carriers",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "dhl",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `carriers/dhl/model`,
-						ID:      cfgpath.NewRoute("model"),
+						ID:      "model",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\Dhl\Model\Carrier`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/account`,
-						ID:      cfgpath.NewRoute("account"),
+						ID:      "account",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/free_method`,
-						ID:      cfgpath.NewRoute("free_method"),
+						ID:      "free_method",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `G`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/shipment_days`,
-						ID:      cfgpath.NewRoute("shipment_days"),
+						ID:      "shipment_days",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `Mon,Tue,Wed,Thu,Fri`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/active_rma`,
-						ID:      cfgpath.NewRoute("active_rma"),
+						ID:      "active_rma",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/dhl/is_online`,
-						ID:      cfgpath.NewRoute("is_online"),
+						ID:      "is_online",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: true,
 					},
@@ -4621,103 +4570,103 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("catalog"),
+	&element.Section{
+		ID:        "catalog",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("downloadable"),
-				Label:     text.Chars(`Downloadable Product Options`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "downloadable",
+				Label:     `Downloadable Product Options`,
 				SortOrder: 600,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `catalog/downloadable/order_item_status`,
-						ID:        cfgpath.NewRoute("order_item_status"),
-						Label:     text.Chars(`Order Item Status to Enable Downloads`),
+						ID:        "order_item_status",
+						Label:     `Order Item Status to Enable Downloads`,
 						Type:      element.TypeSelect,
 						SortOrder: 100,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   9,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/downloadable/downloads_number`,
-						ID:        cfgpath.NewRoute("downloads_number"),
-						Label:     text.Chars(`Default Maximum Number of Downloads`),
+						ID:        "downloads_number",
+						Label:     `Default Maximum Number of Downloads`,
 						Type:      element.TypeText,
 						SortOrder: 200,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   0,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/downloadable/shareable`,
-						ID:        cfgpath.NewRoute("shareable"),
-						Label:     text.Chars(`Shareable`),
+						ID:        "shareable",
+						Label:     `Shareable`,
 						Type:      element.TypeSelect,
 						SortOrder: 300,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/downloadable/samples_title`,
-						ID:        cfgpath.NewRoute("samples_title"),
-						Label:     text.Chars(`Default Sample Title`),
+						ID:        "samples_title",
+						Label:     `Default Sample Title`,
 						Type:      element.TypeText,
 						SortOrder: 400,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Samples`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/downloadable/links_title`,
-						ID:        cfgpath.NewRoute("links_title"),
-						Label:     text.Chars(`Default Link Title`),
+						ID:        "links_title",
+						Label:     `Default Link Title`,
 						Type:      element.TypeText,
 						SortOrder: 500,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Links`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/downloadable/links_target_new_window`,
-						ID:        cfgpath.NewRoute("links_target_new_window"),
-						Label:     text.Chars(`Open Links in New Window`),
+						ID:        "links_target_new_window",
+						Label:     `Open Links in New Window`,
 						Type:      element.TypeSelect,
 						SortOrder: 600,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/downloadable/content_disposition`,
-						ID:        cfgpath.NewRoute("content_disposition"),
-						Label:     text.Chars(`Use Content-Disposition`),
+						ID:        "content_disposition",
+						Label:     `Use Content-Disposition`,
 						Type:      element.TypeSelect,
 						SortOrder: 700,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `inline`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/downloadable/disable_guest_checkout`,
-						ID:        cfgpath.NewRoute("disable_guest_checkout"),
-						Label:     text.Chars(`Disable Guest Checkout if Cart Contains Downloadable Items`),
-						Comment:   text.Chars(`Guest checkout will only work with shareable.`),
+						ID:        "disable_guest_checkout",
+						Label:     `Disable Guest Checkout if Cart Contains Downloadable Items`,
+						Comment:   `Guest checkout will only work with shareable.`,
 						Type:      element.TypeSelect,
 						SortOrder: 800,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   true,
 					},
@@ -4726,335 +4675,335 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("carriers"),
+	&element.Section{
+		ID:        "carriers",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("fedex"),
-				Label:     text.Chars(`FedEx`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "fedex",
+				Label:     `FedEx`,
 				SortOrder: 120,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `carriers/fedex/active`,
-						ID:        cfgpath.NewRoute("active"),
-						Label:     text.Chars(`Enabled for Checkout`),
+						ID:        "active",
+						Label:     `Enabled for Checkout`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/title`,
-						ID:        cfgpath.NewRoute("title"),
-						Label:     text.Chars(`Title`),
+						ID:        "title",
+						Label:     `Title`,
 						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Federal Express`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/account`,
-						ID:        cfgpath.NewRoute("account"),
-						Label:     text.Chars(`Account ID`),
-						Comment:   text.Chars(`Please make sure to use only digits here. No dashes are allowed.`),
+						ID:        "account",
+						Label:     `Account ID`,
+						Comment:   `Please make sure to use only digits here. No dashes are allowed.`,
 						Type:      element.TypeObscure,
 						SortOrder: 40,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/meter_number`,
-						ID:        cfgpath.NewRoute("meter_number"),
-						Label:     text.Chars(`Meter Number`),
+						ID:        "meter_number",
+						Label:     `Meter Number`,
 						Type:      element.TypeObscure,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/key`,
-						ID:        cfgpath.NewRoute("key"),
-						Label:     text.Chars(`Key`),
+						ID:        "key",
+						Label:     `Key`,
 						Type:      element.TypeObscure,
 						SortOrder: 60,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/password`,
-						ID:        cfgpath.NewRoute("password"),
-						Label:     text.Chars(`Password`),
+						ID:        "password",
+						Label:     `Password`,
 						Type:      element.TypeObscure,
 						SortOrder: 70,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/sandbox_mode`,
-						ID:        cfgpath.NewRoute("sandbox_mode"),
-						Label:     text.Chars(`Sandbox Mode`),
+						ID:        "sandbox_mode",
+						Label:     `Sandbox Mode`,
 						Type:      element.TypeSelect,
 						SortOrder: 80,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/production_webservices_url`,
-						ID:        cfgpath.NewRoute("production_webservices_url"),
-						Label:     text.Chars(`Web-Services URL (Production)`),
+						ID:        "production_webservices_url",
+						Label:     `Web-Services URL (Production)`,
 						Type:      element.TypeText,
 						SortOrder: 90,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `https://ws.fedex.com:443/web-services/`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/sandbox_webservices_url`,
-						ID:        cfgpath.NewRoute("sandbox_webservices_url"),
-						Label:     text.Chars(`Web-Services URL (Sandbox)`),
+						ID:        "sandbox_webservices_url",
+						Label:     `Web-Services URL (Sandbox)`,
 						Type:      element.TypeText,
 						SortOrder: 100,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `https://wsbeta.fedex.com:443/web-services/`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/shipment_requesttype`,
-						ID:        cfgpath.NewRoute("shipment_requesttype"),
-						Label:     text.Chars(`Packages Request Type`),
+						ID:        "shipment_requesttype",
+						Label:     `Packages Request Type`,
 						Type:      element.TypeSelect,
 						SortOrder: 110,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/packaging`,
-						ID:        cfgpath.NewRoute("packaging"),
-						Label:     text.Chars(`Packaging`),
+						ID:        "packaging",
+						Label:     `Packaging`,
 						Type:      element.TypeSelect,
 						SortOrder: 120,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `YOUR_PACKAGING`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/dropoff`,
-						ID:        cfgpath.NewRoute("dropoff"),
-						Label:     text.Chars(`Dropoff`),
+						ID:        "dropoff",
+						Label:     `Dropoff`,
 						Type:      element.TypeSelect,
 						SortOrder: 130,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `REGULAR_PICKUP`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/unit_of_measure`,
-						ID:        cfgpath.NewRoute("unit_of_measure"),
-						Label:     text.Chars(`Weight Unit`),
+						ID:        "unit_of_measure",
+						Label:     `Weight Unit`,
 						Type:      element.TypeSelect,
 						SortOrder: 135,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `LB`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/max_package_weight`,
-						ID:        cfgpath.NewRoute("max_package_weight"),
-						Label:     text.Chars(`Maximum  (Please consult your shipping carrier for maximum supported shipping weight)`),
+						ID:        "max_package_weight",
+						Label:     `Maximum  (Please consult your shipping carrier for maximum supported shipping weight)`,
 						Type:      element.TypeText,
 						SortOrder: 140,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   150,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/handling_type`,
-						ID:        cfgpath.NewRoute("handling_type"),
-						Label:     text.Chars(`Calculate Handling Fee`),
+						ID:        "handling_type",
+						Label:     `Calculate Handling Fee`,
 						Type:      element.TypeSelect,
 						SortOrder: 150,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `F`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/handling_action`,
-						ID:        cfgpath.NewRoute("handling_action"),
-						Label:     text.Chars(`Handling Applied`),
+						ID:        "handling_action",
+						Label:     `Handling Applied`,
 						Type:      element.TypeSelect,
 						SortOrder: 160,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `O`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/handling_fee`,
-						ID:        cfgpath.NewRoute("handling_fee"),
-						Label:     text.Chars(`Handling Fee`),
+						ID:        "handling_fee",
+						Label:     `Handling Fee`,
 						Type:      element.TypeText,
 						SortOrder: 170,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/residence_delivery`,
-						ID:        cfgpath.NewRoute("residence_delivery"),
-						Label:     text.Chars(`Residential Delivery`),
+						ID:        "residence_delivery",
+						Label:     `Residential Delivery`,
 						Type:      element.TypeSelect,
 						SortOrder: 180,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/allowed_methods`,
-						ID:        cfgpath.NewRoute("allowed_methods"),
-						Label:     text.Chars(`Allowed Methods`),
+						ID:        "allowed_methods",
+						Label:     `Allowed Methods`,
 						Type:      element.TypeMultiselect,
 						SortOrder: 190,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `EUROPE_FIRST_INTERNATIONAL_PRIORITY,FEDEX_1_DAY_FREIGHT,FEDEX_2_DAY_FREIGHT,FEDEX_2_DAY,FEDEX_2_DAY_AM,FEDEX_3_DAY_FREIGHT,FEDEX_EXPRESS_SAVER,FEDEX_GROUND,FIRST_OVERNIGHT,GROUND_HOME_DELIVERY,INTERNATIONAL_ECONOMY,INTERNATIONAL_ECONOMY_FREIGHT,INTERNATIONAL_FIRST,INTERNATIONAL_GROUND,INTERNATIONAL_PRIORITY,INTERNATIONAL_PRIORITY_FREIGHT,PRIORITY_OVERNIGHT,SMART_POST,STANDARD_OVERNIGHT,FEDEX_FREIGHT,FEDEX_NATIONAL_FREIGHT`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/smartpost_hubid`,
-						ID:        cfgpath.NewRoute("smartpost_hubid"),
-						Label:     text.Chars(`Hub ID`),
-						Comment:   text.Chars(`The field is applicable if the Smart Post method is selected.`),
+						ID:        "smartpost_hubid",
+						Label:     `Hub ID`,
+						Comment:   `The field is applicable if the Smart Post method is selected.`,
 						Type:      element.TypeText,
 						SortOrder: 200,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/free_method`,
-						ID:        cfgpath.NewRoute("free_method"),
-						Label:     text.Chars(`Free Method`),
+						ID:        "free_method",
+						Label:     `Free Method`,
 						Type:      element.TypeSelect,
 						SortOrder: 210,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `FEDEX_GROUND`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/free_shipping_enable`,
-						ID:        cfgpath.NewRoute("free_shipping_enable"),
-						Label:     text.Chars(`Free Shipping Amount Threshold`),
+						ID:        "free_shipping_enable",
+						Label:     `Free Shipping Amount Threshold`,
 						Type:      element.TypeSelect,
 						SortOrder: 220,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/free_shipping_subtotal`,
-						ID:        cfgpath.NewRoute("free_shipping_subtotal"),
-						Label:     text.Chars(`Free Shipping Amount Threshold`),
+						ID:        "free_shipping_subtotal",
+						Label:     `Free Shipping Amount Threshold`,
 						Type:      element.TypeText,
 						SortOrder: 230,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/specificerrmsg`,
-						ID:        cfgpath.NewRoute("specificerrmsg"),
-						Label:     text.Chars(`Displayed Error Message`),
+						ID:        "specificerrmsg",
+						Label:     `Displayed Error Message`,
 						Type:      element.TypeTextarea,
 						SortOrder: 240,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/sallowspecific`,
-						ID:        cfgpath.NewRoute("sallowspecific"),
-						Label:     text.Chars(`Ship to Applicable Countries`),
+						ID:        "sallowspecific",
+						Label:     `Ship to Applicable Countries`,
 						Type:      element.TypeSelect,
 						SortOrder: 250,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/specificcountry`,
-						ID:        cfgpath.NewRoute("specificcountry"),
-						Label:     text.Chars(`Ship to Specific Countries`),
+						ID:        "specificcountry",
+						Label:     `Ship to Specific Countries`,
 						Type:      element.TypeMultiselect,
 						SortOrder: 260,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/debug`,
-						ID:        cfgpath.NewRoute("debug"),
-						Label:     text.Chars(`Debug`),
+						ID:        "debug",
+						Label:     `Debug`,
 						Type:      element.TypeSelect,
 						SortOrder: 270,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/showmethod`,
-						ID:        cfgpath.NewRoute("showmethod"),
-						Label:     text.Chars(`Show Method if Not Applicable`),
+						ID:        "showmethod",
+						Label:     `Show Method if Not Applicable`,
 						Type:      element.TypeSelect,
 						SortOrder: 280,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/sort_order`,
-						ID:        cfgpath.NewRoute("sort_order"),
-						Label:     text.Chars(`Sort Order`),
+						ID:        "sort_order",
+						Label:     `Sort Order`,
 						Type:      element.TypeText,
 						SortOrder: 290,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
@@ -5064,53 +5013,48 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("carriers"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("fedex"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "carriers",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "fedex",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `carriers/fedex/cutoff_cost`,
-						ID:      cfgpath.NewRoute("cutoff_cost"),
+						ID:      "cutoff_cost",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/handling`,
-						ID:      cfgpath.NewRoute("handling"),
+						ID:      "handling",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/model`,
-						ID:      cfgpath.NewRoute("model"),
+						ID:      "model",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\Fedex\Model\Carrier`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/active_rma`,
-						ID:      cfgpath.NewRoute("active_rma"),
+						ID:      "active_rma",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/fedex/is_online`,
-						ID:      cfgpath.NewRoute("is_online"),
+						ID:      "is_online",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: true,
 					},
@@ -5119,36 +5063,36 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("sales"),
+	&element.Section{
+		ID:        "sales",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("gift_options"),
-				Label:     text.Chars(`Gift Options`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "gift_options",
+				Label:     `Gift Options`,
 				SortOrder: 100,
 				Scopes:    scope.PermWebsite,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sales/gift_options/allow_order`,
-						ID:        cfgpath.NewRoute("allow_order"),
-						Label:     text.Chars(`Allow Gift Messages on Order Level`),
+						ID:        "allow_order",
+						Label:     `Allow Gift Messages on Order Level`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales/gift_options/allow_items`,
-						ID:        cfgpath.NewRoute("allow_items"),
-						Label:     text.Chars(`Allow Gift Messages for Order Items`),
+						ID:        "allow_items",
+						Label:     `Allow Gift Messages for Order Items`,
 						Type:      element.TypeSelect,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
@@ -5158,26 +5102,24 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("sales"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("gift_messages"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "sales",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "gift_messages",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sales/gift_messages/allow_items`,
-						ID:      cfgpath.NewRoute("allow_items"),
+						ID:      "allow_items",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales/gift_messages/allow_order`,
-						ID:      cfgpath.NewRoute("allow_order"),
+						ID:      "allow_order",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: false,
 					},
@@ -5186,102 +5128,102 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("google"),
+	&element.Section{
+		ID:        "google",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("adwords"),
-				Label:     text.Chars(`Google AdWords`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "adwords",
+				Label:     `Google AdWords`,
 				SortOrder: 15,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `google/adwords/active`,
-						ID:        cfgpath.NewRoute("active"),
-						Label:     text.Chars(`Enable`),
+						ID:        "active",
+						Label:     `Enable`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/adwords/conversion_id`,
-						ID:        cfgpath.NewRoute("conversion_id"),
-						Label:     text.Chars(`Conversion ID`),
+						ID:        "conversion_id",
+						Label:     `Conversion ID`,
 						Type:      element.TypeText,
 						SortOrder: 11,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/adwords/conversion_language`,
-						ID:        cfgpath.NewRoute("conversion_language"),
-						Label:     text.Chars(`Conversion Language`),
+						ID:        "conversion_language",
+						Label:     `Conversion Language`,
 						Type:      element.TypeSelect,
 						SortOrder: 12,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `en`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/adwords/conversion_format`,
-						ID:        cfgpath.NewRoute("conversion_format"),
-						Label:     text.Chars(`Conversion Format`),
+						ID:        "conversion_format",
+						Label:     `Conversion Format`,
 						Type:      element.TypeText,
 						SortOrder: 13,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   2,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/adwords/conversion_color`,
-						ID:        cfgpath.NewRoute("conversion_color"),
-						Label:     text.Chars(`Conversion Color`),
+						ID:        "conversion_color",
+						Label:     `Conversion Color`,
 						Type:      element.TypeText,
 						SortOrder: 14,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `FFFFFF`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/adwords/conversion_label`,
-						ID:        cfgpath.NewRoute("conversion_label"),
-						Label:     text.Chars(`Conversion Label`),
+						ID:        "conversion_label",
+						Label:     `Conversion Label`,
 						Type:      element.TypeText,
 						SortOrder: 15,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/adwords/conversion_value_type`,
-						ID:        cfgpath.NewRoute("conversion_value_type"),
-						Label:     text.Chars(`Conversion Value Type`),
+						ID:        "conversion_value_type",
+						Label:     `Conversion Value Type`,
 						Type:      element.TypeSelect,
 						SortOrder: 16,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/adwords/conversion_value`,
-						ID:        cfgpath.NewRoute("conversion_value"),
-						Label:     text.Chars(`Conversion Value`),
+						ID:        "conversion_value",
+						Label:     `Conversion Value`,
 						Type:      element.TypeText,
 						SortOrder: 17,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   0,
 					},
@@ -5291,44 +5233,40 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("google"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("adwords"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "google",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "adwords",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `google/adwords/languages`,
-						ID:      cfgpath.NewRoute("languages"),
+						ID:      "languages",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"ar":"ar","bg":"bg","ca":"ca","cs":"cs","da":"da","de":"de","el":"el","en":"en","es":"es","et":"et","fi":"fi","fr":"fr","hi":"hi","hr":"hr","hu":"hu","id":"id","is":"is","it":"it","iw":"iw","ja":"ja","ko":"ko","lt":"lt","lv":"lv","nl":"nl","no":"no","pl":"pl","pt":"pt","ro":"ro","ru":"ru","sk":"sk","sl":"sl","sr":"sr","sv":"sv","th":"th","tl":"tl","tr":"tr","uk":"uk","ur":"ur","vi":"vi","zh_TW":"zh_TW","zh_CN":"zh_CN"}`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/adwords/language_convert`,
-						ID:      cfgpath.NewRoute("language_convert"),
+						ID:      "language_convert",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"zh_CN":"zh_Hans","zh_TW":"zh_Hant","iw":"he"}`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/adwords/conversion_js_src`,
-						ID:      cfgpath.NewRoute("conversion_js_src"),
+						ID:      "conversion_js_src",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `https://www.googleadservices.com/pagead/conversion.js`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/adwords/conversion_img_src`,
-						ID:      cfgpath.NewRoute("conversion_img_src"),
+						ID:      "conversion_img_src",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `https://www.googleadservices.com/pagead/conversion/%s/?label=%s&guid=ON&script=0`,
 					},
@@ -5337,36 +5275,36 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("google"),
-		Label:     text.Chars("Google API"),
+	&element.Section{
+		ID:        "google",
+		Label:     `Google API`,
 		SortOrder: 340,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("analytics"),
-				Label:     text.Chars(`Google Analytics`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "analytics",
+				Label:     `Google Analytics`,
 				SortOrder: 10,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `google/analytics/active`,
-						ID:        cfgpath.NewRoute("active"),
-						Label:     text.Chars(`Enable`),
+						ID:        "active",
+						Label:     `Enable`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/analytics/account`,
-						ID:        cfgpath.NewRoute("account"),
-						Label:     text.Chars(`Account Number`),
+						ID:        "account",
+						Label:     `Account Number`,
 						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
@@ -5375,25 +5313,25 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("google"),
+	&element.Section{
+		ID:        "google",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("analytics"),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "analytics",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `google/analytics/experiments`,
-						ID:        cfgpath.NewRoute("experiments"),
-						Label:     text.Chars(`Enable Content Experiments`),
+						ID:        "experiments",
+						Label:     `Enable Content Experiments`,
 						Type:      element.TypeSelect,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
@@ -5403,17 +5341,16 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("google"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("optimizer"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "google",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "optimizer",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `google/optimizer/active`,
-						ID:      cfgpath.NewRoute("active"),
+						ID:      "active",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: false,
 					},
@@ -5422,146 +5359,146 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("google"),
+	&element.Section{
+		ID:        "google",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("googleshopping"),
-				Label:     text.Chars(`Google Shopping`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "googleshopping",
+				Label:     `Google Shopping`,
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `google/googleshopping/account_id`,
-						ID:        cfgpath.NewRoute("account_id"),
-						Label:     text.Chars(`Account ID`),
+						ID:        "account_id",
+						Label:     `Account ID`,
 						Type:      element.TypeText,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/googleshopping/login`,
-						ID:        cfgpath.NewRoute("login"),
-						Label:     text.Chars(`Account Login`),
+						ID:        "login",
+						Label:     `Account Login`,
 						Type:      element.TypeText,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/googleshopping/password`,
-						ID:        cfgpath.NewRoute("password"),
-						Label:     text.Chars(`Account Password`),
+						ID:        "password",
+						Label:     `Account Password`,
 						Type:      element.TypeObscure,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/googleshopping/account_type`,
-						ID:        cfgpath.NewRoute("account_type"),
-						Label:     text.Chars(`Account Type`),
+						ID:        "account_type",
+						Label:     `Account Type`,
 						Type:      element.TypeSelect,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `HOSTED_OR_GOOGLE`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/googleshopping/target_country`,
-						ID:        cfgpath.NewRoute("target_country"),
-						Label:     text.Chars(`Target Country`),
+						ID:        "target_country",
+						Label:     `Target Country`,
 						Type:      element.TypeSelect,
 						SortOrder: 90,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `US`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/googleshopping/observed`,
-						ID:        cfgpath.NewRoute("observed"),
-						Label:     text.Chars(`Update Google Shopping Item when Product is Updated`),
+						ID:        "observed",
+						Label:     `Update Google Shopping Item when Product is Updated`,
 						Type:      element.TypeSelect,
 						SortOrder: 100,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/googleshopping/verify_meta_tag`,
-						ID:        cfgpath.NewRoute("verify_meta_tag"),
-						Label:     text.Chars(`Verifying Meta Tag`),
+						ID:        "verify_meta_tag",
+						Label:     `Verifying Meta Tag`,
 						Type:      element.TypeText,
 						SortOrder: 110,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/googleshopping/debug`,
-						ID:        cfgpath.NewRoute("debug"),
-						Label:     text.Chars(`Debug`),
+						ID:        "debug",
+						Label:     `Debug`,
 						Type:      element.TypeSelect,
 						SortOrder: 140,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/googleshopping/destinations`,
-						ID:        cfgpath.NewRoute("destinations"),
-						Label:     text.Chars(`Destinations`),
+						ID:        "destinations",
+						Label:     `Destinations`,
 						Type:      element.TypeText,
 						SortOrder: 150,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `{"product_search":"ProductSearch","product_ads":"ProductAds","commerce_search":"CommerceSearch"}`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/googleshopping/product_search`,
-						ID:        cfgpath.NewRoute("product_search"),
-						Label:     text.Chars(`Google Product Search`),
+						ID:        "product_search",
+						Label:     `Google Product Search`,
 						Type:      element.TypeSelect,
 						SortOrder: 151,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/googleshopping/product_ads`,
-						ID:        cfgpath.NewRoute("product_ads"),
-						Label:     text.Chars(`Product Ads`),
+						ID:        "product_ads",
+						Label:     `Product Ads`,
 						Type:      element.TypeSelect,
 						SortOrder: 152,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/googleshopping/commerce_search`,
-						ID:        cfgpath.NewRoute("commerce_search"),
-						Label:     text.Chars(`Commerce Search`),
+						ID:        "commerce_search",
+						Label:     `Commerce Search`,
 						Type:      element.TypeSelect,
 						SortOrder: 153,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
@@ -5571,44 +5508,40 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("google"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("googleshopping"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "google",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "googleshopping",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `google/googleshopping/allowed_countries`,
-						ID:      cfgpath.NewRoute("allowed_countries"),
+						ID:      "allowed_countries",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"AU":{"_value":{"name":"Australia","language":"en","currency":"AUD","currency_name":"Australian Dollar"},"_attribute":{"translate":"name currency_name"}},"BR":{"_value":{"name":"Brazil","language":"pt","locale":"pt_BR","currency":"BRL","currency_name":"Brazilian Real"},"_attribute":{"translate":"name currency_name"}},"CN":{"_value":{"name":"China","language":"zh_CN","currency":"CNY","currency_name":"Chinese Yuan Renminbi"},"_attribute":{"translate":"name currency_name"}},"FR":{"_value":{"name":"France","language":"fr","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"DE":{"_value":{"name":"Germany","language":"de","locale":"de_DE","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"IT":{"_value":{"name":"Italy","language":"it","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"JP":{"_value":{"name":"Japan","language":"ja","currency":"JPY","currency_name":"Japanese Yen"},"_attribute":{"translate":"name currency_name"}},"NL":{"_value":{"name":"Netherlands","language":"nl","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"ES":{"_value":{"name":"Spain","language":"es","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"CH":{"_value":{"name":"Switzerland","language":"de","locale":"de_CH","currency":"CHF","currency_name":"Swiss Franc"},"_attribute":{"translate":"name currency_name"}},"GB":{"_value":{"name":"United Kingdom","language":"en","locale":"en_GB","currency":"GBP","currency_name":"British Pound Sterling"},"_attribute":{"translate":"name currency_name"}},"US":{"_value":{"name":"United States","language":"en","locale":"en_US","currency":"USD","currency_name":"US Dollar"},"_attribute":{"translate":"name currency_name"}}}`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/googleshopping/attributes`,
-						ID:      cfgpath.NewRoute("attributes"),
+						ID:      "attributes",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"Item":{"title":{"_value":{"name":"Title","required":"1"},"_attribute":{"translate":"name"}},"content":{"_value":{"name":"Description","required":"1"},"_attribute":{"translate":"name"}},"expiration_date":{"_value":{"name":"Expiration date","required":"0"},"_attribute":{"translate":"name"}},"adult":{"_value":{"name":"Adult","required":"0"},"_attribute":{"translate":"name"}}},"ProductSearch":{"condition":{"_value":{"name":"Condition","required":"1"},"_attribute":{"translate":"name"}},"price":{"_value":{"name":"Price","required":"1"},"_attribute":{"translate":"name"}},"sale_price":{"_value":{"name":"Sale Price","required":"0","country":"US"},"_attribute":{"translate":"name"}},"sale_price_effective_date_from":{"_value":{"name":"Sale Price Effective From Date","required":"0","country":"US"},"_attribute":{"translate":"name"}},"sale_price_effective_date_to":{"_value":{"name":"Sale Price Effective To Date","required":"0","country":"US"},"_attribute":{"translate":"name"}},"age_group":{"_value":{"name":"Age Group","required":"1"},"_attribute":{"translate":"name"}},"brand":{"_value":{"name":"Brand","required":"1"},"_attribute":{"translate":"name"}},"color":{"_value":{"name":"Color","required":"1"},"_attribute":{"translate":"name"}},"gender":{"_value":{"name":"Gender","required":"1"},"_attribute":{"translate":"name"}},"mpn":{"_value":{"name":"Manufacturer\\'s Part Number (MPN)","required":"1"},"_attribute":{"translate":"name"}},"online_only":{"_value":{"name":"Online Only","required":"0"},"_attribute":{"translate":"name"}},"gtin":{"_value":{"name":"GTIN","required":"1"},"_attribute":{"translate":"name"}},"product_type":{"_value":{"name":"Product Type (Category)","required":"0"},"_attribute":{"translate":"name"}},"product_review_average":{"_value":{"name":"Product Review Average","required":"0"},"_attribute":{"translate":"name"}},"product_review_count":{"_value":{"name":"Product Review Count","required":"0"},"_attribute":{"translate":"name"}},"shipping_weight":{"_value":{"name":"Shipping Weight","required":"0"},"_attribute":{"translate":"name"}},"size":{"_value":{"name":"Size","required":"1"},"_attribute":{"translate":"name"}},"material":{"_value":{"name":"Material","required":"1"},"_attribute":{"translate":"name"}},"pattern":{"_value":{"name":"Pattern\/Graphic","required":"1"},"_attribute":{"translate":"name"}}},"ProductAds":{"adwords_grouping":{"_value":{"name":"Grouping","required":"0"},"_attribute":{"translate":"name"}},"adwords_labels":{"_value":{"name":"Labels","required":"0"},"_attribute":{"translate":"name"}},"adwords_redirect":{"_value":{"name":"Redirect","required":"0"},"_attribute":{"translate":"name"}},"adwords_queryparam":{"_value":{"name":"Query Param","required":"0"},"_attribute":{"translate":"name"}}}}`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/googleshopping/attribute_groups`,
-						ID:      cfgpath.NewRoute("attribute_groups"),
+						ID:      "attribute_groups",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"price":{"sale_price":null,"tax":null,"sale_price_effective_date":null,"sale_price_effective_date_from":null,"sale_price_effective_date_to":null},"shipping_weight":{"weight":null},"title":{"name":null},"content":{"description":null}}`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `google/googleshopping/base_attributes`,
-						ID:      cfgpath.NewRoute("base_attributes"),
+						ID:      "base_attributes",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"id":null,"title":null,"link":null,"content":null,"price":null,"image_link":null,"condition":null,"target_country":null,"content_language":null,"destinations":null,"availability":null,"google_product_category":null,"product_type":null}`,
 					},
@@ -5617,25 +5550,25 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("checkout"),
+	&element.Section{
+		ID:        "checkout",
 		Label:     nil,
 		SortOrder: 305,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("cart"),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "cart",
 				Label:     nil,
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `checkout/cart/grouped_product_image`,
-						ID:        cfgpath.NewRoute("grouped_product_image"),
-						Label:     text.Chars(`Grouped Product Image`),
+						ID:        "grouped_product_image",
+						Label:     `Grouped Product Image`,
 						Type:      element.TypeSelect,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `itself`,
 					},
@@ -5644,82 +5577,82 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("oauth"),
-		Label:     text.Chars("OAuth"),
+	&element.Section{
+		ID:        "oauth",
+		Label:     `OAuth`,
 		SortOrder: 300,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("cleanup"),
-				Label:     text.Chars(`Cleanup Settings`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "cleanup",
+				Label:     `Cleanup Settings`,
 				SortOrder: 300,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `oauth/cleanup/cleanup_probability`,
-						ID:        cfgpath.NewRoute("cleanup_probability"),
-						Label:     text.Chars(`Cleanup Probability`),
-						Comment:   text.Chars(`Integer. Launch cleanup in X OAuth requests. 0 (not recommended) - to disable cleanup`),
+						ID:        "cleanup_probability",
+						Label:     `Cleanup Probability`,
+						Comment:   `Integer. Launch cleanup in X OAuth requests. 0 (not recommended) - to disable cleanup`,
 						Type:      element.TypeText,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   100,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `oauth/cleanup/expiration_period`,
-						ID:        cfgpath.NewRoute("expiration_period"),
-						Label:     text.Chars(`Expiration Period`),
-						Comment:   text.Chars(`Cleanup entries older than X minutes.`),
+						ID:        "expiration_period",
+						Label:     `Expiration Period`,
+						Comment:   `Cleanup entries older than X minutes.`,
 						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   120,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("consumer"),
-				Label:     text.Chars(`Consumer Settings`),
+			&element.Group{
+				ID:        "consumer",
+				Label:     `Consumer Settings`,
 				SortOrder: 400,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `oauth/consumer/expiration_period`,
-						ID:        cfgpath.NewRoute("expiration_period"),
-						Label:     text.Chars(`Expiration Period`),
-						Comment:   text.Chars(`Consumer key/secret will expire if not used within X seconds after Oauth token exchange starts.`),
+						ID:        "expiration_period",
+						Label:     `Expiration Period`,
+						Comment:   `Consumer key/secret will expire if not used within X seconds after Oauth token exchange starts.`,
 						Type:      element.TypeText,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   300,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `oauth/consumer/post_maxredirects`,
-						ID:        cfgpath.NewRoute("post_maxredirects"),
-						Label:     text.Chars(`OAuth consumer credentials HTTP Post maxredirects`),
-						Comment:   text.Chars(`Number of maximum redirects for OAuth consumer credentials Post request.`),
+						ID:        "post_maxredirects",
+						Label:     `OAuth consumer credentials HTTP Post maxredirects`,
+						Comment:   `Number of maximum redirects for OAuth consumer credentials Post request.`,
 						Type:      element.TypeText,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   0,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `oauth/consumer/post_timeout`,
-						ID:        cfgpath.NewRoute("post_timeout"),
-						Label:     text.Chars(`OAuth consumer credentials HTTP Post timeout`),
-						Comment:   text.Chars(`Timeout for OAuth consumer credentials Post request within X seconds.`),
+						ID:        "post_timeout",
+						Label:     `OAuth consumer credentials HTTP Post timeout`,
+						Comment:   `Timeout for OAuth consumer credentials Post request within X seconds.`,
 						Type:      element.TypeText,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   5,
 					},
@@ -5728,83 +5661,83 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("catalog"),
+	&element.Section{
+		ID:        "catalog",
 		Label:     nil,
 		SortOrder: 40,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("layered_navigation"),
-				Label:     text.Chars(`Layered Navigation`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "layered_navigation",
+				Label:     `Layered Navigation`,
 				SortOrder: 490,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `catalog/layered_navigation/display_product_count`,
-						ID:        cfgpath.NewRoute("display_product_count"),
-						Label:     text.Chars(`Display Product Count`),
+						ID:        "display_product_count",
+						Label:     `Display Product Count`,
 						Type:      element.TypeSelect,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/layered_navigation/price_range_calculation`,
-						ID:        cfgpath.NewRoute("price_range_calculation"),
-						Label:     text.Chars(`Price Navigation Step Calculation`),
+						ID:        "price_range_calculation",
+						Label:     `Price Navigation Step Calculation`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `auto`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/layered_navigation/price_range_step`,
-						ID:        cfgpath.NewRoute("price_range_step"),
-						Label:     text.Chars(`Default Price Navigation Step`),
+						ID:        "price_range_step",
+						Label:     `Default Price Navigation Step`,
 						Type:      element.TypeText,
 						SortOrder: 15,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   100,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/layered_navigation/price_range_max_intervals`,
-						ID:        cfgpath.NewRoute("price_range_max_intervals"),
-						Label:     text.Chars(`Maximum Number of Price Intervals`),
-						Comment:   text.Chars(`Maximum number of price intervals is 100`),
+						ID:        "price_range_max_intervals",
+						Label:     `Maximum Number of Price Intervals`,
+						Comment:   `Maximum number of price intervals is 100`,
 						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   10,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/layered_navigation/one_price_interval`,
-						ID:        cfgpath.NewRoute("one_price_interval"),
-						Label:     text.Chars(`Display Price Interval as One Price`),
-						Comment:   text.Chars(`This setting will be applied when all prices in the specific price interval are equal.`),
+						ID:        "one_price_interval",
+						Label:     `Display Price Interval as One Price`,
+						Comment:   `This setting will be applied when all prices in the specific price interval are equal.`,
 						Type:      element.TypeSelect,
 						SortOrder: 15,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/layered_navigation/interval_division_limit`,
-						ID:        cfgpath.NewRoute("interval_division_limit"),
-						Label:     text.Chars(`Interval Division Limit`),
-						Comment:   text.Chars(`Please specify the number of products, that will not be divided into subintervals.`),
+						ID:        "interval_division_limit",
+						Label:     `Interval Division Limit`,
+						Comment:   `Please specify the number of products, that will not be divided into subintervals.`,
 						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   9,
 					},
@@ -5813,26 +5746,26 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("customer"),
+	&element.Section{
+		ID:        "customer",
 		Label:     nil,
 		SortOrder: 130,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("online_customers"),
-				Label:     text.Chars(`Online Customers Options`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "online_customers",
+				Label:     `Online Customers Options`,
 				SortOrder: 10,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `customer/online_customers/online_minutes_interval`,
-						ID:        cfgpath.NewRoute("online_minutes_interval"),
-						Label:     text.Chars(`Online Minutes Interval`),
-						Comment:   text.Chars(`Leave empty for default (15 minutes).`),
+						ID:        "online_minutes_interval",
+						Label:     `Online Minutes Interval`,
+						Comment:   `Leave empty for default (15 minutes).`,
 						Type:      element.TypeText,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
@@ -5840,91 +5773,91 @@ T: {{var telephone}}
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("system"),
+	&element.Section{
+		ID:        "system",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("log"),
-				Label:     text.Chars(`Log Cleaning`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "log",
+				Label:     `Log Cleaning`,
 				SortOrder: 200,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `system/log/clean_after_day`,
-						ID:        cfgpath.NewRoute("clean_after_day"),
-						Label:     text.Chars(`Save Log, Days`),
+						ID:        "clean_after_day",
+						Label:     `Save Log, Days`,
 						Type:      element.TypeText,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   180,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/log/enabled`,
-						ID:        cfgpath.NewRoute("enabled"),
-						Label:     text.Chars(`Enable Log Cleaning`),
+						ID:        "enabled",
+						Label:     `Enable Log Cleaning`,
 						Type:      element.TypeSelect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/log/time`,
-						ID:        cfgpath.NewRoute("time"),
-						Label:     text.Chars(`Start Time`),
+						ID:        "time",
+						Label:     `Start Time`,
 						Type:      element.TypeTime,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/log/frequency`,
-						ID:        cfgpath.NewRoute("frequency"),
-						Label:     text.Chars(`Frequency`),
+						ID:        "frequency",
+						Label:     `Frequency`,
 						Type:      element.TypeSelect,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `D`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/log/error_email`,
-						ID:        cfgpath.NewRoute("error_email"),
-						Label:     text.Chars(`Error Email Recipient`),
+						ID:        "error_email",
+						Label:     `Error Email Recipient`,
 						Type:      element.TypeText,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/log/error_email_identity`,
-						ID:        cfgpath.NewRoute("error_email_identity"),
-						Label:     text.Chars(`Error Email Sender`),
+						ID:        "error_email_identity",
+						Label:     `Error Email Sender`,
 						Type:      element.TypeSelect,
 						SortOrder: 6,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `general`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/log/error_email_template`,
-						ID:        cfgpath.NewRoute("error_email_template"),
-						Label:     text.Chars(`Error Email Template`),
+						ID:        "error_email_template",
+						Label:     `Error Email Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 7,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `system_log_error_email_template`,
 					},
@@ -5934,17 +5867,16 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("log"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("visitor"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "log",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "visitor",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `log/visitor/online_update_frequency`,
-						ID:      cfgpath.NewRoute("online_update_frequency"),
+						ID:      "online_update_frequency",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: 60,
 					},
@@ -5952,26 +5884,24 @@ T: {{var telephone}}
 			},
 		},
 	},
-	element.Section{
-		ID: cfgpath.NewRoute("system"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("log"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "system",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "log",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `system/log/time`,
-						ID:      cfgpath.NewRoute("time"),
+						ID:      "time",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/log/error_email`,
-						ID:      cfgpath.NewRoute("error_email"),
+						ID:      "error_email",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: nil,
 					},
@@ -5980,59 +5910,59 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("system"),
+	&element.Section{
+		ID:        "system",
 		Label:     nil,
 		SortOrder: 900,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("media_storage_configuration"),
-				Label:     text.Chars(`Storage Configuration for Media`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "media_storage_configuration",
+				Label:     `Storage Configuration for Media`,
 				SortOrder: 900,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `system/media_storage_configuration/media_storage`,
-						ID:        cfgpath.NewRoute("media_storage"),
-						Label:     text.Chars(`Media Storage`),
+						ID:        "media_storage",
+						Label:     `Media Storage`,
 						Type:      element.TypeSelect,
 						SortOrder: 100,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/media_storage_configuration/media_database`,
-						ID:        cfgpath.NewRoute("media_database"),
-						Label:     text.Chars(`Select Media Database`),
+						ID:        "media_database",
+						Label:     `Select Media Database`,
 						Type:      element.TypeSelect,
 						SortOrder: 200,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/media_storage_configuration/synchronize`,
-						ID:        cfgpath.NewRoute("synchronize"),
+						ID:        "synchronize",
 						Label:     nil,
-						Comment:   text.Chars(`After selecting a new media storage location, press the Synchronize button to transfer all media to that location. Media will not be available in the new location until the synchronization process is complete.`),
+						Comment:   `After selecting a new media storage location, press the Synchronize button to transfer all media to that location. Media will not be available in the new location until the synchronization process is complete.`,
 						Type:      element.TypeButton,
 						SortOrder: 300,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/media_storage_configuration/configuration_update_time`,
-						ID:        cfgpath.NewRoute("configuration_update_time"),
-						Label:     text.Chars(`Environment Update Time`),
+						ID:        "configuration_update_time",
+						Label:     `Environment Update Time`,
 						Type:      element.TypeText,
 						SortOrder: 400,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
@@ -6041,59 +5971,59 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("sales"),
+	&element.Section{
+		ID:        "sales",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("msrp"),
-				Label:     text.Chars(`Minimum Advertised Price`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "msrp",
+				Label:     `Minimum Advertised Price`,
 				SortOrder: 110,
 				Scopes:    scope.PermWebsite,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sales/msrp/enabled`,
-						ID:        cfgpath.NewRoute("enabled"),
-						Label:     text.Chars(`Enable MAP`),
-						Comment:   text.Chars(`<strong style="color:red">Warning!</strong> Enabling MAP by default will hide all product prices on the front end.`),
+						ID:        "enabled",
+						Label:     `Enable MAP`,
+						Comment:   `<strong style="color:red">Warning!</strong> Enabling MAP by default will hide all product prices on the front end.`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales/msrp/display_price_type`,
-						ID:        cfgpath.NewRoute("display_price_type"),
-						Label:     text.Chars(`Display Actual Price`),
+						ID:        "display_price_type",
+						Label:     `Display Actual Price`,
 						Type:      element.TypeSelect,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales/msrp/explanation_message`,
-						ID:        cfgpath.NewRoute("explanation_message"),
-						Label:     text.Chars(`Default Popup Text Message`),
+						ID:        "explanation_message",
+						Label:     `Default Popup Text Message`,
 						Type:      element.TypeTextarea,
 						SortOrder: 40,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Our price is lower than the manufacturer's "minimum advertised price." As a result, we cannot show you the price in catalog or the product page. <br /><br /> You have no obligation to purchase the product once you know the price. You can simply remove the item from your cart.`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales/msrp/explanation_message_whats_this`,
-						ID:        cfgpath.NewRoute("explanation_message_whats_this"),
-						Label:     text.Chars(`Default "What's This" Text Message`),
+						ID:        "explanation_message_whats_this",
+						Label:     `Default "What's This" Text Message`,
 						Type:      element.TypeTextarea,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Our price is lower than the manufacturer's "minimum advertised price." As a result, we cannot show you the price in catalog or the product page. <br /><br /> You have no obligation to purchase the product once you know the price. You can simply remove the item from your cart.`,
 					},
@@ -6102,36 +6032,36 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("multishipping"),
-		Label:     text.Chars("Multishipping Settings"),
+	&element.Section{
+		ID:        "multishipping",
+		Label:     `Multishipping Settings`,
 		SortOrder: 311,
 		Scopes:    scope.PermWebsite,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("options"),
-				Label:     text.Chars(`Options`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "options",
+				Label:     `Options`,
 				SortOrder: 2,
 				Scopes:    scope.PermWebsite,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `multishipping/options/checkout_multiple`,
-						ID:        cfgpath.NewRoute("checkout_multiple"),
-						Label:     text.Chars(`Allow Shipping to Multiple Addresses`),
+						ID:        "checkout_multiple",
+						Label:     `Allow Shipping to Multiple Addresses`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `multishipping/options/checkout_multiple_maximum_qty`,
-						ID:        cfgpath.NewRoute("checkout_multiple_maximum_qty"),
-						Label:     text.Chars(`Maximum Qty Allowed for Shipping to Multiple Addresses`),
+						ID:        "checkout_multiple_maximum_qty",
+						Label:     `Maximum Qty Allowed for Shipping to Multiple Addresses`,
 						Type:      element.TypeText,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   100,
 					},
@@ -6140,102 +6070,102 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("newsletter"),
-		Label:     text.Chars("Newsletter"),
+	&element.Section{
+		ID:        "newsletter",
+		Label:     `Newsletter`,
 		SortOrder: 110,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("subscription"),
-				Label:     text.Chars(`Subscription Options`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "subscription",
+				Label:     `Subscription Options`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `newsletter/subscription/allow_guest_subscribe`,
-						ID:        cfgpath.NewRoute("allow_guest_subscribe"),
-						Label:     text.Chars(`Allow Guest Subscription`),
+						ID:        "allow_guest_subscribe",
+						Label:     `Allow Guest Subscription`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `newsletter/subscription/confirm`,
-						ID:        cfgpath.NewRoute("confirm"),
-						Label:     text.Chars(`Need to Confirm`),
+						ID:        "confirm",
+						Label:     `Need to Confirm`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `newsletter/subscription/confirm_email_identity`,
-						ID:        cfgpath.NewRoute("confirm_email_identity"),
-						Label:     text.Chars(`Confirmation Email Sender`),
+						ID:        "confirm_email_identity",
+						Label:     `Confirmation Email Sender`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `support`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `newsletter/subscription/confirm_email_template`,
-						ID:        cfgpath.NewRoute("confirm_email_template"),
-						Label:     text.Chars(`Confirmation Email Template`),
+						ID:        "confirm_email_template",
+						Label:     `Confirmation Email Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `newsletter_subscription_confirm_email_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `newsletter/subscription/success_email_identity`,
-						ID:        cfgpath.NewRoute("success_email_identity"),
-						Label:     text.Chars(`Success Email Sender`),
+						ID:        "success_email_identity",
+						Label:     `Success Email Sender`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `general`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `newsletter/subscription/success_email_template`,
-						ID:        cfgpath.NewRoute("success_email_template"),
-						Label:     text.Chars(`Success Email Template`),
+						ID:        "success_email_template",
+						Label:     `Success Email Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `newsletter_subscription_success_email_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `newsletter/subscription/un_email_identity`,
-						ID:        cfgpath.NewRoute("un_email_identity"),
-						Label:     text.Chars(`Unsubscription Email Sender`),
+						ID:        "un_email_identity",
+						Label:     `Unsubscription Email Sender`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `support`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `newsletter/subscription/un_email_template`,
-						ID:        cfgpath.NewRoute("un_email_template"),
-						Label:     text.Chars(`Unsubscription Email Template`),
+						ID:        "un_email_template",
+						Label:     `Unsubscription Email Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `newsletter_subscription_un_email_template`,
 					},
@@ -6245,17 +6175,16 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("newsletter"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("sending"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "newsletter",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "sending",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `newsletter/sending/set_return_path`,
-						ID:      cfgpath.NewRoute("set_return_path"),
+						ID:      "set_return_path",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: false,
 					},
@@ -6264,552 +6193,552 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("payment"),
+	&element.Section{
+		ID:        "payment",
 		Label:     nil,
 		SortOrder: 400,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("checkmo"),
-				Label:     text.Chars(`Check / Money Order`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "checkmo",
+				Label:     `Check / Money Order`,
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `payment/checkmo/active`,
-						ID:        cfgpath.NewRoute("active"),
-						Label:     text.Chars(`Enabled`),
+						ID:        "active",
+						Label:     `Enabled`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/checkmo/order_status`,
-						ID:        cfgpath.NewRoute("order_status"),
-						Label:     text.Chars(`New Order Status`),
+						ID:        "order_status",
+						Label:     `New Order Status`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `pending`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/checkmo/sort_order`,
-						ID:        cfgpath.NewRoute("sort_order"),
-						Label:     text.Chars(`Sort Order`),
+						ID:        "sort_order",
+						Label:     `Sort Order`,
 						Type:      element.TypeText,
 						SortOrder: 100,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/checkmo/title`,
-						ID:        cfgpath.NewRoute("title"),
-						Label:     text.Chars(`Title`),
+						ID:        "title",
+						Label:     `Title`,
 						Type:      element.TypeText,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Check / Money order`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/checkmo/allowspecific`,
-						ID:        cfgpath.NewRoute("allowspecific"),
-						Label:     text.Chars(`Payment from Applicable Countries`),
+						ID:        "allowspecific",
+						Label:     `Payment from Applicable Countries`,
 						Type:      element.TypeSelect,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   0,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/checkmo/specificcountry`,
-						ID:        cfgpath.NewRoute("specificcountry"),
-						Label:     text.Chars(`Payment from Specific Countries`),
+						ID:        "specificcountry",
+						Label:     `Payment from Specific Countries`,
 						Type:      element.TypeMultiselect,
 						SortOrder: 51,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/checkmo/payable_to`,
-						ID:        cfgpath.NewRoute("payable_to"),
-						Label:     text.Chars(`Make Check Payable to`),
+						ID:        "payable_to",
+						Label:     `Make Check Payable to`,
 						Type:      element.TypeText,
 						SortOrder: 61,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/checkmo/mailing_address`,
-						ID:        cfgpath.NewRoute("mailing_address"),
-						Label:     text.Chars(`Send Check to`),
+						ID:        "mailing_address",
+						Label:     `Send Check to`,
 						Type:      element.TypeTextarea,
 						SortOrder: 62,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/checkmo/min_order_total`,
-						ID:        cfgpath.NewRoute("min_order_total"),
-						Label:     text.Chars(`Minimum Order Total`),
+						ID:        "min_order_total",
+						Label:     `Minimum Order Total`,
 						Type:      element.TypeText,
 						SortOrder: 98,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/checkmo/max_order_total`,
-						ID:        cfgpath.NewRoute("max_order_total"),
-						Label:     text.Chars(`Maximum Order Total`),
+						ID:        "max_order_total",
+						Label:     `Maximum Order Total`,
 						Type:      element.TypeText,
 						SortOrder: 99,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/checkmo/model`,
-						ID:        cfgpath.NewRoute("model"),
+						ID:        "model",
 						Label:     nil,
 						Type:      element.TypeText,
 						SortOrder: 0,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Magento\OfflinePayments\Model\Checkmo`,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("purchaseorder"),
-				Label:     text.Chars(`Purchase Order`),
+			&element.Group{
+				ID:        "purchaseorder",
+				Label:     `Purchase Order`,
 				SortOrder: 32,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `payment/purchaseorder/active`,
-						ID:        cfgpath.NewRoute("active"),
-						Label:     text.Chars(`Enabled`),
+						ID:        "active",
+						Label:     `Enabled`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/purchaseorder/order_status`,
-						ID:        cfgpath.NewRoute("order_status"),
-						Label:     text.Chars(`New Order Status`),
+						ID:        "order_status",
+						Label:     `New Order Status`,
 						Type:      element.TypeSelect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `pending`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/purchaseorder/sort_order`,
-						ID:        cfgpath.NewRoute("sort_order"),
-						Label:     text.Chars(`Sort Order`),
+						ID:        "sort_order",
+						Label:     `Sort Order`,
 						Type:      element.TypeText,
 						SortOrder: 100,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/purchaseorder/title`,
-						ID:        cfgpath.NewRoute("title"),
-						Label:     text.Chars(`Title`),
+						ID:        "title",
+						Label:     `Title`,
 						Type:      element.TypeText,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Purchase Order`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/purchaseorder/allowspecific`,
-						ID:        cfgpath.NewRoute("allowspecific"),
-						Label:     text.Chars(`Payment from Applicable Countries`),
+						ID:        "allowspecific",
+						Label:     `Payment from Applicable Countries`,
 						Type:      element.TypeSelect,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   0,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/purchaseorder/specificcountry`,
-						ID:        cfgpath.NewRoute("specificcountry"),
-						Label:     text.Chars(`Payment from Specific Countries`),
+						ID:        "specificcountry",
+						Label:     `Payment from Specific Countries`,
 						Type:      element.TypeMultiselect,
 						SortOrder: 51,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/purchaseorder/min_order_total`,
-						ID:        cfgpath.NewRoute("min_order_total"),
-						Label:     text.Chars(`Minimum Order Total`),
+						ID:        "min_order_total",
+						Label:     `Minimum Order Total`,
 						Type:      element.TypeText,
 						SortOrder: 98,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/purchaseorder/max_order_total`,
-						ID:        cfgpath.NewRoute("max_order_total"),
-						Label:     text.Chars(`Maximum Order Total`),
+						ID:        "max_order_total",
+						Label:     `Maximum Order Total`,
 						Type:      element.TypeText,
 						SortOrder: 99,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/purchaseorder/model`,
-						ID:        cfgpath.NewRoute("model"),
+						ID:        "model",
 						Label:     nil,
 						Type:      element.TypeText,
 						SortOrder: 0,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Magento\OfflinePayments\Model\Purchaseorder`,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("banktransfer"),
-				Label:     text.Chars(`Bank Transfer Payment`),
+			&element.Group{
+				ID:        "banktransfer",
+				Label:     `Bank Transfer Payment`,
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `payment/banktransfer/active`,
-						ID:        cfgpath.NewRoute("active"),
-						Label:     text.Chars(`Enabled`),
+						ID:        "active",
+						Label:     `Enabled`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/banktransfer/title`,
-						ID:        cfgpath.NewRoute("title"),
-						Label:     text.Chars(`Title`),
+						ID:        "title",
+						Label:     `Title`,
 						Type:      element.TypeText,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Bank Transfer Payment`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/banktransfer/order_status`,
-						ID:        cfgpath.NewRoute("order_status"),
-						Label:     text.Chars(`New Order Status`),
+						ID:        "order_status",
+						Label:     `New Order Status`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `pending`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/banktransfer/allowspecific`,
-						ID:        cfgpath.NewRoute("allowspecific"),
-						Label:     text.Chars(`Payment from Applicable Countries`),
+						ID:        "allowspecific",
+						Label:     `Payment from Applicable Countries`,
 						Type:      element.TypeSelect,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   0,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/banktransfer/specificcountry`,
-						ID:        cfgpath.NewRoute("specificcountry"),
-						Label:     text.Chars(`Payment from Specific Countries`),
+						ID:        "specificcountry",
+						Label:     `Payment from Specific Countries`,
 						Type:      element.TypeMultiselect,
 						SortOrder: 51,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/banktransfer/instructions`,
-						ID:        cfgpath.NewRoute("instructions"),
-						Label:     text.Chars(`Instructions`),
+						ID:        "instructions",
+						Label:     `Instructions`,
 						Type:      element.TypeTextarea,
 						SortOrder: 62,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/banktransfer/min_order_total`,
-						ID:        cfgpath.NewRoute("min_order_total"),
-						Label:     text.Chars(`Minimum Order Total`),
+						ID:        "min_order_total",
+						Label:     `Minimum Order Total`,
 						Type:      element.TypeText,
 						SortOrder: 98,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/banktransfer/max_order_total`,
-						ID:        cfgpath.NewRoute("max_order_total"),
-						Label:     text.Chars(`Maximum Order Total`),
+						ID:        "max_order_total",
+						Label:     `Maximum Order Total`,
 						Type:      element.TypeText,
 						SortOrder: 99,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/banktransfer/sort_order`,
-						ID:        cfgpath.NewRoute("sort_order"),
-						Label:     text.Chars(`Sort Order`),
+						ID:        "sort_order",
+						Label:     `Sort Order`,
 						Type:      element.TypeText,
 						SortOrder: 100,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("cashondelivery"),
-				Label:     text.Chars(`Cash On Delivery Payment`),
+			&element.Group{
+				ID:        "cashondelivery",
+				Label:     `Cash On Delivery Payment`,
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `payment/cashondelivery/active`,
-						ID:        cfgpath.NewRoute("active"),
-						Label:     text.Chars(`Enabled`),
+						ID:        "active",
+						Label:     `Enabled`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/cashondelivery/title`,
-						ID:        cfgpath.NewRoute("title"),
-						Label:     text.Chars(`Title`),
+						ID:        "title",
+						Label:     `Title`,
 						Type:      element.TypeText,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Cash On Delivery`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/cashondelivery/order_status`,
-						ID:        cfgpath.NewRoute("order_status"),
-						Label:     text.Chars(`New Order Status`),
+						ID:        "order_status",
+						Label:     `New Order Status`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `pending`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/cashondelivery/allowspecific`,
-						ID:        cfgpath.NewRoute("allowspecific"),
-						Label:     text.Chars(`Payment from Applicable Countries`),
+						ID:        "allowspecific",
+						Label:     `Payment from Applicable Countries`,
 						Type:      element.TypeSelect,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   0,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/cashondelivery/specificcountry`,
-						ID:        cfgpath.NewRoute("specificcountry"),
-						Label:     text.Chars(`Payment from Specific Countries`),
+						ID:        "specificcountry",
+						Label:     `Payment from Specific Countries`,
 						Type:      element.TypeMultiselect,
 						SortOrder: 51,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/cashondelivery/instructions`,
-						ID:        cfgpath.NewRoute("instructions"),
-						Label:     text.Chars(`Instructions`),
+						ID:        "instructions",
+						Label:     `Instructions`,
 						Type:      element.TypeTextarea,
 						SortOrder: 62,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/cashondelivery/min_order_total`,
-						ID:        cfgpath.NewRoute("min_order_total"),
-						Label:     text.Chars(`Minimum Order Total`),
+						ID:        "min_order_total",
+						Label:     `Minimum Order Total`,
 						Type:      element.TypeText,
 						SortOrder: 98,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/cashondelivery/max_order_total`,
-						ID:        cfgpath.NewRoute("max_order_total"),
-						Label:     text.Chars(`Maximum Order Total`),
+						ID:        "max_order_total",
+						Label:     `Maximum Order Total`,
 						Type:      element.TypeText,
 						SortOrder: 99,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/cashondelivery/sort_order`,
-						ID:        cfgpath.NewRoute("sort_order"),
-						Label:     text.Chars(`Sort Order`),
+						ID:        "sort_order",
+						Label:     `Sort Order`,
 						Type:      element.TypeText,
 						SortOrder: 100,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("free"),
-				Label:     text.Chars(`Zero Subtotal Checkout`),
+			&element.Group{
+				ID:        "free",
+				Label:     `Zero Subtotal Checkout`,
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `payment/free/active`,
-						ID:        cfgpath.NewRoute("active"),
-						Label:     text.Chars(`Enabled`),
+						ID:        "active",
+						Label:     `Enabled`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/free/order_status`,
-						ID:        cfgpath.NewRoute("order_status"),
-						Label:     text.Chars(`New Order Status`),
+						ID:        "order_status",
+						Label:     `New Order Status`,
 						Type:      element.TypeSelect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/free/payment_action`,
-						ID:        cfgpath.NewRoute("payment_action"),
-						Label:     text.Chars(`Automatically Invoice All Items`),
+						ID:        "payment_action",
+						Label:     `Automatically Invoice All Items`,
 						Type:      element.TypeSelect,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/free/sort_order`,
-						ID:        cfgpath.NewRoute("sort_order"),
-						Label:     text.Chars(`Sort Order`),
+						ID:        "sort_order",
+						Label:     `Sort Order`,
 						Type:      element.TypeText,
 						SortOrder: 100,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/free/title`,
-						ID:        cfgpath.NewRoute("title"),
-						Label:     text.Chars(`Title`),
+						ID:        "title",
+						Label:     `Title`,
 						Type:      element.TypeText,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/free/allowspecific`,
-						ID:        cfgpath.NewRoute("allowspecific"),
-						Label:     text.Chars(`Payment from Applicable Countries`),
+						ID:        "allowspecific",
+						Label:     `Payment from Applicable Countries`,
 						Type:      element.TypeSelect,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/free/specificcountry`,
-						ID:        cfgpath.NewRoute("specificcountry"),
-						Label:     text.Chars(`Payment from Specific Countries`),
+						ID:        "specificcountry",
+						Label:     `Payment from Specific Countries`,
 						Type:      element.TypeMultiselect,
 						SortOrder: 51,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/free/model`,
-						ID:        cfgpath.NewRoute("model"),
+						ID:        "model",
 						Label:     nil,
 						Type:      element.TypeText,
 						SortOrder: 0,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
@@ -6819,91 +6748,84 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("payment"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("checkmo"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "payment",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "checkmo",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `payment/checkmo/group`,
-						ID:      cfgpath.NewRoute("group"),
+						ID:      "group",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `offline`,
 					},
 				},
 			},
 
-			element.Group{
-				ID: cfgpath.NewRoute("purchaseorder"),
-				Fields: element.FieldSlice{
-					element.Field{
+			&element.Group{
+				ID: "purchaseorder",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `payment/purchaseorder/group`,
-						ID:      cfgpath.NewRoute("group"),
+						ID:      "group",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `offline`,
 					},
 				},
 			},
 
-			element.Group{
-				ID: cfgpath.NewRoute("banktransfer"),
-				Fields: element.FieldSlice{
-					element.Field{
+			&element.Group{
+				ID: "banktransfer",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `payment/banktransfer/model`,
-						ID:      cfgpath.NewRoute("model"),
+						ID:      "model",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\OfflinePayments\Model\Banktransfer`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/banktransfer/group`,
-						ID:      cfgpath.NewRoute("group"),
+						ID:      "group",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `offline`,
 					},
 				},
 			},
 
-			element.Group{
-				ID: cfgpath.NewRoute("cashondelivery"),
-				Fields: element.FieldSlice{
-					element.Field{
+			&element.Group{
+				ID: "cashondelivery",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `payment/cashondelivery/model`,
-						ID:      cfgpath.NewRoute("model"),
+						ID:      "model",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\OfflinePayments\Model\Cashondelivery`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/cashondelivery/group`,
-						ID:      cfgpath.NewRoute("group"),
+						ID:      "group",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `offline`,
 					},
 				},
 			},
 
-			element.Group{
-				ID: cfgpath.NewRoute("free"),
-				Fields: element.FieldSlice{
-					element.Field{
+			&element.Group{
+				ID: "free",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `payment/free/group`,
-						ID:      cfgpath.NewRoute("group"),
+						ID:      "group",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `offline`,
 					},
@@ -6912,415 +6834,415 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("carriers"),
+	&element.Section{
+		ID:        "carriers",
 		Label:     nil,
 		SortOrder: 320,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("flatrate"),
-				Label:     text.Chars(`Flat Rate`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "flatrate",
+				Label:     `Flat Rate`,
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `carriers/flatrate/active`,
-						ID:        cfgpath.NewRoute("active"),
-						Label:     text.Chars(`Enabled`),
+						ID:        "active",
+						Label:     `Enabled`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/flatrate/name`,
-						ID:        cfgpath.NewRoute("name"),
-						Label:     text.Chars(`Method Name`),
+						ID:        "name",
+						Label:     `Method Name`,
 						Type:      element.TypeText,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Fixed`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/flatrate/price`,
-						ID:        cfgpath.NewRoute("price"),
-						Label:     text.Chars(`Price`),
+						ID:        "price",
+						Label:     `Price`,
 						Type:      element.TypeText,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   5.00,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/flatrate/handling_type`,
-						ID:        cfgpath.NewRoute("handling_type"),
-						Label:     text.Chars(`Calculate Handling Fee`),
+						ID:        "handling_type",
+						Label:     `Calculate Handling Fee`,
 						Type:      element.TypeSelect,
 						SortOrder: 7,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `F`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/flatrate/handling_fee`,
-						ID:        cfgpath.NewRoute("handling_fee"),
-						Label:     text.Chars(`Handling Fee`),
+						ID:        "handling_fee",
+						Label:     `Handling Fee`,
 						Type:      element.TypeText,
 						SortOrder: 8,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/flatrate/sort_order`,
-						ID:        cfgpath.NewRoute("sort_order"),
-						Label:     text.Chars(`Sort Order`),
+						ID:        "sort_order",
+						Label:     `Sort Order`,
 						Type:      element.TypeText,
 						SortOrder: 100,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/flatrate/title`,
-						ID:        cfgpath.NewRoute("title"),
-						Label:     text.Chars(`Title`),
+						ID:        "title",
+						Label:     `Title`,
 						Type:      element.TypeText,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Flat Rate`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/flatrate/type`,
-						ID:        cfgpath.NewRoute("type"),
-						Label:     text.Chars(`Type`),
+						ID:        "type",
+						Label:     `Type`,
 						Type:      element.TypeSelect,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `I`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/flatrate/sallowspecific`,
-						ID:        cfgpath.NewRoute("sallowspecific"),
-						Label:     text.Chars(`Ship to Applicable Countries`),
+						ID:        "sallowspecific",
+						Label:     `Ship to Applicable Countries`,
 						Type:      element.TypeSelect,
 						SortOrder: 90,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/flatrate/specificcountry`,
-						ID:        cfgpath.NewRoute("specificcountry"),
-						Label:     text.Chars(`Ship to Specific Countries`),
+						ID:        "specificcountry",
+						Label:     `Ship to Specific Countries`,
 						Type:      element.TypeMultiselect,
 						SortOrder: 91,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/flatrate/showmethod`,
-						ID:        cfgpath.NewRoute("showmethod"),
-						Label:     text.Chars(`Show Method if Not Applicable`),
+						ID:        "showmethod",
+						Label:     `Show Method if Not Applicable`,
 						Type:      element.TypeSelect,
 						SortOrder: 92,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/flatrate/specificerrmsg`,
-						ID:        cfgpath.NewRoute("specificerrmsg"),
-						Label:     text.Chars(`Displayed Error Message`),
+						ID:        "specificerrmsg",
+						Label:     `Displayed Error Message`,
 						Type:      element.TypeTextarea,
 						SortOrder: 80,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `This shipping method is not available. To use this shipping method, please contact us.`,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("tablerate"),
-				Label:     text.Chars(`Table Rates`),
+			&element.Group{
+				ID:        "tablerate",
+				Label:     `Table Rates`,
 				SortOrder: 3,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `carriers/tablerate/handling_type`,
-						ID:        cfgpath.NewRoute("handling_type"),
-						Label:     text.Chars(`Calculate Handling Fee`),
+						ID:        "handling_type",
+						Label:     `Calculate Handling Fee`,
 						Type:      element.TypeSelect,
 						SortOrder: 7,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `F`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/tablerate/handling_fee`,
-						ID:        cfgpath.NewRoute("handling_fee"),
-						Label:     text.Chars(`Handling Fee`),
+						ID:        "handling_fee",
+						Label:     `Handling Fee`,
 						Type:      element.TypeText,
 						SortOrder: 8,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/tablerate/active`,
-						ID:        cfgpath.NewRoute("active"),
-						Label:     text.Chars(`Enabled`),
+						ID:        "active",
+						Label:     `Enabled`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/tablerate/condition_name`,
-						ID:        cfgpath.NewRoute("condition_name"),
-						Label:     text.Chars(`Condition`),
+						ID:        "condition_name",
+						Label:     `Condition`,
 						Type:      element.TypeSelect,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `package_weight`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/tablerate/include_virtual_price`,
-						ID:        cfgpath.NewRoute("include_virtual_price"),
-						Label:     text.Chars(`Include Virtual Products in Price Calculation`),
+						ID:        "include_virtual_price",
+						Label:     `Include Virtual Products in Price Calculation`,
 						Type:      element.TypeSelect,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/tablerate/export`,
-						ID:        cfgpath.NewRoute("export"),
-						Label:     text.Chars(`Export`),
+						ID:        "export",
+						Label:     `Export`,
 						Type:      element.TypeCustom, // @to do: Magento\OfflineShipping\Block\Adminhtml\Form\Field\Export,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/tablerate/import`,
-						ID:        cfgpath.NewRoute("import"),
-						Label:     text.Chars(`Import`),
+						ID:        "import",
+						Label:     `Import`,
 						Type:      element.TypeCustom, // @to do: Magento\OfflineShipping\Block\Adminhtml\Form\Field\Import,
 						SortOrder: 6,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/tablerate/name`,
-						ID:        cfgpath.NewRoute("name"),
-						Label:     text.Chars(`Method Name`),
+						ID:        "name",
+						Label:     `Method Name`,
 						Type:      element.TypeText,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Table Rate`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/tablerate/sort_order`,
-						ID:        cfgpath.NewRoute("sort_order"),
-						Label:     text.Chars(`Sort Order`),
+						ID:        "sort_order",
+						Label:     `Sort Order`,
 						Type:      element.TypeText,
 						SortOrder: 100,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/tablerate/title`,
-						ID:        cfgpath.NewRoute("title"),
-						Label:     text.Chars(`Title`),
+						ID:        "title",
+						Label:     `Title`,
 						Type:      element.TypeText,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Best Way`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/tablerate/sallowspecific`,
-						ID:        cfgpath.NewRoute("sallowspecific"),
-						Label:     text.Chars(`Ship to Applicable Countries`),
+						ID:        "sallowspecific",
+						Label:     `Ship to Applicable Countries`,
 						Type:      element.TypeSelect,
 						SortOrder: 90,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/tablerate/specificcountry`,
-						ID:        cfgpath.NewRoute("specificcountry"),
-						Label:     text.Chars(`Ship to Specific Countries`),
+						ID:        "specificcountry",
+						Label:     `Ship to Specific Countries`,
 						Type:      element.TypeMultiselect,
 						SortOrder: 91,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/tablerate/showmethod`,
-						ID:        cfgpath.NewRoute("showmethod"),
-						Label:     text.Chars(`Show Method if Not Applicable`),
+						ID:        "showmethod",
+						Label:     `Show Method if Not Applicable`,
 						Type:      element.TypeSelect,
 						SortOrder: 92,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/tablerate/specificerrmsg`,
-						ID:        cfgpath.NewRoute("specificerrmsg"),
-						Label:     text.Chars(`Displayed Error Message`),
+						ID:        "specificerrmsg",
+						Label:     `Displayed Error Message`,
 						Type:      element.TypeTextarea,
 						SortOrder: 80,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `This shipping method is not available. To use this shipping method, please contact us.`,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("freeshipping"),
-				Label:     text.Chars(`Free Shipping`),
+			&element.Group{
+				ID:        "freeshipping",
+				Label:     `Free Shipping`,
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `carriers/freeshipping/active`,
-						ID:        cfgpath.NewRoute("active"),
-						Label:     text.Chars(`Enabled`),
+						ID:        "active",
+						Label:     `Enabled`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/freeshipping/free_shipping_subtotal`,
-						ID:        cfgpath.NewRoute("free_shipping_subtotal"),
-						Label:     text.Chars(`Minimum Order Amount`),
+						ID:        "free_shipping_subtotal",
+						Label:     `Minimum Order Amount`,
 						Type:      element.TypeText,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/freeshipping/name`,
-						ID:        cfgpath.NewRoute("name"),
-						Label:     text.Chars(`Method Name`),
+						ID:        "name",
+						Label:     `Method Name`,
 						Type:      element.TypeText,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Free`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/freeshipping/sort_order`,
-						ID:        cfgpath.NewRoute("sort_order"),
-						Label:     text.Chars(`Sort Order`),
+						ID:        "sort_order",
+						Label:     `Sort Order`,
 						Type:      element.TypeText,
 						SortOrder: 100,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/freeshipping/title`,
-						ID:        cfgpath.NewRoute("title"),
-						Label:     text.Chars(`Title`),
+						ID:        "title",
+						Label:     `Title`,
 						Type:      element.TypeText,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Free Shipping`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/freeshipping/sallowspecific`,
-						ID:        cfgpath.NewRoute("sallowspecific"),
-						Label:     text.Chars(`Ship to Applicable Countries`),
+						ID:        "sallowspecific",
+						Label:     `Ship to Applicable Countries`,
 						Type:      element.TypeSelect,
 						SortOrder: 90,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/freeshipping/specificcountry`,
-						ID:        cfgpath.NewRoute("specificcountry"),
-						Label:     text.Chars(`Ship to Specific Countries`),
+						ID:        "specificcountry",
+						Label:     `Ship to Specific Countries`,
 						Type:      element.TypeMultiselect,
 						SortOrder: 91,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/freeshipping/showmethod`,
-						ID:        cfgpath.NewRoute("showmethod"),
-						Label:     text.Chars(`Show Method if Not Applicable`),
+						ID:        "showmethod",
+						Label:     `Show Method if Not Applicable`,
 						Type:      element.TypeSelect,
 						SortOrder: 92,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/freeshipping/specificerrmsg`,
-						ID:        cfgpath.NewRoute("specificerrmsg"),
-						Label:     text.Chars(`Displayed Error Message`),
+						ID:        "specificerrmsg",
+						Label:     `Displayed Error Message`,
 						Type:      element.TypeTextarea,
 						SortOrder: 80,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `This shipping method is not available. To use this shipping method, please contact us.`,
 					},
@@ -7330,54 +7252,50 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("carriers"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("flatrate"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "carriers",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "flatrate",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `carriers/flatrate/model`,
-						ID:      cfgpath.NewRoute("model"),
+						ID:      "model",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\OfflineShipping\Model\Carrier\Flatrate`,
 					},
 				},
 			},
 
-			element.Group{
-				ID: cfgpath.NewRoute("tablerate"),
-				Fields: element.FieldSlice{
-					element.Field{
+			&element.Group{
+				ID: "tablerate",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `carriers/tablerate/model`,
-						ID:      cfgpath.NewRoute("model"),
+						ID:      "model",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\OfflineShipping\Model\Carrier\Tablerate`,
 					},
 				},
 			},
 
-			element.Group{
-				ID: cfgpath.NewRoute("freeshipping"),
-				Fields: element.FieldSlice{
-					element.Field{
+			&element.Group{
+				ID: "freeshipping",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `carriers/freeshipping/cutoff_cost`,
-						ID:      cfgpath.NewRoute("cutoff_cost"),
+						ID:      "cutoff_cost",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: 50,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/freeshipping/model`,
-						ID:      cfgpath.NewRoute("model"),
+						ID:      "model",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\OfflineShipping\Model\Carrier\Freeshipping`,
 					},
@@ -7386,37 +7304,37 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("system"),
+	&element.Section{
+		ID:        "system",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("full_page_cache"),
-				Label:     text.Chars(`Full Page Cache`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "full_page_cache",
+				Label:     `Full Page Cache`,
 				SortOrder: 600,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `system/full_page_cache/caching_application`,
-						ID:        cfgpath.NewRoute("caching_application"),
-						Label:     text.Chars(`Caching Application`),
+						ID:        "caching_application",
+						Label:     `Caching Application`,
 						Type:      element.TypeSelect,
 						SortOrder: 0,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/full_page_cache/ttl`,
-						ID:        cfgpath.NewRoute("ttl"),
-						Label:     text.Chars(`TTL for public content`),
-						Comment:   text.Chars(`Public content cache lifetime in seconds. If field is empty default value 120 will be saved.`),
+						ID:        "ttl",
+						Label:     `TTL for public content`,
+						Comment:   `Public content cache lifetime in seconds. If field is empty default value 120 will be saved.`,
 						Type:      element.TypeText,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   120,
 					},
@@ -7426,35 +7344,32 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("system"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("full_page_cache"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "system",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "full_page_cache",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `system/full_page_cache/varnish3`,
-						ID:      cfgpath.NewRoute("varnish3"),
+						ID:      "varnish3",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"path":"Magento\/PageCache\/etc\/varnish3.vcl"}`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/full_page_cache/varnish4`,
-						ID:      cfgpath.NewRoute("varnish4"),
+						ID:      "varnish4",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"path":"Magento\/PageCache\/etc\/varnish4.vcl"}`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `system/full_page_cache/default`,
-						ID:      cfgpath.NewRoute("default"),
+						ID:      "default",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"access_list":"localhost","backend_host":"localhost","backend_port":"8080","ttl":"120"}`,
 					},
@@ -7463,103 +7378,94 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("payment"),
-		Label:     text.Chars("Payment Methods"),
+	&element.Section{
+		ID:        "payment",
+		Label:     `Payment Methods`,
 		SortOrder: 400,
 		Scopes:    scope.PermStore,
-		Groups:    element.GroupSlice{},
+		Groups:    element.Groups{},
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("payment"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("free"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "payment",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "free",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `payment/free/active`,
-						ID:      cfgpath.NewRoute("active"),
+						ID:      "active",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/free/model`,
-						ID:      cfgpath.NewRoute("model"),
+						ID:      "model",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\Payment\Model\Method\Free`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/free/order_status`,
-						ID:      cfgpath.NewRoute("order_status"),
+						ID:      "order_status",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `pending`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/free/title`,
-						ID:      cfgpath.NewRoute("title"),
+						ID:      "title",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `No Payment Information Required`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/free/allowspecific`,
-						ID:      cfgpath.NewRoute("allowspecific"),
+						ID:      "allowspecific",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/free/sort_order`,
-						ID:      cfgpath.NewRoute("sort_order"),
+						ID:      "sort_order",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: true,
 					},
 				},
 			},
 
-			element.Group{
-				ID: cfgpath.NewRoute("substitution"),
-				Fields: element.FieldSlice{
-					element.Field{
+			&element.Group{
+				ID: "substitution",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `payment/substitution/active`,
-						ID:      cfgpath.NewRoute("active"),
+						ID:      "active",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/substitution/model`,
-						ID:      cfgpath.NewRoute("model"),
+						ID:      "model",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\Payment\Model\Method\Substitution`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `payment/substitution/allowspecific`,
-						ID:      cfgpath.NewRoute("allowspecific"),
+						ID:      "allowspecific",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: false,
 					},
@@ -7568,80 +7474,80 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("persistent"),
-		Label:     text.Chars("Persistent Shopping Cart"),
+	&element.Section{
+		ID:        "persistent",
+		Label:     `Persistent Shopping Cart`,
 		SortOrder: 500,
 		Scopes:    scope.PermWebsite,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("options"),
-				Label:     text.Chars(`General Options`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "options",
+				Label:     `General Options`,
 				SortOrder: 10,
 				Scopes:    scope.PermWebsite,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `persistent/options/enabled`,
-						ID:        cfgpath.NewRoute("enabled"),
-						Label:     text.Chars(`Enable Persistence`),
+						ID:        "enabled",
+						Label:     `Enable Persistence`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `persistent/options/lifetime`,
-						ID:        cfgpath.NewRoute("lifetime"),
-						Label:     text.Chars(`Persistence Lifetime (seconds)`),
+						ID:        "lifetime",
+						Label:     `Persistence Lifetime (seconds)`,
 						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   31536000,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `persistent/options/remember_enabled`,
-						ID:        cfgpath.NewRoute("remember_enabled"),
-						Label:     text.Chars(`Enable "Remember Me"`),
+						ID:        "remember_enabled",
+						Label:     `Enable "Remember Me"`,
 						Type:      element.TypeSelect,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `persistent/options/remember_default`,
-						ID:        cfgpath.NewRoute("remember_default"),
-						Label:     text.Chars(`"Remember Me" Default Value`),
+						ID:        "remember_default",
+						Label:     `"Remember Me" Default Value`,
 						Type:      element.TypeSelect,
 						SortOrder: 40,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `persistent/options/logout_clear`,
-						ID:        cfgpath.NewRoute("logout_clear"),
-						Label:     text.Chars(`Clear Persistence on Log Out`),
+						ID:        "logout_clear",
+						Label:     `Clear Persistence on Log Out`,
 						Type:      element.TypeSelect,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `persistent/options/shopping_cart`,
-						ID:        cfgpath.NewRoute("shopping_cart"),
-						Label:     text.Chars(`Persist Shopping Cart`),
+						ID:        "shopping_cart",
+						Label:     `Persist Shopping Cart`,
 						Type:      element.TypeSelect,
 						SortOrder: 60,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   true,
 					},
@@ -7650,132 +7556,132 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("catalog"),
+	&element.Section{
+		ID:        "catalog",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("productalert"),
-				Label:     text.Chars(`Product Alerts`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "productalert",
+				Label:     `Product Alerts`,
 				SortOrder: 250,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `catalog/productalert/allow_price`,
-						ID:        cfgpath.NewRoute("allow_price"),
-						Label:     text.Chars(`Allow Alert When Product Price Changes`),
+						ID:        "allow_price",
+						Label:     `Allow Alert When Product Price Changes`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/productalert/allow_stock`,
-						ID:        cfgpath.NewRoute("allow_stock"),
-						Label:     text.Chars(`Allow Alert When Product Comes Back in Stock`),
+						ID:        "allow_stock",
+						Label:     `Allow Alert When Product Comes Back in Stock`,
 						Type:      element.TypeSelect,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/productalert/email_price_template`,
-						ID:        cfgpath.NewRoute("email_price_template"),
-						Label:     text.Chars(`Price Alert Email Template`),
+						ID:        "email_price_template",
+						Label:     `Price Alert Email Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `catalog_productalert_email_price_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/productalert/email_stock_template`,
-						ID:        cfgpath.NewRoute("email_stock_template"),
-						Label:     text.Chars(`Stock Alert Email Template`),
+						ID:        "email_stock_template",
+						Label:     `Stock Alert Email Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `catalog_productalert_email_stock_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/productalert/email_identity`,
-						ID:        cfgpath.NewRoute("email_identity"),
-						Label:     text.Chars(`Alert Email Sender`),
+						ID:        "email_identity",
+						Label:     `Alert Email Sender`,
 						Type:      element.TypeSelect,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `general`,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("productalert_cron"),
-				Label:     text.Chars(`Product Alerts Run Settings`),
+			&element.Group{
+				ID:        "productalert_cron",
+				Label:     `Product Alerts Run Settings`,
 				SortOrder: 260,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `catalog/productalert_cron/frequency`,
-						ID:        cfgpath.NewRoute("frequency"),
-						Label:     text.Chars(`Frequency`),
+						ID:        "frequency",
+						Label:     `Frequency`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/productalert_cron/time`,
-						ID:        cfgpath.NewRoute("time"),
-						Label:     text.Chars(`Start Time`),
+						ID:        "time",
+						Label:     `Start Time`,
 						Type:      element.TypeTime,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/productalert_cron/error_email`,
-						ID:        cfgpath.NewRoute("error_email"),
-						Label:     text.Chars(`Error Email Recipient`),
+						ID:        "error_email",
+						Label:     `Error Email Recipient`,
 						Type:      element.TypeText,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/productalert_cron/error_email_identity`,
-						ID:        cfgpath.NewRoute("error_email_identity"),
-						Label:     text.Chars(`Error Email Sender`),
+						ID:        "error_email_identity",
+						Label:     `Error Email Sender`,
 						Type:      element.TypeSelect,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `general`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/productalert_cron/error_email_template`,
-						ID:        cfgpath.NewRoute("error_email_template"),
-						Label:     text.Chars(`Error Email Template`),
+						ID:        "error_email_template",
+						Label:     `Error Email Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `catalog_productalert_cron_error_email_template`,
 					},
@@ -7785,17 +7691,16 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("catalog"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("productalert_cron"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "catalog",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "productalert_cron",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `catalog/productalert_cron/error_email`,
-						ID:      cfgpath.NewRoute("error_email"),
+						ID:      "error_email",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: nil,
 					},
@@ -7804,47 +7709,47 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("catalog"),
+	&element.Section{
+		ID:        "catalog",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("recently_products"),
-				Label:     text.Chars(`Recently Viewed/Compared Products`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "recently_products",
+				Label:     `Recently Viewed/Compared Products`,
 				SortOrder: 350,
 				Scopes:    scope.PermWebsite,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `catalog/recently_products/scope`,
-						ID:        cfgpath.NewRoute("scope"),
-						Label:     text.Chars(`Show for Current`),
+						ID:        "scope",
+						Label:     `Show for Current`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `website`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/recently_products/viewed_count`,
-						ID:        cfgpath.NewRoute("viewed_count"),
-						Label:     text.Chars(`Default Recently Viewed Products Count`),
+						ID:        "viewed_count",
+						Label:     `Default Recently Viewed Products Count`,
 						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   5,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/recently_products/compared_count`,
-						ID:        cfgpath.NewRoute("compared_count"),
-						Label:     text.Chars(`Default Recently Compared Products Count`),
+						ID:        "compared_count",
+						Label:     `Default Recently Compared Products Count`,
 						Type:      element.TypeText,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   5,
 					},
@@ -7852,37 +7757,37 @@ T: {{var telephone}}
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("reports"),
-		Label:     text.Chars("Reports"),
+	&element.Section{
+		ID:        "reports",
+		Label:     `Reports`,
 		SortOrder: 1000,
 		Scopes:    scope.PermDefault,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("dashboard"),
-				Label:     text.Chars(`Dashboard`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "dashboard",
+				Label:     `Dashboard`,
 				SortOrder: 1,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `reports/dashboard/ytd_start`,
-						ID:        cfgpath.NewRoute("ytd_start"),
-						Label:     text.Chars(`Year-To-Date Starts`),
+						ID:        "ytd_start",
+						Label:     `Year-To-Date Starts`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `1,1`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `reports/dashboard/mtd_start`,
-						ID:        cfgpath.NewRoute("mtd_start"),
-						Label:     text.Chars(`Current Month Starts`),
-						Comment:   text.Chars(`Select day of the month.`),
+						ID:        "mtd_start",
+						Label:     `Current Month Starts`,
+						Comment:   `Select day of the month.`,
 						Type:      element.TypeSelect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   true,
 					},
@@ -7891,25 +7796,25 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("catalog"),
+	&element.Section{
+		ID:        "catalog",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("review"),
-				Label:     text.Chars(`Product Reviews`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "review",
+				Label:     `Product Reviews`,
 				SortOrder: 100,
 				Scopes:    scope.PermWebsite,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `catalog/review/allow_guest`,
-						ID:        cfgpath.NewRoute("allow_guest"),
-						Label:     text.Chars(`Allow Guests to Write Reviews`),
+						ID:        "allow_guest",
+						Label:     `Allow Guests to Write Reviews`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   true,
 					},
@@ -7918,25 +7823,25 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("rss"),
-		Label:     text.Chars("RSS Feeds"),
+	&element.Section{
+		ID:        "rss",
+		Label:     `RSS Feeds`,
 		SortOrder: 80,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("config"),
-				Label:     text.Chars(`Rss Config`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "config",
+				Label:     `Rss Config`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `rss/config/active`,
-						ID:        cfgpath.NewRoute("active"),
-						Label:     text.Chars(`Enable RSS`),
+						ID:        "active",
+						Label:     `Enable RSS`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
@@ -7945,271 +7850,271 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("sales"),
-		Label:     text.Chars("Sales"),
+	&element.Section{
+		ID:        "sales",
+		Label:     `Sales`,
 		SortOrder: 300,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("general"),
-				Label:     text.Chars(`General`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "general",
+				Label:     `General`,
 				SortOrder: 5,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sales/general/hide_customer_ip`,
-						ID:        cfgpath.NewRoute("hide_customer_ip"),
-						Label:     text.Chars(`Hide Customer IP`),
-						Comment:   text.Chars(`Choose whether a customer IP is shown in orders, invoices, shipments, and credit memos.`),
+						ID:        "hide_customer_ip",
+						Label:     `Hide Customer IP`,
+						Comment:   `Choose whether a customer IP is shown in orders, invoices, shipments, and credit memos.`,
 						Type:      element.TypeSelect,
 						SortOrder: 0,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("totals_sort"),
-				Label:     text.Chars(`Checkout Totals Sort Order`),
+			&element.Group{
+				ID:        "totals_sort",
+				Label:     `Checkout Totals Sort Order`,
 				SortOrder: 10,
 				Scopes:    scope.PermWebsite,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sales/totals_sort/discount`,
-						ID:        cfgpath.NewRoute("discount"),
-						Label:     text.Chars(`Discount`),
+						ID:        "discount",
+						Label:     `Discount`,
 						Type:      element.TypeText,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   20,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales/totals_sort/grand_total`,
-						ID:        cfgpath.NewRoute("grand_total"),
-						Label:     text.Chars(`Grand Total`),
+						ID:        "grand_total",
+						Label:     `Grand Total`,
 						Type:      element.TypeText,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   100,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales/totals_sort/shipping`,
-						ID:        cfgpath.NewRoute("shipping"),
-						Label:     text.Chars(`Shipping`),
+						ID:        "shipping",
+						Label:     `Shipping`,
 						Type:      element.TypeText,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   30,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales/totals_sort/subtotal`,
-						ID:        cfgpath.NewRoute("subtotal"),
-						Label:     text.Chars(`Subtotal`),
+						ID:        "subtotal",
+						Label:     `Subtotal`,
 						Type:      element.TypeText,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   10,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales/totals_sort/tax`,
-						ID:        cfgpath.NewRoute("tax"),
-						Label:     text.Chars(`Tax`),
+						ID:        "tax",
+						Label:     `Tax`,
 						Type:      element.TypeText,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   40,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("reorder"),
-				Label:     text.Chars(`Reorder`),
+			&element.Group{
+				ID:        "reorder",
+				Label:     `Reorder`,
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sales/reorder/allow`,
-						ID:        cfgpath.NewRoute("allow"),
-						Label:     text.Chars(`Allow Reorder`),
+						ID:        "allow",
+						Label:     `Allow Reorder`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("identity"),
-				Label:     text.Chars(`Invoice and Packing Slip Design`),
+			&element.Group{
+				ID:        "identity",
+				Label:     `Invoice and Packing Slip Design`,
 				SortOrder: 40,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sales/identity/logo`,
-						ID:        cfgpath.NewRoute("logo"),
-						Label:     text.Chars(`Logo for PDF Print-outs (200x50)`),
-						Comment:   text.Chars(`Your default logo will be used in PDF and HTML documents.<br />(jpeg, tiff, png) If your pdf image is distorted, try to use larger file-size image.`),
+						ID:        "logo",
+						Label:     `Logo for PDF Print-outs (200x50)`,
+						Comment:   `Your default logo will be used in PDF and HTML documents.<br />(jpeg, tiff, png) If your pdf image is distorted, try to use larger file-size image.`,
 						Type:      element.TypeImage,
 						SortOrder: 100,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales/identity/logo_html`,
-						ID:        cfgpath.NewRoute("logo_html"),
-						Label:     text.Chars(`Logo for HTML Print View`),
-						Comment:   text.Chars(`Logo for HTML documents only. If empty, default will be used.<br />(jpeg, gif, png)`),
+						ID:        "logo_html",
+						Label:     `Logo for HTML Print View`,
+						Comment:   `Logo for HTML documents only. If empty, default will be used.<br />(jpeg, gif, png)`,
 						Type:      element.TypeImage,
 						SortOrder: 150,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales/identity/address`,
-						ID:        cfgpath.NewRoute("address"),
-						Label:     text.Chars(`Address`),
+						ID:        "address",
+						Label:     `Address`,
 						Type:      element.TypeTextarea,
 						SortOrder: 200,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("minimum_order"),
-				Label:     text.Chars(`Minimum Order Amount`),
+			&element.Group{
+				ID:        "minimum_order",
+				Label:     `Minimum Order Amount`,
 				SortOrder: 50,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sales/minimum_order/active`,
-						ID:        cfgpath.NewRoute("active"),
-						Label:     text.Chars(`Enable`),
+						ID:        "active",
+						Label:     `Enable`,
 						Type:      element.TypeSelect,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales/minimum_order/amount`,
-						ID:        cfgpath.NewRoute("amount"),
-						Label:     text.Chars(`Minimum Amount`),
-						Comment:   text.Chars(`Subtotal after discount`),
+						ID:        "amount",
+						Label:     `Minimum Amount`,
+						Comment:   `Subtotal after discount`,
 						Type:      element.TypeText,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales/minimum_order/tax_including`,
-						ID:        cfgpath.NewRoute("tax_including"),
-						Label:     text.Chars(`Include Tax to Amount`),
+						ID:        "tax_including",
+						Label:     `Include Tax to Amount`,
 						Type:      element.TypeSelect,
 						SortOrder: 15,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales/minimum_order/description`,
-						ID:        cfgpath.NewRoute("description"),
-						Label:     text.Chars(`Description Message`),
-						Comment:   text.Chars(`This message will be shown in the shopping cart when the subtotal (after discount) is lower than the minimum allowed amount.`),
+						ID:        "description",
+						Label:     `Description Message`,
+						Comment:   `This message will be shown in the shopping cart when the subtotal (after discount) is lower than the minimum allowed amount.`,
 						Type:      element.TypeTextarea,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales/minimum_order/error_message`,
-						ID:        cfgpath.NewRoute("error_message"),
-						Label:     text.Chars(`Error to Show in Shopping Cart`),
+						ID:        "error_message",
+						Label:     `Error to Show in Shopping Cart`,
 						Type:      element.TypeTextarea,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales/minimum_order/multi_address`,
-						ID:        cfgpath.NewRoute("multi_address"),
-						Label:     text.Chars(`Validate Each Address Separately in Multi-address Checkout`),
+						ID:        "multi_address",
+						Label:     `Validate Each Address Separately in Multi-address Checkout`,
 						Type:      element.TypeSelect,
 						SortOrder: 40,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales/minimum_order/multi_address_description`,
-						ID:        cfgpath.NewRoute("multi_address_description"),
-						Label:     text.Chars(`Multi-address Description Message`),
-						Comment:   text.Chars(`We'll use the default description above if you leave this empty.`),
+						ID:        "multi_address_description",
+						Label:     `Multi-address Description Message`,
+						Comment:   `We'll use the default description above if you leave this empty.`,
 						Type:      element.TypeTextarea,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales/minimum_order/multi_address_error_message`,
-						ID:        cfgpath.NewRoute("multi_address_error_message"),
-						Label:     text.Chars(`Multi-address Error to Show in Shopping Cart`),
-						Comment:   text.Chars(`We'll use the default error above if you leave this empty.`),
+						ID:        "multi_address_error_message",
+						Label:     `Multi-address Error to Show in Shopping Cart`,
+						Comment:   `We'll use the default error above if you leave this empty.`,
 						Type:      element.TypeTextarea,
 						SortOrder: 60,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("dashboard"),
-				Label:     text.Chars(`Dashboard`),
+			&element.Group{
+				ID:        "dashboard",
+				Label:     `Dashboard`,
 				SortOrder: 60,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sales/dashboard/use_aggregated_data`,
-						ID:        cfgpath.NewRoute("use_aggregated_data"),
-						Label:     text.Chars(`Use Aggregated Data (beta)`),
-						Comment:   text.Chars(`Improves dashboard performance but provides non-realtime data.`),
+						ID:        "use_aggregated_data",
+						Label:     `Use Aggregated Data (beta)`,
+						Comment:   `Improves dashboard performance but provides non-realtime data.`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
@@ -8217,625 +8122,625 @@ T: {{var telephone}}
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("sales_email"),
-		Label:     text.Chars("Sales Emails"),
+	&element.Section{
+		ID:        "sales_email",
+		Label:     `Sales Emails`,
 		SortOrder: 301,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("general"),
-				Label:     text.Chars(`General Settings`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "general",
+				Label:     `General Settings`,
 				SortOrder: 0,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sales_email/general/async_sending`,
-						ID:        cfgpath.NewRoute("async_sending"),
-						Label:     text.Chars(`Asynchronous sending`),
+						ID:        "async_sending",
+						Label:     `Asynchronous sending`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   false,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("order"),
-				Label:     text.Chars(`Order`),
+			&element.Group{
+				ID:        "order",
+				Label:     `Order`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sales_email/order/enabled`,
-						ID:        cfgpath.NewRoute("enabled"),
-						Label:     text.Chars(`Enabled`),
+						ID:        "enabled",
+						Label:     `Enabled`,
 						Type:      element.TypeSelect,
 						SortOrder: 0,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/order/identity`,
-						ID:        cfgpath.NewRoute("identity"),
-						Label:     text.Chars(`New Order Confirmation Email Sender`),
+						ID:        "identity",
+						Label:     `New Order Confirmation Email Sender`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/order/template`,
-						ID:        cfgpath.NewRoute("template"),
-						Label:     text.Chars(`New Order Confirmation Template`),
+						ID:        "template",
+						Label:     `New Order Confirmation Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_order_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/order/guest_template`,
-						ID:        cfgpath.NewRoute("guest_template"),
-						Label:     text.Chars(`New Order Confirmation Template for Guest`),
+						ID:        "guest_template",
+						Label:     `New Order Confirmation Template for Guest`,
 						Type:      element.TypeSelect,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_order_guest_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/order/copy_to`,
-						ID:        cfgpath.NewRoute("copy_to"),
-						Label:     text.Chars(`Send Order Email Copy To`),
-						Comment:   text.Chars(`Comma-separated`),
+						ID:        "copy_to",
+						Label:     `Send Order Email Copy To`,
+						Comment:   `Comma-separated`,
 						Type:      element.TypeText,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/order/copy_method`,
-						ID:        cfgpath.NewRoute("copy_method"),
-						Label:     text.Chars(`Send Order Email Copy Method`),
+						ID:        "copy_method",
+						Label:     `Send Order Email Copy Method`,
 						Type:      element.TypeSelect,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `bcc`,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("order_comment"),
-				Label:     text.Chars(`Order Comments`),
+			&element.Group{
+				ID:        "order_comment",
+				Label:     `Order Comments`,
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sales_email/order_comment/enabled`,
-						ID:        cfgpath.NewRoute("enabled"),
-						Label:     text.Chars(`Enabled`),
+						ID:        "enabled",
+						Label:     `Enabled`,
 						Type:      element.TypeSelect,
 						SortOrder: 0,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/order_comment/identity`,
-						ID:        cfgpath.NewRoute("identity"),
-						Label:     text.Chars(`Order Comment Email Sender`),
+						ID:        "identity",
+						Label:     `Order Comment Email Sender`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/order_comment/template`,
-						ID:        cfgpath.NewRoute("template"),
-						Label:     text.Chars(`Order Comment Email Template`),
+						ID:        "template",
+						Label:     `Order Comment Email Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_order_comment_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/order_comment/guest_template`,
-						ID:        cfgpath.NewRoute("guest_template"),
-						Label:     text.Chars(`Order Comment Email Template for Guest`),
+						ID:        "guest_template",
+						Label:     `Order Comment Email Template for Guest`,
 						Type:      element.TypeSelect,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_order_comment_guest_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/order_comment/copy_to`,
-						ID:        cfgpath.NewRoute("copy_to"),
-						Label:     text.Chars(`Send Order Comment Email Copy To`),
-						Comment:   text.Chars(`Comma-separated`),
+						ID:        "copy_to",
+						Label:     `Send Order Comment Email Copy To`,
+						Comment:   `Comma-separated`,
 						Type:      element.TypeText,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/order_comment/copy_method`,
-						ID:        cfgpath.NewRoute("copy_method"),
-						Label:     text.Chars(`Send Order Comments Email Copy Method`),
+						ID:        "copy_method",
+						Label:     `Send Order Comments Email Copy Method`,
 						Type:      element.TypeSelect,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `bcc`,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("invoice"),
-				Label:     text.Chars(`Invoice`),
+			&element.Group{
+				ID:        "invoice",
+				Label:     `Invoice`,
 				SortOrder: 3,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sales_email/invoice/enabled`,
-						ID:        cfgpath.NewRoute("enabled"),
-						Label:     text.Chars(`Enabled`),
+						ID:        "enabled",
+						Label:     `Enabled`,
 						Type:      element.TypeSelect,
 						SortOrder: 0,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/invoice/identity`,
-						ID:        cfgpath.NewRoute("identity"),
-						Label:     text.Chars(`Invoice Email Sender`),
+						ID:        "identity",
+						Label:     `Invoice Email Sender`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/invoice/template`,
-						ID:        cfgpath.NewRoute("template"),
-						Label:     text.Chars(`Invoice Email Template`),
+						ID:        "template",
+						Label:     `Invoice Email Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_invoice_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/invoice/guest_template`,
-						ID:        cfgpath.NewRoute("guest_template"),
-						Label:     text.Chars(`Invoice Email Template for Guest`),
+						ID:        "guest_template",
+						Label:     `Invoice Email Template for Guest`,
 						Type:      element.TypeSelect,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_invoice_guest_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/invoice/copy_to`,
-						ID:        cfgpath.NewRoute("copy_to"),
-						Label:     text.Chars(`Send Invoice Email Copy To`),
-						Comment:   text.Chars(`Comma-separated`),
+						ID:        "copy_to",
+						Label:     `Send Invoice Email Copy To`,
+						Comment:   `Comma-separated`,
 						Type:      element.TypeText,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/invoice/copy_method`,
-						ID:        cfgpath.NewRoute("copy_method"),
-						Label:     text.Chars(`Send Invoice Email Copy Method`),
+						ID:        "copy_method",
+						Label:     `Send Invoice Email Copy Method`,
 						Type:      element.TypeSelect,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `bcc`,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("invoice_comment"),
-				Label:     text.Chars(`Invoice Comments`),
+			&element.Group{
+				ID:        "invoice_comment",
+				Label:     `Invoice Comments`,
 				SortOrder: 4,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sales_email/invoice_comment/enabled`,
-						ID:        cfgpath.NewRoute("enabled"),
-						Label:     text.Chars(`Enabled`),
+						ID:        "enabled",
+						Label:     `Enabled`,
 						Type:      element.TypeSelect,
 						SortOrder: 0,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/invoice_comment/identity`,
-						ID:        cfgpath.NewRoute("identity"),
-						Label:     text.Chars(`Invoice Comment Email Sender`),
+						ID:        "identity",
+						Label:     `Invoice Comment Email Sender`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/invoice_comment/template`,
-						ID:        cfgpath.NewRoute("template"),
-						Label:     text.Chars(`Invoice Comment Email Template`),
+						ID:        "template",
+						Label:     `Invoice Comment Email Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_invoice_comment_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/invoice_comment/guest_template`,
-						ID:        cfgpath.NewRoute("guest_template"),
-						Label:     text.Chars(`Invoice Comment Email Template for Guest`),
+						ID:        "guest_template",
+						Label:     `Invoice Comment Email Template for Guest`,
 						Type:      element.TypeSelect,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_invoice_comment_guest_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/invoice_comment/copy_to`,
-						ID:        cfgpath.NewRoute("copy_to"),
-						Label:     text.Chars(`Send Invoice Comment Email Copy To`),
-						Comment:   text.Chars(`Comma-separated`),
+						ID:        "copy_to",
+						Label:     `Send Invoice Comment Email Copy To`,
+						Comment:   `Comma-separated`,
 						Type:      element.TypeText,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/invoice_comment/copy_method`,
-						ID:        cfgpath.NewRoute("copy_method"),
-						Label:     text.Chars(`Send Invoice Comments Email Copy Method`),
+						ID:        "copy_method",
+						Label:     `Send Invoice Comments Email Copy Method`,
 						Type:      element.TypeSelect,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `bcc`,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("shipment"),
-				Label:     text.Chars(`Shipment`),
+			&element.Group{
+				ID:        "shipment",
+				Label:     `Shipment`,
 				SortOrder: 5,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sales_email/shipment/enabled`,
-						ID:        cfgpath.NewRoute("enabled"),
-						Label:     text.Chars(`Enabled`),
+						ID:        "enabled",
+						Label:     `Enabled`,
 						Type:      element.TypeSelect,
 						SortOrder: 0,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/shipment/identity`,
-						ID:        cfgpath.NewRoute("identity"),
-						Label:     text.Chars(`Shipment Email Sender`),
+						ID:        "identity",
+						Label:     `Shipment Email Sender`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/shipment/template`,
-						ID:        cfgpath.NewRoute("template"),
-						Label:     text.Chars(`Shipment Email Template`),
+						ID:        "template",
+						Label:     `Shipment Email Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_shipment_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/shipment/guest_template`,
-						ID:        cfgpath.NewRoute("guest_template"),
-						Label:     text.Chars(`Shipment Email Template for Guest`),
+						ID:        "guest_template",
+						Label:     `Shipment Email Template for Guest`,
 						Type:      element.TypeSelect,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_shipment_guest_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/shipment/copy_to`,
-						ID:        cfgpath.NewRoute("copy_to"),
-						Label:     text.Chars(`Send Shipment Email Copy To`),
-						Comment:   text.Chars(`Comma-separated`),
+						ID:        "copy_to",
+						Label:     `Send Shipment Email Copy To`,
+						Comment:   `Comma-separated`,
 						Type:      element.TypeText,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/shipment/copy_method`,
-						ID:        cfgpath.NewRoute("copy_method"),
-						Label:     text.Chars(`Send Shipment Email Copy Method`),
+						ID:        "copy_method",
+						Label:     `Send Shipment Email Copy Method`,
 						Type:      element.TypeSelect,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `bcc`,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("shipment_comment"),
-				Label:     text.Chars(`Shipment Comments`),
+			&element.Group{
+				ID:        "shipment_comment",
+				Label:     `Shipment Comments`,
 				SortOrder: 6,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sales_email/shipment_comment/enabled`,
-						ID:        cfgpath.NewRoute("enabled"),
-						Label:     text.Chars(`Enabled`),
+						ID:        "enabled",
+						Label:     `Enabled`,
 						Type:      element.TypeSelect,
 						SortOrder: 0,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/shipment_comment/identity`,
-						ID:        cfgpath.NewRoute("identity"),
-						Label:     text.Chars(`Shipment Comment Email Sender`),
+						ID:        "identity",
+						Label:     `Shipment Comment Email Sender`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/shipment_comment/template`,
-						ID:        cfgpath.NewRoute("template"),
-						Label:     text.Chars(`Shipment Comment Email Template`),
+						ID:        "template",
+						Label:     `Shipment Comment Email Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_shipment_comment_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/shipment_comment/guest_template`,
-						ID:        cfgpath.NewRoute("guest_template"),
-						Label:     text.Chars(`Shipment Comment Email Template for Guest`),
+						ID:        "guest_template",
+						Label:     `Shipment Comment Email Template for Guest`,
 						Type:      element.TypeSelect,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_shipment_comment_guest_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/shipment_comment/copy_to`,
-						ID:        cfgpath.NewRoute("copy_to"),
-						Label:     text.Chars(`Send Shipment Comment Email Copy To`),
-						Comment:   text.Chars(`Comma-separated`),
+						ID:        "copy_to",
+						Label:     `Send Shipment Comment Email Copy To`,
+						Comment:   `Comma-separated`,
 						Type:      element.TypeText,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/shipment_comment/copy_method`,
-						ID:        cfgpath.NewRoute("copy_method"),
-						Label:     text.Chars(`Send Shipment Comments Email Copy Method`),
+						ID:        "copy_method",
+						Label:     `Send Shipment Comments Email Copy Method`,
 						Type:      element.TypeSelect,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `bcc`,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("creditmemo"),
-				Label:     text.Chars(`Credit Memo`),
+			&element.Group{
+				ID:        "creditmemo",
+				Label:     `Credit Memo`,
 				SortOrder: 7,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sales_email/creditmemo/enabled`,
-						ID:        cfgpath.NewRoute("enabled"),
-						Label:     text.Chars(`Enabled`),
+						ID:        "enabled",
+						Label:     `Enabled`,
 						Type:      element.TypeSelect,
 						SortOrder: 0,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/creditmemo/identity`,
-						ID:        cfgpath.NewRoute("identity"),
-						Label:     text.Chars(`Credit Memo Email Sender`),
+						ID:        "identity",
+						Label:     `Credit Memo Email Sender`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/creditmemo/template`,
-						ID:        cfgpath.NewRoute("template"),
-						Label:     text.Chars(`Credit Memo Email Template`),
+						ID:        "template",
+						Label:     `Credit Memo Email Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_creditmemo_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/creditmemo/guest_template`,
-						ID:        cfgpath.NewRoute("guest_template"),
-						Label:     text.Chars(`Credit Memo Email Template for Guest`),
+						ID:        "guest_template",
+						Label:     `Credit Memo Email Template for Guest`,
 						Type:      element.TypeSelect,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_creditmemo_guest_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/creditmemo/copy_to`,
-						ID:        cfgpath.NewRoute("copy_to"),
-						Label:     text.Chars(`Send Credit Memo Email Copy To`),
-						Comment:   text.Chars(`Comma-separated`),
+						ID:        "copy_to",
+						Label:     `Send Credit Memo Email Copy To`,
+						Comment:   `Comma-separated`,
 						Type:      element.TypeText,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/creditmemo/copy_method`,
-						ID:        cfgpath.NewRoute("copy_method"),
-						Label:     text.Chars(`Send Credit Memo Email Copy Method`),
+						ID:        "copy_method",
+						Label:     `Send Credit Memo Email Copy Method`,
 						Type:      element.TypeSelect,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `bcc`,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("creditmemo_comment"),
-				Label:     text.Chars(`Credit Memo Comments`),
+			&element.Group{
+				ID:        "creditmemo_comment",
+				Label:     `Credit Memo Comments`,
 				SortOrder: 8,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sales_email/creditmemo_comment/enabled`,
-						ID:        cfgpath.NewRoute("enabled"),
-						Label:     text.Chars(`Enabled`),
+						ID:        "enabled",
+						Label:     `Enabled`,
 						Type:      element.TypeSelect,
 						SortOrder: 0,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/creditmemo_comment/identity`,
-						ID:        cfgpath.NewRoute("identity"),
-						Label:     text.Chars(`Credit Memo Comment Email Sender`),
+						ID:        "identity",
+						Label:     `Credit Memo Comment Email Sender`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/creditmemo_comment/template`,
-						ID:        cfgpath.NewRoute("template"),
-						Label:     text.Chars(`Credit Memo Comment Email Template`),
+						ID:        "template",
+						Label:     `Credit Memo Comment Email Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_creditmemo_comment_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/creditmemo_comment/guest_template`,
-						ID:        cfgpath.NewRoute("guest_template"),
-						Label:     text.Chars(`Credit Memo Comment Email Template for Guest`),
+						ID:        "guest_template",
+						Label:     `Credit Memo Comment Email Template for Guest`,
 						Type:      element.TypeSelect,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_creditmemo_comment_guest_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/creditmemo_comment/copy_to`,
-						ID:        cfgpath.NewRoute("copy_to"),
-						Label:     text.Chars(`Send Credit Memo Comment Email Copy To`),
-						Comment:   text.Chars(`Comma-separated`),
+						ID:        "copy_to",
+						Label:     `Send Credit Memo Comment Email Copy To`,
+						Comment:   `Comma-separated`,
 						Type:      element.TypeText,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sales_email/creditmemo_comment/copy_method`,
-						ID:        cfgpath.NewRoute("copy_method"),
-						Label:     text.Chars(`Send Credit Memo Comments Email Copy Method`),
+						ID:        "copy_method",
+						Label:     `Send Credit Memo Comments Email Copy Method`,
 						Type:      element.TypeSelect,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `bcc`,
 					},
@@ -8843,63 +8748,63 @@ T: {{var telephone}}
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("sales_pdf"),
-		Label:     text.Chars("PDF Print-outs"),
+	&element.Section{
+		ID:        "sales_pdf",
+		Label:     `PDF Print-outs`,
 		SortOrder: 302,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("invoice"),
-				Label:     text.Chars(`Invoice`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "invoice",
+				Label:     `Invoice`,
 				SortOrder: 10,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sales_pdf/invoice/put_order_id`,
-						ID:        cfgpath.NewRoute("put_order_id"),
-						Label:     text.Chars(`Display Order ID in Header`),
+						ID:        "put_order_id",
+						Label:     `Display Order ID in Header`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("shipment"),
-				Label:     text.Chars(`Shipment`),
+			&element.Group{
+				ID:        "shipment",
+				Label:     `Shipment`,
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sales_pdf/shipment/put_order_id`,
-						ID:        cfgpath.NewRoute("put_order_id"),
-						Label:     text.Chars(`Display Order ID in Header`),
+						ID:        "put_order_id",
+						Label:     `Display Order ID in Header`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("creditmemo"),
-				Label:     text.Chars(`Credit Memo`),
+			&element.Group{
+				ID:        "creditmemo",
+				Label:     `Credit Memo`,
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sales_pdf/creditmemo/put_order_id`,
-						ID:        cfgpath.NewRoute("put_order_id"),
-						Label:     text.Chars(`Display Order ID in Header`),
+						ID:        "put_order_id",
+						Label:     `Display Order ID in Header`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
@@ -8907,25 +8812,25 @@ T: {{var telephone}}
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("rss"),
+	&element.Section{
+		ID:        "rss",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("order"),
-				Label:     text.Chars(`Order`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "order",
+				Label:     `Order`,
 				SortOrder: 4,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `rss/order/status`,
-						ID:        cfgpath.NewRoute("status"),
-						Label:     text.Chars(`Customer Order Status Notification`),
+						ID:        "status",
+						Label:     `Customer Order Status Notification`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
@@ -8933,25 +8838,25 @@ T: {{var telephone}}
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("dev"),
+	&element.Section{
+		ID:        "dev",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("grid"),
-				Label:     text.Chars(`Grid Settings`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "grid",
+				Label:     `Grid Settings`,
 				SortOrder: 131,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `dev/grid/async_indexing`,
-						ID:        cfgpath.NewRoute("async_indexing"),
-						Label:     text.Chars(`Asynchronous indexing`),
+						ID:        "async_indexing",
+						Label:     `Asynchronous indexing`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   false,
 					},
@@ -8960,71 +8865,71 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("promo"),
-		Label:     text.Chars("Promotions"),
+	&element.Section{
+		ID:        "promo",
+		Label:     `Promotions`,
 		SortOrder: 400,
 		Scopes:    scope.PermDefault,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("auto_generated_coupon_codes"),
-				Label:     text.Chars(`Auto Generated Specific Coupon Codes`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "auto_generated_coupon_codes",
+				Label:     `Auto Generated Specific Coupon Codes`,
 				SortOrder: 10,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `promo/auto_generated_coupon_codes/length`,
-						ID:        cfgpath.NewRoute("length"),
-						Label:     text.Chars(`Code Length`),
-						Comment:   text.Chars(`Excluding prefix, suffix and separators.`),
+						ID:        "length",
+						Label:     `Code Length`,
+						Comment:   `Excluding prefix, suffix and separators.`,
 						Type:      element.TypeText,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   12,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `promo/auto_generated_coupon_codes/format`,
-						ID:        cfgpath.NewRoute("format"),
-						Label:     text.Chars(`Code Format`),
+						ID:        "format",
+						Label:     `Code Format`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `promo/auto_generated_coupon_codes/prefix`,
-						ID:        cfgpath.NewRoute("prefix"),
-						Label:     text.Chars(`Code Prefix`),
+						ID:        "prefix",
+						Label:     `Code Prefix`,
 						Type:      element.TypeText,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `promo/auto_generated_coupon_codes/suffix`,
-						ID:        cfgpath.NewRoute("suffix"),
-						Label:     text.Chars(`Code Suffix`),
+						ID:        "suffix",
+						Label:     `Code Suffix`,
 						Type:      element.TypeText,
 						SortOrder: 40,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `promo/auto_generated_coupon_codes/dash`,
-						ID:        cfgpath.NewRoute("dash"),
-						Label:     text.Chars(`Dash Every X Characters`),
-						Comment:   text.Chars(`If empty no separation.`),
+						ID:        "dash",
+						Label:     `Dash Every X Characters`,
+						Comment:   `If empty no separation.`,
 						Type:      element.TypeText,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
@@ -9032,25 +8937,25 @@ T: {{var telephone}}
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("rss"),
+	&element.Section{
+		ID:        "rss",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("catalog"),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "catalog",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `rss/catalog/discounts`,
-						ID:        cfgpath.NewRoute("discounts"),
-						Label:     text.Chars(`Coupons/Discounts`),
+						ID:        "discounts",
+						Label:     `Coupons/Discounts`,
 						Type:      element.TypeSelect,
 						SortOrder: 12,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
@@ -9059,47 +8964,47 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("catalog"),
+	&element.Section{
+		ID:        "catalog",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("search"),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "search",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `catalog/search/engine`,
-						ID:        cfgpath.NewRoute("engine"),
-						Label:     text.Chars(`Search Engine`),
+						ID:        "engine",
+						Label:     `Search Engine`,
 						Type:      element.TypeSelect,
 						SortOrder: 19,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/search/search_type`,
-						ID:        cfgpath.NewRoute("search_type"),
+						ID:        "search_type",
 						Label:     nil,
 						Type:      element.TypeText,
 						SortOrder: 0,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `catalog/search/use_layered_navigation_count`,
-						ID:        cfgpath.NewRoute("use_layered_navigation_count"),
+						ID:        "use_layered_navigation_count",
 						Label:     nil,
 						Type:      element.TypeText,
 						SortOrder: 0,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
@@ -9108,80 +9013,80 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("sendfriend"),
-		Label:     text.Chars("Email to a Friend"),
+	&element.Section{
+		ID:        "sendfriend",
+		Label:     `Email to a Friend`,
 		SortOrder: 120,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("email"),
-				Label:     text.Chars(`Email Templates`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "email",
+				Label:     `Email Templates`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sendfriend/email/enabled`,
-						ID:        cfgpath.NewRoute("enabled"),
-						Label:     text.Chars(`Enabled`),
+						ID:        "enabled",
+						Label:     `Enabled`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sendfriend/email/template`,
-						ID:        cfgpath.NewRoute("template"),
-						Label:     text.Chars(`Select Email Template`),
+						ID:        "template",
+						Label:     `Select Email Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sendfriend_email_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sendfriend/email/allow_guest`,
-						ID:        cfgpath.NewRoute("allow_guest"),
-						Label:     text.Chars(`Allow for Guests`),
+						ID:        "allow_guest",
+						Label:     `Allow for Guests`,
 						Type:      element.TypeSelect,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sendfriend/email/max_recipients`,
-						ID:        cfgpath.NewRoute("max_recipients"),
-						Label:     text.Chars(`Max Recipients`),
+						ID:        "max_recipients",
+						Label:     `Max Recipients`,
 						Type:      element.TypeText,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   5,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sendfriend/email/max_per_hour`,
-						ID:        cfgpath.NewRoute("max_per_hour"),
-						Label:     text.Chars(`Max Products Sent in 1 Hour`),
+						ID:        "max_per_hour",
+						Label:     `Max Products Sent in 1 Hour`,
 						Type:      element.TypeText,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   5,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sendfriend/email/check_by`,
-						ID:        cfgpath.NewRoute("check_by"),
-						Label:     text.Chars(`Limit Sending By`),
+						ID:        "check_by",
+						Label:     `Limit Sending By`,
 						Type:      element.TypeSelect,
 						SortOrder: 6,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   false,
 					},
@@ -9190,80 +9095,80 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("shipping"),
-		Label:     text.Chars("Shipping Settings"),
+	&element.Section{
+		ID:        "shipping",
+		Label:     `Shipping Settings`,
 		SortOrder: 310,
 		Scopes:    scope.PermWebsite,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("origin"),
-				Label:     text.Chars(`Origin`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "origin",
+				Label:     `Origin`,
 				SortOrder: 1,
 				Scopes:    scope.PermWebsite,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `shipping/origin/country_id`,
-						ID:        cfgpath.NewRoute("country_id"),
-						Label:     text.Chars(`Country`),
+						ID:        "country_id",
+						Label:     `Country`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `US`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `shipping/origin/region_id`,
-						ID:        cfgpath.NewRoute("region_id"),
-						Label:     text.Chars(`Region/State`),
+						ID:        "region_id",
+						Label:     `Region/State`,
 						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   12,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `shipping/origin/postcode`,
-						ID:        cfgpath.NewRoute("postcode"),
-						Label:     text.Chars(`ZIP/Postal Code`),
+						ID:        "postcode",
+						Label:     `ZIP/Postal Code`,
 						Type:      element.TypeText,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   90034,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `shipping/origin/city`,
-						ID:        cfgpath.NewRoute("city"),
-						Label:     text.Chars(`City`),
+						ID:        "city",
+						Label:     `City`,
 						Type:      element.TypeText,
 						SortOrder: 40,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `shipping/origin/street_line1`,
-						ID:        cfgpath.NewRoute("street_line1"),
-						Label:     text.Chars(`Street Address`),
+						ID:        "street_line1",
+						Label:     `Street Address`,
 						Type:      element.TypeText,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `shipping/origin/street_line2`,
-						ID:        cfgpath.NewRoute("street_line2"),
-						Label:     text.Chars(`Street Address Line 2`),
+						ID:        "street_line2",
+						Label:     `Street Address Line 2`,
 						Type:      element.TypeText,
 						SortOrder: 60,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
@@ -9271,242 +9176,242 @@ T: {{var telephone}}
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("carriers"),
-		Label:     text.Chars("Shipping Methods"),
+	&element.Section{
+		ID:        "carriers",
+		Label:     `Shipping Methods`,
 		SortOrder: 320,
 		Scopes:    scope.PermStore,
-		Groups:    element.GroupSlice{},
+		Groups:    element.Groups{},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("sitemap"),
-		Label:     text.Chars("XML Sitemap"),
+	&element.Section{
+		ID:        "sitemap",
+		Label:     `XML Sitemap`,
 		SortOrder: 70,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("category"),
-				Label:     text.Chars(`Categories Options`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "category",
+				Label:     `Categories Options`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sitemap/category/changefreq`,
-						ID:        cfgpath.NewRoute("changefreq"),
-						Label:     text.Chars(`Frequency`),
+						ID:        "changefreq",
+						Label:     `Frequency`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `daily`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sitemap/category/priority`,
-						ID:        cfgpath.NewRoute("priority"),
-						Label:     text.Chars(`Priority`),
-						Comment:   text.Chars(`Valid values range from 0.0 to 1.0.`),
+						ID:        "priority",
+						Label:     `Priority`,
+						Comment:   `Valid values range from 0.0 to 1.0.`,
 						Type:      element.TypeText,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   0.5,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("product"),
-				Label:     text.Chars(`Products Options`),
+			&element.Group{
+				ID:        "product",
+				Label:     `Products Options`,
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sitemap/product/changefreq`,
-						ID:        cfgpath.NewRoute("changefreq"),
-						Label:     text.Chars(`Frequency`),
+						ID:        "changefreq",
+						Label:     `Frequency`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `daily`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sitemap/product/priority`,
-						ID:        cfgpath.NewRoute("priority"),
-						Label:     text.Chars(`Priority`),
-						Comment:   text.Chars(`Valid values range from 0.0 to 1.0.`),
+						ID:        "priority",
+						Label:     `Priority`,
+						Comment:   `Valid values range from 0.0 to 1.0.`,
 						Type:      element.TypeText,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   1,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sitemap/product/image_include`,
-						ID:        cfgpath.NewRoute("image_include"),
-						Label:     text.Chars(`Add Images into Sitemap`),
+						ID:        "image_include",
+						Label:     `Add Images into Sitemap`,
 						Type:      element.TypeSelect,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `all`,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("page"),
-				Label:     text.Chars(`CMS Pages Options`),
+			&element.Group{
+				ID:        "page",
+				Label:     `CMS Pages Options`,
 				SortOrder: 3,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sitemap/page/changefreq`,
-						ID:        cfgpath.NewRoute("changefreq"),
-						Label:     text.Chars(`Frequency`),
+						ID:        "changefreq",
+						Label:     `Frequency`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `daily`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sitemap/page/priority`,
-						ID:        cfgpath.NewRoute("priority"),
-						Label:     text.Chars(`Priority`),
-						Comment:   text.Chars(`Valid values range from 0.0 to 1.0.`),
+						ID:        "priority",
+						Label:     `Priority`,
+						Comment:   `Valid values range from 0.0 to 1.0.`,
 						Type:      element.TypeText,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   0.25,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("generate"),
-				Label:     text.Chars(`Generation Settings`),
+			&element.Group{
+				ID:        "generate",
+				Label:     `Generation Settings`,
 				SortOrder: 4,
 				Scopes:    scope.PermDefault,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sitemap/generate/enabled`,
-						ID:        cfgpath.NewRoute("enabled"),
-						Label:     text.Chars(`Enabled`),
+						ID:        "enabled",
+						Label:     `Enabled`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sitemap/generate/error_email`,
-						ID:        cfgpath.NewRoute("error_email"),
-						Label:     text.Chars(`Error Email Recipient`),
+						ID:        "error_email",
+						Label:     `Error Email Recipient`,
 						Type:      element.TypeText,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sitemap/generate/error_email_identity`,
-						ID:        cfgpath.NewRoute("error_email_identity"),
-						Label:     text.Chars(`Error Email Sender`),
+						ID:        "error_email_identity",
+						Label:     `Error Email Sender`,
 						Type:      element.TypeSelect,
 						SortOrder: 6,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `general`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sitemap/generate/error_email_template`,
-						ID:        cfgpath.NewRoute("error_email_template"),
-						Label:     text.Chars(`Error Email Template`),
+						ID:        "error_email_template",
+						Label:     `Error Email Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 7,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `sitemap_generate_error_email_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sitemap/generate/frequency`,
-						ID:        cfgpath.NewRoute("frequency"),
-						Label:     text.Chars(`Frequency`),
+						ID:        "frequency",
+						Label:     `Frequency`,
 						Type:      element.TypeSelect,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sitemap/generate/time`,
-						ID:        cfgpath.NewRoute("time"),
-						Label:     text.Chars(`Start Time`),
+						ID:        "time",
+						Label:     `Start Time`,
 						Type:      element.TypeTime,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("limit"),
-				Label:     text.Chars(`Sitemap File Limits`),
+			&element.Group{
+				ID:        "limit",
+				Label:     `Sitemap File Limits`,
 				SortOrder: 5,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sitemap/limit/max_lines`,
-						ID:        cfgpath.NewRoute("max_lines"),
-						Label:     text.Chars(`Maximum No of URLs Per File`),
+						ID:        "max_lines",
+						Label:     `Maximum No of URLs Per File`,
 						Type:      element.TypeText,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   50000,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `sitemap/limit/max_file_size`,
-						ID:        cfgpath.NewRoute("max_file_size"),
-						Label:     text.Chars(`Maximum File Size`),
-						Comment:   text.Chars(`File size in bytes.`),
+						ID:        "max_file_size",
+						Label:     `Maximum File Size`,
+						Comment:   `File size in bytes.`,
 						Type:      element.TypeText,
 						SortOrder: 2,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   10485760,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("search_engines"),
-				Label:     text.Chars(`Search Engine Submission Settings`),
+			&element.Group{
+				ID:        "search_engines",
+				Label:     `Search Engine Submission Settings`,
 				SortOrder: 6,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sitemap/search_engines/submission_robots`,
-						ID:        cfgpath.NewRoute("submission_robots"),
-						Label:     text.Chars(`Enable Submission to Robots.txt`),
+						ID:        "submission_robots",
+						Label:     `Enable Submission to Robots.txt`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   false,
 					},
@@ -9516,31 +9421,29 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("sitemap"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("generate"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "sitemap",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "generate",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sitemap/generate/error_email`,
-						ID:      cfgpath.NewRoute("error_email"),
+						ID:      "error_email",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID: cfgpath.NewRoute("file"),
-				Fields: element.FieldSlice{
-					element.Field{
+			&element.Group{
+				ID: "file",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sitemap/file/valid_paths`,
-						ID:      cfgpath.NewRoute("valid_paths"),
+						ID:      "valid_paths",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"available":{"any_path":"\/*\/*.xml"}}`,
 					},
@@ -9549,366 +9452,366 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("tax"),
-		Label:     text.Chars("Tax"),
+	&element.Section{
+		ID:        "tax",
+		Label:     `Tax`,
 		SortOrder: 303,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("classes"),
-				Label:     text.Chars(`Tax Classes`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "classes",
+				Label:     `Tax Classes`,
 				SortOrder: 10,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `tax/classes/shipping_tax_class`,
-						ID:        cfgpath.NewRoute("shipping_tax_class"),
-						Label:     text.Chars(`Tax Class for Shipping`),
+						ID:        "shipping_tax_class",
+						Label:     `Tax Class for Shipping`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/classes/default_product_tax_class`,
-						ID:        cfgpath.NewRoute("default_product_tax_class"),
-						Label:     text.Chars(`Default Tax Class for Product`),
+						ID:        "default_product_tax_class",
+						Label:     `Default Tax Class for Product`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   2,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/classes/default_customer_tax_class`,
-						ID:        cfgpath.NewRoute("default_customer_tax_class"),
-						Label:     text.Chars(`Default Tax Class for Customer`),
+						ID:        "default_customer_tax_class",
+						Label:     `Default Tax Class for Customer`,
 						Type:      element.TypeSelect,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   3,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("calculation"),
-				Label:     text.Chars(`Calculation Settings`),
+			&element.Group{
+				ID:        "calculation",
+				Label:     `Calculation Settings`,
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `tax/calculation/algorithm`,
-						ID:        cfgpath.NewRoute("algorithm"),
-						Label:     text.Chars(`Tax Calculation Method Based On`),
+						ID:        "algorithm",
+						Label:     `Tax Calculation Method Based On`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `TOTAL_BASE_CALCULATION`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/calculation/based_on`,
-						ID:        cfgpath.NewRoute("based_on"),
-						Label:     text.Chars(`Tax Calculation Based On`),
+						ID:        "based_on",
+						Label:     `Tax Calculation Based On`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `shipping`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/calculation/price_includes_tax`,
-						ID:        cfgpath.NewRoute("price_includes_tax"),
-						Label:     text.Chars(`Catalog Prices`),
-						Comment:   text.Chars(`This sets whether catalog prices entered by admin include tax.`),
+						ID:        "price_includes_tax",
+						Label:     `Catalog Prices`,
+						Comment:   `This sets whether catalog prices entered by admin include tax.`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/calculation/shipping_includes_tax`,
-						ID:        cfgpath.NewRoute("shipping_includes_tax"),
-						Label:     text.Chars(`Shipping Prices`),
-						Comment:   text.Chars(`This sets whether shipping amounts entered by admin or obtained from gateways include tax.`),
+						ID:        "shipping_includes_tax",
+						Label:     `Shipping Prices`,
+						Comment:   `This sets whether shipping amounts entered by admin or obtained from gateways include tax.`,
 						Type:      element.TypeSelect,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/calculation/apply_after_discount`,
-						ID:        cfgpath.NewRoute("apply_after_discount"),
-						Label:     text.Chars(`Apply Customer Tax`),
+						ID:        "apply_after_discount",
+						Label:     `Apply Customer Tax`,
 						Type:      element.TypeSelect,
 						SortOrder: 40,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/calculation/discount_tax`,
-						ID:        cfgpath.NewRoute("discount_tax"),
-						Label:     text.Chars(`Apply Discount On Prices`),
-						Comment:   text.Chars(`Apply discount on price including tax is calculated based on store tax, if "Apply Tax after Discount" is selected.`),
+						ID:        "discount_tax",
+						Label:     `Apply Discount On Prices`,
+						Comment:   `Apply discount on price including tax is calculated based on store tax, if "Apply Tax after Discount" is selected.`,
 						Type:      element.TypeSelect,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `["0","0"]`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/calculation/apply_tax_on`,
-						ID:        cfgpath.NewRoute("apply_tax_on"),
-						Label:     text.Chars(`Apply Tax On`),
+						ID:        "apply_tax_on",
+						Label:     `Apply Tax On`,
 						Type:      element.TypeSelect,
 						SortOrder: 60,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/calculation/cross_border_trade_enabled`,
-						ID:        cfgpath.NewRoute("cross_border_trade_enabled"),
-						Label:     text.Chars(`Enable Cross Border Trade`),
-						Comment:   text.Chars(`When catalog price includes tax, enable this setting will fix the price no matter what the customer's tax rate is.`),
+						ID:        "cross_border_trade_enabled",
+						Label:     `Enable Cross Border Trade`,
+						Comment:   `When catalog price includes tax, enable this setting will fix the price no matter what the customer's tax rate is.`,
 						Type:      element.TypeSelect,
 						SortOrder: 70,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("defaults"),
-				Label:     text.Chars(`Default Tax Destination Calculation`),
+			&element.Group{
+				ID:        "defaults",
+				Label:     `Default Tax Destination Calculation`,
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `tax/defaults/country`,
-						ID:        cfgpath.NewRoute("country"),
-						Label:     text.Chars(`Default Country`),
+						ID:        "country",
+						Label:     `Default Country`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `US`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/defaults/region`,
-						ID:        cfgpath.NewRoute("region"),
-						Label:     text.Chars(`Default State`),
+						ID:        "region",
+						Label:     `Default State`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/defaults/postcode`,
-						ID:        cfgpath.NewRoute("postcode"),
-						Label:     text.Chars(`Default Post Code`),
+						ID:        "postcode",
+						Label:     `Default Post Code`,
 						Type:      element.TypeText,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `*`,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("display"),
-				Label:     text.Chars(`Price Display Settings`),
+			&element.Group{
+				ID:        "display",
+				Label:     `Price Display Settings`,
 				SortOrder: 40,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `tax/display/type`,
-						ID:        cfgpath.NewRoute("type"),
-						Label:     text.Chars(`Display Product Prices In Catalog`),
+						ID:        "type",
+						Label:     `Display Product Prices In Catalog`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/display/shipping`,
-						ID:        cfgpath.NewRoute("shipping"),
-						Label:     text.Chars(`Display Shipping Prices`),
+						ID:        "shipping",
+						Label:     `Display Shipping Prices`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("cart_display"),
-				Label:     text.Chars(`Shopping Cart Display Settings`),
+			&element.Group{
+				ID:        "cart_display",
+				Label:     `Shopping Cart Display Settings`,
 				SortOrder: 50,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `tax/cart_display/price`,
-						ID:        cfgpath.NewRoute("price"),
-						Label:     text.Chars(`Display Prices`),
+						ID:        "price",
+						Label:     `Display Prices`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/cart_display/subtotal`,
-						ID:        cfgpath.NewRoute("subtotal"),
-						Label:     text.Chars(`Display Subtotal`),
+						ID:        "subtotal",
+						Label:     `Display Subtotal`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/cart_display/shipping`,
-						ID:        cfgpath.NewRoute("shipping"),
-						Label:     text.Chars(`Display Shipping Amount`),
+						ID:        "shipping",
+						Label:     `Display Shipping Amount`,
 						Type:      element.TypeSelect,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/cart_display/grandtotal`,
-						ID:        cfgpath.NewRoute("grandtotal"),
-						Label:     text.Chars(`Include Tax In Grand Total`),
+						ID:        "grandtotal",
+						Label:     `Include Tax In Grand Total`,
 						Type:      element.TypeSelect,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/cart_display/full_summary`,
-						ID:        cfgpath.NewRoute("full_summary"),
-						Label:     text.Chars(`Display Full Tax Summary`),
+						ID:        "full_summary",
+						Label:     `Display Full Tax Summary`,
 						Type:      element.TypeSelect,
 						SortOrder: 60,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/cart_display/zero_tax`,
-						ID:        cfgpath.NewRoute("zero_tax"),
-						Label:     text.Chars(`Display Zero Tax Subtotal`),
+						ID:        "zero_tax",
+						Label:     `Display Zero Tax Subtotal`,
 						Type:      element.TypeSelect,
 						SortOrder: 120,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   false,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("sales_display"),
-				Label:     text.Chars(`Orders, Invoices, Credit Memos Display Settings`),
+			&element.Group{
+				ID:        "sales_display",
+				Label:     `Orders, Invoices, Credit Memos Display Settings`,
 				SortOrder: 60,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `tax/sales_display/price`,
-						ID:        cfgpath.NewRoute("price"),
-						Label:     text.Chars(`Display Prices`),
+						ID:        "price",
+						Label:     `Display Prices`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/sales_display/subtotal`,
-						ID:        cfgpath.NewRoute("subtotal"),
-						Label:     text.Chars(`Display Subtotal`),
+						ID:        "subtotal",
+						Label:     `Display Subtotal`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/sales_display/shipping`,
-						ID:        cfgpath.NewRoute("shipping"),
-						Label:     text.Chars(`Display Shipping Amount`),
+						ID:        "shipping",
+						Label:     `Display Shipping Amount`,
 						Type:      element.TypeSelect,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/sales_display/grandtotal`,
-						ID:        cfgpath.NewRoute("grandtotal"),
-						Label:     text.Chars(`Include Tax In Grand Total`),
+						ID:        "grandtotal",
+						Label:     `Include Tax In Grand Total`,
 						Type:      element.TypeSelect,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/sales_display/full_summary`,
-						ID:        cfgpath.NewRoute("full_summary"),
-						Label:     text.Chars(`Display Full Tax Summary`),
+						ID:        "full_summary",
+						Label:     `Display Full Tax Summary`,
 						Type:      element.TypeSelect,
 						SortOrder: 60,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/sales_display/zero_tax`,
-						ID:        cfgpath.NewRoute("zero_tax"),
-						Label:     text.Chars(`Display Zero Tax Subtotal`),
+						ID:        "zero_tax",
+						Label:     `Display Zero Tax Subtotal`,
 						Type:      element.TypeSelect,
 						SortOrder: 120,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   false,
 					},
@@ -9918,45 +9821,42 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("tax"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("cart_display"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "tax",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "cart_display",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `tax/cart_display/discount`,
-						ID:      cfgpath.NewRoute("discount"),
+						ID:      "discount",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: true,
 					},
 				},
 			},
 
-			element.Group{
-				ID: cfgpath.NewRoute("sales_display"),
-				Fields: element.FieldSlice{
-					element.Field{
+			&element.Group{
+				ID: "sales_display",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `tax/sales_display/discount`,
-						ID:      cfgpath.NewRoute("discount"),
+						ID:      "discount",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: true,
 					},
 				},
 			},
 
-			element.Group{
-				ID: cfgpath.NewRoute("notification"),
-				Fields: element.FieldSlice{
-					element.Field{
+			&element.Group{
+				ID: "notification",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `tax/notification/url`,
-						ID:      cfgpath.NewRoute("url"),
+						ID:      "url",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `http://www.magentocommerce.com/knowledge-base/entry/magento-ce-18-ee-113-tax-calc`,
 					},
@@ -9965,220 +9865,220 @@ T: {{var telephone}}
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("design"),
+	&element.Section{
+		ID:        "design",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("head"),
-				Label:     text.Chars(`HTML Head`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "head",
+				Label:     `HTML Head`,
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `design/head/shortcut_icon`,
-						ID:        cfgpath.NewRoute("shortcut_icon"),
-						Label:     text.Chars(`Favicon Icon`),
-						Comment:   text.Chars(`Allowed file types: ICO, PNG, GIF, JPG, JPEG, APNG, SVG. Not all browsers support all these formats!`),
+						ID:        "shortcut_icon",
+						Label:     `Favicon Icon`,
+						Comment:   `Allowed file types: ICO, PNG, GIF, JPG, JPEG, APNG, SVG. Not all browsers support all these formats!`,
 						Type:      element.TypeImage,
 						SortOrder: 5,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `design/head/default_title`,
-						ID:        cfgpath.NewRoute("default_title"),
-						Label:     text.Chars(`Default Title`),
+						ID:        "default_title",
+						Label:     `Default Title`,
 						Type:      element.TypeText,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `design/head/title_prefix`,
-						ID:        cfgpath.NewRoute("title_prefix"),
-						Label:     text.Chars(`Title Prefix`),
+						ID:        "title_prefix",
+						Label:     `Title Prefix`,
 						Type:      element.TypeText,
 						SortOrder: 12,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `design/head/title_suffix`,
-						ID:        cfgpath.NewRoute("title_suffix"),
-						Label:     text.Chars(`Title Suffix`),
+						ID:        "title_suffix",
+						Label:     `Title Suffix`,
 						Type:      element.TypeText,
 						SortOrder: 14,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `design/head/default_description`,
-						ID:        cfgpath.NewRoute("default_description"),
-						Label:     text.Chars(`Default Description`),
+						ID:        "default_description",
+						Label:     `Default Description`,
 						Type:      element.TypeTextarea,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `design/head/default_keywords`,
-						ID:        cfgpath.NewRoute("default_keywords"),
-						Label:     text.Chars(`Default Keywords`),
+						ID:        "default_keywords",
+						Label:     `Default Keywords`,
 						Type:      element.TypeTextarea,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `design/head/includes`,
-						ID:        cfgpath.NewRoute("includes"),
-						Label:     text.Chars(`Miscellaneous Scripts`),
-						Comment:   text.Chars(`This will be included before head closing tag in page HTML.`),
+						ID:        "includes",
+						Label:     `Miscellaneous Scripts`,
+						Comment:   `This will be included before head closing tag in page HTML.`,
 						Type:      element.TypeTextarea,
 						SortOrder: 70,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `design/head/demonotice`,
-						ID:        cfgpath.NewRoute("demonotice"),
-						Label:     text.Chars(`Display Demo Store Notice`),
+						ID:        "demonotice",
+						Label:     `Display Demo Store Notice`,
 						Type:      element.TypeSelect,
 						SortOrder: 80,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("search_engine_robots"),
-				Label:     text.Chars(`Search Engine Robots`),
+			&element.Group{
+				ID:        "search_engine_robots",
+				Label:     `Search Engine Robots`,
 				SortOrder: 25,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `design/search_engine_robots/default_robots`,
-						ID:        cfgpath.NewRoute("default_robots"),
-						Label:     text.Chars(`Default Robots`),
-						Comment:   text.Chars(`This will be included before head closing tag in page HTML.`),
+						ID:        "default_robots",
+						Label:     `Default Robots`,
+						Comment:   `This will be included before head closing tag in page HTML.`,
 						Type:      element.TypeSelect,
 						SortOrder: 40,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `INDEX,FOLLOW`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `design/search_engine_robots/custom_instructions`,
-						ID:        cfgpath.NewRoute("custom_instructions"),
-						Label:     text.Chars(`Edit custom instruction of robots.txt File`),
+						ID:        "custom_instructions",
+						Label:     `Edit custom instruction of robots.txt File`,
 						Type:      element.TypeTextarea,
 						SortOrder: 70,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `design/search_engine_robots/reset_to_defaults`,
-						ID:        cfgpath.NewRoute("reset_to_defaults"),
-						Label:     text.Chars(`Reset to Defaults`),
-						Comment:   text.Chars(`This action will delete your custom instructions and reset robots.txt file to system's default settings.`),
+						ID:        "reset_to_defaults",
+						Label:     `Reset to Defaults`,
+						Comment:   `This action will delete your custom instructions and reset robots.txt file to system's default settings.`,
 						Type:      element.TypeButton,
 						SortOrder: 80,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("header"),
-				Label:     text.Chars(`Header`),
+			&element.Group{
+				ID:        "header",
+				Label:     `Header`,
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `design/header/logo_src`,
-						ID:        cfgpath.NewRoute("logo_src"),
-						Label:     text.Chars(`Logo Image`),
-						Comment:   text.Chars(`Allowed file types:PNG, GIF, JPG, JPEG, SVG.`),
+						ID:        "logo_src",
+						Label:     `Logo Image`,
+						Comment:   `Allowed file types:PNG, GIF, JPG, JPEG, SVG.`,
 						Type:      element.TypeImage,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `design/header/logo_alt`,
-						ID:        cfgpath.NewRoute("logo_alt"),
-						Label:     text.Chars(`Logo Image Alt`),
+						ID:        "logo_alt",
+						Label:     `Logo Image Alt`,
 						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `design/header/welcome`,
-						ID:        cfgpath.NewRoute("welcome"),
-						Label:     text.Chars(`Welcome Text`),
+						ID:        "welcome",
+						Label:     `Welcome Text`,
 						Type:      element.TypeText,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("footer"),
-				Label:     text.Chars(`Footer`),
+			&element.Group{
+				ID:        "footer",
+				Label:     `Footer`,
 				SortOrder: 40,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `design/footer/copyright`,
-						ID:        cfgpath.NewRoute("copyright"),
-						Label:     text.Chars(`Copyright`),
+						ID:        "copyright",
+						Label:     `Copyright`,
 						Type:      element.TypeTextarea,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `design/footer/absolute_footer`,
-						ID:        cfgpath.NewRoute("absolute_footer"),
-						Label:     text.Chars(`Miscellaneous HTML`),
-						Comment:   text.Chars(`This will be displayed just before body closing tag.`),
+						ID:        "absolute_footer",
+						Label:     `Miscellaneous HTML`,
+						Comment:   `This will be displayed just before body closing tag.`,
 						Type:      element.TypeTextarea,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
@@ -10188,41 +10088,38 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("design"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("head"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "design",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "head",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `design/head/_value`,
-						ID:      cfgpath.NewRoute("_value"),
+						ID:      "_value",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"default_title":"Magento Commerce","default_description":"Default Description","default_keywords":"Magento, Varien, E-commerce","default_media_type":"text\/html","default_charset":"utf-8"}`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `design/head/_attribute`,
-						ID:      cfgpath.NewRoute("_attribute"),
+						ID:      "_attribute",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"translate":"default_description"}`,
 					},
 				},
 			},
 
-			element.Group{
-				ID: cfgpath.NewRoute("search_engine_robots"),
-				Fields: element.FieldSlice{
-					element.Field{
+			&element.Group{
+				ID: "search_engine_robots",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `design/search_engine_robots/default_custom_instructions`,
-						ID:      cfgpath.NewRoute("default_custom_instructions"),
-						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
-						Scopes:  scope.PermDefault,
+						ID:     "default_custom_instructions",
+						Type:   element.TypeHidden,
+						Scopes: scope.PermDefault,
 						Default: `
 User-agent: *
 Disallow: /index.php/
@@ -10247,46 +10144,42 @@ Disallow: /*SID=
 				},
 			},
 
-			element.Group{
-				ID: cfgpath.NewRoute("header"),
-				Fields: element.FieldSlice{
-					element.Field{
+			&element.Group{
+				ID: "header",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `design/header/_value`,
-						ID:      cfgpath.NewRoute("_value"),
+						ID:      "_value",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"logo_alt":"Magento Commerce","welcome":"Default welcome msg!"}`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `design/header/_attribute`,
-						ID:      cfgpath.NewRoute("_attribute"),
+						ID:      "_attribute",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"translate":"welcome"}`,
 					},
 				},
 			},
 
-			element.Group{
-				ID: cfgpath.NewRoute("footer"),
-				Fields: element.FieldSlice{
-					element.Field{
+			&element.Group{
+				ID: "footer",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `design/footer/_value`,
-						ID:      cfgpath.NewRoute("_value"),
+						ID:      "_value",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"copyright":"&copy; 2014 Magento Demo Store. All Rights Reserved."}`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `design/footer/_attribute`,
-						ID:      cfgpath.NewRoute("_attribute"),
+						ID:      "_attribute",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"translate":"copyright"}`,
 					},
@@ -10294,17 +10187,16 @@ Disallow: /*SID=
 			},
 		},
 	},
-	element.Section{
-		ID: cfgpath.NewRoute("theme"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("customization"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "theme",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "customization",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `theme/customization/custom_css`,
-						ID:      cfgpath.NewRoute("custom_css"),
+						ID:      "custom_css",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\Theme\Model\Theme\Customization\File\CustomCss`,
 					},
@@ -10312,17 +10204,16 @@ Disallow: /*SID=
 			},
 		},
 	},
-	element.Section{
-		ID: cfgpath.NewRoute("system"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("media_storage_configuration"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "system",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "media_storage_configuration",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `system/media_storage_configuration/allowed_resources`,
-						ID:      cfgpath.NewRoute("allowed_resources"),
+						ID:      "allowed_resources",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"site_favicons":"favicon"}`,
 					},
@@ -10331,26 +10222,26 @@ Disallow: /*SID=
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("dev"),
+	&element.Section{
+		ID:        "dev",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("js"),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "js",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `dev/js/translate_strategy`,
-						ID:        cfgpath.NewRoute("translate_strategy"),
-						Label:     text.Chars(`Translation Strategy`),
-						Comment:   text.Chars(`Please put your store into maintenance mode and redeploy static files after changing strategy`),
+						ID:        "translate_strategy",
+						Label:     `Translation Strategy`,
+						Comment:   `Please put your store into maintenance mode and redeploy static files after changing strategy`,
 						Type:      element.TypeSelect,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `none`,
 					},
@@ -10360,35 +10251,32 @@ Disallow: /*SID=
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("dev"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("translate_inline"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "dev",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "translate_inline",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `dev/translate_inline/active`,
-						ID:      cfgpath.NewRoute("active"),
+						ID:      "active",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `dev/translate_inline/active_admin`,
-						ID:      cfgpath.NewRoute("active_admin"),
+						ID:      "active_admin",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `dev/translate_inline/invalid_caches`,
-						ID:      cfgpath.NewRoute("invalid_caches"),
+						ID:      "invalid_caches",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"block_html":null}`,
 					},
@@ -10397,390 +10285,390 @@ Disallow: /*SID=
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("carriers"),
+	&element.Section{
+		ID:        "carriers",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("ups"),
-				Label:     text.Chars(`UPS`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "ups",
+				Label:     `UPS`,
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `carriers/ups/access_license_number`,
-						ID:        cfgpath.NewRoute("access_license_number"),
-						Label:     text.Chars(`Access License Number`),
+						ID:        "access_license_number",
+						Label:     `Access License Number`,
 						Type:      element.TypeObscure,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/active`,
-						ID:        cfgpath.NewRoute("active"),
-						Label:     text.Chars(`Enabled for Checkout`),
+						ID:        "active",
+						Label:     `Enabled for Checkout`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/allowed_methods`,
-						ID:        cfgpath.NewRoute("allowed_methods"),
-						Label:     text.Chars(`Allowed Methods`),
+						ID:        "allowed_methods",
+						Label:     `Allowed Methods`,
 						Type:      element.TypeMultiselect,
 						SortOrder: 170,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `1DM,1DML,1DA,1DAL,1DAPI,1DP,1DPL,2DM,2DML,2DA,2DAL,3DS,GND,GNDCOM,GNDRES,STD,XPR,WXS,XPRL,XDM,XDML,XPD,01,02,03,07,08,11,12,14,54,59,65`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/shipment_requesttype`,
-						ID:        cfgpath.NewRoute("shipment_requesttype"),
-						Label:     text.Chars(`Packages Request Type`),
+						ID:        "shipment_requesttype",
+						Label:     `Packages Request Type`,
 						Type:      element.TypeSelect,
 						SortOrder: 47,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/container`,
-						ID:        cfgpath.NewRoute("container"),
-						Label:     text.Chars(`Container`),
+						ID:        "container",
+						Label:     `Container`,
 						Type:      element.TypeSelect,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `CP`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/free_shipping_enable`,
-						ID:        cfgpath.NewRoute("free_shipping_enable"),
-						Label:     text.Chars(`Free Shipping Amount Threshold`),
+						ID:        "free_shipping_enable",
+						Label:     `Free Shipping Amount Threshold`,
 						Type:      element.TypeSelect,
 						SortOrder: 210,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/free_shipping_subtotal`,
-						ID:        cfgpath.NewRoute("free_shipping_subtotal"),
-						Label:     text.Chars(`Free Shipping Amount Threshold`),
+						ID:        "free_shipping_subtotal",
+						Label:     `Free Shipping Amount Threshold`,
 						Type:      element.TypeText,
 						SortOrder: 220,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/dest_type`,
-						ID:        cfgpath.NewRoute("dest_type"),
-						Label:     text.Chars(`Destination Type`),
+						ID:        "dest_type",
+						Label:     `Destination Type`,
 						Type:      element.TypeSelect,
 						SortOrder: 60,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `RES`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/free_method`,
-						ID:        cfgpath.NewRoute("free_method"),
-						Label:     text.Chars(`Free Method`),
+						ID:        "free_method",
+						Label:     `Free Method`,
 						Type:      element.TypeSelect,
 						SortOrder: 200,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `GND`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/gateway_url`,
-						ID:        cfgpath.NewRoute("gateway_url"),
-						Label:     text.Chars(`Gateway URL`),
+						ID:        "gateway_url",
+						Label:     `Gateway URL`,
 						Type:      element.TypeText,
 						SortOrder: 40,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `http://www.ups.com/using/services/rave/qcostcgi.cgi`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/gateway_xml_url`,
-						ID:        cfgpath.NewRoute("gateway_xml_url"),
-						Label:     text.Chars(`Gateway XML URL`),
+						ID:        "gateway_xml_url",
+						Label:     `Gateway XML URL`,
 						Type:      element.TypeText,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `https://onlinetools.ups.com/ups.app/xml/Rate`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/handling_type`,
-						ID:        cfgpath.NewRoute("handling_type"),
-						Label:     text.Chars(`Calculate Handling Fee`),
+						ID:        "handling_type",
+						Label:     `Calculate Handling Fee`,
 						Type:      element.TypeSelect,
 						SortOrder: 110,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `F`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/handling_action`,
-						ID:        cfgpath.NewRoute("handling_action"),
-						Label:     text.Chars(`Handling Applied`),
+						ID:        "handling_action",
+						Label:     `Handling Applied`,
 						Type:      element.TypeSelect,
 						SortOrder: 120,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `O`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/handling_fee`,
-						ID:        cfgpath.NewRoute("handling_fee"),
-						Label:     text.Chars(`Handling Fee`),
+						ID:        "handling_fee",
+						Label:     `Handling Fee`,
 						Type:      element.TypeText,
 						SortOrder: 130,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/max_package_weight`,
-						ID:        cfgpath.NewRoute("max_package_weight"),
-						Label:     text.Chars(`Maximum  (Please consult your shipping carrier for maximum supported shipping weight)`),
+						ID:        "max_package_weight",
+						Label:     `Maximum  (Please consult your shipping carrier for maximum supported shipping weight)`,
 						Type:      element.TypeText,
 						SortOrder: 80,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   150,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/min_package_weight`,
-						ID:        cfgpath.NewRoute("min_package_weight"),
-						Label:     text.Chars(`Minimum  (Please consult your shipping carrier for minimum supported shipping weight)`),
+						ID:        "min_package_weight",
+						Label:     `Minimum  (Please consult your shipping carrier for minimum supported shipping weight)`,
 						Type:      element.TypeText,
 						SortOrder: 90,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   0.1,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/origin_shipment`,
-						ID:        cfgpath.NewRoute("origin_shipment"),
-						Label:     text.Chars(`Origin of the Shipment`),
+						ID:        "origin_shipment",
+						Label:     `Origin of the Shipment`,
 						Type:      element.TypeSelect,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `Shipments Originating in United States`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/password`,
-						ID:        cfgpath.NewRoute("password"),
-						Label:     text.Chars(`Password`),
+						ID:        "password",
+						Label:     `Password`,
 						Type:      element.TypeObscure,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/pickup`,
-						ID:        cfgpath.NewRoute("pickup"),
-						Label:     text.Chars(`Pickup Method`),
+						ID:        "pickup",
+						Label:     `Pickup Method`,
 						Type:      element.TypeSelect,
 						SortOrder: 80,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `CC`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/sort_order`,
-						ID:        cfgpath.NewRoute("sort_order"),
-						Label:     text.Chars(`Sort Order`),
+						ID:        "sort_order",
+						Label:     `Sort Order`,
 						Type:      element.TypeText,
 						SortOrder: 1000,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/title`,
-						ID:        cfgpath.NewRoute("title"),
-						Label:     text.Chars(`Title`),
+						ID:        "title",
+						Label:     `Title`,
 						Type:      element.TypeText,
 						SortOrder: 40,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `United Parcel Service`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/tracking_xml_url`,
-						ID:        cfgpath.NewRoute("tracking_xml_url"),
-						Label:     text.Chars(`Tracking XML URL`),
+						ID:        "tracking_xml_url",
+						Label:     `Tracking XML URL`,
 						Type:      element.TypeText,
 						SortOrder: 60,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `https://www.ups.com/ups.app/xml/Track`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/type`,
-						ID:        cfgpath.NewRoute("type"),
-						Label:     text.Chars(`UPS Type`),
+						ID:        "type",
+						Label:     `UPS Type`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `UPS`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/is_account_live`,
-						ID:        cfgpath.NewRoute("is_account_live"),
-						Label:     text.Chars(`Live account`),
+						ID:        "is_account_live",
+						Label:     `Live account`,
 						Type:      element.TypeSelect,
 						SortOrder: 25,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/unit_of_measure`,
-						ID:        cfgpath.NewRoute("unit_of_measure"),
-						Label:     text.Chars(`Weight Unit`),
+						ID:        "unit_of_measure",
+						Label:     `Weight Unit`,
 						Type:      element.TypeSelect,
 						SortOrder: 60,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `LBS`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/username`,
-						ID:        cfgpath.NewRoute("username"),
-						Label:     text.Chars(`User ID`),
+						ID:        "username",
+						Label:     `User ID`,
 						Type:      element.TypeObscure,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/negotiated_active`,
-						ID:        cfgpath.NewRoute("negotiated_active"),
-						Label:     text.Chars(`Enable Negotiated Rates`),
+						ID:        "negotiated_active",
+						Label:     `Enable Negotiated Rates`,
 						Type:      element.TypeSelect,
 						SortOrder: 40,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/shipper_number`,
-						ID:        cfgpath.NewRoute("shipper_number"),
-						Label:     text.Chars(`Shipper Number`),
-						Comment:   text.Chars(`Required for negotiated rates; 6-character UPS`),
+						ID:        "shipper_number",
+						Label:     `Shipper Number`,
+						Comment:   `Required for negotiated rates; 6-character UPS`,
 						Type:      element.TypeText,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/sallowspecific`,
-						ID:        cfgpath.NewRoute("sallowspecific"),
-						Label:     text.Chars(`Ship to Applicable Countries`),
+						ID:        "sallowspecific",
+						Label:     `Ship to Applicable Countries`,
 						Type:      element.TypeSelect,
 						SortOrder: 900,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/specificcountry`,
-						ID:        cfgpath.NewRoute("specificcountry"),
-						Label:     text.Chars(`Ship to Specific Countries`),
+						ID:        "specificcountry",
+						Label:     `Ship to Specific Countries`,
 						Type:      element.TypeMultiselect,
 						SortOrder: 910,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/showmethod`,
-						ID:        cfgpath.NewRoute("showmethod"),
-						Label:     text.Chars(`Show Method if Not Applicable`),
+						ID:        "showmethod",
+						Label:     `Show Method if Not Applicable`,
 						Type:      element.TypeSelect,
 						SortOrder: 920,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/specificerrmsg`,
-						ID:        cfgpath.NewRoute("specificerrmsg"),
-						Label:     text.Chars(`Displayed Error Message`),
+						ID:        "specificerrmsg",
+						Label:     `Displayed Error Message`,
 						Type:      element.TypeTextarea,
 						SortOrder: 800,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/mode_xml`,
-						ID:        cfgpath.NewRoute("mode_xml"),
-						Label:     text.Chars(`Mode`),
-						Comment:   text.Chars(`This enables or disables SSL verification of the Magento server by UPS.`),
+						ID:        "mode_xml",
+						Label:     `Mode`,
+						Comment:   `This enables or disables SSL verification of the Magento server by UPS.`,
 						Type:      element.TypeSelect,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/debug`,
-						ID:        cfgpath.NewRoute("debug"),
-						Label:     text.Chars(`Debug`),
+						ID:        "debug",
+						Label:     `Debug`,
 						Type:      element.TypeSelect,
 						SortOrder: 920,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
@@ -10790,53 +10678,48 @@ Disallow: /*SID=
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("carriers"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("ups"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "carriers",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "ups",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `carriers/ups/cutoff_cost`,
-						ID:      cfgpath.NewRoute("cutoff_cost"),
+						ID:      "cutoff_cost",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/handling`,
-						ID:      cfgpath.NewRoute("handling"),
+						ID:      "handling",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/model`,
-						ID:      cfgpath.NewRoute("model"),
+						ID:      "model",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\Ups\Model\Carrier`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/active_rma`,
-						ID:      cfgpath.NewRoute("active_rma"),
+						ID:      "active_rma",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/ups/is_online`,
-						ID:      cfgpath.NewRoute("is_online"),
+						ID:      "is_online",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: true,
 					},
@@ -10845,25 +10728,25 @@ Disallow: /*SID=
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("admin"),
+	&element.Section{
+		ID:        "admin",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("emails"),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "emails",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `admin/emails/reset_password_template`,
-						ID:        cfgpath.NewRoute("reset_password_template"),
-						Label:     text.Chars(`Reset Password Template`),
+						ID:        "reset_password_template",
+						Label:     `Reset Password Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 40,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `admin_emails_reset_password_template`,
 					},
@@ -10873,35 +10756,32 @@ Disallow: /*SID=
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("admin"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("emails"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "admin",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "emails",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `admin/emails/forgot_email_template`,
-						ID:      cfgpath.NewRoute("forgot_email_template"),
+						ID:      "forgot_email_template",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `admin_emails_forgot_email_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `admin/emails/forgot_email_identity`,
-						ID:      cfgpath.NewRoute("forgot_email_identity"),
+						ID:      "forgot_email_identity",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `general`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `admin/emails/password_reset_link_expiration_period`,
-						ID:      cfgpath.NewRoute("password_reset_link_expiration_period"),
+						ID:      "password_reset_link_expiration_period",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: true,
 					},
@@ -10910,333 +10790,333 @@ Disallow: /*SID=
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("carriers"),
+	&element.Section{
+		ID:        "carriers",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("usps"),
-				Label:     text.Chars(`USPS`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "usps",
+				Label:     `USPS`,
 				SortOrder: 110,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `carriers/usps/active`,
-						ID:        cfgpath.NewRoute("active"),
-						Label:     text.Chars(`Enabled for Checkout`),
+						ID:        "active",
+						Label:     `Enabled for Checkout`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/gateway_url`,
-						ID:        cfgpath.NewRoute("gateway_url"),
-						Label:     text.Chars(`Gateway URL`),
+						ID:        "gateway_url",
+						Label:     `Gateway URL`,
 						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `http://production.shippingapis.com/ShippingAPI.dll`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/gateway_secure_url`,
-						ID:        cfgpath.NewRoute("gateway_secure_url"),
-						Label:     text.Chars(`Secure Gateway URL`),
+						ID:        "gateway_secure_url",
+						Label:     `Secure Gateway URL`,
 						Type:      element.TypeText,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `https://secure.shippingapis.com/ShippingAPI.dll`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/title`,
-						ID:        cfgpath.NewRoute("title"),
-						Label:     text.Chars(`Title`),
+						ID:        "title",
+						Label:     `Title`,
 						Type:      element.TypeText,
 						SortOrder: 40,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `United States Postal Service`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/userid`,
-						ID:        cfgpath.NewRoute("userid"),
-						Label:     text.Chars(`User ID`),
+						ID:        "userid",
+						Label:     `User ID`,
 						Type:      element.TypeObscure,
 						SortOrder: 50,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/password`,
-						ID:        cfgpath.NewRoute("password"),
-						Label:     text.Chars(`Password`),
+						ID:        "password",
+						Label:     `Password`,
 						Type:      element.TypeObscure,
 						SortOrder: 53,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/mode`,
-						ID:        cfgpath.NewRoute("mode"),
-						Label:     text.Chars(`Mode`),
+						ID:        "mode",
+						Label:     `Mode`,
 						Type:      element.TypeSelect,
 						SortOrder: 54,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/shipment_requesttype`,
-						ID:        cfgpath.NewRoute("shipment_requesttype"),
-						Label:     text.Chars(`Packages Request Type`),
+						ID:        "shipment_requesttype",
+						Label:     `Packages Request Type`,
 						Type:      element.TypeSelect,
 						SortOrder: 55,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/container`,
-						ID:        cfgpath.NewRoute("container"),
-						Label:     text.Chars(`Container`),
+						ID:        "container",
+						Label:     `Container`,
 						Type:      element.TypeSelect,
 						SortOrder: 60,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `VARIABLE`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/size`,
-						ID:        cfgpath.NewRoute("size"),
-						Label:     text.Chars(`Size`),
+						ID:        "size",
+						Label:     `Size`,
 						Type:      element.TypeSelect,
 						SortOrder: 70,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `REGULAR`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/width`,
-						ID:        cfgpath.NewRoute("width"),
-						Label:     text.Chars(`Width`),
+						ID:        "width",
+						Label:     `Width`,
 						Type:      element.TypeText,
 						SortOrder: 73,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/length`,
-						ID:        cfgpath.NewRoute("length"),
-						Label:     text.Chars(`Length`),
+						ID:        "length",
+						Label:     `Length`,
 						Type:      element.TypeText,
 						SortOrder: 72,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/height`,
-						ID:        cfgpath.NewRoute("height"),
-						Label:     text.Chars(`Height`),
+						ID:        "height",
+						Label:     `Height`,
 						Type:      element.TypeText,
 						SortOrder: 74,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/girth`,
-						ID:        cfgpath.NewRoute("girth"),
-						Label:     text.Chars(`Girth`),
+						ID:        "girth",
+						Label:     `Girth`,
 						Type:      element.TypeText,
 						SortOrder: 76,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/machinable`,
-						ID:        cfgpath.NewRoute("machinable"),
-						Label:     text.Chars(`Machinable`),
+						ID:        "machinable",
+						Label:     `Machinable`,
 						Type:      element.TypeSelect,
 						SortOrder: 80,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `true`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/max_package_weight`,
-						ID:        cfgpath.NewRoute("max_package_weight"),
-						Label:     text.Chars(`Maximum  (Please consult your shipping carrier for maximum supported shipping weight)`),
+						ID:        "max_package_weight",
+						Label:     `Maximum  (Please consult your shipping carrier for maximum supported shipping weight)`,
 						Type:      element.TypeText,
 						SortOrder: 90,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   70,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/handling_type`,
-						ID:        cfgpath.NewRoute("handling_type"),
-						Label:     text.Chars(`Calculate Handling Fee`),
+						ID:        "handling_type",
+						Label:     `Calculate Handling Fee`,
 						Type:      element.TypeSelect,
 						SortOrder: 100,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `F`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/handling_action`,
-						ID:        cfgpath.NewRoute("handling_action"),
-						Label:     text.Chars(`Handling Applied`),
+						ID:        "handling_action",
+						Label:     `Handling Applied`,
 						Type:      element.TypeSelect,
 						SortOrder: 110,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `O`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/handling_fee`,
-						ID:        cfgpath.NewRoute("handling_fee"),
-						Label:     text.Chars(`Handling Fee`),
+						ID:        "handling_fee",
+						Label:     `Handling Fee`,
 						Type:      element.TypeText,
 						SortOrder: 120,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/allowed_methods`,
-						ID:        cfgpath.NewRoute("allowed_methods"),
-						Label:     text.Chars(`Allowed Methods`),
+						ID:        "allowed_methods",
+						Label:     `Allowed Methods`,
 						Type:      element.TypeMultiselect,
 						SortOrder: 130,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `0_FCLE,0_FCL,0_FCP,1,2,3,4,6,7,13,16,17,22,23,25,27,28,33,34,35,36,37,42,43,53,55,56,57,61,INT_1,INT_2,INT_4,INT_6,INT_7,INT_8,INT_9,INT_10,INT_11,INT_12,INT_13,INT_14,INT_15,INT_16,INT_20,INT_26`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/free_method`,
-						ID:        cfgpath.NewRoute("free_method"),
-						Label:     text.Chars(`Free Method`),
+						ID:        "free_method",
+						Label:     `Free Method`,
 						Type:      element.TypeSelect,
 						SortOrder: 140,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/free_shipping_enable`,
-						ID:        cfgpath.NewRoute("free_shipping_enable"),
-						Label:     text.Chars(`Free Shipping Amount Threshold`),
+						ID:        "free_shipping_enable",
+						Label:     `Free Shipping Amount Threshold`,
 						Type:      element.TypeSelect,
 						SortOrder: 1500,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/free_shipping_subtotal`,
-						ID:        cfgpath.NewRoute("free_shipping_subtotal"),
-						Label:     text.Chars(`Free Shipping Amount Threshold`),
+						ID:        "free_shipping_subtotal",
+						Label:     `Free Shipping Amount Threshold`,
 						Type:      element.TypeText,
 						SortOrder: 160,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/specificerrmsg`,
-						ID:        cfgpath.NewRoute("specificerrmsg"),
-						Label:     text.Chars(`Displayed Error Message`),
+						ID:        "specificerrmsg",
+						Label:     `Displayed Error Message`,
 						Type:      element.TypeTextarea,
 						SortOrder: 170,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/sallowspecific`,
-						ID:        cfgpath.NewRoute("sallowspecific"),
-						Label:     text.Chars(`Ship to Applicable Countries`),
+						ID:        "sallowspecific",
+						Label:     `Ship to Applicable Countries`,
 						Type:      element.TypeSelect,
 						SortOrder: 180,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/specificcountry`,
-						ID:        cfgpath.NewRoute("specificcountry"),
-						Label:     text.Chars(`Ship to Specific Countries`),
+						ID:        "specificcountry",
+						Label:     `Ship to Specific Countries`,
 						Type:      element.TypeMultiselect,
 						SortOrder: 190,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/debug`,
-						ID:        cfgpath.NewRoute("debug"),
-						Label:     text.Chars(`Debug`),
+						ID:        "debug",
+						Label:     `Debug`,
 						Type:      element.TypeSelect,
 						SortOrder: 200,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/showmethod`,
-						ID:        cfgpath.NewRoute("showmethod"),
-						Label:     text.Chars(`Show Method if Not Applicable`),
+						ID:        "showmethod",
+						Label:     `Show Method if Not Applicable`,
 						Type:      element.TypeSelect,
 						SortOrder: 210,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/sort_order`,
-						ID:        cfgpath.NewRoute("sort_order"),
-						Label:     text.Chars(`Sort Order`),
+						ID:        "sort_order",
+						Label:     `Sort Order`,
 						Type:      element.TypeText,
 						SortOrder: 220,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
@@ -11246,80 +11126,72 @@ Disallow: /*SID=
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("carriers"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("usps"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "carriers",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "usps",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `carriers/usps/cutoff_cost`,
-						ID:      cfgpath.NewRoute("cutoff_cost"),
+						ID:      "cutoff_cost",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/free_method`,
-						ID:      cfgpath.NewRoute("free_method"),
+						ID:      "free_method",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/handling`,
-						ID:      cfgpath.NewRoute("handling"),
+						ID:      "handling",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/methods`,
-						ID:      cfgpath.NewRoute("methods"),
+						ID:      "methods",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: nil,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/model`,
-						ID:      cfgpath.NewRoute("model"),
+						ID:      "model",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\Usps\Model\Carrier`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/isproduction`,
-						ID:      cfgpath.NewRoute("isproduction"),
+						ID:      "isproduction",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/active_rma`,
-						ID:      cfgpath.NewRoute("active_rma"),
+						ID:      "active_rma",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `carriers/usps/is_online`,
-						ID:      cfgpath.NewRoute("is_online"),
+						ID:      "is_online",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: true,
 					},
@@ -11328,26 +11200,26 @@ Disallow: /*SID=
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("webapi"),
-		Label:     text.Chars("Magento Web API"),
+	&element.Section{
+		ID:        "webapi",
+		Label:     `Magento Web API`,
 		SortOrder: 102,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("soap"),
-				Label:     text.Chars(`SOAP Settings`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "soap",
+				Label:     `SOAP Settings`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `webapi/soap/charset`,
-						ID:        cfgpath.NewRoute("charset"),
-						Label:     text.Chars(`Default Response Charset`),
-						Comment:   text.Chars(`If empty, UTF-8 will be used.`),
+						ID:        "charset",
+						Label:     `Default Response Charset`,
+						Comment:   `If empty, UTF-8 will be used.`,
 						Type:      element.TypeText,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},
@@ -11356,91 +11228,91 @@ Disallow: /*SID=
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("tax"),
+	&element.Section{
+		ID:        "tax",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("weee"),
-				Label:     text.Chars(`Fixed Product Taxes`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "weee",
+				Label:     `Fixed Product Taxes`,
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `tax/weee/enable`,
-						ID:        cfgpath.NewRoute("enable"),
-						Label:     text.Chars(`Enable FPT`),
+						ID:        "enable",
+						Label:     `Enable FPT`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/weee/display_list`,
-						ID:        cfgpath.NewRoute("display_list"),
-						Label:     text.Chars(`Display Prices In Product Lists`),
+						ID:        "display_list",
+						Label:     `Display Prices In Product Lists`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/weee/display`,
-						ID:        cfgpath.NewRoute("display"),
-						Label:     text.Chars(`Display Prices On Product View Page`),
+						ID:        "display",
+						Label:     `Display Prices On Product View Page`,
 						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/weee/display_sales`,
-						ID:        cfgpath.NewRoute("display_sales"),
-						Label:     text.Chars(`Display Prices In Sales Modules`),
+						ID:        "display_sales",
+						Label:     `Display Prices In Sales Modules`,
 						Type:      element.TypeSelect,
 						SortOrder: 30,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/weee/display_email`,
-						ID:        cfgpath.NewRoute("display_email"),
-						Label:     text.Chars(`Display Prices In Emails`),
+						ID:        "display_email",
+						Label:     `Display Prices In Emails`,
 						Type:      element.TypeSelect,
 						SortOrder: 40,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   true,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/weee/apply_vat`,
-						ID:        cfgpath.NewRoute("apply_vat"),
-						Label:     text.Chars(`Apply Tax To FPT`),
+						ID:        "apply_vat",
+						Label:     `Apply Tax To FPT`,
 						Type:      element.TypeSelect,
 						SortOrder: 60,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `tax/weee/include_in_subtotal`,
-						ID:        cfgpath.NewRoute("include_in_subtotal"),
-						Label:     text.Chars(`Include FPT In Subtotal`),
+						ID:        "include_in_subtotal",
+						Label:     `Include FPT In Subtotal`,
 						Type:      element.TypeSelect,
 						SortOrder: 70,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   false,
 					},
@@ -11448,25 +11320,25 @@ Disallow: /*SID=
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("sales"),
+	&element.Section{
+		ID:        "sales",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("totals_sort"),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "totals_sort",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sales/totals_sort/weee`,
-						ID:        cfgpath.NewRoute("weee"),
-						Label:     text.Chars(`Fixed Product Tax`),
+						ID:        "weee",
+						Label:     `Fixed Product Tax`,
 						Type:      element.TypeText,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   35,
 					},
@@ -11476,17 +11348,16 @@ Disallow: /*SID=
 	},
 
 	// Hidden Configuration
-	element.Section{
-		ID: cfgpath.NewRoute("sales"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("totals_sort"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "sales",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "totals_sort",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `sales/totals_sort/weee_tax`,
-						ID:      cfgpath.NewRoute("weee_tax"),
+						ID:      "weee_tax",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: 35,
 					},
@@ -11494,17 +11365,16 @@ Disallow: /*SID=
 			},
 		},
 	},
-	element.Section{
-		ID: cfgpath.NewRoute("general"),
-		Groups: element.GroupSlice{
-			element.Group{
-				ID: cfgpath.NewRoute("validator_data"),
-				Fields: element.FieldSlice{
-					element.Field{
+	&element.Section{
+		ID: "general",
+		Groups: element.Groups{
+			&element.Group{
+				ID: "validator_data",
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `general/validator_data/input_types`,
-						ID:      cfgpath.NewRoute("input_types"),
+						ID:      "input_types",
 						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
 						Scopes:  scope.PermDefault,
 						Default: `{"weee":"weee"}`,
 					},
@@ -11513,98 +11383,98 @@ Disallow: /*SID=
 		},
 	},
 
-	element.Section{
-		ID:        cfgpath.NewRoute("wishlist"),
-		Label:     text.Chars("Wishlist"),
+	&element.Section{
+		ID:        "wishlist",
+		Label:     `Wishlist`,
 		SortOrder: 140,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("email"),
-				Label:     text.Chars(`Share Options`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "email",
+				Label:     `Share Options`,
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `wishlist/email/email_identity`,
-						ID:        cfgpath.NewRoute("email_identity"),
-						Label:     text.Chars(`Email Sender`),
+						ID:        "email_identity",
+						Label:     `Email Sender`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `general`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `wishlist/email/email_template`,
-						ID:        cfgpath.NewRoute("email_template"),
-						Label:     text.Chars(`Email Template`),
+						ID:        "email_template",
+						Label:     `Email Template`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `wishlist_email_email_template`,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `wishlist/email/number_limit`,
-						ID:        cfgpath.NewRoute("number_limit"),
-						Label:     text.Chars(`Max Emails Allowed to be Sent`),
-						Comment:   text.Chars(`10 by default. Max - 10000`),
+						ID:        "number_limit",
+						Label:     `Max Emails Allowed to be Sent`,
+						Comment:   `10 by default. Max - 10000`,
 						Type:      element.TypeText,
 						SortOrder: 3,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   10,
 					},
 
-					element.Field{
+					&element.Field{
 						// Path: `wishlist/email/text_limit`,
-						ID:        cfgpath.NewRoute("text_limit"),
-						Label:     text.Chars(`Email Text Length Limit`),
-						Comment:   text.Chars(`255 by default`),
+						ID:        "text_limit",
+						Label:     `Email Text Length Limit`,
+						Comment:   `255 by default`,
 						Type:      element.TypeText,
 						SortOrder: 4,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   255,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("general"),
-				Label:     text.Chars(`General Options`),
+			&element.Group{
+				ID:        "general",
+				Label:     `General Options`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `wishlist/general/active`,
-						ID:        cfgpath.NewRoute("active"),
-						Label:     text.Chars(`Enabled`),
+						ID:        "active",
+						Label:     `Enabled`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   true,
 					},
 				},
 			},
 
-			element.Group{
-				ID:        cfgpath.NewRoute("wishlist_link"),
-				Label:     text.Chars(`My Wish List Link`),
+			&element.Group{
+				ID:        "wishlist_link",
+				Label:     `My Wish List Link`,
 				SortOrder: 3,
 				Scopes:    scope.PermWebsite,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `wishlist/wishlist_link/use_qty`,
-						ID:        cfgpath.NewRoute("use_qty"),
-						Label:     text.Chars(`Display Wish List Summary`),
+						ID:        "use_qty",
+						Label:     `Display Wish List Summary`,
 						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   nil,
 					},
@@ -11612,25 +11482,25 @@ Disallow: /*SID=
 			},
 		},
 	},
-	element.Section{
-		ID:        cfgpath.NewRoute("rss"),
+	&element.Section{
+		ID:        "rss",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.GroupSlice{
-			element.Group{
-				ID:        cfgpath.NewRoute("wishlist"),
-				Label:     text.Chars(`Wishlist`),
+		Groups: element.Groups{
+			&element.Group{
+				ID:        "wishlist",
+				Label:     `Wishlist`,
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
-				Fields: element.FieldSlice{
-					element.Field{
+				Fields: element.Fields{
+					&element.Field{
 						// Path: `rss/wishlist/active`,
-						ID:        cfgpath.NewRoute("active"),
-						Label:     text.Chars(`Enable RSS`),
+						ID:        "active",
+						Label:     `Enable RSS`,
 						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   element.VisibleYes,
+						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   nil,
 					},

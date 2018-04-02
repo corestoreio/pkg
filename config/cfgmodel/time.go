@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@ package cfgmodel
 import (
 	"time"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/conv"
-	"github.com/corestoreio/errors"
 )
 
 // Time represents a path in config.Getter which handles time values.
@@ -36,8 +36,8 @@ func NewTime(path string, opts ...Option) Time {
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
 // Get is able to parse available time formats as defined in
 // github.com/corestoreio/pkg/util/conv.StringToDate()
-func (t Time) Get(sg config.Scoped) (time.Time, error) {
-	// This code must be kept in sync with other Get() functions
+func (t Time) Value(sg config.Scoped) (time.Time, error) {
+	// This code must be kept in sync with other Value() functions
 
 	var v time.Time
 	var scp = t.initScope().Top()
@@ -47,7 +47,7 @@ func (t Time) Get(sg config.Scoped) (time.Time, error) {
 			var err error
 			v, err = conv.ToTimeE(d)
 			if err != nil {
-				return time.Time{}, errors.NewNotValidf("[cfgmodel] ToTimeE: %v", err)
+				return time.Time{}, errors.NotValid.Newf("[cfgmodel] ToTimeE: %v", err)
 			}
 		}
 	}
@@ -56,7 +56,7 @@ func (t Time) Get(sg config.Scoped) (time.Time, error) {
 	switch {
 	case err == nil: // we found the value in the config service
 		v = val
-	case !errors.IsNotFound(err):
+	case !errors.NotFound.Match(err):
 		err = errors.Wrapf(err, "[cfgmodel] Route %q", t.route)
 	default:
 		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset
@@ -85,8 +85,8 @@ func NewDuration(path string, opts ...Option) Duration {
 // such as "300ms", "-1.5h" or "2h45m".
 // Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
 // Error behaviour: NotValid
-func (t Duration) Get(sg config.Scoped) (time.Duration, error) {
-	// This code must be kept in sync with other Get() functions
+func (t Duration) Value(sg config.Scoped) (time.Duration, error) {
+	// This code must be kept in sync with other Value() functions
 
 	var v time.Duration
 	var scp = t.initScope().Top()
@@ -96,7 +96,7 @@ func (t Duration) Get(sg config.Scoped) (time.Duration, error) {
 			var err error
 			v, err = conv.ToDurationE(d)
 			if err != nil {
-				return 0, errors.NewNotValidf("[cfgmodel] ToDurationE: %v", err)
+				return 0, errors.NotValid.Newf("[cfgmodel] ToDurationE: %v", err)
 			}
 		}
 	}
@@ -105,7 +105,7 @@ func (t Duration) Get(sg config.Scoped) (time.Duration, error) {
 	switch {
 	case err == nil: // we found the value in the config service
 		v = val
-	case !errors.IsNotFound(err):
+	case !errors.NotFound.Match(err):
 		err = errors.Wrapf(err, "[cfgmodel] Route %q", t.route)
 	default:
 		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset

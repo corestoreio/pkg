@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
 package cfgmodel
 
 import (
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/errors"
 )
 
 // todo implement compatible type for both interfaces like in the example ExampleNewGCM_encrypt() and ExampleNewGCM_decrypt of the std lib cipher package.
@@ -104,8 +104,8 @@ func (p *Obscure) Option(opts ...Option) error {
 
 // Get returns an encrypted value decrypted. Panics if Encryptor interface is
 // nil.
-func (p Obscure) Get(sg config.Scoped) ([]byte, error) {
-	s, err := p.Byte.Get(sg)
+func (p Obscure) Value(sg config.Scoped) ([]byte, error) {
+	s, err := p.Byte.Value(sg)
 	if err != nil {
 		return nil, errors.Wrap(err, "[cfgmodel] Obscure.Byte.Get")
 	}

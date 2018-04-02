@@ -9,19 +9,19 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID: "design",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "email",
 					Label:     `Emails`,
 					SortOrder: 510,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: design/email/logo
 							ID:        "logo",
@@ -99,10 +99,10 @@ func init() {
 		// Hidden Configuration, may be visible somewhere else ...
 		element.Section{
 			ID: "system",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "media_storage_configuration",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: system/media_storage_configuration/allowed_resources
 							ID:      `allowed_resources`,
@@ -115,7 +115,7 @@ func init() {
 
 				element.Group{
 					ID: "emails",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: system/emails/forgot_email_template
 							ID:      `forgot_email_template`,
@@ -136,7 +136,7 @@ func init() {
 
 				element.Group{
 					ID: "smtp",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: system/smtp/disable
 							ID:      `disable`,
@@ -166,10 +166,10 @@ func init() {
 		},
 		element.Section{
 			ID: "trans_email",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "ident_custom1",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: trans_email/ident_custom1/email
 							ID:      `email`,
@@ -190,7 +190,7 @@ func init() {
 
 				element.Group{
 					ID: "ident_custom2",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: trans_email/ident_custom2/email
 							ID:      `email`,
@@ -211,7 +211,7 @@ func init() {
 
 				element.Group{
 					ID: "ident_general",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: trans_email/ident_general/email
 							ID:      `email`,
@@ -232,7 +232,7 @@ func init() {
 
 				element.Group{
 					ID: "ident_sales",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: trans_email/ident_sales/email
 							ID:      `email`,
@@ -253,7 +253,7 @@ func init() {
 
 				element.Group{
 					ID: "ident_support",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: trans_email/ident_support/email
 							ID:      `email`,

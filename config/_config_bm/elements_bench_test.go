@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ var sectionSliceFindFieldByID1 element.Field
 // BenchmarkSectionSliceFindFieldByID1-4	10000000	       137 ns/op	       0 B/op	       0 allocs/op => cfgpath.Routes with Sum32 + array with pointers
 // BenchmarkSectionSliceFindFieldByID1-4	 3000000	       484 ns/op	       0 B/op	       0 allocs/op => removed pointers
 func BenchmarkSectionSliceFindFieldByID1(b *testing.B) {
-	r := cfgpath.NewRoute("carriers", "usps", "gateway_url")
+	r := cfgpath.MakeRoute("carriers", "usps", "gateway_url")
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		var err error
@@ -92,11 +92,11 @@ func BenchmarkSectionSliceFindFieldByID1(b *testing.B) {
 // BenchmarkSectionSliceFindFieldByID5-4	  500000	      3045 ns/op	       0 B/op	       0 allocs/op => removed pointers
 func BenchmarkSectionSliceFindFieldByID5(b *testing.B) {
 	var routePaths = [...]cfgpath.Route{
-		cfgpath.NewRoute("carriers", "usps", "gateway_url"),
-		cfgpath.NewRoute("wishlist", "email", "number_limit"),
-		cfgpath.NewRoute("tax", "calculation", "apply_tax_on"),
-		cfgpath.NewRoute("sitemap", "generate", "frequency"),
-		cfgpath.NewRoute("sales_email", "creditmemo_comment", "guest_template"),
+		cfgpath.MakeRoute("carriers", "usps", "gateway_url"),
+		cfgpath.MakeRoute("wishlist", "email", "number_limit"),
+		cfgpath.MakeRoute("tax", "calculation", "apply_tax_on"),
+		cfgpath.MakeRoute("sitemap", "generate", "frequency"),
+		cfgpath.MakeRoute("sales_email", "creditmemo_comment", "guest_template"),
 	}
 
 	b.ReportAllocs()
@@ -114,11 +114,11 @@ func BenchmarkSectionSliceFindFieldByID5(b *testing.B) {
 // BenchmarkSectionSliceFindFieldByID5_Parallel-4	 1000000	      1576 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkSectionSliceFindFieldByID5_Parallel(b *testing.B) {
 	var routePaths = [...]cfgpath.Route{
-		cfgpath.NewRoute("carriers", "usps", "gateway_url"),
-		cfgpath.NewRoute("wishlist", "email", "number_limit"),
-		cfgpath.NewRoute("tax", "calculation", "apply_tax_on"),
-		cfgpath.NewRoute("sitemap", "generate", "frequency"),
-		cfgpath.NewRoute("sales_email", "creditmemo_comment", "guest_template"),
+		cfgpath.MakeRoute("carriers", "usps", "gateway_url"),
+		cfgpath.MakeRoute("wishlist", "email", "number_limit"),
+		cfgpath.MakeRoute("tax", "calculation", "apply_tax_on"),
+		cfgpath.MakeRoute("sitemap", "generate", "frequency"),
+		cfgpath.MakeRoute("sales_email", "creditmemo_comment", "guest_template"),
 	}
 
 	b.ReportAllocs()

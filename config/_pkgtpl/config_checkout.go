@@ -9,23 +9,23 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID:        "checkout",
 			Label:     `Checkout`,
 			SortOrder: 305,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Checkout::checkout
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "options",
 					Label:     `Checkout Options`,
 					SortOrder: 1,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: checkout/options/onepage_checkout_enabled
 							ID:        "onepage_checkout_enabled",
@@ -57,7 +57,7 @@ func init() {
 					Label:     `Shopping Cart`,
 					SortOrder: 2,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: checkout/cart/delete_quote_after
 							ID:        "delete_quote_after",
@@ -88,7 +88,7 @@ func init() {
 					Label:     `My Cart Link`,
 					SortOrder: 3,
 					Scopes:    scope.PermWebsite,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: checkout/cart_link/use_qty
 							ID:        "use_qty",
@@ -108,7 +108,7 @@ func init() {
 					Label:     `Shopping Cart Sidebar`,
 					SortOrder: 4,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: checkout/sidebar/display
 							ID:        "display",
@@ -139,7 +139,7 @@ func init() {
 					Label:     `Payment Failed Emails`,
 					SortOrder: 100,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: checkout/payment_failed/identity
 							ID:        "identity",

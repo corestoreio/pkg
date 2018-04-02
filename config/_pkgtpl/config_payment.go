@@ -9,26 +9,26 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID:        "payment",
 			Label:     `Payment Methods`,
 			SortOrder: 400,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Payment::payment
-			Groups:    element.NewGroupSlice(),
+			Groups:    element.MakeGroups(),
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
 		element.Section{
 			ID: "payment",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "free",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/free/active
 							ID:      `active`,
@@ -81,7 +81,7 @@ func init() {
 
 				element.Group{
 					ID: "substitution",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/substitution/active
 							ID:      `active`,

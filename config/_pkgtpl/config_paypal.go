@@ -9,19 +9,19 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID: "payment",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "paypal_notice",
 					SortOrder: 3,
 					Scopes:    scope.PermStore,
 					HelpURL:   text.Long(`https://www.paypal-marketing.com/emarketing/partner/na/merchantlineup/home.page#mainTab=checkoutlineup`),
-					Fields:    element.NewFieldSlice(),
+					Fields:    element.MakeFields(),
 				},
 
 				element.Group{
@@ -29,7 +29,7 @@ func init() {
 					Label:     `Merchant Location`,
 					SortOrder: 1,
 					Scopes:    scope.PermWebsite,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							ConfigPath: `paypal/general/merchant_country`, // Original: payment/account/merchant_country
 							ID:         "merchant_country",
@@ -48,16 +48,16 @@ func init() {
 		},
 		element.Section{
 			ID: "payment_all_paypal",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:     "payments_pro_hosted_solution_without_bml",
-					Fields: element.NewFieldSlice(),
+					Fields: element.MakeFields(),
 				},
 			),
 		},
 		element.Section{
 			ID: "payment_us",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "paypal_group_all_in_one",
 					Label:     `PayPal All-in-One Payment Solutions&nbsp;&nbsp;<i>Accept and process credit cards and PayPal payments.</i>`,
@@ -65,7 +65,7 @@ func init() {
 					SortOrder: 10,
 					Scopes:    scope.PermStore,
 					HelpURL:   text.Long(`https://www.paypal-marketing.com/emarketing/partner/na/merchantlineup/home.page#mainTab=checkoutlineup&subTab=newlineup`),
-					Fields:    element.NewFieldSlice(),
+					Fields:    element.MakeFields(),
 				},
 
 				element.Group{
@@ -75,7 +75,7 @@ func init() {
 					SortOrder: 15,
 					Scopes:    scope.PermStore,
 					HelpURL:   text.Long(`https://merchant.paypal.com/cgi-bin/marketingweb?cmd=_render-content`),
-					Fields:    element.NewFieldSlice(),
+					Fields:    element.MakeFields(),
 				},
 
 				element.Group{
@@ -85,13 +85,13 @@ func init() {
 					SortOrder: 20,
 					Scopes:    scope.PermStore,
 					HelpURL:   text.Long(`https://merchant.paypal.com/cgi-bin/marketingweb?cmd=_render-content`),
-					Fields:    element.NewFieldSlice(),
+					Fields:    element.MakeFields(),
 				},
 			),
 		},
 		element.Section{
 			ID: "payment_gb",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "paypal_group_all_in_one",
 					Label:     `PayPal All-in-One Payment Solutions&nbsp;&nbsp;<i>Accept and process credit cards and PayPal payments.</i>`,
@@ -99,7 +99,7 @@ func init() {
 					SortOrder: 10,
 					Scopes:    scope.PermStore,
 					HelpURL:   text.Long(`https://www.paypal-marketing.com/emarketing/partner/na/merchantlineup/home.page#mainTab=checkoutlineup&subTab=newlineup`),
-					Fields:    element.NewFieldSlice(),
+					Fields:    element.MakeFields(),
 				},
 
 				element.Group{
@@ -109,13 +109,13 @@ func init() {
 					SortOrder: 20,
 					Scopes:    scope.PermStore,
 					HelpURL:   text.Long(`https://merchant.paypal.com/cgi-bin/marketingweb?cmd=_render-content`),
-					Fields:    element.NewFieldSlice(),
+					Fields:    element.MakeFields(),
 				},
 			),
 		},
 		element.Section{
 			ID: "payment_de",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "paypal_payment_solutions",
 					Label:     `PayPal Payment Solutions`,
@@ -123,13 +123,13 @@ func init() {
 					SortOrder: 10,
 					Scopes:    scope.PermStore,
 					HelpURL:   text.Long(`https://www.paypal-marketing.com/emarketing/partner/na/merchantlineup/home.page#mainTab=checkoutlineup&subTab=newlineup`),
-					Fields:    element.NewFieldSlice(),
+					Fields:    element.MakeFields(),
 				},
 			),
 		},
 		element.Section{
 			ID: "payment_other",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "paypal_payment_solutions",
 					Label:     `PayPal Payment Solutions`,
@@ -137,79 +137,79 @@ func init() {
 					SortOrder: 10,
 					Scopes:    scope.PermStore,
 					HelpURL:   text.Long(`https://www.paypal-marketing.com/emarketing/partner/na/merchantlineup/home.page#mainTab=checkoutlineup&subTab=newlineup`),
-					Fields:    element.NewFieldSlice(),
+					Fields:    element.MakeFields(),
 				},
 			),
 		},
 		element.Section{
 			ID: "payment_ca",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:     "paypal_payment_solutions",
-					Fields: element.NewFieldSlice(),
+					Fields: element.MakeFields(),
 				},
 			),
 		},
 		element.Section{
 			ID: "payment_au",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:     "paypal_payment_solutions",
-					Fields: element.NewFieldSlice(),
+					Fields: element.MakeFields(),
 				},
 			),
 		},
 		element.Section{
 			ID: "payment_jp",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:     "paypal_payment_solutions",
-					Fields: element.NewFieldSlice(),
+					Fields: element.MakeFields(),
 				},
 			),
 		},
 		element.Section{
 			ID: "payment_fr",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:     "paypal_payment_solutions",
-					Fields: element.NewFieldSlice(),
+					Fields: element.MakeFields(),
 				},
 			),
 		},
 		element.Section{
 			ID: "payment_it",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:     "paypal_payment_solutions",
-					Fields: element.NewFieldSlice(),
+					Fields: element.MakeFields(),
 				},
 			),
 		},
 		element.Section{
 			ID: "payment_es",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:     "paypal_payment_solutions",
-					Fields: element.NewFieldSlice(),
+					Fields: element.MakeFields(),
 				},
 			),
 		},
 		element.Section{
 			ID: "payment_hk",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:     "paypal_payment_solutions",
-					Fields: element.NewFieldSlice(),
+					Fields: element.MakeFields(),
 				},
 			),
 		},
 		element.Section{
 			ID: "payment_nz",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:     "paypal_payment_solutions",
-					Fields: element.NewFieldSlice(),
+					Fields: element.MakeFields(),
 				},
 			),
 		},
@@ -217,10 +217,10 @@ func init() {
 		// Hidden Configuration, may be visible somewhere else ...
 		element.Section{
 			ID: "paypal",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "style",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: paypal/style/logo
 							ID:      `logo`,
@@ -232,7 +232,7 @@ func init() {
 
 				element.Group{
 					ID: "wpp",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: paypal/wpp/api_password
 							ID:      `api_password`,
@@ -269,7 +269,7 @@ func init() {
 
 				element.Group{
 					ID: "wpuk",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: paypal/wpuk/user
 							ID:      `user`,
@@ -290,7 +290,7 @@ func init() {
 
 				element.Group{
 					ID: "fetch_reports",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: paypal/fetch_reports/ftp_login
 							ID:      `ftp_login`,
@@ -328,10 +328,10 @@ func init() {
 		},
 		element.Section{
 			ID: "payment",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "paypal_express",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/paypal_express/cfgmodel
 							ID:      `model`,
@@ -448,7 +448,7 @@ func init() {
 
 				element.Group{
 					ID: "paypal_express_bml",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/paypal_express_bml/cfgmodel
 							ID:      `model`,
@@ -477,7 +477,7 @@ func init() {
 
 				element.Group{
 					ID: "payflow_express",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/payflow_express/title
 							ID:      `title`,
@@ -546,7 +546,7 @@ func init() {
 
 				element.Group{
 					ID: "payflow_express_bml",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/payflow_express_bml/cfgmodel
 							ID:      `model`,
@@ -575,7 +575,7 @@ func init() {
 
 				element.Group{
 					ID: "payflowpro",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/payflowpro/cfgmodel
 							ID:      `model`,
@@ -763,7 +763,7 @@ func init() {
 
 				element.Group{
 					ID: "paypal_billing_agreement",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/paypal_billing_agreement/active
 							ID:      `active`,
@@ -816,7 +816,7 @@ func init() {
 
 				element.Group{
 					ID: "payflow_link",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/payflow_link/cfgmodel
 							ID:      `model`,
@@ -957,7 +957,7 @@ func init() {
 
 				element.Group{
 					ID: "payflow_advanced",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/payflow_advanced/cfgmodel
 							ID:      `model`,
@@ -1106,7 +1106,7 @@ func init() {
 
 				element.Group{
 					ID: "hosted_pro",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: payment/hosted_pro/cfgmodel
 							ID:      `model`,

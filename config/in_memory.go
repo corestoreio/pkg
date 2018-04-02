@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,78 +15,77 @@
 package config
 
 import (
+	"strings"
 	"sync"
 
-	"github.com/corestoreio/pkg/config/cfgpath"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/store/scope"
 )
 
-type keyVal struct {
-	k cfgpath.Path
-	v interface{}
-}
+const kvMapScopeSep = '~'
 
 type kvmap struct {
 	sync.RWMutex
-	kv map[uint32]keyVal // todo: create benchmark to check if worth switching to pointers
+	kv map[string][]byte
 }
 
 // NewInMemoryStore creates a new simple key value storage using a map[string]interface{}.
 // Mainly used for testing.
 func NewInMemoryStore() Storager {
 	return &kvmap{
-		kv: make(map[uint32]keyVal),
+		kv: make(map[string][]byte),
 	}
 }
 
 // Set implements Storager interface
-func (sp *kvmap) Set(key cfgpath.Path, value interface{}) error {
-	h32, err := key.Hash(-1)
-	if err != nil {
-		return errors.Wrap(err, "[storage] key.Hash")
-	}
+func (sp *kvmap) Set(scp scope.TypeID, path string, value []byte) error {
+
+	var key strings.Builder
+	key.WriteString(scp.String())
+	key.WriteByte(kvMapScopeSep)
+	key.WriteString(path)
+
 	sp.Lock()
-	sp.kv[h32] = keyVal{key, value}
+	sp.kv[key.String()] = value
 	sp.Unlock()
 	return nil
 }
 
 // Get implements Storager interface.
-// Error behaviour: NotFound.
-func (sp *kvmap) Get(key cfgpath.Path) (interface{}, error) {
-	h32, err := key.Hash(-1)
-	if err != nil {
-		return nil, errors.Wrap(err, "[storage] key.Hash")
-	}
+func (sp *kvmap) Value(scp scope.TypeID, path string) (v []byte, ok bool, err error) {
+
+	var key strings.Builder
+	key.WriteString(scp.String())
+	key.WriteByte(kvMapScopeSep)
+	key.WriteString(path)
+
 	sp.RLock()
-	data, ok := sp.kv[h32]
+	data, ok := sp.kv[key.String()]
 	sp.RUnlock()
 	if ok {
-		return data.v, nil
+		return data, ok, nil
 	}
-	return nil, keyNotFound{key}
+	return nil, false, nil
 }
 
-// AllKeys implements Storager interface
-func (sp *kvmap) AllKeys() (cfgpath.PathSlice, error) {
+// AllKeys implements Storager interface and return unsorted slices. Despite
+// having two slices and they are unsorted the index of the TypeIDs slice does
+// still refer to the same index of the paths slice.
+func (sp *kvmap) AllKeys() (scps scope.TypeIDs, paths []string, err error) {
 	sp.RLock()
 
-	var ret = make(cfgpath.PathSlice, len(sp.kv))
+	scps = make(scope.TypeIDs, len(sp.kv))
+	paths = make([]string, len(sp.kv))
 	i := 0
-	for _, kv := range sp.kv {
-		ret[i] = kv.k
+	for key := range sp.kv {
+		idx := strings.IndexByte(key, kvMapScopeSep)
+		scps[i], err = scope.MakeTypeIDString(key[:idx])
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, "[config] InMemory Storage with key %q", key)
+		}
+		paths[i] = key[idx:]
 		i++
 	}
 	sp.RUnlock()
-	return ret, nil
+	return
 }
-
-// keyNotFound for performance and allocs reasons in benchmarks to test properly
-// the cfg* code and not the configuration Service. The NotFound error has been
-// hard coded which does not record the position where the error happens. We can
-// maybe add the path which was not found but that will trigger 2 allocs because
-// of the sprintf ... which could be bypassed with a bufferpool ;-)
-type keyNotFound struct{ key cfgpath.Path }
-
-func (a keyNotFound) Error() string  { return "[config] KVMap Unknown Key: " + a.key.String() }
-func (a keyNotFound) NotFound() bool { return true }

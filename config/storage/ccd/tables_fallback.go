@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,28 +21,24 @@ package ccd
 // Auto generated via tableToStruct
 
 import (
-	"github.com/corestoreio/pkg/storage/csdb"
-	"github.com/corestoreio/pkg/util/null"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/sql/ddl"
+	"github.com/corestoreio/pkg/sql/dml"
 )
 
-// TableIndex... is the index to a table. These constants are guaranteed
-// to stay the same for all Magento versions. Please access a table via this
-// constant instead of the raw table name. TableIndex iotas must start with 0.
 const (
-	TableIndexCoreConfigData = iota + 1 // Table: core_config_data
-	TableIndexZZZ                       // the maximum index, which is not available.
+	TableNameCoreConfigData = `core_config_data`
 )
 
-func init() {
-	TableCollection = csdb.MustNewTables(
-		csdb.WithTable(
-			TableIndexCoreConfigData,
-			"core_config_data",
-			&csdb.Column{Field: (`config_id`), ColumnType: (`int(10) unsigned`), Null: (`NO`), Key: (`PRI`), Extra: (`auto_increment`)},
-			&csdb.Column{Field: (`scope`), ColumnType: (`varchar(8)`), Null: (`NO`), Key: (`MUL`), Default: null.StringFrom(`default`), Extra: (``)},
-			&csdb.Column{Field: (`scope_id`), ColumnType: (`int(11)`), Null: (`NO`), Key: (``), Default: null.StringFrom(`0`), Extra: (``)},
-			&csdb.Column{Field: (`path`), ColumnType: (`varchar(255)`), Null: (`NO`), Key: (``), Default: null.StringFrom(`general`), Extra: (``)},
-			&csdb.Column{Field: (`value`), ColumnType: (`text`), Null: (`YES`), Key: (``), Extra: (``)},
+func NewTableCollection() *ddl.Tables {
+	ddl.MustNewTables(
+		ddl.WithTable(
+			TableNameCoreConfigData,
+			&ddl.Column{Field: `config_id`, ColumnType: `int(10) unsigned`, Null: `NO`, Key: `PRI`, Extra: `auto_increment`},
+			&ddl.Column{Field: `scope`, ColumnType: `varchar(8)`, Null: `NO`, Key: `MUL`, Default: dml.MakeNullString(`default`), Extra: ""},
+			&ddl.Column{Field: `scope_id`, ColumnType: `int(11)`, Null: `NO`, Key: "", Default: dml.MakeNullString(`0`), Extra: ""},
+			&ddl.Column{Field: `path`, ColumnType: `varchar(255)`, Null: `NO`, Key: "", Default: dml.MakeNullString(`general`), Extra: ""},
+			&ddl.Column{Field: `value`, ColumnType: `text`, Null: `YES`, Key: ``, Extra: ""},
 		),
 	)
 }
@@ -54,9 +50,39 @@ type TableCoreConfigDataSlice []*TableCoreConfigData
 // TableCoreConfigData represents a type for DB table core_config_data
 // Generated via tableToStruct.
 type TableCoreConfigData struct {
-	ConfigID int64       `db:"config_id" json:",omitempty"` // config_id int(10) unsigned NOT NULL PRI  auto_increment
-	Scope    string      `db:"scope" json:",omitempty"`     // scope varchar(8) NOT NULL MUL DEFAULT 'default'
-	ScopeID  int64       `db:"scope_id" json:",omitempty"`  // scope_id int(11) NOT NULL  DEFAULT '0'
-	Path     string      `db:"path" json:",omitempty"`      // path varchar(255) NOT NULL  DEFAULT 'general'
-	Value    null.String `db:"value" json:",omitempty"`     // value text NULL
+	ConfigID int64        `json:",omitempty"`            // config_id int(10) unsigned NOT NULL PRI  auto_increment
+	Path     config.Path  `db:"path" json:",omitempty"`  // path varchar(255) NOT NULL  DEFAULT 'general'
+	Value    config.Value `db:"value" json:",omitempty"` // value text NULL
+}
+
+// MapColumns implements interface ColumnMapper only partially.
+func (p *TableCoreConfigData) MapColumns(cm *dml.ColumnMap) error {
+	if cm.Mode() == dml.ColumnMapEntityReadAll {
+		// bug check for null in Path
+		var pth dml.NullString
+		pth.String = p.Path.Data
+		pth.Valid = p.Path.Valid
+		return cm.Uint64(&p.ConfigID).String(&p.Scope).Int64(&p.ScopeID).NullString(&pth).NullString(&p.Value).Err()
+	}
+	for cm.Next() {
+		switch c := cm.Column(); c {
+		case "config_id": // customer_id is an alias
+			cm.Uint64(&p.ConfigID)
+		case "scope":
+			cm.String(&p.Scope)
+		case "scope_id":
+			cm.Int64(&p.ScopeID)
+		case "path":
+			var pth dml.NullString
+			cm.NullString(&pth)
+			p.Path.Data = pth.String
+			p.Path.Valid = pth.Valid
+		case "value":
+			cm.NullString(&p.Value)
+
+		default:
+			return errors.NotFound.Newf("[dml_test] customerEntity Column %q not found", c)
+		}
+	}
+	return cm.Err()
 }

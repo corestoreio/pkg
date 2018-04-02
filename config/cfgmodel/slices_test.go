@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@ package cfgmodel_test
 import (
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config/cfgmock"
 	"github.com/corestoreio/pkg/config/cfgmodel"
 	"github.com/corestoreio/pkg/config/cfgpath"
 	"github.com/corestoreio/pkg/config/cfgsource"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,7 +30,7 @@ import (
 func TestStringCSVGet(t *testing.T) {
 
 	const pathWebCorsHeaders = "web/cors/exposed_headers"
-	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders).String()
+	wantPath := cfgpath.MustMakeByString(pathWebCorsHeaders).String()
 	b := cfgmodel.NewStringCSV(
 		"web/cors/exposed_headers",
 		cfgmodel.WithFieldFromSectionSlice(configStructure),
@@ -41,7 +41,7 @@ func TestStringCSVGet(t *testing.T) {
 	assert.NotEmpty(t, b.Options())
 
 	sm := cfgmock.NewService()
-	sl, err := b.Get(sm.NewScoped(0, 0))
+	sl, err := b.Value(sm.NewScoped(0, 0))
 	assert.NoError(t, err)
 	assert.Exactly(t, []string{"Content-Type", "X-CoreStore-ID"}, sl) // default values from variable configStructure
 	assert.Exactly(t, typeIDsDefault, sm.StringInvokes().ScopeIDs())
@@ -62,7 +62,7 @@ func TestStringCSVGet(t *testing.T) {
 		sm := cfgmock.NewService(cfgmock.PathValue{
 			wantPath: test.have,
 		})
-		haveSL, haveErr := b.Get(sm.NewScoped(1, 0)) // 1,0 because scope of pathWebCorsHeaders is default,website
+		haveSL, haveErr := b.Value(sm.NewScoped(1, 0)) // 1,0 because scope of pathWebCorsHeaders is default,website
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
 		assert.Exactly(t, test.wantIDs, sm.StringInvokes().ScopeIDs(), "Index %d", i)
@@ -77,7 +77,7 @@ func TestStringCSVGet(t *testing.T) {
 func TestStringCSVWrite(t *testing.T) {
 
 	const pathWebCorsHeaders = "web/cors/exposed_headers"
-	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders).String()
+	wantPath := cfgpath.MustMakeByString(pathWebCorsHeaders).String()
 	b := cfgmodel.NewStringCSV(
 		"web/cors/exposed_headers",
 		cfgmodel.WithFieldFromSectionSlice(configStructure),
@@ -110,12 +110,12 @@ func TestStringCSVCustomSeparator(t *testing.T) {
 		),
 		cfgmodel.WithCSVComma(''),
 	)
-	wantPath := cfgpath.MustNewByParts(cfgPath).String() // Default Scope
+	wantPath := cfgpath.MustMakeByString(cfgPath).String() // Default Scope
 
 	sm := cfgmock.NewService(cfgmock.PathValue{
 		wantPath: `20152016`,
 	})
-	haveSL, haveErr := b.Get(sm.NewScoped(34, 4))
+	haveSL, haveErr := b.Value(sm.NewScoped(34, 4))
 	if haveErr != nil {
 		t.Fatal(haveErr)
 	}
@@ -140,12 +140,12 @@ func TestIntCSV(t *testing.T) {
 	assert.Len(t, b.Options(), 4)
 	assert.Exactly(t, pathWebCorsIntSlice, b.String())
 	// default values:
-	sl, err := b.Get(cfgmock.NewService().NewScoped(0, 4))
+	sl, err := b.Value(cfgmock.NewService().NewScoped(0, 4))
 	assert.NoError(t, err)
 	assert.Exactly(t, []int{2014, 2015, 2016}, sl) // three years are defined in variable configStructure
 	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
 
-	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).BindStore(4).String()
+	wantPath := cfgpath.MustMakeByString(pathWebCorsIntSlice).BindStore(4).String()
 
 	tests := []struct {
 		lenient bool
@@ -165,7 +165,7 @@ func TestIntCSV(t *testing.T) {
 		sm := cfgmock.NewService(cfgmock.PathValue{
 			wantPath: test.have,
 		})
-		haveSL, haveErr := b.Get(sm.NewScoped(0, 4))
+		haveSL, haveErr := b.Value(sm.NewScoped(0, 4))
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
 		assert.Exactly(t, test.wantIDs, sm.StringInvokes().ScopeIDs(), "Index %d", i)
@@ -191,7 +191,7 @@ func TestIntCSVWrite(t *testing.T) {
 			{2017, "Year 2017"},
 		}),
 	)
-	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).BindStore(4).String()
+	wantPath := cfgpath.MustMakeByString(pathWebCorsIntSlice).BindStore(4).String()
 
 	mw := &cfgmock.Write{}
 	b.Source.Merge(cfgsource.NewByInt(cfgsource.Ints{
@@ -219,12 +219,12 @@ func TestIntCSVCustomSeparator(t *testing.T) {
 		}),
 		cfgmodel.WithCSVComma('|'),
 	)
-	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).BindWebsite(34).String()
+	wantPath := cfgpath.MustMakeByString(pathWebCorsIntSlice).BindWebsite(34).String()
 
 	sm := cfgmock.NewService(cfgmock.PathValue{
 		wantPath: `2015|2016|`,
 	})
-	haveSL, haveErr := b.Get(sm.NewScoped(34, 4))
+	haveSL, haveErr := b.Value(sm.NewScoped(34, 4))
 	if haveErr != nil {
 		t.Fatal(haveErr)
 	}
@@ -235,7 +235,7 @@ func TestIntCSVCustomSeparator(t *testing.T) {
 func TestCSVGet(t *testing.T) {
 
 	const pathWebCorsCSV = "web/cors/csv"
-	wantPath := cfgpath.MustNewByParts(pathWebCorsCSV).String()
+	wantPath := cfgpath.MustMakeByString(pathWebCorsCSV).String()
 	b := cfgmodel.NewCSV(
 		"web/cors/csv",
 		cfgmodel.WithFieldFromSectionSlice(configStructure),
@@ -243,7 +243,7 @@ func TestCSVGet(t *testing.T) {
 	)
 	assert.Empty(t, b.Options())
 
-	sl, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
+	sl, err := b.Value(cfgmock.NewService().NewScoped(0, 0))
 	require.NoError(t, err, "%+v", err)
 	assert.Exactly(t,
 		[][]string{{"0", "\"Did you mean...\" Suggestions", "\"meinten Sie...?\""}, {"1", "Accuracy for Suggestions", "Genauigkeit der Vorschläge"}, {"2", "After switching please reindex the<br /><em>Catalog Search Index</em>.", "Nach dem Umschalten reindexieren Sie bitte den <br /><em>Katalog Suchindex</em>."}, {"3", "CATALOG", "KATALOG"}},
@@ -264,7 +264,7 @@ func TestCSVGet(t *testing.T) {
 		sm := cfgmock.NewService(cfgmock.PathValue{
 			wantPath: test.have,
 		})
-		haveSL, haveErr := b.Get(sm.NewScoped(1, 2)) // because scope of pathWebCorsHeaders is default,website
+		haveSL, haveErr := b.Value(sm.NewScoped(1, 2)) // because scope of pathWebCorsHeaders is default,website
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
 		assert.Exactly(t, scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1)}, sm.StringInvokes().ScopeIDs(), "Index %d", i)
@@ -279,7 +279,7 @@ func TestCSVGet(t *testing.T) {
 func TestCSVWrite(t *testing.T) {
 
 	const pathWebCorsCsv = "web/cors/csv"
-	wantPath := cfgpath.MustNewByParts(pathWebCorsCsv).String()
+	wantPath := cfgpath.MustMakeByString(pathWebCorsCsv).String()
 	b := cfgmodel.NewCSV(
 		"web/cors/csv",
 		cfgmodel.WithFieldFromSectionSlice(configStructure),

@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
 package cfgmodel
 
 import (
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/errors"
 )
 
 // Encoder encodes the value v into a byte slice.
@@ -106,8 +106,8 @@ func (p *Encode) Option(opts ...Option) error {
 // Get uses the pointer argument vPtr to decode the data into vPtr. It panics
 // when the Encoder interface is nil. It does not check if vPtr has been passed
 // as a pointer.
-func (p Encode) Get(sg config.Scoped, vPtr interface{}) error {
-	s, err := p.Byte.Get(sg)
+func (p Encode) Value(sg config.Scoped, vPtr interface{}) error {
+	s, err := p.Byte.Value(sg)
 	if err != nil {
 		return errors.Wrap(err, "[cfgmodel] Encode.Byte.Get")
 	}

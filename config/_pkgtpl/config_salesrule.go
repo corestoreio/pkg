@@ -9,23 +9,23 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID:        "promo",
 			Label:     `Promotions`,
 			SortOrder: 400,
 			Scopes:    scope.PermDefault,
 			Resource:  0, // Magento_SalesRule::config_promo
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "auto_generated_coupon_codes",
 					Label:     `Auto Generated Specific Coupon Codes`,
 					SortOrder: 10,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: promo/auto_generated_coupon_codes/length
 							ID:        "length",
@@ -86,10 +86,10 @@ func init() {
 		},
 		element.Section{
 			ID: "rss",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "catalog",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: rss/catalog/discounts
 							ID:        "discounts",

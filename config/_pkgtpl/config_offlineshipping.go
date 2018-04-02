@@ -9,21 +9,21 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID:        "carriers",
 			SortOrder: 320,
 			Scopes:    scope.PermStore,
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "flatrate",
 					Label:     `Flat Rate`,
 					SortOrder: 2,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: carriers/flatrate/active
 							ID:        "active",
@@ -166,7 +166,7 @@ func init() {
 					Label:     `Table Rates`,
 					SortOrder: 3,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: carriers/tablerate/handling_type
 							ID:        "handling_type",
@@ -331,7 +331,7 @@ func init() {
 					Label:     `Free Shipping`,
 					SortOrder: 2,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: carriers/freeshipping/active
 							ID:        "active",
@@ -439,10 +439,10 @@ func init() {
 		// Hidden Configuration, may be visible somewhere else ...
 		element.Section{
 			ID: "carriers",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID: "flatrate",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: carriers/flatrate/cfgmodel
 							ID:      `model`,
@@ -455,7 +455,7 @@ func init() {
 
 				element.Group{
 					ID: "tablerate",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: carriers/tablerate/cfgmodel
 							ID:      `model`,
@@ -468,7 +468,7 @@ func init() {
 
 				element.Group{
 					ID: "freeshipping",
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: carriers/freeshipping/cutoff_cost
 							ID:      `cutoff_cost`,

@@ -25,21 +25,21 @@ import (
 // Used in frontend (to display the user all the settings) and in
 // backend (scope checks and default values). See the source code
 // of this function for the overall available sections, groups and fields.
-func NewConfigStructure() (element.SectionSlice, error) {
-	return element.NewConfiguration(
+func NewConfigStructure() (element.Sections, error) {
+	return element.MakeSectionsValidated(
 		element.Section{
-			ID: cfgpath.NewRoute(`net`),
-			Groups: element.NewGroupSlice(
+			ID: cfgpath.MakeRoute(`net`),
+			Groups: element.MakeGroups(
 				element.Group{
-					ID:        cfgpath.NewRoute(`auth`),
+					ID:        cfgpath.MakeRoute(`auth`),
 					Label:     text.Chars(`Authentication`),
 					Comment:   text.Chars(`TODO`),
 					SortOrder: 160,
 					Scopes:    scope.PermWebsite,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: net/auth/disabled
-							ID:        cfgpath.NewRoute("disabled"),
+							ID:        cfgpath.MakeRoute("disabled"),
 							Label:     text.Chars(`Authentication is disabled`),
 							Comment:   text.Chars(`Disables completely the authentication. Set to true/enable to activate the disabling.`),
 							Type:      element.TypeSelect,

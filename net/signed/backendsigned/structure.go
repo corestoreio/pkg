@@ -25,25 +25,25 @@ import (
 // frontend (to display the user all the settings) and in backend (scope checks
 // and default values). See the source code of this function for the overall
 // available sections, groups and fields.
-func NewConfigStructure() (element.SectionSlice, error) {
+func NewConfigStructure() (element.Sections, error) {
 	sortIdx := 10
 	var iter = func() int {
 		sortIdx += 10
 		return sortIdx
 	}
-	return element.NewConfiguration(
+	return element.MakeSectionsValidated(
 		element.Section{
-			ID: cfgpath.NewRoute("net"),
-			Groups: element.NewGroupSlice(
+			ID: cfgpath.MakeRoute("net"),
+			Groups: element.MakeGroups(
 				element.Group{
-					ID:        cfgpath.NewRoute("signed"),
+					ID:        cfgpath.MakeRoute("signed"),
 					Label:     text.Chars(`Rate throtteling`),
 					SortOrder: 130,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: net/signed/disabled
-							ID:        cfgpath.NewRoute("disabled"),
+							ID:        cfgpath.MakeRoute("disabled"),
 							Label:     text.Chars(`Disabled`),
 							Comment:   text.Chars(`Set to true to disable all signed middlewares.`),
 							Type:      element.TypeSelect,
@@ -53,7 +53,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 						},
 						element.Field{
 							// Path: net/signed/in_trailer
-							ID:        cfgpath.NewRoute("in_trailer"),
+							ID:        cfgpath.MakeRoute("in_trailer"),
 							Label:     text.Chars(`In Trailer`),
 							Comment:   text.Chars(`If true uses a stream based approach to calculate the hash and appends the hash to the HTTP trailer. Note: not all clients can read a HTTP trailer.`),
 							Type:      element.TypeSelect,
@@ -64,7 +64,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 						},
 						element.Field{
 							// Path: net/signed/allowed_methods
-							ID:        cfgpath.NewRoute("allowed_methods"),
+							ID:        cfgpath.MakeRoute("allowed_methods"),
 							Label:     text.Chars(`Allowed HTTP methods`),
 							Comment:   text.Chars(`Limit the validation middleware to the listed HTTP methods to verify a hash.`),
 							Type:      element.TypeSelect,
@@ -75,7 +75,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 						},
 						element.Field{
 							// Path: net/signed/key
-							ID:        cfgpath.NewRoute("key"),
+							ID:        cfgpath.MakeRoute("key"),
 							Label:     text.Chars(`Key / Password`),
 							Comment:   text.Chars(`Your key or password to calculate the hash value with an HMAC function. Longer and weirder keys are winners.`),
 							Type:      element.TypeText,
@@ -85,7 +85,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 						},
 						element.Field{
 							// Path: net/signed/algorithm
-							ID:        cfgpath.NewRoute("algorithm"),
+							ID:        cfgpath.MakeRoute("algorithm"),
 							Label:     text.Chars(`Algorithm`),
 							Comment:   text.Chars(`Currently supported algorithms: sha256, sha512`),
 							Type:      element.TypeSelect,
@@ -96,7 +96,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 						},
 						element.Field{
 							// Path: net/signed/http_header_type
-							ID:        cfgpath.NewRoute("http_header_type"),
+							ID:        cfgpath.MakeRoute("http_header_type"),
 							Label:     text.Chars(`HTTP Header Type`),
 							Comment:   text.Chars(`Sets the type of the HTTP header to either Content-HMAC or Content-Signature.`),
 							Type:      element.TypeSelect,
@@ -107,7 +107,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 						},
 						element.Field{
 							// Path: net/signed/key_id
-							ID:        cfgpath.NewRoute("key_id"),
+							ID:        cfgpath.MakeRoute("key_id"),
 							Label:     text.Chars(`Key ID`),
 							Comment:   text.Chars(`KeyID name or ID of the key which is used in the HMAC algorithm. Only usable when HTTPHeaderType has been set to "signature"`),
 							Type:      element.TypeText,
@@ -118,14 +118,14 @@ func NewConfigStructure() (element.SectionSlice, error) {
 					),
 				},
 				element.Group{
-					ID:        cfgpath.NewRoute("signed_algorithm"),
+					ID:        cfgpath.MakeRoute("signed_algorithm"),
 					Label:     text.Chars(`Signature algortihm`),
 					SortOrder: 140,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: net/signed_storage/gcra_name
-							ID:        cfgpath.NewRoute("gcra_name"),
+							ID:        cfgpath.MakeRoute("gcra_name"),
 							Label:     text.Chars(`Name of the registered GCRA`),
 							Comment:   text.Chars(`Insert the name of the registered GCRA during program initialization with the function Backend.Register().`),
 							Type:      element.TypeText,
@@ -135,7 +135,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 						},
 						element.Field{
 							// Path: net/signed_storage/enable_gcra_memory
-							ID:        cfgpath.NewRoute("enable_gcra_memory"),
+							ID:        cfgpath.MakeRoute("enable_gcra_memory"),
 							Label:     text.Chars(`Use GCRA in-memory (max keys)`),
 							Comment:   text.Chars(`If maxKeys > 0 in-memory key storage will be enabled. The max keys  number of different keys is restricted to the specified amount (65536). In this case, it uses an LRU algorithm to evict older keys to make room for newer ones.`),
 							Type:      element.TypeText,
@@ -146,7 +146,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 						},
 						element.Field{
 							// Path: net/signed_storage/enable_gcra_redis
-							ID:        cfgpath.NewRoute("enable_gcra_redis"),
+							ID:        cfgpath.MakeRoute("enable_gcra_redis"),
 							Label:     text.Chars(`Use GCRA Redis`),
 							Comment:   text.Chars(`If a Redis URL is provided a Redis server will be used for key storage. Setting both entries (in-memory and Redis) then only Redis will be applied. URLs should follow the draft IANA specification for the scheme (https://www.iana.org/assignments/uri-schemes/prov/redis). For example: redis://localhost:6379/3 |  redis://:6380/0 => connects to localhost:6380 | redis:// => connects to localhost:6379 with DB 0 | redis://empty:myPassword@clusterName.xxxxxx.0001.usw2.cache.amazonaws.com:6379/0`),
 							Type:      element.TypeText,

@@ -9,23 +9,23 @@ import (
 
 // ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+var ConfigStructure element.Sections
 
 func init() {
-	ConfigStructure = element.MustNewConfiguration(
+	ConfigStructure = element.MustMakeSectionsValidate(
 		element.Section{
 			ID:        "wishlist",
 			Label:     `Wish List`,
 			SortOrder: 140,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Wishlist::config_wishlist
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "email",
 					Label:     `Share Options`,
 					SortOrder: 2,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: wishlist/email/email_identity
 							ID:        "email_identity",
@@ -82,7 +82,7 @@ func init() {
 					Label:     `General Options`,
 					SortOrder: 1,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: wishlist/general/active
 							ID:        "active",
@@ -102,7 +102,7 @@ func init() {
 					Label:     `My Wish List Link`,
 					SortOrder: 3,
 					Scopes:    scope.PermWebsite,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: wishlist/wishlist_link/use_qty
 							ID:        "use_qty",
@@ -119,13 +119,13 @@ func init() {
 		},
 		element.Section{
 			ID: "rss",
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
 					ID:        "wishlist",
 					Label:     `Wish List`,
 					SortOrder: 2,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: rss/wishlist/active
 							ID:        "active",

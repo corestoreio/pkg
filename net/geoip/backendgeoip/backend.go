@@ -77,8 +77,8 @@ type Configuration struct {
 
 // New initializes the backend configuration models containing the cfgpath.Route
 // variable to the appropriate entries. The function Load() will be executed to
-// apply the SectionSlice to all models. See Load() for more details.
-func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Configuration {
+// apply the Sections to all models. See Load() for more details.
+func New(cfgStruct element.Sections, opts ...cfgmodel.Option) *Configuration {
 	be := &Configuration{
 		OptionFactories: geoip.NewOptionFactories(),
 	}
@@ -105,7 +105,7 @@ func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Configuration
 }
 
 // Load creates the configuration models for each PkgBackend field. Internal
-// mutex will protect the fields during loading. The argument SectionSlice will
+// mutex will protect the fields during loading. The argument Sections will
 // be applied to all models.
 
 var redirects = cfgsource.NewByInt(

@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,19 +18,19 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/cfgmock"
 	"github.com/corestoreio/pkg/config/cfgmodel"
 	"github.com/corestoreio/pkg/config/cfgpath"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestURLGet(t *testing.T) {
 
 	const pathWebURL = "web/unsecure/url"
-	wantPath := cfgpath.MustNewByParts(pathWebURL).BindStore(1)
+	wantPath := cfgpath.MustMakeByString(pathWebURL).BindStore(1)
 	b := cfgmodel.NewURL(pathWebURL, cfgmodel.WithFieldFromSectionSlice(configStructure))
 	assert.Empty(t, b.Options())
 
@@ -52,7 +52,7 @@ func TestURLGet(t *testing.T) {
 		}).NewScoped(0, 1), nil, scope.MakeTypeID(scope.Store, 1), nil},
 	}
 	for i, test := range tests {
-		anURL, haveErr := b.Get(test.scpcfg)
+		anURL, haveErr := b.Value(test.scpcfg)
 		//assert.Exactly(t, test.wantHash.String(), haveH.String(), "Index %d", i)
 		if test.wantErrBhf != nil {
 			assert.Nil(t, anURL, "Index %d", i)
@@ -71,7 +71,7 @@ func TestURLGet(t *testing.T) {
 
 func TestURLWrite(t *testing.T) {
 	const pathWebURL = "web/unsecure/url"
-	wantPath := cfgpath.MustNewByParts(pathWebURL).BindStore(1)
+	wantPath := cfgpath.MustMakeByString(pathWebURL).BindStore(1)
 	b := cfgmodel.NewURL(pathWebURL, cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	data, err := url.Parse(`http://john%20doe@corestore.io/?q=go+language#foo&bar`)
@@ -91,19 +91,19 @@ func TestURLWrite(t *testing.T) {
 
 func TestBaseURLGet(t *testing.T) {
 	const pathWebUnsecUrl = "web/unsecure/base_url"
-	wantPath := cfgpath.MustNewByParts(pathWebUnsecUrl).BindStore(1)
+	wantPath := cfgpath.MustMakeByString(pathWebUnsecUrl).BindStore(1)
 	b := cfgmodel.NewBaseURL(pathWebUnsecUrl, cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	assert.Empty(t, b.Options())
 
-	sg, err := b.Get(cfgmock.NewService().NewScoped(0, 1))
+	sg, err := b.Value(cfgmock.NewService().NewScoped(0, 1))
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, "{{base_url}}", sg)
 	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
 
-	sg, err = b.Get(cfgmock.NewService(cfgmock.PathValue{
+	sg, err = b.Value(cfgmock.NewService(cfgmock.PathValue{
 		wantPath.String(): "http://cs.io",
 	}).NewScoped(0, 1))
 	if err != nil {
@@ -116,7 +116,7 @@ func TestBaseURLGet(t *testing.T) {
 func TestBaseURLWrite(t *testing.T) {
 
 	const pathWebUnsecUrl = "web/unsecure/base_url"
-	wantPath := cfgpath.MustNewByParts(pathWebUnsecUrl).BindStore(1)
+	wantPath := cfgpath.MustMakeByString(pathWebUnsecUrl).BindStore(1)
 	b := cfgmodel.NewBaseURL(pathWebUnsecUrl, cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	mw := &cfgmock.Write{}
