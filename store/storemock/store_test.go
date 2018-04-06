@@ -46,7 +46,7 @@ func TestMustNewStoreAU_ConfigNonNil(t *testing.T) {
 }
 
 func TestMustNewStoreAU_Config(t *testing.T) {
-	var configPath = cfgpath.MustNewByParts("aa/bb/cc")
+	var configPath = cfgpath.MustMakeByString("aa/bb/cc")
 
 	sm := cfgmock.NewService(cfgmock.PathValue{
 		configPath.String():                "DefaultScopeString",

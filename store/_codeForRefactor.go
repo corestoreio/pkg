@@ -107,7 +107,7 @@ func (s Store) BaseURL(ut config.URLType, isSecure bool) (url.URL, error) {
 	if strings.Contains(rawURL, cfgmodel.PlaceholderBaseURL) {
 		// TODO(cs) replace placeholder with \Magento\Framework\App\Request\Http::getDistroBaseUrl()
 		// getDistroBaseUrl will be generated from the $_SERVER variable,
-		base, err := s.baseConfig.String(cfgpath.MustNewByParts(config.PathCSBaseURL))
+		base, err := s.baseConfig.String(cfgpath.MustMakeByString(config.PathCSBaseURL))
 		if err != nil && !errors.IsNotFound(err) {
 			base = config.CSBaseURL
 		}
@@ -206,7 +206,7 @@ func TestStoreBaseURLandPath(t *testing.T) {
 						return cfgmodel.PlaceholderBaseURL, nil
 					case backend.Backend.WebUnsecureBaseURL.String():
 						return cfgmodel.PlaceholderBaseURL, nil
-					case cfgpath.MustNewByParts(config.PathCSBaseURL).String():
+					case cfgpath.MustMakeByString(config.PathCSBaseURL).String():
 						return config.CSBaseURL, nil
 					}
 					return "", errors.NewNotFoundf("Invalid path: %s", p)

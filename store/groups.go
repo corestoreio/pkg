@@ -16,7 +16,7 @@ package store
 
 import "sort"
 
-// GroupSlice collection of Group. GroupSlice has some nice method receivers.
+// Groups collection of Group. Groups has some nice method receivers.
 type GroupSlice []Group
 
 // Sort convenience helper

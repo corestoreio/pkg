@@ -25,23 +25,23 @@ import (
 // frontend (to display the user all the settings) and in backend (scope checks
 // and default values). See the source code of this function for the overall
 // available sections, groups and fields.
-func NewConfigStructure() (element.SectionSlice, error) {
-	return element.NewConfiguration(
+func NewConfigStructure() (element.Sections, error) {
+	return element.MakeSectionsValidated(
 		element.Section{
-			ID:        cfgpath.NewRoute("general"),
+			ID:        cfgpath.MakeRoute("general"),
 			Label:     text.Chars(`General`),
 			SortOrder: 10,
 			Scopes:    scope.PermStore,
-			Groups: element.NewGroupSlice(
+			Groups: element.MakeGroups(
 				element.Group{
-					ID:        cfgpath.NewRoute("store_information"),
+					ID:        cfgpath.MakeRoute("store_information"),
 					Label:     text.Chars(`Store Information`),
 					SortOrder: 100,
 					Scopes:    scope.PermStore,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: general/store_information/name
-							ID:        cfgpath.NewRoute("name"),
+							ID:        cfgpath.MakeRoute("name"),
 							Label:     text.Chars(`Store Name`),
 							Type:      element.TypeText,
 							SortOrder: 10,
@@ -51,7 +51,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: general/store_information/phone
-							ID:        cfgpath.NewRoute("phone"),
+							ID:        cfgpath.MakeRoute("phone"),
 							Label:     text.Chars(`Store Phone Number`),
 							Type:      element.TypeText,
 							SortOrder: 20,
@@ -61,7 +61,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: general/store_information/hours
-							ID:        cfgpath.NewRoute("hours"),
+							ID:        cfgpath.MakeRoute("hours"),
 							Label:     text.Chars(`Store Hours of Operation`),
 							Type:      element.TypeText,
 							SortOrder: 22,
@@ -71,7 +71,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: general/store_information/country_id
-							ID:         cfgpath.NewRoute("country_id"),
+							ID:         cfgpath.MakeRoute("country_id"),
 							Label:      text.Chars(`Country`),
 							Type:       element.TypeSelect,
 							SortOrder:  25,
@@ -82,7 +82,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: general/store_information/region_id
-							ID:        cfgpath.NewRoute("region_id"),
+							ID:        cfgpath.MakeRoute("region_id"),
 							Label:     text.Chars(`Region/State`),
 							Type:      element.TypeText,
 							SortOrder: 27,
@@ -92,7 +92,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: general/store_information/postcode
-							ID:        cfgpath.NewRoute("postcode"),
+							ID:        cfgpath.MakeRoute("postcode"),
 							Label:     text.Chars(`ZIP/Postal Code`),
 							Type:      element.TypeText,
 							SortOrder: 30,
@@ -102,7 +102,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: general/store_information/city
-							ID:        cfgpath.NewRoute("city"),
+							ID:        cfgpath.MakeRoute("city"),
 							Label:     text.Chars(`City`),
 							Type:      element.TypeText,
 							SortOrder: 45,
@@ -112,7 +112,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: general/store_information/street_line1
-							ID:        cfgpath.NewRoute("street_line1"),
+							ID:        cfgpath.MakeRoute("street_line1"),
 							Label:     text.Chars(`Street Address`),
 							Type:      element.TypeText,
 							SortOrder: 55,
@@ -122,7 +122,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: general/store_information/street_line2
-							ID:        cfgpath.NewRoute("street_line2"),
+							ID:        cfgpath.MakeRoute("street_line2"),
 							Label:     text.Chars(`Street Address Line 2`),
 							Type:      element.TypeText,
 							SortOrder: 60,
@@ -132,7 +132,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 
 						element.Field{
 							// Path: general/store_information/merchant_vat_number
-							ID:         cfgpath.NewRoute("merchant_vat_number"),
+							ID:         cfgpath.MakeRoute("merchant_vat_number"),
 							Label:      text.Chars(`VAT Number`),
 							Type:       element.TypeText,
 							SortOrder:  61,
@@ -144,14 +144,14 @@ func NewConfigStructure() (element.SectionSlice, error) {
 				},
 
 				element.Group{
-					ID:        cfgpath.NewRoute("single_store_mode"),
+					ID:        cfgpath.MakeRoute("single_store_mode"),
 					Label:     text.Chars(`Single-Store Mode`),
 					SortOrder: 150,
 					Scopes:    scope.PermDefault,
-					Fields: element.NewFieldSlice(
+					Fields: element.MakeFields(
 						element.Field{
 							// Path: general/single_store_mode/enabled
-							ID:        cfgpath.NewRoute("enabled"),
+							ID:        cfgpath.MakeRoute("enabled"),
 							Label:     text.Chars(`Enable Single-Store Mode`),
 							Comment:   text.Chars(`This setting will not be taken into account if the system has more than one store view.`),
 							Type:      element.TypeSelect,
