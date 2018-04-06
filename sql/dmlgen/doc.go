@@ -17,4 +17,6 @@
 //
 // To generated the protocol buffer file
 // $ protoc --gogo_out=Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types:. --proto_path=/Users/kiri/GoPro/src/:/Users/kiri/GoPro/src/github.com/gogo/protobuf/protobuf/:. *.proto
+//
+// TODO: Generate also protobuf code for https://github.com/twitchtv/twirp/wiki
 package dmlgen
