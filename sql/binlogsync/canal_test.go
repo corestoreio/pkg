@@ -22,10 +22,10 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/binlogsync"
 	"github.com/corestoreio/pkg/sql/ddl"
-	"github.com/corestoreio/pkg/util/cstesting"
-	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
 )
@@ -69,22 +69,16 @@ func TestNewCanal_FailedMasterStatus(t *testing.T) {
 		Addr:   "localhost:3306",
 		DBName: "TestDB",
 	}
-	dbc, dbMock := cstesting.MockDB(t)
-	defer func() {
-		dbMock.ExpectClose()
-		assert.NoError(t, dbc.Close())
-		if err := dbMock.ExpectationsWereMet(); err != nil {
-			t.Error("there were unfulfilled expections", err)
-		}
-	}()
+	dbc, dbMock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, dbc, dbMock)
 
-	wantErr := errors.NewAlreadyClosedf("I'm already closed")
+	wantErr := errors.AlreadyClosed.Newf("I'm already closed")
 	dbMock.ExpectQuery(`SHOW MASTER STATUS`).
 		WillReturnError(wantErr)
 
 	c, err := binlogsync.NewCanal(dsn, binlogsync.WithDB(dbc.DB))
 	assert.Nil(t, c)
-	assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+	assert.True(t, errors.Is(err, errors.AlreadyClosed), "%+v", err)
 }
 
 func TestNewCanal_CheckBinlogRowFormat_Wrong(t *testing.T) {
@@ -95,7 +89,7 @@ func TestNewCanal_CheckBinlogRowFormat_Wrong(t *testing.T) {
 		Addr:   "localhost:3306",
 		DBName: "TestDB",
 	}
-	dbc, dbMock := cstesting.MockDB(t)
+	dbc, dbMock := dmltest.MockDB(t)
 	defer func() {
 		dbMock.ExpectClose()
 		assert.NoError(t, dbc.Close())
@@ -110,7 +104,7 @@ func TestNewCanal_CheckBinlogRowFormat_Wrong(t *testing.T) {
 			sqlmock.NewRows([]string{"File", "Position", "Binlog_Do_DB", "Binlog_Ignore_DB", "Executed_Gtid_Set"}).
 				FromCSVString(`mysqlbin.log:0001,4711,,,`),
 		)
-	dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SHOW VARIABLES WHERE (`Variable_name` LIKE 'binlog_format')")).
+	dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SHOW VARIABLES WHERE (`Variable_name` LIKE 'binlog_format')")).
 		WithArgs().
 		WillReturnRows(
 			sqlmock.NewRows([]string{"Variable_Name", "Value"}).
@@ -119,7 +113,7 @@ func TestNewCanal_CheckBinlogRowFormat_Wrong(t *testing.T) {
 
 	c, err := binlogsync.NewCanal(dsn, binlogsync.WithDB(dbc.DB))
 	assert.Nil(t, c)
-	assert.True(t, errors.IsNotSupported(err), "%+v", err)
+	assert.True(t, errors.Is(err, errors.NotSupported), "%+v", err)
 	assert.Contains(t, err.Error(), `a cat`)
 }
 
@@ -131,7 +125,7 @@ func TestNewCanal_CheckBinlogRowFormat_Error(t *testing.T) {
 		Addr:   "localhost:3306",
 		DBName: "TestDB",
 	}
-	dbc, dbMock := cstesting.MockDB(t)
+	dbc, dbMock := dmltest.MockDB(t)
 	defer func() {
 		dbMock.ExpectClose()
 		assert.NoError(t, dbc.Close())
@@ -146,13 +140,13 @@ func TestNewCanal_CheckBinlogRowFormat_Error(t *testing.T) {
 			sqlmock.NewRows([]string{"File", "Position", "Binlog_Do_DB", "Binlog_Ignore_DB", "Executed_Gtid_Set"}).
 				FromCSVString(`mysqlbin.log:0001,4711,,,`),
 		)
-	wantErr := errors.NewNotImplementedf("MySQL Syntax not implemted")
-	dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SHOW VARIABLES WHERE (`Variable_name` LIKE 'binlog_format')")).
+	wantErr := errors.NotImplemented.Newf("MySQL Syntax not implemted")
+	dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SHOW VARIABLES WHERE (`Variable_name` LIKE 'binlog_format')")).
 		WillReturnError(wantErr)
 
 	c, err := binlogsync.NewCanal(dsn, binlogsync.WithDB(dbc.DB))
 	assert.Nil(t, c)
-	assert.True(t, errors.IsNotImplemented(err), "%+v", err)
+	assert.True(t, errors.Is(err, errors.NotImplemented), "%+v", err)
 	assert.Contains(t, err.Error(), `MySQL Syntax not implemted`)
 }
 
@@ -164,7 +158,7 @@ func newTestCanal(t *testing.T) (*binlogsync.Canal, sqlmock.Sqlmock, func()) {
 		Addr:   "localhost:3306",
 		DBName: "TestDB",
 	}
-	dbc, dbMock := cstesting.MockDB(t)
+	dbc, dbMock := dmltest.MockDB(t)
 	deferred := func() {
 		dbMock.ExpectClose()
 		assert.NoError(t, dbc.Close())
@@ -179,7 +173,7 @@ func newTestCanal(t *testing.T) (*binlogsync.Canal, sqlmock.Sqlmock, func()) {
 			sqlmock.NewRows([]string{"File", "Position", "Binlog_Do_DB", "Binlog_Ignore_DB", "Executed_Gtid_Set"}).
 				FromCSVString(`mysqlbin.log:0001,4711,,,`),
 		)
-	dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SHOW VARIABLES WHERE (`Variable_name` LIKE 'binlog_format')")).
+	dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SHOW VARIABLES WHERE (`Variable_name` LIKE 'binlog_format')")).
 		WithArgs().
 		WillReturnRows(
 			sqlmock.NewRows([]string{"Variable_Name", "Value"}).
@@ -209,7 +203,7 @@ func TestCanal_FindTable_RaceFree(t *testing.T) {
 	dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS WHERE.+TABLE_NAME IN \\('core_config_data'\\)").
 		WithArgs().
 		WillReturnRows(
-			cstesting.MustMockRows(cstesting.WithFile("testdata/core_config_data_columns.csv")))
+			dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_columns.csv")))
 
 	// food for the race detector and to test that only one query will be executed.
 	const iterations = 10
@@ -244,12 +238,12 @@ func TestCanal_FindTable_Error(t *testing.T) {
 	c, dbMock, deferred := newTestCanal(t)
 	defer deferred()
 
-	wantErr := errors.NewUnauthorizedf("Du kommst da nicht rein")
-	dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SELECT TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE, COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ('core_config_data') ORDER BY TABLE_NAME, ORDINAL_POSITION")).
+	wantErr := errors.Unauthorized.Newf("Du kommst da nicht rein")
+	dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE, COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ('core_config_data') ORDER BY TABLE_NAME, ORDINAL_POSITION")).
 		WithArgs().
 		WillReturnError(wantErr)
 
 	tbl, err := c.FindTable(context.Background(), "core_config_data")
 	assert.Exactly(t, ddl.Table{}, tbl)
-	assert.True(t, errors.IsUnauthorized(err), "%+v", err)
+	assert.True(t, errors.Unauthorized.Match(err), "%+v", err)
 }

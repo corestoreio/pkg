@@ -9,6 +9,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/cfgmodel"
 	"github.com/corestoreio/pkg/sql/ddl"
@@ -17,8 +19,6 @@ import (
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/sync/singleflight"
 	"github.com/corestoreio/pkg/util/conv"
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 	"github.com/go-sql-driver/mysql"
 )
 
@@ -53,7 +53,8 @@ type Canal struct {
 	rsMu       sync.RWMutex
 	rsHandlers []RowsEventHandler
 
-	db *sql.DB
+	// dbcp is a database connection pool
+	dbcp *dml.ConnPool
 
 	// Tables contains the overall SQL table cache. If a table gets modified
 	// during runtime of this program then somehow we must clear the cache to
@@ -75,14 +76,11 @@ type Option func(*Canal) error
 // WithMySQL adds the database/sql.DB driver including a ping to the database.
 func WithMySQL() Option {
 	return func(c *Canal) error {
-		db, err := sql.Open("mysql", c.DSN.FormatDSN())
+		dbc, err := dml.NewConnPool(dml.WithDSN(c.DSN.FormatDSN()), dml.WithVerifyConnection())
 		if err != nil {
 			return errors.Wrap(err, "[binlogsync] sql.Open")
 		}
-		if err := db.Ping(); err != nil {
-			return errors.Wrap(err, "[binlogsync] sql ping failed")
-		}
-		c.db = db
+		c.dbcp = dbc
 		return nil
 	}
 }
@@ -90,11 +88,11 @@ func WithMySQL() Option {
 // WithDB allows to set your own DB connection.
 func WithDB(db *sql.DB) Option {
 	return func(c *Canal) (err error) {
-		if err := db.Ping(); err != nil {
+		if err = db.Ping(); err != nil {
 			return errors.Wrap(err, "[binlogsync] sql ping failed")
 		}
-		c.db = db
-		return nil
+		c.dbcp, err = dml.NewConnPool(dml.WithDB(db))
+		return err
 	}
 }
 
@@ -113,7 +111,7 @@ func withUpdateBinlogStart(c *Canal) error {
 	ctx := context.TODO()
 	var ms ddl.MasterStatus
 
-	if _, err := dml.Load(ctx, c.db, &ms, &ms); err != nil {
+	if _, err := c.dbcp.WithQueryBuilder(&ms).Load(ctx, &ms); err != nil {
 		return errors.Wrap(err, "[binlogsync] ShowMasterStatus Load")
 	}
 
@@ -158,11 +156,11 @@ func withCheckBinlogRowFormat(c *Canal) error {
 	ctx := context.Background()
 
 	v := ddl.NewVariables(varName)
-	if _, err := dml.Load(ctx, c.db, v, v); err != nil {
+	if _, err := c.dbcp.WithQueryBuilder(v).Load(ctx, v); err != nil {
 		return errors.Wrap(err, "[binlogsync] checkBinlogRowFormat row.Scan")
 	}
 	if !v.EqualFold(varName, "ROW") {
-		return errors.NewNotSupportedf("[binlogsync] binlog variable %q must have the configured ROW format, but got %q", varName, v.Data[varName])
+		return errors.NotSupported.Newf("[binlogsync] binlog variable %q must have the configured ROW format, but got %q", varName, v.Data[varName])
 	}
 	return nil
 }
@@ -297,7 +295,7 @@ func (c *Canal) Close() error {
 		c.syncer = nil
 	}
 
-	if err := c.db.Close(); err != nil {
+	if err := c.dbcp.Close(); err != nil {
 		return errors.Wrap(err, "[binlogsync] DB close error")
 	}
 	c.wg.Wait()
@@ -315,12 +313,12 @@ func (c *Canal) FindTable(ctx context.Context, tableName string) (ddl.Table, err
 	if err == nil {
 		return *t, nil
 	}
-	if !errors.IsNotFound(err) {
+	if !errors.Is(err, errors.NotFound) {
 		return ddl.Table{}, errors.Wrapf(err, "[binlogsync] FindTable.Table error")
 	}
 
 	val, err, _ := c.tableSFG.Do(tableName, func() (interface{}, error) {
-		if err := c.tables.Options(ddl.WithTableLoadColumns(ctx, c.db, tableName)); err != nil {
+		if err := c.tables.Options(ddl.WithTableLoadColumns(ctx, c.dbcp.DB, tableName)); err != nil {
 			return ddl.Table{}, errors.Wrapf(err, "[binlogsync] FindTable.WithTableLoadColumns error")
 		}
 
@@ -342,7 +340,7 @@ func (c *Canal) FindTable(ctx context.Context, tableName string) (ddl.Table, err
 func (c *Canal) ClearTableCache(db string, table string) {
 	// TODO implement
 	// c.tables.DeleteAllFromCache()
-	//key := fmt.Sprintf("%s.%s", db, table)
+	//key := fmt.Sprintf("%s.%s", dbcp, table)
 	//c.tableLock.Lock()
 	//delete(c.tables, key)
 	//c.tableLock.Unlock()
@@ -351,17 +349,18 @@ func (c *Canal) ClearTableCache(db string, table string) {
 // CheckBinlogRowImage checks MySQL binlog row image, must be in FULL, MINIMAL, NOBLOB
 func (c *Canal) CheckBinlogRowImage(ctx context.Context, image string) error {
 	// need to check MySQL binlog row image? full, minimal or noblob?
-	// now only log
+	// now only log.
+	//  TODO what about MariaDB?
 	const varName = "binlog_row_image"
 	if c.flavor() == MySQLFlavor {
 		v := ddl.NewVariables(varName)
-		if _, err := dml.Load(ctx, c.db, v, v); err != nil {
+		if _, err := c.dbcp.WithQueryBuilder(v).Load(ctx, v); err != nil {
 			return errors.Wrap(err, "[binlogsync] CheckBinlogRowImage LoadOne")
 		}
 
 		// MySQL has binlog row image from 5.6, so older will return empty
 		if v.EqualFold(varName, image) {
-			return errors.NewNotSupportedf("[binlogsync] MySQL uses %q binlog row image, but we want %q", v.Data[varName], image)
+			return errors.NotSupported.Newf("[binlogsync] MySQL uses %q binlog row image, but we want %q", v.Data[varName], image)
 		}
 	}
 	return nil

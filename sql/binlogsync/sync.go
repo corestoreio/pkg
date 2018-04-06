@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/corestoreio/pkg/sql/myreplicator"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/sql/myreplicator"
 )
 
 // Action constants to figure out the type of an event. Those constants will be
@@ -41,7 +41,7 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 
 	s, err := c.syncer.StartSync(pos)
 	if err != nil {
-		return errors.NewFatalf("[binlogsync] Start sync replication at %s error %v", pos, err)
+		return errors.Fatal.Newf("[binlogsync] Start sync replication at %s error %v", pos, err)
 	}
 
 	timeout := time.Second
@@ -82,7 +82,7 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 			// NotFound errors get ignores. For example table has been deleted
 			// and an old event pops in.
 			if err = c.handleRowsEvent(ctxArg, ev); err != nil {
-				isNotFound := errors.IsNotFound(err)
+				isNotFound := errors.Is(err, errors.NotFound)
 				if c.Log.IsInfo() {
 					c.Log.Info("[binlogsync] Rotate binlog to a new position", log.Err(err), log.Stringer("position", pos), log.Bool("ignore_not_found_error", isNotFound))
 				}
@@ -118,7 +118,7 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 func (c *Canal) handleRowsEvent(ctx context.Context, e *myreplicator.BinlogEvent) error {
 	ev, ok := e.Event.(*myreplicator.RowsEvent)
 	if !ok {
-		return errors.NewFatalf("[binlogsync] handleRowsEvent: Failed to cast to *myreplicator.RowsEvent type")
+		return errors.Fatal.Newf("[binlogsync] handleRowsEvent: Failed to cast to *myreplicator.RowsEvent type")
 	}
 
 	// Caveat: table may be altered at runtime.
@@ -145,7 +145,7 @@ func (c *Canal) handleRowsEvent(ctx context.Context, e *myreplicator.BinlogEvent
 	case myreplicator.UPDATE_ROWS_EVENTv1, myreplicator.UPDATE_ROWS_EVENTv2:
 		a = UpdateAction
 	default:
-		return errors.NewNotSupportedf("[binlogsync] EventType %v not yet supported. Table %q.%q", e.Header.EventType, c.DSN.DBName, table)
+		return errors.NotSupported.Newf("[binlogsync] EventType %v not yet supported. Table %q.%q", e.Header.EventType, c.DSN.DBName, table)
 	}
 	return c.travelRowsEventHandler(ctx, a, t, ev.Rows)
 }

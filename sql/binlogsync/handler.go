@@ -3,9 +3,9 @@ package binlogsync
 import (
 	"context"
 
-	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/sql/ddl"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -53,7 +53,7 @@ func (c *Canal) travelRowsEventHandler(ctx context.Context, action string, table
 		h := h
 		erg.Go(func() error {
 			err := h.Do(ctx, action, table, rows)
-			isInterr := errors.IsInterrupted(err)
+			isInterr := errors.Is(err, errors.Interrupted)
 			if err != nil && !isInterr {
 				c.Log.Info("[binlogsync] Handler.Do error", log.Err(err), log.Stringer("handler_name", h),
 					log.String("action", action), log.String("schema", c.DSN.DBName), log.String("table", table.Name))
@@ -78,7 +78,7 @@ func (c *Canal) flushEventHandlers(ctx context.Context) error {
 		h := h
 		erg.Go(func() error {
 			err := h.Complete(ctx)
-			isInterr := errors.IsInterrupted(err)
+			isInterr := errors.Is(err, errors.Interrupted)
 			if err != nil && !isInterr {
 				c.Log.Info("[binlogsync] flushEventHandlers.Handler.Complete error", log.Err(err), log.Stringer("handler_name", h))
 			} else if isInterr {
