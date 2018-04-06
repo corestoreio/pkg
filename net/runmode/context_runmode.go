@@ -21,6 +21,12 @@ import (
 	"github.com/corestoreio/pkg/store/scope"
 )
 
+// TODO important info on how to rework/refactor this package and maybe other.
+//
+// https://twitter.com/peterbourgon/status/752022730812317696
+//
+// https://gist.github.com/SchumacherFM/c62783b57621f791271eedf122de8de9
+
 // Default defines the default run mode which is zero. It indicates the
 // fall back to the default website and its default store.
 const Default scope.TypeID = 0
@@ -56,6 +62,8 @@ type RunModeFunc func(*http.Request) scope.TypeID
 func (f RunModeFunc) CalculateRunMode(r *http.Request) scope.TypeID {
 	return f(r)
 }
+
+// TODO(CYS) remove context function as the scope.TypeID does not belong into a context. See also Merovious
 
 // WithContextRunMode sets the main run mode for the current request. It panics
 // when called multiple times for the current context. This function is used in
