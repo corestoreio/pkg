@@ -93,9 +93,8 @@ func (v Value) String() string {
 
 // WriteTo writes the converted data to w.
 func (v Value) WriteTo(w io.Writer) (n int64, err error) {
-	v, err = v.init()
-	if err != nil {
-		return
+	if v, err = v.init(); err != nil {
+		return 0, errors.WithStack(err)
 	}
 	nw, err := w.Write(v.data)
 	return int64(nw), err
@@ -108,7 +107,9 @@ func (v Value) Str() (_ string, ok bool, err error) {
 
 // Strs splits the converted data using the CSVComma and appends it to `ret`.
 func (v Value) Strs(ret ...string) (_ []string, err error) {
-	v, err = v.init()
+	if v, err = v.init(); err != nil {
+		return nil, errors.WithStack(err)
+	}
 	if v.data == nil {
 		return ret, nil
 	}
@@ -139,7 +140,9 @@ func (v Value) Strs(ret ...string) (_ []string, err error) {
 
 // CSV reads a multiline CSV data value and appends it to ret.
 func (v Value) CSV(ret ...[]string) (_ [][]string, err error) {
-	v, err = v.init()
+	if v, err = v.init(); err != nil {
+		return nil, errors.WithStack(err)
+	}
 	if v.data == nil {
 		return ret, nil
 	}
@@ -164,7 +167,9 @@ func (v Value) CSV(ret ...[]string) (_ [][]string, err error) {
 // function signature for `fn` matches e.g. json.Unmarshal, xml.Unmarshal and
 // many others.
 func (v Value) Unmarshal(fn func(data []byte, vPtr interface{}) error, vPtr interface{}) (err error) {
-	v, err = v.init()
+	if v, err = v.init(); err != nil {
+		return errors.WithStack(err)
+	}
 	if v.data == nil {
 		return nil
 	}
@@ -197,7 +202,9 @@ func (v Value) countSep() (n int, sep []byte) {
 
 // Float64s splits the converted data using the CSVComma and appends it to `ret`.
 func (v Value) Float64s(ret ...float64) (_ []float64, err error) {
-	v, err = v.init()
+	if v, err = v.init(); err != nil {
+		return nil, errors.WithStack(err)
+	}
 	if v.data == nil {
 		return ret, nil
 	}
@@ -243,7 +250,9 @@ func (v Value) Int() (val int, ok bool, err error) {
 // Ints converts the underlying byte slice into an int64 slice using
 // v.CSVComma as a separator. The result gets append to argument `ret`.
 func (v Value) Ints(ret ...int) (_ []int, err error) {
-	v, err = v.init()
+	if v, err = v.init(); err != nil {
+		return nil, errors.WithStack(err)
+	}
 	if v.data == nil {
 		return ret, nil
 	}
@@ -288,7 +297,9 @@ func (v Value) Int64() (_ int64, ok bool, err error) {
 // Int64s converts the underlying byte slice into an int64 slice using
 // v.CSVComma as a separator. The result gets append to argument `ret`.
 func (v Value) Int64s(ret ...int64) (_ []int64, err error) {
-	v, err = v.init()
+	if v, err = v.init(); err != nil {
+		return nil, errors.WithStack(err)
+	}
 	if v.data == nil {
 		return ret, nil
 	}
@@ -333,7 +344,9 @@ func (v Value) Uint64() (_ uint64, ok bool, err error) {
 // Uint64s converts the underlying byte slice into an int64 slice using
 // v.CSVComma as a separator. The result gets append to argument `ret`.
 func (v Value) Uint64s(ret ...uint64) (_ []uint64, err error) {
-	v, err = v.init()
+	if v, err = v.init(); err != nil {
+		return nil, errors.WithStack(err)
+	}
 	if v.data == nil {
 		return ret, nil
 	}
@@ -385,7 +398,9 @@ func (v Value) Time() (t time.Time, ok bool, err error) {
 
 // Times same as Time but parses the CSVComma separated list.
 func (v Value) Times(ret ...time.Time) (t []time.Time, err error) {
-	v, err = v.init()
+	if v, err = v.init(); err != nil {
+		return nil, errors.WithStack(err)
+	}
 	if v.data == nil {
 		return ret, nil
 	}

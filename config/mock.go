@@ -179,7 +179,7 @@ func (s *Mock) UpdateValues(pv MockPathValue) {
 	pv.set(s.Storage)
 }
 
-// Byte returns a byte slice value
+// Value looks up a configuration value for a given path.
 func (s *Mock) Value(p Path) (v Value, ok bool, err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -201,7 +201,7 @@ func (s *Mock) Value(p Path) (v Value, ok bool, err error) {
 	return MakeValue(vb), ok, nil
 }
 
-// ByteInvokes returns the number of Byte() invocations.
+// Invokes returns statistics about invocations
 func (s *Mock) Invokes() invocations {
 	return s.invocations
 }

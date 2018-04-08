@@ -130,7 +130,7 @@ func (s *pubSub) Unsubscribe(subscriptionID int) error {
 
 // sendMsg sends the arg into the channel
 func (s *pubSub) sendMsg(p Path) {
-	if false == s.closed {
+	if !s.closed {
 		s.pubPath <- p
 	}
 }

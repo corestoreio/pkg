@@ -144,7 +144,7 @@ func (s *Service) NewScoped(websiteID, storeID int64) Scoped {
 
 // Write puts a value back into the Service. Example usage:
 //		// Default Scope
-//		p, err := cfgpath.MakeByString("currency/option/base") // or use cfgpath.MustMakeByString( ... )
+//		p, err := config.MakeByString("currency/option/base") // or use config.MustMakeByString( ... )
 // 		err := Write(p, "USD")
 //
 //		// Website Scope
@@ -171,19 +171,18 @@ func (s *Service) Write(p Path, v []byte) error {
 	return nil
 }
 
-// String returns a string from the Service. Example usage:
+// Value returns a configuration value from the Service. Example usage:
 //
 //		// Default Scope
-//		p, err := cfgpath.MakeByString("general/locale/timezone") // or use cfgpath.MustMakeByString( ... )
-// 		s, err := String(p)
+//		dp := config.MustMakePath("general/locale/timezone")
 //
 //		// Website Scope
-//		// 3 for example comes from core_website/store_website database table
-//		s, err := String(p.Bind(scope.WebsiteID, 3))
+//		// 3 for example comes from store_website database table
+//		ws := dp.Bind(scope.WebsiteID, 3)
 //
 //		// Store Scope
-//		// 6 for example comes from core_store/store database table
-//		s, err := String(p.Bind(scope.StoreID, 6))
+//		// 6 for example comes from store database table
+//		ss := p.Bind(scope.StoreID, 6)
 func (s *Service) Value(p Path) (v Value, ok bool, err error) {
 	if s.Log.IsDebug() {
 		defer log.WhenDone(s.Log).Debug("config.Service.get", log.Stringer("path", p), log.Bool("found", ok), log.Err(err))
@@ -200,15 +199,6 @@ func (s *Service) IsSet(p Path) bool {
 	_, ok, err := s.Value(p)
 	return err == nil && ok
 }
-
-// think about that segregation
-//type ScopedStringer interface {
-//  Parent() (scope.Scope, int64)
-//	scope.Scoper
-//	Bind(scope.Scope) ScopedGetter
-//	String(p config.Path, s scope.Scope) (string, error)
-//}
-// and so on ...
 
 // Scoped is equal to Getter but not an interface and the underlying
 // implementation takes care of providing the correct scope: default, website or
@@ -229,8 +219,7 @@ func (s *Service) IsSet(p Path) bool {
 // websiteID and empty storeID are triggering the default scope.
 //
 // You can use the function NewScoped() to create a new object but not
-// mandatory. Returned error has mostly the behaviour of NotFound. Debug logging
-// can be implemented in the config.Getter.
+// mandatory. Scoped must act as non-pointer value.
 type Scoped struct {
 	// Root holds the main functions for retrieving values by paths from the
 	// storage.
@@ -239,7 +228,7 @@ type Scoped struct {
 	StoreID   int64
 }
 
-// NewScopedService instantiates a ScopedGetter implementation.  Getter
+// NewScoped instantiates a ScopedGetter implementation.  Getter
 // specifies the root Getter which does not know about any scope.
 func NewScoped(r Getter, websiteID, storeID int64) Scoped {
 	return Scoped{
@@ -304,7 +293,7 @@ func (ss Scoped) isAllowedWebsite(s scope.Type) bool {
 	return ss.WebsiteID > 0 && scope.PermWebsiteReverse.Has(scp)
 }
 
-// Byte traverses through the scopes store->website->default to find
+// Value traverses through the scopes store->website->default to find
 // a matching byte slice value.
 func (ss Scoped) Value(s scope.Type, route string) (v Value, ok bool, err error) {
 	// fallback to next parent scope if value does not exists

@@ -52,6 +52,7 @@ func TestNotKeyNotFoundError(t *testing.T) {
 	assert.True(t, flat.IsEmpty(), "should be empty")
 
 	val, ok, err := scopedSrv.Value(scope.Store, "catalog")
+	assert.False(t, ok)
 	assert.True(t, val.IsEmpty(), "should be empty")
 	assert.False(t, errors.NotFound.Match(err), "Error: %s", err)
 }

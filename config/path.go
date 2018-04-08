@@ -59,6 +59,7 @@ type Path struct {
 	routeValidated bool
 }
 
+// ParsePathBytes parses a byte slice into a path. TODO implement
 func ParsePathBytes(path []byte) (Path, error) {
 	return Path{}, errors.NotImplemented.Newf("TODO")
 }
@@ -302,15 +303,17 @@ func (p Path) IsValid() error {
 	return nil
 }
 
+// IsEmpty returns true if the underlying route is empty.
 func (p Path) IsEmpty() bool {
 	return p.route == ""
 }
 
-// Equal compares the Sum32 of both routes
+// Equal compares the scope and the route
 func (p Path) Equal(b Path) bool {
 	return p.ScopeID == b.ScopeID && p.route == b.route
 }
 
+// EqualRoute compares only the route.
 func (p Path) EqualRoute(b Path) bool {
 	return p.route == b.route
 }
