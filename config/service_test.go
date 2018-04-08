@@ -336,6 +336,13 @@ func TestScopedServicePermission_One(t *testing.T) {
 		s, _, _ := have.Str()
 		assert.Exactly(t, "c", s) // because ScopedGetter bound to store scope
 	})
+	t.Run("query1 by scope.Absent, matches store", func(t *testing.T) {
+		have, ok, err := sm.NewScoped(WebsiteID, StoreID).Value(scope.Absent, "aa/bb/cc")
+		require.True(t, ok, "scoped path value must be found")
+		require.NoError(t, err)
+		s, _, _ := have.Str()
+		assert.Exactly(t, "c", s) // because ScopedGetter bound to store scope
+	})
 
 	t.Run("query2 by scope.Store, fallback to website", func(t *testing.T) {
 		have, ok, err := sm.NewScoped(WebsiteID, StoreID).Value(scope.Store, "dd/ee/ff")

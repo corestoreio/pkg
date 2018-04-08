@@ -171,7 +171,8 @@ func (s *Service) Write(p Path, v []byte) error {
 	return nil
 }
 
-// Value returns a configuration value from the Service. Example usage:
+// Value returns a configuration value from the Service, ignoring the scopes
+// using a direct match. Example usage:
 //
 //		// Default Scope
 //		dp := config.MustMakePath("general/locale/timezone")
@@ -185,9 +186,8 @@ func (s *Service) Write(p Path, v []byte) error {
 //		ss := p.Bind(scope.StoreID, 6)
 func (s *Service) Value(p Path) (v Value, ok bool, err error) {
 	if s.Log.IsDebug() {
-		defer log.WhenDone(s.Log).Debug("config.Service.get", log.Stringer("path", p), log.Bool("found", ok), log.Err(err))
+		defer log.WhenDone(s.Log).Debug("config.Service.backend.Value", log.Stringer("path", p), log.Bool("found", ok), log.Err(err))
 	}
-
 	v.data, ok, err = s.backend.Value(p.ScopeID, p.route)
 	return
 }
@@ -277,38 +277,42 @@ func (ss Scoped) ScopeIDs() scope.TypeIDs {
 	return ids[:]
 }
 
-func (ss Scoped) isAllowedStore(s scope.Type) bool {
+func (ss Scoped) isAllowedStore(restrictUpTo scope.Type) bool {
 	scp := ss.ScopeID().Type()
-	if s > scope.Absent {
-		scp = s
+	if restrictUpTo > scope.Absent {
+		scp = restrictUpTo
 	}
 	return ss.StoreID > 0 && scope.PermStoreReverse.Has(scp)
 }
 
-func (ss Scoped) isAllowedWebsite(s scope.Type) bool {
+func (ss Scoped) isAllowedWebsite(restrictUpTo scope.Type) bool {
 	scp := ss.ScopeID().Type()
-	if s > scope.Absent {
-		scp = s
+	if restrictUpTo > scope.Absent {
+		scp = restrictUpTo
 	}
 	return ss.WebsiteID > 0 && scope.PermWebsiteReverse.Has(scp)
 }
 
-// Value traverses through the scopes store->website->default to find
-// a matching byte slice value.
-func (ss Scoped) Value(s scope.Type, route string) (v Value, ok bool, err error) {
+// Value traverses through the scopes store->website->default to find a matching
+// byte slice value. The argument `restrictUpTo` scope.Type restricts the
+// bubbling. For example a path gets stored in all three scopes but argument
+// `restrictUpTo` specifies only website scope, then the store scope will be
+// ignored for querying. If argument `restrictUpTo` has been set to zero aka.
+// scope.Absent, then all three scopes are considered for querying.
+func (ss Scoped) Value(restrictUpTo scope.Type, route string) (v Value, ok bool, err error) {
 	// fallback to next parent scope if value does not exists
 	p := Path{
 		route:   route,
 		ScopeID: scope.DefaultTypeID,
 	}
-	if ss.isAllowedStore(s) {
+	if ss.isAllowedStore(restrictUpTo) {
 		v, ok, err := ss.Root.Value(p.BindStore(ss.StoreID))
 		if ok || err != nil {
 			// value found or err is not a NotFound error
 			return v, ok, errors.WithStack(err)
 		}
 	}
-	if ss.isAllowedWebsite(s) {
+	if ss.isAllowedWebsite(restrictUpTo) {
 		v, ok, err := ss.Root.Value(p.BindWebsite(ss.WebsiteID))
 		if ok || err != nil {
 			return v, ok, errors.WithStack(err)
