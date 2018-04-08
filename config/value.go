@@ -370,11 +370,17 @@ func (v Value) Uint64s(ret ...uint64) (_ []uint64, err error) {
 // "2006-01-02 15:04:05.999999999 07:00" up to 35
 // places supports. Minimal format must be a year, e.g. 2006.
 // time.UTC location gets used.
-func (v Value) Time() (t time.Time, err error) {
+func (v Value) Time() (t time.Time, ok bool, err error) {
 	if v, err = v.init(); err != nil {
-		return t, errors.WithStack(err)
+		err = errors.WithStack(err)
+		return
 	}
-	return parseDateTime(string(v.data), time.UTC)
+	if v.IsEmpty() {
+		return
+	}
+	t, err = parseDateTime(string(v.data), time.UTC)
+	ok = err == nil
+	return
 }
 
 // Times same as Time but parses the CSVComma separated list.
@@ -418,20 +424,26 @@ func (v Value) Times(ret ...time.Time) (t []time.Time, err error) {
 
 // Duration converts the underlying converted data into the final type.
 // Uses internally time.ParseDuration
-func (v Value) Duration() (d time.Duration, err error) {
+func (v Value) Duration() (d time.Duration, ok bool, err error) {
 	if v, err = v.init(); err != nil {
-		return 0, errors.WithStack(err)
+		return 0, false, errors.WithStack(err)
 	}
-	return time.ParseDuration(string(v.data))
+	d, err = time.ParseDuration(string(v.data))
+	ok = err == nil
+	return
 }
 
 // IsEqual does a constant time comparison of the underlying data with the input
 // data `d`. Useful for passwords.
-func (v Value) IsEqual(d []byte) (_ bool, err error) {
-	if v, err = v.init(); err != nil {
-		return false, errors.WithStack(err)
-	}
-	return subtle.ConstantTimeCompare(v.data, d) == 1, nil
+func (v Value) IsEqual(d []byte) bool {
+	v, err := v.init()
+	return subtle.ConstantTimeCompare(v.data, d) == 1 && err == nil
+}
+
+// IsEmpty returns true when the data length is zero.
+func (v Value) IsEmpty() bool {
+	v, _ = v.init()
+	return len(v.data) == 0
 }
 
 func parseDateTime(str string, loc *time.Location) (t time.Time, err error) {
@@ -451,7 +463,7 @@ func parseDateTime(str string, loc *time.Location) (t time.Time, err error) {
 			err = errors.WithStack(err)
 		}
 	default:
-		err = errors.NotValid.Newf("[config] invalid time string: %q", str)
+		err = errors.NotValid.Newf("[config] invalid length %d in time string: %q", lStr, str)
 		return
 	}
 

@@ -130,7 +130,7 @@ func (pv MockPathValue) GoString() string {
 
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
-	if _, err := buf.WriteString("cfgmock.MockPathValue{\n"); err != nil {
+	if _, err := buf.WriteString("config.MockPathValue{\n"); err != nil {
 		panic(err)
 	}
 
@@ -189,20 +189,16 @@ func (s *Mock) Value(p Path) (v Value, ok bool, err error) {
 	ps := p.String()
 	s.invocations[ps]++
 
+	if s.GetFn != nil {
+		return s.GetFn(p)
+	}
+
 	var vb []byte
 	vb, ok, err = s.Storage.Value(0, p.String())
 	if err != nil {
 		return
 	}
-
-	switch {
-	case ok:
-		return MakeValue(vb), ok, nil
-	case s.GetFn != nil:
-		return s.GetFn(p)
-	default:
-		return
-	}
+	return MakeValue(vb), ok, nil
 }
 
 // ByteInvokes returns the number of Byte() invocations.

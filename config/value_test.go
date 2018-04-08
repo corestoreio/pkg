@@ -392,20 +392,23 @@ func TestValue(t *testing.T) {
 
 	t.Run("Time1", func(t *testing.T) {
 		v := MakeValue([]byte(`2018-04-02`))
-		val, err := v.Time()
+		val, ok, err := v.Time()
 		assert.NoError(t, err)
+		assert.True(t, ok, "Time should be set and not nil, so true.")
 		assert.Exactly(t, "2018-04-02 00:00:00 +0000 UTC", val.String())
 	})
 	t.Run("Time2", func(t *testing.T) {
 		ct := time.Now().Format("2006-01-02 15:04:05.999999999")
 		v := MakeValue([]byte(ct))
-		val, err := v.Time()
+		val, ok, err := v.Time()
+		assert.True(t, ok, "Time should be set and not nil, so true.")
 		assert.NoError(t, err)
 		assert.Exactly(t, ct+" +0000 UTC", val.String())
 	})
 	t.Run("Time3", func(t *testing.T) {
 		v := MakeValue([]byte(`X018-04-02`))
-		val, err := v.Time()
+		val, ok, err := v.Time()
+		assert.False(t, ok, "Time should NOT be set because invalid.")
 		assert.EqualError(t, err, "parsing time \"X018-04-02\" as \"2006-01-02\": cannot parse \"X018-04-02\" as \"2006\"")
 		assert.Exactly(t, time.Time{}, val)
 	})
@@ -432,7 +435,8 @@ func TestValue(t *testing.T) {
 
 	t.Run("Duration", func(t *testing.T) {
 		v := MakeValue([]byte(`5m2s`))
-		val, err := v.Duration()
+		val, ok, err := v.Duration()
+		assert.True(t, ok, "Duration should be set and not nil, so true.")
 		assert.NoError(t, err)
 		assert.Exactly(t, "5m2s", val.String())
 	})
@@ -440,8 +444,6 @@ func TestValue(t *testing.T) {
 	t.Run("IsEqual", func(t *testing.T) {
 		d := []byte(`5m2s`)
 		v := MakeValue(d)
-		val, err := v.IsEqual(d)
-		assert.NoError(t, err)
-		assert.True(t, val)
+		assert.True(t, v.IsEqual(d))
 	})
 }

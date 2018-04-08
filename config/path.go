@@ -366,39 +366,43 @@ func (p *Path) UnmarshalText(txt []byte) error {
 // Level returns a hierarchical based route depending on the depth. The depth
 // argument defines the depth of levels to be returned. Depth 1 will return the
 // first part like "a", Depth 2 returns "a/b" Depth 3 returns "a/b/c" and so on.
-// Level -1 gives you all available levels. Does not generate a fully qualified
-// path. The returned Route slice is owned by Route. For further modifications
-// you must copy it via Route.Copy(). Error behaviour: NotValid, Empty.
+// Level -1 gives you all available levels. Does generate a fully qualified
+// path.
 func (p Path) Level(depth int) (string, error) {
 	if err := p.IsValid(); err != nil {
 		return "", errors.WithStack(err)
 	}
 
-	lp := len(p.route)
+	fq, err := p.FQ()
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	lp := len(fq)
 	switch {
 	case depth < 0:
-		return p.route, nil
+		return fq, nil
 	case depth == 0:
 		return "", nil
 	case depth >= lp:
-		return p.route, nil
+		return fq, nil
 	}
 
 	pos := 0
 	i := 1
 	for pos <= lp {
-		sc := strings.IndexByte(p.route[pos:], Separator)
+		sc := strings.IndexByte(fq[pos:], Separator)
 		if sc == -1 {
-			return p.route, nil
+			return fq, nil
 		}
 		pos += sc + 1
 
 		if i == depth {
-			return p.route[:pos-1], nil
+			return fq[:pos-1], nil
 		}
 		i++
 	}
-	return p.route, nil
+	return fq, nil
 }
 
 const (
@@ -425,6 +429,7 @@ func (p Path) Hash(depth int) (uint32, error) {
 	if err != nil {
 		return 0, errors.WithStack(err)
 	}
+
 	var hash uint32 = offset32
 	for _, c := range r2 {
 		hash ^= uint32(c)
@@ -447,8 +452,12 @@ func (p Path) Hash(depth int) (uint32, error) {
 //
 // Usage as map key.
 func (p Path) Hash32() uint32 {
+	fq, _ := p.FQ()
+	if fq == "" {
+		return 0
+	}
 	var hash uint32 = offset32
-	for _, c := range p.route {
+	for _, c := range fq {
 		hash ^= uint32(c)
 		hash *= prime32
 	}
@@ -585,9 +594,10 @@ func (ps PathSlice) Len() int { return len(ps) }
 func (ps PathSlice) Less(i, j int) bool {
 	p1 := ps[i]
 	p2 := ps[j]
-	s1, id1 := p1.ScopeID.Unpack()
-	s2, id2 := p2.ScopeID.Unpack()
-	return s1 < s2 && id1 < id2 && p1.route < p1.route
+	if p1.ScopeID != p2.ScopeID && p1.route == p2.route {
+		return p1.ScopeID < p2.ScopeID
+	}
+	return p1.route < p2.route
 }
 
 func (ps PathSlice) Swap(i, j int) { ps[i], ps[j] = ps[j], ps[i] }

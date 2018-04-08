@@ -83,7 +83,7 @@ func (sp *kvmap) AllKeys() (scps scope.TypeIDs, paths []string, err error) {
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "[config] InMemory Storage with key %q", key)
 		}
-		paths[i] = key[idx:]
+		paths[i] = key[idx+1:]
 		i++
 	}
 	sp.RUnlock()

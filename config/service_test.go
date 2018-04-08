@@ -15,7 +15,6 @@
 package config_test
 
 import (
-	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -40,10 +39,6 @@ func TestNewServiceStandard(t *testing.T) {
 	assert.NotNil(t, srv)
 }
 
-func TestWithDBStorage(t *testing.T) {
-	t.Skip("todo")
-}
-
 func TestNotKeyNotFoundError(t *testing.T) {
 
 	srv := config.MustNewService(config.NewInMemoryStore())
@@ -54,14 +49,11 @@ func TestNotKeyNotFoundError(t *testing.T) {
 	flat, ok, err := scopedSrv.Value(scope.Default, "catalog/product/enable_flat")
 	require.NoError(t, err)
 	assert.False(t, ok, "Should not find the key")
-	assert.Empty(t, flat)
-	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
+	assert.True(t, flat.IsEmpty(), "should be empty")
 
 	val, ok, err := scopedSrv.Value(scope.Store, "catalog")
-	assert.Empty(t, val)
-	assert.True(t, errors.NotValid.Match(err), "Error: %s", err)
+	assert.True(t, val.IsEmpty(), "should be empty")
 	assert.False(t, errors.NotFound.Match(err), "Error: %s", err)
-	//assert.Exactly(t, scope.TypeID(0).String(), h.String())
 }
 
 func TestService_Write(t *testing.T) {
@@ -71,7 +63,7 @@ func TestService_Write(t *testing.T) {
 
 	p1 := config.Path{}
 	err := srv.Write(p1, []byte{})
-	assert.True(t, errors.NotValid.Match(err), "Error: %s", err)
+	assert.True(t, errors.Empty.Match(err), "Error: %s", err)
 }
 
 func TestService_Write_Get_Value_Success(t *testing.T) {
@@ -108,6 +100,7 @@ func TestScoped_ScopeIDs(t *testing.T) {
 }
 
 func TestScoped_IsValid(t *testing.T) {
+	t.Parallel()
 	cfg := config.NewMock()
 	tests := []struct {
 		s    config.Scoped
@@ -132,7 +125,7 @@ func TestScoped_IsValid(t *testing.T) {
 }
 
 func TestScopedServiceScope(t *testing.T) {
-
+	t.Parallel()
 	tests := []struct {
 		websiteID, storeID int64
 		wantScope          scope.Type
@@ -152,7 +145,7 @@ func TestScopedServiceScope(t *testing.T) {
 }
 
 func TestScopedServicePath(t *testing.T) {
-
+	t.Parallel()
 	basePath := config.MustMakePath("aa/bb/cc")
 	tests := []struct {
 		desc               string
@@ -195,49 +188,67 @@ func TestScopedServicePath(t *testing.T) {
 
 	// vals stores all possible types for which we have functions in config.ScopedGetter
 	vals := []interface{}{"Gopher", true, float64(3.14159), int(2016), time.Now(), []byte(`Hellö Dear Goph€rs`), time.Hour}
+	const customTestTimeFormat = "2006-01-02 15:04:05"
 
 	for vi, wantVal := range vals {
 		for xi, test := range tests {
 
+			fqVal := conv.ToString(wantVal)
+			if wv, ok := wantVal.(time.Time); ok {
+				fqVal = wv.Format(customTestTimeFormat)
+			}
 			cg := config.NewMock(config.MockPathValue{
-				test.fqpath: conv.ToString(wantVal),
+				test.fqpath: fqVal,
 			})
 
 			sg := cg.NewScoped(test.websiteID, test.storeID)
 			haveVal, haveOK, haveErr := sg.Value(test.perm, test.route)
 
 			if test.wantErrKind > 0 {
-				require.True(t, haveOK, "Index %d/%d scoped path value must be found ", vi, xi)
+				require.False(t, haveOK, "Index %d/%d scoped path value must be found ", vi, xi)
 				// if d, ok := haveVal.(time.Duration); ok {
 				// 	// oh that is so crap because time.Duration cannot be detected for zero value
 				// 	assert.Empty(t, int64(d), "Index %d/%d => %v", vi, xi, wantVal)
 				// } else {
 				// 	assert.Empty(t, haveVal, "Index %d/%d => %v", vi, xi, wantVal)
 				// }
-
-				assert.True(t, test.wantErrKind.Match(haveErr), "Error: %s => %s", haveErr, test.desc)
+				assert.NoError(t, haveErr, "Error: %+v => %s", haveErr, test.desc)
+				// assert.True(t, test.wantErrKind.Match(haveErr), "Error: %+v => %s", haveErr, test.desc)
 				continue
 			}
 			require.NoError(t, haveErr, "Error: %+v\n\n%s", haveErr, test.desc)
 
-			switch wantVal.(type) {
+			switch wv := wantVal.(type) {
 			case []byte:
 				var buf strings.Builder
 				_, err := haveVal.WriteTo(&buf)
 				require.NoError(t, err, "Error: %+v\n\n%s", err, test.desc)
-				assert.Exactly(t, wantVal, buf.String(), test.desc)
+				assert.Exactly(t, string(wv), buf.String(), test.desc)
 
 			case string:
-
+				hs, _, err := haveVal.Str()
+				require.NoError(t, err)
+				assert.Exactly(t, wv, hs)
 			case bool:
-
+				hs, _, err := haveVal.Bool()
+				require.NoError(t, err)
+				assert.Exactly(t, wv, hs)
 			case float64:
-
+				hs, _, err := haveVal.Float64()
+				require.NoError(t, err)
+				assert.Exactly(t, wv, hs)
 			case int:
-
+				hs, _, err := haveVal.Int()
+				require.NoError(t, err)
+				assert.Exactly(t, wv, hs)
 			case time.Time:
-
+				hs, _, err := haveVal.Time()
+				require.NoError(t, err)
+				assert.Exactly(t, wv.Format(customTestTimeFormat), hs.Format(customTestTimeFormat))
 			case time.Duration:
+				hs, _, err := haveVal.Duration()
+				require.NoError(t, err)
+				assert.Exactly(t, wv, hs)
 
 			default:
 				t.Fatalf("Unsupported type: %#v in vals index %d", wantVal, vi)
@@ -248,55 +259,8 @@ func TestScopedServicePath(t *testing.T) {
 	}
 }
 
-var benchmarkScopedServiceVal config.Value
-
-// BenchmarkScopedServiceStringStore-4	 1000000	      2218 ns/op	     320 B/op	       9 allocs/op => Go 1.5.2
-// BenchmarkScopedServiceStringStore-4	  500000	      2939 ns/op	     672 B/op	      17 allocs/op => Go 1.5.3 strings
-// BenchmarkScopedServiceStringStore-4    500000	      2732 ns/op	     912 B/op	      17 allocs/op => cfgpath.Path with []ArgFunc
-// BenchmarkScopedServiceStringStore-4	 1000000	      1821 ns/op	     336 B/op	       3 allocs/op => cfgpath.Path without []ArgFunc
-// BenchmarkScopedServiceStringStore-4   1000000	      1747 ns/op	       0 B/op	       0 allocs/op => Go 1.6 sync.Pool cfgpath.Path without []ArgFunc
-// BenchmarkScopedServiceStringStore-4    500000	      2604 ns/op	       0 B/op	       0 allocs/op => Go 1.7 with ScopeHash
-func BenchmarkScopedServiceStringStore(b *testing.B) {
-	benchmarkScopedServiceStringRun(b, 1, 1)
-}
-
-func BenchmarkScopedServiceStringWebsite(b *testing.B) {
-	benchmarkScopedServiceStringRun(b, 1, 0)
-}
-
-func BenchmarkScopedServiceStringDefault(b *testing.B) {
-	benchmarkScopedServiceStringRun(b, 0, 0)
-}
-
-func benchmarkScopedServiceStringRun(b *testing.B, websiteID, storeID int64) {
-	route := "aa/bb/cc"
-	want := strings.Repeat("Gopher", 100)
-	sg := config.NewMock(config.MockPathValue{
-		config.MustMakePath(route).String(): want,
-	}).NewScoped(websiteID, storeID)
-
-	runtime.GC()
-	b.ResetTimer()
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		var err error
-		var ok bool
-		benchmarkScopedServiceVal, ok, err = sg.Value(scope.Store, route)
-		if err != nil {
-			b.Fatal(err)
-		}
-		if !ok {
-			b.Fatal("must be ok")
-		}
-		s, _, _ := benchmarkScopedServiceVal.Str()
-		if s != want {
-			b.Errorf("Want %s Have %s", want, benchmarkScopedServiceVal)
-		}
-	}
-}
-
-func TestScopedServicePermission(t *testing.T) {
-
+func TestScopedServicePermission_All(t *testing.T) {
+	t.Parallel()
 	basePath := config.MustMakePath("aa/bb/cc")
 
 	sm := config.NewMock(config.MockPathValue{
@@ -326,16 +290,79 @@ func TestScopedServicePermission(t *testing.T) {
 		assert.Exactly(t, test.want, s, "Index %d", i)
 		assert.Exactly(t, test.wantIDs, sm.Invokes().ScopeIDs(), "Index %d", i)
 	}
-
-	have, ok, err := sm.NewScoped(1, 1).Value(scope.Default, "aa/bb/cc")
-	require.True(t, ok, "scoped path value must be found")
-	require.NoError(t, err)
-	s, _, _ := have.Str()
-	assert.Exactly(t, "c", s) // because ScopedGetter bound to store scope
 	assert.Exactly(t, []string{"default/0/aa/bb/cc", "stores/1/aa/bb/cc", "websites/1/aa/bb/cc"}, sm.Invokes().Paths())
 }
 
+func TestScopedServicePermission_One(t *testing.T) {
+	t.Parallel()
+	basePath1 := config.MustMakePath("aa/bb/cc")
+	basePath2 := config.MustMakePath("dd/ee/ff")
+	basePath3 := config.MustMakePath("dd/ee/gg")
+
+	const WebsiteID = 3
+	const StoreID = 5
+
+	sm := config.NewMock(config.MockPathValue{
+		basePath1.Bind(scope.DefaultTypeID).String(): "a",
+		basePath1.BindWebsite(WebsiteID).String():    "b",
+		basePath1.BindStore(StoreID).String():        "c",
+
+		basePath2.BindWebsite(WebsiteID).String(): "bb2",
+
+		basePath3.String(): "cc3",
+	})
+
+	t.Run("query1 by scope.Default, matches default", func(t *testing.T) {
+		have, ok, err := sm.NewScoped(WebsiteID, StoreID).Value(scope.Default, "aa/bb/cc")
+		require.True(t, ok, "scoped path value must be found")
+		require.NoError(t, err)
+		s, _, _ := have.Str()
+		assert.Exactly(t, "a", s) // because ScopedGetter bound to store scope
+	})
+
+	t.Run("query1 by scope.Website, matches website", func(t *testing.T) {
+		have, ok, err := sm.NewScoped(WebsiteID, StoreID).Value(scope.Website, "aa/bb/cc")
+		require.True(t, ok, "scoped path value must be found")
+		require.NoError(t, err)
+		s, _, _ := have.Str()
+		assert.Exactly(t, "b", s) // because ScopedGetter bound to store scope
+	})
+
+	t.Run("query1 by scope.Store, matches store", func(t *testing.T) {
+		have, ok, err := sm.NewScoped(WebsiteID, StoreID).Value(scope.Store, "aa/bb/cc")
+		require.True(t, ok, "scoped path value must be found")
+		require.NoError(t, err)
+		s, _, _ := have.Str()
+		assert.Exactly(t, "c", s) // because ScopedGetter bound to store scope
+	})
+
+	t.Run("query2 by scope.Store, fallback to website", func(t *testing.T) {
+		have, ok, err := sm.NewScoped(WebsiteID, StoreID).Value(scope.Store, "dd/ee/ff")
+		require.True(t, ok, "scoped path value must be found")
+		require.NoError(t, err)
+		s, _, _ := have.Str()
+		assert.Exactly(t, "bb2", s) // because ScopedGetter bound to store scope
+	})
+
+	t.Run("query3 by scope.Store, fallback to default", func(t *testing.T) {
+		have, ok, err := sm.NewScoped(WebsiteID, StoreID).Value(scope.Store, "dd/ee/gg")
+		require.True(t, ok, "scoped path value must be found")
+		require.NoError(t, err)
+		s, _, _ := have.Str()
+		assert.Exactly(t, "cc3", s) // because ScopedGetter bound to store scope
+	})
+	t.Run("query3 by scope.Website, fallback to default", func(t *testing.T) {
+		have, ok, err := sm.NewScoped(WebsiteID, StoreID).Value(scope.Website, "dd/ee/gg")
+		require.True(t, ok, "scoped path value must be found")
+		require.NoError(t, err)
+		s, _, _ := have.Str()
+		assert.Exactly(t, "cc3", s) // because ScopedGetter bound to store scope
+	})
+
+}
+
 func TestScopedService_Parent(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		sg               config.Scoped
 		wantCurrentScope scope.Type

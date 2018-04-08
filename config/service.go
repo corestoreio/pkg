@@ -156,11 +156,14 @@ func (s *Service) NewScoped(websiteID, storeID int64) Scoped {
 //		err := Write(p.Bind(scope.StoreID, 6), "CHF")
 func (s *Service) Write(p Path, v []byte) error {
 	if s.Log.IsDebug() {
-		s.Log.Debug("config.Service.Write", log.Stringer("path", p))
+		log.WhenDone(s.Log).Debug("config.Service.Write", log.Stringer("path", p), log.Int("data_length", len(v)))
+	}
+	if err := p.IsValid(); err != nil {
+		return errors.WithStack(err)
 	}
 
 	if err := s.backend.Set(p.ScopeID, p.route, v); err != nil {
-		return errors.Wrap(err, "[config] sStorage.Set")
+		return errors.Wrap(err, "[config] Service.backend.Set")
 	}
 	if s.pubSub != nil {
 		s.sendMsg(p)

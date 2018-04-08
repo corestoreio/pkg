@@ -17,7 +17,6 @@ package config_test
 import (
 	"fmt"
 
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 )
 
@@ -82,18 +81,16 @@ func ExampleService() {
 	fmt.Println("Scope3:", ok, val)
 
 	// Scope4
-	_, _, err = configSrv.Value(pathString.BindStore(3)) // different scope ID
+	_, ok, err = configSrv.Value(pathString.BindStore(3)) // different scope ID
 	if err != nil {
 		fmt.Printf("Scope4a: srvString Error: %s\n", err)
 		fmt.Printf("Scope4b: srvString Error: %v\n", err) // Use %+v to show the full route! :-)
 	}
-	fmt.Printf("Scope4: Is KeyNotFound %t\n", errors.NotFound.Match(err))
+	fmt.Printf("Scope4: Is Key ok: %t\n", ok)
 
 	// Output:
-	// Scope1: DefaultGopher
-	// Scope2: WebsiteGopher
-	// Scope3: StoreGopher
-	// Scope4a: srvString Error: [config] Storage.String.get: [config] KVMap Unknown Key: stores/3/scope/test/string
-	// Scope4b: srvString Error: [config] Storage.String.get: [config] KVMap Unknown Key: stores/3/scope/test/string
-	// Scope4: Is KeyNotFound true
+	//Scope1: true "DefaultGopher"
+	//Scope2: true "WebsiteGopher"
+	//Scope3: true "StoreGopher"
+	//Scope4: Is Key ok: false
 }

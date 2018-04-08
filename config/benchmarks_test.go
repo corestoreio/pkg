@@ -16,6 +16,7 @@ package config_test
 
 import (
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/corestoreio/pkg/config"
@@ -239,6 +240,52 @@ func BenchmarkRouteSplit(b *testing.B) {
 		}
 		if benchmarkRouteSplit[1] == "" {
 			b.Error("benchmarkRouteSplit[1] is nil! Unexpected")
+		}
+	}
+}
+
+var benchmarkScopedServiceVal config.Value
+
+// BenchmarkScopedServiceStringStore-4	 1000000	      2218 ns/op	     320 B/op	       9 allocs/op => Go 1.5.2
+// BenchmarkScopedServiceStringStore-4	  500000	      2939 ns/op	     672 B/op	      17 allocs/op => Go 1.5.3 strings
+// BenchmarkScopedServiceStringStore-4    500000	      2732 ns/op	     912 B/op	      17 allocs/op => cfgpath.Path with []ArgFunc
+// BenchmarkScopedServiceStringStore-4	 1000000	      1821 ns/op	     336 B/op	       3 allocs/op => cfgpath.Path without []ArgFunc
+// BenchmarkScopedServiceStringStore-4   1000000	      1747 ns/op	       0 B/op	       0 allocs/op => Go 1.6 sync.Pool cfgpath.Path without []ArgFunc
+// BenchmarkScopedServiceStringStore-4    500000	      2604 ns/op	       0 B/op	       0 allocs/op => Go 1.7 with ScopeHash
+func BenchmarkScopedServiceStringStore(b *testing.B) {
+	benchmarkScopedServiceStringRun(b, 1, 1)
+}
+
+func BenchmarkScopedServiceStringWebsite(b *testing.B) {
+	benchmarkScopedServiceStringRun(b, 1, 0)
+}
+
+func BenchmarkScopedServiceStringDefault(b *testing.B) {
+	benchmarkScopedServiceStringRun(b, 0, 0)
+}
+
+func benchmarkScopedServiceStringRun(b *testing.B, websiteID, storeID int64) {
+	route := "aa/bb/cc"
+	want := strings.Repeat("Gopher", 100)
+	sg := config.NewMock(config.MockPathValue{
+		config.MustMakePath(route).String(): want,
+	}).NewScoped(websiteID, storeID)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		var err error
+		var ok bool
+		benchmarkScopedServiceVal, ok, err = sg.Value(scope.Store, route)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if !ok {
+			b.Fatal("must be ok")
+		}
+		s, _, _ := benchmarkScopedServiceVal.Str()
+		if s != want {
+			b.Errorf("Want %s Have %s", want, benchmarkScopedServiceVal)
 		}
 	}
 }

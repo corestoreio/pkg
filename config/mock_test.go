@@ -29,16 +29,9 @@ var _ fmt.GoStringer = (*config.MockPathValue)(nil)
 
 func TestPathValueGoStringer(t *testing.T) {
 	pv := config.MockPathValue{
-		"bb/cc/dd": "true",
 		"rr/ss/tt": "3.141592",
-		"aa/bb/cc": "1",
 	}
-	const want = `config.MockPathValue{
-"aa/bb/cc": 1,
-"bb/cc/dd": true,
-"rr/ss/tt": 3.141592,
-}`
-	assert.Exactly(t, want, pv.GoString())
+	assert.Exactly(t, "config.MockPathValue{\n\"rr/ss/tt\": \"3.141592\",\n}", pv.GoString())
 }
 
 func TestService_FnInvokes(t *testing.T) {
@@ -79,7 +72,7 @@ func TestService_FnInvokes_Map(t *testing.T) {
 
 	assert.Exactly(t, []string{`default/0/test/service/invokes`}, s.Invokes().Paths())
 
-	assert.Exactly(t, 70, s.AllInvocations().Sum())
+	assert.Exactly(t, 10, s.AllInvocations().Sum())
 	assert.Exactly(t, 1, s.AllInvocations().PathCount())
 }
 

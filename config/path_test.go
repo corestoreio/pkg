@@ -25,6 +25,7 @@ import (
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/naughtystrings"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -40,7 +41,7 @@ func TestNewByParts(t *testing.T) {
 		want        string
 		wantErrKind errors.Kind
 	}{
-		{"aa/bb/cc", "aa/bb/cc", errors.NoKind},
+		{"aa/bb/cc", "default/0/aa/bb/cc", errors.NoKind},
 		{"aa/bb/c", "aa/bb/cc", errors.NotValid},
 		{"", "", errors.Empty},
 	}
@@ -151,7 +152,7 @@ func TestFQ(t *testing.T) {
 	assert.Exactly(t, "stores/7475/catalog/frontend/list_allow_all", MustMakePath(r).BindStore(7475).String())
 	p := MustMakePath(r).BindStore(5)
 	assert.Exactly(t, "stores/5/catalog/frontend/list_allow_all", p.String())
-	assert.Exactly(t, "Path{ Route:MakeRoute(\"catalog/frontend/list_allow_all\"), ScopeHash: 67108869 }", p.GoString())
+	assert.Exactly(t, "cfgpath.Path{ Route:cfgpath.MakeRoute(\"catalog/frontend/list_allow_all\"), ScopeHash: 67108869 }", p.GoString())
 }
 
 func TestShouldNotPanicBecauseOfIncorrectStrScope(t *testing.T) {
@@ -180,7 +181,7 @@ func TestShouldPanicIncorrectPath(t *testing.T) {
 }
 
 func TestSplitFQ(t *testing.T) {
-
+	t.Parallel()
 	tests := []struct {
 		have        string
 		wantScope   string
@@ -188,13 +189,13 @@ func TestSplitFQ(t *testing.T) {
 		wantPath    string
 		wantErrKind errors.Kind
 	}{
-		{"groups/1/catalog/frontend/list_allow_all", "default", 0, "<nil>", errors.NotSupported},
-		{"stores/7475/catalog/frontend/list_allow_all", scope.StrStores.String(), 7475, "catalog/frontend/list_allow_all", errors.NoKind},
-		{"stores/4/system/full_page_cache/varnish/backend_port", scope.StrStores.String(), 4, "system/full_page_cache/varnish/backend_port", errors.NoKind},
-		{"websites/1/catalog/frontend/list_allow_all", scope.StrWebsites.String(), 1, "catalog/frontend/list_allow_all", errors.NoKind},
-		{"default/0/catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "catalog/frontend/list_allow_all", errors.NoKind},
-		{"default//catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "catalog/frontend/list_allow_all", errors.NotValid},
-		{"stores/123/catalog/index", "default", 0, "<nil>", errors.NotValid},
+		{"groups/1/catalog/frontend/list_allow_all", "default", 0, "", errors.NotSupported},
+		{"stores/7475/catalog/frontend/list_allow_all", scope.StrStores.String(), 7475, "stores/7475/catalog/frontend/list_allow_all", errors.NoKind},
+		{"stores/4/system/full_page_cache/varnish/backend_port", scope.StrStores.String(), 4, "stores/4/system/full_page_cache/varnish/backend_port", errors.NoKind},
+		{"websites/1/catalog/frontend/list_allow_all", scope.StrWebsites.String(), 1, "websites/1/catalog/frontend/list_allow_all", errors.NoKind},
+		{"default/0/catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "default/0/catalog/frontend/list_allow_all", errors.NoKind},
+		{"default//catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "default/0/catalog/frontend/list_allow_all", errors.NotValid},
+		{"stores/123/catalog/index", "default", 0, "", errors.NotValid},
 	}
 	for i, test := range tests {
 		havePath, haveErr := SplitFQ(test.have)
@@ -212,6 +213,7 @@ func TestSplitFQ(t *testing.T) {
 }
 
 func TestSplitFQ2(t *testing.T) {
+	t.Parallel()
 	p, err := SplitFQ("websites/5/web/cors/allow_credentials")
 	if err != nil {
 		t.Fatalf("%+v", err)
@@ -226,7 +228,7 @@ func TestSplitFQ2(t *testing.T) {
 }
 
 func TestPathIsValid(t *testing.T) {
-
+	t.Parallel()
 	tests := []struct {
 		s           scope.Type
 		id          int64
@@ -262,6 +264,7 @@ func TestPathIsValid(t *testing.T) {
 }
 
 func TestPathValidateNaughtyStrings(t *testing.T) {
+	t.Parallel()
 	// nothing is valid from the list of naughty strings
 	for _, str := range naughtystrings.Unencoded() {
 		_, err := MakePath(str)
@@ -271,29 +274,13 @@ func TestPathValidateNaughtyStrings(t *testing.T) {
 	}
 }
 
-// func TestPathValidateNaughtyStrings(t *testing.T) {
-// 	var valids slices.String = []string{"undefined", "undef", "null", "NULL", "nil", "NIL", "true", "false", "True", "False", "None", "hasOwnProperty", "0", "1", "1/2", "1E2", "1E02", "1/0", "0/0", "999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999", "NaN", "Infinity", "INF", "0x0", "0xffffffff", "0xffffffffffffffff", "0xabad1dea", "123456789012345678901234567890123456789", "01000", "08", "09", "_", "CON", "PRN", "AUX", "NUL", "COM1", "LPT1", "LPT2", "LPT3", "COM2", "COM3", "COM4", "evaluate", "mocha", "expression", "classic", "basement"}
-// 	for _, str := range naughtystrings.Unencoded() {
-// 		_, err := MakePath(str)
-// 		if valids.Contains(str) && err != nil {
-// 			t.Errorf("Should be valid %q but error: %+v", str, err)
-// 		}
-// 	}
-// }
-
 func TestPathRouteIsValid(t *testing.T) {
-
+	t.Parallel()
 	p := Path{
 		ScopeID: scope.MakeTypeID(scope.Store, 2),
 		route:   `general/store_information`,
 	}
 	assert.True(t, errors.NotValid.Match(p.IsValid()))
-
-	p = Path{
-		ScopeID: scope.MakeTypeID(scope.Store, 2),
-		route:   `general/store_information`,
-	}
-	assert.NoError(t, p.IsValid())
 }
 
 func TestPathHashWebsite(t *testing.T) {
@@ -321,13 +308,12 @@ func TestPathHashDefault(t *testing.T) {
 		wantLevel   string
 	}{
 		{"general/single_\x80store_mode/enabled", 0, 0, errors.NotValid, ""},
-		{"general/single_store_mode/enabled", 0, 453736105, errors.NoKind, "default/0"},
-		{"general/single_store_mode/enabled", 1, 2243014074, errors.NoKind, "default/0/general"},
-		{"general/single_store_mode/enabled", 2, 4182795913, errors.NoKind, "default/0/general/single_store_mode"},
-		{"general/single_store_mode/enabled", 3, 1584651487, errors.NoKind, "default/0/general/single_store_mode/enabled"},
-		{"general/single_store_mode/enabled", -1, 1584651487, errors.NoKind, "default/0/general/single_store_mode/enabled"}, // 5
-		{"general/single_store_mode/enabled", 5, 1584651487, errors.NoKind, "default/0/general/single_store_mode/enabled"},  // 6
-		{"general/single_store_mode/enabled", 4, 1584651487, errors.NoKind, "default/0/general/single_store_mode/enabled"},  // 7
+		{"general/single_store_mode/enabled", 2, 453736105, errors.NoKind, "default/0"},
+		{"general/single_store_mode/enabled", 1, 2470140894, errors.NoKind, "default"},
+		{"general/single_store_mode/enabled", 3, 2243014074, errors.NoKind, "default/0/general"},
+		{"general/single_store_mode/enabled", 4, 4182795913, errors.NoKind, "default/0/general/single_store_mode"},
+		{"general/single_store_mode/enabled", -1, 1584651487, errors.NoKind, "default/0/general/single_store_mode/enabled"},
+		{"general/single_store_mode/enabled", 5, 1584651487, errors.NoKind, "default/0/general/single_store_mode/enabled"},
 	}
 	for i, test := range tests {
 		p := Path{
@@ -350,7 +336,7 @@ func TestPathHashDefault(t *testing.T) {
 		if test.level < 0 {
 			test.level = -3
 		}
-		xrl, err := p.Level(test.level + 2)
+		xrl, err := p.Level(test.level)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -416,18 +402,74 @@ func TestPathSlice_Contains(t *testing.T) {
 
 func TestPathSlice_Sort(t *testing.T) {
 
-	ps := PathSlice{
-		MustMakePath("bb/cc/dd"),
-		MustMakePath("xx/yy/zz"),
-		MustMakePath("aa/bb/cc"),
+	runner := func(have, want PathSlice) func(*testing.T) {
+		return func(t *testing.T) {
+			have.Sort()
+			require.Exactly(t, want, have)
+		}
 	}
-	ps.Sort()
-	want := PathSlice{
-		Path{route: `aa/bb/cc`, ScopeID: scope.DefaultTypeID},
-		Path{route: `bb/cc/dd`, ScopeID: scope.DefaultTypeID},
-		Path{route: `xx/yy/zz`, ScopeID: scope.DefaultTypeID},
-	}
-	assert.Exactly(t, want, ps)
+
+	t.Run("Default Scope", runner(
+		PathSlice{
+			MustMakePath("bb/cc/dd"),
+			MustMakePath("xx/yy/zz"),
+			MustMakePath("aa/bb/cc"),
+		},
+		PathSlice{
+			Path{route: `aa/bb/cc`, ScopeID: scope.DefaultTypeID},
+			Path{route: `bb/cc/dd`, ScopeID: scope.DefaultTypeID},
+			Path{route: `xx/yy/zz`, ScopeID: scope.DefaultTypeID},
+		},
+	))
+
+	t.Run("Default+Website Scope", runner(
+		PathSlice{
+			MustMakePath("bb/cc/dd"),
+			MustMakePath("xx/yy/zz").BindWebsite(3),
+			MustMakePath("xx/yy/zz").BindWebsite(1),
+			MustMakePath("xx/yy/zz").BindWebsite(2),
+			MustMakePath("zz/aa/bb").BindWebsite(1),
+			MustMakePath("aa/bb/cc").BindWebsite(2),
+			MustMakePath("aa/bb/cc"),
+		},
+		PathSlice{
+			Path{route: `aa/bb/cc`, ScopeID: scope.DefaultTypeID},
+			Path{route: `aa/bb/cc`, ScopeID: scope.Website.Pack(2)},
+			Path{route: `bb/cc/dd`, ScopeID: scope.DefaultTypeID},
+			Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(1)},
+			Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(2)},
+			Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(3)},
+			Path{route: `zz/aa/bb`, ScopeID: scope.Website.Pack(1)},
+		},
+	))
+
+	t.Run("Default+Website+Store Scope", runner(
+		PathSlice{
+			MustMakePath("bb/cc/dd").BindStore(3),
+			MustMakePath("bb/cc/dd").BindStore(2),
+			MustMakePath("bb/cc/dd"),
+			MustMakePath("xx/yy/zz").BindWebsite(3),
+			MustMakePath("xx/yy/zz").BindWebsite(1),
+			MustMakePath("xx/yy/zz").BindWebsite(2),
+			MustMakePath("zz/aa/bb").BindStore(4),
+			MustMakePath("zz/aa/bb").BindWebsite(1),
+			MustMakePath("aa/bb/cc").BindWebsite(2),
+			MustMakePath("aa/bb/cc"),
+		},
+		PathSlice{
+			Path{route: `aa/bb/cc`, ScopeID: scope.DefaultTypeID},
+			Path{route: `aa/bb/cc`, ScopeID: scope.Website.Pack(2)},
+			Path{route: `bb/cc/dd`, ScopeID: scope.DefaultTypeID},
+			Path{route: `bb/cc/dd`, ScopeID: scope.Store.Pack(2)},
+			Path{route: `bb/cc/dd`, ScopeID: scope.Store.Pack(3)},
+			Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(1)},
+			Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(2)},
+			Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(3)},
+			Path{route: `zz/aa/bb`, ScopeID: scope.Website.Pack(1)},
+			Path{route: `zz/aa/bb`, ScopeID: scope.Store.Pack(4)},
+		},
+	))
+
 }
 
 // BenchmarkPathSlice_Sort-4	 1000000	      1987 ns/op	     480 B/op	       8 allocs/op
@@ -437,12 +479,16 @@ func BenchmarkPathSlice_Sort(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		ps := PathSlice{
-			MustMakePath("rr/ss/tt"),
+			MustMakePath("bb/cc/dd").BindStore(3),
+			MustMakePath("bb/cc/dd").BindStore(2),
 			MustMakePath("bb/cc/dd"),
-			MustMakePath("xx/yy/zz"),
+			MustMakePath("xx/yy/zz").BindWebsite(3),
+			MustMakePath("xx/yy/zz").BindWebsite(1),
+			MustMakePath("xx/yy/zz").BindWebsite(2),
+			MustMakePath("zz/aa/bb").BindStore(4),
+			MustMakePath("zz/aa/bb").BindWebsite(1),
+			MustMakePath("aa/bb/cc").BindWebsite(2),
 			MustMakePath("aa/bb/cc"),
-			MustMakePath("ff/gg/hh"),
-			MustMakePath("cc/dd/ee"),
 		}
 		ps.Sort()
 		if len(ps) != 6 {
@@ -479,14 +525,14 @@ func TestPathLevel(t *testing.T) {
 		depth int
 		want  string
 	}{
-		{"general/single_store_mode/enabled", 0, "<nil>"},
-		{"general/single_store_mode/enabled", 1, "general"},
-		{"general/single_store_mode/enabled", 2, "general/single_store_mode"},
-		{"general/single_store_mode/enabled", 3, "general/single_store_mode/enabled"},
-		{"general/single_store_mode/enabled", -1, "general/single_store_mode/enabled"},
-		{"general/single_store_mode/enabled", 5, "general/single_store_mode/enabled"},
-		{"general/single_store_mode/enabled", 4, "general/single_store_mode/enabled"},
-		{"system/full_page_cache/varnish/backend_port", 3, "system/full_page_cache/varnish"},
+		{"general/single_store_mode/enabled", 0, ""},
+		{"general/single_store_mode/enabled", 1, "default"},
+		{"general/single_store_mode/enabled", 2, "default/0"},
+		{"general/single_store_mode/enabled", 3, "default/0/general"},
+		{"general/single_store_mode/enabled", 4, "default/0/general/single_store_mode"},
+		{"general/single_store_mode/enabled", 5, "default/0/general/single_store_mode/enabled"},
+		{"general/single_store_mode/enabled", -1, "default/0/general/single_store_mode/enabled"},
+		{"system/full_page_cache/varnish/backend_port", 5, "default/0/system/full_page_cache/varnish"},
 	}
 	for i, test := range tests {
 		p := MustMakePath(test.have)
@@ -505,17 +551,16 @@ func TestPathHash(t *testing.T) {
 		wantErrKind errors.Kind
 		wantLevel   string
 	}{
-		{"general/single_\x80store_mode/enabled", 0, 0, errors.NotValid, ""},
-		{"general/single_store_mode/enabled", 0, 2166136261, errors.NoKind, "<nil>"},
-		{"general/single_store_mode/enabled", 1, 616112491, errors.NoKind, "general"},
-		{"general/single_store_mode/enabled", 2, 2274889228, errors.NoKind, "general/single_store_mode"},
-		{"general/single_store_mode/enabled", 3, 1644245266, errors.NoKind, "general/single_store_mode/enabled"},
-		{"general/single_store_mode/enabled", -1, 1644245266, errors.NoKind, "general/single_store_mode/enabled"},
-		{"general/single_store_mode/enabled", 5, 1644245266, errors.NoKind, "general/single_store_mode/enabled"},
-		{"general/single_store_mode/enabled", 4, 1644245266, errors.NoKind, "general/single_store_mode/enabled"},
+		{"general/single_store_mode/enabled", 0, 2166136261, errors.NoKind, ""},
+		{"general/single_store_mode/enabled", 3, 712933164, errors.NoKind, "stores/45/general"},
+		{"general/single_store_mode/enabled", 4, 1051038491, errors.NoKind, "stores/45/general/single_store_mode"},
+		{"general/single_store_mode/enabled", 5, 3926503501, errors.NoKind, "stores/45/general/single_store_mode/enabled"},
+		{"general/single_store_mode/enabled", -1, 3926503501, errors.NoKind, "stores/45/general/single_store_mode/enabled"},
+		{"general/single_store_mode/enabled", 7, 3926503501, errors.NoKind, "stores/45/general/single_store_mode/enabled"},
+		{"general/single_store_mode/enabled", 6, 3926503501, errors.NoKind, "stores/45/general/single_store_mode/enabled"},
 	}
 	for i, test := range tests {
-		p := MustMakePath(test.have)
+		p := MustMakePath(test.have).BindStore(45)
 		hv, err := p.Hash(test.depth)
 		if test.wantErrKind > 0 {
 			assert.True(t, test.wantErrKind.Match(err), "Index %d => %s", i, err)
@@ -561,7 +606,7 @@ func TestPathPartPosition(t *testing.T) {
 		{"general/single/store/website/group/mode/enabled/disabled/default", 5, "group", false},
 	}
 	for i, test := range tests {
-		p := MustMakePath(test.have)
+		p, _ := MakePath(test.have)
 		part, haveErr := p.Part(test.pos)
 		if test.wantErr {
 			assert.Empty(t, part, "Index %d", i)
@@ -583,10 +628,10 @@ func TestPathValidate(t *testing.T) {
 		{"general/store_information/city", errors.NoKind},
 		{"system/full_page_cache/varnish/backend_port", errors.NoKind},
 		{"", errors.Empty},
-		{"general/store_information", errors.NoKind},
+		{"general/store_information", errors.NotValid},
 		////{MustNew("system/dev/debug".Bind(scope.WebsiteID, 22).String()), ErrIncorrectPath},
 		{"groups/33/general/store_information/street", errors.NoKind},
-		{"groups/33", errors.NoKind},
+		{"groups/33", errors.NotValid},
 		{"system/dEv/inv˚lid", errors.NotValid},
 		{"system/dEv/inv'lid", errors.NotValid},
 		{"syst3m/dEv/invalid", errors.NoKind},
@@ -609,19 +654,18 @@ func TestPathSplit(t *testing.T) {
 		wantPart    []string
 		wantErrKind errors.Kind
 	}{
-		{"general/single_\x80store_mode", []string{"general", "single_\x80store_mode"}, errors.NoKind},
-		{"general/single_store_mode", []string{"general", "single_store_mode"}, errors.NoKind},
+		{"general/single_\x80store_mode", []string{"general", "single_\x80store_mode"}, errors.NotValid},
+		{"general/single_store_mode/xx", []string{"general", "single_store_mode", "xx"}, errors.NoKind},
 		{"general", nil, errors.NotValid},
 		{"general/single_store_mode/enabled", []string{"general", "single_store_mode", "enabled"}, errors.NoKind},
 		{"system/full_page_cache/varnish/backend_port", []string{"system", "full_page_cache", "varnish/backend_port"}, errors.NoKind},
 	}
 	for i, test := range tests {
-		p := MustMakePath(test.have)
+		p, _ := MakePath(test.have)
 		sps, haveErr := p.Split()
 		if test.wantErrKind > 0 {
 			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => %s", i, haveErr)
-			assert.Empty(t, sps[0], "Index %d", i)
-			assert.Empty(t, sps[1], "Index %d", i)
+			assert.Nil(t, sps)
 			continue
 		}
 		for i, wantPart := range test.wantPart {

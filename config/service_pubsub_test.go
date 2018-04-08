@@ -14,6 +14,8 @@
 
 package config_test
 
+// TODO use github.com/fortytw2/leaktest
+
 // import (
 // 	"io/ioutil"
 // 	goLog "log"
