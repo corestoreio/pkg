@@ -41,7 +41,7 @@ func NewInMemoryStore() Storager {
 func (sp *kvmap) Set(scp scope.TypeID, path string, value []byte) error {
 
 	var key strings.Builder
-	key.WriteString(scp.String())
+	key.WriteString(scp.ToIntString())
 	key.WriteByte(kvMapScopeSep)
 	key.WriteString(path)
 
@@ -55,7 +55,7 @@ func (sp *kvmap) Set(scp scope.TypeID, path string, value []byte) error {
 func (sp *kvmap) Value(scp scope.TypeID, path string) (v []byte, ok bool, err error) {
 
 	var key strings.Builder
-	key.WriteString(scp.String())
+	key.WriteString(scp.ToIntString())
 	key.WriteByte(kvMapScopeSep)
 	key.WriteString(path)
 
