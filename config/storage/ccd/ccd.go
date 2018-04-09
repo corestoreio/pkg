@@ -27,16 +27,36 @@ import (
 	"github.com/corestoreio/pkg/util/conv"
 )
 
+type Options struct {
+	TableName           string
+	Log                 log.Logger
+	QueryContextTimeout time.Duration
+	Idle                struct {
+		AllKeys time.Duration
+		Read    time.Duration
+		Write   time.Duration
+	}
+}
+
+const (
+	stateOpen = iota
+	stateClosed
+)
+
 // DBStorage connects the MySQL DB with the config.Service type. Implements
 // interface config.Storager.
 type DBStorage struct {
-	log log.Logger
-	// All is a SQL statement for the all keys query
-	All *csdb.ResurrectStmt
-	// Read is a SQL statement for selecting a value from a path/key
-	Read *csdb.ResurrectStmt
-	// Write statement inserts or updates a value
-	Write *csdb.ResurrectStmt
+	config   Options
+	preparer dml.Preparer
+
+	stmtAll dml.StmtQuerier
+	sqlAll  string
+
+	stmtRead dml.StmtQuerier
+	sqlRead  string
+
+	stmtWrite dml.StmtQuerier
+	sqlWrite  string
 }
 
 // NewDBStorage creates a new pointer with resurrecting prepared SQL statements.
@@ -45,83 +65,55 @@ type DBStorage struct {
 //
 // All has an idle time of 15s. Read an idle time of 10s. Write an idle time of
 // 30s. Implements interface config.Storager.
-func NewDBStorage(p dml.Preparer) (*DBStorage, error) {
-	// todo: instead of logging the error we may write it into an
-	// error channel and the gopher who calls NewDBStorage is responsible
-	// for continuously reading from the error channel. or we accept an error channel
-	// as argument here and then writing to it ...
+func NewDBStorage(p dml.Preparer, o Options) (*DBStorage, error) {
 
 	dbs := &DBStorage{
-		log: log.BlackHole{}, // skip debug and info level via init with empty fields
-		All: csdb.NewResurrectStmt(p, fmt.Sprintf(
+		config:   o,
+		preparer: p,
+		sqlAll: fmt.Sprintf(
 			"SELECT scope,scope_id,path FROM `%s` ORDER BY scope,scope_id,path",
 			TableCollection.Name(TableIndexCoreConfigData),
-		)),
-		Read: csdb.NewResurrectStmt(p, fmt.Sprintf(
-			"SELECT `value` FROM `%s` WHERE `scope`=? AND `scope_id`=? AND `path`=?",
-			TableCollection.Name(TableIndexCoreConfigData),
-		)),
+		),
 
-		Write: csdb.NewResurrectStmt(p, fmt.Sprintf(
-			"INSERT INTO `%s` (`scope`,`scope_id`,`path`,`value`) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE `value`=?",
-			TableCollection.Name(TableIndexCoreConfigData),
-		)),
+		//Read: csdb.NewResurrectStmt(p, fmt.Sprintf(
+		//	"SELECT `value` FROM `%s` WHERE `scope`=? AND `scope_id`=? AND `path`=?",
+		//	TableCollection.Name(TableIndexCoreConfigData),
+		//)),
+		//
+		//Write: csdb.NewResurrectStmt(p, fmt.Sprintf(
+		//	"INSERT INTO `%s` (`scope`,`scope_id`,`path`,`value`) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE `value`=?",
+		//	TableCollection.Name(TableIndexCoreConfigData),
+		//)),
 	}
-	dbs.All.Idle = time.Second * 15
-	dbs.All.Log = dbs.log
-	dbs.Read.Idle = time.Second * 10
-	dbs.Read.Log = dbs.log
-	dbs.Write.Idle = time.Second * 30
-	dbs.Write.Log = dbs.log
-	// in the future we may add errors ... just to have for now the func signature
+	if dbs.config.Idle.AllKeys == 0 {
+		dbs.config.Idle.AllKeys = time.Second * 5
+	}
+	if dbs.config.Idle.Read == 0 {
+		dbs.config.Idle.Read = time.Second * 20
+	}
+	if dbs.config.Idle.Write == 0 {
+		dbs.config.Idle.Write = time.Second * 5
+	}
+	if dbs.config.TableName == "" {
+		dbs.config.TableName = "core_config_data"
+	}
+
 	return dbs, nil
 }
 
 // MustNewDBStorage same as NewDBStorage but panics on error. Implements
 // interface config.Storager.
-func MustNewDBStorage(p csdb.Preparer) *DBStorage {
-	s, err := NewDBStorage(p)
+func MustNewDBStorage(p dml.Preparer, o Options) *DBStorage {
+	s, err := NewDBStorage(p, o)
 	if err != nil {
 		panic(err)
 	}
 	return s
 }
 
-// SetLogger applies your custom logger
-func (dbs *DBStorage) SetLogger(l log.Logger) *DBStorage {
-	dbs.log = l
-	dbs.All.Log = l
-	dbs.Read.Log = l
-	dbs.Write.Log = l
-	return dbs
-}
-
-// Start starts the internal idle time checker for the resurrecting SQL statements.
-func (dbs *DBStorage) Start() *DBStorage {
-	dbs.All.StartIdleChecker()
-	dbs.Read.StartIdleChecker()
-	dbs.Write.StartIdleChecker()
-	return dbs
-}
-
-// Stop stops the internal goroutines for idle time checking. Returns the
-// first occurring sql.Stmt.Close() error.
-func (dbs *DBStorage) Stop() error {
-	if err := dbs.All.StopIdleChecker(); err != nil {
-		return errors.Wrap(err, "[ccd] All.StopIdleChecker")
-	}
-	if err := dbs.Read.StopIdleChecker(); err != nil {
-		return errors.Wrap(err, "[ccd] Read.StopIdleChecker")
-	}
-	if err := dbs.Write.StopIdleChecker(); err != nil {
-		return errors.Wrap(err, "[ccd] Write.StopIdleChecker")
-	}
-	return nil
-}
-
 // Set sets a value with its key. Database errors get logged as Info message.
 // Enabled debug level logs the insert ID or rows affected.
-func (dbs *DBStorage) Set(key config.Path, value interface{}) error {
+func (dbs *DBStorage) Set(scp scope.TypeID, path string, value []byte) error {
 	// update lastUsed at the end because there might be the slight chance that
 	// a statement gets closed despite we're waiting for the result from the
 	// server.
@@ -168,7 +160,7 @@ func (dbs *DBStorage) Set(key config.Path, value interface{}) error {
 // Get returns a value from the database by its key. It is guaranteed that the
 // type in the empty interface is a string. It returns nil on error but errors
 // get logged as info message. Error behaviour: NotFound
-func (dbs *DBStorage) Value(key config.Path) (interface{}, error) {
+func (dbs *DBStorage) Value(scp scope.TypeID, path string) (v []byte, ok bool, err error) {
 	// update lastUsed at the end because there might be the slight chance that
 	// a statement gets closed despite we're waiting for the result from the
 	// server.
@@ -197,10 +189,8 @@ func (dbs *DBStorage) Value(key config.Path) (interface{}, error) {
 	return nil, errKeyNotFound
 }
 
-var errKeyNotFound = errors.NewNotFoundf(`[ccd] Key not found`) // todo add test
-
 // AllKeys returns all available keys. Database errors get logged as info message.
-func (dbs *DBStorage) AllKeys() (config.PathSlice, error) {
+func (dbs *DBStorage) AllKeys() (scps scope.TypeIDs, paths []string, err error) {
 	// update lastUsed at the end because there might be the slight chance
 	// that a statement gets closed despite we're waiting for the result
 	// from the server.
