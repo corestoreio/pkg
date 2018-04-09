@@ -55,10 +55,8 @@ type Writer interface {
 
 // Storager is the underlying data storage for holding the keys and its values.
 // Implementations can be spf13/viper or MySQL backed. Default Storager is a
-// simple mutex protected map[string]interface{}. The config.Writer function
-// calls the config.Storager functions and Storager must make sure of the
-// correct type conversions to the supported type of the underlying storage
-// engine.
+// simple mutex protected in memory map[string]string.
+// Storager must be safe for concurrent use.
 type Storager interface {
 	// Set sets a key with a value and returns on success nil or
 	// ErrKeyOverwritten, on failure any other error
@@ -73,6 +71,7 @@ type Storager interface {
 }
 
 // Service main configuration provider. Please use the NewService() function.
+// Safe for concurrent use.
 // TODO build in to support different environments for the same keys. E.g. different API credentials for external APIs (staging, production, etc).
 type Service struct {
 	// backend is the underlying data holding provider. Only access it if you
