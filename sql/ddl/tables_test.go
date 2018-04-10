@@ -353,7 +353,7 @@ func TestWithTableDB(t *testing.T) {
 	defer dmltest.MockClose(t, dbc, dbMock)
 
 	ts := ddl.MustNewTables(
-		ddl.WithTableDB(dbc.DB),
+		ddl.WithDB(dbc.DB),
 		ddl.WithTable("tableA"),
 		ddl.WithTable("tableB"),
 	) // +=2

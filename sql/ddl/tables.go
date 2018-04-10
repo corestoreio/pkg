@@ -41,6 +41,7 @@ type TableOption struct {
 
 // Tables handles all the tables defined for a package. Thread safe.
 type Tables struct {
+	DB dml.QueryExecPreparer
 	// Schema represents the name of the database. Might be empty.
 	Schema        string
 	previousTable string // the table which has been scanned beforehand
@@ -49,15 +50,30 @@ type Tables struct {
 	tm map[string]*Table
 }
 
+// WithDB sets the DB object to the Tables and all sub Table types to handle the
+// database connections. It must be set if other options get used to access the
+// DB.
+func WithDB(db dml.QueryExecPreparer) TableOption {
+	return TableOption{
+		sortOrder: 2,
+		fn: func(tm *Tables) error {
+			tm.DB = db
+			tm.mu.Lock()
+			defer tm.mu.Unlock()
+			for _, t := range tm.tm {
+				t.DB = db
+			}
+			return nil
+		},
+	}
+}
+
 // WithTableOrViewFromQuery creates the new view or table from the SELECT query and
 // adds it to the internal table manager including all loaded column
 // definitions. If providing true in the argument "dropIfExists" the view or
 // table gets first dropped, if exists, and then created. Argument typ can be
 // only `table` or `view`.
-func WithTableOrViewFromQuery(ctx context.Context, db interface {
-	dml.Execer
-	dml.Querier
-}, typ string, objectName string, query string, dropIfExists ...bool) TableOption {
+func WithTableOrViewFromQuery(ctx context.Context, db dml.QueryExecPreparer, typ string, objectName string, query string, dropIfExists ...bool) TableOption {
 	return TableOption{
 		sortOrder: 10,
 		fn: func(tm *Tables) error {
@@ -205,23 +221,6 @@ func WithTableDMLListeners(tableName string, events ...*dml.ListenerBucket) Tabl
 	}
 }
 
-// WithTableDB sets the DB object to handle the database connections on each
-// table.
-func WithTableDB(db dml.QueryExecPreparer) TableOption {
-	return TableOption{
-		sortOrder: 9,
-		fn: func(tm *Tables) error {
-			tm.mu.Lock()
-			defer tm.mu.Unlock()
-
-			for _, t := range tm.tm {
-				t.DB = db
-			}
-			return nil
-		},
-	}
-}
-
 // NewTables creates a new TableService satisfying interface Manager.
 func NewTables(opts ...TableOption) (*Tables, error) {
 	tm := &Tables{
@@ -255,6 +254,13 @@ func (tm *Tables) Options(opts ...TableOption) error {
 			return errors.Wrap(err, "[ddl] Applied option error")
 		}
 	}
+	tm.mu.Lock()
+	for _, tbl := range tm.tm {
+		if tbl.DB != tm.DB {
+			tbl.DB = tm.DB
+		}
+	}
+	tm.mu.Unlock()
 	return nil
 }
 
@@ -399,4 +405,51 @@ func (tm *Tables) ToSQL() (string, []interface{}, error) {
 		return dml.Interpolate(selTablesColumns).Strs(tn...).ToSQL()
 	}
 	return dml.QuerySQL(selAllTablesColumns).ToSQL()
+}
+
+// Validate validates the table names and their column against the current
+// database schema.
+func (tm *Tables) Validate(ctx context.Context) error {
+	tm.mu.RLock()
+	defer tm.mu.RUnlock()
+
+	tblNames := make([]string, 0, len(tm.tm))
+	for tn := range tm.tm {
+		tblNames = append(tblNames, tn)
+	}
+
+	tMap, err := LoadColumns(ctx, tm.DB, tblNames...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	if have, want := len(tMap), len(tm.tm); have != want {
+		return errors.Mismatch.Newf("[ddl] Tables count %d does not match table count %d in database.", want, have)
+	}
+	dbTableNames := make([]string, 0, len(tMap))
+	for tn := range tMap {
+		dbTableNames = append(dbTableNames, tn)
+	}
+
+	// TODO compare it that way, that the DB table is the master and Go objects must be updated
+	// once they do not match the database version.
+	for tn, tbl := range tm.tm {
+		dbTblCols, ok := tMap[tn]
+		if !ok {
+			return errors.UserNotFound.Newf("[ddl] Table %q not found in database. Available tables: %v", tn, dbTableNames)
+		}
+		if want, have := len(tbl.Columns), len(dbTblCols); want > have {
+			return errors.Mismatch.Newf("[ddl] Table %q has more columns (count %d) than its object (column count %d) in the database.", tn, want, have)
+		}
+		for idx, c := range tbl.Columns {
+			dbCol := dbTblCols[idx]
+			if c.Field != dbCol.Field {
+				return errors.Mismatch.Newf("[ddl] Table %q with column name %q at index %d does not match database column name %q",
+					tn, c.Field, idx, dbCol.Field,
+				)
+			}
+			// TODO more comparisons
+		}
+	}
+
+	return errors.NotImplemented.Newf("TODO implement correctly with tests")
 }
