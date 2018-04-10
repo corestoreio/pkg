@@ -129,6 +129,14 @@ func init() {
 	)
 }
 
+func TestTable_Select(t *testing.T) {
+	t.Parallel()
+
+	tbl := tableMap.MustTable("catalog_category_anc_categs_index_idx")
+	sqlStr := tbl.Select("category_id", "path").String()
+	assert.Exactly(t, "SELECT `category_id`, `path` FROM `catalog_category_anc_categs_index_idx` AS `main_table`", sqlStr)
+}
+
 func TestTableStructure(t *testing.T) {
 	t.Parallel()
 

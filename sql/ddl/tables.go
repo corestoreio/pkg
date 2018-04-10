@@ -188,7 +188,7 @@ func WithTableNames(names ...string) TableOption {
 // the events will be copied to the new object.
 func WithTableDMLListeners(tableName string, events ...*dml.ListenerBucket) TableOption {
 	return TableOption{
-		sortOrder: 254,
+		sortOrder: 253,
 		fn: func(tm *Tables) error {
 			tm.mu.Lock()
 			defer tm.mu.Unlock()
@@ -200,6 +200,23 @@ func WithTableDMLListeners(tableName string, events ...*dml.ListenerBucket) Tabl
 			t.Listeners.Merge(events...)
 			tm.tm[tableName] = t
 
+			return nil
+		},
+	}
+}
+
+// WithTableDB sets the DB object to handle the database connections on each
+// table.
+func WithTableDB(db dml.QueryExecPreparer) TableOption {
+	return TableOption{
+		sortOrder: 9,
+		fn: func(tm *Tables) error {
+			tm.mu.Lock()
+			defer tm.mu.Unlock()
+
+			for _, t := range tm.tm {
+				t.DB = db
+			}
 			return nil
 		},
 	}

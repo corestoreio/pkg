@@ -82,9 +82,20 @@ func (t *Table) Insert() *dml.Insert {
 	return i.WithDB(t.DB)
 }
 
-// SelectAll creates a new `SELECT * FROM table` without a WHERE clause.
+// GIT_AUTHOR_EMAIL
+
+// SelectAll creates a new `SELECT column1,column2,cloumnX FROM table` without a
+// WHERE clause.
 func (t *Table) SelectAll() *dml.Select {
 	s := dml.NewSelect(t.columnsAll...).
+		FromAlias(t.Name, MainTable)
+	s.Listeners = s.Listeners.Merge(t.Listeners.Select)
+	return s.WithDB(t.DB)
+}
+
+// Select creates a new SELECT statement with a set FROM clause.
+func (t *Table) Select(columns ...string) *dml.Select {
+	s := dml.NewSelect(columns...).
 		FromAlias(t.Name, MainTable)
 	s.Listeners = s.Listeners.Merge(t.Listeners.Select)
 	return s.WithDB(t.DB)

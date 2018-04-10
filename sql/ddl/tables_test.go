@@ -345,5 +345,19 @@ func TestWithTableOrViewFromQuery(t *testing.T) {
 		assert.Exactly(t, "testTable", tbls.MustTable("testTable").Name)
 		assert.True(t, tbls.MustTable("testTable").IsView, "Table should be a view")
 	})
+}
 
+func TestWithTableDB(t *testing.T) {
+	t.Parallel()
+	dbc, dbMock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, dbc, dbMock)
+
+	ts := ddl.MustNewTables(
+		ddl.WithTableDB(dbc.DB),
+		ddl.WithTable("tableA"),
+		ddl.WithTable("tableB"),
+	) // +=2
+
+	assert.Exactly(t, dbc.DB, ts.MustTable("tableA").DB)
+	assert.Exactly(t, dbc.DB, ts.MustTable("tableB").DB)
 }
