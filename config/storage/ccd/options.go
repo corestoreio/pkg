@@ -15,47 +15,60 @@
 package ccd
 
 import (
+	"context"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/config"
-	"github.com/corestoreio/pkg/config/cfgpath"
-	"github.com/corestoreio/pkg/storage/dbr"
+	"github.com/corestoreio/pkg/sql/ddl"
+	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/store/scope"
+	"time"
 )
 
 // WithCoreConfigData reads the table core_config_data into the Service and
-// overrides existing values. If the column `value` is NULL entry will be
-// ignored. Stops on errors.
-func WithCoreConfigData(dbrSess dbr.SessionRunner) config.Option {
+// overrides existing values. Stops on errors.
+func WithCoreConfigData(tbls *ddl.Tables, o Options) config.Option {
 	return func(s *config.Service) error {
 
-		var ccd TableCoreConfigDataSlice
-		loadedRows, err := TableCollection.MustTable(TableIndexCoreConfigData).Load(dbrSess, &ccd)
-		if s.Log.IsDebug() {
-			s.Log.Debug("ccd.WithCoreConfigData.Load", log.Int("rows", loadedRows), log.Err(err))
+		tn := o.TableName
+		if tn == "" {
+			tn = TableNameCoreConfigData
 		}
+
+		tbl, err := tbls.Table(tn)
 		if err != nil {
-			return errors.Wrap(err, "[ccd] WithCoreConfigData.csdb.Load")
+			return errors.WithStack(err)
 		}
+
+		if o.ContextTimeoutAllKeys == 0 {
+			o.ContextTimeoutAllKeys = time.Second * 10 // just a guess
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), o.ContextTimeoutAllKeys)
+		defer cancel()
 
 		var writtenRows int
-		for _, cd := range ccd {
-			if cd.Value.Valid {
-				var p cfgpath.Path
-				p, err = cfgpath.MakeByString(cd.Path)
-				if err != nil {
-					return errors.Wrapf(err, "[ccd] cfgpath.MakeByString Path %q", cd.Path)
-				}
-
-				if err = s.Write(p.Bind(scope.FromString(cd.Scope).Pack(cd.ScopeID)), cd.Value.String); err != nil {
-					return errors.Wrapf(err, "[ccd] cfgpath.MakeByString Path %q Scope: %q ID: %d Value: %q", cd.Path, cd.Scope, cd.ScopeID, cd.Value.String)
-				}
-				writtenRows++
+		tbl.SelectAll().WithArgs().IterateSerial(ctx, func(cm *dml.ColumnMap) error {
+			var ccd TableCoreConfigData
+			if err := ccd.MapColumns(cm); err != nil {
+				return errors.Wrapf(err, "[ccd] dbs.stmtAll.IterateSerial at row %d", cm.Count)
 			}
-		}
+
+			var v []byte
+			if ccd.Value.Valid {
+				v = []byte(ccd.Value.String)
+			}
+			scp := scope.FromString(ccd.Scope).Pack(ccd.ScopeID)
+			if err = s.Write(scp, ccd.Path, v); err != nil {
+				return errors.Wrapf(err, "[ccd] cfgpath.MakeByString Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ConfigID)
+			}
+
+			return nil
+		})
 		if s.Log.IsDebug() {
-			s.Log.Debug("ccd.WithCoreConfigData.Written", log.Int("loadedRows", loadedRows), log.Int("writtenRows", writtenRows))
+			s.Log.Debug("ccd.WithCoreConfigData.Written", log.Int("writtenRows", writtenRows))
 		}
+
 		return nil
 	}
 }
