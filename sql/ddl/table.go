@@ -82,8 +82,6 @@ func (t *Table) Insert() *dml.Insert {
 	return i.WithDB(t.DB)
 }
 
-// GIT_AUTHOR_EMAIL
-
 // SelectAll creates a new `SELECT column1,column2,cloumnX FROM table` without a
 // WHERE clause.
 func (t *Table) SelectAll() *dml.Select {

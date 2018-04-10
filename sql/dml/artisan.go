@@ -575,6 +575,12 @@ func (a *Artisan) WithDB(db QueryExecPreparer) *Artisan {
 	return a
 }
 
+// WithStmt uses a SQL statement as DB connection.
+func (a *Artisan) WithStmt(stmt *sql.Stmt) *Artisan {
+	a.base.DB = stmtWrapper{stmt: stmt}
+	return a
+}
+
 // WithTx sets the transaction query executor and the logger to run this query
 // within a transaction.
 func (a *Artisan) WithTx(tx *Tx) *Artisan {
@@ -599,6 +605,16 @@ func (a *Artisan) Clone() *Artisan {
 	c.base.DB = nil
 
 	return c
+}
+
+// Close tries to close the underlying DB connection. Useful in cases of
+// prepared statements. If the underlying DB connection does not implement
+// io.Closer, nothing will happen.
+func (a *Artisan) Close() error {
+	if c, ok := a.base.DB.(ioCloser); ok {
+		return errors.WithStack(c.Close())
+	}
+	return nil
 }
 
 /*****************************************************************************************************
