@@ -111,7 +111,7 @@ func TestStringSliceUpdate(t *testing.T) {
 			},
 			haveD:   "default_value",
 			haveI:   6,
-			errKind: errors.OutofRange,
+			errKind: errors.OutOfRange,
 			want: []string{
 				"IFNULL(`scope_table`.`is_visible`, `additional_table`.`is_visible`) AS `is_visible`",
 				"IFNULL(`scope_table`.`is_required`, `main_table`.`is_required`) AS `is_required`",
@@ -156,7 +156,7 @@ func TestStringSliceDelete(t *testing.T) {
 	assert.Equal(t, []string{"Maybe", "should"}, l.ToString())
 	assert.NoError(t, l.Delete(1))
 	assert.Equal(t, []string{"Maybe"}, l.ToString())
-	assert.True(t, errors.OutofRange.Match(l.Delete(1)))
+	assert.True(t, errors.OutOfRange.Match(l.Delete(1)))
 }
 
 func TestStringSliceReduce(t *testing.T) {

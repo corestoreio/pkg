@@ -767,7 +767,7 @@ func (a *Artisan) IterateParallel(ctx context.Context, concurrencyLevel int, cal
 		defer log.WhenDone(a.base.Log).Debug("IterateParallel", log.String("id", a.base.id), log.Err(err))
 	}
 	if concurrencyLevel < 1 {
-		return errors.OutofRange.Newf("[dml] Artisan.IterateParallel concurrencyLevel %d for query ID %q cannot be smaller zero.", concurrencyLevel, a.base.id)
+		return errors.OutOfRange.Newf("[dml] Artisan.IterateParallel concurrencyLevel %d for query ID %q cannot be smaller zero.", concurrencyLevel, a.base.id)
 	}
 
 	r, err := a.query(ctx, args...)

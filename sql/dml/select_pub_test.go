@@ -557,7 +557,7 @@ func TestSelect_Argument_IterateParallel(t *testing.T) {
 			OrderBy("id").WithArgs().IterateParallel(context.Background(), 0, func(cm *dml.ColumnMap) error {
 			return nil
 		})
-		assert.True(t, errors.Is(err, errors.OutofRange), "Error should have kind errors.OutofRange")
+		assert.True(t, errors.Is(err, errors.OutOfRange), "Error should have kind errors.OutOfRange")
 	})
 
 	t.Run("error in mapper of all workers", func(t *testing.T) {
