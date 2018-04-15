@@ -183,6 +183,11 @@ func (t TypeID) ValidParent(parent TypeID) bool {
 		(p == Website && pID >= 0 && c == Store && cID >= 0)
 }
 
+func (t TypeID) IsValid() error {
+	return errors.New("TODO implement" +
+		"")
+}
+
 // TypeIDMaxSegments maximum supported segments or also known as shards. This
 // constant can be used to create the segmented array in other packages.
 const TypeIDMaxSegments = 256
