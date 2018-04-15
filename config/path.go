@@ -23,10 +23,14 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"encoding/binary"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/bufferpool"
+	"github.com/corestoreio/pkg/util/byteconv"
 )
+
+// TODO add text and binary un/marshaler
 
 // Levels defines how many parts are at least in a path.
 // Like a/b/c for 3 parts. And 5 for a fully qualified path.
@@ -40,6 +44,8 @@ const maxLevels = 8 // up to 8. just a guess
 const Separator byte = '/'
 
 const sSeparator = "/"
+
+var bSeparator = []byte(sSeparator)
 
 const errIncorrectPathTpl = "[config] Invalid Path %q. Either to short or missing path separator."
 
@@ -59,16 +65,23 @@ type Path struct {
 	routeValidated bool
 }
 
-// ParsePathBytes parses a byte slice into a path. TODO implement
-func ParsePathBytes(path []byte) (Path, error) {
-	return Path{}, errors.NotImplemented.Newf("TODO")
-}
-
-// MakePath creates a new validated Path. Scope is assigned to Default.
+// MakePath makes a new validated Path. Scope is assigned to Default.
 func MakePath(route string) (Path, error) {
 	p := Path{
 		route:   route,
 		ScopeID: scope.DefaultTypeID,
+	}
+	if err := p.IsValid(); err != nil {
+		return Path{}, errors.Wrapf(err, "[config] Route %q", p.route)
+	}
+	return p, nil
+}
+
+// MakePathWithScope makes a new validate Path with a custom scope.
+func MakePathWithScope(scp scope.TypeID, route string) (Path, error) {
+	p := Path{
+		route:   route,
+		ScopeID: scp,
 	}
 	if err := p.IsValid(); err != nil {
 		return Path{}, errors.Wrapf(err, "[config] Route %q", p.route)
@@ -194,78 +207,6 @@ func SplitFQ(fqPath string) (Path, error) {
 	}, errors.NotValid.New(err, "[config] ParseInt")
 }
 
-// BenchmarkSplitFQ-4  	 2000000	       761 ns/op	      32 B/op	       1 allocs/op
-// slower than the string version above. this commented out will be kept for historical
-// reasons. maybe some one can speed it more up than the above string version.
-//
-// ErrInvalidScopeID when parsing the scope ID fails.
-// var ErrInvalidScopeID = errors.Make("Scope ID contains invalid bytes. Cannot extract an integer value.")
-//func SplitFQ(fqPath Route) (Path, error) {
-//	if false == (bytes.Count(fqPath, Separator) >= Levels+1) || false == fqPath.Valid() {
-//		return Path{}, fmt.Errorf("Incorrect fully qualified path: %q", fqPath)
-//	}
-//
-//	fi := bytes.IndexRune(fqPath, rSeparator)
-//	scopeBytes := fqPath[:fi]
-//
-//	if false == scope.ValidBytes(scopeBytes) {
-//		return Path{}, scope.ErrUnsupportedScope
-//	}
-//
-//	fqPath = fqPath[fi+1:]                   // remove scope string
-//	fi = bytes.IndexRune(fqPath, rSeparator) // find scope id
-//
-//	scopeIDBytes := fqPath[:fi]
-//	if len(scopeIDBytes) > 5 { // i have never seen more than 10k stores, websites or groups
-//		return Path{}, ErrInvalidScopeID
-//	}
-//
-//	const maxUint64 = (1<<64 - 1)
-//	const cutoff = maxUint64/10 + 1
-//	var n uint64
-//	base := 10
-//	for i := 0; i < len(scopeIDBytes); i++ {
-//		var v byte
-//		d := scopeIDBytes[i]
-//		switch {
-//		case '0' <= d && d <= '9':
-//			v = d - '0'
-//		case 'a' <= d && d <= 'z':
-//			v = d - 'a' + 10
-//		case 'A' <= d && d <= 'Z':
-//			v = d - 'A' + 10
-//		default:
-//			n = 0
-//			return Path{}, ErrInvalidScopeID
-//		}
-//		if v >= byte(base) {
-//			n = 0
-//			return Path{}, ErrInvalidScopeID
-//		}
-//
-//		if n >= cutoff {
-//			// n*base overflows
-//			n = maxUint64
-//			return Path{}, ErrInvalidScopeID
-//		}
-//		n *= uint64(base)
-//
-//		n1 := n + uint64(v)
-//		if n1 < n || n1 > (1<<uint(64)-1) { // 64 bits
-//			// n+v overflows
-//			n = maxUint64
-//			return Path{}, ErrInvalidScopeID
-//		}
-//		n = n1
-//	}
-//
-//	return Path{
-//		Route: Route(fqPath[fi+1:].Copy()),
-//		Scope: scope.FromBytes(scopeBytes),
-//		ID:    int64(n),
-//	}, nil
-//}
-
 // IsValid checks for valid configuration path. Returns nil on success.
 // Configuration path attribute can have only three groups of [a-zA-Z0-9_] characters split by '/'.
 // Minimal length per part 2 characters. Case sensitive.
@@ -355,14 +296,62 @@ func (p Path) Append(routes ...string) Path {
 
 // MarshalText implements interface encoding.TextMarshaler.
 func (p Path) MarshalText() (text []byte, err error) {
-	return []byte(p.route), nil
+	var buf bytes.Buffer
+	if err := p.fq(&buf); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return buf.Bytes(), nil
 }
 
 // UnmarshalText transforms the text into a route with performed validation
 // checks. Implements encoding.TextUnmarshaler.
 // Error behaviour: NotValid, Empty.
 func (p *Path) UnmarshalText(txt []byte) error {
-	p.route = string(txt)
+	if !(bytes.Count(txt, bSeparator) >= Levels+1) {
+		return errors.NotValid.Newf("[config] Incorrect fully qualified path: %q. Expecting: strScope/ID/%s", txt, txt)
+	}
+
+	fi := bytes.Index(txt, bSeparator)
+	scopeStr := txt[:fi]
+
+	if !scope.ValidBytes(scopeStr) {
+		return errors.NotSupported.Newf("[config] Unknown Scope: %q", scopeStr)
+	}
+
+	txt = txt[fi+1:]
+	fi = bytes.Index(txt, bSeparator)
+	scopeID, _, err := byteconv.ParseInt(txt[:fi])
+
+	p.route = string(txt[fi+1:])
+	p.ScopeID = scope.MakeTypeID(scope.FromBytes(scopeStr), scopeID)
+	return errors.NotValid.New(err, "[config] ParseInt")
+}
+
+// MarshalText implements interface encoding.TextMarshaler.
+func (p Path) MarshalBinary() (data []byte, err error) {
+	var buf bytes.Buffer
+	buf.Grow(8)
+	sBuf := buf.Bytes()
+	binary.LittleEndian.PutUint64(sBuf[:], p.ScopeID.ToUint64())
+	buf.Reset()
+	buf.Write(sBuf[:])
+	buf.WriteString(p.route)
+	return buf.Bytes(), nil
+}
+
+// UnmarshalText transforms the text into a route with performed validation
+// checks. Implements encoding.TextUnmarshaler.
+// Error behaviour: NotValid, Empty.
+func (p *Path) UnmarshalBinary(data []byte) error {
+	if len(data) < 8+5 { // 8 for the uint and min 5 bytes for a/b/c
+		return errors.TooShort.Newf("[config] UnmarshalBinary: input data too short")
+	}
+	rawScp := data[:7]
+	p.ScopeID = scope.TypeID(binary.LittleEndian.Uint64(rawScp))
+	if err := p.ScopeID.IsValid(); err != nil {
+
+	}
+	p.route = string(data[:])
 	return errors.WithStack(p.IsValid())
 }
 

@@ -29,10 +29,26 @@ import (
 )
 
 var (
-	_ encoding.TextMarshaler   = (*Path)(nil)
-	_ encoding.TextUnmarshaler = (*Path)(nil)
-	_ fmt.Stringer             = (*Path)(nil)
+	_ encoding.TextMarshaler     = (*Path)(nil)
+	_ encoding.TextUnmarshaler   = (*Path)(nil)
+	_ encoding.BinaryMarshaler   = (*Path)(nil)
+	_ encoding.BinaryUnmarshaler = (*Path)(nil)
+	_ fmt.Stringer               = (*Path)(nil)
 )
+
+func TestMakePathWithScope(t *testing.T) {
+	t.Parallel()
+	t.Run("ok", func(t *testing.T) {
+		p, err := MakePathWithScope(scope.Store.Pack(23), "aa/bb/cc")
+		require.NoError(t, err)
+		assert.Exactly(t, "stores/23/aa/bb/cc", p.String())
+	})
+	t.Run("fails", func(t *testing.T) {
+		p, err := MakePathWithScope(scope.Store.Pack(23), "")
+		assert.True(t, errors.Empty.Match(err), "%+v", err)
+		assert.Exactly(t, Path{}, p)
+	})
+}
 
 func TestNewByParts(t *testing.T) {
 	t.Parallel()
