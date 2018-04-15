@@ -18,6 +18,7 @@ import (
 	"context"
 	"time"
 
+	"database/sql"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/sql/ddl"
@@ -198,35 +199,33 @@ func (dbs *DBStorage) Close() error {
 
 // Set sets a value with its key. Database errors get logged as Info message.
 // Enabled debug level logs the insert ID or rows affected.
-func (dbs *DBStorage) Set(scp scope.TypeID, path string, value []byte) error {
-	return nil
+func (dbs *DBStorage) Set(scp scope.TypeID, path string, value []byte) (err error) {
+	dbs.muAll.Lock()
+	prevState := dbs.stmtWriteState
+	dbs.stmtWriteState = stateInUse
+	defer func() {
+		dbs.stmtWriteState = stateOpen
+		dbs.muAll.Unlock()
+	}()
 
-	// update lastUsed at the end because there might be the slight chance that
-	// a statement gets closed despite we're waiting for the result from the
-	// server.
-	//dbs.Write.StartStmtUse()
-	//defer dbs.Write.StopStmtUse()
-	//
-	//valStr, err := conv.ToStringE(value)
-	//if err != nil {
-	//	return errors.Wrapf(err, "[ccd] Set.conv.ToStringE. SQL: %q Key: %q Value: %v", dbs.Write.sqlRaw, key, value)
-	//}
-	//
-	//stmt, err := dbs.Write.Stmt(context.TODO())
-	//if err != nil {
-	//	return errors.Wrapf(err, "[ccd] Set.Write.Stmt. SQL: %q Key: %q", dbs.Write.sqlRaw, key)
-	//}
-	//
-	//pathLeveled, err := key.Level(-1)
-	//if err != nil {
-	//	return errors.Wrapf(err, "[ccd] Set.key.Level. SQL: %q Key: %q", dbs.Write.sqlRaw, key)
-	//}
-	//
-	//scp, id := key.ScopeID.Unpack()
-	//result, err := stmt.Exec(scp.StrType(), id, pathLeveled, valStr, valStr)
-	//if err != nil {
-	//	return errors.Wrapf(err, "[ccd] Set.stmt.Exec. SQL: %q KeyID: %d Scope: %q Path: %q Value: %q", dbs.Write.sqlRaw, id, scp, pathLeveled, valStr)
-	//}
+	if prevState == stateClosed {
+		ctx, cancel := context.WithTimeout(context.Background(), dbs.cfg.ContextTimeoutWrite)
+		defer cancel()
+		var stmt *dml.Stmt
+		stmt, err = dbs.sqlWrite.Prepare(ctx)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		if dbs.stmtWrite == nil {
+			dbs.stmtWrite = stmt.WithArgs()
+		} else {
+			dbs.stmtWrite.WithStmt(stmt.Stmt)
+		}
+	}
+
+	var res sql.Result
+	res, err = dbs.stmtWrite.Uint64(scp.ToUint64()).String(path).Bytes(value).ExecContext(context.Background())
+
 	//if dbs.log.IsDebug() {
 	//	li, err1 := result.LastInsertId()
 	//	ra, err2 := result.RowsAffected()
@@ -241,7 +240,8 @@ func (dbs *DBStorage) Set(scp scope.TypeID, path string, value []byte) error {
 	//		log.Object("value", value),
 	//	)
 	//}
-	//return nil
+
+	return nil
 }
 
 // Get returns a value from the database by its key. It is guaranteed that the
