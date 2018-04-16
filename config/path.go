@@ -236,7 +236,9 @@ func (p Path) IsValid() error {
 				return errors.NotValid.Newf("[config] Route %q contains invalid character %q.", p.route, rn)
 			}
 		}
-
+		if err := p.ScopeID.IsValid(); err != nil {
+			return errors.NotValid.Newf("[config] Route %q contains invalid ScopeID %q.", p.route, p.ScopeID)
+		}
 	}
 	if seps < Levels-1 || utf8.RuneCountInString(p.route) < 8 /*aa/bb/cc*/ {
 		return errors.NotValid.Newf(errIncorrectPathTpl, p.route)
@@ -321,10 +323,13 @@ func (p *Path) UnmarshalText(txt []byte) error {
 	txt = txt[fi+1:]
 	fi = bytes.Index(txt, bSeparator)
 	scopeID, _, err := byteconv.ParseInt(txt[:fi])
+	if err != nil {
+		return errors.NotValid.New(err, "[config] ParseInt")
+	}
 
 	p.route = string(txt[fi+1:])
 	p.ScopeID = scope.MakeTypeID(scope.FromBytes(scopeStr), scopeID)
-	return errors.NotValid.New(err, "[config] ParseInt")
+	return errors.NotValid.New(p.IsValid(), "[config] ParseInt")
 }
 
 // MarshalText implements interface encoding.TextMarshaler.
@@ -346,11 +351,7 @@ func (p *Path) UnmarshalBinary(data []byte) error {
 	if len(data) < 8+5 { // 8 for the uint and min 5 bytes for a/b/c
 		return errors.TooShort.Newf("[config] UnmarshalBinary: input data too short")
 	}
-	rawScp := data[:8]
-	p.ScopeID = scope.TypeID(binary.LittleEndian.Uint64(rawScp))
-	if err := p.ScopeID.IsValid(); err != nil {
-		return errors.WithStack(err)
-	}
+	p.ScopeID = scope.TypeID(binary.LittleEndian.Uint64(data[:8]))
 	p.route = string(data[8:])
 	return errors.WithStack(p.IsValid())
 }

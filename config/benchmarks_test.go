@@ -289,3 +289,91 @@ func benchmarkScopedServiceStringRun(b *testing.B, websiteID, storeID int64) {
 		}
 	}
 }
+
+// BenchmarkPathSlice_Sort-4	 1000000	      1987 ns/op	     480 B/op	       8 allocs/op
+func BenchmarkPathSlice_Sort(b *testing.B) {
+	// allocs are here uninteresting
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ps := config.PathSlice{
+			config.MustMakePath("bb/cc/dd").BindStore(3),
+			config.MustMakePath("bb/cc/dd").BindStore(2),
+			config.MustMakePath("bb/cc/dd"),
+			config.MustMakePath("xx/yy/zz").BindWebsite(3),
+			config.MustMakePath("xx/yy/zz").BindWebsite(1),
+			config.MustMakePath("xx/yy/zz").BindWebsite(2),
+			config.MustMakePath("zz/aa/bb").BindStore(4),
+			config.MustMakePath("zz/aa/bb").BindWebsite(1),
+			config.MustMakePath("aa/bb/cc").BindWebsite(2),
+			config.MustMakePath("aa/bb/cc"),
+		}
+		ps.Sort()
+		if len(ps) != 6 {
+			b.Fatal("Incorrect length of ps variable after sorting")
+		}
+	}
+}
+
+var benchmarkPath config.Path
+
+func BenchmarkPath_Marshal(b *testing.B) {
+	var data []byte
+	var err error
+	const path = "system/full_page_cache/varnish/backend_port"
+	const want = "stores/123/" + path
+
+	// BenchmarkPath_Marshal/MarshalText-4         	 3000000	       592 ns/op	     112 B/op	       1 allocs/op
+	b.Run("MarshalText", func(b *testing.B) {
+		p := config.MustMakePath(path).BindStore(123)
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			if data, err = p.MarshalText(); err != nil {
+				b.Fatal(err)
+			}
+			if len(data) != 54 {
+				b.Fatalf("Invalid data length: %d", len(data))
+			}
+		}
+	})
+	// BenchmarkPath_Marshal/UnmarshalText-4       	 3000000	       546 ns/op	      48 B/op	       1 allocs/op
+	b.Run("UnmarshalText", func(b *testing.B) {
+		var bData = []byte(want)
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			if err := benchmarkPath.UnmarshalText(bData); err != nil {
+				b.Fatal(err)
+			}
+			//b.Fatalf(benchmarkPath.String())
+			if benchmarkPath.ScopeID != scope.TypeID(67108987) {
+				b.Fatalf("Invalid scope: %d", benchmarkPath.ScopeID)
+			}
+		}
+	})
+	// BenchmarkPath_Marshal/MarshalBinary-4       	20000000	        95.5 ns/op	     112 B/op	       1 allocs/op
+	b.Run("MarshalBinary", func(b *testing.B) {
+		p := config.MustMakePath(path).BindStore(123)
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			if data, err = p.MarshalBinary(); err != nil {
+				b.Fatal(err)
+			}
+			if len(data) != 51 {
+				b.Fatalf("Invalid data length: %d", len(data))
+			}
+		}
+	})
+	// BenchmarkPath_Marshal/UnmarshalBinary-4     	 3000000	       500 ns/op	      48 B/op	       1 allocs/op
+	b.Run("UnmarshalBinary", func(b *testing.B) {
+		var bData = []byte("{\x00\x00\x04\x00\x00\x00\x00system/full_page_cache/varnish/backend_port")
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			if err := benchmarkPath.UnmarshalBinary(bData); err != nil {
+				b.Fatal(err)
+			}
+			if benchmarkPath.ScopeID != scope.TypeID(67108987) {
+				b.Fatalf("Invalid scope: %d", benchmarkPath.ScopeID)
+			}
+		}
+	})
+}
