@@ -300,7 +300,7 @@ func TestPathRouteIsValid(t *testing.T) {
 }
 
 func TestPathHashWebsite(t *testing.T) {
-
+	t.Parallel()
 	p := MustMakePath("general/single_store_mode/enabled").BindWebsite(33)
 	hv, err := p.Hash(-1)
 	if err != nil {
@@ -315,7 +315,7 @@ func TestPathHashWebsite(t *testing.T) {
 }
 
 func TestPathHashDefault(t *testing.T) {
-
+	t.Parallel()
 	tests := []struct {
 		have        string
 		level       int
@@ -362,7 +362,7 @@ func TestPathHashDefault(t *testing.T) {
 }
 
 func TestPathCloneAppend(t *testing.T) {
-
+	t.Parallel()
 	rs := "aa/bb/cc"
 	pOrg := MustMakePath(rs)
 	pOrg = pOrg.BindStore(3141)
@@ -388,7 +388,7 @@ func TestPath_BindWebsite(t *testing.T) {
 var _ sort.Interface = (*PathSlice)(nil)
 
 func TestPathSlice_Contains(t *testing.T) {
-
+	t.Parallel()
 	tests := []struct {
 		paths  PathSlice
 		search Path
@@ -417,7 +417,7 @@ func TestPathSlice_Contains(t *testing.T) {
 }
 
 func TestPathSlice_Sort(t *testing.T) {
-
+	t.Parallel()
 	runner := func(have, want PathSlice) func(*testing.T) {
 		return func(t *testing.T) {
 			have.Sort()
@@ -488,34 +488,8 @@ func TestPathSlice_Sort(t *testing.T) {
 
 }
 
-// BenchmarkPathSlice_Sort-4	 1000000	      1987 ns/op	     480 B/op	       8 allocs/op
-func BenchmarkPathSlice_Sort(b *testing.B) {
-	// allocs are here uninteresting
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		ps := PathSlice{
-			MustMakePath("bb/cc/dd").BindStore(3),
-			MustMakePath("bb/cc/dd").BindStore(2),
-			MustMakePath("bb/cc/dd"),
-			MustMakePath("xx/yy/zz").BindWebsite(3),
-			MustMakePath("xx/yy/zz").BindWebsite(1),
-			MustMakePath("xx/yy/zz").BindWebsite(2),
-			MustMakePath("zz/aa/bb").BindStore(4),
-			MustMakePath("zz/aa/bb").BindWebsite(1),
-			MustMakePath("aa/bb/cc").BindWebsite(2),
-			MustMakePath("aa/bb/cc"),
-		}
-		ps.Sort()
-		if len(ps) != 6 {
-			b.Fatal("Incorrect length of ps variable after sorting")
-		}
-	}
-
-}
-
 func TestPathEqual(t *testing.T) {
-
+	t.Parallel()
 	tests := []struct {
 		a    string
 		b    string
@@ -535,7 +509,7 @@ func TestPathEqual(t *testing.T) {
 }
 
 func TestPathLevel(t *testing.T) {
-
+	t.Parallel()
 	tests := []struct {
 		have  string
 		depth int
@@ -604,7 +578,7 @@ func TestPathHash(t *testing.T) {
 }
 
 func TestPathPartPosition(t *testing.T) {
-
+	t.Parallel()
 	tests := []struct {
 		have     string
 		pos      int
@@ -634,7 +608,7 @@ func TestPathPartPosition(t *testing.T) {
 }
 
 func TestPathValidate(t *testing.T) {
-
+	t.Parallel()
 	tests := []struct {
 		have        string
 		wantErrKind errors.Kind
@@ -664,7 +638,7 @@ func TestPathValidate(t *testing.T) {
 }
 
 func TestPathSplit(t *testing.T) {
-
+	t.Parallel()
 	tests := []struct {
 		have        string
 		wantPart    []string
@@ -688,4 +662,76 @@ func TestPathSplit(t *testing.T) {
 			assert.Exactly(t, wantPart, sps[i], "Index %d", i)
 		}
 	}
+}
+
+func TestPath_MarshalText(t *testing.T) {
+	t.Parallel()
+
+	t.Run("two way, no errors", func(t *testing.T) {
+		p, err := MakePathWithScope(scope.Store.Pack(4), "xx/yy/zz")
+		require.NoError(t, err)
+		txt, err := p.MarshalText()
+		require.NoError(t, err)
+		assert.Exactly(t, `stores/4/xx/yy/zz`, string(txt))
+
+		var p2 Path
+		err = p2.UnmarshalText(txt)
+		require.NoError(t, err)
+		assert.Exactly(t, `stores/4/xx/yy/zz`, p2.String())
+	})
+
+	t.Run("UnmarshalText invalid length", func(t *testing.T) {
+		var p2 Path
+		err := p2.UnmarshalText([]byte(`aa/bb`))
+		assert.True(t, errors.NotValid.Match(err), "%+v", err)
+		assert.EqualError(t, err, "[config] Incorrect fully qualified path: \"aa/bb\". Expecting: strScope/ID/aa/bb")
+	})
+	t.Run("UnmarshalText invalid scope", func(t *testing.T) {
+		var p2 Path
+		err := p2.UnmarshalText([]byte(`scopeX/123/aa/bb/cc/dd`))
+		assert.True(t, errors.NotSupported.Match(err), "%+v", err)
+		assert.EqualError(t, err, "[config] Unknown Scope: \"scopeX\"")
+	})
+	t.Run("UnmarshalText failed to parse scope id", func(t *testing.T) {
+		var p2 Path
+		err := p2.UnmarshalText([]byte(`websites/x/aa/bb/cc/dd`))
+		assert.True(t, errors.NotValid.Match(err), "%+v", err)
+		assert.EqualError(t, err, "[config] ParseInt: strconv.ParseInt: parsing \"x\": invalid syntax")
+	})
+}
+
+func TestPath_MarshalBinary(t *testing.T) {
+	t.Parallel()
+
+	t.Run("two way, no errors", func(t *testing.T) {
+		p, err := MakePathWithScope(scope.Store.Pack(4), "xx/yy/zz")
+		require.NoError(t, err)
+		txt, err := p.MarshalBinary()
+		require.NoError(t, err)
+		assert.Exactly(t, "\x04\x00\x00\x04\x00\x00\x00\x00xx/yy/zz", string(txt))
+
+		var p2 Path
+		err = p2.UnmarshalBinary(txt)
+		require.NoError(t, err)
+		assert.Exactly(t, `stores/4/xx/yy/zz`, p2.String())
+	})
+
+	t.Run("UnmarshalBinary invalid length", func(t *testing.T) {
+		var p2 Path
+		err := p2.UnmarshalBinary([]byte(`aa/bb`))
+		assert.True(t, errors.TooShort.Match(err), "%+v", err)
+		assert.EqualError(t, err, "[config] UnmarshalBinary: input data too short")
+	})
+	t.Run("UnmarshalBinary invalid scope", func(t *testing.T) {
+		var p2 Path
+		err := p2.UnmarshalBinary([]byte(`scopeX/123/aa/bb/cc/dd`))
+		assert.True(t, errors.NotValid.Match(err), "%+v", err)
+		assert.EqualError(t, err, "[scope] Invalid Type: Type(112)")
+	})
+	t.Run("UnmarshalBinary failed to parse scope id", func(t *testing.T) {
+		var p2 Path
+		err := p2.UnmarshalBinary([]byte(`websites/x/aa/bb/cc/dd`))
+		assert.True(t, errors.NotValid.Match(err), "%+v", err)
+		assert.EqualError(t, err, "[scope] Invalid Type: Type(115)")
+	})
 }

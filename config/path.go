@@ -331,7 +331,7 @@ func (p *Path) UnmarshalText(txt []byte) error {
 func (p Path) MarshalBinary() (data []byte, err error) {
 	var buf bytes.Buffer
 	buf.Grow(8)
-	sBuf := buf.Bytes()
+	sBuf := buf.Bytes()[:8]
 	binary.LittleEndian.PutUint64(sBuf[:], p.ScopeID.ToUint64())
 	buf.Reset()
 	buf.Write(sBuf[:])
@@ -346,12 +346,12 @@ func (p *Path) UnmarshalBinary(data []byte) error {
 	if len(data) < 8+5 { // 8 for the uint and min 5 bytes for a/b/c
 		return errors.TooShort.Newf("[config] UnmarshalBinary: input data too short")
 	}
-	rawScp := data[:7]
+	rawScp := data[:8]
 	p.ScopeID = scope.TypeID(binary.LittleEndian.Uint64(rawScp))
 	if err := p.ScopeID.IsValid(); err != nil {
-
+		return errors.WithStack(err)
 	}
-	p.route = string(data[:])
+	p.route = string(data[8:])
 	return errors.WithStack(p.IsValid())
 }
 
