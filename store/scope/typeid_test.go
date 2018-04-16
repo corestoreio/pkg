@@ -473,3 +473,12 @@ func TestMakeTypeIDString(t *testing.T) {
 	assert.Exactly(t, scope.TypeID(0), tid)
 	assert.EqualError(t, err, "[scope] MakeTypeIDString with text \"-1\": strconv.ParseUint: parsing \"-1\": invalid syntax")
 }
+
+func TestTypeID_IsValid(t *testing.T) {
+	assert.NoError(t, scope.DefaultTypeID.IsValid())
+	assert.NoError(t, scope.Website.Pack(3).IsValid())
+	assert.NoError(t, scope.Group.Pack(4).IsValid())
+	assert.NoError(t, scope.Store.Pack(5).IsValid())
+	assert.NoError(t, scope.TypeID(0).IsValid())
+	assert.True(t, errors.NotValid.Match(scope.TypeID(485968409).IsValid()))
+}

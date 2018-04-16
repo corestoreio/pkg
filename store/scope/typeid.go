@@ -183,9 +183,13 @@ func (t TypeID) ValidParent(parent TypeID) bool {
 		(p == Website && pID >= 0 && c == Store && cID >= 0)
 }
 
+// IsValid checks if the scope and its ID are valid.
 func (t TypeID) IsValid() error {
-	return errors.New("TODO implement" +
-		"")
+	s, id := t.Unpack()
+	if id < 0 {
+		return errors.NotValid.Newf("[scope] TypeID.IsValid: id cannot be negative, got %d", id)
+	}
+	return s.IsValid()
 }
 
 // TypeIDMaxSegments maximum supported segments or also known as shards. This
@@ -218,7 +222,7 @@ func MakeTypeID(t Type, id int64) TypeID {
 	return TypeID(t)<<24 | TypeID(id)
 }
 
-// MakeTypeIDString creates a TypeID from a numbered string.
+// MakeTypeIDString creates a TypeID from an uint base 10 numbered string.
 func MakeTypeIDString(s string) (TypeID, error) {
 	u64, err := strconv.ParseUint(s, 10, 32)
 	if err != nil {
