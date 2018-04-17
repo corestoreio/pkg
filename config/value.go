@@ -88,6 +88,9 @@ func (v Value) String() string {
 	if err != nil {
 		return fmt.Sprintf("[config] Value: %+v", err)
 	}
+	if v.data == nil {
+		return "<nil>"
+	}
 	return fmt.Sprintf("%q", v.data)
 }
 
@@ -100,6 +103,9 @@ func (v Value) WriteTo(w io.Writer) (n int64, err error) {
 	return int64(nw), err
 }
 
+// Str returns the underlying value as a string. Ok is true when data slice
+// bytes are not nil. Whereas function String implements fmt.Stringer and
+// returns something different.
 func (v Value) Str() (_ string, ok bool, err error) {
 	v, err = v.init()
 	return string(v.data), v.data != nil, err

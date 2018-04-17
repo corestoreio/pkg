@@ -233,11 +233,11 @@ func (p Path) IsValid() error {
 			case unicode.IsDigit(rn), unicode.IsLetter(rn), unicode.IsNumber(rn):
 				// ok
 			default:
-				return errors.NotValid.Newf("[config] Route %q contains invalid character %q.", p.route, rn)
+				return errors.NotValid.Newf("[config] Route %q contains invalid character: %q", p.route, rn)
 			}
 		}
 		if err := p.ScopeID.IsValid(); err != nil {
-			return errors.NotValid.Newf("[config] Route %q contains invalid ScopeID %q.", p.route, p.ScopeID)
+			return errors.NotValid.Newf("[config] Route %q contains invalid ScopeID: %q", p.route, p.ScopeID.String())
 		}
 	}
 	if seps < Levels-1 || utf8.RuneCountInString(p.route) < 8 /*aa/bb/cc*/ {
@@ -332,7 +332,7 @@ func (p *Path) UnmarshalText(txt []byte) error {
 	return errors.NotValid.New(p.IsValid(), "[config] ParseInt")
 }
 
-// MarshalText implements interface encoding.TextMarshaler.
+// MarshalBinary implements interface encoding.BinaryMarshaler.
 func (p Path) MarshalBinary() (data []byte, err error) {
 	var buf bytes.Buffer
 	buf.Grow(8)
@@ -344,9 +344,8 @@ func (p Path) MarshalBinary() (data []byte, err error) {
 	return buf.Bytes(), nil
 }
 
-// UnmarshalText transforms the text into a route with performed validation
-// checks. Implements encoding.TextUnmarshaler.
-// Error behaviour: NotValid, Empty.
+// UnmarshalBinary decodes input bytes into a valid Path. Implements
+// encoding.BinaryUnmarshaler.
 func (p *Path) UnmarshalBinary(data []byte) error {
 	if len(data) < 8+5 { // 8 for the uint and min 5 bytes for a/b/c
 		return errors.TooShort.Newf("[config] UnmarshalBinary: input data too short")

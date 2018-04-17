@@ -144,8 +144,8 @@ func TestFQ(t *testing.T) {
 		{scope.Default, 44, "system/dev/debug", scope.StrDefault.String() + "/0/system/dev/debug", errors.NoKind},
 		{scope.Website, 0, "system/dev/debug", scope.StrWebsites.String() + "/0/system/dev/debug", errors.NoKind},
 		{scope.Website, 343, "system/dev/debug", scope.StrWebsites.String() + "/343/system/dev/debug", errors.NoKind},
-		{250, 0, "system/dev/debug", scope.StrDefault.String() + "/0/system/dev/debug", errors.NoKind},
-		{250, 343, "system/dev/debug", scope.StrDefault.String() + "/0/system/dev/debug", errors.NoKind},
+		{250, 0, "system/dev/debug", scope.StrDefault.String() + "/0/system/dev/debug", errors.NotValid},
+		{250, 343, "system/dev/debug", scope.StrDefault.String() + "/0/system/dev/debug", errors.NotValid},
 	}
 	for i, test := range tests {
 		p, pErr := MakePath(test.route)
@@ -726,12 +726,12 @@ func TestPath_MarshalBinary(t *testing.T) {
 		var p2 Path
 		err := p2.UnmarshalBinary([]byte(`scopeX/123/aa/bb/cc/dd`))
 		assert.True(t, errors.NotValid.Match(err), "%+v", err)
-		assert.EqualError(t, err, "[scope] Invalid Type: Type(112)")
+		assert.EqualError(t, err, "[config] Route \"23/aa/bb/cc/dd\" contains invalid ScopeID: \"Type(Type(112)) ID(7299955)\"")
 	})
 	t.Run("UnmarshalBinary failed to parse scope id", func(t *testing.T) {
 		var p2 Path
 		err := p2.UnmarshalBinary([]byte(`websites/x/aa/bb/cc/dd`))
 		assert.True(t, errors.NotValid.Match(err), "%+v", err)
-		assert.EqualError(t, err, "[scope] Invalid Type: Type(115)")
+		assert.EqualError(t, err, "[config] Route \"/x/aa/bb/cc/dd\" contains invalid ScopeID: \"Type(Type(115)) ID(6448503)\"")
 	})
 }
