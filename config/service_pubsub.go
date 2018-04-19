@@ -39,15 +39,15 @@ type MessageReceiver interface {
 // MessageReceiver interfaces. This interface is at the moment only implemented
 // by the config.Service.
 type Subscriber interface {
-	// Subscribe subscribes a MessageReceiver to a path. Path allows you to
-	// filter to which path or part of a path you would like to listen. A path
-	// can be e.g. "system/smtp/host" to receive messages by single host changes
-	// or "system/smtp" to receive message from all smtp changes or "system" to
-	// receive changes for all paths beginning with "system". A path is equal to
-	// a topic in a PubSub system. Path cannot be empty means you cannot listen
-	// to all changes. Returns a unique identifier for the Subscriber for later
-	// removal, or an error.
-	Subscribe(Path, MessageReceiver) (subscriptionID int, err error)
+	// Subscribe subscribes a MessageReceiver to a fully qualified path. Path
+	// allows you to filter to which path or part of a path you would like to
+	// listen. A path can be e.g. "system/smtp/host" to receive messages by
+	// single host changes or "system/smtp" to receive message from all smtp
+	// changes or "system" to receive changes for all paths beginning with
+	// "system". A path is equal to a topic in a PubSub system. Path cannot be
+	// empty means you cannot listen to all changes. Returns a unique identifier
+	// for the Subscriber for later removal, or an error.
+	Subscribe(fqPath string, mr MessageReceiver) (subscriptionID int, err error)
 }
 
 // pubSub embedded pointer struct into the Service
@@ -55,9 +55,10 @@ type pubSub struct {
 	// subMap, subscribed writers are getting called when a write event
 	// will happen. uint64 is the path/route (aka topic) and int the Subscriber ID for later
 	// removal.
-	subMap     map[uint32]map[int]MessageReceiver
-	subAutoInc int // subAutoInc increased whenever a Subscriber has been added
+	// TODO should be a tree to allow hierarchical subscriptions and then one can remove partially level
 	mu         sync.RWMutex
+	subMap     map[string]map[int]MessageReceiver
+	subAutoInc int // subAutoInc increased whenever a Subscriber has been added
 	pubPath    chan Path
 	stop       chan struct{} // terminates the goroutine
 	closeErr   chan error    // this one tells us that the go routine has really been terminated
@@ -92,21 +93,19 @@ func (s *pubSub) Close() error {
 //		- currency/options/base
 //		- currency/options
 //		- currency
-func (s *pubSub) Subscribe(p Path, mr MessageReceiver) (subscriptionID int, err error) {
-	if p.IsEmpty() {
-		return 0, errors.Empty.Newf("[config] pubSub.Subscribe %q", p)
+func (s *pubSub) Subscribe(path string, mr MessageReceiver) (subscriptionID int, err error) {
+	if path == "" {
+		return 0, errors.Empty.Newf("[config] pubSub.Subscribe: Path is empty")
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.subAutoInc++
 	subscriptionID = s.subAutoInc
 
-	hashPath := p.Hash32()
-
-	if _, ok := s.subMap[hashPath]; !ok {
-		s.subMap[hashPath] = make(map[int]MessageReceiver)
+	if _, ok := s.subMap[path]; !ok {
+		s.subMap[path] = make(map[int]MessageReceiver)
 	}
-	s.subMap[hashPath][subscriptionID] = mr
+	s.subMap[path][subscriptionID] = mr
 
 	return
 }
@@ -139,10 +138,6 @@ func (s *pubSub) sendMsg(p Path) {
 // a message is coming in, it calls all subscribers. We must run asynchronously
 // because we don't know how long each subscriber needs.
 func (s *pubSub) publish() {
-
-	// TODO: review this API and the running goroutine: http://www.jtolds.com/writing/2016/03/go-channels-are-bad-and-you-should-feel-bad/
-	// but for know it works, someone can refactor it :-)
-
 	for {
 		select {
 		case <-s.stop:
@@ -150,7 +145,6 @@ func (s *pubSub) publish() {
 			return
 		case p, ok := <-s.pubPath:
 			if !ok {
-				// channel closed
 				return
 			}
 
@@ -159,10 +153,11 @@ func (s *pubSub) publish() {
 			}
 
 			var evict []int
-
-			evict = append(evict, s.readMapAndSend(p, 1)...)  // e.g.: system and StrScope/ID/system
-			evict = append(evict, s.readMapAndSend(p, 2)...)  // e.g.: system/smtp and StrScope/ID/system/smtp
-			evict = append(evict, s.readMapAndSend(p, -1)...) // e.g.: system/smtp/host/... and StrScope/ID/system/smtp/host/...
+			evict = append(evict, s.readMapAndSend(p, 1)...)  // e.g.: StrScope
+			evict = append(evict, s.readMapAndSend(p, 2)...)  // e.g.: StrScope/ID
+			evict = append(evict, s.readMapAndSend(p, 3)...)  // e.g.: StrScope/ID/system
+			evict = append(evict, s.readMapAndSend(p, 4)...)  // e.g.: StrScope/ID/system/smtp
+			evict = append(evict, s.readMapAndSend(p, -1)...) // e.g.: StrScope/ID/system/smtp/host/...
 
 			// remove all failed Subscribers
 			if len(evict) > 0 {
@@ -180,22 +175,13 @@ func (s *pubSub) readMapAndSend(p Path, level int) (evict []int) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	h, err := p.Hash(level) // including scope and scopeID and the route
+	lev, err := p.Level(level) // including scope and scopeID and the route
 	if err != nil && s.log.IsDebug() {
 		s.log.Debug("config.pubSub.publish.PathHash.err", log.Err(err), log.Stringer("path", p))
 	}
-	if subs, ok := s.subMap[h]; ok { // e.g.: strScope/ID/system/smtp/host/etc/pp
+	if subs, ok := s.subMap[lev]; ok { // e.g.: strScope/ID/system/smtp/host/etc/pp
 		evict = append(evict, s.sendMsgs(subs, p)...)
 	}
-
-	h, err = p.Hash(level) // without scope and scopeID and route only
-	if err != nil && s.log.IsDebug() {
-		s.log.Debug("config.pubSub.publish.RouteHash.err", log.Err(err), log.Stringer("path", p))
-	}
-	if subs, ok := s.subMap[h]; ok { // e.g.: system/smtp/host/etc/pp
-		evict = append(evict, s.sendMsgs(subs, p)...)
-	}
-
 	return
 }
 
@@ -231,7 +217,7 @@ func (s *pubSub) sendMsgRecoverable(id int, sl MessageReceiver, p Path) (err err
 
 func newPubSub(l log.Logger) *pubSub {
 	return &pubSub{
-		subMap:   make(map[uint32]map[int]MessageReceiver),
+		subMap:   make(map[string]map[int]MessageReceiver),
 		pubPath:  make(chan Path),
 		stop:     make(chan struct{}),
 		closeErr: make(chan error),

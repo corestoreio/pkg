@@ -100,7 +100,7 @@ type Mock struct {
 	GetFn       func(p Path) (v Value, ok bool, err error)
 	invocations invocations // contains path and count of how many times the typed function has been called
 
-	SubscribeFn      func(Path, MessageReceiver) (subscriptionID int, err error)
+	SubscribeFn      func(string, MessageReceiver) (subscriptionID int, err error)
 	SubscribeInvokes int32
 }
 
@@ -208,9 +208,9 @@ func (s *Mock) Invokes() invocations {
 
 // Subscribe returns the before applied SubscriptionID and SubscriptionErr
 // Does not start any underlying Goroutines.
-func (s *Mock) Subscribe(p Path, mr MessageReceiver) (subscriptionID int, err error) {
+func (s *Mock) Subscribe(path string, mr MessageReceiver) (subscriptionID int, err error) {
 	s.SubscribeInvokes++
-	return s.SubscribeFn(p, mr)
+	return s.SubscribeFn(path, mr)
 }
 
 // NewScoped creates a new ScopedReader which uses the underlying
