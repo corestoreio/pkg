@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/storage/null"
 )
 
 const (
@@ -559,7 +560,7 @@ func (c *Condition) Uint64s(i ...uint64) *Condition {
 // Add when needed
 //func (c *Condition) Decimals(d ...Decimal) *Condition {}
 
-func (c *Condition) Decimal(d Decimal) *Condition {
+func (c *Condition) Decimal(d null.Decimal) *Condition {
 	v := d.String()
 	if c.isExpression() {
 		if v == sqlStrNullUC {
@@ -668,7 +669,7 @@ func (c *Condition) Times(t ...time.Time) *Condition {
 	return c
 }
 
-func (c *Condition) NullString(nv NullString) *Condition {
+func (c *Condition) NullString(nv null.String) *Condition {
 	if c.isExpression() {
 		c.Right.args = c.Right.args.add(nv)
 		return c
@@ -677,7 +678,7 @@ func (c *Condition) NullString(nv NullString) *Condition {
 	return c
 }
 
-func (c *Condition) NullStrings(nv ...NullString) *Condition {
+func (c *Condition) NullStrings(nv ...null.String) *Condition {
 	if c.isExpression() {
 		c.Right.args = c.Right.args.add(nv)
 		return c
@@ -686,7 +687,7 @@ func (c *Condition) NullStrings(nv ...NullString) *Condition {
 	return c
 }
 
-func (c *Condition) NullFloat64(nv NullFloat64) *Condition {
+func (c *Condition) NullFloat64(nv null.Float64) *Condition {
 	if c.isExpression() {
 		c.Right.args = c.Right.args.add(nv)
 		return c
@@ -695,7 +696,7 @@ func (c *Condition) NullFloat64(nv NullFloat64) *Condition {
 	return c
 }
 
-func (c *Condition) NullFloat64s(nv ...NullFloat64) *Condition {
+func (c *Condition) NullFloat64s(nv ...null.Float64) *Condition {
 	if c.isExpression() {
 		c.Right.args = c.Right.args.add(nv)
 		return c
@@ -704,7 +705,7 @@ func (c *Condition) NullFloat64s(nv ...NullFloat64) *Condition {
 	return c
 }
 
-func (c *Condition) NullInt64(nv NullInt64) *Condition {
+func (c *Condition) NullInt64(nv null.Int64) *Condition {
 	if c.isExpression() {
 		c.Right.args = c.Right.args.add(nv)
 		return c
@@ -713,7 +714,7 @@ func (c *Condition) NullInt64(nv NullInt64) *Condition {
 	return c
 }
 
-func (c *Condition) NullInt64s(nv ...NullInt64) *Condition {
+func (c *Condition) NullInt64s(nv ...null.Int64) *Condition {
 	if c.isExpression() {
 		c.Right.args = c.Right.args.add(nv)
 		return c
@@ -722,7 +723,7 @@ func (c *Condition) NullInt64s(nv ...NullInt64) *Condition {
 	return c
 }
 
-func (c *Condition) NullBool(nv NullBool) *Condition {
+func (c *Condition) NullBool(nv null.Bool) *Condition {
 	if c.isExpression() {
 		c.Right.args = c.Right.args.add(nv)
 		return c
@@ -731,7 +732,7 @@ func (c *Condition) NullBool(nv NullBool) *Condition {
 	return c
 }
 
-func (c *Condition) NullBools(nv ...NullBool) *Condition {
+func (c *Condition) NullBools(nv ...null.Bool) *Condition {
 	if c.isExpression() {
 		c.Right.args = c.Right.args.add(nv)
 		return c
@@ -740,7 +741,7 @@ func (c *Condition) NullBools(nv ...NullBool) *Condition {
 	return c
 }
 
-func (c *Condition) NullTime(nv NullTime) *Condition {
+func (c *Condition) NullTime(nv null.Time) *Condition {
 	if c.isExpression() {
 		c.Right.args = c.Right.args.add(nv)
 		return c
@@ -749,7 +750,7 @@ func (c *Condition) NullTime(nv NullTime) *Condition {
 	return c
 }
 
-func (c *Condition) NullTimes(nv ...NullTime) *Condition {
+func (c *Condition) NullTimes(nv ...null.Time) *Condition {
 	if c.isExpression() {
 		c.Right.args = c.Right.args.add(nv)
 		return c

@@ -21,6 +21,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -37,8 +38,8 @@ func TestArguments_Interfaces(t *testing.T) {
 	t.Run("no slices, nulls valid", func(t *testing.T) {
 		args := MakeArgs(10).
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
-			NullString(MakeNullString("eCom3")).NullInt64(MakeNullInt64(4)).NullFloat64(MakeNullFloat64(2.7)).
-			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()))
+			NullString(null.MakeString("eCom3")).NullInt64(null.MakeInt64(4)).NullFloat64(null.MakeFloat64(2.7)).
+			NullBool(null.MakeBool(true)).NullTime(null.MakeTime(now()))
 
 		assert.Exactly(t,
 			[]interface{}{
@@ -51,8 +52,8 @@ func TestArguments_Interfaces(t *testing.T) {
 	t.Run("no slices, nulls invalid", func(t *testing.T) {
 		args := MakeArgs(10).
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
-			NullString(MakeNullString("eCom3", false)).NullInt64(MakeNullInt64(4, false)).NullFloat64(MakeNullFloat64(2.7, false)).
-			NullBool(MakeNullBool(true, false)).NullTime(MakeNullTime(now(), false))
+			NullString(null.MakeString("eCom3", false)).NullInt64(null.MakeInt64(4, false)).NullFloat64(null.MakeFloat64(2.7, false)).
+			NullBool(null.MakeBool(true, false)).NullTime(null.MakeTime(now(), false))
 		assert.Exactly(t,
 			[]interface{}{nil, int64(-1), int64(1), int64(2), 3.1, true, "eCom1", []uint8{0x65, 0x43, 0x6f, 0x6d, 0x32}, now(),
 				nil, nil, nil, nil, nil},
@@ -63,9 +64,9 @@ func TestArguments_Interfaces(t *testing.T) {
 		args := MakeArgs(10).
 			Null().Ints(-1, -2).Int64s(1, 2).Uints(568, 766).Uint64s(2).Float64s(1.2, 3.1).Bools(false, true).
 			Strings("eCom1", "eCom11").BytesSlice([]byte(`eCom2`)).Times(now(), now()).
-			NullStrings(MakeNullString("eCom3"), MakeNullString("eCom3")).NullInt64s(MakeNullInt64(4), MakeNullInt64(4)).
-			NullFloat64s(MakeNullFloat64(2.7), MakeNullFloat64(2.7)).
-			NullBools(MakeNullBool(true)).NullTimes(MakeNullTime(now()), MakeNullTime(now()))
+			NullStrings(null.MakeString("eCom3"), null.MakeString("eCom3")).NullInt64s(null.MakeInt64(4), null.MakeInt64(4)).
+			NullFloat64s(null.MakeFloat64(2.7), null.MakeFloat64(2.7)).
+			NullBools(null.MakeBool(true)).NullTimes(null.MakeTime(now()), null.MakeTime(now()))
 		assert.Exactly(t,
 			[]interface{}{nil, int64(-1), int64(-2), int64(1), int64(2), int64(568), int64(766), int64(2), 1.2, 3.1, false, true,
 				"eCom1", "eCom11", []uint8{0x65, 0x43, 0x6f, 0x6d, 0x32}, now(), now(),
@@ -87,8 +88,8 @@ func TestArguments_DriverValue(t *testing.T) {
 		args := MakeArgs(10).
 			DriverValues(
 				driverValueNil(0),
-				driverValueBytes(nil), MakeNullInt64(3), MakeNullFloat64(2.7), MakeNullBool(true),
-				driverValueBytes(`Invoice`), MakeNullString("Creditmemo"), nowSentinel{}, MakeNullTime(now()),
+				driverValueBytes(nil), null.MakeInt64(3), null.MakeFloat64(2.7), null.MakeBool(true),
+				driverValueBytes(`Invoice`), null.MakeString("Creditmemo"), nowSentinel{}, null.MakeTime(now()),
 			)
 		assert.Exactly(t,
 			[]interface{}{nil, []uint8(nil), int64(3), 2.7, true,
@@ -100,13 +101,13 @@ func TestArguments_DriverValue(t *testing.T) {
 		args := MakeArgs(10).
 			DriverValue(driverValueNil(0)).
 			DriverValue(driverValueBytes(nil)).
-			DriverValue(MakeNullInt64(3)).
-			DriverValue(MakeNullFloat64(2.7)).
-			DriverValue(MakeNullBool(true)).
+			DriverValue(null.MakeInt64(3)).
+			DriverValue(null.MakeFloat64(2.7)).
+			DriverValue(null.MakeBool(true)).
 			DriverValue(driverValueBytes(`Invoice`)).
-			DriverValue(MakeNullString("Creditmemo")).
+			DriverValue(null.MakeString("Creditmemo")).
 			DriverValue(nowSentinel{}).
-			DriverValue(MakeNullTime(now()))
+			DriverValue(null.MakeTime(now()))
 
 		assert.Exactly(t,
 			[]interface{}{nil, []uint8(nil), int64(3), 2.7, true,
@@ -137,8 +138,8 @@ func TestArguments_WriteTo(t *testing.T) {
 	t.Run("no slices, nulls valid", func(t *testing.T) {
 		args := MakeArgs(10).
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
-			NullString(MakeNullString("eCom3")).NullInt64(MakeNullInt64(4)).NullFloat64(MakeNullFloat64(2.7)).
-			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()))
+			NullString(null.MakeString("eCom3")).NullInt64(null.MakeInt64(4)).NullFloat64(null.MakeFloat64(2.7)).
+			NullBool(null.MakeBool(true)).NullTime(null.MakeTime(now()))
 
 		buf := new(bytes.Buffer)
 		err := args.Write(buf)
@@ -150,8 +151,8 @@ func TestArguments_WriteTo(t *testing.T) {
 	t.Run("no slices, nulls invalid", func(t *testing.T) {
 		args := MakeArgs(10).
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
-			NullString(MakeNullString("eCom3", false)).NullInt64(MakeNullInt64(4, false)).NullFloat64(MakeNullFloat64(2.7, false)).
-			NullBool(MakeNullBool(true, false)).NullTime(MakeNullTime(now(), false))
+			NullString(null.MakeString("eCom3", false)).NullInt64(null.MakeInt64(4, false)).NullFloat64(null.MakeFloat64(2.7, false)).
+			NullBool(null.MakeBool(true, false)).NullTime(null.MakeTime(now(), false))
 
 		buf := new(bytes.Buffer)
 		err := args.Write(buf)
@@ -163,8 +164,8 @@ func TestArguments_WriteTo(t *testing.T) {
 	t.Run("slices, nulls valid", func(t *testing.T) {
 		args := MakeArgs(10).
 			Null().Ints(-1, -2).Int64s(1, 2).Uint64s(2).Float64s(1.2, 3.1).Bools(false, true).Strings("eCom1", "eCom11").BytesSlice([]byte(`eCom2`)).Times(now(), now()).
-			NullStrings(MakeNullString("eCom3"), MakeNullString("eCom3")).NullInt64s(MakeNullInt64(4), MakeNullInt64(5)).NullFloat64s(MakeNullFloat64(2.71), MakeNullFloat64(2.72)).
-			NullBools(MakeNullBool(true)).NullTimes(MakeNullTime(now()), MakeNullTime(now()))
+			NullStrings(null.MakeString("eCom3"), null.MakeString("eCom3")).NullInt64s(null.MakeInt64(4), null.MakeInt64(5)).NullFloat64s(null.MakeFloat64(2.71), null.MakeFloat64(2.72)).
+			NullBools(null.MakeBool(true)).NullTimes(null.MakeTime(now()), null.MakeTime(now()))
 
 		buf := new(bytes.Buffer)
 		err := args.Write(buf)
@@ -188,14 +189,14 @@ func TestArguments_WriteTo(t *testing.T) {
 		assert.True(t, errors.NotValid.Match(err), "Should have a not valid error behaviour %+v", err)
 	})
 	t.Run("non-utf8 NullStrings", func(t *testing.T) {
-		args := MakeArgs(2).NullStrings(MakeNullString("Go2"), MakeNullString("Hello\xc0\x80World"))
+		args := MakeArgs(2).NullStrings(null.MakeString("Go2"), null.MakeString("Hello\xc0\x80World"))
 		buf := new(bytes.Buffer)
 		err := args.Write(buf)
 		assert.Exactly(t, "('Go2',)", buf.String())
 		assert.True(t, errors.NotValid.Match(err), "Should have a not valid error behaviour %+v", err)
 	})
 	t.Run("non-utf8 NullString", func(t *testing.T) {
-		args := MakeArgs(2).NullString(MakeNullString("Hello\xc0\x80World"))
+		args := MakeArgs(2).NullString(null.MakeString("Hello\xc0\x80World"))
 		buf := new(bytes.Buffer)
 		err := args.Write(buf)
 		assert.Empty(t, buf.String())

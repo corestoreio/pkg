@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dml
+package null
 
 import (
 	"bytes"
-	"database/sql"
+	"database/sql/driver"
 	"strconv"
 
 	"github.com/corestoreio/errors"
@@ -27,29 +27,60 @@ import (
 // The same semantics will be provided by the generic MarshalBinary,
 // MarshalText, UnmarshalBinary, UnmarshalText.
 
-// NullBool is a nullable bool. It does not consider false values to be null. It
-// will decode to null, not false, if null. NullBool implements interface
+// Bool is a nullable bool. It does not consider false values to be null. It
+// will decode to null, not false, if null. Bool implements interface
 // Argument.
-type NullBool struct {
-	sql.NullBool
+type Bool struct {
+	Bool  bool
+	Valid bool // Valid is true if Bool is not NULL
 }
 
-// MakeNullBool creates a new NullBool. Implements interface Argument.
-func MakeNullBool(b bool, valid ...bool) NullBool {
+// MakeBool creates a new Bool. Implements interface Argument.
+func MakeBool(b bool, valid ...bool) Bool {
 	v := true
 	if len(valid) == 1 {
 		v = valid[0]
 	}
-	return NullBool{
-		NullBool: sql.NullBool{
-			Bool:  b,
-			Valid: v,
-		},
+	return Bool{
+		Bool:  b,
+		Valid: v,
 	}
 }
 
+// MakeBoolFromByte makes a new Bool from a (text) byte slice.
+func MakeBoolFromByte(data []byte) (nv Bool, err error) {
+	nv.Bool, nv.Valid, err = byteconv.ParseBool(data)
+	return
+}
+
+// Scan implements the Scanner interface.
+func (a *Bool) Scan(value interface{}) (err error) {
+	if value == nil {
+		a.Bool, a.Valid = false, false
+		return
+	}
+	switch vt := value.(type) {
+	case []byte:
+		a.Bool, a.Valid, err = byteconv.ParseBool(vt)
+	case bool:
+		a.Bool = vt
+	case string:
+		a.Bool, err = strconv.ParseBool(vt)
+	}
+	a.Valid = err == nil
+	return nil
+}
+
+// Value implements the driver Valuer interface.
+func (a Bool) Value() (driver.Value, error) {
+	if !a.Valid {
+		return nil, nil
+	}
+	return a.Bool, nil
+}
+
 // GoString prints an optimized Go representation.
-func (a NullBool) String() string {
+func (a Bool) String() string {
 	if !a.Valid {
 		return "null"
 	}
@@ -57,17 +88,17 @@ func (a NullBool) String() string {
 }
 
 // GoString prints an optimized Go representation.
-func (a NullBool) GoString() string {
+func (a Bool) GoString() string {
 	if !a.Valid {
-		return "dml.NullBool{}"
+		return "null.Bool{}"
 	}
-	return "dml.MakeNullBool(" + strconv.FormatBool(a.Bool) + ")"
+	return "null.MakeBool(" + strconv.FormatBool(a.Bool) + ")"
 }
 
 // UnmarshalJSON implements json.Unmarshaler. It supports number and null input.
-// 0 will not be considered a null NullBool. It also supports unmarshalling a
-// sql.NullBool.
-func (a *NullBool) UnmarshalJSON(data []byte) error {
+// 0 will not be considered a null Bool. It also supports unmarshalling a
+// sql.Bool.
+func (a *Bool) UnmarshalJSON(data []byte) error {
 	var err error
 	var v interface{}
 	if err = JSONUnMarshalFn(data, &v); err != nil {
@@ -78,67 +109,67 @@ func (a *NullBool) UnmarshalJSON(data []byte) error {
 		a.Bool = x
 	case map[string]interface{}:
 		dto := &struct {
-			NullBool bool
-			Valid    bool
+			Bool  bool
+			Valid bool
 		}{}
 		err = JSONUnMarshalFn(data, dto)
-		a.Bool = dto.NullBool
+		a.Bool = dto.Bool
 		a.Valid = dto.Valid
 	case nil:
 		a.Valid = false
 		return nil
 	default:
-		err = errors.NotValid.Newf("[dml] json: cannot unmarshal %#v into Go value of type null.NullBool", v)
+		err = errors.NotValid.Newf("[dml] json: cannot unmarshal %#v into Go value of type null.Bool", v)
 	}
 	a.Valid = err == nil
 	return err
 }
 
 // UnmarshalText implements encoding.TextUnmarshaler. It will unmarshal to a
-// null NullBool if the input is a blank or not an integer. It will return an
+// null Bool if the input is a blank or not an integer. It will return an
 // error if the input is not an integer, blank, or "null".
-func (a *NullBool) UnmarshalText(text []byte) (err error) {
-	if len(text) == 0 || bytes.Equal(text, sqlBytesNullUC) || bytes.Equal(text, sqlBytesNullLC) {
+func (a *Bool) UnmarshalText(text []byte) (err error) {
+	if len(text) == 0 || bytes.Equal(text, bTextNullUC) || bytes.Equal(text, bTextNullLC) {
 		a.Valid = false
 		return nil
 	}
-	a.NullBool.Bool, a.NullBool.Valid, err = byteconv.ParseBool(text)
+	a.Bool, a.Valid, err = byteconv.ParseBool(text)
 	return
 }
 
 // MarshalJSON implements json.Marshaler.
-// It will encode null if this NullBool is null.
-func (a NullBool) MarshalJSON() ([]byte, error) {
+// It will encode null if this Bool is null.
+func (a Bool) MarshalJSON() ([]byte, error) {
 	if !a.Valid {
-		return sqlBytesNullLC, nil
+		return bTextNullLC, nil
 	}
 	if !a.Bool {
-		return sqlBytesFalseLC, nil
+		return bTextFalseLC, nil
 	}
-	return sqlBytesTrueLC, nil
+	return bTextTrueLC, nil
 }
 
 // MarshalText implements encoding.TextMarshaler.
-// It will encode a blank string if this NullBool is null.
-func (a NullBool) MarshalText() ([]byte, error) {
+// It will encode a blank string if this Bool is null.
+func (a Bool) MarshalText() ([]byte, error) {
 	if !a.Valid {
 		return []byte{}, nil
 	}
 	if !a.Bool {
-		return sqlBytesFalseLC, nil
+		return bTextFalseLC, nil
 	}
-	return sqlBytesTrueLC, nil
+	return bTextTrueLC, nil
 }
 
-// SetValid changes this NullBool's value and also sets it to be non-null.
-func (a *NullBool) SetValid(v bool) {
+// SetValid changes this Bool's value and also sets it to be non-null.
+func (a *Bool) SetValid(v bool) {
 	a.Bool = v
 	a.Valid = true
 }
 
-// Ptr returns a pointer to this NullBool's value, or a nil pointer if this
-// NullBool is null.
-func (a NullBool) Ptr() *bool {
+// Ptr returns a pointer to this Bool's value, or a nil pointer if this
+// Bool is null.
+func (a Bool) Ptr() *bool {
 	if !a.Valid {
 		return nil
 	}
@@ -146,33 +177,33 @@ func (a NullBool) Ptr() *bool {
 }
 
 // IsZero returns true for invalid Bools, for future omitempty support (Go 1.4?)
-// A non-null NullBool with a 0 value will not be considered zero.
-func (a NullBool) IsZero() bool {
+// A non-null Bool with a 0 value will not be considered zero.
+func (a Bool) IsZero() bool {
 	return !a.Valid
 }
 
 // GobEncode implements the gob.GobEncoder interface for gob serialization.
-func (a NullBool) GobEncode() ([]byte, error) {
+func (a Bool) GobEncode() ([]byte, error) {
 	return a.Marshal()
 }
 
 // GobDecode implements the gob.GobDecoder interface for gob serialization.
-func (a *NullBool) GobDecode(data []byte) error {
+func (a *Bool) GobDecode(data []byte) error {
 	return a.Unmarshal(data)
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
-func (a *NullBool) UnmarshalBinary(data []byte) error {
+func (a *Bool) UnmarshalBinary(data []byte) error {
 	return a.Unmarshal(data)
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface.
-func (a NullBool) MarshalBinary() (data []byte, err error) {
+func (a Bool) MarshalBinary() (data []byte, err error) {
 	return a.Marshal()
 }
 
 // Marshal binary encoder for protocol buffers. Implements proto.Marshaler.
-func (a NullBool) Marshal() ([]byte, error) {
+func (a Bool) Marshal() ([]byte, error) {
 	if !a.Valid {
 		return nil, nil
 	}
@@ -182,7 +213,7 @@ func (a NullBool) Marshal() ([]byte, error) {
 }
 
 // MarshalTo binary encoder for protocol buffers which writes into data.
-func (a NullBool) MarshalTo(data []byte) (n int, err error) {
+func (a Bool) MarshalTo(data []byte) (n int, err error) {
 	if !a.Valid {
 		return 0, nil
 	}
@@ -194,7 +225,7 @@ func (a NullBool) MarshalTo(data []byte) (n int, err error) {
 }
 
 // Unmarshal binary decoder for protocol buffers. Implements proto.Unmarshaler.
-func (a *NullBool) Unmarshal(data []byte) error {
+func (a *Bool) Unmarshal(data []byte) error {
 	if len(data) != 1 {
 		a.Valid = false
 		return nil
@@ -206,22 +237,27 @@ func (a *NullBool) Unmarshal(data []byte) error {
 
 // Size returns the size of the underlying type. If not valid, the size will be
 // 0. Implements proto.Sizer.
-func (a NullBool) Size() (s int) {
+func (a Bool) Size() (s int) {
 	if a.Valid {
 		s = 1
 	}
 	return
 }
 
-func (a NullBool) writeTo(w *bytes.Buffer) (err error) {
+// WriteTo uses a special dialect to encode the value and write it into w. w
+// cannot be replaced by io.Writer and shall not be replaced by an interface
+// because of inlining features of the compiler.
+func (a Bool) WriteTo(d Dialecter, w *bytes.Buffer) (err error) {
 	if a.Valid {
-		dialect.EscapeBool(w, a.Bool)
+		d.EscapeBool(w, a.Bool)
 	} else {
 		_, err = w.WriteString(sqlStrNullUC)
 	}
 	return
 }
-func (a NullBool) append(args []interface{}) []interface{} {
+
+// Append appends the value or its nil type to the interface slice.
+func (a Bool) Append(args []interface{}) []interface{} {
 	if a.Valid {
 		return append(args, a.Bool)
 	}

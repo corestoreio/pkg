@@ -26,6 +26,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -86,12 +87,12 @@ func (be *textBinaryEncoder) UnmarshalText(text []byte) error {
 
 type baseTest struct {
 	Bool        bool
-	NullBool    dml.NullBool
+	NullBool    null.Bool
 	Int         int
 	Int64       int64
-	NullInt64   dml.NullInt64
+	NullInt64   null.Int64
 	Float64     float64
-	NullFloat64 dml.NullFloat64
+	NullFloat64 null.Float64
 	Uint        uint
 	Uint8       uint8
 	Uint16      uint16
@@ -99,10 +100,10 @@ type baseTest struct {
 	Uint64      uint64
 	Byte        []byte
 	Str         string
-	NullString  dml.NullString
+	NullString  null.String
 	Time        time.Time
-	NullTime    dml.NullTime
-	Decimal     dml.Decimal
+	NullTime    null.Time
+	Decimal     null.Decimal
 	Text        textBinaryEncoder
 	Binary      textBinaryEncoder
 }
@@ -284,16 +285,16 @@ func TestColumnMap_Query(t *testing.T) {
 		require.Len(t, tbl.Data, 1)
 
 		tbl.Data[0].Time = now()
-		tbl.Data[0].NullTime = dml.MakeNullTime(now()) // otherwise test would fail ...
+		tbl.Data[0].NullTime = null.MakeTime(now()) // otherwise test would fail ...
 		assert.Exactly(t,
 			&baseTest{
 				Bool:        true,
-				NullBool:    dml.MakeNullBool(false, true),
+				NullBool:    null.MakeBool(false, true),
 				Int:         -1,
 				Int64:       -64,
-				NullInt64:   dml.MakeNullInt64(-128),
+				NullInt64:   null.MakeInt64(-128),
 				Float64:     0.1,
-				NullFloat64: dml.MakeNullFloat64(3.141),
+				NullFloat64: null.MakeFloat64(3.141),
 				Uint:        0x0,
 				Uint8:       0x8,
 				Uint16:      0x10,
@@ -301,10 +302,10 @@ func TestColumnMap_Query(t *testing.T) {
 				Uint64:      0x40,
 				Byte:        []byte("byte data"),
 				Str:         "I'm a string",
-				NullString:  dml.MakeNullString("null_string"),
+				NullString:  null.MakeString("null_string"),
 				Time:        now(),
-				NullTime:    dml.MakeNullTime(now()),
-				Decimal: dml.Decimal{
+				NullTime:    null.MakeTime(now()),
+				Decimal: null.Decimal{
 					Precision: 26817000,
 					Scale:     4,
 					Valid:     true,

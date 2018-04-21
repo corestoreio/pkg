@@ -19,6 +19,8 @@ import (
 	"time"
 )
 
+const timeFormat = "2006-01-02 15:04:05.999999"
+
 type nowSentinel struct{}
 
 var now = time.Now

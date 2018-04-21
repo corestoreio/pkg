@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/sync/bgwork"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -132,7 +133,7 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 
 	p := &dmlPerson{
 		Name:  "Pike",
-		Email: MakeNullString("pikes@peak.co"),
+		Email: null.MakeString("pikes@peak.co"),
 	}
 
 	res, err := s.InsertInto("dml_people").
@@ -357,7 +358,7 @@ func TestInsert_FromSelect(t *testing.T) {
 	t.Run("Record Simple,no select", func(t *testing.T) {
 		p := &dmlPerson{
 			Name:  "Pike",
-			Email: MakeNullString("pikes@peak.co"),
+			Email: null.MakeString("pikes@peak.co"),
 		}
 
 		ins := NewInsert("dml_people").AddColumns("name", "email").
@@ -373,7 +374,7 @@ func TestInsert_FromSelect(t *testing.T) {
 		p := &dmlPerson{
 			ID:    20180128,
 			Name:  "Hans Wurst",
-			Email: MakeNullString("hans@wurst.com"),
+			Email: null.MakeString("hans@wurst.com"),
 		}
 
 		sel := NewSelect("a", "b").
@@ -671,9 +672,9 @@ func TestInsert_Parallel_Bind_Slice(t *testing.T) {
 	}
 	persons := &dmlPersons{
 		Data: []*dmlPerson{
-			{Name: "Muffin Hat", Email: MakeNullString("Muffin@Hat.head")},
-			{Name: "Marianne Phyllis Finch", Email: MakeNullString("marianne@phyllis.finch")},
-			{Name: "Daphne Augusta Perry", Email: MakeNullString("daphne@augusta.perry")},
+			{Name: "Muffin Hat", Email: null.MakeString("Muffin@Hat.head")},
+			{Name: "Marianne Phyllis Finch", Email: null.MakeString("marianne@phyllis.finch")},
+			{Name: "Daphne Augusta Perry", Email: null.MakeString("daphne@augusta.perry")},
 		},
 	}
 

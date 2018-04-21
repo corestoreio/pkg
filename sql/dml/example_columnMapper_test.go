@@ -22,6 +22,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
+	"github.com/corestoreio/pkg/storage/null"
 )
 
 // Make sure that type customerEntity implements interface.
@@ -41,7 +42,7 @@ type customerEntity struct {
 	EntityID      uint64 // Auto Increment, supports until MaxUint64
 	Firstname     string
 	StoreID       uint16
-	LifetimeSales dml.NullFloat64
+	LifetimeSales null.Float64
 	// VoucherCodes contains list of refunded codes, stored as CSV. Or even
 	// stored in another table or even encrypted and the function decrypts it on
 	// load. Same as the M2 EAV models.

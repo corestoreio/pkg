@@ -24,6 +24,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
@@ -484,39 +485,39 @@ func (a *Artisan) Arguments(args *Artisan) *Artisan {
 func (a *Artisan) Records(records ...QualifiedRecord) *Artisan { a.recs = records; return a }
 func (a *Artisan) Raw(raw ...interface{}) *Artisan             { a.raw = raw; return a }
 
-func (a *Artisan) Null() *Artisan                          { return a.add(nil) }
-func (a *Artisan) Int(i int) *Artisan                      { return a.add(i) }
-func (a *Artisan) Ints(i ...int) *Artisan                  { return a.add(i) }
-func (a *Artisan) Int64(i int64) *Artisan                  { return a.add(i) }
-func (a *Artisan) Int64s(i ...int64) *Artisan              { return a.add(i) }
-func (a *Artisan) Uint(i uint) *Artisan                    { return a.add(uint64(i)) }
-func (a *Artisan) Uints(i ...uint) *Artisan                { return a.add(i) }
-func (a *Artisan) Uint64(i uint64) *Artisan                { return a.add(i) }
-func (a *Artisan) Uint64s(i ...uint64) *Artisan            { return a.add(i) }
-func (a *Artisan) Float64(f float64) *Artisan              { return a.add(f) }
-func (a *Artisan) Float64s(f ...float64) *Artisan          { return a.add(f) }
-func (a *Artisan) Bool(b bool) *Artisan                    { return a.add(b) }
-func (a *Artisan) Bools(b ...bool) *Artisan                { return a.add(b) }
-func (a *Artisan) String(s string) *Artisan                { return a.add(s) }
-func (a *Artisan) Strings(s ...string) *Artisan            { return a.add(s) }
-func (a *Artisan) Time(t time.Time) *Artisan               { return a.add(t) }
-func (a *Artisan) Times(t ...time.Time) *Artisan           { return a.add(t) }
-func (a *Artisan) Bytes(b []byte) *Artisan                 { return a.add(b) }
-func (a *Artisan) BytesSlice(b ...[]byte) *Artisan         { return a.add(b) }
-func (a *Artisan) NullString(nv NullString) *Artisan       { return a.add(nv) }
-func (a *Artisan) NullStrings(nv ...NullString) *Artisan   { return a.add(nv) }
-func (a *Artisan) NullFloat64(nv NullFloat64) *Artisan     { return a.add(nv) }
-func (a *Artisan) NullFloat64s(nv ...NullFloat64) *Artisan { return a.add(nv) }
-func (a *Artisan) NullInt64(nv NullInt64) *Artisan         { return a.add(nv) }
-func (a *Artisan) NullInt64s(nv ...NullInt64) *Artisan     { return a.add(nv) }
-func (a *Artisan) NullBool(nv NullBool) *Artisan           { return a.add(nv) }
-func (a *Artisan) NullBools(nv ...NullBool) *Artisan       { return a.add(nv) }
-func (a *Artisan) NullTime(nv NullTime) *Artisan           { return a.add(nv) }
-func (a *Artisan) NullTimes(nv ...NullTime) *Artisan       { return a.add(nv) }
+func (a *Artisan) Null() *Artisan                           { return a.add(nil) }
+func (a *Artisan) Int(i int) *Artisan                       { return a.add(i) }
+func (a *Artisan) Ints(i ...int) *Artisan                   { return a.add(i) }
+func (a *Artisan) Int64(i int64) *Artisan                   { return a.add(i) }
+func (a *Artisan) Int64s(i ...int64) *Artisan               { return a.add(i) }
+func (a *Artisan) Uint(i uint) *Artisan                     { return a.add(uint64(i)) }
+func (a *Artisan) Uints(i ...uint) *Artisan                 { return a.add(i) }
+func (a *Artisan) Uint64(i uint64) *Artisan                 { return a.add(i) }
+func (a *Artisan) Uint64s(i ...uint64) *Artisan             { return a.add(i) }
+func (a *Artisan) Float64(f float64) *Artisan               { return a.add(f) }
+func (a *Artisan) Float64s(f ...float64) *Artisan           { return a.add(f) }
+func (a *Artisan) Bool(b bool) *Artisan                     { return a.add(b) }
+func (a *Artisan) Bools(b ...bool) *Artisan                 { return a.add(b) }
+func (a *Artisan) String(s string) *Artisan                 { return a.add(s) }
+func (a *Artisan) Strings(s ...string) *Artisan             { return a.add(s) }
+func (a *Artisan) Time(t time.Time) *Artisan                { return a.add(t) }
+func (a *Artisan) Times(t ...time.Time) *Artisan            { return a.add(t) }
+func (a *Artisan) Bytes(b []byte) *Artisan                  { return a.add(b) }
+func (a *Artisan) BytesSlice(b ...[]byte) *Artisan          { return a.add(b) }
+func (a *Artisan) NullString(nv null.String) *Artisan       { return a.add(nv) }
+func (a *Artisan) NullStrings(nv ...null.String) *Artisan   { return a.add(nv) }
+func (a *Artisan) NullFloat64(nv null.Float64) *Artisan     { return a.add(nv) }
+func (a *Artisan) NullFloat64s(nv ...null.Float64) *Artisan { return a.add(nv) }
+func (a *Artisan) NullInt64(nv null.Int64) *Artisan         { return a.add(nv) }
+func (a *Artisan) NullInt64s(nv ...null.Int64) *Artisan     { return a.add(nv) }
+func (a *Artisan) NullBool(nv null.Bool) *Artisan           { return a.add(nv) }
+func (a *Artisan) NullBools(nv ...null.Bool) *Artisan       { return a.add(nv) }
+func (a *Artisan) NullTime(nv null.Time) *Artisan           { return a.add(nv) }
+func (a *Artisan) NullTimes(nv ...null.Time) *Artisan       { return a.add(nv) }
 
 // Name sets the name for the following argument. Calling Name two times after
 // each other sets the first call to Name to a NULL value. A call to Name should
-// always follow a call to a function type like Int, Float64s or NullTime.
+// always follow a call to a function type like Int, Float64s or null.Time.
 // Name may contain the placeholder prefix colon.
 func (a *Artisan) Name(n string) *Artisan {
 	a.arguments = append(a.arguments, argument{name: n})
@@ -862,7 +863,7 @@ func (a *Artisan) Load(ctx context.Context, s ColumnMapper, args ...interface{})
 
 // LoadNullInt64 executes the query and returns the first row parsed into the
 // current type. `Found` might be false if there are no matching rows.
-func (a *Artisan) LoadNullInt64(ctx context.Context, args ...interface{}) (nv NullInt64, found bool, err error) {
+func (a *Artisan) LoadNullInt64(ctx context.Context, args ...interface{}) (nv null.Int64, found bool, err error) {
 	found, err = a.loadPrimitive(ctx, &nv, args...)
 	return
 }
@@ -871,35 +872,35 @@ func (a *Artisan) LoadNullInt64(ctx context.Context, args ...interface{}) (nv Nu
 // current type. `Found` might be false if there are no matching rows.
 // This function with ptr type uint64 comes in handy when performing
 // a COUNT(*) query. See function `Select.Count`.
-func (a *Artisan) LoadNullUint64(ctx context.Context, args ...interface{}) (nv NullUint64, found bool, err error) {
+func (a *Artisan) LoadNullUint64(ctx context.Context, args ...interface{}) (nv null.Uint64, found bool, err error) {
 	found, err = a.loadPrimitive(ctx, &nv, args...)
 	return
 }
 
 // LoadNullFloat64 executes the query and returns the first row parsed into the
 // current type. `Found` might be false if there are no matching rows.
-func (a *Artisan) LoadNullFloat64(ctx context.Context, args ...interface{}) (nv NullFloat64, found bool, err error) {
+func (a *Artisan) LoadNullFloat64(ctx context.Context, args ...interface{}) (nv null.Float64, found bool, err error) {
 	found, err = a.loadPrimitive(ctx, &nv, args...)
 	return
 }
 
 // LoadNullString executes the query and returns the first row parsed into the
 // current type. `Found` might be false if there are no matching rows.
-func (a *Artisan) LoadNullString(ctx context.Context, args ...interface{}) (nv NullString, found bool, err error) {
+func (a *Artisan) LoadNullString(ctx context.Context, args ...interface{}) (nv null.String, found bool, err error) {
 	found, err = a.loadPrimitive(ctx, &nv, args...)
 	return
 }
 
 // LoadNullTime executes the query and returns the first row parsed into the
 // current type. `Found` might be false if there are no matching rows.
-func (a *Artisan) LoadNullTime(ctx context.Context, args ...interface{}) (nv NullTime, found bool, err error) {
+func (a *Artisan) LoadNullTime(ctx context.Context, args ...interface{}) (nv null.Time, found bool, err error) {
 	found, err = a.loadPrimitive(ctx, &nv, args...)
 	return
 }
 
 // LoadDecimal executes the query and returns the first row parsed into the
 // current type. `Found` might be false if there are no matching rows.
-func (a *Artisan) LoadDecimal(ctx context.Context, args ...interface{}) (nv Decimal, found bool, err error) {
+func (a *Artisan) LoadDecimal(ctx context.Context, args ...interface{}) (nv null.Decimal, found bool, err error) {
 	found, err = a.loadPrimitive(ctx, &nv, args...)
 	return
 }
@@ -954,7 +955,7 @@ func (a *Artisan) LoadInt64s(ctx context.Context, dest []int64, args ...interfac
 		}
 	}()
 	for r.Next() {
-		var nv NullInt64
+		var nv null.Int64
 		if err = r.Scan(&nv); err != nil {
 			err = errors.WithStack(err)
 			return
@@ -993,7 +994,7 @@ func (a *Artisan) LoadUint64s(ctx context.Context, dest []uint64, args ...interf
 	}()
 
 	for rows.Next() {
-		var nv NullUint64
+		var nv null.Uint64
 		if err = rows.Scan(&nv); err != nil {
 			err = errors.WithStack(err)
 			return
@@ -1030,7 +1031,7 @@ func (a *Artisan) LoadFloat64s(ctx context.Context, dest []float64, args ...inte
 	}()
 
 	for rows.Next() {
-		var nv NullFloat64
+		var nv null.Float64
 		if err = rows.Scan(&nv); err != nil {
 			err = errors.WithStack(err)
 			return
@@ -1067,7 +1068,7 @@ func (a *Artisan) LoadStrings(ctx context.Context, dest []string, args ...interf
 	}()
 
 	for rows.Next() {
-		var value NullString
+		var value null.String
 		if err = rows.Scan(&value); err != nil {
 			err = errors.WithStack(err)
 			return

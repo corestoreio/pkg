@@ -14,13 +14,16 @@
 
 package dml_test
 
-import "github.com/corestoreio/pkg/sql/dml"
+import (
+	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/storage/null"
+)
 
 var cmCustomers = &customerCollection{
 	Data: []*customerEntity{
-		{EntityID: 11, Firstname: "Karl Gopher", StoreID: 0x7, LifetimeSales: dml.MakeNullFloat64(47.11), VoucherCodes: exampleStringSlice{"1FE9983E", "28E76FBC"}},
-		{EntityID: 12, Firstname: "Fung Go Roo", StoreID: 0x7, LifetimeSales: dml.MakeNullFloat64(28.94), VoucherCodes: exampleStringSlice{"4FE7787E", "15E59FBB", "794EFDE8"}},
-		{EntityID: 13, Firstname: "John Doe", StoreID: 0x6, LifetimeSales: dml.MakeNullFloat64(138.54), VoucherCodes: exampleStringSlice{""}},
+		{EntityID: 11, Firstname: "Karl Gopher", StoreID: 0x7, LifetimeSales: null.MakeFloat64(47.11), VoucherCodes: exampleStringSlice{"1FE9983E", "28E76FBC"}},
+		{EntityID: 12, Firstname: "Fung Go Roo", StoreID: 0x7, LifetimeSales: null.MakeFloat64(28.94), VoucherCodes: exampleStringSlice{"4FE7787E", "15E59FBB", "794EFDE8"}},
+		{EntityID: 13, Firstname: "John Doe", StoreID: 0x6, LifetimeSales: null.MakeFloat64(138.54), VoucherCodes: exampleStringSlice{""}},
 	},
 }
 

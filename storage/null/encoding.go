@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dml
+package null
 
 // This file contains all interfaces and function signatures for the various
 // encoders and decoders. You must set them in your package before using the
@@ -20,8 +20,8 @@ package dml
 
 // JSONMarshalFn and JSONUnMarshalFn functions which must be set if you decide
 // to use JSON. Otherwise it panics. In your package write somewhere:
-//		dml.JSONMarshalFn = json.Marshal
-//		dml.JSONUnMarshalFn = json.UnMarshal
+//		null.JSONMarshalFn = json.Marshal
+//		null.JSONUnMarshalFn = json.UnMarshal
 var (
 	JSONMarshalFn   func(v interface{}) ([]byte, error)
 	JSONUnMarshalFn func(data []byte, v interface{}) error

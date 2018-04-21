@@ -22,6 +22,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
+	"github.com/corestoreio/pkg/storage/null"
 )
 
 // Make sure that type salesOrder implements interface.
@@ -33,7 +34,7 @@ type salesOrder struct {
 	State      string // processing, pending, shipped,
 	StoreID    int64
 	CustomerID int64
-	GrandTotal dml.NullFloat64
+	GrandTotal null.Float64
 }
 
 func (so *salesOrder) MapColumns(cm *dml.ColumnMap) error {
@@ -101,8 +102,8 @@ func ExampleUpdate_Prepare() {
 	// Our objects which should update the columns in the database table
 	// `sales_order`.
 	collection := []*salesOrder{
-		{1, "pending", 5, 5678, dml.MakeNullFloat64(31.41459)},
-		{2, "processing", 7, 8912, dml.NullFloat64{}},
+		{1, "pending", 5, 5678, null.MakeFloat64(31.41459)},
+		{2, "processing", 7, 8912, null.Float64{}},
 	}
 	for _, record := range collection {
 		// We're not using an alias in the query so Qualify can have an empty

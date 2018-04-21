@@ -16,15 +16,15 @@ package dml
 
 import (
 	"bytes"
-	"database/sql"
 	"strconv"
 	"time"
+
+	"github.com/corestoreio/pkg/storage/null"
 )
 
 const argBytesCap = 8
 
 var bTextNullUC = []byte(sqlStrNullUC)
-var bTextNullLC = []byte(sqlStrNullLC)
 
 // argEncoded multi dimensional and reusable data structure to encode primitive
 // types into byte slices and later write those byte slices somewhere into. The
@@ -214,7 +214,7 @@ func (ae argEncoded) appendTimes(args ...time.Time) argEncoded {
 	return append(ae, c)
 }
 
-func (ae argEncoded) appendNullString(args ...sql.NullString) argEncoded {
+func (ae argEncoded) appendNullString(args ...null.String) argEncoded {
 	c := ae.growOrNewContainer(len(args))
 	for i, a := range args {
 		if a.Valid {
@@ -226,7 +226,7 @@ func (ae argEncoded) appendNullString(args ...sql.NullString) argEncoded {
 	return append(ae, c)
 }
 
-func (ae argEncoded) appendNullFloat64(args ...sql.NullFloat64) argEncoded {
+func (ae argEncoded) appendNullFloat64(args ...null.Float64) argEncoded {
 	c := ae.growOrNewContainer(len(args))
 	for i, a := range args {
 		if a.Valid {
@@ -238,7 +238,7 @@ func (ae argEncoded) appendNullFloat64(args ...sql.NullFloat64) argEncoded {
 	return append(ae, c)
 }
 
-func (ae argEncoded) appendNullInt64(args ...sql.NullInt64) argEncoded {
+func (ae argEncoded) appendNullInt64(args ...null.Int64) argEncoded {
 	c := ae.growOrNewContainer(len(args))
 	for i, a := range args {
 		if a.Valid {
@@ -250,7 +250,7 @@ func (ae argEncoded) appendNullInt64(args ...sql.NullInt64) argEncoded {
 	return append(ae, c)
 }
 
-func (ae argEncoded) appendNullBool(args ...sql.NullBool) argEncoded {
+func (ae argEncoded) appendNullBool(args ...null.Bool) argEncoded {
 	c := ae.growOrNewContainer(len(args))
 	for i, a := range args {
 		if a.Valid {
@@ -266,7 +266,7 @@ func (ae argEncoded) appendNullBool(args ...sql.NullBool) argEncoded {
 	return append(ae, c)
 }
 
-func (ae argEncoded) appendNullTime(args ...NullTime) argEncoded {
+func (ae argEncoded) appendNullTime(args ...null.Time) argEncoded {
 	c := ae.growOrNewContainer(len(args))
 	for i, a := range args {
 		if a.Valid {

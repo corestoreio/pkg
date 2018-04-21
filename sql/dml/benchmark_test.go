@@ -16,11 +16,11 @@ package dml
 
 import (
 	"bytes"
-	"database/sql"
 	"math"
 	"testing"
 	"time"
 
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
@@ -130,11 +130,11 @@ func BenchmarkArgumentEncoding(b *testing.B) {
 				appendBools(false, true, true, false, true).
 				appendTime(t1).
 				appendTimes(t1, t2, t1).
-				appendNullString(sql.NullString{}, sql.NullString{Valid: true, String: "Hello"}).
-				appendNullFloat64(sql.NullFloat64{Valid: true, Float64: math.E}, sql.NullFloat64{}).
-				appendNullInt64(sql.NullInt64{Valid: true, Int64: 987654321}, sql.NullInt64{}).
-				appendNullBool(sql.NullBool{}, sql.NullBool{Valid: true, Bool: true}, sql.NullBool{Valid: false, Bool: true}).
-				appendNullTime(NullTime{Valid: true, Time: t1}, NullTime{})
+				appendNullString(null.String{}, null.String{Valid: true, String: "Hello"}).
+				appendNullFloat64(null.Float64{Valid: true, Float64: math.E}, null.Float64{}).
+				appendNullInt64(null.Int64{Valid: true, Int64: 987654321}, null.Int64{}).
+				appendNullBool(null.Bool{}, null.Bool{Valid: true, Bool: true}, null.Bool{Valid: false, Bool: true}).
+				appendNullTime(null.Time{Valid: true, Time: t1}, null.Time{})
 		}
 	})
 
@@ -159,13 +159,13 @@ func BenchmarkArgumentEncoding(b *testing.B) {
 			appendBools(false, true, true, false, true).
 			appendTime(t1).
 			appendTimes(t1, t2, t1).
-			appendNullString(sql.NullString{}, sql.NullString{Valid: true, String: "Hello"}).
-			appendNullFloat64(sql.NullFloat64{Valid: true, Float64: math.E}, sql.NullFloat64{}).
-			appendNullInt64(sql.NullInt64{Valid: true, Int64: 987654321}, sql.NullInt64{}).
-			appendNullBool(sql.NullBool{}, sql.NullBool{Valid: true, Bool: true}, sql.NullBool{Valid: false, Bool: true}).
-			appendNullTime(NullTime{Valid: true, Time: t1}, NullTime{})
+			appendNullString(null.String{}, null.String{Valid: true, String: "Hello"}).
+			appendNullFloat64(null.Float64{Valid: true, Float64: math.E}, null.Float64{}).
+			appendNullInt64(null.Int64{Valid: true, Int64: 987654321}, null.Int64{}).
+			appendNullBool(null.Bool{}, null.Bool{Valid: true, Bool: true}, null.Bool{Valid: false, Bool: true}).
+			appendNullTime(null.Time{Valid: true, Time: t1}, null.Time{})
 
-		ns := []sql.NullString{{}, {Valid: true, String: "Hello"}}
+		ns := []null.String{{}, {Valid: true, String: "Hello"}}
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -187,10 +187,10 @@ func BenchmarkArgumentEncoding(b *testing.B) {
 				appendTime(t1).
 				appendTimes(t1, t2, t1).
 				appendNullString(ns...).
-				appendNullFloat64(sql.NullFloat64{Valid: true, Float64: math.E}, sql.NullFloat64{}).
-				appendNullInt64(sql.NullInt64{Valid: true, Int64: 987654321}, sql.NullInt64{}).
-				appendNullBool(sql.NullBool{}, sql.NullBool{Valid: true, Bool: true}, sql.NullBool{Valid: false, Bool: true}).
-				appendNullTime(NullTime{Valid: true, Time: t1}, NullTime{})
+				appendNullFloat64(null.Float64{Valid: true, Float64: math.E}, null.Float64{}).
+				appendNullInt64(null.Int64{Valid: true, Int64: 987654321}, null.Int64{}).
+				appendNullBool(null.Bool{}, null.Bool{Valid: true, Bool: true}, null.Bool{Valid: false, Bool: true}).
+				appendNullTime(null.Time{Valid: true, Time: t1}, null.Time{})
 			// b.Fatal(benchmarkArgEnc.DebugBytes())
 		}
 	})
@@ -261,85 +261,4 @@ func BenchmarkArgumentEncoding(b *testing.B) {
 				appendFloat64(math.MaxFloat64)
 		}
 	})
-}
-
-func BenchmarkSQLScanner(b *testing.B) {
-	var valInt64 int64
-	var valFloat64 float64
-	var valUint64 uint64
-	var valString string
-	var valTime time.Time
-	b.Run("NullInt64", func(b *testing.B) {
-		val := []byte(`12345678`)
-		for i := 0; i < b.N; i++ {
-			var nv NullInt64
-			if err := nv.Scan(val); err != nil {
-				b.Fatal(err)
-			}
-			if nv.Int64 != 12345678 {
-				b.Fatalf("Have %d Want %d", nv.Int64, 12345678)
-			}
-			valInt64 = nv.Int64
-		}
-	})
-	b.Run("NullFloat64", func(b *testing.B) {
-		val := []byte(`-1234.5678`)
-		for i := 0; i < b.N; i++ {
-			var nv NullFloat64
-			if err := nv.Scan(val); err != nil {
-				b.Fatal(err)
-			}
-			if nv.Float64 != -1234.5678 {
-				b.Fatalf("Have %f Want %f", nv.Float64, -1234.5678)
-			}
-			valFloat64 = nv.Float64
-		}
-	})
-	b.Run("NullUint64", func(b *testing.B) {
-		val := []byte(`12345678910`)
-		for i := 0; i < b.N; i++ {
-			var nv NullUint64
-			if err := nv.Scan(val); err != nil {
-				b.Fatal(err)
-			}
-			if nv.Uint64 != 12345678910 {
-				b.Fatalf("Have %d Want %d", nv.Uint64, 12345678910)
-			}
-			valUint64 = nv.Uint64
-		}
-	})
-	b.Run("NullString", func(b *testing.B) {
-		const want = `12345678910`
-		val := []byte(want)
-		for i := 0; i < b.N; i++ {
-			var nv NullString
-			if err := nv.Scan(val); err != nil {
-				b.Fatal(err)
-			}
-			if nv.String != want {
-				b.Fatalf("Have %q Want %q", nv.String, want)
-			}
-			valString = nv.String
-		}
-	})
-	b.Run("NullTime", func(b *testing.B) {
-		const want = `2006-01-02 19:04:05`
-		val := []byte(want)
-		for i := 0; i < b.N; i++ {
-			var nv NullTime
-			if err := nv.Scan(val); err != nil {
-				b.Fatal(err)
-			}
-			if nv.Time.IsZero() {
-				b.Fatalf("Time cannot be zero %s", nv.String())
-			}
-			valTime = nv.Time
-		}
-	})
-	_ = valInt64
-	_ = valFloat64
-	_ = valUint64
-	_ = valString
-	_ = valTime
-
 }

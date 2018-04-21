@@ -20,6 +20,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/storage/null"
 )
 
 // Make sure that type categoryEntity implements interface
@@ -30,7 +31,7 @@ type categoryEntity struct {
 	EntityID       int64 // Auto Increment
 	AttributeSetID int64
 	ParentID       string
-	Path           dml.NullString
+	Path           null.String
 	// TeaserIDs contain a list of foreign primary keys which identifies special
 	// teaser to be shown on the category page. Each teaser ID gets joined by a
 	// | and stored as a long string in the database.
@@ -74,7 +75,7 @@ func (pe *categoryEntity) MapColumns(cm *dml.ColumnMap) error {
 // required arguments.
 func ExampleUpdate_WithArgs_record() {
 
-	ce := &categoryEntity{345, 6, "p123", dml.MakeNullString("4/5/6/7"), []string{"saleAutumn", "saleShoe"}}
+	ce := &categoryEntity{345, 6, "p123", null.MakeString("4/5/6/7"), []string{"saleAutumn", "saleShoe"}}
 
 	// Updates all rows in the table because of missing WHERE statement.
 	u := dml.NewUpdate("catalog_category_entity").
@@ -86,7 +87,7 @@ func ExampleUpdate_WithArgs_record() {
 
 	fmt.Print("\n\n")
 
-	ce = &categoryEntity{678, 6, "p456", dml.NullString{}, nil}
+	ce = &categoryEntity{678, 6, "p456", null.String{}, nil}
 
 	// Updates only one row in the table because of the WHERE clause. You can
 	// call WithRecords and Exec as often as you like. Each call to Exec will

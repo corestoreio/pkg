@@ -16,7 +16,6 @@ package dml_test
 
 import (
 	"context"
-	"database/sql"
 	"flag"
 	"math/rand"
 	"testing"
@@ -25,6 +24,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
+	"github.com/corestoreio/pkg/storage/null"
 )
 
 var runIntegration bool
@@ -153,7 +153,7 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 		truncate(c.DB)
 		p := &dmlPerson{
 			Name:        "Maria Gopher ExecRecord",
-			Email:       dml.MakeNullString("maria@gopherExecRecord.go"),
+			Email:       null.MakeString("maria@gopherExecRecord.go"),
 			StoreID:     storeID,
 			CreatedAt:   now(),
 			TotalIncome: totalIncome,
@@ -183,7 +183,7 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 
-			res, err := stmt.WithArgs().String("Maria Gopher ExecArgs").NullString(dml.MakeNullString("maria@gopherExecArgs.go")).
+			res, err := stmt.WithArgs().String("Maria Gopher ExecArgs").NullString(null.MakeString("maria@gopherExecArgs.go")).
 				Int64(storeID).Time(now()).Float64(totalIncome * float64(i)).ExecContext(ctx)
 			if err != nil {
 				b.Fatal(err)
@@ -201,7 +201,7 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 	b.Run("ExecContext", func(b *testing.B) { // TODO rewrite this in many different ways.
 		truncate(c.DB)
 		name := "Maria Gopher ExecContext"
-		email := sql.NullString{String: "maria@gopherExecContext.go", Valid: true}
+		email := null.String{String: "maria@gopherExecContext.go", Valid: true}
 		stmtA := stmt.WithArgs()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {

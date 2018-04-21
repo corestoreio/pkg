@@ -194,6 +194,24 @@ func (t dsnConnector) Driver() driver.Driver {
 // and event receiver. An invalid driver name causes a NotImplemented error to be
 // returned. You can either apply a DSN or a pre configured *sql.DB type. For
 // full UTF-8 support you must set the charset in the SQL driver to utf8mb4.
+//
+// Quote: http://techblog.en.klab-blogs.com/archives/31093990.html
+// Recommended sql.DB Settings:
+//
+// Definitely set SetMaxOpenConns(). You need this in order to stop opening new
+// connections and sending queries when the load is high and server response
+// slows. If possible, it’s good to do a load test and set the minimum number of
+// connections to ensure maximum throughput, but even if you can’t do that, you
+// should decide on a reasonably appropriate number based on max_connection and
+// the number of cores.
+//
+// Configure SetMaxIdleConns() to be equal to or higher than SetMaxOpenConns().
+// Let SetConnMaxLifetime handle closing idle connections.
+//
+// Set SetConnMaxLifetime() to be the maximum number of connections x 1 second.
+// In most environments, a load of one connection per second won’t be a problem.
+// When you want to set it for longer than an hour, discuss that with an
+// infrastructure/network engineer.
 func NewConnPool(opts ...ConnPoolOption) (*ConnPool, error) {
 	c := &ConnPool{}
 	if err := c.Options(opts...); err != nil {

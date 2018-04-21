@@ -22,22 +22,14 @@ import (
 	"os"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/storage/null"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func maybePanic(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
-type protoMarshalToer interface {
-	MarshalTo(data []byte) (n int, err error)
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 // TEST HELPERS
@@ -77,13 +69,11 @@ var _ ColumnMapper = (*dmlPerson)(nil)
 var _ LastInsertIDAssigner = (*dmlPerson)(nil)
 var _ ColumnMapper = (*dmlPersons)(nil)
 
-var _ ColumnMapper = (*nullTypedRecord)(nil)
-
 type dmlPerson struct {
 	ID    uint64
 	Name  string
-	Email NullString
-	Key   NullString
+	Email null.String
+	Key   null.String
 }
 
 func (p *dmlPerson) AssignLastInsertID(id int64) {
@@ -180,9 +170,9 @@ func (ps *dmlPersons) Names(ret ...string) []string {
 	return ret
 }
 
-func (ps *dmlPersons) Emails(ret ...NullString) []NullString {
+func (ps *dmlPersons) Emails(ret ...null.String) []null.String {
 	if ret == nil {
-		ret = make([]NullString, 0, len(ps.Data))
+		ret = make([]null.String, 0, len(ps.Data))
 	}
 	for _, p := range ps.Data {
 		ret = append(ret, p.Email)
@@ -197,14 +187,16 @@ func (ps *dmlPersons) Emails(ret ...NullString) []NullString {
 //}
 //
 
+var _ ColumnMapper = (*nullTypedRecord)(nil)
+
 type nullTypedRecord struct {
 	ID         int64
-	StringVal  NullString
-	Int64Val   NullInt64
-	Float64Val NullFloat64
-	TimeVal    NullTime
-	BoolVal    NullBool
-	DecimalVal Decimal
+	StringVal  null.String
+	Int64Val   null.Int64
+	Float64Val null.Float64
+	TimeVal    null.Time
+	BoolVal    null.Bool
+	DecimalVal null.Decimal
 }
 
 func (p *nullTypedRecord) MapColumns(cm *ColumnMap) error {
@@ -234,6 +226,17 @@ func (p *nullTypedRecord) MapColumns(cm *ColumnMap) error {
 	}
 	return cm.Err()
 }
+func newNullTypedRecordWithData() *nullTypedRecord {
+	return &nullTypedRecord{
+		ID:         2,
+		StringVal:  null.String{String: "wow", Valid: true},
+		Int64Val:   null.Int64{Int64: 42, Valid: true},
+		Float64Val: null.Float64{Float64: 1.618, Valid: true},
+		TimeVal:    null.Time{Time: time.Date(2009, 1, 3, 18, 15, 5, 0, time.UTC), Valid: true},
+		BoolVal:    null.Bool{Bool: true, Valid: true},
+		DecimalVal: null.Decimal{Precision: 12345, Scale: 3, Valid: true},
+	}
+}
 
 type installFixturesConfig struct {
 	AddPeopleWithMaxUint64 bool
@@ -249,7 +252,7 @@ func installFixtures(db *sql.DB, c *installFixturesConfig) {
 			store_id smallint(5) unsigned DEFAULT 0 COMMENT 'Store Id',
 			created_at timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' COMMENT 'Created At',
 			total_income decimal(12,4) NOT NULL DEFAULT 0.0000 COMMENT 'Used as float64',
-			avg_income decimal(12,5) COMMENT 'Used as dml.Decimal'
+			avg_income decimal(12,5) COMMENT 'Used as Decimal'
 		)
 	`, "`key`")
 

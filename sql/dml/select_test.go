@@ -20,6 +20,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -132,7 +133,7 @@ func TestSelect_BasicToSQL(t *testing.T) {
 			Column("name").NotIn().PlaceHolder(),
 		)
 
-		selA := sel.WithArgs().ExpandPlaceHolders().Ints(3, 4, 5).NullStrings(MakeNullString("A1"), NullString{}, MakeNullString("A2"))
+		selA := sel.WithArgs().ExpandPlaceHolders().Ints(3, 4, 5).NullStrings(null.MakeString("A1"), null.String{}, null.MakeString("A2"))
 
 		compareToSQL(t, selA, errors.NoKind,
 			"SELECT `sku`, `name` FROM `products` WHERE (`id` IN (?,?,?)) AND (`name` NOT IN (?,?,?))",
@@ -140,7 +141,7 @@ func TestSelect_BasicToSQL(t *testing.T) {
 			int64(3), int64(4), int64(5), "A1", nil, "A2",
 		)
 
-		selA.Reset().Ints(3, 4, 5, 6, 7).NullStrings(NullString{}, MakeNullString("A2"))
+		selA.Reset().Ints(3, 4, 5, 6, 7).NullStrings(null.String{}, null.MakeString("A2"))
 		compareToSQL(t, selA, errors.NoKind,
 			"SELECT `sku`, `name` FROM `products` WHERE (`id` IN (?,?,?,?,?)) AND (`name` NOT IN (?,?))",
 			"",
@@ -627,7 +628,7 @@ func TestSelect_LoadType_Single(t *testing.T) {
 			WithArgs().String("SirGeorge@GoIsland.com").LoadNullString(context.TODO())
 		require.NoError(t, err)
 		assert.True(t, found)
-		assert.Exactly(t, MakeNullString("Sir George"), name)
+		assert.Exactly(t, null.MakeString("Sir George"), name)
 	})
 	t.Run("LoadNullString too many columns", func(t *testing.T) {
 		name, found, err := s.SelectFrom("dml_people").AddColumns("name", "email").Where(Expr("email = 'SirGeorge@GoIsland.com'")).WithArgs().LoadNullString(context.TODO())
@@ -639,7 +640,7 @@ func TestSelect_LoadType_Single(t *testing.T) {
 		name, found, err := s.SelectFrom("dml_people").AddColumns("name").Where(Expr("email = 'notfound@example.com'")).WithArgs().LoadNullString(context.TODO())
 		require.NoError(t, err)
 		assert.False(t, found)
-		assert.Exactly(t, NullString{}, name)
+		assert.Exactly(t, null.String{}, name)
 	})
 
 	t.Run("LoadNullInt64", func(t *testing.T) {
@@ -652,13 +653,13 @@ func TestSelect_LoadType_Single(t *testing.T) {
 		id, found, err := s.SelectFrom("dml_people").AddColumns("id", "email").Limit(0, 1).WithArgs().LoadNullInt64(context.TODO())
 		require.Error(t, err)
 		assert.False(t, found)
-		assert.Exactly(t, NullInt64{}, id)
+		assert.Exactly(t, null.Int64{}, id)
 	})
 	t.Run("LoadNullInt64 not found", func(t *testing.T) {
 		id, found, err := s.SelectFrom("dml_people").AddColumns("id").Where(Expr("id=236478326")).WithArgs().LoadNullInt64(context.TODO())
 		require.NoError(t, err)
 		assert.False(t, found)
-		assert.Exactly(t, NullInt64{}, id)
+		assert.Exactly(t, null.Int64{}, id)
 	})
 
 	t.Run("LoadNullUint64", func(t *testing.T) {
@@ -671,13 +672,13 @@ func TestSelect_LoadType_Single(t *testing.T) {
 		id, found, err := s.SelectFrom("dml_people").AddColumns("id", "email").Limit(0, 1).WithArgs().LoadNullUint64(context.TODO())
 		require.Error(t, err)
 		assert.False(t, found)
-		assert.Exactly(t, NullUint64{}, id)
+		assert.Exactly(t, null.Uint64{}, id)
 	})
 	t.Run("LoadNullUint64 not found", func(t *testing.T) {
 		id, found, err := s.SelectFrom("dml_people").AddColumns("id").Where(Expr("id=236478326")).WithArgs().LoadNullUint64(context.TODO())
 		require.NoError(t, err)
 		assert.False(t, found)
-		assert.Exactly(t, NullUint64{}, id)
+		assert.Exactly(t, null.Uint64{}, id)
 	})
 
 	t.Run("LoadNullFloat64", func(t *testing.T) {
@@ -690,13 +691,13 @@ func TestSelect_LoadType_Single(t *testing.T) {
 		id, found, err := s.SelectFrom("dml_people").AddColumns("id", "email").Limit(0, 1).WithArgs().LoadNullFloat64(context.TODO())
 		require.Error(t, err)
 		assert.False(t, found)
-		assert.Exactly(t, NullFloat64{}, id)
+		assert.Exactly(t, null.Float64{}, id)
 	})
 	t.Run("LoadNullFloat64 not found", func(t *testing.T) {
 		id, found, err := s.SelectFrom("dml_people").AddColumns("id").Where(Expr("id=236478326")).WithArgs().LoadNullFloat64(context.TODO())
 		require.NoError(t, err)
 		assert.False(t, found)
-		assert.Exactly(t, NullFloat64{}, id)
+		assert.Exactly(t, null.Float64{}, id)
 	})
 
 	t.Run("LoadDecimal", func(t *testing.T) {
@@ -704,7 +705,7 @@ func TestSelect_LoadType_Single(t *testing.T) {
 			WithArgs().LoadDecimal(context.TODO())
 		require.NoError(t, err)
 		assert.True(t, found)
-		assert.Exactly(t, MakeDecimalInt64(33366677, 5), income)
+		assert.Exactly(t, null.MakeDecimalInt64(33366677, 5), income)
 	})
 }
 
@@ -725,13 +726,13 @@ func TestSelect_WithArgs_LoadUint64(t *testing.T) {
 		id, found, err := sel.WithArgs().LoadNullUint64(context.TODO())
 		require.NoError(t, err)
 		assert.True(t, found)
-		assert.Exactly(t, MakeNullUint64(bigID), id)
+		assert.Exactly(t, null.MakeUint64(bigID), id)
 	})
 	t.Run("MaxUint64 interpolated o:equal", func(t *testing.T) {
 		id, found, err := sel.WithArgs().Interpolate().LoadNullUint64(context.TODO())
 		require.NoError(t, err)
 		assert.True(t, found)
-		assert.Exactly(t, MakeNullUint64(bigID), id)
+		assert.Exactly(t, null.MakeUint64(bigID), id)
 	})
 }
 
@@ -1401,7 +1402,7 @@ func TestSelect_SetRecord(t *testing.T) {
 	p := &dmlPerson{
 		ID:    6666,
 		Name:  "Hans Wurst",
-		Email: MakeNullString("hans@wurst.com"),
+		Email: null.MakeString("hans@wurst.com"),
 	}
 
 	t.Run("multiple args from record", func(t *testing.T) {
@@ -1486,9 +1487,9 @@ func TestSelect_SetRecord(t *testing.T) {
 	t.Run("slice as record", func(t *testing.T) {
 		persons := &dmlPersons{
 			Data: []*dmlPerson{
-				{ID: 33, Name: "Muffin Hat", Email: MakeNullString("Muffin@Hat.head")},
-				{ID: 44, Name: "Marianne Phyllis Finch", Email: MakeNullString("marianne@phyllis.finch")},
-				{ID: 55, Name: "Daphne Augusta Perry", Email: MakeNullString("daphne@augusta.perry")},
+				{ID: 33, Name: "Muffin Hat", Email: null.MakeString("Muffin@Hat.head")},
+				{ID: 44, Name: "Marianne Phyllis Finch", Email: null.MakeString("marianne@phyllis.finch")},
+				{ID: 55, Name: "Daphne Augusta Perry", Email: null.MakeString("daphne@augusta.perry")},
 			},
 		}
 		t.Run("one column in WHERE", func(t *testing.T) {

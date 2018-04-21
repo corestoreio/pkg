@@ -1,0 +1,65 @@
+goos: darwin
+goarch: amd64
+pkg: github.com/corestoreio/pkg/storage/null
+BenchmarkSQLScanner/NullInt64-4         	20000000	        61.9 ns/op	      32 B/op	       1 allocs/op
+BenchmarkSQLScanner/NullInt64-4         	20000000	        61.2 ns/op	      32 B/op	       1 allocs/op
+BenchmarkSQLScanner/NullInt64-4         	20000000	        61.1 ns/op	      32 B/op	       1 allocs/op
+BenchmarkSQLScanner/NullInt64-4         	20000000	        61.1 ns/op	      32 B/op	       1 allocs/op
+BenchmarkSQLScanner/NullInt64-4         	20000000	        60.7 ns/op	      32 B/op	       1 allocs/op
+BenchmarkSQLScanner/NullFloat64-4       	20000000	        69.4 ns/op	      32 B/op	       1 allocs/op
+BenchmarkSQLScanner/NullFloat64-4       	20000000	        70.3 ns/op	      32 B/op	       1 allocs/op
+BenchmarkSQLScanner/NullFloat64-4       	20000000	        69.9 ns/op	      32 B/op	       1 allocs/op
+BenchmarkSQLScanner/NullFloat64-4       	20000000	        69.9 ns/op	      32 B/op	       1 allocs/op
+BenchmarkSQLScanner/NullFloat64-4       	20000000	        69.2 ns/op	      32 B/op	       1 allocs/op
+BenchmarkSQLScanner/NullUint64-4        	20000000	        79.7 ns/op	      32 B/op	       1 allocs/op
+BenchmarkSQLScanner/NullUint64-4        	20000000	        78.5 ns/op	      32 B/op	       1 allocs/op
+BenchmarkSQLScanner/NullUint64-4        	20000000	        78.2 ns/op	      32 B/op	       1 allocs/op
+BenchmarkSQLScanner/NullUint64-4        	20000000	        79.1 ns/op	      32 B/op	       1 allocs/op
+BenchmarkSQLScanner/NullUint64-4        	20000000	        78.9 ns/op	      32 B/op	       1 allocs/op
+BenchmarkSQLScanner/NullString-4        	20000000	        77.1 ns/op	      48 B/op	       2 allocs/op
+BenchmarkSQLScanner/NullString-4        	20000000	        77.9 ns/op	      48 B/op	       2 allocs/op
+BenchmarkSQLScanner/NullString-4        	20000000	        76.6 ns/op	      48 B/op	       2 allocs/op
+BenchmarkSQLScanner/NullString-4        	20000000	        77.4 ns/op	      48 B/op	       2 allocs/op
+BenchmarkSQLScanner/NullString-4        	20000000	        77.6 ns/op	      48 B/op	       2 allocs/op
+BenchmarkSQLScanner/NullTime-4          	 5000000	       380 ns/op	      64 B/op	       2 allocs/op
+BenchmarkSQLScanner/NullTime-4          	 5000000	       382 ns/op	      64 B/op	       2 allocs/op
+BenchmarkSQLScanner/NullTime-4          	 5000000	       382 ns/op	      64 B/op	       2 allocs/op
+BenchmarkSQLScanner/NullTime-4          	 5000000	       384 ns/op	      64 B/op	       2 allocs/op
+BenchmarkSQLScanner/NullTime-4          	 3000000	       381 ns/op	      64 B/op	       2 allocs/op
+BenchmarkDecimal_String/123456789-4     	10000000	       155 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_String/123456789-4     	10000000	       154 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_String/123456789-4     	10000000	       154 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_String/123456789-4     	10000000	       154 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_String/123456789-4     	10000000	       153 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_String/-123456789-4    	10000000	       160 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_String/-123456789-4    	10000000	       161 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_String/-123456789-4    	10000000	       161 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_String/-123456789-4    	10000000	       159 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_String/-123456789-4    	10000000	       160 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_String/12345.6789-4    	10000000	       223 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_String/12345.6789-4    	10000000	       223 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_String/12345.6789-4    	10000000	       224 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_String/12345.6789-4    	10000000	       223 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_String/12345.6789-4    	10000000	       222 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_String/-12345.6789-4   	10000000	       228 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_String/-12345.6789-4   	10000000	       230 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_String/-12345.6789-4   	10000000	       228 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_String/-12345.6789-4   	10000000	       227 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_String/-12345.6789-4   	10000000	       229 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_String/-Scale140-4     	 5000000	       390 ns/op	     288 B/op	       2 allocs/op
+BenchmarkDecimal_String/-Scale140-4     	 5000000	       393 ns/op	     288 B/op	       2 allocs/op
+BenchmarkDecimal_String/-Scale140-4     	 5000000	       394 ns/op	     288 B/op	       2 allocs/op
+BenchmarkDecimal_String/-Scale140-4     	 5000000	       396 ns/op	     288 B/op	       2 allocs/op
+BenchmarkDecimal_String/-Scale140-4     	 3000000	       395 ns/op	     288 B/op	       2 allocs/op
+BenchmarkDecimal_Binary/Marshal-4       	50000000	        32.8 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_Binary/Marshal-4       	50000000	        32.5 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_Binary/Marshal-4       	50000000	        33.9 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_Binary/Marshal-4       	50000000	        35.3 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_Binary/Marshal-4       	50000000	        32.9 ns/op	      16 B/op	       1 allocs/op
+BenchmarkDecimal_Binary/Unmarshal-4     	300000000	         5.81 ns/op	       0 B/op	       0 allocs/op
+BenchmarkDecimal_Binary/Unmarshal-4     	300000000	         5.75 ns/op	       0 B/op	       0 allocs/op
+BenchmarkDecimal_Binary/Unmarshal-4     	300000000	         5.78 ns/op	       0 B/op	       0 allocs/op
+BenchmarkDecimal_Binary/Unmarshal-4     	300000000	         5.79 ns/op	       0 B/op	       0 allocs/op
+BenchmarkDecimal_Binary/Unmarshal-4     	300000000	         5.81 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/corestoreio/pkg/storage/null	114.477s

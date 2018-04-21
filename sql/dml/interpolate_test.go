@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -114,16 +115,16 @@ func TestInterpolate_AllTypes(t *testing.T) {
 		BytesSlice([]byte(`19-20`), nil, []byte(`21`)).
 		Time(now()).
 		Times(now(), now()).
-		NullString(MakeNullString("22")).
-		NullStrings(MakeNullString("23"), NullString{}, MakeNullString("24")).
-		NullFloat64(MakeNullFloat64(25.25)).
-		NullFloat64s(MakeNullFloat64(26.26), NullFloat64{}, MakeNullFloat64(27.27)).
-		NullInt64(MakeNullInt64(28)).
-		NullInt64s(MakeNullInt64(29), NullInt64{}, MakeNullInt64(30)).
-		NullBool(MakeNullBool(true)).
-		NullBools(MakeNullBool(true), NullBool{}, MakeNullBool(false)).
-		NullTime(MakeNullTime(now())).
-		NullTimes(MakeNullTime(now()), NullTime{}, MakeNullTime(now())).
+		NullString(null.MakeString("22")).
+		NullStrings(null.MakeString("23"), null.String{}, null.MakeString("24")).
+		NullFloat64(null.MakeFloat64(25.25)).
+		NullFloat64s(null.MakeFloat64(26.26), null.Float64{}, null.MakeFloat64(27.27)).
+		NullInt64(null.MakeInt64(28)).
+		NullInt64s(null.MakeInt64(29), null.Int64{}, null.MakeInt64(30)).
+		NullBool(null.MakeBool(true)).
+		NullBools(null.MakeBool(true), null.Bool{}, null.MakeBool(false)).
+		NullTime(null.MakeTime(now())).
+		NullTimes(null.MakeTime(now()), null.Time{}, null.MakeTime(now())).
 		ToSQL()
 	require.NoError(t, err)
 	assert.Nil(t, args)
@@ -180,11 +181,11 @@ func (u argValUint16) Value() (driver.Value, error) {
 func TestInterpolate_ArgValue(t *testing.T) {
 	t.Parallel()
 
-	aInt := MakeNullInt64(4711)
-	aStr := MakeNullString("Goph'er")
-	aFlo := MakeNullFloat64(2.7182818)
-	aTim := MakeNullTime(Now.UTC())
-	aBoo := MakeNullBool(true)
+	aInt := null.MakeInt64(4711)
+	aStr := null.MakeString("Goph'er")
+	aFlo := null.MakeFloat64(2.7182818)
+	aTim := null.MakeTime(Now.UTC())
+	aBoo := null.MakeBool(true)
 	aByt := driverValueBytes(`BytyGophe'r`)
 	var aNil driverValueBytes
 

@@ -19,6 +19,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/storage/null"
 )
 
 // Make sure that type productEntity implements interface.
@@ -29,7 +30,7 @@ type productEntity struct {
 	EntityID       int64 // Auto Increment
 	AttributeSetID int64
 	TypeID         string
-	SKU            dml.NullString
+	SKU            null.String
 	HasOptions     bool
 }
 
@@ -64,8 +65,8 @@ func (pe productEntity) MapColumns(cm *dml.ColumnMap) error {
 func ExampleInsert_WithArgs_record() {
 
 	objs := []productEntity{
-		{1, 5, "simple", dml.MakeNullString("SOA9"), false},
-		{2, 5, "virtual", dml.NullString{}, true},
+		{1, 5, "simple", null.MakeString("SOA9"), false},
+		{2, 5, "virtual", null.String{}, true},
 	}
 
 	i := dml.NewInsert("catalog_product_entity").AddColumns("attribute_set_id", "type_id", "sku", "has_options").

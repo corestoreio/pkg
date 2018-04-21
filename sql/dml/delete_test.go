@@ -21,6 +21,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -253,7 +254,7 @@ func TestDelete_Bind(t *testing.T) {
 	t.Parallel()
 	p := &dmlPerson{
 		ID:    5555,
-		Email: MakeNullString("hans@wurst.com"),
+		Email: null.MakeString("hans@wurst.com"),
 	}
 	t.Run("multiple args from Record", func(t *testing.T) {
 		del := NewDelete("dml_people").

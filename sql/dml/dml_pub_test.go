@@ -15,6 +15,7 @@
 package dml_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"reflect"
@@ -25,13 +26,10 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-type protoMarshalToer interface {
-	MarshalTo(data []byte) (n int, err error)
-}
 
 var now = func() time.Time {
 	return time.Date(2006, 1, 2, 15, 4, 5, 02, time.FixedZone("hardcoded", -7))
@@ -40,6 +38,11 @@ var now = func() time.Time {
 func init() {
 	// Freeze time in package log
 	log.Now = now
+	null.JSONMarshalFn = json.Marshal
+	null.JSONUnMarshalFn = json.Unmarshal
+
+	// Set up table `dml_fake_person`
+	//
 }
 
 var _ dml.ColumnMapper = (*dmlPerson)(nil)
@@ -47,8 +50,8 @@ var _ dml.ColumnMapper = (*dmlPerson)(nil)
 type dmlPerson struct {
 	ID          int64
 	Name        string
-	Email       dml.NullString
-	Key         dml.NullString
+	Email       null.String
+	Key         null.String
 	StoreID     int64
 	CreatedAt   time.Time
 	TotalIncome float64
@@ -66,9 +69,9 @@ func (p *dmlPerson) MapColumns(cm *dml.ColumnMap) error {
 		switch c := cm.Column(); c {
 		case "id":
 			cm.Int64(&p.ID)
-		case "name":
+		case "name", "name2": // name2 used in TestWithLogger_WithCTE
 			cm.String(&p.Name)
-		case "email":
+		case "email", "email2": // email2 used in TestWithLogger_WithCTE
 			cm.NullString(&p.Email)
 		case "key":
 			cm.NullString(&p.Key)

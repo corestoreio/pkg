@@ -18,8 +18,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/naughtystrings"
 )
+
+// They both must be kept in sync
+var _ null.Dialecter = (*mysqlDialect)(nil)
+var _ dialecter = (*mysqlDialect)(nil)
 
 func TestEscapeWith_NaughtyStrings(t *testing.T) {
 	s := createRealSessionWithFixtures(t, nil)

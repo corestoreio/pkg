@@ -23,6 +23,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/storage/null"
 )
 
 // https://www.adampalmer.me/iodigitalsec/2013/08/18/mysql_real_escape_string-wont-magically-solve-your-sql-injection-problems/
@@ -32,13 +33,6 @@ const (
 	sqlStrNullLC             = "null"
 	sqlStar                  = "*"
 	defaultArgumentsCapacity = 5
-)
-
-var (
-	sqlBytesNullUC  = []byte(sqlStrNullUC)
-	sqlBytesNullLC  = []byte(sqlStrNullLC)
-	sqlBytesFalseLC = []byte("false")
-	sqlBytesTrueLC  = []byte("true")
 )
 
 // QualifiedRecord is a ColumnMapper with a qualifier. A QualifiedRecord gets
@@ -81,7 +75,7 @@ func (arg *argument) set(v interface{}) {
 
 func (arg *argument) len() (l int) {
 	switch v := arg.value.(type) {
-	case nil, int, int64, uint64, float64, bool, string, []byte, time.Time, NullString, NullInt64, NullFloat64, NullBool, NullTime:
+	case nil, int, int64, uint64, float64, bool, string, []byte, time.Time, null.String, null.Int64, null.Float64, null.Bool, null.Time:
 		l = 1
 	case []int:
 		l = len(v)
@@ -101,15 +95,15 @@ func (arg *argument) len() (l int) {
 		l = len(v)
 	case []time.Time:
 		l = len(v)
-	case []NullString:
+	case []null.String:
 		l = len(v)
-	case []NullInt64:
+	case []null.Int64:
 		l = len(v)
-	case []NullFloat64:
+	case []null.Float64:
 		l = len(v)
-	case []NullBool:
+	case []null.Bool:
 		l = len(v)
-	case []NullTime:
+	case []null.Time:
 		l = len(v)
 	default:
 		panic(errors.NotSupported.Newf("[dml] Unsupported type: %T => %#v", v, v))
@@ -159,18 +153,18 @@ func (arg argument) writeTo(w *bytes.Buffer, pos uint) (err error) {
 			}
 			w.WriteByte(')')
 		}
-	case NullInt64:
-		err = v.writeTo(w)
-	case []NullInt64:
+	case null.Int64:
+		err = v.WriteTo(dialect, w)
+	case []null.Int64:
 		if requestPos {
-			err = v[pos].writeTo(w)
+			err = v[pos].WriteTo(dialect, w)
 		} else {
 			w.WriteByte('(')
 			for l, i := len(v), 0; i < l && err == nil; i++ {
 				if i > 0 {
 					w.WriteByte(',')
 				}
-				err = v[i].writeTo(w)
+				err = v[i].WriteTo(dialect, w)
 			}
 			w.WriteByte(')')
 		}
@@ -225,18 +219,18 @@ func (arg argument) writeTo(w *bytes.Buffer, pos uint) (err error) {
 			}
 			w.WriteByte(')')
 		}
-	case NullFloat64:
-		err = v.writeTo(w)
-	case []NullFloat64:
+	case null.Float64:
+		err = v.WriteTo(dialect, w)
+	case []null.Float64:
 		if requestPos {
-			err = v[pos].writeTo(w)
+			err = v[pos].WriteTo(dialect, w)
 		} else {
 			w.WriteByte('(')
 			for l, i := len(v), 0; i < l && err == nil; i++ {
 				if i > 0 {
 					w.WriteByte(',')
 				}
-				err = v[i].writeTo(w)
+				err = v[i].WriteTo(dialect, w)
 			}
 			w.WriteByte(')')
 		}
@@ -255,18 +249,18 @@ func (arg argument) writeTo(w *bytes.Buffer, pos uint) (err error) {
 			}
 			w.WriteByte(')')
 		}
-	case NullBool:
-		v.writeTo(w)
-	case []NullBool:
+	case null.Bool:
+		v.WriteTo(dialect, w)
+	case []null.Bool:
 		if requestPos {
-			v[pos].writeTo(w)
+			v[pos].WriteTo(dialect, w)
 		} else {
 			w.WriteByte('(')
 			for l, i := len(v), 0; i < l && err == nil; i++ {
 				if i > 0 {
 					w.WriteByte(',')
 				}
-				err = v[i].writeTo(w)
+				err = v[i].WriteTo(dialect, w)
 			}
 			w.WriteByte(')')
 		}
@@ -296,18 +290,18 @@ func (arg argument) writeTo(w *bytes.Buffer, pos uint) (err error) {
 			}
 			w.WriteByte(')')
 		}
-	case NullString:
-		err = v.writeTo(w)
-	case []NullString:
+	case null.String:
+		err = v.WriteTo(dialect, w)
+	case []null.String:
 		if requestPos {
-			err = v[pos].writeTo(w)
+			err = v[pos].WriteTo(dialect, w)
 		} else {
 			w.WriteByte('(')
 			for l, i := len(v), 0; i < l && err == nil; i++ {
 				if i > 0 {
 					w.WriteByte(',')
 				}
-				err = v[i].writeTo(w)
+				err = v[i].WriteTo(dialect, w)
 			}
 			w.WriteByte(')')
 		}
@@ -342,18 +336,18 @@ func (arg argument) writeTo(w *bytes.Buffer, pos uint) (err error) {
 			}
 			w.WriteByte(')')
 		}
-	case NullTime:
-		err = v.writeTo(w)
-	case []NullTime:
+	case null.Time:
+		err = v.WriteTo(dialect, w)
+	case []null.Time:
 		if requestPos {
-			err = v[pos].writeTo(w)
+			err = v[pos].WriteTo(dialect, w)
 		} else {
 			w.WriteByte('(')
 			for l, i := len(v), 0; i < l && err == nil; i++ {
 				if i > 0 {
 					w.WriteByte(',')
 				}
-				err = v[i].writeTo(w)
+				err = v[i].WriteTo(dialect, w)
 			}
 			w.WriteByte(')')
 		}
@@ -381,11 +375,11 @@ func (arg argument) GoString() string {
 		fmt.Fprintf(buf, ".Int64(%d)", v)
 	case []int64:
 		fmt.Fprintf(buf, ".Int64s(%#v...)", v)
-	case NullInt64:
+	case null.Int64:
 		buf.WriteString(".NullInt64(")
 		buf.WriteString(v.GoString())
 		buf.WriteByte(')')
-	case []NullInt64:
+	case []null.Int64:
 		buf.WriteString(".NullInt64s(")
 		for i, nv := range v {
 			if i > 0 {
@@ -406,11 +400,11 @@ func (arg argument) GoString() string {
 		fmt.Fprintf(buf, ".Float64(%f)", v)
 	case []float64:
 		fmt.Fprintf(buf, ".Float64s(%#v...)", v) // the lazy way; prints `[]float64{2.76, 3.141}...` but should `2.76, 3.141`
-	case NullFloat64:
+	case null.Float64:
 		buf.WriteString(".NullFloat64(")
 		buf.WriteString(v.GoString())
 		buf.WriteByte(')')
-	case []NullFloat64:
+	case []null.Float64:
 		buf.WriteString(".NullFloat64s(")
 		for i, nv := range v {
 			if i > 0 {
@@ -424,11 +418,11 @@ func (arg argument) GoString() string {
 		fmt.Fprintf(buf, ".Bool(%v)", v)
 	case []bool:
 		fmt.Fprintf(buf, ".Bools(%#v...)", v)
-	case NullBool:
+	case null.Bool:
 		buf.WriteString(".NullBool(")
 		buf.WriteString(v.GoString())
 		buf.WriteByte(')')
-	case []NullBool:
+	case []null.Bool:
 		buf.WriteString(".NullBools(")
 		for i, nv := range v {
 			if i > 0 {
@@ -449,11 +443,11 @@ func (arg argument) GoString() string {
 			fmt.Fprintf(buf, "%q", nv)
 		}
 		buf.WriteByte(')')
-	case NullString:
+	case null.String:
 		buf.WriteString(".NullString(")
 		buf.WriteString(v.GoString())
 		buf.WriteByte(')')
-	case []NullString:
+	case []null.String:
 		buf.WriteString(".NullStrings(")
 		for i, nv := range v {
 			if i > 0 {
@@ -486,11 +480,11 @@ func (arg argument) GoString() string {
 			fmt.Fprintf(buf, "time.Unix(%d,%d)", t.Unix(), t.Nanosecond())
 		}
 		buf.WriteByte(')')
-	case NullTime:
+	case null.Time:
 		buf.WriteString(".NullTime(")
 		buf.WriteString(v.GoString())
 		buf.WriteByte(')')
-	case []NullTime:
+	case []null.Time:
 		buf.WriteString(".NullTimes(")
 		for i, nv := range v {
 			if i > 0 {
@@ -604,11 +598,11 @@ func (as arguments) Interfaces(args ...interface{}) []interface{} {
 			for _, v := range vv {
 				args = append(args, v)
 			}
-		case NullInt64:
-			args = vv.append(args)
-		case []NullInt64:
+		case null.Int64:
+			args = vv.Append(args)
+		case []null.Int64:
 			for _, v := range vv {
-				args = v.append(args)
+				args = v.Append(args)
 			}
 
 			// Get send as text in a byte slice. The MySQL/MariaDB Server type
@@ -619,6 +613,13 @@ func (as arguments) Interfaces(args ...interface{}) []interface{} {
 			} else {
 				args = append(args, int64(vv))
 			}
+		case null.Uint64:
+			args = vv.Append(args)
+		case []null.Uint64:
+			for _, v := range vv {
+				args = v.Append(args)
+			}
+
 		case uint:
 			if vv > maxInt64 {
 				args = append(args, strconv.AppendUint([]byte{}, uint64(vv), 10))
@@ -654,33 +655,33 @@ func (as arguments) Interfaces(args ...interface{}) []interface{} {
 			for _, v := range vv {
 				args = append(args, v)
 			}
-		case NullFloat64:
-			args = vv.append(args)
-		case []NullFloat64:
+		case null.Float64:
+			args = vv.Append(args)
+		case []null.Float64:
 			for _, v := range vv {
-				args = v.append(args)
+				args = v.Append(args)
 			}
 
 		case []bool:
 			for _, v := range vv {
 				args = append(args, v)
 			}
-		case NullBool:
-			args = vv.append(args)
-		case []NullBool:
+		case null.Bool:
+			args = vv.Append(args)
+		case []null.Bool:
 			for _, v := range vv {
-				args = v.append(args)
+				args = v.Append(args)
 			}
 
 		case []string:
 			for _, v := range vv {
 				args = append(args, v)
 			}
-		case NullString:
-			args = vv.append(args)
-		case []NullString:
+		case null.String:
+			args = vv.Append(args)
+		case []null.String:
 			for _, v := range vv {
-				args = v.append(args)
+				args = v.Append(args)
 			}
 
 		case [][]byte:
@@ -692,11 +693,11 @@ func (as arguments) Interfaces(args ...interface{}) []interface{} {
 			for _, v := range vv {
 				args = append(args, v)
 			}
-		case NullTime:
-			args = vv.append(args)
-		case []NullTime:
+		case null.Time:
+			args = vv.Append(args)
+		case []null.Time:
 			for _, v := range vv {
-				args = v.append(args)
+				args = v.Append(args)
 			}
 		default:
 			panic(errors.NotSupported.Newf("[dml] Unsupported field type: %T", arg.value))

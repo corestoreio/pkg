@@ -20,6 +20,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -108,7 +109,7 @@ func TestUpdate_SetExprToSQL(t *testing.T) {
 				Column("bar99").Expr("COALESCE(bar, 0) + ?"),
 			).
 			Where(Column("id").Int(9)).
-			WithArgs().NullString(NullString{}).Uint(99)
+			WithArgs().NullString(null.String{}).Uint(99)
 		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `a` SET `fooNULL`=?, `bar99`=COALESCE(bar, 0) + ? WHERE (`id` = 9)",
 			"", //"UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = 9)",
@@ -316,7 +317,7 @@ func TestUpdate_SetRecord(t *testing.T) {
 	pRec := &dmlPerson{
 		ID:    12345,
 		Name:  "Gopher",
-		Email: MakeNullString("gopher@g00gle.c0m"),
+		Email: null.MakeString("gopher@g00gle.c0m"),
 	}
 
 	t.Run("without where", func(t *testing.T) {

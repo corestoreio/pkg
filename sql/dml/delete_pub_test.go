@@ -23,6 +23,7 @@ import (
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -120,7 +121,7 @@ func TestDelete_Prepare(t *testing.T) {
 
 			p := &dmlPerson{
 				Name:  test.name,
-				Email: dml.MakeNullString(test.email),
+				Email: null.MakeString(test.email),
 			}
 
 			res, err := stmt.WithArgs().Record("", p).ExecContext(context.TODO())

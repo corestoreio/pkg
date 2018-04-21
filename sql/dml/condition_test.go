@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -32,66 +33,66 @@ func TestOpRune(t *testing.T) {
 	s := NewSelect().From("tableA").AddColumns("a", "b").
 		Where(
 			Column("a1").Like().Str("H_ll_"),
-			Column("a1").Like().NullString(NullString{}),
-			Column("a1").Like().NullString(MakeNullString("NullString")),
+			Column("a1").Like().NullString(null.String{}),
+			Column("a1").Like().NullString(null.MakeString("NullString")),
 			Column("a1").Like().Float64(2.718281),
-			Column("a1").Like().NullFloat64(NullFloat64{}),
-			Column("a1").Like().NullFloat64(MakeNullFloat64(-2.718281)),
+			Column("a1").Like().NullFloat64(null.Float64{}),
+			Column("a1").Like().NullFloat64(null.MakeFloat64(-2.718281)),
 			Column("a1").Like().Int64(2718281),
-			Column("a1").Like().NullInt64(NullInt64{}),
-			Column("a1").Like().NullInt64(MakeNullInt64(-987)),
+			Column("a1").Like().NullInt64(null.Int64{}),
+			Column("a1").Like().NullInt64(null.MakeInt64(-987)),
 			Column("a1").Like().Int(2718281),
 			Column("a1").Like().Bool(true),
-			Column("a1").Like().NullBool(NullBool{}),
-			Column("a1").Like().NullBool(MakeNullBool(false)),
+			Column("a1").Like().NullBool(null.Bool{}),
+			Column("a1").Like().NullBool(null.MakeBool(false)),
 			Column("a1").Like().Time(now()),
-			Column("a1").Like().NullTime(MakeNullTime(now().Add(time.Minute))),
+			Column("a1").Like().NullTime(null.MakeTime(now().Add(time.Minute))),
 			Column("a1").Like().Null(),
 			Column("a1").Like().Bytes([]byte(`H3llo`)),
-			Column("a1").Like().DriverValue(MakeNullInt64(2345)),
+			Column("a1").Like().DriverValue(null.MakeInt64(2345)),
 
 			Column("a2").NotLike().Str("H_ll_"),
-			Column("a2").NotLike().NullString(NullString{}),
-			Column("a2").NotLike().NullString(MakeNullString("NullString")),
+			Column("a2").NotLike().NullString(null.String{}),
+			Column("a2").NotLike().NullString(null.MakeString("NullString")),
 			Column("a2").NotLike().Float64(2.718281),
-			Column("a2").NotLike().NullFloat64(NullFloat64{}),
-			Column("a2").NotLike().NullFloat64(MakeNullFloat64(-2.718281)),
+			Column("a2").NotLike().NullFloat64(null.Float64{}),
+			Column("a2").NotLike().NullFloat64(null.MakeFloat64(-2.718281)),
 			Column("a2").NotLike().Int64(2718281),
-			Column("a2").NotLike().NullInt64(NullInt64{}),
-			Column("a2").NotLike().NullInt64(MakeNullInt64(-987)),
+			Column("a2").NotLike().NullInt64(null.Int64{}),
+			Column("a2").NotLike().NullInt64(null.MakeInt64(-987)),
 			Column("a2").NotLike().Int(2718281),
 			Column("a2").NotLike().Bool(true),
-			Column("a2").NotLike().NullBool(NullBool{}),
-			Column("a2").NotLike().NullBool(MakeNullBool(false)),
+			Column("a2").NotLike().NullBool(null.Bool{}),
+			Column("a2").NotLike().NullBool(null.MakeBool(false)),
 			Column("a2").NotLike().Time(now()),
-			Column("a2").NotLike().NullTime(MakeNullTime(now().Add(time.Minute))),
+			Column("a2").NotLike().NullTime(null.MakeTime(now().Add(time.Minute))),
 			Column("a2").NotLike().Null(),
 			Column("a2").NotLike().Bytes([]byte(`H3llo`)),
-			Column("a2").NotLike().DriverValue(MakeNullInt64(2345)),
+			Column("a2").NotLike().DriverValue(null.MakeInt64(2345)),
 
 			Column("a301").In().Strs("Go1", "Go2"),
-			Column("a303").In().NullString(MakeNullString("NullXString")),
-			Column("a302").In().NullStrings(NullString{}, NullString{}),
+			Column("a303").In().NullString(null.MakeString("NullXString")),
+			Column("a302").In().NullStrings(null.String{}, null.String{}),
 			Column("a304").In().Float64s(2.718281, 3.14159),
-			Column("a305").In().NullFloat64(NullFloat64{}),
-			Column("a306").In().NullFloat64s(MakeNullFloat64(-2.718281), MakeNullFloat64(-3.14159)),
+			Column("a305").In().NullFloat64(null.Float64{}),
+			Column("a306").In().NullFloat64s(null.MakeFloat64(-2.718281), null.MakeFloat64(-3.14159)),
 			Column("a307").In().Int64s(2718281, 314159),
-			Column("a308").In().NullInt64(NullInt64{}),
-			Column("a309").In().NullInt64s(MakeNullInt64(-987), MakeNullInt64(-654)),
+			Column("a308").In().NullInt64(null.Int64{}),
+			Column("a309").In().NullInt64s(null.MakeInt64(-987), null.MakeInt64(-654)),
 			Column("a310").In().Ints(2718281, 314159),
 			Column("a311").In().Bools(true, false),
-			Column("a312").In().NullBool(NullBool{}),
-			Column("a313").In().NullBools(MakeNullBool(true)),
+			Column("a312").In().NullBool(null.Bool{}),
+			Column("a313").In().NullBools(null.MakeBool(true)),
 			Column("a314").In().Times(now(), now()),
-			Column("a315a").In().NullTime(MakeNullTime(now().Add(time.Minute))),
-			Column("a315b").In().NullTimes(MakeNullTime(now().Add(time.Minute)), MakeNullTime(now().Add(time.Minute*2))),
+			Column("a315a").In().NullTime(null.MakeTime(now().Add(time.Minute))),
+			Column("a315b").In().NullTimes(null.MakeTime(now().Add(time.Minute)), null.MakeTime(now().Add(time.Minute*2))),
 			Column("a316").In().Null(),
 			Column("a317").In().Bytes([]byte(`H3llo1`)),
-			Column("a320").In().DriverValue(MakeNullFloat64(674589), MakeNullFloat64(3.14159)),
+			Column("a320").In().DriverValue(null.MakeFloat64(674589), null.MakeFloat64(3.14159)),
 
 			Column("a401").SpaceShip().Str("H_ll_"),
-			Column("a402").SpaceShip().NullString(NullString{}),
-			Column("a403").SpaceShip().NullString(MakeNullString("NullString")),
+			Column("a402").SpaceShip().NullString(null.String{}),
+			Column("a403").SpaceShip().NullString(null.MakeString("NullString")),
 		)
 	compareToSQL(t, s, errors.NoKind,
 		"SELECT `a`, `b` FROM `tableA` WHERE (`a1` LIKE 'H_ll_') AND (`a1` LIKE NULL) AND (`a1` LIKE 'NullString') AND (`a1` LIKE 2.718281) AND (`a1` LIKE NULL) AND (`a1` LIKE -2.718281) AND (`a1` LIKE 2718281) AND (`a1` LIKE NULL) AND (`a1` LIKE -987) AND (`a1` LIKE 2718281) AND (`a1` LIKE 1) AND (`a1` LIKE NULL) AND (`a1` LIKE 0) AND (`a1` LIKE '2006-01-02 15:04:05') AND (`a1` LIKE '2006-01-02 15:05:05') AND (`a1` IS NULL) AND (`a1` LIKE 'H3llo') AND (`a1` LIKE (2345)) AND (`a2` NOT LIKE 'H_ll_') AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE 'NullString') AND (`a2` NOT LIKE 2.718281) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE -2.718281) AND (`a2` NOT LIKE 2718281) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE -987) AND (`a2` NOT LIKE 2718281) AND (`a2` NOT LIKE 1) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE 0) AND (`a2` NOT LIKE '2006-01-02 15:04:05') AND (`a2` NOT LIKE '2006-01-02 15:05:05') AND (`a2` IS NULL) AND (`a2` NOT LIKE 'H3llo') AND (`a2` NOT LIKE (2345)) AND (`a301` IN ('Go1','Go2')) AND (`a303` IN 'NullXString') AND (`a302` IN (NULL,NULL)) AND (`a304` IN (2.718281,3.14159)) AND (`a305` IN NULL) AND (`a306` IN (-2.718281,-3.14159)) AND (`a307` IN (2718281,314159)) AND (`a308` IN NULL) AND (`a309` IN (-987,-654)) AND (`a310` IN (2718281,314159)) AND (`a311` IN (1,0)) AND (`a312` IN NULL) AND (`a313` IN (1)) AND (`a314` IN ('2006-01-02 15:04:05','2006-01-02 15:04:05')) AND (`a315a` IN '2006-01-02 15:05:05') AND (`a315b` IN ('2006-01-02 15:05:05','2006-01-02 15:06:05')) AND (`a316` IS NULL) AND (`a317` IN 'H3llo1') AND (`a320` IN (674589,3.14159)) AND (`a401` <=> 'H_ll_') AND (`a402` <=> NULL) AND (`a403` <=> 'NullString')",
@@ -164,10 +165,10 @@ func TestOpArgs(t *testing.T) {
 		compareToSQL(t,
 			NewSelect("a", "b").From("t1").Where(
 				Column("a3419").In().DriverValues(
-					MakeNullFloat64(3.141),
-					MakeNullString("G'o"),
+					null.MakeFloat64(3.141),
+					null.MakeString("G'o"),
 					driverValueBytes{66, 250, 67},
-					MakeNullTime(now()),
+					null.MakeTime(now()),
 					driverValueBytes([]byte("x\x00\xff")),
 				),
 			),
@@ -180,7 +181,7 @@ func TestOpArgs(t *testing.T) {
 		// Between statements do not work with DriverValue
 		compareToSQL(t,
 			NewSelect("a", "b").From("t1").Where(
-				Column("a319").Between().DriverValues(MakeNullFloat64(3.141), MakeNullString("G'o")),
+				Column("a319").Between().DriverValues(null.MakeFloat64(3.141), null.MakeString("G'o")),
 			),
 			errors.NoKind,
 			"SELECT `a`, `b` FROM `t1` WHERE (`a319` BETWEEN ? AND )",
@@ -313,11 +314,11 @@ func TestExpr_Arguments(t *testing.T) {
 				Expr("t1 = ? AND t2 IN ? AND ns = ? OR nf = ? OR ni = ? OR nb = ? AND nt = ?").
 					Time(now()).
 					Times(now(), now()).
-					NullString(MakeNullString("Goph3r")).
-					NullFloat64(MakeNullFloat64(2.7182)).
-					NullInt64(MakeNullInt64(27182)).
-					NullBool(MakeNullBool(true)).
-					NullTime(MakeNullTime(now())),
+					NullString(null.MakeString("Goph3r")).
+					NullFloat64(null.MakeFloat64(2.7182)).
+					NullInt64(null.MakeInt64(27182)).
+					NullBool(null.MakeBool(true)).
+					NullTime(null.MakeTime(now())),
 			)
 
 		compareToSQL(t, sel, errors.NoKind,
@@ -332,7 +333,7 @@ func TestCondition_Column(t *testing.T) {
 	sel := NewSelect("t_d.attribute_id", "e.entity_id").
 		AddColumnsAliases("t_d.value", "default_value").
 		AddColumnsConditions(SQLIf("t_s.value_id IS NULL", "t_d.value", "t_s.value").Alias("value")).
-		AddColumnsConditions(SQLIf("? IS NULL", "t_d.value", "t_s.value").NullFloat64(MakeNullFloat64(2.718281)).Alias("value")).
+		AddColumnsConditions(SQLIf("? IS NULL", "t_d.value", "t_s.value").NullFloat64(null.MakeFloat64(2.718281)).Alias("value")).
 		FromAlias("catalog_category_entity", "e").
 		Join(
 			MakeIdentifier("catalog_category_entity_varchar").Alias("t_d"), // t_d = table scope default

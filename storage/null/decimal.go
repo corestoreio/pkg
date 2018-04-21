@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dml
+package null
 
 import (
 	"bytes"
@@ -23,7 +23,6 @@ import (
 	"strings"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/pkg/util/bufferpool"
 	"github.com/corestoreio/pkg/util/byteconv"
 )
 
@@ -166,9 +165,8 @@ func (d Decimal) Float64() (value float64) {
 // String returns the string representation of the fixed with decimal. Returns
 // the word `NULL` if the current value is not valid, for now.
 func (d Decimal) String() string {
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
-	d.string(buf)
+	var buf bytes.Buffer
+	d.string(&buf)
 	return buf.String()
 }
 
@@ -227,9 +225,8 @@ func (d Decimal) string(buf *bytes.Buffer) {
 
 // GoString returns an optimized version of the Go representation of Decimal.
 func (d Decimal) GoString() string {
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
-	buf.WriteString("dml.Decimal{")
+	var buf bytes.Buffer
+	buf.WriteString("null.Decimal{")
 	if d.Precision > 0 {
 		buf.WriteString("Precision:")
 		buf2 := strconv.AppendUint(buf.Bytes(), d.Precision, 10)
@@ -245,13 +242,13 @@ func (d Decimal) GoString() string {
 		buf.WriteByte(',')
 	}
 	if d.Negative {
-		writeLabeledBool(buf, "Negative")
+		writeLabeledBool(&buf, "Negative")
 	}
 	if d.Valid {
-		writeLabeledBool(buf, "Valid")
+		writeLabeledBool(&buf, "Valid")
 	}
 	if d.Quote {
-		writeLabeledBool(buf, "Quote")
+		writeLabeledBool(&buf, "Quote")
 	}
 	buf.WriteByte('}')
 	return buf.String()
@@ -286,11 +283,11 @@ func (d Decimal) MarshalJSON() ([]byte, error) {
 	if !d.Valid {
 		return []byte(sqlStrNullLC), nil
 	}
-	buf := new(bytes.Buffer)
+	var buf bytes.Buffer
 	if d.Quote {
 		buf.WriteByte('"')
 	}
-	d.string(buf)
+	d.string(&buf)
 	if d.Quote {
 		buf.WriteByte('"')
 	}
@@ -358,8 +355,8 @@ func (d *Decimal) UnmarshalText(text []byte) (err error) {
 // serialization. Does not support quoting. An invalid type returns an empty
 // string.
 func (d Decimal) MarshalText() (text []byte, err error) {
-	buf := new(bytes.Buffer)
-	d.string(buf)
+	var buf bytes.Buffer
+	d.string(&buf)
 	return buf.Bytes(), nil
 }
 

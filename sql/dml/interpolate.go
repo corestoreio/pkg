@@ -24,6 +24,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
@@ -169,20 +170,20 @@ func (in *ip) Bools(b ...bool) *ip        { in.args = in.args.add(b); return in 
 // Bytes uses a byte slice for comparison. Providing a nil value returns a
 // NULL type. Detects between valid UTF-8 strings and binary data. Later gets
 // hex encoded.
-func (in *ip) Bytes(p []byte) *ip                 { in.args = in.args.add(p); return in }
-func (in *ip) BytesSlice(p ...[]byte) *ip         { in.args = in.args.add(p); return in }
-func (in *ip) Time(t time.Time) *ip               { in.args = in.args.add(t); return in }
-func (in *ip) Times(t ...time.Time) *ip           { in.args = in.args.add(t); return in }
-func (in *ip) NullString(nv NullString) *ip       { in.args = in.args.add(nv); return in }
-func (in *ip) NullStrings(nv ...NullString) *ip   { in.args = in.args.add(nv); return in }
-func (in *ip) NullFloat64(nv NullFloat64) *ip     { in.args = in.args.add(nv); return in }
-func (in *ip) NullFloat64s(nv ...NullFloat64) *ip { in.args = in.args.add(nv); return in }
-func (in *ip) NullInt64(nv NullInt64) *ip         { in.args = in.args.add(nv); return in }
-func (in *ip) NullInt64s(nv ...NullInt64) *ip     { in.args = in.args.add(nv); return in }
-func (in *ip) NullBool(nv NullBool) *ip           { in.args = in.args.add(nv); return in }
-func (in *ip) NullBools(nv ...NullBool) *ip       { in.args = in.args.add(nv); return in }
-func (in *ip) NullTime(nv NullTime) *ip           { in.args = in.args.add(nv); return in }
-func (in *ip) NullTimes(nv ...NullTime) *ip       { in.args = in.args.add(nv); return in }
+func (in *ip) Bytes(p []byte) *ip                  { in.args = in.args.add(p); return in }
+func (in *ip) BytesSlice(p ...[]byte) *ip          { in.args = in.args.add(p); return in }
+func (in *ip) Time(t time.Time) *ip                { in.args = in.args.add(t); return in }
+func (in *ip) Times(t ...time.Time) *ip            { in.args = in.args.add(t); return in }
+func (in *ip) NullString(nv null.String) *ip       { in.args = in.args.add(nv); return in }
+func (in *ip) NullStrings(nv ...null.String) *ip   { in.args = in.args.add(nv); return in }
+func (in *ip) NullFloat64(nv null.Float64) *ip     { in.args = in.args.add(nv); return in }
+func (in *ip) NullFloat64s(nv ...null.Float64) *ip { in.args = in.args.add(nv); return in }
+func (in *ip) NullInt64(nv null.Int64) *ip         { in.args = in.args.add(nv); return in }
+func (in *ip) NullInt64s(nv ...null.Int64) *ip     { in.args = in.args.add(nv); return in }
+func (in *ip) NullBool(nv null.Bool) *ip           { in.args = in.args.add(nv); return in }
+func (in *ip) NullBools(nv ...null.Bool) *ip       { in.args = in.args.add(nv); return in }
+func (in *ip) NullTime(nv null.Time) *ip           { in.args = in.args.add(nv); return in }
+func (in *ip) NullTimes(nv ...null.Time) *ip       { in.args = in.args.add(nv); return in }
 
 // DriverValues adds each Valuer as its own argument.
 func (in *ip) DriverValues(dvs ...driver.Valuer) *ip {

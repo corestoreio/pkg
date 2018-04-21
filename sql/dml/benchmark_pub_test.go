@@ -25,6 +25,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/storage/null"
 )
 
 var (
@@ -734,7 +735,7 @@ func BenchmarkUpdateValuesSQL(b *testing.B) {
 func BenchmarkArgUnion(b *testing.B) {
 	reflectIFaceContainer := make([]interface{}, 0, 25)
 	var finalArgs = make([]interface{}, 0, 30)
-	drvVal := []driver.Valuer{dml.MakeNullString("I'm a valid null string: See the License for the specific language governing permissions and See the License for the specific language governing permissions and See the License for the specific language governing permissions and")}
+	drvVal := []driver.Valuer{null.MakeString("I'm a valid null string: See the License for the specific language governing permissions and See the License for the specific language governing permissions and See the License for the specific language governing permissions and")}
 	argUnion := dml.MakeArgs(30)
 	now1 := dml.Now.UTC()
 	b.ResetTimer()
@@ -881,91 +882,4 @@ func encodePlaceholder(args []interface{}, value interface{}) ([]interface{}, er
 
 	}
 	return args, errors.NotSupported.Newf("Type %#v not supported", value)
-}
-
-var benchmarkDecimal_String string
-
-func BenchmarkDecimal_String(b *testing.B) {
-
-	b.Run("123456789", func(b *testing.B) {
-		d := dml.Decimal{
-			Precision: 123456789,
-			Valid:     true,
-		}
-		for i := 0; i < b.N; i++ {
-			benchmarkDecimal_String = d.String()
-		}
-	})
-	b.Run("-123456789", func(b *testing.B) {
-		d := dml.Decimal{
-			Precision: 123456789,
-			Valid:     true,
-			Negative:  true,
-		}
-		for i := 0; i < b.N; i++ {
-			benchmarkDecimal_String = d.String()
-		}
-	})
-	b.Run("12345.6789", func(b *testing.B) {
-		d := dml.Decimal{
-			Precision: 123456789,
-			Scale:     4,
-			Valid:     true,
-		}
-		for i := 0; i < b.N; i++ {
-			benchmarkDecimal_String = d.String()
-		}
-	})
-	b.Run("-12345.6789", func(b *testing.B) {
-		d := dml.Decimal{
-			Precision: 123456789,
-			Valid:     true,
-			Scale:     4,
-			Negative:  true,
-		}
-		for i := 0; i < b.N; i++ {
-			benchmarkDecimal_String = d.String()
-		}
-	})
-	b.Run("-Scale140", func(b *testing.B) {
-		d := dml.Decimal{
-			Valid:     true,
-			Precision: math.MaxUint64,
-			Scale:     140,
-			Negative:  true,
-		}
-		for i := 0; i < b.N; i++ {
-			benchmarkDecimal_String = d.String()
-		}
-	})
-}
-
-var benchmarkDecimal_MarshalBinary []byte
-
-func BenchmarkDecimal_Binary(b *testing.B) {
-
-	b.Run("Marshal", func(b *testing.B) {
-		d := dml.Decimal{
-			Precision: 123456789,
-			Valid:     true,
-			Scale:     4,
-			Negative:  true,
-		}
-		for i := 0; i < b.N; i++ {
-			var err error
-			benchmarkDecimal_MarshalBinary, err = d.MarshalBinary()
-			if err != nil {
-				b.Fatal(err)
-			}
-		}
-	})
-
-	var dUn dml.Decimal
-	b.Run("Unmarshal", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			if err := dUn.UnmarshalBinary(benchmarkDecimal_MarshalBinary); err != nil {
-				b.Fatal(err)
-			}
-		}
-	})
 }

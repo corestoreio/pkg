@@ -20,8 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"database/sql"
-
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -132,11 +131,11 @@ func TestArgBytes(t *testing.T) {
 			appendBools(false, true, true, false, true).
 			appendTime(t1).
 			appendTimes(t1, t2, t1).
-			appendNullString(sql.NullString{}, sql.NullString{Valid: true, String: "Hello"}).
-			appendNullFloat64(sql.NullFloat64{Valid: true, Float64: math.E}, sql.NullFloat64{}).
-			appendNullInt64(sql.NullInt64{Valid: true, Int64: 987654321}, sql.NullInt64{}).
-			appendNullBool(sql.NullBool{}, sql.NullBool{Valid: true, Bool: true}, sql.NullBool{Valid: false, Bool: true}).
-			appendNullTime(NullTime{Valid: true, Time: t1}, NullTime{})
+			appendNullString(null.String{}, null.String{Valid: true, String: "Hello"}).
+			appendNullFloat64(null.Float64{Valid: true, Float64: math.E}, null.Float64{}).
+			appendNullInt64(null.Int64{Valid: true, Int64: 987654321}, null.Int64{}).
+			appendNullBool(null.Bool{}, null.Bool{Valid: true, Bool: true}, null.Bool{Valid: false, Bool: true}).
+			appendNullTime(null.Time{Valid: true, Time: t1}, null.Time{})
 
 		assert.Exactly(t, "0:{3} 1:{4,5,6} 2:{30} 3:{40,50,60} 4:{4294967295} 5:{800,900} 6:{3.4028234663852886e+38} 7:{80.549,3.141592653589793} 8:{Finally, how will we ship and deliver Go 2?} 9:{Finally, how will we fly and deliver Go 1?,Finally, how will we run and deliver Go 3?,Finally, how will we walk and deliver Go 3?} 10:{1} 11:{0} 12:{0,1,1,0,1} 13:{2006-01-02 15:04:05} 14:{2006-01-02 15:04:05,2006-01-02 15:06:05,2006-01-02 15:04:05} 15:{NULL,Hello} 16:{2.718281828459045,NULL} 17:{987654321,NULL} 18:{NULL,1,NULL} 19:{2006-01-02 15:04:05,NULL}",
 			ac.DebugBytes())

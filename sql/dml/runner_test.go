@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -156,31 +157,31 @@ func TestColumnMap_Scan_Empty_Bytes(t *testing.T) {
 		cm.scanErr = nil
 	})
 	t.Run("NullBool", func(t *testing.T) {
-		var v NullBool
+		var v null.Bool
 		assert.NoError(t, cm.NullBool(&v).Err())
 		assert.False(t, v.Valid)
 		cm.scanErr = nil
 	})
 	t.Run("NullFloat64", func(t *testing.T) {
-		var v NullFloat64
+		var v null.Float64
 		assert.NoError(t, cm.NullFloat64(&v).Err())
 		assert.False(t, v.Valid)
 		cm.scanErr = nil
 	})
 	t.Run("NullInt64", func(t *testing.T) {
-		var v NullInt64
+		var v null.Int64
 		assert.NoError(t, cm.NullInt64(&v).Err())
 		assert.False(t, v.Valid)
 		cm.scanErr = nil
 	})
 	t.Run("NullString", func(t *testing.T) {
-		var v NullString
+		var v null.String
 		assert.NoError(t, cm.NullString(&v).Err())
 		assert.False(t, v.Valid)
 		cm.scanErr = nil
 	})
 	t.Run("NullTime", func(t *testing.T) {
-		var v NullTime
+		var v null.Time
 		assert.NoError(t, cm.NullTime(&v).Err())
 		assert.False(t, v.Valid)
 		cm.scanErr = nil
@@ -193,7 +194,7 @@ func TestColumnMap_Scan_Empty_Bytes(t *testing.T) {
 	})
 	t.Run("Time", func(t *testing.T) {
 		var v time.Time
-		assert.EqualError(t, cm.Time(&v).Err(), "[dml] Column \"SomeColumn\": invalid time string: \"\"")
+		assert.EqualError(t, cm.Time(&v).Err(), "[dml] Column \"SomeColumn\" Time cannot be empty.")
 		assert.Empty(t, v)
 		cm.scanErr = nil
 	})

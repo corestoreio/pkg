@@ -12,15 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dml_test
+package null
 
 import (
 	"encoding/json"
-
-	"github.com/corestoreio/pkg/sql/dml"
+	"time"
 )
 
+type protoMarshalToer interface {
+	MarshalTo(data []byte) (n int, err error)
+}
+
 func init() {
-	dml.JSONMarshalFn = json.Marshal
-	dml.JSONUnMarshalFn = json.Unmarshal
+	JSONMarshalFn = json.Marshal
+	JSONUnMarshalFn = json.Unmarshal
+}
+
+func maybePanic(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+var now = func() time.Time {
+	return time.Date(2006, 1, 2, 15, 4, 5, 02, time.FixedZone("hardcoded", 0))
 }

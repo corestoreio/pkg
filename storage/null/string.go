@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dml
+package null
 
 import (
 	"bytes"
-	"database/sql"
+	"database/sql/driver"
 	"strings"
 	"unicode/utf8"
 
@@ -27,34 +27,33 @@ import (
 // The same semantics will be provided by the generic MarshalBinary,
 // MarshalText, UnmarshalBinary, UnmarshalText.
 
-// NullString is a nullable string. It supports SQL and JSON serialization.
+// String is a nullable string. It supports SQL and JSON serialization.
 // It will marshal to null if null. Blank string input will be considered null.
-// NullString implements interface Argument.
-type NullString struct {
-	sql.NullString
+// String implements interface Argument.
+type String struct {
+	String string
+	Valid  bool // Valid is true if String is not NULL
 }
 
-// MakeNullString creates a new NullString. Setting the second optional argument
-// to false, the string will not be valid anymore, hence NULL. NullString
+// MakeString creates a new String. Setting the second optional argument
+// to false, the string will not be valid anymore, hence NULL. String
 // implements interface Argument.
-func MakeNullString(s string, valid ...bool) NullString {
+func MakeString(s string, valid ...bool) String {
 	v := true
 	if len(valid) == 1 {
 		v = valid[0]
 	}
-	return NullString{
-		NullString: sql.NullString{
-			String: s,
-			Valid:  v,
-		},
+	return String{
+		String: s,
+		Valid:  v,
 	}
 }
 
 // Scan implements the Scanner interface. Approx. >2x times faster than
 // database/sql.convertAssign.
-func (a *NullString) Scan(value interface{}) (err error) {
-	// stdlib		BenchmarkSQLScanner/NullString-4        	10000000	       117 ns/op	      80 B/op	       3 allocs/op
-	// this code	BenchmarkSQLScanner/NullString-4        	20000000	        78.5 ns/op	      48 B/op	       2 allocs/op
+func (a *String) Scan(value interface{}) (err error) {
+	// stdlib		BenchmarkSQLScanner/String-4        	10000000	       117 ns/op	      80 B/op	       3 allocs/op
+	// this code	BenchmarkSQLScanner/String-4        	20000000	        78.5 ns/op	      48 B/op	       2 allocs/op
 	if value == nil {
 		a.String, a.Valid = "", false
 		return nil
@@ -64,29 +63,37 @@ func (a *NullString) Scan(value interface{}) (err error) {
 		a.String = string(v) // must be copied
 		a.Valid = err == nil
 	default:
-		err = errors.NotSupported.Newf("[dml] Type %T not supported in NullString.Scan", value)
+		err = errors.NotSupported.Newf("[dml] Type %T not supported in String.Scan", value)
 	}
 	return
 }
 
+// Value implements the driver Valuer interface.
+func (a String) Value() (driver.Value, error) {
+	if !a.Valid {
+		return nil, nil
+	}
+	return a.String, nil
+}
+
 // GoString prints an optimized Go representation. Takes are of backticks.
 // Looses the information of the private operator. That might get fixed.
-func (a NullString) GoString() string {
+func (a String) GoString() string {
 	if a.Valid && strings.ContainsRune(a.String, '`') {
 		// `This is my`string`
 		a.String = strings.Join(strings.Split(a.String, "`"), "`+\"`\"+`")
 		// `This is my`+"`"+`string`
 	}
 	if !a.Valid {
-		return "dml.NullString{}"
+		return "null.String{}"
 	}
-	return "dml.MakeNullString(`" + a.String + "`)"
+	return "null.MakeString(`" + a.String + "`)"
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-// It supports string and null input. Blank string input does not produce a null NullString.
-// It also supports unmarshalling a sql.NullString.
-func (a *NullString) UnmarshalJSON(data []byte) error {
+// It supports string and null input. Blank string input does not produce a null String.
+// It also supports unmarshalling a sql.String.
+func (a *String) UnmarshalJSON(data []byte) error {
 	var err error
 	var v interface{}
 
@@ -99,34 +106,34 @@ func (a *NullString) UnmarshalJSON(data []byte) error {
 		a.String = x
 	case map[string]interface{}:
 		dto := &struct {
-			NullString string
-			Valid      bool
+			String string
+			Valid  bool
 		}{}
 		err = JSONUnMarshalFn(data, dto)
-		a.String = dto.NullString
+		a.String = dto.String
 		a.Valid = dto.Valid
 	case nil:
 		a.Valid = false
 		return nil
 	default:
-		err = errors.NotValid.Newf("[dml] json: cannot unmarshal %#v into Go value of type dml.NullString", v)
+		err = errors.NotValid.Newf("[dml] json: cannot unmarshal %#v into Go value of type null.String", v)
 	}
 	a.Valid = err == nil
 	return err
 }
 
 // MarshalJSON implements json.Marshaler.
-// It will encode null if this NullString is dml.
-func (a NullString) MarshalJSON() ([]byte, error) {
+// It will encode null if this String is null.
+func (a String) MarshalJSON() ([]byte, error) {
 	if !a.Valid {
-		return sqlBytesNullLC, nil
+		return bTextNullLC, nil
 	}
 	return JSONMarshalFn(a.String)
 }
 
 // MarshalText implements encoding.TextMarshaler.
-// It will encode a blank string when this NullString is dml.
-func (a NullString) MarshalText() ([]byte, error) {
+// It will encode a blank string when this String is null.
+func (a String) MarshalText() ([]byte, error) {
 	if !a.Valid {
 		return nil, nil
 	}
@@ -134,8 +141,8 @@ func (a NullString) MarshalText() ([]byte, error) {
 }
 
 // UnmarshalText implements encoding.TextUnmarshaler.
-// It will unmarshal to a null NullString if the input is a blank string.
-func (a *NullString) UnmarshalText(text []byte) error {
+// It will unmarshal to a null String if the input is a blank string.
+func (a *String) UnmarshalText(text []byte) error {
 	if !utf8.Valid(text) {
 		return errors.NotValid.Newf("[dml] Input bytes are not valid UTF-8 encoded.")
 	}
@@ -144,14 +151,14 @@ func (a *NullString) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// SetValid changes this NullString's value and also sets it to be non-dml.
-func (a *NullString) SetValid(v string) {
+// SetValid changes this String's value and also sets it to be non-null.
+func (a *String) SetValid(v string) {
 	a.String = v
 	a.Valid = true
 }
 
-// Ptr returns a pointer to this NullString's value, or a nil pointer if this NullString is dml.
-func (a NullString) Ptr() *string {
+// Ptr returns a pointer to this String's value, or a nil pointer if this String is null.
+func (a String) Ptr() *string {
 	if !a.Valid {
 		return nil
 	}
@@ -159,37 +166,37 @@ func (a NullString) Ptr() *string {
 }
 
 // IsZero returns true for null strings, for potential future omitempty support.
-func (a NullString) IsZero() bool {
+func (a String) IsZero() bool {
 	return !a.Valid
 }
 
 // GobEncode implements the gob.GobEncoder interface for gob serialization.
-func (a NullString) GobEncode() ([]byte, error) {
+func (a String) GobEncode() ([]byte, error) {
 	return a.Marshal()
 }
 
 // GobDecode implements the gob.GobDecoder interface for gob serialization.
-func (a *NullString) GobDecode(data []byte) error {
+func (a *String) GobDecode(data []byte) error {
 	return a.Unmarshal(data)
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
-func (a *NullString) UnmarshalBinary(data []byte) error {
+func (a *String) UnmarshalBinary(data []byte) error {
 	return a.Unmarshal(data)
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface.
-func (a NullString) MarshalBinary() (data []byte, err error) {
+func (a String) MarshalBinary() (data []byte, err error) {
 	return a.Marshal()
 }
 
 // Marshal binary encoder for protocol buffers. Implements proto.Marshaler.
-func (a NullString) Marshal() ([]byte, error) {
+func (a String) Marshal() ([]byte, error) {
 	return a.MarshalText()
 }
 
 // MarshalTo binary encoder for protocol buffers which writes into data.
-func (a NullString) MarshalTo(data []byte) (n int, err error) {
+func (a String) MarshalTo(data []byte) (n int, err error) {
 	if !a.Valid {
 		return 0, nil
 	}
@@ -198,22 +205,25 @@ func (a NullString) MarshalTo(data []byte) (n int, err error) {
 }
 
 // Unmarshal binary decoder for protocol buffers. Implements proto.Unmarshaler.
-func (a *NullString) Unmarshal(data []byte) error {
+func (a *String) Unmarshal(data []byte) error {
 	return a.UnmarshalText(data)
 }
 
 // Size returns the size of the underlying type. If not valid, the size will be
 // 0. Implements proto.Sizer.
-func (a NullString) Size() (s int) {
+func (a String) Size() (s int) {
 	return len(a.String)
 }
 
-func (a NullString) writeTo(w *bytes.Buffer) (err error) {
+// WriteTo uses a special dialect to encode the value and write it into w. w
+// cannot be replaced by io.Writer and shall not be replaced by an interface
+// because of inlining features of the compiler.
+func (a String) WriteTo(d Dialecter, w *bytes.Buffer) (err error) {
 	if a.Valid {
 		if utf8.ValidString(a.String) {
-			dialect.EscapeString(w, a.String)
+			d.EscapeString(w, a.String)
 		} else {
-			err = errors.NotValid.Newf("[dml] NullString.writeTo: String is not UTF-8: %q", a.String)
+			err = errors.NotValid.Newf("[dml] String.writeTo: String is not UTF-8: %q", a.String)
 		}
 	} else {
 		_, err = w.WriteString(sqlStrNullUC)
@@ -221,7 +231,8 @@ func (a NullString) writeTo(w *bytes.Buffer) (err error) {
 	return
 }
 
-func (a NullString) append(args []interface{}) []interface{} {
+// Append appends the value or its nil type to the interface slice.
+func (a String) Append(args []interface{}) []interface{} {
 	if a.Valid {
 		return append(args, a.String)
 	}

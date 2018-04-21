@@ -24,6 +24,7 @@ import (
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -92,9 +93,9 @@ func TestInsert_Bind(t *testing.T) {
 	t.Run("without columns, all columns requested", func(t *testing.T) {
 
 		customers := []*customerEntity{
-			{EntityID: 11, Firstname: "Karl Gopher", StoreID: 0x7, LifetimeSales: dml.MakeNullFloat64(47.11), VoucherCodes: exampleStringSlice{"1FE9983E", "28E76FBC"}},
-			{EntityID: 12, Firstname: "Fung Go Roo", StoreID: 0x7, LifetimeSales: dml.MakeNullFloat64(28.94), VoucherCodes: exampleStringSlice{"4FE7787E", "15E59FBB", "794EFDE8"}},
-			{EntityID: 13, Firstname: "John Doe", StoreID: 0x6, LifetimeSales: dml.MakeNullFloat64(138.54), VoucherCodes: exampleStringSlice{""}},
+			{EntityID: 11, Firstname: "Karl Gopher", StoreID: 0x7, LifetimeSales: null.MakeFloat64(47.11), VoucherCodes: exampleStringSlice{"1FE9983E", "28E76FBC"}},
+			{EntityID: 12, Firstname: "Fung Go Roo", StoreID: 0x7, LifetimeSales: null.MakeFloat64(28.94), VoucherCodes: exampleStringSlice{"4FE7787E", "15E59FBB", "794EFDE8"}},
+			{EntityID: 13, Firstname: "John Doe", StoreID: 0x6, LifetimeSales: null.MakeFloat64(138.54), VoucherCodes: exampleStringSlice{""}},
 		}
 
 		compareToSQL(t,
@@ -264,7 +265,7 @@ func TestInsert_Prepare(t *testing.T) {
 
 			p := &dmlPerson{
 				Name:  test.name,
-				Email: dml.MakeNullString(test.email),
+				Email: null.MakeString(test.email),
 			}
 
 			res, err := stmt.WithArgs().Record("", p).ExecContext(context.TODO())
@@ -315,7 +316,7 @@ func TestInsert_BuildValues(t *testing.T) {
 
 		p := &dmlPerson{
 			Name:  "Pike",
-			Email: dml.MakeNullString("pikes@peak.co"),
+			Email: null.MakeString("pikes@peak.co"),
 		}
 
 		insA := dml.NewInsert("alpha").

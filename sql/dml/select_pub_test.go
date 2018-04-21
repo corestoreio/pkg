@@ -28,6 +28,7 @@ import (
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/sync/bgwork"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -97,11 +98,11 @@ type TableCoreConfigDataSlice struct {
 // TableCoreConfigData represents a type for DB table core_config_data
 // Generated via tableToStruct.
 type TableCoreConfigData struct {
-	ConfigID int64          `json:",omitempty"` // config_id int(10) unsigned NOT NULL PRI  auto_increment
-	Scope    string         `json:",omitempty"` // scope varchar(8) NOT NULL MUL DEFAULT 'default'
-	ScopeID  int64          `json:",omitempty"` // scope_id int(11) NOT NULL  DEFAULT '0'
-	Path     string         `json:",omitempty"` // path varchar(255) NOT NULL  DEFAULT 'general'
-	Value    dml.NullString `json:",omitempty"` // value text NULL
+	ConfigID int64       `json:",omitempty"` // config_id int(10) unsigned NOT NULL PRI  auto_increment
+	Scope    string      `json:",omitempty"` // scope varchar(8) NOT NULL MUL DEFAULT 'default'
+	ScopeID  int64       `json:",omitempty"` // scope_id int(11) NOT NULL  DEFAULT '0'
+	Path     string      `json:",omitempty"` // path varchar(255) NOT NULL  DEFAULT 'general'
+	Value    null.String `json:",omitempty"` // value text NULL
 }
 
 func (p *TableCoreConfigData) MapColumns(cm *dml.ColumnMap) error {
@@ -382,8 +383,8 @@ func TestSelect_Prepare(t *testing.T) {
 			require.NoError(t, err)
 			assert.Exactly(t, uint64(2), rc)
 
-			assert.Exactly(t, "&{3  4 a/b/c {{ false}}}", fmt.Sprintf("%v", ccd.Data[0]))
-			assert.Exactly(t, "&{4  4 a/b/d {{ false}}}", fmt.Sprintf("%v", ccd.Data[1]))
+			assert.Exactly(t, "&{3  4 a/b/c { false}}", fmt.Sprintf("%v", ccd.Data[0]))
+			assert.Exactly(t, "&{4  4 a/b/d { false}}", fmt.Sprintf("%v", ccd.Data[1]))
 		})
 
 		t.Run("Int64", func(t *testing.T) {
@@ -406,7 +407,7 @@ func TestSelect_Prepare(t *testing.T) {
 			val, found, err := stmt.WithArgs().Int64(346).LoadNullInt64(context.TODO())
 			require.NoError(t, err)
 			assert.True(t, found)
-			assert.Exactly(t, dml.MakeNullInt64(35), val)
+			assert.Exactly(t, null.MakeInt64(35), val)
 		})
 
 		t.Run("Int64s", func(t *testing.T) {

@@ -23,6 +23,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/byteconv"
 )
 
@@ -341,7 +342,7 @@ func (b *ColumnMap) Bool(ptr *bool) *ColumnMap {
 // NullBool reads a bool value and appends it to the arguments slice or assigns the
 // bool value stored in sql.RawBytes to the pointer. See the documentation for
 // function Scan.
-func (b *ColumnMap) NullBool(ptr *NullBool) *ColumnMap {
+func (b *ColumnMap) NullBool(ptr *null.Bool) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
 			b.arguments = b.arguments.add(nil)
@@ -362,7 +363,7 @@ func (b *ColumnMap) NullBool(ptr *NullBool) *ColumnMap {
 			ptr.Bool = v.int64 == 1
 			ptr.Valid = true
 		case 'y':
-			ptr.NullBool.Bool, ptr.NullBool.Valid, b.scanErr = byteconv.ParseBool(v.byte)
+			*ptr, b.scanErr = null.MakeBoolFromByte(v.byte)
 			if b.scanErr != nil {
 				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
 			}
@@ -445,7 +446,7 @@ func (b *ColumnMap) Int64(ptr *int64) *ColumnMap {
 // NullInt64 reads an int64 value and appends it to the arguments slice or
 // assigns the int64 value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
-func (b *ColumnMap) NullInt64(ptr *NullInt64) *ColumnMap {
+func (b *ColumnMap) NullInt64(ptr *null.Int64) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
 			b.arguments = b.arguments.add(nil)
@@ -463,7 +464,7 @@ func (b *ColumnMap) NullInt64(ptr *NullInt64) *ColumnMap {
 			ptr.Int64 = 0
 			ptr.Valid = false
 		case 'y':
-			ptr.NullInt64.Int64, ptr.NullInt64.Valid, b.scanErr = byteconv.ParseInt(v.byte)
+			*ptr, b.scanErr = null.MakeInt64FromByte(v.byte)
 			if b.scanErr != nil {
 				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
 			}
@@ -505,7 +506,7 @@ func (b *ColumnMap) Float64(ptr *float64) *ColumnMap {
 // Decimal reads a Decimal value and appends it to the arguments slice or
 // assigns the numeric value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
-func (b *ColumnMap) Decimal(ptr *Decimal) *ColumnMap {
+func (b *ColumnMap) Decimal(ptr *null.Decimal) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if v := ptr.String(); ptr == nil || v == sqlStrNullUC {
 			b.arguments = b.arguments.add(nil)
@@ -517,11 +518,11 @@ func (b *ColumnMap) Decimal(ptr *Decimal) *ColumnMap {
 	if b.scanErr == nil {
 		switch v := b.scanCol[b.index]; v.field {
 		case 'f':
-			*ptr, b.scanErr = MakeDecimalFloat64(v.float64)
+			*ptr, b.scanErr = null.MakeDecimalFloat64(v.float64)
 		case 'y':
-			*ptr, b.scanErr = MakeDecimalBytes(v.byte)
+			*ptr, b.scanErr = null.MakeDecimalBytes(v.byte)
 		case 's':
-			*ptr, b.scanErr = MakeDecimalBytes([]byte(v.string)) // mostly used for testing
+			*ptr, b.scanErr = null.MakeDecimalBytes([]byte(v.string)) // mostly used for testing
 		case 'n':
 			ptr.Valid = false
 		default:
@@ -534,7 +535,7 @@ func (b *ColumnMap) Decimal(ptr *Decimal) *ColumnMap {
 // NullFloat64 reads a float64 value and appends it to the arguments slice or
 // assigns the float64 value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
-func (b *ColumnMap) NullFloat64(ptr *NullFloat64) *ColumnMap {
+func (b *ColumnMap) NullFloat64(ptr *null.Float64) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
 			b.arguments = b.arguments.add(nil)
@@ -549,7 +550,7 @@ func (b *ColumnMap) NullFloat64(ptr *NullFloat64) *ColumnMap {
 			ptr.Float64 = v.float64
 			ptr.Valid = true
 		case 'y':
-			ptr.NullFloat64.Float64, ptr.NullFloat64.Valid, b.scanErr = byteconv.ParseFloat(v.byte)
+			*ptr, b.scanErr = null.MakeFloat64FromByte(v.byte)
 			if b.scanErr != nil {
 				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
 			}
@@ -864,7 +865,7 @@ func (b *ColumnMap) String(ptr *string) *ColumnMap {
 // NullString reads a string value and appends it to the arguments slice or
 // assigns the string value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
-func (b *ColumnMap) NullString(ptr *NullString) *ColumnMap {
+func (b *ColumnMap) NullString(ptr *null.String) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
 			b.arguments = b.arguments.add(nil)
@@ -918,9 +919,15 @@ func (b *ColumnMap) Time(ptr *time.Time) *ColumnMap {
 		case 't':
 			*ptr = v.time
 		case 'y':
-			*ptr, b.scanErr = parseDateTime(string(v.byte), time.UTC) // time.Location can be merged into ColumnMap but then change NullTime method receiver.
-			if b.scanErr != nil {
-				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			if len(v.byte) == 0 {
+				b.scanErr = errors.Empty.Newf("[dml] Column %q Time cannot be empty.", b.Column())
+			} else {
+				var nt null.Time
+				nt, b.scanErr = null.ParseDateTime(string(v.byte), time.UTC) // time.Location can be merged into ColumnMap but then change NullTime method receiver.
+				*ptr = nt.Time
+				if b.scanErr != nil {
+					b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+				}
 			}
 		default:
 			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
@@ -932,7 +939,7 @@ func (b *ColumnMap) Time(ptr *time.Time) *ColumnMap {
 // NullTime reads a time value and appends it to the arguments slice or assigns
 // the NullTime value stored in sql.RawBytes to the pointer. See the
 // documentation for function Scan.
-func (b *ColumnMap) NullTime(ptr *NullTime) *ColumnMap {
+func (b *ColumnMap) NullTime(ptr *null.Time) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
 			b.arguments = b.arguments.add(nil)
@@ -983,6 +990,6 @@ func (b *ColumnMap) Strings(values ...string) *ColumnMap {
 	return b.addSlice("Strings", values)
 }
 
-func (b *ColumnMap) NullStrings(values ...NullString) *ColumnMap {
+func (b *ColumnMap) NullStrings(values ...null.String) *ColumnMap {
 	return b.addSlice("NullStrings", values)
 }

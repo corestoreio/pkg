@@ -14,16 +14,16 @@
 
 syntax = "proto3";
 
-package dml;
+package null;
 
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 
-option csharp_namespace = "CoreStore.Protobuf.NullType";
+option csharp_namespace = "CoreStore.Protobuf.Null";
 option cc_enable_arenas = true;
-option go_package = "nulltype";
+option go_package = "null";
 option java_package = "com.corestore.protobuf";
-option java_outer_classname = "NullTypesProto";
+option java_outer_classname = "NullProto";
 option java_multiple_files = true;
 option objc_class_prefix = "CSPB";
 
@@ -38,27 +38,32 @@ message Decimal {
 	bool	quote = 5;
 }
 
-message NullBool {
+message Bool {
 	bool	bool = 1;
 	bool	valid = 2;
 }
 
-message NullFloat64 {
+message Float64 {
 	double	float64 = 1;
 	bool	valid = 2;
 }
 
-message NullInt64 {
+message Int64 {
 	int64	int64 = 1;
 	bool	valid = 2;
 }
 
-message NullString {
+message Uint64 {
+	uint64	uint64 = 1;
+	bool	valid = 2;
+}
+
+message String {
 	string	string = 1;
 	bool	valid = 2;
 }
 
-message NullTime {
+message Time {
 	google.protobuf.Timestamp time = 1 [(gogoproto.stdtime)=true,(gogoproto.nullable)=false];
 	bool	valid = 2;
 }

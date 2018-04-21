@@ -24,6 +24,7 @@ import (
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -70,7 +71,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 		p := &dmlPerson{
 			ID:    1,
 			Name:  "Alf",
-			Email: dml.MakeNullString("alf@m') -- el.mac"),
+			Email: null.MakeString("alf@m') -- el.mac"),
 		}
 		res, err := stmt.WithArgs().Record("", p).WithQualifiedColumnsAliases("update_sku").ExecContext(context.TODO())
 		assert.True(t, errors.Mismatch.Match(err), "%+v", err)
@@ -96,12 +97,12 @@ func TestUpdate_WithArgs(t *testing.T) {
 			{
 				ID:    1,
 				Name:  "Alf",
-				Email: dml.MakeNullString("alf@m') -- el.mac"),
+				Email: null.MakeString("alf@m') -- el.mac"),
 			},
 			{
 				ID:    2,
 				Name:  "John",
-				Email: dml.MakeNullString("john@doe.com"),
+				Email: null.MakeString("john@doe.com"),
 			},
 		}
 
@@ -205,7 +206,7 @@ type salesInvoice struct {
 	State      string // processing, pending, shipped,
 	StoreID    int64
 	CustomerID int64
-	GrandTotal dml.NullFloat64
+	GrandTotal null.Float64
 }
 
 func (so *salesInvoice) MapColumns(cm *dml.ColumnMap) error {
@@ -254,8 +255,8 @@ func TestArguments_WithQualifiedColumnsAliases(t *testing.T) {
 	// `sales_invoice`.
 
 	collection := []*salesInvoice{
-		{21, "pending", 5, 5678, dml.MakeNullFloat64(31.41459)},
-		{32, "processing", 7, 8912, dml.NullFloat64{}},
+		{21, "pending", 5, 5678, null.MakeFloat64(31.41459)},
+		{32, "processing", 7, 8912, null.Float64{}},
 	}
 
 	// Create the multi update statement
@@ -290,7 +291,7 @@ func TestUpdate_BindRecord(t *testing.T) {
 		EntityID:       678,
 		AttributeSetID: 6,
 		ParentID:       "p456",
-		Path:           dml.MakeNullString("3/4/5"),
+		Path:           null.MakeString("3/4/5"),
 	}
 
 	t.Run("1 WHERE", func(t *testing.T) {

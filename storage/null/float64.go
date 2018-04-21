@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dml
+package null
 
 import (
 	"bytes"
-	"database/sql"
+	"database/sql/driver"
 	"encoding/binary"
 	"math"
 	"strconv"
@@ -29,32 +29,36 @@ import (
 // The same semantics will be provided by the generic MarshalBinary,
 // MarshalText, UnmarshalBinary, UnmarshalText.
 
-// NullFloat64 is a nullable float64. It does not consider zero values to be null.
-// It will decode to null, not zero, if null. NullFloat64 implements interface
-// Argument.
-type NullFloat64 struct {
-	sql.NullFloat64
+// Float64 is a nullable float64. It does not consider zero values to be null.
+// It will decode to null, not zero, if null.
+type Float64 struct {
+	Float64 float64
+	Valid   bool // Valid is true if Float64 is not NULL
 }
 
-// MakeNullFloat64 creates a new NullFloat64. Setting the second optional argument
-// to false, the string will not be valid anymore, hence NULL. NullFloat64
+// MakeFloat64 creates a new Float64. Setting the second optional argument
+// to false, the string will not be valid anymore, hence NULL. Float64
 // implements interface Argument.
-func MakeNullFloat64(f float64, valid ...bool) NullFloat64 {
+func MakeFloat64(f float64, valid ...bool) Float64 {
 	v := true
 	if len(valid) == 1 {
 		v = valid[0]
 	}
-	return NullFloat64{
-		NullFloat64: sql.NullFloat64{
-			Float64: f,
-			Valid:   v,
-		},
+	return Float64{
+		Float64: f,
+		Valid:   v,
 	}
+}
+
+// MakeFloat64FromByte makes a new Float64 from a (text) byte slice.
+func MakeFloat64FromByte(data []byte) (nv Float64, err error) {
+	nv.Float64, nv.Valid, err = byteconv.ParseFloat(data)
+	return
 }
 
 // Scan implements the Scanner interface. Approx. >3x times faster than
 // database/sql.convertAssign.
-func (a *NullFloat64) Scan(value interface{}) (err error) {
+func (a *Float64) Scan(value interface{}) (err error) {
 	// this version BenchmarkSQLScanner/NullFloat64_[]byte-4       	20000000	        79.0 ns/op	      32 B/op	       1 allocs/op
 	// std lib 		BenchmarkSQLScanner/NullFloat64_[]byte-4       	 5000000	       266 ns/op	      64 B/op	       3 allocs/op
 	if value == nil {
@@ -63,18 +67,26 @@ func (a *NullFloat64) Scan(value interface{}) (err error) {
 	}
 	switch v := value.(type) {
 	case []byte:
-		a.NullFloat64.Float64, a.NullFloat64.Valid, err = byteconv.ParseFloat(v)
+		a.Float64, a.Valid, err = byteconv.ParseFloat(v)
 	case float64:
 		a.Float64 = v
 		a.Valid = true
 	default:
-		err = errors.NotSupported.Newf("[dml] Type %T not yet supported in NullFloat64.Scan", value)
+		err = errors.NotSupported.Newf("[dml] Type %T not yet supported in Float64.Scan", value)
 	}
 	return
 }
 
+// Value implements the driver Valuer interface.
+func (a Float64) Value() (driver.Value, error) {
+	if !a.Valid {
+		return nil, nil
+	}
+	return a.Float64, nil
+}
+
 // String returns the string representation of the float or null.
-func (a NullFloat64) String() string {
+func (a Float64) String() string {
 	if !a.Valid {
 		return "null"
 	}
@@ -82,18 +94,18 @@ func (a NullFloat64) String() string {
 }
 
 // GoString prints an optimized Go representation.
-func (a NullFloat64) GoString() string {
+func (a Float64) GoString() string {
 	if !a.Valid {
-		return "dml.NullFloat64{}"
+		return "null.Float64{}"
 	}
-	return "dml.MakeNullFloat64(" + strconv.FormatFloat(a.Float64, 'f', -1, 64) + ")"
+	return "null.MakeFloat64(" + strconv.FormatFloat(a.Float64, 'f', -1, 64) + ")"
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
 // It supports number and null input.
-// 0 will not be considered a null NullFloat64.
-// It also supports unmarshalling a sql.NullFloat64.
-func (a *NullFloat64) UnmarshalJSON(data []byte) error {
+// 0 will not be considered a null Float64.
+// It also supports unmarshalling a sql.Float64.
+func (a *Float64) UnmarshalJSON(data []byte) error {
 	var err error
 	var v interface{}
 	if err = JSONUnMarshalFn(data, &v); err != nil {
@@ -104,26 +116,26 @@ func (a *NullFloat64) UnmarshalJSON(data []byte) error {
 		a.Float64 = x
 	case map[string]interface{}:
 		dto := &struct {
-			NullFloat64 float64
-			Valid       bool
+			Float64 float64
+			Valid   bool
 		}{}
 		err = JSONUnMarshalFn(data, dto)
-		a.Float64 = dto.NullFloat64
+		a.Float64 = dto.Float64
 		a.Valid = dto.Valid
 	case nil:
 		a.Valid = false
 		return nil
 	default:
-		err = errors.NotValid.Newf("[dml] json: cannot unmarshal %#v into Go value of type null.NullFloat64", v)
+		err = errors.NotValid.Newf("[dml] json: cannot unmarshal %#v into Go value of type null.Float64", v)
 	}
 	a.Valid = err == nil
 	return err
 }
 
 // UnmarshalText implements encoding.TextUnmarshaler.
-// It will unmarshal to a null NullFloat64 if the input is a blank or not an integer.
+// It will unmarshal to a null Float64 if the input is a blank or not an integer.
 // It will return an error if the input is not an integer, blank, or "null".
-func (a *NullFloat64) UnmarshalText(text []byte) error {
+func (a *Float64) UnmarshalText(text []byte) error {
 	str := string(text)
 	if str == "" || str == sqlStrNullLC {
 		a.Valid = false
@@ -136,31 +148,31 @@ func (a *NullFloat64) UnmarshalText(text []byte) error {
 }
 
 // MarshalJSON implements json.Marshaler.
-// It will encode null if this NullFloat64 is null.
-func (a NullFloat64) MarshalJSON() ([]byte, error) {
+// It will encode null if this Float64 is null.
+func (a Float64) MarshalJSON() ([]byte, error) {
 	if !a.Valid {
-		return sqlBytesNullLC, nil
+		return bTextNullLC, nil
 	}
 	return strconv.AppendFloat([]byte{}, a.Float64, 'f', -1, 64), nil
 }
 
 // MarshalText implements encoding.TextMarshaler.
-// It will encode a blank string if this NullFloat64 is null.
-func (a NullFloat64) MarshalText() ([]byte, error) {
+// It will encode a blank string if this Float64 is null.
+func (a Float64) MarshalText() ([]byte, error) {
 	if !a.Valid {
 		return []byte{}, nil
 	}
 	return strconv.AppendFloat([]byte{}, a.Float64, 'f', -1, 64), nil
 }
 
-// SetValid changes this NullFloat64's value and also sets it to be non-null.
-func (a *NullFloat64) SetValid(n float64) {
+// SetValid changes this Float64's value and also sets it to be non-null.
+func (a *Float64) SetValid(n float64) {
 	a.Float64 = n
 	a.Valid = true
 }
 
-// Ptr returns a pointer to this NullFloat64's value, or a nil pointer if this NullFloat64 is null.
-func (a NullFloat64) Ptr() *float64 {
+// Ptr returns a pointer to this Float64's value, or a nil pointer if this Float64 is null.
+func (a Float64) Ptr() *float64 {
 	if !a.Valid {
 		return nil
 	}
@@ -168,33 +180,33 @@ func (a NullFloat64) Ptr() *float64 {
 }
 
 // IsZero returns true for invalid Float64s, for future omitempty support (Go 1.4?)
-// A non-null NullFloat64 with a 0 value will not be considered zero.
-func (a NullFloat64) IsZero() bool {
+// A non-null Float64 with a 0 value will not be considered zero.
+func (a Float64) IsZero() bool {
 	return !a.Valid
 }
 
 // GobEncode implements the gob.GobEncoder interface for gob serialization.
-func (a NullFloat64) GobEncode() ([]byte, error) {
+func (a Float64) GobEncode() ([]byte, error) {
 	return a.Marshal()
 }
 
 // GobDecode implements the gob.GobDecoder interface for gob serialization.
-func (a *NullFloat64) GobDecode(data []byte) error {
+func (a *Float64) GobDecode(data []byte) error {
 	return a.Unmarshal(data)
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
-func (a *NullFloat64) UnmarshalBinary(data []byte) error {
+func (a *Float64) UnmarshalBinary(data []byte) error {
 	return a.Unmarshal(data)
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface.
-func (a NullFloat64) MarshalBinary() (data []byte, err error) {
+func (a Float64) MarshalBinary() (data []byte, err error) {
 	return a.Marshal()
 }
 
 // Marshal binary encoder for protocol buffers. Implements proto.Marshaler.
-func (a NullFloat64) Marshal() ([]byte, error) {
+func (a Float64) Marshal() ([]byte, error) {
 	if !a.Valid {
 		return nil, nil
 	}
@@ -204,7 +216,7 @@ func (a NullFloat64) Marshal() ([]byte, error) {
 }
 
 // MarshalTo binary encoder for protocol buffers which writes into data.
-func (a NullFloat64) MarshalTo(data []byte) (n int, err error) {
+func (a Float64) MarshalTo(data []byte) (n int, err error) {
 	if !a.Valid {
 		return 0, nil
 	}
@@ -213,7 +225,7 @@ func (a NullFloat64) MarshalTo(data []byte) (n int, err error) {
 }
 
 // Unmarshal binary decoder for protocol buffers. Implements proto.Unmarshaler.
-func (a *NullFloat64) Unmarshal(data []byte) error {
+func (a *Float64) Unmarshal(data []byte) error {
 	if len(data) < 8 {
 		a.Valid = false
 		return nil
@@ -226,22 +238,26 @@ func (a *NullFloat64) Unmarshal(data []byte) error {
 
 // Size returns the size of the underlying type. If not valid, the size will be
 // 0. Implements proto.Sizer.
-func (a NullFloat64) Size() (s int) {
+func (a Float64) Size() (s int) {
 	if a.Valid {
 		s = 8
 	}
 	return
 }
 
-func (a NullFloat64) writeTo(w *bytes.Buffer) error {
+// WriteTo uses a special dialect to encode the value and write it into w. w
+// cannot be replaced by io.Writer and shall not be replaced by an interface
+// because of inlining features of the compiler.
+func (a Float64) WriteTo(_ Dialecter, w *bytes.Buffer) (err error) {
 	if a.Valid {
 		return writeFloat64(w, a.Float64)
 	}
-	_, err := w.WriteString(sqlStrNullUC)
+	_, err = w.WriteString(sqlStrNullUC)
 	return err
 }
 
-func (a NullFloat64) append(args []interface{}) []interface{} {
+// Append appends the value or its nil type to the interface slice.
+func (a Float64) Append(args []interface{}) []interface{} {
 	if a.Valid {
 		return append(args, a.Float64)
 	}

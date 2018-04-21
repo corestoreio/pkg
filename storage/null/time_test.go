@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dml
+package null
 
 import (
 	"database/sql/driver"
@@ -40,60 +40,60 @@ var (
 )
 
 var (
-	_ fmt.GoStringer             = (*NullTime)(nil)
-	_ fmt.Stringer               = (*NullTime)(nil)
-	_ json.Marshaler             = (*NullTime)(nil)
-	_ json.Unmarshaler           = (*NullTime)(nil)
-	_ encoding.BinaryMarshaler   = (*NullTime)(nil)
-	_ encoding.BinaryUnmarshaler = (*NullTime)(nil)
-	_ encoding.TextMarshaler     = (*NullTime)(nil)
-	_ encoding.TextUnmarshaler   = (*NullTime)(nil)
-	_ gob.GobEncoder             = (*NullTime)(nil)
-	_ gob.GobDecoder             = (*NullTime)(nil)
-	_ driver.Valuer              = (*NullTime)(nil)
-	_ proto.Marshaler            = (*NullTime)(nil)
-	_ proto.Unmarshaler          = (*NullTime)(nil)
-	_ proto.Sizer                = (*NullTime)(nil)
-	_ protoMarshalToer           = (*NullTime)(nil)
+	_ fmt.GoStringer             = (*Time)(nil)
+	_ fmt.Stringer               = (*Time)(nil)
+	_ json.Marshaler             = (*Time)(nil)
+	_ json.Unmarshaler           = (*Time)(nil)
+	_ encoding.BinaryMarshaler   = (*Time)(nil)
+	_ encoding.BinaryUnmarshaler = (*Time)(nil)
+	_ encoding.TextMarshaler     = (*Time)(nil)
+	_ encoding.TextUnmarshaler   = (*Time)(nil)
+	_ gob.GobEncoder             = (*Time)(nil)
+	_ gob.GobDecoder             = (*Time)(nil)
+	_ driver.Valuer              = (*Time)(nil)
+	_ proto.Marshaler            = (*Time)(nil)
+	_ proto.Unmarshaler          = (*Time)(nil)
+	_ proto.Sizer                = (*Time)(nil)
+	_ protoMarshalToer           = (*Time)(nil)
 )
 
 func TestNullTime_JsonUnmarshal(t *testing.T) {
 	t.Parallel()
-	var ti NullTime
+	var ti Time
 	err := json.Unmarshal(timeJSON, &ti)
 	maybePanic(err)
 	assertTime(t, ti, "UnmarshalJSON() json")
 
-	var null NullTime
+	var null Time
 	err = json.Unmarshal(nullTimeJSON, &null)
 	maybePanic(err)
 	assertNullTime(t, null, "null time json")
 
-	var fromObject NullTime
+	var fromObject Time
 	err = json.Unmarshal(timeObject, &fromObject)
 	maybePanic(err)
 	assertTime(t, fromObject, "time from object json")
 
-	var nullFromObj NullTime
+	var nullFromObj Time
 	err = json.Unmarshal(nullObject, &nullFromObj)
 	maybePanic(err)
 	assertNullTime(t, nullFromObj, "null from object json")
 
-	var invalid NullTime
+	var invalid Time
 	err = invalid.UnmarshalJSON(invalidJSON)
 	if _, ok := err.(*json.SyntaxError); !ok {
 		t.Errorf("expected json.SyntaxError, not %T", err)
 	}
 	assertNullTime(t, invalid, "invalid from object json")
 
-	var bad NullTime
+	var bad Time
 	err = json.Unmarshal(badObject, &bad)
 	if err == nil {
 		t.Errorf("expected error: bad object")
 	}
 	assertNullTime(t, bad, "bad from object json")
 
-	var wrongType NullTime
+	var wrongType Time
 	err = json.Unmarshal(intJSON, &wrongType)
 	if err == nil {
 		t.Errorf("expected error: wrong type JSON")
@@ -103,17 +103,17 @@ func TestNullTime_JsonUnmarshal(t *testing.T) {
 
 func TestNullTime_UnmarshalText(t *testing.T) {
 	t.Parallel()
-	ti := MakeNullTime(timeValue)
+	ti := MakeTime(timeValue)
 	txt, err := ti.MarshalText()
 	maybePanic(err)
 	assertJSONEquals(t, txt, timeString, "marshal text")
 
-	var unmarshal NullTime
+	var unmarshal Time
 	err = unmarshal.UnmarshalText(txt)
 	maybePanic(err)
 	assertTime(t, unmarshal, "unmarshal text")
 
-	var null NullTime
+	var null Time
 	err = null.UnmarshalText(nullJSON)
 	maybePanic(err)
 	assertNullTime(t, null, "unmarshal null text")
@@ -121,7 +121,7 @@ func TestNullTime_UnmarshalText(t *testing.T) {
 	maybePanic(err)
 	assertJSONEquals(t, txt, string(nullJSON), "marshal null text")
 
-	var invalid NullTime
+	var invalid Time
 	err = invalid.UnmarshalText([]byte("hello world"))
 	if err == nil {
 		t.Error("expected error")
@@ -131,7 +131,7 @@ func TestNullTime_UnmarshalText(t *testing.T) {
 
 func TestNullTime_JsonMarshal(t *testing.T) {
 	t.Parallel()
-	ti := MakeNullTime(timeValue)
+	ti := MakeTime(timeValue)
 	data, err := json.Marshal(ti)
 	maybePanic(err)
 	assertJSONEquals(t, data, string(timeJSON), "non-empty json marshal")
@@ -144,22 +144,22 @@ func TestNullTime_JsonMarshal(t *testing.T) {
 
 func TestNullTime_BinaryEncoding(t *testing.T) {
 	t.Parallel()
-	runner := func(b NullTime, want []byte) func(*testing.T) {
+	runner := func(nv Time, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
-			data, err := b.GobEncode()
+			data, err := nv.GobEncode()
 			require.NoError(t, err)
 			require.Exactly(t, want, data, t.Name()+": GobEncode")
-			data, err = b.MarshalBinary()
+			data, err = nv.MarshalBinary()
 			require.NoError(t, err)
 			assert.Exactly(t, want, data, t.Name()+": MarshalBinary")
-			data, err = b.Marshal()
+			data, err = nv.Marshal()
 			require.NoError(t, err)
 			assert.Exactly(t, want, data, t.Name()+": Marshal")
 
-			var decoded NullTime
+			var decoded Time
 			require.NoError(t, decoded.UnmarshalBinary(data), "UnmarshalBinary")
 
-			haveS := b.String()
+			haveS := nv.String()
 			wantS := decoded.String()
 			if len(haveS) > 35 {
 				// Not sure but there can be a bug in the Go stdlib ...
@@ -173,27 +173,27 @@ func TestNullTime_BinaryEncoding(t *testing.T) {
 
 		}
 	}
-	t.Run("now fixed", runner(MakeNullTime(now()), []byte{0x1, 0x0, 0x0, 0x0, 0xe, 0xbb, 0x4b, 0x70, 0x25, 0x0, 0x0, 0x0, 0x2, 0xff, 0x10}))
-	t.Run("null", runner(NullTime{}, nil))
+	t.Run("now fixed", runner(MakeTime(now()), []byte{0x1, 0x0, 0x0, 0x0, 0xe, 0xbb, 0x4b, 0x37, 0xe5, 0x0, 0x0, 0x0, 0x2, 0x0, 0x0}))
+	t.Run("null", runner(Time{}, nil))
 }
 
 func TestNullTime_Size(t *testing.T) {
 	t.Parallel()
 
-	assert.Exactly(t, 0, NullTime{}.Size())
-	assert.Exactly(t, 8, MakeNullTime(now()).Size())
+	assert.Exactly(t, 0, Time{}.Size())
+	assert.Exactly(t, 8, MakeTime(now()).Size())
 }
 
 func TestTimeFrom(t *testing.T) {
 	t.Parallel()
-	ti := MakeNullTime(timeValue)
-	assertTime(t, ti, "MakeNullTime() time.Time")
+	ti := MakeTime(timeValue)
+	assertTime(t, ti, "MakeTime() time.Time")
 }
 
 func TestTimeSetValid(t *testing.T) {
 	t.Parallel()
 	var ti time.Time
-	change := MakeNullTime(ti, false)
+	change := MakeTime(ti, false)
 	assertNullTime(t, change, "SetValid()")
 	change.SetValid(timeValue)
 	assertTime(t, change, "SetValid()")
@@ -201,14 +201,14 @@ func TestTimeSetValid(t *testing.T) {
 
 func TestTimePointer(t *testing.T) {
 	t.Parallel()
-	ti := MakeNullTime(timeValue)
+	ti := MakeTime(timeValue)
 	ptr := ti.Ptr()
 	if *ptr != timeValue {
 		t.Errorf("bad %s time: %#v ≠ %v\n", "pointer", ptr, timeValue)
 	}
 
 	var nt time.Time
-	null := MakeNullTime(nt, false)
+	null := MakeTime(nt, false)
 	ptr = null.Ptr()
 	if ptr != nil {
 		t.Errorf("bad %s time: %#v ≠ %s\n", "nil pointer", ptr, "nil")
@@ -218,31 +218,28 @@ func TestTimePointer(t *testing.T) {
 func TestTimeScanValue(t *testing.T) {
 	t.Parallel()
 
-	var ti NullTime
-	err := ti.Scan(timeValue)
-	maybePanic(err)
+	var ti Time
+	maybePanic(ti.Scan(timeValue))
 	assertTime(t, ti, "scanned time")
 	if v, err := ti.Value(); v != timeValue || err != nil {
 		t.Error("bad value or err:", v, err)
 	}
 
-	var null NullTime
-	err = null.Scan(nil)
-	maybePanic(err)
+	var null Time
+	maybePanic(null.Scan(nil))
 	assertNullTime(t, null, "scanned null")
 	if v, err := null.Value(); v != nil || err != nil {
 		t.Error("bad value or err:", v, err)
 	}
 
-	var wrong NullTime
-	err = wrong.Scan(int64(42))
-	if err == nil {
+	var wrong Time
+	if err := wrong.Scan(int64(42)); err == nil {
 		t.Error("expected error")
 	}
 	assertNullTime(t, wrong, "scanned wrong")
 }
 
-func assertTime(t *testing.T, ti NullTime, from string) {
+func assertTime(t *testing.T, ti Time, from string) {
 	if ti.Time != timeValue {
 		t.Errorf("bad %v time: %v ≠ %v\n", from, ti.Time, timeValue)
 	}
@@ -251,7 +248,7 @@ func assertTime(t *testing.T, ti NullTime, from string) {
 	}
 }
 
-func assertNullTime(t *testing.T, ti NullTime, from string) {
+func assertNullTime(t *testing.T, ti Time, from string) {
 	if ti.Valid {
 		t.Error(from, "is valid, but should be invalid")
 	}
@@ -260,11 +257,11 @@ func assertNullTime(t *testing.T, ti NullTime, from string) {
 func TestNewNullTime(t *testing.T) {
 	t.Parallel()
 	var test = time.Now()
-	assert.Equal(t, test, MakeNullTime(test).Time)
-	assert.True(t, MakeNullTime(test).Valid)
-	assert.True(t, MakeNullTime(time.Time{}).Valid)
+	assert.Equal(t, test, MakeTime(test).Time)
+	assert.True(t, MakeTime(test).Valid)
+	assert.True(t, MakeTime(time.Time{}).Valid)
 
-	v, err := MakeNullTime(test).Value()
+	v, err := MakeTime(test).Value()
 	assert.NoError(t, err)
 	assert.Equal(t, test, v)
 }

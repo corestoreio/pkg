@@ -6,7 +6,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at http://mozilla.org/MPL/2.0/.
 
-package dml
+package null
 
 import (
 	"database/sql/driver"
@@ -16,17 +16,15 @@ import (
 	"github.com/corestoreio/errors"
 )
 
-const timeFormat = "2006-01-02 15:04:05.999999"
-
 /******************************************************************************
 *                           Time related utils                                *
 ******************************************************************************/
 
-// NullTime represents a time.Time that may be NULL.
-// NullTime implements the Scanner interface so
+// Time represents a time.Time that may be NULL.
+// Time implements the Scanner interface so
 // it can be used as a scan destination:
 //
-//  var nt NullTime
+//  var nt Time
 //  err := db.QueryRow("SELECT time FROM foo WHERE id=?", id).Scan(&nt)
 //  ...
 //  if nt.Valid {
@@ -35,8 +33,8 @@ const timeFormat = "2006-01-02 15:04:05.999999"
 //     // NULL value
 //  }
 //
-// This NullTime implementation is not driver-specific
-type NullTime struct {
+// This Time implementation is not driver-specific
+type Time struct {
 	Time  time.Time
 	Valid bool // Valid is true if Time is not NULL
 }
@@ -44,7 +42,7 @@ type NullTime struct {
 // Scan implements the Scanner interface.
 // The value type must be time.Time or string / []byte (formatted time-string),
 // otherwise Scan fails.
-func (nt *NullTime) Scan(value interface{}) (err error) {
+func (nt *Time) Scan(value interface{}) (err error) {
 	nt.Time, nt.Valid = time.Time{}, false
 	if value == nil {
 		return
@@ -57,12 +55,12 @@ func (nt *NullTime) Scan(value interface{}) (err error) {
 		if v == nil {
 			return
 		}
-		nt.Time, err = parseDateTime(string(v), time.UTC)
+		*nt, err = ParseDateTime(string(v), time.UTC)
 	case string:
 		if v == "" {
 			return
 		}
-		nt.Time, err = parseDateTime(v, time.UTC)
+		*nt, err = ParseDateTime(v, time.UTC)
 	default:
 		err = errors.NotValid.Newf("[dml] Can't convert %T to time.Time. Maybe not yet implemented.", value)
 	}
@@ -71,14 +69,18 @@ func (nt *NullTime) Scan(value interface{}) (err error) {
 }
 
 // Value implements the driver.Valuer interface.
-func (nt NullTime) Value() (driver.Value, error) {
+func (nt Time) Value() (driver.Value, error) {
 	if !nt.Valid {
 		return nil, nil
 	}
 	return nt.Time, nil
 }
 
-func parseDateTime(str string, loc *time.Location) (t time.Time, err error) {
+// ParseDateTime parses a string into a Time type. Empty string is considered NULL.
+func ParseDateTime(str string, loc *time.Location) (t Time, err error) {
+	if str == "" {
+		return
+	}
 	zeroBase := "0000-00-00 00:00:00.000000000+00:00"
 	base := "2006-01-02 15:04:05.999999999 07:00"
 	if strings.IndexByte(str, 'T') > 0 {
@@ -90,7 +92,8 @@ func parseDateTime(str string, loc *time.Location) (t time.Time, err error) {
 		if str == zeroBase[:lStr] {
 			return
 		}
-		t, err = time.Parse(base[:lStr], str) // time.RFC3339Nano cannot be used due to the T
+		t.Time, err = time.Parse(base[:lStr], str) // time.RFC3339Nano cannot be used due to the T
+		t.Valid = err == nil
 	default:
 		err = errors.NotValid.Newf("invalid time string: %q", str)
 		return
@@ -98,9 +101,9 @@ func parseDateTime(str string, loc *time.Location) (t time.Time, err error) {
 
 	// Adjust location
 	if err == nil && loc != time.UTC {
-		y, mo, d := t.Date()
-		h, mi, s := t.Clock()
-		t, err = time.Date(y, mo, d, h, mi, s, t.Nanosecond(), loc), nil
+		y, mo, d := t.Time.Date()
+		h, mi, s := t.Time.Clock()
+		t.Time, err = time.Date(y, mo, d, h, mi, s, t.Time.Nanosecond(), loc), nil
 	}
 
 	return

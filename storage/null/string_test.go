@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dml
+package null
 
 import (
 	"bytes"
@@ -30,25 +30,25 @@ import (
 )
 
 var (
-	_ fmt.GoStringer             = (*NullString)(nil)
-	_ json.Marshaler             = (*NullString)(nil)
-	_ json.Unmarshaler           = (*NullString)(nil)
-	_ encoding.BinaryMarshaler   = (*NullString)(nil)
-	_ encoding.BinaryUnmarshaler = (*NullString)(nil)
-	_ encoding.TextMarshaler     = (*NullString)(nil)
-	_ encoding.TextUnmarshaler   = (*NullString)(nil)
-	_ gob.GobEncoder             = (*NullString)(nil)
-	_ gob.GobDecoder             = (*NullString)(nil)
-	_ driver.Valuer              = (*NullString)(nil)
-	_ proto.Marshaler            = (*NullString)(nil)
-	_ proto.Unmarshaler          = (*NullString)(nil)
-	_ proto.Sizer                = (*NullString)(nil)
-	_ protoMarshalToer           = (*NullString)(nil)
+	_ fmt.GoStringer             = (*String)(nil)
+	_ json.Marshaler             = (*String)(nil)
+	_ json.Unmarshaler           = (*String)(nil)
+	_ encoding.BinaryMarshaler   = (*String)(nil)
+	_ encoding.BinaryUnmarshaler = (*String)(nil)
+	_ encoding.TextMarshaler     = (*String)(nil)
+	_ encoding.TextUnmarshaler   = (*String)(nil)
+	_ gob.GobEncoder             = (*String)(nil)
+	_ gob.GobDecoder             = (*String)(nil)
+	_ driver.Valuer              = (*String)(nil)
+	_ proto.Marshaler            = (*String)(nil)
+	_ proto.Unmarshaler          = (*String)(nil)
+	_ proto.Sizer                = (*String)(nil)
+	_ protoMarshalToer           = (*String)(nil)
 )
 var (
 	stringJSON      = []byte(`"test"`)
 	blankStringJSON = []byte(`""`)
-	nullStringJSON  = []byte(`{"NullString":"test","Valid":true}`)
+	nullStringJSON  = []byte(`{"String":"test","Valid":true}`)
 
 	nullJSON    = []byte(sqlStrNullLC)
 	invalidJSON = []byte(`:)`)
@@ -56,45 +56,45 @@ var (
 
 func TestStringFrom(t *testing.T) {
 	t.Parallel()
-	str := MakeNullString("test")
-	assertStr(t, str, "MakeNullString() string")
+	str := MakeString("test")
+	assertStr(t, str, "MakeString() string")
 	assert.Exactly(t, 4, str.Size())
 
-	zero := MakeNullString("")
+	zero := MakeString("")
 	if !zero.Valid {
-		t.Error("MakeNullString(0)", "is invalid, but should be valid")
+		t.Error("MakeString(0)", "is invalid, but should be valid")
 	}
 	assert.Exactly(t, 0, zero.Size())
 }
 
 func TestNullString_JsonUnmarshal(t *testing.T) {
 	t.Parallel()
-	var str NullString
+	var str String
 	maybePanic(json.Unmarshal(stringJSON, &str))
 	assertStr(t, str, "string json")
 
-	var ns NullString
+	var ns String
 	maybePanic(json.Unmarshal(nullStringJSON, &ns))
-	assertStr(t, ns, "sql.NullString json")
+	assertStr(t, ns, "sql.String json")
 
-	var blank NullString
+	var blank String
 	maybePanic(json.Unmarshal(blankStringJSON, &blank))
 	if !blank.Valid {
 		t.Error("blank string should be valid")
 	}
 
-	var null NullString
+	var null String
 	maybePanic(json.Unmarshal(nullJSON, &null))
 	assertNullStr(t, null, "null json")
 
-	var badType NullString
+	var badType String
 	err := json.Unmarshal(boolJSON, &badType)
 	if err == nil {
 		panic("err should not be nil")
 	}
 	assertNullStr(t, badType, "wrong type json")
 
-	var invalid NullString
+	var invalid String
 	err = invalid.UnmarshalJSON(invalidJSON)
 	if _, ok := err.(*json.SyntaxError); !ok {
 		t.Errorf("expected json.SyntaxError, not %T", err)
@@ -104,24 +104,24 @@ func TestNullString_JsonUnmarshal(t *testing.T) {
 
 func TestNullString_TextUnmarshal(t *testing.T) {
 	t.Parallel()
-	var str NullString
+	var str String
 	err := str.UnmarshalText([]byte("test"))
 	maybePanic(err)
 	assertStr(t, str, "UnmarshalText() string")
 
-	var null NullString
+	var null String
 	err = null.UnmarshalText([]byte(""))
 	maybePanic(err)
 	assertNullStr(t, null, "UnmarshalText() empty string")
 
-	var iv NullString
+	var iv String
 	err = iv.UnmarshalText([]byte{0x44, 0xff, 0x01})
 	assert.True(t, errors.NotValid.Match(err), "%+v", err)
 }
 
 func TestNullString_MarshalText(t *testing.T) {
 	t.Parallel()
-	str := MakeNullString("test")
+	str := MakeString("test")
 	data, err := json.Marshal(str)
 	maybePanic(err)
 	assertJSONEquals(t, data, `"test"`, "non-empty json marshal")
@@ -130,7 +130,7 @@ func TestNullString_MarshalText(t *testing.T) {
 	assertJSONEquals(t, data, "test", "non-empty text marshal")
 
 	// empty values should be encoded as an empty string
-	zero := MakeNullString("")
+	zero := MakeString("")
 	data, err = json.Marshal(zero)
 	maybePanic(err)
 	assertJSONEquals(t, data, `""`, "empty json marshal")
@@ -146,7 +146,7 @@ func TestNullString_MarshalText(t *testing.T) {
 
 func TestNullString_BinaryEncoding(t *testing.T) {
 	t.Parallel()
-	runner := func(b NullString, want []byte) func(*testing.T) {
+	runner := func(b String, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
 			data, err := b.GobEncode()
 			require.NoError(t, err)
@@ -158,18 +158,18 @@ func TestNullString_BinaryEncoding(t *testing.T) {
 			require.NoError(t, err)
 			assert.Exactly(t, want, data, t.Name()+": Marshal")
 
-			var decoded NullString
+			var decoded String
 			require.NoError(t, decoded.UnmarshalBinary(data), "UnmarshalBinary")
 			assert.Exactly(t, b, decoded)
 		}
 	}
-	t.Run("HelloWorld", runner(MakeNullString("HelloWorld"), []byte{0x48, 0x65, 0x6c, 0x6c, 0x6f, 0xef, 0xa3, 0xbf, 0x57, 0x6f, 0x72, 0x6c, 0x64}))
-	t.Run("null", runner(NullString{}, nil))
+	t.Run("HelloWorld", runner(MakeString("HelloWorld"), []byte{0x48, 0x65, 0x6c, 0x6c, 0x6f, 0xef, 0xa3, 0xbf, 0x57, 0x6f, 0x72, 0x6c, 0x64}))
+	t.Run("null", runner(String{}, nil))
 }
 
 func TestNullString_MarshalTo(t *testing.T) {
 	t.Parallel()
-	str := MakeNullString("HelloWorld")
+	str := MakeString("HelloWorld")
 	var buf4 [4]byte
 	n, err := str.MarshalTo(buf4[:])
 	maybePanic(err)
@@ -185,13 +185,13 @@ func TestNullString_MarshalTo(t *testing.T) {
 
 func TestStringPointer(t *testing.T) {
 	t.Parallel()
-	str := MakeNullString("test")
+	str := MakeString("test")
 	ptr := str.Ptr()
 	if *ptr != "test" {
 		t.Errorf("bad %s string: %#v ≠ %s\n", "pointer", ptr, "test")
 	}
 
-	null := MakeNullString("", false)
+	null := MakeString("", false)
 	ptr = null.Ptr()
 	if ptr != nil {
 		t.Errorf("bad %s string: %#v ≠ %s\n", "nil pointer", ptr, "nil")
@@ -200,17 +200,17 @@ func TestStringPointer(t *testing.T) {
 
 func TestStringIsZero(t *testing.T) {
 	t.Parallel()
-	str := MakeNullString("test")
+	str := MakeString("test")
 	if str.IsZero() {
 		t.Errorf("IsZero() should be false")
 	}
 
-	blank := MakeNullString("")
+	blank := MakeString("")
 	if blank.IsZero() {
 		t.Errorf("IsZero() should be false")
 	}
 
-	empty := MakeNullString("", true)
+	empty := MakeString("", true)
 	if empty.IsZero() {
 		t.Errorf("IsZero() should be false")
 	}
@@ -218,7 +218,7 @@ func TestStringIsZero(t *testing.T) {
 
 func TestStringSetValid(t *testing.T) {
 	t.Parallel()
-	change := MakeNullString("", false)
+	change := MakeString("", false)
 	assertNullStr(t, change, "SetValid()")
 	change.SetValid("test")
 	assertStr(t, change, "SetValid()")
@@ -228,39 +228,39 @@ func TestNullString_Scan(t *testing.T) {
 	t.Parallel()
 
 	t.Run("nil", func(t *testing.T) {
-		var nv NullString
+		var nv String
 		require.NoError(t, nv.Scan(nil))
-		assert.Exactly(t, NullString{}, nv)
+		assert.Exactly(t, String{}, nv)
 	})
 	t.Run("[]byte", func(t *testing.T) {
-		var nv NullString
+		var nv String
 		require.NoError(t, nv.Scan([]byte(`12345678910`)))
-		assert.Exactly(t, MakeNullString(`12345678910`), nv)
+		assert.Exactly(t, MakeString(`12345678910`), nv)
 	})
 	t.Run("string unsupported", func(t *testing.T) {
-		var nv NullString
+		var nv String
 		err := nv.Scan(`1234567`)
 		assert.True(t, errors.Is(err, errors.NotSupported), "Error behaviour should be errors.NotSupported")
-		assert.Exactly(t, NullString{}, nv)
+		assert.Exactly(t, String{}, nv)
 	})
 }
 
 func TestString_GoString(t *testing.T) {
 	t.Parallel()
-	s := MakeNullString("test", true)
-	assert.Exactly(t, "dml.MakeNullString(`test`)", s.GoString())
+	s := MakeString("test", true)
+	assert.Exactly(t, "null.MakeString(`test`)", s.GoString())
 
-	s = MakeNullString("test", false)
-	assert.Exactly(t, "dml.NullString{}", s.GoString())
+	s = MakeString("test", false)
+	assert.Exactly(t, "null.String{}", s.GoString())
 
-	s = MakeNullString("te`st", true)
-	gsWant := []byte("dml.MakeNullString(`te`+\"`\"+`st`)")
+	s = MakeString("te`st", true)
+	gsWant := []byte("null.MakeString(`te`+\"`\"+`st`)")
 	if !bytes.Equal(gsWant, []byte(s.GoString())) {
 		t.Errorf("Have: %#v Want: %v", s.GoString(), string(gsWant))
 	}
 }
 
-func assertStr(t *testing.T, s NullString, from string) {
+func assertStr(t *testing.T, s String, from string) {
 	if s.String != "test" {
 		t.Errorf("bad %s string: %s ≠ %s\n", from, s.String, "test")
 	}
@@ -269,7 +269,7 @@ func assertStr(t *testing.T, s NullString, from string) {
 	}
 }
 
-func assertNullStr(t *testing.T, s NullString, from string) {
+func assertNullStr(t *testing.T, s String, from string) {
 	if s.Valid {
 		t.Error(from, "is valid, but should be invalid")
 	}
@@ -283,11 +283,11 @@ func assertJSONEquals(t *testing.T, data []byte, cmp string, from string) {
 
 func TestNullStringFrom(t *testing.T) {
 	t.Parallel()
-	assert.Equal(t, "product", MakeNullString("product").String)
-	assert.True(t, MakeNullString("product").Valid)
+	assert.Equal(t, "product", MakeString("product").String)
+	assert.True(t, MakeString("product").Valid)
 	//assert.False(t, NullStringFromPtr(nil).Valid)
-	assert.True(t, MakeNullString("").Valid)
-	v, err := MakeNullString("product").Value()
+	assert.True(t, MakeString("").Valid)
+	v, err := MakeString("product").Value()
 	assert.NoError(t, err)
 	assert.Equal(t, "product", v)
 }
