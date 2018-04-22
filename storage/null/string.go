@@ -38,14 +38,10 @@ type String struct {
 // MakeString creates a new String. Setting the second optional argument
 // to false, the string will not be valid anymore, hence NULL. String
 // implements interface Argument.
-func MakeString(s string, valid ...bool) String {
-	v := true
-	if len(valid) == 1 {
-		v = valid[0]
-	}
+func MakeString(s string) String {
 	return String{
 		String: s,
-		Valid:  v,
+		Valid:  true,
 	}
 }
 
@@ -152,10 +148,10 @@ func (a *String) UnmarshalText(text []byte) error {
 }
 
 // SetValid changes this String's value and also sets it to be non-null.
-func (a *String) SetValid(v string) {
-	a.String = v
-	a.Valid = true
-}
+func (a String) SetValid(v string) String { a.String = v; a.Valid = true; return a }
+
+// SetNull sets the value to Go's default value and Valid to false.
+func (a String) SetNull() String { return String{} }
 
 // Ptr returns a pointer to this String's value, or a nil pointer if this String is null.
 func (a String) Ptr() *string {

@@ -56,7 +56,7 @@ var (
 )
 
 func TestMakeNullInt64(t *testing.T) {
-	t.Parallel()
+
 	i := MakeInt64(9223372036854775806)
 	assertInt64(t, i, "MakeInt64()")
 
@@ -74,7 +74,7 @@ func TestMakeNullInt64(t *testing.T) {
 }
 
 func TestInt64_GoString(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		i64  Int64
 		want string
@@ -90,7 +90,7 @@ func TestInt64_GoString(t *testing.T) {
 }
 
 func TestNullInt64_JsonUnmarshal(t *testing.T) {
-	t.Parallel()
+
 	var i Int64
 	err := json.Unmarshal(int64JSON, &i)
 	maybePanic(err)
@@ -122,7 +122,7 @@ func TestNullInt64_JsonUnmarshal(t *testing.T) {
 }
 
 func TestNullInt64_JsonUnmarshalNonIntegerNumber(t *testing.T) {
-	t.Parallel()
+
 	var i Int64
 	err := json.Unmarshal(float64JSON, &i)
 	if err == nil {
@@ -131,7 +131,7 @@ func TestNullInt64_JsonUnmarshalNonIntegerNumber(t *testing.T) {
 }
 
 func TestNullInt64_JsonUnmarshalInt64Overflow(t *testing.T) {
-	t.Parallel()
+
 	int64Overflow := uint64(math.MaxInt64)
 
 	// Max int64 should decode successfully
@@ -148,7 +148,7 @@ func TestNullInt64_JsonUnmarshalInt64Overflow(t *testing.T) {
 }
 
 func TestNullInt64_UnmarshalText(t *testing.T) {
-	t.Parallel()
+
 	var i Int64
 	err := i.UnmarshalText([]byte("9223372036854775806"))
 	maybePanic(err)
@@ -166,35 +166,35 @@ func TestNullInt64_UnmarshalText(t *testing.T) {
 }
 
 func TestNullInt64_JsonMarshal(t *testing.T) {
-	t.Parallel()
+
 	i := MakeInt64(9223372036854775806)
 	data, err := json.Marshal(i)
 	maybePanic(err)
 	assertJSONEquals(t, data, "9223372036854775806", "non-empty json marshal")
 
 	// invalid values should be encoded as null
-	null := MakeInt64(0, false)
+	null := Int64{}
 	data, err = json.Marshal(null)
 	maybePanic(err)
 	assertJSONEquals(t, data, sqlStrNullLC, "null json marshal")
 }
 
 func TestNullInt64_MarshalText(t *testing.T) {
-	t.Parallel()
+
 	i := MakeInt64(9223372036854775806)
 	data, err := i.MarshalText()
 	maybePanic(err)
 	assertJSONEquals(t, data, "9223372036854775806", "non-empty text marshal")
 
 	// invalid values should be encoded as null
-	null := MakeInt64(0, false)
+	null := MakeInt64(0).SetNull()
 	data, err = null.MarshalText()
 	maybePanic(err)
 	assertJSONEquals(t, data, "", "null text marshal")
 }
 
 func TestNullInt64_BinaryEncoding(t *testing.T) {
-	t.Parallel()
+
 	runner := func(b Int64, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
 			data, err := b.GobEncode()
@@ -220,14 +220,14 @@ func TestNullInt64_BinaryEncoding(t *testing.T) {
 }
 
 func TestInt64Pointer(t *testing.T) {
-	t.Parallel()
+
 	i := MakeInt64(9223372036854775806)
 	ptr := i.Ptr()
 	if *ptr != 9223372036854775806 {
 		t.Errorf("bad %s int64: %#v ≠ %d\n", "pointer", ptr, 9223372036854775806)
 	}
 
-	null := MakeInt64(0, false)
+	null := Int64{}
 	ptr = null.Ptr()
 	if ptr != nil {
 		t.Errorf("bad %s int64: %#v ≠ %s\n", "nil pointer", ptr, "nil")
@@ -235,33 +235,33 @@ func TestInt64Pointer(t *testing.T) {
 }
 
 func TestInt64IsZero(t *testing.T) {
-	t.Parallel()
+
 	i := MakeInt64(9223372036854775806)
 	if i.IsZero() {
 		t.Errorf("IsZero() should be false")
 	}
 
-	null := MakeInt64(0, false)
+	null := MakeInt64(0).SetNull()
 	if !null.IsZero() {
 		t.Errorf("IsZero() should be true")
 	}
 
-	zero := MakeInt64(0, true)
+	zero := MakeInt64(0)
 	if zero.IsZero() {
 		t.Errorf("IsZero() should be false")
 	}
 }
 
 func TestInt64SetValid(t *testing.T) {
-	t.Parallel()
-	change := MakeInt64(0, false)
+
+	change := MakeInt64(0).SetNull()
 	assertNullInt64(t, change, "SetValid()")
-	change.SetValid(9223372036854775806)
-	assertInt64(t, change, "SetValid()")
+
+	assertInt64(t, change.SetValid(9223372036854775806), "SetValid()")
 }
 
 func TestInt64Scan(t *testing.T) {
-	t.Parallel()
+
 	var i Int64
 	err := i.Scan(9223372036854775806)
 	maybePanic(err)
@@ -289,7 +289,7 @@ func assertNullInt64(t *testing.T, i Int64, from string) {
 }
 
 func TestNewNullInt64(t *testing.T) {
-	t.Parallel()
+
 	assert.EqualValues(t, 1257894000, MakeInt64(1257894000).Int64)
 	assert.True(t, MakeInt64(1257894000).Valid)
 	assert.True(t, MakeInt64(0).Valid)
@@ -299,7 +299,6 @@ func TestNewNullInt64(t *testing.T) {
 }
 
 func TestNullInt64_Scan(t *testing.T) {
-	t.Parallel()
 
 	t.Run("nil", func(t *testing.T) {
 		var nv Int64

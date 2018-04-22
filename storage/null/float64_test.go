@@ -55,7 +55,7 @@ var (
 )
 
 func TestFloat64From(t *testing.T) {
-	t.Parallel()
+
 	f := MakeFloat64(1.2345)
 	assertFloat64(t, f, "MakeFloat64()")
 
@@ -78,7 +78,7 @@ func TestNullFloat64_GoString(t *testing.T) {
 }
 
 func TestNullFloat64_JsonUnmarshal(t *testing.T) {
-	t.Parallel()
+
 	var f Float64
 	err := json.Unmarshal(float64JSON, &f)
 	maybePanic(err)
@@ -109,7 +109,7 @@ func TestNullFloat64_JsonUnmarshal(t *testing.T) {
 }
 
 func TestNullFloat64_UnmarshalText(t *testing.T) {
-	t.Parallel()
+
 	var f Float64
 	err := f.UnmarshalText([]byte("1.2345"))
 	maybePanic(err)
@@ -127,35 +127,35 @@ func TestNullFloat64_UnmarshalText(t *testing.T) {
 }
 
 func TestNullFloat64_JsonMarshal(t *testing.T) {
-	t.Parallel()
+
 	f := MakeFloat64(1.2345)
 	data, err := json.Marshal(f)
 	maybePanic(err)
 	assertJSONEquals(t, data, "1.2345", "non-empty json marshal")
 
 	// invalid values should be encoded as null
-	null := MakeFloat64(0, false)
+	null := Float64{}
 	data, err = json.Marshal(null)
 	maybePanic(err)
 	assertJSONEquals(t, data, sqlStrNullLC, "null json marshal")
 }
 
 func TestNullFloat64_MarshalText(t *testing.T) {
-	t.Parallel()
+
 	f := MakeFloat64(1.2345)
 	data, err := f.MarshalText()
 	maybePanic(err)
 	assertJSONEquals(t, data, "1.2345", "non-empty text marshal")
 
 	// invalid values should be encoded as null
-	null := MakeFloat64(0, false)
+	null := MakeFloat64(0).SetNull()
 	data, err = null.MarshalText()
 	maybePanic(err)
 	assertJSONEquals(t, data, "", "null text marshal")
 }
 
 func TestNullFloat64_BinaryEncoding(t *testing.T) {
-	t.Parallel()
+
 	runner := func(b Float64, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
 			data, err := b.GobEncode()
@@ -185,7 +185,7 @@ func TestFloat64Pointer(t *testing.T) {
 		t.Errorf("bad %s float64: %#v ≠ %v\n", "pointer", ptr, 1.2345)
 	}
 
-	null := MakeFloat64(0, false)
+	null := MakeFloat64(0).SetNull()
 	ptr = null.Ptr()
 	if ptr != nil {
 		t.Errorf("bad %s float64: %#v ≠ %s\n", "nil pointer", ptr, "nil")
@@ -198,22 +198,21 @@ func TestFloat64IsZero(t *testing.T) {
 		t.Errorf("IsZero() should be false")
 	}
 
-	null := MakeFloat64(0, false)
+	null := MakeFloat64(0).SetNull()
 	if !null.IsZero() {
 		t.Errorf("IsZero() should be true")
 	}
 
-	zero := MakeFloat64(0, true)
+	zero := MakeFloat64(0)
 	if zero.IsZero() {
 		t.Errorf("IsZero() should be false")
 	}
 }
 
 func TestFloat64SetValid(t *testing.T) {
-	change := MakeFloat64(0, false)
+	var change Float64
 	assertNullFloat64(t, change, "SetValid()")
-	change.SetValid(1.2345)
-	assertFloat64(t, change, "SetValid()")
+	assertFloat64(t, change.SetValid(1.2345), "SetValid()")
 }
 
 func TestFloat64Scan(t *testing.T) {
@@ -244,7 +243,7 @@ func assertNullFloat64(t *testing.T, f Float64, from string) {
 }
 
 func TestNewNullFloat64(t *testing.T) {
-	t.Parallel()
+
 	var test = 1257894000.93445000001
 	assert.Equal(t, test, MakeFloat64(test).Float64)
 	assert.True(t, MakeFloat64(test).Valid)
@@ -255,7 +254,6 @@ func TestNewNullFloat64(t *testing.T) {
 }
 
 func TestNullFloat64_Scan(t *testing.T) {
-	t.Parallel()
 
 	t.Run("nil", func(t *testing.T) {
 		var nv Float64

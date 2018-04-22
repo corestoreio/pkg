@@ -39,14 +39,10 @@ type Float64 struct {
 // MakeFloat64 creates a new Float64. Setting the second optional argument
 // to false, the string will not be valid anymore, hence NULL. Float64
 // implements interface Argument.
-func MakeFloat64(f float64, valid ...bool) Float64 {
-	v := true
-	if len(valid) == 1 {
-		v = valid[0]
-	}
+func MakeFloat64(f float64) Float64 {
 	return Float64{
 		Float64: f,
-		Valid:   v,
+		Valid:   true,
 	}
 }
 
@@ -166,10 +162,10 @@ func (a Float64) MarshalText() ([]byte, error) {
 }
 
 // SetValid changes this Float64's value and also sets it to be non-null.
-func (a *Float64) SetValid(n float64) {
-	a.Float64 = n
-	a.Valid = true
-}
+func (a Float64) SetValid(n float64) Float64 { a.Float64 = n; a.Valid = true; return a }
+
+// SetNull sets the value to Go's default value and Valid to false.
+func (a Float64) SetNull() Float64 { return Float64{} }
 
 // Ptr returns a pointer to this Float64's value, or a nil pointer if this Float64 is null.
 func (a Float64) Ptr() *float64 {

@@ -135,6 +135,9 @@ func (d *Decimal) Scan(value interface{}) (err error) {
 	return
 }
 
+// SetNull sets the value to Go's default value and Valid to false.
+func (d Decimal) SetNull() Decimal { return Decimal{} }
+
 // Int64 converts the underlying uint64 to an int64. Very useful for creating a
 // new 3rd party package type/object. If the Precision field overflows
 // math.MaxInt64 the return values are 0,0. If you want to aovid this use the

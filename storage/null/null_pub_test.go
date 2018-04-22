@@ -107,7 +107,7 @@ func TestNullTypeScanning(t *testing.T) {
 }
 
 func TestNullTypeJSONMarshal(t *testing.T) {
-	t.Parallel()
+
 	type nullTypeJSONTest struct {
 		record       *nullTypedRecord
 		expectedJSON []byte

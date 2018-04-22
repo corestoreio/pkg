@@ -36,14 +36,10 @@ type Bool struct {
 }
 
 // MakeBool creates a new Bool. Implements interface Argument.
-func MakeBool(b bool, valid ...bool) Bool {
-	v := true
-	if len(valid) == 1 {
-		v = valid[0]
-	}
+func MakeBool(b bool) Bool {
 	return Bool{
 		Bool:  b,
-		Valid: v,
+		Valid: true,
 	}
 }
 
@@ -162,10 +158,10 @@ func (a Bool) MarshalText() ([]byte, error) {
 }
 
 // SetValid changes this Bool's value and also sets it to be non-null.
-func (a *Bool) SetValid(v bool) {
-	a.Bool = v
-	a.Valid = true
-}
+func (a Bool) SetValid(v bool) Bool { a.Bool = v; a.Valid = true; return a }
+
+// SetNull sets the value to Go's default value and Valid to false.
+func (a Bool) SetNull() Bool { return Bool{} }
 
 // Ptr returns a pointer to this Bool's value, or a nil pointer if this
 // Bool is null.

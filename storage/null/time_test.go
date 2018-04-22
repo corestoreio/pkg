@@ -58,7 +58,7 @@ var (
 )
 
 func TestNullTime_JsonUnmarshal(t *testing.T) {
-	t.Parallel()
+
 	var ti Time
 	err := json.Unmarshal(timeJSON, &ti)
 	maybePanic(err)
@@ -102,7 +102,7 @@ func TestNullTime_JsonUnmarshal(t *testing.T) {
 }
 
 func TestNullTime_UnmarshalText(t *testing.T) {
-	t.Parallel()
+
 	ti := MakeTime(timeValue)
 	txt, err := ti.MarshalText()
 	maybePanic(err)
@@ -130,7 +130,7 @@ func TestNullTime_UnmarshalText(t *testing.T) {
 }
 
 func TestNullTime_JsonMarshal(t *testing.T) {
-	t.Parallel()
+
 	ti := MakeTime(timeValue)
 	data, err := json.Marshal(ti)
 	maybePanic(err)
@@ -143,7 +143,7 @@ func TestNullTime_JsonMarshal(t *testing.T) {
 }
 
 func TestNullTime_BinaryEncoding(t *testing.T) {
-	t.Parallel()
+
 	runner := func(nv Time, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
 			data, err := nv.GobEncode()
@@ -178,37 +178,34 @@ func TestNullTime_BinaryEncoding(t *testing.T) {
 }
 
 func TestNullTime_Size(t *testing.T) {
-	t.Parallel()
 
 	assert.Exactly(t, 0, Time{}.Size())
 	assert.Exactly(t, 8, MakeTime(now()).Size())
 }
 
 func TestTimeFrom(t *testing.T) {
-	t.Parallel()
+
 	ti := MakeTime(timeValue)
 	assertTime(t, ti, "MakeTime() time.Time")
 }
 
 func TestTimeSetValid(t *testing.T) {
-	t.Parallel()
+
 	var ti time.Time
-	change := MakeTime(ti, false)
+	change := MakeTime(ti).SetNull() // stupid code
 	assertNullTime(t, change, "SetValid()")
-	change.SetValid(timeValue)
-	assertTime(t, change, "SetValid()")
+	assertTime(t, change.SetValid(timeValue), "SetValid()")
 }
 
 func TestTimePointer(t *testing.T) {
-	t.Parallel()
+
 	ti := MakeTime(timeValue)
 	ptr := ti.Ptr()
 	if *ptr != timeValue {
 		t.Errorf("bad %s time: %#v ≠ %v\n", "pointer", ptr, timeValue)
 	}
 
-	var nt time.Time
-	null := MakeTime(nt, false)
+	var null Time
 	ptr = null.Ptr()
 	if ptr != nil {
 		t.Errorf("bad %s time: %#v ≠ %s\n", "nil pointer", ptr, "nil")
@@ -216,7 +213,6 @@ func TestTimePointer(t *testing.T) {
 }
 
 func TestTimeScanValue(t *testing.T) {
-	t.Parallel()
 
 	var ti Time
 	maybePanic(ti.Scan(timeValue))
@@ -255,7 +251,7 @@ func assertNullTime(t *testing.T, ti Time, from string) {
 }
 
 func TestNewNullTime(t *testing.T) {
-	t.Parallel()
+
 	var test = time.Now()
 	assert.Equal(t, test, MakeTime(test).Time)
 	assert.True(t, MakeTime(test).Valid)

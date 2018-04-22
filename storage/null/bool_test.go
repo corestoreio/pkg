@@ -51,7 +51,7 @@ var (
 )
 
 func TestMakeNullBool(t *testing.T) {
-	t.Parallel()
+
 	b := MakeBool(true)
 	assertBool(t, b, "MakeBool()")
 	assert.Exactly(t, "true", b.String())
@@ -67,7 +67,7 @@ func TestMakeNullBool(t *testing.T) {
 }
 
 func TestNullBool_UnmarshalJSON(t *testing.T) {
-	t.Parallel()
+
 	var b Bool
 	err := json.Unmarshal(boolJSON, &b)
 	maybePanic(err)
@@ -98,7 +98,6 @@ func TestNullBool_UnmarshalJSON(t *testing.T) {
 }
 
 func TestNullBool_UnmarshalText(t *testing.T) {
-	t.Parallel()
 
 	var b Bool
 	err := b.UnmarshalText([]byte("true"))
@@ -129,47 +128,45 @@ func TestNullBool_UnmarshalText(t *testing.T) {
 }
 
 func TestNullBool_JsonMarshal(t *testing.T) {
-	t.Parallel()
 
 	b := MakeBool(true)
 	data, err := json.Marshal(b)
 	maybePanic(err)
 	assertJSONEquals(t, data, "true", "non-empty json marshal")
 
-	zero := MakeBool(false, true)
+	zero := MakeBool(false)
 	data, err = json.Marshal(zero)
 	maybePanic(err)
 	assertJSONEquals(t, data, "false", "zero json marshal")
 
 	// invalid values should be encoded as null
-	null := MakeBool(false, false)
+	null := Bool{}
 	data, err = json.Marshal(null)
 	maybePanic(err)
 	assertJSONEquals(t, data, sqlStrNullLC, "null json marshal")
 }
 
 func TestNullBool_MarshalText(t *testing.T) {
-	t.Parallel()
 
 	b := MakeBool(true)
 	data, err := b.MarshalText()
 	maybePanic(err)
 	assertJSONEquals(t, data, "true", "non-empty text marshal")
 
-	zero := MakeBool(false, true)
+	zero := MakeBool(false)
 	data, err = zero.MarshalText()
 	maybePanic(err)
 	assertJSONEquals(t, data, "false", "zero text marshal")
 
 	// invalid values should be encoded as null
-	null := MakeBool(false, false)
+	null := MakeBool(false).SetNull()
 	data, err = null.MarshalText()
 	maybePanic(err)
 	assertJSONEquals(t, data, "", "null text marshal")
 }
 
 func TestNullBool_BinaryEncoding(t *testing.T) {
-	t.Parallel()
+
 	runner := func(b Bool, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
 			data, err := b.GobEncode()
@@ -193,7 +190,7 @@ func TestNullBool_BinaryEncoding(t *testing.T) {
 }
 
 func TestNullBool_BinaryDecoding(t *testing.T) {
-	t.Parallel()
+
 	runner := func(data []byte, want Bool) func(*testing.T) {
 		return func(t *testing.T) {
 			var have Bool
@@ -212,7 +209,6 @@ func TestNullBool_BinaryDecoding(t *testing.T) {
 }
 
 func TestBoolPointer(t *testing.T) {
-	t.Parallel()
 
 	b := MakeBool(true)
 	ptr := b.Ptr()
@@ -220,7 +216,7 @@ func TestBoolPointer(t *testing.T) {
 		t.Errorf("bad %s bool: %#v ≠ %v\n", "pointer", ptr, true)
 	}
 
-	null := MakeBool(false, false)
+	null := MakeBool(false).SetNull()
 	ptr = null.Ptr()
 	if ptr != nil {
 		t.Errorf("bad %s bool: %#v ≠ %s\n", "nil pointer", ptr, "nil")
@@ -228,35 +224,31 @@ func TestBoolPointer(t *testing.T) {
 }
 
 func TestBoolIsZero(t *testing.T) {
-	t.Parallel()
 
 	b := MakeBool(true)
 	if b.IsZero() {
 		t.Errorf("IsZero() should be false")
 	}
 
-	null := MakeBool(false, false)
+	null := MakeBool(false).SetNull()
 	if !null.IsZero() {
 		t.Errorf("IsZero() should be true")
 	}
 
-	zero := MakeBool(false, true)
+	zero := MakeBool(false)
 	if zero.IsZero() {
 		t.Errorf("IsZero() should be false")
 	}
 }
 
 func TestBoolSetValid(t *testing.T) {
-	t.Parallel()
 
-	change := MakeBool(false, false)
+	change := MakeBool(false).SetNull()
 	assertNullBool(t, change, "SetValid()")
-	change.SetValid(true)
-	assertBool(t, change, "SetValid()")
+	assertBool(t, change.SetValid(true), "SetValid()")
 }
 
 func TestBoolScan(t *testing.T) {
-	t.Parallel()
 
 	var b Bool
 	err := b.Scan(true)
@@ -294,7 +286,6 @@ func assertNullBool(t *testing.T, b Bool, from string) {
 }
 
 func TestNewNullBool(t *testing.T) {
-	t.Parallel()
 
 	assert.Equal(t, true, MakeBool(true).Bool)
 	assert.True(t, MakeBool(true).Valid)

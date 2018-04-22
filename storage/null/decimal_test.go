@@ -51,7 +51,7 @@ var (
 )
 
 func TestMakeDecimalInt64(t *testing.T) {
-	t.Parallel()
+
 	d := MakeDecimalInt64(-math.MaxInt64, 13)
 	assert.True(t, d.Negative)
 	assert.Exactly(t, uint64(math.MaxInt64), d.Precision)
@@ -59,7 +59,7 @@ func TestMakeDecimalInt64(t *testing.T) {
 }
 
 func TestMakeDecimalFloat64(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have    float64
 		want    string
@@ -89,7 +89,7 @@ func TestMakeDecimalFloat64(t *testing.T) {
 }
 
 func TestDecimal_GoString(t *testing.T) {
-	t.Parallel()
+
 
 	tests := []struct {
 		have Decimal
@@ -125,7 +125,7 @@ func TestDecimal_GoString(t *testing.T) {
 }
 
 func TestDecimal_String(t *testing.T) {
-	t.Parallel()
+
 
 	tests := []struct {
 		have Decimal
@@ -190,7 +190,7 @@ func TestDecimal_String(t *testing.T) {
 }
 
 func TestDecimal_MarshalJSON(t *testing.T) {
-	t.Parallel()
+
 
 	runner := func(d Decimal, want string) func(*testing.T) {
 		return func(t *testing.T) {
@@ -255,7 +255,7 @@ func TestDecimal_MarshalJSON(t *testing.T) {
 }
 
 func TestDecimal_MarshalText(t *testing.T) {
-	t.Parallel()
+
 
 	runner := func(d Decimal, want string) func(*testing.T) {
 		return func(t *testing.T) {
@@ -301,7 +301,7 @@ func TestDecimal_MarshalText(t *testing.T) {
 }
 
 func TestDecimal_GobEncode(t *testing.T) {
-	t.Parallel()
+
 
 	runner := func(d Decimal, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
@@ -346,7 +346,7 @@ func TestDecimal_GobEncode(t *testing.T) {
 }
 
 func TestDecimal_Int64(t *testing.T) {
-	t.Parallel()
+
 
 	t.Run("1234", func(t *testing.T) {
 		d := Decimal{
@@ -383,7 +383,7 @@ func TestDecimal_Int64(t *testing.T) {
 }
 
 func TestDecimal_Float64(t *testing.T) {
-	t.Parallel()
+
 
 	t.Run("0.0", func(t *testing.T) {
 		d := Decimal{
@@ -424,7 +424,7 @@ func TestDecimal_Float64(t *testing.T) {
 }
 
 func TestDecimal_Scan(t *testing.T) {
-	t.Parallel()
+
 
 	t.Run("nil", func(t *testing.T) {
 		var nv Decimal

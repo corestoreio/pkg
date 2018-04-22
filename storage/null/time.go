@@ -29,14 +29,10 @@ import (
 // MakeTime creates a new Time. Setting the second optional argument to
 // false, the string will not be valid anymore, hence NULL. Time implements
 // interface Argument.
-func MakeTime(t time.Time, valid ...bool) Time {
-	v := true
-	if len(valid) == 1 {
-		v = valid[0]
-	}
+func MakeTime(t time.Time) Time {
 	return Time{
 		Time:  t,
-		Valid: v,
+		Valid: true,
 	}
 }
 
@@ -155,11 +151,10 @@ func (nt *Time) UnmarshalBinary(data []byte) error {
 }
 
 // SetValid changes this Time's value and sets it to be non-null.
-func (nt *Time) SetValid(v time.Time) *Time {
-	nt.Time = v
-	nt.Valid = true
-	return nt
-}
+func (nt Time) SetValid(v time.Time) Time { nt.Time = v; nt.Valid = true; return nt }
+
+// SetNull sets the value to Go's default value and Valid to false.
+func (nt Time) SetNull() Time { return Time{} }
 
 // Ptr returns a pointer to this Time's value, or a nil pointer if this Time is
 // null.

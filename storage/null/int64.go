@@ -39,14 +39,10 @@ type Int64 struct {
 // MakeInt64 creates a new Int64. Setting the second optional argument
 // to false, the string will not be valid anymore, hence NULL. Int64
 // implements interface Argument.
-func MakeInt64(i int64, valid ...bool) Int64 {
-	v := true
-	if len(valid) == 1 {
-		v = valid[0]
-	}
+func MakeInt64(i int64) Int64 {
 	return Int64{
 		Int64: i,
-		Valid: v,
+		Valid: true,
 	}
 }
 
@@ -161,10 +157,10 @@ func (a Int64) MarshalText() ([]byte, error) {
 }
 
 // SetValid changes this Int64's value and also sets it to be non-null.
-func (a *Int64) SetValid(n int64) {
-	a.Int64 = n
-	a.Valid = true
-}
+func (a Int64) SetValid(n int64) Int64 { a.Int64 = n; a.Valid = true; return a }
+
+// SetNull sets the value to Go's default value and Valid to false.
+func (a Int64) SetNull() Int64 { return Int64{} }
 
 // Ptr returns a pointer to this Int64's value, or a nil pointer if this Int64 is null.
 func (a Int64) Ptr() *int64 {
