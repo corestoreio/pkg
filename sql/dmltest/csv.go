@@ -25,7 +25,6 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/pkg/storage/text"
 )
 
 // CSVOptions applies options to the CSV reader
@@ -149,12 +148,8 @@ func LoadCSV(opts ...csvOptions) (columns []string, rows [][]driver.Value, err e
 }
 
 func parseCol(c *config, s string) driver.Value {
-	switch {
-	case strings.ToLower(s) == "null":
+	if strings.ToLower(s) == "null" {
 		return nil
-	}
-	if c.test {
-		return text.Chars(s)
 	}
 	return []byte(s)
 }

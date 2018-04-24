@@ -15,12 +15,31 @@
 package dmltest_test
 
 import (
+	"bytes"
+	"database/sql/driver"
 	"fmt"
 	"testing"
 
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
 )
+
+func rowsToString(rows [][]driver.Value) string {
+	var buf bytes.Buffer
+	for _, row := range rows {
+		for _, col := range row {
+			switch v := col.(type) {
+			case []byte:
+				buf.Write(v)
+			default:
+				buf.WriteString("NULL")
+			}
+			buf.WriteRune('|')
+		}
+		buf.WriteRune('\n')
+	}
+	return buf.String()
+}
 
 func TestLoadCSVWithFile(t *testing.T) {
 	t.Parallel()
@@ -32,8 +51,8 @@ func TestLoadCSVWithFile(t *testing.T) {
 	assert.Exactly(t, []string{"config_id", "scope", "scope_id", "path", "value"}, cols)
 	assert.Len(t, rows, 20)
 
-	want := "[][]driver.Value{[]driver.Value{text.Chars(`1`), text.Chars(`default`), text.Chars(`0`), text.Chars(`cms/wysiwyg/enabled`), text.Chars(`disabled`)}, []driver.Value{text.Chars(`2`), text.Chars(`default`), text.Chars(`0`), text.Chars(`general/region/display_all`), text.Chars(`1`)}, []driver.Value{text.Chars(`3`), text.Chars(`default`), text.Chars(`0`), text.Chars(`general/region/state_required`), text.Chars(`AT,CA,CH,DE,EE,ES,FI,FR,LT,LV,RO,US`)}, []driver.Value{text.Chars(`3`), text.Chars(`stores`), text.Chars(`2`), text.Chars(`general/region/state_required`), text.Chars(`AT`)}, []driver.Value{text.Chars(`5`), text.Chars(`default`), text.Chars(`0`), text.Chars(`web/url/redirect_to_base`), text.Chars(`1`)}, []driver.Value{text.Chars(`7`), text.Chars(`default`), text.Chars(`0`), text.Chars(`web/unsecure/base_url`), text.Chars(`http://magento-1-8.local/`)}, []driver.Value{text.Chars(`7`), text.Chars(`websites`), text.Chars(`1`), text.Chars(`web/unsecure/base_url`), text.Chars(`http://magento-1-8a.dev/`)}, []driver.Value{text.Chars(`8`), text.Chars(`default`), text.Chars(`0`), text.Chars(`web/unsecure/base_link_url`), text.Chars(`{{unsecure_base_url}}`)}, []driver.Value{text.Chars(`9`), text.Chars(`default`), text.Chars(`0`), text.Chars(`web/unsecure/base_skin_url`), text.Chars(`{{unsecure_base_url}}skin/`)}, []driver.Value{text.Chars(`10`), text.Chars(`default`), text.Chars(`0`), text.Chars(`web/unsecure/base_media_url`), text.Chars(`http://localhost:4711/media/`)}, []driver.Value{text.Chars(`11`), text.Chars(`default`), text.Chars(`0`), text.Chars(`web/unsecure/base_js_url`), text.Chars(`{{unsecure_base_url}}js/`)}, []driver.Value{text.Chars(`12`), text.Chars(`default`), text.Chars(`0`), text.Chars(`web/secure/base_url`), text.Chars(`http://magento-1-8.local/`)}, []driver.Value{text.Chars(`13`), text.Chars(`default`), text.Chars(`0`), text.Chars(`web/secure/base_link_url`), text.Chars(`{{secure_base_url}}`)}, []driver.Value{text.Chars(`14`), text.Chars(`default`), text.Chars(`0`), text.Chars(`web/secure/base_skin_url`), text.Chars(`{{secure_base_url}}skin/`)}, []driver.Value{text.Chars(`15`), text.Chars(`default`), text.Chars(`0`), text.Chars(`web/secure/base_media_url`), text.Chars(`http://localhost:4711/media/`)}, []driver.Value{text.Chars(`16`), text.Chars(`default`), text.Chars(`0`), text.Chars(`web/secure/base_js_url`), text.Chars(`{{secure_base_url}}js/`)}, []driver.Value{text.Chars(`17`), text.Chars(`default`), text.Chars(`0`), text.Chars(`web/secure/use_in_frontend`), text.Chars(`0`)}, []driver.Value{text.Chars(`18`), text.Chars(`default`), text.Chars(`0`), text.Chars(`web/secure/use_in_adminhtml`), text.Chars(`0`)}, []driver.Value{text.Chars(`19`), text.Chars(`default`), text.Chars(`0`), text.Chars(`web/secure/offloader_header`), text.Chars(`SSL_OFFLOADED`)}, []driver.Value{text.Chars(`20`), text.Chars(`default`), text.Chars(`0`), text.Chars(`web/default/front`), driver.Value(nil)}}"
-	assert.Exactly(t, want, fmt.Sprintf("%#v", rows))
+	want := "1|default|0|cms/wysiwyg/enabled|disabled|\n2|default|0|general/region/display_all|1|\n3|default|0|general/region/state_required|AT,CA,CH,DE,EE,ES,FI,FR,LT,LV,RO,US|\n3|stores|2|general/region/state_required|AT|\n5|default|0|web/url/redirect_to_base|1|\n7|default|0|web/unsecure/base_url|http://magento-1-8.local/|\n7|websites|1|web/unsecure/base_url|http://magento-1-8a.dev/|\n8|default|0|web/unsecure/base_link_url|{{unsecure_base_url}}|\n9|default|0|web/unsecure/base_skin_url|{{unsecure_base_url}}skin/|\n10|default|0|web/unsecure/base_media_url|http://localhost:4711/media/|\n11|default|0|web/unsecure/base_js_url|{{unsecure_base_url}}js/|\n12|default|0|web/secure/base_url|http://magento-1-8.local/|\n13|default|0|web/secure/base_link_url|{{secure_base_url}}|\n14|default|0|web/secure/base_skin_url|{{secure_base_url}}skin/|\n15|default|0|web/secure/base_media_url|http://localhost:4711/media/|\n16|default|0|web/secure/base_js_url|{{secure_base_url}}js/|\n17|default|0|web/secure/use_in_frontend|0|\n18|default|0|web/secure/use_in_adminhtml|0|\n19|default|0|web/secure/offloader_header|SSL_OFFLOADED|\n20|default|0|web/default/front|NULL|\n"
+	assert.Exactly(t, want, rowsToString(rows))
 }
 
 func TestLoadCSVWithReaderConfig(t *testing.T) {
@@ -47,8 +66,8 @@ func TestLoadCSVWithReaderConfig(t *testing.T) {
 	assert.Exactly(t, []string{"config_id", "scope", "scope_id", "path", "value"}, cols)
 	assert.Len(t, rows, 5)
 
-	want := "[][]driver.Value{[]driver.Value{text.Chars(`1`), text.Chars(`default`), text.Chars(`0`), text.Chars(`cms/wysiwyg/enabled`), text.Chars(`disabled`)}, []driver.Value{text.Chars(`2`), text.Chars(`default`), text.Chars(`0`), text.Chars(`general/region/display_all`), text.Chars(`1`)}, []driver.Value{text.Chars(`3`), text.Chars(`default`), text.Chars(`0`), text.Chars(`general/region/state_required`), text.Chars(`AT,CA,CH,DE,EE,ES,FI,FR,LT,LV,RO,US`)}, []driver.Value{text.Chars(`3`), text.Chars(`stores`), text.Chars(`2`), text.Chars(`general/region/state_required`), text.Chars(`AT`)}, []driver.Value{text.Chars(`5`), text.Chars(`default`), text.Chars(`0`), driver.Value(nil), text.Chars(`1`)}}"
-	assert.Exactly(t, want, fmt.Sprintf("%#v", rows))
+	want := "1|default|0|cms/wysiwyg/enabled|disabled|\n2|default|0|general/region/display_all|1|\n3|default|0|general/region/state_required|AT,CA,CH,DE,EE,ES,FI,FR,LT,LV,RO,US|\n3|stores|2|general/region/state_required|AT|\n5|default|0|NULL|1|\n"
+	assert.Exactly(t, want, rowsToString(rows))
 }
 
 func TestLoadCSVFileError(t *testing.T) {
