@@ -17,12 +17,11 @@ package config_test
 //import (
 //	"fmt"
 //
+//	"github.com/corestoreio/errors"
 //	"github.com/corestoreio/pkg/config"
-//	"github.com/corestoreio/pkg/config/cfgpath"
+//	"github.com/corestoreio/pkg/storage/null"
 //	"github.com/corestoreio/pkg/store"
 //	"github.com/corestoreio/pkg/store/scope"
-//	"github.com/corestoreio/pkg/util/null"
-//	"github.com/corestoreio/errors"
 //)
 //
 //// Config Service, the Default storage engine with build-in in-memory map. The
@@ -38,9 +37,9 @@ package config_test
 //	// website, group and store. For the sake of this example the storage
 //	// is hard coded.
 //	store.WithTableWebsites(
-//		&store.TableWebsite{WebsiteID: 0, Code: null.StringFrom("admin"), Name: null.StringFrom("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: null.BoolFrom(false)},
-//		&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)},
-//		&store.TableWebsite{WebsiteID: 2, Code: null.StringFrom("oz"), Name: null.StringFrom("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: null.BoolFrom(false)},
+//		&store.TableWebsite{WebsiteID: 0, Code: null.MakeString("admin"), Name: null.MakeString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: null.MakeBool(false)},
+//		&store.TableWebsite{WebsiteID: 1, Code: null.MakeString("euro"), Name: null.MakeString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: null.MakeBool(true)},
+//		&store.TableWebsite{WebsiteID: 2, Code: null.MakeString("oz"), Name: null.MakeString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: null.MakeBool(false)},
 //	),
 //	store.WithTableGroups(
 //		&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
@@ -49,27 +48,29 @@ package config_test
 //		&store.TableGroup{GroupID: 2, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4},
 //	),
 //	store.WithTableStores(
-//		&store.TableStore{StoreID: 0, Code: null.StringFrom("admin"), WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
-//		&store.TableStore{StoreID: 5, Code: null.StringFrom("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
-//		&store.TableStore{StoreID: 1, Code: null.StringFrom("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-//		&store.TableStore{StoreID: 4, Code: null.StringFrom("uk"), WebsiteID: 1, GroupID: 2, Name: "UK", SortOrder: 10, IsActive: true},
-//		&store.TableStore{StoreID: 2, Code: null.StringFrom("at"), WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
-//		&store.TableStore{StoreID: 6, Code: null.StringFrom("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
-//		&store.TableStore{IsActive: false, StoreID: 3, Code: null.StringFrom("ch"), WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30},
+//		&store.TableStore{StoreID: 0, Code: null.MakeString("admin"), WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
+//		&store.TableStore{StoreID: 5, Code: null.MakeString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
+//		&store.TableStore{StoreID: 1, Code: null.MakeString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+//		&store.TableStore{StoreID: 4, Code: null.MakeString("uk"), WebsiteID: 1, GroupID: 2, Name: "UK", SortOrder: 10, IsActive: true},
+//		&store.TableStore{StoreID: 2, Code: null.MakeString("at"), WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
+//		&store.TableStore{StoreID: 6, Code: null.MakeString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
+//		&store.TableStore{IsActive: false, StoreID: 3, Code: null.MakeString("ch"), WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30},
 //	),
 //)
 //
+//const exampleRoute = "scope/test/demo_path"
+//
 //// We focus here on type Int() other primitive types are of course also available.
 //// The int numbers here are converted floats. Can you spot the origin?
-//var pathInt = cfgpath.MustMakeByString("scope/test/integer") // panics on incorrect argument. Use only during app start up.
+//var myConfigPath = config.MustMakePath(exampleRoute) // panics on incorrect argument. Use only during app start up.
 //
 //var defaultsInt = []struct {
-//	key cfgpath.Path
-//	val int
+//	key config.Path
+//	val []byte
 //}{
-//	{pathInt, 314159},                // Default
-//	{pathInt.BindWebsite(1), 271828}, // Scope 1 = Website euro
-//	{pathInt.BindStore(2), 141421},   // Scope 2 = Store at
+//	{myConfigPath, []byte(`ScopeDefaultValue`)},                       // Default
+//	{myConfigPath.BindWebsite(1), []byte(`ScopeWebsiteOneEuroValue`)}, // Scope 1 = Website euro
+//	{myConfigPath.BindStore(2), []byte(`ScopeStoreTwoATValue`)},       // Scope 2 = Store at
 //}
 //
 //func ExampleScopedGetter() {
@@ -95,15 +96,20 @@ package config_test
 //	// already to the appropriate scopes.
 //
 //	// Scope1 use store config and hence store value
-//	val, err := atStore.Config.Int(pathInt.Route)
+//	val := atStore.Config.Value(scope.Store, exampleRoute) //.Int(myConfigPath.Route)
+//	valStr, ok, err := val.Str()
 //	if err != nil {
 //		fmt.Printf("srvString1 Error: %+v", err)
 //		return
 //	}
-//	fmt.Println("Scope Value for Store ID 2:", val)
+//	if !ok {
+//		fmt.Printf("srvString1 NULL: %+v", err)
+//		return
+//	}
+//	fmt.Println("Scope Value for Store ID 2:", valStr)
 //
 //	// Scope2 use website config and hence website value
-//	val, err = atStore.Website.Config.Int(pathInt.Route)
+//	val, err = atStore.Website.Config.Int(myConfigPath.Route)
 //	if err != nil {
 //		fmt.Printf("srvString2 Error: %+v", err)
 //		return
@@ -111,7 +117,7 @@ package config_test
 //	fmt.Println("Scope Value for Website ID 1:", val)
 //
 //	// Scope3 force default value
-//	val, err = atStore.Config.Int(pathInt.Route, scope.Default)
+//	val, err = atStore.Config.Int(myConfigPath.Route, scope.Default)
 //	if err != nil {
 //		fmt.Printf("srvString3 Error: %+v", err)
 //		return

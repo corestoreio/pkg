@@ -274,16 +274,17 @@ func benchmarkScopedServiceStringRun(b *testing.B, websiteID, storeID int64) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		var err error
-		var ok bool
-		benchmarkScopedServiceVal, ok, err = sg.Value(scope.Store, route)
+		benchmarkScopedServiceVal = sg.Value(scope.Store, route)
+		if !benchmarkScopedServiceVal.IsValid() {
+			b.Fatal(benchmarkScopedServiceVal)
+		}
+		s, ok, err := benchmarkScopedServiceVal.Str()
+		if !ok {
+			b.Fatal("path must be valid")
+		}
 		if err != nil {
 			b.Fatal(err)
 		}
-		if !ok {
-			b.Fatal("must be ok")
-		}
-		s, _, _ := benchmarkScopedServiceVal.Str()
 		if s != want {
 			b.Errorf("Want %s Have %s", want, benchmarkScopedServiceVal)
 		}

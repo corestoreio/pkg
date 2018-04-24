@@ -46,15 +46,13 @@ func TestNotKeyNotFoundError(t *testing.T) {
 
 	scopedSrv := srv.NewScoped(1, 1)
 
-	flat, ok, err := scopedSrv.Value(scope.Default, "catalog/product/enable_flat")
-	require.NoError(t, err)
-	assert.False(t, ok, "Should not find the key")
+	flat := scopedSrv.Value(scope.Default, "catalog/product/enable_flat")
+	assert.False(t, flat.IsValid(), "Should not find the key")
 	assert.True(t, flat.IsEmpty(), "should be empty")
 
-	val, ok, err := scopedSrv.Value(scope.Store, "catalog")
-	assert.False(t, ok)
+	val := scopedSrv.Value(scope.Store, "catalog")
+	assert.False(t, val.IsValid())
 	assert.True(t, val.IsEmpty(), "should be empty")
-	assert.False(t, errors.NotFound.Match(err), "Error: %s", err)
 }
 
 func TestService_Write(t *testing.T) {
@@ -75,12 +73,8 @@ func TestService_Write_Get_Value_Success(t *testing.T) {
 
 			require.NoError(t, srv.Write(p, value), "Writing Value in Test %q should not fail", t.Name())
 
-			srvVal, haveOK, haveErr := srv.Value(p)
+			haveStr, ok, haveErr := srv.Value(p).Str()
 			require.NoError(t, haveErr, "No error should occur when retrieving a value")
-			require.True(t, haveOK, "The value should not be nil")
-
-			haveStr, ok, haveErr := srvVal.Str()
-			require.NoError(t, haveErr)
 			assert.True(t, ok)
 			assert.Exactly(t, string(value), haveStr)
 
@@ -203,21 +197,12 @@ func TestScopedServicePath(t *testing.T) {
 			})
 
 			sg := cg.NewScoped(test.websiteID, test.storeID)
-			haveVal, haveOK, haveErr := sg.Value(test.perm, test.route)
+			haveVal := sg.Value(test.perm, test.route)
 
 			if test.wantErrKind > 0 {
-				require.False(t, haveOK, "Index %d/%d scoped path value must be found ", vi, xi)
-				// if d, ok := haveVal.(time.Duration); ok {
-				// 	// oh that is so crap because time.Duration cannot be detected for zero value
-				// 	assert.Empty(t, int64(d), "Index %d/%d => %v", vi, xi, wantVal)
-				// } else {
-				// 	assert.Empty(t, haveVal, "Index %d/%d => %v", vi, xi, wantVal)
-				// }
-				assert.NoError(t, haveErr, "Error: %+v => %s", haveErr, test.desc)
-				// assert.True(t, test.wantErrKind.Match(haveErr), "Error: %+v => %s", haveErr, test.desc)
+				require.False(t, haveVal.IsValid(), "Index %d/%d scoped path value must be found ", vi, xi)
 				continue
 			}
-			require.NoError(t, haveErr, "Error: %+v\n\n%s", haveErr, test.desc)
 
 			switch wv := wantVal.(type) {
 			case []byte:
@@ -282,12 +267,12 @@ func TestScopedServicePermission_All(t *testing.T) {
 		{scope.Absent, "c", scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1), scope.Store.Pack(1)}}, // because ScopedGetter bound to store scope
 	}
 	for i, test := range tests {
-		have, ok, err := sm.NewScoped(1, 1).Value(test.s, "aa/bb/cc")
+		haveVal := sm.NewScoped(1, 1).Value(test.s, "aa/bb/cc")
+		s, ok, err := haveVal.Str()
 		if err != nil {
 			t.Fatal("Index", i, "Error", err)
 		}
 		require.True(t, ok, "Scoped path value must be found")
-		s, _, _ := have.Str()
 		assert.Exactly(t, test.want, s, "Index %d", i)
 		assert.Exactly(t, test.wantIDs, sm.Invokes().ScopeIDs(), "Index %d", i)
 	}
@@ -314,56 +299,49 @@ func TestScopedServicePermission_One(t *testing.T) {
 	})
 
 	t.Run("query1 by scope.Default, matches default", func(t *testing.T) {
-		have, ok, err := sm.NewScoped(WebsiteID, StoreID).Value(scope.Default, "aa/bb/cc")
+		s, ok, err := sm.NewScoped(WebsiteID, StoreID).Value(scope.Default, "aa/bb/cc").Str()
 		require.True(t, ok, "scoped path value must be found")
 		require.NoError(t, err)
-		s, _, _ := have.Str()
 		assert.Exactly(t, "a", s) // because ScopedGetter bound to store scope
 	})
 
 	t.Run("query1 by scope.Website, matches website", func(t *testing.T) {
-		have, ok, err := sm.NewScoped(WebsiteID, StoreID).Value(scope.Website, "aa/bb/cc")
+		s, ok, err := sm.NewScoped(WebsiteID, StoreID).Value(scope.Website, "aa/bb/cc").Str()
 		require.True(t, ok, "scoped path value must be found")
 		require.NoError(t, err)
-		s, _, _ := have.Str()
 		assert.Exactly(t, "b", s) // because ScopedGetter bound to store scope
 	})
 
 	t.Run("query1 by scope.Store, matches store", func(t *testing.T) {
-		have, ok, err := sm.NewScoped(WebsiteID, StoreID).Value(scope.Store, "aa/bb/cc")
+		s, ok, err := sm.NewScoped(WebsiteID, StoreID).Value(scope.Store, "aa/bb/cc").Str()
 		require.True(t, ok, "scoped path value must be found")
 		require.NoError(t, err)
-		s, _, _ := have.Str()
 		assert.Exactly(t, "c", s) // because ScopedGetter bound to store scope
 	})
 	t.Run("query1 by scope.Absent, matches store", func(t *testing.T) {
-		have, ok, err := sm.NewScoped(WebsiteID, StoreID).Value(scope.Absent, "aa/bb/cc")
+		s, ok, err := sm.NewScoped(WebsiteID, StoreID).Value(scope.Absent, "aa/bb/cc").Str()
 		require.True(t, ok, "scoped path value must be found")
 		require.NoError(t, err)
-		s, _, _ := have.Str()
 		assert.Exactly(t, "c", s) // because ScopedGetter bound to store scope
 	})
 
 	t.Run("query2 by scope.Store, fallback to website", func(t *testing.T) {
-		have, ok, err := sm.NewScoped(WebsiteID, StoreID).Value(scope.Store, "dd/ee/ff")
+		s, ok, err := sm.NewScoped(WebsiteID, StoreID).Value(scope.Store, "dd/ee/ff").Str()
 		require.True(t, ok, "scoped path value must be found")
 		require.NoError(t, err)
-		s, _, _ := have.Str()
 		assert.Exactly(t, "bb2", s) // because ScopedGetter bound to store scope
 	})
 
 	t.Run("query3 by scope.Store, fallback to default", func(t *testing.T) {
-		have, ok, err := sm.NewScoped(WebsiteID, StoreID).Value(scope.Store, "dd/ee/gg")
+		s, ok, err := sm.NewScoped(WebsiteID, StoreID).Value(scope.Store, "dd/ee/gg").Str()
 		require.True(t, ok, "scoped path value must be found")
 		require.NoError(t, err)
-		s, _, _ := have.Str()
 		assert.Exactly(t, "cc3", s) // because ScopedGetter bound to store scope
 	})
 	t.Run("query3 by scope.Website, fallback to default", func(t *testing.T) {
-		have, ok, err := sm.NewScoped(WebsiteID, StoreID).Value(scope.Website, "dd/ee/gg")
+		s, ok, err := sm.NewScoped(WebsiteID, StoreID).Value(scope.Website, "dd/ee/gg").Str()
 		require.True(t, ok, "scoped path value must be found")
 		require.NoError(t, err)
-		s, _, _ := have.Str()
 		assert.Exactly(t, "cc3", s) // because ScopedGetter bound to store scope
 	})
 

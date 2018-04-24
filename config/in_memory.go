@@ -52,7 +52,7 @@ func (sp *kvmap) Set(scp scope.TypeID, path string, value []byte) error {
 }
 
 // Get implements Storager interface.
-func (sp *kvmap) Value(scp scope.TypeID, path string) (v []byte, ok bool, err error) {
+func (sp *kvmap) Value(scp scope.TypeID, path string) (v []byte, found bool, err error) {
 
 	var key strings.Builder
 	key.WriteString(scp.ToIntString())
@@ -60,12 +60,9 @@ func (sp *kvmap) Value(scp scope.TypeID, path string) (v []byte, ok bool, err er
 	key.WriteString(path)
 
 	sp.RLock()
-	data, ok := sp.kv[key.String()]
+	data, found := sp.kv[key.String()]
 	sp.RUnlock()
-	if ok {
-		return data, ok, nil
-	}
-	return nil, false, nil
+	return data, found, nil
 }
 
 // AllKeys implements Storager interface and return unsorted slices. Despite

@@ -29,6 +29,7 @@ import (
 var (
 	_ fmt.Stringer = (*Value)(nil)
 	_ io.WriterTo  = (*Value)(nil)
+	_ error        = (*Value)(nil)
 )
 
 func TestValue(t *testing.T) {
@@ -37,6 +38,12 @@ func TestValue(t *testing.T) {
 	t.Run("String", func(t *testing.T) {
 		v := MakeValue([]byte(`Rothaus`))
 		assert.Exactly(t, "\"Rothaus\"", v.String())
+
+		v = MakeValue([]byte(nil))
+		assert.Exactly(t, "<nil>", v.String())
+
+		v.found = false
+		assert.Exactly(t, "<notFound>", v.String())
 	})
 	t.Run("String Convert Failed", func(t *testing.T) {
 		v := MakeValue([]byte(`Rothaus`))
@@ -60,6 +67,12 @@ func TestValue(t *testing.T) {
 		assert.True(t, ok)
 		assert.NoError(t, err)
 		assert.Exactly(t, "Waldhaus Beer", string(val))
+
+		v.found = false
+		val, ok, err = v.Str()
+		assert.False(t, ok)
+		assert.NoError(t, err)
+		assert.Exactly(t, "", string(val))
 	})
 	t.Run("Str2", func(t *testing.T) {
 		v := MakeValue(nil)
@@ -67,6 +80,13 @@ func TestValue(t *testing.T) {
 		assert.False(t, ok)
 		assert.NoError(t, err)
 		assert.Exactly(t, "", string(val))
+	})
+	t.Run("Error", func(t *testing.T) {
+		v := MakeValue(nil)
+		v.lastErr = errors.New("Ups")
+		assert.EqualError(t, v, "Ups")
+		v.lastErr = nil
+		assert.EqualError(t, v, "")
 	})
 
 	t.Run("Strs1", func(t *testing.T) {
@@ -439,6 +459,12 @@ func TestValue(t *testing.T) {
 		assert.True(t, ok, "Duration should be set and not nil, so true.")
 		assert.NoError(t, err)
 		assert.Exactly(t, "5m2s", val.String())
+
+		v.found = false
+		val, ok, err = v.Duration()
+		assert.False(t, ok)
+		assert.NoError(t, err)
+		assert.Exactly(t, "0s", val.String())
 	})
 
 	t.Run("IsEqual", func(t *testing.T) {

@@ -50,18 +50,24 @@ func (cfn convertFn) Convert(p Path, data []byte) ([]byte, error) {
 type Value struct {
 	// Path optionally assigned to, to know to which path a value belongs to and to
 	// provide different converter behaviour.
-	Path      Path
-	data      []byte
+	Path Path
+	data []byte
+	// Converter converts on any method receiver call the byte value.
 	Converter ValueConverter
 	// CSVColumnSep defines the CSV column separator, default a comma.
-	CSVComma  rune
 	CSVReader *csv.Reader
+	CSVComma  rune
+	// found gets set to true if any value can be found under the given path.
+	// Even a NULL value can be valid.
+	found   bool
+	lastErr error
 }
 
 // MakeValue makes a new non-pointer value type.
 func MakeValue(data []byte) Value {
 	return Value{
-		data: data,
+		data:  data,
+		found: true,
 	}
 }
 
@@ -71,22 +77,29 @@ func (v Value) WithConvert(fn func(Path, []byte) ([]byte, error)) Value {
 	return v
 }
 
-func (v Value) init() (_ Value, err error) {
+func (v Value) init() (_ Value, found bool, err error) {
+	if v.lastErr != nil || !v.found {
+		return Value{}, false, v.lastErr
+	}
+
 	if v.CSVComma == 0 {
 		v.CSVComma = CSVColumnSeparator
 	}
 	if v.Converter != nil {
 		v.data, err = v.Converter.Convert(v.Path, v.data)
 	}
-	return v, err
+	return v, v.found && err == nil, err
 }
 
 // String implements fmt.Stringer and returns the textual representation and Go
 // syntax escaped of the underlying data.
 func (v Value) String() string {
-	v, err := v.init()
+	v, found, err := v.init()
 	if err != nil {
 		return fmt.Sprintf("[config] Value: %+v", err)
+	}
+	if !found {
+		return "<notFound>"
 	}
 	if v.data == nil {
 		return "<nil>"
@@ -96,7 +109,7 @@ func (v Value) String() string {
 
 // WriteTo writes the converted data to w.
 func (v Value) WriteTo(w io.Writer) (n int64, err error) {
-	if v, err = v.init(); err != nil {
+	if v, _, err = v.init(); err != nil {
 		return 0, errors.WithStack(err)
 	}
 	nw, err := w.Write(v.data)
@@ -107,13 +120,13 @@ func (v Value) WriteTo(w io.Writer) (n int64, err error) {
 // bytes are not nil. Whereas function String implements fmt.Stringer and
 // returns something different.
 func (v Value) Str() (_ string, ok bool, err error) {
-	v, err = v.init()
-	return string(v.data), v.data != nil, err
+	v, ok, err = v.init()
+	return string(v.data), ok && v.data != nil, err
 }
 
 // Strs splits the converted data using the CSVComma and appends it to `ret`.
 func (v Value) Strs(ret ...string) (_ []string, err error) {
-	if v, err = v.init(); err != nil {
+	if v, _, err = v.init(); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if v.data == nil {
@@ -146,7 +159,7 @@ func (v Value) Strs(ret ...string) (_ []string, err error) {
 
 // CSV reads a multiline CSV data value and appends it to ret.
 func (v Value) CSV(ret ...[]string) (_ [][]string, err error) {
-	if v, err = v.init(); err != nil {
+	if v, _, err = v.init(); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if v.data == nil {
@@ -173,7 +186,7 @@ func (v Value) CSV(ret ...[]string) (_ [][]string, err error) {
 // function signature for `fn` matches e.g. json.Unmarshal, xml.Unmarshal and
 // many others.
 func (v Value) Unmarshal(fn func(data []byte, vPtr interface{}) error, vPtr interface{}) (err error) {
-	if v, err = v.init(); err != nil {
+	if v, _, err = v.init(); err != nil {
 		return errors.WithStack(err)
 	}
 	if v.data == nil {
@@ -184,7 +197,7 @@ func (v Value) Unmarshal(fn func(data []byte, vPtr interface{}) error, vPtr inte
 
 // Bool converts the underlying converted data into the final type.
 func (v Value) Bool() (val bool, ok bool, err error) {
-	if v, err = v.init(); err != nil {
+	if v, ok, err = v.init(); err != nil || !ok {
 		return false, false, errors.WithStack(err)
 	}
 	return byteconv.ParseBool(v.data)
@@ -192,7 +205,7 @@ func (v Value) Bool() (val bool, ok bool, err error) {
 
 // Float64 converts the underlying converted data into the final type.
 func (v Value) Float64() (val float64, ok bool, err error) {
-	if v, err = v.init(); err != nil {
+	if v, ok, err = v.init(); err != nil || !ok {
 		return 0, false, errors.WithStack(err)
 	}
 	return byteconv.ParseFloat(v.data)
@@ -208,7 +221,7 @@ func (v Value) countSep() (n int, sep []byte) {
 
 // Float64s splits the converted data using the CSVComma and appends it to `ret`.
 func (v Value) Float64s(ret ...float64) (_ []float64, err error) {
-	if v, err = v.init(); err != nil {
+	if v, _, err = v.init(); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if v.data == nil {
@@ -246,7 +259,7 @@ func (v Value) Float64s(ret ...float64) (_ []float64, err error) {
 
 // Int converts the underlying converted data into the final type.
 func (v Value) Int() (val int, ok bool, err error) {
-	if v, err = v.init(); err != nil {
+	if v, ok, err = v.init(); err != nil || !ok {
 		return 0, false, errors.WithStack(err)
 	}
 	i64, ok, err := byteconv.ParseInt(v.data)
@@ -256,7 +269,7 @@ func (v Value) Int() (val int, ok bool, err error) {
 // Ints converts the underlying byte slice into an int64 slice using
 // v.CSVComma as a separator. The result gets append to argument `ret`.
 func (v Value) Ints(ret ...int) (_ []int, err error) {
-	if v, err = v.init(); err != nil {
+	if v, _, err = v.init(); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if v.data == nil {
@@ -294,7 +307,7 @@ func (v Value) Ints(ret ...int) (_ []int, err error) {
 
 // Int64 converts the underlying converted data into the final type.
 func (v Value) Int64() (_ int64, ok bool, err error) {
-	if v, err = v.init(); err != nil {
+	if v, ok, err = v.init(); err != nil || !ok {
 		return 0, false, errors.WithStack(err)
 	}
 	return byteconv.ParseInt(v.data)
@@ -303,7 +316,7 @@ func (v Value) Int64() (_ int64, ok bool, err error) {
 // Int64s converts the underlying byte slice into an int64 slice using
 // v.CSVComma as a separator. The result gets append to argument `ret`.
 func (v Value) Int64s(ret ...int64) (_ []int64, err error) {
-	if v, err = v.init(); err != nil {
+	if v, _, err = v.init(); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if v.data == nil {
@@ -341,7 +354,7 @@ func (v Value) Int64s(ret ...int64) (_ []int64, err error) {
 
 // Uint64 converts the underlying converted data into the final type.
 func (v Value) Uint64() (_ uint64, ok bool, err error) {
-	if v, err = v.init(); err != nil {
+	if v, ok, err = v.init(); err != nil || !ok {
 		return 0, false, errors.WithStack(err)
 	}
 	return byteconv.ParseUint(v.data, 10, 64)
@@ -350,7 +363,7 @@ func (v Value) Uint64() (_ uint64, ok bool, err error) {
 // Uint64s converts the underlying byte slice into an int64 slice using
 // v.CSVComma as a separator. The result gets append to argument `ret`.
 func (v Value) Uint64s(ret ...uint64) (_ []uint64, err error) {
-	if v, err = v.init(); err != nil {
+	if v, _, err = v.init(); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if v.data == nil {
@@ -390,7 +403,7 @@ func (v Value) Uint64s(ret ...uint64) (_ []uint64, err error) {
 // places supports. Minimal format must be a year, e.g. 2006.
 // time.UTC location gets used.
 func (v Value) Time() (t time.Time, ok bool, err error) {
-	if v, err = v.init(); err != nil {
+	if v, ok, err = v.init(); err != nil || !ok {
 		err = errors.WithStack(err)
 		return
 	}
@@ -404,7 +417,7 @@ func (v Value) Time() (t time.Time, ok bool, err error) {
 
 // Times same as Time but parses the CSVComma separated list.
 func (v Value) Times(ret ...time.Time) (t []time.Time, err error) {
-	if v, err = v.init(); err != nil {
+	if v, _, err = v.init(); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if v.data == nil {
@@ -446,7 +459,7 @@ func (v Value) Times(ret ...time.Time) (t []time.Time, err error) {
 // Duration converts the underlying converted data into the final type.
 // Uses internally time.ParseDuration
 func (v Value) Duration() (d time.Duration, ok bool, err error) {
-	if v, err = v.init(); err != nil {
+	if v, ok, err = v.init(); err != nil || !ok {
 		return 0, false, errors.WithStack(err)
 	}
 	d, err = time.ParseDuration(string(v.data))
@@ -455,16 +468,30 @@ func (v Value) Duration() (d time.Duration, ok bool, err error) {
 }
 
 // IsEqual does a constant time comparison of the underlying data with the input
-// data `d`. Useful for passwords.
+// data `d`. Useful for passwords. Only equal when no error occurs.
 func (v Value) IsEqual(d []byte) bool {
-	v, err := v.init()
-	return subtle.ConstantTimeCompare(v.data, d) == 1 && err == nil
+	v, ok, err := v.init()
+	return ok && subtle.ConstantTimeCompare(v.data, d) == 1 && err == nil
 }
 
-// IsEmpty returns true when the data length is zero.
+// IsEmpty returns true when its length is equal to zero.
 func (v Value) IsEmpty() bool {
-	v, _ = v.init()
-	return len(v.data) == 0
+	v, _, err := v.init()
+	return len(v.data) == 0 && err == nil
+}
+
+// IsValid returns the last error or in case when a Path is really not valid,
+// returns an error with kind NotValid.
+func (v Value) IsValid() bool {
+	return v.lastErr == nil && v.found
+}
+
+// Error implements error interface and returns the last error.
+func (v Value) Error() string {
+	if v.lastErr == nil {
+		return ""
+	}
+	return v.lastErr.Error()
 }
 
 func parseDateTime(str string, loc *time.Location) (t time.Time, err error) {

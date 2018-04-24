@@ -19,6 +19,7 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/bufferpool"
 )
@@ -97,7 +98,7 @@ type Mock struct {
 	Storage Storager
 	mu      sync.Mutex
 	// GetFn can be set optionally. If set then Storage will be ignored.
-	GetFn       func(p Path) (v Value, ok bool, err error)
+	GetFn       func(p Path) (v Value)
 	invocations invocations // contains path and count of how many times the typed function has been called
 
 	SubscribeFn      func(string, MessageReceiver) (subscriptionID int, err error)
@@ -180,7 +181,7 @@ func (s *Mock) UpdateValues(pv MockPathValue) {
 }
 
 // Value looks up a configuration value for a given path.
-func (s *Mock) Value(p Path) (v Value, ok bool, err error) {
+func (s *Mock) Value(p Path) Value {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.invocations == nil {
@@ -193,12 +194,13 @@ func (s *Mock) Value(p Path) (v Value, ok bool, err error) {
 		return s.GetFn(p)
 	}
 
-	var vb []byte
-	vb, ok, err = s.Storage.Value(0, p.String())
-	if err != nil {
-		return
+	vb, ok, err := s.Storage.Value(0, p.String())
+	return Value{
+		Path:    p,
+		data:    vb,
+		found:   ok,
+		lastErr: errors.WithStack(err),
 	}
-	return MakeValue(vb), ok, nil
 }
 
 // Invokes returns statistics about invocations

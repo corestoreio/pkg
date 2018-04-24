@@ -219,6 +219,8 @@ func (p Path) IsValid() error {
 			return errRouteEmpty
 		}
 
+		// TODO check if the route starts with default/website ... etc which is wrong
+
 		if seps == len(p.route) {
 			return errors.NotValid.Newf(errIncorrectPathTpl, p.route)
 		}

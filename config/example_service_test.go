@@ -57,7 +57,7 @@ func ExampleService() {
 	}
 
 	// Scope1
-	val, ok, err := configSrv.Value(pathString)
+	val, ok, err := configSrv.Value(pathString).Str()
 	if err != nil {
 		fmt.Printf("srvString Error: %s", err)
 		return
@@ -65,7 +65,7 @@ func ExampleService() {
 	fmt.Println("Scope1:", ok, val)
 
 	// Scope2
-	val, ok, err = configSrv.Value(pathString.BindWebsite(3))
+	val, ok, err = configSrv.Value(pathString.BindWebsite(3)).Str()
 	if err != nil {
 		fmt.Printf("srvString Error: %s", err)
 		return
@@ -73,7 +73,7 @@ func ExampleService() {
 	fmt.Println("Scope2:", ok, val)
 
 	// Scope3
-	val, ok, err = configSrv.Value(pathString.BindStore(2))
+	val, ok, err = configSrv.Value(pathString.BindStore(2)).Str()
 	if err != nil {
 		fmt.Printf("srvString Error: %s", err)
 		return
@@ -81,7 +81,7 @@ func ExampleService() {
 	fmt.Println("Scope3:", ok, val)
 
 	// Scope4
-	_, ok, err = configSrv.Value(pathString.BindStore(3)) // different scope ID
+	_, ok, err = configSrv.Value(pathString.BindStore(3)).Str() // different scope ID
 	if err != nil {
 		fmt.Printf("Scope4a: srvString Error: %s\n", err)
 		fmt.Printf("Scope4b: srvString Error: %v\n", err) // Use %+v to show the full route! :-)
@@ -89,8 +89,8 @@ func ExampleService() {
 	fmt.Printf("Scope4: Is Key ok: %t\n", ok)
 
 	// Output:
-	//Scope1: true "DefaultGopher"
-	//Scope2: true "WebsiteGopher"
-	//Scope3: true "StoreGopher"
+	//Scope1: true DefaultGopher
+	//Scope2: true WebsiteGopher
+	//Scope3: true StoreGopher
 	//Scope4: Is Key ok: false
 }

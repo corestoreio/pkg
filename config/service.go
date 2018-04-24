@@ -36,7 +36,7 @@ const (
 // cannot be found, it must return false as the 2nd return argument.
 type Getter interface {
 	NewScoped(websiteID, storeID int64) Scoped
-	Value(Path) (v Value, ok bool, err error)
+	Value(Path) Value
 }
 
 // GetterPubSuber implements a configuration Getter and a Subscriber for Publish
@@ -61,11 +61,11 @@ type Storager interface {
 	// Set sets a key with a value and returns on success nil or
 	// ErrKeyOverwritten, on failure any other error
 	Set(scp scope.TypeID, path string, value []byte) error
-	// Get returns the raw value `v` on success and sets `ok` to true because
-	// the value has been found. If the value cannot be found for the desired
-	// path, return value `ok` must be false. A nil value `v` indicates also a
-	// value and hence `ok` is true, if found.
-	Value(scp scope.TypeID, path string) (v []byte, ok bool, err error)
+	// Value returns the raw value `v` on success and sets `found` to true
+	// because the value has been found. If the value cannot be found for the
+	// desired path, return value `found` must be false. A nil value `v`
+	// indicates also a value and hence `found` is true, if found.
+	Value(scp scope.TypeID, path string) (v []byte, found bool, err error)
 	// AllKeys returns the fully qualified keys
 	AllKeys() (scps scope.TypeIDs, paths []string, err error)
 }
@@ -183,20 +183,20 @@ func (s *Service) Write(p Path, v []byte) error {
 //		// Store Scope
 //		// 6 for example comes from store database table
 //		ss := p.Bind(scope.StoreID, 6)
-func (s *Service) Value(p Path) (v Value, ok bool, err error) {
+func (s *Service) Value(p Path) Value {
+	var ok bool
+	var err error
 	if s.Log.IsDebug() {
 		defer log.WhenDone(s.Log).Debug("config.Service.backend.Value", log.Stringer("path", p), log.Bool("found", ok), log.Err(err))
 	}
-	v.data, ok, err = s.backend.Value(p.ScopeID, p.route)
-	return
-}
-
-// IsSet checks if a key is in the configuration. Returns false on error. Errors
-// will be logged in Debug mode. Does not check if the value can be asserted to
-// the desired type.
-func (s *Service) IsSet(p Path) bool {
-	_, ok, err := s.Value(p)
-	return err == nil && ok
+	var data []byte
+	data, ok, err = s.backend.Value(p.ScopeID, p.route)
+	return Value{
+		Path:    p,
+		data:    data,
+		found:   ok,
+		lastErr: errors.WithStack(err),
+	}
 }
 
 // Scoped is equal to Getter but not an interface and the underlying
@@ -298,23 +298,29 @@ func (ss Scoped) isAllowedWebsite(restrictUpTo scope.Type) bool {
 // `restrictUpTo` specifies only website scope, then the store scope will be
 // ignored for querying. If argument `restrictUpTo` has been set to zero aka.
 // scope.Absent, then all three scopes are considered for querying.
-func (ss Scoped) Value(restrictUpTo scope.Type, route string) (v Value, ok bool, err error) {
+func (ss Scoped) Value(restrictUpTo scope.Type, route string) (v Value) {
 	// fallback to next parent scope if value does not exists
 	p := Path{
 		route:   route,
 		ScopeID: scope.DefaultTypeID,
 	}
 	if ss.isAllowedStore(restrictUpTo) {
-		v, ok, err := ss.Root.Value(p.BindStore(ss.StoreID))
-		if ok || err != nil {
+		v := ss.Root.Value(p.BindStore(ss.StoreID))
+		if v.found || v.lastErr != nil {
 			// value found or err is not a NotFound error
-			return v, ok, errors.WithStack(err)
+			if v.lastErr != nil {
+				v.lastErr = errors.WithStack(v.lastErr) // hmm, maybe can be removed if no one gets confused
+			}
+			return v
 		}
 	}
 	if ss.isAllowedWebsite(restrictUpTo) {
-		v, ok, err := ss.Root.Value(p.BindWebsite(ss.WebsiteID))
-		if ok || err != nil {
-			return v, ok, errors.WithStack(err)
+		v := ss.Root.Value(p.BindWebsite(ss.WebsiteID))
+		if v.found || v.lastErr != nil {
+			if v.lastErr != nil {
+				v.lastErr = errors.WithStack(v.lastErr) // hmm, maybe can be removed if no one gets confused
+			}
+			return v
 		}
 	}
 	return ss.Root.Value(p)
