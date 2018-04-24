@@ -23,6 +23,7 @@ import (
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -40,7 +41,7 @@ func init() {
 				Field:      "category_id",
 				ColumnType: "int(10) unsigned",
 				Key:        "MUL",
-				Default:    dml.MakeNullString("0"),
+				Default:    null.MakeString("0"),
 				Extra:      "",
 				Aliases:    []string{"entity_id"},
 				Uniquified: true,
@@ -60,7 +61,7 @@ func init() {
 				Field:      "category_id",
 				ColumnType: "int(10) unsigned",
 				Key:        "PRI",
-				Default:    dml.MakeNullString("0"),
+				Default:    null.MakeString("0"),
 				Extra:      "",
 			},
 			&ddl.Column{
@@ -77,14 +78,14 @@ func init() {
 		&ddl.Column{
 			Field:      "category_id",
 			ColumnType: "int(10) unsigned",
-			Default:    dml.MakeNullString("0"),
+			Default:    null.MakeString("0"),
 			Extra:      "",
 		},
 		&ddl.Column{
 			Field:      "product_id",
 			ColumnType: "int(10) unsigned",
 			Key:        "",
-			Default:    dml.MakeNullString("0"),
+			Default:    null.MakeString("0"),
 			Extra:      "",
 		},
 		&ddl.Column{

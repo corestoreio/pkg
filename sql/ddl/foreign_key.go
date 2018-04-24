@@ -21,23 +21,24 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/storage/null"
 )
 
 // KeyColumnUsage represents a single row for DB table `KEY_COLUMN_USAGE`
 // Generated via dmlgen.
 type KeyColumnUsage struct {
-	ConstraintCatalog          string         // CONSTRAINT_CATALOG varchar(512) NOT NULL  DEFAULT ''''  ""
-	ConstraintSchema           string         // CONSTRAINT_SCHEMA varchar(64) NOT NULL  DEFAULT ''''  ""
-	ConstraintName             string         // CONSTRAINT_NAME varchar(64) NOT NULL  DEFAULT ''''  ""
-	TableCatalog               string         // TABLE_CATALOG varchar(512) NOT NULL  DEFAULT ''''  ""
-	TableSchema                string         // TABLE_SCHEMA varchar(64) NOT NULL  DEFAULT ''''  ""
-	TableName                  string         // TABLE_NAME varchar(64) NOT NULL  DEFAULT ''''  ""
-	ColumnName                 string         // COLUMN_NAME varchar(64) NOT NULL  DEFAULT ''''  ""
-	OrdinalPosition            int64          // ORDINAL_POSITION bigint(10) NOT NULL  DEFAULT '0'  ""
-	PositionInUniqueConstraint dml.NullInt64  // POSITION_IN_UNIQUE_CONSTRAINT bigint(10) NULL  DEFAULT 'NULL'  ""
-	ReferencedTableSchema      dml.NullString // REFERENCED_TABLE_SCHEMA varchar(64) NULL  DEFAULT 'NULL'  ""
-	ReferencedTableName        dml.NullString // REFERENCED_TABLE_NAME varchar(64) NULL  DEFAULT 'NULL'  ""
-	ReferencedColumnName       dml.NullString // REFERENCED_COLUMN_NAME varchar(64) NULL  DEFAULT 'NULL'  ""
+	ConstraintCatalog          string      // CONSTRAINT_CATALOG varchar(512) NOT NULL  DEFAULT ''''  ""
+	ConstraintSchema           string      // CONSTRAINT_SCHEMA varchar(64) NOT NULL  DEFAULT ''''  ""
+	ConstraintName             string      // CONSTRAINT_NAME varchar(64) NOT NULL  DEFAULT ''''  ""
+	TableCatalog               string      // TABLE_CATALOG varchar(512) NOT NULL  DEFAULT ''''  ""
+	TableSchema                string      // TABLE_SCHEMA varchar(64) NOT NULL  DEFAULT ''''  ""
+	TableName                  string      // TABLE_NAME varchar(64) NOT NULL  DEFAULT ''''  ""
+	ColumnName                 string      // COLUMN_NAME varchar(64) NOT NULL  DEFAULT ''''  ""
+	OrdinalPosition            int64       // ORDINAL_POSITION bigint(10) NOT NULL  DEFAULT '0'  ""
+	PositionInUniqueConstraint null.Int64  // POSITION_IN_UNIQUE_CONSTRAINT bigint(10) NULL  DEFAULT 'NULL'  ""
+	ReferencedTableSchema      null.String // REFERENCED_TABLE_SCHEMA varchar(64) NULL  DEFAULT 'NULL'  ""
+	ReferencedTableName        null.String // REFERENCED_TABLE_NAME varchar(64) NULL  DEFAULT 'NULL'  ""
+	ReferencedColumnName       null.String // REFERENCED_COLUMN_NAME varchar(64) NULL  DEFAULT 'NULL'  ""
 }
 
 // NewKeyColumnUsage creates a new pointer with pre-initialized fields.

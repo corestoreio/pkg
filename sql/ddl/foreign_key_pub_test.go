@@ -20,14 +20,14 @@ import (
 	"testing"
 
 	"github.com/corestoreio/pkg/sql/ddl"
-	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func init() {
-	dml.JSONMarshalFn = json.Marshal
+	null.JSONMarshalFn = json.Marshal
 }
 
 // TestLoadForeignKeys_Integration_Mage expects a Mage >=2.2 database and checks
@@ -48,9 +48,9 @@ func TestLoadForeignKeys_Integration_Mage(t *testing.T) {
 
 		dataJSON, err := json.Marshal(fkCols.Data)
 		require.NoError(t, err)
-		assert.Exactly(t,
-			"[{\"ConstraintCatalog\":\"def\",\"ConstraintSchema\":\"magento22\",\"ConstraintName\":\"ADMIN_PASSWORDS_USER_ID_ADMIN_USER_USER_ID\",\"TableCatalog\":\"def\",\"TableSchema\":\"magento22\",\"TableName\":\"admin_passwords\",\"ColumnName\":\"user_id\",\"OrdinalPosition\":1,\"PositionInUniqueConstraint\":1,\"ReferencedTableSchema\":\"magento22\",\"ReferencedTableName\":\"admin_user\",\"ReferencedColumnName\":\"user_id\"},{\"ConstraintCatalog\":\"def\",\"ConstraintSchema\":\"magento22\",\"ConstraintName\":\"ADMIN_USER_SESSION_USER_ID_ADMIN_USER_USER_ID\",\"TableCatalog\":\"def\",\"TableSchema\":\"magento22\",\"TableName\":\"admin_user_session\",\"ColumnName\":\"user_id\",\"OrdinalPosition\":1,\"PositionInUniqueConstraint\":1,\"ReferencedTableSchema\":\"magento22\",\"ReferencedTableName\":\"admin_user\",\"ReferencedColumnName\":\"user_id\"},{\"ConstraintCatalog\":\"def\",\"ConstraintSchema\":\"magento22\",\"ConstraintName\":\"OAUTH_TOKEN_ADMIN_ID_ADMIN_USER_USER_ID\",\"TableCatalog\":\"def\",\"TableSchema\":\"magento22\",\"TableName\":\"oauth_token\",\"ColumnName\":\"admin_id\",\"OrdinalPosition\":1,\"PositionInUniqueConstraint\":1,\"ReferencedTableSchema\":\"magento22\",\"ReferencedTableName\":\"admin_user\",\"ReferencedColumnName\":\"user_id\"},{\"ConstraintCatalog\":\"def\",\"ConstraintSchema\":\"magento22\",\"ConstraintName\":\"UI_BOOKMARK_USER_ID_ADMIN_USER_USER_ID\",\"TableCatalog\":\"def\",\"TableSchema\":\"magento22\",\"TableName\":\"ui_bookmark\",\"ColumnName\":\"user_id\",\"OrdinalPosition\":1,\"PositionInUniqueConstraint\":1,\"ReferencedTableSchema\":\"magento22\",\"ReferencedTableName\":\"admin_user\",\"ReferencedColumnName\":\"user_id\"}]",
+		assert.Contains(t,
 			string(dataJSON),
+			"[{\"ConstraintCatalog\":\"def\",\"ConstraintSchema\":\"magento22\",\"ConstraintName\":\"ADMIN_PASSWORDS_USER_ID_ADMIN_USER_USER_ID\",\"TableCatalog\":\"def\",\"TableSchema\":\"magento22\",\"TableName\":\"admin_passwords\",\"ColumnName\":\"user_id\",\"OrdinalPosition\":1,\"PositionInUniqueConstraint\":1,\"ReferencedTableSchema\":\"magento22\",\"ReferencedTableName\":\"admin_user\",\"ReferencedColumnName\":\"user_id\"},{\"ConstraintCatalog\":\"def\",\"ConstraintSchema\":\"magento22\",\"ConstraintName\":\"ADMIN_USER_SESSION_USER_ID_ADMIN_USER_USER_ID\",\"TableCatalog\":\"def\",\"TableSchema\":\"magento22\",\"TableName\":\"admin_user_session\"",
 		)
 	})
 

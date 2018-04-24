@@ -23,6 +23,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/bufferpool"
 	"github.com/corestoreio/pkg/util/slices"
 )
@@ -43,16 +44,16 @@ type Columns []*Column
 // Column contains information about one database table column retrieved from
 // information_schema.COLUMNS
 type Column struct {
-	Field   string         //`COLUMN_NAME` varchar(64) NOT NULL DEFAULT '',
-	Pos     uint64         //`ORDINAL_POSITION` bigint(21) unsigned NOT NULL DEFAULT '0',
-	Default dml.NullString //`COLUMN_DEFAULT` longtext,
-	Null    string         //`IS_NULLABLE` varchar(3) NOT NULL DEFAULT '',
+	Field   string      //`COLUMN_NAME` varchar(64) NOT NULL DEFAULT '',
+	Pos     uint64      //`ORDINAL_POSITION` bigint(21) unsigned NOT NULL DEFAULT '0',
+	Default null.String //`COLUMN_DEFAULT` longtext,
+	Null    string      //`IS_NULLABLE` varchar(3) NOT NULL DEFAULT '',
 	// DataType contains the basic type of a column like smallint, int, mediumblob,
 	// float, double, etc... but always transformed to lower case.
-	DataType      string        //`DATA_TYPE` varchar(64) NOT NULL DEFAULT '',
-	CharMaxLength dml.NullInt64 //`CHARACTER_MAXIMUM_LENGTH` bigint(21) unsigned DEFAULT NULL,
-	Precision     dml.NullInt64 //`NUMERIC_PRECISION` bigint(21) unsigned DEFAULT NULL,
-	Scale         dml.NullInt64 //`NUMERIC_SCALE` bigint(21) unsigned DEFAULT NULL,
+	DataType      string     //`DATA_TYPE` varchar(64) NOT NULL DEFAULT '',
+	CharMaxLength null.Int64 //`CHARACTER_MAXIMUM_LENGTH` bigint(21) unsigned DEFAULT NULL,
+	Precision     null.Int64 //`NUMERIC_PRECISION` bigint(21) unsigned DEFAULT NULL,
+	Scale         null.Int64 //`NUMERIC_SCALE` bigint(21) unsigned DEFAULT NULL,
 	// ColumnType full SQL string of the column type
 	ColumnType string //`COLUMN_TYPE` longtext NOT NULL,
 	// Key primary or unique or ...
@@ -393,7 +394,7 @@ func (c *Column) GoString() string {
 		fmt.Fprintf(buf, "Pos: %d, ", c.Pos)
 	}
 	if c.Default.Valid {
-		fmt.Fprintf(buf, "Default: dml.MakeNullString(%q), ", c.Default.String)
+		fmt.Fprintf(buf, "Default: null.MakeString(%q), ", c.Default.String)
 	}
 	if c.Null != "" {
 		fmt.Fprintf(buf, "Null: %q, ", c.Null)
@@ -402,13 +403,13 @@ func (c *Column) GoString() string {
 		fmt.Fprintf(buf, "DataType: %q, ", c.DataType)
 	}
 	if c.CharMaxLength.Valid {
-		fmt.Fprintf(buf, "CharMaxLength: dml.MakeNullInt64(%d), ", c.CharMaxLength.Int64)
+		fmt.Fprintf(buf, "CharMaxLength: null.MakeInt64(%d), ", c.CharMaxLength.Int64)
 	}
 	if c.Precision.Valid {
-		fmt.Fprintf(buf, "Precision: dml.MakeNullInt64(%d), ", c.Precision.Int64)
+		fmt.Fprintf(buf, "Precision: null.MakeInt64(%d), ", c.Precision.Int64)
 	}
 	if c.Scale.Valid {
-		fmt.Fprintf(buf, "Scale: dml.MakeNullInt64(%d), ", c.Scale.Int64)
+		fmt.Fprintf(buf, "Scale: null.MakeInt64(%d), ", c.Scale.Int64)
 	}
 	if c.ColumnType != "" {
 		fmt.Fprintf(buf, "ColumnType: %q, ", c.ColumnType)

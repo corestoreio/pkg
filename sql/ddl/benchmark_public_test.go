@@ -21,6 +21,7 @@ import (
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/byteconv"
 )
 
@@ -120,14 +121,14 @@ var benchmarkColumnsJoinFieldsData = ddl.Columns{
 		Field:      "category_id",
 		ColumnType: "int(10) unsigned",
 		Key:        "",
-		Default:    dml.MakeNullString("0"),
+		Default:    null.MakeString("0"),
 		Extra:      "",
 	},
 	&ddl.Column{
 		Field:      "product_id",
 		ColumnType: "int(10) unsigned",
 		Key:        "",
-		Default:    dml.MakeNullString("0"),
+		Default:    null.MakeString("0"),
 		Extra:      "",
 	},
 	&ddl.Column{
