@@ -218,10 +218,9 @@ func (p Path) IsValid() error {
 		if "" == p.route {
 			return errRouteEmpty
 		}
+		rLen := len(p.route)
 
-		// TODO check if the route starts with default/website ... etc which is wrong
-
-		if seps == len(p.route) {
+		if seps == rLen {
 			return errors.NotValid.Newf(errIncorrectPathTpl, p.route)
 		}
 
@@ -240,6 +239,15 @@ func (p Path) IsValid() error {
 		}
 		if err := p.ScopeID.IsValid(); err != nil {
 			return errors.NotValid.Newf("[config] Route %q contains invalid ScopeID: %q", p.route, p.ScopeID.String())
+		}
+		if idx := strings.Index(p.route, scope.StrDefault.String()); idx >= 0 && rLen > idx+7 && p.route[:idx+7] == scope.StrDefault.String() {
+			return errors.NotValid.Newf("[config] Route cannot start with: %q", scope.StrDefault.String())
+		}
+		if idx := strings.Index(p.route, scope.StrWebsites.String()); idx >= 0 && rLen > idx+8 && p.route[:idx+8] == scope.StrWebsites.String() {
+			return errors.NotValid.Newf("[config] Route cannot start with: %q", scope.StrWebsites.String())
+		}
+		if idx := strings.Index(p.route, scope.StrStores.String()); idx >= 0 && rLen > idx+6 && p.route[:idx+6] == scope.StrStores.String() {
+			return errors.NotValid.Newf("[config] Route cannot start with: %q", scope.StrStores.String())
 		}
 	}
 	if seps < Levels-1 || utf8.RuneCountInString(p.route) < 8 /*aa/bb/cc*/ {

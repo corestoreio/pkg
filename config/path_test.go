@@ -292,11 +292,56 @@ func TestPathValidateNaughtyStrings(t *testing.T) {
 
 func TestPathRouteIsValid(t *testing.T) {
 	t.Parallel()
-	p := Path{
-		ScopeID: scope.MakeTypeID(scope.Store, 2),
-		route:   `general/store_information`,
-	}
-	assert.True(t, errors.NotValid.Match(p.IsValid()))
+	t.Run("too short", func(t *testing.T) {
+		p := Path{
+			ScopeID: scope.MakeTypeID(scope.Store, 2),
+			route:   `general/store_information`,
+		}
+		assert.True(t, errors.NotValid.Match(p.IsValid()))
+	})
+	t.Run("starts with default", func(t *testing.T) {
+		p := Path{
+			ScopeID: scope.MakeTypeID(scope.Store, 2),
+			route:   `default/general/store_information`,
+		}
+		assert.True(t, errors.NotValid.Match(p.IsValid()))
+	})
+	t.Run("starts with websites", func(t *testing.T) {
+		p := Path{
+			ScopeID: scope.MakeTypeID(scope.Store, 2),
+			route:   `websites/general/store_information`,
+		}
+		assert.True(t, errors.NotValid.Match(p.IsValid()))
+	})
+	t.Run("starts with stores", func(t *testing.T) {
+		p := Path{
+			ScopeID: scope.MakeTypeID(scope.Store, 2),
+			route:   `stores/general/store_information`,
+		}
+		assert.True(t, errors.NotValid.Match(p.IsValid()))
+	})
+
+	t.Run("contains default is allowed", func(t *testing.T) {
+		p := Path{
+			ScopeID: scope.MakeTypeID(scope.Store, 2),
+			route:   `general/default/store_information`,
+		}
+		assert.NoError(t, p.IsValid())
+	})
+	t.Run("contains websites is allowed", func(t *testing.T) {
+		p := Path{
+			ScopeID: scope.MakeTypeID(scope.Store, 2),
+			route:   `general/websites/store_information`,
+		}
+		assert.NoError(t, p.IsValid())
+	})
+	t.Run("contains stores is allowed", func(t *testing.T) {
+		p := Path{
+			ScopeID: scope.MakeTypeID(scope.Store, 2),
+			route:   `general/stores/store_information`,
+		}
+		assert.NoError(t, p.IsValid())
+	})
 }
 
 func TestPathHashWebsite(t *testing.T) {
@@ -734,4 +779,26 @@ func TestPath_MarshalBinary(t *testing.T) {
 		assert.True(t, errors.NotValid.Match(err), "%+v", err)
 		assert.EqualError(t, err, "[config] Route \"/x/aa/bb/cc/dd\" contains invalid ScopeID: \"Type(Type(115)) ID(6448503)\"")
 	})
+}
+
+func TestPath_IsEmpty(t *testing.T) {
+	t.Parallel()
+	var p Path
+	p.ScopeID = scope.Store.Pack(122)
+	assert.True(t, p.IsEmpty())
+}
+
+func TestPath_Equal(t *testing.T) {
+	t.Parallel()
+
+	p1, err := MakePathWithScope(scope.Store.Pack(4), "xx/yy/zz")
+	require.NoError(t, err)
+
+	p2, err := MakePathWithScope(scope.Store.Pack(4), "xx/yy/zz")
+	require.NoError(t, err)
+
+	assert.True(t, p1.Equal(p2))
+
+	p2.ScopeID = scope.Website.Pack(5)
+	assert.True(t, p1.EqualRoute(p2))
 }
