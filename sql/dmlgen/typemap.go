@@ -45,69 +45,69 @@ type TypeDef struct {
 var (
 	// TODO further optimize this mappings
 	goTypeInt64 = &TypeDef{
-		MysqlUnsignedNull:    "dml.NullInt64",
+		MysqlUnsignedNull:    "null.Int64",
 		MysqlUnsignedNotNull: "uint64",
-		MysqlSignedNull:      "dml.NullInt64",
+		MysqlSignedNull:      "null.Int64",
 		MysqlSignedNotNull:   "int64",
 
-		ProtobufUnsignedNull:    "dml.NullInt64", // Proto package and its type, not the Go package!
+		ProtobufUnsignedNull:    "null.Int64", // Proto package and its type, not the Go package!
 		ProtobufUnsignedNotNull: "uint64",
-		ProtobufSignedNull:      "dml.NullInt64", // Proto package and its type, not the Go package!
+		ProtobufSignedNull:      "null.Int64", // Proto package and its type, not the Go package!
 		ProtobufSignedNotNull:   "int64",
 	}
 	goTypeInt = &TypeDef{
-		MysqlUnsignedNull:    "dml.NullInt64",
+		MysqlUnsignedNull:    "null.Int64",
 		MysqlUnsignedNotNull: "uint64",
-		MysqlSignedNull:      "dml.NullInt64",
+		MysqlSignedNull:      "null.Int64",
 		MysqlSignedNotNull:   "int64",
 
-		ProtobufUnsignedNull:    "dml.NullInt64", // Proto package and its type, not the Go package!
+		ProtobufUnsignedNull:    "null.Int64", // Proto package and its type, not the Go package!
 		ProtobufUnsignedNotNull: "uint64",
-		ProtobufSignedNull:      "dml.NullInt64", // Proto package and its type, not the Go package!
+		ProtobufSignedNull:      "null.Int64", // Proto package and its type, not the Go package!
 		ProtobufSignedNotNull:   "int64",
 	}
 	goTypeFloat64 = &TypeDef{
-		MysqlUnsignedNull:    "dml.NullFloat64",
+		MysqlUnsignedNull:    "null.Float64",
 		MysqlUnsignedNotNull: "float64",
-		MysqlSignedNull:      "dml.NullFloat64",
+		MysqlSignedNull:      "null.Float64",
 		MysqlSignedNotNull:   "float64",
 
-		ProtobufUnsignedNull:    "dml.NullFloat64", // Proto package and its type, not the Go package!
+		ProtobufUnsignedNull:    "null.Float64", // Proto package and its type, not the Go package!
 		ProtobufUnsignedNotNull: "double",
-		ProtobufSignedNull:      "dml.NullFloat64", // Proto package and its type, not the Go package!
+		ProtobufSignedNull:      "null.Float64", // Proto package and its type, not the Go package!
 		ProtobufSignedNotNull:   "double",
 	}
 	goTypeTime = &TypeDef{
-		MysqlUnsignedNull:    "dml.NullTime",
+		MysqlUnsignedNull:    "null.Time",
 		MysqlUnsignedNotNull: "time.Time",
-		MysqlSignedNull:      "dml.NullTime",
+		MysqlSignedNull:      "null.Time",
 		MysqlSignedNotNull:   "time.Time",
 
-		ProtobufUnsignedNull:    "dml.NullTime", // Proto package and its type, not the Go package!
+		ProtobufUnsignedNull:    "null.Time", // Proto package and its type, not the Go package!
 		ProtobufUnsignedNotNull: "google.protobuf.Timestamp",
-		ProtobufSignedNull:      "dml.NullTime", // Proto package and its type, not the Go package!
+		ProtobufSignedNull:      "null.Time", // Proto package and its type, not the Go package!
 		ProtobufSignedNotNull:   "google.protobuf.Timestamp",
 	}
 	goTypeString = &TypeDef{
-		MysqlUnsignedNull:    "dml.NullString",
+		MysqlUnsignedNull:    "null.String",
 		MysqlUnsignedNotNull: "string",
-		MysqlSignedNull:      "dml.NullString",
+		MysqlSignedNull:      "null.String",
 		MysqlSignedNotNull:   "string",
 
-		ProtobufUnsignedNull:    "dml.NullString", // Proto package and its type, not the Go package!
+		ProtobufUnsignedNull:    "null.String", // Proto package and its type, not the Go package!
 		ProtobufUnsignedNotNull: "string",
-		ProtobufSignedNull:      "dml.NullString", // Proto package and its type, not the Go package!
+		ProtobufSignedNull:      "null.String", // Proto package and its type, not the Go package!
 		ProtobufSignedNotNull:   "string",
 	}
 	goTypeBool = &TypeDef{
-		MysqlUnsignedNull:    "dml.NullBool",
+		MysqlUnsignedNull:    "null.Bool",
 		MysqlUnsignedNotNull: "bool",
-		MysqlSignedNull:      "dml.NullBool",
+		MysqlSignedNull:      "null.Bool",
 		MysqlSignedNotNull:   "bool",
 
-		ProtobufUnsignedNull:    "dml.NullBool", // Proto package and its type, not the Go package!
+		ProtobufUnsignedNull:    "null.Bool", // Proto package and its type, not the Go package!
 		ProtobufUnsignedNotNull: "bool",
-		ProtobufSignedNull:      "dml.NullBool", // Proto package and its type, not the Go package!
+		ProtobufSignedNull:      "null.Bool", // Proto package and its type, not the Go package!
 		ProtobufSignedNotNull:   "bool",
 	}
 	goTypeDecimal = &TypeDef{
@@ -219,7 +219,7 @@ func mySQLToGoType(c *ddl.Column, withNull bool) string {
 func toGoPrimitive(c *ddl.Column) string {
 	t := mySQLToGoType(c, true)
 	field := strs.ToGoCamelCase(c.Field)
-	if strings.HasPrefix(t, "dml.Null") {
+	if strings.HasPrefix(t, "null.") {
 		t = field + "." + t[8:]
 	} else {
 		t = field
@@ -283,7 +283,7 @@ func toProtoCustomType(c *ddl.Column) string {
 	if pt == "google.protobuf.Timestamp" {
 		fmt.Fprint(&buf, ",(gogoproto.stdtime)=true")
 	}
-	if c.IsNull() || strings.IndexByte(pt, '.') > 0 /*whenever it is a custom type like dml.Null or google.proto.timestamp*/ {
+	if c.IsNull() || strings.IndexByte(pt, '.') > 0 /*whenever it is a custom type like null. or google.proto.timestamp*/ {
 		// Indeed nullable Go Types must be not-nullable in Protobuf because we
 		// have a non-pointer struct type which contains the field Valid.
 		// Protobuf treats nullable fields as pointer fields, but that is

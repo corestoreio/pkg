@@ -17,7 +17,7 @@ message CoreConfigData {
 	string scope = 2 [(gogoproto.customname)="Scope"];
 	int64 scope_id = 3 [(gogoproto.customname)="ScopeID"];
 	string path = 4 [(gogoproto.customname)="Path"];
-	dml.NullString value = 5 [(gogoproto.customname)="Value",(gogoproto.nullable)=false];
+	null.String value = 5 [(gogoproto.customname)="Value",(gogoproto.nullable)=false];
 }
 
 // CoreConfigDataCollection represents multiple rows for DB table `core_config_data`. Auto generated.
@@ -27,33 +27,33 @@ message CoreConfigDataCollection {
 // CustomerEntity represents a single row for DB table `customer_entity`. Auto generated.
 message CustomerEntity {
 	uint64 entity_id = 1 [(gogoproto.customname)="EntityID"];
-	dml.NullInt64 website_id = 2 [(gogoproto.customname)="WebsiteID",(gogoproto.nullable)=false];
-	dml.NullString email = 3 [(gogoproto.customname)="Email",(gogoproto.nullable)=false];
+	null.Int64 website_id = 2 [(gogoproto.customname)="WebsiteID",(gogoproto.nullable)=false];
+	null.String email = 3 [(gogoproto.customname)="Email",(gogoproto.nullable)=false];
 	uint64 group_id = 4 [(gogoproto.customname)="GroupID"];
-	dml.NullString increment_id = 5 [(gogoproto.customname)="IncrementID",(gogoproto.nullable)=false];
-	dml.NullInt64 store_id = 6 [(gogoproto.customname)="StoreID",(gogoproto.nullable)=false];
+	null.String increment_id = 5 [(gogoproto.customname)="IncrementID",(gogoproto.nullable)=false];
+	null.Int64 store_id = 6 [(gogoproto.customname)="StoreID",(gogoproto.nullable)=false];
 	google.protobuf.Timestamp created_at = 7 [(gogoproto.customname)="CreatedAt",(gogoproto.stdtime)=true,(gogoproto.nullable)=false];
 	google.protobuf.Timestamp updated_at = 8 [(gogoproto.customname)="UpdatedAt",(gogoproto.stdtime)=true,(gogoproto.nullable)=false];
 	bool is_active = 9 [(gogoproto.customname)="IsActive"];
 	uint64 disable_auto_group_change = 10 [(gogoproto.customname)="DisableAutoGroupChange"];
-	dml.NullString created_in = 11 [(gogoproto.customname)="CreatedIn",(gogoproto.nullable)=false];
-	dml.NullString prefix = 12 [(gogoproto.customname)="Prefix",(gogoproto.nullable)=false];
-	dml.NullString firstname = 13 [(gogoproto.customname)="Firstname",(gogoproto.nullable)=false];
-	dml.NullString middlename = 14 [(gogoproto.customname)="Middlename",(gogoproto.nullable)=false];
-	dml.NullString lastname = 15 [(gogoproto.customname)="Lastname",(gogoproto.nullable)=false];
-	dml.NullString suffix = 16 [(gogoproto.customname)="Suffix",(gogoproto.nullable)=false];
-	dml.NullTime dob = 17 [(gogoproto.customname)="Dob",(gogoproto.nullable)=false];
-	dml.NullString password_hash = 18 [(gogoproto.customname)="PasswordHash",(gogoproto.nullable)=false];
-	dml.NullString rp_token = 19 [(gogoproto.customname)="RpToken",(gogoproto.nullable)=false];
-	dml.NullTime rp_token_created_at = 20 [(gogoproto.customname)="RpTokenCreatedAt",(gogoproto.nullable)=false];
-	dml.NullInt64 default_billing = 21 [(gogoproto.customname)="DefaultBilling",(gogoproto.nullable)=false];
-	dml.NullInt64 default_shipping = 22 [(gogoproto.customname)="DefaultShipping",(gogoproto.nullable)=false];
-	dml.NullString taxvat = 23 [(gogoproto.customname)="Taxvat",(gogoproto.nullable)=false];
-	dml.NullString confirmation = 24 [(gogoproto.customname)="Confirmation",(gogoproto.nullable)=false];
-	dml.NullInt64 gender = 25 [(gogoproto.customname)="Gender",(gogoproto.nullable)=false];
-	dml.NullInt64 failures_num = 26 [(gogoproto.customname)="FailuresNum",(gogoproto.nullable)=false];
-	dml.NullTime first_failure = 27 [(gogoproto.customname)="FirstFailure",(gogoproto.nullable)=false];
-	dml.NullTime lock_expires = 28 [(gogoproto.customname)="LockExpires",(gogoproto.nullable)=false];
+	null.String created_in = 11 [(gogoproto.customname)="CreatedIn",(gogoproto.nullable)=false];
+	null.String prefix = 12 [(gogoproto.customname)="Prefix",(gogoproto.nullable)=false];
+	null.String firstname = 13 [(gogoproto.customname)="Firstname",(gogoproto.nullable)=false];
+	null.String middlename = 14 [(gogoproto.customname)="Middlename",(gogoproto.nullable)=false];
+	null.String lastname = 15 [(gogoproto.customname)="Lastname",(gogoproto.nullable)=false];
+	null.String suffix = 16 [(gogoproto.customname)="Suffix",(gogoproto.nullable)=false];
+	null.Time dob = 17 [(gogoproto.customname)="Dob",(gogoproto.nullable)=false];
+	null.String password_hash = 18 [(gogoproto.customname)="PasswordHash",(gogoproto.nullable)=false];
+	null.String rp_token = 19 [(gogoproto.customname)="RpToken",(gogoproto.nullable)=false];
+	null.Time rp_token_created_at = 20 [(gogoproto.customname)="RpTokenCreatedAt",(gogoproto.nullable)=false];
+	null.Int64 default_billing = 21 [(gogoproto.customname)="DefaultBilling",(gogoproto.nullable)=false];
+	null.Int64 default_shipping = 22 [(gogoproto.customname)="DefaultShipping",(gogoproto.nullable)=false];
+	null.String taxvat = 23 [(gogoproto.customname)="Taxvat",(gogoproto.nullable)=false];
+	null.String confirmation = 24 [(gogoproto.customname)="Confirmation",(gogoproto.nullable)=false];
+	null.Int64 gender = 25 [(gogoproto.customname)="Gender",(gogoproto.nullable)=false];
+	null.Int64 failures_num = 26 [(gogoproto.customname)="FailuresNum",(gogoproto.nullable)=false];
+	null.Time first_failure = 27 [(gogoproto.customname)="FirstFailure",(gogoproto.nullable)=false];
+	null.Time lock_expires = 28 [(gogoproto.customname)="LockExpires",(gogoproto.nullable)=false];
 }
 
 // CustomerEntityCollection represents multiple rows for DB table `customer_entity`. Auto generated.
@@ -63,14 +63,14 @@ message CustomerEntityCollection {
 // DmlgenTypes represents a single row for DB table `dmlgen_types`. Auto generated.
 message DmlgenTypes {
 	int64 id = 1 [(gogoproto.customname)="ID"];
-	dml.NullInt64 col_bigint_1 = 2 [(gogoproto.customname)="ColBigint1",(gogoproto.nullable)=false];
+	null.Int64 col_bigint_1 = 2 [(gogoproto.customname)="ColBigint1",(gogoproto.nullable)=false];
 	int64 col_bigint_2 = 3 [(gogoproto.customname)="ColBigint2"];
-	dml.NullInt64 col_bigint_3 = 4 [(gogoproto.customname)="ColBigint3",(gogoproto.nullable)=false];
+	null.Int64 col_bigint_3 = 4 [(gogoproto.customname)="ColBigint3",(gogoproto.nullable)=false];
 	uint64 col_bigint_4 = 5 [(gogoproto.customname)="ColBigint4"];
-	dml.NullString col_blob = 6 [(gogoproto.customname)="ColBlob",(gogoproto.nullable)=false];
-	dml.NullTime col_date_1 = 7 [(gogoproto.customname)="ColDate1",(gogoproto.nullable)=false];
+	null.String col_blob = 6 [(gogoproto.customname)="ColBlob",(gogoproto.nullable)=false];
+	null.Time col_date_1 = 7 [(gogoproto.customname)="ColDate1",(gogoproto.nullable)=false];
 	google.protobuf.Timestamp col_date_2 = 8 [(gogoproto.customname)="ColDate2",(gogoproto.stdtime)=true,(gogoproto.nullable)=false];
-	dml.NullTime col_datetime_1 = 9 [(gogoproto.customname)="ColDatetime1",(gogoproto.nullable)=false];
+	null.Time col_datetime_1 = 9 [(gogoproto.customname)="ColDatetime1",(gogoproto.nullable)=false];
 	google.protobuf.Timestamp col_datetime_2 = 10 [(gogoproto.customname)="ColDatetime2",(gogoproto.stdtime)=true,(gogoproto.nullable)=false];
 	dml.Decimal col_decimal_10_0 = 11 [(gogoproto.customname)="ColDecimal100",(gogoproto.nullable)=false];
 	dml.Decimal col_decimal_12_4 = 12 [(gogoproto.customname)="ColDecimal124",(gogoproto.nullable)=false];
@@ -80,29 +80,29 @@ message DmlgenTypes {
 	dml.Decimal col_decimal_20_6 = 16 [(gogoproto.customname)="ColDecimal206",(gogoproto.nullable)=false];
 	dml.Decimal col_decimal_24_12 = 17 [(gogoproto.customname)="ColDecimal2412",(gogoproto.nullable)=false];
 	double col_float = 18 [(gogoproto.customname)="ColFloat"];
-	dml.NullInt64 col_int_1 = 19 [(gogoproto.customname)="ColInt1",(gogoproto.nullable)=false];
+	null.Int64 col_int_1 = 19 [(gogoproto.customname)="ColInt1",(gogoproto.nullable)=false];
 	int64 col_int_2 = 20 [(gogoproto.customname)="ColInt2"];
-	dml.NullInt64 col_int_3 = 21 [(gogoproto.customname)="ColInt3",(gogoproto.nullable)=false];
+	null.Int64 col_int_3 = 21 [(gogoproto.customname)="ColInt3",(gogoproto.nullable)=false];
 	uint64 col_int_4 = 22 [(gogoproto.customname)="ColInt4"];
-	dml.NullString col_longtext_1 = 23 [(gogoproto.customname)="ColLongtext1",(gogoproto.nullable)=false];
+	null.String col_longtext_1 = 23 [(gogoproto.customname)="ColLongtext1",(gogoproto.nullable)=false];
 	string col_longtext_2 = 24 [(gogoproto.customname)="ColLongtext2"];
-	dml.NullString col_mediumblob = 25 [(gogoproto.customname)="ColMediumblob",(gogoproto.nullable)=false];
-	dml.NullString col_mediumtext_1 = 26 [(gogoproto.customname)="ColMediumtext1",(gogoproto.nullable)=false];
+	null.String col_mediumblob = 25 [(gogoproto.customname)="ColMediumblob",(gogoproto.nullable)=false];
+	null.String col_mediumtext_1 = 26 [(gogoproto.customname)="ColMediumtext1",(gogoproto.nullable)=false];
 	string col_mediumtext_2 = 27 [(gogoproto.customname)="ColMediumtext2"];
-	dml.NullInt64 col_smallint_1 = 28 [(gogoproto.customname)="ColSmallint1",(gogoproto.nullable)=false];
+	null.Int64 col_smallint_1 = 28 [(gogoproto.customname)="ColSmallint1",(gogoproto.nullable)=false];
 	int64 col_smallint_2 = 29 [(gogoproto.customname)="ColSmallint2"];
-	dml.NullInt64 col_smallint_3 = 30 [(gogoproto.customname)="ColSmallint3",(gogoproto.nullable)=false];
+	null.Int64 col_smallint_3 = 30 [(gogoproto.customname)="ColSmallint3",(gogoproto.nullable)=false];
 	uint64 col_smallint_4 = 31 [(gogoproto.customname)="ColSmallint4"];
 	bool has_smallint_5 = 32 [(gogoproto.customname)="HasSmallint5"];
-	dml.NullBool is_smallint_5 = 33 [(gogoproto.customname)="IsSmallint5",(gogoproto.nullable)=false];
-	dml.NullString col_text = 34 [(gogoproto.customname)="ColText",(gogoproto.nullable)=false];
+	null.Bool is_smallint_5 = 33 [(gogoproto.customname)="IsSmallint5",(gogoproto.nullable)=false];
+	null.String col_text = 34 [(gogoproto.customname)="ColText",(gogoproto.nullable)=false];
 	google.protobuf.Timestamp col_timestamp_1 = 35 [(gogoproto.customname)="ColTimestamp1",(gogoproto.stdtime)=true,(gogoproto.nullable)=false];
-	dml.NullTime col_timestamp_2 = 36 [(gogoproto.customname)="ColTimestamp2",(gogoproto.nullable)=false];
+	null.Time col_timestamp_2 = 36 [(gogoproto.customname)="ColTimestamp2",(gogoproto.nullable)=false];
 	int64 col_tinyint_1 = 37 [(gogoproto.customname)="ColTinyint1"];
 	string col_varchar_1 = 38 [(gogoproto.customname)="ColVarchar1"];
-	dml.NullString col_varchar_100 = 39 [(gogoproto.customname)="ColVarchar100",(gogoproto.nullable)=false];
+	null.String col_varchar_100 = 39 [(gogoproto.customname)="ColVarchar100",(gogoproto.nullable)=false];
 	string col_varchar_16 = 40 [(gogoproto.customname)="ColVarchar16"];
-	dml.NullString col_char_1 = 41 [(gogoproto.customname)="ColChar1",(gogoproto.nullable)=false];
+	null.String col_char_1 = 41 [(gogoproto.customname)="ColChar1",(gogoproto.nullable)=false];
 	string col_char_2 = 42 [(gogoproto.customname)="ColChar2"];
 }
 
