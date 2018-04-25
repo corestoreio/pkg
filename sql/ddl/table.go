@@ -74,10 +74,11 @@ func (t *Table) update() *Table {
 
 // Insert creates a new INSERT statement with all non primary key columns. If
 // OnDuplicateKey() gets called, the INSERT can be used as an update or create
-// statement. Adding multiple VALUES section is allowed.
+// statement. Adding multiple VALUES section is allowed. Using this statement to
+// prepare a query, a call to `BuildValues()` triggers building the VALUES
+// clause, otherwise a SQL parse error will occur.
 func (t *Table) Insert() *dml.Insert {
 	i := dml.NewInsert(t.Name).AddColumns(t.columnsNonPK...)
-	i.RecordPlaceHolderCount = len(i.Columns)
 	i.Listeners = i.Listeners.Merge(t.Listeners.Insert)
 	return i.WithDB(t.DB)
 }
