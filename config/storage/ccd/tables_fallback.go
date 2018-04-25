@@ -20,6 +20,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/storage/null"
 )
 
 const (
@@ -32,9 +33,9 @@ func NewTableCollection(db dml.QueryExecPreparer) *ddl.Tables {
 		ddl.WithTable(
 			TableNameCoreConfigData,
 			&ddl.Column{Field: `config_id`, ColumnType: `int(10) unsigned`, Null: `NO`, Key: `PRI`, Extra: `auto_increment`},
-			&ddl.Column{Field: `scope`, ColumnType: `varchar(8)`, Null: `NO`, Key: `MUL`, Default: dml.MakeNullString(`default`), Extra: ""},
-			&ddl.Column{Field: `scope_id`, ColumnType: `int(11)`, Null: `NO`, Key: "", Default: dml.MakeNullString(`0`), Extra: ""},
-			&ddl.Column{Field: `path`, ColumnType: `varchar(255)`, Null: `NO`, Key: "", Default: dml.MakeNullString(`general`), Extra: ""},
+			&ddl.Column{Field: `scope`, ColumnType: `varchar(8)`, Null: `NO`, Key: `MUL`, Default: null.MakeString(`default`), Extra: ""},
+			&ddl.Column{Field: `scope_id`, ColumnType: `int(11)`, Null: `NO`, Key: "", Default: null.MakeString(`0`), Extra: ""},
+			&ddl.Column{Field: `path`, ColumnType: `varchar(255)`, Null: `NO`, Key: "", Default: null.MakeString(`general`), Extra: ""},
 			&ddl.Column{Field: `value`, ColumnType: `text`, Null: `YES`, Key: ``, Extra: ""},
 		),
 		ddl.WithDB(db),
@@ -44,11 +45,11 @@ func NewTableCollection(db dml.QueryExecPreparer) *ddl.Tables {
 // TableCoreConfigData represents a type for DB table core_config_data
 // Generated via tableToStruct.
 type TableCoreConfigData struct {
-	ConfigID int64          // config_id int(10) unsigned NOT NULL PRI  auto_increment
-	Scope    string         // scope varchar(8) NOT NULL MUL DEFAULT 'default'
-	ScopeID  int64          // scope_id int(11) NOT NULL  DEFAULT '0'
-	Path     string         // path varchar(255) NOT NULL  DEFAULT 'general'
-	Value    dml.NullString // value text NULL
+	ConfigID int64       // config_id int(10) unsigned NOT NULL PRI  auto_increment
+	Scope    string      // scope varchar(8) NOT NULL MUL DEFAULT 'default'
+	ScopeID  int64       // scope_id int(11) NOT NULL  DEFAULT '0'
+	Path     string      // path varchar(255) NOT NULL  DEFAULT 'general'
+	Value    null.String // value text NULL
 }
 
 // MapColumns implements interface ColumnMapper only partially.

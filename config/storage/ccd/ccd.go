@@ -16,15 +16,14 @@ package ccd
 
 import (
 	"context"
+	"sync"
 	"time"
 
-	"database/sql"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/store/scope"
-	"sync"
 )
 
 // Options applies options to the DBStorage type.
@@ -199,7 +198,7 @@ func (dbs *DBStorage) Close() error {
 
 // Set sets a value with its key. Database errors get logged as Info message.
 // Enabled debug level logs the insert ID or rows affected.
-func (dbs *DBStorage) Set(scp scope.TypeID, path string, value []byte) (err error) {
+func (dbs *DBStorage) Set(scp scope.TypeID, path string, value []byte) error {
 	dbs.muAll.Lock()
 	prevState := dbs.stmtWriteState
 	dbs.stmtWriteState = stateInUse
@@ -211,8 +210,7 @@ func (dbs *DBStorage) Set(scp scope.TypeID, path string, value []byte) (err erro
 	if prevState == stateClosed {
 		ctx, cancel := context.WithTimeout(context.Background(), dbs.cfg.ContextTimeoutWrite)
 		defer cancel()
-		var stmt *dml.Stmt
-		stmt, err = dbs.sqlWrite.Prepare(ctx)
+		stmt, err := dbs.sqlWrite.Prepare(ctx)
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -223,25 +221,24 @@ func (dbs *DBStorage) Set(scp scope.TypeID, path string, value []byte) (err erro
 		}
 	}
 
-	var res sql.Result
-	res, err = dbs.stmtWrite.Uint64(scp.ToUint64()).String(path).Bytes(value).ExecContext(context.Background())
+	res, err := dbs.stmtWrite.Uint64(scp.ToUint64()).String(path).Bytes(value).ExecContext(context.Background())
 
-	//if dbs.log.IsDebug() {
-	//	li, err1 := result.LastInsertId()
-	//	ra, err2 := result.RowsAffected()
-	//	dbs.log.Debug(
-	//		"config.DBStorage.Set.Write.Result",
-	//		log.Int64("lastInsertID", li),
-	//		log.ErrWithKey("lastInsertIDErr", err1),
-	//		log.Int64("rowsAffected", ra),
-	//		log.ErrWithKey("rowsAffectedErr", err2),
-	//		log.String("SQL", dbs.Write.sqlRaw),
-	//		log.Stringer("key", key),
-	//		log.Object("value", value),
-	//	)
-	//}
+	if dbs.cfg.Log != nil && dbs.cfg.Log.IsDebug() {
+		li, err1 := res.LastInsertId()
+		ra, err2 := res.RowsAffected()
+		dbs.cfg.Log.Debug(
+			"config.DBStorage.Set.Write.Result",
+			log.Int64("lastInsertID", li),
+			log.ErrWithKey("lastInsertIDErr", err1),
+			log.Int64("rowsAffected", ra),
+			log.ErrWithKey("rowsAffectedErr", err2),
+			log.String("scope", scp.String()),
+			log.String("path", path),
+			log.Int("value_len", len(value)),
+		)
+	}
 
-	return nil
+	return err
 }
 
 // Get returns a value from the database by its key. It is guaranteed that the

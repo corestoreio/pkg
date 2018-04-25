@@ -29,6 +29,10 @@ import (
 // overrides existing values. Stops on errors.
 func WithCoreConfigData(tbls *ddl.Tables, o Options) config.Option {
 	return func(s *config.Service) error {
+		var writtenRows int
+		if s.Log.IsDebug() {
+			defer log.WhenDone(s.Log).Debug("ccd.WithCoreConfigData.Written", log.Int("writtenRows", writtenRows))
+		}
 
 		tn := o.TableName
 		if tn == "" {
@@ -47,7 +51,6 @@ func WithCoreConfigData(tbls *ddl.Tables, o Options) config.Option {
 		ctx, cancel := context.WithTimeout(context.Background(), o.ContextTimeoutAllKeys)
 		defer cancel()
 
-		var writtenRows int
 		tbl.SelectAll().WithArgs().IterateSerial(ctx, func(cm *dml.ColumnMap) error {
 			var ccd TableCoreConfigData
 			if err := ccd.MapColumns(cm); err != nil {
@@ -59,16 +62,16 @@ func WithCoreConfigData(tbls *ddl.Tables, o Options) config.Option {
 				v = []byte(ccd.Value.String)
 			}
 			scp := scope.FromString(ccd.Scope).Pack(ccd.ScopeID)
-			if err = s.Write(scp, ccd.Path, v); err != nil {
-				return errors.Wrapf(err, "[ccd] cfgpath.MakeByString Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ConfigID)
+			p, err := config.MakePathWithScope(scp, ccd.Path)
+			if err != nil {
+				return errors.Wrapf(err, "[ccd] WithCoreConfigData.config.MakePathWithScope Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ConfigID)
+			}
+			if err = s.Write(p, v); err != nil {
+				return errors.Wrapf(err, "[ccd] WithCoreConfigData.Service.Write Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ConfigID)
 			}
 
 			return nil
 		})
-		if s.Log.IsDebug() {
-			s.Log.Debug("ccd.WithCoreConfigData.Written", log.Int("writtenRows", writtenRows))
-		}
-
 		return nil
 	}
 }

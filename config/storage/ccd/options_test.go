@@ -16,23 +16,13 @@ package ccd_test
 
 import (
 	"testing"
-)
 
-// Not needed because columns have been supplied via csdb.WithTable() function
-//func init() {
-//	if _, err := csdb.GetDSN(); err == csdb.ErrDSNNotFound {
-//		println("init()", err.Error(), "will skip loading of TableCollection")
-//		return
-//	}
-//
-//	dbc := csdb.MustConnectTest()
-//	if err := ccd.TableCollection.Init(dbc.NewSession()); err != nil {
-//		panic(err)
-//	}
-//	if err := dbc.Close(); err != nil {
-//		panic(err)
-//	}
-//}
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/config/storage/ccd"
+	"github.com/corestoreio/pkg/sql/dmltest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
 
 // Test_WithApplyCoreConfigData reads from the MySQL core_config_data table and applies
 // these value to the underlying storage. tries to get back the values from the
@@ -40,41 +30,39 @@ import (
 func Test_WithCoreConfigData(t *testing.T) {
 	t.Parallel()
 
-	//dbc, dbMock := cstesting.MockDB(t)
-	//defer func() {
-	//	dbMock.ExpectClose()
-	//
-	//	assert.NoError(t, dbc.Close())
-	//
-	//	if err := dbMock.ExpectationsWereMet(); err != nil {
-	//		t.Error("there were unfulfilled expections", err)
-	//	}
-	//}()
-	//
-	//sess := dbc.NewSession()
-	//
-	//dbMock.ExpectQuery("SELECT (.+) FROM `core_config_data` AS `main_table`").WillReturnRows(
-	//	cstesting.MustMockRows(cstesting.WithFile("testdata", "core_config_data.csv")),
-	//)
-	//
-	//im := config.NewInMemoryStore()
-	//s := config.MustNewService(
-	//	im,
-	//	ccd.WithCoreConfigData(sess),
-	//)
-	//defer func() { assert.NoError(t, s.Close()) }()
-	//
-	//assert.NoError(t, s.Write(cfgpath.MustMakeByString("web/secure/offloader_header"), "SSL_OFFLOADED"))
-	//
-	//h, err := s.String(cfgpath.MustMakeByString("web/secure/offloader_header"))
-	//assert.NoError(t, err)
-	//assert.Exactly(t, "SSL_OFFLOADED", h)
-	//
-	//allKeys, err := im.AllKeys()
-	//assert.NoError(t, err)
-	////for i, ak := range allKeys {
-	////	t.Log(i, ak.String())
-	////}
-	//assert.Len(t, allKeys, 21)
+	dbc, dbMock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, dbc, dbMock)
+
+	dbMock.ExpectQuery("SELECT (.+) FROM `core_config_data` AS `main_table`").WillReturnRows(
+		dmltest.MustMockRows(dmltest.WithFile("testdata", "core_config_data.csv")),
+	)
+
+	tbls := ccd.NewTableCollection(dbc.DB)
+
+	im := config.NewInMemoryStore()
+	s := config.MustNewService(
+		im,
+		ccd.WithCoreConfigData(tbls, ccd.Options{}),
+	)
+	defer dmltest.Close(t, s)
+
+	p1 := config.MustMakePath("web/secure/offloader_header").BindStore(987)
+	assert.NoError(t, s.Write(p1, []byte("SSL_OFFLOADED")))
+
+	v, ok, err := s.Value(p1).Str()
+	require.NoError(t, err)
+	require.True(t, ok)
+	assert.Exactly(t, "SSL_OFFLOADED", v)
+
+	p2 := config.MustMakePath("web/unsecure/base_skin_url").BindWebsite(44)
+	v, ok, err = s.Value(p2).Str()
+	require.NoError(t, err)
+	require.True(t, ok)
+	assert.Exactly(t, "{{unsecure_base_url}}skin/", v)
+
+	scps, paths, err := im.AllKeys()
+	assert.NoError(t, err)
+	assert.Len(t, paths, 11)
+	assert.Len(t, scps, 11)
 
 }
