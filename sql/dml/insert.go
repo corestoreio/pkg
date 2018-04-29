@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
@@ -94,12 +93,9 @@ type Insert struct {
 
 // NewInsert creates a new Insert object.
 func NewInsert(into string) *Insert {
-	var rwmu sync.RWMutex
 	return &Insert{
-		BuilderBase: BuilderBase{
-			rwmu: &rwmu,
-		},
-		Into: into,
+		BuilderBase: BuilderBase{},
+		Into:        into,
 	}
 }
 
@@ -110,10 +106,9 @@ func newInsertInto(db QueryExecPreparer, cCom *connCommon, into string) *Insert 
 	if l != nil {
 		l = l.With(log.String("insert_id", id), log.String("table", into))
 	}
-	var rwmu sync.RWMutex
+
 	return &Insert{
 		BuilderBase: BuilderBase{
-			rwmu: &rwmu,
 			builderCommon: builderCommon{
 				id:  id,
 				Log: l,
