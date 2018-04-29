@@ -30,7 +30,6 @@ import (
 
 const (
 	sqlStrNullUC             = "NULL"
-	sqlStrNullLC             = "null"
 	sqlStar                  = "*"
 	defaultArgumentsCapacity = 5
 )

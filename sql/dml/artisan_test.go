@@ -52,8 +52,8 @@ func TestArguments_Interfaces(t *testing.T) {
 	t.Run("no slices, nulls invalid", func(t *testing.T) {
 		args := MakeArgs(10).
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
-			NullString(null.MakeString("eCom3", false)).NullInt64(null.MakeInt64(4, false)).NullFloat64(null.MakeFloat64(2.7, false)).
-			NullBool(null.MakeBool(true, false)).NullTime(null.MakeTime(now(), false))
+			NullString(null.String{}).NullInt64(null.Int64{}).NullFloat64(null.Float64{}).
+			NullBool(null.Bool{}).NullTime(null.Time{})
 		assert.Exactly(t,
 			[]interface{}{nil, int64(-1), int64(1), int64(2), 3.1, true, "eCom1", []uint8{0x65, 0x43, 0x6f, 0x6d, 0x32}, now(),
 				nil, nil, nil, nil, nil},
@@ -151,8 +151,8 @@ func TestArguments_WriteTo(t *testing.T) {
 	t.Run("no slices, nulls invalid", func(t *testing.T) {
 		args := MakeArgs(10).
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
-			NullString(null.MakeString("eCom3", false)).NullInt64(null.MakeInt64(4, false)).NullFloat64(null.MakeFloat64(2.7, false)).
-			NullBool(null.MakeBool(true, false)).NullTime(null.MakeTime(now(), false))
+			NullString(null.String{}).NullInt64(null.Int64{}).NullFloat64(null.Float64{}).
+			NullBool(null.Bool{}).NullTime(null.Time{})
 
 		buf := new(bytes.Buffer)
 		err := args.Write(buf)

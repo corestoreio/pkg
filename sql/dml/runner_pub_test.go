@@ -289,7 +289,7 @@ func TestColumnMap_Query(t *testing.T) {
 		assert.Exactly(t,
 			&baseTest{
 				Bool:        true,
-				NullBool:    null.MakeBool(false, true),
+				NullBool:    null.MakeBool(false),
 				Int:         -1,
 				Int64:       -64,
 				NullInt64:   null.MakeInt64(-128),

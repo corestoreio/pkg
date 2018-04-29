@@ -219,9 +219,9 @@ func (bb *BuilderBase) readBuildCache() (sql []byte) {
 // collecting arguments and later querying.
 func (bb *BuilderBase) withArtisan(qb queryBuilder) *Artisan {
 	var args [defaultArgumentsCapacity]argument
-	if bb.rwmu == nil {
+	if bb.rwmu == nil { // TODO fix race condition
 		var rwmu sync.RWMutex
-		bb.rwmu = &rwmu
+		bb.rwmu = &rwmu // TODO fix race condition
 	}
 	bb.rwmu.Lock()
 	sqlBytes, err := bb.buildToSQL(qb) // sqlBytes owned by buildToSQL

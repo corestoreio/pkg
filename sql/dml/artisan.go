@@ -58,7 +58,8 @@ type Artisan struct {
 	//LimitValid            bool
 	// isPrepared if true the cachedSQL field in base gets ignored
 	isPrepared bool
-	Options    uint
+	// Options like enable interpolation or expanding placeholders.
+	Options uint
 	// hasNamedArgs checks if the SQL string in the cachedSQL field contains
 	// named arguments. 0 not yet checked, 1=does not contain, 2 = yes
 	hasNamedArgs      uint8 // 0 not checked, 1=no, 2=yes
@@ -524,27 +525,22 @@ func (a *Artisan) Name(n string) *Artisan {
 	return a
 }
 
-// Reset resets the slice for new usage retaining the already allocated memory.
-// It does not reset the Options field.
+// Reset resets the internal slices for new usage retaining the already
+// allocated memory. Reset gets called automatically in many Load* functions. In
+// case of an INSERT statement, Reset triggers a new build of the VALUES part.
+// This function must be called when the number of argument changes.
 func (a *Artisan) Reset() *Artisan {
 	for i := range a.recs {
 		a.recs[i].Qualifier = ""
-		a.recs[i].Record = nil
+		a.recs[i].Record = nil // remove pointers for GC
 	}
 	a.recs = a.recs[:0]
 	a.arguments = a.arguments[:0]
 	a.raw = a.raw[:0]
 	a.nextUnnamedArgPos = 0
-	return a
-}
-
-// ResetInsert same as Reset but only applicable with INSERT statements and
-// triggers a new build of the VALUES part. This function must be called when
-// the number of argument changes.
-func (a *Artisan) ResetInsert() *Artisan {
 	a.insertIsBuildValues = false
 	a.insertCachedSQL = a.insertCachedSQL[:0]
-	return a.Reset()
+	return a
 }
 
 // DriverValue adds multiple of the same underlying values to the argument
@@ -832,6 +828,7 @@ func (a *Artisan) Load(ctx context.Context, s ColumnMapper, args ...interface{})
 	}
 	cm := pooledColumnMapGet()
 	defer pooledBufferColumnMapPut(cm, nil, func() {
+		a.Reset()
 		// Not testable with the sqlmock package :-(
 		if err2 := r.Close(); err2 != nil && err == nil {
 			err = errors.Wrap(err2, "[dml] Artisan.Load.Rows.Close")
@@ -917,6 +914,7 @@ func (a *Artisan) loadPrimitive(ctx context.Context, ptr interface{}, args ...in
 		return
 	}
 	defer func() {
+		a.Reset() // reset the internal slices to avoid adding more and more arguments when a query gets executed
 		if errC := rows.Close(); err == nil && errC != nil {
 			err = errors.WithStack(errC)
 		}
@@ -950,6 +948,7 @@ func (a *Artisan) LoadInt64s(ctx context.Context, dest []int64, args ...interfac
 		return
 	}
 	defer func() {
+		a.Reset() // reset the internal slices to avoid adding more and more arguments when a query gets executed
 		if cErr := r.Close(); err == nil && cErr != nil {
 			err = errors.WithStack(cErr)
 		}
@@ -988,6 +987,7 @@ func (a *Artisan) LoadUint64s(ctx context.Context, dest []uint64, args ...interf
 		return
 	}
 	defer func() {
+		a.Reset() // reset the internal slices to avoid adding more and more arguments when a query gets executed
 		if errC := rows.Close(); errC != nil && err == nil {
 			err = errors.WithStack(errC)
 		}
@@ -1025,6 +1025,7 @@ func (a *Artisan) LoadFloat64s(ctx context.Context, dest []float64, args ...inte
 		return
 	}
 	defer func() {
+		a.Reset() // reset the internal slices to avoid adding more and more arguments when a query gets executed
 		if errC := rows.Close(); errC != nil && err == nil {
 			err = errors.WithStack(errC)
 		}
@@ -1062,6 +1063,7 @@ func (a *Artisan) LoadStrings(ctx context.Context, dest []string, args ...interf
 		return
 	}
 	defer func() {
+		a.Reset() // reset the internal slices to avoid adding more and more arguments when a query gets executed
 		if errC := rows.Close(); errC != nil && err == nil {
 			err = errors.WithStack(errC)
 		}
@@ -1097,6 +1099,9 @@ func (a *Artisan) query(ctx context.Context, args ...interface{}) (rows *sql.Row
 
 	rows, err = a.base.DB.QueryContext(ctx, sqlStr, args...)
 	if err != nil {
+		if sqlStr == "" {
+			sqlStr = "PREPARED:" + string(a.base.cachedSQL)
+		}
 		err = errors.Wrapf(err, "[dml] Query.QueryContext with query %q", sqlStr)
 	}
 	return

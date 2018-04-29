@@ -74,8 +74,8 @@ func TestArguments_Length_and_Stringer(t *testing.T) {
 	t.Run("no slices, nulls invalid", func(t *testing.T) {
 		args := MakeArgs(10).
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
-			NullString(null.MakeString("eCom3", false)).NullInt64(null.MakeInt64(4, false)).NullFloat64(null.MakeFloat64(2.7, false)).
-			NullBool(null.MakeBool(true, false)).NullTime(null.MakeTime(now(), false))
+			NullString(null.String{}).NullInt64(null.Int64{}).NullFloat64(null.Float64{}).
+			NullBool(null.Bool{}).NullTime(null.Time{})
 		assert.Exactly(t, 14, args.Len(), "Length mismatch")
 		assert.Exactly(t,
 			"dml.MakeArgs(14).Null().Int(-1).Int64(1).Uint64(2).Float64(3.100000).Bool(true).String(\"eCom1\").Bytes([]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Time(time.Unix(1136228645,2)).NullString(null.String{}).NullInt64(null.Int64{}).NullFloat64(null.Float64{}).NullBool(null.Bool{}).NullTime(null.Time{})",
