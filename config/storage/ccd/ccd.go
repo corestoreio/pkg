@@ -28,16 +28,21 @@ import (
 
 // Options applies options to the DBStorage type.
 type Options struct {
-	TableName                string
-	Log                      log.Logger
-	QueryContextTimeout      time.Duration
-	IdleAllKeys              time.Duration
-	IdleRead                 time.Duration
-	IdleWrite                time.Duration
-	ContextTimeoutAllKeys    time.Duration
-	ContextTimeoutRead       time.Duration
-	ContextTimeoutWrite      time.Duration
-	UseDedicatedDBConnection bool
+	TableName           string
+	Log                 log.Logger
+	QueryContextTimeout time.Duration
+	// IdleAllKeys default 5s
+	IdleAllKeys time.Duration
+	// IdleRead default 20s
+	IdleRead time.Duration
+	// IdleWrite default 10s
+	IdleWrite             time.Duration
+	ContextTimeoutAllKeys time.Duration
+	ContextTimeoutRead    time.Duration
+	ContextTimeoutWrite   time.Duration
+	SkipSchemaValidation  bool
+	// TODO implement UseDedicatedDBConnection per prepared statement, bit complicated
+	// UseDedicatedDBConnection *sql.DB
 }
 
 const (
@@ -83,10 +88,9 @@ type DBStorage struct {
 
 // NewDBStorage creates a new database backed storage service. It creates three
 // prepared statements which are getting automatically closed after an idle time
-// and once used again they get re-prepared.
-//
-// All has an idle time of 15s. Read an idle time of 10s. Write an idle time of
-// 30s. Implements interface config.Storager.
+// and once used again, they get re-prepared. The database schema gets
+// validated, but can also be disabled via options struct. Implements interface
+// config.Storager.
 func NewDBStorage(tbls *ddl.Tables, o Options) (*DBStorage, error) {
 	// TODO reconfigure itself once it is running to load the timeout values from the DB and apply it. Restart the go routines.
 	// Then during restart, block Set and Value operations to let the caller wait until restart complete. might be an overhead.
@@ -96,10 +100,23 @@ func NewDBStorage(tbls *ddl.Tables, o Options) (*DBStorage, error) {
 		tn = TableNameCoreConfigData
 	}
 
+	if !o.SkipSchemaValidation {
+		to := o.ContextTimeoutRead
+		if to == 0 {
+			to = time.Second * 10
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), to)
+		defer cancel()
+		if err := tbls.Validate(ctx); err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+
 	tbl, err := tbls.Table(tn)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+
 	qryAll := tbl.Select("scope", "scope_id", "path").OrderBy("scope", "scope_id", "path")
 	qryAll.Log = o.Log
 
@@ -352,19 +369,20 @@ func (dbs *DBStorage) AllKeys() (scps scope.TypeIDs, paths []string, err error) 
 	ctx, cancel := context.WithTimeout(ctx, dbs.cfg.ContextTimeoutAllKeys)
 	defer cancel()
 
-	dbs.stmtAll.IterateSerial(ctx, func(cm *dml.ColumnMap) error {
+	err = dbs.stmtAll.IterateSerial(ctx, func(cm *dml.ColumnMap) error {
 		var ccd TableCoreConfigData
-		if err := ccd.MapColumns(cm); err != nil {
-			return errors.Wrapf(err, "[ccd] dbs.stmtAll.IterateSerial at row %d", cm.Count)
+		if err2 := ccd.MapColumns(cm); err2 != nil {
+			return errors.Wrapf(err2, "[ccd] dbs.stmtAll.IterateSerial at row %d", cm.Count)
 		}
 		scps = append(scps, scope.MakeTypeID(scope.FromString(ccd.Scope), ccd.ScopeID))
 		paths = append(paths, ccd.Path)
 		return nil
 	})
 
-	return scps, paths, nil
+	return scps, paths, err
 }
 
+// Statistics returns live statistics about opening and closing prepared statements.
 func (dbs *DBStorage) Statistics() (value stats, set stats, all stats) {
 	dbs.muAll.Lock()
 	all = dbs.stmtAllStat

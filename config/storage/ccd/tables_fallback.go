@@ -14,8 +14,6 @@
 
 package ccd
 
-// Auto generated via tableToStruct
-
 import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
@@ -23,9 +21,8 @@ import (
 	"github.com/corestoreio/pkg/storage/null"
 )
 
-const (
-	TableNameCoreConfigData = `core_config_data`
-)
+// TableNameCoreConfigData default database table name.
+const TableNameCoreConfigData = `core_config_data`
 
 // NewTableCollection creates a new Tables object for TableNameCoreConfigData.
 func NewTableCollection(db dml.QueryExecPreparer) *ddl.Tables {

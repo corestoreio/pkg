@@ -52,7 +52,7 @@ func WithCoreConfigData(tbls *ddl.Tables, o Options) config.Option {
 		ctx, cancel := context.WithTimeout(context.Background(), o.ContextTimeoutAllKeys)
 		defer cancel()
 
-		tbl.SelectAll().WithArgs().IterateSerial(ctx, func(cm *dml.ColumnMap) error {
+		return tbl.SelectAll().WithArgs().IterateSerial(ctx, func(cm *dml.ColumnMap) error {
 			var ccd TableCoreConfigData
 			if err := ccd.MapColumns(cm); err != nil {
 				return errors.Wrapf(err, "[ccd] dbs.stmtAll.IterateSerial at row %d", cm.Count)
@@ -73,6 +73,5 @@ func WithCoreConfigData(tbls *ddl.Tables, o Options) config.Option {
 
 			return nil
 		})
-		return nil
 	}
 }

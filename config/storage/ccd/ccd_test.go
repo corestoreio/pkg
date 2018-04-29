@@ -47,7 +47,8 @@ func TestMustNewDBStorage_Panic(t *testing.T) {
 		}
 	}()
 	_ = ccd.MustNewDBStorage(ccd.NewTableCollection(nil), ccd.Options{
-		TableName: "non-existent",
+		TableName:            "non-existent",
+		SkipSchemaValidation: true,
 	})
 }
 
@@ -59,14 +60,17 @@ func TestDBStorage_AllKeys_Mocked(t *testing.T) {
 
 	t.Run("table not found", func(t *testing.T) {
 		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
-			TableName: "non-existent",
+			TableName:            "non-existent",
+			SkipSchemaValidation: true,
 		})
 		assert.Nil(t, dbs)
 		assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	})
 
 	t.Run("no leaking goroutines", func(t *testing.T) {
-		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{})
+		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
+			SkipSchemaValidation: true,
+		})
 		require.NoError(t, err)
 		assert.NoError(t, dbs.Close())
 	})
@@ -77,7 +81,9 @@ func TestDBStorage_AllKeys_Mocked(t *testing.T) {
 		require.NoError(t, err)
 		prepQry.WithArgs().WillReturnRows(rows)
 
-		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{})
+		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
+			SkipSchemaValidation: true,
+		})
 		require.NoError(t, err)
 		defer dmltest.Close(t, dbs)
 
@@ -92,7 +98,8 @@ func TestDBStorage_AllKeys_Mocked(t *testing.T) {
 	t.Run("return all keys, waiting and reprepare", func(t *testing.T) {
 
 		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
-			IdleAllKeys: time.Millisecond * 5,
+			IdleAllKeys:          time.Millisecond * 5,
+			SkipSchemaValidation: true,
 		})
 		require.NoError(t, err)
 		defer dmltest.Close(t, dbs)
@@ -122,7 +129,8 @@ func TestDBStorage_AllKeys_Integration(t *testing.T) {
 	defer dmltest.Close(t, dbc)
 
 	dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
-		IdleAllKeys: time.Millisecond * 2,
+		IdleAllKeys:          time.Millisecond * 2,
+		SkipSchemaValidation: false,
 	})
 	require.NoError(t, err)
 	defer dmltest.Close(t, dbs)
@@ -183,7 +191,9 @@ func TestDBStorage_Value(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 		dbMock.MatchExpectationsInOrder(false)
 
-		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{})
+		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
+			SkipSchemaValidation: true,
+		})
 		require.NoError(t, err)
 		defer dmltest.Close(t, dbs)
 		testBody(t, dbs, dbMock, 0)
@@ -195,8 +205,9 @@ func TestDBStorage_Value(t *testing.T) {
 		dbMock.MatchExpectationsInOrder(false)
 
 		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
-			IdleRead:  time.Millisecond * 50,
-			IdleWrite: time.Millisecond * 50,
+			IdleRead:             time.Millisecond * 50,
+			IdleWrite:            time.Millisecond * 50,
+			SkipSchemaValidation: true,
 		})
 		require.NoError(t, err)
 		defer dmltest.Close(t, dbs)
@@ -216,7 +227,8 @@ func TestDBStorage_Value(t *testing.T) {
 		dbMock.MatchExpectationsInOrder(false)
 
 		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
-			ContextTimeoutRead: time.Millisecond * 50,
+			ContextTimeoutRead:   time.Millisecond * 50,
+			SkipSchemaValidation: true,
 		})
 		require.NoError(t, err)
 		defer dmltest.Close(t, dbs)
@@ -266,7 +278,9 @@ func TestDBStorage_Set(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 		dbMock.MatchExpectationsInOrder(false)
 
-		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{})
+		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
+			SkipSchemaValidation: true,
+		})
 		require.NoError(t, err)
 		defer dmltest.Close(t, dbs)
 		testBody(t, dbs, dbMock, 0)
@@ -278,8 +292,9 @@ func TestDBStorage_Set(t *testing.T) {
 		dbMock.MatchExpectationsInOrder(false)
 
 		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
-			IdleRead:  time.Millisecond * 5,
-			IdleWrite: time.Millisecond * 5,
+			IdleRead:             time.Millisecond * 5,
+			IdleWrite:            time.Millisecond * 5,
+			SkipSchemaValidation: true,
 		})
 		require.NoError(t, err)
 		defer dmltest.Close(t, dbs)
@@ -299,7 +314,8 @@ func TestDBStorage_Set(t *testing.T) {
 		dbMock.MatchExpectationsInOrder(false)
 
 		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
-			ContextTimeoutWrite: time.Millisecond * 50,
+			ContextTimeoutWrite:  time.Millisecond * 50,
+			SkipSchemaValidation: true,
 		})
 		require.NoError(t, err)
 		defer dmltest.Close(t, dbs)
