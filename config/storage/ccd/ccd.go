@@ -28,15 +28,16 @@ import (
 
 // Options applies options to the DBStorage type.
 type Options struct {
-	TableName             string
-	Log                   log.Logger
-	QueryContextTimeout   time.Duration
-	IdleAllKeys           time.Duration
-	IdleRead              time.Duration
-	IdleWrite             time.Duration
-	ContextTimeoutAllKeys time.Duration
-	ContextTimeoutRead    time.Duration
-	ContextTimeoutWrite   time.Duration
+	TableName                string
+	Log                      log.Logger
+	QueryContextTimeout      time.Duration
+	IdleAllKeys              time.Duration
+	IdleRead                 time.Duration
+	IdleWrite                time.Duration
+	ContextTimeoutAllKeys    time.Duration
+	ContextTimeoutRead       time.Duration
+	ContextTimeoutWrite      time.Duration
+	UseDedicatedDBConnection bool
 }
 
 const (
@@ -44,6 +45,11 @@ const (
 	stateOpen
 	stateInUse
 )
+
+type stats struct {
+	Open  uint64
+	Close uint64
+}
 
 // DBStorage connects the MySQL DB with the config.Service type. Implements
 // interface config.Storager.
@@ -54,21 +60,25 @@ type DBStorage struct {
 	sqlRead  *dml.Select
 	sqlWrite *dml.Insert
 
-	tickerAll   *time.Ticker
-	tickerRead  *time.Ticker
-	tickerWrite *time.Ticker
+	tickerDaemonStop chan struct{}
+	tickerAll        *time.Ticker
+	tickerRead       *time.Ticker
+	tickerWrite      *time.Ticker
 
 	muAll        sync.Mutex
 	stmtAll      *dml.Artisan
 	stmtAllState uint8
+	stmtAllStat  stats
 
 	muRead        sync.Mutex
 	stmtRead      *dml.Artisan
 	stmtReadState uint8
+	stmtReadStat  stats
 
 	muWrite        sync.Mutex
 	stmtWrite      *dml.Artisan
 	stmtWriteState uint8
+	stmtWriteStat  stats
 }
 
 // NewDBStorage creates a new database backed storage service. It creates three
@@ -78,6 +88,8 @@ type DBStorage struct {
 // All has an idle time of 15s. Read an idle time of 10s. Write an idle time of
 // 30s. Implements interface config.Storager.
 func NewDBStorage(tbls *ddl.Tables, o Options) (*DBStorage, error) {
+	// TODO reconfigure itself once it is running to load the timeout values from the DB and apply it. Restart the go routines.
+	// Then during restart, block Set and Value operations to let the caller wait until restart complete. might be an overhead.
 
 	tn := o.TableName
 	if tn == "" {
@@ -98,17 +110,16 @@ func NewDBStorage(tbls *ddl.Tables, o Options) (*DBStorage, error) {
 	)
 	qryRead.Log = o.Log
 
-	qryWrite := tbl.Insert()
-	qryWrite.OnDuplicateKeys = dml.Conditions{
-		dml.Column("value"),
-	}
+	qryWrite := tbl.Insert().BuildValues()
+	qryWrite.OnDuplicateKeys = dml.Conditions{dml.Column("value")}
 	qryWrite.Log = o.Log
 
 	dbs := &DBStorage{
-		cfg:      o,
-		sqlAll:   qryAll,
-		sqlRead:  qryRead,
-		sqlWrite: qryWrite,
+		cfg:              o,
+		tickerDaemonStop: make(chan struct{}),
+		sqlAll:           qryAll,
+		sqlRead:          qryRead,
+		sqlWrite:         qryWrite,
 	}
 	if dbs.cfg.IdleAllKeys == 0 {
 		dbs.cfg.IdleAllKeys = time.Second * 5 // just a guess
@@ -128,53 +139,7 @@ func NewDBStorage(tbls *ddl.Tables, o Options) (*DBStorage, error) {
 	if dbs.cfg.ContextTimeoutWrite == 0 {
 		dbs.cfg.ContextTimeoutWrite = dbs.cfg.ContextTimeoutAllKeys
 	}
-	dbs.tickerAll = time.NewTicker(dbs.cfg.IdleAllKeys)
-	dbs.tickerRead = time.NewTicker(dbs.cfg.IdleRead)
-	dbs.tickerWrite = time.NewTicker(dbs.cfg.IdleWrite)
-
-	go func() {
-		for {
-			select {
-			case t, ok := <-dbs.tickerAll.C:
-				if !ok {
-					return
-				}
-				dbs.muAll.Lock()
-				if dbs.stmtAllState == stateOpen {
-					if err := dbs.stmtAll.Close(); err != nil && dbs.cfg.Log != nil && dbs.cfg.Log.IsInfo() {
-						dbs.cfg.Log.Info("ccd.DBStorage.stmtAll.Close", log.Stringer("ticker", t), log.Err(err))
-					}
-					dbs.stmtAllState = stateClosed
-				}
-				dbs.muAll.Unlock()
-			case t, ok := <-dbs.tickerRead.C:
-				if !ok {
-					return
-				}
-				dbs.muRead.Lock()
-				if dbs.stmtReadState == stateOpen {
-					if err := dbs.stmtRead.Close(); err != nil && dbs.cfg.Log != nil && dbs.cfg.Log.IsInfo() {
-						dbs.cfg.Log.Info("ccd.DBStorage.stmtRead.Close", log.Stringer("ticker", t), log.Err(err))
-					}
-					dbs.stmtReadState = stateClosed
-				}
-				dbs.muRead.Unlock()
-			case t, ok := <-dbs.tickerWrite.C:
-				if !ok {
-					return
-				}
-				dbs.muWrite.Lock()
-				if dbs.stmtWriteState == stateOpen {
-					if err := dbs.stmtWrite.Close(); err != nil && dbs.cfg.Log != nil && dbs.cfg.Log.IsInfo() {
-						dbs.cfg.Log.Info("ccd.DBStorage.stmtWrite.Close", log.Stringer("ticker", t), log.Err(err))
-					}
-					dbs.stmtWriteState = stateClosed
-				}
-				dbs.muWrite.Unlock()
-			}
-		}
-	}()
-
+	dbs.runStateCheckers()
 	return dbs, nil
 }
 
@@ -188,29 +153,93 @@ func MustNewDBStorage(tbls *ddl.Tables, o Options) *DBStorage {
 	return s
 }
 
+func (dbs *DBStorage) closeStmtAll(t time.Time) {
+	dbs.muAll.Lock()
+	if dbs.stmtAllState == stateOpen {
+		if err := dbs.stmtAll.Close(); err != nil && dbs.cfg.Log != nil && dbs.cfg.Log.IsInfo() {
+			dbs.cfg.Log.Info("ccd.DBStorage.stmtAll.Close", log.Stringer("ticker", t), log.Err(err))
+		}
+		dbs.stmtAllState = stateClosed
+		dbs.stmtAllStat.Close++
+	}
+	dbs.muAll.Unlock()
+}
+
+func (dbs *DBStorage) closeStmtRead(t time.Time) {
+	dbs.muRead.Lock()
+	if dbs.stmtReadState == stateOpen {
+		if err := dbs.stmtRead.Close(); err != nil && dbs.cfg.Log != nil && dbs.cfg.Log.IsInfo() {
+			dbs.cfg.Log.Info("ccd.DBStorage.stmtRead.Close", log.Stringer("ticker", t), log.Err(err))
+		}
+		dbs.stmtReadState = stateClosed
+		dbs.stmtReadStat.Close++
+	}
+	dbs.muRead.Unlock()
+}
+
+func (dbs *DBStorage) closeStmtWrite(t time.Time) {
+	dbs.muWrite.Lock()
+	if dbs.stmtWriteState == stateOpen {
+		if err := dbs.stmtWrite.Close(); err != nil && dbs.cfg.Log != nil && dbs.cfg.Log.IsInfo() {
+			dbs.cfg.Log.Info("ccd.DBStorage.stmtWrite.Close", log.Stringer("ticker", t), log.Err(err))
+		}
+		dbs.stmtWriteState = stateClosed
+		dbs.stmtWriteStat.Close++
+	}
+	dbs.muWrite.Unlock()
+}
+
+func (dbs *DBStorage) runStateCheckers() {
+
+	dbs.tickerAll = time.NewTicker(dbs.cfg.IdleAllKeys)
+	dbs.tickerRead = time.NewTicker(dbs.cfg.IdleRead)
+	dbs.tickerWrite = time.NewTicker(dbs.cfg.IdleWrite)
+
+	go func() {
+		for {
+			select {
+			case <-dbs.tickerDaemonStop:
+				dbs.tickerAll.Stop()
+				dbs.tickerRead.Stop()
+				dbs.tickerWrite.Stop()
+				t := time.Now()
+				dbs.closeStmtAll(t)
+				dbs.closeStmtRead(t)
+				dbs.closeStmtWrite(t)
+				return
+			case t := <-dbs.tickerAll.C:
+				dbs.closeStmtAll(t)
+			case t := <-dbs.tickerRead.C:
+				dbs.closeStmtRead(t)
+			case t := <-dbs.tickerWrite.C:
+				dbs.closeStmtWrite(t)
+			}
+		}
+	}()
+}
+
 // Close terminates the prepared statements and internal go routines.
 func (dbs *DBStorage) Close() error {
-	dbs.tickerAll.Stop()
-	dbs.tickerRead.Stop()
-	dbs.tickerWrite.Stop()
+	dbs.tickerDaemonStop <- struct{}{} // no need to close this chan because we might restart later the goroutine.
 	return nil
 }
 
 // Set sets a value with its key. Database errors get logged as Info message.
 // Enabled debug level logs the insert ID or rows affected.
 func (dbs *DBStorage) Set(scp scope.TypeID, path string, value []byte) error {
-	dbs.muAll.Lock()
+	dbs.muWrite.Lock()
 	prevState := dbs.stmtWriteState
 	dbs.stmtWriteState = stateInUse
 	defer func() {
 		dbs.stmtWriteState = stateOpen
-		dbs.muAll.Unlock()
+		dbs.muWrite.Unlock()
 	}()
 
+	ctx := context.Background()
 	if prevState == stateClosed {
-		ctx, cancel := context.WithTimeout(context.Background(), dbs.cfg.ContextTimeoutWrite)
+		ctx2, cancel := context.WithTimeout(ctx, dbs.cfg.ContextTimeoutWrite)
 		defer cancel()
-		stmt, err := dbs.sqlWrite.Prepare(ctx)
+		stmt, err := dbs.sqlWrite.Prepare(ctx2)
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -219,10 +248,13 @@ func (dbs *DBStorage) Set(scp scope.TypeID, path string, value []byte) error {
 		} else {
 			dbs.stmtWrite.WithStmt(stmt.Stmt)
 		}
+		dbs.stmtWriteStat.Open++
 	}
 
-	res, err := dbs.stmtWrite.Uint64(scp.ToUint64()).String(path).Bytes(value).ExecContext(context.Background())
-
+	ctx, cancel := context.WithTimeout(ctx, dbs.cfg.ContextTimeoutWrite)
+	defer cancel()
+	res, err := dbs.stmtWrite.Uint64(scp.ToUint64()).String(path).Bytes(value).ExecContext(ctx)
+	dbs.stmtWrite.ResetInsert()
 	if dbs.cfg.Log != nil && dbs.cfg.Log.IsDebug() {
 		li, err1 := res.LastInsertId()
 		ra, err2 := res.RowsAffected()
@@ -241,41 +273,53 @@ func (dbs *DBStorage) Set(scp scope.TypeID, path string, value []byte) error {
 	return err
 }
 
-// Get returns a value from the database by its key. It is guaranteed that the
-// type in the empty interface is a string. It returns nil on error but errors
-// get logged as info message. Error behaviour: NotFound
+// Value performs a read operation from the database and returns a value from
+// the table. The `ok` return argument can be true even if byte slice `v` is
+// nil, which means that the path and scope are stored in the database table.
 func (dbs *DBStorage) Value(scp scope.TypeID, path string) (v []byte, ok bool, err error) {
-	return
+	dbs.muRead.Lock()
+	prevState := dbs.stmtReadState
+	dbs.stmtReadState = stateInUse
+	defer func() {
+		dbs.stmtReadState = stateOpen
+		dbs.muRead.Unlock()
+	}()
 
-	// update lastUsed at the end because there might be the slight chance that
-	// a statement gets closed despite we're waiting for the result from the
-	// server.
-	//dbs.Read.StartStmtUse()
-	//defer dbs.Read.StopStmtUse()
-	//
-	//stmt, err := dbs.Read.Stmt(context.TODO())
-	//if err != nil {
-	//	return nil, errors.Wrapf(err, "[ccd] Get.Read.Stmt. SQL: %q Key: %q", dbs.Read.sqlRaw, key)
-	//}
-	//
-	//pl, err := key.Level(-1)
-	//if err != nil {
-	//	return nil, errors.Wrapf(err, "[ccd] Get.key.Level. SQL: %q Key: %q", dbs.Read.sqlRaw, key)
-	//}
-	//
-	//var data null.String
-	//scp, id := key.ScopeID.Unpack()
-	//err = stmt.QueryRow(scp.StrType(), id, pl).Scan(&data)
-	//if err != nil {
-	//	return nil, errors.Wrapf(err, "[ccd] Get.QueryRow. SQL: %q Key: %q PathLevel: %q", dbs.Read.sqlRaw, key, pl)
-	//}
-	//if data.Valid {
-	//	return data.String, nil
-	//}
-	//return nil, errKeyNotFound
+	ctx := context.Background()
+	if prevState == stateClosed {
+		ctx2, cancel := context.WithTimeout(ctx, dbs.cfg.ContextTimeoutRead)
+		defer cancel()
+		stmt, err := dbs.sqlRead.Prepare(ctx2)
+		if err != nil {
+			return nil, false, errors.WithStack(err)
+		}
+		if dbs.stmtRead == nil {
+			dbs.stmtRead = stmt.WithArgs()
+		} else {
+			dbs.stmtRead.WithStmt(stmt.Stmt)
+		}
+		dbs.stmtReadStat.Open++
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, dbs.cfg.ContextTimeoutRead)
+	defer cancel()
+	s, id := scp.Unpack()
+	nv, found, err := dbs.stmtRead.String(s.StrType()).Int64(id).String(path).LoadNullString(ctx)
+	if err != nil {
+		return nil, false, errors.Wrapf(err, "[ccd] Scope %q Path %q", scp.String(), path)
+	}
+	if !found {
+		return nil, false, nil
+	}
+	var ret []byte
+	if nv.Valid {
+		ret = []byte(nv.String)
+	}
+	return ret, true, nil
 }
 
-// AllKeys returns all available keys. Database errors get logged as info message.
+// AllKeys returns all available keys. Bot slices have the same length where
+// index i of slice `scps` matches index j of slice paths.
 func (dbs *DBStorage) AllKeys() (scps scope.TypeIDs, paths []string, err error) {
 	dbs.muAll.Lock()
 	prevState := dbs.stmtAllState
@@ -285,11 +329,12 @@ func (dbs *DBStorage) AllKeys() (scps scope.TypeIDs, paths []string, err error) 
 		dbs.muAll.Unlock()
 	}()
 
+	ctx := context.Background()
 	if prevState == stateClosed {
-		ctx, cancel := context.WithTimeout(context.Background(), dbs.cfg.ContextTimeoutAllKeys)
+		ctx2, cancel := context.WithTimeout(ctx, dbs.cfg.ContextTimeoutAllKeys)
 		defer cancel()
 		var stmt *dml.Stmt
-		stmt, err = dbs.sqlAll.Prepare(ctx)
+		stmt, err = dbs.sqlAll.Prepare(ctx2)
 		if err != nil {
 			return nil, nil, errors.WithStack(err)
 		}
@@ -298,12 +343,16 @@ func (dbs *DBStorage) AllKeys() (scps scope.TypeIDs, paths []string, err error) 
 		} else {
 			dbs.stmtAll.WithStmt(stmt.Stmt)
 		}
+		dbs.stmtAllStat.Open++
 	}
 
 	scps = make(scope.TypeIDs, 0, 100)
 	paths = make([]string, 0, 100)
 
-	dbs.stmtAll.IterateSerial(context.Background(), func(cm *dml.ColumnMap) error {
+	ctx, cancel := context.WithTimeout(ctx, dbs.cfg.ContextTimeoutAllKeys)
+	defer cancel()
+
+	dbs.stmtAll.IterateSerial(ctx, func(cm *dml.ColumnMap) error {
 		var ccd TableCoreConfigData
 		if err := ccd.MapColumns(cm); err != nil {
 			return errors.Wrapf(err, "[ccd] dbs.stmtAll.IterateSerial at row %d", cm.Count)
@@ -314,4 +363,20 @@ func (dbs *DBStorage) AllKeys() (scps scope.TypeIDs, paths []string, err error) 
 	})
 
 	return scps, paths, nil
+}
+
+func (dbs *DBStorage) Statistics() (value stats, set stats, all stats) {
+	dbs.muAll.Lock()
+	all = dbs.stmtAllStat
+	dbs.muAll.Unlock()
+
+	dbs.muRead.Lock()
+	value = dbs.stmtReadStat
+	dbs.muRead.Unlock()
+
+	dbs.muWrite.Lock()
+	set = dbs.stmtWriteStat
+	dbs.muWrite.Unlock()
+
+	return
 }

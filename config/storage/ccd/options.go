@@ -16,13 +16,14 @@ package ccd
 
 import (
 	"context"
+	"time"
+
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/store/scope"
-	"time"
 )
 
 // WithCoreConfigData reads the table core_config_data into the Service and

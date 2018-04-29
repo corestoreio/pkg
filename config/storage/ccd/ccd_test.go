@@ -15,15 +15,20 @@
 package ccd_test
 
 import (
+	"fmt"
+	"testing"
+	"time"
+
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/storage/ccd"
 	"github.com/corestoreio/pkg/sql/dmltest"
+	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/sync/bgwork"
+	"github.com/fortytw2/leaktest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 var _ config.Storager = (*ccd.DBStorage)(nil)
@@ -47,7 +52,7 @@ func TestMustNewDBStorage_Panic(t *testing.T) {
 }
 
 func TestDBStorage_AllKeys_Mocked(t *testing.T) {
-	t.Parallel()
+	defer leaktest.CheckTimeout(t, time.Second)()
 
 	dbc, dbMock := dmltest.MockDB(t)
 	defer dmltest.MockClose(t, dbc, dbMock)
@@ -61,7 +66,6 @@ func TestDBStorage_AllKeys_Mocked(t *testing.T) {
 	})
 
 	t.Run("no leaking goroutines", func(t *testing.T) {
-		// TODO use package leak test
 		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{})
 		require.NoError(t, err)
 		assert.NoError(t, dbs.Close())
@@ -112,7 +116,7 @@ func TestDBStorage_AllKeys_Mocked(t *testing.T) {
 }
 
 func TestDBStorage_AllKeys_Integration(t *testing.T) {
-	t.Parallel()
+	defer leaktest.Check(t)()
 
 	dbc := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, dbc)
@@ -133,14 +137,186 @@ func TestDBStorage_AllKeys_Integration(t *testing.T) {
 }
 
 var dbStorageMultiTests = []struct {
-	key       config.Path
-	value     interface{}
-	wantValue string
+	path    string
+	scopeID scope.TypeID
+	value   []byte
 }{
-	{config.MustMakePath("testDBStorage/secure/base_url").BindWebsite(10), "http://corestore.io", "http://corestore.io"},
-	{config.MustMakePath("testDBStorage/log/active").BindWebsite(10), 1, "1"},
-	{config.MustMakePath("testDBStorage/log/clean").BindWebsite(20), 19.999, "19.999"},
-	{config.MustMakePath("testDBStorage/product/shipping").BindWebsite(20), 29.999, "29.999"},
-	{config.MustMakePath("testDBStorage/checkout/multishipping"), false, "false"},
-	{config.MustMakePath("testDBStorage/shipping/rate").BindStore(321), 3.14159, "3.14159"},
+	{"testDBStorage/secure/base_url", scope.Website.Pack(10), []byte("http://corestore.io")},
+	{"testDBStorage/log/active", scope.Store.Pack(9), []byte("https://crestre.i")},
+	{"testDBStorage/checkout/multishipping", scope.DefaultTypeID, []byte("false")},
+}
+
+func TestDBStorage_Value(t *testing.T) {
+	defer leaktest.CheckTimeout(t, time.Second)()
+
+	testBody := func(t *testing.T, dbs *ccd.DBStorage, dbMock sqlmock.Sqlmock, sleep time.Duration) {
+
+		prepSel := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `value` FROM `core_config_data` AS `main_table` WHERE (`scope` = ?) AND (`scope_id` = ?) AND (`path` = ?)"))
+		for _, test := range dbStorageMultiTests {
+			scp, sID := test.scopeID.Unpack()
+			prepSel.ExpectQuery().WithArgs(scp.StrType(), sID, test.path).WillReturnRows(sqlmock.NewRows([]string{"value"}))
+
+			haveVal, haveOK, haveErr := dbs.Value(test.scopeID, test.path)
+			require.NoError(t, haveErr)
+			require.False(t, haveOK, "%s Value with path %q should NOT be found", test.scopeID, test.path)
+			assert.Exactly(t, []byte(nil), haveVal)
+		}
+
+		if sleep > 0 {
+			time.Sleep(sleep)
+			prepSel = dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `value` FROM `core_config_data` AS `main_table` WHERE (`scope` = ?) AND (`scope_id` = ?) AND (`path` = ?)"))
+		}
+
+		for _, test := range dbStorageMultiTests {
+			scp, sID := test.scopeID.Unpack()
+			prepSel.ExpectQuery().WithArgs(scp.StrType(), sID, test.path).WillReturnRows(sqlmock.NewRows([]string{"value"}).AddRow(test.value))
+
+			haveVal, haveOK, haveErr := dbs.Value(test.scopeID, test.path)
+			require.NoError(t, haveErr)
+			require.True(t, haveOK, "%s Value with path %q should be found", test.scopeID, test.path)
+			assert.Exactly(t, test.value, haveVal)
+		}
+	}
+
+	t.Run("no waiting", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+		dbMock.MatchExpectationsInOrder(false)
+
+		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{})
+		require.NoError(t, err)
+		defer dmltest.Close(t, dbs)
+		testBody(t, dbs, dbMock, 0)
+	})
+
+	t.Run("wait and restart", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+		dbMock.MatchExpectationsInOrder(false)
+
+		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
+			IdleRead:  time.Millisecond * 50,
+			IdleWrite: time.Millisecond * 50,
+		})
+		require.NoError(t, err)
+		defer dmltest.Close(t, dbs)
+
+		testBody(t, dbs, dbMock, time.Millisecond*100)
+
+		val, set, all := dbs.Statistics()
+		assert.Exactly(t,
+			"read ccd.stats{Open:0x2, Close:0x1} write ccd.stats{Open:0x0, Close:0x0} all ccd.stats{Open:0x0, Close:0x0}",
+			fmt.Sprintf("read %#v write %#v all %#v", val, set, all),
+		)
+	})
+
+	t.Run("query context timeout", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+		dbMock.MatchExpectationsInOrder(false)
+
+		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
+			ContextTimeoutRead: time.Millisecond * 50,
+		})
+		require.NoError(t, err)
+		defer dmltest.Close(t, dbs)
+
+		prepSel := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `value` FROM `core_config_data` AS `main_table` WHERE (`scope` = ?) AND (`scope_id` = ?) AND (`path` = ?)"))
+		for _, test := range dbStorageMultiTests {
+			scp, sID := test.scopeID.Unpack()
+			prepSel.ExpectQuery().WithArgs(scp.StrType(), sID, test.path).WillDelayFor(time.Millisecond * 110).WillReturnRows(sqlmock.NewRows([]string{"value"}))
+
+			haveVal, haveOK, haveErr := dbs.Value(test.scopeID, test.path)
+			assert.Nil(t, haveVal)
+			assert.False(t, haveOK)
+			causeErr := errors.Cause(haveErr)
+			require.EqualError(t, causeErr, "canceling query due to user request")
+		}
+
+	})
+}
+
+func TestDBStorage_Set(t *testing.T) {
+	defer leaktest.CheckTimeout(t, time.Second)()
+
+	testBody := func(t *testing.T, dbs *ccd.DBStorage, dbMock sqlmock.Sqlmock, sleep time.Duration) {
+
+		prepIns := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("INSERT INTO `core_config_data` (`scope`,`scope_id`,`path`,`value`) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE `value`=VALUES(`value`)"))
+
+		for i, test := range dbStorageMultiTests {
+			j := int64(i + 1)
+
+			if sleep > 0 && i > 0 {
+				prepIns = dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("INSERT INTO `core_config_data` (`scope`,`scope_id`,`path`,`value`) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE `value`=VALUES(`value`)"))
+			}
+
+			prepIns.ExpectExec().
+				WithArgs(test.scopeID, test.path, test.value).
+				WillReturnResult(sqlmock.NewResult(j, 0))
+			require.NoError(t, dbs.Set(test.scopeID, test.path, test.value))
+
+			if sleep > 0 {
+				time.Sleep(sleep)
+			}
+		}
+	}
+
+	t.Run("no waiting", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+		dbMock.MatchExpectationsInOrder(false)
+
+		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{})
+		require.NoError(t, err)
+		defer dmltest.Close(t, dbs)
+		testBody(t, dbs, dbMock, 0)
+	})
+
+	t.Run("wait and restart", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+		dbMock.MatchExpectationsInOrder(false)
+
+		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
+			IdleRead:  time.Millisecond * 5,
+			IdleWrite: time.Millisecond * 5,
+		})
+		require.NoError(t, err)
+		defer dmltest.Close(t, dbs)
+
+		testBody(t, dbs, dbMock, time.Millisecond*8)
+
+		val, set, all := dbs.Statistics()
+		assert.Exactly(t,
+			"read ccd.stats{Open:0x0, Close:0x0} write ccd.stats{Open:0x3, Close:0x3} all ccd.stats{Open:0x0, Close:0x0}",
+			fmt.Sprintf("read %#v write %#v all %#v", val, set, all),
+		)
+	})
+
+	t.Run("query context timeout", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+		dbMock.MatchExpectationsInOrder(false)
+
+		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
+			ContextTimeoutWrite: time.Millisecond * 50,
+		})
+		require.NoError(t, err)
+		defer dmltest.Close(t, dbs)
+
+		prepIns := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("INSERT INTO `core_config_data` (`scope`,`scope_id`,`path`,`value`) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE `value`=VALUES(`value`)"))
+		for i, test := range dbStorageMultiTests {
+
+			prepIns.ExpectExec().
+				WithArgs(test.scopeID, test.path, test.value).
+				WillDelayFor(time.Millisecond * 110).
+				WillReturnResult(sqlmock.NewResult(int64(i), 0))
+			haveErr := dbs.Set(test.scopeID, test.path, test.value)
+
+			causeErr := errors.Cause(haveErr)
+			require.EqualError(t, causeErr, "canceling query due to user request")
+		}
+
+	})
+
 }
