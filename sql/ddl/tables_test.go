@@ -19,11 +19,12 @@ import (
 	"io"
 	"testing"
 
-	sqlmock "github.com/DATA-DOG/go-sqlmock"
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -360,4 +361,115 @@ func TestWithTableDB(t *testing.T) {
 
 	assert.Exactly(t, dbc.DB, ts.MustTable("tableA").DB)
 	assert.Exactly(t, dbc.DB, ts.MustTable("tableB").DB)
+}
+
+func newCCD() *ddl.Tables {
+	return ddl.MustNewTables(
+		ddl.WithTable(
+			"core_config_data",
+			&ddl.Column{Field: `config_id`, ColumnType: `int(10) unsigned`, Null: `NO`, Key: `PRI`, Extra: `auto_increment`},
+			&ddl.Column{Field: `scope`, ColumnType: `varchar(8)`, Null: `NO`, Key: `MUL`, Default: null.MakeString(`default`), Extra: ""},
+			&ddl.Column{Field: `scope_id`, ColumnType: `int(11)`, Null: `NO`, Key: "", Default: null.MakeString(`0`), Extra: ""},
+			&ddl.Column{Field: `path`, ColumnType: `varchar(255)`, Null: `NO`, Key: "", Default: null.MakeString(`general`), Extra: ""},
+			&ddl.Column{Field: `value`, ColumnType: `text`, Null: `YES`, Key: ``, Extra: ""},
+		),
+	)
+}
+
+func TestTables_Validate(t *testing.T) {
+	dbc, dbMock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, dbc, dbMock)
+	tbls := newCCD()
+	tbls.DB = dbc.DB
+
+	t.Run("context timeout", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		err := tbls.Validate(ctx)
+		err = errors.Cause(err)
+		assert.EqualError(t, err, "context canceled")
+	})
+	t.Run("Validation OK", func(t *testing.T) {
+		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS WHERE").
+			WillReturnRows(
+				dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_columns.csv")))
+		err := tbls.Validate(context.Background())
+		assert.NoError(t, err, "Validation should succeed")
+	})
+	t.Run("mismatch field name", func(t *testing.T) {
+		tbls.MustTable("core_config_data").Columns[0].Field = "configID"
+		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS WHERE").
+			WillReturnRows(
+				dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_columns.csv")))
+		err := tbls.Validate(context.Background())
+
+		assert.True(t, errors.Mismatch.Match(err), "should have kind mismatch")
+		assert.EqualError(t, err, "[ddl] Table \"core_config_data\" with column name \"configID\" at index 0 does not match database column name \"config_id\"")
+		tbls.MustTable("core_config_data").Columns[0].Field = "config_id"
+	})
+	t.Run("mismatch column type", func(t *testing.T) {
+		tbls.MustTable("core_config_data").Columns[0].ColumnType = "varchar(XX)"
+		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS WHERE").
+			WillReturnRows(
+				dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_columns.csv")))
+		err := tbls.Validate(context.Background())
+
+		assert.True(t, errors.Mismatch.Match(err), "should have kind mismatch")
+		assert.EqualError(t, err, "[ddl] Table \"core_config_data\" with Go column name \"config_id\" does not match MySQL column type. MySQL: \"int(10) unsigned\" Go: \"varchar(XX)\".")
+		tbls.MustTable("core_config_data").Columns[0].ColumnType = "int(10) unsigned"
+	})
+	t.Run("mismatch null property", func(t *testing.T) {
+		tbls.MustTable("core_config_data").Columns[0].Null = "YES"
+		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS WHERE").
+			WillReturnRows(
+				dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_columns.csv")))
+		err := tbls.Validate(context.Background())
+
+		assert.True(t, errors.Mismatch.Match(err), "should have kind mismatch")
+		assert.EqualError(t, err, "[ddl] Table \"core_config_data\" with column name \"config_id\" does not match MySQL null types. MySQL: \"NO\" Go: \"YES\"")
+		tbls.MustTable("core_config_data").Columns[0].Null = "NO"
+	})
+
+	t.Run("too many tables", func(t *testing.T) {
+		tbls := ddl.MustNewTables(
+			ddl.WithTable(
+				"core_config_data",
+				&ddl.Column{Field: `config_id`, ColumnType: `int(10) unsigned`, Null: `NO`, Key: `PRI`, Extra: `auto_increment`},
+			),
+			ddl.WithTable(
+				"customer_entity",
+				&ddl.Column{Field: `config_id`, ColumnType: `int(10) unsigned`, Null: `NO`, Key: `PRI`, Extra: `auto_increment`},
+			),
+			ddl.WithDB(dbc.DB),
+		)
+
+		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS WHERE").
+			WillReturnRows(
+				dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_columns.csv")))
+		err := tbls.Validate(context.Background())
+
+		assert.True(t, errors.Mismatch.Match(err), "should have kind mismatch")
+		assert.EqualError(t, err, "[ddl] Tables count 2 does not match table count 1 in database.")
+	})
+
+	t.Run("less columns", func(t *testing.T) {
+
+		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS WHERE").
+			WillReturnRows(
+				dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_columns_less.csv")))
+		err := tbls.Validate(context.Background())
+
+		assert.True(t, errors.Mismatch.Match(err), "should have kind mismatch")
+		assert.EqualError(t, err, "[ddl] Table \"core_config_data\" has more columns (count 5) than its object (column count 4) in the database.")
+	})
+
+	t.Run("more columns", func(t *testing.T) {
+
+		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS WHERE").
+			WillReturnRows(
+				dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_columns_more.csv")))
+		err := tbls.Validate(context.Background())
+		assert.NoError(t, err)
+	})
+
 }

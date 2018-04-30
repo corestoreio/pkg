@@ -408,7 +408,8 @@ func (tm *Tables) ToSQL() (string, []interface{}, error) {
 }
 
 // Validate validates the table names and their column against the current
-// database schema.
+// database schema. The context is used to maybe cancel the "Load Columns"
+// query.
 func (tm *Tables) Validate(ctx context.Context) error {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
@@ -429,13 +430,14 @@ func (tm *Tables) Validate(ctx context.Context) error {
 	for tn := range tMap {
 		dbTableNames = append(dbTableNames, tn)
 	}
+	sort.Strings(dbTableNames)
 
 	// TODO compare it that way, that the DB table is the master and Go objects must be updated
 	// once they do not match the database version.
 	for tn, tbl := range tm.tm {
 		dbTblCols, ok := tMap[tn]
 		if !ok {
-			return errors.UserNotFound.Newf("[ddl] Table %q not found in database. Available tables: %v", tn, dbTableNames)
+			return errors.NotFound.Newf("[ddl] Table %q not found in database. Available tables: %v", tn, dbTableNames)
 		}
 		if want, have := len(tbl.Columns), len(dbTblCols); want > have {
 			return errors.Mismatch.Newf("[ddl] Table %q has more columns (count %d) than its object (column count %d) in the database.", tn, want, have)
@@ -447,9 +449,19 @@ func (tm *Tables) Validate(ctx context.Context) error {
 					tn, c.Field, idx, dbCol.Field,
 				)
 			}
-			// TODO more comparisons
+			if c.ColumnType != dbCol.ColumnType {
+				return errors.Mismatch.Newf("[ddl] Table %q with Go column name %q does not match MySQL column type. MySQL: %q Go: %q.",
+					tn, c.Field, dbCol.ColumnType, c.ColumnType,
+				)
+			}
+			if c.Null != dbCol.Null {
+				return errors.Mismatch.Newf("[ddl] Table %q with column name %q does not match MySQL null types. MySQL: %q Go: %q",
+					tn, c.Field, dbCol.Null, c.Null,
+				)
+			}
+			// maybe more comparisons
 		}
 	}
 
-	return errors.NotImplemented.Newf("TODO implement correctly with tests")
+	return nil
 }
