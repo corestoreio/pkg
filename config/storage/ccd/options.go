@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
@@ -30,10 +29,6 @@ import (
 // overrides existing values. Stops on errors.
 func WithCoreConfigData(tbls *ddl.Tables, o Options) config.Option {
 	return func(s *config.Service) error {
-		var writtenRows int
-		if s.Log.IsDebug() {
-			defer log.WhenDone(s.Log).Debug("ccd.WithCoreConfigData.Written", log.Int("writtenRows", writtenRows))
-		}
 
 		tn := o.TableName
 		if tn == "" {
