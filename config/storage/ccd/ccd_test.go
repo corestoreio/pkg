@@ -243,6 +243,7 @@ func TestDBStorage_Value(t *testing.T) {
 			assert.False(t, haveOK)
 			causeErr := errors.Cause(haveErr)
 			require.EqualError(t, causeErr, "canceling query due to user request")
+			return
 		}
 
 	})

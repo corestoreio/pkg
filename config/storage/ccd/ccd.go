@@ -271,7 +271,7 @@ func (dbs *DBStorage) Set(scp scope.TypeID, path string, value []byte) error {
 	ctx, cancel := context.WithTimeout(ctx, dbs.cfg.ContextTimeoutWrite)
 	defer cancel()
 	res, err := dbs.stmtWrite.Uint64(scp.ToUint64()).String(path).Bytes(value).ExecContext(ctx)
-	dbs.stmtWrite.ResetInsert()
+	dbs.stmtWrite.Reset()
 	if dbs.cfg.Log != nil && dbs.cfg.Log.IsDebug() {
 		li, err1 := res.LastInsertId()
 		ra, err2 := res.RowsAffected()
