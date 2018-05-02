@@ -195,10 +195,14 @@ func (s *Mock) Value(p Path) Value {
 	}
 
 	vb, ok, err := s.Storage.Value(0, p.String())
+	var found uint8
+	if ok {
+		found = valFoundYes
+	}
 	return Value{
 		Path:    p,
 		data:    vb,
-		found:   ok,
+		found:   found,
 		lastErr: errors.WithStack(err),
 	}
 }

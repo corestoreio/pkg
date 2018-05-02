@@ -20,14 +20,6 @@ import (
 	"github.com/corestoreio/pkg/store/scope"
 )
 
-// LeftDelim and RightDelim are used withing the core_config_data.value field to
-// allow the replacement of the placeholder in exchange with the current value.
-// deprecated gets not refactored
-const (
-	LeftDelim  = "{{"
-	RightDelim = "}}"
-)
-
 // Getter implements how to receive thread-safe a configuration value from an
 // underlying backend service. The provided route as an argument does not
 // make any assumptions if the scope of the Path is allowed to retrieve
@@ -74,6 +66,12 @@ type Storager interface {
 // Safe for concurrent use.
 // TODO build in to support different environments for the same keys. E.g. different API credentials for external APIs (staging, production, etc).
 type Service struct {
+	// lru cache to limit the amount of request to the backend service. Use
+	// function WithLRU to enable it and set the correct max size of the LRU
+	// cache. For now this algorithm should be good enough. Can be refactored
+	// any time later.
+	lru *lruCache
+
 	// backend is the underlying data holding provider. Only access it if you
 	// know exactly what you are doing.
 	backend Storager
@@ -136,12 +134,22 @@ func (s *Service) Options(opts ...Option) error {
 	return nil
 }
 
+// Flush flushes the internal caches. Write operation also flushes the entry for
+// the given key.
+func (s *Service) Flush() error {
+	if s.lru != nil {
+		s.lru.Clear()
+	}
+	return nil
+}
+
 // NewScoped creates a new scope base configuration reader
 func (s *Service) NewScoped(websiteID, storeID int64) Scoped {
 	return NewScoped(s, websiteID, storeID)
 }
 
-// Write puts a value back into the Service. Example usage:
+// Write puts a value back into the Service. Safe for concurrent use. Example
+// usage:
 //		// Default Scope
 //		p, err := config.MakeByString("currency/option/base") // or use config.MustMakeByString( ... )
 // 		err := Write(p, "USD")
@@ -160,18 +168,20 @@ func (s *Service) Write(p Path, v []byte) error {
 	if err := p.IsValid(); err != nil {
 		return errors.WithStack(err)
 	}
-
 	if err := s.backend.Set(p.ScopeID, p.route, v); err != nil {
 		return errors.Wrap(err, "[config] Service.backend.Set")
 	}
 	if s.pubSub != nil {
 		s.sendMsg(p)
 	}
+	if s.lru != nil {
+		s.lru.Remove(p)
+	}
 	return nil
 }
 
 // Value returns a configuration value from the Service, ignoring the scopes
-// using a direct match. Example usage:
+// using a direct match. Safe for concurrent use. Example usage:
 //
 //		// Default Scope
 //		dp := config.MustMakePath("general/locale/timezone")
@@ -183,20 +193,36 @@ func (s *Service) Write(p Path, v []byte) error {
 //		// Store Scope
 //		// 6 for example comes from store database table
 //		ss := p.Bind(scope.StoreID, 6)
-func (s *Service) Value(p Path) Value {
-	var ok bool
-	var err error
+func (s *Service) Value(p Path) (v Value) {
 	if s.Log.IsDebug() {
-		defer log.WhenDone(s.Log).Debug("config.Service.backend.Value", log.Stringer("path", p), log.Bool("found", ok), log.Err(err))
+		wdl := log.WhenDone(s.Log)
+		defer func() {
+			// this func captures the scope of v or the structured log entries would be Go's default values.
+			wdl.Debug("config.Service.Value", log.Stringer("path", p), log.String("found", valFoundStringer(v.found)), log.Err(v.lastErr))
+		}()
 	}
-	var data []byte
-	data, ok, err = s.backend.Value(p.ScopeID, p.route)
-	return Value{
-		Path:    p,
-		data:    data,
-		found:   ok,
-		lastErr: errors.WithStack(err),
+
+	if s.lru != nil {
+		if lruVal, ok := s.lru.Get(p); ok {
+			lruVal.found = valFoundLRU
+			v = lruVal
+			return
+		}
 	}
+
+	v.Path = p
+	var ok bool
+	v.data, ok, v.lastErr = s.backend.Value(p.ScopeID, p.route)
+	if ok {
+		v.found = valFoundYes
+	}
+	if v.lastErr != nil {
+		v.lastErr = errors.Wrapf(v.lastErr, "[config] Service.Value with path %q", p)
+	}
+	if s.lru != nil && v.lastErr == nil {
+		s.lru.Add(p, v)
+	}
+	return v
 }
 
 // Scoped is equal to Getter but not an interface and the underlying
@@ -306,7 +332,7 @@ func (ss Scoped) Value(restrictUpTo scope.Type, route string) (v Value) {
 	}
 	if ss.isAllowedStore(restrictUpTo) {
 		v := ss.Root.Value(p.BindStore(ss.StoreID))
-		if v.found || v.lastErr != nil {
+		if v.found > valFoundNo || v.lastErr != nil {
 			// value found or err is not a NotFound error
 			if v.lastErr != nil {
 				v.lastErr = errors.WithStack(v.lastErr) // hmm, maybe can be removed if no one gets confused
@@ -316,7 +342,7 @@ func (ss Scoped) Value(restrictUpTo scope.Type, route string) (v Value) {
 	}
 	if ss.isAllowedWebsite(restrictUpTo) {
 		v := ss.Root.Value(p.BindWebsite(ss.WebsiteID))
-		if v.found || v.lastErr != nil {
+		if v.found > valFoundNo || v.lastErr != nil {
 			if v.lastErr != nil {
 				v.lastErr = errors.WithStack(v.lastErr) // hmm, maybe can be removed if no one gets confused
 			}

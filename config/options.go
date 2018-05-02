@@ -51,3 +51,13 @@ func WithPubSub() Option {
 		return nil
 	}
 }
+
+// WithLRU provides the `lru` cache which implements a fixed-size thread safe
+// LRU cache. If maxEntries is zero, the cache has no limit and it's assumed
+// that eviction is done by the caller.
+func WithLRU(maxEntries int) Option {
+	return func(s *Service) (err error) {
+		s.lru = newLRU(maxEntries)
+		return
+	}
+}

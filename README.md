@@ -104,6 +104,7 @@ from the geniuses listed below:
 | siddontang | [storage/myreplicator](http://github.com/corestoreio/pkg/tree/master/storage/myreplicator) | MIT Copyright (c) 2014  |
 | Tace De Wolf | [util/byteconv](http://github.com/corestoreio/pkg/tree/master/util/byteconv) | MIT Copyright (c) 2015  |
 | Copyright 2013 The Camlistore Authors | [util/byteconv](http://github.com/corestoreio/pkg/tree/master/util/byteconv) | Apache 2.0  |
+| Copyright 2013 Google Inc. | [storage/lru](http://github.com/corestoreio/pkg/tree/master/storage/lru) | Apache 2.0  |
 
 ## Licensing
 

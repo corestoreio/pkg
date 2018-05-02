@@ -15,11 +15,13 @@
 package config_test
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log/logw"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/conv"
@@ -378,4 +380,66 @@ func TestScopedService_Parent(t *testing.T) {
 		}
 
 	}
+}
+
+func TestWithLRU(t *testing.T) {
+	t.Parallel()
+	mustFloat := func(val float64, ok bool, err error) float64 {
+		if err != nil {
+			t.Fatal(err)
+		}
+		return val
+	}
+
+	var buf bytes.Buffer
+	l := logw.NewLog(
+		logw.WithLevel(logw.LevelDebug),
+		logw.WithWriter(&buf),
+	)
+
+	srv := config.MustNewService(config.NewInMemoryStore(),
+		config.WithLRU(5),
+		config.WithLogger(l),
+	)
+
+	p1 := config.MustMakePath("carrier/dhl/enabled")
+	p2 := p1.BindWebsite(2)
+	p3 := p1.BindStore(3)
+
+	val := srv.Value(p1)
+	assert.False(t, val.IsValid(), "value should NOT be valid and not found")
+
+	require.NoError(t, srv.Write(p1, []byte(`1.001`)))
+	require.NoError(t, srv.Write(p2, []byte(`2.002`)))
+	require.NoError(t, srv.Write(p3, []byte(`3.003`)))
+
+	// NOT from LRU
+	assert.Exactly(t, 1.001, mustFloat(srv.Value(p1).Float64()))
+	assert.Exactly(t, 2.002, mustFloat(srv.Value(p2).Float64()))
+	assert.Exactly(t, 3.003, mustFloat(srv.Value(p3).Float64()))
+
+	// Now from LRU
+	assert.Exactly(t, 1.001, mustFloat(srv.Value(p1).Float64()))
+	assert.Exactly(t, 2.002, mustFloat(srv.Value(p2).Float64()))
+	assert.Exactly(t, 3.003, mustFloat(srv.Value(p3).Float64()))
+
+	lStr := buf.String()
+
+	tests := []struct {
+		contains string
+		strCount int
+	}{
+		{`"default/0/carrier/dhl/enabled" found: "NO"`, 1},
+		{`"default/0/carrier/dhl/enabled" data_length: 5`, 1},
+		{`"websites/2/carrier/dhl/enabled" data_length: 5`, 1},
+		{`"stores/3/carrier/dhl/enabled" data_length: 5`, 1},
+		{`found: "YES"`, 3},
+		{`found: "LRU"`, 3},
+		{`"websites/2/carrier/dhl/enabled" found: "LRU"`, 1},
+	}
+	for _, test := range tests {
+		assert.Contains(t, lStr, test.contains)
+		assert.Exactly(t, test.strCount, strings.Count(lStr, test.contains), "%s", test.contains)
+	}
+
 }

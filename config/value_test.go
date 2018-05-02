@@ -42,7 +42,7 @@ func TestValue(t *testing.T) {
 		v = MakeValue([]byte(nil))
 		assert.Exactly(t, "<nil>", v.String())
 
-		v.found = false
+		v.found = valFoundNo
 		assert.Exactly(t, "<notFound>", v.String())
 	})
 	t.Run("String Convert Failed", func(t *testing.T) {
@@ -68,7 +68,7 @@ func TestValue(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Exactly(t, "Waldhaus Beer", string(val))
 
-		v.found = false
+		v.found = valFoundNo
 		val, ok, err = v.Str()
 		assert.False(t, ok)
 		assert.NoError(t, err)
@@ -460,7 +460,7 @@ func TestValue(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Exactly(t, "5m2s", val.String())
 
-		v.found = false
+		v.found = valFoundNo
 		val, ok, err = v.Duration()
 		assert.False(t, ok)
 		assert.NoError(t, err)

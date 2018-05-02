@@ -45,6 +45,24 @@ func (cfn convertFn) Convert(p Path, data []byte) ([]byte, error) {
 	return cfn(p, data)
 }
 
+const (
+	valFoundNo = iota
+	valFoundYes
+	valFoundLRU
+)
+
+func valFoundStringer(found uint8) string {
+	switch found {
+	case valFoundNo:
+		return "NO"
+	case valFoundYes:
+		return "YES"
+	case valFoundLRU:
+		return "LRU"
+	}
+	return "CONFIG:FOUND_UNDEFINED"
+}
+
 // Value represents an immutable value returned from the configuration service.
 // A value is meant to be only for reading.
 type Value struct {
@@ -57,9 +75,11 @@ type Value struct {
 	// CSVColumnSep defines the CSV column separator, default a comma.
 	CSVReader *csv.Reader
 	CSVComma  rune
-	// found gets set to true if any value can be found under the given path.
-	// Even a NULL value can be valid.
-	found   bool
+	// found gets set to greater zero if any value can be found under the given
+	// path. Even a NULL value can be valid. found gets also used as a
+	// statistical flag to identify where a value comes from, e.g. from backend
+	// or from LRU.
+	found   uint8
 	lastErr error
 }
 
@@ -67,7 +87,7 @@ type Value struct {
 func MakeValue(data []byte) Value {
 	return Value{
 		data:  data,
-		found: true,
+		found: valFoundYes,
 	}
 }
 
@@ -78,7 +98,7 @@ func (v Value) WithConvert(fn func(Path, []byte) ([]byte, error)) Value {
 }
 
 func (v Value) init() (_ Value, found bool, err error) {
-	if v.lastErr != nil || !v.found {
+	if v.lastErr != nil || valFoundNo == v.found {
 		return Value{}, false, v.lastErr
 	}
 
@@ -88,7 +108,7 @@ func (v Value) init() (_ Value, found bool, err error) {
 	if v.Converter != nil {
 		v.data, err = v.Converter.Convert(v.Path, v.data)
 	}
-	return v, v.found && err == nil, err
+	return v, v.found > valFoundNo && err == nil, err
 }
 
 // String implements fmt.Stringer and returns the textual representation and Go
@@ -483,7 +503,17 @@ func (v Value) IsEmpty() bool {
 // IsValid returns the last error or in case when a Path is really not valid,
 // returns an error with kind NotValid.
 func (v Value) IsValid() bool {
-	return v.lastErr == nil && v.found
+	return v.lastErr == nil && v.found > valFoundNo
+}
+
+// equal compares if current is fully equal to v2.
+func (v Value) equal(v2 Value) bool {
+	return v.Path.Equal(v2.Path) && v.equalData(v2)
+}
+
+// equalData compares if the data part of the current value is equal to v2.
+func (v Value) equalData(v2 Value) bool {
+	return v.lastErr == nil && v2.lastErr == nil && v.found > valFoundNo && bytes.Equal(v.data, v2.data)
 }
 
 // Error implements error interface and returns the last error.
