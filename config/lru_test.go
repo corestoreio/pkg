@@ -25,8 +25,8 @@ import (
 
 var lruGetTests = []struct {
 	name       string
-	keyToAdd   Path
-	keyToGet   Path
+	keyToAdd   *Path
+	keyToGet   *Path
 	expectedOk bool
 }{
 	{"01 hit", MustMakePath("aa/bb/cc"), MustMakePath("aa/bb/cc"), true},
@@ -49,8 +49,8 @@ func TestLRUGet(t *testing.T) {
 				val, ok := lru.Get(tt.keyToGet)
 				if ok != tt.expectedOk {
 					t.Fatalf("%q %s: cache hit = %v; want %v", t.Name(), tt.name, ok, !ok)
-				} else if ok && !val.equal(testLRUVal) {
-					t.Fatalf("%q %s expected get to return %s but got %v", t.Name(), tt.name, testLRUVal, val)
+				} else if ok && !val.equalData(testLRUVal) {
+					t.Fatalf("Distinct: %q %s expected get to return %q but got %q", t.Name(), tt.name, testLRUVal.String(), val.String())
 				}
 			}
 		}
@@ -64,8 +64,8 @@ func TestLRUGet(t *testing.T) {
 				val, ok := lru.Get(tt.keyToGet)
 				if ok != tt.expectedOk {
 					t.Fatalf("%q %s: cache hit = %v; want %v", t.Name(), tt.name, ok, !ok)
-				} else if ok && !val.equal(testLRUVal) {
-					t.Fatalf("%q %s expected get to return %s but got %v", t.Name(), tt.name, testLRUVal, val)
+				} else if ok && !val.equalData(testLRUVal) {
+					t.Fatalf("Common: %q %s expected get to return %q but got %q", t.Name(), tt.name, testLRUVal.String(), val.String())
 				}
 			}
 		}
@@ -83,7 +83,7 @@ func TestLRURemove(t *testing.T) {
 	lru.Add(p, testLRUVal)
 	if val, ok := lru.Get(p); !ok {
 		t.Fatal("TestRemove returned no match")
-	} else if !val.equal(testLRUVal) {
+	} else if !val.equalData(testLRUVal) {
 		t.Fatalf("TestRemove failed.  Expected %s, got %s", testLRUVal, val)
 	}
 
@@ -115,7 +115,7 @@ func TestLRUNew_Parallel(t *testing.T) {
 
 			if val, ok := lru.Get(tt.keyToGet); ok != tt.expectedOk {
 				panic(fmt.Sprintf("%s: cache hit = %v; want %v: add:%q get:%q", tt.name, ok, !ok, tt.keyToAdd, tt.keyToGet))
-			} else if ok && !val.equal(testLRUVal) {
+			} else if ok && !val.equalData(testLRUVal) {
 				panic(fmt.Sprintf("%s expected get to return %s but got %v", tt.name, testLRUVal, val))
 			}
 		})
@@ -134,7 +134,7 @@ func TestLRUNew_Parallel(t *testing.T) {
 			val, ok := lru.Get(tt.keyToGet)
 			if ok != tt.expectedOk {
 				panic(fmt.Sprintf("%s: cache hit = %v; want %v", tt.name, ok, tt.expectedOk))
-			} else if ok && !val.equal(testLRUVal) {
+			} else if ok && !val.equalData(testLRUVal) {
 				panic(fmt.Sprintf("%s expected get to return %s but got %v", tt.name, testLRUVal, val))
 			}
 		})

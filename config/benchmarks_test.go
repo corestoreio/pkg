@@ -23,7 +23,7 @@ import (
 	"github.com/corestoreio/pkg/store/scope"
 )
 
-var benchmarkNewByParts config.Path
+var benchmarkNewByParts *config.Path
 
 // BenchmarkNewByParts-4	 5000000	       297 ns/op	      48 B/op	       1 allocs/op
 func BenchmarkNewByParts(b *testing.B) {
@@ -59,21 +59,17 @@ func BenchmarkPathFQ(b *testing.B) {
 	}
 }
 
-var benchmarkPathHash uint32
+var benchmarkPathHash uint64
 
 // BenchmarkPathHashFull-4  	 3000000	       502 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkPathHashFull(b *testing.B) {
-	const scopeID int64 = 12
-	const want uint32 = 1479679325
+	const scopeID = 12
+	const want = 1479679325
 	p := "system/dev/debug"
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		var err error
-		benchmarkPathHash, err = config.MustMakePath(p).BindWebsite(scopeID).Hash(-1)
-		if err != nil {
-			b.Error(err)
-		}
+		benchmarkPathHash = config.MustMakePath(p).BindWebsite(scopeID).Hash64ByLevel(-1)
 	}
 	if benchmarkPathHash != want {
 		b.Errorf("Want: %d; Have, %d", want, benchmarkPathHash)
@@ -81,24 +77,20 @@ func BenchmarkPathHashFull(b *testing.B) {
 }
 
 func BenchmarkPathHashLevel2(b *testing.B) {
-	const scopeID int64 = 13
-	const want uint32 = 723768876
+	const scopeID = 13
+	const want = 723768876
 	p := "system/dev/debug"
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		var err error
-		benchmarkPathHash, err = config.MustMakePath(p).BindWebsite(scopeID).Hash(2)
-		if err != nil {
-			b.Error(err)
-		}
+		benchmarkPathHash = config.MustMakePath(p).BindWebsite(scopeID).Hash64ByLevel(2)
 	}
 	if benchmarkPathHash != want {
 		b.Errorf("Want: %d; Have, %d", want, benchmarkPathHash)
 	}
 }
 
-var benchmarkReverseFQPath config.Path
+var benchmarkReverseFQPath *config.Path
 
 // BenchmarkSplitFQ-4  	10000000	       199 ns/op	      32 B/op	       1 allocs/op
 func BenchmarkSplitFQ(b *testing.B) {
@@ -145,42 +137,6 @@ func benchmarkRouteLevelRun(b *testing.B, level int, have, want string) {
 	}
 	if benchmarkRouteLevel != want {
 		b.Errorf("Want: %s; Have, %s", want, benchmarkRouteLevel)
-	}
-}
-
-var benchmarkRouteHash uint32
-
-// BenchmarkRouteHash-4     	 5000000	       287 ns/op	       0 B/op	       0 allocs/op
-func BenchmarkRouteHash(b *testing.B) {
-	have := config.MustMakePath("general/single_store_mode/enabled")
-	want := uint32(1644245266)
-
-	var err error
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		benchmarkRouteHash, err = have.Hash(3)
-		if err != nil {
-			b.Error(err)
-		}
-		if want != benchmarkRouteHash {
-			b.Errorf("Want: %d; Have: %d", want, benchmarkRouteHash)
-		}
-	}
-}
-
-// BenchmarkRouteHash32-4   	50000000	        37.7 ns/op	       0 B/op	       0 allocs/op
-func BenchmarkRouteHash32(b *testing.B) {
-	have := config.MustMakePath("general/single_store_mode/enabled")
-	want := uint32(1644245266)
-
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		benchmarkRouteHash = have.Hash32()
-		if want != benchmarkRouteHash {
-			b.Errorf("Want: %d; Have: %d", want, benchmarkRouteHash)
-		}
 	}
 }
 

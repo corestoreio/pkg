@@ -36,12 +36,12 @@ type ValueConverter interface {
 	// Convert takes an optionally Path and the raw bytes to convert the raw
 	// bytes into their final representation. An example would be base64
 	// decoding.
-	Convert(Path, []byte) ([]byte, error)
+	Convert(*Path, []byte) ([]byte, error)
 }
 
-type convertFn func(Path, []byte) ([]byte, error)
+type convertFn func(*Path, []byte) ([]byte, error)
 
-func (cfn convertFn) Convert(p Path, data []byte) ([]byte, error) {
+func (cfn convertFn) Convert(p *Path, data []byte) ([]byte, error) {
 	return cfn(p, data)
 }
 
@@ -68,7 +68,7 @@ func valFoundStringer(found uint8) string {
 type Value struct {
 	// Path optionally assigned to, to know to which path a value belongs to and to
 	// provide different converter behaviour.
-	Path Path
+	Path *Path
 	data []byte
 	// Converter converts on any method receiver call the byte value.
 	Converter ValueConverter
@@ -92,7 +92,7 @@ func MakeValue(data []byte) Value {
 }
 
 // WithConvert applies a function as a ValueConverter.
-func (v Value) WithConvert(fn func(Path, []byte) ([]byte, error)) Value {
+func (v Value) WithConvert(fn func(*Path, []byte) ([]byte, error)) Value {
 	v.Converter = convertFn(fn)
 	return v
 }

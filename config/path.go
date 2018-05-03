@@ -16,6 +16,7 @@ package config
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"sort"
 	"strconv"
@@ -23,11 +24,11 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"encoding/binary"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/bufferpool"
 	"github.com/corestoreio/pkg/util/byteconv"
+	"github.com/minio/highwayhash"
 )
 
 // TODO add text and binary un/marshaler
@@ -55,42 +56,45 @@ const errRouteInvalidBytesTpl = "[config] Route contains invalid bytes %q which 
 
 var errRouteEmpty = errors.Empty.Newf("[config] Route is empty")
 
-// Path represents a configuration path bound to a scope.
+// Path represents a configuration path bound to a scope. A Path is not safe for
+// concurrent use.
 type Path struct {
 	route string
 	// ScopeID a route is bound to this Scope and its ID.
 	ScopeID scope.TypeID
-	// routeValidated internal flag to avoid running twice the route valid process
-	// TODO this flag makes only then sense when field `Route` is private and there a public functions to set/modify it.
+	// routeValidated internal flag to avoid running twice the route valid
+	// process.
 	routeValidated bool
+	// TTL time.Duration for later use when the LRU cache becomes time
+	// sensitive, like the one from karlseguin
 }
 
 // MakePath makes a new validated Path. Scope is assigned to Default.
-func MakePath(route string) (Path, error) {
-	p := Path{
+func MakePath(route string) (*Path, error) {
+	p := &Path{
 		route:   route,
 		ScopeID: scope.DefaultTypeID,
 	}
 	if err := p.IsValid(); err != nil {
-		return Path{}, errors.Wrapf(err, "[config] Route %q", p.route)
+		return nil, errors.Wrapf(err, "[config] Route %q", p.route)
 	}
 	return p, nil
 }
 
 // MakePathWithScope makes a new validate Path with a custom scope.
-func MakePathWithScope(scp scope.TypeID, route string) (Path, error) {
-	p := Path{
+func MakePathWithScope(scp scope.TypeID, route string) (*Path, error) {
+	p := &Path{
 		route:   route,
 		ScopeID: scp,
 	}
 	if err := p.IsValid(); err != nil {
-		return Path{}, errors.Wrapf(err, "[config] Route %q", p.route)
+		return nil, errors.Wrapf(err, "[config] Route %q", p.route)
 	}
 	return p, nil
 }
 
 // MustMakePath same as MakePath but panics on error.
-func MustMakePath(route string) Path {
+func MustMakePath(route string) *Path {
 	p, err := MakePath(route)
 	if err != nil {
 		panic(err)
@@ -98,31 +102,42 @@ func MustMakePath(route string) Path {
 	return p
 }
 
-// Bind binds a path to a new scope with its scope ID. Group Scope is not
-// supported and falls back to default. Fluent API design.
-func (p Path) Bind(s scope.TypeID) Path {
+// Bind binds a path to a new scope with its scope ID. Returns a new Path
+// pointer and does not apply the changes to the current Path. Fluent API
+// design.
+func (p Path) Bind(s scope.TypeID) *Path {
 	p.ScopeID = s
-	return p
+	return &p
 }
 
-// BindWebsite binds a path to a website scope and its ID. Convenience helper
-// function. Fluent API design.
-func (p Path) BindWebsite(id int64) Path {
+// BindWebsite binds a path to a website scope and its ID. Returns a new Path
+// pointer and does not apply the changes to the current Path. Convenience
+// helper function. Fluent API design.
+func (p Path) BindWebsite(id int64) *Path {
 	p.ScopeID = scope.MakeTypeID(scope.Website, id)
-	return p
+	return &p
 }
 
-// BindStore binds a path to a store scope and its ID. Convenience helper
-// function. Fluent API design.
-func (p Path) BindStore(id int64) Path {
+// BindStore binds a path to a store scope and its ID. Returns a new Path
+// pointer and does not apply the changes to the current Path. Convenience
+// helper function. Fluent API design.
+func (p Path) BindStore(id int64) *Path {
 	p.ScopeID = scope.MakeTypeID(scope.Store, id)
-	return p
+	return &p
+}
+
+// BindDefault binds a path to the default scope. Returns a new Path pointer and
+// does not apply the changes to the current Path. Convenience helper function.
+// Fluent API design.
+func (p Path) BindDefault() *Path {
+	p.ScopeID = scope.DefaultTypeID
+	return &p
 }
 
 // String returns a fully qualified path. Errors get logged if debug mode
 // is enabled. String starts with `[config] Error:` on error.
 // Error behaviour: NotValid, Empty or WriteFailed
-func (p Path) String() string {
+func (p *Path) String() string {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 	if err := p.fq(buf); err != nil {
@@ -132,26 +147,25 @@ func (p Path) String() string {
 }
 
 // GoString returns the internal representation of Path
-func (p Path) GoString() string {
-	return fmt.Sprintf("cfgpath.Path{ Route:cfgpath.MakeRoute(%q), ScopeHash: %d }", p.route, p.ScopeID)
+func (p *Path) GoString() string {
+	return fmt.Sprintf("config.MakePathWithScope(%d,%q)", p.ScopeID, p.route)
 }
 
 // FQ returns the fully qualified route. Safe for further processing of the
 // returned byte slice. If scope is equal to scope.DefaultID and ID is not
 // zero then ID gets set to zero.
 // Error behaviour: NotValid, Empty or WriteFailed
-func (p Path) FQ() (string, error) {
-	// bufPool not possible because we're returning bytes, which can be modified
-	// and bufPool truncates the slice, so return would a zero slice.
-	var buf bytes.Buffer
-	if err := p.fq(&buf); err != nil {
+func (p *Path) FQ() (string, error) {
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	if err := p.fq(buf); err != nil {
 		return "", errors.Wrapf(err, "[config] Scope %d Path %q", p.ScopeID, p.route)
 	}
 	return buf.String(), nil
 }
 
 // Error behaviour: NotValid or WriteFailed
-func (p Path) fq(buf *bytes.Buffer) error {
+func (p *Path) fq(buf *bytes.Buffer) error {
 	if err := p.IsValid(); err != nil {
 		return err
 	}
@@ -182,29 +196,32 @@ func (p Path) fq(buf *bytes.Buffer) error {
 //		path: 		catalog/frontend/list_allow_all
 // Zero allocations to memory. Err may contain an ErrUnsupportedScope or
 // failed to parse a string into an int64 or invalid fqPath.
-func SplitFQ(fqPath string) (Path, error) {
+func SplitFQ(fqPath string) (*Path, error) {
 	// this is the most fast version I come up with.
 	// moving from strings to bytes was even slower despite inline
 	// th parse int64 function
 	if !(strings.Count(fqPath, sSeparator) >= Levels+1) {
-		return Path{}, errors.NotValid.Newf("[config] Incorrect fully qualified path: %q. Expecting: strScope/ID/%s", fqPath, fqPath)
+		return nil, errors.NotValid.Newf("[config] Incorrect fully qualified path: %q. Expecting: strScope/ID/%s", fqPath, fqPath)
 	}
 
 	fi := strings.Index(fqPath, sSeparator)
 	scopeStr := fqPath[:fi]
 
 	if !scope.Valid(scopeStr) {
-		return Path{}, errors.NotSupported.Newf("[config] Unknown Scope: %q", scopeStr)
+		return nil, errors.NotSupported.Newf("[config] Unknown Scope: %q", scopeStr)
 	}
 
 	fqPath = fqPath[fi+1:]
 	fi = strings.Index(fqPath, sSeparator)
 	scopeID, err := strconv.ParseInt(fqPath[:fi], 10, 64)
+	if err != nil {
+		return nil, errors.NotValid.New(err, "[config] ParseInt with value: %q", fqPath[:fi])
+	}
 
-	return Path{
+	return &Path{
 		route:   fqPath[fi+1:],
 		ScopeID: scope.MakeTypeID(scope.FromString(scopeStr), scopeID),
-	}, errors.NotValid.New(err, "[config] ParseInt")
+	}, nil
 }
 
 // IsValid checks for valid configuration path. Returns nil on success.
@@ -212,7 +229,10 @@ func SplitFQ(fqPath string) (Path, error) {
 // Minimal length per part 2 characters. Case sensitive.
 //
 // Error behaviour: NotValid or Empty
-func (p Path) IsValid() error {
+func (p *Path) IsValid() error {
+	if p == nil {
+		return errors.Empty.Newf("[config] Path is nil")
+	}
 	seps := p.Separators()
 	if !p.routeValidated {
 		if "" == p.route {
@@ -257,32 +277,32 @@ func (p Path) IsValid() error {
 }
 
 // IsEmpty returns true if the underlying route is empty.
-func (p Path) IsEmpty() bool {
-	return p.route == ""
+func (p *Path) IsEmpty() bool {
+	return p == nil || p.route == ""
 }
 
 // Equal compares the scope and the route
-func (p Path) Equal(b Path) bool {
-	return p.ScopeID == b.ScopeID && p.route == b.route
+func (p *Path) Equal(b *Path) bool {
+	return p != nil && b != nil && p.ScopeID == b.ScopeID && p.route == b.route
 }
 
 // EqualRoute compares only the route.
-func (p Path) EqualRoute(b Path) bool {
-	return p.route == b.route
+func (p *Path) EqualRoute(b *Path) bool {
+	return p != nil && b != nil && p.route == b.route
 }
 
 // Append adds other partial routes with a Separator between. After the partial
 // routes have been added a validation check will NOT be done.
-// Internally it creates a new byte slice.
+// It returns a new object and does not modify the current one.
 //
-//		a := cfgpath.Route(`catalog/product`)
-//		b := cfgpath.Route(`enable_flat_tables`)
+//		a := config.MustMakePath(`catalog/product`)
+//		b := config.MustMakePath(`enable_flat_tables`)
 //		if err := a.Append(b); err != nil {
 //			panic(err)
 //		}
 //		println(a.String())
 //		// Should print: catalog/product/enable_flat_tables
-func (p Path) Append(routes ...string) Path {
+func (p *Path) Append(routes ...string) *Path {
 
 	if i1, i2 := strings.LastIndexByte(p.route, Separator), len(p.route)-1; i1 > 0 && i2 > 0 && i1 == i2 {
 		p.route = p.route[:len(p.route)-1] // strip last Separator
@@ -301,13 +321,14 @@ func (p Path) Append(routes ...string) Path {
 			i++
 		}
 	}
-	return Path{
-		route: buf.String(),
-	}
+	p2 := new(Path)
+	*p2 = *p
+	p2.route = buf.String()
+	return p2
 }
 
 // MarshalText implements interface encoding.TextMarshaler.
-func (p Path) MarshalText() (text []byte, err error) {
+func (p *Path) MarshalText() (text []byte, err error) {
 	var buf bytes.Buffer
 	if err := p.fq(&buf); err != nil {
 		return nil, errors.WithStack(err)
@@ -343,7 +364,7 @@ func (p *Path) UnmarshalText(txt []byte) error {
 }
 
 // MarshalBinary implements interface encoding.BinaryMarshaler.
-func (p Path) MarshalBinary() (data []byte, err error) {
+func (p *Path) MarshalBinary() (data []byte, err error) {
 	var buf bytes.Buffer
 	buf.Grow(8)
 	sBuf := buf.Bytes()[:8]
@@ -370,7 +391,7 @@ func (p *Path) UnmarshalBinary(data []byte) error {
 // first part like "a", Depth 2 returns "a/b" Depth 3 returns "a/b/c" and so on.
 // Level -1 gives you all available levels. Does generate a fully qualified
 // path.
-func (p Path) Level(depth int) (string, error) {
+func (p *Path) Level(depth int) (string, error) {
 	if err := p.IsValid(); err != nil {
 		return "", errors.WithStack(err)
 	}
@@ -407,67 +428,35 @@ func (p Path) Level(depth int) (string, error) {
 	return fq, nil
 }
 
-const (
-	offset32 = 2166136261
-	prime32  = 16777619
-)
-
-// Hash same as Level() but returns a fnv32a value or an error if the route is
-// invalid. 32 has been chosen because routes consume not that much space as
-// a []byte.
-//
-// Copyright 2011 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-//
-// Hash implements FNV-1 and FNV-1a, non-cryptographic hash functions
-// created by Glenn Fowler, Landon Curt Noll, and Phong Vo.
-// See
-// http://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function.
-//
+// Hash64ByLevel same as Level() but returns a HighwayHash-64 checksum of data.
 // Usage as map key.
-func (p Path) Hash(depth int) (uint32, error) {
+func (p *Path) Hash64ByLevel(depth int) uint64 {
 	r2, err := p.Level(depth)
 	if err != nil {
-		return 0, errors.WithStack(err)
-	}
-
-	var hash uint32 = offset32
-	for _, c := range r2 {
-		hash ^= uint32(c)
-		hash *= prime32
-	}
-	return hash, nil
-}
-
-// Hash32 returns a fnv32a value of the route. 32 has been chosen because
-// routes consume not that much space as a []byte.
-//
-// Copyright 2011 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-//
-// Hash implements FNV-1 and FNV-1a, non-cryptographic hash functions
-// created by Glenn Fowler, Landon Curt Noll, and Phong Vo.
-// See
-// http://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function.
-//
-// Usage as map key.
-func (p Path) Hash32() uint32 {
-	fq, _ := p.FQ()
-	if fq == "" {
 		return 0
 	}
-	var hash uint32 = offset32
-	for _, c := range fq {
-		hash ^= uint32(c)
-		hash *= prime32
+	return highwayhash.Sum64([]byte(r2), highwayHashKey[:])
+}
+
+// for now a math.rand.Read random key.
+var highwayHashKey = [highwayhash.Size]byte{0x52, 0xfd, 0xfc, 0x7, 0x21, 0x82, 0x65, 0x4f, 0x16, 0x3f, 0x5f, 0xf, 0x9a, 0x62, 0x1d, 0x72, 0x95, 0x66, 0xc7, 0x4d, 0x10, 0x3, 0x7c, 0x4d, 0x7b, 0xbb, 0x4, 0x7, 0xd1, 0xe2, 0xc6, 0x49}
+
+// Hash64 computes the HighwayHash-64 checksum of data.
+// Returns zero in case of an error.
+// Usage as map key.
+func (p *Path) Hash64() uint64 {
+	buf := bufferpool.Get()
+	if err := p.fq(buf); err != nil {
+		bufferpool.Put(buf)
+		return 0
 	}
-	return hash
+	s := highwayhash.Sum64(buf.Bytes(), highwayHashKey[:])
+	bufferpool.Put(buf)
+	return s
 }
 
 // Separators returns the number of separators
-func (p Path) Separators() (count int) {
+func (p *Path) Separators() (count int) {
 	for _, b := range p.route {
 		if b == rune(Separator) {
 			count++
@@ -477,7 +466,7 @@ func (p Path) Separators() (count int) {
 }
 
 // ScopeRoute returns the assigned scope and its ID and the route.
-func (p Path) ScopeRoute() (scope.TypeID, string) {
+func (p *Path) ScopeRoute() (scope.TypeID, string) {
 	return p.ScopeID, p.route
 }
 
@@ -491,7 +480,7 @@ func (p Path) ScopeRoute() (scope.TypeID, string) {
 //		Pos>3 => ErrIncorrectPosition
 // The returned Route slice is owned by Path. For further modifications you must
 // copy it via Route.Copy().
-func (p Path) Part(pos int) (string, error) {
+func (p *Path) Part(pos int) (string, error) {
 	p.routeValidated = true
 	if err := p.IsValid(); err != nil {
 		return "", err
@@ -542,7 +531,7 @@ func (p Path) Part(pos int) (string, error) {
 //		rs[2].String() == "cc"
 //
 // Error behaviour: NotValid
-func (p Path) Split(ret ...string) (_ []string, err error) {
+func (p *Path) Split(ret ...string) (_ []string, err error) {
 
 	const sepCount = Levels - 1 // only two separators supported
 	var sepPos [sepCount]int
@@ -575,15 +564,15 @@ func (p Path) Split(ret ...string) (_ []string, err error) {
 }
 
 // PathSlice represents a collection of Paths
-type PathSlice []Path
+type PathSlice []*Path
 
 // add more functions if needed
 
 // Contains return true if the Path p can be found within the slice.
 // It must match ID, Scope and Route.
-func (ps PathSlice) Contains(p Path) bool {
+func (ps PathSlice) Contains(p *Path) bool {
 	for _, pps := range ps {
-		if pps.ScopeID == p.ScopeID && pps.route == p.route {
+		if p != nil && pps.ScopeID == p.ScopeID && pps.route == p.route {
 			return true
 		}
 	}

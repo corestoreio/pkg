@@ -48,7 +48,7 @@ func TestValue(t *testing.T) {
 	t.Run("String Convert Failed", func(t *testing.T) {
 		v := MakeValue([]byte(`Rothaus`))
 
-		assert.Contains(t, v.WithConvert(func(p Path, data []byte) ([]byte, error) {
+		assert.Contains(t, v.WithConvert(func(p *Path, data []byte) ([]byte, error) {
 			return nil, errors.AlreadyInUse.Newf("Convert already in use")
 		}).String(), "[config] Value: Convert already in use")
 	})

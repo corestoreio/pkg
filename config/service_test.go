@@ -62,14 +62,14 @@ func TestService_Write(t *testing.T) {
 	srv := config.MustNewService(config.NewInMemoryStore())
 	assert.NotNil(t, srv)
 
-	p1 := config.Path{}
+	p1 := new(config.Path)
 	err := srv.Write(p1, []byte{})
 	assert.True(t, errors.Empty.Match(err), "Error: %s", err)
 }
 
 func TestService_Write_Get_Value_Success(t *testing.T) {
 
-	runner := func(p config.Path, value []byte) func(*testing.T) {
+	runner := func(p *config.Path, value []byte) func(*testing.T) {
 		return func(t *testing.T) {
 			srv := config.MustNewService(config.NewInMemoryStore())
 
@@ -291,13 +291,11 @@ func TestScopedServicePermission_One(t *testing.T) {
 	const StoreID = 5
 
 	sm := config.NewMock(config.MockPathValue{
-		basePath1.Bind(scope.DefaultTypeID).String(): "a",
-		basePath1.BindWebsite(WebsiteID).String():    "b",
-		basePath1.BindStore(StoreID).String():        "c",
-
+		basePath1.BindDefault().String():          "a",
+		basePath1.BindWebsite(WebsiteID).String(): "b",
+		basePath1.BindStore(StoreID).String():     "c",
 		basePath2.BindWebsite(WebsiteID).String(): "bb2",
-
-		basePath3.String(): "cc3",
+		basePath3.String():                        "cc3",
 	})
 
 	t.Run("query1 by scope.Default, matches default", func(t *testing.T) {

@@ -28,10 +28,6 @@ type lruCache struct {
 	// an item is evicted. Zero means no limit.
 	maxEntries int
 
-	// OnEvicted optionally specificies a callback function to be
-	// executed when an entry is purged from the cache.
-	OnEvicted func(key Path, value Value)
-
 	mu    sync.Mutex
 	ll    *list.List
 	cache map[Path]*list.Element
@@ -46,37 +42,41 @@ type entry struct {
 // and it's assumed that eviction is done by the caller. This type does not get
 // exported.
 func newLRU(maxEntries int) *lruCache {
+	if maxEntries == 0 {
+		maxEntries = 1024
+	}
 	return &lruCache{
 		maxEntries: maxEntries,
 		ll:         list.New(),
-		cache:      make(map[Path]*list.Element, maxEntries),
+		cache:      make(map[Path]*list.Element, maxEntries+1),
 	}
 }
 
-// Add adds a value to the cache.
-func (c *lruCache) Add(key Path, value Value) {
+// Add adds a value to the cache. Panics on nil Path.
+func (c *lruCache) Add(key *Path, value Value) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if ee, ok := c.cache[key]; ok {
+	k := *key // dereference pointer
+	if ee, ok := c.cache[k]; ok {
 		c.ll.MoveToFront(ee)
 		ev := ee.Value.(*entry)
 		ev.value = value
 		return
 	}
-	ele := c.ll.PushFront(&entry{key, value})
-	c.cache[key] = ele
+	ele := c.ll.PushFront(&entry{k, value})
+	c.cache[k] = ele
 	if c.maxEntries > 0 && c.ll.Len() > c.maxEntries {
 		c.removeOldest()
 	}
 }
 
 // Get looks up a key's value from the cache.
-func (c *lruCache) Get(key Path) (value Value, ok bool) {
+func (c *lruCache) Get(key *Path) (value Value, ok bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if ele, hit := c.cache[key]; hit {
+	if ele, hit := c.cache[*key]; hit {
 		c.ll.MoveToFront(ele)
 		return ele.Value.(*entry).value, true
 	}
@@ -84,10 +84,10 @@ func (c *lruCache) Get(key Path) (value Value, ok bool) {
 }
 
 // Remove removes the provided key from the cache.
-func (c *lruCache) Remove(key Path) {
+func (c *lruCache) Remove(key *Path) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if ele, hit := c.cache[key]; hit {
+	if ele, hit := c.cache[*key]; hit {
 		c.removeElement(ele)
 	}
 }
@@ -111,9 +111,6 @@ func (c *lruCache) removeElement(e *list.Element) {
 	c.ll.Remove(e)
 	kv := e.Value.(*entry)
 	delete(c.cache, kv.key)
-	if c.OnEvicted != nil {
-		c.OnEvicted(kv.key, kv.value)
-	}
 }
 
 // Len returns the number of items in the cache.
@@ -126,13 +123,11 @@ func (c *lruCache) Len() int {
 // Clear purges all stored items from the cache.
 func (c *lruCache) Clear() {
 	c.mu.Lock()
-	if c.OnEvicted != nil {
-		for _, e := range c.cache {
-			kv := e.Value.(*entry)
-			c.OnEvicted(kv.key, kv.value)
-		}
-	}
 	c.ll = list.New()
-	c.cache = make(map[Path]*list.Element)
+	me := c.maxEntries
+	if me == 0 {
+		me = 1024
+	}
+	c.cache = make(map[Path]*list.Element, me+1)
 	c.mu.Unlock()
 }

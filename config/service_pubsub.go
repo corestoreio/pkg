@@ -177,7 +177,7 @@ func (s *pubSub) readMapAndSend(p Path, level int) (evict []int) {
 
 	lev, err := p.Level(level) // including scope and scopeID and the route
 	if err != nil && s.log.IsDebug() {
-		s.log.Debug("config.pubSub.publish.PathHash.err", log.Err(err), log.Stringer("path", p))
+		s.log.Debug("config.pubSub.publish.PathHash.err", log.Err(err), log.Stringer("path", &p))
 	}
 	if subs, ok := s.subMap[lev]; ok { // e.g.: strScope/ID/system/smtp/host/etc/pp
 		evict = append(evict, s.sendMsgs(subs, p)...)
@@ -189,7 +189,7 @@ func (s *pubSub) sendMsgs(subs map[int]MessageReceiver, p Path) (evict []int) {
 	for id, sub := range subs {
 		if err := s.sendMsgRecoverable(id, sub, p); err != nil {
 			if s.log.IsDebug() {
-				s.log.Debug("config.pubSub.publish.sendMessages", log.Err(err), log.Int("id", id), log.Stringer("path", p))
+				s.log.Debug("config.pubSub.publish.sendMessages", log.Err(err), log.Int("id", id), log.Stringer("path", &p))
 			}
 			evict = append(evict, id) // mark Subscribers for removal which failed ...
 		}
@@ -201,10 +201,10 @@ func (s *pubSub) sendMsgRecoverable(id int, sl MessageReceiver, p Path) (err err
 	defer func() { // protect ... you'll never know
 		if r := recover(); r != nil {
 			if recErr, ok := r.(error); ok {
-				s.log.Debug("config.pubSub.publish.recover.err", log.Err(recErr), log.Stringer("path", p))
+				s.log.Debug("config.pubSub.publish.recover.err", log.Err(recErr), log.Stringer("path", &p))
 				err = recErr
 			} else {
-				s.log.Debug("config.pubSub.publish.recover.r", log.Object("recover", r), log.Stringer("path", p))
+				s.log.Debug("config.pubSub.publish.recover.r", log.Object("recover", r), log.Stringer("path", &p))
 				err = errors.Errorf("%#v", r)
 			}
 			// the overall trick here is, that defer will assign a new error to err

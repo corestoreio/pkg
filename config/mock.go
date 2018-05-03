@@ -37,7 +37,7 @@ type MockWrite struct {
 }
 
 // MockWrite writes to a black hole, may return an error
-func (w *MockWrite) Write(p Path, value []byte) error {
+func (w *MockWrite) Write(p *Path, value []byte) error {
 	w.ArgPath = p.String()
 	w.ArgValue = value
 	return w.WriteError
@@ -98,7 +98,7 @@ type Mock struct {
 	Storage Storager
 	mu      sync.Mutex
 	// GetFn can be set optionally. If set then Storage will be ignored.
-	GetFn       func(p Path) (v Value)
+	GetFn       func(p *Path) (v Value)
 	invocations invocations // contains path and count of how many times the typed function has been called
 
 	SubscribeFn      func(string, MessageReceiver) (subscriptionID int, err error)
@@ -181,7 +181,7 @@ func (s *Mock) UpdateValues(pv MockPathValue) {
 }
 
 // Value looks up a configuration value for a given path.
-func (s *Mock) Value(p Path) Value {
+func (s *Mock) Value(p *Path) Value {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.invocations == nil {

@@ -28,7 +28,7 @@ import (
 // cannot be found, it must return false as the 2nd return argument.
 type Getter interface {
 	NewScoped(websiteID, storeID int64) Scoped
-	Value(Path) Value
+	Value(*Path) Value
 }
 
 // GetterPubSuber implements a configuration Getter and a Subscriber for Publish
@@ -42,7 +42,7 @@ type GetterPubSuber interface {
 // scopes.
 type Writer interface {
 	// Write writes a configuration entry and may return an error
-	Write(p Path, value []byte) error
+	Write(p *Path, value []byte) error
 }
 
 // Storager is the underlying data storage for holding the keys and its values.
@@ -161,7 +161,7 @@ func (s *Service) NewScoped(websiteID, storeID int64) Scoped {
 //		// Store Scope
 //		// 6 for example comes from core_store/store database table
 //		err := Write(p.Bind(scope.StoreID, 6), "CHF")
-func (s *Service) Write(p Path, v []byte) error {
+func (s *Service) Write(p *Path, v []byte) error {
 	if s.Log.IsDebug() {
 		log.WhenDone(s.Log).Debug("config.Service.Write", log.Stringer("path", p), log.Int("data_length", len(v)))
 	}
@@ -172,7 +172,7 @@ func (s *Service) Write(p Path, v []byte) error {
 		return errors.Wrap(err, "[config] Service.backend.Set")
 	}
 	if s.pubSub != nil {
-		s.sendMsg(p)
+		s.sendMsg(*p)
 	}
 	if s.lru != nil {
 		s.lru.Remove(p)
@@ -193,7 +193,7 @@ func (s *Service) Write(p Path, v []byte) error {
 //		// Store Scope
 //		// 6 for example comes from store database table
 //		ss := p.Bind(scope.StoreID, 6)
-func (s *Service) Value(p Path) (v Value) {
+func (s *Service) Value(p *Path) (v Value) {
 	if s.Log.IsDebug() {
 		wdl := log.WhenDone(s.Log)
 		defer func() {
@@ -327,11 +327,11 @@ func (ss Scoped) isAllowedWebsite(restrictUpTo scope.Type) bool {
 func (ss Scoped) Value(restrictUpTo scope.Type, route string) (v Value) {
 	// fallback to next parent scope if value does not exists
 	p := Path{
-		route:   route,
-		ScopeID: scope.DefaultTypeID,
+		route: route,
 	}
 	if ss.isAllowedStore(restrictUpTo) {
-		v := ss.Root.Value(p.BindStore(ss.StoreID))
+		p.ScopeID = scope.Store.Pack(ss.StoreID)
+		v := ss.Root.Value(&p)
 		if v.found > valFoundNo || v.lastErr != nil {
 			// value found or err is not a NotFound error
 			if v.lastErr != nil {
@@ -341,7 +341,8 @@ func (ss Scoped) Value(restrictUpTo scope.Type, route string) (v Value) {
 		}
 	}
 	if ss.isAllowedWebsite(restrictUpTo) {
-		v := ss.Root.Value(p.BindWebsite(ss.WebsiteID))
+		p.ScopeID = scope.Website.Pack(ss.WebsiteID)
+		v := ss.Root.Value(&p)
 		if v.found > valFoundNo || v.lastErr != nil {
 			if v.lastErr != nil {
 				v.lastErr = errors.WithStack(v.lastErr) // hmm, maybe can be removed if no one gets confused
@@ -349,5 +350,6 @@ func (ss Scoped) Value(restrictUpTo scope.Type, route string) (v Value) {
 			return v
 		}
 	}
-	return ss.Root.Value(p)
+	p.ScopeID = scope.DefaultTypeID
+	return ss.Root.Value(&p)
 }

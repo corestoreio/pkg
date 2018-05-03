@@ -17,7 +17,6 @@ package config
 import (
 	"encoding"
 	"fmt"
-	"hash/fnv"
 	"sort"
 	"testing"
 
@@ -34,6 +33,7 @@ var (
 	_ encoding.BinaryMarshaler   = (*Path)(nil)
 	_ encoding.BinaryUnmarshaler = (*Path)(nil)
 	_ fmt.Stringer               = (*Path)(nil)
+	_ fmt.GoStringer             = (*Path)(nil)
 )
 
 func TestMakePathWithScope(t *testing.T) {
@@ -46,7 +46,7 @@ func TestMakePathWithScope(t *testing.T) {
 	t.Run("fails", func(t *testing.T) {
 		p, err := MakePathWithScope(scope.Store.Pack(23), "")
 		assert.True(t, errors.Empty.Match(err), "%+v", err)
-		assert.Exactly(t, Path{}, p)
+		assert.Nil(t, p)
 	})
 }
 
@@ -64,7 +64,7 @@ func TestNewByParts(t *testing.T) {
 	for i, test := range tests {
 		haveP, haveErr := MakePath(test.path)
 		if test.wantErrKind > 0 {
-			assert.Empty(t, haveP.route, "Index %d", i)
+			assert.Nil(t, haveP, "Index %d", i)
 			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => %s", i, haveErr)
 			continue
 		}
@@ -118,11 +118,11 @@ func TestMakePath(t *testing.T) {
 	}
 	for i, test := range tests {
 		haveP, haveErr := MakePath(test.route)
-		haveP = haveP.Bind(test.s.Pack(test.id))
 		if test.wantErrKind > 0 {
 			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d", i)
 			continue
 		}
+		haveP = haveP.Bind(test.s.Pack(test.id))
 		fq, fqErr := haveP.FQ()
 		assert.NoError(t, fqErr, "Index %d", i)
 		assert.Exactly(t, test.wantFQ, fq, "Index %d", i)
@@ -149,14 +149,14 @@ func TestFQ(t *testing.T) {
 	}
 	for i, test := range tests {
 		p, pErr := MakePath(test.route)
+		if pErr != nil {
+			assert.True(t, test.wantErrKind.Match(pErr), "Index %d => %s", i, pErr)
+			continue
+		}
 		p = p.Bind(test.scp.Pack(test.id))
 		have, haveErr := p.FQ()
 		if test.wantErrKind > 0 {
 			assert.Empty(t, have, "Index %d", i)
-			if pErr != nil {
-				assert.True(t, test.wantErrKind.Match(pErr), "Index %d => %s", i, pErr)
-				continue
-			}
 			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => %s", i, haveErr)
 			continue
 		}
@@ -168,7 +168,7 @@ func TestFQ(t *testing.T) {
 	assert.Exactly(t, "stores/7475/catalog/frontend/list_allow_all", MustMakePath(r).BindStore(7475).String())
 	p := MustMakePath(r).BindStore(5)
 	assert.Exactly(t, "stores/5/catalog/frontend/list_allow_all", p.String())
-	assert.Exactly(t, "cfgpath.Path{ Route:cfgpath.MakeRoute(\"catalog/frontend/list_allow_all\"), ScopeHash: 67108869 }", p.GoString())
+	assert.Exactly(t, "config.MakePathWithScope(67108869,\"catalog/frontend/list_allow_all\")", p.GoString())
 }
 
 func TestShouldNotPanicBecauseOfIncorrectStrScope(t *testing.T) {
@@ -218,13 +218,15 @@ func TestSplitFQ(t *testing.T) {
 
 		if test.wantErrKind > 0 {
 			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => Error: %s", i, haveErr)
+			assert.Nil(t, havePath, "Index %d", i)
 		} else {
 			assert.NoError(t, haveErr, "Test %v", test)
+			assert.Exactly(t, test.wantScope, havePath.ScopeID.Type().StrType(), "Index %d", i)
+			assert.Exactly(t, test.wantScopeID, havePath.ScopeID.ID(), "Index %d", i)
+			ls, _ := havePath.Level(-1)
+			assert.Exactly(t, test.wantPath, ls, "Index %d", i)
 		}
-		assert.Exactly(t, test.wantScope, havePath.ScopeID.Type().StrType(), "Index %d", i)
-		assert.Exactly(t, test.wantScopeID, havePath.ScopeID.ID(), "Index %d", i)
-		ls, _ := havePath.Level(-1)
-		assert.Exactly(t, test.wantPath, ls, "Index %d", i)
+
 	}
 }
 
@@ -347,63 +349,58 @@ func TestPathRouteIsValid(t *testing.T) {
 func TestPathHashWebsite(t *testing.T) {
 	t.Parallel()
 	p := MustMakePath("general/single_store_mode/enabled").BindWebsite(33)
-	hv, err := p.Hash(-1)
-	if err != nil {
-		t.Fatal(err)
-	}
+	hv := p.Hash64ByLevel(-1)
+
 	t.Log(p.String())
-	check := fnv.New32a()
-	_, cErr := check.Write([]byte(p.String()))
-	assert.NoError(t, cErr)
-	assert.Exactly(t, check.Sum32(), hv, "Have %d want %d", hv, check.Sum32())
+	assert.Exactly(t, uint64(0xe79edc1df8f88eb0), hv, "hashes do not match")
 
 }
 
-func TestPathHashDefault(t *testing.T) {
+func TestPath_Hash64ByLevel(t *testing.T) {
 	t.Parallel()
-	tests := []struct {
-		have        string
-		level       int
-		wantHash    uint32
-		wantErrKind errors.Kind
-		wantLevel   string
-	}{
-		{"general/single_\x80store_mode/enabled", 0, 0, errors.NotValid, ""},
-		{"general/single_store_mode/enabled", 2, 453736105, errors.NoKind, "default/0"},
-		{"general/single_store_mode/enabled", 1, 2470140894, errors.NoKind, "default"},
-		{"general/single_store_mode/enabled", 3, 2243014074, errors.NoKind, "default/0/general"},
-		{"general/single_store_mode/enabled", 4, 4182795913, errors.NoKind, "default/0/general/single_store_mode"},
-		{"general/single_store_mode/enabled", -1, 1584651487, errors.NoKind, "default/0/general/single_store_mode/enabled"},
-		{"general/single_store_mode/enabled", 5, 1584651487, errors.NoKind, "default/0/general/single_store_mode/enabled"},
-	}
-	for i, test := range tests {
-		p := Path{
-			route: test.have,
-		}
 
-		hv, err := p.Hash(test.level)
-		if test.wantErrKind > 0 {
-			assert.True(t, test.wantErrKind.Match(err), "Index %d => %s", i, err)
-			assert.Empty(t, hv, "Index %d", i)
-			continue
-		}
-		assert.NoError(t, err, "Index %d", i)
+	t.Run("level 4 different to full hash", func(t *testing.T) {
+		p := MustMakePath("general/single_store_mode/enabled")
+		hl := p.Hash64ByLevel(4)
+		l, err := p.Level(4)
+		require.NoError(t, err)
+		assert.Exactly(t, "default/0/general/single_store_mode", l)
+		assert.Exactly(t, uint64(0x5cbf04d81b7be97), hl)
+		h := p.Hash64()
+		assert.NotEqual(t, hl, h)
+	})
 
-		check := fnv.New32a()
-		_, cErr := check.Write([]byte(test.wantLevel))
-		assert.NoError(t, cErr)
-		assert.Exactly(t, check.Sum32(), hv, "Want %d Have %d Index %d", check.Sum32(), hv, i)
+	t.Run("different levels", func(t *testing.T) {
+		tests := []struct {
+			have      string
+			level     int
+			wantHash  uint64
+			wantLevel string
+		}{
+			{"general/single_store_mode/enabled", 2, 0x9c8e9914e6663c89, "default/0"},
+			{"general/single_store_mode/enabled", 1, 0x541e70f983cf2646, "default"},
+			{"general/single_store_mode/enabled", 3, 0xe6fa13685c10e2da, "default/0/general"},
+			{"general/single_store_mode/enabled", 4, 0x5cbf04d81b7be97, "default/0/general/single_store_mode"},
+			{"general/single_store_mode/enabled", -1, 0xa317445783c664e3, "default/0/general/single_store_mode/enabled"},
+			{"general/single_store_mode/enabled", 5, 0xa317445783c664e3, "default/0/general/single_store_mode/enabled"},
+		}
+		for i, test := range tests {
+			p := &Path{
+				route: test.have,
+			}
 
-		if test.level < 0 {
-			test.level = -3
+			assert.Exactly(t, test.wantHash, p.Hash64ByLevel(test.level), "Index %d", i)
+
+			if test.level < 0 {
+				test.level = -3
+			}
+			xrl, err := p.Level(test.level)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assert.Exactly(t, test.wantLevel, xrl, "Index %d", i)
 		}
-		xrl, err := p.Level(test.level)
-		if err != nil {
-			t.Fatal(err)
-		}
-		assert.Exactly(t, test.wantLevel, xrl, "Index %d", i)
-		assert.Exactly(t, test.wantHash, hv, "Want %d Have %d Index %d", test.wantHash, hv, i)
-	}
+	})
 }
 
 func TestPathCloneAppend(t *testing.T) {
@@ -436,7 +433,7 @@ func TestPathSlice_Contains(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		paths  PathSlice
-		search Path
+		search *Path
 		want   bool
 	}{
 		{
@@ -477,9 +474,9 @@ func TestPathSlice_Sort(t *testing.T) {
 			MustMakePath("aa/bb/cc"),
 		},
 		PathSlice{
-			Path{route: `aa/bb/cc`, ScopeID: scope.DefaultTypeID},
-			Path{route: `bb/cc/dd`, ScopeID: scope.DefaultTypeID},
-			Path{route: `xx/yy/zz`, ScopeID: scope.DefaultTypeID},
+			&Path{route: `aa/bb/cc`, ScopeID: scope.DefaultTypeID},
+			&Path{route: `bb/cc/dd`, ScopeID: scope.DefaultTypeID},
+			&Path{route: `xx/yy/zz`, ScopeID: scope.DefaultTypeID},
 		},
 	))
 
@@ -494,13 +491,13 @@ func TestPathSlice_Sort(t *testing.T) {
 			MustMakePath("aa/bb/cc"),
 		},
 		PathSlice{
-			Path{route: `aa/bb/cc`, ScopeID: scope.DefaultTypeID},
-			Path{route: `aa/bb/cc`, ScopeID: scope.Website.Pack(2)},
-			Path{route: `bb/cc/dd`, ScopeID: scope.DefaultTypeID},
-			Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(1)},
-			Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(2)},
-			Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(3)},
-			Path{route: `zz/aa/bb`, ScopeID: scope.Website.Pack(1)},
+			&Path{route: `aa/bb/cc`, ScopeID: scope.DefaultTypeID},
+			&Path{route: `aa/bb/cc`, ScopeID: scope.Website.Pack(2)},
+			&Path{route: `bb/cc/dd`, ScopeID: scope.DefaultTypeID},
+			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(1)},
+			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(2)},
+			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(3)},
+			&Path{route: `zz/aa/bb`, ScopeID: scope.Website.Pack(1)},
 		},
 	))
 
@@ -518,16 +515,16 @@ func TestPathSlice_Sort(t *testing.T) {
 			MustMakePath("aa/bb/cc"),
 		},
 		PathSlice{
-			Path{route: `aa/bb/cc`, ScopeID: scope.DefaultTypeID},
-			Path{route: `aa/bb/cc`, ScopeID: scope.Website.Pack(2)},
-			Path{route: `bb/cc/dd`, ScopeID: scope.DefaultTypeID},
-			Path{route: `bb/cc/dd`, ScopeID: scope.Store.Pack(2)},
-			Path{route: `bb/cc/dd`, ScopeID: scope.Store.Pack(3)},
-			Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(1)},
-			Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(2)},
-			Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(3)},
-			Path{route: `zz/aa/bb`, ScopeID: scope.Website.Pack(1)},
-			Path{route: `zz/aa/bb`, ScopeID: scope.Store.Pack(4)},
+			&Path{route: `aa/bb/cc`, ScopeID: scope.DefaultTypeID},
+			&Path{route: `aa/bb/cc`, ScopeID: scope.Website.Pack(2)},
+			&Path{route: `bb/cc/dd`, ScopeID: scope.DefaultTypeID},
+			&Path{route: `bb/cc/dd`, ScopeID: scope.Store.Pack(2)},
+			&Path{route: `bb/cc/dd`, ScopeID: scope.Store.Pack(3)},
+			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(1)},
+			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(2)},
+			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(3)},
+			&Path{route: `zz/aa/bb`, ScopeID: scope.Website.Pack(1)},
+			&Path{route: `zz/aa/bb`, ScopeID: scope.Store.Pack(4)},
 		},
 	))
 
@@ -577,79 +574,46 @@ func TestPathLevel(t *testing.T) {
 	}
 }
 
-func TestPathHash(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		have        string
-		depth       int
-		wantHash    uint32
-		wantErrKind errors.Kind
-		wantLevel   string
-	}{
-		{"general/single_store_mode/enabled", 0, 2166136261, errors.NoKind, ""},
-		{"general/single_store_mode/enabled", 3, 712933164, errors.NoKind, "stores/45/general"},
-		{"general/single_store_mode/enabled", 4, 1051038491, errors.NoKind, "stores/45/general/single_store_mode"},
-		{"general/single_store_mode/enabled", 5, 3926503501, errors.NoKind, "stores/45/general/single_store_mode/enabled"},
-		{"general/single_store_mode/enabled", -1, 3926503501, errors.NoKind, "stores/45/general/single_store_mode/enabled"},
-		{"general/single_store_mode/enabled", 7, 3926503501, errors.NoKind, "stores/45/general/single_store_mode/enabled"},
-		{"general/single_store_mode/enabled", 6, 3926503501, errors.NoKind, "stores/45/general/single_store_mode/enabled"},
-	}
-	for i, test := range tests {
-		p := MustMakePath(test.have).BindStore(45)
-		hv, err := p.Hash(test.depth)
-		if test.wantErrKind > 0 {
-			assert.True(t, test.wantErrKind.Match(err), "Index %d => %s", i, err)
-			assert.Empty(t, hv, "Index %d", i)
-			continue
-		}
-		assert.NoError(t, err, "Index %d", i)
-
-		check := fnv.New32a()
-		if test.wantLevel == "<nil>" {
-			_, cErr := check.Write(nil)
-			assert.NoError(t, cErr)
-		} else {
-			_, cErr := check.Write([]byte(test.wantLevel))
-			assert.NoError(t, cErr)
-		}
-
-		assert.Exactly(t, check.Sum32(), hv, "Have %d Want %d Index %d", check.Sum32(), hv, i)
-
-		l, err := p.Level(test.depth)
-		assert.NoError(t, err)
-		assert.Exactly(t, test.wantLevel, l, "Index %d", i)
-		assert.Exactly(t, test.wantHash, hv, "Expected %d Actual %d Index %d", test.wantHash, hv, i)
-	}
-}
-
 func TestPathPartPosition(t *testing.T) {
 	t.Parallel()
-	tests := []struct {
-		have     string
-		pos      int
-		wantPart string
-		wantErr  bool
-	}{
-		{"general/single_\x80store_mode/enabled", 0, "", true},
-		{"general/single_store_mode/enabled", 0, "", true},
-		{"general/single_store_mode/enabled", 1, "general", false},
-		{"general/single_store_mode/enabled", 2, "single_store_mode", false},
-		{"general/single_store_mode/enabled", 3, "enabled", false},
-		{"system/full_page_cache/varnish/backend_port", 4, "backend_port", false},
-		{"general/single_store_mode/enabled", -1, "", true},
-		{"general/single_store_mode/enabled", 5, "", true},
-		{"general/single/store/website/group/mode/enabled/disabled/default", 5, "group", false},
-	}
-	for i, test := range tests {
-		p, _ := MakePath(test.have)
-		part, haveErr := p.Part(test.pos)
-		if test.wantErr {
-			assert.Empty(t, part, "Index %d", i)
-			assert.True(t, errors.NotValid.Match(haveErr), "Index %d => %s", i, haveErr)
-			continue
+
+	t.Run("invalid route", func(t *testing.T) {
+		p := &Path{
+			route: "general/single_\x80store_mode/enabled",
 		}
-		assert.Exactly(t, test.wantPart, part, "Index %d", i)
-	}
+		part, haveErr := p.Part(0)
+		assert.Empty(t, part)
+		assert.True(t, errors.NotValid.Match(haveErr), "%+v", haveErr)
+	})
+
+	t.Run("valid routes", func(t *testing.T) {
+
+		tests := []struct {
+			have     string
+			pos      int
+			wantPart string
+			wantErr  bool
+		}{
+			{"general/single_store_mode/enabled", 0, "", true},
+			{"general/single_store_mode/enabled", 1, "general", false},
+			{"general/single_store_mode/enabled", 2, "single_store_mode", false},
+			{"general/single_store_mode/enabled", 3, "enabled", false},
+			{"system/full_page_cache/varnish/backend_port", 4, "backend_port", false},
+			{"general/single_store_mode/enabled", -1, "", true},
+			{"general/single_store_mode/enabled", 5, "", true},
+			{"general/single/store/website/group/mode/enabled/disabled/default", 5, "group", false},
+		}
+		for i, test := range tests {
+			p := MustMakePath(test.have)
+			part, haveErr := p.Part(test.pos)
+			if test.wantErr {
+				assert.Empty(t, part, "Index %d", i)
+				assert.True(t, errors.NotValid.Match(haveErr), "Index %d => %s", i, haveErr)
+				continue
+			}
+			assert.Exactly(t, test.wantPart, part, "Index %d", i)
+		}
+	})
 }
 
 func TestPathValidate(t *testing.T) {
@@ -684,29 +648,33 @@ func TestPathValidate(t *testing.T) {
 
 func TestPathSplit(t *testing.T) {
 	t.Parallel()
-	tests := []struct {
-		have        string
-		wantPart    []string
-		wantErrKind errors.Kind
-	}{
-		{"general/single_\x80store_mode", []string{"general", "single_\x80store_mode"}, errors.NotValid},
-		{"general/single_store_mode/xx", []string{"general", "single_store_mode", "xx"}, errors.NoKind},
-		{"general", nil, errors.NotValid},
-		{"general/single_store_mode/enabled", []string{"general", "single_store_mode", "enabled"}, errors.NoKind},
-		{"system/full_page_cache/varnish/backend_port", []string{"system", "full_page_cache", "varnish/backend_port"}, errors.NoKind},
-	}
-	for i, test := range tests {
-		p, _ := MakePath(test.have)
+	t.Run("invalid", func(t *testing.T) {
+		p := &Path{
+			ScopeID: scope.Store.Pack(1),
+			route:   "general",
+		}
 		sps, haveErr := p.Split()
-		if test.wantErrKind > 0 {
-			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => %s", i, haveErr)
-			assert.Nil(t, sps)
-			continue
+		assert.Nil(t, sps)
+		assert.True(t, errors.NotValid.Match(haveErr), "%+v", haveErr)
+	})
+	t.Run("valid paths", func(t *testing.T) {
+		tests := []struct {
+			have     string
+			wantPart []string
+		}{
+			{"general/single_store_mode/xx", []string{"general", "single_store_mode", "xx"}},
+			{"general/single_store_mode/enabled", []string{"general", "single_store_mode", "enabled"}},
+			{"system/full_page_cache/varnish/backend_port", []string{"system", "full_page_cache", "varnish/backend_port"}},
 		}
-		for i, wantPart := range test.wantPart {
-			assert.Exactly(t, wantPart, sps[i], "Index %d", i)
+		for _, test := range tests {
+			p := MustMakePath(test.have)
+			sps, haveErr := p.Split()
+			require.NoError(t, haveErr, "Path %q", test.have)
+			for i, wantPart := range test.wantPart {
+				assert.Exactly(t, wantPart, sps[i], "Index %d", i)
+			}
 		}
-	}
+	})
 }
 
 func TestPath_MarshalText(t *testing.T) {

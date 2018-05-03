@@ -57,7 +57,7 @@ func ExampleService() {
 	}
 
 	// Scope1
-	val, ok, err := configSrv.Value(pathString).Str()
+	val, ok, err := configSrv.Value(pathString.BindDefault()).Str()
 	if err != nil {
 		fmt.Printf("srvString Error: %s", err)
 		return

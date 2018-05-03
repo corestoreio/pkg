@@ -16,10 +16,11 @@ package config_test
 
 import (
 	"fmt"
-	"github.com/corestoreio/pkg/config"
-	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"
+
+	"github.com/corestoreio/pkg/config"
+	"github.com/stretchr/testify/assert"
 )
 
 var _ config.Getter = (*config.Mock)(nil)
@@ -37,7 +38,7 @@ func TestPathValueGoStringer(t *testing.T) {
 func TestService_FnInvokes(t *testing.T) {
 	called := 0
 	s := config.Mock{
-		GetFn: func(p config.Path) (v config.Value) {
+		GetFn: func(p *config.Path) (v config.Value) {
 			called++
 			return
 		},
@@ -49,7 +50,7 @@ func TestService_FnInvokes(t *testing.T) {
 
 func TestService_FnInvokes_Map(t *testing.T) {
 	s := config.Mock{
-		GetFn: func(p config.Path) (v config.Value) {
+		GetFn: func(p *config.Path) (v config.Value) {
 			return
 		},
 	}
