@@ -40,11 +40,11 @@ func WithCoreConfigData(tbls *ddl.Tables, o Options) config.Option {
 			return errors.WithStack(err)
 		}
 
-		if o.ContextTimeoutAllKeys == 0 {
-			o.ContextTimeoutAllKeys = time.Second * 10 // just a guess
+		if o.ContextTimeoutRead == 0 {
+			o.ContextTimeoutRead = time.Second * 10 // just a guess
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), o.ContextTimeoutAllKeys)
+		ctx, cancel := context.WithTimeout(context.Background(), o.ContextTimeoutRead)
 		defer cancel()
 
 		return tbl.SelectAll().WithArgs().IterateSerial(ctx, func(cm *dml.ColumnMap) error {

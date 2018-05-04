@@ -31,16 +31,13 @@ type Options struct {
 	TableName           string
 	Log                 log.Logger
 	QueryContextTimeout time.Duration
-	// IdleAllKeys default 5s
-	IdleAllKeys time.Duration
 	// IdleRead default 20s
 	IdleRead time.Duration
 	// IdleWrite default 10s
-	IdleWrite             time.Duration
-	ContextTimeoutAllKeys time.Duration
-	ContextTimeoutRead    time.Duration
-	ContextTimeoutWrite   time.Duration
-	SkipSchemaValidation  bool
+	IdleWrite            time.Duration
+	ContextTimeoutRead   time.Duration
+	ContextTimeoutWrite  time.Duration
+	SkipSchemaValidation bool
 	// TODO implement UseDedicatedDBConnection per prepared statement, bit complicated
 	// UseDedicatedDBConnection *sql.DB
 }
@@ -61,19 +58,12 @@ type stats struct {
 type DBStorage struct {
 	cfg Options
 
-	sqlAll   *dml.Select
 	sqlRead  *dml.Select
 	sqlWrite *dml.Insert
 
 	tickerDaemonStop chan struct{}
-	tickerAll        *time.Ticker
 	tickerRead       *time.Ticker
 	tickerWrite      *time.Ticker
-
-	muAll        sync.Mutex
-	stmtAll      *dml.Artisan
-	stmtAllState uint8
-	stmtAllStat  stats
 
 	muRead        sync.Mutex
 	stmtRead      *dml.Artisan
@@ -134,12 +124,8 @@ func NewDBStorage(tbls *ddl.Tables, o Options) (*DBStorage, error) {
 	dbs := &DBStorage{
 		cfg:              o,
 		tickerDaemonStop: make(chan struct{}),
-		sqlAll:           qryAll,
 		sqlRead:          qryRead,
 		sqlWrite:         qryWrite,
-	}
-	if dbs.cfg.IdleAllKeys == 0 {
-		dbs.cfg.IdleAllKeys = time.Second * 5 // just a guess
 	}
 	if dbs.cfg.IdleRead == 0 {
 		dbs.cfg.IdleRead = time.Second * 20 // just a guess
@@ -147,14 +133,11 @@ func NewDBStorage(tbls *ddl.Tables, o Options) (*DBStorage, error) {
 	if dbs.cfg.IdleWrite == 0 {
 		dbs.cfg.IdleWrite = time.Second * 10 // just a guess
 	}
-	if dbs.cfg.ContextTimeoutAllKeys == 0 {
-		dbs.cfg.ContextTimeoutAllKeys = time.Second * 10 // just a guess
-	}
 	if dbs.cfg.ContextTimeoutRead == 0 {
-		dbs.cfg.ContextTimeoutRead = dbs.cfg.ContextTimeoutAllKeys
+		dbs.cfg.ContextTimeoutRead = time.Second * 10 // just a guess
 	}
 	if dbs.cfg.ContextTimeoutWrite == 0 {
-		dbs.cfg.ContextTimeoutWrite = dbs.cfg.ContextTimeoutAllKeys
+		dbs.cfg.ContextTimeoutWrite = time.Second * 10 // just a guess
 	}
 	dbs.runStateCheckers()
 	return dbs, nil
@@ -168,18 +151,6 @@ func MustNewDBStorage(tbls *ddl.Tables, o Options) *DBStorage {
 		panic(err)
 	}
 	return s
-}
-
-func (dbs *DBStorage) closeStmtAll(t time.Time) {
-	dbs.muAll.Lock()
-	if dbs.stmtAllState == stateOpen {
-		if err := dbs.stmtAll.Close(); err != nil && dbs.cfg.Log != nil && dbs.cfg.Log.IsInfo() {
-			dbs.cfg.Log.Info("ccd.DBStorage.stmtAll.Close", log.Stringer("ticker", t), log.Err(err))
-		}
-		dbs.stmtAllState = stateClosed
-		dbs.stmtAllStat.Close++
-	}
-	dbs.muAll.Unlock()
 }
 
 func (dbs *DBStorage) closeStmtRead(t time.Time) {
@@ -208,7 +179,6 @@ func (dbs *DBStorage) closeStmtWrite(t time.Time) {
 
 func (dbs *DBStorage) runStateCheckers() {
 
-	dbs.tickerAll = time.NewTicker(dbs.cfg.IdleAllKeys)
 	dbs.tickerRead = time.NewTicker(dbs.cfg.IdleRead)
 	dbs.tickerWrite = time.NewTicker(dbs.cfg.IdleWrite)
 
@@ -216,16 +186,12 @@ func (dbs *DBStorage) runStateCheckers() {
 		for {
 			select {
 			case <-dbs.tickerDaemonStop:
-				dbs.tickerAll.Stop()
 				dbs.tickerRead.Stop()
 				dbs.tickerWrite.Stop()
 				t := time.Now()
-				dbs.closeStmtAll(t)
 				dbs.closeStmtRead(t)
 				dbs.closeStmtWrite(t)
 				return
-			case t := <-dbs.tickerAll.C:
-				dbs.closeStmtAll(t)
 			case t := <-dbs.tickerRead.C:
 				dbs.closeStmtRead(t)
 			case t := <-dbs.tickerWrite.C:
@@ -335,59 +301,8 @@ func (dbs *DBStorage) Value(scp scope.TypeID, path string) (v []byte, ok bool, e
 	return ret, true, nil
 }
 
-// AllKeys returns all available keys. Bot slices have the same length where
-// index i of slice `scps` matches index j of slice paths.
-func (dbs *DBStorage) AllKeys() (scps scope.TypeIDs, paths []string, err error) {
-	dbs.muAll.Lock()
-	prevState := dbs.stmtAllState
-	dbs.stmtAllState = stateInUse
-	defer func() {
-		dbs.stmtAllState = stateOpen
-		dbs.muAll.Unlock()
-	}()
-
-	ctx := context.Background()
-	if prevState == stateClosed {
-		ctx2, cancel := context.WithTimeout(ctx, dbs.cfg.ContextTimeoutAllKeys)
-		defer cancel()
-		var stmt *dml.Stmt
-		stmt, err = dbs.sqlAll.Prepare(ctx2)
-		if err != nil {
-			return nil, nil, errors.WithStack(err)
-		}
-		if dbs.stmtAll == nil {
-			dbs.stmtAll = stmt.WithArgs()
-		} else {
-			dbs.stmtAll.WithStmt(stmt.Stmt)
-		}
-		dbs.stmtAllStat.Open++
-	}
-
-	scps = make(scope.TypeIDs, 0, 100)
-	paths = make([]string, 0, 100)
-
-	ctx, cancel := context.WithTimeout(ctx, dbs.cfg.ContextTimeoutAllKeys)
-	defer cancel()
-
-	err = dbs.stmtAll.IterateSerial(ctx, func(cm *dml.ColumnMap) error {
-		var ccd TableCoreConfigData
-		if err2 := ccd.MapColumns(cm); err2 != nil {
-			return errors.Wrapf(err2, "[ccd] dbs.stmtAll.IterateSerial at row %d", cm.Count)
-		}
-		scps = append(scps, scope.MakeTypeID(scope.FromString(ccd.Scope), ccd.ScopeID))
-		paths = append(paths, ccd.Path)
-		return nil
-	})
-
-	return scps, paths, err
-}
-
 // Statistics returns live statistics about opening and closing prepared statements.
-func (dbs *DBStorage) Statistics() (value stats, set stats, all stats) {
-	dbs.muAll.Lock()
-	all = dbs.stmtAllStat
-	dbs.muAll.Unlock()
-
+func (dbs *DBStorage) Statistics() (value stats, set stats) {
 	dbs.muRead.Lock()
 	value = dbs.stmtReadStat
 	dbs.muRead.Unlock()

@@ -20,9 +20,8 @@ import (
 	"github.com/allegro/bigcache"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
-	"github.com/corestoreio/pkg/config/cfgpath"
 	"github.com/corestoreio/pkg/config/storage/cfgbigcache"
-	"github.com/corestoreio/pkg/util/conv"
+	"github.com/corestoreio/pkg/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,7 +29,7 @@ var _ config.Storager = (*cfgbigcache.Storage)(nil)
 
 func TestCacheGet(t *testing.T) {
 
-	sc, err := cfgbigcache.New(bigcache.Config{
+	bgc, err := cfgbigcache.New(bigcache.Config{
 		Shards: 64,
 	})
 	if err != nil {
@@ -38,30 +37,33 @@ func TestCacheGet(t *testing.T) {
 	}
 
 	tests := []struct {
-		key        cfgpath.Path
-		val        interface{}
+		scp        scope.TypeID
+		path       string
+		val        []byte
 		wantSetErr error
 		wantGetErr error
 	}{
-		{cfgpath.MustMakeByString("aa/bb/cc"), 12345, nil, nil},
+		{scope.DefaultTypeID, "aa/bb/cc", []byte(`DataXYZ`), nil, nil},
+		{scope.Store.Pack(3), "aa/bb/cc", []byte(`DataXYA`), nil, nil},
 	}
 	for idx, test := range tests {
 
-		haveSetErr := sc.Set(test.key, test.val)
+		haveSetErr := bgc.Set(test.scp, test.path, test.val)
 		if test.wantSetErr != nil {
 			assert.EqualError(t, haveSetErr, test.wantSetErr.Error(), "Index %d", idx)
 		} else {
 			assert.NoError(t, haveSetErr, "Index %d", idx)
 		}
 
-		haveVal, haveGetErr := sc.Value(test.key)
+		haveData, haveOK, haveGetErr := bgc.Value(test.scp, test.path)
 		if test.wantGetErr != nil {
 			assert.EqualError(t, haveGetErr, test.wantGetErr.Error(), "Index %d", idx)
+			assert.False(t, haveOK)
 		} else {
 			assert.NoError(t, haveGetErr, "Index %d", idx)
 		}
 		// don't do this 2x conv casting in production code
-		assert.Exactly(t, test.val, conv.ToInt(conv.ToString(haveVal)), "Index %d => %v", idx, conv.ToString(haveVal))
+		assert.Exactly(t, test.val, haveData, "Index %d", idx)
 	}
 }
 
@@ -72,8 +74,9 @@ func TestCacheGetNotFound(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	haveVal, haveGetErr := sc.Value(cfgpath.MustMakeByString("aa/bb/cc"))
-	assert.True(t, errors.NotFound.Match(haveGetErr), "Error: %s", haveGetErr)
+	haveVal, haveFound, haveGetErr := sc.Value(scope.DefaultTypeID, "aa/bb/cc")
+	assert.False(t, haveFound)
+	assert.NoError(t, haveGetErr)
 	assert.Empty(t, haveVal)
 }
 
@@ -81,6 +84,6 @@ func TestCacheError(t *testing.T) {
 	sc, err := cfgbigcache.New(bigcache.Config{
 		Shards: 63,
 	})
-	assert.True(t, errors.IsFatal(err), "Error: %s", err)
+	assert.True(t, errors.Fatal.Match(err), "Error: %s", err)
 	assert.Empty(t, sc)
 }

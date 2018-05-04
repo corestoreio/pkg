@@ -15,13 +15,14 @@
 package cfgbigcache
 
 import (
+	"strings"
+
 	"github.com/allegro/bigcache"
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/pkg/config/cfgpath"
-	"github.com/corestoreio/pkg/util/conv"
+	"github.com/corestoreio/pkg/store/scope"
 )
 
-var errKeyNotFound = errors.NewNotFoundf(`[cfgbigcache] Key not found`)
+const kvMapScopeSep = '~'
 
 // Storage wrapper around the freecache.Cache type
 type Storage struct {
@@ -37,6 +38,7 @@ func New(config bigcache.Config) (*Storage, error) {
 	if err != nil {
 		return nil, errors.Fatal.New(err, "[bigcache] NewBigCache")
 	}
+
 	return &Storage{
 		Cache: bc,
 	}, nil
@@ -44,37 +46,29 @@ func New(config bigcache.Config) (*Storage, error) {
 
 // Set writes a key with its value into the storage. The value
 // gets converted to a byte slice.
-func (s *Storage) Set(key cfgpath.Path, value interface{}) error {
-	fq, err := key.FQ() // safe path
-	if err != nil {
-		return err
-	}
-	b, err := conv.ToByteE(value)
-	if err != nil {
-		return err
-	}
-	return s.Cache.Set(fq.String(), b)
+func (s *Storage) Set(scp scope.TypeID, path string, value []byte) error {
+	var key strings.Builder
+	key.WriteString(scp.ToIntString())
+	key.WriteByte(kvMapScopeSep)
+	key.WriteString(path)
+	return s.Cache.Set(key.String(), value)
 }
 
 // Get may return a ErrKeyNotFound error
-func (s *Storage) Value(key cfgpath.Path) (interface{}, error) {
-	fq, err := key.FQ()
-	if err != nil {
-		return nil, err
-	}
-	val, err := s.Cache.Value(fq.String())
+func (s *Storage) Value(scp scope.TypeID, path string) (v []byte, found bool, err error) {
+	var key strings.Builder
+	key.WriteString(scp.ToIntString())
+	key.WriteByte(kvMapScopeSep)
+	key.WriteString(path)
+
+	val, err := s.Cache.Get(key.String())
 	_, isNotFound := (err).(*bigcache.EntryNotFoundError)
 	if err != nil && !isNotFound {
-		return nil, err
+		return nil, false, err
 	}
 	if isNotFound {
-		return nil, errKeyNotFound
+		return nil, false, nil
 	}
 
-	return val, nil
-}
-
-// AllKeys returns always nil. Function not supported.
-func (s *Storage) AllKeys() (cfgpath.PathSlice, error) {
-	return nil, nil
+	return val, true, nil
 }

@@ -59,8 +59,6 @@ type Storager interface {
 	// desired path, return value `found` must be false. A nil value `v`
 	// indicates also a value and hence `found` is true, if found.
 	Value(scp scope.TypeID, path string) (v []byte, found bool, err error)
-	// AllKeys returns the fully qualified keys
-	AllKeys() (scps scope.TypeIDs, paths []string, err error)
 }
 
 // Service main configuration provider. Please use the NewService() function.
@@ -358,4 +356,16 @@ func (ss Scoped) Value(restrictUpTo scope.Type, route string) (v *Value) {
 	}
 	p.ScopeID = scope.DefaultTypeID
 	return ss.Root.Value(&p)
+}
+
+type MultiStorage struct {
+	Backends []Storager
+}
+
+func (ms *MultiStorage) Set(scp scope.TypeID, path string, value []byte) error {
+	return nil
+}
+
+func (ms *MultiStorage) Value(scp scope.TypeID, path string) (v []byte, found bool, err error) {
+	return
 }

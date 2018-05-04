@@ -59,10 +59,4 @@ func Test_WithCoreConfigData(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, ok)
 	assert.Exactly(t, "{{unsecure_base_url}}skin/", v)
-
-	scps, paths, err := im.AllKeys()
-	assert.NoError(t, err)
-	assert.Len(t, paths, 11)
-	assert.Len(t, scps, 11)
-
 }

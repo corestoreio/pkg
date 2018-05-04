@@ -25,7 +25,6 @@ import (
 	"github.com/corestoreio/pkg/config/storage/ccd"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/pkg/sync/bgwork"
 	"github.com/fortytw2/leaktest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -73,74 +72,6 @@ func TestDBStorage_AllKeys_Mocked(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.NoError(t, dbs.Close())
-	})
-
-	t.Run("return all keys, no waiting", func(t *testing.T) {
-		prepQry := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `scope`, `scope_id`, `path` FROM `core_config_data` AS `main_table` ORDER BY `scope`, `scope_id`, `path`")).ExpectQuery()
-		rows, err := dmltest.MockRows(dmltest.WithFile("testdata", "core_config_data.csv"))
-		require.NoError(t, err)
-		prepQry.WithArgs().WillReturnRows(rows)
-
-		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
-			SkipSchemaValidation: true,
-		})
-		require.NoError(t, err)
-		defer dmltest.Close(t, dbs)
-
-		scps, paths, err := dbs.AllKeys()
-		require.NoError(t, err)
-		assert.Exactly(t, []string{"cms/wysiwyg/enabled", "general/region/display_all", "general/region/state_required", "general/region/state_required", "web/url/redirect_to_base", "web/unsecure/base_url", "web/unsecure/base_url", "web/unsecure/base_link_url", "web/unsecure/base_skin_url", "web/unsecure/base_media_url"},
-			paths)
-		assert.Exactly(t, "Type(Default) ID(0); Type(Store) ID(4); Type(Default) ID(0); Type(Store) ID(2); Type(Default) ID(0); Type(Default) ID(0); Type(Website) ID(1); Type(Default) ID(0); Type(Website) ID(44); Type(Default) ID(0)",
-			scps.String())
-	})
-
-	t.Run("return all keys, waiting and reprepare", func(t *testing.T) {
-
-		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
-			IdleAllKeys:          time.Millisecond * 5,
-			SkipSchemaValidation: true,
-		})
-		require.NoError(t, err)
-		defer dmltest.Close(t, dbs)
-
-		for i := 0; i < 4; i++ {
-			prepQry := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `scope`, `scope_id`, `path` FROM `core_config_data` AS `main_table` ORDER BY `scope`, `scope_id`, `path`")).ExpectQuery()
-			rows, err := dmltest.MockRows(dmltest.WithFile("testdata", "core_config_data.csv"))
-			require.NoError(t, err)
-			prepQry.WithArgs().WillReturnRows(rows)
-
-			scps, paths, err := dbs.AllKeys()
-			require.NoError(t, err)
-			assert.Exactly(t, []string{"cms/wysiwyg/enabled", "general/region/display_all", "general/region/state_required", "general/region/state_required", "web/url/redirect_to_base", "web/unsecure/base_url", "web/unsecure/base_url", "web/unsecure/base_link_url", "web/unsecure/base_skin_url", "web/unsecure/base_media_url"},
-				paths)
-			assert.Exactly(t, "Type(Default) ID(0); Type(Store) ID(4); Type(Default) ID(0); Type(Store) ID(2); Type(Default) ID(0); Type(Default) ID(0); Type(Website) ID(1); Type(Default) ID(0); Type(Website) ID(44); Type(Default) ID(0)",
-				scps.String())
-
-			time.Sleep(time.Millisecond * 8)
-		}
-	})
-}
-
-func TestDBStorage_AllKeys_Integration(t *testing.T) {
-	defer leaktest.Check(t)()
-
-	dbc := dmltest.MustConnectDB(t)
-	defer dmltest.Close(t, dbc)
-
-	dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
-		IdleAllKeys:          time.Millisecond * 2,
-		SkipSchemaValidation: false,
-	})
-	require.NoError(t, err)
-	defer dmltest.Close(t, dbs)
-
-	bgwork.Wait(10, func(idx int) {
-		scps, paths, err := dbs.AllKeys()
-		require.NoError(t, err)
-		assert.Exactly(t, len(scps), len(paths))
-		assert.True(t, len(paths) > 5, "path string slice should contain at least 5 items")
-		time.Sleep(time.Millisecond * time.Duration(idx))
 	})
 }
 
@@ -214,10 +145,10 @@ func TestDBStorage_Value(t *testing.T) {
 
 		testBody(t, dbs, dbMock, time.Millisecond*100)
 
-		val, set, all := dbs.Statistics()
+		val, set := dbs.Statistics()
 		assert.Exactly(t,
-			"read ccd.stats{Open:0x2, Close:0x1} write ccd.stats{Open:0x0, Close:0x0} all ccd.stats{Open:0x0, Close:0x0}",
-			fmt.Sprintf("read %#v write %#v all %#v", val, set, all),
+			"read ccd.stats{Open:0x2, Close:0x1} write ccd.stats{Open:0x0, Close:0x0}",
+			fmt.Sprintf("read %#v write %#v", val, set),
 		)
 	})
 
@@ -302,10 +233,10 @@ func TestDBStorage_Set(t *testing.T) {
 
 		testBody(t, dbs, dbMock, time.Millisecond*8)
 
-		val, set, all := dbs.Statistics()
+		val, set := dbs.Statistics()
 		assert.Exactly(t,
-			"read ccd.stats{Open:0x0, Close:0x0} write ccd.stats{Open:0x3, Close:0x3} all ccd.stats{Open:0x0, Close:0x0}",
-			fmt.Sprintf("read %#v write %#v all %#v", val, set, all),
+			"read ccd.stats{Open:0x0, Close:0x0} write ccd.stats{Open:0x3, Close:0x3}",
+			fmt.Sprintf("read %#v write %#v", val, set),
 		)
 	})
 

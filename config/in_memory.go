@@ -53,21 +53,3 @@ func (sp *kvmap) Value(scp scope.TypeID, path string) (v []byte, found bool, err
 	data, found := sp.kv[kvMapKey{scp, path}]
 	return data, found, nil
 }
-
-// AllKeys implements Storager interface and return unsorted slices. Despite
-// having two slices and they are unsorted the index of the TypeIDs slice does
-// still refer to the same index of the paths slice.
-func (sp *kvmap) AllKeys() (scps scope.TypeIDs, paths []string, err error) {
-	sp.RLock()
-	defer sp.RUnlock()
-
-	scps = make(scope.TypeIDs, len(sp.kv))
-	paths = make([]string, len(sp.kv))
-	i := 0
-	for key := range sp.kv {
-		scps[i] = key.TypeID
-		paths[i] = key.string
-		i++
-	}
-	return
-}
