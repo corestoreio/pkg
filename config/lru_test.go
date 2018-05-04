@@ -25,19 +25,22 @@ import (
 
 var lruGetTests = []struct {
 	name       string
-	keyToAdd   *Path
-	keyToGet   *Path
+	keyToAdd   Path
+	keyToGet   Path
 	expectedOk bool
 }{
-	{"01 hit", MustMakePath("aa/bb/cc"), MustMakePath("aa/bb/cc"), true},
-	{"02 miss", MustMakePath("aa/bb/cc"), MustMakePath("aa/bb/cc").BindStore(11), false},
-	{"03 hit", MustMakePath("aa/bb/cc").BindWebsite(3), MustMakePath("aa/bb/cc").BindWebsite(3), true},
-	{"04 miss", MustMakePath("aa/bb/cc").BindStore(44), MustMakePath("aa/bb/cc").BindWebsite(4), false},
-	{"05 miss", MustMakePath("aa/bb/cc").BindStore(55), MustMakePath("aa/bb/cc").BindStore(56), false},
-	{"06 hit", MustMakePath("aa/bb/cc").BindStore(6), MustMakePath("aa/bb/cc").BindStore(6), true},
+	{"01 hit", *MustNewPath("aa/bb/cc"), *MustNewPath("aa/bb/cc"), true},
+	{"02 miss", *MustNewPath("aa/bb/cc"), *MustNewPath("aa/bb/cc").BindStore(11), false},
+	{"03 hit", *MustNewPath("aa/bb/cc").BindWebsite(3), *MustNewPath("aa/bb/cc").BindWebsite(3), true},
+	{"04 miss", *MustNewPath("aa/bb/cc").BindStore(44), *MustNewPath("aa/bb/cc").BindWebsite(4), false},
+	{"05 miss", *MustNewPath("aa/bb/cc").BindStore(55), *MustNewPath("aa/bb/cc").BindStore(56), false},
+	{"06 hit", *MustNewPath("aa/bb/cc").BindStore(6), *MustNewPath("aa/bb/cc").BindStore(6), true},
 }
 
-var testLRUVal = MakeValue([]byte(`hello world`))
+const testLRUDataStr = `Just a dummy text entry! 😇`
+
+var testLRUData = []byte(testLRUDataStr)
+var testLRUVal = *NewValue(testLRUData)
 
 func TestLRUGet(t *testing.T) {
 
@@ -45,11 +48,11 @@ func TestLRUGet(t *testing.T) {
 		return func(t *testing.T) {
 			for _, tt := range lruGetTests {
 				lru := newLRU(size)
-				lru.Add(tt.keyToAdd, testLRUVal)
+				lru.Add(tt.keyToAdd, *tt.keyToAdd.NewValue(testLRUData))
 				val, ok := lru.Get(tt.keyToGet)
 				if ok != tt.expectedOk {
 					t.Fatalf("%q %s: cache hit = %v; want %v", t.Name(), tt.name, ok, !ok)
-				} else if ok && !val.equalData(testLRUVal) {
+				} else if ok && !val.EqualData(&testLRUVal) {
 					t.Fatalf("Distinct: %q %s expected get to return %q but got %q", t.Name(), tt.name, testLRUVal.String(), val.String())
 				}
 			}
@@ -60,11 +63,11 @@ func TestLRUGet(t *testing.T) {
 		return func(t *testing.T) {
 			lru := newLRU(size)
 			for _, tt := range lruGetTests {
-				lru.Add(tt.keyToAdd, testLRUVal)
+				lru.Add(tt.keyToAdd, *tt.keyToAdd.NewValue(testLRUData))
 				val, ok := lru.Get(tt.keyToGet)
 				if ok != tt.expectedOk {
 					t.Fatalf("%q %s: cache hit = %v; want %v", t.Name(), tt.name, ok, !ok)
-				} else if ok && !val.equalData(testLRUVal) {
+				} else if ok && !val.EqualData(&testLRUVal) {
 					t.Fatalf("Common: %q %s expected get to return %q but got %q", t.Name(), tt.name, testLRUVal.String(), val.String())
 				}
 			}
@@ -79,12 +82,12 @@ func TestLRUGet(t *testing.T) {
 
 func TestLRURemove(t *testing.T) {
 	lru := newLRU(0)
-	p := MustMakePath("gg/hh/ii").BindStore(33)
-	lru.Add(p, testLRUVal)
+	p := *MustNewPath("gg/hh/ii").BindStore(33)
+	lru.Add(p, *p.NewValue(testLRUData))
 	if val, ok := lru.Get(p); !ok {
 		t.Fatal("TestRemove returned no match")
-	} else if !val.equalData(testLRUVal) {
-		t.Fatalf("TestRemove failed.  Expected %s, got %s", testLRUVal, val)
+	} else if !val.EqualData(&testLRUVal) {
+		t.Fatalf("TestRemove failed.  Expected %s, got %s", testLRUVal.String(), val.String())
 	}
 
 	lru.Remove(p)
@@ -110,13 +113,15 @@ func TestLRUNew_Parallel(t *testing.T) {
 			panic: 06 hit: cache hit = false; want true: add:"stores/6/aa/bb/cc" get:"stores/6/aa/bb/cc"
 			AFAIK problems with cache eviction
 			*/
-			lru.Add(tt.keyToAdd, testLRUVal)
-			lru.Add(tt.keyToAdd, testLRUVal) // this is an ugly fix, but not that flaky anymore when running test with -count=40
+			d := NewValue([]byte(testLRUDataStr))
+			v := *tt.keyToAdd.NewValue([]byte(testLRUDataStr))
+			lru.Add(tt.keyToAdd, v)
+			lru.Add(tt.keyToAdd, v) // this is an ugly fix, but not that flaky anymore when running test with -count=40
 
 			if val, ok := lru.Get(tt.keyToGet); ok != tt.expectedOk {
-				panic(fmt.Sprintf("%s: cache hit = %v; want %v: add:%q get:%q", tt.name, ok, !ok, tt.keyToAdd, tt.keyToGet))
-			} else if ok && !val.equalData(testLRUVal) {
-				panic(fmt.Sprintf("%s expected get to return %s but got %v", tt.name, testLRUVal, val))
+				panic(fmt.Sprintf("%s: cache hit = %v; want %v: add:%q get:%q", tt.name, ok, !ok, tt.keyToAdd.String(), tt.keyToGet.String()))
+			} else if ok && !val.EqualData(d) {
+				panic(fmt.Sprintf("%s expected get to return %s but got %v", tt.name, testLRUVal.String(), val))
 			}
 		})
 	})
@@ -125,7 +130,7 @@ func TestLRUNew_Parallel(t *testing.T) {
 		lru := newLRU(5)
 
 		for _, tt := range lruGetTests {
-			lru.Add(tt.keyToAdd, testLRUVal)
+			lru.Add(tt.keyToAdd, *tt.keyToAdd.NewValue(testLRUData))
 		}
 
 		bgwork.Wait(len(lruGetTests), func(idx int) {
@@ -134,8 +139,8 @@ func TestLRUNew_Parallel(t *testing.T) {
 			val, ok := lru.Get(tt.keyToGet)
 			if ok != tt.expectedOk {
 				panic(fmt.Sprintf("%s: cache hit = %v; want %v", tt.name, ok, tt.expectedOk))
-			} else if ok && !val.equalData(testLRUVal) {
-				panic(fmt.Sprintf("%s expected get to return %s but got %v", tt.name, testLRUVal, val))
+			} else if ok && !val.EqualData(&testLRUVal) {
+				panic(fmt.Sprintf("%s expected get to return %s but got %v", tt.name, testLRUVal.String(), val))
 			}
 		})
 	})
@@ -147,7 +152,7 @@ func BenchmarkLRUNew_Parallel(b *testing.B) {
 	b.Run("single", func(b *testing.B) {
 		lru := newLRU(cacheSize)
 		for _, tt := range lruGetTests {
-			lru.Add(tt.keyToAdd, testLRUVal)
+			lru.Add(tt.keyToAdd, *tt.keyToAdd.NewValue(testLRUData))
 		}
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -162,7 +167,7 @@ func BenchmarkLRUNew_Parallel(b *testing.B) {
 	b.Run("parallel", func(b *testing.B) {
 		lru := newLRU(cacheSize)
 		for _, tt := range lruGetTests {
-			lru.Add(tt.keyToAdd, testLRUVal)
+			lru.Add(tt.keyToAdd, *tt.keyToAdd.NewValue(testLRUData))
 		}
 
 		b.ResetTimer()

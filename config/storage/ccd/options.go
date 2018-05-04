@@ -58,9 +58,9 @@ func WithCoreConfigData(tbls *ddl.Tables, o Options) config.Option {
 				v = []byte(ccd.Value.String)
 			}
 			scp := scope.FromString(ccd.Scope).Pack(ccd.ScopeID)
-			p, err := config.MakePathWithScope(scp, ccd.Path)
+			p, err := config.NewPathWithScope(scp, ccd.Path)
 			if err != nil {
-				return errors.Wrapf(err, "[ccd] WithCoreConfigData.config.MakePathWithScope Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ConfigID)
+				return errors.Wrapf(err, "[ccd] WithCoreConfigData.config.NewPathWithScope Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ConfigID)
 			}
 			if err = s.Write(p, v); err != nil {
 				return errors.Wrapf(err, "[ccd] WithCoreConfigData.Service.Write Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ConfigID)

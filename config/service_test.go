@@ -24,6 +24,7 @@ import (
 	"github.com/corestoreio/log/logw"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/sync/bgwork"
 	"github.com/corestoreio/pkg/util/conv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -83,7 +84,7 @@ func TestService_Write_Get_Value_Success(t *testing.T) {
 		}
 	}
 
-	basePath := config.MustMakePath("aa/bb/cc")
+	basePath := config.MustNewPath("aa/bb/cc")
 
 	t.Run("stringDefault", runner(basePath, []byte("Gopher")))
 	t.Run("stringWebsite", runner(basePath.BindWebsite(10), []byte("Gopher")))
@@ -143,7 +144,7 @@ func TestScopedServiceScope(t *testing.T) {
 
 func TestScopedServicePath(t *testing.T) {
 	t.Parallel()
-	basePath := config.MustMakePath("aa/bb/cc")
+	basePath := config.MustNewPath("aa/bb/cc")
 	tests := []struct {
 		desc               string
 		fqpath             string
@@ -249,7 +250,7 @@ func TestScopedServicePath(t *testing.T) {
 
 func TestScopedServicePermission_All(t *testing.T) {
 	t.Parallel()
-	basePath := config.MustMakePath("aa/bb/cc")
+	basePath := config.MustNewPath("aa/bb/cc")
 
 	sm := config.NewMock(config.MockPathValue{
 		basePath.Bind(scope.DefaultTypeID).String(): "a",
@@ -283,9 +284,9 @@ func TestScopedServicePermission_All(t *testing.T) {
 
 func TestScopedServicePermission_One(t *testing.T) {
 	t.Parallel()
-	basePath1 := config.MustMakePath("aa/bb/cc")
-	basePath2 := config.MustMakePath("dd/ee/ff")
-	basePath3 := config.MustMakePath("dd/ee/gg")
+	basePath1 := config.MustNewPath("aa/bb/cc")
+	basePath2 := config.MustNewPath("dd/ee/ff")
+	basePath3 := config.MustNewPath("dd/ee/gg")
 
 	const WebsiteID = 3
 	const StoreID = 5
@@ -400,7 +401,7 @@ func TestWithLRU(t *testing.T) {
 		config.WithLogger(l),
 	)
 
-	p1 := config.MustMakePath("carrier/dhl/enabled")
+	p1 := config.MustNewPath("carrier/dhl/enabled")
 	p2 := p1.BindWebsite(2)
 	p3 := p1.BindStore(3)
 
@@ -439,5 +440,62 @@ func TestWithLRU(t *testing.T) {
 		assert.Contains(t, lStr, test.contains)
 		assert.Exactly(t, test.strCount, strings.Count(lStr, test.contains), "%s", test.contains)
 	}
+}
+
+func TestService_Scoped_LRU_Parallel(t *testing.T) {
+
+	srv := config.MustNewService(config.NewInMemoryStore(),
+		config.WithLRU(5),
+	)
+	const route1 = "carrier/dhl/enabled"
+	const route2 = "payment/paypal/active"
+	p1 := config.MustNewPath(route1)
+	p2 := config.MustNewPath(route2)
+	paths := config.PathSlice{
+		p1,
+		p1.BindWebsite(2),
+		p1.BindStore(3),
+		p2,
+		p2.BindWebsite(2),
+		p2.BindStore(3),
+	}
+
+	scpd := srv.NewScoped(2, 3)
+
+	bgwork.Wait(len(paths), func(idx int) {
+		true := []byte(`1`)
+		p := paths[idx]
+		if p.HasRoutePrefix(route2) {
+			true = []byte(`0`)
+		}
+		if err := srv.Write(p, true); err != nil {
+			panic(err)
+		}
+
+		time.Sleep(time.Millisecond)
+
+		v1, ok, err := scpd.Value(scope.Website, route1).Bool()
+		if !ok {
+			panic("route1 Value must be found")
+		}
+		if err != nil {
+			panic(err)
+		}
+		if !v1 {
+			panic("route1 Value must be true")
+		}
+
+		v2, ok, err := scpd.Value(scope.Website, route2).Bool()
+		if !ok {
+			panic("route2 Value must be found")
+		}
+		if err != nil {
+			panic(err)
+		}
+		if v2 {
+			panic("route2 Value must be false")
+		}
+
+	})
 
 }

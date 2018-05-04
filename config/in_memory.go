@@ -15,53 +15,42 @@
 package config
 
 import (
-	"strings"
 	"sync"
 
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/store/scope"
 )
 
-const kvMapScopeSep = '~'
+type kvMapKey struct {
+	scope.TypeID
+	string
+}
 
 type kvmap struct {
 	sync.RWMutex
-	kv map[string][]byte
+	kv map[kvMapKey][]byte
 }
 
 // NewInMemoryStore creates a new simple key value storage using a map[string]interface{}.
 // Mainly used for testing.
 func NewInMemoryStore() Storager {
 	return &kvmap{
-		kv: make(map[string][]byte),
+		kv: make(map[kvMapKey][]byte),
 	}
 }
 
 // Set implements Storager interface
 func (sp *kvmap) Set(scp scope.TypeID, path string, value []byte) error {
-
-	var key strings.Builder
-	key.WriteString(scp.ToIntString())
-	key.WriteByte(kvMapScopeSep)
-	key.WriteString(path)
-
 	sp.Lock()
-	sp.kv[key.String()] = value
+	sp.kv[kvMapKey{scp, path}] = value
 	sp.Unlock()
 	return nil
 }
 
 // Get implements Storager interface.
 func (sp *kvmap) Value(scp scope.TypeID, path string) (v []byte, found bool, err error) {
-
-	var key strings.Builder
-	key.WriteString(scp.ToIntString())
-	key.WriteByte(kvMapScopeSep)
-	key.WriteString(path)
-
 	sp.RLock()
-	data, found := sp.kv[key.String()]
-	sp.RUnlock()
+	defer sp.RUnlock()
+	data, found := sp.kv[kvMapKey{scp, path}]
 	return data, found, nil
 }
 
@@ -70,19 +59,15 @@ func (sp *kvmap) Value(scp scope.TypeID, path string) (v []byte, found bool, err
 // still refer to the same index of the paths slice.
 func (sp *kvmap) AllKeys() (scps scope.TypeIDs, paths []string, err error) {
 	sp.RLock()
+	defer sp.RUnlock()
 
 	scps = make(scope.TypeIDs, len(sp.kv))
 	paths = make([]string, len(sp.kv))
 	i := 0
 	for key := range sp.kv {
-		idx := strings.IndexByte(key, kvMapScopeSep)
-		scps[i], err = scope.MakeTypeIDString(key[:idx])
-		if err != nil {
-			return nil, nil, errors.Wrapf(err, "[config] InMemory Storage with key %q", key)
-		}
-		paths[i] = key[idx+1:]
+		scps[i] = key.TypeID
+		paths[i] = key.string
 		i++
 	}
-	sp.RUnlock()
 	return
 }

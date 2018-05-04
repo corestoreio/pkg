@@ -46,7 +46,7 @@ func Test_WithCoreConfigData(t *testing.T) {
 	)
 	defer dmltest.Close(t, s)
 
-	p1 := config.MustMakePath("web/secure/offloader_header").BindStore(987)
+	p1 := config.MustNewPath("web/secure/offloader_header").BindStore(987)
 	assert.NoError(t, s.Write(p1, []byte("SSL_OFFLOADED")))
 
 	v, ok, err := s.Value(p1).Str()
@@ -54,7 +54,7 @@ func Test_WithCoreConfigData(t *testing.T) {
 	require.True(t, ok)
 	assert.Exactly(t, "SSL_OFFLOADED", v)
 
-	p2 := config.MustMakePath("web/unsecure/base_skin_url").BindWebsite(44)
+	p2 := config.MustNewPath("web/unsecure/base_skin_url").BindWebsite(44)
 	v, ok, err = s.Value(p2).Str()
 	require.NoError(t, err)
 	require.True(t, ok)

@@ -69,20 +69,8 @@ type Path struct {
 	// sensitive, like the one from karlseguin
 }
 
-// MakePath makes a new validated Path. Scope is assigned to Default.
-func MakePath(route string) (*Path, error) {
-	p := &Path{
-		route:   route,
-		ScopeID: scope.DefaultTypeID,
-	}
-	if err := p.IsValid(); err != nil {
-		return nil, errors.Wrapf(err, "[config] Route %q", p.route)
-	}
-	return p, nil
-}
-
-// MakePathWithScope makes a new validate Path with a custom scope.
-func MakePathWithScope(scp scope.TypeID, route string) (*Path, error) {
+// NewPathWithScope creates a new validate Path with a custom scope.
+func NewPathWithScope(scp scope.TypeID, route string) (*Path, error) {
 	p := &Path{
 		route:   route,
 		ScopeID: scp,
@@ -93,13 +81,24 @@ func MakePathWithScope(scp scope.TypeID, route string) (*Path, error) {
 	return p, nil
 }
 
-// MustMakePath same as MakePath but panics on error.
-func MustMakePath(route string) *Path {
-	p, err := MakePath(route)
+// MustNewPathWithScope creates a new validate Path with a custom scope but
+// panics on error. E.g. invalid path.
+func MustNewPathWithScope(scp scope.TypeID, route string) *Path {
+	p, err := NewPathWithScope(scp, route)
 	if err != nil {
 		panic(err)
 	}
 	return p
+}
+
+// NewPath makes a new validated Path. Scope is assigned to Default.
+func NewPath(route string) (*Path, error) {
+	return NewPathWithScope(scope.DefaultTypeID, route)
+}
+
+// MustNewPath same as NewPath but panics on error.
+func MustNewPath(route string) *Path {
+	return MustNewPathWithScope(scope.DefaultTypeID, route)
 }
 
 // Bind binds a path to a new scope with its scope ID. Returns a new Path
@@ -148,7 +147,7 @@ func (p *Path) String() string {
 
 // GoString returns the internal representation of Path
 func (p *Path) GoString() string {
-	return fmt.Sprintf("config.MakePathWithScope(%d,%q)", p.ScopeID, p.route)
+	return fmt.Sprintf("config.NewPathWithScope(%d,%q)", p.ScopeID, p.route)
 }
 
 // FQ returns the fully qualified route. Safe for further processing of the
@@ -295,8 +294,8 @@ func (p *Path) EqualRoute(b *Path) bool {
 // routes have been added a validation check will NOT be done.
 // It returns a new object and does not modify the current one.
 //
-//		a := config.MustMakePath(`catalog/product`)
-//		b := config.MustMakePath(`enable_flat_tables`)
+//		a := config.MustNewPath(`catalog/product`)
+//		b := config.MustNewPath(`enable_flat_tables`)
 //		if err := a.Append(b); err != nil {
 //			panic(err)
 //		}
@@ -545,6 +544,9 @@ func (p *Path) Split(ret ...string) (_ []string, err error) {
 	if sp < 1 {
 		return nil, errors.NotValid.Newf(errIncorrectPathTpl, p.route)
 	}
+	if ret == nil {
+		ret = make([]string, 0, sp+1)
+	}
 
 	min := 0
 	for i := 0; i < Levels; i++ {
@@ -561,6 +563,20 @@ func (p *Path) Split(ret ...string) (_ []string, err error) {
 		min = max + 1
 	}
 	return ret, err
+}
+
+// NewValue creates a new value with an assigned path. Guarantees not to return
+// nil.
+func (p Path) NewValue(data []byte) *Value {
+	v := NewValue(data)
+	v.Path = p
+	return v
+}
+
+// HasRoutePrefix returns true if the Paths' route starts with the argument route
+func (p *Path) HasRoutePrefix(route string) bool {
+	lr := len(route)
+	return p != nil && len(p.route) >= lr && lr > 0 && p.route[0:lr] == route
 }
 
 // PathSlice represents a collection of Paths

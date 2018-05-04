@@ -19,6 +19,8 @@ package config
 import (
 	"container/list"
 	"sync"
+
+	"github.com/corestoreio/errors"
 )
 
 // lruCache is an LRU cache. It is safe for concurrent access.
@@ -31,11 +33,6 @@ type lruCache struct {
 	mu    sync.Mutex
 	ll    *list.List
 	cache map[Path]*list.Element
-}
-
-type entry struct {
-	key   Path
-	value Value
 }
 
 // newLRU creates a new lruCache. If maxEntries is zero, the cache has no limit
@@ -53,41 +50,43 @@ func newLRU(maxEntries int) *lruCache {
 }
 
 // Add adds a value to the cache. Panics on nil Path.
-func (c *lruCache) Add(key *Path, value Value) {
+func (c *lruCache) Add(key Path, value Value) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	k := *key // dereference pointer
-	if ee, ok := c.cache[k]; ok {
+	if !key.Equal(&value.Path) {
+		panic(errors.Mismatch.Newf("[config] Key Path %q does not match Value path %q", key.String(), value.Path.String()))
+	}
+
+	if ee, ok := c.cache[key]; ok {
+		ee.Value = value
 		c.ll.MoveToFront(ee)
-		ev := ee.Value.(*entry)
-		ev.value = value
 		return
 	}
-	ele := c.ll.PushFront(&entry{k, value})
-	c.cache[k] = ele
+	ele := c.ll.PushFront(value)
+	c.cache[key] = ele
 	if c.maxEntries > 0 && c.ll.Len() > c.maxEntries {
 		c.removeOldest()
 	}
 }
 
 // Get looks up a key's value from the cache.
-func (c *lruCache) Get(key *Path) (value Value, ok bool) {
+func (c *lruCache) Get(key Path) (value Value, ok bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if ele, hit := c.cache[*key]; hit {
+	if ele, hit := c.cache[key]; hit {
 		c.ll.MoveToFront(ele)
-		return ele.Value.(*entry).value, true
+		return ele.Value.(Value), true
 	}
 	return
 }
 
 // Remove removes the provided key from the cache.
-func (c *lruCache) Remove(key *Path) {
+func (c *lruCache) Remove(key Path) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if ele, hit := c.cache[*key]; hit {
+	if ele, hit := c.cache[key]; hit {
 		c.removeElement(ele)
 	}
 }
@@ -109,8 +108,7 @@ func (c *lruCache) removeOldest() {
 
 func (c *lruCache) removeElement(e *list.Element) {
 	c.ll.Remove(e)
-	kv := e.Value.(*entry)
-	delete(c.cache, kv.key)
+	delete(c.cache, e.Value.(Value).Path)
 }
 
 // Len returns the number of items in the cache.

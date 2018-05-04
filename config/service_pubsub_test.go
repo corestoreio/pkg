@@ -57,7 +57,7 @@ func initLogger() (*log.MutexBuffer, log.Logger) {
 
 func TestPubSubBubbling(t *testing.T) {
 
-	testPath := config.MustMakePath("aa/bb/cc")
+	testPath := config.MustNewPath("aa/bb/cc")
 
 	s := config.MustNewService(config.NewInMemoryStore(), config.WithPubSub())
 
@@ -100,7 +100,7 @@ func TestPubSubPanicSimple(t *testing.T) {
 	debugBuf, logger := initLogger()
 	s := config.MustNewService(config.NewInMemoryStore(), config.WithLogger(logger), config.WithPubSub())
 
-	testPath := config.MustMakePath("xx/yy/zz")
+	testPath := config.MustNewPath("xx/yy/zz")
 
 	subID, err := s.Subscribe(testPath.BindStore(123).String(), &testSubscriber{
 		t: t,
@@ -121,7 +121,7 @@ func TestPubSubPanicError(t *testing.T) {
 	debugBuf, logger := initLogger()
 	s := config.MustNewService(config.NewInMemoryStore(), config.WithLogger(logger), config.WithPubSub())
 
-	testPath := config.MustMakePath("aa/bb/cc")
+	testPath := config.MustNewPath("aa/bb/cc")
 
 	var pErr = errors.New("OMG! Panic!")
 
@@ -177,7 +177,7 @@ func TestPubSubPanicMultiple(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, subID > 0)
 
-	assert.NoError(t, s.Write(config.MustMakePath("xx/yy/zz"), []byte(`any kind of data`)))
+	assert.NoError(t, s.Write(config.MustNewPath("xx/yy/zz"), []byte(`any kind of data`)))
 	assert.NoError(t, s.Close())
 
 	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.r recover: "One: Don't panic!`)
@@ -190,7 +190,7 @@ func TestPubSubUnsubscribe(t *testing.T) {
 	debugBuf, logger := initLogger()
 	s := config.MustNewService(config.NewInMemoryStore(), config.WithLogger(logger), config.WithPubSub())
 
-	p := config.MustMakePath("xx/yy/zz").BindStore(123)
+	p := config.MustNewPath("xx/yy/zz").BindStore(123)
 	var pErr = errors.New("WTF? Panic!")
 	subID, err := s.Subscribe(p.String(), &testSubscriber{
 		t: t,
@@ -250,9 +250,9 @@ func TestPubSubEvict(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, subID)
 
-	assert.NoError(t, s.Write(config.MustMakePath("xx/yy/zz").BindStore(123), []byte(`321`)))
-	assert.NoError(t, s.Write(config.MustMakePath("xx/yy/aa").BindStore(123), []byte(`321`)))
-	assert.NoError(t, s.Write(config.MustMakePath("xx/yy/zz").BindStore(123), []byte(`321`)))
+	assert.NoError(t, s.Write(config.MustNewPath("xx/yy/zz").BindStore(123), []byte(`321`)))
+	assert.NoError(t, s.Write(config.MustNewPath("xx/yy/aa").BindStore(123), []byte(`321`)))
+	assert.NoError(t, s.Write(config.MustNewPath("xx/yy/zz").BindStore(123), []byte(`321`)))
 
 	assert.NoError(t, s.Close())
 

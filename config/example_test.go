@@ -22,24 +22,24 @@ import (
 
 func Example() {
 
-	fmt.Println(MustMakePath("system/smtp/host").String())
-	fmt.Println(MustMakePath("system/smtp/host").BindWebsite(1).String())
+	fmt.Println(MustNewPath("system/smtp/host").String())
+	fmt.Println(MustNewPath("system/smtp/host").BindWebsite(1).String())
 	// alternative way
-	fmt.Println(MustMakePath("system/smtp/host").BindWebsite(1).String())
+	fmt.Println(MustNewPath("system/smtp/host").BindWebsite(1).String())
 
-	fmt.Println(MustMakePath("system/smtp/host").BindStore(3).String())
+	fmt.Println(MustNewPath("system/smtp/host").BindStore(3).String())
 	// alternative way
-	fmt.Println(MustMakePath("system/smtp/host").BindStore(3).String())
+	fmt.Println(MustNewPath("system/smtp/host").BindStore(3).String())
 	// Group is not supported and falls back to default
-	fmt.Println(MustMakePath("system/smtp/host").Bind(scope.Group.Pack(4)).String())
+	fmt.Println(MustNewPath("system/smtp/host").Bind(scope.Group.Pack(4)).String())
 
-	p, err := MakePath("system/smtp/host")
+	p, err := NewPath("system/smtp/host")
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}
 	fmt.Println(p.String())
 
-	routes := MustMakePath("dev/css/merge_css_files")
+	routes := MustNewPath("dev/css/merge_css_files")
 	rs, err := routes.Split()
 	if err != nil {
 		fmt.Printf("%s\n", err)

@@ -39,12 +39,12 @@ var (
 func TestMakePathWithScope(t *testing.T) {
 	t.Parallel()
 	t.Run("ok", func(t *testing.T) {
-		p, err := MakePathWithScope(scope.Store.Pack(23), "aa/bb/cc")
+		p, err := NewPathWithScope(scope.Store.Pack(23), "aa/bb/cc")
 		require.NoError(t, err)
 		assert.Exactly(t, "stores/23/aa/bb/cc", p.String())
 	})
 	t.Run("fails", func(t *testing.T) {
-		p, err := MakePathWithScope(scope.Store.Pack(23), "")
+		p, err := NewPathWithScope(scope.Store.Pack(23), "")
 		assert.True(t, errors.Empty.Match(err), "%+v", err)
 		assert.Nil(t, p)
 	})
@@ -62,7 +62,7 @@ func TestNewByParts(t *testing.T) {
 		{"", "", errors.Empty},
 	}
 	for i, test := range tests {
-		haveP, haveErr := MakePath(test.path)
+		haveP, haveErr := NewPath(test.path)
 		if test.wantErrKind > 0 {
 			assert.Nil(t, haveP, "Index %d", i)
 			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => %s", i, haveErr)
@@ -84,7 +84,7 @@ func TestMustNewByPartsPanic(t *testing.T) {
 			t.Fatal("Expecting a panic")
 		}
 	}()
-	_ = MustMakePath("a/\x80/c")
+	_ = MustNewPath("a/\x80/c")
 }
 
 func TestMustNewByPartsNoPanic(t *testing.T) {
@@ -96,7 +96,7 @@ func TestMustNewByPartsNoPanic(t *testing.T) {
 			assert.Nil(t, r, "Why is here a panic")
 		}
 	}()
-	p := MustMakePath("aa/bb/cc")
+	p := MustNewPath("aa/bb/cc")
 	assert.Exactly(t, "default/0/aa/bb/cc", p.String())
 }
 
@@ -117,7 +117,7 @@ func TestMakePath(t *testing.T) {
 		{"aa/bb/cc", scope.Store, 3, "stores/3/aa/bb/cc", errors.NoKind},
 	}
 	for i, test := range tests {
-		haveP, haveErr := MakePath(test.route)
+		haveP, haveErr := NewPath(test.route)
 		if test.wantErrKind > 0 {
 			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d", i)
 			continue
@@ -148,7 +148,7 @@ func TestFQ(t *testing.T) {
 		{250, 343, "system/dev/debug", scope.StrDefault.String() + "/0/system/dev/debug", errors.NotValid},
 	}
 	for i, test := range tests {
-		p, pErr := MakePath(test.route)
+		p, pErr := NewPath(test.route)
 		if pErr != nil {
 			assert.True(t, test.wantErrKind.Match(pErr), "Index %d => %s", i, pErr)
 			continue
@@ -165,26 +165,26 @@ func TestFQ(t *testing.T) {
 	}
 
 	r := "catalog/frontend/list_allow_all"
-	assert.Exactly(t, "stores/7475/catalog/frontend/list_allow_all", MustMakePath(r).BindStore(7475).String())
-	p := MustMakePath(r).BindStore(5)
+	assert.Exactly(t, "stores/7475/catalog/frontend/list_allow_all", MustNewPath(r).BindStore(7475).String())
+	p := MustNewPath(r).BindStore(5)
 	assert.Exactly(t, "stores/5/catalog/frontend/list_allow_all", p.String())
-	assert.Exactly(t, "config.MakePathWithScope(67108869,\"catalog/frontend/list_allow_all\")", p.GoString())
+	assert.Exactly(t, "config.NewPathWithScope(67108869,\"catalog/frontend/list_allow_all\")", p.GoString())
 }
 
 func TestShouldNotPanicBecauseOfIncorrectStrScope(t *testing.T) {
 	t.Parallel()
-	assert.Exactly(t, "stores/345/xxxxx/yyyyy/zzzzz", MustMakePath("xxxxx/yyyyy/zzzzz").BindStore(345).String())
+	assert.Exactly(t, "stores/345/xxxxx/yyyyy/zzzzz", MustNewPath("xxxxx/yyyyy/zzzzz").BindStore(345).String())
 	defer func() {
 		if r := recover(); r != nil {
 			t.Fatal("Did not expect a panic")
 		}
 	}()
-	_ = MustMakePath("xxxxx/yyyyy/zzzzz").Bind(345)
+	_ = MustNewPath("xxxxx/yyyyy/zzzzz").Bind(345)
 }
 
 func TestShouldPanicIncorrectPath(t *testing.T) {
 	t.Parallel()
-	assert.Exactly(t, "default/0/xxxxx/yyyyy/zzzzz", MustMakePath("xxxxx/yyyyy/zzzzz").Bind(345).String())
+	assert.Exactly(t, "default/0/xxxxx/yyyyy/zzzzz", MustNewPath("xxxxx/yyyyy/zzzzz").Bind(345).String())
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
@@ -193,7 +193,7 @@ func TestShouldPanicIncorrectPath(t *testing.T) {
 			t.Fatal("Expecting a panic")
 		}
 	}()
-	assert.Exactly(t, "websites/345/xxxxx/yyyyy", MustMakePath("xxxxx/yyyyy").BindWebsite(345).String())
+	assert.Exactly(t, "websites/345/xxxxx/yyyyy", MustNewPath("xxxxx/yyyyy").BindWebsite(345).String())
 }
 
 func TestSplitFQ(t *testing.T) {
@@ -285,7 +285,7 @@ func TestPathValidateNaughtyStrings(t *testing.T) {
 	t.Parallel()
 	// nothing is valid from the list of naughty strings
 	for _, str := range naughtystrings.Unencoded() {
-		_, err := MakePath(str)
+		_, err := NewPath(str)
 		if err == nil {
 			t.Errorf("Should not be valid: %q", str)
 		}
@@ -348,7 +348,7 @@ func TestPathRouteIsValid(t *testing.T) {
 
 func TestPathHashWebsite(t *testing.T) {
 	t.Parallel()
-	p := MustMakePath("general/single_store_mode/enabled").BindWebsite(33)
+	p := MustNewPath("general/single_store_mode/enabled").BindWebsite(33)
 	hv := p.Hash64ByLevel(-1)
 
 	t.Log(p.String())
@@ -360,7 +360,7 @@ func TestPath_Hash64ByLevel(t *testing.T) {
 	t.Parallel()
 
 	t.Run("level 4 different to full hash", func(t *testing.T) {
-		p := MustMakePath("general/single_store_mode/enabled")
+		p := MustNewPath("general/single_store_mode/enabled")
 		hl := p.Hash64ByLevel(4)
 		l, err := p.Level(4)
 		require.NoError(t, err)
@@ -406,7 +406,7 @@ func TestPath_Hash64ByLevel(t *testing.T) {
 func TestPathCloneAppend(t *testing.T) {
 	t.Parallel()
 	rs := "aa/bb/cc"
-	pOrg := MustMakePath(rs)
+	pOrg := MustNewPath(rs)
 	pOrg = pOrg.BindStore(3141)
 
 	pAssigned := pOrg
@@ -416,13 +416,13 @@ func TestPathCloneAppend(t *testing.T) {
 }
 
 func TestPath_BindStore(t *testing.T) {
-	p := MustMakePath(`aa/bb/cc`)
+	p := MustNewPath(`aa/bb/cc`)
 	p = p.BindStore(33)
 	assert.Exactly(t, scope.MakeTypeID(scope.Store, 33), p.ScopeID)
 }
 
 func TestPath_BindWebsite(t *testing.T) {
-	p := MustMakePath(`aa/bb/cc`)
+	p := MustNewPath(`aa/bb/cc`)
 	p = p.BindWebsite(44)
 	assert.Exactly(t, scope.MakeTypeID(scope.Website, 44), p.ScopeID)
 }
@@ -438,18 +438,18 @@ func TestPathSlice_Contains(t *testing.T) {
 	}{
 		{
 			PathSlice{
-				0: MustMakePath("aa/bb/cc").BindWebsite(3),
-				1: MustMakePath("aa/bb/cc").BindWebsite(2),
+				0: MustNewPath("aa/bb/cc").BindWebsite(3),
+				1: MustNewPath("aa/bb/cc").BindWebsite(2),
 			},
-			MustMakePath("aa/bb/cc").BindWebsite(2),
+			MustNewPath("aa/bb/cc").BindWebsite(2),
 			true,
 		},
 		{
 			PathSlice{
-				0: MustMakePath("aa/bb/cc").BindWebsite(3),
-				1: MustMakePath("aa/bb/cc").BindWebsite(2),
+				0: MustNewPath("aa/bb/cc").BindWebsite(3),
+				1: MustNewPath("aa/bb/cc").BindWebsite(2),
 			},
-			MustMakePath("aa/bb/cc").BindStore(2),
+			MustNewPath("aa/bb/cc").BindStore(2),
 			false,
 		},
 	}
@@ -469,9 +469,9 @@ func TestPathSlice_Sort(t *testing.T) {
 
 	t.Run("Default Scope", runner(
 		PathSlice{
-			MustMakePath("bb/cc/dd"),
-			MustMakePath("xx/yy/zz"),
-			MustMakePath("aa/bb/cc"),
+			MustNewPath("bb/cc/dd"),
+			MustNewPath("xx/yy/zz"),
+			MustNewPath("aa/bb/cc"),
 		},
 		PathSlice{
 			&Path{route: `aa/bb/cc`, ScopeID: scope.DefaultTypeID},
@@ -482,13 +482,13 @@ func TestPathSlice_Sort(t *testing.T) {
 
 	t.Run("Default+Website Scope", runner(
 		PathSlice{
-			MustMakePath("bb/cc/dd"),
-			MustMakePath("xx/yy/zz").BindWebsite(3),
-			MustMakePath("xx/yy/zz").BindWebsite(1),
-			MustMakePath("xx/yy/zz").BindWebsite(2),
-			MustMakePath("zz/aa/bb").BindWebsite(1),
-			MustMakePath("aa/bb/cc").BindWebsite(2),
-			MustMakePath("aa/bb/cc"),
+			MustNewPath("bb/cc/dd"),
+			MustNewPathWithScope(scope.Website.Pack(3), "xx/yy/zz"),
+			MustNewPathWithScope(scope.Website.Pack(1), "xx/yy/zz"),
+			MustNewPathWithScope(scope.Website.Pack(2), "xx/yy/zz"),
+			MustNewPathWithScope(scope.Website.Pack(1), "zz/aa/bb"),
+			MustNewPathWithScope(scope.Website.Pack(2), "aa/bb/cc"),
+			MustNewPath("aa/bb/cc"),
 		},
 		PathSlice{
 			&Path{route: `aa/bb/cc`, ScopeID: scope.DefaultTypeID},
@@ -503,16 +503,16 @@ func TestPathSlice_Sort(t *testing.T) {
 
 	t.Run("Default+Website+Store Scope", runner(
 		PathSlice{
-			MustMakePath("bb/cc/dd").BindStore(3),
-			MustMakePath("bb/cc/dd").BindStore(2),
-			MustMakePath("bb/cc/dd"),
-			MustMakePath("xx/yy/zz").BindWebsite(3),
-			MustMakePath("xx/yy/zz").BindWebsite(1),
-			MustMakePath("xx/yy/zz").BindWebsite(2),
-			MustMakePath("zz/aa/bb").BindStore(4),
-			MustMakePath("zz/aa/bb").BindWebsite(1),
-			MustMakePath("aa/bb/cc").BindWebsite(2),
-			MustMakePath("aa/bb/cc"),
+			MustNewPathWithScope(scope.Store.Pack(3), "bb/cc/dd"),
+			MustNewPathWithScope(scope.Store.Pack(2), "bb/cc/dd"),
+			MustNewPath("bb/cc/dd"),
+			MustNewPathWithScope(scope.Website.Pack(3), "xx/yy/zz"),
+			MustNewPathWithScope(scope.Website.Pack(1), "xx/yy/zz"),
+			MustNewPathWithScope(scope.Website.Pack(2), "xx/yy/zz"),
+			MustNewPathWithScope(scope.Store.Pack(4), "zz/aa/bb"),
+			MustNewPathWithScope(scope.Website.Pack(1), "zz/aa/bb"),
+			MustNewPathWithScope(scope.Website.Pack(2), "aa/bb/cc"),
+			MustNewPath("aa/bb/cc"),
 		},
 		PathSlice{
 			&Path{route: `aa/bb/cc`, ScopeID: scope.DefaultTypeID},
@@ -567,7 +567,7 @@ func TestPathLevel(t *testing.T) {
 		{"system/full_page_cache/varnish/backend_port", 5, "default/0/system/full_page_cache/varnish"},
 	}
 	for i, test := range tests {
-		p := MustMakePath(test.have)
+		p := MustNewPath(test.have)
 		r, err := p.Level(test.depth)
 		assert.NoError(t, err)
 		assert.Exactly(t, test.want, r, "Index %d", i)
@@ -604,7 +604,7 @@ func TestPathPartPosition(t *testing.T) {
 			{"general/single/store/website/group/mode/enabled/disabled/default", 5, "group", false},
 		}
 		for i, test := range tests {
-			p := MustMakePath(test.have)
+			p := MustNewPath(test.have)
 			part, haveErr := p.Part(test.pos)
 			if test.wantErr {
 				assert.Empty(t, part, "Index %d", i)
@@ -637,7 +637,7 @@ func TestPathValidate(t *testing.T) {
 		{"", errors.Empty},
 	}
 	for i, test := range tests {
-		_, haveErr := MakePath(test.have)
+		_, haveErr := NewPath(test.have)
 		if test.wantErrKind > 0 {
 			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => %s", i, haveErr)
 		} else {
@@ -667,7 +667,7 @@ func TestPathSplit(t *testing.T) {
 			{"system/full_page_cache/varnish/backend_port", []string{"system", "full_page_cache", "varnish/backend_port"}},
 		}
 		for _, test := range tests {
-			p := MustMakePath(test.have)
+			p := MustNewPath(test.have)
 			sps, haveErr := p.Split()
 			require.NoError(t, haveErr, "Path %q", test.have)
 			for i, wantPart := range test.wantPart {
@@ -681,7 +681,7 @@ func TestPath_MarshalText(t *testing.T) {
 	t.Parallel()
 
 	t.Run("two way, no errors", func(t *testing.T) {
-		p, err := MakePathWithScope(scope.Store.Pack(4), "xx/yy/zz")
+		p, err := NewPathWithScope(scope.Store.Pack(4), "xx/yy/zz")
 		require.NoError(t, err)
 		txt, err := p.MarshalText()
 		require.NoError(t, err)
@@ -717,7 +717,7 @@ func TestPath_MarshalBinary(t *testing.T) {
 	t.Parallel()
 
 	t.Run("two way, no errors", func(t *testing.T) {
-		p, err := MakePathWithScope(scope.Store.Pack(4), "xx/yy/zz")
+		p, err := NewPathWithScope(scope.Store.Pack(4), "xx/yy/zz")
 		require.NoError(t, err)
 		txt, err := p.MarshalBinary()
 		require.NoError(t, err)
@@ -759,14 +759,24 @@ func TestPath_IsEmpty(t *testing.T) {
 func TestPath_Equal(t *testing.T) {
 	t.Parallel()
 
-	p1, err := MakePathWithScope(scope.Store.Pack(4), "xx/yy/zz")
+	p1, err := NewPathWithScope(scope.Store.Pack(4), "xx/yy/zz")
 	require.NoError(t, err)
 
-	p2, err := MakePathWithScope(scope.Store.Pack(4), "xx/yy/zz")
+	p2, err := NewPathWithScope(scope.Store.Pack(4), "xx/yy/zz")
 	require.NoError(t, err)
 
 	assert.True(t, p1.Equal(p2))
 
 	p2.ScopeID = scope.Website.Pack(5)
 	assert.True(t, p1.EqualRoute(p2))
+}
+
+func TestPath_HasRoutePrefix(t *testing.T) {
+	t.Parallel()
+	p := &Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(3)}
+
+	assert.False(t, p.HasRoutePrefix(""))
+	assert.True(t, p.HasRoutePrefix("xx"))
+	assert.False(t, p.HasRoutePrefix("yy"))
+	assert.True(t, p.HasRoutePrefix("xx/yy/zz"))
 }

@@ -45,7 +45,7 @@ func (w *MockWrite) Write(p *Path, value []byte) error {
 
 // invocations represents a list containing the fully qualified configuration
 // path and number of invocations. This type has attached some helper functions.
-type invocations map[string]int
+type invocations map[Path]int
 
 // Sum returns the total calls for the current method receiver type. E.g. All
 // calls to String() with different or same paths.
@@ -67,7 +67,7 @@ func (iv invocations) Paths() []string {
 	p := make([]string, len(iv))
 	i := 0
 	for k := range iv {
-		p[i] = k
+		p[i] = k.String()
 		i++
 	}
 	sort.Strings(p)
@@ -80,11 +80,7 @@ func (iv invocations) ScopeIDs() scope.TypeIDs {
 	ids := make(scope.TypeIDs, len(iv))
 	i := 0
 	for k := range iv {
-		p, err := SplitFQ(k)
-		if err != nil {
-			panic(fmt.Sprintf("[cfgmock] Path: %q with error: %+v", k, err))
-		}
-		ids[i] = p.ScopeID
+		ids[i] = k.ScopeID
 		i++
 	}
 	sort.Sort(ids)
@@ -98,7 +94,8 @@ type Mock struct {
 	Storage Storager
 	mu      sync.Mutex
 	// GetFn can be set optionally. If set then Storage will be ignored.
-	GetFn       func(p *Path) (v Value)
+	// Must return a guaranteed non-nil Value.
+	GetFn       func(p *Path) (v *Value)
 	invocations invocations // contains path and count of how many times the typed function has been called
 
 	SubscribeFn      func(string, MessageReceiver) (subscriptionID int, err error)
@@ -146,7 +143,7 @@ func (pv MockPathValue) GoString() string {
 	return buf.String()
 }
 
-// NewMock creates a new mocked Mock for testing usage. Initializes a
+// NewMock creates a new mocked Service for testing usage. Initializes a
 // simple in memory key/value storage.
 func NewMock(pvs ...MockPathValue) *Mock {
 	mr := &Mock{
@@ -181,29 +178,32 @@ func (s *Mock) UpdateValues(pv MockPathValue) {
 }
 
 // Value looks up a configuration value for a given path.
-func (s *Mock) Value(p *Path) Value {
+func (s *Mock) Value(p *Path) *Value {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.invocations == nil {
 		s.invocations = make(invocations)
 	}
 	ps := p.String()
-	s.invocations[ps]++
+	s.invocations[*p]++
 
 	if s.GetFn != nil {
 		return s.GetFn(p)
 	}
 
-	vb, ok, err := s.Storage.Value(0, p.String())
+	vb, ok, err := s.Storage.Value(0, ps)
+	if err != nil {
+		err = errors.WithStack(err)
+	}
 	var found uint8
 	if ok {
 		found = valFoundYes
 	}
-	return Value{
-		Path:    p,
+	return &Value{
+		Path:    *p,
 		data:    vb,
 		found:   found,
-		lastErr: errors.WithStack(err),
+		lastErr: err,
 	}
 }
 

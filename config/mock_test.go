@@ -38,19 +38,19 @@ func TestPathValueGoStringer(t *testing.T) {
 func TestService_FnInvokes(t *testing.T) {
 	called := 0
 	s := config.Mock{
-		GetFn: func(p *config.Path) (v config.Value) {
+		GetFn: func(p *config.Path) (v *config.Value) {
 			called++
 			return
 		},
 	}
-	_ = s.Value(config.MustMakePath("test/service/invokes"))
-	_ = s.Value(config.MustMakePath("test/service/invokes"))
+	_ = s.Value(config.MustNewPath("test/service/invokes"))
+	_ = s.Value(config.MustNewPath("test/service/invokes"))
 	assert.Exactly(t, 2, called)
 }
 
 func TestService_FnInvokes_Map(t *testing.T) {
 	s := config.Mock{
-		GetFn: func(p *config.Path) (v config.Value) {
+		GetFn: func(p *config.Path) (v *config.Value) {
 			return
 		},
 	}
@@ -62,7 +62,7 @@ func TestService_FnInvokes_Map(t *testing.T) {
 		// food for the race detector
 		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
-			_ = s.Value(config.MustMakePath("test/service/invokes"))
+			_ = s.Value(config.MustNewPath("test/service/invokes"))
 		}(&wg)
 	}
 	wg.Wait()

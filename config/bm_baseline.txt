@@ -8,9 +8,9 @@ BenchmarkPathHashFull-4     	 3000000	       443 ns/op	       0 B/op	       0 al
 BenchmarkPathHashLevel2-4   	 2000000	       614 ns/op	       0 B/op	       0 allocs/op
 BenchmarkSplitFQ-4          	10000000	       196 ns/op	      32 B/op	       1 allocs/op
 BenchmarkRouteAppend-4      	 5000000	       297 ns/op	      56 B/op	       2 allocs/op
-BenchmarkRouteLevel_One-4   	20000000	        71.7 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRouteLevel_Two-4   	20000000	        82.2 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRouteLevel_All-4   	30000000	        53.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPath_Level_One-4   	20000000	        71.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPath_Level_Two-4   	20000000	        82.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPath_Level_All-4   	30000000	        53.8 ns/op	       0 B/op	       0 allocs/op
 BenchmarkRouteHash-4        	10000000	       164 ns/op	       0 B/op	       0 allocs/op
 BenchmarkRouteHash32-4      	30000000	        39.3 ns/op	       0 B/op	       0 allocs/op
 BenchmarkRoutePart-4        	20000000	        92.9 ns/op	       0 B/op	       0 allocs/op

@@ -28,7 +28,8 @@ import (
 // cannot be found, it must return false as the 2nd return argument.
 type Getter interface {
 	NewScoped(websiteID, storeID int64) Scoped
-	Value(*Path) Value
+	// Value returns a guaranteed non-nil Value.
+	Value(*Path) *Value
 }
 
 // GetterPubSuber implements a configuration Getter and a Subscriber for Publish
@@ -175,7 +176,7 @@ func (s *Service) Write(p *Path, v []byte) error {
 		s.sendMsg(*p)
 	}
 	if s.lru != nil {
-		s.lru.Remove(p)
+		s.lru.Remove(*p)
 	}
 	return nil
 }
@@ -184,7 +185,7 @@ func (s *Service) Write(p *Path, v []byte) error {
 // using a direct match. Safe for concurrent use. Example usage:
 //
 //		// Default Scope
-//		dp := config.MustMakePath("general/locale/timezone")
+//		dp := config.MustNewPath("general/locale/timezone")
 //
 //		// Website Scope
 //		// 3 for example comes from store_website database table
@@ -193,7 +194,9 @@ func (s *Service) Write(p *Path, v []byte) error {
 //		// Store Scope
 //		// 6 for example comes from store database table
 //		ss := p.Bind(scope.StoreID, 6)
-func (s *Service) Value(p *Path) (v Value) {
+//
+// Returns a guaranteed non-nil value.
+func (s *Service) Value(p *Path) (v *Value) {
 	if s.Log.IsDebug() {
 		wdl := log.WhenDone(s.Log)
 		defer func() {
@@ -203,14 +206,16 @@ func (s *Service) Value(p *Path) (v Value) {
 	}
 
 	if s.lru != nil {
-		if lruVal, ok := s.lru.Get(p); ok {
+		if lruVal, ok := s.lru.Get(*p); ok {
 			lruVal.found = valFoundLRU
-			v = lruVal
+			v = &lruVal
 			return
 		}
 	}
 
-	v.Path = p
+	v = &Value{
+		Path: *p,
+	}
 	var ok bool
 	v.data, ok, v.lastErr = s.backend.Value(p.ScopeID, p.route)
 	if ok {
@@ -220,7 +225,7 @@ func (s *Service) Value(p *Path) (v Value) {
 		v.lastErr = errors.Wrapf(v.lastErr, "[config] Service.Value with path %q", p)
 	}
 	if s.lru != nil && v.lastErr == nil {
-		s.lru.Add(p, v)
+		s.lru.Add(v.Path, *v)
 	}
 	return v
 }
@@ -324,7 +329,8 @@ func (ss Scoped) isAllowedWebsite(restrictUpTo scope.Type) bool {
 // `restrictUpTo` specifies only website scope, then the store scope will be
 // ignored for querying. If argument `restrictUpTo` has been set to zero aka.
 // scope.Absent, then all three scopes are considered for querying.
-func (ss Scoped) Value(restrictUpTo scope.Type, route string) (v Value) {
+// Returns a guaranteed non-nil Value.
+func (ss Scoped) Value(restrictUpTo scope.Type, route string) (v *Value) {
 	// fallback to next parent scope if value does not exists
 	p := Path{
 		route: route,
