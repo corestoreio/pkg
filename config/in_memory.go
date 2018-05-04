@@ -30,8 +30,8 @@ type kvmap struct {
 	kv map[kvMapKey][]byte
 }
 
-// NewInMemoryStore creates a new simple key value storage using a map[string]interface{}.
-// Mainly used for testing.
+// NewInMemoryStore creates a new simple key value storage using a map. Mainly
+// used for testing.
 func NewInMemoryStore() Storager {
 	return &kvmap{
 		kv: make(map[kvMapKey][]byte),

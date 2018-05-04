@@ -498,5 +498,3 @@ func TestService_Scoped_LRU_Parallel(t *testing.T) {
 
 	})
 }
-
-var _ config.Storager = (*config.MultiStorage)(nil)

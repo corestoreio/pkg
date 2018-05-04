@@ -69,6 +69,7 @@ type Service struct {
 	// function WithLRU to enable it and set the correct max size of the LRU
 	// cache. For now this algorithm should be good enough. Can be refactored
 	// any time later.
+	// Can be replaced by https://github.com/goburrow/cache TinyLFU
 	lru *lruCache
 
 	// backend is the underlying data holding provider. Only access it if you
@@ -356,16 +357,4 @@ func (ss Scoped) Value(restrictUpTo scope.Type, route string) (v *Value) {
 	}
 	p.ScopeID = scope.DefaultTypeID
 	return ss.Root.Value(&p)
-}
-
-type MultiStorage struct {
-	Backends []Storager
-}
-
-func (ms *MultiStorage) Set(scp scope.TypeID, path string, value []byte) error {
-	return nil
-}
-
-func (ms *MultiStorage) Value(scp scope.TypeID, path string) (v []byte, found bool, err error) {
-	return
 }
