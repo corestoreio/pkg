@@ -55,7 +55,7 @@ func TestCacheGet(t *testing.T) {
 			assert.NoError(t, haveSetErr, "Index %d", idx)
 		}
 
-		haveData, haveOK, haveGetErr := bgc.Value(test.scp, test.path)
+		haveData, haveOK, haveGetErr := bgc.Get(test.scp, test.path)
 		if test.wantGetErr != nil {
 			assert.EqualError(t, haveGetErr, test.wantGetErr.Error(), "Index %d", idx)
 			assert.False(t, haveOK)
@@ -74,7 +74,7 @@ func TestCacheGetNotFound(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	haveVal, haveFound, haveGetErr := sc.Value(scope.DefaultTypeID, "aa/bb/cc")
+	haveVal, haveFound, haveGetErr := sc.Get(scope.DefaultTypeID, "aa/bb/cc")
 	assert.False(t, haveFound)
 	assert.NoError(t, haveGetErr)
 	assert.Empty(t, haveVal)

@@ -54,8 +54,8 @@ func (s *Storage) Set(scp scope.TypeID, path string, value []byte) error {
 	return s.Cache.Set(key.String(), value)
 }
 
-// Get may return a ErrKeyNotFound error
-func (s *Storage) Value(scp scope.TypeID, path string) (v []byte, found bool, err error) {
+// Get returns a value from the cache.
+func (s *Storage) Get(scp scope.TypeID, path string) (v []byte, found bool, err error) {
 	var key strings.Builder
 	key.WriteString(scp.ToIntString())
 	key.WriteByte(kvMapScopeSep)
