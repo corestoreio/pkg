@@ -53,9 +53,9 @@ func MakeMulti(o MultiOptions, ss ...config.Storager) config.Storager {
 	return &multi{options: o, backends: allStorages}
 }
 
-// Put writes concurrently to the backends. A ContextTimeout can be defined to
+// Set writes concurrently to the backends. A ContextTimeout can be defined to
 // cancel the internal goroutine. It returns the first error.
-func (ms *multi) Put(scp scope.TypeID, path string, value []byte) error {
+func (ms *multi) Set(scp scope.TypeID, path string, value []byte) error {
 	// investigate if that concept of timeout and cancellation is good enough
 	ctx := context.Background()
 	if ms.options.ContextTimeout > 0 {
@@ -76,7 +76,7 @@ func (ms *multi) Put(scp scope.TypeID, path string, value []byte) error {
 				select {
 				case <-stopChan:
 					return
-				case errChan <- errors.WithStack(s.Put(scp, path, value)):
+				case errChan <- errors.WithStack(s.Set(scp, path, value)):
 				}
 			}()
 

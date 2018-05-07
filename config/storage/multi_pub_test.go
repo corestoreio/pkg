@@ -44,7 +44,7 @@ func TestMakeMulti(t *testing.T) {
 		inMem2 := config.NewInMemoryStore()
 		m := storage.MakeMulti(storage.MultiOptions{}, inMem1, inMem2)
 
-		require.NoError(t, m.Put(scpID, path, testVal))
+		require.NoError(t, m.Set(scpID, path, testVal))
 
 		cmpGet(t, inMem1, testVal)
 		cmpGet(t, inMem2, testVal)
@@ -61,7 +61,7 @@ func TestMakeMulti(t *testing.T) {
 
 		testVal := []byte(`A bro-grammer has a hammer`)
 
-		err := m.Put(scpID, path, testVal)
+		err := m.Set(scpID, path, testVal)
 		require.Error(t, err)
 		assert.Exactly(t, context.DeadlineExceeded.Error(), err.Error())
 
@@ -79,7 +79,7 @@ func TestMakeMulti(t *testing.T) {
 
 		testVal := []byte(`You are a bro-grammer'`)
 
-		err := m.Put(scpID, path, testVal)
+		err := m.Set(scpID, path, testVal)
 		require.Error(t, err)
 		assert.Exactly(t, "resource in use", err.Error())
 
@@ -104,7 +104,7 @@ type sleepWriter struct {
 	setErr error
 }
 
-func (sw sleepWriter) Put(scp scope.TypeID, path string, value []byte) error {
+func (sw sleepWriter) Set(scp scope.TypeID, path string, value []byte) error {
 	if sw.d > 0 {
 		time.Sleep(sw.d)
 	}
