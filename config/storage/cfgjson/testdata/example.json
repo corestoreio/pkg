@@ -1,0 +1,16 @@
+{
+  "payment/stripe/user_name": {
+    "default": "AUserName",
+    "websites": {
+      "1": "WS1Username",
+      "2": "WS2Username"
+    },
+    "stores": {
+      "5": "SO5Username",
+      "11": "SO11Username"
+    }
+  },
+  "payment/stripe/host": {
+    "default": "localhost:1234"
+  }
+}
