@@ -37,21 +37,21 @@ func ExampleService() {
 	// supported, but we do ;-)
 
 	// scope default:
-	if err := configSrv.Put(pathString, []byte("DefaultGopher")); err != nil {
+	if err := configSrv.Set(pathString, []byte("DefaultGopher")); err != nil {
 		fmt.Printf("Write Error: %s", err)
 		return
 	}
 
 	// scope website. The number 3 is made up and comes usually from DB table
 	// (M1) core_website or (M2) store_website.
-	if err := configSrv.Put(pathString.BindWebsite(3), []byte("WebsiteGopher")); err != nil {
+	if err := configSrv.Set(pathString.BindWebsite(3), []byte("WebsiteGopher")); err != nil {
 		fmt.Printf("Write Error: %s", err)
 		return
 	}
 
 	// scope store. The number 2 is made up and comes usually from DB table
 	// (M1) core_store or (M2) store.
-	if err := configSrv.Put(pathString.BindStore(2), []byte("StoreGopher")); err != nil {
+	if err := configSrv.Set(pathString.BindStore(2), []byte("StoreGopher")); err != nil {
 		fmt.Printf("Write Error: %s", err)
 		return
 	}

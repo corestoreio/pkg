@@ -39,11 +39,11 @@ type GetterPubSuber interface {
 	Subscriber
 }
 
-// Putter thread safe storing of configuration values under different paths and
+// Setter thread safe storing of configuration values under different paths and
 // scopes.
-type Putter interface {
+type Setter interface {
 	// Write writes a configuration entry and may return an error
-	Put(p *Path, value []byte) error
+	Set(p *Path, value []byte) error
 }
 
 // Storager is the underlying data storage for holding the keys and its values.
@@ -55,7 +55,7 @@ type Storager interface {
 
 	// Set sets a key with a value and returns on success nil or
 	// ErrKeyOverwritten, on failure any other error
-	Put(scp scope.TypeID, path string, value []byte) error
+	Set(scp scope.TypeID, path string, value []byte) error
 	// Value returns the raw value `v` on success and sets `found` to true
 	// because the value has been found. If the value cannot be found for the
 	// desired path, return value `found` must be false. A nil value `v`
@@ -150,7 +150,7 @@ func (s *Service) NewScoped(websiteID, storeID int64) Scoped {
 	return NewScoped(s, websiteID, storeID)
 }
 
-// Put puts a value back into the Service. Safe for concurrent use. Example
+// Set puts a value back into the Service. Safe for concurrent use. Example
 // usage:
 //		// Default Scope
 //		p, err := config.MakeByString("currency/option/base") // or use config.MustMakeByString( ... )
@@ -163,14 +163,14 @@ func (s *Service) NewScoped(websiteID, storeID int64) Scoped {
 //		// Store Scope
 //		// 6 for example comes from core_store/store database table
 //		err := Write(p.Bind(scope.StoreID, 6), "CHF")
-func (s *Service) Put(p *Path, v []byte) error {
+func (s *Service) Set(p *Path, v []byte) error {
 	if s.Log.IsDebug() {
 		log.WhenDone(s.Log).Debug("config.Service.Write", log.Stringer("path", p), log.Int("data_length", len(v)))
 	}
 	if err := p.IsValid(); err != nil {
 		return errors.WithStack(err)
 	}
-	if err := s.backend.Put(p.ScopeID, p.route, v); err != nil {
+	if err := s.backend.Set(p.ScopeID, p.route, v); err != nil {
 		return errors.Wrap(err, "[config] Service.backend.Set")
 	}
 	if s.pubSub != nil {

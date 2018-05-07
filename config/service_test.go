@@ -32,7 +32,7 @@ import (
 
 var (
 	_ config.Getter     = (*config.Service)(nil)
-	_ config.Putter     = (*config.Service)(nil)
+	_ config.Setter     = (*config.Service)(nil)
 	_ config.Subscriber = (*config.Service)(nil)
 )
 
@@ -64,7 +64,7 @@ func TestService_Put(t *testing.T) {
 	assert.NotNil(t, srv)
 
 	p1 := new(config.Path)
-	err := srv.Put(p1, []byte{})
+	err := srv.Set(p1, []byte{})
 	assert.True(t, errors.Empty.Match(err), "Error: %s", err)
 }
 
@@ -74,7 +74,7 @@ func TestService_Write_Get_Value_Success(t *testing.T) {
 		return func(t *testing.T) {
 			srv := config.MustNewService(config.NewInMemoryStore())
 
-			require.NoError(t, srv.Put(p, value), "Writing Value in Test %q should not fail", t.Name())
+			require.NoError(t, srv.Set(p, value), "Writing Value in Test %q should not fail", t.Name())
 
 			haveStr, ok, haveErr := srv.Get(p).Str()
 			require.NoError(t, haveErr, "No error should occur when retrieving a value")
@@ -408,9 +408,9 @@ func TestWithLRU(t *testing.T) {
 	val := srv.Get(p1)
 	assert.False(t, val.IsValid(), "value should NOT be valid and not found")
 
-	require.NoError(t, srv.Put(p1, []byte(`1.001`)))
-	require.NoError(t, srv.Put(p2, []byte(`2.002`)))
-	require.NoError(t, srv.Put(p3, []byte(`3.003`)))
+	require.NoError(t, srv.Set(p1, []byte(`1.001`)))
+	require.NoError(t, srv.Set(p2, []byte(`2.002`)))
+	require.NoError(t, srv.Set(p3, []byte(`3.003`)))
 
 	// NOT from LRU
 	assert.Exactly(t, 1.001, mustFloat(srv.Get(p1).Float64()))
@@ -468,7 +468,7 @@ func TestService_Scoped_LRU_Parallel(t *testing.T) {
 		if p.HasRoutePrefix(route2) {
 			true = []byte(`0`)
 		}
-		if err := srv.Put(p, true); err != nil {
+		if err := srv.Set(p, true); err != nil {
 			panic(err)
 		}
 

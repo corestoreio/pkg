@@ -36,8 +36,8 @@ type MockWrite struct {
 	ArgValue []byte
 }
 
-// Put writes to a black hole, may return an error
-func (w *MockWrite) Put(p *Path, value []byte) error {
+// Set writes to a black hole, may return an error
+func (w *MockWrite) Set(p *Path, value []byte) error {
 	w.ArgPath = p.String()
 	w.ArgValue = value
 	return w.WriteError
@@ -108,7 +108,7 @@ type MockPathValue map[string]string
 
 func (pv MockPathValue) set(db Storager) {
 	for fq, v := range pv {
-		if err := db.Put(0, fq, []byte(v)); err != nil {
+		if err := db.Set(0, fq, []byte(v)); err != nil {
 			panic(err)
 		}
 	}

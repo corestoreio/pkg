@@ -32,7 +32,7 @@ func TestSimpleStorage_OneKey(t *testing.T) {
 	var testTypeID = scope.Store.Pack(55)
 	sp := config.NewInMemoryStore()
 
-	assert.NoError(t, sp.Put(testTypeID, "aa/bb/cc", []byte(`19.99`)))
+	assert.NoError(t, sp.Set(testTypeID, "aa/bb/cc", []byte(`19.99`)))
 	vb, ok, err := sp.Get(testTypeID, path)
 	require.NoError(t, err)
 	require.True(t, ok)

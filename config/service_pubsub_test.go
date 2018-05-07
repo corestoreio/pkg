@@ -80,7 +80,7 @@ func TestPubSubBubbling(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, subID, "The very first subscription ID should be 1")
 
-	assert.NoError(t, s.Put(testPath.BindWebsite(123), []byte(`1`)))
+	assert.NoError(t, s.Set(testPath.BindWebsite(123), []byte(`1`)))
 	assert.NoError(t, s.Close())
 
 	//t.Log("Before", "testPath", testPath.Route)
@@ -89,7 +89,7 @@ func TestPubSubBubbling(t *testing.T) {
 	//t.Log("After", "testPath", testPath.Route, "testPath2", testPath2.Route)
 
 	// send on closed channel
-	assert.NoError(t, s.Put(testPath2.BindWebsite(3), []byte(`1`)))
+	assert.NoError(t, s.Set(testPath2.BindWebsite(3), []byte(`1`)))
 	err = s.Close()
 	assert.True(t, errors.AlreadyClosed.Match(err), "Error: %s", err)
 }
@@ -110,7 +110,7 @@ func TestPubSubPanicSimple(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, subID, "The very first subscription ID should be 1")
-	assert.NoError(t, s.Put(testPath.BindStore(123), []byte(`321`)), "Writing value 123 should not fail")
+	assert.NoError(t, s.Set(testPath.BindStore(123), []byte(`321`)), "Writing value 123 should not fail")
 	assert.NoError(t, s.Close(), "Closing the service should not fail.")
 	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.r recover: "Don't panic!"`)
 }
@@ -133,7 +133,7 @@ func TestPubSubPanicError(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, subID, "The very first subscription ID should be 1")
-	assert.NoError(t, s.Put(testPath.BindStore(123), []byte(`321`)))
+	assert.NoError(t, s.Set(testPath.BindStore(123), []byte(`321`)))
 
 	assert.NoError(t, s.Close())
 	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.err error: "OMG! Panic!" path: "stores/123/aa/bb/cc"`)
@@ -177,7 +177,7 @@ func TestPubSubPanicMultiple(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, subID > 0)
 
-	assert.NoError(t, s.Put(config.MustNewPath("xx/yy/zz"), []byte(`any kind of data`)))
+	assert.NoError(t, s.Set(config.MustNewPath("xx/yy/zz"), []byte(`any kind of data`)))
 	assert.NoError(t, s.Close())
 
 	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.r recover: "One: Don't panic!`)
@@ -201,7 +201,7 @@ func TestPubSubUnsubscribe(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, subID, "The very first subscription ID should be 1")
 	assert.NoError(t, s.Unsubscribe(subID))
-	assert.NoError(t, s.Put(p, []byte(`any kind of data`)))
+	assert.NoError(t, s.Set(p, []byte(`any kind of data`)))
 	assert.NoError(t, s.Close())
 	assert.Regexp(t, `config.Service.Write duration: [0-9]+ path: "stores/123/xx/yy/zz" data_length: 16`, debugBuf.String())
 
@@ -250,9 +250,9 @@ func TestPubSubEvict(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, subID)
 
-	assert.NoError(t, s.Put(config.MustNewPath("xx/yy/zz").BindStore(123), []byte(`321`)))
-	assert.NoError(t, s.Put(config.MustNewPath("xx/yy/aa").BindStore(123), []byte(`321`)))
-	assert.NoError(t, s.Put(config.MustNewPath("xx/yy/zz").BindStore(123), []byte(`321`)))
+	assert.NoError(t, s.Set(config.MustNewPath("xx/yy/zz").BindStore(123), []byte(`321`)))
+	assert.NoError(t, s.Set(config.MustNewPath("xx/yy/aa").BindStore(123), []byte(`321`)))
+	assert.NoError(t, s.Set(config.MustNewPath("xx/yy/zz").BindStore(123), []byte(`321`)))
 
 	assert.NoError(t, s.Close())
 

@@ -25,7 +25,7 @@ import (
 
 var _ config.Getter = (*config.Mock)(nil)
 var _ config.GetterPubSuber = (*config.Mock)(nil)
-var _ config.Putter = (*config.MockWrite)(nil)
+var _ config.Setter = (*config.MockWrite)(nil)
 var _ fmt.GoStringer = (*config.MockPathValue)(nil)
 
 func TestPathValueGoStringer(t *testing.T) {
