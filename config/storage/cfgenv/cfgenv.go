@@ -156,8 +156,8 @@ func (s *Storage) Set(scp scope.TypeID, route string, value []byte) error {
 	return nil
 }
 
-// Value returns the value from the environment by match scope and route.
-func (s *Storage) Value(scp scope.TypeID, route string) (v []byte, found bool, err error) {
+// Get returns the value from the environment by match scope and route.
+func (s *Storage) Get(scp scope.TypeID, route string) (v []byte, found bool, err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

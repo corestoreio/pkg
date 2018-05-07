@@ -24,6 +24,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var _ config.Storager = (*Storage)(nil)
+
 func TestToEnvVar(t *testing.T) {
 
 	tests := []struct {
@@ -86,8 +88,8 @@ func TestFromEnvVar(t *testing.T) {
 	}
 }
 
-func validateFoundValue(t *testing.T, s config.Storager, scp scope.TypeID, route string, want string) {
-	data, ok, err := s.Value(scp, route)
+func validateFoundGet(t *testing.T, s config.Storager, scp scope.TypeID, route string, want string) {
+	data, ok, err := s.Get(scp, route)
 	require.NoError(t, err)
 	assert.True(t, ok, "env value must be found")
 	assert.Exactly(t, []byte(want), data)
@@ -110,7 +112,7 @@ func TestStorage_No_Preload(t *testing.T) {
 			defer func() { assert.NoError(t, os.Unsetenv(envVar)) }()
 			require.NoError(t, os.Setenv(envVar, "DATA from ENV"))
 
-			validateFoundValue(t, s, scp, route, `DATA from ENV`)
+			validateFoundGet(t, s, scp, route, `DATA from ENV`)
 		}
 	}
 	t.Run("default scope", runner("CONFIG__AA__BB__CC", scope.DefaultTypeID, "aa/bb/cc"))
@@ -120,7 +122,7 @@ func TestStorage_No_Preload(t *testing.T) {
 		envVar := "CONFIG____€__∏"
 		defer func() { assert.NoError(t, os.Unsetenv(envVar)) }()
 		require.NoError(t, os.Setenv(envVar, "DATA from ENV"))
-		data, ok, err := s.Value(scope.DefaultTypeID, "aa/bb/cc")
+		data, ok, err := s.Get(scope.DefaultTypeID, "aa/bb/cc")
 		require.NoError(t, err)
 		assert.False(t, ok, "env value must be found")
 		assert.Nil(t, data)
@@ -145,7 +147,7 @@ func BenchmarkStorage_No_Preload(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var ok bool
 		var err error
-		benchmarkStorage, ok, err = s.Value(scope.Store.Pack(444), "aa/bb/cc_dd/ee")
+		benchmarkStorage, ok, err = s.Get(scope.Store.Pack(444), "aa/bb/cc_dd/ee")
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -170,14 +172,14 @@ func TestStorage_No_Preload_UnsetEnvAfterRead_And_Cache(t *testing.T) {
 	const wantValue = "Banana 🍌"
 	os.Setenv("CONFIG__WEBSITES__159__AA__BB__CC", wantValue)
 
-	validateFoundValue(t, s, scope.Website.Pack(159), "aa/bb/cc", wantValue)
+	validateFoundGet(t, s, scope.Website.Pack(159), "aa/bb/cc", wantValue)
 
 	ev, eOK := os.LookupEnv("CONFIG__WEBSITES__159__AA__BB__CC")
 	assert.False(t, eOK, "Env var must be unset and not found")
 	assert.Empty(t, ev, "Env var must be empty")
 
 	// Read from cache
-	validateFoundValue(t, s, scope.Website.Pack(159), "aa/bb/cc", wantValue)
+	validateFoundGet(t, s, scope.Website.Pack(159), "aa/bb/cc", wantValue)
 }
 
 func TestStorage_With_Preload_UnsetEnvAfterRead(t *testing.T) {
@@ -193,8 +195,8 @@ func TestStorage_With_Preload_UnsetEnvAfterRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	validateFoundValue(t, s, scope.Store.Pack(345), "xx/bb/cc", wantValue)
-	validateFoundValue(t, s, scope.Store.Pack(345), "xy/bb/cc", "")
+	validateFoundGet(t, s, scope.Store.Pack(345), "xx/bb/cc", wantValue)
+	validateFoundGet(t, s, scope.Store.Pack(345), "xy/bb/cc", "")
 
 	ev, eOK := os.LookupEnv("CONFIG__STORES__345__XX__BB__CC")
 	assert.False(t, eOK, "Env var must be unset and not found")
