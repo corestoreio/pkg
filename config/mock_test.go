@@ -25,7 +25,7 @@ import (
 
 var _ config.Getter = (*config.Mock)(nil)
 var _ config.GetterPubSuber = (*config.Mock)(nil)
-var _ config.Writer = (*config.MockWrite)(nil)
+var _ config.Putter = (*config.MockWrite)(nil)
 var _ fmt.GoStringer = (*config.MockPathValue)(nil)
 
 func TestPathValueGoStringer(t *testing.T) {
@@ -43,8 +43,8 @@ func TestService_FnInvokes(t *testing.T) {
 			return
 		},
 	}
-	_ = s.Value(config.MustNewPath("test/service/invokes"))
-	_ = s.Value(config.MustNewPath("test/service/invokes"))
+	_ = s.Get(config.MustNewPath("test/service/invokes"))
+	_ = s.Get(config.MustNewPath("test/service/invokes"))
 	assert.Exactly(t, 2, called)
 }
 
@@ -62,7 +62,7 @@ func TestService_FnInvokes_Map(t *testing.T) {
 		// food for the race detector
 		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
-			_ = s.Value(config.MustNewPath("test/service/invokes"))
+			_ = s.Get(config.MustNewPath("test/service/invokes"))
 		}(&wg)
 	}
 	wg.Wait()

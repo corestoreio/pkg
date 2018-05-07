@@ -187,7 +187,7 @@ func (p *Path) fq(buf *bytes.Buffer) error {
 	return nil
 }
 
-// SplitFQ takes a fully qualified path and splits it into its parts.
+// NewPathFromFQ takes a fully qualified path and splits it into its parts.
 // 	Input: stores/5/catalog/frontend/list_allow_all
 //	=>
 //		scope: 		stores
@@ -195,7 +195,7 @@ func (p *Path) fq(buf *bytes.Buffer) error {
 //		path: 		catalog/frontend/list_allow_all
 // Zero allocations to memory. Err may contain an ErrUnsupportedScope or
 // failed to parse a string into an int64 or invalid fqPath.
-func SplitFQ(fqPath string) (*Path, error) {
+func NewPathFromFQ(fqPath string) (*Path, error) {
 	// this is the most fast version I come up with.
 	// moving from strings to bytes was even slower despite inline
 	// th parse int64 function

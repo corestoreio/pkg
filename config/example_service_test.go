@@ -37,27 +37,27 @@ func ExampleService() {
 	// supported, but we do ;-)
 
 	// scope default:
-	if err := configSrv.Write(pathString, []byte("DefaultGopher")); err != nil {
+	if err := configSrv.Put(pathString, []byte("DefaultGopher")); err != nil {
 		fmt.Printf("Write Error: %s", err)
 		return
 	}
 
 	// scope website. The number 3 is made up and comes usually from DB table
 	// (M1) core_website or (M2) store_website.
-	if err := configSrv.Write(pathString.BindWebsite(3), []byte("WebsiteGopher")); err != nil {
+	if err := configSrv.Put(pathString.BindWebsite(3), []byte("WebsiteGopher")); err != nil {
 		fmt.Printf("Write Error: %s", err)
 		return
 	}
 
 	// scope store. The number 2 is made up and comes usually from DB table
 	// (M1) core_store or (M2) store.
-	if err := configSrv.Write(pathString.BindStore(2), []byte("StoreGopher")); err != nil {
+	if err := configSrv.Put(pathString.BindStore(2), []byte("StoreGopher")); err != nil {
 		fmt.Printf("Write Error: %s", err)
 		return
 	}
 
 	// Scope1
-	val, ok, err := configSrv.Value(pathString.BindDefault()).Str()
+	val, ok, err := configSrv.Get(pathString.BindDefault()).Str()
 	if err != nil {
 		fmt.Printf("srvString Error: %s", err)
 		return
@@ -65,7 +65,7 @@ func ExampleService() {
 	fmt.Println("Scope1:", ok, val)
 
 	// Scope2
-	val, ok, err = configSrv.Value(pathString.BindWebsite(3)).Str()
+	val, ok, err = configSrv.Get(pathString.BindWebsite(3)).Str()
 	if err != nil {
 		fmt.Printf("srvString Error: %s", err)
 		return
@@ -73,7 +73,7 @@ func ExampleService() {
 	fmt.Println("Scope2:", ok, val)
 
 	// Scope3
-	val, ok, err = configSrv.Value(pathString.BindStore(2)).Str()
+	val, ok, err = configSrv.Get(pathString.BindStore(2)).Str()
 	if err != nil {
 		fmt.Printf("srvString Error: %s", err)
 		return
@@ -81,7 +81,7 @@ func ExampleService() {
 	fmt.Println("Scope3:", ok, val)
 
 	// Scope4
-	_, ok, err = configSrv.Value(pathString.BindStore(3)).Str() // different scope ID
+	_, ok, err = configSrv.Get(pathString.BindStore(3)).Str() // different scope ID
 	if err != nil {
 		fmt.Printf("Scope4a: srvString Error: %s\n", err)
 		fmt.Printf("Scope4b: srvString Error: %v\n", err) // Use %+v to show the full route! :-)

@@ -214,7 +214,7 @@ func TestSplitFQ(t *testing.T) {
 		{"stores/123/catalog/index", "default", 0, "", errors.NotValid},
 	}
 	for i, test := range tests {
-		havePath, haveErr := SplitFQ(test.have)
+		havePath, haveErr := NewPathFromFQ(test.have)
 
 		if test.wantErrKind > 0 {
 			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => Error: %s", i, haveErr)
@@ -232,13 +232,13 @@ func TestSplitFQ(t *testing.T) {
 
 func TestSplitFQ2(t *testing.T) {
 	t.Parallel()
-	p, err := SplitFQ("websites/5/web/cors/allow_credentials")
+	p, err := NewPathFromFQ("websites/5/web/cors/allow_credentials")
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, scope.Website.Pack(5), p.ScopeID)
 
-	p, err = SplitFQ("default/0/web/cors/allow_credentials")
+	p, err = NewPathFromFQ("default/0/web/cors/allow_credentials")
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}

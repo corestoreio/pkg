@@ -38,8 +38,8 @@ func NewInMemoryStore() Storager {
 	}
 }
 
-// Set implements Storager interface
-func (sp *kvmap) Set(scp scope.TypeID, path string, value []byte) error {
+// Put implements Storager interface
+func (sp *kvmap) Put(scp scope.TypeID, path string, value []byte) error {
 	sp.Lock()
 	sp.kv[kvMapKey{scp, path}] = value
 	sp.Unlock()
@@ -47,7 +47,7 @@ func (sp *kvmap) Set(scp scope.TypeID, path string, value []byte) error {
 }
 
 // Get implements Storager interface.
-func (sp *kvmap) Value(scp scope.TypeID, path string) (v []byte, found bool, err error) {
+func (sp *kvmap) Get(scp scope.TypeID, path string) (v []byte, found bool, err error) {
 	sp.RLock()
 	defer sp.RUnlock()
 	data, found := sp.kv[kvMapKey{scp, path}]

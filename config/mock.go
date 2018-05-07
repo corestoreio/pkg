@@ -36,8 +36,8 @@ type MockWrite struct {
 	ArgValue []byte
 }
 
-// MockWrite writes to a black hole, may return an error
-func (w *MockWrite) Write(p *Path, value []byte) error {
+// Put writes to a black hole, may return an error
+func (w *MockWrite) Put(p *Path, value []byte) error {
 	w.ArgPath = p.String()
 	w.ArgValue = value
 	return w.WriteError
@@ -108,7 +108,7 @@ type MockPathValue map[string]string
 
 func (pv MockPathValue) set(db Storager) {
 	for fq, v := range pv {
-		if err := db.Set(0, fq, []byte(v)); err != nil {
+		if err := db.Put(0, fq, []byte(v)); err != nil {
 			panic(err)
 		}
 	}
@@ -177,8 +177,8 @@ func (s *Mock) UpdateValues(pv MockPathValue) {
 	pv.set(s.Storage)
 }
 
-// Value looks up a configuration value for a given path.
-func (s *Mock) Value(p *Path) *Value {
+// Get looks up a configuration value for a given path.
+func (s *Mock) Get(p *Path) *Value {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.invocations == nil {
@@ -191,7 +191,7 @@ func (s *Mock) Value(p *Path) *Value {
 		return s.GetFn(p)
 	}
 
-	vb, ok, err := s.Storage.Value(0, ps)
+	vb, ok, err := s.Storage.Get(0, ps)
 	if err != nil {
 		err = errors.WithStack(err)
 	}

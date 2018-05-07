@@ -96,7 +96,7 @@ var benchmarkReverseFQPath *config.Path
 func BenchmarkSplitFQ(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkReverseFQPath, err = config.SplitFQ("stores/7475/catalog/frontend/list_allow_all")
+		benchmarkReverseFQPath, err = config.NewPathFromFQ("stores/7475/catalog/frontend/list_allow_all")
 		if err != nil {
 			b.Error(err)
 		}
@@ -230,7 +230,7 @@ func benchmarkScopedServiceStringRun(b *testing.B, websiteID, storeID int64) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		benchmarkScopedServiceVal = sg.Value(scope.Store, route)
+		benchmarkScopedServiceVal = sg.Get(scope.Store, route)
 		if !benchmarkScopedServiceVal.IsValid() {
 			b.Fatal(benchmarkScopedServiceVal)
 		}

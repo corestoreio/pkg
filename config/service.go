@@ -29,7 +29,7 @@ import (
 type Getter interface {
 	NewScoped(websiteID, storeID int64) Scoped
 	// Value returns a guaranteed non-nil Value.
-	Value(*Path) *Value
+	Get(*Path) *Value
 }
 
 // GetterPubSuber implements a configuration Getter and a Subscriber for Publish
@@ -39,11 +39,11 @@ type GetterPubSuber interface {
 	Subscriber
 }
 
-// Writer thread safe storing of configuration values under different paths and
+// Putter thread safe storing of configuration values under different paths and
 // scopes.
-type Writer interface {
+type Putter interface {
 	// Write writes a configuration entry and may return an error
-	Write(p *Path, value []byte) error
+	Put(p *Path, value []byte) error
 }
 
 // Storager is the underlying data storage for holding the keys and its values.
@@ -51,14 +51,16 @@ type Writer interface {
 // simple mutex protected in memory map[string]string.
 // Storager must be safe for concurrent use.
 type Storager interface {
+	// TODO maybe add context as first param and observe in storage implementations if the ctx got cancelled.
+
 	// Set sets a key with a value and returns on success nil or
 	// ErrKeyOverwritten, on failure any other error
-	Set(scp scope.TypeID, path string, value []byte) error
+	Put(scp scope.TypeID, path string, value []byte) error
 	// Value returns the raw value `v` on success and sets `found` to true
 	// because the value has been found. If the value cannot be found for the
 	// desired path, return value `found` must be false. A nil value `v`
 	// indicates also a value and hence `found` is true, if found.
-	Value(scp scope.TypeID, path string) (v []byte, found bool, err error)
+	Get(scp scope.TypeID, path string) (v []byte, found bool, err error)
 }
 
 // Service main configuration provider. Please use the NewService() function.
@@ -148,7 +150,7 @@ func (s *Service) NewScoped(websiteID, storeID int64) Scoped {
 	return NewScoped(s, websiteID, storeID)
 }
 
-// Write puts a value back into the Service. Safe for concurrent use. Example
+// Put puts a value back into the Service. Safe for concurrent use. Example
 // usage:
 //		// Default Scope
 //		p, err := config.MakeByString("currency/option/base") // or use config.MustMakeByString( ... )
@@ -161,14 +163,14 @@ func (s *Service) NewScoped(websiteID, storeID int64) Scoped {
 //		// Store Scope
 //		// 6 for example comes from core_store/store database table
 //		err := Write(p.Bind(scope.StoreID, 6), "CHF")
-func (s *Service) Write(p *Path, v []byte) error {
+func (s *Service) Put(p *Path, v []byte) error {
 	if s.Log.IsDebug() {
 		log.WhenDone(s.Log).Debug("config.Service.Write", log.Stringer("path", p), log.Int("data_length", len(v)))
 	}
 	if err := p.IsValid(); err != nil {
 		return errors.WithStack(err)
 	}
-	if err := s.backend.Set(p.ScopeID, p.route, v); err != nil {
+	if err := s.backend.Put(p.ScopeID, p.route, v); err != nil {
 		return errors.Wrap(err, "[config] Service.backend.Set")
 	}
 	if s.pubSub != nil {
@@ -180,7 +182,7 @@ func (s *Service) Write(p *Path, v []byte) error {
 	return nil
 }
 
-// Value returns a configuration value from the Service, ignoring the scopes
+// Get returns a configuration value from the Service, ignoring the scopes
 // using a direct match. Safe for concurrent use. Example usage:
 //
 //		// Default Scope
@@ -195,7 +197,7 @@ func (s *Service) Write(p *Path, v []byte) error {
 //		ss := p.Bind(scope.StoreID, 6)
 //
 // Returns a guaranteed non-nil value.
-func (s *Service) Value(p *Path) (v *Value) {
+func (s *Service) Get(p *Path) (v *Value) {
 	if s.Log.IsDebug() {
 		wdl := log.WhenDone(s.Log)
 		defer func() {
@@ -216,7 +218,7 @@ func (s *Service) Value(p *Path) (v *Value) {
 		Path: *p,
 	}
 	var ok bool
-	v.data, ok, v.lastErr = s.backend.Value(p.ScopeID, p.route)
+	v.data, ok, v.lastErr = s.backend.Get(p.ScopeID, p.route)
 	if ok {
 		v.found = valFoundYes
 	}
@@ -322,21 +324,21 @@ func (ss Scoped) isAllowedWebsite(restrictUpTo scope.Type) bool {
 	return ss.WebsiteID > 0 && scope.PermWebsiteReverse.Has(scp)
 }
 
-// Value traverses through the scopes store->website->default to find a matching
+// Get traverses through the scopes store->website->default to find a matching
 // byte slice value. The argument `restrictUpTo` scope.Type restricts the
 // bubbling. For example a path gets stored in all three scopes but argument
 // `restrictUpTo` specifies only website scope, then the store scope will be
 // ignored for querying. If argument `restrictUpTo` has been set to zero aka.
 // scope.Absent, then all three scopes are considered for querying.
 // Returns a guaranteed non-nil Value.
-func (ss Scoped) Value(restrictUpTo scope.Type, route string) (v *Value) {
+func (ss Scoped) Get(restrictUpTo scope.Type, route string) (v *Value) {
 	// fallback to next parent scope if value does not exists
 	p := Path{
 		route: route,
 	}
 	if ss.isAllowedStore(restrictUpTo) {
 		p.ScopeID = scope.Store.Pack(ss.StoreID)
-		v := ss.Root.Value(&p)
+		v := ss.Root.Get(&p)
 		if v.found > valFoundNo || v.lastErr != nil {
 			// value found or err is not a NotFound error
 			if v.lastErr != nil {
@@ -347,7 +349,7 @@ func (ss Scoped) Value(restrictUpTo scope.Type, route string) (v *Value) {
 	}
 	if ss.isAllowedWebsite(restrictUpTo) {
 		p.ScopeID = scope.Website.Pack(ss.WebsiteID)
-		v := ss.Root.Value(&p)
+		v := ss.Root.Get(&p)
 		if v.found > valFoundNo || v.lastErr != nil {
 			if v.lastErr != nil {
 				v.lastErr = errors.WithStack(v.lastErr) // hmm, maybe can be removed if no one gets confused
@@ -356,5 +358,5 @@ func (ss Scoped) Value(restrictUpTo scope.Type, route string) (v *Value) {
 		}
 	}
 	p.ScopeID = scope.DefaultTypeID
-	return ss.Root.Value(&p)
+	return ss.Root.Get(&p)
 }
