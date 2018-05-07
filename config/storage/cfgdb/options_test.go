@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ccd_test
+package cfgdb_test
 
 import (
 	"testing"
 
 	"github.com/corestoreio/pkg/config"
-	"github.com/corestoreio/pkg/config/storage/ccd"
+	"github.com/corestoreio/pkg/config/storage/cfgdb"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -37,25 +37,25 @@ func Test_WithCoreConfigData(t *testing.T) {
 		dmltest.MustMockRows(dmltest.WithFile("testdata", "core_config_data.csv")),
 	)
 
-	tbls := ccd.NewTableCollection(dbc.DB)
+	tbls := cfgdb.NewTableCollection(dbc.DB)
 
 	im := config.NewInMemoryStore()
 	s := config.MustNewService(
 		im,
-		ccd.WithCoreConfigData(tbls, ccd.Options{}),
+		cfgdb.WithCoreConfigData(tbls, cfgdb.Options{}),
 	)
 	defer dmltest.Close(t, s)
 
 	p1 := config.MustNewPath("web/secure/offloader_header").BindStore(987)
-	assert.NoError(t, s.Write(p1, []byte("SSL_OFFLOADED")))
+	assert.NoError(t, s.Set(p1, []byte("SSL_OFFLOADED")))
 
-	v, ok, err := s.Value(p1).Str()
+	v, ok, err := s.Get(p1).Str()
 	require.NoError(t, err)
 	require.True(t, ok)
 	assert.Exactly(t, "SSL_OFFLOADED", v)
 
 	p2 := config.MustNewPath("web/unsecure/base_skin_url").BindWebsite(44)
-	v, ok, err = s.Value(p2).Str()
+	v, ok, err = s.Get(p2).Str()
 	require.NoError(t, err)
 	require.True(t, ok)
 	assert.Exactly(t, "{{unsecure_base_url}}skin/", v)

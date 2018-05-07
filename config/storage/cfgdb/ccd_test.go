@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ccd_test
+package cfgdb_test
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
-	"github.com/corestoreio/pkg/config/storage/ccd"
+	"github.com/corestoreio/pkg/config/storage/cfgdb"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/fortytw2/leaktest"
@@ -30,7 +30,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var _ config.Storager = (*ccd.DBStorage)(nil)
+var _ config.Storager = (*cfgdb.DBStorage)(nil)
 
 func TestMustNewDBStorage_Panic(t *testing.T) {
 	t.Parallel()
@@ -45,7 +45,7 @@ func TestMustNewDBStorage_Panic(t *testing.T) {
 			t.Error("Expecting a panic but got nothing")
 		}
 	}()
-	_ = ccd.MustNewDBStorage(ccd.NewTableCollection(nil), ccd.Options{
+	_ = cfgdb.MustNewDBStorage(cfgdb.NewTableCollection(nil), cfgdb.Options{
 		TableName:            "non-existent",
 		SkipSchemaValidation: true,
 	})
@@ -58,7 +58,7 @@ func TestDBStorage_AllKeys_Mocked(t *testing.T) {
 	defer dmltest.MockClose(t, dbc, dbMock)
 
 	t.Run("table not found", func(t *testing.T) {
-		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
+		dbs, err := cfgdb.NewDBStorage(cfgdb.NewTableCollection(dbc.DB), cfgdb.Options{
 			TableName:            "non-existent",
 			SkipSchemaValidation: true,
 		})
@@ -67,7 +67,7 @@ func TestDBStorage_AllKeys_Mocked(t *testing.T) {
 	})
 
 	t.Run("no leaking goroutines", func(t *testing.T) {
-		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
+		dbs, err := cfgdb.NewDBStorage(cfgdb.NewTableCollection(dbc.DB), cfgdb.Options{
 			SkipSchemaValidation: true,
 		})
 		require.NoError(t, err)
@@ -85,17 +85,17 @@ var dbStorageMultiTests = []struct {
 	{"testDBStorage/checkout/multishipping", scope.DefaultTypeID, []byte("false")},
 }
 
-func TestDBStorage_Value(t *testing.T) {
+func TestDBStorage_Get(t *testing.T) {
 	defer leaktest.CheckTimeout(t, time.Second)()
 
-	testBody := func(t *testing.T, dbs *ccd.DBStorage, dbMock sqlmock.Sqlmock, sleep time.Duration) {
+	testBody := func(t *testing.T, dbs *cfgdb.DBStorage, dbMock sqlmock.Sqlmock, sleep time.Duration) {
 
 		prepSel := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `value` FROM `core_config_data` AS `main_table` WHERE (`scope` = ?) AND (`scope_id` = ?) AND (`path` = ?)"))
 		for _, test := range dbStorageMultiTests {
 			scp, sID := test.scopeID.Unpack()
 			prepSel.ExpectQuery().WithArgs(scp.StrType(), sID, test.path).WillReturnRows(sqlmock.NewRows([]string{"value"}))
 
-			haveVal, haveOK, haveErr := dbs.Value(test.scopeID, test.path)
+			haveVal, haveOK, haveErr := dbs.Get(test.scopeID, test.path)
 			require.NoError(t, haveErr)
 			require.False(t, haveOK, "%s Value with path %q should NOT be found", test.scopeID, test.path)
 			assert.Exactly(t, []byte(nil), haveVal)
@@ -110,7 +110,7 @@ func TestDBStorage_Value(t *testing.T) {
 			scp, sID := test.scopeID.Unpack()
 			prepSel.ExpectQuery().WithArgs(scp.StrType(), sID, test.path).WillReturnRows(sqlmock.NewRows([]string{"value"}).AddRow(test.value))
 
-			haveVal, haveOK, haveErr := dbs.Value(test.scopeID, test.path)
+			haveVal, haveOK, haveErr := dbs.Get(test.scopeID, test.path)
 			require.NoError(t, haveErr)
 			require.True(t, haveOK, "%s Value with path %q should be found", test.scopeID, test.path)
 			assert.Exactly(t, test.value, haveVal)
@@ -122,7 +122,7 @@ func TestDBStorage_Value(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 		dbMock.MatchExpectationsInOrder(false)
 
-		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
+		dbs, err := cfgdb.NewDBStorage(cfgdb.NewTableCollection(dbc.DB), cfgdb.Options{
 			SkipSchemaValidation: true,
 		})
 		require.NoError(t, err)
@@ -135,7 +135,7 @@ func TestDBStorage_Value(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 		dbMock.MatchExpectationsInOrder(false)
 
-		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
+		dbs, err := cfgdb.NewDBStorage(cfgdb.NewTableCollection(dbc.DB), cfgdb.Options{
 			IdleRead:             time.Millisecond * 50,
 			IdleWrite:            time.Millisecond * 50,
 			SkipSchemaValidation: true,
@@ -147,7 +147,7 @@ func TestDBStorage_Value(t *testing.T) {
 
 		val, set := dbs.Statistics()
 		assert.Exactly(t,
-			"read ccd.stats{Open:0x2, Close:0x1} write ccd.stats{Open:0x0, Close:0x0}",
+			"read cfgdb.stats{Open:0x2, Close:0x1} write cfgdb.stats{Open:0x0, Close:0x0}",
 			fmt.Sprintf("read %#v write %#v", val, set),
 		)
 	})
@@ -157,7 +157,7 @@ func TestDBStorage_Value(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 		dbMock.MatchExpectationsInOrder(false)
 
-		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
+		dbs, err := cfgdb.NewDBStorage(cfgdb.NewTableCollection(dbc.DB), cfgdb.Options{
 			ContextTimeoutRead:   time.Millisecond * 50,
 			SkipSchemaValidation: true,
 		})
@@ -169,7 +169,7 @@ func TestDBStorage_Value(t *testing.T) {
 			scp, sID := test.scopeID.Unpack()
 			prepSel.ExpectQuery().WithArgs(scp.StrType(), sID, test.path).WillDelayFor(time.Millisecond * 110).WillReturnRows(sqlmock.NewRows([]string{"value"}))
 
-			haveVal, haveOK, haveErr := dbs.Value(test.scopeID, test.path)
+			haveVal, haveOK, haveErr := dbs.Get(test.scopeID, test.path)
 			assert.Nil(t, haveVal)
 			assert.False(t, haveOK)
 			causeErr := errors.Cause(haveErr)
@@ -183,7 +183,7 @@ func TestDBStorage_Value(t *testing.T) {
 func TestDBStorage_Set(t *testing.T) {
 	defer leaktest.CheckTimeout(t, time.Second)()
 
-	testBody := func(t *testing.T, dbs *ccd.DBStorage, dbMock sqlmock.Sqlmock, sleep time.Duration) {
+	testBody := func(t *testing.T, dbs *cfgdb.DBStorage, dbMock sqlmock.Sqlmock, sleep time.Duration) {
 
 		prepIns := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("INSERT INTO `core_config_data` (`scope`,`scope_id`,`path`,`value`) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE `value`=VALUES(`value`)"))
 
@@ -210,7 +210,7 @@ func TestDBStorage_Set(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 		dbMock.MatchExpectationsInOrder(false)
 
-		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
+		dbs, err := cfgdb.NewDBStorage(cfgdb.NewTableCollection(dbc.DB), cfgdb.Options{
 			SkipSchemaValidation: true,
 		})
 		require.NoError(t, err)
@@ -223,7 +223,7 @@ func TestDBStorage_Set(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 		dbMock.MatchExpectationsInOrder(false)
 
-		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
+		dbs, err := cfgdb.NewDBStorage(cfgdb.NewTableCollection(dbc.DB), cfgdb.Options{
 			IdleRead:             time.Millisecond * 5,
 			IdleWrite:            time.Millisecond * 5,
 			SkipSchemaValidation: true,
@@ -235,7 +235,7 @@ func TestDBStorage_Set(t *testing.T) {
 
 		val, set := dbs.Statistics()
 		assert.Exactly(t,
-			"read ccd.stats{Open:0x0, Close:0x0} write ccd.stats{Open:0x3, Close:0x3}",
+			"read cfgdb.stats{Open:0x0, Close:0x0} write cfgdb.stats{Open:0x3, Close:0x3}",
 			fmt.Sprintf("read %#v write %#v", val, set),
 		)
 	})
@@ -245,7 +245,7 @@ func TestDBStorage_Set(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 		dbMock.MatchExpectationsInOrder(false)
 
-		dbs, err := ccd.NewDBStorage(ccd.NewTableCollection(dbc.DB), ccd.Options{
+		dbs, err := cfgdb.NewDBStorage(cfgdb.NewTableCollection(dbc.DB), cfgdb.Options{
 			ContextTimeoutWrite:  time.Millisecond * 50,
 			SkipSchemaValidation: true,
 		})

@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package ccd = core_config_data uses the MySQL based table core_config_data
+// Package cfgdb uses the MySQL/MariaDB based table core_config_data
 // for reading and writing configuration paths, scopes and values.
 //
 // It also provides an option function to load data from core_config_data into
 // a storage service.
-package ccd
+package cfgdb

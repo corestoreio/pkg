@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ccd
+package cfgdb
 
 import (
 	"context"
@@ -157,7 +157,7 @@ func (dbs *DBStorage) closeStmtRead(t time.Time) {
 	dbs.muRead.Lock()
 	if dbs.stmtReadState == stateOpen {
 		if err := dbs.stmtRead.Close(); err != nil && dbs.cfg.Log != nil && dbs.cfg.Log.IsInfo() {
-			dbs.cfg.Log.Info("ccd.DBStorage.stmtRead.Close", log.Stringer("ticker", t), log.Err(err))
+			dbs.cfg.Log.Info("cfgdb.DBStorage.stmtRead.Close", log.Stringer("ticker", t), log.Err(err))
 		}
 		dbs.stmtReadState = stateClosed
 		dbs.stmtReadStat.Close++
@@ -169,7 +169,7 @@ func (dbs *DBStorage) closeStmtWrite(t time.Time) {
 	dbs.muWrite.Lock()
 	if dbs.stmtWriteState == stateOpen {
 		if err := dbs.stmtWrite.Close(); err != nil && dbs.cfg.Log != nil && dbs.cfg.Log.IsInfo() {
-			dbs.cfg.Log.Info("ccd.DBStorage.stmtWrite.Close", log.Stringer("ticker", t), log.Err(err))
+			dbs.cfg.Log.Info("cfgdb.DBStorage.stmtWrite.Close", log.Stringer("ticker", t), log.Err(err))
 		}
 		dbs.stmtWriteState = stateClosed
 		dbs.stmtWriteStat.Close++
@@ -207,7 +207,7 @@ func (dbs *DBStorage) Close() error {
 	return nil
 }
 
-// Set sets a value with its key. Database errors get logged as Info message.
+// Set puts a value with its key. Database errors get logged as Info message.
 // Enabled debug level logs the insert ID or rows affected.
 func (dbs *DBStorage) Set(scp scope.TypeID, path string, value []byte) error {
 	dbs.muWrite.Lock()
@@ -256,10 +256,10 @@ func (dbs *DBStorage) Set(scp scope.TypeID, path string, value []byte) error {
 	return err
 }
 
-// Value performs a read operation from the database and returns a value from
+// Get performs a read operation from the database and returns a value from
 // the table. The `ok` return argument can be true even if byte slice `v` is
 // nil, which means that the path and scope are stored in the database table.
-func (dbs *DBStorage) Value(scp scope.TypeID, path string) (v []byte, ok bool, err error) {
+func (dbs *DBStorage) Get(scp scope.TypeID, path string) (v []byte, ok bool, err error) {
 	dbs.muRead.Lock()
 	prevState := dbs.stmtReadState
 	dbs.stmtReadState = stateInUse

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ccd
+package cfgdb
 
 import (
 	"context"
@@ -62,7 +62,7 @@ func WithCoreConfigData(tbls *ddl.Tables, o Options) config.Option {
 			if err != nil {
 				return errors.Wrapf(err, "[ccd] WithCoreConfigData.config.NewPathWithScope Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ConfigID)
 			}
-			if err = s.Write(p, v); err != nil {
+			if err = s.Set(p, v); err != nil {
 				return errors.Wrapf(err, "[ccd] WithCoreConfigData.Service.Write Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ConfigID)
 			}
 
