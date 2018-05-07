@@ -56,7 +56,7 @@ func (p URL) Value(sg config.Scoped) (*url.URL, error) {
 
 // Write writes a new URL and validates it before saving. If v is nil, an empty value
 // will be written.
-func (p URL) Write(w config.Writer, v *url.URL, h scope.TypeID) error {
+func (p URL) Write(w config.Setter, v *url.URL, h scope.TypeID) error {
 	var val string
 	if v != nil {
 		val = v.String()
@@ -78,7 +78,7 @@ func (p BaseURL) Value(sg config.Scoped) (string, error) {
 }
 
 // Write writes a new base URL and validates it before saving. @TODO
-func (p BaseURL) Write(w config.Writer, v string, h scope.TypeID) error {
+func (p BaseURL) Write(w config.Setter, v string, h scope.TypeID) error {
 	// todo URL checks app/code/Magento/Config/Model/Config/Backend/Baseurl.php
 	return p.Str.Write(w, v, h)
 }

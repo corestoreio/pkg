@@ -115,7 +115,7 @@ func (p Encode) Value(sg config.Scoped, vPtr interface{}) error {
 }
 
 // Write writes a raw value encrypted. Panics if Encryptor interface is nil.
-func (p Encode) Write(w config.Writer, v interface{}, h scope.TypeID) error {
+func (p Encode) Write(w config.Setter, v interface{}, h scope.TypeID) error {
 	raw, err := p.Encode(v)
 	if err != nil {
 		return errors.Wrap(err, "[cfgmodel] Encode.Write.Encode")

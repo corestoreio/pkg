@@ -114,7 +114,7 @@ func (p Obscure) Value(sg config.Scoped) ([]byte, error) {
 }
 
 // Write writes a raw value encrypted. Panics if Encryptor interface is nil.
-func (p Obscure) Write(w config.Writer, v []byte, h scope.TypeID) (err error) {
+func (p Obscure) Write(w config.Setter, v []byte, h scope.TypeID) (err error) {
 	v, err = p.Encrypt(v)
 	if err != nil {
 		return err

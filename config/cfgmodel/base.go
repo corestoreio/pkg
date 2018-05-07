@@ -176,10 +176,10 @@ func (bv baseValue) initScope() (p scope.Perm) {
 	return
 }
 
-// Write writes a value v to the config.Writer without checking if the value has
+// Write writes a value v to the config.Setter without checking if the value has
 // changed. Checks if the Scope matches as defined in the non-nil
 // ConfigStructure. Error behaviour: Unauthorized
-func (bv baseValue) Write(w config.Writer, v interface{}, h scope.TypeID) error {
+func (bv baseValue) Write(w config.Setter, v interface{}, h scope.TypeID) error {
 	pp, err := bv.ToPath(h)
 	if err != nil {
 		return errors.Wrap(err, "[cfgmodel] baseValue.ToPath")

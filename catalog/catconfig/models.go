@@ -59,7 +59,7 @@ func (p PriceScope) IsGlobal(sg config.Scoped) (bool, error) {
 	return g == PriceScopeGlobal, nil
 }
 
-func (p PriceScope) Write(w config.Putter, v int, s scope.Type, id int64, idx interface {
+func (p PriceScope) Write(w config.Setter, v int, s scope.Type, id int64, idx interface {
 	Invalidate()
 }) error {
 

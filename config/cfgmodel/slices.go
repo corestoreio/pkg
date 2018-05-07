@@ -101,7 +101,7 @@ func (str StringCSV) Value(sg config.Scoped) ([]string, error) {
 
 // Write writes a slice with its scope and ID to the writer. Validates the input
 // string slice for correct values if set in cfgsource.Slice.
-func (str StringCSV) Write(w config.Writer, sl []string, h scope.TypeID) error {
+func (str StringCSV) Write(w config.Setter, sl []string, h scope.TypeID) error {
 	for _, v := range sl {
 		if err := str.ValidateString(v); err != nil {
 			return err
@@ -181,7 +181,7 @@ func (ic IntCSV) Value(sg config.Scoped) ([]int, error) {
 }
 
 // Write writes int values as a CSV string
-func (ic IntCSV) Write(w config.Writer, sl []int, h scope.TypeID) error {
+func (ic IntCSV) Write(w config.Setter, sl []int, h scope.TypeID) error {
 
 	val := bufferpool.Get()
 	defer bufferpool.Put(val)
@@ -268,7 +268,7 @@ func (c CSV) Value(sg config.Scoped) ([][]string, error) {
 
 // Write writes a slice with its scope and ID to the writer. Validates the input
 // string slice for correct values if set in cfgsource.Slice.
-func (c CSV) Write(w config.Writer, csv [][]string, h scope.TypeID) error {
+func (c CSV) Write(w config.Setter, csv [][]string, h scope.TypeID) error {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 
