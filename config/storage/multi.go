@@ -16,7 +16,6 @@ package storage
 
 import (
 	"context"
-	"io"
 	"time"
 
 	"github.com/corestoreio/errors"
@@ -25,35 +24,49 @@ import (
 	"github.com/golang/sync/errgroup"
 )
 
+type MultiOptions struct {
+	// ContextTimeout if greater than zero a timeout will
+	ContextTimeout time.Duration
+}
+
 // Multi wraps multiple backends into one. Writing to the backend
 // implementations occur concurrent and in parallel. Even a timeout can be set
 // to cancel the writing. Reading a value processes the backends in serial
 // order. The backend which returns the first found value wins. Subsequent calls
 // to other backends are getting skipped.
-type Multi struct {
-	Backends       []config.Storager
-	ContextTimeout time.Duration
+type multi struct {
+	options  MultiOptions
+	backends []config.Storager
 }
 
-// MakeMulti creates a new Multi backend wrapper.
-func MakeMulti(s ...config.Storager) Multi {
-	return Multi{Backends: s}
+// MakeMulti creates a new Multi backend wrapper. Supports other Multi backend
+// wrappers.
+func MakeMulti(o MultiOptions, ss ...config.Storager) config.Storager {
+	allStorages := make([]config.Storager, 0, len(ss))
+	for _, s := range ss {
+		if mw, ok := s.(*multi); ok {
+			allStorages = append(allStorages, mw.backends...)
+		} else {
+			allStorages = append(allStorages, s)
+		}
+	}
+	return &multi{options: o, backends: allStorages}
 }
 
-// Set writes concurrently to the Backends. A ContextTimeout can be defined to
+// Put writes concurrently to the backends. A ContextTimeout can be defined to
 // cancel the internal goroutine. It returns the first error.
-func (ms Multi) Set(scp scope.TypeID, path string, value []byte) error {
+func (ms *multi) Put(scp scope.TypeID, path string, value []byte) error {
 	// investigate if that concept of timeout and cancellation is good enough
 	ctx := context.Background()
-	if ms.ContextTimeout > 0 {
+	if ms.options.ContextTimeout > 0 {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, ms.ContextTimeout)
+		ctx, cancel = context.WithTimeout(ctx, ms.options.ContextTimeout)
 		defer cancel()
 	}
 
 	g, ctx := errgroup.WithContext(ctx)
 
-	for _, s := range ms.Backends {
+	for _, s := range ms.backends {
 		s := s
 		g.Go(func() error {
 			errChan := make(chan error)
@@ -63,10 +76,10 @@ func (ms Multi) Set(scp scope.TypeID, path string, value []byte) error {
 				select {
 				case <-stopChan:
 					return
-				case errChan <- errors.WithStack(s.Set(scp, path, value)):
+				case errChan <- errors.WithStack(s.Put(scp, path, value)):
 				}
 			}()
-			io.MultiWriter()
+
 			select {
 			case <-ctx.Done():
 				close(stopChan)
@@ -82,10 +95,10 @@ func (ms Multi) Set(scp scope.TypeID, path string, value []byte) error {
 	return g.Wait()
 }
 
-// Value returns the first found value from the backend storage.
-func (ms Multi) Value(scp scope.TypeID, path string) (v []byte, found bool, err error) {
-	for idx, s := range ms.Backends {
-		v, found, err = s.Value(scp, path)
+// Get returns the first found value from the backend storage.
+func (ms *multi) Get(scp scope.TypeID, path string) (v []byte, found bool, err error) {
+	for idx, s := range ms.backends {
+		v, found, err = s.Get(scp, path)
 		if err != nil {
 			return nil, false, errors.Wrapf(err, "[config] Multi.Value failed at backend index %d with path %q", idx, path)
 		}
