@@ -14,14 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package config
+package storage
 
 import (
 	"container/list"
 	"sync"
 
-	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/config"
 )
+
+type liElem struct {
+	config.Path
+	bVal []byte
+}
 
 // lruCache is an LRU cache. It is safe for concurrent access.
 // This type does not get exported.
@@ -32,70 +37,60 @@ type lruCache struct {
 
 	mu    sync.Mutex
 	ll    *list.List
-	cache map[Path]*list.Element
+	cache map[cacheKey]*list.Element
 }
 
-// newLRU creates a new lruCache. If maxEntries is zero, the cache has no limit
+// NewLRU creates a new lruCache. If maxEntries is zero, the cache has no limit
 // and it's assumed that eviction is done by the caller. This type does not get
 // exported.
-func newLRU(maxEntries int) *lruCache {
+// WithLRU provides the `lru` cache which implements a fixed-size thread safe
+// LRU cache. If maxEntries is zero, the cache has no limit and it's assumed
+// that eviction is done by the caller.
+// lru cache to limit the amount of request to the backend service. Use
+// function WithLRU to enable it and set the correct max size of the LRU
+// cache. For now this algorithm should be good enough. Can be refactored
+// any time later.
+// Can be replaced by https://github.com/goburrow/cache TinyLFU
+func NewLRU(maxEntries int) config.Storager {
 	if maxEntries == 0 {
 		maxEntries = 1024
 	}
 	return &lruCache{
 		maxEntries: maxEntries,
 		ll:         list.New(),
-		cache:      make(map[Path]*list.Element, maxEntries+1),
+		cache:      make(map[cacheKey]*list.Element, maxEntries+1),
 	}
 }
 
 // Add adds a value to the cache. Panics on nil Path.
-func (c *lruCache) Add(key Path, value Value) {
+func (c *lruCache) Set(p *config.Path, value []byte) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if !key.Equal(&value.Path) {
-		panic(errors.Mismatch.Newf("[config] Key Path %q does not match Value path %q", key.String(), value.Path.String()))
-	}
-
+	key := makeCacheKey(p.ScopeRoute())
 	if ee, ok := c.cache[key]; ok {
-		ee.Value = value
+		ee.Value = liElem{Path: *p, bVal: value}
 		c.ll.MoveToFront(ee)
-		return
+		return nil
 	}
-	ele := c.ll.PushFront(value)
+	ele := c.ll.PushFront(liElem{Path: *p, bVal: value})
 	c.cache[key] = ele
 	if c.maxEntries > 0 && c.ll.Len() > c.maxEntries {
 		c.removeOldest()
 	}
+	return nil
 }
 
 // Get looks up a key's value from the cache.
-func (c *lruCache) Get(key Path) (value Value, ok bool) {
+func (c *lruCache) Get(p *config.Path) (v []byte, found bool, err error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if ele, hit := c.cache[key]; hit {
+	if ele, hit := c.cache[makeCacheKey(p.ScopeRoute())]; hit {
 		c.ll.MoveToFront(ele)
-		return ele.Value.(Value), true
+		return ele.Value.(liElem).bVal, true, nil
 	}
 	return
-}
-
-// Remove removes the provided key from the cache.
-func (c *lruCache) Remove(key Path) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if ele, hit := c.cache[key]; hit {
-		c.removeElement(ele)
-	}
-}
-
-// RemoveOldest removes the oldest item from the cache.
-func (c *lruCache) RemoveOldest() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.removeOldest()
 }
 
 func (c *lruCache) removeOldest() {
@@ -108,24 +103,19 @@ func (c *lruCache) removeOldest() {
 
 func (c *lruCache) removeElement(e *list.Element) {
 	c.ll.Remove(e)
-	delete(c.cache, e.Value.(Value).Path)
+	le := e.Value.(liElem)
+	delete(c.cache, makeCacheKey(le.ScopeRoute()))
 }
 
-// Len returns the number of items in the cache.
-func (c *lruCache) Len() int {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.ll.Len()
-}
-
-// Clear purges all stored items from the cache.
-func (c *lruCache) Clear() {
+// Flush purges all stored items from the cache.
+func (c *lruCache) Flush() error {
 	c.mu.Lock()
 	c.ll = list.New()
 	me := c.maxEntries
 	if me == 0 {
 		me = 1024
 	}
-	c.cache = make(map[Path]*list.Element, me+1)
+	c.cache = make(map[cacheKey]*list.Element, me+1)
 	c.mu.Unlock()
+	return nil
 }

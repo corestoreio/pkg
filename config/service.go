@@ -29,7 +29,7 @@ import (
 type Getter interface {
 	NewScoped(websiteID, storeID int64) Scoped
 	// Value returns a guaranteed non-nil Value.
-	Get(*Path) *Value
+	Get(p *Path) *Value
 }
 
 // GetterPubSuber implements a configuration Getter and a Subscriber for Publish
@@ -52,57 +52,60 @@ type Setter interface {
 // Storager must be safe for concurrent use.
 type Storager interface {
 	// TODO maybe add context as first param and observe in storage implementations if the ctx got cancelled.
-
 	// Set sets a key with a value and returns on success nil or
 	// ErrKeyOverwritten, on failure any other error
-	Set(scp scope.TypeID, path string, value []byte) error
-	// Value returns the raw value `v` on success and sets `found` to true
+	Setter
+	// Get returns the raw value `v` on success and sets `found` to true
 	// because the value has been found. If the value cannot be found for the
 	// desired path, return value `found` must be false. A nil value `v`
 	// indicates also a value and hence `found` is true, if found.
-	Get(scp scope.TypeID, path string) (v []byte, found bool, err error)
+	Get(p *Path) (v []byte, found bool, err error)
 }
 
 // Service main configuration provider. Please use the NewService() function.
 // Safe for concurrent use.
 // TODO build in to support different environments for the same keys. E.g. different API credentials for external APIs (staging, production, etc).
 type Service struct {
-	// lru cache to limit the amount of request to the backend service. Use
-	// function WithLRU to enable it and set the correct max size of the LRU
-	// cache. For now this algorithm should be good enough. Can be refactored
-	// any time later.
-	// Can be replaced by https://github.com/goburrow/cache TinyLFU
-	lru *lruCache
-
-	// backend is the underlying data holding provider. Only access it if you
-	// know exactly what you are doing.
-	backend Storager
+	level2 Storager
+	config Options
 
 	// internal service to provide async pub/sub features while reading/writing
 	// config values.
 	*pubSub
 
-	// Log can be set for debugging purpose. If nil, it panics. Default
+	// log can be set for debugging purpose. If nil, it panics. Default
 	// log.Blackhole with disabled debug and info logging. You should use the
 	// option function WithLogger because the logger gets also set to the
 	// internal pub/sub service. The exported Log can be used in external
 	// package to log within functional option calls. For example in
 	// config/storage/ccd.
-	Log log.Logger
+	log log.Logger
 
-	// TODO auto detect unmarhaller and get one from a pool pass the correct unmarshaler to the Value.
+	// TODO auto detect unmarshaller and get one from a pool pass the correct unmarshaler to the Value.
 }
 
 // NewService creates the main new configuration for all scopes: default,
 // website and store. Default Storage is a simple map[string]interface{}. A new
 // go routine will be startet for the publish and subscribe feature.
-func NewService(backend Storager, opts ...Option) (*Service, error) {
-	s := &Service{
-		backend: backend,
-		Log:     log.BlackHole{}, // disabled debug and info logging.
+// Level2 is the required underlying data holding provider.
+func NewService(level2 Storager, o Options, fns ...LoadDataFn) (s *Service, err error) {
+
+	s = &Service{
+		level2: level2,
+		config: o,
+		log:    o.Log,
 	}
 
-	if err := s.Options(opts...); err != nil {
+	if o.EnablePubSub {
+		var l log.Logger
+		if o.Log != nil {
+			l = o.Log.With(log.Bool("pubSub", true))
+		}
+		s.pubSub = newPubSub(l)
+		go s.publish() // yes we know how to quit this goroutine, just call Service.Close()
+	}
+
+	if err := s.LoadData(fns...); err != nil {
 		if s.pubSub != nil {
 			if err2 := s.Close(); err2 != nil {
 				// terminate publisher go routine and prevent leaking
@@ -111,13 +114,14 @@ func NewService(backend Storager, opts ...Option) (*Service, error) {
 		}
 		return nil, errors.Wrap(err, "[config] Service.Option")
 	}
+
 	return s, nil
 }
 
 // MustNewService same as NewService but panics on error. Use only in testing
 // or during boot process.
-func MustNewService(backend Storager, opts ...Option) *Service {
-	s, err := NewService(backend, opts...)
+func MustNewService(level2 Storager, o Options, fns ...LoadDataFn) *Service {
+	s, err := NewService(level2, o, fns...)
 	if err != nil {
 		panic(err)
 	}
@@ -125,10 +129,10 @@ func MustNewService(backend Storager, opts ...Option) *Service {
 }
 
 // Options applies service options.
-func (s *Service) Options(opts ...Option) error {
-	for _, opt := range opts {
-		if opt != nil {
-			if err := opt(s); err != nil {
+func (s *Service) LoadData(fns ...LoadDataFn) error {
+	for _, f := range fns {
+		if f != nil {
+			if err := f(s); err != nil {
 				return errors.Wrap(err, "[config] Service.Options")
 			}
 		}
@@ -137,10 +141,26 @@ func (s *Service) Options(opts ...Option) error {
 }
 
 // Flush flushes the internal caches. Write operation also flushes the entry for
-// the given key.
+// the given key. If a Storage service implements
+//		type flusher interface {
+//			Flush() error
+//		}
+// then it can flush its internal caches.
 func (s *Service) Flush() error {
-	if s.lru != nil {
-		s.lru.Clear()
+	type flusher interface {
+		Flush() error
+	}
+	if s.config.Level1 != nil {
+		if f, ok := s.config.Level1.(flusher); ok {
+			if err := f.Flush(); err != nil {
+				return errors.WithStack(err)
+			}
+		}
+	}
+	if f, ok := s.level2.(flusher); ok {
+		if err := f.Flush(); err != nil {
+			return errors.WithStack(err)
+		}
 	}
 	return nil
 }
@@ -164,20 +184,17 @@ func (s *Service) NewScoped(websiteID, storeID int64) Scoped {
 //		// 6 for example comes from core_store/store database table
 //		err := Write(p.Bind(scope.StoreID, 6), "CHF")
 func (s *Service) Set(p *Path, v []byte) error {
-	if s.Log.IsDebug() {
-		log.WhenDone(s.Log).Debug("config.Service.Write", log.Stringer("path", p), log.Int("data_length", len(v)))
+	if s.config.Log != nil && s.config.Log.IsDebug() {
+		log.WhenDone(s.config.Log).Debug("config.Service.Write", log.Stringer("path", p), log.Int("data_length", len(v)))
 	}
 	if err := p.IsValid(); err != nil {
 		return errors.WithStack(err)
 	}
-	if err := s.backend.Set(p.ScopeID, p.route, v); err != nil {
-		return errors.Wrap(err, "[config] Service.backend.Set")
+	if err := s.level2.Set(p, v); err != nil {
+		return errors.Wrap(err, "[config] Service.level2.Set")
 	}
 	if s.pubSub != nil {
 		s.sendMsg(*p)
-	}
-	if s.lru != nil {
-		s.lru.Remove(*p)
 	}
 	return nil
 }
@@ -198,35 +215,42 @@ func (s *Service) Set(p *Path, v []byte) error {
 //
 // Returns a guaranteed non-nil value.
 func (s *Service) Get(p *Path) (v *Value) {
-	if s.Log.IsDebug() {
-		wdl := log.WhenDone(s.Log)
+	if s.config.Log != nil && s.config.Log.IsDebug() {
+		wdl := log.WhenDone(s.config.Log)
 		defer func() {
 			// this func captures the scope of v or the structured log entries would be Go's default values.
-			wdl.Debug("config.Service.Value", log.Stringer("path", p), log.String("found", valFoundStringer(v.found)), log.Err(v.lastErr))
+			wdl.Debug("config.Service.Get", log.Stringer("path", p), log.String("found", valFoundStringer(v.found)), log.Err(v.lastErr))
 		}()
 	}
 
-	if s.lru != nil {
-		if lruVal, ok := s.lru.Get(*p); ok {
-			lruVal.found = valFoundLRU
-			v = &lruVal
+	var ok bool
+	v = &Value{
+		Path: *p,
+	}
+
+	if s.config.Level1 != nil {
+		v.data, ok, v.lastErr = s.config.Level1.Get(p)
+		if v.lastErr != nil {
+			return
+		}
+		if ok {
+			v.found = valFoundL1
 			return
 		}
 	}
 
-	v = &Value{
-		Path: *p,
-	}
-	var ok bool
-	v.data, ok, v.lastErr = s.backend.Get(p.ScopeID, p.route)
+	v.data, ok, v.lastErr = s.level2.Get(p)
 	if ok {
-		v.found = valFoundYes
+		v.found = valFoundL2
 	}
 	if v.lastErr != nil {
 		v.lastErr = errors.Wrapf(v.lastErr, "[config] Service.Value with path %q", p)
 	}
-	if s.lru != nil && v.lastErr == nil {
-		s.lru.Add(v.Path, *v)
+	if ok && s.config.Level1 != nil && v.lastErr == nil {
+		if v.lastErr = s.config.Level1.Set(p, v.data); v.lastErr != nil {
+			v.lastErr = errors.Wrapf(v.lastErr, "[config] Service.Level1.Set with path %q", p)
+			return
+		}
 	}
 	return v
 }

@@ -23,6 +23,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log/logw"
 	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/sync/bgwork"
 	"github.com/corestoreio/pkg/util/conv"
@@ -36,15 +37,31 @@ var (
 	_ config.Subscriber = (*config.Service)(nil)
 )
 
-func TestNewServiceStandard(t *testing.T) {
+func TestMustNewService_ShouldPanic(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			if err, ok := r.(error); ok {
+				assert.True(t, errors.VerificationFailed.Match(err), "%+v", err)
+			} else {
+				t.Errorf("Panic should contain an error but got:\n%+v", r)
+			}
+		} else {
+			t.Error("Expecting a panic but got nothing")
+		}
+	}()
 
-	srv := config.MustNewService(config.NewInMemoryStore())
-	assert.NotNil(t, srv)
+	srv := config.MustNewService(storage.NewMap(), config.Options{
+		EnablePubSub: false,
+	}, func(_ *config.Service) error {
+		return errors.VerificationFailed.Newf("Ups")
+	})
+
+	require.Nil(t, srv)
 }
 
 func TestNotKeyNotFoundError(t *testing.T) {
 
-	srv := config.MustNewService(config.NewInMemoryStore())
+	srv := config.MustNewService(storage.NewMap(), config.Options{})
 	assert.NotNil(t, srv)
 
 	scopedSrv := srv.NewScoped(1, 1)
@@ -60,7 +77,7 @@ func TestNotKeyNotFoundError(t *testing.T) {
 
 func TestService_Put(t *testing.T) {
 
-	srv := config.MustNewService(config.NewInMemoryStore())
+	srv := config.MustNewService(storage.NewMap(), config.Options{})
 	assert.NotNil(t, srv)
 
 	p1 := new(config.Path)
@@ -72,8 +89,7 @@ func TestService_Write_Get_Value_Success(t *testing.T) {
 
 	runner := func(p *config.Path, value []byte) func(*testing.T) {
 		return func(t *testing.T) {
-			srv := config.MustNewService(config.NewInMemoryStore())
-
+			srv := config.MustNewService(storage.NewMap(), config.Options{})
 			require.NoError(t, srv.Set(p, value), "Writing Value in Test %q should not fail", t.Name())
 
 			haveStr, ok, haveErr := srv.Get(p).Str()
@@ -99,7 +115,7 @@ func TestScoped_ScopeIDs(t *testing.T) {
 
 func TestScoped_IsValid(t *testing.T) {
 	t.Parallel()
-	cfg := config.NewMock()
+	cfg := config.NewFakeService(storage.NewMap())
 	tests := []struct {
 		s    config.Scoped
 		want bool
@@ -135,7 +151,7 @@ func TestScopedServiceScope(t *testing.T) {
 		{0, 3, scope.Store, 3},
 	}
 	for i, test := range tests {
-		sg := config.NewMock().NewScoped(test.websiteID, test.storeID)
+		sg := config.NewFakeService(storage.NewMap()).NewScoped(test.websiteID, test.storeID)
 		haveScope, haveID := sg.ScopeID().Unpack()
 		assert.Exactly(t, test.wantScope, haveScope, "Index %d", i)
 		assert.Exactly(t, test.wantID, haveID, "Index %d", i)
@@ -195,9 +211,7 @@ func TestScopedServicePath(t *testing.T) {
 			if wv, ok := wantVal.(time.Time); ok {
 				fqVal = wv.Format(customTestTimeFormat)
 			}
-			cg := config.NewMock(config.MockPathValue{
-				test.fqpath: fqVal,
-			})
+			cg := config.NewFakeService(storage.NewMap(test.fqpath, fqVal))
 
 			sg := cg.NewScoped(test.websiteID, test.storeID)
 			haveVal := sg.Get(test.perm, test.route)
@@ -251,12 +265,11 @@ func TestScopedServicePath(t *testing.T) {
 func TestScopedServicePermission_All(t *testing.T) {
 	t.Parallel()
 	basePath := config.MustNewPath("aa/bb/cc")
-
-	sm := config.NewMock(config.MockPathValue{
-		basePath.Bind(scope.DefaultTypeID).String(): "a",
-		basePath.BindWebsite(1).String():            "b",
-		basePath.BindStore(1).String():              "c",
-	})
+	mapStorage := storage.NewMap(
+		basePath.Bind(scope.DefaultTypeID).String(), "a",
+		basePath.BindWebsite(1).String(), "b",
+		basePath.BindStore(1).String(), "c",
+	)
 
 	tests := []struct {
 		s       scope.Type
@@ -264,22 +277,24 @@ func TestScopedServicePermission_All(t *testing.T) {
 		wantIDs scope.TypeIDs
 	}{
 		{scope.Default, "a", scope.TypeIDs{scope.DefaultTypeID}},
-		{scope.Website, "b", scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1)}},
-		{scope.Group, "a", scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1)}},
-		{scope.Store, "c", scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1), scope.Store.Pack(1)}},
-		{scope.Absent, "c", scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1), scope.Store.Pack(1)}}, // because ScopedGetter bound to store scope
+		{scope.Website, "b", scope.TypeIDs{scope.Website.Pack(1)}},
+		{scope.Group, "a", scope.TypeIDs{scope.DefaultTypeID}},
+		{scope.Store, "c", scope.TypeIDs{scope.Store.Pack(1)}},
+		{scope.Absent, "c", scope.TypeIDs{scope.Store.Pack(1)}}, // because ScopedGetter bound to store scope
 	}
 	for i, test := range tests {
-		haveVal := sm.NewScoped(1, 1).Get(test.s, "aa/bb/cc")
+		srv := config.NewFakeService(mapStorage)
+
+		haveVal := srv.NewScoped(1, 1).Get(test.s, "aa/bb/cc")
 		s, ok, err := haveVal.Str()
 		if err != nil {
 			t.Fatal("Index", i, "Error", err)
 		}
 		require.True(t, ok, "Scoped path value must be found")
 		assert.Exactly(t, test.want, s, "Index %d", i)
-		assert.Exactly(t, test.wantIDs, sm.Invokes().ScopeIDs(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, srv.Invokes().ScopeIDs(), "Index %d", i)
 	}
-	assert.Exactly(t, []string{"default/0/aa/bb/cc", "stores/1/aa/bb/cc", "websites/1/aa/bb/cc"}, sm.Invokes().Paths())
+	//assert.Exactly(t, []string{"default/0/aa/bb/cc", "stores/1/aa/bb/cc", "websites/1/aa/bb/cc"}, sm.Invokes().Paths())
 }
 
 func TestScopedServicePermission_One(t *testing.T) {
@@ -291,13 +306,13 @@ func TestScopedServicePermission_One(t *testing.T) {
 	const WebsiteID = 3
 	const StoreID = 5
 
-	sm := config.NewMock(config.MockPathValue{
-		basePath1.BindDefault().String():          "a",
-		basePath1.BindWebsite(WebsiteID).String(): "b",
-		basePath1.BindStore(StoreID).String():     "c",
-		basePath2.BindWebsite(WebsiteID).String(): "bb2",
-		basePath3.String():                        "cc3",
-	})
+	sm := config.NewFakeService(storage.NewMap(
+		basePath1.BindDefault().String(), "a",
+		basePath1.BindWebsite(WebsiteID).String(), "b",
+		basePath1.BindStore(StoreID).String(), "c",
+		basePath2.BindWebsite(WebsiteID).String(), "bb2",
+		basePath3.String(), "cc3",
+	))
 
 	t.Run("query1 by scope.Default, matches default", func(t *testing.T) {
 		s, ok, err := sm.NewScoped(WebsiteID, StoreID).Get(scope.Default, "aa/bb/cc").Str()
@@ -396,10 +411,10 @@ func TestWithLRU(t *testing.T) {
 		logw.WithWriter(&buf),
 	)
 
-	srv := config.MustNewService(config.NewInMemoryStore(),
-		config.WithLRU(5),
-		config.WithLogger(l),
-	)
+	srv := config.MustNewService(storage.NewMap(), config.Options{
+		Level1: storage.NewLRU(5),
+		Log:    l,
+	})
 
 	p1 := config.MustNewPath("carrier/dhl/enabled")
 	p2 := p1.BindWebsite(2)
@@ -413,14 +428,14 @@ func TestWithLRU(t *testing.T) {
 	require.NoError(t, srv.Set(p3, []byte(`3.003`)))
 
 	// NOT from LRU
-	assert.Exactly(t, 1.001, mustFloat(srv.Get(p1).Float64()))
-	assert.Exactly(t, 2.002, mustFloat(srv.Get(p2).Float64()))
-	assert.Exactly(t, 3.003, mustFloat(srv.Get(p3).Float64()))
+	assert.Exactly(t, 1.001, mustFloat(srv.Get(p1).Float64()), "Path1: %s", p1.String())
+	assert.Exactly(t, 2.002, mustFloat(srv.Get(p2).Float64()), "Path2: %s", p2.String())
+	assert.Exactly(t, 3.003, mustFloat(srv.Get(p3).Float64()), "Path3: %s", p3.String())
 
 	// Now from LRU
-	assert.Exactly(t, 1.001, mustFloat(srv.Get(p1).Float64()))
-	assert.Exactly(t, 2.002, mustFloat(srv.Get(p2).Float64()))
-	assert.Exactly(t, 3.003, mustFloat(srv.Get(p3).Float64()))
+	assert.Exactly(t, 1.001, mustFloat(srv.Get(p1).Float64()), "Path1: %s", p1.String())
+	assert.Exactly(t, 2.002, mustFloat(srv.Get(p2).Float64()), "Path2: %s", p2.String())
+	assert.Exactly(t, 3.003, mustFloat(srv.Get(p3).Float64()), "Path3: %s", p3.String())
 
 	lStr := buf.String()
 
@@ -432,9 +447,9 @@ func TestWithLRU(t *testing.T) {
 		{`"default/0/carrier/dhl/enabled" data_length: 5`, 1},
 		{`"websites/2/carrier/dhl/enabled" data_length: 5`, 1},
 		{`"stores/3/carrier/dhl/enabled" data_length: 5`, 1},
-		{`found: "YES"`, 3},
-		{`found: "LRU"`, 3},
-		{`"websites/2/carrier/dhl/enabled" found: "LRU"`, 1},
+		{`found: "Level2"`, 3},
+		{`found: "Level1"`, 3},
+		{`"websites/2/carrier/dhl/enabled" found: "Level1"`, 1},
 	}
 	for _, test := range tests {
 		assert.Contains(t, lStr, test.contains)
@@ -443,10 +458,10 @@ func TestWithLRU(t *testing.T) {
 }
 
 func TestService_Scoped_LRU_Parallel(t *testing.T) {
+	srv := config.MustNewService(storage.NewMap(), config.Options{
+		Level1: storage.NewLRU(5),
+	})
 
-	srv := config.MustNewService(config.NewInMemoryStore(),
-		config.WithLRU(5),
-	)
 	const route1 = "carrier/dhl/enabled"
 	const route2 = "payment/paypal/active"
 	p1 := config.MustNewPath(route1)

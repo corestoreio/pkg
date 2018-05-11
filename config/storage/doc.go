@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package storage defines the available configuration storage engines in its
-// subpackages.
+// Package storage provides the available storage engines for level 1 and level
+// 2 caches.
 package storage

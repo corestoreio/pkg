@@ -15,14 +15,47 @@
 package cfgetcdv3
 
 import (
+	"context"
+
 	"github.com/coreos/etcd/clientv3"
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 )
 
-// WithEtcdV3 reads the ...
-func WithEtcd(ec *clientv3.Client, o Options) config.Option {
+// WithEtcd reads the all keys and their values with the current or configured
+// etcd key prefix and applies it to the config.Service. This function option
+// can be set when creating a new config.Service or updating its internal DB.
+func WithEtcd(c clientv3.KV, o Options) config.LoadDataFn {
+
+	if o.KeyPrefix == "" {
+		o.KeyPrefix = DefaultKeyPrefix
+	}
+
 	return func(s *config.Service) error {
-		// TODO read all applicable keys from etcd and pass them to the service
+
+		ctx := context.Background()
+		if o.RequestTimeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(context.Background(), o.RequestTimeout)
+			defer cancel()
+		}
+
+		resp, err := c.Get(ctx, o.KeyPrefix, clientv3.WithPrefix())
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		for _, ev := range resp.Kvs {
+			fmt.Printf("%s : %s\n", ev.Key, ev.Value)
+
+			p := config.NewPathFromFQ()
+
+			if err := s.Set(,ev.Value); err != nil {
+				return errors.Wra
+			}
+		}
+
+
+
 		return nil
 	}
 }

@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cfgenv
+package storage_test
 
 import (
 	"os"
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-var _ config.Storager = (*Storage)(nil)
 
 func TestToEnvVar(t *testing.T) {
 
@@ -41,62 +41,41 @@ func TestToEnvVar(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		assert.Exactly(t, test.want, ToEnvVar(test.scpID, test.route), "Index %d", i)
-	}
-}
-
-var benchmarkToEnvVar string
-
-// BenchmarkToEnvVar-4   	 3000000	       570 ns/op	     163 B/op	       6 allocs/op
-func BenchmarkToEnvVar(b *testing.B) {
-	scpID := scope.Store.Pack(543)
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		benchmarkToEnvVar = ToEnvVar(scpID, "aa/bb/cc")
-	}
-}
-
-// BenchmarkFromEnvVar-4   	 3000000	       501 ns/op	     184 B/op	       7 allocs/op
-func BenchmarkFromEnvVar(b *testing.B) {
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_, benchmarkToEnvVar = FromEnvVar(Prefix, "CONFIG__WEBSITES__321__AA__BB__CC")
+		assert.Exactly(t, test.want, storage.ToEnvVar(config.MustNewPathWithScope(test.scpID, test.route)), "Index %d", i)
 	}
 }
 
 func TestFromEnvVar(t *testing.T) {
 	tests := []struct {
-		envVar    string
-		wantScpID scope.TypeID
-		wantRoute string
+		envVar   string
+		wantPath string
+		wantErr  errors.Kind
 	}{
-		{"CONFIG__AA__BB__CC", scope.DefaultTypeID, "aa/bb/cc"},
-		{"CONFIG__AA__BB__CC__DD", 0, ""},
-		{"CONFIG__AA__BB__CC_DD", scope.DefaultTypeID, "aa/bb/cc_dd"},
-		{"CONFIG__WEBSITES__321__AA__BB__CC", scope.Website.Pack(321), "aa/bb/cc"},
-		{"CONFIG__STORES__1__AA__BB__CC", scope.Store.Pack(1), "aa/bb/cc"},
-		{"CONFIG__STORES__AA__BB__CC", 0, ""},
-		{"ONFIG__STORES__AA__BB__CC", 0, ""},
-		{"CONFIG__", 0, ""},
-		{"ONFIG__", 0, ""},
-		{"", 0, ""},
+		{"CONFIG__AA__BB__CC", "default/0/aa/bb/cc", errors.NoKind},
+		{"CONFIG__AA__BB__CC__DD", "", errors.NotValid}, // errors.NotValid
+		{"CONFIG__AA__BB__CC_DD", "default/0/aa/bb/cc_dd", errors.NoKind},
+		{"CONFIG__WEBSITES__321__AA__BB__CC", "websites/321/aa/bb/cc", errors.NoKind},
+		{"CONFIG__STORES__1__AA__BB__CC", "stores/1/aa/bb/cc", errors.NoKind},
+		{"CONFIG__STORES__AA__BB__CC", "", errors.NotValid},
+		{"ONFIG__STORES__AA__BB__CC", "", errors.NotValid},
+		{"CONFIG__", "", errors.NotValid},
+		{"ONFIG__", "", errors.NotValid},
+		{"", "", errors.NotValid},
 	}
 	for i, test := range tests {
-		haveScpID, haveRoute := FromEnvVar(Prefix, test.envVar)
-		assert.Exactly(t, test.wantScpID, haveScpID, "Index %d", i)
-		assert.Exactly(t, test.wantRoute, haveRoute, "Index %d", i)
+		haveP, haveErr := storage.FromEnvVar(storage.Prefix, test.envVar)
+		if test.wantErr > 0 {
+			assert.Nil(t, haveP)
+			assert.True(t, test.wantErr.Match(haveErr), "%d: Kind %q\n%+v", i, errors.UnwrapKind(haveErr).String(), haveErr)
+		} else {
+			require.NoError(t, haveErr, "Index %d. Kind %q", i, errors.UnwrapKind(haveErr).String())
+			assert.Exactly(t, test.wantPath, haveP.String(), "Index %d", i)
+		}
 	}
-}
-
-func validateFoundGet(t *testing.T, s config.Storager, scp scope.TypeID, route string, want string) {
-	data, ok, err := s.Get(scp, route)
-	require.NoError(t, err)
-	assert.True(t, ok, "env value must be found")
-	assert.Exactly(t, []byte(want), data)
 }
 
 func TestStorage_No_Preload(t *testing.T) {
-	s, err := NewStorage(Options{
+	s, err := storage.NewEnvironment(storage.EnvOp{
 		Preload: false,
 	})
 	if err != nil {
@@ -104,7 +83,7 @@ func TestStorage_No_Preload(t *testing.T) {
 	}
 
 	t.Run("empty write returns nil error", func(t *testing.T) {
-		assert.NoError(t, s.Set(0, "", nil))
+		assert.NoError(t, s.Set(new(config.Path), nil))
 	})
 
 	runner := func(envVar string, scp scope.TypeID, route string) func(*testing.T) {
@@ -122,49 +101,16 @@ func TestStorage_No_Preload(t *testing.T) {
 		envVar := "CONFIG____€__∏"
 		defer func() { assert.NoError(t, os.Unsetenv(envVar)) }()
 		require.NoError(t, os.Setenv(envVar, "DATA from ENV"))
-		data, ok, err := s.Get(scope.DefaultTypeID, "aa/bb/cc")
-		require.NoError(t, err)
-		assert.False(t, ok, "env value must be found")
-		assert.Nil(t, data)
+
+		validateNotFoundGet(t, s, scope.DefaultTypeID, "aa/bb/cc")
 	})
-}
-
-var benchmarkStorage []byte
-
-// BenchmarkStorage-4      	 1000000	      1084 ns/op	     259 B/op	       7 allocs/op
-func BenchmarkStorage_No_Preload(b *testing.B) {
-	s, err := NewStorage(Options{
-		Preload: false,
-	})
-	if err != nil {
-		b.Fatal(err)
-	}
-
-	if err := os.Setenv("CONFIG__STORES__444__AA__BB__CC_DD__EE", "DATA from ENV"); err != nil {
-		b.Fatal(err)
-	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		var ok bool
-		var err error
-		benchmarkStorage, ok, err = s.Get(scope.Store.Pack(444), "aa/bb/cc_dd/ee")
-		if err != nil {
-			b.Fatal(err)
-		}
-		if !ok {
-			b.Fatal("value must be found")
-		}
-	}
-	if err := os.Unsetenv("CONFIG__STORES__444__AA__BB__CC_DD__EE"); err != nil {
-		b.Fatal(err)
-	}
 }
 
 func TestStorage_No_Preload_UnsetEnvAfterRead_And_Cache(t *testing.T) {
-	s, err := NewStorage(Options{
+	s, err := storage.NewEnvironment(storage.EnvOp{
 		UnsetEnvAfterRead: true,
 		Preload:           false,
-		CacheVariableFn:   func(scp scope.TypeID, route string) bool { return true }, // cache all
+		CacheVariableFn:   func(*config.Path) bool { return true }, // cache all
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -187,10 +133,10 @@ func TestStorage_With_Preload_UnsetEnvAfterRead(t *testing.T) {
 	os.Setenv("CONFIG__STORES__345__XX__BB__CC", wantValue)
 	os.Setenv("CONFIG__STORES__345__XY__BB__CC", "")
 
-	s, err := NewStorage(Options{
+	s, err := storage.NewEnvironment(storage.EnvOp{
 		UnsetEnvAfterRead: true,
 		Preload:           true,
-		CacheVariableFn:   func(scp scope.TypeID, route string) bool { panic("Should not get called") }, // cache all
+		CacheVariableFn:   nil, // cache all
 	})
 	if err != nil {
 		t.Fatal(err)

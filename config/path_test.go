@@ -196,7 +196,7 @@ func TestShouldPanicIncorrectPath(t *testing.T) {
 	assert.Exactly(t, "websites/345/xxxxx/yyyyy", MustNewPath("xxxxx/yyyyy").BindWebsite(345).String())
 }
 
-func TestSplitFQ(t *testing.T) {
+func TestPath_ParseFQ(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		have        string
@@ -213,12 +213,12 @@ func TestSplitFQ(t *testing.T) {
 		{"default//catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "default/0/catalog/frontend/list_allow_all", errors.NotValid},
 		{"stores/123/catalog/index", "default", 0, "", errors.NotValid},
 	}
+	havePath := new(Path)
 	for i, test := range tests {
-		havePath, haveErr := NewPathFromFQ(test.have)
+		haveErr := havePath.ParseFQ(test.have)
 
 		if test.wantErrKind > 0 {
 			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => Error: %s", i, haveErr)
-			assert.Nil(t, havePath, "Index %d", i)
 		} else {
 			assert.NoError(t, haveErr, "Test %v", test)
 			assert.Exactly(t, test.wantScope, havePath.ScopeID.Type().StrType(), "Index %d", i)
@@ -226,20 +226,20 @@ func TestSplitFQ(t *testing.T) {
 			ls, _ := havePath.Level(-1)
 			assert.Exactly(t, test.wantPath, ls, "Index %d", i)
 		}
-
+		havePath.Reset()
 	}
 }
 
 func TestSplitFQ2(t *testing.T) {
 	t.Parallel()
-	p, err := NewPathFromFQ("websites/5/web/cors/allow_credentials")
-	if err != nil {
+	p := new(Path)
+
+	if err := p.ParseFQ("websites/5/web/cors/allow_credentials"); err != nil {
 		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, scope.Website.Pack(5), p.ScopeID)
 
-	p, err = NewPathFromFQ("default/0/web/cors/allow_credentials")
-	if err != nil {
+	if err := p.ParseFQ("default/0/web/cors/allow_credentials"); err != nil {
 		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, scope.DefaultTypeID, p.ScopeID)

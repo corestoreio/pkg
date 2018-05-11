@@ -26,6 +26,7 @@ import (
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/log/logw"
 	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/fortytw2/leaktest"
 	"github.com/stretchr/testify/assert"
@@ -59,7 +60,9 @@ func TestPubSubBubbling(t *testing.T) {
 
 	testPath := config.MustNewPath("aa/bb/cc")
 
-	s := config.MustNewService(config.NewInMemoryStore(), config.WithPubSub())
+	s := config.MustNewService(storage.NewMap(), config.Options{
+		EnablePubSub: true,
+	})
 
 	_, err := s.Subscribe("", nil)
 	assert.True(t, errors.Empty.Match(err), "Error: %s", err)
@@ -98,7 +101,10 @@ func TestPubSubPanicSimple(t *testing.T) {
 	defer leaktest.Check(t)()
 
 	debugBuf, logger := initLogger()
-	s := config.MustNewService(config.NewInMemoryStore(), config.WithLogger(logger), config.WithPubSub())
+	s := config.MustNewService(storage.NewMap(), config.Options{
+		EnablePubSub: true,
+		Log:          logger,
+	})
 
 	testPath := config.MustNewPath("xx/yy/zz")
 
@@ -112,14 +118,17 @@ func TestPubSubPanicSimple(t *testing.T) {
 	assert.Equal(t, 1, subID, "The very first subscription ID should be 1")
 	assert.NoError(t, s.Set(testPath.BindStore(123), []byte(`321`)), "Writing value 123 should not fail")
 	assert.NoError(t, s.Close(), "Closing the service should not fail.")
-	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.r recover: "Don't panic!"`)
+	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.r pubSub: true recover: "Don't panic!"`)
 }
 
 func TestPubSubPanicError(t *testing.T) {
 	defer leaktest.Check(t)()
 
 	debugBuf, logger := initLogger()
-	s := config.MustNewService(config.NewInMemoryStore(), config.WithLogger(logger), config.WithPubSub())
+	s := config.MustNewService(storage.NewMap(), config.Options{
+		EnablePubSub: true,
+		Log:          logger,
+	})
 
 	testPath := config.MustNewPath("aa/bb/cc")
 
@@ -136,13 +145,16 @@ func TestPubSubPanicError(t *testing.T) {
 	assert.NoError(t, s.Set(testPath.BindStore(123), []byte(`321`)))
 
 	assert.NoError(t, s.Close())
-	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.err error: "OMG! Panic!" path: "stores/123/aa/bb/cc"`)
+	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.err pubSub: true error: "OMG! Panic!"`)
 }
 
 func TestPubSubPanicMultiple(t *testing.T) {
 
 	debugBuf, logger := initLogger()
-	s := config.MustNewService(config.NewInMemoryStore(), config.WithLogger(logger), config.WithPubSub())
+	s := config.MustNewService(storage.NewMap(), config.Options{
+		EnablePubSub: true,
+		Log:          logger,
+	})
 
 	subID, err := s.Subscribe("default/0/xx", &testSubscriber{
 		t: t,
@@ -180,15 +192,18 @@ func TestPubSubPanicMultiple(t *testing.T) {
 	assert.NoError(t, s.Set(config.MustNewPath("xx/yy/zz"), []byte(`any kind of data`)))
 	assert.NoError(t, s.Close())
 
-	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.r recover: "One: Don't panic!`)
-	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.r recover: "Two: Don't panic!"`)
-	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.r recover: "Three: Don't panic!"`)
+	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.r pubSub: true recover: "One: Don't panic!"`)
+	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.r pubSub: true recover: "Two: Don't panic!"`)
+	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.r pubSub: true recover: "Three: Don't panic!"`)
 }
 
 func TestPubSubUnsubscribe(t *testing.T) {
 
 	debugBuf, logger := initLogger()
-	s := config.MustNewService(config.NewInMemoryStore(), config.WithLogger(logger), config.WithPubSub())
+	s := config.MustNewService(storage.NewMap(), config.Options{
+		EnablePubSub: true,
+		Log:          logger,
+	})
 
 	p := config.MustNewPath("xx/yy/zz").BindStore(123)
 	var pErr = errors.New("WTF? Panic!")
@@ -216,7 +231,10 @@ type levelCalls struct {
 func TestPubSubEvict(t *testing.T) {
 
 	debugBuf, logger := initLogger()
-	s := config.MustNewService(config.NewInMemoryStore(), config.WithPubSub(), config.WithLogger(logger))
+	s := config.MustNewService(storage.NewMap(), config.Options{
+		EnablePubSub: true,
+		Log:          logger,
+	})
 
 	levelCall := new(levelCalls)
 
@@ -256,7 +274,7 @@ func TestPubSubEvict(t *testing.T) {
 
 	assert.NoError(t, s.Close())
 
-	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.err error: "WTF Eviction? Panic!" path: "stores/123/xx/yy/zz"`)
+	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.err pubSub: true error: "WTF Eviction? Panic!" path: "stores/123/xx/yy/zz"`)
 
 	levelCall.Lock()
 	assert.Equal(t, 3, levelCall.level2Calls)

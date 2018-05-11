@@ -15,29 +15,27 @@
 package config
 
 import (
-	"fmt"
 	"sort"
 	"sync"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
-// MockWrite used for testing when writing configuration values.
+// FakeWrite used for testing when writing configuration values.
 // deprecated no replacement
-type MockWrite struct {
-	// WriteError gets always returned by MockWrite
+type FakeWrite struct {
+	// WriteError gets always returned by FakeWrite
 	WriteError error
 	// ArgPath will be set after calling write to export the config path.
-	// Values you enter here will be overwritten when calling MockWrite
+	// Values you enter here will be overwritten when calling FakeWrite
 	ArgPath string
 	// ArgValue contains the written data
 	ArgValue []byte
 }
 
 // Set writes to a black hole, may return an error
-func (w *MockWrite) Set(p *Path, value []byte) error {
+func (w *FakeWrite) Set(p *Path, value []byte) error {
 	w.ArgPath = p.String()
 	w.ArgValue = value
 	return w.WriteError
@@ -87,11 +85,11 @@ func (iv invocations) ScopeIDs() scope.TypeIDs {
 	return ids
 }
 
-// Mock used for testing. Contains functions which will be called in the
+// FakeService used for testing. Contains functions which will be called in the
 // appropriate methods of interface Getter. Field DB has precedence over
 // the applied functions.
-type Mock struct {
-	Storage Storager
+type FakeService struct {
+	storage Storager
 	mu      sync.Mutex
 	// GetFn can be set optionally. If set then Storage will be ignored.
 	// Must return a guaranteed non-nil Value.
@@ -102,64 +100,17 @@ type Mock struct {
 	SubscribeInvokes int32
 }
 
-// MockPathValue is a required type for an option function. PV = path => value. This
-// map[string]interface{} is protected by a mutex.
-type MockPathValue map[string]string
-
-func (pv MockPathValue) set(db Storager) {
-	for fq, v := range pv {
-		if err := db.Set(0, fq, []byte(v)); err != nil {
-			panic(err)
-		}
-	}
-}
-
-// GoString creates a sorted Go syntax valid map representation. This function
-// panics if it fails to write to the internal buffer. Panicing permitted here
-// because this function is only used in testing.
-func (pv MockPathValue) GoString() string {
-	keys := make(sort.StringSlice, len(pv))
-	i := 0
-	for k := range pv {
-		keys[i] = k
-		i++
-	}
-	keys.Sort()
-
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
-	if _, err := buf.WriteString("config.MockPathValue{\n"); err != nil {
-		panic(err)
-	}
-
-	for _, p := range keys {
-		if _, err := fmt.Fprintf(buf, "%q: %#v,\n", p, pv[p]); err != nil {
-			panic(err)
-		}
-	}
-	if _, err := buf.WriteRune('}'); err != nil {
-		panic(err)
-	}
-	return buf.String()
-}
-
-// NewMock creates a new mocked Service for testing usage. Initializes a
+// NewFakeService creates a new mocked Service for testing usage. Initializes a
 // simple in memory key/value storage.
-func NewMock(pvs ...MockPathValue) *Mock {
-	mr := &Mock{
-		Storage: NewInMemoryStore(),
+func NewFakeService(s Storager) *FakeService {
+	return &FakeService{
+		storage: s,
 	}
-	if len(pvs) > 0 {
-		for _, pv := range pvs {
-			pv.set(mr.Storage)
-		}
-	}
-	return mr
 }
 
 // AllInvocations returns all called paths and increases the counter for
 // duplicated paths.
-func (s *Mock) AllInvocations() invocations {
+func (s *FakeService) AllInvocations() invocations {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	ret := make(invocations)
@@ -172,32 +123,27 @@ func (s *Mock) AllInvocations() invocations {
 	return ret
 }
 
-// UpdateValues adds or overwrites the internal path => value map.
-func (s *Mock) UpdateValues(pv MockPathValue) {
-	pv.set(s.Storage)
-}
-
 // Get looks up a configuration value for a given path.
-func (s *Mock) Get(p *Path) *Value {
+func (s *FakeService) Get(p *Path) *Value {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.invocations == nil {
 		s.invocations = make(invocations)
 	}
-	ps := p.String()
+
 	s.invocations[*p]++
 
 	if s.GetFn != nil {
 		return s.GetFn(p)
 	}
 
-	vb, ok, err := s.Storage.Get(0, ps)
+	vb, ok, err := s.storage.Get(p)
 	if err != nil {
 		err = errors.WithStack(err)
 	}
 	var found uint8
 	if ok {
-		found = valFoundYes
+		found = valFoundL2
 	}
 	return &Value{
 		Path:    *p,
@@ -208,19 +154,19 @@ func (s *Mock) Get(p *Path) *Value {
 }
 
 // Invokes returns statistics about invocations
-func (s *Mock) Invokes() invocations {
+func (s *FakeService) Invokes() invocations {
 	return s.invocations
 }
 
 // Subscribe returns the before applied SubscriptionID and SubscriptionErr
 // Does not start any underlying Goroutines.
-func (s *Mock) Subscribe(path string, mr MessageReceiver) (subscriptionID int, err error) {
+func (s *FakeService) Subscribe(path string, mr MessageReceiver) (subscriptionID int, err error) {
 	s.SubscribeInvokes++
 	return s.SubscribeFn(path, mr)
 }
 
 // NewScoped creates a new ScopedReader which uses the underlying
 // mocked paths and values.
-func (s *Mock) NewScoped(websiteID, storeID int64) Scoped {
+func (s *FakeService) NewScoped(websiteID, storeID int64) Scoped {
 	return NewScoped(s, websiteID, storeID)
 }

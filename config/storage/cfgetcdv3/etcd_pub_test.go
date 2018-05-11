@@ -45,7 +45,7 @@ func TestStorage_Get(t *testing.T) {
 	t.Run("Get found", func(t *testing.T) {
 
 		mo := cfgetcdv3.ClientMock{
-			GetKey:   []byte(`websites/3/` + path),
+			GetKey:   []byte(cfgetcdv3.DefaultKeyPrefix + `websites/3/` + path),
 			GetValue: testData,
 		}
 

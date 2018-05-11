@@ -28,8 +28,13 @@ import (
 	"github.com/corestoreio/pkg/store/scope"
 )
 
+// DefaultKeyPrefix defines the global key prefix, which can be overwritten.
+const DefaultKeyPrefix = "csv3/"
+
 type Options struct {
 	RequestTimeout time.Duration
+	// KeyPrefix defines a global key prefix used for all keys
+	KeyPrefix string
 }
 
 // Storage implemented interface config.Storager.
@@ -46,15 +51,19 @@ func NewStorage(c clientv3.KV, o Options) (*Storage, error) {
 		options: o,
 		client:  c,
 	}
+	if s.options.KeyPrefix == "" {
+		s.options.KeyPrefix = DefaultKeyPrefix
+	}
 
 	return s, nil
 }
 
-func toKey(scp scope.TypeID, route string) string {
-	s, id := scp.Unpack()
+func (s *Storage) toKey(scp scope.TypeID, route string) string {
+	sp, id := scp.Unpack()
 
 	var buf strings.Builder
-	buf.WriteString(s.StrType())
+	buf.WriteString(s.options.KeyPrefix)
+	buf.WriteString(sp.StrType())
 	buf.WriteByte('/')
 	buf.WriteString(strconv.FormatInt(id, 10))
 	buf.WriteByte('/')
@@ -71,7 +80,7 @@ func (s *Storage) Set(scp scope.TypeID, route string, value []byte) error {
 		defer cancel()
 	}
 
-	key := toKey(scp, route)
+	key := s.toKey(scp, route)
 	_, err := s.client.Put(ctx, key, string(value))
 	if err != nil {
 		return errors.Wrapf(err, "[cfgetcdv3] Put failed with key %q", key)
@@ -88,7 +97,7 @@ func (s *Storage) Get(scp scope.TypeID, route string) (v []byte, found bool, err
 		defer cancel()
 	}
 
-	key := toKey(scp, route)
+	key := s.toKey(scp, route)
 	resp, err := s.client.Get(ctx, key)
 	if err != nil {
 		switch err {

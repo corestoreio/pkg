@@ -15,7 +15,6 @@
 package config_test
 
 import (
-	"fmt"
 	"sync"
 	"testing"
 
@@ -23,21 +22,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var _ config.Getter = (*config.Mock)(nil)
-var _ config.GetterPubSuber = (*config.Mock)(nil)
-var _ config.Setter = (*config.MockWrite)(nil)
-var _ fmt.GoStringer = (*config.MockPathValue)(nil)
-
-func TestPathValueGoStringer(t *testing.T) {
-	pv := config.MockPathValue{
-		"rr/ss/tt": "3.141592",
-	}
-	assert.Exactly(t, "config.MockPathValue{\n\"rr/ss/tt\": \"3.141592\",\n}", pv.GoString())
-}
+var _ config.Getter = (*config.FakeService)(nil)
+var _ config.GetterPubSuber = (*config.FakeService)(nil)
+var _ config.Setter = (*config.FakeWrite)(nil)
 
 func TestService_FnInvokes(t *testing.T) {
 	called := 0
-	s := config.Mock{
+	s := config.FakeService{
 		GetFn: func(p *config.Path) (v *config.Value) {
 			called++
 			return
@@ -49,7 +40,7 @@ func TestService_FnInvokes(t *testing.T) {
 }
 
 func TestService_FnInvokes_Map(t *testing.T) {
-	s := config.Mock{
+	s := config.FakeService{
 		GetFn: func(p *config.Path) (v *config.Value) {
 			return
 		},

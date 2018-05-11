@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config_test
+package storage_test
 
 import (
 	"testing"
@@ -23,29 +23,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var _ config.Storager = config.NewInMemoryStore()
+type flusher interface {
+	Flush() error
+}
 
-func TestSimpleStorage_OneKey(t *testing.T) {
-	t.Parallel()
-
-	const path = "aa/bb/cc"
-	var testTypeID = scope.Store.Pack(55)
-	sp := config.NewInMemoryStore()
-
-	assert.NoError(t, sp.Set(testTypeID, "aa/bb/cc", []byte(`19.99`)))
-	vb, ok, err := sp.Get(testTypeID, path)
+func validateFoundGet(t *testing.T, s config.Storager, scp scope.TypeID, route string, want string) {
+	p := config.MustNewPathWithScope(scp, route)
+	data, ok, err := s.Get(p)
 	require.NoError(t, err)
-	require.True(t, ok)
-	assert.True(t, ok)
-	assert.Exactly(t, []byte(`19.99`), vb)
+	assert.True(t, ok, "env value must be found")
+	assert.Exactly(t, []byte(want), data)
+}
 
-	ni, ok, err := sp.Get(testTypeID, "")
-	require.NoError(t, err, "Error: %s", err)
-	require.False(t, ok)
-	assert.Nil(t, ni)
-
-	ni, ok, err = sp.Get(0, "rr/ss/tt")
-	assert.NoError(t, err)
-	assert.False(t, ok)
-	assert.Nil(t, ni)
+func validateNotFoundGet(t *testing.T, s config.Storager, scp scope.TypeID, route string) {
+	p := config.MustNewPathWithScope(scp, route)
+	data, ok, err := s.Get(p)
+	require.NoError(t, err)
+	assert.False(t, ok, "env value must NOT be found")
+	assert.Nil(t, data, "Data must be nil")
 }

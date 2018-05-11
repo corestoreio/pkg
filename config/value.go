@@ -47,18 +47,18 @@ func (cfn convertFn) Convert(p *Path, data []byte) ([]byte, error) {
 
 const (
 	valFoundNo = iota
-	valFoundYes
-	valFoundLRU
+	valFoundL2
+	valFoundL1
 )
 
 func valFoundStringer(found uint8) string {
 	switch found {
 	case valFoundNo:
 		return "NO"
-	case valFoundYes:
-		return "YES"
-	case valFoundLRU:
-		return "LRU"
+	case valFoundL2:
+		return "Level2"
+	case valFoundL1:
+		return "Level1"
 	}
 	return "CONFIG:FOUND_UNDEFINED"
 }
@@ -78,17 +78,23 @@ type Value struct {
 	CSVComma  rune
 	// found gets set to greater zero if any value can be found under the given
 	// path. Even a NULL value can be valid. found gets also used as a
-	// statistical flag to identify where a value comes from, e.g. from backend
+	// statistical flag to identify where a value comes from, e.g. from level2
 	// or from LRU.
 	found   uint8
 	lastErr error
 }
 
+// TODO replace csv.Reader with the following:
+// func() (record []string, err error)
+//type Reader interface {
+//	Read() (record []string, err error)
+//}
+
 // NewValue makes a new non-pointer value type.
 func NewValue(data []byte) *Value {
 	return &Value{
 		data:  data,
-		found: valFoundYes,
+		found: valFoundL2,
 	}
 }
 

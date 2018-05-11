@@ -21,6 +21,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 	"unicode/utf8"
 
@@ -59,14 +60,15 @@ var errRouteEmpty = errors.Empty.Newf("[config] Route is empty")
 // Path represents a configuration path bound to a scope. A Path is not safe for
 // concurrent use.
 type Path struct {
-	route string
+	envPrefix string
+	route     string
 	// ScopeID a route is bound to this Scope and its ID.
 	ScopeID scope.TypeID
 	// routeValidated internal flag to avoid running twice the route valid
 	// process.
 	routeValidated bool
-	// TTL time.Duration for later use when the LRU cache becomes time
-	// sensitive, like the one from karlseguin
+	TTL            time.Duration // for later use when the LRU cache becomes time sensitive, like the one from karlseguin
+	UseEnvPrefix   bool
 }
 
 // NewPathWithScope creates a new validate Path with a custom scope.
@@ -133,13 +135,18 @@ func (p Path) BindDefault() *Path {
 	return &p
 }
 
+func (p *Path) WithEnvPrefix() *Path {
+	p.UseEnvPrefix = true
+	return p
+}
+
 // String returns a fully qualified path. Errors get logged if debug mode
 // is enabled. String starts with `[config] Error:` on error.
 // Error behaviour: NotValid, Empty or WriteFailed
 func (p *Path) String() string {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
-	if err := p.fq(buf); err != nil {
+	if err := p.AppendFQ(buf); err != nil {
 		return fmt.Sprintf("[config] Error: %+v", err)
 	}
 	return buf.String()
@@ -157,14 +164,14 @@ func (p *Path) GoString() string {
 func (p *Path) FQ() (string, error) {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
-	if err := p.fq(buf); err != nil {
+	if err := p.AppendFQ(buf); err != nil {
 		return "", errors.Wrapf(err, "[config] Scope %d Path %q", p.ScopeID, p.route)
 	}
 	return buf.String(), nil
 }
 
-// Error behaviour: NotValid or WriteFailed
-func (p *Path) fq(buf *bytes.Buffer) error {
+// AppendFQ validates the Path and appends it to the buffer.
+func (p *Path) AppendFQ(buf *bytes.Buffer) error {
 	if err := p.IsValid(); err != nil {
 		return err
 	}
@@ -187,40 +194,41 @@ func (p *Path) fq(buf *bytes.Buffer) error {
 	return nil
 }
 
-// NewPathFromFQ takes a fully qualified path and splits it into its parts.
-// 	Input: stores/5/catalog/frontend/list_allow_all
+// ParseFQ takes a fully qualified path and splits it into its parts with final
+// validation. Input: stores/5/catalog/frontend/list_allow_all
 //	=>
 //		scope: 		stores
 //		scopeID: 	5
-//		path: 		catalog/frontend/list_allow_all
-// Zero allocations to memory. Err may contain an ErrUnsupportedScope or
-// failed to parse a string into an int64 or invalid fqPath.
-func NewPathFromFQ(fqPath string) (*Path, error) {
+//		route: 		catalog/frontend/list_allow_all
+// Zero allocations to memory. Useful to reduce allocations by reusing Path
+// pointer in combination with Reset.
+func (p *Path) ParseFQ(fqPath string) error {
 	// this is the most fast version I come up with.
 	// moving from strings to bytes was even slower despite inline
 	// th parse int64 function
 	if !(strings.Count(fqPath, sSeparator) >= Levels+1) {
-		return nil, errors.NotValid.Newf("[config] Incorrect fully qualified path: %q. Expecting: strScope/ID/%s", fqPath, fqPath)
+		return errors.NotValid.Newf("[config] Incorrect fully qualified path: %q. Expecting: strScope/ID/%s", fqPath, fqPath)
 	}
 
 	fi := strings.Index(fqPath, sSeparator)
 	scopeStr := fqPath[:fi]
 
 	if !scope.Valid(scopeStr) {
-		return nil, errors.NotSupported.Newf("[config] Unknown Scope: %q", scopeStr)
+		return errors.NotSupported.Newf("[config] Unknown Scope: %q", scopeStr)
 	}
 
 	fqPath = fqPath[fi+1:]
 	fi = strings.Index(fqPath, sSeparator)
 	scopeID, err := strconv.ParseInt(fqPath[:fi], 10, 64)
 	if err != nil {
-		return nil, errors.NotValid.New(err, "[config] ParseInt with value: %q", fqPath[:fi])
+		return errors.NotValid.New(err, "[config] ParseInt with value: %q", fqPath[:fi])
 	}
 
-	return &Path{
-		route:   fqPath[fi+1:],
-		ScopeID: scope.MakeTypeID(scope.FromString(scopeStr), scopeID),
-	}, nil
+	p.route = fqPath[fi+1:]
+	p.ScopeID = scope.MakeTypeID(scope.FromString(scopeStr), scopeID)
+	p.routeValidated = false
+
+	return p.IsValid()
 }
 
 // IsValid checks for valid configuration path. Returns nil on success.
@@ -290,6 +298,14 @@ func (p *Path) EqualRoute(b *Path) bool {
 	return p != nil && b != nil && p.route == b.route
 }
 
+// Reset sets all fields to the zero value for pointer reuse.
+func (p *Path) Reset() *Path {
+	p.route = ""
+	p.ScopeID = 0
+	p.routeValidated = false
+	return p
+}
+
 // Append adds other partial routes with a Separator between. After the partial
 // routes have been added a validation check will NOT be done.
 // It returns a new object and does not modify the current one.
@@ -329,7 +345,7 @@ func (p *Path) Append(routes ...string) *Path {
 // MarshalText implements interface encoding.TextMarshaler.
 func (p *Path) MarshalText() (text []byte, err error) {
 	var buf bytes.Buffer
-	if err := p.fq(&buf); err != nil {
+	if err := p.AppendFQ(&buf); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return buf.Bytes(), nil
@@ -445,7 +461,7 @@ var highwayHashKey = [highwayhash.Size]byte{0x52, 0xfd, 0xfc, 0x7, 0x21, 0x82, 0
 // Usage as map key.
 func (p *Path) Hash64() uint64 {
 	buf := bufferpool.Get()
-	if err := p.fq(buf); err != nil {
+	if err := p.AppendFQ(buf); err != nil {
 		bufferpool.Put(buf)
 		return 0
 	}

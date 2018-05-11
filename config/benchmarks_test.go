@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/store/scope"
 )
 
@@ -90,14 +91,12 @@ func BenchmarkPathHashLevel2(b *testing.B) {
 	}
 }
 
-var benchmarkReverseFQPath *config.Path
+var benchmarkReverseFQPath = new(config.Path)
 
 // BenchmarkSplitFQ-4  	10000000	       199 ns/op	      32 B/op	       1 allocs/op
 func BenchmarkSplitFQ(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		var err error
-		benchmarkReverseFQPath, err = config.NewPathFromFQ("stores/7475/catalog/frontend/list_allow_all")
-		if err != nil {
+		if err := benchmarkReverseFQPath.ParseFQ("stores/7475/catalog/frontend/list_allow_all"); err != nil {
 			b.Error(err)
 		}
 	}
@@ -223,9 +222,10 @@ func BenchmarkScopedServiceStringDefault(b *testing.B) {
 func benchmarkScopedServiceStringRun(b *testing.B, websiteID, storeID int64) {
 	route := "aa/bb/cc"
 	want := strings.Repeat("Gopher", 100)
-	sg := config.NewMock(config.MockPathValue{
-		config.MustNewPath(route).String(): want,
-	}).NewScoped(websiteID, storeID)
+
+	sg := config.NewFakeService(storage.NewMap(
+		config.MustNewPath(route).String(), want,
+	)).NewScoped(websiteID, storeID)
 
 	b.ResetTimer()
 	b.ReportAllocs()

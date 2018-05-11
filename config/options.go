@@ -15,49 +15,24 @@
 package config
 
 import (
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 )
 
-// Option applies options to the NewService function. Used mainly by external
+// Options applies configurations to the NewService function. Used mainly by external
 // packages for providing different storage engines.
-type Option func(*Service) error
-
-// WithLogger sets a logger to the Service and to the internal pubSub goroutine.
-// If nil, everything will panic. Apply this function before setting other
-// option functions to provide your logger to those other option functions.
-// Default Logger log.Blackhole with disabled debug and info logging.
-func WithLogger(l log.Logger) Option {
-	return func(s *Service) error {
-		s.Log = l
-		if s.pubSub != nil {
-			s.pubSub.log = l
-		}
-		return nil
-	}
+type Options struct {
+	// Level1 defines a usually short lived cached like an LRU or TinyLFU. It
+	// can be set optionally. Level1 only gets called for Set operation when a
+	// value is requested in Level2 via Get.
+	Level1       Storager
+	Log          log.Logger
+	EnablePubSub bool
+	// EnvironmentKey loads a string from the environment to use it as a prefix
+	// for the path. For example different payment gateways and access
+	// credentials for a payment method on STAGING or PRODUCTION systems.
+	EnvironmentKey string
 }
 
-// WithPubSub starts the internal publish and subscribe service as a goroutine.
-func WithPubSub() Option {
-	return func(s *Service) error {
-		if s.pubSub != nil && !s.pubSub.closed {
-			return errors.AlreadyExists.Newf("[config] PubSub Service already exists and is running.")
-		}
-
-		s.pubSub = newPubSub(s.Log)
-
-		go s.publish() // yes we know how to quit this goroutine, just call Service.Close()
-
-		return nil
-	}
-}
-
-// WithLRU provides the `lru` cache which implements a fixed-size thread safe
-// LRU cache. If maxEntries is zero, the cache has no limit and it's assumed
-// that eviction is done by the caller.
-func WithLRU(maxEntries int) Option {
-	return func(s *Service) (err error) {
-		s.lru = newLRU(maxEntries)
-		return
-	}
-}
+// LoadDataFn allows other storage backends to pump their data into the
+// config.Service during or after initialization.
+type LoadDataFn func(*Service) error

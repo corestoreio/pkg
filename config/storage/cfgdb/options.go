@@ -27,7 +27,7 @@ import (
 
 // WithCoreConfigData reads the table core_config_data into the Service and
 // overrides existing values. Stops on errors.
-func WithCoreConfigData(tbls *ddl.Tables, o Options) config.Option {
+func WithCoreConfigData(tbls *ddl.Tables, o Options) config.LoadDataFn {
 	return func(s *config.Service) error {
 
 		tn := o.TableName

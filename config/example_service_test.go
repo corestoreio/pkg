@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/config/storage"
 )
 
 // We focus here on type String() other primitive types are of course also available.
@@ -25,7 +26,7 @@ var pathString = config.MustNewPath("scope/test/string") // panics on incorrect 
 
 // Default storage engine with build-in in-memory map.
 // the NewService gets only instantiated once during app start up.
-var configSrv = config.MustNewService(config.NewInMemoryStore() /*options*/)
+var configSrv = config.MustNewService(storage.NewMap(), config.Options{})
 
 func ExampleService() {
 

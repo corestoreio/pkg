@@ -28,10 +28,11 @@ import (
 )
 
 func TestMakeMulti(t *testing.T) {
-	scpID := scope.Store.Pack(44)
-	const path = "aa/bb/cc"
+
+	p := config.MustNewPathWithScope(scope.Store.Pack(44), "aa/bb/cc")
+
 	cmpGet := func(t *testing.T, s config.Storager, wantData []byte) {
-		v, found, err := s.Get(scpID, path)
+		v, found, err := s.Get(p)
 		require.NoError(t, err)
 		assert.True(t, found)
 		assert.Exactly(t, wantData, v)
@@ -40,11 +41,11 @@ func TestMakeMulti(t *testing.T) {
 	testVal := []byte(`I'm your bro-grammer'`)
 
 	t.Run("write,read to,from all", func(t *testing.T) {
-		inMem1 := config.NewInMemoryStore()
-		inMem2 := config.NewInMemoryStore()
+		inMem1 := storage.NewMap()
+		inMem2 := storage.NewMap()
 		m := storage.MakeMulti(storage.MultiOptions{}, inMem1, inMem2)
 
-		require.NoError(t, m.Set(scpID, path, testVal))
+		require.NoError(t, m.Set(p, testVal))
 
 		cmpGet(t, inMem1, testVal)
 		cmpGet(t, inMem2, testVal)
@@ -53,15 +54,16 @@ func TestMakeMulti(t *testing.T) {
 	})
 
 	t.Run("write timeout", func(t *testing.T) {
-		inMem1 := config.NewInMemoryStore()
-		inMem2 := config.NewInMemoryStore()
+		inMem1 := storage.NewMap()
+		inMem2 := storage.NewMap()
+
 		m := storage.MakeMulti(storage.MultiOptions{
 			ContextTimeout: time.Millisecond * 20,
 		}, inMem1, inMem2, sleepWriter{d: time.Millisecond * 100})
 
 		testVal := []byte(`A bro-grammer has a hammer`)
 
-		err := m.Set(scpID, path, testVal)
+		err := m.Set(p, testVal)
 		require.Error(t, err)
 		assert.Exactly(t, context.DeadlineExceeded.Error(), err.Error())
 
@@ -72,14 +74,15 @@ func TestMakeMulti(t *testing.T) {
 	})
 
 	t.Run("write error", func(t *testing.T) {
-		inMem1 := config.NewInMemoryStore()
-		inMem2 := config.NewInMemoryStore()
+		inMem1 := storage.NewMap()
+		inMem2 := storage.NewMap()
+
 		m2 := storage.MakeMulti(storage.MultiOptions{}, sleepWriter{setErr: errors.AlreadyInUse.Newf("resource in use")})
 		m := storage.MakeMulti(storage.MultiOptions{}, inMem1, inMem2, m2)
 
 		testVal := []byte(`You are a bro-grammer'`)
 
-		err := m.Set(scpID, path, testVal)
+		err := m.Set(p, testVal)
 		require.Error(t, err)
 		assert.Exactly(t, "resource in use", err.Error())
 
@@ -91,12 +94,8 @@ func TestMakeMulti(t *testing.T) {
 	t.Run("found nothing", func(t *testing.T) {
 		m := storage.MakeMulti(storage.MultiOptions{})
 
-		v, found, err := m.Get(scope.Website.Pack(44), path)
-		require.NoError(t, err)
-		assert.False(t, found)
-		assert.Nil(t, v)
+		validateNotFoundGet(t, m, scope.Website.Pack(44), "aa/bb/cc")
 	})
-
 }
 
 type sleepWriter struct {
@@ -104,13 +103,13 @@ type sleepWriter struct {
 	setErr error
 }
 
-func (sw sleepWriter) Set(scp scope.TypeID, path string, value []byte) error {
+func (sw sleepWriter) Set(_ *config.Path, _ []byte) error {
 	if sw.d > 0 {
 		time.Sleep(sw.d)
 	}
 	return sw.setErr
 }
 
-func (sw sleepWriter) Get(scp scope.TypeID, path string) (v []byte, found bool, err error) {
+func (sw sleepWriter) Get(_ *config.Path) (v []byte, found bool, err error) {
 	return
 }

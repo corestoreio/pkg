@@ -12,9 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package cfgenv reads config paths from special crafted environment variables.
-//
-// Env vars (environment variables) can be unset after reading and optionally
-// cached. They can be read during initialization of the storage backend or on
-// each request.
-package cfgenv
+package storage
+
+import "github.com/corestoreio/pkg/store/scope"
+
+type cacheKey struct {
+	scope.TypeID
+	string // route
+}
+
+func makeCacheKey(s scope.TypeID, r string) cacheKey {
+	return cacheKey{s, r}
+}

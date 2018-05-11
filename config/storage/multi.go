@@ -20,13 +20,14 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
-	"github.com/corestoreio/pkg/store/scope"
 	"github.com/golang/sync/errgroup"
 )
 
 type MultiOptions struct {
 	// ContextTimeout if greater than zero a timeout will
 	ContextTimeout time.Duration
+	WriteSerial    bool // TODO implement
+	ReadParallel   bool // TODO implement
 }
 
 // Multi wraps multiple backends into one. Writing to the backend
@@ -35,7 +36,7 @@ type MultiOptions struct {
 // order. The backend which returns the first found value wins. Subsequent calls
 // to other backends are getting skipped.
 type multi struct {
-	options  MultiOptions
+	op       MultiOptions
 	backends []config.Storager
 }
 
@@ -50,17 +51,17 @@ func MakeMulti(o MultiOptions, ss ...config.Storager) config.Storager {
 			allStorages = append(allStorages, s)
 		}
 	}
-	return &multi{options: o, backends: allStorages}
+	return &multi{op: o, backends: allStorages}
 }
 
 // Set writes concurrently to the backends. A ContextTimeout can be defined to
 // cancel the internal goroutine. It returns the first error.
-func (ms *multi) Set(scp scope.TypeID, path string, value []byte) error {
+func (ms *multi) Set(p *config.Path, value []byte) error {
 	// investigate if that concept of timeout and cancellation is good enough
 	ctx := context.Background()
-	if ms.options.ContextTimeout > 0 {
+	if ms.op.ContextTimeout > 0 {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, ms.options.ContextTimeout)
+		ctx, cancel = context.WithTimeout(ctx, ms.op.ContextTimeout)
 		defer cancel()
 	}
 
@@ -68,6 +69,8 @@ func (ms *multi) Set(scp scope.TypeID, path string, value []byte) error {
 
 	for _, s := range ms.backends {
 		s := s
+		p2 := new(config.Path)
+		*p2 = *p // shallow copy to avoid race conditions
 		g.Go(func() error {
 			errChan := make(chan error)
 			stopChan := make(chan struct{})
@@ -76,7 +79,7 @@ func (ms *multi) Set(scp scope.TypeID, path string, value []byte) error {
 				select {
 				case <-stopChan:
 					return
-				case errChan <- errors.WithStack(s.Set(scp, path, value)):
+				case errChan <- errors.WithStack(s.Set(p2, value)):
 				}
 			}()
 
@@ -96,11 +99,11 @@ func (ms *multi) Set(scp scope.TypeID, path string, value []byte) error {
 }
 
 // Get returns the first found value from the backend storage.
-func (ms *multi) Get(scp scope.TypeID, path string) (v []byte, found bool, err error) {
+func (ms *multi) Get(p *config.Path) (v []byte, found bool, err error) {
 	for idx, s := range ms.backends {
-		v, found, err = s.Get(scp, path)
+		v, found, err = s.Get(p)
 		if err != nil {
-			return nil, false, errors.Wrapf(err, "[config] Multi.Value failed at backend index %d with path %q", idx, path)
+			return nil, false, errors.Wrapf(err, "[config] Multi.Value failed at backend index %d with path %q", idx, p.String())
 		}
 		if found {
 			return
