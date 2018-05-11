@@ -25,9 +25,9 @@ import (
 	"github.com/corestoreio/pkg/store/scope"
 )
 
-// WithCoreConfigData reads the table core_config_data into the Service and
+// WithLoadFromDB reads the table core_config_data into the Service and
 // overrides existing values. Stops on errors.
-func WithCoreConfigData(tbls *ddl.Tables, o Options) config.LoadDataFn {
+func WithLoadFromDB(tbls *ddl.Tables, o Options) config.LoadDataFn {
 	return func(s *config.Service) error {
 
 		tn := o.TableName
@@ -60,10 +60,10 @@ func WithCoreConfigData(tbls *ddl.Tables, o Options) config.LoadDataFn {
 			scp := scope.FromString(ccd.Scope).Pack(ccd.ScopeID)
 			p, err := config.NewPathWithScope(scp, ccd.Path)
 			if err != nil {
-				return errors.Wrapf(err, "[ccd] WithCoreConfigData.config.NewPathWithScope Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ConfigID)
+				return errors.Wrapf(err, "[ccd] WithLoadFromDB.config.NewPathWithScope Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ConfigID)
 			}
 			if err = s.Set(p, v); err != nil {
-				return errors.Wrapf(err, "[ccd] WithCoreConfigData.Service.Write Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ConfigID)
+				return errors.Wrapf(err, "[ccd] WithLoadFromDB.Service.Write Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ConfigID)
 			}
 
 			return nil

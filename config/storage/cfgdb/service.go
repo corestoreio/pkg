@@ -21,12 +21,12 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/store/scope"
 )
 
-// Options applies options to the DBStorage type.
+// Options applies options to the Service type.
 type Options struct {
 	TableName           string
 	Log                 log.Logger
@@ -53,9 +53,9 @@ type stats struct {
 	Close uint64
 }
 
-// DBStorage connects the MySQL DB with the config.Service type. Implements
+// Service connects the MySQL/MariaDB with the config.Service type. Implements
 // interface config.Storager.
-type DBStorage struct {
+type Service struct {
 	cfg Options
 
 	sqlRead  *dml.Select
@@ -76,12 +76,12 @@ type DBStorage struct {
 	stmtWriteStat  stats
 }
 
-// NewDBStorage creates a new database backed storage service. It creates three
+// NewService creates a new database backed storage service. It creates three
 // prepared statements which are getting automatically closed after an idle time
 // and once used again, they get re-prepared. The database schema gets
 // validated, but can also be disabled via options struct. Implements interface
 // config.Storager.
-func NewDBStorage(tbls *ddl.Tables, o Options) (*DBStorage, error) {
+func NewService(tbls *ddl.Tables, o Options) (*Service, error) {
 	// TODO reconfigure itself once it is running to load the timeout values from the DB and apply it. Restart the go routines.
 	// Then during restart, block Set and Value operations to let the caller wait until restart complete. might be an overhead.
 
@@ -121,7 +121,7 @@ func NewDBStorage(tbls *ddl.Tables, o Options) (*DBStorage, error) {
 	qryWrite.OnDuplicateKeys = dml.Conditions{dml.Column("value")}
 	qryWrite.Log = o.Log
 
-	dbs := &DBStorage{
+	dbs := &Service{
 		cfg:              o,
 		tickerDaemonStop: make(chan struct{}),
 		sqlRead:          qryRead,
@@ -143,21 +143,21 @@ func NewDBStorage(tbls *ddl.Tables, o Options) (*DBStorage, error) {
 	return dbs, nil
 }
 
-// MustNewDBStorage same as NewDBStorage but panics on error. Implements
+// MustNewService same as NewService but panics on error. Implements
 // interface config.Storager.
-func MustNewDBStorage(tbls *ddl.Tables, o Options) *DBStorage {
-	s, err := NewDBStorage(tbls, o)
+func MustNewService(tbls *ddl.Tables, o Options) *Service {
+	s, err := NewService(tbls, o)
 	if err != nil {
 		panic(err)
 	}
 	return s
 }
 
-func (dbs *DBStorage) closeStmtRead(t time.Time) {
+func (dbs *Service) closeStmtRead(t time.Time) {
 	dbs.muRead.Lock()
 	if dbs.stmtReadState == stateOpen {
 		if err := dbs.stmtRead.Close(); err != nil && dbs.cfg.Log != nil && dbs.cfg.Log.IsInfo() {
-			dbs.cfg.Log.Info("cfgdb.DBStorage.stmtRead.Close", log.Stringer("ticker", t), log.Err(err))
+			dbs.cfg.Log.Info("cfgdb.Service.stmtRead.Close", log.Stringer("ticker", t), log.Err(err))
 		}
 		dbs.stmtReadState = stateClosed
 		dbs.stmtReadStat.Close++
@@ -165,11 +165,11 @@ func (dbs *DBStorage) closeStmtRead(t time.Time) {
 	dbs.muRead.Unlock()
 }
 
-func (dbs *DBStorage) closeStmtWrite(t time.Time) {
+func (dbs *Service) closeStmtWrite(t time.Time) {
 	dbs.muWrite.Lock()
 	if dbs.stmtWriteState == stateOpen {
 		if err := dbs.stmtWrite.Close(); err != nil && dbs.cfg.Log != nil && dbs.cfg.Log.IsInfo() {
-			dbs.cfg.Log.Info("cfgdb.DBStorage.stmtWrite.Close", log.Stringer("ticker", t), log.Err(err))
+			dbs.cfg.Log.Info("cfgdb.Service.stmtWrite.Close", log.Stringer("ticker", t), log.Err(err))
 		}
 		dbs.stmtWriteState = stateClosed
 		dbs.stmtWriteStat.Close++
@@ -177,7 +177,7 @@ func (dbs *DBStorage) closeStmtWrite(t time.Time) {
 	dbs.muWrite.Unlock()
 }
 
-func (dbs *DBStorage) runStateCheckers() {
+func (dbs *Service) runStateCheckers() {
 
 	dbs.tickerRead = time.NewTicker(dbs.cfg.IdleRead)
 	dbs.tickerWrite = time.NewTicker(dbs.cfg.IdleWrite)
@@ -202,14 +202,14 @@ func (dbs *DBStorage) runStateCheckers() {
 }
 
 // Close terminates the prepared statements and internal go routines.
-func (dbs *DBStorage) Close() error {
+func (dbs *Service) Close() error {
 	dbs.tickerDaemonStop <- struct{}{} // no need to close this chan because we might restart later the goroutine.
 	return nil
 }
 
 // Set puts a value with its key. Database errors get logged as Info message.
 // Enabled debug level logs the insert ID or rows affected.
-func (dbs *DBStorage) Set(scp scope.TypeID, path string, value []byte) error {
+func (dbs *Service) Set(p *config.Path, value []byte) error {
 	dbs.muWrite.Lock()
 	prevState := dbs.stmtWriteState
 	dbs.stmtWriteState = stateInUse
@@ -236,19 +236,19 @@ func (dbs *DBStorage) Set(scp scope.TypeID, path string, value []byte) error {
 
 	ctx, cancel := context.WithTimeout(ctx, dbs.cfg.ContextTimeoutWrite)
 	defer cancel()
+	scp, path := p.ScopeRoute()
 	res, err := dbs.stmtWrite.Uint64(scp.ToUint64()).String(path).Bytes(value).ExecContext(ctx)
 	dbs.stmtWrite.Reset()
 	if dbs.cfg.Log != nil && dbs.cfg.Log.IsDebug() {
 		li, err1 := res.LastInsertId()
 		ra, err2 := res.RowsAffected()
 		dbs.cfg.Log.Debug(
-			"config.DBStorage.Set.Write.Result",
+			"config.Service.Set.Write.Result",
 			log.Int64("lastInsertID", li),
 			log.ErrWithKey("lastInsertIDErr", err1),
 			log.Int64("rowsAffected", ra),
 			log.ErrWithKey("rowsAffectedErr", err2),
-			log.String("scope", scp.String()),
-			log.String("path", path),
+			log.String("path", p.String()),
 			log.Int("value_len", len(value)),
 		)
 	}
@@ -259,7 +259,7 @@ func (dbs *DBStorage) Set(scp scope.TypeID, path string, value []byte) error {
 // Get performs a read operation from the database and returns a value from
 // the table. The `ok` return argument can be true even if byte slice `v` is
 // nil, which means that the path and scope are stored in the database table.
-func (dbs *DBStorage) Get(scp scope.TypeID, path string) (v []byte, ok bool, err error) {
+func (dbs *Service) Get(p *config.Path) (v []byte, ok bool, err error) {
 	dbs.muRead.Lock()
 	prevState := dbs.stmtReadState
 	dbs.stmtReadState = stateInUse
@@ -286,6 +286,7 @@ func (dbs *DBStorage) Get(scp scope.TypeID, path string) (v []byte, ok bool, err
 
 	ctx, cancel := context.WithTimeout(ctx, dbs.cfg.ContextTimeoutRead)
 	defer cancel()
+	scp, path := p.ScopeRoute()
 	s, id := scp.Unpack()
 	nv, found, err := dbs.stmtRead.String(s.StrType()).Int64(id).String(path).LoadNullString(ctx)
 	if err != nil {
@@ -302,7 +303,7 @@ func (dbs *DBStorage) Get(scp scope.TypeID, path string) (v []byte, ok bool, err
 }
 
 // Statistics returns live statistics about opening and closing prepared statements.
-func (dbs *DBStorage) Statistics() (value stats, set stats) {
+func (dbs *Service) Statistics() (value stats, set stats) {
 	dbs.muRead.Lock()
 	value = dbs.stmtReadStat
 	dbs.muRead.Unlock()

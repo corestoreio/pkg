@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/config/storage/cfgdb"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/stretchr/testify/assert"
@@ -39,10 +40,11 @@ func Test_WithCoreConfigData(t *testing.T) {
 
 	tbls := cfgdb.NewTableCollection(dbc.DB)
 
-	im := config.NewInMemoryStore()
+	im := storage.NewMap()
 	s := config.MustNewService(
 		im,
-		cfgdb.WithCoreConfigData(tbls, cfgdb.Options{}),
+		config.Options{},
+		cfgdb.WithLoadFromDB(tbls, cfgdb.Options{}),
 	)
 	defer dmltest.Close(t, s)
 
