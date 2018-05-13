@@ -780,3 +780,29 @@ func TestPath_HasRoutePrefix(t *testing.T) {
 	assert.False(t, p.HasRoutePrefix("yy"))
 	assert.True(t, p.HasRoutePrefix("xx/yy/zz"))
 }
+
+func TestPath_ParseStrings(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		scp, id, route string
+		wantPath       string
+		wantErr        errors.Kind
+	}{
+		{"default", "0", "aa/bb/cc", "default/0/aa/bb/cc", errors.NoKind},
+		{"stores", "1", "aa/bb/cc", "stores/1/aa/bb/cc", errors.NoKind},
+		{"websites", "1", "aa/bb/cc", "websites/1/aa/bb/cc", errors.NoKind},
+		{"website", "1", "aa/bb/cc", "", errors.NotValid},
+		{"websites", "-1", "aa/bb/cc", "", errors.CorruptData},
+	}
+
+	for i, test := range tests {
+		p := new(Path)
+		haveErr := p.ParseStrings(test.scp, test.id, test.route)
+		if test.wantErr > 0 {
+			assert.True(t, test.wantErr.Match(haveErr), "IDX:%d %+v", i, haveErr)
+			continue
+		}
+		assert.Exactly(t, test.wantPath, p.String(), "index %d", i)
+	}
+}

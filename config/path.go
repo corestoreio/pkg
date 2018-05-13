@@ -201,8 +201,9 @@ func (p *Path) AppendFQ(buf *bytes.Buffer) error {
 //		scopeID: 	5
 //		route: 		catalog/frontend/list_allow_all
 // Zero allocations to memory. Useful to reduce allocations by reusing Path
-// pointer in combination with Reset.
+// pointer because it calls internally Reset.
 func (p *Path) ParseFQ(fqPath string) error {
+	p.Reset()
 	// this is the most fast version I come up with.
 	// moving from strings to bytes was even slower despite inline
 	// th parse int64 function
@@ -228,6 +229,23 @@ func (p *Path) ParseFQ(fqPath string) error {
 	p.ScopeID = scope.MakeTypeID(scope.FromString(scopeStr), scopeID)
 	p.routeValidated = false
 
+	return p.IsValid()
+}
+
+// ParseStrings parses the arguments into a valid path. scp must be a valid
+// scope string as defined in stores/scope package. id must be a stringified
+// uint value.
+func (p *Path) ParseStrings(scp, id, route string) error {
+	p.Reset()
+	if !scope.Valid(scp) {
+		return errors.NotValid.Newf("[config] %q Invalid scope: %q", route, scp)
+	}
+	id2, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		return errors.CorruptData.New(err, "[config] %q failed to parse %q to uint", route, id)
+	}
+	p.route = route
+	p.ScopeID = scope.FromString(scp).WithID(int64(id2))
 	return p.IsValid()
 }
 
@@ -355,6 +373,7 @@ func (p *Path) MarshalText() (text []byte, err error) {
 // checks. Implements encoding.TextUnmarshaler.
 // Error behaviour: NotValid, Empty.
 func (p *Path) UnmarshalText(txt []byte) error {
+	p.Reset()
 	if !(bytes.Count(txt, bSeparator) >= Levels+1) {
 		return errors.NotValid.Newf("[config] Incorrect fully qualified path: %q. Expecting: strScope/ID/%s", txt, txt)
 	}
@@ -393,6 +412,7 @@ func (p *Path) MarshalBinary() (data []byte, err error) {
 // UnmarshalBinary decodes input bytes into a valid Path. Implements
 // encoding.BinaryUnmarshaler.
 func (p *Path) UnmarshalBinary(data []byte) error {
+	p.Reset()
 	if len(data) < 8+5 { // 8 for the uint and min 5 bytes for a/b/c
 		return errors.TooShort.Newf("[config] UnmarshalBinary: input data too short")
 	}
