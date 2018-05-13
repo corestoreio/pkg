@@ -1,0 +1,5 @@
+{
+  "payment/stripe/user_name": {
+    "default": []
+  }
+}
