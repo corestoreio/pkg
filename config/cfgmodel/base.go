@@ -272,7 +272,7 @@ func (bv baseValue) MustFQ(h ...scope.TypeID) string {
 // MustFQ same as FQ but for scope website and panics on error. Please use only
 // for testing.
 func (bv baseValue) MustFQWebsite(id int64) string {
-	p, err := bv.ToPath(scope.Website.Pack(id))
+	p, err := bv.ToPath(scope.Website.WithID(id))
 	if err != nil {
 		panic(err)
 	}
@@ -282,7 +282,7 @@ func (bv baseValue) MustFQWebsite(id int64) string {
 // MustFQStore same as FQ but for scope store and panics on error. Please use
 // only for testing.
 func (bv baseValue) MustFQStore(id int64) string {
-	p, err := bv.ToPath(scope.Store.Pack(id))
+	p, err := bv.ToPath(scope.Store.WithID(id))
 	if err != nil {
 		panic(err)
 	}

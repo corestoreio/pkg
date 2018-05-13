@@ -292,8 +292,8 @@ func TestServiceWithBackend_WithRunMode_Valid_Request(t *testing.T) {
 		jwt.WithDebugLog(logBuf),
 		jwt.WithOptionFactory(pb.PrepareOptionFactory()),
 		jwt.WithServiceErrorHandler(mw.ErrorWithPanic),
-		jwt.WithErrorHandler(mw.ErrorWithPanic, scope.Website.Pack(1)),
-		jwt.WithMarkPartiallyApplied(true, scope.Website.Pack(1)), // because we load more from the OptionFactories
+		jwt.WithErrorHandler(mw.ErrorWithPanic, scope.Website.WithID(1)),
+		jwt.WithMarkPartiallyApplied(true, scope.Website.WithID(1)), // because we load more from the OptionFactories
 	)
 
 	// our token will be crafted to contain the DE store so the JWT middleware
@@ -312,7 +312,7 @@ func TestServiceWithBackend_WithRunMode_Valid_Request(t *testing.T) {
 		stClaim := jwtclaim.NewStore()
 		stClaim.Store = "de"
 		stClaim.UserID = "hans_wurst"
-		newToken, err := jwts.NewToken(scope.Website.Pack(1), stClaim)
+		newToken, err := jwts.NewToken(scope.Website.WithID(1), stClaim)
 		if err != nil {
 			t.Fatalf("%+v", err)
 		}

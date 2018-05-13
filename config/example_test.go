@@ -31,7 +31,7 @@ func Example() {
 	// alternative way
 	fmt.Println(MustNewPath("system/smtp/host").BindStore(3).String())
 	// Group is not supported and falls back to default
-	fmt.Println(MustNewPath("system/smtp/host").Bind(scope.Group.Pack(4)).String())
+	fmt.Println(MustNewPath("system/smtp/host").Bind(scope.Group.WithID(4)).String())
 
 	p, err := NewPath("system/smtp/host")
 	if err != nil {

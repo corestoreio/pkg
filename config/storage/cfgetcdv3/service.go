@@ -17,15 +17,14 @@ package cfgetcdv3
 import (
 	"bytes"
 	"context"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
 // DefaultKeyPrefix defines the global key prefix, which can be overwritten.
@@ -37,17 +36,17 @@ type Options struct {
 	KeyPrefix string
 }
 
-// Storage implemented interface config.Storager.
-type Storage struct {
+// service implemented interface config.Storager.
+type service struct {
 	options Options
 	client  clientv3.KV
 }
 
-// NewStorage creates a new storage client with either a concret or a mocked
+// NewService creates a new storage client with either a concret or a mocked
 // object of the etcd v3.
-func NewStorage(c clientv3.KV, o Options) (*Storage, error) {
+func NewService(c clientv3.KV, o Options) (config.Storager, error) {
 
-	s := &Storage{
+	s := &service{
 		options: o,
 		client:  c,
 	}
@@ -58,21 +57,17 @@ func NewStorage(c clientv3.KV, o Options) (*Storage, error) {
 	return s, nil
 }
 
-func (s *Storage) toKey(scp scope.TypeID, route string) string {
-	sp, id := scp.Unpack()
+func (s *service) toKey(p *config.Path) (string, error) {
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
 
-	var buf strings.Builder
 	buf.WriteString(s.options.KeyPrefix)
-	buf.WriteString(sp.StrType())
-	buf.WriteByte('/')
-	buf.WriteString(strconv.FormatInt(id, 10))
-	buf.WriteByte('/')
-	buf.WriteString(route)
-	return buf.String()
+	err := p.AppendFQ(buf)
+	return buf.String(), err
 }
 
 // Set puts a key to the etcd service.
-func (s *Storage) Set(scp scope.TypeID, route string, value []byte) error {
+func (s *service) Set(p *config.Path, value []byte) error {
 	ctx := context.Background()
 	if s.options.RequestTimeout > 0 {
 		var cancel context.CancelFunc
@@ -80,16 +75,19 @@ func (s *Storage) Set(scp scope.TypeID, route string, value []byte) error {
 		defer cancel()
 	}
 
-	key := s.toKey(scp, route)
-	_, err := s.client.Put(ctx, key, string(value))
+	key, err := s.toKey(p)
 	if err != nil {
+		return errors.Wrapf(err, "[cfgetcdv3] toKey with key %q", key)
+	}
+
+	if _, err = s.client.Put(ctx, key, string(value)); err != nil {
 		return errors.Wrapf(err, "[cfgetcdv3] Put failed with key %q", key)
 	}
 	return nil
 }
 
 // Get returns a value from the etcd service.
-func (s *Storage) Get(scp scope.TypeID, route string) (v []byte, found bool, err error) {
+func (s *service) Get(p *config.Path) (v []byte, found bool, err error) {
 	ctx := context.Background()
 	if s.options.RequestTimeout > 0 {
 		var cancel context.CancelFunc
@@ -97,7 +95,10 @@ func (s *Storage) Get(scp scope.TypeID, route string) (v []byte, found bool, err
 		defer cancel()
 	}
 
-	key := s.toKey(scp, route)
+	key, err := s.toKey(p)
+	if err != nil {
+		return nil, false, errors.Wrapf(err, "[cfgetcdv3] toKey with key %q", key)
+	}
 	resp, err := s.client.Get(ctx, key)
 	if err != nil {
 		switch err {
@@ -121,8 +122,8 @@ func (s *Storage) Get(scp scope.TypeID, route string) (v []byte, found bool, err
 	return nil, false, nil
 }
 
-// ClientMock implementation for testing purposes.
-type ClientMock struct {
+// FakeClient implementation for testing purposes.
+type FakeClient struct {
 	PutFn    func(ctx context.Context, key, val string, opts ...clientv3.OpOption) (*clientv3.PutResponse, error)
 	PutError error
 	GetError error
@@ -131,14 +132,14 @@ type ClientMock struct {
 	GetValue []byte
 }
 
-func (cm ClientMock) Put(ctx context.Context, key, val string, opts ...clientv3.OpOption) (*clientv3.PutResponse, error) {
+func (cm FakeClient) Put(ctx context.Context, key, val string, opts ...clientv3.OpOption) (*clientv3.PutResponse, error) {
 	if cm.PutFn != nil {
 		return cm.PutFn(ctx, key, val, opts...)
 	}
 	return nil, cm.PutError
 }
 
-func (cm ClientMock) Get(ctx context.Context, key string, opts ...clientv3.OpOption) (*clientv3.GetResponse, error) {
+func (cm FakeClient) Get(ctx context.Context, key string, opts ...clientv3.OpOption) (*clientv3.GetResponse, error) {
 	if cm.GetFn != nil {
 		return cm.GetFn(ctx, key, opts...)
 	}
@@ -155,16 +156,16 @@ func (cm ClientMock) Get(ctx context.Context, key string, opts ...clientv3.OpOpt
 	}, nil
 }
 
-func (cm ClientMock) Delete(ctx context.Context, key string, opts ...clientv3.OpOption) (*clientv3.DeleteResponse, error) {
+func (cm FakeClient) Delete(ctx context.Context, key string, opts ...clientv3.OpOption) (*clientv3.DeleteResponse, error) {
 	return nil, errors.NotImplemented.Newf("[cfgetcdv3] Delete Not Implemented")
 }
 
-func (cm ClientMock) Compact(ctx context.Context, rev int64, opts ...clientv3.CompactOption) (*clientv3.CompactResponse, error) {
+func (cm FakeClient) Compact(ctx context.Context, rev int64, opts ...clientv3.CompactOption) (*clientv3.CompactResponse, error) {
 	return nil, errors.NotImplemented.Newf("[cfgetcdv3] Compact Not Implemented")
 }
 
-func (cm ClientMock) Do(ctx context.Context, op clientv3.Op) (clientv3.OpResponse, error) {
+func (cm FakeClient) Do(ctx context.Context, op clientv3.Op) (clientv3.OpResponse, error) {
 	return clientv3.OpResponse{}, errors.NotImplemented.Newf("[cfgetcdv3] Do Not Implemented")
 }
 
-func (cm ClientMock) Txn(ctx context.Context) clientv3.Txn { return nil }
+func (cm FakeClient) Txn(ctx context.Context) clientv3.Txn { return nil }

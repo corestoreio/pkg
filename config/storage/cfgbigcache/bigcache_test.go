@@ -44,7 +44,7 @@ func TestCacheGet(t *testing.T) {
 		wantGetErr error
 	}{
 		{scope.DefaultTypeID, "aa/bb/cc", []byte(`DataXYZ`), nil, nil},
-		{scope.Store.Pack(3), "aa/bb/cc", []byte(`DataXYA`), nil, nil},
+		{scope.Store.WithID(3), "aa/bb/cc", []byte(`DataXYA`), nil, nil},
 	}
 	for idx, test := range tests {
 

@@ -51,7 +51,7 @@ var testData = []byte(`“The most important property of a program is whether it
 func TestService_UnregisteredHash(t *testing.T) {
 	srv := signed.MustNew(
 		signed.WithRootConfig(cfgmock.NewService()),
-		signed.WithHash("rot13", nil, scope.Store.Pack(333)),
+		signed.WithHash("rot13", nil, scope.Store.WithID(333)),
 	)
 	_, err := srv.ConfigByScope(0, 333)
 	assert.True(t, errors.IsNotFound(err), "%+v", err)
@@ -104,7 +104,7 @@ func TestService_WithResponseSignature_Disabled(t *testing.T) {
 
 	srv := signed.MustNew(
 		signed.WithDebugLog(ioutil.Discard),
-		signed.WithDisable(true, scope.Store.Pack(2)),
+		signed.WithDisable(true, scope.Store.WithID(2)),
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -144,10 +144,10 @@ func TestService_WithResponseSignature_Buffered(t *testing.T) {
 	key := []byte(`My guinea p1g runs acro55 my keyb0ard`)
 
 	srv := signed.MustNew(
-		signed.WithTrailer(false, scope.Website.Pack(1)),
+		signed.WithTrailer(false, scope.Website.WithID(1)),
 		signed.WithDebugLog(ioutil.Discard),
-		signed.WithHeaderHandler(signed.NewContentHMAC("sha256"), scope.Website.Pack(1)),
-		signed.WithHash("sha256", key, scope.Website.Pack(1)), // "sha256" registered via init() func with hashpool.Register()
+		signed.WithHeaderHandler(signed.NewContentHMAC("sha256"), scope.Website.WithID(1)),
+		signed.WithHash("sha256", key, scope.Website.WithID(1)), // "sha256" registered via init() func with hashpool.Register()
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -158,7 +158,7 @@ func TestService_WithResponseSignature_Buffered(t *testing.T) {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
-		}, scope.Website.Pack(1)),
+		}, scope.Website.WithID(1)),
 		signed.WithServiceErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called\n%+v", err))
@@ -196,9 +196,9 @@ func TestService_WithResponseSignature_Trailer(t *testing.T) {
 
 	srv := signed.MustNew(
 		signed.WithDebugLog(ioutil.Discard),
-		signed.WithTrailer(true, scope.Store.Pack(2)),
-		signed.WithHeaderHandler(signed.NewContentHMAC("blk2b256"), scope.Store.Pack(2)),
-		signed.WithHash("blk2b256", key, scope.Store.Pack(2)), // "sha256" registered via init() func with hashpool.Register()
+		signed.WithTrailer(true, scope.Store.WithID(2)),
+		signed.WithHeaderHandler(signed.NewContentHMAC("blk2b256"), scope.Store.WithID(2)),
+		signed.WithHash("blk2b256", key, scope.Store.WithID(2)), // "sha256" registered via init() func with hashpool.Register()
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -209,7 +209,7 @@ func TestService_WithResponseSignature_Trailer(t *testing.T) {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
-		}, scope.Store.Pack(2)),
+		}, scope.Store.WithID(2)),
 		signed.WithServiceErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called\n%+v", err))
@@ -248,8 +248,8 @@ func TestService_Signature_Create_Validate_ContentHMAC(t *testing.T) {
 
 	srv := signed.MustNew(
 		signed.WithDebugLog(ioutil.Discard),
-		signed.WithHeaderHandler(signed.NewContentHMAC("sha256"), scope.Website.Pack(1)),
-		signed.WithHash("sha256", key, scope.Website.Pack(1)), // "sha256" registered via init() func with hashpool.Register()
+		signed.WithHeaderHandler(signed.NewContentHMAC("sha256"), scope.Website.WithID(1)),
+		signed.WithHash("sha256", key, scope.Website.WithID(1)), // "sha256" registered via init() func with hashpool.Register()
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -260,7 +260,7 @@ func TestService_Signature_Create_Validate_ContentHMAC(t *testing.T) {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
-		}, scope.Website.Pack(1)),
+		}, scope.Website.WithID(1)),
 		signed.WithServiceErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called\n%+v", err))
@@ -337,8 +337,8 @@ func TestService_Signature_Create_Validate_Transparent(t *testing.T) {
 
 	srv := signed.MustNew(
 		signed.WithDebugLog(ioutil.Discard),
-		signed.WithTransparent(cache, time.Second*2, scope.Website.Pack(1)),
-		signed.WithHash("sha256", key, scope.Website.Pack(1)), // "sha256" registered via init() func with hashpool.Register()
+		signed.WithTransparent(cache, time.Second*2, scope.Website.WithID(1)),
+		signed.WithHash("sha256", key, scope.Website.WithID(1)), // "sha256" registered via init() func with hashpool.Register()
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -349,7 +349,7 @@ func TestService_Signature_Create_Validate_Transparent(t *testing.T) {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
-		}, scope.Website.Pack(1)),
+		}, scope.Website.WithID(1)),
 		signed.WithServiceErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called\n%+v", err))
@@ -430,8 +430,8 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 
 		srv := signed.MustNew(
 			signed.WithDebugLog(ioutil.Discard),
-			signed.WithHeaderHandler(signed.NewContentHMAC("sha256"), scope.Website.Pack(1)),
-			signed.WithHash("sha256", key, scope.Website.Pack(1)), // "sha256" registered via init() func with hashpool.Register()
+			signed.WithHeaderHandler(signed.NewContentHMAC("sha256"), scope.Website.WithID(1)),
+			signed.WithHash("sha256", key, scope.Website.WithID(1)), // "sha256" registered via init() func with hashpool.Register()
 			signed.WithRootConfig(cfgmock.NewService()),
 			signed.WithErrorHandler(func(err error) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -442,7 +442,7 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					panic(fmt.Sprintf("Should not get called\n%+v", err))
 				})
-			}, scope.Website.Pack(1)),
+			}, scope.Website.WithID(1)),
 			signed.WithServiceErrorHandler(func(err error) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					panic(fmt.Sprintf("Should not get called\n%+v", err))
@@ -501,7 +501,7 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 				assert.True(t, errors.IsNotFound(err), "%+v", err)
 				atomic.AddInt32(finalHandlerCalled, 1)
 			})
-		}, scope.Website.Pack(1)),
+		}, scope.Website.WithID(1)),
 	))
 
 	t.Run("Unkown Method POST", tester(
@@ -511,7 +511,7 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 			r.Header.Set(signed.HeaderContentHMAC, hmacHeaderValue)
 			return r
 		}(),
-		signed.WithAllowedMethods([]string{"PUT", "PATCH"}, scope.Website.Pack(1)),
+		signed.WithAllowedMethods([]string{"PUT", "PATCH"}, scope.Website.WithID(1)),
 		signed.WithErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusLoopDetected)
@@ -520,7 +520,7 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 				assert.Contains(t, err.Error(), `"POST" not allowed in list: ["PUT" "PATCH"]`)
 				atomic.AddInt32(finalHandlerCalled, 1)
 			})
-		}, scope.Website.Pack(1)),
+		}, scope.Website.WithID(1)),
 	))
 
 	t.Run("Error Reading Body", tester(
@@ -538,7 +538,7 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 				assert.Contains(t, err.Error(), `Reader already closed`)
 				atomic.AddInt32(finalHandlerCalled, 1)
 			})
-		}, scope.Website.Pack(1)),
+		}, scope.Website.WithID(1)),
 	))
 
 	t.Run("Disabled", tester(
@@ -548,12 +548,12 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 			r.Header.Set(signed.HeaderContentHMAC, hmacHeaderValue)
 			return r
 		}(),
-		signed.WithDisable(true, scope.Website.Pack(1)),
+		signed.WithDisable(true, scope.Website.WithID(1)),
 		signed.WithErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
-		}, scope.Website.Pack(1)),
+		}, scope.Website.WithID(1)),
 	))
 
 	t.Run("Config not valid", tester(
@@ -563,8 +563,8 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 			r.Header.Set(signed.HeaderContentHMAC, hmacHeaderValue)
 			return r
 		}(),
-		signed.WithDisable(false, scope.Website.Pack(1)),
-		signed.WithAllowedMethods(nil, scope.Website.Pack(1)), // empty list of allowed methods triggers an error
+		signed.WithDisable(false, scope.Website.WithID(1)),
+		signed.WithAllowedMethods(nil, scope.Website.WithID(1)), // empty list of allowed methods triggers an error
 		signed.WithServiceErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusLoopDetected)
@@ -578,7 +578,7 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
-		}, scope.Website.Pack(1)),
+		}, scope.Website.WithID(1)),
 	))
 }
 

@@ -49,6 +49,6 @@ func TestNewMapIntStr(t *testing.T) {
 
 	val, err := m.Value(s.NewScoped(2, 5))
 	assert.NoError(t, err, "%+v", err)
-	assert.Exactly(t, scope.TypeIDs{scope.Store.Pack(5)}, s.IntInvokes().ScopeIDs())
+	assert.Exactly(t, scope.TypeIDs{scope.Store.WithID(5)}, s.IntInvokes().ScopeIDs())
 	assert.Exactly(t, `Parent: Type(Website) ID(2) => Current: Type(Store) ID(5) => Value: 33`, val)
 }

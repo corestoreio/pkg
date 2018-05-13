@@ -97,7 +97,7 @@ func TestBaseValueString(t *testing.T) {
 	wantPath := cfgpath.MustMakeByString(pathWebCorsHeaders).BindWebsite(wantWebsiteID)
 
 	mw := new(cfgmock.Write)
-	err := p1.Write(mw, "314159", scope.Website.Pack(wantWebsiteID))
+	err := p1.Write(mw, "314159", scope.Website.WithID(wantWebsiteID))
 	assert.NoError(t, err, "%+v", err)
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 
@@ -183,23 +183,23 @@ func TestBaseValue_InScope(t *testing.T) {
 
 func TestBaseValue_InScope_Perm(t *testing.T) {
 	bv := newBaseValue("x/y/z", WithScopeStore())
-	assert.NoError(t, bv.inScope(scope.Store.Pack(0)))
-	assert.NoError(t, bv.inScope(scope.Website.Pack(0)))
+	assert.NoError(t, bv.inScope(scope.Store.WithID(0)))
+	assert.NoError(t, bv.inScope(scope.Website.WithID(0)))
 
 	bv = newBaseValue("x/y/z", WithScopeWebsite())
-	assert.Error(t, bv.inScope(scope.Store.Pack(0)))
-	assert.NoError(t, bv.inScope(scope.Website.Pack(0)))
+	assert.Error(t, bv.inScope(scope.Store.WithID(0)))
+	assert.NoError(t, bv.inScope(scope.Website.WithID(0)))
 
 	bv = newBaseValue("x/y/z")
-	assert.Error(t, bv.inScope(scope.Store.Pack(0)))
-	assert.Error(t, bv.inScope(scope.Website.Pack(0)))
+	assert.Error(t, bv.inScope(scope.Store.WithID(0)))
+	assert.Error(t, bv.inScope(scope.Website.WithID(0)))
 }
 
 func TestBaseValue_FQ(t *testing.T) {
 
 	const pth = "aa/bb/cc"
 	p := newBaseValue(pth, WithScopeStore())
-	fq, err := p.FQ(scope.Store.Pack(4))
+	fq, err := p.FQ(scope.Store.WithID(4))
 	assert.NoError(t, err, "%+v", err)
 	assert.Exactly(t, cfgpath.MustMakeByString(pth).BindStore(4).String(), fq)
 }
@@ -215,14 +215,14 @@ func TestBaseValueMustFQPanic(t *testing.T) {
 	}()
 	const pth = "a/b/c"
 	p := newBaseValue(pth, WithScopeStore())
-	fq := p.MustFQ(scope.Website.Pack(4))
+	fq := p.MustFQ(scope.Website.WithID(4))
 	assert.Empty(t, fq)
 }
 
 func TestBaseValueToPath(t *testing.T) {
-	t.Run("Valid Route", testBaseValueToPath(cfgpath.MakeRoute("aa/bb/cc"), scope.Website.Pack(23), nil))
-	t.Run("Invalid Route", testBaseValueToPath(cfgpath.MakeRoute("a/bb/cc"), scope.Website.Pack(23), errors.IsNotValid))
-	t.Run("Unauthorized Route", testBaseValueToPath(cfgpath.MakeRoute("aa/bb/cc"), scope.Store.Pack(22), errors.IsUnauthorized))
+	t.Run("Valid Route", testBaseValueToPath(cfgpath.MakeRoute("aa/bb/cc"), scope.Website.WithID(23), nil))
+	t.Run("Invalid Route", testBaseValueToPath(cfgpath.MakeRoute("a/bb/cc"), scope.Website.WithID(23), errors.IsNotValid))
+	t.Run("Unauthorized Route", testBaseValueToPath(cfgpath.MakeRoute("aa/bb/cc"), scope.Store.WithID(22), errors.IsUnauthorized))
 }
 
 func testBaseValueToPath(route cfgpath.Route, h scope.TypeID, wantErrBhf errors.BehaviourFunc) func(*testing.T) {

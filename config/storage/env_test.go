@@ -34,10 +34,10 @@ func TestToEnvVar(t *testing.T) {
 		want  string
 	}{
 		{scope.DefaultTypeID, "aa/bb/cc", "CONFIG__AA__BB__CC"},
-		{scope.Website.Pack(1), "aa/bb/cc", "CONFIG__WEBSITES__1__AA__BB__CC"},
-		{scope.Store.Pack(444), "aa/bb/cc", "CONFIG__STORES__444__AA__BB__CC"},
-		{scope.Store.Pack(444), "aa/bb/cc/dd/ee", "CONFIG__STORES__444__AA__BB__CC__DD__EE"},
-		{scope.Store.Pack(444), "aa/bb/cc_dd/ee", "CONFIG__STORES__444__AA__BB__CC_DD__EE"},
+		{scope.Website.WithID(1), "aa/bb/cc", "CONFIG__WEBSITES__1__AA__BB__CC"},
+		{scope.Store.WithID(444), "aa/bb/cc", "CONFIG__STORES__444__AA__BB__CC"},
+		{scope.Store.WithID(444), "aa/bb/cc/dd/ee", "CONFIG__STORES__444__AA__BB__CC__DD__EE"},
+		{scope.Store.WithID(444), "aa/bb/cc_dd/ee", "CONFIG__STORES__444__AA__BB__CC_DD__EE"},
 	}
 
 	for i, test := range tests {
@@ -95,8 +95,8 @@ func TestStorage_No_Preload(t *testing.T) {
 		}
 	}
 	t.Run("default scope", runner("CONFIG__AA__BB__CC", scope.DefaultTypeID, "aa/bb/cc"))
-	t.Run("website 123 scope", runner("CONFIG__WEBSITES__1__AA__BB__CC", scope.Website.Pack(1), "aa/bb/cc"))
-	t.Run("store 444 scope", runner("CONFIG__STORES__444__AA__BB__CC_DD__EE", scope.Store.Pack(444), "aa/bb/cc_dd/ee"))
+	t.Run("website 123 scope", runner("CONFIG__WEBSITES__1__AA__BB__CC", scope.Website.WithID(1), "aa/bb/cc"))
+	t.Run("store 444 scope", runner("CONFIG__STORES__444__AA__BB__CC_DD__EE", scope.Store.WithID(444), "aa/bb/cc_dd/ee"))
 	t.Run("wrong path with special symbols", func(t *testing.T) {
 		envVar := "CONFIG____€__∏"
 		defer func() { assert.NoError(t, os.Unsetenv(envVar)) }()
@@ -118,14 +118,14 @@ func TestStorage_No_Preload_UnsetEnvAfterRead_And_Cache(t *testing.T) {
 	const wantValue = "Banana 🍌"
 	os.Setenv("CONFIG__WEBSITES__159__AA__BB__CC", wantValue)
 
-	validateFoundGet(t, s, scope.Website.Pack(159), "aa/bb/cc", wantValue)
+	validateFoundGet(t, s, scope.Website.WithID(159), "aa/bb/cc", wantValue)
 
 	ev, eOK := os.LookupEnv("CONFIG__WEBSITES__159__AA__BB__CC")
 	assert.False(t, eOK, "Env var must be unset and not found")
 	assert.Empty(t, ev, "Env var must be empty")
 
 	// Read from cache
-	validateFoundGet(t, s, scope.Website.Pack(159), "aa/bb/cc", wantValue)
+	validateFoundGet(t, s, scope.Website.WithID(159), "aa/bb/cc", wantValue)
 }
 
 func TestStorage_With_Preload_UnsetEnvAfterRead(t *testing.T) {
@@ -141,8 +141,8 @@ func TestStorage_With_Preload_UnsetEnvAfterRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	validateFoundGet(t, s, scope.Store.Pack(345), "xx/bb/cc", wantValue)
-	validateFoundGet(t, s, scope.Store.Pack(345), "xy/bb/cc", "")
+	validateFoundGet(t, s, scope.Store.WithID(345), "xx/bb/cc", wantValue)
+	validateFoundGet(t, s, scope.Store.WithID(345), "xy/bb/cc", "")
 
 	ev, eOK := os.LookupEnv("CONFIG__STORES__345__XX__BB__CC")
 	assert.False(t, eOK, "Env var must be unset and not found")

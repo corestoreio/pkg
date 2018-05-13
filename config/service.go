@@ -304,7 +304,7 @@ func (ss Scoped) IsValid() bool {
 // to website and website falls back to default.
 func (ss Scoped) ParentID() scope.TypeID {
 	if ss.StoreID > 0 {
-		return scope.Website.Pack(ss.WebsiteID)
+		return scope.Website.WithID(ss.WebsiteID)
 	}
 	return scope.DefaultTypeID
 }
@@ -313,10 +313,10 @@ func (ss Scoped) ParentID() scope.TypeID {
 // configuration has been bound to.
 func (ss Scoped) ScopeID() scope.TypeID {
 	if ss.StoreID > 0 {
-		return scope.Store.Pack(ss.StoreID)
+		return scope.Store.WithID(ss.StoreID)
 	}
 	if ss.WebsiteID > 0 {
-		return scope.Website.Pack(ss.WebsiteID)
+		return scope.Website.WithID(ss.WebsiteID)
 	}
 	return scope.DefaultTypeID
 }
@@ -361,7 +361,7 @@ func (ss Scoped) Get(restrictUpTo scope.Type, route string) (v *Value) {
 		route: route,
 	}
 	if ss.isAllowedStore(restrictUpTo) {
-		p.ScopeID = scope.Store.Pack(ss.StoreID)
+		p.ScopeID = scope.Store.WithID(ss.StoreID)
 		v := ss.Root.Get(&p)
 		if v.found > valFoundNo || v.lastErr != nil {
 			// value found or err is not a NotFound error
@@ -372,7 +372,7 @@ func (ss Scoped) Get(restrictUpTo scope.Type, route string) (v *Value) {
 		}
 	}
 	if ss.isAllowedWebsite(restrictUpTo) {
-		p.ScopeID = scope.Website.Pack(ss.WebsiteID)
+		p.ScopeID = scope.Website.WithID(ss.WebsiteID)
 		v := ss.Root.Get(&p)
 		if v.found > valFoundNo || v.lastErr != nil {
 			if v.lastErr != nil {

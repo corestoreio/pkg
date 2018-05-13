@@ -114,7 +114,7 @@ func TestSectionUpdateField(t *testing.T) {
 }
 
 var _ element.ConfigurationWriter = (*config.Service)(nil)
-var _ config.Writer = (*config.Service)(nil)
+var _ config.Setter = (*config.Service)(nil)
 
 func TestService_ApplyDefaults(t *testing.T) {
 

@@ -35,21 +35,20 @@ var (
 	endpoints = []string{"localhost:2379", "localhost:22379", "localhost:32379"}
 )
 
-var _ config.Storager = (*cfgetcdv3.Storage)(nil)
-
 func TestStorage_Get(t *testing.T) {
 	var testData = []byte(`You should turn it to eleven.`)
-	scpID := scope.Website.Pack(3)
+	scpID := scope.Website.WithID(3)
 	const path = "path/to/orion"
+	p := config.MustNewPathWithScope(scope.Website.WithID(3), "path/to/orion")
 
 	t.Run("Get found", func(t *testing.T) {
 
-		mo := cfgetcdv3.ClientMock{
+		mo := cfgetcdv3.FakeClient{
 			GetKey:   []byte(cfgetcdv3.DefaultKeyPrefix + `websites/3/` + path),
 			GetValue: testData,
 		}
 
-		s, err := cfgetcdv3.NewStorage(mo, cfgetcdv3.Options{})
+		s, err := cfgetcdv3.NewService(mo, cfgetcdv3.Options{})
 		require.NoError(t, err)
 
 		haveData, found, err := s.Get(scpID, path)
@@ -60,12 +59,12 @@ func TestStorage_Get(t *testing.T) {
 
 	t.Run("Get not found", func(t *testing.T) {
 
-		mo := cfgetcdv3.ClientMock{
+		mo := cfgetcdv3.FakeClient{
 			GetKey:   []byte(`websites/3/`),
 			GetValue: testData,
 		}
 
-		s, err := cfgetcdv3.NewStorage(mo, cfgetcdv3.Options{})
+		s, err := cfgetcdv3.NewService(mo, cfgetcdv3.Options{})
 		require.NoError(t, err)
 
 		haveData, found, err := s.Get(scpID, path)
@@ -77,11 +76,11 @@ func TestStorage_Get(t *testing.T) {
 	testGetErrors := func(getErr error) func(*testing.T) {
 		return func(t *testing.T) {
 
-			mo := cfgetcdv3.ClientMock{
+			mo := cfgetcdv3.FakeClient{
 				GetError: getErr,
 			}
 
-			s, err := cfgetcdv3.NewStorage(mo, cfgetcdv3.Options{})
+			s, err := cfgetcdv3.NewService(mo, cfgetcdv3.Options{})
 			require.NoError(t, err)
 
 			haveData, found, err := s.Get(scpID, path)
@@ -96,11 +95,11 @@ func TestStorage_Get(t *testing.T) {
 	t.Run("Get rpctypes.ErrEmptyKey", testGetErrors(rpctypes.ErrEmptyKey))
 	t.Run("Get any other error", func(t *testing.T) {
 
-		mo := cfgetcdv3.ClientMock{
+		mo := cfgetcdv3.FakeClient{
 			GetError: errors.ConnectionLost.Newf("Ups"),
 		}
 
-		s, err := cfgetcdv3.NewStorage(mo, cfgetcdv3.Options{})
+		s, err := cfgetcdv3.NewService(mo, cfgetcdv3.Options{})
 		require.NoError(t, err)
 
 		haveData, found, err := s.Get(scpID, path)
@@ -111,9 +110,9 @@ func TestStorage_Get(t *testing.T) {
 
 	t.Run("Set no error ", func(t *testing.T) {
 
-		mo := cfgetcdv3.ClientMock{}
+		mo := cfgetcdv3.FakeClient{}
 
-		s, err := cfgetcdv3.NewStorage(mo, cfgetcdv3.Options{})
+		s, err := cfgetcdv3.NewService(mo, cfgetcdv3.Options{})
 		require.NoError(t, err)
 
 		err = s.Set(scpID, path, testData)
@@ -121,11 +120,11 @@ func TestStorage_Get(t *testing.T) {
 	})
 	t.Run("Set no error ", func(t *testing.T) {
 
-		mo := cfgetcdv3.ClientMock{
+		mo := cfgetcdv3.FakeClient{
 			PutError: errors.ConnectionLost.Newf("Ups"),
 		}
 
-		s, err := cfgetcdv3.NewStorage(mo, cfgetcdv3.Options{})
+		s, err := cfgetcdv3.NewService(mo, cfgetcdv3.Options{})
 		require.NoError(t, err)
 
 		err = s.Set(scpID, path, testData)

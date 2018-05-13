@@ -110,7 +110,7 @@ func TestService_Write_Get_Value_Success(t *testing.T) {
 
 func TestScoped_ScopeIDs(t *testing.T) {
 	scp := config.Scoped{WebsiteID: 3, StoreID: 4}
-	assert.Exactly(t, scope.TypeIDs{scope.Store.Pack(4), scope.Website.Pack(3)}, scp.ScopeIDs())
+	assert.Exactly(t, scope.TypeIDs{scope.Store.WithID(4), scope.Website.WithID(3)}, scp.ScopeIDs())
 }
 
 func TestScoped_IsValid(t *testing.T) {
@@ -176,19 +176,19 @@ func TestScopedServicePath(t *testing.T) {
 		},
 		{
 			"Website ID 1 ScopedGetter should fall back to default scope",
-			basePath.String(), "aa/bb/cc", scope.Website, 1, 0, errors.NoKind, scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1)},
+			basePath.String(), "aa/bb/cc", scope.Website, 1, 0, errors.NoKind, scope.TypeIDs{scope.DefaultTypeID, scope.Website.WithID(1)},
 		},
 		{
 			"Website ID 10 ScopedGetter should fall back to website 10 scope",
-			basePath.BindWebsite(10).String(), "aa/bb/cc", scope.Website, 10, 0, errors.NoKind, scope.TypeIDs{scope.Website.Pack(10)},
+			basePath.BindWebsite(10).String(), "aa/bb/cc", scope.Website, 10, 0, errors.NoKind, scope.TypeIDs{scope.Website.WithID(10)},
 		},
 		{
 			"Website ID 10 + Store 22 ScopedGetter should fall back to website 10 scope",
-			basePath.BindWebsite(10).String(), "aa/bb/cc", scope.Store, 10, 22, errors.NoKind, scope.TypeIDs{scope.Website.Pack(10), scope.Store.Pack(22)},
+			basePath.BindWebsite(10).String(), "aa/bb/cc", scope.Store, 10, 22, errors.NoKind, scope.TypeIDs{scope.Website.WithID(10), scope.Store.WithID(22)},
 		},
 		{
 			"Website ID 10 + Store 22 ScopedGetter should return Store 22 scope",
-			basePath.BindStore(22).String(), "aa/bb/cc", scope.Store, 10, 22, errors.NoKind, scope.TypeIDs{scope.Store.Pack(22)},
+			basePath.BindStore(22).String(), "aa/bb/cc", scope.Store, 10, 22, errors.NoKind, scope.TypeIDs{scope.Store.WithID(22)},
 		},
 		{
 			"Website ID 10 + Store 42 ScopedGetter should return nothing",
@@ -277,10 +277,10 @@ func TestScopedServicePermission_All(t *testing.T) {
 		wantIDs scope.TypeIDs
 	}{
 		{scope.Default, "a", scope.TypeIDs{scope.DefaultTypeID}},
-		{scope.Website, "b", scope.TypeIDs{scope.Website.Pack(1)}},
+		{scope.Website, "b", scope.TypeIDs{scope.Website.WithID(1)}},
 		{scope.Group, "a", scope.TypeIDs{scope.DefaultTypeID}},
-		{scope.Store, "c", scope.TypeIDs{scope.Store.Pack(1)}},
-		{scope.Absent, "c", scope.TypeIDs{scope.Store.Pack(1)}}, // because ScopedGetter bound to store scope
+		{scope.Store, "c", scope.TypeIDs{scope.Store.WithID(1)}},
+		{scope.Absent, "c", scope.TypeIDs{scope.Store.WithID(1)}}, // because ScopedGetter bound to store scope
 	}
 	for i, test := range tests {
 		srv := config.NewFakeService(mapStorage)

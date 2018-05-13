@@ -205,8 +205,8 @@ func TestService_WithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
 
 	var calledErrorHandler int32
 	if err := s.Options(
-		geoip.WithAlternativeHandler(altHndlr, scope.Store.Pack(2)), // for test case 2
-		geoip.WithAllowedCountryCodes([]string{"DE", "CH", "FI"}, scope.Store.Pack(2)),
+		geoip.WithAlternativeHandler(altHndlr, scope.Store.WithID(2)), // for test case 2
+		geoip.WithAllowedCountryCodes([]string{"DE", "CH", "FI"}, scope.Store.WithID(2)),
 		geoip.WithServiceErrorHandler(func(err error) http.Handler {
 			assert.Error(t, err, "%+v", err)
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -220,7 +220,7 @@ func TestService_WithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
 				w.WriteHeader(http.StatusHTTPVersionNotSupported)
 				atomic.AddInt32(&calledErrorHandler, 1)
 			})
-		}, scope.Store.Pack(2)),
+		}, scope.Store.WithID(2)),
 	); err != nil {
 		t.Fatal(err)
 	}

@@ -56,12 +56,12 @@ func TestService_MultiScope_NoFallback(t *testing.T) {
 	logBuf := new(log.MutexBuffer)
 
 	s := MustNew(
-		withString("Default=0", scope.Default.Pack(0)),
-		withString("Website=1", scope.Website.Pack(1)),
+		withString("Default=0", scope.Default.WithID(0)),
+		withString("Website=1", scope.Website.WithID(1)),
 		WithDebugLog(logBuf),
 	)
 
-	if err := s.Options(withString("Store=1", scope.Store.Pack(2))); err != nil {
+	if err := s.Options(withString("Store=1", scope.Store.WithID(2))); err != nil {
 		t.Errorf("%+v", err)
 	}
 
@@ -115,14 +115,14 @@ func TestService_MultiScope_NoFallback(t *testing.T) {
 }
 
 func TestService_ClearCache(t *testing.T) {
-	srv := MustNew(withString("Gopher", scope.Website.Pack(33)), WithRootConfig(cfgmock.NewService()))
+	srv := MustNew(withString("Gopher", scope.Website.WithID(33)), WithRootConfig(cfgmock.NewService()))
 	cfg, err := srv.ConfigByScope(33, 44)
 	assert.NoError(t, err, "%+v", err)
 	assert.Exactly(t, cfg.string, "Gopher")
 
 	assert.NoError(t, srv.ClearCache())
 
-	cfg, err = srv.ConfigByScopeID(scope.Website.Pack(33), 0)
+	cfg, err = srv.ConfigByScopeID(scope.Website.WithID(33), 0)
 	assert.True(t, errors.IsNotFound(err), "%+v", err)
 	assert.Exactly(t, cfg.string, "")
 }
@@ -130,16 +130,16 @@ func TestService_ClearCache(t *testing.T) {
 func TestService_MultiScope_Fallback(t *testing.T) {
 	// see for default values: newScopedConfig()
 	s := MustNew(
-		withString("Website=1", scope.Website.Pack(1)),
-		withInt(130, scope.Website.Pack(1)),
+		withString("Website=1", scope.Website.WithID(1)),
+		withInt(130, scope.Website.WithID(1)),
 
-		withString("Website=2", scope.Website.Pack(2)), // int must be 42
+		withString("Website=2", scope.Website.WithID(2)), // int must be 42
 
-		withString("Store=1", scope.Store.Pack(1)),
-		withInt(132, scope.Store.Pack(1)),
+		withString("Store=1", scope.Store.WithID(1)),
+		withInt(132, scope.Store.WithID(1)),
 
-		withString("Store=2", scope.Store.Pack(2), scope.Website.Pack(1)), // int must be 130
-		withString("Store=3", scope.Store.Pack(3)),                        // int must be 42
+		withString("Store=2", scope.Store.WithID(2), scope.Website.WithID(1)), // int must be 130
+		withString("Store=3", scope.Store.WithID(3)),                          // int must be 42
 	)
 
 	tests := []struct {
@@ -189,7 +189,7 @@ func TestService_MultiScope_Fallback(t *testing.T) {
 }
 
 func TestService_DefaultOverwritesAScope(t *testing.T) {
-	scopeStore1 := scope.Store.Pack(1)
+	scopeStore1 := scope.Store.WithID(1)
 	s := MustNew(
 		withString("Store=1", scopeStore1),
 		WithDefaultConfig(scopeStore1),
@@ -200,7 +200,7 @@ func TestService_DefaultOverwritesAScope(t *testing.T) {
 }
 
 func TestService_ConfigByScopeID_Error(t *testing.T) {
-	ws44 := scope.Website.Pack(44)
+	ws44 := scope.Website.WithID(44)
 	s := MustNew(
 		WithDefaultConfig(ws44),
 	)
@@ -214,13 +214,13 @@ func TestService_ConfigByScopeID_Error(t *testing.T) {
 	})
 
 	t.Run("Invalid Default", func(t *testing.T) {
-		scpCfg, err := s.ConfigByScopeID(scope.Store.Pack(1), scope.Website.Pack(2))
+		scpCfg, err := s.ConfigByScopeID(scope.Store.WithID(1), scope.Website.WithID(2))
 		assert.True(t, errors.IsNotImplemented(err), "%+v", err)
 		assert.Exactly(t, ScopedConfig{}, scpCfg)
 	})
 
 	t.Run("Invalid Default", func(t *testing.T) {
-		scpCfg, err := s.ConfigByScopeID(scope.Store.Pack(55), ws44)
+		scpCfg, err := s.ConfigByScopeID(scope.Store.WithID(55), ws44)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 		assert.Exactly(t, ScopedConfig{}, scpCfg)
 	})
@@ -229,7 +229,7 @@ func TestService_ConfigByScopeID_Error(t *testing.T) {
 func TestService_ScopedConfig_NotFound(t *testing.T) {
 	s := MustNew(
 		WithRootConfig(cfgmock.NewService()),
-		withString("Store=1", scope.Group.Pack(98765)),
+		withString("Store=1", scope.Group.WithID(98765)),
 		WithErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called. Scoped Error Handler\n\n%+v", err))
@@ -270,24 +270,24 @@ func TestService_ConfigByContext(t *testing.T) {
 func TestService_ConfigByScope(t *testing.T) {
 	s := MustNew(
 		WithRootConfig(cfgmock.NewService()),
-		withInt(33, scope.Website.Pack(3)),
-		withInt(44, scope.Store.Pack(4), scope.Website.Pack(3)),
-		withInt(55, scope.Website.Pack(5)),
-		withInt(66, scope.Store.Pack(6), scope.Website.Pack(5)),
+		withInt(33, scope.Website.WithID(3)),
+		withInt(44, scope.Store.WithID(4), scope.Website.WithID(3)),
+		withInt(55, scope.Website.WithID(5)),
+		withInt(66, scope.Store.WithID(6), scope.Website.WithID(5)),
 	)
 	s.useWebsite = false
 	t.Run("Scope Store", func(t *testing.T) {
 		scpCfg, err := s.ConfigByScope(3, 4)
 		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, scope.Store.Pack(4), scpCfg.ScopeID)
-		assert.Exactly(t, scope.Website.Pack(3), scpCfg.ParentID)
+		assert.Exactly(t, scope.Store.WithID(4), scpCfg.ScopeID)
+		assert.Exactly(t, scope.Website.WithID(3), scpCfg.ParentID)
 	})
 
 	s.useWebsite = true
 	t.Run("Scope Website", func(t *testing.T) {
 		scpCfg, err := s.ConfigByScope(5, 6)
 		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, scope.Website.Pack(5), scpCfg.ScopeID)
+		assert.Exactly(t, scope.Website.WithID(5), scpCfg.ScopeID)
 		assert.Exactly(t, scope.DefaultTypeID, scpCfg.ParentID)
 	})
 }
@@ -304,8 +304,8 @@ func TestService_OptionAfterApply_Error(t *testing.T) {
 func TestWithOptionFactory(t *testing.T) {
 	var off OptionFactoryFunc = func(config.Scoped) []Option {
 		return []Option{
-			withString("a value for the website 2 scope", scope.Website.Pack(2)),
-			withString("a value for the store 1 scope", scope.Store.Pack(1), scope.Website.Pack(2)),
+			withString("a value for the website 2 scope", scope.Website.WithID(2)),
+			withString("a value for the store 1 scope", scope.Store.WithID(1), scope.Website.WithID(2)),
 		}
 	}
 	s := MustNew(
@@ -316,8 +316,8 @@ func TestWithOptionFactory(t *testing.T) {
 	sg := cfgmock.NewService().NewScoped(2, 1)
 	scpCfg, err := s.ConfigByScopedGetter(sg)
 	assert.NoError(t, err)
-	assert.Exactly(t, scope.Store.Pack(1), scpCfg.ScopeID)
-	assert.Exactly(t, scope.Website.Pack(2), scpCfg.ParentID)
+	assert.Exactly(t, scope.Store.WithID(1), scpCfg.ScopeID)
+	assert.Exactly(t, scope.Website.WithID(2), scpCfg.ParentID)
 	assert.Exactly(t, `a value for the store 1 scope`, scpCfg.string)
 }
 

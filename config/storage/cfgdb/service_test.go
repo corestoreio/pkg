@@ -80,8 +80,8 @@ var serviceMultiTests = []struct {
 	scopeID scope.TypeID
 	value   []byte
 }{
-	{"testService/secure/base_url", scope.Website.Pack(10), []byte("http://corestore.io")},
-	{"testService/log/active", scope.Store.Pack(9), []byte("https://crestre.i")},
+	{"testService/secure/base_url", scope.Website.WithID(10), []byte("http://corestore.io")},
+	{"testService/log/active", scope.Store.WithID(9), []byte("https://crestre.i")},
 	{"testService/checkout/multishipping", scope.DefaultTypeID, []byte("false")},
 }
 

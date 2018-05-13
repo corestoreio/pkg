@@ -159,7 +159,7 @@ func TestServiceLogout(t *testing.T) {
 
 func TestServiceIncorrectConfigurationScope(t *testing.T) {
 
-	jwts, err := jwt.New(jwt.WithKey(csjwt.WithPasswordRandom(), scope.Store.Pack(33)))
+	jwts, err := jwt.New(jwt.WithKey(csjwt.WithPasswordRandom(), scope.Store.WithID(33)))
 	assert.Nil(t, jwts)
 	assert.True(t, errors.IsNotSupported(err), "Error: %+v", err)
 }
@@ -167,14 +167,14 @@ func TestServiceIncorrectConfigurationScope(t *testing.T) {
 func TestService_NewToken_Merge_Maps(t *testing.T) {
 
 	jwts, err := jwt.New(
-		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.Pack(3)),
+		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.WithID(3)),
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// NewToken has an underlying map as a claimer
-	theToken, err := jwts.NewToken(scope.Website.Pack(3), jwtclaim.Map{
+	theToken, err := jwts.NewToken(scope.Website.WithID(3), jwtclaim.Map{
 		"xk1": 2.718281,
 	})
 	if err != nil {
@@ -191,19 +191,19 @@ func TestService_NewToken_Merge_Maps(t *testing.T) {
 func TestService_NewToken_Merge_Structs(t *testing.T) {
 
 	jwts, err := jwt.New(
-		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.Pack(4)),
+		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.WithID(4)),
 		jwt.WithTemplateToken(func() csjwt.Token {
 			s := jwtclaim.NewStore()
 			s.Store = "de"
 			return csjwt.NewToken(s)
-		}, scope.Website.Pack(4)),
+		}, scope.Website.WithID(4)),
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// NewToken has an underlying jwtclaim.NewStore as a claimer
-	theToken, err := jwts.NewToken(scope.Website.Pack(4), jwtclaim.Map{
+	theToken, err := jwts.NewToken(scope.Website.WithID(4), jwtclaim.Map{
 		jwtclaim.KeyUserID: "0815",
 	})
 	if err != nil {
@@ -233,17 +233,17 @@ func TestService_NewToken_Merge_Structs(t *testing.T) {
 func TestService_NewToken_Merge_Fail(t *testing.T) {
 
 	jwts, err := jwt.New(
-		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.Pack(4)),
+		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.WithID(4)),
 		jwt.WithTemplateToken(func() csjwt.Token {
 			return csjwt.NewToken(&jwtclaim.Standard{})
-		}, scope.Website.Pack(4)),
+		}, scope.Website.WithID(4)),
 	)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 
 	// NewToken has an underlying jwtclaim.NewStore as a claimer
-	theToken, err := jwts.NewToken(scope.Website.Pack(4), jwtclaim.Map{
+	theToken, err := jwts.NewToken(scope.Website.WithID(4), jwtclaim.Map{
 		jwtclaim.KeyUserID: "0815",
 	})
 	assert.True(t, errors.IsNotSupported(err), "Error: %+v", err)

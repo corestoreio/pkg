@@ -65,7 +65,7 @@ func TestEncode(t *testing.T) {
 	assert.Exactly(t, wantTT, haveTT)
 
 	mw := new(cfgmock.Write)
-	b.Write(mw, wantTT, scope.Store.Pack(12))
+	b.Write(mw, wantTT, scope.Store.WithID(12))
 	assert.Exactly(t, wantJSON, mw.ArgValue)
 	assert.Exactly(t, "stores/12/aa/bb/cc", mw.ArgPath)
 }

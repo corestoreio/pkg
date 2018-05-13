@@ -82,7 +82,7 @@ func TestService_WithToken_MissingToken(t *testing.T) {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic("Should not get called")
 			})
-		}, scope.Website.Pack(1)),
+		}, scope.Website.WithID(1)),
 		jwt.WithServiceErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic("Should not get called")
@@ -100,12 +100,12 @@ func TestService_WithToken_MissingToken(t *testing.T) {
 
 func TestService_WithToken_Disabled(t *testing.T) {
 	authHandler, _ := testAuth_WithToken(t,
-		jwt.WithDisable(true, scope.Website.Pack(44)),
+		jwt.WithDisable(true, scope.Website.WithID(44)),
 		jwt.WithErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic("Should not get called")
 			})
-		}, scope.Website.Pack(1)),
+		}, scope.Website.WithID(1)),
 		jwt.WithServiceErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic("Should not get called")
@@ -123,12 +123,12 @@ func TestService_WithToken_Disabled(t *testing.T) {
 
 func TestService_WithToken_Success(t *testing.T) {
 	authHandler, token := testAuth_WithToken(t,
-		jwt.WithDisable(false, scope.Website.Pack(55)),
+		jwt.WithDisable(false, scope.Website.WithID(55)),
 		jwt.WithErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic("Should not get called")
 			})
-		}, scope.Website.Pack(55)),
+		}, scope.Website.WithID(55)),
 		jwt.WithServiceErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic("Should not get called")
@@ -148,13 +148,13 @@ func TestService_WithToken_Success(t *testing.T) {
 
 func TestService_WithToken_SingleUsage(t *testing.T) {
 	authHandler, token := testAuth_WithToken(t,
-		jwt.WithDisable(false, scope.Website.Pack(66)),
-		jwt.WithSingleTokenUsage(true, scope.Website.Pack(66)),
+		jwt.WithDisable(false, scope.Website.WithID(66)),
+		jwt.WithSingleTokenUsage(true, scope.Website.WithID(66)),
 		jwt.WithErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic("Should not get called")
 			})
-		}, scope.Website.Pack(66)),
+		}, scope.Website.WithID(66)),
 		jwt.WithServiceErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic("Should not get called")

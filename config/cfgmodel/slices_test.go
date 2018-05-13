@@ -52,10 +52,10 @@ func TestStringCSVGet(t *testing.T) {
 		wantIDs scope.TypeIDs
 		wantErr error
 	}{
-		{"Content-Type,X-CoreStore-ID", []string{"Content-Type", "X-CoreStore-ID"}, scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1)}, nil},
-		{"", nil, scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1)}, nil},
-		{"X-CoreStore-ID", []string{"X-CoreStore-ID"}, scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1)}, nil},
-		{"Content-Type,X-CS", []string{"Content-Type", "X-CS"}, scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1)}, nil},
+		{"Content-Type,X-CoreStore-ID", []string{"Content-Type", "X-CoreStore-ID"}, scope.TypeIDs{scope.DefaultTypeID, scope.Website.WithID(1)}, nil},
+		{"", nil, scope.TypeIDs{scope.DefaultTypeID, scope.Website.WithID(1)}, nil},
+		{"X-CoreStore-ID", []string{"X-CoreStore-ID"}, scope.TypeIDs{scope.DefaultTypeID, scope.Website.WithID(1)}, nil},
+		{"Content-Type,X-CS", []string{"Content-Type", "X-CS"}, scope.TypeIDs{scope.DefaultTypeID, scope.Website.WithID(1)}, nil},
 		// todo add errors
 	}
 	for i, test := range tests {
@@ -154,11 +154,11 @@ func TestIntCSV(t *testing.T) {
 		wantIDs scope.TypeIDs
 		wantBhf errors.BehaviourFunc
 	}{
-		{false, "3015,3016", []int{3015, 3016}, scope.TypeIDs{scope.Store.Pack(4)}, nil},
-		{false, "2015,2017", []int{2015, 2017}, scope.TypeIDs{scope.Store.Pack(4)}, nil},
-		{false, "", nil, scope.TypeIDs{scope.Store.Pack(4)}, nil},
-		{false, "2015,,20x17", []int{2015}, scope.TypeIDs{scope.Store.Pack(4)}, errors.IsNotValid},
-		{true, "2015,,2017", []int{2015, 2017}, scope.TypeIDs{scope.Store.Pack(4)}, nil},
+		{false, "3015,3016", []int{3015, 3016}, scope.TypeIDs{scope.Store.WithID(4)}, nil},
+		{false, "2015,2017", []int{2015, 2017}, scope.TypeIDs{scope.Store.WithID(4)}, nil},
+		{false, "", nil, scope.TypeIDs{scope.Store.WithID(4)}, nil},
+		{false, "2015,,20x17", []int{2015}, scope.TypeIDs{scope.Store.WithID(4)}, errors.IsNotValid},
+		{true, "2015,,2017", []int{2015, 2017}, scope.TypeIDs{scope.Store.WithID(4)}, nil},
 	}
 	for i, test := range tests {
 		b.Lenient = test.lenient
@@ -197,10 +197,10 @@ func TestIntCSVWrite(t *testing.T) {
 	b.Source.Merge(cfgsource.NewByInt(cfgsource.Ints{
 		{2018, "Year 2018"},
 	}))
-	assert.NoError(t, b.Write(mw, []int{2016, 2017, 2018}, scope.Store.Pack(4)))
+	assert.NoError(t, b.Write(mw, []int{2016, 2017, 2018}, scope.Store.WithID(4)))
 	assert.Exactly(t, wantPath, mw.ArgPath)
 	assert.Exactly(t, "2016,2017,2018", mw.ArgValue.(string))
-	err := b.Write(mw, []int{2019}, scope.Store.Pack(4))
+	err := b.Write(mw, []int{2019}, scope.Store.WithID(4))
 	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 }
 
@@ -229,7 +229,7 @@ func TestIntCSVCustomSeparator(t *testing.T) {
 		t.Fatal(haveErr)
 	}
 	assert.Exactly(t, []int{2015, 2016}, haveSL)
-	assert.Exactly(t, scope.TypeIDs{scope.Website.Pack(34), scope.Store.Pack(4)}, sm.StringInvokes().ScopeIDs())
+	assert.Exactly(t, scope.TypeIDs{scope.Website.WithID(34), scope.Store.WithID(4)}, sm.StringInvokes().ScopeIDs())
 }
 
 func TestCSVGet(t *testing.T) {
@@ -267,7 +267,7 @@ func TestCSVGet(t *testing.T) {
 		haveSL, haveErr := b.Value(sm.NewScoped(1, 2)) // because scope of pathWebCorsHeaders is default,website
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
-		assert.Exactly(t, scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1)}, sm.StringInvokes().ScopeIDs(), "Index %d", i)
+		assert.Exactly(t, scope.TypeIDs{scope.DefaultTypeID, scope.Website.WithID(1)}, sm.StringInvokes().ScopeIDs(), "Index %d", i)
 		if test.wantErrBhf != nil {
 			assert.True(t, test.wantErrBhf(haveErr), "Index %d Error: %s", i, haveErr)
 			continue

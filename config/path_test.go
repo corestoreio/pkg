@@ -39,12 +39,12 @@ var (
 func TestMakePathWithScope(t *testing.T) {
 	t.Parallel()
 	t.Run("ok", func(t *testing.T) {
-		p, err := NewPathWithScope(scope.Store.Pack(23), "aa/bb/cc")
+		p, err := NewPathWithScope(scope.Store.WithID(23), "aa/bb/cc")
 		require.NoError(t, err)
 		assert.Exactly(t, "stores/23/aa/bb/cc", p.String())
 	})
 	t.Run("fails", func(t *testing.T) {
-		p, err := NewPathWithScope(scope.Store.Pack(23), "")
+		p, err := NewPathWithScope(scope.Store.WithID(23), "")
 		assert.True(t, errors.Empty.Match(err), "%+v", err)
 		assert.Nil(t, p)
 	})
@@ -122,7 +122,7 @@ func TestMakePath(t *testing.T) {
 			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d", i)
 			continue
 		}
-		haveP = haveP.Bind(test.s.Pack(test.id))
+		haveP = haveP.Bind(test.s.WithID(test.id))
 		fq, fqErr := haveP.FQ()
 		assert.NoError(t, fqErr, "Index %d", i)
 		assert.Exactly(t, test.wantFQ, fq, "Index %d", i)
@@ -153,7 +153,7 @@ func TestFQ(t *testing.T) {
 			assert.True(t, test.wantErrKind.Match(pErr), "Index %d => %s", i, pErr)
 			continue
 		}
-		p = p.Bind(test.scp.Pack(test.id))
+		p = p.Bind(test.scp.WithID(test.id))
 		have, haveErr := p.FQ()
 		if test.wantErrKind > 0 {
 			assert.Empty(t, have, "Index %d", i)
@@ -237,7 +237,7 @@ func TestSplitFQ2(t *testing.T) {
 	if err := p.ParseFQ("websites/5/web/cors/allow_credentials"); err != nil {
 		t.Fatalf("%+v", err)
 	}
-	assert.Exactly(t, scope.Website.Pack(5), p.ScopeID)
+	assert.Exactly(t, scope.Website.WithID(5), p.ScopeID)
 
 	if err := p.ParseFQ("default/0/web/cors/allow_credentials"); err != nil {
 		t.Fatalf("%+v", err)
@@ -483,48 +483,48 @@ func TestPathSlice_Sort(t *testing.T) {
 	t.Run("Default+Website Scope", runner(
 		PathSlice{
 			MustNewPath("bb/cc/dd"),
-			MustNewPathWithScope(scope.Website.Pack(3), "xx/yy/zz"),
-			MustNewPathWithScope(scope.Website.Pack(1), "xx/yy/zz"),
-			MustNewPathWithScope(scope.Website.Pack(2), "xx/yy/zz"),
-			MustNewPathWithScope(scope.Website.Pack(1), "zz/aa/bb"),
-			MustNewPathWithScope(scope.Website.Pack(2), "aa/bb/cc"),
+			MustNewPathWithScope(scope.Website.WithID(3), "xx/yy/zz"),
+			MustNewPathWithScope(scope.Website.WithID(1), "xx/yy/zz"),
+			MustNewPathWithScope(scope.Website.WithID(2), "xx/yy/zz"),
+			MustNewPathWithScope(scope.Website.WithID(1), "zz/aa/bb"),
+			MustNewPathWithScope(scope.Website.WithID(2), "aa/bb/cc"),
 			MustNewPath("aa/bb/cc"),
 		},
 		PathSlice{
 			&Path{route: `aa/bb/cc`, ScopeID: scope.DefaultTypeID},
-			&Path{route: `aa/bb/cc`, ScopeID: scope.Website.Pack(2)},
+			&Path{route: `aa/bb/cc`, ScopeID: scope.Website.WithID(2)},
 			&Path{route: `bb/cc/dd`, ScopeID: scope.DefaultTypeID},
-			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(1)},
-			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(2)},
-			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(3)},
-			&Path{route: `zz/aa/bb`, ScopeID: scope.Website.Pack(1)},
+			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.WithID(1)},
+			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.WithID(2)},
+			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.WithID(3)},
+			&Path{route: `zz/aa/bb`, ScopeID: scope.Website.WithID(1)},
 		},
 	))
 
 	t.Run("Default+Website+Store Scope", runner(
 		PathSlice{
-			MustNewPathWithScope(scope.Store.Pack(3), "bb/cc/dd"),
-			MustNewPathWithScope(scope.Store.Pack(2), "bb/cc/dd"),
+			MustNewPathWithScope(scope.Store.WithID(3), "bb/cc/dd"),
+			MustNewPathWithScope(scope.Store.WithID(2), "bb/cc/dd"),
 			MustNewPath("bb/cc/dd"),
-			MustNewPathWithScope(scope.Website.Pack(3), "xx/yy/zz"),
-			MustNewPathWithScope(scope.Website.Pack(1), "xx/yy/zz"),
-			MustNewPathWithScope(scope.Website.Pack(2), "xx/yy/zz"),
-			MustNewPathWithScope(scope.Store.Pack(4), "zz/aa/bb"),
-			MustNewPathWithScope(scope.Website.Pack(1), "zz/aa/bb"),
-			MustNewPathWithScope(scope.Website.Pack(2), "aa/bb/cc"),
+			MustNewPathWithScope(scope.Website.WithID(3), "xx/yy/zz"),
+			MustNewPathWithScope(scope.Website.WithID(1), "xx/yy/zz"),
+			MustNewPathWithScope(scope.Website.WithID(2), "xx/yy/zz"),
+			MustNewPathWithScope(scope.Store.WithID(4), "zz/aa/bb"),
+			MustNewPathWithScope(scope.Website.WithID(1), "zz/aa/bb"),
+			MustNewPathWithScope(scope.Website.WithID(2), "aa/bb/cc"),
 			MustNewPath("aa/bb/cc"),
 		},
 		PathSlice{
 			&Path{route: `aa/bb/cc`, ScopeID: scope.DefaultTypeID},
-			&Path{route: `aa/bb/cc`, ScopeID: scope.Website.Pack(2)},
+			&Path{route: `aa/bb/cc`, ScopeID: scope.Website.WithID(2)},
 			&Path{route: `bb/cc/dd`, ScopeID: scope.DefaultTypeID},
-			&Path{route: `bb/cc/dd`, ScopeID: scope.Store.Pack(2)},
-			&Path{route: `bb/cc/dd`, ScopeID: scope.Store.Pack(3)},
-			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(1)},
-			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(2)},
-			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(3)},
-			&Path{route: `zz/aa/bb`, ScopeID: scope.Website.Pack(1)},
-			&Path{route: `zz/aa/bb`, ScopeID: scope.Store.Pack(4)},
+			&Path{route: `bb/cc/dd`, ScopeID: scope.Store.WithID(2)},
+			&Path{route: `bb/cc/dd`, ScopeID: scope.Store.WithID(3)},
+			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.WithID(1)},
+			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.WithID(2)},
+			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.WithID(3)},
+			&Path{route: `zz/aa/bb`, ScopeID: scope.Website.WithID(1)},
+			&Path{route: `zz/aa/bb`, ScopeID: scope.Store.WithID(4)},
 		},
 	))
 
@@ -650,7 +650,7 @@ func TestPathSplit(t *testing.T) {
 	t.Parallel()
 	t.Run("invalid", func(t *testing.T) {
 		p := &Path{
-			ScopeID: scope.Store.Pack(1),
+			ScopeID: scope.Store.WithID(1),
 			route:   "general",
 		}
 		sps, haveErr := p.Split()
@@ -681,7 +681,7 @@ func TestPath_MarshalText(t *testing.T) {
 	t.Parallel()
 
 	t.Run("two way, no errors", func(t *testing.T) {
-		p, err := NewPathWithScope(scope.Store.Pack(4), "xx/yy/zz")
+		p, err := NewPathWithScope(scope.Store.WithID(4), "xx/yy/zz")
 		require.NoError(t, err)
 		txt, err := p.MarshalText()
 		require.NoError(t, err)
@@ -717,7 +717,7 @@ func TestPath_MarshalBinary(t *testing.T) {
 	t.Parallel()
 
 	t.Run("two way, no errors", func(t *testing.T) {
-		p, err := NewPathWithScope(scope.Store.Pack(4), "xx/yy/zz")
+		p, err := NewPathWithScope(scope.Store.WithID(4), "xx/yy/zz")
 		require.NoError(t, err)
 		txt, err := p.MarshalBinary()
 		require.NoError(t, err)
@@ -752,28 +752,28 @@ func TestPath_MarshalBinary(t *testing.T) {
 func TestPath_IsEmpty(t *testing.T) {
 	t.Parallel()
 	var p Path
-	p.ScopeID = scope.Store.Pack(122)
+	p.ScopeID = scope.Store.WithID(122)
 	assert.True(t, p.IsEmpty())
 }
 
 func TestPath_Equal(t *testing.T) {
 	t.Parallel()
 
-	p1, err := NewPathWithScope(scope.Store.Pack(4), "xx/yy/zz")
+	p1, err := NewPathWithScope(scope.Store.WithID(4), "xx/yy/zz")
 	require.NoError(t, err)
 
-	p2, err := NewPathWithScope(scope.Store.Pack(4), "xx/yy/zz")
+	p2, err := NewPathWithScope(scope.Store.WithID(4), "xx/yy/zz")
 	require.NoError(t, err)
 
 	assert.True(t, p1.Equal(p2))
 
-	p2.ScopeID = scope.Website.Pack(5)
+	p2.ScopeID = scope.Website.WithID(5)
 	assert.True(t, p1.EqualRoute(p2))
 }
 
 func TestPath_HasRoutePrefix(t *testing.T) {
 	t.Parallel()
-	p := &Path{route: `xx/yy/zz`, ScopeID: scope.Website.Pack(3)}
+	p := &Path{route: `xx/yy/zz`, ScopeID: scope.Website.WithID(3)}
 
 	assert.False(t, p.HasRoutePrefix(""))
 	assert.True(t, p.HasRoutePrefix("xx"))

@@ -254,15 +254,15 @@ func BenchmarkPathSlice_Sort(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		ps := config.PathSlice{
-			config.MustNewPathWithScope(scope.Store.Pack(3), "bb/cc/dd"),
-			config.MustNewPathWithScope(scope.Store.Pack(2), "bb/cc/dd"),
+			config.MustNewPathWithScope(scope.Store.WithID(3), "bb/cc/dd"),
+			config.MustNewPathWithScope(scope.Store.WithID(2), "bb/cc/dd"),
 			config.MustNewPath("bb/cc/dd"),
-			config.MustNewPathWithScope(scope.Website.Pack(3), "xx/yy/zz"),
-			config.MustNewPathWithScope(scope.Website.Pack(1), "xx/yy/zz"),
-			config.MustNewPathWithScope(scope.Website.Pack(2), "xx/yy/zz"),
-			config.MustNewPathWithScope(scope.Store.Pack(4), "zz/aa/bb"),
-			config.MustNewPathWithScope(scope.Website.Pack(1), "zz/aa/bb"),
-			config.MustNewPathWithScope(scope.Website.Pack(2), "aa/bb/cc"),
+			config.MustNewPathWithScope(scope.Website.WithID(3), "xx/yy/zz"),
+			config.MustNewPathWithScope(scope.Website.WithID(1), "xx/yy/zz"),
+			config.MustNewPathWithScope(scope.Website.WithID(2), "xx/yy/zz"),
+			config.MustNewPathWithScope(scope.Store.WithID(4), "zz/aa/bb"),
+			config.MustNewPathWithScope(scope.Website.WithID(1), "zz/aa/bb"),
+			config.MustNewPathWithScope(scope.Website.WithID(2), "aa/bb/cc"),
 			config.MustNewPath("aa/bb/cc"),
 		}
 		ps.Sort()

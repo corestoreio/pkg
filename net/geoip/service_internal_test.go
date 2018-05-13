@@ -142,7 +142,7 @@ func TestNewServiceWithCheckAllow(t *testing.T) {
 	})
 
 	t.Run("Scope_Store", func(t *testing.T) {
-		var scopeID = scope.Store.Pack(331122)
+		var scopeID = scope.Store.WithID(331122)
 
 		isAllowed := func(s scope.TypeID, c *geoip.Country, allowedCountries []string) error {
 			assert.Exactly(t, scopeID, s, "Scope_Store @ scope.Hash")

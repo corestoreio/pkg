@@ -47,8 +47,8 @@ func TestConfiguration_Partially_HierarchicalConfig(t *testing.T) {
 	srv := cors.MustNew(
 		cors.WithSettings(cors.Settings{
 			ExposedHeaders: exposedHeaders,
-		}, scope.Website.Pack(3)),
-		cors.WithMarkPartiallyApplied(true, scope.Website.Pack(3)),
+		}, scope.Website.WithID(3)),
+		cors.WithMarkPartiallyApplied(true, scope.Website.WithID(3)),
 		cors.WithOptionFactory(backend.PrepareOptionFactory()),
 	)
 	scpCfg, err := srv.ConfigByScopedGetter(scpCfgSrv)

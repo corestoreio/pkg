@@ -41,7 +41,7 @@ func bmWithToken(b *testing.B, opts ...jwt.Option) {
 		"xfoo": "bar",
 		"zfoo": 4711,
 	}
-	token, err := jwts.NewToken(scope.Default.Pack(0), cl)
+	token, err := jwts.NewToken(scope.Default.WithID(0), cl)
 	if err != nil {
 		b.Error(err)
 	}
@@ -105,14 +105,14 @@ func BenchmarkWithRunMode_MultiTokenAndScope(b *testing.B) {
 	jwts := jwt.MustNew(
 		jwt.WithRootConfig(cfg),
 		jwt.WithExpiration(time.Second*15),
-		jwt.WithExpiration(time.Second*25, scope.Website.Pack(1)),
-		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.Pack(1)),
+		jwt.WithExpiration(time.Second*25, scope.Website.WithID(1)),
+		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.WithID(1)),
 		jwt.WithTemplateToken(func() csjwt.Token {
 			return csjwt.Token{
 				Header: csjwt.NewHead(),
 				Claims: jwtclaim.NewStore(),
 			}
-		}, scope.Website.Pack(1)),
+		}, scope.Website.WithID(1)),
 	)
 
 	// below two lines comment out enables the null black list
@@ -121,7 +121,7 @@ func BenchmarkWithRunMode_MultiTokenAndScope(b *testing.B) {
 	var generateToken = func(storeCode string) []byte {
 		s := jwtclaim.NewStore()
 		s.Store = storeCode
-		token, err := jwts.NewToken(scope.Website.Pack(1), s)
+		token, err := jwts.NewToken(scope.Website.WithID(1), s)
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
@@ -144,7 +144,7 @@ func BenchmarkWithRunMode_MultiTokenAndScope(b *testing.B) {
 	}
 
 	storeSrv := storemock.NewEurozzyService(cfg)
-	jwtHandler := jwts.WithRunMode(scope.Website.Pack(1), // every store with website ID 1
+	jwtHandler := jwts.WithRunMode(scope.Website.WithID(1), // every store with website ID 1
 		storeSrv)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		_, ok := jwt.FromContext(ctx)

@@ -30,15 +30,15 @@ func TestWithGCRARedis(t *testing.T) {
 	s4 := scope.MakeTypeID(scope.Store, 4)
 
 	t.Run("CalcErrorRedis", func(t *testing.T) {
-		s, err := ratelimit.New(redigostore.WithGCRA("redis://localhost/", 's', 100, 10, scope.Store.Pack(4)))
+		s, err := ratelimit.New(redigostore.WithGCRA("redis://localhost/", 's', 100, 10, scope.Store.WithID(4)))
 		assert.Nil(t, s)
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})
 
 	t.Run("Ok", func(t *testing.T) {
 		s := ratelimit.MustNew(
-			ratelimit.WithDefaultConfig(scope.Store.Pack(4)),
-			redigostore.WithGCRA("redis://localhost/1", 's', 100, 10, scope.Store.Pack(4)),
+			ratelimit.WithDefaultConfig(scope.Store.WithID(4)),
+			redigostore.WithGCRA("redis://localhost/1", 's', 100, 10, scope.Store.WithID(4)),
 			redigostore.WithGCRA("redis://localhost/2", 's', 100, 10, scope.DefaultTypeID),
 		)
 		cfg, err := s.ConfigByScopeID(s4, 0)
@@ -51,8 +51,8 @@ func TestWithGCRARedis(t *testing.T) {
 
 	t.Run("OverwrittenByWithDefaultConfig", func(t *testing.T) {
 		s := ratelimit.MustNew(
-			redigostore.WithGCRA("redis://localhost/1", 's', 100, 10, scope.Store.Pack(4)),
-			ratelimit.WithDefaultConfig(scope.Store.Pack(4)),
+			redigostore.WithGCRA("redis://localhost/1", 's', 100, 10, scope.Store.WithID(4)),
+			ratelimit.WithDefaultConfig(scope.Store.WithID(4)),
 		)
 		cfg, err := s.ConfigByScopeID(s4, 0)
 		assert.True(t, errors.IsNotValid(err), "%+v", err)

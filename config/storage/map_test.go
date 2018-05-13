@@ -27,13 +27,13 @@ import (
 func TestNewMap_OneKey(t *testing.T) {
 	t.Parallel()
 
-	p := config.MustNewPathWithScope(scope.Store.Pack(55), "aa/bb/cc")
+	p := config.MustNewPathWithScope(scope.Store.WithID(55), "aa/bb/cc")
 	sp := storage.NewMap()
 
 	assert.NoError(t, sp.Set(p, []byte(`19.99`)))
 
-	validateFoundGet(t, sp, scope.Store.Pack(55), "aa/bb/cc", "19.99")
-	validateNotFoundGet(t, sp, scope.Store.Pack(55), "ff/gg/hh")
+	validateFoundGet(t, sp, scope.Store.WithID(55), "aa/bb/cc", "19.99")
+	validateNotFoundGet(t, sp, scope.Store.WithID(55), "ff/gg/hh")
 	validateNotFoundGet(t, sp, 0, "rr/ss/tt")
 
 	fl, ok := sp.(flusher)
@@ -43,6 +43,6 @@ func TestNewMap_OneKey(t *testing.T) {
 
 	require.NoError(t, fl.Flush())
 
-	validateNotFoundGet(t, sp, scope.Store.Pack(55), "aa/bb/cc")
+	validateNotFoundGet(t, sp, scope.Store.WithID(55), "aa/bb/cc")
 
 }

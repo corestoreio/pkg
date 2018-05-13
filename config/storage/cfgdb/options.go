@@ -57,7 +57,7 @@ func WithLoadFromDB(tbls *ddl.Tables, o Options) config.LoadDataFn {
 			if ccd.Value.Valid {
 				v = []byte(ccd.Value.String)
 			}
-			scp := scope.FromString(ccd.Scope).Pack(ccd.ScopeID)
+			scp := scope.FromString(ccd.Scope).WithID(ccd.ScopeID)
 			p, err := config.NewPathWithScope(scp, ccd.Path)
 			if err != nil {
 				return errors.Wrapf(err, "[ccd] WithLoadFromDB.config.NewPathWithScope Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ConfigID)

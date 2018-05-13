@@ -145,8 +145,8 @@ func TestWithRunMode(t *testing.T) {
 		{ // request with store cookie cn does nothing
 			getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "cn"}),
 			storemock.NewDefaultStoreID(0, 0, nil, storemock.NewStoreIDbyCode(44, 33, nil)),
-			runmode.Options{ErrorHandler: withRunModeErrH(t, nil, false), Calculater: scope.Website.Pack(2)},
-			scope.Website.Pack(2), ``, http.StatusAccepted,
+			runmode.Options{ErrorHandler: withRunModeErrH(t, nil, false), Calculater: scope.Website.WithID(2)},
+			scope.Website.WithID(2), ``, http.StatusAccepted,
 			44, 33, true,
 		},
 	}

@@ -70,7 +70,7 @@ func TestService_FnInvokes_Map(t *testing.T) {
 
 // func TestInvocations_ScopeIDs(t *testing.T) {
 // 	iv := config.Invocations{"websites/5/web/cors/allow_credentials": 1, "default/0/web/cors/allow_credentials": 1}
-// 	assert.Exactly(t, scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(5)}, iv.ScopeIDs())
+// 	assert.Exactly(t, scope.TypeIDs{scope.DefaultTypeID, scope.Website.WithID(5)}, iv.ScopeIDs())
 // }
 //
 // func TestInvocations_Paths(t *testing.T) {

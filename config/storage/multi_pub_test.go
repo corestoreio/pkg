@@ -29,7 +29,7 @@ import (
 
 func TestMakeMulti(t *testing.T) {
 
-	p := config.MustNewPathWithScope(scope.Store.Pack(44), "aa/bb/cc")
+	p := config.MustNewPathWithScope(scope.Store.WithID(44), "aa/bb/cc")
 
 	cmpGet := func(t *testing.T, s config.Storager, wantData []byte) {
 		v, found, err := s.Get(p)
@@ -94,7 +94,7 @@ func TestMakeMulti(t *testing.T) {
 	t.Run("found nothing", func(t *testing.T) {
 		m := storage.MakeMulti(storage.MultiOptions{})
 
-		validateNotFoundGet(t, m, scope.Website.Pack(44), "aa/bb/cc")
+		validateNotFoundGet(t, m, scope.Website.WithID(44), "aa/bb/cc")
 	})
 }
 

@@ -69,8 +69,8 @@ func TestBackend_GCRA_Not_Registered(t *testing.T) {
 			panic("Should not get called")
 		}),
 		false, // do not test logger
-		ratelimit.WithVaryBy(pathGetter{}, scope.Website.Pack(1)),
-		ratelimit.WithRateLimiter(stubLimiter{}, scope.Website.Pack(1)),
+		ratelimit.WithVaryBy(pathGetter{}, scope.Website.WithID(1)),
+		ratelimit.WithRateLimiter(stubLimiter{}, scope.Website.WithID(1)),
 	)
 }
 
@@ -87,8 +87,8 @@ func TestBackend_WithDisable(t *testing.T) {
 			w.WriteHeader(http.StatusTeapot)
 		}),
 		true, // do test logger
-		ratelimit.WithVaryBy(pathGetter{}, scope.Website.Pack(1)),
-		ratelimit.WithRateLimiter(stubLimiter{}, scope.Website.Pack(1)),
+		ratelimit.WithVaryBy(pathGetter{}, scope.Website.WithID(1)),
+		ratelimit.WithRateLimiter(stubLimiter{}, scope.Website.WithID(1)),
 	)
 }
 
@@ -139,9 +139,9 @@ func TestBackend_WithGCRAMemStore(t *testing.T) {
 			atomic.AddInt32(countAllowed, 1)
 		}),
 		true, // do test logger
-		ratelimit.WithVaryBy(pathGetter{}, scope.Website.Pack(1)),
-		ratelimit.WithErrorHandler(mw.ErrorWithPanic, scope.Website.Pack(1)),
-		ratelimit.WithDeniedHandler(deniedH, scope.Website.Pack(1)),
+		ratelimit.WithVaryBy(pathGetter{}, scope.Website.WithID(1)),
+		ratelimit.WithErrorHandler(mw.ErrorWithPanic, scope.Website.WithID(1)),
+		ratelimit.WithDeniedHandler(deniedH, scope.Website.WithID(1)),
 	)
 
 	if have, want := atomic.LoadInt32(countDenied), int32(5); have != want {

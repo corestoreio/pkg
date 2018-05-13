@@ -16,16 +16,18 @@ package cfgetcdv3
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/coreos/etcd/clientv3"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 )
 
-// WithEtcd reads the all keys and their values with the current or configured
-// etcd key prefix and applies it to the config.Service. This function option
-// can be set when creating a new config.Service or updating its internal DB.
-func WithEtcd(c clientv3.KV, o Options) config.LoadDataFn {
+// WithLoadData reads the all keys and their values with the current or configured
+// etcd key prefix and applies it to the config.service. This function option
+// can be set when creating a new config.service or updating its internal DB.
+func WithLoadData(c clientv3.KV, o Options) config.LoadDataFn {
 
 	if o.KeyPrefix == "" {
 		o.KeyPrefix = DefaultKeyPrefix
@@ -44,17 +46,22 @@ func WithEtcd(c clientv3.KV, o Options) config.LoadDataFn {
 		if err != nil {
 			return errors.WithStack(err)
 		}
+		p := new(config.Path)
+		var buf strings.Builder
 		for _, ev := range resp.Kvs {
 			fmt.Printf("%s : %s\n", ev.Key, ev.Value)
+			buf.Write(ev.Key)
 
-			p := config.NewPathFromFQ()
-
-			if err := s.Set(,ev.Value); err != nil {
-				return errors.Wra
+			if err := p.ParseFQ(buf.String()); err != nil {
+				return errors.Wrapf(err, "[config/storage/cfgetcdv3] With Path %q", p.String())
 			}
+
+			if err := s.Set(p, ev.Value); err != nil {
+				return errors.Wrapf(err, "[config/storage/cfgetcdv3] With Path %q", p.String())
+			}
+			buf.Reset()
+			p.Reset()
 		}
-
-
 
 		return nil
 	}

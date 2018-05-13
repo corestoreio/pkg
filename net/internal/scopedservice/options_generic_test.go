@@ -50,7 +50,7 @@ func TestWithConfigGetter(t *testing.T) {
 
 func TestWithErrorHandler(t *testing.T) {
 	var eh = func(error) http.Handler { return nil }
-	s, err := newService(WithErrorHandler(eh, scope.Store.Pack(44)))
+	s, err := newService(WithErrorHandler(eh, scope.Store.WithID(44)))
 	assert.NoError(t, err, "%+v", err)
 	cfg, err := s.ConfigByScopeID(scope.MakeTypeID(scope.Store, 44), 0)
 	assert.NoError(t, err, "%+v", err)
@@ -78,8 +78,8 @@ func TestOptionFactories(t *testing.T) {
 
 	var off OptionFactoryFunc = func(config.Scoped) []Option {
 		return []Option{
-			withString("a value for the store 1 scope", scope.Store.Pack(1)),
-			withString("a value for the website 2 scope", scope.Website.Pack(2)),
+			withString("a value for the store 1 scope", scope.Store.WithID(1)),
+			withString("a value for the website 2 scope", scope.Website.WithID(2)),
 		}
 	}
 
@@ -129,8 +129,8 @@ func TestWithLogger(t *testing.T) {
 func TestWithDisable(t *testing.T) {
 	srv := MustNew(
 		WithRootConfig(cfgmock.NewService()),
-		WithDisable(true, scope.Website.Pack(2)),
-		WithDisable(true, scope.Store.Pack(3)),
+		WithDisable(true, scope.Website.WithID(2)),
+		WithDisable(true, scope.Store.WithID(3)),
 	)
 	scpCfg, err := srv.ConfigByScope(2, 0)
 	assert.NoError(t, err, "%+v", err)
@@ -144,12 +144,12 @@ func TestWithDisable(t *testing.T) {
 func TestWithTriggerOptionFactories(t *testing.T) {
 	srv := MustNew(
 		WithRootConfig(cfgmock.NewService()),
-		WithMarkPartiallyApplied(true, scope.Store.Pack(4)),
+		WithMarkPartiallyApplied(true, scope.Store.WithID(4)),
 	)
 	_, err := srv.ConfigByScope(22, 4)
 	assert.True(t, errors.IsTemporary(err), "%+v", err)
 
-	assert.NoError(t, srv.Options(WithMarkPartiallyApplied(false, scope.Store.Pack(4))))
+	assert.NoError(t, srv.Options(WithMarkPartiallyApplied(false, scope.Store.WithID(4))))
 	_, err = srv.ConfigByScope(22, 4)
 	assert.NoError(t, err, "%+v")
 }

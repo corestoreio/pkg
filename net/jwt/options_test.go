@@ -44,7 +44,7 @@ func TestOptionWithTemplateToken(t *testing.T) {
 				Header: h, // header h has 6 struct fields
 				Claims: sClaim,
 			}
-		}, scope.Website.Pack(3)),
+		}, scope.Website.WithID(3)),
 	)
 	require.NoError(t, err)
 
@@ -53,7 +53,7 @@ func TestOptionWithTemplateToken(t *testing.T) {
 	})
 	require.NoError(t, err, "%+v", err)
 
-	tkWebsite, err := jwts.NewToken(scope.Website.Pack(3), &jwtclaim.Standard{
+	tkWebsite, err := jwts.NewToken(scope.Website.WithID(3), &jwtclaim.Standard{
 		Audience: "Gophers",
 	})
 	require.NoError(t, err)
@@ -65,7 +65,7 @@ func TestOptionWithTemplateToken(t *testing.T) {
 	require.NoError(t, err)
 	assert.Exactly(t, "ch_DE", conv.ToString(lng))
 
-	tkWebsiteParsed, err := jwts.ParseScoped(scope.Website.Pack(3), tkWebsite.Raw)
+	tkWebsiteParsed, err := jwts.ParseScoped(scope.Website.WithID(3), tkWebsite.Raw)
 	require.NoError(t, err)
 	// t.Logf("tkFull: %#v\n", tkWebsiteParsed)
 	claimStore, err := tkWebsiteParsed.Claims.Get(jwtclaim.KeyStore)
@@ -77,11 +77,11 @@ func TestOptionWithTemplateToken(t *testing.T) {
 func TestOptionWithTokenID(t *testing.T) {
 
 	jwts, err := jwt.New(
-		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.Pack(22)),
+		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.WithID(22)),
 	)
 	require.NoError(t, err)
 
-	theToken, err := jwts.NewToken(scope.Website.Pack(22))
+	theToken, err := jwts.NewToken(scope.Website.WithID(22))
 	require.NoError(t, err)
 	assert.NotEmpty(t, theToken.Raw)
 
@@ -93,12 +93,12 @@ func TestOptionWithTokenID(t *testing.T) {
 func TestOptionScopedDefaultExpire(t *testing.T) {
 
 	jwts, err := jwt.New(
-		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.Pack(33)),
+		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.WithID(33)),
 	)
 	require.NoError(t, err)
 
 	now := time.Now()
-	theToken, err := jwts.NewToken(scope.Website.Pack(33)) // must be a pointer the cl or Get() returns nil
+	theToken, err := jwts.NewToken(scope.Website.WithID(33)) // must be a pointer the cl or Get() returns nil
 	require.NoError(t, err)
 
 	assert.NotEmpty(t, theToken.Raw)
@@ -114,16 +114,16 @@ func TestOptionScopedDefaultExpire(t *testing.T) {
 
 func TestWithMaxSkew_Valid(t *testing.T) {
 	jwts, err := jwt.New(
-		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.Pack(44)),
-		jwt.WithSkew(time.Second*5, scope.Website.Pack(44)),
-		jwt.WithExpiration(-time.Second*3, scope.Website.Pack(44)),
+		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.WithID(44)),
+		jwt.WithSkew(time.Second*5, scope.Website.WithID(44)),
+		jwt.WithExpiration(-time.Second*3, scope.Website.WithID(44)),
 	)
 	require.NoError(t, err)
 
-	newTK, err := jwts.NewToken(scope.Website.Pack(44), jwtclaim.Map{"key1": "value1"})
+	newTK, err := jwts.NewToken(scope.Website.WithID(44), jwtclaim.Map{"key1": "value1"})
 	assert.NoError(t, err)
 
-	parsedTK, err := jwts.ParseScoped(scope.Website.Pack(44), newTK.Raw)
+	parsedTK, err := jwts.ParseScoped(scope.Website.WithID(44), newTK.Raw)
 	assert.NoError(t, err)
 	assert.True(t, parsedTK.Valid, "Token must be valid")
 

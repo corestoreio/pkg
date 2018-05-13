@@ -340,7 +340,7 @@ func (ss Sections) Less(i, j int) bool {
 }
 
 // ConfigurationWriter thread safe storing of configuration values under
-// different paths and scopes. This interface has been copied from config.Writer
+// different paths and scopes. This interface has been copied from config.Setter
 // to avoid bloated imports. Due to testing both interfaces will be kept in
 // sync.
 // deprecated this package might get merged into config.

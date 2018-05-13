@@ -227,10 +227,10 @@ func TestBoolGetWithCfgStruct(t *testing.T) {
 		wantIDs scope.TypeIDs
 		want    bool
 	}{
-		{cfgmock.NewService().NewScoped(0, 0), typeIDsDefault, true},                                            // because default value in packageConfiguration is "true"
-		{cfgmock.NewService().NewScoped(5, 4), scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(5)}, true}, // because default value in packageConfiguration is "true"
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): 0}).NewScoped(3, 0), scope.TypeIDs{scope.Website.Pack(3)}, false},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): 0}).NewScoped(3, 5), scope.TypeIDs{scope.Website.Pack(3)}, false},
+		{cfgmock.NewService().NewScoped(0, 0), typeIDsDefault, true},                                              // because default value in packageConfiguration is "true"
+		{cfgmock.NewService().NewScoped(5, 4), scope.TypeIDs{scope.DefaultTypeID, scope.Website.WithID(5)}, true}, // because default value in packageConfiguration is "true"
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): 0}).NewScoped(3, 0), scope.TypeIDs{scope.Website.WithID(3)}, false},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): 0}).NewScoped(3, 5), scope.TypeIDs{scope.Website.WithID(3)}, false},
 	}
 	for i, test := range tests {
 		gb, err := b.Value(test.sg)
@@ -304,9 +304,9 @@ func TestBoolWrite(t *testing.T) {
 	b := cfgmodel.NewBool(pathWebCorsCred, cfgmodel.WithFieldFromSectionSlice(configStructure), cfgmodel.WithSource(cfgsource.YesNo))
 
 	mw := &cfgmock.Write{}
-	err := b.Write(mw, true, scope.Store.Pack(3))
+	err := b.Write(mw, true, scope.Store.WithID(3))
 	assert.True(t, errors.IsUnauthorized(err), "Error: %s", err)
-	assert.NoError(t, b.Write(mw, true, scope.Website.Pack(3)))
+	assert.NoError(t, b.Write(mw, true, scope.Website.WithID(3)))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, true, mw.ArgValue.(bool))
 }
@@ -324,20 +324,20 @@ func TestByteGetWithCfgStruct(t *testing.T) {
 		wantIDs scope.TypeIDs
 		want    []byte
 	}{
-		{cfgmock.NewService().NewScoped(0, 0), typeIDsDefault, defaultWebCorsByte},                                            // because default value in packageConfiguration
-		{cfgmock.NewService().NewScoped(5, 4), scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(5)}, defaultWebCorsByte}, // because default value in packageConfiguration
+		{cfgmock.NewService().NewScoped(0, 0), typeIDsDefault, defaultWebCorsByte},                                              // because default value in packageConfiguration
+		{cfgmock.NewService().NewScoped(5, 4), scope.TypeIDs{scope.DefaultTypeID, scope.Website.WithID(5)}, defaultWebCorsByte}, // because default value in packageConfiguration
 		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): []byte("X-Gopher")}).NewScoped(0, 0), typeIDsDefault, []byte("X-Gopher")},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): []byte("X-Gopher")}).NewScoped(3, 5), scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(3)}, []byte("X-Gopher")},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): []byte("X-Gopher")}).NewScoped(3, 5), scope.TypeIDs{scope.DefaultTypeID, scope.Website.WithID(3)}, []byte("X-Gopher")},
 		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():               []byte("X-Gopher262"),
 			wantPath.BindStore(44).String(): []byte("X-Gopher44"), // because Field.Scopes has PermWebsite
-		}).NewScoped(3, 44), scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(3)}, []byte("X-Gopher262")},
+		}).NewScoped(3, 44), scope.TypeIDs{scope.DefaultTypeID, scope.Website.WithID(3)}, []byte("X-Gopher262")},
 		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():                 []byte("X-Gopher"),
 			wantPath.BindWebsite(33).String(): []byte("X-Gopher33"),
 			wantPath.BindWebsite(43).String(): []byte("X-GopherW43"),
 			wantPath.BindStore(44).String():   []byte("X-Gopher44"),
-		}).NewScoped(33, 43), scope.TypeIDs{scope.Website.Pack(33)}, []byte("X-Gopher33")},
+		}).NewScoped(33, 43), scope.TypeIDs{scope.Website.WithID(33)}, []byte("X-Gopher33")},
 	}
 	for i, test := range tests {
 		gb, err := b.Value(test.sg)
@@ -427,20 +427,20 @@ func TestStrGetWithCfgStruct(t *testing.T) {
 		wantIDs scope.TypeIDs
 		want    string
 	}{
-		{cfgmock.NewService().NewScoped(0, 0), typeIDsDefault, "Content-Type,X-CoreStore-ID"},                                            // because default value in packageConfiguration
-		{cfgmock.NewService().NewScoped(5, 4), scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(5)}, "Content-Type,X-CoreStore-ID"}, // because default value in packageConfiguration
+		{cfgmock.NewService().NewScoped(0, 0), typeIDsDefault, "Content-Type,X-CoreStore-ID"},                                              // because default value in packageConfiguration
+		{cfgmock.NewService().NewScoped(5, 4), scope.TypeIDs{scope.DefaultTypeID, scope.Website.WithID(5)}, "Content-Type,X-CoreStore-ID"}, // because default value in packageConfiguration
 		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): "X-Gopher"}).NewScoped(0, 0), typeIDsDefault, "X-Gopher"},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): "X-Gopher"}).NewScoped(3, 5), scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(3)}, "X-Gopher"},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): "X-Gopher"}).NewScoped(3, 5), scope.TypeIDs{scope.DefaultTypeID, scope.Website.WithID(3)}, "X-Gopher"},
 		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():               "X-Gopher262",
 			wantPath.BindStore(44).String(): "X-Gopher44", // because Field.Scopes has PermWebsite
-		}).NewScoped(3, 44), scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(3)}, "X-Gopher262"},
+		}).NewScoped(3, 44), scope.TypeIDs{scope.DefaultTypeID, scope.Website.WithID(3)}, "X-Gopher262"},
 		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():                 "X-Gopher",
 			wantPath.BindWebsite(33).String(): "X-Gopher33",
 			wantPath.BindWebsite(43).String(): "X-GopherW43",
 			wantPath.BindStore(44).String():   "X-Gopher44",
-		}).NewScoped(33, 43), scope.TypeIDs{scope.Website.Pack(33)}, "X-Gopher33"},
+		}).NewScoped(33, 43), scope.TypeIDs{scope.Website.WithID(33)}, "X-Gopher33"},
 	}
 	for i, test := range tests {
 		gb, err := b.Value(test.sg)
@@ -529,20 +529,20 @@ func TestIntGetWithCfgStruct(t *testing.T) {
 		wantIDs scope.TypeIDs
 		want    int
 	}{
-		{cfgmock.NewService().NewScoped(0, 0), typeIDsDefault, 2015},                                            // because default value in packageConfiguration
-		{cfgmock.NewService().NewScoped(0, 1), typeIDsDefault, 2015},                                            // because default value in packageConfiguration
-		{cfgmock.NewService().NewScoped(2, 1), scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(2)}, 2015}, // because default value in packageConfiguration
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016}).NewScoped(10, 0), scope.TypeIDs{scope.Website.Pack(10)}, 2016},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016}).NewScoped(10, 1), scope.TypeIDs{scope.Website.Pack(10)}, 2016},
+		{cfgmock.NewService().NewScoped(0, 0), typeIDsDefault, 2015},                                              // because default value in packageConfiguration
+		{cfgmock.NewService().NewScoped(0, 1), typeIDsDefault, 2015},                                              // because default value in packageConfiguration
+		{cfgmock.NewService().NewScoped(2, 1), scope.TypeIDs{scope.DefaultTypeID, scope.Website.WithID(2)}, 2015}, // because default value in packageConfiguration
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016}).NewScoped(10, 0), scope.TypeIDs{scope.Website.WithID(10)}, 2016},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016}).NewScoped(10, 1), scope.TypeIDs{scope.Website.WithID(10)}, 2016},
 		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():               3017,
 			wantPath.BindStore(11).String(): 2016, // because Field.Scopes set to PermWebsite
-		}).NewScoped(10, 11), scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(10)}, 3017},
+		}).NewScoped(10, 11), scope.TypeIDs{scope.DefaultTypeID, scope.Website.WithID(10)}, 3017},
 		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():                 3017,
 			wantPath.BindWebsite(10).String(): 4018,
 			wantPath.BindStore(11).String():   2016, // because Field.Scopes set to PermWebsite
-		}).NewScoped(10, 11), scope.TypeIDs{scope.Website.Pack(10)}, 4018},
+		}).NewScoped(10, 11), scope.TypeIDs{scope.Website.WithID(10)}, 4018},
 	}
 	for i, test := range tests {
 		gb, err := b.Value(test.sg)
@@ -614,7 +614,7 @@ func TestIntWrite(t *testing.T) {
 	b := cfgmodel.NewInt(pathWebCorsInt, cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	mw := &cfgmock.Write{}
-	assert.NoError(t, b.Write(mw, 27182, scope.Website.Pack(10)))
+	assert.NoError(t, b.Write(mw, 27182, scope.Website.WithID(10)))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, 27182, mw.ArgValue.(int))
 }
@@ -631,20 +631,20 @@ func TestFloat64GetWithCfgStruct(t *testing.T) {
 		wantIDs scope.TypeIDs
 		want    float64
 	}{
-		{cfgmock.NewService().NewScoped(0, 0), typeIDsDefault, 2015.1000001},                                            // because default value in packageConfiguration
-		{cfgmock.NewService().NewScoped(0, 1), typeIDsDefault, 2015.1000001},                                            // because default value in packageConfiguration
-		{cfgmock.NewService().NewScoped(1, 1), scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1)}, 2015.1000001}, // because default value in packageConfiguration
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016.1000001}).NewScoped(10, 0), scope.TypeIDs{scope.Website.Pack(10)}, 2016.1000001},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016.1000001}).NewScoped(10, 1), scope.TypeIDs{scope.Website.Pack(10)}, 2016.1000001},
+		{cfgmock.NewService().NewScoped(0, 0), typeIDsDefault, 2015.1000001},                                              // because default value in packageConfiguration
+		{cfgmock.NewService().NewScoped(0, 1), typeIDsDefault, 2015.1000001},                                              // because default value in packageConfiguration
+		{cfgmock.NewService().NewScoped(1, 1), scope.TypeIDs{scope.DefaultTypeID, scope.Website.WithID(1)}, 2015.1000001}, // because default value in packageConfiguration
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016.1000001}).NewScoped(10, 0), scope.TypeIDs{scope.Website.WithID(10)}, 2016.1000001},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016.1000001}).NewScoped(10, 1), scope.TypeIDs{scope.Website.WithID(10)}, 2016.1000001},
 		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():               2017.1000001,
 			wantPath.BindStore(11).String(): 2016.1000021,
-		}).NewScoped(10, 11), scope.TypeIDs{scope.Website.Pack(10)}, 2017.1000001},
+		}).NewScoped(10, 11), scope.TypeIDs{scope.Website.WithID(10)}, 2017.1000001},
 		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():                 2017.1000001,
 			wantPath.BindWebsite(13).String(): 2018.2000001,
 			wantPath.BindStore(11).String():   2016.1000021,
-		}).NewScoped(13, 11), scope.TypeIDs{scope.Website.Pack(13)}, 2018.2000001},
+		}).NewScoped(13, 11), scope.TypeIDs{scope.Website.WithID(13)}, 2018.2000001},
 	}
 	for i, test := range tests {
 		gb, err := b.Value(test.sg)
@@ -716,7 +716,7 @@ func TestFloat64Write(t *testing.T) {
 	b := cfgmodel.NewFloat64("web/cors/float64", cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	mw := &cfgmock.Write{}
-	assert.NoError(t, b.Write(mw, 1.123456789, scope.Website.Pack(10)))
+	assert.NoError(t, b.Write(mw, 1.123456789, scope.Website.WithID(10)))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, 1.12345678900000, mw.ArgValue.(float64))
 }

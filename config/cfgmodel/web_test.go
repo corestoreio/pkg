@@ -80,11 +80,11 @@ func TestURLWrite(t *testing.T) {
 	}
 
 	mw := &cfgmock.Write{}
-	assert.NoError(t, b.Write(mw, data, scope.Store.Pack(1)))
+	assert.NoError(t, b.Write(mw, data, scope.Store.WithID(1)))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, `http://john%20doe@corestore.io/?q=go+language#foo&bar`, mw.ArgValue.(string))
 
-	assert.NoError(t, b.Write(mw, nil, scope.Store.Pack(1)))
+	assert.NoError(t, b.Write(mw, nil, scope.Store.WithID(1)))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, ``, mw.ArgValue.(string))
 }
@@ -120,7 +120,7 @@ func TestBaseURLWrite(t *testing.T) {
 	b := cfgmodel.NewBaseURL(pathWebUnsecUrl, cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	mw := &cfgmock.Write{}
-	assert.NoError(t, b.Write(mw, "dude", scope.Store.Pack(1)))
+	assert.NoError(t, b.Write(mw, "dude", scope.Store.WithID(1)))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, "dude", mw.ArgValue.(string))
 }
