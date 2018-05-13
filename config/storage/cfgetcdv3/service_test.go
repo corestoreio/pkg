@@ -30,14 +30,14 @@ import (
 )
 
 var (
-	dialTimeout = 5 * time.Second
-	// requestTimeout = 10 * time.Second
+	dialTimeout = 1 * time.Second
+	// requestTimeout = 2 * time.Second
 	endpoints = []string{"localhost:2379", "localhost:22379", "localhost:32379"}
 )
 
 func TestStorage_Get(t *testing.T) {
 	var testData = []byte(`You should turn it to eleven.`)
-	scpID := scope.Website.WithID(3)
+	//scpID := scope.Website.WithID(3)
 	const path = "path/to/orion"
 	p := config.MustNewPathWithScope(scope.Website.WithID(3), "path/to/orion")
 
@@ -51,7 +51,7 @@ func TestStorage_Get(t *testing.T) {
 		s, err := cfgetcdv3.NewService(mo, cfgetcdv3.Options{})
 		require.NoError(t, err)
 
-		haveData, found, err := s.Get(scpID, path)
+		haveData, found, err := s.Get(p)
 		require.NoError(t, err)
 		assert.True(t, found, "Value and path must be found")
 		assert.Exactly(t, haveData, testData)
@@ -67,7 +67,7 @@ func TestStorage_Get(t *testing.T) {
 		s, err := cfgetcdv3.NewService(mo, cfgetcdv3.Options{})
 		require.NoError(t, err)
 
-		haveData, found, err := s.Get(scpID, path)
+		haveData, found, err := s.Get(p)
 		require.NoError(t, err)
 		assert.False(t, found, "Value and path must NOT be found")
 		assert.Nil(t, haveData)
@@ -83,7 +83,7 @@ func TestStorage_Get(t *testing.T) {
 			s, err := cfgetcdv3.NewService(mo, cfgetcdv3.Options{})
 			require.NoError(t, err)
 
-			haveData, found, err := s.Get(scpID, path)
+			haveData, found, err := s.Get(p)
 			require.NoError(t, err)
 			assert.False(t, found, "Value and path must NOT be found")
 			assert.Nil(t, haveData)
@@ -102,7 +102,7 @@ func TestStorage_Get(t *testing.T) {
 		s, err := cfgetcdv3.NewService(mo, cfgetcdv3.Options{})
 		require.NoError(t, err)
 
-		haveData, found, err := s.Get(scpID, path)
+		haveData, found, err := s.Get(p)
 		require.True(t, errors.ConnectionLost.Match(err), "Should have error kind connection lost")
 		assert.False(t, found, "Value and path must NOT be found")
 		assert.Nil(t, haveData)
@@ -115,7 +115,7 @@ func TestStorage_Get(t *testing.T) {
 		s, err := cfgetcdv3.NewService(mo, cfgetcdv3.Options{})
 		require.NoError(t, err)
 
-		err = s.Set(scpID, path, testData)
+		err = s.Set(p, testData)
 		require.NoError(t, err)
 	})
 	t.Run("Set no error ", func(t *testing.T) {
@@ -127,23 +127,46 @@ func TestStorage_Get(t *testing.T) {
 		s, err := cfgetcdv3.NewService(mo, cfgetcdv3.Options{})
 		require.NoError(t, err)
 
-		err = s.Set(scpID, path, testData)
+		err = s.Set(p, testData)
 		require.True(t, errors.ConnectionLost.Match(err), "Should have error kind connection lost")
 	})
 
 }
 
 func TestNewStorage_Integration(t *testing.T) {
-
-	t.Skip("TODO integration tests")
-
+	/*
+	   $ etcdctl get --prefix csv3
+	   csv3/default/0/tax/calculation/rate
+	   19.0
+	   csv3/stores/2/tax/calculation/rate
+	   19.2
+	*/
 	c, err := clientv3.New(clientv3.Config{
 		Endpoints:   endpoints,
 		DialTimeout: dialTimeout,
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Skipf("etcd daemon seems not to be running: %s", err)
 	}
 	assert.NotNil(t, c)
+
+	srv, err := cfgetcdv3.NewService(c, cfgetcdv3.Options{})
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
+
+	p := config.MustNewPath("tax/calculation/rate")
+	p2 := p.BindStore(2)
+
+	require.NoError(t, srv.Set(p, []byte(`19.0`)))
+	require.NoError(t, srv.Set(p2, []byte(`19.2`)))
+
+	data, _, err := srv.Get(p)
+	require.NoError(t, err)
+	assert.Exactly(t, []byte(`19.0`), data)
+
+	data, _, err = srv.Get(p2)
+	require.NoError(t, err)
+	assert.Exactly(t, []byte(`19.2`), data)
 
 }

@@ -16,7 +16,6 @@ package cfgetcdv3
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/coreos/etcd/clientv3"
@@ -49,7 +48,6 @@ func WithLoadData(c clientv3.KV, o Options) config.LoadDataFn {
 		p := new(config.Path)
 		var buf strings.Builder
 		for _, ev := range resp.Kvs {
-			fmt.Printf("%s : %s\n", ev.Key, ev.Value)
 			buf.Write(ev.Key)
 
 			if err := p.ParseFQ(buf.String()); err != nil {
