@@ -2,6 +2,7 @@
   "payment/stripe/user_name": {
     "default": "AUserName",
     "websites": {
+      "0": "WS0Username",
       "1": "WS1Username",
       "2": "WS2Username"
     },
@@ -10,7 +11,10 @@
       "11": "SO11Username"
     }
   },
-  "payment/stripe/host": {
-    "default": "localhost:1234"
+  "payment/stripe/port": {
+    "default": 1234
+  },
+  "payment/stripe/enable": {
+    "websites": true
   }
 }

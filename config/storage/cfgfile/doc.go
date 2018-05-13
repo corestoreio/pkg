@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package cfgjson reads configuration values from a JSON file.
-package cfgjson
+// Package cfgfile reads configuration values from a JSON,XML,CSV or YAML file.
+package cfgfile
