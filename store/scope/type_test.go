@@ -267,7 +267,7 @@ func TestType_Pack(t *testing.T) {
 		{0, 0, 0},
 	}
 	for i, test := range tests {
-		assert.Exactly(t, test.want, test.s.Pack(test.id), "Index %d", i)
+		assert.Exactly(t, test.want, test.s.WithID(test.id), "Index %d", i)
 	}
 }
 

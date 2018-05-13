@@ -79,7 +79,7 @@ func TestMustNewStoreAU_Config(t *testing.T) {
 	}
 	assert.Exactly(t, "DefaultScopeString", haveS)
 
-	assert.Exactly(t, scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(2), scope.Store.Pack(5)}, sm.AllInvocations().ScopeIDs())
+	assert.Exactly(t, scope.TypeIDs{scope.DefaultTypeID, scope.Website.WithID(2), scope.Store.WithID(5)}, sm.AllInvocations().ScopeIDs())
 	assert.Exactly(t, 3, sm.AllInvocations().PathCount())
 
 }

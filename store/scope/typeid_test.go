@@ -332,9 +332,9 @@ func TestTypeID_ValidParent(t *testing.T) {
 		8:  {0, 0, true},
 		9:  {0, scope.DefaultTypeID, false},
 		10: {scope.DefaultTypeID, 0, true},
-		11: {scope.MakeTypeID(scope.Website, 0), scope.Store.Pack(0), false},
-		12: {scope.MakeTypeID(scope.Website, 1), scope.Store.Pack(2), false},
-		13: {scope.MakeTypeID(scope.Store, 1), scope.Type(5).Pack(2), false},
+		11: {scope.MakeTypeID(scope.Website, 0), scope.Store.WithID(0), false},
+		12: {scope.MakeTypeID(scope.Website, 1), scope.Store.WithID(2), false},
+		13: {scope.MakeTypeID(scope.Store, 1), scope.Type(5).WithID(2), false},
 	}
 	for i, test := range tests {
 		if have, want := test.c.ValidParent(test.p), test.want; have != want {
@@ -349,15 +349,15 @@ func TestTypeIDes_Lowest(t *testing.T) {
 		wantTypeID  scope.TypeID
 		wantErrKind errors.Kind
 	}{
-		0:  {scope.TypeIDs{scope.Store.Pack(1)}, scope.Store.Pack(1), errors.NoKind},
-		1:  {scope.TypeIDs{scope.Store.Pack(1), scope.Store.Pack(2)}, 0, errors.NotValid},
-		2:  {scope.TypeIDs{scope.Website.Pack(1), scope.Store.Pack(2)}, scope.Store.Pack(2), errors.NoKind},
-		3:  {scope.TypeIDs{scope.Website.Pack(1), scope.Store.Pack(2), scope.Store.Pack(2)}, scope.Store.Pack(2), errors.NoKind},
-		4:  {scope.TypeIDs{scope.Website.Pack(667), scope.Store.Pack(889), scope.Website.Pack(667), scope.Store.Pack(889)}, scope.Store.Pack(889), errors.NoKind},
-		5:  {scope.TypeIDs{scope.Store.Pack(2), scope.Website.Pack(345), scope.Website.Pack(346), scope.Store.Pack(2)}, scope.Store.Pack(2), errors.NoKind},
-		6:  {scope.TypeIDs{scope.Store.Pack(333), scope.Website.Pack(345), scope.Website.Pack(345), scope.Store.Pack(333)}, scope.Store.Pack(333), errors.NoKind},
-		7:  {scope.TypeIDs{scope.Store.Pack(3), scope.DefaultTypeID, scope.Store.Pack(3)}, scope.Store.Pack(3), errors.NoKind},
-		8:  {scope.TypeIDs{scope.Website.Pack(3), scope.DefaultTypeID, scope.Website.Pack(3)}, scope.Website.Pack(3), errors.NoKind},
+		0:  {scope.TypeIDs{scope.Store.WithID(1)}, scope.Store.WithID(1), errors.NoKind},
+		1:  {scope.TypeIDs{scope.Store.WithID(1), scope.Store.WithID(2)}, 0, errors.NotValid},
+		2:  {scope.TypeIDs{scope.Website.WithID(1), scope.Store.WithID(2)}, scope.Store.WithID(2), errors.NoKind},
+		3:  {scope.TypeIDs{scope.Website.WithID(1), scope.Store.WithID(2), scope.Store.WithID(2)}, scope.Store.WithID(2), errors.NoKind},
+		4:  {scope.TypeIDs{scope.Website.WithID(667), scope.Store.WithID(889), scope.Website.WithID(667), scope.Store.WithID(889)}, scope.Store.WithID(889), errors.NoKind},
+		5:  {scope.TypeIDs{scope.Store.WithID(2), scope.Website.WithID(345), scope.Website.WithID(346), scope.Store.WithID(2)}, scope.Store.WithID(2), errors.NoKind},
+		6:  {scope.TypeIDs{scope.Store.WithID(333), scope.Website.WithID(345), scope.Website.WithID(345), scope.Store.WithID(333)}, scope.Store.WithID(333), errors.NoKind},
+		7:  {scope.TypeIDs{scope.Store.WithID(3), scope.DefaultTypeID, scope.Store.WithID(3)}, scope.Store.WithID(3), errors.NoKind},
+		8:  {scope.TypeIDs{scope.Website.WithID(3), scope.DefaultTypeID, scope.Website.WithID(3)}, scope.Website.WithID(3), errors.NoKind},
 		9:  {scope.TypeIDs{scope.DefaultTypeID}, scope.DefaultTypeID, errors.NoKind},
 		10: {scope.TypeIDs{0, 1, 2}, scope.DefaultTypeID, errors.NoKind},
 		11: {nil, scope.DefaultTypeID, errors.NoKind},
@@ -383,12 +383,12 @@ func TestTypeIDs_TargetAndParents(t *testing.T) {
 	}{
 		0: {scope.TypeIDs{scope.DefaultTypeID, scope.DefaultTypeID}, scope.DefaultTypeID, scope.TypeIDs{scope.DefaultTypeID}},
 		1: {scope.TypeIDs{scope.DefaultTypeID, scope.DefaultTypeID, scope.DefaultTypeID}, scope.DefaultTypeID, scope.TypeIDs{scope.DefaultTypeID}},
-		2: {scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(3), scope.Store.Pack(2), scope.DefaultTypeID}, scope.DefaultTypeID, scope.TypeIDs{scope.DefaultTypeID}},
-		3: {scope.TypeIDs{scope.Store.Pack(1)}, scope.Store.Pack(1), scope.TypeIDs{scope.DefaultTypeID}},
-		4: {scope.TypeIDs{scope.Website.Pack(2), scope.Store.Pack(1)}, scope.Website.Pack(2), scope.TypeIDs{scope.DefaultTypeID}},
-		5: {scope.TypeIDs{scope.Store.Pack(1), scope.Website.Pack(2)}, scope.Store.Pack(1), scope.TypeIDs{scope.Website.Pack(2), scope.DefaultTypeID}},
-		6: {scope.TypeIDs{scope.Group.Pack(1), scope.Website.Pack(2)}, scope.Group.Pack(1), scope.TypeIDs{scope.Website.Pack(2), scope.DefaultTypeID}},
-		7: {scope.TypeIDs{scope.DefaultTypeID, scope.Group.Pack(1), scope.Website.Pack(2)}, scope.DefaultTypeID, scope.TypeIDs{scope.DefaultTypeID}},
+		2: {scope.TypeIDs{scope.DefaultTypeID, scope.Website.WithID(3), scope.Store.WithID(2), scope.DefaultTypeID}, scope.DefaultTypeID, scope.TypeIDs{scope.DefaultTypeID}},
+		3: {scope.TypeIDs{scope.Store.WithID(1)}, scope.Store.WithID(1), scope.TypeIDs{scope.DefaultTypeID}},
+		4: {scope.TypeIDs{scope.Website.WithID(2), scope.Store.WithID(1)}, scope.Website.WithID(2), scope.TypeIDs{scope.DefaultTypeID}},
+		5: {scope.TypeIDs{scope.Store.WithID(1), scope.Website.WithID(2)}, scope.Store.WithID(1), scope.TypeIDs{scope.Website.WithID(2), scope.DefaultTypeID}},
+		6: {scope.TypeIDs{scope.Group.WithID(1), scope.Website.WithID(2)}, scope.Group.WithID(1), scope.TypeIDs{scope.Website.WithID(2), scope.DefaultTypeID}},
+		7: {scope.TypeIDs{scope.DefaultTypeID, scope.Group.WithID(1), scope.Website.WithID(2)}, scope.DefaultTypeID, scope.TypeIDs{scope.DefaultTypeID}},
 		8: {nil, scope.DefaultTypeID, scope.TypeIDs{scope.DefaultTypeID}},
 		9: {scope.TypeIDs{scope.DefaultTypeID}, scope.DefaultTypeID, scope.TypeIDs{scope.DefaultTypeID}},
 	}
@@ -400,9 +400,9 @@ func TestTypeIDs_TargetAndParents(t *testing.T) {
 }
 
 func BenchmarkTypeIDs_TargetAndParents(b *testing.B) {
-	ids := scope.TypeIDs{scope.Group.Pack(1), scope.Website.Pack(2)}
-	target := scope.Group.Pack(1)
-	parents := scope.TypeIDs{scope.Website.Pack(2), scope.DefaultTypeID}
+	ids := scope.TypeIDs{scope.Group.WithID(1), scope.Website.WithID(2)}
+	target := scope.Group.WithID(1)
+	parents := scope.TypeIDs{scope.Website.WithID(2), scope.DefaultTypeID}
 	var haveT scope.TypeID
 	var haveP scope.TypeIDs
 	b.ReportAllocs()
@@ -421,9 +421,9 @@ func TestTypeIDs_String(t *testing.T) {
 		scope.TypeIDs
 		want string
 	}{
-		0: {scope.TypeIDs{scope.Store.Pack(1)}, "Type(Store) ID(1)"},
-		1: {scope.TypeIDs{scope.Website.Pack(2), scope.Store.Pack(1)}, "Type(Website) ID(2); Type(Store) ID(1)"},
-		2: {scope.TypeIDs{scope.DefaultTypeID, scope.Group.Pack(1), scope.Website.Pack(2)}, "Type(Default) ID(0); Type(Group) ID(1); Type(Website) ID(2)"},
+		0: {scope.TypeIDs{scope.Store.WithID(1)}, "Type(Store) ID(1)"},
+		1: {scope.TypeIDs{scope.Website.WithID(2), scope.Store.WithID(1)}, "Type(Website) ID(2); Type(Store) ID(1)"},
+		2: {scope.TypeIDs{scope.DefaultTypeID, scope.Group.WithID(1), scope.Website.WithID(2)}, "Type(Default) ID(0); Type(Group) ID(1); Type(Website) ID(2)"},
 		3: {nil, ""},
 		4: {scope.TypeIDs{scope.DefaultTypeID}, "Type(Default) ID(0)"},
 	}
@@ -476,9 +476,9 @@ func TestMakeTypeIDString(t *testing.T) {
 
 func TestTypeID_IsValid(t *testing.T) {
 	assert.NoError(t, scope.DefaultTypeID.IsValid())
-	assert.NoError(t, scope.Website.Pack(3).IsValid())
-	assert.NoError(t, scope.Group.Pack(4).IsValid())
-	assert.NoError(t, scope.Store.Pack(5).IsValid())
+	assert.NoError(t, scope.Website.WithID(3).IsValid())
+	assert.NoError(t, scope.Group.WithID(4).IsValid())
+	assert.NoError(t, scope.Store.WithID(5).IsValid())
 	assert.NoError(t, scope.TypeID(0).IsValid())
 	assert.True(t, errors.NotValid.Match(scope.TypeID(485968409).IsValid()))
 }

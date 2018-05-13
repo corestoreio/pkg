@@ -105,9 +105,9 @@ func (s Type) StrBytes() []byte {
 	return bDefault
 }
 
-// Pack calls MakeTypeID for your convenience. It packs the id into a new value
+// WithID calls MakeTypeID for your convenience. It packs the id into a new value
 // containing the Type and its ID ;-).
-func (s Type) Pack(id int64) TypeID {
+func (s Type) WithID(id int64) TypeID {
 	return MakeTypeID(s, id)
 }
 

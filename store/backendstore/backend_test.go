@@ -71,7 +71,7 @@ func TestConfiguration_AddressData(t *testing.T) {
 
 	ad, err := backend.StoreInformation(sg)
 	assert.NoError(t, err)
-	want := &backendstore.StoreInformation{ScopeID: scope.Store.Pack(4), Name: "CoreStore SA", Phone: "32608", Hours: "11am-7pm", Country: "Germany", Region: "Berlin", PostCode: "10100", City: "Shopville", StreetLine1: "Market Str 134", StreetLine2: "Booth 987", Vat: "DE12345678"}
+	want := &backendstore.StoreInformation{ScopeID: scope.Store.WithID(4), Name: "CoreStore SA", Phone: "32608", Hours: "11am-7pm", Country: "Germany", Region: "Berlin", PostCode: "10100", City: "Shopville", StreetLine1: "Market Str 134", StreetLine2: "Booth 987", Vat: "DE12345678"}
 	assert.Exactly(t, want, ad)
 }
 
