@@ -15,6 +15,11 @@
 package config
 
 import (
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
+
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/store/scope"
@@ -66,21 +71,16 @@ type Storager interface {
 // Safe for concurrent use.
 // TODO build in to support different environments for the same keys. E.g. different API credentials for external APIs (staging, production, etc).
 type Service struct {
-	level2 Storager
-	config Options
-
+	level2  Storager
+	envName string
+	config  Options
+	Log     log.Logger
 	// internal service to provide async pub/sub features while reading/writing
 	// config values.
-	*pubSub
-
-	// log can be set for debugging purpose. If nil, it panics. Default
-	// log.Blackhole with disabled debug and info logging. You should use the
-	// option function WithLogger because the logger gets also set to the
-	// internal pub/sub service. The exported Log can be used in external
-	// package to log within functional option calls. For example in
-	// config/storage/ccd.
-	log log.Logger
-
+	pubSub          *pubSub
+	hotReloadSignal chan os.Signal
+	loadDataFns     []LoadDataFn
+	envReplacer     *strings.Replacer
 	// TODO auto detect unmarshaller and get one from a pool pass the correct unmarshaler to the Value.
 }
 
@@ -93,7 +93,11 @@ func NewService(level2 Storager, o Options, fns ...LoadDataFn) (s *Service, err 
 	s = &Service{
 		level2: level2,
 		config: o,
-		log:    o.Log,
+		Log:    o.Log,
+	}
+
+	if err := s.setupEnv(); err != nil {
+		return nil, errors.WithStack(err)
 	}
 
 	if o.EnablePubSub {
@@ -102,17 +106,20 @@ func NewService(level2 Storager, o Options, fns ...LoadDataFn) (s *Service, err 
 			l = o.Log.With(log.Bool("pubSub", true))
 		}
 		s.pubSub = newPubSub(l)
-		go s.publish() // yes we know how to quit this goroutine, just call Service.Close()
+		go s.pubSub.publish() // yes we know how to quit this goroutine, just call Service.Close()
 	}
 
-	if err := s.LoadData(fns...); err != nil {
-		if s.pubSub != nil {
-			if err2 := s.Close(); err2 != nil {
-				// terminate publisher go routine and prevent leaking
-				return nil, errors.Wrap(err2, "[config] Service.Option.Close")
-			}
+	s.loadDataFns = append(s.loadDataFns, fns...) // make a copy of fns slice
+	if err := s.loadData(); err != nil {
+		if err2 := s.Close(); err2 != nil {
+			// terminate publisher go routine and prevent leaking
+			return nil, errors.WithStack(err2)
 		}
-		return nil, errors.Wrap(err, "[config] Service.Option")
+		return nil, errors.WithStack(err)
+	}
+
+	if err := s.shouldEnableHotReload(); err != nil {
+		return nil, errors.WithStack(err)
 	}
 
 	return s, nil
@@ -128,13 +135,92 @@ func MustNewService(level2 Storager, o Options, fns ...LoadDataFn) *Service {
 	return s
 }
 
-// Options applies service options.
-func (s *Service) LoadData(fns ...LoadDataFn) error {
-	for _, f := range fns {
-		if f != nil {
-			if err := f(s); err != nil {
-				return errors.Wrap(err, "[config] Service.Options")
+func (s *Service) setupEnv() error {
+	osEnvVar := DefaultOSEnvVariableName
+	if s.config.OSEnvVariableName != "" {
+		osEnvVar = s.config.OSEnvVariableName
+	}
+	if envVal := os.Getenv(osEnvVar); envVal != "" {
+		if !isLetter(envVal) {
+			return errors.NotValid.Newf("[config] Environment key %q contains invalid non-letter characters: %q", osEnvVar, envVal)
+		}
+		s.envName = envVal
+	}
+
+	if s.envName == "" {
+		s.envName = s.config.EnvName
+	}
+	if s.envName != "" {
+		s.envReplacer = strings.NewReplacer(EnvNamePlaceHolder, s.EnvName())
+	}
+	return nil
+}
+
+func (s *Service) shouldEnableHotReload() error {
+	if !s.config.EnableHotReload {
+		return nil
+	}
+
+	s.hotReloadSignal = make(chan os.Signal, 1)
+	signals := []os.Signal{syscall.SIGUSR2}
+	if len(s.config.HotReloadSignals) > 0 {
+		signals = append(signals[:0], s.config.HotReloadSignals...)
+	}
+
+	signal.Notify(s.hotReloadSignal, signals...)
+
+	go func() {
+		for sgnl := range s.hotReloadSignal {
+			if s.config.Log != nil && s.config.Log.IsDebug() {
+				s.config.Log.Debug("config.Service.HotReload.Signal", log.String("signal", sgnl.String()))
 			}
+			err := s.loadData()
+			if s.config.Log != nil && s.config.Log.IsInfo() && err != nil {
+				s.config.Log.Debug("config.Service.HotReload.LoadingError", log.String("signal", sgnl.String()), log.Err(err))
+			}
+		}
+	}()
+
+	return nil
+}
+
+// loadData used for hot reloading and runs also within another goroutine but
+// reads only from *Service.
+func (s *Service) loadData() error {
+	for _, fn := range s.loadDataFns {
+		if err := fn(s); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return nil
+}
+
+// EnvName returns the environment name to which this service is bound to.
+func (s *Service) EnvName() string {
+	return s.envName
+}
+
+// ReplaceEnvName replaces the occurrence of the value of constant
+// EnvNamePlaceHolder with the current configured environment name. If no
+// environment name has been defined it returns the argument unchanged.
+func (s *Service) ReplaceEnvName(str string) string {
+	if s.envReplacer == nil {
+		return str
+	}
+	return s.envReplacer.Replace(str)
+}
+
+// Close closes and terminates the internal goroutines and connections.
+func (s *Service) Close() error {
+
+	if s.config.EnableHotReload {
+		signal.Stop(s.hotReloadSignal)
+		close(s.hotReloadSignal)
+	}
+
+	if s.config.EnablePubSub {
+		if err := s.pubSub.Close(); err != nil {
+			return errors.WithStack(err)
 		}
 	}
 	return nil
@@ -194,7 +280,7 @@ func (s *Service) Set(p *Path, v []byte) error {
 		return errors.Wrap(err, "[config] Service.level2.Set")
 	}
 	if s.pubSub != nil {
-		s.sendMsg(*p)
+		s.pubSub.sendMsg(*p)
 	}
 	return nil
 }
@@ -255,6 +341,30 @@ func (s *Service) Get(p *Path) (v *Value) {
 	return v
 }
 
+// Subscribe adds a Subscriber to be called when a write event happens. See
+// interface Subscriber for a detailed description. Route can be any kind of
+// level and can contain StrScope and Scope ID. Valid routes can be for example:
+//		- StrScope/ID/currency/options/base
+//		- StrScope/ID/currency/options
+//		- StrScope/ID/currency
+//		- currency/options/base
+//		- currency/options
+//		- currency
+func (s *Service) Subscribe(path string, mr MessageReceiver) (subscriptionID int, err error) {
+	if s.pubSub == nil {
+		return 0, errors.NotImplemented.Newf("[config] PubSub not enabled")
+	}
+	return s.pubSub.Subscribe(path, mr)
+}
+
+// Unsubscribe removes a subscriber with a specific ID.
+func (s *Service) Unsubscribe(subscriptionID int) error {
+	if s.pubSub == nil {
+		return nil
+	}
+	return s.pubSub.Unsubscribe(subscriptionID)
+}
+
 // Scoped is equal to Getter but not an interface and the underlying
 // implementation takes care of providing the correct scope: default, website or
 // store and bubbling up the scope chain from store -> website -> default if a
@@ -282,6 +392,9 @@ type Scoped struct {
 	WebsiteID int64
 	StoreID   int64
 }
+
+// TODO: Scoped should support websites/0/ and stores/0/ to provide a top level
+// websites or stores specific configuration.
 
 // NewScoped instantiates a ScopedGetter implementation.  Getter
 // specifies the root Getter which does not know about any scope.

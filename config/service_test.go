@@ -16,7 +16,11 @@ package config_test
 
 import (
 	"bytes"
+	"os"
+	"strconv"
 	"strings"
+	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 
@@ -27,6 +31,7 @@ import (
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/sync/bgwork"
 	"github.com/corestoreio/pkg/util/conv"
+	"github.com/fortytw2/leaktest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -512,4 +517,54 @@ func TestService_Scoped_LRU_Parallel(t *testing.T) {
 		}
 
 	})
+}
+
+func TestService_EnvName_From_OSEnv(t *testing.T) {
+
+	t.Run("success", func(t *testing.T) {
+		defer leaktest.Check(t)()
+
+		assert.NoError(t, os.Setenv(config.DefaultOSEnvVariableName, "STAGING"))
+		defer func() { assert.NoError(t, os.Unsetenv(config.DefaultOSEnvVariableName)) }()
+
+		srv := config.MustNewService(storage.NewMap(), config.Options{})
+		defer func() { assert.NoError(t, srv.Close()) }()
+
+		assert.Exactly(t, "STAGING", srv.EnvName())
+		assert.Exactly(t, "__STAGING__", srv.ReplaceEnvName("__"+config.EnvNamePlaceHolder+"__"))
+	})
+
+	t.Run("env does contain non-letters", func(t *testing.T) {
+		assert.NoError(t, os.Setenv(config.DefaultOSEnvVariableName, "STAGING"))
+		defer func() { assert.NoError(t, os.Unsetenv(config.DefaultOSEnvVariableName)) }()
+
+		srv, err := config.NewService(storage.NewMap(), config.Options{})
+		assert.Nil(t, srv)
+		assert.True(t, errors.NotValid.Match(err), "%+v", err)
+		assert.EqualError(t, err, "[config] Environment key \"CS_ENV\" contains invalid non-letter characters: \"STAG\\uf8ffING\"")
+	})
+}
+
+func TestHotReload(t *testing.T) {
+	defer leaktest.Check(t)()
+
+	p := config.MustNewPath("ww/ee/rr")
+	var reloadCounter = new(int64)
+	srv := config.MustNewService(storage.NewMap(), config.Options{
+		EnableHotReload:  true,
+		HotReloadSignals: []os.Signal{syscall.SIGUSR1},
+	},
+		func(s *config.Service) error {
+			return s.Set(p, strconv.AppendInt(nil, atomic.AddInt64(reloadCounter, 1), 10))
+		},
+	)
+	defer func() { assert.NoError(t, srv.Close()) }()
+
+	assert.Exactly(t, `"1"`, srv.Get(p).String())
+
+	syscall.Kill(syscall.Getpid(), syscall.SIGUSR1)
+
+	time.Sleep(time.Millisecond * 2)
+	assert.Exactly(t, `"2"`, srv.Get(p).String())
+
 }

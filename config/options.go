@@ -15,8 +15,18 @@
 package config
 
 import (
+	"os"
+	"unicode"
+
 	"github.com/corestoreio/log"
 )
+
+// EnvNamePlaceHolder replaces in a file name or pattern argument applied to a
+// WithFiles, WithFile or WithGlob function with the current environment name of
+// *config.Service. You can load environment dependent configuration files.
+const EnvNamePlaceHolder = `{CS_ENV}`
+
+const DefaultOSEnvVariableName = `CS_ENV`
 
 // Options applies configurations to the NewService function. Used mainly by external
 // packages for providing different storage engines.
@@ -27,12 +37,37 @@ type Options struct {
 	Level1       Storager
 	Log          log.Logger
 	EnablePubSub bool
-	// EnvironmentKey loads a string from the environment to use it as a prefix
-	// for the path. For example different payment gateways and access
-	// credentials for a payment method on STAGING or PRODUCTION systems.
-	EnvironmentKey string
+	// OSEnvVariableName loads a string from an applied environment variable to
+	// use it as a prefix for the Path type and when loading configuration files
+	// as part of their filename or path (see cfgfile.EnvNamePlaceHolder). For
+	// example different payment gateways and access credentials for a payment
+	// method on STAGING or PRODUCTION systems.
+	OSEnvVariableName string
+	// EnvName defines the current name of the environment directly instead of
+	// loading it from an operating system environment variable. It gets used as
+	// a prefix for the Path type or as part of the directory or filename when
+	// loading configuration files (see cfgfile.EnvNamePlaceHolder).
+	EnvName string
+
+	// EnableHotReload if the Service receives an OS signal, it triggers a hot
+	// reload of the cached functions of type LoadDataFn. Errors during hot
+	// reloading do not trigger an exit of the config.Service.
+	EnableHotReload bool
+	// HotReloadSignals specifies custom signals to listen to. Defaults to
+	// syscall.SIGUSR2
+	HotReloadSignals []os.Signal
 }
 
 // LoadDataFn allows other storage backends to pump their data into the
-// config.Service during or after initialization.
+// config.Service during or after initialization via an OS signal and hot
+// reloading.
 type LoadDataFn func(*Service) error
+
+func isLetter(str string) bool {
+	for _, r := range str {
+		if !unicode.IsLetter(r) {
+			return false
+		}
+	}
+	return true
+}
