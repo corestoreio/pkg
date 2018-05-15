@@ -1,0 +1,27 @@
+vendor/bar/environment:
+  default:
+    0: 192.168.33.1
+
+google/analytics/active:
+  websites:
+    1: 0
+    2: false
+
+#    just a comment
+
+dev/log/active:
+  default:
+    0: 1
+dev/js/merge_files:
+  stores:
+    1: 1.001
+    2: 2.002
+
+web/unsecure/base_url:
+  default:
+    0:  "http://eshop.dev/"
+  stores:
+    2: "http://eshop.dev/de-de/"
+    6: "http://eshop.dev/ch-de/"
+    7: "http://eshop.dev/ch-fr/"
+    8: "http://eshop.dev/ch-it/"

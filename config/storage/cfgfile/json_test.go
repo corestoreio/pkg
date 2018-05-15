@@ -32,7 +32,7 @@ func TestWithLoadJSON(t *testing.T) {
 
 		cfgSrv, err := config.NewService(
 			storage.NewMap(), config.Options{},
-			cfgfile.WithLoadJSON("testdata/example.json"),
+			cfgfile.WithLoadJSON(cfgfile.WithFile("testdata", "example.json")),
 		)
 		if err != nil {
 			t.Fatalf("%+v", err)
@@ -54,7 +54,7 @@ func TestWithLoadJSON(t *testing.T) {
 		return func(t *testing.T) {
 			cfgSrv, err := config.NewService(
 				storage.NewMap(), config.Options{},
-				cfgfile.WithLoadJSON("testdata/"+file),
+				cfgfile.WithLoadJSON(cfgfile.WithFile("testdata", file)),
 			)
 			assert.True(t, errKind.Match(err), "%+v", err)
 			assert.Nil(t, cfgSrv)
@@ -63,7 +63,7 @@ func TestWithLoadJSON(t *testing.T) {
 		}
 	}
 	t.Run("malformed_v1", runner("malformed_v1.json", errors.CorruptData,
-		"[cfgjson] Unexpected data in \"payment/stripe/port\""))
+		"[cfgfile] Unexpected data in \"payment/stripe/port\""))
 
 	t.Run("malformed_v2_dataIF", runner("malformed_v2_dataIF.json", errors.CorruptData,
 		"Unable to cast map[string]interface {}{} to []byte"))

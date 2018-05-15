@@ -12,5 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package cfgfile reads configuration values from a JSON,XML,CSV or YAML file.
+// Package cfgfile reads configuration values from JSON,XML,CSV or YAML files.
+//
+// Supports environment names in a file name.
 package cfgfile
