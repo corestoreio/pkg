@@ -25,8 +25,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var _ config.Storager = (*cfgbigcache.Storage)(nil)
-
 func TestCacheGet(t *testing.T) {
 
 	bgc, err := cfgbigcache.New(bigcache.Config{
@@ -47,15 +45,15 @@ func TestCacheGet(t *testing.T) {
 		{scope.Store.WithID(3), "aa/bb/cc", []byte(`DataXYA`), nil, nil},
 	}
 	for idx, test := range tests {
-
-		haveSetErr := bgc.Set(test.scp, test.path, test.val)
+		p := config.MustNewPathWithScope(test.scp, test.path)
+		haveSetErr := bgc.Set(p, test.val)
 		if test.wantSetErr != nil {
 			assert.EqualError(t, haveSetErr, test.wantSetErr.Error(), "Index %d", idx)
 		} else {
 			assert.NoError(t, haveSetErr, "Index %d", idx)
 		}
 
-		haveData, haveOK, haveGetErr := bgc.Get(test.scp, test.path)
+		haveData, haveOK, haveGetErr := bgc.Get(p)
 		if test.wantGetErr != nil {
 			assert.EqualError(t, haveGetErr, test.wantGetErr.Error(), "Index %d", idx)
 			assert.False(t, haveOK)
@@ -74,7 +72,7 @@ func TestCacheGetNotFound(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	haveVal, haveFound, haveGetErr := sc.Get(scope.DefaultTypeID, "aa/bb/cc")
+	haveVal, haveFound, haveGetErr := sc.Get(config.MustNewPath("aa/bb/cc"))
 	assert.False(t, haveFound)
 	assert.NoError(t, haveGetErr)
 	assert.Empty(t, haveVal)

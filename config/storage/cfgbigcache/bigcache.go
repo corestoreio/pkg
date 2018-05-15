@@ -15,54 +15,40 @@
 package cfgbigcache
 
 import (
-	"strings"
-
 	"github.com/allegro/bigcache"
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/config"
 )
 
-const kvMapScopeSep = '~'
-
-// Storage wrapper around the freecache.Cache type
-type Storage struct {
-	Cache *bigcache.BigCache
+type storage struct {
+	bc *bigcache.BigCache
 }
 
 // New creates a new cache with a minimum size set to 512KB.
 // If the size is set relatively large, you should call
 // `debug.SetGCPercent()`, set it to a much smaller value
 // to limit the memory consumption and GC pause time.
-func New(config bigcache.Config) (*Storage, error) {
+func New(config bigcache.Config) (config.Storager, error) {
 	bc, err := bigcache.NewBigCache(config)
 	if err != nil {
-		return nil, errors.Fatal.New(err, "[bigcache] NewBigCache")
+		return nil, errors.Fatal.New(err, "[cfgbigcache] NewBigCache")
 	}
-
-	return &Storage{
-		Cache: bc,
+	return &storage{
+		bc: bc,
 	}, nil
 }
 
 // Set writes a key with its value into the storage. The value
 // gets converted to a byte slice.
-func (s *Storage) Set(scp scope.TypeID, path string, value []byte) error {
-	var key strings.Builder
-	key.WriteString(scp.ToIntString())
-	key.WriteByte(kvMapScopeSep)
-	key.WriteString(path)
-	return s.Cache.Set(key.String(), value)
+func (s *storage) Set(p *config.Path, value []byte) error {
+	return s.bc.Set(p.String(), value)
 }
 
 // Get returns a value from the cache.
-func (s *Storage) Get(scp scope.TypeID, path string) (v []byte, found bool, err error) {
-	var key strings.Builder
-	key.WriteString(scp.ToIntString())
-	key.WriteByte(kvMapScopeSep)
-	key.WriteString(path)
+func (s *storage) Get(p *config.Path) (v []byte, found bool, err error) {
 
-	val, err := s.Cache.Get(key.String())
-	_, isNotFound := (err).(*bigcache.EntryNotFoundError)
+	val, err := s.bc.Get(p.String())
+	_, isNotFound := err.(*bigcache.EntryNotFoundError)
 	if err != nil && !isNotFound {
 		return nil, false, err
 	}
