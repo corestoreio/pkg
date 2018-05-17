@@ -120,7 +120,8 @@ func (v *Value) init() (found bool, err error) {
 }
 
 // String implements fmt.Stringer and returns the textual representation and Go
-// syntax escaped of the underlying data.
+// syntax escaped of the underlying data. It might print the error in the
+// string.
 func (v *Value) String() string {
 	if found, err := v.init(); err != nil {
 		return fmt.Sprintf("[config] Value: %+v", err)
@@ -133,13 +134,19 @@ func (v *Value) String() string {
 	return fmt.Sprintf("%q", v.data)
 }
 
-// WriteTo writes the converted data to w.
+// WriteTo writes the converted raw data to w.
 func (v *Value) WriteTo(w io.Writer) (n int64, err error) {
 	if _, err = v.init(); err != nil {
 		return 0, errors.WithStack(err)
 	}
 	nw, err := w.Write(v.data)
 	return int64(nw), err
+}
+
+// UnsafeStr same as Str but ignores errors.
+func (v *Value) UnsafeStr() (s string) {
+	s, _, _ = v.Str()
+	return
 }
 
 // Str returns the underlying value as a string. Ok is true when data slice
@@ -224,12 +231,24 @@ func (v *Value) Unmarshal(fn func(data []byte, vPtr interface{}) error, vPtr int
 	return fn(v.data, vPtr)
 }
 
+// UnsafeBool same as Bool but ignores errors.
+func (v *Value) UnsafeBool() (val bool) {
+	val, _, _ = v.Bool()
+	return
+}
+
 // Bool converts the underlying converted data into the final type.
 func (v *Value) Bool() (val bool, ok bool, err error) {
 	if ok, err = v.init(); err != nil || !ok {
 		return false, false, errors.WithStack(err)
 	}
 	return byteconv.ParseBool(v.data)
+}
+
+// UnsafeFloat64 same as Float64 but ignores errors.
+func (v *Value) UnsafeFloat64() (val float64) {
+	val, _, _ = v.Float64()
+	return
 }
 
 // Float64 converts the underlying converted data into the final type.
@@ -286,6 +305,12 @@ func (v *Value) Float64s(ret ...float64) (_ []float64, err error) {
 	return ret, nil
 }
 
+// UnsafeInt same as Int but ignores all errors.
+func (v *Value) UnsafeInt() (val int) {
+	val, _, _ = v.Int()
+	return
+}
+
 // Int converts the underlying converted data into the final type.
 func (v *Value) Int() (val int, ok bool, err error) {
 	if ok, err = v.init(); err != nil || !ok {
@@ -332,6 +357,12 @@ func (v *Value) Ints(ret ...int) (_ []int, err error) {
 	}
 
 	return ret, nil
+}
+
+// UnsafeInt64 same as Int64 but ignores all errors
+func (v *Value) UnsafeInt64() (val int64) {
+	val, _, _ = v.Int64()
+	return
 }
 
 // Int64 converts the underlying converted data into the final type.
@@ -381,6 +412,12 @@ func (v *Value) Int64s(ret ...int64) (_ []int64, err error) {
 	return ret, nil
 }
 
+// UnsafeUint64 same as Uint64 but ignores all errors.
+func (v *Value) UnsafeUint64() (val uint64) {
+	val, _, _ = v.Uint64()
+	return
+}
+
 // Uint64 converts the underlying converted data into the final type.
 func (v *Value) Uint64() (_ uint64, ok bool, err error) {
 	if ok, err = v.init(); err != nil || !ok {
@@ -425,6 +462,12 @@ func (v *Value) Uint64s(ret ...uint64) (_ []uint64, err error) {
 		}
 	}
 	return ret, nil
+}
+
+// UnsafeTime same as Time but ignores all errors.
+func (v *Value) UnsafeTime() (t time.Time) {
+	t, _, _ = v.Time()
+	return
 }
 
 // Time parses a MySQL/MariaDB like time format:
@@ -483,6 +526,12 @@ func (v *Value) Times(ret ...time.Time) (t []time.Time, err error) {
 		ret = append(ret, t)
 	}
 	return ret, nil
+}
+
+// UnsafeDuration same as Duration but ignores all errors.
+func (v *Value) UnsafeDuration() (d time.Duration) {
+	d, _, _ = v.Duration()
+	return
 }
 
 // Duration converts the underlying converted data into the final type.

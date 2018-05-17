@@ -473,3 +473,47 @@ func TestValue(t *testing.T) {
 		assert.True(t, v.IsEqual(d))
 	})
 }
+
+func TestValue_Unsafe(t *testing.T) {
+	t.Parallel()
+	t.Run("bool", func(t *testing.T) {
+		assert.True(t, NewValue([]byte(`1`)).UnsafeBool())
+		assert.False(t, NewValue([]byte(`0`)).UnsafeBool())
+		assert.False(t, NewValue([]byte(``)).UnsafeBool())
+		assert.False(t, NewValue(nil).UnsafeBool())
+	})
+	t.Run("string", func(t *testing.T) {
+		assert.Exactly(t, `Ups`, NewValue([]byte(`Ups`)).UnsafeStr())
+		assert.Exactly(t, ``, NewValue(nil).UnsafeStr())
+	})
+	t.Run("float64", func(t *testing.T) {
+		assert.Exactly(t, 2.718281, NewValue([]byte(`2.718281`)).UnsafeFloat64())
+		assert.Exactly(t, 0.0, NewValue([]byte(`=`)).UnsafeFloat64())
+		assert.Exactly(t, 0.0, NewValue(nil).UnsafeFloat64())
+	})
+	t.Run("int", func(t *testing.T) {
+		assert.Exactly(t, 2718281, NewValue([]byte(`2718281`)).UnsafeInt())
+		assert.Exactly(t, 0, NewValue([]byte(`=`)).UnsafeInt())
+		assert.Exactly(t, 0, NewValue(nil).UnsafeInt())
+	})
+	t.Run("int64", func(t *testing.T) {
+		assert.Exactly(t, int64(2718281), NewValue([]byte(`2718281`)).UnsafeInt64())
+		assert.Exactly(t, int64(0), NewValue([]byte(`=`)).UnsafeInt64())
+		assert.Exactly(t, int64(0), NewValue(nil).UnsafeInt64())
+	})
+	t.Run("uint64", func(t *testing.T) {
+		assert.Exactly(t, uint64(2718281), NewValue([]byte(`2718281`)).UnsafeUint64())
+		assert.Exactly(t, uint64(0), NewValue([]byte(`=`)).UnsafeUint64())
+		assert.Exactly(t, uint64(0), NewValue(nil).UnsafeUint64())
+	})
+	t.Run("time", func(t *testing.T) {
+		assert.Exactly(t, time.Date(2018, 4, 2, 0, 0, 0, 0, time.UTC), NewValue([]byte(`2018-04-02`)).UnsafeTime())
+		assert.Exactly(t, time.Time{}, NewValue([]byte(`12018-04-02`)).UnsafeTime())
+		assert.Exactly(t, time.Time{}, NewValue(nil).UnsafeTime())
+	})
+	t.Run("duration", func(t *testing.T) {
+		assert.Exactly(t, time.Duration(302000000000), NewValue([]byte(`5m2s`)).UnsafeDuration())
+		assert.Exactly(t, time.Duration(0), NewValue(nil).UnsafeDuration())
+		assert.Exactly(t, time.Duration(0), NewValue([]byte(`A`)).UnsafeDuration())
+	})
+}
