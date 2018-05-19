@@ -33,11 +33,11 @@ const SlashSeparator = "__"
 // a configuration value.
 const Prefix = "CONFIG" + SlashSeparator
 
-const strSep = string(config.Separator)
+const strSep = string(config.PathSeparator)
 
 var (
-	replTo   = strings.NewReplacer(string(config.Separator), SlashSeparator, scope.StrDefault.String()+strSep+"0"+strSep, "")
-	replFrom = strings.NewReplacer(SlashSeparator, string(config.Separator))
+	replTo   = strings.NewReplacer(string(config.PathSeparator), SlashSeparator, scope.StrDefault.String()+strSep+"0"+strSep, "")
+	replFrom = strings.NewReplacer(SlashSeparator, string(config.PathSeparator))
 )
 
 // ToEnvVar converts a Path to a valid environment key. Returns an empty string
@@ -63,7 +63,7 @@ func FromEnvVar(prefix, envVar string) (*config.Path, error) {
 	}
 	envVar = strings.ToLower(replFrom.Replace(envVar))
 
-	slashes := strings.Count(envVar, string(config.Separator))
+	slashes := strings.Count(envVar, string(config.PathSeparator))
 	if slashes == 2 {
 		// Looks like: etcd/credentials/user_name for default scope
 		return config.NewPathWithScope(scope.DefaultTypeID, envVar)

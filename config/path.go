@@ -21,7 +21,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 	"unicode"
 	"unicode/utf8"
 
@@ -32,43 +31,48 @@ import (
 	"github.com/minio/highwayhash"
 )
 
-// TODO add text and binary un/marshaler
-
-// Levels defines how many parts are at least in a path.
+// PathLevels defines how many parts are at least in a path.
 // Like a/b/c for 3 parts. And 5 for a fully qualified path.
-const Levels = 3
+const PathLevels = 3
 
-// realLevels maximum numbers of supported separators. used as array initializer.
+// maxLevels maximum numbers of supported separators. used as array initializer.
 const maxLevels = 8 // up to 8. just a guess
 
-// Separator used in the database table core_config_data and in config.Service
+// PathSeparator used in the database table core_config_data and in config.Service
 // to separate the path parts.
-const Separator byte = '/'
+const PathSeparator byte = '/'
 
-const sSeparator = "/"
+var (
+	bSeparator    = []byte(sPathSeparator)
+	errRouteEmpty = errors.Empty.Newf("[config] Route is empty")
+)
 
-var bSeparator = []byte(sSeparator)
-
-const errIncorrectPathTpl = "[config] Invalid Path %q. Either to short or missing path separator."
-
-const errIncorrectPositionTpl = "[config] Position '%d' does not exists"
-
-const errRouteInvalidBytesTpl = "[config] Route contains invalid bytes %q which are not runes."
-
-var errRouteEmpty = errors.Empty.Newf("[config] Route is empty")
+const (
+	sPathSeparator          = "/"
+	errIncorrectPathTpl     = "[config] Invalid Path %q. Either to short or missing path separator."
+	errIncorrectPositionTpl = "[config] Position '%d' does not exists"
+	errRouteInvalidBytesTpl = "[config] Route contains invalid bytes %q which are not runes."
+)
 
 // Path represents a configuration path bound to a scope. A Path is not safe for
-// concurrent use.
+// concurrent use. Bind* method receivers always return a new copy of a path.
 type Path struct {
-	envPrefix string
-	route     string
+	route string
 	// ScopeID a route is bound to this Scope and its ID.
 	ScopeID scope.TypeID
 	// routeValidated internal flag to avoid running twice the route valid
 	// process.
 	routeValidated bool
-	TTL            time.Duration // for later use when the LRU cache becomes time sensitive, like the one from karlseguin
-	UseEnvPrefix   bool
+	// UseEnvSuffix if enabled the Path has environment awareness. An
+	// environment comes from the *Service type and defines for example
+	// PRODUCTION, TEST, CI or STAGING. The final path will use this prefix to
+	// distinguish between the environments. Environment awareness should be
+	// added to Paths for e.g. payment credentials or order export access data.
+	UseEnvSuffix bool
+	// envSuffix gets set by the *Service type if the service runs environment
+	// aware and a Path has set UseEnvSuffix to true.
+	envSuffix string
+	//TTL            time.Duration // for later use when the LRU cache becomes time sensitive, like the one from karlseguin
 }
 
 // NewPathWithScope creates a new validate Path with a custom scope.
@@ -135,9 +139,35 @@ func (p Path) BindDefault() *Path {
 	return &p
 }
 
-func (p *Path) WithEnvPrefix() *Path {
-	p.UseEnvPrefix = true
+// WithEnvSuffix enables that this Path has environment awareness. An
+// environment comes from the *Service type and defines for example PRODUCTION,
+// TEST, CI or STAGING. The final path will use this prefix to distinguish
+// between the environments. Environment awareness should be added to Paths for
+// e.g. payment credentials or order export access data.
+func (p *Path) WithEnvSuffix() *Path {
+	p.UseEnvSuffix = true
 	return p
+}
+
+func (p *Path) writeEnvSuffix(buf *bytes.Buffer) {
+	if p.UseEnvSuffix && p.envSuffix != "" {
+		buf.WriteByte(PathSeparator)
+		buf.WriteString(p.envSuffix)
+	}
+}
+
+func (p *Path) stripEnvSuffixStr(r string) string {
+	if p.envSuffix != "" && strings.HasSuffix(r, p.envSuffix) {
+		r = r[:len(r)-len(p.envSuffix)-1] // 1 == PathSeparator length
+	}
+	return r
+}
+
+func (p *Path) stripEnvSuffixByte(r []byte) []byte {
+	if p.envSuffix != "" && bytes.HasSuffix(r, []byte(p.envSuffix)) {
+		r = r[:len(r)-len(p.envSuffix)-1] // 1 == PathSeparator length
+	}
+	return r
 }
 
 // String returns a fully qualified path. Errors get logged if debug mode
@@ -150,11 +180,6 @@ func (p *Path) String() string {
 		return fmt.Sprintf("[config] Error: %+v", err)
 	}
 	return buf.String()
-}
-
-// GoString returns the internal representation of Path
-func (p *Path) GoString() string {
-	return fmt.Sprintf("config.NewPathWithScope(%d,%q)", p.ScopeID, p.route)
 }
 
 // FQ returns the fully qualified route. Safe for further processing of the
@@ -183,14 +208,15 @@ func (p *Path) AppendFQ(buf *bytes.Buffer) error {
 	}
 
 	buf.Write(scp.StrBytes())
-	buf.WriteByte(Separator)
+	buf.WriteByte(PathSeparator)
 
 	bufRaw := buf.Bytes()
 	bufRaw = strconv.AppendInt(bufRaw, id, 10)
 	buf.Reset()
 	buf.Write(bufRaw)
-	buf.WriteByte(Separator)
+	buf.WriteByte(PathSeparator)
 	buf.WriteString(p.route)
+	p.writeEnvSuffix(buf)
 	return nil
 }
 
@@ -204,14 +230,15 @@ func (p *Path) AppendFQ(buf *bytes.Buffer) error {
 // pointer because it calls internally Reset.
 func (p *Path) ParseFQ(fqPath string) error {
 	p.Reset()
+	fqPath = p.stripEnvSuffixStr(fqPath)
 	// this is the most fast version I come up with.
 	// moving from strings to bytes was even slower despite inline
 	// th parse int64 function
-	if !(strings.Count(fqPath, sSeparator) >= Levels+1) {
+	if !(strings.Count(fqPath, sPathSeparator) >= PathLevels+1) {
 		return errors.NotValid.Newf("[config] Incorrect fully qualified path: %q. Expecting: strScope/ID/%s", fqPath, fqPath)
 	}
 
-	fi := strings.Index(fqPath, sSeparator)
+	fi := strings.Index(fqPath, sPathSeparator)
 	scopeStr := fqPath[:fi]
 
 	if !scope.Valid(scopeStr) {
@@ -219,7 +246,7 @@ func (p *Path) ParseFQ(fqPath string) error {
 	}
 
 	fqPath = fqPath[fi+1:]
-	fi = strings.Index(fqPath, sSeparator)
+	fi = strings.Index(fqPath, sPathSeparator)
 	scopeID, err := strconv.ParseInt(fqPath[:fi], 10, 64)
 	if err != nil {
 		return errors.NotValid.New(err, "[config] ParseInt with value: %q", fqPath[:fi])
@@ -228,7 +255,6 @@ func (p *Path) ParseFQ(fqPath string) error {
 	p.route = fqPath[fi+1:]
 	p.ScopeID = scope.MakeTypeID(scope.FromString(scopeStr), scopeID)
 	p.routeValidated = false
-
 	return p.IsValid()
 }
 
@@ -237,6 +263,7 @@ func (p *Path) ParseFQ(fqPath string) error {
 // uint value.
 func (p *Path) ParseStrings(scp, id, route string) error {
 	p.Reset()
+	route = p.stripEnvSuffixStr(route)
 	if !scope.Valid(scp) {
 		return errors.NotValid.Newf("[config] %q Invalid scope: %q", route, scp)
 	}
@@ -274,7 +301,7 @@ func (p *Path) IsValid() error {
 		}
 		for _, rn := range p.route {
 			switch {
-			case rn == rune(Separator), rn == '_':
+			case rn == rune(PathSeparator), rn == '_':
 				// ok
 			case unicode.IsDigit(rn), unicode.IsLetter(rn), unicode.IsNumber(rn):
 				// ok
@@ -295,7 +322,7 @@ func (p *Path) IsValid() error {
 			return errors.NotValid.Newf("[config] Route cannot start with: %q", scope.StrStores.String())
 		}
 	}
-	if seps < Levels-1 || utf8.RuneCountInString(p.route) < 8 /*aa/bb/cc*/ {
+	if seps < PathLevels-1 || utf8.RuneCountInString(p.route) < 8 /*aa/bb/cc*/ {
 		return errors.NotValid.Newf(errIncorrectPathTpl, p.route)
 	}
 	return nil
@@ -321,43 +348,8 @@ func (p *Path) Reset() *Path {
 	p.route = ""
 	p.ScopeID = 0
 	p.routeValidated = false
+	p.UseEnvSuffix = false
 	return p
-}
-
-// Append adds other partial routes with a Separator between. After the partial
-// routes have been added a validation check will NOT be done.
-// It returns a new object and does not modify the current one.
-//
-//		a := config.MustNewPath(`catalog/product`)
-//		b := config.MustNewPath(`enable_flat_tables`)
-//		if err := a.Append(b); err != nil {
-//			panic(err)
-//		}
-//		println(a.String())
-//		// Should print: catalog/product/enable_flat_tables
-func (p *Path) Append(routes ...string) *Path {
-
-	if i1, i2 := strings.LastIndexByte(p.route, Separator), len(p.route)-1; i1 > 0 && i2 > 0 && i1 == i2 {
-		p.route = p.route[:len(p.route)-1] // strip last Separator
-	}
-
-	var buf strings.Builder
-	buf.WriteString(p.route)
-
-	i := 0
-	for _, r := range routes {
-		if r != "" {
-			if len(p.route) > 0 && len(r) > 0 && r[0] != Separator {
-				buf.WriteByte(Separator)
-			}
-			buf.WriteString(r)
-			i++
-		}
-	}
-	p2 := new(Path)
-	*p2 = *p
-	p2.route = buf.String()
-	return p2
 }
 
 // MarshalText implements interface encoding.TextMarshaler.
@@ -374,7 +366,8 @@ func (p *Path) MarshalText() (text []byte, err error) {
 // Error behaviour: NotValid, Empty.
 func (p *Path) UnmarshalText(txt []byte) error {
 	p.Reset()
-	if !(bytes.Count(txt, bSeparator) >= Levels+1) {
+	txt = p.stripEnvSuffixByte(txt)
+	if !(bytes.Count(txt, bSeparator) >= PathLevels+1) {
 		return errors.NotValid.Newf("[config] Incorrect fully qualified path: %q. Expecting: strScope/ID/%s", txt, txt)
 	}
 
@@ -406,6 +399,7 @@ func (p *Path) MarshalBinary() (data []byte, err error) {
 	buf.Reset()
 	buf.Write(sBuf[:])
 	buf.WriteString(p.route)
+	p.writeEnvSuffix(&buf)
 	return buf.Bytes(), nil
 }
 
@@ -417,7 +411,7 @@ func (p *Path) UnmarshalBinary(data []byte) error {
 		return errors.TooShort.Newf("[config] UnmarshalBinary: input data too short")
 	}
 	p.ScopeID = scope.TypeID(binary.LittleEndian.Uint64(data[:8]))
-	p.route = string(data[8:])
+	p.route = string(p.stripEnvSuffixByte(data[8:]))
 	return errors.WithStack(p.IsValid())
 }
 
@@ -449,7 +443,7 @@ func (p *Path) Level(depth int) (string, error) {
 	pos := 0
 	i := 1
 	for pos <= lp {
-		sc := strings.IndexByte(fq[pos:], Separator)
+		sc := strings.IndexByte(fq[pos:], PathSeparator)
 		if sc == -1 {
 			return fq, nil
 		}
@@ -493,7 +487,7 @@ func (p *Path) Hash64() uint64 {
 // Separators returns the number of separators
 func (p *Path) Separators() (count int) {
 	for _, b := range p.route {
-		if b == rune(Separator) {
+		if b == rune(PathSeparator) {
 			count++
 		}
 	}
@@ -502,6 +496,9 @@ func (p *Path) Separators() (count int) {
 
 // ScopeRoute returns the assigned scope and its ID and the route.
 func (p *Path) ScopeRoute() (scope.TypeID, string) {
+	if p.UseEnvSuffix && p.envSuffix != "" {
+		return p.ScopeID, p.route + sPathSeparator + p.envSuffix
+	}
 	return p.ScopeID, p.route
 }
 
@@ -536,7 +533,7 @@ func (p *Path) Part(pos int) (string, error) {
 	var sepPos [maxLevels]int
 	sp := 0
 	for i, b := range p.route {
-		if b == rune(Separator) && sp < maxLevels {
+		if b == rune(PathSeparator) && sp < maxLevels {
 			sepPos[sp] = i + 1 // positions of the separators in the slice
 			sp++
 		}
@@ -568,11 +565,11 @@ func (p *Path) Part(pos int) (string, error) {
 // Error behaviour: NotValid
 func (p *Path) Split(ret ...string) (_ []string, err error) {
 
-	const sepCount = Levels - 1 // only two separators supported
+	const sepCount = PathLevels - 1 // only two separators supported
 	var sepPos [sepCount]int
 	sp := 0
 	for i, b := range p.route {
-		if b == rune(Separator) && sp < sepCount {
+		if b == rune(PathSeparator) && sp < sepCount {
 			sepPos[sp] = i // positions of the separators in the slice
 			sp++
 		}
@@ -585,7 +582,7 @@ func (p *Path) Split(ret ...string) (_ []string, err error) {
 	}
 
 	min := 0
-	for i := 0; i < Levels; i++ {
+	for i := 0; i < PathLevels; i++ {
 		var max int
 		if i < sepCount && sepPos[i] > 0 {
 			max = sepPos[i]
@@ -609,8 +606,8 @@ func (p Path) NewValue(data []byte) *Value {
 	return v
 }
 
-// HasRoutePrefix returns true if the Paths' route starts with the argument route
-func (p *Path) HasRoutePrefix(route string) bool {
+// RouteHasPrefix returns true if the Paths' route starts with the argument route
+func (p *Path) RouteHasPrefix(route string) bool {
 	lr := len(route)
 	return p != nil && len(p.route) >= lr && lr > 0 && p.route[0:lr] == route
 }

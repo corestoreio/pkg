@@ -17,6 +17,7 @@ package config_test
 import (
 	"bytes"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -485,7 +486,7 @@ func TestService_Scoped_LRU_Parallel(t *testing.T) {
 	bgwork.Wait(len(paths), func(idx int) {
 		true := []byte(`1`)
 		p := paths[idx]
-		if p.HasRoutePrefix(route2) {
+		if p.RouteHasPrefix(route2) {
 			true = []byte(`0`)
 		}
 		if err := srv.Set(p, true); err != nil {
@@ -566,5 +567,33 @@ func TestHotReload(t *testing.T) {
 
 	time.Sleep(time.Millisecond * 2)
 	assert.Exactly(t, `"2"`, srv.Get(p).String())
+}
 
+type keyer interface {
+	Keys(ret ...string) []string
+}
+
+func TestService_PathWithEnvName(t *testing.T) {
+
+	p := config.MustNewPath("payment/datatrans/username").BindWebsite(4).WithEnvSuffix()
+
+	sMap := storage.NewMap()
+	srv := config.MustNewService(sMap, config.Options{
+		EnvName: "MY_LOCAL_MACBOOK",
+	})
+	defer func() { assert.NoError(t, srv.Close()) }()
+
+	require.NoError(t, srv.Set(p, []byte(`TESCHT1`)))
+	p.UseEnvSuffix = false
+	require.NoError(t, srv.Set(p, []byte(`TESCHT2`)))
+
+	assert.Exactly(t, `"TESCHT1"`, srv.Get(p.WithEnvSuffix()).String())
+	p.UseEnvSuffix = false
+	assert.Exactly(t, `"TESCHT2"`, srv.Get(p).String())
+
+	keys := sMap.(keyer).Keys()
+	sort.Strings(keys)
+	assert.Exactly(t, []string{
+		"Type(Website) ID(4)/payment/datatrans/username",
+		"Type(Website) ID(4)/payment/datatrans/username/MY_LOCAL_MACBOOK"}, keys)
 }

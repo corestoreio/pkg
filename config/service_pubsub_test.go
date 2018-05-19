@@ -86,13 +86,8 @@ func TestPubSubBubbling(t *testing.T) {
 	assert.NoError(t, s.Set(testPath.BindWebsite(123), []byte(`1`)))
 	assert.NoError(t, s.Close())
 
-	//t.Log("Before", "testPath", testPath.Route)
-	testPath2 := testPath
-	testPath2 = testPath2.Append("Doh")
-	//t.Log("After", "testPath", testPath.Route, "testPath2", testPath2.Route)
-
 	// send on closed channel
-	assert.NoError(t, s.Set(testPath2.BindWebsite(3), []byte(`1`)))
+	assert.NoError(t, s.Set(testPath.BindWebsite(3), []byte(`1`)))
 	err = s.Close()
 	assert.True(t, errors.AlreadyClosed.Match(err), "Error: %s", err)
 }

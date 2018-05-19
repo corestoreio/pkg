@@ -31,9 +31,10 @@ const DefaultOSEnvVariableName = `CS_ENV`
 // Options applies configurations to the NewService function. Used mainly by external
 // packages for providing different storage engines.
 type Options struct {
-	// Level1 defines a usually short lived cached like an LRU or TinyLFU. It
-	// can be set optionally. Level1 only gets called for Set operation when a
-	// value is requested in Level2 via Get.
+	// Level1 defines a usually short lived cached like an LRU or TinyLFU or a
+	// storage with un-resetble data (locked data). It can be set optionally.
+	// Level1 only gets called for Set operation when a value is requested in
+	// Level2 via Get.
 	Level1       Storager
 	Log          log.Logger
 	EnablePubSub bool
@@ -61,7 +62,13 @@ type Options struct {
 // LoadDataFn allows other storage backends to pump their data into the
 // config.Service during or after initialization via an OS signal and hot
 // reloading.
+// TODO LoadDataFn should support the target storage to load the data to allows to write locked values.
 type LoadDataFn func(*Service) error
+
+//type LoadData  struct {
+//	Process func(*Service) error
+//	TargetLevel int
+//}
 
 func isLetter(str string) bool {
 	for _, r := range str {

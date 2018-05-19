@@ -78,3 +78,16 @@ func (sp *kvmap) Flush() error {
 	sp.Unlock()
 	return nil
 }
+
+// Keys returns a randomized slice of all keys. Useful while testing.
+func (sp *kvmap) Keys(ret ...string) []string {
+	sp.RLock()
+	defer sp.RUnlock()
+	if lkv := len(sp.kv); cap(ret) == 0 {
+		ret = make([]string, 0, lkv)
+	}
+	for k := range sp.kv {
+		ret = append(ret, k.TypeID.String()+string(config.PathSeparator)+k.string)
+	}
+	return ret
+}

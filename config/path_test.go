@@ -33,8 +33,14 @@ var (
 	_ encoding.BinaryMarshaler   = (*Path)(nil)
 	_ encoding.BinaryUnmarshaler = (*Path)(nil)
 	_ fmt.Stringer               = (*Path)(nil)
-	_ fmt.GoStringer             = (*Path)(nil)
 )
+
+func assertStrErr(t *testing.T, want string, msgAndArgs ...interface{}) func(string, error) {
+	return func(s string, err error) {
+		require.NoError(t, err, "%+v", err)
+		assert.Exactly(t, want, s, msgAndArgs...)
+	}
+}
 
 func TestMakePathWithScope(t *testing.T) {
 	t.Parallel()
@@ -123,9 +129,7 @@ func TestMakePath(t *testing.T) {
 			continue
 		}
 		haveP = haveP.Bind(test.s.WithID(test.id))
-		fq, fqErr := haveP.FQ()
-		assert.NoError(t, fqErr, "Index %d", i)
-		assert.Exactly(t, test.wantFQ, fq, "Index %d", i)
+		assertStrErr(t, test.wantFQ, "Index %d", i)(haveP.FQ())
 	}
 }
 
@@ -168,7 +172,6 @@ func TestFQ(t *testing.T) {
 	assert.Exactly(t, "stores/7475/catalog/frontend/list_allow_all", MustNewPath(r).BindStore(7475).String())
 	p := MustNewPath(r).BindStore(5)
 	assert.Exactly(t, "stores/5/catalog/frontend/list_allow_all", p.String())
-	assert.Exactly(t, "config.NewPathWithScope(67108869,\"catalog/frontend/list_allow_all\")", p.GoString())
 }
 
 func TestShouldNotPanicBecauseOfIncorrectStrScope(t *testing.T) {
@@ -401,18 +404,6 @@ func TestPath_Hash64ByLevel(t *testing.T) {
 			assert.Exactly(t, test.wantLevel, xrl, "Index %d", i)
 		}
 	})
-}
-
-func TestPathCloneAppend(t *testing.T) {
-	t.Parallel()
-	rs := "aa/bb/cc"
-	pOrg := MustNewPath(rs)
-	pOrg = pOrg.BindStore(3141)
-
-	pAssigned := pOrg
-	assert.Exactly(t, pOrg, pAssigned)
-	pOrg = pOrg.Append("dd")
-	assert.NotEqual(t, pOrg, pAssigned)
 }
 
 func TestPath_BindStore(t *testing.T) {
@@ -775,10 +766,10 @@ func TestPath_HasRoutePrefix(t *testing.T) {
 	t.Parallel()
 	p := &Path{route: `xx/yy/zz`, ScopeID: scope.Website.WithID(3)}
 
-	assert.False(t, p.HasRoutePrefix(""))
-	assert.True(t, p.HasRoutePrefix("xx"))
-	assert.False(t, p.HasRoutePrefix("yy"))
-	assert.True(t, p.HasRoutePrefix("xx/yy/zz"))
+	assert.False(t, p.RouteHasPrefix(""))
+	assert.True(t, p.RouteHasPrefix("xx"))
+	assert.False(t, p.RouteHasPrefix("yy"))
+	assert.True(t, p.RouteHasPrefix("xx/yy/zz"))
 }
 
 func TestPath_ParseStrings(t *testing.T) {
@@ -805,4 +796,68 @@ func TestPath_ParseStrings(t *testing.T) {
 		}
 		assert.Exactly(t, test.wantPath, p.String(), "index %d", i)
 	}
+}
+
+func TestPath_EnvName(t *testing.T) {
+	t.Parallel()
+	t.Run("String and Binary", func(t *testing.T) {
+		p := MustNewPath("tt/ww/de").WithEnvSuffix()
+		p.envSuffix = "STAGING"
+		assertStrErr(t, `default/0/tt/ww/de/STAGING`)(p.FQ())
+
+		d, err := p.BindStore(3).MarshalBinary()
+		require.NoError(t, err)
+		assert.Exactly(t, "\x03\x00\x00\x04\x00\x00\x00\x00tt/ww/de/STAGING", string(d))
+
+		p.UseEnvSuffix = false
+		assertStrErr(t, `default/0/tt/ww/de`)(p.FQ())
+	})
+	t.Run("ParseFQ", func(t *testing.T) {
+		p := &Path{
+			envSuffix: "STAGING",
+		}
+		err := p.ParseFQ(`stores/3/tt/ww/de/STAGING`)
+		require.NoError(t, err, "%+v", err)
+		assertStrErr(t, `stores/3/tt/ww/de`)(p.FQ())
+
+		err = p.ParseFQ(`stores/3/tt/ww/de`)
+		require.NoError(t, err, "%+v", err)
+		assertStrErr(t, `stores/3/tt/ww/de`)(p.FQ())
+	})
+	t.Run("ParseStrings", func(t *testing.T) {
+		p := &Path{
+			envSuffix: "STAGING",
+		}
+		err := p.ParseStrings(`stores`, "3", `tt/ww/de/STAGING`)
+		require.NoError(t, err, "%+v", err)
+		assertStrErr(t, `stores/3/tt/ww/de`)(p.FQ())
+
+		err = p.ParseStrings(`stores`, "3", `tt/ww/de`)
+		require.NoError(t, err, "%+v", err)
+		assertStrErr(t, `stores/3/tt/ww/de`)(p.FQ())
+	})
+	t.Run("UnmarshalText", func(t *testing.T) {
+		p := &Path{
+			envSuffix: "STAGING",
+		}
+		err := p.UnmarshalText([]byte(`stores/3/tt/ww/de/STAGING`))
+		require.NoError(t, err, "%+v", err)
+		assertStrErr(t, `stores/3/tt/ww/de`)(p.FQ())
+
+		err = p.UnmarshalText([]byte(`stores/3/tt/ww/de`))
+		require.NoError(t, err, "%+v", err)
+		assertStrErr(t, `stores/3/tt/ww/de`)(p.FQ())
+	})
+	t.Run("UnmarshalBinary", func(t *testing.T) {
+		p := &Path{
+			envSuffix: "STAGING",
+		}
+		err := p.UnmarshalBinary([]byte("\x03\x00\x00\x04\x00\x00\x00\x00tt/ww/de/STAGING"))
+		require.NoError(t, err, "%+v", err)
+		assertStrErr(t, `stores/3/tt/ww/de`)(p.FQ())
+
+		err = p.UnmarshalBinary([]byte("\x03\x00\x00\x04\x00\x00\x00\x00tt/ww/de"))
+		require.NoError(t, err, "%+v", err)
+		assertStrErr(t, `stores/3/tt/ww/de`)(p.FQ())
+	})
 }

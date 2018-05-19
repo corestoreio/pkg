@@ -84,12 +84,6 @@ type Value struct {
 	lastErr error
 }
 
-// TODO replace csv.Reader with the following:
-// func() (record []string, err error)
-//type Reader interface {
-//	Read() (record []string, err error)
-//}
-
 // NewValue makes a new non-pointer value type.
 func NewValue(data []byte) *Value {
 	return &Value{

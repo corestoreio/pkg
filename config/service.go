@@ -270,6 +270,9 @@ func (s *Service) NewScoped(websiteID, storeID int64) Scoped {
 //		// 6 for example comes from core_store/store database table
 //		err := Write(p.Bind(scope.StoreID, 6), "CHF")
 func (s *Service) Set(p *Path, v []byte) error {
+	if p.UseEnvSuffix && p.envSuffix != s.envName {
+		p.envSuffix = s.envName
+	}
 	if s.config.Log != nil && s.config.Log.IsDebug() {
 		log.WhenDone(s.config.Log).Debug("config.Service.Write", log.Stringer("path", p), log.Int("data_length", len(v)))
 	}
@@ -301,6 +304,10 @@ func (s *Service) Set(p *Path, v []byte) error {
 //
 // Returns a guaranteed non-nil value.
 func (s *Service) Get(p *Path) (v *Value) {
+	if p.UseEnvSuffix && p.envSuffix != s.envName {
+		p.envSuffix = s.envName
+	}
+
 	if s.config.Log != nil && s.config.Log.IsDebug() {
 		wdl := log.WhenDone(s.config.Log)
 		defer func() {
