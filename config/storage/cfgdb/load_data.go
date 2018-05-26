@@ -27,8 +27,8 @@ import (
 
 // WithLoadFromDB reads the table core_config_data into the Service and
 // overrides existing values. Stops on errors.
-func WithLoadFromDB(tbls *ddl.Tables, o Options) config.LoadDataFn {
-	return func(s *config.Service) error {
+func WithLoadFromDB(tbls *ddl.Tables, o Options) config.LoadDataOption {
+	return config.MakeLoadDataOption(func(s *config.Service) error {
 
 		tn := o.TableName
 		if tn == "" {
@@ -68,5 +68,5 @@ func WithLoadFromDB(tbls *ddl.Tables, o Options) config.LoadDataFn {
 
 			return nil
 		})
-	}
+	}).WithUseStorageLevel(1)
 }

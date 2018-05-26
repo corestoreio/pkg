@@ -73,7 +73,7 @@ func TestMakeMulti(t *testing.T) {
 
 	})
 
-	t.Run("write error", func(t *testing.T) {
+	t.Run("write error (racy)", func(t *testing.T) {
 		inMem1 := storage.NewMap()
 		inMem2 := storage.NewMap()
 

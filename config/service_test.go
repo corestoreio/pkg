@@ -58,9 +58,9 @@ func TestMustNewService_ShouldPanic(t *testing.T) {
 
 	srv := config.MustNewService(storage.NewMap(), config.Options{
 		EnablePubSub: false,
-	}, func(_ *config.Service) error {
+	}, config.MakeLoadDataOption(func(_ *config.Service) error {
 		return errors.VerificationFailed.Newf("Ups")
-	})
+	}))
 
 	require.Nil(t, srv)
 }
@@ -555,9 +555,9 @@ func TestHotReload(t *testing.T) {
 		EnableHotReload:  true,
 		HotReloadSignals: []os.Signal{syscall.SIGUSR1},
 	},
-		func(s *config.Service) error {
+		config.MakeLoadDataOption(func(s *config.Service) error {
 			return s.Set(p, strconv.AppendInt(nil, atomic.AddInt64(reloadCounter, 1), 10))
-		},
+		}),
 	)
 	defer func() { assert.NoError(t, srv.Close()) }()
 
@@ -596,4 +596,12 @@ func TestService_PathWithEnvName(t *testing.T) {
 	assert.Exactly(t, []string{
 		"Type(Website) ID(4)/payment/datatrans/username",
 		"Type(Website) ID(4)/payment/datatrans/username/MY_LOCAL_MACBOOK"}, keys)
+}
+
+func TestService_DifferentStorageLevels(t *testing.T) {
+
+	sMap := storage.NewMap()
+	srv := config.MustNewService(sMap, config.Options{})
+	defer func() { assert.NoError(t, srv.Close()) }()
+
 }

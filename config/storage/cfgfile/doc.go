@@ -15,4 +15,6 @@
 // Package cfgfile reads configuration values from JSON,XML,CSV or YAML files.
 //
 // Supports environment names in a file name.
+//
+// TODO func WithHTTPs() option {}
 package cfgfile

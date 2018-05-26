@@ -17,7 +17,9 @@ package storage_test
 import (
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -41,4 +43,59 @@ func validateNotFoundGet(t *testing.T, s config.Storager, scp scope.TypeID, rout
 	require.NoError(t, err)
 	assert.False(t, ok, "env value must NOT be found")
 	assert.Nil(t, data, "Data must be nil")
+}
+
+func TestWithLoadStrings(t *testing.T) {
+	t.Parallel()
+
+	t.Run("unbalanced", func(t *testing.T) {
+		cfgSrv, err := config.NewService(
+			nil, config.Options{
+				Level1: storage.NewMap(),
+			},
+			storage.WithLoadStrings("Baaam"),
+		)
+		assert.Nil(t, cfgSrv)
+		assert.True(t, errors.NotAcceptable.Match(err), "%+v", err)
+	})
+
+	t.Run("successful level 1", func(t *testing.T) {
+
+		pUserName := config.MustNewPath("payment/stripe/user_name").BindWebsite(2)
+
+		cfgSrv, err := config.NewService(
+			nil, config.Options{
+				Level1: storage.NewMap(),
+			},
+			storage.WithLoadStrings(pUserName.String(), "alphZ"),
+		)
+		require.NoError(t, err)
+		assert.Exactly(t, "\"alph\\uf8ffZ\"", cfgSrv.Get(pUserName).String())
+	})
+	t.Run("successful level 1+2", func(t *testing.T) {
+
+		pUserName := config.MustNewPath("payment/stripe/user_name").BindWebsite(2)
+
+		cfgSrv, err := config.NewService(
+			storage.NewMap(), config.Options{
+				Level1: storage.NewMap(),
+			},
+			storage.WithLoadStrings(pUserName.String(), "alphX").WithUseStorageLevel(2),
+			storage.WithLoadStrings(pUserName.String(), "alphZ"),
+		)
+		require.NoError(t, err)
+		assert.Exactly(t, "\"alph\\uf8ffZ\"", cfgSrv.Get(pUserName).String())
+	})
+	t.Run("successful sort order", func(t *testing.T) {
+
+		pUserName := config.MustNewPath("payment/stripe/user_name").BindWebsite(2)
+
+		cfgSrv, err := config.NewService(
+			storage.NewMap(), config.Options{},
+			storage.WithLoadStrings(pUserName.String(), "alphX").WithUseStorageLevel(2).WithSortOrder(2),
+			storage.WithLoadStrings(pUserName.String(), "alphZ").WithUseStorageLevel(2).WithSortOrder(-1),
+		)
+		require.NoError(t, err)
+		assert.Exactly(t, "\"alph\\uf8ffX\"", cfgSrv.Get(pUserName).String())
+	})
 }

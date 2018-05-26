@@ -51,7 +51,7 @@ type Options struct {
 	EnvName string
 
 	// EnableHotReload if the Service receives an OS signal, it triggers a hot
-	// reload of the cached functions of type LoadDataFn. Errors during hot
+	// reload of the cached functions of type LoadDataOption. Errors during hot
 	// reloading do not trigger an exit of the config.Service.
 	EnableHotReload bool
 	// HotReloadSignals specifies custom signals to listen to. Defaults to
@@ -59,16 +59,42 @@ type Options struct {
 	HotReloadSignals []os.Signal
 }
 
-// LoadDataFn allows other storage backends to pump their data into the
+// LoadDataOption allows other storage backends to pump their data into the
 // config.Service during or after initialization via an OS signal and hot
 // reloading.
-// TODO LoadDataFn should support the target storage to load the data to allows to write locked values.
-type LoadDataFn func(*Service) error
+type LoadDataOption struct {
+	level     int // either 1 or 2, if other value, falls back to 2.
+	sortOrder int
+	load      func(*Service) error
+}
 
-//type LoadData  struct {
-//	Process func(*Service) error
-//	TargetLevel int
-//}
+// MakeLoadDataOption a wrapper helper function.
+func MakeLoadDataOption(fn func(*Service) error) LoadDataOption {
+	return LoadDataOption{
+		load: fn,
+	}
+}
+
+// WithSortOrder sets the order/position while loading the data in
+// config.Service.
+func (o LoadDataOption) WithSortOrder(sortOrderPosition int) LoadDataOption {
+	o.sortOrder = sortOrderPosition
+	return o
+}
+
+// WithUseStorageLevel executes the current Load function in storage level one.
+// Argument level can either be 1 or 2. Any other integer value falls back to 2,
+// for now.
+func (o LoadDataOption) WithUseStorageLevel(level int) LoadDataOption {
+	o.level = level
+	return o
+}
+
+type loadDataOptions []LoadDataOption
+
+func (o loadDataOptions) Len() int           { return len(o) }
+func (o loadDataOptions) Less(i, j int) bool { return o[i].sortOrder < o[j].sortOrder }
+func (o loadDataOptions) Swap(i, j int)      { o[i], o[j] = o[j], o[i] }
 
 func isLetter(str string) bool {
 	for _, r := range str {

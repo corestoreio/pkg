@@ -26,13 +26,13 @@ import (
 // WithLoadData reads the all keys and their values with the current or configured
 // etcd key prefix and applies it to the config.service. This function option
 // can be set when creating a new config.service or updating its internal DB.
-func WithLoadData(c clientv3.KV, o Options) config.LoadDataFn {
+func WithLoadData(c clientv3.KV, o Options) config.LoadDataOption {
 
 	if o.KeyPrefix == "" {
 		o.KeyPrefix = DefaultKeyPrefix
 	}
 
-	return func(s *config.Service) error {
+	return config.MakeLoadDataOption(func(s *config.Service) error {
 
 		ctx := context.Background()
 		if o.RequestTimeout > 0 {
@@ -62,5 +62,5 @@ func WithLoadData(c clientv3.KV, o Options) config.LoadDataFn {
 		}
 
 		return nil
-	}
+	}).WithUseStorageLevel(1)
 }

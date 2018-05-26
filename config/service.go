@@ -17,6 +17,7 @@ package config
 import (
 	"os"
 	"os/signal"
+	"sort"
 	"strings"
 	"syscall"
 
@@ -65,11 +66,13 @@ type Storager interface {
 	// desired path, return value `found` must be false. A nil value `v`
 	// indicates also a value and hence `found` is true, if found.
 	Get(p *Path) (v []byte, found bool, err error)
+	// Delete(p *Path) error TODO
 }
 
 // Service main configuration provider. Please use the NewService() function.
-// Safe for concurrent use.
-// TODO build in to support different environments for the same keys. E.g. different API credentials for external APIs (staging, production, etc).
+// Safe for concurrent use. Allows multi level storage backend for e.g. LRU
+// cache or immutable data. Hot reloading enables a devops engineer to apply new
+// configuration changes via kill signal.
 type Service struct {
 	level2  Storager
 	envName string
@@ -79,7 +82,7 @@ type Service struct {
 	// config values.
 	pubSub          *pubSub
 	hotReloadSignal chan os.Signal
-	loadDataFns     []LoadDataFn
+	loadDataFns     loadDataOptions
 	envReplacer     *strings.Replacer
 	// TODO auto detect unmarshaller and get one from a pool pass the correct unmarshaler to the Value.
 }
@@ -88,7 +91,7 @@ type Service struct {
 // website and store. Default Storage is a simple map[string]interface{}. A new
 // go routine will be startet for the publish and subscribe feature.
 // Level2 is the required underlying data holding provider.
-func NewService(level2 Storager, o Options, fns ...LoadDataFn) (s *Service, err error) {
+func NewService(level2 Storager, o Options, fns ...LoadDataOption) (s *Service, err error) {
 
 	s = &Service{
 		level2: level2,
@@ -110,6 +113,7 @@ func NewService(level2 Storager, o Options, fns ...LoadDataFn) (s *Service, err 
 	}
 
 	s.loadDataFns = append(s.loadDataFns, fns...) // make a copy of fns slice
+	sort.Stable(s.loadDataFns)
 	if err := s.loadData(); err != nil {
 		if err2 := s.Close(); err2 != nil {
 			// terminate publisher go routine and prevent leaking
@@ -127,7 +131,7 @@ func NewService(level2 Storager, o Options, fns ...LoadDataFn) (s *Service, err 
 
 // MustNewService same as NewService but panics on error. Use only in testing
 // or during boot process.
-func MustNewService(level2 Storager, o Options, fns ...LoadDataFn) *Service {
+func MustNewService(level2 Storager, o Options, fns ...LoadDataOption) *Service {
 	s, err := NewService(level2, o, fns...)
 	if err != nil {
 		panic(err)
@@ -187,8 +191,14 @@ func (s *Service) shouldEnableHotReload() error {
 // loadData used for hot reloading and runs also within another goroutine but
 // reads only from *Service.
 func (s *Service) loadData() error {
-	for _, fn := range s.loadDataFns {
-		if err := fn(s); err != nil {
+	for _, opt := range s.loadDataFns {
+		s2 := s
+		if opt.level == 1 && s2.config.Level1 != nil {
+			s2 = new(Service)
+			*s2 = *s // might be racy. need to check that.
+			s2.level2 = s2.config.Level1
+		}
+		if err := opt.load(s2); err != nil {
 			return errors.WithStack(err)
 		}
 	}

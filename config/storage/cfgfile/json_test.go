@@ -63,7 +63,7 @@ func TestWithLoadJSON(t *testing.T) {
 		}
 	}
 	t.Run("malformed_v1", runner("malformed_v1.json", errors.CorruptData,
-		"[cfgfile] Unexpected data in \"payment/stripe/port\""))
+		"[cfgfile] WithLoadJSON Unexpected data in \"payment/stripe/port\""))
 
 	t.Run("malformed_v2_dataIF", runner("malformed_v2_dataIF.json", errors.CorruptData,
 		"Unable to cast map[string]interface {}{} to []byte"))
@@ -72,6 +72,6 @@ func TestWithLoadJSON(t *testing.T) {
 		`failed to parse "-1" to uint: strconv.ParseUint: parsing "-1": invalid syntax`))
 
 	t.Run("malformed_v2t_dataIF", runner("malformed_v2t_dataIF.json", errors.CorruptData,
-		`Unexpected data in []interface {}{}`))
+		`WithLoadJSON unexpected data in []interface {}{}`))
 
 }

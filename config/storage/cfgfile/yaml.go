@@ -24,13 +24,13 @@ import (
 
 // WithLoadYAML reads the configuration values from a JSON file and applies it
 // to the config.service. "testdata/example.json" provides an example JSON file.
-func WithLoadYAML(opts ...option) config.LoadDataFn {
-	return func(s *config.Service) (err error) {
+func WithLoadYAML(opts ...option) config.LoadDataOption {
+	return config.MakeLoadDataOption(func(s *config.Service) (err error) {
 		for i := 0; i < len(opts) && err == nil; i++ {
 			err = opts[i](s, loadYAML)
 		}
 		return
-	}
+	}).WithUseStorageLevel(1)
 }
 
 func loadYAML(s config.Setter, r io.Reader) error {
