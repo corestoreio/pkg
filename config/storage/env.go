@@ -71,7 +71,7 @@ func FromEnvVar(prefix, envVar string) (*config.Path, error) {
 	// looks like: stores/2/carrier/dhl/title
 
 	var p config.Path
-	if err := p.ParseFQ(envVar); err != nil {
+	if err := p.Parse(envVar); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return &p, nil

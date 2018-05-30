@@ -133,7 +133,7 @@ func TestMakePath(t *testing.T) {
 	}
 }
 
-func TestFQ(t *testing.T) {
+func TestPath_FQ(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		scp         scope.Type
@@ -199,8 +199,34 @@ func TestShouldPanicIncorrectPath(t *testing.T) {
 	assert.Exactly(t, "websites/345/xxxxx/yyyyy", MustNewPath("xxxxx/yyyyy").BindWebsite(345).String())
 }
 
-func TestPath_ParseFQ(t *testing.T) {
+func TestPath_ParseStrings(t *testing.T) {
 	t.Parallel()
+
+	tests := []struct {
+		scp, id, route string
+		wantPath       string
+		wantErr        errors.Kind
+	}{
+		{"default", "0", "aa/bb/cc", "default/0/aa/bb/cc", errors.NoKind},
+		{"stores", "1", "aa/bb/cc", "stores/1/aa/bb/cc", errors.NoKind},
+		{"websites", "1", "aa/bb/cc", "websites/1/aa/bb/cc", errors.NoKind},
+		{"website", "1", "aa/bb/cc", "", errors.NotValid},
+		{"websites", "-1", "aa/bb/cc", "", errors.CorruptData},
+	}
+
+	for i, test := range tests {
+		p := new(Path)
+		haveErr := p.ParseStrings(test.scp, test.id, test.route)
+		if test.wantErr > 0 {
+			assert.True(t, test.wantErr.Match(haveErr), "IDX:%d %+v", i, haveErr)
+			continue
+		}
+		assert.Exactly(t, test.wantPath, p.String(), "index %d", i)
+	}
+}
+
+func TestPath_Parse(t *testing.T) {
+	// t.Parallel()
 	tests := []struct {
 		have        string
 		wantScope   string
@@ -208,6 +234,9 @@ func TestPath_ParseFQ(t *testing.T) {
 		wantPath    string
 		wantErrKind errors.Kind
 	}{
+		{"catalog/frontend", "", 0, "", errors.NotValid},
+		{"catalog/frontend/list_allow_all", "default", 0, "default/0/catalog/frontend/list_allow_all", errors.NoKind},
+		{"catalog/frontend/list/allow_all", "default", 0, "default/0/catalog/frontend/list/allow_all", errors.NoKind},
 		{"groups/1/catalog/frontend/list_allow_all", "default", 0, "", errors.NotSupported},
 		{"stores/7475/catalog/frontend/list_allow_all", scope.StrStores.String(), 7475, "stores/7475/catalog/frontend/list_allow_all", errors.NoKind},
 		{"stores/4/system/full_page_cache/varnish/backend_port", scope.StrStores.String(), 4, "stores/4/system/full_page_cache/varnish/backend_port", errors.NoKind},
@@ -218,31 +247,30 @@ func TestPath_ParseFQ(t *testing.T) {
 	}
 	havePath := new(Path)
 	for i, test := range tests {
-		haveErr := havePath.ParseFQ(test.have)
+		haveErr := havePath.Parse(test.have)
 
 		if test.wantErrKind > 0 {
 			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => Error: %s", i, haveErr)
 		} else {
-			assert.NoError(t, haveErr, "Test %v", test)
+			require.NoError(t, haveErr, "Test %v", test)
 			assert.Exactly(t, test.wantScope, havePath.ScopeID.Type().StrType(), "Index %d", i)
 			assert.Exactly(t, test.wantScopeID, havePath.ScopeID.ID(), "Index %d", i)
 			ls, _ := havePath.Level(-1)
 			assert.Exactly(t, test.wantPath, ls, "Index %d", i)
 		}
-		havePath.Reset()
 	}
 }
 
-func TestSplitFQ2(t *testing.T) {
+func TestPath_SplitFQ2(t *testing.T) {
 	t.Parallel()
 	p := new(Path)
 
-	if err := p.ParseFQ("websites/5/web/cors/allow_credentials"); err != nil {
+	if err := p.Parse("websites/5/web/cors/allow_credentials"); err != nil {
 		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, scope.Website.WithID(5), p.ScopeID)
 
-	if err := p.ParseFQ("default/0/web/cors/allow_credentials"); err != nil {
+	if err := p.Parse("default/0/web/cors/allow_credentials"); err != nil {
 		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, scope.DefaultTypeID, p.ScopeID)
@@ -772,32 +800,6 @@ func TestPath_HasRoutePrefix(t *testing.T) {
 	assert.True(t, p.RouteHasPrefix("xx/yy/zz"))
 }
 
-func TestPath_ParseStrings(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		scp, id, route string
-		wantPath       string
-		wantErr        errors.Kind
-	}{
-		{"default", "0", "aa/bb/cc", "default/0/aa/bb/cc", errors.NoKind},
-		{"stores", "1", "aa/bb/cc", "stores/1/aa/bb/cc", errors.NoKind},
-		{"websites", "1", "aa/bb/cc", "websites/1/aa/bb/cc", errors.NoKind},
-		{"website", "1", "aa/bb/cc", "", errors.NotValid},
-		{"websites", "-1", "aa/bb/cc", "", errors.CorruptData},
-	}
-
-	for i, test := range tests {
-		p := new(Path)
-		haveErr := p.ParseStrings(test.scp, test.id, test.route)
-		if test.wantErr > 0 {
-			assert.True(t, test.wantErr.Match(haveErr), "IDX:%d %+v", i, haveErr)
-			continue
-		}
-		assert.Exactly(t, test.wantPath, p.String(), "index %d", i)
-	}
-}
-
 func TestPath_EnvName(t *testing.T) {
 	t.Parallel()
 	t.Run("String and Binary", func(t *testing.T) {
@@ -812,15 +814,15 @@ func TestPath_EnvName(t *testing.T) {
 		p.UseEnvSuffix = false
 		assertStrErr(t, `default/0/tt/ww/de`)(p.FQ())
 	})
-	t.Run("ParseFQ", func(t *testing.T) {
+	t.Run("Parse", func(t *testing.T) {
 		p := &Path{
 			envSuffix: "STAGING",
 		}
-		err := p.ParseFQ(`stores/3/tt/ww/de/STAGING`)
+		err := p.Parse(`stores/3/tt/ww/de/STAGING`)
 		require.NoError(t, err, "%+v", err)
 		assertStrErr(t, `stores/3/tt/ww/de`)(p.FQ())
 
-		err = p.ParseFQ(`stores/3/tt/ww/de`)
+		err = p.Parse(`stores/3/tt/ww/de`)
 		require.NoError(t, err, "%+v", err)
 		assertStrErr(t, `stores/3/tt/ww/de`)(p.FQ())
 	})

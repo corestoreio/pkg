@@ -31,11 +31,11 @@ BenchmarkPathHashLevel2-4               	 2000000	       973 ns/op	      64 B/op
 BenchmarkPathHashLevel2-4               	 2000000	       976 ns/op	      64 B/op	       2 allocs/op
 BenchmarkPathHashLevel2-4               	 2000000	       979 ns/op	      64 B/op	       2 allocs/op
 BenchmarkPathHashLevel2-4               	 2000000	       981 ns/op	      64 B/op	       2 allocs/op
-BenchmarkSplitFQ-4                      	20000000	       101 ns/op	      32 B/op	       1 allocs/op
-BenchmarkSplitFQ-4                      	20000000	        99.2 ns/op	      32 B/op	       1 allocs/op
-BenchmarkSplitFQ-4                      	20000000	       100 ns/op	      32 B/op	       1 allocs/op
-BenchmarkSplitFQ-4                      	20000000	       100 ns/op	      32 B/op	       1 allocs/op
-BenchmarkSplitFQ-4                      	20000000	       101 ns/op	      32 B/op	       1 allocs/op
+BenchmarkPathParse-4                      	20000000	       101 ns/op	      32 B/op	       1 allocs/op
+BenchmarkPathParse-4                      	20000000	        99.2 ns/op	      32 B/op	       1 allocs/op
+BenchmarkPathParse-4                      	20000000	       100 ns/op	      32 B/op	       1 allocs/op
+BenchmarkPathParse-4                      	20000000	       100 ns/op	      32 B/op	       1 allocs/op
+BenchmarkPathParse-4                      	20000000	       101 ns/op	      32 B/op	       1 allocs/op
 BenchmarkPath_Level_One-4               	 2000000	       622 ns/op	      32 B/op	       1 allocs/op
 BenchmarkPath_Level_One-4               	 2000000	       611 ns/op	      32 B/op	       1 allocs/op
 BenchmarkPath_Level_One-4               	 2000000	       601 ns/op	      32 B/op	       1 allocs/op

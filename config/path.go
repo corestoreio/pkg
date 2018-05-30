@@ -40,7 +40,7 @@ const maxLevels = 8 // up to 8. just a guess
 
 // PathSeparator used in the database table core_config_data and in config.Service
 // to separate the path parts.
-const PathSeparator byte = '/'
+const PathSeparator = '/'
 
 var (
 	bSeparator    = []byte(sPathSeparator)
@@ -220,41 +220,57 @@ func (p *Path) AppendFQ(buf *bytes.Buffer) error {
 	return nil
 }
 
-// ParseFQ takes a fully qualified path and splits it into its parts with final
-// validation. Input: stores/5/catalog/frontend/list_allow_all
+func isDigitOnly(str string) bool {
+	for _, r := range str {
+		if !unicode.IsDigit(r) {
+			return false
+		}
+	}
+	return true
+}
+
+// Parse takes a route or a fully qualified path and splits it into its parts
+// with final validation. Input: stores/5/catalog/frontend/list_allow_all or
+// just catalog/frontend/list_allow_all to use default scope.
 //	=>
 //		scope: 		stores
 //		scopeID: 	5
 //		route: 		catalog/frontend/list_allow_all
 // Zero allocations to memory. Useful to reduce allocations by reusing Path
 // pointer because it calls internally Reset.
-func (p *Path) ParseFQ(fqPath string) error {
+func (p *Path) Parse(routeOrFQPath string) (err error) {
 	p.Reset()
-	fqPath = p.stripEnvSuffixStr(fqPath)
+	routeOrFQPath = p.stripEnvSuffixStr(routeOrFQPath)
 	// this is the most fast version I come up with.
 	// moving from strings to bytes was even slower despite inline
 	// th parse int64 function
-	if !(strings.Count(fqPath, sPathSeparator) >= PathLevels+1) {
-		return errors.NotValid.Newf("[config] Incorrect fully qualified path: %q. Expecting: strScope/ID/%s", fqPath, fqPath)
+	if strings.Count(routeOrFQPath, sPathSeparator) < PathLevels-1 {
+		return errors.NotValid.Newf("[config] Expecting: %q or `strScope/ID/%s`", routeOrFQPath, routeOrFQPath)
 	}
 
-	fi := strings.Index(fqPath, sPathSeparator)
-	scopeStr := fqPath[:fi]
+	fi1 := strings.Index(routeOrFQPath, sPathSeparator)
+	scopeStr := routeOrFQPath[:fi1]
 
-	if !scope.Valid(scopeStr) {
-		return errors.NotSupported.Newf("[config] Unknown Scope: %q", scopeStr)
+	fi2 := strings.Index(routeOrFQPath[fi1+1:], sPathSeparator)
+	scopeIDStr := routeOrFQPath[fi1+1 : fi1+1+fi2]
+
+	var scopeID int64
+	p.route = routeOrFQPath
+	p.ScopeID = scope.DefaultTypeID
+
+	if isDigitOnly(scopeIDStr) {
+		scopeID, err = strconv.ParseInt(scopeIDStr, 10, 64)
+		if err != nil {
+			return errors.NotValid.New(err, "[config] ParseInt with value: %q", scopeIDStr)
+		}
+		if !scope.Valid(scopeStr) {
+			// if scope is not valid, the next part MUST no be an integer
+			return errors.NotSupported.Newf("[config] Unknown Scope: %q", scopeStr)
+		}
+		p.route = routeOrFQPath[fi1+1+fi2+1:]
+		p.ScopeID = scope.MakeTypeID(scope.FromString(scopeStr), scopeID)
 	}
 
-	fqPath = fqPath[fi+1:]
-	fi = strings.Index(fqPath, sPathSeparator)
-	scopeID, err := strconv.ParseInt(fqPath[:fi], 10, 64)
-	if err != nil {
-		return errors.NotValid.New(err, "[config] ParseInt with value: %q", fqPath[:fi])
-	}
-
-	p.route = fqPath[fi+1:]
-	p.ScopeID = scope.MakeTypeID(scope.FromString(scopeStr), scopeID)
-	p.routeValidated = false
 	return p.IsValid()
 }
 

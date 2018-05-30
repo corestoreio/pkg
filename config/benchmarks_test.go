@@ -93,10 +93,10 @@ func BenchmarkPathHashLevel2(b *testing.B) {
 
 var benchmarkReverseFQPath = new(config.Path)
 
-// BenchmarkSplitFQ-4  	10000000	       199 ns/op	      32 B/op	       1 allocs/op
-func BenchmarkSplitFQ(b *testing.B) {
+// BenchmarkPathParse-4  	10000000	       199 ns/op	      32 B/op	       1 allocs/op
+func BenchmarkPathParse(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		if err := benchmarkReverseFQPath.ParseFQ("stores/7475/catalog/frontend/list_allow_all"); err != nil {
+		if err := benchmarkReverseFQPath.Parse("stores/7475/catalog/frontend/list_allow_all"); err != nil {
 			b.Error(err)
 		}
 	}

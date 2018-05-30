@@ -40,7 +40,7 @@ func NewMap(fqPathValue ...string) config.Storager {
 	p := new(config.Path)
 	for i := 0; i < len(fqPathValue); i = i + 2 {
 		fq := fqPathValue[i]
-		if err := p.ParseFQ(fq); err != nil {
+		if err := p.Parse(fq); err != nil {
 			panic(errors.Fatal.New(err, "[config/storage] NewMap with path %q", fq))
 		}
 		m.kv[makeCacheKey(p.ScopeRoute())] = fqPathValue[i+1]
@@ -87,7 +87,7 @@ func (sp *kvmap) Keys(ret ...string) []string {
 		ret = make([]string, 0, lkv)
 	}
 	for k := range sp.kv {
-		ret = append(ret, k.TypeID.String()+string(config.PathSeparator)+k.string)
+		ret = append(ret, k.scp.String()+string(config.PathSeparator)+k.route)
 	}
 	return ret
 }

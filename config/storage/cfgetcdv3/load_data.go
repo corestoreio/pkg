@@ -50,7 +50,7 @@ func WithLoadData(c clientv3.KV, o Options) config.LoadDataOption {
 		for _, ev := range resp.Kvs {
 			buf.Write(ev.Key)
 
-			if err := p.ParseFQ(buf.String()); err != nil {
+			if err := p.Parse(buf.String()); err != nil {
 				return errors.Wrapf(err, "[config/storage/cfgetcdv3] With Path %q", p.String())
 			}
 

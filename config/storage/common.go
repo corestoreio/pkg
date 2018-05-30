@@ -21,12 +21,12 @@ import (
 )
 
 type cacheKey struct {
-	scope.TypeID
-	string // route
+	scp   scope.TypeID
+	route string // route
 }
 
 func makeCacheKey(s scope.TypeID, r string) cacheKey {
-	return cacheKey{s, r}
+	return cacheKey{scp: s, route: r}
 }
 
 // WithLoadStrings loads a balanced fully qualified path and its stringified
@@ -41,7 +41,7 @@ func WithLoadStrings(fqPathValue ...string) config.LoadDataOption {
 
 		p := new(config.Path)
 		for i := 0; i < len(fqPathValue) && err == nil; i = i + 2 {
-			if err = p.ParseFQ(fqPathValue[i]); err != nil {
+			if err = p.Parse(fqPathValue[i]); err != nil {
 				return errors.WithStack(err)
 			}
 			err = s.Set(p, []byte(fqPathValue[i+1]))
