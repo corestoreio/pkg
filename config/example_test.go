@@ -68,15 +68,17 @@ func ExamplePath() {
 	//dev/css/merge_css_files =>  dev css merge_css_files
 }
 
-// ExampleValue shows
+// ExampleValue shows how to use the Value type to convert the raw byte slice
+// value to the appropriate final type.
 func ExampleValue() {
 	// Default storage engine with build-in in-memory map.
 	// the NewService gets only instantiated once during app start up.
 	configSrv := config.MustNewService(storage.NewMap(), config.Options{})
 
 	const (
-		routeCountries    = "carriers/freeshipping/specificcountry"
-		routeListingCount = "catalog/frontend/list_per_page_values"
+		routeCountries      = "carriers/freeshipping/specificcountry"
+		routeListingCount   = "catalog/frontend/list_per_page_values"
+		routeCookieLifetime = "web/cookie/cookie_lifetime"
 	)
 
 	routesVals := []struct {
@@ -85,6 +87,7 @@ func ExampleValue() {
 	}{
 		{routeCountries, `CH,LI,DE`},
 		{routeListingCount, `5,10,15,20,25`},
+		{routeCookieLifetime, `7200s`},
 	}
 	p := new(config.Path)
 	for _, pv := range routesVals {
@@ -94,17 +97,27 @@ func ExampleValue() {
 		)
 	}
 
+	// This instance of NewScoped gets created somewhere deep in the program.
+	// The numbers 1 and 2 are chosen here randomly.
 	scpd := configSrv.NewScoped(1, 2)
+	cntryVal := scpd.Get(scope.Default, routeCountries)
 
-	countries, err := scpd.Get(scope.Default, routeCountries).Strs()
+	countries, err := cntryVal.Strs()
 	panicIfErr(err)
 	fmt.Printf("%s: %#v\n", routeCountries, countries)
+	fmt.Printf("%s: %q\n", routeCountries, cntryVal.UnsafeStr())
 
 	listingCount, err := scpd.Get(scope.Default, routeListingCount).Ints()
 	panicIfErr(err)
 	fmt.Printf("%s: %#v\n", routeListingCount, listingCount)
 
+	keksLifetime, ok, err := scpd.Get(scope.Default, routeCookieLifetime).Duration()
+	panicIfErr(err)
+	fmt.Printf("%s: found: %t %#v\n", routeCookieLifetime, ok, keksLifetime)
+
 	// Output:
 	//carriers/freeshipping/specificcountry: []string{"CH", "LI", "DE"}
+	//carriers/freeshipping/specificcountry: "CH,LI,DE"
 	//catalog/frontend/list_per_page_values: []int{5, 10, 15, 20, 25}
+	//web/cookie/cookie_lifetime: found: true 7200000000000
 }
