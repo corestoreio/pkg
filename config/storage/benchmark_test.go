@@ -15,7 +15,6 @@
 package storage_test
 
 import (
-	"os"
 	"testing"
 
 	"github.com/corestoreio/pkg/config"
@@ -44,38 +43,6 @@ func BenchmarkFromEnvVar(b *testing.B) {
 		if benchmarkFromEnvVar, err = storage.FromEnvVar(storage.Prefix, "CONFIG__WEBSITES__321__AA__BB__CC"); err != nil {
 			b.Fatal(err)
 		}
-	}
-}
-
-var benchmarkStorage []byte
-
-// BenchmarkStorage_No_Preload-4   	 1000000	      1647 ns/op	     368 B/op	       8 allocs/op
-func BenchmarkStorage_No_Preload(b *testing.B) {
-	s, err := storage.NewEnvironment(storage.EnvOp{
-		Preload: false,
-	})
-	if err != nil {
-		b.Fatal(err)
-	}
-
-	if err := os.Setenv("CONFIG__STORES__444__AA__BB__CC_DD__EE", "DATA from ENV"); err != nil {
-		b.Fatal(err)
-	}
-	p := config.MustNewPathWithScope(scope.Store.WithID(444), "aa/bb/cc_dd/ee")
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		var ok bool
-		var err error
-		benchmarkStorage, ok, err = s.Get(p)
-		if err != nil {
-			b.Fatal(err)
-		}
-		if !ok {
-			b.Fatal("value must be found")
-		}
-	}
-	if err := os.Unsetenv("CONFIG__STORES__444__AA__BB__CC_DD__EE"); err != nil {
-		b.Fatal(err)
 	}
 }
 

@@ -17,10 +17,10 @@ package storage
 import (
 	"os"
 	"strings"
-	"sync"
 	"unicode"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/bufferpool"
@@ -79,123 +79,60 @@ func FromEnvVar(prefix, envVar string) (*config.Path, error) {
 
 // EnvOp allows to set options when creating a new Environment storage service.
 type EnvOp struct {
-	// Preload loads all applicable environment variables during instantiation of
-	// NewEnvironment and caches the variables internally. No other access to the
-	// environment will be made.
-	Preload bool
 	// Prefix can be set to as a custom optional Prefix in case where default
 	// Prefix does not work.
 	Prefix string
-	// UnsetEnvAfterRead calls os.Unsetenv after retrieving the value.
-	UnsetEnvAfterRead bool
-	// CacheVariableFn custom call back function which can be used to
-	// distinguish if a variable should be cached internally or not. Returning
-	// always true, caches all found environment variables. Only applicable when
-	// Preload is false.
-	CacheVariableFn func(*config.Path) bool
 }
 
-// Storage reads configuration values from environment variables. A valid env var is
-// always uppercase and [A-Z0-9_].
-// CONFIG__ETCD__CREDENTIALS__USER_NAME -> etc/credentials/user_name
-// Package cfgenv reads config paths from special crafted environment variables.
-//
-// Env vars (environment variables) can be unset after reading and optionally
-// cached. They can be read during initialization of the storage backend or on
-// each request.
-type Environment struct {
-	options EnvOp
-	mu      sync.Mutex
-	cache   map[cacheKey]string
-}
-
-// NewEnvironment creates a new storage service which reads from the environment
-// variables. EnvOp provides various options to configure the behaviour.
-func NewEnvironment(o EnvOp) (config.Storager, error) {
-	s := &Environment{
-		options: o,
-		cache:   make(map[cacheKey]string),
-	}
-	if s.options.Prefix == "" {
-		s.options.Prefix = Prefix
-	}
-
-	if o.Preload {
-		for _, ev := range os.Environ() {
-			equalPos := strings.IndexRune(ev, '=')
-			if equalPos < 0 {
-				continue
-			}
-			key := ev[:equalPos]
-			if !s.isAllowed(key) {
-				continue
-			}
-
-			p, err := FromEnvVar(s.options.Prefix, key)
-			if err != nil {
-				return nil, errors.WithStack(err)
-			}
-			if s.options.CacheVariableFn == nil || s.options.CacheVariableFn(p) {
-				s.cache[makeCacheKey(p.ScopeRoute())] = ev[equalPos+1:]
-				if s.options.UnsetEnvAfterRead {
-					os.Unsetenv(key)
-				}
-			}
-		}
-	}
-	if s.options.CacheVariableFn == nil {
-		s.options.CacheVariableFn = func(_ *config.Path) bool { return false }
-	}
-	return s, nil
-}
-
-// Set is a no-op function.
-func (s *Environment) Set(_ *config.Path, _ []byte) error {
-	return nil
-}
-
-// Get returns the value from the environment by match scope and route.
-func (s *Environment) Get(p *config.Path) (v []byte, found bool, err error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	key := makeCacheKey(p.ScopeRoute())
-	if s.cache != nil {
-		if val, ok := s.cache[key]; ok {
-			return []byte(val), true, nil
-		}
-	}
-
-	envKey := ToEnvVar(p)
-	if !s.isAllowed(envKey) {
-		return nil, false, nil
-	}
-
-	envVal, ok := os.LookupEnv(envKey)
-	if !ok {
-		return nil, false, nil
-	}
-
-	if s.options.CacheVariableFn(p) {
-		s.cache[key] = envVal
-	}
-	if s.options.UnsetEnvAfterRead {
-		if err := os.Unsetenv(envKey); err != nil {
-			return nil, false, errors.Wrapf(err, "[cfgenv] Unset failed with env variable key: %q", envKey)
-		}
-	}
-	return []byte(envVal), true, nil
-}
-
-func (s *Environment) isAllowed(varName string) bool {
-	if !strings.HasPrefix(varName, s.options.Prefix) {
+func isEnvVarAllowed(prefix, varName string) bool {
+	if !strings.HasPrefix(varName, prefix) {
 		return false
 	}
-
 	for _, r := range varName {
 		if ok := unicode.IsUpper(r) || unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_'; !ok {
 			return false
 		}
 	}
 	return true
+}
+
+// WithLoadEnvironmentVariables reads configuration values from environment
+// variables. A valid env var is always uppercase and [A-Z0-9_].
+//		CONFIG__ETCD__CREDENTIALS__USER_NAME -> etc/credentials/user_name
+//
+// Env vars (environment variables) can be unset after reading and optionally
+// cached. They can be read during initialization of the storage backend or on
+// each request.
+func WithLoadEnvironmentVariables(op EnvOp) config.LoadDataOption {
+	if op.Prefix == "" {
+		op.Prefix = Prefix
+	}
+
+	return config.MakeLoadDataOption(func(s *config.Service) (err error) {
+		for _, ev := range os.Environ() {
+			equalPos := strings.IndexRune(ev, '=')
+			if equalPos < 0 {
+				continue
+			}
+			key := ev[:equalPos]
+			if !isEnvVarAllowed(op.Prefix, key) {
+				continue
+			}
+			envVal, ok := os.LookupEnv(key)
+			if ok {
+				p, err := FromEnvVar(op.Prefix, key)
+				if err != nil {
+					return errors.WithStack(err)
+				}
+				if err := s.Set(p, []byte(envVal)); err != nil {
+					return errors.WithStack(err)
+				}
+			}
+			if s.Log != nil && s.Log.IsDebug() {
+				s.Log.Debug("config.storage.WithLoadEnvironmentVariables", log.String("name", key), log.Bool("found", ok), log.Int("value_length", len(envVal)))
+			}
+		}
+
+		return
+	}).WithUseStorageLevel(1)
 }

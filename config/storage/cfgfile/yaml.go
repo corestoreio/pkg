@@ -22,8 +22,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// WithLoadYAML reads the configuration values from a JSON file and applies it
-// to the config.service. "testdata/example.json" provides an example JSON file.
+// WithLoadYAML reads the configuration values from a YAML file and applies it
+// to the config.service. "testdata/example.yaml" provides an example YAML file.
 func WithLoadYAML(opts ...option) config.LoadDataOption {
 	return config.MakeLoadDataOption(func(s *config.Service) (err error) {
 		for i := 0; i < len(opts) && err == nil; i++ {

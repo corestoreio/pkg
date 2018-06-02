@@ -52,12 +52,12 @@ func TestFromEnvVar(t *testing.T) {
 		wantErr  errors.Kind
 	}{
 		{"CONFIG__AA__BB__CC", "default/0/aa/bb/cc", errors.NoKind},
-		{"CONFIG__AA__BB__CC__DD", "", errors.NotValid}, // errors.NotValid
+		{"CONFIG__AA__BB__CC__DD", "default/0/aa/bb/cc/dd", errors.NoKind},
 		{"CONFIG__AA__BB__CC_DD", "default/0/aa/bb/cc_dd", errors.NoKind},
 		{"CONFIG__WEBSITES__321__AA__BB__CC", "websites/321/aa/bb/cc", errors.NoKind},
 		{"CONFIG__STORES__1__AA__BB__CC", "stores/1/aa/bb/cc", errors.NoKind},
 		{"CONFIG__STORES__AA__BB__CC", "", errors.NotValid},
-		{"ONFIG__STORES__AA__BB__CC", "", errors.NotValid},
+		{"ONFIG__STORES__AA__BB__CC", "default/0/tores/aa/bb/cc", errors.NoKind},
 		{"CONFIG__", "", errors.NotValid},
 		{"ONFIG__", "", errors.NotValid},
 		{"", "", errors.NotValid},
@@ -65,7 +65,7 @@ func TestFromEnvVar(t *testing.T) {
 	for i, test := range tests {
 		haveP, haveErr := storage.FromEnvVar(storage.Prefix, test.envVar)
 		if test.wantErr > 0 {
-			assert.Nil(t, haveP)
+			assert.Nil(t, haveP, "Index %d", i)
 			assert.True(t, test.wantErr.Match(haveErr), "%d: Kind %q\n%+v", i, errors.UnwrapKind(haveErr).String(), haveErr)
 		} else {
 			require.NoError(t, haveErr, "Index %d. Kind %q", i, errors.UnwrapKind(haveErr).String())
@@ -74,78 +74,44 @@ func TestFromEnvVar(t *testing.T) {
 	}
 }
 
-func TestStorage_No_Preload(t *testing.T) {
-	s, err := storage.NewEnvironment(storage.EnvOp{
-		Preload: false,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestWithLoadEnvironmentVariables(t *testing.T) {
 
-	t.Run("empty write returns nil error", func(t *testing.T) {
-		assert.NoError(t, s.Set(new(config.Path), nil))
-	})
+	t.Run("success", func(t *testing.T) {
+		const wantValue = "Pear 🍐"
+		assert.NoError(t, os.Setenv("CONFIG__STORES__345__XX__BB__CC", wantValue))
+		assert.NoError(t, os.Setenv("CONFIG__STORES__345__XY__BB__CC", ""))
+		assert.NoError(t, os.Setenv("CONFIG__GENERAL__GPS__LAT", "42.1234"))
+		defer func() {
+			assert.NoError(t, os.Unsetenv("CONFIG__STORES__345__XX__BB__CC"))
+			assert.NoError(t, os.Unsetenv("CONFIG__STORES__345__XY__BB__CC"))
+			assert.NoError(t, os.Unsetenv("CONFIG__GENERAL__GPS__LAT"))
+		}()
 
-	runner := func(envVar string, scp scope.TypeID, route string) func(*testing.T) {
-		return func(t *testing.T) {
-			defer func() { assert.NoError(t, os.Unsetenv(envVar)) }()
-			require.NoError(t, os.Setenv(envVar, "DATA from ENV"))
-
-			validateFoundGet(t, s, scp, route, `DATA from ENV`)
+		cfgSrv, err := config.NewService(
+			storage.NewMap(), config.Options{},
+			storage.WithLoadEnvironmentVariables(storage.EnvOp{}),
+		)
+		if err != nil {
+			t.Fatalf("%+v", err)
 		}
-	}
-	t.Run("default scope", runner("CONFIG__AA__BB__CC", scope.DefaultTypeID, "aa/bb/cc"))
-	t.Run("website 123 scope", runner("CONFIG__WEBSITES__1__AA__BB__CC", scope.Website.WithID(1), "aa/bb/cc"))
-	t.Run("store 444 scope", runner("CONFIG__STORES__444__AA__BB__CC_DD__EE", scope.Store.WithID(444), "aa/bb/cc_dd/ee"))
-	t.Run("wrong path with special symbols", func(t *testing.T) {
-		envVar := "CONFIG____€__∏"
-		defer func() { assert.NoError(t, os.Unsetenv(envVar)) }()
-		require.NoError(t, os.Setenv(envVar, "DATA from ENV"))
 
-		validateNotFoundGet(t, s, scope.DefaultTypeID, "aa/bb/cc")
+		assert.Exactly(t, "\"Pear 🍐\"", cfgSrv.Get(config.MustNewPathWithScope(scope.Store.WithID(345), "xx/bb/cc")).String())
+		assert.Exactly(t, `""`, cfgSrv.Get(config.MustNewPathWithScope(scope.Store.WithID(345), "xy/bb/cc")).String())
+		assert.Exactly(t, 42.1234, cfgSrv.Get(config.MustNewPath("general/gps/lat")).UnsafeFloat64())
 	})
-}
 
-func TestStorage_No_Preload_UnsetEnvAfterRead_And_Cache(t *testing.T) {
-	s, err := storage.NewEnvironment(storage.EnvOp{
-		UnsetEnvAfterRead: true,
-		Preload:           false,
-		CacheVariableFn:   func(*config.Path) bool { return true }, // cache all
+	t.Run("malformed path", func(t *testing.T) {
+		assert.NoError(t, os.Setenv("CONFIG__BB__CC", "x"))
+		defer func() {
+			assert.NoError(t, os.Unsetenv("CONFIG__BB__CC"))
+		}()
+
+		cfgSrv, err := config.NewService(
+			storage.NewMap(), config.Options{},
+			storage.WithLoadEnvironmentVariables(storage.EnvOp{}),
+		)
+		assert.Nil(t, cfgSrv)
+		assert.True(t, errors.NotValid.Match(err))
+		assert.EqualError(t, err, "[config] Expecting: `aa/bb/cc` or `strScope/ID/aa/bb/cc` but got \"bb/cc\"`")
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	const wantValue = "Banana 🍌"
-	os.Setenv("CONFIG__WEBSITES__159__AA__BB__CC", wantValue)
-
-	validateFoundGet(t, s, scope.Website.WithID(159), "aa/bb/cc", wantValue)
-
-	ev, eOK := os.LookupEnv("CONFIG__WEBSITES__159__AA__BB__CC")
-	assert.False(t, eOK, "Env var must be unset and not found")
-	assert.Empty(t, ev, "Env var must be empty")
-
-	// Read from cache
-	validateFoundGet(t, s, scope.Website.WithID(159), "aa/bb/cc", wantValue)
-}
-
-func TestStorage_With_Preload_UnsetEnvAfterRead(t *testing.T) {
-	const wantValue = "Pear 🍐"
-	os.Setenv("CONFIG__STORES__345__XX__BB__CC", wantValue)
-	os.Setenv("CONFIG__STORES__345__XY__BB__CC", "")
-
-	s, err := storage.NewEnvironment(storage.EnvOp{
-		UnsetEnvAfterRead: true,
-		Preload:           true,
-		CacheVariableFn:   nil, // cache all
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	validateFoundGet(t, s, scope.Store.WithID(345), "xx/bb/cc", wantValue)
-	validateFoundGet(t, s, scope.Store.WithID(345), "xy/bb/cc", "")
-
-	ev, eOK := os.LookupEnv("CONFIG__STORES__345__XX__BB__CC")
-	assert.False(t, eOK, "Env var must be unset and not found")
-	assert.Empty(t, ev, "Env var must be empty")
-
 }

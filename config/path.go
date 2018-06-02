@@ -245,7 +245,7 @@ func (p *Path) Parse(routeOrFQPath string) (err error) {
 	// moving from strings to bytes was even slower despite inline
 	// th parse int64 function
 	if strings.Count(routeOrFQPath, sPathSeparator) < PathLevels-1 {
-		return errors.NotValid.Newf("[config] Expecting: %q or `strScope/ID/%s`", routeOrFQPath, routeOrFQPath)
+		return errors.NotValid.Newf("[config] Expecting: `aa/bb/cc` or `strScope/ID/aa/bb/cc` but got %q`", routeOrFQPath)
 	}
 
 	fi1 := strings.Index(routeOrFQPath, sPathSeparator)
