@@ -599,9 +599,130 @@ func TestService_PathWithEnvName(t *testing.T) {
 }
 
 func TestService_DifferentStorageLevels(t *testing.T) {
-
 	sMap := storage.NewMap()
 	srv := config.MustNewService(sMap, config.Options{})
 	defer func() { assert.NoError(t, srv.Close()) }()
+}
 
+type testObserver struct {
+	err     error
+	rawData []byte
+	observe func(p config.Path, found bool, rawData []byte) (rawData2 []byte, err error)
+}
+
+func (to testObserver) Observe(p config.Path, found bool, rawData []byte) (rawData2 []byte, err error) {
+	if to.observe != nil {
+		return to.observe(p, found, rawData)
+	}
+	if to.rawData != nil {
+		return to.rawData, nil
+	}
+	return rawData, to.err
+}
+
+func TestService_Observer_Set(t *testing.T) {
+
+	srv := config.MustNewService(storage.NewMap(), config.Options{})
+	defer func() { assert.NoError(t, srv.Close()) }()
+
+	pUser := config.MustNewPath("carrier/dhl/username")
+	dUserName := []byte(`96703400169141436bc769418a3577e5`)
+
+	assert.NoError(t, srv.Set(pUser, dUserName))
+
+	t.Run("Register with out of range event ID", func(t *testing.T) {
+		err := srv.RegisterObserver(81, "aa/bb/cc", nil)
+		assert.True(t, errors.OutOfRange.Match(err), "%+v", err)
+	})
+	t.Run("DeregisterObservers with out of range event ID", func(t *testing.T) {
+		err := srv.DeregisterObservers(82, "aa/bb/cc")
+		assert.True(t, errors.OutOfRange.Match(err), "%+v", err)
+	})
+
+	t.Run("Before GET returns error", func(t *testing.T) {
+		assert.NoError(t, srv.RegisterObserver(config.EventOnBeforeGet, "carrier/dhl/username", testObserver{
+			err: errors.AlreadyInUse.Newf("Ups"),
+		}))
+
+		str, ok, err := srv.Get(pUser).Str()
+		assert.Empty(t, str, "Get should return empty string")
+		assert.False(t, ok, "Get should confirm string cannot be found due to an error")
+		assert.True(t, errors.AlreadyInUse.Match(err), "%+v", err)
+
+		assert.NoError(t, srv.DeregisterObservers(config.EventOnBeforeGet, "carrier/dhl/username"))
+	})
+
+	t.Run("After GET returns error", func(t *testing.T) {
+		assert.NoError(t, srv.RegisterObserver(config.EventOnAfterGet, "carrier/dhl/username", testObserver{
+			err: errors.AlreadyCaptured.Newf("Ups"),
+		}))
+
+		str, ok, err := srv.Get(pUser).Str()
+		assert.Empty(t, str, "Get should return empty string")
+		assert.False(t, ok, "Get should confirm string cannot be found due to an error")
+		assert.True(t, errors.AlreadyCaptured.Match(err), "%+v", err)
+
+		assert.NoError(t, srv.DeregisterObservers(config.EventOnAfterGet, "carrier/dhl/username"))
+	})
+
+	t.Run("Before SET returns error", func(t *testing.T) {
+		assert.NoError(t, srv.RegisterObserver(config.EventOnBeforeSet, "aa/bb/cc", testObserver{
+			err: errors.AlreadyInUse.Newf("Ups"),
+		}))
+
+		p := config.MustNewPathWithScope(scope.Website.WithID(2), "aa/bb/cc")
+		data := []byte(`4711`)
+		err := srv.Set(p, data)
+		assert.True(t, errors.AlreadyInUse.Match(err), "%+v", err)
+
+		assert.NoError(t, srv.DeregisterObservers(config.EventOnBeforeSet, "aa/bb/cc"))
+	})
+
+	t.Run("After SET returns error", func(t *testing.T) {
+		assert.NoError(t, srv.RegisterObserver(config.EventOnAfterSet, "aa/bb/cc", testObserver{
+			err: errors.AlreadyCaptured.Newf("Ups"),
+		}))
+
+		p := config.MustNewPathWithScope(scope.Website.WithID(2), "aa/bb/cc")
+		data := []byte(`4711`)
+		err := srv.Set(p, data)
+		assert.True(t, errors.AlreadyCaptured.Match(err), "%+v", err)
+
+		assert.NoError(t, srv.DeregisterObservers(config.EventOnAfterSet, "aa/bb/cc"))
+	})
+
+	t.Run("dispatch", func(t *testing.T) {
+		assert.NoError(t, srv.RegisterObserver(config.EventOnBeforeSet, "aa/bb/dd", testObserver{
+			rawData: []byte(`0816`),
+		}))
+
+		getsCalledGet := false
+		assert.NoError(t, srv.RegisterObserver(config.EventOnBeforeGet, "aa/bb", testObserver{
+			observe: func(p config.Path, found bool, rawData []byte) (rawData2 []byte, err error) {
+				assert.False(t, found)
+				assert.Nil(t, rawData)
+				assert.Exactly(t, `websites/2/aa/bb/dd`, p.String())
+				getsCalledGet = true
+				return rawData, nil
+			},
+		}))
+
+		getsCalledSet := false
+		assert.NoError(t, srv.RegisterObserver(config.EventOnAfterSet, "aa/bb/dd", testObserver{
+			observe: func(p config.Path, found bool, rawData []byte) (rawData2 []byte, err error) {
+				assert.Exactly(t, `0816`, string(rawData))
+				getsCalledSet = true
+				return rawData, nil
+			},
+		}))
+
+		p := config.MustNewPathWithScope(scope.Website.WithID(2), "aa/bb/dd")
+		data := []byte(`4711`)
+		assert.NoError(t, srv.Set(p, data))
+
+		assert.Exactly(t, `"0816"`, srv.Get(p).String())
+		assert.True(t, getsCalledSet, "Event after set should get called")
+		assert.True(t, getsCalledGet, "Event before get should get called")
+		assert.NoError(t, srv.DeregisterObservers(config.EventOnBeforeSet, "/aa/bb/dd"))
+	})
 }

@@ -66,13 +66,10 @@ func valFoundStringer(found uint8) string {
 // Value represents an immutable value returned from the configuration service.
 // A value is meant to be only for reading and not safe for concurrent use.
 type Value struct {
+	data []byte
 	// Path optionally assigned to, to know to which path a value belongs to and to
 	// provide different converter behaviour.
-	Path      Path
-	data      []byte
-	converted bool
-	// Converter converts on any method receiver call the byte value.
-	Converter ValueConverter
+	Path Path
 	// CSVColumnSep defines the CSV column separator, default a comma.
 	CSVReader *csv.Reader
 	CSVComma  rune
@@ -92,12 +89,6 @@ func NewValue(data []byte) *Value {
 	}
 }
 
-// WithConvert applies a function as a ValueConverter.
-func (v *Value) WithConvert(fn func(*Path, []byte) ([]byte, error)) *Value {
-	v.Converter = convertFn(fn)
-	return v
-}
-
 func (v *Value) init() (found bool, err error) {
 	if v.lastErr != nil || valFoundNo == v.found {
 		return false, v.lastErr
@@ -105,10 +96,6 @@ func (v *Value) init() (found bool, err error) {
 
 	if v.CSVComma == 0 {
 		v.CSVComma = CSVColumnSeparator
-	}
-	if v.Converter != nil && !v.converted {
-		v.data, err = v.Converter.Convert(&v.Path, v.data)
-		v.converted = true
 	}
 	return v.found > valFoundNo && err == nil, err
 }

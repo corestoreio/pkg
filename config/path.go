@@ -65,9 +65,18 @@ type Path struct {
 	routeValidated bool
 	// UseEnvSuffix if enabled the Path has environment awareness. An
 	// environment comes from the *Service type and defines for example
-	// PRODUCTION, TEST, CI or STAGING. The final path will use this prefix to
+	// PRODUCTION, TEST, CI or STAGING. The final path will use this suffix to
 	// distinguish between the environments. Environment awareness should be
 	// added to Paths for e.g. payment credentials or order export access data.
+	// Paths which are marked for environment awareness must have stored their
+	// values for each environment. For example: a route can be
+	// carriers/dhl/password and an integration has three environments set:
+	// PRD,TEST,DEV. The final paths for the default value would be:
+	//		default/0/carriers/dhl/password/PRD
+	//		default/0/carriers/dhl/password/TEST
+	//		default/0/carriers/dhl/password/DEV
+	// The path for PRD can also be default/0/carriers/dhl/password when there
+	// would be no OS environment variable present.
 	UseEnvSuffix bool
 	// envSuffix gets set by the *Service type if the service runs environment
 	// aware and a Path has set UseEnvSuffix to true.
@@ -516,6 +525,17 @@ func (p *Path) ScopeRoute() (scope.TypeID, string) {
 		return p.ScopeID, p.route + sPathSeparator + p.envSuffix
 	}
 	return p.ScopeID, p.route
+}
+
+func (p *Path) separatorPrefixRoute() string {
+	var buf strings.Builder
+	buf.WriteByte(PathSeparator)
+	buf.WriteString(p.route)
+	if p.UseEnvSuffix && p.envSuffix != "" {
+		buf.WriteByte(PathSeparator)
+		buf.WriteString(p.envSuffix)
+	}
+	return buf.String()
 }
 
 // Part returns the route part on the desired position. The Route gets validated

@@ -45,13 +45,6 @@ func TestValue(t *testing.T) {
 		v.found = valFoundNo
 		assert.Exactly(t, "<notFound>", v.String())
 	})
-	t.Run("String Convert Failed", func(t *testing.T) {
-		v := NewValue([]byte(`Rothaus`))
-
-		assert.Contains(t, v.WithConvert(func(p *Path, data []byte) ([]byte, error) {
-			return nil, errors.AlreadyInUse.Newf("Convert already in use")
-		}).String(), "[config] Value: Convert already in use")
-	})
 
 	t.Run("WriteTo", func(t *testing.T) {
 		v := NewValue([]byte(`Rothaus Beer`))

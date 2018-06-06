@@ -19,6 +19,7 @@ import (
 	"os/signal"
 	"sort"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/corestoreio/errors"
@@ -84,6 +85,11 @@ type Service struct {
 	hotReloadSignal chan os.Signal
 	loadDataFns     loadDataOptions
 	envReplacer     *strings.Replacer
+
+	// more events can be added once needed,
+	eventMu sync.RWMutex
+	events  [eventMaxCount]*triePath
+
 	// TODO auto detect unmarshaller and get one from a pool pass the correct unmarshaler to the Value.
 }
 
@@ -266,6 +272,47 @@ func (s *Service) NewScoped(websiteID, storeID int64) Scoped {
 	return NewScoped(s, websiteID, storeID)
 }
 
+// RegisterObserver appends a blocking observer for a route or route prefix.
+// Multiple observers can be added to a route. Event argument is one of the
+// constants starting with `EventOn...`.
+func (s *Service) RegisterObserver(event uint8, route string, cb EventObserver) error {
+	if event >= eventMaxCount {
+		return errors.OutOfRange.Newf("[config] Service.RegisterObserver event %d greater or equal than allowed %d", event, eventMaxCount)
+	}
+	s.eventMu.Lock()
+	defer s.eventMu.Unlock()
+
+	if s.events[event] == nil {
+		s.events[event] = newTriePath()
+	}
+	if !strings.HasPrefix(route, sPathSeparator) {
+		route = sPathSeparator + route
+	}
+	s.events[event].Put(route, cb)
+
+	return nil
+}
+
+// DeregisterObservers removes all observers for a specific route or route
+// prefix. Event argument is one of the constants starting with `EventOn...`.
+func (s *Service) DeregisterObservers(event uint8, route string) error {
+	if event >= eventMaxCount {
+		return errors.OutOfRange.Newf("[config] Service.DeregisterObservers event %d greater or equal than allowed %d", event, eventMaxCount)
+	}
+	s.eventMu.Lock()
+	defer s.eventMu.Unlock()
+
+	if s.events[event] == nil {
+		return nil
+	}
+	if !strings.HasPrefix(route, sPathSeparator) {
+		route = sPathSeparator + route
+	}
+	s.events[event].Delete(route)
+
+	return nil
+}
+
 // Set puts a value back into the Service. Safe for concurrent use. Example
 // usage:
 //		// Default Scope
@@ -279,23 +326,43 @@ func (s *Service) NewScoped(websiteID, storeID int64) Scoped {
 //		// Store Scope
 //		// 6 for example comes from core_store/store database table
 //		err := Write(p.Bind(scope.StoreID, 6), "CHF")
-func (s *Service) Set(p *Path, v []byte) error {
+func (s *Service) Set(p *Path, v []byte) (err error) {
+	// wow so many IFs :-\
 	if p.UseEnvSuffix && p.envSuffix != s.envName {
 		p.envSuffix = s.envName
 	}
 	if s.config.Log != nil && s.config.Log.IsDebug() {
-		log.WhenDone(s.config.Log).Debug("config.Service.Write", log.Stringer("path", p), log.Int("data_length", len(v)))
+		defer log.WhenDone(s.config.Log).Debug("config.Service.Write", log.Stringer("path", p), log.Int("data_length", len(v)), log.Err(err))
 	}
-	if err := p.IsValid(); err != nil {
-		return errors.WithStack(err)
+	if err = p.IsValid(); err != nil {
+		err = errors.WithStack(err)
+		return
 	}
+
+	s.eventMu.RLock()
+	defer s.eventMu.RUnlock()
+	if eb, ea := s.events[EventOnBeforeSet], s.events[EventOnAfterSet]; eb != nil || ea != nil {
+		if ea != nil {
+			defer func() {
+				if _, err2 := ea.dispatch(p, err == nil, v); err == nil && err2 != nil {
+					err = errors.WithStack(err2)
+				}
+			}()
+		}
+
+		if v, err = eb.dispatch(p, true, v); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
 	if err := s.level2.Set(p, v); err != nil {
 		return errors.Wrap(err, "[config] Service.level2.Set")
 	}
 	if s.pubSub != nil {
 		s.pubSub.sendMsg(*p)
 	}
-	return nil
+
+	return
 }
 
 // Get returns a configuration value from the Service, ignoring the scopes
@@ -329,6 +396,23 @@ func (s *Service) Get(p *Path) (v *Value) {
 	var ok bool
 	v = &Value{
 		Path: *p,
+	}
+
+	s.eventMu.RLock()
+	defer s.eventMu.RUnlock()
+	if eb, ea := s.events[EventOnBeforeGet], s.events[EventOnAfterGet]; eb != nil || ea != nil {
+		if ea != nil {
+			defer func() {
+				var err error
+				if v.data, err = ea.dispatch(p, v.found > valFoundNo, v.data); err != nil {
+					v.lastErr = errors.WithStack(err)
+				}
+			}()
+		}
+		if _, err := eb.dispatch(p, false, nil); err != nil {
+			v.lastErr = errors.WithStack(err)
+			return
+		}
 	}
 
 	if s.config.Level1 != nil {
@@ -367,6 +451,7 @@ func (s *Service) Get(p *Path) (v *Value) {
 //		- currency/options/base
 //		- currency/options
 //		- currency
+// Events are running asynchronously.
 func (s *Service) Subscribe(path string, mr MessageReceiver) (subscriptionID int, err error) {
 	if s.pubSub == nil {
 		return 0, errors.NotImplemented.Newf("[config] PubSub not enabled")
