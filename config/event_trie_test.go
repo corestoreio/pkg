@@ -110,7 +110,7 @@ func testTrie(t *testing.T, trie *triePath) {
 	// get
 	for _, c := range cases {
 		if value := trie.Get(c.key); !cstesting.EqualPointers(t, value[1], c.value) {
-			t.Errorf("expected key %s to have value %p, got %#v", c.key, c.value, value)
+			t.Errorf("expected key %s to have value %#v, got %#v", c.key, c.value, value)
 		}
 	}
 
@@ -211,7 +211,7 @@ func testTrieWalk(t *testing.T, trie *triePath) {
 	walker := func(key string, value eventObservers) error {
 		// value for each walked key is correct
 		if !cstesting.EqualPointers(t, value[0], table[key]) {
-			t.Errorf("expected key %s to have value %p, got %#v", key, table[key], value)
+			t.Errorf("expected key %s to have value %#v, got %#v", key, table[key], value)
 		}
 		walked[key]++
 		return nil

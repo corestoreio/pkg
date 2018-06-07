@@ -465,6 +465,11 @@ func TestValue(t *testing.T) {
 		v := NewValue(d)
 		assert.True(t, v.IsEqual(d))
 	})
+	t.Run("ConstantTimeCompare", func(t *testing.T) {
+		d := []byte(`5m2s`)
+		v := NewValue(d)
+		assert.True(t, v.ConstantTimeCompare(d))
+	})
 }
 
 func TestValue_Unsafe(t *testing.T) {

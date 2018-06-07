@@ -54,6 +54,7 @@ const (
 
 // EventObserver gets called when an event gets dispatched. Not all events
 // support modifying the raw data argument.
+// For example the EventOnAfterGet allows to decrypt encrypted data.
 type EventObserver interface {
 	// Observe must always return the rawData argument or an error.
 	// Observer can transform and modify the raw data in any case.
@@ -163,7 +164,7 @@ func (trie *triePath) Put(key string, value EventObserver) bool {
 	}
 	node := trie
 	for part, i := segmentPath(key, 0); ; part, i = segmentPath(key, i) {
-		child, _ := node.children[part]
+		child := node.children[part]
 		if child == nil {
 			child = newTriePath()
 			node.children[part] = child

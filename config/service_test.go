@@ -620,7 +620,7 @@ func (to testObserver) Observe(p config.Path, found bool, rawData []byte) (rawDa
 	return rawData, to.err
 }
 
-func TestService_Observer_Set(t *testing.T) {
+func TestService_Observer(t *testing.T) {
 
 	srv := config.MustNewService(storage.NewMap(), config.Options{})
 	defer func() { assert.NoError(t, srv.Close()) }()

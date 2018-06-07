@@ -31,20 +31,6 @@ import (
 // CSVColumnSeparator separates CSV values. Default value.
 const CSVColumnSeparator = ','
 
-// ValueConverter can convert the raw underlying value to the final data.
-type ValueConverter interface {
-	// Convert takes an optionally Path and the raw bytes to convert the raw
-	// bytes into their final representation. An example would be base64
-	// decoding.
-	Convert(*Path, []byte) ([]byte, error)
-}
-
-type convertFn func(*Path, []byte) ([]byte, error)
-
-func (cfn convertFn) Convert(p *Path, data []byte) ([]byte, error) {
-	return cfn(p, data)
-}
-
 const (
 	valFoundNo = iota
 	valFoundL2
@@ -552,7 +538,8 @@ func (v *Value) Equal(v2 *Value) bool {
 }
 
 // EqualData compares if the data part of the current value is equal to v2. Nil
-// safe.
+// safe. Does not use constant time for byte comparison, not secure for
+// passwords.
 func (v *Value) EqualData(v2 *Value) bool {
 	return v != nil && v2 != nil && v.lastErr == nil && v2.lastErr == nil && v.found > valFoundNo && bytes.Equal(v.data, v2.data)
 }
@@ -593,4 +580,11 @@ func parseDateTime(str string, loc *time.Location) (t time.Time, err error) {
 		t, err = time.Date(y, mo, d, h, mi, s, t.Nanosecond(), loc), nil
 	}
 	return
+}
+
+// ConstantTimeCompare compares in a constant time manner data with the
+// underlying value retrieved from the config service. Useful for passwords and
+// other hashes.
+func (v *Value) ConstantTimeCompare(data []byte) bool {
+	return v.lastErr == nil && len(data) > 0 && subtle.ConstantTimeCompare(v.data, data) == 1
 }

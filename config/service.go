@@ -58,7 +58,6 @@ type Setter interface {
 // simple mutex protected in memory map[string]string.
 // Storager must be safe for concurrent use.
 type Storager interface {
-	// TODO maybe add context as first param and observe in storage implementations if the ctx got cancelled.
 	// Set sets a key with a value and returns on success nil or
 	// ErrKeyOverwritten, on failure any other error
 	Setter
@@ -201,6 +200,8 @@ func (s *Service) loadData() error {
 		s2 := s
 		if opt.level == 1 && s2.config.Level1 != nil {
 			s2 = new(Service)
+			// might be OK: assignment copies lock value to *s2: config.Service
+			// contains sync.RWMutex (vet)
 			*s2 = *s // might be racy. need to check that.
 			s2.level2 = s2.config.Level1
 		}

@@ -26,6 +26,7 @@ import (
 // *config.Service. You can load environment dependent configuration files.
 const EnvNamePlaceHolder = `{CS_ENV}`
 
+// DefaultOSEnvVariableName default name of the OS environment variable.
 const DefaultOSEnvVariableName = `CS_ENV`
 
 // Options applies configurations to the NewService function. Used mainly by external
