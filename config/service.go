@@ -333,7 +333,7 @@ func (s *Service) Set(p *Path, v []byte) (err error) {
 		p.envSuffix = s.envName
 	}
 	if s.config.Log != nil && s.config.Log.IsDebug() {
-		defer log.WhenDone(s.config.Log).Debug("config.Service.Write", log.Stringer("path", p), log.Int("data_length", len(v)), log.Err(err))
+		defer log.WhenDone(s.config.Log).Debug("config.Service.Set", log.Stringer("path", p), log.Int("data_length", len(v)), log.Err(err))
 	}
 	if err = p.IsValid(); err != nil {
 		err = errors.WithStack(err)

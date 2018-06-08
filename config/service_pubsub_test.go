@@ -213,7 +213,7 @@ func TestPubSubUnsubscribe(t *testing.T) {
 	assert.NoError(t, s.Unsubscribe(subID))
 	assert.NoError(t, s.Set(p, []byte(`any kind of data`)))
 	assert.NoError(t, s.Close())
-	assert.Regexp(t, `config.Service.Write duration: [0-9]+ path: "stores/123/xx/yy/zz" data_length: 16`, debugBuf.String())
+	assert.Regexp(t, `config.Service.Set duration: [0-9]+ path: "stores/123/xx/yy/zz" data_length: 16`, debugBuf.String())
 
 }
 

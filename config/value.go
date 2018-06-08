@@ -17,6 +17,7 @@ package config
 import (
 	"bytes"
 	"crypto/subtle"
+	"encoding"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -52,7 +53,8 @@ func valFoundStringer(found uint8) string {
 // Value represents an immutable value returned from the configuration service.
 // A value is meant to be only for reading and not safe for concurrent use.
 type Value struct {
-	data []byte
+	data    []byte
+	lastErr error
 	// Path optionally assigned to, to know to which path a value belongs to and to
 	// provide different converter behaviour.
 	Path Path
@@ -63,8 +65,7 @@ type Value struct {
 	// path. Even a NULL value can be valid. found gets also used as a
 	// statistical flag to identify where a value comes from, e.g. from level2
 	// or from LRU.
-	found   uint8
-	lastErr error
+	found uint8
 }
 
 // NewValue makes a new non-pointer value type.
@@ -99,15 +100,6 @@ func (v *Value) String() string {
 		return "<nil>"
 	}
 	return fmt.Sprintf("%q", v.data)
-}
-
-// WriteTo writes the converted raw data to w.
-func (v *Value) WriteTo(w io.Writer) (n int64, err error) {
-	if _, err = v.init(); err != nil {
-		return 0, errors.WithStack(err)
-	}
-	nw, err := w.Write(v.data)
-	return int64(nw), err
 }
 
 // UnsafeStr same as Str but ignores errors.
@@ -185,17 +177,46 @@ func (v *Value) CSV(ret ...[]string) (_ [][]string, err error) {
 	return ret, err
 }
 
-// Unmarshal decodes the value into the final type. vPtr must be a pointer. The
+// UnmarshalTo decodes the value into the final type. vPtr must be a pointer. The
 // function signature for `fn` matches e.g. json.Unmarshal, xml.Unmarshal and
 // many others.
-func (v *Value) Unmarshal(fn func(data []byte, vPtr interface{}) error, vPtr interface{}) (err error) {
+func (v *Value) UnmarshalTo(fn func([]byte, interface{}) error, vPtr interface{}) (err error) {
 	if _, err = v.init(); err != nil {
 		return errors.WithStack(err)
 	}
-	if v.data == nil {
-		return nil
-	}
 	return fn(v.data, vPtr)
+}
+
+// UnmarshalTextTo wrapper to use encoding.TextUnmarshaler for decoding the
+// textual bytes. Useful for custom types.
+func (v *Value) UnmarshalTextTo(tu encoding.TextUnmarshaler) error {
+	if _, err := v.init(); err != nil {
+		return errors.WithStack(err)
+	}
+	return errors.WithStack(tu.UnmarshalText(v.data))
+}
+
+// UnmarshalBinaryTo wrapper to use encoding.BinaryUnmarshaler for decoding the
+// binary bytes. Useful for custom types.
+func (v *Value) UnmarshalBinaryTo(tu encoding.BinaryUnmarshaler) error {
+	if _, err := v.init(); err != nil {
+		return errors.WithStack(err)
+	}
+	return errors.WithStack(tu.UnmarshalBinary(v.data))
+}
+
+// WriteTo writes the converted raw data to w.
+// WriterTo is the interface that wraps the WriteTo method.
+//
+// WriteTo writes data to w until there's no more data to write or
+// when an error occurs. The return value n is the number of bytes
+// written. Any error encountered during the write is also returned.
+func (v *Value) WriteTo(w io.Writer) (n int64, err error) {
+	if _, err = v.init(); err != nil {
+		return 0, errors.WithStack(err)
+	}
+	_, err = w.Write(v.data)
+	return int64(len(v.data)), err
 }
 
 // UnsafeBool same as Bool but ignores errors.

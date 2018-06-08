@@ -32,6 +32,19 @@ var (
 	_ error        = (*Value)(nil)
 )
 
+type myTestUnmarshal struct {
+	result string
+}
+
+func (m *myTestUnmarshal) UnmarshalText(text []byte) error {
+	m.result = string(text)
+	return nil
+}
+func (m *myTestUnmarshal) UnmarshalBinary(data []byte) error {
+	m.result = string(data)
+	return nil
+}
+
 func TestValue(t *testing.T) {
 	t.Parallel()
 
@@ -145,12 +158,28 @@ func TestValue(t *testing.T) {
 		assert.Exactly(t, [][]string(nil), val)
 	})
 
-	t.Run("Unmarshal1", func(t *testing.T) {
+	t.Run("UnmarshalTo", func(t *testing.T) {
 		v := NewValue([]byte(`{"X":1}`))
 		val := map[string]int{}
-		err := v.Unmarshal(json.Unmarshal, &val)
+		err := v.UnmarshalTo(json.Unmarshal, &val)
 		assert.NoError(t, err)
 		assert.Exactly(t, map[string]int{"X": 1}, val)
+	})
+
+	t.Run("UnmarshalTextTo", func(t *testing.T) {
+		v := NewValue([]byte(`{zXz:1}`))
+		val := &myTestUnmarshal{}
+		err := v.UnmarshalTextTo(val)
+		assert.NoError(t, err)
+		assert.Exactly(t, `{zXz:1}`, val.result)
+	})
+
+	t.Run("UnmarshalBinaryTo", func(t *testing.T) {
+		v := NewValue([]byte(`{eXe:1}`))
+		val := &myTestUnmarshal{}
+		err := v.UnmarshalBinaryTo(val)
+		assert.NoError(t, err)
+		assert.Exactly(t, `{eXe:1}`, val.result)
 	})
 
 	t.Run("Bool1", func(t *testing.T) {
