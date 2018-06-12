@@ -42,6 +42,24 @@ const PermStoreReverse Perm = 1 << Store
 // config.Scoped implementation.
 const PermWebsiteReverse Perm = 1<<Store | 1<<Website
 
+// MakePerm creates a Perm type based on the input argument which can be either:
+// "default","d" or "" for PermDefault, "websites", "website" or "w" for
+// PermWebsite OR "stores", "store" or "s" for PermStore. Any other argument
+// triggers a NotSupported error.
+func MakePerm(name string) (p Perm, err error) {
+	switch name {
+	case "default", "d", "":
+		p = PermDefault
+	case "websites", "website", "w":
+		p = PermWebsite
+	case "stores", "store", "s":
+		p = PermStore
+	default:
+		err = errors.NotSupported.Newf("[scope] Permission Scope identifier %q not supported. Available: d,w,s", name)
+	}
+	return
+}
+
 // All applies DefaultID, WebsiteID and StoreID scopes
 func (bits Perm) All() Perm {
 	return bits.Set(Default, Website, Store)
@@ -50,7 +68,7 @@ func (bits Perm) All() Perm {
 // Set takes a variadic amount of Group to set them to Bits
 func (bits Perm) Set(scopes ...Type) Perm {
 	for _, i := range scopes {
-		bits |= (1 << i) // (1 << power = 2^power)
+		bits |= 1 << i // (1 << power = 2^power)
 	}
 	return bits
 }
@@ -68,23 +86,19 @@ func (bits Perm) Top() Type {
 	return Default
 }
 
-// Has checks if a give scope.Type exists within a Perm. Only the first argument
+// Has checks if a given scope.Type exists within a Perm. Only the first argument
 // is supported. Providing no argument assumes the scope.DefaultID.
-func (bits Perm) Has(s ...Type) bool {
-	scp := Default
-	if len(s) > 0 {
-		scp = s[0]
-	}
-	return (bits & Perm(1<<scp)) != 0
+func (bits Perm) Has(s Type) bool {
+	return (bits & Perm(1<<s)) != 0
 }
 
 // Human readable representation of the permissions
 func (bits Perm) Human() []string {
 	var ret = make([]string, 0, maxType)
 	for i := uint(0); i < uint(maxType); i++ {
-		bit := ((bits & (1 << i)) != 0)
+		bit := (bits & (1 << i)) != 0
 		if bit {
-			ret = append(ret, (Type(i).String()))
+			ret = append(ret, Type(i).String())
 		}
 	}
 	return ret
