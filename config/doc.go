@@ -20,7 +20,7 @@ A configuration holds many path.Paths which contains a route, a scope and a scop
 A route is defined as a minimum 3 level deep string separated by a slash. For example
 catalog/product/enable_flat.
 
-Scopes are default, website, group and store. Scope IDs are stored in the core_website,
+ScopePerm are default, website, group and store. Scope IDs are stored in the core_website,
 core_group or core_store tables for M1 and store_website, store_group and store for M2.
 
 Underlying storage can be a simple in memory map (default), MySQL table core_config_data
@@ -91,5 +91,61 @@ The examples show the overall best practices.
 // Minimal length per part 2 characters. Case sensitive.
 //
 // The route parts are used as an ID in element.Section, element.Group and
-// element.Field types. See package element.
+// element.Field types. See following text.
+//
+// The following diagram shows the tree structure:
+//    +---------+
+//    | Section |
+//    +---------+
+//    |
+//    |   +-------+
+//    +-->+ Group |
+//    |   +-------+
+//    |   |
+//    |   |    +--------+
+//    |   +--->+ Field  |
+//    |   |    +--------+
+//    |   |
+//    |   |    +--------+
+//    |   +--->+ Field  |
+//    |   |    +--------+
+//    |   |
+//    |   |    +--------+
+//    |   +--->+ Field  |
+//    |        +--------+
+//    |
+//    |   +-------+
+//    +-->+ Group |
+//    |   +-------+
+//    |   |
+//    |   |    +--------+
+//    |   +--->+ Field  |
+//    |   |    +--------+
+//    |   |
+//    |   |    +--------+
+//    |   +--->+ Field  |
+//    |   |    +--------+
+//    |   |
+//    |   |    +--------+
+//    |   +--->+ Field  |
+//    |        +--------+
+//    |
+//    http://asciiflow.com/
+//
+// The three elements Section, Group and Field represents front-end
+// configuration fields and more important default values and their permissions.
+// A permission is of type scope.Perm and defines which of elements in which
+// scope can be shown.
+//
+// Those three elements represents the tree in function NewConfigStructure()
+// which can be found in any package.
+//
+// Unclear: Your app which includes the cs must merge all
+// "PackageConfiguration"s into a single slice. You should submit all default
+// values (interface config.Sectioner) to the config.Service.ApplyDefaults()
+// function.
+//
+// The JSON encoding of the three elements Section, Group and Field are intended
+// to use on the backend REST API and for debugging and testing. Only used in
+// non performance critical parts.package config
 package config

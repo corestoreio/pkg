@@ -85,11 +85,11 @@ type Service struct {
 	loadDataFns     loadDataOptions
 	envReplacer     *strings.Replacer
 
-	// more events can be added once needed,
-	eventMu sync.RWMutex
-	events  [eventMaxCount]*triePath
-
-	// TODO auto detect unmarshaller and get one from a pool pass the correct unmarshaler to the Value.
+	// more events can be added once needed.
+	mu sync.RWMutex
+	// routeConfig contains essential information about a route like scope for
+	// permission, default value or events.
+	routeConfig *trieRoute
 }
 
 // NewService creates the main new configuration for all scopes: default,
@@ -99,9 +99,10 @@ type Service struct {
 func NewService(level2 Storager, o Options, fns ...LoadDataOption) (s *Service, err error) {
 
 	s = &Service{
-		level2: level2,
-		config: o,
-		Log:    o.Log,
+		level2:      level2,
+		config:      o,
+		Log:         o.Log,
+		routeConfig: newTrieRoute(),
 	}
 
 	if err := s.setupEnv(); err != nil {
@@ -276,20 +277,14 @@ func (s *Service) NewScoped(websiteID, storeID int64) Scoped {
 // RegisterObserver appends a blocking observer for a route or route prefix.
 // Multiple observers can be added to a route. Event argument is one of the
 // constants starting with `EventOn...`.
-func (s *Service) RegisterObserver(event uint8, route string, cb EventObserver) error {
+func (s *Service) RegisterObserver(event uint8, route string, eo EventObserver) error {
 	if event >= eventMaxCount {
 		return errors.OutOfRange.Newf("[config] Service.RegisterObserver event %d greater or equal than allowed %d", event, eventMaxCount)
 	}
-	s.eventMu.Lock()
-	defer s.eventMu.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	if s.events[event] == nil {
-		s.events[event] = newTriePath()
-	}
-	if !strings.HasPrefix(route, sPathSeparator) {
-		route = sPathSeparator + route
-	}
-	s.events[event].Put(route, cb)
+	s.routeConfig.PutEvent(event, route, eo)
 
 	return nil
 }
@@ -300,16 +295,9 @@ func (s *Service) DeregisterObservers(event uint8, route string) error {
 	if event >= eventMaxCount {
 		return errors.OutOfRange.Newf("[config] Service.DeregisterObservers event %d greater or equal than allowed %d", event, eventMaxCount)
 	}
-	s.eventMu.Lock()
-	defer s.eventMu.Unlock()
-
-	if s.events[event] == nil {
-		return nil
-	}
-	if !strings.HasPrefix(route, sPathSeparator) {
-		route = sPathSeparator + route
-	}
-	s.events[event].Delete(route)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.routeConfig.DeleteEvent(event, route)
 
 	return nil
 }
@@ -327,7 +315,7 @@ func (s *Service) DeregisterObservers(event uint8, route string) error {
 //		// Store Scope
 //		// 6 for example comes from core_store/store database table
 //		err := Write(p.Bind(scope.StoreID, 6), "CHF")
-func (s *Service) Set(p *Path, v []byte) (err error) {
+func (s *Service) Set(p *Path, v []byte) (err error) { // TODO v should be an immutable string
 	// wow so many IFs :-\
 	if p.UseEnvSuffix && p.envSuffix != s.envName {
 		p.envSuffix = s.envName
@@ -340,21 +328,19 @@ func (s *Service) Set(p *Path, v []byte) (err error) {
 		return
 	}
 
-	s.eventMu.RLock()
-	defer s.eventMu.RUnlock()
-	if eb, ea := s.events[EventOnBeforeSet], s.events[EventOnAfterSet]; eb != nil || ea != nil {
-		if ea != nil {
-			defer func() {
-				if _, err2 := ea.dispatch(p, err == nil, v); err == nil && err2 != nil {
-					err = errors.WithStack(err2)
-				}
-			}()
-		}
-
-		if v, err = eb.dispatch(p, true, v); err != nil {
-			return errors.WithStack(err)
-		}
+	s.mu.RLock()
+	key := p.separatorPrefixRoute() // this can be optimized to move it into the process signature
+	if v, err = s.routeConfig.process(key, EventOnBeforeSet, p, true, v); err != nil {
+		s.mu.RUnlock()
+		return errors.WithStack(err)
 	}
+	defer func() {
+		var err2 error
+		if v, err2 = s.routeConfig.process(key, EventOnAfterSet, p, err == nil, v); err == nil && err2 != nil {
+			err = errors.WithStack(err2)
+		}
+		s.mu.RUnlock()
+	}()
 
 	if err := s.level2.Set(p, v); err != nil {
 		return errors.Wrap(err, "[config] Service.level2.Set")
@@ -366,8 +352,9 @@ func (s *Service) Set(p *Path, v []byte) (err error) {
 	return
 }
 
-// Get returns a configuration value from the Service, ignoring the scopes
-// using a direct match. Safe for concurrent use. Example usage:
+// Get returns a configuration value from the Service, ignoring the scope
+// hierarchy/fallback logic using a direct match. Safe for concurrent use.
+// Example usage:
 //
 //		// Default Scope
 //		dp := config.MustNewPath("general/locale/timezone")
@@ -379,6 +366,11 @@ func (s *Service) Set(p *Path, v []byte) (err error) {
 //		// Store Scope
 //		// 6 for example comes from store database table
 //		ss := p.Bind(scope.StoreID, 6)
+//
+// It queries first the Level1 cache, if not found, then Level2. If the value
+// cannot be found eventually it accesses the default configuration and tries to
+// get the value. If path meta data has been set, it checks also the permission
+// if a path is allowed to access a specific scope.
 //
 // Returns a guaranteed non-nil value.
 func (s *Service) Get(p *Path) (v *Value) {
@@ -399,22 +391,20 @@ func (s *Service) Get(p *Path) (v *Value) {
 		Path: *p,
 	}
 
-	s.eventMu.RLock()
-	defer s.eventMu.RUnlock()
-	if eb, ea := s.events[EventOnBeforeGet], s.events[EventOnAfterGet]; eb != nil || ea != nil {
-		if ea != nil {
-			defer func() {
-				var err error
-				if v.data, err = ea.dispatch(p, v.found > valFoundNo, v.data); err != nil {
-					v.lastErr = errors.WithStack(err)
-				}
-			}()
-		}
-		if _, err := eb.dispatch(p, false, nil); err != nil {
-			v.lastErr = errors.WithStack(err)
-			return
-		}
+	s.mu.RLock()
+	key := p.separatorPrefixRoute() // this can be optimized to move it into the process signature
+	if _, err := s.routeConfig.process(key, EventOnBeforeGet, p, false, nil); err != nil {
+		s.mu.RUnlock()
+		v.lastErr = errors.WithStack(err)
+		return
 	}
+	defer func() {
+		var err2 error
+		if v.data, err2 = s.routeConfig.process(key, EventOnAfterGet, p, v.found > valFoundNo, v.data); v.lastErr == nil && err2 != nil {
+			v.lastErr = errors.WithStack(err2)
+		}
+		s.mu.RUnlock()
+	}()
 
 	if s.config.Level1 != nil {
 		v.data, ok, v.lastErr = s.config.Level1.Get(p)
@@ -428,24 +418,26 @@ func (s *Service) Get(p *Path) (v *Value) {
 	}
 
 	v.data, ok, v.lastErr = s.level2.Get(p)
-	if ok {
+	switch {
+	case v.lastErr != nil:
+		v.lastErr = errors.Wrapf(v.lastErr, "[config] Service.Value with path %q", p)
+	case ok:
 		v.found = valFoundL2
 	}
-	if v.lastErr != nil {
-		v.lastErr = errors.Wrapf(v.lastErr, "[config] Service.Value with path %q", p)
-	}
+
 	if ok && s.config.Level1 != nil && v.lastErr == nil {
 		if v.lastErr = s.config.Level1.Set(p, v.data); v.lastErr != nil {
 			v.lastErr = errors.Wrapf(v.lastErr, "[config] Service.Level1.Set with path %q", p)
 			return
 		}
 	}
-	return v
+	return
 }
 
-// Subscribe adds a Subscriber to be called when a write event happens. See
-// interface Subscriber for a detailed description. Route can be any kind of
-// level and can contain StrScope and Scope ID. Valid routes can be for example:
+// Subscribe adds an asynchronous Subscriber to be called when a write event
+// happens. See interface Subscriber for a detailed description. Path can be any
+// kind of level and can contain StrScope and Scope ID. Valid paths can be for
+// example:
 //		- StrScope/ID/currency/options/base
 //		- StrScope/ID/currency/options
 //		- StrScope/ID/currency
@@ -501,9 +493,9 @@ type Scoped struct {
 
 // NewScoped instantiates a ScopedGetter implementation.  Getter
 // specifies the root Getter which does not know about any scope.
-func NewScoped(r Getter, websiteID, storeID int64) Scoped {
+func NewScoped(g Getter, websiteID, storeID int64) Scoped {
 	return Scoped{
-		Root:      r,
+		Root:      g,
 		WebsiteID: websiteID,
 		StoreID:   storeID,
 	}

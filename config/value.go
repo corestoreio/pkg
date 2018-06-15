@@ -36,6 +36,7 @@ const (
 	valFoundNo = iota
 	valFoundL2
 	valFoundL1
+	valFoundDefaults
 )
 
 func valFoundStringer(found uint8) string {

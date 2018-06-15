@@ -42,26 +42,6 @@ import (
 	"github.com/corestoreio/pkg/util/cstesting"
 )
 
-func TestPathTrieNormal(t *testing.T) {
-	trie := newTriePath()
-	testTrie(t, trie)
-}
-
-func TestPathTrieNilBehavior(t *testing.T) {
-	trie := newTriePath()
-	testNilBehavior(t, trie)
-}
-
-func TestPathTrieRoot(t *testing.T) {
-	trie := newTriePath()
-	testTrieRoot(t, trie)
-}
-
-func TestPathTrieWalk(t *testing.T) {
-	trie := newTriePath()
-	testTrieWalk(t, trie)
-}
-
 type noopObserver int
 
 func (noopObserver) Observe(p Path, found bool, rawData []byte) ([]byte, error) { return rawData, nil }
@@ -72,7 +52,9 @@ var (
 	noopCB2 = new(noopObserver)
 )
 
-func testTrie(t *testing.T, trie *triePath) {
+func TestPathTrieNormal(t *testing.T) {
+	trie := newTrieRoute()
+
 	cases := []struct {
 		key   string
 		value EventObserver
@@ -88,28 +70,28 @@ func testTrie(t *testing.T, trie *triePath) {
 
 	// get missing keys
 	for _, c := range cases {
-		if value := trie.Get(c.key); value != nil {
-			t.Errorf("expected key %s to be missing, found value %p", c.key, value)
+		if value := trie.Get(c.key); value.valid {
+			t.Errorf("expected key %s to be missing, found value %#v", c.key, value)
 		}
 	}
 
 	// initial put
 	for _, c := range cases {
-		if isNew := trie.Put(c.key, noopCB0); !isNew {
+		if isNew := trie.PutEvent(EventOnAfterGet, c.key, noopCB0); !isNew {
 			t.Errorf("expected key %s to be missing", c.key)
 		}
 	}
 
 	// subsequent put
 	for _, c := range cases {
-		if isNew := trie.Put(c.key, c.value); isNew {
+		if isNew := trie.PutEvent(EventOnAfterGet, c.key, c.value); isNew {
 			t.Errorf("expected key %s to have a value already", c.key)
 		}
 	}
 
 	// get
 	for _, c := range cases {
-		if value := trie.Get(c.key); !cstesting.EqualPointers(t, value[1], c.value) {
+		if value := trie.Get(c.key); !cstesting.EqualPointers(t, value.Events[EventOnAfterGet][1], c.value) {
 			t.Errorf("expected key %s to have value %#v, got %#v", c.key, c.value, value)
 		}
 	}
@@ -131,13 +113,14 @@ func testTrie(t *testing.T, trie *triePath) {
 
 	// get deleted keys
 	for _, c := range cases {
-		if value := trie.Get(c.key); value != nil {
-			t.Errorf("expected key %s to be deleted, got value %p", c.key, value)
+		if value := trie.Get(c.key); value.valid {
+			t.Errorf("expected key %s to be deleted, got value %#v", c.key, value)
 		}
 	}
 }
 
-func testNilBehavior(t *testing.T, trie *triePath) {
+func TestPathTrieNilBehavior(t *testing.T) {
+	trie := newTrieRoute()
 	cases := []struct {
 		key   string
 		value EventObserver
@@ -150,44 +133,46 @@ func testNilBehavior(t *testing.T, trie *triePath) {
 
 	// initial put
 	for _, c := range cases {
-		if isNew := trie.Put(c.key, c.value); !isNew {
+		if isNew := trie.PutEvent(EventOnAfterGet, c.key, c.value); !isNew {
 			t.Errorf("expected key %s to be missing", c.key)
 		}
 	}
 
 	// get nil
 	for _, key := range expectNilValues {
-		if value := trie.Get(key); len(value) != 0 {
+		if value := trie.Get(key); len(value.Events[EventOnAfterGet]) != 0 {
 			t.Errorf("expected key %s to have value nil, got %#v", key, value)
 		}
 	}
 }
 
-func testTrieRoot(t *testing.T, trie *triePath) {
+func TestPathTrieRoot(t *testing.T) {
+	trie := newTrieRoute()
 
-	if value := trie.Get(""); value != nil {
-		t.Errorf("expected key '' to be missing, found value %p", value)
+	if value := trie.Get(""); value.valid {
+		t.Errorf("expected key '' to be missing, found value %#v", value)
 	}
-	if !trie.Put("", noopCB0) {
+	if !trie.PutEvent(EventOnAfterGet, "", noopCB0) {
 		t.Error("expected key '' to be missing")
 	}
-	if trie.Put("", noopCB1) {
+	if trie.PutEvent(EventOnAfterGet, "", noopCB1) {
 		t.Error("expected key '' to have a value already")
 	}
-	if value := trie.Get(""); !cstesting.EqualPointers(t, value[1], noopCB1) {
+	if value := trie.Get(""); !cstesting.EqualPointers(t, value.Events[EventOnAfterGet][1], noopCB1) {
 		t.Errorf("expected key '' to have value %p, got %#v", noopCB1, value)
 	}
 	if !trie.Delete("") {
 		t.Error("expected key '' to be deleted")
 	}
-	if value := trie.Get(""); value != nil {
-		t.Errorf("expected key '' to be deleted, got value %p", value)
+	if value := trie.Get(""); value.valid {
+		t.Errorf("expected key '' to be deleted, got value %#v", value)
 	}
 }
 
-func testTrieWalk(t *testing.T, trie *triePath) {
+func TestPathTrieWalk(t *testing.T) {
+	trie := newTrieRoute()
 	table := map[string]EventObserver{
-		"fish":         noopCB0,
+		"/fish":        noopCB0,
 		"/cat":         noopCB1,
 		"/dog":         noopCB1,
 		"/cats":        noopCB2,
@@ -203,14 +188,15 @@ func testTrieWalk(t *testing.T, trie *triePath) {
 	}
 
 	for key, value := range table {
-		if isNew := trie.Put(key, value); !isNew {
+		if isNew := trie.PutEvent(EventOnAfterGet, key, value); !isNew {
 			t.Errorf("expected key %s to be missing", key)
 		}
 	}
 
-	walker := func(key string, value eventObservers) error {
+	walker := func(key string, value fieldMeta) error {
 		// value for each walked key is correct
-		if !cstesting.EqualPointers(t, value[0], table[key]) {
+
+		if value.Events[EventOnAfterGet] != nil && !cstesting.EqualPointers(t, value.Events[EventOnAfterGet][0], table[key]) {
 			t.Errorf("expected key %s to have value %#v, got %#v", key, table[key], value)
 		}
 		walked[key]++
@@ -246,7 +232,7 @@ func TestPathSegmenter(t *testing.T) {
 
 	for _, c := range cases {
 		partNum := 0
-		for prefix, i := segmentPath(c.key, 0); ; prefix, i = segmentPath(c.key, i) {
+		for prefix, i := segmentRoute(c.key, 0); ; prefix, i = segmentRoute(c.key, i) {
 			if prefix != c.parts[partNum] {
 				t.Errorf("expected part %d of key '%s' to be '%s', got '%s'", partNum, c.key, c.parts[partNum], prefix)
 			}
@@ -285,7 +271,7 @@ func TestPathSegmenterEdgeCases(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		segment, nextIndex := segmentPath(c.path, c.start)
+		segment, nextIndex := segmentRoute(c.path, c.start)
 		if segment != c.segment {
 			t.Errorf("expected segment %s starting at %d in path %s, got %s", c.segment, c.start, c.path, segment)
 		}

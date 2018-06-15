@@ -54,6 +54,16 @@ const (
 	errRouteInvalidBytesTpl = "[config] Route contains invalid bytes %q which are not runes."
 )
 
+func joinParts(buf *bytes.Buffer, parts ...string) error {
+	for i, p := range parts {
+		if i > 0 {
+			buf.WriteByte(PathSeparator)
+		}
+		buf.WriteString(p)
+	}
+	return nil
+}
+
 // Path represents a configuration path bound to a scope. A Path is not safe for
 // concurrent use. Bind* method receivers always return a new copy of a path.
 type Path struct {
@@ -227,15 +237,6 @@ func (p *Path) AppendFQ(buf *bytes.Buffer) error {
 	buf.WriteString(p.route)
 	p.writeEnvSuffix(buf)
 	return nil
-}
-
-func isDigitOnly(str string) bool {
-	for _, r := range str {
-		if !unicode.IsDigit(r) {
-			return false
-		}
-	}
-	return true
 }
 
 // Parse takes a route or a fully qualified path and splits it into its parts

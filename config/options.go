@@ -16,9 +16,13 @@ package config
 
 import (
 	"os"
+	"strings"
 	"unicode"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
 // EnvNamePlaceHolder replaces in a file name or pattern argument applied to a
@@ -104,4 +108,97 @@ func isLetter(str string) bool {
 		}
 	}
 	return true
+}
+
+func isDigitOnly(str string) bool {
+	for _, r := range str {
+		if !unicode.IsDigit(r) {
+			return false
+		}
+	}
+	return true
+}
+
+func hasScopePrefix(path string) bool {
+	firstSepPos := strings.IndexByte(path, PathSeparator)
+	if firstSepPos < 1 { // case: /aa/bb/cc OR no PathSeparator at all
+		return false
+	}
+	return scope.Valid(path[:firstSepPos])
+}
+
+// WithApplyDefaultValues sets immutable default values and scope restrictions
+// into the service for specific routes. `routeValueScope` is a triple balanced
+// slice, e.g.:
+//		WithApplyDefaults(
+// 			"currency/options/allow","d","CHF,EUR",
+// 			"tax/classes/shipping_tax_class","w","2",
+// 			"carriers/freeshipping/name","s","Free Shipping",
+// 		)
+// First part the route, then default value and last part the scope permission
+// where "d" or "" defines the default scope, "w" defines websites and "s"
+// defines stores.
+func WithApplyDefaultValues(routeValueScope ...string) LoadDataOption {
+	return LoadDataOption{
+		load: func(s *Service) error {
+			if len(routeValueScope)%3 != 0 {
+				return errors.NotValid.Newf("[config] WithApplyDefaultValues: routeValueScope is not a triple balanced slice: %v", routeValueScope)
+			}
+
+			s.mu.Lock()
+			defer s.mu.Unlock()
+
+			for i := 0; i < len(routeValueScope); i = i + 3 {
+				r := routeValueScope[i]
+				if hasScopePrefix(r) {
+					return errors.NotAllowed.Newf("[config] WithApplyDefaults path %q should be qualified with a scope. Expecting just e.g.: aa/bb/cc", r)
+				}
+
+				perm, err := scope.MakePerm(routeValueScope[i+1])
+				if err != nil {
+					return errors.Wrapf(err, "[config] WithApplyDefaultValues for route %q", r)
+				}
+
+				s.routeConfig.PutMeta(r, perm, routeValueScope[i+2])
+			}
+			return nil
+		},
+	}
+}
+
+// WithApplySections sets the default values and permissionable scopes for
+// specific routes.
+func WithApplySections(sections ...*Section) LoadDataOption {
+	secs := Sections(sections)
+	return LoadDataOption{
+		load: func(s *Service) error {
+			if err := secs.Validate(); err != nil {
+				return errors.WithStack(err)
+			}
+
+			buf := bufferpool.Get()
+			s.mu.Lock()
+			defer func() {
+				s.mu.Unlock()
+				bufferpool.Put(buf)
+			}()
+
+			for _, sec := range secs {
+				for _, g := range sec.Groups {
+					for _, f := range g.Fields {
+
+						parts := [3]string{sec.ID, g.ID, f.ID}
+						joinParts(buf, parts[:]...)
+						route := buf.String()
+
+						s.routeConfig.PutMeta(route, f.ScopePerm, f.Default)
+
+						buf.Reset()
+					}
+				}
+			}
+
+			return nil
+		},
+	}
 }
