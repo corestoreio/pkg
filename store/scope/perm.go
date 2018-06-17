@@ -15,8 +15,10 @@
 package scope
 
 import (
+	"bytes"
+	"strings"
+
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
 // Perm is a bit set and used for permissions depending on the scope.Type.
@@ -48,11 +50,11 @@ const PermWebsiteReverse Perm = 1<<Store | 1<<Website
 // triggers a NotSupported error.
 func MakePerm(name string) (p Perm, err error) {
 	switch name {
-	case "default", "d", "":
+	case strDefault, "d", "":
 		p = PermDefault
-	case "websites", "website", "w":
+	case strWebsites, "w":
 		p = PermWebsite
-	case "stores", "store", "s":
+	case strStores, "s":
 		p = PermStore
 	default:
 		err = errors.NotSupported.Newf("[scope] Permission Scope identifier %q not supported. Available: d,w,s", name)
@@ -93,8 +95,10 @@ func (bits Perm) Has(s Type) bool {
 }
 
 // Human readable representation of the permissions
-func (bits Perm) Human() []string {
-	var ret = make([]string, 0, maxType)
+func (bits Perm) Human(ret ...string) []string {
+	if ret == nil {
+		ret = make([]string, 0, maxType)
+	}
 	for i := uint(0); i < uint(maxType); i++ {
 		bit := (bits & (1 << i)) != 0
 		if bit {
@@ -106,53 +110,47 @@ func (bits Perm) Human() []string {
 
 // String readable representation of the permissions
 func (bits Perm) String() string {
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
-
-	for i := uint(0); i < uint(maxType); i++ {
-		if (bits & (1 << i)) != 0 {
-			_, _ = buf.WriteString(Type(i).String())
-			_ = buf.WriteByte(',')
-		}
+	switch {
+	case bits.Has(Store):
+		return strStores
+	case bits.Has(Website):
+		return strWebsites
 	}
-	buf.Truncate(buf.Len() - 1) // remove last colon
-	return buf.String()
-
+	return strDefault
 }
 
-var nullByte = []byte("null")
+// TODO for Go2 implement encoding.TextMarshaler and econding.BinaryMarshaler
 
-// MarshalJSON implements marshaling into an array or null if no bits are set.
-// Returns null when Perm is empty aka zero. null and 0 are considered the same
-// for a later unmarshalling. @todo UnMarshal
+var (
+	nullByte  = []byte("null")
+	quoteByte = []byte(`"`)
+)
+
+// MarshalJSON implements json.Marshaler
 func (bits Perm) MarshalJSON() ([]byte, error) {
 	if bits == 0 {
 		return nullByte, nil
 	}
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
-	if _, err := buf.WriteString(`["`); err != nil {
-		return nil, errors.Wrap(err, "[scope] Perm.Write")
-	}
-	hm := bits.Human()
-	lhm := len(hm) - 1
-	for i, h := range hm {
-		if _, err := buf.WriteString(h); err != nil {
-			return nil, errors.Wrap(err, "[scope] Perm.Write")
-		}
-
-		if i < lhm {
-			if _, err := buf.WriteString(`","`); err != nil {
-				return nil, errors.Wrap(err, "[scope] Perm.Write")
-			}
-		}
-	}
-
-	if _, err := buf.WriteString(`"]`); err != nil {
-		return nil, errors.Wrap(err, "[scope] Perm.Write")
-	}
-
-	// seems redundant but we must copy the bytes aways because bufferpool.Put()
-	// resets the buffer
+	var buf strings.Builder
+	buf.WriteByte('"')
+	buf.WriteString(bits.String())
+	buf.WriteByte('"')
 	return []byte(buf.String()), nil
+}
+
+// MarshalJSON implements json.Marshaler
+func (bits *Perm) UnmarshalJSON(data []byte) error {
+	if data == nil {
+		*bits = 0
+		return nil
+	}
+	if bytes.HasPrefix(data, quoteByte) {
+		data = data[1:]
+	}
+	if bytes.HasSuffix(data, quoteByte) {
+		data = data[:len(data)-1]
+	}
+	p, err := MakePerm(string(data))
+	*bits = p
+	return errors.WithStack(err)
 }

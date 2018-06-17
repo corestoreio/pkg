@@ -25,41 +25,6 @@ import (
 var _ json.Marshaler = (*Type)(nil)
 var _ json.Unmarshaler = (*Type)(nil)
 
-func TestTypeBits(t *testing.T) {
-
-	const (
-		scope1 Type = iota + 1
-		scope2
-		scope3
-		scope4
-		scope5
-	)
-
-	tests := []struct {
-		have    []Type
-		want    Type
-		notWant Type
-		human   []string
-		string
-	}{
-		{[]Type{scope1, scope2}, scope2, scope3, []string{"Default", "Website"}, "Default,Website"},
-		{[]Type{scope3, scope4}, scope3, scope2, []string{"Group", "Store"}, "Group,Store"},
-		{[]Type{scope4, scope5}, scope4, scope2, []string{"Store"}, "Store"},
-	}
-
-	for _, test := range tests {
-		var b = Perm(0).Set(test.have...)
-		if !b.Has(test.want) {
-			t.Errorf("%d should contain %d", b, test.want)
-		}
-		if b.Has(test.notWant) {
-			t.Errorf("%d should not contain %d", b, test.notWant)
-		}
-		assert.EqualValues(t, test.human, b.Human())
-		assert.EqualValues(t, test.string, b.String())
-	}
-}
-
 func TestFromString(t *testing.T) {
 
 	tests := []struct {
