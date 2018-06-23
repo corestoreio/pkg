@@ -559,6 +559,14 @@ func TestHotReload(t *testing.T) {
 		config.MakeLoadDataOption(func(s *config.Service) error {
 			return s.Set(p, strconv.AppendInt(nil, atomic.AddInt64(reloadCounter, 1), 10))
 		}),
+		config.WithFieldMeta(
+			&config.FieldMeta{
+				Route:          "carrier/dhl/timeout",
+				WriteScopePerm: scope.PermDefault,
+				ScopeID:        scope.DefaultTypeID, // gets ignored
+				Default:        "3601s",
+			},
+		).WithSortOrder(2),
 	)
 	defer func() { assert.NoError(t, srv.Close()) }()
 
@@ -568,6 +576,9 @@ func TestHotReload(t *testing.T) {
 
 	time.Sleep(time.Millisecond * 2)
 	assert.Exactly(t, `"2"`, srv.Get(p).String())
+
+	pTimeout := config.MustNewPath("carrier/dhl/timeout")
+	assert.Exactly(t, `"3601s"`, srv.Get(pTimeout).String())
 }
 
 type keyer interface {
@@ -728,7 +739,25 @@ func TestService_Observer(t *testing.T) {
 	})
 }
 
-func TestService_FieldMetaData(t *testing.T) {
+func TestService_FieldMetaData_CheckScope(t *testing.T) {
+	t.Parallel()
+	srv, err := config.NewService(storage.NewMap(), config.Options{},
+		config.WithFieldMeta(
+			&config.FieldMeta{
+				Route:          "carrier/dhl/timeout",
+				WriteScopePerm: scope.PermWebsite,
+				ScopeID:        scope.Store.WithID(4),
+				Default:        "3600s",
+			},
+		),
+	)
+	assert.Nil(t, srv)
+	assert.True(t, errors.NotAcceptable.Match(err), "%+v", err)
+	assert.EqualError(t, err, "[config] WriteScopePerm \"websites\" and ScopeID \"Type(Store) ID(4)\" cannot be set at once for path \"carrier/dhl/timeout\"")
+}
+
+func TestService_FieldMetaData_Fallbacks(t *testing.T) {
+	t.Parallel()
 
 	srv := config.MustNewService(storage.NewMap(), config.Options{},
 		config.WithFieldMeta(
@@ -758,7 +787,28 @@ func TestService_FieldMetaData(t *testing.T) {
 				ScopeID: scope.Website.WithID(2), // for Website 2 this is the default value
 				Default: "prdUser2",
 			},
-		),
+		).WithSortOrder(3),
+
+		config.WithApplySections(
+			&config.Section{
+				ID: `customer`,
+				Groups: config.MakeGroups(
+					&config.Group{
+						ID: `address`,
+						Fields: config.MakeFields(
+							&config.Field{
+								ID:        `prefix_options`,
+								Default:   `Bitte wählen;Frau;Herr`,
+								Type:      config.TypeSelect,
+								Label:     `Name Title`,
+								SortOrder: 100,
+								Visible:   true,
+							},
+						),
+					},
+				),
+			},
+		).WithSortOrder(1),
 	)
 	defer func() { assert.NoError(t, srv.Close()) }()
 
@@ -808,25 +858,25 @@ func TestService_FieldMetaData(t *testing.T) {
 	})
 	t.Run("username: website scope 3 can access website scope and gets default scope default value", func(t *testing.T) {
 		scpd := srv.Scoped(3, 4)
-		str, ok, err := scpd.Get(scope.Website, "carrier/dhl/username").Str()
-		assert.True(t, ok)
-		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "prdUser0", str)
+		str := scpd.Get(scope.Website, "carrier/dhl/username").String()
+		assert.Exactly(t, `"prdUser0"`, str)
 	})
 	t.Run("username: website scope 1 can access website scope and gets its scope default value", func(t *testing.T) {
 
 		scpd := srv.Scoped(1, 4)
-		str, ok, err := scpd.Get(scope.Store, "carrier/dhl/username").Str()
-		assert.True(t, ok)
-		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "prdUser1", str)
+		str := scpd.Get(scope.Store, "carrier/dhl/username").String()
+		assert.Exactly(t, `"prdUser1"`, str)
 	})
 	t.Run("username: website scope 2 can access website scope and gets its scope default value", func(t *testing.T) {
 		scpd := srv.Scoped(2, 4)
-		str, ok, err := scpd.Get(scope.Website, "carrier/dhl/username").Str()
-		assert.True(t, ok)
-		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "prdUser2", str)
+		str := scpd.Get(scope.Website, "carrier/dhl/username").String()
+		assert.Exactly(t, `"prdUser2"`, str)
+	})
+
+	t.Run("prefix_option: scope 5,6 falls back to default", func(t *testing.T) {
+		scpd := srv.Scoped(5, 6)
+		str := scpd.Get(scope.Website, "customer/address/prefix_options").String()
+		assert.Exactly(t, "\"Bitte wählen;Frau;Herr\"", str)
 	})
 
 }

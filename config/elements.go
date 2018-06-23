@@ -468,15 +468,13 @@ type FieldMeta struct {
 	valid  bool
 	Events [eventMaxCount]eventObservers
 	// Route defines the route or storage key, e.g.: customer/address/prefix_options
-	// TODO it should be a path carrier/dhl/username
-	// TODO it should be a path websites/1/carrier/dhl/username
-	// TODO it should be a path stores/1/carrier/dhl/username
 	Route string
 	// WriteScopePerm sets the permission to allow setting values to this route.
 	// For example WriteScopePerm equals scope.PermStore can be set from
 	// default, website and store. If you restrict WriteScopePerm to
 	// scope.PermDefault, the route and its value can only be set from default
-	// but not from websites or stores.
+	// but not from websites or stores. It is only allowed to set WriteScopePerm
+	// when ScopeID is zero or scope.DefaultTypeID.
 	WriteScopePerm scope.Perm
 	// ScopeID defines the scope ID for which a default value is valid. Scope
 	// type can only contain three scopes (default,websites or stores). ID

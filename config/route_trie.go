@@ -244,7 +244,8 @@ func (trie *trieRoute) PutMeta(key string, fm *FieldMeta) bool {
 	isNewVal := node.fm.valid == false
 
 	for i := range node.fm.Events {
-		fm.Events[i] = append(fm.Events[i], node.fm.Events[i]...)
+		node.fm.Events[i] = append(node.fm.Events[i], fm.Events[i]...)
+		fm.Events[i] = node.fm.Events[i]
 	}
 	node.fm = *fm
 	node.fm.valid = true

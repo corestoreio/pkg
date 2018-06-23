@@ -34,7 +34,7 @@ import (
 // and gives you the possibility to fallback the hierarchy levels. If a value
 // cannot be found, it must return false as the 2nd return argument.
 type Getter interface {
-	NewScoped(websiteID, storeID int64) Scoped
+	Scoped(websiteID, storeID int64) Scoped
 	// Value returns a guaranteed non-nil Value.
 	Get(p *Path) *Value
 }

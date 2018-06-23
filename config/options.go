@@ -118,18 +118,26 @@ func isDigitOnly(str string) bool {
 	return true
 }
 
-// WithFieldMeta sets immutable default values and scope restrictions
-// into the service for specific routes. Storage level and sort order are not supported.
+// WithFieldMeta sets immutable default values and scope restrictions into the
+// service for specific routes. Storage level and sort order are not supported.
+// FieldMeta data gets only set once. Reloading is not possible.
 func WithFieldMeta(fms ...*FieldMeta) LoadDataOption {
+	var once bool
 	return LoadDataOption{
 		load: func(s *Service) error {
+			if once {
+				fms = nil
+				return nil
+			}
 			s.mu.Lock()
-			defer s.mu.Unlock()
+			defer func() {
+				once = true
+				s.mu.Unlock()
+			}()
 
 			for _, rfm := range fms {
-
 				if rfm.WriteScopePerm > 0 && rfm.ScopeID > scope.DefaultTypeID {
-					return errors.NotAcceptable.Newf("[config] WriteScopePerm and ScopeID cannot be set at once.")
+					return errors.NotAcceptable.Newf("[config] WriteScopePerm %q and ScopeID %q cannot be set at once for path %q", rfm.WriteScopePerm.String(), rfm.ScopeID.String(), rfm.Route)
 				}
 				rfm.valid = true
 				if !rfm.DefaultValid && rfm.Default != "" {
@@ -148,8 +156,14 @@ func WithFieldMeta(fms ...*FieldMeta) LoadDataOption {
 // supported.
 func WithApplySections(sections ...*Section) LoadDataOption {
 	secs := Sections(sections)
+	var once bool
 	return LoadDataOption{
 		load: func(s *Service) error {
+			if once {
+				sections = nil
+				secs = nil
+				return nil
+			}
 			if err := secs.Validate(); err != nil {
 				return errors.WithStack(err)
 			}
@@ -159,6 +173,7 @@ func WithApplySections(sections ...*Section) LoadDataOption {
 			defer func() {
 				s.mu.Unlock()
 				bufferpool.Put(buf)
+				once = true
 			}()
 
 			fm := new(FieldMeta)
@@ -173,6 +188,7 @@ func WithApplySections(sections ...*Section) LoadDataOption {
 						fm.valid = true
 						fm.WriteScopePerm = f.Scopes
 						fm.Default = f.Default
+						fm.DefaultValid = f.Default != ""
 						s.routeConfig.PutMeta(route, fm)
 						buf.Reset()
 					}
