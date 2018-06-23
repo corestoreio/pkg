@@ -16,7 +16,6 @@ package config
 
 import (
 	"os"
-	"strings"
 	"unicode"
 
 	"github.com/corestoreio/errors"
@@ -119,47 +118,24 @@ func isDigitOnly(str string) bool {
 	return true
 }
 
-func hasScopePrefix(path string) bool {
-	firstSepPos := strings.IndexByte(path, PathSeparator)
-	if firstSepPos < 1 { // case: /aa/bb/cc OR no PathSeparator at all
-		return false
-	}
-	return scope.Valid(path[:firstSepPos])
-}
-
-// WithApplyDefaultValues sets immutable default values and scope restrictions
-// into the service for specific routes. `routeValueScope` is a triple balanced
-// slice, e.g.:
-//		WithApplyDefaults(
-// 			"currency/options/allow","d","CHF,EUR",
-// 			"tax/classes/shipping_tax_class","w","2",
-// 			"carriers/freeshipping/name","s","Free Shipping",
-// 		)
-// First part the route, then default value and last part the scope permission
-// where "d" or "" defines the default scope, "w" defines websites and "s"
-// defines stores.
-func WithApplyDefaultValues(routeValueScope ...string) LoadDataOption {
+// WithFieldMeta sets immutable default values and scope restrictions
+// into the service for specific routes. Storage level and sort order are not supported.
+func WithFieldMeta(fms ...*FieldMeta) LoadDataOption {
 	return LoadDataOption{
 		load: func(s *Service) error {
-			if len(routeValueScope)%3 != 0 {
-				return errors.NotValid.Newf("[config] WithApplyDefaultValues: routeValueScope is not a triple balanced slice: %v", routeValueScope)
-			}
-
 			s.mu.Lock()
 			defer s.mu.Unlock()
 
-			for i := 0; i < len(routeValueScope); i = i + 3 {
-				r := routeValueScope[i]
-				if hasScopePrefix(r) {
-					return errors.NotAllowed.Newf("[config] WithApplyDefaults path %q should be qualified with a scope. Expecting just e.g.: aa/bb/cc", r)
-				}
+			for _, rfm := range fms {
 
-				perm, err := scope.MakePerm(routeValueScope[i+1])
-				if err != nil {
-					return errors.Wrapf(err, "[config] WithApplyDefaultValues for route %q", r)
+				if rfm.WriteScopePerm > 0 && rfm.ScopeID > scope.DefaultTypeID {
+					return errors.NotAcceptable.Newf("[config] WriteScopePerm and ScopeID cannot be set at once.")
 				}
-
-				s.routeConfig.PutMeta(r, perm, routeValueScope[i+2])
+				rfm.valid = true
+				if !rfm.DefaultValid && rfm.Default != "" {
+					rfm.DefaultValid = true
+				}
+				s.routeConfig.PutMeta(rfm.Route, rfm)
 			}
 			return nil
 		},
@@ -167,7 +143,9 @@ func WithApplyDefaultValues(routeValueScope ...string) LoadDataOption {
 }
 
 // WithApplySections sets the default values and permissionable scopes for
-// specific routes.
+// specific routes. This function option cannot handle a default value for a
+// specific website/store scope. Storage level and sort order are not
+// supported.
 func WithApplySections(sections ...*Section) LoadDataOption {
 	secs := Sections(sections)
 	return LoadDataOption{
@@ -183,6 +161,7 @@ func WithApplySections(sections ...*Section) LoadDataOption {
 				bufferpool.Put(buf)
 			}()
 
+			fm := new(FieldMeta)
 			for _, sec := range secs {
 				for _, g := range sec.Groups {
 					for _, f := range g.Fields {
@@ -191,13 +170,14 @@ func WithApplySections(sections ...*Section) LoadDataOption {
 						joinParts(buf, parts[:]...)
 						route := buf.String()
 
-						s.routeConfig.PutMeta(route, f.ScopePerm, f.Default)
-
+						fm.valid = true
+						fm.WriteScopePerm = f.Scopes
+						fm.Default = f.Default
+						s.routeConfig.PutMeta(route, fm)
 						buf.Reset()
 					}
 				}
 			}
-
 			return nil
 		},
 	}

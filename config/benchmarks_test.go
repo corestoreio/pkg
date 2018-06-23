@@ -207,6 +207,7 @@ var benchmarkScopedServiceVal *config.Value
 // BenchmarkScopedServiceStringStore-4	 1000000	      1821 ns/op	     336 B/op	       3 allocs/op => cfgpath.Path without []ArgFunc
 // BenchmarkScopedServiceStringStore-4   1000000	      1747 ns/op	       0 B/op	       0 allocs/op => Go 1.6 sync.Pool cfgpath.Path without []ArgFunc
 // BenchmarkScopedServiceStringStore-4    500000	      2604 ns/op	       0 B/op	       0 allocs/op => Go 1.7 with ScopeHash
+// BenchmarkScopedServiceStringStore-4   1000000	      1764 ns/op	    1616 B/op	       6 allocs/op +> Go 1.10 with events
 func BenchmarkScopedServiceStringStore(b *testing.B) {
 	benchmarkScopedServiceStringRun(b, 1, 1)
 }
@@ -225,7 +226,7 @@ func benchmarkScopedServiceStringRun(b *testing.B, websiteID, storeID int64) {
 
 	sg := config.NewFakeService(storage.NewMap(
 		config.MustNewPath(route).String(), want,
-	)).NewScoped(websiteID, storeID)
+	)).Scoped(websiteID, storeID)
 
 	b.ResetTimer()
 	b.ReportAllocs()

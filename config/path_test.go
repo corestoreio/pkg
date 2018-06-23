@@ -863,22 +863,3 @@ func TestPath_EnvName(t *testing.T) {
 		assertStrErr(t, `stores/3/tt/ww/de`)(p.FQ())
 	})
 }
-
-func TestHasScopePrefix(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		path      string
-		hasPrefix bool
-	}{
-		{"aa/bb/cc", false},
-		{"default/bb/cc", true},
-		{"stores/bb/cc", true},
-		{"websites/bb/cc", true},
-		{"groups/bb/cc", false},
-		{"groupsxxcc", false},
-	}
-	for _, test := range tests {
-		assert.Exactly(t, test.hasPrefix, hasScopePrefix(test.path), "Path: %q", test.path)
-	}
-}

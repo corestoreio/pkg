@@ -36,7 +36,7 @@ The package config/element contains more detailed information.
 Scope Values
 
 To get a value from the configuration Service via any type method you have to provide a
-path.Path. If you use the ScopedGetter via function NewScoped() you can only provide a
+path.Path. If you use the ScopedGetter via function MakeScoped() you can only provide a
 path.Route to the type methods String(), Int(), Float64(), etc.
 
 The examples show the overall best practices.

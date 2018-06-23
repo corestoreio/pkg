@@ -41,6 +41,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
 // Event constants defines where and when a specific blocking event gets
@@ -60,18 +61,18 @@ const (
 type EventObserver interface {
 	// Observe must always return the rawData argument or an error.
 	// Observer can transform and modify the raw data in any case.
-	Observe(p Path, found bool, rawData []byte) (rawData2 []byte, err error)
+	Observe(p Path, rawData []byte, found bool) (rawData2 []byte, err error)
 }
 
 type eventObservers []EventObserver
 
-func (fns eventObservers) dispatch(p *Path, found bool, v []byte) (_ []byte, err error) {
+func (fns eventObservers) dispatch(p *Path, v []byte, found bool) (_ []byte, err error) {
 	if len(fns) == 0 {
 		return v, nil
 	}
 	p2 := *p
 	for idx, fn := range fns {
-		if v, err = fn.Observe(p2, found, v); err != nil {
+		if v, err = fn.Observe(p2, v, found); err != nil {
 			return nil, errors.Wrapf(err, "[config] At index %d", idx)
 		}
 	}
@@ -80,7 +81,7 @@ func (fns eventObservers) dispatch(p *Path, found bool, v []byte) (_ []byte, err
 
 // walkFn defines some action to take on the given key and value during
 // a Trie Walk. Returning a non-nil error will terminate the Walk.
-type walkFn func(key string, value fieldMeta) error
+type walkFn func(key string, value FieldMeta) error
 
 // segmentRoute segments string key paths by slash separators. For example,
 // "/a/b/c" -> ("/a", 2), ("/b", 4), ("/c", -1) in successive calls. It does
@@ -105,28 +106,57 @@ func segmentRoute(path string, start int) (segment string, next int) {
 // segmentStringFn may be used to customize how strings are segmented into
 // nodes. A classic trie might segment keys by rune (i.e. unicode points).
 type trieRoute struct {
-	fm       fieldMeta
+	fm       FieldMeta
 	children map[string]*trieRoute
 }
 
 // newTrieRoute allocates and returns a new *trieRoute.
 func newTrieRoute() *trieRoute {
 	return &trieRoute{
-		children: make(map[string]*trieRoute),
+		children: make(map[string]*trieRoute, 10),
 	}
+}
+
+func buildTrieKey(key string, scp scope.TypeID) string {
+	// This code provides less allocs and fastest execution.
+	hasPS := strings.HasPrefix(key, sPathSeparator)
+	if !scp.Type().IsWebSiteOrStore() {
+		if hasPS {
+			return key
+		}
+		buf := bufferpool.Get()
+		buf.WriteByte(PathSeparator)
+		buf.WriteString(key)
+		key = buf.String()
+		bufferpool.Put(buf)
+		return key
+	}
+
+	buf := bufferpool.Get()
+	if !hasPS {
+		buf.WriteByte(PathSeparator)
+	}
+	buf.WriteString(key)
+	buf.WriteByte(PathSeparator)
+
+	b := buf.Bytes()
+	buf.Reset()
+	buf.Write(scp.AppendHuman(b, PathSeparator))
+
+	key = buf.String()
+	bufferpool.Put(buf)
+	return key
 }
 
 // Get returns the fm stored at the given key. Returns nil for internal
 // nodes or for nodes with a fm of nil.
-func (trie *trieRoute) Get(key string) fieldMeta {
-	if !strings.HasPrefix(key, sPathSeparator) {
-		key = sPathSeparator + key
-	}
+func (trie *trieRoute) Get(key string) FieldMeta {
+	key = buildTrieKey(key, 0)
 	node := trie
 	for part, i := segmentRoute(key, 0); ; part, i = segmentRoute(key, i) {
 		node = node.children[part]
 		if node == nil {
-			return fieldMeta{}
+			return FieldMeta{}
 		}
 		if i == -1 {
 			break
@@ -137,53 +167,42 @@ func (trie *trieRoute) Get(key string) fieldMeta {
 
 // process runs on each tree level and dispatches the events and checks for
 // scope permission and default value.
-func (trie *trieRoute) process(key string, event uint8, p *Path, found bool, v []byte) (_ []byte, err error) {
+func (trie *trieRoute) process(key string, event uint8, p *Path, v []byte, found bool) (v2 []byte, found2 bool, err error) {
 	if trie == nil {
-		return v, nil
+		return v, found, nil
 	}
-	if !strings.HasPrefix(key, sPathSeparator) {
-		key = sPathSeparator + key
-	}
+
 	node := trie
 	for part, i := segmentRoute(key, 0); ; part, i = segmentRoute(key, i) {
 		node = node.children[part]
 
 		if node == nil {
-			return v, nil
+			return v, found, nil
 		}
-		if node.fm.valid && node.fm.ScopePerm > 0 && p.ScopeID > 0 && !node.fm.ScopePerm.Has(p.ScopeID.Type()) {
-			return nil, errors.NotAllowed.Newf("[config] The path %q is not allowed to access this scope %s", p.String(), node.fm.ScopePerm.String())
+		if node.fm.valid && event == EventOnBeforeSet && node.fm.WriteScopePerm > 0 && p.ScopeID > 0 && !node.fm.WriteScopePerm.Has(p.ScopeID.Type()) {
+			return nil, false, errors.NotAllowed.Newf("[config] The path %q is not allowed to access this scope %s", p.String(), node.fm.WriteScopePerm.String())
 		}
 
-		if v, err = node.fm.Events[event].dispatch(p, found, v); err != nil {
-			return nil, errors.WithStack(err)
+		if v, err = node.fm.Events[event].dispatch(p, v, found); err != nil {
+			return nil, false, errors.WithStack(err)
 		}
-		if node.fm.valid && event == EventOnAfterGet && !found && v == nil && node.fm.Default != "" { // dispatch should also return `found`
+
+		if node.fm.valid && (len(node.children) == 0 || p.ScopeID == 0 || p.ScopeID == scope.DefaultTypeID) &&
+			event == EventOnAfterGet && !found && v == nil && node.fm.DefaultValid {
 			v = []byte(node.fm.Default)
+			found = true
 		}
 
 		if i == -1 {
 			break
 		}
 	}
-	return v, nil
+
+	return v, found, nil
 }
 
-// PutEvent inserts the fm into the trie at the given key, replacing any
-// existing items. It returns true if the put adds a new fm, false
-// if it replaces an existing fm.
-// Note that internal nodes have nil values so a stored nil fm will not
-// be distinguishable and will not be included in Walks.
-func (trie *trieRoute) PutEvent(event uint8, key string, eo EventObserver) bool {
-	if eo == nil {
-		return true
-	}
-
-	if !strings.HasPrefix(key, sPathSeparator) {
-		key = sPathSeparator + key
-	}
-
-	node := trie
+func trieGetNode(node *trieRoute, key string, scp scope.TypeID) *trieRoute {
+	key = buildTrieKey(key, scp)
 	for part, i := segmentRoute(key, 0); ; part, i = segmentRoute(key, i) {
 		child := node.children[part]
 		if child == nil {
@@ -195,6 +214,18 @@ func (trie *trieRoute) PutEvent(event uint8, key string, eo EventObserver) bool 
 			break
 		}
 	}
+	return node
+}
+
+// PutEvent inserts the eo into the trie at the given key, replacing any
+// existing items. It returns true if the put adds a new fm, false if it
+// replaces an existing fm.
+func (trie *trieRoute) PutEvent(event uint8, key string, eo EventObserver) bool {
+	if eo == nil {
+		return true
+	}
+	node := trieGetNode(trie, key, 0)
+
 	// does node have an existing eo?
 	isNewVal := node.fm.valid == false
 	node.fm.Events[event] = append(node.fm.Events[event], eo)
@@ -202,27 +233,20 @@ func (trie *trieRoute) PutEvent(event uint8, key string, eo EventObserver) bool 
 	return isNewVal
 }
 
-func (trie *trieRoute) PutMeta(key string, perm scope.Perm, defaultVal string) bool {
-	if !strings.HasPrefix(key, sPathSeparator) {
-		key = sPathSeparator + key
-	}
+// PutMeta inserts the `fm` into the trie at the given key, replacing any
+// existing items, except the Events which will be appended to `fm`. It returns
+// true if the put adds a new fm, false if it replaces an existing fm. The
+// pointer fm gets dereferenced.
+func (trie *trieRoute) PutMeta(key string, fm *FieldMeta) bool {
+	node := trieGetNode(trie, key, fm.ScopeID)
 
-	node := trie
-	for part, i := segmentRoute(key, 0); ; part, i = segmentRoute(key, i) {
-		child := node.children[part]
-		if child == nil {
-			child = newTrieRoute()
-			node.children[part] = child
-		}
-		node = child
-		if i == -1 {
-			break
-		}
-	}
-	// does node have an existing eo?
+	// does node have an existing fm?
 	isNewVal := node.fm.valid == false
-	node.fm.ScopePerm = perm
-	node.fm.Default = defaultVal
+
+	for i := range node.fm.Events {
+		fm.Events[i] = append(fm.Events[i], node.fm.Events[i]...)
+	}
+	node.fm = *fm
 	node.fm.valid = true
 	return isNewVal
 }
@@ -231,13 +255,10 @@ func (trie *trieRoute) PutMeta(key string, perm scope.Perm, defaultVal string) b
 // node was found for the given key. If the node or any of its ancestors becomes
 // childless as a result, it is removed from the trie.
 func (trie *trieRoute) DeleteEvent(event uint8, key string) bool {
-	if !strings.HasPrefix(key, sPathSeparator) {
-		key = sPathSeparator + key
-	}
-	var path []nodeStr // record ancestors to check later
+	key = buildTrieKey(key, 0)
+
 	node := trie
 	for part, i := segmentRoute(key, 0); ; part, i = segmentRoute(key, i) {
-		path = append(path, nodeStr{part: part, node: node})
 		node = node.children[part]
 		if node == nil {
 			// node does not exist
@@ -247,9 +268,8 @@ func (trie *trieRoute) DeleteEvent(event uint8, key string) bool {
 			break
 		}
 	}
-	// delete the node fm
+
 	node.fm.Events[event] = nil
-	// if leaf, remove it from its parent's children map. Repeat for ancestor path.
 
 	return true // node (internal or not) existed and its fm was nil'd
 }
@@ -258,9 +278,7 @@ func (trie *trieRoute) DeleteEvent(event uint8, key string) bool {
 // node was found for the given key. If the node or any of its ancestors becomes
 // childless as a result, it is removed from the trie.
 func (trie *trieRoute) Delete(key string) bool {
-	if !strings.HasPrefix(key, sPathSeparator) {
-		key = sPathSeparator + key
-	}
+	key = buildTrieKey(key, 0)
 	var path []nodeStr // record ancestors to check later
 	node := trie
 	for part, i := segmentRoute(key, 0); ; part, i = segmentRoute(key, i) {
@@ -275,7 +293,7 @@ func (trie *trieRoute) Delete(key string) bool {
 		}
 	}
 	// delete the node fm
-	node.fm = fieldMeta{}
+	node.fm = FieldMeta{}
 	// if leaf, remove it from its parent's children map. Repeat for ancestor path.
 	if node.isLeaf() {
 		// iterate backwards over path

@@ -39,12 +39,83 @@ package config
 import (
 	"testing"
 
+	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/cstesting"
+	"github.com/stretchr/testify/assert"
 )
+
+func TestBuildTrieKey(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		key  string
+		scp  scope.TypeID
+		want string
+	}{
+		{"aa/bb/cc", 0, "/aa/bb/cc"},
+		{"/aa/bb/cc", 0, "/aa/bb/cc"},
+		{"a1/bb/cc", scope.DefaultTypeID, "/a1/bb/cc"},
+		{"/a1a/bb/cc", scope.DefaultTypeID, "/a1a/bb/cc"},
+		{"a2/bb/cc", scope.Website.WithID(3), "/a2/bb/cc/websites/3"},
+		{"/a2a/bb/cc", scope.Website.WithID(3), "/a2a/bb/cc/websites/3"},
+		{"a3/bb/cc", scope.Group.WithID(3), "/a3/bb/cc"},
+		{"/a3a/bb/cc", scope.Group.WithID(3), "/a3a/bb/cc"},
+		{"a4/bb/cc", scope.Store.WithID(3), "/a4/bb/cc/stores/3"},
+		{"/a5/bb/cc", scope.Store.WithID(31), "/a5/bb/cc/stores/31"},
+	}
+	for _, test := range tests {
+		assert.Exactly(t, test.want, buildTrieKey(test.key, test.scp), "Path: %q", test.key)
+	}
+}
+
+var benchmarkBuildTrieKey string
+
+func BenchmarkBuildTrieKey(b *testing.B) {
+	const route = "customer/create_account/generate_human_friendly_id"
+	const route2 = "/" + route
+	b.Run("scope=0 with prefix", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			benchmarkBuildTrieKey = buildTrieKey(route2, 0)
+		}
+		if want := "/customer/create_account/generate_human_friendly_id"; benchmarkBuildTrieKey != want {
+			b.Fatalf("want %q\nhave %q", want, benchmarkBuildTrieKey)
+		}
+	})
+	b.Run("scope=0 without", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			benchmarkBuildTrieKey = buildTrieKey(route, 0)
+		}
+		if want := "/customer/create_account/generate_human_friendly_id"; benchmarkBuildTrieKey != want {
+			b.Fatalf("want %q\nhave %q", want, benchmarkBuildTrieKey)
+		}
+	})
+	b.Run("Store=10", func(b *testing.B) {
+		scp := scope.Store.WithID(10)
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			benchmarkBuildTrieKey = buildTrieKey(route, scp)
+		}
+		if want := "/customer/create_account/generate_human_friendly_id/stores/10"; benchmarkBuildTrieKey != want {
+			b.Fatalf("want %q\nhave %q", want, benchmarkBuildTrieKey)
+		}
+	})
+	b.Run("Website=20", func(b *testing.B) {
+		scp := scope.Website.WithID(20)
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			benchmarkBuildTrieKey = buildTrieKey(route, scp)
+		}
+		if want := "/customer/create_account/generate_human_friendly_id/websites/20"; benchmarkBuildTrieKey != want {
+			b.Fatalf("want %q\nhave %q", want, benchmarkBuildTrieKey)
+		}
+	})
+}
 
 type noopObserver int
 
-func (noopObserver) Observe(p Path, found bool, rawData []byte) ([]byte, error) { return rawData, nil }
+func (noopObserver) Observe(p Path, rawData []byte, found bool) (rawData2 []byte, err error) {
+	return rawData, nil
+}
 
 var (
 	noopCB0 = new(noopObserver)
@@ -58,14 +129,15 @@ func TestPathTrieNormal(t *testing.T) {
 	cases := []struct {
 		key   string
 		value EventObserver
+		meta  FieldMeta
 	}{
-		{"fish", noopCB1},
-		{"/cat", noopCB2},
-		{"/dog", noopCB1},
-		{"/cats", noopCB2},
-		{"/caterpillar", noopCB2},
-		{"/cat/gideon", noopCB2},
-		{"/cat/giddy", noopCB1},
+		{"fish", noopCB1, FieldMeta{}},
+		{"/cat", noopCB2, FieldMeta{valid: true, Default: "cat", WriteScopePerm: scope.PermStore}},
+		{"/dog", noopCB1, FieldMeta{valid: true, Default: "dog", WriteScopePerm: scope.PermStore}},
+		{"/cats", noopCB2, FieldMeta{valid: true, Default: "cats", WriteScopePerm: scope.PermStore}},
+		{"/caterpillar", noopCB2, FieldMeta{valid: true, Default: "caterpillar", WriteScopePerm: scope.PermWebsite}},
+		{"/cat/gideon", noopCB2, FieldMeta{valid: true, Default: "cat/gideon", WriteScopePerm: scope.PermStore}},
+		{"/cat/giddy", noopCB1, FieldMeta{valid: true, Default: "cat/giddy", WriteScopePerm: scope.PermDefault}},
 	}
 
 	// get missing keys
@@ -80,6 +152,14 @@ func TestPathTrieNormal(t *testing.T) {
 		if isNew := trie.PutEvent(EventOnAfterGet, c.key, noopCB0); !isNew {
 			t.Errorf("expected key %s to be missing", c.key)
 		}
+		fm := &FieldMeta{
+			WriteScopePerm: c.meta.WriteScopePerm,
+			DefaultValid:   true,
+			Default:        c.meta.Default,
+		}
+		if isNew := trie.PutMeta(c.key, fm); isNew {
+			t.Errorf("expected key %s to be missing", c.key)
+		}
 	}
 
 	// subsequent put
@@ -91,9 +171,12 @@ func TestPathTrieNormal(t *testing.T) {
 
 	// get
 	for _, c := range cases {
-		if value := trie.Get(c.key); !cstesting.EqualPointers(t, value.Events[EventOnAfterGet][1], c.value) {
+		value := trie.Get(c.key)
+		if !cstesting.EqualPointers(t, value.Events[EventOnAfterGet][1], c.value) {
 			t.Errorf("expected key %s to have value %#v, got %#v", c.key, c.value, value)
 		}
+		assert.Exactly(t, c.meta.Default, value.Default)
+		assert.Exactly(t, c.meta.WriteScopePerm, value.WriteScopePerm)
 	}
 
 	// delete, expect Delete to return true indicating a node was nil'd
@@ -193,7 +276,7 @@ func TestPathTrieWalk(t *testing.T) {
 		}
 	}
 
-	walker := func(key string, value fieldMeta) error {
+	walker := func(key string, value FieldMeta) error {
 		// value for each walked key is correct
 
 		if value.Events[EventOnAfterGet] != nil && !cstesting.EqualPointers(t, value.Events[EventOnAfterGet][0], table[key]) {

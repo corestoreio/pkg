@@ -528,7 +528,7 @@ func (p *Path) ScopeRoute() (scope.TypeID, string) {
 	return p.ScopeID, p.route
 }
 
-func (p *Path) separatorPrefixRoute() string {
+func (p *Path) separatorSuffixRoute() string {
 	var buf strings.Builder
 	buf.WriteByte(PathSeparator)
 	buf.WriteString(p.route)

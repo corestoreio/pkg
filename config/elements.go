@@ -75,8 +75,9 @@ type Section struct {
 	// ID unique ID and merged with others. 1st part of the path.
 	ID    string
 	Label string `json:",omitempty"`
-	// ScopePerm: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
-	// ScopePerm can contain multiple Scope but no more than Default, Website and Store.
+	// Scopes: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
+	// Scopes can contain multiple Scope but no more than Default, Website and
+	// Store.
 	Scopes    scope.Perm `json:",omitempty"`
 	SortOrder int        `json:",omitempty"`
 	// Resource some kind of ACL if someone is allowed for no,read or write access @todo
@@ -372,7 +373,7 @@ type Group struct {
 	ID      string
 	Label   string `json:",omitempty"`
 	Comment string `json:",omitempty"`
-	// ScopePerm: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
+	// Scopes: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
 	Scopes    scope.Perm `json:",omitempty"`
 	SortOrder int        `json:",omitempty"`
 
@@ -459,6 +460,34 @@ func (gs Groups) Less(i, j int) bool {
 // FIELDS
 ///////////////////////////////////////////////////////////////////////////////
 
+// FieldMeta sets meta data for a field into the config.Service object. The meta
+// data defines scope access restrictions and default values for different
+// scopes.
+// Intermediate type for function WithFieldMeta
+type FieldMeta struct {
+	valid  bool
+	Events [eventMaxCount]eventObservers
+	// Route defines the route or storage key, e.g.: customer/address/prefix_options
+	// TODO it should be a path carrier/dhl/username
+	// TODO it should be a path websites/1/carrier/dhl/username
+	// TODO it should be a path stores/1/carrier/dhl/username
+	Route string
+	// WriteScopePerm sets the permission to allow setting values to this route.
+	// For example WriteScopePerm equals scope.PermStore can be set from
+	// default, website and store. If you restrict WriteScopePerm to
+	// scope.PermDefault, the route and its value can only be set from default
+	// but not from websites or stores.
+	WriteScopePerm scope.Perm
+	// ScopeID defines the scope ID for which a default value is valid. Scope
+	// type can only contain three scopes (default,websites or stores). ID
+	// relates to the corresponding website or store ID.
+	ScopeID      scope.TypeID
+	DefaultValid bool
+	// Default sets the default value which gets later parsed into the desired
+	// final Go type. An empty string means not set or null.
+	Default string
+}
+
 // Fields contains a set of Fields. Has several method receivers attached.
 // Thread safe for reading but not for modifying.
 type Fields []*Field
@@ -487,23 +516,14 @@ type Field struct {
 	// CanBeEmpty only used in HTML forms for multiselect fields
 	// Use case: lib/internal/Magento/Framework/Data/Form/Element/Multiselect.php::getElementHtml()
 	CanBeEmpty bool `json:",omitempty"`
-	// ScopePerm defines the max allowed scope. Some paths or values can only act
+	// Scopes defines the max allowed scope. Some paths or values can only act
 	// on default, website or store scope. So perm checks if the provided
 	// path has a scope equal or lower than defined in perm.
-	ScopePerm scope.Perm `json:",omitempty"`
+	Scopes scope.Perm `json:",omitempty"`
 	// Default can contain any default config value: float64, int64, string,
 	// bool. An empty string is equal to NULL. A default gets requests if the
 	// value for a path cannot be retrieved from Level1 or Level2 storage.
 	Default string `json:",omitempty"`
-}
-
-// fieldMeta contains important the fields from type Field. fieldMeta gets used
-// in the Service type to look up the default value and the allowed scope.
-type fieldMeta struct {
-	valid     bool
-	Events    [eventMaxCount]eventObservers
-	ScopePerm scope.Perm
-	Default   string
 }
 
 // MakeFields wrapper to create a new Fields
@@ -586,8 +606,8 @@ func (f *Field) Update(new *Field) *Field {
 	if "" != new.Tooltip {
 		f.Tooltip = new.Tooltip
 	}
-	if new.ScopePerm > 0 {
-		f.ScopePerm = new.ScopePerm
+	if new.Scopes > 0 {
+		f.Scopes = new.Scopes
 	}
 	if new.SortOrder != 0 {
 		f.SortOrder = new.SortOrder

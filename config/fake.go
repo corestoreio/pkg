@@ -165,8 +165,8 @@ func (s *FakeService) Subscribe(path string, mr MessageReceiver) (subscriptionID
 	return s.SubscribeFn(path, mr)
 }
 
-// NewScoped creates a new ScopedReader which uses the underlying
+// Scoped creates a new ScopedReader which uses the underlying
 // mocked paths and values.
-func (s *FakeService) NewScoped(websiteID, storeID int64) Scoped {
-	return NewScoped(s, websiteID, storeID)
+func (s *FakeService) Scoped(websiteID, storeID int64) Scoped {
+	return MakeScoped(s, websiteID, storeID)
 }

@@ -97,9 +97,9 @@ func ExampleValue() {
 		)
 	}
 
-	// This instance of NewScoped gets created somewhere deep in the program.
+	// This instance of MakeScoped gets created somewhere deep in the program.
 	// The numbers 1 and 2 are chosen here randomly.
-	scpd := configSrv.NewScoped(1, 2)
+	scpd := configSrv.Scoped(1, 2)
 	cntryVal := scpd.Get(scope.Default, routeCountries)
 
 	countries, err := cntryVal.Strs()

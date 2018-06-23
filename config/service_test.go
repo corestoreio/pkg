@@ -70,7 +70,7 @@ func TestNotKeyNotFoundError(t *testing.T) {
 	srv := config.MustNewService(storage.NewMap(), config.Options{})
 	assert.NotNil(t, srv)
 
-	scopedSrv := srv.NewScoped(1, 1)
+	scopedSrv := srv.Scoped(1, 1)
 
 	flat := scopedSrv.Get(scope.Default, "catalog/product/enable_flat")
 	assert.False(t, flat.IsValid(), "Should not find the key")
@@ -115,7 +115,7 @@ func TestService_Write_Get_Value_Success(t *testing.T) {
 }
 
 func TestScoped_ScopeIDs(t *testing.T) {
-	scp := config.Scoped{WebsiteID: 3, StoreID: 4}
+	scp := config.MakeScoped(nil, 3, 4)
 	assert.Exactly(t, scope.TypeIDs{scope.Store.WithID(4), scope.Website.WithID(3)}, scp.ScopeIDs())
 }
 
@@ -123,22 +123,23 @@ func TestScoped_IsValid(t *testing.T) {
 	t.Parallel()
 	cfg := config.NewFakeService(storage.NewMap())
 	tests := []struct {
-		s    config.Scoped
-		want bool
+		websiteID int64
+		storeID   int64
+		want      bool
 	}{
-		{config.Scoped{}, false},
-		{config.Scoped{WebsiteID: 1, StoreID: 0}, false},
-		{config.Scoped{WebsiteID: 1, StoreID: 1}, false},
-		{config.Scoped{WebsiteID: 0, StoreID: 1}, false},
-		{config.Scoped{Root: cfg}, true},
-		{config.Scoped{Root: cfg, WebsiteID: 1, StoreID: 0}, true},
-		{config.Scoped{Root: cfg, WebsiteID: 1, StoreID: 1}, true},
-		{config.Scoped{Root: cfg, WebsiteID: 0, StoreID: 1}, false},
-		{config.Scoped{Root: cfg, WebsiteID: 1, StoreID: -1}, false},
-		{config.Scoped{Root: cfg, WebsiteID: -1, StoreID: -1}, false},
+		{0, 0, true},
+		{1, 0, true},
+		{1, 1, true},
+		{0, 1, false},
+		{1, 0, true},
+		{1, 1, true},
+		{0, 1, false},
+		{1, -1, false},
+		{-1, -1, false},
 	}
 	for i, test := range tests {
-		if have, want := test.s.IsValid(), test.want; have != want {
+		s := config.MakeScoped(cfg, test.websiteID, test.storeID)
+		if have, want := s.IsValid(), test.want; have != want {
 			t.Errorf("Idx %d => Have: %v Want: %v", i, have, want)
 		}
 	}
@@ -157,7 +158,7 @@ func TestScopedServiceScope(t *testing.T) {
 		{0, 3, scope.Store, 3},
 	}
 	for i, test := range tests {
-		sg := config.NewFakeService(storage.NewMap()).NewScoped(test.websiteID, test.storeID)
+		sg := config.NewFakeService(storage.NewMap()).Scoped(test.websiteID, test.storeID)
 		haveScope, haveID := sg.ScopeID().Unpack()
 		assert.Exactly(t, test.wantScope, haveScope, "Index %d", i)
 		assert.Exactly(t, test.wantID, haveID, "Index %d", i)
@@ -219,7 +220,7 @@ func TestScopedServicePath(t *testing.T) {
 			}
 			cg := config.NewFakeService(storage.NewMap(test.fqpath, fqVal))
 
-			sg := cg.NewScoped(test.websiteID, test.storeID)
+			sg := cg.Scoped(test.websiteID, test.storeID)
 			haveVal := sg.Get(test.perm, test.route)
 
 			if test.wantErrKind > 0 {
@@ -291,7 +292,7 @@ func TestScopedServicePermission_All(t *testing.T) {
 	for i, test := range tests {
 		srv := config.NewFakeService(mapStorage)
 
-		haveVal := srv.NewScoped(1, 1).Get(test.s, "aa/bb/cc")
+		haveVal := srv.Scoped(1, 1).Get(test.s, "aa/bb/cc")
 		s, ok, err := haveVal.Str()
 		if err != nil {
 			t.Fatal("Index", i, "Error", err)
@@ -321,47 +322,47 @@ func TestScopedServicePermission_One(t *testing.T) {
 	))
 
 	t.Run("query1 by scope.Default, matches default", func(t *testing.T) {
-		s, ok, err := sm.NewScoped(WebsiteID, StoreID).Get(scope.Default, "aa/bb/cc").Str()
+		s, ok, err := sm.Scoped(WebsiteID, StoreID).Get(scope.Default, "aa/bb/cc").Str()
 		require.True(t, ok, "scoped path value must be found")
 		require.NoError(t, err)
 		assert.Exactly(t, "a", s) // because ScopedGetter bound to store scope
 	})
 
 	t.Run("query1 by scope.Website, matches website", func(t *testing.T) {
-		s, ok, err := sm.NewScoped(WebsiteID, StoreID).Get(scope.Website, "aa/bb/cc").Str()
+		s, ok, err := sm.Scoped(WebsiteID, StoreID).Get(scope.Website, "aa/bb/cc").Str()
 		require.True(t, ok, "scoped path value must be found")
 		require.NoError(t, err)
 		assert.Exactly(t, "b", s) // because ScopedGetter bound to store scope
 	})
 
 	t.Run("query1 by scope.Store, matches store", func(t *testing.T) {
-		s, ok, err := sm.NewScoped(WebsiteID, StoreID).Get(scope.Store, "aa/bb/cc").Str()
+		s, ok, err := sm.Scoped(WebsiteID, StoreID).Get(scope.Store, "aa/bb/cc").Str()
 		require.True(t, ok, "scoped path value must be found")
 		require.NoError(t, err)
 		assert.Exactly(t, "c", s) // because ScopedGetter bound to store scope
 	})
 	t.Run("query1 by scope.Absent, matches store", func(t *testing.T) {
-		s, ok, err := sm.NewScoped(WebsiteID, StoreID).Get(scope.Absent, "aa/bb/cc").Str()
+		s, ok, err := sm.Scoped(WebsiteID, StoreID).Get(scope.Absent, "aa/bb/cc").Str()
 		require.True(t, ok, "scoped path value must be found")
 		require.NoError(t, err)
 		assert.Exactly(t, "c", s) // because ScopedGetter bound to store scope
 	})
 
 	t.Run("query2 by scope.Store, fallback to website", func(t *testing.T) {
-		s, ok, err := sm.NewScoped(WebsiteID, StoreID).Get(scope.Store, "dd/ee/ff").Str()
+		s, ok, err := sm.Scoped(WebsiteID, StoreID).Get(scope.Store, "dd/ee/ff").Str()
 		require.True(t, ok, "scoped path value must be found")
 		require.NoError(t, err)
 		assert.Exactly(t, "bb2", s) // because ScopedGetter bound to store scope
 	})
 
 	t.Run("query3 by scope.Store, fallback to default", func(t *testing.T) {
-		s, ok, err := sm.NewScoped(WebsiteID, StoreID).Get(scope.Store, "dd/ee/gg").Str()
+		s, ok, err := sm.Scoped(WebsiteID, StoreID).Get(scope.Store, "dd/ee/gg").Str()
 		require.True(t, ok, "scoped path value must be found")
 		require.NoError(t, err)
 		assert.Exactly(t, "cc3", s) // because ScopedGetter bound to store scope
 	})
 	t.Run("query3 by scope.Website, fallback to default", func(t *testing.T) {
-		s, ok, err := sm.NewScoped(WebsiteID, StoreID).Get(scope.Website, "dd/ee/gg").Str()
+		s, ok, err := sm.Scoped(WebsiteID, StoreID).Get(scope.Website, "dd/ee/gg").Str()
 		require.True(t, ok, "scoped path value must be found")
 		require.NoError(t, err)
 		assert.Exactly(t, "cc3", s) // because ScopedGetter bound to store scope
@@ -378,9 +379,9 @@ func TestScopedService_Parent(t *testing.T) {
 		wantParentScope  scope.Type
 		wantParentID     int64
 	}{
-		{config.NewScoped(nil, 33, 1), scope.Store, 1, scope.Website, 33},
-		{config.NewScoped(nil, 3, 0), scope.Website, 3, scope.Default, 0},
-		{config.NewScoped(nil, 0, 0), scope.Default, 0, scope.Default, 0},
+		{config.MakeScoped(nil, 33, 1), scope.Store, 1, scope.Website, 33},
+		{config.MakeScoped(nil, 3, 0), scope.Website, 3, scope.Default, 0},
+		{config.MakeScoped(nil, 0, 0), scope.Default, 0, scope.Default, 0},
 	}
 	for _, test := range tests {
 		haveScp, haveID := test.sg.ParentID().Unpack()
@@ -481,7 +482,7 @@ func TestService_Scoped_LRU_Parallel(t *testing.T) {
 		p2.BindStore(3),
 	}
 
-	scpd := srv.NewScoped(2, 3)
+	scpd := srv.Scoped(2, 3)
 
 	bgwork.Wait(len(paths), func(idx int) {
 		true := []byte(`1`)
@@ -607,12 +608,12 @@ func TestService_DifferentStorageLevels(t *testing.T) {
 type testObserver struct {
 	err     error
 	rawData []byte
-	observe func(p config.Path, found bool, rawData []byte) (rawData2 []byte, err error)
+	observe func(p config.Path, rawData []byte, found bool) (rawData2 []byte, err error)
 }
 
-func (to testObserver) Observe(p config.Path, found bool, rawData []byte) (rawData2 []byte, err error) {
+func (to testObserver) Observe(p config.Path, rawData []byte, found bool) (rawData2 []byte, err error) {
 	if to.observe != nil {
-		return to.observe(p, found, rawData)
+		return to.observe(p, rawData, found)
 	}
 	if to.rawData != nil {
 		return to.rawData, nil
@@ -698,7 +699,7 @@ func TestService_Observer(t *testing.T) {
 
 		getsCalledGet := false
 		assert.NoError(t, srv.RegisterObserver(config.EventOnBeforeGet, "aa/bb", testObserver{
-			observe: func(p config.Path, found bool, rawData []byte) (rawData2 []byte, err error) {
+			observe: func(p config.Path, rawData []byte, found bool) (rawData2 []byte, err error) {
 				assert.False(t, found)
 				assert.Nil(t, rawData)
 				assert.Exactly(t, `websites/2/aa/bb/dd`, p.String())
@@ -709,7 +710,7 @@ func TestService_Observer(t *testing.T) {
 
 		getsCalledSet := false
 		assert.NoError(t, srv.RegisterObserver(config.EventOnAfterSet, "aa/bb/dd", testObserver{
-			observe: func(p config.Path, found bool, rawData []byte) (rawData2 []byte, err error) {
+			observe: func(p config.Path, rawData []byte, found bool) (rawData2 []byte, err error) {
 				assert.Exactly(t, `0816`, string(rawData))
 				getsCalledSet = true
 				return rawData, nil
@@ -725,4 +726,107 @@ func TestService_Observer(t *testing.T) {
 		assert.True(t, getsCalledGet, "Event before get should get called")
 		assert.NoError(t, srv.DeregisterObservers(config.EventOnBeforeSet, "/aa/bb/dd"))
 	})
+}
+
+func TestService_FieldMetaData(t *testing.T) {
+
+	srv := config.MustNewService(storage.NewMap(), config.Options{},
+		config.WithFieldMeta(
+			&config.FieldMeta{
+				Route:          "catalog/layered_navigation/display_product_count",
+				WriteScopePerm: 0, // writing allowed from all scopes
+				Default:        "false",
+			},
+			&config.FieldMeta{
+				Route:          "carrier/dhl/timeout",
+				WriteScopePerm: scope.PermDefault,
+				ScopeID:        scope.DefaultTypeID, // gets ignored
+				Default:        "3600s",
+			},
+			&config.FieldMeta{
+				Route:          "carrier/dhl/username", // for all other websites/stores this is the default value
+				WriteScopePerm: scope.PermWebsite,      // Perm can only be set when ScopeID is <= DefaultID.
+				Default:        "prdUser0",
+			},
+			&config.FieldMeta{
+				Route:   "carrier/dhl/username",
+				ScopeID: scope.Website.WithID(1), // for Website 1 this is the default value
+				Default: "prdUser1",
+			},
+			&config.FieldMeta{
+				Route:   "carrier/dhl/username",
+				ScopeID: scope.Website.WithID(2), // for Website 2 this is the default value
+				Default: "prdUser2",
+			},
+		),
+	)
+	defer func() { assert.NoError(t, srv.Close()) }()
+
+	dhlTimeout := config.MustNewPath("carrier/dhl/timeout")
+	dhlUsername := config.MustNewPath("carrier/dhl/username")
+
+	t.Run("timeout: store scope cannot write default scope", func(t *testing.T) {
+		dhlTimeout := dhlTimeout.BindStore(3)
+		err := srv.Set(dhlTimeout, []byte(`1m`))
+		assert.True(t, errors.NotAllowed.Match(err), "%+v", err)
+
+		str, ok, err := srv.Get(dhlTimeout).Str()
+		assert.True(t, ok)
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, `3600s`, str)
+	})
+	t.Run("timeout: website scope cannot access default scope", func(t *testing.T) {
+		dhlTimeout := dhlTimeout.BindWebsite(3)
+		err := srv.Set(dhlTimeout, []byte(`1m`))
+		assert.True(t, errors.NotAllowed.Match(err), "%+v", err)
+
+		str, ok, err := srv.Get(dhlTimeout).Str()
+		assert.True(t, ok)
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, `3600s`, str)
+	})
+	t.Run("timeout: default scope can access default scope", func(t *testing.T) {
+		err := srv.Set(dhlTimeout, []byte(`1m`))
+		assert.NoError(t, err, "%+v", err)
+
+		d, ok, err := srv.Get(dhlTimeout).Duration()
+		assert.True(t, ok)
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, time.Duration(60000000000), d)
+	})
+
+	t.Run("username: store scope cannot access website scope", func(t *testing.T) {
+		dhlUsername := dhlUsername.BindStore(3)
+		err := srv.Set(dhlUsername, []byte(`guestUser`))
+		assert.True(t, errors.NotAllowed.Match(err), "%+v", err)
+
+		str, ok, err := srv.Get(dhlUsername).Str()
+		assert.False(t, ok)
+		assert.NoError(t, err, "%+v", err)
+		assert.Empty(t, str) // direct hit must return empty value because no default value for default scope set.
+
+	})
+	t.Run("username: website scope 3 can access website scope and gets default scope default value", func(t *testing.T) {
+		scpd := srv.Scoped(3, 4)
+		str, ok, err := scpd.Get(scope.Website, "carrier/dhl/username").Str()
+		assert.True(t, ok)
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, "prdUser0", str)
+	})
+	t.Run("username: website scope 1 can access website scope and gets its scope default value", func(t *testing.T) {
+
+		scpd := srv.Scoped(1, 4)
+		str, ok, err := scpd.Get(scope.Store, "carrier/dhl/username").Str()
+		assert.True(t, ok)
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, "prdUser1", str)
+	})
+	t.Run("username: website scope 2 can access website scope and gets its scope default value", func(t *testing.T) {
+		scpd := srv.Scoped(2, 4)
+		str, ok, err := scpd.Get(scope.Website, "carrier/dhl/username").Str()
+		assert.True(t, ok)
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, "prdUser2", str)
+	})
+
 }

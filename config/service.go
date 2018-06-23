@@ -30,7 +30,7 @@ import (
 // Getter implements how to receive thread-safe a configuration value from an
 // underlying backend service. The provided route as an argument does not
 // make any assumptions if the scope of the Path is allowed to retrieve
-// the value. The NewScoped() function binds a route to a scope.Scope
+// the value. The MakeScoped() function binds a route to a scope.Scope
 // and gives you the possibility to fallback the hierarchy levels. If a value
 // cannot be found, it must return false as the 2nd return argument.
 type Getter interface {
@@ -269,9 +269,10 @@ func (s *Service) Flush() error {
 	return nil
 }
 
-// NewScoped creates a new scope base configuration reader
-func (s *Service) NewScoped(websiteID, storeID int64) Scoped {
-	return NewScoped(s, websiteID, storeID)
+// Scoped creates a new scope base configuration reader which has the
+// implemented fall back hierarchy.
+func (s *Service) Scoped(websiteID, storeID int64) Scoped {
+	return MakeScoped(s, websiteID, storeID)
 }
 
 // RegisterObserver appends a blocking observer for a route or route prefix.
@@ -329,14 +330,15 @@ func (s *Service) Set(p *Path, v []byte) (err error) { // TODO v should be an im
 	}
 
 	s.mu.RLock()
-	key := p.separatorPrefixRoute() // this can be optimized to move it into the process signature
-	if v, err = s.routeConfig.process(key, EventOnBeforeSet, p, true, v); err != nil {
+	key := p.separatorSuffixRoute() // this can be optimized to move it into the process signature
+	key = buildTrieKey(key, p.ScopeID)
+	if v, _, err = s.routeConfig.process(key, EventOnBeforeSet, p, v, true); err != nil {
 		s.mu.RUnlock()
 		return errors.WithStack(err)
 	}
 	defer func() {
 		var err2 error
-		if v, err2 = s.routeConfig.process(key, EventOnAfterSet, p, err == nil, v); err == nil && err2 != nil {
+		if v, _, err2 = s.routeConfig.process(key, EventOnAfterSet, p, v, err == nil); err == nil && err2 != nil {
 			err = errors.WithStack(err2)
 		}
 		s.mu.RUnlock()
@@ -392,16 +394,22 @@ func (s *Service) Get(p *Path) (v *Value) {
 	}
 
 	s.mu.RLock()
-	key := p.separatorPrefixRoute() // this can be optimized to move it into the process signature
-	if _, err := s.routeConfig.process(key, EventOnBeforeGet, p, false, nil); err != nil {
+	key := p.separatorSuffixRoute() // this can be optimized to move it into the process signature
+	key = buildTrieKey(key, p.ScopeID)
+	if _, _, err := s.routeConfig.process(key, EventOnBeforeGet, p, nil, false); err != nil {
 		s.mu.RUnlock()
 		v.lastErr = errors.WithStack(err)
 		return
 	}
 	defer func() {
 		var err2 error
-		if v.data, err2 = s.routeConfig.process(key, EventOnAfterGet, p, v.found > valFoundNo, v.data); v.lastErr == nil && err2 != nil {
+		var ok2 bool
+		if v.data, ok2, err2 = s.routeConfig.process(key, EventOnAfterGet, p, v.data, v.found > valFoundNo); v.lastErr == nil && err2 != nil {
 			v.lastErr = errors.WithStack(err2)
+		}
+
+		if ok2 && v.found == valFoundNo {
+			v.found = valFoundDefaults
 		}
 		s.mu.RUnlock()
 	}()
@@ -478,41 +486,41 @@ func (s *Service) Unsubscribe(subscriptionID int) error {
 // tables via foreign keys. Empty storeID triggers the website scope. Empty
 // websiteID and empty storeID are triggering the default scope.
 //
-// You can use the function NewScoped() to create a new object but not
+// You can use the function MakeScoped() to create a new object but not
 // mandatory. Scoped must act as non-pointer value.
 type Scoped struct {
 	// Root holds the main functions for retrieving values by paths from the
 	// storage.
-	Root      Getter
-	WebsiteID int64
-	StoreID   int64
+	rootSrv   Getter
+	websiteID int64
+	storeID   int64
 }
 
 // TODO: Scoped should support websites/0/ and stores/0/ to provide a top level
 // websites or stores specific configuration.
 
-// NewScoped instantiates a ScopedGetter implementation.  Getter
+// MakeScoped instantiates a ScopedGetter implementation.  Getter
 // specifies the root Getter which does not know about any scope.
-func NewScoped(g Getter, websiteID, storeID int64) Scoped {
+func MakeScoped(g Getter, websiteID, storeID int64) Scoped {
 	return Scoped{
-		Root:      g,
-		WebsiteID: websiteID,
-		StoreID:   storeID,
+		rootSrv:   g,
+		websiteID: websiteID,
+		storeID:   storeID,
 	}
 }
 
 // IsValid checks if the object has been set up correctly.
 func (ss Scoped) IsValid() bool {
-	return ss.Root != nil && ((ss.WebsiteID == 0 && ss.StoreID == 0) ||
-		(ss.WebsiteID > 0 && ss.StoreID == 0) ||
-		(ss.WebsiteID > 0 && ss.StoreID > 0))
+	return ss.rootSrv != nil && ((ss.websiteID == 0 && ss.storeID == 0) ||
+		(ss.websiteID > 0 && ss.storeID == 0) ||
+		(ss.websiteID > 0 && ss.storeID > 0))
 }
 
 // ParentID tells you the parent underlying scope and its ID. Store falls back
 // to website and website falls back to default.
 func (ss Scoped) ParentID() scope.TypeID {
-	if ss.StoreID > 0 {
-		return scope.Website.WithID(ss.WebsiteID)
+	if ss.storeID > 0 {
+		return scope.Website.WithID(ss.websiteID)
 	}
 	return scope.DefaultTypeID
 }
@@ -520,11 +528,11 @@ func (ss Scoped) ParentID() scope.TypeID {
 // ScopeID tells you the current underlying scope and its ID to which this
 // configuration has been bound to.
 func (ss Scoped) ScopeID() scope.TypeID {
-	if ss.StoreID > 0 {
-		return scope.Store.WithID(ss.StoreID)
+	if ss.storeID > 0 {
+		return scope.Store.WithID(ss.storeID)
 	}
-	if ss.WebsiteID > 0 {
-		return scope.Website.WithID(ss.WebsiteID)
+	if ss.websiteID > 0 {
+		return scope.Website.WithID(ss.websiteID)
 	}
 	return scope.DefaultTypeID
 }
@@ -545,7 +553,7 @@ func (ss Scoped) isAllowedStore(restrictUpTo scope.Type) bool {
 	if restrictUpTo > scope.Absent {
 		scp = restrictUpTo
 	}
-	return ss.StoreID > 0 && scope.PermStoreReverse.Has(scp)
+	return ss.storeID > 0 && scope.PermStoreReverse.Has(scp)
 }
 
 func (ss Scoped) isAllowedWebsite(restrictUpTo scope.Type) bool {
@@ -553,7 +561,7 @@ func (ss Scoped) isAllowedWebsite(restrictUpTo scope.Type) bool {
 	if restrictUpTo > scope.Absent {
 		scp = restrictUpTo
 	}
-	return ss.WebsiteID > 0 && scope.PermWebsiteReverse.Has(scp)
+	return ss.websiteID > 0 && scope.PermWebsiteReverse.Has(scp)
 }
 
 // Get traverses through the scopes store->website->default to find a matching
@@ -569,8 +577,8 @@ func (ss Scoped) Get(restrictUpTo scope.Type, route string) (v *Value) {
 		route: route,
 	}
 	if ss.isAllowedStore(restrictUpTo) {
-		p.ScopeID = scope.Store.WithID(ss.StoreID)
-		v := ss.Root.Get(&p)
+		p.ScopeID = scope.Store.WithID(ss.storeID)
+		v := ss.rootSrv.Get(&p)
 		if v.found > valFoundNo || v.lastErr != nil {
 			// value found or err is not a NotFound error
 			if v.lastErr != nil {
@@ -580,8 +588,8 @@ func (ss Scoped) Get(restrictUpTo scope.Type, route string) (v *Value) {
 		}
 	}
 	if ss.isAllowedWebsite(restrictUpTo) {
-		p.ScopeID = scope.Website.WithID(ss.WebsiteID)
-		v := ss.Root.Get(&p)
+		p.ScopeID = scope.Website.WithID(ss.websiteID)
+		v := ss.rootSrv.Get(&p)
 		if v.found > valFoundNo || v.lastErr != nil {
 			if v.lastErr != nil {
 				v.lastErr = errors.WithStack(v.lastErr) // hmm, maybe can be removed if no one gets confused
@@ -590,5 +598,5 @@ func (ss Scoped) Get(restrictUpTo scope.Type, route string) (v *Value) {
 		}
 	}
 	p.ScopeID = scope.DefaultTypeID
-	return ss.Root.Get(&p)
+	return ss.rootSrv.Get(&p)
 }
