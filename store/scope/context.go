@@ -18,7 +18,7 @@ import (
 	"context"
 )
 
-type ctxScopeKey struct{}
+type ctxScopeKey uint8
 
 type ctxScopeWrapper struct {
 	websiteID int64
@@ -32,7 +32,7 @@ type ctxScopeWrapper struct {
 // middleware can set the scope depending on geo location information. These IDs
 // will be later used to e.g. read the scoped configuration.
 func WithContext(ctx context.Context, websiteID, storeID int64) context.Context {
-	return context.WithValue(ctx, ctxScopeKey{}, ctxScopeWrapper{websiteID: websiteID, storeID: storeID})
+	return context.WithValue(ctx, ctxScopeKey(0), ctxScopeWrapper{websiteID: websiteID, storeID: storeID})
 }
 
 // FromContext returns the requested current store scope and its parent website
@@ -40,6 +40,6 @@ func WithContext(ctx context.Context, websiteID, storeID int64) context.Context 
 // request. A scope gets set via HTTP form, cookie, JSON Web Token or GeoIP or
 // other fancy features.
 func FromContext(ctx context.Context) (websiteID, storeID int64, ok bool) {
-	w, ok := ctx.Value(ctxScopeKey{}).(ctxScopeWrapper)
+	w, ok := ctx.Value(ctxScopeKey(0)).(ctxScopeWrapper)
 	return w.websiteID, w.storeID, ok && w.websiteID >= 0 && w.storeID >= 0
 }

@@ -482,3 +482,20 @@ func TestTypeID_IsValid(t *testing.T) {
 	assert.NoError(t, scope.TypeID(0).IsValid())
 	assert.True(t, errors.NotValid.Match(scope.TypeID(485968409).IsValid()))
 }
+
+func TestTypeID_AppendHuman(t *testing.T) {
+	tests := []struct {
+		sid  scope.TypeID
+		want string
+	}{
+		{scope.DefaultTypeID, ""},
+		{scope.Group.WithID(13), ""},
+		{scope.Website.WithID(13), "websites/13"},
+		{scope.Website.WithID(0), "websites/0"},
+		{scope.Store.WithID(13), "stores/13"},
+		{scope.Store.WithID(0), "stores/0"},
+	}
+	for _, test := range tests {
+		assert.Exactly(t, test.want, string(test.sid.AppendHuman(nil, '/')))
+	}
+}

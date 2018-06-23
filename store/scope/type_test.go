@@ -242,3 +242,11 @@ func TestType_IsValid(t *testing.T) {
 	t2 := Type(234)
 	assert.True(t, errors.NotValid.Match(t2.IsValid()), "Should have error kind NotValid")
 }
+
+func TestType_IsWebSiteOrStore(t *testing.T) {
+	assert.True(t, Website.IsWebSiteOrStore())
+	assert.True(t, Store.IsWebSiteOrStore())
+	assert.False(t, Default.IsWebSiteOrStore())
+	assert.False(t, Group.IsWebSiteOrStore())
+	assert.False(t, Type(5).IsWebSiteOrStore())
+}

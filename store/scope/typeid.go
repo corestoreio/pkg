@@ -86,6 +86,24 @@ func (t TypeID) AppendBytes(dst []byte) (text []byte) {
 	return strconv.AppendUint(dst, t.ToUint64(), 10)
 }
 
+// AppendHuman appends to dst the human textual representation of a Websites or
+// Stores scope and their IDs. Default, Group and invalid scopes won't get
+// appended. Will write:
+//		scope.Websites.WithID(1) => websites/1
+//		scope.Stores.WithID(2) => stores/2
+//		scope.DefaultTypeID => "" <- returns dst unchanged.
+//		scope.Group.WithID(4) => "" <- returns dst unchanged.
+// This function gets used in the config package to write a path depending on
+// the paths scope.
+func (t TypeID) AppendHuman(dst []byte, separator byte) (text []byte) {
+	if s, id := t.Unpack(); s.IsWebSiteOrStore() {
+		dst = append(dst, s.StrBytes()...)
+		dst = append(dst, separator)
+		dst = strconv.AppendInt(dst, id, 10)
+	}
+	return dst
+}
+
 // MarshalText implements encoding.TextMarshaler
 func (t TypeID) MarshalText() (text []byte, err error) {
 	return strconv.AppendUint([]byte{}, t.ToUint64(), 10), nil

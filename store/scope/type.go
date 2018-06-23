@@ -105,13 +105,18 @@ func (s Type) StrBytes() []byte {
 	return bDefault
 }
 
+// IsWebSiteOrStore returns true if the type is either Website or Store.
+func (s Type) IsWebSiteOrStore() bool {
+	return s == Website || s == Store
+}
+
 // WithID calls MakeTypeID for your convenience. It packs the id into a new value
 // containing the Type and its ID ;-).
 func (s Type) WithID(id int64) TypeID {
 	return MakeTypeID(s, id)
 }
 
-// IsValid checks if the type is within the scope Defaut, Website, Group or
+// IsValid checks if the type is within the scope Default, Website, Group or
 // Store.
 func (s Type) IsValid() error {
 	if s >= maxType {
