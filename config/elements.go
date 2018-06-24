@@ -80,7 +80,7 @@ type Section struct {
 	// Store.
 	Scopes    scope.Perm `json:",omitempty"`
 	SortOrder int        `json:",omitempty"`
-	// Resource some kind of ACL if someone is allowed for no,read or write access @todo
+	// Resource TODO some kind of ACL if someone has the right to view,access and/or modify.
 	Resource uint   `json:",omitempty"`
 	Groups   Groups `json:",omitempty"`
 }
@@ -165,10 +165,13 @@ func (ss Sections) Merge(sections ...*Section) Sections {
 // found in this slice otherwise overrides struct fields if not empty. Not
 // thread safe.
 func (ss Sections) merge(s *Section) Sections {
-	cs, idx, err := ss.Find(s.ID) // cs = current section
-	if err != nil {
+	cs, idx := ss.Find(s.ID) // cs = current section
+	if idx < 0 {
 		ss = append(ss, s)
 		idx = len(ss) - 1
+	}
+	if cs == nil {
+		cs = new(Section)
 	}
 
 	cs.ID = s.ID
@@ -189,86 +192,87 @@ func (ss Sections) merge(s *Section) Sections {
 	return ss
 }
 
-// Find returns a Section pointer or ErrSectionNotFound. Route must be a single
-// part. E.g. if you have path "a/b/c" route would be in this case "a". For
-// comparison the field Sum32 of a route will be used. 2nd return parameter
-// contains the position of the Section within the Sections. Error
-// behaviour: NotFound
-func (ss Sections) Find(id string) (*Section, int, error) {
+// Find returns a Section pointer or -1 if section not found. Route must be a
+// single part. E.g. if you have path "a/b/c" route would be in this case "a".
+// 2nd return parameter contains the position of the Section within the Sections
+// or -1 if not found.
+func (ss Sections) Find(id string) (_ *Section, index int) {
 	for i, s := range ss {
 		if s.ID == id {
-			return s, i, nil
+			return s, i
 		}
 	}
-	return nil, 0, errors.NotFound.Newf("[element] Section %q", id)
+	return nil, -1
 }
 
 // FindGroup searches for a group using the first two path segments. Route must
 // have the format a/b/c. 2nd return parameter contains the position of the
-// Group within the GgroupSlice of a Section. Error behaviour: NotFound
-func (ss Sections) FindGroup(r string) (*Group, int, error) {
+// Group within the GroupSlice of a Section or -1 if not found.
+func (ss Sections) FindGroup(r string) (_ *Group, index int) {
 	p := &Path{
 		route: r,
 	}
 	spl, err := p.Split()
-	if err != nil {
-		return nil, 0, errors.NotFound.Newf("[element] Route %q", r)
+	if err != nil || len(spl) == 0 {
+		return nil, -10
 	}
-	cs, _, err := ss.Find(spl[0])
-	if err != nil {
-		return nil, 0, errors.Wrap(err, "[element] Sections.FindGroup")
+
+	cs, idx := ss.Find(spl[0])
+	if idx < 0 {
+		return nil, -1
 	}
-	return cs.Groups.Find(spl[1]) // annotation missing !?
+	return cs.Groups.Find(spl[1])
 }
 
-// FindField searches for a field using all three path segments. Route must have
-// the format a/b/c. Error behaviour: NotFound, NotValid
-func (ss Sections) FindField(r string) (*Field, int, error) {
+// FindField searches for a field using all path segments. Route must have the
+// format a/b/c. 2nd return parameter contains the position of the Field within
+// the FieldSlice of a Section/Group or -1 if not found.
+func (ss Sections) FindField(r string) (_ *Field, index int) {
 	p := &Path{
 		route: r,
 	}
 	spl, err := p.Split()
-	if err != nil {
-		return nil, 0, errors.Wrapf(err, "[element] Route %q", r)
+	if err != nil || len(spl) < 3 {
+		return nil, -10
 	}
-	sec, _, err := ss.Find(spl[0])
-	if err != nil {
-		return nil, 0, errors.Wrapf(err, "[element] Route %q", r)
+	sec, idx := ss.Find(spl[0])
+	if idx < 0 {
+		return nil, -1
 	}
-	cg, _, err := sec.Groups.Find(spl[1])
-	if err != nil {
-		return nil, 0, errors.Wrapf(err, "[element] Route %q", r)
+	cg, idx := sec.Groups.Find(spl[1])
+	if idx < 0 {
+		return nil, -2
 	}
-	return cg.Fields.Find(spl[2]) // annotation missing !?
+	return cg.Fields.Find(spl[2])
 }
 
 // UpdateField searches for a field using all three path segments and updates
-// the found field with the new field data. Not thread safe! Error behaviour:
-// NotFound, NotValid
-func (ss Sections) UpdateField(r string, nf *Field) error {
+// the found field with the new field data. Returns the field position within
+// the GroupSlice or a negative index in case a route part can't be found.
+func (ss Sections) UpdateField(r string, nf *Field) (index int) {
 	p := &Path{
 		route: r,
 	}
 	spl, err := p.Split()
 	if err != nil {
-		return errors.Wrapf(err, "[element] Route %q", r)
+		return -10
 	}
-	sec, sIDX, err := ss.Find(spl[0])
-	if err != nil {
-		return errors.Wrapf(err, "[element] Route %q", r)
+	sec, sIDX := ss.Find(spl[0])
+	if sIDX < 0 {
+		return sIDX
 	}
-	cg, gIDX, err := sec.Groups.Find(spl[1])
-	if err != nil {
-		return errors.Wrapf(err, "[element] Route %q", r)
+	cg, gIDX := sec.Groups.Find(spl[1])
+	if gIDX < 0 {
+		return gIDX
 	}
-	cf, fIDX, err := cg.Fields.Find(spl[2])
-	if err != nil {
-		return errors.Wrapf(err, "[element] Route %q", r)
+	cf, fIDX := cg.Fields.Find(spl[2])
+	if fIDX < 0 {
+		return fIDX
 	}
 
 	ss[sIDX].Groups[gIDX].Fields[fIDX] = cf.Update(nf)
 
-	return nil
+	return fIDX
 }
 
 // Append adds 0..n Section. Not thread safe.
@@ -277,38 +281,40 @@ func (ss Sections) Append(s ...*Section) Sections {
 }
 
 // AppendFields adds 0..n *Fields. Path must have at least two path parts like
-// a/b more path parts gets ignored. Not thread safe. Error behaviour: NotFound,
-// NotValid
-func (ss Sections) AppendFields(r string, fs ...*Field) (Sections, error) {
+// a/b more path parts gets ignored. Returns as index the new length of the
+// FieldSlice or a negative value on error.
+func (ss Sections) AppendFields(r string, fs ...*Field) (_ Sections, index int) {
 	p := &Path{
 		route: r,
 	}
 	spl, err := p.Split()
-	if err != nil {
-		return nil, errors.NotFound.Newf("[element] Route %q", r)
+	if err != nil || len(spl) < 3 {
+		return nil, -10
 	}
-	cs, sIDX, err := ss.Find(spl[0])
-	if err != nil {
-		return nil, errors.Wrapf(err, "[element] Route %q", r)
+	cs, sIDX := ss.Find(spl[0])
+	if sIDX < 0 {
+		return ss, sIDX
 	}
-	cg, gIDX, err := cs.Groups.Find(spl[1])
-	if err != nil {
-		return nil, errors.Wrapf(err, "[element] Route %q", r)
+	cg, gIDX := cs.Groups.Find(spl[1])
+	if gIDX < 0 {
+		return ss, gIDX
 	}
 	cg.Fields = cg.Fields.Append(fs...)
 	ss[sIDX].Groups[gIDX] = cg
-	return ss, nil
+
+	return ss, len(ss[sIDX].Groups[gIDX].Fields)
 }
 
 // Validate checks for duplicated configuration paths in all three hierarchy
 // levels. Error behaviour: NotValid
 func (ss Sections) Validate() error {
 	if len(ss) == 0 {
-		return errors.NotValid.Newf("[element] Sections length is zero")
+		return nil
 	}
 
 	dups := make(map[string]bool) // pc path checker
 	var buf strings.Builder
+	p := new(Path)
 	for _, s := range ss {
 		for _, g := range s.Groups {
 			for _, f := range g.Fields {
@@ -317,10 +323,14 @@ func (ss Sections) Validate() error {
 				buf.WriteString(g.ID)
 				buf.WriteByte(PathSeparator)
 				buf.WriteString(f.ID)
-				if !dups[buf.String()] {
-					dups[buf.String()] = true
+				key := buf.String()
+				if !dups[key] {
+					dups[key] = true
 				} else {
-					return errors.Duplicated.Newf("[config] Within sections the path %q appears two times.", buf.String())
+					return errors.Duplicated.Newf("[config] Within sections the path %q appears two times.", key)
+				}
+				if err := p.Parse(key); err != nil {
+					return errors.WithStack(err)
 				}
 				buf.Reset()
 			}
@@ -363,11 +373,9 @@ func (ss Sections) Less(i, j int) bool {
 ///////////////////////////////////////////////////////////////////////////////
 
 // Groups contains a set of Groups.
-//  Thread safe for reading but not for modifying.
 type Groups []*Group
 
-// Group defines the layout of a group containing multiple Fields
-//  Thread safe for reading but not for modifying.
+// Group defines the layout of a group containing multiple Fields.
 type Group struct {
 	// ID unique ID and merged with others. 2nd part of the path.
 	ID      string
@@ -390,16 +398,15 @@ func MakeGroups(gs ...*Group) Groups {
 	return Groups(gs)
 }
 
-// Find returns a Group pointer or ErrGroupNotFound. Route must be a single
-// part. E.g. if you have path "a/b/c" route would be in this case "b". For
-// comparison the field Sum32 of a route will be used. Error behaviour: NotFound
-func (gs Groups) Find(id string) (*Group, int, error) {
+// Find returns a Group pointer or index -1 if group not found. Route must be a
+// single part. E.g. if you have path "a/b/c" route would be in this case "b".
+func (gs Groups) Find(id string) (_ *Group, index int) {
 	for i, g := range gs {
 		if g.ID != "" && g.ID == id {
-			return g, i, nil
+			return g, i
 		}
 	}
-	return nil, 0, errors.NotFound.Newf("[element] Group %q not found", id)
+	return nil, -2
 }
 
 // Merge copies the data from a groups into this slice and returns the new
@@ -413,8 +420,8 @@ func (gs Groups) Merge(groups ...*Group) Groups {
 }
 
 func (gs Groups) merge(g *Group) Groups {
-	cg, idx, err := gs.Find(g.ID) // cg current group
-	if err != nil {
+	cg, idx := gs.Find(g.ID) // cg current group
+	if idx < 0 {
 		cg = g
 		gs = append(gs, cg)
 		idx = len(gs) - 1
@@ -465,7 +472,6 @@ func (gs Groups) Less(i, j int) bool {
 // scopes.
 // Intermediate type for function WithFieldMeta
 type FieldMeta struct {
-	valid  bool
 	Events [eventMaxCount]eventObservers
 	// Route defines the route or storage key, e.g.: customer/address/prefix_options
 	Route string
@@ -480,19 +486,18 @@ type FieldMeta struct {
 	// type can only contain three scopes (default,websites or stores). ID
 	// relates to the corresponding website or store ID.
 	ScopeID      scope.TypeID
+	Default      string
 	DefaultValid bool
 	// Default sets the default value which gets later parsed into the desired
 	// final Go type. An empty string means not set or null.
-	Default string
+	valid bool
 }
 
-// Fields contains a set of Fields. Has several method receivers attached.
-// Thread safe for reading but not for modifying.
+// Fields contains a set of Fields, the final configuration value.
 type Fields []*Field
 
 // Field contains the final path element of a configuration. Includes several
-// options. Thread safe for reading but not for modifying. @see
-// magento2/app/code/Magento/Config/etc/system_file.xsd
+// options.
 type Field struct {
 	// ID unique ID and NOT merged with others. 3rd and final part of the path.
 	ID string
@@ -512,7 +517,6 @@ type Field struct {
 	// Visible used for configuration settings which are not exposed to the user.
 	Visible bool `json:",omitempty"`
 	// CanBeEmpty only used in HTML forms for multiselect fields
-	// Use case: lib/internal/Magento/Framework/Data/Form/Element/Multiselect.php::getElementHtml()
 	CanBeEmpty bool `json:",omitempty"`
 	// Scopes defines the max allowed scope. Some paths or values can only act
 	// on default, website or store scope. So perm checks if the provided
@@ -529,16 +533,16 @@ func MakeFields(fs ...*Field) Fields {
 	return Fields(fs)
 }
 
-// Find returns a Field pointer or ErrFieldNotFound. Route must be a single
-// part. E.g. if you have path "a/b/c" route would be in this case "c". 2nd
-// argument int contains the slice index of the field. Error behaviour: NotFound
-func (fs Fields) Find(id string) (*Field, int, error) {
+// Find returns a Field pointer or index is -1 if field not found. Route must be
+// a single part. E.g. if you have path "a/b/c" route would be in this case "c".
+// 2nd argument int contains the slice index of the field.
+func (fs Fields) Find(id string) (_ *Field, index int) {
 	for i, f := range fs {
 		if f.ID != "" && f.ID == id {
-			return f, i, nil
+			return f, i
 		}
 	}
-	return nil, 0, errors.NotFound.Newf("[element] Field %q not found", id)
+	return nil, -3
 }
 
 // Append adds *Field (variadic) to the Fields. Not thread safe.
@@ -559,8 +563,8 @@ func (fs Fields) Merge(fields ...*Field) Fields {
 // merge merges field f into the slice. Appends the field if the Id is new.
 func (fs Fields) merge(f *Field) Fields {
 
-	cf, idx, err := fs.Find(f.ID) // cf current field
-	if err != nil {
+	cf, idx := fs.Find(f.ID) // cf current field
+	if idx < 0 {
 		cf = f
 		fs = append(fs, cf)
 		idx = len(fs) - 1

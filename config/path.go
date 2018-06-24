@@ -54,14 +54,13 @@ const (
 	errRouteInvalidBytesTpl = "[config] Route contains invalid bytes %q which are not runes."
 )
 
-func joinParts(buf *bytes.Buffer, parts ...string) error {
+func joinParts(buf *bytes.Buffer, parts ...string) {
 	for i, p := range parts {
 		if i > 0 {
 			buf.WriteByte(PathSeparator)
 		}
 		buf.WriteString(p)
 	}
-	return nil
 }
 
 // Path represents a configuration path bound to a scope. A Path is not safe for

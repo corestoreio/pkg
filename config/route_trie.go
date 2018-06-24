@@ -227,7 +227,7 @@ func (trie *trieRoute) PutEvent(event uint8, key string, eo EventObserver) bool 
 	node := trieGetNode(trie, key, 0)
 
 	// does node have an existing eo?
-	isNewVal := node.fm.valid == false
+	isNewVal := !node.fm.valid
 	node.fm.Events[event] = append(node.fm.Events[event], eo)
 	node.fm.valid = true
 	return isNewVal
@@ -241,7 +241,7 @@ func (trie *trieRoute) PutMeta(key string, fm *FieldMeta) bool {
 	node := trieGetNode(trie, key, fm.ScopeID)
 
 	// does node have an existing fm?
-	isNewVal := node.fm.valid == false
+	isNewVal := !node.fm.valid
 
 	for i := range node.fm.Events {
 		node.fm.Events[i] = append(node.fm.Events[i], fm.Events[i]...)
@@ -327,7 +327,9 @@ type nodeStr struct {
 
 func (trie *trieRoute) walk(key string, walker walkFn) error {
 	if trie.fm.valid {
-		walker(key, trie.fm)
+		if err := walker(key, trie.fm); err != nil {
+			return errors.WithStack(err)
+		}
 	}
 	for part, child := range trie.children {
 		err := child.walk(key+part, walker)
