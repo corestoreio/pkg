@@ -739,7 +739,42 @@ func TestService_Observer(t *testing.T) {
 	})
 }
 
-func TestService_FieldMetaData_CheckScope(t *testing.T) {
+func genFieldMetaChan(fms ...*config.FieldMeta) func(*config.Service) (<-chan *config.FieldMeta, <-chan error) {
+	return func(s *config.Service) (<-chan *config.FieldMeta, <-chan error) {
+		fmc := make(chan *config.FieldMeta)
+		errc := make(chan error)
+
+		go func() {
+			defer close(fmc)
+			defer close(errc)
+
+			for _, fm := range fms {
+				fmc <- fm
+			}
+		}()
+
+		return fmc, errc
+	}
+}
+
+func TestService_FieldMetaData_CheckScope_Sync(t *testing.T) {
+	t.Parallel()
+	srv, err := config.NewService(storage.NewMap(), config.Options{},
+		config.WithFieldMetaGenerator(
+			genFieldMetaChan(&config.FieldMeta{
+				Route:          "carrier/dhl/timeout",
+				WriteScopePerm: scope.PermWebsite,
+				ScopeID:        scope.Store.WithID(4),
+				Default:        "3600s",
+			}),
+		),
+	)
+	assert.Nil(t, srv)
+	assert.True(t, errors.NotAcceptable.Match(err), "%+v", err)
+	assert.EqualError(t, err, "[config] WriteScopePerm \"websites\" and ScopeID \"Type(Store) ID(4)\" cannot be set at once for path \"carrier/dhl/timeout\"")
+}
+
+func TestService_FieldMetaData_CheckScope_Async(t *testing.T) {
 	t.Parallel()
 	srv, err := config.NewService(storage.NewMap(), config.Options{},
 		config.WithFieldMeta(

@@ -118,9 +118,59 @@ func isDigitOnly(str string) bool {
 	return true
 }
 
+// WithFieldMetaGenerator sets immutable default values and scope restrictions
+// into the service for specific routes. Storage level and sort order are not
+// supported. FieldMeta data gets only set once. Reloading is not possible.
+// Supports hierarchical fall back to the parent scope for default values. See
+// cfgfile.WithLoadFieldMetaYAML to load this data via a YAML file. This
+// functional options supports stream based processing. fmGenerator function
+// must close both channels once the process finishes.
+func WithFieldMetaGenerator(fmGenerator func(*Service) (<-chan *FieldMeta, <-chan error)) LoadDataOption {
+	var once bool
+	return LoadDataOption{
+		load: func(s *Service) error {
+			if once {
+				return nil
+			}
+			s.mu.Lock()
+			defer func() {
+				once = true
+				s.mu.Unlock()
+			}()
+
+			fmC, errC := fmGenerator(s)
+			for {
+				select {
+				case rfm, ok := <-fmC:
+					if !ok {
+						return nil
+					}
+					if rfm.WriteScopePerm > 0 && rfm.ScopeID > scope.DefaultTypeID {
+						return errors.NotAcceptable.Newf("[config] WriteScopePerm %q and ScopeID %q cannot be set at once for path %q", rfm.WriteScopePerm.String(), rfm.ScopeID.String(), rfm.Route)
+					}
+					rfm.valid = true
+					if !rfm.DefaultValid && rfm.Default != "" {
+						rfm.DefaultValid = true
+					}
+					s.routeConfig.PutMeta(rfm.Route, rfm)
+
+				case err, ok := <-errC:
+					if !ok {
+						return nil
+					}
+					return errors.WithStack(err)
+				}
+			}
+
+			return nil
+		},
+	}
+}
+
 // WithFieldMeta sets immutable default values and scope restrictions into the
 // service for specific routes. Storage level and sort order are not supported.
 // FieldMeta data gets only set once. Reloading is not possible.
+// Synchronous version.
 func WithFieldMeta(fms ...*FieldMeta) LoadDataOption {
 	var once bool
 	return LoadDataOption{
@@ -150,10 +200,11 @@ func WithFieldMeta(fms ...*FieldMeta) LoadDataOption {
 	}
 }
 
-// WithApplySections sets the default values and permissionable scopes for
-// specific routes. This function option cannot handle a default value for a
-// specific website/store scope. Storage level and sort order are not
-// supported.
+// WithApplySections sets the default values and permissible scopes for specific
+// routes. This function option cannot handle a default value for a specific
+// website/store scope. Storage level and sort order are not supported. Because
+// of using FieldMeta, it supports hierarchical fall back to the parent scope
+// for default values.
 func WithApplySections(sections ...*Section) LoadDataOption {
 	secs := Sections(sections)
 	var once bool
