@@ -1,0 +1,19 @@
+carrier/dpd/port:
+  default: 8080
+  perm: "default"
+carrier/dpd/timeout:
+  default: "60s"
+  perm: "websites"
+  websites:
+    1: "50s"
+    2: "40s"
+
+#    just a comment
+
+carrier/dpd/username:
+  default: "prdUser0"
+  perm: "stores"
+  stores:
+    3: "prdUser1"
+    4: "prdUser2"
+

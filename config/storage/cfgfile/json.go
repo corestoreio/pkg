@@ -25,6 +25,8 @@ import (
 
 // WithLoadJSON reads the configuration values from a JSON file and applies it
 // to the config.service. "testdata/example.json" provides an example JSON file.
+// Loads all data into RAM before processing it. Can be refactored internally
+// for stream based processing.
 func WithLoadJSON(opts ...option) config.LoadDataOption {
 	return config.MakeLoadDataOption(func(s *config.Service) (err error) {
 		for i := 0; i < len(opts) && err == nil; i++ {

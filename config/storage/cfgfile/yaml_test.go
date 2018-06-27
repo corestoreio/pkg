@@ -22,6 +22,7 @@ import (
 	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/config/storage/cfgfile"
 	"github.com/corestoreio/pkg/store/scope"
+	"github.com/fortytw2/leaktest"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -62,5 +63,59 @@ func TestWithLoadYAML(t *testing.T) {
 		assert.Nil(t, cfgSrv)
 		assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 2: cannot unmarshal !!str `192.168...` into map[string]string")
 	})
+}
 
+func TestWithLoadFieldMetaYAML(t *testing.T) {
+	defer leaktest.Check(t)()
+
+	t.Run("success", func(t *testing.T) {
+
+		cfgSrv, err := config.NewService(
+			storage.NewMap(), config.Options{},
+			cfgfile.WithLoadFieldMetaYAML(cfgfile.WithFiles([]string{"testdata", "example_field_meta.yaml"})),
+		)
+		if err != nil {
+			t.Fatalf("%+v", err)
+		}
+
+		scpd13 := cfgSrv.Scoped(1, 3)
+		scpd24 := cfgSrv.Scoped(2, 4)
+		assert.Exactly(t, `"8080"`, scpd13.Get(scope.Default, "carrier/dpd/port").String())
+		assert.Exactly(t, `"60s"`, scpd13.Get(scope.Default, "carrier/dpd/timeout").String())
+		assert.Exactly(t, `"50s"`, scpd13.Get(scope.Website, "carrier/dpd/timeout").String())
+		assert.Exactly(t, `"40s"`, scpd24.Get(scope.Website, "carrier/dpd/timeout").String())
+		assert.Exactly(t, `"prdUser0"`, scpd13.Get(scope.Website, "carrier/dpd/username").String())
+		assert.Exactly(t, `"prdUser1"`, scpd13.Get(scope.Store, "carrier/dpd/username").String())
+		assert.Exactly(t, `"prdUser2"`, scpd24.Get(scope.Store, "carrier/dpd/username").String())
+
+		err = cfgSrv.Set(config.MustNewPath("carrier/dpd/port").BindWebsite(1), []byte(`return error`))
+		assert.True(t, errors.NotAllowed.Match(err), "%+v", err)
+		err = cfgSrv.Set(config.MustNewPath("carrier/dpd/timeout").BindStore(1), []byte(`return error`))
+		assert.True(t, errors.NotAllowed.Match(err), "%+v", err)
+	})
+
+	t.Run("malformed yaml", func(t *testing.T) {
+		cfgSrv, err := config.NewService(
+			storage.NewMap(), config.Options{},
+			cfgfile.WithLoadFieldMetaYAML(cfgfile.WithFiles([]string{"testdata", "example.yaml"})),
+		)
+		assert.Nil(t, cfgSrv)
+		assert.True(t, errors.Fatal.Match(err), "%+v", err)
+	})
+	t.Run("malformed perm", func(t *testing.T) {
+		cfgSrv, err := config.NewService(
+			storage.NewMap(), config.Options{},
+			cfgfile.WithLoadFieldMetaYAML(cfgfile.WithFiles([]string{"testdata", "malformed_field_meta.yaml"})),
+		)
+		assert.Nil(t, cfgSrv)
+		assert.True(t, errors.NotSupported.Match(err), "%+v", err)
+	})
+	t.Run("file not found", func(t *testing.T) {
+		cfgSrv, err := config.NewService(
+			storage.NewMap(), config.Options{},
+			cfgfile.WithLoadFieldMetaYAML(cfgfile.WithFiles([]string{"testdata", "malformed_field_meta_XXXZ.yaml"})),
+		)
+		assert.Nil(t, cfgSrv)
+		assert.True(t, errors.NotFound.Match(err), "%+v", err)
+	})
 }

@@ -30,7 +30,7 @@ func processFile(file string, s *config.Service, cb func(config.Setter, io.Reade
 	var f io.ReadCloser
 	f, err = os.Open(file)
 	if err != nil {
-		return errors.WithStack(err)
+		return errors.NotFound.New(err, "[cfgfile] os.Open")
 	}
 	defer func() {
 		if errC := f.Close(); err == nil && errC != nil {
