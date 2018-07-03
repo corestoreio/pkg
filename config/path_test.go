@@ -33,8 +33,58 @@ var (
 	_ encoding.BinaryMarshaler   = (*Path)(nil)
 	_ encoding.BinaryUnmarshaler = (*Path)(nil)
 	_ fmt.Stringer               = (*Path)(nil)
+	_ fmt.Stringer               = (*Route)(nil)
 )
 
+func TestRoute_Bind(t *testing.T) {
+	t.Parallel()
+
+	const eeRrTt Route = "ee/rr/tt"
+
+	assert.Exactly(t, `websites/99/ee/rr/tt`, eeRrTt.Bind(scope.Website.WithID(99)).String())
+	assert.Exactly(t, `websites/98/ee/rr/tt`, eeRrTt.BindWebsite(98).String())
+	assert.Exactly(t, `stores/78/ee/rr/tt`, eeRrTt.BindStore(78).String())
+	assert.Exactly(t, `default/0/ee/rr/tt`, eeRrTt.BindDefault().String())
+	assert.Exactly(t, `ee/rr/tt`, eeRrTt.String())
+}
+
+func TestRoute_Separators(t *testing.T) {
+	t.Parallel()
+
+	assert.Exactly(t, 2, Route("ee/rr/tt").Separators())
+	assert.Exactly(t, 1, Route("ee/rrtt").Separators())
+	assert.Exactly(t, 0, Route("eerrtt").Separators())
+	assert.Exactly(t, 5, Route("e/e/r/r/t/t").Separators())
+}
+
+func TestRoute_IsValid(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		have        string
+		wantErrKind errors.Kind
+	}{
+		{"//", errors.NotValid},
+		{"general/store_information/city", errors.NoKind},
+		{"general/store_information/city", errors.NoKind},
+		{"system/full_page_cache/varnish/backend_port", errors.NoKind},
+		{"", errors.Empty},
+		{"general/store_information", errors.NotValid},
+		{"groups/33/general/store_information/street", errors.NoKind},
+		{"groups/33", errors.NotValid},
+		{"system/dEv/inv˚lid", errors.NotValid},
+		{"system/dEv/inv'lid", errors.NotValid},
+		{"syst3m/dEv/invalid", errors.NoKind},
+		{"", errors.Empty},
+	}
+	for i, test := range tests {
+		haveErr := Route(test.have).IsValid()
+		if test.wantErrKind > 0 {
+			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => %s", i, haveErr)
+		} else {
+			assert.NoError(t, haveErr, "Index %d", i)
+		}
+	}
+}
 func assertStrErr(t *testing.T, want string, msgAndArgs ...interface{}) func(string, error) {
 	return func(s string, err error) {
 		require.NoError(t, err, "%+v", err)
@@ -276,7 +326,7 @@ func TestPath_SplitFQ2(t *testing.T) {
 	assert.Exactly(t, scope.DefaultTypeID, p.ScopeID)
 }
 
-func TestPathIsValid(t *testing.T) {
+func TestPath_IsValid1(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		s           scope.Type
@@ -301,7 +351,7 @@ func TestPathIsValid(t *testing.T) {
 	for i, test := range tests {
 		p := Path{
 			ScopeID: scope.MakeTypeID(test.s, test.id),
-			route:   test.have,
+			route:   Route(test.have),
 		}
 		haveErr := p.IsValid()
 		if test.wantErrKind > 0 {
@@ -323,7 +373,7 @@ func TestPathValidateNaughtyStrings(t *testing.T) {
 	}
 }
 
-func TestPathRouteIsValid(t *testing.T) {
+func TestPath_IsValid2(t *testing.T) {
 	t.Parallel()
 	t.Run("too short", func(t *testing.T) {
 		p := Path{
@@ -417,7 +467,7 @@ func TestPath_Hash64ByLevel(t *testing.T) {
 		}
 		for i, test := range tests {
 			p := &Path{
-				route: test.have,
+				route: Route(test.have),
 			}
 
 			assert.Exactly(t, test.wantHash, p.Hash64ByLevel(test.level), "Index %d", i)

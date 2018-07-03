@@ -63,10 +63,96 @@ func joinParts(buf *bytes.Buffer, parts ...string) {
 	}
 }
 
+// Route defines a string with at least two Separators denoting a route to the
+// configuration value in a hierarchical manner. A Route does not contain any
+// information about a scope. The purpose of Route should be to transfer a
+// constant string later into a type Path.
+type Route string
+
+// String implements fmt.Stringer
+func (r Route) String() string { return string(r) }
+
+// Bind creates a new Path and binds it to a new scope with its scope ID.
+func (r Route) Bind(s scope.TypeID) *Path {
+	return &Path{
+		route:   r,
+		ScopeID: s,
+	}
+}
+
+// BindWebsite creates a new Path and binds it to a website scope and its ID.
+func (r Route) BindWebsite(id int64) *Path {
+	return &Path{
+		route:   r,
+		ScopeID: scope.MakeTypeID(scope.Website, id),
+	}
+}
+
+// BindStore creates a new Path and binds it to a store scope and its ID.
+func (r Route) BindStore(id int64) *Path {
+	return &Path{
+		route:   r,
+		ScopeID: scope.MakeTypeID(scope.Store, id),
+	}
+}
+
+// BindDefault creates a new Path and binds it to the default scope.
+func (r Route) BindDefault() *Path {
+	return &Path{
+		route:   r,
+		ScopeID: scope.DefaultTypeID,
+	}
+}
+
+// Separators returns the number of separators
+func (r Route) Separators() (count int) {
+	// TODO can be merged with type Path
+	for _, b := range r {
+		if b == rune(PathSeparator) {
+			count++
+		}
+	}
+	return
+}
+
+// IsValid returns an error if the route is not valid.
+func (r Route) IsValid() error {
+	// TODO can be merged with type Path
+	seps := r.Separators()
+
+	if "" == r {
+		return errRouteEmpty
+	}
+	rLen := len(r)
+
+	if seps == rLen {
+		return errors.NotValid.Newf("[config] Invalid Route %q. Either to short or missing path separator.", r)
+	}
+
+	if !utf8.ValidString(string(r)) {
+		return errors.NotValid.Newf(errRouteInvalidBytesTpl, r)
+	}
+	for _, rn := range r {
+		switch {
+		case rn == rune(PathSeparator), rn == '_':
+			// ok
+		case unicode.IsDigit(rn), unicode.IsLetter(rn), unicode.IsNumber(rn):
+			// ok
+		default:
+			return errors.NotValid.Newf("[config] Route %q contains invalid character: %q", r, rn)
+		}
+	}
+
+	if seps < PathLevels-1 || utf8.RuneCountInString(string(r)) < 8 /*aa/bb/cc*/ {
+		return errors.NotValid.Newf("[config] Invalid Route %q. Either to short or missing path separator.", r)
+	}
+	return nil
+}
+
 // Path represents a configuration path bound to a scope. A Path is not safe for
 // concurrent use. Bind* method receivers always return a new copy of a path.
 type Path struct {
-	route string
+	route Route
 	// ScopeID a route is bound to this Scope and its ID.
 	ScopeID scope.TypeID
 	// routeValidated internal flag to avoid running twice the route valid
@@ -96,7 +182,7 @@ type Path struct {
 // NewPathWithScope creates a new validate Path with a custom scope.
 func NewPathWithScope(scp scope.TypeID, route string) (*Path, error) {
 	p := &Path{
-		route:   route,
+		route:   Route(route),
 		ScopeID: scp,
 	}
 	if err := p.IsValid(); err != nil {
@@ -233,7 +319,7 @@ func (p *Path) AppendFQ(buf *bytes.Buffer) error {
 	buf.Reset()
 	buf.Write(bufRaw)
 	buf.WriteByte(PathSeparator)
-	buf.WriteString(p.route)
+	buf.WriteString(string(p.route))
 	p.writeEnvSuffix(buf)
 	return nil
 }
@@ -264,7 +350,7 @@ func (p *Path) Parse(routeOrFQPath string) (err error) {
 	scopeIDStr := routeOrFQPath[fi1+1 : fi1+1+fi2]
 
 	var scopeID int64
-	p.route = routeOrFQPath
+	p.route = Route(routeOrFQPath)
 	p.ScopeID = scope.DefaultTypeID
 
 	if isDigitOnly(scopeIDStr) {
@@ -276,7 +362,7 @@ func (p *Path) Parse(routeOrFQPath string) (err error) {
 			// if scope is not valid, the next part MUST no be an integer
 			return errors.NotSupported.Newf("[config] Unknown Scope: %q", scopeStr)
 		}
-		p.route = routeOrFQPath[fi1+1+fi2+1:]
+		p.route = Route(routeOrFQPath[fi1+1+fi2+1:])
 		p.ScopeID = scope.MakeTypeID(scope.FromString(scopeStr), scopeID)
 	}
 
@@ -296,7 +382,7 @@ func (p *Path) ParseStrings(scp, id, route string) error {
 	if err != nil {
 		return errors.CorruptData.New(err, "[config] %q failed to parse %q to uint", route, id)
 	}
-	p.route = route
+	p.route = Route(route)
 	p.ScopeID = scope.FromString(scp).WithID(int64(id2))
 	return p.IsValid()
 }
@@ -321,7 +407,7 @@ func (p *Path) IsValid() error {
 			return errors.NotValid.Newf(errIncorrectPathTpl, p.route)
 		}
 
-		if !utf8.ValidString(p.route) {
+		if !utf8.ValidString(string(p.route)) {
 			return errors.NotValid.Newf(errRouteInvalidBytesTpl, p.route)
 		}
 		for _, rn := range p.route {
@@ -337,17 +423,17 @@ func (p *Path) IsValid() error {
 		if err := p.ScopeID.IsValid(); err != nil {
 			return errors.NotValid.Newf("[config] Route %q contains invalid ScopeID: %q", p.route, p.ScopeID.String())
 		}
-		if idx := strings.Index(p.route, scope.StrDefault.String()); idx >= 0 && rLen > idx+7 && p.route[:idx+7] == scope.StrDefault.String() {
+		if idx := strings.Index(string(p.route), scope.StrDefault.String()); idx >= 0 && rLen > idx+7 && string(p.route[:idx+7]) == scope.StrDefault.String() {
 			return errors.NotValid.Newf("[config] Route cannot start with: %q", scope.StrDefault.String())
 		}
-		if idx := strings.Index(p.route, scope.StrWebsites.String()); idx >= 0 && rLen > idx+8 && p.route[:idx+8] == scope.StrWebsites.String() {
+		if idx := strings.Index(string(p.route), scope.StrWebsites.String()); idx >= 0 && rLen > idx+8 && string(p.route[:idx+8]) == scope.StrWebsites.String() {
 			return errors.NotValid.Newf("[config] Route cannot start with: %q", scope.StrWebsites.String())
 		}
-		if idx := strings.Index(p.route, scope.StrStores.String()); idx >= 0 && rLen > idx+6 && p.route[:idx+6] == scope.StrStores.String() {
+		if idx := strings.Index(string(p.route), scope.StrStores.String()); idx >= 0 && rLen > idx+6 && string(p.route[:idx+6]) == scope.StrStores.String() {
 			return errors.NotValid.Newf("[config] Route cannot start with: %q", scope.StrStores.String())
 		}
 	}
-	if seps < PathLevels-1 || utf8.RuneCountInString(p.route) < 8 /*aa/bb/cc*/ {
+	if seps < PathLevels-1 || utf8.RuneCountInString(string(p.route)) < 8 /*aa/bb/cc*/ {
 		return errors.NotValid.Newf(errIncorrectPathTpl, p.route)
 	}
 	return nil
@@ -410,7 +496,7 @@ func (p *Path) UnmarshalText(txt []byte) error {
 		return errors.NotValid.New(err, "[config] ParseInt")
 	}
 
-	p.route = string(txt[fi+1:])
+	p.route = Route(txt[fi+1:])
 	p.ScopeID = scope.MakeTypeID(scope.FromBytes(scopeStr), scopeID)
 	return errors.NotValid.New(p.IsValid(), "[config] ParseInt")
 }
@@ -423,7 +509,7 @@ func (p *Path) MarshalBinary() (data []byte, err error) {
 	binary.LittleEndian.PutUint64(sBuf[:], p.ScopeID.ToUint64())
 	buf.Reset()
 	buf.Write(sBuf[:])
-	buf.WriteString(p.route)
+	buf.WriteString(string(p.route))
 	p.writeEnvSuffix(&buf)
 	return buf.Bytes(), nil
 }
@@ -436,7 +522,7 @@ func (p *Path) UnmarshalBinary(data []byte) error {
 		return errors.TooShort.Newf("[config] UnmarshalBinary: input data too short")
 	}
 	p.ScopeID = scope.TypeID(binary.LittleEndian.Uint64(data[:8]))
-	p.route = string(p.stripEnvSuffixByte(data[8:]))
+	p.route = Route(p.stripEnvSuffixByte(data[8:]))
 	return errors.WithStack(p.IsValid())
 }
 
@@ -522,15 +608,15 @@ func (p *Path) Separators() (count int) {
 // ScopeRoute returns the assigned scope and its ID and the route.
 func (p *Path) ScopeRoute() (scope.TypeID, string) {
 	if p.UseEnvSuffix && p.envSuffix != "" {
-		return p.ScopeID, p.route + sPathSeparator + p.envSuffix
+		return p.ScopeID, string(p.route) + sPathSeparator + p.envSuffix
 	}
-	return p.ScopeID, p.route
+	return p.ScopeID, string(p.route)
 }
 
 func (p *Path) separatorSuffixRoute() string {
 	var buf strings.Builder
 	buf.WriteByte(PathSeparator)
-	buf.WriteString(p.route)
+	buf.WriteString(string(p.route))
 	if p.UseEnvSuffix && p.envSuffix != "" {
 		buf.WriteByte(PathSeparator)
 		buf.WriteString(p.envSuffix)
@@ -549,6 +635,7 @@ func (p *Path) separatorSuffixRoute() string {
 // The returned Route slice is owned by Path. For further modifications you must
 // copy it via Route.Copy().
 func (p *Path) Part(pos int) (string, error) {
+	// TODO move this into type Route
 	p.routeValidated = true
 	if err := p.IsValid(); err != nil {
 		return "", err
@@ -560,7 +647,7 @@ func (p *Path) Part(pos int) (string, error) {
 
 	sepCount := p.Separators()
 	if sepCount < 1 { // no separator found
-		return p.route, nil
+		return string(p.route), nil
 	}
 	if pos > sepCount+1 {
 		return "", errors.NotValid.Newf(errIncorrectPositionTpl, pos)
@@ -579,15 +666,15 @@ func (p *Path) Part(pos int) (string, error) {
 	min := 0
 	for i := 0; i < maxLevels; i++ {
 		if sepPos[i] == 0 { // no more separators found
-			return p.route[min:], nil
+			return string(p.route[min:]), nil
 		}
 		max := sepPos[i]
 		if i == pos {
-			return p.route[min : max-1], nil
+			return string(p.route[min : max-1]), nil
 		}
 		min = max
 	}
-	return p.route[min:], nil
+	return string(p.route[min:]), nil
 }
 
 // Split splits the route into its three parts and appends it to the slice
@@ -600,7 +687,7 @@ func (p *Path) Part(pos int) (string, error) {
 //
 // Error behaviour: NotValid
 func (p *Path) Split(ret ...string) (_ []string, err error) {
-
+	// TODO move this into type route
 	const sepCount = PathLevels - 1 // only two separators supported
 	var sepPos [sepCount]int
 	sp := 0
@@ -625,7 +712,7 @@ func (p *Path) Split(ret ...string) (_ []string, err error) {
 		} else {
 			max = len(p.route)
 		}
-		ret = append(ret, p.route[min:max])
+		ret = append(ret, string(p.route[min:max]))
 		if i < sepCount && sepPos[i] == 0 {
 			return
 		}
@@ -645,7 +732,7 @@ func (p Path) NewValue(data []byte) *Value {
 // RouteHasPrefix returns true if the Paths' route starts with the argument route
 func (p *Path) RouteHasPrefix(route string) bool {
 	lr := len(route)
-	return p != nil && len(p.route) >= lr && lr > 0 && p.route[0:lr] == route
+	return p != nil && len(p.route) >= lr && lr > 0 && string(p.route[0:lr]) == route
 }
 
 // PathSlice represents a collection of Paths

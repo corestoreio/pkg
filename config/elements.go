@@ -210,7 +210,7 @@ func (ss Sections) Find(id string) (_ *Section, index int) {
 // Group within the GroupSlice of a Section or -1 if not found.
 func (ss Sections) FindGroup(r string) (_ *Group, index int) {
 	p := &Path{
-		route: r,
+		route: Route(r), // TODO fix this once Split has be refactored towards type Route
 	}
 	spl, err := p.Split()
 	if err != nil || len(spl) == 0 {
@@ -229,7 +229,7 @@ func (ss Sections) FindGroup(r string) (_ *Group, index int) {
 // the FieldSlice of a Section/Group or -1 if not found.
 func (ss Sections) FindField(r string) (_ *Field, index int) {
 	p := &Path{
-		route: r,
+		route: Route(r), // TODO fix this once Split has be refactored towards type Route
 	}
 	spl, err := p.Split()
 	if err != nil || len(spl) < 3 {
@@ -251,7 +251,7 @@ func (ss Sections) FindField(r string) (_ *Field, index int) {
 // the GroupSlice or a negative index in case a route part can't be found.
 func (ss Sections) UpdateField(r string, nf *Field) (index int) {
 	p := &Path{
-		route: r,
+		route: Route(r), // TODO fix this once Split has be refactored towards type Route
 	}
 	spl, err := p.Split()
 	if err != nil {
@@ -285,7 +285,7 @@ func (ss Sections) Append(s ...*Section) Sections {
 // FieldSlice or a negative value on error.
 func (ss Sections) AppendFields(r string, fs ...*Field) (_ Sections, index int) {
 	p := &Path{
-		route: r,
+		route: Route(r), // TODO fix this once Split has be refactored towards type Route
 	}
 	spl, err := p.Split()
 	if err != nil || len(spl) < 3 {

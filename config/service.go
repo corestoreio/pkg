@@ -574,7 +574,7 @@ func (ss Scoped) isAllowedWebsite(restrictUpTo scope.Type) bool {
 func (ss Scoped) Get(restrictUpTo scope.Type, route string) (v *Value) {
 	// fallback to next parent scope if value does not exists
 	p := Path{
-		route: route,
+		route: Route(route),
 	}
 	if ss.isAllowedStore(restrictUpTo) {
 		p.ScopeID = scope.Store.WithID(ss.storeID)
