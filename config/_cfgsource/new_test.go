@@ -12,8 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package source provides a slice type for handling config sources to be
-// used in config/models.
-//
-// In Mage world this is called ToOptionArray() or ToOptionHash().
-package cfgsource
+package _cfgsource_test
+
+import (
+	"testing"
+
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/config/cfgsource"
+)
+
+func TestMustNewByString(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			err, ok := r.(error)
+			if !ok {
+				t.Fatal("Expecting an error")
+			} else {
+				if have, want := errors.IsNotValid(err), true; have != want {
+					t.Fatalf("Have %t Want %t", have, want)
+				}
+			}
+		} else {
+			t.Fatal("Expecting a panic")
+		}
+	}()
+	_ = _cfgsource.MustNewByString("Panic")
+}

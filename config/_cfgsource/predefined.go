@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cfgsource
+package _cfgsource
 
 // YesNo defines an immutable slice with yes and no options.
 var YesNo = NewByBool(Bools{
