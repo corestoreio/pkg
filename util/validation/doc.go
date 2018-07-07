@@ -12,11 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/*
-Package validation provides abstract functions and options to allow validation
-of any struct or slice without reflection or struct fields.
+// Package validation provides validation function for primitive data types.
+//
+// It does not and will not use any kind of reflection.
 
-Compile time safety and no runtime checks ... TODO(cs)
+// review https://github.com/go-ozzo/ozzo-validation but with an API like uber-go/zap. Ozzo is a slow reflection soup.
+// import "github.com/asaskevich/govalidator"
+// TODO: review github.com/markbates/validate which has the nicest API ... not really
+// https://github.com/gobuffalo/authrecipe/blob/master/models/user.go#53
+// TODO: review https://github.com/RussellLuo/validating
+//
+// https://github.com/go-validator/validator uses struct tags which means hard coded validation and not changeable
+// https://github.com/go-ozzo/ozzo-validation uses struct field based validation rules, changeable.
+// https://github.com/go-playground/validator uses struct tags
 
-*/
 package validation
