@@ -61,5 +61,7 @@ package github.com/albrow/jobs. Think about an abstracted interface for sending 
 Job queque for e.g. sending emails … but we cannot require it as an dependency only for testing
 https://github.com/albrow/jobs
 
+TODO github.com/go-mail/mail
+
 */
 package email
