@@ -176,7 +176,12 @@ type Path struct {
 	// envSuffix gets set by the *Service type if the service runs environment
 	// aware and a Path has set UseEnvSuffix to true.
 	envSuffix string
-	//TTL            time.Duration // for later use when the LRU cache becomes time sensitive, like the one from karlseguin
+	// TODO ActiveFrom defines a time when a key becomes active, supported time
+	// format: Y-m-d H:i:s (MySQL Datetime column).
+	// ActiveFrom time.Time
+	// TODO ActiveTo defines a time when a key becomes inactive, supported time
+	// format: Y-m-d H:i:s (MySQL Datetime column).
+	// ActiveTo time.Time
 }
 
 // NewPathWithScope creates a new validate Path with a custom scope.

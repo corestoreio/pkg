@@ -22,8 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var _ config.Getter = (*config.FakeService)(nil)
-var _ config.GetterPubSuber = (*config.FakeService)(nil)
+var _ config.Subscriber = (*config.FakeService)(nil)
 var _ config.Setter = (*config.FakeWrite)(nil)
 
 func TestService_FnInvokes(t *testing.T) {

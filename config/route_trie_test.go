@@ -128,7 +128,7 @@ func TestPathTrieNormal(t *testing.T) {
 
 	cases := []struct {
 		key   string
-		value EventObserver
+		value Observer
 		meta  FieldMeta
 	}{
 		{"fish", noopCB1, FieldMeta{}},
@@ -206,7 +206,7 @@ func TestPathTrieNilBehavior(t *testing.T) {
 	trie := newTrieRoute()
 	cases := []struct {
 		key   string
-		value EventObserver
+		value Observer
 	}{
 		{"/cat", noopCB1},
 		{"/catamaran", noopCB2},
@@ -254,7 +254,7 @@ func TestPathTrieRoot(t *testing.T) {
 
 func TestPathTrieWalk(t *testing.T) {
 	trie := newTrieRoute()
-	table := map[string]EventObserver{
+	table := map[string]Observer{
 		"/fish":        noopCB0,
 		"/cat":         noopCB1,
 		"/dog":         noopCB1,

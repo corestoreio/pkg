@@ -168,5 +168,5 @@ func (s *FakeService) Subscribe(path string, mr MessageReceiver) (subscriptionID
 // Scoped creates a new ScopedReader which uses the underlying
 // mocked paths and values.
 func (s *FakeService) Scoped(websiteID, storeID int64) Scoped {
-	return MakeScoped(s, websiteID, storeID)
+	return makeScoped(s, websiteID, storeID)
 }

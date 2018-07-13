@@ -27,23 +27,11 @@ import (
 	"github.com/corestoreio/pkg/store/scope"
 )
 
-// Getter implements how to receive thread-safe a configuration value from an
-// underlying backend service. The provided route as an argument does not
-// make any assumptions if the scope of the Path is allowed to retrieve
-// the value. The MakeScoped() function binds a route to a scope.Scope
-// and gives you the possibility to fallback the hierarchy levels. If a value
-// cannot be found, it must return false as the 2nd return argument.
-type Getter interface {
+// Scoper creates a hierarchy based configuration retriever based on website and
+// its store ID. Scoper gets used in other packages to attach the config.Service
+// type or mocked version of it.
+type Scoper interface {
 	Scoped(websiteID, storeID int64) Scoped
-	// Value returns a guaranteed non-nil Value.
-	Get(p *Path) *Value
-}
-
-// GetterPubSuber implements a configuration Getter and a Subscriber for Publish
-// and Subscribe pattern.
-type GetterPubSuber interface {
-	Getter
-	Subscriber
 }
 
 // Setter thread safe storing of configuration values under different paths and
@@ -67,6 +55,14 @@ type Storager interface {
 	// indicates also a value and hence `found` is true, if found.
 	Get(p *Path) (v []byte, found bool, err error)
 	// Delete(p *Path) error TODO
+}
+
+// ObserverRegisterer adds or removes observers for different events and theirs
+// routes. Extracted for testability in other packages. Type *Service implements
+// this interface.
+type ObserverRegisterer interface {
+	RegisterObserver(event uint8, route string, eo Observer) error
+	DeregisterObserver(event uint8, route string) error
 }
 
 // Service main configuration provider. Please use the NewService() function.
@@ -272,13 +268,13 @@ func (s *Service) Flush() error {
 // Scoped creates a new scope base configuration reader which has the
 // implemented fall back hierarchy.
 func (s *Service) Scoped(websiteID, storeID int64) Scoped {
-	return MakeScoped(s, websiteID, storeID)
+	return makeScoped(s, websiteID, storeID)
 }
 
 // RegisterObserver appends a blocking observer for a route or route prefix.
 // Multiple observers can be added to a route. Event argument is one of the
 // constants starting with `EventOn...`.
-func (s *Service) RegisterObserver(event uint8, route string, eo EventObserver) error {
+func (s *Service) RegisterObserver(event uint8, route string, eo Observer) error {
 	if event >= eventMaxCount {
 		return errors.OutOfRange.Newf("[config] Service.RegisterObserver event %d greater or equal than allowed %d", event, eventMaxCount)
 	}
@@ -290,11 +286,11 @@ func (s *Service) RegisterObserver(event uint8, route string, eo EventObserver) 
 	return nil
 }
 
-// DeregisterObservers removes all observers for a specific route or route
+// DeregisterObserver removes all observers for a specific route or route
 // prefix. Event argument is one of the constants starting with `EventOn...`.
-func (s *Service) DeregisterObservers(event uint8, route string) error {
+func (s *Service) DeregisterObserver(event uint8, route string) error {
 	if event >= eventMaxCount {
-		return errors.OutOfRange.Newf("[config] Service.DeregisterObservers event %d greater or equal than allowed %d", event, eventMaxCount)
+		return errors.OutOfRange.Newf("[config] Service.DeregisterObserver event %d greater or equal than allowed %d", event, eventMaxCount)
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -485,25 +481,25 @@ func (s *Service) Unsubscribe(subscriptionID int) error {
 // WebsiteID and StoreID must be in a relation like enforced in the database
 // tables via foreign keys. Empty storeID triggers the website scope. Empty
 // websiteID and empty storeID are triggering the default scope.
-//
-// You can use the function MakeScoped() to create a new object but not
-// mandatory. Scoped must act as non-pointer value.
 type Scoped struct {
 	// Root holds the main functions for retrieving values by paths from the
-	// storage.
-	rootSrv   Getter
+	// storage or a fake service.
+	rootSrv   getter
 	websiteID int64
 	storeID   int64
 }
 
-// TODO: Scoped should support websites/0/ and stores/0/ to provide a top level
-// websites or stores specific configuration.
+// TODO: Scoped should support websites/0/ and stores/0/ to provide a top level websites or stores specific configuration.
 
-// MakeScoped instantiates a ScopedGetter implementation.  Getter
+type getter interface {
+	Get(p *Path) *Value
+}
+
+// makeScoped instantiates a ScopedGetter implementation.  Getter
 // specifies the root Getter which does not know about any scope.
-func MakeScoped(g Getter, websiteID, storeID int64) Scoped {
+func makeScoped(s getter, websiteID, storeID int64) Scoped {
 	return Scoped{
-		rootSrv:   g,
+		rootSrv:   s,
 		websiteID: websiteID,
 		storeID:   storeID,
 	}

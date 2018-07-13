@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /*
-Package config handles the configuration and its scopes.
+Package config, abbrev. cfg, handles the configuration and its scopes.
 
 A configuration holds many path.Paths which contains a route, a scope and a scope ID.
 
@@ -36,7 +36,7 @@ The package config/element contains more detailed information.
 Scope Values
 
 To get a value from the configuration Service via any type method you have to provide a
-path.Path. If you use the ScopedGetter via function MakeScoped() you can only provide a
+path.Path. If you use the ScopedGetter via function makeScoped() you can only provide a
 path.Route to the type methods String(), Int(), Float64(), etc.
 
 The examples show the overall best practices.

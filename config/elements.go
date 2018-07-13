@@ -472,7 +472,7 @@ func (gs Groups) Less(i, j int) bool {
 // scopes.
 // Intermediate type for function WithFieldMeta
 type FieldMeta struct {
-	Events [eventMaxCount]eventObservers
+	Events [eventMaxCount]observers
 	// Route defines the route or storage key, e.g.: customer/address/prefix_options
 	Route string
 	// WriteScopePerm sets the permission to allow setting values to this route.

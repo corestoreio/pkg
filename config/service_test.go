@@ -38,9 +38,9 @@ import (
 )
 
 var (
-	_ config.Getter     = (*config.Service)(nil)
-	_ config.Setter     = (*config.Service)(nil)
-	_ config.Subscriber = (*config.Service)(nil)
+	_ config.Setter             = (*config.Service)(nil)
+	_ config.Subscriber         = (*config.Service)(nil)
+	_ config.ObserverRegisterer = (*config.Service)(nil)
 )
 
 func TestMustNewService_ShouldPanic(t *testing.T) {
@@ -114,11 +114,6 @@ func TestService_Write_Get_Value_Success(t *testing.T) {
 
 }
 
-func TestScoped_ScopeIDs(t *testing.T) {
-	scp := config.MakeScoped(nil, 3, 4)
-	assert.Exactly(t, scope.TypeIDs{scope.Store.WithID(4), scope.Website.WithID(3)}, scp.ScopeIDs())
-}
-
 func TestScoped_IsValid(t *testing.T) {
 	t.Parallel()
 	cfg := config.NewFakeService(storage.NewMap())
@@ -138,7 +133,7 @@ func TestScoped_IsValid(t *testing.T) {
 		{-1, -1, false},
 	}
 	for i, test := range tests {
-		s := config.MakeScoped(cfg, test.websiteID, test.storeID)
+		s := cfg.Scoped(test.websiteID, test.storeID)
 		if have, want := s.IsValid(), test.want; have != want {
 			t.Errorf("Idx %d => Have: %v Want: %v", i, have, want)
 		}
@@ -368,39 +363,6 @@ func TestScopedServicePermission_One(t *testing.T) {
 		assert.Exactly(t, "cc3", s) // because ScopedGetter bound to store scope
 	})
 
-}
-
-func TestScopedService_Parent(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		sg               config.Scoped
-		wantCurrentScope scope.Type
-		wantCurrentId    int64
-		wantParentScope  scope.Type
-		wantParentID     int64
-	}{
-		{config.MakeScoped(nil, 33, 1), scope.Store, 1, scope.Website, 33},
-		{config.MakeScoped(nil, 3, 0), scope.Website, 3, scope.Default, 0},
-		{config.MakeScoped(nil, 0, 0), scope.Default, 0, scope.Default, 0},
-	}
-	for _, test := range tests {
-		haveScp, haveID := test.sg.ParentID().Unpack()
-		if have, want := haveScp, test.wantParentScope; have != want {
-			t.Errorf("ParentScope: Have: %v Want: %v", have, want)
-		}
-		if have, want := haveID, test.wantParentID; have != want {
-			t.Errorf("ParentScopeID: Have: %v Want: %v", have, want)
-		}
-
-		haveScp, haveID = test.sg.ScopeID().Unpack()
-		if have, want := haveScp, test.wantCurrentScope; have != want {
-			t.Errorf("Scope: Have: %v Want: %v", have, want)
-		}
-		if have, want := haveID, test.wantCurrentId; have != want {
-			t.Errorf("ScopeID: Have: %v Want: %v", have, want)
-		}
-
-	}
 }
 
 func TestWithLRU(t *testing.T) {
@@ -646,8 +608,8 @@ func TestService_Observer(t *testing.T) {
 		err := srv.RegisterObserver(81, "aa/bb/cc", nil)
 		assert.True(t, errors.OutOfRange.Match(err), "%+v", err)
 	})
-	t.Run("DeregisterObservers with out of range event ID", func(t *testing.T) {
-		err := srv.DeregisterObservers(82, "aa/bb/cc")
+	t.Run("DeregisterObserver with out of range event ID", func(t *testing.T) {
+		err := srv.DeregisterObserver(82, "aa/bb/cc")
 		assert.True(t, errors.OutOfRange.Match(err), "%+v", err)
 	})
 
@@ -661,7 +623,7 @@ func TestService_Observer(t *testing.T) {
 		assert.False(t, ok, "Get should confirm string cannot be found due to an error")
 		assert.True(t, errors.AlreadyInUse.Match(err), "%+v", err)
 
-		assert.NoError(t, srv.DeregisterObservers(config.EventOnBeforeGet, "carrier/dhl/username"))
+		assert.NoError(t, srv.DeregisterObserver(config.EventOnBeforeGet, "carrier/dhl/username"))
 	})
 
 	t.Run("After GET returns error", func(t *testing.T) {
@@ -674,7 +636,7 @@ func TestService_Observer(t *testing.T) {
 		assert.False(t, ok, "Get should confirm string cannot be found due to an error")
 		assert.True(t, errors.AlreadyCaptured.Match(err), "%+v", err)
 
-		assert.NoError(t, srv.DeregisterObservers(config.EventOnAfterGet, "carrier/dhl/username"))
+		assert.NoError(t, srv.DeregisterObserver(config.EventOnAfterGet, "carrier/dhl/username"))
 	})
 
 	t.Run("Before SET returns error", func(t *testing.T) {
@@ -687,7 +649,7 @@ func TestService_Observer(t *testing.T) {
 		err := srv.Set(p, data)
 		assert.True(t, errors.AlreadyInUse.Match(err), "%+v", err)
 
-		assert.NoError(t, srv.DeregisterObservers(config.EventOnBeforeSet, "aa/bb/cc"))
+		assert.NoError(t, srv.DeregisterObserver(config.EventOnBeforeSet, "aa/bb/cc"))
 	})
 
 	t.Run("After SET returns error", func(t *testing.T) {
@@ -700,7 +662,7 @@ func TestService_Observer(t *testing.T) {
 		err := srv.Set(p, data)
 		assert.True(t, errors.AlreadyCaptured.Match(err), "%+v", err)
 
-		assert.NoError(t, srv.DeregisterObservers(config.EventOnAfterSet, "aa/bb/cc"))
+		assert.NoError(t, srv.DeregisterObserver(config.EventOnAfterSet, "aa/bb/cc"))
 	})
 
 	t.Run("dispatch", func(t *testing.T) {
@@ -735,7 +697,7 @@ func TestService_Observer(t *testing.T) {
 		assert.Exactly(t, `"0816"`, srv.Get(p).String())
 		assert.True(t, getsCalledSet, "Event after set should get called")
 		assert.True(t, getsCalledGet, "Event before get should get called")
-		assert.NoError(t, srv.DeregisterObservers(config.EventOnBeforeSet, "/aa/bb/dd"))
+		assert.NoError(t, srv.DeregisterObserver(config.EventOnBeforeSet, "/aa/bb/dd"))
 	})
 }
 

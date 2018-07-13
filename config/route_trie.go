@@ -54,19 +54,37 @@ const (
 	eventMaxCount
 )
 
-// EventObserver gets called when an event gets dispatched. Not all events
+// MakeEvent creates a new validated event from one of the four possible event
+// names: before_set, before_get, after_set and after_get.
+func MakeEvent(name string) (event uint8, err error) {
+	switch name {
+	case "before_set":
+		event = EventOnBeforeSet
+	case "before_get":
+		event = EventOnBeforeGet
+	case "after_set":
+		event = EventOnAfterSet
+	case "after_get":
+		event = EventOnAfterGet
+	default:
+		err = errors.NotFound.Newf("[config] Unknown event name: %q. Available: before_set, before_get, after_set and after_get", name)
+	}
+	return
+}
+
+// Observer gets called when an event gets dispatched. Not all events
 // support modifying the raw data argument. For example the EventOnAfterGet
 // allows to decrypt encrypted data. Or check if some one is allowed to read or
 // write a special path with its value. Or validate data for correctness.
-type EventObserver interface {
+type Observer interface {
 	// Observe must always return the rawData argument or an error.
 	// Observer can transform and modify the raw data in any case.
-	Observe(p Path, rawData []byte, found bool) (rawData2 []byte, err error)
+	Observe(p Path, rawData []byte, found bool) (newRawData []byte, err error)
 }
 
-type eventObservers []EventObserver
+type observers []Observer
 
-func (fns eventObservers) dispatch(p *Path, v []byte, found bool) (_ []byte, err error) {
+func (fns observers) dispatch(p *Path, v []byte, found bool) (_ []byte, err error) {
 	if len(fns) == 0 {
 		return v, nil
 	}
@@ -220,7 +238,7 @@ func trieGetNode(node *trieRoute, key string, scp scope.TypeID) *trieRoute {
 // PutEvent inserts the eo into the trie at the given key, replacing any
 // existing items. It returns true if the put adds a new fm, false if it
 // replaces an existing fm.
-func (trie *trieRoute) PutEvent(event uint8, key string, eo EventObserver) bool {
+func (trie *trieRoute) PutEvent(event uint8, key string, eo Observer) bool {
 	if eo == nil {
 		return true
 	}
