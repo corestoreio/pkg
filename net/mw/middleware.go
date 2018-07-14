@@ -19,7 +19,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	loghttp "github.com/corestoreio/log/http"
 )
@@ -100,7 +99,6 @@ const (
 // Suported options are: SetMethodOverrideFormKey() and SetLogger().
 func WithXHTTPMethodOverride(opts ...Option) Middleware {
 	ob := newOptionBox(opts...)
-	errUnknownMethod := errors.NewNotValidf("[mw] Unknown http method")
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			mo := r.FormValue(ob.methodOverrideFormKey)
@@ -115,8 +113,7 @@ func WithXHTTPMethodOverride(opts ...Option) Middleware {
 				// not sure if an error is here really needed ...
 				if ob.log.IsDebug() {
 					ob.log.Debug(
-						"mw.WithXHTTPMethodOverride.switch",
-						log.Err(errUnknownMethod),
+						"mw.WithXHTTPMethodOverride.switch.default.unknown",
 						log.String("method", mo),
 						log.String("form", r.Form.Encode()),
 						log.Object("header", r.Header))
