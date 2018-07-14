@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,37 +20,17 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/corestoreio/pkg/config"
-	"github.com/corestoreio/pkg/config/cfgmock"
-	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWithConfigGetter_Panic(t *testing.T) {
-	defer func() {
-		if r := recover(); r != nil {
-			assert.NotNil(t, r)
-		} else {
-			t.Fatal("Expecting a panic")
-		}
-	}()
-	_ = WithRootConfig(nil)
-}
-
-func TestWithConfigGetter(t *testing.T) {
-	cfg := cfgmock.NewService()
-
-	src, err := newService(WithRootConfig(cfg))
-	assert.NoError(t, err)
-	assert.NotNil(t, src.RootConfig)
-}
-
 func TestWithErrorHandler(t *testing.T) {
 	var eh = func(error) http.Handler { return nil }
-	s, err := newService(WithErrorHandler(eh, scope.Store.WithID(44)))
+	s, err := newService(nil, WithErrorHandler(eh, scope.Store.WithID(44)))
 	assert.NoError(t, err, "%+v", err)
 	cfg, err := s.ConfigByScopeID(scope.MakeTypeID(scope.Store, 44), 0)
 	assert.NoError(t, err, "%+v", err)
@@ -61,17 +41,17 @@ func TestWithErrorHandler(t *testing.T) {
 
 func TestWithServiceErrorHandler(t *testing.T) {
 	var eh = func(error) http.Handler { return nil }
-	s, err := newService(WithServiceErrorHandler(eh))
+	s, err := newService(nil, WithServiceErrorHandler(eh))
 	assert.NoError(t, err)
 	cstesting.EqualPointers(t, s.ErrorHandler, eh)
 	assert.Nil(t, s.ErrorHandler(errors.New("Error handler returns nil")))
 }
 
 func TestOptionsError(t *testing.T) {
-	opts := OptionsError(errors.NewAlreadyClosedf("Something has already been closed."))
-	s, err := New(opts...)
+	opts := OptionsError(errors.AlreadyClosed.Newf("Something has already been closed."))
+	s, err := New(nil, opts...)
 	assert.Nil(t, s)
-	assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+	assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 }
 
 func TestOptionFactories(t *testing.T) {
@@ -93,7 +73,7 @@ func TestOptionFactories(t *testing.T) {
 
 	off3, err := of.Lookup("not found")
 	assert.Nil(t, off3)
-	assert.True(t, errors.IsNotFound(err), "%+v", err)
+	assert.True(t, errors.NotFound.Match(err), "%+v", err)
 }
 
 func TestNewScopedConfigGeneric(t *testing.T) {
@@ -112,23 +92,23 @@ func TestNewScopedConfigGeneric(t *testing.T) {
 
 func TestWithDebugLog(t *testing.T) {
 	logBuf := new(log.MutexBuffer)
-	srv, err := newService(WithDebugLog(logBuf))
+	srv, err := newService(nil, WithDebugLog(logBuf))
 	assert.NoError(t, err, "%+v", err)
 
-	_, err = srv.ConfigByScopedGetter(cfgmock.NewService().NewScoped(0, 0))
+	_, err = srv.ConfigByScopedGetter(config.NewFakeService(nil).Scoped(0, 0))
 	assert.NoError(t, err, "%+v", err)
 	assert.Contains(t, logBuf.String(), `scopedservice.Service.ConfigByScopedGetter.IsValid requested_scope: "Type(Default) ID(0)" requested_parent_scope: "Type(Absent) ID(0)" responded_scope: "Type(Default) ID(0)"`)
 }
 
 func TestWithLogger(t *testing.T) {
 	nl := log.BlackHole{}
-	srv := MustNew(WithLogger(nl))
+	srv := MustNew(nil, WithLogger(nl))
 	assert.Exactly(t, nl, srv.Log)
 }
 
 func TestWithDisable(t *testing.T) {
 	srv := MustNew(
-		WithRootConfig(cfgmock.NewService()),
+		config.NewFakeService(nil),
 		WithDisable(true, scope.Website.WithID(2)),
 		WithDisable(true, scope.Store.WithID(3)),
 	)
@@ -143,11 +123,11 @@ func TestWithDisable(t *testing.T) {
 
 func TestWithTriggerOptionFactories(t *testing.T) {
 	srv := MustNew(
-		WithRootConfig(cfgmock.NewService()),
+		config.NewFakeService(nil),
 		WithMarkPartiallyApplied(true, scope.Store.WithID(4)),
 	)
 	_, err := srv.ConfigByScope(22, 4)
-	assert.True(t, errors.IsTemporary(err), "%+v", err)
+	assert.True(t, errors.Temporary.Match(err), "%+v", err)
 
 	assert.NoError(t, srv.Options(WithMarkPartiallyApplied(false, scope.Store.WithID(4))))
 	_, err = srv.ConfigByScope(22, 4)

@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,5 +24,5 @@ import (
 func TestNewScopedConfigGeneric_ScopeID_Error(t *testing.T) {
 	sc := newScopedConfig(0, 0)
 	err := sc.isValidPreCheck()
-	assert.True(t, errors.IsNotValid(err), "%+v", err)
+	assert.True(t, errors.NotValid.Match(err), "%+v", err)
 }

@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@ package scopedservice
 import (
 	"net/http"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/errors"
 )
 
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
@@ -62,7 +62,7 @@ func (sc *ScopedConfig) isValidPreCheck() (err error) {
 	case sc.lastErr != nil:
 		err = errors.Wrap(sc.lastErr, "[scopedservice] ScopedConfig.isValid has an lastErr")
 	case sc.ScopeID == 0:
-		err = errors.NewNotValidf(errConfigScopeIDNotSet)
+		err = errors.NotValid.Newf(errConfigScopeIDNotSet)
 	}
 	return err
 }

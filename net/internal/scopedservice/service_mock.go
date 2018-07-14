@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,10 @@
 
 package scopedservice
 
-import "github.com/corestoreio/pkg/store/scope"
+import (
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/store/scope"
+)
 
 const configDefaultString = "Hello Default Gophers"
 const configDefaultInt int = 42
@@ -25,8 +28,8 @@ type Service struct {
 }
 
 // New DO NOT USE
-func New(opts ...Option) (*Service, error) {
-	return newService(opts...)
+func New(cfg config.Scoper, opts ...Option) (*Service, error) {
+	return newService(cfg, opts...)
 }
 
 // ScopedConfig DO NOT USE

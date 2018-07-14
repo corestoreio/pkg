@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,12 +21,12 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/sync/singleflight"
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 )
 
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
@@ -61,17 +61,18 @@ type service struct {
 	mw.ErrorHandler
 	// Log used for debugging. Defaults to black hole.
 	Log log.Logger
-	// rootConfig optional backend configuration. Gets only used while running
+	// config optional backend configuration. Gets only used while running
 	// HTTP related middlewares.
-	RootConfig config.Getter
+	config config.Scoper
 }
 
-func newService(opts ...Option) (*Service, error) {
+func newService(cfg config.Scoper, opts ...Option) (*Service, error) {
 	s := &Service{
 		service: service{
 			Log:          log.BlackHole{},
 			ErrorHandler: defaultErrorHandler,
 			scopeCache:   make(map[scope.TypeID]*ScopedConfig),
+			config:       cfg,
 		},
 	}
 	if err := s.Options(WithDefaultConfig(scope.DefaultTypeID)); err != nil {
@@ -84,8 +85,8 @@ func newService(opts ...Option) (*Service, error) {
 }
 
 // MustNew same as New() but panics on error. Use only during app start up process.
-func MustNew(opts ...Option) *Service {
-	c, err := New(opts...)
+func MustNew(cfg config.Scoper, opts ...Option) *Service {
+	c, err := New(cfg, opts...)
 	if err != nil {
 		panic(err)
 	}
@@ -144,9 +145,9 @@ func (s *Service) DebugCache(w io.Writer) error {
 // OptionFactory is set the configuration gets loaded from the backend. A nil
 // root config causes a panic.
 func (s *Service) ConfigByScope(websiteID, storeID int64) (ScopedConfig, error) {
-	cfg := s.RootConfig.NewScoped(websiteID, storeID)
+	cfg := s.config.Scoped(websiteID, storeID)
 	if s.useWebsite {
-		cfg = s.RootConfig.NewScoped(websiteID, 0)
+		cfg = s.config.Scoped(websiteID, 0)
 	}
 	return s.ConfigByScopedGetter(cfg)
 }
@@ -159,7 +160,7 @@ func (s *Service) configByContext(ctx context.Context) (ScopedConfig, error) {
 	// mistake.
 	websiteID, storeID, scopeOK := scope.FromContext(ctx)
 	if !scopeOK {
-		return ScopedConfig{}, errors.NewNotFoundf("[scopedservice] configByContext: scope.FromContext not found")
+		return ScopedConfig{}, errors.NotFound.Newf("[scopedservice] configByContext: scope.FromContext not found")
 	}
 
 	scpCfg, err := s.ConfigByScope(websiteID, storeID)
@@ -217,14 +218,14 @@ func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) (ScopedConfig, erro
 			return sCfg, errors.Wrap(err, "[scopedservice] Options applied by OptionFactoryFunc")
 		})
 		if !ok { // unlikely to happen but you'll never know. how to test that?
-			return ScopedConfig{}, errors.NewFatalf("[scopedservice] Inflight.DoChan returned a closed/unreadable channel")
+			return ScopedConfig{}, errors.Fatal.Newf("[scopedservice] Inflight.DoChan returned a closed/unreadable channel")
 		}
 		if res.Err != nil {
 			return ScopedConfig{}, errors.Wrap(res.Err, "[scopedservice] Inflight.DoChan.Error")
 		}
 		sCfg, ok := res.Val.(ScopedConfig)
 		if !ok {
-			return ScopedConfig{}, errors.NewFatalf("[scopedservice] Inflight.DoChan res.Val cannot be type asserted to scopedConfig")
+			return ScopedConfig{}, errors.Fatal.Newf("[scopedservice] Inflight.DoChan res.Val cannot be type asserted to scopedConfig")
 		}
 		return sCfg, nil
 	}
@@ -260,7 +261,7 @@ func (s *Service) ConfigByScopeID(current scope.TypeID, parent scope.TypeID) (sc
 	// Default scope. If "parent" equals 0 then no fall back.
 
 	if !current.ValidParent(parent) {
-		return scpCfg, errors.NewNotValidf("[scopedservice] The current scope %s has an invalid parent scope %s", current, parent)
+		return scpCfg, errors.NotValid.Newf("[scopedservice] The current scope %s has an invalid parent scope %s", current, parent)
 	}
 
 	// pointer must get dereferenced in a lock to avoid race conditions while
@@ -279,7 +280,7 @@ func (s *Service) ConfigByScopeID(current scope.TypeID, parent scope.TypeID) (sc
 		return scpCfg, errors.Wrap(scpCfg.isValid(), "[scopedservice] Validated directly found")
 	}
 	if parent == 0 {
-		return scpCfg, errors.NewNotFoundf(errConfigNotFound, current)
+		return scpCfg, errors.NotFound.Newf(errConfigNotFound, current)
 	}
 
 	// slow path: now lock everything until the fall back has been found.
@@ -314,7 +315,7 @@ func (s *Service) ConfigByScopeID(current scope.TypeID, parent scope.TypeID) (sc
 			}
 			s.scopeCache[current] = pScpCfg // gets assigned a pointer so equal to default
 		} else {
-			return scpCfg, errors.NewNotFoundf(errConfigNotFound, scope.DefaultTypeID)
+			return scpCfg, errors.NotFound.Newf(errConfigNotFound, scope.DefaultTypeID)
 		}
 	}
 	return scpCfg, nil

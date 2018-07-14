@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,18 +25,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/pkg/config"
-	"github.com/corestoreio/pkg/config/cfgmock"
-	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/stretchr/testify/assert"
 )
 
 func withError() Option {
 	return func(s *Service) error {
-		return errors.NewNotValidf("Paaaaaaaniic!")
+		return errors.NotValid.Newf("Paaaaaaaniic!")
 	}
 }
 
@@ -44,18 +43,19 @@ func TestMustNew_Default(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
-			assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+			assert.True(t, errors.NotValid.Match(err), "Error: %s", err)
 		} else {
 			t.Fatal("Expecting a Panic")
 		}
 	}()
-	_ = MustNew(withError())
+	_ = MustNew(nil, withError())
 }
 
 func TestService_MultiScope_NoFallback(t *testing.T) {
 	logBuf := new(log.MutexBuffer)
 
 	s := MustNew(
+		nil,
 		withString("Default=0", scope.Default.WithID(0)),
 		withString("Website=1", scope.Website.WithID(1)),
 		WithDebugLog(logBuf),
@@ -73,12 +73,12 @@ func TestService_MultiScope_NoFallback(t *testing.T) {
 			cfg  config.Scoped
 			want string
 		}{
-			0: {cfgmock.NewService().NewScoped(0, 0), "Default=0"},
-			1: {cfgmock.NewService().NewScoped(1, 999), "Website=1"},   // store 999 not found, fall back to website
-			2: {cfgmock.NewService().NewScoped(888, 777), "Default=0"}, // store 777 + website 888 not found, fall back to Default
-			3: {cfgmock.NewService().NewScoped(1, 0), "Website=1"},
-			4: {cfgmock.NewService().NewScoped(1, 2), "Store=1"},
-			5: {cfgmock.NewService().NewScoped(334, 2), "Store=1"},
+			0: {config.NewFakeService(nil).Scoped(0, 0), "Default=0"},
+			1: {config.NewFakeService(nil).Scoped(1, 999), "Website=1"},   // store 999 not found, fall back to website
+			2: {config.NewFakeService(nil).Scoped(888, 777), "Default=0"}, // store 777 + website 888 not found, fall back to Default
+			3: {config.NewFakeService(nil).Scoped(1, 0), "Website=1"},
+			4: {config.NewFakeService(nil).Scoped(1, 2), "Store=1"},
+			5: {config.NewFakeService(nil).Scoped(334, 2), "Store=1"},
 		}
 		for i, test := range tests {
 
@@ -115,7 +115,7 @@ func TestService_MultiScope_NoFallback(t *testing.T) {
 }
 
 func TestService_ClearCache(t *testing.T) {
-	srv := MustNew(withString("Gopher", scope.Website.WithID(33)), WithRootConfig(cfgmock.NewService()))
+	srv := MustNew(config.NewFakeService(nil), withString("Gopher", scope.Website.WithID(33)))
 	cfg, err := srv.ConfigByScope(33, 44)
 	assert.NoError(t, err, "%+v", err)
 	assert.Exactly(t, cfg.string, "Gopher")
@@ -123,13 +123,14 @@ func TestService_ClearCache(t *testing.T) {
 	assert.NoError(t, srv.ClearCache())
 
 	cfg, err = srv.ConfigByScopeID(scope.Website.WithID(33), 0)
-	assert.True(t, errors.IsNotFound(err), "%+v", err)
+	assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	assert.Exactly(t, cfg.string, "")
 }
 
 func TestService_MultiScope_Fallback(t *testing.T) {
 	// see for default values: newScopedConfig()
 	s := MustNew(
+		nil,
 		withString("Website=1", scope.Website.WithID(1)),
 		withInt(130, scope.Website.WithID(1)),
 
@@ -147,23 +148,23 @@ func TestService_MultiScope_Fallback(t *testing.T) {
 		want string
 	}{
 		// Default values
-		0: {cfgmock.NewService().NewScoped(0, 0), configDefaultString + " => 42 => Type(Default) ID(0) => Type(Default) ID(0)"},
+		0: {config.NewFakeService(nil).Scoped(0, 0), configDefaultString + " => 42 => Type(Default) ID(0) => Type(Default) ID(0)"},
 		// Store 99 does not exists so we get the pointer from Website 1
-		1: {cfgmock.NewService().NewScoped(1, 99), "Website=1 => 130 => Type(Website) ID(1) => Type(Website) ID(1)"},
+		1: {config.NewFakeService(nil).Scoped(1, 99), "Website=1 => 130 => Type(Website) ID(1) => Type(Website) ID(1)"},
 		// Store 0 does not exists so we get the pointer from Website 1
-		2: {cfgmock.NewService().NewScoped(1, 0), "Website=1 => 130 => Type(Website) ID(1) => Type(Website) ID(1)"},
+		2: {config.NewFakeService(nil).Scoped(1, 0), "Website=1 => 130 => Type(Website) ID(1) => Type(Website) ID(1)"},
 		// programmer made an error. Store 99 cannot have multiple parents (1
 		// and 2) and Store 99 already checked above and assigned to Website 1.
-		3: {cfgmock.NewService().NewScoped(2, 99), "Website=1 => 130 => Type(Website) ID(1) => Type(Website) ID(1)"},
+		3: {config.NewFakeService(nil).Scoped(2, 99), "Website=1 => 130 => Type(Website) ID(1) => Type(Website) ID(1)"},
 		// Store 98 does not exists and gets pointer to Website 2 assigned
-		4: {cfgmock.NewService().NewScoped(2, 98), "Website=2 => 42 => Type(Website) ID(2) => Type(Website) ID(2)"},
+		4: {config.NewFakeService(nil).Scoped(2, 98), "Website=2 => 42 => Type(Website) ID(2) => Type(Website) ID(2)"},
 		// store 777 + website 888 not found, fall back to Default
-		5: {cfgmock.NewService().NewScoped(888, 777), configDefaultString + " => 42 => Type(Default) ID(0) => Type(Default) ID(0)"},
+		5: {config.NewFakeService(nil).Scoped(888, 777), configDefaultString + " => 42 => Type(Default) ID(0) => Type(Default) ID(0)"},
 		// 130 value from Website 1
-		6: {cfgmock.NewService().NewScoped(1, 2), "Store=2 => 130 => Type(Store) ID(2) => Type(Website) ID(1)"},
-		7: {cfgmock.NewService().NewScoped(1, 1), "Store=1 => 132 => Type(Store) ID(1) => Type(Default) ID(0)"},
-		8: {cfgmock.NewService().NewScoped(1, 3), "Store=3 => 42 => Type(Store) ID(3) => Type(Default) ID(0)"},
-		//{cfgmock.NewService().NewScoped(334, 2), "Store=1"},
+		6: {config.NewFakeService(nil).Scoped(1, 2), "Store=2 => 130 => Type(Store) ID(2) => Type(Website) ID(1)"},
+		7: {config.NewFakeService(nil).Scoped(1, 1), "Store=1 => 132 => Type(Store) ID(1) => Type(Default) ID(0)"},
+		8: {config.NewFakeService(nil).Scoped(1, 3), "Store=3 => 42 => Type(Store) ID(3) => Type(Default) ID(0)"},
+		//{config.NewFakeService(nil).Scoped(334, 2), "Store=1"},
 	}
 	for j, test := range tests {
 
@@ -190,7 +191,7 @@ func TestService_MultiScope_Fallback(t *testing.T) {
 
 func TestService_DefaultOverwritesAScope(t *testing.T) {
 	scopeStore1 := scope.Store.WithID(1)
-	s := MustNew(
+	s := MustNew(nil,
 		withString("Store=1", scopeStore1),
 		WithDefaultConfig(scopeStore1),
 	)
@@ -201,34 +202,34 @@ func TestService_DefaultOverwritesAScope(t *testing.T) {
 
 func TestService_ConfigByScopeID_Error(t *testing.T) {
 	ws44 := scope.Website.WithID(44)
-	s := MustNew(
+	s := MustNew(nil,
 		WithDefaultConfig(ws44),
 	)
-	s.scopeCache[scope.DefaultTypeID].lastErr = errors.NewNotImplementedf("Brain")
-	s.scopeCache[ws44].lastErr = errors.NewAlreadyClosedf("Brain")
+	s.scopeCache[scope.DefaultTypeID].lastErr = errors.NotImplemented.Newf("Brain")
+	s.scopeCache[ws44].lastErr = errors.AlreadyClosed.Newf("Brain")
 
 	t.Run("Invalid Parent", func(t *testing.T) {
 		scpCfg, err := s.ConfigByScopeID(2, 1)
-		assert.True(t, errors.IsNotValid(err), "%+v", err)
+		assert.True(t, errors.NotValid.Match(err), "%+v", err)
 		assert.Exactly(t, ScopedConfig{}, scpCfg)
 	})
 
 	t.Run("Invalid Default", func(t *testing.T) {
 		scpCfg, err := s.ConfigByScopeID(scope.Store.WithID(1), scope.Website.WithID(2))
-		assert.True(t, errors.IsNotImplemented(err), "%+v", err)
+		assert.True(t, errors.NotImplemented.Match(err), "%+v", err)
 		assert.Exactly(t, ScopedConfig{}, scpCfg)
 	})
 
 	t.Run("Invalid Default", func(t *testing.T) {
 		scpCfg, err := s.ConfigByScopeID(scope.Store.WithID(55), ws44)
-		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 		assert.Exactly(t, ScopedConfig{}, scpCfg)
 	})
 }
 
 func TestService_ScopedConfig_NotFound(t *testing.T) {
 	s := MustNew(
-		WithRootConfig(cfgmock.NewService()),
+		config.NewFakeService(nil),
 		withString("Store=1", scope.Group.WithID(98765)),
 		WithErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -244,18 +245,18 @@ func TestService_ScopedConfig_NotFound(t *testing.T) {
 
 	ctx := scope.WithContext(context.Background(), 1, 1)
 	scpCfg, err := s.configByContext(ctx)
-	assert.True(t, errors.IsNotFound(err), "%+v", err)
+	assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	assert.Exactly(t, ScopedConfig{}, scpCfg)
 }
 
 func TestService_ConfigByContext(t *testing.T) {
 	s := MustNew(
-		WithRootConfig(cfgmock.NewService()),
+		config.NewFakeService(nil),
 	)
 
 	t.Run("Error", func(t *testing.T) {
 		scpCfg, err := s.configByContext(context.Background())
-		assert.True(t, errors.IsNotFound(err), "%+v", err)
+		assert.True(t, errors.NotFound.Match(err), "%+v", err)
 		assert.Exactly(t, ScopedConfig{}, scpCfg)
 	})
 
@@ -269,7 +270,7 @@ func TestService_ConfigByContext(t *testing.T) {
 
 func TestService_ConfigByScope(t *testing.T) {
 	s := MustNew(
-		WithRootConfig(cfgmock.NewService()),
+		config.NewFakeService(nil),
 		withInt(33, scope.Website.WithID(3)),
 		withInt(44, scope.Store.WithID(4), scope.Website.WithID(3)),
 		withInt(55, scope.Website.WithID(5)),
@@ -293,12 +294,12 @@ func TestService_ConfigByScope(t *testing.T) {
 }
 
 func TestService_OptionAfterApply_Error(t *testing.T) {
-	s := MustNew()
+	s := MustNew(config.NewFakeService(nil))
 	s.optionAfterApply = func() error {
-		return errors.NewWriteFailedf("Do'h!")
+		return errors.WriteFailed.Newf("Do'h!")
 	}
-	err := s.Options(WithRootConfig(cfgmock.NewService()))
-	assert.True(t, errors.IsWriteFailed(err), "%+v", err)
+	err := s.Options(WithDebugLog(nil))
+	assert.True(t, errors.WriteFailed.Match(err), "%+v", err)
 }
 
 func TestWithOptionFactory(t *testing.T) {
@@ -309,11 +310,11 @@ func TestWithOptionFactory(t *testing.T) {
 		}
 	}
 	s := MustNew(
-		WithRootConfig(cfgmock.NewService()),
+		config.NewFakeService(nil),
 		WithOptionFactory(off),
 	)
 
-	sg := cfgmock.NewService().NewScoped(2, 1)
+	sg := config.NewFakeService(nil).Scoped(2, 1)
 	scpCfg, err := s.ConfigByScopedGetter(sg)
 	assert.NoError(t, err)
 	assert.Exactly(t, scope.Store.WithID(1), scpCfg.ScopeID)
@@ -328,13 +329,13 @@ func TestWithOptionFactory_Error(t *testing.T) {
 		}
 	}
 	s := MustNew(
-		WithRootConfig(cfgmock.NewService()),
+		config.NewFakeService(nil),
 		WithOptionFactory(off),
 	)
 
-	sg := cfgmock.NewService().NewScoped(2, 1)
+	sg := config.NewFakeService(nil).Scoped(2, 1)
 	scpCfg, err := s.ConfigByScopedGetter(sg)
-	assert.True(t, errors.IsNotValid(err), "%+v", err)
+	assert.True(t, errors.NotValid.Match(err), "%+v", err)
 	assert.Exactly(t, scope.TypeID(0), scpCfg.ScopeID)
 	assert.Exactly(t, scope.TypeID(0), scpCfg.ParentID)
 	assert.Exactly(t, ``, scpCfg.string)
