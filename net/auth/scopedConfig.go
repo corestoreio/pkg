@@ -18,9 +18,9 @@ import (
 	"net/http"
 	"sort"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/errors"
 )
 
 // TriggerFunc defines the condition if the ProviderFunc
@@ -65,7 +65,7 @@ func (sc *ScopedConfig) isValid() error {
 		return nil
 	}
 	if 0 == len(sc.providers) || 0 == len(sc.triggers) {
-		return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeID, len(sc.triggers) == 0, len(sc.providers) == 0)
+		return errors.NotValid.Newf(errScopedConfigNotValid, sc.ScopeID, len(sc.triggers) == 0, len(sc.providers) == 0)
 	}
 	return nil
 }
@@ -115,7 +115,7 @@ func (ap providers) Swap(i, j int)      { ap[i], ap[j] = ap[j], ap[i] }
 // and checks the very last error.
 func (ap providers) do(scopeID scope.TypeID, r *http.Request) error {
 	if len(ap) == 0 {
-		return errors.NewNotImplementedf("[auth] No authentication provider available")
+		return errors.NotImplemented.Newf("[auth] No authentication provider available")
 	}
 
 	nc := 1 // nc == next counter

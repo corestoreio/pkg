@@ -18,10 +18,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/hashpool"
-	"github.com/corestoreio/errors"
 )
 
 // BasicAuthFunc defines a function to validate basic auth credentials.
@@ -38,7 +38,7 @@ func basicAuthValidator(hashName, username, password string) (BasicAuthFunc, err
 }
 
 func basicAuth(baf BasicAuthFunc) ProviderFunc {
-	var errInvalidData = errors.NewUnauthorizedf("[auth] Invalid username or password")
+	var errInvalidData = errors.Unauthorized.Newf("[auth] Invalid username or password")
 	return func(scopeID scope.TypeID, r *http.Request) (callNext bool, err error) {
 		givenUser, givenPass, ok := r.BasicAuth()
 		if !ok {

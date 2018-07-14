@@ -15,10 +15,10 @@
 package backendauth
 
 import (
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/cfgmodel"
 	"github.com/corestoreio/pkg/net"
-	"github.com/corestoreio/errors"
 )
 
 // ConfigIPRange defines how IP ranges are stored and handled.
@@ -50,7 +50,7 @@ func (cc ConfigIPRange) Get(sg config.Scoped) (net.IPRanges, error) {
 	var rngs net.IPRanges
 	for _, row := range data {
 		if len(row) != 2 {
-			return nil, errors.NewNotValidf("[backendauth] IP Range %q not in expected format: IP.From-IP.To", row)
+			return nil, errors.NotValid.Newf("[backendauth] IP Range %q not in expected format: IP.From-IP.To", row)
 		}
 		if row[0] != "" && row[1] != "" {
 			rngs = append(rngs, net.MakeIPRange(row[0], row[1]))

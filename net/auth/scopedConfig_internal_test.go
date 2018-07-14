@@ -24,7 +24,7 @@ import (
 func TestAuthProviders_Do_Len0(t *testing.T) {
 	ap := providers{}
 	err := ap.do(0, nil)
-	assert.True(t, errors.IsNotImplemented(err), "%+v", err)
+	assert.True(t, errors.NotImplemented.Match(err), "%+v", err)
 }
 
 func TestAuthTriggers_Do_Len0(t *testing.T) {

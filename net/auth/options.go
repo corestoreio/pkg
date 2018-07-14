@@ -19,9 +19,9 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/errors"
 )
 
 // WithDefaultConfig applies the default configuration settings for
@@ -107,7 +107,7 @@ func strSliceToRegexSlice(sl []string) ([]*regexp.Regexp, error) {
 		}
 		r, err := regexp.Compile(b)
 		if err != nil {
-			return nil, errors.NewFatalf("[auth] Failed to compile regex %q at index %d", b, i)
+			return nil, errors.Fatal.Newf("[auth] Failed to compile regex %q at index %d", b, i)
 		}
 		rs = append(rs, r)
 	}
@@ -247,7 +247,7 @@ func WithInvalidAuth(callNext bool, scopeIDs ...scope.TypeID) Option {
 		sc.providers = append(sc.providers, authProvider{
 			prio: prioIncrement,
 			ProviderFunc: func(scopeID scope.TypeID, r *http.Request) (bool, error) {
-				return callNext, errors.NewUnauthorizedf("[auth] Access denied in Scope %s for path %q", scopeID, r.URL.Path)
+				return callNext, errors.Unauthorized.Newf("[auth] Access denied in Scope %s for path %q", scopeID, r.URL.Path)
 			},
 		})
 		sc.providers.sort()

@@ -23,14 +23,14 @@ package auth_test
 import (
 	"testing"
 
-	"github.com/corestoreio/pkg/net/auth"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/net/auth"
 	"github.com/stretchr/testify/assert"
 )
 
 func withError() auth.Option {
 	return func(s *auth.Service) error {
-		return errors.NewNotValidf("Paaaaanic!")
+		return errors.NotValid.Newf("Paaaaanic!")
 	}
 }
 
@@ -39,12 +39,12 @@ func TestMustNew_Default(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
-			assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+			assert.True(t, errors.NotValid.Match(err), "Error: %s", err)
 		} else {
 			t.Fatal("Expecting a Panic")
 		}
 	}()
-	_ = auth.MustNew(withError())
+	_ = auth.MustNew(nil, withError())
 }
 
 func TestMustNew_Website(t *testing.T) {
@@ -52,10 +52,10 @@ func TestMustNew_Website(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
-			assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+			assert.True(t, errors.NotValid.Match(err), "Error: %s", err)
 		} else {
 			t.Fatal("Expecting a Panic")
 		}
 	}()
-	_ = auth.MustNew(withError())
+	_ = auth.MustNew(nil, withError())
 }

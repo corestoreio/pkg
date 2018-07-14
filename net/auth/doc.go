@@ -14,6 +14,8 @@
 
 // Package auth provides authentication middleware.
 //
+// TODO refactor this package to extract business logic from transport medium.
+//
 // Successful authenticated clients may also retrieve a JSON web token.
 // Authentication via basic auth, ACL access control list (for different
 // routes), IP based, LDAP, SAML ...

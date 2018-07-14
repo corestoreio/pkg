@@ -16,6 +16,8 @@
 
 package auth
 
+import "github.com/corestoreio/pkg/config"
+
 // Service implements authentication middleware and scoped based authorization.
 type Service struct {
 	service
@@ -23,8 +25,8 @@ type Service struct {
 
 // New creates a new authentication service to be used as a middleware or
 // standalone.
-func New(opts ...Option) (*Service, error) {
-	s, err := newService(opts...)
+func New(cfg config.Scoper, opts ...Option) (*Service, error) {
+	s, err := newService(cfg, opts...)
 	if err != nil {
 		return nil, err
 	}

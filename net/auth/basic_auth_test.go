@@ -27,7 +27,7 @@ func TestBasicAuthValidator_UnknownHash(t *testing.T) {
 	t.Parallel()
 	af, err := basicAuthValidator("?", "", "")
 	assert.Nil(t, af)
-	assert.True(t, errors.IsNotFound(err), "%+v", err)
+	assert.True(t, errors.NotFound.Match(err), "%+v", err)
 }
 
 func TestBasicAuthHandler(t *testing.T) {

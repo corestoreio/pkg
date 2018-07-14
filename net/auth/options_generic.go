@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@ import (
 	"io"
 	"sync"
 
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
+	"github.com/corestoreio/log/logw"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/sync/singleflight"
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
-	"github.com/corestoreio/log/logw"
 )
 
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
@@ -105,7 +105,7 @@ func WithMarkPartiallyApplied(partially bool, scopeIDs ...scope.TypeID) Option {
 		sc := s.findScopedConfig(scopeIDs...)
 		sc.lastErr = nil
 		if partially {
-			sc.lastErr = errors.NewTemporaryf(errConfigMarkedAsPartiallyLoaded, sc.ScopeID)
+			sc.lastErr = errors.Temporary.Newf(errConfigMarkedAsPartiallyLoaded, sc.ScopeID)
 		}
 		return s.updateScopedConfig(sc)
 	}
@@ -118,19 +118,6 @@ func WithServiceErrorHandler(eh mw.ErrorHandler) Option {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 		s.ErrorHandler = eh
-		return nil
-	}
-}
-
-// WithRootConfig sets the root configuration service to retrieve the scoped
-// base configuration. If you set the option WithOptionFactory() then the option
-// WithRootConfig() does not need to be set as it won't get used.
-func WithRootConfig(cg config.Getter) Option {
-	_ = cg.NewScoped(0, 0) // let it panic as early as possible if cg is nil
-	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-		s.RootConfig = cg
 		return nil
 	}
 }
@@ -245,5 +232,5 @@ func (of *OptionFactories) Lookup(name string) (OptionFactoryFunc, error) {
 	if off, ok := of.register[name]; ok { // off = OptionFactoryFunc ;-)
 		return off, nil
 	}
-	return nil, errors.NewNotFoundf("[auth] Requested OptionFactoryFunc %q not registered.", name)
+	return nil, errors.NotFound.Newf("[auth] Requested OptionFactoryFunc %q not registered.", name)
 }
