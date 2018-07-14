@@ -17,15 +17,18 @@ package request_test
 import (
 	"net"
 	"net/http"
-	"testing"
-
 	"net/http/httptest"
+	"testing"
 
 	csnet "github.com/corestoreio/pkg/net"
 	"github.com/corestoreio/pkg/net/auth"
 	"github.com/corestoreio/pkg/net/request"
 	"github.com/stretchr/testify/assert"
 )
+
+// check if the returned function conforms with the auth package
+var _ auth.TriggerFunc = request.InIPRange("192.168.0.1", "192.168.0.100")
+var _ auth.TriggerFunc = request.NotInIPRange("192.168.0.1", "192.168.0.100")
 
 func TestGetRealIP(t *testing.T) {
 	t.Parallel()
@@ -83,10 +86,6 @@ func TestGetRealIP(t *testing.T) {
 		assert.Exactly(t, test.wantIP, haveIP, "Index: %d Want %s Have %s", i, test.wantIP, haveIP)
 	}
 }
-
-// check if the returned function conforms with the auth package
-var _ auth.TriggerFunc = request.InIPRange("192.168.0.1", "192.168.0.100")
-var _ auth.TriggerFunc = request.NotInIPRange("192.168.0.1", "192.168.0.100")
 
 func TestInIPRange(t *testing.T) {
 	t.Parallel()

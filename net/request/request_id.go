@@ -26,7 +26,6 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/log"
 	loghttp "github.com/corestoreio/log/http"
 )
@@ -46,7 +45,7 @@ type ID struct {
 	Count *uint64
 	// NewIDFunc generates a new ID. Can be nil.
 	NewIDFunc func(*http.Request) string
-	log.Logger
+	Log       log.Logger
 }
 
 func (iw *ID) newID() func(*http.Request) string {
@@ -79,10 +78,8 @@ func (iw *ID) newID() func(*http.Request) string {
 // otherwise a random value is generated. You can specify your own generator by
 // providing the NewIDFunc in an option. No options uses the default request
 // prefix generator.
-func (iw *ID) With() mw.Middleware {
-	if iw.Logger == nil {
-		iw.Logger = log.BlackHole{}
-	}
+// The returned function is compatible to type mw.Middleware.
+func (iw *ID) With() func(h http.Handler) http.Handler {
 	if iw.HeaderIDKeyName == "" {
 		iw.HeaderIDKeyName = HeaderIDKeyName
 	}
@@ -99,8 +96,8 @@ func (iw *ID) With() mw.Middleware {
 			if id == "" {
 				id = iw.NewIDFunc(r)
 			}
-			if iw.IsDebug() {
-				iw.Debug("request.ID.With", log.String("id", id), loghttp.Request("request", r))
+			if iw.Log != nil && iw.Log.IsDebug() {
+				iw.Log.Debug("request.ID.With", log.String("id", id), loghttp.Request("request", r))
 			}
 			w.Header().Set(iw.HeaderIDKeyName, id)
 			h.ServeHTTP(w, r)
