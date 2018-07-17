@@ -32,8 +32,6 @@ const (
 	rxStrCreditCard     = "^(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|6(?:011|5[0-9][0-9])[0-9]{12}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|(?:2131|1800|35\\d{3})\\d{11})$"
 	rxStrISBN10         = "^(?:[0-9]{9}X|[0-9]{10})$"
 	rxStrISBN13         = "^(?:[0-9]{13})$"
-	rxStrInt            = "^(?:[-+]?(?:0|[1-9][0-9]*))$"
-	rxStrFloat          = "^(?:[-+]?(?:[0-9]+))?(?:\\.[0-9]*)?(?:[eE][\\+\\-]?(?:[0-9]+))?$"
 	rxStrRGBcolor       = "^rgb\\(\\s*(0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])\\s*,\\s*(0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])\\s*,\\s*(0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])\\s*\\)$"
 	rxStrASCII          = "^[\x00-\x7F]+$"
 	rxStrMultibyte      = "[^\x00-\x7F]"
@@ -79,8 +77,6 @@ var (
 	rxCreditCard     = regexp.MustCompile(rxStrCreditCard)
 	rxISBN10         = regexp.MustCompile(rxStrISBN10)
 	rxISBN13         = regexp.MustCompile(rxStrISBN13)
-	rxInt            = regexp.MustCompile(rxStrInt)
-	rxFloat          = regexp.MustCompile(rxStrFloat)
 	rxRGBcolor       = regexp.MustCompile(rxStrRGBcolor)
 	rxASCII          = regexp.MustCompile(rxStrASCII)
 	rxPrintableASCII = regexp.MustCompile(rxStrPrintableASCII)

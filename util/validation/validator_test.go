@@ -632,6 +632,53 @@ func TestIsInt(t *testing.T) {
 	}
 }
 
+func TestIsBool(t *testing.T) {
+	t.Parallel()
+
+	var tests = []struct {
+		param    string
+		expected bool
+	}{
+		{"", true},
+		{"0", true},
+		{"1", true},
+		{"true", true},
+		{"truE", false},
+		{"TRUE", true},
+		{"True", true},
+		{"false", true},
+		{"f", true},
+		{"t", true},
+		{"2", false},
+		{"OK", false},
+		{"YO", false},
+	}
+	for _, test := range tests {
+		actual := IsBool(test.param)
+		if actual != test.expected {
+			t.Errorf("Expected IsBool(%q) to be %v, got %v", test.param, test.expected, actual)
+		}
+	}
+}
+
+var benchmarkIsInt bool
+
+// REGEX
+// BenchmarkIsInt-4   	 2000000	       775 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkIsInt-4   	 2000000	       769 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkIsInt-4   	 2000000	       750 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkIsInt-4   	50000000	        33.9 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkIsInt-4   	50000000	        33.3 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkIsInt-4   	50000000	        33.8 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkIsInt(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		benchmarkIsInt = IsInt("-9223372036854775809")
+	}
+	if !benchmarkIsInt {
+		b.Fatal("Must be an INT")
+	}
+}
+
 func TestIsHash(t *testing.T) {
 	t.Parallel()
 
@@ -969,7 +1016,7 @@ func TestIsFloat(t *testing.T) {
 	}{
 		{"", false},
 		{"  ", false},
-		{"-.123", false},
+		{"-.123", true},
 		{"abacaba", false},
 		{"1f", false},
 		{"-1f", false},
