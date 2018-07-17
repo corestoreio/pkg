@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,4 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package validation_test
+package validation
+
+import "testing"
+
+var benchmarkIsLocale bool
+
+func BenchmarkIsLocale(b *testing.B) {
+	b.Run("parallel", func(b *testing.B) {
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				_ = IsLocale("de-CH")
+			}
+		})
+	})
+	b.Run("single", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			benchmarkIsLocale = IsLocale("vai-Vaii-LR")
+		}
+	})
+}

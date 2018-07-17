@@ -40,6 +40,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/corestoreio/pkg/sync/bgwork"
 )
 
 func TestIsAlpha(t *testing.T) {
@@ -1636,6 +1638,38 @@ func TestIsISO693Alpha3b(t *testing.T) {
 			t.Errorf("Expected IsISO693Alpha3b(%q) to be %v, got %v", test.param, test.expected, actual)
 		}
 	}
+}
+
+func TestIsLocale(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		param    string
+		expected bool
+	}{
+		{"", false},
+		{"1", false},
+		{"-", false},
+		{"a", false},
+		{"abcd", false},
+		{"de_DE", true},
+		{"de_de", true},
+		{"dede", true},
+		{"dech", true},
+		{"deCH", true},
+		{"de-CH", true},
+		{"zhhanscn", true},
+		{"xhhanscn", false},
+		{"", false},
+	}
+	// Detect race conditions
+	bgwork.Wait(len(tests), func(idx int) {
+		test := tests[idx]
+		actual := IsLocale(test.param)
+		if actual != test.expected {
+			t.Errorf("Expected IsLocale(%q) to be %v, got %v", test.param, test.expected, actual)
+		}
+	})
 }
 
 func TestIsIP(t *testing.T) {

@@ -688,7 +688,7 @@ func IsISO693Alpha2(str string) bool {
 	return false
 }
 
-// IsISO693Alpha3b checks if a string is valid three-letter language code
+// IsISO693Alpha3b checks if a string is valid three-letter language code.
 func IsISO693Alpha3b(str string) bool {
 	for _, entry := range ISO693List {
 		if str == entry.Alpha3bCode {
@@ -696,6 +696,19 @@ func IsISO693Alpha3b(str string) bool {
 		}
 	}
 	return false
+}
+
+// IsLocale checks case-insensitive if the provided string is a locale.
+func IsLocale(lcid string) bool {
+	lcid = strings.ToLower(lcid)
+	var buf strings.Builder
+	for _, r := range lcid {
+		if 'a' <= r && r <= 'z' || '0' <= r && r <= '9' {
+			buf.WriteRune(r)
+		}
+	}
+	_, ok := LocaleList[buf.String()]
+	return ok
 }
 
 // IsDNSName will validate the given string as a DNS name
@@ -882,15 +895,9 @@ func IsRFC3339WithoutZone(str string) bool {
 	return IsTime(str, RF3339WithoutZone)
 }
 
-// IsISO4217 check if string is valid ISO currency code
+// IsISO4217 check if string is valid ISO currency code. Code must be upper case.
 func IsISO4217(str string) bool {
-	for _, currency := range ISO4217List {
-		if str == currency {
-			return true
-		}
-	}
-
-	return false
+	return iso4217List[str]
 }
 
 // ByteLength check string's length
