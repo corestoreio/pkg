@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package validation provides observers implementing various validations and
-// their mutation methods.
+// Package validation provides observers implementing various validation
+// methods.
 //
 // The list of validators will be extended. Please suggest new ones.
 package validation

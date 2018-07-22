@@ -251,19 +251,3 @@ func TestNewStrings(t *testing.T) {
 	)
 
 }
-
-func TestStrings_UnmarshalJSON(t *testing.T) {
-	t.Parallel()
-	rawJSON := []byte(`{"validators":["Locale"],"csv_comma":"|","additional_allowed_values":["Klingon","Vulcan"]}`)
-
-	var data validation.Strings
-	require.NoError(t, data.UnmarshalJSON(rawJSON))
-
-	sv, err := validation.NewStrings(data)
-	require.NoError(t, err)
-	value := []byte(`de_DE|Vulcan`)
-	nValue, err := sv.Observe(config.Path{}, value, true)
-	require.NoError(t, err)
-	assert.Exactly(t, value, nValue)
-
-}

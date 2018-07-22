@@ -27,7 +27,6 @@ import (
 
 // Strings checks if a value or a CSV value is a valid type of the defined field
 // "Type" and/or contained within AdditionalAllowedValues.
-//easyjson:json
 type Strings struct {
 	// Type can be:
 	// "ISO3166Alpha2","country_codes2" for two letter country codes,

@@ -24,9 +24,8 @@ import (
 )
 
 // MinMaxInt64 validates if a value is between or in range of min and max.
-// Provide MinMax as balanced slice where value n defines min and n+1 the max
-// value. This function
-//easyjson:json
+// Provide the field MinMax as a balanced slice where value n defines min and
+// n+1 the max value. For JSON handling, see sub-package `json`.
 type MinMaxInt64 struct {
 	MinMax []int64 `json:"min_max,omitempty"`
 	// PartialValidation if true only one of min/max pairs must be valid.
@@ -35,9 +34,9 @@ type MinMaxInt64 struct {
 
 // NewMinMaxInt64 creates a new observer to check if a value is contained
 // between min and max values. Argument MinMax must be balanced slice.
-func NewMinMaxInt64(MinMax ...int64) (MinMaxInt64, error) {
-	return MinMaxInt64{
-		MinMax: MinMax, // copy data away
+func NewMinMaxInt64(MinMax ...int64) (*MinMaxInt64, error) {
+	return &MinMaxInt64{
+		MinMax: MinMax,
 	}, nil
 }
 

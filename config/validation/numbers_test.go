@@ -15,7 +15,6 @@
 package validation_test
 
 import (
-	"math"
 	"testing"
 
 	"github.com/corestoreio/errors"
@@ -95,24 +94,4 @@ func TestMinMaxInt_Observe(t *testing.T) {
 		assert.True(t, errors.OutOfRange.Match(err), "%+v", err)
 		assert.Nil(t, ret)
 	})
-}
-
-func TestMinMaxInt64_MarshalJSON(t *testing.T) {
-	t.Parallel()
-
-	mm, err := validation.NewMinMaxInt64(-math.MaxInt64, math.MaxInt64)
-	require.NoError(t, err)
-	data, err := mm.MarshalJSON()
-	assert.NoError(t, err)
-	assert.Exactly(t, "{\"min_max\":[-9223372036854775807,9223372036854775807]}", string(data))
-}
-
-func TestMinMaxInt64_UnmarshalJSON(t *testing.T) {
-	t.Parallel()
-
-	mm := new(validation.MinMaxInt64)
-
-	assert.NoError(t, mm.UnmarshalJSON([]byte("{\"min_max\":[-9223372036854775806,9223372036854775806]}")))
-	assert.Exactly(t, &validation.MinMaxInt64{
-		MinMax: []int64{-math.MaxInt64 + 1, math.MaxInt64 - 1}}, mm)
 }
