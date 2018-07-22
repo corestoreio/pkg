@@ -22,6 +22,7 @@ import (
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/validation"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -32,72 +33,78 @@ func TestMinMaxInt_Observe(t *testing.T) {
 	t.Parallel()
 	var p config.Path
 	t.Run("parse failed", func(t *testing.T) {
-		mm := &validation.MinMaxInt64{
-			Min: 1,
-			Max: 2,
-		}
-		_, err := mm.Observe(p, []byte("NAN"), false)
+		mm, err := validation.NewMinMaxInt64(1, 2)
+		require.NoError(t, err)
+		_, err = mm.Observe(p, []byte("NAN"), false)
 		assert.EqualError(t, err, "strconv.ParseInt: parsing \"NAN\": invalid syntax")
 	})
 	t.Run("null", func(t *testing.T) {
-		mm := &validation.MinMaxInt64{
-			Min: 1,
-			Max: 2,
-		}
+		mm, err := validation.NewMinMaxInt64(1, 2)
+		require.NoError(t, err)
 		ret, err := mm.Observe(p, nil, false)
 		assert.NoError(t, err)
 		assert.Nil(t, ret)
 	})
 	t.Run("not in range1", func(t *testing.T) {
-		mm := &validation.MinMaxInt64{
-			Min: 1,
-			Max: 2,
-		}
+		mm, err := validation.NewMinMaxInt64(1, 2)
+		require.NoError(t, err)
 		ret, err := mm.Observe(p, []byte(`3`), false)
 		assert.True(t, errors.OutOfRange.Match(err), "%+v", err)
 		assert.Nil(t, ret)
 	})
 	t.Run("not in range2", func(t *testing.T) {
-		mm := &validation.MinMaxInt64{
-			Min: 2,
-			Max: 1,
-		}
+		mm, err := validation.NewMinMaxInt64(2, 1)
+		require.NoError(t, err)
 		ret, err := mm.Observe(p, []byte(`3`), false)
 		assert.True(t, errors.OutOfRange.Match(err), "%+v", err)
 		assert.Nil(t, ret)
 	})
 	t.Run("in range1", func(t *testing.T) {
-		mm := &validation.MinMaxInt64{
-			Min: 1,
-			Max: 2,
-		}
+		mm, err := validation.NewMinMaxInt64(1, 2)
+		require.NoError(t, err)
 		data := []byte(`2`)
 		ret, err := mm.Observe(p, data, false)
 		assert.NoError(t, err)
-		assert.Exactly(t, ret, data)
+		assert.Exactly(t, data, ret)
 	})
 	t.Run("in range2", func(t *testing.T) {
-		mm := &validation.MinMaxInt64{
-			Min: 1,
-			Max: 2,
-		}
+		mm, err := validation.NewMinMaxInt64(1, 2)
+		require.NoError(t, err)
 		data := []byte(`2`)
 		ret, err := mm.Observe(p, data, false)
 		assert.NoError(t, err)
-		assert.Exactly(t, ret, data)
+		assert.Exactly(t, data, ret)
+	})
+
+	t.Run("partial validation enabled success", func(t *testing.T) {
+		mm, err := validation.NewMinMaxInt64(1, 2, 5, 6, 7, 8)
+		require.NoError(t, err)
+		mm.PartialValidation = true
+		data := []byte(`6`)
+		ret, err := mm.Observe(p, data, false)
+		assert.NoError(t, err)
+		assert.Exactly(t, data, ret)
+	})
+
+	t.Run("partial validation disabled fails", func(t *testing.T) {
+		mm, err := validation.NewMinMaxInt64(1, 2, 5, 6, 7, 8)
+		require.NoError(t, err)
+		mm.PartialValidation = false
+		data := []byte(`6`)
+		ret, err := mm.Observe(p, data, false)
+		assert.True(t, errors.OutOfRange.Match(err), "%+v", err)
+		assert.Nil(t, ret)
 	})
 }
 
 func TestMinMaxInt64_MarshalJSON(t *testing.T) {
 	t.Parallel()
 
-	mm := &validation.MinMaxInt64{
-		Min: -math.MaxInt64,
-		Max: math.MaxInt64,
-	}
+	mm, err := validation.NewMinMaxInt64(-math.MaxInt64, math.MaxInt64)
+	require.NoError(t, err)
 	data, err := mm.MarshalJSON()
 	assert.NoError(t, err)
-	assert.Exactly(t, "{\"min\":-9223372036854775807,\"max\":9223372036854775807}", string(data))
+	assert.Exactly(t, "{\"min_max\":[-9223372036854775807,9223372036854775807]}", string(data))
 }
 
 func TestMinMaxInt64_UnmarshalJSON(t *testing.T) {
@@ -105,9 +112,7 @@ func TestMinMaxInt64_UnmarshalJSON(t *testing.T) {
 
 	mm := new(validation.MinMaxInt64)
 
-	assert.NoError(t, mm.UnmarshalJSON([]byte("{\"min\":-9223372036854775806,\"max\":9223372036854775806}")))
+	assert.NoError(t, mm.UnmarshalJSON([]byte("{\"min_max\":[-9223372036854775806,9223372036854775806]}")))
 	assert.Exactly(t, &validation.MinMaxInt64{
-		Min: -math.MaxInt64 + 1,
-		Max: math.MaxInt64 - 1,
-	}, mm)
+		MinMax: []int64{-math.MaxInt64 + 1, math.MaxInt64 - 1}}, mm)
 }

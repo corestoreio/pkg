@@ -24,13 +24,29 @@ import (
 )
 
 // MinMaxInt64 validates if a value is between or in range of min and max.
+// Provide MinMax as balanced slice where value n defines min and n+1 the max
+// value. This function
 //easyjson:json
 type MinMaxInt64 struct {
-	Min int64 `json:"min,omitempty"`
-	Max int64 `json:"max,omitempty"`
+	MinMax []int64 `json:"min_max,omitempty"`
+	// PartialValidation if true only one of min/max pairs must be valid.
+	PartialValidation bool `json:"partial_validation,omitempty"`
+}
+
+// NewMinMaxInt64 creates a new observer to check if a value is contained
+// between min and max values. Argument MinMax must be balanced slice.
+func NewMinMaxInt64(MinMax ...int64) (MinMaxInt64, error) {
+	return MinMaxInt64{
+		MinMax: MinMax, // copy data away
+	}, nil
 }
 
 func (v MinMaxInt64) Observe(p config.Path, rawData []byte, found bool) (rawData2 []byte, err error) {
+	lmm := len(v.MinMax)
+	if lmm%2 == 1 || lmm < 1 {
+		return nil, errors.NotAcceptable.Newf("[config/validation] MinMaxInt64 does not contain a balanced slice. Len: %d", lmm)
+	}
+
 	val, ok, err := byteconv.ParseInt(rawData)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -38,8 +54,18 @@ func (v MinMaxInt64) Observe(p config.Path, rawData []byte, found bool) (rawData
 	if !ok {
 		return rawData, nil
 	}
-	if !validation.InRangeInt64(val, v.Min, v.Max) {
-		return nil, errors.OutOfRange.Newf("[config/validation] %q value out of range: %d < v:%d < %d", v.Min, val, v.Max)
+	var validations int
+	for i := 0; i < lmm; i = i + 2 {
+		if left, right := v.MinMax[i], v.MinMax[i+1]; validation.InRangeInt64(val, left, right) {
+			validations++
+			if v.PartialValidation {
+				return rawData, nil
+			}
+		}
 	}
-	return rawData, nil
+
+	if !v.PartialValidation && validations == lmm/2 {
+		return rawData, nil
+	}
+	return nil, errors.OutOfRange.Newf("[config/validation] %q value out of range: %v", val, v.MinMax)
 }

@@ -44,15 +44,20 @@ type Strings struct {
 	// "int" for integers
 	// "float" for floating point numbers
 	// "bool" for boolean values
+	// "not_empty" to proof values is not empty
+	// "not_empty_trim_space" to proof that values with trimmed white spaces are not empty
 	// "Custom" for any custom checking if the value is contained in the
 	// AdditionalAllowedValues map.
-	Type string `json:"type,omitempty"`
+	Validators []string `json:"validators,omitempty"`
+	// PartialValidation if true only one of the Validators must return true /
+	// match the string.
+	PartialValidation bool `json:"partial_validation,omitempty"`
 	// CSVComma one character to separate the input data. If empty the
 	// validation process does not know to validate CSV.
 	CSVComma string `json:"csv_comma,omitempty"`
 	// AdditionalAllowedValues can be optionally or solely defined to add more
-	// allowed values than Type field defines or if Type equals "Custom" then
-	// AdditionalAllowedValues must have values.
+	// allowed values than Validators field defines or if Validators equals
+	// "Custom" then AdditionalAllowedValues must have values.
 	AdditionalAllowedValues []string `json:"additional_allowed_values,omitempty"`
 }
 
@@ -60,47 +65,58 @@ type Strings struct {
 // any string listed in the documenation for type Strings.
 func NewStrings(data Strings) (config.Observer, error) {
 	ia := &observeStrings{
-		valType: data.Type,
+		valType:           append([]string{}, data.Validators...), // copy data
+		valFns:            make([]func(string) bool, 0, len(data.Validators)),
+		partialValidation: data.PartialValidation,
 	}
 
-	switch data.Type {
-	case "ISO3166Alpha2", "country_codes2":
-		ia.valFn = validation.IsISO3166Alpha2
-	case "ISO3166Alpha3", "country_codes3":
-		ia.valFn = validation.IsISO3166Alpha3
-	case "ISO4217", "currency3":
-		ia.valFn = validation.IsISO4217
-	case "Locale", "locale":
-		ia.valFn = validation.IsLocale
-	case "ISO693Alpha2", "language2":
-		ia.valFn = validation.IsISO693Alpha2
-	case "ISO693Alpha3", "language3":
-		ia.valFn = validation.IsISO693Alpha3b
-	case "uuid":
-		ia.valFn = validation.IsUUID
-	case "uuid3":
-		ia.valFn = validation.IsUUIDv3
-	case "uuid4":
-		ia.valFn = validation.IsUUIDv4
-	case "uuid5":
-		ia.valFn = validation.IsUUIDv5
-	case "url":
-		ia.valFn = validation.IsURL
-	case "int":
-		ia.valFn = validation.IsInt
-	case "float":
-		ia.valFn = validation.IsFloat
-	case "bool":
-		ia.valFn = validation.IsBool
+	for _, val := range data.Validators {
+		var valFn func(string) bool
+		switch val {
+		case "ISO3166Alpha2", "country_codes2":
+			valFn = validation.IsISO3166Alpha2
+		case "ISO3166Alpha3", "country_codes3":
+			valFn = validation.IsISO3166Alpha3
+		case "ISO4217", "currency3":
+			valFn = validation.IsISO4217
+		case "Locale", "locale":
+			valFn = validation.IsLocale
+		case "ISO693Alpha2", "language2":
+			valFn = validation.IsISO693Alpha2
+		case "ISO693Alpha3", "language3":
+			valFn = validation.IsISO693Alpha3b
+		case "uuid":
+			valFn = validation.IsUUID
+		case "uuid3":
+			valFn = validation.IsUUIDv3
+		case "uuid4":
+			valFn = validation.IsUUIDv4
+		case "uuid5":
+			valFn = validation.IsUUIDv5
+		case "url":
+			valFn = validation.IsURL
+		case "int":
+			valFn = validation.IsInt
+		case "float":
+			valFn = validation.IsFloat
+		case "bool":
+			valFn = validation.IsBool
+		case "notempty", "not_empty":
+			valFn = validation.IsNotEmpty
+		case "notemptytrimspace", "not_empty_trim_space":
+			valFn = validation.IsNotEmptyTrimSpace
 
-	case "Custom":
-		if len(data.AdditionalAllowedValues) == 0 {
-			return nil, errors.Empty.Newf("[config/validation] For type %q the argument allowedValues cannot be empty.", data.Type)
+		case "Custom":
+			if len(data.AdditionalAllowedValues) == 0 {
+				return nil, errors.Empty.Newf("[config/validation] For type %q the argument allowedValues cannot be empty.", data.Validators)
+			}
+		default:
+			return nil, errors.NotSupported.Newf("[config/validation] Validators %q not yet supported.", data.Validators)
 		}
-	default:
-		return nil, errors.NotSupported.Newf("[config/validation] Type %q not yet supported.", data.Type)
+		if valFn != nil {
+			ia.valFns = append(ia.valFns, valFn)
+		}
 	}
-
 	if len(data.AdditionalAllowedValues) > 0 {
 		ia.allowedValues = make(map[string]bool)
 		for _, c := range data.AdditionalAllowedValues {
@@ -122,14 +138,25 @@ func NewStrings(data Strings) (config.Observer, error) {
 // That is the reason we have a separate struct for JSON handling. Having two
 // structs allows to refrain from using Locks.
 type observeStrings struct {
-	valType       string
-	csvComma      rune
-	allowedValues map[string]bool
-	valFn         func(string) bool
+	valType           []string
+	csvComma          rune
+	allowedValues     map[string]bool
+	valFns            []func(string) bool
+	partialValidation bool
 }
 
 func (v *observeStrings) isValid(buf *strings.Builder) error {
-	if v.valFn != nil && v.valFn(buf.String()) {
+
+	var validations int
+	for _, valFn := range v.valFns {
+		if valFn(buf.String()) {
+			validations++
+		}
+	}
+	if lFns := len(v.valFns); lFns > 0 && !v.partialValidation && validations == lFns {
+		return nil
+	}
+	if v.partialValidation && validations > 0 {
 		return nil
 	}
 	if v.allowedValues[buf.String()] {

@@ -36,8 +36,31 @@ func easyjson4837aca4DecodeGithubComCorestoreioPkgConfigValidation(in *jlexer.Le
 			continue
 		}
 		switch key {
-		case "type":
-			out.Type = string(in.String())
+		case "validators":
+			if in.IsNull() {
+				in.Skip()
+				out.Validators = nil
+			} else {
+				in.Delim('[')
+				if out.Validators == nil {
+					if !in.IsDelim(']') {
+						out.Validators = make([]string, 0, 4)
+					} else {
+						out.Validators = []string{}
+					}
+				} else {
+					out.Validators = (out.Validators)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v1 string
+					v1 = string(in.String())
+					out.Validators = append(out.Validators, v1)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
+		case "partial_validation":
+			out.PartialValidation = bool(in.Bool())
 		case "csv_comma":
 			out.CSVComma = string(in.String())
 		case "additional_allowed_values":
@@ -56,9 +79,9 @@ func easyjson4837aca4DecodeGithubComCorestoreioPkgConfigValidation(in *jlexer.Le
 					out.AdditionalAllowedValues = (out.AdditionalAllowedValues)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v1 string
-					v1 = string(in.String())
-					out.AdditionalAllowedValues = append(out.AdditionalAllowedValues, v1)
+					var v2 string
+					v2 = string(in.String())
+					out.AdditionalAllowedValues = append(out.AdditionalAllowedValues, v2)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -77,15 +100,34 @@ func easyjson4837aca4EncodeGithubComCorestoreioPkgConfigValidation(out *jwriter.
 	out.RawByte('{')
 	first := true
 	_ = first
-	if in.Type != "" {
-		const prefix string = ",\"type\":"
+	if len(in.Validators) != 0 {
+		const prefix string = ",\"validators\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.Type))
+		{
+			out.RawByte('[')
+			for v3, v4 := range in.Validators {
+				if v3 > 0 {
+					out.RawByte(',')
+				}
+				out.String(string(v4))
+			}
+			out.RawByte(']')
+		}
+	}
+	if in.PartialValidation {
+		const prefix string = ",\"partial_validation\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Bool(bool(in.PartialValidation))
 	}
 	if in.CSVComma != "" {
 		const prefix string = ",\"csv_comma\":"
@@ -107,11 +149,11 @@ func easyjson4837aca4EncodeGithubComCorestoreioPkgConfigValidation(out *jwriter.
 		}
 		{
 			out.RawByte('[')
-			for v2, v3 := range in.AdditionalAllowedValues {
-				if v2 > 0 {
+			for v5, v6 := range in.AdditionalAllowedValues {
+				if v5 > 0 {
 					out.RawByte(',')
 				}
-				out.String(string(v3))
+				out.String(string(v6))
 			}
 			out.RawByte(']')
 		}

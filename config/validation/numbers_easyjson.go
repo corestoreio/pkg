@@ -36,10 +36,31 @@ func easyjson4c299a40DecodeGithubComCorestoreioPkgConfigValidation(in *jlexer.Le
 			continue
 		}
 		switch key {
-		case "min":
-			out.Min = int64(in.Int64())
-		case "max":
-			out.Max = int64(in.Int64())
+		case "min_max":
+			if in.IsNull() {
+				in.Skip()
+				out.MinMax = nil
+			} else {
+				in.Delim('[')
+				if out.MinMax == nil {
+					if !in.IsDelim(']') {
+						out.MinMax = make([]int64, 0, 8)
+					} else {
+						out.MinMax = []int64{}
+					}
+				} else {
+					out.MinMax = (out.MinMax)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v1 int64
+					v1 = int64(in.Int64())
+					out.MinMax = append(out.MinMax, v1)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
+		case "partial_validation":
+			out.PartialValidation = bool(in.Bool())
 		default:
 			in.SkipRecursive()
 		}
@@ -54,25 +75,34 @@ func easyjson4c299a40EncodeGithubComCorestoreioPkgConfigValidation(out *jwriter.
 	out.RawByte('{')
 	first := true
 	_ = first
-	if in.Min != 0 {
-		const prefix string = ",\"min\":"
+	if len(in.MinMax) != 0 {
+		const prefix string = ",\"min_max\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
 		} else {
 			out.RawString(prefix)
 		}
-		out.Int64(int64(in.Min))
+		{
+			out.RawByte('[')
+			for v2, v3 := range in.MinMax {
+				if v2 > 0 {
+					out.RawByte(',')
+				}
+				out.Int64(int64(v3))
+			}
+			out.RawByte(']')
+		}
 	}
-	if in.Max != 0 {
-		const prefix string = ",\"max\":"
+	if in.PartialValidation {
+		const prefix string = ",\"partial_validation\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
 		} else {
 			out.RawString(prefix)
 		}
-		out.Int64(int64(in.Max))
+		out.Bool(bool(in.PartialValidation))
 	}
 	out.RawByte('}')
 }
