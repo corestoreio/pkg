@@ -1,0 +1,30 @@
+goos: darwin
+goarch: amd64
+pkg: github.com/corestoreio/pkg/config/validation
+BenchmarkMinMaxInt64/partial-4  	50000000	        30.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMinMaxInt64/partial-4  	50000000	        30.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMinMaxInt64/partial-4  	50000000	        30.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMinMaxInt64/partial-4  	50000000	        30.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMinMaxInt64/partial-4  	50000000	        30.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMinMaxInt64/non-partial-4         	50000000	        32.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMinMaxInt64/non-partial-4         	50000000	        33.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMinMaxInt64/non-partial-4         	50000000	        33.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMinMaxInt64/non-partial-4         	50000000	        33.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMinMaxInt64/non-partial-4         	50000000	        33.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStrings_CSV_Locale/with_Add.AllowedValues_non-partial_single-4         	 3000000	       431 ns/op	      64 B/op	       7 allocs/op
+BenchmarkStrings_CSV_Locale/with_Add.AllowedValues_non-partial_single-4         	 3000000	       435 ns/op	      64 B/op	       7 allocs/op
+BenchmarkStrings_CSV_Locale/with_Add.AllowedValues_non-partial_single-4         	 3000000	       430 ns/op	      64 B/op	       7 allocs/op
+BenchmarkStrings_CSV_Locale/with_Add.AllowedValues_non-partial_single-4         	 3000000	       434 ns/op	      64 B/op	       7 allocs/op
+BenchmarkStrings_CSV_Locale/with_Add.AllowedValues_non-partial_single-4         	 3000000	       432 ns/op	      64 B/op	       7 allocs/op
+BenchmarkStrings_CSV_Locale/with_Add.AllowedValues_non-partial_multi-4          	 5000000	       271 ns/op	      64 B/op	       7 allocs/op
+BenchmarkStrings_CSV_Locale/with_Add.AllowedValues_non-partial_multi-4          	 5000000	       272 ns/op	      64 B/op	       7 allocs/op
+BenchmarkStrings_CSV_Locale/with_Add.AllowedValues_non-partial_multi-4          	 5000000	       267 ns/op	      64 B/op	       7 allocs/op
+BenchmarkStrings_CSV_Locale/with_Add.AllowedValues_non-partial_multi-4          	 5000000	       267 ns/op	      64 B/op	       7 allocs/op
+BenchmarkStrings_CSV_Locale/with_Add.AllowedValues_non-partial_multi-4          	 5000000	       256 ns/op	      64 B/op	       7 allocs/op
+BenchmarkStrings_Simple/notempty,bool-4                                         	30000000	        57.4 ns/op	       1 B/op	       1 allocs/op
+BenchmarkStrings_Simple/notempty,bool-4                                         	30000000	        57.6 ns/op	       1 B/op	       1 allocs/op
+BenchmarkStrings_Simple/notempty,bool-4                                         	30000000	        57.9 ns/op	       1 B/op	       1 allocs/op
+BenchmarkStrings_Simple/notempty,bool-4                                         	20000000	        58.2 ns/op	       1 B/op	       1 allocs/op
+BenchmarkStrings_Simple/notempty,bool-4                                         	30000000	        58.2 ns/op	       1 B/op	       1 allocs/op
+PASS
+ok  	github.com/corestoreio/pkg/config/validation	41.422s

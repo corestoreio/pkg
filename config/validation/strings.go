@@ -145,24 +145,24 @@ type observeStrings struct {
 	partialValidation bool
 }
 
-func (v *observeStrings) isValid(buf *strings.Builder) error {
+func (v *observeStrings) isValid(val string) error {
 
 	var validations int
 	for _, valFn := range v.valFns {
-		if valFn(buf.String()) {
+		if valFn(val) {
 			validations++
+			if v.partialValidation {
+				return nil
+			}
 		}
 	}
 	if lFns := len(v.valFns); lFns > 0 && !v.partialValidation && validations == lFns {
 		return nil
 	}
-	if v.partialValidation && validations > 0 {
+	if v.allowedValues[val] {
 		return nil
 	}
-	if v.allowedValues[buf.String()] {
-		return nil
-	}
-	return errors.NotValid.Newf("[config/validation] The provided value %q can't be validated against %q", buf.String(), v.valType)
+	return errors.NotValid.Newf("[config/validation] The provided value %q can't be validated against %q", val, v.valType)
 }
 
 // Observe validates the given rawData value. This functions runs in a hot path.
@@ -172,31 +172,30 @@ func (v *observeStrings) Observe(_ config.Path, rawData []byte, found bool) (raw
 		return nil, errors.NotValid.Newf("[config/validation] Input data (length:%d) matches no valid UTF8 rune.", len(rawData))
 	}
 
-	var buf strings.Builder
-	buf.Write(rawData)
-	bufLen := buf.Len() - 1
+	rawString := string(rawData)
+	bufLen := len(rawString) - 1
 
 	if v.csvComma == 0 {
-		if err := v.isValid(&buf); err != nil {
+		if err := v.isValid(rawString); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		return rawData, nil
 	}
 
 	var column strings.Builder
-	for pos, r := range buf.String() {
+	for pos, r := range rawString {
 		switch {
 		case r == v.csvComma && pos == 0:
 			// do nothing
 		case r == v.csvComma && pos > 0:
-			if err := v.isValid(&column); err != nil {
+			if err := v.isValid(column.String()); err != nil {
 				return nil, errors.WithStack(err)
 			}
 			column.Reset()
 		case pos == bufLen:
 			column.WriteRune(r)
 
-			if err := v.isValid(&column); err != nil {
+			if err := v.isValid(column.String()); err != nil {
 				return nil, errors.WithStack(err)
 			}
 			column.Reset()
