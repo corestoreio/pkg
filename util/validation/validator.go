@@ -439,6 +439,16 @@ func IsNull(str string) bool {
 	return len(str) == 0
 }
 
+// IsNotEmpty check if the string is not empty.
+func IsNotEmpty(str string) bool {
+	return len(str) > 0
+}
+
+// IsNotEmptyTrimSpace check if the white space trimmed string is not empty.
+func IsNotEmptyTrimSpace(str string) bool {
+	return len(strings.TrimSpace(str)) > 0
+}
+
 // IsByteLength check if the string's length (in bytes) falls in a range.
 func IsByteLength(str string, min, max int) bool {
 	return len(str) >= min && len(str) <= max

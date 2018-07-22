@@ -1127,6 +1127,51 @@ func TestIsNull(t *testing.T) {
 	}
 }
 
+func TestIsNotEmpty(t *testing.T) {
+	t.Parallel()
+
+	var tests = []struct {
+		param    string
+		expected bool
+	}{
+		{"abacaba", true},
+		{"", false},
+	}
+	for _, test := range tests {
+		actual := IsNotEmpty(test.param)
+		if actual != test.expected {
+			t.Errorf("Expected IsNull(%q) to be %v, got %v", test.param, test.expected, actual)
+		}
+	}
+}
+
+func TestIsNotEmptyTrimSpace(t *testing.T) {
+	t.Parallel()
+
+	var tests = []struct {
+		param    string
+		expected bool
+	}{
+		{"abacaba ", true},
+		{" abacaba", true},
+		{"\n abacaba", true},
+		{"\n abacaba\t", true},
+		{"", false},
+		{" ", false},
+		{"\t", false},
+		{"\t \t", false},
+		{"\t \t\r", false},
+		{"\t \t\r\n", false},
+		{"\n", false},
+	}
+	for _, test := range tests {
+		actual := IsNotEmptyTrimSpace(test.param)
+		if actual != test.expected {
+			t.Errorf("Expected IsNull(%q) to be %v, got %v", test.param, test.expected, actual)
+		}
+	}
+}
+
 func TestIsDivisibleBy(t *testing.T) {
 	t.Parallel()
 
