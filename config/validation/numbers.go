@@ -24,24 +24,24 @@ import (
 )
 
 // MinMaxInt64 validates if a value is between or in range of min and max.
-// Provide the field MinMax as a balanced slice where value n defines min and
-// n+1 the max value. For JSON handling, see sub-package `json`.
+// Provide the field Conditions as a balanced slice where value n defines min
+// and n+1 the max value. For JSON handling, see sub-package `json`.
 type MinMaxInt64 struct {
-	MinMax []int64 `json:"min_max,omitempty"`
+	Conditions []int64 `json:"conditions,omitempty"`
 	// PartialValidation if true only one of min/max pairs must be valid.
 	PartialValidation bool `json:"partial_validation,omitempty"`
 }
 
 // NewMinMaxInt64 creates a new observer to check if a value is contained
 // between min and max values. Argument MinMax must be balanced slice.
-func NewMinMaxInt64(MinMax ...int64) (*MinMaxInt64, error) {
+func NewMinMaxInt64(minMax ...int64) (*MinMaxInt64, error) {
 	return &MinMaxInt64{
-		MinMax: MinMax,
+		Conditions: minMax,
 	}, nil
 }
 
 func (v MinMaxInt64) Observe(p config.Path, rawData []byte, found bool) (rawData2 []byte, err error) {
-	lmm := len(v.MinMax)
+	lmm := len(v.Conditions)
 	if lmm%2 == 1 || lmm < 1 {
 		return nil, errors.NotAcceptable.Newf("[config/validation] MinMaxInt64 does not contain a balanced slice. Len: %d", lmm)
 	}
@@ -55,7 +55,7 @@ func (v MinMaxInt64) Observe(p config.Path, rawData []byte, found bool) (rawData
 	}
 	var validations int
 	for i := 0; i < lmm; i = i + 2 {
-		if left, right := v.MinMax[i], v.MinMax[i+1]; validation.InRangeInt64(val, left, right) {
+		if left, right := v.Conditions[i], v.Conditions[i+1]; validation.InRangeInt64(val, left, right) {
 			validations++
 			if v.PartialValidation {
 				return rawData, nil
@@ -66,5 +66,5 @@ func (v MinMaxInt64) Observe(p config.Path, rawData []byte, found bool) (rawData
 	if !v.PartialValidation && validations == lmm/2 {
 		return rawData, nil
 	}
-	return nil, errors.OutOfRange.Newf("[config/validation] %q value out of range: %v", val, v.MinMax)
+	return nil, errors.OutOfRange.Newf("[config/validation] %q value out of range: %v", val, v.Conditions)
 }
