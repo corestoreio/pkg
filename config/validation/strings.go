@@ -133,6 +133,15 @@ func NewStrings(data Strings) (config.Observer, error) {
 	return ia, nil
 }
 
+// MustNewStrings same as NewStrings but panics on error.
+func MustNewStrings(data Strings) config.Observer {
+	o, err := NewStrings(data)
+	if err != nil {
+		panic(err)
+	}
+	return o
+}
+
 // observeStrings must be used to prevent race conditions during initialization.
 // That is the reason we have a separate struct for JSON handling. Having two
 // structs allows to refrain from using Locks.

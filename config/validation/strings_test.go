@@ -249,5 +249,21 @@ func TestNewStrings(t *testing.T) {
 	t.Run("partialValidation disabled validate incorrect",
 		runner(sl("int", "bool"), sl(), "", false, []byte("true"), true, errors.NoKind, errors.NotValid),
 	)
+}
 
+func TestMustNewStrings(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			if err, ok := r.(error); ok {
+				assert.True(t, errors.NotSupported.Match(err), "%+v", err)
+			} else {
+				t.Errorf("Panic should contain an error but got:\n%+v", r)
+			}
+		} else {
+			t.Error("Expecting a panic but got nothing")
+		}
+	}()
+	validation.MustNewStrings(validation.Strings{
+		Validators: []string{"IsPHP"},
+	})
 }
