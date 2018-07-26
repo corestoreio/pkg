@@ -18,10 +18,40 @@ package json
 
 import (
 	"encoding/json"
+	"io"
+	"io/ioutil"
+	"sync"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/config/validation"
 )
+
+// RegisterObservers reads JSON byte data from r, parses it, creates the
+// appropriate observers and registers them with the config.Service.
+func RegisterObservers(or config.ObserverRegisterer, r io.Reader) error {
+
+	jsonData, err := ioutil.ReadAll(r)
+	if err != nil {
+		return errors.ReadFailed.New(err, "[config/validation/json] Reading failed")
+	}
+
+	vs := make(Validators, 0, 5)
+	if err := vs.UnmarshalJSON(jsonData); err != nil {
+		return errors.BadEncoding.New(err, "[config/validation/json] JSON decoding failed")
+	}
+
+	for _, v := range vs {
+		event, route, o, err := v.makeObserver()
+		if err != nil {
+			return errors.Wrapf(err, "[config/validation] Data: %#v", v)
+		}
+		if err := or.RegisterObserver(event, route, o); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return nil
+}
 
 // Validator defines the data retrieved from the outside as JSON to add a new
 // validator for a specific route and event.
@@ -33,9 +63,10 @@ type Validator struct {
 	// config.MakeEvent.
 	Event string `json:"event,omitempty"`
 	// Type name of struct to decode and specifies the type of the validator.
-	// Case sensitive.
+	// Case sensitive. Supported names are `strings` or `min_max_int64` or TBC.
 	Type string `json:"type,omitempty"`
-	// Condition contains the JSON object for a type like: MinMaxInt64, UUID, etc
+	// Condition contains the JSON object for a type in this package like:
+	// `Strings` or `MinMaxInt64` or TBC.
 	Condition json.RawMessage `json:"condition,omitempty"`
 }
 
@@ -43,24 +74,7 @@ type Validator struct {
 //easyjson:json
 type Validators []*Validator
 
-type unmarshalableObserver interface { // can be used to implement custom types, but later.
-	config.Observer
-	UnmarshalJSON(data []byte) error
-}
-
-func (v *Validator) NewFromJSON() (event uint8, route string, _ config.Observer, err error) {
-	var ov unmarshalableObserver
-	switch v.Type {
-	case "MinMaxInt64":
-		ov = new(MinMaxInt64)
-	case "UUID":
-		ov = new(UUID)
-	case "ISO3166Alpha2":
-		ov, _ = NewISO3166Alpha2()
-	default:
-		return 0, "", nil, errors.NotFound.Newf("[config/validation] Validator type %q not found in list.", v.Type)
-	}
-
+func (v *Validator) makeObserver() (event uint8, route string, _ config.Observer, err error) {
 	if err := config.Route(v.Route).IsValid(); err != nil {
 		return 0, "", nil, errors.Wrapf(err, "[config/validation] Invalid route: %#v", v)
 	}
@@ -69,77 +83,61 @@ func (v *Validator) NewFromJSON() (event uint8, route string, _ config.Observer,
 		return 0, "", nil, errors.Empty.Newf("[config/validation] Data for %q is empty. %#v", v.Type, v)
 	}
 
-	if err := ov.UnmarshalJSON(v.Condition); err != nil {
-		return 0, "", nil, errors.Wrapf(err, "[config/validation] Failed to decode: %#v", v)
-	}
-
 	if event, err = config.MakeEvent(v.Event); err != nil {
 		return 0, "", nil, errors.WithStack(err)
 	}
 
-	return event, v.Route, ov, nil
-}
-
-func (v *Validator) MakeEventRouteFromJSON() (event uint8, route string, err error) {
-
-	if err := config.Route(v.Route).IsValid(); err != nil {
-		return event, "", errors.Wrapf(err, "[config/validation] Invalid route: %#v", v)
-	}
-
-	event, err = config.MakeEvent(v.Event)
-	err = errors.WithStack(err)
-	route = v.Route
-	return
-}
-
-func (m *Validator) Size() (n int) {
-	var l int
-	_ = l
-	l = len(m.Route)
-	if l > 0 {
-		n += 1 + l + sovValidator(uint64(l))
-	}
-	l = len(m.Event)
-	if l > 0 {
-		n += 1 + l + sovValidator(uint64(l))
-	}
-	l = len(m.Type)
-	if l > 0 {
-		n += 1 + l + sovValidator(uint64(l))
-	}
-	l = len(m.Condition)
-	if l > 0 {
-		n += 1 + l + sovValidator(uint64(l))
-	}
-	return n
-}
-
-func sovValidator(x uint64) (n int) {
-	for {
-		n++
-		x >>= 7
-		if x == 0 {
-			break
+	switch v.Type {
+	case "min_max_int64", "minmaxint64", "MinMaxInt64":
+		mm := new(MinMaxInt64)
+		if err := mm.UnmarshalJSON(v.Condition); err != nil {
+			return 0, "", nil, errors.BadEncoding.New(err, "[config/validation] Failed to decode: %#v", v)
 		}
-	}
-	return n
-}
+		return event, v.Route, mm.MinMaxInt64, nil
 
-func RegisterObserversFromJSON(or config.ObserverRegisterer, jsonData []byte) error {
-
-	vs := make(Validators, 0, 5)
-	if err := vs.UnmarshalJSON(jsonData); err != nil {
-		return errors.WithStack(err)
-	}
-
-	for _, v := range vs {
-		event, route, o, err := v.NewFromJSON()
+	case "strings", "Strings":
+		str := new(Strings)
+		if err := str.UnmarshalJSON(v.Condition); err != nil {
+			return 0, "", nil, errors.BadEncoding.New(err, "[config/validation] Failed to decode: %#v", v)
+		}
+		vStr, err := validation.NewStrings(str.Strings)
 		if err != nil {
-			return errors.Wrapf(err, "[config/validation] Data: %#v", v)
+			return 0, "", nil, errors.WithStack(err)
 		}
-		if err := or.RegisterObserver(event, route, o); err != nil {
-			return errors.WithStack(err)
+		return event, v.Route, vStr, nil
+
+	default:
+		customObserverRegistry.RLock()
+		defer customObserverRegistry.RUnlock()
+		if uo, ok := customObserverRegistry.pool[v.Type]; ok {
+			if err := uo.UnmarshalJSON(v.Condition); err != nil {
+				return 0, "", nil, errors.BadEncoding.New(err, "[config/validation] Failed to decode: %#v", v)
+			}
+			return event, v.Route, uo, nil
 		}
+		return 0, "", nil, errors.NotFound.Newf("[config/validation] Validator type %q not found in list.", v.Type)
 	}
-	return nil
+}
+
+// UnmarshallableObserver allows to implement custom validation for function
+// RegisterObservers. Don't abuse this >:-|
+type UnmarshallableObserver interface {
+	json.Unmarshaler
+	config.Observer
+}
+
+type customObservers struct {
+	sync.RWMutex
+	pool map[string]UnmarshallableObserver
+}
+
+var customObserverRegistry = &customObservers{
+	pool: make(map[string]UnmarshallableObserver),
+}
+
+// RegisterCustomObserver adds a custom observer to the global registry.
+func RegisterCustomObserver(typeName string, uo UnmarshallableObserver) {
+	customObserverRegistry.Lock()
+	defer customObserverRegistry.Unlock()
+	customObserverRegistry.pool[typeName] = uo
 }

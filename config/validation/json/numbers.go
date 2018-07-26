@@ -12,5 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package json contains
+//go:generate easyjson $GOFILE
+
 package json
+
+import "github.com/corestoreio/pkg/config/validation"
+
+// MinMaxInt64 provides a wrapper to handle JSON for type
+// validation.MinMaxInt64.
+//easyjson:json
+type MinMaxInt64 struct {
+	validation.MinMaxInt64
+}

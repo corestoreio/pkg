@@ -12,5 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package json contains
+//go:generate easyjson $GOFILE
+
 package json
+
+import "github.com/corestoreio/pkg/config/validation"
+
+// Strings wrapper type to handle JSON for validation.NewStrings
+// function. Please see validation.Strings for further options.
+//easyjson:json
+type Strings struct {
+	validation.Strings
+}
