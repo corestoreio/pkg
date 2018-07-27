@@ -17,11 +17,10 @@ package json_test
 import (
 	"testing"
 
+	"github.com/alecthomas/assert"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/validation"
 	"github.com/corestoreio/pkg/config/validation/json"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestStrings_UnmarshalJSON(t *testing.T) {
@@ -29,7 +28,7 @@ func TestStrings_UnmarshalJSON(t *testing.T) {
 	rawJSON := []byte(`{"validators":["Locale"],"csv_comma":"|","additional_allowed_values":["Klingon","Vulcan"]}`)
 
 	var data json.Strings
-	require.NoError(t, data.UnmarshalJSON(rawJSON))
+	assert.NoError(t, data.UnmarshalJSON(rawJSON))
 	assert.Exactly(t, json.Strings{
 		Strings: validation.Strings{
 			Validators:              []string{"Locale"},
@@ -39,10 +38,10 @@ func TestStrings_UnmarshalJSON(t *testing.T) {
 	}, data)
 
 	sv, err := validation.NewStrings(data.Strings)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	value := []byte(`de_DE|Vulcan`)
 	nValue, err := sv.Observe(config.Path{}, value, true)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Exactly(t, value, nValue)
 
 }

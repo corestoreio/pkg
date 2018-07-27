@@ -22,8 +22,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alecthomas/assert"
 	"github.com/corestoreio/errors"
-	"github.com/stretchr/testify/assert"
 )
 
 var (

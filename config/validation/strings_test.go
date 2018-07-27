@@ -17,11 +17,10 @@ package validation_test
 import (
 	"testing"
 
+	"github.com/alecthomas/assert"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/validation"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func sl(s ...string) []string { return s }
@@ -52,8 +51,8 @@ func TestNewStrings(t *testing.T) {
 				assert.True(t, wantNewErr.Match(err), "%+v", err)
 				return
 			}
-			require.NoError(t, err)
-			require.NotNil(t, s)
+			assert.NoError(t, err)
+			assert.NotNil(t, s)
 
 			haveData, haveErr := s.Observe(config.Path{}, data, found)
 			if wantObserveErr > 0 {
@@ -61,7 +60,7 @@ func TestNewStrings(t *testing.T) {
 				assert.True(t, wantObserveErr.Match(haveErr), "%+v", haveErr)
 				return
 			}
-			require.NoError(t, haveErr)
+			assert.NoError(t, haveErr)
 			assert.Exactly(t, data, haveData)
 		}
 	}

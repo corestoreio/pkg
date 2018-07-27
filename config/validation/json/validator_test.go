@@ -19,11 +19,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/alecthomas/assert"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/validation"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 type observerRegistererFake struct {
@@ -82,7 +81,7 @@ func TestRegisterObservers(t *testing.T) {
 		err := RegisterObservers(or, bytes.NewBufferString(`[{ 
 			"event":"before_set", "route":"payment/pp/port", "type":"MinMaxInt64", "condition":{"conditions":[8080,8090]} 
 		}]`))
-		require.NoError(t, err)
+		assert.NoError(t, err)
 	})
 	t.Run("MinMaxInt64 Empty conditions", func(t *testing.T) {
 		or := observerRegistererFake{
@@ -95,7 +94,7 @@ func TestRegisterObservers(t *testing.T) {
 		err := RegisterObservers(or, bytes.NewBufferString(`[{ 
 			"event":"before_set", "route":"payment/pp/port", "type":"MinMaxInt64", "condition":{"conditions":[]} 
 		}]`))
-		require.NoError(t, err)
+		assert.NoError(t, err)
 	})
 	t.Run("MinMaxInt64 empty condition", func(t *testing.T) {
 		or := observerRegistererFake{
@@ -149,7 +148,7 @@ func TestRegisterObservers(t *testing.T) {
 		err := RegisterObservers(or, bytes.NewBufferString(`[ { "event":"after_set", "route":"aa/ee/ff", "type":"Strings",
 		  "condition":{"validators":["Locale"],"csv_comma":"|","additional_allowed_values":["Vulcan"]}}
 		]`))
-		require.NoError(t, err)
+		assert.NoError(t, err)
 	})
 
 	t.Run("Strings condition JSON malformed", func(t *testing.T) {
@@ -193,7 +192,7 @@ func TestRegisterObservers(t *testing.T) {
 		err := RegisterObservers(or, bytes.NewBufferString(`[ { "event":"after_get", "route":"bb/ee/ff", "type":"XMLValidation",
 		  "condition":{"validators":["IsPHP"],"additional_allowed_values":["Vulcan"]}}
 		]`))
-		require.NoError(t, err)
+		assert.NoError(t, err)
 	})
 
 	t.Run("customObserverRegistry malformed condition JSON", func(t *testing.T) {

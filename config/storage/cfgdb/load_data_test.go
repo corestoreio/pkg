@@ -17,12 +17,11 @@ package cfgdb_test
 import (
 	"testing"
 
+	"github.com/alecthomas/assert"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/config/storage/cfgdb"
 	"github.com/corestoreio/pkg/sql/dmltest"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // Test_WithApplyCoreConfigData reads from the MySQL core_config_data table and applies
@@ -52,13 +51,13 @@ func Test_WithCoreConfigData(t *testing.T) {
 	assert.NoError(t, s.Set(p1, []byte("SSL_OFFLOADED")))
 
 	v, ok, err := s.Get(p1).Str()
-	require.NoError(t, err)
-	require.True(t, ok)
+	assert.NoError(t, err)
+	assert.True(t, ok)
 	assert.Exactly(t, "SSL_OFFLOADED", v)
 
 	p2 := config.MustNewPath("web/unsecure/base_skin_url").BindWebsite(44)
 	v, ok, err = s.Get(p2).Str()
-	require.NoError(t, err)
-	require.True(t, ok)
+	assert.NoError(t, err)
+	assert.True(t, ok)
 	assert.Exactly(t, "{{unsecure_base_url}}skin/", v)
 }

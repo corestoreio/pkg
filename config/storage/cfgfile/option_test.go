@@ -19,11 +19,10 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"github.com/alecthomas/assert"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/config/storage/cfgfile"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestWithGlob_Placeholder(t *testing.T) {
@@ -33,12 +32,12 @@ func TestWithGlob_Placeholder(t *testing.T) {
 			EnvName: "path",
 		},
 	)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	shouldGetCalled := false
 	cfgfile.WithGlob("testdata/malformed_"+config.EnvNamePlaceHolder+".yaml")(cfgSrv, func(_ config.Setter, r io.Reader) error {
 		data, err := ioutil.ReadAll(r)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		assert.Exactly(t, `vendorbarenvironment:
   default:

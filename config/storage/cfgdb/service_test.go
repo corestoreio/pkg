@@ -20,14 +20,13 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/alecthomas/assert"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/storage/cfgdb"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/fortytw2/leaktest"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 var _ config.Storager = (*cfgdb.Service)(nil)
@@ -70,7 +69,7 @@ func TestService_AllKeys_Mocked(t *testing.T) {
 		dbs, err := cfgdb.NewService(cfgdb.NewTableCollection(dbc.DB), cfgdb.Options{
 			SkipSchemaValidation: true,
 		})
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.NoError(t, dbs.Close())
 	})
 }
@@ -96,8 +95,8 @@ func TestService_Get(t *testing.T) {
 			prepSel.ExpectQuery().WithArgs(scp.StrType(), sID, test.path).WillReturnRows(sqlmock.NewRows([]string{"value"}))
 
 			haveVal, haveOK, haveErr := dbs.Get(config.MustNewPathWithScope(test.scopeID, test.path))
-			require.NoError(t, haveErr)
-			require.False(t, haveOK, "%s Value with path %q should NOT be found", test.scopeID, test.path)
+			assert.NoError(t, haveErr)
+			assert.False(t, haveOK, "%s Value with path %q should NOT be found", test.scopeID, test.path)
 			assert.Exactly(t, []byte(nil), haveVal)
 		}
 
@@ -111,8 +110,8 @@ func TestService_Get(t *testing.T) {
 			prepSel.ExpectQuery().WithArgs(scp.StrType(), sID, test.path).WillReturnRows(sqlmock.NewRows([]string{"value"}).AddRow(test.value))
 
 			haveVal, haveOK, haveErr := dbs.Get(config.MustNewPathWithScope(test.scopeID, test.path))
-			require.NoError(t, haveErr)
-			require.True(t, haveOK, "%s Value with path %q should be found", test.scopeID, test.path)
+			assert.NoError(t, haveErr)
+			assert.True(t, haveOK, "%s Value with path %q should be found", test.scopeID, test.path)
 			assert.Exactly(t, test.value, haveVal)
 		}
 	}
@@ -125,7 +124,7 @@ func TestService_Get(t *testing.T) {
 		dbs, err := cfgdb.NewService(cfgdb.NewTableCollection(dbc.DB), cfgdb.Options{
 			SkipSchemaValidation: true,
 		})
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		defer dmltest.Close(t, dbs)
 		testBody(t, dbs, dbMock, 0)
 	})
@@ -140,7 +139,7 @@ func TestService_Get(t *testing.T) {
 			IdleWrite:            time.Millisecond * 50,
 			SkipSchemaValidation: true,
 		})
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		defer dmltest.Close(t, dbs)
 
 		testBody(t, dbs, dbMock, time.Millisecond*100)
@@ -161,7 +160,7 @@ func TestService_Get(t *testing.T) {
 			ContextTimeoutRead:   time.Millisecond * 50,
 			SkipSchemaValidation: true,
 		})
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		defer dmltest.Close(t, dbs)
 
 		prepSel := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `value` FROM `core_config_data` AS `main_table` WHERE (`scope` = ?) AND (`scope_id` = ?) AND (`path` = ?)"))
@@ -173,7 +172,7 @@ func TestService_Get(t *testing.T) {
 			assert.Nil(t, haveVal)
 			assert.False(t, haveOK)
 			causeErr := errors.Cause(haveErr)
-			require.EqualError(t, causeErr, "canceling query due to user request")
+			assert.EqualError(t, causeErr, "canceling query due to user request")
 			return
 		}
 
@@ -197,7 +196,7 @@ func TestService_Set(t *testing.T) {
 			prepIns.ExpectExec().
 				WithArgs(test.scopeID, test.path, test.value).
 				WillReturnResult(sqlmock.NewResult(j, 0))
-			require.NoError(t, dbs.Set(config.MustNewPathWithScope(test.scopeID, test.path), test.value))
+			assert.NoError(t, dbs.Set(config.MustNewPathWithScope(test.scopeID, test.path), test.value))
 
 			if sleep > 0 {
 				time.Sleep(sleep)
@@ -213,7 +212,7 @@ func TestService_Set(t *testing.T) {
 		dbs, err := cfgdb.NewService(cfgdb.NewTableCollection(dbc.DB), cfgdb.Options{
 			SkipSchemaValidation: true,
 		})
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		defer dmltest.Close(t, dbs)
 		testBody(t, dbs, dbMock, 0)
 	})
@@ -228,7 +227,7 @@ func TestService_Set(t *testing.T) {
 			IdleWrite:            time.Millisecond * 5,
 			SkipSchemaValidation: true,
 		})
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		defer dmltest.Close(t, dbs)
 
 		testBody(t, dbs, dbMock, time.Millisecond*8)
@@ -249,7 +248,7 @@ func TestService_Set(t *testing.T) {
 			ContextTimeoutWrite:  time.Millisecond * 50,
 			SkipSchemaValidation: true,
 		})
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		defer dmltest.Close(t, dbs)
 
 		prepIns := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("INSERT INTO `core_config_data` (`scope`,`scope_id`,`path`,`value`) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE `value`=VALUES(`value`)"))
@@ -262,7 +261,7 @@ func TestService_Set(t *testing.T) {
 			haveErr := dbs.Set(config.MustNewPathWithScope(test.scopeID, test.path), test.value)
 
 			causeErr := errors.Cause(haveErr)
-			require.EqualError(t, causeErr, "canceling query due to user request")
+			assert.EqualError(t, causeErr, "canceling query due to user request")
 		}
 
 	})

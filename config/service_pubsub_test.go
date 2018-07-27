@@ -22,6 +22,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/alecthomas/assert"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/log/logw"
@@ -29,7 +30,6 @@ import (
 	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/fortytw2/leaktest"
-	"github.com/stretchr/testify/assert"
 )
 
 // those tests cannot run in  because of reading and writing the debug log :-(

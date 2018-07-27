@@ -17,11 +17,10 @@ package storage_test
 import (
 	"testing"
 
+	"github.com/alecthomas/assert"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestNewMap_OneKey(t *testing.T) {
@@ -41,7 +40,7 @@ func TestNewMap_OneKey(t *testing.T) {
 		t.Fatalf("%#v must implement Flusher interface", sp)
 	}
 
-	require.NoError(t, fl.Flush())
+	assert.NoError(t, fl.Flush())
 
 	validateNotFoundGet(t, sp, scope.Store.WithID(55), "aa/bb/cc")
 

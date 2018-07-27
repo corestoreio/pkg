@@ -17,11 +17,10 @@ package validation_test
 import (
 	"testing"
 
+	"github.com/alecthomas/assert"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/validation"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -33,34 +32,34 @@ func TestMinMaxInt_Observe(t *testing.T) {
 	var p config.Path
 	t.Run("parse failed", func(t *testing.T) {
 		mm, err := validation.NewMinMaxInt64(1, 2)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		_, err = mm.Observe(p, []byte("NAN"), false)
 		assert.EqualError(t, err, "strconv.ParseInt: parsing \"NAN\": invalid syntax")
 	})
 	t.Run("null", func(t *testing.T) {
 		mm, err := validation.NewMinMaxInt64(1, 2)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		ret, err := mm.Observe(p, nil, false)
 		assert.NoError(t, err)
 		assert.Nil(t, ret)
 	})
 	t.Run("not in range1", func(t *testing.T) {
 		mm, err := validation.NewMinMaxInt64(1, 2)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		ret, err := mm.Observe(p, []byte(`3`), false)
 		assert.True(t, errors.OutOfRange.Match(err), "%+v", err)
 		assert.Nil(t, ret)
 	})
 	t.Run("not in range2", func(t *testing.T) {
 		mm, err := validation.NewMinMaxInt64(2, 1)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		ret, err := mm.Observe(p, []byte(`3`), false)
 		assert.True(t, errors.OutOfRange.Match(err), "%+v", err)
 		assert.Nil(t, ret)
 	})
 	t.Run("in range1", func(t *testing.T) {
 		mm, err := validation.NewMinMaxInt64(1, 2)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		data := []byte(`2`)
 		ret, err := mm.Observe(p, data, false)
 		assert.NoError(t, err)
@@ -68,7 +67,7 @@ func TestMinMaxInt_Observe(t *testing.T) {
 	})
 	t.Run("in range2", func(t *testing.T) {
 		mm, err := validation.NewMinMaxInt64(1, 2)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		data := []byte(`2`)
 		ret, err := mm.Observe(p, data, false)
 		assert.NoError(t, err)
@@ -77,7 +76,7 @@ func TestMinMaxInt_Observe(t *testing.T) {
 
 	t.Run("partial validation enabled success", func(t *testing.T) {
 		mm, err := validation.NewMinMaxInt64(1, 2, 5, 6, 7, 8)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		mm.PartialValidation = true
 		data := []byte(`6`)
 		ret, err := mm.Observe(p, data, false)
@@ -87,7 +86,7 @@ func TestMinMaxInt_Observe(t *testing.T) {
 
 	t.Run("partial validation disabled fails", func(t *testing.T) {
 		mm, err := validation.NewMinMaxInt64(1, 2, 5, 6, 7, 8)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		mm.PartialValidation = false
 		data := []byte(`6`)
 		ret, err := mm.Observe(p, data, false)

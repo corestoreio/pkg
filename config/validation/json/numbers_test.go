@@ -18,9 +18,9 @@ import (
 	"math"
 	"testing"
 
+	"github.com/alecthomas/assert"
 	"github.com/corestoreio/pkg/config/validation"
 	"github.com/corestoreio/pkg/config/validation/json"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestMinMaxInt64_MarshalJSON(t *testing.T) {

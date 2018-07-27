@@ -20,11 +20,10 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/alecthomas/assert"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/naughtystrings"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -87,7 +86,7 @@ func TestRoute_IsValid(t *testing.T) {
 }
 func assertStrErr(t *testing.T, want string, msgAndArgs ...interface{}) func(string, error) {
 	return func(s string, err error) {
-		require.NoError(t, err, "%+v", err)
+		assert.NoError(t, err, "%+v", err)
 		assert.Exactly(t, want, s, msgAndArgs...)
 	}
 }
@@ -96,7 +95,7 @@ func TestMakePathWithScope(t *testing.T) {
 	t.Parallel()
 	t.Run("ok", func(t *testing.T) {
 		p, err := NewPathWithScope(scope.Store.WithID(23), "aa/bb/cc")
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t, "stores/23/aa/bb/cc", p.String())
 	})
 	t.Run("fails", func(t *testing.T) {
@@ -302,7 +301,7 @@ func TestPath_Parse(t *testing.T) {
 		if test.wantErrKind > 0 {
 			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => Error: %s", i, haveErr)
 		} else {
-			require.NoError(t, haveErr, "Test %v", test)
+			assert.NoError(t, haveErr, "Test %v", test)
 			assert.Exactly(t, test.wantScope, havePath.ScopeID.Type().StrType(), "Index %d", i)
 			assert.Exactly(t, test.wantScopeID, havePath.ScopeID.ID(), "Index %d", i)
 			ls, _ := havePath.Level(-1)
@@ -444,7 +443,7 @@ func TestPath_Hash64ByLevel(t *testing.T) {
 		p := MustNewPath("general/single_store_mode/enabled")
 		hl := p.Hash64ByLevel(4)
 		l, err := p.Level(4)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t, "default/0/general/single_store_mode", l)
 		assert.Exactly(t, uint64(0x5cbf04d81b7be97), hl)
 		h := p.Hash64()
@@ -532,7 +531,7 @@ func TestPathSlice_Sort(t *testing.T) {
 	runner := func(have, want PathSlice) func(*testing.T) {
 		return func(t *testing.T) {
 			have.Sort()
-			require.Exactly(t, want, have)
+			assert.Exactly(t, want, have)
 		}
 	}
 
@@ -738,7 +737,7 @@ func TestPathSplit(t *testing.T) {
 		for _, test := range tests {
 			p := MustNewPath(test.have)
 			sps, haveErr := p.Split()
-			require.NoError(t, haveErr, "Path %q", test.have)
+			assert.NoError(t, haveErr, "Path %q", test.have)
 			for i, wantPart := range test.wantPart {
 				assert.Exactly(t, wantPart, sps[i], "Index %d", i)
 			}
@@ -751,14 +750,14 @@ func TestPath_MarshalText(t *testing.T) {
 
 	t.Run("two way, no errors", func(t *testing.T) {
 		p, err := NewPathWithScope(scope.Store.WithID(4), "xx/yy/zz")
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		txt, err := p.MarshalText()
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t, `stores/4/xx/yy/zz`, string(txt))
 
 		var p2 Path
 		err = p2.UnmarshalText(txt)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t, `stores/4/xx/yy/zz`, p2.String())
 	})
 
@@ -787,14 +786,14 @@ func TestPath_MarshalBinary(t *testing.T) {
 
 	t.Run("two way, no errors", func(t *testing.T) {
 		p, err := NewPathWithScope(scope.Store.WithID(4), "xx/yy/zz")
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		txt, err := p.MarshalBinary()
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t, "\x04\x00\x00\x04\x00\x00\x00\x00xx/yy/zz", string(txt))
 
 		var p2 Path
 		err = p2.UnmarshalBinary(txt)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t, `stores/4/xx/yy/zz`, p2.String())
 	})
 
@@ -829,10 +828,10 @@ func TestPath_Equal(t *testing.T) {
 	t.Parallel()
 
 	p1, err := NewPathWithScope(scope.Store.WithID(4), "xx/yy/zz")
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	p2, err := NewPathWithScope(scope.Store.WithID(4), "xx/yy/zz")
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	assert.True(t, p1.Equal(p2))
 
@@ -858,7 +857,7 @@ func TestPath_EnvName(t *testing.T) {
 		assertStrErr(t, `default/0/tt/ww/de/STAGING`)(p.FQ())
 
 		d, err := p.BindStore(3).MarshalBinary()
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t, "\x03\x00\x00\x04\x00\x00\x00\x00tt/ww/de/STAGING", string(d))
 
 		p.UseEnvSuffix = false
@@ -869,11 +868,11 @@ func TestPath_EnvName(t *testing.T) {
 			envSuffix: "STAGING",
 		}
 		err := p.Parse(`stores/3/tt/ww/de/STAGING`)
-		require.NoError(t, err, "%+v", err)
+		assert.NoError(t, err, "%+v", err)
 		assertStrErr(t, `stores/3/tt/ww/de`)(p.FQ())
 
 		err = p.Parse(`stores/3/tt/ww/de`)
-		require.NoError(t, err, "%+v", err)
+		assert.NoError(t, err, "%+v", err)
 		assertStrErr(t, `stores/3/tt/ww/de`)(p.FQ())
 	})
 	t.Run("ParseStrings", func(t *testing.T) {
@@ -881,11 +880,11 @@ func TestPath_EnvName(t *testing.T) {
 			envSuffix: "STAGING",
 		}
 		err := p.ParseStrings(`stores`, "3", `tt/ww/de/STAGING`)
-		require.NoError(t, err, "%+v", err)
+		assert.NoError(t, err, "%+v", err)
 		assertStrErr(t, `stores/3/tt/ww/de`)(p.FQ())
 
 		err = p.ParseStrings(`stores`, "3", `tt/ww/de`)
-		require.NoError(t, err, "%+v", err)
+		assert.NoError(t, err, "%+v", err)
 		assertStrErr(t, `stores/3/tt/ww/de`)(p.FQ())
 	})
 	t.Run("UnmarshalText", func(t *testing.T) {
@@ -893,11 +892,11 @@ func TestPath_EnvName(t *testing.T) {
 			envSuffix: "STAGING",
 		}
 		err := p.UnmarshalText([]byte(`stores/3/tt/ww/de/STAGING`))
-		require.NoError(t, err, "%+v", err)
+		assert.NoError(t, err, "%+v", err)
 		assertStrErr(t, `stores/3/tt/ww/de`)(p.FQ())
 
 		err = p.UnmarshalText([]byte(`stores/3/tt/ww/de`))
-		require.NoError(t, err, "%+v", err)
+		assert.NoError(t, err, "%+v", err)
 		assertStrErr(t, `stores/3/tt/ww/de`)(p.FQ())
 	})
 	t.Run("UnmarshalBinary", func(t *testing.T) {
@@ -905,11 +904,11 @@ func TestPath_EnvName(t *testing.T) {
 			envSuffix: "STAGING",
 		}
 		err := p.UnmarshalBinary([]byte("\x03\x00\x00\x04\x00\x00\x00\x00tt/ww/de/STAGING"))
-		require.NoError(t, err, "%+v", err)
+		assert.NoError(t, err, "%+v", err)
 		assertStrErr(t, `stores/3/tt/ww/de`)(p.FQ())
 
 		err = p.UnmarshalBinary([]byte("\x03\x00\x00\x04\x00\x00\x00\x00tt/ww/de"))
-		require.NoError(t, err, "%+v", err)
+		assert.NoError(t, err, "%+v", err)
 		assertStrErr(t, `stores/3/tt/ww/de`)(p.FQ())
 	})
 }

@@ -12,28 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package _cfgsource_test
+package modification
 
-import (
-	"testing"
-
-	"github.com/corestoreio/errors"
-)
-
-func TestMustNewByString(t *testing.T) {
-	defer func() {
-		if r := recover(); r != nil {
-			err, ok := r.(error)
-			if !ok {
-				t.Fatal("Expecting an error")
-			} else {
-				if have, want := errors.IsNotValid(err), true; have != want {
-					t.Fatalf("Have %t Want %t", have, want)
-				}
-			}
-		} else {
-			t.Fatal("Expecting a panic")
-		}
-	}()
-	_ = _cfgsource.MustNewByString("Panic")
-}
+// e.g. TRIM, lower case, uppercase

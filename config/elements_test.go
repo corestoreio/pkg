@@ -18,11 +18,10 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/alecthomas/assert"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestSections_Validate(t *testing.T) {
@@ -433,7 +432,7 @@ func TestSectionSliceMerge(t *testing.T) {
 		var baseSl config.Sections
 		baseSl = baseSl.MergeMultiple(test.have...)
 		j, err := json.Marshal(baseSl)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		if string(j) != test.want {
 			t.Errorf("\nIndex: %d\nExpected: %s\nActual:   %s\n", i, test.want, j)
@@ -601,7 +600,7 @@ func TestGroupSliceMerge(t *testing.T) {
 		baseGsl = baseGsl.Merge(test.have...)
 
 		j, err := json.Marshal(baseGsl)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		if string(j) != test.want {
 			t.Errorf("\nIndex: %d\nExpected: %s\nActual:   %s\n", i, test.want, j)
 		}
@@ -662,7 +661,7 @@ func TestSectionSliceFindGroupByID(t *testing.T) {
 		}
 
 		assert.True(t, haveIdx >= 0, "Index %d", i)
-		require.NotNil(t, haveGroup, "Index %d", i)
+		assert.NotNil(t, haveGroup, "Index %d", i)
 		assert.Exactly(t, test.wantGID, haveGroup.ID)
 	}
 }
@@ -726,7 +725,7 @@ func TestSectionSliceFindFieldByID(t *testing.T) {
 			continue
 		}
 		assert.True(t, haveIdx >= 0, "Index %d", i)
-		require.NotNil(t, haveGroup)
+		assert.NotNil(t, haveGroup)
 		assert.Exactly(t, test.wantFID, haveGroup.ID, "Index %d", i)
 	}
 }
@@ -824,7 +823,7 @@ func TestSectionSliceSortAll(t *testing.T) {
 	assert.Exactly(t, 15, ss.TotalFields())
 	ss.SortAll()
 	have, err := json.Marshal(ss)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	if want != string(have) {
 		t.Errorf("\nWant: %s\nHave: %s\n", want, have)
 	}
@@ -846,13 +845,13 @@ func TestSectionSliceAppendFields(t *testing.T) {
 			)},
 	)
 	ss, idx := ss.AppendFields("aa/XX/YY")
-	require.Exactly(t, -2, idx)
+	assert.Exactly(t, -2, idx)
 
 	ss, idx = ss.AppendFields("aa/aa/cc", &config.Field{ID: `cc`})
-	require.Exactly(t, 3, idx)
+	assert.Exactly(t, 3, idx)
 
 	have, err := json.Marshal(ss)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	if want != string(have) {
 		t.Errorf("\nWant: %s\nHave: %s\n", want, have)
 	}

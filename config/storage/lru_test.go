@@ -21,10 +21,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/alecthomas/assert"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/sync/bgwork"
-	"github.com/stretchr/testify/require"
 )
 
 var lruGetTests = []struct {
@@ -53,9 +53,9 @@ func TestLRUGet(t *testing.T) {
 		return func(t *testing.T) {
 			for _, tt := range lruGetTests {
 				lru := storage.NewLRU(size)
-				require.NoError(t, lru.Set(tt.keyToAdd, testLRUData))
+				assert.NoError(t, lru.Set(tt.keyToAdd, testLRUData))
 				val, ok, err := lru.Get(tt.keyToGet)
-				require.NoError(t, err)
+				assert.NoError(t, err)
 				if ok != tt.expectedOk {
 					t.Fatalf("%q %s: cache hit = %v; want %v", t.Name(), tt.name, ok, !ok)
 				} else if ok && !bytes.Equal(val, testLRUData) {
@@ -69,9 +69,9 @@ func TestLRUGet(t *testing.T) {
 		return func(t *testing.T) {
 			lru := storage.NewLRU(size)
 			for _, tt := range lruGetTests {
-				require.NoError(t, lru.Set(tt.keyToAdd, testLRUData))
+				assert.NoError(t, lru.Set(tt.keyToAdd, testLRUData))
 				val, ok, err := lru.Get(tt.keyToGet)
-				require.NoError(t, err)
+				assert.NoError(t, err)
 				if ok != tt.expectedOk {
 					t.Fatalf("%q %s: cache hit = %v; want %v", t.Name(), tt.name, ok, !ok)
 				} else if ok && !bytes.Equal(val, testLRUData) {
@@ -125,7 +125,7 @@ func TestLRUNew_Parallel(t *testing.T) {
 		lru := storage.NewLRU(5)
 
 		for _, tt := range lruGetTests {
-			require.NoError(t, lru.Set(tt.keyToAdd, testLRUData))
+			assert.NoError(t, lru.Set(tt.keyToAdd, testLRUData))
 		}
 
 		bgwork.Wait(len(lruGetTests), func(idx int) {

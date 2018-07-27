@@ -18,12 +18,11 @@ import (
 	"os"
 	"testing"
 
+	"github.com/alecthomas/assert"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestToEnvVar(t *testing.T) {
@@ -68,7 +67,7 @@ func TestFromEnvVar(t *testing.T) {
 			assert.Nil(t, haveP, "Index %d", i)
 			assert.True(t, test.wantErr.Match(haveErr), "%d: Kind %q\n%+v", i, errors.UnwrapKind(haveErr).String(), haveErr)
 		} else {
-			require.NoError(t, haveErr, "Index %d. Kind %q", i, errors.UnwrapKind(haveErr).String())
+			assert.NoError(t, haveErr, "Index %d. Kind %q", i, errors.UnwrapKind(haveErr).String())
 			assert.Exactly(t, test.wantPath, haveP.String(), "Index %d", i)
 		}
 	}

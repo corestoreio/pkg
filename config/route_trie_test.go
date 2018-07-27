@@ -39,9 +39,9 @@ package config
 import (
 	"testing"
 
+	"github.com/alecthomas/assert"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/cstesting"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestBuildTrieKey(t *testing.T) {

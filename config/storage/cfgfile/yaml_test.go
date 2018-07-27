@@ -17,13 +17,13 @@ package cfgfile_test
 import (
 	"testing"
 
+	"github.com/alecthomas/assert"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/config/storage/cfgfile"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/fortytw2/leaktest"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestWithLoadYAML(t *testing.T) {

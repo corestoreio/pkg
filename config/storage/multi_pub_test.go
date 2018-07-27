@@ -19,12 +19,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alecthomas/assert"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestMakeMulti(t *testing.T) {
@@ -33,7 +32,7 @@ func TestMakeMulti(t *testing.T) {
 
 	cmpGet := func(t *testing.T, s config.Storager, wantData []byte) {
 		v, found, err := s.Get(p)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.True(t, found)
 		assert.Exactly(t, wantData, v)
 	}
@@ -45,7 +44,7 @@ func TestMakeMulti(t *testing.T) {
 		inMem2 := storage.NewMap()
 		m := storage.MakeMulti(storage.MultiOptions{}, inMem1, inMem2)
 
-		require.NoError(t, m.Set(p, testVal))
+		assert.NoError(t, m.Set(p, testVal))
 
 		cmpGet(t, inMem1, testVal)
 		cmpGet(t, inMem2, testVal)
@@ -64,7 +63,7 @@ func TestMakeMulti(t *testing.T) {
 		testVal := []byte(`A bro-grammer has a hammer`)
 
 		err := m.Set(p, testVal)
-		require.Error(t, err)
+		assert.Error(t, err)
 		assert.Exactly(t, context.DeadlineExceeded.Error(), err.Error())
 
 		cmpGet(t, inMem1, testVal)
@@ -83,7 +82,7 @@ func TestMakeMulti(t *testing.T) {
 		testVal := []byte(`You are a bro-grammer'`)
 
 		err := m.Set(p, testVal)
-		require.Error(t, err)
+		assert.Error(t, err)
 		assert.Exactly(t, "resource in use", err.Error())
 
 		cmpGet(t, inMem1, testVal)

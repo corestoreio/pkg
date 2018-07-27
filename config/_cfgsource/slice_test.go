@@ -19,9 +19,8 @@ import (
 	"math"
 	"testing"
 
+	"github.com/alecthomas/assert"
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/pkg/config/cfgsource"
-	"github.com/stretchr/testify/assert"
 )
 
 var _ json.Marshaler = (*_cfgsource.Pair)(nil)

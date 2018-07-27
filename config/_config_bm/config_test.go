@@ -19,51 +19,51 @@ package config_test
 // for CoreStore but are here to use for testing and benchmarking.
 
 import (
-	"github.com/corestoreio/pkg/config/element"
+	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/store/scope"
 )
 
-var packageAllConfiguration = element.MustMakeSectionsMerged(
-	&element.Section{
+var packageAllConfiguration = config.MustMakeSectionsMerged(
+	&config.Section{
 		ID: "system",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "adminnotification",
 				Label:     `Notifications`,
 				SortOrder: 250,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `system/adminnotification/use_https`,
 						ID:        "use_https",
 						Label:     `Use HTTPS to Get Feed`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/adminnotification/frequency`,
 						ID:        "frequency",
 						Label:     `Update Frequency`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/adminnotification/last_update`,
 						ID:        "last_update",
 						Label:     `Last Update`,
-						Type:      element.TypeLabel,
+						Type:      config.TypeLabel,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   0,
+						Default:   "0",
 					},
 				},
 			},
@@ -71,32 +71,32 @@ var packageAllConfiguration = element.MustMakeSectionsMerged(
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "system",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "adminnotification",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `system/adminnotification/feed_url`,
 						ID:      "feed_url",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `notifications.magentocommerce.com/magento2/community/notifications.rss`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/adminnotification/popup_url`,
 						ID:      "popup_url",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `widgets.magentocommerce.com/notificationPopup`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/adminnotification/severity_icons_url`,
 						ID:      "severity_icons_url",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `widgets.magentocommerce.com/%s/%s.gif`,
 					},
@@ -104,1291 +104,1207 @@ var packageAllConfiguration = element.MustMakeSectionsMerged(
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "advanced",
 		Label:     `Advanced`,
 		SortOrder: 910,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "modules_disable_output",
 				Label:     `Disable Modules Output`,
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
-				Fields:    element.Fields{},
+				Fields:    config.Fields{},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "trans_email",
 		Label:     `Store Email Addresses`,
 		SortOrder: 90,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "ident_custom1",
 				Label:     `Custom Email 1`,
 				SortOrder: 4,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `trans_email/ident_custom1/email`,
 						ID:        "email",
 						Label:     `Sender Email`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `trans_email/ident_custom1/name`,
 						ID:        "name",
 						Label:     `Sender Name`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "ident_custom2",
 				Label:     `Custom Email 2`,
 				SortOrder: 5,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `trans_email/ident_custom2/email`,
 						ID:        "email",
 						Label:     `Sender Email`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `trans_email/ident_custom2/name`,
 						ID:        "name",
 						Label:     `Sender Name`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "ident_general",
 				Label:     `General Contact`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `trans_email/ident_general/email`,
 						ID:        "email",
 						Label:     `Sender Email`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `trans_email/ident_general/name`,
 						ID:        "name",
 						Label:     `Sender Name`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "ident_sales",
 				Label:     `Sales Representative`,
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `trans_email/ident_sales/email`,
 						ID:        "email",
 						Label:     `Sender Email`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `trans_email/ident_sales/name`,
 						ID:        "name",
 						Label:     `Sender Name`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "ident_support",
 				Label:     `Customer Support`,
 				SortOrder: 3,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `trans_email/ident_support/email`,
 						ID:        "email",
 						Label:     `Sender Email`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `trans_email/ident_support/name`,
 						ID:        "name",
 						Label:     `Sender Name`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "design",
 		Label:     `Design`,
 		SortOrder: 30,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "theme",
 				Label:     `Design Theme`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `design/theme/theme_id`,
 						ID:        "theme_id",
 						Label:     `Design Theme`,
 						Comment:   `If no value is specified, the system default will be used. The system default may be modified by third party extensions.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `design/theme/ua_regexp`,
 						ID:        "ua_regexp",
 						Label:     `User-Agent Exceptions`,
 						Comment:   `Search strings are either normal strings or regular exceptions (PCRE). They are matched in the same order as entered. Examples:<br /><span style="font-family:monospace">Firefox<br />/^mozilla/i</span>`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "pagination",
 				Label:     `Pagination`,
 				SortOrder: 500,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `design/pagination/pagination_frame`,
 						ID:        "pagination_frame",
 						Label:     `Pagination Frame`,
 						Comment:   `How many links to display at once.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 7,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `design/pagination/pagination_frame_skip`,
 						ID:        "pagination_frame_skip",
 						Label:     `Pagination Frame Skip`,
 						Comment:   `If the current frame position does not cover utmost pages, will render link to current position plus/minus this value.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 8,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `design/pagination/anchor_text_for_previous`,
 						ID:        "anchor_text_for_previous",
 						Label:     `Anchor Text for Previous`,
 						Comment:   `Alternative text for previous link in pagination menu. If empty, default arrow image will used.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 9,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `design/pagination/anchor_text_for_next`,
 						ID:        "anchor_text_for_next",
 						Label:     `Anchor Text for Next`,
 						Comment:   `Alternative text for next link in pagination menu. If empty, default arrow image will used.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "email",
 				Label:     `Transactional Emails`,
 				SortOrder: 510,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `design/email/logo`,
 						ID:        "logo",
 						Label:     `Logo Image`,
 						Comment:   `Allowed file types: jpg, jpeg, gif, png`,
-						Type:      element.TypeImage,
+						Type:      config.TypeImage,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `design/email/logo_alt`,
 						ID:        "logo_alt",
 						Label:     `Logo Image Alt`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "dev",
 		Label:     `Developer`,
 		SortOrder: 920,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "debug",
 				Label:     `Debug`,
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `dev/debug/template_hints`,
 						ID:        "template_hints",
 						Label:     `Template Path Hints`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `dev/debug/template_hints_blocks`,
 						ID:        "template_hints_blocks",
 						Label:     `Add Block Names to Hints`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 21,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "template",
 				Label:     `Template Settings`,
 				SortOrder: 25,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `dev/template/allow_symlink`,
 						ID:        "allow_symlink",
 						Label:     `Allow Symlinks`,
 						Comment:   `Warning! Enabling this feature is not recommended on production environments because it represents a potential security risk.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `dev/template/minify_html`,
 						ID:        "minify_html",
 						Label:     `Minify Html`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 25,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   false,
+						Default:   "0",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "translate_inline",
 				Label:     `Translate Inline`,
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `dev/translate_inline/active`,
 						ID:        "active",
 						Label:     `Enabled for Frontend`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `dev/translate_inline/active_admin`,
 						ID:        "active_admin",
 						Label:     `Enabled for Admin`,
 						Comment:   `Translate, blocks and other output caches should be disabled for both frontend and admin inline translations.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "js",
 				Label:     `JavaScript Settings`,
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `dev/js/merge_files`,
 						ID:        "merge_files",
 						Label:     `Merge JavaScript Files`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `dev/js/enable_js_bundling`,
 						ID:        "enable_js_bundling",
 						Label:     `Enable Javascript Bundling`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `dev/js/minify_files`,
 						ID:        "minify_files",
 						Label:     `Minify JavaScript Files`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "css",
 				Label:     `CSS Settings`,
 				SortOrder: 110,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `dev/css/merge_css_files`,
 						ID:        "merge_css_files",
 						Label:     `Merge CSS Files`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `dev/css/minify_files`,
 						ID:        "minify_files",
 						Label:     `Minify CSS Files`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "image",
 				Label:     `Image Processing Settings`,
 				SortOrder: 120,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `dev/image/default_adapter`,
 						ID:        "default_adapter",
 						Label:     `Image Adapter`,
 						Comment:   `When the adapter was changed, please, flush Catalog Images Cache.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "static",
 				Label:     `Static Files Settings`,
 				SortOrder: 130,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `dev/static/sign`,
 						ID:        "sign",
 						Label:     `Sign Static Files`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "general",
 		Label:     `General`,
 		SortOrder: 10,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "country",
 				Label:     `Country Options`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `general/country/allow`,
 						ID:        "allow",
 						Label:     `Allow Countries`,
-						Type:      element.TypeMultiselect,
+						Type:      config.TypeMultiselect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `general/country/default`,
 						ID:        "default",
 						Label:     `Default Country`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `general/country/eu_countries`,
 						ID:        "eu_countries",
 						Label:     `European Union Countries`,
-						Type:      element.TypeMultiselect,
+						Type:      config.TypeMultiselect,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "locale",
 				Label:     `Locale Options`,
 				SortOrder: 8,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `general/locale/timezone`,
 						ID:        "timezone",
 						Label:     `Timezone`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `general/locale/code`,
 						ID:        "code",
 						Label:     `Locale`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `general/locale/firstday`,
 						ID:        "firstday",
 						Label:     `First Day of Week`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `general/locale/weekend`,
 						ID:        "weekend",
 						Label:     `Weekend Days`,
-						Type:      element.TypeMultiselect,
+						Type:      config.TypeMultiselect,
 						SortOrder: 15,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "store_information",
 				Label:     `Store Information`,
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `general/store_information/name`,
 						ID:        "name",
 						Label:     `Store Name`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `general/store_information/phone`,
 						ID:        "phone",
 						Label:     `Store Phone Number`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `general/store_information/country_id`,
 						ID:        "country_id",
 						Label:     `Country`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 25,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `general/store_information/region_id`,
 						ID:        "region_id",
 						Label:     `Region/State`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 27,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `general/store_information/postcode`,
 						ID:        "postcode",
 						Label:     `ZIP/Postal Code`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `general/store_information/city`,
 						ID:        "city",
 						Label:     `City`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 45,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `general/store_information/street_line1`,
 						ID:        "street_line1",
 						Label:     `Street Address`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 55,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `general/store_information/street_line2`,
 						ID:        "street_line2",
 						Label:     `Street Address Line 2`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 60,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `general/store_information/merchant_vat_number`,
 						ID:        "merchant_vat_number",
 						Label:     `VAT Number`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 61,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "single_store_mode",
 				Label:     `Single-Store Mode`,
 				SortOrder: 150,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `general/single_store_mode/enabled`,
 						ID:        "enabled",
 						Label:     `Enable Single-Store Mode`,
 						Comment:   `This setting will not be taken into account if system has more than one store view.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "system",
 		Label:     `System`,
 		SortOrder: 900,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "smtp",
 				Label:     `Mail Sending Settings`,
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `system/smtp/disable`,
 						ID:        "disable",
 						Label:     `Disable Email Communications`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/smtp/host`,
 						ID:        "host",
 						Label:     `Host`,
 						Comment:   `For Windows server only.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/smtp/port`,
 						ID:        "port",
 						Label:     `Port (25)`,
 						Comment:   `For Windows server only.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/smtp/set_return_path`,
 						ID:        "set_return_path",
 						Label:     `Set Return-Path`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 70,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/smtp/return_path_email`,
 						ID:        "return_path_email",
 						Label:     `Return-Path Email`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 80,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "admin",
 		Label:     `Admin`,
 		SortOrder: 20,
 		Scopes:    scope.PermDefault,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "emails",
 				Label:     `Admin User Emails`,
 				SortOrder: 10,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `admin/emails/forgot_email_template`,
 						ID:        "forgot_email_template",
 						Label:     `Forgot Password Email Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `admin/emails/forgot_email_identity`,
 						ID:        "forgot_email_identity",
 						Label:     `Forgot and Reset Email Sender`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `admin/emails/password_reset_link_expiration_period`,
 						ID:        "password_reset_link_expiration_period",
 						Label:     `Recovery Link Expiration Period (days)`,
 						Comment:   `Please enter a number 1 or greater in this field.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "startup",
 				Label:     `Startup Page`,
 				SortOrder: 20,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `admin/startup/menu_item_id`,
 						ID:        "menu_item_id",
 						Label:     `Startup Page`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "url",
 				Label:     `Admin Base URL`,
 				SortOrder: 30,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `admin/url/use_custom`,
 						ID:        "use_custom",
 						Label:     `Use Custom Admin URL`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `admin/url/custom`,
 						ID:        "custom",
 						Label:     `Custom Admin URL`,
 						Comment:   `Make sure that base URL ends with '/' (slash), e.g. http://yourdomain/magento/`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `admin/url/use_custom_path`,
 						ID:        "use_custom_path",
 						Label:     `Use Custom Admin Path`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `admin/url/custom_path`,
 						ID:        "custom_path",
 						Label:     `Custom Admin Path`,
 						Comment:   `You will have to log in after you save your custom admin cfgpath.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "security",
 				Label:     `Security`,
 				SortOrder: 35,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `admin/security/use_form_key`,
 						ID:        "use_form_key",
 						Label:     `Add Secret Key to URLs`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `admin/security/use_case_sensitive_login`,
 						ID:        "use_case_sensitive_login",
 						Label:     `Login is Case Sensitive`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `admin/security/session_lifetime`,
 						ID:        "session_lifetime",
 						Label:     `Admin Session Lifetime (seconds)`,
 						Comment:   `Values less than 60 are ignored.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "dashboard",
 				Label:     `Dashboard`,
 				SortOrder: 40,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `admin/dashboard/enable_charts`,
 						ID:        "enable_charts",
 						Label:     `Enable Charts`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "web",
 		Label:     `Web`,
 		SortOrder: 20,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "url",
 				Label:     `Url Options`,
 				SortOrder: 3,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `web/url/use_store`,
 						ID:        "use_store",
 						Label:     `Add Store Code to Urls`,
 						Comment:   `<strong style="color:red">Warning!</strong> When using Store Code in URLs, in some cases system may not work properly if URLs without Store Codes are specified in the third party services (e.g. PayPal etc.).`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/url/redirect_to_base`,
 						ID:        "redirect_to_base",
 						Label:     `Auto-redirect to Base URL`,
 						Comment:   `I.e. redirect from http://example.com/store/ to http://www.example.com/store/`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "seo",
 				Label:     `Search Engine Optimization`,
 				SortOrder: 5,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `web/seo/use_rewrites`,
 						ID:        "use_rewrites",
 						Label:     `Use Web Server Rewrites`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   false,
+						Default:   "0",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "unsecure",
 				Label:     `Base URLs`,
 				Comment:   `Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`,
 				SortOrder: 10,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `web/unsecure/base_url`,
 						ID:        "base_url",
 						Label:     `Base URL`,
 						Comment:   `Specify URL or {{base_url}} placeholder.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/unsecure/base_link_url`,
 						ID:        "base_link_url",
 						Label:     `Base Link URL`,
 						Comment:   `May start with {{unsecure_base_url}} placeholder.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/unsecure/base_static_url`,
 						ID:        "base_static_url",
 						Label:     `Base URL for Static View Files`,
 						Comment:   `May be empty or start with {{unsecure_base_url}} placeholder.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 25,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/unsecure/base_media_url`,
 						ID:        "base_media_url",
 						Label:     `Base URL for User Media Files`,
 						Comment:   `May be empty or start with {{unsecure_base_url}} placeholder.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 40,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "secure",
 				Label:     `Base URLs (Secure)`,
 				Comment:   `Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. https://example.com/magento/`,
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `web/secure/base_url`,
 						ID:        "base_url",
 						Label:     `Secure Base URL`,
 						Comment:   `Specify URL or {{base_url}}, or {{unsecure_base_url}} placeholder.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/secure/base_link_url`,
 						ID:        "base_link_url",
 						Label:     `Secure Base Link URL`,
 						Comment:   `May start with {{secure_base_url}} or {{unsecure_base_url}} placeholder.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/secure/base_static_url`,
 						ID:        "base_static_url",
 						Label:     `Secure Base URL for Static View Files`,
 						Comment:   `May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}} placeholder.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 25,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/secure/base_media_url`,
 						ID:        "base_media_url",
 						Label:     `Secure Base URL for User Media Files`,
 						Comment:   `May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}} placeholder.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 40,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/secure/use_in_frontend`,
 						ID:        "use_in_frontend",
 						Label:     `Use Secure URLs in Frontend`,
 						Comment:   `Enter https protocol to use Secure URLs in Frontend.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/secure/use_in_adminhtml`,
 						ID:        "use_in_adminhtml",
 						Label:     `Use Secure URLs in Admin`,
 						Comment:   `Enter https protocol to use Secure URLs in Admin.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 60,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/secure/offloader_header`,
 						ID:        "offloader_header",
 						Label:     `Offloader header`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 70,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "default",
 				Label:     `Default Pages`,
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `web/default/front`,
 						ID:        "front",
 						Label:     `Default Web URL`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/default/no_route`,
 						ID:        "no_route",
 						Label:     `Default No-route URL`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "session",
 				Label:     `Session Validation Settings`,
 				SortOrder: 60,
 				Scopes:    scope.PermWebsite,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `web/session/use_remote_addr`,
 						ID:        "use_remote_addr",
 						Label:     `Validate REMOTE_ADDR`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/session/use_http_via`,
 						ID:        "use_http_via",
 						Label:     `Validate HTTP_VIA`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/session/use_http_x_forwarded_for`,
 						ID:        "use_http_x_forwarded_for",
 						Label:     `Validate HTTP_X_FORWARDED_FOR`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/session/use_http_user_agent`,
 						ID:        "use_http_user_agent",
 						Label:     `Validate HTTP_USER_AGENT`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 40,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/session/use_frontend_sid`,
 						ID:        "use_frontend_sid",
 						Label:     `Use SID on Frontend`,
 						Comment:   `Allows customers to stay logged in when switching between different stores.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 				},
 			},
@@ -1396,67 +1312,67 @@ var packageAllConfiguration = element.MustMakeSectionsMerged(
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "system",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "media_storage_configuration",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `system/media_storage_configuration/allowed_resources`,
 						ID:      "allowed_resources",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"email_folder":"email"}`,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID: "emails",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `system/emails/forgot_email_template`,
 						ID:      "forgot_email_template",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `system_emails_forgot_email_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/emails/forgot_email_identity`,
 						ID:      "forgot_email_identity",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `general`,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID: "dashboard",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `system/dashboard/enable_charts`,
 						ID:      "enable_charts",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: true,
+						Default: "1",
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID: "general",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "validator_data",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `general/validator_data/input_types`,
 						ID:      "input_types",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"price":"price","media_image":"media_image","gallery":"gallery"}`,
 					},
@@ -1464,307 +1380,302 @@ var packageAllConfiguration = element.MustMakeSectionsMerged(
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "system",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "backup",
 				Label:     `Scheduled Backup Settings`,
 				SortOrder: 500,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `system/backup/enabled`,
 						ID:        "enabled",
 						Label:     `Enable Scheduled Backup`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/backup/type`,
 						ID:        "type",
 						Label:     `Backup Type`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/backup/time`,
 						ID:        "time",
 						Label:     `Start Time`,
-						Type:      element.TypeTime,
+						Type:      config.TypeTime,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/backup/frequency`,
 						ID:        "frequency",
 						Label:     `Frequency`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 40,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/backup/maintenance`,
 						ID:        "maintenance",
 						Label:     `Maintenance Mode`,
 						Comment:   `Please put your store into maintenance mode during backup.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "admin",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "captcha",
 				Label:     `CAPTCHA`,
 				SortOrder: 50,
 				Scopes:    scope.PermWebsite,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `admin/captcha/enable`,
 						ID:        "enable",
 						Label:     `Enable CAPTCHA in Admin`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `admin/captcha/font`,
 						ID:        "font",
 						Label:     `Font`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `linlibertine`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `admin/captcha/forms`,
 						ID:        "forms",
 						Label:     `Forms`,
-						Type:      element.TypeMultiselect,
+						Type:      config.TypeMultiselect,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `backend_forgotpassword`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `admin/captcha/mode`,
 						ID:        "mode",
 						Label:     `Displaying Mode`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `after_fail`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `admin/captcha/failed_attempts_login`,
 						ID:        "failed_attempts_login",
 						Label:     `Number of Unsuccessful Attempts to Login`,
 						Comment:   `If 0 is specified, CAPTCHA on the Login form will be always available.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   3,
+						Default:   "3",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `admin/captcha/timeout`,
 						ID:        "timeout",
 						Label:     `CAPTCHA Timeout (minutes)`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 6,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   7,
+						Default:   "7",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `admin/captcha/length`,
 						ID:        "length",
 						Label:     `Number of Symbols`,
 						Comment:   `Please specify 8 symbols at the most. Range allowed (e.g. 3-5)`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 7,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `4-5`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `admin/captcha/symbols`,
 						ID:        "symbols",
 						Label:     `Symbols Used in CAPTCHA`,
 						Comment:   `Please use only letters (a-z or A-Z) or numbers (0-9) in this field. No spaces or other characters are allowed.<br />Similar looking characters (e.g. "i", "l", "1") decrease chance of correct recognition by customer.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 8,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `ABCDEFGHJKMnpqrstuvwxyz23456789`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `admin/captcha/case_sensitive`,
 						ID:        "case_sensitive",
 						Label:     `Case Sensitive`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 9,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   false,
+						Default:   "0",
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "customer",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "captcha",
 				Label:     `CAPTCHA`,
 				SortOrder: 110,
 				Scopes:    scope.PermWebsite,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `customer/captcha/enable`,
 						ID:        "enable",
 						Label:     `Enable CAPTCHA on Frontend`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/captcha/font`,
 						ID:        "font",
 						Label:     `Font`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `linlibertine`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/captcha/forms`,
 						ID:        "forms",
 						Label:     `Forms`,
 						Comment:   `CAPTCHA for "Create user" and "Forgot password" forms is always enabled if chosen.`,
-						Type:      element.TypeMultiselect,
+						Type:      config.TypeMultiselect,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `user_forgotpassword`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/captcha/mode`,
 						ID:        "mode",
 						Label:     `Displaying Mode`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `after_fail`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/captcha/failed_attempts_login`,
 						ID:        "failed_attempts_login",
 						Label:     `Number of Unsuccessful Attempts to Login`,
 						Comment:   `If 0 is specified, CAPTCHA on the Login form will be always available.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   3,
+						Default:   "3",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/captcha/timeout`,
 						ID:        "timeout",
 						Label:     `CAPTCHA Timeout (minutes)`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 6,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   7,
+						Default:   "7",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/captcha/length`,
 						ID:        "length",
 						Label:     `Number of Symbols`,
 						Comment:   `Please specify 8 symbols at the most. Range allowed (e.g. 3-5)`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 7,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `4-5`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/captcha/symbols`,
 						ID:        "symbols",
 						Label:     `Symbols Used in CAPTCHA`,
 						Comment:   `Please use only letters (a-z or A-Z) or numbers (0-9) in this field. No spaces or other characters are allowed.<br />Similar looking characters (e.g. "i", "l", "1") decrease chance of correct recognition by customer.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 8,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `ABCDEFGHJKMnpqrstuvwxyz23456789`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/captcha/case_sensitive`,
 						ID:        "case_sensitive",
 						Label:     `Case Sensitive`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 9,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 				},
 			},
@@ -1772,16 +1683,16 @@ var packageAllConfiguration = element.MustMakeSectionsMerged(
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "system",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "media_storage_configuration",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `system/media_storage_configuration/allowed_resources`,
 						ID:      "allowed_resources",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"captcha_folder":"captcha"}`,
 					},
@@ -1789,40 +1700,39 @@ var packageAllConfiguration = element.MustMakeSectionsMerged(
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID: "admin",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "captcha",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `admin/captcha/type`,
 						ID:      "type",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `default`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `admin/captcha/failed_attempts_ip`,
 						ID:      "failed_attempts_ip",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: 1000,
+						Default: "1000",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `admin/captcha/shown_to_logged_in_user`,
-						ID:      "shown_to_logged_in_user",
-						Type:    element.TypeHidden,
-						Scopes:  scope.PermDefault,
-						Default: nil,
+						ID:     "shown_to_logged_in_user",
+						Type:   config.TypeHidden,
+						Scopes: scope.PermDefault,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `admin/captcha/always_for`,
 						ID:      "always_for",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"backend_forgotpassword":"1"}`,
 					},
@@ -1830,40 +1740,40 @@ var packageAllConfiguration = element.MustMakeSectionsMerged(
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID: "customer",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "captcha",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `customer/captcha/type`,
 						ID:      "type",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `default`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/captcha/failed_attempts_ip`,
 						ID:      "failed_attempts_ip",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: 1000,
+						Default: "1000",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/captcha/shown_to_logged_in_user`,
 						ID:      "shown_to_logged_in_user",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"contact_us":"1"}`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/captcha/always_for`,
 						ID:      "always_for",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"user_create":"1","user_forgotpassword":"1","guest_checkout":"1","register_during_checkout":"1","contact_us":"1"}`,
 					},
@@ -1871,45 +1781,45 @@ var packageAllConfiguration = element.MustMakeSectionsMerged(
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID: "captcha",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "_value",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `captcha/_value/fonts`,
 						ID:      "fonts",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"linlibertine":{"label":"LinLibertine","path":"LinLibertineFont\/LinLibertine_Bd-2.8.1.ttf"}}`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `captcha/_value/frontend`,
 						ID:      "frontend",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: `{"areas":{"user_create":{"label":"Create user"},"user_login":{"label":"Login"},"user_forgotpassword":{"label":"Forgot password"},"guest_checkout":{"label":"Checkout as Guest"},"register_during_checkout":{"label":"Register during Checkout"},"contact_us":{"label":"Contact Us"}}}`,
+						Default: `{"areas":{"user_create":{"label":"Create user"}","user_login":{"label":"Login"},"user_forgotpassword":{"label":"Forgot password"},"guest_checkout":{"label":"Checkout as Guest"},"register_during_checkout":{"label":"Register during Checkout"},"contact_us":{"label":"Contact Us"}}}`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `captcha/_value/backend`,
 						ID:      "backend",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: `{"areas":{"backend_login":{"label":"Admin Login"},"backend_forgotpassword":{"label":"Admin Forgot Password"}}}`,
+						Default: `{"areas":{"backend_login":{"label":"Admin Login"}","backend_forgotpassword":{"label":"Admin Forgot Password"}}}`,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID: "_attribute",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `captcha/_attribute/translate`,
 						ID:      "translate",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `label`,
 					},
@@ -1918,60 +1828,60 @@ var packageAllConfiguration = element.MustMakeSectionsMerged(
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "catalog",
 		Label:     `Catalog`,
 		SortOrder: 40,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "fields_masks",
 				Label:     `Product Fields Auto-Generation`,
 				SortOrder: 90,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `catalog/fields_masks/sku`,
 						ID:        "sku",
 						Label:     `Mask for SKU`,
 						Comment:   `Use {{name}} as Product Name placeholder`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `{{name}}`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/fields_masks/meta_title`,
 						ID:        "meta_title",
 						Label:     `Mask for Meta Title`,
 						Comment:   `Use {{name}} as Product Name placeholder`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `{{name}}`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/fields_masks/meta_keyword`,
 						ID:        "meta_keyword",
 						Label:     `Mask for Meta Keywords`,
 						Comment:   `Use {{name}} as Product Name or {{sku}} as Product SKU placeholders`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `{{name}}`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/fields_masks/meta_description`,
 						ID:        "meta_description",
 						Label:     `Mask for Meta Description`,
 						Comment:   `Use {{name}} and {{description}} as Product Name and Product Description placeholders`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 40,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
@@ -1980,414 +1890,400 @@ var packageAllConfiguration = element.MustMakeSectionsMerged(
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "frontend",
 				Label:     `Frontend`,
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `catalog/frontend/list_mode`,
 						ID:        "list_mode",
 						Label:     `List Mode`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `grid-list`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/frontend/grid_per_page_values`,
 						ID:        "grid_per_page_values",
 						Label:     `Products per Page on Grid Allowed Values`,
 						Comment:   `Comma-separated.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   `9,15,30`,
+						Default:   `9",15,30`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/frontend/grid_per_page`,
 						ID:        "grid_per_page",
 						Label:     `Products per Page on Grid Default Value`,
 						Comment:   `Must be in the allowed values list`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   9,
+						Default:   "9",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/frontend/list_per_page_values`,
 						ID:        "list_per_page_values",
 						Label:     `Products per Page on List Allowed Values`,
 						Comment:   `Comma-separated.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   `5,10,15,20,25`,
+						Default:   `5",10,15,20,25`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/frontend/list_per_page`,
 						ID:        "list_per_page",
 						Label:     `Products per Page on List Default Value`,
 						Comment:   `Must be in the allowed values list`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   10,
+						Default:   "10",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/frontend/flat_catalog_category`,
 						ID:        "flat_catalog_category",
 						Label:     `Use Flat Catalog Category`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 100,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/frontend/flat_catalog_product`,
 						ID:        "flat_catalog_product",
 						Label:     `Use Flat Catalog Product`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 100,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/frontend/default_sort_by`,
 						ID:        "default_sort_by",
 						Label:     `Product Listing Sort by`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 6,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `position`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/frontend/list_allow_all`,
 						ID:        "list_allow_all",
 						Label:     `Allow All Products per Page`,
 						Comment:   `Whether to show "All" option in the "Show X Per Page" dropdown`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 6,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/frontend/parse_url_directives`,
 						ID:        "parse_url_directives",
 						Label:     `Allow Dynamic Media URLs in Products and Categories`,
 						Comment:   `E.g. {{media url="path/to/image.jpg"}} {{skin url="path/to/picture.gif"}}. Dynamic directives parsing impacts catalog performance.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 200,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "placeholder",
 				Label:     `Product Image Placeholders`,
 				SortOrder: 300,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `catalog/placeholder/placeholder`,
 						ID:        "placeholder",
 						Label:     nil,
-						Type:      element.TypeImage,
+						Type:      config.TypeImage,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "seo",
 				Label:     `Search Engine Optimization`,
 				SortOrder: 500,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `catalog/seo/title_separator`,
 						ID:        "title_separator",
 						Label:     `Page Title Separator`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 6,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `-`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/seo/category_canonical_tag`,
 						ID:        "category_canonical_tag",
 						Label:     `Use Canonical Link Meta Tag For Categories`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 7,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/seo/product_canonical_tag`,
 						ID:        "product_canonical_tag",
 						Label:     `Use Canonical Link Meta Tag For Products`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 8,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   false,
+						Default:   "0",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "price",
 				Label:     `Price`,
 				SortOrder: 400,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `catalog/price/scope`,
 						ID:        "scope",
 						Label:     `Catalog Price Scope`,
 						Comment:   `This defines the base currency scope ("Currency Setup" > "Currency Options" > "Base Currency").`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "navigation",
 				Label:     `Category Top Navigation`,
 				SortOrder: 500,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `catalog/navigation/max_depth`,
 						ID:        "max_depth",
 						Label:     `Maximal Depth`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   0,
+						Default:   "0",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "custom_options",
 				Label:     `Date & Time Custom Options`,
 				SortOrder: 700,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `catalog/custom_options/use_calendar`,
 						ID:        "use_calendar",
 						Label:     `Use JavaScript Calendar`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/custom_options/date_fields_order`,
 						ID:        "date_fields_order",
 						Label:     `Date Fields Order`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   `m,d,y`,
+						Default:   `m",d,y`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/custom_options/time_format`,
 						ID:        "time_format",
 						Label:     `Time Format`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `12h`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/custom_options/year_range`,
 						ID:        "year_range",
 						Label:     `Year Range`,
 						Comment:   `Please use a four-digit year format.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "design",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "watermark",
 				Label:     `Product Image Watermarks`,
 				SortOrder: 400,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `design/watermark/size`,
 						ID:        "size",
 						Label:     `Watermark Default Size`,
 						Comment:   `Example format: 200x300.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 100,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `design/watermark/imageOpacity`,
 						ID:        "imageOpacity",
 						Label:     `Watermark Opacity, Percent`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 150,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `design/watermark/image`,
 						ID:        "image",
 						Label:     `Watermark`,
 						Comment:   `Allowed file types: jpeg, gif, png.`,
-						Type:      element.TypeImage,
+						Type:      config.TypeImage,
 						SortOrder: 200,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `design/watermark/position`,
 						ID:        "position",
 						Label:     `Watermark Position`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 300,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "cms",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "wysiwyg",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `cms/wysiwyg/use_static_urls_in_catalog`,
 						ID:        "use_static_urls_in_catalog",
 						Label:     `Use Static URLs for Media Content in WYSIWYG for Catalog`,
 						Comment:   `This applies only to catalog products and categories. Media content will be inserted into the editor as a static URL. Media content is not updated if the system configuration base URL changes.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "rss",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "catalog",
 				Label:     `Catalog`,
 				SortOrder: 3,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `rss/catalog/new`,
 						ID:        "new",
 						Label:     `New Products`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `rss/catalog/special`,
 						ID:        "special",
 						Label:     `Special Products`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 11,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `rss/catalog/category`,
 						ID:        "category",
 						Label:     `Top Level Category`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 14,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
@@ -2395,91 +2291,91 @@ var packageAllConfiguration = element.MustMakeSectionsMerged(
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "catalog",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "product",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `catalog/product/flat`,
 						ID:      "flat",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"max_index_count":"64"}`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/product/default_tax_group`,
 						ID:      "default_tax_group",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: 2,
+						Default: "2",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID: "seo",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `catalog/seo/product_url_suffix`,
 						ID:      "product_url_suffix",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `.html`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/seo/category_url_suffix`,
 						ID:      "category_url_suffix",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `.html`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/seo/product_use_categories`,
 						ID:      "product_use_categories",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: false,
+						Default: "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/seo/save_rewrites_history`,
 						ID:      "save_rewrites_history",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: true,
+						Default: "1",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID: "custom_options",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `catalog/custom_options/forbidden_extensions`,
 						ID:      "forbidden_extensions",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: `php,exe`,
+						Default: `php",exe`,
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID: "system",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "media_storage_configuration",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `system/media_storage_configuration/allowed_resources`,
 						ID:      "allowed_resources",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"catalog_images_folder":"catalog","product_custom_options_fodler":"custom_options"}`,
 					},
@@ -2488,738 +2384,721 @@ var packageAllConfiguration = element.MustMakeSectionsMerged(
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "cataloginventory",
 		Label:     `Inventory`,
 		SortOrder: 50,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "options",
 				Label:     `Stock Options`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `cataloginventory/options/can_subtract`,
 						ID:        "can_subtract",
 						Label:     `Decrease Stock When Order is Placed`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `cataloginventory/options/can_back_in_stock`,
 						ID:        "can_back_in_stock",
 						Label:     `Set Items' Status to be In Stock When Order is Cancelled`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `cataloginventory/options/show_out_of_stock`,
 						ID:        "show_out_of_stock",
 						Label:     `Display Out of Stock Products`,
 						Comment:   `Products will still be shown by direct product URLs.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `cataloginventory/options/stock_threshold_qty`,
 						ID:        "stock_threshold_qty",
 						Label:     `Only X left Threshold`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   0,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `cataloginventory/options/display_product_stock_status`,
 						ID:        "display_product_stock_status",
 						Label:     `Display products availability in stock in the frontend`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "item_options",
 				Label:     `Product Stock Options`,
 				Comment:   `Please note that these settings apply to individual items in the cart, not to the entire cart.`,
 				SortOrder: 10,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `cataloginventory/item_options/manage_stock`,
 						ID:        "manage_stock",
 						Label:     `Manage Stock`,
 						Comment:   `Changing can take some time due to processing whole catalog.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `cataloginventory/item_options/backorders`,
 						ID:        "backorders",
 						Label:     `Backorders`,
 						Comment:   `Changing can take some time due to processing whole catalog.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `cataloginventory/item_options/max_sale_qty`,
 						ID:        "max_sale_qty",
 						Label:     `Maximum Qty Allowed in Shopping Cart`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   10000,
+						Default:   "10000",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `cataloginventory/item_options/min_qty`,
 						ID:        "min_qty",
 						Label:     `Qty for Item's Status to Become Out of Stock`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   0,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `cataloginventory/item_options/min_sale_qty`,
 						ID:        "min_sale_qty",
 						Label:     `Minimum Qty Allowed in Shopping Cart`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 6,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   1,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `cataloginventory/item_options/notify_stock_qty`,
 						ID:        "notify_stock_qty",
 						Label:     `Notify for Quantity Below`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 7,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   1,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `cataloginventory/item_options/auto_return`,
 						ID:        "auto_return",
 						Label:     `Automatically Return Credit Memo Item to Stock`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `cataloginventory/item_options/enable_qty_increments`,
 						ID:        "enable_qty_increments",
 						Label:     `Enable Qty Increments`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 8,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `cataloginventory/item_options/qty_increments`,
 						ID:        "qty_increments",
 						Label:     `Qty Increments`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 9,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   1,
+						Default:   "1",
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "catalog",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "seo",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `catalog/seo/search_terms`,
 						ID:        "search_terms",
 						Label:     `Popular Search Terms`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "search",
 				Label:     `Catalog Search`,
 				SortOrder: 500,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `catalog/search/engine`,
 						ID:        "engine",
 						Label:     nil,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 0,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `mysql`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/search/min_query_length`,
 						ID:        "min_query_length",
 						Label:     `Minimal Query Length`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   1,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/search/max_query_length`,
 						ID:        "max_query_length",
 						Label:     `Maximum Query Length`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   128,
+						Default:   "128",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/search/use_layered_navigation_count`,
 						ID:        "use_layered_navigation_count",
 						Label:     `Apply Layered Navigation if Search Results are Less Than`,
 						Comment:   `Enter "0" to enable layered navigation for any number of results.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 25,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   0,
+						Default:   "0",
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "catalog",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "seo",
 				Label:     `Search Engine Optimization`,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `catalog/seo/category_url_suffix`,
 						ID:        "category_url_suffix",
 						Label:     `Category URL Suffix`,
 						Comment:   `You need to refresh the cache.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/seo/product_url_suffix`,
 						ID:        "product_url_suffix",
 						Label:     `Product URL Suffix`,
 						Comment:   `You need to refresh the cache.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/seo/product_use_categories`,
 						ID:        "product_use_categories",
 						Label:     `Use Categories Path for Product URLs`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/seo/save_rewrites_history`,
 						ID:        "save_rewrites_history",
 						Label:     `Create Permanent Redirect for URLs if URL Key Changed`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "payment_services",
 		Label:     `Payment Services`,
 		SortOrder: 450,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "centinel",
 				Label:     `3D Secure Credit Card Validation`,
 				SortOrder: 1,
 				Scopes:    scope.PermWebsite,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `payment_services/centinel/processor_id`,
 						ID:        "processor_id",
 						Label:     `Processor ID`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment_services/centinel/merchant_id`,
 						ID:        "merchant_id",
 						Label:     `Merchant ID`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment_services/centinel/password`,
 						ID:        "password",
 						Label:     `Password`,
-						Type:      element.TypeObscure,
+						Type:      config.TypeObscure,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment_services/centinel/test_mode`,
 						ID:        "test_mode",
 						Label:     `Test Mode`,
 						Comment:   `This overrides any API URL that may be specified by a payment method.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 40,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment_services/centinel/debug`,
 						ID:        "debug",
 						Label:     `Debug Mode`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "checkout",
 		Label:     `Checkout`,
 		SortOrder: 305,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "options",
 				Label:     `Checkout Options`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `checkout/options/onepage_checkout_enabled`,
 						ID:        "onepage_checkout_enabled",
 						Label:     `Enable Onepage Checkout`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `checkout/options/guest_checkout`,
 						ID:        "guest_checkout",
 						Label:     `Allow Guest Checkout`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `checkout/options/customer_must_be_logged`,
 						ID:        "customer_must_be_logged",
 						Label:     `Require Customer To Be Logged In To Checkout`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 15,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "cart",
 				Label:     `Shopping Cart`,
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `checkout/cart/delete_quote_after`,
 						ID:        "delete_quote_after",
 						Label:     `Quote Lifetime (days)`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   30,
+						Default:   "30",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `checkout/cart/redirect_to_cart`,
 						ID:        "redirect_to_cart",
 						Label:     `After Adding a Product Redirect to Shopping Cart`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   false,
+						Default:   "0",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "cart_link",
 				Label:     `My Cart Link`,
 				SortOrder: 3,
 				Scopes:    scope.PermWebsite,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `checkout/cart_link/use_qty`,
 						ID:        "use_qty",
 						Label:     `Display Cart Summary`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   true,
+						Default:   "1",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "sidebar",
 				Label:     `Shopping Cart Sidebar`,
 				SortOrder: 4,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `checkout/sidebar/display`,
 						ID:        "display",
 						Label:     `Display Shopping Cart Sidebar`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `checkout/sidebar/count`,
 						ID:        "count",
 						Label:     `Maximum Display Recently Added Item(s)`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   5,
+						Default:   "5",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "payment_failed",
 				Label:     `Payment Failed Emails`,
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `checkout/payment_failed/identity`,
 						ID:        "identity",
 						Label:     `Payment Failed Email Sender`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `general`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `checkout/payment_failed/receiver`,
 						ID:        "receiver",
 						Label:     `Payment Failed Email Receiver`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `general`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `checkout/payment_failed/template`,
 						ID:        "template",
 						Label:     `Payment Failed Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `checkout_payment_failed_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `checkout/payment_failed/copy_to`,
 						ID:        "copy_to",
 						Label:     `Send Payment Failed Email Copy To`,
 						Comment:   `Separate by ",".`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `checkout/payment_failed/copy_method`,
 						ID:        "copy_method",
 						Label:     `Send Payment Failed Email Copy Method`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "checkout",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "options",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `checkout/options/enable_agreements`,
 						ID:        "enable_agreements",
 						Label:     `Enable Terms and Conditions`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "web",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "default",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `web/default/cms_home_page`,
 						ID:        "cms_home_page",
 						Label:     `CMS Home Page`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `home`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/default/cms_no_route`,
 						ID:        "cms_no_route",
 						Label:     `CMS No Route Page`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `no-route`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/default/cms_no_cookies`,
 						ID:        "cms_no_cookies",
 						Label:     `CMS No Cookies Page`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `enable-cookies`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/default/show_cms_breadcrumbs`,
 						ID:        "show_cms_breadcrumbs",
 						Label:     `Show Breadcrumbs for CMS Pages`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "browser_capabilities",
 				Label:     `Browser Capabilities Detection`,
 				SortOrder: 200,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `web/browser_capabilities/cookies`,
 						ID:        "cookies",
 						Label:     `Redirect to CMS-page if Cookies are Disabled`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 100,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/browser_capabilities/javascript`,
 						ID:        "javascript",
 						Label:     `Show Notice if JavaScript is Disabled`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 200,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/browser_capabilities/local_storage`,
 						ID:        "local_storage",
 						Label:     `Show Notice if Local Storage is Disabled`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 300,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "cms",
 		Label:     `Content Management`,
 		SortOrder: 1001,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "wysiwyg",
 				Label:     `WYSIWYG Options`,
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `cms/wysiwyg/enabled`,
 						ID:        "enabled",
 						Label:     `Enable WYSIWYG Editor`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
@@ -3231,24 +3110,24 @@ var packageAllConfiguration = element.MustMakeSectionsMerged(
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "web",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "default",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `web/default/front`,
 						ID:      "front",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `cms`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/default/no_route`,
 						ID:      "no_route",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `cms/noroute/index`,
 					},
@@ -3256,16 +3135,16 @@ var packageAllConfiguration = element.MustMakeSectionsMerged(
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID: "system",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "media_storage_configuration",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `system/media_storage_configuration/allowed_resources`,
 						ID:      "allowed_resources",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"wysiwyg_image_folder":"wysiwyg"}`,
 					},
@@ -3274,23 +3153,23 @@ var packageAllConfiguration = element.MustMakeSectionsMerged(
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "checkout",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "cart",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `checkout/cart/configurable_product_image`,
 						ID:        "configurable_product_image",
 						Label:     `Configurable Product Image`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermStore,
@@ -3301,64 +3180,64 @@ var packageAllConfiguration = element.MustMakeSectionsMerged(
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "contact",
 		Label:     `Contacts`,
 		SortOrder: 100,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "contact",
 				Label:     `Contact Us`,
 				SortOrder: 10,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `contact/contact/enabled`,
 						ID:        "enabled",
 						Label:     `Enable Contact Us`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "email",
 				Label:     `Email Options`,
 				SortOrder: 50,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `contact/email/recipient_email`,
 						ID:        "recipient_email",
 						Label:     `Send Emails To`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `hello@example.com`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `contact/email/sender_email_identity`,
 						ID:        "sender_email_identity",
 						Label:     `Email Sender`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `custom2`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `contact/email/email_template`,
 						ID:        "email_template",
 						Label:     `Email Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermStore,
@@ -3369,72 +3248,70 @@ var packageAllConfiguration = element.MustMakeSectionsMerged(
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "web",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "cookie",
 				Label:     `Default Cookie Settings`,
 				SortOrder: 50,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `web/cookie/cookie_lifetime`,
 						ID:        "cookie_lifetime",
 						Label:     `Cookie Lifetime`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   3600,
+						Default:   "3600",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/cookie/cookie_path`,
 						ID:        "cookie_path",
 						Label:     `Cookie Path`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/cookie/cookie_domain`,
 						ID:        "cookie_domain",
 						Label:     `Cookie Domain`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/cookie/cookie_httponly`,
 						ID:        "cookie_httponly",
 						Label:     `Use HTTP Only`,
 						Comment:   `<strong style="color:red">Warning</strong>:  Do not set to "No". User security could be compromised.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 40,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `web/cookie/cookie_restriction`,
 						ID:        "cookie_restriction",
 						Label:     `Cookie Restriction Mode`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 				},
 			},
@@ -3442,471 +3319,455 @@ var packageAllConfiguration = element.MustMakeSectionsMerged(
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "web",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "cookie",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `web/cookie/cookie_restriction_lifetime`,
 						ID:      "cookie_restriction_lifetime",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: 31536000,
+						Default: "31536000",
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "system",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "cron",
 				Label:     `Cron (Scheduled Tasks) - all the times are in minutes`,
 				Comment:   `For correct URLs generated during cron runs please make sure that Web > Secure and Unsecure Base URLs are explicitly set.`,
 				SortOrder: 15,
 				Scopes:    scope.PermDefault,
-				Fields:    element.Fields{},
+				Fields:    config.Fields{},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "customer",
 		Label:     `Customer Configuration`,
 		SortOrder: 130,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "account_share",
 				Label:     `Account Sharing Options`,
 				SortOrder: 10,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `customer/account_share/scope`,
 						ID:        "scope",
 						Label:     `Share Customer Accounts`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   true,
+						Default:   "1",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "create_account",
 				Label:     `Create New Account Options`,
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `customer/create_account/auto_group_assign`,
 						ID:        "auto_group_assign",
 						Label:     `Enable Automatic Assignment to Customer Group`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/create_account/tax_calculation_address_type`,
 						ID:        "tax_calculation_address_type",
 						Label:     `Tax Calculation Based On`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `billing`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/create_account/default_group`,
 						ID:        "default_group",
 						Label:     `Default Group`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/create_account/viv_domestic_group`,
 						ID:        "viv_domestic_group",
 						Label:     `Group for Valid VAT ID - Domestic`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/create_account/viv_intra_union_group`,
 						ID:        "viv_intra_union_group",
 						Label:     `Group for Valid VAT ID - Intra-Union`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 40,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/create_account/viv_invalid_group`,
 						ID:        "viv_invalid_group",
 						Label:     `Group for Invalid VAT ID`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/create_account/viv_error_group`,
 						ID:        "viv_error_group",
 						Label:     `Validation Error Group`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 55,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/create_account/viv_on_each_transaction`,
 						ID:        "viv_on_each_transaction",
 						Label:     `Validate on Each Transaction`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 56,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/create_account/viv_disable_auto_group_assign_default`,
 						ID:        "viv_disable_auto_group_assign_default",
 						Label:     `Default Value for Disable Automatic Group Changes Based on VAT ID`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 57,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/create_account/vat_frontend_visibility`,
 						ID:        "vat_frontend_visibility",
 						Label:     `Show VAT Number on Frontend`,
 						Comment:   `To show VAT number on frontend, set Show VAT Number on Frontend option to Yes.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 58,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/create_account/email_domain`,
 						ID:        "email_domain",
 						Label:     `Default Email Domain`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 60,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `example.com`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/create_account/email_template`,
 						ID:        "email_template",
 						Label:     `Default Welcome Email`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 70,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `customer_create_account_email_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/create_account/email_identity`,
 						ID:        "email_identity",
 						Label:     `Email Sender`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 80,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `general`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/create_account/confirm`,
 						ID:        "confirm",
 						Label:     `Require Emails Confirmation`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 90,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/create_account/email_confirmation_template`,
 						ID:        "email_confirmation_template",
 						Label:     `Confirmation Link Email`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 100,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `customer_create_account_email_confirmation_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/create_account/email_confirmed_template`,
 						ID:        "email_confirmed_template",
 						Label:     `Welcome Email`,
 						Comment:   `This email will be sent instead of default welcome email, after account confirmation.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 110,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `customer_create_account_email_confirmed_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/create_account/generate_human_friendly_id`,
 						ID:        "generate_human_friendly_id",
 						Label:     `Generate Human-Friendly Customer ID`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 120,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "password",
 				Label:     `Password Options`,
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `customer/password/forgot_email_template`,
 						ID:        "forgot_email_template",
 						Label:     `Forgot Email Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `customer_password_forgot_email_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/password/remind_email_template`,
 						ID:        "remind_email_template",
 						Label:     `Remind Email Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `customer_password_remind_email_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/password/reset_password_template`,
 						ID:        "reset_password_template",
 						Label:     `Reset Password Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `customer_password_reset_password_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/password/forgot_email_identity`,
 						ID:        "forgot_email_identity",
 						Label:     `Password Template Email Sender`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `support`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/password/reset_link_expiration_period`,
 						ID:        "reset_link_expiration_period",
 						Label:     `Recovery Link Expiration Period (days)`,
 						Comment:   `Please enter a number 1 or greater in this field.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 60,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   1,
+						Default:   "1",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "address",
 				Label:     `Name and Address Options`,
 				SortOrder: 40,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `customer/address/street_lines`,
 						ID:        "street_lines",
 						Label:     `Number of Lines in a Street Address`,
 						Comment:   `Leave empty for default (2). Valid range: 1-4`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   2,
+						Default:   "2",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/address/prefix_show`,
 						ID:        "prefix_show",
 						Label:     `Show Prefix`,
 						Comment:   `The title that goes before name (Mr., Mrs., etc.)`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/address/prefix_options`,
 						ID:        "prefix_options",
 						Label:     `Prefix Dropdown Options`,
 						Comment:   `Semicolon (;) separated values.<br/>Put semicolon in the beginning for empty first option.<br/>Leave empty for open text field.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/address/middlename_show`,
 						ID:        "middlename_show",
 						Label:     `Show Middle Name (initial)`,
 						Comment:   `Always optional.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 40,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/address/suffix_show`,
 						ID:        "suffix_show",
 						Label:     `Show Suffix`,
 						Comment:   `The suffix that goes after name (Jr., Sr., etc.)`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/address/suffix_options`,
 						ID:        "suffix_options",
 						Label:     `Suffix Dropdown Options`,
 						Comment:   `Semicolon (;) separated values.<br/>Put semicolon in the beginning for empty first option.<br/>Leave empty for open text field.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 60,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/address/dob_show`,
 						ID:        "dob_show",
 						Label:     `Show Date of Birth`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 70,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/address/taxvat_show`,
 						ID:        "taxvat_show",
 						Label:     `Show Tax/VAT Number`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 80,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/address/gender_show`,
 						ID:        "gender_show",
 						Label:     `Show Gender`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 90,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "startup",
 				Label:     `Login Options`,
 				SortOrder: 90,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `customer/startup/redirect_dashboard`,
 						ID:        "redirect_dashboard",
 						Label:     `Redirect Customer to Account Dashboard after Logging in`,
 						Comment:   `Customer will stay on the current page if "No" is selected.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   true,
+						Default:   "1",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "address_templates",
 				Label:     `Address Templates`,
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `customer/address_templates/text`,
 						ID:        "text",
 						Label:     `Text`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
@@ -3917,29 +3778,29 @@ var packageAllConfiguration = element.MustMakeSectionsMerged(
 {{depend street2}}{{var street2}}{{/depend}}
 {{depend street3}}{{var street3}}{{/depend}}
 {{depend street4}}{{var street4}}{{/depend}}
-{{if city}}{{var city}},  {{/if}}{{if region}}{{var region}}, {{/if}}{{if postcode}}{{var postcode}}{{/if}}
+{{if city}}{{var city}}",  {{/if}}{{if region}}{{var region}}, {{/if}}{{if postcode}}{{var postcode}}{{/if}}
 {{var country}}
 T: {{var telephone}}
 {{depend fax}}F: {{var fax}}{{/depend}}
 {{depend vat_id}}VAT: {{var vat_id}}{{/depend}}`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/address_templates/oneline`,
 						ID:        "oneline",
 						Label:     `Text One Line`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}, {{var street}}, {{var city}}, {{var region}} {{var postcode}}, {{var country}}`,
+						Default:   `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}", {{var street}}, {{var city}}, {{var region}} {{var postcode}}, {{var country}}`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/address_templates/html`,
 						ID:        "html",
 						Label:     `HTML`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermStore,
@@ -3949,18 +3810,18 @@ T: {{var telephone}}
 {{depend street2}}{{var street2}}<br />{{/depend}}
 {{depend street3}}{{var street3}}<br />{{/depend}}
 {{depend street4}}{{var street4}}<br />{{/depend}}
-{{if city}}{{var city}},  {{/if}}{{if region}}{{var region}}, {{/if}}{{if postcode}}{{var postcode}}{{/if}}<br/>
+{{if city}}{{var city}}",  {{/if}}{{if region}}{{var region}}, {{/if}}{{if postcode}}{{var postcode}}{{/if}}<br/>
 {{var country}}<br/>
 {{depend telephone}}T: {{var telephone}}{{/depend}}
 {{depend fax}}<br/>F: {{var fax}}{{/depend}}
 {{depend vat_id}}<br/>VAT: {{var vat_id}}{{/depend}}`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/address_templates/pdf`,
 						ID:        "pdf",
 						Label:     `PDF`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermStore,
@@ -3971,7 +3832,7 @@ T: {{var telephone}}
 {{depend street2}}{{var street2}}|{{/depend}}
 {{depend street3}}{{var street3}}|{{/depend}}
 {{depend street4}}{{var street4}}|{{/depend}}
-{{if city}}{{var city}},|{{/if}}
+{{if city}}{{var city}}",|{{/if}}
 {{if region}}{{var region}}, {{/if}}{{if postcode}}{{var postcode}}{{/if}}|
 {{var country}}|
 {{depend telephone}}T: {{var telephone}}{{/depend}}|
@@ -3982,27 +3843,26 @@ T: {{var telephone}}
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "general",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "store_information",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `general/store_information/validate_vat_number`,
 						ID:        "validate_vat_number",
 						Label:     nil,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 62,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 				},
 			},
@@ -4010,103 +3870,96 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "customer",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "default",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `customer/default/group`,
 						ID:      "group",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: true,
+						Default: "1",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID: "address",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `customer/address/prefix_show`,
-						ID:      "prefix_show",
-						Type:    element.TypeHidden,
-						Scopes:  scope.PermDefault,
-						Default: nil,
+						ID:     "prefix_show",
+						Type:   config.TypeHidden,
+						Scopes: scope.PermDefault,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/address/prefix_options`,
-						ID:      "prefix_options",
-						Type:    element.TypeHidden,
-						Scopes:  scope.PermDefault,
-						Default: nil,
+						ID:     "prefix_options",
+						Type:   config.TypeHidden,
+						Scopes: scope.PermDefault,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/address/middlename_show`,
-						ID:      "middlename_show",
-						Type:    element.TypeHidden,
-						Scopes:  scope.PermDefault,
-						Default: nil,
+						ID:     "middlename_show",
+						Type:   config.TypeHidden,
+						Scopes: scope.PermDefault,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/address/suffix_show`,
-						ID:      "suffix_show",
-						Type:    element.TypeHidden,
-						Scopes:  scope.PermDefault,
-						Default: nil,
+						ID:     "suffix_show",
+						Type:   config.TypeHidden,
+						Scopes: scope.PermDefault,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/address/suffix_options`,
-						ID:      "suffix_options",
-						Type:    element.TypeHidden,
-						Scopes:  scope.PermDefault,
-						Default: nil,
+						ID:     "suffix_options",
+						Type:   config.TypeHidden,
+						Scopes: scope.PermDefault,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/address/dob_show`,
-						ID:      "dob_show",
-						Type:    element.TypeHidden,
-						Scopes:  scope.PermDefault,
-						Default: nil,
+						ID:     "dob_show",
+						Type:   config.TypeHidden,
+						Scopes: scope.PermDefault,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `customer/address/gender_show`,
-						ID:      "gender_show",
-						Type:    element.TypeHidden,
-						Scopes:  scope.PermDefault,
-						Default: nil,
+						ID:     "gender_show",
+						Type:   config.TypeHidden,
+						Scopes: scope.PermDefault,
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "dev",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "front_end_development_workflow",
 				Label:     `Front-end development workflow`,
 				SortOrder: 8,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `dev/front_end_development_workflow/type`,
 						ID:        "type",
 						Label:     `Workflow type`,
 						Comment:   `Not available in production mode`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
@@ -4115,22 +3968,21 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "restrict",
 				Label:     `Developer Client Restrictions`,
 				SortOrder: 10,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `dev/restrict/allow_ips`,
 						ID:        "allow_ips",
 						Label:     `Allowed IPs (comma separated)`,
 						Comment:   `Leave empty for access from any location.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
@@ -4138,356 +3990,339 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "dev",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "restrict",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `dev/restrict/allow_ips`,
-						ID:      "allow_ips",
-						Type:    element.TypeHidden,
-						Scopes:  scope.PermDefault,
-						Default: nil,
+						ID:     "allow_ips",
+						Type:   config.TypeHidden,
+						Scopes: scope.PermDefault,
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "carriers",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "dhl",
 				Label:     `DHL`,
 				SortOrder: 140,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `carriers/dhl/active`,
 						ID:        "active",
 						Label:     `Enabled for Checkout`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/gateway_url`,
 						ID:        "gateway_url",
 						Label:     `Gateway URL`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `https://xmlpi-ea.dhl.com/XMLShippingServlet`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/title`,
 						ID:        "title",
 						Label:     `Title`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `DHL`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/id`,
 						ID:        "id",
 						Label:     `Access ID`,
-						Type:      element.TypeObscure,
+						Type:      config.TypeObscure,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/password`,
 						ID:        "password",
 						Label:     `Password`,
-						Type:      element.TypeObscure,
+						Type:      config.TypeObscure,
 						SortOrder: 60,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/account`,
 						ID:        "account",
 						Label:     `Account Number`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 70,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/content_type`,
 						ID:        "content_type",
 						Label:     `Content Type`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 90,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `N`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/handling_type`,
 						ID:        "handling_type",
 						Label:     `Calculate Handling Fee`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 100,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `F`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/handling_action`,
 						ID:        "handling_action",
 						Label:     `Handling Applied`,
-						Comment:   `"Per Order" allows a single handling fee for the entire order. "Per Package" allows an individual handling fee for each package.`,
-						Type:      element.TypeSelect,
+						Comment:   `Per Order" allows a single handling fee for the entire order. "Per Package" allows an individual handling fee for each package.`,
+						Type:      config.TypeSelect,
 						SortOrder: 110,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `O`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/handling_fee`,
 						ID:        "handling_fee",
 						Label:     `Handling Fee`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 120,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/divide_order_weight`,
 						ID:        "divide_order_weight",
 						Label:     `Divide Order Weight`,
 						Comment:   `This allows breaking total order weight into smaller pieces if it exeeds 70 kg to ensure accurate calculation of shipping charges.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 130,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/unit_of_measure`,
 						ID:        "unit_of_measure",
 						Label:     `Weight Unit`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 140,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `K`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/size`,
 						ID:        "size",
 						Label:     `Size`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 150,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `R`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/height`,
 						ID:        "height",
 						Label:     `Height`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 151,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/depth`,
 						ID:        "depth",
 						Label:     `Depth`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 152,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/width`,
 						ID:        "width",
 						Label:     `Width`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 153,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/doc_methods`,
 						ID:        "doc_methods",
 						Label:     `Allowed Methods`,
-						Type:      element.TypeMultiselect,
+						Type:      config.TypeMultiselect,
 						SortOrder: 170,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   `2,5,6,7,9,B,C,D,U,K,L,G,W,I,N,O,R,S,T,X`,
+						Default:   `2",5,6,7,9,B,C,D,U,K,L,G,W,I,N,O,R,S,T,X`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/nondoc_methods`,
 						ID:        "nondoc_methods",
 						Label:     `Allowed Methods`,
-						Type:      element.TypeMultiselect,
+						Type:      config.TypeMultiselect,
 						SortOrder: 170,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   `1,3,4,8,P,Q,E,F,H,J,M,V,Y`,
+						Default:   `1",3,4,8,P,Q,E,F,H,J,M,V,Y`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/ready_time`,
 						ID:        "ready_time",
 						Label:     `Ready time`,
 						Comment:   ` time after order submission (in hours)`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 180,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/specificerrmsg`,
 						ID:        "specificerrmsg",
 						Label:     `Displayed Error Message`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 800,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
+						Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method", please contact us.`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/free_method_doc`,
 						ID:        "free_method_doc",
 						Label:     `Free Method`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1200,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/free_method_nondoc`,
 						ID:        "free_method_nondoc",
 						Label:     `Free Method`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1200,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/free_shipping_enable`,
 						ID:        "free_shipping_enable",
 						Label:     `Free Shipping Amount Threshold`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1210,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/free_shipping_subtotal`,
 						ID:        "free_shipping_subtotal",
 						Label:     `Free Shipping Amount Threshold`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 1220,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/sallowspecific`,
 						ID:        "sallowspecific",
 						Label:     `Ship to Applicable Countries`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1900,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/specificcountry`,
 						ID:        "specificcountry",
 						Label:     `Ship to Specific Countries`,
-						Type:      element.TypeMultiselect,
+						Type:      config.TypeMultiselect,
 						SortOrder: 1910,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/showmethod`,
 						ID:        "showmethod",
 						Label:     `Show Method if Not Applicable`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1940,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/sort_order`,
 						ID:        "sort_order",
 						Label:     `Sort Order`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 2000,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/debug`,
 						ID:        "debug",
 						Label:     `Debug`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1950,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 				},
 			},
@@ -4495,16 +4330,16 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "system",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "media_storage_configuration",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `system/media_storage_configuration/allowed_resources`,
 						ID:      "allowed_resources",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"dhl_folder":"dhl"}`,
 					},
@@ -4512,500 +4347,485 @@ T: {{var telephone}}
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID: "carriers",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "dhl",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `carriers/dhl/model`,
 						ID:      "model",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\Dhl\Model\Carrier`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/account`,
-						ID:      "account",
-						Type:    element.TypeHidden,
-						Scopes:  scope.PermDefault,
-						Default: nil,
+						ID:     "account",
+						Type:   config.TypeHidden,
+						Scopes: scope.PermDefault,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/free_method`,
 						ID:      "free_method",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `G`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/shipment_days`,
 						ID:      "shipment_days",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: `Mon,Tue,Wed,Thu,Fri`,
+						Default: `Mon",Tue,Wed,Thu,Fri`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/active_rma`,
 						ID:      "active_rma",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: false,
+						Default: "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/dhl/is_online`,
 						ID:      "is_online",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: true,
+						Default: "1",
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "catalog",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "downloadable",
 				Label:     `Downloadable Product Options`,
 				SortOrder: 600,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `catalog/downloadable/order_item_status`,
 						ID:        "order_item_status",
 						Label:     `Order Item Status to Enable Downloads`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 100,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   9,
+						Default:   "9",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/downloadable/downloads_number`,
 						ID:        "downloads_number",
 						Label:     `Default Maximum Number of Downloads`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 200,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   0,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/downloadable/shareable`,
 						ID:        "shareable",
 						Label:     `Shareable`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 300,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/downloadable/samples_title`,
 						ID:        "samples_title",
 						Label:     `Default Sample Title`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 400,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Samples`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/downloadable/links_title`,
 						ID:        "links_title",
 						Label:     `Default Link Title`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 500,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Links`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/downloadable/links_target_new_window`,
 						ID:        "links_target_new_window",
 						Label:     `Open Links in New Window`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 600,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/downloadable/content_disposition`,
 						ID:        "content_disposition",
 						Label:     `Use Content-Disposition`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 700,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `inline`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/downloadable/disable_guest_checkout`,
 						ID:        "disable_guest_checkout",
 						Label:     `Disable Guest Checkout if Cart Contains Downloadable Items`,
 						Comment:   `Guest checkout will only work with shareable.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 800,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   true,
+						Default:   "1",
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "carriers",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "fedex",
 				Label:     `FedEx`,
 				SortOrder: 120,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `carriers/fedex/active`,
 						ID:        "active",
 						Label:     `Enabled for Checkout`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/title`,
 						ID:        "title",
 						Label:     `Title`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Federal Express`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/account`,
 						ID:        "account",
 						Label:     `Account ID`,
 						Comment:   `Please make sure to use only digits here. No dashes are allowed.`,
-						Type:      element.TypeObscure,
+						Type:      config.TypeObscure,
 						SortOrder: 40,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/meter_number`,
 						ID:        "meter_number",
 						Label:     `Meter Number`,
-						Type:      element.TypeObscure,
+						Type:      config.TypeObscure,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/key`,
 						ID:        "key",
 						Label:     `Key`,
-						Type:      element.TypeObscure,
+						Type:      config.TypeObscure,
 						SortOrder: 60,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/password`,
 						ID:        "password",
 						Label:     `Password`,
-						Type:      element.TypeObscure,
+						Type:      config.TypeObscure,
 						SortOrder: 70,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/sandbox_mode`,
 						ID:        "sandbox_mode",
 						Label:     `Sandbox Mode`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 80,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/production_webservices_url`,
 						ID:        "production_webservices_url",
 						Label:     `Web-Services URL (Production)`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 90,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `https://ws.fedex.com:443/web-services/`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/sandbox_webservices_url`,
 						ID:        "sandbox_webservices_url",
 						Label:     `Web-Services URL (Sandbox)`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 100,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `https://wsbeta.fedex.com:443/web-services/`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/shipment_requesttype`,
 						ID:        "shipment_requesttype",
 						Label:     `Packages Request Type`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 110,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/packaging`,
 						ID:        "packaging",
 						Label:     `Packaging`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 120,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `YOUR_PACKAGING`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/dropoff`,
 						ID:        "dropoff",
 						Label:     `Dropoff`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 130,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `REGULAR_PICKUP`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/unit_of_measure`,
 						ID:        "unit_of_measure",
 						Label:     `Weight Unit`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 135,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `LB`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/max_package_weight`,
 						ID:        "max_package_weight",
 						Label:     `Maximum  (Please consult your shipping carrier for maximum supported shipping weight)`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 140,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   150,
+						Default:   "150",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/handling_type`,
 						ID:        "handling_type",
 						Label:     `Calculate Handling Fee`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 150,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `F`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/handling_action`,
 						ID:        "handling_action",
 						Label:     `Handling Applied`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 160,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `O`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/handling_fee`,
 						ID:        "handling_fee",
 						Label:     `Handling Fee`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 170,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/residence_delivery`,
 						ID:        "residence_delivery",
 						Label:     `Residential Delivery`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 180,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/allowed_methods`,
 						ID:        "allowed_methods",
 						Label:     `Allowed Methods`,
-						Type:      element.TypeMultiselect,
+						Type:      config.TypeMultiselect,
 						SortOrder: 190,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   `EUROPE_FIRST_INTERNATIONAL_PRIORITY,FEDEX_1_DAY_FREIGHT,FEDEX_2_DAY_FREIGHT,FEDEX_2_DAY,FEDEX_2_DAY_AM,FEDEX_3_DAY_FREIGHT,FEDEX_EXPRESS_SAVER,FEDEX_GROUND,FIRST_OVERNIGHT,GROUND_HOME_DELIVERY,INTERNATIONAL_ECONOMY,INTERNATIONAL_ECONOMY_FREIGHT,INTERNATIONAL_FIRST,INTERNATIONAL_GROUND,INTERNATIONAL_PRIORITY,INTERNATIONAL_PRIORITY_FREIGHT,PRIORITY_OVERNIGHT,SMART_POST,STANDARD_OVERNIGHT,FEDEX_FREIGHT,FEDEX_NATIONAL_FREIGHT`,
+						Default:   `EUROPE_FIRST_INTERNATIONAL_PRIORITY",FEDEX_1_DAY_FREIGHT,FEDEX_2_DAY_FREIGHT,FEDEX_2_DAY,FEDEX_2_DAY_AM,FEDEX_3_DAY_FREIGHT,FEDEX_EXPRESS_SAVER,FEDEX_GROUND,FIRST_OVERNIGHT,GROUND_HOME_DELIVERY,INTERNATIONAL_ECONOMY,INTERNATIONAL_ECONOMY_FREIGHT,INTERNATIONAL_FIRST,INTERNATIONAL_GROUND,INTERNATIONAL_PRIORITY,INTERNATIONAL_PRIORITY_FREIGHT,PRIORITY_OVERNIGHT,SMART_POST,STANDARD_OVERNIGHT,FEDEX_FREIGHT,FEDEX_NATIONAL_FREIGHT`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/smartpost_hubid`,
 						ID:        "smartpost_hubid",
 						Label:     `Hub ID`,
 						Comment:   `The field is applicable if the Smart Post method is selected.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 200,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/free_method`,
 						ID:        "free_method",
 						Label:     `Free Method`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 210,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `FEDEX_GROUND`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/free_shipping_enable`,
 						ID:        "free_shipping_enable",
 						Label:     `Free Shipping Amount Threshold`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 220,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/free_shipping_subtotal`,
 						ID:        "free_shipping_subtotal",
 						Label:     `Free Shipping Amount Threshold`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 230,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/specificerrmsg`,
 						ID:        "specificerrmsg",
 						Label:     `Displayed Error Message`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 240,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
+						Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method", please contact us.`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/sallowspecific`,
 						ID:        "sallowspecific",
 						Label:     `Ship to Applicable Countries`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 250,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/specificcountry`,
 						ID:        "specificcountry",
 						Label:     `Ship to Specific Countries`,
-						Type:      element.TypeMultiselect,
+						Type:      config.TypeMultiselect,
 						SortOrder: 260,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/debug`,
 						ID:        "debug",
 						Label:     `Debug`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 270,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/showmethod`,
 						ID:        "showmethod",
 						Label:     `Show Method if Not Applicable`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 280,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/sort_order`,
 						ID:        "sort_order",
 						Label:     `Sort Order`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 290,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 				},
 			},
@@ -5013,88 +4833,85 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "carriers",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "fedex",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `carriers/fedex/cutoff_cost`,
-						ID:      "cutoff_cost",
-						Type:    element.TypeHidden,
-						Scopes:  scope.PermDefault,
-						Default: nil,
+						ID:     "cutoff_cost",
+						Type:   config.TypeHidden,
+						Scopes: scope.PermDefault,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/handling`,
 						ID:      "handling",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: false,
+						Default: "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/model`,
 						ID:      "model",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\Fedex\Model\Carrier`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/active_rma`,
 						ID:      "active_rma",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: false,
+						Default: "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/fedex/is_online`,
 						ID:      "is_online",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: true,
+						Default: "1",
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "sales",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "gift_options",
 				Label:     `Gift Options`,
 				SortOrder: 100,
 				Scopes:    scope.PermWebsite,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sales/gift_options/allow_order`,
 						ID:        "allow_order",
 						Label:     `Allow Gift Messages on Order Level`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales/gift_options/allow_items`,
 						ID:        "allow_items",
 						Label:     `Allow Gift Messages for Order Items`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 				},
 			},
@@ -5102,130 +4919,128 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "sales",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "gift_messages",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sales/gift_messages/allow_items`,
 						ID:      "allow_items",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: false,
+						Default: "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales/gift_messages/allow_order`,
 						ID:      "allow_order",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: false,
+						Default: "0",
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "google",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "adwords",
 				Label:     `Google AdWords`,
 				SortOrder: 15,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `google/adwords/active`,
 						ID:        "active",
 						Label:     `Enable`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/adwords/conversion_id`,
 						ID:        "conversion_id",
 						Label:     `Conversion ID`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 11,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/adwords/conversion_language`,
 						ID:        "conversion_language",
 						Label:     `Conversion Language`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 12,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `en`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/adwords/conversion_format`,
 						ID:        "conversion_format",
 						Label:     `Conversion Format`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 13,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   2,
+						Default:   "2",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/adwords/conversion_color`,
 						ID:        "conversion_color",
 						Label:     `Conversion Color`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 14,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `FFFFFF`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/adwords/conversion_label`,
 						ID:        "conversion_label",
 						Label:     `Conversion Label`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 15,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/adwords/conversion_value_type`,
 						ID:        "conversion_value_type",
 						Label:     `Conversion Value Type`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 16,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/adwords/conversion_value`,
 						ID:        "conversion_value",
 						Label:     `Conversion Value`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 17,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   0,
+						Default:   "0",
 					},
 				},
 			},
@@ -5233,40 +5048,40 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "google",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "adwords",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `google/adwords/languages`,
 						ID:      "languages",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"ar":"ar","bg":"bg","ca":"ca","cs":"cs","da":"da","de":"de","el":"el","en":"en","es":"es","et":"et","fi":"fi","fr":"fr","hi":"hi","hr":"hr","hu":"hu","id":"id","is":"is","it":"it","iw":"iw","ja":"ja","ko":"ko","lt":"lt","lv":"lv","nl":"nl","no":"no","pl":"pl","pt":"pt","ro":"ro","ru":"ru","sk":"sk","sl":"sl","sr":"sr","sv":"sv","th":"th","tl":"tl","tr":"tr","uk":"uk","ur":"ur","vi":"vi","zh_TW":"zh_TW","zh_CN":"zh_CN"}`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/adwords/language_convert`,
 						ID:      "language_convert",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"zh_CN":"zh_Hans","zh_TW":"zh_Hant","iw":"he"}`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/adwords/conversion_js_src`,
 						ID:      "conversion_js_src",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `https://www.googleadservices.com/pagead/conversion.js`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/adwords/conversion_img_src`,
 						ID:      "conversion_img_src",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `https://www.googleadservices.com/pagead/conversion/%s/?label=%s&guid=ON&script=0`,
 					},
@@ -5275,65 +5090,62 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "google",
 		Label:     `Google API`,
 		SortOrder: 340,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "analytics",
 				Label:     `Google Analytics`,
 				SortOrder: 10,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `google/analytics/active`,
 						ID:        "active",
 						Label:     `Enable`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/analytics/account`,
 						ID:        "account",
 						Label:     `Account Number`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "google",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "analytics",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `google/analytics/experiments`,
 						ID:        "experiments",
 						Label:     `Enable Content Experiments`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
@@ -5341,166 +5153,157 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "google",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "optimizer",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `google/optimizer/active`,
 						ID:      "active",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: false,
+						Default: "0",
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "google",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "googleshopping",
 				Label:     `Google Shopping`,
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `google/googleshopping/account_id`,
 						ID:        "account_id",
 						Label:     `Account ID`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/googleshopping/login`,
 						ID:        "login",
 						Label:     `Account Login`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/googleshopping/password`,
 						ID:        "password",
 						Label:     `Account Password`,
-						Type:      element.TypeObscure,
+						Type:      config.TypeObscure,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/googleshopping/account_type`,
 						ID:        "account_type",
 						Label:     `Account Type`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `HOSTED_OR_GOOGLE`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/googleshopping/target_country`,
 						ID:        "target_country",
 						Label:     `Target Country`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 90,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `US`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/googleshopping/observed`,
 						ID:        "observed",
 						Label:     `Update Google Shopping Item when Product is Updated`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 100,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/googleshopping/verify_meta_tag`,
 						ID:        "verify_meta_tag",
 						Label:     `Verifying Meta Tag`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 110,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/googleshopping/debug`,
 						ID:        "debug",
 						Label:     `Debug`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 140,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/googleshopping/destinations`,
 						ID:        "destinations",
 						Label:     `Destinations`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 150,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `{"product_search":"ProductSearch","product_ads":"ProductAds","commerce_search":"CommerceSearch"}`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/googleshopping/product_search`,
 						ID:        "product_search",
 						Label:     `Google Product Search`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 151,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/googleshopping/product_ads`,
 						ID:        "product_ads",
 						Label:     `Product Ads`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 152,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/googleshopping/commerce_search`,
 						ID:        "commerce_search",
 						Label:     `Commerce Search`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 153,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
@@ -5508,65 +5311,65 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "google",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "googleshopping",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `google/googleshopping/allowed_countries`,
 						ID:      "allowed_countries",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"AU":{"_value":{"name":"Australia","language":"en","currency":"AUD","currency_name":"Australian Dollar"},"_attribute":{"translate":"name currency_name"}},"BR":{"_value":{"name":"Brazil","language":"pt","locale":"pt_BR","currency":"BRL","currency_name":"Brazilian Real"},"_attribute":{"translate":"name currency_name"}},"CN":{"_value":{"name":"China","language":"zh_CN","currency":"CNY","currency_name":"Chinese Yuan Renminbi"},"_attribute":{"translate":"name currency_name"}},"FR":{"_value":{"name":"France","language":"fr","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"DE":{"_value":{"name":"Germany","language":"de","locale":"de_DE","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"IT":{"_value":{"name":"Italy","language":"it","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"JP":{"_value":{"name":"Japan","language":"ja","currency":"JPY","currency_name":"Japanese Yen"},"_attribute":{"translate":"name currency_name"}},"NL":{"_value":{"name":"Netherlands","language":"nl","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"ES":{"_value":{"name":"Spain","language":"es","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"CH":{"_value":{"name":"Switzerland","language":"de","locale":"de_CH","currency":"CHF","currency_name":"Swiss Franc"},"_attribute":{"translate":"name currency_name"}},"GB":{"_value":{"name":"United Kingdom","language":"en","locale":"en_GB","currency":"GBP","currency_name":"British Pound Sterling"},"_attribute":{"translate":"name currency_name"}},"US":{"_value":{"name":"United States","language":"en","locale":"en_US","currency":"USD","currency_name":"US Dollar"},"_attribute":{"translate":"name currency_name"}}}`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/googleshopping/attributes`,
 						ID:      "attributes",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"Item":{"title":{"_value":{"name":"Title","required":"1"},"_attribute":{"translate":"name"}},"content":{"_value":{"name":"Description","required":"1"},"_attribute":{"translate":"name"}},"expiration_date":{"_value":{"name":"Expiration date","required":"0"},"_attribute":{"translate":"name"}},"adult":{"_value":{"name":"Adult","required":"0"},"_attribute":{"translate":"name"}}},"ProductSearch":{"condition":{"_value":{"name":"Condition","required":"1"},"_attribute":{"translate":"name"}},"price":{"_value":{"name":"Price","required":"1"},"_attribute":{"translate":"name"}},"sale_price":{"_value":{"name":"Sale Price","required":"0","country":"US"},"_attribute":{"translate":"name"}},"sale_price_effective_date_from":{"_value":{"name":"Sale Price Effective From Date","required":"0","country":"US"},"_attribute":{"translate":"name"}},"sale_price_effective_date_to":{"_value":{"name":"Sale Price Effective To Date","required":"0","country":"US"},"_attribute":{"translate":"name"}},"age_group":{"_value":{"name":"Age Group","required":"1"},"_attribute":{"translate":"name"}},"brand":{"_value":{"name":"Brand","required":"1"},"_attribute":{"translate":"name"}},"color":{"_value":{"name":"Color","required":"1"},"_attribute":{"translate":"name"}},"gender":{"_value":{"name":"Gender","required":"1"},"_attribute":{"translate":"name"}},"mpn":{"_value":{"name":"Manufacturer\\'s Part Number (MPN)","required":"1"},"_attribute":{"translate":"name"}},"online_only":{"_value":{"name":"Online Only","required":"0"},"_attribute":{"translate":"name"}},"gtin":{"_value":{"name":"GTIN","required":"1"},"_attribute":{"translate":"name"}},"product_type":{"_value":{"name":"Product Type (Category)","required":"0"},"_attribute":{"translate":"name"}},"product_review_average":{"_value":{"name":"Product Review Average","required":"0"},"_attribute":{"translate":"name"}},"product_review_count":{"_value":{"name":"Product Review Count","required":"0"},"_attribute":{"translate":"name"}},"shipping_weight":{"_value":{"name":"Shipping Weight","required":"0"},"_attribute":{"translate":"name"}},"size":{"_value":{"name":"Size","required":"1"},"_attribute":{"translate":"name"}},"material":{"_value":{"name":"Material","required":"1"},"_attribute":{"translate":"name"}},"pattern":{"_value":{"name":"Pattern\/Graphic","required":"1"},"_attribute":{"translate":"name"}}},"ProductAds":{"adwords_grouping":{"_value":{"name":"Grouping","required":"0"},"_attribute":{"translate":"name"}},"adwords_labels":{"_value":{"name":"Labels","required":"0"},"_attribute":{"translate":"name"}},"adwords_redirect":{"_value":{"name":"Redirect","required":"0"},"_attribute":{"translate":"name"}},"adwords_queryparam":{"_value":{"name":"Query Param","required":"0"},"_attribute":{"translate":"name"}}}}`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/googleshopping/attribute_groups`,
 						ID:      "attribute_groups",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: `{"price":{"sale_price":null,"tax":null,"sale_price_effective_date":null,"sale_price_effective_date_from":null,"sale_price_effective_date_to":null},"shipping_weight":{"weight":null},"title":{"name":null},"content":{"description":null}}`,
+						Default: `{"price":{"sale_price":null","tax":null,"sale_price_effective_date":null,"sale_price_effective_date_from":null,"sale_price_effective_date_to":null},"shipping_weight":{"weight":null},"title":{"name":null},"content":{"description":null}}`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `google/googleshopping/base_attributes`,
 						ID:      "base_attributes",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: `{"id":null,"title":null,"link":null,"content":null,"price":null,"image_link":null,"condition":null,"target_country":null,"content_language":null,"destinations":null,"availability":null,"google_product_category":null,"product_type":null}`,
+						Default: `{"id":null","title":null,"link":null,"content":null,"price":null,"image_link":null,"condition":null,"target_country":null,"content_language":null,"destinations":null,"availability":null,"google_product_category":null,"product_type":null}`,
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "checkout",
 		Label:     nil,
 		SortOrder: 305,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "cart",
 				Label:     nil,
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `checkout/cart/grouped_product_image`,
 						ID:        "grouped_product_image",
 						Label:     `Grouped Product Image`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermStore,
@@ -5577,285 +5380,282 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "oauth",
 		Label:     `OAuth`,
 		SortOrder: 300,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "cleanup",
 				Label:     `Cleanup Settings`,
 				SortOrder: 300,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `oauth/cleanup/cleanup_probability`,
 						ID:        "cleanup_probability",
 						Label:     `Cleanup Probability`,
 						Comment:   `Integer. Launch cleanup in X OAuth requests. 0 (not recommended) - to disable cleanup`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   100,
+						Default:   "100",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `oauth/cleanup/expiration_period`,
 						ID:        "expiration_period",
 						Label:     `Expiration Period`,
 						Comment:   `Cleanup entries older than X minutes.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   120,
+						Default:   "120",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "consumer",
 				Label:     `Consumer Settings`,
 				SortOrder: 400,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `oauth/consumer/expiration_period`,
 						ID:        "expiration_period",
 						Label:     `Expiration Period`,
 						Comment:   `Consumer key/secret will expire if not used within X seconds after Oauth token exchange starts.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   300,
+						Default:   "300",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `oauth/consumer/post_maxredirects`,
 						ID:        "post_maxredirects",
 						Label:     `OAuth consumer credentials HTTP Post maxredirects`,
 						Comment:   `Number of maximum redirects for OAuth consumer credentials Post request.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   0,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `oauth/consumer/post_timeout`,
 						ID:        "post_timeout",
 						Label:     `OAuth consumer credentials HTTP Post timeout`,
 						Comment:   `Timeout for OAuth consumer credentials Post request within X seconds.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   5,
+						Default:   "5",
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "catalog",
 		Label:     nil,
 		SortOrder: 40,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "layered_navigation",
 				Label:     `Layered Navigation`,
 				SortOrder: 490,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `catalog/layered_navigation/display_product_count`,
 						ID:        "display_product_count",
 						Label:     `Display Product Count`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/layered_navigation/price_range_calculation`,
 						ID:        "price_range_calculation",
 						Label:     `Price Navigation Step Calculation`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `auto`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/layered_navigation/price_range_step`,
 						ID:        "price_range_step",
 						Label:     `Default Price Navigation Step`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 15,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   100,
+						Default:   "100",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/layered_navigation/price_range_max_intervals`,
 						ID:        "price_range_max_intervals",
 						Label:     `Maximum Number of Price Intervals`,
 						Comment:   `Maximum number of price intervals is 100`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   10,
+						Default:   "10",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/layered_navigation/one_price_interval`,
 						ID:        "one_price_interval",
 						Label:     `Display Price Interval as One Price`,
 						Comment:   `This setting will be applied when all prices in the specific price interval are equal.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 15,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/layered_navigation/interval_division_limit`,
 						ID:        "interval_division_limit",
 						Label:     `Interval Division Limit`,
 						Comment:   `Please specify the number of products, that will not be divided into subintervals.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   9,
+						Default:   "9",
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "customer",
 		Label:     nil,
 		SortOrder: 130,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "online_customers",
 				Label:     `Online Customers Options`,
 				SortOrder: 10,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `customer/online_customers/online_minutes_interval`,
 						ID:        "online_minutes_interval",
 						Label:     `Online Minutes Interval`,
 						Comment:   `Leave empty for default (15 minutes).`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "system",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "log",
 				Label:     `Log Cleaning`,
 				SortOrder: 200,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `system/log/clean_after_day`,
 						ID:        "clean_after_day",
 						Label:     `Save Log, Days`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   180,
+						Default:   "180",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/log/enabled`,
 						ID:        "enabled",
 						Label:     `Enable Log Cleaning`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/log/time`,
 						ID:        "time",
 						Label:     `Start Time`,
-						Type:      element.TypeTime,
+						Type:      config.TypeTime,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/log/frequency`,
 						ID:        "frequency",
 						Label:     `Frequency`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `D`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/log/error_email`,
 						ID:        "error_email",
 						Label:     `Error Email Recipient`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/log/error_email_identity`,
 						ID:        "error_email_identity",
 						Label:     `Error Email Sender`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 6,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `general`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/log/error_email_template`,
 						ID:        "error_email_template",
 						Label:     `Error Email Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 7,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
@@ -5867,303 +5667,297 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "log",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "visitor",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `log/visitor/online_update_frequency`,
 						ID:      "online_update_frequency",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: 60,
+						Default: "60",
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID: "system",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "log",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `system/log/time`,
-						ID:      "time",
-						Type:    element.TypeHidden,
-						Scopes:  scope.PermDefault,
-						Default: nil,
+						ID:     "time",
+						Type:   config.TypeHidden,
+						Scopes: scope.PermDefault,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/log/error_email`,
-						ID:      "error_email",
-						Type:    element.TypeHidden,
-						Scopes:  scope.PermDefault,
-						Default: nil,
+						ID:     "error_email",
+						Type:   config.TypeHidden,
+						Scopes: scope.PermDefault,
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "system",
 		Label:     nil,
 		SortOrder: 900,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "media_storage_configuration",
 				Label:     `Storage Configuration for Media`,
 				SortOrder: 900,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `system/media_storage_configuration/media_storage`,
 						ID:        "media_storage",
 						Label:     `Media Storage`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 100,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/media_storage_configuration/media_database`,
 						ID:        "media_database",
 						Label:     `Select Media Database`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 200,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/media_storage_configuration/synchronize`,
 						ID:        "synchronize",
 						Label:     nil,
 						Comment:   `After selecting a new media storage location, press the Synchronize button to transfer all media to that location. Media will not be available in the new location until the synchronization process is complete.`,
-						Type:      element.TypeButton,
+						Type:      config.TypeButton,
 						SortOrder: 300,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/media_storage_configuration/configuration_update_time`,
 						ID:        "configuration_update_time",
 						Label:     `Environment Update Time`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 400,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "sales",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "msrp",
 				Label:     `Minimum Advertised Price`,
 				SortOrder: 110,
 				Scopes:    scope.PermWebsite,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sales/msrp/enabled`,
 						ID:        "enabled",
 						Label:     `Enable MAP`,
 						Comment:   `<strong style="color:red">Warning!</strong> Enabling MAP by default will hide all product prices on the front end.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales/msrp/display_price_type`,
 						ID:        "display_price_type",
 						Label:     `Display Actual Price`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales/msrp/explanation_message`,
 						ID:        "explanation_message",
 						Label:     `Default Popup Text Message`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 40,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   `Our price is lower than the manufacturer's "minimum advertised price." As a result, we cannot show you the price in catalog or the product page. <br /><br /> You have no obligation to purchase the product once you know the price. You can simply remove the item from your cart.`,
+						Default:   `Our price is lower than the manufacturer's "minimum advertised price." As a result", we cannot show you the price in catalog or the product page. <br /><br /> You have no obligation to purchase the product once you know the price. You can simply remove the item from your cart.`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales/msrp/explanation_message_whats_this`,
 						ID:        "explanation_message_whats_this",
 						Label:     `Default "What's This" Text Message`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   `Our price is lower than the manufacturer's "minimum advertised price." As a result, we cannot show you the price in catalog or the product page. <br /><br /> You have no obligation to purchase the product once you know the price. You can simply remove the item from your cart.`,
+						Default:   `Our price is lower than the manufacturer's "minimum advertised price." As a result", we cannot show you the price in catalog or the product page. <br /><br /> You have no obligation to purchase the product once you know the price. You can simply remove the item from your cart.`,
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "multishipping",
 		Label:     `Multishipping Settings`,
 		SortOrder: 311,
 		Scopes:    scope.PermWebsite,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "options",
 				Label:     `Options`,
 				SortOrder: 2,
 				Scopes:    scope.PermWebsite,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `multishipping/options/checkout_multiple`,
 						ID:        "checkout_multiple",
 						Label:     `Allow Shipping to Multiple Addresses`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `multishipping/options/checkout_multiple_maximum_qty`,
 						ID:        "checkout_multiple_maximum_qty",
 						Label:     `Maximum Qty Allowed for Shipping to Multiple Addresses`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   100,
+						Default:   "100",
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "newsletter",
 		Label:     `Newsletter`,
 		SortOrder: 110,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "subscription",
 				Label:     `Subscription Options`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `newsletter/subscription/allow_guest_subscribe`,
 						ID:        "allow_guest_subscribe",
 						Label:     `Allow Guest Subscription`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `newsletter/subscription/confirm`,
 						ID:        "confirm",
 						Label:     `Need to Confirm`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `newsletter/subscription/confirm_email_identity`,
 						ID:        "confirm_email_identity",
 						Label:     `Confirmation Email Sender`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `support`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `newsletter/subscription/confirm_email_template`,
 						ID:        "confirm_email_template",
 						Label:     `Confirmation Email Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `newsletter_subscription_confirm_email_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `newsletter/subscription/success_email_identity`,
 						ID:        "success_email_identity",
 						Label:     `Success Email Sender`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `general`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `newsletter/subscription/success_email_template`,
 						ID:        "success_email_template",
 						Label:     `Success Email Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `newsletter_subscription_success_email_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `newsletter/subscription/un_email_identity`,
 						ID:        "un_email_identity",
 						Label:     `Unsubscription Email Sender`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `support`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `newsletter/subscription/un_email_template`,
 						ID:        "un_email_template",
 						Label:     `Unsubscription Email Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
@@ -6175,151 +5969,145 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "newsletter",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "sending",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `newsletter/sending/set_return_path`,
 						ID:      "set_return_path",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: false,
+						Default: "0",
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "payment",
 		Label:     nil,
 		SortOrder: 400,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "checkmo",
 				Label:     `Check / Money Order`,
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `payment/checkmo/active`,
 						ID:        "active",
 						Label:     `Enabled`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/checkmo/order_status`,
 						ID:        "order_status",
 						Label:     `New Order Status`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `pending`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/checkmo/sort_order`,
 						ID:        "sort_order",
 						Label:     `Sort Order`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 100,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/checkmo/title`,
 						ID:        "title",
 						Label:     `Title`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Check / Money order`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/checkmo/allowspecific`,
 						ID:        "allowspecific",
 						Label:     `Payment from Applicable Countries`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   0,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/checkmo/specificcountry`,
 						ID:        "specificcountry",
 						Label:     `Payment from Specific Countries`,
-						Type:      element.TypeMultiselect,
+						Type:      config.TypeMultiselect,
 						SortOrder: 51,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/checkmo/payable_to`,
 						ID:        "payable_to",
 						Label:     `Make Check Payable to`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 61,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/checkmo/mailing_address`,
 						ID:        "mailing_address",
 						Label:     `Send Check to`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 62,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/checkmo/min_order_total`,
 						ID:        "min_order_total",
 						Label:     `Minimum Order Total`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 98,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/checkmo/max_order_total`,
 						ID:        "max_order_total",
 						Label:     `Maximum Order Total`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 99,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/checkmo/model`,
 						ID:        "model",
 						Label:     nil,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 0,
 						Visible:   true,
 						Scopes:    scope.PermStore,
@@ -6328,105 +6116,101 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "purchaseorder",
 				Label:     `Purchase Order`,
 				SortOrder: 32,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `payment/purchaseorder/active`,
 						ID:        "active",
 						Label:     `Enabled`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/purchaseorder/order_status`,
 						ID:        "order_status",
 						Label:     `New Order Status`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `pending`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/purchaseorder/sort_order`,
 						ID:        "sort_order",
 						Label:     `Sort Order`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 100,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/purchaseorder/title`,
 						ID:        "title",
 						Label:     `Title`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Purchase Order`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/purchaseorder/allowspecific`,
 						ID:        "allowspecific",
 						Label:     `Payment from Applicable Countries`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   0,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/purchaseorder/specificcountry`,
 						ID:        "specificcountry",
 						Label:     `Payment from Specific Countries`,
-						Type:      element.TypeMultiselect,
+						Type:      config.TypeMultiselect,
 						SortOrder: 51,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/purchaseorder/min_order_total`,
 						ID:        "min_order_total",
 						Label:     `Minimum Order Total`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 98,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/purchaseorder/max_order_total`,
 						ID:        "max_order_total",
 						Label:     `Maximum Order Total`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 99,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/purchaseorder/model`,
 						ID:        "model",
 						Label:     nil,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 0,
 						Visible:   true,
 						Scopes:    scope.PermStore,
@@ -6435,312 +6219,294 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "banktransfer",
 				Label:     `Bank Transfer Payment`,
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `payment/banktransfer/active`,
 						ID:        "active",
 						Label:     `Enabled`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/banktransfer/title`,
 						ID:        "title",
 						Label:     `Title`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Bank Transfer Payment`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/banktransfer/order_status`,
 						ID:        "order_status",
 						Label:     `New Order Status`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `pending`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/banktransfer/allowspecific`,
 						ID:        "allowspecific",
 						Label:     `Payment from Applicable Countries`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   0,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/banktransfer/specificcountry`,
 						ID:        "specificcountry",
 						Label:     `Payment from Specific Countries`,
-						Type:      element.TypeMultiselect,
+						Type:      config.TypeMultiselect,
 						SortOrder: 51,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/banktransfer/instructions`,
 						ID:        "instructions",
 						Label:     `Instructions`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 62,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/banktransfer/min_order_total`,
 						ID:        "min_order_total",
 						Label:     `Minimum Order Total`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 98,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/banktransfer/max_order_total`,
 						ID:        "max_order_total",
 						Label:     `Maximum Order Total`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 99,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/banktransfer/sort_order`,
 						ID:        "sort_order",
 						Label:     `Sort Order`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 100,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "cashondelivery",
 				Label:     `Cash On Delivery Payment`,
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `payment/cashondelivery/active`,
 						ID:        "active",
 						Label:     `Enabled`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/cashondelivery/title`,
 						ID:        "title",
 						Label:     `Title`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Cash On Delivery`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/cashondelivery/order_status`,
 						ID:        "order_status",
 						Label:     `New Order Status`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `pending`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/cashondelivery/allowspecific`,
 						ID:        "allowspecific",
 						Label:     `Payment from Applicable Countries`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   0,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/cashondelivery/specificcountry`,
 						ID:        "specificcountry",
 						Label:     `Payment from Specific Countries`,
-						Type:      element.TypeMultiselect,
+						Type:      config.TypeMultiselect,
 						SortOrder: 51,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/cashondelivery/instructions`,
 						ID:        "instructions",
 						Label:     `Instructions`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 62,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/cashondelivery/min_order_total`,
 						ID:        "min_order_total",
 						Label:     `Minimum Order Total`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 98,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/cashondelivery/max_order_total`,
 						ID:        "max_order_total",
 						Label:     `Maximum Order Total`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 99,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/cashondelivery/sort_order`,
 						ID:        "sort_order",
 						Label:     `Sort Order`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 100,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "free",
 				Label:     `Zero Subtotal Checkout`,
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `payment/free/active`,
 						ID:        "active",
 						Label:     `Enabled`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/free/order_status`,
 						ID:        "order_status",
 						Label:     `New Order Status`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/free/payment_action`,
 						ID:        "payment_action",
 						Label:     `Automatically Invoice All Items`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/free/sort_order`,
 						ID:        "sort_order",
 						Label:     `Sort Order`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 100,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/free/title`,
 						ID:        "title",
 						Label:     `Title`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/free/allowspecific`,
 						ID:        "allowspecific",
 						Label:     `Payment from Applicable Countries`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/free/specificcountry`,
 						ID:        "specificcountry",
 						Label:     `Payment from Specific Countries`,
-						Type:      element.TypeMultiselect,
+						Type:      config.TypeMultiselect,
 						SortOrder: 51,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/free/model`,
 						ID:        "model",
 						Label:     nil,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 0,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
@@ -6748,84 +6514,84 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "payment",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "checkmo",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `payment/checkmo/group`,
 						ID:      "group",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `offline`,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID: "purchaseorder",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `payment/purchaseorder/group`,
 						ID:      "group",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `offline`,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID: "banktransfer",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `payment/banktransfer/model`,
 						ID:      "model",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\OfflinePayments\Model\Banktransfer`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/banktransfer/group`,
 						ID:      "group",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `offline`,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID: "cashondelivery",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `payment/cashondelivery/model`,
 						ID:      "model",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\OfflinePayments\Model\Cashondelivery`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/cashondelivery/group`,
 						ID:      "group",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `offline`,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID: "free",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `payment/free/group`,
 						ID:      "group",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `offline`,
 					},
@@ -6834,417 +6600,403 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "carriers",
 		Label:     nil,
 		SortOrder: 320,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "flatrate",
 				Label:     `Flat Rate`,
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `carriers/flatrate/active`,
 						ID:        "active",
 						Label:     `Enabled`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/flatrate/name`,
 						ID:        "name",
 						Label:     `Method Name`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Fixed`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/flatrate/price`,
 						ID:        "price",
 						Label:     `Price`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   5.00,
+						Default:   "5.00",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/flatrate/handling_type`,
 						ID:        "handling_type",
 						Label:     `Calculate Handling Fee`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 7,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `F`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/flatrate/handling_fee`,
 						ID:        "handling_fee",
 						Label:     `Handling Fee`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 8,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/flatrate/sort_order`,
 						ID:        "sort_order",
 						Label:     `Sort Order`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 100,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/flatrate/title`,
 						ID:        "title",
 						Label:     `Title`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Flat Rate`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/flatrate/type`,
 						ID:        "type",
 						Label:     `Type`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `I`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/flatrate/sallowspecific`,
 						ID:        "sallowspecific",
 						Label:     `Ship to Applicable Countries`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 90,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/flatrate/specificcountry`,
 						ID:        "specificcountry",
 						Label:     `Ship to Specific Countries`,
-						Type:      element.TypeMultiselect,
+						Type:      config.TypeMultiselect,
 						SortOrder: 91,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/flatrate/showmethod`,
 						ID:        "showmethod",
 						Label:     `Show Method if Not Applicable`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 92,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/flatrate/specificerrmsg`,
 						ID:        "specificerrmsg",
 						Label:     `Displayed Error Message`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 80,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   `This shipping method is not available. To use this shipping method, please contact us.`,
+						Default:   `This shipping method is not available. To use this shipping method", please contact us.`,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "tablerate",
 				Label:     `Table Rates`,
 				SortOrder: 3,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `carriers/tablerate/handling_type`,
 						ID:        "handling_type",
 						Label:     `Calculate Handling Fee`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 7,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `F`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/tablerate/handling_fee`,
 						ID:        "handling_fee",
 						Label:     `Handling Fee`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 8,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/tablerate/active`,
 						ID:        "active",
 						Label:     `Enabled`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/tablerate/condition_name`,
 						ID:        "condition_name",
 						Label:     `Condition`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `package_weight`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/tablerate/include_virtual_price`,
 						ID:        "include_virtual_price",
 						Label:     `Include Virtual Products in Price Calculation`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/tablerate/export`,
 						ID:        "export",
 						Label:     `Export`,
-						Type:      element.TypeCustom, // @to do: Magento\OfflineShipping\Block\Adminhtml\Form\Field\Export,
+						Type:      config.TypeCustom, // @to do: Magento\OfflineShipping\Block\Adminhtml\Form\Field\Export,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/tablerate/import`,
 						ID:        "import",
 						Label:     `Import`,
-						Type:      element.TypeCustom, // @to do: Magento\OfflineShipping\Block\Adminhtml\Form\Field\Import,
+						Type:      config.TypeCustom, // @to do: Magento\OfflineShipping\Block\Adminhtml\Form\Field\Import,
 						SortOrder: 6,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/tablerate/name`,
 						ID:        "name",
 						Label:     `Method Name`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Table Rate`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/tablerate/sort_order`,
 						ID:        "sort_order",
 						Label:     `Sort Order`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 100,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/tablerate/title`,
 						ID:        "title",
 						Label:     `Title`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Best Way`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/tablerate/sallowspecific`,
 						ID:        "sallowspecific",
 						Label:     `Ship to Applicable Countries`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 90,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/tablerate/specificcountry`,
 						ID:        "specificcountry",
 						Label:     `Ship to Specific Countries`,
-						Type:      element.TypeMultiselect,
+						Type:      config.TypeMultiselect,
 						SortOrder: 91,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/tablerate/showmethod`,
 						ID:        "showmethod",
 						Label:     `Show Method if Not Applicable`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 92,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/tablerate/specificerrmsg`,
 						ID:        "specificerrmsg",
 						Label:     `Displayed Error Message`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 80,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   `This shipping method is not available. To use this shipping method, please contact us.`,
+						Default:   `This shipping method is not available. To use this shipping method", please contact us.`,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "freeshipping",
 				Label:     `Free Shipping`,
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `carriers/freeshipping/active`,
 						ID:        "active",
 						Label:     `Enabled`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/freeshipping/free_shipping_subtotal`,
 						ID:        "free_shipping_subtotal",
 						Label:     `Minimum Order Amount`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/freeshipping/name`,
 						ID:        "name",
 						Label:     `Method Name`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Free`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/freeshipping/sort_order`,
 						ID:        "sort_order",
 						Label:     `Sort Order`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 100,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/freeshipping/title`,
 						ID:        "title",
 						Label:     `Title`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `Free Shipping`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/freeshipping/sallowspecific`,
 						ID:        "sallowspecific",
 						Label:     `Ship to Applicable Countries`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 90,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/freeshipping/specificcountry`,
 						ID:        "specificcountry",
 						Label:     `Ship to Specific Countries`,
-						Type:      element.TypeMultiselect,
+						Type:      config.TypeMultiselect,
 						SortOrder: 91,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/freeshipping/showmethod`,
 						ID:        "showmethod",
 						Label:     `Show Method if Not Applicable`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 92,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/freeshipping/specificerrmsg`,
 						ID:        "specificerrmsg",
 						Label:     `Displayed Error Message`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 80,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   `This shipping method is not available. To use this shipping method, please contact us.`,
+						Default:   `This shipping method is not available. To use this shipping method", please contact us.`,
 					},
 				},
 			},
@@ -7252,50 +7004,50 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "carriers",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "flatrate",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `carriers/flatrate/model`,
 						ID:      "model",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\OfflineShipping\Model\Carrier\Flatrate`,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID: "tablerate",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `carriers/tablerate/model`,
 						ID:      "model",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\OfflineShipping\Model\Carrier\Tablerate`,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID: "freeshipping",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `carriers/freeshipping/cutoff_cost`,
 						ID:      "cutoff_cost",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: 50,
+						Default: "50",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/freeshipping/model`,
 						ID:      "model",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\OfflineShipping\Model\Carrier\Freeshipping`,
 					},
@@ -7304,39 +7056,39 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "system",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "full_page_cache",
 				Label:     `Full Page Cache`,
 				SortOrder: 600,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `system/full_page_cache/caching_application`,
 						ID:        "caching_application",
 						Label:     `Caching Application`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 0,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/full_page_cache/ttl`,
 						ID:        "ttl",
 						Label:     `TTL for public content`,
 						Comment:   `Public content cache lifetime in seconds. If field is empty default value 120 will be saved.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   120,
+						Default:   "120",
 					},
 				},
 			},
@@ -7344,32 +7096,32 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "system",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "full_page_cache",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `system/full_page_cache/varnish3`,
 						ID:      "varnish3",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"path":"Magento\/PageCache\/etc\/varnish3.vcl"}`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/full_page_cache/varnish4`,
 						ID:      "varnish4",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"path":"Magento\/PageCache\/etc\/varnish4.vcl"}`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `system/full_page_cache/default`,
 						ID:      "default",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"access_list":"localhost","backend_host":"localhost","backend_port":"8080","ttl":"120"}`,
 					},
@@ -7378,245 +7130,245 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "payment",
 		Label:     `Payment Methods`,
 		SortOrder: 400,
 		Scopes:    scope.PermStore,
-		Groups:    element.Groups{},
+		Groups:    config.Groups{},
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "payment",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "free",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `payment/free/active`,
 						ID:      "active",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: true,
+						Default: "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/free/model`,
 						ID:      "model",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\Payment\Model\Method\Free`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/free/order_status`,
 						ID:      "order_status",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `pending`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/free/title`,
 						ID:      "title",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `No Payment Information Required`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/free/allowspecific`,
 						ID:      "allowspecific",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: false,
+						Default: "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/free/sort_order`,
 						ID:      "sort_order",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: true,
+						Default: "1",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID: "substitution",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `payment/substitution/active`,
 						ID:      "active",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: false,
+						Default: "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/substitution/model`,
 						ID:      "model",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\Payment\Model\Method\Substitution`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `payment/substitution/allowspecific`,
 						ID:      "allowspecific",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: false,
+						Default: "0",
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "persistent",
 		Label:     `Persistent Shopping Cart`,
 		SortOrder: 500,
 		Scopes:    scope.PermWebsite,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "options",
 				Label:     `General Options`,
 				SortOrder: 10,
 				Scopes:    scope.PermWebsite,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `persistent/options/enabled`,
 						ID:        "enabled",
 						Label:     `Enable Persistence`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `persistent/options/lifetime`,
 						ID:        "lifetime",
 						Label:     `Persistence Lifetime (seconds)`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   31536000,
+						Default:   "31536000",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `persistent/options/remember_enabled`,
 						ID:        "remember_enabled",
-						Label:     `Enable "Remember Me"`,
-						Type:      element.TypeSelect,
+						Label:     `Enable "Remember Me`,
+						Type:      config.TypeSelect,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `persistent/options/remember_default`,
 						ID:        "remember_default",
-						Label:     `"Remember Me" Default Value`,
-						Type:      element.TypeSelect,
+						Label:     `Remember Me" Default Value`,
+						Type:      config.TypeSelect,
 						SortOrder: 40,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `persistent/options/logout_clear`,
 						ID:        "logout_clear",
 						Label:     `Clear Persistence on Log Out`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `persistent/options/shopping_cart`,
 						ID:        "shopping_cart",
 						Label:     `Persist Shopping Cart`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 60,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   true,
+						Default:   "1",
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "catalog",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "productalert",
 				Label:     `Product Alerts`,
 				SortOrder: 250,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `catalog/productalert/allow_price`,
 						ID:        "allow_price",
 						Label:     `Allow Alert When Product Price Changes`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/productalert/allow_stock`,
 						ID:        "allow_stock",
 						Label:     `Allow Alert When Product Comes Back in Stock`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/productalert/email_price_template`,
 						ID:        "email_price_template",
 						Label:     `Price Alert Email Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `catalog_productalert_email_price_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/productalert/email_stock_template`,
 						ID:        "email_stock_template",
 						Label:     `Stock Alert Email Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `catalog_productalert_email_stock_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/productalert/email_identity`,
 						ID:        "email_identity",
 						Label:     `Alert Email Sender`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermStore,
@@ -7625,61 +7377,58 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "productalert_cron",
 				Label:     `Product Alerts Run Settings`,
 				SortOrder: 260,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `catalog/productalert_cron/frequency`,
 						ID:        "frequency",
 						Label:     `Frequency`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/productalert_cron/time`,
 						ID:        "time",
 						Label:     `Start Time`,
-						Type:      element.TypeTime,
+						Type:      config.TypeTime,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/productalert_cron/error_email`,
 						ID:        "error_email",
 						Label:     `Error Email Recipient`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/productalert_cron/error_email_identity`,
 						ID:        "error_email_identity",
 						Label:     `Error Email Sender`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
 						Default:   `general`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/productalert_cron/error_email_template`,
 						ID:        "error_email_template",
 						Label:     `Error Email Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
@@ -7691,529 +7440,514 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "catalog",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "productalert_cron",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `catalog/productalert_cron/error_email`,
-						ID:      "error_email",
-						Type:    element.TypeHidden,
-						Scopes:  scope.PermDefault,
-						Default: nil,
+						ID:     "error_email",
+						Type:   config.TypeHidden,
+						Scopes: scope.PermDefault,
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "catalog",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "recently_products",
 				Label:     `Recently Viewed/Compared Products`,
 				SortOrder: 350,
 				Scopes:    scope.PermWebsite,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `catalog/recently_products/scope`,
 						ID:        "scope",
 						Label:     `Show for Current`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `website`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/recently_products/viewed_count`,
 						ID:        "viewed_count",
 						Label:     `Default Recently Viewed Products Count`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   5,
+						Default:   "5",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/recently_products/compared_count`,
 						ID:        "compared_count",
 						Label:     `Default Recently Compared Products Count`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   5,
+						Default:   "5",
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "reports",
 		Label:     `Reports`,
 		SortOrder: 1000,
 		Scopes:    scope.PermDefault,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "dashboard",
 				Label:     `Dashboard`,
 				SortOrder: 1,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `reports/dashboard/ytd_start`,
 						ID:        "ytd_start",
 						Label:     `Year-To-Date Starts`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   `1,1`,
+						Default:   `1",1`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `reports/dashboard/mtd_start`,
 						ID:        "mtd_start",
 						Label:     `Current Month Starts`,
 						Comment:   `Select day of the month.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   true,
+						Default:   "1",
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "catalog",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "review",
 				Label:     `Product Reviews`,
 				SortOrder: 100,
 				Scopes:    scope.PermWebsite,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `catalog/review/allow_guest`,
 						ID:        "allow_guest",
 						Label:     `Allow Guests to Write Reviews`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   true,
+						Default:   "1",
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "rss",
 		Label:     `RSS Feeds`,
 		SortOrder: 80,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "config",
 				Label:     `Rss Config`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `rss/config/active`,
 						ID:        "active",
 						Label:     `Enable RSS`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "sales",
 		Label:     `Sales`,
 		SortOrder: 300,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "general",
 				Label:     `General`,
 				SortOrder: 5,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sales/general/hide_customer_ip`,
 						ID:        "hide_customer_ip",
 						Label:     `Hide Customer IP`,
 						Comment:   `Choose whether a customer IP is shown in orders, invoices, shipments, and credit memos.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 0,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "totals_sort",
 				Label:     `Checkout Totals Sort Order`,
 				SortOrder: 10,
 				Scopes:    scope.PermWebsite,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sales/totals_sort/discount`,
 						ID:        "discount",
 						Label:     `Discount`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   20,
+						Default:   "20",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales/totals_sort/grand_total`,
 						ID:        "grand_total",
 						Label:     `Grand Total`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   100,
+						Default:   "100",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales/totals_sort/shipping`,
 						ID:        "shipping",
 						Label:     `Shipping`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   30,
+						Default:   "30",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales/totals_sort/subtotal`,
 						ID:        "subtotal",
 						Label:     `Subtotal`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   10,
+						Default:   "10",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales/totals_sort/tax`,
 						ID:        "tax",
 						Label:     `Tax`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   40,
+						Default:   "40",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "reorder",
 				Label:     `Reorder`,
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sales/reorder/allow`,
 						ID:        "allow",
 						Label:     `Allow Reorder`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "identity",
 				Label:     `Invoice and Packing Slip Design`,
 				SortOrder: 40,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sales/identity/logo`,
 						ID:        "logo",
 						Label:     `Logo for PDF Print-outs (200x50)`,
 						Comment:   `Your default logo will be used in PDF and HTML documents.<br />(jpeg, tiff, png) If your pdf image is distorted, try to use larger file-size image.`,
-						Type:      element.TypeImage,
+						Type:      config.TypeImage,
 						SortOrder: 100,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales/identity/logo_html`,
 						ID:        "logo_html",
 						Label:     `Logo for HTML Print View`,
 						Comment:   `Logo for HTML documents only. If empty, default will be used.<br />(jpeg, gif, png)`,
-						Type:      element.TypeImage,
+						Type:      config.TypeImage,
 						SortOrder: 150,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales/identity/address`,
 						ID:        "address",
 						Label:     `Address`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 200,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "minimum_order",
 				Label:     `Minimum Order Amount`,
 				SortOrder: 50,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sales/minimum_order/active`,
 						ID:        "active",
 						Label:     `Enable`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales/minimum_order/amount`,
 						ID:        "amount",
 						Label:     `Minimum Amount`,
 						Comment:   `Subtotal after discount`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales/minimum_order/tax_including`,
 						ID:        "tax_including",
 						Label:     `Include Tax to Amount`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 15,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales/minimum_order/description`,
 						ID:        "description",
 						Label:     `Description Message`,
 						Comment:   `This message will be shown in the shopping cart when the subtotal (after discount) is lower than the minimum allowed amount.`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales/minimum_order/error_message`,
 						ID:        "error_message",
 						Label:     `Error to Show in Shopping Cart`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales/minimum_order/multi_address`,
 						ID:        "multi_address",
 						Label:     `Validate Each Address Separately in Multi-address Checkout`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 40,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales/minimum_order/multi_address_description`,
 						ID:        "multi_address_description",
 						Label:     `Multi-address Description Message`,
 						Comment:   `We'll use the default description above if you leave this empty.`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales/minimum_order/multi_address_error_message`,
 						ID:        "multi_address_error_message",
 						Label:     `Multi-address Error to Show in Shopping Cart`,
 						Comment:   `We'll use the default error above if you leave this empty.`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 60,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "dashboard",
 				Label:     `Dashboard`,
 				SortOrder: 60,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sales/dashboard/use_aggregated_data`,
 						ID:        "use_aggregated_data",
 						Label:     `Use Aggregated Data (beta)`,
 						Comment:   `Improves dashboard performance but provides non-realtime data.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "sales_email",
 		Label:     `Sales Emails`,
 		SortOrder: 301,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "general",
 				Label:     `General Settings`,
 				SortOrder: 0,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sales_email/general/async_sending`,
 						ID:        "async_sending",
 						Label:     `Asynchronous sending`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   false,
+						Default:   "0",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "order",
 				Label:     `Order`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sales_email/order/enabled`,
 						ID:        "enabled",
 						Label:     `Enabled`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 0,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/order/identity`,
 						ID:        "identity",
 						Label:     `New Order Confirmation Email Sender`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/order/template`,
 						ID:        "template",
 						Label:     `New Order Confirmation Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_order_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/order/guest_template`,
 						ID:        "guest_template",
 						Label:     `New Order Confirmation Template for Guest`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_order_guest_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/order/copy_to`,
 						ID:        "copy_to",
 						Label:     `Send Order Email Copy To`,
 						Comment:   `Comma-separated`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/order/copy_method`,
 						ID:        "copy_method",
 						Label:     `Send Order Email Copy Method`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermStore,
@@ -8222,73 +7956,72 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "order_comment",
 				Label:     `Order Comments`,
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sales_email/order_comment/enabled`,
 						ID:        "enabled",
 						Label:     `Enabled`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 0,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/order_comment/identity`,
 						ID:        "identity",
 						Label:     `Order Comment Email Sender`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/order_comment/template`,
 						ID:        "template",
 						Label:     `Order Comment Email Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_order_comment_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/order_comment/guest_template`,
 						ID:        "guest_template",
 						Label:     `Order Comment Email Template for Guest`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_order_comment_guest_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/order_comment/copy_to`,
 						ID:        "copy_to",
 						Label:     `Send Order Comment Email Copy To`,
 						Comment:   `Comma-separated`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/order_comment/copy_method`,
 						ID:        "copy_method",
 						Label:     `Send Order Comments Email Copy Method`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermStore,
@@ -8297,73 +8030,72 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "invoice",
 				Label:     `Invoice`,
 				SortOrder: 3,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sales_email/invoice/enabled`,
 						ID:        "enabled",
 						Label:     `Enabled`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 0,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/invoice/identity`,
 						ID:        "identity",
 						Label:     `Invoice Email Sender`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/invoice/template`,
 						ID:        "template",
 						Label:     `Invoice Email Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_invoice_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/invoice/guest_template`,
 						ID:        "guest_template",
 						Label:     `Invoice Email Template for Guest`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_invoice_guest_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/invoice/copy_to`,
 						ID:        "copy_to",
 						Label:     `Send Invoice Email Copy To`,
 						Comment:   `Comma-separated`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/invoice/copy_method`,
 						ID:        "copy_method",
 						Label:     `Send Invoice Email Copy Method`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermStore,
@@ -8372,73 +8104,72 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "invoice_comment",
 				Label:     `Invoice Comments`,
 				SortOrder: 4,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sales_email/invoice_comment/enabled`,
 						ID:        "enabled",
 						Label:     `Enabled`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 0,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/invoice_comment/identity`,
 						ID:        "identity",
 						Label:     `Invoice Comment Email Sender`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/invoice_comment/template`,
 						ID:        "template",
 						Label:     `Invoice Comment Email Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_invoice_comment_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/invoice_comment/guest_template`,
 						ID:        "guest_template",
 						Label:     `Invoice Comment Email Template for Guest`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_invoice_comment_guest_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/invoice_comment/copy_to`,
 						ID:        "copy_to",
 						Label:     `Send Invoice Comment Email Copy To`,
 						Comment:   `Comma-separated`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/invoice_comment/copy_method`,
 						ID:        "copy_method",
 						Label:     `Send Invoice Comments Email Copy Method`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermStore,
@@ -8447,73 +8178,72 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "shipment",
 				Label:     `Shipment`,
 				SortOrder: 5,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sales_email/shipment/enabled`,
 						ID:        "enabled",
 						Label:     `Enabled`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 0,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/shipment/identity`,
 						ID:        "identity",
 						Label:     `Shipment Email Sender`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/shipment/template`,
 						ID:        "template",
 						Label:     `Shipment Email Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_shipment_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/shipment/guest_template`,
 						ID:        "guest_template",
 						Label:     `Shipment Email Template for Guest`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_shipment_guest_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/shipment/copy_to`,
 						ID:        "copy_to",
 						Label:     `Send Shipment Email Copy To`,
 						Comment:   `Comma-separated`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/shipment/copy_method`,
 						ID:        "copy_method",
 						Label:     `Send Shipment Email Copy Method`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermStore,
@@ -8522,73 +8252,72 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "shipment_comment",
 				Label:     `Shipment Comments`,
 				SortOrder: 6,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sales_email/shipment_comment/enabled`,
 						ID:        "enabled",
 						Label:     `Enabled`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 0,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/shipment_comment/identity`,
 						ID:        "identity",
 						Label:     `Shipment Comment Email Sender`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/shipment_comment/template`,
 						ID:        "template",
 						Label:     `Shipment Comment Email Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_shipment_comment_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/shipment_comment/guest_template`,
 						ID:        "guest_template",
 						Label:     `Shipment Comment Email Template for Guest`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_shipment_comment_guest_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/shipment_comment/copy_to`,
 						ID:        "copy_to",
 						Label:     `Send Shipment Comment Email Copy To`,
 						Comment:   `Comma-separated`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/shipment_comment/copy_method`,
 						ID:        "copy_method",
 						Label:     `Send Shipment Comments Email Copy Method`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermStore,
@@ -8597,73 +8326,72 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "creditmemo",
 				Label:     `Credit Memo`,
 				SortOrder: 7,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sales_email/creditmemo/enabled`,
 						ID:        "enabled",
 						Label:     `Enabled`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 0,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/creditmemo/identity`,
 						ID:        "identity",
 						Label:     `Credit Memo Email Sender`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/creditmemo/template`,
 						ID:        "template",
 						Label:     `Credit Memo Email Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_creditmemo_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/creditmemo/guest_template`,
 						ID:        "guest_template",
 						Label:     `Credit Memo Email Template for Guest`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_creditmemo_guest_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/creditmemo/copy_to`,
 						ID:        "copy_to",
 						Label:     `Send Credit Memo Email Copy To`,
 						Comment:   `Comma-separated`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/creditmemo/copy_method`,
 						ID:        "copy_method",
 						Label:     `Send Credit Memo Email Copy Method`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermStore,
@@ -8672,73 +8400,72 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "creditmemo_comment",
 				Label:     `Credit Memo Comments`,
 				SortOrder: 8,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sales_email/creditmemo_comment/enabled`,
 						ID:        "enabled",
 						Label:     `Enabled`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 0,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/creditmemo_comment/identity`,
 						ID:        "identity",
 						Label:     `Credit Memo Comment Email Sender`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/creditmemo_comment/template`,
 						ID:        "template",
 						Label:     `Credit Memo Comment Email Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_creditmemo_comment_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/creditmemo_comment/guest_template`,
 						ID:        "guest_template",
 						Label:     `Credit Memo Comment Email Template for Guest`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sales_email_creditmemo_comment_guest_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/creditmemo_comment/copy_to`,
 						ID:        "copy_to",
 						Label:     `Send Credit Memo Comment Email Copy To`,
 						Comment:   `Comma-separated`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sales_email/creditmemo_comment/copy_method`,
 						ID:        "copy_method",
 						Label:     `Send Credit Memo Comments Email Copy Method`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermStore,
@@ -8748,513 +8475,502 @@ T: {{var telephone}}
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "sales_pdf",
 		Label:     `PDF Print-outs`,
 		SortOrder: 302,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "invoice",
 				Label:     `Invoice`,
 				SortOrder: 10,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sales_pdf/invoice/put_order_id`,
 						ID:        "put_order_id",
 						Label:     `Display Order ID in Header`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "shipment",
 				Label:     `Shipment`,
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sales_pdf/shipment/put_order_id`,
 						ID:        "put_order_id",
 						Label:     `Display Order ID in Header`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "creditmemo",
 				Label:     `Credit Memo`,
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sales_pdf/creditmemo/put_order_id`,
 						ID:        "put_order_id",
 						Label:     `Display Order ID in Header`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "rss",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "order",
 				Label:     `Order`,
 				SortOrder: 4,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `rss/order/status`,
 						ID:        "status",
 						Label:     `Customer Order Status Notification`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "dev",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "grid",
 				Label:     `Grid Settings`,
 				SortOrder: 131,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `dev/grid/async_indexing`,
 						ID:        "async_indexing",
 						Label:     `Asynchronous indexing`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   false,
+						Default:   "0",
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "promo",
 		Label:     `Promotions`,
 		SortOrder: 400,
 		Scopes:    scope.PermDefault,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "auto_generated_coupon_codes",
 				Label:     `Auto Generated Specific Coupon Codes`,
 				SortOrder: 10,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `promo/auto_generated_coupon_codes/length`,
 						ID:        "length",
 						Label:     `Code Length`,
 						Comment:   `Excluding prefix, suffix and separators.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   12,
+						Default:   "12",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `promo/auto_generated_coupon_codes/format`,
 						ID:        "format",
 						Label:     `Code Format`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `promo/auto_generated_coupon_codes/prefix`,
 						ID:        "prefix",
 						Label:     `Code Prefix`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `promo/auto_generated_coupon_codes/suffix`,
 						ID:        "suffix",
 						Label:     `Code Suffix`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 40,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `promo/auto_generated_coupon_codes/dash`,
 						ID:        "dash",
 						Label:     `Dash Every X Characters`,
 						Comment:   `If empty no separation.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "rss",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "catalog",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `rss/catalog/discounts`,
 						ID:        "discounts",
 						Label:     `Coupons/Discounts`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 12,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "catalog",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "search",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `catalog/search/engine`,
 						ID:        "engine",
 						Label:     `Search Engine`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 19,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/search/search_type`,
 						ID:        "search_type",
 						Label:     nil,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 0,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `catalog/search/use_layered_navigation_count`,
 						ID:        "use_layered_navigation_count",
 						Label:     nil,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 0,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "sendfriend",
 		Label:     `Email to a Friend`,
 		SortOrder: 120,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "email",
 				Label:     `Email Templates`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sendfriend/email/enabled`,
 						ID:        "enabled",
 						Label:     `Enabled`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sendfriend/email/template`,
 						ID:        "template",
 						Label:     `Select Email Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `sendfriend_email_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sendfriend/email/allow_guest`,
 						ID:        "allow_guest",
 						Label:     `Allow for Guests`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sendfriend/email/max_recipients`,
 						ID:        "max_recipients",
 						Label:     `Max Recipients`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   5,
+						Default:   "5",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sendfriend/email/max_per_hour`,
 						ID:        "max_per_hour",
 						Label:     `Max Products Sent in 1 Hour`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   5,
+						Default:   "5",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sendfriend/email/check_by`,
 						ID:        "check_by",
 						Label:     `Limit Sending By`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 6,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   false,
+						Default:   "0",
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "shipping",
 		Label:     `Shipping Settings`,
 		SortOrder: 310,
 		Scopes:    scope.PermWebsite,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "origin",
 				Label:     `Origin`,
 				SortOrder: 1,
 				Scopes:    scope.PermWebsite,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `shipping/origin/country_id`,
 						ID:        "country_id",
 						Label:     `Country`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `US`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `shipping/origin/region_id`,
 						ID:        "region_id",
 						Label:     `Region/State`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   12,
+						Default:   "12",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `shipping/origin/postcode`,
 						ID:        "postcode",
 						Label:     `ZIP/Postal Code`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   90034,
+						Default:   "90034",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `shipping/origin/city`,
 						ID:        "city",
 						Label:     `City`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 40,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `shipping/origin/street_line1`,
 						ID:        "street_line1",
 						Label:     `Street Address`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `shipping/origin/street_line2`,
 						ID:        "street_line2",
 						Label:     `Street Address Line 2`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 60,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "carriers",
 		Label:     `Shipping Methods`,
 		SortOrder: 320,
 		Scopes:    scope.PermStore,
-		Groups:    element.Groups{},
+		Groups:    config.Groups{},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "sitemap",
 		Label:     `XML Sitemap`,
 		SortOrder: 70,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "category",
 				Label:     `Categories Options`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sitemap/category/changefreq`,
 						ID:        "changefreq",
 						Label:     `Frequency`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `daily`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sitemap/category/priority`,
 						ID:        "priority",
 						Label:     `Priority`,
 						Comment:   `Valid values range from 0.0 to 1.0.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   0.5,
+						Default:   "0.5",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "product",
 				Label:     `Products Options`,
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sitemap/product/changefreq`,
 						ID:        "changefreq",
 						Label:     `Frequency`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `daily`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sitemap/product/priority`,
 						ID:        "priority",
 						Label:     `Priority`,
 						Comment:   `Valid values range from 0.0 to 1.0.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   1,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sitemap/product/image_include`,
 						ID:        "image_include",
 						Label:     `Add Images into Sitemap`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermStore,
@@ -9263,157 +8979,154 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "page",
 				Label:     `CMS Pages Options`,
 				SortOrder: 3,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sitemap/page/changefreq`,
 						ID:        "changefreq",
 						Label:     `Frequency`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `daily`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sitemap/page/priority`,
 						ID:        "priority",
 						Label:     `Priority`,
 						Comment:   `Valid values range from 0.0 to 1.0.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   0.25,
+						Default:   "0.25",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "generate",
 				Label:     `Generation Settings`,
 				SortOrder: 4,
 				Scopes:    scope.PermDefault,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sitemap/generate/enabled`,
 						ID:        "enabled",
 						Label:     `Enabled`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sitemap/generate/error_email`,
 						ID:        "error_email",
 						Label:     `Error Email Recipient`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sitemap/generate/error_email_identity`,
 						ID:        "error_email_identity",
 						Label:     `Error Email Sender`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 6,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `general`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sitemap/generate/error_email_template`,
 						ID:        "error_email_template",
 						Label:     `Error Email Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 7,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `sitemap_generate_error_email_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sitemap/generate/frequency`,
 						ID:        "frequency",
 						Label:     `Frequency`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sitemap/generate/time`,
 						ID:        "time",
 						Label:     `Start Time`,
-						Type:      element.TypeTime,
+						Type:      config.TypeTime,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "limit",
 				Label:     `Sitemap File Limits`,
 				SortOrder: 5,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sitemap/limit/max_lines`,
 						ID:        "max_lines",
 						Label:     `Maximum No of URLs Per File`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   50000,
+						Default:   "50000",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `sitemap/limit/max_file_size`,
 						ID:        "max_file_size",
 						Label:     `Maximum File Size`,
 						Comment:   `File size in bytes.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 2,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   10485760,
+						Default:   "10485760",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "search_engines",
 				Label:     `Search Engine Submission Settings`,
 				SortOrder: 6,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sitemap/search_engines/submission_robots`,
 						ID:        "submission_robots",
 						Label:     `Enable Submission to Robots.txt`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   false,
+						Default:   "0",
 					},
 				},
 			},
@@ -9421,29 +9134,28 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "sitemap",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "generate",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sitemap/generate/error_email`,
-						ID:      "error_email",
-						Type:    element.TypeHidden,
-						Scopes:  scope.PermDefault,
-						Default: nil,
+						ID:     "error_email",
+						Type:   config.TypeHidden,
+						Scopes: scope.PermDefault,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID: "file",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sitemap/file/valid_paths`,
 						ID:      "valid_paths",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"available":{"any_path":"\/*\/*.xml"}}`,
 					},
@@ -9452,186 +9164,185 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "tax",
 		Label:     `Tax`,
 		SortOrder: 303,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "classes",
 				Label:     `Tax Classes`,
 				SortOrder: 10,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `tax/classes/shipping_tax_class`,
 						ID:        "shipping_tax_class",
 						Label:     `Tax Class for Shipping`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/classes/default_product_tax_class`,
 						ID:        "default_product_tax_class",
 						Label:     `Default Tax Class for Product`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   2,
+						Default:   "2",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/classes/default_customer_tax_class`,
 						ID:        "default_customer_tax_class",
 						Label:     `Default Tax Class for Customer`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
-						Default:   3,
+						Default:   "3",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "calculation",
 				Label:     `Calculation Settings`,
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `tax/calculation/algorithm`,
 						ID:        "algorithm",
 						Label:     `Tax Calculation Method Based On`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `TOTAL_BASE_CALCULATION`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/calculation/based_on`,
 						ID:        "based_on",
 						Label:     `Tax Calculation Based On`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `shipping`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/calculation/price_includes_tax`,
 						ID:        "price_includes_tax",
 						Label:     `Catalog Prices`,
 						Comment:   `This sets whether catalog prices entered by admin include tax.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/calculation/shipping_includes_tax`,
 						ID:        "shipping_includes_tax",
 						Label:     `Shipping Prices`,
 						Comment:   `This sets whether shipping amounts entered by admin or obtained from gateways include tax.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/calculation/apply_after_discount`,
 						ID:        "apply_after_discount",
 						Label:     `Apply Customer Tax`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 40,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/calculation/discount_tax`,
 						ID:        "discount_tax",
 						Label:     `Apply Discount On Prices`,
 						Comment:   `Apply discount on price including tax is calculated based on store tax, if "Apply Tax after Discount" is selected.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `["0","0"]`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/calculation/apply_tax_on`,
 						ID:        "apply_tax_on",
 						Label:     `Apply Tax On`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 60,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/calculation/cross_border_trade_enabled`,
 						ID:        "cross_border_trade_enabled",
 						Label:     `Enable Cross Border Trade`,
 						Comment:   `When catalog price includes tax, enable this setting will fix the price no matter what the customer's tax rate is.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 70,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "defaults",
 				Label:     `Default Tax Destination Calculation`,
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `tax/defaults/country`,
 						ID:        "country",
 						Label:     `Default Country`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `US`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/defaults/region`,
 						ID:        "region",
 						Label:     `Default State`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/defaults/postcode`,
 						ID:        "postcode",
 						Label:     `Default Post Code`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermStore,
@@ -9640,180 +9351,180 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "display",
 				Label:     `Price Display Settings`,
 				SortOrder: 40,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `tax/display/type`,
 						ID:        "type",
 						Label:     `Display Product Prices In Catalog`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/display/shipping`,
 						ID:        "shipping",
 						Label:     `Display Shipping Prices`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "cart_display",
 				Label:     `Shopping Cart Display Settings`,
 				SortOrder: 50,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `tax/cart_display/price`,
 						ID:        "price",
 						Label:     `Display Prices`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/cart_display/subtotal`,
 						ID:        "subtotal",
 						Label:     `Display Subtotal`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/cart_display/shipping`,
 						ID:        "shipping",
 						Label:     `Display Shipping Amount`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/cart_display/grandtotal`,
 						ID:        "grandtotal",
 						Label:     `Include Tax In Grand Total`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/cart_display/full_summary`,
 						ID:        "full_summary",
 						Label:     `Display Full Tax Summary`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 60,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/cart_display/zero_tax`,
 						ID:        "zero_tax",
 						Label:     `Display Zero Tax Subtotal`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 120,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   false,
+						Default:   "0",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "sales_display",
 				Label:     `Orders, Invoices, Credit Memos Display Settings`,
 				SortOrder: 60,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `tax/sales_display/price`,
 						ID:        "price",
 						Label:     `Display Prices`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/sales_display/subtotal`,
 						ID:        "subtotal",
 						Label:     `Display Subtotal`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/sales_display/shipping`,
 						ID:        "shipping",
 						Label:     `Display Shipping Amount`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/sales_display/grandtotal`,
 						ID:        "grandtotal",
 						Label:     `Include Tax In Grand Total`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/sales_display/full_summary`,
 						ID:        "full_summary",
 						Label:     `Display Full Tax Summary`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 60,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/sales_display/zero_tax`,
 						ID:        "zero_tax",
 						Label:     `Display Zero Tax Subtotal`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 120,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   false,
+						Default:   "0",
 					},
 				},
 			},
@@ -9821,42 +9532,42 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "tax",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "cart_display",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `tax/cart_display/discount`,
 						ID:      "discount",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: true,
+						Default: "1",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID: "sales_display",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `tax/sales_display/discount`,
 						ID:      "discount",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: true,
+						Default: "1",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID: "notification",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `tax/notification/url`,
 						ID:      "url",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `http://www.magentocommerce.com/knowledge-base/entry/magento-ce-18-ee-113-tax-calc`,
 					},
@@ -9865,222 +9576,207 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "design",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "head",
 				Label:     `HTML Head`,
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `design/head/shortcut_icon`,
 						ID:        "shortcut_icon",
 						Label:     `Favicon Icon`,
 						Comment:   `Allowed file types: ICO, PNG, GIF, JPG, JPEG, APNG, SVG. Not all browsers support all these formats!`,
-						Type:      element.TypeImage,
+						Type:      config.TypeImage,
 						SortOrder: 5,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `design/head/default_title`,
 						ID:        "default_title",
 						Label:     `Default Title`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `design/head/title_prefix`,
 						ID:        "title_prefix",
 						Label:     `Title Prefix`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 12,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `design/head/title_suffix`,
 						ID:        "title_suffix",
 						Label:     `Title Suffix`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 14,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `design/head/default_description`,
 						ID:        "default_description",
 						Label:     `Default Description`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `design/head/default_keywords`,
 						ID:        "default_keywords",
 						Label:     `Default Keywords`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `design/head/includes`,
 						ID:        "includes",
 						Label:     `Miscellaneous Scripts`,
 						Comment:   `This will be included before head closing tag in page HTML.`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 70,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `design/head/demonotice`,
 						ID:        "demonotice",
 						Label:     `Display Demo Store Notice`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 80,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "search_engine_robots",
 				Label:     `Search Engine Robots`,
 				SortOrder: 25,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `design/search_engine_robots/default_robots`,
 						ID:        "default_robots",
 						Label:     `Default Robots`,
 						Comment:   `This will be included before head closing tag in page HTML.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 40,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   `INDEX,FOLLOW`,
+						Default:   `INDEX",FOLLOW`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `design/search_engine_robots/custom_instructions`,
 						ID:        "custom_instructions",
 						Label:     `Edit custom instruction of robots.txt File`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 70,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `design/search_engine_robots/reset_to_defaults`,
 						ID:        "reset_to_defaults",
 						Label:     `Reset to Defaults`,
 						Comment:   `This action will delete your custom instructions and reset robots.txt file to system's default settings.`,
-						Type:      element.TypeButton,
+						Type:      config.TypeButton,
 						SortOrder: 80,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "header",
 				Label:     `Header`,
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `design/header/logo_src`,
 						ID:        "logo_src",
 						Label:     `Logo Image`,
 						Comment:   `Allowed file types:PNG, GIF, JPG, JPEG, SVG.`,
-						Type:      element.TypeImage,
+						Type:      config.TypeImage,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `design/header/logo_alt`,
 						ID:        "logo_alt",
 						Label:     `Logo Image Alt`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `design/header/welcome`,
 						ID:        "welcome",
 						Label:     `Welcome Text`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "footer",
 				Label:     `Footer`,
 				SortOrder: 40,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `design/footer/copyright`,
 						ID:        "copyright",
 						Label:     `Copyright`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `design/footer/absolute_footer`,
 						ID:        "absolute_footer",
 						Label:     `Miscellaneous HTML`,
 						Comment:   `This will be displayed just before body closing tag.`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
@@ -10088,37 +9784,37 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "design",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "head",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `design/head/_value`,
 						ID:      "_value",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"default_title":"Magento Commerce","default_description":"Default Description","default_keywords":"Magento, Varien, E-commerce","default_media_type":"text\/html","default_charset":"utf-8"}`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `design/head/_attribute`,
 						ID:      "_attribute",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"translate":"default_description"}`,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID: "search_engine_robots",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `design/search_engine_robots/default_custom_instructions`,
 						ID:     "default_custom_instructions",
-						Type:   element.TypeHidden,
+						Type:   config.TypeHidden,
 						Scopes: scope.PermDefault,
 						Default: `
 User-agent: *
@@ -10144,42 +9840,42 @@ Disallow: /*SID=
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID: "header",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `design/header/_value`,
 						ID:      "_value",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"logo_alt":"Magento Commerce","welcome":"Default welcome msg!"}`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `design/header/_attribute`,
 						ID:      "_attribute",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"translate":"welcome"}`,
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID: "footer",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `design/footer/_value`,
 						ID:      "_value",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"copyright":"&copy; 2014 Magento Demo Store. All Rights Reserved."}`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `design/footer/_attribute`,
 						ID:      "_attribute",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"translate":"copyright"}`,
 					},
@@ -10187,16 +9883,16 @@ Disallow: /*SID=
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID: "theme",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "customization",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `theme/customization/custom_css`,
 						ID:      "custom_css",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\Theme\Model\Theme\Customization\File\CustomCss`,
 					},
@@ -10204,16 +9900,16 @@ Disallow: /*SID=
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID: "system",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "media_storage_configuration",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `system/media_storage_configuration/allowed_resources`,
 						ID:      "allowed_resources",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"site_favicons":"favicon"}`,
 					},
@@ -10222,24 +9918,24 @@ Disallow: /*SID=
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "dev",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "js",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `dev/js/translate_strategy`,
 						ID:        "translate_strategy",
 						Label:     `Translation Strategy`,
 						Comment:   `Please put your store into maintenance mode and redeploy static files after changing strategy`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
@@ -10251,32 +9947,32 @@ Disallow: /*SID=
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "dev",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "translate_inline",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `dev/translate_inline/active`,
 						ID:      "active",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: false,
+						Default: "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `dev/translate_inline/active_admin`,
 						ID:      "active_admin",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: false,
+						Default: "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `dev/translate_inline/invalid_caches`,
 						ID:      "invalid_caches",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"block_html":null}`,
 					},
@@ -10285,392 +9981,381 @@ Disallow: /*SID=
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "carriers",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "ups",
 				Label:     `UPS`,
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `carriers/ups/access_license_number`,
 						ID:        "access_license_number",
 						Label:     `Access License Number`,
-						Type:      element.TypeObscure,
+						Type:      config.TypeObscure,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/active`,
 						ID:        "active",
 						Label:     `Enabled for Checkout`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/allowed_methods`,
 						ID:        "allowed_methods",
 						Label:     `Allowed Methods`,
-						Type:      element.TypeMultiselect,
+						Type:      config.TypeMultiselect,
 						SortOrder: 170,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   `1DM,1DML,1DA,1DAL,1DAPI,1DP,1DPL,2DM,2DML,2DA,2DAL,3DS,GND,GNDCOM,GNDRES,STD,XPR,WXS,XPRL,XDM,XDML,XPD,01,02,03,07,08,11,12,14,54,59,65`,
+						Default:   `1DM",1DML,1DA,1DAL,1DAPI,1DP,1DPL,2DM,2DML,2DA,2DAL,3DS,GND,GNDCOM,GNDRES,STD,XPR,WXS,XPRL,XDM,XDML,XPD,01,02,03,07,08,11,12,14,54,59,65`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/shipment_requesttype`,
 						ID:        "shipment_requesttype",
 						Label:     `Packages Request Type`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 47,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/container`,
 						ID:        "container",
 						Label:     `Container`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `CP`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/free_shipping_enable`,
 						ID:        "free_shipping_enable",
 						Label:     `Free Shipping Amount Threshold`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 210,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/free_shipping_subtotal`,
 						ID:        "free_shipping_subtotal",
 						Label:     `Free Shipping Amount Threshold`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 220,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/dest_type`,
 						ID:        "dest_type",
 						Label:     `Destination Type`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 60,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `RES`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/free_method`,
 						ID:        "free_method",
 						Label:     `Free Method`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 200,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `GND`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/gateway_url`,
 						ID:        "gateway_url",
 						Label:     `Gateway URL`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 40,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `http://www.ups.com/using/services/rave/qcostcgi.cgi`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/gateway_xml_url`,
 						ID:        "gateway_xml_url",
 						Label:     `Gateway XML URL`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `https://onlinetools.ups.com/ups.app/xml/Rate`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/handling_type`,
 						ID:        "handling_type",
 						Label:     `Calculate Handling Fee`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 110,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `F`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/handling_action`,
 						ID:        "handling_action",
 						Label:     `Handling Applied`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 120,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `O`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/handling_fee`,
 						ID:        "handling_fee",
 						Label:     `Handling Fee`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 130,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/max_package_weight`,
 						ID:        "max_package_weight",
 						Label:     `Maximum  (Please consult your shipping carrier for maximum supported shipping weight)`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 80,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   150,
+						Default:   "150",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/min_package_weight`,
 						ID:        "min_package_weight",
 						Label:     `Minimum  (Please consult your shipping carrier for minimum supported shipping weight)`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 90,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   0.1,
+						Default:   "0.1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/origin_shipment`,
 						ID:        "origin_shipment",
 						Label:     `Origin of the Shipment`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `Shipments Originating in United States`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/password`,
 						ID:        "password",
 						Label:     `Password`,
-						Type:      element.TypeObscure,
+						Type:      config.TypeObscure,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/pickup`,
 						ID:        "pickup",
 						Label:     `Pickup Method`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 80,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `CC`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/sort_order`,
 						ID:        "sort_order",
 						Label:     `Sort Order`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 1000,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/title`,
 						ID:        "title",
 						Label:     `Title`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 40,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `United Parcel Service`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/tracking_xml_url`,
 						ID:        "tracking_xml_url",
 						Label:     `Tracking XML URL`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 60,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `https://www.ups.com/ups.app/xml/Track`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/type`,
 						ID:        "type",
 						Label:     `UPS Type`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `UPS`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/is_account_live`,
 						ID:        "is_account_live",
 						Label:     `Live account`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 25,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/unit_of_measure`,
 						ID:        "unit_of_measure",
 						Label:     `Weight Unit`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 60,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `LBS`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/username`,
 						ID:        "username",
 						Label:     `User ID`,
-						Type:      element.TypeObscure,
+						Type:      config.TypeObscure,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/negotiated_active`,
 						ID:        "negotiated_active",
 						Label:     `Enable Negotiated Rates`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 40,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/shipper_number`,
 						ID:        "shipper_number",
 						Label:     `Shipper Number`,
 						Comment:   `Required for negotiated rates; 6-character UPS`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/sallowspecific`,
 						ID:        "sallowspecific",
 						Label:     `Ship to Applicable Countries`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 900,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/specificcountry`,
 						ID:        "specificcountry",
 						Label:     `Ship to Specific Countries`,
-						Type:      element.TypeMultiselect,
+						Type:      config.TypeMultiselect,
 						SortOrder: 910,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/showmethod`,
 						ID:        "showmethod",
 						Label:     `Show Method if Not Applicable`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 920,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/specificerrmsg`,
 						ID:        "specificerrmsg",
 						Label:     `Displayed Error Message`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 800,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
+						Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method", please contact us.`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/mode_xml`,
 						ID:        "mode_xml",
 						Label:     `Mode`,
 						Comment:   `This enables or disables SSL verification of the Magento server by UPS.`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/debug`,
 						ID:        "debug",
 						Label:     `Debug`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 920,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 				},
 			},
@@ -10678,73 +10363,72 @@ Disallow: /*SID=
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "carriers",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "ups",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `carriers/ups/cutoff_cost`,
-						ID:      "cutoff_cost",
-						Type:    element.TypeHidden,
-						Scopes:  scope.PermDefault,
-						Default: nil,
+						ID:     "cutoff_cost",
+						Type:   config.TypeHidden,
+						Scopes: scope.PermDefault,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/handling`,
 						ID:      "handling",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: false,
+						Default: "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/model`,
 						ID:      "model",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\Ups\Model\Carrier`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/active_rma`,
 						ID:      "active_rma",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: false,
+						Default: "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/ups/is_online`,
 						ID:      "is_online",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: true,
+						Default: "1",
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "admin",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "emails",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `admin/emails/reset_password_template`,
 						ID:        "reset_password_template",
 						Label:     `Reset Password Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 40,
 						Visible:   true,
 						Scopes:    scope.PermDefault,
@@ -10756,369 +10440,354 @@ Disallow: /*SID=
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "admin",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "emails",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `admin/emails/forgot_email_template`,
 						ID:      "forgot_email_template",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `admin_emails_forgot_email_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `admin/emails/forgot_email_identity`,
 						ID:      "forgot_email_identity",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `general`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `admin/emails/password_reset_link_expiration_period`,
 						ID:      "password_reset_link_expiration_period",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: true,
+						Default: "1",
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "carriers",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "usps",
 				Label:     `USPS`,
 				SortOrder: 110,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `carriers/usps/active`,
 						ID:        "active",
 						Label:     `Enabled for Checkout`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/gateway_url`,
 						ID:        "gateway_url",
 						Label:     `Gateway URL`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `http://production.shippingapis.com/ShippingAPI.dll`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/gateway_secure_url`,
 						ID:        "gateway_secure_url",
 						Label:     `Secure Gateway URL`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `https://secure.shippingapis.com/ShippingAPI.dll`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/title`,
 						ID:        "title",
 						Label:     `Title`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 40,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `United States Postal Service`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/userid`,
 						ID:        "userid",
 						Label:     `User ID`,
-						Type:      element.TypeObscure,
+						Type:      config.TypeObscure,
 						SortOrder: 50,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/password`,
 						ID:        "password",
 						Label:     `Password`,
-						Type:      element.TypeObscure,
+						Type:      config.TypeObscure,
 						SortOrder: 53,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/mode`,
 						ID:        "mode",
 						Label:     `Mode`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 54,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/shipment_requesttype`,
 						ID:        "shipment_requesttype",
 						Label:     `Packages Request Type`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 55,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/container`,
 						ID:        "container",
 						Label:     `Container`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 60,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `VARIABLE`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/size`,
 						ID:        "size",
 						Label:     `Size`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 70,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `REGULAR`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/width`,
 						ID:        "width",
 						Label:     `Width`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 73,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/length`,
 						ID:        "length",
 						Label:     `Length`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 72,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/height`,
 						ID:        "height",
 						Label:     `Height`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 74,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/girth`,
 						ID:        "girth",
 						Label:     `Girth`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 76,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/machinable`,
 						ID:        "machinable",
 						Label:     `Machinable`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 80,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `true`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/max_package_weight`,
 						ID:        "max_package_weight",
 						Label:     `Maximum  (Please consult your shipping carrier for maximum supported shipping weight)`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 90,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   70,
+						Default:   "70",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/handling_type`,
 						ID:        "handling_type",
 						Label:     `Calculate Handling Fee`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 100,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `F`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/handling_action`,
 						ID:        "handling_action",
 						Label:     `Handling Applied`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 110,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
 						Default:   `O`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/handling_fee`,
 						ID:        "handling_fee",
 						Label:     `Handling Fee`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 120,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/allowed_methods`,
 						ID:        "allowed_methods",
 						Label:     `Allowed Methods`,
-						Type:      element.TypeMultiselect,
+						Type:      config.TypeMultiselect,
 						SortOrder: 130,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   `0_FCLE,0_FCL,0_FCP,1,2,3,4,6,7,13,16,17,22,23,25,27,28,33,34,35,36,37,42,43,53,55,56,57,61,INT_1,INT_2,INT_4,INT_6,INT_7,INT_8,INT_9,INT_10,INT_11,INT_12,INT_13,INT_14,INT_15,INT_16,INT_20,INT_26`,
+						Default:   `0_FCLE",0_FCL,0_FCP,1,2,3,4,6,7,13,16,17,22,23,25,27,28,33,34,35,36,37,42,43,53,55,56,57,61,INT_1,INT_2,INT_4,INT_6,INT_7,INT_8,INT_9,INT_10,INT_11,INT_12,INT_13,INT_14,INT_15,INT_16,INT_20,INT_26`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/free_method`,
 						ID:        "free_method",
 						Label:     `Free Method`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 140,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/free_shipping_enable`,
 						ID:        "free_shipping_enable",
 						Label:     `Free Shipping Amount Threshold`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1500,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/free_shipping_subtotal`,
 						ID:        "free_shipping_subtotal",
 						Label:     `Free Shipping Amount Threshold`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 160,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/specificerrmsg`,
 						ID:        "specificerrmsg",
 						Label:     `Displayed Error Message`,
-						Type:      element.TypeTextarea,
+						Type:      config.TypeTextarea,
 						SortOrder: 170,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
+						Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method", please contact us.`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/sallowspecific`,
 						ID:        "sallowspecific",
 						Label:     `Ship to Applicable Countries`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 180,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/specificcountry`,
 						ID:        "specificcountry",
 						Label:     `Ship to Specific Countries`,
-						Type:      element.TypeMultiselect,
+						Type:      config.TypeMultiselect,
 						SortOrder: 190,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/debug`,
 						ID:        "debug",
 						Label:     `Debug`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 200,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/showmethod`,
 						ID:        "showmethod",
 						Label:     `Show Method if Not Applicable`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 210,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/sort_order`,
 						ID:        "sort_order",
 						Label:     `Sort Order`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 220,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 				},
 			},
@@ -11126,221 +10795,216 @@ Disallow: /*SID=
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "carriers",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "usps",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `carriers/usps/cutoff_cost`,
-						ID:      "cutoff_cost",
-						Type:    element.TypeHidden,
-						Scopes:  scope.PermDefault,
-						Default: nil,
+						ID:     "cutoff_cost",
+						Type:   config.TypeHidden,
+						Scopes: scope.PermDefault,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/free_method`,
-						ID:      "free_method",
-						Type:    element.TypeHidden,
-						Scopes:  scope.PermDefault,
-						Default: nil,
+						ID:     "free_method",
+						Type:   config.TypeHidden,
+						Scopes: scope.PermDefault,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/handling`,
-						ID:      "handling",
-						Type:    element.TypeHidden,
-						Scopes:  scope.PermDefault,
-						Default: nil,
+						ID:     "handling",
+						Type:   config.TypeHidden,
+						Scopes: scope.PermDefault,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/methods`,
-						ID:      "methods",
-						Type:    element.TypeHidden,
-						Scopes:  scope.PermDefault,
-						Default: nil,
+						ID:     "methods",
+						Type:   config.TypeHidden,
+						Scopes: scope.PermDefault,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/model`,
 						ID:      "model",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `Magento\Usps\Model\Carrier`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/isproduction`,
 						ID:      "isproduction",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: false,
+						Default: "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/active_rma`,
 						ID:      "active_rma",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: false,
+						Default: "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `carriers/usps/is_online`,
 						ID:      "is_online",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: true,
+						Default: "1",
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "webapi",
 		Label:     `Magento Web API`,
 		SortOrder: 102,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "soap",
 				Label:     `SOAP Settings`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `webapi/soap/charset`,
 						ID:        "charset",
 						Label:     `Default Response Charset`,
 						Comment:   `If empty, UTF-8 will be used.`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "tax",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "weee",
 				Label:     `Fixed Product Taxes`,
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `tax/weee/enable`,
 						ID:        "enable",
 						Label:     `Enable FPT`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/weee/display_list`,
 						ID:        "display_list",
 						Label:     `Display Prices In Product Lists`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/weee/display`,
 						ID:        "display",
 						Label:     `Display Prices On Product View Page`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 20,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/weee/display_sales`,
 						ID:        "display_sales",
 						Label:     `Display Prices In Sales Modules`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 30,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/weee/display_email`,
 						ID:        "display_email",
 						Label:     `Display Prices In Emails`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 40,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   true,
+						Default:   "1",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/weee/apply_vat`,
 						ID:        "apply_vat",
 						Label:     `Apply Tax To FPT`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 60,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `tax/weee/include_in_subtotal`,
 						ID:        "include_in_subtotal",
 						Label:     `Include FPT In Subtotal`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 70,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   false,
+						Default:   "0",
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "sales",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "totals_sort",
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sales/totals_sort/weee`,
 						ID:        "weee",
 						Label:     `Fixed Product Tax`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   35,
+						Default:   "35",
 					},
 				},
 			},
@@ -11348,33 +11012,33 @@ Disallow: /*SID=
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	&config.Section{
 		ID: "sales",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "totals_sort",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `sales/totals_sort/weee_tax`,
 						ID:      "weee_tax",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
-						Default: 35,
+						Default: "35",
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID: "general",
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID: "validator_data",
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `general/validator_data/input_types`,
 						ID:      "input_types",
-						Type:    element.TypeHidden,
+						Type:    config.TypeHidden,
 						Scopes:  scope.PermDefault,
 						Default: `{"weee":"weee"}`,
 					},
@@ -11383,126 +11047,124 @@ Disallow: /*SID=
 		},
 	},
 
-	&element.Section{
+	&config.Section{
 		ID:        "wishlist",
 		Label:     `Wishlist`,
 		SortOrder: 140,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "email",
 				Label:     `Share Options`,
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `wishlist/email/email_identity`,
 						ID:        "email_identity",
 						Label:     `Email Sender`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `general`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `wishlist/email/email_template`,
 						ID:        "email_template",
 						Label:     `Email Template`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
 						Default:   `wishlist_email_email_template`,
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `wishlist/email/number_limit`,
 						ID:        "number_limit",
 						Label:     `Max Emails Allowed to be Sent`,
 						Comment:   `10 by default. Max - 10000`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 3,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   10,
+						Default:   "10",
 					},
 
-					&element.Field{
+					&config.Field{
 						// Path: `wishlist/email/text_limit`,
 						ID:        "text_limit",
 						Label:     `Email Text Length Limit`,
 						Comment:   `255 by default`,
-						Type:      element.TypeText,
+						Type:      config.TypeText,
 						SortOrder: 4,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   255,
+						Default:   "255",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "general",
 				Label:     `General Options`,
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `wishlist/general/active`,
 						ID:        "active",
 						Label:     `Enabled`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   true,
+						Default:   "1",
 					},
 				},
 			},
 
-			&element.Group{
+			&config.Group{
 				ID:        "wishlist_link",
 				Label:     `My Wish List Link`,
 				SortOrder: 3,
 				Scopes:    scope.PermWebsite,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `wishlist/wishlist_link/use_qty`,
 						ID:        "use_qty",
 						Label:     `Display Wish List Summary`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 1,
 						Visible:   true,
 						Scopes:    scope.PermWebsite,
-						Default:   nil,
 					},
 				},
 			},
 		},
 	},
-	&element.Section{
+	&config.Section{
 		ID:        "rss",
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
-		Groups: element.Groups{
-			&element.Group{
+		Groups: config.Groups{
+			&config.Group{
 				ID:        "wishlist",
 				Label:     `Wishlist`,
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
-				Fields: element.Fields{
-					&element.Field{
+				Fields: config.Fields{
+					&config.Field{
 						// Path: `rss/wishlist/active`,
 						ID:        "active",
 						Label:     `Enable RSS`,
-						Type:      element.TypeSelect,
+						Type:      config.TypeSelect,
 						SortOrder: 10,
 						Visible:   true,
 						Scopes:    scope.PermStore,
-						Default:   nil,
 					},
 				},
 			},
