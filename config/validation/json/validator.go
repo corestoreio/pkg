@@ -27,8 +27,8 @@ import (
 	"github.com/corestoreio/pkg/config/validation"
 )
 
-// RegisterObservers reads JSON byte data from r, parses it, creates the
-// appropriate observers and registers them with the config.Service.
+// RegisterObservers reads all JSON byte data from r into memory, parses it,
+// creates the appropriate observers and registers them with the config.Service.
 func RegisterObservers(or config.ObserverRegisterer, r io.Reader) error {
 
 	jsonData, err := ioutil.ReadAll(r)
@@ -75,7 +75,7 @@ type Validator struct {
 type Validators []*Validator
 
 func (v *Validator) makeObserver() (event uint8, route string, _ config.Observer, err error) {
-	if err := config.Route(v.Route).IsValid(); err != nil {
+	if err = config.Route(v.Route).IsValid(); err != nil {
 		return 0, "", nil, errors.Wrapf(err, "[config/validation] Invalid route: %#v", v)
 	}
 

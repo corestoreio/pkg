@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package json contains
+// Package json adds JSON encoded validators to the config.ObserverRegisterer.
 package json
