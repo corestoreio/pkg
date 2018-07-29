@@ -62,6 +62,43 @@ func (orf observerRegistererFake) DeregisterObserver(event uint8, route string) 
 	return nil
 }
 
+func TestDeregisterObservers(t *testing.T) {
+	t.Parallel()
+
+	t.Run("JSON malformed", func(t *testing.T) {
+		or := observerRegistererFake{
+			t: t,
+		}
+
+		err := DeregisterObservers(or, bytes.NewBufferString(`[{ 
+			"event":before_set, "route":"payment/pp/port", "type":"MinMaxInt64", "condition":{"conditions":[8080,8090]} 
+		}]`))
+		assert.True(t, errors.BadEncoding.Match(err), "%+v", err)
+	})
+	t.Run("event not found", func(t *testing.T) {
+		or := observerRegistererFake{
+			t: t,
+		}
+		err := DeregisterObservers(or, bytes.NewBufferString(`[{ 
+			"event":"before_heck", "route":"payment/pp/port", "type":"MinMaxInt64", "condition":{"conditions":[8080,8090]} 
+		}]`))
+		assert.True(t, errors.NotFound.Match(err), "%+v", err)
+	})
+
+	t.Run("deregistered", func(t *testing.T) {
+		or := observerRegistererFake{
+			t:         t,
+			wantEvent: config.EventOnBeforeSet,
+			wantRoute: "payment/pp/port",
+		}
+		err := DeregisterObservers(or, bytes.NewBufferString(`[{ 
+			"event":"before_set", "route":"payment/pp/port" 
+		}]`))
+		assert.NoError(t, err)
+	})
+
+}
+
 func TestRegisterObservers(t *testing.T) {
 	t.Parallel()
 
@@ -226,6 +263,41 @@ func TestRegisterObservers(t *testing.T) {
 		assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	})
 
+}
+
+func TestValidator_MakeEventRoute(t *testing.T) {
+	t.Parallel()
+
+	t.Run("All Valid", func(t *testing.T) {
+		v := &Validator{
+			Route: "general/stores/information",
+			Event: "after_set",
+		}
+		e, r, err := v.MakeEventRoute()
+		assert.NoError(t, err)
+		assert.Exactly(t, "general/stores/information", r)
+		assert.Exactly(t, config.EventOnAfterSet, e)
+	})
+	t.Run("event not found", func(t *testing.T) {
+		v := &Validator{
+			Route: "general/stores/information",
+			Event: "after_bet",
+		}
+		e, r, err := v.MakeEventRoute()
+		assert.True(t, errors.NotFound.Match(err))
+		assert.Empty(t, r)
+		assert.Empty(t, e)
+	})
+	t.Run("invalid route", func(t *testing.T) {
+		v := &Validator{
+			Route: "d/f",
+			Event: "after_set",
+		}
+		e, r, err := v.MakeEventRoute()
+		assert.True(t, errors.NotValid.Match(err))
+		assert.Empty(t, r)
+		assert.Empty(t, e)
+	})
 }
 
 var _ UnmarshallableObserver = (*xmlValidator)(nil)

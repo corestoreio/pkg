@@ -42,11 +42,37 @@ func RegisterObservers(or config.ObserverRegisterer, r io.Reader) error {
 	}
 
 	for _, v := range vs {
-		event, route, o, err := v.makeObserver()
+		event, route, o, err := v.MakeObserver()
 		if err != nil {
 			return errors.Wrapf(err, "[config/validation] Data: %#v", v)
 		}
 		if err := or.RegisterObserver(event, route, o); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return nil
+}
+
+// DeregisterObservers reads all JSON byte data from r into memory, parses it,
+// removes the appropriate observers which matches the route and the event.
+func DeregisterObservers(or config.ObserverRegisterer, r io.Reader) error {
+
+	jsonData, err := ioutil.ReadAll(r)
+	if err != nil {
+		return errors.ReadFailed.New(err, "[config/validation/json] Reading failed")
+	}
+
+	vs := make(Validators, 0, 5)
+	if err := vs.UnmarshalJSON(jsonData); err != nil {
+		return errors.BadEncoding.New(err, "[config/validation/json] JSON decoding failed")
+	}
+
+	for _, v := range vs {
+		event, route, err := v.MakeEventRoute()
+		if err != nil {
+			return errors.Wrapf(err, "[config/validation] Data: %#v", v)
+		}
+		if err := or.DeregisterObserver(event, route); err != nil {
 			return errors.WithStack(err)
 		}
 	}
@@ -87,6 +113,9 @@ func (v Validators) Validate() error {
 // Validate checks if the data is confirm to the business logic. Returns nil on success.
 // Also used by github.com/grpc-ecosystem/go-grpc-middleware/validator
 func (v *Validator) Validate() error {
+	if v == nil {
+		return nil
+	}
 	if err := config.Route(v.Route).IsValid(); err != nil {
 		return errors.Wrapf(err, "[config/validation] Invalid route: %#v", v)
 	}
@@ -113,7 +142,22 @@ func (v *Validator) Validate() error {
 	return nil
 }
 
-func (v *Validator) makeObserver() (event uint8, route string, _ config.Observer, err error) {
+// MakeEventRoute extracts a validated event and a route from the data.
+func (v *Validator) MakeEventRoute() (event uint8, route string, err error) {
+	if event, err = config.MakeEvent(v.Event); err != nil {
+		return 0, "", errors.WithStack(err)
+	}
+
+	if err := config.Route(v.Route).IsValid(); err != nil {
+		return 0, "", errors.Wrapf(err, "[config/validation] Invalid route: %#v", v)
+	}
+
+	return event, v.Route, nil
+}
+
+// MakeObserver transforms and validates the Validator data into a functional
+// observer for an event and a specific route.
+func (v Validator) MakeObserver() (event uint8, route string, _ config.Observer, err error) {
 	if err := v.Validate(); err != nil {
 		return 0, "", nil, errors.WithStack(err)
 	}
