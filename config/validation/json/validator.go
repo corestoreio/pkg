@@ -74,18 +74,51 @@ type Validator struct {
 //easyjson:json
 type Validators []*Validator
 
-func (v *Validator) makeObserver() (event uint8, route string, _ config.Observer, err error) {
-	if err = config.Route(v.Route).IsValid(); err != nil {
-		return 0, "", nil, errors.Wrapf(err, "[config/validation] Invalid route: %#v", v)
+// Validate runs the validation process on all slice members.
+func (v Validators) Validate() error {
+	for _, vi := range v {
+		if err := vi.Validate(); err != nil {
+			return errors.WithStack(err) // maybe add the index within the slice.
+		}
+	}
+	return nil
+}
+
+// Validate checks if the data is confirm to the business logic. Returns nil on success.
+// Also used by github.com/grpc-ecosystem/go-grpc-middleware/validator
+func (v *Validator) Validate() error {
+	if err := config.Route(v.Route).IsValid(); err != nil {
+		return errors.Wrapf(err, "[config/validation] Invalid route: %#v", v)
 	}
 
 	if len(v.Condition) == 0 {
-		return 0, "", nil, errors.Empty.Newf("[config/validation] Data for %q is empty. %#v", v.Type, v)
+		return errors.Empty.Newf("[config/validation] Data for %q is empty. %#v", v.Type, v)
+	}
+	if _, err := config.MakeEvent(v.Event); err != nil {
+		return errors.WithStack(err)
 	}
 
-	if event, err = config.MakeEvent(v.Event); err != nil {
+	// This logic is duplicated but for now ok. No need to add another abstraction.
+	switch v.Type {
+	case "min_max_int64", "minmaxint64", "MinMaxInt64",
+		"strings", "Strings":
+		// ok
+	default:
+		customObserverRegistry.RLock()
+		defer customObserverRegistry.RUnlock()
+		if _, ok := customObserverRegistry.pool[v.Type]; !ok {
+			return errors.NotFound.Newf("[config/validation] Validator type %q not found in list.", v.Type)
+		}
+	}
+	return nil
+}
+
+func (v *Validator) makeObserver() (event uint8, route string, _ config.Observer, err error) {
+	if err := v.Validate(); err != nil {
 		return 0, "", nil, errors.WithStack(err)
 	}
+
+	event, _ = config.MakeEvent(v.Event)
 
 	switch v.Type {
 	case "min_max_int64", "minmaxint64", "MinMaxInt64":
@@ -105,18 +138,16 @@ func (v *Validator) makeObserver() (event uint8, route string, _ config.Observer
 			return 0, "", nil, errors.WithStack(err)
 		}
 		return event, v.Route, vStr, nil
-
-	default:
-		customObserverRegistry.RLock()
-		defer customObserverRegistry.RUnlock()
-		if uo, ok := customObserverRegistry.pool[v.Type]; ok {
-			if err := uo.UnmarshalJSON(v.Condition); err != nil {
-				return 0, "", nil, errors.BadEncoding.New(err, "[config/validation] Failed to decode: %#v", v)
-			}
-			return event, v.Route, uo, nil
-		}
-		return 0, "", nil, errors.NotFound.Newf("[config/validation] Validator type %q not found in list.", v.Type)
 	}
+
+	customObserverRegistry.RLock()
+	defer customObserverRegistry.RUnlock()
+	uo := customObserverRegistry.pool[v.Type]
+
+	if err := uo.UnmarshalJSON(v.Condition); err != nil {
+		return 0, "", nil, errors.BadEncoding.New(err, "[config/validation] Failed to decode: %#v", v)
+	}
+	return event, v.Route, uo, nil
 }
 
 // UnmarshallableObserver allows to implement custom validation for function

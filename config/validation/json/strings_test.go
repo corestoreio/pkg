@@ -45,3 +45,18 @@ func TestStrings_UnmarshalJSON(t *testing.T) {
 	assert.Exactly(t, value, nValue)
 
 }
+
+func TestStrings_MarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	strs := json.Strings{
+		Strings: validation.Strings{
+			Validators:              []string{"Locale"},
+			CSVComma:                "|",
+			AdditionalAllowedValues: []string{"Klingon", "Vulcan"},
+		},
+	}
+	data, err := strs.MarshalJSON()
+	assert.NoError(t, err)
+	assert.Exactly(t, "{\"validators\":[\"Locale\"],\"csv_comma\":\"|\",\"additional_allowed_values\":[\"Klingon\",\"Vulcan\"]}", string(data))
+}

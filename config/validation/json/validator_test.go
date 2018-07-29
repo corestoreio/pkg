@@ -23,6 +23,12 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/validation"
+	uv "github.com/corestoreio/pkg/util/validation"
+)
+
+var (
+	_ uv.Validator = (*Validators)(nil)
+	_ uv.Validator = (*Validator)(nil)
 )
 
 type observerRegistererFake struct {
@@ -240,4 +246,51 @@ func (xv xmlValidator) UnmarshalJSON(data []byte) error {
 
 func (xv xmlValidator) Observe(p config.Path, rawData []byte, found bool) (newRawData []byte, err error) {
 	return rawData, nil
+}
+
+func TestValidators_JSON(t *testing.T) {
+	t.Parallel()
+
+	data := []byte(`[ 
+	{ "event":"after_get", "route":"gg/ee/ff", "type":"Strings",
+		  "condition":{"validators":["Locale"],"additional_allowed_values":["Rhomulan"]}},
+	{ "event":"after_set", "route":"aa/ee/ff", "type":"Strings",
+		  "condition":{"validators":["Locale"],"csv_comma":"|","additional_allowed_values":["Vulcan"]}}
+		]`)
+	valis := new(Validators)
+	assert.NoError(t, valis.UnmarshalJSON(data))
+
+	newData, err := valis.MarshalJSON()
+	assert.NoError(t, err)
+
+	assert.Exactly(t, `[{"route":"gg/ee/ff","event":"after_get","type":"Strings","condition":{"validators":["Locale"],"additional_allowed_values":["Rhomulan"]}},{"route":"aa/ee/ff","event":"after_set","type":"Strings","condition":{"validators":["Locale"],"csv_comma":"|","additional_allowed_values":["Vulcan"]}}]`,
+		string(newData))
+}
+
+func TestValidators_Validate(t *testing.T) {
+	t.Parallel()
+
+	t.Run("success", func(t *testing.T) {
+		valis := Validators{
+			&Validator{
+				Route:     "aa/bb/cc",
+				Event:     "before_set",
+				Type:      "strings",
+				Condition: []byte(`{"validators":["Locale"],"csv_comma":"|","additional_allowed_values":["Vulcan"]}`),
+			},
+		}
+		assert.NoError(t, valis.Validate())
+	})
+
+	t.Run("an errors", func(t *testing.T) {
+		valis := Validators{
+			&Validator{
+				Route: "aa/bb/cc",
+				Event: "before_set",
+				Type:  "strings",
+			},
+		}
+		assert.True(t, errors.Empty.Match(valis.Validate()))
+	})
+
 }
