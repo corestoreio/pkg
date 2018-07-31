@@ -21,10 +21,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/alecthomas/assert"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/sync/bgwork"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var lruGetTests = []struct {

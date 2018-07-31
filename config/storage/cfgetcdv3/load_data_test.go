@@ -18,13 +18,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/alecthomas/assert"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/config/storage/cfgetcdv3"
 	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestWithLoadData_Success(t *testing.T) {

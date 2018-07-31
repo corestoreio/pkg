@@ -17,12 +17,12 @@ package cfgbigcache_test
 import (
 	"testing"
 
-	"github.com/alecthomas/assert"
 	"github.com/allegro/bigcache"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/storage/cfgbigcache"
 	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestCacheGet(t *testing.T) {

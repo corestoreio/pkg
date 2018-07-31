@@ -17,10 +17,10 @@ package json_test
 import (
 	"testing"
 
-	"github.com/alecthomas/assert"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/validation"
 	"github.com/corestoreio/pkg/config/validation/json"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestStrings_UnmarshalJSON(t *testing.T) {

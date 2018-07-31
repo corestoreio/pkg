@@ -18,8 +18,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/alecthomas/assert"
 	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var _ config.Subscriber = (*config.FakeService)(nil)

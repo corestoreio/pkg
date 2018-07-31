@@ -19,10 +19,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/alecthomas/assert"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/validation"
+	"github.com/corestoreio/pkg/util/assert"
 	uv "github.com/corestoreio/pkg/util/validation"
 )
 

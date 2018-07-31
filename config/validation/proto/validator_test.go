@@ -20,11 +20,11 @@ import (
 	"net"
 	"testing"
 
-	"github.com/alecthomas/assert"
 	"github.com/corestoreio/pkg/config"
 	cfgval "github.com/corestoreio/pkg/config/validation"
 	"github.com/corestoreio/pkg/config/validation/json"
 	"github.com/corestoreio/pkg/config/validation/proto"
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/validation"
 	google_protobuf "github.com/gogo/protobuf/types"
 	"google.golang.org/grpc"

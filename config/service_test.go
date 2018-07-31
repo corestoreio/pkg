@@ -25,13 +25,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alecthomas/assert"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log/logw"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/sync/bgwork"
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/conv"
 	"github.com/fortytw2/leaktest"
 )

@@ -17,11 +17,11 @@ package cfgdb_test
 import (
 	"testing"
 
-	"github.com/alecthomas/assert"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/config/storage/cfgdb"
 	"github.com/corestoreio/pkg/sql/dmltest"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 // Test_WithApplyCoreConfigData reads from the MySQL core_config_data table and applies

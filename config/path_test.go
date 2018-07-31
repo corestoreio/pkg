@@ -20,9 +20,9 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/alecthomas/assert"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/naughtystrings"
 )
 

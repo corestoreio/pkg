@@ -19,10 +19,10 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/alecthomas/assert"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/config/storage/cfgfile"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestWithGlob_Placeholder(t *testing.T) {
