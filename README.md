@@ -90,7 +90,6 @@ from the geniuses listed below:
 | Martin Angers and Contributors. | [ctxthrottled](http://github.com/corestoreio/pkg/tree/master/net/ctxthrottled) | The MIT License (MIT) 2014 |
 | Dave Cheney <dave AT cheney.net> | [util/errors](https://github.com/pkg/errors) | The MIT License (MIT) 2015 |
 | Jad Dittmar | [finance](https://github.com/Confunctionist/finance) aka. [money](http://github.com/corestoreio/pkg/tree/master/storage/money) | Copyright (c) 2011 |
-| Wenbin Xiao | [util/sqlparser](https://github.com/xwb1989/sqlparser) | Copyright 2015 BSD Style |
 | Google Inc | [youtube/vitess\sqlparser](https://github.com/youtube/vitess) | Copyright 2012 BSD Style |
 | Olivier Poitrey| [ctxmw.WithAccessLog](https://github.com/corestoreio/pkg/tree/master/net/ctxmw) & CORS | Copyright (c) 2014-2015  MIT License |
 | Dave Grijalva| [csjwt](https://github.com/corestoreio/pkg/tree/master/util/csjwt) | Copyright (c) 2012 MIT License |
@@ -105,6 +104,8 @@ from the geniuses listed below:
 | Tace De Wolf | [util/byteconv](http://github.com/corestoreio/pkg/tree/master/util/byteconv) | MIT Copyright (c) 2015  |
 | Copyright 2013 The Camlistore Authors | [util/byteconv](http://github.com/corestoreio/pkg/tree/master/util/byteconv) | Apache 2.0  |
 | Copyright 2013 Google Inc. | [storage/lru](http://github.com/corestoreio/pkg/tree/master/storage/lru) | Apache 2.0  |
+| Alex Saskevich | [util/validation](http://github.com/asaskevich/govalidator) | MIT Copyright (c) 2014  |
+| Mat Ryer and Tyler Bunnell | [util/assert](http://github.com/alecthomas/assert) or github.com/stretchr/testify | Copyright (c) 2012 - 2013  |
 
 ## Licensing
 
