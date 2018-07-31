@@ -13,7 +13,10 @@
 // limitations under the License.
 
 syntax = "proto3";
+
 package proto;
+
+import "google/protobuf/empty.proto";
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
 option go_package = "proto";
@@ -22,6 +25,8 @@ option (gogoproto.goproto_getters_all) = false;
 option (gogoproto.unmarshaler_all) = true;
 option (gogoproto.marshaler_all) = true;
 option (gogoproto.sizer_all) = true;
+// Enable generation of XXX_MessageName methods for grpc-go/status.
+option (gogoproto.messagename_all) = true;
 
 message Validators {
 	repeated Validator collection = 1;
@@ -33,4 +38,10 @@ message Validator {
 	string type = 3 [(gogoproto.customname)="Type"];
 	// validator contains a JSON string for the appropriate validator type.
 	bytes condition = 4 [(gogoproto.customname)="Condition"];
+}
+
+
+service ConfigValidationService {
+	rpc Register (Validators) returns (google.protobuf.Empty) {}
+	rpc Deregister (Validators) returns (google.protobuf.Empty) {}
 }

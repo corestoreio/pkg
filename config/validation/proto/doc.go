@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package proto provides protocol buffer definitions and handlers for the
-// config validation package to add observers.
+// Package proto adds protocol buffer encoded validators to the
+// config.ObserverRegisterer WIP.
 package proto
