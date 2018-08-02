@@ -16,6 +16,7 @@ package cfgetcdv3_test
 
 import (
 	"context"
+	"flag"
 	"testing"
 	"time"
 
@@ -28,8 +29,13 @@ import (
 	"github.com/corestoreio/pkg/util/assert"
 )
 
+func init() {
+	flag.BoolVar(&runIntegration, "integration", false, "Enables dml integration tests")
+}
+
 var (
-	dialTimeout = 1 * time.Second
+	runIntegration bool
+	dialTimeout    = 1 * time.Second
 	// requestTimeout = 2 * time.Second
 	endpoints = []string{"localhost:2379", "localhost:22379", "localhost:32379"}
 )
@@ -133,6 +139,9 @@ func TestStorage_Get(t *testing.T) {
 }
 
 func TestNewStorage_Integration(t *testing.T) {
+	if !runIntegration {
+		t.Skip("Skipped. To enable use -integration=1")
+	}
 	/*
 	   $ etcdctl get --prefix csv3
 	   csv3/default/0/tax/calculation/rate
