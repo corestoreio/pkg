@@ -18,12 +18,69 @@ package validation
 
 import (
 	"strings"
+	"sync"
 	"unicode/utf8"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/util/validation"
 )
+
+// ValidateFunc function signature for a validator.
+type ValidateFunc func(string) bool
+
+type strValReg struct {
+	sync.RWMutex
+	pool map[string]ValidateFunc
+}
+
+var stringValidatorRegistry *strValReg
+
+func init() {
+	stringValidatorRegistry = &strValReg{
+		pool: map[string]ValidateFunc{
+			"ISO3166Alpha2":        validation.IsISO3166Alpha2,
+			"country_codes2":       validation.IsISO3166Alpha2,
+			"ISO3166Alpha3":        validation.IsISO3166Alpha3,
+			"country_codes3":       validation.IsISO3166Alpha3,
+			"ISO4217":              validation.IsISO4217,
+			"currency3":            validation.IsISO4217,
+			"Locale":               validation.IsLocale,
+			"locale":               validation.IsLocale,
+			"ISO693Alpha2":         validation.IsISO693Alpha2,
+			"language2":            validation.IsISO693Alpha2,
+			"ISO693Alpha3":         validation.IsISO693Alpha3b,
+			"language3":            validation.IsISO693Alpha3b,
+			"uuid":                 validation.IsUUID,
+			"uuid3":                validation.IsUUIDv3,
+			"uuid4":                validation.IsUUIDv4,
+			"uuid5":                validation.IsUUIDv5,
+			"url":                  validation.IsURL,
+			"int":                  validation.IsInt,
+			"float":                validation.IsFloat,
+			"bool":                 validation.IsBool,
+			"utf8":                 utf8.ValidString,
+			"utf8_digit":           validation.IsUTFDigit,
+			"utf8_letter":          validation.IsUTFLetter,
+			"utf8_letter_numeric":  validation.IsUTFLetterNumeric,
+			"notempty":             validation.IsNotEmpty,
+			"not_empty":            validation.IsNotEmpty,
+			"notemptytrimspace":    validation.IsNotEmptyTrimSpace,
+			"not_empty_trim_space": validation.IsNotEmptyTrimSpace,
+			"hexadecimal":          validation.IsHexadecimal,
+			"hexcolor":             validation.IsHexcolor,
+		},
+	}
+}
+
+// RegisterStringValidator adds a custom string validation function to the
+// global registry. Adding an entry with an already existing `typeName`
+// overwrites the previous validator. `typeName` will be handled case-sensitive.
+func RegisterStringValidator(typeName string, uo ValidateFunc) {
+	stringValidatorRegistry.Lock()
+	stringValidatorRegistry.pool[typeName] = uo
+	stringValidatorRegistry.Unlock()
+}
 
 // Strings checks if a value or a CSV value is a valid type of the defined field
 // "Type" and/or contained within AdditionalAllowedValues.
@@ -68,49 +125,22 @@ func NewStrings(data Strings) (config.Observer, error) {
 		valFns:            make([]func(string) bool, 0, len(data.Validators)),
 		partialValidation: data.PartialValidation,
 	}
+	stringValidatorRegistry.RLock()
+	defer stringValidatorRegistry.RUnlock()
 
 	for _, val := range data.Validators {
-		var valFn func(string) bool
+		var valFn ValidateFunc
 		switch val {
-		case "ISO3166Alpha2", "country_codes2":
-			valFn = validation.IsISO3166Alpha2
-		case "ISO3166Alpha3", "country_codes3":
-			valFn = validation.IsISO3166Alpha3
-		case "ISO4217", "currency3":
-			valFn = validation.IsISO4217
-		case "Locale", "locale":
-			valFn = validation.IsLocale
-		case "ISO693Alpha2", "language2":
-			valFn = validation.IsISO693Alpha2
-		case "ISO693Alpha3", "language3":
-			valFn = validation.IsISO693Alpha3b
-		case "uuid":
-			valFn = validation.IsUUID
-		case "uuid3":
-			valFn = validation.IsUUIDv3
-		case "uuid4":
-			valFn = validation.IsUUIDv4
-		case "uuid5":
-			valFn = validation.IsUUIDv5
-		case "url":
-			valFn = validation.IsURL
-		case "int":
-			valFn = validation.IsInt
-		case "float":
-			valFn = validation.IsFloat
-		case "bool":
-			valFn = validation.IsBool
-		case "notempty", "not_empty":
-			valFn = validation.IsNotEmpty
-		case "notemptytrimspace", "not_empty_trim_space":
-			valFn = validation.IsNotEmptyTrimSpace
-
-		case "Custom":
+		case "Custom", "custom":
 			if len(data.AdditionalAllowedValues) == 0 {
 				return nil, errors.Empty.Newf("[config/validation] For type %q the argument allowedValues cannot be empty.", data.Validators)
 			}
 		default:
-			return nil, errors.NotSupported.Newf("[config/validation] Validators %q not yet supported.", data.Validators)
+			var ok bool
+			valFn, ok = stringValidatorRegistry.pool[val]
+			if !ok {
+				return nil, errors.NotSupported.Newf("[config/validation] Validators %q not yet supported.", data.Validators)
+			}
 		}
 		if valFn != nil {
 			ia.valFns = append(ia.valFns, valFn)

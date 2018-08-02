@@ -248,6 +248,19 @@ func TestNewStrings(t *testing.T) {
 	t.Run("partialValidation disabled validate incorrect",
 		runner(sl("int", "bool"), sl(), "", false, []byte("true"), true, errors.NoKind, errors.NotValid),
 	)
+
+	validation.RegisterStringValidator("is_euro", isEuro)
+	t.Run("RegisterStringValidator is_euro ok",
+		runner(sl("is_euro"), sl(), "", false, []byte("€"), true, errors.NoKind, errors.NoKind),
+	)
+	t.Run("RegisterStringValidator is_euro nok",
+		runner(sl("is_euro"), sl(), "", false, []byte(""), true, errors.NoKind, errors.NotValid),
+	)
+
+}
+
+func isEuro(s string) bool {
+	return s == "€"
 }
 
 func TestMustNewStrings(t *testing.T) {
