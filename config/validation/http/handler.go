@@ -16,7 +16,6 @@ package http
 
 import (
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/corestoreio/pkg/config"
@@ -39,8 +38,8 @@ type HandlerOptions struct {
 	StatusCodeError int
 }
 
-// RegisterObserversFromJSON provides an endpoint to register validators with
-// the concrete type of config.Service
+// RegisterObserversFromJSON provides an endpoint handler to register validators
+// with the concrete type of config.Service
 func RegisterObserversFromJSON(or config.ObserverRegisterer, ho HandlerOptions) http.Handler {
 	if ho.StatusCodeOk == 0 {
 		ho.StatusCodeOk = http.StatusCreated
@@ -61,17 +60,13 @@ func RegisterObserversFromJSON(or config.ObserverRegisterer, ho HandlerOptions) 
 			ho.ErrorHandler(err).ServeHTTP(w, r)
 			return
 		}
-		if _, err := io.Copy(ioutil.Discard, r.Body); err != nil {
-			ho.ErrorHandler(err).ServeHTTP(w, r)
-			return
-		}
-
+		// io.Copy(ioutil.Discard, r.Body) // I don't know if that is necessary
 		w.WriteHeader(ho.StatusCodeOk)
 	})
 }
 
-// DeregisterObserverFromJSON provides an endpoint to deregister validators with
-// the concrete type of config.Service
+// DeregisterObserverFromJSON provides an endpoint handler to deregister
+// validators with the concrete type of config.Service
 func DeregisterObserverFromJSON(or config.ObserverRegisterer, ho HandlerOptions) http.Handler {
 	if ho.StatusCodeOk == 0 {
 		ho.StatusCodeOk = http.StatusAccepted
@@ -92,10 +87,7 @@ func DeregisterObserverFromJSON(or config.ObserverRegisterer, ho HandlerOptions)
 			ho.ErrorHandler(err).ServeHTTP(w, r)
 			return
 		}
-		if _, err := io.Copy(ioutil.Discard, r.Body); err != nil {
-			ho.ErrorHandler(err).ServeHTTP(w, r)
-			return
-		}
+		// io.Copy(ioutil.Discard, r.Body) // I don't know if that is necessary
 		w.WriteHeader(ho.StatusCodeOk)
 	})
 }

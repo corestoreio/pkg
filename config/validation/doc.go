@@ -16,4 +16,7 @@
 // methods.
 //
 // The list of validators will be extended. Please suggest new ones.
+//
+// The sub packages contain implementations for a transport medium or server
+// type. Packages `http` and `proto` and dependent on `json`.
 package validation
