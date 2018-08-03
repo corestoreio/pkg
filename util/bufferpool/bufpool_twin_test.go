@@ -18,9 +18,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/bufferpool"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 var twinBuf = bufferpool.NewTwin(4096)
@@ -61,10 +60,10 @@ func TestTwinBuffer_CopyFirstToSecond(t *testing.T) {
 	defer bufferpool.PutTwin(buf)
 	data := []byte(`// Licensed under the Apache License, Version 2.0 (the "License");`)
 	_, err := buf.First.Write(data)
-	require.NoError(t, err, "First.Write should not fail")
+	assert.NoError(t, err, "First.Write should not fail")
 
 	_, err = buf.CopyFirstToSecond()
-	require.NoError(t, err, "CopyFirstToSecond should not fail")
+	assert.NoError(t, err, "CopyFirstToSecond should not fail")
 
 	assert.Exactly(t, string(data), buf.Second.String())
 	assert.Exactly(t, "", buf.First.String())
@@ -77,10 +76,10 @@ func TestTwinBuffer_CopySecondToFirst(t *testing.T) {
 	defer bufferpool.PutTwin(buf)
 	data := []byte(`// Licensed under the Apache License, Version 2.0 (the "License");`)
 	_, err := buf.Second.Write(data)
-	require.NoError(t, err, "First.Write should not fail")
+	assert.NoError(t, err, "First.Write should not fail")
 
 	_, err = buf.CopySecondToFirst()
-	require.NoError(t, err, "CopyFirstToSecond should not fail")
+	assert.NoError(t, err, "CopyFirstToSecond should not fail")
 
 	assert.Exactly(t, string(data), buf.First.String())
 	assert.Exactly(t, "", buf.Second.String())

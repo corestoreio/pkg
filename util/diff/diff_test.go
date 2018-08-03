@@ -17,8 +17,8 @@ package diff_test
 import (
 	"testing"
 
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/diff"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestUnified(t *testing.T) {
@@ -41,8 +41,6 @@ func TestUnified(t *testing.T) {
 			assert.Error(t, haveErr, "Index %d", i)
 			continue
 		}
-		if false == assert.Exactly(t, test.want, haveDiff) {
-			t.Errorf("Error @ Index %d\n%s\n", i, haveDiff)
-		}
+		assert.Exactly(t, test.want, haveDiff)
 	}
 }

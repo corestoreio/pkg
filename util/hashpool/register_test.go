@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/errors"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 const dataStr = `Don't communicate by sharing memory, share memory by communicating. ∏`

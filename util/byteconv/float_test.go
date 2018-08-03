@@ -27,8 +27,7 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestParseNullFloatSQL_ParseFloatSQL(t *testing.T) {
@@ -44,7 +43,7 @@ func TestParseNullFloatSQL_ParseFloatSQL(t *testing.T) {
 				assert.Error(t, err, "err: For number %q", have)
 				return
 			}
-			require.NoError(t, err, t.Name())
+			assert.NoError(t, err, t.Name())
 			assert.Exactly(t, want.Valid, ok, "Valid for %s", t.Name())
 			assert.Exactly(t, want.Float64, nf, t.Name())
 		}

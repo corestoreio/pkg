@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/pkg/util"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestParseTimeStrict(t *testing.T) {

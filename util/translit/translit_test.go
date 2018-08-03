@@ -17,8 +17,8 @@ package translit_test
 import (
 	"testing"
 
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/translit"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestTranslit(t *testing.T) {

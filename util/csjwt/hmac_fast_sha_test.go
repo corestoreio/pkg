@@ -20,8 +20,8 @@ import (
 	"testing"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/csjwt"
-	"github.com/stretchr/testify/assert"
 )
 
 var hmacFastTestData []struct {

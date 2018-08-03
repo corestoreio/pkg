@@ -25,10 +25,10 @@ import (
 	"testing"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/hashpool"
 	"github.com/dchest/siphash"
 	"github.com/pierrec/xxHash/xxHash64"
-	"github.com/stretchr/testify/assert"
 	_ "golang.org/x/crypto/blake2b"
 )
 

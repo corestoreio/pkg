@@ -19,13 +19,12 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/corestoreio/pkg/storage/text"
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/csjwt"
 	"github.com/corestoreio/pkg/util/csjwt/jwtclaim"
-	"github.com/stretchr/testify/assert"
 )
 
-func genParseTk(t *testing.T) (text.Chars, csjwt.Keyfunc) {
+func genParseTk(t *testing.T) ([]byte, csjwt.Keyfunc) {
 	hs256 := csjwt.NewSigningMethodHS256()
 	key := csjwt.WithPasswordRandom()
 	rawTK, err := csjwt.NewToken(&jwtclaim.Map{"extractMe": 3.14159}).SignedString(hs256, key)
@@ -64,7 +63,7 @@ func TestParseFromRequest(t *testing.T) {
 		t.Fatalf("%+v", err)
 	}
 	r.Form = url.Values{
-		csjwt.HTTPFormInputName: []string{rawTK.String()},
+		csjwt.HTTPFormInputName: []string{string(rawTK)},
 	}
 
 	haveTK := csjwt.NewToken(&jwtclaim.Map{})

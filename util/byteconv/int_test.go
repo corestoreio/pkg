@@ -27,8 +27,7 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestParseNullInt64SQL_ParseIntSQL(t *testing.T) {
@@ -48,7 +47,7 @@ func TestParseNullInt64SQL_ParseIntSQL(t *testing.T) {
 				assert.Error(t, err, "For %q", have)
 				return
 			}
-			require.NoError(t, err, t.Name())
+			assert.NoError(t, err, t.Name())
 		}
 	}
 	t.Run("NULL is 0 and invalid", runner("NULL", sql.NullInt64{}, false))

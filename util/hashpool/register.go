@@ -105,6 +105,8 @@ func Register(name string, hh func() hash.Hash) error {
 func Deregister(name string) {
 	index := hash64(0).writeStr(name)
 	db.Lock()
+	defer db.Unlock()
+
 	delete(db.ht, index)
 	for k, v := range db.ht {
 		// find all hmac hashes with the same name
@@ -112,7 +114,6 @@ func Deregister(name string) {
 			delete(db.ht, k)
 		}
 	}
-	db.Unlock()
 }
 
 // FromRegistry returns a hash pool for the given name, otherwise a NotFound
@@ -141,8 +142,10 @@ func MustFromRegistry(name string) Tank {
 // hash. Key aka. password. The newly generated hash pool will be internally
 // cached with the identifier of name plus key.
 func FromRegistryHMAC(name string, key []byte) (Tank, error) {
-	nameIndex := hash64(0).writeStr(name)
+	db.Lock()
+	defer db.Unlock()
 
+	nameIndex := hash64(0).writeStr(name)
 	hashTnk, ok := db.ht[nameIndex]
 	if !ok {
 		return Tank{}, errors.NotFound.Newf("[hashpool] Unknown Hash %q. Not yet registered?", name)
@@ -150,16 +153,12 @@ func FromRegistryHMAC(name string, key []byte) (Tank, error) {
 
 	index := nameIndex.writeBytes(key)
 
-	db.RLock()
 	ht, ok := db.ht[index]
-	db.RUnlock()
 	if !ok {
 		ht = makeHtVal(nameIndex, func() hash.Hash {
 			return hmac.New(hashTnk.hf, key)
 		})
-		db.Lock()
 		db.ht[index] = ht
-		db.Unlock()
 	}
 	return ht.Tank, nil
 }

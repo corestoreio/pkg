@@ -18,8 +18,7 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestParseNullBool(t *testing.T) {
@@ -35,7 +34,7 @@ func TestParseNullBool(t *testing.T) {
 				assert.Error(t, err, "%q", have)
 				return
 			}
-			require.NoError(t, err, "%s %q", t.Name(), have)
+			assert.NoError(t, err, "%s %q", t.Name(), have)
 			assert.Exactly(t, want.Valid, ok)
 			assert.Exactly(t, want.Bool, bv, t.Name())
 		}
@@ -69,11 +68,17 @@ func BenchmarkParseBool(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			benchmarkParseBool, _, err = ParseBool(true)
 		}
+		if err != nil {
+			b.Fatal(err)
+		}
 	})
 	b.Run("with-stdlib", func(b *testing.B) {
 		UseStdLib = tr
 		for i := 0; i < b.N; i++ {
 			benchmarkParseBool, _, err = ParseBool(true)
+		}
+		if err != nil {
+			b.Fatal(err)
 		}
 	})
 }

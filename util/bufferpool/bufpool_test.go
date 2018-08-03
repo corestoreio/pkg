@@ -18,8 +18,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/bufferpool"
-	"github.com/stretchr/testify/assert"
 )
 
 var singleBuf = bufferpool.New(4096)

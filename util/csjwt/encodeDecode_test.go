@@ -20,9 +20,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/csjwt"
 	"github.com/corestoreio/pkg/util/csjwt/jwtclaim"
-	"github.com/stretchr/testify/assert"
 )
 
 var _ csjwt.Deserializer = (*csjwt.JSONEncoding)(nil)

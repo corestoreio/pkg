@@ -19,9 +19,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/cstesting"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestChangeEnv(t *testing.T) {
@@ -29,7 +28,7 @@ func TestChangeEnv(t *testing.T) {
 
 	key := "X_CORESTORE_TESTING"
 	val := "X_CORESTORE_TESTING_VAL1"
-	require.NoError(t, os.Setenv(key, val))
+	assert.NoError(t, os.Setenv(key, val))
 
 	f := cstesting.ChangeEnv(t, key, val+"a")
 	assert.Exactly(t, val+"a", os.Getenv(key))
@@ -39,16 +38,16 @@ func TestChangeEnv(t *testing.T) {
 
 func TestChangeDir(t *testing.T) {
 	wdOld, err := os.Getwd()
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	f := cstesting.ChangeDir(t, os.TempDir())
 	wdNew, err := os.Getwd()
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	wdNew = strings.Replace(wdNew, "/private", "", 1)
 	assert.Exactly(t, os.TempDir(), wdNew+string(os.PathSeparator))
 	f()
 
 	wdCurrent, err := os.Getwd()
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Exactly(t, wdOld, wdCurrent)
 }

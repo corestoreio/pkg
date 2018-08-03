@@ -18,8 +18,8 @@ import (
 	"testing"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/slices"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestInt64Sort(t *testing.T) {

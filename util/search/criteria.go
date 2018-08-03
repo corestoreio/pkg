@@ -14,6 +14,8 @@
 
 package search
 
+// TODO JSON and protobuf
+
 //'eq'            => "{{fieldName}} = ?",
 //'neq'           => "{{fieldName}} != ?",
 //'like'          => "{{fieldName}} LIKE ?",
@@ -37,7 +39,7 @@ package search
 
 type Filter struct {
 	Field     string
-	Value     interface{}
+	Value     string
 	Condition string // default 'eq'
 }
 type Filters struct {
@@ -60,6 +62,7 @@ type Criteria struct {
 func (c *Criteria) AddFilters(fs ...Filter) *Criteria {
 	c.FilterGroups = append(c.FilterGroups, Filters{
 		Filters:  fs,
-		JoinType: 'a',
+		JoinType: "???",
 	})
+	return c
 }

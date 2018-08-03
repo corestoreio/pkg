@@ -17,8 +17,8 @@ package strs_test
 import (
 	"testing"
 
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/strs"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestStrIsAlNum(t *testing.T) {
