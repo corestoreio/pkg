@@ -51,17 +51,17 @@ func (t Tank) Get() hash.Hash64 {
 // returns the resulting slice. It does not change the underlying hash state. It
 // fetches a hash from the pool and returns it after writing the sum. No need to
 // call Get() and Put().
-func (t Tank) Sum(data, appendTo []byte) []byte {
+func (t Tank) Sum(data, appendTo []byte) (ret []byte) {
 	h := t.Get()
-	defer t.Put(h)
 	_, _ = h.Write(data)
-	return h.Sum(appendTo)
+	ret = h.Sum(appendTo)
+	t.Put(h)
+	return ret
 }
 
 // SumHex writes the hashed data into the hex encoder.
 func (t Tank) SumHex(data []byte) string {
 	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
 	bs := 1024
 	if t.BufferSize > 0 {
 		bs = t.BufferSize
@@ -70,7 +70,9 @@ func (t Tank) SumHex(data []byte) string {
 	tmpBuf := t.Sum(data, buf.Bytes())
 	buf.Reset()
 	_, _ = buf.Write(tmpBuf)
-	return hex.EncodeToString(buf.Bytes())
+	ret := hex.EncodeToString(buf.Bytes())
+	bufferpool.Put(buf)
+	return ret
 }
 
 // Equal hashes data and compares it with MAC for equality without leaking
@@ -94,21 +96,18 @@ func (t Tank) EqualPairs(dataPairs ...[]byte) bool {
 		return false
 	}
 
-	buf1 := bufferpool.Get()
-	defer bufferpool.Put(buf1)
-	buf2 := bufferpool.Get()
-	defer bufferpool.Put(buf2)
+	twinBuf := bufferpool.GetTwin()
+	defer bufferpool.PutTwin(twinBuf)
 
 	eq := 0
 	for i := 0; i <= ldp/2; i = i + 2 {
 		if len(dataPairs[i]) == 0 {
 			return false
 		}
-		if subtle.ConstantTimeCompare(t.Sum(dataPairs[i], buf1.Bytes()), t.Sum(dataPairs[i+1], buf2.Bytes())) == 1 {
+		if subtle.ConstantTimeCompare(t.Sum(dataPairs[i], twinBuf.First.Bytes()), t.Sum(dataPairs[i+1], twinBuf.Second.Bytes())) == 1 {
 			eq++
 		}
-		buf1.Reset()
-		buf2.Reset()
+		twinBuf.Reset()
 	}
 	return eq == ldp/2
 }
