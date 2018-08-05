@@ -117,8 +117,7 @@ type Strings struct {
 	AdditionalAllowedValues []string `json:"additional_allowed_values,omitempty"`
 }
 
-// NewStrings creates a new type specific validator. Argument validationType can be
-// any string listed in the documenation for type Strings.
+// NewStrings creates a new type specific validator.
 func NewStrings(data Strings) (config.Observer, error) {
 	ia := &observeStrings{
 		valType:           append([]string{}, data.Validators...), // copy data

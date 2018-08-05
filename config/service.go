@@ -70,7 +70,11 @@ type ObserverRegisterer interface {
 // cache or immutable data. Hot reloading enables a devops engineer to apply new
 // configuration changes via kill signal.
 type Service struct {
-	level2  Storager
+	level2 Storager
+	// envName a service can be bound to TEST, DEV, STAGING, PRD and
+	// configuration paths which should use the envName as a suffix will lookup
+	// if the value exists with the envName as suffix, if not it falls back to
+	// the usual configuration path patterns.
 	envName string
 	config  Options
 	Log     log.Logger
@@ -141,6 +145,8 @@ func MustNewService(level2 Storager, o Options, fns ...LoadDataOption) *Service 
 	return s
 }
 
+// setupEnv assigns the service environment name from the OS environment to the
+// field envName. envName gets later used as path suffix.
 func (s *Service) setupEnv() error {
 	osEnvVar := DefaultOSEnvVariableName
 	if s.config.OSEnvVariableName != "" {
