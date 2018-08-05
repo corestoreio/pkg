@@ -84,3 +84,18 @@ func TestTwinBuffer_CopySecondToFirst(t *testing.T) {
 	assert.Exactly(t, string(data), buf.First.String())
 	assert.Exactly(t, "", buf.Second.String())
 }
+
+func TestTwinBuffer_Reset(t *testing.T) {
+	t.Parallel()
+
+	buf := bufferpool.GetTwin()
+	defer bufferpool.PutTwin(buf)
+
+	buf.First.WriteString("S1")
+	buf.Second.WriteString("S2")
+	assert.Exactly(t, buf.First.Len(), 2)
+	assert.Exactly(t, buf.Second.Len(), 2)
+	buf.Reset()
+	assert.Exactly(t, buf.First.Len(), 0)
+	assert.Exactly(t, buf.Second.Len(), 0)
+}

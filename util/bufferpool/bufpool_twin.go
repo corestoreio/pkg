@@ -21,7 +21,7 @@ import (
 	"sync"
 )
 
-var twinBufferPool = NewTwin(256) // estimated *cough* average size
+var twinBufferPool = NewTwin(1024) // estimated *cough* average size
 
 // TwinBuffer contains two buffers.
 type TwinBuffer struct {
@@ -63,6 +63,12 @@ func (tw *TwinBuffer) CopySecondToFirst() (n int64, err error) {
 	n, err = tw.Second.WriteTo(tw.First)
 	tw.Second.Reset()
 	return
+}
+
+// Reset resets both buffers.
+func (tw *TwinBuffer) Reset() {
+	tw.First.Reset()
+	tw.Second.Reset()
 }
 
 // GetTwin returns a buffer containing two buffers, `First` and `Second`, from the pool.
