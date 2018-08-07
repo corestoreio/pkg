@@ -24,11 +24,14 @@ import (
 	"github.com/corestoreio/pkg/config/validation"
 	"github.com/corestoreio/pkg/util/assert"
 	uv "github.com/corestoreio/pkg/util/validation"
+	"github.com/mailru/easyjson"
 )
 
 var (
-	_ uv.Validator = (*Validators)(nil)
-	_ uv.Validator = (*Validator)(nil)
+	_ uv.Validator       = (*Validators)(nil)
+	_ uv.Validator       = (*Validator)(nil)
+	_ easyjson.Marshaler = (*Validator)(nil)
+	_ easyjson.Marshaler = (*Validators)(nil)
 )
 
 type observerRegistererFake struct {

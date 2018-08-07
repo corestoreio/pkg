@@ -21,6 +21,11 @@ import (
 	"github.com/corestoreio/pkg/config/validation"
 	"github.com/corestoreio/pkg/config/validation/json"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/mailru/easyjson"
+)
+
+var (
+	_ easyjson.Marshaler = (*json.Strings)(nil)
 )
 
 func TestStrings_UnmarshalJSON(t *testing.T) {

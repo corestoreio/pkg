@@ -21,6 +21,11 @@ import (
 	"github.com/corestoreio/pkg/config/validation"
 	"github.com/corestoreio/pkg/config/validation/json"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/mailru/easyjson"
+)
+
+var (
+	_ easyjson.Marshaler = (*json.MinMaxInt64)(nil)
 )
 
 func TestMinMaxInt64_MarshalJSON(t *testing.T) {

@@ -5,7 +5,6 @@ package json
 import (
 	json "encoding/json"
 
-	easyjson "github.com/mailru/easyjson"
 	jlexer "github.com/mailru/easyjson/jlexer"
 	jwriter "github.com/mailru/easyjson/jwriter"
 )
@@ -15,7 +14,6 @@ var (
 	_ *json.RawMessage
 	_ *jlexer.Lexer
 	_ *jwriter.Writer
-	_ easyjson.Marshaler
 )
 
 func easyjson4837aca4DecodeGithubComCorestoreioPkgConfigValidationJson(in *jlexer.Lexer, out *Strings) {
