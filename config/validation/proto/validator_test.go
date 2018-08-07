@@ -71,16 +71,14 @@ func (orf *observerRegistererFake) DeregisterObserver(event uint8, route string)
 	return nil
 }
 
-const grpcPort = ":50053"
-
 var (
 	_ validation.Validator = (*proto.Validator)(nil)
 	_ validation.Validator = (*proto.Validators)(nil)
 	// _ proto.ConfigValidationServiceServer = (*proto.registrar)(nil)
 )
 
-func grpcServer(t *testing.T, or config.ObserverRegisterer, stop <-chan struct{}) {
-	lis, err := net.Listen("tcp", grpcPort)
+func grpcServer(t *testing.T, port string, or config.ObserverRegisterer, stop <-chan struct{}) {
+	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,13 +99,13 @@ func grpcServer(t *testing.T, or config.ObserverRegisterer, stop <-chan struct{}
 func TestNewConfigValidationServiceServer_Register_Ok(t *testing.T) {
 	stop := make(chan struct{})
 
-	grpcServer(t, &observerRegistererFake{
+	grpcServer(t, ":50053", &observerRegistererFake{
 		wantRoute:     "shipment/dhl/free",
 		wantEvent:     config.EventOnBeforeSet,
 		wantValidator: cfgval.MustNewStrings(cfgval.Strings{Validators: []string{"bool"}}),
 	}, stop)
 
-	const address = "localhost" + grpcPort
+	const address = "localhost:50053"
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		t.Fatalf("did not connect: %v", err)
@@ -137,9 +135,9 @@ func TestNewConfigValidationServiceServer_Register_Ok(t *testing.T) {
 func TestNewConfigValidationServiceServer_Register_Invalid(t *testing.T) {
 	stop := make(chan struct{})
 
-	grpcServer(t, &observerRegistererFake{}, stop)
+	grpcServer(t, ":50054", &observerRegistererFake{}, stop)
 
-	const address = "localhost" + grpcPort
+	const address = "localhost:50054"
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		t.Fatalf("did not connect: %v", err)
@@ -174,12 +172,12 @@ func TestNewConfigValidationServiceServer_Register_Invalid(t *testing.T) {
 func TestNewConfigValidationServiceServer_Deegister_Ok(t *testing.T) {
 	stop := make(chan struct{})
 
-	grpcServer(t, &observerRegistererFake{
+	grpcServer(t, ":50055", &observerRegistererFake{
 		wantRoute: "shipment/dhl/free",
 		wantEvent: config.EventOnBeforeSet,
 	}, stop)
 
-	const address = "localhost" + grpcPort
+	const address = "localhost:50055"
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		t.Fatalf("did not connect: %v", err)
