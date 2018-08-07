@@ -1,0 +1,120 @@
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package modification
+
+import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
+
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/util/bufferpool"
+	"github.com/corestoreio/pkg/util/gzippool"
+	"github.com/corestoreio/pkg/util/hashpool"
+)
+
+// as long as we don't see a use case for those modificators in other packages,
+// they stay private. might be refactored later.
+
+func trim(_ *config.Path, data []byte) ([]byte, error) {
+	return bytes.TrimSpace(data), nil
+}
+
+func toUpper(_ *config.Path, data []byte) ([]byte, error) {
+	return bytes.ToUpper(data), nil
+}
+
+func toLower(_ *config.Path, data []byte) ([]byte, error) {
+	return bytes.ToLower(data), nil
+}
+
+func toTitle(_ *config.Path, data []byte) ([]byte, error) {
+	return bytes.Title(data), nil
+}
+
+func base64Encode(_ *config.Path, src []byte) (dst []byte, _ error) {
+	dst = make([]byte, base64.StdEncoding.EncodedLen(len(src)))
+	base64.StdEncoding.Encode(dst, src)
+	return
+}
+
+func base64Decode(_ *config.Path, src []byte) (dst []byte, _ error) {
+	dst = make([]byte, base64.StdEncoding.DecodedLen(len(src)))
+	base64.StdEncoding.Decode(dst, src)
+	return
+}
+
+func hexEncode(_ *config.Path, src []byte) (dst []byte, _ error) {
+	dst = make([]byte, hex.EncodedLen(len(src)))
+	hex.Encode(dst, src)
+	return dst, nil
+}
+
+func hexDecode(_ *config.Path, src []byte) (dst []byte, _ error) {
+	dst = make([]byte, hex.DecodedLen(len(src)))
+	hex.Decode(dst, src)
+	return dst, nil
+}
+
+// hash256 prefix the fully qualified path to src and then hashes it. Higher
+// security.
+func hash256(p *config.Path, src []byte) ([]byte, error) {
+	tnk, err := hashpool.FromRegistry("sha256")
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	if err := p.AppendFQ(buf); err != nil {
+		return nil, errors.Wrapf(err, "[config/modification] SHA256 with path %q", p.String())
+	}
+	buf.Write(src)
+	var dst [sha256.Size]byte
+	return tnk.Sum(buf.Bytes(), dst[:0]), nil
+}
+
+func dataGzip(_ *config.Path, src []byte) (dst []byte, _ error) {
+	var buf bytes.Buffer
+	buf.Grow(len(src) * 9 / 10) // *0.9
+	zw := gzippool.GetWriter(&buf)
+	defer gzippool.PutWriter(zw)
+	zw.Write(src)
+	if err := zw.Close(); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return buf.Bytes(), nil
+}
+
+func dataGunzip(_ *config.Path, src []byte) (dst []byte, _ error) {
+	r := bufferpool.GetReader(src)
+	zr := gzippool.GetReader(r)
+	defer func() {
+		bufferpool.PutReader(r)
+		gzippool.PutReader(zr)
+	}()
+
+	var buf bytes.Buffer
+	if _, err := buf.ReadFrom(zr); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if err := zr.Close(); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return buf.Bytes(), nil
+}

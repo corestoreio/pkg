@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package modification provides functions to modify a configuration value.
+//
+// Modification can be trim, lower case, upper case, title, base64
+// encode/decode, sha256, gzip, gunzip and AES-GCM encrypt/decrypt.
+//
+// Other encryption algorithms are getting later added.
+//
+// Note: When using sha256 the fully qualified path gets prefixed to the value.
 package modification
-
-// e.g. TRIM, lower case, uppercase
