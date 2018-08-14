@@ -20,4 +20,11 @@
 // Other encryption algorithms are getting later added.
 //
 // Note: When using sha256 the fully qualified path gets prefixed to the value.
+//
+// To enabled HTTP handler or protobuf you must set build tags on the CLI.
+// Supported build tags are:
+// - `json` for JSON encoding and decoding.
+// - `proto` for protocol buffers encoding and registration of modificators via
+//    proto services, includes `json`.
+// - `http` to enable registration of modificators via HTTP handlers.
 package modification

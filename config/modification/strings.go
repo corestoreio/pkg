@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate easyjson $GOFILE
-
 package modification
 
 import (
@@ -60,6 +58,7 @@ func RegisterOperator(typeName string, h Operator) {
 
 // Strings defines the modificators to use to alter a string received from the
 // config.Service.
+//easyjson:json
 type Strings struct {
 	// Modificators currently supported: upper, lower, trim, title,
 	// base64_encode, base64_decode, sha256 (must one time be registered in

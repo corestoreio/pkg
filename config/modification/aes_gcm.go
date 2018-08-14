@@ -25,6 +25,9 @@ import (
 	"github.com/corestoreio/pkg/config"
 )
 
+// AESGCMOptions sets the Key and Nonce from this struct or from environment
+// variables.
+//easyjson:json
 type AESGCMOptions struct {
 	// The key argument should be the AES key, either 16, 24, or 32 bytes to
 	// select AES-128, AES-192, or AES-256. If empty, a random key will be
