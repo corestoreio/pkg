@@ -30,11 +30,11 @@ func TestMustNewStoreAU_ConfigNil(t *testing.T) {
 	assert.NotNil(t, sAU.Config)
 	assert.NotNil(t, sAU.Website.Config)
 
-	assert.Exactly(t, int64(5), sAU.Config.StoreID)
-	assert.Exactly(t, int64(2), sAU.Config.WebsiteID)
+	assert.Exactly(t, int64(5), sAU.Config.storeID)
+	assert.Exactly(t, int64(2), sAU.Config.websiteID)
 
-	assert.Exactly(t, int64(0), sAU.Website.Config.StoreID)
-	assert.Exactly(t, int64(2), sAU.Website.Config.WebsiteID)
+	assert.Exactly(t, int64(0), sAU.Website.Config.storeID)
+	assert.Exactly(t, int64(2), sAU.Website.Config.websiteID)
 
 }
 

@@ -79,7 +79,7 @@ func (w *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) erro
 	w.Groups = make(GroupSlice, groups.Len(), groups.Len())
 	for i, g := range groups {
 		var err error
-		w.Groups[i], err = NewGroup(w.Config.Root, g, nil, tss) // passing nil to limit the recursion
+		w.Groups[i], err = NewGroup(w.Config.rootSrv, g, nil, tss) // passing nil to limit the recursion
 		if err != nil {
 			return errors.Wrapf(err, "[store] NewGroup. Group %#v Website Data: %#v", g, w.Data)
 		}
@@ -88,7 +88,7 @@ func (w *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) erro
 	w.Stores = make(StoreSlice, stores.Len(), stores.Len())
 	for i, s := range stores {
 		var err error
-		w.Stores[i], err = NewStore(w.Config.Root, s, nil, nil)
+		w.Stores[i], err = NewStore(w.Config.rootSrv, s, nil, nil)
 		if err != nil {
 			return errors.Wrapf(err, "[store] NewStore. Store %#v Website Data %#v", s, w.Data)
 		}
@@ -109,8 +109,8 @@ func (w Website) Validate() error {
 			return errors.NewNotValidf("[store] Website ID %d != Store Website ID %d", w.ID(), s.Data.WebsiteID)
 		}
 	}
-	if w.Config.WebsiteID != w.ID() {
-		return errors.NewNotValidf("[store] Website ID %d != Config Website ID %d", w.ID(), w.Config.WebsiteID)
+	if w.Config.websiteID != w.ID() {
+		return errors.NewNotValidf("[store] Website ID %d != Config Website ID %d", w.ID(), w.Config.websiteID)
 	}
 	return nil
 }

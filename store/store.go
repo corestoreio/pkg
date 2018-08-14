@@ -104,11 +104,11 @@ func (s Store) Validate() (err error) {
 	case s.GroupID() != s.Group.ID():
 		err = errors.NewNotValidf("[store] Store %d: Store.GroupID %d != Group.ID %d", s.ID(), s.GroupID(), s.Group.ID())
 
-	case s.Config.WebsiteID != s.WebsiteID():
-		err = errors.NewNotValidf("[store] Store %d: Website ID %d != Config Website ID %d", s.ID(), s.WebsiteID(), s.Config.WebsiteID)
+	case s.Config.websiteID != s.WebsiteID():
+		err = errors.NewNotValidf("[store] Store %d: Website ID %d != Config Website ID %d", s.ID(), s.WebsiteID(), s.Config.websiteID)
 
-	case s.Config.StoreID != s.ID():
-		err = errors.NewNotValidf("[store] Store %d: Store ID %d != Config Store ID %d", s.ID(), s.ID(), s.Config.StoreID)
+	case s.Config.storeID != s.ID():
+		err = errors.NewNotValidf("[store] Store %d: Store ID %d != Config Store ID %d", s.ID(), s.ID(), s.Config.storeID)
 	}
 	return err
 }
