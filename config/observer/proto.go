@@ -12,57 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package proto
+// +build csall proto
+
+package observer
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
-	"github.com/corestoreio/pkg/config/validation/json"
 	"github.com/corestoreio/pkg/net/cspb"
 	"github.com/gogo/protobuf/types"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )
-
-// Validator defines the data retrieved from the outside as JSON to add a new
-// validator for a specific route and event.
-type Validator struct {
-	json.Validator
-}
-
-// Validators a list of Validator types.
-type Validators struct {
-	Collection []*Validator
-}
-
-// Validate validates the current slice and used in GRPC middleware.
-func (m Validators) Validate() error {
-	for _, v := range m.Collection {
-		if err := v.Validate(); err != nil {
-			return errors.WithStack(err)
-		}
-	}
-	return nil
-}
 
 type registrar struct {
 	or config.ObserverRegisterer
 }
 
-// NewConfigValidationServiceServer creates a new GRPC server which can register
+// NewProtoServiceServer creates a new GRPC server which can register
 // and deregister validation observers to the concrete config.Server type.
-func NewConfigValidationServiceServer(or config.ObserverRegisterer) ConfigValidationServiceServer {
+func NewProtoServiceServer(or config.ObserverRegisterer) ProtoServiceServer {
 	return registrar{
 		or: or,
 	}
 }
 
-func (r registrar) Register(ctx context.Context, vs *Validators) (*types.Empty, error) {
+func (r registrar) Register(ctx context.Context, vs *Configurations) (*types.Empty, error) {
 	if err := vs.Validate(); err != nil {
 		return nil, cspb.NewStatusBadRequestError(codes.InvalidArgument, "[config/validation/proto]",
-			"Validators.Validate",
+			"Configurations.Validate",
 			err.Error(),
 		)
 	}
@@ -90,7 +70,7 @@ func (r registrar) Register(ctx context.Context, vs *Validators) (*types.Empty, 
 	return &types.Empty{}, nil
 }
 
-func (r registrar) Deregister(ctx context.Context, vs *Validators) (*types.Empty, error) {
+func (r registrar) Deregister(ctx context.Context, vs *Configurations) (*types.Empty, error) {
 	for _, v := range vs.Collection {
 		event, route, err := v.MakeEventRoute()
 		if err != nil {

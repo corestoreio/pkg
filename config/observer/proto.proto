@@ -14,12 +14,12 @@
 
 syntax = "proto3";
 
-package modification;
+package observer;
 
 import "google/protobuf/empty.proto";
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
-option go_package = "modification";
+option go_package = "observer";
 option (gogoproto.typedecl_all) = false;
 option (gogoproto.goproto_getters_all) = false;
 option (gogoproto.unmarshaler_all) = true;
@@ -29,11 +29,11 @@ option (gogoproto.goproto_unrecognized_all) = false;
 // Enable generation of XXX_MessageName methods for grpc-go/status.
 option (gogoproto.messagename_all) = true;
 
-message Observers {
-	repeated Observer collection = 1;
+message Configurations {
+	repeated Configuration collection = 1;
 }
 
-message Observer {
+message Configuration {
 	string route = 1 [(gogoproto.customname)="Route"];
 	string event = 2 [(gogoproto.customname)="Event"];
 	string type = 3 [(gogoproto.customname)="Type"];
@@ -41,8 +41,7 @@ message Observer {
 	bytes condition = 4 [(gogoproto.customname)="Condition"];
 }
 
-
-service ProtoObserverService {
-	rpc Register (Observers) returns (google.protobuf.Empty) {}
-	rpc Deregister (Observers) returns (google.protobuf.Empty) {}
+service ProtoService {
+	rpc Register (Configurations) returns (google.protobuf.Empty) {}
+	rpc Deregister (Configurations) returns (google.protobuf.Empty) {}
 }

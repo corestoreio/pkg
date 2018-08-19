@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package modification_test
+package observer_test
 
 import (
 	"os"
@@ -20,17 +20,17 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
-	"github.com/corestoreio/pkg/config/modification"
+	"github.com/corestoreio/pkg/config/observer"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestNewAESGCM(t *testing.T) {
 	t.Parallel()
 	t.Run("encrypt and decrypt with default values", func(t *testing.T) {
-		o := &modification.AESGCMOptions{}
-		obEnc, err := modification.NewAESGCM(config.EventOnBeforeSet, o)
+		o := &observer.AESGCMOptions{}
+		obEnc, err := observer.NewAESGCM(config.EventOnBeforeSet, o)
 		assert.NoError(t, err)
-		obDec, err := modification.NewAESGCM(config.EventOnAfterGet, o) // o contains now the random nonce value
+		obDec, err := observer.NewAESGCM(config.EventOnAfterGet, o) // o contains now the random nonce value
 
 		p := *config.MustNewPath("aa/bb/cc")
 		plainText := []byte(`X-Fit Games 2018`)
@@ -43,19 +43,19 @@ func TestNewAESGCM(t *testing.T) {
 	})
 
 	t.Run("invalid encryption key", func(t *testing.T) {
-		o := &modification.AESGCMOptions{
+		o := &observer.AESGCMOptions{
 			Key: "a",
 		}
-		obEnc, err := modification.NewAESGCM(config.EventOnBeforeSet, o)
+		obEnc, err := observer.NewAESGCM(config.EventOnBeforeSet, o)
 		assert.Nil(t, obEnc)
 		assert.True(t, errors.NotValid.Match(err), "%+v", err)
 	})
 
 	t.Run("event EventOnAfterGet does not decrypt", func(t *testing.T) {
-		o := &modification.AESGCMOptions{
+		o := &observer.AESGCMOptions{
 			Key: "abcdefghijklmnop",
 		}
-		obEnc, err := modification.NewAESGCM(config.EventOnAfterGet, o)
+		obEnc, err := observer.NewAESGCM(config.EventOnAfterGet, o)
 		p := *config.MustNewPath("aa/bb/cc")
 		decText, err := obEnc.Observe(p, nil, false)
 		assert.NoError(t, err, "%+v", err)
@@ -70,13 +70,13 @@ func TestNewAESGCM(t *testing.T) {
 			os.Unsetenv("AESGCM_NONCE")
 		}()
 
-		o := &modification.AESGCMOptions{
+		o := &observer.AESGCMOptions{
 			KeyEnvironmentVariableName:   "AESGCM_KEY",
 			NonceEnvironmentVariableName: "AESGCM_NONCE",
 		}
-		obEnc, err := modification.NewAESGCM(config.EventOnBeforeSet, o)
+		obEnc, err := observer.NewAESGCM(config.EventOnBeforeSet, o)
 		assert.NoError(t, err, "%+v", err)
-		obDec, err := modification.NewAESGCM(config.EventOnAfterGet, o) // o contains now the random nonce value
+		obDec, err := observer.NewAESGCM(config.EventOnAfterGet, o) // o contains now the random nonce value
 
 		p := *config.MustNewPath("aa/bb/cc")
 		plainText := []byte(`X-Fit Games 2018`)

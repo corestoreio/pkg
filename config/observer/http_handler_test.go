@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package http_test
+// +build csall http
+
+package observer_test
 
 import (
 	"bytes"
@@ -22,8 +24,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/pkg/config"
-	"github.com/corestoreio/pkg/config/validation"
-	"github.com/corestoreio/pkg/config/validation/http"
+	"github.com/corestoreio/pkg/config/observer"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
@@ -39,18 +40,12 @@ func (orf observerRegistererFake) RegisterObserver(event uint8, route string, o 
 	if orf.err != nil {
 		return orf.err
 	}
-	if orf.wantEvent != event {
-		assert.Exactly(orf.t, orf.wantEvent, event, "Event should be equal: have %d want %d", orf.wantEvent, event)
-	}
-	if orf.wantRoute != route {
-		assert.Exactly(orf.t, orf.wantRoute, route, "Routes")
-	}
-
+	assert.Exactly(orf.t, orf.wantEvent, event, "Event should be equal")
+	assert.Exactly(orf.t, orf.wantRoute, route, "Route should be equal")
 	// Pointers are different in the final objects hence they get printed and
 	// their structure compared, not the address.
-	if want, have := fmt.Sprintf("%#v", orf.wantValidator), fmt.Sprintf("%#v", o); want != have {
-		assert.Exactly(orf.t, want, have, "Observer internal types should match")
-	}
+	assert.Exactly(orf.t, fmt.Sprintf("%#v", orf.wantValidator), fmt.Sprintf("%#v", o), "Observer internal types should match")
+
 	return nil
 }
 
@@ -58,34 +53,30 @@ func (orf observerRegistererFake) DeregisterObserver(event uint8, route string) 
 	if orf.err != nil {
 		return orf.err
 	}
-	if orf.wantEvent != event {
-		assert.Exactly(orf.t, orf.wantEvent, event, "Event should be equal: have %d want %d", orf.wantEvent, event)
-	}
-	if orf.wantRoute != route {
-		assert.Exactly(orf.t, orf.wantRoute, route, "Routes")
-	}
+	assert.Exactly(orf.t, orf.wantEvent, event, "Event should be equal")
+	assert.Exactly(orf.t, orf.wantRoute, route, "Route should be equal")
+
 	return nil
 }
-
 func TestRegisterObserversFromJSON(t *testing.T) {
 	t.Parallel()
 
 	t.Run("StatusCreated", func(t *testing.T) {
-		hdnlr := http.RegisterObserversFromJSON(observerRegistererFake{
+		hdnlr := observer.HTTPJSONRegistry(observerRegistererFake{
 			t:         t,
 			wantEvent: config.EventOnAfterSet,
 			wantRoute: "aa/ee/ff",
-			wantValidator: validation.MustNewStrings(validation.Strings{
-				Validators:              []string{"Locale"},
+			wantValidator: observer.MustNewValidator(observer.ValidatorArg{
+				Funcs: []string{"Locale"},
 				AdditionalAllowedValues: []string{"Vulcan"},
 				CSVComma:                "|",
 			}),
-		}, http.HandlerOptions{})
+		}, observer.HTTPHandlerOptions{})
 
 		w := httptest.NewRecorder()
-		req, err := gohttp.NewRequest("GET", "/", bytes.NewBufferString(`[ { "event":"after_set", "route":"aa/ee/ff", "type":"Strings",
+		req, err := gohttp.NewRequest("GET", "/", bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"ValidatorArg",
 		  "condition":{"validators":["Locale"],"csv_comma":"|","additional_allowed_values":["Vulcan"]}}
-		]`))
+		]}`))
 		assert.NoError(t, err)
 		hdnlr.ServeHTTP(w, req)
 
@@ -94,21 +85,21 @@ func TestRegisterObserversFromJSON(t *testing.T) {
 	})
 
 	t.Run("custom StatusNonAuthoritativeInfo", func(t *testing.T) {
-		hdnlr := http.RegisterObserversFromJSON(observerRegistererFake{
+		hdnlr := observer.HTTPJSONRegistry(observerRegistererFake{
 			t:         t,
 			wantEvent: config.EventOnAfterSet,
 			wantRoute: "aa/ee/ff",
-			wantValidator: validation.MustNewStrings(validation.Strings{
-				Validators: []string{"int"},
+			wantValidator: observer.MustNewValidator(observer.ValidatorArg{
+				Funcs: []string{"int"},
 			}),
-		}, http.HandlerOptions{
+		}, observer.HTTPHandlerOptions{
 			StatusCodeOk: gohttp.StatusNonAuthoritativeInfo,
 		})
 
 		w := httptest.NewRecorder()
-		req, err := gohttp.NewRequest("GET", "/", bytes.NewBufferString(`[ { "event":"after_set", "route":"aa/ee/ff", "type":"Strings",
+		req, err := gohttp.NewRequest("GET", "/", bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"ValidatorArg",
 		  "condition":{"validators":["int"]}}
-		]`))
+		]}`))
 		assert.NoError(t, err)
 		hdnlr.ServeHTTP(w, req)
 
@@ -117,22 +108,22 @@ func TestRegisterObserversFromJSON(t *testing.T) {
 	})
 
 	t.Run("Request too large StatusNotAcceptable", func(t *testing.T) {
-		hdnlr := http.RegisterObserversFromJSON(observerRegistererFake{
+		hdnlr := observer.HTTPJSONRegistry(observerRegistererFake{
 			t:         t,
 			wantEvent: config.EventOnAfterSet,
 			wantRoute: "aa/ee/ff",
-			wantValidator: validation.MustNewStrings(validation.Strings{
-				Validators: []string{"int"},
+			wantValidator: observer.MustNewValidator(observer.ValidatorArg{
+				Funcs: []string{"int"},
 			}),
-		}, http.HandlerOptions{
+		}, observer.HTTPHandlerOptions{
 			StatusCodeError: gohttp.StatusNotAcceptable,
 			MaxRequestSize:  100,
 		})
 
 		w := httptest.NewRecorder()
-		req, err := gohttp.NewRequest("GET", "/", bytes.NewBufferString(`[ { "event":"after_set", "route":"aa/ee/ff", "type":"Strings",
+		req, err := gohttp.NewRequest("GET", "/", bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"ValidatorArg",
 		  "condition":{"validators":["int"]}}
-		]`))
+		]}`))
 		assert.NoError(t, err)
 		hdnlr.ServeHTTP(w, req)
 
@@ -145,15 +136,15 @@ func TestDeregisterObserverFromJSON(t *testing.T) {
 	t.Parallel()
 
 	t.Run("StatusAccepted", func(t *testing.T) {
-		hdnlr := http.DeregisterObserverFromJSON(observerRegistererFake{
+		hdnlr := observer.HTTPJSONDeregistry(observerRegistererFake{
 			t:         t,
 			wantEvent: config.EventOnAfterSet,
 			wantRoute: "aa/ee/ff",
-		}, http.HandlerOptions{})
+		}, observer.HTTPHandlerOptions{})
 
 		w := httptest.NewRecorder()
-		req, err := gohttp.NewRequest("GET", "/", bytes.NewBufferString(`[ { "event":"after_set", "route":"aa/ee/ff" }
-		]`))
+		req, err := gohttp.NewRequest("GET", "/", bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff" }
+		]}`))
 		assert.NoError(t, err)
 		hdnlr.ServeHTTP(w, req)
 
@@ -162,17 +153,17 @@ func TestDeregisterObserverFromJSON(t *testing.T) {
 	})
 
 	t.Run("custom StatusNonAuthoritativeInfo", func(t *testing.T) {
-		hdnlr := http.DeregisterObserverFromJSON(observerRegistererFake{
+		hdnlr := observer.HTTPJSONDeregistry(observerRegistererFake{
 			t:         t,
 			wantEvent: config.EventOnAfterSet,
 			wantRoute: "aa/ee/ff",
-		}, http.HandlerOptions{
+		}, observer.HTTPHandlerOptions{
 			StatusCodeOk: gohttp.StatusNonAuthoritativeInfo,
 		})
 
 		w := httptest.NewRecorder()
-		req, err := gohttp.NewRequest("GET", "/", bytes.NewBufferString(`[ { "event":"after_set", "route":"aa/ee/ff"}
-		]`))
+		req, err := gohttp.NewRequest("GET", "/", bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff"}
+		]}`))
 		assert.NoError(t, err)
 		hdnlr.ServeHTTP(w, req)
 
@@ -181,17 +172,17 @@ func TestDeregisterObserverFromJSON(t *testing.T) {
 	})
 
 	t.Run("Request too large StatusNotAcceptable", func(t *testing.T) {
-		hdnlr := http.DeregisterObserverFromJSON(observerRegistererFake{
+		hdnlr := observer.HTTPJSONDeregistry(observerRegistererFake{
 			t:         t,
 			wantEvent: config.EventOnAfterSet,
 			wantRoute: "aa/ee/ff",
-		}, http.HandlerOptions{
+		}, observer.HTTPHandlerOptions{
 			StatusCodeError: gohttp.StatusNotAcceptable,
 			MaxRequestSize:  43,
 		})
 
 		w := httptest.NewRecorder()
-		req, err := gohttp.NewRequest("GET", "/", bytes.NewBufferString(`[ { "event":"after_set", "route":"aa/ee/ff" ]`))
+		req, err := gohttp.NewRequest("GET", "/", bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff" ]}`))
 		assert.NoError(t, err)
 		hdnlr.ServeHTTP(w, req)
 

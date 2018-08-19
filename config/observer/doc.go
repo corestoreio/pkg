@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package modification provides functions to modify a configuration value.
+// Package observer provides validators and modificators for configuration
+// values.
+//
+// The list of validators and modificators will be extended. Please suggest new
+// ones.
 //
 // Modification can be trim, lower case, upper case, title, base64
 // encode/decode, sha256, gzip, gunzip and AES-GCM encrypt/decrypt.
@@ -27,4 +31,5 @@
 // - `proto` for protocol buffers encoding and registration of modificators via
 //    proto services, includes `json`.
 // - `http` to enable registration of modificators via HTTP handlers.
-package modification
+// - `csall` for all features.
+package observer

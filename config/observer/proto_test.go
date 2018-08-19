@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package proto_test
+// +build csall proto
+
+package observer_test
 
 import (
 	"context"
@@ -21,24 +23,22 @@ import (
 	"testing"
 
 	"github.com/corestoreio/pkg/config"
-	cfgval "github.com/corestoreio/pkg/config/validation"
-	"github.com/corestoreio/pkg/config/validation/json"
-	"github.com/corestoreio/pkg/config/validation/proto"
+	"github.com/corestoreio/pkg/config/observer"
 	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/validation"
 	google_protobuf "github.com/gogo/protobuf/types"
 	"google.golang.org/grpc"
 )
 
-type observerRegistererFake struct {
-	*testing.T    // can't be used because of the parallel context of a server.
+type observerRegistererPanicFake struct {
+	testName      string
 	wantEvent     uint8
 	wantRoute     string
 	wantValidator interface{}
 	err           error
 }
 
-func (orf *observerRegistererFake) RegisterObserver(event uint8, route string, o config.Observer) error {
+func (orf *observerRegistererPanicFake) RegisterObserver(event uint8, route string, o config.Observer) error {
 	if orf.err != nil {
 		return orf.err
 	}
@@ -52,12 +52,12 @@ func (orf *observerRegistererFake) RegisterObserver(event uint8, route string, o
 	// Pointers are different in the final objects hence they get printed and
 	// their structure compared, not the address.
 	if want, have := fmt.Sprintf("%#v", orf.wantValidator), fmt.Sprintf("%#v", o); want != have {
-		panic(fmt.Sprintf("Observer internal types should match.\nWant:%s\nHave:%s\n", want, have))
+		panic(fmt.Sprintf("%s: Observer internal types should match.\nWant:%s\nHave:%s\n", orf.testName, want, have))
 	}
 	return nil
 }
 
-func (orf *observerRegistererFake) DeregisterObserver(event uint8, route string) error {
+func (orf *observerRegistererPanicFake) DeregisterObserver(event uint8, route string) error {
 	if orf.err != nil {
 		return orf.err
 	}
@@ -72,9 +72,9 @@ func (orf *observerRegistererFake) DeregisterObserver(event uint8, route string)
 }
 
 var (
-	_ validation.Validator = (*proto.Validator)(nil)
-	_ validation.Validator = (*proto.Validators)(nil)
-	// _ proto.ConfigValidationServiceServer = (*proto.registrar)(nil)
+	_ validation.Validator = (*observer.Configuration)(nil)
+	_ validation.Validator = (*observer.Configurations)(nil)
+	// _ observer.ProtoServiceServer = (*observer.registrar)(nil)
 )
 
 func grpcServer(t *testing.T, port string, or config.ObserverRegisterer, stop <-chan struct{}) {
@@ -83,7 +83,7 @@ func grpcServer(t *testing.T, port string, or config.ObserverRegisterer, stop <-
 		t.Fatal(err)
 	}
 	s := grpc.NewServer()
-	proto.RegisterConfigValidationServiceServer(s, proto.NewConfigValidationServiceServer(or))
+	observer.RegisterProtoServiceServer(s, observer.NewProtoServiceServer(or))
 
 	go func() {
 		if err := s.Serve(lis); err != nil {
@@ -96,13 +96,14 @@ func grpcServer(t *testing.T, port string, or config.ObserverRegisterer, stop <-
 	}()
 }
 
-func TestNewConfigValidationServiceServer_Register_Ok(t *testing.T) {
+func TestNewProtoServiceServer_Register_Ok(t *testing.T) {
 	stop := make(chan struct{})
 
-	grpcServer(t, ":50053", &observerRegistererFake{
+	grpcServer(t, ":50053", &observerRegistererPanicFake{
+		testName:      t.Name(),
 		wantRoute:     "shipment/dhl/free",
 		wantEvent:     config.EventOnBeforeSet,
-		wantValidator: cfgval.MustNewStrings(cfgval.Strings{Validators: []string{"bool"}}),
+		wantValidator: observer.MustNewValidator(observer.ValidatorArg{Funcs: []string{"bool"}}),
 	}, stop)
 
 	const address = "localhost:50053"
@@ -115,16 +116,16 @@ func TestNewConfigValidationServiceServer_Register_Ok(t *testing.T) {
 		assert.NoError(t, conn.Close())
 	}()
 
-	c := proto.NewConfigValidationServiceClient(conn)
+	c := observer.NewProtoServiceClient(conn)
 
-	result, err := c.Register(context.Background(), &proto.Validators{
-		Collection: []*proto.Validator{
-			{json.Validator{
+	result, err := c.Register(context.Background(), &observer.Configurations{
+		Collection: []*observer.Configuration{
+			{
 				Event:     "before_set",
 				Route:     "shipment/dhl/free",
 				Type:      "strings",
-				Condition: []byte(`{"validators":["bool"]}`),
-			}},
+				Condition: []byte(`{"funcs":["bool"]}`),
+			},
 		},
 	})
 
@@ -132,10 +133,10 @@ func TestNewConfigValidationServiceServer_Register_Ok(t *testing.T) {
 	assert.Exactly(t, &google_protobuf.Empty{}, result)
 }
 
-func TestNewConfigValidationServiceServer_Register_Invalid(t *testing.T) {
+func TestNewProtoServiceServer_Register_Invalid(t *testing.T) {
 	stop := make(chan struct{})
 
-	grpcServer(t, ":50054", &observerRegistererFake{}, stop)
+	grpcServer(t, ":50054", &observerRegistererPanicFake{testName: t.Name()}, stop)
 
 	const address = "localhost:50054"
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -147,16 +148,16 @@ func TestNewConfigValidationServiceServer_Register_Invalid(t *testing.T) {
 		assert.NoError(t, conn.Close())
 	}()
 
-	c := proto.NewConfigValidationServiceClient(conn)
+	c := observer.NewProtoServiceClient(conn)
 
-	result, err := c.Register(context.Background(), &proto.Validators{
-		Collection: []*proto.Validator{
-			{json.Validator{
+	result, err := c.Register(context.Background(), &observer.Configurations{
+		Collection: []*observer.Configuration{
+			{
 				Event:     "before_det",
 				Route:     "shipment/dhl/free",
 				Type:      "strings",
-				Condition: []byte(`{"validators":["bool"]}`),
-			}},
+				Condition: []byte(`{"funcs":["bool"]}`),
+			},
 		},
 	})
 
@@ -169,10 +170,11 @@ func TestNewConfigValidationServiceServer_Register_Invalid(t *testing.T) {
 	// assert.Exactly(t, []interface{}{errors.New("asd")}, st.Details())
 }
 
-func TestNewConfigValidationServiceServer_Deegister_Ok(t *testing.T) {
+func TestNewProtoServiceServer_Deegister_Ok(t *testing.T) {
 	stop := make(chan struct{})
 
-	grpcServer(t, ":50055", &observerRegistererFake{
+	grpcServer(t, ":50055", &observerRegistererPanicFake{
+		testName:  t.Name(),
 		wantRoute: "shipment/dhl/free",
 		wantEvent: config.EventOnBeforeSet,
 	}, stop)
@@ -187,14 +189,14 @@ func TestNewConfigValidationServiceServer_Deegister_Ok(t *testing.T) {
 		assert.NoError(t, conn.Close())
 	}()
 
-	c := proto.NewConfigValidationServiceClient(conn)
+	c := observer.NewProtoServiceClient(conn)
 
-	result, err := c.Deregister(context.Background(), &proto.Validators{
-		Collection: []*proto.Validator{
-			{json.Validator{
+	result, err := c.Deregister(context.Background(), &observer.Configurations{
+		Collection: []*observer.Configuration{
+			{
 				Event: "before_set",
 				Route: "shipment/dhl/free",
-			}},
+			},
 		},
 	})
 

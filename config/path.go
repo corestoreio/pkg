@@ -176,12 +176,26 @@ type Path struct {
 	// envSuffix gets set by the *Service type if the service runs environment
 	// aware and a Path has set UseEnvSuffix to true.
 	envSuffix string
+
+	// Idea for a new path: default/0/carriers/dhl/password/en=DEV/fr=YYYYMMDDHHIISS/to=YYYYMMDDHHIISS/pu=1/su=beta2
+	// or proto/json encoded
+
 	// TODO ActiveFrom defines a time when a key becomes active, supported time
 	// format: Y-m-d H:i:s (MySQL Datetime column).
 	// ActiveFrom time.Time
 	// TODO ActiveTo defines a time when a key becomes inactive, supported time
 	// format: Y-m-d H:i:s (MySQL Datetime column).
 	// ActiveTo time.Time
+	// TODO IsPublic defines if a path has a public or private behaviour. For
+	// example when displaying all values for all paths, then paths marked as
+	// private are getting skipped. This feature depends on the storage engine.
+	// Get operation does not consider Public/Private
+	// IsPublic bool
+	// TODO Suffix defines a random suffix appended to a path. if the key with
+	// that suffix does not exists, the fall back goes to the path with
+	// env-suffix and then to the standard path. Useful to test different
+	// versions or A/B testing.
+	// Suffix string
 }
 
 // NewPathWithScope creates a new validate Path with a custom scope.

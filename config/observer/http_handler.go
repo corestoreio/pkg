@@ -12,20 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package http
+// +build csall http
+
+package observer
 
 import (
 	"io"
 	"net/http"
 
 	"github.com/corestoreio/pkg/config"
-	"github.com/corestoreio/pkg/config/validation/json"
 	"github.com/corestoreio/pkg/net/mw"
 )
 
-// HandlerOptions can set different behaviour to the Register/Deregister
-// endpoints.
-type HandlerOptions struct {
+// HTTPHandlerOptions can set different behaviour to the
+// HTTPJSONRegistry / HTTPJSONDeregistry. endpoints.
+type HTTPHandlerOptions struct {
 	// ErrorHandler custom error handler. Default error handler returns just a
 	// status code.
 	ErrorHandler   mw.ErrorHandler
@@ -38,9 +39,9 @@ type HandlerOptions struct {
 	StatusCodeError int
 }
 
-// RegisterObserversFromJSON provides an endpoint handler to register validators
+// HTTPJSONRegistry provides an endpoint handler to register validators
 // with the concrete type of config.Service
-func RegisterObserversFromJSON(or config.ObserverRegisterer, ho HandlerOptions) http.Handler {
+func HTTPJSONRegistry(or config.ObserverRegisterer, ho HTTPHandlerOptions) http.Handler {
 	if ho.StatusCodeOk == 0 {
 		ho.StatusCodeOk = http.StatusCreated
 	}
@@ -56,7 +57,7 @@ func RegisterObserversFromJSON(or config.ObserverRegisterer, ho HandlerOptions) 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
-		if err := json.RegisterObservers(or, io.LimitReader(r.Body, ho.MaxRequestSize)); err != nil {
+		if err := JSONRegisterObservers(or, io.LimitReader(r.Body, ho.MaxRequestSize)); err != nil {
 			ho.ErrorHandler(err).ServeHTTP(w, r)
 			return
 		}
@@ -65,9 +66,9 @@ func RegisterObserversFromJSON(or config.ObserverRegisterer, ho HandlerOptions) 
 	})
 }
 
-// DeregisterObserverFromJSON provides an endpoint handler to deregister
+// HTTPJSONDeregistry provides an endpoint handler to deregister
 // validators with the concrete type of config.Service
-func DeregisterObserverFromJSON(or config.ObserverRegisterer, ho HandlerOptions) http.Handler {
+func HTTPJSONDeregistry(or config.ObserverRegisterer, ho HTTPHandlerOptions) http.Handler {
 	if ho.StatusCodeOk == 0 {
 		ho.StatusCodeOk = http.StatusAccepted
 	}
@@ -83,7 +84,7 @@ func DeregisterObserverFromJSON(or config.ObserverRegisterer, ho HandlerOptions)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
-		if err := json.DeregisterObservers(or, io.LimitReader(r.Body, ho.MaxRequestSize)); err != nil {
+		if err := JSONDeregisterObservers(or, io.LimitReader(r.Body, ho.MaxRequestSize)); err != nil {
 			ho.ErrorHandler(err).ServeHTTP(w, r)
 			return
 		}

@@ -12,13 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build  all json
+// +build csall json
 
-package modification
+package observer
 
-import "github.com/mailru/easyjson"
+// import (
+// 	"github.com/corestoreio/pkg/config"
+// 	"github.com/corestoreio/pkg/config/validation"
+// )
 
-var (
-	_ easyjson.Marshaler = (*AESGCMOptions)(nil)
-	_ easyjson.Marshaler = (*Strings)(nil)
-)
+// type ValidFileExtension struct {
+// 	Extensions []string
+// }
+//
+// func (fe *ValidFileExtension) UnmarshalJSON(data []byte) error {
+// 	return nil
+// }
+//
+// func (fe ValidFileExtension) Observe(p config.Path, rawData []byte, found bool) (newRawData []byte, err error) {
+// 	return rawData, nil
+// }
+
+func ExampleRegisterCustomObserver() {
+
+	// validation.RegisterCustomObserver("image_file", &ValidFileExtension{})
+}

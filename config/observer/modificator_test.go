@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package modification
+package observer
 
 import (
 	"crypto/sha256"
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/hashpool"
@@ -60,4 +61,55 @@ func TestOperators(t *testing.T) {
 
 	assert.Exactly(t, []byte("The Small Universe"),
 		errCheck(t)(dataGunzip(nil, []byte("\x1f\x8b\b\x00\x00\x00\x00\x00\x00\xff\n\xc9HU\b\xceM\xcc\xc9Q\b\xcd\xcb,K-*N\x05\x04\x00\x00\xff\xff\x05\xd1r\xe9\x12\x00\x00\x00"))))
+}
+
+func TestMustNewModificator(t *testing.T) {
+	t.Parallel()
+	defer func() {
+		if r := recover(); r != nil {
+			if err, ok := r.(error); ok {
+				assert.True(t, errors.NotSupported.Match(err))
+			} else {
+				t.Errorf("Panic should contain an error but got:\n%+v", r)
+			}
+		} else {
+			t.Error("Expecting a panic but got nothing")
+		}
+	}()
+	_ = MustNewModificator(ModificatorArg{
+		Funcs: []string{"neverGonnaGiveYouUp"},
+	})
+}
+
+func TestNewModificator(t *testing.T) {
+	t.Parallel()
+
+	t.Run("trim upper", func(t *testing.T) {
+		ms := MustNewModificator(ModificatorArg{
+			Funcs: []string{"trim", "upper"},
+		})
+
+		var p config.Path
+		data := []byte(" \thello\n \t")
+		have, err := ms.Observe(p, data, true)
+		assert.NoError(t, err)
+		assert.Exactly(t, "HELLO", string(have))
+	})
+
+	t.Run("custom operator returns error ", func(t *testing.T) {
+		RegisterModificator("csx", func(*config.Path, []byte) ([]byte, error) {
+			return nil, errors.New("An error")
+		})
+
+		ms := MustNewModificator(ModificatorArg{
+			Funcs: []string{"trim", "csx", "upper"},
+		})
+
+		var p config.Path
+		data := []byte(" \thello\n \t")
+		have, err := ms.Observe(p, data, true)
+		assert.Nil(t, have)
+		assert.True(t, errors.Interrupted.Match(err), "%+v", err)
+
+	})
 }

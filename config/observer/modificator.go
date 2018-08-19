@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package modification
+package observer
 
 import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"sync"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
@@ -26,6 +27,101 @@ import (
 	"github.com/corestoreio/pkg/util/gzippool"
 	"github.com/corestoreio/pkg/util/hashpool"
 )
+
+// alter vs modification vs change | Don't know - non native speaker and
+// StackExchange isn't helpful.
+
+// ModificateFn defines the function signature for altering the data.
+type ModificateFn func(*config.Path, []byte) ([]byte, error)
+
+type modReg struct {
+	sync.RWMutex
+	pool map[string]ModificateFn
+}
+
+var modificatorRegistry = &modReg{
+	pool: map[string]ModificateFn{
+		"upper":         toUpper,
+		"lower":         toLower,
+		"trim":          trim,
+		"title":         toTitle,
+		"base64_encode": base64Encode,
+		"base64_decode": base64Decode,
+		"hex_encode":    hexEncode,
+		"hex_decode":    hexDecode,
+		"sha256":        hash256, // as an example, but must register
+		"gzip":          dataGzip,
+		"gunzip":        dataGunzip,
+	},
+}
+
+// RegisterModificator adds a new operator to the global registry and might
+// overwrite previously set entries.
+func RegisterModificator(typeName string, h ModificateFn) {
+	modificatorRegistry.Lock()
+	defer modificatorRegistry.Unlock()
+	modificatorRegistry.pool[typeName] = h
+}
+
+// ModificatorArg defines the modificators to use to alter a string received from the
+// config.Service.
+//easyjson:json
+type ModificatorArg struct {
+	// Funcs defines a list of function names. Currently supported: upper,
+	// lower, trim, title, base64_encode, base64_decode, sha256 (must one time
+	// be registered in hashpool package), gzip, gunzip.
+	Funcs []string `json:"funcs,omitempty"`
+}
+
+// NewModificator creates a new type specific modificator.
+func NewModificator(data ModificatorArg) (config.Observer, error) {
+	ia := &modificators{
+		opType: append([]string{}, data.Funcs...), // copy data
+		opFns:  make([]ModificateFn, 0, len(data.Funcs)),
+	}
+
+	modificatorRegistry.RLock()
+	defer modificatorRegistry.RUnlock()
+
+	for _, mod := range data.Funcs {
+		h, ok := modificatorRegistry.pool[mod]
+		if !ok || h == nil {
+			return nil, errors.NotSupported.Newf("[config/validation] Modificator %q not yet supported.", mod)
+		}
+		ia.opFns = append(ia.opFns, h)
+	}
+
+	return ia, nil
+}
+
+// MustNewModificator same as NewModificator but panics on error.
+func MustNewModificator(data ModificatorArg) config.Observer {
+	o, err := NewModificator(data)
+	if err != nil {
+		panic(err)
+	}
+	return o
+}
+
+// modificators must be used to prevent race conditions during initialization.
+// That is the reason we have a separate struct for JSON handling. Having two
+// structs allows to refrain from using Locks.
+type modificators struct {
+	opType []string
+	opFns  []ModificateFn
+}
+
+// Observe validates the given rawData value. This functions runs in a hot path.
+func (v *modificators) Observe(p config.Path, rawData []byte, found bool) (rawData2 []byte, err error) {
+	rawData2 = rawData
+	p2 := &p
+	for idx, valFn := range v.opFns {
+		if rawData2, err = valFn(p2, rawData2); err != nil {
+			return nil, errors.Interrupted.New(err, "[config/modification] Function %q interrupted", v.opType[idx])
+		}
+	}
+	return rawData2, nil
+}
 
 // as long as we don't see a use case for those modificators in other packages,
 // they stay private. might be refactored later.

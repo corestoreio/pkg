@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package validation_test
+package observer_test
 
 import (
 	"bytes"
 	"testing"
 
 	"github.com/corestoreio/pkg/config"
-	"github.com/corestoreio/pkg/config/validation"
+	"github.com/corestoreio/pkg/config/observer"
 )
 
 // BenchmarkMinMaxInt64/partial-4         	50000000	        30.6 ns/op	       0 B/op	       0 allocs/op
@@ -28,7 +28,7 @@ func BenchmarkMinMaxInt64(b *testing.B) {
 	var p config.Path
 
 	b.Run("partial", func(b *testing.B) {
-		mm, err := validation.NewMinMaxInt64(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+		mm, err := observer.NewValidateMinMaxInt(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -50,7 +50,7 @@ func BenchmarkMinMaxInt64(b *testing.B) {
 	})
 
 	b.Run("non-partial", func(b *testing.B) {
-		mm, err := validation.NewMinMaxInt64(2012, 2016, 2016, 2018) // weird ;-)
+		mm, err := observer.NewValidateMinMaxInt(2012, 2016, 2016, 2018) // weird ;-)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -76,8 +76,8 @@ func BenchmarkStrings_CSV_Locale(b *testing.B) {
 	var p config.Path
 
 	b.Run("with Add.AllowedValues non-partial single", func(b *testing.B) {
-		s, err := validation.NewStrings(validation.Strings{
-			Validators:              []string{"locale"},
+		s, err := observer.NewValidator(observer.ValidatorArg{
+			Funcs:                   []string{"locale"},
 			PartialValidation:       false,
 			AdditionalAllowedValues: []string{"tlh"}, // tlh for klingon
 			CSVComma:                ";",
@@ -103,8 +103,8 @@ func BenchmarkStrings_CSV_Locale(b *testing.B) {
 	})
 
 	b.Run("with Add.AllowedValues non-partial multi", func(b *testing.B) {
-		s, err := validation.NewStrings(validation.Strings{
-			Validators:              []string{"locale"},
+		s, err := observer.NewValidator(observer.ValidatorArg{
+			Funcs:                   []string{"locale"},
 			PartialValidation:       false,
 			AdditionalAllowedValues: []string{"tlh"}, // tlh for klingon
 			CSVComma:                ";",
@@ -136,8 +136,8 @@ func BenchmarkStrings_Simple(b *testing.B) {
 	var p config.Path
 
 	b.Run("notempty,bool", func(b *testing.B) {
-		s, err := validation.NewStrings(validation.Strings{
-			Validators: []string{"notempty", "bool"},
+		s, err := observer.NewValidator(observer.ValidatorArg{
+			Funcs: []string{"notempty", "bool"},
 		})
 		if err != nil {
 			b.Fatal(err)

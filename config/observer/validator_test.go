@@ -12,20 +12,132 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package validation_test
+package observer
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
-	"github.com/corestoreio/pkg/config/validation"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
+var (
+	_ config.Observer = (*ValidateMinMaxInt)(nil)
+)
+
+func TestMinMaxInt_Observe(t *testing.T) {
+	t.Parallel()
+	var p config.Path
+	t.Run("parse failed", func(t *testing.T) {
+		mm, err := NewValidateMinMaxInt(1, 2)
+		assert.NoError(t, err)
+		_, err = mm.Observe(p, []byte("NAN"), false)
+		assert.EqualError(t, err, "strconv.ParseInt: parsing \"NAN\": invalid syntax")
+	})
+	t.Run("null", func(t *testing.T) {
+		mm, err := NewValidateMinMaxInt(1, 2)
+		assert.NoError(t, err)
+		ret, err := mm.Observe(p, nil, false)
+		assert.NoError(t, err)
+		assert.Nil(t, ret)
+	})
+	t.Run("not in range1", func(t *testing.T) {
+		mm, err := NewValidateMinMaxInt(1, 2)
+		assert.NoError(t, err)
+		ret, err := mm.Observe(p, []byte(`3`), false)
+		assert.True(t, errors.OutOfRange.Match(err), "%+v", err)
+		assert.Nil(t, ret)
+	})
+	t.Run("not in range2", func(t *testing.T) {
+		mm, err := NewValidateMinMaxInt(2, 1)
+		assert.NoError(t, err)
+		ret, err := mm.Observe(p, []byte(`3`), false)
+		assert.True(t, errors.OutOfRange.Match(err), "%+v", err)
+		assert.Nil(t, ret)
+	})
+	t.Run("in range1", func(t *testing.T) {
+		mm, err := NewValidateMinMaxInt(1, 2)
+		assert.NoError(t, err)
+		data := []byte(`2`)
+		ret, err := mm.Observe(p, data, false)
+		assert.NoError(t, err)
+		assert.Exactly(t, data, ret)
+	})
+	t.Run("in range2", func(t *testing.T) {
+		mm, err := NewValidateMinMaxInt(1, 2)
+		assert.NoError(t, err)
+		data := []byte(`2`)
+		ret, err := mm.Observe(p, data, false)
+		assert.NoError(t, err)
+		assert.Exactly(t, data, ret)
+	})
+
+	t.Run("partial validation enabled success", func(t *testing.T) {
+		mm, err := NewValidateMinMaxInt(1, 2, 5, 6, 7, 8)
+		assert.NoError(t, err)
+		mm.PartialValidation = true
+		data := []byte(`6`)
+		ret, err := mm.Observe(p, data, false)
+		assert.NoError(t, err)
+		assert.Exactly(t, data, ret)
+	})
+
+	t.Run("partial validation disabled fails", func(t *testing.T) {
+		mm, err := NewValidateMinMaxInt(1, 2, 5, 6, 7, 8)
+		assert.NoError(t, err)
+		mm.PartialValidation = false
+		data := []byte(`6`)
+		ret, err := mm.Observe(p, data, false)
+		assert.True(t, errors.OutOfRange.Match(err), "%+v", err)
+		assert.Nil(t, ret)
+	})
+}
+
+type observerRegistererFake struct {
+	t             *testing.T
+	wantEvent     uint8
+	wantRoute     string
+	wantValidator interface{}
+	err           error
+}
+
+func (orf observerRegistererFake) RegisterObserver(event uint8, route string, o config.Observer) error {
+	if orf.err != nil {
+		return orf.err
+	}
+	if orf.wantEvent != event {
+		assert.Exactly(orf.t, orf.wantEvent, event, "Event should be equal: have %d want %d", orf.wantEvent, event)
+	}
+	if orf.wantRoute != route {
+		assert.Exactly(orf.t, orf.wantRoute, route, "Routes")
+	}
+
+	// Pointers are different in the final objects hence they get printed and
+	// their structure compared, not the address.
+	if want, have := fmt.Sprintf("%#v", orf.wantValidator), fmt.Sprintf("%#v", o); want != have {
+		assert.Exactly(orf.t, want, have, "Observer internal types should match")
+	}
+	return nil
+}
+
+func (orf observerRegistererFake) DeregisterObserver(event uint8, route string) error {
+	if orf.err != nil {
+		return orf.err
+	}
+	if orf.wantEvent != event {
+		assert.Exactly(orf.t, orf.wantEvent, event, "Event should be equal: have %d want %d", orf.wantEvent, event)
+	}
+	if orf.wantRoute != route {
+		assert.Exactly(orf.t, orf.wantRoute, route, "Routes")
+	}
+	return nil
+}
+
 func sl(s ...string) []string { return s }
 
-func TestNewStrings(t *testing.T) {
+func TestNewValidator(t *testing.T) {
 	t.Parallel()
 
 	runner := func(
@@ -40,8 +152,8 @@ func TestNewStrings(t *testing.T) {
 	) func(*testing.T) {
 		return func(t *testing.T) {
 
-			s, err := validation.NewStrings(validation.Strings{
-				Validators:              validationType,
+			s, err := NewValidator(ValidatorArg{
+				Funcs:                   validationType,
 				PartialValidation:       partialValidation,
 				AdditionalAllowedValues: allowedValues,
 				CSVComma:                csvComma,
@@ -249,11 +361,11 @@ func TestNewStrings(t *testing.T) {
 		runner(sl("int", "bool"), sl(), "", false, []byte("true"), true, errors.NoKind, errors.NotValid),
 	)
 
-	validation.RegisterStringValidator("is_euro", isEuro)
-	t.Run("RegisterStringValidator is_euro ok",
+	RegisterValidator("is_euro", isEuro)
+	t.Run("RegisterValidator is_euro ok",
 		runner(sl("is_euro"), sl(), "", false, []byte("€"), true, errors.NoKind, errors.NoKind),
 	)
-	t.Run("RegisterStringValidator is_euro nok",
+	t.Run("RegisterValidator is_euro nok",
 		runner(sl("is_euro"), sl(), "", false, []byte(""), true, errors.NoKind, errors.NotValid),
 	)
 
@@ -263,7 +375,7 @@ func isEuro(s string) bool {
 	return s == "€"
 }
 
-func TestMustNewStrings(t *testing.T) {
+func TestMustNewValidator(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
 			if err, ok := r.(error); ok {
@@ -275,7 +387,7 @@ func TestMustNewStrings(t *testing.T) {
 			t.Error("Expecting a panic but got nothing")
 		}
 	}()
-	validation.MustNewStrings(validation.Strings{
-		Validators: []string{"IsPHP"},
+	MustNewValidator(ValidatorArg{
+		Funcs: []string{"IsPHP"},
 	})
 }
