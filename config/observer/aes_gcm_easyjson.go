@@ -5,19 +5,14 @@
 package observer
 
 import (
-	json "encoding/json"
-
-	easyjson "github.com/mailru/easyjson"
 	jlexer "github.com/mailru/easyjson/jlexer"
 	jwriter "github.com/mailru/easyjson/jwriter"
 )
 
 // suppress unused package warning
 var (
-	_ *json.RawMessage
 	_ *jlexer.Lexer
 	_ *jwriter.Writer
-	_ easyjson.Marshaler
 )
 
 func easyjson4cfa51e5DecodeGithubComCorestoreioPkgConfigObserver(in *jlexer.Lexer, out *AESGCMOptions) {
