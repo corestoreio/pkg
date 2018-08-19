@@ -55,8 +55,9 @@ var modificatorRegistry = &modReg{
 	},
 }
 
-// RegisterModificator adds a new operator to the global registry and might
-// overwrite previously set entries.
+// RegisterModificator adds a new modification function to the global registry
+// and might overwrite previously set entries. Access to the global registry can
+// be achieved via function NewModificator.
 func RegisterModificator(typeName string, h ModificateFn) {
 	modificatorRegistry.Lock()
 	defer modificatorRegistry.Unlock()
@@ -69,7 +70,9 @@ func RegisterModificator(typeName string, h ModificateFn) {
 type ModificatorArg struct {
 	// Funcs defines a list of function names. Currently supported: upper,
 	// lower, trim, title, base64_encode, base64_decode, sha256 (must one time
-	// be registered in hashpool package), gzip, gunzip.
+	// be registered in hashpool package), gzip, gunzip. Additional all other
+	// custom modificator functions registered via RegisterModificator are
+	// supported.
 	Funcs []string `json:"funcs,omitempty"`
 }
 

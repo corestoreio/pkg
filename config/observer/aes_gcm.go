@@ -27,7 +27,6 @@ import (
 
 // AESGCMOptions sets the Key and Nonce from this struct or from environment
 // variables.
-//easyjson:json
 type AESGCMOptions struct {
 	// The key argument should be the AES key, either 16, 24, or 32 bytes to
 	// select AES-128, AES-192, or AES-256. If empty, a random key will be
@@ -50,7 +49,8 @@ type aesGCM struct {
 
 // NewAESGCM creates a new observer which can encrypt or decrypt a value with
 // the AES-GCM mode. Only two events are supported: config.EventOnBeforeSet for
-// encryption and config.EventOnAfterGet for decryption.
+// encryption and config.EventOnAfterGet for decryption. For security reasons
+// this function cannot be access via JSON or protocol buffers.
 func NewAESGCM(eventType uint8, eo *AESGCMOptions) (config.Observer, error) {
 
 	if eventType != config.EventOnBeforeSet && eventType != config.EventOnAfterGet {
@@ -104,7 +104,6 @@ func NewAESGCM(eventType uint8, eo *AESGCMOptions) (config.Observer, error) {
 }
 
 func (v *aesGCM) Observe(p config.Path, rawData []byte, found bool) ([]byte, error) {
-
 	switch v.eventType {
 	case config.EventOnBeforeSet:
 		return v.aead.Seal(nil, v.o.Nonce, rawData, nil), nil

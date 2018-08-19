@@ -18,6 +18,7 @@ package observer
 
 import (
 	"bytes"
+	"encoding/json"
 	"testing"
 
 	"github.com/corestoreio/errors"
@@ -198,7 +199,7 @@ func TestRegisterObservers(t *testing.T) {
 				wantJSON: wantConditionJSON,
 			},
 		}
-		RegisterCustomObserver("XMLValidationOK", func(data []byte) (config.Observer, error) {
+		RegisterCustom("XMLValidationOK", func(data json.RawMessage) (config.Observer, error) {
 			assert.Exactly(t, wantConditionJSON, data)
 			return xmlValidator{wantJSON: wantConditionJSON}, nil
 		})
@@ -213,7 +214,7 @@ func TestRegisterObservers(t *testing.T) {
 		or := observerRegistererFake{
 			t: t,
 		}
-		RegisterCustomObserver("XMLValidationErr01", func(data []byte) (config.Observer, error) {
+		RegisterCustom("XMLValidationErr01", func(data json.RawMessage) (config.Observer, error) {
 			assert.Exactly(t, []byte("{\"validators\":IsPHP,\"additional_allowed_values\":[\"Vulcan\"]}"), data)
 			return nil, errors.Blocked.Newf("Ups")
 		})

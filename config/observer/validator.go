@@ -25,53 +25,6 @@ import (
 	"github.com/corestoreio/pkg/util/validation"
 )
 
-// ValidateMinMaxInt validates if a value is between or in range of min and max.
-// Provide the field Conditions as a balanced slice where value n defines min
-// and n+1 the max value. For JSON handling, see sub-package `json`.
-//easyjson:json
-type ValidateMinMaxInt struct {
-	Conditions []int64 `json:"conditions,omitempty"`
-	// PartialValidation if true only one of min/max pairs must be valid.
-	PartialValidation bool `json:"partial_validation,omitempty"`
-}
-
-// NewValidateMinMaxInt creates a new observer to check if a value is
-// contained between min and max values. Argument MinMax must be balanced slice.
-func NewValidateMinMaxInt(minMax ...int64) (*ValidateMinMaxInt, error) {
-	return &ValidateMinMaxInt{
-		Conditions: minMax,
-	}, nil
-}
-
-func (v ValidateMinMaxInt) Observe(p config.Path, rawData []byte, found bool) (rawData2 []byte, err error) {
-	lmm := len(v.Conditions)
-	if lmm%2 == 1 || lmm < 1 {
-		return nil, errors.NotAcceptable.Newf("[config/validation] ValidateMinMaxInt does not contain a balanced slice. Len: %d", lmm)
-	}
-
-	val, ok, err := byteconv.ParseInt(rawData)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	if !ok {
-		return rawData, nil
-	}
-	var validations int
-	for i := 0; i < lmm; i = i + 2 {
-		if left, right := v.Conditions[i], v.Conditions[i+1]; validation.InRangeInt64(val, left, right) {
-			validations++
-			if v.PartialValidation {
-				return rawData, nil
-			}
-		}
-	}
-
-	if !v.PartialValidation && validations == lmm/2 {
-		return rawData, nil
-	}
-	return nil, errors.OutOfRange.Newf("[config/validation] %q value out of range: %v", val, v.Conditions)
-}
-
 // ValidateFn function signature for a validator.
 type ValidateFn func(string) bool
 
@@ -125,8 +78,10 @@ func RegisterValidator(typeName string, vfn ValidateFn) {
 	validatorRegistry.Unlock()
 }
 
-// ValidatorArg checks if a value or a CSV value is a valid type of the defined field
-// "Type" and/or contained within AdditionalAllowedValues.
+// ValidatorArg gets used as argument to function NewValidator to create a new
+// validation observer implementing various checks. Working on CSV data is
+// supported to validate each CSV entity. ValidatorArg implements JSON
+// encoding/decoding for creating new observer via HTTP or protocol buffers.
 //easyjson:json
 type ValidatorArg struct {
 	// Funcs sets the list of validator functions which can be:
@@ -148,6 +103,8 @@ type ValidatorArg struct {
 	// "not_empty_trim_space" to proof that values with trimmed white spaces are not empty
 	// "custom" for any custom checking if the value is contained in the
 	// AdditionalAllowedValues map.
+	// Additional all other custom validator functions registered via
+	// RegisterValidator are supported.
 	Funcs []string `json:"funcs,omitempty"`
 	// PartialValidation if true only one of the Configurations must return true /
 	// match the string.
@@ -286,4 +243,51 @@ func (v *validators) Observe(_ config.Path, rawData []byte, found bool) (rawData
 	}
 
 	return rawData, nil
+}
+
+// ValidateMinMaxInt validates if a value is between or in range of min and max.
+// Provide the field Conditions as a balanced slice where value n defines min
+// and n+1 the max value. For JSON handling, see sub-package `json`.
+//easyjson:json
+type ValidateMinMaxInt struct {
+	Conditions []int64 `json:"conditions,omitempty"`
+	// PartialValidation if true only one of min/max pairs must be valid.
+	PartialValidation bool `json:"partial_validation,omitempty"`
+}
+
+// NewValidateMinMaxInt creates a new observer to check if a value is
+// contained between min and max values. Argument MinMax must be balanced slice.
+func NewValidateMinMaxInt(minMax ...int64) (*ValidateMinMaxInt, error) {
+	return &ValidateMinMaxInt{
+		Conditions: minMax,
+	}, nil
+}
+
+func (v ValidateMinMaxInt) Observe(p config.Path, rawData []byte, found bool) (rawData2 []byte, err error) {
+	lmm := len(v.Conditions)
+	if lmm%2 == 1 || lmm < 1 {
+		return nil, errors.NotAcceptable.Newf("[config/validation] ValidateMinMaxInt does not contain a balanced slice. Len: %d", lmm)
+	}
+
+	val, ok, err := byteconv.ParseInt(rawData)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if !ok {
+		return rawData, nil
+	}
+	var validations int
+	for i := 0; i < lmm; i = i + 2 {
+		if left, right := v.Conditions[i], v.Conditions[i+1]; validation.InRangeInt64(val, left, right) {
+			validations++
+			if v.PartialValidation {
+				return rawData, nil
+			}
+		}
+	}
+
+	if !v.PartialValidation && validations == lmm/2 {
+		return rawData, nil
+	}
+	return nil, errors.OutOfRange.Newf("[config/validation] %q value out of range: %v", val, v.Conditions)
 }

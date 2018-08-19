@@ -35,5 +35,5 @@ package observer
 
 func ExampleRegisterCustomObserver() {
 
-	// validation.RegisterCustomObserver("image_file", &ValidFileExtension{})
+	// validation.RegisterCustom("image_file", &ValidFileExtension{})
 }

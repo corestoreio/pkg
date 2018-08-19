@@ -26,10 +26,10 @@ import (
 	"github.com/corestoreio/pkg/config"
 )
 
-// NewFunc allows to implement custom validator derived from the input
-// JSON raw bytes. The function gets called in Configuration.MakeObserver or in
+// NewFunc allows to implement a custom observer which gets created based on the
+// raw JSON. The function gets called in Configuration.MakeObserver or in
 // JSONRegisterObservers.
-type NewFunc func(data []byte) (config.Observer, error)
+type NewFunc func(data json.RawMessage) (config.Observer, error)
 
 type customObservers struct {
 	sync.RWMutex
@@ -40,17 +40,17 @@ var customObserverRegistry = &customObservers{
 	pool: make(map[string]NewFunc),
 }
 
-// RegisterCustomObserver adds a custom observer to the global registry. A
+// RegisterCustom adds a custom observer to the global registry. A
 // custom observer can be accessed via Configuration.MakeObserver or via
 // JSONRegisterObservers.
-func RegisterCustomObserver(typeName string, fn NewFunc) {
+func RegisterCustom(typeName string, fn NewFunc) {
 	customObserverRegistry.Lock()
 	defer customObserverRegistry.Unlock()
 	customObserverRegistry.pool[typeName] = fn
 }
 
-// Configuration defines the data retrieved from the outside as JSON to add a new
-// validator for a specific route and event.
+// Configuration defines the data retrieved from the outside as JSON to add a
+// new observer for a specific route and event.
 //easyjson:json
 type Configuration struct {
 	// Route defines at least three parts: e.g. general/information/store
@@ -58,8 +58,9 @@ type Configuration struct {
 	// Event can be before_set, after_set, before_get or after_get. See
 	// config.MakeEvent.
 	Event string `json:"event,omitempty"`
-	// Type name of struct to decode and specifies the type of the validator.
-	// Case sensitive. Supported names are `strings` or `min_max_int64` or TBC.
+	// Type specifies the kind of the observer which should be created. Case
+	// sensitive. Supported names are: "ValidateMinMaxInt", "validator",
+	// "modificator" and the keys registered via function RegisterCustom.
 	Type string `json:"type,omitempty"`
 	// Condition contains the JSON object for a type in this package like:
 	// `ValidatorArg` or `ValidateMinMaxInt` or TBC.
@@ -114,8 +115,7 @@ func (v *Configuration) Validate() error {
 
 	// This logic is duplicated but for now ok. No need to add another abstraction.
 	switch v.Type {
-	case "min_max_int64", "minmaxint64", "ValidateMinMaxInt",
-		"strings", "ValidatorArg":
+	case "ValidateMinMaxInt", "validator", "modificator":
 		// ok
 	default:
 		customObserverRegistry.RLock()
@@ -150,19 +150,30 @@ func (v Configuration) MakeObserver() (event uint8, route string, _ config.Obser
 	event, _ = config.MakeEvent(v.Event)
 
 	switch v.Type {
-	case "min_max_int64", "minmaxint64", "ValidateMinMaxInt":
+	case "ValidateMinMaxInt":
 		mm := new(ValidateMinMaxInt)
 		if err := mm.UnmarshalJSON(v.Condition); err != nil {
 			return 0, "", nil, errors.BadEncoding.New(err, "[config/validation] Failed to decode: %#v", v)
 		}
 		return event, v.Route, mm, nil
 
-	case "strings", "ValidatorArg":
-		var str ValidatorArg
-		if err := str.UnmarshalJSON(v.Condition); err != nil {
+	case "validator":
+		var va ValidatorArg
+		if err := va.UnmarshalJSON(v.Condition); err != nil {
 			return 0, "", nil, errors.BadEncoding.New(err, "[config/validation] Failed to decode: %#v", v)
 		}
-		vStr, err := NewValidator(str)
+		vStr, err := NewValidator(va)
+		if err != nil {
+			return 0, "", nil, errors.WithStack(err)
+		}
+		return event, v.Route, vStr, nil
+
+	case "modificator":
+		var ma ModificatorArg
+		if err := ma.UnmarshalJSON(v.Condition); err != nil {
+			return 0, "", nil, errors.BadEncoding.New(err, "[config/validation] Failed to decode: %#v", v)
+		}
+		vStr, err := NewModificator(ma)
 		if err != nil {
 			return 0, "", nil, errors.WithStack(err)
 		}
