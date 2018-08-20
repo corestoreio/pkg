@@ -1,22 +1,19 @@
-# Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
-# 
+# Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# all packages tested here must pass the tests. packages not listed here
-# are under development will break things.
-
-GOTEST=GO15VENDOREXPERIMENT=1 go test -race -v -cover
-GORUN=GO15VENDOREXPERIMENT=1 go run -v
+GOTEST=go test -race -v -cover
+GORUN=go run -v
 
 DBTESTS = ./codegen ./config/... ./directory/... ./eav/... ./store/... ./storage/...
 
@@ -25,24 +22,18 @@ NONDBTESTS = ./util/... ./locale/... ./i18n/... \
 ./config/... ./store/... \
 ./vendor/golang.org/x/text/...
 
-test: testnodb test1 test2
+test: testnodb testdb
 
 testnodb: clean
 	$(GOTEST) $(NONDBTESTS)
 
-test1: clean
-	@echo "Running tests for Mage1 database schema"
-	@export CS_DSN_TEST='magento-1-9:magento-1-9@tcp(localhost:3306)/magento-1-9' && \
-	export CS_DSN='magento-1-9:magento-1-9@tcp(localhost:3306)/magento-1-9' && \
-	go run codegen/tableToStruct/*.go && \
-	$(GOTEST) -tags mage1 $(DBTESTS)
-
-test2: clean
-	@echo "Running tests for Mage2 database schema"
+testdb: clean
+	# setup DB
+	@echo "Running tests for database schema"
 	@export CS_DSN_TEST='magento2:magento2@tcp(localhost:3306)/magento2' && \
 	export CS_DSN='magento2:magento2@tcp(localhost:3306)/magento2' && \
 	go run codegen/tableToStruct/*.go && \
-	$(GOTEST) -tags mage2 $(DBTESTS)
+	$(GOTEST) $(DBTESTS)
 
 clean:
 	find . -name tables_generated.go -delete
@@ -57,10 +48,23 @@ depgraph:
 	find . -type d -not -iwholename '*.git*' -exec sh -c "godepgraph -horizontal {} | dot -Tsvg -o {}/godepgraph.svg" \;
 
 cover:
-    gocov test ./... | gocov report > test_coverage.txt
+	gocov test ./... | gocov report > test_coverage.txt
 
-magento1:
-	@echo "Installing Magento 1 TODO"
+generate:
+	# TODO add refactored version of https://github.com/mwitkow/go-proto-validators because its error messages are pretty weird and not in the sense of corestore
+	find .  -not -iwholename '*.git*' -not -iwholename '*vendor*' -name *.pb.go -delete
+	# config/validation
+	protoc \
+	--gogo_out=plugins=grpc,\
+	Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,\
+	Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,\
+	Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types,\
+	Mgoogle/api/annotations.proto=github.com/gogo/googleapis/google/api,\
+	Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types:\
+	./config/observer/ \
+	--proto_path=../../../:../../../github.com/gogo/protobuf/protobuf/ \
+	-I ./config/observer/ \
+	proto.proto
 
-magento2:
-	@echo "Installing Magento 2 TODO"
+	easyjson -build_tags "csall json proto" -omit_empty \
+	config/observer/aes_gcm.go config/observer/json.go config/observer/modificator.go config/observer/validator.go
