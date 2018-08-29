@@ -234,6 +234,32 @@ func TestRegisterObservers(t *testing.T) {
 		assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	})
 
+	t.Run("ModifierArg success", func(t *testing.T) {
+		or := observerRegistererFake{
+			t:         t,
+			wantEvent: config.EventOnBeforeGet,
+			wantRoute: "aa/gg/ff",
+			wantValidator: MustNewModifier(ModifierArg{
+				Funcs: []string{"base64_decode"},
+			}),
+		}
+
+		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[ { "event":"before_get", "route":"aa/gg/ff", "type":"modifier",
+		  "condition":{"funcs":["base64_decode"]}}
+		]}`))
+		assert.NoError(t, err)
+	})
+
+	t.Run("ModifierArg condition JSON malformed", func(t *testing.T) {
+		or := observerRegistererFake{
+			t: t,
+		}
+
+		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"modifier",
+		  "condition":{"funcs":["base64_decode"  }}
+		]}`))
+		assert.True(t, errors.BadEncoding.Match(err), "%+v", err)
+	})
 }
 
 func TestValidator_MakeEventRoute(t *testing.T) {

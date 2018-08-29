@@ -64,6 +64,15 @@ func RegisterModifier(typeName string, h ModificateFn) {
 	modifierRegistry.pool[typeName] = h
 }
 
+func availableModifiers(ret ...string) []string {
+	modifierRegistry.RLock()
+	defer modifierRegistry.RUnlock()
+	for n := range modifierRegistry.pool {
+		ret = append(ret, n)
+	}
+	return ret
+}
+
 // ModifierArg defines the modifiers to use to alter a string received from the
 // config.Service.
 //easyjson:json
@@ -89,7 +98,7 @@ func NewModifier(data ModifierArg) (config.Observer, error) {
 	for _, mod := range data.Funcs {
 		h, ok := modifierRegistry.pool[mod]
 		if !ok || h == nil {
-			return nil, errors.NotSupported.Newf("[config/observer] Modifier %q not yet supported.", mod)
+			return nil, errors.NotSupported.Newf("[config/observer] Modifier %q not found in list %v.", mod, availableModifiers())
 		}
 		ia.opFns = append(ia.opFns, h)
 	}
