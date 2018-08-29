@@ -27,8 +27,8 @@ import (
 // HTTPHandlerOptions can set different behaviour to the
 // HTTPJSONRegistry / HTTPJSONDeregistry. endpoints.
 type HTTPHandlerOptions struct {
-	// ErrorHandler custom error handler. Default error handler returns just a
-	// status code.
+	// ErrorHandler custom error handler. Default error handler returns a status
+	// code and prints the whole stack trace. May leak sensitive information.
 	ErrorHandler   mw.ErrorHandler
 	MaxRequestSize int64 // Default 10kb
 	// StatusCodeOk sets the HTTP status for successful operation, default

@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package observer provides validators and modificators for configuration
+// Package observer provides validators and modifiers for configuration
 // values.
 //
-// The list of validators and modificators will be extended. Please suggest new
+// The list of validators and modifiers will be extended. Please suggest new
 // ones.
 //
 // Modification can be trim, lower case, upper case, title, base64
@@ -28,8 +28,8 @@
 // To enabled HTTP handler or protobuf you must set build tags on the CLI.
 // Supported build tags are:
 // - `json` for JSON encoding and decoding.
-// - `proto` for protocol buffers encoding and registration of modificators via
+// - `proto` for protocol buffers encoding and registration of modifiers via
 //    proto services, includes `json`.
-// - `http` to enable registration of modificators via HTTP handlers.
+// - `http` to enable registration of modifiers via HTTP handlers.
 // - `csall` for all features.
 package observer

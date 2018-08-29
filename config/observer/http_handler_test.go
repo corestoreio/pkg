@@ -67,21 +67,21 @@ func TestRegisterObserversFromJSON(t *testing.T) {
 			wantEvent: config.EventOnAfterSet,
 			wantRoute: "aa/ee/ff",
 			wantValidator: observer.MustNewValidator(observer.ValidatorArg{
-				Funcs: []string{"Locale"},
+				Funcs:                   []string{"Locale"},
 				AdditionalAllowedValues: []string{"Vulcan"},
 				CSVComma:                "|",
 			}),
 		}, observer.HTTPHandlerOptions{})
 
 		w := httptest.NewRecorder()
-		req, err := gohttp.NewRequest("GET", "/", bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"ValidatorArg",
-		  "condition":{"validators":["Locale"],"csv_comma":"|","additional_allowed_values":["Vulcan"]}}
+		req, err := gohttp.NewRequest("GET", "/", bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"validator",
+		  "condition":{"funcs":["Locale"],"csv_comma":"|","additional_allowed_values":["Vulcan"]}}
 		]}`))
 		assert.NoError(t, err)
 		hdnlr.ServeHTTP(w, req)
 
-		assert.Exactly(t, w.Code, gohttp.StatusCreated, "gohttp.StatusCreated")
 		assert.Empty(t, w.Body.String())
+		assert.Exactly(t, gohttp.StatusCreated, w.Code, "gohttp.StatusCreated")
 	})
 
 	t.Run("custom StatusNonAuthoritativeInfo", func(t *testing.T) {
@@ -97,13 +97,13 @@ func TestRegisterObserversFromJSON(t *testing.T) {
 		})
 
 		w := httptest.NewRecorder()
-		req, err := gohttp.NewRequest("GET", "/", bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"ValidatorArg",
-		  "condition":{"validators":["int"]}}
+		req, err := gohttp.NewRequest("GET", "/", bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"validator",
+		  "condition":{"funcs":["int"]}}
 		]}`))
 		assert.NoError(t, err)
 		hdnlr.ServeHTTP(w, req)
 
-		assert.Exactly(t, w.Code, gohttp.StatusNonAuthoritativeInfo, "gohttp.StatusNonAuthoritativeInfo")
+		assert.Exactly(t, gohttp.StatusNonAuthoritativeInfo, w.Code, "gohttp.StatusNonAuthoritativeInfo")
 		assert.Empty(t, w.Body.String())
 	})
 
@@ -121,13 +121,13 @@ func TestRegisterObserversFromJSON(t *testing.T) {
 		})
 
 		w := httptest.NewRecorder()
-		req, err := gohttp.NewRequest("GET", "/", bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"ValidatorArg",
+		req, err := gohttp.NewRequest("GET", "/", bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"validator",
 		  "condition":{"validators":["int"]}}
 		]}`))
 		assert.NoError(t, err)
 		hdnlr.ServeHTTP(w, req)
 
-		assert.Exactly(t, w.Code, gohttp.StatusNotAcceptable, "gohttp.StatusNotAcceptable")
+		assert.Exactly(t, gohttp.StatusNotAcceptable, w.Code, "gohttp.StatusNotAcceptable")
 		assert.Contains(t, w.Body.String(), "parse error: EOF reached while skipping array/object or token near offset 100 of ''")
 	})
 }
@@ -148,7 +148,7 @@ func TestDeregisterObserverFromJSON(t *testing.T) {
 		assert.NoError(t, err)
 		hdnlr.ServeHTTP(w, req)
 
-		assert.Exactly(t, w.Code, gohttp.StatusAccepted, "gohttp.StatusAccepted")
+		assert.Exactly(t, gohttp.StatusAccepted, w.Code, "gohttp.StatusAccepted")
 		assert.Empty(t, w.Body.String())
 	})
 
@@ -167,7 +167,7 @@ func TestDeregisterObserverFromJSON(t *testing.T) {
 		assert.NoError(t, err)
 		hdnlr.ServeHTTP(w, req)
 
-		assert.Exactly(t, w.Code, gohttp.StatusNonAuthoritativeInfo, "gohttp.StatusNonAuthoritativeInfo")
+		assert.Exactly(t, gohttp.StatusNonAuthoritativeInfo, w.Code, "gohttp.StatusNonAuthoritativeInfo")
 		assert.Empty(t, w.Body.String())
 	})
 
@@ -186,7 +186,7 @@ func TestDeregisterObserverFromJSON(t *testing.T) {
 		assert.NoError(t, err)
 		hdnlr.ServeHTTP(w, req)
 
-		assert.Exactly(t, w.Code, gohttp.StatusNotAcceptable, "gohttp.StatusNotAcceptable")
+		assert.Exactly(t, gohttp.StatusNotAcceptable, w.Code, "gohttp.StatusNotAcceptable")
 		assert.Contains(t, w.Body.String(), "[config/validation/json] JSON decoding failed")
 	})
 }

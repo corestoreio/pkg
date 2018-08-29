@@ -22,6 +22,7 @@ import (
 	"net"
 	"testing"
 
+	"github.com/alecthomas/repr"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/observer"
 	"github.com/corestoreio/pkg/util/assert"
@@ -123,12 +124,14 @@ func TestNewProtoServiceServer_Register_Ok(t *testing.T) {
 			{
 				Event:     "before_set",
 				Route:     "shipment/dhl/free",
-				Type:      "strings",
+				Type:      "validator",
 				Condition: []byte(`{"funcs":["bool"]}`),
 			},
 		},
 	})
-
+	if err != nil {
+		t.Log(repr.String(err))
+	}
 	assert.NoError(t, err)
 	assert.Exactly(t, &google_protobuf.Empty{}, result)
 }
@@ -155,7 +158,7 @@ func TestNewProtoServiceServer_Register_Invalid(t *testing.T) {
 			{
 				Event:     "before_det",
 				Route:     "shipment/dhl/free",
-				Type:      "strings",
+				Type:      "validation",
 				Condition: []byte(`{"funcs":["bool"]}`),
 			},
 		},

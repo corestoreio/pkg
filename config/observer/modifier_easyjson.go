@@ -15,7 +15,7 @@ var (
 	_ *jwriter.Writer
 )
 
-func easyjson32fe820fDecodeGithubComCorestoreioPkgConfigObserver(in *jlexer.Lexer, out *ModificatorArg) {
+func easyjson32fe820fDecodeGithubComCorestoreioPkgConfigObserver(in *jlexer.Lexer, out *ModifierArg) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -67,7 +67,7 @@ func easyjson32fe820fDecodeGithubComCorestoreioPkgConfigObserver(in *jlexer.Lexe
 		in.Consumed()
 	}
 }
-func easyjson32fe820fEncodeGithubComCorestoreioPkgConfigObserver(out *jwriter.Writer, in ModificatorArg) {
+func easyjson32fe820fEncodeGithubComCorestoreioPkgConfigObserver(out *jwriter.Writer, in ModifierArg) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -94,25 +94,25 @@ func easyjson32fe820fEncodeGithubComCorestoreioPkgConfigObserver(out *jwriter.Wr
 }
 
 // MarshalJSON supports json.Marshaler interface
-func (v ModificatorArg) MarshalJSON() ([]byte, error) {
+func (v ModifierArg) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
 	easyjson32fe820fEncodeGithubComCorestoreioPkgConfigObserver(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
-func (v ModificatorArg) MarshalEasyJSON(w *jwriter.Writer) {
+func (v ModifierArg) MarshalEasyJSON(w *jwriter.Writer) {
 	easyjson32fe820fEncodeGithubComCorestoreioPkgConfigObserver(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
-func (v *ModificatorArg) UnmarshalJSON(data []byte) error {
+func (v *ModifierArg) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
 	easyjson32fe820fDecodeGithubComCorestoreioPkgConfigObserver(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *ModificatorArg) UnmarshalEasyJSON(l *jlexer.Lexer) {
+func (v *ModifierArg) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson32fe820fDecodeGithubComCorestoreioPkgConfigObserver(l, v)
 }

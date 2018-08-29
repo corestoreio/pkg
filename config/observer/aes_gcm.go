@@ -50,11 +50,11 @@ type aesGCM struct {
 // NewAESGCM creates a new observer which can encrypt or decrypt a value with
 // the AES-GCM mode. Only two events are supported: config.EventOnBeforeSet for
 // encryption and config.EventOnAfterGet for decryption. For security reasons
-// this function cannot be access via JSON or protocol buffers.
+// this function cannot be accessed via JSON or protocol buffers.
 func NewAESGCM(eventType uint8, eo *AESGCMOptions) (config.Observer, error) {
 
 	if eventType != config.EventOnBeforeSet && eventType != config.EventOnAfterGet {
-		return nil, errors.NotValid.Newf("[config/modification] Event type can only be: EventOnBeforeSet (encryption) or EventOnAfterGet (decryption)")
+		return nil, errors.NotValid.Newf("[config/observer] Event type can only be: EventOnBeforeSet (encryption) or EventOnAfterGet (decryption)")
 	}
 
 	key := []byte(eo.Key)
@@ -65,13 +65,13 @@ func NewAESGCM(eventType uint8, eo *AESGCMOptions) (config.Observer, error) {
 	if len(key) == 0 {
 		key = make([]byte, 32) // AES-256
 		if _, err := io.ReadFull(rand.Reader, key); err != nil {
-			return nil, errors.ReadFailed.New(err, "[config/modification] ReadFull failed")
+			return nil, errors.ReadFailed.New(err, "[config/observer] ReadFull failed")
 		}
 		eo.Key = string(key)
 	}
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return nil, errors.NotValid.New(err, "[config/modification] The encryption key has a wrong format.")
+		return nil, errors.NotValid.New(err, "[config/observer] The encryption key has a wrong format.")
 	}
 
 	// Never use more than 2^32 = [12]byte random nonces with a given key
@@ -84,14 +84,14 @@ func NewAESGCM(eventType uint8, eo *AESGCMOptions) (config.Observer, error) {
 	if len(eo.Nonce) != nonceLength {
 		nonce = make([]byte, nonceLength)
 		if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-			return nil, errors.ReadFailed.New(err, "[config/modification] ReadFull failed")
+			return nil, errors.ReadFailed.New(err, "[config/observer] ReadFull failed")
 		}
 		eo.Nonce = append(eo.Nonce[:0], nonce...)
 	}
 
 	aead, err := cipher.NewGCM(block)
 	if err != nil {
-		return nil, errors.Fatal.New(err, "[config/modification] cipher GCM failed")
+		return nil, errors.Fatal.New(err, "[config/observer] cipher GCM failed")
 	}
 
 	enc := &aesGCM{
@@ -113,9 +113,9 @@ func (v *aesGCM) Observe(p config.Path, rawData []byte, found bool) ([]byte, err
 		}
 		plaintext, err := v.aead.Open(nil, v.o.Nonce, rawData, nil)
 		if err != nil {
-			return nil, errors.Wrapf(err, "[config/modification] For Path %q", p.String())
+			return nil, errors.Wrapf(err, "[config/observer] For Path %q", p.String())
 		}
 		return plaintext, nil
 	}
-	return nil, errors.Fatal.Newf("[config/modification] A programmer made an error")
+	return nil, errors.Fatal.Newf("[config/observer] A programmer made an error")
 }

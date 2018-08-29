@@ -18,7 +18,6 @@ package observer
 
 import (
 	"bytes"
-	"encoding/json"
 	"testing"
 
 	"github.com/corestoreio/errors"
@@ -44,7 +43,7 @@ func TestDeregisterObservers(t *testing.T) {
 		}
 
 		err := JSONDeregisterObservers(or, bytes.NewBufferString(`{"Collection":[{ 
-			"event":before_set, "route":"payment/pp/port", "type":"ValidateMinMaxInt", "condition":{"conditions":[8080,8090]} 
+			"event":before_set, "route":"payment/pp/port", "type":"validateMinMaxInt", "condition":{"conditions":[8080,8090]} 
 		}]}`))
 		assert.True(t, errors.BadEncoding.Match(err), "%+v", err)
 	})
@@ -53,7 +52,7 @@ func TestDeregisterObservers(t *testing.T) {
 			t: t,
 		}
 		err := JSONDeregisterObservers(or, bytes.NewBufferString(`{"Collection":[{ 
-			"event":"before_heck", "route":"payment/pp/port", "type":"ValidateMinMaxInt", "condition":{"conditions":[8080,8090]} 
+			"event":"before_heck", "route":"payment/pp/port", "type":"validateMinMaxInt", "condition":{"conditions":[8080,8090]} 
 		}]}`))
 		assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	})
@@ -81,7 +80,7 @@ func TestRegisterObservers(t *testing.T) {
 		}
 
 		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[{ 
-			"event":before_set, "route":"payment/pp/port", "type":"ValidateMinMaxInt", "condition":{"conditions":[8080,8090]} 
+			"event":before_set, "route":"payment/pp/port", "type":"validateMinMaxInt", "condition":{"conditions":[8080,8090]} 
 		}]}`))
 		assert.True(t, errors.BadEncoding.Match(err), "%+v", err)
 	})
@@ -95,7 +94,7 @@ func TestRegisterObservers(t *testing.T) {
 		}
 
 		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[{ 
-			"event":"before_set", "route":"payment/pp/port", "type":"ValidateMinMaxInt", "condition":{"conditions":[8080,8090]} 
+			"event":"before_set", "route":"payment/pp/port", "type":"validateMinMaxInt", "condition":{"conditions":[8080,8090]} 
 		}]}`))
 		assert.NoError(t, err)
 	})
@@ -108,7 +107,7 @@ func TestRegisterObservers(t *testing.T) {
 		}
 
 		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[{ 
-			"event":"before_set", "route":"payment/pp/port", "type":"ValidateMinMaxInt", "condition":{"conditions":[]} 
+			"event":"before_set", "route":"payment/pp/port", "type":"validateMinMaxInt", "condition":{"conditions":[]} 
 		}]}`))
 		assert.NoError(t, err)
 	})
@@ -117,7 +116,7 @@ func TestRegisterObservers(t *testing.T) {
 			t: t,
 		}
 		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[{ 
-			"event":"before_set", "route":"payment/pp/port", "type":"ValidateMinMaxInt" 
+			"event":"before_set", "route":"payment/pp/port", "type":"validateMinMaxInt" 
 		}]}`))
 		assert.True(t, errors.Empty.Match(err), "%+v", err)
 	})
@@ -126,7 +125,7 @@ func TestRegisterObservers(t *testing.T) {
 			t: t,
 		}
 		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[{ 
-			"event":"before_set", "route":"pay", "type":"ValidateMinMaxInt" 
+			"event":"before_set", "route":"pay", "type":"validateMinMaxInt" 
 		}]}`))
 		assert.True(t, errors.NotValid.Match(err), "%+v", err)
 	})
@@ -135,7 +134,7 @@ func TestRegisterObservers(t *testing.T) {
 			t: t,
 		}
 		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[{ 
-			"event":"before_sunrise", "route":"payment/pp/port", "type":"ValidateMinMaxInt", "condition":{"conditions":[3]}
+			"event":"before_sunrise", "route":"payment/pp/port", "type":"validateMinMaxInt", "condition":{"conditions":[3]}
 		}]}`))
 		assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	})
@@ -144,7 +143,7 @@ func TestRegisterObservers(t *testing.T) {
 			t: t,
 		}
 		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[{ 
-			"event":"before_set", "route":"payment/pp/port", "type":"ValidateMinMaxInt", "condition":{"conditions":[x]}
+			"event":"before_set", "route":"payment/pp/port", "type":"validateMinMaxInt", "condition":{"conditions":[x]}
 		}]}`))
 		assert.True(t, errors.BadEncoding.Match(err), "%+v", err)
 	})
@@ -161,8 +160,8 @@ func TestRegisterObservers(t *testing.T) {
 			}),
 		}
 
-		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"ValidatorArg",
-		  "condition":{"validators":["Locale"],"csv_comma":"|","additional_allowed_values":["Vulcan"]}}
+		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"validator",
+		  "condition":{"funcs":["Locale"],"csv_comma":"|","additional_allowed_values":["Vulcan"]}}
 		]}`))
 		assert.NoError(t, err)
 	})
@@ -172,8 +171,8 @@ func TestRegisterObservers(t *testing.T) {
 			t: t,
 		}
 
-		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"ValidatorArg",
-		  "condition":{"validators":["Locale"],"csv_comma":|,"additional_allowed_values":["Vulcan"]}}
+		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"validator",
+		  "condition":{"funcs":["Locale"],"csv_comma":|,"additional_allowed_values":["Vulcan"]}}
 		]}`))
 		assert.True(t, errors.BadEncoding.Match(err), "%+v", err)
 	})
@@ -182,14 +181,14 @@ func TestRegisterObservers(t *testing.T) {
 			t: t,
 		}
 
-		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"ValidatorArg",
-		  "condition":{"validators":["IsPHP"],"additional_allowed_values":["Vulcan"]}}
+		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"validator",
+		  "condition":{"funcs":["IsPHP"],"additional_allowed_values":["Vulcan"]}}
 		]}`))
 		assert.True(t, errors.NotSupported.Match(err), "%+v", err)
 	})
 
-	t.Run("customObserverRegistry success", func(t *testing.T) {
-		wantConditionJSON := []byte(`{"validators":["IsPHP"],"additional_allowed_values":["Vulcan"]}`)
+	t.Run("observerRegistry success", func(t *testing.T) {
+		wantConditionJSON := []byte(`{"funcs":["IsPHP"],"additional_allowed_values":["Vulcan"]}`)
 
 		or := observerRegistererFake{
 			t:         t,
@@ -199,28 +198,28 @@ func TestRegisterObservers(t *testing.T) {
 				wantJSON: wantConditionJSON,
 			},
 		}
-		RegisterCustom("XMLValidationOK", func(data json.RawMessage) (config.Observer, error) {
+		RegisterFactory("XMLValidationOK", func(data []byte) (config.Observer, error) {
 			assert.Exactly(t, wantConditionJSON, data)
 			return xmlValidator{wantJSON: wantConditionJSON}, nil
 		})
 
 		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[ { "event":"after_get", "route":"bb/ee/ff", "type":"XMLValidationOK",
-		  "condition":{"validators":["IsPHP"],"additional_allowed_values":["Vulcan"]}}
+		  "condition":{"funcs":["IsPHP"],"additional_allowed_values":["Vulcan"]}}
 		]}`))
 		assert.NoError(t, err)
 	})
 
-	t.Run("customObserverRegistry new validator throws error", func(t *testing.T) {
+	t.Run("observerRegistry new validator throws error", func(t *testing.T) {
 		or := observerRegistererFake{
 			t: t,
 		}
-		RegisterCustom("XMLValidationErr01", func(data json.RawMessage) (config.Observer, error) {
-			assert.Exactly(t, []byte("{\"validators\":IsPHP,\"additional_allowed_values\":[\"Vulcan\"]}"), data)
+		RegisterFactory("XMLValidationErr01", func(data []byte) (config.Observer, error) {
+			assert.Exactly(t, []byte("{\"funcs\":IsPHP,\"additional_allowed_values\":[\"Vulcan\"]}"), data)
 			return nil, errors.Blocked.Newf("Ups")
 		})
 
 		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[ { "event":"after_get", "route":"bb/ee/ff", "type":"XMLValidationErr01",
-		  "condition":{"validators":IsPHP,"additional_allowed_values":["Vulcan"]}}
+		  "condition":{"funcs":IsPHP,"additional_allowed_values":["Vulcan"]}}
 		]}`))
 		assert.True(t, errors.Blocked.Match(err), "%+v", err)
 	})
@@ -288,10 +287,10 @@ func TestValidators_JSON(t *testing.T) {
 	t.Parallel()
 
 	data := []byte(`{"Collection":[ 
-	{ "event":"after_get", "route":"gg/ee/ff", "type":"ValidatorArg",
-		  "condition":{"validators":["Locale"],"additional_allowed_values":["Rhomulan"]}},
-	{ "event":"after_set", "route":"aa/ee/ff", "type":"ValidatorArg",
-		  "condition":{"validators":["Locale"],"csv_comma":"|","additional_allowed_values":["Vulcan"]}}
+	{ "event":"after_get", "route":"gg/ee/ff", "type":"validator",
+		  "condition":{"funcs":["Locale"],"additional_allowed_values":["Rhomulan"]}},
+	{ "event":"after_set", "route":"aa/ee/ff", "type":"validator",
+		  "condition":{"funcs":["Locale"],"csv_comma":"|","additional_allowed_values":["Vulcan"]}}
 		]}`)
 	valis := new(Configurations)
 	assert.NoError(t, valis.UnmarshalJSON(data))
@@ -299,7 +298,7 @@ func TestValidators_JSON(t *testing.T) {
 	newData, err := valis.MarshalJSON()
 	assert.NoError(t, err)
 
-	assert.Exactly(t, `{"Collection":[{"route":"gg/ee/ff","event":"after_get","type":"ValidatorArg","condition":{"validators":["Locale"],"additional_allowed_values":["Rhomulan"]}},{"route":"aa/ee/ff","event":"after_set","type":"ValidatorArg","condition":{"validators":["Locale"],"csv_comma":"|","additional_allowed_values":["Vulcan"]}}]}`,
+	assert.Exactly(t, `{"Collection":[{"route":"gg/ee/ff","event":"after_get","type":"validator","condition":{"funcs":["Locale"],"additional_allowed_values":["Rhomulan"]}},{"route":"aa/ee/ff","event":"after_set","type":"validator","condition":{"funcs":["Locale"],"csv_comma":"|","additional_allowed_values":["Vulcan"]}}]}`,
 		string(newData))
 }
 
@@ -312,8 +311,8 @@ func TestValidators_Validate(t *testing.T) {
 				{
 					Route:     "aa/bb/cc",
 					Event:     "before_set",
-					Type:      "strings",
-					Condition: []byte(`{"validators":["Locale"],"csv_comma":"|","additional_allowed_values":["Vulcan"]}`),
+					Type:      "validator",
+					Condition: []byte(`{"funcs":["Locale"],"csv_comma":"|","additional_allowed_values":["Vulcan"]}`),
 				},
 			},
 		}
@@ -326,7 +325,7 @@ func TestValidators_Validate(t *testing.T) {
 				{
 					Route: "aa/bb/cc",
 					Event: "before_set",
-					Type:  "strings",
+					Type:  ``,
 				},
 			},
 		}

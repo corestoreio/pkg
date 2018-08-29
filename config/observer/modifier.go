@@ -39,7 +39,7 @@ type modReg struct {
 	pool map[string]ModificateFn
 }
 
-var modificatorRegistry = &modReg{
+var modifierRegistry = &modReg{
 	pool: map[string]ModificateFn{
 		"upper":         toUpper,
 		"lower":         toLower,
@@ -55,41 +55,41 @@ var modificatorRegistry = &modReg{
 	},
 }
 
-// RegisterModificator adds a new modification function to the global registry
+// RegisterModifier adds a new modification function to the global registry
 // and might overwrite previously set entries. Access to the global registry can
-// be achieved via function NewModificator.
-func RegisterModificator(typeName string, h ModificateFn) {
-	modificatorRegistry.Lock()
-	defer modificatorRegistry.Unlock()
-	modificatorRegistry.pool[typeName] = h
+// be achieved via function NewModifier.
+func RegisterModifier(typeName string, h ModificateFn) {
+	modifierRegistry.Lock()
+	defer modifierRegistry.Unlock()
+	modifierRegistry.pool[typeName] = h
 }
 
-// ModificatorArg defines the modificators to use to alter a string received from the
+// ModifierArg defines the modifiers to use to alter a string received from the
 // config.Service.
 //easyjson:json
-type ModificatorArg struct {
+type ModifierArg struct {
 	// Funcs defines a list of function names. Currently supported: upper,
 	// lower, trim, title, base64_encode, base64_decode, sha256 (must one time
 	// be registered in hashpool package), gzip, gunzip. Additional all other
-	// custom modificator functions registered via RegisterModificator are
+	// custom modifier functions registered via RegisterModifier are
 	// supported.
 	Funcs []string `json:"funcs,omitempty"`
 }
 
-// NewModificator creates a new type specific modificator.
-func NewModificator(data ModificatorArg) (config.Observer, error) {
-	ia := &modificators{
+// NewModifier creates a new type specific modifier.
+func NewModifier(data ModifierArg) (config.Observer, error) {
+	ia := &modifiers{
 		opType: append([]string{}, data.Funcs...), // copy data
 		opFns:  make([]ModificateFn, 0, len(data.Funcs)),
 	}
 
-	modificatorRegistry.RLock()
-	defer modificatorRegistry.RUnlock()
+	modifierRegistry.RLock()
+	defer modifierRegistry.RUnlock()
 
 	for _, mod := range data.Funcs {
-		h, ok := modificatorRegistry.pool[mod]
+		h, ok := modifierRegistry.pool[mod]
 		if !ok || h == nil {
-			return nil, errors.NotSupported.Newf("[config/validation] Modificator %q not yet supported.", mod)
+			return nil, errors.NotSupported.Newf("[config/observer] Modifier %q not yet supported.", mod)
 		}
 		ia.opFns = append(ia.opFns, h)
 	}
@@ -97,36 +97,36 @@ func NewModificator(data ModificatorArg) (config.Observer, error) {
 	return ia, nil
 }
 
-// MustNewModificator same as NewModificator but panics on error.
-func MustNewModificator(data ModificatorArg) config.Observer {
-	o, err := NewModificator(data)
+// MustNewModifier same as NewModifier but panics on error.
+func MustNewModifier(data ModifierArg) config.Observer {
+	o, err := NewModifier(data)
 	if err != nil {
 		panic(err)
 	}
 	return o
 }
 
-// modificators must be used to prevent race conditions during initialization.
+// modifiers must be used to prevent race conditions during initialization.
 // That is the reason we have a separate struct for JSON handling. Having two
 // structs allows to refrain from using Locks.
-type modificators struct {
+type modifiers struct {
 	opType []string
 	opFns  []ModificateFn
 }
 
 // Observe validates the given rawData value. This functions runs in a hot path.
-func (v *modificators) Observe(p config.Path, rawData []byte, found bool) (rawData2 []byte, err error) {
+func (v *modifiers) Observe(p config.Path, rawData []byte, found bool) (rawData2 []byte, err error) {
 	rawData2 = rawData
 	p2 := &p
 	for idx, valFn := range v.opFns {
 		if rawData2, err = valFn(p2, rawData2); err != nil {
-			return nil, errors.Interrupted.New(err, "[config/modification] Function %q interrupted", v.opType[idx])
+			return nil, errors.Interrupted.New(err, "[config/observer] Function %q interrupted", v.opType[idx])
 		}
 	}
 	return rawData2, nil
 }
 
-// as long as we don't see a use case for those modificators in other packages,
+// as long as we don't see a use case for those modifiers in other packages,
 // they stay private. might be refactored later.
 
 func trim(_ *config.Path, data []byte) ([]byte, error) {
@@ -180,7 +180,7 @@ func hash256(p *config.Path, src []byte) ([]byte, error) {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 	if err := p.AppendFQ(buf); err != nil {
-		return nil, errors.Wrapf(err, "[config/modification] SHA256 with path %q", p.String())
+		return nil, errors.Wrapf(err, "[config/observer] SHA256 with path %q", p.String())
 	}
 	buf.Write(src)
 	var dst [sha256.Size]byte

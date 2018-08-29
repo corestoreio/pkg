@@ -63,7 +63,7 @@ func TestOperators(t *testing.T) {
 		errCheck(t)(dataGunzip(nil, []byte("\x1f\x8b\b\x00\x00\x00\x00\x00\x00\xff\n\xc9HU\b\xceM\xcc\xc9Q\b\xcd\xcb,K-*N\x05\x04\x00\x00\xff\xff\x05\xd1r\xe9\x12\x00\x00\x00"))))
 }
 
-func TestMustNewModificator(t *testing.T) {
+func TestMustNewModifier(t *testing.T) {
 	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
@@ -76,16 +76,16 @@ func TestMustNewModificator(t *testing.T) {
 			t.Error("Expecting a panic but got nothing")
 		}
 	}()
-	_ = MustNewModificator(ModificatorArg{
+	_ = MustNewModifier(ModifierArg{
 		Funcs: []string{"neverGonnaGiveYouUp"},
 	})
 }
 
-func TestNewModificator(t *testing.T) {
+func TestNewModifier(t *testing.T) {
 	t.Parallel()
 
 	t.Run("trim upper", func(t *testing.T) {
-		ms := MustNewModificator(ModificatorArg{
+		ms := MustNewModifier(ModifierArg{
 			Funcs: []string{"trim", "upper"},
 		})
 
@@ -97,11 +97,11 @@ func TestNewModificator(t *testing.T) {
 	})
 
 	t.Run("custom operator returns error ", func(t *testing.T) {
-		RegisterModificator("csx", func(*config.Path, []byte) ([]byte, error) {
+		RegisterModifier("csx", func(*config.Path, []byte) ([]byte, error) {
 			return nil, errors.New("An error")
 		})
 
-		ms := MustNewModificator(ModificatorArg{
+		ms := MustNewModifier(ModifierArg{
 			Funcs: []string{"trim", "csx", "upper"},
 		})
 

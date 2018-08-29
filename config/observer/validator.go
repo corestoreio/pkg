@@ -133,13 +133,13 @@ func NewValidator(data ValidatorArg) (config.Observer, error) {
 		switch val {
 		case "Custom", "custom":
 			if len(data.AdditionalAllowedValues) == 0 {
-				return nil, errors.Empty.Newf("[config/validation] For type %q the argument allowedValues cannot be empty.", data.Funcs)
+				return nil, errors.Empty.Newf("[config/observer] For type %q the argument allowedValues cannot be empty.", data.Funcs)
 			}
 		default:
 			var ok bool
 			valFn, ok = validatorRegistry.pool[val]
 			if !ok {
-				return nil, errors.NotSupported.Newf("[config/validation] Configurations %q not yet supported.", data.Funcs)
+				return nil, errors.NotSupported.Newf("[config/observer] Configurations %q not yet supported.", data.Funcs)
 			}
 		}
 		if valFn != nil {
@@ -200,14 +200,14 @@ func (v *validators) isValid(val string) error {
 	if v.allowedValues[val] {
 		return nil
 	}
-	return errors.NotValid.Newf("[config/validation] The provided value %q can't be validated against %q", val, v.valType)
+	return errors.NotValid.Newf("[config/observer] The provided value %q can't be validated against %q", val, v.valType)
 }
 
 // Observe validates the given rawData value. This functions runs in a hot path.
 func (v *validators) Observe(_ config.Path, rawData []byte, found bool) (rawData2 []byte, err error) {
 
 	if !utf8.Valid(rawData) {
-		return nil, errors.NotValid.Newf("[config/validation] Input data (length:%d) matches no valid UTF8 rune.", len(rawData))
+		return nil, errors.NotValid.Newf("[config/observer] Input data (length:%d) matches no valid UTF8 rune.", len(rawData))
 	}
 
 	rawString := string(rawData)
@@ -266,7 +266,7 @@ func NewValidateMinMaxInt(minMax ...int64) (*ValidateMinMaxInt, error) {
 func (v ValidateMinMaxInt) Observe(p config.Path, rawData []byte, found bool) (rawData2 []byte, err error) {
 	lmm := len(v.Conditions)
 	if lmm%2 == 1 || lmm < 1 {
-		return nil, errors.NotAcceptable.Newf("[config/validation] ValidateMinMaxInt does not contain a balanced slice. Len: %d", lmm)
+		return nil, errors.NotAcceptable.Newf("[config/observer] ValidateMinMaxInt does not contain a balanced slice. Len: %d", lmm)
 	}
 
 	val, ok, err := byteconv.ParseInt(rawData)
@@ -289,5 +289,5 @@ func (v ValidateMinMaxInt) Observe(p config.Path, rawData []byte, found bool) (r
 	if !v.PartialValidation && validations == lmm/2 {
 		return rawData, nil
 	}
-	return nil, errors.OutOfRange.Newf("[config/validation] %q value out of range: %v", val, v.Conditions)
+	return nil, errors.OutOfRange.Newf("[config/observer] %q value out of range: %v", val, v.Conditions)
 }

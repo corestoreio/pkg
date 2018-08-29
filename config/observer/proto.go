@@ -74,7 +74,7 @@ func (r registrar) Deregister(ctx context.Context, vs *Configurations) (*types.E
 	for _, v := range vs.Collection {
 		event, route, err := v.MakeEventRoute()
 		if err != nil {
-			return nil, errors.Wrapf(err, "[config/validation] Data: %#v", v)
+			return nil, errors.Wrapf(err, "[config/observer] Data: %#v", v)
 		}
 		if err := r.or.DeregisterObserver(event, route); err != nil {
 			return nil, errors.WithStack(err)
