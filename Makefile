@@ -67,4 +67,4 @@ generate:
 	proto.proto
 
 	easyjson -build_tags "csall json proto" -omit_empty \
-	config/observer/aes_gcm.go config/observer/json.go config/observer/modificator.go config/observer/validator.go
+	config/observer/aes_gcm.go config/observer/json.go config/observer/modifier.go config/observer/validator.go
