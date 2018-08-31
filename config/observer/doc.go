@@ -27,9 +27,8 @@
 //
 // To enabled HTTP handler or protobuf you must set build tags on the CLI.
 // Supported build tags are:
-// - `json` for JSON encoding and decoding.
-// - `proto` for protocol buffers encoding and registration of modifiers via
-//    proto services, includes `json`.
-// - `http` to enable registration of modifiers via HTTP handlers.
-// - `csall` for all features.
+//	- `json` for JSON encoding and decoding.
+//	- `proto` for protocol buffers encoding and registration of modifiers via proto services, includes `json`.
+//	- `http` to enable registration of modifiers via HTTP handlers.
+//	- `csall` for all features.
 package observer

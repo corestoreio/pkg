@@ -14,6 +14,8 @@
 
 // +build csall json proto
 
+//go:generate easyjson -build_tags "csall json proto" $GOFILE
+
 package observer
 
 import (
@@ -58,7 +60,11 @@ func init() {
 // contains this Configurtion data.
 //easyjson:json
 type Configuration struct {
-	// Route defines at least three parts: e.g. general/information/store
+	// Route defines the route for which an event gets dispatched and hence the
+	// observer triggered. The route can be a route prefix (e.g. `general`) or a
+	// full route (e.g. `general/information/store`) In the above case the
+	// observer for prefix route `general` gets dispatched every time a route
+	// with that prefix gets called.
 	Route string `json:"route,omitempty"`
 	// Event can be before_set, after_set, before_get or after_get. See
 	// config.MakeEvent.
@@ -108,8 +114,8 @@ func (m *Configuration) Validate() error {
 	if m == nil {
 		return nil
 	}
-	if err := config.Route(m.Route).IsValid(); err != nil {
-		return errors.Wrapf(err, "[config/observer] Invalid route: %#v", m)
+	if m.Route == "" {
+		return errors.Empty.Newf("[config/observer] Route is empty for type %q", m.Type)
 	}
 
 	if len(m.Condition) == 0 {
@@ -131,8 +137,8 @@ func (m *Configuration) MakeEventRoute() (event uint8, route string, err error) 
 		return 0, "", errors.WithStack(err)
 	}
 
-	if err := config.Route(m.Route).IsValid(); err != nil {
-		return 0, "", errors.Wrapf(err, "[config/observer] Invalid route: %q", m.Route)
+	if m.Route == "" {
+		return 0, "", errors.Empty.Newf("[config/observer] Route is empty for type %q", m.Type)
 	}
 
 	return event, m.Route, nil
@@ -156,9 +162,10 @@ func (m *Configuration) MakeObserver() (event uint8, route string, _ config.Obse
 	return 0, "", nil, errors.Fatal.Newf("[config/observer] A programmer made an error. This can never happen.")
 }
 
-// JSONRegisterObservers reads all JSON byte data from r into memory, parses it,
+// RegisterWithJSON reads all JSON byte data from r into memory, parses it,
 // creates the appropriate observers and registers them with the config.Service.
-func JSONRegisterObservers(or config.ObserverRegisterer, r io.Reader) error {
+// The data in io.Reader must have the structure of type `Configurations`.
+func RegisterWithJSON(or config.ObserverRegisterer, r io.Reader) error {
 
 	jsonData, err := ioutil.ReadAll(r)
 	if err != nil {
@@ -183,9 +190,10 @@ func JSONRegisterObservers(or config.ObserverRegisterer, r io.Reader) error {
 	return nil
 }
 
-// JSONDeregisterObservers reads all JSON byte data from r into memory, parses it,
+// DeregisterWithJSON reads all JSON byte data from r into memory, parses it,
 // removes the appropriate observers which matches the route and the event.
-func JSONDeregisterObservers(or config.ObserverRegisterer, r io.Reader) error {
+// The data in io.Reader must have the structure of type `Configurations`.
+func DeregisterWithJSON(or config.ObserverRegisterer, r io.Reader) error {
 
 	jsonData, err := ioutil.ReadAll(r)
 	if err != nil {

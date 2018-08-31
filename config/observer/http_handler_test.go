@@ -62,7 +62,7 @@ func TestRegisterObserversFromJSON(t *testing.T) {
 	t.Parallel()
 
 	t.Run("StatusCreated", func(t *testing.T) {
-		hdnlr := observer.HTTPJSONRegistry(observerRegistererFake{
+		hdnlr := observer.RegisterWithJSONviaHTTP(observerRegistererFake{
 			t:         t,
 			wantEvent: config.EventOnAfterSet,
 			wantRoute: "aa/ee/ff",
@@ -85,7 +85,7 @@ func TestRegisterObserversFromJSON(t *testing.T) {
 	})
 
 	t.Run("custom StatusNonAuthoritativeInfo", func(t *testing.T) {
-		hdnlr := observer.HTTPJSONRegistry(observerRegistererFake{
+		hdnlr := observer.RegisterWithJSONviaHTTP(observerRegistererFake{
 			t:         t,
 			wantEvent: config.EventOnAfterSet,
 			wantRoute: "aa/ee/ff",
@@ -108,7 +108,7 @@ func TestRegisterObserversFromJSON(t *testing.T) {
 	})
 
 	t.Run("Request too large StatusNotAcceptable", func(t *testing.T) {
-		hdnlr := observer.HTTPJSONRegistry(observerRegistererFake{
+		hdnlr := observer.RegisterWithJSONviaHTTP(observerRegistererFake{
 			t:         t,
 			wantEvent: config.EventOnAfterSet,
 			wantRoute: "aa/ee/ff",
@@ -136,7 +136,7 @@ func TestDeregisterObserverFromJSON(t *testing.T) {
 	t.Parallel()
 
 	t.Run("StatusAccepted", func(t *testing.T) {
-		hdnlr := observer.HTTPJSONDeregistry(observerRegistererFake{
+		hdnlr := observer.DeregisterWithJSONviaHTTP(observerRegistererFake{
 			t:         t,
 			wantEvent: config.EventOnAfterSet,
 			wantRoute: "aa/ee/ff",
@@ -153,7 +153,7 @@ func TestDeregisterObserverFromJSON(t *testing.T) {
 	})
 
 	t.Run("custom StatusNonAuthoritativeInfo", func(t *testing.T) {
-		hdnlr := observer.HTTPJSONDeregistry(observerRegistererFake{
+		hdnlr := observer.DeregisterWithJSONviaHTTP(observerRegistererFake{
 			t:         t,
 			wantEvent: config.EventOnAfterSet,
 			wantRoute: "aa/ee/ff",
@@ -172,7 +172,7 @@ func TestDeregisterObserverFromJSON(t *testing.T) {
 	})
 
 	t.Run("Request too large StatusNotAcceptable", func(t *testing.T) {
-		hdnlr := observer.HTTPJSONDeregistry(observerRegistererFake{
+		hdnlr := observer.DeregisterWithJSONviaHTTP(observerRegistererFake{
 			t:         t,
 			wantEvent: config.EventOnAfterSet,
 			wantRoute: "aa/ee/ff",

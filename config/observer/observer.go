@@ -22,7 +22,7 @@ import (
 
 // FactoryFunc allows to implement a custom observer which gets created based on
 // the input data. The function gets called in Configuration.MakeObserver or in
-// JSONRegisterObservers. Input data can be raw JSON or YAML or XML.
+// RegisterWithJSON. Input data can be raw JSON or YAML or XML.
 type FactoryFunc func(data []byte) (config.Observer, error)
 
 type obsReg struct {
@@ -36,7 +36,8 @@ var observerRegistry = &obsReg{
 
 // RegisterFactory adds a custom observer factory to the global registry. A
 // custom observer can be accessed via Configuration.MakeObserver or via
-// JSONRegisterObservers.
+// RegisterWithJSON. FactoryFunc can be anything, validation or
+// modification, logging, etc.
 func RegisterFactory(typeName string, fn FactoryFunc) {
 	observerRegistry.Lock()
 	defer observerRegistry.Unlock()

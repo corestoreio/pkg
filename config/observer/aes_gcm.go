@@ -83,11 +83,11 @@ func NewAESGCM(eventType uint8, eo *AESGCMOptions) (config.Observer, error) {
 
 	if len(eo.Nonce) != nonceLength {
 		nonce = make([]byte, nonceLength)
-		if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-			return nil, errors.ReadFailed.New(err, "[config/observer] ReadFull failed")
+		if _, err2 := io.ReadFull(rand.Reader, nonce); err2 != nil {
+			return nil, errors.ReadFailed.New(err2, "[config/observer] ReadFull failed")
 		}
-		eo.Nonce = append(eo.Nonce[:0], nonce...)
 	}
+	eo.Nonce = append(eo.Nonce[:0], nonce...)
 
 	aead, err := cipher.NewGCM(block)
 	if err != nil {

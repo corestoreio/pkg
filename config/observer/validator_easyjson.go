@@ -59,6 +59,8 @@ func easyjson32b9832cDecodeGithubComCorestoreioPkgConfigObserver(in *jlexer.Lexe
 			}
 		case "partial_validation":
 			out.PartialValidation = bool(in.Bool())
+		case "insecure":
+			out.Insecure = bool(in.Bool())
 		case "csv_comma":
 			out.CSVComma = string(in.String())
 		case "additional_allowed_values":
@@ -126,6 +128,16 @@ func easyjson32b9832cEncodeGithubComCorestoreioPkgConfigObserver(out *jwriter.Wr
 			out.RawString(prefix)
 		}
 		out.Bool(bool(in.PartialValidation))
+	}
+	if in.Insecure {
+		const prefix string = ",\"insecure\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Bool(bool(in.Insecure))
 	}
 	if in.CSVComma != "" {
 		const prefix string = ",\"csv_comma\":"

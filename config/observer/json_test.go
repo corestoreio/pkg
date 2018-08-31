@@ -42,7 +42,7 @@ func TestDeregisterObservers(t *testing.T) {
 			t: t,
 		}
 
-		err := JSONDeregisterObservers(or, bytes.NewBufferString(`{"Collection":[{ 
+		err := DeregisterWithJSON(or, bytes.NewBufferString(`{"Collection":[{ 
 			"event":before_set, "route":"payment/pp/port", "type":"validateMinMaxInt", "condition":{"conditions":[8080,8090]} 
 		}]}`))
 		assert.True(t, errors.BadEncoding.Match(err), "%+v", err)
@@ -51,7 +51,7 @@ func TestDeregisterObservers(t *testing.T) {
 		or := observerRegistererFake{
 			t: t,
 		}
-		err := JSONDeregisterObservers(or, bytes.NewBufferString(`{"Collection":[{ 
+		err := DeregisterWithJSON(or, bytes.NewBufferString(`{"Collection":[{ 
 			"event":"before_heck", "route":"payment/pp/port", "type":"validateMinMaxInt", "condition":{"conditions":[8080,8090]} 
 		}]}`))
 		assert.True(t, errors.NotFound.Match(err), "%+v", err)
@@ -63,7 +63,7 @@ func TestDeregisterObservers(t *testing.T) {
 			wantEvent: config.EventOnBeforeSet,
 			wantRoute: "payment/pp/port",
 		}
-		err := JSONDeregisterObservers(or, bytes.NewBufferString(`{"Collection":[{ 
+		err := DeregisterWithJSON(or, bytes.NewBufferString(`{"Collection":[{ 
 			"event":"before_set", "route":"payment/pp/port" 
 		}]}`))
 		assert.NoError(t, err)
@@ -74,12 +74,12 @@ func TestDeregisterObservers(t *testing.T) {
 func TestRegisterObservers(t *testing.T) {
 	t.Parallel()
 
-	t.Run("JSONRegisterObservers JSON malformed", func(t *testing.T) {
+	t.Run("RegisterWithJSON JSON malformed", func(t *testing.T) {
 		or := observerRegistererFake{
 			t: t,
 		}
 
-		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[{ 
+		err := RegisterWithJSON(or, bytes.NewBufferString(`{"Collection":[{ 
 			"event":before_set, "route":"payment/pp/port", "type":"validateMinMaxInt", "condition":{"conditions":[8080,8090]} 
 		}]}`))
 		assert.True(t, errors.BadEncoding.Match(err), "%+v", err)
@@ -93,7 +93,7 @@ func TestRegisterObservers(t *testing.T) {
 			wantValidator: &ValidateMinMaxInt{Conditions: []int64{8080, 8090}},
 		}
 
-		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[{ 
+		err := RegisterWithJSON(or, bytes.NewBufferString(`{"Collection":[{ 
 			"event":"before_set", "route":"payment/pp/port", "type":"validateMinMaxInt", "condition":{"conditions":[8080,8090]} 
 		}]}`))
 		assert.NoError(t, err)
@@ -106,7 +106,7 @@ func TestRegisterObservers(t *testing.T) {
 			wantValidator: &ValidateMinMaxInt{Conditions: []int64{}},
 		}
 
-		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[{ 
+		err := RegisterWithJSON(or, bytes.NewBufferString(`{"Collection":[{ 
 			"event":"before_set", "route":"payment/pp/port", "type":"validateMinMaxInt", "condition":{"conditions":[]} 
 		}]}`))
 		assert.NoError(t, err)
@@ -115,7 +115,7 @@ func TestRegisterObservers(t *testing.T) {
 		or := observerRegistererFake{
 			t: t,
 		}
-		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[{ 
+		err := RegisterWithJSON(or, bytes.NewBufferString(`{"Collection":[{ 
 			"event":"before_set", "route":"payment/pp/port", "type":"validateMinMaxInt" 
 		}]}`))
 		assert.True(t, errors.Empty.Match(err), "%+v", err)
@@ -124,7 +124,7 @@ func TestRegisterObservers(t *testing.T) {
 		or := observerRegistererFake{
 			t: t,
 		}
-		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[{ 
+		err := RegisterWithJSON(or, bytes.NewBufferString(`{"Collection":[{ 
 			"event":"before_set", "route":"pay", "type":"validateMinMaxInt" 
 		}]}`))
 		assert.True(t, errors.NotValid.Match(err), "%+v", err)
@@ -133,7 +133,7 @@ func TestRegisterObservers(t *testing.T) {
 		or := observerRegistererFake{
 			t: t,
 		}
-		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[{ 
+		err := RegisterWithJSON(or, bytes.NewBufferString(`{"Collection":[{ 
 			"event":"before_sunrise", "route":"payment/pp/port", "type":"validateMinMaxInt", "condition":{"conditions":[3]}
 		}]}`))
 		assert.True(t, errors.NotFound.Match(err), "%+v", err)
@@ -142,7 +142,7 @@ func TestRegisterObservers(t *testing.T) {
 		or := observerRegistererFake{
 			t: t,
 		}
-		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[{ 
+		err := RegisterWithJSON(or, bytes.NewBufferString(`{"Collection":[{ 
 			"event":"before_set", "route":"payment/pp/port", "type":"validateMinMaxInt", "condition":{"conditions":[x]}
 		}]}`))
 		assert.True(t, errors.BadEncoding.Match(err), "%+v", err)
@@ -160,7 +160,7 @@ func TestRegisterObservers(t *testing.T) {
 			}),
 		}
 
-		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"validator",
+		err := RegisterWithJSON(or, bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"validator",
 		  "condition":{"funcs":["Locale"],"csv_comma":"|","additional_allowed_values":["Vulcan"]}}
 		]}`))
 		assert.NoError(t, err)
@@ -171,7 +171,7 @@ func TestRegisterObservers(t *testing.T) {
 			t: t,
 		}
 
-		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"validator",
+		err := RegisterWithJSON(or, bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"validator",
 		  "condition":{"funcs":["Locale"],"csv_comma":|,"additional_allowed_values":["Vulcan"]}}
 		]}`))
 		assert.True(t, errors.BadEncoding.Match(err), "%+v", err)
@@ -181,7 +181,7 @@ func TestRegisterObservers(t *testing.T) {
 			t: t,
 		}
 
-		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"validator",
+		err := RegisterWithJSON(or, bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"validator",
 		  "condition":{"funcs":["IsPHP"],"additional_allowed_values":["Vulcan"]}}
 		]}`))
 		assert.True(t, errors.NotSupported.Match(err), "%+v", err)
@@ -203,7 +203,7 @@ func TestRegisterObservers(t *testing.T) {
 			return xmlValidator{wantJSON: wantConditionJSON}, nil
 		})
 
-		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[ { "event":"after_get", "route":"bb/ee/ff", "type":"XMLValidationOK",
+		err := RegisterWithJSON(or, bytes.NewBufferString(`{"Collection":[ { "event":"after_get", "route":"bb/ee/ff", "type":"XMLValidationOK",
 		  "condition":{"funcs":["IsPHP"],"additional_allowed_values":["Vulcan"]}}
 		]}`))
 		assert.NoError(t, err)
@@ -218,7 +218,7 @@ func TestRegisterObservers(t *testing.T) {
 			return nil, errors.Blocked.Newf("Ups")
 		})
 
-		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[ { "event":"after_get", "route":"bb/ee/ff", "type":"XMLValidationErr01",
+		err := RegisterWithJSON(or, bytes.NewBufferString(`{"Collection":[ { "event":"after_get", "route":"bb/ee/ff", "type":"XMLValidationErr01",
 		  "condition":{"funcs":IsPHP,"additional_allowed_values":["Vulcan"]}}
 		]}`))
 		assert.True(t, errors.Blocked.Match(err), "%+v", err)
@@ -228,7 +228,7 @@ func TestRegisterObservers(t *testing.T) {
 		or := observerRegistererFake{
 			t: t,
 		}
-		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[ { "event":"after_get", "route":"bb/ee/ff", "type":"YAMLValidation",
+		err := RegisterWithJSON(or, bytes.NewBufferString(`{"Collection":[ { "event":"after_get", "route":"bb/ee/ff", "type":"YAMLValidation",
 		  "condition":{ }}
 		]}`))
 		assert.True(t, errors.NotFound.Match(err), "%+v", err)
@@ -244,7 +244,7 @@ func TestRegisterObservers(t *testing.T) {
 			}),
 		}
 
-		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[ { "event":"before_get", "route":"aa/gg/ff", "type":"modifier",
+		err := RegisterWithJSON(or, bytes.NewBufferString(`{"Collection":[ { "event":"before_get", "route":"aa/gg/ff", "type":"modifier",
 		  "condition":{"funcs":["base64_decode"]}}
 		]}`))
 		assert.NoError(t, err)
@@ -255,7 +255,7 @@ func TestRegisterObservers(t *testing.T) {
 			t: t,
 		}
 
-		err := JSONRegisterObservers(or, bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"modifier",
+		err := RegisterWithJSON(or, bytes.NewBufferString(`{"Collection":[ { "event":"after_set", "route":"aa/ee/ff", "type":"modifier",
 		  "condition":{"funcs":["base64_decode"  }}
 		]}`))
 		assert.True(t, errors.BadEncoding.Match(err), "%+v", err)

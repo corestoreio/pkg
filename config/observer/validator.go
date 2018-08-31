@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:generate easyjson -build_tags "csall json proto" $GOFILE
+
 package observer
 
 import (
@@ -109,6 +111,9 @@ type ValidatorArg struct {
 	// PartialValidation if true only one of the Configurations must return true /
 	// match the string.
 	PartialValidation bool `json:"partial_validation,omitempty"`
+	// Insecure enables printing in case of errors the values used in a
+	// validation function. This might and will leak sensitive information.
+	Insecure bool `json:"insecure,omitempty"`
 	// CSVComma one character to separate the input data. If empty the
 	// validation process does not know to validate CSV.
 	CSVComma string `json:"csv_comma,omitempty"`
@@ -124,6 +129,7 @@ func NewValidator(data ValidatorArg) (config.Observer, error) {
 		valType:           append([]string{}, data.Funcs...), // copy data
 		valFns:            make([]func(string) bool, 0, len(data.Funcs)),
 		partialValidation: data.PartialValidation,
+		insecure:          data.Insecure,
 	}
 	validatorRegistry.RLock()
 	defer validatorRegistry.RUnlock()
@@ -176,11 +182,12 @@ func MustNewValidator(data ValidatorArg) config.Observer {
 // That is the reason we have a separate struct for JSON handling. Having two
 // structs allows to refrain from using Locks.
 type validators struct {
-	valType           []string
 	csvComma          rune
+	partialValidation bool
+	valType           []string
 	allowedValues     map[string]bool
 	valFns            []func(string) bool
-	partialValidation bool
+	insecure          bool
 }
 
 func (v *validators) isValid(val string) error {
@@ -200,7 +207,10 @@ func (v *validators) isValid(val string) error {
 	if v.allowedValues[val] {
 		return nil
 	}
-	return errors.NotValid.Newf("[config/observer] The provided value %q can't be validated against %q", val, v.valType)
+	if !v.insecure {
+		val = "<redacted>"
+	}
+	return errors.NotValid.Newf("[config/observer] The value %q can't be validated against %q", val, v.valType)
 }
 
 // Observe validates the given rawData value. This functions runs in a hot path.
@@ -263,10 +273,11 @@ func NewValidateMinMaxInt(minMax ...int64) (*ValidateMinMaxInt, error) {
 	}, nil
 }
 
+// Observe runs the validation process.
 func (v ValidateMinMaxInt) Observe(p config.Path, rawData []byte, found bool) (rawData2 []byte, err error) {
-	lmm := len(v.Conditions)
-	if lmm%2 == 1 || lmm < 1 {
-		return nil, errors.NotAcceptable.Newf("[config/observer] ValidateMinMaxInt does not contain a balanced slice. Len: %d", lmm)
+	condLen := len(v.Conditions)
+	if condLen%2 == 1 || condLen < 1 {
+		return nil, errors.NotAcceptable.Newf("[config/observer] ValidateMinMaxInt does not contain a balanced slice. Len: %d", condLen)
 	}
 
 	val, ok, err := byteconv.ParseInt(rawData)
@@ -277,7 +288,7 @@ func (v ValidateMinMaxInt) Observe(p config.Path, rawData []byte, found bool) (r
 		return rawData, nil
 	}
 	var validations int
-	for i := 0; i < lmm; i = i + 2 {
+	for i := 0; i < condLen; i = i + 2 {
 		if left, right := v.Conditions[i], v.Conditions[i+1]; validation.InRangeInt64(val, left, right) {
 			validations++
 			if v.PartialValidation {
@@ -286,7 +297,7 @@ func (v ValidateMinMaxInt) Observe(p config.Path, rawData []byte, found bool) (r
 		}
 	}
 
-	if !v.PartialValidation && validations == lmm/2 {
+	if !v.PartialValidation && validations == condLen/2 {
 		return rawData, nil
 	}
 	return nil, errors.OutOfRange.Newf("[config/observer] %q value out of range: %v", val, v.Conditions)

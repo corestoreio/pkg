@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:generate easyjson -build_tags "csall json proto" $GOFILE
+
 package observer
 
 import (
@@ -160,9 +162,9 @@ func base64Encode(_ *config.Path, src []byte) (dst []byte, _ error) {
 	return
 }
 
-func base64Decode(_ *config.Path, src []byte) (dst []byte, _ error) {
+func base64Decode(_ *config.Path, src []byte) (dst []byte, err error) {
 	dst = make([]byte, base64.StdEncoding.DecodedLen(len(src)))
-	base64.StdEncoding.Decode(dst, src)
+	_, err = base64.StdEncoding.Decode(dst, src)
 	return
 }
 
@@ -172,10 +174,10 @@ func hexEncode(_ *config.Path, src []byte) (dst []byte, _ error) {
 	return dst, nil
 }
 
-func hexDecode(_ *config.Path, src []byte) (dst []byte, _ error) {
+func hexDecode(_ *config.Path, src []byte) (dst []byte, err error) {
 	dst = make([]byte, hex.DecodedLen(len(src)))
-	hex.Decode(dst, src)
-	return dst, nil
+	_, err = hex.Decode(dst, src)
+	return
 }
 
 // hash256 prefix the fully qualified path to src and then hashes it. Higher
@@ -201,7 +203,9 @@ func dataGzip(_ *config.Path, src []byte) (dst []byte, _ error) {
 	buf.Grow(len(src) * 9 / 10) // *0.9
 	zw := gzippool.GetWriter(&buf)
 	defer gzippool.PutWriter(zw)
-	zw.Write(src)
+	if _, err := zw.Write(src); err != nil {
+		return nil, errors.WithStack(err)
+	}
 	if err := zw.Close(); err != nil {
 		return nil, errors.WithStack(err)
 	}

@@ -25,7 +25,7 @@ import (
 )
 
 // HTTPHandlerOptions can set different behaviour to the
-// HTTPJSONRegistry / HTTPJSONDeregistry. endpoints.
+// RegisterWithJSONviaHTTP / DeregisterWithJSONviaHTTP. endpoints.
 type HTTPHandlerOptions struct {
 	// ErrorHandler custom error handler. Default error handler returns a status
 	// code and prints the whole stack trace. May leak sensitive information.
@@ -39,9 +39,9 @@ type HTTPHandlerOptions struct {
 	StatusCodeError int
 }
 
-// HTTPJSONRegistry provides an endpoint handler to register validators
+// RegisterWithJSONviaHTTP provides an endpoint handler to register validators
 // with the concrete type of config.Service
-func HTTPJSONRegistry(or config.ObserverRegisterer, ho HTTPHandlerOptions) http.Handler {
+func RegisterWithJSONviaHTTP(or config.ObserverRegisterer, ho HTTPHandlerOptions) http.Handler {
 	if ho.StatusCodeOk == 0 {
 		ho.StatusCodeOk = http.StatusCreated
 	}
@@ -57,7 +57,7 @@ func HTTPJSONRegistry(or config.ObserverRegisterer, ho HTTPHandlerOptions) http.
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
-		if err := JSONRegisterObservers(or, io.LimitReader(r.Body, ho.MaxRequestSize)); err != nil {
+		if err := RegisterWithJSON(or, io.LimitReader(r.Body, ho.MaxRequestSize)); err != nil {
 			ho.ErrorHandler(err).ServeHTTP(w, r)
 			return
 		}
@@ -66,9 +66,9 @@ func HTTPJSONRegistry(or config.ObserverRegisterer, ho HTTPHandlerOptions) http.
 	})
 }
 
-// HTTPJSONDeregistry provides an endpoint handler to deregister
+// DeregisterWithJSONviaHTTP provides an endpoint handler to deregister
 // validators with the concrete type of config.Service
-func HTTPJSONDeregistry(or config.ObserverRegisterer, ho HTTPHandlerOptions) http.Handler {
+func DeregisterWithJSONviaHTTP(or config.ObserverRegisterer, ho HTTPHandlerOptions) http.Handler {
 	if ho.StatusCodeOk == 0 {
 		ho.StatusCodeOk = http.StatusAccepted
 	}
@@ -84,7 +84,7 @@ func HTTPJSONDeregistry(or config.ObserverRegisterer, ho HTTPHandlerOptions) htt
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
-		if err := JSONDeregisterObservers(or, io.LimitReader(r.Body, ho.MaxRequestSize)); err != nil {
+		if err := DeregisterWithJSON(or, io.LimitReader(r.Body, ho.MaxRequestSize)); err != nil {
 			ho.ErrorHandler(err).ServeHTTP(w, r)
 			return
 		}
