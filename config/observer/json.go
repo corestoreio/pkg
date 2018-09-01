@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build csall json proto
+// +build csall json http proto
 
-//go:generate easyjson -build_tags "csall json proto" $GOFILE
+//go:generate easyjson -build_tags "csall json http proto" $GOFILE
 
 package observer
 

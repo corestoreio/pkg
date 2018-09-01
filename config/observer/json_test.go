@@ -120,14 +120,17 @@ func TestRegisterObservers(t *testing.T) {
 		}]}`))
 		assert.True(t, errors.Empty.Match(err), "%+v", err)
 	})
-	t.Run("ValidateMinMaxInt invalid route", func(t *testing.T) {
+	t.Run("ValidateMinMaxInt short route", func(t *testing.T) {
 		or := observerRegistererFake{
-			t: t,
+			t:             t,
+			wantEvent:     config.EventOnBeforeSet,
+			wantRoute:     "pay",
+			wantValidator: &ValidateMinMaxInt{Conditions: []int64{8080, 8090}},
 		}
 		err := RegisterWithJSON(or, bytes.NewBufferString(`{"Collection":[{ 
-			"event":"before_set", "route":"pay", "type":"validateMinMaxInt" 
+			"event":"before_set", "route":"pay", "type":"validateMinMaxInt", "condition":{"conditions":[8080,8090]} 
 		}]}`))
-		assert.True(t, errors.NotValid.Match(err), "%+v", err)
+		assert.NoError(t, err)
 	})
 	t.Run("ValidateMinMaxInt invalid event", func(t *testing.T) {
 		or := observerRegistererFake{
@@ -291,9 +294,9 @@ func TestValidator_MakeEventRoute(t *testing.T) {
 			Event: "after_set",
 		}
 		e, r, err := v.MakeEventRoute()
-		assert.True(t, errors.NotValid.Match(err))
-		assert.Empty(t, r)
-		assert.Empty(t, e)
+		assert.NoError(t, err)
+		assert.Exactly(t, "d/f", r)
+		assert.Exactly(t, config.EventOnAfterSet, e)
 	})
 }
 

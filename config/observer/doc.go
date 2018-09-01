@@ -15,11 +15,19 @@
 // Package observer provides validators and modifiers for configuration
 // values.
 //
+// Installed validators: ISO3166Alpha2, country_codes2, ISO3166Alpha3,
+// country_codes3, ISO4217, currency3, Locale, locale, ISO693Alpha2, language2,
+// ISO693Alpha3, language3, uuid, uuid3, uuid4, uuid5, url, int, float, bool,
+// utf8, utf8_digit, utf8_letter, utf8_letter_numeric, notempty, not_empty,
+// notemptytrimspace, not_empty_trim_space, hexadecimal, hexcolor and any custom
+// validator added via function RegisterValidator.
+//
+// Installed modifiers: upper, lower, trim, title, base64_encode, base64_decode,
+// hex_encode, hex_decode, sha256, gzip, gunzip, AES-GCM encrypt/decrypt and any
+// custom modifier added via function RegisterModifier.
+//
 // The list of validators and modifiers will be extended. Please suggest new
 // ones.
-//
-// Modification can be trim, lower case, upper case, title, base64
-// encode/decode, sha256, gzip, gunzip and AES-GCM encrypt/decrypt.
 //
 // Other encryption algorithms are getting later added.
 //
