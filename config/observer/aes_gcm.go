@@ -103,6 +103,15 @@ func NewAESGCM(eventType uint8, eo *AESGCMOptions) (config.Observer, error) {
 	return enc, nil
 }
 
+// MustNewAESGCM same as NewAESGCM but panics on error.
+func MustNewAESGCM(eventType uint8, eo *AESGCMOptions) config.Observer {
+	enc, err := NewAESGCM(eventType, eo)
+	if err != nil {
+		panic(err)
+	}
+	return enc
+}
+
 func (v *aesGCM) Observe(p config.Path, rawData []byte, found bool) ([]byte, error) {
 	switch v.eventType {
 	case config.EventOnBeforeSet:

@@ -90,5 +90,19 @@ func TestNewAESGCM(t *testing.T) {
 		assert.NoError(t, err, "%+v", err)
 		assert.Exactly(t, plainText, decText)
 	})
+}
 
+func TestMustNewAESGCM(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			if err, ok := r.(error); ok {
+				assert.True(t, errors.NotValid.Match(err))
+			} else {
+				t.Errorf("Panic should contain an error but got:\n%+v", r)
+			}
+		} else {
+			t.Error("Expecting a panic but got nothing")
+		}
+	}()
+	_ = observer.MustNewAESGCM(19, &observer.AESGCMOptions{})
 }
