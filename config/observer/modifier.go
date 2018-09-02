@@ -30,19 +30,16 @@ import (
 	"github.com/corestoreio/pkg/util/hashpool"
 )
 
-// alter vs modification vs change | Don't know - non native speaker and
-// StackExchange isn't helpful.
-
-// ModificateFn defines the function signature for altering the data.
-type ModificateFn func(*config.Path, []byte) ([]byte, error)
+// ModifierFn defines the function signature for altering the data.
+type ModifierFn func(*config.Path, []byte) ([]byte, error)
 
 type modReg struct {
 	sync.RWMutex
-	pool map[string]ModificateFn
+	pool map[string]ModifierFn
 }
 
 var modifierRegistry = &modReg{
-	pool: map[string]ModificateFn{
+	pool: map[string]ModifierFn{
 		"upper":         toUpper,
 		"lower":         toLower,
 		"trim":          trim,
@@ -60,7 +57,7 @@ var modifierRegistry = &modReg{
 // RegisterModifier adds a new modification function to the global registry
 // and might overwrite previously set entries. Access to the global registry can
 // be achieved via function NewModifier.
-func RegisterModifier(typeName string, h ModificateFn) {
+func RegisterModifier(typeName string, h ModifierFn) {
 	modifierRegistry.Lock()
 	defer modifierRegistry.Unlock()
 	modifierRegistry.pool[typeName] = h
@@ -91,7 +88,7 @@ type ModifierArg struct {
 func NewModifier(data ModifierArg) (config.Observer, error) {
 	ia := &modifiers{
 		opType: append([]string{}, data.Funcs...), // copy data
-		opFns:  make([]ModificateFn, 0, len(data.Funcs)),
+		opFns:  make([]ModifierFn, 0, len(data.Funcs)),
 	}
 
 	modifierRegistry.RLock()
@@ -122,7 +119,7 @@ func MustNewModifier(data ModifierArg) config.Observer {
 // structs allows to refrain from using Locks.
 type modifiers struct {
 	opType []string
-	opFns  []ModificateFn
+	opFns  []ModifierFn
 }
 
 // Observe validates the given rawData value. This functions runs in a hot path.
