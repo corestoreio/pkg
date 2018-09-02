@@ -23,8 +23,9 @@ import (
 	"github.com/golang/sync/errgroup"
 )
 
+// MultiOptions provides options for function MakeMulti.
 type MultiOptions struct {
-	// ContextTimeout if greater than zero a timeout will
+	// ContextTimeout if greater than zero a timeout will kick in.
 	ContextTimeout time.Duration
 	WriteDisabled  []bool // TODO implement must be same length as `backends` and defines which backends should ne write
 	WriteSerial    bool   // TODO implement

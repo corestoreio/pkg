@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cfgdb
+// +build csall db
+
+package storage
 
 import (
 	"context"
@@ -24,19 +26,77 @@ import (
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/storage/null"
+	"github.com/corestoreio/pkg/store/scope"
 )
 
-// Options applies options to the Service type.
-type Options struct {
+// TableNameCoreConfigData default database table name.
+const TableNameCoreConfigData = `core_config_data`
+
+// NewTableCollection creates a new Tables object for TableNameCoreConfigData.
+func NewTableCollection(db dml.QueryExecPreparer) *ddl.Tables {
+	return ddl.MustNewTables(
+		ddl.WithTable(
+			TableNameCoreConfigData,
+			&ddl.Column{Field: `config_id`, ColumnType: `int(10) unsigned`, Null: `NO`, Key: `PRI`, Extra: `auto_increment`},
+			&ddl.Column{Field: `scope`, ColumnType: `varchar(8)`, Null: `NO`, Key: `MUL`, Default: null.MakeString(`default`), Extra: ""},
+			&ddl.Column{Field: `scope_id`, ColumnType: `int(11)`, Null: `NO`, Key: "", Default: null.MakeString(`0`), Extra: ""},
+			&ddl.Column{Field: `path`, ColumnType: `varchar(255)`, Null: `NO`, Key: "", Default: null.MakeString(`general`), Extra: ""},
+			&ddl.Column{Field: `value`, ColumnType: `text`, Null: `YES`, Key: ``, Extra: ""},
+		),
+		ddl.WithDB(db),
+	)
+}
+
+// TableCoreConfigData represents a type for DB table core_config_data
+// Generated via tableToStruct.
+type TableCoreConfigData struct {
+	ConfigID int64       // config_id int(10) unsigned NOT NULL PRI  auto_increment
+	Scope    string      // scope varchar(8) NOT NULL MUL DEFAULT 'default'
+	ScopeID  int64       // scope_id int(11) NOT NULL  DEFAULT '0'
+	Path     string      // path varchar(255) NOT NULL  DEFAULT 'general'
+	Value    null.String // value text NULL
+}
+
+// MapColumns implements interface ColumnMapper only partially.
+func (p *TableCoreConfigData) MapColumns(cm *dml.ColumnMap) error {
+	if cm.Mode() == dml.ColumnMapEntityReadAll {
+		return cm.Int64(&p.ConfigID).String(&p.Scope).Int64(&p.ScopeID).String(&p.Path).NullString(&p.Value).Err()
+	}
+	for cm.Next() {
+		switch c := cm.Column(); c {
+		case "config_id": // customer_id is an alias
+			cm.Int64(&p.ConfigID)
+		case "scope":
+			cm.String(&p.Scope)
+		case "scope_id":
+			cm.Int64(&p.ScopeID)
+		case "path":
+			cm.String(&p.Path)
+		case "value":
+			cm.NullString(&p.Value)
+		default:
+			return errors.NotFound.Newf("[config/storage] TableCoreConfigData Column %q not found", c)
+		}
+	}
+	return cm.Err()
+}
+
+// DBOptions applies options to the `DB` type.
+type DBOptions struct {
+	// TableName if set, specifies the alternate table name, default:
+	// `core_config_data` aka constant TableNameCoreConfigData.
 	TableName           string
 	Log                 log.Logger
 	QueryContextTimeout time.Duration
 	// IdleRead default 20s
 	IdleRead time.Duration
 	// IdleWrite default 10s
-	IdleWrite            time.Duration
-	ContextTimeoutRead   time.Duration
-	ContextTimeoutWrite  time.Duration
+	IdleWrite           time.Duration
+	ContextTimeoutRead  time.Duration
+	ContextTimeoutWrite time.Duration
+	// SkipSchemaValidation disables the validation of the DB schema compared
+	// with the schema stored in Go source files.
 	SkipSchemaValidation bool
 	// TODO implement UseDedicatedDBConnection per prepared statement, bit complicated
 	// UseDedicatedDBConnection *sql.DB
@@ -48,15 +108,15 @@ const (
 	stateInUse
 )
 
-type stats struct {
+type dbStats struct {
 	Open  uint64
 	Close uint64
 }
 
 // Service connects the MySQL/MariaDB with the config.Service type. Implements
 // interface config.Storager.
-type Service struct {
-	cfg Options
+type DB struct {
+	cfg DBOptions
 
 	sqlRead  *dml.Select
 	sqlWrite *dml.Insert
@@ -68,22 +128,29 @@ type Service struct {
 	muRead        sync.Mutex
 	stmtRead      *dml.Artisan
 	stmtReadState uint8
-	stmtReadStat  stats
+	stmtReadStat  dbStats
 
 	muWrite        sync.Mutex
 	stmtWrite      *dml.Artisan
 	stmtWriteState uint8
-	stmtWriteStat  stats
+	stmtWriteStat  dbStats
 }
 
-// NewService creates a new database backed storage service. It creates three
+// NewDB creates a new database backed storage service. It creates three
 // prepared statements which are getting automatically closed after an idle time
 // and once used again, they get re-prepared. The database schema gets
 // validated, but can also be disabled via options struct. Implements interface
 // config.Storager.
-func NewService(tbls *ddl.Tables, o Options) (*Service, error) {
-	// TODO reconfigure itself once it is running to load the timeout values from the DB and apply it. Restart the go routines.
-	// Then during restart, block Set and Value operations to let the caller wait until restart complete. might be an overhead.
+// NewDB uses the MySQL/MariaDB based table `core_config_data`
+// for reading and writing configuration paths, scopes and values.
+//
+// It also provides an option function to load data from core_config_data into
+// a storage service.
+func NewDB(tbls *ddl.Tables, o DBOptions) (*DB, error) {
+	// TODO reconfigure itself once it is running to load the timeout values
+	// from the DB and apply it. Restart the go routines. Then during restart,
+	// block Set and Value operations to let the caller wait until restart
+	// complete. might be an overhead.
 
 	tn := o.TableName
 	if tn == "" {
@@ -121,7 +188,7 @@ func NewService(tbls *ddl.Tables, o Options) (*Service, error) {
 	qryWrite.OnDuplicateKeys = dml.Conditions{dml.Column("value")}
 	qryWrite.Log = o.Log
 
-	dbs := &Service{
+	dbs := &DB{
 		cfg:              o,
 		tickerDaemonStop: make(chan struct{}),
 		sqlRead:          qryRead,
@@ -143,21 +210,21 @@ func NewService(tbls *ddl.Tables, o Options) (*Service, error) {
 	return dbs, nil
 }
 
-// MustNewService same as NewService but panics on error. Implements
+// MustNewDB same as NewDB but panics on error. Implements
 // interface config.Storager.
-func MustNewService(tbls *ddl.Tables, o Options) *Service {
-	s, err := NewService(tbls, o)
+func MustNewDB(tbls *ddl.Tables, o DBOptions) *DB {
+	s, err := NewDB(tbls, o)
 	if err != nil {
 		panic(err)
 	}
 	return s
 }
 
-func (dbs *Service) closeStmtRead(t time.Time) {
+func (dbs *DB) closeStmtRead(t time.Time) {
 	dbs.muRead.Lock()
 	if dbs.stmtReadState == stateOpen {
 		if err := dbs.stmtRead.Close(); err != nil && dbs.cfg.Log != nil && dbs.cfg.Log.IsInfo() {
-			dbs.cfg.Log.Info("cfgdb.Service.stmtRead.Close", log.Stringer("ticker", t), log.Err(err))
+			dbs.cfg.Log.Info("config.storage.DB.stmtRead.Close", log.Stringer("ticker", t), log.Err(err))
 		}
 		dbs.stmtReadState = stateClosed
 		dbs.stmtReadStat.Close++
@@ -165,11 +232,11 @@ func (dbs *Service) closeStmtRead(t time.Time) {
 	dbs.muRead.Unlock()
 }
 
-func (dbs *Service) closeStmtWrite(t time.Time) {
+func (dbs *DB) closeStmtWrite(t time.Time) {
 	dbs.muWrite.Lock()
 	if dbs.stmtWriteState == stateOpen {
 		if err := dbs.stmtWrite.Close(); err != nil && dbs.cfg.Log != nil && dbs.cfg.Log.IsInfo() {
-			dbs.cfg.Log.Info("cfgdb.Service.stmtWrite.Close", log.Stringer("ticker", t), log.Err(err))
+			dbs.cfg.Log.Info("config.storage.DB.stmtWrite.Close", log.Stringer("ticker", t), log.Err(err))
 		}
 		dbs.stmtWriteState = stateClosed
 		dbs.stmtWriteStat.Close++
@@ -177,7 +244,7 @@ func (dbs *Service) closeStmtWrite(t time.Time) {
 	dbs.muWrite.Unlock()
 }
 
-func (dbs *Service) runStateCheckers() {
+func (dbs *DB) runStateCheckers() {
 
 	dbs.tickerRead = time.NewTicker(dbs.cfg.IdleRead)
 	dbs.tickerWrite = time.NewTicker(dbs.cfg.IdleWrite)
@@ -202,14 +269,14 @@ func (dbs *Service) runStateCheckers() {
 }
 
 // Close terminates the prepared statements and internal go routines.
-func (dbs *Service) Close() error {
+func (dbs *DB) Close() error {
 	dbs.tickerDaemonStop <- struct{}{} // no need to close this chan because we might restart later the goroutine.
 	return nil
 }
 
 // Set puts a value with its key. Database errors get logged as Info message.
 // Enabled debug level logs the insert ID or rows affected.
-func (dbs *Service) Set(p *config.Path, value []byte) error {
+func (dbs *DB) Set(p *config.Path, value []byte) error {
 	dbs.muWrite.Lock()
 	prevState := dbs.stmtWriteState
 	dbs.stmtWriteState = stateInUse
@@ -243,7 +310,7 @@ func (dbs *Service) Set(p *config.Path, value []byte) error {
 		li, err1 := res.LastInsertId()
 		ra, err2 := res.RowsAffected()
 		dbs.cfg.Log.Debug(
-			"config.Service.Set.Write.Result",
+			"config.storage.DB.Set.Write.Result",
 			log.Int64("lastInsertID", li),
 			log.ErrWithKey("lastInsertIDErr", err1),
 			log.Int64("rowsAffected", ra),
@@ -259,7 +326,7 @@ func (dbs *Service) Set(p *config.Path, value []byte) error {
 // Get performs a read operation from the database and returns a value from
 // the table. The `ok` return argument can be true even if byte slice `v` is
 // nil, which means that the path and scope are stored in the database table.
-func (dbs *Service) Get(p *config.Path) (v []byte, ok bool, err error) {
+func (dbs *DB) Get(p *config.Path) (v []byte, ok bool, err error) {
 	dbs.muRead.Lock()
 	prevState := dbs.stmtReadState
 	dbs.stmtReadState = stateInUse
@@ -290,7 +357,7 @@ func (dbs *Service) Get(p *config.Path) (v []byte, ok bool, err error) {
 	s, id := scp.Unpack()
 	nv, found, err := dbs.stmtRead.String(s.StrType()).Int64(id).String(path).LoadNullString(ctx)
 	if err != nil {
-		return nil, false, errors.Wrapf(err, "[ccd] Scope %q Path %q", scp.String(), path)
+		return nil, false, errors.Wrapf(err, "[config/storage] DB Scope %q Path %q", scp.String(), path)
 	}
 	if !found {
 		return nil, false, nil
@@ -303,7 +370,7 @@ func (dbs *Service) Get(p *config.Path) (v []byte, ok bool, err error) {
 }
 
 // Statistics returns live statistics about opening and closing prepared statements.
-func (dbs *Service) Statistics() (value stats, set stats) {
+func (dbs *DB) Statistics() (value dbStats, set dbStats) {
 	dbs.muRead.Lock()
 	value = dbs.stmtReadStat
 	dbs.muRead.Unlock()
@@ -313,4 +380,50 @@ func (dbs *Service) Statistics() (value stats, set stats) {
 	dbs.muWrite.Unlock()
 
 	return
+}
+
+// WithLoadFromDB reads the table core_config_data into the Service and
+// overrides existing values. Stops on errors.
+func WithLoadFromDB(tbls *ddl.Tables, o DBOptions) config.LoadDataOption {
+	return config.MakeLoadDataOption(func(s *config.Service) error {
+
+		tn := o.TableName
+		if tn == "" {
+			tn = TableNameCoreConfigData
+		}
+
+		tbl, err := tbls.Table(tn)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		if o.ContextTimeoutRead == 0 {
+			o.ContextTimeoutRead = time.Second * 10 // just a guess
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), o.ContextTimeoutRead)
+		defer cancel()
+
+		return tbl.SelectAll().WithArgs().IterateSerial(ctx, func(cm *dml.ColumnMap) error {
+			var ccd TableCoreConfigData
+			if err := ccd.MapColumns(cm); err != nil {
+				return errors.Wrapf(err, "[config/storage] dbs.stmtAll.IterateSerial at row %d", cm.Count)
+			}
+
+			var v []byte
+			if ccd.Value.Valid {
+				v = []byte(ccd.Value.String)
+			}
+			scp := scope.FromString(ccd.Scope).WithID(ccd.ScopeID)
+			p, err := config.NewPathWithScope(scp, ccd.Path)
+			if err != nil {
+				return errors.Wrapf(err, "[config/storage] WithLoadFromDB.config.NewPathWithScope Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ConfigID)
+			}
+			if err = s.Set(p, v); err != nil {
+				return errors.Wrapf(err, "[config/storage] WithLoadFromDB.Service.Write Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ConfigID)
+			}
+
+			return nil
+		})
+	}).WithUseStorageLevel(1)
 }

@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cfgdb_test
+// +build csall db
+
+package storage_test
 
 import (
 	"fmt"
@@ -22,16 +24,16 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
-	"github.com/corestoreio/pkg/config/storage/cfgdb"
+	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/assert"
 	"github.com/fortytw2/leaktest"
 )
 
-var _ config.Storager = (*cfgdb.Service)(nil)
+var _ config.Storager = (*storage.DB)(nil)
 
-func TestMustNewService_Panic(t *testing.T) {
+func TestMustNewDB_Panic(t *testing.T) {
 	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
@@ -44,7 +46,7 @@ func TestMustNewService_Panic(t *testing.T) {
 			t.Error("Expecting a panic but got nothing")
 		}
 	}()
-	_ = cfgdb.MustNewService(cfgdb.NewTableCollection(nil), cfgdb.Options{
+	_ = storage.MustNewDB(storage.NewTableCollection(nil), storage.DBOptions{
 		TableName:            "non-existent",
 		SkipSchemaValidation: true,
 	})
@@ -57,7 +59,7 @@ func TestService_AllKeys_Mocked(t *testing.T) {
 	defer dmltest.MockClose(t, dbc, dbMock)
 
 	t.Run("table not found", func(t *testing.T) {
-		dbs, err := cfgdb.NewService(cfgdb.NewTableCollection(dbc.DB), cfgdb.Options{
+		dbs, err := storage.NewDB(storage.NewTableCollection(dbc.DB), storage.DBOptions{
 			TableName:            "non-existent",
 			SkipSchemaValidation: true,
 		})
@@ -66,7 +68,7 @@ func TestService_AllKeys_Mocked(t *testing.T) {
 	})
 
 	t.Run("no leaking goroutines", func(t *testing.T) {
-		dbs, err := cfgdb.NewService(cfgdb.NewTableCollection(dbc.DB), cfgdb.Options{
+		dbs, err := storage.NewDB(storage.NewTableCollection(dbc.DB), storage.DBOptions{
 			SkipSchemaValidation: true,
 		})
 		assert.NoError(t, err)
@@ -87,7 +89,7 @@ var serviceMultiTests = []struct {
 func TestService_Get(t *testing.T) {
 	defer leaktest.CheckTimeout(t, time.Second)()
 
-	testBody := func(t *testing.T, dbs *cfgdb.Service, dbMock sqlmock.Sqlmock, sleep time.Duration) {
+	testBody := func(t *testing.T, dbs *storage.DB, dbMock sqlmock.Sqlmock, sleep time.Duration) {
 
 		prepSel := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `value` FROM `core_config_data` AS `main_table` WHERE (`scope` = ?) AND (`scope_id` = ?) AND (`path` = ?)"))
 		for _, test := range serviceMultiTests {
@@ -121,7 +123,7 @@ func TestService_Get(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 		dbMock.MatchExpectationsInOrder(false)
 
-		dbs, err := cfgdb.NewService(cfgdb.NewTableCollection(dbc.DB), cfgdb.Options{
+		dbs, err := storage.NewDB(storage.NewTableCollection(dbc.DB), storage.DBOptions{
 			SkipSchemaValidation: true,
 		})
 		assert.NoError(t, err)
@@ -134,7 +136,7 @@ func TestService_Get(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 		dbMock.MatchExpectationsInOrder(false)
 
-		dbs, err := cfgdb.NewService(cfgdb.NewTableCollection(dbc.DB), cfgdb.Options{
+		dbs, err := storage.NewDB(storage.NewTableCollection(dbc.DB), storage.DBOptions{
 			IdleRead:             time.Millisecond * 50,
 			IdleWrite:            time.Millisecond * 50,
 			SkipSchemaValidation: true,
@@ -146,7 +148,7 @@ func TestService_Get(t *testing.T) {
 
 		val, set := dbs.Statistics()
 		assert.Exactly(t,
-			"read cfgdb.stats{Open:0x2, Close:0x1} write cfgdb.stats{Open:0x0, Close:0x0}",
+			"read storage.dbStats{Open:0x2, Close:0x1} write storage.dbStats{Open:0x0, Close:0x0}",
 			fmt.Sprintf("read %#v write %#v", val, set),
 		)
 	})
@@ -156,7 +158,7 @@ func TestService_Get(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 		dbMock.MatchExpectationsInOrder(false)
 
-		dbs, err := cfgdb.NewService(cfgdb.NewTableCollection(dbc.DB), cfgdb.Options{
+		dbs, err := storage.NewDB(storage.NewTableCollection(dbc.DB), storage.DBOptions{
 			ContextTimeoutRead:   time.Millisecond * 50,
 			SkipSchemaValidation: true,
 		})
@@ -182,7 +184,7 @@ func TestService_Get(t *testing.T) {
 func TestService_Set(t *testing.T) {
 	defer leaktest.CheckTimeout(t, time.Second)()
 
-	testBody := func(t *testing.T, dbs *cfgdb.Service, dbMock sqlmock.Sqlmock, sleep time.Duration) {
+	testBody := func(t *testing.T, dbs *storage.DB, dbMock sqlmock.Sqlmock, sleep time.Duration) {
 
 		prepIns := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("INSERT INTO `core_config_data` (`scope`,`scope_id`,`path`,`value`) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE `value`=VALUES(`value`)"))
 
@@ -209,7 +211,7 @@ func TestService_Set(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 		dbMock.MatchExpectationsInOrder(false)
 
-		dbs, err := cfgdb.NewService(cfgdb.NewTableCollection(dbc.DB), cfgdb.Options{
+		dbs, err := storage.NewDB(storage.NewTableCollection(dbc.DB), storage.DBOptions{
 			SkipSchemaValidation: true,
 		})
 		assert.NoError(t, err)
@@ -222,7 +224,7 @@ func TestService_Set(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 		dbMock.MatchExpectationsInOrder(false)
 
-		dbs, err := cfgdb.NewService(cfgdb.NewTableCollection(dbc.DB), cfgdb.Options{
+		dbs, err := storage.NewDB(storage.NewTableCollection(dbc.DB), storage.DBOptions{
 			IdleRead:             time.Millisecond * 5,
 			IdleWrite:            time.Millisecond * 5,
 			SkipSchemaValidation: true,
@@ -234,7 +236,7 @@ func TestService_Set(t *testing.T) {
 
 		val, set := dbs.Statistics()
 		assert.Exactly(t,
-			"read cfgdb.stats{Open:0x0, Close:0x0} write cfgdb.stats{Open:0x3, Close:0x3}",
+			"read storage.dbStats{Open:0x0, Close:0x0} write storage.dbStats{Open:0x3, Close:0x3}",
 			fmt.Sprintf("read %#v write %#v", val, set),
 		)
 	})
@@ -244,7 +246,7 @@ func TestService_Set(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 		dbMock.MatchExpectationsInOrder(false)
 
-		dbs, err := cfgdb.NewService(cfgdb.NewTableCollection(dbc.DB), cfgdb.Options{
+		dbs, err := storage.NewDB(storage.NewTableCollection(dbc.DB), storage.DBOptions{
 			ContextTimeoutWrite:  time.Millisecond * 50,
 			SkipSchemaValidation: true,
 		})
@@ -265,5 +267,42 @@ func TestService_Set(t *testing.T) {
 		}
 
 	})
+}
 
+// Test_WithApplyCoreConfigData reads from the MySQL core_config_data table and applies
+// these value to the underlying storage. tries to get back the values from the
+// underlying storage
+func Test_WithCoreConfigData(t *testing.T) {
+	t.Parallel()
+
+	dbc, dbMock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, dbc, dbMock)
+
+	dbMock.ExpectQuery("SELECT (.+) FROM `core_config_data` AS `main_table`").WillReturnRows(
+		dmltest.MustMockRows(dmltest.WithFile("testdata", "core_config_data.csv")),
+	)
+
+	tbls := storage.NewTableCollection(dbc.DB)
+
+	im := storage.NewMap()
+	s := config.MustNewService(
+		im,
+		config.Options{},
+		storage.WithLoadFromDB(tbls, storage.DBOptions{}),
+	)
+	defer dmltest.Close(t, s)
+
+	p1 := config.MustNewPath("web/secure/offloader_header").BindStore(987)
+	assert.NoError(t, s.Set(p1, []byte("SSL_OFFLOADED")))
+
+	v, ok, err := s.Get(p1).Str()
+	assert.NoError(t, err)
+	assert.True(t, ok)
+	assert.Exactly(t, "SSL_OFFLOADED", v)
+
+	p2 := config.MustNewPath("web/unsecure/base_skin_url").BindWebsite(44)
+	v, ok, err = s.Get(p2).Str()
+	assert.NoError(t, err)
+	assert.True(t, ok)
+	assert.Exactly(t, "{{unsecure_base_url}}skin/", v)
 }

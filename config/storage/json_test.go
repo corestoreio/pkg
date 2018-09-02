@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cfgfile_test
+// +build csall json
+
+package storage_test
 
 import (
 	"testing"
@@ -20,7 +22,6 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/storage"
-	"github.com/corestoreio/pkg/config/storage/cfgfile"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/assert"
 )
@@ -32,7 +33,7 @@ func TestWithLoadJSON(t *testing.T) {
 
 		cfgSrv, err := config.NewService(
 			storage.NewMap(), config.Options{},
-			cfgfile.WithLoadJSON(cfgfile.WithFile("testdata", "example.json")),
+			storage.WithLoadJSON(storage.WithFile("testdata", "example.json")),
 		)
 		if err != nil {
 			t.Fatalf("%+v", err)
@@ -54,7 +55,7 @@ func TestWithLoadJSON(t *testing.T) {
 		return func(t *testing.T) {
 			cfgSrv, err := config.NewService(
 				storage.NewMap(), config.Options{},
-				cfgfile.WithLoadJSON(cfgfile.WithFile("testdata", file)),
+				storage.WithLoadJSON(storage.WithFile("testdata", file)),
 			)
 			assert.True(t, errKind.Match(err), "%+v", err)
 			assert.Nil(t, cfgSrv)

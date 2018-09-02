@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cfgetcdv3_test
+// +build csall etcdv3
+
+package storage_test
 
 import (
 	"context"
@@ -22,15 +24,16 @@ import (
 
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
-	"github.com/corestoreio/pkg/config/storage/cfgetcdv3"
+	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
 func init() {
-	flag.BoolVar(&runIntegration, "integration", false, "Enables dml integration tests")
+	flag.BoolVar(&runIntegration, "integration", false, "Enables etcdv3 integration tests")
 }
 
 var (
@@ -48,12 +51,12 @@ func TestStorage_Get(t *testing.T) {
 
 	t.Run("Get found", func(t *testing.T) {
 
-		mo := cfgetcdv3.FakeClient{
-			GetKey:   []byte(cfgetcdv3.DefaultKeyPrefix + `websites/3/` + path),
+		mo := storage.Etcdv3FakeClient{
+			GetKey:   []byte(storage.Etcdv3DefaultKeyPrefix + `websites/3/` + path),
 			GetValue: testData,
 		}
 
-		s, err := cfgetcdv3.NewService(mo, cfgetcdv3.Options{})
+		s, err := storage.NewEtcdv3Client(mo, storage.Etcdv3Options{})
 		assert.NoError(t, err)
 
 		haveData, found, err := s.Get(p)
@@ -64,12 +67,12 @@ func TestStorage_Get(t *testing.T) {
 
 	t.Run("Get not found", func(t *testing.T) {
 
-		mo := cfgetcdv3.FakeClient{
+		mo := storage.Etcdv3FakeClient{
 			GetKey:   []byte(`websites/3/`),
 			GetValue: testData,
 		}
 
-		s, err := cfgetcdv3.NewService(mo, cfgetcdv3.Options{})
+		s, err := storage.NewEtcdv3Client(mo, storage.Etcdv3Options{})
 		assert.NoError(t, err)
 
 		haveData, found, err := s.Get(p)
@@ -81,11 +84,11 @@ func TestStorage_Get(t *testing.T) {
 	testGetErrors := func(getErr error) func(*testing.T) {
 		return func(t *testing.T) {
 
-			mo := cfgetcdv3.FakeClient{
+			mo := storage.Etcdv3FakeClient{
 				GetError: getErr,
 			}
 
-			s, err := cfgetcdv3.NewService(mo, cfgetcdv3.Options{})
+			s, err := storage.NewEtcdv3Client(mo, storage.Etcdv3Options{})
 			assert.NoError(t, err)
 
 			haveData, found, err := s.Get(p)
@@ -100,11 +103,11 @@ func TestStorage_Get(t *testing.T) {
 	t.Run("Get rpctypes.ErrEmptyKey", testGetErrors(rpctypes.ErrEmptyKey))
 	t.Run("Get any other error", func(t *testing.T) {
 
-		mo := cfgetcdv3.FakeClient{
+		mo := storage.Etcdv3FakeClient{
 			GetError: errors.ConnectionLost.Newf("Ups"),
 		}
 
-		s, err := cfgetcdv3.NewService(mo, cfgetcdv3.Options{})
+		s, err := storage.NewEtcdv3Client(mo, storage.Etcdv3Options{})
 		assert.NoError(t, err)
 
 		haveData, found, err := s.Get(p)
@@ -115,9 +118,9 @@ func TestStorage_Get(t *testing.T) {
 
 	t.Run("Set no error ", func(t *testing.T) {
 
-		mo := cfgetcdv3.FakeClient{}
+		mo := storage.Etcdv3FakeClient{}
 
-		s, err := cfgetcdv3.NewService(mo, cfgetcdv3.Options{})
+		s, err := storage.NewEtcdv3Client(mo, storage.Etcdv3Options{})
 		assert.NoError(t, err)
 
 		err = s.Set(p, testData)
@@ -125,11 +128,11 @@ func TestStorage_Get(t *testing.T) {
 	})
 	t.Run("Set no error ", func(t *testing.T) {
 
-		mo := cfgetcdv3.FakeClient{
+		mo := storage.Etcdv3FakeClient{
 			PutError: errors.ConnectionLost.Newf("Ups"),
 		}
 
-		s, err := cfgetcdv3.NewService(mo, cfgetcdv3.Options{})
+		s, err := storage.NewEtcdv3Client(mo, storage.Etcdv3Options{})
 		assert.NoError(t, err)
 
 		err = s.Set(p, testData)
@@ -158,7 +161,7 @@ func TestNewStorage_Integration(t *testing.T) {
 	}
 	assert.NotNil(t, c)
 
-	srv, err := cfgetcdv3.NewService(c, cfgetcdv3.Options{})
+	srv, err := storage.NewEtcdv3Client(c, storage.Etcdv3Options{})
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
@@ -176,5 +179,43 @@ func TestNewStorage_Integration(t *testing.T) {
 	data, _, err = srv.Get(p2)
 	assert.NoError(t, err)
 	assert.Exactly(t, []byte(`19.2`), data)
+
+}
+
+func TestWithLoadData_Success(t *testing.T) {
+
+	fc := storage.Etcdv3FakeClient{
+		GetFn: func(ctx context.Context, key string, opts ...clientv3.OpOption) (*clientv3.GetResponse, error) {
+			return &clientv3.GetResponse{
+				Kvs: []*mvccpb.KeyValue{
+					{
+						Key:   []byte(`websites/2/payment/datatr/sha1`),
+						Value: []byte(`fc9d6fd2d8db223be4a7484a8619f26b`),
+					},
+					{
+						Key:   []byte(`stores/1/payment/datatr/sha1`),
+						Value: []byte(`46aaccbebf47d8f8fce8c02d621aa573`),
+					},
+					{
+						Key:   []byte(`default/0/payment/datatr/sha1`),
+						Value: []byte(`e30d8df9810bc36105c96ad3ae76ffd3`),
+					},
+				},
+			}, nil
+		},
+	}
+	inMem := storage.NewMap()
+	cfgSrv, err := config.NewService(
+		inMem, config.Options{},
+		storage.WithLoadFromEtcdv3(fc, storage.Etcdv3Options{}),
+	)
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
+	p := config.MustNewPathWithScope(scope.Website.WithID(2), "payment/datatr/sha1")
+
+	assert.Exactly(t, `"fc9d6fd2d8db223be4a7484a8619f26b"`, cfgSrv.Get(p).String())
+	assert.Exactly(t, `"46aaccbebf47d8f8fce8c02d621aa573"`, cfgSrv.Get(p.BindStore(1)).String())
+	assert.Exactly(t, `"e30d8df9810bc36105c96ad3ae76ffd3"`, cfgSrv.Get(p.BindDefault()).String())
 
 }

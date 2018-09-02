@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cfgbigcache
+// +build csall bigcache
+
+package storage
 
 import (
 	"github.com/allegro/bigcache"
@@ -20,32 +22,37 @@ import (
 	"github.com/corestoreio/pkg/config"
 )
 
-type storage struct {
+type bcStorage struct {
 	bc *bigcache.BigCache
 }
 
-// New creates a new cache with a minimum size set to 512KB.
-// If the size is set relatively large, you should call
-// `debug.SetGCPercent()`, set it to a much smaller value
-// to limit the memory consumption and GC pause time.
-func New(config bigcache.Config) (config.Storager, error) {
+// NewBigCache creates a new cache with a minimum size set to 512KB. If the size
+// is set relatively large, you should call `debug.SetGCPercent()`, set it to a
+// much smaller value to limit the memory consumption and GC pause time.
+//
+// Bigcache delivers under high concurrent and parallel load better results than
+// a simple key value mutex protected map.
+//
+// Maybe implements synchronization with MySQL core_config_data table. Converts
+// all values to byte slices.
+func NewBigCache(config bigcache.Config) (config.Storager, error) {
 	bc, err := bigcache.NewBigCache(config)
 	if err != nil {
-		return nil, errors.Fatal.New(err, "[cfgbigcache] NewBigCache")
+		return nil, errors.Fatal.New(err, "[config/storage] NewBigCache")
 	}
-	return &storage{
+	return &bcStorage{
 		bc: bc,
 	}, nil
 }
 
 // Set writes a key with its value into the storage. The value
 // gets converted to a byte slice.
-func (s *storage) Set(p *config.Path, value []byte) error {
+func (s *bcStorage) Set(p *config.Path, value []byte) error {
 	return s.bc.Set(p.String(), value)
 }
 
 // Get returns a value from the cache.
-func (s *storage) Get(p *config.Path) (v []byte, found bool, err error) {
+func (s *bcStorage) Get(p *config.Path) (v []byte, found bool, err error) {
 
 	val, err := s.bc.Get(p.String())
 	_, isNotFound := err.(*bigcache.EntryNotFoundError)

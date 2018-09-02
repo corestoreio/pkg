@@ -14,4 +14,9 @@
 
 // Package storage provides the available storage engines for level 1 and level
 // 2 caches.
+//
+// Use Go build tags to enable special storage clients or file format loading
+// functions. Supported tags are: bigcache (store in big cache), db (store in
+// MySQL/MariaDB), etcdv3 (store in etcd cluster/server), load from json and
+// yaml.
 package storage

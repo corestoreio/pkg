@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cfgfile_test
+// +build csall json yaml
+
+package storage_test
 
 import (
 	"io"
@@ -21,7 +23,6 @@ import (
 
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/storage"
-	"github.com/corestoreio/pkg/config/storage/cfgfile"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
@@ -35,7 +36,7 @@ func TestWithGlob_Placeholder(t *testing.T) {
 	assert.NoError(t, err)
 
 	shouldGetCalled := false
-	cfgfile.WithGlob("testdata/malformed_"+config.EnvNamePlaceHolder+".yaml")(cfgSrv, func(_ config.Setter, r io.Reader) error {
+	storage.WithGlob("testdata/malformed_"+config.EnvNamePlaceHolder+".yaml")(cfgSrv, func(_ config.Setter, r io.Reader) error {
 		data, err := ioutil.ReadAll(r)
 		assert.NoError(t, err)
 

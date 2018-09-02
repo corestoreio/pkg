@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cfgbigcache_test
+// +build csall bigcache
+
+package storage_test
 
 import (
 	"testing"
@@ -20,14 +22,14 @@ import (
 	"github.com/allegro/bigcache"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
-	"github.com/corestoreio/pkg/config/storage/cfgbigcache"
+	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestCacheGet(t *testing.T) {
 
-	bgc, err := cfgbigcache.New(bigcache.Config{
+	bgc, err := storage.NewBigCache(bigcache.Config{
 		Shards: 64,
 	})
 	if err != nil {
@@ -66,7 +68,7 @@ func TestCacheGet(t *testing.T) {
 }
 
 func TestCacheGetNotFound(t *testing.T) {
-	sc, err := cfgbigcache.New(bigcache.Config{
+	sc, err := storage.NewBigCache(bigcache.Config{
 		Shards: 64,
 	})
 	if err != nil {
@@ -79,7 +81,7 @@ func TestCacheGetNotFound(t *testing.T) {
 }
 
 func TestCacheError(t *testing.T) {
-	sc, err := cfgbigcache.New(bigcache.Config{
+	sc, err := storage.NewBigCache(bigcache.Config{
 		Shards: 63,
 	})
 	assert.True(t, errors.Fatal.Match(err), "Error: %s", err)

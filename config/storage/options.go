@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cfgfile
+// +build csall json yaml
+
+package storage
 
 import (
 	"io"
@@ -30,7 +32,7 @@ func processFile(file string, s *config.Service, cb func(config.Setter, io.Reade
 	var f io.ReadCloser
 	f, err = os.Open(file)
 	if err != nil {
-		return errors.NotFound.New(err, "[cfgfile] os.Open")
+		return errors.NotFound.New(err, "[config/storage] os.Open")
 	}
 	defer func() {
 		if errC := f.Close(); err == nil && errC != nil {
@@ -60,7 +62,7 @@ func WithGlob(pattern string) option {
 		p2 := s.ReplaceEnvName(pattern)
 		matches, err := filepath.Glob(p2)
 		if s.Log != nil && s.Log.IsDebug() {
-			s.Log.Debug("cfgfile.WithGlob", log.String("pattern", pattern), log.String("replaced", p2),
+			s.Log.Debug("config.storage.WithGlob", log.String("pattern", pattern), log.String("replaced", p2),
 				log.Strings("matched_files", matches...), log.String("env_name", s.EnvName()))
 		}
 		if err != nil {
@@ -68,7 +70,7 @@ func WithGlob(pattern string) option {
 		}
 		for _, file := range matches {
 			if err := processFile(file, s, cb); err != nil {
-				return errors.Wrapf(err, "[cfgfile] WithGlob for file %q", file)
+				return errors.Wrapf(err, "[config/storage] WithGlob for file %q", file)
 			}
 		}
 		return nil

@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cfgfile_test
+// +build csall yaml
+
+package storage_test
 
 import (
 	"testing"
@@ -20,7 +22,6 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/storage"
-	"github.com/corestoreio/pkg/config/storage/cfgfile"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/assert"
 	"github.com/fortytw2/leaktest"
@@ -32,7 +33,7 @@ func TestWithLoadYAML(t *testing.T) {
 
 		cfgSrv, err := config.NewService(
 			storage.NewMap(), config.Options{},
-			cfgfile.WithLoadYAML(cfgfile.WithFiles([]string{"testdata", "example.yaml"})),
+			storage.WithLoadYAML(storage.WithFiles([]string{"testdata", "example.yaml"})),
 		)
 		if err != nil {
 			t.Fatalf("%+v", err)
@@ -47,7 +48,7 @@ func TestWithLoadYAML(t *testing.T) {
 
 		cfgSrv, err := config.NewService(
 			storage.NewMap(), config.Options{},
-			cfgfile.WithLoadYAML(cfgfile.WithFiles([]string{"testdata", "malformed_path.yaml"})),
+			storage.WithLoadYAML(storage.WithFiles([]string{"testdata", "malformed_path.yaml"})),
 		)
 		assert.Nil(t, cfgSrv)
 		assert.True(t, errors.NotValid.Match(err))
@@ -58,7 +59,7 @@ func TestWithLoadYAML(t *testing.T) {
 
 		cfgSrv, err := config.NewService(
 			storage.NewMap(), config.Options{},
-			cfgfile.WithLoadYAML(cfgfile.WithFiles([]string{"testdata", "malformed_yaml.yaml"})),
+			storage.WithLoadYAML(storage.WithFiles([]string{"testdata", "malformed_yaml.yaml"})),
 		)
 		assert.Nil(t, cfgSrv)
 		assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 2: cannot unmarshal !!str `192.168...` into map[string]string")
@@ -72,7 +73,7 @@ func TestWithLoadFieldMetaYAML(t *testing.T) {
 
 		cfgSrv, err := config.NewService(
 			storage.NewMap(), config.Options{},
-			cfgfile.WithLoadFieldMetaYAML(cfgfile.WithFiles([]string{"testdata", "example_field_meta.yaml"})),
+			storage.WithLoadFieldMetaYAML(storage.WithFiles([]string{"testdata", "example_field_meta.yaml"})),
 		)
 		if err != nil {
 			t.Fatalf("%+v", err)
@@ -97,7 +98,7 @@ func TestWithLoadFieldMetaYAML(t *testing.T) {
 	t.Run("malformed yaml", func(t *testing.T) {
 		cfgSrv, err := config.NewService(
 			storage.NewMap(), config.Options{},
-			cfgfile.WithLoadFieldMetaYAML(cfgfile.WithFiles([]string{"testdata", "example.yaml"})),
+			storage.WithLoadFieldMetaYAML(storage.WithFiles([]string{"testdata", "example.yaml"})),
 		)
 		assert.Nil(t, cfgSrv)
 		assert.True(t, errors.Fatal.Match(err), "%+v", err)
@@ -105,7 +106,7 @@ func TestWithLoadFieldMetaYAML(t *testing.T) {
 	t.Run("malformed perm", func(t *testing.T) {
 		cfgSrv, err := config.NewService(
 			storage.NewMap(), config.Options{},
-			cfgfile.WithLoadFieldMetaYAML(cfgfile.WithFiles([]string{"testdata", "malformed_field_meta.yaml"})),
+			storage.WithLoadFieldMetaYAML(storage.WithFiles([]string{"testdata", "malformed_field_meta.yaml"})),
 		)
 		assert.Nil(t, cfgSrv)
 		assert.True(t, errors.NotSupported.Match(err), "%+v", err)
@@ -113,7 +114,7 @@ func TestWithLoadFieldMetaYAML(t *testing.T) {
 	t.Run("file not found", func(t *testing.T) {
 		cfgSrv, err := config.NewService(
 			storage.NewMap(), config.Options{},
-			cfgfile.WithLoadFieldMetaYAML(cfgfile.WithFiles([]string{"testdata", "malformed_field_meta_XXXZ.yaml"})),
+			storage.WithLoadFieldMetaYAML(storage.WithFiles([]string{"testdata", "malformed_field_meta_XXXZ.yaml"})),
 		)
 		assert.Nil(t, cfgSrv)
 		assert.True(t, errors.NotFound.Match(err), "%+v", err)
