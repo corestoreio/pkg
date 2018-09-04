@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build csall etcdv3
+// +build etcdv3
 
-package storage_test
+package storage
 
 import (
 	"context"
@@ -22,14 +22,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/coreos/etcd/clientv3"
-	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
-	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/assert"
+	"go.etcd.io/etcd/clientv3"
+	"go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes"
+	"go.etcd.io/etcd/mvcc/mvccpb"
 )
 
 func init() {
@@ -51,12 +50,12 @@ func TestStorage_Get(t *testing.T) {
 
 	t.Run("Get found", func(t *testing.T) {
 
-		mo := storage.Etcdv3FakeClient{
-			GetKey:   []byte(storage.Etcdv3DefaultKeyPrefix + `websites/3/` + path),
+		mo := Etcdv3FakeClient{
+			GetKey:   []byte(Etcdv3DefaultKeyPrefix + `websites/3/` + path),
 			GetValue: testData,
 		}
 
-		s, err := storage.NewEtcdv3Client(mo, storage.Etcdv3Options{})
+		s, err := NewEtcdv3Client(mo, Etcdv3Options{})
 		assert.NoError(t, err)
 
 		haveData, found, err := s.Get(p)
@@ -67,12 +66,12 @@ func TestStorage_Get(t *testing.T) {
 
 	t.Run("Get not found", func(t *testing.T) {
 
-		mo := storage.Etcdv3FakeClient{
+		mo := Etcdv3FakeClient{
 			GetKey:   []byte(`websites/3/`),
 			GetValue: testData,
 		}
 
-		s, err := storage.NewEtcdv3Client(mo, storage.Etcdv3Options{})
+		s, err := NewEtcdv3Client(mo, Etcdv3Options{})
 		assert.NoError(t, err)
 
 		haveData, found, err := s.Get(p)
@@ -84,11 +83,11 @@ func TestStorage_Get(t *testing.T) {
 	testGetErrors := func(getErr error) func(*testing.T) {
 		return func(t *testing.T) {
 
-			mo := storage.Etcdv3FakeClient{
+			mo := Etcdv3FakeClient{
 				GetError: getErr,
 			}
 
-			s, err := storage.NewEtcdv3Client(mo, storage.Etcdv3Options{})
+			s, err := NewEtcdv3Client(mo, Etcdv3Options{})
 			assert.NoError(t, err)
 
 			haveData, found, err := s.Get(p)
@@ -103,11 +102,11 @@ func TestStorage_Get(t *testing.T) {
 	t.Run("Get rpctypes.ErrEmptyKey", testGetErrors(rpctypes.ErrEmptyKey))
 	t.Run("Get any other error", func(t *testing.T) {
 
-		mo := storage.Etcdv3FakeClient{
+		mo := Etcdv3FakeClient{
 			GetError: errors.ConnectionLost.Newf("Ups"),
 		}
 
-		s, err := storage.NewEtcdv3Client(mo, storage.Etcdv3Options{})
+		s, err := NewEtcdv3Client(mo, Etcdv3Options{})
 		assert.NoError(t, err)
 
 		haveData, found, err := s.Get(p)
@@ -118,9 +117,9 @@ func TestStorage_Get(t *testing.T) {
 
 	t.Run("Set no error ", func(t *testing.T) {
 
-		mo := storage.Etcdv3FakeClient{}
+		mo := Etcdv3FakeClient{}
 
-		s, err := storage.NewEtcdv3Client(mo, storage.Etcdv3Options{})
+		s, err := NewEtcdv3Client(mo, Etcdv3Options{})
 		assert.NoError(t, err)
 
 		err = s.Set(p, testData)
@@ -128,11 +127,11 @@ func TestStorage_Get(t *testing.T) {
 	})
 	t.Run("Set no error ", func(t *testing.T) {
 
-		mo := storage.Etcdv3FakeClient{
+		mo := Etcdv3FakeClient{
 			PutError: errors.ConnectionLost.Newf("Ups"),
 		}
 
-		s, err := storage.NewEtcdv3Client(mo, storage.Etcdv3Options{})
+		s, err := NewEtcdv3Client(mo, Etcdv3Options{})
 		assert.NoError(t, err)
 
 		err = s.Set(p, testData)
@@ -161,7 +160,7 @@ func TestNewStorage_Integration(t *testing.T) {
 	}
 	assert.NotNil(t, c)
 
-	srv, err := storage.NewEtcdv3Client(c, storage.Etcdv3Options{})
+	srv, err := NewEtcdv3Client(c, Etcdv3Options{})
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
@@ -184,7 +183,7 @@ func TestNewStorage_Integration(t *testing.T) {
 
 func TestWithLoadData_Success(t *testing.T) {
 
-	fc := storage.Etcdv3FakeClient{
+	fc := Etcdv3FakeClient{
 		GetFn: func(ctx context.Context, key string, opts ...clientv3.OpOption) (*clientv3.GetResponse, error) {
 			return &clientv3.GetResponse{
 				Kvs: []*mvccpb.KeyValue{
@@ -204,10 +203,10 @@ func TestWithLoadData_Success(t *testing.T) {
 			}, nil
 		},
 	}
-	inMem := storage.NewMap()
+	inMem := NewMap()
 	cfgSrv, err := config.NewService(
 		inMem, config.Options{},
-		storage.WithLoadFromEtcdv3(fc, storage.Etcdv3Options{}),
+		WithLoadFromEtcdv3(fc, Etcdv3Options{}),
 	)
 	if err != nil {
 		t.Fatalf("%+v", err)
