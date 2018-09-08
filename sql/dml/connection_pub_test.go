@@ -283,7 +283,7 @@ func TestWithExecSQLOnConn(t *testing.T) {
 		assert.NoError(t, err, "%+v", err)
 	})
 
-	t.Run("transaction error", func(t *testing.T) {
+	t.Run("transaction rollback", func(t *testing.T) {
 		ctx := context.TODO()
 		dbc, mock := dmltest.MockDB(t,
 			dml.WithExecSQLOnConnClose(ctx, "drop table xx3"),
@@ -296,18 +296,16 @@ func TestWithExecSQLOnConn(t *testing.T) {
 		mock.ExpectBegin()
 		errDrop := errors.NotAcceptable.Newf("Ups")
 		mock.ExpectExec("drop table xx3").WithArgs().WillReturnError(errDrop)
-		mock.ExpectCommit()
+		mock.ExpectRollback()
 
 		err := dbc.Options(
 			dml.WithExecSQLOnConnOpen(ctx, "create table xx3"),
 		)
 		assert.NoError(t, err, "%+v", err)
 
-		mock.ExpectClose()
-
 		err = dbc.Close()
 		assert.True(t, errors.NotAcceptable.Match(err), "%+v", err)
-		mock.ExpectationsWereMet()
+		assert.NoError(t, mock.ExpectationsWereMet())
 
 	})
 }
