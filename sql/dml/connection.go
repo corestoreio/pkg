@@ -32,6 +32,11 @@ type uniqueIDFn func() string
 func uniqueIDNoOp() string             { return "" }
 func mapTableNameNoOp(n string) string { return n }
 
+const (
+	eventOnOpen = iota // must start with zero
+	eventOnClose
+)
+
 type connCommon struct {
 	start time.Time
 	Log   log.Logger
@@ -44,6 +49,7 @@ type connCommon struct {
 	// comment-end-termination pattern: `*/`.
 	makeUniqueID uniqueIDFn
 	mapTableName func(oldName string) (newName string)
+	runOnClose   []ConnPoolOption
 }
 
 // ConnPool at a connection to the database with an EventReceiver to send
@@ -87,6 +93,7 @@ type Tx struct {
 // ConnPoolOption can be used at an argument in NewConnPool to configure a
 // connection.
 type ConnPoolOption struct {
+	eventType uint8
 	sortOrder uint8
 	fn        func(*ConnPool) error
 	// WithUniqueIDFn applies a unique ID generator function without an applied
@@ -144,9 +151,45 @@ func WithDB(db *sql.DB) ConnPoolOption {
 // be established.
 func WithVerifyConnection() ConnPoolOption {
 	return ConnPoolOption{
-		sortOrder: 255,
+		sortOrder: 253,
 		fn: func(c *ConnPool) error {
 			return errors.WithStack(c.DB.Ping())
+		},
+	}
+}
+
+// WithExecSQLOnConnOpen runs the sqlQuery arguments after successful opening a
+// DB connection. All queries are running in a transaction.
+func WithExecSQLOnConnOpen(ctx context.Context, sqlQuery ...string) ConnPoolOption {
+	return withExecSQL(ctx, eventOnOpen, sqlQuery...)
+}
+
+// WithExecSQLOnConnClose runs the sqlQuery arguments before closing a DB
+// connection. All queries are running in a transaction.
+func WithExecSQLOnConnClose(ctx context.Context, sqlQuery ...string) ConnPoolOption {
+	return withExecSQL(ctx, eventOnClose, sqlQuery...)
+}
+
+func withExecSQL(ctx context.Context, event uint8, sqlQuery ...string) ConnPoolOption {
+	return ConnPoolOption{
+		eventType: event,
+		sortOrder: 255,
+		fn: func(c *ConnPool) error {
+			if len(sqlQuery) == 0 {
+				return errors.Empty.Newf("[dml] WithInitialExecSQL argument sqlQuery is empty.")
+			}
+
+			fns := make([]func(*Tx) error, len(sqlQuery))
+			for i, sq := range sqlQuery {
+				sq := sq // prevent bug while scoping
+				fns[i] = func(tx *Tx) error {
+					if _, err := tx.DB.ExecContext(ctx, sq); err != nil {
+						return errors.Wrapf(err, "[dml] WithInitialExecSQL Query: %q", sq)
+					}
+					return nil
+				}
+			}
+			return c.Transaction(ctx, &sql.TxOptions{}, fns...)
 		},
 	}
 }
@@ -276,10 +319,16 @@ func (c *ConnPool) Options(opts ...ConnPoolOption) error {
 	})
 
 	for _, opt := range opts {
-		if err := opt.fn(c); err != nil {
-			return errors.WithStack(err)
+		switch opt.eventType {
+		case eventOnOpen:
+			if err := opt.fn(c); err != nil {
+				return errors.WithStack(err)
+			}
+		case eventOnClose:
+			c.runOnClose = append(c.runOnClose, opt)
 		}
 	}
+
 	return nil
 }
 
@@ -287,10 +336,16 @@ func (c *ConnPool) Options(opts ...ConnPoolOption) error {
 //
 // It is rare to Close a DB, as the DB handle is meant to be long-lived and
 // shared between many goroutines. It logs the time taken, if a logger has been
-// set with Info logging enabled.
+// set with Info logging enabled. It runs the ConnPoolOption, marked for running
+// before close.
 func (c *ConnPool) Close() error {
 	if c.Log != nil && c.Log.IsDebug() {
 		defer c.Log.Debug("Close", log.Duration("duration", now().Sub(c.start)))
+	}
+	for _, opt := range c.runOnClose {
+		if err := opt.fn(c); err != nil {
+			return errors.WithStack(err)
+		}
 	}
 	return c.DB.Close() // no stack wrap otherwise error is hard to compare
 }
@@ -357,7 +412,7 @@ func (c *ConnPool) Transaction(ctx context.Context, opts *sql.TxOptions, fns ...
 	for i, f := range fns {
 		if err := f(tx); err != nil {
 			err = errors.Wrapf(err, "[dml] ConnPool.Transaction.error at index %d", i)
-			if rErr := tx.Rollback(); rErr != nil {
+			if rErr := tx.Rollback(); rErr != nil && err == nil {
 				err = errors.Wrapf(rErr, "[dml] ConnPool.Transaction.Rollback.error at index %d", i)
 			}
 			return err
