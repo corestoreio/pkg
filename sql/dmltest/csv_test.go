@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/pkg/sql/dmltest"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func rowsToString(rows [][]driver.Value) string {
