@@ -25,8 +25,7 @@ import (
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/storage/null"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var _ dml.ColumnMapper = (*someRecord)(nil)
@@ -157,9 +156,9 @@ func TestInsert_Prepare(t *testing.T) {
 			AddColumns("email", "group_id", "created_at").BuildValues().
 			WithDB(dbc.DB).
 			Prepare(context.TODO())
-		require.NoError(t, err, "failed creating a prepared statement")
+		assert.NoError(t, err, "failed creating a prepared statement")
 		defer func() {
-			require.NoError(t, stmt.Close(), "Close on a prepared statement")
+			assert.NoError(t, stmt.Close(), "Close on a prepared statement")
 		}()
 
 		tests := []struct {
@@ -201,9 +200,9 @@ func TestInsert_Prepare(t *testing.T) {
 			SetRowCount(2).
 			WithDB(dbc.DB).
 			Prepare(context.TODO())
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		defer func() {
-			require.NoError(t, stmt.Close(), "Close on a prepared statement")
+			assert.NoError(t, stmt.Close(), "Close on a prepared statement")
 		}()
 
 		tests := []struct {
@@ -247,9 +246,9 @@ func TestInsert_Prepare(t *testing.T) {
 			BuildValues().
 			WithDB(dbc.DB).
 			Prepare(context.TODO())
-		require.NoError(t, err, "failed creating a prepared statement")
+		assert.NoError(t, err, "failed creating a prepared statement")
 		defer func() {
-			require.NoError(t, stmt.Close(), "Close on a prepared statement")
+			assert.NoError(t, stmt.Close(), "Close on a prepared statement")
 		}()
 
 		tests := []struct {
@@ -293,13 +292,13 @@ func TestInsert_Prepare(t *testing.T) {
 			BuildValues().
 			WithDB(dbc.DB).
 			Prepare(context.TODO())
-		require.NoError(t, err, "failed creating a prepared statement")
+		assert.NoError(t, err, "failed creating a prepared statement")
 		defer func() {
-			require.NoError(t, stmt.Close(), "Close on a prepared statement")
+			assert.NoError(t, stmt.Close(), "Close on a prepared statement")
 		}()
 
 		res, err := stmt.WithArgs().ExecContext(context.TODO(), "Peter Gopher", "peter@gopher.go")
-		require.NoError(t, err, "failed to execute ExecContext")
+		assert.NoError(t, err, "failed to execute ExecContext")
 
 		lid, err := res.LastInsertId()
 		if err != nil {

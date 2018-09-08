@@ -20,8 +20,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/errors"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 // check if the types implement the interfaces
@@ -108,6 +107,6 @@ func TestWriteInsertPlaceholders(t *testing.T) {
 	for i, test := range tests {
 		var buf bytes.Buffer
 		writeInsertPlaceholders(&buf, test.rowCount, test.columnCount)
-		require.Exactly(t, test.want, buf.String(), "Index %d", i)
+		assert.Exactly(t, test.want, buf.String(), "Index %d", i)
 	}
 }

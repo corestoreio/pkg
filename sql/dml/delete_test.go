@@ -22,8 +22,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/storage/null"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestDeleteAllToSQL(t *testing.T) {
@@ -103,27 +102,27 @@ func TestDeleteReal(t *testing.T) {
 	// Insert a Barack
 	res, err := s.InsertInto("dml_people").AddColumns("name", "email").
 		WithArgs().ExecContext(context.TODO(), "Barack", "barack@whitehouse.gov")
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	if res == nil {
 		t.Fatal("result should not be nil. See previous error")
 	}
 
 	// Get Barack'ab ID
 	id, err := res.LastInsertId()
-	require.NoError(t, err, "LastInsertId")
+	assert.NoError(t, err, "LastInsertId")
 
 	// Delete Barack
 	res, err = s.DeleteFrom("dml_people").Where(Column("id").Int64(id)).WithArgs().ExecContext(context.TODO())
-	require.NoError(t, err, "DeleteFrom")
+	assert.NoError(t, err, "DeleteFrom")
 
 	// Ensure we only reflected one row and that the id no longer exists
 	rowsAff, err := res.RowsAffected()
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, int64(1), rowsAff, "RowsAffected")
 
 	count, found, err := s.SelectFrom("dml_people").Count().Where(Column("id").PlaceHolder()).WithArgs().Int64(id).LoadNullInt64(context.TODO())
-	require.NoError(t, err)
-	require.True(t, found, "should have found a row")
+	assert.NoError(t, err)
+	assert.True(t, found, "should have found a row")
 	assert.Equal(t, int64(0), count.Int64, "count")
 }
 
@@ -232,8 +231,8 @@ func TestDelete_BuildCacheDisabled(t *testing.T) {
 	t.Run("without interpolate", func(t *testing.T) {
 		for i := 0; i < iterations; i++ {
 			sql, args, err := del.ToSQL()
-			require.NoError(t, err, "%+v", err)
-			require.Equal(t, cachedSQLPlaceHolder, sql)
+			assert.NoError(t, err, "%+v", err)
+			assert.Equal(t, cachedSQLPlaceHolder, sql)
 			assert.Nil(t, args, "No arguments provided but got some")
 			assert.Nil(t, del.cachedSQL, "cache []byte should be nil")
 		}

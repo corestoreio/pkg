@@ -23,8 +23,7 @@ import (
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestUnion_Query(t *testing.T) {
@@ -66,16 +65,16 @@ func TestUnion_Query(t *testing.T) {
 		u.WithDB(dbc.DB)
 
 		rows, err := u.WithArgs().QueryContext(context.TODO())
-		require.NoError(t, err, "%+v", err)
+		assert.NoError(t, err, "%+v", err)
 
 		var xx []string
 		for rows.Next() {
 			var x string
-			require.NoError(t, rows.Scan(&x))
+			assert.NoError(t, rows.Scan(&x))
 			xx = append(xx, x)
 		}
 		assert.Exactly(t, []string{"row1", "row2"}, xx)
-		require.NoError(t, rows.Close())
+		assert.NoError(t, rows.Close())
 	})
 }
 
@@ -134,7 +133,7 @@ func TestUnion_Prepare(t *testing.T) {
 			PreserveResultSet().WithDB(dbc.DB)
 
 		stmt, err := u.Prepare(context.TODO())
-		require.Nil(t, stmt)
+		assert.Nil(t, stmt)
 		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	})
 
@@ -155,27 +154,27 @@ func TestUnion_Prepare(t *testing.T) {
 		).
 			WithDB(dbc.DB).
 			Prepare(context.TODO())
-		require.NoError(t, err, "failed creating a prepared statement")
+		assert.NoError(t, err, "failed creating a prepared statement")
 		defer func() {
-			require.NoError(t, stmt.Close(), "Close on a prepared statement")
+			assert.NoError(t, stmt.Close(), "Close on a prepared statement")
 		}()
 
 		t.Run("Context", func(t *testing.T) {
 
 			rows, err := stmt.WithArgs().QueryContext(context.TODO(), 6889)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			defer rows.Close()
 
 			cols, err := rows.Columns()
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.Exactly(t, []string{"a", "b"}, cols)
 		})
 
 		t.Run("RowContext", func(t *testing.T) {
 			row := stmt.WithArgs().QueryRowContext(context.TODO(), 6890)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			n, e := "", ""
-			require.NoError(t, row.Scan(&n, &e))
+			assert.NoError(t, row.Scan(&n, &e))
 
 			assert.Exactly(t, "Peter Gopher2", n)
 			assert.Exactly(t, "peter@gopher.go2", e)
@@ -195,7 +194,7 @@ func TestUnion_Prepare(t *testing.T) {
 			WithDB(dbc.DB).
 			Prepare(context.TODO())
 
-		require.NoError(t, err, "failed creating a prepared statement")
+		assert.NoError(t, err, "failed creating a prepared statement")
 		defer dmltest.Close(t, stmt)
 
 		const iterations = 3
@@ -210,10 +209,10 @@ func TestUnion_Prepare(t *testing.T) {
 
 			for i := 0; i < iterations; i++ {
 				rows, err := stmtA.QueryContext(context.TODO())
-				require.NoError(t, err)
+				assert.NoError(t, err)
 
 				cols, err := rows.Columns()
-				require.NoError(t, err)
+				assert.NoError(t, err)
 				assert.Exactly(t, []string{"name", "email"}, cols)
 				rows.Close()
 			}
@@ -230,10 +229,10 @@ func TestUnion_Prepare(t *testing.T) {
 
 			for i := 0; i < iterations; i++ {
 				rows, err := stmtA.QueryContext(context.TODO())
-				require.NoError(t, err)
+				assert.NoError(t, err)
 
 				cols, err := rows.Columns()
-				require.NoError(t, err)
+				assert.NoError(t, err)
 				assert.Exactly(t, []string{"name", "email"}, cols)
 				rows.Close()
 			}

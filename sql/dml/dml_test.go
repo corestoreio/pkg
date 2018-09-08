@@ -26,9 +26,8 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/storage/null"
+	"github.com/corestoreio/pkg/util/assert"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -332,9 +331,9 @@ func compareToSQL(
 ) {
 	sqlStr, args, err := qb.ToSQL()
 	if wantErrKind.Empty() {
-		require.NoError(t, err)
+		assert.NoError(t, err)
 	} else {
-		require.True(t, wantErrKind.Match(err), "%+v", err)
+		assert.True(t, wantErrKind.Match(err), "%+v", err)
 	}
 
 	if wantSQLPlaceholders != "" {
@@ -354,12 +353,12 @@ func compareToSQL(
 
 	sqlStr, args, err = qb.ToSQL() // Call with enabled interpolation
 	if wantErrKind.Empty() {
-		require.NoError(t, err)
+		assert.NoError(t, err)
 	} else {
-		require.True(t, wantErrKind.Match(err), "%+v")
+		assert.True(t, wantErrKind.Match(err), "%+v")
 	}
-	require.Equal(t, wantSQLInterpolated, sqlStr, "Interpolated SQL strings do not match")
-	require.Nil(t, args, "Artisan should be nil when the SQL string gets interpolated")
+	assert.Equal(t, wantSQLInterpolated, sqlStr, "Interpolated SQL strings do not match")
+	assert.Nil(t, args, "Artisan should be nil when the SQL string gets interpolated")
 }
 
 // compareToSQL2 This function also exists in file dml_public_test.go to
@@ -371,9 +370,9 @@ func compareToSQL2(
 	t.Helper()
 	sqlStr, args, err := qb.ToSQL()
 	if wantErrKind.Empty() {
-		require.NoError(t, err, "With SQL %q", wantSQL)
+		assert.NoError(t, err, "With SQL %q", wantSQL)
 	} else {
-		require.True(t, wantErrKind.Match(err), "%+v", err)
+		assert.True(t, wantErrKind.Match(err), "%+v", err)
 	}
 	assert.Exactly(t, wantSQL, sqlStr, "SQL strings do not match")
 	assert.Exactly(t, wantArgs, args, "Arguments do not match")
@@ -382,17 +381,17 @@ func compareToSQL2(
 func compareExecContext(t testing.TB, ex StmtExecer, lastInsertID, rowsAffected int64) (retLastInsertID, retRowsAffected int64) {
 
 	res, err := ex.ExecContext(context.Background())
-	require.NoError(t, err)
-	require.NotNil(t, res, "Returned result from ExecContext should not be nil")
+	assert.NoError(t, err)
+	assert.NotNil(t, res, "Returned result from ExecContext should not be nil")
 
 	if lastInsertID > 0 {
 		retLastInsertID, err = res.LastInsertId()
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t, lastInsertID, retLastInsertID, "Last insert ID do not match")
 	}
 	if rowsAffected > 0 {
 		retRowsAffected, err = res.RowsAffected()
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t, rowsAffected, retRowsAffected, "Affected rows do not match")
 	}
 	return

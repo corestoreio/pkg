@@ -25,8 +25,7 @@ import (
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/storage/null"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestUpdate_WithArgs(t *testing.T) {
@@ -66,7 +65,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 			Where(dml.Column("entity_id").In().PlaceHolder())
 
 		stmt, err := mu.Prepare(context.TODO())
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		p := &dmlPerson{
 			ID:    1,
@@ -117,10 +116,10 @@ func TestUpdate_WithArgs(t *testing.T) {
 		prep.ExpectExec().WithArgs("John", "john@doe.com", 2).WillReturnResult(sqlmock.NewResult(0, 1))
 
 		stmt, err := mu.Prepare(context.TODO())
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		for i, record := range records {
 			results, err := stmt.WithArgs().Record("ce", record).ExecContext(context.TODO())
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			aff, err := results.RowsAffected()
 			if err != nil {
 				t.Fatalf("Result index %d with error: %s", i, err)
@@ -140,13 +139,13 @@ func TestUpdate_WithArgs(t *testing.T) {
 			AddColumns("name", "email").
 			Where(dml.Column("id").Equal().PlaceHolder()).
 			WithDB(dbc.DB).Prepare(context.TODO())
-		require.NoError(t, err, "failed creating a prepared statement")
+		assert.NoError(t, err, "failed creating a prepared statement")
 		defer func() {
-			require.NoError(t, stmt.Close(), "Close on a prepared statement")
+			assert.NoError(t, stmt.Close(), "Close on a prepared statement")
 		}()
 
 		res, err := stmt.WithArgs().ExecContext(context.TODO(), "Peter Gopher", "peter@gopher.go", 3456)
-		require.NoError(t, err, "failed to execute ExecContext")
+		assert.NoError(t, err, "failed to execute ExecContext")
 
 		ra, err := res.RowsAffected()
 		if err != nil {
@@ -167,9 +166,9 @@ func TestUpdate_WithArgs(t *testing.T) {
 			AddColumns("name", "email").
 			Where(dml.Column("id").Equal().PlaceHolder()).
 			WithDB(dbc.DB).Prepare(context.TODO())
-		require.NoError(t, err, "failed creating a prepared statement")
+		assert.NoError(t, err, "failed creating a prepared statement")
 		defer func() {
-			require.NoError(t, stmt.Close(), "Close on a prepared statement")
+			assert.NoError(t, stmt.Close(), "Close on a prepared statement")
 		}()
 
 		tests := []struct {
@@ -267,22 +266,22 @@ func TestArguments_WithQualifiedColumnsAliases(t *testing.T) {
 			dml.Column("entity_id").PlaceHolder(),                 // Int64() acts as a place holder
 		).
 		Prepare(context.TODO())
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	stmtExec := stmt.WithArgs().WithQualifiedColumnsAliases("state", "alias_customer_id", "grand_total", "entity_id")
 
 	for i, record := range collection {
 		results, err := stmtExec.Record("sales_invoice", record).ExecContext(context.TODO())
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		ra, err := results.RowsAffected()
-		require.NoError(t, err, "Index %d", i)
+		assert.NoError(t, err, "Index %d", i)
 		assert.Exactly(t, int64(1), ra, "Index %d", i)
 		stmtExec.Reset()
 	}
 
 	dbMock.ExpectClose()
 	dbc.Close()
-	require.NoError(t, dbMock.ExpectationsWereMet())
+	assert.NoError(t, dbMock.ExpectationsWereMet())
 
 }
 

@@ -22,8 +22,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/storage/null"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var _ fmt.Stringer = Op(0)
@@ -219,11 +218,11 @@ func TestConditions_writeOnDuplicateKey(t *testing.T) {
 			buf := new(bytes.Buffer)
 
 			ph, err := cnds.writeOnDuplicateKey(buf, nil)
-			require.Nil(t, ph, "TODO check me")
-			require.NoError(t, err)
+			assert.Nil(t, ph, "TODO check me")
+			assert.NoError(t, err)
 			//args := MakeArgs(2)
 			//args, _, err = cnds.appendArgs(args, appendArgsDUPKEY)
-			//require.NoError(t, err)
+			//assert.NoError(t, err)
 			//assert.Exactly(t, wantSQL, buf.String(), t.Name())
 			//assert.Exactly(t, wantArgs, args.Interfaces(), t.Name())
 		}

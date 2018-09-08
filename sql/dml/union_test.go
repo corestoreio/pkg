@@ -18,8 +18,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/errors"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestUnion_Basics(t *testing.T) {
@@ -144,7 +143,7 @@ func TestUnion_DisableBuildCache(t *testing.T) {
 				cachedSQLPlaceHolder,
 				"",
 			)
-			require.Empty(t, u.cachedSQL)
+			assert.Empty(t, u.cachedSQL)
 		}
 	})
 
@@ -157,7 +156,7 @@ func TestUnion_DisableBuildCache(t *testing.T) {
 				cachedSQLPlaceHolder,
 				cachedSQLInterpolated,
 			)
-			require.Empty(t, u.cachedSQL)
+			assert.Empty(t, u.cachedSQL)
 		}
 	})
 }

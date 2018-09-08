@@ -27,8 +27,7 @@ import (
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/storage/null"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var (
@@ -43,9 +42,9 @@ var (
 func TestColumnMap_BinaryText(t *testing.T) {
 	cm := dml.NewColumnMap(1)
 
-	require.NoError(t, cm.Binary(&textBinaryEncoder{data: []byte(`BinaryTest`)}).Err())
+	assert.NoError(t, cm.Binary(&textBinaryEncoder{data: []byte(`BinaryTest`)}).Err())
 	assert.Exactly(t, "dml.MakeArgs(1).Bytes([]byte{0x42, 0x69, 0x6e, 0x61, 0x72, 0x79, 0x54, 0x65, 0x73, 0x74})", cm.GoString())
-	require.NoError(t, cm.Text(&textBinaryEncoder{data: []byte(`TextTest`)}).Err())
+	assert.NoError(t, cm.Text(&textBinaryEncoder{data: []byte(`TextTest`)}).Err())
 	assert.Exactly(t, "dml.MakeArgs(2).Bytes([]byte{0x42, 0x69, 0x6e, 0x61, 0x72, 0x79, 0x54, 0x65, 0x73, 0x74}).Bytes([]byte{0x54, 0x65, 0x78, 0x74, 0x54, 0x65, 0x73, 0x74})", cm.GoString())
 
 	cm.CheckValidUTF8 = true
@@ -224,7 +223,7 @@ func TestColumnMap_Query(t *testing.T) {
 
 	t.Run("scan with error", func(t *testing.T) {
 		r := sqlmock.NewRows(columns).AddRow(
-			make(chan int), "Nope",
+			1234, "Nope",
 			1, 2, nil,
 			0.1, nil,
 			0, 8, 16, 32, 64,
@@ -236,7 +235,7 @@ func TestColumnMap_Query(t *testing.T) {
 
 		rc, err := dbc.WithQueryBuilder(tbl).Load(context.TODO(), tbl)
 		assert.Exactly(t, uint64(0), rc)
-		assert.Contains(t, err.Error(), "sql: Scan error on column index 0: [dml] ColumnMap.Scan does not yet support type chan int with value")
+		assert.Contains(t, err.Error(), `[dml] Column "null_bool": strconv.ParseBool: parsing "Nope": invalid syntax`)
 	})
 
 	t.Run("fmt.Stringer", func(t *testing.T) {
@@ -255,14 +254,14 @@ func TestColumnMap_Query(t *testing.T) {
 		tbl := new(baseTestCollection)
 		tbl.EventAfterScan = func(b *dml.ColumnMap, _ *baseTest) {
 			buf := new(bytes.Buffer)
-			require.NoError(t, b.Debug(buf))
+			assert.NoError(t, b.Debug(buf))
 			assert.Exactly(t, "bool: \"1\"\nnull_bool: \"false\"\nint: \"-13\"\nint64: \"-64\"\nnull_int64: \"-128\"\nfloat64: \"0.1\"\nnull_float64: \"3.141\"\nuint: \"0\"\nuint8: \"8\"\nuint16: \"16\"\nuint32: \"32\"\nuint64: \"64\"\nbyte: \"byte data\"\nstr: \"I'm a string\"\nnull_string: <nil>\ntime: \"2006-01-02 15:04:05.000000002 +0000 hardcoded\"\nnull_time: <nil>\ndecimal: <nil>\ntext: <nil>\nbinary: <nil>",
 				buf.String())
 		}
 
 		rc, err := dbc.WithQueryBuilder(tbl).Load(context.TODO(), tbl)
 		assert.Exactly(t, uint64(1), rc)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 	})
 
 	t.Run("all types non-nil", func(t *testing.T) {
@@ -279,10 +278,10 @@ func TestColumnMap_Query(t *testing.T) {
 		tbl := new(baseTestCollection)
 
 		rc, err := dbc.WithQueryBuilder(tbl).Load(context.TODO(), tbl)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		assert.Exactly(t, uint64(1), rc)
-		require.Len(t, tbl.Data, 1)
+		assert.Len(t, tbl.Data, 1)
 
 		tbl.Data[0].Time = now()
 		tbl.Data[0].NullTime = null.MakeTime(now()) // otherwise test would fail ...
@@ -332,8 +331,8 @@ func TestColumnMap_Query(t *testing.T) {
 
 		rc, err := dbc.WithQueryBuilder(tbl).Load(context.TODO(), tbl)
 		assert.Exactly(t, uint64(1), rc)
-		require.NoError(t, err)
-		require.Len(t, tbl.Data, 1)
+		assert.NoError(t, err)
+		assert.Len(t, tbl.Data, 1)
 
 		want := &baseTest{
 			Bool:    true,
@@ -419,17 +418,17 @@ func TestColumnMap_Prepared(t *testing.T) {
 			tbl.CheckValidUTF8 = true
 			tbl.EventAfterScan = func(b *dml.ColumnMap, _ *baseTest) {
 				buf := new(bytes.Buffer)
-				require.NoError(t, b.Debug(buf))
+				assert.NoError(t, b.Debug(buf))
 				assert.Exactly(t, want, buf.String())
 			}
 			stmt, err := dbc.SelectFrom("test").Star().Prepare(context.TODO())
-			require.NoError(t, err)
+			assert.NoError(t, err)
 
 			rc, err := stmt.WithArgs().Load(context.TODO(), tbl)
 			if scanErrWantKind != errors.NoKind {
 				assert.True(t, errors.Is(err, scanErrWantKind), "Should be Error Kind %s; Got: %s\n%+v", scanErrWantKind, errors.UnwrapKind(err), err)
 			} else {
-				require.NoError(t, err)
+				assert.NoError(t, err)
 				assert.Exactly(t, uint64(1), rc, "Should return one loaded row")
 			}
 		}
@@ -829,7 +828,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		6.4, nil, // "float64", "null_float64",
 		1, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
 		[]byte(`Hi`), "x", "y", time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
-		48.98, //	"decimal",
+		48.98,                                              //	"decimal",
 		[]byte(`Hello World Text`), []byte("Hello Binary"), // "text", "binary",
 	))
 	t.Run("text invalid UTF8", runner(
@@ -840,7 +839,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		6.4, nil, // "float64", "null_float64",
 		1, 8, 16, 32, 64, // "uint", "uint8", "uint16", "uint32", "uint64"
 		[]byte(`Hi`), "x", "y", time.Time{}, nil, // "byte", "str", "null_string", "time", "null_time",
-		48.98, //	"decimal",
+		48.98,                                            //	"decimal",
 		[]byte("hello \xc0\x80"), []byte("Hello Binary"), // "text", "binary",
 	))
 	t.Run("text type error", runner(

@@ -30,8 +30,7 @@ import (
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/sync/bgwork"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestSelect_QueryContext(t *testing.T) {
@@ -69,13 +68,13 @@ func TestSelect_QueryContext(t *testing.T) {
 		sel := dml.NewSelect("a").From("tableX")
 		sel.DB = dbc.DB
 		rows, err := sel.WithArgs().QueryContext(context.TODO())
-		require.NoError(t, err, "%+v", err)
+		assert.NoError(t, err, "%+v", err)
 		defer dmltest.Close(t, rows)
 
 		var xx []string
 		for rows.Next() {
 			var x string
-			require.NoError(t, rows.Scan(&x))
+			assert.NoError(t, rows.Scan(&x))
 			xx = append(xx, x)
 		}
 		assert.Exactly(t, []string{"row1", "row2"}, xx)
@@ -248,9 +247,9 @@ func TestSelect_Prepare(t *testing.T) {
 
 		sel := dml.NewSelect("id").From("tableX").Where(dml.Column("id").In().PlaceHolders(2)).WithDB(dbc.DB)
 		stmt, err := sel.Prepare(context.TODO())
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		ints, err := stmt.WithArgs().LoadInt64s(context.TODO(), nil, 3739, 3740)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t, []int64{78}, ints)
 	})
 
@@ -269,25 +268,25 @@ func TestSelect_Prepare(t *testing.T) {
 			Where(dml.Column("id").PlaceHolder()).
 			WithDB(dbc.DB).
 			Prepare(context.TODO())
-		require.NoError(t, err, "failed creating a prepared statement")
+		assert.NoError(t, err, "failed creating a prepared statement")
 		defer dmltest.Close(t, stmt)
 
 		t.Run("Context", func(t *testing.T) {
 
 			rows, err := stmt.WithArgs().QueryContext(context.TODO(), 6789)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			defer dmltest.Close(t, rows)
 
 			cols, err := rows.Columns()
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.Exactly(t, []string{"name", "email"}, cols)
 		})
 
 		t.Run("RowContext", func(t *testing.T) {
 			row := stmt.WithArgs().QueryRowContext(context.TODO(), 6790)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			n, e := "", ""
-			require.NoError(t, row.Scan(&n, &e))
+			assert.NoError(t, row.Scan(&n, &e))
 
 			assert.Exactly(t, "Peter Gopher2", n)
 			assert.Exactly(t, "peter@gopher.go2", e)
@@ -304,7 +303,7 @@ func TestSelect_Prepare(t *testing.T) {
 			Where(dml.Column("id").PlaceHolder()).
 			WithDB(dbc.DB).
 			Prepare(context.TODO())
-		require.NoError(t, err, "failed creating a prepared statement")
+		assert.NoError(t, err, "failed creating a prepared statement")
 		defer dmltest.Close(t, stmt)
 
 		const iterations = 3
@@ -319,10 +318,10 @@ func TestSelect_Prepare(t *testing.T) {
 
 			for i := 0; i < iterations; i++ {
 				rows, err := stmtA.QueryContext(context.TODO())
-				require.NoError(t, err)
+				assert.NoError(t, err)
 
 				cols, err := rows.Columns()
-				require.NoError(t, err)
+				assert.NoError(t, err)
 				assert.Exactly(t, []string{"name", "email"}, cols)
 				dmltest.Close(t, rows)
 			}
@@ -339,10 +338,10 @@ func TestSelect_Prepare(t *testing.T) {
 
 			for i := 0; i < iterations; i++ {
 				rows, err := stmtA.QueryContext(context.TODO())
-				require.NoError(t, err)
+				assert.NoError(t, err)
 
 				cols, err := rows.Columns()
-				require.NoError(t, err)
+				assert.NoError(t, err)
 				assert.Exactly(t, []string{"name", "email"}, cols)
 				dmltest.Close(t, rows)
 			}
@@ -369,7 +368,7 @@ func TestSelect_Prepare(t *testing.T) {
 				Where(dml.Column("config_id").In().PlaceHolder()).
 				WithDB(dbc.DB).
 				Prepare(context.TODO())
-			require.NoError(t, err, "failed creating a prepared statement")
+			assert.NoError(t, err, "failed creating a prepared statement")
 			defer dmltest.Close(t, stmt)
 
 			columns := []string{"config_id", "scope_id", "path"}
@@ -380,7 +379,7 @@ func TestSelect_Prepare(t *testing.T) {
 			ccd := &TableCoreConfigDataSlice{}
 
 			rc, err := stmt.WithArgs().Load(context.TODO(), ccd, 345)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.Exactly(t, uint64(2), rc)
 
 			assert.Exactly(t, "&{3  4 a/b/c { false}}", fmt.Sprintf("%v", ccd.Data[0]))
@@ -397,7 +396,7 @@ func TestSelect_Prepare(t *testing.T) {
 				Where(dml.Column("config_id").PlaceHolder()).
 				WithDB(dbc.DB).
 				Prepare(context.TODO())
-			require.NoError(t, err, "failed creating a prepared statement")
+			assert.NoError(t, err, "failed creating a prepared statement")
 			defer dmltest.Close(t, stmt)
 
 			columns := []string{"scope_id"}
@@ -405,7 +404,7 @@ func TestSelect_Prepare(t *testing.T) {
 			prep.ExpectQuery().WithArgs(346).WillReturnRows(sqlmock.NewRows(columns).AddRow(35))
 
 			val, found, err := stmt.WithArgs().Int64(346).LoadNullInt64(context.TODO())
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.True(t, found)
 			assert.Exactly(t, null.MakeInt64(35), val)
 		})
@@ -420,7 +419,7 @@ func TestSelect_Prepare(t *testing.T) {
 				Where(dml.Column("config_id").In().PlaceHolder()).
 				WithDB(dbc.DB).
 				Prepare(context.TODO())
-			require.NoError(t, err, "failed creating a prepared statement")
+			assert.NoError(t, err, "failed creating a prepared statement")
 			defer dmltest.Close(t, stmt)
 
 			columns := []string{"scope_id"}
@@ -428,7 +427,7 @@ func TestSelect_Prepare(t *testing.T) {
 			prep.ExpectQuery().WithArgs(346, 347).WillReturnRows(sqlmock.NewRows(columns).AddRow(36).AddRow(37))
 
 			val, err := stmt.WithArgs().Int64s(346, 347).LoadInt64s(context.TODO(), nil)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.Exactly(t, []int64{36, 37}, val)
 		})
 
@@ -440,7 +439,7 @@ func TestSelect_Argument_IterateSerial(t *testing.T) {
 	defer dmltest.Close(t, dbc)
 
 	rowCount, found, err := dbc.SelectFrom("dml_fake_person").Count().WithArgs().LoadNullInt64(context.Background())
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.True(t, found)
 	if rowCount.Int64 < 10000 {
 		t.Skipf("dml_fake_person table contains less than 10k items, seems not to be installed. Got %d items", rowCount.Int64)
@@ -475,7 +474,7 @@ func TestSelect_Argument_IterateSerial(t *testing.T) {
 			counter++
 			return nil
 		})
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t, rowCount, counter, "Should have loaded %d rows", rowCount)
 	})
 
@@ -527,7 +526,7 @@ func TestSelect_Argument_IterateSerial(t *testing.T) {
 		t.Run("WG02 (prepared,multi conn)", func(t *testing.T) {
 
 			stmt, err := fpSel.Prepare(context.Background())
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			defer dmltest.Close(t, stmt)
 
 			bgwork.Wait(concurrencyLevel, func(index int) {
@@ -547,7 +546,7 @@ func TestSelect_Argument_IterateParallel(t *testing.T) {
 	const concurrencyLevel = 4
 
 	rowCount, _, err := dbc.SelectFrom("dml_fake_person").Count().WithArgs().LoadNullInt64(context.Background())
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	if rowCount.Int64 < 10000 {
 		t.Fatalf("dml_fake_person table contains less than 10k items, seems not to be installed. Got %d items", rowCount.Int64)
 	}
@@ -608,7 +607,7 @@ func TestSelect_Argument_IterateParallel(t *testing.T) {
 			atomic.AddInt32(rowsLoadedCounter, 1)
 			return nil
 		})
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t, int32(40), *rowsLoadedCounter, "Should load this amount of rows from the database server.")
 	})
 

@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/pkg/storage/null"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestArgBytes(t *testing.T) {

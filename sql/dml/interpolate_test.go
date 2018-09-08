@@ -23,8 +23,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/storage/null"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var _ fmt.Stringer = (*ip)(nil)
@@ -51,21 +50,21 @@ func TestExpandPlaceHolders(t *testing.T) {
 	t.Run("one arg with one value", func(t *testing.T) {
 		args := MakeArgs(1).Int64(1)
 		s, err := ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN (?)", args)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t, "SELECT * FROM `table` WHERE id IN (?)", s)
 		assert.Exactly(t, []interface{}{int64(1)}, args.Interfaces())
 	})
 	t.Run("one arg with three values", func(t *testing.T) {
 		args := MakeArgs(1).Int64s(11, 3, 5)
 		s, err := ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN ?", args)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t, "SELECT * FROM `table` WHERE id IN (?,?,?)", s)
 		assert.Exactly(t, []interface{}{int64(11), int64(3), int64(5)}, args.Interfaces())
 	})
 	t.Run("multi 3,5 times replacement", func(t *testing.T) {
 		args := MakeArgs(3).Int64s(5, 7, 9).Strings("a", "b", "c", "d", "e")
 		s, err := ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN ? AND name IN ?", args)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t, "SELECT * FROM `table` WHERE id IN (?,?,?) AND name IN (?,?,?,?,?)", s)
 		assert.Exactly(t, []interface{}{int64(5), int64(7), int64(9), "a", "b", "c", "d", "e"}, args.Interfaces())
 	})
@@ -126,7 +125,7 @@ func TestInterpolate_AllTypes(t *testing.T) {
 		NullTime(null.MakeTime(now())).
 		NullTimes(null.MakeTime(now()), null.Time{}, null.MakeTime(now())).
 		ToSQL()
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Nil(t, args)
 	assert.Exactly(t,
 		"SELECT NULL,'Unsafe',2,(3,4),5,(6,7),8,(9,10),11.1,(12.12,13.13),'14',('15','16'),1,(0,1,0),'17-18',('19-20',NULL,'21'),'2006-01-02 15:04:05',('2006-01-02 15:04:05','2006-01-02 15:04:05'),'22',('23',NULL,'24'),25.25,(26.26,NULL,27.27),28,(29,NULL,30),1,(1,NULL,0),'2006-01-02 15:04:05',('2006-01-02 15:04:05',NULL,'2006-01-02 15:04:05')",

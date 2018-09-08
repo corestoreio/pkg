@@ -21,8 +21,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/errors"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var _ fullConner = (*cbConn)(nil)
@@ -50,7 +49,7 @@ func TestWrapDriver_Connection_Error(t *testing.T) {
 				}
 			})
 		con, err := wrappedDrv.Open("nvr mind")
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		return con
 	}
 
@@ -123,9 +122,9 @@ func TestWrapDriver_Stmt_Error(t *testing.T) {
 			}
 		})
 		con, err := wrappedDrv.Open("nvr mind")
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		stmt, err := con.Prepare("")
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		return stmt
 	}
 

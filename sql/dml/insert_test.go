@@ -21,8 +21,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/sync/bgwork"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestInsert_NoArguments(t *testing.T) {
@@ -118,9 +117,9 @@ func validateInsertingBarack(t *testing.T, c *ConnPool, lastInsertID int64) {
 
 	var person dmlPerson
 	_, err := c.SelectFrom("dml_people").Star().Where(Column("id").Int64(lastInsertID)).WithArgs().Load(context.TODO(), &person)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
-	require.Equal(t, lastInsertID, int64(person.ID))
+	assert.Equal(t, lastInsertID, int64(person.ID))
 	assert.Equal(t, "Barack", person.Name)
 	assert.Equal(t, true, person.Email.Valid)
 	assert.Equal(t, "obama@whitehouse.gov", person.Email.String)
@@ -142,7 +141,7 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
-	require.Exactly(t, uint64(3), p.ID, "Last Insert ID must be three")
+	assert.Exactly(t, uint64(3), p.ID, "Last Insert ID must be three")
 
 	inID, err := res.LastInsertId()
 	if err != nil {
@@ -151,7 +150,7 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 	{
 		var p dmlPerson
 		_, err = s.SelectFrom("dml_people").Star().Where(Column("id").Int64(inID)).WithArgs().Load(context.TODO(), &p)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, "Pike", p.Name)
 		assert.Equal(t, "pikes@peak.co", p.Email.String)
 	}
@@ -175,7 +174,7 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 	{
 		var p dmlPerson
 		_, err = s.SelectFrom("dml_people").Star().Where(Column("id").Int64(inID)).WithArgs().Load(context.TODO(), &p)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, "Pik3", p.Name)
 		assert.Equal(t, "pikes@peak.com", p.Email.String)
 	}
@@ -214,7 +213,7 @@ func TestInsert_Events(t *testing.T) {
 
 		da := d.WithArgs().Int(1).Bool(true).String("X1").String("X2")
 		sqlStr, args, err := da.Interpolate().ToSQL()
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Nil(t, args)
 		assert.Exactly(t, "INSERT INTO `tableA` (`a`,`b`,`col1`,`col2`) VALUES (1,1,'X1','X2')", sqlStr)
 
@@ -502,10 +501,10 @@ func TestInsert_DisableBuildCache(t *testing.T) {
 	t.Run("without interpolate", func(t *testing.T) {
 		for i := 0; i < 3; i++ {
 			sql, args, err := ins.Raw(1, 2, 3, 4, 5, 6).ToSQL()
-			require.NoError(t, err, "%+v", err)
-			require.Equal(t, cachedSQLPlaceHolder, sql)
-			require.Equal(t, []interface{}{1, 2, 3, 4, 5, 6}, args)
-			require.Equal(t, "INSERT INTO `a` (`b`,`c`) VALUES  ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)",
+			assert.NoError(t, err, "%+v", err)
+			assert.Equal(t, cachedSQLPlaceHolder, sql)
+			assert.Equal(t, []interface{}{1, 2, 3, 4, 5, 6}, args)
+			assert.Equal(t, "INSERT INTO `a` (`b`,`c`) VALUES  ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)",
 				string(ins.base.cachedSQL))
 			ins.Reset()
 		}
@@ -518,9 +517,9 @@ func TestInsert_DisableBuildCache(t *testing.T) {
 		const cachedSQLInterpolated = "INSERT INTO `a` (`b`,`c`) VALUES (1,2),(3,4),(5,6) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)"
 		for i := 0; i < 3; i++ {
 			sql, args, err := insA.ToSQL()
-			require.NoError(t, err, "%+v", err)
-			require.Equal(t, cachedSQLInterpolated, sql)
-			require.Nil(t, args)
+			assert.NoError(t, err, "%+v", err)
+			assert.Equal(t, cachedSQLInterpolated, sql)
+			assert.Nil(t, args)
 			assert.Equal(t, "INSERT INTO `a` (`b`,`c`) VALUES  ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)", string(ins.base.cachedSQL))
 		}
 	})

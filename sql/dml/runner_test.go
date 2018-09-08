@@ -21,8 +21,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/storage/null"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var _ fmt.Stringer = (*scannedColumn)(nil)
@@ -85,37 +84,37 @@ func TestScannedColumn_Scan(t *testing.T) {
 	t.Parallel()
 	sc := scannedColumn{}
 
-	require.NoError(t, sc.Scan(int64(4711)))
+	assert.NoError(t, sc.Scan(int64(4711)))
 	assert.Exactly(t, "4711", sc.String())
 
-	require.NoError(t, sc.Scan(int(4711)))
+	assert.NoError(t, sc.Scan(int(4711)))
 	assert.Exactly(t, "4711", sc.String())
 
-	require.NoError(t, sc.Scan(float32(47.11)))
+	assert.NoError(t, sc.Scan(float32(47.11)))
 	assert.Exactly(t, "47.11000061035156", sc.String())
 
-	require.NoError(t, sc.Scan(float64(47.11)))
+	assert.NoError(t, sc.Scan(float64(47.11)))
 	assert.Exactly(t, "47.11", sc.String())
 
-	require.NoError(t, sc.Scan(true))
+	assert.NoError(t, sc.Scan(true))
 	assert.Exactly(t, "true", sc.String())
-	require.NoError(t, sc.Scan(false))
+	assert.NoError(t, sc.Scan(false))
 	assert.Exactly(t, "false", sc.String())
 
-	require.NoError(t, sc.Scan([]byte(`@`)))
+	assert.NoError(t, sc.Scan([]byte(`@`)))
 	assert.Exactly(t, "@", sc.String())
 
-	require.NoError(t, sc.Scan(`@`))
+	assert.NoError(t, sc.Scan(`@`))
 	assert.Exactly(t, "@", sc.String())
 
-	require.NoError(t, sc.Scan(now()))
+	assert.NoError(t, sc.Scan(now()))
 	assert.Exactly(t, "2006-01-02 15:04:05.000000002 -0400 UTC-4", sc.String())
 
-	require.NoError(t, sc.Scan(nil))
+	assert.NoError(t, sc.Scan(nil))
 	assert.Exactly(t, "<nil>", sc.String())
 
 	err := sc.Scan(uint8(1))
-	require.True(t, errors.Is(err, errors.NotSupported), "Should be error kind NotSupported")
+	assert.True(t, errors.Is(err, errors.NotSupported), "Should be error kind NotSupported")
 
 }
 
@@ -195,7 +194,7 @@ func TestColumnMap_Scan_Empty_Bytes(t *testing.T) {
 	t.Run("Time", func(t *testing.T) {
 		var v time.Time
 		assert.EqualError(t, cm.Time(&v).Err(), "[dml] Column \"SomeColumn\" Time cannot be empty.")
-		assert.Empty(t, v)
+		assert.True(t, v.IsZero(), "Got: %s", v.String())
 		cm.scanErr = nil
 	})
 	t.Run("Uint", func(t *testing.T) {

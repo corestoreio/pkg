@@ -22,8 +22,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/storage/null"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var _ ColumnMapper = (*Artisan)(nil)
@@ -143,7 +142,7 @@ func TestArguments_WriteTo(t *testing.T) {
 
 		buf := new(bytes.Buffer)
 		err := args.Write(buf)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t,
 			"(NULL,-1,1,2,3.1,1,'eCom1','eCom2','2006-01-02 15:04:05','eCom3',4,2.7,1,'2006-01-02 15:04:05')",
 			buf.String())
@@ -156,7 +155,7 @@ func TestArguments_WriteTo(t *testing.T) {
 
 		buf := new(bytes.Buffer)
 		err := args.Write(buf)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t,
 			"(NULL,-1,1,2,3.1,1,'eCom1','eCom2','2006-01-02 15:04:05',NULL,NULL,NULL,NULL,NULL)",
 			buf.String())
@@ -169,7 +168,7 @@ func TestArguments_WriteTo(t *testing.T) {
 
 		buf := new(bytes.Buffer)
 		err := args.Write(buf)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t,
 			"(NULL,(-1,-2),(1,2),(2),(1.2,3.1),(0,1),('eCom1','eCom11'),('eCom2'),('2006-01-02 15:04:05','2006-01-02 15:04:05'),('eCom3','eCom3'),(4,5),(2.71,2.72),(1),('2006-01-02 15:04:05','2006-01-02 15:04:05'))",
 			buf.String())
@@ -205,13 +204,13 @@ func TestArguments_WriteTo(t *testing.T) {
 	t.Run("bytes as binary", func(t *testing.T) {
 		args := MakeArgs(2).Bytes([]byte("\xc0\x80"))
 		buf := new(bytes.Buffer)
-		require.NoError(t, args.Write(buf))
+		assert.NoError(t, args.Write(buf))
 		assert.Exactly(t, "0xc080", buf.String())
 	})
 	t.Run("bytesSlice as binary", func(t *testing.T) {
 		args := MakeArgs(2).BytesSlice([]byte(`Rusty`), []byte("Go\xc0\x80"))
 		buf := new(bytes.Buffer)
-		require.NoError(t, args.Write(buf))
+		assert.NoError(t, args.Write(buf))
 		assert.Exactly(t, "('Rusty',0x476fc080)", buf.String())
 	})
 	t.Run("should panic because unknown field type", func(t *testing.T) {
@@ -229,7 +228,7 @@ func TestArguments_WriteTo(t *testing.T) {
 
 		au := argument{value: complex64(1), isSet: true}
 		buf := new(bytes.Buffer)
-		require.NoError(t, au.writeTo(buf, 0))
+		assert.NoError(t, au.writeTo(buf, 0))
 		assert.Empty(t, buf.String(), "buffer should be empty")
 	})
 }
@@ -286,7 +285,7 @@ func TestArguments_HasNamedArgs(t *testing.T) {
 				Expr("CAST(:abc AS CHAR(20))").Alias("str"),
 			).WithArgs().Record("", MakeArgs(1).Name("abc").String("a'bc"))
 		_, _, err := a.ToSQL()
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t, uint8(2), a.hasNamedArgs)
 	})
 	t.Run("hasNamedArgs in condition, no args", func(t *testing.T) {
@@ -294,7 +293,7 @@ func TestArguments_HasNamedArgs(t *testing.T) {
 			Column("id").Greater().PlaceHolder(),
 			Column("email").Like().NamedArg("ema1l")).WithArgs()
 		_, _, err := a.ToSQL()
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t, uint8(1), a.hasNamedArgs)
 	})
 	t.Run("hasNamedArgs in condition, with args", func(t *testing.T) {
@@ -302,7 +301,7 @@ func TestArguments_HasNamedArgs(t *testing.T) {
 			Column("id").Greater().PlaceHolder(),
 			Column("email").Like().NamedArg("ema1l")).WithArgs().String("my@email.org")
 		_, _, err := a.ToSQL()
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t, uint8(1), a.hasNamedArgs)
 	})
 	t.Run("hasNamedArgs none", func(t *testing.T) {
@@ -310,7 +309,7 @@ func TestArguments_HasNamedArgs(t *testing.T) {
 			Column("id").Greater().Int(221),
 			Column("email").Like().Str("em@1l.de")).WithArgs()
 		_, _, err := a.ToSQL()
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t, uint8(1), a.hasNamedArgs)
 	})
 }
@@ -361,33 +360,33 @@ func TestArguments_NextUnnamedArg(t *testing.T) {
 		args := MakeArgs(5).Name("colZ").Int64(3).Uint64(6).Name("colB").Float64(2.2).String("c").Name("colA").Strings("a", "b")
 
 		a, ok := args.nextUnnamedArg()
-		require.True(t, ok, "Should find an unnamed argument")
+		assert.True(t, ok, "Should find an unnamed argument")
 		assert.Empty(t, a.name)
 		assert.Exactly(t, uint64(6), a.value)
 
 		a, ok = args.nextUnnamedArg()
-		require.True(t, ok, "Should find an unnamed argument")
+		assert.True(t, ok, "Should find an unnamed argument")
 		assert.Empty(t, a.name)
 		assert.Exactly(t, "c", a.value)
 
 		a, ok = args.nextUnnamedArg()
-		require.False(t, ok, "Should NOT find an unnamed argument")
+		assert.False(t, ok, "Should NOT find an unnamed argument")
 		assert.Exactly(t, argument{}, a)
 
 		args.Reset().Float64(3.14159).Name("price").Float64(2.7182).Time(now())
 
 		a, ok = args.nextUnnamedArg()
-		require.True(t, ok, "Should find an unnamed argument")
+		assert.True(t, ok, "Should find an unnamed argument")
 		assert.Empty(t, a.name)
 		assert.Exactly(t, 3.14159, a.value)
 
 		a, ok = args.nextUnnamedArg()
-		require.True(t, ok, "Should find an unnamed argument")
+		assert.True(t, ok, "Should find an unnamed argument")
 		assert.Empty(t, a.name)
 		assert.Exactly(t, now(), a.value)
 
 		a, ok = args.nextUnnamedArg()
-		require.False(t, ok, "Should NOT find an unnamed argument")
+		assert.False(t, ok, "Should NOT find an unnamed argument")
 		assert.Exactly(t, argument{}, a)
 	})
 
@@ -395,11 +394,11 @@ func TestArguments_NextUnnamedArg(t *testing.T) {
 		args := MakeArgs(5).Name("colZ").Int64(3).Name("colB").Float64(2.2).Name("colA").Strings("a", "b")
 
 		a, ok := args.nextUnnamedArg()
-		require.False(t, ok, "Should NOT find an unnamed argument")
+		assert.False(t, ok, "Should NOT find an unnamed argument")
 		assert.Exactly(t, argument{}, a)
 
 		a, ok = args.nextUnnamedArg()
-		require.False(t, ok, "Should NOT find an unnamed argument")
+		assert.False(t, ok, "Should NOT find an unnamed argument")
 		assert.Exactly(t, argument{}, a)
 	})
 }

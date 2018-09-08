@@ -25,7 +25,7 @@ import (
 
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestDriverCallBack(t *testing.T) {
@@ -62,28 +62,28 @@ func TestDriverCallBack(t *testing.T) {
 	sel := db.SelectFrom("dml_people").Star().Where(dml.Column("name").PlaceHolder()).DisableBuildCache()
 	var ppl dmlPerson
 	_, err := sel.WithArgs().String("Bernd").Load(ctx, &ppl)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	_, err = sel.SQLNoCache().WithArgs().Interpolate().String("Das Brot").Load(context.Background(), &ppl)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	con, err := db.Conn(ctx)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	upd := con.Update("dml_people").Set(dml.Column("name").PlaceHolder())
 	_, err = upd.WithArgs().ExecContext(ctx, "Hugo")
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	_, err = upd.WithArgs().String("Bernie").Interpolate().ExecContext(ctx)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
-	require.NoError(t, con.Close())
+	assert.NoError(t, con.Close())
 
 	dmltest.Close(t, db)
 	//t.Log(buf.String())
 	//ioutil.WriteFile("testdata/TestDriverCallBack.want.txt", buf.Bytes(), 0644)
 	wantLog, err := ioutil.ReadFile("testdata/TestDriverCallBack.want.txt")
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	if !bytes.Equal(wantLog, buf.Bytes()) {
 		t.Error("testdata/TestDriverCallBack.want.txt does not match with `have`.")
 	}

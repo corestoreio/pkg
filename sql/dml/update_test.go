@@ -21,8 +21,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/storage/null"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestUpdate_Basics(t *testing.T) {
@@ -163,7 +162,7 @@ func TestUpdateReal(t *testing.T) {
 		Set(Column("name").Str("Barack"), Column("email").Str("barack@whitehouse.gov")).
 		Where(Column("id").In().Int64s(id, 8888)).WithArgs().ExecContext(context.TODO())
 	// Meaning of 8888: Just to see if the SQL with place holders gets created correctly
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	var person dmlPerson
 	_, err = s.SelectFrom("dml_people").Star().Where(Column("id").Int64(id)).WithArgs().Load(context.TODO(), &person)

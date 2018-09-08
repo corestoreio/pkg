@@ -27,8 +27,7 @@ import (
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/storage/null"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var now = func() time.Time {
@@ -112,9 +111,9 @@ func compareToSQL(
 ) {
 	sqlStr, args, err := qb.ToSQL()
 	if wantErrKind.Empty() {
-		require.NoError(t, err)
+		assert.NoError(t, err)
 	} else {
-		require.True(t, wantErrKind.Match(err), "%+v", err)
+		assert.True(t, wantErrKind.Match(err), "%+v", err)
 	}
 
 	if wantSQLPlaceholders != "" {
@@ -133,13 +132,13 @@ func compareToSQL(
 	}
 
 	sqlStr, args, err = qb.ToSQL() // Call with enabled interpolation
-	require.Nil(t, args, "Artisan should be nil when the SQL string gets interpolated")
+	assert.Nil(t, args, "Artisan should be nil when the SQL string gets interpolated")
 	if wantErrKind.Empty() {
-		require.NoError(t, err)
+		assert.NoError(t, err)
 	} else {
-		require.True(t, wantErrKind.Match(err), "%+v")
+		assert.True(t, wantErrKind.Match(err), "%+v")
 	}
-	require.Equal(t, wantSQLInterpolated, sqlStr, "Interpolated SQL strings do not match")
+	assert.Equal(t, wantSQLInterpolated, sqlStr, "Interpolated SQL strings do not match")
 }
 
 func ifNotEqualPanic(have, want interface{}, msg ...string) {

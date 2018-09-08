@@ -24,8 +24,7 @@ import (
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/storage/null"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestDelete_Prepare(t *testing.T) {
@@ -63,7 +62,7 @@ func TestDelete_Prepare(t *testing.T) {
 			Where(dml.Column("email").PlaceHolder(), dml.Column("group_id").PlaceHolder()).
 			WithDB(dbc.DB).
 			Prepare(context.TODO())
-		require.NoError(t, err, "failed creating a prepared statement")
+		assert.NoError(t, err, "failed creating a prepared statement")
 		defer dmltest.Close(t, stmt)
 
 		tests := []struct {
@@ -103,9 +102,9 @@ func TestDelete_Prepare(t *testing.T) {
 			Where(dml.Column("name").PlaceHolder(), dml.Column("email").PlaceHolder()).
 			WithDB(dbc.DB).
 			Prepare(context.TODO())
-		require.NoError(t, err, "failed creating a prepared statement")
+		assert.NoError(t, err, "failed creating a prepared statement")
 		defer func() {
-			require.NoError(t, stmt.Close(), "Close on a prepared statement")
+			assert.NoError(t, stmt.Close(), "Close on a prepared statement")
 		}()
 
 		tests := []struct {
@@ -147,13 +146,13 @@ func TestDelete_Prepare(t *testing.T) {
 			Where(dml.Column("name").PlaceHolder(), dml.Column("email").PlaceHolder()).
 			WithDB(dbc.DB).
 			Prepare(context.TODO())
-		require.NoError(t, err, "failed creating a prepared statement")
+		assert.NoError(t, err, "failed creating a prepared statement")
 		defer func() {
-			require.NoError(t, stmt.Close(), "Close on a prepared statement")
+			assert.NoError(t, stmt.Close(), "Close on a prepared statement")
 		}()
 
 		res, err := stmt.WithArgs().ExecContext(context.TODO(), "Peter Gopher", "peter@gopher.go")
-		require.NoError(t, err, "failed to execute ExecContext")
+		assert.NoError(t, err, "failed to execute ExecContext")
 
 		lid, err := res.RowsAffected()
 		if err != nil {

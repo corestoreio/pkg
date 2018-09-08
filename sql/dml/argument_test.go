@@ -23,8 +23,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/storage/null"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 type driverValueBytes []byte
@@ -109,7 +108,7 @@ func TestIFaceToArgs(t *testing.T) {
 			true, "Gopher", []byte(`Hello`),
 			now(), &nt, nil,
 		)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		assert.Exactly(t, []interface{}{
 			float64(2.299999952316284), float64(2.2),
