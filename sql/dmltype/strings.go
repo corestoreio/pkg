@@ -32,6 +32,8 @@ type CSV []string
 // quoteEscapeRegex is the regex to match escaped characters in a string.
 var quoteEscapeRegex = regexp.MustCompile(`([^\\]([\\]{2})*)\\"`)
 
+// todo implement column mapper
+
 // Scan satisfies the sql.Scanner interface for CSV.
 func (l *CSV) Scan(src interface{}) error {
 	var str string
