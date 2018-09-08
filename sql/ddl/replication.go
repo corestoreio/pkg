@@ -15,6 +15,7 @@
 package ddl
 
 import (
+	"io"
 	"strconv"
 	"strings"
 
@@ -96,6 +97,26 @@ func (ms MasterStatus) String() string {
 	str.WriteByte(';')
 	str.WriteString(strconv.FormatUint(uint64(ms.Position), 10))
 	return str.String()
+}
+
+var semicolon = []byte(`;`)
+
+// WriteTo implements io.WriterTo and writes the current position and file name
+// to w.
+func (ms MasterStatus) WriteTo(w io.Writer) (n int64, err error) {
+	if ms.File == "" {
+		return
+	}
+
+	n2, _ := w.Write([]byte(ms.File))
+	n += int64(n2)
+	n2, _ = w.Write(semicolon)
+	n += int64(n2)
+
+	var buf [16]byte
+	n2, _ = w.Write(strconv.AppendUint(buf[:0], uint64(ms.Position), 10))
+	n += int64(n2)
+	return
 }
 
 // FromString parses as string in the format: mysql-bin.000002;236423 means

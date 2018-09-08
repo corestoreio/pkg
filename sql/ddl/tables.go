@@ -23,7 +23,6 @@ import (
 	"github.com/corestoreio/pkg/sql/dml"
 )
 
-// @deprecated
 const (
 	MainTable       = "main_table"
 	AdditionalTable = "additional_table"

@@ -22,9 +22,10 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
+	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/storage/null"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 // Check that type adheres to interfaces
@@ -36,7 +37,34 @@ var _ sort.Interface = (*ddl.Columns)(nil)
 func TestLoadColumns_Integration_Mage(t *testing.T) {
 	t.Parallel()
 
-	dbc := dmltest.MustConnectDB(t)
+	ctx := context.TODO()
+	dbc := dmltest.MustConnectDB(t,
+		dml.WithExecSQLOnConnOpen(ctx,
+			"DROP TABLE IF EXISTS `core_config_data_test3`;",
+			"DROP TABLE IF EXISTS `catalog_category_product_test4`;",
+			`CREATE TABLE core_config_data_test3 (
+  config_id int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Config Id',
+  scope varchar(8) NOT NULL DEFAULT 'default' COMMENT 'Config Scope',
+  scope_id int(11) NOT NULL DEFAULT 0 COMMENT 'Config Scope Id',
+  path varchar(255) NOT NULL DEFAULT 'general' COMMENT 'Config Path',
+  value text DEFAULT NULL COMMENT 'Config Value',
+  PRIMARY KEY (config_id),
+  UNIQUE KEY CORE_CONFIG_DATA_SCOPE_SCOPE_ID_PATH (scope,scope_id,path)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8 COMMENT='Config Data';`,
+
+			`CREATE TABLE catalog_category_product_test4 (
+  entity_id int(11) NOT NULL AUTO_INCREMENT COMMENT 'Entity ID',
+  category_id int(10) unsigned NOT NULL DEFAULT 0 COMMENT 'Category ID',
+  product_id int(10) unsigned NOT NULL DEFAULT 0 COMMENT 'Product ID',
+  position int(11) NOT NULL DEFAULT 0 COMMENT 'Position',
+  PRIMARY KEY (entity_id,category_id,product_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Catalog Product To Category Linkage Table';
+`),
+		dml.WithExecSQLOnConnClose(ctx,
+			"DROP TABLE IF EXISTS `core_config_data_test3`;",
+			"DROP TABLE IF EXISTS `catalog_category_product_test4`;",
+		),
+	) // create DB
 	defer dmltest.Close(t, dbc)
 
 	tests := []struct {
@@ -45,12 +73,12 @@ func TestLoadColumns_Integration_Mage(t *testing.T) {
 		wantErrKind    errors.Kind
 		wantJoinFields string
 	}{
-		{"core_config_data",
+		{"core_config_data_test3",
 			"ddl.Columns{\n&ddl.Column{Field: \"config_id\", Pos: 1, Null: \"NO\", DataType: \"int\", Precision: null.MakeInt64(10), Scale: null.MakeInt64(0), ColumnType: \"int(10) unsigned\", Key: \"PRI\", Extra: \"auto_increment\", Comment: \"Config Id\", },\n&ddl.Column{Field: \"scope\", Pos: 2, Default: null.MakeString(\"'default'\"), Null: \"NO\", DataType: \"varchar\", CharMaxLength: null.MakeInt64(8), ColumnType: \"varchar(8)\", Key: \"MUL\", Comment: \"Config Scope\", },\n&ddl.Column{Field: \"scope_id\", Pos: 3, Default: null.MakeString(\"0\"), Null: \"NO\", DataType: \"int\", Precision: null.MakeInt64(10), Scale: null.MakeInt64(0), ColumnType: \"int(11)\", Comment: \"Config Scope Id\", },\n&ddl.Column{Field: \"path\", Pos: 4, Default: null.MakeString(\"'general'\"), Null: \"NO\", DataType: \"varchar\", CharMaxLength: null.MakeInt64(255), ColumnType: \"varchar(255)\", Comment: \"Config Path\", },\n&ddl.Column{Field: \"value\", Pos: 5, Default: null.MakeString(\"NULL\"), Null: \"YES\", DataType: \"text\", CharMaxLength: null.MakeInt64(65535), ColumnType: \"text\", Comment: \"Config Value\", },\n}\n",
 			errors.NoKind,
 			"config_id_scope_scope_id_path_value",
 		},
-		{"catalog_category_product",
+		{"catalog_category_product_test4",
 			"ddl.Columns{\n&ddl.Column{Field: \"entity_id\", Pos: 1, Null: \"NO\", DataType: \"int\", Precision: null.MakeInt64(10), Scale: null.MakeInt64(0), ColumnType: \"int(11)\", Key: \"PRI\", Extra: \"auto_increment\", Comment: \"Entity ID\", },\n&ddl.Column{Field: \"category_id\", Pos: 2, Default: null.MakeString(\"0\"), Null: \"NO\", DataType: \"int\", Precision: null.MakeInt64(10), Scale: null.MakeInt64(0), ColumnType: \"int(10) unsigned\", Key: \"PRI\", Comment: \"Category ID\", },\n&ddl.Column{Field: \"product_id\", Pos: 3, Default: null.MakeString(\"0\"), Null: \"NO\", DataType: \"int\", Precision: null.MakeInt64(10), Scale: null.MakeInt64(0), ColumnType: \"int(10) unsigned\", Key: \"PRI\", Comment: \"Product ID\", },\n&ddl.Column{Field: \"position\", Pos: 4, Default: null.MakeString(\"0\"), Null: \"NO\", DataType: \"int\", Precision: null.MakeInt64(10), Scale: null.MakeInt64(0), ColumnType: \"int(11)\", Comment: \"Position\", },\n}\n",
 			errors.NoKind,
 			"entity_id_category_id_product_id_position",

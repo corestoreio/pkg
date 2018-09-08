@@ -19,9 +19,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/corestoreio/pkg/util/assert"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestGetDSN(t *testing.T) {
@@ -90,7 +89,7 @@ func TestGetParsedDSN(t *testing.T) {
 			assert.Contains(t, haveErr.Error(), test.wantErr.Error(), "Index %d => %+v", i, haveErr)
 			continue
 		}
-		require.NoError(t, haveErr, "%+v", haveErr)
+		assert.NoError(t, haveErr, "%+v", haveErr)
 		assert.Contains(t, haveURL.FormatDSN(), test.wantURL, "Index %d", i)
 	}
 }

@@ -24,13 +24,13 @@ import (
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/storage/null"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
-var _ dml.QueryBuilder = (*ddl.Table)(nil)
-var _ dml.ColumnMapper = (*ddl.Table)(nil)
-
+var (
+	_ dml.QueryBuilder = (*ddl.Table)(nil)
+	_ dml.ColumnMapper = (*ddl.Table)(nil)
+)
 var tableMap *ddl.Tables
 
 func init() {
@@ -310,9 +310,9 @@ func TestTable_Artisan_Methods(t *testing.T) {
 			String("a@b.c").String("Franz").
 			String("d@e.f").String("Sissi").
 			ExecContext(context.Background())
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		id, err := res.LastInsertId()
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t, int64(11), id)
 	})
 
@@ -324,9 +324,9 @@ func TestTable_Artisan_Methods(t *testing.T) {
 		res, err := tblAdmUser.DeleteByPK().WithArgs().
 			String("a@b.c").String("d@e.f").
 			ExecContext(context.Background())
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		id, err := res.RowsAffected()
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t, int64(2), id)
 	})
 
@@ -336,8 +336,8 @@ func TestTable_Artisan_Methods(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows([]string{"user_id", "email", "first_name", "username"}))
 
 		rows, err := tblAdmUser.SelectByPK().WithArgs().Int64(234).QueryContext(context.Background())
-		require.NoError(t, err)
-		require.NoError(t, rows.Close())
+		assert.NoError(t, err)
+		assert.NoError(t, rows.Close())
 	})
 
 	t.Run("SelectAll", func(t *testing.T) {
@@ -346,8 +346,8 @@ func TestTable_Artisan_Methods(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows([]string{"user_id", "email", "first_name", "username"}))
 
 		rows, err := tblAdmUser.SelectAll().WithArgs().QueryContext(context.Background())
-		require.NoError(t, err)
-		require.NoError(t, rows.Close())
+		assert.NoError(t, err)
+		assert.NoError(t, rows.Close())
 	})
 
 	t.Run("UpdateByPK", func(t *testing.T) {
@@ -359,9 +359,9 @@ func TestTable_Artisan_Methods(t *testing.T) {
 			String("a@b.c").String("Franz").
 			Int64(3).
 			ExecContext(context.Background())
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		id, err := res.RowsAffected()
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Exactly(t, int64(1), id)
 	})
 

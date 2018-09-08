@@ -25,13 +25,14 @@ import (
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/storage/null"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
-var _ dml.QueryBuilder = (*ddl.Tables)(nil)
-var _ dml.ColumnMapper = (*ddl.Tables)(nil)
-var _ io.Closer = (*ddl.Tables)(nil)
+var (
+	_ dml.QueryBuilder = (*ddl.Tables)(nil)
+	_ dml.ColumnMapper = (*ddl.Tables)(nil)
+	_ io.Closer        = (*ddl.Tables)(nil)
+)
 
 func TestNewTableService(t *testing.T) {
 	t.Parallel()
@@ -154,7 +155,7 @@ func TestTables_RowScan_Integration(t *testing.T) {
 		ddl.WithTable("admin_user"),
 	)
 	_, err := dbc.WithQueryBuilder(tm0).Load(context.TODO(), tm0)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	table := tm0.MustTable("admin_user")
 
@@ -182,7 +183,7 @@ func TestTables_RowScan_Mock(t *testing.T) {
 		ddl.WithTable("admin_user"),
 	)
 	_, err := dbc.WithQueryBuilder(tm0).Load(context.TODO(), tm0)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	table := tm0.MustTable("admin_user")
 	assert.Exactly(t, []string{"user_id", "firsname", "modified"}, table.Columns.FieldNames())
@@ -225,7 +226,7 @@ func TestWithTableDMLListeners(t *testing.T) {
 			ddl.WithTableDMLListeners("TeschtT", ev, ev),
 		) // +=2
 		tbl := ts.MustTable("TeschtT")
-		require.Exactly(t, "TeschtT", tbl.Name)
+		assert.Exactly(t, "TeschtT", tbl.Name)
 	})
 
 	t.Run("Nil Table and after WithTable call", func(*testing.T) {
@@ -234,7 +235,7 @@ func TestWithTableDMLListeners(t *testing.T) {
 			ddl.WithTable("TeschtU", &ddl.Column{Field: "col1"}),
 		) // +=2
 		tbl := ts.MustTable("TeschtU")
-		require.Exactly(t, "TeschtU", tbl.Name)
+		assert.Exactly(t, "TeschtU", tbl.Name)
 	})
 }
 

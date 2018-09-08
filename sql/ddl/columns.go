@@ -75,6 +75,7 @@ type Column struct {
 
 // DMLLoadColumns specifies the data manipulation language for retrieving all
 // columns in the current database for a specific table.
+// TABLE_NAME is always lower case.
 const selTablesColumns = `SELECT
 	TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE,
 		DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE,

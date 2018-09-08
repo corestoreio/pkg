@@ -16,6 +16,7 @@ package ddl_test
 
 import (
 	"context"
+	"io"
 	"testing"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
@@ -23,11 +24,12 @@ import (
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var _ dml.QueryBuilder = (*ddl.MasterStatus)(nil)
 var _ dml.ColumnMapper = (*ddl.MasterStatus)(nil)
+var _ io.WriterTo = (*ddl.MasterStatus)(nil)
 
 func TestMasterStatus_Compare(t *testing.T) {
 	t.Parallel()
