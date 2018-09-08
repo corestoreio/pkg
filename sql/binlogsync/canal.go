@@ -1,6 +1,7 @@
 package binlogsync
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"net"
@@ -12,11 +13,9 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/config"
-	"github.com/corestoreio/pkg/config/cfgmodel"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/myreplicator"
-	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/sync/singleflight"
 	"github.com/corestoreio/pkg/util/conv"
 	"github.com/go-sql-driver/mysql"
@@ -28,18 +27,17 @@ const (
 	MariaDBFlavor = "mariadb"
 )
 
+var ConfigPathBackendPosition = config.MustNewPath(`sql/binlogsync/master_position`)
+
 // Canal can sync your MySQL data. MySQL must use the binlog format ROW.
 type Canal struct {
-	// BackendPosition initial idea. writing supported but not loading
-	BackendPosition cfgmodel.Str
-
 	// mclose acts only during the call to Close().
 	mclose sync.Mutex
 	// DSN contains the parsed DSN
 	DSN         *mysql.Config
 	canalParams map[string]string
 
-	cfgw config.Writer
+	cfgBackend config.Setter
 
 	masterMu           sync.RWMutex
 	masterStatus       ddl.MasterStatus
@@ -96,11 +94,11 @@ func WithDB(db *sql.DB) Option {
 	}
 }
 
-// WithConfigurationWriter used to persists the current binlog position.
-func WithConfigurationWriter(w config.Writer) Option {
-	//Write(p cfgpath.Path, value interface{}) error
+// WithConfigurationSetter used to persists the current binlog position.
+// If discarded, the last position won't be saved.
+func WithConfigurationSetter(s config.Setter) Option {
 	return func(c *Canal) error {
-		c.cfgw = w
+		c.cfgBackend = s
 		return nil
 	}
 }
@@ -177,8 +175,6 @@ func NewCanal(dsn *mysql.Config, db Option, opts ...Option) (*Canal, error) {
 	atomic.StoreInt32(c.closed, 0)
 	c.expAlterTable = regexp.MustCompile("(?i)^ALTER\\sTABLE\\s.*?`{0,1}(.*?)`{0,1}\\.{0,1}`{0,1}([^`\\.]+?)`{0,1}\\s.*")
 
-	c.BackendPosition = cfgmodel.NewStr("sql/binlogsync/position")
-
 	// remove custom parameters from DSN and copy them into our own map because
 	// otherwise MySQL connection fails due to unknown connection parameters.
 	if c.DSN.Params != nil {
@@ -210,38 +206,42 @@ func NewCanal(dsn *mysql.Config, db Option, opts ...Option) (*Canal, error) {
 	return c, nil
 }
 
-func (c *Canal) masterSave() error {
+// TODO continue sync from last stored master position
 
-	n := time.Now()
-	if n.Sub(c.masterLastSaveTime) < time.Second {
-		return nil
-	}
+func (c *Canal) masterSave(fileName string, pos uint) error {
 	c.masterMu.Lock()
 	defer c.masterMu.Unlock()
 
-	if c.cfgw == nil {
+	c.masterStatus.File = fileName
+	c.masterStatus.Position = pos
+
+	now := time.Now()
+	if now.Sub(c.masterLastSaveTime) < time.Second {
+		return nil
+	}
+
+	if c.cfgBackend == nil {
 		if c.Log.IsDebug() {
-			c.Log.Debug("[binlogsync] Master Status cannot be saved because config.Writer is nil",
+			c.Log.Debug("[binlogsync] Warning: Master Status cannot be saved because config.Setter is nil",
 				log.String("database", c.DSN.DBName), log.Stringer("master_status", c.masterStatus))
 		}
 		return nil
 	}
 
-	// todo refactor to find a different way by not importing package config and scope
-	if err := c.BackendPosition.Write(c.cfgw, c.masterStatus.String(), scope.DefaultTypeID); err != nil {
-		return errors.Wrap(err, "[binlogsync] failed to write into config")
+	var buf bytes.Buffer
+	c.masterStatus.WriteTo(&buf)
+	if err := c.cfgBackend.Set(ConfigPathBackendPosition, buf.Bytes()); err != nil {
+		if c.Log.IsInfo() {
+			c.Log.Info("[binlogsync] Failed to store Master Status",
+				log.Time("master_last_save_time", c.masterLastSaveTime),
+				log.Err(err), log.String("database", c.DSN.DBName), log.Stringer("master_status", c.masterStatus))
+		}
+		return errors.WithStack(err)
 	}
 
-	c.masterLastSaveTime = n
+	c.masterLastSaveTime = now
 
 	return nil
-}
-
-func (c *Canal) masterUpdate(fileName string, pos uint) {
-	c.masterMu.Lock()
-	defer c.masterMu.Unlock()
-	c.masterStatus.File = fileName
-	c.masterStatus.Position = pos
 }
 
 // SyncedPosition returns the current synced position as retrieved from the SQl

@@ -106,8 +106,7 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 			continue
 		}
 
-		c.masterUpdate(pos.File, pos.Position)
-		if err := c.masterSave(); err != nil {
+		if err := c.masterSave(pos.File, pos.Position); err != nil {
 			c.Log.Info("[binlogsync] startSyncBinlog: Failed to save master position", log.Err(err), log.Stringer("position", pos))
 		}
 	}
