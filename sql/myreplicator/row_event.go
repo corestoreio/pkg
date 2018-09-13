@@ -32,7 +32,7 @@ type TableMapEvent struct {
 	NullBitmap []byte
 }
 
-func (e *TableMapEvent) Decode(data []byte) error {
+func (e *TableMapEvent) decode(data []byte) error {
 	pos := 0
 	e.TableID = mysql.FixedLengthInt(data[0:e.tableIDSize])
 	pos += e.tableIDSize
@@ -228,7 +228,7 @@ type RowsEvent struct {
 	timestampStringLocation *time.Location
 }
 
-func (e *RowsEvent) Decode(data []byte) error {
+func (e *RowsEvent) decode(data []byte) error {
 	pos := 0
 	e.TableID = mysql.FixedLengthInt(data[0:e.tableIDSize])
 	pos += e.tableIDSize
@@ -849,7 +849,7 @@ type RowsQueryEvent struct {
 	Query []byte
 }
 
-func (e *RowsQueryEvent) Decode(data []byte) error {
+func (e *RowsQueryEvent) decode(data []byte) error {
 	//ignore length byte 1
 	e.Query = data[1:]
 	return nil

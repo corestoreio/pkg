@@ -16,7 +16,7 @@ func (e *GenericEvent) Dump(w io.Writer) {
 	fmt.Fprintln(w)
 }
 
-func (e *GenericEvent) Decode(data []byte) error {
+func (e *GenericEvent) decode(data []byte) error {
 	e.Data = data
 
 	return nil

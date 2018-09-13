@@ -130,7 +130,7 @@ func (p *BinlogParser) parseSingleEvent(r io.Reader, onEvent OnEventFunc) (bool,
 		return false, errors.Errorf("invalid body data size in event %s, need %d but got %d", h.EventType, bodyLen, len(body))
 	}
 
-	var e Event
+	var e EventDecoder
 	e, err = p.parseEvent(h, body, rawData)
 	if err != nil {
 		if errors.NotFound.Match(err) {
@@ -187,7 +187,7 @@ func (p *BinlogParser) SetVerifyChecksum(verify bool) {
 
 func (p *BinlogParser) parseHeader(data []byte) (*EventHeader, error) {
 	h := new(EventHeader)
-	err := h.Decode(data)
+	err := h.decode(data)
 	if err != nil {
 		return nil, err
 	}
@@ -195,8 +195,8 @@ func (p *BinlogParser) parseHeader(data []byte) (*EventHeader, error) {
 	return h, nil
 }
 
-func (p *BinlogParser) parseEvent(h *EventHeader, data []byte, rawData []byte) (Event, error) {
-	var e Event
+func (p *BinlogParser) parseEvent(h *EventHeader, data []byte, rawData []byte) (EventDecoder, error) {
+	var e EventDecoder
 
 	if h.EventType == FORMAT_DESCRIPTION_EVENT {
 		p.format = &FormatDescriptionEvent{}
@@ -262,7 +262,7 @@ func (p *BinlogParser) parseEvent(h *EventHeader, data []byte, rawData []byte) (
 		}
 	}
 
-	if err := e.Decode(data); err != nil {
+	if err := e.decode(data); err != nil {
 		return nil, &EventError{h, err.Error(), data}
 	}
 

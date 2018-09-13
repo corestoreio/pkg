@@ -23,11 +23,12 @@ const (
 )
 
 type BinlogEvent struct {
-	// raw binlog data which contains all data, including binlog header and event body, and including crc32 checksum if exists
+	// RawData contains raw binlog data which contains all data, including
+	// binlog header and event body, and including crc32 checksum if exists
 	RawData []byte
 
 	Header *EventHeader
-	Event  Event
+	Event  EventDecoder
 }
 
 func (e *BinlogEvent) Dump(w io.Writer) {
@@ -35,11 +36,11 @@ func (e *BinlogEvent) Dump(w io.Writer) {
 	e.Event.Dump(w)
 }
 
-type Event interface {
+type EventDecoder interface {
 	//Dump Event, format like python-mysql-replication
 	Dump(w io.Writer)
 
-	Decode(data []byte) error
+	decode(data []byte) error
 }
 
 type EventError struct {
@@ -65,7 +66,7 @@ type EventHeader struct {
 	Flags     uint16
 }
 
-func (h *EventHeader) Decode(data []byte) error {
+func (h *EventHeader) decode(data []byte) error {
 	if len(data) < EventHeaderSize {
 		return errors.Errorf("header size too short %d, must 19", len(data))
 	}
@@ -153,7 +154,7 @@ type FormatDescriptionEvent struct {
 	ChecksumAlgorithm byte
 }
 
-func (e *FormatDescriptionEvent) Decode(data []byte) error {
+func (e *FormatDescriptionEvent) decode(data []byte) error {
 	pos := 0
 	e.Version = binary.LittleEndian.Uint16(data[pos:])
 	pos += 2
@@ -204,7 +205,7 @@ type RotateEvent struct {
 	NextLogName []byte
 }
 
-func (e *RotateEvent) Decode(data []byte) error {
+func (e *RotateEvent) decode(data []byte) error {
 	e.Position = binary.LittleEndian.Uint64(data[0:])
 	e.NextLogName = data[8:]
 
@@ -224,7 +225,7 @@ type XIDEvent struct {
 	GSet mysql.GTIDSet
 }
 
-func (e *XIDEvent) Decode(data []byte) error {
+func (e *XIDEvent) decode(data []byte) error {
 	e.XID = binary.LittleEndian.Uint64(data)
 	return nil
 }
@@ -249,7 +250,7 @@ type QueryEvent struct {
 	GSet mysql.GTIDSet
 }
 
-func (e *QueryEvent) Decode(data []byte) error {
+func (e *QueryEvent) decode(data []byte) error {
 	pos := 0
 
 	e.SlaveProxyID = binary.LittleEndian.Uint32(data[pos:])
@@ -301,7 +302,7 @@ type GTIDEvent struct {
 	SequenceNumber int64
 }
 
-func (e *GTIDEvent) Decode(data []byte) error {
+func (e *GTIDEvent) decode(data []byte) error {
 	pos := 0
 	e.CommitFlag = uint8(data[pos])
 	pos++
@@ -334,7 +335,7 @@ type BeginLoadQueryEvent struct {
 	BlockData []byte
 }
 
-func (e *BeginLoadQueryEvent) Decode(data []byte) error {
+func (e *BeginLoadQueryEvent) decode(data []byte) error {
 	pos := 0
 
 	e.FileID = binary.LittleEndian.Uint32(data[pos:])
@@ -363,7 +364,7 @@ type ExecuteLoadQueryEvent struct {
 	DupHandlingFlags uint8
 }
 
-func (e *ExecuteLoadQueryEvent) Decode(data []byte) error {
+func (e *ExecuteLoadQueryEvent) decode(data []byte) error {
 	pos := 0
 
 	e.SlaveProxyID = binary.LittleEndian.Uint32(data[pos:])
@@ -415,7 +416,7 @@ type MariadbAnnotateRowsEvent struct {
 	Query []byte
 }
 
-func (e *MariadbAnnotateRowsEvent) Decode(data []byte) error {
+func (e *MariadbAnnotateRowsEvent) decode(data []byte) error {
 	e.Query = data
 	return nil
 }
@@ -429,7 +430,7 @@ type MariadbBinlogCheckPointEvent struct {
 	Info []byte
 }
 
-func (e *MariadbBinlogCheckPointEvent) Decode(data []byte) error {
+func (e *MariadbBinlogCheckPointEvent) decode(data []byte) error {
 	e.Info = data
 	return nil
 }
@@ -443,7 +444,7 @@ type MariadbGTIDEvent struct {
 	GTID mysql.MariadbGTID
 }
 
-func (e *MariadbGTIDEvent) Decode(data []byte) error {
+func (e *MariadbGTIDEvent) decode(data []byte) error {
 	e.GTID.SequenceNumber = binary.LittleEndian.Uint64(data)
 	e.GTID.DomainID = binary.LittleEndian.Uint32(data[8:])
 
@@ -461,7 +462,7 @@ type MariadbGTIDListEvent struct {
 	GTIDs []mysql.MariadbGTID
 }
 
-func (e *MariadbGTIDListEvent) Decode(data []byte) error {
+func (e *MariadbGTIDListEvent) decode(data []byte) error {
 	pos := 0
 	v := binary.LittleEndian.Uint32(data[pos:])
 	pos += 4

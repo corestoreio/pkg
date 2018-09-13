@@ -344,7 +344,7 @@ func (_ *testDecodeSuite) TestLastNull(c *C) {
 
 	tableMapEvent := new(TableMapEvent)
 	tableMapEvent.tableIDSize = 6
-	err := tableMapEvent.Decode(tableMapEventData)
+	err := tableMapEvent.decode(tableMapEventData)
 	c.Assert(err, IsNil)
 
 	rows := new(RowsEvent)
@@ -360,7 +360,7 @@ func (_ *testDecodeSuite) TestLastNull(c *C) {
 
 	for _, tbl := range tbls {
 		rows.Rows = nil
-		err = rows.Decode(tbl)
+		err = rows.decode(tbl)
 		c.Assert(err, IsNil)
 		c.Assert(rows.Rows, HasLen, 3)
 	}
@@ -381,7 +381,7 @@ func (_ *testDecodeSuite) TestParseRowPanic(c *C) {
 
 	data := []byte{18, 7, 0, 0, 0, 0, 1, 0, 2, 0, 26, 1, 1, 16, 252, 248, 142, 63, 0, 0, 13, 0, 0, 0, 13, 0, 0, 0}
 
-	err := rows.Decode(data)
+	err := rows.decode(data)
 	c.Assert(err, IsNil)
 	c.Assert(rows.Rows[0][0], Equals, int32(16270))
 }
@@ -408,7 +408,7 @@ func (_ *testDecodeSuite) TestParseJson(c *C) {
 
 	tableMapEvent := new(TableMapEvent)
 	tableMapEvent.tableIDSize = 6
-	err := tableMapEvent.Decode(tableMapEventData)
+	err := tableMapEvent.decode(tableMapEventData)
 	c.Assert(err, IsNil)
 
 	rows := new(RowsEvent)
@@ -424,7 +424,7 @@ func (_ *testDecodeSuite) TestParseJson(c *C) {
 
 	for _, tbl := range tbls {
 		rows.Rows = nil
-		err = rows.Decode(tbl)
+		err = rows.decode(tbl)
 		c.Assert(err, IsNil)
 		c.Assert(rows.Rows[0][1], Equals, float64(1))
 	}
