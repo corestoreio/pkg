@@ -21,16 +21,11 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
-	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
-var (
-	_ dml.QueryBuilder = (*ddl.Table)(nil)
-	_ dml.ColumnMapper = (*ddl.Table)(nil)
-)
 var tableMap *ddl.Tables
 
 func init() {

@@ -17,6 +17,7 @@ package ddl
 import (
 	"context"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/corestoreio/errors"
@@ -24,6 +25,7 @@ import (
 )
 
 const (
+	PrefixView      = "view_" // If identifier starts with this, it is considered a view.
 	MainTable       = "main_table"
 	AdditionalTable = "additional_table"
 	ScopeTable      = "scope_table"
@@ -54,7 +56,7 @@ type Tables struct {
 // DB.
 func WithDB(db dml.QueryExecPreparer) TableOption {
 	return TableOption{
-		sortOrder: 2,
+		sortOrder: 10,
 		fn: func(tm *Tables) error {
 			tm.DB = db
 			tm.mu.Lock()
@@ -62,60 +64,6 @@ func WithDB(db dml.QueryExecPreparer) TableOption {
 			for _, t := range tm.tm {
 				t.DB = db
 			}
-			return nil
-		},
-	}
-}
-
-// WithTableOrViewFromQuery creates the new view or table from the SELECT query and
-// adds it to the internal table manager including all loaded column
-// definitions. If providing true in the argument "dropIfExists" the view or
-// table gets first dropped, if exists, and then created. Argument typ can be
-// only `table` or `view`.
-func WithTableOrViewFromQuery(ctx context.Context, db dml.QueryExecPreparer, typ string, objectName string, query string, dropIfExists ...bool) TableOption {
-	return TableOption{
-		sortOrder: 10,
-		fn: func(tm *Tables) error {
-
-			if err := dml.IsValidIdentifier(objectName); err != nil {
-				return errors.WithStack(err)
-			}
-
-			var viewOrTable string
-			switch typ {
-			case "view":
-				viewOrTable = "VIEW"
-			case "table":
-				viewOrTable = "TABLE"
-			default:
-				return errors.Unavailable.Newf("[ddl] Option %q for variable typ not available. Only `view` or `table`", typ)
-			}
-
-			vnq := dml.Quoter.Name(objectName)
-			if len(dropIfExists) > 0 && dropIfExists[0] {
-				if _, err := db.ExecContext(ctx, "DROP "+viewOrTable+" IF EXISTS "+vnq); err != nil {
-					return errors.Wrapf(err, "[ddl] Drop view failed %q", objectName)
-				}
-			}
-
-			_, err := db.ExecContext(ctx, "CREATE "+viewOrTable+" "+vnq+" AS "+query)
-			if err != nil {
-				return errors.Wrapf(err, "[ddl] Create view %q failed", objectName)
-			}
-
-			tc, err := LoadColumns(ctx, db, objectName)
-			if err != nil {
-				return errors.Wrapf(err, "[ddl] Load columns failed for %q", objectName)
-			}
-
-			if err := WithTable(objectName, tc[objectName]...).fn(tm); err != nil {
-				return errors.Wrapf(err, "[ddl] Failed to add new table %q", objectName)
-			}
-
-			tm.mu.Lock()
-			defer tm.mu.Unlock()
-			tm.tm[objectName].IsView = viewOrTable == "VIEW"
-
 			return nil
 		},
 	}
@@ -129,6 +77,7 @@ func WithTableOrViewFromQuery(ctx context.Context, db dml.QueryExecPreparer, typ
 // name of the table differs.
 func WithTable(tableName string, cols ...*Column) TableOption {
 	return TableOption{
+		sortOrder: 1,
 		fn: func(tm *Tables) error {
 			if err := dml.IsValidIdentifier(tableName); err != nil {
 				return errors.WithStack(err)
@@ -142,33 +91,67 @@ func WithTable(tableName string, cols ...*Column) TableOption {
 	}
 }
 
-// WithTableLoadColumns inserts a new table to the Tables struct, identified by
-// its index. What is the reason to use int as the table index and not a name?
-// Because table names between M1 and M2 get renamed and in a Go SQL code
-// generator script of the CoreStore project, we can guarantee that the
-// generated index constant will always stay the same but the name of the table
-// differs.
-func WithTableLoadColumns(ctx context.Context, db dml.Querier, names ...string) TableOption {
+// WithCreateTable upserts tables to the current `Tables` object. Either it adds a new
+// table/view or overwrites existing entries. Argument `identifierCreateSyntax`
+// must be balanced slice where index i is the table/view name and i+1 can be
+// either empty or contain the SQL CREATE statement. In case a SQL CREATE
+// statement has been supplied, it gets executed otherwise ignored. After table
+// initialization the create syntax and the column specifications are getting
+// loaded. Write the SQL CREATE statement in upper case.
+//		WithCreateTable(
+//			"sales_order_history", "CREATE TABLE `sales_order_history` ( ... )", // table gets dropped and recreated
+//			"sales_order_stat", "CREATE VIEW `sales_order_stat` AS SELECT ...", // table gets dropped and recreated
+//			"sales_order", "", // table/view already exists and gets loaded, NOT dropped.
+//		)
+func WithCreateTable(ctx context.Context, db dml.QueryExecPreparer, identifierCreateSyntax ...string) TableOption {
 	return TableOption{
+		sortOrder: 5,
 		fn: func(tm *Tables) error {
-			for _, n := range names {
-				if err := dml.IsValidIdentifier(n); err != nil {
+			tm.mu.Lock()
+			defer tm.mu.Unlock()
+
+			lenIDCS := len(identifierCreateSyntax)
+			if lenIDCS%2 == 1 {
+				return errors.NotValid.Newf("[ddl] WithCreateTable expects a balanced slice, but got %d items.", lenIDCS)
+			}
+
+			tvNames := make([]string, 0, lenIDCS/2)
+			for i := 0; i < lenIDCS; i = i + 2 {
+				// tv = table or view
+				tvName := identifierCreateSyntax[i]
+				tvCreate := identifierCreateSyntax[i+1]
+
+				if err := dml.IsValidIdentifier(tvName); err != nil {
 					return errors.WithStack(err)
 				}
+
+				tvNames = append(tvNames, tvName)
+				t := NewTable(tvName)
+				tm.tm[tvName] = t
+
+				if isCreateStmt(tvName, tvCreate) {
+					t.IsView = strings.Contains(tvCreate, " VIEW ") || strings.HasPrefix(tvName, PrefixView)
+					t.CreateSyntax = tvCreate
+					if err := t.Create(ctx, db); err != nil {
+						return errors.WithStack(err)
+					}
+				}
+
+				if err := t.loadCreateSyntax(ctx, db); err != nil {
+					return errors.WithStack(err)
+				}
+
 			}
-
-			tc, err := LoadColumns(ctx, db, names...)
-			if err != nil {
-				return errors.WithStack(err)
-			}
-
-			for _, n := range names {
-				t := NewTable(n)
-				t.Schema = tm.Schema
-
-				t.Columns = tc[n]
-				if err := tm.Upsert(t); err != nil {
-					return errors.Wrapf(err, "[ddl] Tables.Insert for %q", n)
+			if db != nil {
+				tc, err := LoadColumns(ctx, db, tvNames...)
+				if err != nil {
+					return errors.WithStack(err)
+				}
+				for _, n := range tvNames {
+					t := tm.tm[n]
+					t.Schema = tm.Schema
+					t.Columns = tc[n]
+					t.update()
 				}
 			}
 			return nil
@@ -176,23 +159,51 @@ func WithTableLoadColumns(ctx context.Context, db dml.Querier, names ...string) 
 	}
 }
 
-// WithTableNames creates for each table name and its index a new table pointer.
-// You should call afterwards the functional option WithLoadColumnDefinitions.
-// This function returns an error if a table index already exists.
-func WithTableNames(names ...string) TableOption {
+func isCreateStmt(idName, stmt string) bool {
+	return stmt != "" && strings.HasPrefix(stmt, "CREATE ") && strings.Contains(stmt, idName)
+}
+
+// WithDropTable drops the tables or views listed in argument `tableViewNames`.
+// If argument `option` contains the string "DISABLE_FOREIGN_KEY_CHECKS", then foreign keys get disabled
+// and at the end re-enabled.
+func WithDropTable(ctx context.Context, db dml.QueryExecPreparer, option string, tableViewNames ...string) TableOption {
 	return TableOption{
-		fn: func(tm *Tables) error {
-			for _, name := range names {
+		sortOrder: 2,
+		fn: func(tm *Tables) (err error) {
+			tm.mu.Lock()
+			defer tm.mu.Unlock()
+
+			if option != "" && strings.Contains(strings.ToUpper(option), "DISABLE_FOREIGN_KEY_CHECKS") {
+				if _, err = db.ExecContext(ctx, "SET FOREIGN_KEY_CHECKS=0"); err != nil {
+					return errors.WithStack(err)
+				}
+				defer func() {
+					if _, err2 := db.ExecContext(ctx, "SET FOREIGN_KEY_CHECKS=1"); err == nil && err2 != nil {
+						err = errors.WithStack(err2)
+					}
+				}()
+			}
+
+			for _, name := range tableViewNames {
+				if t, ok := tm.tm[name]; ok {
+					if err = t.Drop(ctx, db); err != nil {
+						return errors.WithStack(err)
+					}
+					continue
+				}
+
 				if err := dml.IsValidIdentifier(name); err != nil {
 					return errors.WithStack(err)
 				}
-			}
-
-			for _, tn := range names {
-				if err := tm.Upsert(NewTable(tn)); err != nil {
-					return errors.Wrapf(err, "[ddl] Tables.Insert %q", tn)
+				typ := "TABLE"
+				if strings.HasPrefix(name, PrefixView) {
+					typ = "VIEW"
+				}
+				if _, err = db.ExecContext(ctx, "DROP "+typ+" IF EXISTS "+dml.Quoter.Name(name)); err != nil {
+					return errors.Wrapf(err, "[ddl] Failed to drop %q", name)
 				}
 			}
+
 			return nil
 		},
 	}
@@ -226,7 +237,7 @@ func NewTables(opts ...TableOption) (*Tables, error) {
 		tm: make(map[string]*Table),
 	}
 	if err := tm.Options(opts...); err != nil {
-		return nil, errors.Wrap(err, "[ddl] NewTables applied option error")
+		return nil, errors.WithStack(err)
 	}
 	return tm, nil
 }
@@ -250,7 +261,7 @@ func (tm *Tables) Options(opts ...TableOption) error {
 
 	for _, to := range opts {
 		if err := to.fn(tm); err != nil {
-			return errors.Wrap(err, "[ddl] Applied option error")
+			return errors.WithStack(err)
 		}
 	}
 	tm.mu.Lock()
@@ -360,50 +371,6 @@ func (tm *Tables) DeleteAllFromCache() {
 	defer tm.mu.Unlock()
 	// maybe clear each pointer in the Table struct to avoid a memory leak
 	tm.tm = make(map[string]*Table)
-}
-
-// MapColumns scans a row from a database. It creates automatically a new Table
-// object for non-existing ones. Existing tables gets reset their columns slice
-// and it refreshes them.
-func (tm *Tables) MapColumns(rc *dml.ColumnMap) error {
-	if rc.Count == 0 {
-		tm.mu.Lock()
-	}
-
-	c, tableName, err := NewColumn(rc)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	t, ok := tm.tm[tableName]
-	if !ok {
-		t = NewTable(tableName)
-		tm.tm[tableName] = t
-	}
-
-	if tm.previousTable != tableName {
-		tm.previousTable = tableName
-		t.resetColumns()
-	}
-
-	t.Columns = append(t.Columns, c)
-	return nil
-}
-
-// Close implements io.Closer interface used in dml.Load. It unlocks the
-// internal mutex.
-func (tm *Tables) Close() error {
-	tm.mu.Unlock()
-	return nil
-}
-
-// ToSQL returns the SQL string for loading the column definitions of either all
-// tables or of the already created Table objects.
-func (tm *Tables) ToSQL() (string, []interface{}, error) {
-	if tn := tm.Tables(); len(tn) > 0 {
-		return dml.Interpolate(selTablesColumns).Strs(tn...).ToSQL()
-	}
-	return dml.QuerySQL(selAllTablesColumns).ToSQL()
 }
 
 // Validate validates the table names and their column against the current

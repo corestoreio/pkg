@@ -114,6 +114,12 @@ func (vs *Variables) Equal(key, expected string) bool {
 	return vs.Data[key] == expected
 }
 
+// Contains check case sensitive if subStr is contained in the value retrieved by key.
+func (vs *Variables) Contains(key, subStr string) bool {
+	v, ok := vs.Data[key]
+	return ok && v != "" && strings.Contains(v, subStr)
+}
+
 // Keys if argument keys has been provided the map keys will be appended to the
 // slice otherwise a new slice gets returned. The returned slice has a random
 // order. The keys argument is not for filtering.

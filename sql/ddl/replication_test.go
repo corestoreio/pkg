@@ -15,6 +15,7 @@
 package ddl_test
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"testing"
@@ -98,4 +99,18 @@ func TestMasterStatus_FromString(t *testing.T) {
 		assert.Exactly(t, test.wantPosition, haveMS.Position, "Index %d", i)
 		assert.Exactly(t, test.wantString, haveMS.String())
 	}
+}
+
+func TestMasterStatus_WriteTo(t *testing.T) {
+	t.Parallel()
+
+	var ms = &ddl.MasterStatus{}
+	err := ms.FromString("mysql-bin.000004;545460")
+	assert.NoError(t, err)
+	var buf bytes.Buffer
+
+	_, err = ms.WriteTo(&buf)
+	assert.NoError(t, err)
+
+	assert.Exactly(t, "mysql-bin.000004;545460", buf.String())
 }

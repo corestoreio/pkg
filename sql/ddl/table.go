@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/corestoreio/errors"
@@ -34,13 +35,17 @@ type Table struct {
 	Schema string
 	// Name of the table
 	Name string
-	// Columns all table columns
+	// Columns all table columns. They do not get used to create or alter a
+	// table.
 	Columns Columns
 	// Listeners specific pre defined listeners which gets dispatches to each
 	// DML statement (SELECT, INSERT, UPDATE or DELETE).
 	Listeners dml.ListenerBucket
-	// IsView set to true to mark if the table is a view
-	IsView       bool
+	// IsView set to true to mark if the table is a view.
+	IsView bool
+	// CreateSyntax stores the table/view create SQL command as retrieved via
+	// command `SHOW CREATE TABLE/VIEW [name]`.
+	CreateSyntax string
 	columnsPK    []string
 	columnsNonPK []string
 	columnsAll   []string
@@ -135,48 +140,6 @@ func (t *Table) whereByPK(op dml.Op) dml.Conditions {
 	return cnds
 }
 
-func (t *Table) resetColumns() {
-	if cap(t.Columns) == 0 {
-		t.Columns = make(Columns, 0, 10)
-	}
-	for i := range t.Columns {
-		// Pointer must be nilled to remove a reference and avoid a memory
-		// leak, AFAIK.
-		t.Columns[i] = nil
-	}
-	t.Columns = t.Columns[:0]
-}
-
-// MapColumns implements dml.ColumnMapper interface to read column values from a
-// query with table information_schema.COLUMNS.
-func (t *Table) MapColumns(rc *dml.ColumnMap) error {
-	if rc.Count == 0 {
-		t.resetColumns()
-	}
-
-	c, tableName, err := NewColumn(rc)
-	if err != nil {
-		return errors.Wrapf(err, "[ddl] Table.RowScan. Table %q\n", t.Name)
-	}
-
-	if t.Name == "" {
-		t.Name = tableName
-	}
-
-	t.Columns = append(t.Columns, c)
-	t.update()
-	return nil
-}
-
-// ToSQL creates a SQL query for loading all columns for the current table.
-func (t *Table) ToSQL() (string, []interface{}, error) {
-	sqlStr, _, err := dml.Interpolate(selTablesColumns).Str(t.Name).ToSQL()
-	if err != nil {
-		return "", nil, errors.Wrapf(err, "[ddl] Table.ToSQL.Interpolate for table %q", t.Name)
-	}
-	return sqlStr, nil, nil
-}
-
 // Truncate truncates the tables. Removes all rows and sets the auto increment
 // to zero. Just like a CREATE TABLE statement.
 func (t *Table) Truncate(ctx context.Context, execer dml.Execer) error {
@@ -244,17 +207,62 @@ func (t *Table) Swap(ctx context.Context, execer dml.Execer, other string) error
 	return nil
 }
 
-// Drop drops, if exists, the table or the view.
-func (t *Table) Drop(ctx context.Context, execer dml.Execer) error {
-	typ := "TABLE"
-	if t.IsView {
-		typ = "VIEW"
+func (t *Table) loadCreateSyntax(ctx context.Context, db dml.Querier) (err error) {
+	if db == nil {
+		return nil
 	}
+	rows, err := db.QueryContext(ctx, fmt.Sprintf("SHOW CREATE %s %s", t.getTyp(), dml.Quoter.Name(t.Name)))
+	if err != nil {
+		return errors.Wrapf(err, "[ddl] Query for %s %q failed", t.getTyp(), t.Name)
+	}
+
+	defer func() {
+		if err2 := rows.Close(); err == nil && err2 != nil {
+			err = errors.Wrapf(err2, "[ddl] Close query result for table %q failed", t.Name)
+		}
+	}()
+	for rows.Next() {
+		var noop string
+		if err := rows.Scan(&noop, &t.CreateSyntax); err != nil {
+			return errors.Wrapf(err, "[ddl] Scan for query result for table %q failed", t.Name)
+		}
+		if noop != t.Name {
+			return errors.Mismatch.Newf("[ddl] Table names do not match: want %q, got %q", noop, t.Name)
+		}
+	}
+	return nil
+}
+
+func (t *Table) getTyp() string {
+	if t.IsView || strings.HasPrefix(t.Name, PrefixView) {
+		return "VIEW"
+	}
+	return "TABLE"
+}
+
+// Drop drops, if exists, the table or the view.
+func (t *Table) Drop(ctx context.Context, db dml.Execer) error {
 	if err := dml.IsValidIdentifier(t.Name); err != nil {
 		return errors.Wrap(err, "[ddl] Drop table name")
 	}
-	_, err := execer.ExecContext(ctx, "DROP "+typ+" IF EXISTS "+dml.Quoter.QualifierName(t.Schema, t.Name))
+	_, err := db.ExecContext(ctx, "DROP "+t.getTyp()+" IF EXISTS "+dml.Quoter.QualifierName(t.Schema, t.Name))
 	return errors.Wrapf(err, "[ddl] failed to drop table %q", t.Name)
+}
+
+// Create ...
+// `CreateSyntax`.
+func (t *Table) Create(ctx context.Context, db dml.Execer) error {
+	if db == nil {
+		return nil
+	}
+	if !strings.Contains(t.CreateSyntax, dml.Quoter.Name(t.Name)) {
+		return errors.Mismatch.Newf("[ddl] Cannot find name %q for type %q in CreateSyntax field. Name not quoted?", t.Name, t.getTyp())
+	}
+	if !strings.HasPrefix(t.CreateSyntax, "CREATE ") {
+		errors.NotValid.Newf("[ddl] Invalid CreateSyntax for table %q", t.Name)
+	}
+	_, err := db.ExecContext(ctx, t.CreateSyntax)
+	return errors.Wrapf(err, "[ddl] failed to create table %q", t.Name)
 }
 
 // InfileOptions provides options for the function LoadDataInfile. Some columns
