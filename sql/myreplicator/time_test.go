@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestFracTime_String(t *testing.T) {
@@ -28,7 +28,10 @@ func TestFracTime_String(t *testing.T) {
 			{2000, 1, 1, 1, 1, 1, 1, 6, "2000-01-01 01:01:01.000001"},
 		}
 		for _, test := range tbls {
-			t1 := fracTime{time.Date(test.year, time.Month(test.month), test.day, test.hour, test.min, test.sec, test.microSec*1000, time.UTC), test.frac}
+			t1 := fracTime{
+				Time: time.Date(test.year, time.Month(test.month), test.day, test.hour, test.min, test.sec, test.microSec*1000, time.UTC),
+				Dec:  test.frac,
+			}
 			assert.Exactly(t, test.expected, t1.String())
 		}
 
@@ -53,4 +56,22 @@ func TestFracTime_String(t *testing.T) {
 			assert.Exactly(t, test.expected, formatZeroTime(test.frac, test.dec))
 		}
 	})
+}
+
+func TestTimeStringLocation(t *testing.T) {
+	ft := fracTime{
+		Time:                    time.Date(2018, time.Month(7), 30, 10, 0, 0, 0, time.FixedZone("EST", -5*3600)),
+		Dec:                     0,
+		timestampStringLocation: nil,
+	}
+
+	assert.Exactly(t, "2018-07-30 10:00:00", ft.String())
+
+	ft = fracTime{
+		Time:                    time.Date(2018, time.Month(7), 30, 10, 0, 0, 0, time.FixedZone("EST", -5*3600)),
+		Dec:                     0,
+		timestampStringLocation: time.UTC,
+	}
+
+	assert.Exactly(t, "2018-07-30 15:00:00", ft.String())
 }

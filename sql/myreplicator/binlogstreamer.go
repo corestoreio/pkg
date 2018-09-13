@@ -7,10 +7,6 @@ import (
 	"github.com/corestoreio/log"
 )
 
-var (
-	errSyncAlreadyClosed = errors.AlreadyClosed.Newf("[myreplicator] Sync was closed")
-)
-
 // BinlogStreamer gets the streaming event.
 type BinlogStreamer struct {
 	Log     log.Logger
@@ -19,9 +15,10 @@ type BinlogStreamer struct {
 	err     error
 }
 
-// GetEvent gets the binlog event one by one, it will block until Syncer receives any events from MySQL
-// or meets a sync error. You can pass a context (like Cancel or Timeout) to break the block.
-// Returns a temporary error behaviour
+// GetEvent gets the binlog event one by one, it will block until Syncer
+// receives any events from MySQL or meets a sync error. You can pass a context
+// (like Cancel or Timeout) to break the block. May return a temporary error
+// behaviour.
 func (s *BinlogStreamer) GetEvent(ctx context.Context) (*BinlogEvent, error) {
 	if s.err != nil {
 		return nil, errors.Temporary.Newf("[myreplicator] Last sync error or closed, try sync and get event again")
@@ -31,21 +28,31 @@ func (s *BinlogStreamer) GetEvent(ctx context.Context) (*BinlogEvent, error) {
 	case ble := <-s.bleChan:
 		return ble, nil
 	case s.err = <-s.errChan:
-		return nil, errors.Wrap(s.err, "[myreplicator] GetEvent error")
+		return nil, errors.WithStack(s.err)
 	case <-ctx.Done():
-		return nil, errors.Wrap(ctx.Err(), "[myreplicator] GetEvent context error")
+		return nil, errors.WithStack(ctx.Err())
 	}
 }
 
+// DumpEvents dumps all left events
+func (s *BinlogStreamer) DumpEvents() []*BinlogEvent {
+	count := len(s.bleChan)
+	events := make([]*BinlogEvent, 0, count)
+	for i := 0; i < count; i++ {
+		events = append(events, <-s.bleChan)
+	}
+	return events
+}
+
 func (s *BinlogStreamer) close() {
-	s.closeWithError(errors.Wrap(errSyncAlreadyClosed, "[myreplicator] binlogstreamer close"))
+	s.closeWithError(errors.AlreadyClosed.Newf("[myreplicator] Sync already closed"))
 }
 
 func (s *BinlogStreamer) closeWithError(err error) {
 	if err == nil {
-		err = errors.Wrap(errSyncAlreadyClosed, "")
+		err = errors.AlreadyClosed.Newf("[myreplicator] Sync closed")
 	}
-	// log.Errorf("close sync with err: %v", err)
+
 	select {
 	case s.errChan <- err:
 		if s.Log.IsInfo() {

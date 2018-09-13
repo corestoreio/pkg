@@ -5,14 +5,15 @@ import (
 	"crypto/tls"
 	"encoding/binary"
 	"fmt"
+	"os"
+	"sync"
+	"time"
+
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/siddontang/go-mysql/client"
 	"github.com/siddontang/go-mysql/mysql"
-	"os"
-	"sync"
-	"time"
 )
 
 var (
@@ -159,7 +160,7 @@ func (b *BinlogSyncer) registerSlave() error {
 	//for mysql 5.6+, binlog has a crc32 checksum
 	//before mysql 5.6, this will not work, don't matter.:-)
 	if r, err := b.con.Execute("SHOW GLOBAL VARIABLES LIKE 'BINLOG_CHECKSUM'"); err != nil {
-		return errors.Wrap(err, "[myreplicator]")
+		return errors.WithStack(err)
 	} else {
 		s, _ := r.GetString(0, 1)
 		if s != "" {
@@ -172,7 +173,7 @@ func (b *BinlogSyncer) registerSlave() error {
 			// That preference is specified below.
 
 			if _, err = b.con.Execute(`SET @master_binlog_checksum='NONE'`); err != nil {
-				return errors.Wrap(err, "[myreplicator]")
+				return errors.WithStack(err)
 			}
 
 			// if _, err = b.c.Execute(`SET @master_binlog_checksum=@@global.binlog_checksum`); err != nil {
@@ -192,11 +193,11 @@ func (b *BinlogSyncer) registerSlave() error {
 	}
 
 	if err = b.writeRegisterSlaveCommand(); err != nil {
-		return errors.Wrap(err, "[myreplicator]")
+		return errors.WithStack(err)
 	}
 
 	if _, err = b.con.ReadOKPacket(); err != nil {
-		return errors.Wrap(err, "[myreplicator]")
+		return errors.WithStack(err)
 	}
 
 	return nil
@@ -208,7 +209,7 @@ func (b *BinlogSyncer) enableSemiSync() error {
 	}
 
 	if r, err := b.con.Execute("SHOW VARIABLES LIKE 'rpl_semi_sync_master_enabled';"); err != nil {
-		return errors.Wrap(err, "[myreplicator]")
+		return errors.WithStack(err)
 	} else {
 		s, _ := r.GetString(0, 1)
 		if s != "ON" {
@@ -220,7 +221,7 @@ func (b *BinlogSyncer) enableSemiSync() error {
 
 	_, err := b.con.Execute(`SET @rpl_semi_sync_slave = 1;`)
 	if err != nil {
-		return errors.Wrap(err, "[myreplicator]")
+		return errors.WithStack(err)
 	}
 
 	return nil
@@ -232,11 +233,11 @@ func (b *BinlogSyncer) prepare() error {
 	}
 
 	if err := b.registerSlave(); err != nil {
-		return errors.Wrap(err, "[myreplicator]")
+		return errors.WithStack(err)
 	}
 
 	if err := b.enableSemiSync(); err != nil {
-		return errors.Wrap(err, "[myreplicator]")
+		return errors.WithStack(err)
 	}
 
 	return nil
@@ -266,7 +267,7 @@ func (b *BinlogSyncer) StartSync(pos ddl.MasterStatus) (*BinlogStreamer, error) 
 	}
 
 	if err := b.prepareSyncPos(pos); err != nil {
-		return nil, errors.Wrap(err, "[myreplicator]")
+		return nil, errors.WithStack(err)
 	}
 
 	return b.startDumpStream(), nil
@@ -286,7 +287,7 @@ func (b *BinlogSyncer) StartSyncGTID(gset mysql.GTIDSet) (*BinlogStreamer, error
 	}
 
 	if err := b.prepare(); err != nil {
-		return nil, errors.Wrap(err, "[myreplicator]")
+		return nil, errors.WithStack(err)
 	}
 
 	var err error
@@ -396,6 +397,7 @@ func (b *BinlogSyncer) localHostname() string {
 	return b.cfg.Localhost
 }
 
+// if this command fails then the permission `REPLICATION SLAVE` is missing.
 func (b *BinlogSyncer) writeRegisterSlaveCommand() error {
 	b.con.ResetSequence()
 
@@ -456,13 +458,13 @@ func (b *BinlogSyncer) replySemiSyncACK(p ddl.MasterStatus) error {
 
 	err := b.con.WritePacket(data)
 	if err != nil {
-		return errors.Wrap(err, "[myreplicator]")
+		return errors.WithStack(err)
 	}
 
 	_, err = b.con.ReadOKPacket()
 	if err != nil {
 	}
-	return errors.Wrap(err, "[myreplicator]")
+	return errors.WithStack(err)
 }
 
 func (b *BinlogSyncer) retrySync() error {
@@ -475,7 +477,7 @@ func (b *BinlogSyncer) retrySync() error {
 
 	b.parser.Reset()
 	if err := b.prepareSyncPos(b.nextPos); err != nil {
-		return errors.Wrap(err, "[myreplicator]")
+		return errors.WithStack(err)
 	}
 
 	return nil
@@ -488,11 +490,11 @@ func (b *BinlogSyncer) prepareSyncPos(pos ddl.MasterStatus) error {
 	}
 
 	if err := b.prepare(); err != nil {
-		return errors.Wrap(err, "[myreplicator]")
+		return errors.WithStack(err)
 	}
 
 	if err := b.writeBinglogDumpCommand(pos); err != nil {
-		return errors.Wrap(err, "[myreplicator]")
+		return errors.WithStack(err)
 	}
 
 	return nil
@@ -570,19 +572,19 @@ func (b *BinlogSyncer) onStream(s *BinlogStreamer) {
 }
 
 func (b *BinlogSyncer) parseEvent(s *BinlogStreamer, data []byte) error {
-	//skip OK byte, 0x00
+	// skip OK byte, 0x00
 	data = data[1:]
 
 	needACK := false
 	if b.cfg.SemiSyncEnabled && (data[0] == SemiSyncIndicator) {
-		needACK = (data[1] == 0x01)
-		//skip semi sync header
+		needACK = data[1] == 0x01
+		// skip semi sync header
 		data = data[2:]
 	}
 
-	e, err := b.parser.parse(data)
+	e, err := b.parser.Parse(data)
 	if err != nil {
-		return errors.Wrap(err, "[myreplicator]")
+		return errors.WithStack(err)
 	}
 
 	if e.Header.LogPos > 0 {
@@ -608,7 +610,7 @@ func (b *BinlogSyncer) parseEvent(s *BinlogStreamer, data []byte) error {
 	if needACK {
 		err := b.replySemiSyncACK(b.nextPos)
 		if err != nil {
-			return errors.Wrap(err, "[myreplicator]")
+			return errors.WithStack(err)
 		}
 	}
 

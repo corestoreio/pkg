@@ -7,8 +7,8 @@ import (
 	"path"
 	"time"
 
-	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/sql/ddl"
 )
 
 // StartBackup enables, like the mysqlbinlog command line tool, a remote raw

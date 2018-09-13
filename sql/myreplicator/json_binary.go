@@ -69,8 +69,13 @@ func jsonbGetValueEntrySize(isSmall bool) int {
 
 // decodeJsonBinary decodes the JSON binary encoding data and returns
 // the common JSON encoding data.
-func decodeJsonBinary(data []byte) ([]byte, error) {
-	d := new(jsonBinaryDecoder)
+func (e *RowsEvent) decodeJsonBinary(data []byte) ([]byte, error) {
+	// Sometimes, we can insert a NULL JSON even we set the JSON field as NOT NULL.
+	// If we meet this case, we can return an empty slice.
+	if len(data) == 0 {
+		return []byte{}, nil
+	}
+	d := jsonBinaryDecoder{}
 
 	if d.isDataShort(data, 1) {
 		return nil, d.err
@@ -337,7 +342,7 @@ func (d *jsonBinaryDecoder) decodeString(data []byte) string {
 
 	l, n := d.decodeVariableLength(data)
 
-	if d.isDataShort(data, int(l)+n) {
+	if d.isDataShort(data, l+n) {
 		return ""
 	}
 
@@ -357,11 +362,11 @@ func (d *jsonBinaryDecoder) decodeOpaque(data []byte) interface{} {
 
 	l, n := d.decodeVariableLength(data)
 
-	if d.isDataShort(data, int(l)+n) {
+	if d.isDataShort(data, l+n) {
 		return nil
 	}
 
-	data = data[n : int(l)+n]
+	data = data[n : l+n]
 
 	switch tp {
 	case mysql.MYSQL_TYPE_NEWDECIMAL:
@@ -458,7 +463,7 @@ func (d *jsonBinaryDecoder) decodeVariableLength(data []byte) (int, int) {
 	length := uint64(0)
 	for ; pos < maxCount; pos++ {
 		v := data[pos]
-		length = (length << 7) + uint64(v&0x7F)
+		length |= uint64(v&0x7F) << uint(7*pos)
 
 		if v&0x80 == 0 {
 			if length > math.MaxUint32 {
