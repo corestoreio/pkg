@@ -18,6 +18,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -216,6 +217,19 @@ func WithDSN(dsn string, cb ...DriverCallBack) ConnPoolOption {
 			return nil
 		},
 	}
+}
+
+// EnvDSN is the name of the environment variable
+const EnvDSN string = "CS_DSN"
+
+// WithDSNfromEnv loads the DSN string from an environment variable named by
+// `dsnEnvName`. If `dsnEnvName` is empty, then it falls back to the environment
+// variable name of constant `EnvDSN`.
+func WithDSNfromEnv(dsnEnvName string, cb ...DriverCallBack) ConnPoolOption {
+	if dsnEnvName == "" {
+		dsnEnvName = EnvDSN
+	}
+	return WithDSN(os.Getenv(dsnEnvName), cb...)
 }
 
 // dsnConnector implements a type to open a connection to the DB. It makes the

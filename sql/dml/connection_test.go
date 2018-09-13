@@ -16,8 +16,10 @@ package dml
 
 import (
 	"context"
+	"os"
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
@@ -63,4 +65,17 @@ func TestTransactionRollbackReal(t *testing.T) {
 
 	err = tx.Rollback()
 	assert.NoError(t, err)
+}
+
+func TestWithDSNfromEnv(t *testing.T) {
+	t.Parallel()
+
+	os.Setenv("TEST_CS_DSN_WithDSNfromEnv", "errrrr")
+	defer func() {
+		os.Unsetenv("TEST_CS_DSN_WithDSNfromEnv")
+	}()
+
+	cp, err := NewConnPool(WithDSNfromEnv("TEST_CS_DSN_WithDSNfromEnv"))
+	assert.Nil(t, cp)
+	assert.True(t, errors.NotImplemented.Match(err), "%+v", err)
 }
