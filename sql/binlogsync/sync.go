@@ -25,8 +25,8 @@ func (c *Canal) clearTableCacheOnAlterTableStatement(schema, query []byte) {
 		scma := string(mb[1])
 		tbl := string(mb[2])
 		c.ClearTableCache(scma, tbl)
-		if c.Log.IsInfo() {
-			c.Log.Info("[binlogsync] Table structure changed, clear table cache",
+		if c.log.IsInfo() {
+			c.log.Info("[binlogsync] Table structure changed, clear table cache",
 				log.String("database", scma), log.String("table", tbl))
 		}
 	}
@@ -35,8 +35,8 @@ func (c *Canal) clearTableCacheOnAlterTableStatement(schema, query []byte) {
 func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 	pos := c.masterStatus
 
-	if c.Log.IsInfo() {
-		c.Log.Info("[binlogsync] Start syncing of binlog", log.Stringer("position", pos))
+	if c.log.IsInfo() {
+		c.log.Info("[binlogsync] Start syncing of binlog", log.Stringer("position", pos))
 	}
 
 	s, err := c.syncer.StartSync(pos)
@@ -73,8 +73,8 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 			pos.Position = uint(e.Position)
 			// r.ev <- pos
 
-			if c.Log.IsInfo() {
-				c.Log.Info("[binlogsync] Rotate binlog to a new position", log.Stringer("position", pos))
+			if c.log.IsInfo() {
+				c.log.Info("[binlogsync] Rotate binlog to a new position", log.Stringer("position", pos))
 			}
 
 		case *myreplicator.RowsEvent:
@@ -83,8 +83,8 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 			// and an old event pops in.
 			if err = c.handleRowsEvent(ctxArg, ev); err != nil {
 				isNotFound := errors.Is(err, errors.NotFound)
-				if c.Log.IsInfo() {
-					c.Log.Info("[binlogsync] Rotate binlog to a new position", log.Err(err), log.Stringer("position", pos), log.Bool("ignore_not_found_error", isNotFound))
+				if c.log.IsInfo() {
+					c.log.Info("[binlogsync] Rotate binlog to a new position", log.Err(err), log.Stringer("position", pos), log.Bool("ignore_not_found_error", isNotFound))
 				}
 				if !isNotFound {
 					return errors.Wrap(err, "[binlogsync] handleRowsEvent")
@@ -107,7 +107,7 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 		}
 
 		if err := c.masterSave(pos.File, pos.Position); err != nil {
-			c.Log.Info("[binlogsync] startSyncBinlog: Failed to save master position", log.Err(err), log.Stringer("position", pos))
+			c.log.Info("[binlogsync] startSyncBinlog: Failed to save master position", log.Err(err), log.Stringer("position", pos))
 		}
 	}
 }
@@ -122,9 +122,9 @@ func (c *Canal) handleRowsEvent(ctx context.Context, e *myreplicator.BinlogEvent
 
 	// Caveat: table may be altered at runtime.
 
-	if in := string(ev.Table.Schema); c.DSN.DBName != in {
-		if c.Log.IsDebug() {
-			c.Log.Debug("[binlogsync] Skipping database", log.String("database_have", in), log.String("database_want", c.DSN.DBName), log.Int("table_id", int(ev.TableID)))
+	if in := string(ev.Table.Schema); c.dsn.DBName != in {
+		if c.log.IsDebug() {
+			c.log.Debug("[binlogsync] Skipping database", log.String("database_have", in), log.String("database_want", c.dsn.DBName), log.Int("table_id", int(ev.TableID)))
 		}
 		return nil
 	}
@@ -133,7 +133,7 @@ func (c *Canal) handleRowsEvent(ctx context.Context, e *myreplicator.BinlogEvent
 
 	t, err := c.FindTable(ctx, table)
 	if err != nil {
-		return errors.Wrapf(err, "[binlogsync] GetTable %q.%q", c.DSN.DBName, table)
+		return errors.Wrapf(err, "[binlogsync] GetTable %q.%q", c.dsn.DBName, table)
 	}
 	var a string
 	switch e.Header.EventType {
@@ -144,7 +144,7 @@ func (c *Canal) handleRowsEvent(ctx context.Context, e *myreplicator.BinlogEvent
 	case myreplicator.UPDATE_ROWS_EVENTv1, myreplicator.UPDATE_ROWS_EVENTv2:
 		a = UpdateAction
 	default:
-		return errors.NotSupported.Newf("[binlogsync] EventType %v not yet supported. Table %q.%q", e.Header.EventType, c.DSN.DBName, table)
+		return errors.NotSupported.Newf("[binlogsync] EventType %v not yet supported. Table %q.%q", e.Header.EventType, c.dsn.DBName, table)
 	}
 	return c.travelRowsEventHandler(ctx, a, t, ev.Rows)
 }

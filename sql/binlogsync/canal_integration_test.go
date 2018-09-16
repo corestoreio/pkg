@@ -16,35 +16,51 @@ package binlogsync_test
 
 import (
 	"context"
+	"flag"
 	"math/rand"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/alecthomas/assert"
 	"github.com/corestoreio/pkg/sql/binlogsync"
 	"github.com/corestoreio/pkg/sql/ddl"
+	"github.com/corestoreio/pkg/sql/dml"
 )
 
 // TODO(CyS): Add more tests
 
+var (
+	runIntegration = flag.Bool("integration", false, "Enables MySQL/MariaDB integration tests, env var CS_DSN must be set")
+)
+
 func TestIntegrationNewCanal(t *testing.T) {
-	t.Parallel()
-	dsn, err := ddl.GetParsedDSN()
-	if err != nil {
-		t.Skipf("Failed to get DSN from env %q with %s", ddl.EnvDSN, err)
+	if !*runIntegration {
+		t.Skip("Skipping integration tests. You can enable them with via CLI option `-integration`")
 	}
+
+	dsn := os.Getenv(dml.EnvDSN)
+	if dsn == "" {
+		t.Skipf("Skipping integration test because environment variable %q not set.", dml.EnvDSN)
+	}
+
 	c, err := binlogsync.NewCanal(dsn, binlogsync.WithMySQL())
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 
 	c.RegisterRowsEventHandler(catalogProductEvent{idx: 1001, t: t})
-	//c.RegisterRowsEventHandler(catalogProductEvent{idx: 1002, t: t})
+	// c.RegisterRowsEventHandler(catalogProductEvent{idx: 1002, t: t})
 
-	if err := c.Start(context.Background()); err != nil {
-		t.Fatalf("%+v", err)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	cancel()
+	assert.NoError(t, c.Start(ctx), "Start error")
+
+	select {
+	case <-ctx.Done():
+		println("Closing", ctx.Err().Error())
+		assert.NoError(t, c.Close(), "c.Close()")
 	}
-	time.Sleep(time.Second * 10)
-	c.Close()
 
 }
 

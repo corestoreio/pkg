@@ -55,11 +55,11 @@ func (c *Canal) travelRowsEventHandler(ctx context.Context, action string, table
 			err := h.Do(ctx, action, table, rows)
 			isInterr := errors.Is(err, errors.Interrupted)
 			if err != nil && !isInterr {
-				c.Log.Info("[binlogsync] Handler.Do error", log.Err(err), log.Stringer("handler_name", h),
-					log.String("action", action), log.String("schema", c.DSN.DBName), log.String("table", table.Name))
+				c.log.Info("[binlogsync] Handler.Do error", log.Err(err), log.Stringer("handler_name", h),
+					log.String("action", action), log.String("schema", c.dsn.DBName), log.String("table", table.Name))
 			} else if isInterr {
-				c.Log.Info("[binlogsync] Handler.Do Interrupt", log.Err(err), log.Stringer("handler_name", h),
-					log.String("action", action), log.String("schema", c.DSN.DBName), log.String("table", table.Name))
+				c.log.Info("[binlogsync] Handler.Do Interrupt", log.Err(err), log.Stringer("handler_name", h),
+					log.String("action", action), log.String("schema", c.dsn.DBName), log.String("table", table.Name))
 				return errors.Wrap(err, "[binlogsync] travelRowsEventHandler interrupted")
 			}
 			return nil
@@ -80,9 +80,9 @@ func (c *Canal) flushEventHandlers(ctx context.Context) error {
 			err := h.Complete(ctx)
 			isInterr := errors.Is(err, errors.Interrupted)
 			if err != nil && !isInterr {
-				c.Log.Info("[binlogsync] flushEventHandlers.Handler.Complete error", log.Err(err), log.Stringer("handler_name", h))
+				c.log.Info("[binlogsync] flushEventHandlers.Handler.Complete error", log.Err(err), log.Stringer("handler_name", h))
 			} else if isInterr {
-				c.Log.Info("[binlogsync] flushEventHandlers.Handler.Complete interrupted", log.Err(err), log.Stringer("handler_name", h))
+				c.log.Info("[binlogsync] flushEventHandlers.Handler.Complete interrupted", log.Err(err), log.Stringer("handler_name", h))
 				return errors.Wrap(err, "[binlogsync] flushEventHandlers interrupted")
 			}
 			return nil

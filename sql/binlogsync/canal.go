@@ -34,7 +34,7 @@ type Canal struct {
 	// mclose acts only during the call to Close().
 	mclose sync.Mutex
 	// DSN contains the parsed DSN
-	DSN         *mysql.Config
+	dsn         *mysql.Config
 	canalParams map[string]string
 
 	cfgBackend config.Setter
@@ -64,7 +64,7 @@ type Canal struct {
 	tableSFG *singleflight.Group
 
 	closed *int32
-	Log    log.Logger
+	log    log.Logger
 	wg     sync.WaitGroup
 }
 
@@ -74,9 +74,9 @@ type Option func(*Canal) error
 // WithMySQL adds the database/sql.DB driver including a ping to the database.
 func WithMySQL() Option {
 	return func(c *Canal) error {
-		dbc, err := dml.NewConnPool(dml.WithDSN(c.DSN.FormatDSN()), dml.WithVerifyConnection())
+		dbc, err := dml.NewConnPool(dml.WithDSN(c.dsn.FormatDSN()), dml.WithVerifyConnection())
 		if err != nil {
-			return errors.Wrap(err, "[binlogsync] sql.Open")
+			return errors.WithStack(err)
 		}
 		c.dbcp = dbc
 		return nil
@@ -87,7 +87,7 @@ func WithMySQL() Option {
 func WithDB(db *sql.DB) Option {
 	return func(c *Canal) (err error) {
 		if err = db.Ping(); err != nil {
-			return errors.Wrap(err, "[binlogsync] sql ping failed")
+			return errors.WithStack(err)
 		}
 		c.dbcp, err = dml.NewConnPool(dml.WithDB(db))
 		return err
@@ -103,6 +103,13 @@ func WithConfigurationSetter(s config.Setter) Option {
 	}
 }
 
+func WithLogger(l log.Logger) Option {
+	return func(c *Canal) error {
+		c.log = l
+		return nil
+	}
+}
+
 // TODO(CyS) add a WithContext() option function or just only a parameter for a time out.
 
 func withUpdateBinlogStart(c *Canal) error {
@@ -110,7 +117,7 @@ func withUpdateBinlogStart(c *Canal) error {
 	var ms ddl.MasterStatus
 
 	if _, err := c.dbcp.WithQueryBuilder(&ms).Load(ctx, &ms); err != nil {
-		return errors.Wrap(err, "[binlogsync] ShowMasterStatus Load")
+		return errors.WithStack(err)
 	}
 
 	c.masterStatus = ms
@@ -128,9 +135,10 @@ func withUpdateBinlogStart(c *Canal) error {
 
 // withPrepareSyncer creates its own database connection.
 func withPrepareSyncer(c *Canal) error {
-	host, port, err := net.SplitHostPort(c.DSN.Addr)
+
+	host, port, err := net.SplitHostPort(c.dsn.Addr)
 	if err != nil {
-		return errors.Wrap(err, "[binlogsync] withPrepareSyncer SplitHostPort")
+		return errors.Wrapf(err, "[binlogsync] withPrepareSyncer SplitHostPort %q", c.dsn.Addr)
 	}
 	var blSlaveID = 100
 	if v, ok := c.canalParams["BinlogSlaveId"]; ok && v != "" {
@@ -142,10 +150,13 @@ func withPrepareSyncer(c *Canal) error {
 		Flavor:   c.flavor(),
 		Host:     host,
 		Port:     uint16(conv.ToInt(port)),
-		User:     c.DSN.User,
-		Password: c.DSN.Passwd,
+		User:     c.dsn.User,
+		Password: c.dsn.Passwd,
+		Log:      c.log,
 	}
+
 	c.syncer = myreplicator.NewBinlogSyncer(&cfg)
+
 	return nil
 }
 
@@ -155,10 +166,10 @@ func withCheckBinlogRowFormat(c *Canal) error {
 
 	v := ddl.NewVariables(varName)
 	if _, err := c.dbcp.WithQueryBuilder(v).Load(ctx, v); err != nil {
-		return errors.Wrap(err, "[binlogsync] checkBinlogRowFormat row.Scan")
+		return errors.WithStack(err)
 	}
 	if !v.EqualFold(varName, "ROW") {
-		return errors.NotSupported.Newf("[binlogsync] binlog variable %q must have the configured ROW format, but got %q", varName, v.Data[varName])
+		return errors.NotSupported.Newf("[binlogsync] binlog variable %q must have the configured ROW format, but got %q. ROW means: Records events affecting individual table rows.", varName, v.Data[varName])
 	}
 	return nil
 }
@@ -168,30 +179,35 @@ var customMySQLParams = []string{"BinlogStartFile", "BinlogStartPosition", "Binl
 // NewCanal creates a new canal object to start reading the MySQL binary log. If
 // you don't provide a database connection option this function will panic.
 // export CS_DSN='root:PASSWORD@tcp(localhost:3306)/DATABASE_NAME?BinlogSlaveId=100&BinlogStartFile=mysql-bin.000002&BinlogStartPosition=4'
-func NewCanal(dsn *mysql.Config, db Option, opts ...Option) (*Canal, error) {
+func NewCanal(dsn string, db Option, opts ...Option) (*Canal, error) {
+	pDSN, err := mysql.ParseDSN(dsn)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
 	c := new(Canal)
-	c.DSN = dsn
+	c.dsn = pDSN
 	c.closed = new(int32)
 	atomic.StoreInt32(c.closed, 0)
 	c.expAlterTable = regexp.MustCompile("(?i)^ALTER\\sTABLE\\s.*?`{0,1}(.*?)`{0,1}\\.{0,1}`{0,1}([^`\\.]+?)`{0,1}\\s.*")
 
 	// remove custom parameters from DSN and copy them into our own map because
 	// otherwise MySQL connection fails due to unknown connection parameters.
-	if c.DSN.Params != nil {
+	if c.dsn.Params != nil {
 		c.canalParams = make(map[string]string)
 		for _, p := range customMySQLParams {
-			if v, ok := c.DSN.Params[p]; ok && v != "" {
+			if v, ok := c.dsn.Params[p]; ok && v != "" {
 				c.canalParams[p] = v
-				delete(c.DSN.Params, p)
+				delete(c.dsn.Params, p)
 			}
 		}
 
 	}
 
 	c.tables = ddl.MustNewTables()
-	c.tables.Schema = c.DSN.DBName
+	c.tables.Schema = c.dsn.DBName
 	c.tableSFG = new(singleflight.Group)
-	c.Log = log.BlackHole{}
+	c.log = log.BlackHole{}
 
 	opts2 := []Option{db}
 	opts2 = append(opts2, opts...)
@@ -199,7 +215,7 @@ func NewCanal(dsn *mysql.Config, db Option, opts ...Option) (*Canal, error) {
 
 	for _, opt := range opts2 {
 		if err := opt(c); err != nil {
-			return nil, errors.Wrap(err, "[binlogsync] Applied options")
+			return nil, errors.WithStack(err)
 		}
 	}
 
@@ -221,9 +237,9 @@ func (c *Canal) masterSave(fileName string, pos uint) error {
 	}
 
 	if c.cfgBackend == nil {
-		if c.Log.IsDebug() {
-			c.Log.Debug("[binlogsync] Warning: Master Status cannot be saved because config.Setter is nil",
-				log.String("database", c.DSN.DBName), log.Stringer("master_status", c.masterStatus))
+		if c.log.IsDebug() {
+			c.log.Debug("[binlogsync] Warning: Master Status cannot be saved because config.Setter is nil",
+				log.String("database", c.dsn.DBName), log.Stringer("master_status", c.masterStatus))
 		}
 		return nil
 	}
@@ -231,10 +247,10 @@ func (c *Canal) masterSave(fileName string, pos uint) error {
 	var buf bytes.Buffer
 	c.masterStatus.WriteTo(&buf)
 	if err := c.cfgBackend.Set(ConfigPathBackendPosition, buf.Bytes()); err != nil {
-		if c.Log.IsInfo() {
-			c.Log.Info("[binlogsync] Failed to store Master Status",
+		if c.log.IsInfo() {
+			c.log.Info("[binlogsync] Failed to store Master Status",
 				log.Time("master_last_save_time", c.masterLastSaveTime),
-				log.Err(err), log.String("database", c.DSN.DBName), log.Stringer("master_status", c.masterStatus))
+				log.Err(err), log.String("database", c.dsn.DBName), log.Stringer("master_status", c.masterStatus))
 		}
 		return errors.WithStack(err)
 	}
@@ -257,7 +273,6 @@ func (c *Canal) SyncedPosition() ddl.MasterStatus {
 func (c *Canal) Start(ctx context.Context) error {
 	c.wg.Add(1)
 	go c.run(ctx)
-
 	return nil
 }
 
@@ -268,9 +283,9 @@ func (c *Canal) run(ctx context.Context) error {
 
 	if err := c.startSyncBinlog(ctx); err != nil {
 		if !c.isClosed() {
-			c.Log.Info("[binlogsync] Canal start has encountered a sync binlog error", log.Err(err))
+			c.log.Info("[binlogsync] Canal start has encountered a sync binlog error", log.Err(err))
 		}
-		return errors.Wrap(err, "[binlogsync] run.startSyncBinlog")
+		return errors.WithStack(err)
 	}
 	return nil
 }
@@ -296,7 +311,7 @@ func (c *Canal) Close() error {
 	}
 
 	if err := c.dbcp.Close(); err != nil {
-		return errors.Wrap(err, "[binlogsync] DB close error")
+		return errors.WithStack(err)
 	}
 	c.wg.Wait()
 	return nil
@@ -306,7 +321,7 @@ func (c *Canal) Close() error {
 // the first search, it will add the table to the internal map and performs a
 // column load from the information_schema and then returns the fully defined
 // table.
-func (c *Canal) FindTable(ctx context.Context, tableName string) (ddl.Table, error) {
+func (c *Canal) FindTable(ctx context.Context, tableName string) (dt ddl.Table, _ error) {
 	// deference the table pointer to avoid race conditions and devs modifying the
 	// table ;-)
 	t, err := c.tables.Table(tableName)
@@ -314,23 +329,23 @@ func (c *Canal) FindTable(ctx context.Context, tableName string) (ddl.Table, err
 		return *t, nil
 	}
 	if !errors.Is(err, errors.NotFound) {
-		return ddl.Table{}, errors.Wrapf(err, "[binlogsync] FindTable.Table error")
+		return dt, errors.WithStack(err)
 	}
 
 	val, err, _ := c.tableSFG.Do(tableName, func() (interface{}, error) {
-		if err := c.tables.Options(ddl.WithTableLoadColumns(ctx, c.dbcp.DB, tableName)); err != nil {
-			return ddl.Table{}, errors.Wrapf(err, "[binlogsync] FindTable.WithTableLoadColumns error")
+		if err := c.tables.Options(ddl.WithCreateTable(ctx, c.dbcp.DB, tableName, "")); err != nil {
+			return dt, errors.WithStack(err)
 		}
 
 		t, err = c.tables.Table(tableName)
 		if err != nil {
-			return ddl.Table{}, errors.Wrapf(err, "[binlogsync] FindTable.Table2 error")
+			return dt, errors.WithStack(err)
 		}
 		return *t, nil
 	})
 
 	if err != nil {
-		return ddl.Table{}, errors.Wrapf(err, "[binlogsync] FindTable.SingleFlight error")
+		return dt, errors.WithStack(err)
 	}
 
 	return val.(ddl.Table), nil
@@ -355,7 +370,7 @@ func (c *Canal) CheckBinlogRowImage(ctx context.Context, image string) error {
 	if c.flavor() == MySQLFlavor {
 		v := ddl.NewVariables(varName)
 		if _, err := c.dbcp.WithQueryBuilder(v).Load(ctx, v); err != nil {
-			return errors.Wrap(err, "[binlogsync] CheckBinlogRowImage LoadOne")
+			return errors.WithStack(err)
 		}
 
 		// MySQL has binlog row image from 5.6, so older will return empty
