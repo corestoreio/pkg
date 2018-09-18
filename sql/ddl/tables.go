@@ -16,6 +16,7 @@ package ddl
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -274,6 +275,15 @@ func (tm *Tables) Options(opts ...TableOption) error {
 	return nil
 }
 
+// errTableNotFound provides a custom error behaviour with not capturing the
+// stack trace and hence less allocs.
+type errTableNotFound string
+
+func (t errTableNotFound) ErrorKind() errors.Kind { return errors.NotFound }
+func (t errTableNotFound) Error() string {
+	return fmt.Sprintf("[ddl] Table %q not found or not yet added.", string(t))
+}
+
 // Table returns the structure from a map m by a giving index i. What is the
 // reason to use int as the table index and not a name? Because table names
 // between M1 and M2 get renamed and in a Go SQL code generator script of the
@@ -285,7 +295,7 @@ func (tm *Tables) Table(name string) (*Table, error) {
 	if t, ok := tm.tm[name]; ok {
 		return t, nil
 	}
-	return nil, errors.NotFound.Newf("[ddl] Table %q not found.", name)
+	return nil, errTableNotFound(name)
 }
 
 // MustTable same as Table function but panics when the table cannot be found or

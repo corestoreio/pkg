@@ -22,13 +22,25 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
-var _ dml.ColumnMapper = (*Variables)(nil)
-var _ dml.QueryBuilder = (*Variables)(nil)
+var (
+	_ dml.ColumnMapper = (*Variables)(nil)
+	_ dml.QueryBuilder = (*Variables)(nil)
+	_ errors.Kinder    = (*errTableNotFound)(nil)
+	_ error            = (*errTableNotFound)(nil)
+)
+
+func TestErrTableNotFound(t *testing.T) {
+	t.Parallel()
+	err := errTableNotFound("Errr")
+	assert.Exactly(t, errors.NotFound, err.ErrorKind())
+	assert.Exactly(t, "[ddl] Table \"Errr\" not found or not yet added.", err.Error())
+}
 
 func TestNewVariables_Integration(t *testing.T) {
 	t.Parallel()
