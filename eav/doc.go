@@ -28,4 +28,14 @@
 // Backend models can be an alternative to an observer; for example, when you
 // have to do something that depends on an attribute value when an entity is
 // saved.
+//
+// TODO(CSC): idea to import data quickly: see Entity-Attribute-Value_(EAV)_The_Antipattern_Too_Great_to_Give_Up_-__Andy_Novick_2016-03-19.pdf
+// Break it down to single partition operations
+// • SQLCLR proc breaks the file by attribute_id
+// • SEND attribute_id’s data to a Service Broker QUEUE
+// • Each task is working on ONE attribute_id
+// – That’s one HOBT / Partition
+// • Run 1-2 tasks per core
+// CSC: in our case run a pool goroutines to work on the attribute IDs or for
+// each attribute_id a dedicated goroutine (maybe code generated)
 package eav
