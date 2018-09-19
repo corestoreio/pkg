@@ -17,6 +17,9 @@ package mw
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/corestoreio/log"
+	loghttp "github.com/corestoreio/log/http"
 )
 
 // ErrorHandler passes an error to an handler and returns the handler with the
@@ -30,6 +33,27 @@ func ErrorWithStatusCode(code int) ErrorHandler {
 	return func(err error) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			http.Error(w, fmt.Sprintf("%s\n\n%+v", http.StatusText(code), err), code)
+		})
+	}
+}
+
+// LogErrorWithStatusCode same as ErrorWithStatusCode but does not print the
+// error message and logs it instead with level debug or info.
+func LogErrorWithStatusCode(l log.Logger, code int) ErrorHandler {
+	return func(err error) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+			http.Error(w, http.StatusText(code), code)
+
+			fields := log.Fields{
+				log.Err(err), log.Int("status_code", code),
+				loghttp.Request("request", loghttp.ShallowCloneRequest(r)),
+			}
+			if l.IsDebug() {
+				l.Debug("mw.LogErrorWithStatusCode", fields...)
+			} else if l.IsInfo() {
+				l.Info("mw.LogErrorWithStatusCode", fields...)
+			}
 		})
 	}
 }

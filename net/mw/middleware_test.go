@@ -18,13 +18,12 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 
-	"net/url"
-
 	"github.com/corestoreio/pkg/net/mw"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 type key uint

@@ -26,7 +26,7 @@ type Option func(ob *optionBox)
 
 func newOptionBox(opts ...Option) *optionBox {
 	ob := &optionBox{
-		log: log.BlackHole{}, // disabled info and debug logging
+		log:                   log.BlackHole{}, // disabled info and debug logging
 		methodOverrideFormKey: MethodOverrideFormKey,
 	}
 	for _, o := range opts {

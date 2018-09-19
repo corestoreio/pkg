@@ -15,13 +15,15 @@
 package mw_test
 
 import (
+	"bytes"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log/logw"
 	"github.com/corestoreio/pkg/net/mw"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestErrorWithCode(t *testing.T) {
@@ -48,4 +50,19 @@ func TestErrorWithPanic(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mw.ErrorWithPanic(errors.New("Oh dude, this handler should not be called, but it did.")).ServeHTTP(rec, nil)
 	assert.Exactly(t, http.StatusInternalServerError, rec.Code)
+}
+
+func TestLogErrorWithStatusCode(t *testing.T) {
+
+	var buf bytes.Buffer
+	lg := logw.NewLog(logw.WithWriter(&buf), logw.WithLevel(logw.LevelDebug))
+
+	eh := mw.LogErrorWithStatusCode(lg, http.StatusTeapot)
+	rec := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/", nil)
+	eh(errors.AlreadyRefunded.Newf("Invoice already refunded")).ServeHTTP(rec, r)
+	assert.Exactly(t, http.StatusTeapot, rec.Code)
+	assert.Contains(t, rec.Body.String(), "I'm a teapot\n")
+	assert.Contains(t, rec.Body.String(), http.StatusText(http.StatusTeapot))
+	assert.Contains(t, buf.String(), `mw.LogErrorWithStatusCode error: "Invoice already refunded" status_code: 418 request: "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"`)
 }
