@@ -21,6 +21,8 @@ import (
 	"sync"
 )
 
+// TODO use github.com/intel-go/bytebuf or check if it can be merged upstream into go-src/master
+
 var twinBufferPool = NewTwin(1024) // estimated *cough* average size
 
 // TwinBuffer contains two buffers.
@@ -79,6 +81,17 @@ func GetTwin() *TwinBuffer {
 // PutTwin returns a twin buffer to the pool. The buffers get reset before they
 // are put back into circulation.
 func PutTwin(buf *TwinBuffer) {
+	// @see https://go-review.googlesource.com/c/go/+/136116/4/src/fmt/print.go
+	// Proper usage of a sync.Pool requires each entry to have approximately
+	// the same memory cost. To obtain this property when the stored type
+	// contains a variably-sized buffer, we add a hard limit on the maximum buffer
+	// to place back in the pool.
+	//
+	// See https://golang.org/issue/23199
+	const maxSize = 1 << 16 // 64KiB
+	if buf.First.Cap() > maxSize || buf.Second.Cap() > maxSize {
+		return
+	}
 	twinBufferPool.Put(buf)
 }
 
@@ -87,6 +100,11 @@ func PutTwin(buf *TwinBuffer) {
 //		buf := twinBuf.Get()
 //		defer twinBuf.PutCallBack(buf, wg.Done)
 func PutTwinCallBack(buf *TwinBuffer, fn func()) {
+	const maxSize = 1 << 16 // 64KiB
+	if buf.First.Cap() > maxSize || buf.Second.Cap() > maxSize {
+		fn()
+		return
+	}
 	twinBufferPool.PutCallBack(buf, fn)
 }
 
