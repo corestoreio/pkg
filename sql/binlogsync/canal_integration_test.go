@@ -19,6 +19,7 @@ import (
 	"flag"
 	"math/rand"
 	"os"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -34,7 +35,7 @@ var (
 	runIntegration = flag.Bool("integration", false, "Enables MySQL/MariaDB integration tests, env var CS_DSN must be set")
 )
 
-func TestIntegrationNewCanal(t *testing.T) {
+func TestIntegrationNewCanal_WithoutCfgSrv(t *testing.T) {
 	if !*runIntegration {
 		t.Skip("Skipping integration tests. You can enable them with via CLI option `-integration`")
 	}
@@ -44,12 +45,13 @@ func TestIntegrationNewCanal(t *testing.T) {
 		t.Skipf("Skipping integration test because environment variable %q not set.", dml.EnvDSN)
 	}
 
-	c, err := binlogsync.NewCanal(dsn, binlogsync.WithMySQL())
+	c, err := binlogsync.NewCanal(dsn, binlogsync.WithMySQL(), binlogsync.Options{})
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 
-	c.RegisterRowsEventHandler(catalogProductEvent{idx: 1001, t: t})
+	cpe := catalogProductEvent{idx: 1001, callCounter: new(int32), t: t}
+	c.RegisterRowsEventHandler(cpe)
 	// c.RegisterRowsEventHandler(catalogProductEvent{idx: 1002, t: t})
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
@@ -58,15 +60,17 @@ func TestIntegrationNewCanal(t *testing.T) {
 
 	select {
 	case <-ctx.Done():
-		println("Closing", ctx.Err().Error())
+		t.Log("Err CTX: Closing", ctx.Err().Error())
 		assert.NoError(t, c.Close(), "c.Close()")
+		assert.Exactly(t, int32(1), atomic.LoadInt32(cpe.callCounter), "catalogProductEvent should have get called")
 	}
 
 }
 
 type catalogProductEvent struct {
-	idx int
-	t   *testing.T
+	idx         int
+	callCounter *int32
+	t           *testing.T
 }
 
 func (cpe catalogProductEvent) Do(_ context.Context, action string, table ddl.Table, rows [][]interface{}) error {
@@ -78,6 +82,7 @@ func (cpe catalogProductEvent) Do(_ context.Context, action string, table ddl.Ta
 		cpe.t.Logf("%#v", r)
 	}
 	cpe.t.Logf("\n")
+	atomic.AddInt32(cpe.callCounter, 1)
 	return nil
 }
 func (cpe catalogProductEvent) Complete(_ context.Context) error {

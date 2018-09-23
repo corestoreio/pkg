@@ -3,7 +3,9 @@ package binlogsync
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"database/sql"
+	"fmt"
 	"net"
 	"regexp"
 	"sync"
@@ -16,6 +18,7 @@ import (
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/myreplicator"
+	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/sync/singleflight"
 	"github.com/corestoreio/pkg/util/conv"
 	"github.com/go-sql-driver/mysql"
@@ -27,26 +30,32 @@ const (
 	MariaDBFlavor = "mariadb"
 )
 
-var ConfigPathBackendPosition = config.MustNewPath(`sql/binlogsync/master_position`)
+// Configuration paths for config.Service
+const (
+	ConfigPathBackendPosition     = `sql/binlogsync/master_position`
+	ConfigPathIncludeTableRegex   = `sql/binlogsync/include_table_regex`
+	ConfigPathExcludeTableRegex   = `sql/binlogsync/exclude_table_regex`
+	ConfigPathBinlogStartFile     = `sql/binlogsync/binlog_start_file`
+	ConfigPathBinlogStartPosition = `sql/binlogsync/binlog_start_position`
+	ConfigPathBinlogSlaveID       = `sql/binlogsync/binlog_slave_id`
+	ConfigPathServerFlavor        = `sql/binlogsync/server_flavor`
+)
 
 // Canal can sync your MySQL data. MySQL must use the binlog format ROW.
 type Canal struct {
+	opts                      Options
+	configPathBackendPosition *config.Path
 	// mclose acts only during the call to Close().
 	mclose sync.Mutex
 	// DSN contains the parsed DSN
-	dsn         *mysql.Config
-	canalParams map[string]string
+	dsn *mysql.Config
 
-	cfgBackend config.Setter
+	cfgScope config.Scoped // required
+	syncer   *myreplicator.BinlogSyncer
 
 	masterMu           sync.RWMutex
 	masterStatus       ddl.MasterStatus
 	masterLastSaveTime time.Time
-
-	// expAlterTable defines the regex to be used to detect ALTER TABLE
-	// statements to reinitialize the internal table structure cache.
-	expAlterTable *regexp.Regexp
-	syncer        *myreplicator.BinlogSyncer
 
 	rsMu       sync.RWMutex
 	rsHandlers []RowsEventHandler
@@ -61,75 +70,99 @@ type Canal struct {
 	// tableSFG takes to only execute one SQL query per table in parallel
 	// situations. No need for a pointer because Canal is already a pointer. So
 	// simple embedding.
-	tableSFG *singleflight.Group
+	tableSFG singleflight.Group
+
+	tableLock         sync.RWMutex
+	tableAllowedCache map[string]bool
+	includeTableRegex []*regexp.Regexp
+	excludeTableRegex []*regexp.Regexp
 
 	closed *int32
-	log    log.Logger
 	wg     sync.WaitGroup
 }
 
-// Option applies multiple options to the Canal type.
-type Option func(*Canal) error
+// DBConFactory creates a new database connection.
+type DBConFactory func(dsn string) (*dml.ConnPool, error)
 
-// WithMySQL adds the database/sql.DB driver including a ping to the database.
-func WithMySQL() Option {
-	return func(c *Canal) error {
-		dbc, err := dml.NewConnPool(dml.WithDSN(c.dsn.FormatDSN()), dml.WithVerifyConnection())
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		c.dbcp = dbc
-		return nil
+// WithMySQL adds the database/sql.DB driver including a ping to the database
+// from the provided DSN.
+func WithMySQL() DBConFactory {
+	return func(dsn string) (*dml.ConnPool, error) {
+		dbc, err := dml.NewConnPool(dml.WithDSN(dsn), dml.WithVerifyConnection())
+		return dbc, errors.WithStack(err)
 	}
 }
 
 // WithDB allows to set your own DB connection.
-func WithDB(db *sql.DB) Option {
-	return func(c *Canal) (err error) {
-		if err = db.Ping(); err != nil {
-			return errors.WithStack(err)
+func WithDB(db *sql.DB) DBConFactory {
+	return func(_ string) (*dml.ConnPool, error) {
+		if err := db.Ping(); err != nil {
+			return nil, errors.WithStack(err)
 		}
-		c.dbcp, err = dml.NewConnPool(dml.WithDB(db))
-		return err
+		dbc, err := dml.NewConnPool(dml.WithDB(db))
+		return dbc, errors.WithStack(err)
 	}
 }
 
-// WithConfigurationSetter used to persists the current binlog position.
-// If discarded, the last position won't be saved.
-func WithConfigurationSetter(s config.Setter) Option {
+func withIncludeTables(regexes []string) func(c *Canal) error {
 	return func(c *Canal) error {
-		c.cfgBackend = s
+		if len(regexes) == 0 {
+			return nil
+		}
+		c.tableLock.Lock()
+		defer c.tableLock.Unlock()
+		c.includeTableRegex = make([]*regexp.Regexp, len(regexes))
+		for i, val := range regexes {
+			reg, err := regexp.Compile(val)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			c.includeTableRegex[i] = reg
+		}
 		return nil
 	}
 }
 
-func WithLogger(l log.Logger) Option {
+func withExcludeTables(regexes []string) func(c *Canal) error {
 	return func(c *Canal) error {
-		c.log = l
+		if len(regexes) == 0 {
+			return nil
+		}
+		c.tableLock.Lock()
+		defer c.tableLock.Unlock()
+		c.excludeTableRegex = make([]*regexp.Regexp, len(regexes))
+		for i, val := range regexes {
+			reg, err := regexp.Compile(val)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			c.excludeTableRegex[i] = reg
+		}
 		return nil
 	}
 }
-
-// TODO(CyS) add a WithContext() option function or just only a parameter for a time out.
 
 func withUpdateBinlogStart(c *Canal) error {
-	ctx := context.TODO()
-	var ms ddl.MasterStatus
 
+	if c.opts.BinlogStartFile != "" && c.opts.BinlogStartPosition > 0 {
+		c.masterStatus.File = c.opts.BinlogStartFile
+		c.masterStatus.Position = uint(c.opts.BinlogStartPosition)
+		return nil
+	}
+
+	if c.opts.MasterStatusQueryTimeout == 0 {
+		c.opts.MasterStatusQueryTimeout = time.Second * 20
+	}
+
+	var ms ddl.MasterStatus
+	ctx, cancel := context.WithTimeout(context.Background(), c.opts.MasterStatusQueryTimeout)
+	defer cancel()
 	if _, err := c.dbcp.WithQueryBuilder(&ms).Load(ctx, &ms); err != nil {
 		return errors.WithStack(err)
 	}
 
 	c.masterStatus = ms
 
-	if v, ok := c.canalParams["BinlogStartFile"]; ok && v != "" {
-		c.masterStatus.File = v
-	}
-	if v, ok := c.canalParams["BinlogStartPosition"]; ok && v != "" {
-		if hasPos := conv.ToUint(v); hasPos >= 4 {
-			c.masterStatus.Position = hasPos
-		}
-	}
 	return nil
 }
 
@@ -140,19 +173,20 @@ func withPrepareSyncer(c *Canal) error {
 	if err != nil {
 		return errors.Wrapf(err, "[binlogsync] withPrepareSyncer SplitHostPort %q", c.dsn.Addr)
 	}
-	var blSlaveID = 100
-	if v, ok := c.canalParams["BinlogSlaveId"]; ok && v != "" {
-		blSlaveID = conv.ToInt(v)
+
+	if c.opts.BinlogSlaveId == 0 {
+		c.opts.BinlogSlaveId = 100
 	}
 
 	cfg := myreplicator.BinlogSyncerConfig{
-		ServerID: uint32(blSlaveID),
-		Flavor:   c.flavor(),
-		Host:     host,
-		Port:     uint16(conv.ToInt(port)),
-		User:     c.dsn.User,
-		Password: c.dsn.Passwd,
-		Log:      c.log,
+		ServerID:  uint32(c.opts.BinlogSlaveId),
+		Flavor:    c.opts.Flavor,
+		Host:      host,
+		Port:      uint16(conv.ToUint(port)),
+		User:      c.dsn.User,
+		Password:  c.dsn.Passwd,
+		Log:       c.opts.Log,
+		TLSConfig: c.opts.TLSConfig,
 	}
 
 	c.syncer = myreplicator.NewBinlogSyncer(&cfg)
@@ -174,50 +208,131 @@ func withCheckBinlogRowFormat(c *Canal) error {
 	return nil
 }
 
-var customMySQLParams = []string{"BinlogStartFile", "BinlogStartPosition", "BinlogSlaveId", "flavor"}
+// Options provides multiple options for NewCanal. Part of those options can get
+// loaded via config.Scoped.
+type Options struct {
+	// ConfigScoped defines the configuration to load the following fields from.
+	// If not set the data won't be loaded.
+	ConfigScoped config.Scoped
+	ConfigSet    config.Setter
+	Log          log.Logger
+	TLSConfig    *tls.Config
+	// IncludeTableRegex defines the regex which matches the allowed table
+	// names. Default state of WithIncludeTables is empty, this will include all
+	// tables.
+	IncludeTableRegex []string
+	// ExcludeTableRegex defines the regex which matches the excluded table
+	// names. Default state of WithExcludeTables is empty, ignores exluding and
+	// includes all tables.
+	ExcludeTableRegex []string
 
-// NewCanal creates a new canal object to start reading the MySQL binary log. If
-// you don't provide a database connection option this function will panic.
-// export CS_DSN='root:PASSWORD@tcp(localhost:3306)/DATABASE_NAME?BinlogSlaveId=100&BinlogStartFile=mysql-bin.000002&BinlogStartPosition=4'
-func NewCanal(dsn string, db Option, opts ...Option) (*Canal, error) {
+	BinlogStartFile     string
+	BinlogStartPosition uint64
+	BinlogSlaveId       uint64
+	// Flavor defines if `mariadb` or `mysql` should be used. Defaults to
+	// `mariadb`.
+	Flavor                   string
+	MasterStatusQueryTimeout time.Duration
+}
+
+func (o Options) loadOptionsFromConfig() (_ Options, err error) {
+
+	switch o.Flavor {
+	case MySQLFlavor:
+		o.Flavor = MySQLFlavor
+	default:
+		o.Flavor = MariaDBFlavor
+	}
+
+	if o.Log == nil {
+		o.Log = log.BlackHole{}
+	}
+
+	if !o.ConfigScoped.IsValid() {
+		return o, nil
+	}
+
+	if o.IncludeTableRegex == nil {
+		v := o.ConfigScoped.Get(scope.Default, ConfigPathIncludeTableRegex)
+		if o.IncludeTableRegex, err = v.Strs(o.IncludeTableRegex...); err != nil {
+			err = errors.WithStack(err)
+			return
+		}
+	}
+	if o.ExcludeTableRegex == nil {
+		v := o.ConfigScoped.Get(scope.Default, ConfigPathExcludeTableRegex)
+		if o.ExcludeTableRegex, err = v.Strs(o.ExcludeTableRegex...); err != nil {
+			err = errors.WithStack(err)
+			return
+		}
+	}
+	if o.BinlogStartFile == "" {
+		v := o.ConfigScoped.Get(scope.Default, ConfigPathBinlogStartFile)
+		o.BinlogStartFile = v.UnsafeStr()
+	}
+	if o.BinlogStartPosition == 0 {
+		v := o.ConfigScoped.Get(scope.Default, ConfigPathBinlogStartPosition)
+		o.BinlogStartPosition = v.UnsafeUint64()
+	}
+	if o.BinlogSlaveId == 0 {
+		v := o.ConfigScoped.Get(scope.Default, ConfigPathBinlogSlaveID)
+		o.BinlogStartPosition = v.UnsafeUint64()
+	}
+	if o.Flavor == "" {
+		v := o.ConfigScoped.Get(scope.Default, ConfigPathServerFlavor)
+		o.Flavor = v.UnsafeStr()
+	}
+
+	return o, nil
+}
+
+// NewCanal creates a new canal object to start reading the MySQL binary log.
+// The DSN is need to setup two different connections. One connection for reading the binary stream and the 2nd connection
+// to execute queries. The 2nd argument `db` gets used to executed the queries, like setting variables or getting table information.
+// Default database flavor is `mariadb`.
+// export CS_DSN='root:PASSWORD@tcp(localhost:3306)/DATABASE_NAME
+func NewCanal(dsn string, db DBConFactory, opt Options) (*Canal, error) {
 	pDSN, err := mysql.ParseDSN(dsn)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	c := new(Canal)
-	c.dsn = pDSN
-	c.closed = new(int32)
-	atomic.StoreInt32(c.closed, 0)
-	c.expAlterTable = regexp.MustCompile("(?i)^ALTER\\sTABLE\\s.*?`{0,1}(.*?)`{0,1}\\.{0,1}`{0,1}([^`\\.]+?)`{0,1}\\s.*")
-
-	// remove custom parameters from DSN and copy them into our own map because
-	// otherwise MySQL connection fails due to unknown connection parameters.
-	if c.dsn.Params != nil {
-		c.canalParams = make(map[string]string)
-		for _, p := range customMySQLParams {
-			if v, ok := c.dsn.Params[p]; ok && v != "" {
-				c.canalParams[p] = v
-				delete(c.dsn.Params, p)
-			}
-		}
-
+	if opt, err = opt.loadOptionsFromConfig(); err != nil {
+		return nil, errors.WithStack(err)
 	}
 
-	c.tables = ddl.MustNewTables()
+	c := &Canal{
+		opts:                      opt,
+		configPathBackendPosition: config.MustNewPath(ConfigPathBackendPosition),
+		dsn:                       pDSN,
+		closed:                    new(int32),
+		tables:                    ddl.MustNewTables(),
+	}
+
+	atomic.StoreInt32(c.closed, 0)
+
 	c.tables.Schema = c.dsn.DBName
-	c.tableSFG = new(singleflight.Group)
-	c.log = log.BlackHole{}
 
-	opts2 := []Option{db}
-	opts2 = append(opts2, opts...)
-	opts2 = append(opts2, withUpdateBinlogStart, withPrepareSyncer, withCheckBinlogRowFormat)
+	c.dbcp, err = db(dsn)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
 
-	for _, opt := range opts2 {
-		if err := opt(c); err != nil {
+	initOptFn := [...]func(c *Canal) error{
+		withUpdateBinlogStart, withPrepareSyncer, withCheckBinlogRowFormat,
+		withIncludeTables(opt.IncludeTableRegex), withExcludeTables(opt.ExcludeTableRegex),
+	}
+	for _, optFn := range initOptFn {
+		if err := optFn(c); err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}
+
+	c.tableLock.Lock()
+	if c.includeTableRegex != nil || c.excludeTableRegex != nil {
+		c.tableAllowedCache = make(map[string]bool)
+	}
+	c.tableLock.Unlock()
 
 	return c, nil
 }
@@ -236,9 +351,9 @@ func (c *Canal) masterSave(fileName string, pos uint) error {
 		return nil
 	}
 
-	if c.cfgBackend == nil {
-		if c.log.IsDebug() {
-			c.log.Debug("[binlogsync] Warning: Master Status cannot be saved because config.Setter is nil",
+	if c.opts.ConfigSet == nil {
+		if c.opts.Log.IsDebug() {
+			c.opts.Log.Debug("[binlogsync] Warning: Master Status cannot be saved because config.Setter is nil",
 				log.String("database", c.dsn.DBName), log.Stringer("master_status", c.masterStatus))
 		}
 		return nil
@@ -246,9 +361,9 @@ func (c *Canal) masterSave(fileName string, pos uint) error {
 
 	var buf bytes.Buffer
 	c.masterStatus.WriteTo(&buf)
-	if err := c.cfgBackend.Set(ConfigPathBackendPosition, buf.Bytes()); err != nil {
-		if c.log.IsInfo() {
-			c.log.Info("[binlogsync] Failed to store Master Status",
+	if err := c.opts.ConfigSet.Set(c.configPathBackendPosition, buf.Bytes()); err != nil {
+		if c.opts.Log.IsInfo() {
+			c.opts.Log.Info("[binlogsync] Failed to store Master Status",
 				log.Time("master_last_save_time", c.masterLastSaveTime),
 				log.Err(err), log.String("database", c.dsn.DBName), log.Stringer("master_status", c.masterStatus))
 		}
@@ -283,7 +398,7 @@ func (c *Canal) run(ctx context.Context) error {
 
 	if err := c.startSyncBinlog(ctx); err != nil {
 		if !c.isClosed() {
-			c.log.Info("[binlogsync] Canal start has encountered a sync binlog error", log.Err(err))
+			c.opts.Log.Info("[binlogsync] Canal start has encountered a sync binlog error", log.Err(err))
 		}
 		return errors.WithStack(err)
 	}
@@ -317,13 +432,62 @@ func (c *Canal) Close() error {
 	return nil
 }
 
+func (c *Canal) isTableAllowed(tblName string) bool {
+	// no filter, return true
+	if c.tableAllowedCache == nil {
+		return true
+	}
+
+	c.tableLock.RLock()
+	isAllowed, ok := c.tableAllowedCache[tblName]
+	c.tableLock.RUnlock()
+	if ok {
+		// cache hit
+		return isAllowed
+	}
+	matchFlag := false
+	// check include
+	if c.includeTableRegex != nil {
+		for _, reg := range c.includeTableRegex {
+			if reg.MatchString(tblName) {
+				matchFlag = true
+				break
+			}
+		}
+	}
+	// check exclude
+	if matchFlag && c.excludeTableRegex != nil {
+		for _, reg := range c.excludeTableRegex {
+			if reg.MatchString(tblName) {
+				matchFlag = false
+				break
+			}
+		}
+	}
+	c.tableLock.Lock()
+	c.tableAllowedCache[tblName] = matchFlag
+	c.tableLock.Unlock()
+	return matchFlag
+}
+
+type errTableNotAllowed string
+
+func (t errTableNotAllowed) ErrorKind() errors.Kind { return errors.NotAllowed }
+func (t errTableNotAllowed) Error() string {
+	return fmt.Sprintf("[binlogsync] Table %q is not allowed", string(t))
+}
+
 // FindTable tries to find a table by its ID. If the table cannot be found by
 // the first search, it will add the table to the internal map and performs a
 // column load from the information_schema and then returns the fully defined
-// table.
+// table. Only tables which are found in the database name of the DSN get
+// loaded.
 func (c *Canal) FindTable(ctx context.Context, tableName string) (dt ddl.Table, _ error) {
-	// deference the table pointer to avoid race conditions and devs modifying the
-	// table ;-)
+
+	if !c.isTableAllowed(tableName) {
+		return dt, errTableNotAllowed(tableName)
+	}
+
 	t, err := c.tables.Table(tableName)
 	if err == nil {
 		return *t, nil
@@ -367,7 +531,7 @@ func (c *Canal) CheckBinlogRowImage(ctx context.Context, image string) error {
 	// now only log.
 	//  TODO what about MariaDB?
 	const varName = "binlog_row_image"
-	if c.flavor() == MySQLFlavor {
+	if c.opts.Flavor == MySQLFlavor {
 		v := ddl.NewVariables(varName)
 		if _, err := c.dbcp.WithQueryBuilder(v).Load(ctx, v); err != nil {
 			return errors.WithStack(err)
@@ -379,19 +543,4 @@ func (c *Canal) CheckBinlogRowImage(ctx context.Context, image string) error {
 		}
 	}
 	return nil
-}
-
-func (c *Canal) flavor() string {
-	var f string
-	if v, ok := c.canalParams["flavor"]; ok && v != "" {
-		f = v
-	}
-	if f == "" {
-		f = MySQLFlavor
-	}
-	switch f {
-	case MariaDBFlavor:
-		return MariaDBFlavor
-	}
-	return MySQLFlavor
 }

@@ -43,7 +43,7 @@ func (c *Canal) RegisterRowsEventHandler(h RowsEventHandler) {
 	c.rsHandlers = append(c.rsHandlers, h)
 }
 
-func (c *Canal) travelRowsEventHandler(ctx context.Context, action string, table ddl.Table, rows [][]interface{}) error {
+func (c *Canal) processRowsEventHandler(ctx context.Context, action string, table ddl.Table, rows [][]interface{}) error {
 	c.rsMu.RLock()
 	defer c.rsMu.RUnlock()
 
@@ -55,17 +55,17 @@ func (c *Canal) travelRowsEventHandler(ctx context.Context, action string, table
 			err := h.Do(ctx, action, table, rows)
 			isInterr := errors.Is(err, errors.Interrupted)
 			if err != nil && !isInterr {
-				c.log.Info("[binlogsync] Handler.Do error", log.Err(err), log.Stringer("handler_name", h),
+				c.opts.Log.Info("binlogsync.Canal.processRowsEventHandler.Go.Do.error", log.Err(err), log.Stringer("handler_name", h),
 					log.String("action", action), log.String("schema", c.dsn.DBName), log.String("table", table.Name))
 			} else if isInterr {
-				c.log.Info("[binlogsync] Handler.Do Interrupt", log.Err(err), log.Stringer("handler_name", h),
+				c.opts.Log.Info("binlogsync.Canal.processRowsEventHandler.Go.Do.interrupted.error", log.Err(err), log.Stringer("handler_name", h),
 					log.String("action", action), log.String("schema", c.dsn.DBName), log.String("table", table.Name))
-				return errors.Wrap(err, "[binlogsync] travelRowsEventHandler interrupted")
+				return errors.WithStack(err)
 			}
 			return nil
 		})
 	}
-	return errors.Wrap(erg.Wait(), "[binlogsync] travelRowsEventHandler errgroup Wait")
+	return errors.WithStack(erg.Wait())
 }
 
 func (c *Canal) flushEventHandlers(ctx context.Context) error {
@@ -80,9 +80,9 @@ func (c *Canal) flushEventHandlers(ctx context.Context) error {
 			err := h.Complete(ctx)
 			isInterr := errors.Is(err, errors.Interrupted)
 			if err != nil && !isInterr {
-				c.log.Info("[binlogsync] flushEventHandlers.Handler.Complete error", log.Err(err), log.Stringer("handler_name", h))
+				c.opts.Log.Info("binlogsync.Canal.flushEventHandlers.Go.Complete.error", log.Err(err), log.Stringer("handler_name", h))
 			} else if isInterr {
-				c.log.Info("[binlogsync] flushEventHandlers.Handler.Complete interrupted", log.Err(err), log.Stringer("handler_name", h))
+				c.opts.Log.Info("binlogsync.Canal.flushEventHandlers.Go.Complete.interrupted.error", log.Err(err), log.Stringer("handler_name", h))
 				return errors.Wrap(err, "[binlogsync] flushEventHandlers interrupted")
 			}
 			return nil

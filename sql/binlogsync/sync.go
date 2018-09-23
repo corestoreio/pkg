@@ -2,10 +2,12 @@ package binlogsync
 
 import (
 	"context"
+	"regexp"
 	"time"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/myreplicator"
 )
 
@@ -17,26 +19,56 @@ const (
 	DeleteAction = "delete"
 )
 
-func (c *Canal) clearTableCacheOnAlterTableStatement(schema, query []byte) {
-	if mb := c.expAlterTable.FindSubmatch(query); mb != nil {
-		if len(mb[1]) == 0 {
-			mb[1] = schema
+var (
+	expCreateTable = regexp.MustCompile("(?i)^CREATE\\sTABLE(\\sIF\\sNOT\\sEXISTS)?\\s`{0,1}(.*?)`{0,1}\\.{0,1}`{0,1}([^`\\.]+?)`{0,1}\\s.*")
+	expAlterTable  = regexp.MustCompile("(?i)^ALTER\\sTABLE\\s.*?`{0,1}(.*?)`{0,1}\\.{0,1}`{0,1}([^`\\.]+?)`{0,1}\\s.*")
+	expRenameTable = regexp.MustCompile("(?i)^RENAME\\sTABLE\\s.*?`{0,1}(.*?)`{0,1}\\.{0,1}`{0,1}([^`\\.]+?)`{0,1}\\s{1,}TO\\s.*?")
+	expDropTable   = regexp.MustCompile("(?i)^DROP\\sTABLE(\\sIF\\sEXISTS){0,1}\\s`{0,1}(.*?)`{0,1}\\.{0,1}`{0,1}([^`\\.]+?)`{0,1}(?:$|\\s)")
+	ddlExpressions = [...]*regexp.Regexp{expCreateTable, expAlterTable, expRenameTable, expDropTable}
+)
+
+func extractTableFromQueryEvent(schema, query []byte) (dbName, tableName string) {
+	var mb [][]byte
+
+	for _, reg := range ddlExpressions {
+		mb = reg.FindSubmatch(query)
+		if len(mb) != 0 {
+			break
 		}
-		scma := string(mb[1])
-		tbl := string(mb[2])
-		c.ClearTableCache(scma, tbl)
-		if c.log.IsInfo() {
-			c.log.Info("[binlogsync] Table structure changed, clear table cache",
-				log.String("database", scma), log.String("table", tbl))
+	}
+	mbLen := len(mb)
+	if mbLen == 0 {
+		return
+	}
+
+	// the first last is table name, the second last is database name(if exists)
+	if len(mb[mbLen-2]) == 0 {
+		dbName = string(schema)
+	} else {
+		dbName = string(mb[mbLen-2])
+	}
+	tableName = string(mb[mbLen-1])
+	return
+}
+
+func (c *Canal) clearTableCacheOnDDLStmt(schema, query []byte) {
+	if db, tbl := extractTableFromQueryEvent(schema, query); tbl != "" {
+		c.ClearTableCache(db, tbl)
+		if c.opts.Log.IsInfo() {
+			c.opts.Log.Info("[binlogsync] Table structure changed, clear table cache",
+				log.String("database", db), log.String("table", tbl), log.String("query", string(query)))
 		}
 	}
 }
 
 func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
+	if c.syncer == nil {
+		return errors.AlreadyClosed.Newf("[binlogsync] Canal already closed and myreplicator.BinlogSyncer is nil")
+	}
 	pos := c.masterStatus
 
-	if c.log.IsInfo() {
-		c.log.Info("[binlogsync] Start syncing of binlog", log.Stringer("position", pos))
+	if c.opts.Log.IsInfo() {
+		c.opts.Log.Info("[binlogsync] Start syncing of binlog", log.Stringer("position", pos))
 	}
 
 	s, err := c.syncer.StartSync(pos)
@@ -55,7 +87,7 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 			continue
 		}
 		if err != nil {
-			return errors.Wrap(err, "[binlogsync] startSyncBinlog.GetEvent")
+			return errors.WithStack(err)
 		}
 
 		timeout = time.Second
@@ -67,15 +99,17 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 		case *myreplicator.RotateEvent:
 			if err := c.flushEventHandlers(ctxArg); err != nil {
 				// todo maybe better err handling ...
-				return errors.Wrap(err, "[binlogsync] startSyncBinlog.flushEventHandlers")
+				return errors.WithStack(err)
 			}
 			pos.File = string(e.NextLogName)
 			pos.Position = uint(e.Position)
 			// r.ev <- pos
 
-			if c.log.IsInfo() {
-				c.log.Info("[binlogsync] Rotate binlog to a new position", log.Stringer("position", pos))
+			if c.opts.Log.IsInfo() {
+				c.opts.Log.Info("[binlogsync] Rotate binlog to a new position", log.Stringer("position", pos))
 			}
+
+			// call event handler OnRotate(e)
 
 		case *myreplicator.RowsEvent:
 			// we only focus row based event.
@@ -83,19 +117,40 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 			// and an old event pops in.
 			if err = c.handleRowsEvent(ctxArg, ev); err != nil {
 				isNotFound := errors.Is(err, errors.NotFound)
-				if c.log.IsInfo() {
-					c.log.Info("[binlogsync] Rotate binlog to a new position", log.Err(err), log.Stringer("position", pos), log.Bool("ignore_not_found_error", isNotFound))
+				if c.opts.Log.IsInfo() {
+					c.opts.Log.Info("[binlogsync] Rotate binlog to a new position", log.Err(err), log.Stringer("position", pos), log.Bool("ignore_not_found_error", isNotFound))
 				}
 				if !isNotFound {
-					return errors.Wrap(err, "[binlogsync] handleRowsEvent")
+					return errors.WithStack(err)
 				}
-				continue
+				continue // to not save the master position, not necessary.
 			}
 		case *myreplicator.XIDEvent:
-			// try to save the position later
+			// TODO implement
+			// if e.GSet != nil {
+			// 	c.master.UpdateGTIDSet(e.GSet)
+			// }
+
+			// call event OnXID(pos)
+
+		case *myreplicator.MariadbGTIDEvent:
+			// call event OnGTID(gtid)
+
+		case *myreplicator.GTIDEvent:
+			// call event OnGTID(gtid)
+
 		case *myreplicator.QueryEvent:
+			// TODO implement GTID set but review if it makes sense to import siddontang/go-mysql/mysql
+			// if e.GSet != nil {
+			// 	c.master.UpdateGTIDSet(e.GSet)
+			// }
+
 			// handle alert table query
-			c.clearTableCacheOnAlterTableStatement(e.Schema, e.Query)
+			c.clearTableCacheOnDDLStmt(e.Schema, e.Query)
+
+			// For now really necessary.
+			// TODO: call two more event handlers: on OnTableChanged(db,table) and OnDDL(pos, e)
+
 			// save master position, so no continue
 		case
 			*myreplicator.TableMapEvent,
@@ -107,7 +162,7 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 		}
 
 		if err := c.masterSave(pos.File, pos.Position); err != nil {
-			c.log.Info("[binlogsync] startSyncBinlog: Failed to save master position", log.Err(err), log.Stringer("position", pos))
+			c.opts.Log.Info("[binlogsync] startSyncBinlog: Failed to save master position", log.Err(err), log.Stringer("position", pos))
 		}
 	}
 }
@@ -121,10 +176,10 @@ func (c *Canal) handleRowsEvent(ctx context.Context, e *myreplicator.BinlogEvent
 	}
 
 	// Caveat: table may be altered at runtime.
-
-	if in := string(ev.Table.Schema); c.dsn.DBName != in {
-		if c.log.IsDebug() {
-			c.log.Debug("[binlogsync] Skipping database", log.String("database_have", in), log.String("database_want", c.dsn.DBName), log.Int("table_id", int(ev.TableID)))
+	schemaName := string(ev.Table.Schema)
+	if c.dsn.DBName != schemaName {
+		if c.opts.Log.IsDebug() {
+			c.opts.Log.Debug("[binlogsync.Canal.handleRowsEvent.Skipping.database", log.String("database_have", schemaName), log.String("database_want", c.dsn.DBName), log.Int("table_id", int(ev.TableID)))
 		}
 		return nil
 	}
@@ -132,9 +187,19 @@ func (c *Canal) handleRowsEvent(ctx context.Context, e *myreplicator.BinlogEvent
 	table := string(ev.Table.Table)
 
 	t, err := c.FindTable(ctx, table)
-	if err != nil {
-		return errors.Wrapf(err, "[binlogsync] GetTable %q.%q", c.dsn.DBName, table)
+	switch {
+	case err == nil:
+		// noop
+	case errors.NotAllowed.Match(err):
+		// do not execute the processRowsEventHandler function
+		if c.opts.Log.IsDebug() {
+			c.opts.Log.Debug("binlogsync.Canal.handleRowsEvent.Skipping.not_allowed_table", log.String("database", schemaName), log.String("table", table), log.Int("table_id", int(ev.TableID)))
+		}
+		return nil
+	default:
+		return errors.Wrapf(err, "[binlogsync] handleRowsEvent %q.%q", c.dsn.DBName, table)
 	}
+
 	var a string
 	switch e.Header.EventType {
 	case myreplicator.WRITE_ROWS_EVENTv1, myreplicator.WRITE_ROWS_EVENTv2:
@@ -146,32 +211,40 @@ func (c *Canal) handleRowsEvent(ctx context.Context, e *myreplicator.BinlogEvent
 	default:
 		return errors.NotSupported.Newf("[binlogsync] EventType %v not yet supported. Table %q.%q", e.Header.EventType, c.dsn.DBName, table)
 	}
-	return c.travelRowsEventHandler(ctx, a, t, ev.Rows)
+	return c.processRowsEventHandler(ctx, a, t, ev.Rows)
 }
 
-// todo: implement when needed
-//func (c *Canal) WaitUntilPos(pos mysql.Position, timeout int) error {
-//	if timeout <= 0 {
-//		timeout = 60
-//	}
-//
-//	timer := time.NewTimer(time.Duration(timeout) * time.Second)
-//	for {
-//		select {
-//		case <-timer.C:
-//			return errors.NewTimeoutf("[binlogsync] WaitUntilPos wait position %v err", pos)
-//		default:
-//			if c.masterPos.Compare(pos) >= 0 {
-//				return nil
-//			} else {
-//				time.Sleep(100 * time.Millisecond)
-//			}
-//		}
-//	}
-//
-//	return nil
-//}
-//
+// FlushBinlog executes FLUSH BINARY LOGS.
+func (c *Canal) FlushBinlog() error {
+	_, err := c.dbcp.DB.Exec("FLUSH BINARY LOGS")
+	return errors.WithStack(err)
+}
+
+func (c *Canal) WaitUntilPos(pos ddl.MasterStatus, timeout time.Duration) error {
+	timer := time.NewTimer(timeout)
+	for {
+		select {
+		case <-timer.C:
+			return errors.Timeout.Newf("[binlogsync] Waited for position %v too long > %s", pos, timeout.String())
+		default:
+			if err := c.FlushBinlog(); err != nil {
+				return errors.WithStack(err)
+			}
+			curPos := c.SyncedPosition()
+			if curPos.Compare(pos) >= 0 {
+				return nil
+			} else {
+				if c.opts.Log.IsDebug() {
+					c.opts.Log.Debug("binlogsync.Canal.WaitUntilPos",
+						log.String("current_pos", curPos.String()), log.String("waiting_for_post", pos.String()))
+				}
+				time.Sleep(100 * time.Millisecond)
+			}
+		}
+	}
+	return nil
+}
+
 //func (c *Canal) CatchMasterPos(timeout int) error {
 //	rr, err := c.Execute("SHOW MASTER STATUS")
 //	if err != nil {

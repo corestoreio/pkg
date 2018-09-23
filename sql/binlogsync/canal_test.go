@@ -31,7 +31,10 @@ import (
 
 func TestCanal_Option_With_DB_Error(t *testing.T) {
 	t.Run("MySQL Ping", func(t *testing.T) {
-		c, err := binlogsync.NewCanal(`root:@x'(tcp127)/?allowNativePasswords=false&parseTime=true&maxAllowedPacket=0`, binlogsync.WithMySQL())
+		c, err := binlogsync.NewCanal(
+			`root:@x'(tcp127)/?allowNativePasswords=false&parseTime=true&maxAllowedPacket=0`,
+			binlogsync.WithMySQL(),
+			binlogsync.Options{})
 		assert.Nil(t, c)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), `unknown network x'`)
@@ -39,7 +42,9 @@ func TestCanal_Option_With_DB_Error(t *testing.T) {
 
 	t.Run("DB Ping", func(t *testing.T) {
 		db, err := sql.Open("mysql", "root:root@localhost/db")
-		c, err := binlogsync.NewCanal(`root:@x'(tcp127)/?allowNativePasswords=false&maxAllowedPacket=0`, binlogsync.WithDB(db))
+		c, err := binlogsync.NewCanal(
+			`root:@x'(tcp127)/?allowNativePasswords=false&maxAllowedPacket=0`,
+			binlogsync.WithDB(db), binlogsync.Options{})
 		assert.Nil(t, c)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), `default addr for network 'localhost' unknown`)
@@ -55,7 +60,9 @@ func TestNewCanal_FailedMasterStatus(t *testing.T) {
 	dbMock.ExpectQuery(`SHOW MASTER STATUS`).
 		WillReturnError(wantErr)
 
-	c, err := binlogsync.NewCanal(`root:@x'err(localhost:3306)/TestDB?allowNativePasswords=false&maxAllowedPacket=0`, binlogsync.WithDB(dbc.DB))
+	c, err := binlogsync.NewCanal(
+		`root:@x'err(localhost:3306)/TestDB?allowNativePasswords=false&maxAllowedPacket=0`,
+		binlogsync.WithDB(dbc.DB), binlogsync.Options{})
 	assert.Nil(t, c)
 	assert.True(t, errors.Is(err, errors.AlreadyClosed), "%+v", err)
 }
@@ -78,7 +85,9 @@ func TestNewCanal_CheckBinlogRowFormat_Wrong(t *testing.T) {
 				FromCSVString(`binlog_format,a cat`),
 		)
 
-	c, err := binlogsync.NewCanal(`root:@x'err(localhost:3306)/TestDB?allowNativePasswords=false&maxAllowedPacket=0`, binlogsync.WithDB(dbc.DB))
+	c, err := binlogsync.NewCanal(
+		`root:@x'err(localhost:3306)/TestDB?allowNativePasswords=false&maxAllowedPacket=0`,
+		binlogsync.WithDB(dbc.DB), binlogsync.Options{})
 	assert.Nil(t, c)
 	assert.True(t, errors.Is(err, errors.NotSupported), "%+v", err)
 	assert.Contains(t, err.Error(), `a cat`)
@@ -105,7 +114,9 @@ func TestNewCanal_CheckBinlogRowFormat_Error(t *testing.T) {
 	dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SHOW VARIABLES WHERE (`Variable_name` LIKE 'binlog_format')")).
 		WillReturnError(wantErr)
 
-	c, err := binlogsync.NewCanal(`root:@x'err(localhost:3306)/TestDB?allowNativePasswords=false&maxAllowedPacket=0`, binlogsync.WithDB(dbc.DB))
+	c, err := binlogsync.NewCanal(
+		`root:@x'err(localhost:3306)/TestDB?allowNativePasswords=false&maxAllowedPacket=0`,
+		binlogsync.WithDB(dbc.DB), binlogsync.Options{})
 	assert.Nil(t, c)
 	assert.True(t, errors.Is(err, errors.NotImplemented), "%+v", err)
 	assert.Contains(t, err.Error(), `MySQL Syntax not implemted`)
@@ -132,7 +143,8 @@ func newTestCanal(t *testing.T) (*binlogsync.Canal, sqlmock.Sqlmock, func()) {
 				FromCSVString(`binlog_format,row`),
 		)
 
-	c, err := binlogsync.NewCanal(`root:@x'err(localhost:3306)/TestDB?allowNativePasswords=false&maxAllowedPacket=0`, binlogsync.WithDB(dbc.DB))
+	c, err := binlogsync.NewCanal(`root:@x'err(localhost:3306)/TestDB?allowNativePasswords=false&maxAllowedPacket=0`,
+		binlogsync.WithDB(dbc.DB), binlogsync.Options{})
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
