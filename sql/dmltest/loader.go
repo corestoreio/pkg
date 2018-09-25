@@ -15,6 +15,7 @@
 package dmltest
 
 import (
+	"bytes"
 	"context"
 	"os/exec"
 	"path/filepath"
@@ -75,5 +76,16 @@ func SQLDumpLoad(ctx context.Context, dsn string, globPattern string, o SQLDumpO
 }
 
 func realExecCmd(ctx context.Context, name string, args ...string) error {
-	return exec.CommandContext(ctx, name, args...).Run()
+	cmd := exec.CommandContext(ctx, name, args...)
+
+	var bufe bytes.Buffer
+	var bufo bytes.Buffer
+	cmd.Stderr = &bufe
+	cmd.Stdout = &bufo
+
+	if err := cmd.Run(); err != nil {
+		return errors.Wrapf(err, "[dmltest] SQLDumpLoad\nStderr: %s\nStdout: %s", bufe.String(), bufo.String())
+	}
+
+	return nil
 }
