@@ -233,6 +233,10 @@ type Options struct {
 	// `mariadb`.
 	Flavor                   string
 	MasterStatusQueryTimeout time.Duration
+	// OnClose runs before the database connection gets closed and after the
+	// syncer has been closed. The syncer does not "see" the changes comming
+	// from the queries executed in the call back.
+	OnClose func(*dml.ConnPool) error
 }
 
 func (o Options) loadOptionsFromConfig() (_ Options, err error) {
@@ -423,6 +427,10 @@ func (c *Canal) Close() error {
 	if c.syncer != nil {
 		c.syncer.Close()
 		c.syncer = nil
+	}
+
+	if err := c.opts.OnClose(c.dbcp); err != nil {
+		return errors.WithStack(err)
 	}
 
 	if err := c.dbcp.Close(); err != nil {
