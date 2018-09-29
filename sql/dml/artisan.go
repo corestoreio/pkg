@@ -572,8 +572,8 @@ func (a *Artisan) WithDB(db QueryExecPreparer) *Artisan {
 	return a
 }
 
-// WithStmt uses a SQL statement as DB connection.
-func (a *Artisan) WithStmt(stmt *sql.Stmt) *Artisan {
+// WithPreparedStmt uses a SQL statement as DB connection.
+func (a *Artisan) WithPreparedStmt(stmt *sql.Stmt) *Artisan {
 	a.base.DB = stmtWrapper{stmt: stmt}
 	return a
 }
@@ -639,9 +639,11 @@ func pooledBufferColumnMapPut(cm *ColumnMap, buf *bufferpool.TwinBuffer, fn func
 	pooledColumnMap.Put(cm)
 }
 
+const argumentPoolMaxSize = 32
+
 var pooledArguments = sync.Pool{
 	New: func() interface{} {
-		var a [16]argument
+		var a [argumentPoolMaxSize]argument
 		return arguments(a[:0])
 	},
 }
@@ -651,8 +653,17 @@ func pooledArgumentsGet() arguments {
 }
 
 func pooledArgumentsPut(a arguments, buf *bufferpool.TwinBuffer) {
-	a = a[:0]
-	pooledArguments.Put(a)
+	// @see https://go-review.googlesource.com/c/go/+/136116/4/src/fmt/print.go
+	// Proper usage of a sync.Pool requires each entry to have approximately
+	// the same memory cost. To obtain this property when the stored type
+	// contains a variably-sized buffer, we add a hard limit on the maximum buffer
+	// to place back in the pool.
+	//
+	// See https://golang.org/issue/23199
+	if cap(a) <= argumentPoolMaxSize {
+		a = a[:0]
+		pooledArguments.Put(a)
+	}
 	if buf != nil {
 		bufferpool.PutTwin(buf)
 	}

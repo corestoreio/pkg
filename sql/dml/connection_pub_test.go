@@ -309,3 +309,32 @@ func TestWithExecSQLOnConn(t *testing.T) {
 
 	})
 }
+
+func TestConnPool_WithPrepare(t *testing.T) {
+	t.Parallel()
+	dbc, dbMock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, dbc, dbMock)
+
+	dbMock.ExpectPrepare("DROP TABLE \\?").ExpectExec().WithArgs("tabA").WillReturnResult(sqlmock.NewResult(1, 1))
+
+	a := dbc.WithPrepare(context.TODO(), "DROP TABLE ?")
+	_, err := a.ExecContext(context.TODO(), "tabA")
+	assert.NoError(t, err)
+}
+
+func TestTx_WithPrepare(t *testing.T) {
+	t.Parallel()
+	dbc, dbMock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, dbc, dbMock)
+
+	dbMock.ExpectBegin()
+	dbMock.ExpectPrepare("DROP TABLE \\?").ExpectExec().WithArgs("tabA").WillReturnResult(sqlmock.NewResult(1, 1))
+	dbMock.ExpectCommit()
+
+	err := dbc.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
+		a := tx.WithPrepare(context.TODO(), "DROP TABLE ?")
+		_, err := a.ExecContext(context.TODO(), "tabA")
+		return err
+	})
+	assert.NoError(t, err, "%+v", err)
+}

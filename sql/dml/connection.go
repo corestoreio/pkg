@@ -478,23 +478,53 @@ func (c *ConnPool) Conn(ctx context.Context) (*Conn, error) {
 	}, errors.WithStack(err)
 }
 
-// WithRawSQL creates a new Artisan for the given SQL string.
-func (c *ConnPool) WithRawSQL(sql string) *Artisan {
+// WithRawSQL creates a new Artisan for the given SQL string. It does not
+// prepare the query nor runs place holder substitution.
+func (c *ConnPool) WithRawSQL(query string) *Artisan {
 	id := c.makeUniqueID()
 	l := c.Log
 	if l != nil {
-		l = l.With(log.String("conn_pool_raw_sql_id", id), log.String("sql", sql))
+		l = l.With(log.String("conn_pool_raw_sql_id", id), log.String("query", query))
 	}
 	var args [defaultArgumentsCapacity]argument
 	return &Artisan{
 		base: builderCommon{
-			cachedSQL: []byte(sql),
+			cachedSQL: []byte(query),
 			Log:       l,
 			id:        id,
 			DB:        c.DB,
 		},
 		arguments: args[:0],
 	}
+}
+
+// Prepare executes the statement represented by the Select to create a prepared
+// statement. It returns a custom statement type or an error if there was one.
+// Provided arguments or records in the Select are getting ignored. The provided
+// context is used for the preparation of the statement, not for the execution
+// of the statement. The returned Stmter is not safe for concurrent use, despite
+// the underlying *sql.Stmt is.
+func (c *ConnPool) WithPrepare(ctx context.Context, query string) *Artisan {
+	id := c.makeUniqueID()
+	l := c.Log
+	if l != nil {
+		l = l.With(log.String("conn_pool_prepare_sql_id", id), log.String("query", query))
+	}
+
+	stmt, err := c.DB.PrepareContext(ctx, query)
+
+	var args [defaultArgumentsCapacity]argument
+	a := &Artisan{
+		base: builderCommon{
+			id:     id,
+			ärgErr: err,
+			Log:    l,
+			DB:     stmtWrapper{stmt: stmt},
+		},
+		arguments:  args[:0],
+		isPrepared: true,
+	}
+	return a
 }
 
 // BeginTx starts a transaction.
@@ -640,6 +670,35 @@ func (tx *Tx) WithRawSQL(sql string) *Artisan {
 		},
 		arguments: args[:0],
 	}
+}
+
+// Prepare executes the statement represented by the Select to create a prepared
+// statement. It returns a custom statement type or an error if there was one.
+// Provided arguments or records in the Select are getting ignored. The provided
+// context is used for the preparation of the statement, not for the execution
+// of the statement. The returned Stmter is not safe for concurrent use, despite
+// the underlying *sql.Stmt is.
+func (tx *Tx) WithPrepare(ctx context.Context, query string) *Artisan {
+	id := tx.makeUniqueID()
+	l := tx.Log
+	if l != nil {
+		l = l.With(log.String("tx_prepare_sql_id", id), log.String("query", query))
+	}
+
+	stmt, err := tx.DB.PrepareContext(ctx, query)
+
+	var args [defaultArgumentsCapacity]argument
+	a := &Artisan{
+		base: builderCommon{
+			id:     id,
+			ärgErr: err,
+			Log:    l,
+			DB:     stmtWrapper{stmt: stmt},
+		},
+		arguments:  args[:0],
+		isPrepared: true,
+	}
+	return a
 }
 
 // Commit finishes the transaction. It logs the time taken, if a logger has been
