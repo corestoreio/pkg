@@ -338,3 +338,16 @@ func TestTx_WithPrepare(t *testing.T) {
 	})
 	assert.NoError(t, err, "%+v", err)
 }
+
+func TestWithCreateDatabase(t *testing.T) {
+	t.Parallel()
+	dbc, dbMock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, dbc, dbMock)
+
+	dbMock.ExpectExec("SET NAMES 'utf8mb4'").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+	dbMock.ExpectExec("CREATE DATABASE IF NOT EXISTS `myTestDb`").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+	dbMock.ExpectExec("ALTER DATABASE `myTestDb` DEFAULT CHARACTER SET='utf8mb4' COLLATE='utf8mb4_unicode_ci'").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+
+	err := dbc.Options(dml.WithCreateDatabase(context.TODO(), "myTestDb"))
+	assert.NoError(t, err, "%+v", err)
+}

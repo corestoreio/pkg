@@ -57,8 +57,9 @@ type connCommon struct {
 // events, errors, and timings to
 type ConnPool struct {
 	connCommon
+	// DB must be set using one of the ConnPoolOption function.
 	DB  *sql.DB
-	dsn string
+	dsn *mysql.Config
 }
 
 // Conn represents a single database session rather a pool of database sessions.
@@ -136,18 +137,6 @@ func WithLogger(l log.Logger, uniqueIDFn func() string) ConnPoolOption {
 	}
 }
 
-// WithDB sets the DB value to an existing connection. Mainly used for testing.
-// Does not support DriverCallBack.
-func WithDB(db *sql.DB) ConnPoolOption {
-	return ConnPoolOption{
-		sortOrder: 1,
-		fn: func(c *ConnPool) error {
-			c.DB = db
-			return nil
-		},
-	}
-}
-
 // WithVerifyConnection checks if the connection to the server is valid and can
 // be established.
 func WithVerifyConnection() ConnPoolOption {
@@ -158,6 +147,58 @@ func WithVerifyConnection() ConnPoolOption {
 		},
 	}
 }
+
+// WithCreateDatabase creates the database and sets the utf8mb4 option. It does
+// not drop the database.
+func WithCreateDatabase(ctx context.Context, databaseName string) ConnPoolOption {
+	return ConnPoolOption{
+		sortOrder: 253,
+		fn: func(c *ConnPool) error {
+
+			if databaseName == "" {
+				databaseName = c.dsn.DBName
+			}
+			if err := WithSetNamesUTF8MB4().fn(c); err != nil {
+				return errors.WithStack(err)
+			}
+			qdb := Quoter.Name(databaseName)
+			if _, err := c.DB.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS "+qdb); err != nil {
+				return errors.WithStack(err)
+			}
+			if _, err := c.DB.ExecContext(ctx, "ALTER DATABASE "+qdb+" DEFAULT CHARACTER SET='utf8mb4' COLLATE='utf8mb4_unicode_ci'"); err != nil {
+				return errors.WithStack(err)
+			}
+			return nil
+		},
+	}
+}
+
+// TODO func WithRequireUTF8MB4() ConnPoolOption {
+// 	return ConnPoolOption{
+// 		sortOrder: 253,
+// 		fn: func(c *ConnPool) error {
+// 			// For Schemas:
+// 			//
+// 			// SELECT default_character_set_name FROM information_schema.SCHEMATA
+// 			// WHERE schema_name = "schemaname";
+// 			// For Tables:
+// 			//
+// 			// SELECT CCSA.character_set_name FROM information_schema.`TABLES` T,
+// 			// 	information_schema.`COLLATION_CHARACTER_SET_APPLICABILITY` CCSA
+// 			// WHERE CCSA.collation_name = T.table_collation
+// 			// AND T.table_schema = "schemaname"
+// 			// AND T.table_name = "tablename";
+// 			// For Columns:
+// 			//
+// 			// SELECT character_set_name FROM information_schema.`COLUMNS`
+// 			// WHERE table_schema = "schemaname"
+// 			// AND table_name = "tablename"
+// 			// AND column_name = "columnname";
+//
+// 			return nil
+// 		},
+// 	}
+// }
 
 // WithExecSQLOnConnOpen runs the sqlQuery arguments after successful opening a
 // DB connection. All queries are running in a transaction.
@@ -174,7 +215,7 @@ func WithExecSQLOnConnClose(ctx context.Context, sqlQuery ...string) ConnPoolOpt
 func withExecSQL(ctx context.Context, event uint8, sqlQuery ...string) ConnPoolOption {
 	return ConnPoolOption{
 		eventType: event,
-		sortOrder: 255,
+		sortOrder: 250,
 		fn: func(c *ConnPool) error {
 			if len(sqlQuery) == 0 {
 				return errors.Empty.Newf("[dml] WithInitialExecSQL argument sqlQuery is empty.")
@@ -195,6 +236,29 @@ func withExecSQL(ctx context.Context, event uint8, sqlQuery ...string) ConnPoolO
 	}
 }
 
+// WithSetNamesUTF8MB4 sets the utf8mb4 charset and collation.
+func WithSetNamesUTF8MB4() ConnPoolOption {
+	return ConnPoolOption{
+		sortOrder: 2, // must run after WithDSN and WithDB
+		fn: func(c *ConnPool) error {
+			_, err := c.DB.ExecContext(context.Background(), "SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'")
+			return errors.WithStack(err)
+		},
+	}
+}
+
+// WithDB sets the DB value to an existing connection. Mainly used for testing.
+// Does not support DriverCallBack.
+func WithDB(db *sql.DB) ConnPoolOption {
+	return ConnPoolOption{
+		sortOrder: 1,
+		fn: func(c *ConnPool) error {
+			c.DB = db
+			return nil
+		},
+	}
+}
+
 // WithDSN sets the data source name for a connection.
 // Second argument DriverCallBack adds a low level call back function on MySQL driver level to
 // create a a new instrumented driver. No need to call `sql.Register`!
@@ -204,11 +268,13 @@ func WithDSN(dsn string, cb ...DriverCallBack) ConnPoolOption {
 	}
 	return ConnPoolOption{
 		sortOrder: 0,
-		fn: func(c *ConnPool) error {
+		fn: func(c *ConnPool) (err error) {
 			if !strings.Contains(dsn, "parseTime") {
 				return errors.NotImplemented.Newf("[dml] The DSN for go-sql-driver/mysql must contain the parameters `?parseTime=true[&loc=YourTimeZone]`")
 			}
-			c.dsn = dsn
+			if c.dsn, err = mysql.ParseDSN(dsn); err != nil {
+				return errors.WithStack(err)
+			}
 			var drv driver.Driver = mysql.MySQLDriver{}
 			if len(cb) == 1 {
 				drv = wrapDriver(drv, cb[0])
@@ -283,11 +349,6 @@ func NewConnPool(opts ...ConnPoolOption) (*ConnPool, error) {
 	}
 	// validate that DSN contains the utf8mb4 setting
 
-	// TODO: Validate that we run with utf8mb4 the normal utf8 is only 3 bytes
-	// where utf8mb4 is full 4byte support.
-	// SHOW VARIABLES WHERE Variable_name LIKE 'character\_set\_%' OR Variable_name LIKE 'collation%';
-	// TODO: Set SQL mode to strict https://dev.mysql.com/doc/refman/5.7/en/sql-mode.html#sql-mode-strict
-
 	return c, nil
 }
 
@@ -304,9 +365,8 @@ func MustConnectAndVerify(opts ...ConnPoolOption) *ConnPool {
 	return c
 }
 
-// Options applies options to a connection
+// Options applies options to a connection.
 func (c *ConnPool) Options(opts ...ConnPoolOption) error {
-
 	for i, opt := range opts {
 		if opt.UniqueIDFn != nil {
 			opts[i].sortOrder = 8 // must be this number
