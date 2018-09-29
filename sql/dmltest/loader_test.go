@@ -16,6 +16,9 @@ package dmltest
 
 import (
 	"context"
+	"io"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/corestoreio/errors"
@@ -27,16 +30,13 @@ func TestSQLDumpLoad(t *testing.T) {
 
 	t.Run("load sql files", func(t *testing.T) {
 
-		exexCmd := func(_ context.Context, name string, arg ...string) error {
-			assert.Exactly(t, `mysql`, name)
+		exexCmd := func(ctx context.Context, r io.ReadCloser, cmd string, arg ...string) error {
+			assert.Exactly(t, `bash`, cmd)
 
-			fileName := arg[len(arg)-1]
-			assert.Contains(t, fileName, "testdata/product_entity_0")
-
-			arg = arg[:len(arg)-1]
-			assert.Exactly(t, []string{
-				"--host", "localhost:3306", "--user", "cs2", "--password", "cs2", "--database", "testDB", "<",
-			}, arg)
+			args := strings.Join(arg, " ")
+			assert.Contains(t, args, "mydefaults-")
+			assert.Contains(t, args, "-c mysql --defaults-file=")
+			assert.Contains(t, args, os.TempDir())
 			return nil
 		}
 
@@ -48,7 +48,7 @@ func TestSQLDumpLoad(t *testing.T) {
 
 	t.Run("mysql fails", func(t *testing.T) {
 
-		exexCmd := func(_ context.Context, name string, arg ...string) error {
+		exexCmd := func(ctx context.Context, r io.ReadCloser, cmd string, arg ...string) error {
 			return errors.NotImplemented.Newf("Cant handle it")
 		}
 

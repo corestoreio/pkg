@@ -17,6 +17,11 @@ package dmltest
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"net"
+	"os"
 	"os/exec"
 	"path/filepath"
 
@@ -24,15 +29,78 @@ import (
 	"github.com/go-sql-driver/mysql"
 )
 
+func writeMySQLDefaults(cfg *mysql.Config, o *SQLDumpOptions) (string, error) {
+
+	var myCnf bytes.Buffer
+	myCnf.WriteString("[mysql]\n")
+
+	if cfg.Addr != "" {
+
+		host, port, err := net.SplitHostPort(cfg.Addr)
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
+		fmt.Fprintf(&myCnf, "host = %s\n", host)
+
+		if port != "" {
+			fmt.Fprintf(&myCnf, "port = %s\n", port)
+		}
+	}
+	if cfg.User != "" {
+		fmt.Fprintf(&myCnf, "user = %s\n", cfg.User)
+	}
+	if cfg.Passwd != "" {
+		fmt.Fprintf(&myCnf, "password = %s\n", cfg.Passwd)
+	}
+	for _, ma := range o.MySQLArgs {
+		myCnf.WriteString(ma)
+		myCnf.WriteByte('\n')
+	}
+	fmt.Fprintf(&myCnf, "database = %s\n", cfg.DBName)
+
+	df, err := ioutil.TempFile("", "mydefaults-")
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	defer df.Close()
+
+	if _, err := df.Write(myCnf.Bytes()); err != nil {
+		return "", errors.WithStack(err)
+	}
+	return df.Name(), nil
+}
+
+func stdInExec(ctx context.Context, f io.ReadCloser, name string, args ...string) (err error) {
+	defer func() {
+		if err2 := f.Close(); err == nil && err2 != nil {
+			err = err2
+		}
+	}()
+	cmd := exec.CommandContext(ctx, name, args...)
+	cmd.Stdin = f // os.File, so special case, no need for a pipe to support large files
+
+	if out, err2 := cmd.CombinedOutput(); err2 != nil {
+		err = errors.Wrapf(err2, "[dmltest] SQLDumpLoad\n%s", string(out))
+		return
+	}
+	return
+}
+
+// SQLDumpOptions can set a different MySQL/MariaDB binary path and adds more
+// arguments.
 type SQLDumpOptions struct {
 	MySQLPath string
 	MySQLArgs []string
 	// mocked out for testing.
-	execCommandContext func(ctx context.Context, name string, arg ...string) error
+	execCommandContext func(ctx context.Context, file io.ReadCloser, cmd string, arg ...string) error
 }
 
-// SQLDumpLoad reads all files regonized by `globPattern` argument into
-// MySQL/MariaDB. The password will be visible via a process manager.
+// SQLDumpLoad reads all files recognized by `globPattern` argument into
+// MySQL/MariaDB. The password will NOT be visible via process manager but gets
+// temporarily written into the TMP dir of the OS. This function does only even
+// work when the server and the client runs on different machines. For now it
+// only works when the program `bash` has been installed. This function supports
+// any file size of a `.sql` file.
 func SQLDumpLoad(ctx context.Context, dsn string, globPattern string, o SQLDumpOptions) error {
 
 	matches, err := filepath.Glob(globPattern)
@@ -45,46 +113,30 @@ func SQLDumpLoad(ctx context.Context, dsn string, globPattern string, o SQLDumpO
 		return errors.WithStack(err)
 	}
 
-	mybin := "mysql"
-	var args []string
-	if cfg.Addr != "" {
-		args = append(args, "--host", cfg.Addr)
-	}
-	if cfg.User != "" {
-		args = append(args, "--user", cfg.User)
-	}
-	if cfg.Passwd != "" {
-		args = append(args, "--password", cfg.Passwd)
-	}
-	args = append(args, "--database", cfg.DBName)
-	args = append(args, o.MySQLArgs...)
-	args = append(args, "<", "<placeholder>")
-
 	execCmd := o.execCommandContext
 	if execCmd == nil {
-		execCmd = realExecCmd
+		execCmd = stdInExec
 	}
 
+	dfFile, err := writeMySQLDefaults(cfg, &o)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	defer os.Remove(dfFile)
+
+	myPath := o.MySQLPath
+	if myPath == "" {
+		myPath = "mysql"
+	}
 	for _, file := range matches {
-		args[len(args)-1] = file
-		if err := execCmd(ctx, mybin, args...); err != nil {
+		f, err := os.Open(file)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		if err := execCmd(ctx, f, "bash", "-c", fmt.Sprintf("%s --defaults-file=%s", myPath, dfFile)); err != nil {
 			return errors.Wrapf(err, "[dmltest] Failed to load SQL dump with file %q", file)
 		}
-	}
-
-	return nil
-}
-
-func realExecCmd(ctx context.Context, name string, args ...string) error {
-	cmd := exec.CommandContext(ctx, name, args...)
-
-	var bufe bytes.Buffer
-	var bufo bytes.Buffer
-	cmd.Stderr = &bufe
-	cmd.Stdout = &bufo
-
-	if err := cmd.Run(); err != nil {
-		return errors.Wrapf(err, "[dmltest] SQLDumpLoad\nStderr: %s\nStdout: %s", bufe.String(), bufo.String())
 	}
 
 	return nil
