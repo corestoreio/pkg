@@ -23,9 +23,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/gogo/protobuf/proto"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -147,17 +146,17 @@ func TestNullTime_BinaryEncoding(t *testing.T) {
 	runner := func(nv Time, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
 			data, err := nv.GobEncode()
-			require.NoError(t, err)
-			require.Exactly(t, want, data, t.Name()+": GobEncode")
+			assert.NoError(t, err)
+			assert.Exactly(t, want, data, t.Name()+": GobEncode")
 			data, err = nv.MarshalBinary()
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.Exactly(t, want, data, t.Name()+": MarshalBinary")
 			data, err = nv.Marshal()
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.Exactly(t, want, data, t.Name()+": Marshal")
 
 			var decoded Time
-			require.NoError(t, decoded.UnmarshalBinary(data), "UnmarshalBinary")
+			assert.NoError(t, decoded.UnmarshalBinary(data), "UnmarshalBinary")
 
 			haveS := nv.String()
 			wantS := decoded.String()

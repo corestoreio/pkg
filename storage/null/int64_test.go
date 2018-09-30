@@ -26,9 +26,8 @@ import (
 	"testing"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/gogo/protobuf/proto"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -198,17 +197,17 @@ func TestNullInt64_BinaryEncoding(t *testing.T) {
 	runner := func(b Int64, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
 			data, err := b.GobEncode()
-			require.NoError(t, err)
-			require.Exactly(t, want, data, t.Name()+": GobEncode")
+			assert.NoError(t, err)
+			assert.Exactly(t, want, data, t.Name()+": GobEncode")
 			data, err = b.MarshalBinary()
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.Exactly(t, want, data, t.Name()+": MarshalBinary")
 			data, err = b.Marshal()
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.Exactly(t, want, data, t.Name()+": Marshal")
 
 			var decoded Int64
-			require.NoError(t, decoded.UnmarshalBinary(data), "UnmarshalBinary")
+			assert.NoError(t, decoded.UnmarshalBinary(data), "UnmarshalBinary")
 			assert.Exactly(t, b, decoded)
 		}
 	}
@@ -302,22 +301,22 @@ func TestNullInt64_Scan(t *testing.T) {
 
 	t.Run("nil", func(t *testing.T) {
 		var nv Int64
-		require.NoError(t, nv.Scan(nil))
+		assert.NoError(t, nv.Scan(nil))
 		assert.Exactly(t, Int64{}, nv)
 	})
 	t.Run("[]byte", func(t *testing.T) {
 		var nv Int64
-		require.NoError(t, nv.Scan([]byte(`-1234567`)))
+		assert.NoError(t, nv.Scan([]byte(`-1234567`)))
 		assert.Exactly(t, MakeInt64(-1234567), nv)
 	})
 	t.Run("int64", func(t *testing.T) {
 		var nv Int64
-		require.NoError(t, nv.Scan(int64(-1234568)))
+		assert.NoError(t, nv.Scan(int64(-1234568)))
 		assert.Exactly(t, MakeInt64(-1234568), nv)
 	})
 	t.Run("int", func(t *testing.T) {
 		var nv Int64
-		require.NoError(t, nv.Scan(int(-1234569)))
+		assert.NoError(t, nv.Scan(int(-1234569)))
 		assert.Exactly(t, MakeInt64(-1234569), nv)
 	})
 	t.Run("string unsupported", func(t *testing.T) {

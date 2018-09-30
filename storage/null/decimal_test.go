@@ -25,9 +25,8 @@ import (
 	"testing"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/gogo/protobuf/proto"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // Holy guacamole. Those are many interface implementations. Maybe too much but who knows.
@@ -90,7 +89,6 @@ func TestMakeDecimalFloat64(t *testing.T) {
 
 func TestDecimal_GoString(t *testing.T) {
 
-
 	tests := []struct {
 		have Decimal
 		want string
@@ -125,7 +123,6 @@ func TestDecimal_GoString(t *testing.T) {
 }
 
 func TestDecimal_String(t *testing.T) {
-
 
 	tests := []struct {
 		have Decimal
@@ -183,7 +180,7 @@ func TestDecimal_String(t *testing.T) {
 	}
 	for i, test := range tests {
 		val, err := test.have.Value()
-		require.NoError(t, err, "Index %d", i)
+		assert.NoError(t, err, "Index %d", i)
 		assert.Exactly(t, test.want, val, "Index %d", i)
 
 	}
@@ -191,15 +188,14 @@ func TestDecimal_String(t *testing.T) {
 
 func TestDecimal_MarshalJSON(t *testing.T) {
 
-
 	runner := func(d Decimal, want string) func(*testing.T) {
 		return func(t *testing.T) {
 			raw, err := d.MarshalJSON()
-			require.NoError(t, err, t.Name())
+			assert.NoError(t, err, t.Name())
 			assert.Exactly(t, want, string(raw), t.Name())
 
 			var d2 Decimal
-			require.NoError(t, d2.UnmarshalJSON(raw), t.Name())
+			assert.NoError(t, d2.UnmarshalJSON(raw), t.Name())
 			assert.Exactly(t, d, d2, t.Name())
 		}
 	}
@@ -249,23 +245,22 @@ func TestDecimal_MarshalJSON(t *testing.T) {
 			Precision: 1234,
 			Scale:     2,
 		}
-		require.NoError(t, dNull.UnmarshalJSON([]byte("null")))
+		assert.NoError(t, dNull.UnmarshalJSON([]byte("null")))
 		assert.Exactly(t, Decimal{}, dNull)
 	})
 }
 
 func TestDecimal_MarshalText(t *testing.T) {
 
-
 	runner := func(d Decimal, want string) func(*testing.T) {
 		return func(t *testing.T) {
 			raw, err := d.MarshalText()
-			require.NoError(t, err, t.Name())
+			assert.NoError(t, err, t.Name())
 			assert.Exactly(t, want, string(raw), t.Name())
 			d.Quote = false
 
 			var d2 Decimal
-			require.NoError(t, d2.UnmarshalText(raw), t.Name())
+			assert.NoError(t, d2.UnmarshalText(raw), t.Name())
 			assert.Exactly(t, d, d2, t.Name())
 		}
 	}
@@ -295,22 +290,21 @@ func TestDecimal_MarshalText(t *testing.T) {
 			Precision: 1234,
 			Scale:     2,
 		}
-		require.NoError(t, dNull.UnmarshalText([]byte("")))
+		assert.NoError(t, dNull.UnmarshalText([]byte("")))
 		assert.Exactly(t, Decimal{}, dNull)
 	})
 }
 
 func TestDecimal_GobEncode(t *testing.T) {
 
-
 	runner := func(d Decimal, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
 			raw, err := d.GobEncode()
-			require.NoError(t, err, t.Name())
+			assert.NoError(t, err, t.Name())
 			assert.Exactly(t, want, raw, t.Name())
 
 			var d2 Decimal
-			require.NoError(t, d2.GobDecode(raw), t.Name())
+			assert.NoError(t, d2.GobDecode(raw), t.Name())
 			assert.Exactly(t, d, d2, t.Name())
 		}
 	}
@@ -340,13 +334,12 @@ func TestDecimal_GobEncode(t *testing.T) {
 			Precision: 1234,
 			Scale:     2,
 		}
-		require.NoError(t, dNull.GobDecode([]byte("")))
+		assert.NoError(t, dNull.GobDecode([]byte("")))
 		assert.Exactly(t, Decimal{}, dNull)
 	})
 }
 
 func TestDecimal_Int64(t *testing.T) {
-
 
 	t.Run("1234", func(t *testing.T) {
 		d := Decimal{
@@ -383,7 +376,6 @@ func TestDecimal_Int64(t *testing.T) {
 }
 
 func TestDecimal_Float64(t *testing.T) {
-
 
 	t.Run("0.0", func(t *testing.T) {
 		d := Decimal{
@@ -425,20 +417,19 @@ func TestDecimal_Float64(t *testing.T) {
 
 func TestDecimal_Scan(t *testing.T) {
 
-
 	t.Run("nil", func(t *testing.T) {
 		var nv Decimal
-		require.NoError(t, nv.Scan(nil))
+		assert.NoError(t, nv.Scan(nil))
 		assert.Exactly(t, Decimal{}, nv)
 	})
 	t.Run("[]byte", func(t *testing.T) {
 		var nv Decimal
-		require.NoError(t, nv.Scan([]byte(`-1234.567`)))
+		assert.NoError(t, nv.Scan([]byte(`-1234.567`)))
 		assert.Exactly(t, MakeDecimalInt64(-1234567, 3), nv)
 	})
 	t.Run("float64", func(t *testing.T) {
 		var nv Decimal
-		require.NoError(t, nv.Scan(-1234.569))
+		assert.NoError(t, nv.Scan(-1234.569))
 		assert.Exactly(t, MakeDecimalInt64(-1234569, 3), nv)
 	})
 	t.Run("string unsupported", func(t *testing.T) {
@@ -446,5 +437,28 @@ func TestDecimal_Scan(t *testing.T) {
 		err := nv.Scan(`-123.4567`)
 		assert.True(t, errors.Is(err, errors.NotSupported), "Error behaviour should be errors.NotSupported")
 		assert.Exactly(t, Decimal{}, nv)
+	})
+}
+
+func TestDecimal_Equal(t *testing.T) {
+	t.Run("equal", func(t *testing.T) {
+		a := Decimal{Precision: 11, Scale: 1, Negative: true, Valid: true}
+		b := Decimal{Precision: 11, Scale: 1, Negative: true, Valid: true}
+		assert.True(t, a.Equal(b))
+	})
+	t.Run("unequal", func(t *testing.T) {
+		a := Decimal{Precision: 13, Scale: 1, Negative: true, Valid: true}
+		b := Decimal{Precision: 11, Scale: 1, Negative: true, Valid: true}
+		assert.False(t, a.Equal(b))
+	})
+	t.Run("not valid1", func(t *testing.T) {
+		a := Decimal{Precision: 13, Scale: 1, Negative: true}
+		b := Decimal{Precision: 11, Scale: 1, Negative: true, Valid: true}
+		assert.False(t, a.Equal(b))
+	})
+	t.Run("not valid2", func(t *testing.T) {
+		a := Decimal{Precision: 13, Scale: 1, Negative: true, Valid: true}
+		b := Decimal{Precision: 11, Scale: 1, Negative: true}
+		assert.False(t, a.Equal(b))
 	})
 }

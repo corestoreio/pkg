@@ -24,12 +24,26 @@ import (
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/storage/null"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
+const tableNullTypesCreate = `CREATE TABLE dml_null_types (
+  id int(11) NOT NULL AUTO_INCREMENT,
+  string_val varchar(255) DEFAULT NULL,
+  int64_val int(11) DEFAULT NULL,
+  float64_val float DEFAULT NULL,
+  time_val datetime DEFAULT NULL,
+  bool_val tinyint(1) DEFAULT NULL,
+  decimal_val decimal(5,3) DEFAULT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
+
+const tableNullTypesDrop = `DROP TABLE IF EXISTS dml_null_types`
+
 func TestDecimal_Select_Integration(t *testing.T) {
-	dbc := dmltest.MustConnectDB(t)
+	ctx := context.TODO()
+	dbc := dmltest.MustConnectDB(t, dml.WithSetNamesUTF8MB4(),
+		dml.WithExecSQLOnConnOpen(ctx, tableNullTypesCreate), dml.WithExecSQLOnConnClose(ctx, tableNullTypesDrop))
 	defer dmltest.Close(t, dbc)
 
 	rec := newNullTypedRecordWithData()
@@ -37,9 +51,9 @@ func TestDecimal_Select_Integration(t *testing.T) {
 		AddColumns("id", "string_val", "int64_val", "float64_val", "time_val", "bool_val", "decimal_val")
 
 	res, err := in.WithArgs().Record("", rec).ExecContext(context.TODO())
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	id, err := res.LastInsertId()
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Exactly(t, int64(2), id)
 
 	nullTypeSet := &nullTypedRecord{}
@@ -50,14 +64,16 @@ func TestDecimal_Select_Integration(t *testing.T) {
 	)
 
 	rc, err := sel.WithArgs().Load(context.TODO(), nullTypeSet)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Exactly(t, uint64(1), rc)
 
 	assert.Exactly(t, rec, nullTypeSet)
 }
 
 func TestNullTypeScanning(t *testing.T) {
-	dbc := dmltest.MustConnectDB(t)
+	ctx := context.TODO()
+	dbc := dmltest.MustConnectDB(t, dml.WithSetNamesUTF8MB4(),
+		dml.WithExecSQLOnConnOpen(ctx, tableNullTypesCreate), dml.WithExecSQLOnConnClose(ctx, tableNullTypesDrop))
 	defer dmltest.Close(t, dbc)
 
 	type nullTypeScanningTest struct {
@@ -81,9 +97,9 @@ func TestNullTypeScanning(t *testing.T) {
 		res, err := dbc.InsertInto("dml_null_types").
 			AddColumns("string_val", "int64_val", "float64_val", "time_val", "bool_val", "decimal_val").
 			WithArgs().Record("", test.record).ExecContext(context.TODO())
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		id, err := res.LastInsertId()
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		// Scan it back and check that all fields are of the correct validity and are
 		// equal to the reference record
@@ -91,7 +107,7 @@ func TestNullTypeScanning(t *testing.T) {
 		_, err = dbc.SelectFrom("dml_null_types").Star().Where(
 			dml.Expr("id = ?").Int64(id),
 		).WithArgs().Load(context.TODO(), nullTypeSet)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		assert.Equal(t, test.record, nullTypeSet)
 		assert.Equal(t, test.valid, nullTypeSet.StringVal.Valid)

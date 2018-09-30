@@ -22,9 +22,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/gogo/protobuf/proto"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -170,17 +169,17 @@ func TestNullBool_BinaryEncoding(t *testing.T) {
 	runner := func(b Bool, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
 			data, err := b.GobEncode()
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.Exactly(t, want, data, "GobEncode")
 			data, err = b.MarshalBinary()
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.Exactly(t, want, data, "MarshalBinary")
 			data, err = b.Marshal()
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.Exactly(t, want, data, "Marshal")
 
 			var decoded Bool
-			require.NoError(t, decoded.UnmarshalBinary(data), "UnmarshalBinary")
+			assert.NoError(t, decoded.UnmarshalBinary(data), "UnmarshalBinary")
 			assert.Exactly(t, b, decoded)
 		}
 	}
@@ -194,11 +193,11 @@ func TestNullBool_BinaryDecoding(t *testing.T) {
 	runner := func(data []byte, want Bool) func(*testing.T) {
 		return func(t *testing.T) {
 			var have Bool
-			require.NoError(t, have.GobDecode(data), "GobDecode")
+			assert.NoError(t, have.GobDecode(data), "GobDecode")
 			assert.Exactly(t, want, have, "GobDecode")
-			require.NoError(t, have.UnmarshalBinary(data), "UnmarshalBinary")
+			assert.NoError(t, have.UnmarshalBinary(data), "UnmarshalBinary")
 			assert.Exactly(t, want, have, "UnmarshalBinary")
-			require.NoError(t, have.Unmarshal(data), "Unmarshal")
+			assert.NoError(t, have.Unmarshal(data), "Unmarshal")
 			assert.Exactly(t, want, have, "Unmarshal")
 		}
 	}

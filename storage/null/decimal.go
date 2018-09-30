@@ -46,6 +46,7 @@ const (
 // https://dev.mysql.com/doc/refman/5.7/en/precision-math-decimal-characteristics.html
 // https://dev.mysql.com/doc/refman/5.7/en/floating-point-types.html
 type Decimal struct {
+	_         [0]int // enforce to use struct fields
 	Precision uint64 // The value itself
 	Scale     int32  // Number of digits
 	Negative  bool
@@ -137,6 +138,12 @@ func (d *Decimal) Scan(value interface{}) (err error) {
 
 // SetNull sets the value to Go's default value and Valid to false.
 func (d Decimal) SetNull() Decimal { return Decimal{} }
+
+// Equal compares another Decimal object for equality. Equality can only succeed
+// when both `Valid` fields are true.
+func (d Decimal) Equal(d2 Decimal) bool {
+	return d.Valid && d2.Valid && d.Precision == d2.Precision && d.Scale == d2.Scale && d.Negative == d2.Negative
+}
 
 // Int64 converts the underlying uint64 to an int64. Very useful for creating a
 // new 3rd party package type/object. If the Precision field overflows
