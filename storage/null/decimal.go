@@ -38,6 +38,8 @@ const (
 	decimalBinaryVersion01
 )
 
+var bytesDot = []byte(`.`)
+
 // Decimal defines a container type for any MySQL/MariaDB
 // decimal/numeric/float/double data type and their representation in Go.
 // Decimal does not perform any kind of calculations. Helpful packages for
@@ -48,7 +50,7 @@ const (
 type Decimal struct {
 	_         [0]int // enforce to use struct fields
 	Precision uint64 // The value itself
-	Scale     int32  // Number of digits
+	Scale     int32  // Number of digits after the dot
 	Negative  bool
 	Valid     bool
 	// Quote if true JSON marshaling will quote the returned number and creates
@@ -97,6 +99,8 @@ func MakeDecimalFloat64(value float64) (d Decimal, err error) {
 // MakeDecimalBytes parses b to create a new Decimal. b must contain ASCII
 // numbers. If b contains null/NULL the returned object represents that value.
 // This function can be used for big.Int.Bytes() or similar implementations.
+// Parses only numbers as stored in MySQL/MariaDB decimal/double column format,
+// e.g. -47.11.
 func MakeDecimalBytes(b []byte) (d Decimal, err error) {
 	// maybe use string comparison but run benchmarks
 	if len(b) == 0 || bytes.Equal(b, bTextNullLC) || bytes.Equal(b, bTextNullUC) {
@@ -108,14 +112,28 @@ func MakeDecimalBytes(b []byte) (d Decimal, err error) {
 		b = b[1:]
 	}
 
+	// TODO this block can be further micro optimized, but later.
+
 	digits := b
+	if dotPos := bytes.IndexByte(b, '.'); dotPos >= 0 {
+		digits = bytes.TrimRightFunc(digits, isZero)
+	}
+	digits = bytes.TrimLeftFunc(digits, isZero)
+	if len(digits) > 0 && digits[0] == '.' { // we cut off too much
+		digits = append([]byte{'0'}, digits...)
+	}
+
 	if dotPos := bytes.IndexByte(digits, '.'); dotPos > 0 { // 0.333 dotPos is min 1
-		d.Scale = int32(len(b)-dotPos) - 1
+		d.Scale = int32(len(digits)-dotPos) - 1
 		// remove dot 2363.7800 => 23637800 => Scale=4
-		digits = append(digits[:dotPos], b[dotPos+1:]...)
+		digits = append(digits[:dotPos], digits[dotPos+1:]...)
 	}
 	d.Precision, d.Valid, err = byteconv.ParseUint(digits, 10, 64)
 	return
+}
+
+func isZero(r rune) bool {
+	return r == '0'
 }
 
 // Scan implements the Scanner interface. Approx. >3x times faster than
