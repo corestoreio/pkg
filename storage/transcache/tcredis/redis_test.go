@@ -23,7 +23,7 @@ import (
 	"github.com/corestoreio/pkg/util"
 	"github.com/corestoreio/errors"
 	"github.com/garyburd/redigo/redis"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var _ transcache.Cacher = (*wrapper)(nil)

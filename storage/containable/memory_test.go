@@ -23,7 +23,7 @@ import (
 
 	"github.com/corestoreio/pkg/net/jwt"
 	"github.com/corestoreio/pkg/storage/containable"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var _ containable.Container = (*containable.InMemory)(nil)
