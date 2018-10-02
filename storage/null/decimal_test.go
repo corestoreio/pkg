@@ -57,16 +57,19 @@ func TestMakeDecimalBytes(t *testing.T) {
 		wantNegative  bool
 		wantErr       error
 		wantStr       string
+		wantValid     bool
 	}{
-		{"-10.550000000000000000001", 0, 0, false, errors.New(`strconv.ParseUint: parsing "10550000000000000000001": value out of range`), ""},
-		{"-10.55000000000000000000", 1055, 2, true, nil, "-10.55"},
-		{"-10.5500000000000000000000000", 1055, 2, true, nil, "-10.55"},
-		{"0010.5500000000000000000000000", 1055, 2, false, nil, "10.55"},
-		{"-0010.651234560000000000000000", 1065123456, 8, true, nil, "-10.65123456"},
-		{"0010.55", 1055, 2, false, nil, "10.55"},
-		{"0010.00", 10, 0, false, nil, "10"},
-		{"10000", 10000, 0, false, nil, "10000"},
-		{"0010", 10, 0, false, nil, "10"},
+		{"-10.550000000000000000001", 0, 0, false, errors.New(`strconv.ParseUint: parsing "10550000000000000000001": value out of range`), "", false},
+		{"-10.55000000000000000000", 1055, 2, true, nil, "-10.55", true},
+		{"-10.5500000000000000000000000", 1055, 2, true, nil, "-10.55", true},
+		{"0010.5500000000000000000000000", 1055, 2, false, nil, "10.55", true},
+		{"-0010.651234560000000000000000", 1065123456, 8, true, nil, "-10.65123456", true},
+		{"0010.55", 1055, 2, false, nil, "10.55", true},
+		{"0010.00", 10, 0, false, nil, "10", true},
+		{"10000", 10000, 0, false, nil, "10000", true},
+		{"0010", 10, 0, false, nil, "10", true},
+		{"0.000", 0, 0, false, nil, "0", true},
+		{"00000.0000000", 0, 0, false, nil, "0", true},
 	}
 	for i, test := range tests {
 		haveD, haveErr := MakeDecimalBytes([]byte(test.data))
@@ -75,6 +78,7 @@ func TestMakeDecimalBytes(t *testing.T) {
 			continue
 		}
 		assert.NoError(t, haveErr, "[%d] Err: %+v", i, haveErr)
+		assert.Exactly(t, test.wantValid, haveD.Valid, "Index %d", i)
 		assert.Exactly(t, test.wantPrecision, haveD.Precision, "Index %d", i)
 		assert.Exactly(t, test.wantScale, haveD.Scale, "Index %d", i)
 		assert.Exactly(t, test.wantNegative, haveD.Negative, "Index %d", i)
