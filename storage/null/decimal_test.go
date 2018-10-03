@@ -50,6 +50,7 @@ var (
 )
 
 func TestMakeDecimalBytes(t *testing.T) {
+
 	tests := []struct {
 		data          string
 		wantPrecision uint64
@@ -59,7 +60,7 @@ func TestMakeDecimalBytes(t *testing.T) {
 		wantStr       string
 		wantValid     bool
 	}{
-		{"-10.550000000000000000001", 0, 0, false, errors.New(`strconv.ParseUint: parsing "10550000000000000000001": value out of range`), "", false},
+		{"-10.550000000000000000001", 0, 21, true, nil, "-10.550000000000000000001", true},
 		{"-10.55000000000000000000", 1055, 2, true, nil, "-10.55", true},
 		{"-10.5500000000000000000000000", 1055, 2, true, nil, "-10.55", true},
 		{"0010.5500000000000000000000000", 1055, 2, false, nil, "10.55", true},
@@ -67,22 +68,35 @@ func TestMakeDecimalBytes(t *testing.T) {
 		{"0010.55", 1055, 2, false, nil, "10.55", true},
 		{"0010.00", 10, 0, false, nil, "10", true},
 		{"10000", 10000, 0, false, nil, "10000", true},
+		{"47.11", 4711, 2, false, nil, "47.11", true},
 		{"0010", 10, 0, false, nil, "10", true},
 		{"0.000", 0, 0, false, nil, "0", true},
+		{"0.010", 1, 2, false, nil, "0.01", true},
 		{"00000.0000000", 0, 0, false, nil, "0", true},
+		{"0", 0, 0, false, nil, "0", true},
+		{".0", 0, 0, false, nil, "0", true},
+		{"", 0, 0, false, nil, "NULL", false},
+		{"0.1234567890123456789", 1234567890123456789, 19, false, nil, "0.1234567890123456789", true},
+		{"0.01234567890123456789", 1234567890123456789, 20, false, nil, "0.01234567890123456789", true},
+		{"-0.012345678901234567891", 12345678901234567891, 21, true, nil, "-0.012345678901234567891", true},
+		{"-0.18446744073709551615", math.MaxUint64, 20, true, nil, "-0.18446744073709551615", true},
+		{"-0.184467440737095516151", 0, 21, true, nil, "-0.184467440737095516151", true},
+		{"0.0123456789012345678912345", 0, 25, false, nil, "0.0123456789012345678912345", true},
+		{"123456789012345678912345678901234", 0, 0, false, nil, "123456789012345678912345678901234", true},
+		{"123456789012345678912345678901234.123456789012345678912345678901234", 0, 33, false, nil, "123456789012345678912345678901234.123456789012345678912345678901234", true},
 	}
 	for i, test := range tests {
 		haveD, haveErr := MakeDecimalBytes([]byte(test.data))
 		if test.wantErr != nil {
-			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d")
+			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
 			continue
 		}
 		assert.NoError(t, haveErr, "[%d] Err: %+v", i, haveErr)
-		assert.Exactly(t, test.wantValid, haveD.Valid, "Index %d", i)
-		assert.Exactly(t, test.wantPrecision, haveD.Precision, "Index %d", i)
-		assert.Exactly(t, test.wantScale, haveD.Scale, "Index %d", i)
-		assert.Exactly(t, test.wantNegative, haveD.Negative, "Index %d", i)
-		assert.Exactly(t, test.wantStr, haveD.String())
+		assert.Exactly(t, test.wantValid, haveD.Valid, "Index %d not valid", i)
+		assert.Exactly(t, test.wantPrecision, haveD.Precision, "Index %d does not match precision", i)
+		assert.Exactly(t, test.wantScale, haveD.Scale, "Index %d does not match scale", i)
+		assert.Exactly(t, test.wantNegative, haveD.Negative, "Index %d does not match negative", i)
+		assert.Exactly(t, test.wantStr, haveD.String(), "Index %d does not match String", i)
 	}
 }
 
@@ -153,10 +167,27 @@ func TestDecimal_GoString(t *testing.T) {
 			Negative:  true,
 			Quote:     true,
 		}, "null.Decimal{Precision:65535,Scale:8,Negative:true,Valid:true,Quote:true,}"},
+		{MustMakeDecimalBytes([]byte("12345678912345.12345678")),
+			`null.Decimal{PrecisionStr:"1234567891234512345678",Scale:8,Valid:true,}`},
 	}
 	for i, test := range tests {
 		assert.Exactly(t, test.want, test.have.GoString(), "Index %d", i)
 	}
+}
+
+func TestMustMakeDecimalBytes(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			if err, ok := r.(error); ok {
+				assert.EqualError(t, err, "strconv.ParseUint: parsing \"helloWorld\": invalid syntax")
+			} else {
+				t.Errorf("Panic should contain an error but got:\n%+v", r)
+			}
+		} else {
+			t.Error("Expecting a panic but got nothing")
+		}
+	}()
+	MustMakeDecimalBytes([]byte(`helloWorld`))
 }
 
 func TestDecimal_String(t *testing.T) {

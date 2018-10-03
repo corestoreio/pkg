@@ -29,13 +29,14 @@ option objc_class_prefix = "CSPB";
 
 // Decimal represents the MySQL/MariaDB decimal column type.
 message Decimal {
-	uint64	precision = 1;
-	int32	scale = 2; // Number of decimals after the radix
-	bool	negative = 3;
-	bool	valid = 4; // If false, null must be handled
+	string  precision_str = 1;
+	uint64	precision = 2;
+	int32	scale = 3; // Number of decimals after the radix
+	bool	negative = 4;
+	bool	valid = 5; // If false, null must be handled
 	// Quote if true JSON marshaling will quote the returned number and creates
 	// a string. JavaScript floats are only 53 bits.
-	bool	quote = 5;
+	bool	quote = 6;
 }
 
 message Bool {

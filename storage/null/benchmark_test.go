@@ -158,6 +158,17 @@ func BenchmarkDecimal_String(b *testing.B) {
 			benchmarkDecimal_String = d.String()
 		}
 	})
+	b.Run("PrecStr Scale30", func(b *testing.B) {
+		d := null.Decimal{
+			Valid:        true,
+			PrecisionStr: "123456789012345678912345",
+			Scale:        30,
+			Negative:     true,
+		}
+		for i := 0; i < b.N; i++ {
+			benchmarkDecimal_String = d.String()
+		}
+	})
 }
 
 var benchmarkDecimal_MarshalBinary []byte
@@ -188,4 +199,31 @@ func BenchmarkDecimal_Binary(b *testing.B) {
 			}
 		}
 	})
+}
+
+var benchmarkMakeDecimalBytes null.Decimal
+
+func benchMakeDecimalBytes(data []byte) func(b *testing.B) {
+	return func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			var err error
+			if benchmarkMakeDecimalBytes, err = null.MakeDecimalBytes(data); err != nil {
+				b.Fatal(err)
+			}
+		}
+	}
+}
+
+func BenchmarkMakeDecimalBytes(b *testing.B) {
+	tests := []string{
+		`-10.550000000000000000001`,
+		`-0010.651234560000000000000000`,
+		`123.45`,
+		`0.1234567890123456789`,
+		`0`,
+		`6789012345678912345678901234.123`,
+	}
+	for _, data := range tests {
+		b.Run(string(data), benchMakeDecimalBytes([]byte(data)))
+	}
 }

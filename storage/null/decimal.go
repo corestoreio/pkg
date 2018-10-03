@@ -18,11 +18,13 @@ import (
 	"bytes"
 	"database/sql/driver"
 	"encoding/binary"
+	"fmt"
 	"math"
 	"strconv"
 	"strings"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/bufferpool"
 	"github.com/corestoreio/pkg/util/byteconv"
 )
 
@@ -41,18 +43,20 @@ const (
 var bytesDot = []byte(`.`)
 
 // Decimal defines a container type for any MySQL/MariaDB
-// decimal/numeric/float/double data type and their representation in Go.
-// Decimal does not perform any kind of calculations. Helpful packages for
-// arbitrary precision calculations are github.com/ericlagergren/decimal or
-// gopkg.in/inf.v0 or github.com/shopspring/decimal or a future new Go type.
+// decimal/numeric/float/double data type and their representation in Go. It can
+// store arbitrary large values. Decimal does not perform any kind of
+// calculations. Helpful packages for arbitrary precision calculations are
+// github.com/ericlagergren/decimal or gopkg.in/inf.v0 or
+// github.com/shopspring/decimal or a future new Go type.
 // https://dev.mysql.com/doc/refman/5.7/en/precision-math-decimal-characteristics.html
 // https://dev.mysql.com/doc/refman/5.7/en/floating-point-types.html
 type Decimal struct {
-	_         [0]int // enforce to use struct fields
-	Precision uint64 // The value itself
-	Scale     int32  // Number of digits after the dot
-	Negative  bool
-	Valid     bool
+	_            [0]int // enforce to use struct fields
+	PrecisionStr string // Not empty if to large for an uint64
+	Precision    uint64 // The value itself, always set if it fits into an uint64
+	Scale        int32  // Number of digits after the dot
+	Negative     bool
+	Valid        bool
 	// Quote if true JSON marshaling will quote the returned number and creates
 	// a string. JavaScript floats are only 53 bits.
 	Quote bool
@@ -115,11 +119,15 @@ func MakeDecimalBytes(b []byte) (d Decimal, err error) {
 	// TODO this block can be further micro optimized, but later.
 
 	digits := b
+	lenDigits := len(digits)
+	if (lenDigits == 1 && digits[0] == '0') || lenDigits == 0 {
+		return Decimal{Valid: lenDigits == 1}, nil
+	}
 	if dotPos := bytes.IndexByte(b, '.'); dotPos >= 0 {
 		digits = bytes.TrimRightFunc(digits, isZero)
 	}
 	digits = bytes.TrimLeftFunc(digits, isZero)
-	if len(digits) > 0 && digits[0] == '.' { // we cut off too much
+	if lenDigits > 0 && digits[0] == '.' { // we cut off too much
 		digits = append([]byte{'0'}, digits...)
 	}
 
@@ -128,8 +136,24 @@ func MakeDecimalBytes(b []byte) (d Decimal, err error) {
 		// remove dot 2363.7800 => 23637800 => Scale=4
 		digits = append(digits[:dotPos], digits[dotPos+1:]...)
 	}
+
 	d.Precision, d.Valid, err = byteconv.ParseUint(digits, 10, 64)
+	if se, ok := err.(*strconv.NumError); ok && se.Err == strconv.ErrRange {
+		err = nil
+		d.Precision = 0
+		d.PrecisionStr = string(digits)
+		d.Valid = d.PrecisionStr != ""
+	}
 	return
+}
+
+// MustMakeDecimalBytes same behaviour as MakeDecimalBytes but panics on error.
+func MustMakeDecimalBytes(data []byte) Decimal {
+	d, err := MakeDecimalBytes(data)
+	if err != nil {
+		panic(err)
+	}
+	return d
 }
 
 func isZero(r rune) bool {
@@ -137,7 +161,7 @@ func isZero(r rune) bool {
 }
 
 // Scan implements the Scanner interface. Approx. >3x times faster than
-//// database/sql.convertAssign.
+// database/sql.convertAssign.
 func (d *Decimal) Scan(value interface{}) (err error) {
 	if value == nil {
 		d.Precision, d.Scale, d.Negative, d.Valid = 0, 0, false, false
@@ -193,8 +217,9 @@ func (d Decimal) Float64() (value float64) {
 // String returns the string representation of the fixed with decimal. Returns
 // the word `NULL` if the current value is not valid, for now.
 func (d Decimal) String() string {
-	var buf bytes.Buffer
-	d.string(&buf)
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	d.string(buf)
 	return buf.String()
 }
 
@@ -216,6 +241,11 @@ func (d Decimal) string(buf *bytes.Buffer) {
 	}
 
 	if d.Scale == 0 {
+		if d.PrecisionStr != "" {
+			buf.WriteString(d.PrecisionStr)
+			return
+		}
+
 		raw := strconv.AppendUint(buf.Bytes(), d.Precision, 10)
 		buf.Reset()
 		buf.Write(raw)
@@ -223,6 +253,10 @@ func (d Decimal) string(buf *bytes.Buffer) {
 	}
 
 	digits := int32(math.Log10(float64(d.Precision)) + 1)
+	if d.PrecisionStr != "" {
+		digits = int32(len(d.PrecisionStr))
+	}
+
 	leadingZeros := d.Scale - digits + 1
 
 	if leadingZeros > 0 {
@@ -236,16 +270,19 @@ func (d Decimal) string(buf *bytes.Buffer) {
 		}
 		digits += leadingZeros
 	}
-
-	raw := strconv.AppendUint(buf.Bytes(), d.Precision, 10)
-	buf.Reset()
-	buf.Write(raw)
+	if d.PrecisionStr != "" {
+		buf.WriteString(d.PrecisionStr)
+	} else {
+		raw := strconv.AppendUint(buf.Bytes(), d.Precision, 10)
+		buf.Reset()
+		buf.Write(raw)
+	}
 
 	pos := digits - d.Scale + prevLen
 	if d.Negative {
 		pos++
 	}
-	raw = buf.Bytes()
+	raw := buf.Bytes()
 	newRaw := append(raw[:pos], append([]byte("."), raw[pos:]...)...)
 	buf.Reset()
 	buf.Write(newRaw)
@@ -253,8 +290,15 @@ func (d Decimal) string(buf *bytes.Buffer) {
 
 // GoString returns an optimized version of the Go representation of Decimal.
 func (d Decimal) GoString() string {
-	var buf bytes.Buffer
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+
 	buf.WriteString("null.Decimal{")
+	if d.PrecisionStr != "" {
+		buf.WriteString("PrecisionStr:")
+		fmt.Fprintf(buf, "%q", d.PrecisionStr)
+		buf.WriteByte(',')
+	}
 	if d.Precision > 0 {
 		buf.WriteString("Precision:")
 		buf2 := strconv.AppendUint(buf.Bytes(), d.Precision, 10)
@@ -270,13 +314,13 @@ func (d Decimal) GoString() string {
 		buf.WriteByte(',')
 	}
 	if d.Negative {
-		writeLabeledBool(&buf, "Negative")
+		writeLabeledBool(buf, "Negative")
 	}
 	if d.Valid {
-		writeLabeledBool(&buf, "Valid")
+		writeLabeledBool(buf, "Valid")
 	}
 	if d.Quote {
-		writeLabeledBool(&buf, "Quote")
+		writeLabeledBool(buf, "Quote")
 	}
 	buf.WriteByte('}')
 	return buf.String()
