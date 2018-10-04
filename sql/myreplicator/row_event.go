@@ -6,11 +6,11 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"strconv"
 	"time"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/siddontang/go-mysql/mysql"
 )
 
@@ -487,7 +487,7 @@ func (e *RowsEvent) decodeValue(data []byte, tp byte, meta uint16) (v interface{
 			v = int64(data[0])
 			n = 1
 		case 2:
-			v = int64(binary.BigEndian.Uint16(data))
+			v = int64(binary.LittleEndian.Uint16(data))
 			n = 2
 		default:
 			err = fmt.Errorf("Unknown ENUM packlen=%d", l)
@@ -496,7 +496,7 @@ func (e *RowsEvent) decodeValue(data []byte, tp byte, meta uint16) (v interface{
 		n = int(meta & 0xFF)
 		nbits := n * 8
 
-		v, err = decodeBit(data, nbits, n)
+		v, err = littleDecodeBit(data, nbits, n)
 	case mysql.MYSQL_TYPE_BLOB:
 		v, n, err = decodeBlob(data, meta)
 	case mysql.MYSQL_TYPE_VARCHAR,
@@ -545,15 +545,16 @@ var compressedBytes = []int{0, 1, 1, 2, 2, 3, 3, 4, 4, 4}
 
 func decodeDecimalDecompressValue(compIndx int, data []byte, mask uint8) (size int, value uint32) {
 	size = compressedBytes[compIndx]
-	databuff := make([]byte, size)
+	// databuff := make([]byte, size)
+	var databuff [4]byte
 	for i := 0; i < size; i++ {
 		databuff[i] = data[i] ^ mask
 	}
-	value = uint32(mysql.BFixedLengthInt(databuff))
+	value = uint32(mysql.BFixedLengthInt(databuff[:size]))
 	return
 }
 
-func decodeDecimal(data []byte, precision int, decimals int) (float64, int, error) {
+func decodeDecimal(data []byte, precision int, decimals int) (null.Decimal, int, error) {
 	//see python mysql myreplicator and https://github.com/jeremycole/mysql_binlog
 	integral := (precision - decimals)
 	uncompIntegral := int(integral / digitsPerInteger)
@@ -606,7 +607,10 @@ func decodeDecimal(data []byte, precision int, decimals int) (float64, int, erro
 		pos += size
 	}
 
-	f, err := strconv.ParseFloat(string(res.Bytes()), 64)
+	f, err := null.MakeDecimalBytes(res.Bytes())
+	if err != nil {
+		err = errors.WithStack(err)
+	}
 	return f, pos, err
 }
 
@@ -635,6 +639,38 @@ func decodeBit(data []byte, nbits int, length int) (value int64, err error) {
 	} else {
 		if length != 1 {
 			err = fmt.Errorf("invalid bit length %d", length)
+		} else {
+			value = int64(data[0])
+		}
+	}
+	return
+}
+
+func littleDecodeBit(data []byte, nbits int, length int) (value int64, err error) {
+	if nbits > 1 {
+		switch length {
+		case 1:
+			value = int64(data[0])
+		case 2:
+			value = int64(binary.LittleEndian.Uint16(data))
+		case 3:
+			value = int64(mysql.FixedLengthInt(data[0:3]))
+		case 4:
+			value = int64(binary.LittleEndian.Uint32(data))
+		case 5:
+			value = int64(mysql.FixedLengthInt(data[0:5]))
+		case 6:
+			value = int64(mysql.FixedLengthInt(data[0:6]))
+		case 7:
+			value = int64(mysql.FixedLengthInt(data[0:7]))
+		case 8:
+			value = int64(binary.LittleEndian.Uint64(data))
+		default:
+			err = fmt.Errorf("[myreplicator](1) %q contains invalid bit length %d", string(data), length)
+		}
+	} else {
+		if length != 1 {
+			err = fmt.Errorf("[myreplicator](2) %q contains invalid bit length %d", string(data), length)
 		} else {
 			value = int64(data[0])
 		}

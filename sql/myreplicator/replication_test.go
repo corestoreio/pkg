@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alecthomas/assert"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/util/assert"
 	gomysql "github.com/go-sql-driver/mysql"
 	uuid "github.com/satori/go.uuid"
 	"github.com/siddontang/go-mysql/mysql"
