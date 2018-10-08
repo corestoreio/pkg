@@ -113,7 +113,7 @@ func (b *BinlogSyncer) close() {
 
 	if b.con != nil {
 		if err := b.con.SetReadDeadline(time.Now().Add(100 * time.Millisecond)); err != nil && b.cfg.Log.IsDebug() {
-			b.cfg.Log.Debug("BinlogSyncer.SetReadDeadline.error", log.Err(err), log.Object("config", b.cfg))
+			b.cfg.Log.Debug("BinlogSyncer.SetReadDeadline.error", log.Err(err))
 		}
 	}
 
@@ -121,7 +121,7 @@ func (b *BinlogSyncer) close() {
 
 	if b.con != nil {
 		if err := b.con.Close(); err != nil && b.cfg.Log.IsDebug() {
-			b.cfg.Log.Debug("BinlogSyncer.con.close.error", log.Err(err), log.Object("config", b.cfg))
+			b.cfg.Log.Debug("BinlogSyncer.con.close.error", log.Err(err))
 		}
 	}
 
@@ -142,12 +142,12 @@ func (b *BinlogSyncer) isClosed() bool {
 func (b *BinlogSyncer) registerSlave() error {
 	if b.con != nil {
 		if err := b.con.Close(); err != nil && b.cfg.Log.IsDebug() {
-			b.cfg.Log.Debug("BinlogSyncer.registerSlave.con.close.error", log.Err(err), log.Object("config", b.cfg))
+			b.cfg.Log.Debug("BinlogSyncer.registerSlave.con.close.error", log.Err(err))
 		}
 	}
 
 	if b.cfg.Log.IsInfo() {
-		b.cfg.Log.Info("BinlogSyncer.registerSlave.new", log.String("slave_host", b.cfg.Host), log.Uint("slave_port", uint(b.cfg.Port)), log.Object("config", b.cfg))
+		b.cfg.Log.Info("BinlogSyncer.registerSlave.new", log.String("slave_host", b.cfg.Host), log.Uint("slave_port", uint(b.cfg.Port)))
 	}
 	var err error
 	b.con, err = client.Connect(fmt.Sprintf("%s:%d", b.cfg.Host, b.cfg.Port), b.cfg.User, b.cfg.Password, "", func(c *client.Conn) {
@@ -512,7 +512,7 @@ func (b *BinlogSyncer) onStream(s *BinlogStreamer) {
 		data, err := b.con.ReadPacket()
 		if err != nil {
 			if b.cfg.Log.IsInfo() {
-				b.cfg.Log.Info("BinlogSyncer.onStream.connection.readpacket", log.Err(err), log.Object("config", b.cfg))
+				b.cfg.Log.Info("BinlogSyncer.onStream.connection.readpacket", log.Err(err))
 			}
 
 			// we meet connection error, should re-connect again with
@@ -532,7 +532,7 @@ func (b *BinlogSyncer) onStream(s *BinlogStreamer) {
 				case <-time.After(time.Second):
 					if err = b.retrySync(); err != nil {
 						if b.cfg.Log.IsInfo() {
-							b.cfg.Log.Info("BinlogSyncer.onStream.retrySync.waitAsecond", log.Err(err), log.Object("config", b.cfg))
+							b.cfg.Log.Info("BinlogSyncer.onStream.retrySync.waitAsecond", log.Err(err))
 						}
 						continue
 					}
@@ -561,7 +561,8 @@ func (b *BinlogSyncer) onStream(s *BinlogStreamer) {
 			// Some users told me that they received EOF packet here, but I don't know why.
 			// So we only log a message and retry ReadPacket.
 			if b.cfg.Log.IsInfo() {
-				b.cfg.Log.Info("BinlogSyncer.onStream.eof_header", log.String("info", "receive EOF packet, retry ReadPacket"), log.Err(err), log.Object("config", b.cfg))
+				b.cfg.Log.Info("BinlogSyncer.onStream.eof_header", log.String("info", "receive EOF packet, retry ReadPacket"),
+					log.Err(err))
 			}
 			continue
 		default:
@@ -596,7 +597,7 @@ func (b *BinlogSyncer) parseEvent(s *BinlogStreamer, data []byte) error {
 		b.nextPos.File = string(re.NextLogName)
 		b.nextPos.Position = uint(re.Position)
 		if b.cfg.Log.IsInfo() {
-			b.cfg.Log.Info("BinlogSyncer.parseEvent.RotateEvent", log.Stringer("position", b.nextPos), log.Object("config", b.cfg))
+			b.cfg.Log.Info("BinlogSyncer.parseEvent.RotateEvent", log.Stringer("position", b.nextPos))
 		}
 	}
 
