@@ -52,6 +52,7 @@ func extractTableFromQueryEvent(schema, query []byte) (dbName, tableName string)
 }
 
 func (c *Canal) clearTableCacheOnDDLStmt(schema, query []byte) {
+	defer log.WhenDone(c.opts.Log).Info("binlogsync.Canal.clearTableCacheOnDDLStmt")
 	if db, tbl := extractTableFromQueryEvent(schema, query); tbl != "" {
 		c.ClearTableCache(db, tbl)
 		if c.opts.Log.IsInfo() {
@@ -170,6 +171,7 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 // handleRowsEvent handles an event on the rows and calls all registered rows
 // event handler. can return different error behaviours.
 func (c *Canal) handleRowsEvent(ctx context.Context, e *myreplicator.BinlogEvent) error {
+	defer log.WhenDone(c.opts.Log).Info("binlogsync.Canal.handleRowsEvent")
 	ev, ok := e.Event.(*myreplicator.RowsEvent)
 	if !ok {
 		return errors.Fatal.Newf("[binlogsync] handleRowsEvent: Failed to cast to *myreplicator.RowsEvent type")
@@ -179,7 +181,8 @@ func (c *Canal) handleRowsEvent(ctx context.Context, e *myreplicator.BinlogEvent
 	schemaName := string(ev.Table.Schema)
 	if c.dsn.DBName != schemaName {
 		if c.opts.Log.IsDebug() {
-			c.opts.Log.Debug("[binlogsync.Canal.handleRowsEvent.Skipping.database", log.String("database_have", schemaName), log.String("database_want", c.dsn.DBName), log.Int("table_id", int(ev.TableID)))
+			c.opts.Log.Debug("[binlogsync.Canal.handleRowsEvent.Skipping.database", log.String("database_have", schemaName),
+				log.String("database_want", c.dsn.DBName), log.Int("table_id", int(ev.TableID)))
 		}
 		return nil
 	}
@@ -193,7 +196,8 @@ func (c *Canal) handleRowsEvent(ctx context.Context, e *myreplicator.BinlogEvent
 	case errors.NotAllowed.Match(err):
 		// do not execute the processRowsEventHandler function
 		if c.opts.Log.IsDebug() {
-			c.opts.Log.Debug("binlogsync.Canal.handleRowsEvent.Skipping.not_allowed_table", log.String("database", schemaName), log.String("table", table), log.Int("table_id", int(ev.TableID)))
+			c.opts.Log.Debug("binlogsync.Canal.handleRowsEvent.Skipping.not_allowed_table", log.String("database", schemaName),
+				log.String("table", table), log.Int("table_id", int(ev.TableID)))
 		}
 		return nil
 	default:

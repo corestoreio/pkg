@@ -24,7 +24,6 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/binlogsync"
-	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/util/assert"
 )
@@ -216,6 +215,6 @@ func TestCanal_FindTable_Error(t *testing.T) {
 		WillReturnError(wantErr)
 
 	tbl, err := c.FindTable(context.Background(), "core_config_data")
-	assert.Exactly(t, ddl.Table{}, tbl)
 	assert.True(t, errors.Unauthorized.Match(err), "%+v", err)
+	assert.Nil(t, tbl)
 }

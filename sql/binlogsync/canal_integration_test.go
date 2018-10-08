@@ -45,25 +45,33 @@ func TestIntegrationNewCanal_WithoutCfgSrv(t *testing.T) {
 		t.Skipf("Skipping integration test because environment variable %q not set.", dml.EnvDSN)
 	}
 
+	// var bufLog bytes.Buffer
+	// myLog := logw.NewLog(logw.WithDebug(&bufLog, "INTG", log.LstdFlags))
+
 	c, err := binlogsync.NewCanal(dsn, binlogsync.WithMySQL(), binlogsync.Options{
-		IncludeTableRegex: []string{"catalog_product_entity"},
+		// Log:               myLog,
+		IncludeTableRegex: []string{"catalog_product_entity", "^sales_order$"},
 		OnClose: func(db *dml.ConnPool) (err error) {
-			if _, err = db.DB.ExecContext(context.Background(), `DROP TABLE IF EXISTS 
-			catalog_product_entity_datetime, catalog_product_entity_decimal, catalog_product_entity_int, 
-			catalog_product_entity_text, catalog_product_entity_varchar, catalog_product_entity`); err != nil {
+			// return nil
+			if _, err = db.DB.ExecContext(context.Background(), `DROP TABLE IF EXISTS
+			catalog_product_entity_datetime, catalog_product_entity_decimal, catalog_product_entity_int,
+			catalog_product_entity_text, catalog_product_entity_varchar,catalog_product_entity`); err != nil {
+				panic(err)
 				return errors.WithStack(err)
 			}
 			_, err = db.DB.ExecContext(context.Background(), `DROP TABLE IF EXISTS
 			catalog_category_entity_datetime,catalog_category_entity_decimal,catalog_category_entity_int,
-			catalog_category_entity_text,catalog_category_entity_varchar,catalog_category_entity`)
+			catalog_category_entity_text,catalog_category_entity_varchar,catalog_category_entity,sales_order`)
 			return errors.WithStack(err)
 		},
 	})
 	assert.NoError(t, err, "%+v", err)
 
 	cpe := &catalogProductEvent{idx: 1001, t: t, counter: make(map[string]int)}
-	c.RegisterRowsEventHandler(cpe)
-	// c.RegisterRowsEventHandler(catalogProductEvent{idx: 1002, t: t})
+	c.RegisterRowsEventHandler("", cpe)
+
+	soe := &salesOrderEvent{idx: 1001, t: t, counter: make(map[string]int)}
+	c.RegisterRowsEventHandler("sales_order", soe)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
@@ -78,10 +86,14 @@ func TestIntegrationNewCanal_WithoutCfgSrv(t *testing.T) {
 		err := c.Close()
 		assert.NoError(t, err, "c.Close(): %+v", err)
 	}
-	assert.Exactly(t, 5, cpe.counter[binlogsync.InsertAction], "InsertActions")
+	assert.Exactly(t, 6, cpe.counter[binlogsync.InsertAction], "InsertActions") // 5+1 (1=> sales_order)
 	assert.Exactly(t, 3, cpe.counter[binlogsync.UpdateAction], "UpdateActions")
 	assert.Exactly(t, 1, cpe.counter[binlogsync.DeleteAction], "DeleteActions")
+
+	assert.Exactly(t, 1, soe.counter[binlogsync.InsertAction], "InsertActions")
 }
+
+var _ binlogsync.RowsEventHandler = (*catalogProductEvent)(nil)
 
 type catalogProductEvent struct {
 	idx     int
@@ -89,7 +101,7 @@ type catalogProductEvent struct {
 	counter map[string]int
 }
 
-func (cpe *catalogProductEvent) Do(_ context.Context, action string, table ddl.Table, rows [][]interface{}) error {
+func (cpe *catalogProductEvent) Do(_ context.Context, action string, table *ddl.Table, rows [][]interface{}) error {
 	cpe.counter[action]++
 	// Uncomment the following lines to see the data
 	// cpe.t.Logf("%d: %q %q.%q", cpe.idx, action, table.Schema, table.Name)
@@ -122,6 +134,42 @@ func (cpe *catalogProductEvent) Do(_ context.Context, action string, table ddl.T
 func (cpe *catalogProductEvent) Complete(_ context.Context) error {
 	return nil // errors.NewFatalf("[test] What is incomplete?")
 }
+
 func (cpe *catalogProductEvent) String() string {
-	return "WTF? catalogProductEvent"
+	return "catalogProductEvent"
+}
+
+var _ binlogsync.RowsEventHandler = (*salesOrderEvent)(nil)
+
+type salesOrderEvent struct {
+	idx     int
+	t       *testing.T
+	counter map[string]int
+}
+
+func (cpe *salesOrderEvent) Do(_ context.Context, action string, table *ddl.Table, rows [][]interface{}) error {
+	if table.Name != "sales_order" {
+		// should not happen due to the special registration of this handler
+		return errors.Fatal.Newf("table name %q not allowed and not expected", table.Name)
+	}
+	cpe.counter[action]++
+	// Uncomment the following lines to see the data
+	// cpe.t.Logf("%d: %q %q.%q", cpe.idx, action, table.Schema, table.Name)
+	// for _, r := range rows {
+	// 	cpe.t.Logf("%#v", r)
+	// }
+
+	if action == binlogsync.InsertAction {
+		assert.Exactly(cpe.t, "89875168d4e71e08688d6a266413162a", rows[0][4], "A: Row4: %#v", rows[0][4])
+		// 	assert.Exactly(cpe.t, []interface{}{int32(66), int16(111), "simple", "MH01-XL-CS111", int16(1), int16(0), "2018-04-17 21:42:21", "2018-04-17 21:42:21"}, rows[1], "B: Row1: %#v", rows[1])
+		assert.Len(cpe.t, rows, 2)
+	}
+
+	return nil
+}
+func (cpe *salesOrderEvent) Complete(_ context.Context) error {
+	return nil // errors.NewFatalf("[test] What is incomplete?")
+}
+func (cpe *salesOrderEvent) String() string {
+	return "salesOrderEvent"
 }

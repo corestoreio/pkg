@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 */
+SET NAMES utf8mb4;
 UPDATE `catalog_product_entity` SET
 	`attribute_set_id`=111,
 	 `sku`='MH01-XL-CS111',

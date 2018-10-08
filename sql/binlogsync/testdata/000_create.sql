@@ -3,6 +3,7 @@
  * Licensed under OSL 3.0
  * http://opensource.org/licenses/osl-3.0.php Open Software License (OSL 3.0)
 */
+SET NAMES utf8mb4;
 SET foreign_key_checks = 0;
 -- Create syntax for TABLE 'catalog_product_entity'
 DROP TABLE IF EXISTS `catalog_product_entity`;

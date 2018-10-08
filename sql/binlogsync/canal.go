@@ -57,8 +57,10 @@ type Canal struct {
 	masterStatus       ddl.MasterStatus
 	masterLastSaveTime time.Time
 
-	rsMu       sync.RWMutex
-	rsHandlers []RowsEventHandler
+	rsMu sync.RWMutex
+	// the empty map key declares event handler for all tables, filtered  by the regexes.
+	// Otherwise an event handler is only registered for a specific table.
+	rsHandlers map[string][]RowsEventHandler
 
 	// dbcp is a database connection pool
 	dbcp *dml.ConnPool
@@ -490,37 +492,37 @@ func (t errTableNotAllowed) Error() string {
 // column load from the information_schema and then returns the fully defined
 // table. Only tables which are found in the database name of the DSN get
 // loaded.
-func (c *Canal) FindTable(ctx context.Context, tableName string) (dt ddl.Table, _ error) {
+func (c *Canal) FindTable(ctx context.Context, tableName string) (*ddl.Table, error) {
 
 	if !c.isTableAllowed(tableName) {
-		return dt, errTableNotAllowed(tableName)
+		return nil, errTableNotAllowed(tableName)
 	}
 
 	t, err := c.tables.Table(tableName)
 	if err == nil {
-		return *t, nil
+		return t, nil
 	}
 	if !errors.Is(err, errors.NotFound) {
-		return dt, errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 
 	val, err, _ := c.tableSFG.Do(tableName, func() (interface{}, error) {
 		if err := c.tables.Options(ddl.WithCreateTable(ctx, c.dbcp.DB, tableName, "")); err != nil {
-			return dt, errors.WithStack(err)
+			return nil, errors.WithStack(err)
 		}
 
 		t, err = c.tables.Table(tableName)
 		if err != nil {
-			return dt, errors.WithStack(err)
+			return nil, errors.WithStack(err)
 		}
-		return *t, nil
+		return t, nil
 	})
 
 	if err != nil {
-		return dt, errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 
-	return val.(ddl.Table), nil
+	return val.(*ddl.Table), nil
 }
 
 // ClearTableCache clear table cache
