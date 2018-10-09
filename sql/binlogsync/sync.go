@@ -218,12 +218,22 @@ func (c *Canal) handleRowsEvent(ctx context.Context, e *myreplicator.BinlogEvent
 	return c.processRowsEventHandler(ctx, a, t, ev.Rows)
 }
 
+func (c *Canal) GetMasterPos() (ms ddl.MasterStatus, err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), c.opts.MasterStatusQueryTimeout)
+	defer cancel()
+	if _, err = c.dbcp.WithQueryBuilder(&ms).Load(ctx, &ms); err != nil {
+		return ms, errors.WithStack(err)
+	}
+	return
+}
+
 // FlushBinlog executes FLUSH BINARY LOGS.
 func (c *Canal) FlushBinlog() error {
 	_, err := c.dbcp.DB.Exec("FLUSH BINARY LOGS")
 	return errors.WithStack(err)
 }
 
+// WaitUntilPos flushes the binary logs until we've reached the desired position.
 func (c *Canal) WaitUntilPos(pos ddl.MasterStatus, timeout time.Duration) error {
 	timer := time.NewTimer(timeout)
 	for {
@@ -249,14 +259,13 @@ func (c *Canal) WaitUntilPos(pos ddl.MasterStatus, timeout time.Duration) error 
 	return nil
 }
 
-//func (c *Canal) CatchMasterPos(timeout int) error {
-//	rr, err := c.Execute("SHOW MASTER STATUS")
-//	if err != nil {
-//		return errors.Wrap(err, "[binlogsync] CatchMasterPos")
-//	}
-//
-//	name, _ := rr.GetString(0, 0)
-//	pos, _ := rr.GetInt(0, 1)
-//
-//	return c.WaitUntilPos(mysql.Position{Name: name, Pos: uint32(pos)}, timeout)
-//}
+// CatchMasterPos reads the current master position and waits until we reached
+// it.
+func (c *Canal) CatchMasterPos(timeout time.Duration) error {
+	pos, err := c.GetMasterPos()
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return c.WaitUntilPos(pos, timeout)
+}

@@ -35,7 +35,7 @@ var (
 	runIntegration = flag.Bool("integration", false, "Enables MySQL/MariaDB integration tests, env var CS_DSN must be set")
 )
 
-func TestIntegrationNewCanal_WithoutCfgSrv(t *testing.T) {
+func TestIntegrationNewCanal(t *testing.T) {
 	if !*runIntegration {
 		t.Skip("Skipping integration tests. You can enable them with via CLI option `-integration`")
 	}
@@ -48,7 +48,7 @@ func TestIntegrationNewCanal_WithoutCfgSrv(t *testing.T) {
 	// var bufLog bytes.Buffer
 	// myLog := logw.NewLog(logw.WithDebug(&bufLog, "INTG", log.LstdFlags))
 
-	c, err := binlogsync.NewCanal(dsn, binlogsync.WithMySQL(), binlogsync.Options{
+	c, err := binlogsync.NewCanal(dsn, binlogsync.WithMySQL(), &binlogsync.Options{
 		// Log:               myLog,
 		IncludeTableRegex: []string{"catalog_product_entity", "^sales_order$"},
 		OnClose: func(db *dml.ConnPool) (err error) {

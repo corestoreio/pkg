@@ -18,6 +18,8 @@ import (
 	"testing"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/config/storage"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
@@ -31,4 +33,30 @@ func TestErrTableNotAllowed(t *testing.T) {
 	err := errTableNotAllowed("Errr")
 	assert.Exactly(t, errors.NotAllowed, err.ErrorKind())
 	assert.Exactly(t, "[binlogsync] Table \"Errr\" is not allowed", err.Error(), "%q", err.Error())
+}
+
+func TestOptions_LoadFromConfigService(t *testing.T) {
+	t.Parallel()
+
+	cfgScp := config.NewFakeService(storage.NewMap(
+		`default/0/sql/binlogsync/include_table_regex`, "^sales_order$,^catalog_[a-z]+$",
+		`default/0/sql/binlogsync/exclude_table_regex`, "wishlist.+,core.+",
+		`default/0/sql/binlogsync/binlog_start_file`, "my.bin.x",
+		`default/0/sql/binlogsync/binlog_start_position`, "123456",
+		`default/0/sql/binlogsync/binlog_slave_id`, "4711",
+		`default/0/sql/binlogsync/server_flavor`, "mysql",
+	)).Scoped(1, 1)
+
+	o := &Options{
+		ConfigScoped: cfgScp,
+	}
+	err := o.loadFromConfigService()
+	assert.NoError(t, err, "\n%+v", err)
+
+	assert.Exactly(t, []string{"^sales_order$", "^catalog_[a-z]+$"}, o.IncludeTableRegex, "IncludeTableRegex")
+	assert.Exactly(t, []string{"wishlist.+", "core.+"}, o.ExcludeTableRegex, "ExcludeTableRegex")
+	assert.Exactly(t, "my.bin.x", o.BinlogStartFile, "BinlogStartFile")
+	assert.Exactly(t, uint64(123456), o.BinlogStartPosition, "BinlogStartPosition")
+	assert.Exactly(t, uint64(4711), o.BinlogSlaveId, "BinlogSlaveId")
+	assert.Exactly(t, "mysql", o.Flavor, "Flavor")
 }

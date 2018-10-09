@@ -144,6 +144,8 @@ func withExcludeTables(regexes []string) func(c *Canal) error {
 	}
 }
 
+// withUpdateBinlogStart enables to start from a specific position or just start
+// from the current master position. See startSyncBinlog
 func withUpdateBinlogStart(c *Canal) error {
 
 	if c.opts.BinlogStartFile != "" && c.opts.BinlogStartPosition > 0 {
@@ -216,9 +218,10 @@ type Options struct {
 	// ConfigScoped defines the configuration to load the following fields from.
 	// If not set the data won't be loaded.
 	ConfigScoped config.Scoped
-	ConfigSet    config.Setter
-	Log          log.Logger
-	TLSConfig    *tls.Config
+	// ConfigSet used to persists the master position of the binlog stream.
+	ConfigSet config.Setter
+	Log       log.Logger
+	TLSConfig *tls.Config // Needs some rework
 	// IncludeTableRegex defines the regex which matches the allowed table
 	// names. Default state of WithIncludeTables is empty, this will include all
 	// tables.
@@ -241,21 +244,22 @@ type Options struct {
 	OnClose func(*dml.ConnPool) error
 }
 
-func (o Options) loadOptionsFromConfig() (_ Options, err error) {
-
-	switch o.Flavor {
-	case MySQLFlavor:
-		o.Flavor = MySQLFlavor
-	default:
-		o.Flavor = MariaDBFlavor
-	}
+func (o *Options) loadFromConfigService() (err error) {
+	defer func() {
+		switch o.Flavor {
+		case MySQLFlavor:
+			o.Flavor = MySQLFlavor
+		default:
+			o.Flavor = MariaDBFlavor
+		}
+	}()
 
 	if o.Log == nil {
 		o.Log = log.BlackHole{}
 	}
 
 	if !o.ConfigScoped.IsValid() {
-		return o, nil
+		return nil
 	}
 
 	if o.IncludeTableRegex == nil {
@@ -282,14 +286,14 @@ func (o Options) loadOptionsFromConfig() (_ Options, err error) {
 	}
 	if o.BinlogSlaveId == 0 {
 		v := o.ConfigScoped.Get(scope.Default, ConfigPathBinlogSlaveID)
-		o.BinlogStartPosition = v.UnsafeUint64()
+		o.BinlogSlaveId = v.UnsafeUint64()
 	}
 	if o.Flavor == "" {
 		v := o.ConfigScoped.Get(scope.Default, ConfigPathServerFlavor)
 		o.Flavor = v.UnsafeStr()
 	}
 
-	return o, nil
+	return nil
 }
 
 // NewCanal creates a new canal object to start reading the MySQL binary log.
@@ -297,18 +301,18 @@ func (o Options) loadOptionsFromConfig() (_ Options, err error) {
 // to execute queries. The 2nd argument `db` gets used to executed the queries, like setting variables or getting table information.
 // Default database flavor is `mariadb`.
 // export CS_DSN='root:PASSWORD@tcp(localhost:3306)/DATABASE_NAME
-func NewCanal(dsn string, db DBConFactory, opt Options) (*Canal, error) {
+func NewCanal(dsn string, db DBConFactory, opt *Options) (*Canal, error) {
 	pDSN, err := mysql.ParseDSN(dsn)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	if opt, err = opt.loadOptionsFromConfig(); err != nil {
+	if err := opt.loadFromConfigService(); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	c := &Canal{
-		opts:                      opt,
+		opts:                      *opt,
 		configPathBackendPosition: config.MustNewPath(ConfigPathBackendPosition),
 		dsn:                       pDSN,
 		closed:                    new(int32),
@@ -527,12 +531,7 @@ func (c *Canal) FindTable(ctx context.Context, tableName string) (*ddl.Table, er
 
 // ClearTableCache clear table cache
 func (c *Canal) ClearTableCache(db string, table string) {
-	// TODO implement
-	// c.tables.DeleteAllFromCache()
-	//key := fmt.Sprintf("%s.%s", dbcp, table)
-	//c.tableLock.Lock()
-	//delete(c.tables, key)
-	//c.tableLock.Unlock()
+	c.tables.DeleteAllFromCache()
 }
 
 // CheckBinlogRowImage checks MySQL binlog row image, must be in FULL, MINIMAL, NOBLOB
