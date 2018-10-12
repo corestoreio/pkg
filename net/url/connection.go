@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -51,12 +51,12 @@ var defaultPoolConnectionParameters = [...]string{
 func ParseConnection(raw string) (address, username, password string, params url.Values, err error) {
 	u, err := url.Parse(raw)
 	if err != nil {
-		return "", "", "", nil, errors.NewFatalf("[backend] url.Parse: %s", err)
+		return "", "", "", nil, errors.Fatal.New(err, "")
 	}
 
 	host, port, err := net.SplitHostPort(u.Host)
 	if sErr, ok := err.(*net.AddrError); ok && sErr != nil && sErr.Err == "too many colons in address" {
-		return "", "", "", nil, errors.NewFatalf("[backend] net.SplitHostPort: %s", err)
+		return "", "", "", nil, errors.Fatal.New(err, "")
 	}
 	if err != nil {
 		// assume port is missing
@@ -69,8 +69,7 @@ func ParseConnection(raw string) (address, username, password string, params url
 				port = "11211"
 				// add more cases if needed
 			default:
-				// might leak password because raw URL gets output ...
-				return "", "", "", nil, errors.NewNotSupportedf("[backend] ParseNoSQLURL unsupported scheme %q because Port is empty. URL: %q", u.Scheme, raw)
+				return "", "", "", nil, errors.NotSupported.Newf("[backend] ParseNoSQLURL unsupported scheme %q because Port is empty.", u.Scheme)
 			}
 		}
 	}
@@ -85,7 +84,7 @@ func ParseConnection(raw string) (address, username, password string, params url
 
 	params, err = url.ParseQuery(u.RawQuery)
 	if err != nil {
-		return "", "", "", nil, errors.NewNotValidf("[backend] ParseNoSQLURL: Failed to parse %q for parameters in URL %q with error %s", u.RawQuery, raw, err)
+		return "", "", "", nil, errors.WithStack(err)
 	}
 
 	match := pathDBRegexp.FindStringSubmatch(u.Path)
