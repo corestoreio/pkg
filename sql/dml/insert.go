@@ -23,6 +23,31 @@ import (
 	"github.com/corestoreio/log"
 )
 
+/*
+TODO: Using big transactions When doing many inserts in a row, you should wrap
+them with BEGIN / END to avoid doing a full transaction (which includes a disk
+sync) for every row. For example, doing a begin/end every 1000 inserts will
+speed up your inserts by almost 1000 times.
+BEGIN;
+INSERT ...
+INSERT ...
+END;
+BEGIN;
+INSERT ...
+INSERT ...
+END;
+...
+The reason why you may want to have many BEGIN/END statements instead of just
+one is that the former will use up less transaction log space.
+
+Multi-value inserts
+You can insert many rows at once with multi-value row inserts:
+
+INSERT INTO table_name values(1,"row 1"),(2, "row 2"),...;
+The limit for how much data you can have in one statement is controlled by the
+max_allowed_packet server variable.
+*/
+
 // LastInsertIDAssigner assigns the last insert ID of an auto increment
 // column back to the objects.
 type LastInsertIDAssigner interface {
@@ -43,13 +68,13 @@ type Insert struct {
 	// Select used to create an "INSERT INTO `table` SELECT ..." statement.
 	Select *Select
 	Pairs  Conditions
-	// OnDuplicateKeys updates the referenced columns. See documentation for type
-	// `Conditions`. For more details
+	// OnDuplicateKeys updates the referenced columns. See documentation for
+	// type `Conditions`. For more details
 	// https://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html
 	// Conditions contains the column/argument association for either the SET
-	// clause in an UPDATE statement or to be used in an INSERT ... ON DUPLICATE KEY
-	// statement. For each column there must be one argument which can either be nil
-	// or has an actual value.
+	// clause in an UPDATE statement or to be used in an INSERT ... ON DUPLICATE
+	// KEY statement. For each column there must be one argument which can
+	// either be nil or has an actual value.
 	//
 	// When using the ON DUPLICATE KEY feature in the Insert builder:
 	//
@@ -247,11 +272,10 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 // connection and settings from the current DML type (Delete, Insert, Select,
 // Update, Union, With, etc.). The field DB can still be overwritten.
 // Interpolation does not support the raw interfaces. It's an architecture bug
-// to use WithArgs inside a loop.
-// In case of INSERT statement, WithArgs figures automatically out how the
-// VALUES section must look like depending on the number of arguments. In some
-// cases type Insert needs to know the RowCount to build the appropriate amount
-// of placeholders.
+// to use WithArgs inside a loop. In case of INSERT statement, WithArgs figures
+// automatically out how the VALUES section must look like depending on the
+// number of arguments. In some cases type Insert needs to know the RowCount to
+// build the appropriate amount of placeholders.
 func (b *Insert) WithArgs() *Artisan {
 	var pairArgs arguments
 	b.rwmu.RLock()
