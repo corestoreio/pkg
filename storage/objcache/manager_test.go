@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,12 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package transcache_test
+package objcache
 
-import "github.com/corestoreio/pkg/storage/transcache"
+import (
+	"testing"
 
-var (
-	_ transcache.Codecer = transcache.XMLCodec{}
-	_ transcache.Codecer = transcache.JSONCodec{}
-	_ transcache.Codecer = transcache.GobCodec{}
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/assert"
 )
+
+func withError() Option {
+	return Option{
+		fn: func(p *Manager) error {
+			return errors.NotImplemented.Newf("What?")
+		},
+	}
+}
+
+func TestNewProcessor_NewError(t *testing.T) {
+	p, err := NewManager(withError())
+	assert.Nil(t, p)
+	assert.True(t, errors.NotImplemented.Match(err), "Error: %s", err)
+}

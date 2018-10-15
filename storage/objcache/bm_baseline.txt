@@ -10,8 +10,6 @@ Benchmark_BigCache_Stores/JSON_1x-4         	   50000	     25751 ns/op	    5917 
 Benchmark_BigCache_Stores/JSON_2x-4         	   30000	     44873 ns/op	    8799 B/op	     196 allocs/op
 Benchmark_BigCache_Stores/MsgPack_1x-4      	  100000	     15413 ns/op	    6757 B/op	      40 allocs/op
 Benchmark_BigCache_Stores/MsgPack_2x-4      	  100000	     24071 ns/op	   10453 B/op	      71 allocs/op
-Benchmark_BoltDB_Gob/Country_1x-4           	    5000	    282996 ns/op	   41777 B/op	     528 allocs/op
-Benchmark_BoltDB_Gob/Stores_1x-4            	    5000	    241388 ns/op	   17873 B/op	     106 allocs/op
 Benchmark_Redis_Gob/Country_1x-4            	   20000	    105060 ns/op	   19733 B/op	     458 allocs/op
 Benchmark_Redis_Gob/Country_2x-4            	   10000	    161372 ns/op	   34331 B/op	     793 allocs/op
 Benchmark_Redis_Gob/Stores_1x-4             	   20000	     70220 ns/op	    1975 B/op	      42 allocs/op
@@ -21,4 +19,4 @@ Benchmark_Redis_MsgPack/Country_2x-4        	   10000	    147528 ns/op	   24639 
 Benchmark_Redis_MsgPack/Stores_1x-4         	   20000	     80508 ns/op	    8297 B/op	      47 allocs/op
 Benchmark_Redis_MsgPack/Stores_2x-4         	   10000	    123921 ns/op	   13339 B/op	      82 allocs/op
 PASS
-ok  	github.com/corestoreio/pkg/storage/transcache	43.361s
+ok  	github.com/corestoreio/pkg/storage/objcache	43.361s

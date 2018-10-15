@@ -21,4 +21,4 @@ Benchmark_Redis_MsgPack/Country_2x-4        	   10000	    138594 ns/op	   16372 
 Benchmark_Redis_MsgPack/Stores_1x-4         	   20000	     71001 ns/op	    2977 B/op	      41 allocs/op
 Benchmark_Redis_MsgPack/Stores_2x-4         	   10000	    116169 ns/op	    5121 B/op	      73 allocs/op
 PASS
-ok  	github.com/corestoreio/pkg/storage/transcache	40.998s
+ok  	github.com/corestoreio/pkg/storage/objcache	40.998s

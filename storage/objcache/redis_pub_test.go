@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,26 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tcredis
+// +build redis csall
+
+package objcache_test
 
 import (
+	"fmt"
 	"math"
 	"testing"
 
 	"github.com/alicebob/miniredis"
-	"github.com/corestoreio/pkg/storage/transcache"
-	"github.com/corestoreio/pkg/util"
 	"github.com/corestoreio/errors"
-	"github.com/garyburd/redigo/redis"
+	"github.com/corestoreio/pkg/storage/objcache"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/corestoreio/pkg/util/strs"
+	"github.com/garyburd/redigo/redis"
 )
-
-var _ transcache.Cacher = (*wrapper)(nil)
-
-func TestKeyNotFound(t *testing.T) {
-	t.Parallel()
-	assert.True(t, errors.IsNotFound(keyNotFound{}), "error type keyNotFound should have behaviour NotFound")
-}
 
 func TestWithDial_SetGet_Success_Live(t *testing.T) {
 	t.Parallel()
@@ -43,17 +39,17 @@ func TestWithDial_SetGet_Success_Live(t *testing.T) {
 	defer mr.Close()
 	redConURL := "redis://" + mr.Addr()
 
-	p, err := transcache.NewProcessor(WithURL(redConURL), WithPing(), transcache.WithEncoder(transcache.XMLCodec{}))
+	p, err := objcache.NewManager(objcache.WithRedisURL(redConURL), objcache.WithRedisPing(), objcache.WithEncoder(JSONCodec{}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer func() {
-		if err := p.Cache.Close(); err != nil {
+		if err := p.Close(); err != nil {
 			t.Fatal(err)
 		}
 	}()
 
-	var key = []byte(util.RandAlnum(30))
+	var key = []byte(strs.RandAlnum(30))
 	if err := p.Set(key, math.Pi); err != nil {
 		t.Fatalf("Key %q Error: %s", key, err)
 	}
@@ -75,21 +71,21 @@ func TestWithDial_Get_NotFound_Live(t *testing.T) {
 	defer mr.Close()
 	redConURL := "redis://" + mr.Addr()
 
-	p, err := transcache.NewProcessor(WithPing(), WithURL(redConURL), transcache.WithEncoder(transcache.XMLCodec{}))
+	p, err := objcache.NewManager(objcache.WithRedisPing(), objcache.WithRedisURL(redConURL), objcache.WithEncoder(JSONCodec{}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer func() {
-		if err := p.Cache.Close(); err != nil {
+		if err := p.Close(); err != nil {
 			t.Fatal(err)
 		}
 	}()
 
-	var key = []byte(util.RandAlnum(30))
+	var key = []byte(strs.RandAlnum(30))
 
 	var newVal float64
 	err = p.Get(key, &newVal)
-	assert.True(t, errors.IsNotFound(err), "%+v", err)
+	assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	assert.Empty(t, newVal)
 }
 
@@ -102,17 +98,17 @@ func TestWithURL_SetGet_Success_Mock(t *testing.T) {
 	}
 	defer mr.Close()
 
-	p, err := transcache.NewProcessor(WithURL("redis://"+mr.Addr()), WithPing(), transcache.WithEncoder(transcache.JSONCodec{}))
+	p, err := objcache.NewManager(objcache.WithRedisURL("redis://"+mr.Addr()), objcache.WithRedisPing(), objcache.WithEncoder(JSONCodec{}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer func() {
-		if err := p.Cache.Close(); err != nil {
+		if err := p.Close(); err != nil {
 			t.Fatal(err)
 		}
 	}()
 
-	var key = []byte(util.RandAlnum(30))
+	var key = []byte(strs.RandAlnum(30))
 
 	if err := p.Set(key, math.Pi); err != nil {
 		t.Fatalf("Key %q Error: %s", key, err)
@@ -134,21 +130,21 @@ func TestWithDial_Get_NotFound_Mock(t *testing.T) {
 	}
 	defer mr.Close()
 
-	p, err := transcache.NewProcessor(WithURL("redis://"+mr.Addr()), WithPing(), transcache.WithEncoder(transcache.JSONCodec{}))
+	p, err := objcache.NewManager(objcache.WithRedisURL("redis://"+mr.Addr()), objcache.WithRedisPing(), objcache.WithEncoder(JSONCodec{}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer func() {
-		if err := p.Cache.Close(); err != nil {
+		if err := p.Close(); err != nil {
 			t.Fatal(err)
 		}
 	}()
 
-	var key = []byte(util.RandAlnum(30))
+	var key = []byte(strs.RandAlnum(30))
 
 	var newVal float64
 	err = p.Get(key, &newVal)
-	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
+	assert.True(t, errors.NotFound.Match(err), "Error: %s", err)
 	assert.Empty(t, newVal)
 }
 
@@ -161,31 +157,31 @@ func TestWithDial_Get_Fatal_Mock(t *testing.T) {
 	}
 	defer mr.Close()
 
-	p, err := transcache.NewProcessor(WithURL("redis://"+mr.Addr()), WithPing(), transcache.WithEncoder(transcache.JSONCodec{}))
+	p, err := objcache.NewManager(objcache.WithRedisURL("redis://"+mr.Addr()), objcache.WithRedisPing(), objcache.WithEncoder(JSONCodec{}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer func() {
-		if err := p.Cache.Close(); err != nil {
+		if err := p.Close(); err != nil {
 			t.Fatal(err)
 		}
 	}()
 
-	var key = []byte(util.RandAlnum(30))
+	var key = []byte(strs.RandAlnum(30))
 
 	var newVal float64
 	err = p.Get(key, &newVal)
-	assert.True(t, errors.IsNotFound(err), "Error: %+v", err)
+	assert.True(t, errors.NotFound.Match(err), "Error: %+v", err)
 	assert.Empty(t, newVal)
 }
 
 func TestWithDial_ConFailure(t *testing.T) {
 	t.Parallel()
 
-	p, err := transcache.NewProcessor(WithPing(), WithClient(&redis.Pool{
+	p, err := objcache.NewManager(objcache.WithRedisPing(), objcache.WithRedisClient(&redis.Pool{
 		Dial: func() (redis.Conn, error) { return redis.Dial("tcp", "127.0.0.1:3344") }, // random port
-	}), transcache.WithEncoder(transcache.JSONCodec{}))
-	assert.True(t, errors.IsFatal(err), "Error: %s", err)
+	}), objcache.WithEncoder(JSONCodec{}))
+	assert.True(t, errors.Fatal.Match(err), "Error: %s", err)
 	assert.True(t, p == nil, "p is not nil")
 }
 
@@ -194,35 +190,35 @@ func TestWithDialURL_ConFailure(t *testing.T) {
 
 	var dialErrors = []struct {
 		rawurl string
-		errBhf errors.BehaviourFunc
+		errBhf errors.Kind
 	}{
 		{
 			"localhost",
-			errors.IsNotSupported, // "invalid redis URL scheme",
+			errors.NotSupported, // "invalid redis URL scheme",
 		},
 		// The error message for invalid hosts is different in different
 		// versions of Go, so just check that there is an error message.
 		{
 			"redis://weird url",
-			errors.IsFatal,
+			errors.Fatal,
 		},
 		{
 			"redis://foo:bar:baz",
-			errors.IsFatal,
+			errors.Fatal,
 		},
 		{
 			"http://www.google.com",
-			errors.IsNotSupported, // "invalid redis URL scheme: http",
+			errors.NotSupported, // "invalid redis URL scheme: http",
 		},
 		{
 			"redis://localhost:6379?db=",
-			errors.IsFatal, // "invalid database: abc123",
+			errors.Fatal, // "invalid database: abc123",
 		},
 	}
 	for i, test := range dialErrors {
-		p, err := transcache.NewProcessor(WithURL(test.rawurl), WithPing(), transcache.WithEncoder(transcache.JSONCodec{}))
-		if test.errBhf != nil {
-			assert.True(t, test.errBhf(err), "Index %d Error %+v", i, err)
+		p, err := objcache.NewManager(objcache.WithRedisURL(test.rawurl), objcache.WithRedisPing(), objcache.WithEncoder(JSONCodec{}))
+		if test.errBhf > 0 {
+			assert.True(t, test.errBhf.Match(err), "Index %d Error %+v", i, err)
 			assert.Nil(t, p, "Index %d", i)
 		} else {
 			assert.NoError(t, err, "Index %d", i)
@@ -230,4 +226,14 @@ func TestWithDialURL_ConFailure(t *testing.T) {
 		}
 	}
 
+}
+
+func TestProcessor_Parallel_GetSet_Redis(t *testing.T) {
+	mr := miniredis.NewMiniRedis()
+	if err := mr.Start(); err != nil {
+		t.Fatalf("%+v", err)
+	}
+	defer mr.Close()
+	redConURL := fmt.Sprintf("redis://%s/2", mr.Addr())
+	newTestNewProcessor(t, objcache.WithRedisURL(redConURL))
 }

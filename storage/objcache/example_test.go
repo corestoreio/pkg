@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package transcache_test
+// +build bigcache csall
+
+package objcache_test
 
 import (
 	"encoding/gob"
 	"fmt"
 	"log"
 
-	"github.com/corestoreio/pkg/storage/transcache"
-	"github.com/corestoreio/pkg/storage/transcache/tcbigcache"
+	"github.com/allegro/bigcache"
+	"github.com/corestoreio/pkg/storage/objcache"
 )
 
 type P struct {
@@ -44,18 +46,18 @@ func init() {
 	gob.Register(R{})
 }
 
-// This example shows the basic usage of the package: Create the transcache
+// This example shows the basic usage of the package: Create the objcache
 // processor, set some values, get some, re-prime gob, set values get some.
 func ExampleWithPooledEncoder() {
 
 	// Use the gob encoder and prime it with the types.
-	tc, err := transcache.NewProcessor(
+	tc, err := objcache.NewManager(
 		// Playing around? Try removing P{}, Q{}, R{} from the next line and see what happens.
-		transcache.WithPooledEncoder(transcache.GobCodec{}, P{}, Q{}, R{}),
-		tcbigcache.With( /*you can set here bigcache.Config*/ ),
+		objcache.WithPooledEncoder(objcache.GobCodec{}, P{}, Q{}, R{}),
+		objcache.WithBigCache(bigcache.Config{}),
 	)
 	if err != nil {
-		log.Fatalf("NewProcessor error: %+v", err)
+		log.Fatalf("NewManager error: %+v", err)
 	}
 
 	pythagorasKey := []byte(`Pythagoras`)

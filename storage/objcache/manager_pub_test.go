@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,38 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package transcache_test
+// +build gob csall
+
+package objcache_test
 
 import (
 	"encoding/gob"
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"net"
 	"sync"
 	"testing"
 
-	"github.com/corestoreio/pkg/storage/transcache"
-	"github.com/corestoreio/pkg/storage/transcache/tcbigcache"
-	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/storage/objcache"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
-var _ transcache.Transcacher = (*transcache.Processor)(nil)
-
-func withError() transcache.Option {
-	return func(p *transcache.Processor) error {
-		return errors.NewNotImplementedf("What?")
-	}
-}
-
-func TestNewProcessor_NewError(t *testing.T) {
-	p, err := transcache.NewProcessor(withError())
-	assert.Nil(t, p)
-	assert.True(t, errors.IsNotImplemented(err), "Error: %s", err)
-}
+var _ io.Closer = (*objcache.Manager)(nil)
 
 func TestNewProcessor_EncoderError(t *testing.T) {
-	p, err := transcache.NewProcessor(transcache.WithPooledEncoder(transcache.GobCodec{}))
+	p, err := objcache.NewManager(objcache.WithPooledEncoder(objcache.GobCodec{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,45 +43,12 @@ func TestNewProcessor_EncoderError(t *testing.T) {
 		ErrChan: make(chan error),
 	}
 	err = p.Set([]byte("key1"), ch)
-	assert.True(t, errors.IsFatal(err), "Error: %s", err)
-}
-
-func TestNewProcessor_DecoderError(t *testing.T) {
-	p, err := transcache.NewProcessor(transcache.WithPooledEncoder(transcache.GobCodec{}), tcbigcache.With())
-	if err != nil {
-		t.Fatal(err)
-	}
-	key := []byte("key1")
-	val1 := struct {
-		Val string
-	}{
-		Val: "Gopher",
-	}
-	assert.NoError(t, p.Set(key, val1))
-
-	var val2 struct {
-		Val2 string
-	}
-	err = p.Get(key, &val2)
-	assert.True(t, errors.IsFatal(err), "Error: %s", err)
-}
-
-func TestNewProcessor_GetError(t *testing.T) {
-	p, err := transcache.NewProcessor(transcache.WithPooledEncoder(transcache.GobCodec{}), tcbigcache.With())
-	if err != nil {
-		t.Fatal(err)
-	}
-	key := []byte("key1")
-	var ch struct {
-		ErrChan string
-	}
-	err = p.Get(key, ch)
-	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
+	assert.EqualError(t, err, "[objcache] With key \"key1\": gob: type struct { ErrChan chan error } has no exported fields", "Error: %s", err)
 }
 
 const iterations = 30
 
-func testCountry(t *testing.T, wg *sync.WaitGroup, p *transcache.Processor, key []byte) {
+func testCountry(t *testing.T, wg *sync.WaitGroup, p *objcache.Manager, key []byte) {
 	defer wg.Done()
 
 	var val = getTestCountry(t)
@@ -126,7 +82,7 @@ func testCountry(t *testing.T, wg *sync.WaitGroup, p *transcache.Processor, key 
 
 }
 
-func testStoreSlice(t *testing.T, wg *sync.WaitGroup, p *transcache.Processor, key []byte) {
+func testStoreSlice(t *testing.T, wg *sync.WaitGroup, p *objcache.Manager, key []byte) {
 	defer wg.Done()
 
 	var val = getTestStores()
@@ -265,4 +221,34 @@ func getTestStores() TableStoreSlice {
 		&TableStore{StoreID: 6, Code: "nz", WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
 		&TableStore{IsActive: false, StoreID: 3, Code: "ch", WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30},
 	}
+}
+
+func newTestNewProcessor(t *testing.T, opts ...objcache.Option) {
+	p, err := objcache.NewManager(append(opts, objcache.WithPooledEncoder(objcache.GobCodec{}, Country{}, TableStoreSlice{}))...)
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
+
+	var wg sync.WaitGroup
+
+	// to detect race conditions run with -race
+	wg.Add(1)
+	go testCountry(t, &wg, p, []byte("country_one"))
+
+	wg.Add(1)
+	go testStoreSlice(t, &wg, p, []byte("stores_one"))
+
+	wg.Add(1)
+	go testCountry(t, &wg, p, []byte("country_two"))
+
+	wg.Add(1)
+	go testStoreSlice(t, &wg, p, []byte("stores_two"))
+
+	wg.Add(1)
+	go testStoreSlice(t, &wg, p, []byte("stores_three"))
+
+	wg.Add(1)
+	go testCountry(t, &wg, p, []byte("country_three"))
+
+	wg.Wait()
 }

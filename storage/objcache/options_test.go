@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package tcbigcache adapter for the transcache package to use an in-memory cache.
-//
-// For more details: https://godoc.org/github.com/allegro/bigcache
-package tcbigcache
+package objcache
+
+import "sort"
+
+var (
+	_ sort.Interface = (*options)(nil)
+)

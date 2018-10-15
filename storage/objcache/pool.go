@@ -1,4 +1,4 @@
-package transcache
+package objcache
 
 import (
 	"bytes"
@@ -7,12 +7,16 @@ import (
 	"sync"
 )
 
+// not quite sure if this seems to be a good idea. Each time you use sync.Pool,
+// it is a bug report to the garbage collector. Additionally objects returned to
+// the pool must have a maximum size.
+
 type pooledCodec struct {
 	encoderPool sync.Pool
 	decoderPool sync.Pool
 }
 
-// NewPooledCodec delegates to the passed codec for creating Encoders/Decoders.
+// newPooledCodec delegates to the passed codec for creating Encoders/Decoders.
 // Newly created Encoder/Decoders will Encode/Decode the passed sample structs
 // without actually writing/reading from their respective Writer/Readers. This
 // is useful for Codec's like GobCodec{} which encodes/decodes extra type
@@ -24,7 +28,7 @@ type pooledCodec struct {
 // decoder each type an encoder or a decoder object will be returned from the
 // pool. This function panics if the types, used for priming, can neither be
 // encoded nor decoded.
-func NewPooledCodec(codec Codecer, types ...interface{}) Codecer {
+func newPooledCodec(codec Codecer, types ...interface{}) Codecer {
 	return &pooledCodec{
 		encoderPool: sync.Pool{New: func() interface{} {
 			var enc delegateEncoder

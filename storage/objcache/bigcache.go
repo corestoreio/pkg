@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,25 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tcbigcache
+// +build bigcache csall
+
+package objcache
 
 import (
 	"time"
 
 	"github.com/allegro/bigcache"
-	"github.com/corestoreio/pkg/storage/transcache"
 	"github.com/corestoreio/errors"
 )
 
-var errKeyNotFound = errors.NewNotFoundf(`[tcbigcache] Key not found`)
+var errKeyNotFound = errors.NotFound.Newf(`[objcache] Key not found`)
 
-// With sets the bigcache as underlying storage engine to the transcache.
+// WithBigCache sets the bigcache as underlying storage engine to the
 // This function allows to set custom configuration options to the bigcache
 // instance.
 // Default option: shards 256, LifeWindow 12 hours, Verbose false
 //
 // For more details: https://godoc.org/github.com/allegro/bigcache
-func With(c ...bigcache.Config) transcache.Option {
+func WithBigCache(c bigcache.Config) Option {
 	def := bigcache.Config{
 		// optimize this ...
 		Shards:             256,
@@ -40,44 +41,44 @@ func With(c ...bigcache.Config) transcache.Option {
 		Verbose:            false,
 		HardMaxCacheSize:   0,
 	}
-	if len(c) == 1 {
-		def = c[0]
+	if c.Shards > 0 {
+		def = c
 	}
-	return func(p *transcache.Processor) error {
-		c, err := bigcache.NewBigCache(def)
-		if err != nil {
-			return errors.NewFatalf("[tcbigcache] bigcache.NewBigCache. Error: %s", err)
-		}
-		p.Cache = wrapper{c}
-		return nil
+	return Option{
+		fn: func(p *Manager) error {
+			c, err := bigcache.NewBigCache(def)
+			if err != nil {
+				return errors.Fatal.Newf("[objcache] bigcache.NewBigCache. Error: %s", err)
+			}
+			p.cache = bigCacheWrapper{c}
+			return nil
+		},
 	}
 }
 
-type wrapper struct {
+type bigCacheWrapper struct {
 	*bigcache.BigCache
 }
 
-func (w wrapper) Set(key []byte, value []byte) error {
-	return errors.Wrap(
-		w.BigCache.Set(string(key), value),
-		"[tcbigcache] wrapper.Set.Set")
+func (w bigCacheWrapper) Set(key []byte, value []byte) error {
+	if err := w.BigCache.Set(string(key), value); err != nil {
+		// This error construct save some unneeded allocations.
+		return errors.Wrapf(err, "[objcache] bigCacheWrapper.Set.Set with key %q", string(key))
+	}
+	return nil
 }
 
-func (w wrapper) Get(key []byte) ([]byte, error) {
+func (w bigCacheWrapper) Get(key []byte) ([]byte, error) {
 	v, err := w.BigCache.Get(string(key))
 	if _, ok := err.(*bigcache.EntryNotFoundError); ok {
 		return nil, errKeyNotFound
 	}
 	if err != nil {
-		return nil, errors.NewFatal(err, "[tcbigcache] wrapper.Get.Get")
+		return nil, errors.Fatal.New(err, "[objcache] bigCacheWrapper.Get.Get for key %q", string(key))
 	}
 	return v, nil
-	// just to sure to copy the data away
-	//buf := make([]byte, len(v), len(v))
-	//copy(buf, v)
-	//return buf, nil
 }
 
-func (bw wrapper) Close() error {
+func (w bigCacheWrapper) Close() error {
 	return nil
 }

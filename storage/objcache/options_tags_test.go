@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,5 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package tcredis implements a wrapper for the Redis server.
-package tcredis
+// +build bigcache redis csall
+
+package objcache_test
+
+import (
+	"encoding/json"
+	"io"
+
+	"github.com/corestoreio/pkg/storage/objcache"
+)
+
+var _ objcache.Codecer = (*JSONCodec)(nil)
+
+type JSONCodec struct{}
+
+func (c JSONCodec) NewEncoder(w io.Writer) objcache.Encoder {
+	return json.NewEncoder(w)
+}
+
+func (c JSONCodec) NewDecoder(r io.Reader) objcache.Decoder {
+	return json.NewDecoder(r)
+}

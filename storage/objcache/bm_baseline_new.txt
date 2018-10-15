@@ -1,0 +1,73 @@
+goos: darwin
+goarch: amd64
+pkg: github.com/corestoreio/pkg/storage/objcache
+Benchmark_BigCache_Country/Gob_1x-4         	  100000	     21780 ns/op	   10511 B/op	     277 allocs/op
+Benchmark_BigCache_Country/Gob_1x-4         	  100000	     20844 ns/op	   10512 B/op	     277 allocs/op
+Benchmark_BigCache_Country/Gob_1x-4         	  100000	     20776 ns/op	   10512 B/op	     277 allocs/op
+Benchmark_BigCache_Country/Gob_1x-4         	  100000	     22730 ns/op	   10511 B/op	     277 allocs/op
+Benchmark_BigCache_Country/Gob_1x-4         	  100000	     20800 ns/op	   10511 B/op	     277 allocs/op
+Benchmark_BigCache_Country/Gob_2x-4         	   50000	     32542 ns/op	   16596 B/op	     442 allocs/op
+Benchmark_BigCache_Country/Gob_2x-4         	   50000	     32531 ns/op	   16600 B/op	     442 allocs/op
+Benchmark_BigCache_Country/Gob_2x-4         	   50000	     32494 ns/op	   16599 B/op	     442 allocs/op
+Benchmark_BigCache_Country/Gob_2x-4         	   50000	     32562 ns/op	   16599 B/op	     442 allocs/op
+Benchmark_BigCache_Country/Gob_2x-4         	   50000	     32518 ns/op	   16600 B/op	     442 allocs/op
+Benchmark_BigCache_Country/JSON_1x-4        	   30000	     49768 ns/op	   17021 B/op	     426 allocs/op
+Benchmark_BigCache_Country/JSON_1x-4        	   30000	     52047 ns/op	   17021 B/op	     426 allocs/op
+Benchmark_BigCache_Country/JSON_1x-4        	   30000	     49639 ns/op	   17022 B/op	     426 allocs/op
+Benchmark_BigCache_Country/JSON_1x-4        	   30000	     49759 ns/op	   17022 B/op	     426 allocs/op
+Benchmark_BigCache_Country/JSON_1x-4        	   30000	     49638 ns/op	   17021 B/op	     426 allocs/op
+Benchmark_BigCache_Country/JSON_2x-4        	   20000	     84488 ns/op	   25988 B/op	     713 allocs/op
+Benchmark_BigCache_Country/JSON_2x-4        	   20000	     84383 ns/op	   25989 B/op	     713 allocs/op
+Benchmark_BigCache_Country/JSON_2x-4        	   20000	     88423 ns/op	   25989 B/op	     713 allocs/op
+Benchmark_BigCache_Country/JSON_2x-4        	   20000	     84304 ns/op	   25989 B/op	     713 allocs/op
+Benchmark_BigCache_Country/JSON_2x-4        	   20000	     86003 ns/op	   25988 B/op	     713 allocs/op
+Benchmark_BigCache_Country/MsgPack_1x-4     	  100000	     19381 ns/op	    8549 B/op	     146 allocs/op
+Benchmark_BigCache_Country/MsgPack_1x-4     	  100000	     19174 ns/op	    8549 B/op	     146 allocs/op
+Benchmark_BigCache_Country/MsgPack_1x-4     	  100000	     19326 ns/op	    8549 B/op	     146 allocs/op
+Benchmark_BigCache_Country/MsgPack_1x-4     	  100000	     19295 ns/op	    8549 B/op	     146 allocs/op
+Benchmark_BigCache_Country/MsgPack_1x-4     	  100000	     19231 ns/op	    8549 B/op	     146 allocs/op
+Benchmark_BigCache_Country/MsgPack_2x-4     	   50000	     31508 ns/op	   14603 B/op	     278 allocs/op
+Benchmark_BigCache_Country/MsgPack_2x-4     	   50000	     31557 ns/op	   14603 B/op	     278 allocs/op
+Benchmark_BigCache_Country/MsgPack_2x-4     	   50000	     32724 ns/op	   14603 B/op	     278 allocs/op
+Benchmark_BigCache_Country/MsgPack_2x-4     	   50000	     31705 ns/op	   14603 B/op	     278 allocs/op
+Benchmark_BigCache_Country/MsgPack_2x-4     	   50000	     31738 ns/op	   14603 B/op	     278 allocs/op
+Benchmark_BigCache_Stores/Gob_1x-4          	  300000	      4567 ns/op	    1280 B/op	      35 allocs/op
+Benchmark_BigCache_Stores/Gob_1x-4          	  300000	      4565 ns/op	    1280 B/op	      35 allocs/op
+Benchmark_BigCache_Stores/Gob_1x-4          	  300000	      4566 ns/op	    1280 B/op	      35 allocs/op
+Benchmark_BigCache_Stores/Gob_1x-4          	  300000	      4565 ns/op	    1280 B/op	      35 allocs/op
+Benchmark_BigCache_Stores/Gob_1x-4          	  300000	      4580 ns/op	    1280 B/op	      35 allocs/op
+Benchmark_BigCache_Stores/Gob_2x-4          	  200000	      7035 ns/op	    2304 B/op	      63 allocs/op
+Benchmark_BigCache_Stores/Gob_2x-4          	  200000	      7076 ns/op	    2304 B/op	      63 allocs/op
+Benchmark_BigCache_Stores/Gob_2x-4          	  200000	      7013 ns/op	    2304 B/op	      63 allocs/op
+Benchmark_BigCache_Stores/Gob_2x-4          	  200000	      7044 ns/op	    2304 B/op	      63 allocs/op
+Benchmark_BigCache_Stores/Gob_2x-4          	  200000	      7027 ns/op	    2304 B/op	      63 allocs/op
+Benchmark_BigCache_Stores/JSON_1x-4         	  100000	     13346 ns/op	    2325 B/op	      44 allocs/op
+Benchmark_BigCache_Stores/JSON_1x-4         	  100000	     13405 ns/op	    2325 B/op	      44 allocs/op
+Benchmark_BigCache_Stores/JSON_1x-4         	  100000	     13344 ns/op	    2325 B/op	      44 allocs/op
+Benchmark_BigCache_Stores/JSON_1x-4         	  100000	     13340 ns/op	    2325 B/op	      44 allocs/op
+Benchmark_BigCache_Stores/JSON_1x-4         	  100000	     13371 ns/op	    2325 B/op	      44 allocs/op
+Benchmark_BigCache_Stores/JSON_2x-4         	   50000	     24152 ns/op	    3915 B/op	      81 allocs/op
+Benchmark_BigCache_Stores/JSON_2x-4         	   50000	     24208 ns/op	    3915 B/op	      81 allocs/op
+Benchmark_BigCache_Stores/JSON_2x-4         	   50000	     24346 ns/op	    3915 B/op	      81 allocs/op
+Benchmark_BigCache_Stores/JSON_2x-4         	   50000	     24259 ns/op	    3915 B/op	      81 allocs/op
+Benchmark_BigCache_Stores/JSON_2x-4         	   50000	     24504 ns/op	    3915 B/op	      81 allocs/op
+Benchmark_BigCache_Stores/MsgPack_1x-4      	  200000	      9192 ns/op	    2831 B/op	      43 allocs/op
+Benchmark_BigCache_Stores/MsgPack_1x-4      	  200000	      9281 ns/op	    2831 B/op	      43 allocs/op
+Benchmark_BigCache_Stores/MsgPack_1x-4      	  200000	      9432 ns/op	    2831 B/op	      43 allocs/op
+Benchmark_BigCache_Stores/MsgPack_1x-4      	  200000	      9488 ns/op	    2831 B/op	      43 allocs/op
+Benchmark_BigCache_Stores/MsgPack_1x-4      	  200000	      9257 ns/op	    2831 B/op	      43 allocs/op
+Benchmark_BigCache_Stores/MsgPack_2x-4      	  100000	     15812 ns/op	    4670 B/op	      75 allocs/op
+Benchmark_BigCache_Stores/MsgPack_2x-4      	  100000	     15379 ns/op	    4670 B/op	      75 allocs/op
+Benchmark_BigCache_Stores/MsgPack_2x-4      	  100000	     14807 ns/op	    4670 B/op	      75 allocs/op
+Benchmark_BigCache_Stores/MsgPack_2x-4      	  100000	     14785 ns/op	    4670 B/op	      75 allocs/op
+Benchmark_BigCache_Stores/MsgPack_2x-4      	  100000	     15200 ns/op	    4670 B/op	      75 allocs/op
+--- SKIP: Benchmark_Redis_Gob
+    bench_test.go:130: Skipping live test because environment CS_REDIS_TEST variable not found.
+        	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
+        		
+--- SKIP: Benchmark_Redis_MsgPack
+    bench_test.go:143: Skipping live test because environment CS_REDIS_TEST variable not found.
+        	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
+        		
+PASS
+ok  	github.com/corestoreio/pkg/storage/objcache	123.435s
