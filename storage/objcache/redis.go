@@ -17,6 +17,7 @@
 package objcache
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"time"
@@ -151,32 +152,41 @@ type redisWrapper struct {
 	ping bool
 }
 
-func (w redisWrapper) Set(key []byte, value []byte) error {
+func (w redisWrapper) Set(_ context.Context, key string, value []byte) error {
 	conn := w.Pool.Get()
 	defer conn.Close()
 
 	if _, err := conn.Do("SET", key, value); err != nil {
-		return errors.Fatal.Newf("[objcache] redisWrapper.Set.NewStatusCmd: %s", err)
+		return errors.Wrapf(err, "[objcache] With key %q", key)
 	}
 	return nil
 }
 
-func (w redisWrapper) Get(key []byte) ([]byte, error) {
+func (w redisWrapper) Get(_ context.Context, key string) ([]byte, error) {
 	conn := w.Pool.Get()
 	defer conn.Close()
 
 	raw, err := redis.Bytes(conn.Do("GET", key))
 	if err != nil {
 		if err != redis.ErrNil {
-			return nil, errors.Fatal.Newf("[objcache] redisWrapper.Get.Cmd: %s", err)
+			return nil, errors.Wrapf(err, "[objcache] With key %q", key)
 		}
 		return nil, keyNotFound{key: key}
 	}
 	return raw, nil
 }
 
+func (w redisWrapper) Delete(_ context.Context, key string) error {
+	conn := w.Pool.Get()
+	defer conn.Close()
+	if _, err := conn.Do("DEL", key); err != nil {
+		return errors.Wrapf(err, "[objcache] With key %q", key)
+	}
+	return nil
+}
+
 type keyNotFound struct {
-	key []byte
+	key string
 }
 
 func (k keyNotFound) Error() string {

@@ -17,6 +17,7 @@
 package objcache_test
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"testing"
@@ -49,13 +50,13 @@ func TestWithDial_SetGet_Success_Live(t *testing.T) {
 		}
 	}()
 
-	var key = []byte(strs.RandAlnum(30))
-	if err := p.Set(key, math.Pi); err != nil {
+	key := strs.RandAlnum(30)
+	if err := p.Set(context.TODO(), key, math.Pi, nil); err != nil {
 		t.Fatalf("Key %q Error: %s", key, err)
 	}
 
 	var newVal float64
-	if err := p.Get(key, &newVal); err != nil {
+	if err := p.Get(context.TODO(), key, &newVal, nil); err != nil {
 		t.Fatalf("Key %q Error: %s", key, err)
 	}
 	assert.Exactly(t, math.Pi, newVal)
@@ -81,10 +82,9 @@ func TestWithDial_Get_NotFound_Live(t *testing.T) {
 		}
 	}()
 
-	var key = []byte(strs.RandAlnum(30))
-
+	key := strs.RandAlnum(30)
 	var newVal float64
-	err = p.Get(key, &newVal)
+	err = p.Get(context.TODO(), key, &newVal, nil)
 	assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	assert.Empty(t, newVal)
 }
@@ -108,14 +108,14 @@ func TestWithURL_SetGet_Success_Mock(t *testing.T) {
 		}
 	}()
 
-	var key = []byte(strs.RandAlnum(30))
+	key := strs.RandAlnum(30)
 
-	if err := p.Set(key, math.Pi); err != nil {
+	if err := p.Set(context.TODO(), key, math.Pi, nil); err != nil {
 		t.Fatalf("Key %q Error: %s", key, err)
 	}
 
 	var newVal float64
-	if err := p.Get(key, &newVal); err != nil {
+	if err := p.Get(context.TODO(), key, &newVal, nil); err != nil {
 		t.Fatalf("Key %q Error: %s", key, err)
 	}
 	assert.Exactly(t, math.Pi, newVal)
@@ -140,10 +140,10 @@ func TestWithDial_Get_NotFound_Mock(t *testing.T) {
 		}
 	}()
 
-	var key = []byte(strs.RandAlnum(30))
+	key := strs.RandAlnum(30)
 
 	var newVal float64
-	err = p.Get(key, &newVal)
+	err = p.Get(context.TODO(), key, &newVal, nil)
 	assert.True(t, errors.NotFound.Match(err), "Error: %s", err)
 	assert.Empty(t, newVal)
 }
@@ -167,10 +167,10 @@ func TestWithDial_Get_Fatal_Mock(t *testing.T) {
 		}
 	}()
 
-	var key = []byte(strs.RandAlnum(30))
+	key := strs.RandAlnum(30)
 
 	var newVal float64
-	err = p.Get(key, &newVal)
+	err = p.Get(context.TODO(), key, &newVal, nil)
 	assert.True(t, errors.NotFound.Match(err), "Error: %+v", err)
 	assert.Empty(t, newVal)
 }

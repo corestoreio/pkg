@@ -17,6 +17,7 @@
 package objcache
 
 import (
+	"context"
 	"time"
 
 	"github.com/allegro/bigcache"
@@ -48,7 +49,7 @@ func WithBigCache(c bigcache.Config) Option {
 		fn: func(p *Manager) error {
 			c, err := bigcache.NewBigCache(def)
 			if err != nil {
-				return errors.Fatal.Newf("[objcache] bigcache.NewBigCache. Error: %s", err)
+				return errors.WithStack(err)
 			}
 			p.cache = bigCacheWrapper{c}
 			return nil
@@ -60,23 +61,27 @@ type bigCacheWrapper struct {
 	*bigcache.BigCache
 }
 
-func (w bigCacheWrapper) Set(key []byte, value []byte) error {
-	if err := w.BigCache.Set(string(key), value); err != nil {
+func (w bigCacheWrapper) Set(_ context.Context, key string, value []byte) error {
+	if err := w.BigCache.Set(key, value); err != nil {
 		// This error construct save some unneeded allocations.
-		return errors.Wrapf(err, "[objcache] bigCacheWrapper.Set.Set with key %q", string(key))
+		return errors.Wrapf(err, "[objcache] With key %q", key)
 	}
 	return nil
 }
 
-func (w bigCacheWrapper) Get(key []byte) ([]byte, error) {
-	v, err := w.BigCache.Get(string(key))
+func (w bigCacheWrapper) Get(_ context.Context, key string) ([]byte, error) {
+	v, err := w.BigCache.Get(key)
 	if _, ok := err.(*bigcache.EntryNotFoundError); ok {
 		return nil, errKeyNotFound
 	}
 	if err != nil {
-		return nil, errors.Fatal.New(err, "[objcache] bigCacheWrapper.Get.Get for key %q", string(key))
+		return nil, errors.Fatal.New(err, "[objcache] With key %q", key)
 	}
 	return v, nil
+}
+
+func (w bigCacheWrapper) Delete(_ context.Context, key string) (err error) {
+	return w.BigCache.Delete(key)
 }
 
 func (w bigCacheWrapper) Close() error {

@@ -14,6 +14,11 @@
 
 package objcache
 
+import (
+	"context"
+	"sync"
+)
+
 // Option provides convenience helper functions to apply various options while
 // creating a new Manager type.
 type Option struct {
@@ -59,3 +64,48 @@ func WithCache(c Storager) Option {
 		},
 	}
 }
+
+// WithSimpleSlowCacheMap creates an in-memory map map[string]string as cache
+// backend.
+func WithSimpleSlowCacheMap() Option {
+	return Option{
+		fn: func(p *Manager) error {
+			p.cache = &mapCache{
+				items: make(map[string]string),
+			}
+			return nil
+		},
+	}
+}
+
+type mapCache struct {
+	sync.RWMutex
+	items map[string]string
+}
+
+func (mc *mapCache) Set(_ context.Context, key string, value []byte) (err error) {
+	mc.Lock()
+	defer mc.Unlock()
+	mc.items[string(key)] = string(value)
+	return nil
+}
+
+func (mc *mapCache) Get(_ context.Context, key string) (value []byte, err error) {
+	mc.RLock()
+	defer mc.RUnlock()
+	if v, ok := mc.items[string(key)]; ok {
+		return []byte(v), nil
+	}
+	return nil, nil
+}
+
+func (mc *mapCache) Delete(_ context.Context, key string) (err error) {
+	mc.Lock()
+	defer mc.Unlock()
+	delete(mc.items, key)
+	return nil
+}
+func (mc *mapCache) Close() error { return nil }
+
+// OpOption configures Operations like Get, Set, Delete.
+type OpOption struct{}

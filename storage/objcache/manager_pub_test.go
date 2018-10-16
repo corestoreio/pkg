@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build gob csall
+// +build bigcache gob redis csall
 
 package objcache_test
 
 import (
+	"context"
 	"encoding/gob"
 	"encoding/json"
 	"io"
@@ -32,7 +33,7 @@ import (
 var _ io.Closer = (*objcache.Manager)(nil)
 
 func TestNewProcessor_EncoderError(t *testing.T) {
-	p, err := objcache.NewManager(objcache.WithPooledEncoder(objcache.GobCodec{}))
+	p, err := objcache.NewManager(objcache.WithPooledEncoder(gobCodec{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,70 +43,70 @@ func TestNewProcessor_EncoderError(t *testing.T) {
 	}{
 		ErrChan: make(chan error),
 	}
-	err = p.Set([]byte("key1"), ch)
+	err = p.Set(context.TODO(), "key1", ch, nil)
 	assert.EqualError(t, err, "[objcache] With key \"key1\": gob: type struct { ErrChan chan error } has no exported fields", "Error: %s", err)
 }
 
 const iterations = 30
 
-func testCountry(t *testing.T, wg *sync.WaitGroup, p *objcache.Manager, key []byte) {
+func testCountry(t *testing.T, wg *sync.WaitGroup, p *objcache.Manager, key string) {
 	defer wg.Done()
 
 	var val = getTestCountry(t)
 
-	if err := p.Set(key, val); err != nil {
+	if err := p.Set(context.TODO(), key, val, nil); err != nil {
 		t.Fatal(err)
 	}
 
 	for i := 0; i < iterations; i++ {
 		var newVal = new(Country)
-		if err := p.Get(key, newVal); err != nil {
+		if err := p.Get(context.TODO(), key, newVal, nil); err != nil {
 			t.Fatal(err)
 		}
 		assert.Exactly(t, val, newVal)
 	}
 
-	if err := p.Set(key, Country{}); err != nil {
+	if err := p.Set(context.TODO(), key, Country{}, nil); err != nil {
 		t.Fatal(err)
 	}
 
 	for i := 0; i < iterations; i++ {
-		if err := p.Set(key, val); err != nil {
+		if err := p.Set(context.TODO(), key, val, nil); err != nil {
 			t.Fatal(err)
 		}
 	}
 	var newVal = new(Country)
-	if err := p.Get(key, newVal); err != nil {
+	if err := p.Get(context.TODO(), key, newVal, nil); err != nil {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, val, newVal)
 
 }
 
-func testStoreSlice(t *testing.T, wg *sync.WaitGroup, p *objcache.Manager, key []byte) {
+func testStoreSlice(t *testing.T, wg *sync.WaitGroup, p *objcache.Manager, key string) {
 	defer wg.Done()
 
 	var val = getTestStores()
-	if err := p.Set(key, val); err != nil {
+	if err := p.Set(context.TODO(), key, val, nil); err != nil {
 		t.Fatal(err)
 	}
 	for i := 0; i < iterations; i++ {
 		var newVal TableStoreSlice
-		if err := p.Get(key, &newVal); err != nil {
+		if err := p.Get(context.TODO(), key, &newVal, nil); err != nil {
 			t.Fatal(err)
 		}
 		assert.Exactly(t, val, newVal)
 	}
-	if err := p.Set(key, TableStoreSlice{}); err != nil {
+	if err := p.Set(context.TODO(), key, TableStoreSlice{}, nil); err != nil {
 		t.Fatal(err)
 	}
 	for i := 0; i < iterations; i++ {
-		if err := p.Set(key, val); err != nil {
+		if err := p.Set(context.TODO(), key, val, nil); err != nil {
 			t.Fatal(err)
 		}
 	}
 	var newVal TableStoreSlice
-	if err := p.Get(key, &newVal); err != nil {
+	if err := p.Get(context.TODO(), key, &newVal, nil); err != nil {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, val, newVal)
@@ -224,7 +225,7 @@ func getTestStores() TableStoreSlice {
 }
 
 func newTestNewProcessor(t *testing.T, opts ...objcache.Option) {
-	p, err := objcache.NewManager(append(opts, objcache.WithPooledEncoder(objcache.GobCodec{}, Country{}, TableStoreSlice{}))...)
+	p, err := objcache.NewManager(append(opts, objcache.WithPooledEncoder(gobCodec{}, Country{}, TableStoreSlice{}))...)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
@@ -233,22 +234,22 @@ func newTestNewProcessor(t *testing.T, opts ...objcache.Option) {
 
 	// to detect race conditions run with -race
 	wg.Add(1)
-	go testCountry(t, &wg, p, []byte("country_one"))
+	go testCountry(t, &wg, p, "country_one")
 
 	wg.Add(1)
-	go testStoreSlice(t, &wg, p, []byte("stores_one"))
+	go testStoreSlice(t, &wg, p, "stores_one")
 
 	wg.Add(1)
-	go testCountry(t, &wg, p, []byte("country_two"))
+	go testCountry(t, &wg, p, "country_two")
 
 	wg.Add(1)
-	go testStoreSlice(t, &wg, p, []byte("stores_two"))
+	go testStoreSlice(t, &wg, p, "stores_two")
 
 	wg.Add(1)
-	go testStoreSlice(t, &wg, p, []byte("stores_three"))
+	go testStoreSlice(t, &wg, p, "stores_three")
 
 	wg.Add(1)
-	go testCountry(t, &wg, p, []byte("country_three"))
+	go testCountry(t, &wg, p, "country_three")
 
 	wg.Wait()
 }

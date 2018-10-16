@@ -17,6 +17,7 @@
 package objcache_test
 
 import (
+	"encoding/gob"
 	"encoding/json"
 	"io"
 
@@ -33,4 +34,16 @@ func (c JSONCodec) NewEncoder(w io.Writer) objcache.Encoder {
 
 func (c JSONCodec) NewDecoder(r io.Reader) objcache.Decoder {
 	return json.NewDecoder(r)
+}
+
+var _ objcache.Codecer = gobCodec{}
+
+type gobCodec struct{}
+
+func (c gobCodec) NewEncoder(w io.Writer) objcache.Encoder {
+	return gob.NewEncoder(w)
+}
+
+func (c gobCodec) NewDecoder(r io.Reader) objcache.Decoder {
+	return gob.NewDecoder(r)
 }

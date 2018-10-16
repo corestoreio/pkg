@@ -17,6 +17,7 @@
 package objcache_test
 
 import (
+	"context"
 	"io"
 	"os"
 	"strconv"
@@ -40,21 +41,22 @@ func benchmark_country_enc(iterationsSetGet int, opts ...objcache.Option) func(b
 		}()
 		cntry := getTestCountry(b) // type already gob.Registered ...
 		const wantCountryISO = "US"
+		ctx := context.TODO()
 		b.ReportAllocs()
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			var i int64
 			for pb.Next() {
-				key := strconv.AppendInt(nil, i, 10) // 1 alloc
+				key := strconv.FormatInt(i, 10) // 1 alloc
 				i++
 
-				if err := p.Set(key, cntry); err != nil {
+				if err := p.Set(ctx, key, cntry, nil); err != nil {
 					b.Fatalf("%+v", err)
 				}
 				// Double execution might detect storing of type information in streaming encoders
 				for j := 0; j < iterationsSetGet; j++ {
 					var newCntry = new(Country)
-					if err := p.Get(key, newCntry); err != nil {
+					if err := p.Get(ctx, key, newCntry, nil); err != nil {
 						b.Fatalf("%+v", err)
 					}
 					if newCntry.Country.IsoCode != wantCountryISO {
@@ -79,22 +81,23 @@ func benchmark_stores_enc(iterationsSetGet int, opts ...objcache.Option) func(b 
 		}()
 		ts := getTestStores() // type already gob.Registered ...
 		const wantStoreCode = "nz"
+		ctx := context.TODO()
 		b.ReportAllocs()
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			var i int64
 			for pb.Next() {
-				key := strconv.AppendInt(nil, i, 10) // 1 alloc
+				key := strconv.FormatInt(i, 10) // 1 alloc
 				i++
 
-				if err := p.Set(key, ts); err != nil {
+				if err := p.Set(ctx, key, ts, nil); err != nil {
 					b.Fatal(err)
 				}
 
 				// Double execution might detect storing of type information in streaming encoders
 				for j := 0; j < iterationsSetGet; j++ {
 					var newTS TableStoreSlice
-					if err := p.Get(key, &newTS); err != nil {
+					if err := p.Get(ctx, key, &newTS, nil); err != nil {
 						b.Fatal(err)
 					}
 					if have := newTS[5].Code; have != wantStoreCode {
@@ -107,8 +110,8 @@ func benchmark_stores_enc(iterationsSetGet int, opts ...objcache.Option) func(b 
 }
 
 func Benchmark_BigCache_Country(b *testing.B) {
-	b.Run("Gob_1x", benchmark_country_enc(1, objcache.WithBigCache(bigcache.Config{}), objcache.WithPooledEncoder(objcache.GobCodec{}, Country{})))
-	b.Run("Gob_2x", benchmark_country_enc(2, objcache.WithBigCache(bigcache.Config{}), objcache.WithPooledEncoder(objcache.GobCodec{}, Country{})))
+	b.Run("Gob_1x", benchmark_country_enc(1, objcache.WithBigCache(bigcache.Config{}), objcache.WithPooledEncoder(gobCodec{}, Country{})))
+	b.Run("Gob_2x", benchmark_country_enc(2, objcache.WithBigCache(bigcache.Config{}), objcache.WithPooledEncoder(gobCodec{}, Country{})))
 	b.Run("JSON_1x", benchmark_country_enc(1, objcache.WithBigCache(bigcache.Config{}), objcache.WithPooledEncoder(JSONCodec{})))
 	b.Run("JSON_2x", benchmark_country_enc(2, objcache.WithBigCache(bigcache.Config{}), objcache.WithPooledEncoder(JSONCodec{})))
 	b.Run("MsgPack_1x", benchmark_country_enc(1, objcache.WithBigCache(bigcache.Config{}), objcache.WithEncoder(newMsgPackCodec())))
@@ -116,8 +119,8 @@ func Benchmark_BigCache_Country(b *testing.B) {
 }
 
 func Benchmark_BigCache_Stores(b *testing.B) {
-	b.Run("Gob_1x", benchmark_stores_enc(1, objcache.WithBigCache(bigcache.Config{}), objcache.WithPooledEncoder(objcache.GobCodec{}, TableStoreSlice{})))
-	b.Run("Gob_2x", benchmark_stores_enc(2, objcache.WithBigCache(bigcache.Config{}), objcache.WithPooledEncoder(objcache.GobCodec{}, TableStoreSlice{})))
+	b.Run("Gob_1x", benchmark_stores_enc(1, objcache.WithBigCache(bigcache.Config{}), objcache.WithPooledEncoder(gobCodec{}, TableStoreSlice{})))
+	b.Run("Gob_2x", benchmark_stores_enc(2, objcache.WithBigCache(bigcache.Config{}), objcache.WithPooledEncoder(gobCodec{}, TableStoreSlice{})))
 	b.Run("JSON_1x", benchmark_stores_enc(1, objcache.WithBigCache(bigcache.Config{}), objcache.WithPooledEncoder(JSONCodec{})))
 	b.Run("JSON_2x", benchmark_stores_enc(2, objcache.WithBigCache(bigcache.Config{}), objcache.WithPooledEncoder(JSONCodec{})))
 	b.Run("MsgPack_1x", benchmark_stores_enc(1, objcache.WithBigCache(bigcache.Config{}), objcache.WithEncoder(newMsgPackCodec())))
@@ -131,10 +134,10 @@ func Benchmark_Redis_Gob(b *testing.B) {
 	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
 		`)
 	}
-	b.Run("Country_1x", benchmark_country_enc(1, objcache.WithRedisURL(redConURL), objcache.WithPooledEncoder(objcache.GobCodec{}, Country{})))
-	b.Run("Country_2x", benchmark_country_enc(2, objcache.WithRedisURL(redConURL), objcache.WithPooledEncoder(objcache.GobCodec{}, Country{})))
-	b.Run("Stores_1x", benchmark_stores_enc(1, objcache.WithRedisURL(redConURL), objcache.WithPooledEncoder(objcache.GobCodec{}, TableStoreSlice{})))
-	b.Run("Stores_2x", benchmark_stores_enc(2, objcache.WithRedisURL(redConURL), objcache.WithPooledEncoder(objcache.GobCodec{}, TableStoreSlice{})))
+	b.Run("Country_1x", benchmark_country_enc(1, objcache.WithRedisURL(redConURL), objcache.WithPooledEncoder(gobCodec{}, Country{})))
+	b.Run("Country_2x", benchmark_country_enc(2, objcache.WithRedisURL(redConURL), objcache.WithPooledEncoder(gobCodec{}, Country{})))
+	b.Run("Stores_1x", benchmark_stores_enc(1, objcache.WithRedisURL(redConURL), objcache.WithPooledEncoder(gobCodec{}, TableStoreSlice{})))
+	b.Run("Stores_2x", benchmark_stores_enc(2, objcache.WithRedisURL(redConURL), objcache.WithPooledEncoder(gobCodec{}, TableStoreSlice{})))
 }
 
 func Benchmark_Redis_MsgPack(b *testing.B) {

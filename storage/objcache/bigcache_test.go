@@ -17,6 +17,7 @@
 package objcache_test
 
 import (
+	"context"
 	"math"
 	"testing"
 
@@ -31,13 +32,13 @@ func TestWithBigCache_Success(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var key = []byte(`key1`)
-	if err := p.Set(key, math.Pi); err != nil {
+	key := `key1`
+	if err := p.Set(context.TODO(), key, math.Pi, nil); err != nil {
 		t.Fatal(err)
 	}
 
 	var newVal float64
-	if err := p.Get(key, &newVal); err != nil {
+	if err := p.Get(context.TODO(), key, &newVal, nil); err != nil {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, math.Pi, newVal)
@@ -49,7 +50,7 @@ func TestWithBigCache_Error(t *testing.T) {
 		Shards: 3,
 	}))
 	assert.Nil(t, p)
-	assert.True(t, errors.Fatal.Match(err), "Error: %+v", err)
+	assert.EqualError(t, err, "[objcache] NewManager applied options: Shards number must be power of two", "Error: %+v", err)
 }
 
 func TestProcessor_Parallel_GetSet_BigCache(t *testing.T) {
@@ -57,22 +58,22 @@ func TestProcessor_Parallel_GetSet_BigCache(t *testing.T) {
 }
 
 func TestNewProcessor_DecoderError(t *testing.T) {
-	p, err := objcache.NewManager(objcache.WithPooledEncoder(JSONCodec{}), objcache.WithBigCache(bigcache.Config{}))
+	p, err := objcache.NewManager(objcache.WithPooledEncoder(gobCodec{}), objcache.WithBigCache(bigcache.Config{}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	key := []byte("key1")
+	key := "key1"
 	val1 := struct {
 		Val string
 	}{
 		Val: "Gopher",
 	}
-	assert.NoError(t, p.Set(key, val1))
+	assert.NoError(t, p.Set(context.TODO(), key, val1, nil))
 
 	var val2 struct {
 		Val2 string
 	}
-	err = p.Get(key, &val2)
+	err = p.Get(context.TODO(), key, &val2, nil)
 	assert.EqualError(t, err, "[objcache] With key \"key1\" and dst type *struct { Val2 string }: gob: type mismatch: no fields matched compiling decoder for ", "Error: %s", err)
 }
 
@@ -81,10 +82,10 @@ func TestNewProcessor_GetError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	key := []byte("key1")
+	key := "key1"
 	var ch struct {
 		ErrChan string
 	}
-	err = p.Get(key, ch)
+	err = p.Get(context.TODO(), key, ch, nil)
 	assert.True(t, errors.NotFound.Match(err), "Error: %s", err)
 }

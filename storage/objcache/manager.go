@@ -16,6 +16,7 @@ package objcache
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"sort"
 
@@ -23,12 +24,14 @@ import (
 	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
-// Storager defines a custom backend cache type to be used as underlying storage of the
-// Transcacher. Must be safe for concurrent usage. Caches which implement this
-// interface can be found in the subpackages objcache, tcboltdb, objcache ...
+// Storager defines a custom backend cache type to be used as underlying storage
+// of the Manager. Must be safe for concurrent usage. Caches which implement
+// this interface can be enabled via build tag. The context depends if it is
+// supported by a backend cache implementation.
 type Storager interface {
-	Set(key, value []byte) (err error)
-	Get(key []byte) (value []byte, err error)
+	Set(ctx context.Context, key string, value []byte) (err error)
+	Get(ctx context.Context, key string) (value []byte, err error)
+	Delete(ctx context.Context, key string) (err error)
 	// Close closes the underlying cache service.
 	Close() error
 }
@@ -87,14 +90,14 @@ type marshaler interface {
 //		}
 // and calls `Marshal`. Checking for marshaler has precedence. Useful with
 // protobuf.
-func (tr *Manager) Set(key []byte, src interface{}) error {
+func (tr *Manager) Set(ctx context.Context, key string, src interface{}, opo *OpOption) error {
 	if om, ok := src.(marshaler); ok {
 		data, err := om.Marshal()
 		if err != nil {
-			return errors.Wrapf(err, "[objcache] With key %q", string(key))
+			return errors.Wrapf(err, "[objcache] With key %q", key)
 		}
-		if err := tr.cache.Set(key, data); err != nil {
-			return errors.Wrapf(err, "[objcache] With key %q", string(key))
+		if err := tr.cache.Set(ctx, key, data); err != nil {
+			return errors.Wrapf(err, "[objcache] With key %q", key)
 		}
 		return nil
 	}
@@ -106,11 +109,11 @@ func (tr *Manager) Set(key []byte, src interface{}) error {
 	}
 
 	if err := enc.Encode(src); err != nil {
-		return errors.Wrapf(err, "[objcache] With key %q", string(key))
+		return errors.Wrapf(err, "[objcache] With key %q", key)
 	}
 
-	if err := tr.cache.Set(key, buf.Bytes()); err != nil {
-		return errors.Wrapf(err, "[objcache] With key %q", string(key))
+	if err := tr.cache.Set(ctx, key, buf.Bytes()); err != nil {
+		return errors.Wrapf(err, "[objcache] With key %q", key)
 	}
 	return nil
 }
@@ -131,15 +134,15 @@ type unmarshaler interface {
 // the Unmarshal gets called. This type check has precedence before the decoder.
 // You have to check yourself if the returned error is of type NotFound or of
 // any other source. Every caching type defines its own NotFound error.
-func (tr *Manager) Get(key []byte, dst interface{}) error {
-	val, err := tr.cache.Get(key)
+func (tr *Manager) Get(ctx context.Context, key string, dst interface{}, opo *OpOption) error {
+	val, err := tr.cache.Get(ctx, key)
 	if err != nil {
-		return errors.Wrapf(err, "[objcache] With key %q and dst type %T", string(key), dst)
+		return errors.Wrapf(err, "[objcache] With key %q and dst type %T", key, dst)
 	}
 
 	if unm, ok := dst.(unmarshaler); ok {
 		if err := unm.Unmarshal(val); err != nil {
-			return errors.Wrapf(err, "[objcache] With key %q and dst type %T", string(key), dst)
+			return errors.Wrapf(err, "[objcache] With key %q and dst type %T", key, dst)
 		}
 		return nil
 	}
@@ -148,14 +151,22 @@ func (tr *Manager) Get(key []byte, dst interface{}) error {
 	defer bufferpool.Put(buf)
 
 	if _, err := buf.Write(val); err != nil {
-		return errors.WriteFailed.New(err, "[objcache] Get.Buffer.Write for key %q", string(key))
+		return errors.WriteFailed.New(err, "[objcache] Get.Buffer.Write for key %q", key)
 	}
 	dec := tr.codec.NewDecoder(buf)
 	if pc, ok := tr.codec.(*pooledCodec); ok {
 		defer pc.PutDecoder(dec)
 	}
 	if err := dec.Decode(dst); err != nil {
-		return errors.Wrapf(err, "[objcache] With key %q and dst type %T", string(key), dst)
+		return errors.Wrapf(err, "[objcache] With key %q and dst type %T", key, dst)
+	}
+	return nil
+}
+
+// Delete removes a key from the storage.
+func (tr *Manager) Delete(ctx context.Context, key string, opo *OpOption) (err error) {
+	if err := tr.cache.Delete(ctx, key); err != nil {
+		return errors.Wrapf(err, "[objcache] With key %q", key)
 	}
 	return nil
 }

@@ -17,6 +17,7 @@
 package objcache_test
 
 import (
+	"context"
 	"encoding/gob"
 	"fmt"
 	"log"
@@ -53,19 +54,19 @@ func ExampleWithPooledEncoder() {
 	// Use the gob encoder and prime it with the types.
 	tc, err := objcache.NewManager(
 		// Playing around? Try removing P{}, Q{}, R{} from the next line and see what happens.
-		objcache.WithPooledEncoder(objcache.GobCodec{}, P{}, Q{}, R{}),
+		objcache.WithPooledEncoder(gobCodec{}, P{}, Q{}, R{}),
 		objcache.WithBigCache(bigcache.Config{}),
 	)
 	if err != nil {
 		log.Fatalf("NewManager error: %+v", err)
 	}
 
-	pythagorasKey := []byte(`Pythagoras`)
-	if err := tc.Set(pythagorasKey, P{3, 4, 5, "Pythagoras"}); err != nil {
+	pythagorasKey := `Pythagoras`
+	if err := tc.Set(context.TODO(), pythagorasKey, P{3, 4, 5, "Pythagoras"}, nil); err != nil {
 		log.Fatalf("Set error 1: %+v", err)
 	}
-	treeHouseKey := []byte(`TreeHouse`)
-	if err := tc.Set(treeHouseKey, P{1782, 1841, 1922, "Treehouse"}); err != nil {
+	treeHouseKey := `TreeHouse`
+	if err := tc.Set(context.TODO(), treeHouseKey, P{1782, 1841, 1922, "Treehouse"}, nil); err != nil {
 		log.Fatalf("Set error 2: %+v", err)
 	}
 
@@ -73,22 +74,22 @@ func ExampleWithPooledEncoder() {
 	// than Set operations so we're simulating that with 5 repetitions.
 	for i := 0; i < 5; i++ {
 		var q Q
-		if err := tc.Get(pythagorasKey, &q); err != nil {
+		if err := tc.Get(context.TODO(), pythagorasKey, &q, nil); err != nil {
 			log.Fatalf("Get error 1: %+v", err)
 		}
 		fmt.Printf("%q: {%d, %d}\n", q.Name, *q.X, *q.Y)
 
-		if err := tc.Get(treeHouseKey, &q); err != nil {
+		if err := tc.Get(context.TODO(), treeHouseKey, &q, nil); err != nil {
 			log.Fatalf("Get error: %+v", err)
 		}
 		fmt.Printf("%q: {%d, %d}\n", q.Name, *q.X, *q.Y)
 	}
 
 	// We overwrite the previously set values
-	if err := tc.Set(pythagorasKey, R{"Pythagoras2", 'P'}); err != nil {
+	if err := tc.Set(context.TODO(), pythagorasKey, R{"Pythagoras2", 'P'}, nil); err != nil {
 		log.Fatalf("Set error 1: %+v", err)
 	}
-	if err := tc.Set(treeHouseKey, R{"Treehouse2", 'T'}); err != nil {
+	if err := tc.Set(context.TODO(), treeHouseKey, R{"Treehouse2", 'T'}, nil); err != nil {
 		log.Fatalf("Set error 2: %+v", err)
 	}
 
@@ -96,12 +97,12 @@ func ExampleWithPooledEncoder() {
 	// than Set operations so we're simulating that with 5 repetitions.
 	for i := 0; i < 5; i++ {
 		var r R
-		if err := tc.Get(pythagorasKey, &r); err != nil {
+		if err := tc.Get(context.TODO(), pythagorasKey, &r, nil); err != nil {
 			log.Fatalf("Get error 3: %+v", err)
 		}
 		fmt.Printf("%q: {%d}\n", r.Name, r.Rune)
 
-		if err := tc.Get(treeHouseKey, &r); err != nil {
+		if err := tc.Get(context.TODO(), treeHouseKey, &r, nil); err != nil {
 			log.Fatalf("Get error: %+v", err)
 		}
 		fmt.Printf("%q: {%d}\n", r.Name, r.Rune)
