@@ -14,8 +14,14 @@
 
 package objcache
 
-import "sort"
+import (
+	"sort"
+
+	"github.com/corestoreio/errors"
+)
 
 var (
 	_ sort.Interface = (*options)(nil)
+	_ errors.Kinder  = (*ErrKeyNotFound)(nil)
+	_ error          = (*ErrKeyNotFound)(nil)
 )

@@ -24,8 +24,6 @@ import (
 	"github.com/corestoreio/errors"
 )
 
-var errKeyNotFound = errors.NotFound.Newf(`[objcache] Key not found`)
-
 // WithBigCache sets the bigcache as underlying storage engine to the
 // This function allows to set custom configuration options to the bigcache
 // instance.
@@ -61,27 +59,35 @@ type bigCacheWrapper struct {
 	*bigcache.BigCache
 }
 
-func (w bigCacheWrapper) Set(_ context.Context, key string, value []byte) error {
-	if err := w.BigCache.Set(key, value); err != nil {
-		// This error construct save some unneeded allocations.
-		return errors.Wrapf(err, "[objcache] With key %q", key)
+func (w bigCacheWrapper) Set(_ context.Context, keys []string, values [][]byte) error {
+	for i, key := range keys {
+		if err := w.BigCache.Set(key, values[i]); err != nil {
+			// This error construct save some unneeded allocations.
+			return errors.Wrapf(err, "[objcache] With key %q", key)
+		}
 	}
 	return nil
 }
 
-func (w bigCacheWrapper) Get(_ context.Context, key string) ([]byte, error) {
-	v, err := w.BigCache.Get(key)
-	if _, ok := err.(*bigcache.EntryNotFoundError); ok {
-		return nil, errKeyNotFound
+func (w bigCacheWrapper) Get(_ context.Context, keys []string) (values [][]byte, err error) {
+	for _, key := range keys {
+		v, err := w.BigCache.Get(key)
+		if _, ok := err.(*bigcache.EntryNotFoundError); ok {
+			return nil, ErrKeyNotFound(key)
+		}
+		if err != nil {
+			return nil, errors.Fatal.New(err, "[objcache] With key %q", key)
+		}
+		values = append(values, v)
 	}
-	if err != nil {
-		return nil, errors.Fatal.New(err, "[objcache] With key %q", key)
-	}
-	return v, nil
+	return values, nil
 }
 
-func (w bigCacheWrapper) Delete(_ context.Context, key string) (err error) {
-	return w.BigCache.Delete(key)
+func (w bigCacheWrapper) Delete(_ context.Context, keys []string) (err error) {
+	for i := 0; i < len(keys) && err == nil; i++ {
+		err = w.BigCache.Delete(keys[i])
+	}
+	return
 }
 
 func (w bigCacheWrapper) Close() error {

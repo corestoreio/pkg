@@ -16,17 +16,4 @@
 
 package objcache
 
-import (
-	"testing"
-
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/pkg/util/assert"
-)
-
-var _ errors.Kinder = (*keyNotFound)(nil)
 var _ Storager = (*redisWrapper)(nil)
-
-func TestKeyNotFound(t *testing.T) {
-	t.Parallel()
-	assert.True(t, errors.NotFound.Match(keyNotFound{}), "error type keyNotFound should have behaviour NotFound")
-}

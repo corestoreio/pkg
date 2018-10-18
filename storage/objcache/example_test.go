@@ -62,11 +62,11 @@ func ExampleWithPooledEncoder() {
 	}
 
 	pythagorasKey := `Pythagoras`
-	if err := tc.Set(context.TODO(), pythagorasKey, P{3, 4, 5, "Pythagoras"}, nil); err != nil {
+	if err := tc.Set(context.TODO(), objcache.NewItem(pythagorasKey, P{3, 4, 5, "Pythagoras"})); err != nil {
 		log.Fatalf("Set error 1: %+v", err)
 	}
 	treeHouseKey := `TreeHouse`
-	if err := tc.Set(context.TODO(), treeHouseKey, P{1782, 1841, 1922, "Treehouse"}, nil); err != nil {
+	if err := tc.Set(context.TODO(), objcache.NewItem(treeHouseKey, P{1782, 1841, 1922, "Treehouse"})); err != nil {
 		log.Fatalf("Set error 2: %+v", err)
 	}
 
@@ -74,22 +74,22 @@ func ExampleWithPooledEncoder() {
 	// than Set operations so we're simulating that with 5 repetitions.
 	for i := 0; i < 5; i++ {
 		var q Q
-		if err := tc.Get(context.TODO(), pythagorasKey, &q, nil); err != nil {
+		if err := tc.Get(context.TODO(), objcache.NewItem(pythagorasKey, &q)); err != nil {
 			log.Fatalf("Get error 1: %+v", err)
 		}
 		fmt.Printf("%q: {%d, %d}\n", q.Name, *q.X, *q.Y)
 
-		if err := tc.Get(context.TODO(), treeHouseKey, &q, nil); err != nil {
+		if err := tc.Get(context.TODO(), objcache.NewItem(treeHouseKey, &q)); err != nil {
 			log.Fatalf("Get error: %+v", err)
 		}
 		fmt.Printf("%q: {%d, %d}\n", q.Name, *q.X, *q.Y)
 	}
 
 	// We overwrite the previously set values
-	if err := tc.Set(context.TODO(), pythagorasKey, R{"Pythagoras2", 'P'}, nil); err != nil {
+	if err := tc.Set(context.TODO(), objcache.NewItem(pythagorasKey, R{"Pythagoras2", 'P'})); err != nil {
 		log.Fatalf("Set error 1: %+v", err)
 	}
-	if err := tc.Set(context.TODO(), treeHouseKey, R{"Treehouse2", 'T'}, nil); err != nil {
+	if err := tc.Set(context.TODO(), objcache.NewItem(treeHouseKey, R{"Treehouse2", 'T'})); err != nil {
 		log.Fatalf("Set error 2: %+v", err)
 	}
 
@@ -97,12 +97,12 @@ func ExampleWithPooledEncoder() {
 	// than Set operations so we're simulating that with 5 repetitions.
 	for i := 0; i < 5; i++ {
 		var r R
-		if err := tc.Get(context.TODO(), pythagorasKey, &r, nil); err != nil {
+		if err := tc.Get(context.TODO(), objcache.NewItem(pythagorasKey, &r)); err != nil {
 			log.Fatalf("Get error 3: %+v", err)
 		}
 		fmt.Printf("%q: {%d}\n", r.Name, r.Rune)
 
-		if err := tc.Get(context.TODO(), treeHouseKey, &r, nil); err != nil {
+		if err := tc.Get(context.TODO(), objcache.NewItem(treeHouseKey, &r)); err != nil {
 			log.Fatalf("Get error: %+v", err)
 		}
 		fmt.Printf("%q: {%d}\n", r.Name, r.Rune)

@@ -33,12 +33,12 @@ func TestWithBigCache_Success(t *testing.T) {
 		t.Fatal(err)
 	}
 	key := `key1`
-	if err := p.Set(context.TODO(), key, math.Pi, nil); err != nil {
+	if err := p.Set(context.TODO(), objcache.NewItem(key, math.Pi)); err != nil {
 		t.Fatal(err)
 	}
 
 	var newVal float64
-	if err := p.Get(context.TODO(), key, &newVal, nil); err != nil {
+	if err := p.Get(context.TODO(), objcache.NewItem(key, &newVal)); err != nil {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, math.Pi, newVal)
@@ -68,12 +68,12 @@ func TestNewProcessor_DecoderError(t *testing.T) {
 	}{
 		Val: "Gopher",
 	}
-	assert.NoError(t, p.Set(context.TODO(), key, val1, nil))
+	assert.NoError(t, p.Set(context.TODO(), objcache.NewItem(key, val1)))
 
 	var val2 struct {
 		Val2 string
 	}
-	err = p.Get(context.TODO(), key, &val2, nil)
+	err = p.Get(context.TODO(), objcache.NewItem(key, &val2))
 	assert.EqualError(t, err, "[objcache] With key \"key1\" and dst type *struct { Val2 string }: gob: type mismatch: no fields matched compiling decoder for ", "Error: %s", err)
 }
 
@@ -86,6 +86,6 @@ func TestNewProcessor_GetError(t *testing.T) {
 	var ch struct {
 		ErrChan string
 	}
-	err = p.Get(context.TODO(), key, ch, nil)
+	err = p.Get(context.TODO(), objcache.NewItem(key, ch))
 	assert.True(t, errors.NotFound.Match(err), "Error: %s", err)
 }

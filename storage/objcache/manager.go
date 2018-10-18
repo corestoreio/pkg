@@ -19,19 +19,20 @@ import (
 	"context"
 	"io"
 	"sort"
+	"time"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
 // Storager defines a custom backend cache type to be used as underlying storage
 // of the Manager. Must be safe for concurrent usage. Caches which implement
 // this interface can be enabled via build tag. The context depends if it is
-// supported by a backend cache implementation.
+// supported by a backend cache implementation. All keys and values have the
+// same length.
 type Storager interface {
-	Set(ctx context.Context, key string, value []byte) (err error)
-	Get(ctx context.Context, key string) (value []byte, err error)
-	Delete(ctx context.Context, key string) (err error)
+	Set(ctx context.Context, key []string, value [][]byte) (err error)
+	Get(ctx context.Context, key []string) (value [][]byte, err error)
+	Delete(ctx context.Context, key []string) (err error)
 	// Close closes the underlying cache service.
 	Close() error
 }
@@ -62,6 +63,65 @@ type Manager struct {
 	codec Codecer
 }
 
+type Item struct {
+	Key string
+	// Object is a pointer to the current type.
+	Object     interface{}
+	Expiration time.Duration // TODO implement
+	// More fields will follow
+}
+
+func NewItem(key string, object interface{}) *Item {
+	return &Item{
+		Key:    key,
+		Object: object,
+	}
+}
+
+func (m *Item) encode(c Codecer, buf *bytes.Buffer) error {
+	switch ot := m.Object.(type) {
+	case marshaler:
+		data, err := ot.Marshal()
+		if err != nil {
+			return errors.Wrapf(err, "[objcache] With key %q and dst type %T", m.Key, m.Object)
+		}
+		_, err = buf.Write(data)
+		return err
+	default:
+		enc := c.NewEncoder(buf)
+		pc, ok := c.(*pooledCodec)
+		err := enc.Encode(m.Object)
+		if ok {
+			pc.PutEncoder(enc)
+		}
+		if err != nil {
+			return errors.Wrapf(err, "[objcache] With key %q and dst type %T", m.Key, m.Object) // saves an allocation ;-)
+		}
+	}
+	return nil
+}
+
+func (m *Item) decode(c Codecer, data []byte) error {
+	if unm, ok := m.Object.(unmarshaler); ok {
+		if err := unm.Unmarshal(data); err != nil {
+			return errors.Wrapf(err, "[objcache] With key %q and dst type %T", m.Key, m.Object)
+		}
+		return nil
+	}
+
+	r := bytes.NewReader(data)
+	dec := c.NewDecoder(r)
+	pc, ok := c.(*pooledCodec)
+	err := dec.Decode(m.Object)
+	if ok {
+		pc.PutDecoder(dec)
+	}
+	if err != nil && err != io.EOF {
+		return errors.Wrapf(err, "[objcache] With key %q and dst type %T", m.Key, m.Object) // saves an allocation ;-)
+	}
+	return nil
+}
+
 // NewManager creates a new type with no default cache instance and no
 // encoder. You must set a caching service or it panics please see the sub
 // packages objcache, tcbolddb and objcache. You must also set an encoder,
@@ -90,30 +150,19 @@ type marshaler interface {
 //		}
 // and calls `Marshal`. Checking for marshaler has precedence. Useful with
 // protobuf.
-func (tr *Manager) Set(ctx context.Context, key string, src interface{}, opo *OpOption) error {
-	if om, ok := src.(marshaler); ok {
-		data, err := om.Marshal()
-		if err != nil {
-			return errors.Wrapf(err, "[objcache] With key %q", key)
+func (tr *Manager) Set(ctx context.Context, items ...*Item) error {
+	keys := make([]string, 0, len(items))
+	vals := make([][]byte, 0, len(items))
+	for _, item := range items {
+		keys = append(keys, item.Key)
+		var buf bytes.Buffer
+		if err := item.encode(tr.codec, &buf); err != nil {
+			return errors.WithStack(err)
 		}
-		if err := tr.cache.Set(ctx, key, data); err != nil {
-			return errors.Wrapf(err, "[objcache] With key %q", key)
-		}
-		return nil
+		vals = append(vals, buf.Bytes())
 	}
-
-	var buf bytes.Buffer
-	enc := tr.codec.NewEncoder(&buf)
-	if pc, ok := tr.codec.(*pooledCodec); ok {
-		defer pc.PutEncoder(enc)
-	}
-
-	if err := enc.Encode(src); err != nil {
-		return errors.Wrapf(err, "[objcache] With key %q", key)
-	}
-
-	if err := tr.cache.Set(ctx, key, buf.Bytes()); err != nil {
-		return errors.Wrapf(err, "[objcache] With key %q", key)
+	if err := tr.cache.Set(ctx, keys, vals); err != nil {
+		return errors.Wrapf(err, "[objcache] With keys %v", keys)
 	}
 	return nil
 }
@@ -134,39 +183,30 @@ type unmarshaler interface {
 // the Unmarshal gets called. This type check has precedence before the decoder.
 // You have to check yourself if the returned error is of type NotFound or of
 // any other source. Every caching type defines its own NotFound error.
-func (tr *Manager) Get(ctx context.Context, key string, dst interface{}, opo *OpOption) error {
-	val, err := tr.cache.Get(ctx, key)
+func (tr *Manager) Get(ctx context.Context, items ...*Item) error {
+	keys := make([]string, len(items))
+	for i, item := range items {
+		keys[i] = item.Key
+	}
+
+	vals, err := tr.cache.Get(ctx, keys)
 	if err != nil {
-		return errors.Wrapf(err, "[objcache] With key %q and dst type %T", key, dst)
+		return errors.Wrapf(err, "[objcache] With keys %v", keys)
 	}
 
-	if unm, ok := dst.(unmarshaler); ok {
-		if err := unm.Unmarshal(val); err != nil {
-			return errors.Wrapf(err, "[objcache] With key %q and dst type %T", key, dst)
+	for i, item := range items {
+		val := vals[i]
+		if err := item.decode(tr.codec, val); err != nil {
+			return errors.WithStack(err)
 		}
-		return nil
-	}
-
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
-
-	if _, err := buf.Write(val); err != nil {
-		return errors.WriteFailed.New(err, "[objcache] Get.Buffer.Write for key %q", key)
-	}
-	dec := tr.codec.NewDecoder(buf)
-	if pc, ok := tr.codec.(*pooledCodec); ok {
-		defer pc.PutDecoder(dec)
-	}
-	if err := dec.Decode(dst); err != nil {
-		return errors.Wrapf(err, "[objcache] With key %q and dst type %T", key, dst)
 	}
 	return nil
 }
 
 // Delete removes a key from the storage.
-func (tr *Manager) Delete(ctx context.Context, key string, opo *OpOption) (err error) {
+func (tr *Manager) Delete(ctx context.Context, key ...string) (err error) {
 	if err := tr.cache.Delete(ctx, key); err != nil {
-		return errors.Wrapf(err, "[objcache] With key %q", key)
+		return errors.Wrapf(err, "[objcache] With keys %v", key)
 	}
 	return nil
 }

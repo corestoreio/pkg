@@ -16,7 +16,10 @@ package objcache
 
 import (
 	"context"
+	"fmt"
 	"sync"
+
+	"github.com/corestoreio/errors"
 )
 
 // Option provides convenience helper functions to apply various options while
@@ -83,29 +86,45 @@ type mapCache struct {
 	items map[string]string
 }
 
-func (mc *mapCache) Set(_ context.Context, key string, value []byte) (err error) {
+func (mc *mapCache) Set(_ context.Context, keys []string, values [][]byte) (err error) {
 	mc.Lock()
 	defer mc.Unlock()
-	mc.items[string(key)] = string(value)
+	for i, key := range keys {
+		mc.items[key] = string(values[i])
+	}
 	return nil
 }
 
-func (mc *mapCache) Get(_ context.Context, key string) (value []byte, err error) {
+func (mc *mapCache) Get(_ context.Context, keys []string) (values [][]byte, err error) {
 	mc.RLock()
 	defer mc.RUnlock()
-	if v, ok := mc.items[string(key)]; ok {
-		return []byte(v), nil
+	for _, key := range keys {
+		if v, ok := mc.items[key]; ok {
+			values = append(values, []byte(v))
+		} else {
+			return nil, ErrKeyNotFound(key)
+		}
 	}
-	return nil, nil
+	return values, nil
 }
 
-func (mc *mapCache) Delete(_ context.Context, key string) (err error) {
+func (mc *mapCache) Delete(_ context.Context, keys []string) (err error) {
 	mc.Lock()
 	defer mc.Unlock()
-	delete(mc.items, key)
+	for _, key := range keys {
+		delete(mc.items, key)
+	}
 	return nil
 }
 func (mc *mapCache) Close() error { return nil }
 
-// OpOption configures Operations like Get, Set, Delete.
-type OpOption struct{}
+// ErrKeyNotFound returned by a backend cache to indicate that a key can't be
+// found.
+type ErrKeyNotFound string
+
+func (e ErrKeyNotFound) ErrorKind() errors.Kind {
+	return errors.NotFound
+}
+func (e ErrKeyNotFound) Error() string {
+	return fmt.Sprintf("[objcache] Key %q not found", e)
+}

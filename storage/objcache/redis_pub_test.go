@@ -30,7 +30,7 @@ import (
 	"github.com/garyburd/redigo/redis"
 )
 
-func TestWithDial_SetGet_Success_Live(t *testing.T) {
+func TestRedis_SetGet_Success_Live(t *testing.T) {
 	t.Parallel()
 
 	mr := miniredis.NewMiniRedis()
@@ -51,77 +51,18 @@ func TestWithDial_SetGet_Success_Live(t *testing.T) {
 	}()
 
 	key := strs.RandAlnum(30)
-	if err := p.Set(context.TODO(), key, math.Pi, nil); err != nil {
+	if err := p.Set(context.TODO(), objcache.NewItem(key, math.Pi)); err != nil {
 		t.Fatalf("Key %q Error: %s", key, err)
 	}
 
 	var newVal float64
-	if err := p.Get(context.TODO(), key, &newVal, nil); err != nil {
-		t.Fatalf("Key %q Error: %s", key, err)
-	}
-	assert.Exactly(t, math.Pi, newVal)
-}
-
-func TestWithDial_Get_NotFound_Live(t *testing.T) {
-	t.Parallel()
-
-	mr := miniredis.NewMiniRedis()
-	if err := mr.Start(); err != nil {
-		t.Fatal(err)
-	}
-	defer mr.Close()
-	redConURL := "redis://" + mr.Addr()
-
-	p, err := objcache.NewManager(objcache.WithRedisPing(), objcache.WithRedisURL(redConURL), objcache.WithEncoder(JSONCodec{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		if err := p.Close(); err != nil {
-			t.Fatal(err)
-		}
-	}()
-
-	key := strs.RandAlnum(30)
-	var newVal float64
-	err = p.Get(context.TODO(), key, &newVal, nil)
-	assert.True(t, errors.NotFound.Match(err), "%+v", err)
-	assert.Empty(t, newVal)
-}
-
-func TestWithURL_SetGet_Success_Mock(t *testing.T) {
-	t.Parallel()
-
-	mr := miniredis.NewMiniRedis()
-	if err := mr.Start(); err != nil {
-		t.Fatal(err)
-	}
-	defer mr.Close()
-
-	p, err := objcache.NewManager(objcache.WithRedisURL("redis://"+mr.Addr()), objcache.WithRedisPing(), objcache.WithEncoder(JSONCodec{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		if err := p.Close(); err != nil {
-			t.Fatal(err)
-		}
-	}()
-
-	key := strs.RandAlnum(30)
-
-	if err := p.Set(context.TODO(), key, math.Pi, nil); err != nil {
-		t.Fatalf("Key %q Error: %s", key, err)
-	}
-
-	var newVal float64
-	if err := p.Get(context.TODO(), key, &newVal, nil); err != nil {
+	if err := p.Get(context.TODO(), objcache.NewItem(key, &newVal)); err != nil {
 		t.Fatalf("Key %q Error: %s", key, err)
 	}
 	assert.Exactly(t, math.Pi, newVal)
 }
 
-func TestWithDial_Get_NotFound_Mock(t *testing.T) {
+func TestRedis_SetGet_Success_Mock(t *testing.T) {
 	t.Parallel()
 
 	mr := miniredis.NewMiniRedis()
@@ -142,40 +83,40 @@ func TestWithDial_Get_NotFound_Mock(t *testing.T) {
 
 	key := strs.RandAlnum(30)
 
+	if err := p.Set(context.TODO(), objcache.NewItem(key, math.Pi)); err != nil {
+		t.Fatalf("Key %q Error: %s", key, err)
+	}
+
 	var newVal float64
-	err = p.Get(context.TODO(), key, &newVal, nil)
-	assert.True(t, errors.NotFound.Match(err), "Error: %s", err)
-	assert.Empty(t, newVal)
+	if err := p.Get(context.TODO(), objcache.NewItem(key, &newVal)); err != nil {
+		t.Fatalf("Key %q Error: %s", key, err)
+	}
+	assert.Exactly(t, math.Pi, newVal)
 }
 
-func TestWithDial_Get_Fatal_Mock(t *testing.T) {
+func TestRedis_Get_NotFound_Mock(t *testing.T) {
 	t.Parallel()
 
 	mr := miniredis.NewMiniRedis()
-	if err := mr.Start(); err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, mr.Start())
 	defer mr.Close()
 
 	p, err := objcache.NewManager(objcache.WithRedisURL("redis://"+mr.Addr()), objcache.WithRedisPing(), objcache.WithEncoder(JSONCodec{}))
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 	defer func() {
-		if err := p.Close(); err != nil {
-			t.Fatal(err)
-		}
+		assert.NoError(t, p.Close())
 	}()
 
 	key := strs.RandAlnum(30)
 
 	var newVal float64
-	err = p.Get(context.TODO(), key, &newVal, nil)
-	assert.True(t, errors.NotFound.Match(err), "Error: %+v", err)
+	err = p.Get(context.TODO(), objcache.NewItem(key, &newVal))
+	assert.NoError(t, err, "%+v", err)
+	// assert.True(t, errors.NotFound.Match(err), "Error: %+v", err)
 	assert.Empty(t, newVal)
 }
 
-func TestWithDial_ConFailure(t *testing.T) {
+func TestRedisURL_ConFailure_Dial(t *testing.T) {
 	t.Parallel()
 
 	p, err := objcache.NewManager(objcache.WithRedisPing(), objcache.WithRedisClient(&redis.Pool{
@@ -185,7 +126,7 @@ func TestWithDial_ConFailure(t *testing.T) {
 	assert.True(t, p == nil, "p is not nil")
 }
 
-func TestWithDialURL_ConFailure(t *testing.T) {
+func TestRedisURL_ConFailure(t *testing.T) {
 	t.Parallel()
 
 	var dialErrors = []struct {
@@ -228,11 +169,9 @@ func TestWithDialURL_ConFailure(t *testing.T) {
 
 }
 
-func TestProcessor_Parallel_GetSet_Redis(t *testing.T) {
+func TestRedis_Parallel_GetSet(t *testing.T) {
 	mr := miniredis.NewMiniRedis()
-	if err := mr.Start(); err != nil {
-		t.Fatalf("%+v", err)
-	}
+	assert.NoError(t, mr.Start())
 	defer mr.Close()
 	redConURL := fmt.Sprintf("redis://%s/2", mr.Addr())
 	newTestNewProcessor(t, objcache.WithRedisURL(redConURL))

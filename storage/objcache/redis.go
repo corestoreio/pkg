@@ -18,8 +18,8 @@ package objcache
 
 import (
 	"context"
-	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/corestoreio/errors"
@@ -152,47 +152,64 @@ type redisWrapper struct {
 	ping bool
 }
 
-func (w redisWrapper) Set(_ context.Context, key string, value []byte) error {
+func (w redisWrapper) Set(_ context.Context, keys []string, values [][]byte) error {
 	conn := w.Pool.Get()
 	defer conn.Close()
-
-	if _, err := conn.Do("SET", key, value); err != nil {
-		return errors.Wrapf(err, "[objcache] With key %q", key)
+	// TODO optimize for length==1
+	if lk, lv := len(keys), len(values); lk != lv {
+		return errors.Mismatch.Newf("[objcache] Key count [%d] is not equally to the length value [%d]", lk, lv)
 	}
+
+	if _, err := conn.Do("MSET", byteSliceToIFaces(strSliceToIFaces(nil, keys), values)...); err != nil {
+		return errors.Wrapf(err, "[objcache] With keys %v", keys)
+	}
+
 	return nil
 }
 
-func (w redisWrapper) Get(_ context.Context, key string) ([]byte, error) {
+func (w redisWrapper) Get(_ context.Context, keys []string) (values [][]byte, err error) {
 	conn := w.Pool.Get()
 	defer conn.Close()
-
-	raw, err := redis.Bytes(conn.Do("GET", key))
+	// TODO optimize for length==1
+	values, err = redis.ByteSlices(conn.Do("MGET", strSliceToIFaces(nil, keys)...))
 	if err != nil {
 		if err != redis.ErrNil {
-			return nil, errors.Wrapf(err, "[objcache] With key %q", key)
+			return nil, errors.Wrapf(err, "[objcache] With keys %v", keys)
 		}
-		return nil, keyNotFound{key: key}
+		return nil, ErrKeyNotFound(strings.Join(keys, ", "))
 	}
-	return raw, nil
+	if lk, lv := len(keys), len(values); lk != lv {
+		return nil, ErrKeyNotFound(strings.Join(keys, ", "))
+	}
+	return values, nil
 }
 
-func (w redisWrapper) Delete(_ context.Context, key string) error {
+func strSliceToIFaces(ret []interface{}, sl []string) []interface{} {
+	// TODO use a sync.Pool but write before hand appropriate concurrent running benchmarks
+	if ret == nil {
+		ret = make([]interface{}, 0, len(sl))
+	}
+	for _, s := range sl {
+		ret = append(ret, s)
+	}
+	return ret
+}
+
+func byteSliceToIFaces(ret []interface{}, sl [][]byte) []interface{} {
+	if ret == nil {
+		ret = make([]interface{}, 0, len(sl))
+	}
+	for _, s := range sl {
+		ret = append(ret, s)
+	}
+	return ret
+}
+
+func (w redisWrapper) Delete(_ context.Context, keys []string) error {
 	conn := w.Pool.Get()
 	defer conn.Close()
-	if _, err := conn.Do("DEL", key); err != nil {
-		return errors.Wrapf(err, "[objcache] With key %q", key)
+	if _, err := conn.Do("DEL", strSliceToIFaces(nil, keys)...); err != nil {
+		return errors.Wrapf(err, "[objcache] With keys %v", keys)
 	}
 	return nil
-}
-
-type keyNotFound struct {
-	key string
-}
-
-func (k keyNotFound) Error() string {
-	return fmt.Sprintf("[objcache] The key %q has not been found.", k.key)
-}
-
-func (k keyNotFound) ErrorKind() errors.Kind {
-	return errors.NotFound
 }

@@ -43,8 +43,8 @@ func TestNewProcessor_EncoderError(t *testing.T) {
 	}{
 		ErrChan: make(chan error),
 	}
-	err = p.Set(context.TODO(), "key1", ch, nil)
-	assert.EqualError(t, err, "[objcache] With key \"key1\": gob: type struct { ErrChan chan error } has no exported fields", "Error: %s", err)
+	err = p.Set(context.TODO(), objcache.NewItem("key1", ch))
+	assert.EqualError(t, err, "[objcache] With key \"key1\" and dst type struct { ErrChan chan error }: gob: type struct { ErrChan chan error } has no exported fields", "Error: %s", err)
 }
 
 const iterations = 30
@@ -54,31 +54,26 @@ func testCountry(t *testing.T, wg *sync.WaitGroup, p *objcache.Manager, key stri
 
 	var val = getTestCountry(t)
 
-	if err := p.Set(context.TODO(), key, val, nil); err != nil {
-		t.Fatal(err)
-	}
+	err := p.Set(context.TODO(), objcache.NewItem(key, val))
+	assert.NoError(t, err, "%+v", err)
 
 	for i := 0; i < iterations; i++ {
 		var newVal = new(Country)
-		if err := p.Get(context.TODO(), key, newVal, nil); err != nil {
-			t.Fatal(err)
-		}
+		err := p.Get(context.TODO(), objcache.NewItem(key, newVal))
+		assert.NoError(t, err, "%+v", err)
 		assert.Exactly(t, val, newVal)
 	}
 
-	if err := p.Set(context.TODO(), key, Country{}, nil); err != nil {
-		t.Fatal(err)
-	}
+	err = p.Set(context.TODO(), objcache.NewItem(key, Country{}))
+	assert.NoError(t, err, "%+v", err)
 
 	for i := 0; i < iterations; i++ {
-		if err := p.Set(context.TODO(), key, val, nil); err != nil {
-			t.Fatal(err)
-		}
+		err := p.Set(context.TODO(), objcache.NewItem(key, val))
+		assert.NoError(t, err, "%+v", err)
 	}
 	var newVal = new(Country)
-	if err := p.Get(context.TODO(), key, newVal, nil); err != nil {
-		t.Fatal(err)
-	}
+	err = p.Get(context.TODO(), objcache.NewItem(key, newVal))
+	assert.NoError(t, err, "%+v", err)
 	assert.Exactly(t, val, newVal)
 
 }
@@ -87,28 +82,26 @@ func testStoreSlice(t *testing.T, wg *sync.WaitGroup, p *objcache.Manager, key s
 	defer wg.Done()
 
 	var val = getTestStores()
-	if err := p.Set(context.TODO(), key, val, nil); err != nil {
+	if err := p.Set(context.TODO(), objcache.NewItem(key, val)); err != nil {
 		t.Fatal(err)
 	}
 	for i := 0; i < iterations; i++ {
 		var newVal TableStoreSlice
-		if err := p.Get(context.TODO(), key, &newVal, nil); err != nil {
-			t.Fatal(err)
-		}
+		err := p.Get(context.TODO(), objcache.NewItem(key, &newVal))
+		assert.NoError(t, err)
 		assert.Exactly(t, val, newVal)
 	}
-	if err := p.Set(context.TODO(), key, TableStoreSlice{}, nil); err != nil {
-		t.Fatal(err)
-	}
+	err := p.Set(context.TODO(), objcache.NewItem(key, TableStoreSlice{}))
+	assert.NoError(t, err)
+
 	for i := 0; i < iterations; i++ {
-		if err := p.Set(context.TODO(), key, val, nil); err != nil {
-			t.Fatal(err)
-		}
+		err := p.Set(context.TODO(), objcache.NewItem(key, val))
+		assert.NoError(t, err)
 	}
 	var newVal TableStoreSlice
-	if err := p.Get(context.TODO(), key, &newVal, nil); err != nil {
-		t.Fatal(err)
-	}
+	err = p.Get(context.TODO(), objcache.NewItem(key, &newVal))
+	assert.NoError(t, err)
+
 	assert.Exactly(t, val, newVal)
 }
 

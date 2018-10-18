@@ -50,13 +50,13 @@ func benchmark_country_enc(iterationsSetGet int, opts ...objcache.Option) func(b
 				key := strconv.FormatInt(i, 10) // 1 alloc
 				i++
 
-				if err := p.Set(ctx, key, cntry, nil); err != nil {
+				if err := p.Set(ctx, objcache.NewItem(key, cntry)); err != nil {
 					b.Fatalf("%+v", err)
 				}
 				// Double execution might detect storing of type information in streaming encoders
 				for j := 0; j < iterationsSetGet; j++ {
 					var newCntry = new(Country)
-					if err := p.Get(ctx, key, newCntry, nil); err != nil {
+					if err := p.Get(ctx, objcache.NewItem(key, newCntry)); err != nil {
 						b.Fatalf("%+v", err)
 					}
 					if newCntry.Country.IsoCode != wantCountryISO {
@@ -90,14 +90,14 @@ func benchmark_stores_enc(iterationsSetGet int, opts ...objcache.Option) func(b 
 				key := strconv.FormatInt(i, 10) // 1 alloc
 				i++
 
-				if err := p.Set(ctx, key, ts, nil); err != nil {
+				if err := p.Set(ctx, objcache.NewItem(key, ts)); err != nil {
 					b.Fatal(err)
 				}
 
 				// Double execution might detect storing of type information in streaming encoders
 				for j := 0; j < iterationsSetGet; j++ {
 					var newTS TableStoreSlice
-					if err := p.Get(ctx, key, &newTS, nil); err != nil {
+					if err := p.Get(ctx, objcache.NewItem(key, &newTS)); err != nil {
 						b.Fatal(err)
 					}
 					if have := newTS[5].Code; have != wantStoreCode {
