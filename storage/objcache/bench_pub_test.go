@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build csall
+//  +build csall
 
 package objcache_test
 
@@ -30,7 +30,7 @@ import (
 
 func benchmark_country_enc(iterationsSetGet int, opts ...objcache.Option) func(b *testing.B) {
 	return func(b *testing.B) {
-		p, err := objcache.NewManager(opts...)
+		p, err := objcache.NewService(opts...)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -70,7 +70,7 @@ func benchmark_country_enc(iterationsSetGet int, opts ...objcache.Option) func(b
 
 func benchmark_stores_enc(iterationsSetGet int, opts ...objcache.Option) func(b *testing.B) {
 	return func(b *testing.B) {
-		p, err := objcache.NewManager(opts...)
+		p, err := objcache.NewService(opts...)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -116,6 +116,8 @@ func Benchmark_BigCache_Country(b *testing.B) {
 	b.Run("JSON_2x", benchmark_country_enc(2, objcache.WithBigCache(bigcache.Config{}), objcache.WithPooledEncoder(JSONCodec{})))
 	b.Run("MsgPack_1x", benchmark_country_enc(1, objcache.WithBigCache(bigcache.Config{}), objcache.WithEncoder(newMsgPackCodec())))
 	b.Run("MsgPack_2x", benchmark_country_enc(2, objcache.WithBigCache(bigcache.Config{}), objcache.WithEncoder(newMsgPackCodec())))
+	b.Run("GoGoProto_1x", benchmark_country_enc(1, objcache.WithBigCache(bigcache.Config{})))
+	b.Run("GoGoProto_2x", benchmark_country_enc(2, objcache.WithBigCache(bigcache.Config{})))
 }
 
 func Benchmark_BigCache_Stores(b *testing.B) {

@@ -30,13 +30,11 @@ import (
 	"github.com/corestoreio/pkg/util/assert"
 )
 
-var _ io.Closer = (*objcache.Manager)(nil)
+var _ io.Closer = (*objcache.Service)(nil)
 
 func TestNewProcessor_EncoderError(t *testing.T) {
-	p, err := objcache.NewManager(objcache.WithPooledEncoder(gobCodec{}))
-	if err != nil {
-		t.Fatal(err)
-	}
+	p, err := objcache.NewService(objcache.WithPooledEncoder(gobCodec{}), objcache.WithSimpleSlowCacheMap())
+	assert.NoError(t, err)
 
 	ch := struct {
 		ErrChan chan error
@@ -49,7 +47,7 @@ func TestNewProcessor_EncoderError(t *testing.T) {
 
 const iterations = 30
 
-func testCountry(t *testing.T, wg *sync.WaitGroup, p *objcache.Manager, key string) {
+func testCountry(t *testing.T, wg *sync.WaitGroup, p *objcache.Service, key string) {
 	defer wg.Done()
 
 	var val = getTestCountry(t)
@@ -78,7 +76,7 @@ func testCountry(t *testing.T, wg *sync.WaitGroup, p *objcache.Manager, key stri
 
 }
 
-func testStoreSlice(t *testing.T, wg *sync.WaitGroup, p *objcache.Manager, key string) {
+func testStoreSlice(t *testing.T, wg *sync.WaitGroup, p *objcache.Service, key string) {
 	defer wg.Done()
 
 	var val = getTestStores()
@@ -175,17 +173,11 @@ type Country struct {
 	} `json:"maxmind,omitempty"`
 }
 
-func getTestCountry(t interface {
-	Fatal(...interface{})
-}) *Country {
+func getTestCountry(t testing.TB) *Country {
 	td, err := ioutil.ReadFile("testdata/response.json")
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 	c := new(Country)
-	if err := json.Unmarshal(td, c); err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, json.Unmarshal(td, c))
 	return c
 }
 
@@ -218,7 +210,7 @@ func getTestStores() TableStoreSlice {
 }
 
 func newTestNewProcessor(t *testing.T, opts ...objcache.Option) {
-	p, err := objcache.NewManager(append(opts, objcache.WithPooledEncoder(gobCodec{}, Country{}, TableStoreSlice{}))...)
+	p, err := objcache.NewService(append(opts, objcache.WithPooledEncoder(gobCodec{}, Country{}, TableStoreSlice{}))...)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}

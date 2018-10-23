@@ -40,7 +40,7 @@ func TestRedis_SetGet_Success_Live(t *testing.T) {
 	defer mr.Close()
 	redConURL := "redis://" + mr.Addr()
 
-	p, err := objcache.NewManager(objcache.WithRedisURL(redConURL), objcache.WithRedisPing(), objcache.WithEncoder(JSONCodec{}))
+	p, err := objcache.NewService(objcache.WithRedisURL(redConURL), objcache.WithEncoder(JSONCodec{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +71,7 @@ func TestRedis_SetGet_Success_Mock(t *testing.T) {
 	}
 	defer mr.Close()
 
-	p, err := objcache.NewManager(objcache.WithRedisURL("redis://"+mr.Addr()), objcache.WithRedisPing(), objcache.WithEncoder(JSONCodec{}))
+	p, err := objcache.NewService(objcache.WithRedisURL("redis://"+mr.Addr()), objcache.WithEncoder(JSONCodec{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +101,7 @@ func TestRedis_Get_NotFound_Mock(t *testing.T) {
 	assert.NoError(t, mr.Start())
 	defer mr.Close()
 
-	p, err := objcache.NewManager(objcache.WithRedisURL("redis://"+mr.Addr()), objcache.WithRedisPing(), objcache.WithEncoder(JSONCodec{}))
+	p, err := objcache.NewService(objcache.WithRedisURL("redis://"+mr.Addr()), objcache.WithEncoder(JSONCodec{}))
 	assert.NoError(t, err)
 	defer func() {
 		assert.NoError(t, p.Close())
@@ -119,8 +119,8 @@ func TestRedis_Get_NotFound_Mock(t *testing.T) {
 func TestRedisURL_ConFailure_Dial(t *testing.T) {
 	t.Parallel()
 
-	p, err := objcache.NewManager(objcache.WithRedisPing(), objcache.WithRedisClient(&redis.Pool{
-		Dial: func() (redis.Conn, error) { return redis.Dial("tcp", "127.0.0.1:3344") }, // random port
+	p, err := objcache.NewService(objcache.WithRedisClient(&redis.Pool{
+		Dial: func() (redis.Conn, error) { return redis.Dial("tcp", "127.0.0.1:53344") }, // random port
 	}), objcache.WithEncoder(JSONCodec{}))
 	assert.True(t, errors.Fatal.Match(err), "Error: %s", err)
 	assert.True(t, p == nil, "p is not nil")
@@ -157,7 +157,7 @@ func TestRedisURL_ConFailure(t *testing.T) {
 		},
 	}
 	for i, test := range dialErrors {
-		p, err := objcache.NewManager(objcache.WithRedisURL(test.rawurl), objcache.WithRedisPing(), objcache.WithEncoder(JSONCodec{}))
+		p, err := objcache.NewService(objcache.WithRedisURL(test.rawurl), objcache.WithEncoder(JSONCodec{}))
 		if test.errBhf > 0 {
 			assert.True(t, test.errBhf.Match(err), "Index %d Error %+v", i, err)
 			assert.Nil(t, p, "Index %d", i)

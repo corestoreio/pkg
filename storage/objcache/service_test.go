@@ -23,14 +23,14 @@ import (
 
 func withError() Option {
 	return Option{
-		fn: func(p *Manager) error {
+		fn: func(p *Service) error {
 			return errors.NotImplemented.Newf("What?")
 		},
 	}
 }
 
 func TestNewProcessor_NewError(t *testing.T) {
-	p, err := NewManager(withError())
+	p, err := NewService(withError())
 	assert.Nil(t, p)
 	assert.True(t, errors.NotImplemented.Match(err), "Error: %s", err)
 }

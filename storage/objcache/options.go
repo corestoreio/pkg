@@ -23,10 +23,10 @@ import (
 )
 
 // Option provides convenience helper functions to apply various options while
-// creating a new Manager type.
+// creating a new Service type.
 type Option struct {
 	sortOrder int
-	fn        func(*Manager) error
+	fn        func(*Service) error
 }
 
 type options []Option
@@ -38,7 +38,7 @@ func (o options) Swap(i, j int)      { o[i], o[j] = o[j], o[i] }
 // WithEncoder sets a custom encoder and decoder.
 func WithEncoder(codec Codecer) Option {
 	return Option{
-		fn: func(p *Manager) error {
+		fn: func(p *Service) error {
 			p.codec = codec
 			return nil
 		},
@@ -51,18 +51,18 @@ func WithEncoder(codec Codecer) Option {
 // If you use gob you must use gob.Register() for your types.
 func WithPooledEncoder(codec Codecer, primeObjects ...interface{}) Option {
 	return Option{
-		fn: func(p *Manager) error {
+		fn: func(p *Service) error {
 			p.codec = newPooledCodec(codec, primeObjects...)
 			return nil
 		},
 	}
 }
 
-// WithCache sets a custom cache type. Examples in the subpackages.
-func WithCache(c Storager) Option {
+// WithAddStorage sets a custom cache type. Examples in the subpackages.
+func WithAddStorage(c Storager) Option {
 	return Option{
-		fn: func(p *Manager) error {
-			p.cache = c
+		fn: func(p *Service) error {
+			p.cache[len(p.cache)+1] = c
 			return nil
 		},
 	}
@@ -72,8 +72,8 @@ func WithCache(c Storager) Option {
 // backend.
 func WithSimpleSlowCacheMap() Option {
 	return Option{
-		fn: func(p *Manager) error {
-			p.cache = &mapCache{
+		fn: func(p *Service) error {
+			p.cache[len(p.cache)+1] = &mapCache{
 				items: make(map[string]string),
 			}
 			return nil
@@ -86,9 +86,13 @@ type mapCache struct {
 	items map[string]string
 }
 
-func (mc *mapCache) Set(_ context.Context, keys []string, values [][]byte) (err error) {
+func (mc *mapCache) Set(_ context.Context, items *Items) (err error) {
 	mc.Lock()
 	defer mc.Unlock()
+	keys, values, err := items.Encode(nil, nil)
+	if err != nil {
+		return errors.WithStack(err)
+	}
 	for i, key := range keys {
 		mc.items[key] = string(values[i])
 	}

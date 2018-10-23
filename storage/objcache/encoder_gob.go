@@ -23,7 +23,7 @@ import (
 
 var _ Codecer = GobCodec{}
 
-// GobCodec is used to encode/decode using the Gob format. You must use
+// GobCodec is used to Encode/decode using the Gob format. You must use
 // gob.Register to add new types to a pooled gob encoder. The gob encoding gets
 // used in its stream idea implementation. Types won't get stored in the
 // backend. Each change in type must trigger a cace flush.

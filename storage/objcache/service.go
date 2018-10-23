@@ -25,12 +25,12 @@ import (
 )
 
 // Storager defines a custom backend cache type to be used as underlying storage
-// of the Manager. Must be safe for concurrent usage. Caches which implement
+// of the Service. Must be safe for concurrent usage. Caches which implement
 // this interface can be enabled via build tag. The context depends if it is
 // supported by a backend cache implementation. All keys and values have the
 // same length.
 type Storager interface {
-	Set(ctx context.Context, key []string, value [][]byte) (err error)
+	Set(ctx context.Context, items *Items) (err error)
 	Get(ctx context.Context, key []string) (value [][]byte, err error)
 	Delete(ctx context.Context, key []string) (err error)
 	// Close closes the underlying cache service.
@@ -43,7 +43,7 @@ type Codecer interface {
 	NewDecoder(io.Reader) Decoder
 }
 
-// Encoder defines how to encode a type represented by variable src into a byte
+// Encoder defines how to Encode a type represented by variable src into a byte
 // slice. Encoders must write their data into an io.Writer defined in option
 // function WithEncoder().
 type Encoder interface {
@@ -56,11 +56,24 @@ type Decoder interface {
 	Decode(dst interface{}) error
 }
 
-// Manager handles the encoding, decoding and caching
-type Manager struct {
+// Service handles the encoding, decoding and caching.
+type Service struct {
 	// Cache exported to allow easy debugging and access to raw values.
-	cache Storager
+	cache map[int]Storager // read/write randomly from/to a storage
 	codec Codecer
+}
+
+type Items struct {
+	items []*Item
+	codec Codecer
+}
+
+func newItems(i []*Item, c Codecer) *Items {
+	// sync pool would be a nice fit here
+	return &Items{
+		items: i,
+		codec: c,
+	}
 }
 
 type Item struct {
@@ -78,17 +91,17 @@ func NewItem(key string, object interface{}) *Item {
 	}
 }
 
-func (m *Item) encode(c Codecer, buf *bytes.Buffer) error {
+func (m *Item) encode(c Codecer, w io.Writer) error {
 	switch ot := m.Object.(type) {
 	case marshaler:
 		data, err := ot.Marshal()
 		if err != nil {
 			return errors.Wrapf(err, "[objcache] With key %q and dst type %T", m.Key, m.Object)
 		}
-		_, err = buf.Write(data)
+		_, err = w.Write(data)
 		return err
 	default:
-		enc := c.NewEncoder(buf)
+		enc := c.NewEncoder(w)
 		pc, ok := c.(*pooledCodec)
 		err := enc.Encode(m.Object)
 		if ok {
@@ -122,17 +135,59 @@ func (m *Item) decode(c Codecer, data []byte) error {
 	return nil
 }
 
-// NewManager creates a new type with no default cache instance and no
+// Encode encodes all items to they byte slice representation. Returns two slices whose indexes
+// match to the other. The data might be appended to the optional arguments `keys` and `values`
+func (ms *Items) Encode(keys []string, values [][]byte) (_keys []string, _values [][]byte, err error) {
+	if keys == nil {
+		keys = make([]string, 0, len(ms.items))
+	}
+	if values == nil {
+		values = make([][]byte, 0, len(ms.items))
+	}
+	for _, item := range ms.items {
+		keys = append(keys, item.Key)
+		var buf bytes.Buffer
+		if err := item.encode(ms.codec, &buf); err != nil {
+			return nil, nil, errors.WithStack(err)
+		}
+		values = append(values, buf.Bytes())
+	}
+	return keys, values, nil
+}
+
+func (ms *Items) decode(values [][]byte) error {
+	for i, item := range ms.items {
+		if err := item.decode(ms.codec, values[i]); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return nil
+}
+
+// Keys returns only all available keys. Might append it to argument `keys`.
+func (ms *Items) Keys(keys ...string) []string {
+	if keys == nil {
+		keys = make([]string, 0, len(ms.items))
+	}
+	for _, item := range ms.items {
+		keys = append(keys, item.Key)
+	}
+	return keys
+}
+
+// NewService creates a new type with no default cache instance and no
 // encoder. You must set a caching service or it panics please see the sub
 // packages objcache, tcbolddb and objcache. You must also set an encoder,
 // which is not optional ;-)
-func NewManager(opts ...Option) (*Manager, error) {
-	p := new(Manager)
+func NewService(opts ...Option) (*Service, error) {
+	p := &Service{
+		cache: make(map[int]Storager, 6),
+	}
 	opts2 := options(opts)
 	sort.Stable(opts2)
 	for _, opt := range opts2 {
 		if err := opt.fn(p); err != nil {
-			return nil, errors.Wrap(err, "[objcache] NewManager applied options")
+			return nil, errors.Wrap(err, "[objcache] NewService applied options")
 		}
 	}
 	return p, nil
@@ -150,19 +205,13 @@ type marshaler interface {
 //		}
 // and calls `Marshal`. Checking for marshaler has precedence. Useful with
 // protobuf.
-func (tr *Manager) Set(ctx context.Context, items ...*Item) error {
-	keys := make([]string, 0, len(items))
-	vals := make([][]byte, 0, len(items))
-	for _, item := range items {
-		keys = append(keys, item.Key)
-		var buf bytes.Buffer
-		if err := item.encode(tr.codec, &buf); err != nil {
+func (tr *Service) Set(ctx context.Context, items ...*Item) error {
+	itms := newItems(items, tr.codec)
+	for _, c := range tr.cache {
+
+		if err := c.Set(ctx, itms); err != nil {
 			return errors.WithStack(err)
 		}
-		vals = append(vals, buf.Bytes())
-	}
-	if err := tr.cache.Set(ctx, keys, vals); err != nil {
-		return errors.Wrapf(err, "[objcache] With keys %v", keys)
 	}
 	return nil
 }
@@ -183,20 +232,15 @@ type unmarshaler interface {
 // the Unmarshal gets called. This type check has precedence before the decoder.
 // You have to check yourself if the returned error is of type NotFound or of
 // any other source. Every caching type defines its own NotFound error.
-func (tr *Manager) Get(ctx context.Context, items ...*Item) error {
-	keys := make([]string, len(items))
-	for i, item := range items {
-		keys[i] = item.Key
-	}
-
-	vals, err := tr.cache.Get(ctx, keys)
-	if err != nil {
-		return errors.Wrapf(err, "[objcache] With keys %v", keys)
-	}
-
-	for i, item := range items {
-		val := vals[i]
-		if err := item.decode(tr.codec, val); err != nil {
+func (tr *Service) Get(ctx context.Context, items ...*Item) error {
+	itms := newItems(items, tr.codec)
+	keys := itms.Keys()
+	for _, c := range tr.cache {
+		vals, err := c.Get(ctx, keys)
+		if err != nil {
+			return errors.Wrapf(err, "[objcache] With keys %v", keys)
+		}
+		if err := itms.decode(vals); err != nil {
 			return errors.WithStack(err)
 		}
 	}
@@ -204,14 +248,21 @@ func (tr *Manager) Get(ctx context.Context, items ...*Item) error {
 }
 
 // Delete removes a key from the storage.
-func (tr *Manager) Delete(ctx context.Context, key ...string) (err error) {
-	if err := tr.cache.Delete(ctx, key); err != nil {
-		return errors.Wrapf(err, "[objcache] With keys %v", key)
+func (tr *Service) Delete(ctx context.Context, key ...string) (err error) {
+	for _, c := range tr.cache {
+		if err := c.Delete(ctx, key); err != nil {
+			return errors.WithStack(err)
+		}
 	}
 	return nil
 }
 
 // Close closes the underlying storage engines.
-func (tr *Manager) Close() error {
-	return tr.cache.Close()
+func (tr *Service) Close() error {
+	for _, c := range tr.cache {
+		if err := c.Close(); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return nil
 }

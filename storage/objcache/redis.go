@@ -34,17 +34,14 @@ import (
 func WithRedisClient(pool *redis.Pool) Option {
 	return Option{
 		sortOrder: 1,
-		fn: func(p *Manager) error {
-			var ping bool
-			if p2, ok := p.cache.(redisWrapper); ok {
-				ping = p2.ping
+		fn: func(p *Service) error {
+			w := makeRedisWrapper(pool)
+			w.ping = true
+			if err := doPing(w); err != nil {
+				return errors.WithStack(err)
 			}
-			w := redisWrapper{
-				Pool: pool,
-				ping: ping,
-			}
-			p.cache = w
-			return doPing(w)
+			p.cache[len(p.cache)+1] = w
+			return nil
 		},
 	}
 }
@@ -52,7 +49,7 @@ func WithRedisClient(pool *redis.Pool) Option {
 // WithRedisURL connects to a Redis server at the given URL using the Redis URI
 // scheme. URLs should follow the draft IANA specification for the scheme
 // (https://www.iana.org/assignments/uri-schemes/prov/redis). This option
-// function sets the connection as cache backend to the Manager.
+// function sets the connection as cache backend to the Service.
 //
 // On error, while parsing the rawURL, this function will leak sensitive data,
 // for now.
@@ -63,7 +60,7 @@ func WithRedisClient(pool *redis.Pool) Option {
 func WithRedisURL(rawURL string) Option {
 	return Option{
 		sortOrder: 2,
-		fn: func(p *Manager) error {
+		fn: func(p *Service) error {
 
 			addr, _, pw, params, err := url.ParseConnection(rawURL)
 			if err != nil {
@@ -110,26 +107,6 @@ func WithRedisURL(rawURL string) Option {
 	}
 }
 
-// WithRedisPing pings the redis database and checks if the connection parameters are
-// valid.
-func WithRedisPing() Option {
-	return Option{
-		sortOrder: 100,
-		fn: func(p *Manager) error {
-			var pool *redis.Pool
-			if w, ok := p.cache.(redisWrapper); ok && w.Pool != nil {
-				pool = w.Pool
-			}
-			w := redisWrapper{
-				Pool: pool,
-				ping: true,
-			}
-			p.cache = w
-			return doPing(w)
-		},
-	}
-}
-
 func doPing(w redisWrapper) error {
 	if !w.ping || w.Pool == nil {
 		return nil
@@ -142,22 +119,36 @@ func doPing(w redisWrapper) error {
 		return errors.Fatal.Newf("[backend] Redis Ping failed: %s", err)
 	}
 	if pong != "PONG" {
-		return errors.Fatal.Newf("[backend] Redis Ping not Pong: %#v", pong)
+		return errors.ConnectionFailed.Newf("[backend] Redis Ping not Pong: %#v", pong)
 	}
 	return nil
+}
+
+func makeRedisWrapper(rp *redis.Pool) redisWrapper {
+	return redisWrapper{
+		Pool: rp,
+		// ipf: &sync.Pool{
+		// 	New: func() interface{} {
+		// 		ifs := make([]interface{}, 0, 10)
+		// 		return &ifs
+		// 	},
+		// },
+	}
 }
 
 type redisWrapper struct {
 	*redis.Pool
 	ping bool
+	// ifp  *sync.Pool
 }
 
-func (w redisWrapper) Set(_ context.Context, keys []string, values [][]byte) error {
+func (w redisWrapper) Set(_ context.Context, items *Items) error {
 	conn := w.Pool.Get()
 	defer conn.Close()
-	// TODO optimize for length==1
-	if lk, lv := len(keys), len(values); lk != lv {
-		return errors.Mismatch.Newf("[objcache] Key count [%d] is not equally to the length value [%d]", lk, lv)
+
+	keys, values, err := items.Encode(nil, nil)
+	if err != nil {
+		return errors.WithStack(err)
 	}
 
 	if _, err := conn.Do("MSET", byteSliceToIFaces(strSliceToIFaces(nil, keys), values)...); err != nil {

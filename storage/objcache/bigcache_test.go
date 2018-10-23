@@ -28,7 +28,7 @@ import (
 )
 
 func TestWithBigCache_Success(t *testing.T) {
-	p, err := objcache.NewManager(objcache.WithBigCache(bigcache.Config{}), objcache.WithEncoder(JSONCodec{}))
+	p, err := objcache.NewService(objcache.WithBigCache(bigcache.Config{}), objcache.WithEncoder(JSONCodec{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,15 +42,14 @@ func TestWithBigCache_Success(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, math.Pi, newVal)
-
 }
 
 func TestWithBigCache_Error(t *testing.T) {
-	p, err := objcache.NewManager(objcache.WithBigCache(bigcache.Config{
+	p, err := objcache.NewService(objcache.WithBigCache(bigcache.Config{
 		Shards: 3,
 	}))
 	assert.Nil(t, p)
-	assert.EqualError(t, err, "[objcache] NewManager applied options: Shards number must be power of two", "Error: %+v", err)
+	assert.EqualError(t, err, "[objcache] NewService applied options: Shards number must be power of two", "Error: %+v", err)
 }
 
 func TestProcessor_Parallel_GetSet_BigCache(t *testing.T) {
@@ -58,7 +57,7 @@ func TestProcessor_Parallel_GetSet_BigCache(t *testing.T) {
 }
 
 func TestNewProcessor_DecoderError(t *testing.T) {
-	p, err := objcache.NewManager(objcache.WithPooledEncoder(gobCodec{}), objcache.WithBigCache(bigcache.Config{}))
+	p, err := objcache.NewService(objcache.WithPooledEncoder(gobCodec{}), objcache.WithBigCache(bigcache.Config{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +77,7 @@ func TestNewProcessor_DecoderError(t *testing.T) {
 }
 
 func TestNewProcessor_GetError(t *testing.T) {
-	p, err := objcache.NewManager(objcache.WithPooledEncoder(JSONCodec{}), objcache.WithBigCache(bigcache.Config{}))
+	p, err := objcache.NewService(objcache.WithPooledEncoder(JSONCodec{}), objcache.WithBigCache(bigcache.Config{}))
 	if err != nil {
 		t.Fatal(err)
 	}

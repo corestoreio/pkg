@@ -52,13 +52,13 @@ func init() {
 func ExampleWithPooledEncoder() {
 
 	// Use the gob encoder and prime it with the types.
-	tc, err := objcache.NewManager(
+	tc, err := objcache.NewService(
 		// Playing around? Try removing P{}, Q{}, R{} from the next line and see what happens.
 		objcache.WithPooledEncoder(gobCodec{}, P{}, Q{}, R{}),
 		objcache.WithBigCache(bigcache.Config{}),
 	)
 	if err != nil {
-		log.Fatalf("NewManager error: %+v", err)
+		log.Fatalf("NewService error: %+v", err)
 	}
 
 	pythagorasKey := `Pythagoras`
