@@ -28,11 +28,13 @@ import (
 // of the Service. Must be safe for concurrent usage. Caches which implement
 // this interface can be enabled via build tag. The context depends if it is
 // supported by a backend cache implementation. All keys and values have the
-// same length.
+// same length. `expirations` is a list seconds with the same length as keys &
+// values. A second entry defines when a key expires. If the entry is empty, the
+// key does not expire.
 type Storager interface {
-	Set(ctx context.Context, items *Items) (err error)
-	Get(ctx context.Context, key []string) (value [][]byte, err error)
-	Delete(ctx context.Context, key []string) (err error)
+	Set(ctx context.Context, keys []string, values [][]byte, expirations []int64) (err error)
+	Get(ctx context.Context, keys []string) (values [][]byte, err error)
+	Delete(ctx context.Context, keys []string) (err error)
 	// Close closes the underlying cache service.
 	Close() error
 }
@@ -65,19 +67,7 @@ type Service struct {
 	// sync.Pool of *Item
 }
 
-// Items a list of multiple *Item and a preset Codecer.
-type Items struct {
-	items []*Item
-	codec Codecer
-}
-
-func newItems(i []*Item, c Codecer) *Items {
-	// sync pool would be a nice fit here
-	return &Items{
-		items: i,
-		codec: c,
-	}
-}
+type items []*Item
 
 // Item defines a single cache entry with options like cache expiration.
 type Item struct {
@@ -148,39 +138,37 @@ func (m *Item) decode(c Codecer, data []byte) (err error) {
 // Encode encodes all items to their byte slice representation. Returns two
 // slices whose indexes match to the other. The data might be appended to the
 // optional arguments `keys` and `values`.
-func (ms *Items) Encode(keys []string, values [][]byte) (_keys []string, _values [][]byte, err error) {
-	if keys == nil {
-		keys = make([]string, 0, len(ms.items))
-	}
-	if values == nil {
-		values = make([][]byte, 0, len(ms.items))
-	}
-	for _, item := range ms.items {
+func (ms items) encode(codec Codecer) (keys []string, values [][]byte, expires []int64, err error) {
+	keys = make([]string, 0, len(ms))
+	values = make([][]byte, 0, len(ms))
+	expires = make([]int64, 0, len(ms))
+
+	for _, item := range ms {
 		keys = append(keys, item.Key)
 		var buf bytes.Buffer
-		if err := item.encode(ms.codec, &buf); err != nil {
-			return nil, nil, errors.WithStack(err)
+		if err := item.encode(codec, &buf); err != nil {
+			return nil, nil, nil, errors.WithStack(err)
 		}
 		values = append(values, buf.Bytes())
+		expires = append(expires, int64(item.Expiration.Seconds()))
 	}
-	return keys, values, nil
+	return keys, values, expires, nil
 }
 
-func (ms *Items) decode(values [][]byte) error {
-	for i, item := range ms.items {
-		if err := item.decode(ms.codec, values[i]); err != nil {
+func (ms items) decode(codec Codecer, values [][]byte) error {
+	for i, item := range ms {
+		if err := item.decode(codec, values[i]); err != nil {
 			return errors.WithStack(err)
 		}
 	}
 	return nil
 }
 
-// Keys returns only all available keys. Might append it to argument `keys`.
-func (ms *Items) Keys(keys ...string) []string {
+func (ms items) keys(keys ...string) []string {
 	if keys == nil {
-		keys = make([]string, 0, len(ms.items))
+		keys = make([]string, 0, len(ms))
 	}
-	for _, item := range ms.items {
+	for _, item := range ms {
 		keys = append(keys, item.Key)
 	}
 	return keys
@@ -215,10 +203,14 @@ type marshaler interface {
 // and calls `Marshal`. Checking for marshaler has precedence. Useful with
 // protobuf. The argument `items` allows a cache backend to write multiple items
 // to its cache with one connection. E.g. Redis MGET/MSET.
-func (tr *Service) Set(ctx context.Context, items ...*Item) error {
-	itms := newItems(items, tr.codec)
+func (tr *Service) Set(ctx context.Context, item ...*Item) error {
+	itms := items(item)
+	keys, values, expires, err := itms.encode(tr.codec)
+	if err != nil {
+		return errors.WithStack(err)
+	}
 	for _, c := range tr.cache {
-		if err := c.Set(ctx, itms); err != nil {
+		if err := c.Set(ctx, keys, values, expires); err != nil {
 			return errors.WithStack(err)
 		}
 	}
@@ -243,18 +235,18 @@ type unmarshaler interface {
 // any other source. Every caching type defines its own NotFound error. The
 // argument `items` allows a cache backend to read multiple items at once, e.g.
 // Redis MGET/MSET.
-func (tr *Service) Get(ctx context.Context, items ...*Item) error {
-	itms := newItems(items, tr.codec)
-	keys := itms.Keys()
+func (tr *Service) Get(ctx context.Context, item ...*Item) error {
+	itms := items(item)
+	keys := itms.keys()
 	for _, c := range tr.cache {
 		vals, err := c.Get(ctx, keys)
 		if err != nil {
 			return errors.Wrapf(err, "[objcache] With keys %v", keys)
 		}
-		if err := itms.decode(vals); err != nil {
+		if err := itms.decode(tr.codec, vals); err != nil {
 			return errors.WithStack(err)
 		}
-		return nil // TODO implement a better cache selection algorithm
+		return nil // TODO implement a better cache selection algorithm instead of random map reads
 	}
 	return nil
 }

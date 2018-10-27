@@ -59,12 +59,7 @@ type bigCacheWrapper struct {
 	*bigcache.BigCache
 }
 
-func (w bigCacheWrapper) Set(_ context.Context, items *Items) error {
-	keys, values, err := items.Encode(nil, nil)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
+func (w bigCacheWrapper) Set(_ context.Context, keys []string, values [][]byte, _ []int64) (err error) {
 	for i, key := range keys {
 		if err := w.BigCache.Set(key, values[i]); err != nil {
 			// This error construct save some unneeded allocations.

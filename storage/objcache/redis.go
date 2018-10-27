@@ -177,7 +177,7 @@ type redisWrapper struct {
 	// ifp  *sync.Pool
 }
 
-func (w redisWrapper) Set(_ context.Context, items *Items) (err error) {
+func (w redisWrapper) Set(ctx context.Context, keys []string, values [][]byte, expirations []int64) (err error) {
 	conn := w.Pool.Get()
 	defer func() {
 		if err2 := conn.Close(); err == nil && err2 != nil {
@@ -185,20 +185,24 @@ func (w redisWrapper) Set(_ context.Context, items *Items) (err error) {
 		}
 	}()
 
-	keys, values, err2 := items.Encode(nil, nil)
-	if err2 != nil {
-		err = errors.WithStack(err2)
-		return
-	}
-	// TODO honor expiration
-	args := make([]interface{}, 0, len(keys)*2)
+	args := make([]interface{}, 0, len(keys)*3)
 	for i, key := range keys {
-		args = append(args, key, values[i])
+		e := expirations[i] // e = expires in x seconds
+		if e < 1 {
+			args = append(args, key, values[i])
+		} else {
+			if _, err2 := conn.Do("SETEX", key, e, values[i]); err2 != nil {
+				err = errors.Wrapf(err2, "[objcache] With key %q", key)
+				return
+			}
+		}
 	}
 
-	if _, err2 := conn.Do("MSET", args...); err2 != nil {
-		err = errors.Wrapf(err2, "[objcache] With keys %v", keys)
-		return
+	if la := len(args); la > 0 && la%2 == 0 {
+		if _, err2 := conn.Do("MSET", args...); err2 != nil {
+			err = errors.Wrapf(err2, "[objcache] With keys %v", keys)
+			return
+		}
 	}
 
 	return err

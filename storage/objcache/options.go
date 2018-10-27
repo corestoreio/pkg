@@ -18,9 +18,12 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/corestoreio/errors"
 )
+
+var now = time.Now
 
 // Option provides convenience helper functions to apply various options while
 // creating a new Service type.
@@ -74,27 +77,33 @@ func WithSimpleSlowCacheMap() Option {
 	return Option{
 		fn: func(p *Service) error {
 			p.cache[len(p.cache)+1] = &mapCache{
-				items: make(map[string]string),
+				items: make(map[string]*mapCacheItem),
 			}
 			return nil
 		},
 	}
 }
 
-type mapCache struct {
-	sync.RWMutex
-	items map[string]string
+type mapCacheItem struct {
+	value      string
+	expiration int64 // unix timestamp seconds
 }
 
-func (mc *mapCache) Set(_ context.Context, items *Items) (err error) {
+type mapCache struct {
+	sync.RWMutex
+	items map[string]*mapCacheItem // pointer ... will have a large GC overhead ...
+}
+
+func (mc *mapCache) Set(_ context.Context, keys []string, values [][]byte, expirations []int64) (err error) {
 	mc.Lock()
 	defer mc.Unlock()
-	keys, values, err := items.Encode(nil, nil)
-	if err != nil {
-		return errors.WithStack(err)
-	}
+
 	for i, key := range keys {
-		mc.items[key] = string(values[i])
+		e := expirations[i]
+		if e > 0 {
+			e = now().Add(time.Second * time.Duration(e)).Unix()
+		}
+		mc.items[key] = &mapCacheItem{value: string(values[i]), expiration: e}
 	}
 	return nil
 }
@@ -103,8 +112,8 @@ func (mc *mapCache) Get(_ context.Context, keys []string) (values [][]byte, err 
 	mc.RLock()
 	defer mc.RUnlock()
 	for _, key := range keys {
-		if v, ok := mc.items[key]; ok {
-			values = append(values, []byte(v))
+		if v, ok := mc.items[key]; ok && (v.expiration == 0 || (now().Unix() > v.expiration)) {
+			values = append(values, []byte(v.value))
 		} else {
 			return nil, ErrKeyNotFound(key)
 		}
