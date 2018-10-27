@@ -73,9 +73,11 @@ type items []*Item
 type Item struct {
 	Key string
 	// Object is a pointer to the current type.
-	Object     interface{}
-	Expiration time.Duration // TODO implement
-	// More fields will follow
+	Object interface{}
+	// Expiration in seconds. If 0 no expiration desired.
+	Expiration int64
+
+	// ClearObjectAfterSet bool idea to set the object field to nil after Set has been called.
 }
 
 // NewItem creates a new item pointer.
@@ -150,7 +152,7 @@ func (ms items) encode(codec Codecer) (keys []string, values [][]byte, expires [
 			return nil, nil, nil, errors.WithStack(err)
 		}
 		values = append(values, buf.Bytes())
-		expires = append(expires, int64(item.Expiration.Seconds()))
+		expires = append(expires, item.Expiration)
 	}
 	return keys, values, expires, nil
 }

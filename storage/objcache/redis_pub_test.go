@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"math"
 	"testing"
+	"time"
 
 	"github.com/alicebob/miniredis"
 	"github.com/corestoreio/errors"
@@ -30,68 +31,56 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
-func TestWithRedisURL_SetGet_Success_Live(t *testing.T) {
+func TestWithRedisURL_SetGet_Success(t *testing.T) {
 	t.Parallel()
 
-	mr := miniredis.NewMiniRedis()
-	if err := mr.Start(); err != nil {
-		t.Fatal(err)
-	}
-	defer mr.Close()
-	redConURL := "redis://" + mr.Addr()
-
-	p, err := objcache.NewService(objcache.WithRedisURL(redConURL), objcache.WithEncoder(JSONCodec{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		if err := p.Close(); err != nil {
+	t.Run("miniredis", func(t *testing.T) {
+		mr := miniredis.NewMiniRedis()
+		if err := mr.Start(); err != nil {
 			t.Fatal(err)
 		}
-	}()
+		defer mr.Close()
+		redConURL := "redis://" + mr.Addr()
 
-	key := strs.RandAlnum(30)
-	if err := p.Set(context.TODO(), objcache.NewItem(key, math.Pi)); err != nil {
-		t.Fatalf("Key %q Error: %s", key, err)
-	}
+		testWithRedisURL_SetGet_Success(t, func() {
+			mr.FastForward(time.Second * 2)
+		}, objcache.WithRedisURL(redConURL), objcache.WithEncoder(JSONCodec{}))
+	})
 
-	var newVal float64
-	if err := p.Get(context.TODO(), objcache.NewItem(key, &newVal)); err != nil {
-		t.Fatalf("Key %q Error: %s", key, err)
-	}
-	assert.Exactly(t, math.Pi, newVal)
+	t.Run("real redis integration", func(t *testing.T) {
+		redConURL := lookupRedisEnv(t)
+		testWithRedisURL_SetGet_Success(t, func() {
+			time.Sleep(time.Second * 2)
+		}, objcache.WithRedisURL(redConURL), objcache.WithEncoder(JSONCodec{}))
+	})
 }
 
-func TestWithRedisURL_SetGet_Success_Mock(t *testing.T) {
-	t.Parallel()
-
-	mr := miniredis.NewMiniRedis()
-	if err := mr.Start(); err != nil {
-		t.Fatal(err)
-	}
-	defer mr.Close()
-
-	p, err := objcache.NewService(objcache.WithRedisURL("redis://"+mr.Addr()), objcache.WithEncoder(JSONCodec{}))
+func testWithRedisURL_SetGet_Success(t *testing.T, cb func(), opts ...objcache.Option) {
+	p, err := objcache.NewService(opts...)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer func() {
-		if err := p.Close(); err != nil {
-			t.Fatal(err)
-		}
+		assert.NoError(t, p.Close())
 	}()
 
 	key := strs.RandAlnum(30)
-
-	if err := p.Set(context.TODO(), objcache.NewItem(key, math.Pi)); err != nil {
+	itm := objcache.NewItem(key, math.Pi)
+	itm.Expiration = 1 // expires in seconds
+	if err := p.Set(context.TODO(), itm); err != nil {
 		t.Fatalf("Key %q Error: %s", key, err)
 	}
 
 	var newVal float64
-	if err := p.Get(context.TODO(), objcache.NewItem(key, &newVal)); err != nil {
-		t.Fatalf("Key %q Error: %s", key, err)
-	}
+	err = p.Get(context.TODO(), objcache.NewItem(key, &newVal))
+	assert.NoError(t, err, "%+v", err)
 	assert.Exactly(t, math.Pi, newVal)
+
+	cb()
+
+	newVal = 0
+	err = p.Get(context.TODO(), objcache.NewItem(key, &newVal))
+	assert.True(t, errors.NotFound.Match(err), "%+v", err)
 }
 
 func TestWithRedisURL_Get_NotFound_Mock(t *testing.T) {

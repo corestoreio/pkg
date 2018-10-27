@@ -112,7 +112,7 @@ func (mc *mapCache) Get(_ context.Context, keys []string) (values [][]byte, err 
 	mc.RLock()
 	defer mc.RUnlock()
 	for _, key := range keys {
-		if v, ok := mc.items[key]; ok && (v.expiration == 0 || (now().Unix() > v.expiration)) {
+		if v, ok := mc.items[key]; ok && (v.expiration == 0 || (now().Unix() <= v.expiration)) {
 			values = append(values, []byte(v.value))
 		} else {
 			return nil, ErrKeyNotFound(key)

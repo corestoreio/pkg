@@ -20,6 +20,7 @@ import (
 	"io"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/assert"
@@ -43,7 +44,9 @@ func (c JSONCodec) NewDecoder(r io.Reader) Decoder {
 	return json.NewDecoder(r)
 }
 
-func TestWithSimpleSlowCacheMap(t *testing.T) {
+func TestWithSimpleSlowCacheMap_Expires(t *testing.T) {
+	t.Parallel()
+
 	p, err := NewService(WithPooledEncoder(JSONCodec{}), WithSimpleSlowCacheMap())
 	assert.NoError(t, err)
 	defer assert.NoError(t, p.Close())
@@ -51,5 +54,23 @@ func TestWithSimpleSlowCacheMap(t *testing.T) {
 	t.Run("key not found", func(t *testing.T) {
 		err := p.Get(context.TODO(), NewItem("upppsss", nil))
 		assert.True(t, errors.NotFound.Match(err), "should have kind not found, but got: %+v", err)
+	})
+
+	t.Run("key expires", func(t *testing.T) {
+
+		itm := NewItem("keyEx", 3.14159)
+		itm.Expiration = 1 // one second
+
+		err := p.Set(context.TODO(), itm)
+		assert.NoError(t, err)
+		var f float64
+		itm.Object = &f
+		err = p.Get(context.TODO(), itm)
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, 3.14159, f)
+		time.Sleep(time.Second * 2)
+
+		err = p.Get(context.TODO(), itm)
+		assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	})
 }
