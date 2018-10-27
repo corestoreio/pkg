@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build bigcache redis csall
+// +build bigcache redis gob csall
 
 package objcache_test
 
@@ -20,6 +20,8 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"io"
+	"os"
+	"testing"
 
 	"github.com/corestoreio/pkg/storage/objcache"
 )
@@ -46,4 +48,19 @@ func (c gobCodec) NewEncoder(w io.Writer) objcache.Encoder {
 
 func (c gobCodec) NewDecoder(r io.Reader) objcache.Decoder {
 	return gob.NewDecoder(r)
+}
+
+func TestWithSimpleSlowCacheMap_Delete(t *testing.T) {
+	t.Parallel()
+	newTestServiceDelete(t, objcache.WithSimpleSlowCacheMap())
+}
+
+func lookupRedisEnv(t testing.TB) string {
+	redConURL := os.Getenv("CS_REDIS_TEST")
+	if redConURL == "" {
+		t.Skip(`Skipping live test because environment CS_REDIS_TEST variable not found.
+	export CS_REDIS_TEST="redis://127.0.0.1:6379/?db=3"
+		`)
+	}
+	return redConURL
 }

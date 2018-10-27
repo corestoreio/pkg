@@ -15,9 +15,14 @@
 package objcache
 
 import (
+	"context"
+	"encoding/json"
+	"io"
 	"sort"
+	"testing"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var (
@@ -25,3 +30,26 @@ var (
 	_ errors.Kinder  = (*ErrKeyNotFound)(nil)
 	_ error          = (*ErrKeyNotFound)(nil)
 )
+
+var _ Codecer = (*JSONCodec)(nil)
+
+type JSONCodec struct{}
+
+func (c JSONCodec) NewEncoder(w io.Writer) Encoder {
+	return json.NewEncoder(w)
+}
+
+func (c JSONCodec) NewDecoder(r io.Reader) Decoder {
+	return json.NewDecoder(r)
+}
+
+func TestWithSimpleSlowCacheMap(t *testing.T) {
+	p, err := NewService(WithPooledEncoder(JSONCodec{}), WithSimpleSlowCacheMap())
+	assert.NoError(t, err)
+	defer assert.NoError(t, p.Close())
+
+	t.Run("key not found", func(t *testing.T) {
+		err := p.Get(context.TODO(), NewItem("upppsss", nil))
+		assert.True(t, errors.NotFound.Match(err), "should have kind not found, but got: %+v", err)
+	})
+}

@@ -26,6 +26,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/storage/objcache"
 	"github.com/corestoreio/pkg/util/assert"
 )
@@ -33,6 +34,7 @@ import (
 var _ io.Closer = (*objcache.Service)(nil)
 
 func TestNewProcessor_EncoderError(t *testing.T) {
+	t.Parallel()
 	p, err := objcache.NewService(objcache.WithPooledEncoder(gobCodec{}), objcache.WithSimpleSlowCacheMap())
 	assert.NoError(t, err)
 
@@ -43,6 +45,56 @@ func TestNewProcessor_EncoderError(t *testing.T) {
 	}
 	err = p.Set(context.TODO(), objcache.NewItem("key1", ch))
 	assert.EqualError(t, err, "[objcache] With key \"key1\" and dst type struct { ErrChan chan error }: gob: type struct { ErrChan chan error } has no exported fields", "Error: %s", err)
+}
+
+type myString struct {
+	data string
+	err  error
+}
+
+func (ms *myString) Unmarshal(data []byte) error {
+	ms.data = string(data)
+	return ms.err
+}
+func (ms *myString) Marshal() ([]byte, error) {
+	return []byte(ms.data), ms.err
+}
+
+func TestService_Marshal_Unmarshal(t *testing.T) {
+	p, err := objcache.NewService(objcache.WithPooledEncoder(gobCodec{}), objcache.WithSimpleSlowCacheMap())
+	assert.NoError(t, err)
+	defer assert.NoError(t, p.Close())
+
+	t.Run("marshal error", func(t *testing.T) {
+		dErr := &myString{err: errors.BadEncoding.Newf("Bad encoding")}
+		err := p.Set(context.TODO(), objcache.NewItem("dErr", dErr))
+		assert.True(t, errors.BadEncoding.Match(err), "%+v", err)
+	})
+	t.Run("unmarshal error", func(t *testing.T) {
+		err := p.Set(context.TODO(), objcache.NewItem("dErr", 1))
+		assert.NoError(t, err)
+		dErr := &myString{err: errors.BadEncoding.Newf("Bad encoding")}
+		err = p.Get(context.TODO(), objcache.NewItem("dErr", dErr))
+		assert.True(t, errors.BadEncoding.Match(err), "%+v", err)
+	})
+
+	t.Run("success", func(t *testing.T) {
+
+		d1 := &myString{data: "HelloWorld"}
+		d2 := &myString{data: "HalloWelt"}
+		i1, i2 := objcache.NewItem("d1", d1), objcache.NewItem("d2", d2)
+
+		err = p.Set(context.TODO(), i1, i2)
+		assert.NoError(t, err)
+
+		d1.data = ""
+		d2.data = ""
+		err = p.Get(context.TODO(), i1, i2)
+		assert.NoError(t, err)
+
+		assert.Exactly(t, "HelloWorld", d1.data)
+		assert.Exactly(t, "HalloWelt", d2.data)
+	})
 }
 
 const iterations = 30
@@ -237,4 +289,52 @@ func newTestNewProcessor(t *testing.T, opts ...objcache.Option) {
 	go testCountry(t, &wg, p, "country_three")
 
 	wg.Wait()
+}
+
+func newTestServiceDelete(t *testing.T, opts ...objcache.Option) {
+
+	p, err := objcache.NewService(append(opts, objcache.WithEncoder(JSONCodec{}))...)
+	assert.NoError(t, err)
+	defer func() { assert.NoError(t, p.Close()) }()
+
+	t.Run("single key", func(t *testing.T) {
+		err = p.Set(context.TODO(), objcache.NewItem("bc_delete", 1970))
+		assert.NoError(t, err)
+
+		var bcInt int
+		err = p.Get(context.TODO(), objcache.NewItem("bc_delete", &bcInt))
+		assert.NoError(t, err)
+		assert.Exactly(t, 1970, bcInt)
+
+		err = p.Delete(context.TODO(), "bc_delete")
+		assert.NoError(t, err)
+
+		bcInt = 0
+		err = p.Get(context.TODO(), objcache.NewItem("bc_delete", &bcInt))
+		assert.True(t, errors.NotFound.Match(err), "%+v", err)
+		assert.Exactly(t, 0, bcInt)
+	})
+
+	t.Run("multiple keys", func(t *testing.T) {
+		err = p.Set(context.TODO(), objcache.NewItem("bc_delete1", 1971), objcache.NewItem("bc_delete2", 1972))
+		assert.NoError(t, err)
+
+		var bcInt1 int
+		var bcInt2 int
+		err = p.Get(context.TODO(), objcache.NewItem("bc_delete1", &bcInt1), objcache.NewItem("bc_delete2", &bcInt2))
+		assert.NoError(t, err, "\n%+v", err)
+		assert.Exactly(t, 1971, bcInt1)
+		assert.Exactly(t, 1972, bcInt2)
+
+		err = p.Delete(context.TODO(), "bc_delete1", "bc_delete2")
+		assert.NoError(t, err)
+
+		bcInt1 = 0
+		bcInt2 = 0
+		err = p.Get(context.TODO(), objcache.NewItem("bc_delete1", &bcInt1), objcache.NewItem("bc_delete2", &bcInt2))
+		assert.True(t, errors.NotFound.Match(err), "%+v", err)
+		assert.Exactly(t, 0, bcInt1)
+		assert.Exactly(t, 0, bcInt2)
+	})
+
 }

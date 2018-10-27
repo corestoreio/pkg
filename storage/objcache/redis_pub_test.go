@@ -27,10 +27,10 @@ import (
 	"github.com/corestoreio/pkg/storage/objcache"
 	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/strs"
-	"github.com/garyburd/redigo/redis"
+	"github.com/gomodule/redigo/redis"
 )
 
-func TestRedis_SetGet_Success_Live(t *testing.T) {
+func TestWithRedisURL_SetGet_Success_Live(t *testing.T) {
 	t.Parallel()
 
 	mr := miniredis.NewMiniRedis()
@@ -62,7 +62,7 @@ func TestRedis_SetGet_Success_Live(t *testing.T) {
 	assert.Exactly(t, math.Pi, newVal)
 }
 
-func TestRedis_SetGet_Success_Mock(t *testing.T) {
+func TestWithRedisURL_SetGet_Success_Mock(t *testing.T) {
 	t.Parallel()
 
 	mr := miniredis.NewMiniRedis()
@@ -94,7 +94,7 @@ func TestRedis_SetGet_Success_Mock(t *testing.T) {
 	assert.Exactly(t, math.Pi, newVal)
 }
 
-func TestRedis_Get_NotFound_Mock(t *testing.T) {
+func TestWithRedisURL_Get_NotFound_Mock(t *testing.T) {
 	t.Parallel()
 
 	mr := miniredis.NewMiniRedis()
@@ -111,12 +111,11 @@ func TestRedis_Get_NotFound_Mock(t *testing.T) {
 
 	var newVal float64
 	err = p.Get(context.TODO(), objcache.NewItem(key, &newVal))
-	assert.NoError(t, err, "%+v", err)
-	// assert.True(t, errors.NotFound.Match(err), "Error: %+v", err)
+	assert.True(t, errors.NotFound.Match(err), "Error: %+v", err)
 	assert.Empty(t, newVal)
 }
 
-func TestRedisURL_ConFailure_Dial(t *testing.T) {
+func TestWithRedisURLURL_ConFailure_Dial(t *testing.T) {
 	t.Parallel()
 
 	p, err := objcache.NewService(objcache.WithRedisClient(&redis.Pool{
@@ -126,7 +125,7 @@ func TestRedisURL_ConFailure_Dial(t *testing.T) {
 	assert.True(t, p == nil, "p is not nil")
 }
 
-func TestRedisURL_ConFailure(t *testing.T) {
+func TestWithRedisURL_ConFailure(t *testing.T) {
 	t.Parallel()
 
 	var dialErrors = []struct {
@@ -169,10 +168,23 @@ func TestRedisURL_ConFailure(t *testing.T) {
 
 }
 
-func TestRedis_Parallel_GetSet(t *testing.T) {
+func TestWithRedisURL_Parallel_GetSet(t *testing.T) {
 	mr := miniredis.NewMiniRedis()
 	assert.NoError(t, mr.Start())
 	defer mr.Close()
-	redConURL := fmt.Sprintf("redis://%s/2", mr.Addr())
+	redConURL := fmt.Sprintf("redis://%s/?db=2", mr.Addr())
 	newTestNewProcessor(t, objcache.WithRedisURL(redConURL))
+}
+
+func TestWithRedisURLMock_Delete(t *testing.T) {
+	mr := miniredis.NewMiniRedis()
+	assert.NoError(t, mr.Start())
+	defer mr.Close()
+	redConURL := fmt.Sprintf("redis://%s/?db=2", mr.Addr())
+	newTestServiceDelete(t, objcache.WithRedisURL(redConURL))
+}
+
+func TestWithRedisURLReal_Delete(t *testing.T) {
+	redConURL := lookupRedisEnv(t)
+	newTestServiceDelete(t, objcache.WithRedisURL(redConURL))
 }

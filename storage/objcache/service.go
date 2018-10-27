@@ -59,10 +59,13 @@ type Decoder interface {
 // Service handles the encoding, decoding and caching.
 type Service struct {
 	// Cache exported to allow easy debugging and access to raw values.
-	cache map[int]Storager // read/write randomly from/to a storage
-	codec Codecer
+	cache             map[int]Storager // read/write randomly from/to a storage
+	codec             Codecer
+	defaultExpiration time.Duration // TODO implement
+	// sync.Pool of *Item
 }
 
+// Items a list of multiple *Item and a preset Codecer.
 type Items struct {
 	items []*Item
 	codec Codecer
@@ -76,6 +79,7 @@ func newItems(i []*Item, c Codecer) *Items {
 	}
 }
 
+// Item defines a single cache entry with options like cache expiration.
 type Item struct {
 	Key string
 	// Object is a pointer to the current type.
@@ -84,6 +88,7 @@ type Item struct {
 	// More fields will follow
 }
 
+// NewItem creates a new item pointer.
 func NewItem(key string, object interface{}) *Item {
 	return &Item{
 		Key:    key,
@@ -91,52 +96,58 @@ func NewItem(key string, object interface{}) *Item {
 	}
 }
 
-func (m *Item) encode(c Codecer, w io.Writer) error {
+func (m *Item) encode(c Codecer, w io.Writer) (err error) {
 	switch ot := m.Object.(type) {
 	case marshaler:
-		data, err := ot.Marshal()
-		if err != nil {
-			return errors.Wrapf(err, "[objcache] With key %q and dst type %T", m.Key, m.Object)
+		data, err2 := ot.Marshal()
+		if err2 != nil {
+			return errors.Wrapf(err2, "[objcache] With key %q and dst type %T", m.Key, m.Object)
 		}
 		_, err = w.Write(data)
-		return err
 	default:
 		enc := c.NewEncoder(w)
 		pc, ok := c.(*pooledCodec)
-		err := enc.Encode(m.Object)
+		err = enc.Encode(m.Object)
 		if ok {
 			pc.PutEncoder(enc)
 		}
+		if err == io.EOF {
+			err = nil
+		}
 		if err != nil {
-			return errors.Wrapf(err, "[objcache] With key %q and dst type %T", m.Key, m.Object) // saves an allocation ;-)
+			err = errors.Wrapf(err, "[objcache] With key %q and dst type %T", m.Key, m.Object) // saves an allocation ;-)
 		}
 	}
-	return nil
+	return err
 }
 
-func (m *Item) decode(c Codecer, data []byte) error {
-	if unm, ok := m.Object.(unmarshaler); ok {
-		if err := unm.Unmarshal(data); err != nil {
+func (m *Item) decode(c Codecer, data []byte) (err error) {
+	switch ot := m.Object.(type) {
+	case unmarshaler:
+		if err = ot.Unmarshal(data); err != nil {
 			return errors.Wrapf(err, "[objcache] With key %q and dst type %T", m.Key, m.Object)
 		}
-		return nil
+	default:
+		r := bytes.NewReader(data)
+		dec := c.NewDecoder(r)
+		pc, ok := c.(*pooledCodec)
+		err = dec.Decode(m.Object)
+		if ok {
+			pc.PutDecoder(dec)
+		}
+		if err == io.EOF {
+			err = nil
+		}
+		if err != nil {
+			err = errors.Wrapf(err, "[objcache] With key %q and dst type %T", m.Key, m.Object) // saves an allocation ;-)
+		}
 	}
-
-	r := bytes.NewReader(data)
-	dec := c.NewDecoder(r)
-	pc, ok := c.(*pooledCodec)
-	err := dec.Decode(m.Object)
-	if ok {
-		pc.PutDecoder(dec)
-	}
-	if err != nil && err != io.EOF {
-		return errors.Wrapf(err, "[objcache] With key %q and dst type %T", m.Key, m.Object) // saves an allocation ;-)
-	}
-	return nil
+	return err
 }
 
-// Encode encodes all items to they byte slice representation. Returns two slices whose indexes
-// match to the other. The data might be appended to the optional arguments `keys` and `values`
+// Encode encodes all items to their byte slice representation. Returns two
+// slices whose indexes match to the other. The data might be appended to the
+// optional arguments `keys` and `values`.
 func (ms *Items) Encode(keys []string, values [][]byte) (_keys []string, _values [][]byte, err error) {
 	if keys == nil {
 		keys = make([]string, 0, len(ms.items))
@@ -175,10 +186,7 @@ func (ms *Items) Keys(keys ...string) []string {
 	return keys
 }
 
-// NewService creates a new type with no default cache instance and no
-// encoder. You must set a caching service or it panics please see the sub
-// packages objcache, tcbolddb and objcache. You must also set an encoder,
-// which is not optional ;-)
+// NewService creates a new cache service.
 func NewService(opts ...Option) (*Service, error) {
 	p := &Service{
 		cache: make(map[int]Storager, 6),
@@ -198,17 +206,18 @@ type marshaler interface {
 	Marshal() ([]byte, error)
 }
 
-// Set sets the type src with a key. Src gets either encoded using the
-// previously applied encoder OR `src` gets checked if it implements interface
+// Set sets the item in the cache. `items` gets either encoded using the
+// previously applied encoder OR each item of the `items` slice gets checked if
+// it implements interface
 //		type marshaler interface {
 //			Marshal() ([]byte, error)
 //		}
 // and calls `Marshal`. Checking for marshaler has precedence. Useful with
-// protobuf.
+// protobuf. The argument `items` allows a cache backend to write multiple items
+// to its cache with one connection. E.g. Redis MGET/MSET.
 func (tr *Service) Set(ctx context.Context, items ...*Item) error {
 	itms := newItems(items, tr.codec)
 	for _, c := range tr.cache {
-
 		if err := c.Set(ctx, itms); err != nil {
 			return errors.WithStack(err)
 		}
@@ -224,14 +233,16 @@ type unmarshaler interface {
 	Unmarshal([]byte) error
 }
 
-// Get looks up the key and parses the raw data into the destination pointer
+// Get looks up the items and parses the raw data into the destination pointer
 // `dst`. If `dst` implements interface
 //		type unmarshaler interface {
 // 			Unmarshal([]byte) error
 //		}
 // the Unmarshal gets called. This type check has precedence before the decoder.
 // You have to check yourself if the returned error is of type NotFound or of
-// any other source. Every caching type defines its own NotFound error.
+// any other source. Every caching type defines its own NotFound error. The
+// argument `items` allows a cache backend to read multiple items at once, e.g.
+// Redis MGET/MSET.
 func (tr *Service) Get(ctx context.Context, items ...*Item) error {
 	itms := newItems(items, tr.codec)
 	keys := itms.Keys()
@@ -243,11 +254,12 @@ func (tr *Service) Get(ctx context.Context, items ...*Item) error {
 		if err := itms.decode(vals); err != nil {
 			return errors.WithStack(err)
 		}
+		return nil // TODO implement a better cache selection algorithm
 	}
 	return nil
 }
 
-// Delete removes a key from the storage.
+// Delete removes keys from the storage.
 func (tr *Service) Delete(ctx context.Context, key ...string) (err error) {
 	for _, c := range tr.cache {
 		if err := c.Delete(ctx, key); err != nil {

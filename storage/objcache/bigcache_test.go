@@ -56,7 +56,7 @@ func TestProcessor_Parallel_GetSet_BigCache(t *testing.T) {
 	newTestNewProcessor(t, objcache.WithBigCache(bigcache.Config{}))
 }
 
-func TestNewProcessor_DecoderError(t *testing.T) {
+func TestWithBigCache_DecoderError(t *testing.T) {
 	p, err := objcache.NewService(objcache.WithPooledEncoder(gobCodec{}), objcache.WithBigCache(bigcache.Config{}))
 	if err != nil {
 		t.Fatal(err)
@@ -76,15 +76,18 @@ func TestNewProcessor_DecoderError(t *testing.T) {
 	assert.EqualError(t, err, "[objcache] With key \"key1\" and dst type *struct { Val2 string }: gob: type mismatch: no fields matched compiling decoder for ", "Error: %s", err)
 }
 
-func TestNewProcessor_GetError(t *testing.T) {
+func TestWithBigCache_GetError(t *testing.T) {
 	p, err := objcache.NewService(objcache.WithPooledEncoder(JSONCodec{}), objcache.WithBigCache(bigcache.Config{}))
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 	key := "key1"
 	var ch struct {
 		ErrChan string
 	}
 	err = p.Get(context.TODO(), objcache.NewItem(key, ch))
 	assert.True(t, errors.NotFound.Match(err), "Error: %s", err)
+}
+
+func TestWithBigCache_Delete(t *testing.T) {
+	t.Parallel()
+	newTestServiceDelete(t, objcache.WithBigCache(bigcache.Config{}))
 }

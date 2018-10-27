@@ -130,5 +130,5 @@ func (e ErrKeyNotFound) ErrorKind() errors.Kind {
 	return errors.NotFound
 }
 func (e ErrKeyNotFound) Error() string {
-	return fmt.Sprintf("[objcache] Key %q not found", e)
+	return fmt.Sprintf("[objcache] Key %q not found", string(e))
 }

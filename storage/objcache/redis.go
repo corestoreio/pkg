@@ -18,19 +18,18 @@ package objcache
 
 import (
 	"context"
+	gourl "net/url"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/net/url"
-	"github.com/garyburd/redigo/redis"
+	"github.com/gomodule/redigo/redis"
 )
 
-// WithRedisClient connects to the Redis server. Set ping to true to check if the
+// WithRedisClient connects to the Redis server and does a ping to check if the
 // connection works correctly.
-//
-// For options see: https://godoc.org/gopkg.in/redis.v3#Options
 func WithRedisClient(pool *redis.Pool) Option {
 	return Option{
 		sortOrder: 1,
@@ -46,7 +45,33 @@ func WithRedisClient(pool *redis.Pool) Option {
 	}
 }
 
-// WithRedisURL connects to a Redis server at the given URL using the Redis URI
+func parseDuration(keys []string, ds []*time.Duration, params gourl.Values) (err error) {
+	i := 0
+	for ; i < len(keys) && err == nil; i++ {
+		if p := params.Get(keys[i]); p != "" {
+			*(ds[i]), err = time.ParseDuration(p)
+		}
+	}
+	if err != nil {
+		err = errors.NotValid.New(err, "[objcache] WithRedisURL Parameter %q with value %q is invalid", keys[i], params.Get(keys[i]))
+	}
+	return err
+}
+
+func parseInt(keys []string, ds []*int, params gourl.Values) (err error) {
+	i := 0
+	for ; i < len(keys) && err == nil; i++ {
+		if p := params.Get(keys[i]); p != "" {
+			*(ds[i]), err = strconv.Atoi(p)
+		}
+	}
+	if err != nil {
+		err = errors.NotValid.New(err, "[objcache] WithRedisURL Parameter %q with value %q is invalid", keys[i], params.Get(keys[i]))
+	}
+	return err
+}
+
+// WithRedisURL connects to a Redis server at the given URL using the HTTP URI
 // scheme. URLs should follow the draft IANA specification for the scheme
 // (https://www.iana.org/assignments/uri-schemes/prov/redis). This option
 // function sets the connection as cache backend to the Service.
@@ -55,52 +80,62 @@ func WithRedisClient(pool *redis.Pool) Option {
 // for now.
 //
 // For example:
-// 		redis://localhost:6379/3
-// 		redis://localhost:6379/?max_active=50&max_idle=5&idle_timeout=10s
+// 		redis://localhost:6379/?db=3
+// 		redis://localhost:6379/?max_active=50&max_idle=5&idle_timeout=10s&max_conn_lifetime=1m
 func WithRedisURL(rawURL string) Option {
 	return Option{
 		sortOrder: 2,
-		fn: func(p *Service) error {
-
-			addr, _, pw, params, err := url.ParseConnection(rawURL)
+		fn: func(p *Service) (err error) {
+			addr, _, password, params, err := url.ParseConnection(rawURL)
 			if err != nil {
-				return errors.Wrapf(err, "[backend] Redis error parsing URL %q", rawURL)
+				return errors.Wrapf(err, "[objcache] Redis error parsing URL %q", rawURL)
 			}
-			maxActive, err := strconv.Atoi(params.Get("max_active"))
-			if err != nil {
-				return errors.Wrapf(err, "[backend] NewRedis.ParseNoSQLURL. Parameter max_active not valid in %q", rawURL)
-			}
-			maxIdle, err := strconv.Atoi(params.Get("max_idle"))
-			if err != nil {
-				return errors.NotValid.New(err, "[backend] NewRedis.ParseNoSQLURL. Parameter max_idle not valid in %q", rawURL)
-			}
-			idleTimeout, err := time.ParseDuration(params.Get("idle_timeout"))
-			if err != nil {
-				return errors.NotValid.New(err, "[backend] NewRedis.ParseNoSQLURL. Parameter idle_timeout not valid in %q", rawURL)
-			}
-
 			pool := &redis.Pool{
-				MaxActive:   maxActive,
-				MaxIdle:     maxIdle,
-				IdleTimeout: idleTimeout,
 				Dial: func() (redis.Conn, error) {
 					c, err := redis.Dial("tcp", addr)
 					if err != nil {
-						return nil, errors.Fatal.New(err, "[backend] Redis Dial failed")
+						return nil, errors.Fatal.New(err, "[objcache] Redis Dial failed")
 					}
-					if pw != "" {
-						if _, err := c.Do("AUTH", pw); err != nil {
+					if password != "" {
+						if _, err := c.Do("AUTH", password); err != nil {
 							c.Close()
-							return nil, errors.Unauthorized.New(err, "[backend] Redis AUTH failed")
+							return nil, errors.Unauthorized.New(err, "[objcache] Redis AUTH failed")
 						}
 					}
 					if _, err := c.Do("SELECT", params.Get("db")); err != nil {
 						c.Close()
-						return nil, errors.Fatal.New(err, "[backend] Redis DB select failed")
+						return nil, errors.Fatal.New(err, "[objcache] Redis DB select failed")
 					}
 					return c, nil
 				},
 			}
+
+			// add some more params if missing
+			err = parseDuration([]string{
+				"max_conn_lifetime",
+				"idle_timeout",
+			}, []*time.Duration{
+				&pool.MaxConnLifetime,
+				&pool.IdleTimeout,
+			}, params)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
+			err = parseInt([]string{
+				"max_idle",
+				"max_active",
+			}, []*int{
+				&pool.MaxIdle,
+				&pool.MaxActive,
+			}, params)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
+			// if params.Get("tls") == "1" {
+			// 	o.TLSConfig = &tls.Config{ServerName: o.Addr} // TODO check if might be wrong the Addr,
+			// }
 
 			return WithRedisClient(pool).fn(p)
 		},
@@ -108,7 +143,7 @@ func WithRedisURL(rawURL string) Option {
 }
 
 func doPing(w redisWrapper) error {
-	if !w.ping || w.Pool == nil {
+	if !w.ping {
 		return nil
 	}
 	conn := w.Pool.Get()
@@ -116,10 +151,10 @@ func doPing(w redisWrapper) error {
 
 	pong, err := redis.String(conn.Do("PING"))
 	if err != nil && err != redis.ErrNil {
-		return errors.Fatal.Newf("[backend] Redis Ping failed: %s", err)
+		return errors.Fatal.Newf("[objcache] Redis Ping failed: %s", err)
 	}
 	if pong != "PONG" {
-		return errors.ConnectionFailed.Newf("[backend] Redis Ping not Pong: %#v", pong)
+		return errors.ConnectionFailed.Newf("[objcache] Redis Ping not Pong: %#v", pong)
 	}
 	return nil
 }
@@ -142,37 +177,73 @@ type redisWrapper struct {
 	// ifp  *sync.Pool
 }
 
-func (w redisWrapper) Set(_ context.Context, items *Items) error {
+func (w redisWrapper) Set(_ context.Context, items *Items) (err error) {
 	conn := w.Pool.Get()
-	defer conn.Close()
+	defer func() {
+		if err2 := conn.Close(); err == nil && err2 != nil {
+			err = err2
+		}
+	}()
 
-	keys, values, err := items.Encode(nil, nil)
-	if err != nil {
-		return errors.WithStack(err)
+	keys, values, err2 := items.Encode(nil, nil)
+	if err2 != nil {
+		err = errors.WithStack(err2)
+		return
+	}
+	// TODO honor expiration
+	args := make([]interface{}, 0, len(keys)*2)
+	for i, key := range keys {
+		args = append(args, key, values[i])
 	}
 
-	if _, err := conn.Do("MSET", byteSliceToIFaces(strSliceToIFaces(nil, keys), values)...); err != nil {
-		return errors.Wrapf(err, "[objcache] With keys %v", keys)
+	if _, err2 := conn.Do("MSET", args...); err2 != nil {
+		err = errors.Wrapf(err2, "[objcache] With keys %v", keys)
+		return
 	}
 
-	return nil
+	return err
 }
 
 func (w redisWrapper) Get(_ context.Context, keys []string) (values [][]byte, err error) {
 	conn := w.Pool.Get()
-	defer conn.Close()
+	defer func() {
+		if err2 := conn.Close(); err == nil && err2 != nil {
+			err = err2
+		}
+	}()
+
+	if len(keys) == 1 {
+		var val []byte
+		val, err = redis.Bytes(conn.Do("GET", keys[0]))
+		if err != nil {
+			if err == redis.ErrNil {
+				err = ErrKeyNotFound(keys[0])
+			} else {
+				err = errors.Wrapf(err, "[objcache] With keys %v", keys)
+			}
+		} else {
+			values = append(values, val)
+		}
+		return
+	}
+
 	// TODO optimize for length==1
 	values, err = redis.ByteSlices(conn.Do("MGET", strSliceToIFaces(nil, keys)...))
 	if err != nil {
-		if err != redis.ErrNil {
-			return nil, errors.Wrapf(err, "[objcache] With keys %v", keys)
-		}
-		return nil, ErrKeyNotFound(strings.Join(keys, ", "))
+		err = errors.Wrapf(err, "[objcache] With keys %v", keys)
+		return
 	}
 	if lk, lv := len(keys), len(values); lk != lv {
-		return nil, ErrKeyNotFound(strings.Join(keys, ", "))
+		err = ErrKeyNotFound(strings.Join(keys, ", "))
+		return
 	}
-	return values, nil
+	for i, key := range keys {
+		if values[i] == nil {
+			err = ErrKeyNotFound(key)
+			return
+		}
+	}
+	return
 }
 
 func strSliceToIFaces(ret []interface{}, sl []string) []interface{} {
@@ -186,21 +257,15 @@ func strSliceToIFaces(ret []interface{}, sl []string) []interface{} {
 	return ret
 }
 
-func byteSliceToIFaces(ret []interface{}, sl [][]byte) []interface{} {
-	if ret == nil {
-		ret = make([]interface{}, 0, len(sl))
-	}
-	for _, s := range sl {
-		ret = append(ret, s)
-	}
-	return ret
-}
-
-func (w redisWrapper) Delete(_ context.Context, keys []string) error {
+func (w redisWrapper) Delete(_ context.Context, keys []string) (err error) {
 	conn := w.Pool.Get()
-	defer conn.Close()
-	if _, err := conn.Do("DEL", strSliceToIFaces(nil, keys)...); err != nil {
-		return errors.Wrapf(err, "[objcache] With keys %v", keys)
+	defer func() {
+		if err2 := conn.Close(); err == nil && err2 != nil {
+			err = err2
+		}
+	}()
+	if _, err = conn.Do("DEL", strSliceToIFaces(nil, keys)...); err != nil {
+		err = errors.Wrapf(err, "[objcache] With keys %v", keys)
 	}
-	return nil
+	return
 }
