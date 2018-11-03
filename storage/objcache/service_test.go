@@ -21,16 +21,25 @@ import (
 	"github.com/corestoreio/pkg/util/assert"
 )
 
-func withError() Option {
-	return Option{
-		fn: func(p *Service) error {
-			return errors.NotImplemented.Newf("What?")
-		},
-	}
-}
-
 func TestNewProcessor_NewError(t *testing.T) {
-	p, err := NewService(withError())
-	assert.Nil(t, p)
-	assert.True(t, errors.NotImplemented.Match(err), "Error: %s", err)
+
+	t.Run("level1 error", func(t *testing.T) {
+		p, err := NewService(
+			func() (Storager, error) { return nil, errors.NotImplemented.Newf("ups") },
+			NewBlackHoleClient(nil),
+			nil,
+		)
+		assert.Nil(t, p)
+		assert.True(t, errors.NotImplemented.Match(err), "Error: %s", err)
+	})
+
+	t.Run("level2 error", func(t *testing.T) {
+		p, err := NewService(
+			NewBlackHoleClient(nil),
+			func() (Storager, error) { return nil, errors.NotImplemented.Newf("ups") },
+			nil,
+		)
+		assert.Nil(t, p)
+		assert.True(t, errors.NotImplemented.Match(err), "Error: %s", err)
+	})
 }

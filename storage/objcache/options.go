@@ -25,94 +25,57 @@ import (
 
 var now = time.Now
 
-// Option provides convenience helper functions to apply various options while
-// creating a new Service type.
-type Option struct {
-	sortOrder int
-	fn        func(*Service) error
+// ServiceOptions used when creating a NewService.
+type ServiceOptions struct {
+	// Codec optionally encodes and decodes an object. The default "codec"
+	// checks if a type implements Marshal() or Unmarshal() interface or any of
+	// the two interfaces from package "encoding".
+	Codec Codecer
+	// PrimeObjects creates new encoder/decoder with a sync.Pool to reuse the
+	// objects. Setting PrimeObjects causes the encoder/decode to prime the data
+	// which means that no type information will be stored in the cache. If you
+	// use gob you must use still gob.Register() your types. TL;DR: Skips type
+	// information in the cache.
+	PrimeObjects   []interface{}
+	DefaultExpires time.Duration
 }
 
-type options []Option
-
-func (o options) Len() int           { return len(o) }
-func (o options) Less(i, j int) bool { return o[i].sortOrder < o[j].sortOrder }
-func (o options) Swap(i, j int)      { o[i], o[j] = o[j], o[i] }
-
-// WithEncoder sets a custom encoder and decoder.
-func WithEncoder(codec Codecer) Option {
-	return Option{
-		fn: func(p *Service) error {
-			p.codec = codec
-			return nil
-		},
-	}
-}
-
-// WithPooledEncoder creates new encoder/decoder with a sync.Pool to reuse the
-// objects. Providing argument primeObjects causes the encoder/decode to prime
-// the data which means that no type information will be stored in the cache.
-// If you use gob you must use gob.Register() for your types.
-func WithPooledEncoder(codec Codecer, primeObjects ...interface{}) Option {
-	return Option{
-		fn: func(p *Service) error {
-			p.codec = newPooledCodec(codec, primeObjects...)
-			return nil
-		},
-	}
-}
-
-// WithAddStorage sets a custom cache type. Examples in the subpackages.
-func WithAddStorage(c Storager) Option {
-	return Option{
-		fn: func(p *Service) error {
-			p.cache[len(p.cache)+1] = c
-			return nil
-		},
-	}
-}
-
-// WithSimpleSlowCacheMap creates an in-memory map map[string]string as cache
-// backend.
-func WithSimpleSlowCacheMap() Option {
-	return Option{
-		fn: func(p *Service) error {
-			p.cache[len(p.cache)+1] = &mapCache{
-				items: make(map[string]*mapCacheItem),
-			}
-			return nil
-		},
-	}
+// NewCacheSimpleInmemory creates an in-memory map map[string]string as cache
+// backend which supports expiration.
+func NewCacheSimpleInmemory() (Storager, error) {
+	mc := &mapCache{}
+	return mc, nil
 }
 
 type mapCacheItem struct {
 	value      string
-	expiration int64 // unix timestamp seconds
+	expiration time.Time
 }
 
 type mapCache struct {
-	sync.RWMutex
-	items map[string]*mapCacheItem // pointer ... will have a large GC overhead ...
+	items sync.Map
 }
 
-func (mc *mapCache) Set(_ context.Context, keys []string, values [][]byte, expirations []int64) (err error) {
-	mc.Lock()
-	defer mc.Unlock()
-
+func (mc *mapCache) Put(_ context.Context, keys []string, values [][]byte, expirations []time.Duration) (err error) {
+	hasExp := len(expirations) > 0
+	n := now()
 	for i, key := range keys {
-		e := expirations[i]
-		if e > 0 {
-			e = now().Add(time.Second * time.Duration(e)).Unix()
+		var e time.Time
+		if hasExp {
+			if ed := expirations[i]; ed > 0 {
+				e = n.Add(ed)
+			}
 		}
-		mc.items[key] = &mapCacheItem{value: string(values[i]), expiration: e}
+		mc.items.Store(key, &mapCacheItem{value: string(values[i]), expiration: e})
 	}
 	return nil
 }
 
 func (mc *mapCache) Get(_ context.Context, keys []string) (values [][]byte, err error) {
-	mc.RLock()
-	defer mc.RUnlock()
+	n := now()
 	for _, key := range keys {
-		if v, ok := mc.items[key]; ok && (v.expiration == 0 || (now().Unix() <= v.expiration)) {
+		val, ok := mc.items.Load(key)
+		if v, ok2 := val.(*mapCacheItem); ok2 && ok && (v.expiration.IsZero() || v.expiration.After(n)) {
 			values = append(values, []byte(v.value))
 		} else {
 			return nil, ErrKeyNotFound(key)
@@ -122,11 +85,18 @@ func (mc *mapCache) Get(_ context.Context, keys []string) (values [][]byte, err 
 }
 
 func (mc *mapCache) Delete(_ context.Context, keys []string) (err error) {
-	mc.Lock()
-	defer mc.Unlock()
 	for _, key := range keys {
-		delete(mc.items, key)
+		mc.items.Delete(key)
 	}
+	return nil
+}
+func (mc *mapCache) Truncate(ctx context.Context) (err error) {
+	mc.items.Range(func(key, value interface{}) bool {
+		value = nil
+		mc.items.Delete(key)
+		return true
+	})
+	mc.items = sync.Map{}
 	return nil
 }
 func (mc *mapCache) Close() error { return nil }
@@ -141,3 +111,25 @@ func (e ErrKeyNotFound) ErrorKind() errors.Kind {
 func (e ErrKeyNotFound) Error() string {
 	return fmt.Sprintf("[objcache] Key %q not found", string(e))
 }
+
+// NewBlackHoleClient creates a black hole client for testing with the ability
+// to return errors.
+func NewBlackHoleClient(optionalTestErr error) NewStorageFn {
+	return func() (Storager, error) { return blackHole{err: optionalTestErr}, nil }
+}
+
+type blackHole struct {
+	err error
+}
+
+func (mc blackHole) Put(_ context.Context, keys []string, values [][]byte, expirations []time.Duration) (err error) {
+	return mc.err
+}
+
+func (mc blackHole) Get(_ context.Context, keys []string) (values [][]byte, err error) {
+	return nil, mc.err
+}
+
+func (mc blackHole) Delete(_ context.Context, keys []string) (err error) { return mc.err }
+func (mc blackHole) Truncate(ctx context.Context) (err error)            { return mc.err }
+func (mc blackHole) Close() error                                        { return mc.err }

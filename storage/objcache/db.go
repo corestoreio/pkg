@@ -12,15 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package objcache transcodes arbitrary Go types to bytes and stores them in
-// a cache reducing GC.
-//
-// A Cache can be either in memory or a persistent one. Cache adapters are
-// available for bigcache or Redis. To enable the cache adapter use build tags
-// "bigcache" or "redis" or "csall". More cache adapters might follow.
-//
-// Use case: Caching millions of Go types as a byte slice reduces the pressure
-// to the GC.
-//
-// For more details regarding bigcache: https://godoc.org/github.com/allegro/bigcache
+// +build db csall
+
 package objcache
+
+import (
+	"github.com/corestoreio/pkg/sql/dml"
+)
+
+func NewDBClient(db dml.QueryExecPreparer) NewStorageFn {
+	panic("TODO")
+}

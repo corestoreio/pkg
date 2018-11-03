@@ -31,7 +31,7 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
-func TestWithRedisURL_SetGet_Success(t *testing.T) {
+func TestWithRedisURL_PutGet_Success(t *testing.T) {
 	t.Parallel()
 
 	t.Run("miniredis", func(t *testing.T) {
@@ -42,21 +42,21 @@ func TestWithRedisURL_SetGet_Success(t *testing.T) {
 		defer mr.Close()
 		redConURL := "redis://" + mr.Addr()
 
-		testWithRedisURL_SetGet_Success(t, func() {
+		testWithRedisURL_PutGet_Success(t, func() {
 			mr.FastForward(time.Second * 2)
-		}, objcache.WithRedisURL(redConURL), objcache.WithEncoder(JSONCodec{}))
+		}, objcache.WithRedisURL(redConURL), newSrvOpt(JSONCodec{}))
 	})
 
 	t.Run("real redis integration", func(t *testing.T) {
 		redConURL := lookupRedisEnv(t)
-		testWithRedisURL_SetGet_Success(t, func() {
+		testWithRedisURL_PutGet_Success(t, func() {
 			time.Sleep(time.Second * 2)
-		}, objcache.WithRedisURL(redConURL), objcache.WithEncoder(JSONCodec{}))
+		}, objcache.WithRedisURL(redConURL), newSrvOpt(JSONCodec{}))
 	})
 }
 
-func testWithRedisURL_SetGet_Success(t *testing.T, cb func(), opts ...objcache.Option) {
-	p, err := objcache.NewService(opts...)
+func testWithRedisURL_PutGet_Success(t *testing.T, cb func(), level2 objcache.NewStorageFn, so *objcache.ServiceOptions) {
+	p, err := objcache.NewService(nil, level2, so)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,21 +65,19 @@ func testWithRedisURL_SetGet_Success(t *testing.T, cb func(), opts ...objcache.O
 	}()
 
 	key := strs.RandAlnum(30)
-	itm := objcache.NewItem(key, math.Pi)
-	itm.Expiration = 1 // expires in seconds
-	if err := p.Set(context.TODO(), itm); err != nil {
+	if err := p.Put(context.TODO(), key, math.Pi, time.Second); err != nil {
 		t.Fatalf("Key %q Error: %s", key, err)
 	}
 
 	var newVal float64
-	err = p.Get(context.TODO(), objcache.NewItem(key, &newVal))
+	err = p.Get(context.TODO(), key, &newVal)
 	assert.NoError(t, err, "%+v", err)
 	assert.Exactly(t, math.Pi, newVal)
 
 	cb()
 
 	newVal = 0
-	err = p.Get(context.TODO(), objcache.NewItem(key, &newVal))
+	err = p.Get(context.TODO(), key, &newVal)
 	assert.True(t, errors.NotFound.Match(err), "%+v", err)
 }
 
@@ -90,7 +88,7 @@ func TestWithRedisURL_Get_NotFound_Mock(t *testing.T) {
 	assert.NoError(t, mr.Start())
 	defer mr.Close()
 
-	p, err := objcache.NewService(objcache.WithRedisURL("redis://"+mr.Addr()), objcache.WithEncoder(JSONCodec{}))
+	p, err := objcache.NewService(nil, objcache.WithRedisURL("redis://"+mr.Addr()), newSrvOpt(JSONCodec{}))
 	assert.NoError(t, err)
 	defer func() {
 		assert.NoError(t, p.Close())
@@ -99,7 +97,7 @@ func TestWithRedisURL_Get_NotFound_Mock(t *testing.T) {
 	key := strs.RandAlnum(30)
 
 	var newVal float64
-	err = p.Get(context.TODO(), objcache.NewItem(key, &newVal))
+	err = p.Get(context.TODO(), key, &newVal)
 	assert.True(t, errors.NotFound.Match(err), "Error: %+v", err)
 	assert.Empty(t, newVal)
 }
@@ -107,9 +105,9 @@ func TestWithRedisURL_Get_NotFound_Mock(t *testing.T) {
 func TestWithRedisURLURL_ConFailure_Dial(t *testing.T) {
 	t.Parallel()
 
-	p, err := objcache.NewService(objcache.WithRedisClient(&redis.Pool{
+	p, err := objcache.NewService(nil, objcache.NewRedisClient(&redis.Pool{
 		Dial: func() (redis.Conn, error) { return redis.Dial("tcp", "127.0.0.1:53344") }, // random port
-	}), objcache.WithEncoder(JSONCodec{}))
+	}, &objcache.RedisOption{}), newSrvOpt(JSONCodec{}))
 	assert.True(t, errors.Fatal.Match(err), "Error: %s", err)
 	assert.True(t, p == nil, "p is not nil")
 }
@@ -145,7 +143,7 @@ func TestWithRedisURL_ConFailure(t *testing.T) {
 		},
 	}
 	for i, test := range dialErrors {
-		p, err := objcache.NewService(objcache.WithRedisURL(test.rawurl), objcache.WithEncoder(JSONCodec{}))
+		p, err := objcache.NewService(nil, objcache.WithRedisURL(test.rawurl), newSrvOpt(JSONCodec{}))
 		if test.errBhf > 0 {
 			assert.True(t, test.errBhf.Match(err), "Index %d Error %+v", i, err)
 			assert.Nil(t, p, "Index %d", i)
@@ -157,7 +155,7 @@ func TestWithRedisURL_ConFailure(t *testing.T) {
 
 }
 
-func TestWithRedisURL_Parallel_GetSet(t *testing.T) {
+func TestWithRedisURL_Parallel_GetPut(t *testing.T) {
 	mr := miniredis.NewMiniRedis()
 	assert.NoError(t, mr.Start())
 	defer mr.Close()

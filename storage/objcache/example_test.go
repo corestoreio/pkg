@@ -41,68 +41,70 @@ type R struct {
 	Rune rune
 }
 
-func init() {
-	gob.Register(P{})
-	gob.Register(Q{})
-	gob.Register(R{})
-}
-
 // This example shows the basic usage of the package: Create the objcache
 // processor, set some values, get some, re-prime gob, set values get some.
 func ExampleWithPooledEncoder() {
 
+	gob.Register(P{})
+	gob.Register(Q{})
+	gob.Register(R{})
+
 	// Use the gob encoder and prime it with the types.
 	tc, err := objcache.NewService(
+		nil,
+		objcache.NewBigCacheClient(bigcache.Config{}),
 		// Playing around? Try removing P{}, Q{}, R{} from the next line and see what happens.
-		objcache.WithPooledEncoder(gobCodec{}, P{}, Q{}, R{}),
-		objcache.WithBigCache(bigcache.Config{}),
+		&objcache.ServiceOptions{
+			Codec:        gobCodec{},
+			PrimeObjects: []interface{}{P{}, Q{}, R{}},
+		},
 	)
 	if err != nil {
 		log.Fatalf("NewService error: %+v", err)
 	}
 
 	pythagorasKey := `Pythagoras`
-	if err := tc.Set(context.TODO(), objcache.NewItem(pythagorasKey, P{3, 4, 5, "Pythagoras"})); err != nil {
-		log.Fatalf("Set error 1: %+v", err)
+	if err := tc.Put(context.TODO(), pythagorasKey, P{3, 4, 5, "Pythagoras"}, 0); err != nil {
+		log.Fatalf("Put error 1: %+v", err)
 	}
 	treeHouseKey := `TreeHouse`
-	if err := tc.Set(context.TODO(), objcache.NewItem(treeHouseKey, P{1782, 1841, 1922, "Treehouse"})); err != nil {
-		log.Fatalf("Set error 2: %+v", err)
+	if err := tc.Put(context.TODO(), treeHouseKey, P{1782, 1841, 1922, "Treehouse"}, 0); err != nil {
+		log.Fatalf("Put error 2: %+v", err)
 	}
 
 	// Get from cache and print the values. Get operations are called more frequently
-	// than Set operations so we're simulating that with 5 repetitions.
+	// than Put operations so we're simulating that with 5 repetitions.
 	for i := 0; i < 5; i++ {
 		var q Q
-		if err := tc.Get(context.TODO(), objcache.NewItem(pythagorasKey, &q)); err != nil {
+		if err := tc.Get(context.TODO(), pythagorasKey, &q); err != nil {
 			log.Fatalf("Get error 1: %+v", err)
 		}
 		fmt.Printf("%q: {%d, %d}\n", q.Name, *q.X, *q.Y)
 
-		if err := tc.Get(context.TODO(), objcache.NewItem(treeHouseKey, &q)); err != nil {
+		if err := tc.Get(context.TODO(), treeHouseKey, &q); err != nil {
 			log.Fatalf("Get error: %+v", err)
 		}
 		fmt.Printf("%q: {%d, %d}\n", q.Name, *q.X, *q.Y)
 	}
 
 	// We overwrite the previously set values
-	if err := tc.Set(context.TODO(), objcache.NewItem(pythagorasKey, R{"Pythagoras2", 'P'})); err != nil {
-		log.Fatalf("Set error 1: %+v", err)
+	if err := tc.Put(context.TODO(), pythagorasKey, R{"Pythagoras2", 'P'}, 0); err != nil {
+		log.Fatalf("Put error 1: %+v", err)
 	}
-	if err := tc.Set(context.TODO(), objcache.NewItem(treeHouseKey, R{"Treehouse2", 'T'})); err != nil {
-		log.Fatalf("Set error 2: %+v", err)
+	if err := tc.Put(context.TODO(), treeHouseKey, R{"Treehouse2", 'T'}, 0); err != nil {
+		log.Fatalf("Put error 2: %+v", err)
 	}
 
 	// Get from cache and print the values. Get operations are called more frequently
-	// than Set operations so we're simulating that with 5 repetitions.
+	// than Put operations so we're simulating that with 5 repetitions.
 	for i := 0; i < 5; i++ {
 		var r R
-		if err := tc.Get(context.TODO(), objcache.NewItem(pythagorasKey, &r)); err != nil {
+		if err := tc.Get(context.TODO(), pythagorasKey, &r); err != nil {
 			log.Fatalf("Get error 3: %+v", err)
 		}
 		fmt.Printf("%q: {%d}\n", r.Name, r.Rune)
 
-		if err := tc.Get(context.TODO(), objcache.NewItem(treeHouseKey, &r)); err != nil {
+		if err := tc.Get(context.TODO(), treeHouseKey, &r); err != nil {
 			log.Fatalf("Get error: %+v", err)
 		}
 		fmt.Printf("%q: {%d}\n", r.Name, r.Rune)

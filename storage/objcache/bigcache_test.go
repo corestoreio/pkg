@@ -28,36 +28,36 @@ import (
 )
 
 func TestWithBigCache_Success(t *testing.T) {
-	p, err := objcache.NewService(objcache.WithBigCache(bigcache.Config{}), objcache.WithEncoder(JSONCodec{}))
+	p, err := objcache.NewService(nil, objcache.NewBigCacheClient(bigcache.Config{}), newSrvOpt(JSONCodec{}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	key := `key1`
-	if err := p.Set(context.TODO(), objcache.NewItem(key, math.Pi)); err != nil {
+	if err := p.Put(context.TODO(), key, math.Pi, 0); err != nil {
 		t.Fatal(err)
 	}
 
 	var newVal float64
-	if err := p.Get(context.TODO(), objcache.NewItem(key, &newVal)); err != nil {
+	if err := p.Get(context.TODO(), key, &newVal); err != nil {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, math.Pi, newVal)
 }
 
 func TestWithBigCache_Error(t *testing.T) {
-	p, err := objcache.NewService(objcache.WithBigCache(bigcache.Config{
+	p, err := objcache.NewService(objcache.NewBigCacheClient(bigcache.Config{
 		Shards: 3,
-	}))
+	}), nil, nil)
 	assert.Nil(t, p)
-	assert.EqualError(t, err, "[objcache] NewService applied options: Shards number must be power of two", "Error: %+v", err)
+	assert.EqualError(t, err, "Shards number must be power of two", "Error: %+v", err)
 }
 
-func TestProcessor_Parallel_GetSet_BigCache(t *testing.T) {
-	newTestNewProcessor(t, objcache.WithBigCache(bigcache.Config{}))
+func TestProcessor_Parallel_GetPut_BigCache(t *testing.T) {
+	newTestNewProcessor(t, objcache.NewBigCacheClient(bigcache.Config{}))
 }
 
 func TestWithBigCache_DecoderError(t *testing.T) {
-	p, err := objcache.NewService(objcache.WithPooledEncoder(gobCodec{}), objcache.WithBigCache(bigcache.Config{}))
+	p, err := objcache.NewService(objcache.NewBlackHoleClient(nil), objcache.NewBigCacheClient(bigcache.Config{}), newSrvOpt(gobCodec{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,27 +67,27 @@ func TestWithBigCache_DecoderError(t *testing.T) {
 	}{
 		Val: "Gopher",
 	}
-	assert.NoError(t, p.Set(context.TODO(), objcache.NewItem(key, val1)))
+	assert.NoError(t, p.Put(context.TODO(), key, val1, 0))
 
 	var val2 struct {
 		Val2 string
 	}
-	err = p.Get(context.TODO(), objcache.NewItem(key, &val2))
+	err = p.Get(context.TODO(), key, &val2)
 	assert.EqualError(t, err, "[objcache] With key \"key1\" and dst type *struct { Val2 string }: gob: type mismatch: no fields matched compiling decoder for ", "Error: %s", err)
 }
 
 func TestWithBigCache_GetError(t *testing.T) {
-	p, err := objcache.NewService(objcache.WithPooledEncoder(JSONCodec{}), objcache.WithBigCache(bigcache.Config{}))
+	p, err := objcache.NewService(objcache.NewBlackHoleClient(nil), objcache.NewBigCacheClient(bigcache.Config{}), newSrvOpt(JSONCodec{}))
 	assert.NoError(t, err)
 	key := "key1"
 	var ch struct {
 		ErrChan string
 	}
-	err = p.Get(context.TODO(), objcache.NewItem(key, ch))
+	err = p.Get(context.TODO(), key, ch)
 	assert.True(t, errors.NotFound.Match(err), "Error: %s", err)
 }
 
 func TestWithBigCache_Delete(t *testing.T) {
 	t.Parallel()
-	newTestServiceDelete(t, objcache.WithBigCache(bigcache.Config{}))
+	newTestServiceDelete(t, objcache.NewBigCacheClient(bigcache.Config{}))
 }

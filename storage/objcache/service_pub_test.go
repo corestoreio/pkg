@@ -23,19 +23,21 @@ import (
 	"io"
 	"io/ioutil"
 	"net"
-	"sync"
+	"reflect"
 	"testing"
+	"time"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/storage/objcache"
 	"github.com/corestoreio/pkg/util/assert"
+	"golang.org/x/sync/errgroup"
 )
 
 var _ io.Closer = (*objcache.Service)(nil)
 
 func TestNewProcessor_EncoderError(t *testing.T) {
 	t.Parallel()
-	p, err := objcache.NewService(objcache.WithPooledEncoder(gobCodec{}), objcache.WithSimpleSlowCacheMap())
+	p, err := objcache.NewService(nil, objcache.NewCacheSimpleInmemory, newSrvOpt(gobCodec{}))
 	assert.NoError(t, err)
 
 	ch := struct {
@@ -43,7 +45,7 @@ func TestNewProcessor_EncoderError(t *testing.T) {
 	}{
 		ErrChan: make(chan error),
 	}
-	err = p.Set(context.TODO(), objcache.NewItem("key1", ch))
+	err = p.Put(context.TODO(), "key1", ch, 0)
 	assert.EqualError(t, err, "[objcache] With key \"key1\" and dst type struct { ErrChan chan error }: gob: type struct { ErrChan chan error } has no exported fields", "Error: %s", err)
 }
 
@@ -60,36 +62,35 @@ func (ms *myString) Marshal() ([]byte, error) {
 	return []byte(ms.data), ms.err
 }
 
-func TestService_Marshal_Unmarshal(t *testing.T) {
-	p, err := objcache.NewService(objcache.WithPooledEncoder(gobCodec{}), objcache.WithSimpleSlowCacheMap())
+func TestService_Encoding(t *testing.T) {
+	p, err := objcache.NewService(nil, objcache.NewCacheSimpleInmemory, newSrvOpt(gobCodec{}))
 	assert.NoError(t, err)
 	defer assert.NoError(t, p.Close())
 
 	t.Run("marshal error", func(t *testing.T) {
 		dErr := &myString{err: errors.BadEncoding.Newf("Bad encoding")}
-		err := p.Set(context.TODO(), objcache.NewItem("dErr", dErr))
+		err := p.Put(context.TODO(), "dErr", dErr, 0)
 		assert.True(t, errors.BadEncoding.Match(err), "%+v", err)
 	})
 	t.Run("unmarshal error", func(t *testing.T) {
-		err := p.Set(context.TODO(), objcache.NewItem("dErr", 1))
+		err := p.Put(context.TODO(), "dErr2", 1, 0)
 		assert.NoError(t, err)
 		dErr := &myString{err: errors.BadEncoding.Newf("Bad encoding")}
-		err = p.Get(context.TODO(), objcache.NewItem("dErr", dErr))
+		err = p.Get(context.TODO(), "dErr2", dErr)
 		assert.True(t, errors.BadEncoding.Match(err), "%+v", err)
 	})
 
-	t.Run("success", func(t *testing.T) {
+	t.Run("marshal success", func(t *testing.T) {
 
 		d1 := &myString{data: "HelloWorld"}
 		d2 := &myString{data: "HalloWelt"}
-		i1, i2 := objcache.NewItem("d1", d1), objcache.NewItem("d2", d2)
 
-		err = p.Set(context.TODO(), i1, i2)
+		err = p.PutMulti(context.TODO(), []string{"d1x", "d2x"}, []interface{}{d1, d2}, nil)
 		assert.NoError(t, err)
 
 		d1.data = ""
 		d2.data = ""
-		err = p.Get(context.TODO(), i1, i2)
+		err = p.GetMulti(context.TODO(), []string{"d1x", "d2x"}, []interface{}{d1, d2})
 		assert.NoError(t, err)
 
 		assert.Exactly(t, "HelloWorld", d1.data)
@@ -99,60 +100,79 @@ func TestService_Marshal_Unmarshal(t *testing.T) {
 
 const iterations = 30
 
-func testCountry(t *testing.T, wg *sync.WaitGroup, p *objcache.Service, key string) {
-	defer wg.Done()
+func testCountry(p *objcache.Service, key string) func() error {
+	var val = mustGetTestCountry()
+	return func() error {
+		if err := p.Put(context.TODO(), key, val, 0); err != nil {
+			return errors.WithStack(err)
+		}
 
-	var val = getTestCountry(t)
+		for i := 0; i < iterations; i++ {
+			var newVal = new(Country)
+			if err := p.Get(context.TODO(), key, newVal); err != nil {
+				return errors.WithStack(err)
+			}
+			if !reflect.DeepEqual(val, newVal) {
+				return errors.Mismatch.Newf("%#v\n!=\n%#v", val, newVal)
+			}
+		}
 
-	err := p.Set(context.TODO(), objcache.NewItem(key, val))
-	assert.NoError(t, err, "%+v", err)
+		if err := p.Put(context.TODO(), key, Country{}, 0); err != nil {
+			return errors.WithStack(err)
+		}
 
-	for i := 0; i < iterations; i++ {
+		for i := 0; i < iterations; i++ {
+			if err := p.Put(context.TODO(), key, val, 0); err != nil {
+				return errors.WithStack(err)
+			}
+		}
 		var newVal = new(Country)
-		err := p.Get(context.TODO(), objcache.NewItem(key, newVal))
-		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, val, newVal)
+		if err := p.Get(context.TODO(), key, newVal); err != nil {
+			return errors.WithStack(err)
+		}
+		if !reflect.DeepEqual(val, newVal) {
+			return errors.Mismatch.Newf("%#v\n!=\n%#v", val, newVal)
+		}
+		return nil
 	}
-
-	err = p.Set(context.TODO(), objcache.NewItem(key, Country{}))
-	assert.NoError(t, err, "%+v", err)
-
-	for i := 0; i < iterations; i++ {
-		err := p.Set(context.TODO(), objcache.NewItem(key, val))
-		assert.NoError(t, err, "%+v", err)
-	}
-	var newVal = new(Country)
-	err = p.Get(context.TODO(), objcache.NewItem(key, newVal))
-	assert.NoError(t, err, "%+v", err)
-	assert.Exactly(t, val, newVal)
-
 }
 
-func testStoreSlice(t *testing.T, wg *sync.WaitGroup, p *objcache.Service, key string) {
-	defer wg.Done()
+func testStoreSlice(p *objcache.Service, key string) func() error {
+	return func() error {
 
-	var val = getTestStores()
-	if err := p.Set(context.TODO(), objcache.NewItem(key, val)); err != nil {
-		t.Fatal(err)
-	}
-	for i := 0; i < iterations; i++ {
+		var val = getTestStores()
+		if err := p.Put(context.TODO(), key, val, 0); err != nil {
+			return errors.WithStack(err)
+		}
+		for i := 0; i < iterations; i++ {
+			var newVal TableStoreSlice
+			if err := p.Get(context.TODO(), key, &newVal); err != nil {
+				return errors.WithStack(err)
+			}
+			if !reflect.DeepEqual(val, newVal) {
+				return errors.Mismatch.Newf("%#v\n!=\n%#v", val, newVal)
+			}
+		}
+		if err := p.Put(context.TODO(), key, TableStoreSlice{}, 0); err != nil {
+			return errors.WithStack(err)
+		}
+
+		for i := 0; i < iterations; i++ {
+			if err := p.Put(context.TODO(), key, val, 0); err != nil {
+				return errors.WithStack(err)
+			}
+		}
 		var newVal TableStoreSlice
-		err := p.Get(context.TODO(), objcache.NewItem(key, &newVal))
-		assert.NoError(t, err)
-		assert.Exactly(t, val, newVal)
-	}
-	err := p.Set(context.TODO(), objcache.NewItem(key, TableStoreSlice{}))
-	assert.NoError(t, err)
+		if err := p.Get(context.TODO(), key, &newVal); err != nil {
+			return errors.WithStack(err)
+		}
 
-	for i := 0; i < iterations; i++ {
-		err := p.Set(context.TODO(), objcache.NewItem(key, val))
-		assert.NoError(t, err)
-	}
-	var newVal TableStoreSlice
-	err = p.Get(context.TODO(), objcache.NewItem(key, &newVal))
-	assert.NoError(t, err)
+		if !reflect.DeepEqual(val, newVal) {
+			return errors.Mismatch.Newf("%#v\n!=\n%#v", val, newVal)
+		}
 
-	assert.Exactly(t, val, newVal)
+		return nil
+	}
 }
 
 func init() {
@@ -225,11 +245,15 @@ type Country struct {
 	} `json:"maxmind,omitempty"`
 }
 
-func getTestCountry(t testing.TB) *Country {
+func mustGetTestCountry() *Country {
 	td, err := ioutil.ReadFile("testdata/response.json")
-	assert.NoError(t, err)
+	if err != nil {
+		panic(err)
+	}
 	c := new(Country)
-	assert.NoError(t, json.Unmarshal(td, c))
+	if err := json.Unmarshal(td, c); err != nil {
+		panic(err)
+	}
 	return c
 }
 
@@ -261,48 +285,36 @@ func getTestStores() TableStoreSlice {
 	}
 }
 
-func newTestNewProcessor(t *testing.T, opts ...objcache.Option) {
-	p, err := objcache.NewService(append(opts, objcache.WithPooledEncoder(gobCodec{}, Country{}, TableStoreSlice{}))...)
-	if err != nil {
-		t.Fatalf("%+v", err)
-	}
-
-	var wg sync.WaitGroup
+func newTestNewProcessor(t *testing.T, level2 objcache.NewStorageFn) {
+	p, err := objcache.NewService(objcache.NewBlackHoleClient(nil), level2, newSrvOpt(gobCodec{}, Country{}, TableStoreSlice{}))
+	assert.NoError(t, err)
 
 	// to detect race conditions run with -race
-	wg.Add(1)
-	go testCountry(t, &wg, p, "country_one")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
+	eg, _ := errgroup.WithContext(ctx)
+	eg.Go(testCountry(p, "country_one"))
+	eg.Go(testStoreSlice(p, "stores_one"))
+	eg.Go(testCountry(p, "country_two"))
+	eg.Go(testStoreSlice(p, "stores_two"))
+	eg.Go(testStoreSlice(p, "stores_three"))
+	eg.Go(testCountry(p, "country_three"))
 
-	wg.Add(1)
-	go testStoreSlice(t, &wg, p, "stores_one")
-
-	wg.Add(1)
-	go testCountry(t, &wg, p, "country_two")
-
-	wg.Add(1)
-	go testStoreSlice(t, &wg, p, "stores_two")
-
-	wg.Add(1)
-	go testStoreSlice(t, &wg, p, "stores_three")
-
-	wg.Add(1)
-	go testCountry(t, &wg, p, "country_three")
-
-	wg.Wait()
+	assert.NoError(t, eg.Wait())
 }
 
-func newTestServiceDelete(t *testing.T, opts ...objcache.Option) {
+func newTestServiceDelete(t *testing.T, level2 objcache.NewStorageFn) {
 
-	p, err := objcache.NewService(append(opts, objcache.WithEncoder(JSONCodec{}))...)
+	p, err := objcache.NewService(objcache.NewBlackHoleClient(nil), level2, newSrvOpt(JSONCodec{}))
 	assert.NoError(t, err)
 	defer func() { assert.NoError(t, p.Close()) }()
 
 	t.Run("single key", func(t *testing.T) {
-		err = p.Set(context.TODO(), objcache.NewItem("bc_delete", 1970))
+		err = p.Put(context.TODO(), "bc_delete", 1970, 0)
 		assert.NoError(t, err)
 
 		var bcInt int
-		err = p.Get(context.TODO(), objcache.NewItem("bc_delete", &bcInt))
+		err = p.Get(context.TODO(), "bc_delete", &bcInt)
 		assert.NoError(t, err)
 		assert.Exactly(t, 1970, bcInt)
 
@@ -310,18 +322,23 @@ func newTestServiceDelete(t *testing.T, opts ...objcache.Option) {
 		assert.NoError(t, err)
 
 		bcInt = 0
-		err = p.Get(context.TODO(), objcache.NewItem("bc_delete", &bcInt))
+		err = p.Get(context.TODO(), "bc_delete", &bcInt)
 		assert.True(t, errors.NotFound.Match(err), "%+v", err)
 		assert.Exactly(t, 0, bcInt)
 	})
 
 	t.Run("multiple keys", func(t *testing.T) {
-		err = p.Set(context.TODO(), objcache.NewItem("bc_delete1", 1971), objcache.NewItem("bc_delete2", 1972))
+
+		bcInt1 := 1971
+		bcInt2 := 1972
+		keys := []string{"bc_delete1", "bc_delete2"}
+		vals := []interface{}{&bcInt1, &bcInt2}
+		err = p.PutMulti(context.TODO(), keys, vals, nil)
 		assert.NoError(t, err)
 
-		var bcInt1 int
-		var bcInt2 int
-		err = p.Get(context.TODO(), objcache.NewItem("bc_delete1", &bcInt1), objcache.NewItem("bc_delete2", &bcInt2))
+		bcInt1 = 0
+		bcInt2 = 0
+		err = p.GetMulti(context.TODO(), keys, vals)
 		assert.NoError(t, err, "\n%+v", err)
 		assert.Exactly(t, 1971, bcInt1)
 		assert.Exactly(t, 1972, bcInt2)
@@ -331,7 +348,7 @@ func newTestServiceDelete(t *testing.T, opts ...objcache.Option) {
 
 		bcInt1 = 0
 		bcInt2 = 0
-		err = p.Get(context.TODO(), objcache.NewItem("bc_delete1", &bcInt1), objcache.NewItem("bc_delete2", &bcInt2))
+		err = p.GetMulti(context.TODO(), keys, vals)
 		assert.True(t, errors.NotFound.Match(err), "%+v", err)
 		assert.Exactly(t, 0, bcInt1)
 		assert.Exactly(t, 0, bcInt2)

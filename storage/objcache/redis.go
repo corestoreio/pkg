@@ -28,20 +28,21 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
-// WithRedisClient connects to the Redis server and does a ping to check if the
+// RedisOption applies several options for the Redis client.
+type RedisOption struct {
+	KeyPrefix string
+}
+
+// NewRedisClient connects to the Redis server and does a ping to check if the
 // connection works correctly.
-func WithRedisClient(pool *redis.Pool) Option {
-	return Option{
-		sortOrder: 1,
-		fn: func(p *Service) error {
-			w := makeRedisWrapper(pool)
-			w.ping = true
-			if err := doPing(w); err != nil {
-				return errors.WithStack(err)
-			}
-			p.cache[len(p.cache)+1] = w
-			return nil
-		},
+func NewRedisClient(pool *redis.Pool, ro *RedisOption) NewStorageFn {
+	return func() (Storager, error) {
+		w := makeRedisWrapper(pool, ro)
+		w.ping = true
+		if err := doPing(w); err != nil {
+			return nil, errors.WithStack(err)
+		}
+		return w, nil
 	}
 }
 
@@ -81,64 +82,63 @@ func parseInt(keys []string, ds []*int, params gourl.Values) (err error) {
 //
 // For example:
 // 		redis://localhost:6379/?db=3
-// 		redis://localhost:6379/?max_active=50&max_idle=5&idle_timeout=10s&max_conn_lifetime=1m
-func WithRedisURL(rawURL string) Option {
-	return Option{
-		sortOrder: 2,
-		fn: func(p *Service) (err error) {
-			addr, _, password, params, err := url.ParseConnection(rawURL)
-			if err != nil {
-				return errors.Wrapf(err, "[objcache] Redis error parsing URL %q", rawURL)
-			}
-			pool := &redis.Pool{
-				Dial: func() (redis.Conn, error) {
-					c, err := redis.Dial("tcp", addr)
-					if err != nil {
-						return nil, errors.Fatal.New(err, "[objcache] Redis Dial failed")
-					}
-					if password != "" {
-						if _, err := c.Do("AUTH", password); err != nil {
-							c.Close()
-							return nil, errors.Unauthorized.New(err, "[objcache] Redis AUTH failed")
-						}
-					}
-					if _, err := c.Do("SELECT", params.Get("db")); err != nil {
+// 		redis://localhost:6379/?max_active=50&max_idle=5&idle_timeout=10s&max_conn_lifetime=1m&key_prefix=xcache_
+func WithRedisURL(rawURL string) NewStorageFn {
+	return func() (Storager, error) {
+		addr, _, password, params, err := url.ParseConnection(rawURL)
+		if err != nil {
+			return nil, errors.Wrapf(err, "[objcache] Redis error parsing URL %q", rawURL)
+		}
+		pool := &redis.Pool{
+			Dial: func() (redis.Conn, error) {
+				c, err := redis.Dial("tcp", addr)
+				if err != nil {
+					return nil, errors.Fatal.New(err, "[objcache] Redis Dial failed")
+				}
+				if password != "" {
+					if _, err := c.Do("AUTH", password); err != nil {
 						c.Close()
-						return nil, errors.Fatal.New(err, "[objcache] Redis DB select failed")
+						return nil, errors.Unauthorized.New(err, "[objcache] Redis AUTH failed")
 					}
-					return c, nil
-				},
-			}
+				}
+				if _, err := c.Do("SELECT", params.Get("db")); err != nil {
+					c.Close()
+					return nil, errors.Fatal.New(err, "[objcache] Redis DB select failed")
+				}
+				return c, nil
+			},
+		}
 
-			// add some more params if missing
-			err = parseDuration([]string{
-				"max_conn_lifetime",
-				"idle_timeout",
-			}, []*time.Duration{
-				&pool.MaxConnLifetime,
-				&pool.IdleTimeout,
-			}, params)
-			if err != nil {
-				return errors.WithStack(err)
-			}
+		// add some more params if missing
+		err = parseDuration([]string{
+			"max_conn_lifetime",
+			"idle_timeout",
+		}, []*time.Duration{
+			&pool.MaxConnLifetime,
+			&pool.IdleTimeout,
+		}, params)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
 
-			err = parseInt([]string{
-				"max_idle",
-				"max_active",
-			}, []*int{
-				&pool.MaxIdle,
-				&pool.MaxActive,
-			}, params)
-			if err != nil {
-				return errors.WithStack(err)
-			}
+		err = parseInt([]string{
+			"max_idle",
+			"max_active",
+		}, []*int{
+			&pool.MaxIdle,
+			&pool.MaxActive,
+		}, params)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
 
-			// if params.Get("tls") == "1" {
-			// 	o.TLSConfig = &tls.Config{ServerName: o.Addr} // TODO check if might be wrong the Addr,
-			// }
+		// if params.Get("tls") == "1" {
+		// 	o.TLSConfig = &tls.Config{ServerName: o.Addr} // TODO check if might be wrong the Addr,
+		// }
 
-			return WithRedisClient(pool).fn(p)
-		},
+		return NewRedisClient(pool, &RedisOption{
+			KeyPrefix: params.Get("key_prefix"),
+		})()
 	}
 }
 
@@ -159,7 +159,7 @@ func doPing(w redisWrapper) error {
 	return nil
 }
 
-func makeRedisWrapper(rp *redis.Pool) redisWrapper {
+func makeRedisWrapper(rp *redis.Pool, ro *RedisOption) redisWrapper {
 	return redisWrapper{
 		Pool: rp,
 		// ipf: &sync.Pool{
@@ -168,16 +168,18 @@ func makeRedisWrapper(rp *redis.Pool) redisWrapper {
 		// 		return &ifs
 		// 	},
 		// },
+		keyPrefix: ro.KeyPrefix,
 	}
 }
 
 type redisWrapper struct {
 	*redis.Pool
-	ping bool
+	ping      bool
+	keyPrefix string
 	// ifp  *sync.Pool
 }
 
-func (w redisWrapper) Set(ctx context.Context, keys []string, values [][]byte, expirations []int64) (err error) {
+func (w redisWrapper) Put(_ context.Context, keys []string, values [][]byte, expirations []time.Duration) (err error) {
 	conn := w.Pool.Get()
 	defer func() {
 		if err2 := conn.Close(); err == nil && err2 != nil {
@@ -187,7 +189,7 @@ func (w redisWrapper) Set(ctx context.Context, keys []string, values [][]byte, e
 
 	args := make([]interface{}, 0, len(keys)*3)
 	for i, key := range keys {
-		e := expirations[i] // e = expires in x seconds
+		e := expirations[i].Seconds() // e = expires in x seconds
 		if e < 1 {
 			args = append(args, key, values[i])
 		} else {
@@ -272,4 +274,13 @@ func (w redisWrapper) Delete(_ context.Context, keys []string) (err error) {
 		err = errors.Wrapf(err, "[objcache] With keys %v", keys)
 	}
 	return
+}
+
+func (w redisWrapper) Truncate(ctx context.Context) (err error) {
+	// TODO flush redis by key prefix
+	return nil
+}
+
+func (w redisWrapper) Close() error {
+	return w.Pool.Close()
 }

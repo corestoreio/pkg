@@ -24,34 +24,31 @@ import (
 	"github.com/corestoreio/errors"
 )
 
-// WithBigCache sets the bigcache as underlying storage engine to the
+// NewBigCacheClient sets the bigcache as underlying storage engine to the
 // This function allows to set custom configuration options to the bigcache
 // instance.
 // Default option: shards 256, LifeWindow 12 hours, Verbose false
 //
 // For more details: https://godoc.org/github.com/allegro/bigcache
-func WithBigCache(c bigcache.Config) Option {
-	def := bigcache.Config{
-		// optimize this ...
-		Shards:             256,
-		LifeWindow:         time.Hour * 12,
-		MaxEntriesInWindow: 1000 * 10 * 60,
-		MaxEntrySize:       500,
-		Verbose:            false,
-		HardMaxCacheSize:   0,
-	}
-	if c.Shards > 0 {
-		def = c
-	}
-	return Option{
-		fn: func(p *Service) error {
-			c, err := bigcache.NewBigCache(def)
-			if err != nil {
-				return errors.WithStack(err)
-			}
-			p.cache[len(p.cache)+1] = bigCacheWrapper{c}
-			return nil
-		},
+func NewBigCacheClient(c bigcache.Config) NewStorageFn {
+	return func() (Storager, error) {
+		def := bigcache.Config{
+			// optimize this ...
+			Shards:             256,
+			LifeWindow:         time.Hour * 12,
+			MaxEntriesInWindow: 1000 * 10 * 60,
+			MaxEntrySize:       500,
+			Verbose:            false,
+			HardMaxCacheSize:   0,
+		}
+		if c.Shards > 0 {
+			def = c
+		}
+		bc, err := bigcache.NewBigCache(def)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		return bigCacheWrapper{bc}, nil
 	}
 }
 
@@ -59,7 +56,7 @@ type bigCacheWrapper struct {
 	*bigcache.BigCache
 }
 
-func (w bigCacheWrapper) Set(_ context.Context, keys []string, values [][]byte, _ []int64) (err error) {
+func (w bigCacheWrapper) Put(_ context.Context, keys []string, values [][]byte, _ []time.Duration) (err error) {
 	for i, key := range keys {
 		if err := w.BigCache.Set(key, values[i]); err != nil {
 			// This error construct save some unneeded allocations.
@@ -88,6 +85,10 @@ func (w bigCacheWrapper) Delete(_ context.Context, keys []string) (err error) {
 		err = w.BigCache.Delete(keys[i])
 	}
 	return
+}
+
+func (w bigCacheWrapper) Truncate(ctx context.Context) (err error) {
+	return w.BigCache.Reset()
 }
 
 func (w bigCacheWrapper) Close() error {

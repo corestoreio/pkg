@@ -28,9 +28,16 @@ import (
 	"github.com/ugorji/go/codec"
 )
 
-func benchmark_country_enc(iterationsSetGet int, opts ...objcache.Option) func(b *testing.B) {
+func newSrvOpt(c objcache.Codecer, primeObjects ...interface{}) *objcache.ServiceOptions {
+	return &objcache.ServiceOptions{
+		Codec:        c,
+		PrimeObjects: primeObjects,
+	}
+}
+
+func benchmarkCountry(iterationsPutGet int, level2 objcache.NewStorageFn, opts *objcache.ServiceOptions) func(b *testing.B) {
 	return func(b *testing.B) {
-		p, err := objcache.NewService(opts...)
+		p, err := objcache.NewService(nil, level2, opts)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -39,7 +46,7 @@ func benchmark_country_enc(iterationsSetGet int, opts ...objcache.Option) func(b
 				b.Fatal(err)
 			}
 		}()
-		cntry := getTestCountry(b) // type already gob.Registered ...
+		cntry := mustGetTestCountry() // type already gob.Registered ...
 		const wantCountryISO = "US"
 		ctx := context.TODO()
 		b.ReportAllocs()
@@ -50,13 +57,13 @@ func benchmark_country_enc(iterationsSetGet int, opts ...objcache.Option) func(b
 				key := strconv.FormatInt(i, 10) // 1 alloc
 				i++
 
-				if err := p.Set(ctx, objcache.NewItem(key, cntry)); err != nil {
+				if err := p.Put(ctx, key, cntry, 0); err != nil {
 					b.Fatalf("%+v", err)
 				}
 				// Double execution might detect storing of type information in streaming encoders
-				for j := 0; j < iterationsSetGet; j++ {
-					var newCntry = new(Country)
-					if err := p.Get(ctx, objcache.NewItem(key, newCntry)); err != nil {
+				for j := 0; j < iterationsPutGet; j++ {
+					var newCntry Country
+					if err := p.Get(ctx, key, &newCntry); err != nil {
 						b.Fatalf("%+v", err)
 					}
 					if newCntry.Country.IsoCode != wantCountryISO {
@@ -68,9 +75,9 @@ func benchmark_country_enc(iterationsSetGet int, opts ...objcache.Option) func(b
 	}
 }
 
-func benchmark_stores_enc(iterationsSetGet int, opts ...objcache.Option) func(b *testing.B) {
+func benchmarkStores(iterationsPutGet int, level2 objcache.NewStorageFn, opts *objcache.ServiceOptions) func(b *testing.B) {
 	return func(b *testing.B) {
-		p, err := objcache.NewService(opts...)
+		p, err := objcache.NewService(nil, level2, opts)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -90,14 +97,14 @@ func benchmark_stores_enc(iterationsSetGet int, opts ...objcache.Option) func(b 
 				key := strconv.FormatInt(i, 10) // 1 alloc
 				i++
 
-				if err := p.Set(ctx, objcache.NewItem(key, ts)); err != nil {
+				if err := p.Put(ctx, key, ts, 0); err != nil {
 					b.Fatal(err)
 				}
 
 				// Double execution might detect storing of type information in streaming encoders
-				for j := 0; j < iterationsSetGet; j++ {
+				for j := 0; j < iterationsPutGet; j++ {
 					var newTS TableStoreSlice
-					if err := p.Get(ctx, objcache.NewItem(key, &newTS)); err != nil {
+					if err := p.Get(ctx, key, &newTS); err != nil {
 						b.Fatal(err)
 					}
 					if have := newTS[5].Code; have != wantStoreCode {
@@ -110,23 +117,21 @@ func benchmark_stores_enc(iterationsSetGet int, opts ...objcache.Option) func(b 
 }
 
 func Benchmark_BigCache_Country(b *testing.B) {
-	b.Run("Gob_1x", benchmark_country_enc(1, objcache.WithBigCache(bigcache.Config{}), objcache.WithPooledEncoder(gobCodec{}, Country{})))
-	b.Run("Gob_2x", benchmark_country_enc(2, objcache.WithBigCache(bigcache.Config{}), objcache.WithPooledEncoder(gobCodec{}, Country{})))
-	b.Run("JSON_1x", benchmark_country_enc(1, objcache.WithBigCache(bigcache.Config{}), objcache.WithPooledEncoder(JSONCodec{})))
-	b.Run("JSON_2x", benchmark_country_enc(2, objcache.WithBigCache(bigcache.Config{}), objcache.WithPooledEncoder(JSONCodec{})))
-	b.Run("MsgPack_1x", benchmark_country_enc(1, objcache.WithBigCache(bigcache.Config{}), objcache.WithEncoder(newMsgPackCodec())))
-	b.Run("MsgPack_2x", benchmark_country_enc(2, objcache.WithBigCache(bigcache.Config{}), objcache.WithEncoder(newMsgPackCodec())))
-	b.Run("GoGoProto_1x", benchmark_country_enc(1, objcache.WithBigCache(bigcache.Config{})))
-	b.Run("GoGoProto_2x", benchmark_country_enc(2, objcache.WithBigCache(bigcache.Config{})))
+	b.Run("Gob_1x", benchmarkCountry(1, objcache.NewBigCacheClient(bigcache.Config{}), newSrvOpt(gobCodec{}, Country{})))
+	b.Run("Gob_2x", benchmarkCountry(2, objcache.NewBigCacheClient(bigcache.Config{}), newSrvOpt(gobCodec{}, Country{})))
+	b.Run("JSON_1x", benchmarkCountry(1, objcache.NewBigCacheClient(bigcache.Config{}), newSrvOpt(JSONCodec{})))
+	b.Run("JSON_2x", benchmarkCountry(2, objcache.NewBigCacheClient(bigcache.Config{}), newSrvOpt(JSONCodec{})))
+	b.Run("MsgPack_1x", benchmarkCountry(1, objcache.NewBigCacheClient(bigcache.Config{}), newSrvOpt(newMsgPackCodec())))
+	b.Run("MsgPack_2x", benchmarkCountry(2, objcache.NewBigCacheClient(bigcache.Config{}), newSrvOpt(newMsgPackCodec())))
 }
 
 func Benchmark_BigCache_Stores(b *testing.B) {
-	b.Run("Gob_1x", benchmark_stores_enc(1, objcache.WithBigCache(bigcache.Config{}), objcache.WithPooledEncoder(gobCodec{}, TableStoreSlice{})))
-	b.Run("Gob_2x", benchmark_stores_enc(2, objcache.WithBigCache(bigcache.Config{}), objcache.WithPooledEncoder(gobCodec{}, TableStoreSlice{})))
-	b.Run("JSON_1x", benchmark_stores_enc(1, objcache.WithBigCache(bigcache.Config{}), objcache.WithPooledEncoder(JSONCodec{})))
-	b.Run("JSON_2x", benchmark_stores_enc(2, objcache.WithBigCache(bigcache.Config{}), objcache.WithPooledEncoder(JSONCodec{})))
-	b.Run("MsgPack_1x", benchmark_stores_enc(1, objcache.WithBigCache(bigcache.Config{}), objcache.WithEncoder(newMsgPackCodec())))
-	b.Run("MsgPack_2x", benchmark_stores_enc(2, objcache.WithBigCache(bigcache.Config{}), objcache.WithEncoder(newMsgPackCodec())))
+	b.Run("Gob_1x", benchmarkStores(1, objcache.NewBigCacheClient(bigcache.Config{}), newSrvOpt(gobCodec{}, TableStoreSlice{})))
+	b.Run("Gob_2x", benchmarkStores(2, objcache.NewBigCacheClient(bigcache.Config{}), newSrvOpt(gobCodec{}, TableStoreSlice{})))
+	b.Run("JSON_1x", benchmarkStores(1, objcache.NewBigCacheClient(bigcache.Config{}), newSrvOpt(JSONCodec{})))
+	b.Run("JSON_2x", benchmarkStores(2, objcache.NewBigCacheClient(bigcache.Config{}), newSrvOpt(JSONCodec{})))
+	b.Run("MsgPack_1x", benchmarkStores(1, objcache.NewBigCacheClient(bigcache.Config{}), newSrvOpt(newMsgPackCodec())))
+	b.Run("MsgPack_2x", benchmarkStores(2, objcache.NewBigCacheClient(bigcache.Config{}), newSrvOpt(newMsgPackCodec())))
 }
 
 func Benchmark_Redis_Gob(b *testing.B) {
@@ -136,10 +141,10 @@ func Benchmark_Redis_Gob(b *testing.B) {
 	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
 		`)
 	}
-	b.Run("Country_1x", benchmark_country_enc(1, objcache.WithRedisURL(redConURL), objcache.WithPooledEncoder(gobCodec{}, Country{})))
-	b.Run("Country_2x", benchmark_country_enc(2, objcache.WithRedisURL(redConURL), objcache.WithPooledEncoder(gobCodec{}, Country{})))
-	b.Run("Stores_1x", benchmark_stores_enc(1, objcache.WithRedisURL(redConURL), objcache.WithPooledEncoder(gobCodec{}, TableStoreSlice{})))
-	b.Run("Stores_2x", benchmark_stores_enc(2, objcache.WithRedisURL(redConURL), objcache.WithPooledEncoder(gobCodec{}, TableStoreSlice{})))
+	b.Run("Country_1x", benchmarkCountry(1, objcache.WithRedisURL(redConURL), newSrvOpt(gobCodec{}, Country{})))
+	b.Run("Country_2x", benchmarkCountry(2, objcache.WithRedisURL(redConURL), newSrvOpt(gobCodec{}, Country{})))
+	b.Run("Stores_1x", benchmarkStores(1, objcache.WithRedisURL(redConURL), newSrvOpt(gobCodec{}, TableStoreSlice{})))
+	b.Run("Stores_2x", benchmarkStores(2, objcache.WithRedisURL(redConURL), newSrvOpt(gobCodec{}, TableStoreSlice{})))
 }
 
 func Benchmark_Redis_MsgPack(b *testing.B) {
@@ -149,10 +154,10 @@ func Benchmark_Redis_MsgPack(b *testing.B) {
 	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
 		`)
 	}
-	b.Run("Country_1x", benchmark_country_enc(1, objcache.WithRedisURL(redConURL), objcache.WithEncoder(newMsgPackCodec())))
-	b.Run("Country_2x", benchmark_country_enc(2, objcache.WithRedisURL(redConURL), objcache.WithEncoder(newMsgPackCodec())))
-	b.Run("Stores_1x", benchmark_stores_enc(1, objcache.WithRedisURL(redConURL), objcache.WithEncoder(newMsgPackCodec())))
-	b.Run("Stores_2x", benchmark_stores_enc(2, objcache.WithRedisURL(redConURL), objcache.WithEncoder(newMsgPackCodec())))
+	b.Run("Country_1x", benchmarkCountry(1, objcache.WithRedisURL(redConURL), newSrvOpt(newMsgPackCodec())))
+	b.Run("Country_2x", benchmarkCountry(2, objcache.WithRedisURL(redConURL), newSrvOpt(newMsgPackCodec())))
+	b.Run("Stores_1x", benchmarkStores(1, objcache.WithRedisURL(redConURL), newSrvOpt(newMsgPackCodec())))
+	b.Run("Stores_2x", benchmarkStores(2, objcache.WithRedisURL(redConURL), newSrvOpt(newMsgPackCodec())))
 }
 
 var ugmsgPackHandle codec.MsgpackHandle
