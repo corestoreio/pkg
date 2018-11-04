@@ -323,7 +323,7 @@ func newTestServiceDelete(t *testing.T, level2 objcache.NewStorageFn) {
 
 		bcInt = 0
 		err = p.Get(context.TODO(), "bc_delete", &bcInt)
-		assert.True(t, errors.NotFound.Match(err), "%+v", err)
+		assert.NoError(t, err, "%+v", err)
 		assert.Exactly(t, 0, bcInt)
 	})
 
@@ -349,9 +349,8 @@ func newTestServiceDelete(t *testing.T, level2 objcache.NewStorageFn) {
 		bcInt1 = 0
 		bcInt2 = 0
 		err = p.GetMulti(context.TODO(), keys, vals)
-		assert.True(t, errors.NotFound.Match(err), "%+v", err)
+		assert.NoError(t, err, "%+v", err)
 		assert.Exactly(t, 0, bcInt1)
 		assert.Exactly(t, 0, bcInt2)
 	})
-
 }

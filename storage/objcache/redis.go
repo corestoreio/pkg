@@ -20,7 +20,6 @@ import (
 	"context"
 	gourl "net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/corestoreio/errors"
@@ -223,31 +222,23 @@ func (w redisWrapper) Get(_ context.Context, keys []string) (values [][]byte, er
 		val, err = redis.Bytes(conn.Do("GET", keys[0]))
 		if err != nil {
 			if err == redis.ErrNil {
-				err = ErrKeyNotFound(keys[0])
+				err = nil
+				val = nil
 			} else {
-				err = errors.Wrapf(err, "[objcache] With keys %v", keys)
+				return nil, errors.Wrapf(err, "[objcache] With keys %v", keys)
 			}
-		} else {
-			values = append(values, val)
 		}
+		values = append(values, val)
 		return
 	}
 
-	// TODO optimize for length==1
 	values, err = redis.ByteSlices(conn.Do("MGET", strSliceToIFaces(nil, keys)...))
 	if err != nil {
 		err = errors.Wrapf(err, "[objcache] With keys %v", keys)
 		return
 	}
 	if lk, lv := len(keys), len(values); lk != lv {
-		err = ErrKeyNotFound(strings.Join(keys, ", "))
-		return
-	}
-	for i, key := range keys {
-		if values[i] == nil {
-			err = ErrKeyNotFound(key)
-			return
-		}
+		err = errors.Mismatch.Newf("[objcache] Length of keys (%d) does not match length of returned bytes (%d). Keys: %v", lk, lv, keys)
 	}
 	return
 }

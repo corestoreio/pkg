@@ -21,13 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/assert"
-)
-
-var (
-	_ errors.Kinder = (*ErrKeyNotFound)(nil)
-	_ error         = (*ErrKeyNotFound)(nil)
 )
 
 var _ Codecer = (*JSONCodec)(nil)
@@ -51,7 +45,7 @@ func TestWithSimpleSlowCacheMap_Expires(t *testing.T) {
 
 	t.Run("key not found", func(t *testing.T) {
 		err := p.Get(context.TODO(), "upppsss", nil)
-		assert.True(t, errors.NotFound.Match(err), "should have kind not found, but got: %+v", err)
+		assert.NoError(t, err, "should have kind not found, but got: %+v", err)
 	})
 
 	t.Run("key expires", func(t *testing.T) {
@@ -64,7 +58,72 @@ func TestWithSimpleSlowCacheMap_Expires(t *testing.T) {
 		assert.Exactly(t, 3.14159, f)
 		time.Sleep(time.Second * 2)
 
-		err = p.Get(context.TODO(), "keyEx", nil)
-		assert.True(t, errors.NotFound.Match(err), "%+v", err)
+		var f2 float64
+		err = p.Get(context.TODO(), "keyEx", &f2)
+		assert.NoError(t, err, "%+v", err)
+		assert.Empty(t, f2)
 	})
+}
+
+var (
+	_ marshaler   = (*binary)(nil)
+	_ unmarshaler = (*binary)(nil)
+)
+
+func TestMakeBinary(t *testing.T) {
+	p, err := NewService(NewCacheSimpleInmemory, NewCacheSimpleInmemory, &ServiceOptions{Codec: JSONCodec{}})
+	assert.NoError(t, err)
+	defer assert.NoError(t, p.Close())
+
+	t.Run("exists single", func(t *testing.T) {
+		b := MakeBinary()
+		err := p.Put(context.TODO(), "mb01", b, 0)
+		assert.NoError(t, err)
+
+		err = p.Get(context.TODO(), "mb01", &b)
+		assert.NoError(t, err)
+		assert.True(t, b.IsValid(), "Binary should be valid")
+	})
+
+	t.Run("not exists single", func(t *testing.T) {
+		b := MakeBinary()
+		err = p.Get(context.TODO(), "mb02", &b)
+		assert.NoError(t, err)
+		assert.False(t, b.IsValid(), "Binary should be valid")
+	})
+
+	t.Run("exists multiple", func(t *testing.T) {
+		b1 := MakeBinary()
+		b2 := MakeBinary()
+		b3 := MakeBinary()
+		keys := []string{"mb10", "mb20", "mb30"}
+		vals := []interface{}{&b1, &b2, &b3}
+		err := p.PutMulti(context.TODO(), keys, vals, nil)
+		assert.NoError(t, err)
+
+		b1a := MakeBinary()
+		b2a := MakeBinary()
+		b3a := MakeBinary()
+		vals2 := []interface{}{&b1a, &b2a, &b3a}
+		err = p.GetMulti(context.TODO(), keys, vals2)
+		assert.NoError(t, err)
+		assert.True(t, b1a.IsValid(), "Binary b1a should be valid")
+		assert.True(t, b2a.IsValid(), "Binary b2a should be valid")
+		assert.True(t, b3a.IsValid(), "Binary b3a should be valid")
+	})
+
+	t.Run("not exists multiple", func(t *testing.T) {
+		b1 := MakeBinary()
+		b2 := MakeBinary()
+		b3 := MakeBinary()
+		keys := []string{"mb10", "mb20a", "mb30a"}
+		vals := []interface{}{&b1, &b2, &b3}
+
+		err = p.GetMulti(context.TODO(), keys, vals)
+		assert.NoError(t, err)
+		assert.True(t, b1.IsValid(), "Binary b1 should be valid")
+		assert.False(t, b2.IsValid(), "Binary b2 should not be valid")
+		assert.False(t, b3.IsValid(), "Binary b3 should not be valid")
+	})
+
 }

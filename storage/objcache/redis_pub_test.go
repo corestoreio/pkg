@@ -78,7 +78,8 @@ func testWithRedisURL_PutGet_Success(t *testing.T, cb func(), level2 objcache.Ne
 
 	newVal = 0
 	err = p.Get(context.TODO(), key, &newVal)
-	assert.True(t, errors.NotFound.Match(err), "%+v", err)
+	assert.NoError(t, err, "%+v", err)
+	assert.Empty(t, newVal)
 }
 
 func TestWithRedisURL_Get_NotFound_Mock(t *testing.T) {
@@ -98,7 +99,7 @@ func TestWithRedisURL_Get_NotFound_Mock(t *testing.T) {
 
 	var newVal float64
 	err = p.Get(context.TODO(), key, &newVal)
-	assert.True(t, errors.NotFound.Match(err), "Error: %+v", err)
+	assert.NoError(t, err, "Error: %+v", err)
 	assert.Empty(t, newVal)
 }
 

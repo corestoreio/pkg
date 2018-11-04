@@ -16,11 +16,8 @@ package objcache
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
-
-	"github.com/corestoreio/errors"
 )
 
 var now = time.Now
@@ -78,7 +75,7 @@ func (mc *mapCache) Get(_ context.Context, keys []string) (values [][]byte, err 
 		if v, ok2 := val.(*mapCacheItem); ok2 && ok && (v.expiration.IsZero() || v.expiration.After(n)) {
 			values = append(values, []byte(v.value))
 		} else {
-			return nil, ErrKeyNotFound(key)
+			values = append(values, nil)
 		}
 	}
 	return values, nil
@@ -101,17 +98,6 @@ func (mc *mapCache) Truncate(ctx context.Context) (err error) {
 }
 func (mc *mapCache) Close() error { return nil }
 
-// ErrKeyNotFound returned by a backend cache to indicate that a key can't be
-// found.
-type ErrKeyNotFound string
-
-func (e ErrKeyNotFound) ErrorKind() errors.Kind {
-	return errors.NotFound
-}
-func (e ErrKeyNotFound) Error() string {
-	return fmt.Sprintf("[objcache] Key %q not found", string(e))
-}
-
 // NewBlackHoleClient creates a black hole client for testing with the ability
 // to return errors.
 func NewBlackHoleClient(optionalTestErr error) NewStorageFn {
@@ -133,3 +119,24 @@ func (mc blackHole) Get(_ context.Context, keys []string) (values [][]byte, err 
 func (mc blackHole) Delete(_ context.Context, keys []string) (err error) { return mc.err }
 func (mc blackHole) Truncate(ctx context.Context) (err error)            { return mc.err }
 func (mc blackHole) Close() error                                        { return mc.err }
+
+// binary a simple type to use the Service as a set-algorithm to e.g. check if a
+// key exists.
+type binary byte
+
+func (n *binary) Unmarshal(data []byte) error {
+	var val binary = '0'
+	if len(data) == 1 && data[0] == '1' {
+		val = '1'
+	}
+	*n = val
+	return nil
+}
+
+func (n binary) Marshal() ([]byte, error) { return []byte{byte(n)}, nil }
+func (n binary) IsValid() bool            { return n == '1' }
+
+// MakeBinary creates a binary type for using in Put/Get functions when the code
+// needs a `set` algorithm. For example checking if a JWT exists in the
+// blacklist. Function IsValid returns true if the key exists.
+func MakeBinary() binary { return binary('1') }

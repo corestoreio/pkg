@@ -69,11 +69,12 @@ func (w bigCacheWrapper) Put(_ context.Context, keys []string, values [][]byte, 
 func (w bigCacheWrapper) Get(_ context.Context, keys []string) (values [][]byte, err error) {
 	for _, key := range keys {
 		v, err := w.BigCache.Get(key)
-		if _, ok := err.(*bigcache.EntryNotFoundError); ok {
-			return nil, ErrKeyNotFound(key)
-		}
 		if err != nil {
-			return nil, errors.Fatal.New(err, "[objcache] With key %q", key)
+			if _, ok := err.(*bigcache.EntryNotFoundError); ok {
+				v = nil
+			} else {
+				return nil, errors.Wrapf(err, "[objcache] With key %q", key)
+			}
 		}
 		values = append(values, v)
 	}

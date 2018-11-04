@@ -22,7 +22,6 @@ import (
 	"testing"
 
 	"github.com/allegro/bigcache"
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/storage/objcache"
 	"github.com/corestoreio/pkg/util/assert"
 )
@@ -83,8 +82,9 @@ func TestWithBigCache_GetError(t *testing.T) {
 	var ch struct {
 		ErrChan string
 	}
-	err = p.Get(context.TODO(), key, ch)
-	assert.True(t, errors.NotFound.Match(err), "Error: %s", err)
+	err = p.Get(context.TODO(), key, &ch)
+	assert.NoError(t, err, "Error: %s", err)
+	assert.Empty(t, ch.ErrChan)
 }
 
 func TestWithBigCache_Delete(t *testing.T) {

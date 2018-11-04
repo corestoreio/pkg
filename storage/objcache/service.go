@@ -35,6 +35,9 @@ import (
 // key does not expire.
 type Storager interface {
 	Put(ctx context.Context, keys []string, values [][]byte, expirations []time.Duration) (err error)
+	// Get returns the bytes for given keys. The values slice must have the same
+	// length as the keys slice. If one of the keys can't be found, its byte
+	// slice must be `nil`.
 	Get(ctx context.Context, keys []string) (values [][]byte, err error)
 	Delete(ctx context.Context, keys []string) (err error)
 	Truncate(ctx context.Context) (err error)
@@ -335,18 +338,19 @@ func (tr *Service) Get(ctx context.Context, key string, dst interface{}) (err er
 	var vals [][]byte
 	if tr.level1 != nil {
 		vals, err = tr.level1.Get(ctx, ri.keys)
-		if err != nil && !errors.NotFound.Match(err) {
+		if err != nil {
 			return errors.Wrapf(err, "[objcache] Level1 with keys %v", ri.keys)
 		}
 	}
 	if lv := len(vals); lv == 0 {
 		vals, err = tr.level2.Get(ctx, ri.keys)
-		if err != nil && !errors.NotFound.Match(err) {
+		if err != nil {
 			return errors.Wrapf(err, "[objcache] Level2 with keys %v", ri.keys)
 		}
 	}
 	if err == nil {
-		if err2 := decodeAll(tr.so.Codec, vals, ri.keys, []interface{}{dst}); err2 != nil {
+		idst := [1]interface{}{dst}
+		if err2 := decodeAll(tr.so.Codec, vals, ri.keys, idst[:]); err2 != nil {
 			return errors.WithStack(err2)
 		}
 	}
