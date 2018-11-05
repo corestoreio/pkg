@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"math"
 	"net"
 	"reflect"
 	"testing"
@@ -30,6 +31,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/storage/objcache"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/corestoreio/pkg/util/strs"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -81,7 +83,6 @@ func TestService_Encoding(t *testing.T) {
 	})
 
 	t.Run("marshal success", func(t *testing.T) {
-
 		d1 := &myString{data: "HelloWorld"}
 		d2 := &myString{data: "HalloWelt"}
 
@@ -285,9 +286,15 @@ func getTestStores() TableStoreSlice {
 	}
 }
 
-func newTestNewProcessor(t *testing.T, level2 objcache.NewStorageFn) {
-	p, err := objcache.NewService(objcache.NewBlackHoleClient(nil), level2, newSrvOpt(gobCodec{}, Country{}, TableStoreSlice{}))
+func newServiceComplexParallelTest(t *testing.T, level2 objcache.NewStorageFn, so *objcache.ServiceOptions) {
+	if so == nil {
+		so = newSrvOpt(gobCodec{}, Country{}, TableStoreSlice{})
+	}
+	p, err := objcache.NewService(objcache.NewBlackHoleClient(nil), level2, so)
 	assert.NoError(t, err)
+	defer func() {
+		assert.NoError(t, p.Close())
+	}()
 
 	// to detect race conditions run with -race
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
@@ -353,4 +360,31 @@ func newTestServiceDelete(t *testing.T, level2 objcache.NewStorageFn) {
 		assert.Exactly(t, 0, bcInt1)
 		assert.Exactly(t, 0, bcInt2)
 	})
+}
+
+func testExpiration(t *testing.T, cb func(), level2 objcache.NewStorageFn, so *objcache.ServiceOptions) {
+	p, err := objcache.NewService(nil, level2, so)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		assert.NoError(t, p.Close())
+	}()
+
+	key := strs.RandAlnum(30)
+	if err := p.Put(context.TODO(), key, math.Pi, time.Second); err != nil {
+		t.Fatalf("Key %q Error: %s", key, err)
+	}
+
+	var newVal float64
+	err = p.Get(context.TODO(), key, &newVal)
+	assert.NoError(t, err, "%+v", err)
+	assert.Exactly(t, math.Pi, newVal)
+
+	cb()
+
+	newVal = 0
+	err = p.Get(context.TODO(), key, &newVal)
+	assert.NoError(t, err, "%+v", err)
+	assert.Empty(t, newVal)
 }

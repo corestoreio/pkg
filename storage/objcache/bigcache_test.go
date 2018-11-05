@@ -51,8 +51,8 @@ func TestWithBigCache_Error(t *testing.T) {
 	assert.EqualError(t, err, "Shards number must be power of two", "Error: %+v", err)
 }
 
-func TestProcessor_Parallel_GetPut_BigCache(t *testing.T) {
-	newTestNewProcessor(t, objcache.NewBigCacheClient(bigcache.Config{}))
+func TestBigCache_ServiceComplexParallel(t *testing.T) {
+	newServiceComplexParallelTest(t, objcache.NewBigCacheClient(bigcache.Config{}), nil)
 }
 
 func TestWithBigCache_DecoderError(t *testing.T) {

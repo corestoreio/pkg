@@ -56,7 +56,6 @@ func benchmarkCountry(iterationsPutGet int, level2 objcache.NewStorageFn, opts *
 			for pb.Next() {
 				key := strconv.FormatInt(i, 10) // 1 alloc
 				i++
-
 				if err := p.Put(ctx, key, cntry, 0); err != nil {
 					b.Fatalf("%+v", err)
 				}
@@ -158,6 +157,20 @@ func Benchmark_Redis_MsgPack(b *testing.B) {
 	b.Run("Country_2x", benchmarkCountry(2, objcache.WithRedisURL(redConURL), newSrvOpt(newMsgPackCodec())))
 	b.Run("Stores_1x", benchmarkStores(1, objcache.WithRedisURL(redConURL), newSrvOpt(newMsgPackCodec())))
 	b.Run("Stores_2x", benchmarkStores(2, objcache.WithRedisURL(redConURL), newSrvOpt(newMsgPackCodec())))
+}
+
+func Benchmark_File_Gob(b *testing.B) {
+	defer func() {
+		b.StopTimer()
+		if err := os.RemoveAll("testdata/fs"); err != nil {
+			b.Fatal(err)
+		}
+		b.StartTimer()
+	}()
+	b.Run("Country_1x", benchmarkCountry(1, objcache.NewFileSystemClient(nil), newSrvOpt(gobCodec{}, Country{})))
+	b.Run("Country_2x", benchmarkCountry(2, objcache.NewFileSystemClient(nil), newSrvOpt(gobCodec{}, Country{})))
+	b.Run("Stores_1x", benchmarkStores(1, objcache.NewFileSystemClient(nil), newSrvOpt(gobCodec{}, TableStoreSlice{})))
+	b.Run("Stores_2x", benchmarkStores(2, objcache.NewFileSystemClient(nil), newSrvOpt(gobCodec{}, TableStoreSlice{})))
 }
 
 var ugmsgPackHandle codec.MsgpackHandle

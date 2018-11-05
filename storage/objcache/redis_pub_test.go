@@ -19,7 +19,6 @@ package objcache_test
 import (
 	"context"
 	"fmt"
-	"math"
 	"testing"
 	"time"
 
@@ -42,44 +41,17 @@ func TestWithRedisURL_PutGet_Success(t *testing.T) {
 		defer mr.Close()
 		redConURL := "redis://" + mr.Addr()
 
-		testWithRedisURL_PutGet_Success(t, func() {
+		testExpiration(t, func() {
 			mr.FastForward(time.Second * 2)
 		}, objcache.WithRedisURL(redConURL), newSrvOpt(JSONCodec{}))
 	})
 
 	t.Run("real redis integration", func(t *testing.T) {
 		redConURL := lookupRedisEnv(t)
-		testWithRedisURL_PutGet_Success(t, func() {
+		testExpiration(t, func() {
 			time.Sleep(time.Second * 2)
 		}, objcache.WithRedisURL(redConURL), newSrvOpt(JSONCodec{}))
 	})
-}
-
-func testWithRedisURL_PutGet_Success(t *testing.T, cb func(), level2 objcache.NewStorageFn, so *objcache.ServiceOptions) {
-	p, err := objcache.NewService(nil, level2, so)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		assert.NoError(t, p.Close())
-	}()
-
-	key := strs.RandAlnum(30)
-	if err := p.Put(context.TODO(), key, math.Pi, time.Second); err != nil {
-		t.Fatalf("Key %q Error: %s", key, err)
-	}
-
-	var newVal float64
-	err = p.Get(context.TODO(), key, &newVal)
-	assert.NoError(t, err, "%+v", err)
-	assert.Exactly(t, math.Pi, newVal)
-
-	cb()
-
-	newVal = 0
-	err = p.Get(context.TODO(), key, &newVal)
-	assert.NoError(t, err, "%+v", err)
-	assert.Empty(t, newVal)
 }
 
 func TestWithRedisURL_Get_NotFound_Mock(t *testing.T) {
@@ -156,12 +128,12 @@ func TestWithRedisURL_ConFailure(t *testing.T) {
 
 }
 
-func TestWithRedisURL_Parallel_GetPut(t *testing.T) {
+func TestWithRedisURL_ComplexParallel(t *testing.T) {
 	mr := miniredis.NewMiniRedis()
 	assert.NoError(t, mr.Start())
 	defer mr.Close()
 	redConURL := fmt.Sprintf("redis://%s/?db=2", mr.Addr())
-	newTestNewProcessor(t, objcache.WithRedisURL(redConURL))
+	newServiceComplexParallelTest(t, objcache.WithRedisURL(redConURL), nil)
 }
 
 func TestWithRedisURLMock_Delete(t *testing.T) {

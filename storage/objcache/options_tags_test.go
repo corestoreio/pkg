@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build bigcache redis gob csall
+// +build bigcache redis gob file csall
 
 package objcache_test
 
