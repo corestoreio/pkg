@@ -15,6 +15,8 @@
 package objcache
 
 import (
+	"context"
+	"encoding"
 	"testing"
 
 	"github.com/corestoreio/errors"
@@ -41,5 +43,61 @@ func TestNewProcessor_NewError(t *testing.T) {
 		)
 		assert.Nil(t, p)
 		assert.True(t, errors.NotImplemented.Match(err), "Error: %s", err)
+	})
+}
+
+var (
+	_ encoding.TextMarshaler     = (*encodingText)(nil)
+	_ encoding.TextUnmarshaler   = (*encodingText)(nil)
+	_ encoding.BinaryUnmarshaler = (*encodingBinary)(nil)
+	_ encoding.BinaryMarshaler   = (*encodingBinary)(nil)
+)
+
+type encodingText string
+
+func (e *encodingText) UnmarshalText(text []byte) error {
+	*e = encodingText(text)
+	return nil
+}
+func (e encodingText) MarshalText() (text []byte, err error) { return []byte(e), nil }
+
+type encodingBinary string
+
+func (e *encodingBinary) UnmarshalBinary(text []byte) error {
+	*e = encodingBinary(text)
+	return nil
+}
+func (e encodingBinary) MarshalBinary() (text []byte, err error) { return []byte(e), nil }
+
+func TestEncoding_Text_Binary(t *testing.T) {
+	t.Parallel()
+
+	// Not using any codec
+	p, err := NewService(NewCacheSimpleInmemory, NewCacheSimpleInmemory, &ServiceOptions{Codec: nil})
+	assert.NoError(t, err)
+	defer assert.NoError(t, p.Close())
+
+	ctx := context.TODO()
+	t.Run("Text", func(t *testing.T) {
+		obj := encodingText("Hello World 🎉")
+		err := p.Set(ctx, "kt", obj, 0)
+		assert.NoError(t, err)
+
+		var obj2 encodingText
+		err = p.Get(ctx, "kt", &obj2)
+		assert.NoError(t, err)
+		assert.Exactly(t, obj, obj2)
+		assert.NotEmpty(t, obj2)
+	})
+	t.Run("Binary", func(t *testing.T) {
+		obj := encodingBinary("Hello World 🎉")
+		err := p.Set(ctx, "kt", obj, 0)
+		assert.NoError(t, err)
+
+		var obj2 encodingBinary
+		err = p.Get(ctx, "kt", &obj2)
+		assert.NoError(t, err)
+		assert.Exactly(t, obj, obj2)
+		assert.NotEmpty(t, obj2)
 	})
 }
