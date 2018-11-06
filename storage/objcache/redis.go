@@ -53,7 +53,7 @@ func parseDuration(keys []string, ds []*time.Duration, params gourl.Values) (err
 		}
 	}
 	if err != nil {
-		err = errors.NotValid.New(err, "[objcache] WithRedisURL Parameter %q with value %q is invalid", keys[i], params.Get(keys[i]))
+		err = errors.NotValid.New(err, "[objcache] NewRedisByURLClient Parameter %q with value %q is invalid", keys[i], params.Get(keys[i]))
 	}
 	return err
 }
@@ -66,12 +66,12 @@ func parseInt(keys []string, ds []*int, params gourl.Values) (err error) {
 		}
 	}
 	if err != nil {
-		err = errors.NotValid.New(err, "[objcache] WithRedisURL Parameter %q with value %q is invalid", keys[i], params.Get(keys[i]))
+		err = errors.NotValid.New(err, "[objcache] NewRedisByURLClient Parameter %q with value %q is invalid", keys[i], params.Get(keys[i]))
 	}
 	return err
 }
 
-// WithRedisURL connects to a Redis server at the given URL using the HTTP URI
+// NewRedisByURLClient connects to a Redis server at the given URL using the HTTP URI
 // scheme. URLs should follow the draft IANA specification for the scheme
 // (https://www.iana.org/assignments/uri-schemes/prov/redis). This option
 // function sets the connection as cache backend to the Service.
@@ -82,7 +82,7 @@ func parseInt(keys []string, ds []*int, params gourl.Values) (err error) {
 // For example:
 // 		redis://localhost:6379/?db=3
 // 		redis://localhost:6379/?max_active=50&max_idle=5&idle_timeout=10s&max_conn_lifetime=1m&key_prefix=xcache_
-func WithRedisURL(rawURL string) NewStorageFn {
+func NewRedisByURLClient(rawURL string) NewStorageFn {
 	return func() (Storager, error) {
 		addr, _, password, params, err := url.ParseConnection(rawURL)
 		if err != nil {

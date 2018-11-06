@@ -140,10 +140,10 @@ func Benchmark_Redis_Gob(b *testing.B) {
 	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
 		`)
 	}
-	b.Run("Country_1x", benchmarkCountry(1, objcache.WithRedisURL(redConURL), newSrvOpt(gobCodec{}, Country{})))
-	b.Run("Country_2x", benchmarkCountry(2, objcache.WithRedisURL(redConURL), newSrvOpt(gobCodec{}, Country{})))
-	b.Run("Stores_1x", benchmarkStores(1, objcache.WithRedisURL(redConURL), newSrvOpt(gobCodec{}, TableStoreSlice{})))
-	b.Run("Stores_2x", benchmarkStores(2, objcache.WithRedisURL(redConURL), newSrvOpt(gobCodec{}, TableStoreSlice{})))
+	b.Run("Country_1x", benchmarkCountry(1, objcache.NewRedisByURLClient(redConURL), newSrvOpt(gobCodec{}, Country{})))
+	b.Run("Country_2x", benchmarkCountry(2, objcache.NewRedisByURLClient(redConURL), newSrvOpt(gobCodec{}, Country{})))
+	b.Run("Stores_1x", benchmarkStores(1, objcache.NewRedisByURLClient(redConURL), newSrvOpt(gobCodec{}, TableStoreSlice{})))
+	b.Run("Stores_2x", benchmarkStores(2, objcache.NewRedisByURLClient(redConURL), newSrvOpt(gobCodec{}, TableStoreSlice{})))
 }
 
 func Benchmark_Redis_MsgPack(b *testing.B) {
@@ -153,10 +153,10 @@ func Benchmark_Redis_MsgPack(b *testing.B) {
 	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
 		`)
 	}
-	b.Run("Country_1x", benchmarkCountry(1, objcache.WithRedisURL(redConURL), newSrvOpt(newMsgPackCodec())))
-	b.Run("Country_2x", benchmarkCountry(2, objcache.WithRedisURL(redConURL), newSrvOpt(newMsgPackCodec())))
-	b.Run("Stores_1x", benchmarkStores(1, objcache.WithRedisURL(redConURL), newSrvOpt(newMsgPackCodec())))
-	b.Run("Stores_2x", benchmarkStores(2, objcache.WithRedisURL(redConURL), newSrvOpt(newMsgPackCodec())))
+	b.Run("Country_1x", benchmarkCountry(1, objcache.NewRedisByURLClient(redConURL), newSrvOpt(newMsgPackCodec())))
+	b.Run("Country_2x", benchmarkCountry(2, objcache.NewRedisByURLClient(redConURL), newSrvOpt(newMsgPackCodec())))
+	b.Run("Stores_1x", benchmarkStores(1, objcache.NewRedisByURLClient(redConURL), newSrvOpt(newMsgPackCodec())))
+	b.Run("Stores_2x", benchmarkStores(2, objcache.NewRedisByURLClient(redConURL), newSrvOpt(newMsgPackCodec())))
 }
 
 func Benchmark_File_Gob(b *testing.B) {

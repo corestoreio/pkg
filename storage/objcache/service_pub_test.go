@@ -51,6 +51,12 @@ func TestNewProcessor_EncoderError(t *testing.T) {
 	assert.EqualError(t, err, "[objcache] With key \"key1\" and dst type struct { ErrChan chan error }: gob: type struct { ErrChan chan error } has no exported fields", "Error: %s", err)
 }
 
+func debugSliceBytes(t testing.TB, data ...[]byte) {
+	for i, d := range data {
+		t.Logf("IDX:%02d: IsNil %t | %q", i, d == nil, string(d))
+	}
+}
+
 type myString struct {
 	data string
 	err  error

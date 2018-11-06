@@ -43,14 +43,14 @@ func TestWithRedisURL_PutGet_Success(t *testing.T) {
 
 		testExpiration(t, func() {
 			mr.FastForward(time.Second * 2)
-		}, objcache.WithRedisURL(redConURL), newSrvOpt(JSONCodec{}))
+		}, objcache.NewRedisByURLClient(redConURL), newSrvOpt(JSONCodec{}))
 	})
 
 	t.Run("real redis integration", func(t *testing.T) {
 		redConURL := lookupRedisEnv(t)
 		testExpiration(t, func() {
 			time.Sleep(time.Second * 2)
-		}, objcache.WithRedisURL(redConURL), newSrvOpt(JSONCodec{}))
+		}, objcache.NewRedisByURLClient(redConURL), newSrvOpt(JSONCodec{}))
 	})
 }
 
@@ -61,7 +61,7 @@ func TestWithRedisURL_Get_NotFound_Mock(t *testing.T) {
 	assert.NoError(t, mr.Start())
 	defer mr.Close()
 
-	p, err := objcache.NewService(nil, objcache.WithRedisURL("redis://"+mr.Addr()), newSrvOpt(JSONCodec{}))
+	p, err := objcache.NewService(nil, objcache.NewRedisByURLClient("redis://"+mr.Addr()), newSrvOpt(JSONCodec{}))
 	assert.NoError(t, err)
 	defer func() {
 		assert.NoError(t, p.Close())
@@ -116,7 +116,7 @@ func TestWithRedisURL_ConFailure(t *testing.T) {
 		},
 	}
 	for i, test := range dialErrors {
-		p, err := objcache.NewService(nil, objcache.WithRedisURL(test.rawurl), newSrvOpt(JSONCodec{}))
+		p, err := objcache.NewService(nil, objcache.NewRedisByURLClient(test.rawurl), newSrvOpt(JSONCodec{}))
 		if test.errBhf > 0 {
 			assert.True(t, test.errBhf.Match(err), "Index %d Error %+v", i, err)
 			assert.Nil(t, p, "Index %d", i)
@@ -133,7 +133,7 @@ func TestWithRedisURL_ComplexParallel(t *testing.T) {
 	assert.NoError(t, mr.Start())
 	defer mr.Close()
 	redConURL := fmt.Sprintf("redis://%s/?db=2", mr.Addr())
-	newServiceComplexParallelTest(t, objcache.WithRedisURL(redConURL), nil)
+	newServiceComplexParallelTest(t, objcache.NewRedisByURLClient(redConURL), nil)
 }
 
 func TestWithRedisURLMock_Delete(t *testing.T) {
@@ -141,10 +141,10 @@ func TestWithRedisURLMock_Delete(t *testing.T) {
 	assert.NoError(t, mr.Start())
 	defer mr.Close()
 	redConURL := fmt.Sprintf("redis://%s/?db=2", mr.Addr())
-	newTestServiceDelete(t, objcache.WithRedisURL(redConURL))
+	newTestServiceDelete(t, objcache.NewRedisByURLClient(redConURL))
 }
 
 func TestWithRedisURLReal_Delete(t *testing.T) {
 	redConURL := lookupRedisEnv(t)
-	newTestServiceDelete(t, objcache.WithRedisURL(redConURL))
+	newTestServiceDelete(t, objcache.NewRedisByURLClient(redConURL))
 }

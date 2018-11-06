@@ -40,7 +40,7 @@ type lruCache struct {
 	cache map[string]*list.Element
 }
 
-// NewLRU creates a new lruCache. If maxEntries is zero, the cache has no limit
+// NewCacheLRU creates a new lruCache. If maxEntries is zero, the cache has no limit
 // and it's assumed that eviction is done by the caller. This type does not get
 // exported.
 // WithLRU provides the `lru` cache which implements a fixed-size thread safe
@@ -51,14 +51,17 @@ type lruCache struct {
 // cache. For now this algorithm should be good enough. Can be refactored
 // any time later.
 // Can be replaced by https://github.com/goburrow/cache TinyLFU
-func NewLRU(maxEntries int) Storager {
-	if maxEntries == 0 {
-		maxEntries = 1024
-	}
-	return &lruCache{
-		maxEntries: maxEntries,
-		ll:         list.New(),
-		cache:      make(map[string]*list.Element, maxEntries+1),
+// LRU cache backend does not support expiration.
+func NewCacheLRU(maxEntries int) NewStorageFn {
+	return func() (Storager, error) {
+		if maxEntries == 0 {
+			maxEntries = 1024
+		}
+		return &lruCache{
+			maxEntries: maxEntries,
+			ll:         list.New(),
+			cache:      make(map[string]*list.Element, maxEntries+1),
+		}, nil
 	}
 }
 
@@ -88,9 +91,11 @@ func (c *lruCache) Get(_ context.Context, keys []string) (values [][]byte, err e
 	defer c.mu.Unlock()
 
 	for _, key := range keys {
-		if ele, hit := c.cache[key]; hit {
+		if ele, ok := c.cache[key]; ok {
 			c.ll.MoveToFront(ele)
 			values = append(values, ele.Value.(liElem).bVal)
+		} else {
+			values = append(values, nil)
 		}
 	}
 	return
@@ -113,13 +118,14 @@ func (c *lruCache) removeElement(e *list.Element) {
 // Flush purges all stored items from the cache.
 func (c *lruCache) Truncate(_ context.Context) (err error) {
 	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	c.ll = list.New()
 	me := c.maxEntries
 	if me == 0 {
 		me = 1024
 	}
 	c.cache = make(map[string]*list.Element, me+1)
-	c.mu.Unlock()
 	return nil
 }
 
@@ -130,7 +136,8 @@ func (c *lruCache) Delete(_ context.Context, keys []string) (err error) {
 	for _, key := range keys {
 		if ee, ok := c.cache[key]; ok {
 			c.ll.Remove(ee)
-			return nil
+			c.cache[key] = nil
+			delete(c.cache, key)
 		}
 	}
 	return nil
