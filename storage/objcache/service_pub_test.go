@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build bigcache gob redis csall
-
 package objcache_test
 
 import (
@@ -54,6 +52,13 @@ func TestNewProcessor_EncoderError(t *testing.T) {
 func debugSliceBytes(t testing.TB, data ...[]byte) {
 	for i, d := range data {
 		t.Logf("IDX:%02d: IsNil %t | %q", i, d == nil, string(d))
+	}
+}
+
+func newSrvOpt(c objcache.Codecer, primeObjects ...interface{}) *objcache.ServiceOptions {
+	return &objcache.ServiceOptions{
+		Codec:        c,
+		PrimeObjects: primeObjects,
 	}
 }
 

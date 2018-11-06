@@ -28,13 +28,6 @@ import (
 	"github.com/ugorji/go/codec"
 )
 
-func newSrvOpt(c objcache.Codecer, primeObjects ...interface{}) *objcache.ServiceOptions {
-	return &objcache.ServiceOptions{
-		Codec:        c,
-		PrimeObjects: primeObjects,
-	}
-}
-
 func benchmarkCountry(iterationsSetGet int, level2 objcache.NewStorageFn, opts *objcache.ServiceOptions) func(b *testing.B) {
 	return func(b *testing.B) {
 		p, err := objcache.NewService(nil, level2, opts)
