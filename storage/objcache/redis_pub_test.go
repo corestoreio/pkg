@@ -30,7 +30,7 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
-func TestWithRedisURL_PutGet_Success(t *testing.T) {
+func TestWithRedisURL_SetGet_Success(t *testing.T) {
 	t.Parallel()
 
 	t.Run("miniredis", func(t *testing.T) {

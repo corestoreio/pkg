@@ -32,7 +32,7 @@ func TestWithBigCache_Success(t *testing.T) {
 		t.Fatal(err)
 	}
 	key := `key1`
-	if err := p.Put(context.TODO(), key, math.Pi, 0); err != nil {
+	if err := p.Set(context.TODO(), key, math.Pi, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -66,7 +66,7 @@ func TestWithBigCache_DecoderError(t *testing.T) {
 	}{
 		Val: "Gopher",
 	}
-	assert.NoError(t, p.Put(context.TODO(), key, val1, 0))
+	assert.NoError(t, p.Set(context.TODO(), key, val1, 0))
 
 	var val2 struct {
 		Val2 string

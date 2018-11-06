@@ -107,11 +107,11 @@ func (fs *fileStorage) writeFileContent(fileName string, data []byte, expires ti
 	return
 }
 
-// Put writes the values into a file by using the keys as their filename. The
+// Set writes the values into a file by using the keys as their filename. The
 // keys will be sha1ed. If no duration gets set, the file atime and mtime
 // applies to 1970-01-01 which means that the content never expires. once the
 // mtime and atime is greater than the year 1970, the expiration gets checked.
-func (fs *fileStorage) Put(_ context.Context, keys []string, values [][]byte, expires []time.Duration) (err error) {
+func (fs *fileStorage) Set(_ context.Context, keys []string, values [][]byte, expires []time.Duration) (err error) {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 	for i, key := range keys {

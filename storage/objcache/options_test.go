@@ -50,7 +50,7 @@ func TestWithSimpleSlowCacheMap_Expires(t *testing.T) {
 
 	t.Run("key expires", func(t *testing.T) {
 
-		err := p.Put(context.TODO(), "keyEx", 3.14159, time.Second)
+		err := p.Set(context.TODO(), "keyEx", 3.14159, time.Second)
 		assert.NoError(t, err)
 		var f float64
 		err = p.Get(context.TODO(), "keyEx", &f)
@@ -77,7 +77,7 @@ func TestMakeBinary(t *testing.T) {
 
 	t.Run("exists single", func(t *testing.T) {
 		b := MakeBinary()
-		err := p.Put(context.TODO(), "mb01", b, 0)
+		err := p.Set(context.TODO(), "mb01", b, 0)
 		assert.NoError(t, err)
 
 		err = p.Get(context.TODO(), "mb01", &b)
@@ -98,7 +98,7 @@ func TestMakeBinary(t *testing.T) {
 		b3 := MakeBinary()
 		keys := []string{"mb10", "mb20", "mb30"}
 		vals := []interface{}{&b1, &b2, &b3}
-		err := p.PutMulti(context.TODO(), keys, vals, nil)
+		err := p.SetMulti(context.TODO(), keys, vals, nil)
 		assert.NoError(t, err)
 
 		b1a := MakeBinary()

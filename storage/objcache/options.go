@@ -53,7 +53,7 @@ type mapCache struct {
 	items sync.Map
 }
 
-func (mc *mapCache) Put(_ context.Context, keys []string, values [][]byte, expirations []time.Duration) (err error) {
+func (mc *mapCache) Set(_ context.Context, keys []string, values [][]byte, expirations []time.Duration) (err error) {
 	hasExp := len(expirations) > 0
 	n := now()
 	for i, key := range keys {
@@ -108,7 +108,7 @@ type blackHole struct {
 	err error
 }
 
-func (mc blackHole) Put(_ context.Context, keys []string, values [][]byte, expirations []time.Duration) (err error) {
+func (mc blackHole) Set(_ context.Context, keys []string, values [][]byte, expirations []time.Duration) (err error) {
 	return mc.err
 }
 
@@ -136,7 +136,7 @@ func (n *binary) Unmarshal(data []byte) error {
 func (n binary) Marshal() ([]byte, error) { return []byte{byte(n)}, nil }
 func (n binary) IsValid() bool            { return n == '1' }
 
-// MakeBinary creates a binary type for using in Put/Get functions when the code
+// MakeBinary creates a binary type for using in Set/Get functions when the code
 // needs a `set` algorithm. For example checking if a JWT exists in the
 // blacklist. Function IsValid returns true if the key exists.
 func MakeBinary() binary { return binary('1') }

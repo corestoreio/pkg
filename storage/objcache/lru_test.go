@@ -48,7 +48,7 @@ func TestLRUGet(t *testing.T) {
 			for _, tt := range lruGetTests {
 				lru, err := objcache.NewCacheLRU(size)()
 				assert.NoError(t, err)
-				assert.NoError(t, lru.Put(ctx, []string{tt.key}, testLRUData, nil))
+				assert.NoError(t, lru.Set(ctx, []string{tt.key}, testLRUData, nil))
 				val, err := lru.Get(ctx, []string{tt.key})
 				assert.NoError(t, err)
 				ok := (val != nil)
@@ -68,7 +68,7 @@ func TestLRUGet(t *testing.T) {
 			assert.NoError(t, err)
 			ctx := context.TODO()
 			for _, tt := range lruGetTests {
-				assert.NoError(t, lru.Put(ctx, []string{tt.key}, testLRUData, nil))
+				assert.NoError(t, lru.Set(ctx, []string{tt.key}, testLRUData, nil))
 				val, err := lru.Get(ctx, []string{tt.key})
 				assert.NoError(t, err)
 				ok := val != nil
@@ -107,11 +107,11 @@ func TestLRUNew_Parallel(t *testing.T) {
 			AFAIK problems with cache eviction
 			*/
 
-			err := lru.Put(ctx, []string{tt.key}, testLRUData, nil)
+			err := lru.Set(ctx, []string{tt.key}, testLRUData, nil)
 			if err != nil {
 				panic(err)
 			}
-			err = lru.Put(ctx, []string{tt.key}, testLRUData, nil) // this is an ugly fix, but not that flaky anymore when running test with -count=40
+			err = lru.Set(ctx, []string{tt.key}, testLRUData, nil) // this is an ugly fix, but not that flaky anymore when running test with -count=40
 			if err != nil {
 				panic(err)
 			}
@@ -134,7 +134,7 @@ func TestLRUNew_Parallel(t *testing.T) {
 		assert.NoError(t, err)
 		ctx := context.TODO()
 		for _, tt := range lruGetTests {
-			assert.NoError(t, lru.Put(ctx, []string{tt.key}, testLRUData, nil))
+			assert.NoError(t, lru.Set(ctx, []string{tt.key}, testLRUData, nil))
 		}
 
 		bgwork.Wait(len(lruGetTests), func(idx int) {

@@ -56,7 +56,7 @@ type bigCacheWrapper struct {
 	*bigcache.BigCache
 }
 
-func (w bigCacheWrapper) Put(_ context.Context, keys []string, values [][]byte, _ []time.Duration) (err error) {
+func (w bigCacheWrapper) Set(_ context.Context, keys []string, values [][]byte, _ []time.Duration) (err error) {
 	for i, key := range keys {
 		if err := w.BigCache.Set(key, values[i]); err != nil {
 			// This error construct save some unneeded allocations.

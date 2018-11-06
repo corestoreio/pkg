@@ -64,16 +64,16 @@ func ExampleWithPooledEncoder() {
 	}
 
 	pythagorasKey := `Pythagoras`
-	if err := tc.Put(context.TODO(), pythagorasKey, P{3, 4, 5, "Pythagoras"}, 0); err != nil {
-		log.Fatalf("Put error 1: %+v", err)
+	if err := tc.Set(context.TODO(), pythagorasKey, P{3, 4, 5, "Pythagoras"}, 0); err != nil {
+		log.Fatalf("Set error 1: %+v", err)
 	}
 	treeHouseKey := `TreeHouse`
-	if err := tc.Put(context.TODO(), treeHouseKey, P{1782, 1841, 1922, "Treehouse"}, 0); err != nil {
-		log.Fatalf("Put error 2: %+v", err)
+	if err := tc.Set(context.TODO(), treeHouseKey, P{1782, 1841, 1922, "Treehouse"}, 0); err != nil {
+		log.Fatalf("Set error 2: %+v", err)
 	}
 
 	// Get from cache and print the values. Get operations are called more frequently
-	// than Put operations so we're simulating that with 5 repetitions.
+	// than Set operations so we're simulating that with 5 repetitions.
 	for i := 0; i < 5; i++ {
 		var q Q
 		if err := tc.Get(context.TODO(), pythagorasKey, &q); err != nil {
@@ -88,15 +88,15 @@ func ExampleWithPooledEncoder() {
 	}
 
 	// We overwrite the previously set values
-	if err := tc.Put(context.TODO(), pythagorasKey, R{"Pythagoras2", 'P'}, 0); err != nil {
-		log.Fatalf("Put error 1: %+v", err)
+	if err := tc.Set(context.TODO(), pythagorasKey, R{"Pythagoras2", 'P'}, 0); err != nil {
+		log.Fatalf("Set error 1: %+v", err)
 	}
-	if err := tc.Put(context.TODO(), treeHouseKey, R{"Treehouse2", 'T'}, 0); err != nil {
-		log.Fatalf("Put error 2: %+v", err)
+	if err := tc.Set(context.TODO(), treeHouseKey, R{"Treehouse2", 'T'}, 0); err != nil {
+		log.Fatalf("Set error 2: %+v", err)
 	}
 
 	// Get from cache and print the values. Get operations are called more frequently
-	// than Put operations so we're simulating that with 5 repetitions.
+	// than Set operations so we're simulating that with 5 repetitions.
 	for i := 0; i < 5; i++ {
 		var r R
 		if err := tc.Get(context.TODO(), pythagorasKey, &r); err != nil {

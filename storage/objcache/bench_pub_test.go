@@ -35,7 +35,7 @@ func newSrvOpt(c objcache.Codecer, primeObjects ...interface{}) *objcache.Servic
 	}
 }
 
-func benchmarkCountry(iterationsPutGet int, level2 objcache.NewStorageFn, opts *objcache.ServiceOptions) func(b *testing.B) {
+func benchmarkCountry(iterationsSetGet int, level2 objcache.NewStorageFn, opts *objcache.ServiceOptions) func(b *testing.B) {
 	return func(b *testing.B) {
 		p, err := objcache.NewService(nil, level2, opts)
 		if err != nil {
@@ -56,11 +56,11 @@ func benchmarkCountry(iterationsPutGet int, level2 objcache.NewStorageFn, opts *
 			for pb.Next() {
 				key := strconv.FormatInt(i, 10) // 1 alloc
 				i++
-				if err := p.Put(ctx, key, cntry, 0); err != nil {
+				if err := p.Set(ctx, key, cntry, 0); err != nil {
 					b.Fatalf("%+v", err)
 				}
 				// Double execution might detect storing of type information in streaming encoders
-				for j := 0; j < iterationsPutGet; j++ {
+				for j := 0; j < iterationsSetGet; j++ {
 					var newCntry Country
 					if err := p.Get(ctx, key, &newCntry); err != nil {
 						b.Fatalf("%+v", err)
@@ -74,7 +74,7 @@ func benchmarkCountry(iterationsPutGet int, level2 objcache.NewStorageFn, opts *
 	}
 }
 
-func benchmarkStores(iterationsPutGet int, level2 objcache.NewStorageFn, opts *objcache.ServiceOptions) func(b *testing.B) {
+func benchmarkStores(iterationsSetGet int, level2 objcache.NewStorageFn, opts *objcache.ServiceOptions) func(b *testing.B) {
 	return func(b *testing.B) {
 		p, err := objcache.NewService(nil, level2, opts)
 		if err != nil {
@@ -96,12 +96,12 @@ func benchmarkStores(iterationsPutGet int, level2 objcache.NewStorageFn, opts *o
 				key := strconv.FormatInt(i, 10) // 1 alloc
 				i++
 
-				if err := p.Put(ctx, key, ts, 0); err != nil {
+				if err := p.Set(ctx, key, ts, 0); err != nil {
 					b.Fatal(err)
 				}
 
 				// Double execution might detect storing of type information in streaming encoders
-				for j := 0; j < iterationsPutGet; j++ {
+				for j := 0; j < iterationsSetGet; j++ {
 					var newTS TableStoreSlice
 					if err := p.Get(ctx, key, &newTS); err != nil {
 						b.Fatal(err)

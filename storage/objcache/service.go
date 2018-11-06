@@ -34,7 +34,7 @@ import (
 // values. A second entry defines when a key expires. If the entry is empty, the
 // key does not expire.
 type Storager interface {
-	Put(ctx context.Context, keys []string, values [][]byte, expirations []time.Duration) (err error)
+	Set(ctx context.Context, keys []string, values [][]byte, expirations []time.Duration) (err error)
 	// Get returns the bytes for given keys. The values slice must have the same
 	// length as the keys slice. If one of the keys can't be found, its byte
 	// slice must be `nil`.
@@ -248,14 +248,14 @@ type marshaler interface {
 	Marshal() ([]byte, error)
 }
 
-// Put puts the item in the cache. `src` gets either encoded using the
+// Set puts the item in the cache. `src` gets either encoded using the
 // previously applied encoder OR `src` gets checked if it implements interface
 //		type marshaler interface {
 //			Marshal() ([]byte, error)
 //		}
 // and calls `Marshal`. (also checks for the interfaces in package "encoding").
 // Checking for marshaler has precedence. Useful with protobuf.
-func (tr *Service) Put(ctx context.Context, key string, src interface{}, expires time.Duration) error {
+func (tr *Service) Set(ctx context.Context, key string, src interface{}, expires time.Duration) error {
 	ri := tr.poolGetRawItems()
 	defer tr.poolPutRawItems(ri)
 
@@ -272,20 +272,20 @@ func (tr *Service) Put(ctx context.Context, key string, src interface{}, expires
 	ri.expires = append(ri.expires, expires)
 
 	if tr.level1 != nil {
-		if err := tr.level1.Put(ctx, ri.keys, ri.values, ri.expires); err != nil {
+		if err := tr.level1.Set(ctx, ri.keys, ri.values, ri.expires); err != nil {
 			return errors.WithStack(err)
 		}
 	}
 
-	if err := tr.level2.Put(ctx, ri.keys, ri.values, ri.expires); err != nil {
+	if err := tr.level2.Set(ctx, ri.keys, ri.values, ri.expires); err != nil {
 		return errors.WithStack(err)
 	}
 	return nil
 }
 
-// PutMulti allows a cache to write several entities at once. For example using
-// Redis MSET. Same logic applies as when using `Put`.
-func (tr *Service) PutMulti(ctx context.Context, keys []string, src []interface{}, expires []time.Duration) error {
+// SetMulti allows a cache to write several entities at once. For example using
+// Redis MSET. Same logic applies as when using `Set`.
+func (tr *Service) SetMulti(ctx context.Context, keys []string, src []interface{}, expires []time.Duration) error {
 	if lk, ld := len(keys), len(src); lk != ld {
 		return errors.Mismatch.Newf("[objcache] Length of keys (%d) vs length of src (%d) must be equal", lk, ld)
 	}
@@ -299,11 +299,11 @@ func (tr *Service) PutMulti(ctx context.Context, keys []string, src []interface{
 	}
 
 	if tr.level1 != nil {
-		if err := tr.level1.Put(ctx, ri.keys, ri.values, ri.expires); err != nil {
+		if err := tr.level1.Set(ctx, ri.keys, ri.values, ri.expires); err != nil {
 			return errors.WithStack(err)
 		}
 	}
-	if err := tr.level2.Put(ctx, ri.keys, ri.values, ri.expires); err != nil {
+	if err := tr.level2.Set(ctx, ri.keys, ri.values, ri.expires); err != nil {
 		return errors.WithStack(err)
 	}
 	return nil

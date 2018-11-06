@@ -178,7 +178,7 @@ type redisWrapper struct {
 	// ifp  *sync.Pool
 }
 
-func (w redisWrapper) Put(_ context.Context, keys []string, values [][]byte, expirations []time.Duration) (err error) {
+func (w redisWrapper) Set(_ context.Context, keys []string, values [][]byte, expirations []time.Duration) (err error) {
 	conn := w.Pool.Get()
 	defer func() {
 		if err2 := conn.Close(); err == nil && err2 != nil {

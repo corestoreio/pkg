@@ -47,7 +47,7 @@ func TestNewProcessor_EncoderError(t *testing.T) {
 	}{
 		ErrChan: make(chan error),
 	}
-	err = p.Put(context.TODO(), "key1", ch, 0)
+	err = p.Set(context.TODO(), "key1", ch, 0)
 	assert.EqualError(t, err, "[objcache] With key \"key1\" and dst type struct { ErrChan chan error }: gob: type struct { ErrChan chan error } has no exported fields", "Error: %s", err)
 }
 
@@ -77,11 +77,11 @@ func TestService_Encoding(t *testing.T) {
 
 	t.Run("marshal error", func(t *testing.T) {
 		dErr := &myString{err: errors.BadEncoding.Newf("Bad encoding")}
-		err := p.Put(context.TODO(), "dErr", dErr, 0)
+		err := p.Set(context.TODO(), "dErr", dErr, 0)
 		assert.True(t, errors.BadEncoding.Match(err), "%+v", err)
 	})
 	t.Run("unmarshal error", func(t *testing.T) {
-		err := p.Put(context.TODO(), "dErr2", 1, 0)
+		err := p.Set(context.TODO(), "dErr2", 1, 0)
 		assert.NoError(t, err)
 		dErr := &myString{err: errors.BadEncoding.Newf("Bad encoding")}
 		err = p.Get(context.TODO(), "dErr2", dErr)
@@ -92,7 +92,7 @@ func TestService_Encoding(t *testing.T) {
 		d1 := &myString{data: "HelloWorld"}
 		d2 := &myString{data: "HalloWelt"}
 
-		err = p.PutMulti(context.TODO(), []string{"d1x", "d2x"}, []interface{}{d1, d2}, nil)
+		err = p.SetMulti(context.TODO(), []string{"d1x", "d2x"}, []interface{}{d1, d2}, nil)
 		assert.NoError(t, err)
 
 		d1.data = ""
@@ -110,7 +110,7 @@ const iterations = 30
 func testCountry(p *objcache.Service, key string) func() error {
 	var val = mustGetTestCountry()
 	return func() error {
-		if err := p.Put(context.TODO(), key, val, 0); err != nil {
+		if err := p.Set(context.TODO(), key, val, 0); err != nil {
 			return errors.WithStack(err)
 		}
 
@@ -124,12 +124,12 @@ func testCountry(p *objcache.Service, key string) func() error {
 			}
 		}
 
-		if err := p.Put(context.TODO(), key, Country{}, 0); err != nil {
+		if err := p.Set(context.TODO(), key, Country{}, 0); err != nil {
 			return errors.WithStack(err)
 		}
 
 		for i := 0; i < iterations; i++ {
-			if err := p.Put(context.TODO(), key, val, 0); err != nil {
+			if err := p.Set(context.TODO(), key, val, 0); err != nil {
 				return errors.WithStack(err)
 			}
 		}
@@ -148,7 +148,7 @@ func testStoreSlice(p *objcache.Service, key string) func() error {
 	return func() error {
 
 		var val = getTestStores()
-		if err := p.Put(context.TODO(), key, val, 0); err != nil {
+		if err := p.Set(context.TODO(), key, val, 0); err != nil {
 			return errors.WithStack(err)
 		}
 		for i := 0; i < iterations; i++ {
@@ -160,12 +160,12 @@ func testStoreSlice(p *objcache.Service, key string) func() error {
 				return errors.Mismatch.Newf("%#v\n!=\n%#v", val, newVal)
 			}
 		}
-		if err := p.Put(context.TODO(), key, TableStoreSlice{}, 0); err != nil {
+		if err := p.Set(context.TODO(), key, TableStoreSlice{}, 0); err != nil {
 			return errors.WithStack(err)
 		}
 
 		for i := 0; i < iterations; i++ {
-			if err := p.Put(context.TODO(), key, val, 0); err != nil {
+			if err := p.Set(context.TODO(), key, val, 0); err != nil {
 				return errors.WithStack(err)
 			}
 		}
@@ -323,7 +323,7 @@ func newTestServiceDelete(t *testing.T, level2 objcache.NewStorageFn) {
 	defer func() { assert.NoError(t, p.Close()) }()
 
 	t.Run("single key", func(t *testing.T) {
-		err = p.Put(context.TODO(), "bc_delete", 1970, 0)
+		err = p.Set(context.TODO(), "bc_delete", 1970, 0)
 		assert.NoError(t, err)
 
 		var bcInt int
@@ -346,7 +346,7 @@ func newTestServiceDelete(t *testing.T, level2 objcache.NewStorageFn) {
 		bcInt2 := 1972
 		keys := []string{"bc_delete1", "bc_delete2"}
 		vals := []interface{}{&bcInt1, &bcInt2}
-		err = p.PutMulti(context.TODO(), keys, vals, nil)
+		err = p.SetMulti(context.TODO(), keys, vals, nil)
 		assert.NoError(t, err)
 
 		bcInt1 = 0
@@ -378,7 +378,7 @@ func testExpiration(t *testing.T, cb func(), level2 objcache.NewStorageFn, so *o
 	}()
 
 	key := strs.RandAlnum(30)
-	if err := p.Put(context.TODO(), key, math.Pi, time.Second); err != nil {
+	if err := p.Set(context.TODO(), key, math.Pi, time.Second); err != nil {
 		t.Fatalf("Key %q Error: %s", key, err)
 	}
 

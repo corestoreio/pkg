@@ -66,7 +66,7 @@ func NewCacheLRU(maxEntries int) NewStorageFn {
 }
 
 // Add adds a value to the cache. Panics on nil Path.
-func (c *lruCache) Put(_ context.Context, keys []string, values [][]byte, _ []time.Duration) (err error) {
+func (c *lruCache) Set(_ context.Context, keys []string, values [][]byte, _ []time.Duration) (err error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
