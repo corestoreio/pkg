@@ -98,7 +98,7 @@ from the geniuses listed below:
 | Ventu.io, Oleg Sklyar, contributors. | [util/shortid](http://github.com/corestoreio/pkg/tree/master/utils/shortid) | MIT License Copyright (c) 2016, |
 | Carl Jackson (carl@avtok.com) (Goji) | [net/responseproxy](http://github.com/corestoreio/pkg/tree/master/net/responseproxy) | Copyright (c) 2014, 2015, 2016 |
 | Greg Roseberry, 2014; Patrick O'Brien, 2016 | [util/null](http://github.com/corestoreio/pkg/tree/master/util/null) | BSD Copyright (c) 2014, 2015, 2016 |
-| The Go-MySQL-Driver Authors | [util/null/time_mysql.go](http://github.com/corestoreio/pkg/tree/master/util/null/time_mysql.go) | Mozilla Public License, v. 2.0, Copyright 2012  |
+| The Go-MySQL-Driver Authors | [storage/null/time_mysql.go](http://github.com/corestoreio/pkg/tree/master/storage/null/time_mysql.go) | Mozilla Public License, v. 2.0, Copyright 2012  |
 | siddontang | [storage/binlogsync](http://github.com/corestoreio/pkg/tree/master/storage/binlogsync) | MIT Copyright (c) 2014  |
 | siddontang | [storage/myreplicator](http://github.com/corestoreio/pkg/tree/master/storage/myreplicator) | MIT Copyright (c) 2014  |
 | Tace De Wolf | [util/byteconv](http://github.com/corestoreio/pkg/tree/master/util/byteconv) | MIT Copyright (c) 2015  |
@@ -106,6 +106,7 @@ from the geniuses listed below:
 | Copyright 2013 Google Inc. | [storage/lru](http://github.com/corestoreio/pkg/tree/master/storage/lru) | Apache 2.0  |
 | Alex Saskevich | [util/validation](http://github.com/asaskevich/govalidator) | MIT Copyright (c) 2014  |
 | Mat Ryer and Tyler Bunnell | [util/assert](http://github.com/alecthomas/assert) or github.com/stretchr/testify | Copyright (c) 2012 - 2013  |
+| Google Youtube | [storage/lru](http://github.com/youtube/vitess) | Apache License, Version 2.0 |
 
 ## Licensing
 

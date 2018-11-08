@@ -124,6 +124,9 @@ func testCountry(p *objcache.Service, key string) func() error {
 			if err := p.Get(context.TODO(), key, newVal); err != nil {
 				return errors.WithStack(err)
 			}
+			if want, have := val.IP.String(), newVal.IP.String(); want != have {
+				return errors.Mismatch.Newf("%q != %q", want, have)
+			}
 			if !reflect.DeepEqual(val, newVal) {
 				return errors.Mismatch.Newf("%#v\n!=\n%#v", val, newVal)
 			}

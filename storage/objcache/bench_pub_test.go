@@ -166,6 +166,13 @@ func Benchmark_File_Gob(b *testing.B) {
 	b.Run("Stores_2x", benchmarkStores(2, objcache.NewFileSystemClient(nil), newSrvOpt(gobCodec{}, TableStoreSlice{})))
 }
 
+func Benchmark_LRU_Gob(b *testing.B) {
+	b.Run("Country_1x", benchmarkCountry(1, objcache.NewLRU(nil), newSrvOpt(gobCodec{}, Country{})))
+	b.Run("Country_2x", benchmarkCountry(2, objcache.NewLRU(nil), newSrvOpt(gobCodec{}, Country{})))
+	b.Run("Stores_1x", benchmarkStores(1, objcache.NewLRU(nil), newSrvOpt(gobCodec{}, TableStoreSlice{})))
+	b.Run("Stores_2x", benchmarkStores(2, objcache.NewLRU(nil), newSrvOpt(gobCodec{}, TableStoreSlice{})))
+}
+
 var ugmsgPackHandle codec.MsgpackHandle
 
 // msgPackCodec cannot be pooled because then it uses too much allocs and slows down.
