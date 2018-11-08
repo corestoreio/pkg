@@ -12,12 +12,14 @@ then
 	gometalinter --update --install
 fi
 
+megacheck -tags csall $@
 gometalinter \
 	--exclude='error return value not checked.*(Close|Log|Print).*\(errcheck\)$' \
 	--exclude='.*_test\.go:.*error return value not checked.*\(errcheck\)$' \
 	--exclude='duplicate of.*_test.go.*\(dupl\)$' \
 	--disable=aligncheck \
 	--disable=gotype \
+	--disable=megacheck \
 	--cyclo-over=20 \
 	--tests \
 	--deadline=30s $@

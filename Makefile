@@ -65,6 +65,3 @@ generate:
 	--proto_path=../../../:../../../github.com/gogo/protobuf/protobuf/ \
 	-I ./config/observer/ \
 	proto.proto
-
-	easyjson -build_tags "csall json proto" -omit_empty \
-	config/observer/aes_gcm.go config/observer/json.go config/observer/modifier.go config/observer/validator.go
