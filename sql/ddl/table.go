@@ -42,10 +42,7 @@ type Table struct {
 	// DML statement (SELECT, INSERT, UPDATE or DELETE).
 	Listeners dml.ListenerBucket
 	// IsView set to true to mark if the table is a view.
-	IsView bool
-	// CreateSyntax stores the table/view create SQL command as retrieved via
-	// command `SHOW CREATE TABLE/VIEW [name]`.
-	CreateSyntax string
+	IsView       bool
 	columnsPK    []string
 	columnsNonPK []string
 	columnsAll   []string
@@ -207,32 +204,6 @@ func (t *Table) Swap(ctx context.Context, execer dml.Execer, other string) error
 	return nil
 }
 
-func (t *Table) loadCreateSyntax(ctx context.Context, db dml.Querier) (err error) {
-	if db == nil {
-		return nil
-	}
-	rows, err := db.QueryContext(ctx, fmt.Sprintf("SHOW CREATE %s %s", t.getTyp(), dml.Quoter.Name(t.Name)))
-	if err != nil {
-		return errors.Wrapf(err, "[ddl] Query for %s %q failed", t.getTyp(), t.Name)
-	}
-
-	defer func() {
-		if err2 := rows.Close(); err == nil && err2 != nil {
-			err = errors.Wrapf(err2, "[ddl] Close query result for table %q failed", t.Name)
-		}
-	}()
-	for rows.Next() {
-		var noop string
-		if err := rows.Scan(&noop, &t.CreateSyntax); err != nil {
-			return errors.Wrapf(err, "[ddl] Scan for query result for table %q failed", t.Name)
-		}
-		if noop != t.Name {
-			return errors.Mismatch.Newf("[ddl] Table names do not match: want %q, got %q", noop, t.Name)
-		}
-	}
-	return nil
-}
-
 func (t *Table) getTyp() string {
 	if t.IsView || strings.HasPrefix(t.Name, PrefixView) {
 		return "VIEW"
@@ -247,22 +218,6 @@ func (t *Table) Drop(ctx context.Context, db dml.Execer) error {
 	}
 	_, err := db.ExecContext(ctx, "DROP "+t.getTyp()+" IF EXISTS "+dml.Quoter.QualifierName(t.Schema, t.Name))
 	return errors.Wrapf(err, "[ddl] failed to drop table %q", t.Name)
-}
-
-// Create ...
-// `CreateSyntax`.
-func (t *Table) Create(ctx context.Context, db dml.Execer) error {
-	if db == nil {
-		return nil
-	}
-	if !strings.Contains(t.CreateSyntax, dml.Quoter.Name(t.Name)) {
-		return errors.Mismatch.Newf("[ddl] Cannot find name %q for type %q in CreateSyntax field. Name not quoted?", t.Name, t.getTyp())
-	}
-	if !strings.HasPrefix(t.CreateSyntax, "CREATE ") {
-		errors.NotValid.Newf("[ddl] Invalid CreateSyntax for table %q", t.Name)
-	}
-	_, err := db.ExecContext(ctx, t.CreateSyntax)
-	return errors.Wrapf(err, "[ddl] failed to create table %q", t.Name)
 }
 
 // InfileOptions provides options for the function LoadDataInfile. Some columns

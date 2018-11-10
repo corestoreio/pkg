@@ -16,6 +16,7 @@ package ddl_test
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -132,14 +133,7 @@ func TestWithCreateTable_Mock_DoesNotCreateTable(t *testing.T) {
 	dbc, dbMock := dmltest.MockDB(t)
 	defer dmltest.MockClose(t, dbc, dbMock)
 
-	rows := sqlmock.NewRows([]string{"Table", "Create Table"}).
-		FromCSVString(
-			`"admin_user","CREATE TABLE admin_user ( user_id int(10),  PRIMARY KEY (user_id))"
-`)
-	dbMock.ExpectQuery("SHOW CREATE TABLE `admin_user`").
-		WillReturnRows(rows)
-
-	rows = sqlmock.NewRows([]string{"TABLE_NAME", "COLUMN_NAME", "ORDINAL_POSITION", "COLUMN_DEFAULT", "IS_NULLABLE", "DATA_TYPE", "CHARACTER_MAXIMUM_LENGTH", "NUMERIC_PRECISION", "NUMERIC_SCALE", "COLUMN_TYPE", "COLUMN_KEY", "EXTRA", "COLUMN_COMMENT"}).
+	rows := sqlmock.NewRows([]string{"TABLE_NAME", "COLUMN_NAME", "ORDINAL_POSITION", "COLUMN_DEFAULT", "IS_NULLABLE", "DATA_TYPE", "CHARACTER_MAXIMUM_LENGTH", "NUMERIC_PRECISION", "NUMERIC_SCALE", "COLUMN_TYPE", "COLUMN_KEY", "EXTRA", "COLUMN_COMMENT"}).
 		FromCSVString(
 			`"admin_user","user_id",1,0,"NO","int",0,10,0,"int(10) unsigned","PRI","auto_increment","User ID"
 "admin_user","firsname",2,NULL,"YES","varchar",32,0,0,"varchar(32)","","","User First Name"
@@ -156,7 +150,6 @@ func TestWithCreateTable_Mock_DoesNotCreateTable(t *testing.T) {
 
 	table := tm0.MustTable("admin_user")
 	assert.Exactly(t, []string{"user_id", "firsname", "modified"}, table.Columns.FieldNames())
-	assert.Exactly(t, "CREATE TABLE admin_user ( user_id int(10),  PRIMARY KEY (user_id))", table.CreateSyntax)
 	//t.Log(table.Columns.GoString())
 }
 
@@ -168,10 +161,6 @@ func TestWithCreateTable_Mock_DoesCreateTable(t *testing.T) {
 
 	dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("CREATE TABLE `admin_user` ( user_id int(10),  PRIMARY KEY (user_id))")).
 		WillReturnResult(sqlmock.NewResult(0, 0))
-
-	dbMock.ExpectQuery("SHOW CREATE TABLE `admin_user`").
-		WillReturnRows(sqlmock.NewRows([]string{"Table", "Create Table"}).
-			FromCSVString(`"admin_user","CREATE TABLE admin_user ( user_id int(10),  PRIMARY KEY (user_id))"` + "\n"))
 
 	dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE\\(\\) AND TABLE_NAME.+").
 		WillReturnRows(sqlmock.NewRows([]string{"TABLE_NAME", "COLUMN_NAME", "ORDINAL_POSITION", "COLUMN_DEFAULT", "IS_NULLABLE", "DATA_TYPE", "CHARACTER_MAXIMUM_LENGTH", "NUMERIC_PRECISION", "NUMERIC_SCALE", "COLUMN_TYPE", "COLUMN_KEY", "EXTRA", "COLUMN_COMMENT"}).
@@ -187,8 +176,91 @@ func TestWithCreateTable_Mock_DoesCreateTable(t *testing.T) {
 
 	table := tm0.MustTable("admin_user")
 	assert.Exactly(t, []string{"user_id", "firsname", "modified"}, table.Columns.FieldNames())
-	assert.Exactly(t, "CREATE TABLE admin_user ( user_id int(10),  PRIMARY KEY (user_id))", table.CreateSyntax)
 	//t.Log(table.Columns.GoString())
+}
+
+func TestWithCreateTableFromFile(t *testing.T) {
+	t.Parallel()
+
+	t.Run("case01 load one file one table correctly", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("CREATE TABLE `core_config_data` ( `config_id` int(10) )")).
+			WillReturnResult(sqlmock.NewResult(0, 0))
+
+		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE\\(\\) AND TABLE_NAME.+").
+			WillReturnRows(sqlmock.NewRows([]string{"TABLE_NAME", "COLUMN_NAME", "ORDINAL_POSITION", "COLUMN_DEFAULT", "IS_NULLABLE", "DATA_TYPE", "CHARACTER_MAXIMUM_LENGTH", "NUMERIC_PRECISION", "NUMERIC_SCALE", "COLUMN_TYPE", "COLUMN_KEY", "EXTRA", "COLUMN_COMMENT"}).
+				FromCSVString(`"core_config_data","config_id",1,0,"NO","int",0,10,0,"int(10)","","",""
+`))
+
+		tm0, err := ddl.NewTables(
+			ddl.WithCreateTableFromFile(context.TODO(), dbc.DB, "testdata/case01_*", "core_config_data"),
+		)
+		assert.NoError(t, err, "%+v", err)
+
+		table := tm0.MustTable("core_config_data")
+		assert.Exactly(t, []string{"config_id"}, table.Columns.FieldNames())
+	})
+
+	t.Run("case02 not a CREATE stmt and fails", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		tm0, err := ddl.NewTables(
+			ddl.WithCreateTableFromFile(context.TODO(), dbc.DB, "testdata/case02_*", "core_config_data"),
+		)
+		assert.True(t, errors.NotAllowed.Match(err), "%+v", err)
+		assert.Nil(t, tm0)
+	})
+
+	t.Run("case03 table name not found in file name", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		tm0, err := ddl.NewTables(
+			ddl.WithCreateTableFromFile(context.TODO(), dbc.DB, "testdata/case03_*", "core_config_data"),
+		)
+		assert.True(t, errors.Mismatch.Match(err), "%+v", err)
+		assert.Nil(t, tm0)
+	})
+
+	t.Run("case04 table name not found in file content", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		tm0, err := ddl.NewTables(
+			ddl.WithCreateTableFromFile(context.TODO(), dbc.DB, "testdata/case04_*", "core_config_data"),
+		)
+		assert.True(t, errors.NotAllowed.Match(err), "%+v", err)
+		assert.Nil(t, tm0)
+	})
+
+	t.Run("case05 load two files two tables correctly", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("CREATE TABLE `core_config_data` ( `config_id` int(10) )")).
+			WillReturnResult(sqlmock.NewResult(0, 0))
+
+		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("CREATE TABLE `admin_user` ( `id` int(10) )")).
+			WillReturnResult(sqlmock.NewResult(0, 0))
+
+		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE\\(\\) AND TABLE_NAME.+").
+			WillReturnRows(sqlmock.NewRows([]string{"TABLE_NAME", "COLUMN_NAME", "ORDINAL_POSITION", "COLUMN_DEFAULT", "IS_NULLABLE", "DATA_TYPE", "CHARACTER_MAXIMUM_LENGTH", "NUMERIC_PRECISION", "NUMERIC_SCALE", "COLUMN_TYPE", "COLUMN_KEY", "EXTRA", "COLUMN_COMMENT"}).
+				FromCSVString(`"core_config_data","config_id",1,0,"NO","int",0,10,0,"int(10)","","",""
+"admin_user","id",1,0,"NO","int",0,10,0,"int(10)","","",""
+`))
+
+		tm0, err := ddl.NewTables(
+			ddl.WithCreateTableFromFile(context.TODO(), dbc.DB, "testdata/case05_*", "core_config_data", "admin_user"),
+		)
+		assert.NoError(t, err, "%+v", err)
+
+		assert.Exactly(t, []string{"config_id"}, tm0.MustTable("core_config_data").Columns.FieldNames())
+		assert.Exactly(t, []string{"id"}, tm0.MustTable("admin_user").Columns.FieldNames())
+	})
+
 }
 
 func TestWithDropTable(t *testing.T) {
@@ -339,10 +411,6 @@ func TestWithCreateTable_FromQuery(t *testing.T) {
 			ExpectExec(dmltest.SQLMockQuoteMeta("CREATE TABLE `testTable` AS SELECT * FROM catalog_product_entity")).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
-		dbMock.ExpectQuery("SHOW CREATE TABLE `testTable`").
-			WillReturnRows(sqlmock.NewRows([]string{"Table", "Create Table"}).
-				FromCSVString(`"testTable","CREATE TABLE testTable ( user_id int(10),  PRIMARY KEY (user_id))"` + "\n"))
-
 		dbMock.ExpectQuery("SELEC.+\\s+FROM\\s+information_schema\\.COLUMNS").WillReturnError(xErr)
 
 		tbls, err := ddl.NewTables(ddl.WithCreateTable(context.TODO(), dbc.DB, "testTable", "CREATE TABLE `testTable` AS SELECT * FROM catalog_product_entity"))
@@ -364,7 +432,9 @@ func TestWithTableDB(t *testing.T) {
 
 	assert.Exactly(t, dbc.DB, ts.MustTable("tableA").DB)
 	assert.Exactly(t, dbc.DB, ts.MustTable("tableB").DB)
-	assert.Exactly(t, []string{"tableA", "tableB"}, ts.Tables())
+	haveTS := ts.Tables()
+	sort.Strings(haveTS)
+	assert.Exactly(t, []string{"tableA", "tableB"}, haveTS)
 }
 
 func newCCD() *ddl.Tables {

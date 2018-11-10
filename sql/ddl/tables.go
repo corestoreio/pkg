@@ -15,8 +15,12 @@
 package ddl
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -100,8 +104,8 @@ func WithTable(tableName string, cols ...*Column) TableOption {
 // initialization the create syntax and the column specifications are getting
 // loaded. Write the SQL CREATE statement in upper case.
 //		WithCreateTable(
-//			"sales_order_history", "CREATE TABLE `sales_order_history` ( ... )", // table gets dropped and recreated
-//			"sales_order_stat", "CREATE VIEW `sales_order_stat` AS SELECT ...", // table gets dropped and recreated
+//			"sales_order_history", "CREATE TABLE `sales_order_history` ( ... )", // table created if not exists
+//			"sales_order_stat", "CREATE VIEW `sales_order_stat` AS SELECT ...", // table created if not exists
 //			"sales_order", "", // table/view already exists and gets loaded, NOT dropped.
 //		)
 func WithCreateTable(ctx context.Context, db dml.QueryExecPreparer, identifierCreateSyntax ...string) TableOption {
@@ -132,36 +136,84 @@ func WithCreateTable(ctx context.Context, db dml.QueryExecPreparer, identifierCr
 
 				if isCreateStmt(tvName, tvCreate) {
 					t.IsView = strings.Contains(tvCreate, " VIEW ") || strings.HasPrefix(tvName, PrefixView)
-					t.CreateSyntax = tvCreate
-					if err := t.Create(ctx, db); err != nil {
-						return errors.WithStack(err)
+					if _, err := db.ExecContext(ctx, tvCreate); err != nil {
+						return errors.Wrapf(err, "[ddl] WithCreateTable failed to run for table %q the query: %q", tvName, tvCreate)
 					}
 				}
-
-				if err := t.loadCreateSyntax(ctx, db); err != nil {
-					return errors.WithStack(err)
-				}
-
 			}
-			if db != nil {
-				tc, err := LoadColumns(ctx, db, tvNames...)
-				if err != nil {
-					return errors.WithStack(err)
-				}
-				for _, n := range tvNames {
-					t := tm.tm[n]
-					t.Schema = tm.Schema
-					t.Columns = tc[n]
-					t.update()
-				}
+			if db == nil {
+				return nil
+			}
+			tc, err := LoadColumns(ctx, db, tvNames...)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			for _, n := range tvNames {
+				t := tm.tm[n]
+				t.Schema = tm.Schema
+				t.Columns = tc[n]
+				t.update()
 			}
 			return nil
 		},
 	}
 }
 
+var regexpCreateTable = regexp.MustCompile(`CREATE\s+(VIEW|TABLE)\s*(?:IF\s+NOT\s+EXISTS)?\s+`)
+
 func isCreateStmt(idName, stmt string) bool {
-	return stmt != "" && strings.HasPrefix(stmt, "CREATE ") && strings.Contains(stmt, idName)
+	return regexpCreateTable.MatchString(stmt) && strings.Contains(stmt, idName)
+}
+
+func isCreateStmtBytes(idName, stmt []byte) bool {
+	return regexpCreateTable.Match(stmt) && bytes.Contains(stmt, idName)
+}
+
+// WithCreateTableFromFile creates the defined tables from the loaded *.sql
+// files.
+func WithCreateTableFromFile(ctx context.Context, db dml.QueryExecPreparer, globPattern string, tableNames ...string) TableOption {
+	return TableOption{
+		sortOrder: 6,
+		fn: func(tm *Tables) error {
+			matches, err := filepath.Glob(globPattern)
+			if err != nil {
+				return errors.Wrapf(err, "[ddl] WithCreateTableFromFile and pattern %q", globPattern)
+			}
+			identifierCreateSyntax, err := loadSQLFiles(matches, tableNames)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			return WithCreateTable(ctx, db, identifierCreateSyntax...).fn(tm)
+		},
+	}
+}
+
+func loadSQLFiles(fileNames, tableNames []string) ([]string, error) {
+	ret := make([]string, 0, len(tableNames)*2)
+	var notFound []string
+	for _, tn := range tableNames {
+		found := false
+		for _, fn := range fileNames {
+			if strings.Contains(fn, tn) {
+				data, err := ioutil.ReadFile(fn)
+				if err != nil {
+					return nil, errors.ReadFailed.New(err, "[ddl] WithCreateTableFromFile failed to file %q for table %q", fn, tn)
+				}
+				if !isCreateStmtBytes([]byte(tn), data) { // drop all comments
+					return nil, errors.NotAllowed.Newf("[ddl] WithCreateTableFromFile allows only CREATE TABLE|VIEW statements, got %q", data)
+				}
+				ret = append(ret, tn, string(data))
+				found = true
+			}
+		}
+		if !found {
+			notFound = append(notFound, tn)
+		}
+	}
+	if len(notFound) > 0 {
+		return nil, errors.Mismatch.Newf("[dd] WithCreateTableFromFile cannot load the files for tables: %v", notFound)
+	}
+	return ret, nil
 }
 
 // WithDropTable drops the tables or views listed in argument `tableViewNames`.
