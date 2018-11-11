@@ -17,7 +17,6 @@ package dml_test
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -26,6 +25,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/assert"
 )
@@ -39,9 +39,6 @@ func init() {
 	log.Now = now
 	null.JSONMarshalFn = json.Marshal
 	null.JSONUnMarshalFn = json.Unmarshal
-
-	// Set up table `dml_fake_person`
-	//
 }
 
 var _ dml.ColumnMapper = (*dmlPerson)(nil)
@@ -88,10 +85,7 @@ func (p *dmlPerson) MapColumns(cm *dml.ColumnMap) error {
 }
 
 func createRealSession(t testing.TB, opts ...dml.ConnPoolOption) *dml.ConnPool {
-	dsn := os.Getenv("CS_DSN")
-	if dsn == "" {
-		t.Skip("Environment variable CS_DSN not found. Skipping ...")
-	}
+	dsn := dmltest.MustGetDSN(t)
 	cxn, err := dml.NewConnPool(
 		append([]dml.ConnPoolOption{dml.WithDSN(dsn)}, opts...)...,
 	)
