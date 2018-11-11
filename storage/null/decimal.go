@@ -40,7 +40,7 @@ const (
 	decimalBinaryVersion01
 )
 
-var bytesDot = []byte(`.`)
+var bytesZero = []byte(`0`)
 
 // Decimal defines a container type for any MySQL/MariaDB
 // decimal/numeric/float/double data type and their representation in Go. It can
@@ -122,9 +122,6 @@ func MakeDecimalBytes(b []byte) (d Decimal, err error) {
 	lenDigits := len(digits)
 	if (lenDigits == 1 && digits[0] == '0') || lenDigits == 0 {
 		return Decimal{Valid: lenDigits == 1}, nil
-	}
-	if dotPos := bytes.IndexByte(b, '.'); dotPos >= 0 {
-		digits = bytes.TrimRightFunc(digits, isZero)
 	}
 	digits = bytes.TrimLeftFunc(digits, isZero)
 	if lenDigits > 0 && digits[0] == '.' { // we cut off too much
@@ -252,7 +249,10 @@ func (d Decimal) string(buf *bytes.Buffer) {
 		return
 	}
 
-	digits := int32(math.Log10(float64(d.Precision)) + 1)
+	var digits int32
+	if d.Precision != 0 {
+		digits = int32(math.Log10(float64(d.Precision)) + 1)
+	}
 	if d.PrecisionStr != "" {
 		digits = int32(len(d.PrecisionStr))
 	}
@@ -283,7 +283,14 @@ func (d Decimal) string(buf *bytes.Buffer) {
 		pos++
 	}
 	raw := buf.Bytes()
-	newRaw := append(raw[:pos], append([]byte("."), raw[pos:]...)...)
+	decs := raw[pos:]
+	if bytes.HasSuffix(decs, bytesZero) {
+		decs = bytes.TrimRightFunc(decs, isZero)
+	}
+	newRaw := raw[:pos]
+	if len(decs) > 0 {
+		newRaw = append(newRaw, append([]byte("."), decs...)...)
+	}
 	buf.Reset()
 	buf.Write(newRaw)
 }
