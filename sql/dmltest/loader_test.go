@@ -39,23 +39,28 @@ func TestSQLDumpLoad(t *testing.T) {
 			assert.Contains(t, args, os.TempDir())
 			return nil
 		}
-
-		err := SQLDumpLoad(context.TODO(), `cs2:cs2@tcp(localhost:3306)/testDB?parseTime=true&loc=UTC`, "testdata/*.sql", SQLDumpOptions{
+		SQLDumpLoad(t, "testdata/*.sql", &SQLDumpOptions{
+			DSN:                `cs2:cs2@tcp(localhost:3306)/testDB?parseTime=true&loc=UTC`,
 			execCommandContext: exexCmd,
 		})
-		assert.NoError(t, err)
 	})
 
 	t.Run("mysql fails", func(t *testing.T) {
-
 		exexCmd := func(ctx context.Context, r io.ReadCloser, cmd string, arg ...string) error {
 			return errors.NotImplemented.Newf("Cant handle it")
 		}
 
-		err := SQLDumpLoad(context.TODO(), `cs2:cs2@tcp(localhost:3306)/testDB?parseTime=true&loc=UTC`, "testdata/", SQLDumpOptions{
+		SQLDumpLoad(testingMock{T: t}, "testdata/", &SQLDumpOptions{
+			DSN:                `cs2:cs2@tcp(localhost:3306)/testDB?parseTime=true&loc=UTC`,
 			execCommandContext: exexCmd,
 		})
-		assert.True(t, errors.NotImplemented.Match(err), "%+v", err)
 	})
+}
 
+type testingMock struct {
+	*testing.T
+}
+
+func (tm testingMock) Fatalf(format string, args ...interface{}) {
+	assert.True(tm.T, errors.NotImplemented.Match(args[0].(error)))
 }

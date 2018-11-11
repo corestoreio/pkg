@@ -24,6 +24,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
+	"testing"
 
 	"github.com/corestoreio/errors"
 	"github.com/go-sql-driver/mysql"
@@ -91,53 +93,70 @@ func stdInExec(ctx context.Context, f io.ReadCloser, name string, args ...string
 type SQLDumpOptions struct {
 	MySQLPath string
 	MySQLArgs []string
+	DSN       string
 	// mocked out for testing.
 	execCommandContext func(ctx context.Context, file io.ReadCloser, cmd string, arg ...string) error
 }
 
 // SQLDumpLoad reads all files recognized by `globPattern` argument into
 // MySQL/MariaDB. The password will NOT be visible via process manager but gets
-// temporarily written into the TMP dir of the OS. This function does only even
-// work when the server and the client runs on different machines. For now it
-// only works when the program `bash` has been installed. This function supports
-// any file size of a `.sql` file.
-func SQLDumpLoad(ctx context.Context, dsn string, globPattern string, o SQLDumpOptions) error {
+// temporarily written into the TMP dir of the OS. This function does even work
+// when the server and the client runs on different machines. For now it only
+// works when the program `bash` has been installed. This function supports any
+// file size of a `.sql` file. Bonus: if file names contain the string
+// "cleanup", they will be run in the defer function. The returned function must
+// be run in the defer part of a test. This function skips a test, if the DSN
+// environment variable cannot be found.
+func SQLDumpLoad(t testing.TB, globPattern string, o *SQLDumpOptions) func() {
+	if o == nil {
+		o = &SQLDumpOptions{}
+	}
+
+	if o.DSN == "" {
+		o.DSN = MustGetDSN(t)
+	}
 
 	matches, err := filepath.Glob(globPattern)
-	if err != nil {
-		return errors.WithStack(err)
-	}
+	FatalIfError(t, err)
 
-	cfg, err := mysql.ParseDSN(dsn)
-	if err != nil {
-		return errors.WithStack(err)
-	}
+	cfg, err := mysql.ParseDSN(o.DSN)
+	FatalIfError(t, err)
 
 	execCmd := o.execCommandContext
 	if execCmd == nil {
 		execCmd = stdInExec
 	}
 
-	dfFile, err := writeMySQLDefaults(cfg, &o)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	defer os.Remove(dfFile)
+	dfFile, err := writeMySQLDefaults(cfg, o)
+	FatalIfError(t, err)
 
 	myPath := o.MySQLPath
 	if myPath == "" {
 		myPath = "mysql"
 	}
-	for _, file := range matches {
-		f, err := os.Open(file)
-		if err != nil {
-			return errors.WithStack(err)
-		}
+	ctx := context.TODO()
 
-		if err := execCmd(ctx, f, "bash", "-c", fmt.Sprintf("%s --defaults-file=%s", myPath, dfFile)); err != nil {
-			return errors.Wrapf(err, "[dmltest] Failed to load SQL dump with file %q", file)
+	runExec := func(file string) {
+		f, err := os.Open(file)
+		FatalIfError(t, err)
+
+		err = execCmd(ctx, f, "bash", "-c", fmt.Sprintf("%s --defaults-file=%s", myPath, dfFile))
+		FatalIfError(t, err)
+	}
+
+	var cleanUpFiles []string
+	for _, file := range matches {
+		if strings.Contains(file, "cleanup") {
+			cleanUpFiles = append(cleanUpFiles, file)
+		} else {
+			runExec(file)
 		}
 	}
 
-	return nil
+	return func() {
+		defer os.Remove(dfFile)
+		for _, file := range cleanUpFiles {
+			runExec(file)
+		}
+	}
 }
