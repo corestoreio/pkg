@@ -118,6 +118,9 @@ func SQLDumpLoad(t testing.TB, globPattern string, o *SQLDumpOptions) func() {
 
 	matches, err := filepath.Glob(globPattern)
 	FatalIfError(t, err)
+	if len(matches) == 0 {
+		FatalIfError(t, errors.NotFound.Newf("No files found for glob pattern: %q", globPattern))
+	}
 
 	cfg, err := mysql.ParseDSN(o.DSN)
 	FatalIfError(t, err)

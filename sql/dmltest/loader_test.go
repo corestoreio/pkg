@@ -45,12 +45,21 @@ func TestSQLDumpLoad(t *testing.T) {
 		})
 	})
 
+	t.Run("not files found", func(t *testing.T) {
+		SQLDumpLoad(testingMock{T: t, wantErr: errors.NotFound}, "testdata/not_files_found", &SQLDumpOptions{
+			DSN: `cs2:cs2@tcp(localhost:3306)/testDB?parseTime=true&loc=UTC`,
+			execCommandContext: func(ctx context.Context, r io.ReadCloser, cmd string, arg ...string) error {
+				return nil
+			},
+		})
+	})
+
 	t.Run("mysql fails", func(t *testing.T) {
 		exexCmd := func(ctx context.Context, r io.ReadCloser, cmd string, arg ...string) error {
 			return errors.NotImplemented.Newf("Cant handle it")
 		}
 
-		SQLDumpLoad(testingMock{T: t}, "testdata/", &SQLDumpOptions{
+		SQLDumpLoad(testingMock{T: t, wantErr: errors.NotImplemented}, "testdata/", &SQLDumpOptions{
 			DSN:                `cs2:cs2@tcp(localhost:3306)/testDB?parseTime=true&loc=UTC`,
 			execCommandContext: exexCmd,
 		})
@@ -59,8 +68,9 @@ func TestSQLDumpLoad(t *testing.T) {
 
 type testingMock struct {
 	*testing.T
+	wantErr errors.Kind
 }
 
 func (tm testingMock) Fatalf(format string, args ...interface{}) {
-	assert.True(tm.T, errors.NotImplemented.Match(args[0].(error)))
+	assert.True(tm.T, tm.wantErr.Match(args[0].(error)))
 }
