@@ -253,6 +253,28 @@ func (b *Select) Where(wf ...*Condition) *Select {
 	return b
 }
 
+// When applies the function `fn` query changes if the given "test" is true.
+// Providing the optional second function, uses it as the default value, if test
+// is false. `defaultFn` can be nil.
+func (b *Select) When(test bool, fn func(*Select), defaultFn func(*Select)) *Select {
+	// TODO add this to other DML types
+	switch {
+	case test:
+		fn(b) // test is true, applies callback
+	case defaultFn != nil:
+		defaultFn(b) // default value, if test is false
+	}
+	return b
+}
+
+// Unless applies the function `fn` query changes if the given "test" is false.
+// Providing the optional second function, uses it as the default value, if test
+// is false. `defaultFn` can be nil.
+func (b *Select) Unless(test bool, fn func(*Select), defaultFn func(*Select)) *Select {
+	// TODO add this to other DML types
+	return b.When(!test, fn, defaultFn)
+}
+
 // GroupBy appends columns to group the statement. A column gets always quoted
 // if it is a valid identifier otherwise it will be treated as an expression.
 // MySQL does not sort the results set. To avoid the overhead of sorting that

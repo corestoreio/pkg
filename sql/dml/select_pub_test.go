@@ -658,3 +658,31 @@ func TestSelect_Clone(t *testing.T) {
 		assert.Exactly(t, s.Log, s2.Log)
 	})
 }
+
+func TestSelect_When_Unless(t *testing.T) {
+	t.Parallel()
+
+	t.Run("true and no default", func(t *testing.T) {
+		s := dml.NewSelect("entity_id").From("catalog_product_entity")
+		s.When(true, func(s2 *dml.Select) {
+			s2.Where(dml.Column("sku").Like().Str("4711"))
+		}, nil)
+		assert.Exactly(t, "SELECT `entity_id` FROM `catalog_product_entity` WHERE (`sku` LIKE '4711')", s.String())
+	})
+	t.Run("false and no default", func(t *testing.T) {
+		s := dml.NewSelect("entity_id").From("catalog_product_entity")
+		s.When(false, func(s2 *dml.Select) {
+			s2.Where(dml.Column("sku").Like().Str("4711"))
+		}, nil)
+		assert.Exactly(t, "SELECT `entity_id` FROM `catalog_product_entity`", s.String())
+	})
+	t.Run("Unless true and default", func(t *testing.T) {
+		s := dml.NewSelect("entity_id").From("catalog_product_entity")
+		s.Unless(true, func(s2 *dml.Select) {
+			s2.Where(dml.Column("sku").Like().Str("4712"))
+		}, func(s2 *dml.Select) {
+			s2.Where(dml.Column("sku").Like().Str("4713"))
+		})
+		assert.Exactly(t, "SELECT `entity_id` FROM `catalog_product_entity` WHERE (`sku` LIKE '4713')", s.String())
+	})
+}
