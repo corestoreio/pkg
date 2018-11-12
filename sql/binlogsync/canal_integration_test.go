@@ -17,7 +17,6 @@ package binlogsync_test
 import (
 	"context"
 	"flag"
-	"os"
 	"testing"
 	"time"
 
@@ -40,10 +39,7 @@ func TestIntegrationNewCanal(t *testing.T) {
 		t.Skip("Skipping integration tests. You can enable them with via CLI option `-integration`")
 	}
 
-	dsn := os.Getenv(dml.EnvDSN)
-	if dsn == "" {
-		t.Skipf("Skipping integration test because environment variable %q not set.", dml.EnvDSN)
-	}
+	dsn := dmltest.MustGetDSN(t)
 
 	// var bufLog bytes.Buffer
 	// myLog := logw.NewLog(logw.WithDebug(&bufLog, "INTG", log.LstdFlags))
@@ -77,8 +73,7 @@ func TestIntegrationNewCanal(t *testing.T) {
 	defer cancel()
 	assert.NoError(t, c.Start(ctx), "Start error")
 
-	err = dmltest.SQLDumpLoad(context.Background(), dsn, "testdata/*sql", dmltest.SQLDumpOptions{})
-	assert.NoError(t, err)
+	dmltest.SQLDumpLoad(t, "testdata/*sql", nil)
 
 	select {
 	case <-ctx.Done():
@@ -86,11 +81,10 @@ func TestIntegrationNewCanal(t *testing.T) {
 		err := c.Close()
 		assert.NoError(t, err, "c.Close(): %+v", err)
 	}
-	assert.Exactly(t, 6, cpe.counter[binlogsync.InsertAction], "InsertActions") // 5+1 (1=> sales_order)
-	assert.Exactly(t, 3, cpe.counter[binlogsync.UpdateAction], "UpdateActions")
-	assert.Exactly(t, 1, cpe.counter[binlogsync.DeleteAction], "DeleteActions")
-
-	assert.Exactly(t, 1, soe.counter[binlogsync.InsertAction], "InsertActions")
+	assert.Exactly(t, 6, cpe.counter[binlogsync.InsertAction], "InsertActions:\n%#v", cpe.counter) // 5+1 (1=> sales_order)
+	assert.Exactly(t, 3, cpe.counter[binlogsync.UpdateAction], "UpdateActions:\n%#v", cpe.counter)
+	assert.Exactly(t, 1, cpe.counter[binlogsync.DeleteAction], "DeleteActions:\n%#v", cpe.counter)
+	assert.Exactly(t, 1, soe.counter[binlogsync.InsertAction], "InsertActions:\n%#v", cpe.counter)
 }
 
 var _ binlogsync.RowsEventHandler = (*catalogProductEvent)(nil)

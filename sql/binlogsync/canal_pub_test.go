@@ -163,10 +163,6 @@ func TestCanal_FindTable_RaceFree(t *testing.T) {
 	c, dbMock, deferred := newTestCanal(t)
 	defer deferred()
 
-	dbMock.ExpectQuery("SHOW CREATE TABLE `core_config_data`").
-		WillReturnRows(sqlmock.NewRows([]string{"Table", "Create Table"}).
-			FromCSVString(`"core_config_data","CREATE TABLE core_config_data ( id int(10),  PRIMARY KEY (id))"` + "\n"))
-
 	dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS WHERE.+TABLE_NAME IN \\('core_config_data'\\)").
 		WithArgs().
 		WillReturnRows(
@@ -205,10 +201,6 @@ func TestCanal_FindTable_Error(t *testing.T) {
 	defer deferred()
 
 	wantErr := errors.Unauthorized.Newf("Du kommst da nicht rein")
-
-	dbMock.ExpectQuery("SHOW CREATE TABLE `core_config_data`").
-		WillReturnRows(sqlmock.NewRows([]string{"Table", "Create Table"}).
-			FromCSVString(`"core_config_data","CREATE TABLE core_config_data ( id int(10),  PRIMARY KEY (id))"` + "\n"))
 
 	dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE.. AND TABLE_NAME IN \\('core_config_data'\\)").
 		WithArgs().
