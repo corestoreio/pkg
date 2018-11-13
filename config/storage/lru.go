@@ -50,7 +50,6 @@ type lruCache struct {
 // function WithLRU to enable it and set the correct max size of the LRU
 // cache. For now this algorithm should be good enough. Can be refactored
 // any time later.
-// Can be replaced by https://github.com/goburrow/cache TinyLFU
 func NewLRU(maxEntries int) config.Storager {
 	if maxEntries == 0 {
 		maxEntries = 1024

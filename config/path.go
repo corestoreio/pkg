@@ -21,6 +21,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 	"unicode/utf8"
 
@@ -30,6 +31,9 @@ import (
 	"github.com/corestoreio/pkg/util/byteconv"
 	"github.com/minio/highwayhash"
 )
+
+// timeNow mocked out for testing purposes
+var timeNow = time.Now
 
 // PathLevels defines how many parts are at least in a path.
 // Like a/b/c for 3 parts. And 5 for a fully qualified path.
@@ -176,21 +180,11 @@ type Path struct {
 	// envSuffix gets set by the *Service type if the service runs environment
 	// aware and a Path has set UseEnvSuffix to true.
 	envSuffix string
-
-	// Idea for a new path: default/0/carriers/dhl/password/en=DEV/fr=YYYYMMDDHHIISS/to=YYYYMMDDHHIISS/pu=1/su=beta2
-	// or proto/json encoded
-
-	// TODO ActiveFrom defines a time when a key becomes active, supported time
-	// format: Y-m-d H:i:s (MySQL Datetime column).
-	// ActiveFrom time.Time
-	// TODO ActiveTo defines a time when a key becomes inactive, supported time
-	// format: Y-m-d H:i:s (MySQL Datetime column).
-	// ActiveTo time.Time
-	// TODO IsPublic defines if a path has a public or private behaviour. For
-	// example when displaying all values for all paths, then paths marked as
-	// private are getting skipped. This feature depends on the storage engine.
-	// Get operation does not consider Public/Private
-	// IsPublic bool
+	// Expires defines a time when a key becomes inactive and hence expires. The
+	// expiration is only supported when writing a value via interface
+	// Setter.Set. The same path can have different expiration dates and values.
+	// This feature depends on the underlying storage engine.
+	Expires time.Time
 	// TODO Suffix defines a random suffix appended to a path. if the key with
 	// that suffix does not exists, the fall back goes to the path with
 	// env-suffix and then to the standard path. Useful to test different
@@ -752,6 +746,13 @@ func (p Path) NewValue(data []byte) *Value {
 func (p *Path) RouteHasPrefix(route string) bool {
 	lr := len(route)
 	return p != nil && len(p.route) >= lr && lr > 0 && string(p.route[0:lr]) == route
+}
+
+// ExpireIn sets the current time with the default time zone and adds the
+// duration. It returns a copy of the path with the new expiration value.
+func (p Path) ExpireIn(d time.Duration) Path {
+	p.Expires = timeNow().Add(d)
+	return p
 }
 
 // PathSlice represents a collection of Paths

@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/store/scope"
@@ -34,6 +35,12 @@ var (
 	_ fmt.Stringer               = (*Path)(nil)
 	_ fmt.Stringer               = (*Route)(nil)
 )
+
+func init() {
+	timeNow = func() time.Time {
+		return time.Unix(100, 10)
+	}
+}
 
 func TestRoute_Bind(t *testing.T) {
 	t.Parallel()
@@ -911,4 +918,10 @@ func TestPath_EnvName(t *testing.T) {
 		assert.NoError(t, err, "%+v", err)
 		assertStrErr(t, `stores/3/tt/ww/de`)(p.FQ())
 	})
+}
+
+func TestPath_ExpireIn(t *testing.T) {
+	t.Parallel()
+	p := MustNewPath(`xx/yy/zz`).ExpireIn(time.Second)
+	assert.Exactly(t, int64(101), p.Expires.Unix())
 }

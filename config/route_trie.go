@@ -89,9 +89,9 @@ func (fns observers) dispatch(p *Path, v []byte, found bool) (_ []byte, err erro
 		return v, nil
 	}
 	p2 := *p
-	for idx, fn := range fns {
+	for _, fn := range fns {
 		if v, err = fn.Observe(p2, v, found); err != nil {
-			return nil, errors.Wrapf(err, "[config] At index %d", idx)
+			return nil, errors.WithStack(err)
 		}
 	}
 	return v, nil
