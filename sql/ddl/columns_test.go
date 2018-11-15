@@ -16,6 +16,7 @@ package ddl_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"testing"
@@ -34,7 +35,7 @@ var _ fmt.GoStringer = (*ddl.Columns)(nil)
 var _ fmt.GoStringer = (*ddl.Column)(nil)
 var _ sort.Interface = (*ddl.Columns)(nil)
 
-func TestLoadColumns_Integration_Mage(t *testing.T) {
+func TestLoadColumns_Integration(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.TODO()
@@ -74,12 +75,12 @@ func TestLoadColumns_Integration_Mage(t *testing.T) {
 		wantJoinFields string
 	}{
 		{"core_config_data_test3",
-			"ddl.Columns{\n&ddl.Column{Field: \"config_id\", Pos: 1, Null: \"NO\", DataType: \"int\", Precision: null.MakeInt64(10), Scale: null.MakeInt64(0), ColumnType: \"int(10) unsigned\", Key: \"PRI\", Extra: \"auto_increment\", Comment: \"Config Id\", },\n&ddl.Column{Field: \"scope\", Pos: 2, Default: null.MakeString(\"'default'\"), Null: \"NO\", DataType: \"varchar\", CharMaxLength: null.MakeInt64(8), ColumnType: \"varchar(8)\", Key: \"MUL\", Comment: \"Config Scope\", },\n&ddl.Column{Field: \"scope_id\", Pos: 3, Default: null.MakeString(\"0\"), Null: \"NO\", DataType: \"int\", Precision: null.MakeInt64(10), Scale: null.MakeInt64(0), ColumnType: \"int(11)\", Comment: \"Config Scope Id\", },\n&ddl.Column{Field: \"path\", Pos: 4, Default: null.MakeString(\"'general'\"), Null: \"NO\", DataType: \"varchar\", CharMaxLength: null.MakeInt64(255), ColumnType: \"varchar(255)\", Comment: \"Config Path\", },\n&ddl.Column{Field: \"value\", Pos: 5, Default: null.MakeString(\"NULL\"), Null: \"YES\", DataType: \"text\", CharMaxLength: null.MakeInt64(65535), ColumnType: \"text\", Comment: \"Config Value\", },\n}\n",
+			"[{\"Field\":\"config_id\",\"Pos\":1,\"Default\":null,\"Null\":\"NO\",\"DataType\":\"int\",\"CharMaxLength\":null,\"Precision\":10,\"Scale\":0,\"ColumnType\":\"int(10) unsigned\",\"Key\":\"PRI\",\"Extra\":\"auto_increment\",\"Comment\":\"Config Id\",\"IsGenerated\":\"NEVER\",\"GenerationExpression\":null,\"Aliases\":null,\"Uniquified\":false,\"StructTag\":\"\"},{\"Field\":\"scope\",\"Pos\":2,\"Default\":\"'default'\",\"Null\":\"NO\",\"DataType\":\"varchar\",\"CharMaxLength\":8,\"Precision\":null,\"Scale\":null,\"ColumnType\":\"varchar(8)\",\"Key\":\"MUL\",\"Extra\":\"\",\"Comment\":\"Config Scope\",\"IsGenerated\":\"NEVER\",\"GenerationExpression\":null,\"Aliases\":null,\"Uniquified\":false,\"StructTag\":\"\"},{\"Field\":\"scope_id\",\"Pos\":3,\"Default\":\"0\",\"Null\":\"NO\",\"DataType\":\"int\",\"CharMaxLength\":null,\"Precision\":10,\"Scale\":0,\"ColumnType\":\"int(11)\",\"Key\":\"\",\"Extra\":\"\",\"Comment\":\"Config Scope Id\",\"IsGenerated\":\"NEVER\",\"GenerationExpression\":null,\"Aliases\":null,\"Uniquified\":false,\"StructTag\":\"\"},{\"Field\":\"path\",\"Pos\":4,\"Default\":\"'general'\",\"Null\":\"NO\",\"DataType\":\"varchar\",\"CharMaxLength\":255,\"Precision\":null,\"Scale\":null,\"ColumnType\":\"varchar(255)\",\"Key\":\"\",\"Extra\":\"\",\"Comment\":\"Config Path\",\"IsGenerated\":\"NEVER\",\"GenerationExpression\":null,\"Aliases\":null,\"Uniquified\":false,\"StructTag\":\"\"},{\"Field\":\"value\",\"Pos\":5,\"Default\":\"NULL\",\"Null\":\"YES\",\"DataType\":\"text\",\"CharMaxLength\":65535,\"Precision\":null,\"Scale\":null,\"ColumnType\":\"text\",\"Key\":\"\",\"Extra\":\"\",\"Comment\":\"Config Value\",\"IsGenerated\":\"NEVER\",\"GenerationExpression\":null,\"Aliases\":null,\"Uniquified\":false,\"StructTag\":\"\"}]",
 			errors.NoKind,
 			"config_id_scope_scope_id_path_value",
 		},
 		{"catalog_category_product_test4",
-			"ddl.Columns{\n&ddl.Column{Field: \"entity_id\", Pos: 1, Null: \"NO\", DataType: \"int\", Precision: null.MakeInt64(10), Scale: null.MakeInt64(0), ColumnType: \"int(11)\", Key: \"PRI\", Extra: \"auto_increment\", Comment: \"Entity ID\", },\n&ddl.Column{Field: \"category_id\", Pos: 2, Default: null.MakeString(\"0\"), Null: \"NO\", DataType: \"int\", Precision: null.MakeInt64(10), Scale: null.MakeInt64(0), ColumnType: \"int(10) unsigned\", Key: \"PRI\", Comment: \"Category ID\", },\n&ddl.Column{Field: \"product_id\", Pos: 3, Default: null.MakeString(\"0\"), Null: \"NO\", DataType: \"int\", Precision: null.MakeInt64(10), Scale: null.MakeInt64(0), ColumnType: \"int(10) unsigned\", Key: \"PRI\", Comment: \"Product ID\", },\n&ddl.Column{Field: \"position\", Pos: 4, Default: null.MakeString(\"0\"), Null: \"NO\", DataType: \"int\", Precision: null.MakeInt64(10), Scale: null.MakeInt64(0), ColumnType: \"int(11)\", Comment: \"Position\", },\n}\n",
+			"[{\"Field\":\"entity_id\",\"Pos\":1,\"Default\":null,\"Null\":\"NO\",\"DataType\":\"int\",\"CharMaxLength\":null,\"Precision\":10,\"Scale\":0,\"ColumnType\":\"int(11)\",\"Key\":\"PRI\",\"Extra\":\"auto_increment\",\"Comment\":\"Entity ID\",\"IsGenerated\":\"NEVER\",\"GenerationExpression\":null,\"Aliases\":null,\"Uniquified\":false,\"StructTag\":\"\"},{\"Field\":\"category_id\",\"Pos\":2,\"Default\":\"0\",\"Null\":\"NO\",\"DataType\":\"int\",\"CharMaxLength\":null,\"Precision\":10,\"Scale\":0,\"ColumnType\":\"int(10) unsigned\",\"Key\":\"PRI\",\"Extra\":\"\",\"Comment\":\"Category ID\",\"IsGenerated\":\"NEVER\",\"GenerationExpression\":null,\"Aliases\":null,\"Uniquified\":false,\"StructTag\":\"\"},{\"Field\":\"product_id\",\"Pos\":3,\"Default\":\"0\",\"Null\":\"NO\",\"DataType\":\"int\",\"CharMaxLength\":null,\"Precision\":10,\"Scale\":0,\"ColumnType\":\"int(10) unsigned\",\"Key\":\"PRI\",\"Extra\":\"\",\"Comment\":\"Product ID\",\"IsGenerated\":\"NEVER\",\"GenerationExpression\":null,\"Aliases\":null,\"Uniquified\":false,\"StructTag\":\"\"},{\"Field\":\"position\",\"Pos\":4,\"Default\":\"0\",\"Null\":\"NO\",\"DataType\":\"int\",\"CharMaxLength\":null,\"Precision\":10,\"Scale\":0,\"ColumnType\":\"int(11)\",\"Key\":\"\",\"Extra\":\"\",\"Comment\":\"Position\",\"IsGenerated\":\"NEVER\",\"GenerationExpression\":null,\"Aliases\":null,\"Uniquified\":false,\"StructTag\":\"\"}]",
 			errors.NoKind,
 			"entity_id_category_id_product_id_position",
 		},
@@ -96,8 +97,10 @@ func TestLoadColumns_Integration_Mage(t *testing.T) {
 		if !test.wantErrKind.Empty() {
 			assert.True(t, test.wantErrKind.Match(err), "Index %d", i)
 		} else {
-			assert.NoError(t, err, "Index %d", i)
-			assert.Equal(t, test.want, fmt.Sprintf("%#v\n", cols1), "Index %d", i)
+			assert.NoError(t, err, "Index %d\n%+v", i, err)
+			data, err := json.Marshal(cols1)
+			assert.NoError(t, err)
+			assert.Equal(t, test.want, string(data), "Index %d\n%q", i, data)
 			assert.Equal(t, test.wantJoinFields, cols1.JoinFields("_"), "Index %d", i)
 		}
 	}

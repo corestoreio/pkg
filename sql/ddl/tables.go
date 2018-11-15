@@ -74,12 +74,9 @@ func WithDB(db dml.QueryExecPreparer) TableOption {
 	}
 }
 
-// WithTable inserts a new table to the Tables struct, identified by its index.
-// You can optionally specify the columns. What is the reason to use int as the
-// table index and not a name? Because table names between M1 and M2 get renamed
-// and in a Go SQL code generator script of the CoreStore project, we can
-// guarantee that the generated index constant will always stay the same but the
-// name of the table differs.
+// WithTable inserts a new table to the Tables struct. You can optionally
+// specify the columns. Without columns the call to load the columns from the
+// INFORMATION_SCHEMA must be added.
 func WithTable(tableName string, cols ...*Column) TableOption {
 	return TableOption{
 		sortOrder: 1,

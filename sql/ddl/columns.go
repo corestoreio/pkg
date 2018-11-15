@@ -44,22 +44,24 @@ type Columns []*Column
 // Column contains information about one database table column retrieved from
 // information_schema.COLUMNS
 type Column struct {
-	Field   string      //`COLUMN_NAME` varchar(64) NOT NULL DEFAULT '',
-	Pos     uint64      //`ORDINAL_POSITION` bigint(21) unsigned NOT NULL DEFAULT '0',
-	Default null.String //`COLUMN_DEFAULT` longtext,
-	Null    string      //`IS_NULLABLE` varchar(3) NOT NULL DEFAULT '',
+	Field   string      // `COLUMN_NAME` varchar(64) NOT NULL DEFAULT '',
+	Pos     uint64      // `ORDINAL_POSITION` bigint(21) unsigned NOT NULL DEFAULT '0',
+	Default null.String // `COLUMN_DEFAULT` longtext,
+	Null    string      // `IS_NULLABLE` varchar(3) NOT NULL DEFAULT '',
 	// DataType contains the basic type of a column like smallint, int, mediumblob,
 	// float, double, etc... but always transformed to lower case.
-	DataType      string     //`DATA_TYPE` varchar(64) NOT NULL DEFAULT '',
-	CharMaxLength null.Int64 //`CHARACTER_MAXIMUM_LENGTH` bigint(21) unsigned DEFAULT NULL,
-	Precision     null.Int64 //`NUMERIC_PRECISION` bigint(21) unsigned DEFAULT NULL,
-	Scale         null.Int64 //`NUMERIC_SCALE` bigint(21) unsigned DEFAULT NULL,
+	DataType      string     // `DATA_TYPE` varchar(64) NOT NULL DEFAULT '',
+	CharMaxLength null.Int64 // `CHARACTER_MAXIMUM_LENGTH` bigint(21) unsigned DEFAULT NULL,
+	Precision     null.Int64 // `NUMERIC_PRECISION` bigint(21) unsigned DEFAULT NULL,
+	Scale         null.Int64 // `NUMERIC_SCALE` bigint(21) unsigned DEFAULT NULL,
 	// ColumnType full SQL string of the column type
-	ColumnType string //`COLUMN_TYPE` longtext NOT NULL,
+	ColumnType string // `COLUMN_TYPE` longtext NOT NULL,
 	// Key primary or unique or ...
-	Key     string //`COLUMN_KEY` varchar(3) NOT NULL DEFAULT '',
-	Extra   string //`EXTRA` varchar(30) NOT NULL DEFAULT '',
-	Comment string //`COLUMN_COMMENT` varchar(1024) NOT NULL DEFAULT '',
+	Key                  string      // `COLUMN_KEY` varchar(3) NOT NULL DEFAULT '',
+	Extra                string      // `EXTRA` varchar(30) NOT NULL DEFAULT '',
+	Comment              string      // `COLUMN_COMMENT` varchar(1024) NOT NULL DEFAULT '',
+	IsGenerated          string      // `IS_GENERATED` varchar(6) NOT NULL DEFAULT '', MariaDB only https://mariadb.com/kb/en/library/information-schema-columns-table/
+	GenerationExpression null.String // `GENERATION_EXPRESSION` longtext DEFAULT NULL
 	// Aliases specifies different names used for this column. Mainly used when
 	// generating code for interface dml.ColumnMapper. For example
 	// customer_entity.entity_id can also be sales_order.customer_id. The alias
@@ -73,21 +75,19 @@ type Column struct {
 	StructTag string
 }
 
-// DMLLoadColumns specifies the data manipulation language for retrieving all
-// columns in the current database for a specific table.
-// TABLE_NAME is always lower case.
-const selTablesColumns = `SELECT
+// TODO check DB flavor: if MySQL or MariaDB, first one does not have column IS_GENERATED
+const (
+	selBaseSelect = `SELECT
 	TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE,
 		DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE,
-		COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT
-	 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ?
-	 ORDER BY TABLE_NAME, ORDINAL_POSITION`
-
-const selAllTablesColumns = `SELECT
-	TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE,
-		DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE,
-		COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT
-	 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() ORDER BY TABLE_NAME, ORDINAL_POSITION`
+		COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT, IS_GENERATED, GENERATION_EXPRESSION
+	 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE()`
+	// DMLLoadColumns specifies the data manipulation language for retrieving
+	// all columns in the current database for a specific table. TABLE_NAME is
+	// always lower case.
+	selTablesColumns    = selBaseSelect + ` AND TABLE_NAME IN ? ORDER BY TABLE_NAME, ORDINAL_POSITION`
+	selAllTablesColumns = selBaseSelect + ` ORDER BY TABLE_NAME, ORDINAL_POSITION`
+)
 
 // LoadColumns returns all columns from a list of table names in the current
 // database. Map key contains the table name. Returns a NotFound error if the
@@ -348,6 +348,10 @@ func NewColumn(rc *dml.ColumnMap) (c *Column, tableName string, err error) {
 			rc.String(&c.Extra)
 		case "COLUMN_COMMENT":
 			rc.String(&c.Comment)
+		case "IS_GENERATED":
+			rc.String(&c.IsGenerated)
+		case "GENERATION_EXPRESSION":
+			rc.NullString(&c.GenerationExpression)
 		case "aliases":
 			// TODO the query must be extendable for all three columns to attach any table from any DB.
 			if aliases := ""; rc.Mode() == dml.ColumnMapScan {
@@ -433,6 +437,12 @@ func (c *Column) GoString() string {
 	if c.StructTag != "" {
 		fmt.Fprintf(buf, "StructTag: %q, ", c.StructTag)
 	}
+	if c.IsGenerated != "" {
+		fmt.Fprintf(buf, "IsGenerated: %q, ", c.IsGenerated)
+	}
+	if c.GenerationExpression.Valid {
+		fmt.Fprintf(buf, "GenerationExpression: %q, ", c.GenerationExpression.String)
+	}
 	_ = buf.WriteByte('}')
 	return buf.String()
 }
@@ -507,8 +517,10 @@ func (c *Column) IsBool() bool {
 	return isInt && columnTypes.byName.bool.ContainsReverse(c.Field)
 }
 
-// columnTypes looks ugly but ... refactor later
-var columnTypes = struct { // the slices in this struct are only for reading. no mutex protection required
+// columnTypes looks ugly but ... refactor later.
+// the slices in this struct are only for reading. no mutex protection required.
+// which partial column name triggers a specific type in Go or MySQL.
+var columnTypes = struct {
 	byName struct {
 		bool       slices.String
 		money      slices.String
