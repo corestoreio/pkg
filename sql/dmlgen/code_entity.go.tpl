@@ -1,6 +1,9 @@
+// <code_entity.go.tpl>
+
 // {{.Entity}} represents a single row for DB table `{{.TableName}}`.
 // Auto generated.
 {{.Comment -}}
+{{- if .JsonMarshaler }}//easyjson:json{{end}}
 type {{.Entity}} struct {
 {{range .Columns}}{{ToGoCamelCase .Field}} {{GoTypeNull .}}
 		{{- if ne .StructTag "" -}}`{{.StructTag}}`{{- end}} {{.GoComment}}
@@ -15,7 +18,8 @@ func New{{.Entity}}() *{{.Entity}} {
 // AssignLastInsertID updates the increment ID field with the last inserted ID
 // from an INSERT operation. Implements dml.InsertIDAssigner. Auto generated.
 func (e *{{.Entity}}) AssignLastInsertID(id int64) {
-	{{range .Columns}}{{if .IsPK}} e.{{ToGoCamelCase .Field}} = {{GoTypeNull .}}(id) {{end}} {{end}}
+	{{range .Columns}}{{if and .IsPK .IsAutoIncrement}} e.{{ToGoCamelCase .Field}} = {{GoType .}}(id)
+	{{end}}{{end -}}
 }
 
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
@@ -33,3 +37,5 @@ func (e *{{.Entity}}) MapColumns(cm *dml.ColumnMap) error {
 	}
 	return errors.WithStack(cm.Err())
 }
+// </code_entity.go.tpl>
+

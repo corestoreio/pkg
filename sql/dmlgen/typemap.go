@@ -111,15 +111,15 @@ var (
 		ProtobufSignedNotNull:   "bool",
 	}
 	goTypeDecimal = &TypeDef{
-		MysqlUnsignedNull:    "dml.Decimal",
-		MysqlUnsignedNotNull: "dml.Decimal",
-		MysqlSignedNull:      "dml.Decimal",
-		MysqlSignedNotNull:   "dml.Decimal",
+		MysqlUnsignedNull:    "null.Decimal",
+		MysqlUnsignedNotNull: "null.Decimal",
+		MysqlSignedNull:      "null.Decimal",
+		MysqlSignedNotNull:   "null.Decimal",
 
-		ProtobufUnsignedNull:    "dml.Decimal", // Proto package and its type not the Go package!
-		ProtobufUnsignedNotNull: "dml.Decimal", // Proto package and its type not the Go package!
-		ProtobufSignedNull:      "dml.Decimal", // Proto package and its type not the Go package!
-		ProtobufSignedNotNull:   "dml.Decimal", // Proto package and its type not the Go package!
+		ProtobufUnsignedNull:    "null.Decimal", // Proto package and its type not the Go package!
+		ProtobufUnsignedNotNull: "null.Decimal", // Proto package and its type not the Go package!
+		ProtobufSignedNull:      "null.Decimal", // Proto package and its type not the Go package!
+		ProtobufSignedNotNull:   "null.Decimal", // Proto package and its type not the Go package!
 	}
 	goTypeByte = &TypeDef{
 		MysqlUnsignedNull:    "[]byte",
@@ -214,13 +214,13 @@ func mySQLToGoType(c *ddl.Column, withNull bool) string {
 	return t
 }
 
-// toGoPrimitive returns for Go type or structure the final primitive:
+// toGoPrimitiveFromNull returns for Go type or structure the final primitive:
 // int->int but NullInt->.Int
-func toGoPrimitive(c *ddl.Column) string {
+func toGoPrimitiveFromNull(c *ddl.Column) string {
 	t := mySQLToGoType(c, true)
 	field := strs.ToGoCamelCase(c.Field)
-	if strings.HasPrefix(t, "null.") {
-		t = field + "." + t[8:]
+	if strings.HasPrefix(t, "null.") && t != "null.Decimal" {
+		t = field + "." + t[5:] // 5 == len("null.")
 	} else {
 		t = field
 	}
@@ -228,14 +228,14 @@ func toGoPrimitive(c *ddl.Column) string {
 }
 
 func toGoFuncNull(c *ddl.Column) string {
-	return mySQLToGoFunc(c, true)
+	return mySQLToGoDmlColumnMap(c, true)
 }
 
 func toGoFunc(c *ddl.Column) string {
-	return mySQLToGoFunc(c, false)
+	return mySQLToGoDmlColumnMap(c, false)
 }
 
-func mySQLToGoFunc(c *ddl.Column, withNull bool) string {
+func mySQLToGoDmlColumnMap(c *ddl.Column, withNull bool) string {
 
 	gt := mySQLToGoType(c, withNull)
 	switch gt {
@@ -244,7 +244,13 @@ func mySQLToGoFunc(c *ddl.Column, withNull bool) string {
 	}
 
 	if dot := strings.IndexByte(gt, '.'); dot > 0 {
-		return gt[dot+1:]
+		pkg := gt[:dot]
+		fnName := gt[dot+1:]
+		if fnName == "Decimal" || (pkg == "time" && fnName == "Time") {
+			return fnName
+		}
+		r, n := utf8.DecodeRuneInString(pkg)
+		return string(unicode.ToUpper(r)) + pkg[n:] + fnName
 	}
 	r, n := utf8.DecodeRuneInString(gt)
 	return string(unicode.ToUpper(r)) + gt[n:]

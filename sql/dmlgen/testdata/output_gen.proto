@@ -3,21 +3,25 @@ syntax = "proto3";
 package testdata;
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
-import "github.com/corestoreio/pkg/sql/dml/types_null.proto";
+import "github.com/corestoreio/pkg/storage/null/null.proto";
 option go_package = "testdata";
 option (gogoproto.typedecl_all) = false;
 option (gogoproto.goproto_getters_all) = false;
 option (gogoproto.unmarshaler_all) = true;
 option (gogoproto.marshaler_all) = true;
 option (gogoproto.sizer_all) = true;
+option (gogoproto.goproto_unrecognized_all) = false;
 
 // CoreConfigData represents a single row for DB table `core_config_data`. Auto generated.
 message CoreConfigData {
 	uint64 config_id = 1 [(gogoproto.customname)="ConfigID"];
 	string scope = 2 [(gogoproto.customname)="Scope"];
 	int64 scope_id = 3 [(gogoproto.customname)="ScopeID"];
-	string path = 4 [(gogoproto.customname)="Path"];
-	null.String value = 5 [(gogoproto.customname)="Value",(gogoproto.nullable)=false];
+	google.protobuf.Timestamp expires = 4 [(gogoproto.customname)="Expires",(gogoproto.stdtime)=true,(gogoproto.nullable)=false];
+	string path = 5 [(gogoproto.customname)="Path"];
+	null.String value = 6 [(gogoproto.customname)="Value",(gogoproto.nullable)=false];
+	google.protobuf.Timestamp version_ts = 7 [(gogoproto.customname)="VersionTs",(gogoproto.stdtime)=true,(gogoproto.nullable)=false];
+	google.protobuf.Timestamp version_te = 8 [(gogoproto.customname)="VersionTe",(gogoproto.stdtime)=true,(gogoproto.nullable)=false];
 }
 
 // CoreConfigDataCollection represents multiple rows for DB table `core_config_data`. Auto generated.
@@ -72,13 +76,13 @@ message DmlgenTypes {
 	google.protobuf.Timestamp col_date_2 = 8 [(gogoproto.customname)="ColDate2",(gogoproto.stdtime)=true,(gogoproto.nullable)=false];
 	null.Time col_datetime_1 = 9 [(gogoproto.customname)="ColDatetime1",(gogoproto.nullable)=false];
 	google.protobuf.Timestamp col_datetime_2 = 10 [(gogoproto.customname)="ColDatetime2",(gogoproto.stdtime)=true,(gogoproto.nullable)=false];
-	dml.Decimal col_decimal_10_0 = 11 [(gogoproto.customname)="ColDecimal100",(gogoproto.nullable)=false];
-	dml.Decimal col_decimal_12_4 = 12 [(gogoproto.customname)="ColDecimal124",(gogoproto.nullable)=false];
-	dml.Decimal price_12_4a = 13 [(gogoproto.customname)="Price124a",(gogoproto.nullable)=false];
-	dml.Decimal price_12_4b = 14 [(gogoproto.customname)="Price124b",(gogoproto.nullable)=false];
-	dml.Decimal col_decimal_12_3 = 15 [(gogoproto.customname)="ColDecimal123",(gogoproto.nullable)=false];
-	dml.Decimal col_decimal_20_6 = 16 [(gogoproto.customname)="ColDecimal206",(gogoproto.nullable)=false];
-	dml.Decimal col_decimal_24_12 = 17 [(gogoproto.customname)="ColDecimal2412",(gogoproto.nullable)=false];
+	null.Decimal col_decimal_10_0 = 11 [(gogoproto.customname)="ColDecimal100",(gogoproto.nullable)=false];
+	null.Decimal col_decimal_12_4 = 12 [(gogoproto.customname)="ColDecimal124",(gogoproto.nullable)=false];
+	null.Decimal price_12_4a = 13 [(gogoproto.customname)="Price124a",(gogoproto.nullable)=false];
+	null.Decimal price_12_4b = 14 [(gogoproto.customname)="Price124b",(gogoproto.nullable)=false];
+	null.Decimal col_decimal_12_3 = 15 [(gogoproto.customname)="ColDecimal123",(gogoproto.nullable)=false];
+	null.Decimal col_decimal_20_6 = 16 [(gogoproto.customname)="ColDecimal206",(gogoproto.nullable)=false];
+	null.Decimal col_decimal_24_12 = 17 [(gogoproto.customname)="ColDecimal2412",(gogoproto.nullable)=false];
 	double col_float = 18 [(gogoproto.customname)="ColFloat"];
 	null.Int64 col_int_1 = 19 [(gogoproto.customname)="ColInt1",(gogoproto.nullable)=false];
 	int64 col_int_2 = 20 [(gogoproto.customname)="ColInt2"];

@@ -1,24 +1,21 @@
-// experimental, for now private but depends on later usage to make it public.
-type slice{{.Entity}} []*{{.Entity}}
-
 // {{.Collection}} represents a collection type for DB table {{.TableName}}
 // Not thread safe. Auto generated.
 {{.Comment -}}
+{{- if .JsonMarshaler }}//easyjson:json{{end}}
 type {{.Collection}} struct {
-	// Data contains a slice of []*{{.Entity}}
-	Data           		slice{{.Entity}}
-	BeforeMapColumns	func(uint64, *{{.Entity}}) error
-	AfterMapColumns 	func(uint64, *{{.Entity}}) error
+	Data           		[]*{{.Entity}} `json:"data,omitempty"`
+	BeforeMapColumns	func(uint64, *{{.Entity}}) error `json:"-"`
+	AfterMapColumns 	func(uint64, *{{.Entity}}) error `json:"-"`
 }
 
-// Make{{.Collection}} creates a new initialized collection. Auto generated.
-func Make{{.Collection}}() {{.Collection}} {
-	return {{.Collection}}{
-		Data: make(slice{{.Entity}}, 0, 5),
+// New{{.Collection}} creates a new initialized collection. Auto generated.
+func New{{.Collection}}() *{{.Collection}} {
+	return &{{.Collection}}{
+		Data: make([]*{{.Entity}}, 0, 5),
 	}
 }
 
-func (cc {{.Collection}}) scanColumns(cm *dml.ColumnMap,e *{{.Entity}}, idx uint64) error {
+func (cc *{{.Collection}}) scanColumns(cm *dml.ColumnMap,e *{{.Entity}}, idx uint64) error {
 	if err := cc.BeforeMapColumns(idx, e); err != nil {
 		return errors.WithStack(err)
 	}
@@ -32,7 +29,7 @@ func (cc {{.Collection}}) scanColumns(cm *dml.ColumnMap,e *{{.Entity}}, idx uint
 }
 
 // MapColumns implements dml.ColumnMapper interface. Auto generated.
-func (cc {{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
+func (cc *{{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
 		for i, e := range cc.Data {
@@ -54,24 +51,25 @@ func (cc {{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
 			switch c := cm.Column(); c {
 			{{- range .Columns.UniqueColumns -}}
 			case "{{.Field}}"{{range .Aliases}},"{{.}}"{{end}}:
-				cm.Args = cm.Args.{{GoFuncNull .}}s(cc.{{ToGoCamelCase .Field}}s()...)
+				cm = cm.{{GoFuncNull .}}s(cc.{{ToGoCamelCase .Field}}s()...)
 			{{- end}}
-			{{- range .Columns.UniquifiedColumns}}
+			{{/* {{- range .Columns.UniquifiedColumns}}		// no idea if that is needed
 			case "{{.Field}}"{{range .Aliases}},"{{.}}"{{end}}:
-				cm.Args = cm.Args.{{GoFunc .}}s(cc.{{ToGoCamelCase .Field}}s()...){{end}}
+				cm = cm.{{GoFuncNull .}}s(cc.{{ToGoCamelCase .Field}}s()...)
+			{{- end}} */}}
 			default:
 				return errors.NotFound.Newf("[{{.Package}}] {{.Collection}} Column %q not found", c)
 			}
 		}
 	default:
-		return errors.NotSupported.Newf("[dml] Unknown Mode: %q", string(m))
+		return errors.NotSupported.Newf("[{{.Package}}] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }
 {{range .Columns.UniqueColumns}}
 // {{ToGoCamelCase .Field}}s returns a slice or appends to a slice all values.
 // Auto generated.
-func (cc {{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoTypeNull .}}) []{{GoTypeNull .}} {
+func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoTypeNull .}}) []{{GoTypeNull .}} {
 	if ret == nil {
 		ret = make([]{{GoTypeNull .}}, 0, len(cc.Data))
 	}
@@ -86,7 +84,7 @@ func (cc {{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoTypeNull .}}) []
 // and returns a slice or appends to a slice only unique values of that column.
 // The values will be filtered internally in a Go map. No DB query gets
 // executed. Auto generated.
-func (cc {{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoType .}}) []{{GoType .}} {
+func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoType .}}) []{{GoType .}} {
 	if ret == nil {
 		ret = make([]{{GoType .}}, 0, len(cc.Data))
 	}
@@ -94,11 +92,11 @@ func (cc {{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoType .}}) []{{Go
 		TODO: a reusable map and use different algorithms depending on the size
 		of the cc.Data slice. Sometimes a for/for loop runs faster than a map.
 	*/}}
-	dupCheck := make(map[{{GoType .}}]struct{}, len(cc.Data))
+	dupCheck := make(map[{{GoType .}}]bool, len(cc.Data))
 	for _, e := range cc.Data {
-		if _, ok := dupCheck[e.{{GoPrimitive .}}]; !ok {
-			ret = append(ret, e.{{GoPrimitive .}})
-			dupCheck[e.{{GoPrimitive .}}] = struct{}{}
+		if !dupCheck[e.{{GoPrimitiveNull .}}] {
+			ret = append(ret, e.{{GoPrimitiveNull .}})
+			dupCheck[e.{{GoPrimitiveNull .}}] = true
 		}
 	}
 	return ret

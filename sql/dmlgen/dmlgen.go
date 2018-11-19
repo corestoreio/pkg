@@ -22,7 +22,7 @@ import (
 	"go/ast"
 	"go/build"
 	"go/format"
-	"go/parser"
+	goparser "go/parser"
 	"go/token"
 	"io"
 	"os"
@@ -35,11 +35,15 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/util/bufferpool"
 	"github.com/corestoreio/pkg/util/slices"
 	"github.com/corestoreio/pkg/util/strs"
+	"github.com/mailru/easyjson/bootstrap"
+	"github.com/mailru/easyjson/parser"
 )
 
 // Initial idea and prototyping for code generation.
+// TODO DML gen must take care of the types in myreplicator.RowsEvent.decodeValue
 
 const pkgPath = `src/github.com/corestoreio/pkg/sql/dmlgen`
 
@@ -73,7 +77,7 @@ type Option struct {
 type TableOption struct {
 	// Encoders add method receivers for, each struct, compatible with the
 	// interface declarations in the various encoding packages. Supported
-	// encoder names are: text, binary, and protobuf. Text includes JSON. Binary
+	// encoder names are: json, binary, and protobuf. Text includes JSON. Binary
 	// includes Gob.
 	Encoders []string
 	// StructTags enables struct tags proactively for the whole struct. Allowed
@@ -106,10 +110,9 @@ type TableOption struct {
 
 func (to *TableOption) applyEncoders(ts *Tables, t *table) {
 	for i := 0; i < len(to.Encoders) && to.lastErr == nil; i++ {
-		//for _, enc := range to.Encoders {
 		switch enc := to.Encoders[i]; enc {
-		case "text":
-			t.TextMarshaler = true
+		case "json":
+			t.JsonMarshaler = true
 		case "binary":
 			t.BinaryMarshaler = true
 		case "protobuf":
@@ -248,7 +251,7 @@ func (to *TableOption) applyUniquifiedColumns(t *table) {
 }
 
 // WithTableOption applies options to a table, identified by the table name used
-// as map key.
+// as map key. Options are custom struct or different encoders.
 func WithTableOption(tableName string, opt *TableOption) (o Option) {
 	// Panic as early as possible.
 	if len(opt.CustomStructTags)%2 == 1 {
@@ -313,15 +316,28 @@ func WithColumnAliasesFromForeignKeys(ctx context.Context, db dml.Querier) (opt 
 	return
 }
 
-// WithTable sets a table and its columns. Allows to overwrite a table fetched
+// WithCreateTable sets a table and its columns. Allows to overwrite a table fetched
 // with function WithLoadColumns.
-func WithTable(tableName string, columns ddl.Columns) (opt Option) {
+func WithTable(tableName string, columns ddl.Columns, actions ...string) (opt Option) {
 	opt.sortOrder = 10
 	opt.fn = func(ts *Tables) error {
-		ts.Tables[tableName] = &table{
-			TableName: tableName,
-			Columns:   columns,
+		isOverwrite := len(actions) > 0 && actions[0] == "overwrite"
+		t, ok := ts.Tables[tableName]
+		if ok && isOverwrite {
+			for ci, ct := range t.Columns {
+				for _, cc := range columns {
+					if ct.Field == cc.Field {
+						t.Columns[ci] = cc
+					}
+				}
+			}
+		} else {
+			t = &table{
+				TableName: tableName,
+				Columns:   columns,
+			}
 		}
+		ts.Tables[tableName] = t
 		return nil
 	}
 	return
@@ -356,18 +372,23 @@ func (ts *Tables) sortedTableNames() []string {
 	return sortedKeys
 }
 
-// NewTables creates a new instance of the SQL table code generator.
+// NewTables creates a new instance of the SQL table code generator. The order
+// of the applied options does not matter as they are getting sorted internally.
 func NewTables(packageName string, opts ...Option) (*Tables, error) {
 	ts := &Tables{
 		Tables:  make(map[string]*table),
 		Package: packageName,
 		ImportPaths: []string{
+			"context",
 			"database/sql",
 			"encoding/json",
-			"github.com/corestoreio/pkg/sql/dml",
-			"github.com/corestoreio/pkg/sql/ddl",
-			"github.com/corestoreio/errors",
+			"sort",
 			"time",
+
+			"github.com/corestoreio/errors",
+			"github.com/corestoreio/pkg/sql/ddl",
+			"github.com/corestoreio/pkg/sql/dml",
+			"github.com/corestoreio/pkg/storage/null",
 		},
 		FuncMap: make(template.FuncMap, 10),
 	}
@@ -376,7 +397,7 @@ func NewTables(packageName string, opts ...Option) (*Tables, error) {
 	ts.FuncMap["GoType"] = toGoType
 	ts.FuncMap["GoFuncNull"] = toGoFuncNull
 	ts.FuncMap["GoFunc"] = toGoFunc
-	ts.FuncMap["GoPrimitive"] = toGoPrimitive
+	ts.FuncMap["GoPrimitiveNull"] = toGoPrimitiveFromNull
 	ts.FuncMap["ProtoType"] = toProtoType
 	ts.FuncMap["ProtoCustomType"] = toProtoCustomType
 
@@ -387,6 +408,7 @@ func NewTables(packageName string, opts ...Option) (*Tables, error) {
 			"(gogoproto.unmarshaler_all) = true",
 			"(gogoproto.marshaler_all) = true",
 			"(gogoproto.sizer_all) = true",
+			"(gogoproto.goproto_unrecognized_all) = false",
 		}
 	}
 
@@ -415,7 +437,7 @@ func NewTables(packageName string, opts ...Option) (*Tables, error) {
 // findUsedPackages checks for needed packages which we must import.
 func (ts *Tables) findUsedPackages(file []byte) ([]string, error) {
 
-	af, err := parser.ParseFile(token.NewFileSet(), "virtual_file.go", append([]byte("package temporarily_main\n\n"), file...), 0)
+	af, err := goparser.ParseFile(token.NewFileSet(), "cs_virtual_file.go", append([]byte("package temporarily_main\n\n"), file...), 0)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -441,10 +463,11 @@ func (ts *Tables) findUsedPackages(file []byte) ([]string, error) {
 
 // WriteProto writes the protocol buffer specifications into `w`.
 func (ts *Tables) WriteProto(w io.Writer) error {
-	buf := new(bytes.Buffer)
 	if !ts.writeProto {
 		return errors.NotAcceptable.Newf("[dmlgen] Protocol buffer generation not enabled.")
 	}
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
 
 	if !ts.DisableFileHeader {
 		if err := ts.tpls.Funcs(ts.FuncMap).ExecuteTemplate(buf, "code_proto_header.go.tpl", ts); err != nil {
@@ -505,9 +528,6 @@ func (ts *Tables) WriteGo(w io.Writer) error {
 		if !t.DisableCollectionMethods {
 			ts.execTpl(buf, t, "code_collection_methods.go.tpl")
 		}
-		if t.TextMarshaler {
-			ts.execTpl(buf, t, "code_text.go.tpl")
-		}
 		if t.BinaryMarshaler {
 			ts.execTpl(buf, t, "code_binary.go.tpl")
 		}
@@ -519,8 +539,10 @@ func (ts *Tables) WriteGo(w io.Writer) error {
 	if !ts.DisableFileHeader {
 		// now figure out all used package names in the buffer.
 		fmt.Fprintf(w, "// Auto generated via github.com/corestoreio/pkg/sql/dmlgen\n\npackage %s\n\nimport (\n", ts.Package)
+		// println(buf.String())
 		pkgs, err := ts.findUsedPackages(buf.Bytes())
 		if err != nil {
+			_, _ = w.Write(buf.Bytes()) // write malformed data for debugging reasons.
 			return errors.WithStack(err)
 		}
 		for _, path := range pkgs {
@@ -545,7 +567,7 @@ type table struct {
 	TableName                string      // Name of the table
 	Comment                  string      // Comment above the struct type declaration
 	Columns                  ddl.Columns // all columns of a table
-	TextMarshaler            bool
+	JsonMarshaler            bool
 	BinaryMarshaler          bool
 	Protobuf                 bool // writes the .proto file if true
 	DisableCollectionMethods bool
@@ -601,6 +623,55 @@ func GenerateProto(path string) error {
 		if !strings.Contains(text, "WARNING") {
 			return errors.WriteFailed.Newf("[dmlgen] protoc Error: %s", text)
 		}
+	}
+	return nil
+}
+
+func GenerateJSON(fname string, g *bootstrap.Generator) (err error) {
+	fInfo, err := os.Stat(fname)
+	if err != nil {
+		return err
+	}
+
+	p := parser.Parser{}
+	if err := p.Parse(fname, fInfo.IsDir()); err != nil {
+		return fmt.Errorf("Error parsing %v: %v", fname, err)
+	}
+
+	var outName string
+	if fInfo.IsDir() {
+		outName = filepath.Join(fname, p.PkgName+"_easyjson.go")
+	} else {
+		if s := strings.TrimSuffix(fname, ".go"); s == fname {
+			return errors.New("Filename must end in '.go'")
+		} else {
+			outName = s + "_easyjson.go"
+		}
+	}
+
+	var trimmedBuildTags string
+	// if *buildTags != "" {
+	// 	trimmedBuildTags = strings.TrimSpace(*buildTags)
+	// }
+	if g == nil {
+		g = &bootstrap.Generator{
+			BuildTags:             trimmedBuildTags,
+			PkgPath:               p.PkgPath,
+			PkgName:               p.PkgName,
+			Types:                 p.StructNames,
+			SnakeCase:             true,
+			LowerCamelCase:        true,
+			NoStdMarshalers:       false,
+			DisallowUnknownFields: false,
+			OmitEmpty:             true,
+			LeaveTemps:            false,
+			OutName:               outName,
+			StubsOnly:             false,
+			NoFormat:              true,
+		}
+	}
+	if err := g.Run(); err != nil {
+		return fmt.Errorf("Bootstrap failed: %v", err)
 	}
 	return nil
 }

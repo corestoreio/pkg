@@ -25,9 +25,10 @@ import (
 	"github.com/corestoreio/pkg/sql/dmlgen"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/storage/null"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
+
+var _ = null.JSONMarshalFn
 
 /*
 SELECT
@@ -58,32 +59,37 @@ ORDER BY COLUMN_TYPE
 
 func writeFile(t *testing.T, outFile string, w func(io.Writer) error) {
 	f, err := os.Create(outFile)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	defer dmltest.Close(t, f)
-	require.NoError(t, w(f))
+	err = w(f)
+	assert.NoError(t, err, "%+v", err)
 }
 
-// TestNewTables writes a Go and Proto file to the testdata directory for manual
+// TestNewTables_Generated writes a Go and Proto file to the testdata directory for manual
 // review for different tables. This test also analyzes the foreign keys
 // pointing to customer_entity. No tests of the generated source code are
 // getting executed because API gets developed, still.
-func TestNewTables(t *testing.T) {
-	t.Parallel()
+func TestNewTables_Generated(t *testing.T) {
+	db := dmltest.MustConnectDB(t)
+	defer dmltest.Close(t, db)
 
-	db, mock := dmltest.MockDB(t)
-	defer dmltest.MockClose(t, db, mock)
-
-	mock.ExpectQuery("SELECT.+information_schema.COLUMNS.+").WillReturnRows(dmltest.MustMockRows(
-		dmltest.WithFile("testdata/INFORMATION_SCHEMA.COLUMNS.csv"),
-	))
-	mock.ExpectQuery("SELECT.+information_schema.KEY_COLUMN_USAGE.+").WillReturnRows(dmltest.MustMockRows(
-		dmltest.WithFile("testdata/INFORMATION_SCHEMA.KEY_COLUMN_USAGE.csv"),
-	))
+	// defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil)()
+	dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil)
 
 	ctx := context.Background()
 	ts, err := dmlgen.NewTables("testdata",
+
+		dmlgen.WithLoadColumns(ctx, db.DB, "dmlgen_types", "core_config_data", "customer_entity"),
+		dmlgen.WithTableOption(
+			"customer_entity", &dmlgen.TableOption{
+				Encoders: []string{"json", "protobuf"},
+			}),
+
+		// dmlgen.WithLoadColumns(ctx, db.DB, "dmlgen_types"),
+
 		dmlgen.WithTableOption(
 			"core_config_data", &dmlgen.TableOption{
+				Encoders: []string{"json", "protobuf"},
 				CustomStructTags: []string{
 					"path", `json:"x_path" xml:"y_path"`,
 					"scope_id", `json:"scope_id" xml:"scope_id"`,
@@ -94,36 +100,32 @@ func TestNewTables(t *testing.T) {
 				},
 				UniquifiedColumns: []string{"path"},
 			}),
+
+		dmlgen.WithTable("core_config_data", ddl.Columns{
+			&ddl.Column{Field: "path", Pos: 5, Default: null.MakeString("'general'"), Null: "NO", DataType: "varchar", CharMaxLength: null.MakeInt64(255), ColumnType: "varchar(255)", Comment: "Config Path overwritten"},
+		}, "overwrite"),
+
 		dmlgen.WithTableOption(
 			"dmlgen_types", &dmlgen.TableOption{
-				Encoders:          []string{"text", "binary", "protobuf"},
+				Encoders:          []string{"json", "binary", "protobuf"},
 				StructTags:        []string{"json", "protobuf"},
-				UniquifiedColumns: []string{"col_longtext_2", "col_int_1", "col_int_2", "has_smallint_5", "col_date_2", "col_blob"},
+				UniquifiedColumns: []string{"price_12_4a", "col_longtext_2", "col_int_1", "col_int_2", "has_smallint_5", "col_date_2", "col_blob"},
 				Comment:           "Just another comment.\n//easyjson:json",
 			}),
 		dmlgen.WithTableOption(
-			"customer_entity", &dmlgen.TableOption{
-				Encoders: []string{"text", "protobuf"},
+			"dmlgen_types", &dmlgen.TableOption{
+				Encoders: []string{"json", "protobuf"},
 			}),
-
-		dmlgen.WithTable("core_config_data", ddl.Columns{
-			&ddl.Column{Field: "config_id", Pos: 1, Null: "NO", DataType: "int", Precision: null.MakeInt64(10), Scale: null.MakeInt64(0), ColumnType: "int(10) unsigned", Key: "PRI", Extra: "auto_increment", Comment: "Config Id"},
-			&ddl.Column{Field: "scope", Pos: 2, Default: null.MakeString("'default'"), Null: "NO", DataType: "varchar", CharMaxLength: null.MakeInt64(8), ColumnType: "varchar(8)", Key: "MUL", Comment: "Config Scope"},
-			&ddl.Column{Field: "scope_id", Pos: 3, Default: null.MakeString("0"), Null: "NO", DataType: "int", Precision: null.MakeInt64(10), Scale: null.MakeInt64(0), ColumnType: "int(11)", Comment: "Config Scope Id"},
-			&ddl.Column{Field: "path", Pos: 4, Default: null.MakeString("'general'"), Null: "NO", DataType: "varchar", CharMaxLength: null.MakeInt64(255), ColumnType: "varchar(255)", Comment: "Config Path"},
-			&ddl.Column{Field: "value", Pos: 5, Default: null.MakeString("NULL"), Null: "YES", DataType: "text", CharMaxLength: null.MakeInt64(65535), ColumnType: "text", Comment: "Config Value"},
-		}),
-
-		dmlgen.WithLoadColumns(ctx, db.DB, "dmlgen_types", "customer_entity"),
 
 		dmlgen.WithColumnAliasesFromForeignKeys(ctx, db.DB),
 	)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	writeFile(t, "testdata/output_gen.go", ts.WriteGo)
 	writeFile(t, "testdata/output_gen.proto", ts.WriteProto)
 	// Generates for all proto files the Go source code.
-	require.NoError(t, dmlgen.GenerateProto("./testdata"))
+	err = dmlgen.GenerateProto("./testdata")
+	assert.NoError(t, err, "%+v", err)
 }
 
 func TestInfoSchemaForeignKeys(t *testing.T) {
@@ -135,18 +137,19 @@ func TestInfoSchemaForeignKeys(t *testing.T) {
 
 	ts, err := dmlgen.NewTables("testdata",
 		dmlgen.WithTableOption("KEY_COLUMN_USAGE", &dmlgen.TableOption{
-			Encoders:          []string{"text", "binary"},
+			Encoders:          []string{"json", "binary"},
 			UniquifiedColumns: []string{"TABLE_NAME", "COLUMN_NAME"},
 		}),
 		dmlgen.WithLoadColumns(context.Background(), db.DB, "KEY_COLUMN_USAGE"),
 	)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	writeFile(t, "testdata/KEY_COLUMN_USAGE_gen.go", ts.WriteGo)
 }
 
 func TestWithCustomStructTags(t *testing.T) {
 	t.Parallel()
+
 	t.Run("unbalanced should panic", func(t *testing.T) {
 		defer func() {
 			if r := recover(); r != nil {
@@ -160,12 +163,14 @@ func TestWithCustomStructTags(t *testing.T) {
 			}
 		}()
 
-		dmlgen.NewTables("testdata",
+		tbl, err := dmlgen.NewTables("testdata",
 			dmlgen.WithTable("table", ddl.Columns{&ddl.Column{Field: "config_id"}}),
 			dmlgen.WithTableOption("table", &dmlgen.TableOption{
 				CustomStructTags: []string{"unbalanced"},
 			}),
 		)
+		assert.Nil(t, tbl)
+		assert.NoError(t, err)
 	})
 
 	t.Run("table not found", func(t *testing.T) {
@@ -174,7 +179,7 @@ func TestWithCustomStructTags(t *testing.T) {
 				CustomStructTags: []string{"column", "db:..."},
 			}),
 		)
-		require.Nil(t, tbls)
+		assert.Nil(t, tbls)
 		assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	})
 
@@ -187,7 +192,7 @@ func TestWithCustomStructTags(t *testing.T) {
 				&ddl.Column{Field: "config_id"},
 			}),
 		)
-		require.Nil(t, tbls)
+		assert.Nil(t, tbls)
 		assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	})
 }
@@ -201,7 +206,7 @@ func TestWithStructTags(t *testing.T) {
 				StructTags: []string{"unbalanced"},
 			}),
 		)
-		require.Nil(t, tbls)
+		assert.Nil(t, tbls)
 		assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	})
 
@@ -214,7 +219,7 @@ func TestWithStructTags(t *testing.T) {
 				&ddl.Column{Field: "config_id"},
 			}),
 		)
-		require.Nil(t, tbls)
+		assert.Nil(t, tbls)
 		assert.True(t, errors.NotSupported.Match(err), "%+v", err)
 	})
 
@@ -227,7 +232,7 @@ func TestWithStructTags(t *testing.T) {
 				&ddl.Column{Field: "config_id"},
 			}),
 		)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		have := tbls.Tables["core_config_data"].Columns.ByField("config_id").GoString()
 		assert.Exactly(t, "&ddl.Column{Field: \"config_id\", StructTag: \"bson:\\\"config_id,omitempty\\\" db:\\\"config_id\\\" env:\\\"config_id\\\" json:\\\"config_id,omitempty\\\" toml:\\\"config_id\\\" yaml:\\\"config_id,omitempty\\\" xml:\\\"config_id,omitempty\\\"\", }", have)
 	})
@@ -242,7 +247,7 @@ func TestWithColumnAliases(t *testing.T) {
 				ColumnAliases: map[string][]string{"column": {"alias"}},
 			}),
 		)
-		require.Nil(t, tbls)
+		assert.Nil(t, tbls)
 		assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	})
 
@@ -255,7 +260,7 @@ func TestWithColumnAliases(t *testing.T) {
 				&ddl.Column{Field: "config_id"},
 			}),
 		)
-		require.Nil(t, tbls)
+		assert.Nil(t, tbls)
 		assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	})
 }
@@ -273,7 +278,7 @@ func TestWithUniquifiedColumns(t *testing.T) {
 				&ddl.Column{Field: "config_id"},
 			}),
 		)
-		require.Nil(t, tbls)
+		assert.Nil(t, tbls)
 		assert.True(t, errors.NotFound.Match(err), "%+v", err)
 	})
 }
