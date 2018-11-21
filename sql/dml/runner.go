@@ -986,6 +986,10 @@ func (b *ColumnMap) Uint64s(values ...uint64) *ColumnMap {
 	return b.addSlice("Uint64s", values)
 }
 
+func (b *ColumnMap) Int64s(values ...int64) *ColumnMap {
+	return b.addSlice("Int64s", values)
+}
+
 func (b *ColumnMap) Strings(values ...string) *ColumnMap {
 	return b.addSlice("Strings", values)
 }
