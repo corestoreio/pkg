@@ -25,6 +25,7 @@ import (
 	goparser "go/parser"
 	"go/token"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -112,7 +113,9 @@ func (to *TableOption) applyEncoders(ts *Tables, t *table) {
 	for i := 0; i < len(to.Encoders) && to.lastErr == nil; i++ {
 		switch enc := to.Encoders[i]; enc {
 		case "json":
-			t.JsonMarshaler = true
+			t.JsonMarshaler = true // for now does nothing
+		case "easyjson":
+			t.EasyJsonMarshaler = true
 		case "binary":
 			t.BinaryMarshaler = true
 		case "protobuf":
@@ -470,14 +473,14 @@ func (ts *Tables) WriteProto(w io.Writer) error {
 	defer bufferpool.Put(buf)
 
 	if !ts.DisableFileHeader {
-		if err := ts.tpls.Funcs(ts.FuncMap).ExecuteTemplate(buf, "code_proto_header.go.tpl", ts); err != nil {
+		if err := ts.tpls.Funcs(ts.FuncMap).ExecuteTemplate(buf, "code_proto_10_header.go.tpl", ts); err != nil {
 			return errors.WriteFailed.New(err, "[dmlgen] For file header")
 		}
 	}
 
 	for _, tblName := range ts.sortedTableNames() {
 		t := ts.Tables[tblName] // must panic if table name not found
-		if err := t.writeTo(buf, ts.tpls.Lookup("code_proto.go.tpl").Funcs(ts.FuncMap)); err != nil {
+		if err := t.writeTo(buf, ts.tpls.Lookup("code_proto_20_table.go.tpl").Funcs(ts.FuncMap)); err != nil {
 			return errors.WriteFailed.New(err, "[dmlgen] For Table %q", t.TableName)
 		}
 	}
@@ -514,7 +517,7 @@ func (ts *Tables) WriteGo(w io.Writer) error {
 			Tables:     tables,
 			TableNames: sortedTableNames,
 		}
-		if err := ts.tpls.ExecuteTemplate(buf, "code_tables.go.tpl", data); err != nil {
+		if err := ts.tpls.ExecuteTemplate(buf, "code_10_tables.go.tpl", data); err != nil {
 			return errors.WriteFailed.New(err, "[dmlgen] For Tables %v", tables)
 		}
 	}
@@ -523,13 +526,12 @@ func (ts *Tables) WriteGo(w io.Writer) error {
 	for _, tblname := range sortedTableNames {
 		t := ts.Tables[tblname] // must panic if table name not found
 
-		ts.execTpl(buf, t, "code_entity.go.tpl")
-		ts.execTpl(buf, t, "code_collection.go.tpl")
+		ts.execTpl(buf, t, "code_20_entity.go.tpl")
 		if !t.DisableCollectionMethods {
-			ts.execTpl(buf, t, "code_collection_methods.go.tpl")
+			ts.execTpl(buf, t, "code_30_collection_methods.go.tpl")
 		}
 		if t.BinaryMarshaler {
-			ts.execTpl(buf, t, "code_binary.go.tpl")
+			ts.execTpl(buf, t, "code_40_binary.go.tpl")
 		}
 		if ts.lastError != nil {
 			return ts.lastError
@@ -568,6 +570,7 @@ type table struct {
 	Comment                  string      // Comment above the struct type declaration
 	Columns                  ddl.Columns // all columns of a table
 	JsonMarshaler            bool
+	EasyJsonMarshaler        bool
 	BinaryMarshaler          bool
 	Protobuf                 bool // writes the .proto file if true
 	DisableCollectionMethods bool
@@ -624,9 +627,32 @@ func GenerateProto(path string) error {
 			return errors.WriteFailed.Newf("[dmlgen] protoc Error: %s", text)
 		}
 	}
+
+	// what a hack: find all *.pb.go files and remove `import null
+	// "github.com/corestoreio/pkg/storage/null"` because no other way to get
+	// rid of the unused import or reference that import somehow in the
+	// generated file :-( Once there's a better solution, remove this code.
+	pbGoFiles, err := filepath.Glob(path + "*.pb.go")
+	if err != nil {
+		return errors.Wrapf(err, "[dmlgen] Can't access pb.go files in path %q", path)
+	}
+	removeImport := []byte("import null \"github.com/corestoreio/pkg/storage/null\"\n")
+	for _, file := range pbGoFiles {
+		fContent, err := ioutil.ReadFile(file)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		fContent = bytes.ReplaceAll(fContent, removeImport, nil)
+		if err := ioutil.WriteFile(file, fContent, 0644); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
 	return nil
 }
 
+// GenerateJSON creates the easysjon code for a specific file or a whole
+// directory. argument `g` can be nil.
 func GenerateJSON(fname string, g *bootstrap.Generator) (err error) {
 	fInfo, err := os.Stat(fname)
 	if err != nil {

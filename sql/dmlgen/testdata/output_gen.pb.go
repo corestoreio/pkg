@@ -6,7 +6,6 @@ package testdata
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import null "github.com/corestoreio/pkg/storage/null"
 import _ "github.com/gogo/protobuf/gogoproto"
 import _ "github.com/gogo/protobuf/types"
 

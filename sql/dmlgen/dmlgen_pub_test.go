@@ -89,7 +89,7 @@ func TestNewTables_Generated(t *testing.T) {
 
 		dmlgen.WithTableOption(
 			"core_config_data", &dmlgen.TableOption{
-				Encoders: []string{"json", "protobuf"},
+				Encoders: []string{"easyjson", "protobuf"},
 				CustomStructTags: []string{
 					"path", `json:"x_path" xml:"y_path"`,
 					"scope_id", `json:"scope_id" xml:"scope_id"`,
@@ -107,7 +107,7 @@ func TestNewTables_Generated(t *testing.T) {
 
 		dmlgen.WithTableOption(
 			"dmlgen_types", &dmlgen.TableOption{
-				Encoders:          []string{"json", "binary", "protobuf"},
+				Encoders:          []string{"easyjson", "binary", "protobuf"},
 				StructTags:        []string{"json", "protobuf"},
 				UniquifiedColumns: []string{"price_12_4a", "col_longtext_2", "col_int_1", "col_int_2", "has_smallint_5", "col_date_2", "col_blob"},
 				Comment:           "Just another comment.\n//easyjson:json",
@@ -125,6 +125,8 @@ func TestNewTables_Generated(t *testing.T) {
 	writeFile(t, "testdata/output_gen.proto", ts.WriteProto)
 	// Generates for all proto files the Go source code.
 	err = dmlgen.GenerateProto("./testdata")
+	assert.NoError(t, err, "%+v", err)
+	err = dmlgen.GenerateJSON("./testdata", nil)
 	assert.NoError(t, err, "%+v", err)
 }
 

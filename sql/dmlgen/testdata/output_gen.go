@@ -35,8 +35,6 @@ func NewTables(ctx context.Context, db dml.QueryExecPreparer, opts ...ddl.TableO
 	return tm, nil
 }
 
-// <code_entity.go.tpl>
-
 // CoreConfigData represents a single row for DB table `core_config_data`.
 // Auto generated.
 //easyjson:json
@@ -92,8 +90,6 @@ func (e *CoreConfigData) MapColumns(cm *dml.ColumnMap) error {
 	}
 	return errors.WithStack(cm.Err())
 }
-
-// </code_entity.go.tpl>
 
 // CoreConfigDataCollection represents a collection type for DB table core_config_data
 // Not thread safe. Auto generated.
@@ -245,11 +241,8 @@ func (cc *CoreConfigDataCollection) Append(n ...*CoreConfigData) *CoreConfigData
 	return cc
 }
 
-// <code_entity.go.tpl>
-
 // CustomerEntity represents a single row for DB table `customer_entity`.
 // Auto generated.
-//easyjson:json
 type CustomerEntity struct {
 	EntityID               uint64      // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
 	WebsiteID              null.Int64  // website_id smallint(5) unsigned NULL MUL DEFAULT 'NULL'  "Website ID"
@@ -363,11 +356,8 @@ func (e *CustomerEntity) MapColumns(cm *dml.ColumnMap) error {
 	return errors.WithStack(cm.Err())
 }
 
-// </code_entity.go.tpl>
-
 // CustomerEntityCollection represents a collection type for DB table customer_entity
 // Not thread safe. Auto generated.
-//easyjson:json
 type CustomerEntityCollection struct {
 	Data             []*CustomerEntity                   `json:"data,omitempty"`
 	BeforeMapColumns func(uint64, *CustomerEntity) error `json:"-"`
@@ -515,8 +505,6 @@ func (cc *CustomerEntityCollection) Append(n ...*CustomerEntity) *CustomerEntity
 	cc.Data = append(cc.Data, n...)
 	return cc
 }
-
-// <code_entity.go.tpl>
 
 // DmlgenTypes represents a single row for DB table `dmlgen_types`.
 // Auto generated.
@@ -675,8 +663,6 @@ func (e *DmlgenTypes) MapColumns(cm *dml.ColumnMap) error {
 	}
 	return errors.WithStack(cm.Err())
 }
-
-// </code_entity.go.tpl>
 
 // DmlgenTypesCollection represents a collection type for DB table dmlgen_types
 // Not thread safe. Auto generated.
