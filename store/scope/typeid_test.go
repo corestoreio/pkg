@@ -24,8 +24,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var (
@@ -55,17 +54,18 @@ func TestMakeTypeID(t *testing.T) {
 		wantScp scope.Type
 		wantID  int64
 	}{
-		0: {scope.Default, 0, scope.Default, 0},
-		1: {scope.Default, -1, scope.Default, 0},
-		2: {scope.Default, 1, scope.Default, 0},
-		3: {scope.Store, 1, scope.Store, 1},
-		4: {scope.Group, 4, scope.Group, 4},
-		5: {scope.Group, -4, scope.Absent, 0},
-		6: {scope.Website, scope.MaxID, scope.Website, scope.MaxID},
-		7: {scope.Website, -scope.MaxID, scope.Absent, 0},
-		8: {scope.Website, scope.MaxID + 1, scope.Absent, 0},
+		{scope.Default, 0, scope.Default, 0},
+		{scope.Default, -1, scope.Default, 0},
+		{scope.Default, 1, scope.Default, 0},
+		{scope.Store, 1, scope.Store, 1},
+		{scope.Group, 4, scope.Group, 4},
+		{scope.Group, -4, scope.Absent, 0},
+		{scope.Website, scope.MaxID, scope.Website, scope.MaxID},
+		{scope.Website, -scope.MaxID, scope.Absent, 0},
+		{scope.Website, scope.MaxID + 1, scope.Absent, 0},
 	}
 	for i, test := range tests {
+		t.Logf("ID: %d", scope.MakeTypeID(test.scp, test.id))
 		haveScp, haveID := scope.MakeTypeID(test.scp, test.id).Unpack()
 		if have, want := haveScp, test.wantScp; have != want {
 			t.Errorf("(IDX %d) Type Have: %v Want: %v", i, have, want)
@@ -437,23 +437,23 @@ func TestTypeID_Marshal(t *testing.T) {
 
 	t.Run("binary", func(t *testing.T) {
 		bin, err := id.MarshalBinary()
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		var idBin scope.TypeID
-		require.NoError(t, idBin.UnmarshalBinary(bin))
+		assert.NoError(t, idBin.UnmarshalBinary(bin))
 		assert.Exactly(t, id, idBin)
 
 	})
 	t.Run("text", func(t *testing.T) {
 		txt, err := id.MarshalText()
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		var idTxt scope.TypeID
-		require.NoError(t, idTxt.UnmarshalText(txt))
+		assert.NoError(t, idTxt.UnmarshalText(txt))
 		assert.Exactly(t, id, idTxt)
 	})
 	t.Run("UnmarshalText error", func(t *testing.T) {
 		var idTxt scope.TypeID
-		require.EqualError(t, idTxt.UnmarshalText([]byte(`-1`)), "[scope] TypeID.UnmarshalText with text \"-1\": strconv.ParseUint: parsing \"-1\": invalid syntax")
+		assert.EqualError(t, idTxt.UnmarshalText([]byte(`-1`)), "[scope] TypeID.UnmarshalText with text \"-1\": strconv.ParseUint: parsing \"-1\": invalid syntax")
 	})
 	t.Run("UnmarshalBinary error", func(t *testing.T) {
 		var idTxt scope.TypeID

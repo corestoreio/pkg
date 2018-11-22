@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestFromContext(t *testing.T) {
