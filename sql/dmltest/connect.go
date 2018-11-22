@@ -15,6 +15,7 @@
 package dmltest
 
 import (
+	"database/sql"
 	"io"
 	"os"
 	"testing"
@@ -100,5 +101,32 @@ func FatalIfError(t testing.TB, err error) {
 		} else {
 			panic(err)
 		}
+	}
+}
+
+// CheckLastInsertID returns a function which accepts the return result from
+// Exec*() and returns itself the last_insert_id or emits an error.
+func CheckLastInsertID(t interface {
+	Errorf(format string, args ...interface{})
+}, msg ...string) func(sql.Result, error) int64 {
+	return func(res sql.Result, err error) int64 {
+		if err != nil {
+			if len(msg) == 1 {
+				t.Errorf("%q: %+v", msg[0], err)
+			} else {
+				t.Errorf("%+v", err)
+			}
+			return 0
+		}
+		lid, err := res.LastInsertId()
+		if err != nil {
+			if len(msg) == 1 {
+				t.Errorf("%q: %+v", msg[0], err)
+			} else {
+				t.Errorf("%+v", err)
+			}
+			return 0
+		}
+		return lid
 	}
 }
