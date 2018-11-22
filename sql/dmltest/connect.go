@@ -127,6 +127,9 @@ func CheckLastInsertID(t interface {
 			}
 			return 0
 		}
+		if lid < 0 {
+			t.Errorf("Expecting Last Insert ID to be greater than zero, got %d", lid)
+		}
 		return lid
 	}
 }
