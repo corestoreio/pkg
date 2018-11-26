@@ -91,9 +91,10 @@ func stdInExec(ctx context.Context, f io.ReadCloser, name string, args ...string
 // SQLDumpOptions can set a different MySQL/MariaDB binary path and adds more
 // arguments.
 type SQLDumpOptions struct {
-	MySQLPath string
-	MySQLArgs []string
-	DSN       string
+	MySQLPath     string
+	MySQLArgs     []string
+	DSN           string
+	SkipDBCleanup bool
 	// mocked out for testing.
 	execCommandContext func(ctx context.Context, file io.ReadCloser, cmd string, arg ...string) error
 }
@@ -158,8 +159,10 @@ func SQLDumpLoad(t testing.TB, globPattern string, o *SQLDumpOptions) func() {
 
 	return func() {
 		defer os.Remove(dfFile)
-		for _, file := range cleanUpFiles {
-			runExec(file)
+		if !o.SkipDBCleanup {
+			for _, file := range cleanUpFiles {
+				runExec(file)
+			}
 		}
 	}
 }
