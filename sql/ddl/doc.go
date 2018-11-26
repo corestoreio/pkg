@@ -15,4 +15,7 @@
 // Package ddl implements MySQL data definition language functions.
 //
 // Functions for tables, columns, statements, replication, validation and DB variables.
+//
+// https://launchbylunch.com/posts/2014/Feb/16/sql-naming-conventions/
+//
 package ddl

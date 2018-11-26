@@ -68,7 +68,7 @@ func init() {
 		),
 	)
 
-	tableMap.Upsert(ddl.NewTable(
+	if err := tableMap.Upsert(ddl.NewTable(
 		"catalog_category_anc_products_index_idx",
 		&ddl.Column{
 			Field:      "category_id",
@@ -91,8 +91,11 @@ func init() {
 			Extra:      "",
 		},
 	),
-	)
-	tableMap.Upsert(ddl.NewTable(
+	); err != nil {
+		panic(err)
+	}
+
+	if err := tableMap.Upsert(ddl.NewTable(
 		"admin_user",
 		&ddl.Column{
 			Field:      "user_id",
@@ -122,7 +125,9 @@ func init() {
 			Extra:      "",
 		},
 	),
-	)
+	); err != nil {
+		panic(err)
+	}
 }
 
 func TestTable_Select(t *testing.T) {
@@ -297,13 +302,13 @@ func TestTable_Artisan_Methods(t *testing.T) {
 	tblAdmUser.DB = dbc.DB
 
 	t.Run("Insert", func(t *testing.T) {
-		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("INSERT INTO `admin_user` (`email`,`first_name`) VALUES (?,?),(?,?)")).
-			WithArgs("a@b.c", "Franz", "d@e.f", "Sissi").
+		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("INSERT INTO `admin_user` (`email`,`first_name`,`username`) VALUES (?,?,?),(?,?,?)")).
+			WithArgs("a@b.c", "Franz", "franz", "d@e.f", "Sissi", "sissi").
 			WillReturnResult(sqlmock.NewResult(11, 0))
 
 		res, err := tblAdmUser.Insert().WithArgs().
-			String("a@b.c").String("Franz").
-			String("d@e.f").String("Sissi").
+			String("a@b.c").String("Franz").String("franz").
+			String("d@e.f").String("Sissi").String("sissi").
 			ExecContext(context.Background())
 		assert.NoError(t, err)
 		id, err := res.LastInsertId()
@@ -346,12 +351,12 @@ func TestTable_Artisan_Methods(t *testing.T) {
 	})
 
 	t.Run("UpdateByPK", func(t *testing.T) {
-		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("UPDATE `admin_user` SET `email`=?, `first_name`=? WHERE (`user_id` = ?)")).
-			WithArgs("a@b.c", "Franz", int64(3)).
+		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("UPDATE `admin_user` SET `email`=?, `first_name`=?, `username`=? WHERE (`user_id` = ?)")).
+			WithArgs("a@b.c", "Franz", "franz", int64(3)).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		res, err := tblAdmUser.UpdateByPK().WithArgs().
-			String("a@b.c").String("Franz").
+			String("a@b.c").String("Franz").String("franz").
 			Int64(3).
 			ExecContext(context.Background())
 		assert.NoError(t, err)
@@ -359,5 +364,23 @@ func TestTable_Artisan_Methods(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Exactly(t, int64(1), id)
 	})
+}
+
+func TestTable_GeneratedColumns(t *testing.T) {
+	t.Parallel()
+
+	dbc := dmltest.MustConnectDB(t)
+	defer dmltest.Close(t, dbc)
+
+	dmltest.SQLDumpLoad(t, "testdata/generated*.sql", nil)
+	// defer dmltest.SQLDumpLoad(t, "testdata/generated*.sql", nil)()
+
+	tbls := ddl.MustNewTables(
+		ddl.WithCreateTable(context.TODO(), dbc.DB, "core_config_data_generated", ""),
+	)
+
+	ins := tbls.MustTable("core_config_data_generated").Insert()
+	t.Log(ins.String())
+	// only those columsn which aren't generated
 
 }

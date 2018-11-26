@@ -60,8 +60,8 @@ type Column struct {
 	Key                  string      // `COLUMN_KEY` varchar(3) NOT NULL DEFAULT '',
 	Extra                string      // `EXTRA` varchar(30) NOT NULL DEFAULT '',
 	Comment              string      // `COLUMN_COMMENT` varchar(1024) NOT NULL DEFAULT '',
-	IsGenerated          string      // `IS_GENERATED` varchar(6) NOT NULL DEFAULT '', MariaDB only https://mariadb.com/kb/en/library/information-schema-columns-table/
-	GenerationExpression null.String // `GENERATION_EXPRESSION` longtext DEFAULT NULL
+	Generated            string      // `IS_GENERATED` varchar(6) NOT NULL DEFAULT '', MariaDB only https://mariadb.com/kb/en/library/information-schema-columns-table/
+	GenerationExpression null.String // `GENERATION_EXPRESSION` longtext DEFAULT NULL, MariaDB only https://mariadb.com/kb/en/library/information-schema-columns-table/
 	// Aliases specifies different names used for this column. Mainly used when
 	// generating code for interface dml.ColumnMapper. For example
 	// customer_entity.entity_id can also be sales_order.customer_id. The alias
@@ -174,17 +174,25 @@ func (cs Columns) FieldNames(fn ...string) []string {
 }
 
 func colIsPK(c *Column) bool {
-	return c.IsPK()
+	return c.IsPK() && !c.IsSystemVersioned()
+}
+
+func colIsUnique(c *Column) bool {
+	return c.IsUnique() && !c.IsSystemVersioned()
+}
+
+func colIsNotSysVers(c *Column) bool {
+	return !c.IsSystemVersioned()
+}
+
+func colIsNotGeneratedNonPK(c *Column) bool {
+	return !c.IsGenerated() && !c.IsSystemVersioned() && c.Extra != "auto_increment"
 }
 
 // PrimaryKeys returns all primary key columns. It may append the columns to the
 // provided argument slice.
 func (cs Columns) PrimaryKeys(cols ...*Column) Columns {
 	return cs.Filter(colIsPK, cols...)
-}
-
-func colIsUnique(c *Column) bool {
-	return c.IsUnique()
 }
 
 // UniqueKeys returns all unique key columns. It may append the columns to the
@@ -210,17 +218,17 @@ func (cs Columns) UniqueColumns(cols ...*Column) Columns {
 			ukCount++
 		}
 	}
-	if pkCount == 1 {
+	if pkCount >= 1 {
 		cols = cs.PrimaryKeys(cols...)
 	}
-	if ukCount == 1 {
+	if ukCount >= 1 {
 		cols = cs.UniqueKeys(cols...)
 	}
 	return cols
 }
 
 func colIsNotPK(c *Column) bool {
-	return !c.IsPK() && !c.IsUnique()
+	return !c.IsPK() && !c.IsUnique() && c.GenerationExpression.String == ""
 }
 
 // NonPrimaryColumns returns all non primary key and non-unique key columns.
@@ -250,7 +258,7 @@ func (cs Columns) Contains(fieldName string) bool {
 }
 
 func colIsNotUniquified(c *Column) bool {
-	return c.Uniquified
+	return c.Uniquified && c.GenerationExpression.String == ""
 }
 
 // UniquifiedColumns returns all columns which have the flag Uniquified set to
@@ -349,7 +357,7 @@ func NewColumn(rc *dml.ColumnMap) (c *Column, tableName string, err error) {
 		case "COLUMN_COMMENT":
 			rc.String(&c.Comment)
 		case "IS_GENERATED":
-			rc.String(&c.IsGenerated)
+			rc.String(&c.Generated)
 		case "GENERATION_EXPRESSION":
 			rc.NullString(&c.GenerationExpression)
 		case "aliases":
@@ -437,8 +445,8 @@ func (c *Column) GoString() string {
 	if c.StructTag != "" {
 		fmt.Fprintf(buf, "StructTag: %q, ", c.StructTag)
 	}
-	if c.IsGenerated != "" {
-		fmt.Fprintf(buf, "IsGenerated: %q, ", c.IsGenerated)
+	if c.Generated != "" {
+		fmt.Fprintf(buf, "Generated: %q, ", c.Generated)
 	}
 	if c.GenerationExpression.Valid {
 		fmt.Fprintf(buf, "GenerationExpression: %q, ", c.GenerationExpression.String)
@@ -475,6 +483,17 @@ func (c *Column) IsUnsigned() bool {
 // IsCurrentTimestamp checks if the Default field is a current timestamp
 func (c *Column) IsCurrentTimestamp() bool {
 	return c.Default.String == columnCurrentTimestamp
+}
+
+// IsGenerated returns true if the column is a virtual generated column.
+func (c *Column) IsGenerated() bool {
+	return c.Generated == "ALWAYS" || c.GenerationExpression.Valid
+}
+
+// IsSystemVersioned returns true if the column gets used for system versioning.
+// https://mariadb.com/kb/en/library/system-versioned-tables/
+func (c *Column) IsSystemVersioned() bool {
+	return c.GenerationExpression.Valid && (c.GenerationExpression.String == "ROW START" || c.GenerationExpression.String == "ROW END")
 }
 
 // IsFloat returns true if a column is of one of the types: decimal, double or

@@ -42,10 +42,14 @@ type Table struct {
 	// DML statement (SELECT, INSERT, UPDATE or DELETE).
 	Listeners dml.ListenerBucket
 	// IsView set to true to mark if the table is a view.
-	IsView       bool
-	columnsPK    []string
-	columnsNonPK []string
-	columnsAll   []string
+	IsView bool
+	// optimized column selection for specific DML operations.
+	columnsPK    []string // only primary key columns
+	columnsNonPK []string // all columns, except PK and system-versioned
+	columnsAll   []string // all columns, except system-versioned
+	// columnsUpsert contains all non-virtual, non-system versioned and non
+	// auto_increment columns for update or insert operations.
+	columnsUpsert []string
 }
 
 // NewTable initializes a new table structure
@@ -62,6 +66,7 @@ func (t *Table) update() *Table {
 	if len(t.Columns) == 0 {
 		return t
 	}
+
 	t.columnsNonPK = t.columnsNonPK[:0]
 	t.columnsNonPK = t.Columns.NonPrimaryColumns().FieldNames(t.columnsNonPK...)
 
@@ -69,7 +74,10 @@ func (t *Table) update() *Table {
 	t.columnsPK = t.Columns.PrimaryKeys().FieldNames(t.columnsPK...)
 
 	t.columnsAll = t.columnsAll[:0]
-	t.columnsAll = t.Columns.FieldNames(t.columnsAll...)
+	t.columnsAll = t.Columns.Filter(colIsNotSysVers).FieldNames(t.columnsAll...)
+
+	t.columnsUpsert = t.columnsUpsert[:0]
+	t.columnsUpsert = t.Columns.Filter(colIsNotGeneratedNonPK).FieldNames(t.columnsUpsert...)
 
 	return t
 }
@@ -80,7 +88,7 @@ func (t *Table) update() *Table {
 // prepare a query, a call to `BuildValues()` triggers building the VALUES
 // clause, otherwise a SQL parse error will occur.
 func (t *Table) Insert() *dml.Insert {
-	i := dml.NewInsert(t.Name).AddColumns(t.columnsNonPK...)
+	i := dml.NewInsert(t.Name).AddColumns(t.columnsUpsert...)
 	i.Listeners = i.Listeners.Merge(t.Listeners.Insert)
 	return i.WithDB(t.DB)
 }
@@ -121,7 +129,7 @@ func (t *Table) DeleteByPK() *dml.Delete {
 // UpdateByPK creates a new `UPDATE table SET ... WHERE id = ?`. The SET clause
 // contains all non primary columns.
 func (t *Table) UpdateByPK() *dml.Update {
-	u := dml.NewUpdate(t.Name).AddColumns(t.columnsNonPK...)
+	u := dml.NewUpdate(t.Name).AddColumns(t.columnsUpsert...)
 	u.Wheres = t.whereByPK(dml.Equal)
 	u.Listeners = u.Listeners.Merge(t.Listeners.Update)
 	return u.WithDB(t.DB)
