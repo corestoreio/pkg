@@ -316,26 +316,39 @@ func TestTable_Artisan_Methods(t *testing.T) {
 		assert.Exactly(t, int64(11), id)
 	})
 
-	t.Run("DeleteByPK", func(t *testing.T) {
-		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("DELETE FROM `admin_user` WHERE (`user_id` IN ?)")).
+	t.Run("DeleteByPK prepared", func(t *testing.T) {
+		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("DELETE FROM `admin_user` WHERE (`user_id` IN (?,?))")).
 			WithArgs("a@b.c", "d@e.f").
 			WillReturnResult(sqlmock.NewResult(0, 2))
 
-		res, err := tblAdmUser.DeleteByPK().WithArgs().
-			String("a@b.c").String("d@e.f").
+		res, err := tblAdmUser.DeleteByPK().WithArgs().ExpandPlaceHolders().
+			Strings("a@b.c", "d@e.f").
 			ExecContext(context.Background())
 		assert.NoError(t, err)
 		id, err := res.RowsAffected()
 		assert.NoError(t, err)
 		assert.Exactly(t, int64(2), id)
 	})
+	t.Run("DeleteByPK interpolated", func(t *testing.T) {
+		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("DELETE FROM `admin_user` WHERE (`user_id` IN ('a@b.c','d@e.f'))")).
+			WithArgs().
+			WillReturnResult(sqlmock.NewResult(0, 2))
+
+		res, err := tblAdmUser.DeleteByPK().WithArgs().Interpolate().
+			Strings("a@b.c", "d@e.f").
+			ExecContext(context.Background())
+		assert.NoError(t, err, "%+v", err)
+		id, err := res.RowsAffected()
+		assert.NoError(t, err)
+		assert.Exactly(t, int64(2), id)
+	})
 
 	t.Run("SelectByPK", func(t *testing.T) {
-		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT `user_id`, `email`, `first_name`, `username` FROM `admin_user` AS `main_table` WHERE (`user_id` IN ?)")).
-			WithArgs(int64(234)).
+		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT `user_id`, `email`, `first_name`, `username` FROM `admin_user` AS `main_table` WHERE (`user_id` IN (?,?,?))")).
+			WithArgs(int64(234), int64(235), int64(236)).
 			WillReturnRows(sqlmock.NewRows([]string{"user_id", "email", "first_name", "username"}))
 
-		rows, err := tblAdmUser.SelectByPK().WithArgs().Int64(234).QueryContext(context.Background())
+		rows, err := tblAdmUser.SelectByPK().WithArgs().Int64s(234, 235, 236).QueryContext(context.Background())
 		assert.NoError(t, err)
 		assert.NoError(t, rows.Close())
 	})
