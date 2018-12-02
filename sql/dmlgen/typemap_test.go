@@ -122,20 +122,20 @@ func TestToGoPrimitive(t *testing.T) {
 		c    *ddl.Column
 		want string // The function names as mentioned in dml.ColumnMap.[TFunc]
 	}{
-		{&ddl.Column{Field: "col_int_1", Pos: 19, Default: null.MakeString("NULL"), Null: "YES", DataType: "int", Precision: null.MakeInt64(10), Scale: null.MakeInt64(0), ColumnType: "int(10)", Uniquified: true, IsGenerated: "NEVER"}, "ColInt1.Int64"},
+		{&ddl.Column{Field: "col_int_1", Pos: 19, Default: null.MakeString("NULL"), Null: "YES", DataType: "int", Precision: null.MakeInt64(10), Scale: null.MakeInt64(0), ColumnType: "int(10)", Uniquified: true, Generated: "NEVER"}, "ColInt1.Int64"},
 		{&ddl.Column{Field: `category_id214`, DataType: `bigint`, ColumnType: `bigint unsigned`}, "CategoryId214"},
-		{&ddl.Column{Field: "id", Pos: 1, Null: "NO", DataType: "int", Precision: null.MakeInt64(10), Scale: null.MakeInt64(0), ColumnType: "int(11)", Key: "PRI", Extra: "auto_increment", IsGenerated: "NEVER"}, "ID"},
-		{&ddl.Column{Field: "col_bigint_1", Pos: 2, Default: null.MakeString("NULL"), Null: "YES", DataType: "bigint", Precision: null.MakeInt64(19), Scale: null.MakeInt64(0), ColumnType: "bigint(20)", IsGenerated: "NEVER"}, "ColBigint1.Int64"},
-		{&ddl.Column{Field: "col_bigint_2", Pos: 3, Default: null.MakeString("0"), Null: "NO", DataType: "bigint", Precision: null.MakeInt64(19), Scale: null.MakeInt64(0), ColumnType: "bigint(20)", IsGenerated: "NEVER"}, "ColBigint2"},
-		{&ddl.Column{Field: "col_bigint_3", Pos: 4, Default: null.MakeString("NULL"), Null: "YES", DataType: "bigint", Precision: null.MakeInt64(20), Scale: null.MakeInt64(0), ColumnType: "bigint(20) unsigned", IsGenerated: "NEVER"}, "ColBigint3.Int64"},
-		{&ddl.Column{Field: "col_bigint_4", Pos: 5, Default: null.MakeString("0"), Null: "NO", DataType: "bigint", Precision: null.MakeInt64(20), Scale: null.MakeInt64(0), ColumnType: "bigint(20) unsigned", IsGenerated: "NEVER"}, "ColBigint4"},
-		{&ddl.Column{Field: "col_blob", Pos: 6, Default: null.MakeString("NULL"), Null: "YES", DataType: "blob", CharMaxLength: null.MakeInt64(65535), ColumnType: "blob", IsGenerated: "NEVER"}, "ColBlob.String"},
-		{&ddl.Column{Field: "col_date_1", Pos: 7, Default: null.MakeString("NULL"), Null: "YES", DataType: "date", ColumnType: "date", IsGenerated: "NEVER"}, "ColDate1.Time"},
-		{&ddl.Column{Field: "col_date_2", Pos: 8, Default: null.MakeString("'0000-00-00'"), Null: "NO", DataType: "date", ColumnType: "date", IsGenerated: "NEVER"}, "ColDate2"},
-		{&ddl.Column{Field: "col_datetime_1", Pos: 9, Default: null.MakeString("NULL"), Null: "YES", DataType: "datetime", ColumnType: "datetime", IsGenerated: "NEVER"}, "ColDatetime1.Time"},
-		{&ddl.Column{Field: "col_decimal_10_0", Pos: 11, Default: null.MakeString("NULL"), Null: "YES", DataType: "decimal", Precision: null.MakeInt64(10), Scale: null.MakeInt64(0), ColumnType: "decimal(10,0) unsigned", IsGenerated: "NEVER"}, "ColDecimal100"},
-		{&ddl.Column{Field: "col_decimal_12_4", Pos: 12, Default: null.MakeString("NULL"), Null: "YES", DataType: "decimal", Precision: null.MakeInt64(12), Scale: null.MakeInt64(4), ColumnType: "decimal(12,4)", IsGenerated: "NEVER"}, "ColDecimal124"},
-		{&ddl.Column{Field: "price_12_4a", Pos: 13, Default: null.MakeString("NULL"), Null: "YES", DataType: "decimal", Precision: null.MakeInt64(12), Scale: null.MakeInt64(4), ColumnType: "decimal(12,4)", IsGenerated: "NEVER"}, "Price124a"},
+		{&ddl.Column{Field: "id", Pos: 1, Null: "NO", DataType: "int", Precision: null.MakeInt64(10), Scale: null.MakeInt64(0), ColumnType: "int(11)", Key: "PRI", Extra: "auto_increment", Generated: "NEVER"}, "ID"},
+		{&ddl.Column{Field: "col_bigint_1", Pos: 2, Default: null.MakeString("NULL"), Null: "YES", DataType: "bigint", Precision: null.MakeInt64(19), Scale: null.MakeInt64(0), ColumnType: "bigint(20)", Generated: "NEVER"}, "ColBigint1.Int64"},
+		{&ddl.Column{Field: "col_bigint_2", Pos: 3, Default: null.MakeString("0"), Null: "NO", DataType: "bigint", Precision: null.MakeInt64(19), Scale: null.MakeInt64(0), ColumnType: "bigint(20)", Generated: "NEVER"}, "ColBigint2"},
+		{&ddl.Column{Field: "col_bigint_3", Pos: 4, Default: null.MakeString("NULL"), Null: "YES", DataType: "bigint", Precision: null.MakeInt64(20), Scale: null.MakeInt64(0), ColumnType: "bigint(20) unsigned", Generated: "NEVER"}, "ColBigint3.Int64"},
+		{&ddl.Column{Field: "col_bigint_4", Pos: 5, Default: null.MakeString("0"), Null: "NO", DataType: "bigint", Precision: null.MakeInt64(20), Scale: null.MakeInt64(0), ColumnType: "bigint(20) unsigned", Generated: "NEVER"}, "ColBigint4"},
+		{&ddl.Column{Field: "col_blob", Pos: 6, Default: null.MakeString("NULL"), Null: "YES", DataType: "blob", CharMaxLength: null.MakeInt64(65535), ColumnType: "blob", Generated: "NEVER"}, "ColBlob.String"},
+		{&ddl.Column{Field: "col_date_1", Pos: 7, Default: null.MakeString("NULL"), Null: "YES", DataType: "date", ColumnType: "date", Generated: "NEVER"}, "ColDate1.Time"},
+		{&ddl.Column{Field: "col_date_2", Pos: 8, Default: null.MakeString("'0000-00-00'"), Null: "NO", DataType: "date", ColumnType: "date", Generated: "NEVER"}, "ColDate2"},
+		{&ddl.Column{Field: "col_datetime_1", Pos: 9, Default: null.MakeString("NULL"), Null: "YES", DataType: "datetime", ColumnType: "datetime", Generated: "NEVER"}, "ColDatetime1.Time"},
+		{&ddl.Column{Field: "col_decimal_10_0", Pos: 11, Default: null.MakeString("NULL"), Null: "YES", DataType: "decimal", Precision: null.MakeInt64(10), Scale: null.MakeInt64(0), ColumnType: "decimal(10,0) unsigned", Generated: "NEVER"}, "ColDecimal100"},
+		{&ddl.Column{Field: "col_decimal_12_4", Pos: 12, Default: null.MakeString("NULL"), Null: "YES", DataType: "decimal", Precision: null.MakeInt64(12), Scale: null.MakeInt64(4), ColumnType: "decimal(12,4)", Generated: "NEVER"}, "ColDecimal124"},
+		{&ddl.Column{Field: "price_12_4a", Pos: 13, Default: null.MakeString("NULL"), Null: "YES", DataType: "decimal", Precision: null.MakeInt64(12), Scale: null.MakeInt64(4), ColumnType: "decimal(12,4)", Generated: "NEVER"}, "Price124a"},
 	}
 	for i, test := range tests {
 		have := toGoPrimitiveFromNull(test.c)

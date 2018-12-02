@@ -7,12 +7,6 @@ type {{.Entity}} struct {
 		{{- if ne .StructTag "" -}}`{{.StructTag}}`{{- end}} {{.GoComment}}
 {{end}} }
 
-// New{{.Entity}} creates a new pointer with pre-initialized fields. Auto
-// generated.
-func New{{.Entity}}() *{{.Entity}} {
-	return &{{.Entity}}{}
-}
-
 // AssignLastInsertID updates the increment ID field with the last inserted ID
 // from an INSERT operation. Implements dml.InsertIDAssigner. Auto generated.
 func (e *{{.Entity}}) AssignLastInsertID(id int64) {
@@ -35,6 +29,9 @@ func (e *{{.Entity}}) MapColumns(cm *dml.ColumnMap) error {
 	}
 	return errors.WithStack(cm.Err())
 }
+
+// Empty empties all the fields of the current object. Also known as Reset.
+func (e *{{.Entity}}) Empty() *{{.Entity}} { *e = {{.Entity}}{}; return e }
 
 // {{.Collection}} represents a collection type for DB table {{.TableName}}
 // Not thread safe. Auto generated.{{with .Comment}}
@@ -79,7 +76,7 @@ func (cc *{{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
 		if cm.Count == 0 {
 			cc.Data = cc.Data[:0]
 		}
-		e := New{{.Entity}}()
+		e := new({{.Entity}})
 		if err := cc.scanColumns(cm, e, cm.Count); err != nil {
 			return errors.WithStack(err)
 		}

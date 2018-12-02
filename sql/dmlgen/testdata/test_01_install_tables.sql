@@ -177,7 +177,7 @@ CREATE TABLE `core_config_data` (
   `config_id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Id',
   `scope` varchar(8) NOT NULL DEFAULT 'default' COMMENT 'Scope',
   `scope_id` int(11) NOT NULL DEFAULT 0 COMMENT 'Scope Id',
-  `expires` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' COMMENT 'Value expiration time',
+  `expires` DATETIME NULL COMMENT 'Value expiration time',
   `path` varchar(255) NOT NULL COMMENT 'Path',
   `value` text DEFAULT NULL COMMENT 'Value',
   `version_ts` TIMESTAMP(6) GENERATED ALWAYS AS ROW START COMMENT 'Timestamp Start Versioning',
