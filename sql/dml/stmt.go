@@ -66,7 +66,7 @@ type Stmt struct {
 	Stmt *sql.Stmt
 }
 
-// WithArgs creates a new argument handler.
+// WithArgs creates a new argument handler. Not safe for concurrent use.
 func (st *Stmt) WithArgs() *Artisan {
 	var args [defaultArgumentsCapacity]argument
 	a := &Artisan{
