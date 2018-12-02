@@ -122,11 +122,19 @@ func TestInsert_Bind(t *testing.T) {
 func TestInsert_Prepare(t *testing.T) {
 	t.Parallel()
 
-	t.Run("ToSQL Error", func(t *testing.T) {
+	t.Run("BuildValues not set Error", func(t *testing.T) {
 		in := &dml.Insert{}
 		in.AddColumns("a", "b")
 		stmt, err := in.Prepare(context.TODO())
 		assert.Nil(t, stmt)
+		assert.True(t, errors.NotAcceptable.Match(err))
+	})
+
+	t.Run("ToSQL Error", func(t *testing.T) {
+		in := &dml.Insert{}
+		in.AddColumns("a", "b")
+		stmt, _, err := in.ToSQL()
+		assert.Empty(t, stmt)
 		assert.True(t, errors.Empty.Match(err))
 	})
 
@@ -137,7 +145,7 @@ func TestInsert_Prepare(t *testing.T) {
 		in.DB = dbMock{
 			error: errors.AlreadyClosed.Newf("Who closed myself?"),
 		}
-		in.AddColumns("a", "b")
+		in.AddColumns("a", "b").BuildValues()
 
 		stmt, err := in.Prepare(context.TODO())
 		assert.Nil(t, stmt)

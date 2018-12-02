@@ -22,10 +22,10 @@ import "google/protobuf/timestamp.proto";
 option csharp_namespace = "CoreStore.Protobuf.Null";
 option cc_enable_arenas = true;
 option go_package = "null";
-option java_package = "com.corestore.protobuf";
+option java_package = "com.corestore.protobuf.null";
 option java_outer_classname = "NullProto";
 option java_multiple_files = true;
-option objc_class_prefix = "CSPB";
+option objc_class_prefix = "CSNULL";
 
 // Decimal represents the MySQL/MariaDB decimal column type.
 message Decimal {

@@ -597,13 +597,19 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 		}
 	})
 
-	t.Run("IN Clause", func(t *testing.T) {
+	t.Run("IN Clause (multiple args,interpolate)", func(t *testing.T) {
 		ids, err := s.SelectFrom("dml_people").AddColumns("id").
 			Where(Column("id").In().Int64s(1, 2, 3)).WithArgs().LoadInt64s(context.TODO(), nil)
 		assert.NoError(t, err)
 		assert.Exactly(t, []int64{1, 2}, ids)
 	})
-	t.Run("NOT IN Clause", func(t *testing.T) {
+	t.Run("IN Clause (single args,interpolate)", func(t *testing.T) {
+		ids, err := s.SelectFrom("dml_people").AddColumns("id").
+			Where(Column("id").In().Int64s(2)).WithArgs().LoadInt64s(context.TODO(), nil)
+		assert.NoError(t, err)
+		assert.Exactly(t, []int64{2}, ids)
+	})
+	t.Run("NOT IN Clause (multiple args)", func(t *testing.T) {
 		ids, err := s.SelectFrom("dml_people").AddColumns("id").
 			Where(Column("id").NotIn().Int64s(2, 3)).WithArgs().LoadInt64s(context.TODO(), nil)
 		assert.NoError(t, err)

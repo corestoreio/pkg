@@ -351,7 +351,8 @@ func (b *Select) OrderByRandom(idColumnName string, limit uint64) *Select {
 	return b
 }
 
-// Limit sets a limit for the statement; overrides any existing LIMIT
+// Limit sets a limit for the statement; overrides any existing LIMIT.
+// Don't build a pagination with offset or you go straight to hell.
 func (b *Select) Limit(offset uint64, limit uint64) *Select {
 	b.OffsetCount = offset
 	b.LimitCount = limit
@@ -360,7 +361,8 @@ func (b *Select) Limit(offset uint64, limit uint64) *Select {
 }
 
 // Paginate sets LIMIT/OFFSET for the statement based on the given page/perPage
-// Assumes page/perPage are valid. Page and perPage must be >= 1
+// Assumes page/perPage are valid. Page and perPage must be >= 1.
+// Deprecated see a talk from Marcus Wienand - Modern SQL
 func (b *Select) Paginate(page, perPage uint64) *Select {
 	b.Limit((page-1)*perPage, perPage)
 	return b

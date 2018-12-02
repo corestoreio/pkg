@@ -72,38 +72,52 @@ func (arg *argument) set(v interface{}) {
 	arg.value = v
 }
 
-func (arg *argument) len() (l int) {
+func (arg *argument) sliceLen() (l int, isSlice bool) {
 	switch v := arg.value.(type) {
 	case nil, int, int64, uint64, float64, bool, string, []byte, time.Time, null.String, null.Int64, null.Float64, null.Bool, null.Time:
 		l = 1
 	case []int:
 		l = len(v)
+		isSlice = true
 	case []int64:
 		l = len(v)
+		isSlice = true
 	case []uint64:
 		l = len(v)
+		isSlice = true
 	case []uint:
 		l = len(v)
+		isSlice = true
 	case []float64:
 		l = len(v)
+		isSlice = true
 	case []bool:
 		l = len(v)
+		isSlice = true
 	case []string:
 		l = len(v)
+		isSlice = true
 	case [][]byte:
 		l = len(v)
+		isSlice = true
 	case []time.Time:
 		l = len(v)
+		isSlice = true
 	case []null.String:
 		l = len(v)
+		isSlice = true
 	case []null.Int64:
 		l = len(v)
+		isSlice = true
 	case []null.Float64:
 		l = len(v)
+		isSlice = true
 	case []null.Bool:
 		l = len(v)
+		isSlice = true
 	case []null.Time:
 		l = len(v)
+		isSlice = true
 	default:
 		panic(errors.NotSupported.Newf("[dml] Unsupported type: %T => %#v", v, v))
 	}
@@ -541,12 +555,23 @@ func (as arguments) GoString() string {
 }
 
 // Len returns the total length of all arguments.
-func (as arguments) Len() int {
-	var l int
+func (as arguments) Len() (l int) {
 	for _, arg := range as {
-		l += arg.len()
+		al, _ := arg.sliceLen()
+		l += al
 	}
 	return l
+}
+
+func (as arguments) totalSliceLen() (l int, containsAtLeastOneSlice bool) {
+	for _, arg := range as {
+		al, isSlice := arg.sliceLen()
+		if isSlice {
+			containsAtLeastOneSlice = true
+		}
+		l += al
+	}
+	return
 }
 
 // Write writes all arguments into buf and separates by a comma.

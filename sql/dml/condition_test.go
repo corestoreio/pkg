@@ -118,11 +118,35 @@ func TestOpArgs(t *testing.T) {
 			),
 			errors.NoKind,
 			"SELECT `a`, `b` FROM `t1` WHERE (`a315` IS NULL) AND (`a316` IN ?) AND (`a317` REGEXP ?) AND (`a317` NOT REGEXP ?)",
-			"SELECT `a`, `b` FROM `t1` WHERE (`a315` IS NULL) AND (`a316` IN ?) AND (`a317` REGEXP ?) AND (`a317` NOT REGEXP ?)",
+			"",
+		)
+	})
+	t.Run("IN place holder and one value", func(t *testing.T) {
+		compareToSQL(t,
+			NewSelect("a", "b").From("t1").Where(
+				Column("a315").In().Null(),
+				Column("a316").In().PlaceHolder(),
+			).WithArgs().Strings("aa"),
+			errors.NoKind,
+			"SELECT `a`, `b` FROM `t1` WHERE (`a315` IS NULL) AND (`a316` IN ?)",
+			"SELECT `a`, `b` FROM `t1` WHERE (`a315` IS NULL) AND (`a316` IN ('aa'))",
+			"aa",
+		)
+	})
+	t.Run("IN place holder and two values", func(t *testing.T) {
+		compareToSQL(t,
+			NewSelect("a", "b").From("t1").Where(
+				Column("a315").In().Null(),
+				Column("a316").In().PlaceHolder(),
+			).WithArgs().Strings("aa", "bb"),
+			errors.NoKind,
+			"SELECT `a`, `b` FROM `t1` WHERE (`a315` IS NULL) AND (`a316` IN ?)",
+			"SELECT `a`, `b` FROM `t1` WHERE (`a315` IS NULL) AND (`a316` IN ('aa','bb'))",
+			"aa", "bb",
 		)
 	})
 
-	t.Run("Args In", func(t *testing.T) {
+	t.Run("Args In (single)", func(t *testing.T) {
 		compareToSQL(t,
 			NewSelect("a", "b").From("t1").Where(
 				Column("a311").Xor().Int(9),
@@ -135,6 +159,20 @@ func TestOpArgs(t *testing.T) {
 			errors.NoKind,
 			"SELECT `a`, `b` FROM `t1` WHERE (`a311` XOR 9) AND (`a313` IN 3.3) AND (`a314` IN 33) AND (`a312` IN 44) AND (`a315` IN 'Go1') AND (`a316` IN ('Go','Rust'))",
 			"SELECT `a`, `b` FROM `t1` WHERE (`a311` XOR 9) AND (`a313` IN 3.3) AND (`a314` IN 33) AND (`a312` IN 44) AND (`a315` IN 'Go1') AND (`a316` IN ('Go','Rust'))",
+		)
+	})
+	t.Run("Args In (plural)", func(t *testing.T) {
+		compareToSQL(t,
+			NewSelect("a", "b").From("t1").Where(
+				Column("a313").In().Float64s(3.3),
+				Column("a314").In().Int64s(33),
+				Column("a312").In().Ints(44),
+				Column("a315").In().Strs(`Go1`),
+				Column("a316").In().BytesSlice([]byte(`Go`), []byte(`Rust`)),
+			),
+			errors.NoKind,
+			"SELECT `a`, `b` FROM `t1` WHERE (`a313` IN (3.3)) AND (`a314` IN (33)) AND (`a312` IN (44)) AND (`a315` IN ('Go1')) AND (`a316` IN ('Go','Rust'))",
+			"SELECT `a`, `b` FROM `t1` WHERE (`a313` IN (3.3)) AND (`a314` IN (33)) AND (`a312` IN (44)) AND (`a315` IN ('Go1')) AND (`a316` IN ('Go','Rust'))",
 		)
 	})
 
@@ -329,29 +367,47 @@ func TestExpr_Arguments(t *testing.T) {
 
 func TestCondition_Column(t *testing.T) {
 	t.Parallel()
-	sel := NewSelect("t_d.attribute_id", "e.entity_id").
-		AddColumnsAliases("t_d.value", "default_value").
-		AddColumnsConditions(SQLIf("t_s.value_id IS NULL", "t_d.value", "t_s.value").Alias("value")).
-		AddColumnsConditions(SQLIf("? IS NULL", "t_d.value", "t_s.value").NullFloat64(null.MakeFloat64(2.718281)).Alias("value")).
-		FromAlias("catalog_category_entity", "e").
-		Join(
-			MakeIdentifier("catalog_category_entity_varchar").Alias("t_d"), // t_d = table scope default
-			Column("e.entity_id").Equal().Column("t_d.entity_id"),
-		).
-		LeftJoin(
-			MakeIdentifier("catalog_category_entity_varchar").Alias("t_s"), // t_s = table scope store
-			Column("t_s.attribute_id").GreaterOrEqual().Column("t_d.attribute_id"),
-		).
-		Where(
-			Column("e.entity_id").In().Int64s(28, 16, 25, 17),
-			Column("t_d.attribute_id").In().Int64s(45),
-			Column("t_d.store_id").Equal().SQLIfNull("t_s.store_id", "0"),
-		)
 
-	compareToSQL(t, sel, errors.NoKind,
-		"SELECT `t_d`.`attribute_id`, `e`.`entity_id`, `t_d`.`value` AS `default_value`, IF((t_s.value_id IS NULL), t_d.value, t_s.value) AS `value`, IF((2.718281 IS NULL), t_d.value, t_s.value) AS `value` FROM `catalog_category_entity` AS `e` INNER JOIN `catalog_category_entity_varchar` AS `t_d` ON (`e`.`entity_id` = `t_d`.`entity_id`) LEFT JOIN `catalog_category_entity_varchar` AS `t_s` ON (`t_s`.`attribute_id` >= `t_d`.`attribute_id`) WHERE (`e`.`entity_id` IN (28,16,25,17)) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0))",
-		"SELECT `t_d`.`attribute_id`, `e`.`entity_id`, `t_d`.`value` AS `default_value`, IF((t_s.value_id IS NULL), t_d.value, t_s.value) AS `value`, IF((2.718281 IS NULL), t_d.value, t_s.value) AS `value` FROM `catalog_category_entity` AS `e` INNER JOIN `catalog_category_entity_varchar` AS `t_d` ON (`e`.`entity_id` = `t_d`.`entity_id`) LEFT JOIN `catalog_category_entity_varchar` AS `t_s` ON (`t_s`.`attribute_id` >= `t_d`.`attribute_id`) WHERE (`e`.`entity_id` IN (28,16,25,17)) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0))",
-	)
+	t.Run("complex", func(t *testing.T) {
+		sel := NewSelect("t_d.attribute_id", "e.entity_id").
+			AddColumnsAliases("t_d.value", "default_value").
+			AddColumnsConditions(SQLIf("t_s.value_id IS NULL", "t_d.value", "t_s.value").Alias("value")).
+			AddColumnsConditions(SQLIf("? IS NULL", "t_d.value", "t_s.value").NullFloat64(null.MakeFloat64(2.718281)).Alias("value")).
+			FromAlias("catalog_category_entity", "e").
+			Join(
+				MakeIdentifier("catalog_category_entity_varchar").Alias("t_d"), // t_d = table scope default
+				Column("e.entity_id").Equal().Column("t_d.entity_id"),
+			).
+			LeftJoin(
+				MakeIdentifier("catalog_category_entity_varchar").Alias("t_s"), // t_s = table scope store
+				Column("t_s.attribute_id").GreaterOrEqual().Column("t_d.attribute_id"),
+			).
+			Where(
+				Column("e.entity_id").In().Int64s(28, 16, 25, 17),
+				Column("t_d.attribute_id").In().Int64s(45),
+				Column("t_d.store_id").Equal().SQLIfNull("t_s.store_id", "0"),
+			)
+
+		compareToSQL(t, sel, errors.NoKind,
+			"SELECT `t_d`.`attribute_id`, `e`.`entity_id`, `t_d`.`value` AS `default_value`, IF((t_s.value_id IS NULL), t_d.value, t_s.value) AS `value`, IF((2.718281 IS NULL), t_d.value, t_s.value) AS `value` FROM `catalog_category_entity` AS `e` INNER JOIN `catalog_category_entity_varchar` AS `t_d` ON (`e`.`entity_id` = `t_d`.`entity_id`) LEFT JOIN `catalog_category_entity_varchar` AS `t_s` ON (`t_s`.`attribute_id` >= `t_d`.`attribute_id`) WHERE (`e`.`entity_id` IN (28,16,25,17)) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0))",
+			"SELECT `t_d`.`attribute_id`, `e`.`entity_id`, `t_d`.`value` AS `default_value`, IF((t_s.value_id IS NULL), t_d.value, t_s.value) AS `value`, IF((2.718281 IS NULL), t_d.value, t_s.value) AS `value` FROM `catalog_category_entity` AS `e` INNER JOIN `catalog_category_entity_varchar` AS `t_d` ON (`e`.`entity_id` = `t_d`.`entity_id`) LEFT JOIN `catalog_category_entity_varchar` AS `t_s` ON (`t_s`.`attribute_id` >= `t_d`.`attribute_id`) WHERE (`e`.`entity_id` IN (28,16,25,17)) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0))",
+		)
+	})
+
+	t.Run("simple", func(t *testing.T) {
+		sel := NewSelect("t_d.attribute_id", "e.entity_id").
+			FromAlias("catalog_category_entity", "e").
+			Where(
+				Column("e.entity_id").In().Int64s(28, 16, 25, 17),
+				Column("t_d.attribute_id").In().Int64s(45),
+			)
+
+		compareToSQL(t, sel, errors.NoKind,
+			"SELECT `t_d`.`attribute_id`, `e`.`entity_id` FROM `catalog_category_entity` AS `e` WHERE (`e`.`entity_id` IN (28,16,25,17)) AND (`t_d`.`attribute_id` IN (45))",
+			"SELECT `t_d`.`attribute_id`, `e`.`entity_id` FROM `catalog_category_entity` AS `e` WHERE (`e`.`entity_id` IN (28,16,25,17)) AND (`t_d`.`attribute_id` IN (45))",
+		)
+	})
+
 }
 
 func TestExpr(t *testing.T) {

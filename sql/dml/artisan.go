@@ -235,8 +235,11 @@ func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}
 		return "", nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
 	}
 
+	// TODO more advanced caching of the final non-expanded SQL string
+
 	if a.Options&argOptionExpandPlaceholder != 0 {
-		if phCount := bytes.Count(sqlBuf.First.Bytes(), placeHolderByte); phCount < a.Len() {
+		phCount := bytes.Count(sqlBuf.First.Bytes(), placeHolderByte)
+		if aLen, hasSlice := a.totalSliceLen(); phCount < aLen || hasSlice {
 			if err := expandPlaceHolders(sqlBuf.Second, sqlBuf.First.Bytes(), collectedArgs); err != nil {
 				return "", nil, errors.WithStack(err)
 			}

@@ -187,6 +187,11 @@ func (bb *BuilderBase) buildToSQL(qb queryBuilder) ([]byte, error) {
 
 func (bb *BuilderBase) prepare(ctx context.Context, db Preparer, qb queryBuilder, source rune) (_ *Stmt, err error) {
 	var rawQuery []byte
+
+	if in, ok := qb.(*Insert); ok && in != nil && !in.IsBuildValues {
+		return nil, errors.NotAcceptable.Newf("[dml] did you forgot to call .BuildValues()?")
+	}
+
 	rawQuery, err = bb.buildToSQL(qb)
 	if bb.Log != nil && bb.Log.IsDebug() {
 		defer log.WhenDone(bb.Log).Debug("Prepare", log.Err(err), log.String("sql", string(rawQuery)))
@@ -194,6 +199,7 @@ func (bb *BuilderBase) prepare(ctx context.Context, db Preparer, qb queryBuilder
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+
 	sqlStmt, err := db.PrepareContext(ctx, string(rawQuery))
 	if err != nil {
 		return nil, errors.Wrapf(err, "[dml] Prepare.PrepareContext with query %q", rawQuery)

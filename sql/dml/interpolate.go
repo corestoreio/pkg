@@ -74,8 +74,8 @@ func expandPlaceHolders(buf writer, sql []byte, args arguments) error {
 		switch r {
 		case placeHolderRune:
 			if i < len(args) {
-				reps := args[i].len()
-				if reps > 1 {
+				reps, isSlice := args[i].sliceLen()
+				if isSlice {
 					buf.WriteByte('(')
 				}
 				for r := 0; r < reps; r++ {
@@ -84,7 +84,7 @@ func expandPlaceHolders(buf writer, sql []byte, args arguments) error {
 						buf.WriteByte(',')
 					}
 				}
-				if reps > 1 {
+				if isSlice {
 					buf.WriteByte(')')
 				}
 			}

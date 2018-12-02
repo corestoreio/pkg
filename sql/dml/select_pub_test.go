@@ -158,11 +158,12 @@ func (ps *TableCoreConfigDataSlice) Close() error {
 func TestSelect_Load(t *testing.T) {
 	t.Parallel()
 
-	t.Run("success", func(t *testing.T) {
+	t.Run("success no condition", func(t *testing.T) {
 		dbc, dbMock := dmltest.MockDB(t)
 		defer dmltest.MockClose(t, dbc, dbMock)
 
-		dbMock.ExpectQuery("SELECT").WillReturnRows(dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data.csv")))
+		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT * FROM `core_config_data`")).
+			WillReturnRows(dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data.csv")))
 		s := dml.NewSelect("*").From("core_config_data")
 		s.DB = dbc.DB
 
@@ -181,6 +182,44 @@ func TestSelect_Load(t *testing.T) {
 		}
 		assert.Equal(t, "{\"ConfigID\":2,\"Scope\":\"default\",\"Path\":\"web/unsecure/base_url\",\"Value\":\"http://mgeto2.local/\"}\n{\"ConfigID\":3,\"Scope\":\"website\",\"ScopeID\":11,\"Path\":\"general/locale/code\",\"Value\":\"en_US\"}\n{\"ConfigID\":4,\"Scope\":\"default\",\"Path\":\"general/locale/timezone\",\"Value\":\"Europe/Berlin\"}\n{\"ConfigID\":5,\"Scope\":\"default\",\"Path\":\"currency/options/base\",\"Value\":\"EUR\"}\n{\"ConfigID\":15,\"Scope\":\"store\",\"ScopeID\":33,\"Path\":\"design/head/includes\",\"Value\":\"\\u003clink  rel=\\\"stylesheet\\\" type=\\\"text/css\\\" href=\\\"{{MEDIA_URL}}styles.css\\\" /\\u003e\"}\n{\"ConfigID\":16,\"Scope\":\"default\",\"Path\":\"admin/security/use_case_sensitive_login\",\"Value\":null}\n{\"ConfigID\":17,\"Scope\":\"default\",\"Path\":\"admin/security/session_lifetime\",\"Value\":\"90000\"}\n",
 			buf.String())
+	})
+
+	t.Run("success In with one ARG", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT `config_id` FROM `core_config_data` WHERE (`config_id` IN (?)")).
+			WillReturnRows(dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_ints.csv"))).
+			WithArgs(199)
+
+		s := dbc.SelectFrom("core_config_data").AddColumns("config_id").Where(
+			dml.Column("config_id").In().PlaceHolder(),
+		)
+
+		var dst []int64
+		dst, err := s.WithArgs().ExpandPlaceHolders().Int64s(199).LoadInt64s(context.TODO(), dst)
+		assert.NoError(t, err, "%+v", err)
+
+		// wrong result set for correct query. maybe some one can fix the returned data.
+		assert.Equal(t, []int64{2, 3, 4, 16, 17}, dst)
+	})
+	t.Run("success In with two ARGs", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT `config_id` FROM `core_config_data` WHERE (`config_id` IN (?,?))")).
+			WillReturnRows(dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_ints.csv"))).
+			WithArgs(199, 217)
+
+		s := dbc.SelectFrom("core_config_data").AddColumns("config_id").Where(
+			dml.Column("config_id").In().PlaceHolder(),
+		)
+
+		var dst []int64
+		dst, err := s.WithArgs().Int64s(199, 217).ExpandPlaceHolders().LoadInt64s(context.TODO(), dst)
+		assert.NoError(t, err, "%+v", err)
+
+		assert.Equal(t, []int64{2, 3, 4, 16, 17}, dst)
 	})
 
 	t.Run("row error", func(t *testing.T) {

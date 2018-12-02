@@ -18,7 +18,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 	"reflect"
 	"testing"
@@ -50,7 +49,7 @@ func createRealSession(t testing.TB) *ConnPool {
 
 func createRealSessionWithFixtures(t testing.TB, c *installFixturesConfig) *ConnPool {
 	sess := createRealSession(t)
-	installFixtures(sess.DB, c)
+	installFixtures(t, sess.DB, c)
 	return sess
 }
 
@@ -241,7 +240,7 @@ type installFixturesConfig struct {
 	AddPeopleWithMaxUint64 bool
 }
 
-func installFixtures(db *sql.DB, c *installFixturesConfig) {
+func installFixtures(t testing.TB, db *sql.DB, c *installFixturesConfig) {
 	createPeopleTable := fmt.Sprintf(`
 		CREATE TABLE dml_people (
 			id bigint(8) unsigned NOT NULL auto_increment PRIMARY KEY,
@@ -280,11 +279,9 @@ func installFixtures(db *sql.DB, c *installFixturesConfig) {
 		sqlToRun = append(sqlToRun, "INSERT INTO `dml_people` (id,name,email) VALUES (18446744073700551613,'Cyrill', 'firstname@lastname.fm')")
 	}
 
-	for _, v := range sqlToRun {
-		_, err := db.Exec(v)
-		if err != nil {
-			log.Fatalln("Failed to execute statement: ", v, " Got error: ", err)
-		}
+	for _, sqlStr := range sqlToRun {
+		_, err := db.Exec(sqlStr)
+		assert.NoError(t, err, "With SQL statement: %q", sqlStr)
 	}
 }
 

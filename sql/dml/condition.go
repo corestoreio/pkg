@@ -930,7 +930,7 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 
 		case cnd.Right.arg.isSet && lenArgs == 0: // One Argument and no expression
 			Quoter.WriteIdentifier(w, cnd.Left)
-			if cnd.Right.arg.len() > 1 && cnd.Operator == 0 { // no operator but slice applied, so creating an IN query.
+			if al, _ := cnd.Right.arg.sliceLen(); al > 1 && cnd.Operator == 0 { // no operator but slice applied, so creating an IN query.
 				cnd.Operator = In
 			}
 			if err = cnd.Operator.write(w, arguments{cnd.Right.arg}); err != nil {
