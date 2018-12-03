@@ -6,13 +6,12 @@ import (
 	"context"
 	"sort"
 	"time"
-
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/storage/null"
-)
 
+)
 const (
 	TableNameCoreConfigData = "core_config_data"
 	TableNameCustomerEntity = "customer_entity"
@@ -45,7 +44,7 @@ type CoreConfigData struct {
 	ConfigID  uint64      `json:"config_id,omitempty"`     // config_id int(10) unsigned NOT NULL PRI  auto_increment "Id"
 	Scope     string      `json:"scope,omitempty"`         // scope varchar(8) NOT NULL MUL DEFAULT ''default''  "Scope"
 	ScopeID   int64       `json:"scope_id" xml:"scope_id"` // scope_id int(11) NOT NULL  DEFAULT '0'  "Scope Id"
-	Expires   time.Time   `json:"expires,omitempty"`       // expires timestamp NOT NULL  DEFAULT 'current_timestamp()' on update current_timestamp() "Value expiration time"
+	Expires   null.Time   `json:"expires,omitempty"`       // expires datetime NULL  DEFAULT 'NULL'  "Value expiration time"
 	Path      string      `json:"x_path" xml:"y_path"`     // path varchar(255) NOT NULL  DEFAULT ''general''  "Config Path overwritten"
 	Value     null.String `json:"value,omitempty"`         // value text NULL  DEFAULT 'NULL'  "Value"
 	VersionTs time.Time   `json:"version_ts,omitempty"`    // version_ts timestamp(6) NOT NULL    "Timestamp Start Versioning"
@@ -61,7 +60,7 @@ func (e *CoreConfigData) AssignLastInsertID(id int64) {
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *CoreConfigData) MapColumns(cm *dml.ColumnMap) error {
 	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Uint64(&e.ConfigID).String(&e.Scope).Int64(&e.ScopeID).Time(&e.Expires).String(&e.Path).NullString(&e.Value).Time(&e.VersionTs).Time(&e.VersionTe).Err()
+		return cm.Uint64(&e.ConfigID).String(&e.Scope).Int64(&e.ScopeID).NullTime(&e.Expires).String(&e.Path).NullString(&e.Value).Time(&e.VersionTs).Time(&e.VersionTe).Err()
 	}
 	for cm.Next() {
 		switch c := cm.Column(); c {
@@ -72,7 +71,7 @@ func (e *CoreConfigData) MapColumns(cm *dml.ColumnMap) error {
 		case "scope_id":
 			cm.Int64(&e.ScopeID)
 		case "expires":
-			cm.Time(&e.Expires)
+			cm.NullTime(&e.Expires)
 		case "path", "storage_location", "config_directory":
 			cm.String(&e.Path)
 		case "value":
@@ -88,7 +87,8 @@ func (e *CoreConfigData) MapColumns(cm *dml.ColumnMap) error {
 	return errors.WithStack(cm.Err())
 }
 
-func (m *CoreConfigData) Empty() *CoreConfigData { *m = CoreConfigData{}; return m }
+// Empty empties all the fields of the current object. Also known as Reset.
+func (e *CoreConfigData) Empty() *CoreConfigData { *e = CoreConfigData{}; return e }
 
 // CoreConfigDataCollection represents a collection type for DB table core_config_data
 // Not thread safe. Auto generated.
@@ -140,6 +140,8 @@ func (cc *CoreConfigDataCollection) MapColumns(cm *dml.ColumnMap) error {
 	case dml.ColumnMapCollectionReadSet:
 		for cm.Next() {
 			switch c := cm.Column(); c {
+			case "config_id":
+				cm = cm.Uint64s(cc.ConfigIDs()...)
 
 			default:
 				return errors.NotFound.Newf("[testdata] CoreConfigDataCollection Column %q not found", c)
@@ -149,6 +151,18 @@ func (cc *CoreConfigDataCollection) MapColumns(cm *dml.ColumnMap) error {
 		return errors.NotSupported.Newf("[testdata] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
+}
+
+// ConfigIDs returns a slice or appends to a slice all values.
+// Auto generated.
+func (cc *CoreConfigDataCollection) ConfigIDs(ret ...uint64) []uint64 {
+	if ret == nil {
+		ret = make([]uint64, 0, len(cc.Data))
+	}
+	for _, e := range cc.Data {
+		ret = append(ret, e.ConfigID)
+	}
+	return ret
 }
 
 // Paths belongs to the column `path`
@@ -190,6 +204,12 @@ func (cc *CoreConfigDataCollection) Each(f func(*CoreConfigData)) *CoreConfigDat
 		f(cc.Data[i])
 	}
 	return cc
+}
+
+func (cc *CoreConfigDataCollection) SortByConfigID() {
+	sort.Slice(cc.Data, func(i, j int) bool {
+		return cc.Data[i].ConfigID < cc.Data[j].ConfigID
+	})
 }
 
 // Cut will remove items i through j-1.
@@ -348,6 +368,9 @@ func (e *CustomerEntity) MapColumns(cm *dml.ColumnMap) error {
 	}
 	return errors.WithStack(cm.Err())
 }
+
+// Empty empties all the fields of the current object. Also known as Reset.
+func (e *CustomerEntity) Empty() *CustomerEntity { *e = CustomerEntity{}; return e }
 
 // CustomerEntityCollection represents a collection type for DB table customer_entity
 // Not thread safe. Auto generated.
@@ -650,6 +673,9 @@ func (e *DmlgenTypes) MapColumns(cm *dml.ColumnMap) error {
 	}
 	return errors.WithStack(cm.Err())
 }
+
+// Empty empties all the fields of the current object. Also known as Reset.
+func (e *DmlgenTypes) Empty() *DmlgenTypes { *e = DmlgenTypes{}; return e }
 
 // DmlgenTypesCollection represents a collection type for DB table dmlgen_types
 // Not thread safe. Auto generated.

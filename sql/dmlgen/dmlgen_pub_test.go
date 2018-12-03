@@ -17,7 +17,9 @@ package dmlgen_test
 import (
 	"context"
 	"io"
+	"io/ioutil"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/corestoreio/errors"
@@ -57,11 +59,21 @@ GROUP BY COLUMN_TYPE
 ORDER BY COLUMN_TYPE
 */
 
-func writeFile(t *testing.T, outFile string, w func(io.Writer) error) {
+func writeFile(t *testing.T, outFile string, wFn func(io.Writer, io.Writer) error) {
+	testF := ioutil.Discard
+	if strings.HasSuffix(outFile, ".go") {
+		testFile := strings.Replace(outFile, ".go", "_test.go", 1)
+
+		ft, err := os.Create(testFile)
+		assert.NoError(t, err)
+		defer dmltest.Close(t, ft)
+		testF = ft
+	}
+
 	f, err := os.Create(outFile)
 	assert.NoError(t, err)
 	defer dmltest.Close(t, f)
-	err = w(f)
+	err = wFn(f, testF)
 	assert.NoError(t, err, "%+v", err)
 }
 
@@ -77,7 +89,7 @@ func TestNewTables_Generated(t *testing.T) {
 	dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil)
 
 	ctx := context.Background()
-	ts, err := dmlgen.NewTables("testdata",
+	ts, err := dmlgen.NewTables("github.com/corestoreio/pkg/sql/dmlgen/testdata",
 
 		dmlgen.WithLoadColumns(ctx, db.DB, "dmlgen_types", "core_config_data", "customer_entity"),
 		dmlgen.WithTableOption(

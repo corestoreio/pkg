@@ -51,8 +51,9 @@ const pkgPath = `src/github.com/corestoreio/pkg/sql/dmlgen`
 // Tables can generated Go source for for database tables once correctly
 // configured.
 type Tables struct {
-	Package     string // Name of the package
-	ImportPaths []string
+	Package           string // Name of the package
+	PackageImportPath string // Name of the package
+	ImportPaths       []string
 	// Tables uses the table name as map key and the table description as value.
 	Tables map[string]*table
 	template.FuncMap
@@ -377,10 +378,12 @@ func (ts *Tables) sortedTableNames() []string {
 
 // NewTables creates a new instance of the SQL table code generator. The order
 // of the applied options does not matter as they are getting sorted internally.
-func NewTables(packageName string, opts ...Option) (*Tables, error) {
+func NewTables(packageImportPath string, opts ...Option) (*Tables, error) {
+	_, pkg := filepath.Split(packageImportPath)
 	ts := &Tables{
-		Tables:  make(map[string]*table),
-		Package: packageName,
+		Tables:            make(map[string]*table),
+		Package:           pkg,
+		PackageImportPath: packageImportPath,
 		ImportPaths: []string{
 			"context",
 			"database/sql",
@@ -464,8 +467,9 @@ func (ts *Tables) findUsedPackages(file []byte) ([]string, error) {
 	return ret, nil
 }
 
-// WriteProto writes the protocol buffer specifications into `w`.
-func (ts *Tables) WriteProto(w io.Writer) error {
+// WriteProto writes the protocol buffer specifications into `w` and its test
+// sources into wTest, if there are any tests.
+func (ts *Tables) WriteProto(w io.Writer, wTest io.Writer) error {
 	if !ts.writeProto {
 		return errors.NotAcceptable.Newf("[dmlgen] Protocol buffer generation not enabled.")
 	}
@@ -497,9 +501,10 @@ func (ts *Tables) execTpl(w io.Writer, t *table, tplName string) {
 	}
 }
 
-// WriteGo writes the Go source code into `w`.
-func (ts *Tables) WriteGo(w io.Writer) error {
+// WriteGo writes the Go source code into `w` and the test code into WTest.
+func (ts *Tables) WriteGo(w io.Writer, wTest io.Writer) error {
 	buf := new(bytes.Buffer)
+	bufTest := new(bytes.Buffer)
 	ts.tpls = ts.tpls.Funcs(ts.FuncMap)
 
 	sortedTableNames := ts.sortedTableNames()
@@ -518,6 +523,9 @@ func (ts *Tables) WriteGo(w io.Writer) error {
 			TableNames: sortedTableNames,
 		}
 		if err := ts.tpls.ExecuteTemplate(buf, "code_10_tables.go.tpl", data); err != nil {
+			return errors.WriteFailed.New(err, "[dmlgen] For Tables %v", tables)
+		}
+		if err := ts.tpls.ExecuteTemplate(bufTest, "code_90_test.go.tpl", data); err != nil {
 			return errors.WriteFailed.New(err, "[dmlgen] For Tables %v", tables)
 		}
 	}
@@ -551,6 +559,21 @@ func (ts *Tables) WriteGo(w io.Writer) error {
 			fmt.Fprintf(w, "\t%q\n", path)
 		}
 		fmt.Fprint(w, "\n)\n")
+
+		// now figure out all used package names in the buffer.
+		fmt.Fprintf(wTest, "// Auto generated via github.com/corestoreio/pkg/sql/dmlgen\n\npackage %s\n\nimport (\n", ts.Package)
+
+		for _, path := range []string{
+			"testing",
+			"context",
+			"sort",
+			"github.com/corestoreio/pkg/sql/dmltest",
+			"github.com/bxcodec/faker",
+			"github.com/corestoreio/pkg/util/assert",
+		} {
+			fmt.Fprintf(wTest, "\t%q\n", path)
+		}
+		fmt.Fprint(wTest, "\n)\n")
 	}
 
 	fmted, err := format.Source(buf.Bytes())
@@ -559,7 +582,17 @@ func (ts *Tables) WriteGo(w io.Writer) error {
 	}
 	buf.Reset()
 	buf.Write(fmted)
-	_, err = buf.WriteTo(w)
+	if _, err = buf.WriteTo(w); err != nil {
+		return errors.WithStack(err)
+	}
+
+	fmted, err = format.Source(bufTest.Bytes())
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	bufTest.Reset()
+	bufTest.Write(fmted)
+	_, err = bufTest.WriteTo(wTest)
 	return err
 }
 
@@ -693,7 +726,7 @@ func GenerateJSON(fname string, g *bootstrap.Generator) (err error) {
 			LeaveTemps:            false,
 			OutName:               outName,
 			StubsOnly:             false,
-			NoFormat:              true,
+			NoFormat:              false,
 		}
 	}
 	if err := g.Run(); err != nil {

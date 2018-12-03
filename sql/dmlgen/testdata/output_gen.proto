@@ -17,7 +17,7 @@ message CoreConfigData {
 	uint64 config_id = 1 [(gogoproto.customname)="ConfigID"];
 	string scope = 2 [(gogoproto.customname)="Scope"];
 	int64 scope_id = 3 [(gogoproto.customname)="ScopeID"];
-	google.protobuf.Timestamp expires = 4 [(gogoproto.customname)="Expires",(gogoproto.stdtime)=true,(gogoproto.nullable)=false];
+	null.Time expires = 4 [(gogoproto.customname)="Expires",(gogoproto.nullable)=false];
 	string path = 5 [(gogoproto.customname)="Path"];
 	null.String value = 6 [(gogoproto.customname)="Value",(gogoproto.nullable)=false];
 	google.protobuf.Timestamp version_ts = 7 [(gogoproto.customname)="VersionTs",(gogoproto.stdtime)=true,(gogoproto.nullable)=false];
