@@ -197,3 +197,9 @@ func BenchmarkRandAlnum_18(b *testing.B) {
 		benchCases = strs.RandAlnum(18)
 	}
 }
+
+func TestCutToLength(t *testing.T) {
+	assert.Exactly(t, "a", strs.CutToLength("a", 2))
+	assert.Exactly(t, "aa", strs.CutToLength("aa", 2))
+	assert.Exactly(t, "bb", strs.CutToLength("bbb", 2))
+}

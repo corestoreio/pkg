@@ -239,3 +239,11 @@ func LintName(name string) (should string) {
 }
 
 // END Copyright (c) 2013 The Go Authors.
+
+// CutToLength cuts a long string at maxLength. If shorter, nothing changes.
+func CutToLength(data string, maxLength int) string {
+	if len(data) > maxLength {
+		return data[:maxLength]
+	}
+	return data
+}
