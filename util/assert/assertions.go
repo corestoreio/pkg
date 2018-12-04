@@ -286,6 +286,60 @@ func Exactly(t TestingT, expected, actual interface{}, msgAndArgs ...interface{}
 
 }
 
+// ExactlyLength asserts that two objects with maximum length of their string
+// fields are equal in value and type.
+//
+//    assert.ExactlyLength(t,2, "aa", "aaa")
+//
+// Shorts aaa to aa and checks if aa is equal to aa. This function is needed
+// when writing random strings to the database table with short column length.
+func ExactlyLength(t TestingT, maxLength int, ptrExpected, ptrActual interface{}, msgAndArgs ...interface{}) {
+
+	aVal := reflect.ValueOf(ptrExpected)
+	bVal := reflect.ValueOf(ptrActual)
+
+	if ak, bk := aVal.Kind(), bVal.Kind(); ak != reflect.Ptr || bk != reflect.Ptr {
+		Fail(t, "Argument `ptrExpected` or `ptrActual` must be a pointer")
+	}
+
+	if at, bt := aVal.Type(), bVal.Type(); at != bt {
+		Fail(t, "Types expected to match exactly", "%v != %v", at, bt)
+	}
+	shortenStrings(maxLength, aVal)
+	shortenStrings(maxLength, bVal)
+	Equal(t, ptrExpected, ptrActual, msgAndArgs...)
+}
+
+func shortenStrings(maxLength int, val reflect.Value) {
+	switch val.Kind() {
+	case reflect.String:
+		if val.Len() > maxLength {
+			s := val.String()[:maxLength]
+			val.SetString(s)
+		}
+		// TODO case []byte
+	case reflect.Ptr:
+		v := val.Elem()
+		shortenStrings(maxLength, v)
+
+	case reflect.Struct:
+
+		for i := 0; i < val.NumField(); i++ {
+			f := val.Field(i)
+			if !f.CanSet() {
+				continue // to avoid panic to set on unexported field in struct
+			}
+			switch f.Kind() {
+			case reflect.String:
+				if f.Len() > maxLength {
+					s := f.String()[:maxLength]
+					f.SetString(s)
+				}
+			}
+		}
+	}
+}
+
 // NotNil asserts that the specified object is not nil.
 //
 //    assert.NotNil(t, err, "err should be something")
