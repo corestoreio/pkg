@@ -335,6 +335,12 @@ func shortenStrings(maxLength int, val reflect.Value) {
 					s := f.String()[:maxLength]
 					f.SetString(s)
 				}
+			case reflect.Ptr:
+				v := f.Elem()
+				shortenStrings(maxLength, v)
+
+			case reflect.Struct:
+				shortenStrings(maxLength, f.Elem())
 			}
 		}
 	}
