@@ -46,6 +46,7 @@ import (
 // Initial idea and prototyping for code generation.
 // TODO DML gen must take care of the types in myreplicator.RowsEvent.decodeValue
 
+// pkgPath used to load the external template files `*.go.tpl`.
 const pkgPath = `src/github.com/corestoreio/pkg/sql/dmlgen`
 
 // Tables can generated Go source for for database tables once correctly
@@ -60,10 +61,13 @@ type Tables struct {
 	DisableFileHeader   bool
 	DisableTableSchemas bool
 	GogoProtoOptions    []string
-	// goTpl contains a parsed template to render a single table.
-	tpls       *template.Template
-	writeProto bool
-	lastError  error
+	// TestSQLDumpGlobPath contains the path and glob pattern to load a SQL dump
+	// containing the table schemas to run integration tests. If empty no dumps
+	// get loaded and the test program assumes that the tables already exists.
+	TestSQLDumpGlobPath string
+	tpls                *template.Template
+	writeProto          bool
+	lastError           error
 }
 
 // Option represents a sortable option for the NewTables function. Each option
@@ -514,13 +518,15 @@ func (ts *Tables) WriteGo(w io.Writer, wTest io.Writer) error {
 			tables[i] = ts.Tables[tblname] // must panic if table name not found
 		}
 		data := struct {
-			Package    string // Name of the package
-			Tables     []*table
-			TableNames []string
+			Package             string // Name of the package
+			Tables              []*table
+			TableNames          []string
+			TestSQLDumpGlobPath string
 		}{
-			Package:    ts.Package,
-			Tables:     tables,
-			TableNames: sortedTableNames,
+			Package:             ts.Package,
+			Tables:              tables,
+			TableNames:          sortedTableNames,
+			TestSQLDumpGlobPath: ts.TestSQLDumpGlobPath,
 		}
 		if err := ts.tpls.ExecuteTemplate(buf, "code_10_tables.go.tpl", data); err != nil {
 			return errors.WriteFailed.New(err, "[dmlgen] For Tables %v", tables)
@@ -730,7 +736,7 @@ func GenerateJSON(fname string, g *bootstrap.Generator) (err error) {
 		}
 	}
 	if err := g.Run(); err != nil {
-		return fmt.Errorf("Bootstrap failed: %v", err)
+		return fmt.Errorf("easyJSON: Bootstrap failed: %v", err)
 	}
 	return nil
 }

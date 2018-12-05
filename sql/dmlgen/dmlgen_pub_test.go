@@ -133,6 +133,8 @@ func TestNewTables_Generated(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
+	ts.TestSQLDumpGlobPath = "test_*_tables.sql"
+
 	writeFile(t, "testdata/output_gen.go", ts.WriteGo)
 	writeFile(t, "testdata/output_gen.proto", ts.WriteProto)
 	// Generates for all proto files the Go source code.

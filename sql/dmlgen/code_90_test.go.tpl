@@ -2,9 +2,9 @@ func TestNewTables(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
 
-	defer dmltest.SQLDumpLoad(t, "test_*_tables.sql", &dmltest.SQLDumpOptions{
+	{{with .TestSQLDumpGlobPath}}defer dmltest.SQLDumpLoad(t, "{{.}}", &dmltest.SQLDumpOptions{
 		SkipDBCleanup: true,
-	})()
+	})(){{end}}
 
 	ctx := context.TODO()
 	tbls, err := NewTables(ctx, db.DB)
@@ -41,11 +41,13 @@ func TestNewTables(t *testing.T) {
 			assert.NoError(t, err, "%+v", err)
 			assert.Exactly(t, uint64(1), rowCount, "RowCount did not match")
 
-			// assert.Exactly(t, entityIn.Scope, entityOut.Scope, "Scope did not match")
-			// assert.Exactly(t, entityIn.ScopeID, entityOut.ScopeID, "ScopeID did not match")
-			// assert.Exactly(t, entityIn.Expires, entityOut.Expires, "Expires did not match")
-			// assert.Exactly(t, entityIn.Path, entityOut.Path, "Path did not match")
-			// assert.Exactly(t, entityIn.Value, entityOut.Value, "Value did not match")
+			{{- range $col := $table.Columns }}
+				{{if $col.IsString -}}
+					assert.ExactlyLength(t, {{$col.CharMaxLength.Int64}}, &entityIn.{{ToGoCamelCase $col.Field}}, &entityOut.{{ToGoCamelCase $col.Field}}, "{{ToGoCamelCase $col.Field}} do not match")
+				{{- else -}}
+					assert.Exactly(t, entityIn.{{ToGoCamelCase $col.Field}}, entityOut.{{ToGoCamelCase $col.Field}}, "{{ToGoCamelCase $col.Field}} did not match")
+				{{- end}}
+			{{- end}}
 		}
 	})
 	{{- end}}
