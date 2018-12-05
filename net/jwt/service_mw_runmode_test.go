@@ -157,7 +157,7 @@ func TestService_WithRunMode_SingleUsage(t *testing.T) {
 		jwt.WithErrorHandler(mw.ErrorWithPanic, scope.Website.WithID(1)),
 		jwt.WithServiceErrorHandler(mw.ErrorWithPanic),
 		// default is a null blacklist so we must set one
-		jwt.WithBlacklist(containable.NewInMemory()),
+		jwt.WithBlacklist(set.NewInMemory()),
 	)
 
 	req := httptest.NewRequest("GET", "http://auth2.xyz", nil)

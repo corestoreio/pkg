@@ -333,7 +333,7 @@ func TestService_Signature_Create_Validate_Transparent(t *testing.T) {
 
 	key := []byte(`My guinea p1g run5 acro55 my keyb0ard`)
 
-	cache := containable.NewInMemory()
+	cache := set.NewInMemory()
 
 	srv := signed.MustNew(
 		signed.WithDebugLog(ioutil.Discard),

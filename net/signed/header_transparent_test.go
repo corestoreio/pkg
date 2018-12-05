@@ -23,15 +23,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var _ signed.Cacher = (*containable.InMemory)(nil)
-var _ signed.Cacher = (*containable.Mock)(nil)
+var _ signed.Cacher = (*set.InMemory)(nil)
+var _ signed.Cacher = (*set.Mock)(nil)
 
 func TestMakeTransparent(t *testing.T) {
 
 	haveHash := []byte(`I'm your testing hash value`)
 	haveTTL := time.Millisecond * 333
 
-	cm := containable.Mock{
+	cm := set.Mock{
 		SetFn: func(hash []byte, ttl time.Duration) error {
 			assert.Exactly(t, haveHash, hash)
 			assert.Exactly(t, haveTTL, ttl)

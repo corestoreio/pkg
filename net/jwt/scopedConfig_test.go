@@ -28,7 +28,7 @@ import (
 )
 
 func TestScopedConfig_ParseFromRequest_Valid(t *testing.T) {
-	bl := containable.NewInMemory()
+	bl := set.NewInMemory()
 	sc := newScopedConfig(0, 0)
 	kid := shortid.MustGenerate()
 	tk := csjwt.NewToken(jwtclaim.Map{"jti": kid})
@@ -76,7 +76,7 @@ func TestScopedConfig_ParseFromRequest_Invalid_JTI(t *testing.T) {
 }
 
 func TestScopedConfig_ParseFromRequest_In_Blacklist(t *testing.T) {
-	bl := containable.NewInMemory()
+	bl := set.NewInMemory()
 	sc := newScopedConfig(0, 0)
 	kid := shortid.MustGenerate()
 	assert.NoError(t, bl.Set([]byte(kid), time.Hour))
@@ -131,7 +131,7 @@ func TestScopedConfig_ParseFromRequest_SingleTokenUsage_BL_Set_Error(t *testing.
 // todo investigate allocs
 // 200000	      9072 ns/op	    1529 B/op	      32 allocs/op
 func BenchmarkScopedConfig_ParseFromRequest_HS256Fast_FNV64a(b *testing.B) {
-	bl := containable.NewInMemory()
+	bl := set.NewInMemory()
 
 	for i := 0; i < 10000; i++ {
 		kid := []byte(shortid.MustGenerate())

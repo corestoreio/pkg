@@ -76,7 +76,7 @@ var keyBenchmarkHMACPW = jwt.WithKey(csjwt.WithPassword([]byte(`Rump3lst!lzch3n`
 
 // 200000	      8474 ns/op	    2698 B/op	      63 allocs/op <= Go 1.7
 func BenchmarkWithToken_HMAC_InMemoryBL(b *testing.B) {
-	bl := containable.NewInMemory()
+	bl := set.NewInMemory()
 	bmWithToken(b, keyBenchmarkHMACPW, jwt.WithBlacklist(bl))
 	// b.Logf("Blacklist Items %d", bl.Len())
 }
@@ -116,7 +116,7 @@ func BenchmarkWithRunMode_MultiTokenAndScope(b *testing.B) {
 	)
 
 	// below two lines comment out enables the null black list
-	jwts.Blacklist = containable.NewInMemory()
+	jwts.Blacklist = set.NewInMemory()
 
 	var generateToken = func(storeCode string) []byte {
 		s := jwtclaim.NewStore()

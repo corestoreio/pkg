@@ -161,7 +161,7 @@ func TestService_WithToken_SingleUsage(t *testing.T) {
 			})
 		}),
 		// default is a null blacklist so we must set one
-		jwt.WithBlacklist(containable.NewInMemory()),
+		jwt.WithBlacklist(set.NewInMemory()),
 	)
 
 	req := httptest.NewRequest("GET", "http://auth2.xyz", nil)

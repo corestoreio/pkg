@@ -22,9 +22,9 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/net/geoip"
 	"github.com/corestoreio/pkg/sync/singleflight"
-	"github.com/corestoreio/errors"
 )
 
 // TransCacher transcodes Go objects. It knows how to encode and cache any Go
@@ -42,7 +42,7 @@ const MaxMindWebserviceBaseURL = "https://geoip.maxmind.com/geoip/v2.1/country/"
 
 // mmws resolves to MaxMind WebService
 type mmws struct {
-	inflight   *singleflight.Group
+	inflight   singleflight.Group
 	userID     string
 	licenseKey string
 	// client instantiated once and used for all queries to MaxMind.
@@ -52,7 +52,6 @@ type mmws struct {
 
 func newMMWS(t TransCacher, userID, licenseKey string, hc *http.Client) *mmws {
 	mm := &mmws{
-		inflight:    new(singleflight.Group),
 		userID:      userID,
 		licenseKey:  licenseKey,
 		client:      hc,

@@ -86,18 +86,18 @@ func NewOptionFactory(hc *http.Client, userID, license cfgmodel.Str, timeout cfg
 			return geoip.OptionsError(errors.Wrap(err, "[maxmindwebservice] MaxmindWebserviceRedisURL.Get"))
 		}
 
-		var tco [2]transcache.Option
+		var tco [2]objcache.Option
 		switch {
 		case vRedisURL != nil:
 			tco[0] = tcredis.WithURL(vRedisURL.String(), nil, true)
 		default:
 			tco[0] = tcbigcache.With()
 		}
-		tco[1] = transcache.WithPooledEncoder(transcache.GobCodec{}, geoip.Country{}) // prime gob with the Country struct
+		tco[1] = objcache.WithPooledEncoder(objcache.GobCodec{}, geoip.Country{}) // prime gob with the Country struct
 
 		// for now only encoding/gob can be used, we might make it configurable
 		// to choose the encoder/decoder.
-		tc, err := transcache.NewProcessor(tco[:]...)
+		tc, err := objcache.NewProcessor(tco[:]...)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[maxmindwebservice] transcache.NewProcessor"))
 		}
