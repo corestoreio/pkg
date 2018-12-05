@@ -525,15 +525,19 @@ func (c *Column) IsMoney() bool {
 
 // IsBool returns true if column is of type `int` and its name starts with a
 // special string like: `used_`, `is_`, `has_`.
-func (c *Column) IsBool() bool {
-	var isInt bool
+func (c *Column) IsBool() (ok bool) {
 	switch c.DataType {
 	case "int", "tinyint", "smallint", "bigint":
-		isInt = true
+		ok = true
 	case "bit":
 		return true
 	}
-	return isInt && columnTypes.byName.bool.ContainsReverse(c.Field)
+	return ok && columnTypes.byName.bool.ContainsReverse(c.Field)
+}
+
+// IsString returns true if the column can contain a string or byte values.
+func (c *Column) IsString() bool {
+	return c.CharMaxLength.Valid && c.CharMaxLength.Int64 > 0
 }
 
 // columnTypes looks ugly but ... refactor later.

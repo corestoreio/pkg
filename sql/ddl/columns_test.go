@@ -186,29 +186,29 @@ func TestColumnsFilter(t *testing.T) {
 }
 
 var adminUserColumns = ddl.Columns{
-	&ddl.Column{Field: "user_id", Pos: 1, Default: null.String{}, Null: "NO", DataType: "int", CharMaxLength: null.Int64{}, Precision: null.MakeInt64(10), Scale: null.MakeInt64(0), ColumnType: "int(10) unsigned", Key: "PRI", Extra: "auto_increment", Comment: "User ID"},
-	&ddl.Column{Field: "firstname", Pos: 2, Default: null.String{}, Null: "YES", DataType: "varchar", CharMaxLength: null.MakeInt64(32), Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "varchar(32)", Key: "", Extra: "", Comment: "User First Name"},
-	&ddl.Column{Field: "lastname", Pos: 3, Default: null.String{}, Null: "YES", DataType: "varchar", CharMaxLength: null.MakeInt64(32), Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "varchar(32)", Key: "", Extra: "", Comment: "User Last Name"},
-	&ddl.Column{Field: "email", Pos: 4, Default: null.String{}, Null: "YES", DataType: "varchar", CharMaxLength: null.MakeInt64(128), Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "varchar(128)", Key: "", Extra: "", Comment: "User Email"},
-	&ddl.Column{Field: "username", Pos: 5, Default: null.String{}, Null: "YES", DataType: "varchar", CharMaxLength: null.MakeInt64(40), Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "varchar(40)", Key: "UNI", Extra: "", Comment: "User Login"},
-	&ddl.Column{Field: "password", Pos: 6, Default: null.String{}, Null: "NO", DataType: "varchar", CharMaxLength: null.MakeInt64(255), Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "varchar(255)", Key: "", Extra: "", Comment: "User Password"},
-	&ddl.Column{Field: "created", Pos: 7, Default: null.MakeString(`0000-00-00 00:00:00`), Null: "NO", DataType: "timestamp", CharMaxLength: null.Int64{}, Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "timestamp", Key: "", Extra: "", Comment: "User Created Time"},
-	&ddl.Column{Field: "modified", Pos: 8, Default: null.MakeString(`CURRENT_TIMESTAMP`), Null: "NO", DataType: "timestamp", CharMaxLength: null.Int64{}, Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "timestamp", Key: "", Extra: "on update CURRENT_TIMESTAMP", Comment: "User Modified Time"},
-	&ddl.Column{Field: "logdate", Pos: 9, Default: null.String{}, Null: "YES", DataType: "timestamp", CharMaxLength: null.Int64{}, Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "timestamp", Key: "", Extra: "", Comment: "User Last Login Time"},
-	&ddl.Column{Field: "lognum", Pos: 10, Default: null.MakeString(`0`), Null: "NO", DataType: "smallint", CharMaxLength: null.Int64{}, Precision: null.MakeInt64(5), Scale: null.MakeInt64(0), ColumnType: "smallint(5) unsigned", Key: "", Extra: "", Comment: "User Login Number"},
-	&ddl.Column{Field: "reload_acl_flag", Pos: 11, Default: null.MakeString(`0`), Null: "NO", DataType: "smallint", CharMaxLength: null.Int64{}, Precision: null.MakeInt64(5), Scale: null.MakeInt64(0), ColumnType: "smallint(6)", Key: "", Extra: "", Comment: "Reload ACL"},
-	&ddl.Column{Field: "is_active", Pos: 12, Default: null.MakeString(`1`), Null: "NO", DataType: "smallint", CharMaxLength: null.Int64{}, Precision: null.MakeInt64(5), Scale: null.MakeInt64(0), ColumnType: "smallint(6)", Key: "", Extra: "", Comment: "User Is Active"},
-	&ddl.Column{Field: "extra", Pos: 13, Default: null.String{}, Null: "YES", DataType: "text", CharMaxLength: null.MakeInt64(65535), Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "text", Key: "", Extra: "", Comment: "User Extra Data"},
-	&ddl.Column{Field: "rp_token", Pos: 14, Default: null.String{}, Null: "YES", DataType: "text", CharMaxLength: null.MakeInt64(65535), Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "text", Key: "", Extra: "", Comment: "Reset Password Link Token"},
-	&ddl.Column{Field: "rp_token_created_at", Pos: 15, Default: null.String{}, Null: "YES", DataType: "timestamp", CharMaxLength: null.Int64{}, Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "timestamp", Key: "", Extra: "", Comment: "Reset Password Link Token Creation Date"},
-	&ddl.Column{Field: "interface_locale", Pos: 16, Default: null.MakeString(`en_US`), Null: "NO", DataType: "varchar", CharMaxLength: null.MakeInt64(16), Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "varchar(16)", Key: "", Extra: "", Comment: "Backend interface locale"},
-	&ddl.Column{Field: "failures_num", Pos: 17, Default: null.MakeString(`0`), Null: "YES", DataType: "smallint", CharMaxLength: null.Int64{}, Precision: null.MakeInt64(5), Scale: null.MakeInt64(0), ColumnType: "smallint(6)", Key: "", Extra: "", Comment: "Failure Number"},
-	&ddl.Column{Field: "first_failure", Pos: 18, Default: null.String{}, Null: "YES", DataType: "timestamp", CharMaxLength: null.Int64{}, Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "timestamp", Key: "", Extra: "", Comment: "First Failure"},
-	&ddl.Column{Field: "lock_expires", Pos: 19, Default: null.String{}, Null: "YES", DataType: "timestamp", CharMaxLength: null.Int64{}, Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "timestamp", Key: "", Extra: "", Comment: "Expiration Lock Dates"},
-	&ddl.Column{Field: "virtual_a", Pos: 20, Default: null.String{}, Null: "YES", DataType: "timestamp", CharMaxLength: null.Int64{}, Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "timestamp", Key: "", Extra: "VIRTUAL GENERATED", Comment: "", Generated: "ALWAYS", GenerationExpression: null.MakeString("`failures_num` MOD 10")},
-	&ddl.Column{Field: "stored_b", Pos: 21, Default: null.String{}, Null: "YES", DataType: "timestamp", CharMaxLength: null.Int64{}, Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "timestamp", Key: "", Extra: "STORED GENERATED", Comment: "", Generated: "ALWAYS", GenerationExpression: null.MakeString("left(`rp_token`,5)")},
-	&ddl.Column{Field: "version_ts", Pos: 22, Default: null.String{}, Null: "YES", DataType: "timestamp", CharMaxLength: null.Int64{}, Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "timestamp(6)", Key: "", Extra: "STORED GENERATED", Comment: "Timestamp Start Versioning", Generated: "ALWAYS", GenerationExpression: null.MakeString("ROW START")},
-	&ddl.Column{Field: "version_te", Pos: 23, Default: null.String{}, Null: "YES", DataType: "timestamp", CharMaxLength: null.Int64{}, Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "timestamp(6)", Key: "PRI", Extra: "STORED GENERATED", Comment: "Timestamp End Versioning", Generated: "ALWAYS", GenerationExpression: null.MakeString("ROW END")},
+	&ddl.Column{Field: "user_id", Pos: 1, Default: null.String{}, Null: "NO", DataType: "int", Precision: null.MakeInt64(10), Scale: null.MakeInt64(0), ColumnType: "int(10) unsigned", Key: "PRI", Extra: "auto_increment", Comment: "User ID"},
+	&ddl.Column{Field: "firstname", Pos: 2, Default: null.String{}, Null: "YES", DataType: "varchar", CharMaxLength: null.MakeInt64(32), ColumnType: "varchar(32)", Comment: "User First Name"},
+	&ddl.Column{Field: "lastname", Pos: 3, Default: null.String{}, Null: "YES", DataType: "varchar", CharMaxLength: null.MakeInt64(32), ColumnType: "varchar(32)", Comment: "User Last Name"},
+	&ddl.Column{Field: "email", Pos: 4, Default: null.String{}, Null: "YES", DataType: "varchar", CharMaxLength: null.MakeInt64(128), ColumnType: "varchar(128)", Comment: "User Email"},
+	&ddl.Column{Field: "username", Pos: 5, Default: null.String{}, Null: "YES", DataType: "varchar", CharMaxLength: null.MakeInt64(40), ColumnType: "varchar(40)", Key: "UNI", Comment: "User Login"},
+	&ddl.Column{Field: "password", Pos: 6, Default: null.String{}, Null: "NO", DataType: "varchar", CharMaxLength: null.MakeInt64(255), ColumnType: "varchar(255)", Comment: "User Password"},
+	&ddl.Column{Field: "created", Pos: 7, Default: null.MakeString(`0000-00-00 00:00:00`), Null: "NO", DataType: "timestamp", ColumnType: "timestamp", Comment: "User Created Time"},
+	&ddl.Column{Field: "modified", Pos: 8, Default: null.MakeString(`CURRENT_TIMESTAMP`), Null: "NO", DataType: "timestamp", ColumnType: "timestamp", Extra: "on update CURRENT_TIMESTAMP", Comment: "User Modified Time"},
+	&ddl.Column{Field: "logdate", Pos: 9, Default: null.String{}, Null: "YES", DataType: "timestamp", ColumnType: "timestamp", Comment: "User Last Login Time"},
+	&ddl.Column{Field: "lognum", Pos: 10, Default: null.MakeString(`0`), Null: "NO", DataType: "smallint", Precision: null.MakeInt64(5), Scale: null.MakeInt64(0), ColumnType: "smallint(5) unsigned", Comment: "User Login Number"},
+	&ddl.Column{Field: "reload_acl_flag", Pos: 11, Default: null.MakeString(`0`), Null: "NO", DataType: "smallint", Precision: null.MakeInt64(5), Scale: null.MakeInt64(0), ColumnType: "smallint(6)", Comment: "Reload ACL"},
+	&ddl.Column{Field: "is_active", Pos: 12, Default: null.MakeString(`1`), Null: "NO", DataType: "smallint", Precision: null.MakeInt64(5), Scale: null.MakeInt64(0), ColumnType: "smallint(6)", Comment: "User Is Active"},
+	&ddl.Column{Field: "extra", Pos: 13, Default: null.String{}, Null: "YES", DataType: "text", CharMaxLength: null.MakeInt64(65535), ColumnType: "text", Comment: "User Extra Data"},
+	&ddl.Column{Field: "rp_token", Pos: 14, Default: null.String{}, Null: "YES", DataType: "text", CharMaxLength: null.MakeInt64(65535), ColumnType: "text", Comment: "Reset Password Link Token"},
+	&ddl.Column{Field: "rp_token_created_at", Pos: 15, Default: null.String{}, Null: "YES", DataType: "timestamp", ColumnType: "timestamp", Comment: "Reset Password Link Token Creation Date"},
+	&ddl.Column{Field: "interface_locale", Pos: 16, Default: null.MakeString(`en_US`), Null: "NO", DataType: "varchar", CharMaxLength: null.MakeInt64(16), ColumnType: "varchar(16)", Comment: "Backend interface locale"},
+	&ddl.Column{Field: "failures_num", Pos: 17, Default: null.MakeString(`0`), Null: "YES", DataType: "smallint", Precision: null.MakeInt64(5), Scale: null.MakeInt64(0), ColumnType: "smallint(6)", Comment: "Failure Number"},
+	&ddl.Column{Field: "first_failure", Pos: 18, Default: null.String{}, Null: "YES", DataType: "timestamp", ColumnType: "timestamp", Comment: "First Failure"},
+	&ddl.Column{Field: "lock_expires", Pos: 19, Default: null.String{}, Null: "YES", DataType: "timestamp", ColumnType: "timestamp", Comment: "Expiration Lock Dates"},
+	&ddl.Column{Field: "virtual_a", Pos: 20, Default: null.String{}, Null: "YES", DataType: "timestamp", ColumnType: "timestamp", Extra: "VIRTUAL GENERATED", Generated: "ALWAYS", GenerationExpression: null.MakeString("`failures_num` MOD 10")},
+	&ddl.Column{Field: "stored_b", Pos: 21, Default: null.String{}, Null: "YES", DataType: "timestamp", ColumnType: "timestamp", Extra: "STORED GENERATED", Generated: "ALWAYS", GenerationExpression: null.MakeString("left(`rp_token`,5)")},
+	&ddl.Column{Field: "version_ts", Pos: 22, Default: null.String{}, Null: "YES", DataType: "timestamp", ColumnType: "timestamp(6)", Extra: "STORED GENERATED", Comment: "Timestamp Start Versioning", Generated: "ALWAYS", GenerationExpression: null.MakeString("ROW START")},
+	&ddl.Column{Field: "version_te", Pos: 23, Default: null.String{}, Null: "YES", DataType: "timestamp", ColumnType: "timestamp(6)", Key: "PRI", Extra: "STORED GENERATED", Comment: "Timestamp End Versioning", Generated: "ALWAYS", GenerationExpression: null.MakeString("ROW END")},
 }
 
 func TestColumns_UniqueColumns(t *testing.T) {
@@ -258,4 +258,11 @@ func TestColumn_IsSystemVersioned(t *testing.T) {
 	assert.False(t, adminUserColumns.ByField("reload_acl_flag").IsSystemVersioned())
 	assert.False(t, adminUserColumns.ByField("stored_b").IsSystemVersioned())
 	assert.False(t, adminUserColumns.ByField("virtual_a").IsSystemVersioned())
+}
+
+func TestColumn_IsString(t *testing.T) {
+	t.Parallel()
+	assert.False(t, adminUserColumns.ByField("version_ts").IsString())
+	assert.True(t, adminUserColumns.ByField("firstname").IsString())
+	assert.True(t, adminUserColumns.ByField("extra").IsString())
 }

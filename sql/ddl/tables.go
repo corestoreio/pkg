@@ -30,6 +30,8 @@ import (
 )
 
 const (
+	// PrefixView  is an anti-pattern I've seen many such systems where at some point a view will become a table.
+	// deprecated
 	PrefixView      = "view_" // If identifier starts with this, it is considered a view.
 	MainTable       = "main_table"
 	AdditionalTable = "additional_table"
