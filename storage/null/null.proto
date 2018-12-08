@@ -27,6 +27,8 @@ option java_outer_classname = "NullProto";
 option java_multiple_files = true;
 option objc_class_prefix = "CSNULL";
 
+// https://developers.google.com/protocol-buffers/docs/proto#scalar
+
 // Decimal represents the MySQL/MariaDB decimal column type.
 message Decimal {
 	string  precision_str = 1;
@@ -54,8 +56,38 @@ message Int64 {
 	bool	valid = 2;
 }
 
+message Int32 {
+	int32	int32 = 1;
+	bool	valid = 2;
+}
+
+message Int16 {
+	int32	int16 = 1;
+	bool	valid = 2;
+}
+
+message Int8 {
+	int32	int8 = 1;
+	bool	valid = 2;
+}
+
 message Uint64 {
 	uint64	uint64 = 1;
+	bool	valid = 2;
+}
+
+message Uint32 {
+	uint32	uint32 = 1;
+	bool	valid = 2;
+}
+
+message Uint16 {
+	uint32	uint16 = 1;
+	bool	valid = 2;
+}
+
+message Uint8 {
+	uint32	uint8 = 1;
 	bool	valid = 2;
 }
 

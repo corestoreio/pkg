@@ -1,0 +1,56 @@
+# Flatbuffers https://google.github.io/flatbuffers/flatbuffers_guide_writing_schema.html
+# WIP
+
+namespace null;
+
+// Decimal represents the MySQL/MariaDB decimal column type.
+struct Decimal {
+	precision_str:string;
+	precision:uint64;
+	scale:int32; // Number of decimals after the radix
+	negative:bool;
+	valid:bool; // If false, null must be handled
+	// Quote if true JSON marshaling will quote the returned number and creates
+	// a string. JavaScript floats are only 53 bits.
+	quote:bool;
+}
+
+struct Bool {
+	bool:bool;
+	valid:bool;
+}
+
+struct Float64 {
+	float64:float64;
+	valid:bool;
+}
+
+struct Int64 {
+	int64:int64;
+	valid:bool;
+}
+
+struct Int32 {
+	int32:int32;
+	valid:bool;
+}
+
+struct Uint64 {
+	uint64:uint64;
+	valid:bool;
+}
+
+struct Uint32 {
+	uint32:uint32:
+	valid:bool;
+}
+
+struct String {
+	string:string;
+	valid:bool;
+}
+
+struct Time {
+	google.protobuf.Timestamp time = 1 [(gogoproto.stdtime)=true,(gogoproto.nullable)=false];
+	valid:bool;
+}
