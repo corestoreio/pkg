@@ -229,7 +229,7 @@ func (a Uint8) MarshalTo(data []byte) (n int, err error) {
 		return 0, nil
 	}
 	binary.LittleEndian.PutUint16(data, uint16(a.Uint8))
-	return 8, nil
+	return 2, nil
 }
 
 // Unmarshal binary decoder for protocol buffers. Implements proto.Unmarshaler.
