@@ -19,6 +19,7 @@ import (
 	"context"
 	"database/sql/driver"
 	"encoding"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -88,6 +89,9 @@ type baseTest struct {
 	Bool        bool
 	NullBool    null.Bool
 	Int         int
+	Int8        int8
+	Int16       int16
+	Int32       int32
 	Int64       int64
 	NullInt64   null.Int64
 	Float64     float64
@@ -107,9 +111,15 @@ type baseTest struct {
 	Binary      textBinaryEncoder
 }
 
+// TODO add null types of the u/int
 func (bt *baseTest) MapColumns(cm *dml.ColumnMap) error {
 	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Bool(&bt.Bool).NullBool(&bt.NullBool).Int(&bt.Int).Int64(&bt.Int64).NullInt64(&bt.NullInt64).Float64(&bt.Float64).NullFloat64(&bt.NullFloat64).Uint(&bt.Uint).Uint8(&bt.Uint8).Uint16(&bt.Uint16).Uint32(&bt.Uint32).Uint64(&bt.Uint64).Byte(&bt.Byte).String(&bt.Str).NullString(&bt.NullString).Time(&bt.Time).NullTime(&bt.NullTime).Err()
+		return cm.Bool(&bt.Bool).NullBool(&bt.NullBool).
+			Int(&bt.Int).Int8(&bt.Int8).Int16(&bt.Int16).Int32(&bt.Int32).Int64(&bt.Int64).NullInt64(&bt.NullInt64).
+			Float64(&bt.Float64).NullFloat64(&bt.NullFloat64).
+			Uint(&bt.Uint).Uint8(&bt.Uint8).Uint16(&bt.Uint16).Uint32(&bt.Uint32).Uint64(&bt.Uint64).
+			Byte(&bt.Byte).String(&bt.Str).NullString(&bt.NullString).
+			Time(&bt.Time).NullTime(&bt.NullTime).Err()
 	}
 	for cm.Next() {
 		switch c := cm.Column(); c {
@@ -119,6 +129,12 @@ func (bt *baseTest) MapColumns(cm *dml.ColumnMap) error {
 			cm.NullBool(&bt.NullBool)
 		case "int":
 			cm.Int(&bt.Int)
+		case "int8":
+			cm.Int8(&bt.Int8)
+		case "int16":
+			cm.Int16(&bt.Int16)
+		case "int32":
+			cm.Int32(&bt.Int32)
 		case "int64":
 			cm.Int64(&bt.Int64)
 		case "null_int64":
@@ -239,7 +255,7 @@ func TestColumnMap_Query(t *testing.T) {
 	})
 
 	t.Run("fmt.Stringer", func(t *testing.T) {
-
+		// TODO extend the rows to add all types for `baseTest`
 		r := sqlmock.NewRows(columns).AddRow(
 			"1", "false",
 			-13, int64(-64), -128,
@@ -285,34 +301,40 @@ func TestColumnMap_Query(t *testing.T) {
 
 		tbl.Data[0].Time = now()
 		tbl.Data[0].NullTime = null.MakeTime(now()) // otherwise test would fail ...
-		assert.Exactly(t,
-			&baseTest{
-				Bool:        true,
-				NullBool:    null.MakeBool(false),
-				Int:         -1,
-				Int64:       -64,
-				NullInt64:   null.MakeInt64(-128),
-				Float64:     0.1,
-				NullFloat64: null.MakeFloat64(3.141),
-				Uint:        0x0,
-				Uint8:       0x8,
-				Uint16:      0x10,
-				Uint32:      0x20,
-				Uint64:      0x40,
-				Byte:        []byte("byte data"),
-				Str:         "I'm a string",
-				NullString:  null.MakeString("null_string"),
-				Time:        now(),
-				NullTime:    null.MakeTime(now()),
-				Decimal: null.Decimal{
-					Precision: 26817000,
-					Scale:     4,
-					Valid:     true,
-				},
-				Text:   textBinaryEncoder{data: []byte(`Hello Text`)},
-				Binary: textBinaryEncoder{data: []byte(`Hello Binary`)},
+
+		bt := &baseTest{
+			Bool:        true,
+			NullBool:    null.MakeBool(false),
+			Int:         -1,
+			Int64:       -64,
+			NullInt64:   null.MakeInt64(-128),
+			Float64:     0.1,
+			NullFloat64: null.MakeFloat64(3.141),
+			Uint:        0x0,
+			Uint8:       0x8,
+			Uint16:      0x10,
+			Uint32:      0x20,
+			Uint64:      0x40,
+			Byte:        []byte("byte data"),
+			Str:         "I'm a string",
+			NullString:  null.MakeString("null_string"),
+			Time:        now(),
+			NullTime:    null.MakeTime(now()),
+			Decimal: null.Decimal{
+				Precision: 26817000,
+				Scale:     4,
+				Valid:     true,
 			},
-			tbl.Data[0])
+			Text:   textBinaryEncoder{data: []byte(`Hello Text`)},
+			Binary: textBinaryEncoder{data: []byte(`Hello Binary`)},
+		}
+
+		btj, err := json.Marshal(bt)
+		assert.NoError(t, err)
+		tdj, err := json.Marshal(tbl.Data[0])
+		assert.NoError(t, err)
+
+		assert.Exactly(t, btj, tdj, "\nWant: %q\nHave: %q", btj, tdj)
 	})
 
 	t.Run("all types nil", func(t *testing.T) {

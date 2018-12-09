@@ -18,6 +18,7 @@ import (
 	"database/sql"
 	"encoding"
 	"fmt"
+	"math"
 	"strconv"
 	"time"
 	"unicode/utf8"
@@ -162,9 +163,10 @@ func (b *ColumnMap) Mode() (m columnMapMode) {
 // support all of the MySQL protocol field types. Hence we can support
 // fieldTypeGeometry, fieldTypeJSON with custom decoders.
 type scannedColumn struct {
-	field   byte      // i,f,b,y,s,t, n == null; nothing equals null of nil/empty
+	field   byte      // i,j,f,b,y,s,t, n == null; nothing equals null of nil/empty
 	bool    bool      // b
 	int64   int64     // i
+	uint64  uint64    // j
 	float64 float64   // f double type
 	string  string    // s
 	time    time.Time // t
@@ -175,6 +177,8 @@ func (s scannedColumn) String() string {
 	switch s.field {
 	case 'i':
 		return strconv.FormatInt(s.int64, 10)
+	case 'j':
+		return strconv.FormatUint(s.uint64, 10)
 	case 'f':
 		return strconv.FormatFloat(s.float64, 'f', -1, 64)
 	case 'b':
@@ -195,6 +199,7 @@ func (s *scannedColumn) reset() {
 	s.field = 0
 	s.bool = false
 	s.int64 = 0
+	s.uint64 = 0
 	s.float64 = 0
 	s.string = ""
 	s.time = time.Time{}
@@ -203,9 +208,15 @@ func (s *scannedColumn) reset() {
 
 func (s *scannedColumn) Scan(src interface{}) (err error) {
 	switch val := src.(type) {
+	case []byte: // most important case
+		s.field = 'y'
+		s.byte = val
 	case int64:
 		s.field = 'i'
 		s.int64 = val
+	case uint64:
+		s.field = 'j'
+		s.uint64 = val
 	case int: // sqlmock package requires this
 		s.field = 'i'
 		s.int64 = int64(val)
@@ -218,9 +229,6 @@ func (s *scannedColumn) Scan(src interface{}) (err error) {
 	case bool:
 		s.field = 'b'
 		s.bool = val
-	case []byte:
-		s.field = 'y'
-		s.byte = val
 	case string:
 		s.field = 's'
 		s.string = val
@@ -427,18 +435,125 @@ func (b *ColumnMap) Int64(ptr *int64) *ColumnMap {
 		}
 		return b
 	}
-	if b.scanErr == nil {
-		switch v := b.scanCol[b.index]; v.field {
-		case 'i':
-			*ptr = v.int64
-		case 'y':
-			*ptr, _, b.scanErr = byteconv.ParseInt(v.byte)
-			if b.scanErr != nil {
-				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
-			}
-		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+	if b.scanErr != nil {
+		return b
+	}
+	switch v := b.scanCol[b.index]; v.field {
+	case 'i':
+		*ptr = v.int64
+	case 'y':
+		*ptr, _, b.scanErr = byteconv.ParseInt(v.byte)
+		if b.scanErr != nil {
+			b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
 		}
+	default:
+		b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+	}
+	return b
+}
+
+// Int32 reads a int32 value and appends it to the arguments slice or assigns
+// the int32 value stored in sql.RawBytes to the pointer. See the documentation
+// for function Scan.
+func (b *ColumnMap) Int32(ptr *int32) *ColumnMap {
+	if b.shouldCollectArgs() {
+		if ptr == nil {
+			b.arguments = b.arguments.add(nil)
+		} else {
+			b.arguments = b.arguments.add(*ptr)
+		}
+		return b
+	}
+	if b.scanErr != nil {
+		return b
+	}
+	switch v := b.scanCol[b.index]; v.field {
+	case 'i':
+		*ptr = int32(v.int64)
+	case 'y':
+		var i64 int64
+		i64, _, b.scanErr = byteconv.ParseInt(v.byte)
+		switch {
+		case b.scanErr != nil:
+			b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+		case i64 > math.MaxInt32, i64 < -math.MaxInt32:
+			b.scanErr = errors.Overflowed.Newf("[dml] Column %q overflows int32: i64: %d", b.Column(), i64)
+		default:
+			*ptr = int32(i64)
+		}
+	default:
+		b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+	}
+	return b
+}
+
+// Int16 reads a int16 value and appends it to the arguments slice or assigns
+// the int16 value stored in sql.RawBytes to the pointer. See the documentation
+// for function Scan.
+func (b *ColumnMap) Int16(ptr *int16) *ColumnMap {
+	if b.shouldCollectArgs() {
+		if ptr == nil {
+			b.arguments = b.arguments.add(nil)
+		} else {
+			b.arguments = b.arguments.add(*ptr)
+		}
+		return b
+	}
+	if b.scanErr != nil {
+		return b
+	}
+	switch v := b.scanCol[b.index]; v.field {
+	case 'i':
+		*ptr = int16(v.int64)
+	case 'y':
+		var i64 int64
+		i64, _, b.scanErr = byteconv.ParseInt(v.byte)
+		switch {
+		case b.scanErr != nil:
+			b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+		case i64 > math.MaxInt16, i64 < -math.MaxInt16:
+			b.scanErr = errors.Overflowed.Newf("[dml] Column %q overflows int16: i64: %d", b.Column(), i64)
+		default:
+			*ptr = int16(i64)
+		}
+	default:
+		b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+	}
+	return b
+
+}
+
+// Int8 reads a int8 value and appends it to the arguments slice or assigns
+// the int8 value stored in sql.RawBytes to the pointer. See the documentation
+// for function Scan.
+func (b *ColumnMap) Int8(ptr *int8) *ColumnMap {
+	if b.shouldCollectArgs() {
+		if ptr == nil {
+			b.arguments = b.arguments.add(nil)
+		} else {
+			b.arguments = b.arguments.add(*ptr)
+		}
+		return b
+	}
+	if b.scanErr != nil {
+		return b
+	}
+	switch v := b.scanCol[b.index]; v.field {
+	case 'i':
+		*ptr = int8(v.int64)
+	case 'y':
+		var i64 int64
+		i64, _, b.scanErr = byteconv.ParseInt(v.byte)
+		switch {
+		case b.scanErr != nil:
+			b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+		case i64 > math.MaxInt8, i64 < -math.MaxInt8:
+			b.scanErr = errors.Overflowed.Newf("[dml] Column %q overflows int8: i64: %d", b.Column(), i64)
+		default:
+			*ptr = int8(i64)
+		}
+	default:
+		b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 	}
 	return b
 }
@@ -465,6 +580,230 @@ func (b *ColumnMap) NullInt64(ptr *null.Int64) *ColumnMap {
 			ptr.Valid = false
 		case 'y':
 			*ptr, b.scanErr = null.MakeInt64FromByte(v.byte)
+			if b.scanErr != nil {
+				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			}
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+		}
+	}
+	return b
+}
+
+// NullInt32 reads an int32 value and appends it to the arguments slice or
+// assigns the int32 value stored in sql.RawBytes to the pointer. See the
+// documentation for function Scan.
+func (b *ColumnMap) NullInt32(ptr *null.Int32) *ColumnMap {
+	if b.shouldCollectArgs() {
+		if ptr == nil {
+			b.arguments = b.arguments.add(nil)
+		} else {
+			b.arguments = b.arguments.add(*ptr)
+		}
+		return b
+	}
+	if b.scanErr == nil {
+		switch v := b.scanCol[b.index]; v.field {
+		case 'i':
+			ptr.Int32 = int32(v.int64) // TODO check overflow
+			ptr.Valid = true
+		case 'n':
+			ptr.Int32 = 0
+			ptr.Valid = false
+		case 'y':
+			*ptr, b.scanErr = null.MakeInt32FromByte(v.byte)
+			if b.scanErr != nil {
+				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			}
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+		}
+	}
+	return b
+}
+
+// NullInt16 reads an int16 value and appends it to the arguments slice or
+// assigns the int16 value stored in sql.RawBytes to the pointer. See the
+// documentation for function Scan.
+func (b *ColumnMap) NullInt16(ptr *null.Int16) *ColumnMap {
+	if b.shouldCollectArgs() {
+		if ptr == nil {
+			b.arguments = b.arguments.add(nil)
+		} else {
+			b.arguments = b.arguments.add(*ptr)
+		}
+		return b
+	}
+	if b.scanErr == nil {
+		switch v := b.scanCol[b.index]; v.field {
+		case 'i':
+			ptr.Int16 = int16(v.int64) // TODO check overflow
+			ptr.Valid = true
+		case 'n':
+			ptr.Int16 = 0
+			ptr.Valid = false
+		case 'y':
+			*ptr, b.scanErr = null.MakeInt16FromByte(v.byte)
+			if b.scanErr != nil {
+				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			}
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+		}
+	}
+	return b
+}
+
+// NullInt8 reads an int8 value and appends it to the arguments slice or
+// assigns the int8 value stored in sql.RawBytes to the pointer. See the
+// documentation for function Scan.
+func (b *ColumnMap) NullInt8(ptr *null.Int8) *ColumnMap {
+	if b.shouldCollectArgs() {
+		if ptr == nil {
+			b.arguments = b.arguments.add(nil)
+		} else {
+			b.arguments = b.arguments.add(*ptr)
+		}
+		return b
+	}
+	if b.scanErr == nil {
+		switch v := b.scanCol[b.index]; v.field {
+		case 'i':
+			ptr.Int8 = int8(v.int64) // TODO check overflow
+			ptr.Valid = true
+		case 'n':
+			ptr.Int8 = 0
+			ptr.Valid = false
+		case 'y':
+			*ptr, b.scanErr = null.MakeInt8FromByte(v.byte)
+			if b.scanErr != nil {
+				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			}
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+		}
+	}
+	return b
+}
+
+// NullInt64 reads an int64 value and appends it to the arguments slice or
+// assigns the int64 value stored in sql.RawBytes to the pointer. See the
+// documentation for function Scan.
+func (b *ColumnMap) NullUint64(ptr *null.Uint64) *ColumnMap {
+	if b.shouldCollectArgs() {
+		if ptr == nil {
+			b.arguments = b.arguments.add(nil)
+		} else {
+			b.arguments = b.arguments.add(*ptr)
+		}
+		return b
+	}
+	if b.scanErr == nil {
+		switch v := b.scanCol[b.index]; v.field {
+		case 'i':
+			ptr.Uint64 = v.uint64
+			ptr.Valid = true
+		case 'n':
+			ptr.Uint64 = 0
+			ptr.Valid = false
+		case 'y':
+			*ptr, b.scanErr = null.MakeUint64FromByte(v.byte)
+			if b.scanErr != nil {
+				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			}
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+		}
+	}
+	return b
+}
+
+// NullInt32 reads an int32 value and appends it to the arguments slice or
+// assigns the int32 value stored in sql.RawBytes to the pointer. See the
+// documentation for function Scan.
+func (b *ColumnMap) NullUint32(ptr *null.Uint32) *ColumnMap {
+	if b.shouldCollectArgs() {
+		if ptr == nil {
+			b.arguments = b.arguments.add(nil)
+		} else {
+			b.arguments = b.arguments.add(*ptr)
+		}
+		return b
+	}
+	if b.scanErr == nil {
+		switch v := b.scanCol[b.index]; v.field {
+		case 'i':
+			ptr.Uint32 = uint32(v.uint64) // TODO check overflow
+			ptr.Valid = true
+		case 'n':
+			ptr.Uint32 = 0
+			ptr.Valid = false
+		case 'y':
+			*ptr, b.scanErr = null.MakeUint32FromByte(v.byte)
+			if b.scanErr != nil {
+				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			}
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+		}
+	}
+	return b
+}
+
+// NullInt16 reads an int16 value and appends it to the arguments slice or
+// assigns the int16 value stored in sql.RawBytes to the pointer. See the
+// documentation for function Scan.
+func (b *ColumnMap) NullUint16(ptr *null.Uint16) *ColumnMap {
+	if b.shouldCollectArgs() {
+		if ptr == nil {
+			b.arguments = b.arguments.add(nil)
+		} else {
+			b.arguments = b.arguments.add(*ptr)
+		}
+		return b
+	}
+	if b.scanErr == nil {
+		switch v := b.scanCol[b.index]; v.field {
+		case 'i':
+			ptr.Uint16 = uint16(v.uint64) // TODO check overflow
+			ptr.Valid = true
+		case 'n':
+			ptr.Uint16 = 0
+			ptr.Valid = false
+		case 'y':
+			*ptr, b.scanErr = null.MakeUint16FromByte(v.byte)
+			if b.scanErr != nil {
+				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			}
+		default:
+			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+		}
+	}
+	return b
+}
+
+// NullInt8 reads an int8 value and appends it to the arguments slice or
+// assigns the int8 value stored in sql.RawBytes to the pointer. See the
+// documentation for function Scan.
+func (b *ColumnMap) NullUint8(ptr *null.Uint8) *ColumnMap {
+	if b.shouldCollectArgs() {
+		if ptr == nil {
+			b.arguments = b.arguments.add(nil)
+		} else {
+			b.arguments = b.arguments.add(*ptr)
+		}
+		return b
+	}
+	if b.scanErr == nil {
+		switch v := b.scanCol[b.index]; v.field {
+		case 'i':
+			ptr.Uint8 = uint8(v.uint64) // TODO check overflow
+			ptr.Valid = true
+		case 'n':
+			ptr.Uint8 = 0
+			ptr.Valid = false
+		case 'y':
+			*ptr, b.scanErr = null.MakeUint8FromByte(v.byte)
 			if b.scanErr != nil {
 				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
 			}
@@ -986,8 +1325,32 @@ func (b *ColumnMap) Uint64s(values ...uint64) *ColumnMap {
 	return b.addSlice("Uint64s", values)
 }
 
+func (b *ColumnMap) Uint32s(values ...uint32) *ColumnMap {
+	return b.addSlice("Uint32s", values)
+}
+
+func (b *ColumnMap) Uint16s(values ...uint16) *ColumnMap {
+	return b.addSlice("Uint16s", values)
+}
+
+func (b *ColumnMap) Uint8s(values ...uint8) *ColumnMap {
+	return b.addSlice("Uint8s", values)
+}
+
 func (b *ColumnMap) Int64s(values ...int64) *ColumnMap {
 	return b.addSlice("Int64s", values)
+}
+
+func (b *ColumnMap) Int32s(values ...int32) *ColumnMap {
+	return b.addSlice("Int32s", values)
+}
+
+func (b *ColumnMap) Int16s(values ...int16) *ColumnMap {
+	return b.addSlice("Int16s", values)
+}
+
+func (b *ColumnMap) Int8s(values ...int8) *ColumnMap {
+	return b.addSlice("Int8s", values)
 }
 
 func (b *ColumnMap) Strings(values ...string) *ColumnMap {

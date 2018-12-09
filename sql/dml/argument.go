@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"database/sql/driver"
 	"fmt"
+	"math"
 	"strconv"
 	"time"
 	"unicode/utf8"
@@ -597,7 +598,6 @@ func (as arguments) Write(buf *bytes.Buffer) error {
 // of the allowed types in driver.Value. It appends its values to the `args`
 // slice.
 func (as arguments) Interfaces(args ...interface{}) []interface{} {
-	const maxInt64 = 1<<63 - 1
 	if len(as) == 0 {
 		return args
 	}
@@ -632,7 +632,7 @@ func (as arguments) Interfaces(args ...interface{}) []interface{} {
 			// Get send as text in a byte slice. The MySQL/MariaDB Server type
 			// casts it into a bigint. If you change this, a test will fail.
 		case uint64:
-			if vv > maxInt64 {
+			if vv > math.MaxInt64 {
 				args = append(args, strconv.AppendUint([]byte{}, vv, 10))
 			} else {
 				args = append(args, int64(vv))
@@ -645,7 +645,7 @@ func (as arguments) Interfaces(args ...interface{}) []interface{} {
 			}
 
 		case uint:
-			if vv > maxInt64 {
+			if vv > math.MaxInt64 {
 				args = append(args, strconv.AppendUint([]byte{}, uint64(vv), 10))
 			} else {
 				args = append(args, int64(vv))
@@ -660,7 +660,7 @@ func (as arguments) Interfaces(args ...interface{}) []interface{} {
 
 		case []uint64:
 			for _, v := range vv {
-				if v > maxInt64 {
+				if v > math.MaxInt64 {
 					args = append(args, strconv.AppendUint([]byte{}, v, 10))
 				} else {
 					args = append(args, int64(v))
@@ -668,7 +668,7 @@ func (as arguments) Interfaces(args ...interface{}) []interface{} {
 			}
 		case []uint:
 			for _, v := range vv {
-				if v > maxInt64 {
+				if v > math.MaxInt64 {
 					args = append(args, strconv.AppendUint([]byte{}, uint64(v), 10))
 				} else {
 					args = append(args, int64(v))
