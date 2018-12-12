@@ -1,6 +1,6 @@
 // {{.Entity}} represents a single row for DB table `{{.TableName}}`.
 // Auto generated.{{with .Comment}}
-{{.Comment -}}{{end}}{{- if .EasyJsonMarshaler }}
+{{.Comment -}}{{end}}{{- if .HasEasyJsonMarshaler }}
 //easyjson:json{{end}}
 type {{.Entity}} struct {
 {{range .Columns}}{{ToGoCamelCase .Field}} {{GoTypeNull .}}
@@ -35,7 +35,7 @@ func (e *{{.Entity}}) Empty() *{{.Entity}} { *e = {{.Entity}}{}; return e }
 
 // {{.Collection}} represents a collection type for DB table {{.TableName}}
 // Not thread safe. Auto generated.{{with .Comment}}
-{{.Comment -}}{{end}}{{- if .EasyJsonMarshaler }}
+{{.Comment -}}{{end}}{{- if .HasEasyJsonMarshaler }}
 //easyjson:json{{end}}
 type {{.Collection}} struct {
 	Data           		[]*{{.Entity}} `json:"data,omitempty"`

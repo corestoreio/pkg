@@ -77,11 +77,11 @@ func writeFile(t *testing.T, outFile string, wFn func(io.Writer, io.Writer) erro
 	assert.NoError(t, err, "%+v", err)
 }
 
-// TestNewTables_Generated writes a Go and Proto file to the testdata directory for manual
-// review for different tables. This test also analyzes the foreign keys
-// pointing to customer_entity. No tests of the generated source code are
-// getting executed because API gets developed, still.
-func TestNewTables_Generated(t *testing.T) {
+// TestGenerate_Tables_Protobuf_Json writes a Go and Proto file to the testdata
+// directory for manual review for different tables. This test also analyzes the
+// foreign keys pointing to customer_entity. No tests of the generated source
+// code are getting executed because API gets developed, still.
+func TestGenerate_Tables_Protobuf_Json(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
 
@@ -90,6 +90,8 @@ func TestNewTables_Generated(t *testing.T) {
 
 	ctx := context.Background()
 	ts, err := dmlgen.NewTables("github.com/corestoreio/pkg/sql/dmlgen/testdata",
+
+		dmlgen.WithProtobuf(),
 
 		dmlgen.WithLoadColumns(ctx, db.DB, "dmlgen_types", "core_config_data", "customer_entity"),
 		dmlgen.WithTableOption(
@@ -135,8 +137,8 @@ func TestNewTables_Generated(t *testing.T) {
 
 	ts.TestSQLDumpGlobPath = "test_*_tables.sql"
 
-	writeFile(t, "testdata/output_gen.go", ts.WriteGo)
-	writeFile(t, "testdata/output_gen.proto", ts.WriteProto)
+	writeFile(t, "testdata/output_gen.go", ts.GenerateGo)
+	writeFile(t, "testdata/output_gen.proto", ts.GenerateSerializer)
 	// Generates for all proto files the Go source code.
 	err = dmlgen.GenerateProto("./testdata")
 	assert.NoError(t, err, "%+v", err)
@@ -160,7 +162,7 @@ func TestInfoSchemaForeignKeys(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	writeFile(t, "testdata/KEY_COLUMN_USAGE_gen.go", ts.WriteGo)
+	writeFile(t, "testdata/KEY_COLUMN_USAGE_gen.go", ts.GenerateGo)
 }
 
 func TestWithCustomStructTags(t *testing.T) {

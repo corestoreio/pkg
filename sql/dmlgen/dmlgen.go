@@ -60,13 +60,23 @@ type Tables struct {
 	template.FuncMap
 	DisableFileHeader   bool
 	DisableTableSchemas bool
-	GogoProtoOptions    []string
+	// Serializer defines the de/serializing method to use. Either
+	// `empty`=default (none) or proto=protocol buffers or fbs=flatbuffers. JSON
+	// marshaling is not affected with this config. Only one serializer can be
+	// defined because some Go types depends on the types of serializer. E.g.
+	// protobuf cannot use int16/int8 whereas in flatbuffers they are available.
+	// Using a common denominator for every serializer like an int32 can cause
+	// data loss when communicating with the database table which has different
+	// (smaller) column types than an int32.
+	Serializer string
+	// SerializerHeaderOptions defines custom headers to use in the .proto or .fbs file.
+	// For proto, sane defaults are available.
+	SerializerHeaderOptions []string
 	// TestSQLDumpGlobPath contains the path and glob pattern to load a SQL dump
 	// containing the table schemas to run integration tests. If empty no dumps
 	// get loaded and the test program assumes that the tables already exists.
 	TestSQLDumpGlobPath string
 	tpls                *template.Template
-	writeProto          bool
 	lastError           error
 }
 
@@ -118,15 +128,13 @@ func (to *TableOption) applyEncoders(ts *Tables, t *table) {
 	for i := 0; i < len(to.Encoders) && to.lastErr == nil; i++ {
 		switch enc := to.Encoders[i]; enc {
 		case "json":
-			t.JsonMarshaler = true // for now does nothing
+			t.HasJsonMarshaler = true // for now does nothing
 		case "easyjson":
-			t.EasyJsonMarshaler = true
+			t.HasEasyJsonMarshaler = true
 		case "binary":
-			t.BinaryMarshaler = true
-		case "protobuf":
-			// github.com/gogo/protobuf/protoc-gen-gogo/generator/generator.go#L1629 Generator.goTag
-			ts.writeProto = true
-			t.Protobuf = true // for now leave it in. maybe later PB gets added to the struct tags.
+			t.HasBinaryMarshaler = true
+		case "protobuf", "fbs":
+			t.HasSerializer = true // for now leave it in. maybe later PB gets added to the struct tags.
 		default:
 			to.lastErr = errors.NotSupported.Newf("[dmlgen] WithTableOption: Table %q Encoder %q not supported", t.TableName, enc)
 		}
@@ -325,7 +333,7 @@ func WithColumnAliasesFromForeignKeys(ctx context.Context, db dml.Querier) (opt 
 }
 
 // WithCreateTable sets a table and its columns. Allows to overwrite a table fetched
-// with function WithLoadColumns.
+// with function WithLoadColumns. Argument `actions` can only be set to "overwrite".
 func WithTable(tableName string, columns ddl.Columns, actions ...string) (opt Option) {
 	opt.sortOrder = 10
 	opt.fn = func(ts *Tables) error {
@@ -371,6 +379,42 @@ func WithLoadColumns(ctx context.Context, db dml.Querier, tables ...string) (opt
 	return
 }
 
+// WithProtobuf enables protocol buffers as a serialization method. Argument
+// headerOptions is optional.
+func WithProtobuf(headerOptions ...string) (opt Option) {
+	opt.sortOrder = 110
+	opt.fn = func(ts *Tables) error {
+		ts.Serializer = "protobuf"
+		if len(headerOptions) == 0 {
+			ts.SerializerHeaderOptions = []string{
+				"(gogoproto.typedecl_all) = false",
+				"(gogoproto.goproto_getters_all) = false",
+				"(gogoproto.unmarshaler_all) = true",
+				"(gogoproto.marshaler_all) = true",
+				"(gogoproto.sizer_all) = true",
+				"(gogoproto.goproto_unrecognized_all) = false",
+			}
+		}
+		return nil
+	}
+	return
+}
+
+// WithFlatbuffers enables flatbuffers (FBS) as a serialization method. Argument
+// headerOptions is optional.
+func WithFlatbuffers(headerOptions ...string) (opt Option) {
+	opt.sortOrder = 111
+	opt.fn = func(ts *Tables) error {
+		ts.Serializer = "fbs"
+		if len(headerOptions) == 0 {
+			// TODO find sane defaults
+			// ts.SerializerHeaderOptions = []string{}
+		}
+		return nil
+	}
+	return
+}
+
 func (ts *Tables) sortedTableNames() []string {
 	sortedKeys := make(slices.String, 0, len(ts.Tables))
 	for k := range ts.Tables {
@@ -402,25 +446,6 @@ func NewTables(packageImportPath string, opts ...Option) (*Tables, error) {
 		},
 		FuncMap: make(template.FuncMap, 10),
 	}
-	ts.FuncMap["ToGoCamelCase"] = strs.ToGoCamelCase // net_http->NetHTTP entity_id->EntityID
-	ts.FuncMap["GoTypeNull"] = toGoTypeNull
-	ts.FuncMap["GoType"] = toGoType
-	ts.FuncMap["GoFuncNull"] = toGoFuncNull
-	ts.FuncMap["GoFunc"] = toGoFunc
-	ts.FuncMap["GoPrimitiveNull"] = toGoPrimitiveFromNull
-	ts.FuncMap["ProtoType"] = toProtoType
-	ts.FuncMap["ProtoCustomType"] = toProtoCustomType
-
-	if len(ts.GogoProtoOptions) == 0 {
-		ts.GogoProtoOptions = []string{
-			"(gogoproto.typedecl_all) = false",
-			"(gogoproto.goproto_getters_all) = false",
-			"(gogoproto.unmarshaler_all) = true",
-			"(gogoproto.marshaler_all) = true",
-			"(gogoproto.sizer_all) = true",
-			"(gogoproto.goproto_unrecognized_all) = false",
-		}
-	}
 
 	sort.Slice(opts, func(i, j int) bool {
 		return opts[i].sortOrder < opts[j].sortOrder // ascending 0-9 sorting ;-)
@@ -431,6 +456,48 @@ func NewTables(packageImportPath string, opts ...Option) (*Tables, error) {
 			return nil, errors.WithStack(err)
 		}
 	}
+
+	ts.FuncMap["ToGoCamelCase"] = strs.ToGoCamelCase // net_http->NetHTTP entity_id->EntityID
+	ts.FuncMap["GoTypeNull"] = func(c *ddl.Column) string {
+		return ts.mySQLToGoType(c, true)
+	}
+	ts.FuncMap["GoType"] = func(c *ddl.Column) string {
+		return ts.mySQLToGoType(c, false)
+	}
+	ts.FuncMap["GoFuncNull"] = func(c *ddl.Column) string {
+		return ts.mySQLToGoDmlColumnMap(c, true)
+	}
+	ts.FuncMap["GoFunc"] = func(c *ddl.Column) string {
+		return ts.mySQLToGoDmlColumnMap(c, false)
+	}
+
+	ts.FuncMap["GoPrimitiveNull"] = ts.toGoPrimitiveFromNull
+	ts.FuncMap["SerializerType"] = func(c *ddl.Column) string {
+		pt := ts.toSerializerType(c, true)
+		if strings.IndexByte(pt, '/') > 0 { // slash identifies an import path
+			return "bytes"
+		}
+		return pt
+	}
+	ts.FuncMap["SerializerCustomType"] = func(c *ddl.Column) string {
+		pt := ts.toSerializerType(c, true)
+		var buf strings.Builder
+		if pt == "google.protobuf.Timestamp" {
+			fmt.Fprint(&buf, ",(gogoproto.stdtime)=true")
+		}
+		if pt == "bytes" {
+			return "" // bytes can be null
+		}
+		if c.IsNull() || strings.IndexByte(pt, '.') > 0 /*whenever it is a custom type like null. or google.proto.timestamp*/ {
+			// Indeed nullable Go Types must be not-nullable in HasSerializer because we
+			// have a non-pointer struct type which contains the field Valid.
+			// HasSerializer treats nullable fields as pointer fields, but that is
+			// ridiculous.
+			fmt.Fprint(&buf, ",(gogoproto.nullable)=false")
+		}
+		return buf.String()
+	}
+
 	var err error
 	glob := filepath.Join(build.Default.GOPATH, pkgPath, "code_*.go.tpl")
 	ts.tpls, err = template.New("InitialParseGlob").Funcs(ts.FuncMap).ParseGlob(glob)
@@ -471,25 +538,34 @@ func (ts *Tables) findUsedPackages(file []byte) ([]string, error) {
 	return ret, nil
 }
 
-// WriteProto writes the protocol buffer specifications into `w` and its test
+// GenerateSerializer writes the protocol buffer specifications into `w` and its test
 // sources into wTest, if there are any tests.
-func (ts *Tables) WriteProto(w io.Writer, wTest io.Writer) error {
-	if !ts.writeProto {
-		return errors.NotAcceptable.Newf("[dmlgen] Protocol buffer generation not enabled.")
+func (ts *Tables) GenerateSerializer(w io.Writer, wTest io.Writer) error {
+	switch ts.Serializer {
+	case "protobuf", "fbs":
+	// supported
+	case "", "default", "none":
+		return nil // do nothing
+	default:
+		return errors.NotAcceptable.Newf("[dmlgen] Serializer %q not supported.", ts.Serializer)
 	}
+
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 
 	if !ts.DisableFileHeader {
-		if err := ts.tpls.Funcs(ts.FuncMap).ExecuteTemplate(buf, "code_proto_10_header.go.tpl", ts); err != nil {
+		if err := ts.tpls.Funcs(ts.FuncMap).ExecuteTemplate(buf, "code_"+ts.Serializer+"_10_header.go.tpl", ts); err != nil {
 			return errors.WriteFailed.New(err, "[dmlgen] For file header")
 		}
 	}
 
+	tableFileName := "code_" + ts.Serializer + "_20_table.go.tpl"
 	for _, tblName := range ts.sortedTableNames() {
 		t := ts.Tables[tblName] // must panic if table name not found
-		if err := t.writeTo(buf, ts.tpls.Lookup("code_proto_20_table.go.tpl").Funcs(ts.FuncMap)); err != nil {
-			return errors.WriteFailed.New(err, "[dmlgen] For Table %q", t.TableName)
+		if t.HasSerializer {
+			if err := t.writeTo(buf, ts.tpls.Lookup(tableFileName).Funcs(ts.FuncMap)); err != nil {
+				return errors.WriteFailed.New(err, "[dmlgen] For Table %q", t.TableName)
+			}
 		}
 	}
 	_, err := buf.WriteTo(w)
@@ -505,8 +581,8 @@ func (ts *Tables) execTpl(w io.Writer, t *table, tplName string) {
 	}
 }
 
-// WriteGo writes the Go source code into `w` and the test code into WTest.
-func (ts *Tables) WriteGo(w io.Writer, wTest io.Writer) error {
+// GenerateGo writes the Go source code into `w` and the test code into wTest.
+func (ts *Tables) GenerateGo(w io.Writer, wTest io.Writer) error {
 	buf := new(bytes.Buffer)
 	bufTest := new(bytes.Buffer)
 	ts.tpls = ts.tpls.Funcs(ts.FuncMap)
@@ -544,7 +620,7 @@ func (ts *Tables) WriteGo(w io.Writer, wTest io.Writer) error {
 		if !t.DisableCollectionMethods {
 			ts.execTpl(buf, t, "code_30_collection_methods.go.tpl")
 		}
-		if t.BinaryMarshaler {
+		if t.HasBinaryMarshaler {
 			ts.execTpl(buf, t, "code_40_binary.go.tpl")
 		}
 		if ts.lastError != nil {
@@ -608,10 +684,10 @@ type table struct {
 	TableName                string      // Name of the table
 	Comment                  string      // Comment above the struct type declaration
 	Columns                  ddl.Columns // all columns of a table
-	JsonMarshaler            bool
-	EasyJsonMarshaler        bool
-	BinaryMarshaler          bool
-	Protobuf                 bool // writes the .proto file if true
+	HasJsonMarshaler         bool
+	HasEasyJsonMarshaler     bool
+	HasBinaryMarshaler       bool
+	HasSerializer            bool // writes the .proto file if true
 	DisableCollectionMethods bool
 }
 

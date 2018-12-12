@@ -25,169 +25,384 @@ import (
 	"github.com/corestoreio/pkg/util/strs"
 )
 
-// TypeDef used in variable `MysqlTypeToGo` to map a MySQL/MariaDB type to its
-// appropriate Go or Protocol Buffer type. Those types are getting printed in
-// the generated files.
+// TypeDef used in variable `mysqlTypeToGo` to map a MySQL/MariaDB type to its
+// appropriate Go and serializer type. Those types are getting printed in the
+// generated files.
 type TypeDef struct {
-	MysqlUnsignedNull    string
-	MysqlUnsignedNotNull string
-	MysqlSignedNull      string
-	MysqlSignedNotNull   string
+	GoUNull    string // unsigned null
+	GoUNotNull string // unsigned not null
+	GoNull     string // A go type which can be null/nil
+	GoNotNull  string // A usually native Go primitive type
 
-	ProtobufUnsignedNull    string
-	ProtobufUnsignedNotNull string
-	ProtobufSignedNull      string
-	ProtobufSignedNotNull   string
+	SerializerUNull    string
+	SerializerUNotNull string
+	SerializerNull     string
+	SerializerNotNull  string
 }
 
-// These variables are mapping the un/signed and null/not-null types to the
-// appropriate Go type.
-var (
-	// TODO further optimize this mappings
-	goTypeInt64 = &TypeDef{
-		MysqlUnsignedNull:    "null.Int64",
-		MysqlUnsignedNotNull: "uint64",
-		MysqlSignedNull:      "null.Int64",
-		MysqlSignedNotNull:   "int64",
+var typeMap = map[string]map[string]*TypeDef{ // immutable
+	// Go native type, covers also unsigned and NULL
+	"int64": {
+		// implementation name. Default uses no serializer.
+		"default": &TypeDef{
+			GoUNull:    "null.Uint64", // Go unsigned null
+			GoUNotNull: "uint64",      // Go unsigned not null
+			GoNull:     "null.Int64",  // Go signed null
+			GoNotNull:  "int64",       // Go signed not null
+		},
+		// proto uses protocol buffers or gogoproto as serializer. It requires a
+		// mapping of the go type to the protobuf type. Some native Go types are
+		// not supported in protobuf. For example if the DB column type is
+		// smallint, Go and protobuf types must be minimum int32. This can cause
+		// data loss or overflow when writing int32 into the DB. So you think it
+		// runs correctly until you load the values back from the DB...
+		"protobuf": {
+			GoUNull:    "null.Uint64", // Go unsigned null
+			GoUNotNull: "uint64",      // Go unsigned not null
+			GoNull:     "null.Int64",  // Go signed null
+			GoNotNull:  "int64",       // Go signed not null
 
-		ProtobufUnsignedNull:    "null.Int64", // Proto package and its type, not the Go package!
-		ProtobufUnsignedNotNull: "uint64",
-		ProtobufSignedNull:      "null.Int64", // Proto package and its type, not the Go package!
-		ProtobufSignedNotNull:   "int64",
+			// native types of the protobuf implementation. pkg null refers to
+			// storage/null/null.proto file
+			SerializerUNull:    "null.Uint64", // proto unsigned null | no pun intended ;-)
+			SerializerUNotNull: "uint64",      // proto unsigned not null
+			SerializerNull:     "null.Int64",  // proto signed null
+			SerializerNotNull:  "int64",       // proto signed not null
+		},
+		"fbs": {
+			GoUNull:    "null.Uint64",
+			GoUNotNull: "uint64",
+			GoNull:     "null.Int64",
+			GoNotNull:  "int64",
+
+			// native types of the flatbuffers implementation. pkg null refers
+			// to storage/null/null.fbs file
+			SerializerUNull:    "null.Uint64", // fbs unsigned null
+			SerializerUNotNull: "ulong",       // fbs unsigned not null
+			SerializerNull:     "null.Int64",  // fbs signed null
+			SerializerNotNull:  "long",        // fbs signed not null
+		},
+	},
+	"int32": {
+		"default": &TypeDef{
+			GoUNull:    "null.Uint32",
+			GoUNotNull: "uint32",
+			GoNull:     "null.Int32",
+			GoNotNull:  "int32",
+		},
+		"protobuf": {
+			GoUNull:            "null.Uint32",
+			GoUNotNull:         "uint32",
+			GoNull:             "null.Int32",
+			GoNotNull:          "int32",
+			SerializerUNull:    "null.Uint32",
+			SerializerUNotNull: "uint32",
+			SerializerNull:     "null.Int32",
+			SerializerNotNull:  "int32",
+		},
+		"fbs": {
+			GoUNull:            "null.Uint32",
+			GoUNotNull:         "uint32",
+			GoNull:             "null.Int32",
+			GoNotNull:          "int32",
+			SerializerUNull:    "null.Uint32",
+			SerializerUNotNull: "uint",
+			SerializerNull:     "null.Int32",
+			SerializerNotNull:  "int",
+		},
+	},
+	"int16": {
+		"default": &TypeDef{
+			GoUNull:    "null.Uint16",
+			GoUNotNull: "uint16",
+			GoNull:     "null.Int16",
+			GoNotNull:  "int16",
+		},
+		"protobuf": {
+			GoUNull:            "null.Uint32",
+			GoUNotNull:         "uint32",
+			GoNull:             "null.Int32",
+			GoNotNull:          "int32",
+			SerializerUNull:    "null.Uint32",
+			SerializerUNotNull: "uint32",
+			SerializerNull:     "null.Int32",
+			SerializerNotNull:  "int32",
+		},
+		"fbs": {
+			GoUNull:            "null.Uint16",
+			GoUNotNull:         "uint16",
+			GoNull:             "null.Int16",
+			GoNotNull:          "int16",
+			SerializerUNull:    "null.Uint16",
+			SerializerUNotNull: "ushort",
+			SerializerNull:     "null.Int16",
+			SerializerNotNull:  "short",
+		},
+	},
+	"int8": {
+		"default": &TypeDef{
+			GoUNull:    "null.Uint8",
+			GoUNotNull: "uint8",
+			GoNull:     "null.Int8",
+			GoNotNull:  "int8",
+		},
+		"protobuf": {
+			GoUNull:            "null.Uint32",
+			GoUNotNull:         "uint32",
+			GoNull:             "null.Int32",
+			GoNotNull:          "int32",
+			SerializerUNull:    "null.Uint32",
+			SerializerUNotNull: "uint32",
+			SerializerNull:     "null.Int32",
+			SerializerNotNull:  "int32",
+		},
+		"fbs": {
+			GoUNull:            "null.Uint8",
+			GoUNotNull:         "uint8",
+			GoNull:             "null.Int8",
+			GoNotNull:          "int8",
+			SerializerUNull:    "null.Uint8",
+			SerializerUNotNull: "ubyte",
+			SerializerNull:     "null.Int8",
+			SerializerNotNull:  "byte",
+		},
+	},
+	"float64": {
+		"default": &TypeDef{
+			GoUNull:    "null.Uint8",
+			GoUNotNull: "float64",
+			GoNull:     "null.Int8",
+			GoNotNull:  "float64",
+		},
+		"protobuf": {
+			GoUNull:            "null.Float64",
+			GoUNotNull:         "float64",
+			GoNull:             "null.Float64",
+			GoNotNull:          "float64",
+			SerializerUNull:    "null.Float64",
+			SerializerUNotNull: "double",
+			SerializerNull:     "null.Float64",
+			SerializerNotNull:  "double",
+		},
+		"fbs": {
+			GoUNull:            "null.Float64",
+			GoUNotNull:         "float64",
+			GoNull:             "null.Float64",
+			GoNotNull:          "float64",
+			SerializerUNull:    "null.Double",
+			SerializerUNotNull: "double",
+			SerializerNull:     "null.Double",
+			SerializerNotNull:  "double",
+		},
+	},
+	"time": {
+		"default": &TypeDef{
+			GoUNull:    "null.Time",
+			GoUNotNull: "time.Time",
+			GoNull:     "null.Time",
+			GoNotNull:  "time.Time",
+		},
+		"protobuf": {
+			GoUNull:            "null.Time",
+			GoUNotNull:         "time.Time",
+			GoNull:             "null.Time",
+			GoNotNull:          "time.Time",
+			SerializerUNull:    "null.Time",
+			SerializerUNotNull: "google.protobuf.Timestamp",
+			SerializerNull:     "null.Time",
+			SerializerNotNull:  "google.protobuf.Timestamp",
+		},
+		"fbs": {
+			GoUNull:            "null.Time",
+			GoUNotNull:         "time.Time",
+			GoNull:             "null.Time",
+			GoNotNull:          "time.Time",
+			SerializerUNull:    "null.Time",
+			SerializerUNotNull: "null.Time",
+			SerializerNull:     "null.Time",
+			SerializerNotNull:  "null.Time",
+		},
+	},
+	"string": {
+		"default": &TypeDef{
+			GoUNull:    "null.String",
+			GoUNotNull: "string",
+			GoNull:     "null.String",
+			GoNotNull:  "string",
+		},
+		"protobuf": {
+			GoUNull:            "null.String",
+			GoUNotNull:         "string",
+			GoNull:             "null.String",
+			GoNotNull:          "string",
+			SerializerUNull:    "null.String",
+			SerializerUNotNull: "string",
+			SerializerNull:     "null.String",
+			SerializerNotNull:  "string",
+		},
+		"fbs": {
+			GoUNull:            "null.String",
+			GoUNotNull:         "string",
+			GoNull:             "null.String",
+			GoNotNull:          "string",
+			SerializerUNull:    "null.String",
+			SerializerUNotNull: "string",
+			SerializerNull:     "null.String",
+			SerializerNotNull:  "string",
+		},
+	},
+	"bool": {
+		"default": &TypeDef{
+			GoUNull:    "null.Bool",
+			GoUNotNull: "bool",
+			GoNull:     "null.Bool",
+			GoNotNull:  "bool",
+		},
+		"protobuf": {
+			GoUNull:            "null.Bool",
+			GoUNotNull:         "bool",
+			GoNull:             "null.Bool",
+			GoNotNull:          "bool",
+			SerializerUNull:    "null.Bool",
+			SerializerUNotNull: "bool",
+			SerializerNull:     "null.Bool",
+			SerializerNotNull:  "bool",
+		},
+		"fbs": {
+			GoUNull:            "null.Bool",
+			GoUNotNull:         "bool",
+			GoNull:             "null.Bool",
+			GoNotNull:          "bool",
+			SerializerUNull:    "null.Bool",
+			SerializerUNotNull: "bool",
+			SerializerNull:     "null.Bool",
+			SerializerNotNull:  "bool",
+		},
+	},
+	"decimal": {
+		"default": &TypeDef{
+			GoUNull:    "null.Decimal",
+			GoUNotNull: "null.Decimal",
+			GoNull:     "null.Decimal",
+			GoNotNull:  "null.Decimal",
+		},
+		"protobuf": {
+			GoUNull:            "null.Decimal",
+			GoUNotNull:         "null.Decimal",
+			GoNull:             "null.Decimal",
+			GoNotNull:          "null.Decimal",
+			SerializerUNull:    "null.Decimal",
+			SerializerUNotNull: "null.Decimal",
+			SerializerNull:     "null.Decimal",
+			SerializerNotNull:  "null.Decimal",
+		},
+		"fbs": {
+			GoUNull:            "null.Decimal",
+			GoUNotNull:         "null.Decimal",
+			GoNull:             "null.Decimal",
+			GoNotNull:          "null.Decimal",
+			SerializerUNull:    "null.Decimal",
+			SerializerUNotNull: "null.Decimal",
+			SerializerNull:     "null.Decimal",
+			SerializerNotNull:  "null.Decimal",
+		},
+	},
+	"byte": {
+		"default": &TypeDef{
+			GoUNull:    "[]byte",
+			GoUNotNull: "[]byte",
+			GoNull:     "[]byte",
+			GoNotNull:  "[]byte",
+		},
+		"protobuf": {
+			GoUNull:            "[]byte",
+			GoUNotNull:         "[]byte",
+			GoNull:             "[]byte",
+			GoNotNull:          "[]byte",
+			SerializerUNull:    "bytes",
+			SerializerUNotNull: "bytes",
+			SerializerNull:     "bytes",
+			SerializerNotNull:  "bytes"},
+		"fbs": {
+			GoUNull:            "[]byte",
+			GoUNotNull:         "[]byte",
+			GoNull:             "[]byte",
+			GoNotNull:          "[]byte",
+			SerializerUNull:    "[ubyte]",
+			SerializerUNotNull: "[ubyte]",
+			SerializerNull:     "[ubyte]",
+			SerializerNotNull:  "[ubyte]"},
+	},
+}
+
+func mustTMK(key string) map[string]*TypeDef {
+	if m, ok := typeMap[key]; ok {
+		return m
 	}
-	goTypeInt = &TypeDef{
-		MysqlUnsignedNull:    "null.Int64",
-		MysqlUnsignedNotNull: "uint64",
-		MysqlSignedNull:      "null.Int64",
-		MysqlSignedNotNull:   "int64",
+	panic(fmt.Sprintf("[dmlgen] Key %q not found in typeMap", key))
+}
 
-		ProtobufUnsignedNull:    "null.Int64", // Proto package and its type, not the Go package!
-		ProtobufUnsignedNotNull: "uint64",
-		ProtobufSignedNull:      "null.Int64", // Proto package and its type, not the Go package!
-		ProtobufSignedNotNull:   "int64",
-	}
-	goTypeFloat64 = &TypeDef{
-		MysqlUnsignedNull:    "null.Float64",
-		MysqlUnsignedNotNull: "float64",
-		MysqlSignedNull:      "null.Float64",
-		MysqlSignedNotNull:   "float64",
-
-		ProtobufUnsignedNull:    "null.Float64", // Proto package and its type, not the Go package!
-		ProtobufUnsignedNotNull: "double",
-		ProtobufSignedNull:      "null.Float64", // Proto package and its type, not the Go package!
-		ProtobufSignedNotNull:   "double",
-	}
-	goTypeTime = &TypeDef{
-		MysqlUnsignedNull:    "null.Time",
-		MysqlUnsignedNotNull: "time.Time",
-		MysqlSignedNull:      "null.Time",
-		MysqlSignedNotNull:   "time.Time",
-
-		ProtobufUnsignedNull:    "null.Time", // Proto package and its type, not the Go package!
-		ProtobufUnsignedNotNull: "google.protobuf.Timestamp",
-		ProtobufSignedNull:      "null.Time", // Proto package and its type, not the Go package!
-		ProtobufSignedNotNull:   "google.protobuf.Timestamp",
-	}
-	goTypeString = &TypeDef{
-		MysqlUnsignedNull:    "null.String",
-		MysqlUnsignedNotNull: "string",
-		MysqlSignedNull:      "null.String",
-		MysqlSignedNotNull:   "string",
-
-		ProtobufUnsignedNull:    "null.String", // Proto package and its type, not the Go package!
-		ProtobufUnsignedNotNull: "string",
-		ProtobufSignedNull:      "null.String", // Proto package and its type, not the Go package!
-		ProtobufSignedNotNull:   "string",
-	}
-	goTypeBool = &TypeDef{
-		MysqlUnsignedNull:    "null.Bool",
-		MysqlUnsignedNotNull: "bool",
-		MysqlSignedNull:      "null.Bool",
-		MysqlSignedNotNull:   "bool",
-
-		ProtobufUnsignedNull:    "null.Bool", // Proto package and its type, not the Go package!
-		ProtobufUnsignedNotNull: "bool",
-		ProtobufSignedNull:      "null.Bool", // Proto package and its type, not the Go package!
-		ProtobufSignedNotNull:   "bool",
-	}
-	goTypeDecimal = &TypeDef{
-		MysqlUnsignedNull:    "null.Decimal",
-		MysqlUnsignedNotNull: "null.Decimal",
-		MysqlSignedNull:      "null.Decimal",
-		MysqlSignedNotNull:   "null.Decimal",
-
-		ProtobufUnsignedNull:    "null.Decimal", // Proto package and its type not the Go package!
-		ProtobufUnsignedNotNull: "null.Decimal", // Proto package and its type not the Go package!
-		ProtobufSignedNull:      "null.Decimal", // Proto package and its type not the Go package!
-		ProtobufSignedNotNull:   "null.Decimal", // Proto package and its type not the Go package!
-	}
-	goTypeByte = &TypeDef{
-		MysqlUnsignedNull:    "[]byte",
-		MysqlUnsignedNotNull: "[]byte",
-		MysqlSignedNull:      "[]byte",
-		MysqlSignedNotNull:   "[]byte",
-
-		ProtobufUnsignedNull:    "bytes",
-		ProtobufUnsignedNotNull: "bytes",
-		ProtobufSignedNull:      "bytes",
-		ProtobufSignedNotNull:   "bytes",
-	}
-)
-
-// MysqlTypeToGo maps the MySql/MariaDB field type to the correct Go/protobuf
+// mysqlTypeToGo maps the MySql/MariaDB field type to the correct Go/protobuf
 // type. See the type TypeDef for more details. This exported variable allows to
 // set custom types before code generation.
-var MysqlTypeToGo = map[string]*TypeDef{
-	"int":        goTypeInt,
-	"bigint":     goTypeInt64,
-	"smallint":   goTypeInt,
-	"tinyint":    goTypeInt,
-	"mediumint":  goTypeInt,
-	"double":     goTypeFloat64,
-	"float":      goTypeFloat64,
-	"decimal":    goTypeDecimal,
-	"date":       goTypeTime,
-	"datetime":   goTypeTime,
-	"timestamp":  goTypeTime,
-	"char":       goTypeString,
-	"varchar":    goTypeString,
-	"enum":       goTypeString,
-	"set":        goTypeString,
-	"text":       goTypeString,
-	"longtext":   goTypeString,
-	"mediumtext": goTypeString,
-	"tinytext":   goTypeString,
-	"blob":       goTypeString,
-	"longblob":   goTypeString,
-	"mediumblob": goTypeString,
-	"tinyblob":   goTypeString,
-	"binary":     goTypeByte,
-	"varbinary":  goTypeByte,
-	"bit":        goTypeBool,
+var mysqlTypeToGo = map[string]map[string]*TypeDef{ // immutable
+	// key1=MySQL Type; key2=serializer;
+	"int":        mustTMK("int32"),
+	"bigint":     mustTMK("int64"),
+	"smallint":   mustTMK("int16"),
+	"tinyint":    mustTMK("int8"),
+	"mediumint":  mustTMK("int32"),
+	"double":     mustTMK("float64"),
+	"float":      mustTMK("float64"),
+	"decimal":    mustTMK("decimal"),
+	"date":       mustTMK("time"),
+	"datetime":   mustTMK("time"),
+	"timestamp":  mustTMK("time"),
+	"char":       mustTMK("string"),
+	"varchar":    mustTMK("string"),
+	"enum":       mustTMK("string"),
+	"set":        mustTMK("string"),
+	"text":       mustTMK("string"),
+	"longtext":   mustTMK("string"),
+	"mediumtext": mustTMK("string"),
+	"tinytext":   mustTMK("string"),
+	"blob":       mustTMK("byte"),
+	"longblob":   mustTMK("byte"),
+	"mediumblob": mustTMK("byte"),
+	"tinyblob":   mustTMK("byte"),
+	"binary":     mustTMK("byte"),
+	"varbinary":  mustTMK("byte"),
+	"bit":        mustTMK("bool"),
+	// TODO add more MySQL types like JSON or GEO
 }
 
-func toGoTypeNull(c *ddl.Column) string {
-	return mySQLToGoType(c, true)
-}
-
-func toGoType(c *ddl.Column) string {
-	return mySQLToGoType(c, false)
-}
-
-func findType(c *ddl.Column) *TypeDef {
-
-	goType, ok := MysqlTypeToGo[c.DataType]
-	if !ok {
-		panic(errors.NotFound.Newf("[dmlgen] MySQL type %q not found", c.DataType))
+func mustGetTypeDef(mysqlDataType, serializer string) *TypeDef {
+	if serializer == "" {
+		serializer = "default"
 	}
+	myType, ok := mysqlTypeToGo[mysqlDataType] // readonly access so safe for concurrent access
+	if !ok {
+		panic(errors.NotFound.Newf("[dmlgen] MySQL type %q not found", mysqlDataType))
+	}
+
+	goType, ok := myType[serializer]
+	if !ok {
+		panic(errors.NotFound.Newf("[dmlgen] Serializer %q not found", serializer))
+	}
+	return goType
+}
+
+func (ts *Tables) findType(c *ddl.Column) *TypeDef {
+
+	goType := mustGetTypeDef(c.DataType, ts.Serializer)
 
 	// The switch block overwrites the already retrieved goType by checking for
 	// bool columns and columns which contains a money unit.
 	switch {
 	case c.IsBool():
-		goType = MysqlTypeToGo["bit"]
+		goType = mustGetTypeDef("bit", ts.Serializer)
 	case c.IsFloat() && c.IsMoney():
-		goType = MysqlTypeToGo["decimal"]
+		goType = mustGetTypeDef("decimal", ts.Serializer)
 	}
 	return goType
 }
@@ -195,29 +410,30 @@ func findType(c *ddl.Column) *TypeDef {
 // mySQLToGoType calculates the data type of the field DataType. For example
 // bigint, smallint, tinyint will result in "int". If withNull is true the
 // returned type can store a null value.
-func mySQLToGoType(c *ddl.Column, withNull bool) string {
+func (ts *Tables) mySQLToGoType(c *ddl.Column, withNull bool) string {
 
-	goType := findType(c)
+	goType := ts.findType(c)
 
 	var t string
 	switch {
 	case c.IsUnsigned() && c.IsNull() && withNull:
-		t = goType.MysqlUnsignedNull // unsigned null
+		t = goType.GoUNull // unsigned null
 	case c.IsUnsigned() && (!c.IsNull() || !withNull):
-		t = goType.MysqlUnsignedNotNull // unsigned not null
+		t = goType.GoUNotNull // unsigned not null
 	case !c.IsUnsigned() && c.IsNull() && withNull:
-		t = goType.MysqlSignedNull // signed null
+		t = goType.GoNull // signed null
 	case !c.IsUnsigned() && (!c.IsNull() || !withNull):
-		t = goType.MysqlSignedNotNull // signed not null
+		t = goType.GoNotNull // signed not null
 	}
 
 	return t
 }
 
-// toGoPrimitiveFromNull returns for Go type or structure the final primitive:
-// int->int but NullInt->.Int
-func toGoPrimitiveFromNull(c *ddl.Column) string {
-	t := mySQLToGoType(c, true)
+// toGoPrimitiveFromNull returns for a Go type or structure the final primitive:
+// int->int but NullInt->.Int. Either it is the struct field name or final type
+// of a composite nullable type.
+func (ts *Tables) toGoPrimitiveFromNull(c *ddl.Column) string {
+	t := ts.mySQLToGoType(c, true)
 	field := strs.ToGoCamelCase(c.Field)
 	if strings.HasPrefix(t, "null.") && t != "null.Decimal" {
 		t = field + "." + t[5:] // 5 == len("null.")
@@ -227,17 +443,9 @@ func toGoPrimitiveFromNull(c *ddl.Column) string {
 	return t
 }
 
-func toGoFuncNull(c *ddl.Column) string {
-	return mySQLToGoDmlColumnMap(c, true)
-}
+func (ts *Tables) mySQLToGoDmlColumnMap(c *ddl.Column, withNull bool) string {
 
-func toGoFunc(c *ddl.Column) string {
-	return mySQLToGoDmlColumnMap(c, false)
-}
-
-func mySQLToGoDmlColumnMap(c *ddl.Column, withNull bool) string {
-
-	gt := mySQLToGoType(c, withNull)
+	gt := ts.mySQLToGoType(c, withNull)
 	switch gt {
 	case "[]byte":
 		return "Byte"
@@ -256,45 +464,21 @@ func mySQLToGoDmlColumnMap(c *ddl.Column, withNull bool) string {
 	return string(unicode.ToUpper(r)) + gt[n:]
 }
 
-func toProto(c *ddl.Column, withNull bool) string {
+func (ts *Tables) toSerializerType(c *ddl.Column, withNull bool) string {
 
-	goType := findType(c)
+	goType := ts.findType(c)
 
 	var t string
 	switch {
 	case c.IsUnsigned() && c.IsNull() && withNull:
-		t = goType.ProtobufUnsignedNull // unsigned null
+		t = goType.SerializerUNull // unsigned null
 	case c.IsUnsigned() && (!c.IsNull() || !withNull):
-		t = goType.ProtobufUnsignedNotNull // unsigned not null
+		t = goType.SerializerUNotNull // unsigned not null
 	case !c.IsUnsigned() && c.IsNull() && withNull:
-		t = goType.ProtobufSignedNull // signed null
+		t = goType.SerializerNull // signed null
 	case !c.IsUnsigned() && (!c.IsNull() || !withNull):
-		t = goType.ProtobufSignedNotNull // signed not null
+		t = goType.SerializerNotNull // signed not null
 	}
 
 	return t
-}
-
-func toProtoType(c *ddl.Column) string {
-	pt := toProto(c, true)
-	if strings.IndexByte(pt, '/') > 0 { // slash identifies an import path
-		return "bytes"
-	}
-	return pt
-}
-
-func toProtoCustomType(c *ddl.Column) string {
-	pt := toProto(c, true)
-	var buf strings.Builder
-	if pt == "google.protobuf.Timestamp" {
-		fmt.Fprint(&buf, ",(gogoproto.stdtime)=true")
-	}
-	if c.IsNull() || strings.IndexByte(pt, '.') > 0 /*whenever it is a custom type like null. or google.proto.timestamp*/ {
-		// Indeed nullable Go Types must be not-nullable in Protobuf because we
-		// have a non-pointer struct type which contains the field Valid.
-		// Protobuf treats nullable fields as pointer fields, but that is
-		// ridiculous.
-		fmt.Fprint(&buf, ",(gogoproto.nullable)=false")
-	}
-	return buf.String()
 }

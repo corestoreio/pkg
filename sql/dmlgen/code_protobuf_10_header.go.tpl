@@ -5,6 +5,6 @@ import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 import "github.com/corestoreio/pkg/storage/null/null.proto";
 option go_package = "{{.Package}}";
-{{range $opts := .GogoProtoOptions -}}
+{{range $opts := .SerializerHeaderOptions -}}
 option {{$opts}};
 {{end}}

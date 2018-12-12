@@ -36,5 +36,6 @@
 // github.com/mattes/migrate 744 Stars
 // A migration helper written in Go. Use it in your existing Golang code or run
 // commands via the CLI.
-
+//
+// https://github.com/golang-migrate/migrate
 package migration

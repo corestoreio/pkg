@@ -3,14 +3,14 @@
 package testdata
 
 import (
-	"context"
-	"github.com/bxcodec/faker"
-	"github.com/corestoreio/pkg/sql/dmltest"
-	"github.com/corestoreio/pkg/util/assert"
-	"sort"
 	"testing"
-)
+	"context"
+	"sort"
+	"github.com/corestoreio/pkg/sql/dmltest"
+	"github.com/bxcodec/faker"
+	"github.com/corestoreio/pkg/util/assert"
 
+)
 func TestNewTables(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)

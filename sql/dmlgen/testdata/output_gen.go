@@ -4,14 +4,14 @@ package testdata
 
 import (
 	"context"
-	"sort"
-	"time"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/storage/null"
-
+	"sort"
+	"time"
 )
+
 const (
 	TableNameCoreConfigData = "core_config_data"
 	TableNameCustomerEntity = "customer_entity"
@@ -41,9 +41,9 @@ func NewTables(ctx context.Context, db dml.QueryExecPreparer, opts ...ddl.TableO
 // Auto generated.
 //easyjson:json
 type CoreConfigData struct {
-	ConfigID  uint64      `json:"config_id,omitempty"`     // config_id int(10) unsigned NOT NULL PRI  auto_increment "Id"
+	ConfigID  uint32      `json:"config_id,omitempty"`     // config_id int(10) unsigned NOT NULL PRI  auto_increment "Id"
 	Scope     string      `json:"scope,omitempty"`         // scope varchar(8) NOT NULL MUL DEFAULT ''default''  "Scope"
-	ScopeID   int64       `json:"scope_id" xml:"scope_id"` // scope_id int(11) NOT NULL  DEFAULT '0'  "Scope Id"
+	ScopeID   int32       `json:"scope_id" xml:"scope_id"` // scope_id int(11) NOT NULL  DEFAULT '0'  "Scope Id"
 	Expires   null.Time   `json:"expires,omitempty"`       // expires datetime NULL  DEFAULT 'NULL'  "Value expiration time"
 	Path      string      `json:"x_path" xml:"y_path"`     // path varchar(255) NOT NULL  DEFAULT ''general''  "Config Path overwritten"
 	Value     null.String `json:"value,omitempty"`         // value text NULL  DEFAULT 'NULL'  "Value"
@@ -54,22 +54,22 @@ type CoreConfigData struct {
 // AssignLastInsertID updates the increment ID field with the last inserted ID
 // from an INSERT operation. Implements dml.InsertIDAssigner. Auto generated.
 func (e *CoreConfigData) AssignLastInsertID(id int64) {
-	e.ConfigID = uint64(id)
+	e.ConfigID = uint32(id)
 }
 
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *CoreConfigData) MapColumns(cm *dml.ColumnMap) error {
 	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Uint64(&e.ConfigID).String(&e.Scope).Int64(&e.ScopeID).NullTime(&e.Expires).String(&e.Path).NullString(&e.Value).Time(&e.VersionTs).Time(&e.VersionTe).Err()
+		return cm.Uint32(&e.ConfigID).String(&e.Scope).Int32(&e.ScopeID).NullTime(&e.Expires).String(&e.Path).NullString(&e.Value).Time(&e.VersionTs).Time(&e.VersionTe).Err()
 	}
 	for cm.Next() {
 		switch c := cm.Column(); c {
 		case "config_id":
-			cm.Uint64(&e.ConfigID)
+			cm.Uint32(&e.ConfigID)
 		case "scope":
 			cm.String(&e.Scope)
 		case "scope_id":
-			cm.Int64(&e.ScopeID)
+			cm.Int32(&e.ScopeID)
 		case "expires":
 			cm.NullTime(&e.Expires)
 		case "path", "storage_location", "config_directory":
@@ -141,7 +141,7 @@ func (cc *CoreConfigDataCollection) MapColumns(cm *dml.ColumnMap) error {
 		for cm.Next() {
 			switch c := cm.Column(); c {
 			case "config_id":
-				cm = cm.Uint64s(cc.ConfigIDs()...)
+				cm = cm.Uint32s(cc.ConfigIDs()...)
 
 			default:
 				return errors.NotFound.Newf("[testdata] CoreConfigDataCollection Column %q not found", c)
@@ -155,9 +155,9 @@ func (cc *CoreConfigDataCollection) MapColumns(cm *dml.ColumnMap) error {
 
 // ConfigIDs returns a slice or appends to a slice all values.
 // Auto generated.
-func (cc *CoreConfigDataCollection) ConfigIDs(ret ...uint64) []uint64 {
+func (cc *CoreConfigDataCollection) ConfigIDs(ret ...uint32) []uint32 {
 	if ret == nil {
-		ret = make([]uint64, 0, len(cc.Data))
+		ret = make([]uint32, 0, len(cc.Data))
 	}
 	for _, e := range cc.Data {
 		ret = append(ret, e.ConfigID)
@@ -263,16 +263,16 @@ func (cc *CoreConfigDataCollection) Append(n ...*CoreConfigData) *CoreConfigData
 // CustomerEntity represents a single row for DB table `customer_entity`.
 // Auto generated.
 type CustomerEntity struct {
-	EntityID               uint64      // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
-	WebsiteID              null.Int64  // website_id smallint(5) unsigned NULL MUL DEFAULT 'NULL'  "Website ID"
+	EntityID               uint32      // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
+	WebsiteID              null.Uint32 // website_id smallint(5) unsigned NULL MUL DEFAULT 'NULL'  "Website ID"
 	Email                  null.String // email varchar(255) NULL MUL DEFAULT 'NULL'  "Email"
-	GroupID                uint64      // group_id smallint(5) unsigned NOT NULL  DEFAULT '0'  "Group ID"
+	GroupID                uint32      // group_id smallint(5) unsigned NOT NULL  DEFAULT '0'  "Group ID"
 	IncrementID            null.String // increment_id varchar(50) NULL  DEFAULT 'NULL'  "Increment Id"
-	StoreID                null.Int64  // store_id smallint(5) unsigned NULL MUL DEFAULT '0'  "Store ID"
+	StoreID                null.Uint32 // store_id smallint(5) unsigned NULL MUL DEFAULT '0'  "Store ID"
 	CreatedAt              time.Time   // created_at timestamp NOT NULL  DEFAULT 'current_timestamp()'  "Created At"
 	UpdatedAt              time.Time   // updated_at timestamp NOT NULL  DEFAULT 'current_timestamp()' on update current_timestamp() "Updated At"
 	IsActive               bool        // is_active smallint(5) unsigned NOT NULL  DEFAULT '1'  "Is Active"
-	DisableAutoGroupChange uint64      // disable_auto_group_change smallint(5) unsigned NOT NULL  DEFAULT '0'  "Disable automatic group change based on VAT ID"
+	DisableAutoGroupChange uint32      // disable_auto_group_change smallint(5) unsigned NOT NULL  DEFAULT '0'  "Disable automatic group change based on VAT ID"
 	CreatedIn              null.String // created_in varchar(255) NULL  DEFAULT 'NULL'  "Created From"
 	Prefix                 null.String // prefix varchar(40) NULL  DEFAULT 'NULL'  "Name Prefix"
 	Firstname              null.String // firstname varchar(255) NULL MUL DEFAULT 'NULL'  "First Name"
@@ -283,12 +283,12 @@ type CustomerEntity struct {
 	PasswordHash           null.String // password_hash varchar(128) NULL  DEFAULT 'NULL'  "Password_hash"
 	RpToken                null.String // rp_token varchar(128) NULL  DEFAULT 'NULL'  "Reset password token"
 	RpTokenCreatedAt       null.Time   // rp_token_created_at datetime NULL  DEFAULT 'NULL'  "Reset password token creation time"
-	DefaultBilling         null.Int64  // default_billing int(10) unsigned NULL  DEFAULT 'NULL'  "Default Billing Address"
-	DefaultShipping        null.Int64  // default_shipping int(10) unsigned NULL  DEFAULT 'NULL'  "Default Shipping Address"
+	DefaultBilling         null.Uint32 // default_billing int(10) unsigned NULL  DEFAULT 'NULL'  "Default Billing Address"
+	DefaultShipping        null.Uint32 // default_shipping int(10) unsigned NULL  DEFAULT 'NULL'  "Default Shipping Address"
 	Taxvat                 null.String // taxvat varchar(50) NULL  DEFAULT 'NULL'  "Tax/VAT Number"
 	Confirmation           null.String // confirmation varchar(64) NULL  DEFAULT 'NULL'  "Is Confirmed"
-	Gender                 null.Int64  // gender smallint(5) unsigned NULL  DEFAULT 'NULL'  "Gender"
-	FailuresNum            null.Int64  // failures_num smallint(6) NULL  DEFAULT '0'  "Failure Number"
+	Gender                 null.Uint32 // gender smallint(5) unsigned NULL  DEFAULT 'NULL'  "Gender"
+	FailuresNum            null.Int32  // failures_num smallint(6) NULL  DEFAULT '0'  "Failure Number"
 	FirstFailure           null.Time   // first_failure timestamp NULL  DEFAULT 'NULL'  "First Failure"
 	LockExpires            null.Time   // lock_expires timestamp NULL  DEFAULT 'NULL'  "Lock Expiration Date"
 }
@@ -296,28 +296,28 @@ type CustomerEntity struct {
 // AssignLastInsertID updates the increment ID field with the last inserted ID
 // from an INSERT operation. Implements dml.InsertIDAssigner. Auto generated.
 func (e *CustomerEntity) AssignLastInsertID(id int64) {
-	e.EntityID = uint64(id)
+	e.EntityID = uint32(id)
 }
 
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *CustomerEntity) MapColumns(cm *dml.ColumnMap) error {
 	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Uint64(&e.EntityID).NullInt64(&e.WebsiteID).NullString(&e.Email).Uint64(&e.GroupID).NullString(&e.IncrementID).NullInt64(&e.StoreID).Time(&e.CreatedAt).Time(&e.UpdatedAt).Bool(&e.IsActive).Uint64(&e.DisableAutoGroupChange).NullString(&e.CreatedIn).NullString(&e.Prefix).NullString(&e.Firstname).NullString(&e.Middlename).NullString(&e.Lastname).NullString(&e.Suffix).NullTime(&e.Dob).NullString(&e.PasswordHash).NullString(&e.RpToken).NullTime(&e.RpTokenCreatedAt).NullInt64(&e.DefaultBilling).NullInt64(&e.DefaultShipping).NullString(&e.Taxvat).NullString(&e.Confirmation).NullInt64(&e.Gender).NullInt64(&e.FailuresNum).NullTime(&e.FirstFailure).NullTime(&e.LockExpires).Err()
+		return cm.Uint32(&e.EntityID).NullUint32(&e.WebsiteID).NullString(&e.Email).Uint32(&e.GroupID).NullString(&e.IncrementID).NullUint32(&e.StoreID).Time(&e.CreatedAt).Time(&e.UpdatedAt).Bool(&e.IsActive).Uint32(&e.DisableAutoGroupChange).NullString(&e.CreatedIn).NullString(&e.Prefix).NullString(&e.Firstname).NullString(&e.Middlename).NullString(&e.Lastname).NullString(&e.Suffix).NullTime(&e.Dob).NullString(&e.PasswordHash).NullString(&e.RpToken).NullTime(&e.RpTokenCreatedAt).NullUint32(&e.DefaultBilling).NullUint32(&e.DefaultShipping).NullString(&e.Taxvat).NullString(&e.Confirmation).NullUint32(&e.Gender).NullInt32(&e.FailuresNum).NullTime(&e.FirstFailure).NullTime(&e.LockExpires).Err()
 	}
 	for cm.Next() {
 		switch c := cm.Column(); c {
 		case "entity_id", "parent_id":
-			cm.Uint64(&e.EntityID)
+			cm.Uint32(&e.EntityID)
 		case "website_id":
-			cm.NullInt64(&e.WebsiteID)
+			cm.NullUint32(&e.WebsiteID)
 		case "email":
 			cm.NullString(&e.Email)
 		case "group_id":
-			cm.Uint64(&e.GroupID)
+			cm.Uint32(&e.GroupID)
 		case "increment_id":
 			cm.NullString(&e.IncrementID)
 		case "store_id":
-			cm.NullInt64(&e.StoreID)
+			cm.NullUint32(&e.StoreID)
 		case "created_at":
 			cm.Time(&e.CreatedAt)
 		case "updated_at":
@@ -325,7 +325,7 @@ func (e *CustomerEntity) MapColumns(cm *dml.ColumnMap) error {
 		case "is_active":
 			cm.Bool(&e.IsActive)
 		case "disable_auto_group_change":
-			cm.Uint64(&e.DisableAutoGroupChange)
+			cm.Uint32(&e.DisableAutoGroupChange)
 		case "created_in":
 			cm.NullString(&e.CreatedIn)
 		case "prefix":
@@ -347,17 +347,17 @@ func (e *CustomerEntity) MapColumns(cm *dml.ColumnMap) error {
 		case "rp_token_created_at":
 			cm.NullTime(&e.RpTokenCreatedAt)
 		case "default_billing":
-			cm.NullInt64(&e.DefaultBilling)
+			cm.NullUint32(&e.DefaultBilling)
 		case "default_shipping":
-			cm.NullInt64(&e.DefaultShipping)
+			cm.NullUint32(&e.DefaultShipping)
 		case "taxvat":
 			cm.NullString(&e.Taxvat)
 		case "confirmation":
 			cm.NullString(&e.Confirmation)
 		case "gender":
-			cm.NullInt64(&e.Gender)
+			cm.NullUint32(&e.Gender)
 		case "failures_num":
-			cm.NullInt64(&e.FailuresNum)
+			cm.NullInt32(&e.FailuresNum)
 		case "first_failure":
 			cm.NullTime(&e.FirstFailure)
 		case "lock_expires":
@@ -422,7 +422,7 @@ func (cc *CustomerEntityCollection) MapColumns(cm *dml.ColumnMap) error {
 		for cm.Next() {
 			switch c := cm.Column(); c {
 			case "entity_id", "parent_id":
-				cm = cm.Uint64s(cc.EntityIDs()...)
+				cm = cm.Uint32s(cc.EntityIDs()...)
 
 			default:
 				return errors.NotFound.Newf("[testdata] CustomerEntityCollection Column %q not found", c)
@@ -436,9 +436,9 @@ func (cc *CustomerEntityCollection) MapColumns(cm *dml.ColumnMap) error {
 
 // EntityIDs returns a slice or appends to a slice all values.
 // Auto generated.
-func (cc *CustomerEntityCollection) EntityIDs(ret ...uint64) []uint64 {
+func (cc *CustomerEntityCollection) EntityIDs(ret ...uint32) []uint32 {
 	if ret == nil {
-		ret = make([]uint64, 0, len(cc.Data))
+		ret = make([]uint32, 0, len(cc.Data))
 	}
 	for _, e := range cc.Data {
 		ret = append(ret, e.EntityID)
@@ -526,12 +526,12 @@ func (cc *CustomerEntityCollection) Append(n ...*CustomerEntity) *CustomerEntity
 // Auto generated.
 //easyjson:json
 type DmlgenTypes struct {
-	ID             int64        // id int(11) NOT NULL PRI  auto_increment ""
+	ID             int32        // id int(11) NOT NULL PRI  auto_increment ""
 	ColBigint1     null.Int64   // col_bigint_1 bigint(20) NULL  DEFAULT 'NULL'  ""
 	ColBigint2     int64        // col_bigint_2 bigint(20) NOT NULL  DEFAULT '0'  ""
-	ColBigint3     null.Int64   // col_bigint_3 bigint(20) unsigned NULL  DEFAULT 'NULL'  ""
+	ColBigint3     null.Uint64  // col_bigint_3 bigint(20) unsigned NULL  DEFAULT 'NULL'  ""
 	ColBigint4     uint64       // col_bigint_4 bigint(20) unsigned NOT NULL  DEFAULT '0'  ""
-	ColBlob        null.String  // col_blob blob NULL  DEFAULT 'NULL'  ""
+	ColBlob        []byte       // col_blob blob NULL  DEFAULT 'NULL'  ""
 	ColDate1       null.Time    // col_date_1 date NULL  DEFAULT 'NULL'  ""
 	ColDate2       time.Time    // col_date_2 date NOT NULL  DEFAULT ''0000-00-00''  ""
 	ColDatetime1   null.Time    // col_datetime_1 datetime NULL  DEFAULT 'NULL'  ""
@@ -544,25 +544,25 @@ type DmlgenTypes struct {
 	ColDecimal206  null.Decimal // col_decimal_20_6 decimal(20,6) NOT NULL  DEFAULT '0.000000'  ""
 	ColDecimal2412 null.Decimal // col_decimal_24_12 decimal(24,12) NOT NULL  DEFAULT '0.000000000000'  ""
 	ColFloat       float64      // col_float float NOT NULL  DEFAULT '1'  ""
-	ColInt1        null.Int64   // col_int_1 int(10) NULL  DEFAULT 'NULL'  ""
-	ColInt2        int64        // col_int_2 int(10) NOT NULL  DEFAULT '0'  ""
-	ColInt3        null.Int64   // col_int_3 int(10) unsigned NULL  DEFAULT 'NULL'  ""
-	ColInt4        uint64       // col_int_4 int(10) unsigned NOT NULL  DEFAULT '0'  ""
+	ColInt1        null.Int32   // col_int_1 int(10) NULL  DEFAULT 'NULL'  ""
+	ColInt2        int32        // col_int_2 int(10) NOT NULL  DEFAULT '0'  ""
+	ColInt3        null.Uint32  // col_int_3 int(10) unsigned NULL  DEFAULT 'NULL'  ""
+	ColInt4        uint32       // col_int_4 int(10) unsigned NOT NULL  DEFAULT '0'  ""
 	ColLongtext1   null.String  // col_longtext_1 longtext NULL  DEFAULT 'NULL'  ""
 	ColLongtext2   string       // col_longtext_2 longtext NOT NULL  DEFAULT ''''  ""
-	ColMediumblob  null.String  // col_mediumblob mediumblob NULL  DEFAULT 'NULL'  ""
+	ColMediumblob  []byte       // col_mediumblob mediumblob NULL  DEFAULT 'NULL'  ""
 	ColMediumtext1 null.String  // col_mediumtext_1 mediumtext NULL  DEFAULT 'NULL'  ""
 	ColMediumtext2 string       // col_mediumtext_2 mediumtext NOT NULL  DEFAULT ''''  ""
-	ColSmallint1   null.Int64   // col_smallint_1 smallint(5) NULL  DEFAULT 'NULL'  ""
-	ColSmallint2   int64        // col_smallint_2 smallint(5) NOT NULL  DEFAULT '0'  ""
-	ColSmallint3   null.Int64   // col_smallint_3 smallint(5) unsigned NULL  DEFAULT 'NULL'  ""
-	ColSmallint4   uint64       // col_smallint_4 smallint(5) unsigned NOT NULL  DEFAULT '0'  ""
+	ColSmallint1   null.Int32   // col_smallint_1 smallint(5) NULL  DEFAULT 'NULL'  ""
+	ColSmallint2   int32        // col_smallint_2 smallint(5) NOT NULL  DEFAULT '0'  ""
+	ColSmallint3   null.Uint32  // col_smallint_3 smallint(5) unsigned NULL  DEFAULT 'NULL'  ""
+	ColSmallint4   uint32       // col_smallint_4 smallint(5) unsigned NOT NULL  DEFAULT '0'  ""
 	HasSmallint5   bool         // has_smallint_5 smallint(5) unsigned NOT NULL  DEFAULT '0'  ""
 	IsSmallint5    null.Bool    // is_smallint_5 smallint(5) NULL  DEFAULT 'NULL'  ""
 	ColText        null.String  // col_text text NULL  DEFAULT 'NULL'  ""
 	ColTimestamp1  time.Time    // col_timestamp_1 timestamp NOT NULL  DEFAULT 'current_timestamp()'  ""
 	ColTimestamp2  null.Time    // col_timestamp_2 timestamp NULL  DEFAULT 'NULL'  ""
-	ColTinyint1    int64        // col_tinyint_1 tinyint(1) NOT NULL  DEFAULT '0'  ""
+	ColTinyint1    int32        // col_tinyint_1 tinyint(1) NOT NULL  DEFAULT '0'  ""
 	ColVarchar1    string       // col_varchar_1 varchar(1) NOT NULL  DEFAULT ''0''  ""
 	ColVarchar100  null.String  // col_varchar_100 varchar(100) NULL  DEFAULT 'NULL'  ""
 	ColVarchar16   string       // col_varchar_16 varchar(16) NOT NULL  DEFAULT ''de_DE''  ""
@@ -573,28 +573,28 @@ type DmlgenTypes struct {
 // AssignLastInsertID updates the increment ID field with the last inserted ID
 // from an INSERT operation. Implements dml.InsertIDAssigner. Auto generated.
 func (e *DmlgenTypes) AssignLastInsertID(id int64) {
-	e.ID = int64(id)
+	e.ID = int32(id)
 }
 
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *DmlgenTypes) MapColumns(cm *dml.ColumnMap) error {
 	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Int64(&e.ID).NullInt64(&e.ColBigint1).Int64(&e.ColBigint2).NullInt64(&e.ColBigint3).Uint64(&e.ColBigint4).NullString(&e.ColBlob).NullTime(&e.ColDate1).Time(&e.ColDate2).NullTime(&e.ColDatetime1).Time(&e.ColDatetime2).Decimal(&e.ColDecimal100).Decimal(&e.ColDecimal124).Decimal(&e.Price124a).Decimal(&e.Price124b).Decimal(&e.ColDecimal123).Decimal(&e.ColDecimal206).Decimal(&e.ColDecimal2412).Float64(&e.ColFloat).NullInt64(&e.ColInt1).Int64(&e.ColInt2).NullInt64(&e.ColInt3).Uint64(&e.ColInt4).NullString(&e.ColLongtext1).String(&e.ColLongtext2).NullString(&e.ColMediumblob).NullString(&e.ColMediumtext1).String(&e.ColMediumtext2).NullInt64(&e.ColSmallint1).Int64(&e.ColSmallint2).NullInt64(&e.ColSmallint3).Uint64(&e.ColSmallint4).Bool(&e.HasSmallint5).NullBool(&e.IsSmallint5).NullString(&e.ColText).Time(&e.ColTimestamp1).NullTime(&e.ColTimestamp2).Int64(&e.ColTinyint1).String(&e.ColVarchar1).NullString(&e.ColVarchar100).String(&e.ColVarchar16).NullString(&e.ColChar1).String(&e.ColChar2).Err()
+		return cm.Int32(&e.ID).NullInt64(&e.ColBigint1).Int64(&e.ColBigint2).NullUint64(&e.ColBigint3).Uint64(&e.ColBigint4).Byte(&e.ColBlob).NullTime(&e.ColDate1).Time(&e.ColDate2).NullTime(&e.ColDatetime1).Time(&e.ColDatetime2).Decimal(&e.ColDecimal100).Decimal(&e.ColDecimal124).Decimal(&e.Price124a).Decimal(&e.Price124b).Decimal(&e.ColDecimal123).Decimal(&e.ColDecimal206).Decimal(&e.ColDecimal2412).Float64(&e.ColFloat).NullInt32(&e.ColInt1).Int32(&e.ColInt2).NullUint32(&e.ColInt3).Uint32(&e.ColInt4).NullString(&e.ColLongtext1).String(&e.ColLongtext2).Byte(&e.ColMediumblob).NullString(&e.ColMediumtext1).String(&e.ColMediumtext2).NullInt32(&e.ColSmallint1).Int32(&e.ColSmallint2).NullUint32(&e.ColSmallint3).Uint32(&e.ColSmallint4).Bool(&e.HasSmallint5).NullBool(&e.IsSmallint5).NullString(&e.ColText).Time(&e.ColTimestamp1).NullTime(&e.ColTimestamp2).Int32(&e.ColTinyint1).String(&e.ColVarchar1).NullString(&e.ColVarchar100).String(&e.ColVarchar16).NullString(&e.ColChar1).String(&e.ColChar2).Err()
 	}
 	for cm.Next() {
 		switch c := cm.Column(); c {
 		case "id":
-			cm.Int64(&e.ID)
+			cm.Int32(&e.ID)
 		case "col_bigint_1":
 			cm.NullInt64(&e.ColBigint1)
 		case "col_bigint_2":
 			cm.Int64(&e.ColBigint2)
 		case "col_bigint_3":
-			cm.NullInt64(&e.ColBigint3)
+			cm.NullUint64(&e.ColBigint3)
 		case "col_bigint_4":
 			cm.Uint64(&e.ColBigint4)
 		case "col_blob":
-			cm.NullString(&e.ColBlob)
+			cm.Byte(&e.ColBlob)
 		case "col_date_1":
 			cm.NullTime(&e.ColDate1)
 		case "col_date_2":
@@ -620,31 +620,31 @@ func (e *DmlgenTypes) MapColumns(cm *dml.ColumnMap) error {
 		case "col_float":
 			cm.Float64(&e.ColFloat)
 		case "col_int_1":
-			cm.NullInt64(&e.ColInt1)
+			cm.NullInt32(&e.ColInt1)
 		case "col_int_2":
-			cm.Int64(&e.ColInt2)
+			cm.Int32(&e.ColInt2)
 		case "col_int_3":
-			cm.NullInt64(&e.ColInt3)
+			cm.NullUint32(&e.ColInt3)
 		case "col_int_4":
-			cm.Uint64(&e.ColInt4)
+			cm.Uint32(&e.ColInt4)
 		case "col_longtext_1":
 			cm.NullString(&e.ColLongtext1)
 		case "col_longtext_2":
 			cm.String(&e.ColLongtext2)
 		case "col_mediumblob":
-			cm.NullString(&e.ColMediumblob)
+			cm.Byte(&e.ColMediumblob)
 		case "col_mediumtext_1":
 			cm.NullString(&e.ColMediumtext1)
 		case "col_mediumtext_2":
 			cm.String(&e.ColMediumtext2)
 		case "col_smallint_1":
-			cm.NullInt64(&e.ColSmallint1)
+			cm.NullInt32(&e.ColSmallint1)
 		case "col_smallint_2":
-			cm.Int64(&e.ColSmallint2)
+			cm.Int32(&e.ColSmallint2)
 		case "col_smallint_3":
-			cm.NullInt64(&e.ColSmallint3)
+			cm.NullUint32(&e.ColSmallint3)
 		case "col_smallint_4":
-			cm.Uint64(&e.ColSmallint4)
+			cm.Uint32(&e.ColSmallint4)
 		case "has_smallint_5":
 			cm.Bool(&e.HasSmallint5)
 		case "is_smallint_5":
@@ -656,7 +656,7 @@ func (e *DmlgenTypes) MapColumns(cm *dml.ColumnMap) error {
 		case "col_timestamp_2":
 			cm.NullTime(&e.ColTimestamp2)
 		case "col_tinyint_1":
-			cm.Int64(&e.ColTinyint1)
+			cm.Int32(&e.ColTinyint1)
 		case "col_varchar_1":
 			cm.String(&e.ColVarchar1)
 		case "col_varchar_100":
@@ -728,7 +728,7 @@ func (cc *DmlgenTypesCollection) MapColumns(cm *dml.ColumnMap) error {
 		for cm.Next() {
 			switch c := cm.Column(); c {
 			case "id":
-				cm = cm.Int64s(cc.IDs()...)
+				cm = cm.Int32s(cc.IDs()...)
 
 			default:
 				return errors.NotFound.Newf("[testdata] DmlgenTypesCollection Column %q not found", c)
@@ -742,9 +742,9 @@ func (cc *DmlgenTypesCollection) MapColumns(cm *dml.ColumnMap) error {
 
 // IDs returns a slice or appends to a slice all values.
 // Auto generated.
-func (cc *DmlgenTypesCollection) IDs(ret ...int64) []int64 {
+func (cc *DmlgenTypesCollection) IDs(ret ...int32) []int32 {
 	if ret == nil {
-		ret = make([]int64, 0, len(cc.Data))
+		ret = make([]int32, 0, len(cc.Data))
 	}
 	for _, e := range cc.Data {
 		ret = append(ret, e.ID)
@@ -756,16 +756,16 @@ func (cc *DmlgenTypesCollection) IDs(ret ...int64) []int64 {
 // and returns a slice or appends to a slice only unique values of that column.
 // The values will be filtered internally in a Go map. No DB query gets
 // executed. Auto generated.
-func (cc *DmlgenTypesCollection) ColBlobs(ret ...string) []string {
+func (cc *DmlgenTypesCollection) ColBlobs(ret ...[]byte) [][]byte {
 	if ret == nil {
-		ret = make([]string, 0, len(cc.Data))
+		ret = make([][]byte, 0, len(cc.Data))
 	}
 
-	dupCheck := make(map[string]bool, len(cc.Data))
+	dupCheck := make(map[[]byte]bool, len(cc.Data))
 	for _, e := range cc.Data {
-		if !dupCheck[e.ColBlob.String] {
-			ret = append(ret, e.ColBlob.String)
-			dupCheck[e.ColBlob.String] = true
+		if !dupCheck[e.ColBlob] {
+			ret = append(ret, e.ColBlob)
+			dupCheck[e.ColBlob] = true
 		}
 	}
 	return ret
@@ -813,16 +813,16 @@ func (cc *DmlgenTypesCollection) Price124as(ret ...null.Decimal) []null.Decimal 
 // and returns a slice or appends to a slice only unique values of that column.
 // The values will be filtered internally in a Go map. No DB query gets
 // executed. Auto generated.
-func (cc *DmlgenTypesCollection) ColInt1s(ret ...int64) []int64 {
+func (cc *DmlgenTypesCollection) ColInt1s(ret ...int32) []int32 {
 	if ret == nil {
-		ret = make([]int64, 0, len(cc.Data))
+		ret = make([]int32, 0, len(cc.Data))
 	}
 
-	dupCheck := make(map[int64]bool, len(cc.Data))
+	dupCheck := make(map[int32]bool, len(cc.Data))
 	for _, e := range cc.Data {
-		if !dupCheck[e.ColInt1.Int64] {
-			ret = append(ret, e.ColInt1.Int64)
-			dupCheck[e.ColInt1.Int64] = true
+		if !dupCheck[e.ColInt1.Int32] {
+			ret = append(ret, e.ColInt1.Int32)
+			dupCheck[e.ColInt1.Int32] = true
 		}
 	}
 	return ret
@@ -832,12 +832,12 @@ func (cc *DmlgenTypesCollection) ColInt1s(ret ...int64) []int64 {
 // and returns a slice or appends to a slice only unique values of that column.
 // The values will be filtered internally in a Go map. No DB query gets
 // executed. Auto generated.
-func (cc *DmlgenTypesCollection) ColInt2s(ret ...int64) []int64 {
+func (cc *DmlgenTypesCollection) ColInt2s(ret ...int32) []int32 {
 	if ret == nil {
-		ret = make([]int64, 0, len(cc.Data))
+		ret = make([]int32, 0, len(cc.Data))
 	}
 
-	dupCheck := make(map[int64]bool, len(cc.Data))
+	dupCheck := make(map[int32]bool, len(cc.Data))
 	for _, e := range cc.Data {
 		if !dupCheck[e.ColInt2] {
 			ret = append(ret, e.ColInt2)
