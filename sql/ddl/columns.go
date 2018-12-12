@@ -397,6 +397,7 @@ func (c *Column) GoComment() string {
 
 // GoString returns the Go types representation. See interface fmt.GoStringer
 func (c *Column) GoString() string {
+	// mauybe this can be removed ...
 	// fix tests if you change this layout of the returned string or rename columns.
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
@@ -538,6 +539,15 @@ func (c *Column) IsBool() (ok bool) {
 // IsString returns true if the column can contain a string or byte values.
 func (c *Column) IsString() bool {
 	return c.CharMaxLength.Valid && c.CharMaxLength.Int64 > 0
+}
+
+// IsBlobDataType returns true if the columns data type is neither blob,
+// text, binary nor json. It doesn't matter if tiny, long or small has been
+// prefixed.
+func (c *Column) IsBlobDataType() bool {
+	dt := strings.ToLower(c.DataType)
+	return strings.Contains(dt, "blob") || strings.Contains(dt, "text") ||
+		strings.Contains(dt, "binary") || strings.Contains(dt, "json")
 }
 
 // columnTypes looks ugly but ... refactor later.

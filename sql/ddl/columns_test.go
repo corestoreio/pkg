@@ -199,7 +199,7 @@ var adminUserColumns = ddl.Columns{
 	&ddl.Column{Field: "reload_acl_flag", Pos: 11, Default: null.MakeString(`0`), Null: "NO", DataType: "smallint", Precision: null.MakeInt64(5), Scale: null.MakeInt64(0), ColumnType: "smallint(6)", Comment: "Reload ACL"},
 	&ddl.Column{Field: "is_active", Pos: 12, Default: null.MakeString(`1`), Null: "NO", DataType: "smallint", Precision: null.MakeInt64(5), Scale: null.MakeInt64(0), ColumnType: "smallint(6)", Comment: "User Is Active"},
 	&ddl.Column{Field: "extra", Pos: 13, Default: null.String{}, Null: "YES", DataType: "text", CharMaxLength: null.MakeInt64(65535), ColumnType: "text", Comment: "User Extra Data"},
-	&ddl.Column{Field: "rp_token", Pos: 14, Default: null.String{}, Null: "YES", DataType: "text", CharMaxLength: null.MakeInt64(65535), ColumnType: "text", Comment: "Reset Password Link Token"},
+	&ddl.Column{Field: "rp_token", Pos: 14, Default: null.String{}, Null: "YES", DataType: "longtext", CharMaxLength: null.MakeInt64(65535), ColumnType: "text", Comment: "Reset Password Link Token"},
 	&ddl.Column{Field: "rp_token_created_at", Pos: 15, Default: null.String{}, Null: "YES", DataType: "timestamp", ColumnType: "timestamp", Comment: "Reset Password Link Token Creation Date"},
 	&ddl.Column{Field: "interface_locale", Pos: 16, Default: null.MakeString(`en_US`), Null: "NO", DataType: "varchar", CharMaxLength: null.MakeInt64(16), ColumnType: "varchar(16)", Comment: "Backend interface locale"},
 	&ddl.Column{Field: "failures_num", Pos: 17, Default: null.MakeString(`0`), Null: "YES", DataType: "smallint", Precision: null.MakeInt64(5), Scale: null.MakeInt64(0), ColumnType: "smallint(6)", Comment: "Failure Number"},
@@ -265,4 +265,13 @@ func TestColumn_IsString(t *testing.T) {
 	assert.False(t, adminUserColumns.ByField("version_ts").IsString())
 	assert.True(t, adminUserColumns.ByField("firstname").IsString())
 	assert.True(t, adminUserColumns.ByField("extra").IsString())
+}
+
+func TestColumn_IsBlobDataType(t *testing.T) {
+	t.Parallel()
+	assert.False(t, adminUserColumns.ByField("version_ts").IsBlobDataType(), "version_ts")
+	assert.False(t, adminUserColumns.ByField("firstname").IsBlobDataType(), "firstname")
+	assert.True(t, adminUserColumns.ByField("extra").IsBlobDataType(), "extra")
+	assert.True(t, adminUserColumns.ByField("rp_token").IsBlobDataType(), "rp_token")
+
 }
