@@ -497,6 +497,24 @@ func Len(t TestingT, object interface{}, length int, msgAndArgs ...interface{}) 
 	}
 }
 
+// LenBetween asserts that the specified object has a length between a lower and
+// an upper bound. LenBetween also fails if the object has a type that len() not
+// accept.
+//
+//    assert.MaxLen(t, mySlice, 3, "The size of slice is not 3")
+//
+// Returns whether the assertion was successful (true) or not (false).
+func LenBetween(t TestingT, object interface{}, min, maxLength int, msgAndArgs ...interface{}) {
+	ok, l := getLen(object)
+	if !ok {
+		Fail(t, fmt.Sprintf("\"%s\" could not be applied builtin len()", object), msgAndArgs...)
+	}
+
+	if l < min || l > maxLength {
+		Fail(t, fmt.Sprintf("\"%s\" should have a length between %d and %d, but has %d", object, min, maxLength, l), msgAndArgs...)
+	}
+}
+
 // True asserts that the specified value is true.
 //
 //    assert.True(t, myBool, "myBool should be true")

@@ -33,3 +33,9 @@ func TestExactlyLength(t *testing.T) {
 		assert.ExactlyLength(t, 6, &expected, &b)
 	})
 }
+
+func TestMaxLen(t *testing.T) {
+	sl := [10]int{}
+	assert.LenBetween(t, sl, 10, 10)
+	assert.LenBetween(t, sl, 9, 11)
+}
