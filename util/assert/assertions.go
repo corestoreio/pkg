@@ -472,12 +472,21 @@ func NotEmpty(t TestingT, object interface{}, msgAndArgs ...interface{}) {
 // return (false, 0) if impossible.
 func getLen(x interface{}) (ok bool, length int) {
 	v := reflect.ValueOf(x)
+	ok = true
 	defer func() {
 		if e := recover(); e != nil {
 			ok = false
 		}
 	}()
-	return true, v.Len()
+	switch v.Kind() {
+	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
+		return ok, int(v.Int())
+	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
+		return ok, int(v.Uint())
+	case reflect.Float32, reflect.Float64:
+		return ok, int(math.Ceil(v.Float()))
+	}
+	return ok, v.Len()
 }
 
 // Len asserts that the specified object has specific length.
@@ -502,6 +511,7 @@ func Len(t TestingT, object interface{}, length int, msgAndArgs ...interface{}) 
 // accept.
 //
 //    assert.MaxLen(t, mySlice, 3, "The size of slice is not 3")
+//    assert.MaxLen(t, myInt, 5, "The value of myInt is not smaller or equal to 5")
 //
 // Returns whether the assertion was successful (true) or not (false).
 func LenBetween(t TestingT, object interface{}, min, maxLength int, msgAndArgs ...interface{}) {
