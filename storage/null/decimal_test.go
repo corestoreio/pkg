@@ -26,6 +26,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/corestoreio/pkg/util/pseudo"
 	"github.com/gogo/protobuf/proto"
 )
 
@@ -47,6 +48,7 @@ var (
 	_ proto.Sizer                = (*Decimal)(nil)
 	_ protoMarshalToer           = (*Decimal)(nil)
 	_ sql.Scanner                = (*Decimal)(nil)
+	_ pseudo.Faker               = (*Decimal)(nil)
 )
 
 func TestMakeDecimalBytes(t *testing.T) {
@@ -528,5 +530,20 @@ func TestDecimal_Equal(t *testing.T) {
 		a := Decimal{Precision: 13, Scale: 1, Negative: true, Valid: true}
 		b := Decimal{Precision: 11, Scale: 1, Negative: true}
 		assert.False(t, a.Equal(b))
+	})
+}
+
+func TestDecimal_Fake(t *testing.T) {
+	t.Run("PrecisionStr", func(t *testing.T) {
+		d := &Decimal{}
+		hasFakeDataApplied, err := d.Fake("PrecisionStr")
+		assert.NoError(t, err)
+		assert.True(t, hasFakeDataApplied)
+	})
+	t.Run("Precision", func(t *testing.T) {
+		d := &Decimal{}
+		hasFakeDataApplied, err := d.Fake("Precision")
+		assert.NoError(t, err)
+		assert.False(t, hasFakeDataApplied)
 	})
 }

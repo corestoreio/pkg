@@ -494,3 +494,14 @@ func (d Decimal) Size() (s int) {
 	}
 	return
 }
+
+// Fake implements pseudo.Faker interface to generate custom fake data for
+// specific fields. In this case field PrecisionStr should not contain random
+// fake data at all or we need to generate correct fake data.
+func (d *Decimal) Fake(fieldName string) (hasFakeDataApplied bool, err error) {
+	switch fieldName {
+	case "PrecisionStr":
+		return true, nil
+	}
+	return false, nil
+}
