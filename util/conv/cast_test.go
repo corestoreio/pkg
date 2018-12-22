@@ -38,6 +38,18 @@ func TestToInt64(t *testing.T) {
 	assert.Exactly(t, int64(1), ToInt64(true))
 	assert.Exactly(t, int64(0), ToInt64(false))
 	assert.Exactly(t, i64_8, ToInt64(eight))
+
+	assert.Exactly(t, int64(128), ToInt64(uint8(128)))
+	assert.Exactly(t, int64(128), ToInt64(uint16(128)))
+	assert.Exactly(t, int64(128), ToInt64(uint32(128)))
+	assert.Exactly(t, int64(128), ToInt64(uint64(128)))
+	assert.Exactly(t, int64(128), ToInt64(uint(128)))
+
+	assert.Exactly(t, int64(64), ToInt64(int8(64)))
+	assert.Exactly(t, int64(128), ToInt64(int16(128)))
+	assert.Exactly(t, int64(128), ToInt64(int32(128)))
+	assert.Exactly(t, int64(128), ToInt64(int64(128)))
+	assert.Exactly(t, int64(128), ToInt64(int(128)))
 }
 
 func TestToUint(t *testing.T) {

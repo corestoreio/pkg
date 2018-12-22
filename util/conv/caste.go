@@ -307,6 +307,17 @@ func ToInt64E(i interface{}) (int64, error) {
 		return int64(s), nil
 	case int8:
 		return int64(s), nil
+	case uint:
+		return int64(s), nil
+	case uint64:
+		return int64(s), nil
+	case uint32:
+		return int64(s), nil
+	case uint16:
+		return int64(s), nil
+	case uint8:
+		return int64(s), nil
+
 	case string:
 		v, err := strconv.ParseInt(s, 0, 64)
 		if err == nil {
