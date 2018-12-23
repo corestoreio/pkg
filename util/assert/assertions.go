@@ -177,7 +177,7 @@ func messageFromMsgAndArgs(msgAndArgs ...interface{}) string {
 // Indents all lines of the message by appending a number of tabs to each line, in an output format compatible with Go's
 // test printing (see inner comment for specifics)
 func indentMessageLines(message string, tabs int) string {
-	outBuf := new(bytes.Buffer)
+	var outBuf bytes.Buffer
 
 	for i, scanner := 0, bufio.NewScanner(strings.NewReader(message)); scanner.Scan(); i++ {
 		if i != 0 {
@@ -193,7 +193,9 @@ func indentMessageLines(message string, tabs int) string {
 		}
 		outBuf.WriteString(scanner.Text())
 	}
-
+	if outBuf.Len() == 0 {
+		outBuf.WriteString(message)
+	}
 	return outBuf.String()
 }
 
