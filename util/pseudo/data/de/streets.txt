@@ -1,0 +1,1242 @@
+Gerader Steg
+Robert-Leicht-Straße
+Hoffenheimer Straße
+Jiggeler Straße
+Hermannshöhe
+Im Tann
+Moose
+Horlecke
+Am Spatzenberg
+Hans-Planer-Straße
+Lochenstraße
+Emil-Mannkopff-Straße
+Ludwig-Schmank-Str.11
+Gültlinger Straße
+Am Straßfeld
+Seehundstraße
+Poznaner Straße
+Tippelstraße
+Franz-Rupp-Straße
+Josefstraße
+Waldwinkel
+Zillerstallstraße
+Am alten Sägewerk
+Bernwies
+Rhumeweg
+Auritzer Weg
+An der Hüh
+Brühlhofstraße
+Lugweg
+Dornseifer Straße
+Am Timmerbed
+Treidlerstraße
+Im Hängelmoor
+Teilungsweg
+Am Martinsholz
+Rudliebstraße
+Lassallestraße
+Lindener Straße
+Mühlfeld
+Möllensdorfer Straße
+Rothof
+Ebelingstraße
+Crengeldanzstraße
+Ortelsburger Weg
+Heidgesberg
+Hangerstraße
+Wolfram-von-Eschenbach-Platz
+Heinrich-Kamp-Straße
+Herrengartenweg
+Sebastian-Kneipp-Platz
+Keimstraße
+Kohlenweg
+Riesener Straße
+Stetzscher Straße
+Behrmannplatz
+In den Hallen
+Ewald-Stark-Straße
+Grieshalde
+Čapkova
+Mannelstraße
+Wienser Straße
+Marktweg
+Flaßworth
+Ehestorfer Weg
+Osticker Berg
+Meissner Straße
+Hans-Eidig-Weg
+Peuerlinger Straße
+Ellerkirchstraße
+Scheuermannsweg
+Sankt-Gallener Straße
+Böllgraben
+Geigershallenweg
+Kandelweg
+Stitzweg
+Im Tiefen Tal
+Heldenberger Straße
+Thielenplatz
+Thuro-Balzer-Weg
+Christine-Koch-Weg
+Böddeken
+Kießlingerstraße
+Zum Lohr
+Saarstraße/Leonhardstraße
+Unterer Weiler
+Töpferring
+August-Sunke-Straße
+Eugen-zur-Nieden-Ring
+Markelo-Platz
+Am Rothsiefen
+Hohenhausgasse
+Wilhelmshavener Heerstraße
+Bergenstraße
+Schlappengasse
+Frenshofer Weg
+Occostraße
+Arnold-Huppertz-Straße
+Hennentalweg
+Zur Festung
+Dammannstraße
+Am Sioniterhof
+Kortemickestraße
+Heisterbusch
+Tornauer Weg
+Untere Burggasse
+Harreshof
+Kreuzäckerweg
+Maurenstraße
+Aschach
+Schneider-Wibbel-Gasse
+Doktor-Walter-Bruch-Straße
+Kühbachstraße
+Wertchenstraße
+Salzweg
+Röhringstraße
+Fenner Straße
+Kersbacher Straße
+Lingnerallee
+Wiesbeek
+Von-Witzleben-Allee
+Wocklum
+Lehmkuhlenbusch
+Im Fischerkamp
+Vor-dem-Jechator
+Natt
+Paradieser Weg
+Schiebestraße
+Mülheimer Ufer
+Egliseestrasse
+Wirtelstraße
+Am Weidenesch
+Edith-Ennen-Straße
+Abt-Wolfram-Ring
+Togostraße
+Pöppelstraße
+Am Brechfeld
+Otterweg
+Seehof
+Willy Brandt Straße
+Am Bahneinschnitt
+Hagenzeller Weg
+Renoirallee
+Kaspar-Schleibner-Straße
+Silberdistelweg
+Schwartauer Landstraße
+Noerdlicher Zubringer
+Von-Röntgen-Straße
+Lenach
+Lohwasen
+Bornaer Chausee / Silberschacht
+Charitéplatz
+Treppenweg
+Allee am Röthelheimpark
+Koppleiten
+Etschweg
+Orthstraße
+Maschkuhlen
+In der Röthe
+Slevogtweg
+Sandfortskamp
+Conrad-Niermann-Straße
+Volzstraße
+Flunkgasse
+Am Ludelbach
+Magnikirchstraße
+Balteshof
+Auf den Wöörden
+Op de Borg
+Chausseehaus
+Schmuckerweg
+Harsefelder Straße
+Über dem Heckenfeld
+Elfbuchenstraße
+Auf der Schanzen
+Handwerkerzentrum
+Groß Erlach
+Kalkhüttenweg
+Südstrand
+Scholvinstraße
+Stahlwerkstraße
+Constantin-Kirchhoff-Straße
+Am Fischhaus
+Die Galgenhohl
+De-Vos-Straße
+Dr.-Siegfried-Straße
+Hemminger Straße
+A76 --> Heerlen
+Dettumer Straße
+Am Kiebitzmoor
+Stoffeler Kapellenweg
+Humbrink
+Roßlebener Straße
+Meifortweg
+Hohenwarther Straße
+Kleine Adlerstraße
+Falkensteinplatz
+Niersstraße
+Zahnstraße
+Am Ulmenrück
+Schreckelberger Weg
+Am Römerkanal
+Brettermarkt
+Almfeld
+Pertolzhofener Straße
+Rothenberger Straße
+Osterbrink
+Enderstraße
+Senner Marktplatz
+Am Eschenbach
+Zum Hirtengütl
+Am Fasanengarten
+Meiendorfer Mühlenweg
+Stellmoorweg
+Lüdinghauserstraße
+Nedderfeld
+Im Knappestück
+Arno-Schreiter-Straße
+Oggenhauser Straße
+Haslauerstraße
+Am Tucherpark
+Rembergstraße
+Zum hohlen Morgen
+Zweigstraße
+Kuhmühle
+Mettnaustraße
+Badestraße
+Tegelkamp
+Sankt-Ursula Straße
+Zum Ihnedieck
+Am Haldenberg
+Doomerstraße
+Hans-Grade-Straße
+Bruno-Heide-Straße
+Guardinistraße
+Beesener Straße
+Denhardtstraße
+Ehbühl
+Werschenreger Straße
+Hochleiten
+Pfützäckerweg
+Eichholzweg
+Svatopluka Čecha
+An der Marienglashöhle
+Felix-Klein-Straße
+Rupert-Bodner-Straße
+Franzosen-Weg
+Op'n Klint
+Im Lufen
+Strühkamp
+Zur Quernst
+Glasbergstraße
+Kehler Weg
+Hillwartshäuserstraße
+Meinersfehner Straße
+Löhbergstraße
+Endschütz
+Elisabet-Ney-Straße
+Schonebeck
+Bäderstraße
+Strandbadweg
+Paarmanns Weg
+Altenlohe
+Grasweg
+Schäferkamp
+Dellbrücker Mauspfad
+Klinker Weg
+Massengasse
+Zur Treu
+Rotkotstraße
+Camburger Straße
+Am Hutzelberg
+Girardetstraße
+Thiatildisstraße
+Schwazer Straße
+Döbritschen
+Hornusstraße
+Schloßgrabengasse
+Reumontstraße
+A6 Nürnberg-Heinbronn
+Ostend
+Železná
+Klitzingstraße
+Burkhardtsdorfer Straße
+Am Scheiblerfeld
+Hochstraß
+Alberweiler
+Zuckerweg
+Mühlstetter Weg
+Zuckerfabrik
+Rhoneweg
+Unterer Esperweg
+Kadettweg
+Butterkamp
+Trakehnerstraße
+Poxdorf
+Hirschhorner Straße
+Hausmattenweg
+Salzau
+Ostbredenstraße 73 +
+Josef-Landes-Straße
+Pfefferstraße
+Bronntor
+Winkelmühle
+Wohldamm
+Feuerwehrplatz
+Altenstraße
+Fraulund
+Fallingbosteler Straße
+Siemensweg
+Wirthsfeld
+Satellitenweg
+Große Pfahlstraße
+Am Schulhaus
+Am Geestkamp
+Hermann-Höpker-Aschoff-Straße
+Am Erlanger Weg
+Kuhlmanns Weg
+Sittard
+Hultschiner Damm
+Auf Drei Eichen
+Zur Nette
+Am Alten Flugplatz
+Vogeliusweg
+Am Turmhof
+Alter Deichsweg
+Bevenser Weg
+Palmzeile
+Schwanden
+Bilholtstraße
+Sandfurther Straße
+Robert-Heck-Straße
+Zum Ellerbach
+Koppenplatz
+Wickrather Markt
+Alfred-Schütte-Straße
+Scherfhausen
+Richelstraße
+Steinbusch
+Auf dem Lerchenbühl
+Niegn Diek
+Pechreuther Weg
+Am Hallertor
+Ehrlichstraße
+Splintstraße
+Loebellstraße
+Nunnenbrauk
+Crutzenkirchweg
+Obere Mauerstraße
+Bäkerpfad
+Bottenhorner Weg
+Höppnerweg
+Rinscheweg
+Elsa-Brandström-Weg
+Karl-Glockner-Straße
+Fuchsengarten
+Schieloer Straße
+Bleiswijker Straße
+Mulzerstraße
+Tentweg
+Uerdinger Gerichtsweg
+In der Lahrbach
+Planitzwiese
+In der Feldmark
+Am Mitteltännicht
+Plessingstraße
+Am Roßmarkt
+Im Zemmer
+Aurorastraße
+Dreffdonk
+Amalienweg
+Auf der Rüdde
+Artur Becker Straße
+Im Ohle
+Hopfenseeweg
+Söhlbacher Weg
+Am Satz
+Johannes-Schlaf-Straße
+Moosbroksweg
+Altfriedstein
+Sonnenscheineck
+Obere Waldemey
+Lil-Dagover-Ring
+Babcockallee
+Wallstraße
+Baumgartenstraße
+Wagnerstraße
+Meteler Stiege
+Bräuberg
+Anheggerstraße
+Im Öltschen
+Pottacker
+Stoffeler Damm
+Holter Straße
+Ernst-Lehmannstraße
+Wehrbruchweg
+Alpinenstraße
+Am Gymnasium
+Berner Weg
+Hans-Oster-Straße
+Hocklenkamperstraße
+Pfarrer-Steiner-Platz
+Therese-Stählin-Straße
+Ochsenberg
+Zum Platenau
+Gleißhammerstraße
+Friedrich-Krapf-Straße
+Garibaldistraße
+Bärnsdorfer Straße
+Svobodova
+Potsdammer Chaussee
+Am Linnenbach
+Romantische Straße
+Grohmannstraße
+Max-Cahnbley-Straße
+Sassenfelder Straße
+Ernst-Lemmer-Straße
+Max-Volmer-Straße
+Tropolis
+Köngener Straße
+Benzenmühlstraße
+Stobenstraße
+Am Dammacker
+Loogeplatz
+Erich-Köhn-Straße
+Worringstraße
+Walderdorffring
+Niemeierstraße
+Licher Straße
+Papierstraße
+Rummerweg
+Neuen Berg
+Bautzmannstraße
+Hermann-Ehlers-Straße
+Windelkampsweg
+Schißlerstraße
+Ostraßeng
+Kleinburgforder Straße
+Mosbach
+Rallenstieg
+Rotkreuzstraße
+Bei St. Jost
+Oberer Weg
+Bodekamp
+Prittwitzstraße
+Charlottenburger Ufer
+Cordulastraße
+Greisenbruchstraße
+Am Lautenbach
+Sterlepperstraße
+Craimooser Straße
+Lüdenstraße
+Anton-Grimm-Straße
+Franzosenschanze
+Düstere Straße
+Erikastiege
+Arndstraße
+Schliechtstraße
+Zum Mönchtal
+Gebauerstraße
+Prüner Gang
+An der Immenburg
+Ekenisfeld
+Sander Deichweg
+Frankenbachstraße
+Ignatiusstraße
+Rekener Straße
+Elme
+Lyserstraße
+Blocksquerstraße
+Wilhelm-Kobelt-Straße
+Babendörpstieg
+Tepler Straße
+Schleifmühle
+Hiemesstraße
+Graf-Haeseler-Straße
+Hintere Töpfergasse
+Gregor-Mendel-Straße
+Kohlhäuserstraße
+Beesdau Straße der Freundschaft
+Lewer Straße
+Am Fichtenhof
+Celsiusweg
+Eppsteiner Weg
+Ooser Burgstraße
+Horning
+Leveling Straße
+Rechberghäuser Straße
+Ebner-Eschenbach-Weg
+Bürgermeister-Amann-Straße
+Pleißenbachstraße
+Lowenthal
+Hippelstraße
+Barvířská
+August-Bebel-Straße
+Ferdinand-Clasen-Straße
+Wermertshäuser Straße
+Endemannstraße
+Lübzer Straße
+Grasbergweg
+Trifftweg
+Vereinstraße
+Josef-Hösl-Straße
+Reilstraße
+Am Bergbaumuseum
+Wilhelm-Liebknecht-Platz
+Hinterlehen
+Zum Kaarbach
+Bibersaue
+Rammelsbergstraße
+Reuterweg
+Hamdorfer Weg
+Vordere Ruh
+Tøndervej
+Vennstraße
+Wartiner Straße
+Diekweg
+Peddenöde
+Münzenberg
+Vierzig-Acker-Weg
+Südparkallee
+Louis-Mendel-Straße
+Am Vierhufengut
+Liborius-Gräßmann-Straße
+An der Burg Sülz
+Abt-Lienhardt-Weg
+Starzenbachstraße
+Kornburger Hauptstraße
+Hausmannsweg
+Altlaufstraße
+Richard-Köhn-Straße
+In der Altstadt
+Wilhelm-Schuy-Straße
+Grauhofstraße
+Dechbettener Straße
+A8 Salzburg -> München
+Wandlhamerstraße
+Sophienstraße
+Ruhekopf
+Münsterblickstraße
+Am Maintor
+Alte Brücke
+Zum Kalkwerk
+Trebenweg
+Randsiedlung
+Tornéestraße
+Dunkler Weg
+Büchelstraße
+Draiser Straße
+Numbachstraße
+Schwander Straße
+Gozbertstraße
+Aulkestraße
+Stichelsdorfer Straße
+Am Fernblick
+Wupperplatz
+Brixstraße
+Sissiweg
+Wossidloweg
+Brockwinkler Weg
+Eckweg
+Greuther Straße
+Gastelshof
+Obere Bauscherstraße
+Ubjergvej
+Zacharias-Werner-Straße
+Am Nagelbach
+Kuhberg
+Deelstücke
+Bükerfeldstraße
+Untere Mühlgasse
+Gustav-Julius-Pilz-Straße
+Hanvert
+Wöhrmühle
+Am Jagdstadel
+Am Augarten
+Ottendorfer Straße
+Im Schnellenwind
+Rangierbahnhof
+Berghof
+Ferdinand-Tietz-Straße
+Krokauer Mühle
+Lohaustraße
+Lohgässele
+Krabben
+Auf der Gathe
+Nesselberg
+Gießener Straße
+Mittelberger Straße
+Am Stausee
+Kogelhof
+Gangelsgarten
+Brohltalstraße
+Oberer Brigachweg
+An den Schraan
+Turnstraße
+Golmer Chaussee
+Bouserstraße
+Otterfinger Straße
+Hermann-Jansen-Straße
+Mößnerstraße
+Alte Gärtnerei
+Altmünsterstraße
+Brokstraße
+Am Hohenhainsgarten
+Hans-Küfner-Straße
+Neundorfer Straße
+Otto-Schmidt-Straße
+Ligsalzstraße
+Im Bockeloh
+Rämplstraße
+Hunoltstraße
+Im Mitteldorf
+Pingsdorfer Straße
+Buttergasse
+Schnellweg
+Eugenie-Marlitt-Weg
+Im Schleifrad
+Am Rottfeld
+Dittestraße
+Campingstraße
+Oberanger
+Treunitz
+Hans-Holbein-Straße
+Cunnertswalder Straße
+Unterm Ziel
+Rießstraße
+Klauskamp
+Unghauser Straße
+Prinzendamm
+Hattenheimer Straße
+Walserstraße
+Vorbergstraße
+Straße der Gemeinschaft
+Am Langenberg
+Zinkengasse
+Warnemünder Weg
+Bürgermeister-Haupt-Straße
+Meldorfer Hafen
+Gellertstraße
+Grüngartenstraße
+Marrensberg
+Maitalweg
+Wiedstraße
+Hornsche Straße
+Stoib
+Krähenbüschken
+Am Campingplatz
+Bollenser Weg
+Max-Reger-Ring
+Amortplatz
+Porscheweg
+Bavenstedter Straße
+Solarstraße
+Am Schinkelplatz
+Theisseiler Straße
+Baldungstraße
+Bleichenhofstraße
+Knivsbergring
+Arno-Münch-Straße
+Ludwig-Kühn-Straße
+Sankt-Anna-Gasse
+Cauerstraße
+Am Neetzekanal
+Düsseldorfer Landstraße
+Professor-Neu-Allee
+Mehringweg
+Fritz-Lutz-Straße
+Stutensee
+Wengenstraße
+Gmelinstraße
+Wolfsau
+Am Schlehdorn
+Ferdinand-Beutel-Weg
+Zum Warburger Tor
+Höhensteig
+Auf dem Hellen Weyer
+Süseler Moor
+Am Stellbrink
+Kleingeraszell
+Amselgrund
+An der Oberen Mauer
+Horscheltstraße
+Inneboltstraße
+Ahrstraße
+Willi-Graf-Straße
+Bruchbrunnenstraße
+Wettgasse
+Wellenburg
+Vor dem Jechator
+Am Wurmel
+Fürstabt-Gerbert-Straße
+Obere Schneeburgstraße
+Häuseläckerweg
+Am Riemerskamp
+Steinerne Kirche
+Simon-von-Utrecht-Straße
+Pionierweg
+Giechkröttendorf
+Ursinger Straße
+Fuchspass
+Liningstraße
+Lange Riede
+Schönau
+Geislinger Weg
+Schellenbruckplatz
+Orlandostraße
+An den Reben
+Greisingstraße
+Am Brückelchen
+Engelsföhr
+Vaakerweg
+Zu Thiemanns Kuhle
+Im Feldpütz
+Untere Käppelesstraße
+Osnabücker Landstraße
+Musterbahn
+Zwolle-Allee
+Heinkelmannstraße
+Flürener Weg
+Am Trienensiepen
+Veseder Straße
+Freiherr-von-Hundbiss-Straße
+Vogteiweg
+Oettinghäuser Straße
+Im Wiesenfeld
+Philipp-Foltz-Straße
+Am Haidchensberg
+Leergasse
+Krähensaal
+Rens Sønderåvej
+Am Kayweg
+Allofskamp
+Zum Schatthütle
+Nonnweiler Straße
+Landshamer Straße
+Zschopenweg
+Gangesallee
+Leisewitzstraße
+De-Smit-Straße
+Levester Straße
+Schwalbenstraße
+Mühlheimer Straße
+Jürgensallee
+Am Fuchsloch
+Rachel Straße
+Püttnerstraße
+Im Flutgraben
+Rheinhöhe
+Kleine Münsterstraße
+Loehwies
+Edelhofweg
+Im Semmichbache
+Messeler Straße
+Ravensberger Straße
+Hospeltstraße
+Joseph-Wild-Straße
+Karl-Böhm-Straße
+Hersbrucker Straße
+Pfeuferstraße
+Bremer Heerstraße
+Graal-Müritzer-Straße
+Jacobäer Straße
+Nisterstraße
+Zitadellenweg
+Mindelstraße
+Moorkulturstraße
+Wandsbeker Zollstraße
+Obere Waldplätze
+Wintershallstraße
+Kiebitzkoppel
+Anette-Thoma-Weg
+Hatzevennstraße
+Marcus-Heinemann-Straße
+Nieuwpoorter Straße
+Haberstraße
+Werdlinstraße
+Goldkäferweg
+Kurze Wehme
+Geroldsauer Straße
+Im Haun
+Habichtstraße
+Ständehausstraße
+Luise-Kiesselbach-Platz
+Ohlauer Weg
+Lechweg
+Arminstraße
+Sandkampstraße
+Untere Karlstraße
+team Allee
+Im Kreuzfeld
+Lettengasse
+Mainzerhofstraße
+Am Eulenschlag
+Gambrinusstraße
+Kick-Rasel-Straße
+Attenbergstraße
+Pegnitztalstraße
+Temnitz-Park-Chaussee
+Bertha-von-Suttner-Platz
+Bacchusstraße
+Büthersworthstraße
+Hüllbergstraße
+Marterleiten
+Mühlenbrink
+Nowackanlage
+Degenershausen
+Hanstorfer Straße
+Feyerabendstraße
+Hochbühlstraße
+Am Drachenhain
+Borchallee
+Oderweg
+Wennerbergstraße
+Viehweidweg
+Valentin-Streuber-Straße
+Schwartmoorallee
+Vochemer Straße
+Im Gibitzental
+Am Hauenboden
+Chemnitzer Straße
+Sindelfinger Straße
+Volkartshainer Weg
+Sonnenweg
+Domshove
+Am Viehbach
+Georg-Pfandzelter-Straße
+Klinge
+Riedlingser Straße
+Hanna-Kunath-Straße
+Otto-Lilienthal-Straße
+Peter-Kintgen-Straße
+Teuringer Straße
+Gesenhofstraße
+Im Backesgarten
+Süderdünenring
+Feldschmiedekamp
+Joseph-Herzfeld-Straße
+Lorenzlust
+Wulferdingheide
+Söternstraße
+Karl-Blechen-Straße
+Füllergasse
+Katzenbruchstraße
+St.-Heinrich-Straße
+Jutta-Balk-Straße
+Gebhard-Huber-Straße
+Angerlohstraße
+Merzbrück
+Lauterstraße
+Urfahrnstraße
+Am Irlenspahn
+Wessobrunner Weg
+Sohnreystraße
+Loekamptor
+Karl-Pabst-Straße
+Nördlinger Straße
+Am Bostelberg
+Posthornstraße
+Kleinseebacher Straße
+Im Hegen
+Klaus-Konrad-Straße
+Erdmannsdorffstraße
+Henriette-Herz-Ring
+An der Litt
+Manhardtwinkl
+Weibermarkt
+Franzstraße
+Stoltenberag
+Auf dem Campus
+Privatweg
+Am Inn
+Köhlerstrat
+Thusneldastraße
+Schwarze Brede
+Reuschstraße
+Abbachstraße
+Talhof
+Waldhäuser
+Hinterm Knick
+Am Hutfeld
+Sendener Straße
+Bongarten
+Memlingstraße
+Schmiederstraße
+Wäscherzell
+Werdohler Weg
+An der Akademie
+Am Kuhkamp
+Zum Handwerkszentrum
+Weizacker Straße
+Im Bruch
+Neben den Mühlweg
+Dr.-Eugen-Schön-Straße
+Wäldern
+Wiesenaue
+Rumpffsweg
+Alte Lohmarer Straße
+Mittelbacher Straße
+Wilhelm-Carl-Schreiber-Straße
+Adam-Mann-Straße
+Börnestraße
+Bierhoffstraße
+Am Giesen
+Klombeckstraße
+Feldmohnstraße
+Saline
+Pfortenäckerweg
+Klüver-Kamp
+Elisabeth-Selbert-Straße
+Ziegelfeldstraße
+Bottenäckerstraße
+Ernst-Heinkel-Straße
+Steinkaute
+Schwabachanlage
+Am Brunnbach
+Karl-Sting-Straße
+Griechischer Weg
+Süderdeichsweg
+Jötunsteig
+Eichhorstweg
+Ohner Straße
+Dannenberger Landstraße
+Wttenberger Straße
+Wirteltorplatz
+Christian-Peicke-Straße
+Auf den Bühlen
+Heidelbeergasse
+Pfaffenweg
+Hohnweg
+Im Lappenbusch
+Dweerkamp
+Markus-Ruf-Straße
+Ernst-Heinkel-Weg
+Eichenknick
+Im Hasenwinkel
+Von-Orsbeck-Straße
+Kartäusertor
+Neue Parsteiner Straße
+Palnkamer Straße
+Kap-Horn-Straße
+Ammensleber Straße
+Obere Wank
+Bei der Schilleroper
+Philippine-Welser-Straße
+Hildenweg
+Josef-Kitz-Straße
+Domhof
+Konrad-Zuse-Straße
+von-Vincke-Straße
+Am Schießeck
+Tigerstraße
+Erlgarten
+Riesenweg
+An't Pumpwark
+Dachsweg
+Hainhäuser Weg
+Wattmannstraße
+Radweg Sonnenstraße
+Mennwarthstraße
+Berthastraße
+Verwellengrund
+Am Radweg
+Kleekamp
+Ruthertal
+Hülsweg
+Im Seelach
+Südender Straße
+Am Tännig
+Rheinstraße 16a
+Kreuzgartenstraße
+An der Stauerklinik
+Sommerland
+Biemker Straße
+Buchschwabacher Straße
+Am Denkmal
+Sandweierer Straße
+Orangeriestraße
+Weißgerberstraße
+Zur kleinen Schleuse
+Kleiner Dänholm
+Im Turmfeld
+Passmannweg
+Nikolskoer Weg
+Johann-Sebastian-Bach
+Schöffleiten
+An den Pappeln
+Mylauer Straße
+Molenkiekergang
+Schuckerstraße
+Moos
+Dietzing
+Willi-Geldmacher-Straße
+Prosiker Kreisstraße
+Ziegelbachklinge
+Pfarrgarten
+Am Rabenknapp
+Kanzlei
+Elly-Heuss-Knapp-Weg
+Ida-Ehre-Platz
+Niederrheinische Straße
+Scharrnstraße
+Quantwick
+Kobeliusweg
+Hans-Hinrichs-Straße
+Fellinghausener Straße
+Neutzer Straße
+Putjatinstraße
+Gleißentalstraße
+Rudolf-Trache-Straße
+Dürnbachstraße
+Grimm-Privatweg
+Kranzlstraße
+Krokelstraße
+Baiertaler Straße
+Hasseldieksdammer Weg
+Hochthümer Straße
+Auf Gitzem
+Im Vennbahnbogen
+Im Hoerm
+Stefanstraße
+Kleinsachsenheimer Straße
+Westerrode
+Gebrüder-Münch-Straße
+Im Heestern
+Bockgasse
+Altenhagener Straße
+Gänseblümchenweg
+Lachtrupstraße
+Vor den Tannen
+Hopmannstraße
+Magnussenstraße
+Lüdorf
+Julius-Bender-Straße
+Fruchtmarkt
+Ostergasse
+Fallersleber-Tor-Wall
+Gewerbegebiet West
+Postreitergasse
+Salenhofweg
+Unterweilerer Weg
+Heidweg
+Dellbrücker Straße
+Zußdorfer Straße
+Schneebergweg
+Porzellinergasse
+Oberdorfer Weg
+Wurmkamp
+Himmeläckerring
+Kreuzung Notpfortenstraße/Ritterstraße
+An der Dammheide
+St.-Jürgen-Weg
+Osterwarf
+Schloßberg
+Päpinghauser Straße
+Pfälzische Straße
+Unter dem Bogen
+August-Seidel-Straße
+Flaschenstraße
+Wanda-Oesau-Straße
+Brumleystraße
+Am Rosenhügel
+Herborner Weg
+Max-Joseph-Weg
+Banngarten Straße
+Königsförder Straße
+Im Borne
+Lüttenglehn
+Sankt-Hubertus-Straße
+Vor dem Lauch
+An der Hören
+Domberg
+Oefelestraße
+Max-Halbe-Straße
+Von-Kluck-Straße
+Burgundenplatz
+Bleibtreuplatz
+Kirchbühl
+Windorfer Straße
+Prof.-Urban-Straße
+Europaplatz
+Heinrichsthaler Straße
+Klarweinstraße
+Holbacher Dorfstraße
+Kleine Sandkaul
+Gehsenweg
+Jakobuskirchplatz
+Matthesstraße
+Niederwiesenring
+Am Sportzentrum
+Ermelesstraße
+Wolftalstraße
+Am Mühlenstieg
+Am Spitzgarten
+Elisabeth-Treskow-Platz
+Ludwig-Erk-Platz
+Am Schulweg
+Kirnitzschtalstraße
+Willebadessener Straße
+Aalfang
+Niedernfeldstraße
+Neuhauser Hauptstraße
+Zum Mandelschlag
+Müllerkamp
+Friedrich-Hebbel-Weg
+Von-der-Heydt-Straße
+Werner-Rummelt-Straße
+Ümminger Straße
+Arheilger Straße
+Hammer Steindamm
+Billrothstraße
+Haydnweg
+Georg-Wolf-Straße
+Brennaborstraße
+Braunselweg
+Geschwornenweg
+Birkerfeld
+Am Zweng
+Cunnersdorfer Straße
+Weidenbusch
+Zum Tannenberg
+Josef-Schwartz-Straße
+Albertus-Magnus-Platz
+Umgehungsstraße
+St.-Josef-Straße
+Joseph-Schmidt-Straße
+Jürnweg
+Am Eichenweall
+Kofeldhöhe
+Balthasargäßchen
+In der Straßwies
+Kothersgasse
+Am Mieler Berg
+Tutenweg
+Berufsschulstraße
+1. Kirchstraße
+Trockener Kamp
+Josef-Schröder-Straße
+Himbeerweg
+Erlenhof
+Fettigstraße
+Walkürenweg
+Am Fuhrenkamp
+Stadtstraße
+Lutzehof
+Zum Düffenbroich
+Werder Platz
+Weißkirchenweg
+Violenstraße
+Schwellhäusl
+Schlangenzahl
+Oestertalstraße
+Höngesberg
+Resedenweg
+Obere Hausbergstraße
+Am Kaltenborn
+Schützweg
+Lorsbachstraße
+Kiesweg
+Sökelandstraße
+Werrenstraße
+Dr.-Krause-Straße
+Heetbarg
+Dycker Straße
+Pigagestraße
+Geißenweide
+Lauerhofstraße
+Jan-von-Werth-Straße
+Friedrich-Wolf-Straße
+Dörnerzaunstraße
+Bischhäuser Straße
+Großgörschener Straße
+Wolfsangerstraße
+Am Sibichen
+Mitterandstraße
+Förstleinweg
+Adolfsstraße
+Singoldstraße
+Heddinghäuser Straße
+Daxenäckerweg
+Zoppotweg
+Kupferwiesenstraße
+Berckhusenstraße
+Schülperstraße
+Lettberger Straße
+Jessnerstraße
+Wiefelsteder Straße
+Sonntagsstraße
+Maisteig
+Am Westschnellweg
+Lowetscher Straße
+Alkorstraße
+Zollhausstraße
+Planegger Straße
+Elsterbogen
+Leschen
+Arno-Esch-Straße
+Franz-Zebisch-Straße
+Schneizlreuth
+Im Kohlpfad
+Am Brüllenden Löwen
+Mauerseglerstraße
+Josef-Haydn-Straße
+Bauhausplatz
+Hiller-von-Gaertringen-Straße
+Breitehornweg
+Dorfäcker Weg
+Lingese Talsperre
+Alfred-Schrapel-Straße
+Beim Grenzgraben
+Steinbrink
+Holzebene
+Eberhardplatz
+Untere Brauhausstraße
+Ludwig-Kegel-Straße
+Cambener Weg
+Landstrasse
+Im Strutfeld
+Lomnická
+Zollernweg
+Hellerwiese
+Hannberger Straße
+Reußengraben
+Lämmchesgasse
+Kunigundestraße
+Leonie
+Goetzstraße
+Aidseestraße
+Stattlerstraße
+Höhgasse
+Am Löwendenkmal
+Hemmersweg
+Küßnachtstraße
+Halle-Kasseler-Straße
+Scherer-Passage
+Maria Einsiedel
+Zum Reiser
+Zum Wöhren
+Deutelmosser Straße
+Nollenweg
+In den Wellen
+Ulrich-Mair-Straße
+Osteeler Campen
