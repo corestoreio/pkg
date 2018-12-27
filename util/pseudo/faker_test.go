@@ -124,7 +124,7 @@ type NotTaggedStruct struct {
 }
 
 func TestFakerData(t *testing.T) {
-	s := NewService(0, nil)
+	s := MustNewService(0, nil)
 	var a SomeStruct
 	err := s.FakeData(&a)
 	assert.NoError(t, err, "\n%+v", err)
@@ -152,19 +152,18 @@ func TestFakerData(t *testing.T) {
 }
 
 func TestUnsuportedMapStringInterface(t *testing.T) {
-	s := NewService(0, nil)
+	s := MustNewService(0, nil)
 
 	type Sample struct {
 		Map map[string]interface{}
 	}
 	sample := new(Sample)
-	if err := s.FakeData(sample); err == nil {
-		t.Error("Expected Got Error. But got nil")
-	}
+	err := s.FakeData(sample)
+	assert.True(t, errors.NotSupported.Match(err), "%+v", err)
 }
 
 func TestSetDataIfArgumentNotPtr(t *testing.T) {
-	s := NewService(0, nil)
+	s := MustNewService(0, nil)
 	temp := struct{}{}
 	err := s.FakeData(temp)
 	assert.True(t, errors.NotSupported.Match(err), "%+v", err)
@@ -172,7 +171,7 @@ func TestSetDataIfArgumentNotPtr(t *testing.T) {
 
 func TestSetDataIfArgumentNotHaveReflect(t *testing.T) {
 	temp := func() {}
-	s := NewService(0, nil)
+	s := MustNewService(0, nil)
 	err := s.FakeData(temp)
 	assert.True(t, errors.NotSupported.Match(err), "%+v", err)
 }
@@ -182,7 +181,7 @@ func TestSetDataErrorDataParseTagStringType(t *testing.T) {
 		Test string `faker:"test"`
 	}{}
 	t.Logf("%+v ", temp)
-	s := NewService(0, nil)
+	s := MustNewService(0, nil)
 	if err := s.FakeData(temp); err == nil {
 		t.Error("Exptected error Unsupported tag, but got nil")
 	}
@@ -192,7 +191,7 @@ func TestSetDataErrorDataParseTagIntType(t *testing.T) {
 	temp := &struct {
 		Test int `faker:"test"`
 	}{}
-	s := NewService(0, nil)
+	s := MustNewService(0, nil)
 	if err := s.FakeData(temp); err == nil {
 		t.Error("Exptected error Unsupported tag, but got nil")
 	}
@@ -200,27 +199,27 @@ func TestSetDataErrorDataParseTagIntType(t *testing.T) {
 
 func TestSetDataWithTagIfFirstArgumentNotPtr(t *testing.T) {
 	temp := struct{}{}
-	s := NewService(0, nil)
-	err := s.setDataWithTag(reflect.ValueOf(temp), "", 0)
+	s := MustNewService(0, nil)
+	err := s.setDataWithTag(reflect.ValueOf(temp), "", 0, false)
 	assert.True(t, errors.NotSupported.Match(err), "%+v", err)
 }
 
 func TestSetDataWithTagIfFirstArgumentSlice(t *testing.T) {
 	temp := []int{}
-	s := NewService(0, nil)
-	err := s.setDataWithTag(reflect.ValueOf(&temp), "", 0)
+	s := MustNewService(0, nil)
+	err := s.setDataWithTag(reflect.ValueOf(&temp), "", 0, false)
 	assert.True(t, errors.NotFound.Match(err), "%+v", err)
 }
 
 func TestSetDataWithTagIfFirstArgumentNotFound(t *testing.T) {
 	temp := struct{}{}
-	s := NewService(0, nil)
-	err := s.setDataWithTag(reflect.ValueOf(&temp), "", 0)
+	s := MustNewService(0, nil)
+	err := s.setDataWithTag(reflect.ValueOf(&temp), "", 0, false)
 	assert.True(t, errors.NotFound.Match(err), "%+v", err)
 }
 
 func BenchmarkFakerDataNOTTagged(b *testing.B) {
-	s := NewService(0, nil)
+	s := MustNewService(0, nil)
 	for i := 0; i < b.N; i++ {
 		a := NotTaggedStruct{}
 		err := s.FakeData(&a)
@@ -231,7 +230,7 @@ func BenchmarkFakerDataNOTTagged(b *testing.B) {
 }
 
 func BenchmarkFakerDataTagged(b *testing.B) {
-	s := NewService(0, nil)
+	s := MustNewService(0, nil)
 	for i := 0; i < b.N; i++ {
 		a := TaggedStruct{}
 		err := s.FakeData(&a)
@@ -253,7 +252,7 @@ type PointerC struct {
 }
 
 func TestStructPointer(t *testing.T) {
-	s := NewService(0, nil)
+	s := MustNewService(0, nil)
 	a := new(PointerStructB)
 	err := s.FakeData(a)
 	if err != nil {
@@ -282,7 +281,7 @@ type CustomTypeStruct struct {
 
 func TestCustomType(t *testing.T) {
 	a := new(CustomTypeStruct)
-	s := NewService(0, nil)
+	s := MustNewService(0, nil)
 	err := s.FakeData(a)
 	assert.NoError(t, err)
 	// t.Logf("A value: %+v , Somestruct Value: %+v  ", a, a)
@@ -296,7 +295,7 @@ type SampleStruct struct {
 func TestUnexportedFieldStruct(t *testing.T) {
 	// This test is to ensure that the faker won't panic if trying to fake data on struct that has unexported field
 	a := new(SampleStruct)
-	s := NewService(0, nil)
+	s := MustNewService(0, nil)
 	err := s.FakeData(a)
 
 	if err != nil {
@@ -308,7 +307,7 @@ func TestUnexportedFieldStruct(t *testing.T) {
 func TestPointerToCustomScalar(t *testing.T) {
 	// This test is to ensure that the faker won't panic if trying to fake data on struct that has field
 	a := new(CustomInt)
-	s := NewService(0, nil)
+	s := MustNewService(0, nil)
 	err := s.FakeData(a)
 
 	if err != nil {
@@ -324,7 +323,7 @@ type PointerCustomIntStruct struct {
 func TestPointerToCustomIntStruct(t *testing.T) {
 	// This test is to ensure that the faker won't panic if trying to fake data on struct that has field
 	a := new(PointerCustomIntStruct)
-	s := NewService(0, nil)
+	s := MustNewService(0, nil)
 	err := s.FakeData(a)
 
 	if err != nil {
@@ -340,7 +339,7 @@ func TestSkipField(t *testing.T) {
 		ID              int
 		ShouldBeSkipped int `faker:"-"`
 	}{}
-	s := NewService(0, nil)
+	s := MustNewService(0, nil)
 	err := s.FakeData(&a)
 
 	if err != nil {
@@ -359,29 +358,21 @@ func TestExtend(t *testing.T) {
 	a := struct {
 		ID string `faker:"test"`
 	}{}
-	s := NewService(0, nil)
-	previous := s.AddProvider("test", func(maxLen int) (interface{}, error) {
+	s := MustNewService(0, nil, WithTagFakeFunc("test", func(maxLen int) (interface{}, error) {
 		return "test", nil
-	})
-	assert.Nil(t, previous)
+	}))
 
 	assert.NoError(t, s.FakeData(&a))
-
-	if a.ID != "test" {
-		t.Error("ID should be equal test value")
-	}
+	assert.Exactly(t, "test", a.ID)
 }
 
 func TestTagAlreadyExists(t *testing.T) {
-	// This test is to ensure that existing tag cannot be rewritten
-	s := NewService(0, nil)
-	prev := s.AddProvider("email", func(maxLen int) (interface{}, error) { return "", nil })
-	assert.NotNil(t, prev)
-
+	s := MustNewService(0, nil, WithTagFakeFunc("email", func(maxLen int) (interface{}, error) { return "", nil }))
+	assert.NotNil(t, s)
 }
 
 func TestSetLang(t *testing.T) {
-	s := NewService(0, nil)
+	s := MustNewService(0, nil)
 	err := s.SetLang("ru")
 	if err != nil {
 		t.Error("SetLang should successfully set lang")
@@ -394,7 +385,7 @@ func TestSetLang(t *testing.T) {
 }
 
 func TestFakerRuWithoutCallback(t *testing.T) {
-	s := NewService(0, &Options{
+	s := MustNewService(0, &Options{
 		EnFallback: false,
 	})
 	assert.NoError(t, s.SetLang("ru"))
@@ -405,7 +396,7 @@ func TestFakerRuWithoutCallback(t *testing.T) {
 }
 
 func TestFakerRuWithCallback(t *testing.T) {
-	s := NewService(0, &Options{
+	s := MustNewService(0, &Options{
 		EnFallback: true,
 	})
 	assert.NoError(t, s.SetLang("ru"))
@@ -419,7 +410,7 @@ func TestFakerRuWithCallback(t *testing.T) {
 // This test should be run with the race detector enabled.
 func TestConcurrentSafety(t *testing.T) {
 
-	s := NewService(0, &Options{
+	s := MustNewService(0, &Options{
 		EnFallback: true,
 	})
 
@@ -458,15 +449,72 @@ type CoreConfigData struct {
 
 func TestMaxLen(t *testing.T) {
 	t.Run("CoreConfigData", func(t *testing.T) {
-		s := NewService(0, nil)
+		s := MustNewService(0, nil)
 		ccd := new(CoreConfigData)
 		assert.NoError(t, s.FakeData(ccd))
 		assert.LenBetween(t, ccd.ConfigID, 0, 10)
 		assert.LenBetween(t, ccd.Scope, 1, 8)
 		assert.LenBetween(t, ccd.ScopeID, 0, math.MaxInt32)
 		assert.LenBetween(t, ccd.Path, 1, 255)
-		assert.LenBetween(t, ccd.Value.String, 1, 65535)
+		if ccd.Value.Valid {
+			assert.LenBetween(t, ccd.Value.String, 1, 65535)
+		} else {
+			assert.Exactly(t, null.String{}, ccd.Value)
+		}
 		assert.LenBetween(t, ccd.ColBlob, 1, 65535)
 		// t.Logf("%#v", ccd.ColDecimal100)
 	})
+}
+
+type MyNullString struct {
+	String string `max_len:"10"`
+	Valid  bool
+}
+
+func TestRespectValidField(t *testing.T) {
+
+	s := MustNewService(0, &Options{
+		RespectValidField: true,
+	})
+
+	for i := 0; i < 1000; i++ {
+		ns := new(MyNullString)
+		assert.NoError(t, s.FakeData(ns))
+		if ns.Valid {
+			assert.LenBetween(t, ns.String, 1, 10)
+		} else {
+			assert.Empty(t, ns.String)
+		}
+	}
+}
+
+func TestToSnakeCase(t *testing.T) {
+	tests := []struct {
+		have, want string
+	}{
+		{"Hello", "hello"},
+		{"RegionID", "region_id"},
+		{"EntityID", "entity_id"},
+		{"PasswordToken", "password_token"},
+	}
+
+	bgwork.Wait(len(tests), func(idx int) {
+		for _, test := range tests {
+			h := toSnakeCase(test.have)
+			assert.Exactly(t, test.want, h, "Want: %q Have: %q", test.want, h)
+		}
+	})
+}
+
+type CustomerEntity struct {
+	EntityID     uint32      `max_len:"10"`  // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
+	WebsiteID    null.Uint32 `max_len:"5"`   // website_id smallint(5) unsigned NULL MUL DEFAULT 'NULL'  "Website ID"
+	Email        null.String `max_len:"255"` // email varchar(255) NULL MUL DEFAULT 'NULL'  "Email"
+	GroupID      uint32      `max_len:"5"`   // group_id smallint(5) unsigned NOT NULL  DEFAULT '0'  "Group ID"
+	Prefix       null.String `max_len:"40"`  // prefix varchar(40) NULL  DEFAULT 'NULL'  "Name Prefix"
+	Firstname    null.String `max_len:"255"` // firstname varchar(255) NULL MUL DEFAULT 'NULL'  "First Name"
+	Middlename   null.String `max_len:"255"` // middlename varchar(255) NULL  DEFAULT 'NULL'  "Middle Name/Initial"
+	Lastname     null.String `max_len:"255"` // lastname varchar(255) NULL MUL DEFAULT 'NULL'  "Last Name"
+	Dob          null.Time   // dob date NULL  DEFAULT 'NULL'  "Date of Birth"
+	PasswordHash null.String `max_len:"128"` // password_hash varchar(128) NULL  DEFAULT 'NULL'  "Password_hash"
 }

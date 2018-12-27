@@ -29,7 +29,7 @@ func (s *Service) Characters() string {
 // Word generates random word
 func (s *Service) Word(maxLen int) string {
 	wrd := s.lookup(s.o.Lang, "words", true)
-	if len(wrd) > int(maxLen) {
+	if maxLen > 0 && len(wrd) > int(maxLen) {
 		wrd = wrd[:maxLen]
 	}
 	return wrd
@@ -101,7 +101,11 @@ func (s *Service) Sentences(maxLen int) string {
 
 // Paragraph generates paragraph
 func (s *Service) Paragraph(maxLen int) string {
-	return s.SentencesN(s.r.Intn(10)+1, maxLen)
+	sn := s.SentencesN(s.r.Intn(10)+1, 0)
+	if len(sn) > maxLen {
+		sn = sn[:maxLen]
+	}
+	return sn
 }
 
 // ParagraphsN generates n paragraphs

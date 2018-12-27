@@ -24,11 +24,12 @@ later).
 package pseudo
 
 import (
-	"fmt"
 	"math"
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -66,23 +67,65 @@ const (
 	Skip = "-"
 )
 
-// FakeFunc generates new specific fake values. The returned interface{} type can only contain
-// the following primitive types:
-//
-//   uint64
-//   int64
-//   float64
-//   bool
-//   []byte
-//   string
-//   time.Time
-//
+// FakeFunc generates new specific fake values. The returned interface{} type
+// can only contain primitive types and time.Time.
 type FakeFunc func(maxLen int) (interface{}, error)
 
+// Options applied for the Service type.
 type Options struct {
 	Lang            string
 	UseExternalData bool
 	EnFallback      bool
+	TimeLocation    *time.Location // defaults to UTC
+	// RespectValidField if enabled allows to observe the `Valid bool` field of
+	// a struct. Like sql.NullString, sqlNullInt64 or all null.* types. If Valid
+	// is false, the other fields will be reset to their repective default
+	// values. Reason: All fields of a struct are getting applied with fake
+	// data, if Valid is false and the field gets written to the e.g. DB and
+	// later compared.
+	RespectValidField bool
+	// DisabledFieldNameUse if enabled avoids the usage of the field name
+	// instead of the struct tag to find out which kind of random function is
+	// needed.
+	DisabledFieldNameUse bool
+}
+
+type optionFn struct {
+	sortOrder int
+	fn        func(*Service) error
+}
+
+// WithTagFakeFunc extends faker with a new tag (or field name) to generate fake
+// data with a specified custom algorithm. It will overwrite a previous set
+// function.
+func WithTagFakeFunc(tag string, provider FakeFunc) optionFn {
+	return optionFn{
+		sortOrder: 10,
+		fn: func(s *Service) error {
+			s.mu.Lock()
+			defer s.mu.Unlock()
+			s.funcs[tag] = provider
+			return nil
+		},
+	}
+}
+
+// WithTagFakeFuncAlias sets a new alias. E.g. when WithTagFakeFunc("http",...)
+// adds a function to generate HTTP links, then calling
+// WithTagFakeFuncAlias("http","https") would say that https is an alias of the
+// http function.
+func WithTagFakeFuncAlias(tagAlias ...string) optionFn {
+	return optionFn{
+		sortOrder: 100,
+		fn: func(s *Service) error {
+			s.mu.Lock()
+			defer s.mu.Unlock()
+			for i := 0; i < len(tagAlias); i = i + 2 {
+				s.funcsAliases[tagAlias[i]] = tagAlias[i+1]
+			}
+			return nil
+		},
+	}
 }
 
 // Service provides a service to generate fake data.
@@ -97,7 +140,17 @@ type Service struct {
 	funcsAliases map[string]string // alias name => original name
 }
 
-func NewService(seed uint64, o *Options) *Service {
+// MustNewService creates a new Service but panics on error.
+func MustNewService(seed uint64, o *Options, opts ...optionFn) *Service {
+	s, err := NewService(seed, o, opts...)
+	if err != nil {
+		panic(err)
+	}
+	return s
+}
+
+// NewService creates a new fake service.
+func NewService(seed uint64, o *Options, opts ...optionFn) (*Service, error) {
 	if seed == 0 {
 		seed = uint64(time.Now().UnixNano())
 	}
@@ -109,10 +162,13 @@ func NewService(seed uint64, o *Options) *Service {
 	if o.Lang == "" {
 		o.Lang = "en"
 	}
+	if o.TimeLocation == nil {
+		o.TimeLocation = time.UTC
+	}
 
 	s := &Service{
 		langMapping: make(map[string]map[string][]string),
-		r:           rand.New(rand.NewSource(seed)),
+		r:           rand.New(&lockedSource{src: rand.NewSource(seed)}),
 		o:           *o,
 		id:          new(uint64),
 	}
@@ -181,6 +237,12 @@ func NewService(seed uint64, o *Options) *Service {
 		"first_name": func(maxLen int) (interface{}, error) {
 			return s.FirstName(), nil
 		},
+		"prefix": func(maxLen int) (interface{}, error) {
+			return s.Prefix(), nil
+		},
+		"suffix": func(maxLen int) (interface{}, error) {
+			return s.Suffix(), nil
+		},
 		"date": func(maxLen int) (interface{}, error) {
 			return s.Date(), nil
 		},
@@ -189,6 +251,9 @@ func NewService(seed uint64, o *Options) *Service {
 		},
 		"timestamp": func(maxLen int) (interface{}, error) {
 			return s.TimeStamp(), nil
+		},
+		"dob": func(maxLen int) (interface{}, error) {
+			return s.Dob18(), nil
 		},
 		"timezone": func(maxLen int) (interface{}, error) {
 			return s.TimeZone(), nil
@@ -208,14 +273,6 @@ func NewService(seed uint64, o *Options) *Service {
 		"week_day": func(maxLen int) (interface{}, error) {
 			return s.WeekDay(), nil
 		},
-
-		// YEAR               = "year"
-		// DayOfWeek          = "day_of_week"
-		// DayOfMonthTag      = "day_of_month"
-		// TIMESTAMP          = "timestamp"
-		// CENTURY            = "century"
-		// TIMEZONE           = "timezone"
-		// TimePeriodTag      = "time_period"
 
 		"sentence": func(maxLen int) (interface{}, error) {
 			return s.Sentence(maxLen), nil
@@ -238,10 +295,49 @@ func NewService(seed uint64, o *Options) *Service {
 		"word": func(maxLen int) (interface{}, error) {
 			return s.Word(maxLen), nil
 		},
+		"city": func(maxLen int) (interface{}, error) {
+			return s.City(), nil
+		},
+		"postcode": func(maxLen int) (interface{}, error) {
+			return s.Zip(), nil
+		},
+		"street": func(maxLen int) (interface{}, error) {
+			return s.StreetAddress(), nil
+		},
+		"company": func(maxLen int) (interface{}, error) {
+			return s.CompanyLegal(), nil
+		},
 	}
-	s.funcsAliases = map[string]string{}
+	s.funcsAliases = map[string]string{
+		"firstname":     "first_name",
+		"middlename":    "first_name",
+		"lastname":      "last_name",
+		"password_hash": "password",
+		"zip":           "postcode",
+		"address":       "street",
+	}
 
-	return s
+	sort.Slice(opts, func(i, j int) bool {
+		return opts[i].sortOrder < opts[j].sortOrder // ascending 0-9 sorting ;-)
+	})
+
+	for _, o := range opts {
+		if err := o.fn(s); err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+
+	// validate that the alias target exists
+	for alias, target := range s.funcsAliases {
+		if _, ok := s.funcs[alias]; ok {
+			return nil, errors.AlreadyExists.Newf("[pseudo] Alias %q already exists as a fakeFunc", alias)
+		}
+		if _, ok := s.funcs[target]; !ok {
+			return nil, errors.NotImplemented.Newf("[pseudo] Alias %q has an undefined target %q", alias, target)
+		}
+	}
+
+	return s, nil
 }
 
 // GetLangs returns a slice of available languages
@@ -314,9 +410,6 @@ func (s *Service) _lookup(lang, cat string, fallback bool) string {
 
 func (s *Service) populateSamples(lang, cat string) ([]string, error) {
 	data, err := s.readFile(lang, cat)
-
-	// fmt.Printf("%q %q\n\n%#v\n", lang, cat, data)
-
 	if err != nil {
 		return nil, err
 	}
@@ -358,19 +451,7 @@ func (s *Service) FakeData(ptr interface{}) error {
 	return nil
 }
 
-// AddProvider extend faker with tag to generate fake data with specified custom
-// algorithm. If it might overwrite a previous function, it will return the
-// previous function, otherwise nil.
-func (s *Service) AddProvider(tag string, provider FakeFunc) (previous FakeFunc) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	previous, _ = s.funcs[tag]
-	s.funcs[tag] = provider
-	return
-}
-
-func (s *Service) getValue(t reflect.Type, maxLen uint64) (_ reflect.Value, err error) {
+func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, err error) {
 
 	k := t.Kind()
 
@@ -383,15 +464,17 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (_ reflect.Value, err 
 		v := reflect.New(t.Elem())
 		val, err := s.getValue(t.Elem(), maxLen)
 		if err != nil {
-			return reflect.Value{}, err
+			return rVal, err
 		}
 		v.Elem().Set(val.Convert(t.Elem()))
 		return v, nil
 	case reflect.Struct:
 
-		switch t.String() {
+		switch ts := t.String(); ts {
 		case "time.Time":
 			ft := time.Now().Add(time.Duration(s.r.Int63n(3600 * 24 * 90)))
+			// proper way to get rid of the nano seconds
+			ft = time.Unix(ft.Unix(), 0).In(s.o.TimeLocation)
 			return reflect.ValueOf(ft), nil
 		default:
 			v := reflect.New(t).Elem()
@@ -402,14 +485,16 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (_ reflect.Value, err 
 				fkr, _ = v.Addr().Interface().(Faker)
 			}
 
+			shouldResetField := false
 			for i := 0; i < v.NumField(); i++ {
 				vf := v.Field(i)
+				fieldName := t.Field(i).Name
 				if !vf.CanSet() {
 					continue // to avoid panic to set on unexported field in struct
 				}
 				if fkr != nil {
-					if skip, err := fkr.Fake(t.Field(i).Name); err != nil {
-						return reflect.Value{}, err
+					if skip, err := fkr.Fake(fieldName); err != nil {
+						return rVal, err
 					} else if skip {
 						continue
 					}
@@ -419,27 +504,40 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (_ reflect.Value, err 
 				if maxLenTag := t.Field(i).Tag.Get(tagMaxLenName); maxLenTag != "" {
 					maxLen, err = strconv.ParseUint(maxLenTag, 10, 64)
 					if err != nil {
-						return reflect.Value{}, err
+						return rVal, err
 					}
 				}
-				switch tag {
-				case "":
+
+				fieldName = toSnakeCase(fieldName)
+				switch {
+				case tag == Skip:
+					continue
+				case tag != "":
+					if err := s.setDataWithTag(vf.Addr(), tag, maxLen, false); err != nil {
+						return rVal, errors.WithStack(err)
+					}
+				case tag == "" && !s.o.DisabledFieldNameUse && s.hasTagBasedFunc(fieldName):
+					if err := s.setDataWithTag(vf.Addr(), fieldName, maxLen, true); err != nil {
+						return rVal, errors.WithStack(err)
+					}
+				default:
 					val, err := s.getValue(vf.Type(), maxLen)
 					if err != nil {
 						return reflect.Value{}, err
 					}
 					val = val.Convert(vf.Type())
 					vf.Set(val)
-				case Skip:
-					continue
-				default:
-					err := s.setDataWithTag(vf.Addr(), tag, maxLen)
-					if err != nil {
-						return reflect.Value{}, err
-					}
 				}
 
+				if !shouldResetField && t.Field(i).Name == "Valid" && vf.Kind() == reflect.Bool && !vf.Bool() {
+					shouldResetField = true
+				}
 			}
+
+			if shouldResetField {
+				v.Set(reflect.New(t).Elem())
+			}
+
 			return v, nil
 		}
 
@@ -452,7 +550,7 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (_ reflect.Value, err 
 		for i := 0; i < v.Len(); i++ {
 			val, err := s.getValue(t.Elem(), maxLen)
 			if err != nil {
-				return reflect.Value{}, err
+				return rVal, err
 			}
 			v.Index(i).Set(val)
 		}
@@ -499,30 +597,42 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (_ reflect.Value, err 
 		for ; i < randLen; i++ {
 			key, err := s.getValue(t.Key(), maxLen)
 			if err != nil {
-				return reflect.Value{}, err
+				return rVal, err
 			}
 			val, err := s.getValue(t.Elem(), maxLen)
 			if err != nil {
-				return reflect.Value{}, err
+				return rVal, err
 			}
 			v.SetMapIndex(key, val)
 		}
 		return v, nil
 	default:
-		err := fmt.Errorf("no support for kind %+v", t)
-		return reflect.Value{}, err
+		return rVal, errors.NotSupported.Newf("[pseudo] Type %+v not supported", t)
 	}
-
 }
 
-func (s *Service) setDataWithTag(v reflect.Value, tag string, maxLen uint64) error {
+func (s *Service) hasTagBasedFunc(tag string) bool {
+	if fnAlias, ok := s.funcsAliases[tag]; ok && fnAlias != "" {
+		tag = fnAlias
+	}
+	_, ok := s.funcs[tag]
+	return ok
+}
+
+func (s *Service) setDataWithTag(v reflect.Value, tag string, maxLen uint64, tagIsFieldName bool) error {
 	if v.Kind() != reflect.Ptr {
 		return errors.NotSupported.Newf("[pseudo] Non-pointer values are not supported. Argument ptr should be a pointer.")
 	}
 
-	// TODO check if this is racy
+	// TODO check if the map access causes a race condition.
+	if fnAlias, ok := s.funcsAliases[tag]; ok && fnAlias != "" {
+		tag = fnAlias
+	}
 	fn, ok := s.funcs[tag]
-	if !ok {
+	if !ok && tagIsFieldName {
+		return nil
+	}
+	if !ok && !tagIsFieldName {
 		return errors.NotFound.Newf("[pseudo] Tag %q not found in map", tag)
 	}
 	iFaceVal, err := fn(int(maxLen))
@@ -608,4 +718,36 @@ func (s *Service) randomStringNumber(n uint64) string {
 	}
 
 	return string(b)
+}
+
+type caseCache struct {
+	mu    sync.RWMutex
+	cache map[string]string
+}
+
+var (
+	matchFirstCap    = regexp.MustCompile("(.)([A-Z][a-z]+)")
+	matchAllCap      = regexp.MustCompile("([a-z0-9])([A-Z])")
+	caseCacheService = &caseCache{cache: map[string]string{
+		"CountryID":    "country_id",
+		"EntityID":     "entity_id",
+		"PasswordHash": "password_hash",
+	}}
+)
+
+func toSnakeCase(str string) string {
+	caseCacheService.mu.RLock()
+	caStr := caseCacheService.cache[str]
+	caseCacheService.mu.RUnlock()
+	if caStr != "" {
+		return caStr
+	}
+	caseCacheService.mu.Lock()
+	defer caseCacheService.mu.Unlock()
+
+	snake := matchFirstCap.ReplaceAllString(str, "${1}_${2}")
+	snake = matchAllCap.ReplaceAllString(snake, "${1}_${2}")
+	lc := strings.ToLower(snake)
+	caseCacheService.cache[str] = lc
+	return lc
 }

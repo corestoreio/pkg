@@ -7,7 +7,7 @@ import (
 )
 
 func TestAddresses(t *testing.T) {
-	s := NewService(0, nil)
+	s := MustNewService(0, nil)
 	for _, lang := range s.GetLangs() {
 		assert.NoError(t, s.SetLang(lang))
 		t.Logf("=== %q ===", lang)
@@ -17,7 +17,7 @@ func TestAddresses(t *testing.T) {
 
 		v = s.Country()
 		t.Logf("Country %q", v)
-		assert.LenBetween(t, v, 1, 42, "Country failed with lang %s", lang)
+		assert.LenBetween(t, v, 1, 50, "Country failed with lang %s", lang)
 
 		v = s.City()
 		t.Logf("City %q", v)

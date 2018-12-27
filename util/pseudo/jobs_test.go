@@ -7,7 +7,7 @@ import (
 )
 
 func TestJobs(t *testing.T) {
-	s := NewService(0, nil)
+	s := MustNewService(0, nil)
 	for _, lang := range s.GetLangs() {
 		assert.NoError(t, s.SetLang(lang))
 
@@ -17,7 +17,7 @@ func TestJobs(t *testing.T) {
 
 		v = s.CompanyLegal()
 		t.Logf("CompanyLegal %q %q", lang, v)
-		assert.LenBetween(t, v, 1, 50, "CompanyLegal failed with lang %s", lang)
+		assert.LenBetween(t, v, 1, 70, "CompanyLegal failed with lang %s", lang)
 
 		v = s.JobTitle()
 		t.Logf("JobTitle %q %q", lang, v)
@@ -25,7 +25,7 @@ func TestJobs(t *testing.T) {
 
 		v = s.Industry()
 		t.Logf("Industry %q %q", lang, v)
-		assert.LenBetween(t, v, 1, 40, "Industry failed with lang %s", lang)
+		assert.LenBetween(t, v, 1, 50, "Industry failed with lang %s", lang)
 
 	}
 }

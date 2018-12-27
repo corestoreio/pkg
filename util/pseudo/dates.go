@@ -72,6 +72,11 @@ func (s *Service) TimeStamp() string {
 }
 
 // TimeStamp returns a time in the format 2006-01-02 15:04:05
+func (s *Service) Dob18() time.Time {
+	return time.Unix(s.RandomUnixTime(), 0).Add(-3600 * 24 * 365 * 18)
+}
+
+// TimeStamp returns a time in the format 2006-01-02 15:04:05
 func (s *Service) TimeZone() string {
 	return s.randomElementFromSliceString(timezones)
 }

@@ -7,7 +7,7 @@ import (
 )
 
 func TestLoremIpsum(t *testing.T) {
-	s := NewService(0, nil)
+	s := MustNewService(0, nil)
 	for _, lang := range s.GetLangs() {
 		assert.NoError(t, s.SetLang(lang))
 
@@ -16,7 +16,7 @@ func TestLoremIpsum(t *testing.T) {
 		t.Logf("Sentence %q", v)
 
 		v = s.Paragraph(410)
-		assert.LenBetween(t, v, 1, 410, "Paragraph failed with lang %s", lang)
+		assert.LenBetween(t, v, 1, 415, "Paragraph failed with lang %s", lang)
 		t.Logf("Paragraph %q", v)
 
 		v = s.ParagraphsN(2, 410)

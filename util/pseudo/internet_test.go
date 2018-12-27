@@ -7,7 +7,7 @@ import (
 )
 
 func TestInternet(t *testing.T) {
-	s := NewService(0, nil)
+	s := MustNewService(0, nil)
 	for _, lang := range s.GetLangs() {
 		assert.NoError(t, s.SetLang(lang))
 
@@ -21,11 +21,11 @@ func TestInternet(t *testing.T) {
 
 		v = s.DomainName()
 		t.Logf("DomainName %q", v)
-		assert.LenBetween(t, v, 1, 30, "DomainName failed with lang %s", lang)
+		assert.LenBetween(t, v, 1, 70, "DomainName failed with lang %s", lang)
 
 		v = s.EmailAddress()
 		t.Logf("EmailAddress %q", v)
-		assert.LenBetween(t, v, 1, 50, "EmailAddress failed with lang %s", lang)
+		assert.LenBetween(t, v, 1, 90, "EmailAddress failed with lang %s", lang)
 
 		v = s.EmailSubject(30)
 		t.Logf("EmailSubject %q", v)

@@ -2,27 +2,26 @@ package pseudo
 
 import (
 	"testing"
+
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestNames(t *testing.T) {
-	s := NewService(0, nil)
+	s := MustNewService(0, nil)
 	for _, lang := range s.GetLangs() {
-		s.SetLang(lang)
+		assert.NoError(t, s.SetLang(lang))
 
 		v := s.MaleFirstName()
-		if v == "" {
-			t.Errorf("MaleFirstName failed with lang %s", lang)
-		}
+		t.Logf("MaleFirstName %q", v)
+		assert.LenBetween(t, v, 1, 50, "MaleFirstName failed with lang %s", lang)
 
 		v = s.FemaleFirstName()
-		if v == "" {
-			t.Errorf("FemaleFirstName failed with lang %s", lang)
-		}
+		t.Logf("FemaleFirstName %q", v)
+		assert.LenBetween(t, v, 1, 50, "FemaleFirstName failed with lang %s", lang)
 
 		v = s.FirstName()
-		if v == "" {
-			t.Errorf("FirstName failed with lang %s", lang)
-		}
+		t.Logf("FirstName %q", v)
+		assert.LenBetween(t, v, 1, 50, "FirstName failed with lang %s", lang)
 
 		v = s.MaleLastName()
 		if v == "" {
@@ -35,9 +34,8 @@ func TestNames(t *testing.T) {
 		}
 
 		v = s.LastName()
-		if v == "" {
-			t.Errorf("LastName failed with lang %s", lang)
-		}
+		t.Logf("LastName %q", v)
+		assert.LenBetween(t, v, 1, 50, "LastName failed with lang %s", lang)
 
 		v = s.MalePatronymic()
 		if v == "" {

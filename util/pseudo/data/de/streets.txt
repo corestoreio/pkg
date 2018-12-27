@@ -10,7 +10,7 @@ Am Spatzenberg
 Hans-Planer-Straße
 Lochenstraße
 Emil-Mannkopff-Straße
-Ludwig-Schmank-Str.11
+Ludwig-Schmank-Str.
 Gültlinger Straße
 Am Straßfeld
 Seehundstraße
@@ -296,7 +296,7 @@ Poxdorf
 Hirschhorner Straße
 Hausmattenweg
 Salzau
-Ostbredenstraße 73 +
+Ostbredenstraße
 Josef-Landes-Straße
 Pfefferstraße
 Bronntor
@@ -966,7 +966,7 @@ Hülsweg
 Im Seelach
 Südender Straße
 Am Tännig
-Rheinstraße 16a
+Rheinstraße
 Kreuzgartenstraße
 An der Stauerklinik
 Sommerland

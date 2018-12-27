@@ -65,6 +65,23 @@ func (s *Service) Patronymic() string {
 	return s.patronymic(s.randGender())
 }
 
+// Prefix returns a random prefix for either a female or male, sometimes an
+// empty prefix.
+func (s *Service) Suffix() string {
+	if s.r.Intn(101)%2 == 0 {
+		return ""
+	}
+	return s.suffix(s.randGender())
+}
+
+// Prefix returns a random prefix for either a female or male, sometimes an
+// empty prefix.
+func (s *Service) Prefix() string {
+	if s.r.Intn(101)%5 == 0 {
+		return ""
+	}
+	return s.prefix(s.randGender())
+}
 func (s *Service) prefix(gender string) string {
 	return s.lookup(s.o.Lang, gender+"_name_prefixes", false)
 }

@@ -107,6 +107,8 @@ from the geniuses listed below:
 | Alex Saskevich | [util/validation](http://github.com/asaskevich/govalidator) | MIT Copyright (c) 2014  |
 | Mat Ryer and Tyler Bunnell | [util/assert](http://github.com/alecthomas/assert) or github.com/stretchr/testify | Copyright (c) 2012 - 2013  |
 | Google Youtube | [storage/lru](http://github.com/youtube/vitess) | Apache License, Version 2.0 |
+| Iman Tumorang | util/pseudo | Copyright (c) 2017 Iman Tumorang |
+| Dmitry Afanasyev | util/pseudo | Copyright (c) 2014 Dmitry Afanasyev |
 
 ## Licensing
 

@@ -7,7 +7,7 @@ import (
 )
 
 func TestDates(t *testing.T) {
-	s := NewService(0, nil)
+	s := MustNewService(0, nil)
 	for _, lang := range s.GetLangs() {
 		assert.NoError(t, s.SetLang(lang))
 

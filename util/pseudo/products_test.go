@@ -5,7 +5,7 @@ import (
 )
 
 func TestProducts(t *testing.T) {
-	s := NewService(0, nil)
+	s := MustNewService(0, nil)
 	for _, lang := range s.GetLangs() {
 		s.SetLang(lang)
 
