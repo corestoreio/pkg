@@ -617,10 +617,46 @@ func (as arguments) Interfaces(args ...interface{}) []interface{} {
 			for _, v := range vv {
 				args = append(args, int64(v))
 			}
+		case int8:
+			args = append(args, int64(vv))
+		case []int8:
+			for _, v := range vv {
+				args = append(args, int64(v))
+			}
+		case int16:
+			args = append(args, int64(vv))
+		case []int16:
+			for _, v := range vv {
+				args = append(args, int64(v))
+			}
+		case int32:
+			args = append(args, int64(vv))
+		case []int32:
+			for _, v := range vv {
+				args = append(args, int64(v))
+			}
 
 		case []int64:
 			for _, v := range vv {
 				args = append(args, v)
+			}
+		case null.Int8:
+			args = vv.Append(args)
+		case []null.Int8:
+			for _, v := range vv {
+				args = v.Append(args)
+			}
+		case null.Int16:
+			args = vv.Append(args)
+		case []null.Int16:
+			for _, v := range vv {
+				args = v.Append(args)
+			}
+		case null.Int32:
+			args = vv.Append(args)
+		case []null.Int32:
+			for _, v := range vv {
+				args = v.Append(args)
 			}
 		case null.Int64:
 			args = vv.Append(args)
@@ -636,6 +672,24 @@ func (as arguments) Interfaces(args ...interface{}) []interface{} {
 				args = append(args, strconv.AppendUint([]byte{}, vv, 10))
 			} else {
 				args = append(args, int64(vv))
+			}
+		case null.Uint8:
+			args = vv.Append(args)
+		case []null.Uint8:
+			for _, v := range vv {
+				args = v.Append(args)
+			}
+		case null.Uint16:
+			args = vv.Append(args)
+		case []null.Uint16:
+			for _, v := range vv {
+				args = v.Append(args)
+			}
+		case null.Uint32:
+			args = vv.Append(args) // TODO check all uints for overflow of MaxInt64
+		case []null.Uint32:
+			for _, v := range vv {
+				args = v.Append(args)
 			}
 		case null.Uint64:
 			args = vv.Append(args)

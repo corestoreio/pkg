@@ -136,16 +136,23 @@ const (
 // needs to be written better.
 func (b *ColumnMap) Mode() (m columnMapMode) {
 	if b.scanArgs != nil {
-		return ColumnMapScan // assign the column values from the DB to the structs and create new structs in a slice.
+		// assign the column values from the DB to the structs and create new
+		// structs in a slice.
+		return ColumnMapScan
 	}
 
 	switch b.columnsLen {
 	case 0:
-		m = ColumnMapEntityReadAll // Entity: read all mode; Collection jump into loop and pass on to Entity
+		// Entity: read all mode; Collection jump into loop and pass on to
+		// Entity.
+		m = ColumnMapEntityReadAll
 	case 1:
-		m = ColumnMapCollectionReadSet // request certain column values as a slice.
+		// request certain column values as a slice.
+		m = ColumnMapCollectionReadSet
 	default:
-		m = ColumnMapEntityReadSet // Entity: calls the for cm.Next loop; Collection jump into loop and pass on to Entity
+		// Entity: calls the for cm.Next loop; Collection jump into loop and
+		// pass on to Entity.
+		m = ColumnMapEntityReadSet
 	}
 	return m
 }
@@ -156,17 +163,18 @@ func (b *ColumnMap) Mode() (m columnMapMode) {
 // result set and binaryRows gets used when a prepared statement gets executed
 // and returns a result set. TextRows contains only byte slices whereas
 // binaryRows contains already decoded types as defined in driver.Value. Avoids
-// the reflection soup in database/sql.convertAssign.
-// The supported data types depend on the this function:
-// github.com/go-sql-driver/mysql/packets.go:1133 `func (rows *binaryRows) readRow(dest []driver.Value) error`
-// Then all the type functions (Int,String,Uint8, etc) in type ColumnMap can
-// support all of the MySQL protocol field types. Hence we can support
-// fieldTypeGeometry, fieldTypeJSON with custom decoders.
+// the reflection soup in database/sql.convertAssign. The supported data types
+// depend on the this function: github.com/go-sql-driver/mysql/packets.go:1120
+// `func (rows *binaryRows) readRow(dest []driver.Value) error` Then all the
+// type functions (Int,String,Uint8, etc) in type ColumnMap can support all of
+// the MySQL protocol field types. Hence we can support fieldTypeGeometry,
+// fieldTypeJSON with custom decoders.
+// Case for large uint64: if the DB value overflows math.MaxInt64, then it will
+// be converted to a []byte slice, otherwise we have to deal with int64
 type scannedColumn struct {
 	field   byte      // i,j,f,b,y,s,t, n == null; nothing equals null of nil/empty
 	bool    bool      // b
 	int64   int64     // i
-	uint64  uint64    // j
 	float64 float64   // f double type
 	string  string    // s
 	time    time.Time // t
@@ -177,8 +185,6 @@ func (s scannedColumn) String() string {
 	switch s.field {
 	case 'i':
 		return strconv.FormatInt(s.int64, 10)
-	case 'j':
-		return strconv.FormatUint(s.uint64, 10)
 	case 'f':
 		return strconv.FormatFloat(s.float64, 'f', -1, 64)
 	case 'b':
@@ -199,7 +205,6 @@ func (s *scannedColumn) reset() {
 	s.field = 0
 	s.bool = false
 	s.int64 = 0
-	s.uint64 = 0
 	s.float64 = 0
 	s.string = ""
 	s.time = time.Time{}
@@ -214,9 +219,6 @@ func (s *scannedColumn) Scan(src interface{}) (err error) {
 	case int64:
 		s.field = 'i'
 		s.int64 = val
-	case uint64:
-		s.field = 'j'
-		s.uint64 = val
 	case int: // sqlmock package requires this
 		s.field = 'i'
 		s.int64 = int64(val)
@@ -701,7 +703,7 @@ func (b *ColumnMap) NullUint64(ptr *null.Uint64) *ColumnMap {
 	if b.scanErr == nil {
 		switch v := b.scanCol[b.index]; v.field {
 		case 'i':
-			ptr.Uint64 = v.uint64
+			ptr.Uint64 = uint64(v.int64)
 			ptr.Valid = true
 		case 'n':
 			ptr.Uint64 = 0
@@ -733,7 +735,7 @@ func (b *ColumnMap) NullUint32(ptr *null.Uint32) *ColumnMap {
 	if b.scanErr == nil {
 		switch v := b.scanCol[b.index]; v.field {
 		case 'i':
-			ptr.Uint32 = uint32(v.uint64) // TODO check overflow
+			ptr.Uint32 = uint32(v.int64) // TODO check overflow
 			ptr.Valid = true
 		case 'n':
 			ptr.Uint32 = 0
@@ -765,7 +767,7 @@ func (b *ColumnMap) NullUint16(ptr *null.Uint16) *ColumnMap {
 	if b.scanErr == nil {
 		switch v := b.scanCol[b.index]; v.field {
 		case 'i':
-			ptr.Uint16 = uint16(v.uint64) // TODO check overflow
+			ptr.Uint16 = uint16(v.int64) // TODO check overflow
 			ptr.Valid = true
 		case 'n':
 			ptr.Uint16 = 0
@@ -797,7 +799,7 @@ func (b *ColumnMap) NullUint8(ptr *null.Uint8) *ColumnMap {
 	if b.scanErr == nil {
 		switch v := b.scanCol[b.index]; v.field {
 		case 'i':
-			ptr.Uint8 = uint8(v.uint64) // TODO check overflow
+			ptr.Uint8 = uint8(v.int64) // TODO check overflow
 			ptr.Valid = true
 		case 'n':
 			ptr.Uint8 = 0
