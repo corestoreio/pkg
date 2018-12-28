@@ -2,7 +2,9 @@ package pseudo
 
 import (
 	"sync/atomic"
+	"time"
 
+	"github.com/oklog/ulid"
 	"github.com/satori/go.uuid"
 )
 
@@ -89,11 +91,20 @@ func (s *Service) ID() uint64 {
 	return atomic.AddUint64(s.id, 1)
 }
 
+// UUID returns a UUID v4.
 func (s *Service) UUID() []byte {
 	u := uuid.Must(uuid.NewV4())
 	return u.Bytes()
 }
+
+// UUID returns a UUID v4 as string.
 func (s *Service) UUIDString() string {
 	u := uuid.Must(uuid.NewV4())
 	return u.String()
+}
+
+// ULID returns an ULID which is a 16 byte Universally Unique Lexicographically
+// Sortable Identifier.
+func (s *Service) ULID() ulid.ULID {
+	return ulid.MustNew(ulid.Timestamp(time.Now()), s.ulidEntropy)
 }

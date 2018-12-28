@@ -24,6 +24,7 @@ later).
 package pseudo
 
 import (
+	"io"
 	"math"
 	"os"
 	"path/filepath"
@@ -37,6 +38,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/conv"
+	"github.com/oklog/ulid"
 	"golang.org/x/exp/rand"
 )
 
@@ -130,9 +132,10 @@ func WithTagFakeFuncAlias(tagAlias ...string) optionFn {
 
 // Service provides a service to generate fake data.
 type Service struct {
-	r  *rand.Rand
-	o  Options
-	id *uint64
+	r           *rand.Rand
+	o           Options
+	id          *uint64
+	ulidEntropy io.Reader
 
 	mu           sync.RWMutex
 	langMapping  map[string]map[string][]string // cat/subcat/lang/samples
@@ -171,6 +174,7 @@ func NewService(seed uint64, o *Options, opts ...optionFn) (*Service, error) {
 		r:           rand.New(&lockedSource{src: rand.NewSource(seed)}),
 		o:           *o,
 		id:          new(uint64),
+		ulidEntropy: ulid.Monotonic(rand.New(rand.NewSource(seed)), 0),
 	}
 
 	s.funcs = map[string]FakeFunc{
@@ -182,6 +186,9 @@ func NewService(seed uint64, o *Options, opts ...optionFn) (*Service, error) {
 		},
 		"uuid_string": func(maxLen int) (interface{}, error) {
 			return s.UUIDString(), nil
+		},
+		"ulid": func(maxLen int) (interface{}, error) {
+			return s.ULID().String(), nil
 		},
 		"mac_address": func(maxLen int) (interface{}, error) {
 			return s.MacAddress(), nil
@@ -315,6 +322,7 @@ func NewService(seed uint64, o *Options, opts ...optionFn) (*Service, error) {
 		"password_hash": "password",
 		"zip":           "postcode",
 		"address":       "street",
+		"increment_id":  "ulid",
 	}
 
 	sort.Slice(opts, func(i, j int) bool {
@@ -572,7 +580,7 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 		return reflect.ValueOf(s.r.Float64()), nil
 
 	case reflect.Bool:
-		val := s.r.Uint64n(2) > 0
+		val := s.r.Uint64n(3) > 0 // create more true values
 		return reflect.ValueOf(val), nil
 
 	case reflect.Uint:
