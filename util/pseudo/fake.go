@@ -1,26 +1,26 @@
-/*
-package pseudo is the fake data generator for go (Golang), heavily inspired by
-forgery and ffaker Ruby gems.
-
-CoreStore: This package has been refactored to avoid package global variables
-and settings which are an anti-pattern. In a multi store/language environment a
-package global language limits everything. Also the global PRNG got eliminate
-and reduces a mutex bottle neck.
-
-Most data and methods are ported from forgery/ffaker Ruby gems.
-
-Currently english and russian languages are available.
-
-For the list of available methods please look at
-https://godoc.org/github.com/icrowley/fake.
-
-Fake embeds samples data files unless you call UseExternalData(true) in order to
-be able to work without external files dependencies when compiled, so, if you
-add new data files or make changes to existing ones don't forget to regenerate
-data.go file using github.com/mjibson/esc tool and esc -o data.go -pkg fake data
-command (or you can just use go generate command if you are using Go 1.4 or
-later).
-*/
+// package pseudo is the fake data generator, heavily inspired by
+// forgery and ffaker Ruby gems.
+//
+// CoreStore: This package has been refactored to avoid package global variables
+// and global settings which are an anti-pattern. In a multi store/language
+// environment a package global language limits everything. Also the global PRNG
+// got eliminate and reduces a mutex bottle neck. This package can also handle
+// max_len values for generated data and supports embedded structs which
+// implements sql.Scanner interface.
+//
+// Most data and methods are ported from forgery/ffaker Ruby gems.
+//
+// Currently english and russian languages are available.
+//
+// For the list of available methods please look at
+// https://godoc.org/github.com/icrowley/fake.
+//
+// Fake embeds samples data files unless you call UseExternalData(true) in order
+// to be able to work without external files dependencies when compiled, so, if
+// you add new data files or make changes to existing ones don't forget to
+// regenerate data.go file using github.com/mjibson/esc tool and esc -o data.go
+// -pkg fake data command (or you can just use go generate command if you are
+// using Go 1.4 or later).
 package pseudo
 
 import (
@@ -62,7 +62,6 @@ const (
 	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
 	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
 	letterBytes   = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	numberBytes   = "0123456789"
 	tagName       = "faker"
 	tagMaxLenName = "max_len"
 	// Skip indicates a struct tag, that the field should be skipped.
@@ -785,22 +784,6 @@ func (s *Service) randomString(n uint64) string {
 
 func (s *Service) randomElementFromSliceString(sl []string) string {
 	return sl[s.r.Int()%len(sl)]
-}
-func (s *Service) randomStringNumber(n uint64) string {
-	b := make([]byte, n)
-	for i, cache, remain := n-1, s.r.Uint64(), letterIdxMax; i >= 0; {
-		if remain == 0 {
-			cache, remain = s.r.Uint64(), letterIdxMax
-		}
-		if idx := int(cache & letterIdxMask); idx < len(numberBytes) {
-			b[i] = numberBytes[idx]
-			i--
-		}
-		cache >>= letterIdxBits
-		remain--
-	}
-
-	return string(b)
 }
 
 type caseCache struct {

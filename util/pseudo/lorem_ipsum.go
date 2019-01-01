@@ -42,8 +42,8 @@ func (s *Service) WordsN(n int, maxLen int) string {
 		words[i] = s.Word(maxLen / n)
 	}
 	wrd := strings.Join(words, " ")
-	if len(wrd) > int(maxLen) {
-
+	if maxLen > 0 && len(wrd) > int(maxLen) {
+		wrd = wrd[:maxLen]
 	}
 	return wrd
 }
