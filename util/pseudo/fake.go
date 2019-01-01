@@ -459,6 +459,10 @@ func (s *Service) FakeData(ptr interface{}) error {
 	return nil
 }
 
+type scanner interface {
+	Scan(interface{}) error
+}
+
 func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, err error) {
 
 	k := t.Kind()
@@ -496,7 +500,8 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 			shouldResetField := false
 			for i := 0; i < v.NumField(); i++ {
 				vf := v.Field(i)
-				fieldName := t.Field(i).Name
+				tf := t.Field(i)
+				fieldName := tf.Name
 				if !vf.CanSet() {
 					continue // to avoid panic to set on unexported field in struct
 				}
@@ -508,34 +513,89 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 					}
 				}
 
-				tag := t.Field(i).Tag.Get(tagName)
-				if maxLenTag := t.Field(i).Tag.Get(tagMaxLenName); maxLenTag != "" {
+				tag := tf.Tag.Get(tagName)
+				if tag == Skip {
+					continue
+				}
+
+				if maxLenTag := tf.Tag.Get(tagMaxLenName); maxLenTag != "" {
 					maxLen, err = strconv.ParseUint(maxLenTag, 10, 64)
 					if err != nil {
 						return rVal, err
 					}
 				}
-
 				fieldName = toSnakeCase(fieldName)
+
+				/* if strings.HasPrefix(tf.Type.String(), "null.") */
+				{ // relates to package github.com/corestoreio/pkg/storage/null
+
+					sTag := tag
+					if sTag == "" {
+						sTag = fieldName
+					}
+
+					if vf.CanInterface() && vf.CanAddr() {
+						if scnr, ok := vf.Addr().Interface().(scanner); ok {
+							ifaceVal, ok, err := s.getFuncsValue(sTag, maxLen)
+							if err != nil {
+								return rVal, errors.WithStack(err)
+							}
+							if ok {
+								if err := scnr.Scan(ifaceVal); err != nil {
+									return rVal, errors.WithStack(err)
+								}
+								continue
+							}
+						}
+					}
+				}
+
 				switch {
-				case tag == Skip:
-					continue
-				case tag != "":
-					if err := s.setDataWithTag(vf.Addr(), tag, maxLen, false); err != nil {
-						return rVal, errors.WithStack(err)
-					}
-				case tag == "" && !s.o.DisabledFieldNameUse && s.hasTagBasedFunc(fieldName):
-					if err := s.setDataWithTag(vf.Addr(), fieldName, maxLen, true); err != nil {
-						return rVal, errors.WithStack(err)
-					}
-				default:
+				case tag == "":
 					val, err := s.getValue(vf.Type(), maxLen)
 					if err != nil {
 						return reflect.Value{}, err
 					}
 					val = val.Convert(vf.Type())
 					vf.Set(val)
+
+				default:
+					err := s.setDataWithTag(vf.Addr(), tag, maxLen, false)
+					if err != nil {
+						return reflect.Value{}, err
+					}
 				}
+
+				// // if vf.Kind() == reflect.Struct { // embedded struct
+				// // 	if tag == "" {
+				// // 		tag = fieldName
+				// // 	}
+				// // 	val, err := s.getValue(vf.Type(), maxLen)
+				// // 	if err != nil {
+				// // 		return reflect.Value{}, err
+				// // 	}
+				// // 	val = val.Convert(vf.Type())
+				// // 	vf.Set(val)
+				// // 	continue
+				// // }
+				// switch {
+				// case tag != "":
+				// 	if err := s.setDataWithTag(vf.Addr(), tag, maxLen, false); err != nil {
+				// 		return rVal, errors.WithStack(err)
+				// 	}
+				// case tag == "" && !s.o.DisabledFieldNameUse && s.hasTagBasedFunc(fieldName):
+				// 	if err := s.setDataWithTag(vf.Addr(), fieldName, maxLen, true); err != nil {
+				// 		return rVal, errors.WithStack(err)
+				// 	}
+				// 	fmt.Printf("vf after: %#v\n", vf.Interface())
+				// default:
+				// 	val, err := s.getValue(vf.Type(), maxLen)
+				// 	if err != nil {
+				// 		return reflect.Value{}, err
+				// 	}
+				// 	val = val.Convert(vf.Type())
+				// 	vf.Set(val)
+				// }
 
 				if !shouldResetField && t.Field(i).Name == "Valid" && vf.Kind() == reflect.Bool && !vf.Bool() {
 					shouldResetField = true
@@ -619,12 +679,25 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 	}
 }
 
-func (s *Service) hasTagBasedFunc(tag string) bool {
+// func (s *Service) hasTagBasedFunc(tag string) bool {
+// 	if fnAlias, ok := s.funcsAliases[tag]; ok && fnAlias != "" {
+// 		tag = fnAlias
+// 	}
+// 	_, ok := s.funcs[tag]
+// 	return ok
+// }
+
+func (s *Service) getFuncsValue(tag string, maxLen uint64) (interface{}, bool, error) {
+	// TODO check if the map access causes a race condition.
 	if fnAlias, ok := s.funcsAliases[tag]; ok && fnAlias != "" {
 		tag = fnAlias
 	}
-	_, ok := s.funcs[tag]
-	return ok
+	fn, ok := s.funcs[tag]
+	if !ok {
+		return nil, false, nil
+	}
+	iFaceVal, err := fn(int(maxLen))
+	return iFaceVal, true, err
 }
 
 func (s *Service) setDataWithTag(v reflect.Value, tag string, maxLen uint64, tagIsFieldName bool) error {
@@ -649,7 +722,7 @@ func (s *Service) setDataWithTag(v reflect.Value, tag string, maxLen uint64, tag
 	}
 
 	v = reflect.Indirect(v)
-	switch v.Kind() {
+	switch k := v.Kind(); k {
 	case reflect.Float32, reflect.Float64:
 		val, err := conv.ToFloat64E(iFaceVal)
 		if err != nil {
@@ -686,6 +759,8 @@ func (s *Service) setDataWithTag(v reflect.Value, tag string, maxLen uint64, tag
 			return errors.WithStack(err)
 		}
 		v.SetUint(uint64(val))
+	default:
+		return errors.NotSupported.Newf("[pseudo] Kind %q not supported in setDataWithTag", k)
 	}
 
 	return nil

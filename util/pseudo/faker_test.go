@@ -2,6 +2,7 @@ package pseudo
 
 import (
 	"encoding/json"
+	"fmt"
 	"math"
 	"reflect"
 	"testing"
@@ -182,9 +183,8 @@ func TestSetDataErrorDataParseTagStringType(t *testing.T) {
 	}{}
 	t.Logf("%+v ", temp)
 	s := MustNewService(0, nil)
-	if err := s.FakeData(temp); err == nil {
-		t.Error("Exptected error Unsupported tag, but got nil")
-	}
+	err := s.FakeData(temp)
+	assert.True(t, errors.NotFound.Match(err), "%+v", err)
 }
 
 func TestSetDataErrorDataParseTagIntType(t *testing.T) {
@@ -216,28 +216,6 @@ func TestSetDataWithTagIfFirstArgumentNotFound(t *testing.T) {
 	s := MustNewService(0, nil)
 	err := s.setDataWithTag(reflect.ValueOf(&temp), "", 0, false)
 	assert.True(t, errors.NotFound.Match(err), "%+v", err)
-}
-
-func BenchmarkFakerDataNOTTagged(b *testing.B) {
-	s := MustNewService(0, nil)
-	for i := 0; i < b.N; i++ {
-		a := NotTaggedStruct{}
-		err := s.FakeData(&a)
-		if err != nil {
-			b.Fatal(err)
-		}
-	}
-}
-
-func BenchmarkFakerDataTagged(b *testing.B) {
-	s := MustNewService(0, nil)
-	for i := 0; i < b.N; i++ {
-		a := TaggedStruct{}
-		err := s.FakeData(&a)
-		if err != nil {
-			b.Fatal(err)
-		}
-	}
 }
 
 type PointerStructA struct {
@@ -450,19 +428,22 @@ type CoreConfigData struct {
 func TestMaxLen(t *testing.T) {
 	t.Run("CoreConfigData", func(t *testing.T) {
 		s := MustNewService(0, nil)
-		ccd := new(CoreConfigData)
-		assert.NoError(t, s.FakeData(ccd))
-		assert.LenBetween(t, ccd.ConfigID, 0, 10)
-		assert.LenBetween(t, ccd.Scope, 1, 8)
-		assert.LenBetween(t, ccd.ScopeID, 0, math.MaxInt32)
-		assert.LenBetween(t, ccd.Path, 1, 255)
-		if ccd.Value.Valid {
-			assert.LenBetween(t, ccd.Value.String, 1, 65535)
-		} else {
-			assert.Exactly(t, null.String{}, ccd.Value)
+
+		for i := 0; i < 100; i++ {
+			ccd := new(CoreConfigData)
+			assert.NoError(t, s.FakeData(ccd))
+			assert.LenBetween(t, ccd.ConfigID, 0, 10)
+			assert.LenBetween(t, ccd.Scope, 1, 8)
+			assert.LenBetween(t, ccd.ScopeID, 0, math.MaxInt32)
+			assert.LenBetween(t, ccd.Path, 1, 255)
+			if ccd.Value.Valid {
+				assert.LenBetween(t, ccd.Value.String, 1, 65535)
+			} else {
+				assert.Exactly(t, null.String{}, ccd.Value)
+			}
+			assert.LenBetween(t, ccd.ColBlob, 1, 65535)
+			// t.Logf("%#v", ccd.ColDecimal100)
 		}
-		assert.LenBetween(t, ccd.ColBlob, 1, 65535)
-		// t.Logf("%#v", ccd.ColDecimal100)
 	})
 }
 
@@ -507,14 +488,31 @@ func TestToSnakeCase(t *testing.T) {
 }
 
 type CustomerEntity struct {
-	EntityID     uint32      `max_len:"10"`  // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
-	WebsiteID    null.Uint32 `max_len:"5"`   // website_id smallint(5) unsigned NULL MUL DEFAULT 'NULL'  "Website ID"
-	Email        null.String `max_len:"255"` // email varchar(255) NULL MUL DEFAULT 'NULL'  "Email"
-	GroupID      uint32      `max_len:"5"`   // group_id smallint(5) unsigned NOT NULL  DEFAULT '0'  "Group ID"
-	Prefix       null.String `max_len:"40"`  // prefix varchar(40) NULL  DEFAULT 'NULL'  "Name Prefix"
-	Firstname    null.String `max_len:"255"` // firstname varchar(255) NULL MUL DEFAULT 'NULL'  "First Name"
-	Middlename   null.String `max_len:"255"` // middlename varchar(255) NULL  DEFAULT 'NULL'  "Middle Name/Initial"
-	Lastname     null.String `max_len:"255"` // lastname varchar(255) NULL MUL DEFAULT 'NULL'  "Last Name"
-	Dob          null.Time   // dob date NULL  DEFAULT 'NULL'  "Date of Birth"
-	PasswordHash null.String `max_len:"128"` // password_hash varchar(128) NULL  DEFAULT 'NULL'  "Password_hash"
+	EntityID     uint32      `max_len:"10"`
+	WebsiteID    null.Uint32 `max_len:"5"`
+	Email        null.String `max_len:"255"`
+	GroupID      uint32      `max_len:"5"`
+	Prefix       null.String `max_len:"40"`
+	Firstname    null.String `max_len:"255"`
+	Middlename   null.String `max_len:"255"`
+	Lastname     null.String `max_len:"255"`
+	Dob          null.Time
+	PasswordHash null.String `max_len:"128"`
+	RandomWeird  null.String `max_len:"13"`
+}
+
+func TestCustomerEntity_Fieldnames(t *testing.T) {
+	s := MustNewService(0, nil)
+
+	for i := 0; i < 10; i++ {
+		var a CustomerEntity
+		err := s.FakeData(&a)
+		assert.NoError(t, err, "\n%+v", err)
+		//t.Logf("%#v", a)
+		assert.LenBetween(t, fmt.Sprintf("%#v", a), 260, 530)
+		if a.Email.Valid {
+			assert.Regexp(t, "^[a-z0-9\\-_]+@.+\\.[a-z0-9\\-]+$", a.Email.String, "Email address")
+		}
+	}
+
 }
