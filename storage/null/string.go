@@ -58,6 +58,9 @@ func (a *String) Scan(value interface{}) (err error) {
 	case []byte:
 		a.String = string(v) // must be copied
 		a.Valid = err == nil
+	case string:
+		a.String = v
+		a.Valid = err == nil
 	default:
 		err = errors.NotSupported.Newf("[dml] Type %T not supported in String.Scan", value)
 	}

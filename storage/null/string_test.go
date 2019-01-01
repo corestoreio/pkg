@@ -233,9 +233,14 @@ func TestNullString_Scan(t *testing.T) {
 		assert.NoError(t, nv.Scan([]byte(`12345678910`)))
 		assert.Exactly(t, MakeString(`12345678910`), nv)
 	})
-	t.Run("string unsupported", func(t *testing.T) {
+	t.Run("string", func(t *testing.T) {
 		var nv String
-		err := nv.Scan(`1234567`)
+		assert.NoError(t, nv.Scan(`12345678910`))
+		assert.Exactly(t, MakeString(`12345678910`), nv)
+	})
+	t.Run("[]rune unsupported", func(t *testing.T) {
+		var nv String
+		err := nv.Scan([]rune(`1234567`))
 		assert.True(t, errors.Is(err, errors.NotSupported), "Error behaviour should be errors.NotSupported")
 		assert.Exactly(t, String{}, nv)
 	})
