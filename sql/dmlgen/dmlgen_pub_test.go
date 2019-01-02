@@ -93,22 +93,22 @@ func TestGenerate_Tables_Protobuf_Json(t *testing.T) {
 
 		dmlgen.WithProtobuf(),
 
+		//dmlgen.WithLoadColumns(ctx, db.DB, "dmlgen_types"),
 		dmlgen.WithLoadColumns(ctx, db.DB, "dmlgen_types", "core_config_data", "customer_entity"),
 		dmlgen.WithTableOption(
 			"customer_entity", &dmlgen.TableOption{
-				Encoders: []string{"json", "protobuf"},
+				Encoders:   []string{"json", "protobuf"},
+				StructTags: []string{"max_len"},
 			}),
-
-		// dmlgen.WithLoadColumns(ctx, db.DB, "dmlgen_types"),
 
 		dmlgen.WithTableOption(
 			"core_config_data", &dmlgen.TableOption{
 				Encoders: []string{"easyjson", "protobuf"},
 				CustomStructTags: []string{
-					"path", `json:"x_path" xml:"y_path"`,
+					"path", `json:"x_path" xml:"y_path" max_len:"255"`,
 					"scope_id", `json:"scope_id" xml:"scope_id"`,
 				},
-				StructTags: []string{"json"},
+				StructTags: []string{"json", "max_len"},
 				ColumnAliases: map[string][]string{
 					"path": {"storage_location", "config_directory"},
 				},
@@ -122,13 +122,9 @@ func TestGenerate_Tables_Protobuf_Json(t *testing.T) {
 		dmlgen.WithTableOption(
 			"dmlgen_types", &dmlgen.TableOption{
 				Encoders:          []string{"easyjson", "binary", "protobuf"},
-				StructTags:        []string{"json", "protobuf"},
-				UniquifiedColumns: []string{"price_12_4a", "col_longtext_2", "col_int_1", "col_int_2", "has_smallint_5", "col_date_2", "col_blob"},
-				Comment:           "Just another comment.\n//easyjson:json",
-			}),
-		dmlgen.WithTableOption(
-			"dmlgen_types", &dmlgen.TableOption{
-				Encoders: []string{"json", "protobuf"},
+				StructTags:        []string{"json", "protobuf", "max_len"},
+				UniquifiedColumns: []string{"col_varchar_100", "price_12_4a", "col_int_1", "col_int_2", "has_smallint_5", "col_date_2"},
+				Comment:           "Just another comment.",
 			}),
 
 		dmlgen.WithColumnAliasesFromForeignKeys(ctx, db.DB),

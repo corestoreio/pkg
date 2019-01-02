@@ -43,6 +43,11 @@ import (
 	"github.com/mailru/easyjson/parser"
 )
 
+// Reason for using this package "shuLhan/go-bindata": at the moment well
+// maintained and does not include net/http.
+//go:generate go get -u github.com/shuLhan/go-bindata/...
+//go:generate go-bindata -o bindata.go -pkg dmlgen ./_tpl/...
+
 // Initial idea and prototyping for code generation.
 // TODO DML gen must take care of the types in myreplicator.RowsEvent.decodeValue
 
@@ -119,7 +124,7 @@ type TableOption struct {
 	ColumnAliases map[string][]string // key=column name value a list of aliases
 	// UniquifiedColumns specifies columns which are non primary/unique key one
 	// but should have a dedicated function to extract their unique primitive
-	// values as a slice.
+	// values as a slice. Not allowed are text, blob and binary.
 	UniquifiedColumns []string
 	lastErr           error
 }
@@ -167,6 +172,14 @@ func (to *TableOption) applyStructTags(t *table) {
 				fmt.Fprintf(&buf, `yaml:"%s,omitempty"`, c.Field)
 			case "xml":
 				fmt.Fprintf(&buf, `xml:"%s,omitempty"`, c.Field)
+			case "max_len":
+				l := c.CharMaxLength.Int64
+				if c.Precision.Valid {
+					l = c.Precision.Int64
+				}
+				if l > 0 {
+					fmt.Fprintf(&buf, `max_len:"%d"`, l)
+				}
 			case "protobuf":
 				// github.com/gogo/protobuf/protoc-gen-gogo/generator/generator.go#L1629 Generator.goTag
 				// The tag is a string like "varint,2,opt,name=fieldname,def=7" that
@@ -222,7 +235,7 @@ func (to *TableOption) applyComments(t *table) {
 		buf.WriteString(line)
 		buf.WriteByte('\n')
 	}
-	t.Comment = buf.String()
+	t.Comment = strings.TrimSpace(buf.String())
 }
 
 func (to *TableOption) applyColumnAliases(t *table) {
@@ -249,19 +262,20 @@ func (to *TableOption) applyColumnAliases(t *table) {
 	}
 }
 
+// skips text and blob and varbinary and json and geo
 func (to *TableOption) applyUniquifiedColumns(t *table) {
 	for i := 0; i < len(to.UniquifiedColumns) && to.lastErr == nil; i++ {
 		cn := to.UniquifiedColumns[i]
 		found := false
 		for _, c := range t.Columns {
-			if c.Field == cn {
+			if c.Field == cn && false == c.IsBlobDataType() {
 				c.Uniquified = true
 				found = true
 			}
 		}
 		if !found {
-			to.lastErr = errors.NotFound.Newf("[dmlgen] WithTableOption:UniquifiedColumns: For table %q the Column %q cannot be found.",
-				to.CustomStructTags, cn)
+			to.lastErr = errors.NotFound.Newf("[dmlgen] WithTableOption:UniquifiedColumns: For table %q the Column %q cannot be found in the list of available columns or its data type is not allowed.",
+				t.TableName, cn)
 		}
 	}
 }
@@ -498,11 +512,16 @@ func NewTables(packageImportPath string, opts ...Option) (*Tables, error) {
 		return buf.String()
 	}
 
-	var err error
-	glob := filepath.Join(build.Default.GOPATH, pkgPath, "code_*.go.tpl")
-	ts.tpls, err = template.New("InitialParseGlob").Funcs(ts.FuncMap).ParseGlob(glob)
-	if err != nil {
-		return nil, errors.WithStack(err)
+	ts.tpls = template.New("InitialParseGlob").Funcs(ts.FuncMap)
+	for _, f := range AssetNames() {
+		data, err := Asset(f)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		if _, err := ts.tpls.New(filepath.Base(f)).Parse(string(data)); err != nil {
+			return nil, errors.Wrapf(err, "[dmlgen] Failed to parse %q", f)
+		}
 	}
 
 	for _, t := range ts.Tables {
@@ -554,12 +573,12 @@ func (ts *Tables) GenerateSerializer(w io.Writer, wTest io.Writer) error {
 	defer bufferpool.Put(buf)
 
 	if !ts.DisableFileHeader {
-		if err := ts.tpls.Funcs(ts.FuncMap).ExecuteTemplate(buf, "code_"+ts.Serializer+"_10_header.go.tpl", ts); err != nil {
+		if err := ts.tpls.Funcs(ts.FuncMap).ExecuteTemplate(buf, ts.Serializer+"_10_header.go.tpl", ts); err != nil {
 			return errors.WriteFailed.New(err, "[dmlgen] For file header")
 		}
 	}
 
-	tableFileName := "code_" + ts.Serializer + "_20_table.go.tpl"
+	tableFileName := ts.Serializer + "_20_table.go.tpl"
 	for _, tblName := range ts.sortedTableNames() {
 		t := ts.Tables[tblName] // must panic if table name not found
 		if t.HasSerializer {
@@ -604,10 +623,10 @@ func (ts *Tables) GenerateGo(w io.Writer, wTest io.Writer) error {
 			TableNames:          sortedTableNames,
 			TestSQLDumpGlobPath: ts.TestSQLDumpGlobPath,
 		}
-		if err := ts.tpls.ExecuteTemplate(buf, "code_10_tables.go.tpl", data); err != nil {
+		if err := ts.tpls.ExecuteTemplate(buf, "10_tables.go.tpl", data); err != nil {
 			return errors.WriteFailed.New(err, "[dmlgen] For Tables %v", tables)
 		}
-		if err := ts.tpls.ExecuteTemplate(bufTest, "code_90_test.go.tpl", data); err != nil {
+		if err := ts.tpls.ExecuteTemplate(bufTest, "90_test.go.tpl", data); err != nil {
 			return errors.WriteFailed.New(err, "[dmlgen] For Tables %v", tables)
 		}
 	}
@@ -616,12 +635,12 @@ func (ts *Tables) GenerateGo(w io.Writer, wTest io.Writer) error {
 	for _, tblname := range sortedTableNames {
 		t := ts.Tables[tblname] // must panic if table name not found
 
-		ts.execTpl(buf, t, "code_20_entity.go.tpl")
+		ts.execTpl(buf, t, "20_entity.go.tpl")
 		if !t.DisableCollectionMethods {
-			ts.execTpl(buf, t, "code_30_collection_methods.go.tpl")
+			ts.execTpl(buf, t, "30_collection_methods.go.tpl")
 		}
 		if t.HasBinaryMarshaler {
-			ts.execTpl(buf, t, "code_40_binary.go.tpl")
+			ts.execTpl(buf, t, "40_binary.go.tpl")
 		}
 		if ts.lastError != nil {
 			return ts.lastError
@@ -650,8 +669,8 @@ func (ts *Tables) GenerateGo(w io.Writer, wTest io.Writer) error {
 			"context",
 			"sort",
 			"github.com/corestoreio/pkg/sql/dmltest",
-			"github.com/bxcodec/faker",
 			"github.com/corestoreio/pkg/util/assert",
+			"github.com/corestoreio/pkg/util/pseudo",
 		} {
 			fmt.Fprintf(wTest, "\t%q\n", path)
 		}

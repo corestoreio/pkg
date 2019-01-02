@@ -1,6 +1,6 @@
 // {{.Entity}} represents a single row for DB table `{{.TableName}}`.
 // Auto generated.{{with .Comment}}
-{{.Comment -}}{{end}}{{- if .HasEasyJsonMarshaler }}
+{{. -}}{{end}}{{- if .HasEasyJsonMarshaler }}
 //easyjson:json{{end}}
 type {{.Entity}} struct {
 {{range .Columns}}{{ToGoCamelCase .Field}} {{GoTypeNull .}}
@@ -35,7 +35,7 @@ func (e *{{.Entity}}) Empty() *{{.Entity}} { *e = {{.Entity}}{}; return e }
 
 // {{.Collection}} represents a collection type for DB table {{.TableName}}
 // Not thread safe. Auto generated.{{with .Comment}}
-{{.Comment -}}{{end}}{{- if .HasEasyJsonMarshaler }}
+{{. -}}{{end}}{{- if .HasEasyJsonMarshaler }}
 //easyjson:json{{end}}
 type {{.Collection}} struct {
 	Data           		[]*{{.Entity}} `json:"data,omitempty"`
@@ -119,7 +119,7 @@ func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoTypeNull .}}) [
 // and returns a slice or appends to a slice only unique values of that column.
 // The values will be filtered internally in a Go map. No DB query gets
 // executed. Auto generated.
-func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoType .}}) []{{GoType .}} {
+func (cc *{{$.Collection}}) Unique{{ToGoCamelCase .Field}}s(ret ...{{GoType .}}) []{{GoType .}} {
 	if ret == nil {
 		ret = make([]{{GoType .}}, 0, len(cc.Data))
 	}

@@ -16,22 +16,30 @@ func TestNewTables(t *testing.T) {
 
 	err = tbls.Validate(ctx)
 	assert.NoError(t, err)
+	ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de"},
+		pseudo.WithTagFakeFunc("website_id", func(maxLen int) (interface{}, error) {
+			return 1, nil
+		}),
+		pseudo.WithTagFakeFunc("store_id", func(maxLen int) (interface{}, error) {
+			return 1, nil
+		}),
+	)
 
 	// TODO run those tests in parallel
 	{{- range $table := .Tables }}
 	t.Run("{{ToGoCamelCase .TableName}}_Entity", func(t *testing.T) {
 		ccd := tbls.MustTable(TableName{{ToGoCamelCase .TableName}})
 
-		inStmt, err := ccd.Insert().Ignore().BuildValues().Prepare(ctx)
+		inStmt, err := ccd.Insert().BuildValues().Prepare(ctx) // Do not use Ignore() to suppress DB errors.
 		assert.NoError(t, err, "%+v", err)
 		insArtisan := inStmt.WithArgs()
 		defer dmltest.Close(t, inStmt)
 
 		selArtisan := ccd.SelectByPK().WithArgs().ExpandPlaceHolders()
 
-		for i := 0; i < 5; i++ {
+		for i := 0; i < 9; i++ {
 			entityIn := new({{ToGoCamelCase .TableName}})
-			assert.NoError(t, faker.FakeData(entityIn))
+			assert.NoError(t, ps.FakeData(entityIn))
 
 			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.{{ToGoCamelCase .TableName}}_Entity")(insArtisan.Record("", entityIn).ExecContext(ctx))
 			insArtisan.Reset()
@@ -43,9 +51,9 @@ func TestNewTables(t *testing.T) {
 
 			{{- range $col := $table.Columns }}
 				{{if $col.IsString -}}
-					assert.ExactlyLength(t, {{$col.CharMaxLength.Int64}}, &entityIn.{{ToGoCamelCase $col.Field}}, &entityOut.{{ToGoCamelCase $col.Field}}, "{{ToGoCamelCase $col.Field}} do not match")
-				{{- else -}}
-					assert.Exactly(t, entityIn.{{ToGoCamelCase $col.Field}}, entityOut.{{ToGoCamelCase $col.Field}}, "{{ToGoCamelCase $col.Field}} did not match")
+					assert.ExactlyLength(t, {{$col.CharMaxLength.Int64}}, &entityIn.{{ToGoCamelCase $col.Field}}, &entityOut.{{ToGoCamelCase $col.Field}}, "IDX%d: {{ToGoCamelCase $col.Field}} should match", lID)
+				{{- else if not $col.IsSystemVersioned -}}
+					assert.Exactly(t, entityIn.{{ToGoCamelCase $col.Field}}, entityOut.{{ToGoCamelCase $col.Field}}, "IDX%d: {{ToGoCamelCase $col.Field}} should match", lID)
 				{{- end}}
 			{{- end}}
 		}

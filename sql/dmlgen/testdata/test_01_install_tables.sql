@@ -70,7 +70,7 @@ CREATE TABLE `store` (
   KEY `STORE_GROUP_ID` (`group_id`),
   CONSTRAINT `STORE_GROUP_ID_STORE_GROUP_GROUP_ID` FOREIGN KEY (`group_id`) REFERENCES `store_group` (`group_id`) ON DELETE CASCADE,
   CONSTRAINT `STORE_WEBSITE_ID_STORE_WEBSITE_WEBSITE_ID` FOREIGN KEY (`website_id`) REFERENCES `store_website` (`website_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COMMENT='Stores';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Stores';
 
 -- Create syntax for TABLE 'store_group'
 CREATE TABLE `store_group` (
@@ -85,7 +85,7 @@ CREATE TABLE `store_group` (
   KEY `STORE_GROUP_WEBSITE_ID` (`website_id`),
   KEY `STORE_GROUP_DEFAULT_STORE_ID` (`default_store_id`),
   CONSTRAINT `STORE_GROUP_WEBSITE_ID_STORE_WEBSITE_WEBSITE_ID` FOREIGN KEY (`website_id`) REFERENCES `store_website` (`website_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COMMENT='Store Groups';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Store Groups';
 
 -- Create syntax for TABLE 'store_website'
 CREATE TABLE `store_website` (
@@ -99,7 +99,7 @@ CREATE TABLE `store_website` (
   UNIQUE KEY `STORE_WEBSITE_CODE` (`code`),
   KEY `STORE_WEBSITE_SORT_ORDER` (`sort_order`),
   KEY `STORE_WEBSITE_DEFAULT_GROUP_ID` (`default_group_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COMMENT='Websites';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Websites';
 
 -- Create syntax for TABLE 'customer_entity'
 CREATE TABLE `customer_entity` (
@@ -139,7 +139,7 @@ CREATE TABLE `customer_entity` (
   KEY `CUSTOMER_ENTITY_LASTNAME` (`lastname`),
   CONSTRAINT `CUSTOMER_ENTITY_STORE_ID_STORE_STORE_ID` FOREIGN KEY (`store_id`) REFERENCES `store` (`store_id`) ON DELETE SET NULL,
   CONSTRAINT `CUSTOMER_ENTITY_WEBSITE_ID_STORE_WEBSITE_WEBSITE_ID` FOREIGN KEY (`website_id`) REFERENCES `store_website` (`website_id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COMMENT='Customer Entity';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Customer Entity';
 
 -- Create syntax for TABLE 'customer_address_entity'
 CREATE TABLE `customer_address_entity` (
@@ -171,7 +171,7 @@ CREATE TABLE `customer_address_entity` (
   PRIMARY KEY (`entity_id`),
   KEY `CUSTOMER_ADDRESS_ENTITY_PARENT_ID` (`parent_id`),
   CONSTRAINT `CUSTOMER_ADDRESS_ENTITY_PARENT_ID_CUSTOMER_ENTITY_ENTITY_ID` FOREIGN KEY (`parent_id`) REFERENCES `customer_entity` (`entity_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COMMENT='Customer Address Entity';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Customer Address Entity';
 
 CREATE TABLE `core_config_data` (
   `config_id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Id',
@@ -192,5 +192,16 @@ CREATE TABLE `core_config_data` (
     PARTITION p_cur CURRENT
     );
 
+INSERT INTO `store` (`store_id`, `code`, `website_id`, `group_id`, `name`, `sort_order`, `is_active`)
+VALUES
+	(1,'admin',0,0,'Admin',0,1);
+
+INSERT INTO `store_group` (`group_id`, `website_id`, `name`, `root_category_id`, `default_store_id`, `code`)
+VALUES
+	(1,0,'Admin',0,0,'admin');
+
+INSERT INTO `store_website` (`website_id`, `code`, `name`, `sort_order`, `default_group_id`, `is_default`)
+VALUES
+	(1,'admin','Admin',0,0,1);
 
 SET foreign_key_checks = 1;

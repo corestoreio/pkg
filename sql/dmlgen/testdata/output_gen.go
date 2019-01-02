@@ -4,14 +4,14 @@ package testdata
 
 import (
 	"context"
+	"sort"
+	"time"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/storage/null"
-	"sort"
-	"time"
-)
 
+)
 const (
 	TableNameCoreConfigData = "core_config_data"
 	TableNameCustomerEntity = "customer_entity"
@@ -41,14 +41,14 @@ func NewTables(ctx context.Context, db dml.QueryExecPreparer, opts ...ddl.TableO
 // Auto generated.
 //easyjson:json
 type CoreConfigData struct {
-	ConfigID  uint32      `json:"config_id,omitempty"`     // config_id int(10) unsigned NOT NULL PRI  auto_increment "Id"
-	Scope     string      `json:"scope,omitempty"`         // scope varchar(8) NOT NULL MUL DEFAULT ''default''  "Scope"
-	ScopeID   int32       `json:"scope_id" xml:"scope_id"` // scope_id int(11) NOT NULL  DEFAULT '0'  "Scope Id"
-	Expires   null.Time   `json:"expires,omitempty"`       // expires datetime NULL  DEFAULT 'NULL'  "Value expiration time"
-	Path      string      `json:"x_path" xml:"y_path"`     // path varchar(255) NOT NULL  DEFAULT ''general''  "Config Path overwritten"
-	Value     null.String `json:"value,omitempty"`         // value text NULL  DEFAULT 'NULL'  "Value"
-	VersionTs time.Time   `json:"version_ts,omitempty"`    // version_ts timestamp(6) NOT NULL    "Timestamp Start Versioning"
-	VersionTe time.Time   `json:"version_te,omitempty"`    // version_te timestamp(6) NOT NULL PRI   "Timestamp End Versioning"
+	ConfigID  uint32      `json:"config_id,omitempty" max_len:"10"`  // config_id int(10) unsigned NOT NULL PRI  auto_increment "Id"
+	Scope     string      `json:"scope,omitempty" max_len:"8"`       // scope varchar(8) NOT NULL MUL DEFAULT ''default''  "Scope"
+	ScopeID   int32       `json:"scope_id" xml:"scope_id"`           // scope_id int(11) NOT NULL  DEFAULT '0'  "Scope Id"
+	Expires   null.Time   `json:"expires,omitempty" `                // expires datetime NULL  DEFAULT 'NULL'  "Value expiration time"
+	Path      string      `json:"x_path" xml:"y_path" max_len:"255"` // path varchar(255) NOT NULL  DEFAULT ''general''  "Config Path overwritten"
+	Value     null.String `json:"value,omitempty" max_len:"65535"`   // value text NULL  DEFAULT 'NULL'  "Value"
+	VersionTs time.Time   `json:"version_ts,omitempty" `             // version_ts timestamp(6) NOT NULL    "Timestamp Start Versioning"
+	VersionTe time.Time   `json:"version_te,omitempty" `             // version_te timestamp(6) NOT NULL PRI   "Timestamp End Versioning"
 }
 
 // AssignLastInsertID updates the increment ID field with the last inserted ID
@@ -169,7 +169,7 @@ func (cc *CoreConfigDataCollection) ConfigIDs(ret ...uint32) []uint32 {
 // and returns a slice or appends to a slice only unique values of that column.
 // The values will be filtered internally in a Go map. No DB query gets
 // executed. Auto generated.
-func (cc *CoreConfigDataCollection) Paths(ret ...string) []string {
+func (cc *CoreConfigDataCollection) UniquePaths(ret ...string) []string {
 	if ret == nil {
 		ret = make([]string, 0, len(cc.Data))
 	}
@@ -263,32 +263,32 @@ func (cc *CoreConfigDataCollection) Append(n ...*CoreConfigData) *CoreConfigData
 // CustomerEntity represents a single row for DB table `customer_entity`.
 // Auto generated.
 type CustomerEntity struct {
-	EntityID               uint32      // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
-	WebsiteID              null.Uint32 // website_id smallint(5) unsigned NULL MUL DEFAULT 'NULL'  "Website ID"
-	Email                  null.String // email varchar(255) NULL MUL DEFAULT 'NULL'  "Email"
-	GroupID                uint32      // group_id smallint(5) unsigned NOT NULL  DEFAULT '0'  "Group ID"
-	IncrementID            null.String // increment_id varchar(50) NULL  DEFAULT 'NULL'  "Increment Id"
-	StoreID                null.Uint32 // store_id smallint(5) unsigned NULL MUL DEFAULT '0'  "Store ID"
+	EntityID               uint32      `max_len:"10"`  // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
+	WebsiteID              null.Uint32 `max_len:"5"`   // website_id smallint(5) unsigned NULL MUL DEFAULT 'NULL'  "Website ID"
+	Email                  null.String `max_len:"255"` // email varchar(255) NULL MUL DEFAULT 'NULL'  "Email"
+	GroupID                uint32      `max_len:"5"`   // group_id smallint(5) unsigned NOT NULL  DEFAULT '0'  "Group ID"
+	IncrementID            null.String `max_len:"50"`  // increment_id varchar(50) NULL  DEFAULT 'NULL'  "Increment Id"
+	StoreID                null.Uint32 `max_len:"5"`   // store_id smallint(5) unsigned NULL MUL DEFAULT '0'  "Store ID"
 	CreatedAt              time.Time   // created_at timestamp NOT NULL  DEFAULT 'current_timestamp()'  "Created At"
 	UpdatedAt              time.Time   // updated_at timestamp NOT NULL  DEFAULT 'current_timestamp()' on update current_timestamp() "Updated At"
-	IsActive               bool        // is_active smallint(5) unsigned NOT NULL  DEFAULT '1'  "Is Active"
-	DisableAutoGroupChange uint32      // disable_auto_group_change smallint(5) unsigned NOT NULL  DEFAULT '0'  "Disable automatic group change based on VAT ID"
-	CreatedIn              null.String // created_in varchar(255) NULL  DEFAULT 'NULL'  "Created From"
-	Prefix                 null.String // prefix varchar(40) NULL  DEFAULT 'NULL'  "Name Prefix"
-	Firstname              null.String // firstname varchar(255) NULL MUL DEFAULT 'NULL'  "First Name"
-	Middlename             null.String // middlename varchar(255) NULL  DEFAULT 'NULL'  "Middle Name/Initial"
-	Lastname               null.String // lastname varchar(255) NULL MUL DEFAULT 'NULL'  "Last Name"
-	Suffix                 null.String // suffix varchar(40) NULL  DEFAULT 'NULL'  "Name Suffix"
+	IsActive               bool        `max_len:"5"`   // is_active smallint(5) unsigned NOT NULL  DEFAULT '1'  "Is Active"
+	DisableAutoGroupChange uint32      `max_len:"5"`   // disable_auto_group_change smallint(5) unsigned NOT NULL  DEFAULT '0'  "Disable automatic group change based on VAT ID"
+	CreatedIn              null.String `max_len:"255"` // created_in varchar(255) NULL  DEFAULT 'NULL'  "Created From"
+	Prefix                 null.String `max_len:"40"`  // prefix varchar(40) NULL  DEFAULT 'NULL'  "Name Prefix"
+	Firstname              null.String `max_len:"255"` // firstname varchar(255) NULL MUL DEFAULT 'NULL'  "First Name"
+	Middlename             null.String `max_len:"255"` // middlename varchar(255) NULL  DEFAULT 'NULL'  "Middle Name/Initial"
+	Lastname               null.String `max_len:"255"` // lastname varchar(255) NULL MUL DEFAULT 'NULL'  "Last Name"
+	Suffix                 null.String `max_len:"40"`  // suffix varchar(40) NULL  DEFAULT 'NULL'  "Name Suffix"
 	Dob                    null.Time   // dob date NULL  DEFAULT 'NULL'  "Date of Birth"
-	PasswordHash           null.String // password_hash varchar(128) NULL  DEFAULT 'NULL'  "Password_hash"
-	RpToken                null.String // rp_token varchar(128) NULL  DEFAULT 'NULL'  "Reset password token"
+	PasswordHash           null.String `max_len:"128"` // password_hash varchar(128) NULL  DEFAULT 'NULL'  "Password_hash"
+	RpToken                null.String `max_len:"128"` // rp_token varchar(128) NULL  DEFAULT 'NULL'  "Reset password token"
 	RpTokenCreatedAt       null.Time   // rp_token_created_at datetime NULL  DEFAULT 'NULL'  "Reset password token creation time"
-	DefaultBilling         null.Uint32 // default_billing int(10) unsigned NULL  DEFAULT 'NULL'  "Default Billing Address"
-	DefaultShipping        null.Uint32 // default_shipping int(10) unsigned NULL  DEFAULT 'NULL'  "Default Shipping Address"
-	Taxvat                 null.String // taxvat varchar(50) NULL  DEFAULT 'NULL'  "Tax/VAT Number"
-	Confirmation           null.String // confirmation varchar(64) NULL  DEFAULT 'NULL'  "Is Confirmed"
-	Gender                 null.Uint32 // gender smallint(5) unsigned NULL  DEFAULT 'NULL'  "Gender"
-	FailuresNum            null.Int32  // failures_num smallint(6) NULL  DEFAULT '0'  "Failure Number"
+	DefaultBilling         null.Uint32 `max_len:"10"` // default_billing int(10) unsigned NULL  DEFAULT 'NULL'  "Default Billing Address"
+	DefaultShipping        null.Uint32 `max_len:"10"` // default_shipping int(10) unsigned NULL  DEFAULT 'NULL'  "Default Shipping Address"
+	Taxvat                 null.String `max_len:"50"` // taxvat varchar(50) NULL  DEFAULT 'NULL'  "Tax/VAT Number"
+	Confirmation           null.String `max_len:"64"` // confirmation varchar(64) NULL  DEFAULT 'NULL'  "Is Confirmed"
+	Gender                 null.Uint32 `max_len:"5"`  // gender smallint(5) unsigned NULL  DEFAULT 'NULL'  "Gender"
+	FailuresNum            null.Int32  `max_len:"5"`  // failures_num smallint(6) NULL  DEFAULT '0'  "Failure Number"
 	FirstFailure           null.Time   // first_failure timestamp NULL  DEFAULT 'NULL'  "First Failure"
 	LockExpires            null.Time   // lock_expires timestamp NULL  DEFAULT 'NULL'  "Lock Expiration Date"
 }
@@ -524,50 +524,51 @@ func (cc *CustomerEntityCollection) Append(n ...*CustomerEntity) *CustomerEntity
 
 // DmlgenTypes represents a single row for DB table `dmlgen_types`.
 // Auto generated.
+// Just another comment.
 //easyjson:json
 type DmlgenTypes struct {
-	ID             int32        // id int(11) NOT NULL PRI  auto_increment ""
-	ColBigint1     null.Int64   // col_bigint_1 bigint(20) NULL  DEFAULT 'NULL'  ""
-	ColBigint2     int64        // col_bigint_2 bigint(20) NOT NULL  DEFAULT '0'  ""
-	ColBigint3     null.Uint64  // col_bigint_3 bigint(20) unsigned NULL  DEFAULT 'NULL'  ""
-	ColBigint4     uint64       // col_bigint_4 bigint(20) unsigned NOT NULL  DEFAULT '0'  ""
-	ColBlob        []byte       // col_blob blob NULL  DEFAULT 'NULL'  ""
-	ColDate1       null.Time    // col_date_1 date NULL  DEFAULT 'NULL'  ""
-	ColDate2       time.Time    // col_date_2 date NOT NULL  DEFAULT ''0000-00-00''  ""
-	ColDatetime1   null.Time    // col_datetime_1 datetime NULL  DEFAULT 'NULL'  ""
-	ColDatetime2   time.Time    // col_datetime_2 datetime NOT NULL  DEFAULT ''0000-00-00 00:00:00''  ""
-	ColDecimal100  null.Decimal // col_decimal_10_0 decimal(10,0) unsigned NULL  DEFAULT 'NULL'  ""
-	ColDecimal124  null.Decimal // col_decimal_12_4 decimal(12,4) NULL  DEFAULT 'NULL'  ""
-	Price124a      null.Decimal // price_12_4a decimal(12,4) NULL  DEFAULT 'NULL'  ""
-	Price124b      null.Decimal // price_12_4b decimal(12,4) NOT NULL  DEFAULT '0.0000'  ""
-	ColDecimal123  null.Decimal // col_decimal_12_3 decimal(12,3) NOT NULL  DEFAULT '0.000'  ""
-	ColDecimal206  null.Decimal // col_decimal_20_6 decimal(20,6) NOT NULL  DEFAULT '0.000000'  ""
-	ColDecimal2412 null.Decimal // col_decimal_24_12 decimal(24,12) NOT NULL  DEFAULT '0.000000000000'  ""
-	ColFloat       float64      // col_float float NOT NULL  DEFAULT '1'  ""
-	ColInt1        null.Int32   // col_int_1 int(10) NULL  DEFAULT 'NULL'  ""
-	ColInt2        int32        // col_int_2 int(10) NOT NULL  DEFAULT '0'  ""
-	ColInt3        null.Uint32  // col_int_3 int(10) unsigned NULL  DEFAULT 'NULL'  ""
-	ColInt4        uint32       // col_int_4 int(10) unsigned NOT NULL  DEFAULT '0'  ""
-	ColLongtext1   null.String  // col_longtext_1 longtext NULL  DEFAULT 'NULL'  ""
-	ColLongtext2   string       // col_longtext_2 longtext NOT NULL  DEFAULT ''''  ""
-	ColMediumblob  []byte       // col_mediumblob mediumblob NULL  DEFAULT 'NULL'  ""
-	ColMediumtext1 null.String  // col_mediumtext_1 mediumtext NULL  DEFAULT 'NULL'  ""
-	ColMediumtext2 string       // col_mediumtext_2 mediumtext NOT NULL  DEFAULT ''''  ""
-	ColSmallint1   null.Int32   // col_smallint_1 smallint(5) NULL  DEFAULT 'NULL'  ""
-	ColSmallint2   int32        // col_smallint_2 smallint(5) NOT NULL  DEFAULT '0'  ""
-	ColSmallint3   null.Uint32  // col_smallint_3 smallint(5) unsigned NULL  DEFAULT 'NULL'  ""
-	ColSmallint4   uint32       // col_smallint_4 smallint(5) unsigned NOT NULL  DEFAULT '0'  ""
-	HasSmallint5   bool         // has_smallint_5 smallint(5) unsigned NOT NULL  DEFAULT '0'  ""
-	IsSmallint5    null.Bool    // is_smallint_5 smallint(5) NULL  DEFAULT 'NULL'  ""
-	ColText        null.String  // col_text text NULL  DEFAULT 'NULL'  ""
-	ColTimestamp1  time.Time    // col_timestamp_1 timestamp NOT NULL  DEFAULT 'current_timestamp()'  ""
-	ColTimestamp2  null.Time    // col_timestamp_2 timestamp NULL  DEFAULT 'NULL'  ""
-	ColTinyint1    int32        // col_tinyint_1 tinyint(1) NOT NULL  DEFAULT '0'  ""
-	ColVarchar1    string       // col_varchar_1 varchar(1) NOT NULL  DEFAULT ''0''  ""
-	ColVarchar100  null.String  // col_varchar_100 varchar(100) NULL  DEFAULT 'NULL'  ""
-	ColVarchar16   string       // col_varchar_16 varchar(16) NOT NULL  DEFAULT ''de_DE''  ""
-	ColChar1       null.String  // col_char_1 char(21) NULL  DEFAULT 'NULL'  ""
-	ColChar2       string       // col_char_2 char(17) NOT NULL  DEFAULT ''xchar''  ""
+	ID             int32        `json:"id,omitempty"  max_len:"10"`                     // id int(11) NOT NULL PRI  auto_increment ""
+	ColBigint1     null.Int64   `json:"col_bigint_1,omitempty"  max_len:"19"`           // col_bigint_1 bigint(20) NULL  DEFAULT 'NULL'  ""
+	ColBigint2     int64        `json:"col_bigint_2,omitempty"  max_len:"19"`           // col_bigint_2 bigint(20) NOT NULL  DEFAULT '0'  ""
+	ColBigint3     null.Uint64  `json:"col_bigint_3,omitempty"  max_len:"20"`           // col_bigint_3 bigint(20) unsigned NULL  DEFAULT 'NULL'  ""
+	ColBigint4     uint64       `json:"col_bigint_4,omitempty"  max_len:"20"`           // col_bigint_4 bigint(20) unsigned NOT NULL  DEFAULT '0'  ""
+	ColBlob        []byte       `json:"col_blob,omitempty"  max_len:"65535"`            // col_blob blob NULL  DEFAULT 'NULL'  ""
+	ColDate1       null.Time    `json:"col_date_1,omitempty"  `                         // col_date_1 date NULL  DEFAULT 'NULL'  ""
+	ColDate2       time.Time    `json:"col_date_2,omitempty"  `                         // col_date_2 date NOT NULL  DEFAULT ''0000-00-00''  ""
+	ColDatetime1   null.Time    `json:"col_datetime_1,omitempty"  `                     // col_datetime_1 datetime NULL  DEFAULT 'NULL'  ""
+	ColDatetime2   time.Time    `json:"col_datetime_2,omitempty"  `                     // col_datetime_2 datetime NOT NULL  DEFAULT ''0000-00-00 00:00:00''  ""
+	ColDecimal100  null.Decimal `json:"col_decimal_10_0,omitempty"  max_len:"10"`       // col_decimal_10_0 decimal(10,0) unsigned NULL  DEFAULT 'NULL'  ""
+	ColDecimal124  null.Decimal `json:"col_decimal_12_4,omitempty"  max_len:"12"`       // col_decimal_12_4 decimal(12,4) NULL  DEFAULT 'NULL'  ""
+	Price124a      null.Decimal `json:"price_12_4a,omitempty"  max_len:"12"`            // price_12_4a decimal(12,4) NULL  DEFAULT 'NULL'  ""
+	Price124b      null.Decimal `json:"price_12_4b,omitempty"  max_len:"12"`            // price_12_4b decimal(12,4) NOT NULL  DEFAULT '0.0000'  ""
+	ColDecimal123  null.Decimal `json:"col_decimal_12_3,omitempty"  max_len:"12"`       // col_decimal_12_3 decimal(12,3) NOT NULL  DEFAULT '0.000'  ""
+	ColDecimal206  null.Decimal `json:"col_decimal_20_6,omitempty"  max_len:"20"`       // col_decimal_20_6 decimal(20,6) NOT NULL  DEFAULT '0.000000'  ""
+	ColDecimal2412 null.Decimal `json:"col_decimal_24_12,omitempty"  max_len:"24"`      // col_decimal_24_12 decimal(24,12) NOT NULL  DEFAULT '0.000000000000'  ""
+	ColFloat       float64      `json:"col_float,omitempty"  max_len:"12"`              // col_float float NOT NULL  DEFAULT '1'  ""
+	ColInt1        null.Int32   `json:"col_int_1,omitempty"  max_len:"10"`              // col_int_1 int(10) NULL  DEFAULT 'NULL'  ""
+	ColInt2        int32        `json:"col_int_2,omitempty"  max_len:"10"`              // col_int_2 int(10) NOT NULL  DEFAULT '0'  ""
+	ColInt3        null.Uint32  `json:"col_int_3,omitempty"  max_len:"10"`              // col_int_3 int(10) unsigned NULL  DEFAULT 'NULL'  ""
+	ColInt4        uint32       `json:"col_int_4,omitempty"  max_len:"10"`              // col_int_4 int(10) unsigned NOT NULL  DEFAULT '0'  ""
+	ColLongtext1   null.String  `json:"col_longtext_1,omitempty"  max_len:"4294967295"` // col_longtext_1 longtext NULL  DEFAULT 'NULL'  ""
+	ColLongtext2   string       `json:"col_longtext_2,omitempty"  max_len:"4294967295"` // col_longtext_2 longtext NOT NULL  DEFAULT ''''  ""
+	ColMediumblob  []byte       `json:"col_mediumblob,omitempty"  max_len:"16777215"`   // col_mediumblob mediumblob NULL  DEFAULT 'NULL'  ""
+	ColMediumtext1 null.String  `json:"col_mediumtext_1,omitempty"  max_len:"16777215"` // col_mediumtext_1 mediumtext NULL  DEFAULT 'NULL'  ""
+	ColMediumtext2 string       `json:"col_mediumtext_2,omitempty"  max_len:"16777215"` // col_mediumtext_2 mediumtext NOT NULL  DEFAULT ''''  ""
+	ColSmallint1   null.Int32   `json:"col_smallint_1,omitempty"  max_len:"5"`          // col_smallint_1 smallint(5) NULL  DEFAULT 'NULL'  ""
+	ColSmallint2   int32        `json:"col_smallint_2,omitempty"  max_len:"5"`          // col_smallint_2 smallint(5) NOT NULL  DEFAULT '0'  ""
+	ColSmallint3   null.Uint32  `json:"col_smallint_3,omitempty"  max_len:"5"`          // col_smallint_3 smallint(5) unsigned NULL  DEFAULT 'NULL'  ""
+	ColSmallint4   uint32       `json:"col_smallint_4,omitempty"  max_len:"5"`          // col_smallint_4 smallint(5) unsigned NOT NULL  DEFAULT '0'  ""
+	HasSmallint5   bool         `json:"has_smallint_5,omitempty"  max_len:"5"`          // has_smallint_5 smallint(5) unsigned NOT NULL  DEFAULT '0'  ""
+	IsSmallint5    null.Bool    `json:"is_smallint_5,omitempty"  max_len:"5"`           // is_smallint_5 smallint(5) NULL  DEFAULT 'NULL'  ""
+	ColText        null.String  `json:"col_text,omitempty"  max_len:"65535"`            // col_text text NULL  DEFAULT 'NULL'  ""
+	ColTimestamp1  time.Time    `json:"col_timestamp_1,omitempty"  `                    // col_timestamp_1 timestamp NOT NULL  DEFAULT 'current_timestamp()'  ""
+	ColTimestamp2  null.Time    `json:"col_timestamp_2,omitempty"  `                    // col_timestamp_2 timestamp NULL  DEFAULT 'NULL'  ""
+	ColTinyint1    int32        `json:"col_tinyint_1,omitempty"  max_len:"3"`           // col_tinyint_1 tinyint(1) NOT NULL  DEFAULT '0'  ""
+	ColVarchar1    string       `json:"col_varchar_1,omitempty"  max_len:"1"`           // col_varchar_1 varchar(1) NOT NULL  DEFAULT ''0''  ""
+	ColVarchar100  null.String  `json:"col_varchar_100,omitempty"  max_len:"100"`       // col_varchar_100 varchar(100) NULL  DEFAULT 'NULL'  ""
+	ColVarchar16   string       `json:"col_varchar_16,omitempty"  max_len:"16"`         // col_varchar_16 varchar(16) NOT NULL  DEFAULT ''de_DE''  ""
+	ColChar1       null.String  `json:"col_char_1,omitempty"  max_len:"21"`             // col_char_1 char(21) NULL  DEFAULT 'NULL'  ""
+	ColChar2       string       `json:"col_char_2,omitempty"  max_len:"17"`             // col_char_2 char(17) NOT NULL  DEFAULT ''xchar''  ""
 }
 
 // AssignLastInsertID updates the increment ID field with the last inserted ID
@@ -679,6 +680,7 @@ func (e *DmlgenTypes) Empty() *DmlgenTypes { *e = DmlgenTypes{}; return e }
 
 // DmlgenTypesCollection represents a collection type for DB table dmlgen_types
 // Not thread safe. Auto generated.
+// Just another comment.
 //easyjson:json
 type DmlgenTypesCollection struct {
 	Data             []*DmlgenTypes                   `json:"data,omitempty"`
@@ -752,30 +754,11 @@ func (cc *DmlgenTypesCollection) IDs(ret ...int32) []int32 {
 	return ret
 }
 
-// ColBlobs belongs to the column `col_blob`
-// and returns a slice or appends to a slice only unique values of that column.
-// The values will be filtered internally in a Go map. No DB query gets
-// executed. Auto generated.
-func (cc *DmlgenTypesCollection) ColBlobs(ret ...[]byte) [][]byte {
-	if ret == nil {
-		ret = make([][]byte, 0, len(cc.Data))
-	}
-
-	dupCheck := make(map[[]byte]bool, len(cc.Data))
-	for _, e := range cc.Data {
-		if !dupCheck[e.ColBlob] {
-			ret = append(ret, e.ColBlob)
-			dupCheck[e.ColBlob] = true
-		}
-	}
-	return ret
-}
-
 // ColDate2s belongs to the column `col_date_2`
 // and returns a slice or appends to a slice only unique values of that column.
 // The values will be filtered internally in a Go map. No DB query gets
 // executed. Auto generated.
-func (cc *DmlgenTypesCollection) ColDate2s(ret ...time.Time) []time.Time {
+func (cc *DmlgenTypesCollection) UniqueColDate2s(ret ...time.Time) []time.Time {
 	if ret == nil {
 		ret = make([]time.Time, 0, len(cc.Data))
 	}
@@ -794,7 +777,7 @@ func (cc *DmlgenTypesCollection) ColDate2s(ret ...time.Time) []time.Time {
 // and returns a slice or appends to a slice only unique values of that column.
 // The values will be filtered internally in a Go map. No DB query gets
 // executed. Auto generated.
-func (cc *DmlgenTypesCollection) Price124as(ret ...null.Decimal) []null.Decimal {
+func (cc *DmlgenTypesCollection) UniquePrice124as(ret ...null.Decimal) []null.Decimal {
 	if ret == nil {
 		ret = make([]null.Decimal, 0, len(cc.Data))
 	}
@@ -813,7 +796,7 @@ func (cc *DmlgenTypesCollection) Price124as(ret ...null.Decimal) []null.Decimal 
 // and returns a slice or appends to a slice only unique values of that column.
 // The values will be filtered internally in a Go map. No DB query gets
 // executed. Auto generated.
-func (cc *DmlgenTypesCollection) ColInt1s(ret ...int32) []int32 {
+func (cc *DmlgenTypesCollection) UniqueColInt1s(ret ...int32) []int32 {
 	if ret == nil {
 		ret = make([]int32, 0, len(cc.Data))
 	}
@@ -832,7 +815,7 @@ func (cc *DmlgenTypesCollection) ColInt1s(ret ...int32) []int32 {
 // and returns a slice or appends to a slice only unique values of that column.
 // The values will be filtered internally in a Go map. No DB query gets
 // executed. Auto generated.
-func (cc *DmlgenTypesCollection) ColInt2s(ret ...int32) []int32 {
+func (cc *DmlgenTypesCollection) UniqueColInt2s(ret ...int32) []int32 {
 	if ret == nil {
 		ret = make([]int32, 0, len(cc.Data))
 	}
@@ -847,30 +830,11 @@ func (cc *DmlgenTypesCollection) ColInt2s(ret ...int32) []int32 {
 	return ret
 }
 
-// ColLongtext2s belongs to the column `col_longtext_2`
-// and returns a slice or appends to a slice only unique values of that column.
-// The values will be filtered internally in a Go map. No DB query gets
-// executed. Auto generated.
-func (cc *DmlgenTypesCollection) ColLongtext2s(ret ...string) []string {
-	if ret == nil {
-		ret = make([]string, 0, len(cc.Data))
-	}
-
-	dupCheck := make(map[string]bool, len(cc.Data))
-	for _, e := range cc.Data {
-		if !dupCheck[e.ColLongtext2] {
-			ret = append(ret, e.ColLongtext2)
-			dupCheck[e.ColLongtext2] = true
-		}
-	}
-	return ret
-}
-
 // HasSmallint5s belongs to the column `has_smallint_5`
 // and returns a slice or appends to a slice only unique values of that column.
 // The values will be filtered internally in a Go map. No DB query gets
 // executed. Auto generated.
-func (cc *DmlgenTypesCollection) HasSmallint5s(ret ...bool) []bool {
+func (cc *DmlgenTypesCollection) UniqueHasSmallint5s(ret ...bool) []bool {
 	if ret == nil {
 		ret = make([]bool, 0, len(cc.Data))
 	}
@@ -880,6 +844,25 @@ func (cc *DmlgenTypesCollection) HasSmallint5s(ret ...bool) []bool {
 		if !dupCheck[e.HasSmallint5] {
 			ret = append(ret, e.HasSmallint5)
 			dupCheck[e.HasSmallint5] = true
+		}
+	}
+	return ret
+}
+
+// ColVarchar100s belongs to the column `col_varchar_100`
+// and returns a slice or appends to a slice only unique values of that column.
+// The values will be filtered internally in a Go map. No DB query gets
+// executed. Auto generated.
+func (cc *DmlgenTypesCollection) UniqueColVarchar100s(ret ...string) []string {
+	if ret == nil {
+		ret = make([]string, 0, len(cc.Data))
+	}
+
+	dupCheck := make(map[string]bool, len(cc.Data))
+	for _, e := range cc.Data {
+		if !dupCheck[e.ColVarchar100.String] {
+			ret = append(ret, e.ColVarchar100.String)
+			dupCheck[e.ColVarchar100.String] = true
 		}
 	}
 	return ret

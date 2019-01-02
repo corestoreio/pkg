@@ -150,142 +150,148 @@ func easyjsonA96ca39cDecodeGithubComCorestoreioPkgSqlDmlgenTestdata1(in *jlexer.
 		}
 		switch key {
 		case "id":
-			out.ID = int64(in.Int64())
-		case "colBigint1":
+			out.ID = int32(in.Int32())
+		case "col_bigint_1":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColBigint1).UnmarshalJSON(data))
 			}
-		case "colBigint2":
+		case "col_bigint_2":
 			out.ColBigint2 = int64(in.Int64())
-		case "colBigint3":
+		case "col_bigint_3":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColBigint3).UnmarshalJSON(data))
 			}
-		case "colBigint4":
+		case "col_bigint_4":
 			out.ColBigint4 = uint64(in.Uint64())
-		case "colBlob":
-			if data := in.Raw(); in.Ok() {
-				in.AddError((out.ColBlob).UnmarshalJSON(data))
+		case "col_blob":
+			if in.IsNull() {
+				in.Skip()
+				out.ColBlob = nil
+			} else {
+				out.ColBlob = in.Bytes()
 			}
-		case "colDate1":
+		case "col_date_1":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColDate1).UnmarshalJSON(data))
 			}
-		case "colDate2":
+		case "col_date_2":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColDate2).UnmarshalJSON(data))
 			}
-		case "colDatetime1":
+		case "col_datetime_1":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColDatetime1).UnmarshalJSON(data))
 			}
-		case "colDatetime2":
+		case "col_datetime_2":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColDatetime2).UnmarshalJSON(data))
 			}
-		case "colDecimal100":
+		case "col_decimal_10_0":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColDecimal100).UnmarshalJSON(data))
 			}
-		case "colDecimal124":
+		case "col_decimal_12_4":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColDecimal124).UnmarshalJSON(data))
 			}
-		case "price124a":
+		case "price_12_4a":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.Price124a).UnmarshalJSON(data))
 			}
-		case "price124b":
+		case "price_12_4b":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.Price124b).UnmarshalJSON(data))
 			}
-		case "colDecimal123":
+		case "col_decimal_12_3":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColDecimal123).UnmarshalJSON(data))
 			}
-		case "colDecimal206":
+		case "col_decimal_20_6":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColDecimal206).UnmarshalJSON(data))
 			}
-		case "colDecimal2412":
+		case "col_decimal_24_12":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColDecimal2412).UnmarshalJSON(data))
 			}
-		case "colFloat":
+		case "col_float":
 			out.ColFloat = float64(in.Float64())
-		case "colInt1":
+		case "col_int_1":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColInt1).UnmarshalJSON(data))
 			}
-		case "colInt2":
-			out.ColInt2 = int64(in.Int64())
-		case "colInt3":
+		case "col_int_2":
+			out.ColInt2 = int32(in.Int32())
+		case "col_int_3":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColInt3).UnmarshalJSON(data))
 			}
-		case "colInt4":
-			out.ColInt4 = uint64(in.Uint64())
-		case "colLongtext1":
+		case "col_int_4":
+			out.ColInt4 = uint32(in.Uint32())
+		case "col_longtext_1":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColLongtext1).UnmarshalJSON(data))
 			}
-		case "colLongtext2":
+		case "col_longtext_2":
 			out.ColLongtext2 = string(in.String())
-		case "colMediumblob":
-			if data := in.Raw(); in.Ok() {
-				in.AddError((out.ColMediumblob).UnmarshalJSON(data))
+		case "col_mediumblob":
+			if in.IsNull() {
+				in.Skip()
+				out.ColMediumblob = nil
+			} else {
+				out.ColMediumblob = in.Bytes()
 			}
-		case "colMediumtext1":
+		case "col_mediumtext_1":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColMediumtext1).UnmarshalJSON(data))
 			}
-		case "colMediumtext2":
+		case "col_mediumtext_2":
 			out.ColMediumtext2 = string(in.String())
-		case "colSmallint1":
+		case "col_smallint_1":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColSmallint1).UnmarshalJSON(data))
 			}
-		case "colSmallint2":
-			out.ColSmallint2 = int64(in.Int64())
-		case "colSmallint3":
+		case "col_smallint_2":
+			out.ColSmallint2 = int32(in.Int32())
+		case "col_smallint_3":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColSmallint3).UnmarshalJSON(data))
 			}
-		case "colSmallint4":
-			out.ColSmallint4 = uint64(in.Uint64())
-		case "hasSmallint5":
+		case "col_smallint_4":
+			out.ColSmallint4 = uint32(in.Uint32())
+		case "has_smallint_5":
 			out.HasSmallint5 = bool(in.Bool())
-		case "isSmallint5":
+		case "is_smallint_5":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.IsSmallint5).UnmarshalJSON(data))
 			}
-		case "colText":
+		case "col_text":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColText).UnmarshalJSON(data))
 			}
-		case "colTimestamp1":
+		case "col_timestamp_1":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColTimestamp1).UnmarshalJSON(data))
 			}
-		case "colTimestamp2":
+		case "col_timestamp_2":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColTimestamp2).UnmarshalJSON(data))
 			}
-		case "colTinyint1":
-			out.ColTinyint1 = int64(in.Int64())
-		case "colVarchar1":
+		case "col_tinyint_1":
+			out.ColTinyint1 = int32(in.Int32())
+		case "col_varchar_1":
 			out.ColVarchar1 = string(in.String())
-		case "colVarchar100":
+		case "col_varchar_100":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColVarchar100).UnmarshalJSON(data))
 			}
-		case "colVarchar16":
+		case "col_varchar_16":
 			out.ColVarchar16 = string(in.String())
-		case "colChar1":
+		case "col_char_1":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColChar1).UnmarshalJSON(data))
 			}
-		case "colChar2":
+		case "col_char_2":
 			out.ColChar2 = string(in.String())
 		default:
 			in.SkipRecursive()
@@ -309,10 +315,10 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		} else {
 			out.RawString(prefix)
 		}
-		out.Int64(int64(in.ID))
+		out.Int32(int32(in.ID))
 	}
 	if true {
-		const prefix string = ",\"colBigint1\":"
+		const prefix string = ",\"col_bigint_1\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -322,7 +328,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.ColBigint1).MarshalJSON())
 	}
 	if in.ColBigint2 != 0 {
-		const prefix string = ",\"colBigint2\":"
+		const prefix string = ",\"col_bigint_2\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -332,7 +338,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Int64(int64(in.ColBigint2))
 	}
 	if true {
-		const prefix string = ",\"colBigint3\":"
+		const prefix string = ",\"col_bigint_3\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -342,7 +348,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.ColBigint3).MarshalJSON())
 	}
 	if in.ColBigint4 != 0 {
-		const prefix string = ",\"colBigint4\":"
+		const prefix string = ",\"col_bigint_4\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -351,18 +357,18 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		}
 		out.Uint64(uint64(in.ColBigint4))
 	}
-	if true {
-		const prefix string = ",\"colBlob\":"
+	if len(in.ColBlob) != 0 {
+		const prefix string = ",\"col_blob\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
 		} else {
 			out.RawString(prefix)
 		}
-		out.Raw((in.ColBlob).MarshalJSON())
+		out.Base64Bytes(in.ColBlob)
 	}
 	if true {
-		const prefix string = ",\"colDate1\":"
+		const prefix string = ",\"col_date_1\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -372,7 +378,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.ColDate1).MarshalJSON())
 	}
 	if true {
-		const prefix string = ",\"colDate2\":"
+		const prefix string = ",\"col_date_2\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -382,7 +388,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.ColDate2).MarshalJSON())
 	}
 	if true {
-		const prefix string = ",\"colDatetime1\":"
+		const prefix string = ",\"col_datetime_1\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -392,7 +398,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.ColDatetime1).MarshalJSON())
 	}
 	if true {
-		const prefix string = ",\"colDatetime2\":"
+		const prefix string = ",\"col_datetime_2\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -402,7 +408,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.ColDatetime2).MarshalJSON())
 	}
 	if true {
-		const prefix string = ",\"colDecimal100\":"
+		const prefix string = ",\"col_decimal_10_0\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -412,7 +418,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.ColDecimal100).MarshalJSON())
 	}
 	if true {
-		const prefix string = ",\"colDecimal124\":"
+		const prefix string = ",\"col_decimal_12_4\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -422,7 +428,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.ColDecimal124).MarshalJSON())
 	}
 	if true {
-		const prefix string = ",\"price124a\":"
+		const prefix string = ",\"price_12_4a\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -432,7 +438,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.Price124a).MarshalJSON())
 	}
 	if true {
-		const prefix string = ",\"price124b\":"
+		const prefix string = ",\"price_12_4b\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -442,7 +448,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.Price124b).MarshalJSON())
 	}
 	if true {
-		const prefix string = ",\"colDecimal123\":"
+		const prefix string = ",\"col_decimal_12_3\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -452,7 +458,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.ColDecimal123).MarshalJSON())
 	}
 	if true {
-		const prefix string = ",\"colDecimal206\":"
+		const prefix string = ",\"col_decimal_20_6\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -462,7 +468,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.ColDecimal206).MarshalJSON())
 	}
 	if true {
-		const prefix string = ",\"colDecimal2412\":"
+		const prefix string = ",\"col_decimal_24_12\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -472,7 +478,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.ColDecimal2412).MarshalJSON())
 	}
 	if in.ColFloat != 0 {
-		const prefix string = ",\"colFloat\":"
+		const prefix string = ",\"col_float\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -482,7 +488,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Float64(float64(in.ColFloat))
 	}
 	if true {
-		const prefix string = ",\"colInt1\":"
+		const prefix string = ",\"col_int_1\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -492,17 +498,17 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.ColInt1).MarshalJSON())
 	}
 	if in.ColInt2 != 0 {
-		const prefix string = ",\"colInt2\":"
+		const prefix string = ",\"col_int_2\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
 		} else {
 			out.RawString(prefix)
 		}
-		out.Int64(int64(in.ColInt2))
+		out.Int32(int32(in.ColInt2))
 	}
 	if true {
-		const prefix string = ",\"colInt3\":"
+		const prefix string = ",\"col_int_3\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -512,17 +518,17 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.ColInt3).MarshalJSON())
 	}
 	if in.ColInt4 != 0 {
-		const prefix string = ",\"colInt4\":"
+		const prefix string = ",\"col_int_4\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
 		} else {
 			out.RawString(prefix)
 		}
-		out.Uint64(uint64(in.ColInt4))
+		out.Uint32(uint32(in.ColInt4))
 	}
 	if true {
-		const prefix string = ",\"colLongtext1\":"
+		const prefix string = ",\"col_longtext_1\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -532,7 +538,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.ColLongtext1).MarshalJSON())
 	}
 	if in.ColLongtext2 != "" {
-		const prefix string = ",\"colLongtext2\":"
+		const prefix string = ",\"col_longtext_2\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -541,18 +547,18 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		}
 		out.String(string(in.ColLongtext2))
 	}
-	if true {
-		const prefix string = ",\"colMediumblob\":"
+	if len(in.ColMediumblob) != 0 {
+		const prefix string = ",\"col_mediumblob\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
 		} else {
 			out.RawString(prefix)
 		}
-		out.Raw((in.ColMediumblob).MarshalJSON())
+		out.Base64Bytes(in.ColMediumblob)
 	}
 	if true {
-		const prefix string = ",\"colMediumtext1\":"
+		const prefix string = ",\"col_mediumtext_1\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -562,7 +568,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.ColMediumtext1).MarshalJSON())
 	}
 	if in.ColMediumtext2 != "" {
-		const prefix string = ",\"colMediumtext2\":"
+		const prefix string = ",\"col_mediumtext_2\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -572,7 +578,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.String(string(in.ColMediumtext2))
 	}
 	if true {
-		const prefix string = ",\"colSmallint1\":"
+		const prefix string = ",\"col_smallint_1\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -582,17 +588,17 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.ColSmallint1).MarshalJSON())
 	}
 	if in.ColSmallint2 != 0 {
-		const prefix string = ",\"colSmallint2\":"
+		const prefix string = ",\"col_smallint_2\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
 		} else {
 			out.RawString(prefix)
 		}
-		out.Int64(int64(in.ColSmallint2))
+		out.Int32(int32(in.ColSmallint2))
 	}
 	if true {
-		const prefix string = ",\"colSmallint3\":"
+		const prefix string = ",\"col_smallint_3\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -602,17 +608,17 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.ColSmallint3).MarshalJSON())
 	}
 	if in.ColSmallint4 != 0 {
-		const prefix string = ",\"colSmallint4\":"
+		const prefix string = ",\"col_smallint_4\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
 		} else {
 			out.RawString(prefix)
 		}
-		out.Uint64(uint64(in.ColSmallint4))
+		out.Uint32(uint32(in.ColSmallint4))
 	}
 	if in.HasSmallint5 {
-		const prefix string = ",\"hasSmallint5\":"
+		const prefix string = ",\"has_smallint_5\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -622,7 +628,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Bool(bool(in.HasSmallint5))
 	}
 	if true {
-		const prefix string = ",\"isSmallint5\":"
+		const prefix string = ",\"is_smallint_5\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -632,7 +638,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.IsSmallint5).MarshalJSON())
 	}
 	if true {
-		const prefix string = ",\"colText\":"
+		const prefix string = ",\"col_text\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -642,7 +648,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.ColText).MarshalJSON())
 	}
 	if true {
-		const prefix string = ",\"colTimestamp1\":"
+		const prefix string = ",\"col_timestamp_1\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -652,7 +658,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.ColTimestamp1).MarshalJSON())
 	}
 	if true {
-		const prefix string = ",\"colTimestamp2\":"
+		const prefix string = ",\"col_timestamp_2\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -662,17 +668,17 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.ColTimestamp2).MarshalJSON())
 	}
 	if in.ColTinyint1 != 0 {
-		const prefix string = ",\"colTinyint1\":"
+		const prefix string = ",\"col_tinyint_1\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
 		} else {
 			out.RawString(prefix)
 		}
-		out.Int64(int64(in.ColTinyint1))
+		out.Int32(int32(in.ColTinyint1))
 	}
 	if in.ColVarchar1 != "" {
-		const prefix string = ",\"colVarchar1\":"
+		const prefix string = ",\"col_varchar_1\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -682,7 +688,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.String(string(in.ColVarchar1))
 	}
 	if true {
-		const prefix string = ",\"colVarchar100\":"
+		const prefix string = ",\"col_varchar_100\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -692,7 +698,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.ColVarchar100).MarshalJSON())
 	}
 	if in.ColVarchar16 != "" {
-		const prefix string = ",\"colVarchar16\":"
+		const prefix string = ",\"col_varchar_16\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -702,7 +708,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.String(string(in.ColVarchar16))
 	}
 	if true {
-		const prefix string = ",\"colChar1\":"
+		const prefix string = ",\"col_char_1\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -712,7 +718,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.ColChar1).MarshalJSON())
 	}
 	if in.ColChar2 != "" {
-		const prefix string = ",\"colChar2\":"
+		const prefix string = ",\"col_char_2\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -782,17 +788,17 @@ func easyjsonA96ca39cDecodeGithubComCorestoreioPkgSqlDmlgenTestdata2(in *jlexer.
 					out.Data = (out.Data)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v4 *CoreConfigData
+					var v10 *CoreConfigData
 					if in.IsNull() {
 						in.Skip()
-						v4 = nil
+						v10 = nil
 					} else {
-						if v4 == nil {
-							v4 = new(CoreConfigData)
+						if v10 == nil {
+							v10 = new(CoreConfigData)
 						}
-						(*v4).UnmarshalEasyJSON(in)
+						(*v10).UnmarshalEasyJSON(in)
 					}
-					out.Data = append(out.Data, v4)
+					out.Data = append(out.Data, v10)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -821,14 +827,14 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata2(out *jwrite
 		}
 		{
 			out.RawByte('[')
-			for v5, v6 := range in.Data {
-				if v5 > 0 {
+			for v11, v12 := range in.Data {
+				if v11 > 0 {
 					out.RawByte(',')
 				}
-				if v6 == nil {
+				if v12 == nil {
 					out.RawString("null")
 				} else {
-					(*v6).MarshalEasyJSON(out)
+					(*v12).MarshalEasyJSON(out)
 				}
 			}
 			out.RawByte(']')
@@ -880,11 +886,11 @@ func easyjsonA96ca39cDecodeGithubComCorestoreioPkgSqlDmlgenTestdata3(in *jlexer.
 		}
 		switch key {
 		case "config_id":
-			out.ConfigID = uint64(in.Uint64())
+			out.ConfigID = uint32(in.Uint32())
 		case "scope":
 			out.Scope = string(in.String())
 		case "scope_id":
-			out.ScopeID = int64(in.Int64())
+			out.ScopeID = int32(in.Int32())
 		case "expires":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.Expires).UnmarshalJSON(data))
@@ -925,7 +931,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata3(out *jwrite
 		} else {
 			out.RawString(prefix)
 		}
-		out.Uint64(uint64(in.ConfigID))
+		out.Uint32(uint32(in.ConfigID))
 	}
 	if in.Scope != "" {
 		const prefix string = ",\"scope\":"
@@ -945,7 +951,7 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata3(out *jwrite
 		} else {
 			out.RawString(prefix)
 		}
-		out.Int64(int64(in.ScopeID))
+		out.Int32(int32(in.ScopeID))
 	}
 	if true {
 		const prefix string = ",\"expires\":"
