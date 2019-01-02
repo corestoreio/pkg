@@ -28,7 +28,15 @@ func (s *Service) TopLevelDomain() string {
 // DomainName generates random domain name
 func (s *Service) DomainName() string {
 	c := strings.ReplaceAll(s.Company(), " ", "-")
-	return strings.ToLower(c + "." + s.TopLevelDomain())
+	c = strings.ToLower(c + "." + s.TopLevelDomain())
+	var buf strings.Builder
+	for _, r := range c {
+		switch {
+		case r >= 'a' && r <= 'z', r >= '0' && r <= '9', r == '-', r == '.':
+			buf.WriteRune(r)
+		}
+	}
+	return buf.String()
 }
 
 // EmailAddress generates email address
