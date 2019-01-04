@@ -89,7 +89,12 @@ type Options struct {
 	// instead of the struct tag to find out which kind of random function is
 	// needed.
 	DisabledFieldNameUse bool
+	// MaxLenStringLimit defines the upper bound of the maximal length for a
+	// string. If not set, defaults to 512.
+	MaxLenStringLimit uint64
 }
+
+const maxLenStringLimit = 512
 
 type optionFn struct {
 	sortOrder int
@@ -166,6 +171,9 @@ func NewService(seed uint64, o *Options, opts ...optionFn) (*Service, error) {
 	}
 	if o.TimeLocation == nil {
 		o.TimeLocation = time.UTC
+	}
+	if o.MaxLenStringLimit == 0 {
+		o.MaxLenStringLimit = maxLenStringLimit
 	}
 
 	s := &Service{
@@ -495,7 +503,6 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 				// The _ is important to not cause a panic: "comma ok" pattern with ignored ok
 				fkr, _ = v.Addr().Interface().(Faker)
 			}
-
 			shouldResetField := false
 			for i := 0; i < v.NumField(); i++ {
 				vf := v.Field(i)
@@ -565,37 +572,6 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 					}
 				}
 
-				// // if vf.Kind() == reflect.Struct { // embedded struct
-				// // 	if tag == "" {
-				// // 		tag = fieldName
-				// // 	}
-				// // 	val, err := s.getValue(vf.Type(), maxLen)
-				// // 	if err != nil {
-				// // 		return reflect.Value{}, err
-				// // 	}
-				// // 	val = val.Convert(vf.Type())
-				// // 	vf.Set(val)
-				// // 	continue
-				// // }
-				// switch {
-				// case tag != "":
-				// 	if err := s.setDataWithTag(vf.Addr(), tag, maxLen, false); err != nil {
-				// 		return rVal, errors.WithStack(err)
-				// 	}
-				// case tag == "" && !s.o.DisabledFieldNameUse && s.hasTagBasedFunc(fieldName):
-				// 	if err := s.setDataWithTag(vf.Addr(), fieldName, maxLen, true); err != nil {
-				// 		return rVal, errors.WithStack(err)
-				// 	}
-				// 	fmt.Printf("vf after: %#v\n", vf.Interface())
-				// default:
-				// 	val, err := s.getValue(vf.Type(), maxLen)
-				// 	if err != nil {
-				// 		return reflect.Value{}, err
-				// 	}
-				// 	val = val.Convert(vf.Type())
-				// 	vf.Set(val)
-				// }
-
 				if !shouldResetField && t.Field(i).Name == "Valid" && vf.Kind() == reflect.Bool && !vf.Bool() {
 					shouldResetField = true
 				}
@@ -609,13 +585,21 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 		}
 
 	case reflect.String:
-		res := s.randomString(maxLen)
+		ml := maxLen
+		if ml > s.o.MaxLenStringLimit {
+			ml = s.o.MaxLenStringLimit
+		}
+		res := s.randomString(ml)
 		return reflect.ValueOf(res), nil
 	case reflect.Array, reflect.Slice:
-		slLen := s.r.Uint64n(maxLen)
+		ml := maxLen
+		if ml > s.o.MaxLenStringLimit {
+			ml = s.o.MaxLenStringLimit
+		}
+		slLen := s.r.Uint64n(ml)
 		v := reflect.MakeSlice(t, int(slLen), int(slLen))
 		for i := 0; i < v.Len(); i++ {
-			val, err := s.getValue(t.Elem(), maxLen)
+			val, err := s.getValue(t.Elem(), ml)
 			if err != nil {
 				return rVal, err
 			}

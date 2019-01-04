@@ -441,7 +441,11 @@ func TestMaxLen(t *testing.T) {
 			} else {
 				assert.Exactly(t, null.String{}, ccd.Value)
 			}
-			assert.LenBetween(t, ccd.ColBlob, 1, 65535)
+			if len(ccd.ColBlob) > 0 {
+				assert.LenBetween(t, ccd.ColBlob, 1, 65535)
+			} else {
+				assert.Empty(t, ccd.ColBlob)
+			}
 			// t.Logf("%#v", ccd.ColDecimal100)
 		}
 	})
@@ -508,11 +512,35 @@ func TestCustomerEntity_Fieldnames(t *testing.T) {
 		var a CustomerEntity
 		err := s.FakeData(&a)
 		assert.NoError(t, err, "\n%+v", err)
-		//t.Logf("%#v", a)
-		assert.LenBetween(t, fmt.Sprintf("%#v", a), 260, 530)
+		// t.Logf("%#v", a)
+		assert.LenBetween(t, fmt.Sprintf("%#v", a), 260, 535)
 		if a.Email.Valid {
 			assert.Regexp(t, "^[a-z0-9\\-_]+@.+\\.[a-z0-9\\-]+$", a.Email.String, "Email address")
 		}
 	}
+}
 
+type MaxStringLen struct {
+	ColBlob      []byte      `json:"col_blob,omitempty"  max_len:"65535"`
+	ColLongtext1 null.String `json:"col_longtext_1,omitempty"  max_len:"4294967295"`
+	ColLongtext2 string      `json:"col_longtext_2,omitempty"  max_len:"4294967295"`
+}
+
+func TestMaxStringLen(t *testing.T) {
+	s := MustNewService(0, nil) // defaults to maxLenStringLimit
+
+	for i := 0; i < 10; i++ {
+		var a MaxStringLen
+		err := s.FakeData(&a)
+		assert.NoError(t, err, "\n%+v", err)
+
+		assert.LenBetween(t, a.ColBlob, 1, maxLenStringLimit, "Field a.ColBlob")
+		if a.ColLongtext1.Valid {
+			assert.LenBetween(t, a.ColLongtext1.String, 1, maxLenStringLimit, "Field ColLongtext1.String")
+		} else {
+			assert.Empty(t, a.ColLongtext1.String, "Field ColLongtext1.String")
+		}
+		assert.LenBetween(t, a.ColLongtext2, 1, maxLenStringLimit, "Field ColLongtext2")
+
+	}
 }
