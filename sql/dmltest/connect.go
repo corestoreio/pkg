@@ -23,6 +23,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/fatih/color"
 )
 
 // EnvDSN is the name of the environment variable
@@ -41,7 +42,7 @@ func getDSN(env string) (string, error) {
 func MustGetDSN(t testing.TB) string {
 	d, err := getDSN(EnvDSN)
 	if err != nil {
-		t.Skip(err)
+		t.Skip(color.MagentaString("%s", err))
 	}
 	return d
 }
@@ -53,7 +54,7 @@ func MustGetDSN(t testing.TB) string {
 func MustConnectDB(t testing.TB, opts ...dml.ConnPoolOption) *dml.ConnPool {
 	t.Helper()
 	if _, err := getDSN(EnvDSN); errors.NotFound.Match(err) {
-		t.Skipf("%s", err)
+		t.Skip(color.MagentaString("%s", err))
 	}
 	cfg := []dml.ConnPoolOption{dml.WithDSN(MustGetDSN(t))}
 	return dml.MustConnectAndVerify(append(cfg, opts...)...)
