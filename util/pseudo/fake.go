@@ -511,13 +511,6 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 				if !vf.CanSet() {
 					continue // to avoid panic to set on unexported field in struct
 				}
-				if fkr != nil {
-					if skip, err := fkr.Fake(fieldName); err != nil {
-						return rVal, err
-					} else if skip {
-						continue
-					}
-				}
 
 				tag := tf.Tag.Get(tagName)
 				if tag == Skip {
@@ -530,14 +523,14 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 						return rVal, err
 					}
 				}
-				fieldName = toSnakeCase(fieldName)
 
-				/* if strings.HasPrefix(tf.Type.String(), "null.") */
-				{ // relates to package github.com/corestoreio/pkg/storage/null
+				// Custom functions must have precedence before interface Faker
+				// implementation of a type.
+				{
 
 					sTag := tag
 					if sTag == "" {
-						sTag = fieldName
+						sTag = toSnakeCase(fieldName)
 					}
 
 					if vf.CanInterface() && vf.CanAddr() {
@@ -553,6 +546,15 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 								continue
 							}
 						}
+					}
+				}
+
+				if fkr != nil {
+					// fieldName is the original field name as written in the struct.
+					if skip, err := fkr.Fake(fieldName); err != nil {
+						return rVal, err
+					} else if skip {
+						continue
 					}
 				}
 
