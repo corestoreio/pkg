@@ -425,7 +425,6 @@ func (ts *Tables) mySQLToGoType(c *ddl.Column, withNull bool) string {
 	case !c.IsUnsigned() && (!c.IsNull() || !withNull):
 		t = goType.GoNotNull // signed not null
 	}
-
 	return t
 }
 

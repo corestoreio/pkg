@@ -186,9 +186,9 @@ func easyjsonA96ca39cDecodeGithubComCorestoreioPkgSqlDmlgenTestdata1(in *jlexer.
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColDatetime2).UnmarshalJSON(data))
 			}
-		case "col_decimal_10_0":
+		case "col_decimal_10_1":
 			if data := in.Raw(); in.Ok() {
-				in.AddError((out.ColDecimal100).UnmarshalJSON(data))
+				in.AddError((out.ColDecimal101).UnmarshalJSON(data))
 			}
 		case "col_decimal_12_4":
 			if data := in.Raw(); in.Ok() {
@@ -214,8 +214,6 @@ func easyjsonA96ca39cDecodeGithubComCorestoreioPkgSqlDmlgenTestdata1(in *jlexer.
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColDecimal2412).UnmarshalJSON(data))
 			}
-		case "col_float":
-			out.ColFloat = float64(in.Float64())
 		case "col_int_1":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColInt1).UnmarshalJSON(data))
@@ -408,14 +406,14 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 		out.Raw((in.ColDatetime2).MarshalJSON())
 	}
 	if true {
-		const prefix string = ",\"col_decimal_10_0\":"
+		const prefix string = ",\"col_decimal_10_1\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
 		} else {
 			out.RawString(prefix)
 		}
-		out.Raw((in.ColDecimal100).MarshalJSON())
+		out.Raw((in.ColDecimal101).MarshalJSON())
 	}
 	if true {
 		const prefix string = ",\"col_decimal_12_4\":"
@@ -476,16 +474,6 @@ func easyjsonA96ca39cEncodeGithubComCorestoreioPkgSqlDmlgenTestdata1(out *jwrite
 			out.RawString(prefix)
 		}
 		out.Raw((in.ColDecimal2412).MarshalJSON())
-	}
-	if in.ColFloat != 0 {
-		const prefix string = ",\"col_float\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
-		out.Float64(float64(in.ColFloat))
 	}
 	if true {
 		const prefix string = ",\"col_int_1\":"

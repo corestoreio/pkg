@@ -93,7 +93,6 @@ func TestGenerate_Tables_Protobuf_Json(t *testing.T) {
 
 		dmlgen.WithProtobuf(),
 
-		//dmlgen.WithLoadColumns(ctx, db.DB, "dmlgen_types"),
 		dmlgen.WithLoadColumns(ctx, db.DB, "dmlgen_types", "core_config_data", "customer_entity"),
 		dmlgen.WithTableOption(
 			"customer_entity", &dmlgen.TableOption{
@@ -128,9 +127,42 @@ func TestGenerate_Tables_Protobuf_Json(t *testing.T) {
 			}),
 
 		dmlgen.WithColumnAliasesFromForeignKeys(ctx, db.DB),
+		dmlgen.WithCustomCode("pseudo.MustNewService.Option", `
+		pseudo.WithTagFakeFunc("ColDate1", func(maxLen int) (interface{}, error) {
+			if ps.Intn(1000)%3 == 0 {
+				return nil, nil
+			}
+			return ps.Dob18(), nil
+		}),
+		pseudo.WithTagFakeFunc("ColDate2", func(maxLen int) (interface{}, error) {
+			return ps.Dob18().MarshalText()
+		}),
+		pseudo.WithTagFakeFunc("ColDecimal101", func(maxLen int) (interface{}, error) {
+			return fmt.Sprintf("%.1f", ps.Price()), nil
+		}),
+		pseudo.WithTagFakeFunc("Price124b", func(maxLen int) (interface{}, error) {
+			return fmt.Sprintf("%.4f", ps.Price()), nil
+		}),
+		pseudo.WithTagFakeFunc("ColDecimal123", func(maxLen int) (interface{}, error) {
+			return fmt.Sprintf("%.3f", ps.Float64()), nil
+		}),
+		pseudo.WithTagFakeFunc("ColDecimal206", func(maxLen int) (interface{}, error) {
+			return fmt.Sprintf("%.6f", ps.Float64()), nil
+		}),
+		pseudo.WithTagFakeFunc("ColDecimal2412", func(maxLen int) (interface{}, error) {
+			return fmt.Sprintf("%.12f", ps.Float64()), nil
+		}),
+		pseudo.WithTagFakeFuncAlias(
+			"ColDecimal124", "Price124b", 
+			"Price124a", "Price124b",
+			"ColFloat", "ColDecimal206",
+			"Dob", "ColDate1",
+		),
+`),
 	)
 	assert.NoError(t, err)
 
+	ts.ImportPathsTesting = append(ts.ImportPathsTesting, "fmt") // only needed for pseudo functional options.
 	ts.TestSQLDumpGlobPath = "test_*_tables.sql"
 
 	writeFile(t, "testdata/output_gen.go", ts.GenerateGo)

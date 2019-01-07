@@ -16,13 +16,15 @@ func TestNewTables(t *testing.T) {
 
 	err = tbls.Validate(ctx)
 	assert.NoError(t, err)
-	ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de"},
-		pseudo.WithTagFakeFunc("website_id", func(maxLen int) (interface{}, error) {
+	var ps *pseudo.Service
+	ps = pseudo.MustNewService(0, &pseudo.Options{Lang: "de",FloatMaxDecimals:6},
+		pseudo.WithTagFakeFunc("WebsiteID", func(maxLen int) (interface{}, error) {
 			return 1, nil
 		}),
-		pseudo.WithTagFakeFunc("store_id", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("StoreID", func(maxLen int) (interface{}, error) {
 			return 1, nil
 		}),
+		{{- CustomCode "pseudo.MustNewService.Option" -}}
 	)
 
 	// TODO run those tests in parallel

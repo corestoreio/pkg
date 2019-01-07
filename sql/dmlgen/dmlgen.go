@@ -57,9 +57,10 @@ const pkgPath = `src/github.com/corestoreio/pkg/sql/dmlgen`
 // Tables can generated Go source for for database tables once correctly
 // configured.
 type Tables struct {
-	Package           string // Name of the package
-	PackageImportPath string // Name of the package
-	ImportPaths       []string
+	Package            string // Name of the package
+	PackageImportPath  string // Name of the package
+	ImportPaths        []string
+	ImportPathsTesting []string
 	// Tables uses the table name as map key and the table description as value.
 	Tables map[string]*table
 	template.FuncMap
@@ -83,6 +84,10 @@ type Tables struct {
 	TestSQLDumpGlobPath string
 	tpls                *template.Template
 	lastError           error
+
+	// customCode injects custom code to manipulate testing and other generate
+	// code blocks.
+	customCode map[string]string
 }
 
 // Option represents a sortable option for the NewTables function. Each option
@@ -429,6 +434,18 @@ func WithFlatbuffers(headerOptions ...string) (opt Option) {
 	return
 }
 
+func WithCustomCode(marker, code string) (opt Option) {
+	opt.sortOrder = 112
+	opt.fn = func(ts *Tables) error {
+		if ts.customCode == nil {
+			ts.customCode = make(map[string]string)
+		}
+		ts.customCode[marker] = code
+		return nil
+	}
+	return
+}
+
 func (ts *Tables) sortedTableNames() []string {
 	sortedKeys := make(slices.String, 0, len(ts.Tables))
 	for k := range ts.Tables {
@@ -458,6 +475,14 @@ func NewTables(packageImportPath string, opts ...Option) (*Tables, error) {
 			"github.com/corestoreio/pkg/sql/dml",
 			"github.com/corestoreio/pkg/storage/null",
 		},
+		ImportPathsTesting: []string{
+			"testing",
+			"context",
+			"sort",
+			"github.com/corestoreio/pkg/sql/dmltest",
+			"github.com/corestoreio/pkg/util/assert",
+			"github.com/corestoreio/pkg/util/pseudo",
+		},
 		FuncMap: make(template.FuncMap, 10),
 	}
 
@@ -469,6 +494,10 @@ func NewTables(packageImportPath string, opts ...Option) (*Tables, error) {
 		if err := opt.fn(ts); err != nil {
 			return nil, errors.WithStack(err)
 		}
+	}
+
+	ts.FuncMap["CustomCode"] = func(marker string) string {
+		return ts.customCode[marker]
 	}
 
 	ts.FuncMap["ToGoCamelCase"] = strs.ToGoCamelCase // net_http->NetHTTP entity_id->EntityID
@@ -664,14 +693,7 @@ func (ts *Tables) GenerateGo(w io.Writer, wTest io.Writer) error {
 		// now figure out all used package names in the buffer.
 		fmt.Fprintf(wTest, "// Auto generated via github.com/corestoreio/pkg/sql/dmlgen\n\npackage %s\n\nimport (\n", ts.Package)
 
-		for _, path := range []string{
-			"testing",
-			"context",
-			"sort",
-			"github.com/corestoreio/pkg/sql/dmltest",
-			"github.com/corestoreio/pkg/util/assert",
-			"github.com/corestoreio/pkg/util/pseudo",
-		} {
+		for _, path := range ts.ImportPathsTesting {
 			fmt.Fprintf(wTest, "\t%q\n", path)
 		}
 		fmt.Fprint(wTest, "\n)\n")
@@ -776,7 +798,7 @@ func GenerateProto(path string) error {
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		fContent = bytes.ReplaceAll(fContent, removeImport, nil)
+		fContent = bytes.Replace(fContent, removeImport, nil, -1)
 		if err := ioutil.WriteFile(file, fContent, 0644); err != nil {
 			return errors.WithStack(err)
 		}
@@ -795,7 +817,7 @@ func GenerateJSON(fname string, g *bootstrap.Generator) (err error) {
 
 	p := parser.Parser{}
 	if err := p.Parse(fname, fInfo.IsDir()); err != nil {
-		return fmt.Errorf("Error parsing %v: %v", fname, err)
+		return errors.CorruptData.Newf("[dmlgen] Error parsing failed %v: %v", fname, err)
 	}
 
 	var outName string
@@ -831,7 +853,7 @@ func GenerateJSON(fname string, g *bootstrap.Generator) (err error) {
 		}
 	}
 	if err := g.Run(); err != nil {
-		return fmt.Errorf("easyJSON: Bootstrap failed: %v", err)
+		return errors.Fatal.Newf("[dmlgen] easyJSON: Bootstrap failed: %v", err)
 	}
 	return nil
 }

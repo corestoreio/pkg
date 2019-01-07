@@ -4,14 +4,14 @@ package testdata
 
 import (
 	"context"
-	"sort"
-	"time"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/storage/null"
-
+	"sort"
+	"time"
 )
+
 const (
 	TableNameCoreConfigData = "core_config_data"
 	TableNameCustomerEntity = "customer_entity"
@@ -537,14 +537,13 @@ type DmlgenTypes struct {
 	ColDate2       time.Time    `json:"col_date_2,omitempty"  `                         // col_date_2 date NOT NULL  DEFAULT ''0000-00-00''  ""
 	ColDatetime1   null.Time    `json:"col_datetime_1,omitempty"  `                     // col_datetime_1 datetime NULL  DEFAULT 'NULL'  ""
 	ColDatetime2   time.Time    `json:"col_datetime_2,omitempty"  `                     // col_datetime_2 datetime NOT NULL  DEFAULT ''0000-00-00 00:00:00''  ""
-	ColDecimal100  null.Decimal `json:"col_decimal_10_0,omitempty"  max_len:"10"`       // col_decimal_10_0 decimal(10,0) unsigned NULL  DEFAULT 'NULL'  ""
+	ColDecimal101  null.Decimal `json:"col_decimal_10_1,omitempty"  max_len:"10"`       // col_decimal_10_1 decimal(10,1) unsigned NULL  DEFAULT 'NULL'  ""
 	ColDecimal124  null.Decimal `json:"col_decimal_12_4,omitempty"  max_len:"12"`       // col_decimal_12_4 decimal(12,4) NULL  DEFAULT 'NULL'  ""
 	Price124a      null.Decimal `json:"price_12_4a,omitempty"  max_len:"12"`            // price_12_4a decimal(12,4) NULL  DEFAULT 'NULL'  ""
 	Price124b      null.Decimal `json:"price_12_4b,omitempty"  max_len:"12"`            // price_12_4b decimal(12,4) NOT NULL  DEFAULT '0.0000'  ""
 	ColDecimal123  null.Decimal `json:"col_decimal_12_3,omitempty"  max_len:"12"`       // col_decimal_12_3 decimal(12,3) NOT NULL  DEFAULT '0.000'  ""
 	ColDecimal206  null.Decimal `json:"col_decimal_20_6,omitempty"  max_len:"20"`       // col_decimal_20_6 decimal(20,6) NOT NULL  DEFAULT '0.000000'  ""
 	ColDecimal2412 null.Decimal `json:"col_decimal_24_12,omitempty"  max_len:"24"`      // col_decimal_24_12 decimal(24,12) NOT NULL  DEFAULT '0.000000000000'  ""
-	ColFloat       float64      `json:"col_float,omitempty"  max_len:"12"`              // col_float float NOT NULL  DEFAULT '1'  ""
 	ColInt1        null.Int32   `json:"col_int_1,omitempty"  max_len:"10"`              // col_int_1 int(10) NULL  DEFAULT 'NULL'  ""
 	ColInt2        int32        `json:"col_int_2,omitempty"  max_len:"10"`              // col_int_2 int(10) NOT NULL  DEFAULT '0'  ""
 	ColInt3        null.Uint32  `json:"col_int_3,omitempty"  max_len:"10"`              // col_int_3 int(10) unsigned NULL  DEFAULT 'NULL'  ""
@@ -580,7 +579,7 @@ func (e *DmlgenTypes) AssignLastInsertID(id int64) {
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *DmlgenTypes) MapColumns(cm *dml.ColumnMap) error {
 	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Int32(&e.ID).NullInt64(&e.ColBigint1).Int64(&e.ColBigint2).NullUint64(&e.ColBigint3).Uint64(&e.ColBigint4).Byte(&e.ColBlob).NullTime(&e.ColDate1).Time(&e.ColDate2).NullTime(&e.ColDatetime1).Time(&e.ColDatetime2).Decimal(&e.ColDecimal100).Decimal(&e.ColDecimal124).Decimal(&e.Price124a).Decimal(&e.Price124b).Decimal(&e.ColDecimal123).Decimal(&e.ColDecimal206).Decimal(&e.ColDecimal2412).Float64(&e.ColFloat).NullInt32(&e.ColInt1).Int32(&e.ColInt2).NullUint32(&e.ColInt3).Uint32(&e.ColInt4).NullString(&e.ColLongtext1).String(&e.ColLongtext2).Byte(&e.ColMediumblob).NullString(&e.ColMediumtext1).String(&e.ColMediumtext2).NullInt32(&e.ColSmallint1).Int32(&e.ColSmallint2).NullUint32(&e.ColSmallint3).Uint32(&e.ColSmallint4).Bool(&e.HasSmallint5).NullBool(&e.IsSmallint5).NullString(&e.ColText).Time(&e.ColTimestamp1).NullTime(&e.ColTimestamp2).Int32(&e.ColTinyint1).String(&e.ColVarchar1).NullString(&e.ColVarchar100).String(&e.ColVarchar16).NullString(&e.ColChar1).String(&e.ColChar2).Err()
+		return cm.Int32(&e.ID).NullInt64(&e.ColBigint1).Int64(&e.ColBigint2).NullUint64(&e.ColBigint3).Uint64(&e.ColBigint4).Byte(&e.ColBlob).NullTime(&e.ColDate1).Time(&e.ColDate2).NullTime(&e.ColDatetime1).Time(&e.ColDatetime2).Decimal(&e.ColDecimal101).Decimal(&e.ColDecimal124).Decimal(&e.Price124a).Decimal(&e.Price124b).Decimal(&e.ColDecimal123).Decimal(&e.ColDecimal206).Decimal(&e.ColDecimal2412).NullInt32(&e.ColInt1).Int32(&e.ColInt2).NullUint32(&e.ColInt3).Uint32(&e.ColInt4).NullString(&e.ColLongtext1).String(&e.ColLongtext2).Byte(&e.ColMediumblob).NullString(&e.ColMediumtext1).String(&e.ColMediumtext2).NullInt32(&e.ColSmallint1).Int32(&e.ColSmallint2).NullUint32(&e.ColSmallint3).Uint32(&e.ColSmallint4).Bool(&e.HasSmallint5).NullBool(&e.IsSmallint5).NullString(&e.ColText).Time(&e.ColTimestamp1).NullTime(&e.ColTimestamp2).Int32(&e.ColTinyint1).String(&e.ColVarchar1).NullString(&e.ColVarchar100).String(&e.ColVarchar16).NullString(&e.ColChar1).String(&e.ColChar2).Err()
 	}
 	for cm.Next() {
 		switch c := cm.Column(); c {
@@ -604,8 +603,8 @@ func (e *DmlgenTypes) MapColumns(cm *dml.ColumnMap) error {
 			cm.NullTime(&e.ColDatetime1)
 		case "col_datetime_2":
 			cm.Time(&e.ColDatetime2)
-		case "col_decimal_10_0":
-			cm.Decimal(&e.ColDecimal100)
+		case "col_decimal_10_1":
+			cm.Decimal(&e.ColDecimal101)
 		case "col_decimal_12_4":
 			cm.Decimal(&e.ColDecimal124)
 		case "price_12_4a":
@@ -618,8 +617,6 @@ func (e *DmlgenTypes) MapColumns(cm *dml.ColumnMap) error {
 			cm.Decimal(&e.ColDecimal206)
 		case "col_decimal_24_12":
 			cm.Decimal(&e.ColDecimal2412)
-		case "col_float":
-			cm.Float64(&e.ColFloat)
 		case "col_int_1":
 			cm.NullInt32(&e.ColInt1)
 		case "col_int_2":

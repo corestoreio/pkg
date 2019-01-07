@@ -4,6 +4,7 @@ package testdata
 
 import (
 	"context"
+	"fmt"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/pseudo"
@@ -29,13 +30,44 @@ func TestNewTables(t *testing.T) {
 
 	err = tbls.Validate(ctx)
 	assert.NoError(t, err)
-	ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de"},
-		pseudo.WithTagFakeFunc("website_id", func(maxLen int) (interface{}, error) {
+	var ps *pseudo.Service
+	ps = pseudo.MustNewService(0, &pseudo.Options{Lang: "de", FloatMaxDecimals: 6},
+		pseudo.WithTagFakeFunc("WebsiteID", func(maxLen int) (interface{}, error) {
 			return 1, nil
 		}),
-		pseudo.WithTagFakeFunc("store_id", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("StoreID", func(maxLen int) (interface{}, error) {
 			return 1, nil
 		}),
+		pseudo.WithTagFakeFunc("ColDate1", func(maxLen int) (interface{}, error) {
+			if ps.Intn(1000)%3 == 0 {
+				return nil, nil
+			}
+			return ps.Dob18(), nil
+		}),
+		pseudo.WithTagFakeFunc("ColDate2", func(maxLen int) (interface{}, error) {
+			return ps.Dob18().MarshalText()
+		}),
+		pseudo.WithTagFakeFunc("ColDecimal101", func(maxLen int) (interface{}, error) {
+			return fmt.Sprintf("%.1f", ps.Price()), nil
+		}),
+		pseudo.WithTagFakeFunc("Price124b", func(maxLen int) (interface{}, error) {
+			return fmt.Sprintf("%.4f", ps.Price()), nil
+		}),
+		pseudo.WithTagFakeFunc("ColDecimal123", func(maxLen int) (interface{}, error) {
+			return fmt.Sprintf("%.3f", ps.Float64()), nil
+		}),
+		pseudo.WithTagFakeFunc("ColDecimal206", func(maxLen int) (interface{}, error) {
+			return fmt.Sprintf("%.6f", ps.Float64()), nil
+		}),
+		pseudo.WithTagFakeFunc("ColDecimal2412", func(maxLen int) (interface{}, error) {
+			return fmt.Sprintf("%.12f", ps.Float64()), nil
+		}),
+		pseudo.WithTagFakeFuncAlias(
+			"ColDecimal124", "Price124b",
+			"Price124a", "Price124b",
+			"ColFloat", "ColDecimal206",
+			"Dob", "ColDate1",
+		),
 	)
 
 	// TODO run those tests in parallel
@@ -151,14 +183,13 @@ func TestNewTables(t *testing.T) {
 			assert.Exactly(t, entityIn.ColDate2, entityOut.ColDate2, "IDX%d: ColDate2 should match", lID)
 			assert.Exactly(t, entityIn.ColDatetime1, entityOut.ColDatetime1, "IDX%d: ColDatetime1 should match", lID)
 			assert.Exactly(t, entityIn.ColDatetime2, entityOut.ColDatetime2, "IDX%d: ColDatetime2 should match", lID)
-			assert.Exactly(t, entityIn.ColDecimal100, entityOut.ColDecimal100, "IDX%d: ColDecimal100 should match", lID)
+			assert.Exactly(t, entityIn.ColDecimal101, entityOut.ColDecimal101, "IDX%d: ColDecimal101 should match", lID)
 			assert.Exactly(t, entityIn.ColDecimal124, entityOut.ColDecimal124, "IDX%d: ColDecimal124 should match", lID)
 			assert.Exactly(t, entityIn.Price124a, entityOut.Price124a, "IDX%d: Price124a should match", lID)
 			assert.Exactly(t, entityIn.Price124b, entityOut.Price124b, "IDX%d: Price124b should match", lID)
 			assert.Exactly(t, entityIn.ColDecimal123, entityOut.ColDecimal123, "IDX%d: ColDecimal123 should match", lID)
 			assert.Exactly(t, entityIn.ColDecimal206, entityOut.ColDecimal206, "IDX%d: ColDecimal206 should match", lID)
 			assert.Exactly(t, entityIn.ColDecimal2412, entityOut.ColDecimal2412, "IDX%d: ColDecimal2412 should match", lID)
-			assert.Exactly(t, entityIn.ColFloat, entityOut.ColFloat, "IDX%d: ColFloat should match", lID)
 			assert.Exactly(t, entityIn.ColInt1, entityOut.ColInt1, "IDX%d: ColInt1 should match", lID)
 			assert.Exactly(t, entityIn.ColInt2, entityOut.ColInt2, "IDX%d: ColInt2 should match", lID)
 			assert.Exactly(t, entityIn.ColInt3, entityOut.ColInt3, "IDX%d: ColInt3 should match", lID)
