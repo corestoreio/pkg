@@ -109,7 +109,11 @@ func (s *Service) ULID() ulid.ULID {
 	return ulid.MustNew(ulid.Timestamp(time.Now()), s.ulidEntropy)
 }
 
-// Int returns a non-negative pseudo-random int.
-func (s *Service) Int() int {
-	return s.r.Int()
+// Intn returns a non-negative pseudo-random int.
+func (s *Service) Intn(n int) int {
+	return s.r.Intn(n)
+}
+
+func (s *Service) Float64() float64 {
+	return float64(s.r.Intn(10000)) + float64(s.r.Uint64())/1e12
 }

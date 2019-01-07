@@ -24,6 +24,7 @@
 package pseudo
 
 import (
+	"encoding"
 	"io"
 	"math"
 	"os"
@@ -92,6 +93,9 @@ type Options struct {
 	// MaxLenStringLimit defines the upper bound of the maximal length for a
 	// string. If not set, defaults to 512.
 	MaxLenStringLimit uint64
+	// FloatMaxDecimals limits the float generation to this amount of decimals.
+	// Useful for MySQL/MariaDB float column type.
+	FloatMaxDecimals int
 }
 
 const maxLenStringLimit = 512
@@ -118,16 +122,17 @@ func WithTagFakeFunc(tag string, provider FakeFunc) optionFn {
 
 // WithTagFakeFuncAlias sets a new alias. E.g. when WithTagFakeFunc("http",...)
 // adds a function to generate HTTP links, then calling
-// WithTagFakeFuncAlias("http","https") would say that https is an alias of the
-// http function.
-func WithTagFakeFuncAlias(tagAlias ...string) optionFn {
+// WithTagFakeFuncAlias("https","http","ftps","ftp") would say that https is an
+// alias of the http function and ftps is an alias of ftp.
+func WithTagFakeFuncAlias(aliasTag ...string) optionFn {
 	return optionFn{
 		sortOrder: 100,
 		fn: func(s *Service) error {
 			s.mu.Lock()
 			defer s.mu.Unlock()
-			for i := 0; i < len(tagAlias); i = i + 2 {
-				s.funcsAliases[tagAlias[i]] = tagAlias[i+1]
+			for i := 0; i < len(aliasTag); i = i + 2 {
+				// alias name => original name
+				s.funcsAliases[aliasTag[i]] = aliasTag[i+1]
 			}
 			return nil
 		},
@@ -505,9 +510,9 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 			}
 			shouldResetField := false
 			for i := 0; i < v.NumField(); i++ {
-				vf := v.Field(i)
-				tf := t.Field(i)
-				fieldName := tf.Name
+				vf := v.Field(i) // value field
+				tf := t.Field(i) // type field
+
 				if !vf.CanSet() {
 					continue // to avoid panic to set on unexported field in struct
 				}
@@ -526,32 +531,38 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 
 				// Custom functions must have precedence before interface Faker
 				// implementation of a type.
-				{
-
+				if vf.CanInterface() && vf.CanAddr() {
 					sTag := tag
 					if sTag == "" {
-						sTag = toSnakeCase(fieldName)
+						sTag = tf.Name
 					}
-
-					if vf.CanInterface() && vf.CanAddr() {
-						if scnr, ok := vf.Addr().Interface().(scanner); ok {
-							ifaceVal, ok, err := s.getFuncsValue(sTag, maxLen)
+					iFaceVal, ok, err := s.getFuncsValue(sTag, maxLen)
+					if err != nil {
+						return rVal, errors.WithStack(err)
+					}
+					if ok {
+						switch tFace := vf.Addr().Interface().(type) {
+						case scanner:
+							if err := tFace.Scan(iFaceVal); err != nil {
+								return rVal, errors.WithStack(err)
+							}
+							continue
+						case encoding.TextUnmarshaler:
+							bt, err := conv.ToByteE(iFaceVal)
 							if err != nil {
 								return rVal, errors.WithStack(err)
 							}
-							if ok {
-								if err := scnr.Scan(ifaceVal); err != nil {
-									return rVal, errors.WithStack(err)
-								}
-								continue
+							if err := tFace.UnmarshalText(bt); err != nil {
+								return rVal, errors.WithStack(err)
 							}
+							continue
 						}
 					}
 				}
 
 				if fkr != nil {
 					// fieldName is the original field name as written in the struct.
-					if skip, err := fkr.Fake(fieldName); err != nil {
+					if skip, err := fkr.Fake(tf.Name); err != nil {
 						return rVal, err
 					} else if skip {
 						continue
@@ -622,7 +633,12 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 	case reflect.Float32:
 		return reflect.ValueOf(s.r.Float32()), nil
 	case reflect.Float64:
-		return reflect.ValueOf(s.r.Float64()), nil
+		f := s.r.Float64()
+		if s.o.FloatMaxDecimals > 0 {
+			p10 := math.Pow10(s.o.FloatMaxDecimals)
+			f = math.Round(f*p10) / p10
+		}
+		return reflect.ValueOf(f), nil
 
 	case reflect.Bool:
 		val := s.r.Uint64n(3) > 0 // create more true values
