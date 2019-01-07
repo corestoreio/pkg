@@ -497,16 +497,15 @@ func TestDecimal_Scan(t *testing.T) {
 		assert.NoError(t, nv.Scan([]byte(`-1234.567`)))
 		assert.Exactly(t, MakeDecimalInt64(-1234567, 3), nv)
 	})
+	t.Run("string", func(t *testing.T) {
+		var nv Decimal
+		assert.NoError(t, nv.Scan(`-1234.567`))
+		assert.Exactly(t, MakeDecimalInt64(-1234567, 3), nv)
+	})
 	t.Run("float64", func(t *testing.T) {
 		var nv Decimal
 		assert.NoError(t, nv.Scan(-1234.569))
 		assert.Exactly(t, MakeDecimalInt64(-1234569, 3), nv)
-	})
-	t.Run("string unsupported", func(t *testing.T) {
-		var nv Decimal
-		err := nv.Scan(`-123.4567`)
-		assert.True(t, errors.Is(err, errors.NotSupported), "Error behaviour should be errors.NotSupported")
-		assert.Exactly(t, Decimal{}, nv)
 	})
 }
 

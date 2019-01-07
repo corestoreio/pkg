@@ -165,6 +165,8 @@ func (d *Decimal) Scan(value interface{}) (err error) {
 		return nil
 	}
 	switch v := value.(type) {
+	case string:
+		*d, err = MakeDecimalBytes([]byte(v))
 	case []byte:
 		*d, err = MakeDecimalBytes(v)
 	case float64:
