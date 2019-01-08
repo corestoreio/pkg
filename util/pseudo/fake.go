@@ -534,14 +534,19 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 				if vf.CanInterface() && vf.CanAddr() {
 					sTag := tag
 					if sTag == "" {
-						sTag = tf.Name
+						sTag = toSnakeCase(tf.Name)
 					}
+
 					iFaceVal, ok, err := s.getFuncsValue(sTag, maxLen)
 					if err != nil {
 						return rVal, errors.WithStack(err)
 					}
 					if ok {
 						switch tFace := vf.Addr().Interface().(type) {
+						case time.Time, *time.Time:
+							// do nothing resp. skip as iFaceVal might contain
+							// data which the following two interfaces can't
+							// parse.
 						case scanner:
 							if err := tFace.Scan(iFaceVal); err != nil {
 								return rVal, errors.WithStack(err)

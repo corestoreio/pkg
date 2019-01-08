@@ -431,7 +431,8 @@ func TestMaxLen(t *testing.T) {
 
 		for i := 0; i < 100; i++ {
 			ccd := new(CoreConfigData)
-			assert.NoError(t, s.FakeData(ccd))
+			err := s.FakeData(ccd)
+			assert.NoError(t, err, "%+v", err)
 			assert.LenBetween(t, ccd.ConfigID, 0, 10)
 			assert.LenBetween(t, ccd.Scope, 1, 8)
 			assert.LenBetween(t, ccd.ScopeID, 0, math.MaxInt32)
