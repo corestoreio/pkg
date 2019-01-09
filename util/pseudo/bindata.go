@@ -16,8 +16,8 @@
 // data/de/female_name_prefixes.txt
 // data/de/female_name_suffixes.txt
 // data/de/female_patronymics.txt
+// data/de/format_clock.txt
 // data/de/format_date.txt
-// data/de/format_time.txt
 // data/de/genders.txt
 // data/de/industries.txt
 // data/de/jobs.txt
@@ -57,8 +57,8 @@
 // data/en/female_name_prefixes.txt
 // data/en/female_name_suffixes.txt
 // data/en/female_patronymics.txt
+// data/en/format_clock.txt
 // data/en/format_date.txt
-// data/en/format_time.txt
 // data/en/genders.txt
 // data/en/industries.txt
 // data/en/jobs.txt
@@ -1351,6 +1351,36 @@ func bindataDataDeFemalepatronymicstxt() (*asset, error) {
 	return a, nil
 }
 
+var _bindataDataDeFormatclocktxt = []byte(
+	"\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x32\x30\xb6\x32\x30\xe1\x02\x04\x00\x00\xff\xff\xe4\x83\x3b\xb3\x06\x00" +
+		"\x00\x00")
+
+func bindataDataDeFormatclocktxtBytes() ([]byte, error) {
+	return bindataRead(
+		_bindataDataDeFormatclocktxt,
+		"data/de/format_clock.txt",
+	)
+}
+
+func bindataDataDeFormatclocktxt() (*asset, error) {
+	bytes, err := bindataDataDeFormatclocktxtBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{
+		name:        "data/de/format_clock.txt",
+		size:        6,
+		md5checksum: "",
+		mode:        os.FileMode(420),
+		modTime:     time.Unix(1547014881, 0),
+	}
+
+	a := &asset{bytes: bytes, info: info}
+
+	return a, nil
+}
+
 var _bindataDataDeFormatdatetxt = []byte(
 	"\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x32\x30\xd4\x37\x30\xd2\x37\x32\x30\x30\xe3\x02\x04\x00\x00\xff\xff\xdd" +
 		"\x80\x37\xb3\x0b\x00\x00\x00")
@@ -1374,36 +1404,6 @@ func bindataDataDeFormatdatetxt() (*asset, error) {
 		md5checksum: "",
 		mode:        os.FileMode(420),
 		modTime:     time.Unix(1545456392, 0),
-	}
-
-	a := &asset{bytes: bytes, info: info}
-
-	return a, nil
-}
-
-var _bindataDataDeFormattimetxt = []byte(
-	"\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x32\xb6\x32\x30\x51\x08\xf0\xe5\x02\x04\x00\x00\xff\xff\xd8\x31\x24\x5b" +
-		"\x08\x00\x00\x00")
-
-func bindataDataDeFormattimetxtBytes() ([]byte, error) {
-	return bindataRead(
-		_bindataDataDeFormattimetxt,
-		"data/de/format_time.txt",
-	)
-}
-
-func bindataDataDeFormattimetxt() (*asset, error) {
-	bytes, err := bindataDataDeFormattimetxtBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	info := bindataFileInfo{
-		name:        "data/de/format_time.txt",
-		size:        8,
-		md5checksum: "",
-		mode:        os.FileMode(420),
-		modTime:     time.Unix(1545456442, 0),
 	}
 
 	a := &asset{bytes: bytes, info: info}
@@ -4013,6 +4013,36 @@ func bindataDataEnFemalepatronymicstxt() (*asset, error) {
 	return a, nil
 }
 
+var _bindataDataEnFormatclocktxt = []byte(
+	"\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x32\xb6\x32\x30\x51\x08\xf0\xe5\x02\x04\x00\x00\xff\xff\xd8\x31\x24\x5b" +
+		"\x08\x00\x00\x00")
+
+func bindataDataEnFormatclocktxtBytes() ([]byte, error) {
+	return bindataRead(
+		_bindataDataEnFormatclocktxt,
+		"data/en/format_clock.txt",
+	)
+}
+
+func bindataDataEnFormatclocktxt() (*asset, error) {
+	bytes, err := bindataDataEnFormatclocktxtBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{
+		name:        "data/en/format_clock.txt",
+		size:        8,
+		md5checksum: "",
+		mode:        os.FileMode(420),
+		modTime:     time.Unix(1545456442, 0),
+	}
+
+	a := &asset{bytes: bytes, info: info}
+
+	return a, nil
+}
+
 var _bindataDataEnFormatdatetxt = []byte(
 	"\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x32\x30\xd4\x37\x30\xd2\x37\x32\x30\x30\xe3\x02\x04\x00\x00\xff\xff\xdd" +
 		"\x80\x37\xb3\x0b\x00\x00\x00")
@@ -4036,36 +4066,6 @@ func bindataDataEnFormatdatetxt() (*asset, error) {
 		md5checksum: "",
 		mode:        os.FileMode(420),
 		modTime:     time.Unix(1545456392, 0),
-	}
-
-	a := &asset{bytes: bytes, info: info}
-
-	return a, nil
-}
-
-var _bindataDataEnFormattimetxt = []byte(
-	"\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x32\xb6\x32\x30\x51\x08\xf0\xe5\x02\x04\x00\x00\xff\xff\xd8\x31\x24\x5b" +
-		"\x08\x00\x00\x00")
-
-func bindataDataEnFormattimetxtBytes() ([]byte, error) {
-	return bindataRead(
-		_bindataDataEnFormattimetxt,
-		"data/en/format_time.txt",
-	)
-}
-
-func bindataDataEnFormattimetxt() (*asset, error) {
-	bytes, err := bindataDataEnFormattimetxtBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	info := bindataFileInfo{
-		name:        "data/en/format_time.txt",
-		size:        8,
-		md5checksum: "",
-		mode:        os.FileMode(420),
-		modTime:     time.Unix(1545456442, 0),
 	}
 
 	a := &asset{bytes: bytes, info: info}
@@ -6210,8 +6210,8 @@ var _bindata = map[string]func() (*asset, error){
 	"data/de/female_name_prefixes.txt": bindataDataDeFemalenameprefixestxt,
 	"data/de/female_name_suffixes.txt": bindataDataDeFemalenamesuffixestxt,
 	"data/de/female_patronymics.txt":   bindataDataDeFemalepatronymicstxt,
+	"data/de/format_clock.txt":         bindataDataDeFormatclocktxt,
 	"data/de/format_date.txt":          bindataDataDeFormatdatetxt,
-	"data/de/format_time.txt":          bindataDataDeFormattimetxt,
 	"data/de/genders.txt":              bindataDataDeGenderstxt,
 	"data/de/industries.txt":           bindataDataDeIndustriestxt,
 	"data/de/jobs.txt":                 bindataDataDeJobstxt,
@@ -6251,8 +6251,8 @@ var _bindata = map[string]func() (*asset, error){
 	"data/en/female_name_prefixes.txt": bindataDataEnFemalenameprefixestxt,
 	"data/en/female_name_suffixes.txt": bindataDataEnFemalenamesuffixestxt,
 	"data/en/female_patronymics.txt":   bindataDataEnFemalepatronymicstxt,
+	"data/en/format_clock.txt":         bindataDataEnFormatclocktxt,
 	"data/en/format_date.txt":          bindataDataEnFormatdatetxt,
-	"data/en/format_time.txt":          bindataDataEnFormattimetxt,
 	"data/en/genders.txt":              bindataDataEnGenderstxt,
 	"data/en/industries.txt":           bindataDataEnIndustriestxt,
 	"data/en/jobs.txt":                 bindataDataEnJobstxt,
@@ -6368,8 +6368,8 @@ var _bintree = &bintree{Func: nil, Children: map[string]*bintree{
 			"female_name_prefixes.txt": {Func: bindataDataDeFemalenameprefixestxt, Children: map[string]*bintree{}},
 			"female_name_suffixes.txt": {Func: bindataDataDeFemalenamesuffixestxt, Children: map[string]*bintree{}},
 			"female_patronymics.txt":   {Func: bindataDataDeFemalepatronymicstxt, Children: map[string]*bintree{}},
+			"format_clock.txt":         {Func: bindataDataDeFormatclocktxt, Children: map[string]*bintree{}},
 			"format_date.txt":          {Func: bindataDataDeFormatdatetxt, Children: map[string]*bintree{}},
-			"format_time.txt":          {Func: bindataDataDeFormattimetxt, Children: map[string]*bintree{}},
 			"genders.txt":              {Func: bindataDataDeGenderstxt, Children: map[string]*bintree{}},
 			"industries.txt":           {Func: bindataDataDeIndustriestxt, Children: map[string]*bintree{}},
 			"jobs.txt":                 {Func: bindataDataDeJobstxt, Children: map[string]*bintree{}},
@@ -6411,8 +6411,8 @@ var _bintree = &bintree{Func: nil, Children: map[string]*bintree{
 			"female_name_prefixes.txt": {Func: bindataDataEnFemalenameprefixestxt, Children: map[string]*bintree{}},
 			"female_name_suffixes.txt": {Func: bindataDataEnFemalenamesuffixestxt, Children: map[string]*bintree{}},
 			"female_patronymics.txt":   {Func: bindataDataEnFemalepatronymicstxt, Children: map[string]*bintree{}},
+			"format_clock.txt":         {Func: bindataDataEnFormatclocktxt, Children: map[string]*bintree{}},
 			"format_date.txt":          {Func: bindataDataEnFormatdatetxt, Children: map[string]*bintree{}},
-			"format_time.txt":          {Func: bindataDataEnFormattimetxt, Children: map[string]*bintree{}},
 			"genders.txt":              {Func: bindataDataEnGenderstxt, Children: map[string]*bintree{}},
 			"industries.txt":           {Func: bindataDataEnIndustriestxt, Children: map[string]*bintree{}},
 			"jobs.txt":                 {Func: bindataDataEnJobstxt, Children: map[string]*bintree{}},

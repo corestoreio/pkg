@@ -57,24 +57,30 @@ func (s *Service) RandomUnixTime() int64 {
 // Date formats DateTime using example BaseDate const
 func (s *Service) Date() string {
 	f := s.lookup(s.o.Lang, "format_date", true)
-	return time.Unix(s.RandomUnixTime(), 0).Format(f)
+	return time.Unix(s.RandomUnixTime(), 0).In(s.o.TimeLocation).Format(f)
 }
 
-// Time formats DateTime using example Time const
-func (s *Service) Time() string {
-	f := s.lookup(s.o.Lang, "format_time", true)
-	return time.Unix(s.RandomUnixTime(), 0).Format(f)
+// Clock formats DateTime to return e.g. 15:04, the clock time.
+func (s *Service) Clock() string {
+	f := s.lookup(s.o.Lang, "format_clock", true)
+	return time.Unix(s.RandomUnixTime(), 0).In(s.o.TimeLocation).Format(f)
+}
+
+// Time returns a random time.
+func (s *Service) Time() time.Time {
+	return time.Unix(s.RandomUnixTime(), 0).In(s.o.TimeLocation)
 }
 
 // TimeStamp returns a time in the format 2006-01-02 15:04:05
 func (s *Service) TimeStamp() string {
-	return time.Unix(s.RandomUnixTime(), 0).Format("2006-01-02 15:04:05")
+	return time.Unix(s.RandomUnixTime(), 0).In(s.o.TimeLocation).Format("2006-01-02 15:04:05")
 }
 
-// TimeStamp returns a time in the format 2006-01-02 15:04:05
+// Dob18 returns a date of birth in the format 2006-01-02 00:00:00 with a
+// minimum age of 18 years.
 func (s *Service) Dob18() time.Time {
 	t := time.Unix(s.RandomUnixTime(), 0).Add(-3600 * 24 * 365 * 18)
-	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, s.o.TimeLocation)
 }
 
 // TimeStamp returns a time in the format 2006-01-02 15:04:05

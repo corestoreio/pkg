@@ -44,7 +44,7 @@ import (
 )
 
 // Reason for using this package: at the moment well maintained and does not include net/http.
-//go:generate go get -v -u github.com/shuLhan/go-bindata/...
+// Run: $ go get -u github.com/shuLhan/go-bindata
 //go:generate go-bindata -o bindata.go -pkg pseudo data/...
 
 // Faker allows a type to implement a custom fake data generation. The argument
@@ -264,6 +264,9 @@ func NewService(seed uint64, o *Options, opts ...optionFn) (*Service, error) {
 		},
 		"date": func(maxLen int) (interface{}, error) {
 			return s.Date(), nil
+		},
+		"clock": func(maxLen int) (interface{}, error) {
+			return s.Clock(), nil
 		},
 		"time": func(maxLen int) (interface{}, error) {
 			return s.Time(), nil
@@ -496,7 +499,11 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 
 		switch ts := t.String(); ts {
 		case "time.Time":
-			ft := time.Now().Add(time.Duration(s.r.Int63n(3600 * 24 * 90)))
+			var neg int64 = 1
+			if s.r.Int()%2 == 0 {
+				neg = -1
+			}
+			ft := time.Now().Add(time.Second * time.Duration(neg*s.r.Int63n(3600*24*90)))
 			// proper way to get rid of the nano seconds
 			ft = time.Unix(ft.Unix(), 0).In(s.o.TimeLocation)
 			return reflect.ValueOf(ft), nil
@@ -509,6 +516,7 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 				fkr, _ = v.Addr().Interface().(Faker)
 			}
 			shouldResetField := false
+
 			for i := 0; i < v.NumField(); i++ {
 				vf := v.Field(i) // value field
 				tf := t.Field(i) // type field
@@ -541,17 +549,23 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 					if err != nil {
 						return rVal, errors.WithStack(err)
 					}
+
 					if ok {
 						switch tFace := vf.Addr().Interface().(type) {
-						case time.Time, *time.Time:
-							// do nothing resp. skip as iFaceVal might contain
-							// data which the following two interfaces can't
-							// parse.
+						case *time.Time:
+							iFaceValTime, err := conv.ToTimeE(iFaceVal)
+							if err != nil {
+								return rVal, errors.WithStack(err)
+							}
+							vf.Set(reflect.ValueOf(iFaceValTime))
+							continue
+
 						case scanner:
 							if err := tFace.Scan(iFaceVal); err != nil {
 								return rVal, errors.WithStack(err)
 							}
 							continue
+
 						case encoding.TextUnmarshaler:
 							bt, err := conv.ToByteE(iFaceVal)
 							if err != nil {

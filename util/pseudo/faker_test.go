@@ -545,3 +545,29 @@ func TestMaxStringLen(t *testing.T) {
 
 	}
 }
+
+type testServiceDateTime struct {
+	ID           int32
+	ColDate2     time.Time
+	ColDatetime1 null.Time
+}
+
+func TestService_CustomFakeFunc_DateTime(t *testing.T) {
+	// When i have for a field ColDate2 a custom fake func ... then why gets it
+	// iterated to the next time.Time field? becuase ColDatetime1 has null.Time
+	// which is later just Time because the pkg path is not prefiexed
+	s := MustNewService(0, nil,
+		WithTagFakeFunc("col_date2", func(maxLen int) (interface{}, error) {
+			x := "2018-04-30"
+			return x, nil
+		}),
+	)
+
+	a := new(testServiceDateTime)
+	err := s.FakeData(&a)
+	assert.NoError(t, err, "\n%+v", err)
+
+	// t.Logf("%#v", a)
+	assert.Exactly(t, "2018-04-30 00:00:00", a.ColDate2.Format("2006-01-02 15:04:05"))
+	assert.NotEmpty(t, a.ColDatetime1.String())
+}
