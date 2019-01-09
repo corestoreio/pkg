@@ -31,7 +31,13 @@ func ToTimeE(i interface{}) (time.Time, error) {
 		if e == nil {
 			return d, nil
 		}
-		return time.Time{}, errors.NotValid.Newf("[conv] Could not parse Date/Time format: %v\n", e)
+		return time.Time{}, errors.NotValid.Newf("[conv] Could not parse the string Date/Time format: %v\n", e)
+	case []byte:
+		d, e := StringToDate(string(s), nil)
+		if e == nil {
+			return d, nil
+		}
+		return time.Time{}, errors.NotValid.Newf("[conv] Could not parse the []byte Date/Time format: %v\n", e)
 	case int64:
 		return time.Unix(s, 0), nil
 	case float64:

@@ -449,11 +449,21 @@ func TestToTimeE(t *testing.T) {
 }
 
 func TestToTimeSpecific(t *testing.T) {
+	t.Run("string", func(t *testing.T) {
+		const have = "2012-08-23 09:20:13"
+		tm, err := ToTimeE(have)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Log(tm.String())
+	})
 
-	const have = "2012-08-23 09:20:13"
-	tm, err := ToTimeE(have)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(tm.String())
+	t.Run("bytes", func(t *testing.T) {
+		have := []byte(`1973-05-23T00:00:00Z`)
+		tm, err := ToTimeE(have)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Exactly(t, "1973-05-23 00:00:00 +0000 UTC", tm.String())
+	})
 }
