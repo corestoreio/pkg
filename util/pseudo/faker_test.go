@@ -571,3 +571,30 @@ func TestService_CustomFakeFunc_DateTime(t *testing.T) {
 	assert.Exactly(t, "2018-04-30 00:00:00", a.ColDate2.Format("2006-01-02 15:04:05"))
 	assert.NotEmpty(t, a.ColDatetime1.String())
 }
+
+type testServiceDecimal struct {
+	ID           int32
+	ColDatetime2 time.Time
+	ColPrice1    null.Decimal
+	ColPrice2    null.Decimal
+}
+
+func TestService_CustomFakeFunc_Decimal(t *testing.T) {
+	s := MustNewService(0, nil,
+		WithTagFakeFunc("col_price1", func(maxLen int) (interface{}, error) {
+			x := "123.4567"
+			return x, nil
+		}),
+		WithTagFakeFuncAlias("col_price2", "col_price1"),
+	)
+	for i := 0; i < 20; i++ {
+
+		a := new(testServiceDecimal)
+		err := s.FakeData(&a)
+		assert.NoError(t, err, "\nIDX:%d %+v", i, err)
+
+		// t.Logf("%#v", a)
+		assert.Exactly(t, "123.4567", a.ColPrice1.String(), "IDX %d", i)
+		assert.Exactly(t, "123.4567", a.ColPrice2.String(), "IDX %d", i)
+	}
+}
