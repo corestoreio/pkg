@@ -45,7 +45,7 @@ import (
 
 // Reason for using this package "shuLhan/go-bindata": at the moment well
 // maintained and does not include net/http.
-//go:generate go get -u github.com/shuLhan/go-bindata/...
+// Run: $ go get github.com/shuLhan/go-bindata
 //go:generate go-bindata -o bindata.go -pkg dmlgen ./_tpl/...
 
 // Initial idea and prototyping for code generation.
@@ -434,6 +434,9 @@ func WithFlatbuffers(headerOptions ...string) (opt Option) {
 	return
 }
 
+// WithCustomCode inserts at the marker position your custom Go code. For
+// available markers search the .go.tpl files for the function call
+// `CustomCode`. An example got written in TestGenerate_Tables_Protobuf_Json.
 func WithCustomCode(marker, code string) (opt Option) {
 	opt.sortOrder = 112
 	opt.fn = func(ts *Tables) error {

@@ -128,35 +128,34 @@ func TestGenerate_Tables_Protobuf_Json(t *testing.T) {
 
 		dmlgen.WithColumnAliasesFromForeignKeys(ctx, db.DB),
 		dmlgen.WithCustomCode("pseudo.MustNewService.Option", `
-		pseudo.WithTagFakeFunc("ColDate1", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("col_date1", func(maxLen int) (interface{}, error) {
 			if ps.Intn(1000)%3 == 0 {
 				return nil, nil
 			}
 			return ps.Dob18(), nil
 		}),
-		pseudo.WithTagFakeFunc("ColDate2", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("col_date2", func(maxLen int) (interface{}, error) {
 			return ps.Dob18().MarshalText()
 		}),
-		pseudo.WithTagFakeFunc("ColDecimal101", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("col_decimal101", func(maxLen int) (interface{}, error) {
 			return fmt.Sprintf("%.1f", ps.Price()), nil
 		}),
-		pseudo.WithTagFakeFunc("Price124b", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("price124b", func(maxLen int) (interface{}, error) {
 			return fmt.Sprintf("%.4f", ps.Price()), nil
 		}),
-		pseudo.WithTagFakeFunc("ColDecimal123", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("col_decimal123", func(maxLen int) (interface{}, error) {
 			return fmt.Sprintf("%.3f", ps.Float64()), nil
 		}),
-		pseudo.WithTagFakeFunc("ColDecimal206", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("col_decimal206", func(maxLen int) (interface{}, error) {
 			return fmt.Sprintf("%.6f", ps.Float64()), nil
 		}),
-		pseudo.WithTagFakeFunc("ColDecimal2412", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("col_decimal2412", func(maxLen int) (interface{}, error) {
 			return fmt.Sprintf("%.12f", ps.Float64()), nil
 		}),
 		pseudo.WithTagFakeFuncAlias(
-			"ColDecimal124", "Price124b", 
-			"Price124a", "Price124b",
-			"ColFloat", "ColDecimal206",
-			"Dob", "ColDate1",
+			"col_decimal124", "price124b",
+			"price124a", "price124b",
+			"col_float", "col_decimal206",
 		),
 `),
 	)

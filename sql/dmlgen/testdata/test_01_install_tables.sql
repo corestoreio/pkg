@@ -26,7 +26,7 @@ CREATE TABLE `dmlgen_types` (
   col_decimal_12_3          DECIMAL(12, 3)       NOT NULL           DEFAULT 0,
   col_decimal_20_6          DECIMAL(20, 6)       NOT NULL           DEFAULT 0.000000,
   col_decimal_24_12         DECIMAL(24, 12)      NOT NULL           DEFAULT 0.000000000000,
-  /* col_float                 FLOAT                NOT NULL           DEFAULT 1, hard to compare so skipping */
+  /* col_float                 FLOAT                NOT NULL           DEFAULT 1, hard to compare, so skipping */
   col_int_1                 INT(10)              NULL,
   col_int_2                 INT(10)              NOT NULL           DEFAULT 0,
   col_int_3                 INT(10) UNSIGNED     NULL,

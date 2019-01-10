@@ -32,41 +32,40 @@ func TestNewTables(t *testing.T) {
 	assert.NoError(t, err)
 	var ps *pseudo.Service
 	ps = pseudo.MustNewService(0, &pseudo.Options{Lang: "de", FloatMaxDecimals: 6},
-		pseudo.WithTagFakeFunc("WebsiteID", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("website_id", func(maxLen int) (interface{}, error) {
 			return 1, nil
 		}),
-		pseudo.WithTagFakeFunc("StoreID", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("store_id", func(maxLen int) (interface{}, error) {
 			return 1, nil
 		}),
-		pseudo.WithTagFakeFunc("ColDate1", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("col_date1", func(maxLen int) (interface{}, error) {
 			if ps.Intn(1000)%3 == 0 {
 				return nil, nil
 			}
 			return ps.Dob18(), nil
 		}),
-		pseudo.WithTagFakeFunc("ColDate2", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("col_date2", func(maxLen int) (interface{}, error) {
 			return ps.Dob18().MarshalText()
 		}),
-		pseudo.WithTagFakeFunc("ColDecimal101", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("col_decimal101", func(maxLen int) (interface{}, error) {
 			return fmt.Sprintf("%.1f", ps.Price()), nil
 		}),
-		pseudo.WithTagFakeFunc("Price124b", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("price124b", func(maxLen int) (interface{}, error) {
 			return fmt.Sprintf("%.4f", ps.Price()), nil
 		}),
-		pseudo.WithTagFakeFunc("ColDecimal123", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("col_decimal123", func(maxLen int) (interface{}, error) {
 			return fmt.Sprintf("%.3f", ps.Float64()), nil
 		}),
-		pseudo.WithTagFakeFunc("ColDecimal206", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("col_decimal206", func(maxLen int) (interface{}, error) {
 			return fmt.Sprintf("%.6f", ps.Float64()), nil
 		}),
-		pseudo.WithTagFakeFunc("ColDecimal2412", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("col_decimal2412", func(maxLen int) (interface{}, error) {
 			return fmt.Sprintf("%.12f", ps.Float64()), nil
 		}),
 		pseudo.WithTagFakeFuncAlias(
-			"ColDecimal124", "Price124b",
-			"Price124a", "Price124b",
-			"ColFloat", "ColDecimal206",
-			"Dob", "ColDate1",
+			"col_decimal124", "price124b",
+			"price124a", "price124b",
+			"col_float", "col_decimal206",
 		),
 	)
 
@@ -83,7 +82,10 @@ func TestNewTables(t *testing.T) {
 
 		for i := 0; i < 9; i++ {
 			entityIn := new(CoreConfigData)
-			assert.NoError(t, ps.FakeData(entityIn))
+			if err := ps.FakeData(entityIn); err != nil {
+				t.Errorf("IDX[%d]: %+v", i, err)
+				return
+			}
 
 			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CoreConfigData_Entity")(insArtisan.Record("", entityIn).ExecContext(ctx))
 			insArtisan.Reset()
@@ -91,7 +93,7 @@ func TestNewTables(t *testing.T) {
 			entityOut := new(CoreConfigData)
 			rowCount, err := selArtisan.Int64s(lID).Load(ctx, entityOut)
 			assert.NoError(t, err, "%+v", err)
-			assert.Exactly(t, uint64(1), rowCount, "RowCount did not match")
+			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
 			assert.Exactly(t, entityIn.ConfigID, entityOut.ConfigID, "IDX%d: ConfigID should match", lID)
 			assert.ExactlyLength(t, 8, &entityIn.Scope, &entityOut.Scope, "IDX%d: Scope should match", lID)
 			assert.Exactly(t, entityIn.ScopeID, entityOut.ScopeID, "IDX%d: ScopeID should match", lID)
@@ -113,7 +115,10 @@ func TestNewTables(t *testing.T) {
 
 		for i := 0; i < 9; i++ {
 			entityIn := new(CustomerEntity)
-			assert.NoError(t, ps.FakeData(entityIn))
+			if err := ps.FakeData(entityIn); err != nil {
+				t.Errorf("IDX[%d]: %+v", i, err)
+				return
+			}
 
 			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CustomerEntity_Entity")(insArtisan.Record("", entityIn).ExecContext(ctx))
 			insArtisan.Reset()
@@ -121,7 +126,7 @@ func TestNewTables(t *testing.T) {
 			entityOut := new(CustomerEntity)
 			rowCount, err := selArtisan.Int64s(lID).Load(ctx, entityOut)
 			assert.NoError(t, err, "%+v", err)
-			assert.Exactly(t, uint64(1), rowCount, "RowCount did not match")
+			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
 			assert.Exactly(t, entityIn.EntityID, entityOut.EntityID, "IDX%d: EntityID should match", lID)
 			assert.Exactly(t, entityIn.WebsiteID, entityOut.WebsiteID, "IDX%d: WebsiteID should match", lID)
 			assert.ExactlyLength(t, 255, &entityIn.Email, &entityOut.Email, "IDX%d: Email should match", lID)
@@ -164,7 +169,10 @@ func TestNewTables(t *testing.T) {
 
 		for i := 0; i < 9; i++ {
 			entityIn := new(DmlgenTypes)
-			assert.NoError(t, ps.FakeData(entityIn))
+			if err := ps.FakeData(entityIn); err != nil {
+				t.Errorf("IDX[%d]: %+v", i, err)
+				return
+			}
 
 			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.DmlgenTypes_Entity")(insArtisan.Record("", entityIn).ExecContext(ctx))
 			insArtisan.Reset()
@@ -172,7 +180,7 @@ func TestNewTables(t *testing.T) {
 			entityOut := new(DmlgenTypes)
 			rowCount, err := selArtisan.Int64s(lID).Load(ctx, entityOut)
 			assert.NoError(t, err, "%+v", err)
-			assert.Exactly(t, uint64(1), rowCount, "RowCount did not match")
+			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
 			assert.Exactly(t, entityIn.ID, entityOut.ID, "IDX%d: ID should match", lID)
 			assert.Exactly(t, entityIn.ColBigint1, entityOut.ColBigint1, "IDX%d: ColBigint1 should match", lID)
 			assert.Exactly(t, entityIn.ColBigint2, entityOut.ColBigint2, "IDX%d: ColBigint2 should match", lID)

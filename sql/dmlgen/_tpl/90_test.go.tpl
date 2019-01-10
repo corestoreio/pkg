@@ -18,10 +18,10 @@ func TestNewTables(t *testing.T) {
 	assert.NoError(t, err)
 	var ps *pseudo.Service
 	ps = pseudo.MustNewService(0, &pseudo.Options{Lang: "de",FloatMaxDecimals:6},
-		pseudo.WithTagFakeFunc("WebsiteID", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("website_id", func(maxLen int) (interface{}, error) {
 			return 1, nil
 		}),
-		pseudo.WithTagFakeFunc("StoreID", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("store_id", func(maxLen int) (interface{}, error) {
 			return 1, nil
 		}),
 		{{- CustomCode "pseudo.MustNewService.Option" -}}
@@ -41,7 +41,10 @@ func TestNewTables(t *testing.T) {
 
 		for i := 0; i < 9; i++ {
 			entityIn := new({{ToGoCamelCase .TableName}})
-			assert.NoError(t, ps.FakeData(entityIn))
+			if err := ps.FakeData(entityIn); err != nil {
+				t.Errorf("IDX[%d]: %+v", i, err)
+				return
+			}
 
 			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.{{ToGoCamelCase .TableName}}_Entity")(insArtisan.Record("", entityIn).ExecContext(ctx))
 			insArtisan.Reset()
@@ -49,7 +52,7 @@ func TestNewTables(t *testing.T) {
 			entityOut := new({{ToGoCamelCase .TableName}})
 			rowCount, err := selArtisan.Int64s(lID).Load(ctx, entityOut)
 			assert.NoError(t, err, "%+v", err)
-			assert.Exactly(t, uint64(1), rowCount, "RowCount did not match")
+			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
 
 			{{- range $col := $table.Columns }}
 				{{if $col.IsString -}}

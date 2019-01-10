@@ -4,14 +4,14 @@ package testdata
 
 import (
 	"context"
+	"sort"
+	"time"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/storage/null"
-	"sort"
-	"time"
-)
 
+)
 const (
 	TableNameCoreConfigData = "core_config_data"
 	TableNameCustomerEntity = "customer_entity"
