@@ -160,7 +160,8 @@ func TestUnsuportedMapStringInterface(t *testing.T) {
 	}
 	sample := new(Sample)
 	err := s.FakeData(sample)
-	assert.True(t, errors.NotSupported.Match(err), "%+v", err)
+	assert.NoError(t, err, "%+v", err)
+	assert.Empty(t, sample.Map, "sample.Map should be empty")
 }
 
 func TestSetDataIfArgumentNotPtr(t *testing.T) {

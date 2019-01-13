@@ -456,6 +456,7 @@ func (s *Service) readFile(lang, cat string) (_ []byte, err error) {
 // FakeData is the main function. Will generate a fake data based on your
 // struct.  You can use this for automation testing, or anything that need
 // automated data. You don't need to Create your own data for your testing.
+// Unsupported types are getting ignored.
 func (s *Service) FakeData(ptr interface{}) error {
 
 	reflectType := reflect.TypeOf(ptr)
@@ -589,14 +590,18 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 				}
 
 				switch {
-				case tag == "":
+				case tag == "" && isConvertibleType(vf.Kind()):
+					// The check of isConvertibleType protects from a panic of
+					// Convert. Especially useful when an exported field has a
+					// func or interface or channel type.
 					val, err := s.getValue(vf.Type(), maxLen)
 					if err != nil {
 						return reflect.Value{}, err
 					}
 					val = val.Convert(vf.Type())
 					vf.Set(val)
-
+				case tag == "":
+					// println("vf.Type() non-convertible", vf.String())
 				default:
 					err := s.setDataWithTag(vf.Addr(), tag, maxLen, false)
 					if err != nil {
@@ -697,6 +702,29 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 	default:
 		return rVal, errors.NotSupported.Newf("[pseudo] Type %+v not supported", t)
 	}
+}
+
+func isConvertibleType(k reflect.Kind) bool {
+	switch k {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return true
+
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return true
+
+	case reflect.Float32, reflect.Float64:
+		return true
+
+	case reflect.Complex64, reflect.Complex128:
+		return true
+
+	case reflect.String:
+		return true
+
+	case reflect.Slice:
+		return true
+	}
+	return false
 }
 
 // func (s *Service) hasTagBasedFunc(tag string) bool {
