@@ -329,6 +329,15 @@ func NewService(seed uint64, o *Options, opts ...optionFn) (*Service, error) {
 		"company": func(maxLen int) (interface{}, error) {
 			return s.CompanyLegal(), nil
 		},
+		"country": func(maxLen int) (interface{}, error) {
+			return s.Country(), nil
+		},
+		"country_id": func(maxLen int) (interface{}, error) {
+			return s.CountryISO2(), nil
+		},
+		"region": func(maxLen int) (interface{}, error) {
+			return s.State(), nil
+		},
 	}
 	s.funcsAliases = map[string]string{
 		"firstname":     "first_name",
@@ -338,6 +347,8 @@ func NewService(seed uint64, o *Options, opts ...optionFn) (*Service, error) {
 		"zip":           "postcode",
 		"address":       "street",
 		"increment_id":  "ulid",
+		"telephone":     "phone_number",
+		"fax":           "phone_number",
 	}
 
 	sort.Slice(opts, func(i, j int) bool {

@@ -12,6 +12,11 @@ func (s *Service) Country() string {
 	return s.lookup(s.o.Lang, "countries", true)
 }
 
+// CountryISO2 generates a random country iso2 code
+func (s *Service) CountryISO2() string {
+	return s.lookup("en", "country_iso2", false)
+}
+
 // City generates random city
 func (s *Service) City() string {
 	city := s.lookup(s.o.Lang, "cities", true)
