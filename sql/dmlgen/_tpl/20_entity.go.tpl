@@ -5,6 +5,7 @@
 type {{.Entity}} struct {
 {{range .Columns}}{{ToGoCamelCase .Field}} {{GoTypeNull .}}
 		{{- if ne .StructTag "" -}}`{{.StructTag}}`{{- end}} {{.GoComment}}
+{{end}} {{range .ReferencedCollections }} {{.}}
 {{end}} }
 
 // AssignLastInsertID updates the increment ID field with the last inserted ID
@@ -43,9 +44,14 @@ type {{.Collection}} struct {
 	AfterMapColumns 	func(uint64, *{{.Entity}}) error `json:"-"`
 }
 
-// New{{.Collection}} creates a new initialized collection. Auto generated.
-func New{{.Collection}}() *{{.Collection}} {
-	return &{{.Collection}}{
+// Make{{.Collection}} creates a new initialized collection. Auto generated.
+func Make{{.Collection}}() {{.Collection}} {
+	{{/*
+		TODO(idea): use a global pool which can register for each type the
+		before/after mapcolumn function so that the dev does not need to assign
+		each time. think if it's worth such a pattern.
+	*/ -}}
+	return {{.Collection}}{
 		Data: make([]*{{.Entity}}, 0, 5),
 	}
 }

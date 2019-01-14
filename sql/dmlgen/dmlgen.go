@@ -49,7 +49,13 @@ import (
 //go:generate go-bindata -o bindata.go -pkg dmlgen ./_tpl/...
 
 // Initial idea and prototyping for code generation.
-// TODO DML gen must take care of the types in myreplicator.RowsEvent.decodeValue
+// TODO DML gen must take care of the types in myreplicator.RowsEvent.decodeValue (not possible)
+
+// TODO mark fields or types as private which then prints them lower case (Go
+// 	private) and provides setter/getter: password fields do not get accidentally
+// 	printed. json:"-" can be used, but what about other encoders?
+
+// TODO generate a hidden type which contains the original data to detect changes and store only changed fields.
 
 // pkgPath used to load the external template files `*.go.tpl`.
 const pkgPath = `src/github.com/corestoreio/pkg/sql/dmlgen`
@@ -325,6 +331,7 @@ func WithColumnAliasesFromForeignKeys(ctx context.Context, db dml.Querier) (opt 
 		if err != nil {
 			return errors.WithStack(err)
 		}
+
 		for tblPkCol, kcuc := range tblFks {
 			// tblPkCol == REFERENCED_TABLE_NAME.REFERENCED_COLUMN_NAME
 			// REFERENCED_TABLE_NAME is contained in sortedTableNames()
@@ -343,6 +350,42 @@ func WithColumnAliasesFromForeignKeys(ctx context.Context, db dml.Querier) (opt 
 							unique[kcu.ColumnName] = true
 						}
 					}
+				}
+			}
+		}
+		return nil
+	}
+	return
+}
+
+// WithReferenceEntitiesByForeignKeys analyses the foreign keys which points to
+// a table and adds them as a struct field name. For example:
+// customer_address_entity.parent_id is a foreign key to
+// customer_entity.entity_id hence the generated struct CustomerEntity has a new
+// field which gets named CustomerAddressEntityCollection, pointing to type
+// CustomerAddressEntityCollection. structFieldNameMapperFn can be nil, if so
+// the name of the Go collection type gets used as field name.
+func WithReferenceEntitiesByForeignKeys(ctx context.Context, db dml.Querier, structFieldNameMapperFn func(string) string) (opt Option) {
+	// initial implementation. might not work correctly with the EAV tables as
+	// it might to point to to many tables/structs.
+
+	if structFieldNameMapperFn == nil {
+		structFieldNameMapperFn = func(s string) string { return s }
+	}
+
+	opt.sortOrder = 210 // must run at the end or where the end is near ;-)
+	opt.fn = func(ts *Tables) error {
+
+		tblFks, err := ddl.LoadKeyColumnUsage(ctx, db, ts.sortedTableNames()...)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		for _, kcuc := range tblFks { // kcuc = keyColumnUsageCollection
+			for _, kcuce := range kcuc.Data {
+				if kcuce.ReferencedTableName.Valid {
+					t := ts.Tables[kcuce.ReferencedTableName.String]
+					t.ReferencedCollections = append(t.ReferencedCollections,
+						structFieldNameMapperFn(kcuce.TableName)+" "+strs.ToGoCamelCase(kcuce.TableName)+"Collection")
 				}
 			}
 		}
@@ -724,10 +767,13 @@ func (ts *Tables) GenerateGo(w io.Writer, wTest io.Writer) error {
 
 // table writes one database table into Go source code.
 type table struct {
-	Package                  string      // Name of the package
-	TableName                string      // Name of the table
-	Comment                  string      // Comment above the struct type declaration
-	Columns                  ddl.Columns // all columns of a table
+	Package   string      // Name of the package
+	TableName string      // Name of the table
+	Comment   string      // Comment above the struct type declaration
+	Columns   ddl.Columns // all columns of a table
+	// ReferencedCollections, map key is the name of the struct field, map value
+	// the target Go collection type.
+	ReferencedCollections    []string
 	HasJsonMarshaler         bool
 	HasEasyJsonMarshaler     bool
 	HasBinaryMarshaler       bool

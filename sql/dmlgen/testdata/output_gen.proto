@@ -28,6 +28,39 @@ message CoreConfigData {
 message CoreConfigDataCollection {
 	repeated CoreConfigData Data = 1;
 }
+// CustomerAddressEntity represents a single row for DB table `customer_address_entity`. Auto generated.
+message CustomerAddressEntity {
+	uint32 entity_id = 1 [(gogoproto.customname)="EntityID"];
+	null.String increment_id = 2 [(gogoproto.customname)="IncrementID",(gogoproto.nullable)=false];
+	null.Uint32 parent_id = 3 [(gogoproto.customname)="ParentID",(gogoproto.nullable)=false];
+	google.protobuf.Timestamp created_at = 4 [(gogoproto.customname)="CreatedAt",(gogoproto.stdtime)=true,(gogoproto.nullable)=false];
+	google.protobuf.Timestamp updated_at = 5 [(gogoproto.customname)="UpdatedAt",(gogoproto.stdtime)=true,(gogoproto.nullable)=false];
+	bool is_active = 6 [(gogoproto.customname)="IsActive"];
+	string city = 7 [(gogoproto.customname)="City"];
+	null.String company = 8 [(gogoproto.customname)="Company",(gogoproto.nullable)=false];
+	string country_id = 9 [(gogoproto.customname)="CountryID"];
+	null.String fax = 10 [(gogoproto.customname)="Fax",(gogoproto.nullable)=false];
+	string firstname = 11 [(gogoproto.customname)="Firstname"];
+	string lastname = 12 [(gogoproto.customname)="Lastname"];
+	null.String middlename = 13 [(gogoproto.customname)="Middlename",(gogoproto.nullable)=false];
+	null.String postcode = 14 [(gogoproto.customname)="Postcode",(gogoproto.nullable)=false];
+	null.String prefix = 15 [(gogoproto.customname)="Prefix",(gogoproto.nullable)=false];
+	null.String region = 16 [(gogoproto.customname)="Region",(gogoproto.nullable)=false];
+	null.Uint32 region_id = 17 [(gogoproto.customname)="RegionID",(gogoproto.nullable)=false];
+	string street = 18 [(gogoproto.customname)="Street"];
+	null.String suffix = 19 [(gogoproto.customname)="Suffix",(gogoproto.nullable)=false];
+	string telephone = 20 [(gogoproto.customname)="Telephone"];
+	null.String vat_id = 21 [(gogoproto.customname)="VatID",(gogoproto.nullable)=false];
+	null.Bool vat_is_valid = 22 [(gogoproto.customname)="VatIsValid",(gogoproto.nullable)=false];
+	null.String vat_request_date = 23 [(gogoproto.customname)="VatRequestDate",(gogoproto.nullable)=false];
+	null.String vat_request_id = 24 [(gogoproto.customname)="VatRequestID",(gogoproto.nullable)=false];
+	null.Uint32 vat_request_success = 25 [(gogoproto.customname)="VatRequestSuccess",(gogoproto.nullable)=false];
+}
+
+// CustomerAddressEntityCollection represents multiple rows for DB table `customer_address_entity`. Auto generated.
+message CustomerAddressEntityCollection {
+	repeated CustomerAddressEntity Data = 1;
+}
 // CustomerEntity represents a single row for DB table `customer_entity`. Auto generated.
 message CustomerEntity {
 	uint32 entity_id = 1 [(gogoproto.customname)="EntityID"];

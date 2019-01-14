@@ -5,6 +5,7 @@ package testdata
 import (
 	"context"
 	"fmt"
+	"github.com/alecthomas/repr"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/pseudo"
@@ -26,7 +27,7 @@ func TestNewTables(t *testing.T) {
 
 	tblNames := tbls.Tables()
 	sort.Strings(tblNames)
-	assert.Exactly(t, []string{"core_config_data", "customer_entity", "dmlgen_types"}, tblNames)
+	assert.Exactly(t, []string{"core_config_data", "customer_address_entity", "customer_entity", "dmlgen_types"}, tblNames)
 
 	err = tbls.Validate(ctx)
 	assert.NoError(t, err)
@@ -37,6 +38,9 @@ func TestNewTables(t *testing.T) {
 		}),
 		pseudo.WithTagFakeFunc("store_id", func(maxLen int) (interface{}, error) {
 			return 1, nil
+		}),
+		pseudo.WithTagFakeFunc("CustomerAddressEntity.ParentID", func(maxLen int) (interface{}, error) {
+			return nil, nil
 		}),
 		pseudo.WithTagFakeFunc("col_date1", func(maxLen int) (interface{}, error) {
 			if ps.Intn(1000)%3 == 0 {
@@ -103,6 +107,57 @@ func TestNewTables(t *testing.T) {
 
 		}
 	})
+	t.Run("CustomerAddressEntity_Entity", func(t *testing.T) {
+		ccd := tbls.MustTable(TableNameCustomerAddressEntity)
+
+		inStmt, err := ccd.Insert().BuildValues().Prepare(ctx) // Do not use Ignore() to suppress DB errors.
+		assert.NoError(t, err, "%+v", err)
+		insArtisan := inStmt.WithArgs()
+		defer dmltest.Close(t, inStmt)
+
+		selArtisan := ccd.SelectByPK().WithArgs().ExpandPlaceHolders()
+
+		for i := 0; i < 9; i++ {
+			entityIn := new(CustomerAddressEntity)
+			if err := ps.FakeData(entityIn); err != nil {
+				t.Errorf("IDX[%d]: %+v", i, err)
+				return
+			}
+
+			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CustomerAddressEntity_Entity")(insArtisan.Record("", entityIn).ExecContext(ctx))
+			insArtisan.Reset()
+
+			entityOut := new(CustomerAddressEntity)
+			rowCount, err := selArtisan.Int64s(lID).Load(ctx, entityOut)
+			assert.NoError(t, err, "%+v", err)
+			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
+			assert.Exactly(t, entityIn.EntityID, entityOut.EntityID, "IDX%d: EntityID should match", lID)
+			assert.ExactlyLength(t, 50, &entityIn.IncrementID, &entityOut.IncrementID, "IDX%d: IncrementID should match", lID)
+			assert.Exactly(t, entityIn.ParentID, entityOut.ParentID, "IDX%d: ParentID should match", lID)
+			assert.Exactly(t, entityIn.CreatedAt, entityOut.CreatedAt, "IDX%d: CreatedAt should match", lID)
+			assert.Exactly(t, entityIn.UpdatedAt, entityOut.UpdatedAt, "IDX%d: UpdatedAt should match", lID)
+			assert.Exactly(t, entityIn.IsActive, entityOut.IsActive, "IDX%d: IsActive should match", lID)
+			assert.ExactlyLength(t, 255, &entityIn.City, &entityOut.City, "IDX%d: City should match", lID)
+			assert.ExactlyLength(t, 255, &entityIn.Company, &entityOut.Company, "IDX%d: Company should match", lID)
+			assert.ExactlyLength(t, 255, &entityIn.CountryID, &entityOut.CountryID, "IDX%d: CountryID should match", lID)
+			assert.ExactlyLength(t, 255, &entityIn.Fax, &entityOut.Fax, "IDX%d: Fax should match", lID)
+			assert.ExactlyLength(t, 255, &entityIn.Firstname, &entityOut.Firstname, "IDX%d: Firstname should match", lID)
+			assert.ExactlyLength(t, 255, &entityIn.Lastname, &entityOut.Lastname, "IDX%d: Lastname should match", lID)
+			assert.ExactlyLength(t, 255, &entityIn.Middlename, &entityOut.Middlename, "IDX%d: Middlename should match", lID)
+			assert.ExactlyLength(t, 255, &entityIn.Postcode, &entityOut.Postcode, "IDX%d: Postcode should match", lID)
+			assert.ExactlyLength(t, 40, &entityIn.Prefix, &entityOut.Prefix, "IDX%d: Prefix should match", lID)
+			assert.ExactlyLength(t, 255, &entityIn.Region, &entityOut.Region, "IDX%d: Region should match", lID)
+			assert.Exactly(t, entityIn.RegionID, entityOut.RegionID, "IDX%d: RegionID should match", lID)
+			assert.ExactlyLength(t, 65535, &entityIn.Street, &entityOut.Street, "IDX%d: Street should match", lID)
+			assert.ExactlyLength(t, 40, &entityIn.Suffix, &entityOut.Suffix, "IDX%d: Suffix should match", lID)
+			assert.ExactlyLength(t, 255, &entityIn.Telephone, &entityOut.Telephone, "IDX%d: Telephone should match", lID)
+			assert.ExactlyLength(t, 255, &entityIn.VatID, &entityOut.VatID, "IDX%d: VatID should match", lID)
+			assert.Exactly(t, entityIn.VatIsValid, entityOut.VatIsValid, "IDX%d: VatIsValid should match", lID)
+			assert.ExactlyLength(t, 255, &entityIn.VatRequestDate, &entityOut.VatRequestDate, "IDX%d: VatRequestDate should match", lID)
+			assert.ExactlyLength(t, 255, &entityIn.VatRequestID, &entityOut.VatRequestID, "IDX%d: VatRequestID should match", lID)
+			assert.Exactly(t, entityIn.VatRequestSuccess, entityOut.VatRequestSuccess, "IDX%d: VatRequestSuccess should match", lID)
+		}
+	})
 	t.Run("CustomerEntity_Entity", func(t *testing.T) {
 		ccd := tbls.MustTable(TableNameCustomerEntity)
 
@@ -113,12 +168,14 @@ func TestNewTables(t *testing.T) {
 
 		selArtisan := ccd.SelectByPK().WithArgs().ExpandPlaceHolders()
 
-		for i := 0; i < 9; i++ {
+		for i := 0; i < 1; i++ {
 			entityIn := new(CustomerEntity)
 			if err := ps.FakeData(entityIn); err != nil {
 				t.Errorf("IDX[%d]: %+v", i, err)
 				return
 			}
+
+			repr.Println(entityIn)
 
 			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CustomerEntity_Entity")(insArtisan.Record("", entityIn).ExecContext(ctx))
 			insArtisan.Reset()

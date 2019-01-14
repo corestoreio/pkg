@@ -79,8 +79,7 @@ func writeFile(t *testing.T, outFile string, wFn func(io.Writer, io.Writer) erro
 
 // TestGenerate_Tables_Protobuf_Json writes a Go and Proto file to the testdata
 // directory for manual review for different tables. This test also analyzes the
-// foreign keys pointing to customer_entity. No tests of the generated source
-// code are getting executed because API gets developed, still.
+// foreign keys pointing to customer_entity.
 func TestGenerate_Tables_Protobuf_Json(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
@@ -93,9 +92,14 @@ func TestGenerate_Tables_Protobuf_Json(t *testing.T) {
 
 		dmlgen.WithProtobuf(),
 
-		dmlgen.WithLoadColumns(ctx, db.DB, "dmlgen_types", "core_config_data", "customer_entity"),
+		dmlgen.WithLoadColumns(ctx, db.DB, "dmlgen_types", "core_config_data", "customer_entity", "customer_address_entity"),
 		dmlgen.WithTableOption(
 			"customer_entity", &dmlgen.TableOption{
+				Encoders:   []string{"json", "protobuf"},
+				StructTags: []string{"max_len"},
+			}),
+		dmlgen.WithTableOption(
+			"customer_address_entity", &dmlgen.TableOption{
 				Encoders:   []string{"json", "protobuf"},
 				StructTags: []string{"max_len"},
 			}),
@@ -127,7 +131,18 @@ func TestGenerate_Tables_Protobuf_Json(t *testing.T) {
 			}),
 
 		dmlgen.WithColumnAliasesFromForeignKeys(ctx, db.DB),
+		dmlgen.WithReferenceEntitiesByForeignKeys(ctx, db.DB, func(tableName string) string {
+			switch tableName {
+			case "customer_address_entity":
+				tableName = "Addresses"
+			}
+			return tableName
+		}),
+
 		dmlgen.WithCustomCode("pseudo.MustNewService.Option", `
+		pseudo.WithTagFakeFunc("CustomerAddressEntity.ParentID", func(maxLen int) (interface{}, error) {
+			return nil, nil 
+		}),
 		pseudo.WithTagFakeFunc("col_date1", func(maxLen int) (interface{}, error) {
 			if ps.Intn(1000)%3 == 0 {
 				return nil, nil
