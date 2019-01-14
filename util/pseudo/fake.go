@@ -576,6 +576,13 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 								return rVal, errors.WithStack(err)
 							}
 							continue
+						default:
+							val := reflect.ValueOf(iFaceVal)
+							if isConvertibleType(vf.Kind()) && isConvertibleType(val.Kind()) {
+								val = val.Convert(vf.Type())
+								vf.Set(val)
+							}
+							continue
 						}
 					}
 				}
@@ -590,7 +597,7 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 				}
 
 				switch {
-				case tag == "" && isConvertibleType(vf.Kind()):
+				case tag == "":
 					// The check of isConvertibleType protects from a panic of
 					// Convert. Especially useful when an exported field has a
 					// func or interface or channel type.
@@ -598,10 +605,12 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 					if err != nil {
 						return reflect.Value{}, err
 					}
-					val = val.Convert(vf.Type())
-					vf.Set(val)
-				case tag == "":
-					// println("vf.Type() non-convertible", vf.String())
+					if isConvertibleType(vf.Kind()) {
+						val = val.Convert(vf.Type())
+					}
+					if val.IsValid() {
+						vf.Set(val)
+					}
 				default:
 					err := s.setDataWithTag(vf.Addr(), tag, maxLen, false)
 					if err != nil {
@@ -699,9 +708,11 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 			v.SetMapIndex(key, val)
 		}
 		return v, nil
-	default:
-		return rVal, errors.NotSupported.Newf("[pseudo] Type %+v not supported", t)
+	case reflect.Func, reflect.Chan, reflect.Interface, reflect.Complex64, reflect.Complex128:
+		// ignore
+		return rVal, nil
 	}
+	return rVal, errors.NotSupported.Newf("[pseudo] Type %+v not supported", t)
 }
 
 func isConvertibleType(k reflect.Kind) bool {
@@ -726,14 +737,6 @@ func isConvertibleType(k reflect.Kind) bool {
 	}
 	return false
 }
-
-// func (s *Service) hasTagBasedFunc(tag string) bool {
-// 	if fnAlias, ok := s.funcsAliases[tag]; ok && fnAlias != "" {
-// 		tag = fnAlias
-// 	}
-// 	_, ok := s.funcs[tag]
-// 	return ok
-// }
 
 func (s *Service) getFuncsValue(tag string, maxLen uint64) (interface{}, bool, error) {
 	// TODO check if the map access causes a race condition.
