@@ -80,7 +80,6 @@ message CustomerEntity {
 	null.String lastname = 15 [(gogoproto.customname)="Lastname",(gogoproto.nullable)=false];
 	null.String suffix = 16 [(gogoproto.customname)="Suffix",(gogoproto.nullable)=false];
 	null.Time dob = 17 [(gogoproto.customname)="Dob",(gogoproto.nullable)=false];
-	null.String password_hash = 18 [(gogoproto.customname)="PasswordHash",(gogoproto.nullable)=false];
 	null.String rp_token = 19 [(gogoproto.customname)="RpToken",(gogoproto.nullable)=false];
 	null.Time rp_token_created_at = 20 [(gogoproto.customname)="RpTokenCreatedAt",(gogoproto.nullable)=false];
 	null.Uint32 default_billing = 21 [(gogoproto.customname)="DefaultBilling",(gogoproto.nullable)=false];

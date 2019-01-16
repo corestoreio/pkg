@@ -3,16 +3,15 @@
 package testdata
 
 import (
+	"testing"
 	"context"
-	"fmt"
-	"github.com/alecthomas/repr"
+	"sort"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/pseudo"
-	"sort"
-	"testing"
-)
+	"fmt"
 
+)
 func TestNewTables(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
@@ -168,14 +167,12 @@ func TestNewTables(t *testing.T) {
 
 		selArtisan := ccd.SelectByPK().WithArgs().ExpandPlaceHolders()
 
-		for i := 0; i < 1; i++ {
+		for i := 0; i < 9; i++ {
 			entityIn := new(CustomerEntity)
 			if err := ps.FakeData(entityIn); err != nil {
 				t.Errorf("IDX[%d]: %+v", i, err)
 				return
 			}
-
-			repr.Println(entityIn)
 
 			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CustomerEntity_Entity")(insArtisan.Record("", entityIn).ExecContext(ctx))
 			insArtisan.Reset()

@@ -21,9 +21,9 @@ func (cc *{{.Collection}}) Each(f func(*{{.Entity}})) *{{.Collection}} {
 }
 
 {{ range .Columns.UniqueColumns -}}
-func (cc *{{$.Collection}}) SortBy{{ToGoCamelCase .Field}}() {
+func (cc *{{$.Collection}}) SortBy{{GoCamel .Field}}() {
 	sort.Slice(cc.Data,func(i, j int) bool {
-		return cc.Data[i].{{ToGoCamelCase .Field}} < cc.Data[j].{{ToGoCamelCase .Field}}
+		return cc.Data[i].{{GoCamel .Field}} < cc.Data[j].{{GoCamel .Field}}
 	})
 } {{- end}}
 

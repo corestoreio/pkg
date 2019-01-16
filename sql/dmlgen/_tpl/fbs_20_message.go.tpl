@@ -1,7 +1,7 @@
 // {{.Entity}} represents a single row for DB table `{{.TableName}}`. Auto generated.
 table {{.Entity}} {
 	{{- range .Columns}}
-		{{ToGoCamelCase .Field}}:{{SerializerType .}}; // {{.Field}}
+		{{GoCamel .Field}}:{{SerializerType .}}; // {{.Field}}
 	{{- end}}
 }
 

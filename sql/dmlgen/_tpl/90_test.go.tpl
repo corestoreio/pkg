@@ -29,8 +29,8 @@ func TestNewTables(t *testing.T) {
 
 	// TODO run those tests in parallel
 	{{- range $table := .Tables }}
-	t.Run("{{ToGoCamelCase .TableName}}_Entity", func(t *testing.T) {
-		ccd := tbls.MustTable(TableName{{ToGoCamelCase .TableName}})
+	t.Run("{{GoCamel .TableName}}_Entity", func(t *testing.T) {
+		ccd := tbls.MustTable(TableName{{GoCamel .TableName}})
 
 		inStmt, err := ccd.Insert().BuildValues().Prepare(ctx) // Do not use Ignore() to suppress DB errors.
 		assert.NoError(t, err, "%+v", err)
@@ -40,25 +40,25 @@ func TestNewTables(t *testing.T) {
 		selArtisan := ccd.SelectByPK().WithArgs().ExpandPlaceHolders()
 
 		for i := 0; i < 9; i++ {
-			entityIn := new({{ToGoCamelCase .TableName}})
+			entityIn := new({{GoCamel .TableName}})
 			if err := ps.FakeData(entityIn); err != nil {
 				t.Errorf("IDX[%d]: %+v", i, err)
 				return
 			}
 
-			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.{{ToGoCamelCase .TableName}}_Entity")(insArtisan.Record("", entityIn).ExecContext(ctx))
+			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.{{GoCamel .TableName}}_Entity")(insArtisan.Record("", entityIn).ExecContext(ctx))
 			insArtisan.Reset()
 
-			entityOut := new({{ToGoCamelCase .TableName}})
+			entityOut := new({{GoCamel .TableName}})
 			rowCount, err := selArtisan.Int64s(lID).Load(ctx, entityOut)
 			assert.NoError(t, err, "%+v", err)
 			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
 
 			{{- range $col := $table.Columns }}
 				{{if $col.IsString -}}
-					assert.ExactlyLength(t, {{$col.CharMaxLength.Int64}}, &entityIn.{{ToGoCamelCase $col.Field}}, &entityOut.{{ToGoCamelCase $col.Field}}, "IDX%d: {{ToGoCamelCase $col.Field}} should match", lID)
+					assert.ExactlyLength(t, {{$col.CharMaxLength.Int64}}, &entityIn.{{GoCamel $col.Field}}, &entityOut.{{GoCamel $col.Field}}, "IDX%d: {{GoCamel $col.Field}} should match", lID)
 				{{- else if not $col.IsSystemVersioned -}}
-					assert.Exactly(t, entityIn.{{ToGoCamelCase $col.Field}}, entityOut.{{ToGoCamelCase $col.Field}}, "IDX%d: {{ToGoCamelCase $col.Field}} should match", lID)
+					assert.Exactly(t, entityIn.{{GoCamel $col.Field}}, entityOut.{{GoCamel $col.Field}}, "IDX%d: {{GoCamel $col.Field}} should match", lID)
 				{{- end}}
 			{{- end}}
 		}

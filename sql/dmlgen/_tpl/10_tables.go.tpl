@@ -1,6 +1,6 @@
 const (
 {{- range $table := .Tables }}
-	TableName{{ToGoCamelCase .TableName}} = "{{.TableName}}"
+	TableName{{GoCamel .TableName}} = "{{.TableName}}"
 {{- end}}
 )
 
@@ -10,7 +10,7 @@ const (
 func NewTables(ctx context.Context, db dml.QueryExecPreparer, opts ...ddl.TableOption) (tm *ddl.Tables,err error) {
 	if tm, err = ddl.NewTables(
 		ddl.WithCreateTable(ctx, db, {{- range $table := .Tables }}
-		 TableName{{ToGoCamelCase .TableName}}, "",
+		 TableName{{GoCamel .TableName}}, "",
 		{{- end}}),
 		ddl.WithDB(db),
 	); err != nil {

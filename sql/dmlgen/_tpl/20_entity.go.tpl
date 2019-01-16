@@ -3,7 +3,7 @@
 {{. -}}{{end}}{{- if .HasEasyJsonMarshaler }}
 //easyjson:json{{end}}
 type {{.Entity}} struct {
-{{range .Columns}}{{ToGoCamelCase .Field}} {{GoTypeNull .}}
+{{range .Columns}}{{GoCamelMaybePrivate .Field}} {{GoTypeNull .}}
 		{{- if ne .StructTag "" -}}`{{.StructTag}}`{{- end}} {{.GoComment}}
 {{end}} {{range .ReferencedCollections }} {{.}}
 {{end}} }
@@ -11,19 +11,33 @@ type {{.Entity}} struct {
 // AssignLastInsertID updates the increment ID field with the last inserted ID
 // from an INSERT operation. Implements dml.InsertIDAssigner. Auto generated.
 func (e *{{.Entity}}) AssignLastInsertID(id int64) {
-	{{range .Columns}}{{if and .IsPK .IsAutoIncrement}} e.{{ToGoCamelCase .Field}} = {{GoType .}}(id)
+	{{range .Columns}}{{if and .IsPK .IsAutoIncrement}} e.{{GoCamelMaybePrivate .Field}} = {{GoType .}}(id)
 	{{end}}{{end -}}
 }
 
+{{- range .Columns}}{{ if IsFieldPrivate .Field }}
+// Set{{GoCamel .Field}} sets the data for a private and security sensitive
+// field.
+func (e *{{$.Entity}}) Set{{GoCamel .Field}}(d {{GoTypeNull .}}) *{{$.Entity}} {
+	e.{{GoCamelMaybePrivate .Field}} = d
+	return e
+}
+
+// Get{{GoCamel .Field}} returns the data from a private and security sensitive
+// field.
+func (e *{{$.Entity}}) Get{{GoCamel .Field}}() {{GoTypeNull .}} {
+	return e.{{GoCamelMaybePrivate .Field}}
+}
+{{end }}{{end }}
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *{{.Entity}}) MapColumns(cm *dml.ColumnMap) error {
 	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm{{range .Columns}}.{{GoFuncNull .}}(&e.{{ToGoCamelCase .Field}}){{end}}.Err()
+		return cm{{range .Columns}}.{{GoFuncNull .}}(&e.{{GoCamelMaybePrivate .Field}}){{end}}.Err()
 	}
 	for cm.Next() {
 		switch c := cm.Column(); c { {{range .Columns}}
 			case "{{.Field}}"{{range .Aliases}},"{{.}}"{{end}}:
-				cm.{{GoFuncNull .}}(&e.{{ToGoCamelCase .Field}}){{end}}
+				cm.{{GoFuncNull .}}(&e.{{GoCamelMaybePrivate .Field}}){{end}}
 			default:
 				return errors.NotFound.Newf("[{{.Package}}] {{.Entity}} Column %q not found", c)
 		}
@@ -92,11 +106,11 @@ func (cc *{{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
 			switch c := cm.Column(); c {
 			{{- range .Columns.UniqueColumns -}}
 			case "{{.Field}}"{{range .Aliases}},"{{.}}"{{end}}:
-				cm = cm.{{GoFuncNull .}}s(cc.{{ToGoCamelCase .Field}}s()...)
+				cm = cm.{{GoFuncNull .}}s(cc.{{GoCamel .Field}}s()...)
 			{{- end}}
 			{{/* {{- range .Columns.UniquifiedColumns}}		// no idea if that is needed
 			case "{{.Field}}"{{range .Aliases}},"{{.}}"{{end}}:
-				cm = cm.{{GoFuncNull .}}s(cc.{{ToGoCamelCase .Field}}s()...)
+				cm = cm.{{GoFuncNull .}}s(cc.{{GoCamel .Field}}s()...)
 			{{- end}} */}}
 			default:
 				return errors.NotFound.Newf("[{{.Package}}] {{.Collection}} Column %q not found", c)
@@ -108,24 +122,24 @@ func (cc *{{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
 	return cm.Err()
 }
 {{range .Columns.UniqueColumns}}
-// {{ToGoCamelCase .Field}}s returns a slice or appends to a slice all values.
+// {{GoCamel .Field}}s returns a slice or appends to a slice all values.
 // Auto generated.
-func (cc *{{$.Collection}}) {{ToGoCamelCase .Field}}s(ret ...{{GoTypeNull .}}) []{{GoTypeNull .}} {
+func (cc *{{$.Collection}}) {{GoCamel .Field}}s(ret ...{{GoTypeNull .}}) []{{GoTypeNull .}} {
 	if ret == nil {
 		ret = make([]{{GoTypeNull .}}, 0, len(cc.Data))
 	}
 	for _, e := range cc.Data {
-		ret = append(ret, e.{{ToGoCamelCase .Field}})
+		ret = append(ret, e.{{GoCamel .Field}})
 	}
 	return ret
 } {{end}}
 
 {{- range .Columns.UniquifiedColumns}}
-// {{ToGoCamelCase .Field}}s belongs to the column `{{.Field}}`
+// {{GoCamel .Field}}s belongs to the column `{{.Field}}`
 // and returns a slice or appends to a slice only unique values of that column.
 // The values will be filtered internally in a Go map. No DB query gets
 // executed. Auto generated.
-func (cc *{{$.Collection}}) Unique{{ToGoCamelCase .Field}}s(ret ...{{GoType .}}) []{{GoType .}} {
+func (cc *{{$.Collection}}) Unique{{GoCamel .Field}}s(ret ...{{GoType .}}) []{{GoType .}} {
 	if ret == nil {
 		ret = make([]{{GoType .}}, 0, len(cc.Data))
 	}

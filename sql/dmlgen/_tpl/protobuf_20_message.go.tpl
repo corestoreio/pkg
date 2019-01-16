@@ -1,7 +1,7 @@
 // {{.Entity}} represents a single row for DB table `{{.TableName}}`. Auto generated.
 message {{.Entity}} {
-	{{- range .Columns}}
-	{{SerializerType .}} {{.Field}} = {{.Pos}} [(gogoproto.customname)="{{ToGoCamelCase .Field}}" {{- SerializerCustomType .}}];
+	{{- range .Columns}}{{ if IsFieldPublic .Field }}
+	{{SerializerType .}} {{.Field}} = {{.Pos}} [(gogoproto.customname)="{{GoCamel .Field}}" {{- SerializerCustomType .}}];{{end}}
 	{{- end}}
 }
 

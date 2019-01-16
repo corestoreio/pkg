@@ -537,7 +537,7 @@ type CustomerEntity struct {
 	Lastname               null.String `max_len:"255"` // lastname varchar(255) NULL MUL DEFAULT 'NULL'  "Last Name"
 	Suffix                 null.String `max_len:"40"`  // suffix varchar(40) NULL  DEFAULT 'NULL'  "Name Suffix"
 	Dob                    null.Time   // dob date NULL  DEFAULT 'NULL'  "Date of Birth"
-	PasswordHash           null.String `max_len:"128"` // password_hash varchar(128) NULL  DEFAULT 'NULL'  "Password_hash"
+	passwordHash           null.String `max_len:"128"` // password_hash varchar(128) NULL  DEFAULT 'NULL'  "Password_hash"
 	RpToken                null.String `max_len:"128"` // rp_token varchar(128) NULL  DEFAULT 'NULL'  "Reset password token"
 	RpTokenCreatedAt       null.Time   // rp_token_created_at datetime NULL  DEFAULT 'NULL'  "Reset password token creation time"
 	DefaultBilling         null.Uint32 `max_len:"10"` // default_billing int(10) unsigned NULL  DEFAULT 'NULL'  "Default Billing Address"
@@ -557,10 +557,23 @@ func (e *CustomerEntity) AssignLastInsertID(id int64) {
 	e.EntityID = uint32(id)
 }
 
+// SetPasswordHash sets the data for a private and security sensitive
+// field.
+func (e *CustomerEntity) SetPasswordHash(d null.String) *CustomerEntity {
+	e.passwordHash = d
+	return e
+}
+
+// GetPasswordHash returns the data from a private and security sensitive
+// field.
+func (e *CustomerEntity) GetPasswordHash() null.String {
+	return e.passwordHash
+}
+
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *CustomerEntity) MapColumns(cm *dml.ColumnMap) error {
 	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Uint32(&e.EntityID).NullUint32(&e.WebsiteID).NullString(&e.Email).Uint32(&e.GroupID).NullString(&e.IncrementID).NullUint32(&e.StoreID).Time(&e.CreatedAt).Time(&e.UpdatedAt).Bool(&e.IsActive).Uint32(&e.DisableAutoGroupChange).NullString(&e.CreatedIn).NullString(&e.Prefix).NullString(&e.Firstname).NullString(&e.Middlename).NullString(&e.Lastname).NullString(&e.Suffix).NullTime(&e.Dob).NullString(&e.PasswordHash).NullString(&e.RpToken).NullTime(&e.RpTokenCreatedAt).NullUint32(&e.DefaultBilling).NullUint32(&e.DefaultShipping).NullString(&e.Taxvat).NullString(&e.Confirmation).NullUint32(&e.Gender).NullInt32(&e.FailuresNum).NullTime(&e.FirstFailure).NullTime(&e.LockExpires).Err()
+		return cm.Uint32(&e.EntityID).NullUint32(&e.WebsiteID).NullString(&e.Email).Uint32(&e.GroupID).NullString(&e.IncrementID).NullUint32(&e.StoreID).Time(&e.CreatedAt).Time(&e.UpdatedAt).Bool(&e.IsActive).Uint32(&e.DisableAutoGroupChange).NullString(&e.CreatedIn).NullString(&e.Prefix).NullString(&e.Firstname).NullString(&e.Middlename).NullString(&e.Lastname).NullString(&e.Suffix).NullTime(&e.Dob).NullString(&e.passwordHash).NullString(&e.RpToken).NullTime(&e.RpTokenCreatedAt).NullUint32(&e.DefaultBilling).NullUint32(&e.DefaultShipping).NullString(&e.Taxvat).NullString(&e.Confirmation).NullUint32(&e.Gender).NullInt32(&e.FailuresNum).NullTime(&e.FirstFailure).NullTime(&e.LockExpires).Err()
 	}
 	for cm.Next() {
 		switch c := cm.Column(); c {
@@ -599,7 +612,7 @@ func (e *CustomerEntity) MapColumns(cm *dml.ColumnMap) error {
 		case "dob":
 			cm.NullTime(&e.Dob)
 		case "password_hash":
-			cm.NullString(&e.PasswordHash)
+			cm.NullString(&e.passwordHash)
 		case "rp_token":
 			cm.NullString(&e.RpToken)
 		case "rp_token_created_at":

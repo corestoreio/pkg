@@ -32,6 +32,7 @@ import (
 	"sort"
 	"strings"
 	"text/template"
+	"unicode"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
@@ -51,14 +52,14 @@ import (
 // Initial idea and prototyping for code generation.
 // TODO DML gen must take care of the types in myreplicator.RowsEvent.decodeValue (not possible)
 
-// TODO mark fields or types as private which then prints them lower case (Go
-// 	private) and provides setter/getter: password fields do not get accidentally
-// 	printed. json:"-" can be used, but what about other encoders?
-
-// TODO generate a hidden type which contains the original data to detect changes and store only changed fields.
-
-// pkgPath used to load the external template files `*.go.tpl`.
-const pkgPath = `src/github.com/corestoreio/pkg/sql/dmlgen`
+// TODO generate a hidden type which contains the original data to detect
+//  changes and store only changed fields. Investigate other implementations.
+//  With the e.g. new field "originalData" pointing to the struct we create a
+//  recursion, also we need to track which field needs to be updated after a
+//  change. Alternative implementation: a byte slice using protobuf encoding
+//  to store the current data and when saving to DB happens decode the data and
+//  compare the fields, then return the change field names, except autoinc
+//  fields.
 
 // Tables can generated Go source for for database tables once correctly
 // configured.
@@ -104,9 +105,9 @@ type Option struct {
 	fn        func(*Tables) error
 }
 
-// TableOption used in conjunction with WithTableOption to apply different
+// TableConfig used in conjunction with WithTableConfig to apply different
 // configurations for a generated struct and its struct collection.
-type TableOption struct {
+type TableConfig struct {
 	// Encoders add method receivers for, each struct, compatible with the
 	// interface declarations in the various encoding packages. Supported
 	// encoder names are: json, binary, and protobuf. Text includes JSON. Binary
@@ -137,10 +138,14 @@ type TableOption struct {
 	// but should have a dedicated function to extract their unique primitive
 	// values as a slice. Not allowed are text, blob and binary.
 	UniquifiedColumns []string
-	lastErr           error
+	// PrivateFields list struct field names which should be private to avoid
+	// accidentally leaking through encoders. Appropriate getter/setter methods
+	// get generated.
+	PrivateFields []string
+	lastErr       error
 }
 
-func (to *TableOption) applyEncoders(ts *Tables, t *table) {
+func (to *TableConfig) applyEncoders(ts *Tables, t *table) {
 	for i := 0; i < len(to.Encoders) && to.lastErr == nil; i++ {
 		switch enc := to.Encoders[i]; enc {
 		case "json":
@@ -152,12 +157,12 @@ func (to *TableOption) applyEncoders(ts *Tables, t *table) {
 		case "protobuf", "fbs":
 			t.HasSerializer = true // for now leave it in. maybe later PB gets added to the struct tags.
 		default:
-			to.lastErr = errors.NotSupported.Newf("[dmlgen] WithTableOption: Table %q Encoder %q not supported", t.TableName, enc)
+			to.lastErr = errors.NotSupported.Newf("[dmlgen] WithTableConfig: Table %q Encoder %q not supported", t.TableName, enc)
 		}
 	}
 }
 
-func (to *TableOption) applyStructTags(t *table) {
+func (to *TableConfig) applyStructTags(t *table) {
 	for h := 0; h < len(t.Columns) && to.lastErr == nil; h++ {
 		c := t.Columns[h]
 		var buf strings.Builder
@@ -212,14 +217,14 @@ func (to *TableOption) applyStructTags(t *table) {
 				//customType := ",customtype=github.com/gogo/protobuf/test.TODO"
 				//fmt.Fprintf(&buf, `protobuf:"%s,%d,opt,name=%s%s"`, pbType, c.Pos, c.Field, customType)
 			default:
-				to.lastErr = errors.NotSupported.Newf("[dmlgen] WithTableOption: Table %q Tag %q not supported", t.TableName, tagName)
+				to.lastErr = errors.NotSupported.Newf("[dmlgen] WithTableConfig: Table %q Tag %q not supported", t.TableName, tagName)
 			}
 		}
 		c.StructTag = buf.String()
 	} // end Columns loop
 }
 
-func (to *TableOption) applyCustomStructTags(t *table) {
+func (to *TableConfig) applyCustomStructTags(t *table) {
 	for i := 0; i < len(to.CustomStructTags) && to.lastErr == nil; i = i + 2 {
 		found := false
 		for _, c := range t.Columns {
@@ -229,13 +234,22 @@ func (to *TableOption) applyCustomStructTags(t *table) {
 			}
 		}
 		if !found {
-			to.lastErr = errors.NotFound.Newf("[dmlgen] WithTableOption:CustomStructTags: For table %q the Column %q cannot be found.",
+			to.lastErr = errors.NotFound.Newf("[dmlgen] WithTableConfig:CustomStructTags: For table %q the Column %q cannot be found.",
 				t.TableName, to.CustomStructTags[i])
 		}
 	}
 }
 
-func (to *TableOption) applyComments(t *table) {
+func (to *TableConfig) applyPrivateFields(t *table) {
+	if len(to.PrivateFields) > 0 && t.privateFields == nil {
+		t.privateFields = make(map[string]bool)
+	}
+	for _, pf := range to.PrivateFields {
+		t.privateFields[pf] = true
+	}
+}
+
+func (to *TableConfig) applyComments(t *table) {
 	var buf strings.Builder
 	lines := strings.Split(to.Comment, "\n")
 	for i := 0; i < len(lines) && to.lastErr == nil && to.Comment != ""; i++ {
@@ -249,7 +263,7 @@ func (to *TableOption) applyComments(t *table) {
 	t.Comment = strings.TrimSpace(buf.String())
 }
 
-func (to *TableOption) applyColumnAliases(t *table) {
+func (to *TableConfig) applyColumnAliases(t *table) {
 	if to.lastErr != nil {
 		return
 	}
@@ -266,7 +280,7 @@ func (to *TableOption) applyColumnAliases(t *table) {
 			}
 		}
 		if !found {
-			to.lastErr = errors.NotFound.Newf("[dmlgen] WithTableOption:ColumnAliases: For table %q the Column %q cannot be found.",
+			to.lastErr = errors.NotFound.Newf("[dmlgen] WithTableConfig:ColumnAliases: For table %q the Column %q cannot be found.",
 				t.TableName, colName)
 			return
 		}
@@ -274,7 +288,7 @@ func (to *TableOption) applyColumnAliases(t *table) {
 }
 
 // skips text and blob and varbinary and json and geo
-func (to *TableOption) applyUniquifiedColumns(t *table) {
+func (to *TableConfig) applyUniquifiedColumns(t *table) {
 	for i := 0; i < len(to.UniquifiedColumns) && to.lastErr == nil; i++ {
 		cn := to.UniquifiedColumns[i]
 		found := false
@@ -285,28 +299,29 @@ func (to *TableOption) applyUniquifiedColumns(t *table) {
 			}
 		}
 		if !found {
-			to.lastErr = errors.NotFound.Newf("[dmlgen] WithTableOption:UniquifiedColumns: For table %q the Column %q cannot be found in the list of available columns or its data type is not allowed.",
+			to.lastErr = errors.NotFound.Newf("[dmlgen] WithTableConfig:UniquifiedColumns: For table %q the Column %q cannot be found in the list of available columns or its data type is not allowed.",
 				t.TableName, cn)
 		}
 	}
 }
 
-// WithTableOption applies options to a table, identified by the table name used
+// WithTableConfig applies options to a table, identified by the table name used
 // as map key. Options are custom struct or different encoders.
-func WithTableOption(tableName string, opt *TableOption) (o Option) {
+func WithTableConfig(tableName string, opt *TableConfig) (o Option) {
 	// Panic as early as possible.
 	if len(opt.CustomStructTags)%2 == 1 {
-		panic(errors.Fatal.Newf("[dmlgen] WithTableOption: Table %q option CustomStructTags must be a balanced slice.", tableName))
+		panic(errors.Fatal.Newf("[dmlgen] WithTableConfig: Table %q option CustomStructTags must be a balanced slice.", tableName))
 	}
 	o.sortOrder = 150
 	o.fn = func(ts *Tables) (err error) {
 		t, ok := ts.Tables[tableName]
 		if t == nil || !ok {
-			return errors.NotFound.Newf("[dmlgen] WithTableOption: Table %q not found.", tableName)
+			return errors.NotFound.Newf("[dmlgen] WithTableConfig: Table %q not found.", tableName)
 		}
 		opt.applyEncoders(ts, t)
 		opt.applyStructTags(t)
 		opt.applyCustomStructTags(t)
+		opt.applyPrivateFields(t)
 		opt.applyComments(t)
 		opt.applyColumnAliases(t)
 		opt.applyUniquifiedColumns(t)
@@ -394,7 +409,7 @@ func WithReferenceEntitiesByForeignKeys(ctx context.Context, db dml.Querier, str
 	return
 }
 
-// WithCreateTable sets a table and its columns. Allows to overwrite a table fetched
+// WithTable sets a table and its columns. Allows to overwrite a table fetched
 // with function WithLoadColumns. Argument `actions` can only be set to "overwrite".
 func WithTable(tableName string, columns ddl.Columns, actions ...string) (opt Option) {
 	opt.sortOrder = 10
@@ -479,7 +494,9 @@ func WithFlatbuffers(headerOptions ...string) (opt Option) {
 
 // WithCustomCode inserts at the marker position your custom Go code. For
 // available markers search the .go.tpl files for the function call
-// `CustomCode`. An example got written in TestGenerate_Tables_Protobuf_Json.
+// `CustomCode`. An example got written in TestGenerate_Tables_Protobuf_Json. If
+// the marker does not exists or has a typo, no error gets reported and no code
+// gets written.
 func WithCustomCode(marker, code string) (opt Option) {
 	opt.sortOrder = 112
 	opt.fn = func(ts *Tables) error {
@@ -529,7 +546,7 @@ func NewTables(packageImportPath string, opts ...Option) (*Tables, error) {
 			"github.com/corestoreio/pkg/util/assert",
 			"github.com/corestoreio/pkg/util/pseudo",
 		},
-		FuncMap: make(template.FuncMap, 10),
+		FuncMap: make(template.FuncMap, 20),
 	}
 
 	sort.Slice(opts, func(i, j int) bool {
@@ -542,24 +559,15 @@ func NewTables(packageImportPath string, opts ...Option) (*Tables, error) {
 		}
 	}
 
-	ts.FuncMap["CustomCode"] = func(marker string) string {
-		return ts.customCode[marker]
-	}
-
-	ts.FuncMap["ToGoCamelCase"] = strs.ToGoCamelCase // net_http->NetHTTP entity_id->EntityID
-	ts.FuncMap["GoTypeNull"] = func(c *ddl.Column) string {
-		return ts.mySQLToGoType(c, true)
-	}
-	ts.FuncMap["GoType"] = func(c *ddl.Column) string {
-		return ts.mySQLToGoType(c, false)
-	}
-	ts.FuncMap["GoFuncNull"] = func(c *ddl.Column) string {
-		return ts.mySQLToGoDmlColumnMap(c, true)
-	}
-	ts.FuncMap["GoFunc"] = func(c *ddl.Column) string {
-		return ts.mySQLToGoDmlColumnMap(c, false)
-	}
-
+	ts.FuncMap["CustomCode"] = func(marker string) string { return ts.customCode[marker] }
+	ts.FuncMap["GoCamel"] = strs.ToGoCamelCase // net_http->NetHTTP entity_id->EntityID
+	ts.FuncMap["GoCamelMaybePrivate"] = func(s string) string { return s }
+	ts.FuncMap["GoTypeNull"] = func(c *ddl.Column) string { return ts.mySQLToGoType(c, true) }
+	ts.FuncMap["GoType"] = func(c *ddl.Column) string { return ts.mySQLToGoType(c, false) }
+	ts.FuncMap["GoFuncNull"] = func(c *ddl.Column) string { return ts.mySQLToGoDmlColumnMap(c, true) }
+	ts.FuncMap["GoFunc"] = func(c *ddl.Column) string { return ts.mySQLToGoDmlColumnMap(c, false) }
+	ts.FuncMap["IsFieldPublic"] = func(string) bool { return false }
+	ts.FuncMap["IsFieldPrivate"] = func(string) bool { return false }
 	ts.FuncMap["GoPrimitiveNull"] = ts.toGoPrimitiveFromNull
 	ts.FuncMap["SerializerType"] = func(c *ddl.Column) string {
 		pt := ts.toSerializerType(c, true)
@@ -653,9 +661,10 @@ func (ts *Tables) GenerateSerializer(w io.Writer, wTest io.Writer) error {
 		}
 	}
 
-	tableFileName := ts.Serializer + "_20_table.go.tpl"
+	tableFileName := ts.Serializer + "_20_message.go.tpl"
 	for _, tblName := range ts.sortedTableNames() {
 		t := ts.Tables[tblName] // must panic if table name not found
+		ts.FuncMap["IsFieldPublic"] = t.IsFieldPublic
 		if t.HasSerializer {
 			if err := t.writeTo(buf, ts.tpls.Lookup(tableFileName).Funcs(ts.FuncMap)); err != nil {
 				return errors.WriteFailed.New(err, "[dmlgen] For Table %q", t.TableName)
@@ -708,7 +717,21 @@ func (ts *Tables) GenerateGo(w io.Writer, wTest io.Writer) error {
 
 	// deal with random map to guarantee the persistent code generation.
 	for _, tblname := range sortedTableNames {
-		t := ts.Tables[tblname] // must panic if table name not found
+		t, ok := ts.Tables[tblname]
+		if !ok || t == nil {
+			return errors.NotFound.Newf("[dmlgen] Table %q not found", tblname)
+		}
+		ts.FuncMap["IsFieldPrivate"] = t.IsFieldPrivate
+		ts.FuncMap["GoCamelMaybePrivate"] = func(s string) string {
+			su := strs.ToGoCamelCase(s)
+			if t.IsFieldPublic(s) {
+				return su
+			}
+			sr := []rune(su)
+			sr[0] = unicode.ToLower(sr[0])
+			return string(sr)
+		}
+		ts.tpls = ts.tpls.Funcs(ts.FuncMap)
 
 		ts.execTpl(buf, t, "20_entity.go.tpl")
 		if !t.DisableCollectionMethods {
@@ -734,7 +757,7 @@ func (ts *Tables) GenerateGo(w io.Writer, wTest io.Writer) error {
 		for _, path := range pkgs {
 			fmt.Fprintf(w, "\t%q\n", path)
 		}
-		fmt.Fprint(w, "\n)\n")
+		fmt.Fprintf(w, "\n)\n")
 
 		// now figure out all used package names in the buffer.
 		fmt.Fprintf(wTest, "// Auto generated via github.com/corestoreio/pkg/sql/dmlgen\n\npackage %s\n\nimport (\n", ts.Package)
@@ -742,7 +765,7 @@ func (ts *Tables) GenerateGo(w io.Writer, wTest io.Writer) error {
 		for _, path := range ts.ImportPathsTesting {
 			fmt.Fprintf(wTest, "\t%q\n", path)
 		}
-		fmt.Fprint(wTest, "\n)\n")
+		fmt.Fprintf(wTest, "\n)\n")
 	}
 
 	fmted, err := format.Source(buf.Bytes())
@@ -779,11 +802,12 @@ type table struct {
 	HasBinaryMarshaler       bool
 	HasSerializer            bool // writes the .proto file if true
 	DisableCollectionMethods bool
+	// PrivateFields key=snake case name of the DB column, value=true, the field must be private
+	privateFields map[string]bool
 }
 
 // WriteTo implements io.WriterTo and writes the generated source code into w.
 func (t *table) writeTo(w io.Writer, tpl *template.Template) error {
-
 	data := struct {
 		table
 		Collection string
@@ -793,8 +817,15 @@ func (t *table) writeTo(w io.Writer, tpl *template.Template) error {
 		Collection: strs.ToGoCamelCase(t.TableName) + "Collection",
 		Entity:     strs.ToGoCamelCase(t.TableName),
 	}
-
 	return tpl.Execute(w, data)
+}
+
+func (t *table) IsFieldPublic(dbColumnName string) bool {
+	return t.privateFields == nil || !t.privateFields[dbColumnName]
+}
+
+func (t *table) IsFieldPrivate(dbColumnName string) bool {
+	return t.privateFields != nil && t.privateFields[dbColumnName]
 }
 
 // GenerateProto searches all *.proto files in the given path and calls protoc
