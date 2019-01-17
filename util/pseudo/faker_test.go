@@ -587,6 +587,9 @@ func TestService_CustomFakeFunc_Decimal(t *testing.T) {
 			return x, nil
 		}),
 		WithTagFakeFuncAlias("col_price2", "col_price1"),
+		WithTagFakeFunc("pseudo.testServiceDecimal.ID", func(maxLen int) (interface{}, error) {
+			return 999, nil
+		}),
 	)
 	for i := 0; i < 20; i++ {
 
@@ -595,7 +598,8 @@ func TestService_CustomFakeFunc_Decimal(t *testing.T) {
 		assert.NoError(t, err, "\nIDX:%d %+v", i, err)
 
 		// t.Logf("%#v", a)
-		assert.Exactly(t, "123.4567", a.ColPrice1.String(), "IDX %d", i)
-		assert.Exactly(t, "123.4567", a.ColPrice2.String(), "IDX %d", i)
+		assert.Exactly(t, int32(999), a.ID, "IDX %d for field ID", i)
+		assert.Exactly(t, "123.4567", a.ColPrice1.String(), "IDX %d for field ColPrice1", i)
+		assert.Exactly(t, "123.4567", a.ColPrice2.String(), "IDX %d for field ColPrice2", i)
 	}
 }

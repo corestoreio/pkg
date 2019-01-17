@@ -528,7 +528,7 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 				fkr, _ = v.Addr().Interface().(Faker)
 			}
 			shouldResetField := false
-
+			typeName := v.Type().String()
 			for i := 0; i < v.NumField(); i++ {
 				vf := v.Field(i) // value field
 				tf := t.Field(i) // type field
@@ -557,7 +557,7 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 						sTag = toSnakeCase(tf.Name)
 					}
 
-					iFaceVal, ok, err := s.getFuncsValue(sTag, maxLen)
+					iFaceVal, ok, err := s.getFuncsValue(typeName, tf.Name, sTag, maxLen)
 					if err != nil {
 						return rVal, errors.WithStack(err)
 					}
@@ -749,8 +749,20 @@ func isConvertibleType(k reflect.Kind) bool {
 	return false
 }
 
-func (s *Service) getFuncsValue(tag string, maxLen uint64) (interface{}, bool, error) {
-	// TODO check if the map access causes a race condition.
+func (s *Service) getFuncsValue(typeName, fieldName, tag string, maxLen uint64) (interface{}, bool, error) {
+	// typeName = testdata.CustomerAddressEntity
+	// fieldName = ParentID
+	// tag = parent_id
+
+	// fmt.Printf("%s.%s Tag:%s\n", typeName, fieldName, tag)
+
+	// testdata.CustomerAddressEntity.CountryID
+	if fn, ok := s.funcs[typeName+"."+fieldName]; ok {
+		iFaceVal, err := fn(int(maxLen))
+		return iFaceVal, true, err
+	}
+
+	// lookup an alias for parent_id
 	if fnAlias, ok := s.funcsAliases[tag]; ok && fnAlias != "" {
 		tag = fnAlias
 	}
