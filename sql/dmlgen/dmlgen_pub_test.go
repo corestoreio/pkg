@@ -141,7 +141,7 @@ func TestGenerate_Tables_Protobuf_Json(t *testing.T) {
 		}),
 
 		dmlgen.WithCustomCode("pseudo.MustNewService.Option", `
-		pseudo.WithTagFakeFunc("CustomerAddressEntity.ParentID", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("testdata.CustomerAddressEntity.ParentID", func(maxLen int) (interface{}, error) {
 			return nil, nil 
 		}),
 		pseudo.WithTagFakeFunc("col_date1", func(maxLen int) (interface{}, error) {

@@ -56,9 +56,9 @@ func TestNewTables(t *testing.T) {
 
 			{{- range $col := $table.Columns }}
 				{{if $col.IsString -}}
-					assert.ExactlyLength(t, {{$col.CharMaxLength.Int64}}, &entityIn.{{GoCamel $col.Field}}, &entityOut.{{GoCamel $col.Field}}, "IDX%d: {{GoCamel $col.Field}} should match", lID)
+					assert.ExactlyLength(t, {{$col.CharMaxLength.Int64}}, &entityIn.{{$table.GoCamelMaybePrivate $col.Field}}, &entityOut.{{$table.GoCamelMaybePrivate $col.Field}}, "IDX%d: {{$table.GoCamelMaybePrivate $col.Field}} should match", lID)
 				{{- else if not $col.IsSystemVersioned -}}
-					assert.Exactly(t, entityIn.{{GoCamel $col.Field}}, entityOut.{{GoCamel $col.Field}}, "IDX%d: {{GoCamel $col.Field}} should match", lID)
+					assert.Exactly(t, entityIn.{{$table.GoCamelMaybePrivate $col.Field}}, entityOut.{{$table.GoCamelMaybePrivate $col.Field}}, "IDX%d: {{$table.GoCamelMaybePrivate $col.Field}} should match", lID)
 				{{- end}}
 			{{- end}}
 		}

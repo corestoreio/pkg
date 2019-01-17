@@ -722,15 +722,7 @@ func (ts *Tables) GenerateGo(w io.Writer, wTest io.Writer) error {
 			return errors.NotFound.Newf("[dmlgen] Table %q not found", tblname)
 		}
 		ts.FuncMap["IsFieldPrivate"] = t.IsFieldPrivate
-		ts.FuncMap["GoCamelMaybePrivate"] = func(s string) string {
-			su := strs.ToGoCamelCase(s)
-			if t.IsFieldPublic(s) {
-				return su
-			}
-			sr := []rune(su)
-			sr[0] = unicode.ToLower(sr[0])
-			return string(sr)
-		}
+		ts.FuncMap["GoCamelMaybePrivate"] = t.GoCamelMaybePrivate
 		ts.tpls = ts.tpls.Funcs(ts.FuncMap)
 
 		ts.execTpl(buf, t, "20_entity.go.tpl")
@@ -826,6 +818,16 @@ func (t *table) IsFieldPublic(dbColumnName string) bool {
 
 func (t *table) IsFieldPrivate(dbColumnName string) bool {
 	return t.privateFields != nil && t.privateFields[dbColumnName]
+}
+
+func (t *table) GoCamelMaybePrivate(s string) string {
+	su := strs.ToGoCamelCase(s)
+	if t.IsFieldPublic(s) {
+		return su
+	}
+	sr := []rune(su)
+	sr[0] = unicode.ToLower(sr[0])
+	return string(sr)
 }
 
 // GenerateProto searches all *.proto files in the given path and calls protoc

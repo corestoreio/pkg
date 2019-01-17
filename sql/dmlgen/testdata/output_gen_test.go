@@ -3,15 +3,15 @@
 package testdata
 
 import (
-	"testing"
 	"context"
-	"sort"
+	"fmt"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/pseudo"
-	"fmt"
-
+	"sort"
+	"testing"
 )
+
 func TestNewTables(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
@@ -38,7 +38,7 @@ func TestNewTables(t *testing.T) {
 		pseudo.WithTagFakeFunc("store_id", func(maxLen int) (interface{}, error) {
 			return 1, nil
 		}),
-		pseudo.WithTagFakeFunc("CustomerAddressEntity.ParentID", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("testdata.CustomerAddressEntity.ParentID", func(maxLen int) (interface{}, error) {
 			return nil, nil
 		}),
 		pseudo.WithTagFakeFunc("col_date1", func(maxLen int) (interface{}, error) {
@@ -198,7 +198,7 @@ func TestNewTables(t *testing.T) {
 			assert.ExactlyLength(t, 255, &entityIn.Lastname, &entityOut.Lastname, "IDX%d: Lastname should match", lID)
 			assert.ExactlyLength(t, 40, &entityIn.Suffix, &entityOut.Suffix, "IDX%d: Suffix should match", lID)
 			assert.Exactly(t, entityIn.Dob, entityOut.Dob, "IDX%d: Dob should match", lID)
-			assert.ExactlyLength(t, 128, &entityIn.PasswordHash, &entityOut.PasswordHash, "IDX%d: PasswordHash should match", lID)
+			assert.ExactlyLength(t, 128, &entityIn.passwordHash, &entityOut.passwordHash, "IDX%d: passwordHash should match", lID)
 			assert.ExactlyLength(t, 128, &entityIn.RpToken, &entityOut.RpToken, "IDX%d: RpToken should match", lID)
 			assert.Exactly(t, entityIn.RpTokenCreatedAt, entityOut.RpTokenCreatedAt, "IDX%d: RpTokenCreatedAt should match", lID)
 			assert.Exactly(t, entityIn.DefaultBilling, entityOut.DefaultBilling, "IDX%d: DefaultBilling should match", lID)
