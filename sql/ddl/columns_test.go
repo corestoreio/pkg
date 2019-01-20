@@ -36,7 +36,6 @@ var _ fmt.GoStringer = (*ddl.Column)(nil)
 var _ sort.Interface = (*ddl.Columns)(nil)
 
 func TestLoadColumns_Integration(t *testing.T) {
-	t.Parallel()
 
 	ctx := context.TODO()
 	dbc := dmltest.MustConnectDB(t,
@@ -107,7 +106,7 @@ func TestLoadColumns_Integration(t *testing.T) {
 }
 
 func TestColumns(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have  int
 		want  int
@@ -157,7 +156,6 @@ func TestColumns(t *testing.T) {
 }
 
 func TestColumnsFilter(t *testing.T) {
-	t.Parallel()
 	cols := ddl.Columns{
 		&ddl.Column{
 			Field:      `category_id131`,
@@ -212,47 +210,38 @@ var adminUserColumns = ddl.Columns{
 }
 
 func TestColumns_UniqueColumns(t *testing.T) {
-	t.Parallel()
 	assert.Exactly(t, []string{"user_id", "username"}, adminUserColumns.UniqueColumns().FieldNames())
 }
 
 func TestColumnsSort(t *testing.T) {
-	t.Parallel()
 	sort.Sort(adminUserColumns)
 	assert.Exactly(t, `user_id`, adminUserColumns.First().Field)
 }
 
 func TestColumn_GoComment(t *testing.T) {
-	t.Parallel()
-
 	assert.Exactly(t, "// user_id int(10) unsigned NOT NULL PRI  auto_increment \"User ID\"",
 		adminUserColumns.First().GoComment())
 	assert.Exactly(t, "// firstname varchar(32) NULL    \"User First Name\"",
 		adminUserColumns.ByField("firstname").GoComment())
-
 }
 
 func TestColumn_IsUnsigned(t *testing.T) {
-	t.Parallel()
 	assert.True(t, adminUserColumns.ByField("lognum").IsUnsigned())
 	assert.False(t, adminUserColumns.ByField("reload_acl_flag").IsUnsigned())
 }
 
 func TestColumn_IsCurrentTimestamp(t *testing.T) {
-	t.Parallel()
 	assert.True(t, adminUserColumns.ByField("modified").IsCurrentTimestamp())
 	assert.False(t, adminUserColumns.ByField("reload_acl_flag").IsCurrentTimestamp())
 }
 
 func TestColumn_IsGenerated(t *testing.T) {
-	t.Parallel()
 	assert.True(t, adminUserColumns.ByField("virtual_a").IsGenerated())
 	assert.True(t, adminUserColumns.ByField("stored_b").IsGenerated())
 	assert.False(t, adminUserColumns.ByField("reload_acl_flag").IsGenerated())
 }
 
 func TestColumn_IsSystemVersioned(t *testing.T) {
-	t.Parallel()
 	assert.True(t, adminUserColumns.ByField("version_ts").IsSystemVersioned())
 	assert.True(t, adminUserColumns.ByField("version_te").IsSystemVersioned())
 	assert.False(t, adminUserColumns.ByField("reload_acl_flag").IsSystemVersioned())
@@ -261,17 +250,14 @@ func TestColumn_IsSystemVersioned(t *testing.T) {
 }
 
 func TestColumn_IsString(t *testing.T) {
-	t.Parallel()
 	assert.False(t, adminUserColumns.ByField("version_ts").IsString())
 	assert.True(t, adminUserColumns.ByField("firstname").IsString())
 	assert.True(t, adminUserColumns.ByField("extra").IsString())
 }
 
 func TestColumn_IsBlobDataType(t *testing.T) {
-	t.Parallel()
 	assert.False(t, adminUserColumns.ByField("version_ts").IsBlobDataType(), "version_ts")
 	assert.False(t, adminUserColumns.ByField("firstname").IsBlobDataType(), "firstname")
 	assert.True(t, adminUserColumns.ByField("extra").IsBlobDataType(), "extra")
 	assert.True(t, adminUserColumns.ByField("rp_token").IsBlobDataType(), "rp_token")
-
 }

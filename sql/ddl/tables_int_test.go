@@ -15,12 +15,16 @@
 package ddl
 
 import (
+	"context"
+	"sort"
 	"testing"
 
+	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestIsCreateStmt(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		tableName string
 		stmt      string
@@ -40,4 +44,26 @@ func TestIsCreateStmt(t *testing.T) {
 		haveOK := isCreateStmt(test.tableName, test.stmt) && isCreateStmtBytes([]byte(test.tableName), []byte(test.stmt))
 		assert.Exactly(t, test.ok, haveOK, "Index %d %q", i, test.tableName)
 	}
+}
+
+func TestWithTableDB(t *testing.T) {
+	t.Parallel()
+	dbc, dbMock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, dbc, dbMock)
+
+	dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS WHERE").
+		WillReturnRows(
+			dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_columns.csv")))
+
+	ts := MustNewTables(
+		WithDB(dbc.DB),
+		WithTable("tableA"),
+		WithCreateTable(context.TODO(), "tableB", ""),
+	) // +=2
+
+	assert.Exactly(t, dbc.DB, ts.MustTable("tableA").dcp.DB)
+	assert.Exactly(t, dbc.DB, ts.MustTable("tableB").dcp.DB)
+	haveTS := ts.Tables()
+	sort.Strings(haveTS)
+	assert.Exactly(t, []string{"tableA", "tableB"}, haveTS)
 }

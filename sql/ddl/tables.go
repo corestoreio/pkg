@@ -17,6 +17,7 @@ package ddl
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -49,7 +50,7 @@ type TableOption struct {
 
 // Tables handles all the tables defined for a package. Thread safe.
 type Tables struct {
-	DB dml.QueryExecPreparer
+	dcp *dml.ConnPool // database connection pool
 	// Schema represents the name of the database. Might be empty.
 	Schema        string
 	previousTable string // the table which has been scanned beforehand
@@ -61,15 +62,19 @@ type Tables struct {
 // WithDB sets the DB object to the Tables and all sub Table types to handle the
 // database connections. It must be set if other options get used to access the
 // DB.
-func WithDB(db dml.QueryExecPreparer) TableOption {
+func WithDB(db *sql.DB, opts ...dml.ConnPoolOption) TableOption {
 	return TableOption{
-		sortOrder: 10,
+		sortOrder: 1,
 		fn: func(tm *Tables) error {
-			tm.DB = db
+			p, err := dml.NewConnPool(append(opts, dml.WithDB(db))...)
+			if err != nil {
+				return errors.WithStack(err)
+			}
 			tm.mu.Lock()
 			defer tm.mu.Unlock()
+			tm.dcp = p
 			for _, t := range tm.tm {
-				t.DB = db
+				t.dcp = p
 			}
 			return nil
 		},
@@ -81,7 +86,7 @@ func WithDB(db dml.QueryExecPreparer) TableOption {
 // INFORMATION_SCHEMA must be added.
 func WithTable(tableName string, cols ...*Column) TableOption {
 	return TableOption{
-		sortOrder: 1,
+		sortOrder: 10,
 		fn: func(tm *Tables) error {
 			if err := dml.IsValidIdentifier(tableName); err != nil {
 				return errors.WithStack(err)
@@ -107,9 +112,9 @@ func WithTable(tableName string, cols ...*Column) TableOption {
 //			"sales_order_stat", "CREATE VIEW `sales_order_stat` AS SELECT ...", // table created if not exists
 //			"sales_order", "", // table/view already exists and gets loaded, NOT dropped.
 //		)
-func WithCreateTable(ctx context.Context, db dml.QueryExecPreparer, identifierCreateSyntax ...string) TableOption {
+func WithCreateTable(ctx context.Context, identifierCreateSyntax ...string) TableOption {
 	return TableOption{
-		sortOrder: 5,
+		sortOrder: 50,
 		fn: func(tm *Tables) error {
 			tm.mu.Lock()
 			defer tm.mu.Unlock()
@@ -135,15 +140,15 @@ func WithCreateTable(ctx context.Context, db dml.QueryExecPreparer, identifierCr
 
 				if isCreateStmt(tvName, tvCreate) {
 					t.IsView = strings.Contains(tvCreate, " VIEW ") || strings.HasPrefix(tvName, PrefixView)
-					if _, err := db.ExecContext(ctx, tvCreate); err != nil {
+					if _, err := tm.dcp.DB.ExecContext(ctx, tvCreate); err != nil {
 						return errors.Wrapf(err, "[ddl] WithCreateTable failed to run for table %q the query: %q", tvName, tvCreate)
 					}
 				}
 			}
-			if db == nil {
+			if tm.dcp == nil {
 				return nil
 			}
-			tc, err := LoadColumns(ctx, db, tvNames...)
+			tc, err := LoadColumns(ctx, tm.dcp.DB, tvNames...)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -170,9 +175,9 @@ func isCreateStmtBytes(idName, stmt []byte) bool {
 
 // WithCreateTableFromFile creates the defined tables from the loaded *.sql
 // files.
-func WithCreateTableFromFile(ctx context.Context, db dml.QueryExecPreparer, globPattern string, tableNames ...string) TableOption {
+func WithCreateTableFromFile(ctx context.Context, globPattern string, tableNames ...string) TableOption {
 	return TableOption{
-		sortOrder: 6,
+		sortOrder: 60,
 		fn: func(tm *Tables) error {
 			matches, err := filepath.Glob(globPattern)
 			if err != nil {
@@ -182,7 +187,7 @@ func WithCreateTableFromFile(ctx context.Context, db dml.QueryExecPreparer, glob
 			if err != nil {
 				return errors.WithStack(err)
 			}
-			return WithCreateTable(ctx, db, identifierCreateSyntax...).fn(tm)
+			return WithCreateTable(ctx, identifierCreateSyntax...).fn(tm)
 		},
 	}
 }
@@ -218,47 +223,47 @@ func loadSQLFiles(fileNames, tableNames []string) ([]string, error) {
 // WithDropTable drops the tables or views listed in argument `tableViewNames`.
 // If argument `option` contains the string "DISABLE_FOREIGN_KEY_CHECKS", then foreign keys get disabled
 // and at the end re-enabled.
-func WithDropTable(ctx context.Context, db dml.QueryExecPreparer, option string, tableViewNames ...string) TableOption {
+func WithDropTable(ctx context.Context, option string, tableViewNames ...string) TableOption {
 	return TableOption{
-		sortOrder: 2,
+		sortOrder: 11,
 		fn: func(tm *Tables) (err error) {
 			tm.mu.Lock()
 			defer tm.mu.Unlock()
 
 			if option != "" && strings.Contains(strings.ToUpper(option), "DISABLE_FOREIGN_KEY_CHECKS") {
-				if _, err = db.ExecContext(ctx, "SET FOREIGN_KEY_CHECKS=0"); err != nil {
-					return errors.WithStack(err)
-				}
-				defer func() {
-					if _, err2 := db.ExecContext(ctx, "SET FOREIGN_KEY_CHECKS=1"); err == nil && err2 != nil {
-						err = errors.WithStack(err2)
-					}
-				}()
+				return tm.dcp.WithDisabledForeignKeyChecks(ctx, func(conn *dml.Conn) error {
+					return withDropTable(ctx, tm, conn.DB, tableViewNames)
+				})
 			}
-
-			for _, name := range tableViewNames {
-				if t, ok := tm.tm[name]; ok {
-					if err = t.Drop(ctx, db); err != nil {
-						return errors.WithStack(err)
-					}
-					continue
-				}
-
-				if err := dml.IsValidIdentifier(name); err != nil {
-					return errors.WithStack(err)
-				}
-				typ := "TABLE"
-				if strings.HasPrefix(name, PrefixView) {
-					typ = "VIEW"
-				}
-				if _, err = db.ExecContext(ctx, "DROP "+typ+" IF EXISTS "+dml.Quoter.Name(name)); err != nil {
-					return errors.Wrapf(err, "[ddl] Failed to drop %q", name)
-				}
-			}
-
-			return nil
+			return withDropTable(ctx, tm, tm.dcp.DB, tableViewNames)
 		},
 	}
+}
+
+func withDropTable(ctx context.Context, tm *Tables, db dml.QueryExecPreparer, tableViewNames []string) (err error) {
+	for _, name := range tableViewNames {
+		if t, ok := tm.tm[name]; ok {
+			t.customDB = db
+			if err = t.Drop(ctx); err != nil {
+				t.customDB = nil
+				return errors.WithStack(err)
+			}
+			t.customDB = nil
+			continue
+		}
+
+		if err := dml.IsValidIdentifier(name); err != nil {
+			return errors.WithStack(err)
+		}
+		typ := "TABLE"
+		if strings.HasPrefix(name, PrefixView) {
+			typ = "VIEW"
+		}
+		if _, err = db.ExecContext(ctx, "DROP "+typ+" IF EXISTS "+dml.Quoter.Name(name)); err != nil {
+			return errors.Wrapf(err, "[ddl] Failed to drop %q", name)
+		}
+	}
+	return nil
 }
 
 // WithTableDMLListeners adds event listeners to a table object. It doesn't
@@ -318,8 +323,8 @@ func (tm *Tables) Options(opts ...TableOption) error {
 	}
 	tm.mu.Lock()
 	for _, tbl := range tm.tm {
-		if tbl.DB != tm.DB {
-			tbl.DB = tm.DB
+		if tbl.dcp != tm.dcp {
+			tbl.dcp = tm.dcp
 		}
 	}
 	tm.mu.Unlock()
@@ -446,7 +451,7 @@ func (tm *Tables) Validate(ctx context.Context) error {
 		tblNames = append(tblNames, tn)
 	}
 
-	tMap, err := LoadColumns(ctx, tm.DB, tblNames...)
+	tMap, err := LoadColumns(ctx, tm.dcp.DB, tblNames...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

@@ -18,14 +18,12 @@ CREATE TABLE `x910store` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS `x910cms_block`;
-
 CREATE TABLE `x910cms_block` (
   `block_id` smallint(6) NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`block_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS `x910cms_block_store`;
-
 CREATE TABLE `x910cms_block_store` (
   `block_id` smallint(6) NOT NULL,
   `store_id` smallint(5) unsigned NOT NULL,
@@ -37,14 +35,12 @@ CREATE TABLE `x910cms_block_store` (
 
 
 DROP TABLE IF EXISTS `x910cms_page`;
-
 CREATE TABLE `x910cms_page` (
   `page_id` smallint(6) NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`page_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS `x910cms_page_store`;
-
 CREATE TABLE `x910cms_page_store` (
   `page_id` smallint(6) NOT NULL,
   `store_id` smallint(5) unsigned NOT NULL,
@@ -54,6 +50,7 @@ CREATE TABLE `x910cms_page_store` (
   CONSTRAINT `CMS_PAGE_STORE_STORE_ID_STORE_STORE_ID` FOREIGN KEY (`store_id`) REFERENCES `x910store` (`store_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+DROP TABLE IF EXISTS `x910catalog_eav_attribute`;
 CREATE TABLE `x910catalog_eav_attribute` (
   `attribute_id` smallint(5) unsigned NOT NULL COMMENT 'Attribute ID',
   PRIMARY KEY (`attribute_id`)

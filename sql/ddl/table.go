@@ -28,9 +28,13 @@ import (
 	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
-// Table represents a table from a specific database.
+// Table represents a table from a specific database with a bound default
+// connection pool. Its fields are not secure to use in concurrent context and
+// hence might cause a race condition if used not properly.
 type Table struct {
-	DB dml.QueryExecPreparer
+	// dcp represents a Database Connection Pool. Shall not be nil
+	dcp      *dml.ConnPool
+	customDB dml.QueryExecPreparer // if set we have a shallow copy
 	// Schema represents the name of the database. Might be empty.
 	Schema string
 	// Name of the table
@@ -82,57 +86,85 @@ func (t *Table) update() *Table {
 	return t
 }
 
+// WithDB creates a shallow clone of the current Table object and uses argument
+// `db` as the current connection. `db` can be a connection pool, a single
+// connection or a transaction. This method might cause a race condition if use
+// not properly. One shall not modify the slices in the returned *Table.
+func (t *Table) WithDB(db dml.QueryExecPreparer) *Table {
+	t2 := new(Table)
+	*t2 = *t // dereference pointer and copy object. retains the slice storage.
+	t2.customDB = db
+	return t2
+}
+
 // Insert creates a new INSERT statement with all non primary key columns. If
 // OnDuplicateKey() gets called, the INSERT can be used as an update or create
 // statement. Adding multiple VALUES section is allowed. Using this statement to
 // prepare a query, a call to `BuildValues()` triggers building the VALUES
 // clause, otherwise a SQL parse error will occur.
 func (t *Table) Insert() *dml.Insert {
-	i := dml.NewInsert(t.Name).AddColumns(t.columnsUpsert...)
+	i := t.dcp.InsertInto(t.Name).AddColumns(t.columnsUpsert...)
 	i.Listeners = i.Listeners.Merge(t.Listeners.Insert)
-	return i.WithDB(t.DB)
+	if t.customDB != nil {
+		i.DB = t.customDB
+	}
+	return i
 }
 
 // SelectAll creates a new `SELECT column1,column2,cloumnX FROM table` without a
 // WHERE clause.
 func (t *Table) SelectAll() *dml.Select {
-	s := dml.NewSelect(t.columnsAll...).
-		FromAlias(t.Name, MainTable)
+	s := t.dcp.SelectFrom(t.Name, MainTable).AddColumns(t.columnsAll...)
 	s.Listeners = s.Listeners.Merge(t.Listeners.Select)
-	return s.WithDB(t.DB)
+	if t.customDB != nil {
+		s.DB = t.customDB
+	}
+	return s
 }
 
-// Select creates a new SELECT statement with a set FROM clause.
+// Select creates a new SELECT statement with no columns but a pre-filled FROM
+// clause.
 func (t *Table) Select(columns ...string) *dml.Select {
-	s := dml.NewSelect(columns...).
-		FromAlias(t.Name, MainTable)
+	s := t.dcp.SelectFrom(t.Name, MainTable).AddColumns(columns...)
 	s.Listeners = s.Listeners.Merge(t.Listeners.Select)
-	return s.WithDB(t.DB)
+	if t.customDB != nil {
+		s.DB = t.customDB
+	}
+	return s
 }
 
-// SelectByPK creates a new `SELECT * FROM table WHERE id IN (?)`
+// SelectByPK creates a new `SELECT columns FROM table WHERE id IN (?)`
 func (t *Table) SelectByPK() *dml.Select {
-	s := dml.NewSelect(t.columnsAll...).FromAlias(t.Name, MainTable)
+	s := t.dcp.SelectFrom(t.Name, MainTable).AddColumns(t.columnsAll...)
 	s.Wheres = t.whereByPK(dml.In)
 	s.Listeners = s.Listeners.Merge(t.Listeners.Select)
-	return s.WithDB(t.DB)
+	if t.customDB != nil {
+		s.DB = t.customDB
+	}
+	return s
 }
 
 // DeleteByPK creates a new `DELETE FROM table WHERE id IN (?)`
 func (t *Table) DeleteByPK() *dml.Delete {
-	d := dml.NewDelete(t.Name)
+	d := t.dcp.DeleteFrom(t.Name)
 	d.Wheres = t.whereByPK(dml.In)
 	d.Listeners = d.Listeners.Merge(t.Listeners.Delete)
-	return d.WithDB(t.DB)
+	if t.customDB != nil {
+		d.DB = t.customDB
+	}
+	return d
 }
 
 // UpdateByPK creates a new `UPDATE table SET ... WHERE id = ?`. The SET clause
 // contains all non primary columns.
 func (t *Table) UpdateByPK() *dml.Update {
-	u := dml.NewUpdate(t.Name).AddColumns(t.columnsUpsert...)
+	u := t.dcp.Update(t.Name).AddColumns(t.columnsUpsert...)
 	u.Wheres = t.whereByPK(dml.Equal)
 	u.Listeners = u.Listeners.Merge(t.Listeners.Update)
-	return u.WithDB(t.DB)
+	if t.customDB != nil {
+		u.DB = t.customDB
+	}
+	return u
 }
 
 func (t *Table) whereByPK(op dml.Op) dml.Conditions {
@@ -145,42 +177,55 @@ func (t *Table) whereByPK(op dml.Op) dml.Conditions {
 	return cnds
 }
 
-// Truncate truncates the tables. Removes all rows and sets the auto increment
-// to zero. Just like a CREATE TABLE statement.
-func (t *Table) Truncate(ctx context.Context, execer dml.Execer) error {
+func (t *Table) runExec(ctx context.Context, qry string) error {
+	var db dml.QueryExecPreparer
+	if t.dcp != nil {
+		db = t.dcp.DB
+	}
+	if t.customDB != nil {
+		db = t.customDB
+	}
+	if _, err := db.ExecContext(ctx, qry); err != nil {
+		return errors.Wrapf(err, "[ddl] failed to exec %q", qry) // please do change this return signature, saves an alloc
+	}
+	return nil
+}
+
+// Truncate truncates the table. Removes all rows and sets the auto increment to
+// zero. Just like a CREATE TABLE statement. To use a custom connection, call
+// WithDB before.
+func (t *Table) Truncate(ctx context.Context) error {
 	if t.IsView {
 		return nil
 	}
 	if err := dml.IsValidIdentifier(t.Name); err != nil {
 		return errors.WithStack(err)
 	}
-	ddl := "TRUNCATE TABLE " + dml.Quoter.QualifierName(t.Schema, t.Name)
-	_, err := execer.ExecContext(ctx, ddl)
-	return errors.Wrapf(err, "[ddl] failed to truncate table %q", ddl)
+	return t.runExec(ctx, "TRUNCATE TABLE "+dml.Quoter.QualifierName(t.Schema, t.Name))
 }
 
 // Rename renames the current table to the new table name. Renaming is an atomic
 // operation in the database. As long as two databases are on the same file
 // system, you can use RENAME TABLE to move a table from one database to
 // another. RENAME TABLE also works for views, as long as you do not try to
-// rename a view into a different database.
-func (t *Table) Rename(ctx context.Context, execer dml.Execer, new string) error {
+// rename a view into a different database. To use a custom connection, call
+// WithDB before.
+func (t *Table) Rename(ctx context.Context, new string) error {
 	if err := dml.IsValidIdentifier(t.Name); err != nil {
 		return errors.WithStack(err)
 	}
 	if err := dml.IsValidIdentifier(new); err != nil {
 		return errors.WithStack(err)
 	}
-	ddl := "RENAME TABLE " + dml.Quoter.QualifierName(t.Schema, t.Name) + " TO " + dml.Quoter.NameAlias(new, "")
-	_, err := execer.ExecContext(ctx, ddl)
-	return errors.Wrapf(err, "[ddl] failed to rename table %q", ddl)
+	return t.runExec(ctx, "RENAME TABLE "+dml.Quoter.QualifierName(t.Schema, t.Name)+" TO "+dml.Quoter.NameAlias(new, ""))
 }
 
 // Swap swaps the current table with the other table of the same structure.
 // Renaming is an atomic operation in the database. Note: indexes won't get
 // swapped! As long as two databases are on the same file system, you can use
-// RENAME TABLE to move a table from one database to another.
-func (t *Table) Swap(ctx context.Context, execer dml.Execer, other string) error {
+// RENAME TABLE to move a table from one database to another. To use a custom
+// connection, call WithDB before.
+func (t *Table) Swap(ctx context.Context, other string) error {
 	if err := dml.IsValidIdentifier(t.Name); err != nil {
 		return errors.WithStack(err)
 	}
@@ -204,12 +249,7 @@ func (t *Table) Swap(ctx context.Context, execer dml.Execer, other string) error
 	dml.Quoter.WriteIdentifier(buf, tmp)
 	buf.WriteString(" TO ")
 	dml.Quoter.WriteIdentifier(buf, other)
-
-	if _, err := execer.ExecContext(ctx, buf.String()); err != nil {
-		// only allocs in case of an error ;-)
-		return errors.Wrapf(err, "[ddl] Failed to swap table %q", buf.String())
-	}
-	return nil
+	return t.runExec(ctx, buf.String())
 }
 
 func (t *Table) getTyp() string {
@@ -219,13 +259,13 @@ func (t *Table) getTyp() string {
 	return "TABLE"
 }
 
-// Drop drops, if exists, the table or the view.
-func (t *Table) Drop(ctx context.Context, db dml.Execer) error {
+// Drop drops, if exists, the table or the view. To use a custom connection,
+// call WithDB before.
+func (t *Table) Drop(ctx context.Context) error {
 	if err := dml.IsValidIdentifier(t.Name); err != nil {
 		return errors.Wrap(err, "[ddl] Drop table name")
 	}
-	_, err := db.ExecContext(ctx, "DROP "+t.getTyp()+" IF EXISTS "+dml.Quoter.QualifierName(t.Schema, t.Name))
-	return errors.Wrapf(err, "[ddl] failed to drop table %q", t.Name)
+	return t.runExec(ctx, "DROP "+t.getTyp()+" IF EXISTS "+dml.Quoter.QualifierName(t.Schema, t.Name))
 }
 
 // InfileOptions provides options for the function LoadDataInfile. Some columns
@@ -281,7 +321,7 @@ type InfileOptions struct {
 // https://godoc.org/github.com/go-sql-driver/mysql#RegisterLocalFile. To ignore
 // foreign key constraints during the load operation, issue a SET
 // foreign_key_checks = 0 statement before executing LOAD DATA.
-func (t *Table) LoadDataInfile(ctx context.Context, db dml.Execer, filePath string, o InfileOptions) error {
+func (t *Table) LoadDataInfile(ctx context.Context, filePath string, o InfileOptions) error {
 	if t.IsView {
 		return nil
 	}
@@ -389,7 +429,5 @@ func (t *Table) LoadDataInfile(ctx context.Context, db dml.Execer, filePath stri
 	if o.Log.IsDebug() {
 		o.Log.Debug("ddl.Table.Infile.SQL", log.String("sql", buf.String()))
 	}
-
-	_, err := db.ExecContext(ctx, buf.String())
-	return errors.Fatal.New(err, "[csb] Infile for table %q failed with query: %q", t.Name, buf.String())
+	return t.runExec(ctx, buf.String())
 }

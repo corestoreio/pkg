@@ -16,7 +16,7 @@ package ddl_test
 
 import (
 	"context"
-	"sort"
+	"database/sql"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -41,7 +41,7 @@ func TestNewTableServicePanic(t *testing.T) {
 	}()
 
 	_ = ddl.MustNewTables(
-		ddl.WithCreateTable(context.TODO(), nil, ""),
+		ddl.WithCreateTable(context.TODO(), ""),
 	)
 }
 
@@ -59,7 +59,7 @@ func TestTables_Upsert_Insert(t *testing.T) {
 func TestTables_DeleteFromCache(t *testing.T) {
 	t.Parallel()
 
-	ts := ddl.MustNewTables(ddl.WithCreateTable(context.TODO(), nil, "a3", "", "b5", "", "c7", ""))
+	ts := ddl.MustNewTables(ddl.WithCreateTable(context.TODO(), "a3", "", "b5", "", "c7", ""))
 	t.Run("Delete One", func(t *testing.T) {
 		ts.DeleteFromCache("b5")
 		assert.Exactly(t, 2, ts.Len())
@@ -73,7 +73,7 @@ func TestTables_DeleteFromCache(t *testing.T) {
 func TestTables_DeleteAllFromCache(t *testing.T) {
 	t.Parallel()
 
-	ts := ddl.MustNewTables(ddl.WithCreateTable(context.TODO(), nil, "a3", "", "b5", "", "c7", ""))
+	ts := ddl.MustNewTables(ddl.WithCreateTable(context.TODO(), "a3", "", "b5", "", "c7", ""))
 	ts.DeleteAllFromCache()
 	assert.Exactly(t, 0, ts.Len())
 }
@@ -81,7 +81,7 @@ func TestTables_DeleteAllFromCache(t *testing.T) {
 func TestTables_Upsert_Update(t *testing.T) {
 	t.Parallel()
 
-	ts := ddl.MustNewTables(ddl.WithCreateTable(context.TODO(), nil, "a3", "", "b5", "", "c7", ""))
+	ts := ddl.MustNewTables(ddl.WithCreateTable(context.TODO(), "a3", "", "b5", "", "c7", ""))
 	t.Run("One", func(t *testing.T) {
 		ts.Upsert(ddl.NewTable("x5"))
 		assert.Exactly(t, 4, ts.Len())
@@ -103,7 +103,7 @@ func TestTables_MustTable(t *testing.T) {
 		}
 	}()
 
-	ts := ddl.MustNewTables(ddl.WithCreateTable(context.TODO(), nil, "a3"))
+	ts := ddl.MustNewTables(ddl.WithCreateTable(context.TODO(), "a3"))
 	tbl := ts.MustTable("a3")
 	assert.NotNil(t, tbl)
 	tbl = ts.MustTable("a44")
@@ -113,7 +113,7 @@ func TestTables_MustTable(t *testing.T) {
 func TestWithTableNames(t *testing.T) {
 	t.Parallel()
 
-	ts := ddl.MustNewTables(ddl.WithCreateTable(context.TODO(), nil, "a3", "", "b5", "", "c7", ""))
+	ts := ddl.MustNewTables(ddl.WithCreateTable(context.TODO(), "a3", "", "b5", "", "c7", ""))
 	t.Run("Ok", func(t *testing.T) {
 		assert.Exactly(t, "a3", ts.MustTable("a3").Name)
 		assert.Exactly(t, "b5", ts.MustTable("b5").Name)
@@ -121,7 +121,7 @@ func TestWithTableNames(t *testing.T) {
 	})
 
 	t.Run("Invalid Identifier", func(t *testing.T) {
-		err := ts.Options(ddl.WithCreateTable(context.TODO(), nil, "x1", ""))
+		err := ts.Options(ddl.WithCreateTable(context.TODO(), "x1", ""))
 		assert.True(t, errors.NotValid.Match(err), "%+v", err)
 		assert.Contains(t, err.Error(), `identifier "x\uf8ff1" (Case 2)`)
 	})
@@ -144,7 +144,8 @@ func TestWithCreateTable_Mock_DoesNotCreateTable(t *testing.T) {
 		WillReturnRows(rows)
 
 	tm0, err := ddl.NewTables(
-		ddl.WithCreateTable(context.TODO(), dbc.DB, "admin_user", "CREATE BUGGY TABLE"),
+		ddl.WithDB(dbc.DB),
+		ddl.WithCreateTable(context.TODO(), "admin_user", "CREATE BUGGY TABLE"),
 	)
 	assert.NoError(t, err, "%+v", err)
 
@@ -170,7 +171,8 @@ func TestWithCreateTable_Mock_DoesCreateTable(t *testing.T) {
 `))
 
 	tm0, err := ddl.NewTables(
-		ddl.WithCreateTable(context.TODO(), dbc.DB, "admin_user", "CREATE TABLE `admin_user` ( user_id int(10),  PRIMARY KEY (user_id))"),
+		ddl.WithDB(dbc.DB),
+		ddl.WithCreateTable(context.TODO(), "admin_user", "CREATE TABLE `admin_user` ( user_id int(10),  PRIMARY KEY (user_id))"),
 	)
 	assert.NoError(t, err, "%+v", err)
 
@@ -195,7 +197,8 @@ func TestWithCreateTableFromFile(t *testing.T) {
 `))
 
 		tm0, err := ddl.NewTables(
-			ddl.WithCreateTableFromFile(context.TODO(), dbc.DB, "testdata/case01_*", "core_config_data"),
+			ddl.WithDB(dbc.DB),
+			ddl.WithCreateTableFromFile(context.TODO(), "testdata/case01_*", "core_config_data"),
 		)
 		assert.NoError(t, err, "%+v", err)
 
@@ -208,7 +211,8 @@ func TestWithCreateTableFromFile(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 
 		tm0, err := ddl.NewTables(
-			ddl.WithCreateTableFromFile(context.TODO(), dbc.DB, "testdata/case02_*", "core_config_data"),
+			ddl.WithDB(dbc.DB),
+			ddl.WithCreateTableFromFile(context.TODO(), "testdata/case02_*", "core_config_data"),
 		)
 		assert.True(t, errors.NotAllowed.Match(err), "%+v", err)
 		assert.Nil(t, tm0)
@@ -219,7 +223,8 @@ func TestWithCreateTableFromFile(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 
 		tm0, err := ddl.NewTables(
-			ddl.WithCreateTableFromFile(context.TODO(), dbc.DB, "testdata/case03_*", "core_config_data"),
+			ddl.WithDB(dbc.DB),
+			ddl.WithCreateTableFromFile(context.TODO(), "testdata/case03_*", "core_config_data"),
 		)
 		assert.True(t, errors.Mismatch.Match(err), "%+v", err)
 		assert.Nil(t, tm0)
@@ -230,7 +235,8 @@ func TestWithCreateTableFromFile(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 
 		tm0, err := ddl.NewTables(
-			ddl.WithCreateTableFromFile(context.TODO(), dbc.DB, "testdata/case04_*", "core_config_data"),
+			ddl.WithDB(dbc.DB),
+			ddl.WithCreateTableFromFile(context.TODO(), "testdata/case04_*", "core_config_data"),
 		)
 		assert.True(t, errors.NotAllowed.Match(err), "%+v", err)
 		assert.Nil(t, tm0)
@@ -253,7 +259,8 @@ func TestWithCreateTableFromFile(t *testing.T) {
 `))
 
 		tm0, err := ddl.NewTables(
-			ddl.WithCreateTableFromFile(context.TODO(), dbc.DB, "testdata/case05_*", "core_config_data", "admin_user"),
+			ddl.WithDB(dbc.DB),
+			ddl.WithCreateTableFromFile(context.TODO(), "testdata/case05_*", "core_config_data", "admin_user"),
 		)
 		assert.NoError(t, err, "%+v", err)
 
@@ -279,7 +286,8 @@ func TestWithDropTable(t *testing.T) {
 			dbMock.ExpectExec(`SET FOREIGN_KEY_CHECKS=1`).WillReturnResult(sqlmock.NewResult(0, 0))
 
 			tm0, err := ddl.NewTables(
-				ddl.WithDropTable(context.TODO(), dbc.DB, "DISABLE_FOREIGN_KEY_CHECKS", "admin_user", "admin_role", "view_admin_perm"),
+				ddl.WithDB(dbc.DB),
+				ddl.WithDropTable(context.TODO(), "DISABLE_FOREIGN_KEY_CHECKS", "admin_user", "admin_role", "view_admin_perm"),
 			)
 			assert.NoError(t, err, "%+v", err)
 			_ = tm0
@@ -294,7 +302,8 @@ func TestWithDropTable(t *testing.T) {
 			dbMock.ExpectExec(`SET FOREIGN_KEY_CHECKS=1`).WillReturnResult(sqlmock.NewResult(0, 0))
 
 			tm0, err := ddl.NewTables(
-				ddl.WithDropTable(context.TODO(), dbc.DB, "DISABLE_FOREIGN_KEY_CHECKS", "admin_user"),
+				ddl.WithDB(dbc.DB),
+				ddl.WithDropTable(context.TODO(), "DISABLE_FOREIGN_KEY_CHECKS", "admin_user"),
 			)
 			assert.Nil(t, tm0)
 			assert.True(t, errors.NotValid.Match(err), "%+v", err)
@@ -308,7 +317,8 @@ func TestWithDropTable(t *testing.T) {
 			dbMock.ExpectExec("DROP TABLE IF EXISTS `admin_role`").WillReturnResult(sqlmock.NewResult(0, 0))
 
 			tm0, err := ddl.NewTables(
-				ddl.WithDropTable(context.TODO(), dbc.DB, "", "admin_user", "admin_role"),
+				ddl.WithDB(dbc.DB),
+				ddl.WithDropTable(context.TODO(), "", "admin_user", "admin_role"),
 			)
 			assert.NoError(t, err, "%+v", err)
 			_ = tm0
@@ -327,9 +337,10 @@ func TestWithDropTable(t *testing.T) {
 			dbMock.ExpectExec(`SET FOREIGN_KEY_CHECKS=1`).WillReturnResult(sqlmock.NewResult(0, 0))
 
 			tm0, err := ddl.NewTables(
+				ddl.WithDB(dbc.DB),
 				ddl.WithTable("admin_user"),
 				ddl.WithTable("admin_role"),
-				ddl.WithDropTable(context.TODO(), dbc.DB, "DISABLE_FOREIGN_KEY_CHECKS", "admin_user", "admin_role"),
+				ddl.WithDropTable(context.TODO(), "DISABLE_FOREIGN_KEY_CHECKS", "admin_user", "admin_role"),
 			)
 
 			assert.NoError(t, err, "%+v", err)
@@ -397,7 +408,7 @@ func TestWithCreateTable_FromQuery(t *testing.T) {
 		xErr := errors.AlreadyClosed.Newf("Connection already closed")
 		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("CREATE TABLE `testTable` AS SELECT * FROM catalog_product_entity")).WillReturnError(xErr)
 
-		tbls, err := ddl.NewTables(ddl.WithCreateTable(context.TODO(), dbc.DB, "testTable", "CREATE TABLE `testTable` AS SELECT * FROM catalog_product_entity"))
+		tbls, err := ddl.NewTables(ddl.WithDB(dbc.DB), ddl.WithCreateTable(context.TODO(), "testTable", "CREATE TABLE `testTable` AS SELECT * FROM catalog_product_entity"))
 		assert.Nil(t, tbls)
 		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	})
@@ -413,32 +424,15 @@ func TestWithCreateTable_FromQuery(t *testing.T) {
 
 		dbMock.ExpectQuery("SELEC.+\\s+FROM\\s+information_schema\\.COLUMNS").WillReturnError(xErr)
 
-		tbls, err := ddl.NewTables(ddl.WithCreateTable(context.TODO(), dbc.DB, "testTable", "CREATE TABLE `testTable` AS SELECT * FROM catalog_product_entity"))
+		tbls, err := ddl.NewTables(ddl.WithDB(dbc.DB), ddl.WithCreateTable(context.TODO(), "testTable", "CREATE TABLE `testTable` AS SELECT * FROM catalog_product_entity"))
 		assert.Nil(t, tbls)
 		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
 	})
 }
 
-func TestWithTableDB(t *testing.T) {
-	t.Parallel()
-	dbc, dbMock := dmltest.MockDB(t)
-	defer dmltest.MockClose(t, dbc, dbMock)
-
-	ts := ddl.MustNewTables(
-		ddl.WithDB(dbc.DB),
-		ddl.WithTable("tableA"),
-		ddl.WithCreateTable(context.TODO(), nil, "tableB", ""),
-	) // +=2
-
-	assert.Exactly(t, dbc.DB, ts.MustTable("tableA").DB)
-	assert.Exactly(t, dbc.DB, ts.MustTable("tableB").DB)
-	haveTS := ts.Tables()
-	sort.Strings(haveTS)
-	assert.Exactly(t, []string{"tableA", "tableB"}, haveTS)
-}
-
-func newCCD() *ddl.Tables {
+func newCCD(db *sql.DB) *ddl.Tables {
 	return ddl.MustNewTables(
+		ddl.WithDB(db),
 		ddl.WithTable(
 			"core_config_data",
 			&ddl.Column{Field: `config_id`, ColumnType: `int(10) unsigned`, Null: `NO`, Key: `PRI`, Extra: `auto_increment`},
@@ -453,8 +447,7 @@ func newCCD() *ddl.Tables {
 func TestTables_Validate(t *testing.T) {
 	dbc, dbMock := dmltest.MockDB(t)
 	defer dmltest.MockClose(t, dbc, dbMock)
-	tbls := newCCD()
-	tbls.DB = dbc.DB
+	tbls := newCCD(dbc.DB)
 
 	t.Run("context timeout", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())

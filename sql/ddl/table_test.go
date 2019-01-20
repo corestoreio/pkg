@@ -184,14 +184,14 @@ func TestTable_Truncate(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 
 		dbMock.ExpectExec("TRUNCATE TABLE `catalog_category_anc_categs_index_tmp`").WillReturnResult(sqlmock.NewResult(0, 0))
-		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Truncate(context.TODO(), dbc.DB)
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").WithDB(dbc.DB).Truncate(context.TODO())
 		assert.NoError(t, err, "%+v", err)
 	})
 
 	t.Run("Invalid table Name", func(t *testing.T) {
 		tbl := ddl.NewTable("product")
 		tbl.IsView = true
-		err := tbl.Rename(context.TODO(), nil, "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
+		err := tbl.Rename(context.TODO(), "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
 		assert.True(t, errors.NotValid.Match(err), "%+v", err)
 	})
 }
@@ -204,14 +204,14 @@ func TestTable_Rename(t *testing.T) {
 
 		dbMock.ExpectExec("RENAME TABLE `catalog_category_anc_categs_index_tmp` TO `catalog_category_anc_categs`").
 			WillReturnResult(sqlmock.NewResult(0, 0))
-		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Rename(context.TODO(), dbc.DB, "catalog_category_anc_categs")
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").WithDB(dbc.DB).Rename(context.TODO(), "catalog_category_anc_categs")
 		assert.NoError(t, err, "%+v", err)
 	})
 
 	t.Run("Invalid table Name", func(t *testing.T) {
 		tbl := ddl.NewTable("product")
 		tbl.IsView = true
-		err := tbl.Rename(context.TODO(), nil, "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
+		err := tbl.Rename(context.TODO(), "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
 		assert.True(t, errors.NotValid.Match(err), "%+v", err)
 	})
 }
@@ -225,14 +225,14 @@ func TestTable_Swap(t *testing.T) {
 
 		dbMock.ExpectExec("RENAME TABLE `catalog_category_anc_categs_index_tmp` TO `catalog_category_anc_categs_index_tmp_[0-9]+`, `catalog_category_anc_categs_NEW` TO `catalog_category_anc_categs_index_tmp`,`catalog_category_anc_categs_index_tmp_[0-9]+` TO `catalog_category_anc_categs_NEW`").
 			WillReturnResult(sqlmock.NewResult(0, 0))
-		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Swap(context.TODO(), dbc.DB, "catalog_category_anc_categs_NEW")
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").WithDB(dbc.DB).Swap(context.TODO(), "catalog_category_anc_categs_NEW")
 		assert.NoError(t, err, "%+v", err)
 	})
 
 	t.Run("Invalid table Name", func(t *testing.T) {
 		tbl := ddl.NewTable("product")
 		tbl.IsView = true
-		err := tbl.Swap(context.TODO(), nil, "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
+		err := tbl.Swap(context.TODO(), "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
 		assert.True(t, errors.NotValid.Match(err), "%+v", err)
 	})
 }
@@ -245,13 +245,13 @@ func TestTable_Drop(t *testing.T) {
 
 		dbMock.ExpectExec("DROP TABLE IF EXISTS `catalog_category_anc_categs_index_tmp`").
 			WillReturnResult(sqlmock.NewResult(0, 0))
-		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Drop(context.TODO(), dbc.DB)
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").WithDB(dbc.DB).Drop(context.TODO())
 		assert.NoError(t, err, "%+v", err)
 	})
 	t.Run("Invalid table Name", func(t *testing.T) {
 		tbl := ddl.NewTable("produ™€ct")
 		tbl.IsView = true
-		err := tbl.Drop(context.TODO(), nil)
+		err := tbl.Drop(context.TODO())
 		assert.True(t, errors.NotValid.Match(err), "%+v", err)
 	})
 }
@@ -266,7 +266,7 @@ func TestTable_LoadDataInfile(t *testing.T) {
 		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("LOAD DATA LOCAL INFILE 'non-existent.csv' INTO TABLE `admin_user` (user_id,email,first_name,username) ;")).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
-		err := tableMap.MustTable("admin_user").LoadDataInfile(context.TODO(), dbc.DB, "non-existent.csv", ddl.InfileOptions{})
+		err := tableMap.MustTable("admin_user").WithDB(dbc.DB).LoadDataInfile(context.TODO(), "non-existent.csv", ddl.InfileOptions{})
 		assert.NoError(t, err, "%+v", err)
 	})
 
@@ -276,7 +276,7 @@ func TestTable_LoadDataInfile(t *testing.T) {
 
 		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("LOAD DATA LOCAL INFILE 'non-existent.csv' REPLACE INTO TABLE `admin_user` FIELDS TERMINATED BY '|' OPTIONALLY ENCLOSED BY '+' ESCAPED BY '\"' LINES TERMINATED BY ' ' STARTING BY '###' IGNORE 1 LINES (user_id,@email,@username,) SET username=UPPER(@username), email=UPPER(@email);")).
 			WillReturnResult(sqlmock.NewResult(0, 0))
-		err := tableMap.MustTable("admin_user").LoadDataInfile(context.TODO(), dbc.DB, "non-existent.csv", ddl.InfileOptions{
+		err := tableMap.MustTable("admin_user").WithDB(dbc.DB).LoadDataInfile(context.TODO(), "non-existent.csv", ddl.InfileOptions{
 			Replace:                    true,
 			FieldsTerminatedBy:         "|",
 			FieldsOptionallyEnclosedBy: true,
@@ -293,13 +293,12 @@ func TestTable_LoadDataInfile(t *testing.T) {
 }
 
 func TestTable_Artisan_Methods(t *testing.T) {
-	t.Parallel()
 
 	dbc, dbMock := dmltest.MockDB(t)
 	defer dmltest.MockClose(t, dbc, dbMock)
+	assert.NoError(t, tableMap.Options(ddl.WithDB(dbc.DB)), "Cant set sql.DB on tableMap")
 
 	tblAdmUser := tableMap.MustTable("admin_user")
-	tblAdmUser.DB = dbc.DB
 
 	t.Run("Insert", func(t *testing.T) {
 		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("INSERT INTO `admin_user` (`email`,`first_name`,`username`) VALUES (?,?,?),(?,?,?)")).
@@ -348,7 +347,7 @@ func TestTable_Artisan_Methods(t *testing.T) {
 			WithArgs(int64(234), int64(235), int64(236)).
 			WillReturnRows(sqlmock.NewRows([]string{"user_id", "email", "first_name", "username"}))
 
-		rows, err := tblAdmUser.SelectByPK().WithArgs().Int64s(234, 235, 236).QueryContext(context.Background())
+		rows, err := tblAdmUser.SelectByPK().WithArgs().ExpandPlaceHolders().Int64s(234, 235, 236).QueryContext(context.Background())
 		assert.NoError(t, err)
 		assert.NoError(t, rows.Close())
 	})
@@ -389,7 +388,8 @@ func TestTable_GeneratedColumns(t *testing.T) {
 	// defer dmltest.SQLDumpLoad(t, "testdata/generated*.sql", nil)()
 
 	tbls := ddl.MustNewTables(
-		ddl.WithCreateTable(context.TODO(), dbc.DB, "core_config_data_generated", ""),
+		ddl.WithDB(dbc.DB),
+		ddl.WithCreateTable(context.TODO(), "core_config_data_generated", ""),
 	)
 
 	ins := tbls.MustTable("core_config_data_generated").Insert()
