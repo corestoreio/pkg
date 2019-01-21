@@ -14,6 +14,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/alecthomas/repr"
+	"github.com/corestoreio/errors"
 )
 
 // TestingT is an interface wrapper around *testing.T
@@ -845,7 +846,7 @@ func NoError(t TestingT, err error, msgAndArgs ...interface{}) {
 		return
 	}
 
-	Fail(t, fmt.Sprintf("No error is expected but got %v", err), msgAndArgs...)
+	Fail(t, fmt.Sprintf("No error is expected but got:\n%+v", err), msgAndArgs...)
 }
 
 // Error asserts that a function returned an error (i.e. not `nil`).
@@ -858,6 +859,20 @@ func NoError(t TestingT, err error, msgAndArgs ...interface{}) {
 func Error(t TestingT, err error, msgAndArgs ...interface{}) {
 	message := messageFromMsgAndArgs(msgAndArgs...)
 	NotNil(t, err, "An error is expected but got nil. %s", message)
+}
+
+// ErrorIsKind asserts that an error matches the expected Kind.
+func ErrorIsKind(t TestingT, expected errors.Kind, err error, msgAndArgs ...interface{}) {
+	if err == nil {
+		Error(t, err, msgAndArgs...)
+	}
+	if !errors.CausedBehaviour(err, expected) {
+
+		haveKind := errors.UnwrapKind(err)
+		Fail(t, fmt.Sprintf("Error should match kind %q but got kind %q:\n%+v\n",
+			expected.String(), haveKind.String(), err),
+			msgAndArgs...)
+	}
 }
 
 // EqualError asserts that a function returned an error (i.e. not `nil`)

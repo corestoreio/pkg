@@ -3,6 +3,7 @@ package assert_test
 import (
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
@@ -89,4 +90,9 @@ type DataMaxLen struct {
 
 	Float32 float32
 	Float64 float64
+}
+
+func TestErrorIsKind(t *testing.T) {
+	err := errors.AlreadyCaptured.Newf("the already captured err")
+	assert.ErrorIsKind(t, errors.AlreadyCaptured, err)
 }
