@@ -34,7 +34,7 @@ func TestNewTableServicePanic(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
-			assert.True(t, errors.NotValid.Match(err), "%+v", err)
+			assert.ErrorIsKind(t, errors.NotValid, err)
 		} else {
 			t.Error("Expecting a panic")
 		}
@@ -97,7 +97,7 @@ func TestTables_MustTable(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
-			assert.True(t, errors.NotValid.Match(err), "%+v", err)
+			assert.ErrorIsKind(t, errors.NotValid, err)
 		} else {
 			t.Error("Expecting a panic")
 		}
@@ -122,7 +122,7 @@ func TestWithTableNames(t *testing.T) {
 
 	t.Run("Invalid Identifier", func(t *testing.T) {
 		err := ts.Options(ddl.WithCreateTable(context.TODO(), "x1", ""))
-		assert.True(t, errors.NotValid.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.NotValid, err)
 		assert.Contains(t, err.Error(), `identifier "x\uf8ff1" (Case 2)`)
 	})
 }
@@ -214,7 +214,7 @@ func TestWithCreateTableFromFile(t *testing.T) {
 			ddl.WithDB(dbc.DB),
 			ddl.WithCreateTableFromFile(context.TODO(), "testdata/case02_*", "core_config_data"),
 		)
-		assert.True(t, errors.NotAllowed.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.NotAllowed, err)
 		assert.Nil(t, tm0)
 	})
 
@@ -226,7 +226,7 @@ func TestWithCreateTableFromFile(t *testing.T) {
 			ddl.WithDB(dbc.DB),
 			ddl.WithCreateTableFromFile(context.TODO(), "testdata/case03_*", "core_config_data"),
 		)
-		assert.True(t, errors.Mismatch.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.Mismatch, err)
 		assert.Nil(t, tm0)
 	})
 
@@ -238,7 +238,7 @@ func TestWithCreateTableFromFile(t *testing.T) {
 			ddl.WithDB(dbc.DB),
 			ddl.WithCreateTableFromFile(context.TODO(), "testdata/case04_*", "core_config_data"),
 		)
-		assert.True(t, errors.NotAllowed.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.NotAllowed, err)
 		assert.Nil(t, tm0)
 	})
 
@@ -306,7 +306,7 @@ func TestWithDropTable(t *testing.T) {
 				ddl.WithDropTable(context.TODO(), "DISABLE_FOREIGN_KEY_CHECKS", "admin_user"),
 			)
 			assert.Nil(t, tm0)
-			assert.True(t, errors.NotValid.Match(err), "%+v", err)
+			assert.ErrorIsKind(t, errors.NotValid, err)
 		})
 
 		t.Run("without DISABLE_FOREIGN_KEY_CHECKS", func(t *testing.T) {
@@ -410,7 +410,7 @@ func TestWithCreateTable_FromQuery(t *testing.T) {
 
 		tbls, err := ddl.NewTables(ddl.WithDB(dbc.DB), ddl.WithCreateTable(context.TODO(), "testTable", "CREATE TABLE `testTable` AS SELECT * FROM catalog_product_entity"))
 		assert.Nil(t, tbls)
-		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
 
 	t.Run("load columns fails", func(t *testing.T) {
@@ -426,7 +426,7 @@ func TestWithCreateTable_FromQuery(t *testing.T) {
 
 		tbls, err := ddl.NewTables(ddl.WithDB(dbc.DB), ddl.WithCreateTable(context.TODO(), "testTable", "CREATE TABLE `testTable` AS SELECT * FROM catalog_product_entity"))
 		assert.Nil(t, tbls)
-		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
 }
 
@@ -470,7 +470,7 @@ func TestTables_Validate(t *testing.T) {
 				dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_columns.csv")))
 		err := tbls.Validate(context.Background())
 
-		assert.True(t, errors.Mismatch.Match(err), "should have kind mismatch")
+		assert.ErrorIsKind(t, errors.Mismatch, err)
 		assert.EqualError(t, err, "[ddl] Table \"core_config_data\" with column name \"configID\" at index 0 does not match database column name \"config_id\"")
 		tbls.MustTable("core_config_data").Columns[0].Field = "config_id"
 	})
@@ -481,7 +481,7 @@ func TestTables_Validate(t *testing.T) {
 				dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_columns.csv")))
 		err := tbls.Validate(context.Background())
 
-		assert.True(t, errors.Mismatch.Match(err), "should have kind mismatch")
+		assert.ErrorIsKind(t, errors.Mismatch, err)
 		assert.EqualError(t, err, "[ddl] Table \"core_config_data\" with Go column name \"config_id\" does not match MySQL column type. MySQL: \"int(10) unsigned\" Go: \"varchar(XX)\".")
 		tbls.MustTable("core_config_data").Columns[0].ColumnType = "int(10) unsigned"
 	})
@@ -492,7 +492,7 @@ func TestTables_Validate(t *testing.T) {
 				dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_columns.csv")))
 		err := tbls.Validate(context.Background())
 
-		assert.True(t, errors.Mismatch.Match(err), "should have kind mismatch")
+		assert.ErrorIsKind(t, errors.Mismatch, err)
 		assert.EqualError(t, err, "[ddl] Table \"core_config_data\" with column name \"config_id\" does not match MySQL null types. MySQL: \"NO\" Go: \"YES\"")
 		tbls.MustTable("core_config_data").Columns[0].Null = "NO"
 	})
@@ -513,7 +513,7 @@ func TestTables_Validate(t *testing.T) {
 				dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_columns.csv")))
 		err := tbls.Validate(context.Background())
 
-		assert.True(t, errors.Mismatch.Match(err), "should have kind mismatch")
+		assert.ErrorIsKind(t, errors.Mismatch, err)
 		assert.EqualError(t, err, "[ddl] Tables count 2 does not match table count 1 in database.")
 	})
 
@@ -524,7 +524,7 @@ func TestTables_Validate(t *testing.T) {
 				dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_columns_less.csv")))
 		err := tbls.Validate(context.Background())
 
-		assert.True(t, errors.Mismatch.Match(err), "should have kind mismatch")
+		assert.ErrorIsKind(t, errors.Mismatch, err)
 		assert.EqualError(t, err, "[ddl] Table \"core_config_data\" has more columns (count 5) than its object (column count 4) in the database.")
 	})
 

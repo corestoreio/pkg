@@ -192,7 +192,7 @@ func TestTable_Truncate(t *testing.T) {
 		tbl := ddl.NewTable("product")
 		tbl.IsView = true
 		err := tbl.Rename(context.TODO(), "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
-		assert.True(t, errors.NotValid.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
 }
 
@@ -212,7 +212,7 @@ func TestTable_Rename(t *testing.T) {
 		tbl := ddl.NewTable("product")
 		tbl.IsView = true
 		err := tbl.Rename(context.TODO(), "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
-		assert.True(t, errors.NotValid.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
 }
 
@@ -233,7 +233,7 @@ func TestTable_Swap(t *testing.T) {
 		tbl := ddl.NewTable("product")
 		tbl.IsView = true
 		err := tbl.Swap(context.TODO(), "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
-		assert.True(t, errors.NotValid.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
 }
 
@@ -252,7 +252,7 @@ func TestTable_Drop(t *testing.T) {
 		tbl := ddl.NewTable("produ™€ct")
 		tbl.IsView = true
 		err := tbl.Drop(context.TODO())
-		assert.True(t, errors.NotValid.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
 }
 
