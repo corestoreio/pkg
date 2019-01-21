@@ -119,7 +119,7 @@ func TestArguments_DriverValue(t *testing.T) {
 			DriverValue(
 				driverValueNotSupported(4),
 			).ToSQL()
-		assert.True(t, errors.Is(err, errors.NotSupported), "Should have behaviour errors.NotSupported")
+		assert.ErrorIsKind(t, errors.NotSupported, err)
 	})
 
 	t.Run("Driver.Values panics because Value error", func(t *testing.T) {
@@ -127,7 +127,7 @@ func TestArguments_DriverValue(t *testing.T) {
 			DriverValue(
 				driverValueError(0),
 			).ToSQL()
-		assert.True(t, errors.Is(err, errors.Fatal), "Should have behaviour errors.Fatal")
+		assert.ErrorIsKind(t, errors.Fatal, err)
 	})
 }
 
@@ -178,28 +178,28 @@ func TestArguments_WriteTo(t *testing.T) {
 		buf := new(bytes.Buffer)
 		err := args.Write(buf)
 		assert.Empty(t, buf.String(), "Buffer should be empty")
-		assert.True(t, errors.NotValid.Match(err), "Should have a not valid error behaviour %+v", err)
+		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
 	t.Run("non-utf8 strings", func(t *testing.T) {
 		args := MakeArgs(2).Strings("Go", "\xc0\x80")
 		buf := new(bytes.Buffer)
 		err := args.Write(buf)
 		assert.Exactly(t, `('Go',)`, buf.String())
-		assert.True(t, errors.NotValid.Match(err), "Should have a not valid error behaviour %+v", err)
+		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
 	t.Run("non-utf8 NullStrings", func(t *testing.T) {
 		args := MakeArgs(2).NullStrings(null.MakeString("Go2"), null.MakeString("Hello\xc0\x80World"))
 		buf := new(bytes.Buffer)
 		err := args.Write(buf)
 		assert.Exactly(t, "('Go2',)", buf.String())
-		assert.True(t, errors.NotValid.Match(err), "Should have a not valid error behaviour %+v", err)
+		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
 	t.Run("non-utf8 NullString", func(t *testing.T) {
 		args := MakeArgs(2).NullString(null.MakeString("Hello\xc0\x80World"))
 		buf := new(bytes.Buffer)
 		err := args.Write(buf)
 		assert.Empty(t, buf.String())
-		assert.True(t, errors.NotValid.Match(err), "Should have a not valid error behaviour %+v", err)
+		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
 	t.Run("bytes as binary", func(t *testing.T) {
 		args := MakeArgs(2).Bytes([]byte("\xc0\x80"))
@@ -217,7 +217,8 @@ func TestArguments_WriteTo(t *testing.T) {
 		defer func() {
 			if r := recover(); r != nil {
 				if err, ok := r.(error); ok {
-					assert.True(t, errors.NotSupported.Match(err), "Should be a not supported error; got %+v", err)
+					assert.ErrorIsKind(t, errors.NotSupported, err)
+
 				} else {
 					t.Errorf("Panic should contain an error but got:\n%+v", r)
 				}

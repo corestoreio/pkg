@@ -114,7 +114,7 @@ func TestScannedColumn_Scan(t *testing.T) {
 	assert.Exactly(t, "<nil>", sc.String())
 
 	err := sc.Scan(uint8(1))
-	assert.True(t, errors.Is(err, errors.NotSupported), "Should be error kind NotSupported")
+	assert.ErrorIsKind(t, errors.NotSupported, err)
 
 }
 

@@ -181,7 +181,7 @@ func TestUpdate_Prepare(t *testing.T) {
 		in.Set(Column("a").Int(1))
 		stmt, err := in.Prepare(context.TODO())
 		assert.Nil(t, stmt)
-		assert.True(t, errors.Empty.Match(err))
+		assert.ErrorIsKind(t, errors.Empty, err)
 	})
 
 	t.Run("Prepare Error", func(t *testing.T) {
@@ -194,7 +194,7 @@ func TestUpdate_Prepare(t *testing.T) {
 
 		stmt, err := u.Prepare(context.TODO())
 		assert.Nil(t, stmt)
-		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
 }
 

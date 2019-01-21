@@ -29,7 +29,7 @@ func TestStmtWrapper(t *testing.T) {
 		defer func() {
 			if r := recover(); r != nil {
 				if err, ok := r.(error); ok {
-					assert.True(t, errors.Is(err, errors.NotAllowed), "Error should have kind errors.NotAllowed")
+					assert.ErrorIsKind(t, errors.NotAllowed, err)
 				} else {
 					t.Errorf("Panic should contain an error but got:\n%+v", r)
 				}
@@ -46,7 +46,7 @@ func TestStmtWrapper(t *testing.T) {
 		defer func() {
 			if r := recover(); r != nil {
 				if err, ok := r.(error); ok {
-					assert.True(t, errors.Is(err, errors.NotAllowed), "Error should have kind errors.NotAllowed")
+					assert.ErrorIsKind(t, errors.NotAllowed, err)
 				} else {
 					t.Errorf("Panic should contain an error but got:\n%+v", r)
 				}
@@ -63,7 +63,7 @@ func TestStmtWrapper(t *testing.T) {
 		defer func() {
 			if r := recover(); r != nil {
 				if err, ok := r.(error); ok {
-					assert.True(t, errors.Is(err, errors.NotAllowed), "Error should have kind errors.NotAllowed")
+					assert.ErrorIsKind(t, errors.NotAllowed, err)
 				} else {
 					t.Errorf("Panic should contain an error but got:\n%+v", r)
 				}
@@ -80,7 +80,7 @@ func TestStmtWrapper(t *testing.T) {
 		defer func() {
 			if r := recover(); r != nil {
 				if err, ok := r.(error); ok {
-					assert.True(t, errors.Is(err, errors.NotAllowed), "Error should have kind errors.NotAllowed")
+					assert.ErrorIsKind(t, errors.NotAllowed, err)
 				} else {
 					t.Errorf("Panic should contain an error but got:\n%+v", r)
 				}

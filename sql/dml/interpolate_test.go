@@ -35,17 +35,17 @@ func TestExpandPlaceHolders(t *testing.T) {
 	t.Run("MisMatch", func(t *testing.T) {
 		s, err := ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN (?)", nil)
 		assert.Empty(t, s)
-		assert.True(t, errors.Mismatch.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.Mismatch, err)
 	})
 	t.Run("MisMatch length reps", func(t *testing.T) {
 		s, err := ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN (?)", MakeArgs(2).Int64s(1, 2).Strings("d", "3"))
 		assert.Empty(t, s)
-		assert.True(t, errors.Mismatch.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.Mismatch, err)
 	})
 	t.Run("MisMatch qMarks", func(t *testing.T) {
 		s, err := ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN(!)", MakeArgs(1).Int64(3))
 		assert.Empty(t, s)
-		assert.True(t, errors.Mismatch.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.Mismatch, err)
 	})
 	t.Run("one arg with one value", func(t *testing.T) {
 		args := MakeArgs(1).Int64(1)
@@ -157,7 +157,7 @@ func TestInterpolate_Errors(t *testing.T) {
 	})
 	t.Run("way too many qmarks", func(t *testing.T) {
 		_, _, err := Interpolate("SELECT * FROM x WHERE a IN ? OR b = ? OR c = ? AND d = ?").Ints(3, 4).Int64(2).ToSQL()
-		assert.True(t, errors.Mismatch.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.Mismatch, err)
 	})
 	t.Run("print error into String", func(t *testing.T) {
 		ip := Interpolate("SELECT * FROM x WHERE a IN (?) AND b BETWEEN ? AND ? AND c = ? AND d IN (?,?)").
@@ -214,11 +214,11 @@ func TestInterpolate_ArgValue(t *testing.T) {
 	})
 	t.Run("type not supported", func(t *testing.T) {
 		_, _, err := Interpolate("SELECT * FROM x WHERE a = ?").DriverValues(argValUint16(0)).ToSQL()
-		assert.True(t, errors.NotSupported.Match(err), "error should have kind errors.NotSupported: %+v", err)
+		assert.ErrorIsKind(t, errors.NotSupported, err)
 	})
 	t.Run("valuer error", func(t *testing.T) {
 		_, _, err := Interpolate("SELECT * FROM x WHERE a = ?").DriverValues(argValUint16(1)).ToSQL()
-		assert.True(t, errors.Is(err, errors.Aborted), "error should have kind aborted")
+		assert.ErrorIsKind(t, errors.Aborted, err)
 	})
 }
 

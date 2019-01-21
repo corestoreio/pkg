@@ -41,7 +41,7 @@ func TestWith_Query(t *testing.T) {
 			WithDB(dbc.DB)
 		rows, err := sel.WithArgs().QueryContext(context.TODO())
 		assert.Nil(t, rows)
-		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 
 	})
 }
@@ -61,7 +61,7 @@ func TestWith_Load(t *testing.T) {
 			WithDB(dbc.DB)
 		rows, err := sel.WithArgs().Load(context.TODO(), nil)
 		assert.Exactly(t, uint64(0), rows)
-		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
 }
 
@@ -177,7 +177,7 @@ func TestWith_Prepare(t *testing.T) {
 			WithDB(dbc.DB)
 		stmt, err := sel.Prepare(context.TODO())
 		assert.Nil(t, stmt)
-		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
 
 	t.Run("Query", func(t *testing.T) {
@@ -306,7 +306,7 @@ func TestWith_Prepare(t *testing.T) {
 
 			stmtA := stmt.WithArgs().Record("", p)
 			rows, err := stmtA.QueryContext(context.TODO())
-			assert.True(t, errors.Duplicated.Match(err), "%+v", err)
+			assert.ErrorIsKind(t, errors.Duplicated, err)
 			assert.Nil(t, rows)
 		})
 	})

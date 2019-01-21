@@ -36,7 +36,7 @@ func TestUnion_Query(t *testing.T) {
 		)
 		rows, err := u.WithArgs().QueryContext(context.TODO())
 		assert.Nil(t, rows)
-		assert.True(t, errors.Empty.Match(err))
+		assert.ErrorIsKind(t, errors.Empty, err)
 	})
 
 	u := dml.NewUnion(
@@ -50,7 +50,7 @@ func TestUnion_Query(t *testing.T) {
 		})
 		rows, err := u.WithArgs().QueryContext(context.TODO())
 		assert.Nil(t, rows)
-		assert.True(t, errors.ConnectionFailed.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.ConnectionFailed, err)
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -65,7 +65,7 @@ func TestUnion_Query(t *testing.T) {
 		u.WithDB(dbc.DB)
 
 		rows, err := u.WithArgs().QueryContext(context.TODO())
-		assert.NoError(t, err, "%+v", err)
+		assert.NoError(t, err)
 
 		var xx []string
 		for rows.Next() {
@@ -97,7 +97,7 @@ func TestUnion_Load(t *testing.T) {
 
 		rows, err := u.WithDB(dbc.DB).WithArgs().Load(context.TODO(), nil)
 		assert.Exactly(t, uint64(0), rows)
-		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
 }
 
@@ -111,7 +111,7 @@ func TestUnion_Prepare(t *testing.T) {
 		)
 		stmt, err := u.Prepare(context.TODO())
 		assert.Nil(t, stmt)
-		assert.True(t, errors.Empty.Match(err))
+		assert.ErrorIsKind(t, errors.Empty, err)
 	})
 
 	t.Run("Error", func(t *testing.T) {
@@ -134,7 +134,7 @@ func TestUnion_Prepare(t *testing.T) {
 
 		stmt, err := u.Prepare(context.TODO())
 		assert.Nil(t, stmt)
-		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
 
 	t.Run("Query", func(t *testing.T) {
@@ -241,7 +241,7 @@ func TestUnion_Prepare(t *testing.T) {
 		t.Run("WithRecords Error", func(t *testing.T) {
 			p := &TableCoreConfigDataSlice{err: errors.Duplicated.Newf("Found a duplicate")}
 			rows, err := stmt.WithArgs().Record("", p).QueryContext(context.TODO())
-			assert.True(t, errors.Duplicated.Match(err), "%+v", err)
+			assert.ErrorIsKind(t, errors.Duplicated, err)
 			assert.Nil(t, rows)
 		})
 	})

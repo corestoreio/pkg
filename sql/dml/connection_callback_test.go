@@ -56,56 +56,56 @@ func TestWrapDriver_Connection_Error(t *testing.T) {
 	t.Run("PrepareContext", func(t *testing.T) {
 		con := getCon(t, SQLErrDriverCon{})
 		_, err := con.(driver.ConnPrepareContext).PrepareContext(ctx, "")
-		assert.True(t, errors.AlreadyClosed.Match(err), "%s", err)
+		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
 	t.Run("PrepareContext Original Error", func(t *testing.T) {
 		con := getCon(t, SQLErrDriverCon{
 			PrepareError: errors.WriteFailed.Newf("Should not get overwritten"),
 		})
 		_, err := con.(driver.ConnPrepareContext).PrepareContext(ctx, "")
-		assert.True(t, errors.WriteFailed.Match(err), "%s", err)
+		assert.ErrorIsKind(t, errors.WriteFailed, err)
 	})
 	t.Run("Prepare", func(t *testing.T) {
 		con := getCon(t, SQLErrDriverCon{})
 		_, err := con.Prepare("")
-		assert.True(t, errors.AlreadyClosed.Match(err), "%s", err)
+		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
 	t.Run("Close", func(t *testing.T) {
 		con := getCon(t, SQLErrDriverCon{})
 		err := con.Close()
-		assert.True(t, errors.AlreadyClosed.Match(err), "%s", err)
+		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
 	t.Run("Begin", func(t *testing.T) {
 		con := getCon(t, SQLErrDriverCon{})
 		_, err := con.Begin()
-		assert.True(t, errors.AlreadyClosed.Match(err), "%s", err)
+		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
 	t.Run("BeginTx", func(t *testing.T) {
 		con := getCon(t, SQLErrDriverCon{})
 		_, err := con.(driver.ConnBeginTx).BeginTx(ctx, driver.TxOptions{})
-		assert.True(t, errors.AlreadyClosed.Match(err), "%s", err)
+		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
 	t.Run("Ping", func(t *testing.T) {
 		con := getCon(t, SQLErrDriverCon{})
 		err := con.(driver.Pinger).Ping(ctx)
-		assert.True(t, errors.AlreadyClosed.Match(err), "%s", err)
+		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
 	t.Run("ExecContext", func(t *testing.T) {
 		con := getCon(t, SQLErrDriverCon{})
 		_, err := con.(driver.ExecerContext).ExecContext(ctx, "", nil)
-		assert.True(t, errors.AlreadyClosed.Match(err), "%s", err)
+		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
 	t.Run("ExecContext Original Error", func(t *testing.T) {
 		con := getCon(t, SQLErrDriverCon{
 			ExecError: errors.WriteFailed.Newf("Should not get overwritten"),
 		})
 		_, err := con.(driver.ExecerContext).ExecContext(ctx, "", nil)
-		assert.True(t, errors.WriteFailed.Match(err), "%s", err)
+		assert.ErrorIsKind(t, errors.WriteFailed, err)
 	})
 	t.Run("QueryContext", func(t *testing.T) {
 		con := getCon(t, SQLErrDriverCon{})
 		_, err := con.(driver.QueryerContext).QueryContext(ctx, "", nil)
-		assert.True(t, errors.AlreadyClosed.Match(err), "%s", err)
+		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
 }
 
@@ -133,28 +133,28 @@ func TestWrapDriver_Stmt_Error(t *testing.T) {
 	t.Run("Exec", func(t *testing.T) {
 		con := getStmt(t)
 		_, err := con.Exec(nil)
-		assert.True(t, errors.Aborted.Match(err), "%s", err)
+		assert.ErrorIsKind(t, errors.Aborted, err)
 	})
 	t.Run("Query", func(t *testing.T) {
 		con := getStmt(t)
 		_, err := con.Query(nil)
-		assert.True(t, errors.Aborted.Match(err), "%s", err)
+		assert.ErrorIsKind(t, errors.Aborted, err)
 	})
 	t.Run("Close", func(t *testing.T) {
 		con := getStmt(t)
 		err := con.Close()
-		assert.True(t, errors.Aborted.Match(err), "%s", err)
+		assert.ErrorIsKind(t, errors.Aborted, err)
 	})
 
 	t.Run("ExecContext", func(t *testing.T) {
 		con := getStmt(t)
 		_, err := con.(driver.StmtExecContext).ExecContext(ctx, nil)
-		assert.True(t, errors.Aborted.Match(err), "%s", err)
+		assert.ErrorIsKind(t, errors.Aborted, err)
 	})
 	t.Run("QueryContext", func(t *testing.T) {
 		con := getStmt(t)
 		_, err := con.(driver.StmtQueryContext).QueryContext(ctx, nil)
-		assert.True(t, errors.Aborted.Match(err), "%s", err)
+		assert.ErrorIsKind(t, errors.Aborted, err)
 	})
 }
 

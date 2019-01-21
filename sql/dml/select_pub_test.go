@@ -39,7 +39,7 @@ func TestSelect_QueryContext(t *testing.T) {
 		sel := (&dml.Select{}).WithDB(dbMock{})
 		rows, err := sel.WithArgs().QueryContext(context.TODO())
 		assert.Nil(t, rows)
-		assert.True(t, errors.Empty.Match(err))
+		assert.ErrorIsKind(t, errors.Empty, err)
 	})
 
 	t.Run("Error", func(t *testing.T) {
@@ -55,7 +55,7 @@ func TestSelect_QueryContext(t *testing.T) {
 
 		rows, err := sel.WithArgs().QueryContext(context.TODO())
 		assert.Nil(t, rows)
-		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -68,7 +68,7 @@ func TestSelect_QueryContext(t *testing.T) {
 		sel := dml.NewSelect("a").From("tableX")
 		sel.DB = dbc.DB
 		rows, err := sel.WithArgs().QueryContext(context.TODO())
-		assert.NoError(t, err, "%+v", err)
+		assert.NoError(t, err)
 		defer dmltest.Close(t, rows)
 
 		var xx []string
@@ -170,7 +170,7 @@ func TestSelect_Load(t *testing.T) {
 		ccd := &TableCoreConfigDataSlice{}
 
 		_, err := s.WithArgs().Load(context.TODO(), ccd)
-		assert.NoError(t, err, "%+v", err)
+		assert.NoError(t, err)
 
 		buf := new(bytes.Buffer)
 		je := json.NewEncoder(buf)
@@ -198,7 +198,7 @@ func TestSelect_Load(t *testing.T) {
 
 		var dst []int64
 		dst, err := s.WithArgs().ExpandPlaceHolders().Int64s(199).LoadInt64s(context.TODO(), dst)
-		assert.NoError(t, err, "%+v", err)
+		assert.NoError(t, err)
 
 		// wrong result set for correct query. maybe some one can fix the returned data.
 		assert.Equal(t, []int64{2, 3, 4, 16, 17}, dst)
@@ -217,7 +217,7 @@ func TestSelect_Load(t *testing.T) {
 
 		var dst []int64
 		dst, err := s.WithArgs().Int64s(199, 217).ExpandPlaceHolders().LoadInt64s(context.TODO(), dst)
-		assert.NoError(t, err, "%+v", err)
+		assert.NoError(t, err)
 
 		assert.Equal(t, []int64{2, 3, 4, 16, 17}, dst)
 	})
@@ -234,7 +234,7 @@ func TestSelect_Load(t *testing.T) {
 
 		ccd := &TableCoreConfigDataSlice{}
 		_, err := s.WithArgs().Load(context.TODO(), ccd)
-		assert.True(t, errors.ConnectionFailed.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.ConnectionFailed, err)
 	})
 
 	t.Run("ioClose error", func(t *testing.T) {
@@ -250,7 +250,7 @@ func TestSelect_Load(t *testing.T) {
 			err: errors.Duplicated.Newf("Somewhere exists a duplicate entry"),
 		}
 		_, err := s.WithArgs().Load(context.TODO(), ccd)
-		assert.True(t, errors.Duplicated.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.Duplicated, err)
 	})
 }
 
@@ -261,7 +261,7 @@ func TestSelect_Prepare(t *testing.T) {
 		sel := dml.NewSelect()
 		stmt, err := sel.Prepare(context.TODO())
 		assert.Nil(t, stmt)
-		assert.True(t, errors.Empty.Match(err))
+		assert.ErrorIsKind(t, errors.Empty, err)
 	})
 
 	t.Run("Prepare Error", func(t *testing.T) {
@@ -273,7 +273,7 @@ func TestSelect_Prepare(t *testing.T) {
 		sel := dml.NewSelect("a", "b").From("tableX").WithDB(dbc.DB)
 		stmt, err := sel.Prepare(context.TODO())
 		assert.Nil(t, stmt)
-		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
 
 	t.Run("Prepare IN", func(t *testing.T) {
@@ -390,7 +390,7 @@ func TestSelect_Prepare(t *testing.T) {
 			p := &TableCoreConfigDataSlice{err: errors.Duplicated.Newf("Found a duplicate")}
 			stmtA := stmt.WithArgs().Record("", p)
 			rows, err := stmtA.QueryContext(context.TODO())
-			assert.True(t, errors.Duplicated.Match(err), "%+v", err)
+			assert.ErrorIsKind(t, errors.Duplicated, err)
 			assert.Nil(t, rows)
 		})
 	})
@@ -492,7 +492,7 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 				OrderBy("id").WithArgs().IterateSerial(context.Background(), func(cm *dml.ColumnMap) error {
 				return errors.Blocked.Newf("Mapping blocked")
 			})
-			assert.True(t, errors.Is(err, errors.Blocked), "Error should have kind errors.Blocked")
+			assert.ErrorIsKind(t, errors.Blocked, err)
 		})
 
 		t.Run("serial serial", func(t *testing.T) {
@@ -590,7 +590,7 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 				OrderBy("id").WithArgs().IterateParallel(context.Background(), 0, func(cm *dml.ColumnMap) error {
 				return nil
 			})
-			assert.True(t, errors.Is(err, errors.OutOfRange), "Error should have kind errors.OutOfRange")
+			assert.ErrorIsKind(t, errors.OutOfRange, err)
 		})
 
 		t.Run("error in mapper of all workers", func(t *testing.T) {
@@ -605,7 +605,7 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 			case *errors.MultiErr:
 				assert.True(t, errors.MultiErrMatchAll(err, errors.Blocked), "MultiErr should have all errors of kind errors.Blocked")
 			default:
-				assert.True(t, errors.Is(err, errors.Blocked), "Error should be kind errors.Blocked, got: %+v", err)
+				assert.ErrorIsKind(t, errors.Blocked, err)
 			}
 		})
 

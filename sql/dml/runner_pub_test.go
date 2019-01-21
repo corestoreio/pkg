@@ -50,7 +50,7 @@ func TestColumnMap_BinaryText(t *testing.T) {
 
 	cm.CheckValidUTF8 = true
 	err := cm.Text(&textBinaryEncoder{data: []byte("\xc0\x80")}).Err()
-	assert.True(t, errors.Is(err, errors.NotValid), "Want errors.NotValid; Got %s\n%+v", errors.UnwrapKind(err), err)
+	assert.ErrorIsKind(t, errors.NotValid, err)
 
 }
 
@@ -390,7 +390,7 @@ func TestColumnMap_Query(t *testing.T) {
 
 		rc, err := dbc.WithQueryBuilder(tbl).Load(context.TODO(), tbl)
 		assert.Exactly(t, uint64(0), rc)
-		assert.True(t, errors.NotValid.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
 
 	t.Run("invalid UTF8 NullStr", func(t *testing.T) {
@@ -411,8 +411,7 @@ func TestColumnMap_Query(t *testing.T) {
 
 		rc, err := dbc.WithQueryBuilder(tbl).Load(context.TODO(), tbl)
 		assert.Exactly(t, uint64(0), rc)
-		assert.True(t, errors.NotValid.Match(err), "%+v", err)
-
+		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
 }
 

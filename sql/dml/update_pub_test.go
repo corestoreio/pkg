@@ -36,7 +36,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 
 		res, err := mu.WithArgs().ExecContext(context.TODO())
 		assert.Nil(t, res)
-		assert.True(t, errors.Empty.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.Empty, err)
 	})
 
 	t.Run("alias mismatch Exec", func(t *testing.T) {
@@ -51,7 +51,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 			WithArgs().WithQualifiedColumnsAliases("update_sku").
 			Record("", nil).ExecContext(context.TODO())
 		assert.Nil(t, res)
-		assert.True(t, errors.Mismatch.Match(err), "Should be of kind errors.Mismatch %+v", err)
+		assert.ErrorIsKind(t, errors.Mismatch, err)
 	})
 
 	t.Run("alias mismatch Prepare", func(t *testing.T) {
@@ -73,7 +73,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 			Email: null.MakeString("alf@m') -- el.mac"),
 		}
 		res, err := stmt.WithArgs().Record("", p).WithQualifiedColumnsAliases("update_sku").ExecContext(context.TODO())
-		assert.True(t, errors.Mismatch.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.Mismatch, err)
 		assert.Nil(t, res, "No result is expected")
 	})
 
@@ -85,7 +85,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 
 		res, err := mu.WithArgs().ExecContext(context.TODO())
 		assert.Nil(t, res)
-		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
 
 	t.Run("prepared success", func(t *testing.T) {

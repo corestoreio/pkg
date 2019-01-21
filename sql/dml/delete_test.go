@@ -231,7 +231,7 @@ func TestDelete_BuildCacheDisabled(t *testing.T) {
 	t.Run("without interpolate", func(t *testing.T) {
 		for i := 0; i < iterations; i++ {
 			sql, args, err := del.ToSQL()
-			assert.NoError(t, err, "%+v", err)
+			assert.NoError(t, err)
 			assert.Equal(t, cachedSQLPlaceHolder, sql)
 			assert.Nil(t, args, "No arguments provided but got some")
 			assert.Nil(t, del.cachedSQL, "cache []byte should be nil")

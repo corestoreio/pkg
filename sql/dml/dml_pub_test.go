@@ -107,7 +107,7 @@ func compareToSQL(
 	if wantErrKind.Empty() {
 		assert.NoError(t, err)
 	} else {
-		assert.True(t, wantErrKind.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, wantErrKind, err)
 	}
 
 	if wantSQLPlaceholders != "" {
@@ -130,7 +130,7 @@ func compareToSQL(
 	if wantErrKind.Empty() {
 		assert.NoError(t, err)
 	} else {
-		assert.True(t, wantErrKind.Match(err), "%+v")
+		assert.ErrorIsKind(t, wantErrKind, err)
 	}
 	assert.Equal(t, wantSQLInterpolated, sqlStr, "Interpolated SQL strings do not match")
 }

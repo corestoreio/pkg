@@ -313,7 +313,7 @@ func TestWithLogger_Select(t *testing.T) {
 			defer buf.Reset()
 			rows, err := pplSel.WithArgs().Raw(67896543123).Interpolate().QueryContext(context.TODO())
 			assert.Nil(t, rows)
-			assert.True(t, errors.NotAllowed.Match(err), "%s", err)
+			assert.ErrorIsKind(t, errors.NotAllowed, err)
 		})
 		t.Run("Query Correct", func(t *testing.T) {
 			defer buf.Reset()

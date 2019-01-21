@@ -106,7 +106,7 @@ func TestIsValidIdentifier(t *testing.T) {
 
 func TestIsValidIdentifier2(t *testing.T) {
 	t.Parallel()
-	assert.True(t, errors.NotValid.Match(IsValidIdentifier("DATE_FORMAT(t3.period, '%Y-%m-01')")))
+	assert.ErrorIsKind(t, errors.NotValid, IsValidIdentifier("DATE_FORMAT(t3.period, '%Y-%m-01')"))
 	assert.NoError(t, IsValidIdentifier("table.col"))
 }
 

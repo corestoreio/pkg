@@ -90,7 +90,7 @@ func TestNewListenerBucket(t *testing.T) {
 	t.Run("panic", func(t *testing.T) {
 		defer func() {
 			if r := recover(); r != nil {
-				assert.True(t, errors.Empty.Match(r.(error)), "%+v", r.(error))
+				assert.ErrorIsKind(t, errors.Empty, r.(error))
 			} else {
 				t.Error("Expecting a panic")
 			}
@@ -104,28 +104,28 @@ func TestNewListenerBucket(t *testing.T) {
 			ListenSelectFn: func(*Select) {},
 		})
 		assert.Nil(t, lb)
-		assert.True(t, errors.Empty.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.Empty, err)
 	})
 	t.Run("Error Insert", func(t *testing.T) {
 		lb, err := NewListenerBucket(Listen{
 			ListenInsertFn: func(*Insert) {},
 		})
 		assert.Nil(t, lb)
-		assert.True(t, errors.Empty.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.Empty, err)
 	})
 	t.Run("Error Update", func(t *testing.T) {
 		lb, err := NewListenerBucket(Listen{
 			ListenUpdateFn: func(*Update) {},
 		})
 		assert.Nil(t, lb)
-		assert.True(t, errors.Empty.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.Empty, err)
 	})
 	t.Run("Error Delete", func(t *testing.T) {
 		lb, err := NewListenerBucket(Listen{
 			ListenDeleteFn: func(*Delete) {},
 		})
 		assert.Nil(t, lb)
-		assert.True(t, errors.Empty.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.Empty, err)
 	})
 	t.Run("Select Only", func(t *testing.T) {
 		called := 0

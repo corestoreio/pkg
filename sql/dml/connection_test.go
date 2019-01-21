@@ -77,5 +77,5 @@ func TestWithDSNfromEnv(t *testing.T) {
 
 	cp, err := NewConnPool(WithDSNfromEnv("TEST_CS_DSN_WithDSNfromEnv"))
 	assert.Nil(t, cp)
-	assert.True(t, errors.NotImplemented.Match(err), "%+v", err)
+	assert.ErrorIsKind(t, errors.NotImplemented, err)
 }

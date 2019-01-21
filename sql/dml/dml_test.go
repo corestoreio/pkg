@@ -330,7 +330,7 @@ func compareToSQL(
 	if wantErrKind.Empty() {
 		assert.NoError(t, err)
 	} else {
-		assert.True(t, wantErrKind.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, wantErrKind, err)
 	}
 
 	if wantSQLPlaceholders != "" {
@@ -352,7 +352,7 @@ func compareToSQL(
 	if wantErrKind.Empty() {
 		assert.NoError(t, err)
 	} else {
-		assert.True(t, wantErrKind.Match(err), "%+v")
+		assert.ErrorIsKind(t, wantErrKind, err)
 	}
 	assert.Equal(t, wantSQLInterpolated, sqlStr, "Interpolated SQL strings do not match")
 	assert.Nil(t, args, "Artisan should be nil when the SQL string gets interpolated")
@@ -369,7 +369,7 @@ func compareToSQL2(
 	if wantErrKind.Empty() {
 		assert.NoError(t, err, "With SQL %q", wantSQL)
 	} else {
-		assert.True(t, wantErrKind.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, wantErrKind, err)
 	}
 	assert.Exactly(t, wantSQL, sqlStr, "SQL strings do not match")
 	assert.Exactly(t, wantArgs, args, "Arguments do not match")

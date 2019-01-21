@@ -154,7 +154,7 @@ func TestTx_Wrap(t *testing.T) {
 			assert.Nil(t, res)
 			return err
 		})
-		assert.True(t, errors.Aborted.Match(err))
+		assert.ErrorIsKind(t, errors.Aborted, err)
 	})
 }
 
@@ -257,7 +257,7 @@ func TestWithExecSQLOnConn(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, mock)
 
 		err := dbc.Options(dml.WithExecSQLOnConnOpen(ctx))
-		assert.True(t, errors.Empty.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.Empty, err)
 	})
 
 	t.Run("success", func(t *testing.T) {
@@ -280,7 +280,7 @@ func TestWithExecSQLOnConn(t *testing.T) {
 		)
 		dmltest.MockClose(t, dbc, mock)
 
-		assert.NoError(t, err, "%+v", err)
+		assert.NoError(t, err)
 	})
 
 	t.Run("transaction rollback", func(t *testing.T) {
@@ -301,10 +301,10 @@ func TestWithExecSQLOnConn(t *testing.T) {
 		err := dbc.Options(
 			dml.WithExecSQLOnConnOpen(ctx, "create table xx3"),
 		)
-		assert.NoError(t, err, "%+v", err)
+		assert.NoError(t, err)
 
 		err = dbc.Close()
-		assert.True(t, errors.NotAcceptable.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.NotAcceptable, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 
 	})
@@ -336,7 +336,7 @@ func TestTx_WithPrepare(t *testing.T) {
 		_, err := a.ExecContext(context.TODO(), "tabA")
 		return err
 	})
-	assert.NoError(t, err, "%+v", err)
+	assert.NoError(t, err)
 }
 
 func TestWithCreateDatabase(t *testing.T) {
@@ -349,7 +349,7 @@ func TestWithCreateDatabase(t *testing.T) {
 	dbMock.ExpectExec("ALTER DATABASE `myTestDb` DEFAULT CHARACTER SET='utf8mb4' COLLATE='utf8mb4_unicode_ci'").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
 
 	err := dbc.Options(dml.WithCreateDatabase(context.TODO(), "myTestDb"))
-	assert.NoError(t, err, "%+v", err)
+	assert.NoError(t, err)
 }
 
 func TestConnPool_WithDisabledForeignKeyChecks(t *testing.T) {
@@ -364,7 +364,7 @@ func TestConnPool_WithDisabledForeignKeyChecks(t *testing.T) {
 		err := dbc.WithDisabledForeignKeyChecks(context.TODO(), func(conn *dml.Conn) error {
 			return nil
 		})
-		assert.NoError(t, err, "%+v", err)
+		assert.NoError(t, err)
 	})
 
 	t.Run("error in FOREIGN_KEY_CHECKS=0", func(t *testing.T) {
@@ -377,7 +377,7 @@ func TestConnPool_WithDisabledForeignKeyChecks(t *testing.T) {
 		err := dbc.WithDisabledForeignKeyChecks(context.TODO(), func(conn *dml.Conn) error {
 			return errors.Blocked.Newf("gets suppressed")
 		})
-		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
 
 	t.Run("error in FOREIGN_KEY_CHECKS=0", func(t *testing.T) {
@@ -391,7 +391,7 @@ func TestConnPool_WithDisabledForeignKeyChecks(t *testing.T) {
 		err := dbc.WithDisabledForeignKeyChecks(context.TODO(), func(conn *dml.Conn) error {
 			return nil
 		})
-		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
 
 	t.Run("error in FOREIGN_KEY_CHECKS=0", func(t *testing.T) {
@@ -405,7 +405,7 @@ func TestConnPool_WithDisabledForeignKeyChecks(t *testing.T) {
 		err := dbc.WithDisabledForeignKeyChecks(context.TODO(), func(conn *dml.Conn) error {
 			return errors.Blocked.Newf("gets NOT suppressed")
 		})
-		assert.True(t, errors.Blocked.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.Blocked, err)
 	})
 
 }

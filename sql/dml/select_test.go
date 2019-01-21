@@ -572,7 +572,7 @@ func TestSelect_Load_Rows(t *testing.T) {
 		count, err := s.SelectFrom("dml_people").AddColumns("id", "name", "email").
 			Where(Column("email").Str("dontexist@uservoice.com")).WithArgs().Load(context.TODO(), &person2)
 
-		assert.NoError(t, err, "%+v", err)
+		assert.NoError(t, err)
 		assert.Exactly(t, dmlPerson{}, person2)
 		assert.Empty(t, count, "Should have no rows loaded")
 	})
@@ -1039,7 +1039,7 @@ func TestSelect_Columns(t *testing.T) {
 		defer func() {
 			if r := recover(); r != nil {
 				if err, ok := r.(error); ok {
-					assert.True(t, errors.Mismatch.Match(err), "%+v", err)
+					assert.ErrorIsKind(t, errors.Mismatch, err)
 				} else {
 					t.Errorf("Panic should contain an error but got:\n%+v", r)
 				}

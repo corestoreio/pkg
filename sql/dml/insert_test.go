@@ -501,7 +501,7 @@ func TestInsert_DisableBuildCache(t *testing.T) {
 	t.Run("without interpolate", func(t *testing.T) {
 		for i := 0; i < 3; i++ {
 			sql, args, err := ins.Raw(1, 2, 3, 4, 5, 6).ToSQL()
-			assert.NoError(t, err, "%+v", err)
+			assert.NoError(t, err)
 			assert.Equal(t, cachedSQLPlaceHolder, sql)
 			assert.Equal(t, []interface{}{1, 2, 3, 4, 5, 6}, args)
 			assert.Equal(t, "INSERT INTO `a` (`b`,`c`) VALUES  ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)",
@@ -517,7 +517,7 @@ func TestInsert_DisableBuildCache(t *testing.T) {
 		const cachedSQLInterpolated = "INSERT INTO `a` (`b`,`c`) VALUES (1,2),(3,4),(5,6) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)"
 		for i := 0; i < 3; i++ {
 			sql, args, err := insA.ToSQL()
-			assert.NoError(t, err, "%+v", err)
+			assert.NoError(t, err)
 			assert.Equal(t, cachedSQLInterpolated, sql)
 			assert.Nil(t, args)
 			assert.Equal(t, "INSERT INTO `a` (`b`,`c`) VALUES  ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)", string(ins.base.cachedSQL))

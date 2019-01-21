@@ -135,7 +135,7 @@ func TestSQLIfNull(t *testing.T) {
 		defer func() {
 			if r := recover(); r != nil {
 				if err, ok := r.(error); ok {
-					assert.True(t, errors.NotValid.Match(err), "%+v", err)
+					assert.ErrorIsKind(t, errors.NotValid, err)
 				} else {
 					t.Errorf("Panic should contain an error but got:\n%+v", r)
 				}
@@ -266,7 +266,7 @@ func TestSQLCase(t *testing.T) {
 		defer func() {
 			if r := recover(); r != nil {
 				if err, ok := r.(error); ok {
-					assert.True(t, errors.Fatal.Match(err))
+					assert.ErrorIsKind(t, errors.Fatal, err)
 				} else {
 					t.Errorf("Panic should contain an error but got:\n%+v", r)
 				}

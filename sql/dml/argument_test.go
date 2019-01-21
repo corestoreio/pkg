@@ -97,7 +97,7 @@ func TestIFaceToArgs(t *testing.T) {
 	t.Parallel()
 	t.Run("not supported", func(t *testing.T) {
 		_, err := iFaceToArgs(arguments{}, time.Minute)
-		assert.True(t, errors.Is(err, errors.NotSupported), "err should have kind errors.NotSupported")
+		assert.ErrorIsKind(t, errors.NotSupported, err)
 	})
 	t.Run("all types", func(t *testing.T) {
 		nt := now()

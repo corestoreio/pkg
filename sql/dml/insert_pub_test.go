@@ -127,7 +127,7 @@ func TestInsert_Prepare(t *testing.T) {
 		in.AddColumns("a", "b")
 		stmt, err := in.Prepare(context.TODO())
 		assert.Nil(t, stmt)
-		assert.True(t, errors.NotAcceptable.Match(err))
+		assert.ErrorIsKind(t, errors.NotAcceptable, err)
 	})
 
 	t.Run("ToSQL Error", func(t *testing.T) {
@@ -135,7 +135,7 @@ func TestInsert_Prepare(t *testing.T) {
 		in.AddColumns("a", "b")
 		stmt, _, err := in.ToSQL()
 		assert.Empty(t, stmt)
-		assert.True(t, errors.Empty.Match(err))
+		assert.ErrorIsKind(t, errors.Empty, err)
 	})
 
 	t.Run("DB Error", func(t *testing.T) {
@@ -149,7 +149,7 @@ func TestInsert_Prepare(t *testing.T) {
 
 		stmt, err := in.Prepare(context.TODO())
 		assert.Nil(t, stmt)
-		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
 
 	t.Run("ExecArgs One Row", func(t *testing.T) {
