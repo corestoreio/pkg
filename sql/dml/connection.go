@@ -587,6 +587,31 @@ func (c *ConnPool) WithPrepare(ctx context.Context, query string) *Artisan {
 	return a
 }
 
+// WithDisabledForeignKeyChecks runs the callBack with disabled foreign key
+// checks in a dedicated connection session. Foreign key checks are getting
+// automatically re-enabled. The context is used to disable and enable the FK
+// check.
+func (c *ConnPool) WithDisabledForeignKeyChecks(ctx context.Context, callBack func(*Conn) error) (err error) {
+	dbc, err := c.Conn(ctx)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	defer func() {
+		if _, err2 := dbc.DB.ExecContext(ctx, "SET FOREIGN_KEY_CHECKS=1"); err == nil && err2 != nil {
+			err = errors.WithStack(err2)
+		}
+		if err2 := dbc.Close(); err == nil && err2 != nil {
+			err = errors.WithStack(err2)
+		}
+	}()
+	if _, err = dbc.DB.ExecContext(ctx, "SET FOREIGN_KEY_CHECKS=0"); err != nil {
+		err = errors.WithStack(err)
+		return
+	}
+	err = callBack(dbc)
+	return
+}
+
 // BeginTx starts a transaction.
 //
 // The provided context is used until the transaction is committed or rolled back.

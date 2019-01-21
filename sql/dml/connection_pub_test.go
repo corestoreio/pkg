@@ -351,3 +351,61 @@ func TestWithCreateDatabase(t *testing.T) {
 	err := dbc.Options(dml.WithCreateDatabase(context.TODO(), "myTestDb"))
 	assert.NoError(t, err, "%+v", err)
 }
+
+func TestConnPool_WithDisabledForeignKeyChecks(t *testing.T) {
+
+	t.Run("success", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		dbMock.ExpectExec(`SET FOREIGN_KEY_CHECKS=0`).WillReturnResult(sqlmock.NewResult(0, 0))
+		dbMock.ExpectExec(`SET FOREIGN_KEY_CHECKS=1`).WillReturnResult(sqlmock.NewResult(0, 0))
+
+		err := dbc.WithDisabledForeignKeyChecks(context.TODO(), func(conn *dml.Conn) error {
+			return nil
+		})
+		assert.NoError(t, err, "%+v", err)
+	})
+
+	t.Run("error in FOREIGN_KEY_CHECKS=0", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		wantErr := errors.AlreadyClosed.Newf("Closed")
+		dbMock.ExpectExec(`SET FOREIGN_KEY_CHECKS=0`).WillReturnError(wantErr)
+
+		err := dbc.WithDisabledForeignKeyChecks(context.TODO(), func(conn *dml.Conn) error {
+			return errors.Blocked.Newf("gets suppressed")
+		})
+		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
+	})
+
+	t.Run("error in FOREIGN_KEY_CHECKS=0", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		wantErr := errors.AlreadyClosed.Newf("Closed")
+		dbMock.ExpectExec(`SET FOREIGN_KEY_CHECKS=0`).WillReturnResult(sqlmock.NewResult(0, 0))
+		dbMock.ExpectExec(`SET FOREIGN_KEY_CHECKS=1`).WillReturnError(wantErr)
+
+		err := dbc.WithDisabledForeignKeyChecks(context.TODO(), func(conn *dml.Conn) error {
+			return nil
+		})
+		assert.True(t, errors.AlreadyClosed.Match(err), "%+v", err)
+	})
+
+	t.Run("error in FOREIGN_KEY_CHECKS=0", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		wantErr := errors.AlreadyClosed.Newf("Closed")
+		dbMock.ExpectExec(`SET FOREIGN_KEY_CHECKS=0`).WillReturnResult(sqlmock.NewResult(0, 0))
+		dbMock.ExpectExec(`SET FOREIGN_KEY_CHECKS=1`).WillReturnError(wantErr)
+
+		err := dbc.WithDisabledForeignKeyChecks(context.TODO(), func(conn *dml.Conn) error {
+			return errors.Blocked.Newf("gets NOT suppressed")
+		})
+		assert.True(t, errors.Blocked.Match(err), "%+v", err)
+	})
+
+}
