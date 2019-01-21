@@ -108,7 +108,7 @@ type SQLDumpOptions struct {
 // "cleanup", they will be run in the defer function. The returned function must
 // be run in the defer part of a test. This function skips a test, if the DSN
 // environment variable cannot be found.
-func SQLDumpLoad(t testing.TB, globPattern string, o *SQLDumpOptions) func() {
+func SQLDumpLoad(t testing.TB, globPattern string, o *SQLDumpOptions) struct{ Deferred func() } {
 	if o == nil {
 		o = &SQLDumpOptions{}
 	}
@@ -157,12 +157,16 @@ func SQLDumpLoad(t testing.TB, globPattern string, o *SQLDumpOptions) func() {
 		}
 	}
 
-	return func() {
-		defer os.Remove(dfFile)
-		if !o.SkipDBCleanup {
-			for _, file := range cleanUpFiles {
-				runExec(file)
+	return struct {
+		Deferred func()
+	}{
+		Deferred: func() {
+			defer os.Remove(dfFile)
+			if !o.SkipDBCleanup {
+				for _, file := range cleanUpFiles {
+					runExec(file)
+				}
 			}
-		}
+		},
 	}
 }

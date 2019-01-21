@@ -110,7 +110,7 @@ func TestMockRowsLoaded(t *testing.T) {
 	assert.NotNil(t, rows)
 
 	// Sorry for this test, but they removed the .Columns() function
-	assert.Contains(t, fmt.Sprintf("%#v", rows), `sqlmock.Rows{cols:[]string{"config_id", "scope", "scope_id", "path", "value"}`)
+	assert.Contains(t, fmt.Sprintf("%#v", rows), `cols:[]string{"config_id", "scope", "scope_id", "path", "value"}`)
 }
 
 func TestMustMockRows(t *testing.T) {
