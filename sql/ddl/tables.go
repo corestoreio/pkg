@@ -70,11 +70,22 @@ func WithDB(db *sql.DB, opts ...dml.ConnPoolOption) TableOption {
 			if err != nil {
 				return errors.WithStack(err)
 			}
+			return WithConnPool(p).fn(tm)
+		},
+	}
+}
+
+// WithConnPool sets the connection pool to the Tables and each of it Table
+// type. This function has precedence over WithDB.
+func WithConnPool(db *dml.ConnPool) TableOption {
+	return TableOption{
+		sortOrder: 2,
+		fn: func(tm *Tables) error {
 			tm.mu.Lock()
 			defer tm.mu.Unlock()
-			tm.dcp = p
+			tm.dcp = db
 			for _, t := range tm.tm {
-				t.dcp = p
+				t.dcp = db
 			}
 			return nil
 		},
