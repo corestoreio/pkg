@@ -420,26 +420,17 @@ func (b *Select) WithArgs() *Artisan {
 // disabled.
 func (b *Select) ToSQL() (string, []interface{}, error) {
 	rawSQL, err := b.buildToSQL(b)
-	return string(rawSQL), nil, err
+	return rawSQL, nil, err
 }
 
-func (b *Select) writeBuildCache(sql []byte, qualifiedColumns []string) {
-	b.qualifiedColumns = qualifiedColumns
-	if !b.IsBuildCacheDisabled {
-		b.cachedSQL = sql
-		// The data can be discarded as the query has been cached as byte slice.
-		b.BuilderConditional = BuilderConditional{}
-		b.Columns = nil
-		b.GroupBys = nil
-		b.Havings = nil
-	}
-}
-
-// DisableBuildCache if enabled it does not cache the SQL string as a final
-// rendered byte slice. Allows you to rebuild the query with different
-// statements.
-func (b *Select) DisableBuildCache() *Select {
-	b.IsBuildCacheDisabled = true
+// WithCacheKey sets the currently used cache key when generating a SQL string.
+// By setting a different cache key, a previous generated SQL query is
+// accessible again. New cache keys allow to change the generated query of the
+// current object. E.g. different where clauses or different row counts in
+// INSERT ... VALUES statements. The empty string defines the default cache key.
+// If the `args` argument contains values, then fmt.Sprintf gets used.
+func (b *Select) WithCacheKey(key string, args ...interface{}) *Select {
+	b.withCacheKey(key, args...)
 	return b
 }
 

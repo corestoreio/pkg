@@ -119,10 +119,10 @@ func validateInsertingBarack(t *testing.T, c *ConnPool, lastInsertID int64) {
 	_, err := c.SelectFrom("dml_people").Star().Where(Column("id").Int64(lastInsertID)).WithArgs().Load(context.TODO(), &person)
 	assert.NoError(t, err)
 
-	assert.Equal(t, lastInsertID, int64(person.ID))
-	assert.Equal(t, "Barack", person.Name)
-	assert.Equal(t, true, person.Email.Valid)
-	assert.Equal(t, "obama@whitehouse.gov", person.Email.String)
+	assert.Exactly(t, lastInsertID, int64(person.ID))
+	assert.Exactly(t, "Barack", person.Name)
+	assert.Exactly(t, true, person.Email.Valid)
+	assert.Exactly(t, "obama@whitehouse.gov", person.Email.String)
 }
 
 func TestInsertReal_OnDuplicateKey(t *testing.T) {
@@ -151,8 +151,8 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 		var p dmlPerson
 		_, err = s.SelectFrom("dml_people").Star().Where(Column("id").Int64(inID)).WithArgs().Load(context.TODO(), &p)
 		assert.NoError(t, err)
-		assert.Equal(t, "Pike", p.Name)
-		assert.Equal(t, "pikes@peak.co", p.Email.String)
+		assert.Exactly(t, "Pike", p.Name)
+		assert.Exactly(t, "pikes@peak.co", p.Email.String)
 	}
 
 	p.Name = "-"
@@ -175,8 +175,8 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 		var p dmlPerson
 		_, err = s.SelectFrom("dml_people").Star().Where(Column("id").Int64(inID)).WithArgs().Load(context.TODO(), &p)
 		assert.NoError(t, err)
-		assert.Equal(t, "Pik3", p.Name)
-		assert.Equal(t, "pikes@peak.com", p.Email.String)
+		assert.Exactly(t, "Pik3", p.Name)
+		assert.Exactly(t, "pikes@peak.com", p.Email.String)
 	}
 }
 
@@ -494,34 +494,35 @@ func TestInsert_Pair(t *testing.T) {
 func TestInsert_DisableBuildCache(t *testing.T) {
 	t.Parallel()
 
-	ins := NewInsert("a").AddColumns("b", "c").
-		OnDuplicateKey().DisableBuildCache().WithArgs()
+	insA := NewInsert("a").AddColumns("b", "c").
+		OnDuplicateKey().WithArgs()
 
 	const cachedSQLPlaceHolder = "INSERT INTO `a` (`b`,`c`) VALUES (?,?),(?,?),(?,?) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)"
 	t.Run("without interpolate", func(t *testing.T) {
 		for i := 0; i < 3; i++ {
-			sql, args, err := ins.Raw(1, 2, 3, 4, 5, 6).ToSQL()
+			sql, args, err := insA.Raw(1, 2, 3, 4, 5, 6).ToSQL()
 			assert.NoError(t, err)
-			assert.Equal(t, cachedSQLPlaceHolder, sql)
-			assert.Equal(t, []interface{}{1, 2, 3, 4, 5, 6}, args)
-			assert.Equal(t, "INSERT INTO `a` (`b`,`c`) VALUES  ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)",
-				string(ins.base.cachedSQL))
-			ins.Reset()
+			assert.Exactly(t, cachedSQLPlaceHolder, sql)
+			assert.Exactly(t, []interface{}{1, 2, 3, 4, 5, 6}, args)
+			insA.Reset()
 		}
+		assert.Exactly(t, []string{"", "INSERT INTO `a` (`b`,`c`) VALUES  ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)"},
+			insA.CachedQueries())
 	})
 
 	t.Run("with interpolate", func(t *testing.T) {
-		insA := ins.Reset().Interpolate()
+		insA := insA.Reset().Interpolate()
 		insA.Int(1).Int(2).Int(3).Int(4).Int(5).Int(6)
 
 		const cachedSQLInterpolated = "INSERT INTO `a` (`b`,`c`) VALUES (1,2),(3,4),(5,6) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)"
 		for i := 0; i < 3; i++ {
 			sql, args, err := insA.ToSQL()
 			assert.NoError(t, err)
-			assert.Equal(t, cachedSQLInterpolated, sql)
+			assert.Exactly(t, cachedSQLInterpolated, sql)
 			assert.Nil(t, args)
-			assert.Equal(t, "INSERT INTO `a` (`b`,`c`) VALUES  ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)", string(ins.base.cachedSQL))
 		}
+		assert.Exactly(t, []string{"", "INSERT INTO `a` (`b`,`c`) VALUES  ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)"},
+			insA.CachedQueries())
 	})
 }
 

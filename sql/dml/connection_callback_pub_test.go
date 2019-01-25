@@ -59,12 +59,12 @@ func TestDriverCallBack(t *testing.T) {
 		))
 
 	ctx := context.TODO()
-	sel := db.SelectFrom("dml_people").Star().Where(dml.Column("name").PlaceHolder()).DisableBuildCache()
+	sel := db.SelectFrom("dml_people").Star().Where(dml.Column("name").PlaceHolder()) // TODO fix me .DisableBuildCache()
 	var ppl dmlPerson
 	_, err := sel.WithArgs().String("Bernd").Load(ctx, &ppl)
 	assert.NoError(t, err)
 
-	_, err = sel.SQLNoCache().WithArgs().Interpolate().String("Das Brot").Load(context.Background(), &ppl)
+	_, err = sel.WithCacheKey("NoCache").SQLNoCache().WithArgs().Interpolate().String("Das Brot").Load(context.Background(), &ppl)
 	assert.NoError(t, err)
 
 	con, err := db.Conn(ctx)
@@ -80,8 +80,8 @@ func TestDriverCallBack(t *testing.T) {
 	assert.NoError(t, con.Close())
 
 	dmltest.Close(t, db)
-	//t.Log(buf.String())
-	//ioutil.WriteFile("testdata/TestDriverCallBack.want.txt", buf.Bytes(), 0644)
+	// t.Log(buf.String())
+	// ioutil.WriteFile("testdata/TestDriverCallBack.want2.txt", buf.Bytes(), 0644)
 	wantLog, err := ioutil.ReadFile("testdata/TestDriverCallBack.want.txt")
 	assert.NoError(t, err)
 	if !bytes.Equal(wantLog, buf.Bytes()) {

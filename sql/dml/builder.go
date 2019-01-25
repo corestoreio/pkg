@@ -18,12 +18,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 	"sync"
 	"unicode/utf8"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
 const (
@@ -62,13 +64,6 @@ func (s QuerySQL) ToSQL() (string, []interface{}, error) {
 // queryBuilder must support thread safety when writing and reading the cache.
 type queryBuilder interface {
 	toSQL(w *bytes.Buffer, placeHolders []string) ([]string, error)
-	// writeBuildCache gets called even when `sql` is nil, because
-	// qualifiedColumns might contain columns.
-	// Maybe this should be an io.Writer, but the overhead is pretty huge.
-	writeBuildCache(sql []byte, qualifiedColumns []string)
-	// readBuildCache returns the cached SQL string.
-	// Maybe this should be an io.Reader, but the overhead is pretty huge.
-	readBuildCache() (sql []byte)
 }
 
 // builderCommon
@@ -96,32 +91,40 @@ type builderCommon struct {
 	// dedicated database session) or a *sql.Tx (an in-progress database
 	// transaction).
 	DB QueryExecPreparer
-	// IsBuildCacheDisabled disable the caching and destroying of the DML statement objects
-	IsBuildCacheDisabled bool // see DisableBuildCache()
 	// EstimatedCachedSQLSize specifies the estimated size in bytes of the final
 	// SQL string. This value gets used during SQL string building process to
 	// reduce the allocations and speed up the process. Default Value is xxxx
 	// Bytes.
 	EstimatedCachedSQLSize uint16
-
+	CacheKey               string
+	SingleUseCacheKey      bool // TODO implement, should panic when setting the same cahce key the 2nd time
 	// cachedSQL contains the final SQL string which gets send to the server.
-	cachedSQL []byte
+	// Using the CacheKey allows a dml type (insert,update,select ... )
+	// to build multiple different versions from object.
+	cachedSQL map[string]string
 	// qualifiedColumns gets collected before calling ToSQL, and clearing the all
 	// pointers, to know which columns need values from the QualifiedRecords
 	qualifiedColumns []string
 }
 
-// estimatedCachedSQLSize 1024 bytes value got retrieved by analyzing and
-// reviewing some M2 SQL queries.
-const estimatedCachedSQLSize = 1024
+func (bc *builderCommon) withCacheKey(key string, args ...interface{}) {
+	if len(args) > 0 {
+		key = fmt.Sprintf(key, args...)
+	}
 
-// rwLocker exists only to avoid complaints of `go vet`. It throws false positive
-// warnings. Fix later, somehow.
-type rwLocker interface {
-	RLock()
-	RUnlock()
-	Lock()
-	Unlock()
+	bc.CacheKey = key
+}
+
+func (bc *builderCommon) CachedQueries(queries ...string) []string {
+	keys := make([]string, 0, len(bc.cachedSQL))
+	for key := range bc.cachedSQL {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		queries = append(queries, k, bc.cachedSQL[k])
+	}
+	return queries
 }
 
 // BuilderBase contains fields which all SQL query builder have in common, the
@@ -157,50 +160,42 @@ func (bb BuilderBase) Clone() BuilderBase {
 // called by toSQL.
 // buildArgsAndSQL generates the SQL string and its place holders. Takes care of
 // caching. It returns the string with placeholders.
-func (bb *BuilderBase) buildToSQL(qb queryBuilder) ([]byte, error) {
+func (bb *BuilderBase) buildToSQL(qb queryBuilder) (string, error) {
 	if bb.ärgErr != nil {
-		return nil, errors.WithStack(bb.ärgErr)
+		return "", errors.WithStack(bb.ärgErr)
 	}
-	rawSQL := qb.readBuildCache()
-	if rawSQL == nil || bb.IsBuildCacheDisabled {
-
-		// Pre allocating that with a decent size, can speed up writing due to
-		// less re-slicing / buffer.Grow.
-		size := bb.EstimatedCachedSQLSize
-		if size == 0 {
-			size = estimatedCachedSQLSize
-		}
-		buf := bytes.NewBuffer(make([]byte, 0, size))
+	rawSQL, ok := bb.cachedSQL[bb.CacheKey]
+	if !ok {
+		buf := bufferpool.Get()
+		defer bufferpool.Put(buf)
 		qualifiedColumns, err := qb.toSQL(buf, []string{})
 		if err != nil {
-			return nil, errors.WithStack(err)
+			return "", errors.WithStack(err)
 		}
-		var writeCacheSQL []byte
-		if !bb.IsBuildCacheDisabled {
-			writeCacheSQL = buf.Bytes()
+		rawSQL = buf.String()
+		bb.qualifiedColumns = qualifiedColumns
+		if bb.cachedSQL == nil {
+			bb.cachedSQL = make(map[string]string, 20)
 		}
-		qb.writeBuildCache(writeCacheSQL, qualifiedColumns)
-		rawSQL = buf.Bytes()
+		bb.cachedSQL[bb.CacheKey] = rawSQL
 	}
 	return rawSQL, nil
 }
 
 func (bb *BuilderBase) prepare(ctx context.Context, db Preparer, qb queryBuilder, source rune) (_ *Stmt, err error) {
-	var rawQuery []byte
-
 	if in, ok := qb.(*Insert); ok && in != nil && !in.IsBuildValues {
 		return nil, errors.NotAcceptable.Newf("[dml] did you forgot to call .BuildValues()?")
 	}
 
-	rawQuery, err = bb.buildToSQL(qb)
+	rawQuery, err := bb.buildToSQL(qb)
 	if bb.Log != nil && bb.Log.IsDebug() {
-		defer log.WhenDone(bb.Log).Debug("Prepare", log.Err(err), log.String("sql", string(rawQuery)))
+		defer log.WhenDone(bb.Log).Debug("Prepare", log.Err(err), log.String("sql", rawQuery))
 	}
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	sqlStmt, err := db.PrepareContext(ctx, string(rawQuery))
+	sqlStmt, err := db.PrepareContext(ctx, rawQuery)
 	if err != nil {
 		return nil, errors.Wrapf(err, "[dml] Prepare.PrepareContext with query %q", rawQuery)
 	}
@@ -209,15 +204,11 @@ func (bb *BuilderBase) prepare(ctx context.Context, db Preparer, qb queryBuilder
 		base: bb.builderCommon,
 		Stmt: sqlStmt,
 	}
-	stmt.base.cachedSQL = rawQuery
+	stmt.base.CacheKey = bb.CacheKey
+	stmt.base.cachedSQL[bb.CacheKey] = rawQuery
 	stmt.base.DB = stmtWrapper{stmt: sqlStmt}
 	stmt.base.source = source
 	return stmt, nil
-}
-
-func (bb *BuilderBase) readBuildCache() (sql []byte) {
-	sql = bb.cachedSQL
-	return sql
 }
 
 // withArtisan builds the SQl string and creates a new Artisan object for
@@ -225,14 +216,18 @@ func (bb *BuilderBase) readBuildCache() (sql []byte) {
 func (bb *BuilderBase) withArtisan(qb queryBuilder) *Artisan {
 	var args [defaultArgumentsCapacity]argument
 	bb.rwmu.Lock()
-	sqlBytes, err := bb.buildToSQL(qb) // sqlBytes owned by buildToSQL
+
+	// TODO skip build SQL when cache key exsits in map
+
+	_, err := bb.buildToSQL(qb) // // build and set internal state
 	a := Artisan{
 		base:      bb.builderCommon,
 		arguments: args[:0],
 	}
+	if err != nil {
+		a.base.ärgErr = errors.WithStack(err)
+	}
 	bb.rwmu.Unlock()
-	a.base.cachedSQL = sqlBytes
-	a.base.ärgErr = errors.WithStack(err)
 	return &a
 }
 
@@ -268,11 +263,11 @@ func (b *BuilderConditional) join(j string, t id, on ...*Condition) {
 	b.Joins = append(b.Joins, jf)
 }
 
-func sqlObjToString(rawSQL []byte, err error) string {
+func sqlObjToString(rawSQL string, err error) string {
 	if err != nil {
 		return fmt.Sprintf("[dml] String Error: %+v", err)
 	}
-	return string(rawSQL)
+	return rawSQL
 }
 
 // String returns a string representing a preprocessed, interpolated, query.
@@ -444,11 +439,4 @@ func writeInsertPlaceholders(buf *bytes.Buffer, rowCount, columnCount uint) {
 			buf.WriteByte(')')
 		}
 	}
-}
-
-func bufTrySizeByResliceOrNew(buf []byte, size int) []byte {
-	if size <= cap(buf) {
-		return buf[:size]
-	}
-	return make([]byte, size)
 }

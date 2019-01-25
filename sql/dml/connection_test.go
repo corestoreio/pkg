@@ -41,10 +41,10 @@ func TestTransactionReal(t *testing.T) {
 	_, err = tx.SelectFrom("dml_people").Star().Where(Column("id").Int64(lastInsertID)).WithArgs().Load(context.TODO(), &person)
 	assert.NoError(t, err)
 
-	assert.Equal(t, lastInsertID, int64(person.ID))
-	assert.Equal(t, "Barack", person.Name)
-	assert.Equal(t, true, person.Email.Valid)
-	assert.Equal(t, "obama@whitehouse.gov", person.Email.String)
+	assert.Exactly(t, lastInsertID, int64(person.ID))
+	assert.Exactly(t, "Barack", person.Name)
+	assert.Exactly(t, true, person.Email.Valid)
+	assert.Exactly(t, "obama@whitehouse.gov", person.Email.String)
 
 	err = tx.Commit()
 	assert.NoError(t, err)
@@ -61,7 +61,7 @@ func TestTransactionRollbackReal(t *testing.T) {
 	var person dmlPerson
 	_, err = tx.SelectFrom("dml_people").Star().Where(Column("email").PlaceHolder()).WithArgs().Load(context.TODO(), &person, "SirGeorge@GoIsland.com")
 	assert.NoError(t, err)
-	assert.Equal(t, "Sir George", person.Name)
+	assert.Exactly(t, "Sir George", person.Name)
 
 	err = tx.Rollback()
 	assert.NoError(t, err)

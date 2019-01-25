@@ -111,8 +111,8 @@ func compareToSQL(
 	}
 
 	if wantSQLPlaceholders != "" {
-		assert.Equal(t, wantSQLPlaceholders, sqlStr, "Placeholder SQL strings do not match")
-		assert.Equal(t, wantArgs, args, "Placeholder Arguments do not match")
+		assert.Exactly(t, wantSQLPlaceholders, sqlStr, "Placeholder SQL strings do not match")
+		assert.Exactly(t, wantArgs, args, "Placeholder Arguments do not match")
 	}
 
 	if wantSQLInterpolated == "" {
@@ -132,7 +132,7 @@ func compareToSQL(
 	} else {
 		assert.ErrorIsKind(t, wantErrKind, err)
 	}
-	assert.Equal(t, wantSQLInterpolated, sqlStr, "Interpolated SQL strings do not match")
+	assert.Exactly(t, wantSQLInterpolated, sqlStr, "Interpolated SQL strings do not match")
 }
 
 func ifNotEqualPanic(have, want interface{}, msg ...string) {

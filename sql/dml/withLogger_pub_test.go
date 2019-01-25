@@ -47,15 +47,14 @@ func TestWithLogger_Insert(t *testing.T) {
 	)
 	assert.NoError(t, rConn.Options(dml.WithLogger(lg, uniqueIDFunc)))
 
-	t.Run("ConnPool", func(t *testing.T) {
-		d := rConn.InsertInto("dml_people").Replace().AddColumns("email", "name").DisableBuildCache()
+	t.Run("Conn1Pool", func(t *testing.T) {
+		d := rConn.InsertInto("dml_people").Replace().AddColumns("email", "name") // TODO fix me .DisableBuildCache()
 
 		t.Run("Prepare", func(t *testing.T) {
 			defer buf.Reset()
 			stmt, err := d.BuildValues().Prepare(context.TODO())
 			assert.NoError(t, err)
 			defer dmltest.Close(t, stmt)
-			d.IsBuildValues = false
 
 			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ04\" insert_id: \"UNIQ08\" table: \"dml_people\" duration: 0 error: \"<nil>\" sql: \"REPLACE /*ID$UNIQ08*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\"\n",
 				buf.String())
@@ -82,11 +81,11 @@ func TestWithLogger_Insert(t *testing.T) {
 		})
 	})
 
-	t.Run("Conn", func(t *testing.T) {
+	t.Run("Conn2", func(t *testing.T) {
 		conn, err := rConn.Conn(context.TODO())
 		assert.NoError(t, err)
 
-		oIns := conn.InsertInto("dml_people").Replace().AddColumns("email", "name").DisableBuildCache()
+		oIns := conn.InsertInto("dml_people").Replace().AddColumns("email", "name").BuildValues()
 
 		t.Run("Exec", func(t *testing.T) {
 			defer buf.Reset()
@@ -100,9 +99,9 @@ func TestWithLogger_Insert(t *testing.T) {
 		t.Run("Prepare", func(t *testing.T) {
 			defer buf.Reset()
 			stmt, err := oIns.BuildValues().Prepare(context.TODO())
-			oIns.IsBuildValues = false
+			// oIns.IsBuildValues = false
 			assert.NoError(t, err)
-			defer stmt.Close()
+			defer dmltest.Close(t, stmt)
 
 			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" insert_id: \"UNIQ24\" table: \"dml_people\" duration: 0 error: \"<nil>\" sql: \"REPLACE /*ID$UNIQ24*/ INTO `dml_people` (`email`,`name`) VALUES (?,?)\"\n",
 				buf.String())
@@ -111,9 +110,9 @@ func TestWithLogger_Insert(t *testing.T) {
 		t.Run("Prepare Exec", func(t *testing.T) {
 			defer buf.Reset()
 			stmt, err := oIns.BuildValues().Prepare(context.TODO())
-			oIns.IsBuildValues = false
+			// oIns.IsBuildValues = false
 			assert.NoError(t, err)
-			defer stmt.Close()
+			defer dmltest.Close(t, stmt)
 
 			_, err = stmt.WithArgs().ExecContext(context.TODO(), "mail@e.de", "Hans")
 			assert.NoError(t, err)
@@ -202,8 +201,7 @@ func TestWithLogger_Delete(t *testing.T) {
 			defer buf.Reset()
 			stmt, err := d.Prepare(context.TODO())
 			assert.NoError(t, err)
-			defer stmt.Close()
-
+			defer dmltest.Close(t, stmt)
 			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQUEID01\" delete_id: \"UNIQUEID02\" table: \"dml_people\" duration: 0 error: \"<nil>\" sql: \"DELETE /*ID$UNIQUEID02*/ FROM `dml_people` WHERE (`id` >= 34.56)\"\n",
 				buf.String())
 		})
@@ -242,7 +240,7 @@ func TestWithLogger_Delete(t *testing.T) {
 
 			stmt, err := d.Prepare(context.TODO())
 			assert.NoError(t, err)
-			defer stmt.Close()
+			defer dmltest.Close(t, stmt)
 
 			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQUEID01\" conn_id: \"UNIQUEID05\" delete_id: \"UNIQUEID06\" table: \"dml_people\" duration: 0 error: \"<nil>\" sql: \"DELETE /*ID$UNIQUEID06*/ FROM `dml_people` WHERE (`id` >= ?)\"\n",
 				buf.String())
@@ -253,7 +251,7 @@ func TestWithLogger_Delete(t *testing.T) {
 
 			stmt, err := d.Prepare(context.TODO())
 			assert.NoError(t, err)
-			defer stmt.Close()
+			defer dmltest.Close(t, stmt)
 
 			_, err = stmt.WithArgs().ExecContext(context.TODO(), 41.57)
 			assert.NoError(t, err)
@@ -606,7 +604,7 @@ func TestWithLogger_Union(t *testing.T) {
 			defer buf.Reset()
 			stmt, err := u.Prepare(context.TODO())
 			assert.NoError(t, err)
-			defer stmt.Close()
+			defer dmltest.Close(t, stmt)
 
 			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ01\" union_id: \"UNIQ02\" tables: \"dml_people, dml_people\" duration: 0 error: \"<nil>\" sql: \"(SELECT /*ID$UNIQ02*/ `name`, `email` AS `email` FROM `dml_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8)))\"\n",
 				buf.String())
@@ -662,7 +660,7 @@ func TestWithLogger_Union(t *testing.T) {
 
 			stmt, err := u.Prepare(context.TODO())
 			assert.NoError(t, err)
-			defer stmt.Close()
+			defer dmltest.Close(t, stmt)
 
 			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" union_id: \"UNIQ06\" tables: \"dml_people, dml_people\" duration: 0 error: \"<nil>\" sql: \"(SELECT /*ID$UNIQ06*/ `name`, `email` AS `email` FROM `dml_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (61,81)))\"\n",
 				buf.String())
@@ -739,7 +737,7 @@ func TestWithLogger_Update(t *testing.T) {
 			defer buf.Reset()
 			stmt, err := d.Prepare(context.TODO())
 			assert.NoError(t, err)
-			defer stmt.Close()
+			defer dmltest.Close(t, stmt)
 
 			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ03\" update_id: \"UNIQ06\" table: \"dml_people\" duration: 0 error: \"<nil>\" sql: \"UPDATE /*ID$UNIQ06*/ `dml_people` SET `email`='new@email.com' WHERE (`id` >= 78.31)\"\n",
 				buf.String())
@@ -781,7 +779,7 @@ func TestWithLogger_Update(t *testing.T) {
 
 			stmt, err := d.Prepare(context.TODO())
 			assert.NoError(t, err)
-			defer stmt.Close()
+			defer dmltest.Close(t, stmt)
 
 			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" update_id: \"UNIQ18\" table: \"dml_people\" duration: 0 error: \"<nil>\" sql: \"UPDATE /*ID$UNIQ18*/ `dml_people` SET `email`='new@email.com' WHERE (`id` >= 21.56)\"\n",
 				buf.String())
@@ -792,7 +790,7 @@ func TestWithLogger_Update(t *testing.T) {
 
 			stmt, err := d.Prepare(context.TODO())
 			assert.NoError(t, err)
-			defer stmt.Close()
+			defer dmltest.Close(t, stmt)
 
 			_, err = stmt.WithArgs().ExecContext(context.TODO())
 			assert.NoError(t, err)
@@ -884,7 +882,7 @@ func TestWithLogger_WithCTE(t *testing.T) {
 			defer buf.Reset()
 			stmt, err := wth.Prepare(context.TODO())
 			assert.NoError(t, err)
-			defer stmt.Close()
+			defer dmltest.Close(t, stmt)
 
 			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ02\" with_cte_id: \"UNIQ04\" tables: \"zehTeEh\" duration: 0 error: \"<nil>\" sql: \"WITH /*ID$UNIQ04*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dml_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\"\n",
 				buf.String())
@@ -945,7 +943,7 @@ func TestWithLogger_WithCTE(t *testing.T) {
 
 			stmt, err := u.Prepare(context.TODO())
 			assert.NoError(t, err)
-			defer stmt.Close()
+			defer dmltest.Close(t, stmt)
 
 			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" with_cte_id: \"UNIQ12\" tables: \"zehTeEh\" duration: 0 error: \"<nil>\" sql: \"WITH /*ID$UNIQ12*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dml_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\"\n",
 				buf.String())

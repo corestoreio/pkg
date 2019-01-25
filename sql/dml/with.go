@@ -205,23 +205,14 @@ func (b *With) ToSQL() (string, []interface{}, error) {
 	return string(rawSQL), nil, nil
 }
 
-func (b *With) writeBuildCache(sql []byte, qualifiedColumns []string) {
-	b.qualifiedColumns = qualifiedColumns
-	if !b.IsBuildCacheDisabled {
-		b.Subclauses = nil
-		b.TopLevel.Select = nil
-		b.TopLevel.Union = nil
-		b.TopLevel.Update = nil
-		b.TopLevel.Delete = nil
-		b.cachedSQL = sql
-	}
-}
-
-// DisableBuildCache if enabled it does not cache the SQL string as a final
-// rendered byte slice. Allows you to rebuild the query with different
-// statements.
-func (b *With) DisableBuildCache() *With {
-	b.IsBuildCacheDisabled = true
+// WithCacheKey sets the currently used cache key when generating a SQL string.
+// By setting a different cache key, a previous generated SQL query is
+// accessible again. New cache keys allow to change the generated query of the
+// current object. E.g. different where clauses or different row counts in
+// INSERT ... VALUES statements. The empty string defines the default cache key.
+// If the `args` argument contains values, then fmt.Sprintf gets used.
+func (b *With) WithCacheKey(key string, args ...interface{}) *With {
+	b.withCacheKey(key, args...)
 	return b
 }
 
@@ -233,7 +224,7 @@ func (b *With) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err er
 		w.WriteString("RECURSIVE ")
 	}
 
-	//for i, ls := 0, len(b.Subclauses); i < ls && err == nil; i++ {
+	// for i, ls := 0, len(b.Subclauses); i < ls && err == nil; i++ {
 	//	sc := b.Subclauses[i]
 	//	}
 	for i, sc := range b.Subclauses {
@@ -252,13 +243,13 @@ func (b *With) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err er
 		w.WriteString(" AS (")
 		switch {
 		case sc.Select != nil:
-			sc.Select.IsBuildCacheDisabled = b.IsBuildCacheDisabled
+			sc.Select.CacheKey = b.CacheKey
 			placeHolders, err = sc.Select.toSQL(w, placeHolders)
 			if err != nil {
 				return nil, errors.WithStack(err)
 			}
 		case sc.Union != nil:
-			sc.Union.IsBuildCacheDisabled = b.IsBuildCacheDisabled
+			sc.Union.CacheKey = b.CacheKey
 			placeHolders, err = sc.Union.toSQL(w, placeHolders)
 			if err != nil {
 				return nil, errors.WithStack(err)
@@ -273,22 +264,22 @@ func (b *With) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err er
 
 	switch {
 	case b.TopLevel.Select != nil:
-		b.TopLevel.Select.IsBuildCacheDisabled = b.IsBuildCacheDisabled
+		b.TopLevel.Select.CacheKey = b.CacheKey
 		placeHolders, err = b.TopLevel.Select.toSQL(w, placeHolders)
 		return placeHolders, errors.WithStack(err)
 
 	case b.TopLevel.Union != nil:
-		b.TopLevel.Union.IsBuildCacheDisabled = b.IsBuildCacheDisabled
+		b.TopLevel.Union.CacheKey = b.CacheKey
 		placeHolders, err = b.TopLevel.Union.toSQL(w, placeHolders)
 		return placeHolders, errors.WithStack(err)
 
 	case b.TopLevel.Update != nil:
-		b.TopLevel.Update.IsBuildCacheDisabled = b.IsBuildCacheDisabled
+		b.TopLevel.Update.CacheKey = b.CacheKey
 		placeHolders, err = b.TopLevel.Update.toSQL(w, placeHolders)
 		return placeHolders, errors.WithStack(err)
 
 	case b.TopLevel.Delete != nil:
-		b.TopLevel.Delete.IsBuildCacheDisabled = b.IsBuildCacheDisabled
+		b.TopLevel.Delete.CacheKey = b.CacheKey
 		placeHolders, err = b.TopLevel.Delete.toSQL(w, placeHolders)
 		return placeHolders, errors.WithStack(err)
 	}

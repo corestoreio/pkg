@@ -333,8 +333,8 @@ func writeInterpolateBytes(buf *bytes.Buffer, sql []byte, args arguments) error 
 // replaces them with a ? placeholder. It does not remove duplicates because
 // those are needed for the amount of arguments to get. The extracted strings
 // get appended to qualifiedColumns argument.
-func extractReplaceNamedArgs(sql []byte, qualifiedColumns []string) (_ []byte, _ []string, found bool) {
-	if bytes.IndexByte(sql, namedArgStartByte) == -1 {
+func extractReplaceNamedArgs(sql string, qualifiedColumns []string) (_ string, _ []string, found bool) {
+	if strings.IndexByte(sql, namedArgStartByte) == -1 {
 		return sql, qualifiedColumns, found
 	}
 	lSQL := len(sql)
@@ -344,7 +344,7 @@ func extractReplaceNamedArgs(sql []byte, qualifiedColumns []string) (_ []byte, _
 	quoteStart := false
 	pos := 0
 	for pos < len(sql) {
-		r, w := utf8.DecodeRune(sql[pos:])
+		r, w := utf8.DecodeRuneInString(sql[pos:])
 		pos += w
 
 		switch {
@@ -376,7 +376,7 @@ func extractReplaceNamedArgs(sql []byte, qualifiedColumns []string) (_ []byte, _
 		}
 	}
 	bufferpool.Put(buf)
-	return newSQL.Bytes(), qualifiedColumns, found
+	return newSQL.String(), qualifiedColumns, found
 }
 
 func isNamedArg(placeHolder string) (ret bool) {

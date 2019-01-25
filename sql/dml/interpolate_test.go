@@ -74,21 +74,21 @@ func TestInterpolate_Nil(t *testing.T) {
 	t.Parallel()
 	t.Run("one nil", func(t *testing.T) {
 		ip := Interpolate("SELECT * FROM x WHERE a = ?").Null()
-		assert.Equal(t, "SELECT * FROM x WHERE a = NULL", ip.String())
+		assert.Exactly(t, "SELECT * FROM x WHERE a = NULL", ip.String())
 
 		ip = Interpolate("SELECT * FROM x WHERE a = ?").Null()
-		assert.Equal(t, "SELECT * FROM x WHERE a = NULL", ip.String())
+		assert.Exactly(t, "SELECT * FROM x WHERE a = NULL", ip.String())
 	})
 	t.Run("two nil", func(t *testing.T) {
 		ip := Interpolate("SELECT * FROM x WHERE a BETWEEN ? AND ?").Null().Null()
-		assert.Equal(t, "SELECT * FROM x WHERE a BETWEEN NULL AND NULL", ip.String())
+		assert.Exactly(t, "SELECT * FROM x WHERE a BETWEEN NULL AND NULL", ip.String())
 
 		ip = Interpolate("SELECT * FROM x WHERE a BETWEEN ? AND ?").Null().Null()
-		assert.Equal(t, "SELECT * FROM x WHERE a BETWEEN NULL AND NULL", ip.String())
+		assert.Exactly(t, "SELECT * FROM x WHERE a BETWEEN NULL AND NULL", ip.String())
 	})
 	t.Run("one nil between two values", func(t *testing.T) {
 		ip := Interpolate("SELECT * FROM x WHERE a BETWEEN ? AND ? OR Y=?").Int(1).Null().Str("X")
-		assert.Equal(t, "SELECT * FROM x WHERE a BETWEEN 1 AND NULL OR Y='X'", ip.String())
+		assert.Exactly(t, "SELECT * FROM x WHERE a BETWEEN 1 AND NULL OR Y='X'", ip.String())
 	})
 }
 
@@ -588,7 +588,7 @@ func TestExtractNamedArgs(t *testing.T) {
 
 	runner := func(haveSQL, wantSQL string, wantQualifiedColumns ...string) func(*testing.T) {
 		return func(t *testing.T) {
-			gotSQL, qualifiedColumns, _ := extractReplaceNamedArgs([]byte(haveSQL), nil)
+			gotSQL, qualifiedColumns, _ := extractReplaceNamedArgs(haveSQL, nil)
 			assert.Exactly(t, wantSQL, string(gotSQL))
 			assert.Exactly(t, wantQualifiedColumns, qualifiedColumns)
 		}

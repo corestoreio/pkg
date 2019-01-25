@@ -198,18 +198,14 @@ func (b *Show) ToSQL() (string, []interface{}, error) {
 	return string(rawSQL), nil, nil
 }
 
-func (b *Show) writeBuildCache(sql []byte, qualifiedColumns []string) {
-	b.qualifiedColumns = qualifiedColumns
-	if !b.IsBuildCacheDisabled {
-		b.cachedSQL = sql
-	}
-}
-
-// DisableBuildCache if enabled it does not cache the SQL string as a final
-// rendered byte slice. Allows you to rebuild the query with different
-// statements.
-func (b *Show) DisableBuildCache() *Show {
-	b.IsBuildCacheDisabled = true
+// WithCacheKey sets the currently used cache key when generating a SQL string.
+// By setting a different cache key, a previous generated SQL query is
+// accessible again. New cache keys allow to change the generated query of the
+// current object. E.g. different where clauses or different row counts in
+// INSERT ... VALUES statements. The empty string defines the default cache key.
+// If the `args` argument contains values, then fmt.Sprintf gets used.
+func (b *Show) WithCacheKey(key string, args ...interface{}) *Show {
+	b.withCacheKey(key, args...)
 	return b
 }
 

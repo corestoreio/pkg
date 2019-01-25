@@ -180,7 +180,7 @@ func TestSelect_Load(t *testing.T) {
 				t.Fatalf("%+v", err)
 			}
 		}
-		assert.Equal(t, "{\"ConfigID\":2,\"Scope\":\"default\",\"Path\":\"web/unsecure/base_url\",\"Value\":\"http://mgeto2.local/\"}\n{\"ConfigID\":3,\"Scope\":\"website\",\"ScopeID\":11,\"Path\":\"general/locale/code\",\"Value\":\"en_US\"}\n{\"ConfigID\":4,\"Scope\":\"default\",\"Path\":\"general/locale/timezone\",\"Value\":\"Europe/Berlin\"}\n{\"ConfigID\":5,\"Scope\":\"default\",\"Path\":\"currency/options/base\",\"Value\":\"EUR\"}\n{\"ConfigID\":15,\"Scope\":\"store\",\"ScopeID\":33,\"Path\":\"design/head/includes\",\"Value\":\"\\u003clink  rel=\\\"stylesheet\\\" type=\\\"text/css\\\" href=\\\"{{MEDIA_URL}}styles.css\\\" /\\u003e\"}\n{\"ConfigID\":16,\"Scope\":\"default\",\"Path\":\"admin/security/use_case_sensitive_login\",\"Value\":null}\n{\"ConfigID\":17,\"Scope\":\"default\",\"Path\":\"admin/security/session_lifetime\",\"Value\":\"90000\"}\n",
+		assert.Exactly(t, "{\"ConfigID\":2,\"Scope\":\"default\",\"Path\":\"web/unsecure/base_url\",\"Value\":\"http://mgeto2.local/\"}\n{\"ConfigID\":3,\"Scope\":\"website\",\"ScopeID\":11,\"Path\":\"general/locale/code\",\"Value\":\"en_US\"}\n{\"ConfigID\":4,\"Scope\":\"default\",\"Path\":\"general/locale/timezone\",\"Value\":\"Europe/Berlin\"}\n{\"ConfigID\":5,\"Scope\":\"default\",\"Path\":\"currency/options/base\",\"Value\":\"EUR\"}\n{\"ConfigID\":15,\"Scope\":\"store\",\"ScopeID\":33,\"Path\":\"design/head/includes\",\"Value\":\"\\u003clink  rel=\\\"stylesheet\\\" type=\\\"text/css\\\" href=\\\"{{MEDIA_URL}}styles.css\\\" /\\u003e\"}\n{\"ConfigID\":16,\"Scope\":\"default\",\"Path\":\"admin/security/use_case_sensitive_login\",\"Value\":null}\n{\"ConfigID\":17,\"Scope\":\"default\",\"Path\":\"admin/security/session_lifetime\",\"Value\":\"90000\"}\n",
 			buf.String())
 	})
 
@@ -201,7 +201,7 @@ func TestSelect_Load(t *testing.T) {
 		assert.NoError(t, err)
 
 		// wrong result set for correct query. maybe some one can fix the returned data.
-		assert.Equal(t, []int64{2, 3, 4, 16, 17}, dst)
+		assert.Exactly(t, []int64{2, 3, 4, 16, 17}, dst)
 	})
 	t.Run("success In with two ARGs", func(t *testing.T) {
 		dbc, dbMock := dmltest.MockDB(t)
@@ -219,7 +219,7 @@ func TestSelect_Load(t *testing.T) {
 		dst, err := s.WithArgs().Int64s(199, 217).ExpandPlaceHolders().LoadInt64s(context.TODO(), dst)
 		assert.NoError(t, err)
 
-		assert.Equal(t, []int64{2, 3, 4, 16, 17}, dst)
+		assert.Exactly(t, []int64{2, 3, 4, 16, 17}, dst)
 	})
 
 	t.Run("row error", func(t *testing.T) {
@@ -476,7 +476,7 @@ func TestSelect_Prepare(t *testing.T) {
 func TestSelect_Argument_Iterate(t *testing.T) {
 	dbc := createRealSession(t)
 	defer dmltest.Close(t, dbc)
-	defer dmltest.SQLDumpLoad(t, "testdata/person_ffaker*", nil)()
+	defer dmltest.SQLDumpLoad(t, "testdata/person_ffaker*", nil).Deferred()
 
 	rowCount, found, err := dbc.SelectFrom("dml_fake_person").Count().WithArgs().LoadNullInt64(context.Background())
 	assert.NoError(t, err)
@@ -538,7 +538,7 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 					if err := fp.MapColumns(cm); err != nil {
 						return err
 					}
-					//fmt.Printf("%d: %#v\n", i, fp)
+					// fmt.Printf("%d: %#v\n", i, fp)
 					if fp.Weight < 1 || fp.Height < 1 || fp.ID < i || fp.UpdateTime.IsZero() {
 						return errors.NotValid.Newf("failed to load fakePerson: one of the four fields (id,weight,height,update_time) is empty: %#v", fp)
 					}

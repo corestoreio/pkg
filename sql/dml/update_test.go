@@ -133,15 +133,15 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	// Assert our record was updated (and only our record)
 	rowsAff, err := res.RowsAffected()
 	assert.NoError(t, err)
-	assert.Equal(t, int64(1), rowsAff)
+	assert.Exactly(t, int64(1), rowsAff)
 
 	var person dmlPerson
 	_, err = s.SelectFrom("dml_people").AddColumns("id", "name", "key").
 		Where(Column("email").Str("ben@whitehouse.gov")).WithArgs().Load(context.TODO(), &person)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "Benjamin", person.Name)
-	assert.Equal(t, "6-revoked", person.Key.String)
+	assert.Exactly(t, "Benjamin", person.Name)
+	assert.Exactly(t, "6-revoked", person.Key.String)
 }
 
 func TestUpdateReal(t *testing.T) {
@@ -168,10 +168,10 @@ func TestUpdateReal(t *testing.T) {
 	_, err = s.SelectFrom("dml_people").Star().Where(Column("id").Int64(id)).WithArgs().Load(context.TODO(), &person)
 	assert.NoError(t, err)
 
-	assert.Equal(t, id, int64(person.ID))
-	assert.Equal(t, "Barack", person.Name)
-	assert.Equal(t, true, person.Email.Valid)
-	assert.Equal(t, "barack@whitehouse.gov", person.Email.String)
+	assert.Exactly(t, id, int64(person.ID))
+	assert.Exactly(t, "Barack", person.Name)
+	assert.Exactly(t, true, person.Email.Valid)
+	assert.Exactly(t, "barack@whitehouse.gov", person.Email.String)
 }
 
 func TestUpdate_Prepare(t *testing.T) {
@@ -356,19 +356,25 @@ func TestUpdate_DisableBuildCache(t *testing.T) {
 		Set(
 			Column("foo").Int(1),
 			Column("bar").Expr("COALESCE(bar, 0) + ?").Int(2)).
-		Where(Column("id").PlaceHolder()).
-		DisableBuildCache()
+		Where(Column("id").PlaceHolder())
 
 	const cachedSQLPlaceHolder = "UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = ?)"
 	const cachedSQLInterpolated = "UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = 987654321)"
 
 	for i := 0; i < 3; i++ {
-		compareToSQL(t, up.WithArgs().Uint(987654321), errors.NoKind,
+		compareToSQL(t, up.WithCacheKey("index_%d", i).WithArgs().Uint(987654321), errors.NoKind,
 			cachedSQLPlaceHolder,
 			cachedSQLInterpolated,
 			int64(987654321),
 		)
-		assert.Empty(t, up.cachedSQL)
 	}
-
+	assert.Exactly(t,
+		[]string{
+			"index_0", "UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = ?)",
+			"index_1", "UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = ?)",
+			"index_2", "UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = ?)"},
+		up.CachedQueries(),
+		"%#v",
+		up.CachedQueries(),
+	)
 }

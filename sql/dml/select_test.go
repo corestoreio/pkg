@@ -534,21 +534,21 @@ func TestSelect_Load_Slice_Scanner(t *testing.T) {
 	count, err := s.SelectFrom("dml_people").AddColumns("id", "name", "email").OrderBy("id").WithArgs().Load(context.TODO(), &people)
 
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(2), count)
+	assert.Exactly(t, uint64(2), count)
 
-	assert.Equal(t, len(people.Data), 2)
+	assert.Exactly(t, len(people.Data), 2)
 	if len(people.Data) == 2 {
 		// Make sure that the Ids are isSet. It'ab possible (maybe?) that different DBs isSet ids differently so
 		// don't assume they're 1 and 2.
 		assert.True(t, people.Data[0].ID > 0)
 		assert.True(t, people.Data[1].ID > people.Data[0].ID)
 
-		assert.Equal(t, "Sir George", people.Data[0].Name)
+		assert.Exactly(t, "Sir George", people.Data[0].Name)
 		assert.True(t, people.Data[0].Email.Valid)
-		assert.Equal(t, "SirGeorge@GoIsland.com", people.Data[0].Email.String)
-		assert.Equal(t, "Dmitri", people.Data[1].Name)
+		assert.Exactly(t, "SirGeorge@GoIsland.com", people.Data[0].Email.String)
+		assert.Exactly(t, "Dmitri", people.Data[1].Name)
 		assert.True(t, people.Data[1].Email.Valid)
-		assert.Equal(t, "zavorotni@jadius.com", people.Data[1].Email.String)
+		assert.Exactly(t, "zavorotni@jadius.com", people.Data[1].Email.String)
 	}
 }
 
@@ -562,9 +562,9 @@ func TestSelect_Load_Rows(t *testing.T) {
 			Where(Column("email").Str("SirGeorge@GoIsland.com")).WithArgs().Load(context.TODO(), &person)
 		assert.NoError(t, err)
 		assert.True(t, person.ID > 0)
-		assert.Equal(t, "Sir George", person.Name)
+		assert.Exactly(t, "Sir George", person.Name)
 		assert.True(t, person.Email.Valid)
-		assert.Equal(t, "SirGeorge@GoIsland.com", person.Email.String)
+		assert.Exactly(t, "SirGeorge@GoIsland.com", person.Email.String)
 	})
 
 	t.Run("not found", func(t *testing.T) {
@@ -588,12 +588,12 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 			String("SirGeorge@GoIsland.com").Load(context.TODO(), &people)
 
 		assert.NoError(t, err)
-		assert.Equal(t, uint64(1), count)
+		assert.Exactly(t, uint64(1), count)
 		if len(people.Data) == 1 {
-			assert.Equal(t, "Sir George", people.Data[0].Name)
-			assert.Equal(t, uint64(0), people.Data[0].ID)      // not set
-			assert.Equal(t, false, people.Data[0].Email.Valid) // not set
-			assert.Equal(t, "", people.Data[0].Email.String)   // not set
+			assert.Exactly(t, "Sir George", people.Data[0].Name)
+			assert.Exactly(t, uint64(0), people.Data[0].ID)      // not set
+			assert.Exactly(t, false, people.Data[0].Email.Valid) // not set
+			assert.Exactly(t, "", people.Data[0].Email.String)   // not set
 		}
 	})
 
@@ -747,7 +747,7 @@ func TestSelect_WithArgs_LoadType_Slices(t *testing.T) {
 	t.Run("LoadStrings", func(t *testing.T) {
 		names, err := s.SelectFrom("dml_people").AddColumns("name").WithArgs().LoadStrings(context.TODO(), nil)
 		assert.NoError(t, err)
-		assert.Equal(t, []string{"Sir George", "Dmitri"}, names)
+		assert.Exactly(t, []string{"Sir George", "Dmitri"}, names)
 	})
 	t.Run("LoadStrings too many columns", func(t *testing.T) {
 		vals, err := s.SelectFrom("dml_people").AddColumns("name", "email").WithArgs().LoadStrings(context.TODO(), nil)
@@ -763,7 +763,7 @@ func TestSelect_WithArgs_LoadType_Slices(t *testing.T) {
 	t.Run("LoadInt64s", func(t *testing.T) {
 		names, err := s.SelectFrom("dml_people").AddColumns("id").WithArgs().LoadInt64s(context.TODO(), nil)
 		assert.NoError(t, err)
-		assert.Equal(t, []int64{1, 2}, names)
+		assert.Exactly(t, []int64{1, 2}, names)
 	})
 	t.Run("LoadInt64s too many columns", func(t *testing.T) {
 		vals, err := s.SelectFrom("dml_people").AddColumns("id", "email").WithArgs().LoadInt64s(context.TODO(), nil)
@@ -779,7 +779,7 @@ func TestSelect_WithArgs_LoadType_Slices(t *testing.T) {
 	t.Run("LoadUint64s", func(t *testing.T) {
 		names, err := s.SelectFrom("dml_people").AddColumns("id").WithArgs().LoadUint64s(context.TODO(), nil)
 		assert.NoError(t, err)
-		assert.Equal(t, []uint64{1, 2}, names)
+		assert.Exactly(t, []uint64{1, 2}, names)
 	})
 	t.Run("LoadUint64s too many columns", func(t *testing.T) {
 		vals, err := s.SelectFrom("dml_people").AddColumns("id", "email").WithArgs().LoadUint64s(context.TODO(), nil)
@@ -795,7 +795,7 @@ func TestSelect_WithArgs_LoadType_Slices(t *testing.T) {
 	t.Run("LoadFloat64s", func(t *testing.T) {
 		names, err := s.SelectFrom("dml_people").AddColumns("id").WithArgs().LoadFloat64s(context.TODO(), nil)
 		assert.NoError(t, err)
-		assert.Equal(t, []float64{1, 2}, names)
+		assert.Exactly(t, []float64{1, 2}, names)
 	})
 	t.Run("LoadFloat64s too many columns", func(t *testing.T) {
 		vals, err := s.SelectFrom("dml_people").AddColumns("id", "email").WithArgs().LoadFloat64s(context.TODO(), nil)
@@ -1351,9 +1351,7 @@ func TestSelect_DisableBuildCache(t *testing.T) {
 	const run1 = "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 8,7"
 	const run2 = "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) AND (`added_col` = 3.14159) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 8,7"
 
-	sel.DisableBuildCache()
-
-	compareToSQL(t, sel.WithArgs().Int(87654), errors.NoKind,
+	compareToSQL(t, sel.WithCacheKey("key1").WithArgs().Int(87654), errors.NoKind,
 		run1,
 		"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 87654) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 8,7",
 		int64(87654))
@@ -1361,8 +1359,8 @@ func TestSelect_DisableBuildCache(t *testing.T) {
 	sel.Where(
 		Column("added_col").Float64(3.14159),
 	)
-	compareToSQL(t, sel.WithArgs().Int(87654), errors.NoKind, run2, "", int64(87654))
-	sel.IsBuildCacheDisabled = false
+	compareToSQL(t, sel.WithCacheKey("key2").WithArgs().Int(87654), errors.NoKind, run2, "", int64(87654))
+	// key2 still applies to the next 2 calls
 	compareToSQL(t, sel.WithArgs().Int(87654), errors.NoKind, run2, "", int64(87654))
 	compareToSQL(t, sel.WithArgs().Int(87654), errors.NoKind, run2,
 		"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 87654) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) AND (`added_col` = 3.14159) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 8,7",

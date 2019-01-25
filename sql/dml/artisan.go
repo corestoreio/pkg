@@ -19,6 +19,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"strings"
 	"sync"
 	"time"
 
@@ -51,7 +52,7 @@ type Artisan struct {
 	OffsetCount             uint64
 	// insertCachedSQL contains the final build SQL string with the correct
 	// amount of placeholders.
-	insertCachedSQL     []byte
+	insertCachedSQL     string
 	insertColumnCount   uint
 	insertRowCount      uint
 	insertIsBuildValues bool
@@ -125,6 +126,21 @@ func (a *Artisan) ToSQL() (string, []interface{}, error) {
 	return a.prepareArgs()
 }
 
+func (a *Artisan) CachedQueries(queries ...string) []string {
+	return a.base.CachedQueries(queries...)
+}
+
+// WithCacheKey sets the currently used cache key when generating a SQL string.
+// By setting a different cache key, a previous generated SQL query is
+// accessible again. New cache keys allow to change the generated query of the
+// current object. E.g. different where clauses or different row counts in
+// INSERT ... VALUES statements. The empty string defines the default cache key.
+// If the `args` argument contains values, then fmt.Sprintf gets used.
+func (a *Artisan) WithCacheKey(key string, args ...interface{}) *Artisan {
+	a.base.withCacheKey(key, args...)
+	return a
+}
+
 // Interpolate if set stringyfies the arguments into the SQL string and returns
 // pre-processed SQL command when calling the function ToSQL. Not suitable for
 // prepared statements. ToSQLs second argument `args` will then be nil.
@@ -163,12 +179,13 @@ func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}
 	if a.base.ärgErr != nil {
 		return "", nil, errors.WithStack(a.base.ärgErr)
 	}
-	if !a.isPrepared && len(a.base.cachedSQL) == 0 {
-		return "", nil, errors.Empty.Newf("[dml] Artisan: The SQL string is empty.")
-	}
 
 	if a.base.source == dmlSourceInsert {
 		return a.prepareArgsInsert(extArgs...)
+	}
+	cachedSQL, ok := a.base.cachedSQL[a.base.CacheKey] // ignore ,ok but we have to use it to avoid a panic
+	if !a.isPrepared && !ok {
+		return "", nil, errors.Empty.Newf("[dml] Artisan: The SQL string is empty.")
 	}
 
 	if a.isEmpty() { // no arguments provided
@@ -176,12 +193,13 @@ func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}
 		if a.isPrepared {
 			return "", extArgs, nil
 		}
+
 		if len(a.OrderBys) == 0 && !a.LimitValid {
-			return string(a.base.cachedSQL), extArgs, nil
+			return string(cachedSQL), extArgs, nil
 		}
 		buf := bufferpool.Get()
 		defer bufferpool.Put(buf)
-		buf.Write(a.base.cachedSQL)
+		buf.WriteString(cachedSQL)
 		sqlWriteOrderBy(buf, a.OrderBys, false)
 		sqlWriteLimitOffset(buf, a.LimitValid, a.OffsetValid, a.OffsetCount, a.LimitCount)
 		return buf.String(), extArgs, nil
@@ -190,7 +208,11 @@ func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}
 	if !a.isPrepared && a.hasNamedArgs == 0 {
 		var found bool
 		a.hasNamedArgs = 1
-		a.base.cachedSQL, a.base.qualifiedColumns, found = extractReplaceNamedArgs(a.base.cachedSQL, a.base.qualifiedColumns)
+		cachedSQL, a.base.qualifiedColumns, found = extractReplaceNamedArgs(cachedSQL, a.base.qualifiedColumns)
+		if found {
+			// TODO fix concurrent map write
+			a.base.cachedSQL[a.base.CacheKey] = cachedSQL
+		}
 
 		switch la := len(a.arguments); true {
 		case found:
@@ -223,7 +245,7 @@ func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}
 	// worst case. Best case would be no modification and hence we don't need a
 	// bytes.Buffer from the pool! TODO(CYS) optimize this and only acquire a
 	// buffer from the pool in the worse case.
-	if _, err := sqlBuf.First.Write(a.base.cachedSQL); err != nil {
+	if _, err := sqlBuf.First.WriteString(cachedSQL); err != nil {
 		return "", nil, errors.WithStack(err)
 	}
 
@@ -344,22 +366,22 @@ func (a *Artisan) appendConvertedRecordsToArguments(collectedArgs arguments) (ar
 // external arguments.
 func (a *Artisan) prepareArgsInsert(extArgs ...interface{}) (string, []interface{}, error) {
 
-	//cm := pooledColumnMapGet()
+	// cm := pooledColumnMapGet()
 	sqlBuf := bufferpool.GetTwin()
 	defer bufferpool.PutTwin(sqlBuf)
-	//defer pooledBufferColumnMapPut(cm, sqlBuf, nil)
+	// defer pooledBufferColumnMapPut(cm, sqlBuf, nil)
 
 	cm := NewColumnMap(16)
 	cm.setColumns(a.base.qualifiedColumns)
-	//defer bufferpool.PutTwin(sqlBuf)
+	// defer bufferpool.PutTwin(sqlBuf)
 	cm.arguments = append(cm.arguments, a.arguments...)
 	lenInsertCachedSQL := len(a.insertCachedSQL)
+	cachedSQL := a.base.cachedSQL[a.base.CacheKey]
 	{
-		cachedSQL := a.base.cachedSQL
 		if lenInsertCachedSQL > 0 {
 			cachedSQL = a.insertCachedSQL
 		}
-		if _, err := sqlBuf.First.Write(cachedSQL); err != nil {
+		if _, err := sqlBuf.First.WriteString(cachedSQL); err != nil {
 			return "", nil, errors.WithStack(err)
 		}
 
@@ -383,10 +405,10 @@ func (a *Artisan) prepareArgsInsert(extArgs ...interface{}) (string, []interface
 	totalArgLen := uint(len(cm.arguments) + len(extArgs))
 
 	if !a.insertIsBuildValues && lenInsertCachedSQL == 0 { // Write placeholder list e.g. "VALUES (?,?),(?,?)"
-		odkPos := bytes.Index(a.base.cachedSQL, onDuplicateKeyPart)
+		odkPos := strings.Index(cachedSQL, onDuplicateKeyPartS)
 		if odkPos > 0 {
 			sqlBuf.First.Reset()
-			sqlBuf.First.Write(a.base.cachedSQL[:odkPos])
+			sqlBuf.First.WriteString(cachedSQL[:odkPos])
 		}
 
 		if a.insertRowCount > 0 {
@@ -400,10 +422,9 @@ func (a *Artisan) prepareArgsInsert(extArgs ...interface{}) (string, []interface
 			writeInsertPlaceholders(sqlBuf.First, rowCount, a.insertColumnCount)
 		}
 		if odkPos > 0 {
-			sqlBuf.First.Write(a.base.cachedSQL[odkPos:])
+			sqlBuf.First.WriteString(cachedSQL[odkPos:])
 		}
-		a.insertCachedSQL = bufTrySizeByResliceOrNew(a.insertCachedSQL, sqlBuf.First.Len())
-		copy(a.insertCachedSQL, sqlBuf.First.Bytes())
+		a.insertCachedSQL = sqlBuf.First.String()
 	}
 
 	if a.Options > 0 {
@@ -1114,7 +1135,8 @@ func (a *Artisan) query(ctx context.Context, args ...interface{}) (rows *sql.Row
 	rows, err = a.base.DB.QueryContext(ctx, sqlStr, args...)
 	if err != nil {
 		if sqlStr == "" {
-			sqlStr = "PREPARED:" + string(a.base.cachedSQL)
+			cachedSQL := a.base.cachedSQL[a.base.CacheKey]
+			sqlStr = "PREPARED:" + string(cachedSQL)
 		}
 		err = errors.Wrapf(err, "[dml] Query.QueryContext with query %q", sqlStr)
 	}

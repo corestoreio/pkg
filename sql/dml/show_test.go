@@ -114,20 +114,23 @@ func TestShow(t *testing.T) {
 		)
 	})
 
-	t.Run("table status WHERE", func(t *testing.T) {
-		s := NewShow().TableStatus().Where(Column("Name").Regexp().Str(".*catalog[_]+")).DisableBuildCache()
+	t.Run("table status WHERE (build cache)", func(t *testing.T) {
+		s := NewShow().TableStatus().Where(Column("Name").Regexp().Str(".*catalog[_]+"))
 		compareToSQL(t, s, errors.NoKind,
 			"SHOW TABLE STATUS WHERE (`Name` REGEXP '.*catalog[_]+')",
 			"SHOW TABLE STATUS WHERE (`Name` REGEXP '.*catalog[_]+')",
 		)
-		assert.Empty(t, s.cachedSQL)
-		s.WhereFragments[0].Str("sales$") // set Equal on purpose ... because cache already written
+		assert.Exactly(t, []string{"", "SHOW TABLE STATUS WHERE (`Name` REGEXP '.*catalog[_]+')"}, s.CachedQueries())
+
+		s.WithCacheKey("XsalesX").WhereFragments[0].Str("sales$") // set Equal on purpose ... because cache already written
 		// twice to test the build cache
 		compareToSQL(t, s, errors.NoKind,
 			"SHOW TABLE STATUS WHERE (`Name` REGEXP 'sales$')",
 			"SHOW TABLE STATUS WHERE (`Name` REGEXP 'sales$')",
 		)
-		assert.Empty(t, s.cachedSQL)
+		assert.Exactly(t,
+			[]string{"", "SHOW TABLE STATUS WHERE (`Name` REGEXP '.*catalog[_]+')", "XsalesX", "SHOW TABLE STATUS WHERE (`Name` REGEXP 'sales$')"},
+			s.CachedQueries())
 	})
 
 }

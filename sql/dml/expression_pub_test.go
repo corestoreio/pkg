@@ -53,7 +53,7 @@ func TestTableColumnQuote(t *testing.T) {
 
 	for i, test := range tests {
 		actC := dml.Quoter.ColumnsWithQualifier(test.haveT, test.haveC...)
-		assert.Equal(t, test.want, actC, "Index %d", i)
+		assert.Exactly(t, test.want, actC, "Index %d", i)
 	}
 }
 
@@ -70,7 +70,7 @@ func TestSQLIfNull(t *testing.T) {
 			if alias != "" {
 				ifn = ifn.Alias(alias)
 			}
-			assert.Equal(t, want, ifn.Left)
+			assert.Exactly(t, want, ifn.Left)
 			assert.True(t, ifn.IsLeftExpression, "IsLeftExpression should be true")
 		}
 	}

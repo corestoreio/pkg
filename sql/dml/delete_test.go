@@ -118,12 +118,12 @@ func TestDeleteReal(t *testing.T) {
 	// Ensure we only reflected one row and that the id no longer exists
 	rowsAff, err := res.RowsAffected()
 	assert.NoError(t, err)
-	assert.Equal(t, int64(1), rowsAff, "RowsAffected")
+	assert.Exactly(t, int64(1), rowsAff, "RowsAffected")
 
 	count, found, err := s.SelectFrom("dml_people").Count().Where(Column("id").PlaceHolder()).WithArgs().Int64(id).LoadNullInt64(context.TODO())
 	assert.NoError(t, err)
 	assert.True(t, found, "should have found a row")
-	assert.Equal(t, int64(0), count.Int64, "count")
+	assert.Exactly(t, int64(0), count.Int64, "count")
 }
 
 func TestDelete_Events(t *testing.T) {
@@ -224,28 +224,28 @@ func TestDelete_BuildCacheDisabled(t *testing.T) {
 		Column("b").PlaceHolder(),
 	).Limit(1).OrderBy("id")
 
-	del.IsBuildCacheDisabled = true
-
 	const iterations = 3
 	const cachedSQLPlaceHolder = "DELETE FROM `alpha` WHERE (`a` = 'b') AND (`b` = ?) ORDER BY `id` LIMIT 1"
 	t.Run("without interpolate", func(t *testing.T) {
 		for i := 0; i < iterations; i++ {
 			sql, args, err := del.ToSQL()
 			assert.NoError(t, err)
-			assert.Equal(t, cachedSQLPlaceHolder, sql)
+			assert.Exactly(t, cachedSQLPlaceHolder, sql)
 			assert.Nil(t, args, "No arguments provided but got some")
-			assert.Nil(t, del.cachedSQL, "cache []byte should be nil")
 		}
+		assert.Exactly(t, []string{"", "DELETE FROM `alpha` WHERE (`a` = 'b') AND (`b` = ?) ORDER BY `id` LIMIT 1"},
+			del.CachedQueries())
 	})
 
 	t.Run("with interpolate", func(t *testing.T) {
-		delA := del.WithArgs().Int64(3333).Interpolate()
-		del.cachedSQL = nil
-		const cachedSQLInterpolated = "DELETE FROM `alpha` WHERE (`a` = 'b') AND (`b` = 3333) ORDER BY `id` LIMIT 1"
-		for i := 0; i < iterations; i++ {
-			compareToSQL2(t, delA, errors.NoKind, cachedSQLInterpolated)
-			assert.Nil(t, del.cachedSQL, "cache []byte should be nil")
-		}
+		delA := del.WithArgs().Interpolate()
+
+		compareToSQL2(t, delA.Int(123), errors.NoKind, "DELETE FROM `alpha` WHERE (`a` = 'b') AND (`b` = 123) ORDER BY `id` LIMIT 1")
+		delA.Reset()
+		compareToSQL2(t, delA.Int(124), errors.NoKind, "DELETE FROM `alpha` WHERE (`a` = 'b') AND (`b` = 124) ORDER BY `id` LIMIT 1")
+
+		assert.Exactly(t, []string{"", "DELETE FROM `alpha` WHERE (`a` = 'b') AND (`b` = ?) ORDER BY `id` LIMIT 1"},
+			del.CachedQueries())
 	})
 }
 

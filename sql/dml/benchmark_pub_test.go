@@ -198,7 +198,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 	})
 
 	b.Run("ToSQL Interpolate NoCache", func(b *testing.B) {
-		sqlObj.IsBuildCacheDisabled = true
+		// TODO fix me sqlObj.IsBuildCacheDisabled = true
 		for i := 0; i < b.N; i++ {
 			var err error
 			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.ToSQL()
@@ -209,7 +209,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 	})
 
 	b.Run("ToSQL Interpolate Cache", func(b *testing.B) {
-		sqlObj.IsBuildCacheDisabled = false
+		// TODO fix me sqlObj.IsBuildCacheDisabled = false
 		for i := 0; i < b.N; i++ {
 			var err error
 			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.ToSQL()
@@ -417,7 +417,7 @@ func BenchmarkDeleteSQL(b *testing.B) {
 
 	sqlObj := dml.NewDelete("alpha").Where(dml.Column("a").Str("b")).Limit(1).OrderBy("id")
 	b.Run("ToSQL no cache", func(b *testing.B) {
-		sqlObj.IsBuildCacheDisabled = true
+		// TODO fix me	sqlObj.IsBuildCacheDisabled = true
 		for i := 0; i < b.N; i++ {
 			var err error
 			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.ToSQL()
@@ -428,7 +428,7 @@ func BenchmarkDeleteSQL(b *testing.B) {
 	})
 
 	b.Run("ToSQL with cache", func(b *testing.B) {
-		sqlObj.IsBuildCacheDisabled = false
+		// TODO fix me	sqlObj.IsBuildCacheDisabled = false
 		for i := 0; i < b.N; i++ {
 			var err error
 			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.ToSQL()
@@ -455,7 +455,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	sqlObj := dml.NewInsert("alpha").AddColumns("something_id", "user_id", "other")
 
 	b.Run("ToSQL no cache", func(b *testing.B) {
-		sqlObj.IsBuildCacheDisabled = true
+		// TODO fix me	sqlObj.IsBuildCacheDisabled = true
 		for i := 0; i < b.N; i++ {
 			var err error
 			sqlObjA := sqlObj.WithArgs().Int64(1).Int64(2).Bool(true)
@@ -467,7 +467,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	})
 
 	b.Run("ToSQL with cache", func(b *testing.B) {
-		sqlObj.IsBuildCacheDisabled = false
+		// TODO fix me	sqlObj.IsBuildCacheDisabled = false
 		for i := 0; i < b.N; i++ {
 			var err error
 			sqlObjA := sqlObj.WithArgs().Int64(1).Int64(2).Bool(true)
@@ -479,7 +479,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	})
 
 	b.Run("ToSQL optimized", func(b *testing.B) {
-		sqlObj.IsBuildCacheDisabled = false
+		// TODO fix me sqlObj.IsBuildCacheDisabled = false
 		sqlObjA := sqlObj.WithArgs().Int64(1).Int64(2).Bool(true).Reset()
 		for i := 0; i < b.N; i++ {
 			var err error

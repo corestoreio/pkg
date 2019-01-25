@@ -464,3 +464,32 @@ func TestArtisan_OrderByLimit(t *testing.T) {
 		})
 	})
 }
+
+func TestArtisan_PreGeneratedQueries(t *testing.T) {
+	t.Parallel()
+
+	t.Run("SELECT", func(t *testing.T) {
+
+		sel := NewSelect("a", "b").From("c").Where(
+			Column("id").Greater().PlaceHolder(),
+			Column("email").Like().PlaceHolder())
+
+		_, _, err := sel.WithCacheKey("id_greater").ToSQL() // build cache 1
+		assert.NoError(t, err)
+
+		// modify SQL
+		sel.Wheres[0] = Column("id").Less().PlaceHolder()
+		_, _, err = sel.WithCacheKey("id_less").ToSQL() // build cache 2
+		assert.NoError(t, err)
+
+		selA := sel.WithArgs()
+
+		compareToSQL2(t, selA.WithCacheKey("id_greater"), errors.NoKind,
+			"SELECT `a`, `b` FROM `c` WHERE (`id` > ?) AND (`email` LIKE ?)",
+		)
+		compareToSQL2(t, selA.WithCacheKey("id_less"), errors.NoKind,
+			"SELECT `a`, `b` FROM `c` WHERE (`id` < ?) AND (`email` LIKE ?)",
+		)
+		compareToSQL2(t, selA.WithCacheKey("id_not_found"), errors.Empty, "")
+	})
+}
