@@ -198,10 +198,9 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 	})
 
 	b.Run("ToSQL Interpolate NoCache", func(b *testing.B) {
-		// TODO fix me sqlObj.IsBuildCacheDisabled = true
 		for i := 0; i < b.N; i++ {
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.WithCacheKey("bm_ip_nc_%d", i).ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -209,7 +208,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 	})
 
 	b.Run("ToSQL Interpolate Cache", func(b *testing.B) {
-		// TODO fix me sqlObj.IsBuildCacheDisabled = false
+		sqlObj.WithCacheKey("")
 		for i := 0; i < b.N; i++ {
 			var err error
 			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.ToSQL()
@@ -417,10 +416,9 @@ func BenchmarkDeleteSQL(b *testing.B) {
 
 	sqlObj := dml.NewDelete("alpha").Where(dml.Column("a").Str("b")).Limit(1).OrderBy("id")
 	b.Run("ToSQL no cache", func(b *testing.B) {
-		// TODO fix me	sqlObj.IsBuildCacheDisabled = true
 		for i := 0; i < b.N; i++ {
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.WithCacheKey("delete_nc_%d", i).ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -428,7 +426,7 @@ func BenchmarkDeleteSQL(b *testing.B) {
 	})
 
 	b.Run("ToSQL with cache", func(b *testing.B) {
-		// TODO fix me	sqlObj.IsBuildCacheDisabled = false
+		sqlObj.WithCacheKey("")
 		for i := 0; i < b.N; i++ {
 			var err error
 			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.ToSQL()

@@ -56,7 +56,6 @@ type Artisan struct {
 	insertColumnCount   uint
 	insertRowCount      uint
 	insertIsBuildValues bool
-	//LimitValid            bool
 	// isPrepared if true the cachedSQL field in base gets ignored
 	isPrepared bool
 	// Options like enable interpolation or expanding placeholders.
@@ -65,7 +64,7 @@ type Artisan struct {
 	// named arguments. 0 not yet checked, 1=does not contain, 2 = yes
 	hasNamedArgs      uint8 // 0 not checked, 1=no, 2=yes
 	nextUnnamedArgPos int
-	raw               []interface{}
+	raw               []interface{} // set by developer
 	arguments
 	recs []QualifiedRecord
 }
@@ -277,7 +276,8 @@ func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}
 		return sqlBuf.Second.String(), nil, nil
 	}
 
-	return sqlBuf.First.String(), collectedArgs.Interfaces(extArgs...), nil
+	extArgs = collectedArgs.Interfaces(extArgs...)
+	return sqlBuf.First.String(), extArgs, nil
 }
 
 func (a *Artisan) appendConvertedRecordsToArguments(collectedArgs arguments) (arguments, error) {
@@ -665,6 +665,9 @@ func pooledBufferColumnMapPut(cm *ColumnMap, buf *bufferpool.TwinBuffer, fn func
 
 const argumentPoolMaxSize = 32
 
+// regarding the returned slices in both pools: https://github.com/golang/go/blob/7e394a2/src/net/http/h2_bundle.go#L998-L1043
+// they also uses a []byte slice in the pool and not a pointer
+
 var pooledArguments = sync.Pool{
 	New: func() interface{} {
 		var a [argumentPoolMaxSize]argument
@@ -690,6 +693,24 @@ func pooledArgumentsPut(a arguments, buf *bufferpool.TwinBuffer) {
 	}
 	if buf != nil {
 		bufferpool.PutTwin(buf)
+	}
+}
+
+var pooledInterfaces = sync.Pool{
+	New: func() interface{} {
+		var a [argumentPoolMaxSize]interface{}
+		return a[:0]
+	},
+}
+
+func pooledInterfacesGet() []interface{} {
+	return pooledInterfaces.Get().([]interface{})
+}
+
+func pooledInterfacesPut(a []interface{}) {
+	if cap(a) <= argumentPoolMaxSize {
+		a = a[:0]
+		pooledInterfaces.Put(a)
 	}
 }
 
@@ -1123,16 +1144,19 @@ func (a *Artisan) LoadStrings(ctx context.Context, dest []string, args ...interf
 }
 
 func (a *Artisan) query(ctx context.Context, args ...interface{}) (rows *sql.Rows, err error) {
-	sqlStr, args, err2 := a.prepareArgs(args...)
-	err = err2
+	pArgs := pooledInterfacesGet()
+	defer pooledInterfacesPut(pArgs)
+	pArgs = append(pArgs, args...)
+
+	var sqlStr string
+	sqlStr, pArgs, err = a.prepareArgs(pArgs...)
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug("Query", log.String("sql", sqlStr), log.String("source", string(a.base.source)), log.Err(err))
 	}
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-
-	rows, err = a.base.DB.QueryContext(ctx, sqlStr, args...)
+	rows, err = a.base.DB.QueryContext(ctx, sqlStr, pArgs...)
 	if err != nil {
 		if sqlStr == "" {
 			cachedSQL := a.base.cachedSQL[a.base.CacheKey]
@@ -1144,8 +1168,12 @@ func (a *Artisan) query(ctx context.Context, args ...interface{}) (rows *sql.Row
 }
 
 func (a *Artisan) exec(ctx context.Context, args ...interface{}) (result sql.Result, err error) {
-	sqlStr, args, err2 := a.prepareArgs(args...)
-	err = err2
+	pArgs := pooledInterfacesGet()
+	defer pooledInterfacesPut(pArgs)
+	pArgs = append(pArgs, args...)
+
+	var sqlStr string
+	sqlStr, pArgs, err = a.prepareArgs(pArgs...)
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug("Exec", log.String("sql", sqlStr), log.String("source", string(a.base.source)), log.Err(err))
 	}
@@ -1153,7 +1181,7 @@ func (a *Artisan) exec(ctx context.Context, args ...interface{}) (result sql.Res
 		return nil, errors.WithStack(err)
 	}
 
-	result, err = a.base.DB.ExecContext(ctx, sqlStr, args...)
+	result, err = a.base.DB.ExecContext(ctx, sqlStr, pArgs...)
 	if err != nil {
 		err = errors.Wrapf(err, "[dml] ExecContext with query %q", sqlStr) // err gets catched by the defer
 		return

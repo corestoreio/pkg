@@ -34,21 +34,12 @@ func init() {
 }
 
 // table with 2007 rows and 5 columns
-// BenchmarkSelect_Integration_LoadStructs-4   	     300	   3995130 ns/op	  839604 B/op	   23915 allocs/op <- Reflection with struct tags
-// BenchmarkSelect_Integration_LoadX-4         	     500	   3190194 ns/op	  752296 B/op	   21883 allocs/op <- "No Reflection"
-// BenchmarkSelect_Integration_LoadGoSQLDriver-4   	 500	   2975945 ns/op	  738824 B/op	   17859 allocs/op
-// BenchmarkSelect_Integration_LoadPubNative-4       500	   2826601 ns/op	  669699 B/op	   11966 allocs/op <- no database/sql
 
-// BenchmarkSelect_Integration_Load-4   	     500	   3393616 ns/op	  752254 B/op	   21882 allocs/op <- if/else orgie
-// BenchmarkSelect_Integration_Load-4   	     500	   3461720 ns/op	  752234 B/op	   21882 allocs/op <- switch
-
-// BenchmarkSelect_Integration_LScanner-4   	 500	   3425029 ns/op	  755206 B/op	   21878 allocs/op
-// BenchmarkSelectRows2007-4   	     500	   3288291 ns/op	  784423 B/op	   23890 allocs/op <- iFace with Scan function
-// BenchmarkSelectRows2007-4   	     500	   3001319 ns/op	  784290 B/op	   23888 allocs/op Go 1.9 with new Scanner iFace
-// BenchmarkSelectRows2007-4   	    1000	   1947410 ns/op	  743693 B/op	   17876 allocs/op Go 1.9 with RowConvert type and sql.RawBytes
-// BenchmarkSelectRows2007-4   	    1000	   2014803 ns/op	  743507 B/op	   17876 allocs/op Go 1.10 beta1 MariaDB 10.2
-// BenchmarkSelectRows2007/Query-4         	     500	   2869035 ns/op	  743026 B/op	   17868 allocs/op MariaDB 10.3.2
-// BenchmarkSelectRows2007/Prepared-4      	     500	   2572352 ns/op	  629875 B/op	   16383 allocs/op MariaDB 10.3.2
+// MacBook Pro (13-inch, 2017, Two Thunderbolt 3 ports) 2.5 GHz Intel Core i7
+// go version devel +5fae09b738 Tue Jan 15 23:30:58 2019 +0000 darwin/amd64
+// BenchmarkSelectRows2007/Query-4         	    				1000	   2067316 ns/op	  742986 B/op	   17222 allocs/op
+// BenchmarkSelectRows2007/Prepared,noSliceReuse-4         	    1000	   1912768 ns/op	  629676 B/op	   15738 allocs/op
+// BenchmarkSelectRows2007/Prepared,SliceReuse-4           	    1000	   1921589 ns/op	  570973 B/op	   15723 allocs/op
 func BenchmarkSelectRows2007(b *testing.B) {
 	if !runIntegration {
 		b.Skip("Skipped. To enable use -integration=1")
@@ -115,9 +106,9 @@ func BenchmarkSelectRows2007(b *testing.B) {
 
 }
 
-//BenchmarkInsert_Prepared/ExecRecord-4        	    5000	    320371 ns/op	     512 B/op	      12 allocs/op
-//BenchmarkInsert_Prepared/ExecArgs-4         	    5000	    310453 ns/op	     640 B/op	      14 allocs/op
-//BenchmarkInsert_Prepared/ExecContext-4      	    5000	    312097 ns/op	     608 B/op	      13 allocs/op
+// BenchmarkInsert_Prepared/ExecRecord-4       	    5000	    320371 ns/op	     512 B/op	      12 allocs/op
+// BenchmarkInsert_Prepared/ExecArgs-4         	    5000	    310453 ns/op	     640 B/op	      14 allocs/op
+// BenchmarkInsert_Prepared/ExecContext-4      	    5000	    312097 ns/op	     608 B/op	      13 allocs/op
 func BenchmarkInsert_Prepared(b *testing.B) {
 	if !runIntegration {
 		b.Skip("Skipped. To enable use -integration=1")
@@ -137,10 +128,10 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 	truncate(c.DB)
 
 	stmt, err := c.InsertInto("dml_people").
-		AddColumns("name", "email", "store_id", "created_at", "total_income").
+		AddColumns("name", "email", "store_id", "created_at", "total_income").BuildValues().
 		Prepare(context.TODO())
 	if err != nil {
-		b.Fatal(err)
+		b.Fatalf("%+v", err)
 	}
 	defer dmltest.Close(b, stmt)
 
@@ -180,10 +171,10 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 	b.Run("ExecArgs", func(b *testing.B) {
 		truncate(c.DB)
 
+		stmtA := stmt.WithArgs()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-
-			res, err := stmt.WithArgs().String("Maria Gopher ExecArgs").NullString(null.MakeString("maria@gopherExecArgs.go")).
+			res, err := stmtA.String("Maria Gopher ExecArgs").NullString(null.MakeString("maria@gopherExecArgs.go")).
 				Int64(storeID).Time(now()).Float64(totalIncome * float64(i)).ExecContext(ctx)
 			if err != nil {
 				b.Fatal(err)
@@ -195,6 +186,7 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 			if lid < 1 {
 				b.Fatalf("LastInsertID was %d", lid)
 			}
+			stmtA.Reset()
 		}
 	})
 
@@ -205,7 +197,6 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 		stmtA := stmt.WithArgs()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-
 			res, err := stmtA.ExecContext(ctx, name, email, storeID, now(), totalIncome*float64(i))
 			if err != nil {
 				b.Fatal(err)

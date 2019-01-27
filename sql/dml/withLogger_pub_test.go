@@ -48,7 +48,7 @@ func TestWithLogger_Insert(t *testing.T) {
 	assert.NoError(t, rConn.Options(dml.WithLogger(lg, uniqueIDFunc)))
 
 	t.Run("Conn1Pool", func(t *testing.T) {
-		d := rConn.InsertInto("dml_people").Replace().AddColumns("email", "name") // TODO fix me .DisableBuildCache()
+		d := rConn.InsertInto("dml_people").Replace().AddColumns("email", "name")
 
 		t.Run("Prepare", func(t *testing.T) {
 			defer buf.Reset()

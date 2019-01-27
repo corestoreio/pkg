@@ -59,7 +59,7 @@ func TestDriverCallBack(t *testing.T) {
 		))
 
 	ctx := context.TODO()
-	sel := db.SelectFrom("dml_people").Star().Where(dml.Column("name").PlaceHolder()) // TODO fix me .DisableBuildCache()
+	sel := db.SelectFrom("dml_people").Star().Where(dml.Column("name").PlaceHolder())
 	var ppl dmlPerson
 	_, err := sel.WithArgs().String("Bernd").Load(ctx, &ppl)
 	assert.NoError(t, err)

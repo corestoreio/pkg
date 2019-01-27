@@ -181,8 +181,9 @@ func TestUpdate_WithArgs(t *testing.T) {
 			{"Petra Gopher", "petra@gopher.go", 3457, 21},
 		}
 
+		stmtA := stmt.WithArgs()
 		for i, test := range tests {
-			res, err := stmt.WithArgs().String(test.name).String(test.email).Int(test.id).ExecContext(context.TODO())
+			res, err := stmtA.String(test.name).String(test.email).Int(test.id).ExecContext(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -191,6 +192,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 				t.Fatalf("Result index %d with error: %s", i, err)
 			}
 			assert.Exactly(t, test.rowsAffected, ra, "Index %d has different LastInsertIDs", i)
+			stmtA.Reset()
 		}
 	})
 

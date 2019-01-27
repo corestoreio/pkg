@@ -80,7 +80,6 @@ func ExampleUpdate_WithArgs_record() {
 	// Updates all rows in the table because of missing WHERE statement.
 	u := dml.NewUpdate("catalog_category_entity").
 		AddColumns("attribute_set_id", "parent_id", "path", "teaser_id_s")
-		// TODO fix me DisableBuildCache()
 
 	// qualifier can be empty because no alias and no additional tables.
 	writeToSQLAndInterpolate(u.WithCacheKey("update all").WithArgs().Record("", ce))
