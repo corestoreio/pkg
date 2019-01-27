@@ -241,7 +241,7 @@ func TestWithCustomStructTags(t *testing.T) {
 			}),
 		)
 		assert.Nil(t, tbls)
-		assert.True(t, errors.NotFound.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.NotFound, err)
 	})
 
 	t.Run("column not found", func(t *testing.T) {
@@ -254,7 +254,7 @@ func TestWithCustomStructTags(t *testing.T) {
 			}),
 		)
 		assert.Nil(t, tbls)
-		assert.True(t, errors.NotFound.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.NotFound, err)
 	})
 }
 
@@ -268,7 +268,7 @@ func TestWithStructTags(t *testing.T) {
 			}),
 		)
 		assert.Nil(t, tbls)
-		assert.True(t, errors.NotFound.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.NotFound, err)
 	})
 
 	t.Run("struct tag not supported", func(t *testing.T) {
@@ -309,7 +309,7 @@ func TestWithColumnAliases(t *testing.T) {
 			}),
 		)
 		assert.Nil(t, tbls)
-		assert.True(t, errors.NotFound.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.NotFound, err)
 	})
 
 	t.Run("column not found", func(t *testing.T) {
@@ -322,7 +322,7 @@ func TestWithColumnAliases(t *testing.T) {
 			}),
 		)
 		assert.Nil(t, tbls)
-		assert.True(t, errors.NotFound.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.NotFound, err)
 	})
 }
 
@@ -340,6 +340,6 @@ func TestWithUniquifiedColumns(t *testing.T) {
 			}),
 		)
 		assert.Nil(t, tbls)
-		assert.True(t, errors.NotFound.Match(err), "%+v", err)
+		assert.ErrorIsKind(t, errors.NotFound, err)
 	})
 }

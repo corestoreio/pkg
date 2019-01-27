@@ -6,8 +6,9 @@ func TestNewTables(t *testing.T) {
 		SkipDBCleanup: true,
 	})(){{end}}
 
-	ctx := context.TODO()
-	tbls, err := NewTables(ctx, db.DB)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
+	defer cancel()
+	tbls, err := NewTables(ctx, ddl.WithConnPool(db))
 	assert.NoError(t, err)
 
 	tblNames := tbls.Tables()
@@ -33,7 +34,7 @@ func TestNewTables(t *testing.T) {
 		ccd := tbls.MustTable(TableName{{GoCamel .TableName}})
 
 		inStmt, err := ccd.Insert().BuildValues().Prepare(ctx) // Do not use Ignore() to suppress DB errors.
-		assert.NoError(t, err, "%+v", err)
+		assert.NoError(t, err)
 		insArtisan := inStmt.WithArgs()
 		defer dmltest.Close(t, inStmt)
 
@@ -51,7 +52,7 @@ func TestNewTables(t *testing.T) {
 
 			entityOut := new({{GoCamel .TableName}})
 			rowCount, err := selArtisan.Int64s(lID).Load(ctx, entityOut)
-			assert.NoError(t, err, "%+v", err)
+			assert.NoError(t, err)
 			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
 
 			{{- range $col := $table.Columns }}

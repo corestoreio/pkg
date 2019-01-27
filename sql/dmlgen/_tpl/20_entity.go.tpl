@@ -58,27 +58,31 @@ type {{.Collection}} struct {
 	AfterMapColumns 	func(uint64, *{{.Entity}}) error `json:"-"`
 }
 
-// Make{{.Collection}} creates a new initialized collection. Auto generated.
-func Make{{.Collection}}() {{.Collection}} {
+// New{{.Collection}} creates a new initialized collection. Auto generated.
+func New{{.Collection}}() *{{.Collection}} {
 	{{/*
 		TODO(idea): use a global pool which can register for each type the
 		before/after mapcolumn function so that the dev does not need to assign
 		each time. think if it's worth such a pattern.
 	*/ -}}
-	return {{.Collection}}{
+	return &{{.Collection}}{
 		Data: make([]*{{.Entity}}, 0, 5),
 	}
 }
 
 func (cc *{{.Collection}}) scanColumns(cm *dml.ColumnMap,e *{{.Entity}}, idx uint64) error {
-	if err := cc.BeforeMapColumns(idx, e); err != nil {
-		return errors.WithStack(err)
+	if cc.BeforeMapColumns != nil {
+		if err := cc.BeforeMapColumns(idx, e); err != nil {
+			return errors.WithStack(err)
+		}
 	}
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
-	if err := cc.AfterMapColumns(idx, e); err != nil {
-		return errors.WithStack(err)
+	if cc.AfterMapColumns != nil {
+		if err := cc.AfterMapColumns(idx, e); err != nil {
+			return errors.WithStack(err)
+		}
 	}
 	return nil
 }
