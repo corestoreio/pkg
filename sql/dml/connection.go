@@ -503,7 +503,7 @@ func (c *ConnPool) WithQueryBuilder(qb QueryBuilder) *Artisan {
 	var args [defaultArgumentsCapacity]argument
 	return &Artisan{
 		base: builderCommon{
-			cachedSQL: []string{"", sql},
+			cachedSQL: map[string]string{"": sql},
 			Log:       c.Log,
 			id:        c.makeUniqueID(),
 			DB:        c.DB,
@@ -549,7 +549,7 @@ func (c *ConnPool) WithRawSQL(query string) *Artisan {
 	var args [defaultArgumentsCapacity]argument
 	return &Artisan{
 		base: builderCommon{
-			cachedSQL: []string{"", query},
+			cachedSQL: map[string]string{"": query},
 			Log:       l,
 			id:        id,
 			DB:        c.DB,
@@ -706,7 +706,7 @@ func (c *Conn) WithQueryBuilder(qb QueryBuilder) *Artisan {
 	var args [defaultArgumentsCapacity]argument
 	return &Artisan{
 		base: builderCommon{
-			cachedSQL: []string{"", sql},
+			cachedSQL: map[string]string{"": sql},
 			Log:       l,
 			id:        id,
 			DB:        c.DB,
@@ -728,7 +728,7 @@ func (c *Conn) WithRawSQL(sql string) *Artisan {
 	var args [defaultArgumentsCapacity]argument
 	return &Artisan{
 		base: builderCommon{
-			cachedSQL: []string{"", sql},
+			cachedSQL: map[string]string{"": sql},
 			Log:       l,
 			id:        id,
 			DB:        c.DB,
@@ -748,7 +748,7 @@ func (tx *Tx) WithRawSQL(sql string) *Artisan {
 	var args [defaultArgumentsCapacity]argument
 	return &Artisan{
 		base: builderCommon{
-			cachedSQL: []string{"", sql},
+			cachedSQL: map[string]string{"": sql},
 			Log:       l,
 			id:        id,
 			DB:        tx.DB,
@@ -812,7 +812,7 @@ func (tx *Tx) WithQueryBuilder(qb QueryBuilder) *Artisan {
 	var args [defaultArgumentsCapacity]argument
 	return &Artisan{
 		base: builderCommon{
-			cachedSQL: []string{"", sql},
+			cachedSQL: map[string]string{"": sql},
 			Log:       tx.Log,
 			id:        tx.makeUniqueID(),
 			DB:        tx.DB,

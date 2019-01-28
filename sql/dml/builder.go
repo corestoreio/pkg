@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 	"sync"
 	"unicode/utf8"
@@ -96,12 +97,11 @@ type builderCommon struct {
 	// Bytes.
 	EstimatedCachedSQLSize uint16
 	CacheKey               string
-	SingleUseCacheKey      bool // TODO implement, should panic when setting the same cahce key the 2nd time
+	// SingleUseCacheKey      bool // TODO implement, should panic when setting the same cahce key the 2nd time
 	// cachedSQL contains the final SQL string which gets send to the server.
 	// Using the CacheKey allows a dml type (insert,update,select ... ) to build
-	// multiple different versions from object. Previous version was a map with
-	// huge overhead, so a slice is fine for up to 5-6 key/values pairs.
-	cachedSQL []string // balanced slice
+	// multiple different versions from object.
+	cachedSQL map[string]string
 	// qualifiedColumns gets collected before calling ToSQL, and clearing the all
 	// pointers, to know which columns need values from the QualifiedRecords
 	qualifiedColumns []string
@@ -115,26 +115,27 @@ func (bc *builderCommon) withCacheKey(key string, args ...interface{}) {
 }
 
 func (bc *builderCommon) CachedQueries(queries ...string) []string {
-	return append(queries, bc.cachedSQL...)
+	keys := make([]string, 0, len(bc.cachedSQL))
+	for key := range bc.cachedSQL {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		queries = append(queries, k, bc.cachedSQL[k])
+	}
+	return queries
 }
 
-func (bc *builderCommon) cachedSQLGet(key string) (string, bool) {
-	for i, d := range bc.cachedSQL {
-		if d == key {
-			return bc.cachedSQL[i+1], true // bounds check?
-		}
-	}
-	return "", false
+func (bc *builderCommon) cachedSQLGet(key string) (sql string, ok bool) {
+	sql, ok = bc.cachedSQL[key]
+	return
 }
 
 func (bc *builderCommon) cachedSQLUpsert(key string, sql string) {
-	for i, d := range bc.cachedSQL {
-		if d == key {
-			bc.cachedSQL[i+1] = sql
-			return
-		}
+	if bc.cachedSQL == nil {
+		bc.cachedSQL = make(map[string]string, 32) // 32 is just a guess
 	}
-	bc.cachedSQL = append(bc.cachedSQL, key, sql)
+	bc.cachedSQL[key] = sql
 }
 
 // BuilderBase contains fields which all SQL query builder have in common, the
