@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"sort"
 	"strconv"
 	"sync"
 	"unicode/utf8"
@@ -99,9 +98,10 @@ type builderCommon struct {
 	CacheKey               string
 	SingleUseCacheKey      bool // TODO implement, should panic when setting the same cahce key the 2nd time
 	// cachedSQL contains the final SQL string which gets send to the server.
-	// Using the CacheKey allows a dml type (insert,update,select ... )
-	// to build multiple different versions from object.
-	cachedSQL map[string]string
+	// Using the CacheKey allows a dml type (insert,update,select ... ) to build
+	// multiple different versions from object. Previous version was a map with
+	// huge overhead, so a slice is fine for up to 5-6 key/values pairs.
+	cachedSQL []string // balanced slice
 	// qualifiedColumns gets collected before calling ToSQL, and clearing the all
 	// pointers, to know which columns need values from the QualifiedRecords
 	qualifiedColumns []string
@@ -111,20 +111,30 @@ func (bc *builderCommon) withCacheKey(key string, args ...interface{}) {
 	if len(args) > 0 {
 		key = fmt.Sprintf(key, args...)
 	}
-
 	bc.CacheKey = key
 }
 
 func (bc *builderCommon) CachedQueries(queries ...string) []string {
-	keys := make([]string, 0, len(bc.cachedSQL))
-	for key := range bc.cachedSQL {
-		keys = append(keys, key)
+	return append(queries, bc.cachedSQL...)
+}
+
+func (bc *builderCommon) cachedSQLGet(key string) (string, bool) {
+	for i, d := range bc.cachedSQL {
+		if d == key {
+			return bc.cachedSQL[i+1], true // bounds check?
+		}
 	}
-	sort.Strings(keys)
-	for _, k := range keys {
-		queries = append(queries, k, bc.cachedSQL[k])
+	return "", false
+}
+
+func (bc *builderCommon) cachedSQLUpsert(key string, sql string) {
+	for i, d := range bc.cachedSQL {
+		if d == key {
+			bc.cachedSQL[i+1] = sql
+			return
+		}
 	}
-	return queries
+	bc.cachedSQL = append(bc.cachedSQL, key, sql)
 }
 
 // BuilderBase contains fields which all SQL query builder have in common, the
@@ -164,7 +174,8 @@ func (bb *BuilderBase) buildToSQL(qb queryBuilder) (string, error) {
 	if bb.ärgErr != nil {
 		return "", errors.WithStack(bb.ärgErr)
 	}
-	rawSQL, ok := bb.cachedSQL[bb.CacheKey]
+
+	rawSQL, ok := bb.cachedSQLGet(bb.CacheKey)
 	if !ok {
 		buf := bufferpool.Get()
 		defer bufferpool.Put(buf)
@@ -174,10 +185,7 @@ func (bb *BuilderBase) buildToSQL(qb queryBuilder) (string, error) {
 		}
 		rawSQL = buf.String()
 		bb.qualifiedColumns = qualifiedColumns
-		if bb.cachedSQL == nil {
-			bb.cachedSQL = make(map[string]string, 20)
-		}
-		bb.cachedSQL[bb.CacheKey] = rawSQL
+		bb.cachedSQLUpsert(bb.CacheKey, rawSQL)
 	}
 	return rawSQL, nil
 }
@@ -205,7 +213,7 @@ func (bb *BuilderBase) prepare(ctx context.Context, db Preparer, qb queryBuilder
 		Stmt: sqlStmt,
 	}
 	stmt.base.CacheKey = bb.CacheKey
-	stmt.base.cachedSQL[bb.CacheKey] = rawQuery
+	stmt.base.cachedSQLUpsert(bb.CacheKey, rawQuery)
 	stmt.base.DB = stmtWrapper{stmt: sqlStmt}
 	stmt.base.source = source
 	return stmt, nil
@@ -216,9 +224,6 @@ func (bb *BuilderBase) prepare(ctx context.Context, db Preparer, qb queryBuilder
 func (bb *BuilderBase) withArtisan(qb queryBuilder) *Artisan {
 	var args [defaultArgumentsCapacity]argument
 	bb.rwmu.Lock()
-
-	// TODO skip build SQL when cache key exsits in map
-
 	_, err := bb.buildToSQL(qb) // // build and set internal state
 	a := Artisan{
 		base:      bb.builderCommon,
@@ -439,4 +444,11 @@ func writeInsertPlaceholders(buf *bytes.Buffer, rowCount, columnCount uint) {
 			buf.WriteByte(')')
 		}
 	}
+}
+
+func bufTrySizeByResliceOrNew(buf []byte, size int) []byte {
+	if size <= cap(buf) {
+		return buf[:size]
+	}
+	return make([]byte, size)
 }

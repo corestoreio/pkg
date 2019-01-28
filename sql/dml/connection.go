@@ -499,11 +499,11 @@ func (c *ConnPool) Transaction(ctx context.Context, opts *sql.TxOptions, fns ...
 // assigned connection and builds the SQL string. The returned arguments and
 // errors of the QueryBuilder will be forwarded to the Artisan type.
 func (c *ConnPool) WithQueryBuilder(qb QueryBuilder) *Artisan {
-	sqlStr, argsRaw, err := qb.ToSQL()
+	sql, argsRaw, err := qb.ToSQL()
 	var args [defaultArgumentsCapacity]argument
 	return &Artisan{
 		base: builderCommon{
-			cachedSQL: map[string]string{"": sqlStr},
+			cachedSQL: []string{"", sql},
 			Log:       c.Log,
 			id:        c.makeUniqueID(),
 			DB:        c.DB,
@@ -549,7 +549,7 @@ func (c *ConnPool) WithRawSQL(query string) *Artisan {
 	var args [defaultArgumentsCapacity]argument
 	return &Artisan{
 		base: builderCommon{
-			cachedSQL: map[string]string{"": query},
+			cachedSQL: []string{"", query},
 			Log:       l,
 			id:        id,
 			DB:        c.DB,
@@ -697,16 +697,16 @@ func (c *Conn) Close() error {
 // assigned connection and builds the SQL string. The returned arguments and
 // errors of the QueryBuilder will be forwarded to the Artisan type.
 func (c *Conn) WithQueryBuilder(qb QueryBuilder) *Artisan {
-	sqlStr, argsRaw, err := qb.ToSQL()
+	sql, argsRaw, err := qb.ToSQL()
 	id := c.makeUniqueID()
 	l := c.Log
 	if l != nil {
-		l = l.With(log.String("query_builder_id", id), log.String("sql", sqlStr))
+		l = l.With(log.String("query_builder_id", id), log.String("sql", sql))
 	}
 	var args [defaultArgumentsCapacity]argument
 	return &Artisan{
 		base: builderCommon{
-			cachedSQL: map[string]string{"": sqlStr},
+			cachedSQL: []string{"", sql},
 			Log:       l,
 			id:        id,
 			DB:        c.DB,
@@ -728,7 +728,7 @@ func (c *Conn) WithRawSQL(sql string) *Artisan {
 	var args [defaultArgumentsCapacity]argument
 	return &Artisan{
 		base: builderCommon{
-			cachedSQL: map[string]string{"": sql},
+			cachedSQL: []string{"", sql},
 			Log:       l,
 			id:        id,
 			DB:        c.DB,
@@ -748,7 +748,7 @@ func (tx *Tx) WithRawSQL(sql string) *Artisan {
 	var args [defaultArgumentsCapacity]argument
 	return &Artisan{
 		base: builderCommon{
-			cachedSQL: map[string]string{"": sql},
+			cachedSQL: []string{"", sql},
 			Log:       l,
 			id:        id,
 			DB:        tx.DB,
@@ -808,11 +808,11 @@ func (tx *Tx) Rollback() error {
 // assigned connection and builds the SQL string. The returned arguments and
 // errors of the QueryBuilder will be forwarded to the Artisan type.
 func (tx *Tx) WithQueryBuilder(qb QueryBuilder) *Artisan {
-	sqlStr, argsRaw, err := qb.ToSQL()
+	sql, argsRaw, err := qb.ToSQL()
 	var args [defaultArgumentsCapacity]argument
 	return &Artisan{
 		base: builderCommon{
-			cachedSQL: map[string]string{"": sqlStr},
+			cachedSQL: []string{"", sql},
 			Log:       tx.Log,
 			id:        tx.makeUniqueID(),
 			DB:        tx.DB,

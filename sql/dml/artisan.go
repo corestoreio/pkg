@@ -182,7 +182,7 @@ func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}
 	if a.base.source == dmlSourceInsert {
 		return a.prepareArgsInsert(extArgs...)
 	}
-	cachedSQL, ok := a.base.cachedSQL[a.base.CacheKey] // ignore ,ok but we have to use it to avoid a panic
+	cachedSQL, ok := a.base.cachedSQLGet(a.base.CacheKey)
 	if !a.isPrepared && !ok {
 		return "", nil, errors.Empty.Newf("[dml] Artisan: The SQL string is empty.")
 	}
@@ -209,8 +209,7 @@ func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}
 		a.hasNamedArgs = 1
 		cachedSQL, a.base.qualifiedColumns, found = extractReplaceNamedArgs(cachedSQL, a.base.qualifiedColumns)
 		if found {
-			// TODO fix concurrent map write
-			a.base.cachedSQL[a.base.CacheKey] = cachedSQL
+			a.base.cachedSQLUpsert(a.base.CacheKey, cachedSQL)
 		}
 
 		switch la := len(a.arguments); true {
@@ -376,7 +375,7 @@ func (a *Artisan) prepareArgsInsert(extArgs ...interface{}) (string, []interface
 	// defer bufferpool.PutTwin(sqlBuf)
 	cm.arguments = append(cm.arguments, a.arguments...)
 	lenInsertCachedSQL := len(a.insertCachedSQL)
-	cachedSQL := a.base.cachedSQL[a.base.CacheKey]
+	cachedSQL, _ := a.base.cachedSQLGet(a.base.CacheKey)
 	{
 		if lenInsertCachedSQL > 0 {
 			cachedSQL = a.insertCachedSQL
@@ -1159,7 +1158,7 @@ func (a *Artisan) query(ctx context.Context, args ...interface{}) (rows *sql.Row
 	rows, err = a.base.DB.QueryContext(ctx, sqlStr, pArgs...)
 	if err != nil {
 		if sqlStr == "" {
-			cachedSQL := a.base.cachedSQL[a.base.CacheKey]
+			cachedSQL, _ := a.base.cachedSQLGet(a.base.CacheKey)
 			sqlStr = "PREPARED:" + string(cachedSQL)
 		}
 		err = errors.Wrapf(err, "[dml] Query.QueryContext with query %q", sqlStr)

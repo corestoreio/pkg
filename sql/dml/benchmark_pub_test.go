@@ -49,8 +49,9 @@ func (benchMockQuerier) QueryRowContext(ctx context.Context, query string, args 
 	return new(sql.Row)
 }
 
-// BenchmarkSelect_Rows-4   	 1000000	      2188 ns/op	    1354 B/op	      19 allocs/op old
-// BenchmarkSelect_Rows-4   	 1000000	      2223 ns/op	    1386 B/op	      20 allocs/op new
+// BenchmarkSelect_Rows-4		 1000000	      2276 ns/op	    4344 B/op	      12 allocs/op git commit 609db6db
+// BenchmarkSelect_Rows-4   	  500000	      2919 ns/op	    5411 B/op	      18 allocs/op
+// BenchmarkSelect_Rows-4   	  500000	      2504 ns/op	    4239 B/op	      17 allocs/op
 func BenchmarkSelect_Rows(b *testing.B) {
 
 	tables := []string{"eav_attribute"}
@@ -64,9 +65,7 @@ func BenchmarkSelect_Rows(b *testing.B) {
 			"COLUMN_TYPE", "COLUMN_KEY", "EXTRA", "COLUMN_COMMENT").From("information_schema.COLUMNS").
 			Where(dml.Expr(`TABLE_SCHEMA=DATABASE()`)).WithDB(db)
 
-		if len(tables) > 0 {
-			sel.Where(dml.Column("TABLE_NAME IN ?").In().PlaceHolder())
-		}
+		sel.Where(dml.Column("TABLE_NAME").In().PlaceHolder())
 
 		rows, err := sel.WithArgs().Strings(tables...).QueryContext(ctx)
 		if err != nil {

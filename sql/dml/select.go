@@ -420,7 +420,7 @@ func (b *Select) WithArgs() *Artisan {
 // disabled.
 func (b *Select) ToSQL() (string, []interface{}, error) {
 	rawSQL, err := b.buildToSQL(b)
-	return rawSQL, nil, err
+	return string(rawSQL), nil, err
 }
 
 // WithCacheKey sets the currently used cache key when generating a SQL string.
