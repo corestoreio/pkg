@@ -182,7 +182,7 @@ func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}
 	if a.base.source == dmlSourceInsert {
 		return a.prepareArgsInsert(extArgs...)
 	}
-	cachedSQL, ok := a.base.cachedSQLGet(a.base.CacheKey)
+	cachedSQL, ok := a.base.cachedSQL[a.base.CacheKey]
 	if !a.isPrepared && !ok {
 		return "", nil, errors.Empty.Newf("[dml] Artisan: The SQL string is empty.")
 	}
@@ -375,7 +375,7 @@ func (a *Artisan) prepareArgsInsert(extArgs ...interface{}) (string, []interface
 	// defer bufferpool.PutTwin(sqlBuf)
 	cm.arguments = append(cm.arguments, a.arguments...)
 	lenInsertCachedSQL := len(a.insertCachedSQL)
-	cachedSQL, _ := a.base.cachedSQLGet(a.base.CacheKey)
+	cachedSQL, _ := a.base.cachedSQL[a.base.CacheKey]
 	{
 		if lenInsertCachedSQL > 0 {
 			cachedSQL = a.insertCachedSQL
@@ -423,6 +423,8 @@ func (a *Artisan) prepareArgsInsert(extArgs ...interface{}) (string, []interface
 		if odkPos > 0 {
 			sqlBuf.First.WriteString(cachedSQL[odkPos:])
 		}
+	}
+	if lenInsertCachedSQL == 0 {
 		a.insertCachedSQL = sqlBuf.First.String()
 	}
 
@@ -438,8 +440,7 @@ func (a *Artisan) prepareArgsInsert(extArgs ...interface{}) (string, []interface
 			return sqlBuf.Second.String(), nil, nil
 		}
 	}
-
-	return sqlBuf.First.String(), cm.arguments.Interfaces(extArgs...), nil
+	return a.insertCachedSQL, cm.arguments.Interfaces(extArgs...), nil
 }
 
 // nextUnnamedArg returns an unnamed argument by its position.
@@ -1158,7 +1159,7 @@ func (a *Artisan) query(ctx context.Context, args ...interface{}) (rows *sql.Row
 	rows, err = a.base.DB.QueryContext(ctx, sqlStr, pArgs...)
 	if err != nil {
 		if sqlStr == "" {
-			cachedSQL, _ := a.base.cachedSQLGet(a.base.CacheKey)
+			cachedSQL, _ := a.base.cachedSQL[a.base.CacheKey]
 			sqlStr = "PREPARED:" + string(cachedSQL)
 		}
 		err = errors.Wrapf(err, "[dml] Query.QueryContext with query %q", sqlStr)

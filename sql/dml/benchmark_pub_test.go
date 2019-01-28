@@ -441,21 +441,23 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	b.Run("NewInsert", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = dml.NewInsert("alpha").AddColumns("something_id", "user_id", "other").
-				WithArgs().Int64(1).Int64(2).Bool(true).ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = dml.NewInsert("alpha").
+				AddColumns("something_id", "user_id", "other").
+				WithArgs().
+				Int64(1).Int64(2).Bool(true).
+				ToSQL()
 			if err != nil {
 				b.Fatal(err)
 			}
 		}
 	})
 
-	sqlObj := dml.NewInsert("alpha").AddColumns("something_id", "user_id", "other")
-
 	b.Run("ToSQL no cache", func(b *testing.B) {
-		// TODO fix me	sqlObj.IsBuildCacheDisabled = true
+		sqlObj := dml.NewInsert("alpha").AddColumns("something_id", "user_id", "other")
+		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			var err error
-			sqlObjA := sqlObj.WithArgs().Int64(1).Int64(2).Bool(true)
+			sqlObjA := sqlObj.WithCacheKey("index_%d", i).WithArgs().Int64(1).Int64(2).Bool(true)
 			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObjA.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
@@ -464,27 +466,16 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	})
 
 	b.Run("ToSQL with cache", func(b *testing.B) {
-		// TODO fix me	sqlObj.IsBuildCacheDisabled = false
+		sqlObj := dml.NewInsert("alpha").AddColumns("something_id", "user_id", "other")
+		delA := sqlObj.WithArgs()
+		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			var err error
-			sqlObjA := sqlObj.WithArgs().Int64(1).Int64(2).Bool(true)
-			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObjA.ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = delA.Int64(1).Int64(2).Bool(true).ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-		}
-	})
-
-	b.Run("ToSQL optimized", func(b *testing.B) {
-		// TODO fix me sqlObj.IsBuildCacheDisabled = false
-		sqlObjA := sqlObj.WithArgs().Int64(1).Int64(2).Bool(true).Reset()
-		for i := 0; i < b.N; i++ {
-			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObjA.Int64(1).Int64(2).Bool(true).ToSQL()
-			if err != nil {
-				b.Fatalf("%+v", err)
-			}
-			sqlObjA.Reset()
+			delA.Reset()
 		}
 	})
 }

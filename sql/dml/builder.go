@@ -126,11 +126,6 @@ func (bc *builderCommon) CachedQueries(queries ...string) []string {
 	return queries
 }
 
-func (bc *builderCommon) cachedSQLGet(key string) (sql string, ok bool) {
-	sql, ok = bc.cachedSQL[key]
-	return
-}
-
 func (bc *builderCommon) cachedSQLUpsert(key string, sql string) {
 	if bc.cachedSQL == nil {
 		bc.cachedSQL = make(map[string]string, 32) // 32 is just a guess
@@ -176,7 +171,7 @@ func (bb *BuilderBase) buildToSQL(qb queryBuilder) (string, error) {
 		return "", errors.WithStack(bb.ärgErr)
 	}
 
-	rawSQL, ok := bb.cachedSQLGet(bb.CacheKey)
+	rawSQL, ok := bb.cachedSQL[bb.CacheKey]
 	if !ok {
 		buf := bufferpool.Get()
 		defer bufferpool.Put(buf)
@@ -225,7 +220,7 @@ func (bb *BuilderBase) prepare(ctx context.Context, db Preparer, qb queryBuilder
 func (bb *BuilderBase) withArtisan(qb queryBuilder) *Artisan {
 	var args [defaultArgumentsCapacity]argument
 	bb.rwmu.Lock()
-	_, err := bb.buildToSQL(qb) // // build and set internal state
+	_, err := bb.buildToSQL(qb)
 	a := Artisan{
 		base:      bb.builderCommon,
 		arguments: args[:0],
