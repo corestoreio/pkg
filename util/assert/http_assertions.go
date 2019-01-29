@@ -1,3 +1,5 @@
+// +build csall http
+
 package assert
 
 import (

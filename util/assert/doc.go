@@ -1,11 +1,12 @@
-// Package assert provides a set of comprehensive testing tools for use with the normal Go testing system.
+// Package assert provides a set of comprehensive testing tools for use with the
+// normal Go testing system.
 //
 // Example Usage
 //
 // The following is a complete example using assert in a standard test function:
 //    import (
 //      "testing"
-//      "github.com/stretchr/testify/assert"
+//      "github.com/corestoreio/pkg/util/assert"
 //    )
 //
 //    func TestSomething(t *testing.T) {
@@ -21,7 +22,7 @@
 //
 //    import (
 //      "testing"
-//      "github.com/stretchr/testify/assert"
+//      "github.com/corestoreio/pkg/util/assert"
 //    )
 //
 //    func TestSomething(t *testing.T) {
@@ -35,11 +36,14 @@
 //
 // Assertions
 //
-// Assertions allow you to easily write test code, and are global funcs in the `assert` package.
-// All assertion functions take, as the first argument, the `*testing.T` object provided by the
-// testing framework. This allows the assertion funcs to write the failings and other details to
-// the correct place.
+// Assertions allow you to easily write test code, and are global funcs in the
+// `assert` package. All assertion functions take, as the first argument, the
+// `*testing.T` object provided by the testing framework. This allows the
+// assertion funcs to write the failings and other details to the correct place.
 //
-// Every assertion function also takes an optional string message as the final argument,
-// allowing custom error messages to be appended to the message the assertion method outputs.
+// Every assertion function also takes an optional string message as the final
+// argument, allowing custom error messages to be appended to the message the
+// assertion method outputs.
+//
+// To enable HTTP assertions you must compile with build tag `csall` or `http`.
 package assert
