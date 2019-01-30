@@ -111,20 +111,12 @@ func (t *Table) Insert() *dml.Insert {
 	return i
 }
 
-// SelectAll creates a new `SELECT column1,column2,cloumnX FROM table` without a
-// WHERE clause.
-func (t *Table) SelectAll() *dml.Select {
-	s := t.dcp.SelectFrom(t.Name, MainTable).AddColumns(t.columnsAll...)
-	s.Listeners = s.Listeners.Merge(t.Listeners.Select)
-	if t.customDB != nil {
-		s.DB = t.customDB
-	}
-	return s
-}
-
-// Select creates a new SELECT statement with no columns but a pre-filled FROM
-// clause.
+// Select creates a new SELECT statement. If "*" gets set as an argument, then
+// all columns will be added to to list of columns.
 func (t *Table) Select(columns ...string) *dml.Select {
+	if len(columns) == 1 && columns[0] == "*" {
+		columns = t.columnsAll
+	}
 	s := t.dcp.SelectFrom(t.Name, MainTable).AddColumns(columns...)
 	s.Listeners = s.Listeners.Merge(t.Listeners.Select)
 	if t.customDB != nil {

@@ -357,7 +357,7 @@ func TestTable_Artisan_Methods(t *testing.T) {
 			WithArgs().
 			WillReturnRows(sqlmock.NewRows([]string{"user_id", "email", "first_name", "username"}))
 
-		rows, err := tblAdmUser.SelectAll().WithArgs().QueryContext(context.Background())
+		rows, err := tblAdmUser.Select("*").WithArgs().QueryContext(context.Background())
 		assert.NoError(t, err)
 		assert.NoError(t, rows.Close())
 	})
@@ -379,21 +379,16 @@ func TestTable_Artisan_Methods(t *testing.T) {
 }
 
 func TestTable_GeneratedColumns(t *testing.T) {
-	t.Parallel()
-
 	dbc := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, dbc)
-
-	dmltest.SQLDumpLoad(t, "testdata/generated*.sql", nil)
-	// defer dmltest.SQLDumpLoad(t, "testdata/generated*.sql", nil)()
+	defer dmltest.SQLDumpLoad(t, "testdata/generated*.sql", nil).Deferred()
 
 	tbls := ddl.MustNewTables(
 		ddl.WithDB(dbc.DB),
 		ddl.WithCreateTable(context.TODO(), "core_config_data_generated", ""),
 	)
 
-	ins := tbls.MustTable("core_config_data_generated").Insert()
-	t.Log(ins.String())
-	// only those columsn which aren't generated
-
+	// INSERT should contain only the non-generated columns.
+	ins := tbls.MustTable("core_config_data_generated").Insert().BuildValues()
+	assert.Exactly(t, "INSERT INTO `core_config_data_generated` (`type_id`,`expires`,`path`,`value`) VALUES (?,?,?,?)", ins.String())
 }

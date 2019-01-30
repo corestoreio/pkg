@@ -34,7 +34,7 @@ func TestLoadForeignKeys_Integration(t *testing.T) {
 
 	dbc := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, dbc)
-	defer dmltest.SQLDumpLoad(t, "testdata/testLoadForeignKeys*.sql", nil)()
+	defer dmltest.SQLDumpLoad(t, "testdata/testLoadForeignKeys*.sql", nil).Deferred()
 
 	t.Run("x859admin_user", func(t *testing.T) {
 
