@@ -632,6 +632,9 @@ func (a *Artisan) Clone() *Artisan {
 // prepared statements. If the underlying DB connection does not implement
 // io.Closer, nothing will happen.
 func (a *Artisan) Close() error {
+	if a.base.ärgErr != nil {
+		return errors.WithStack(a.base.ärgErr)
+	}
 	if c, ok := a.base.DB.(ioCloser); ok {
 		return errors.WithStack(c.Close())
 	}

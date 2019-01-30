@@ -39,7 +39,7 @@ func TestStmtWrapper(t *testing.T) {
 		}()
 
 		sw := stmtWrapper{}
-		sw.PrepareContext(context.TODO(), "SELECT X")
+		_, _ = sw.PrepareContext(context.TODO(), "SELECT X")
 	})
 
 	t.Run("ExecContext", func(t *testing.T) {
@@ -56,7 +56,7 @@ func TestStmtWrapper(t *testing.T) {
 		}()
 
 		sw := stmtWrapper{}
-		sw.ExecContext(context.TODO(), "SELECT X")
+		_, _ = sw.ExecContext(context.TODO(), "SELECT X")
 	})
 
 	t.Run("QueryContext", func(t *testing.T) {
@@ -73,7 +73,7 @@ func TestStmtWrapper(t *testing.T) {
 		}()
 
 		sw := stmtWrapper{}
-		sw.QueryContext(context.TODO(), "SELECT X")
+		_, _ = sw.QueryContext(context.TODO(), "SELECT X")
 	})
 
 	t.Run("QueryRowContext", func(t *testing.T) {

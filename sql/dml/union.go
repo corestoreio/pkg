@@ -301,6 +301,11 @@ func (u *Union) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err e
 		repl.WriteString(w, selStr)
 		w.WriteByte(')')
 	}
+
+	if w.Len() == 0 {
+		return nil, errors.Empty.Newf("[dml] No SQL string generated. Number of select stmts: %d", len(u.Selects))
+	}
+
 	sqlWriteOrderBy(w, u.OrderBys, true)
 	return placeHolders, nil
 }
@@ -313,6 +318,22 @@ func (u *Union) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err e
 // the underlying *sql.Stmt is.
 func (u *Union) Prepare(ctx context.Context) (*Stmt, error) {
 	return u.prepare(ctx, u.DB, u, dmlSourceUnion)
+}
+
+// PrepareWithArgs same as Prepare but forwards the possible error of creating a
+// prepared statement into the Artisan type. Reduces boilerplate code. You must
+// call Artisan.Close to deallocate the prepared statement in the SQL server.
+func (u *Union) PrepareWithArgs(ctx context.Context) *Artisan {
+	stmt, err := u.prepare(ctx, u.DB, u, dmlSourceUnion)
+	if err != nil {
+		a := &Artisan{
+			base: builderCommon{
+				ärgErr: errors.WithStack(err),
+			},
+		}
+		return a
+	}
+	return stmt.WithArgs()
 }
 
 // Clone creates a clone of the current object, leaving fields DB and Log

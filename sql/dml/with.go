@@ -296,6 +296,22 @@ func (b *With) Prepare(ctx context.Context) (*Stmt, error) {
 	return b.prepare(ctx, b.DB, b, dmlSourceWith)
 }
 
+// PrepareWithArgs same as Prepare but forwards the possible error of creating a
+// prepared statement into the Artisan type. Reduces boilerplate code. You must
+// call Artisan.Close to deallocate the prepared statement in the SQL server.
+func (b *With) PrepareWithArgs(ctx context.Context) *Artisan {
+	stmt, err := b.prepare(ctx, b.DB, b, dmlSourceWith)
+	if err != nil {
+		a := &Artisan{
+			base: builderCommon{
+				ärgErr: errors.WithStack(err),
+			},
+		}
+		return a
+	}
+	return stmt.WithArgs()
+}
+
 // Clone creates a clone of the current object, leaving fields DB and Log
 // untouched.
 func (b *With) Clone() *With {

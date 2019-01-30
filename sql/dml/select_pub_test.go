@@ -725,3 +725,51 @@ func TestSelect_When_Unless(t *testing.T) {
 		assert.Exactly(t, "SELECT `entity_id` FROM `catalog_product_entity` WHERE (`sku` LIKE '4713')", s.String())
 	})
 }
+
+func TestPrepareWithArgs(t *testing.T) {
+
+	t.Run("all dml types", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		// defer dmltest.MockClose(t, dbc, dbMock)
+
+		dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `a1` FROM `a`")).WillBeClosed()
+		dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("(SELECT * FROM `b1`) UNION (SELECT * FROM `b2`)")).WillBeClosed()
+		dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("UPDATE `c` SET `c1`=?")).WillBeClosed()
+		dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("WITH `one` AS (SELECT 1) SELECT * FROM `one`")).WillBeClosed()
+		dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("DELETE FROM `e`")).WillBeClosed()
+		dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("INSERT INTO `d` (`d1`) VALUES (?)")).WillBeClosed()
+
+		ctx := context.TODO()
+
+		for _, a := range []*dml.Artisan{
+			dbc.SelectFrom("a").AddColumns("a1").PrepareWithArgs(ctx),
+			dbc.Union(dml.NewSelect("*").From("b1"), dml.NewSelect("*").From("b2")).PrepareWithArgs(ctx),
+			dbc.Update("c").AddColumns("c1").PrepareWithArgs(ctx),
+			dbc.With(
+				dml.WithCTE{Name: "one", Select: dml.NewSelect().Unsafe().AddColumns("1")},
+			).Select(dml.NewSelect().Star().From("one")).PrepareWithArgs(ctx),
+			dbc.DeleteFrom("e").PrepareWithArgs(ctx),
+			dbc.InsertInto("d").AddColumns("d1").BuildValues().PrepareWithArgs(ctx),
+		} {
+			dmltest.Close(t, a)
+		}
+	})
+
+	t.Run("select error", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+		ctx := context.TODO()
+
+		err := dbc.SelectFrom("a").PrepareWithArgs(ctx).Close()
+		assert.ErrorIsKind(t, errors.Empty, err)
+	})
+
+	t.Run("union error", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+		ctx := context.TODO()
+
+		err := dbc.Union(dml.NewSelect("*").From("b")).PrepareWithArgs(ctx).Close()
+		assert.ErrorIsKind(t, errors.Empty, err)
+	})
+}

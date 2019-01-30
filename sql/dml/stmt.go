@@ -26,6 +26,7 @@ type stmtWrapper struct {
 		ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error)
 		QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error)
 		QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row
+		ioCloser
 	}
 }
 
@@ -55,6 +56,10 @@ func (sw stmtWrapper) QueryRowContext(ctx context.Context, sql string, args ...i
 		panic(errors.NotAllowed.Newf("[dml] Argument `sql` with %q not allowed because this is a prepared statement", sql))
 	}
 	return sw.stmt.QueryRowContext(ctx, args...)
+}
+
+func (sw stmtWrapper) Close() error {
+	return sw.stmt.Close()
 }
 
 // Stmt wraps a *sql.Stmt (a prepared statement) with a specific SQL query. To

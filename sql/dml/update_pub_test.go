@@ -66,6 +66,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 
 		stmt, err := mu.Prepare(context.TODO())
 		assert.NoError(t, err)
+		defer dmltest.Close(t, stmt)
 
 		p := &dmlPerson{
 			ID:    1,
@@ -117,6 +118,8 @@ func TestUpdate_WithArgs(t *testing.T) {
 
 		stmt, err := mu.Prepare(context.TODO())
 		assert.NoError(t, err)
+		defer dmltest.Close(t, stmt)
+
 		for i, record := range records {
 			results, err := stmt.WithArgs().Record("ce", record).ExecContext(context.TODO())
 			assert.NoError(t, err)
@@ -140,9 +143,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 			Where(dml.Column("id").Equal().PlaceHolder()).
 			WithDB(dbc.DB).Prepare(context.TODO())
 		assert.NoError(t, err, "failed creating a prepared statement")
-		defer func() {
-			assert.NoError(t, stmt.Close(), "Close on a prepared statement")
-		}()
+		defer dmltest.Close(t, stmt)
 
 		res, err := stmt.WithArgs().ExecContext(context.TODO(), "Peter Gopher", "peter@gopher.go", 3456)
 		assert.NoError(t, err, "failed to execute ExecContext")
@@ -167,9 +168,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 			Where(dml.Column("id").Equal().PlaceHolder()).
 			WithDB(dbc.DB).Prepare(context.TODO())
 		assert.NoError(t, err, "failed creating a prepared statement")
-		defer func() {
-			assert.NoError(t, stmt.Close(), "Close on a prepared statement")
-		}()
+		defer dmltest.Close(t, stmt)
 
 		tests := []struct {
 			name         string
@@ -282,9 +281,8 @@ func TestArguments_WithQualifiedColumnsAliases(t *testing.T) {
 	}
 
 	dbMock.ExpectClose()
-	dbc.Close()
+	dmltest.Close(t, dbc)
 	assert.NoError(t, dbMock.ExpectationsWereMet())
-
 }
 
 func TestUpdate_BindRecord(t *testing.T) {
