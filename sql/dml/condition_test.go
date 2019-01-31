@@ -562,5 +562,31 @@ func TestJoins_Clone(t *testing.T) {
 	notEqualPointers(t, jn[0], jn2[0])
 	notEqualPointers(t, jn[0].On[0], jn2[0].On[0])
 	notEqualPointers(t, jn[0].On[1].Columns, jn2[0].On[1].Columns)
+}
 
+func TestConditions_Reset(t *testing.T) {
+	t.Parallel()
+
+	s := NewSelect("sku").FromAlias("catalog", "e").
+		Where(
+			Column("e.entity_id").PlaceHolder(),
+			Column("t_d.attribute_id").In().Int64s(45),
+		)
+	sql, _, err := s.ToSQL()
+	assert.NoError(t, err)
+	assert.Exactly(t, "SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = ?) AND (`t_d`.`attribute_id` IN (45))", sql)
+
+	s.WithCacheKey("resetted_where").Wheres.Reset()
+	s.Where(
+		Column("e.entity_id2").PlaceHolder(),
+	)
+
+	sql, _, err = s.ToSQL()
+	assert.NoError(t, err)
+	assert.Exactly(t, "SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id2` = ?)", sql)
+
+	assert.Exactly(t, []string{
+		"", "SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = ?) AND (`t_d`.`attribute_id` IN (45))",
+		"resetted_where", "SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id2` = ?)"},
+		s.CachedQueries(), "CachedQueries")
 }

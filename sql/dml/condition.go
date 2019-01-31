@@ -167,6 +167,16 @@ func (cs Conditions) Clone() Conditions {
 	return cs2
 }
 
+// Reset resets the slice to length zero and retains the allocated memory.
+func (cs *Conditions) Reset() Conditions {
+	cs2 := *cs
+	for i := range cs2 {
+		cs2[i] = nil
+	}
+	*cs = cs2[:0]
+	return *cs
+}
+
 // Joins defines multiple join conditions.
 type Joins []*join
 
