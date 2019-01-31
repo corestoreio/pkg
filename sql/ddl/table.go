@@ -42,9 +42,6 @@ type Table struct {
 	// Columns all table columns. They do not get used to create or alter a
 	// table.
 	Columns Columns
-	// Listeners specific pre defined listeners which gets dispatches to each
-	// DML statement (SELECT, INSERT, UPDATE or DELETE).
-	Listeners dml.ListenerBucket
 	// IsView set to true to mark if the table is a view.
 	IsView bool
 	// optimized column selection for specific DML operations.
@@ -104,7 +101,6 @@ func (t *Table) WithDB(db dml.QueryExecPreparer) *Table {
 // clause, otherwise a SQL parse error will occur.
 func (t *Table) Insert() *dml.Insert {
 	i := t.dcp.InsertInto(t.Name).AddColumns(t.columnsUpsert...)
-	i.Listeners = i.Listeners.Merge(t.Listeners.Insert)
 	if t.customDB != nil {
 		i.DB = t.customDB
 	}
@@ -118,7 +114,6 @@ func (t *Table) Select(columns ...string) *dml.Select {
 		columns = t.columnsAll
 	}
 	s := t.dcp.SelectFrom(t.Name, MainTable).AddColumns(columns...)
-	s.Listeners = s.Listeners.Merge(t.Listeners.Select)
 	if t.customDB != nil {
 		s.DB = t.customDB
 	}
@@ -129,7 +124,6 @@ func (t *Table) Select(columns ...string) *dml.Select {
 func (t *Table) SelectByPK() *dml.Select {
 	s := t.dcp.SelectFrom(t.Name, MainTable).AddColumns(t.columnsAll...)
 	s.Wheres = t.whereByPK(dml.In)
-	s.Listeners = s.Listeners.Merge(t.Listeners.Select)
 	if t.customDB != nil {
 		s.DB = t.customDB
 	}
@@ -140,7 +134,6 @@ func (t *Table) SelectByPK() *dml.Select {
 func (t *Table) DeleteByPK() *dml.Delete {
 	d := t.dcp.DeleteFrom(t.Name)
 	d.Wheres = t.whereByPK(dml.In)
-	d.Listeners = d.Listeners.Merge(t.Listeners.Delete)
 	if t.customDB != nil {
 		d.DB = t.customDB
 	}
@@ -152,7 +145,6 @@ func (t *Table) DeleteByPK() *dml.Delete {
 func (t *Table) UpdateByPK() *dml.Update {
 	u := t.dcp.Update(t.Name).AddColumns(t.columnsUpsert...)
 	u.Wheres = t.whereByPK(dml.Equal)
-	u.Listeners = u.Listeners.Merge(t.Listeners.Update)
 	if t.customDB != nil {
 		u.DB = t.customDB
 	}

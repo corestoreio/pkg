@@ -277,28 +277,6 @@ func withDropTable(ctx context.Context, tm *Tables, db dml.QueryExecPreparer, ta
 	return nil
 }
 
-// WithTableDMLListeners adds event listeners to a table object. It doesn't
-// matter if the table has already been set. If the table object gets set later,
-// the events will be copied to the new object.
-func WithTableDMLListeners(tableName string, events ...*dml.ListenerBucket) TableOption {
-	return TableOption{
-		sortOrder: 253,
-		fn: func(tm *Tables) error {
-			tm.mu.Lock()
-			defer tm.mu.Unlock()
-
-			t, ok := tm.tm[tableName]
-			if !ok {
-				return errors.NotFound.Newf("[ddl] Table %q not found", tableName)
-			}
-			t.Listeners.Merge(events...)
-			tm.tm[tableName] = t
-
-			return nil
-		},
-	}
-}
-
 // NewTables creates a new TableService satisfying interface Manager.
 func NewTables(opts ...TableOption) (*Tables, error) {
 	tm := &Tables{
@@ -405,7 +383,6 @@ func (tm *Tables) Len() int {
 // new table buckets. Empty columns in the new table gets updated from the
 // existing table.
 func (tm *Tables) Upsert(tNew *Table) error {
-
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
 
@@ -414,9 +391,6 @@ func (tm *Tables) Upsert(tNew *Table) error {
 		tm.tm[tNew.Name] = tNew
 		return nil
 	}
-
-	// for now copy only the events from the existing table
-	tNew.Listeners.Merge(&tOld.Listeners)
 
 	if tNew.Schema == "" {
 		tNew.Schema = tOld.Schema

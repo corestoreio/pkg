@@ -22,7 +22,6 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
-	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/assert"
@@ -346,55 +345,6 @@ func TestWithDropTable(t *testing.T) {
 			assert.NoError(t, err, "%+v", err)
 			_ = tm0
 		})
-	})
-}
-
-func TestWithTableDMLListeners(t *testing.T) {
-	t.Parallel()
-
-	counter := 0
-	ev := dml.MustNewListenerBucket(
-		dml.Listen{
-			Name:           "l1",
-			EventType:      dml.OnBeforeToSQL,
-			ListenSelectFn: func(_ *dml.Select) { counter++ },
-		},
-		dml.Listen{
-			Name:           "l2",
-			EventType:      dml.OnBeforeToSQL,
-			ListenSelectFn: func(_ *dml.Select) { counter++ },
-		},
-	)
-
-	t.Run("Nil Table / No-WithTable", func(*testing.T) {
-		ts := ddl.MustNewTables(
-			ddl.WithTableDMLListeners("tableA", ev, ev),
-			ddl.WithTable("tableA"),
-		) // +=2
-		tbl := ts.MustTable("tableA")
-		sel := dml.NewSelect().From("tableA")
-		sel.Listeners.Merge(tbl.Listeners.Select) // +=2
-		sel.AddColumns("a", "b")
-		assert.Exactly(t, "SELECT `a`, `b` FROM `tableA`", sel.String())
-		assert.Exactly(t, 4, counter) // yes 4 is correct
-	})
-
-	t.Run("Non Nil Table", func(*testing.T) {
-		ts := ddl.MustNewTables(
-			ddl.WithTable("TeschtT", &ddl.Column{Field: "col1"}),
-			ddl.WithTableDMLListeners("TeschtT", ev, ev),
-		) // +=2
-		tbl := ts.MustTable("TeschtT")
-		assert.Exactly(t, "TeschtT", tbl.Name)
-	})
-
-	t.Run("Nil Table and after WithTable call", func(*testing.T) {
-		ts := ddl.MustNewTables(
-			ddl.WithTableDMLListeners("TeschtU", ev, ev),
-			ddl.WithTable("TeschtU", &ddl.Column{Field: "col1"}),
-		) // +=2
-		tbl := ts.MustTable("TeschtU")
-		assert.Exactly(t, "TeschtU", tbl.Name)
 	})
 }
 
