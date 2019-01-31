@@ -120,9 +120,14 @@ func (t *Table) Select(columns ...string) *dml.Select {
 	return s
 }
 
-// SelectByPK creates a new `SELECT columns FROM table WHERE id IN (?)`
-func (t *Table) SelectByPK() *dml.Select {
-	s := t.dcp.SelectFrom(t.Name, MainTable).AddColumns(t.columnsAll...)
+// SelectByPK creates a new `SELECT columns FROM table WHERE id IN (?)`. If "*"
+// gets set as an argument, then all columns will be added to to list of
+// columns.
+func (t *Table) SelectByPK(columns ...string) *dml.Select {
+	if len(columns) == 1 && columns[0] == "*" {
+		columns = t.columnsAll
+	}
+	s := t.dcp.SelectFrom(t.Name, MainTable).AddColumns(columns...)
 	s.Wheres = t.whereByPK(dml.In)
 	if t.customDB != nil {
 		s.DB = t.customDB
