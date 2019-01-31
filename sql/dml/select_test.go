@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/assert"
 )
@@ -902,93 +901,6 @@ func TestSelect_Locks(t *testing.T) {
 		compareToSQL2(t, s, errors.NoKind,
 			"SELECT `p1`.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email` FROM `dml_people` AS `p1` FOR UPDATE",
 		)
-	})
-}
-
-func TestSelect_Events(t *testing.T) {
-	t.Parallel()
-
-	t.Run("Stop Propagation", func(t *testing.T) {
-		d := NewSelect("a", "b").FromAlias("tableA", "tA")
-		d.OrderBy("col3")
-
-		d.Log = log.BlackHole{EnableInfo: true, EnableDebug: true}
-		d.Listeners.Add(
-			Listen{
-				Name:      "listener1",
-				EventType: OnBeforeToSQL,
-				ListenSelectFn: func(b *Select) {
-					b.OrderByDesc("col1")
-				},
-			},
-			Listen{
-				Name:      "listener2",
-				EventType: OnBeforeToSQL,
-				ListenSelectFn: func(b *Select) {
-					b.OrderByDesc("col2")
-					b.PropagationStopped = true
-				},
-			},
-			Listen{
-				Name:      "listener3",
-				EventType: OnBeforeToSQL,
-				ListenSelectFn: func(b *Select) {
-					panic("Should not get called")
-				},
-			},
-		)
-		compareToSQL2(t, d, errors.NoKind,
-			"SELECT `a`, `b` FROM `tableA` AS `tA` ORDER BY `col3`, `col1` DESC, `col2` DESC",
-		)
-		// call it twice
-		compareToSQL2(t, d, errors.NoKind,
-			"SELECT `a`, `b` FROM `tableA` AS `tA` ORDER BY `col3`, `col1` DESC, `col2` DESC",
-		)
-	})
-
-	t.Run("Missing EventType", func(t *testing.T) {
-		s := NewSelect("a", "b").FromAlias("tableA", "tA")
-		s.OrderBy("col3")
-		s.Listeners.Add(Listen{
-			Name: "a col1",
-			ListenSelectFn: func(s2 *Select) {
-				s2.Where(Column("a").Float64(3.14159))
-				s2.OrderByDesc("col1")
-			},
-		})
-		compareToSQL2(t, s, errors.Empty,
-			"",
-		)
-	})
-
-	t.Run("Should Dispatch", func(t *testing.T) {
-		s := NewSelect("a", "b").FromAlias("tableA", "tA")
-		s.OrderBy("col3")
-		s.Listeners.Add(Listen{
-			Name:      "a col1",
-			EventType: OnBeforeToSQL,
-			ListenSelectFn: func(s2 *Select) {
-				s2.Where(Column("a").Float64(3.14159))
-				s2.OrderByDesc("col1")
-			},
-		})
-		s.Listeners.Add(Listen{
-			Name:      "b col2",
-			EventType: OnBeforeToSQL,
-			ListenSelectFn: func(s2 *Select) {
-				s2.OrderByDesc("col2").
-					Where(Column("b").Str("a"))
-			},
-		})
-
-		compareToSQL2(t, s, errors.NoKind,
-			"SELECT `a`, `b` FROM `tableA` AS `tA` WHERE (`a` = 3.14159) AND (`b` = 'a') ORDER BY `col3`, `col1` DESC, `col2` DESC",
-		)
-		// call it twice
-		compareToSQL2(t, s, errors.NoKind,
-			"SELECT `a`, `b` FROM `tableA` AS `tA` WHERE (`a` = 3.14159) AND (`b` = 'a') ORDER BY `col3`, `col1` DESC, `col2` DESC",
-		)
-		assert.Exactly(t, `a col1; b col2`, s.Listeners.String())
 	})
 }
 

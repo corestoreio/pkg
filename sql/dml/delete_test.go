@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/assert"
 )
@@ -124,96 +123,6 @@ func TestDeleteReal(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, found, "should have found a row")
 	assert.Exactly(t, int64(0), count.Int64, "count")
-}
-
-func TestDelete_Events(t *testing.T) {
-	t.Parallel()
-
-	t.Run("Stop Propagation", func(t *testing.T) {
-		d := NewDelete("tableA").Alias("main_table")
-		d.Log = log.BlackHole{EnableInfo: true, EnableDebug: true}
-		d.Listeners.Add(
-			Listen{
-				Name:      "listener1",
-				EventType: OnBeforeToSQL,
-				ListenDeleteFn: func(b *Delete) {
-					b.OrderByDesc("col1")
-				},
-			},
-			Listen{
-				Name:      "listener2",
-				EventType: OnBeforeToSQL,
-				ListenDeleteFn: func(b *Delete) {
-					b.OrderByDesc("col2")
-					b.PropagationStopped = true
-				},
-			},
-			Listen{
-				Name:      "listener3",
-				EventType: OnBeforeToSQL,
-				ListenDeleteFn: func(b *Delete) {
-					panic("Should not get called")
-				},
-			},
-		)
-		compareToSQL2(t, d, errors.NoKind,
-			"DELETE FROM `tableA` AS `main_table` ORDER BY `col1` DESC, `col2` DESC",
-		)
-	})
-
-	t.Run("Missing EventType", func(t *testing.T) {
-		d := NewDelete("tableA").Alias("main_table")
-
-		d.OrderBy("col2")
-		d.Listeners.Add(
-			Listen{
-				Name: "col1",
-				ListenDeleteFn: func(b *Delete) {
-					b.OrderByDesc("col1")
-				},
-			},
-		)
-		compareToSQL2(t, d, errors.Empty,
-			"",
-		)
-	})
-
-	t.Run("Should Dispatch", func(t *testing.T) {
-
-		d := NewDelete("tableA").Alias("main_table")
-
-		d.OrderBy("col2")
-		d.Listeners.Add(
-			Listen{
-				Name:      "col1",
-				EventType: OnBeforeToSQL,
-				ListenDeleteFn: func(b *Delete) {
-					b.OrderByDesc("col1")
-				},
-			},
-			Listen{
-				Name:      "storeid",
-				EventType: OnBeforeToSQL,
-				ListenDeleteFn: func(b *Delete) {
-					b.Where(Column("store_id").Int64(1))
-				},
-			},
-		)
-
-		d.Listeners.Add(
-			Listen{
-				Name:      "repetitive",
-				EventType: OnBeforeToSQL,
-				ListenDeleteFn: func(b *Delete) {
-					b.Where(Column("repetitive").Int(3))
-				},
-			},
-		)
-		compareToSQL2(t, d, errors.NoKind,
-			"DELETE FROM `tableA` AS `main_table` WHERE (`store_id` = 1) AND (`repetitive` = 3) ORDER BY `col2`, `col1` DESC",
-		)
-		assert.Exactly(t, `col1; storeid; repetitive`, d.Listeners.String())
-	})
 }
 
 func TestDelete_BuildCacheDisabled(t *testing.T) {

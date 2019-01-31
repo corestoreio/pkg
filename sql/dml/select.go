@@ -51,9 +51,6 @@ type Select struct {
 	IsOrderByDeactivated bool // See OrderByDeactivated()
 	IsOrderByRand        bool // enables the original slow ORDER BY RAND() clause
 	OffsetCount          uint64
-	// Listeners allows to dispatch certain functions in different
-	// situations.
-	Listeners ListenersSelect
 }
 
 // NewSelect creates a new Select object.
@@ -439,10 +436,6 @@ func (b *Select) WithCacheKey(key string, args ...interface{}) *Select {
 func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err error) {
 	b.source = dmlSourceSelect
 	b.defaultQualifier = b.Table.qualifier()
-
-	if err = b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
-		return nil, errors.WithStack(err)
-	}
 
 	if len(b.Columns) == 0 && !b.IsCountStar && !b.IsStar {
 		return nil, errors.Empty.Newf("[dml] Select: no columns specified")

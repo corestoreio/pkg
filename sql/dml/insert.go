@@ -111,9 +111,6 @@ type Insert struct {
 	// VALUES do not need to get build by default because mostly WithArgs gets
 	// called to build the VALUES part dynamically.
 	IsBuildValues bool
-	// Listeners allows to dispatch certain functions in different
-	// situations.
-	Listeners ListenersInsert
 }
 
 // NewInsert creates a new Insert object.
@@ -329,10 +326,6 @@ func (b *Insert) WithCacheKey(key string, args ...interface{}) *Insert {
 }
 
 func (b *Insert) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, error) {
-	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
-		return nil, errors.WithStack(err)
-	}
-
 	for _, cv := range b.Pairs {
 		if !strInSlice(cv.Left, b.Columns) {
 			b.Columns = append(b.Columns, cv.Left)

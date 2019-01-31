@@ -53,9 +53,6 @@ type Delete struct {
 	// possible to use aliases. The use of aggregate functions is not allowed.
 	// RETURNING cannot be used in multi-table DELETEs.
 	Returning *Select
-	// Listeners allows to dispatch certain functions in different
-	// situations.
-	Listeners ListenersDelete
 }
 
 // NewDelete creates a new Delete object.
@@ -255,10 +252,6 @@ func (b *Delete) WithCacheKey(key string, args ...interface{}) *Delete {
 func (b *Delete) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err error) {
 	b.source = dmlSourceDelete
 	b.defaultQualifier = b.Table.qualifier()
-
-	if err = b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
-		return nil, errors.WithStack(err)
-	}
 
 	if b.Table.Name == "" {
 		return nil, errors.Empty.Newf("[dml] Delete: Table is missing")

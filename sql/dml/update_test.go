@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/assert"
 )
@@ -216,97 +215,6 @@ func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 			"UPDATE `catalog_product_entity` SET `sku`=?, `updated_at`=? WHERE (`entity_id` IN ?)",
 			"",
 		)
-	})
-}
-
-func TestUpdate_Events(t *testing.T) {
-	t.Parallel()
-
-	t.Run("Stop Propagation", func(t *testing.T) {
-		d := NewUpdate("tableA")
-		d.Set(Column("y").Int(25), Column("z").Int(26))
-
-		d.Log = log.BlackHole{EnableInfo: true, EnableDebug: true}
-		d.Listeners.Add(
-			Listen{
-				Name:      "listener1",
-				EventType: OnBeforeToSQL,
-				ListenUpdateFn: func(b *Update) {
-					b.Set(Column("a").Int(1))
-				},
-			},
-			Listen{
-				Name:      "listener2",
-				EventType: OnBeforeToSQL,
-				ListenUpdateFn: func(b *Update) {
-					b.Set(Column("b").Int(1))
-					b.PropagationStopped = true
-				},
-			},
-			Listen{
-				Name:      "listener3",
-				EventType: OnBeforeToSQL,
-				ListenUpdateFn: func(b *Update) {
-					panic("Should not get called")
-				},
-			},
-		)
-		compareToSQL(t, d, errors.NoKind,
-			"UPDATE `tableA` SET `y`=25, `z`=26, `a`=1, `b`=1",
-			"UPDATE `tableA` SET `y`=25, `z`=26, `a`=1, `b`=1", // each call ToSQL appends more columns
-		)
-	})
-
-	t.Run("Missing EventType", func(t *testing.T) {
-		up := NewUpdate("tableA")
-		up.Set(Column("a").Int(1), Column("b").Bool(true))
-
-		up.Listeners.Add(
-			Listen{
-				Name: "c=pi",
-				ListenUpdateFn: func(u *Update) {
-					u.Set(Column("c").Float64(3.14159))
-				},
-			},
-		)
-		compareToSQL(t, up, errors.Empty,
-			"",
-			"",
-		)
-	})
-
-	t.Run("Should Dispatch", func(t *testing.T) {
-		up := NewUpdate("tableA")
-		up.Set(Column("a").Int(1), Column("b").Bool(true))
-		up.Listeners.Add(
-			Listen{
-				Name:      "c=pi",
-				EventType: OnBeforeToSQL,
-				ListenUpdateFn: func(u *Update) {
-					u.Set(Column("c").Float64(3.14159))
-				},
-			},
-			Listen{
-				Name:      "d=d",
-				EventType: OnBeforeToSQL,
-				ListenUpdateFn: func(u *Update) {
-					u.Set(Column("d").Str("d"))
-				},
-			},
-		)
-
-		up.Listeners.Add(Listen{
-			Name:      "e",
-			EventType: OnBeforeToSQL,
-			ListenUpdateFn: func(u *Update) {
-				u.Set(Column("e").Str("e"))
-			},
-		})
-		compareToSQL(t, up, errors.NoKind,
-			"UPDATE `tableA` SET `a`=1, `b`=1, `c`=3.14159, `d`='d', `e`='e'",
-			"UPDATE `tableA` SET `a`=1, `b`=1, `c`=3.14159, `d`='d', `e`='e'", // each call ToSQL appends more columns
-		)
-		assert.Exactly(t, `c=pi; d=d; e`, up.Listeners.String())
 	})
 }
 

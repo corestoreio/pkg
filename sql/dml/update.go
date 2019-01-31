@@ -30,9 +30,6 @@ type Update struct {
 	// SetClauses contains the column/argument association. For each column
 	// there must be one argument.
 	SetClauses Conditions
-	// Listeners allows to dispatch certain functions in different
-	// situations.
-	Listeners ListenersUpdate
 }
 
 // NewUpdate creates a new Update object.
@@ -185,9 +182,6 @@ func (b *Update) WithCacheKey(key string, args ...interface{}) *Update {
 func (b *Update) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, error) {
 	b.defaultQualifier = b.Table.qualifier()
 	b.source = dmlSourceUpdate
-	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
-		return nil, errors.WithStack(err)
-	}
 
 	if len(b.Table.Name) == 0 {
 		return nil, errors.Empty.Newf("[dml] Update: Table at empty")
