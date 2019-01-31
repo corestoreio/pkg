@@ -542,6 +542,9 @@ func NewTables(packageImportPath string, opts ...Option) (*Tables, error) {
 			"testing",
 			"context",
 			"sort",
+			"time",
+			"github.com/corestoreio/pkg/sql/ddl",
+			"github.com/corestoreio/pkg/sql/dml",
 			"github.com/corestoreio/pkg/sql/dmltest",
 			"github.com/corestoreio/pkg/util/assert",
 			"github.com/corestoreio/pkg/util/pseudo",
@@ -801,11 +804,11 @@ type table struct {
 // WriteTo implements io.WriterTo and writes the generated source code into w.
 func (t *table) writeTo(w io.Writer, tpl *template.Template) error {
 	data := struct {
-		table
+		*table
 		Collection string
 		Entity     string
 	}{
-		table:      *t,
+		table:      t,
 		Collection: strs.ToGoCamelCase(t.TableName) + "Collection",
 		Entity:     strs.ToGoCamelCase(t.TableName),
 	}
@@ -828,6 +831,10 @@ func (t *table) GoCamelMaybePrivate(s string) string {
 	sr := []rune(su)
 	sr[0] = unicode.ToLower(sr[0])
 	return string(sr)
+}
+
+func (t *table) CollectionName() string {
+	return strs.ToGoCamelCase(t.TableName) + "Collection"
 }
 
 // GenerateProto searches all *.proto files in the given path and calls protoc

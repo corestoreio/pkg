@@ -70,6 +70,17 @@ func New{{.Collection}}() *{{.Collection}} {
 	}
 }
 
+// AssignLastInsertID traverses through the slice and sets a decrementing new
+// ID to each entity.
+func (cc *{{.Collection}}) AssignLastInsertID(id int64) {
+	id++
+	var j int64 = 1
+	for i := len(cc.Data) - 1; i >= 0; i-- {
+		cc.Data[i].AssignLastInsertID(id - j)
+		j++
+	}
+}
+
 func (cc *{{.Collection}}) scanColumns(cm *dml.ColumnMap,e *{{.Entity}}, idx uint64) error {
 	if cc.BeforeMapColumns != nil {
 		if err := cc.BeforeMapColumns(idx, e); err != nil {

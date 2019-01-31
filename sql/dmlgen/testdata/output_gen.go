@@ -4,14 +4,14 @@ package testdata
 
 import (
 	"context"
+	"sort"
+	"time"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/storage/null"
-	"sort"
-	"time"
-)
 
+)
 const (
 	TableNameCoreConfigData        = "core_config_data"
 	TableNameCustomerAddressEntity = "customer_address_entity"
@@ -103,6 +103,17 @@ type CoreConfigDataCollection struct {
 func NewCoreConfigDataCollection() *CoreConfigDataCollection {
 	return &CoreConfigDataCollection{
 		Data: make([]*CoreConfigData, 0, 5),
+	}
+}
+
+// AssignLastInsertID traverses through the slice and sets a decrementing new
+// ID to each entity.
+func (cc *CoreConfigDataCollection) AssignLastInsertID(id int64) {
+	id++
+	var j int64 = 1
+	for i := len(cc.Data) - 1; i >= 0; i-- {
+		cc.Data[i].AssignLastInsertID(id - j)
+		j++
 	}
 }
 
@@ -382,15 +393,30 @@ func NewCustomerAddressEntityCollection() *CustomerAddressEntityCollection {
 	}
 }
 
+// AssignLastInsertID traverses through the slice and sets a decrementing new
+// ID to each entity.
+func (cc *CustomerAddressEntityCollection) AssignLastInsertID(id int64) {
+	id++
+	var j int64 = 1
+	for i := len(cc.Data) - 1; i >= 0; i-- {
+		cc.Data[i].AssignLastInsertID(id - j)
+		j++
+	}
+}
+
 func (cc *CustomerAddressEntityCollection) scanColumns(cm *dml.ColumnMap, e *CustomerAddressEntity, idx uint64) error {
-	if err := cc.BeforeMapColumns(idx, e); err != nil {
-		return errors.WithStack(err)
+	if cc.BeforeMapColumns != nil {
+		if err := cc.BeforeMapColumns(idx, e); err != nil {
+			return errors.WithStack(err)
+		}
 	}
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
-	if err := cc.AfterMapColumns(idx, e); err != nil {
-		return errors.WithStack(err)
+	if cc.AfterMapColumns != nil {
+		if err := cc.AfterMapColumns(idx, e); err != nil {
+			return errors.WithStack(err)
+		}
 	}
 	return nil
 }
@@ -660,15 +686,30 @@ func NewCustomerEntityCollection() *CustomerEntityCollection {
 	}
 }
 
+// AssignLastInsertID traverses through the slice and sets a decrementing new
+// ID to each entity.
+func (cc *CustomerEntityCollection) AssignLastInsertID(id int64) {
+	id++
+	var j int64 = 1
+	for i := len(cc.Data) - 1; i >= 0; i-- {
+		cc.Data[i].AssignLastInsertID(id - j)
+		j++
+	}
+}
+
 func (cc *CustomerEntityCollection) scanColumns(cm *dml.ColumnMap, e *CustomerEntity, idx uint64) error {
-	if err := cc.BeforeMapColumns(idx, e); err != nil {
-		return errors.WithStack(err)
+	if cc.BeforeMapColumns != nil {
+		if err := cc.BeforeMapColumns(idx, e); err != nil {
+			return errors.WithStack(err)
+		}
 	}
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
-	if err := cc.AfterMapColumns(idx, e); err != nil {
-		return errors.WithStack(err)
+	if cc.AfterMapColumns != nil {
+		if err := cc.AfterMapColumns(idx, e); err != nil {
+			return errors.WithStack(err)
+		}
 	}
 	return nil
 }
@@ -965,15 +1006,30 @@ func NewDmlgenTypesCollection() *DmlgenTypesCollection {
 	}
 }
 
+// AssignLastInsertID traverses through the slice and sets a decrementing new
+// ID to each entity.
+func (cc *DmlgenTypesCollection) AssignLastInsertID(id int64) {
+	id++
+	var j int64 = 1
+	for i := len(cc.Data) - 1; i >= 0; i-- {
+		cc.Data[i].AssignLastInsertID(id - j)
+		j++
+	}
+}
+
 func (cc *DmlgenTypesCollection) scanColumns(cm *dml.ColumnMap, e *DmlgenTypes, idx uint64) error {
-	if err := cc.BeforeMapColumns(idx, e); err != nil {
-		return errors.WithStack(err)
+	if cc.BeforeMapColumns != nil {
+		if err := cc.BeforeMapColumns(idx, e); err != nil {
+			return errors.WithStack(err)
+		}
 	}
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
-	if err := cc.AfterMapColumns(idx, e); err != nil {
-		return errors.WithStack(err)
+	if cc.AfterMapColumns != nil {
+		if err := cc.AfterMapColumns(idx, e); err != nil {
+			return errors.WithStack(err)
+		}
 	}
 	return nil
 }

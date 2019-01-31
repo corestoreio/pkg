@@ -5,11 +5,14 @@ package testdata
 import (
 	"context"
 	"fmt"
+	"github.com/corestoreio/pkg/sql/ddl"
+	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/pseudo"
 	"sort"
 	"testing"
+	"time"
 )
 
 func TestNewTables(t *testing.T) {
@@ -18,10 +21,11 @@ func TestNewTables(t *testing.T) {
 
 	defer dmltest.SQLDumpLoad(t, "test_*_tables.sql", &dmltest.SQLDumpOptions{
 		SkipDBCleanup: true,
-	})()
+	}).Deferred()
 
-	ctx := context.TODO()
-	tbls, err := NewTables(ctx, db.DB)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
+	defer cancel()
+	tbls, err := NewTables(ctx, ddl.WithConnPool(db))
 	assert.NoError(t, err)
 
 	tblNames := tbls.Tables()
@@ -74,208 +78,284 @@ func TestNewTables(t *testing.T) {
 
 	// TODO run those tests in parallel
 	t.Run("CoreConfigData_Entity", func(t *testing.T) {
-		ccd := tbls.MustTable(TableNameCoreConfigData)
+		tbl := tbls.MustTable(TableNameCoreConfigData)
 
-		inStmt, err := ccd.Insert().BuildValues().Prepare(ctx) // Do not use Ignore() to suppress DB errors.
-		assert.NoError(t, err, "%+v", err)
-		insArtisan := inStmt.WithArgs()
-		defer dmltest.Close(t, inStmt)
+		entINSERT := tbl.Insert().BuildValues()
+		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
 
-		selArtisan := ccd.SelectByPK().WithArgs().ExpandPlaceHolders()
+		entSELECT := tbl.SelectByPK("*")
+		entSELECTStmtA := entSELECT.WithArgs().ExpandPlaceHolders() // WithArgs generates the cached SQL string with key ""
+
+		entSELECT.WithCacheKey("select_10").Wheres.Reset()
+		_, _, err := entSELECT.Where(
+			dml.Column("config_id").LessOrEqual().Int(10),
+		).ToSQL() // ToSQL generates the new cached SQL string with key select_10
+		assert.NoError(t, err)
 
 		for i := 0; i < 9; i++ {
-			entityIn := new(CoreConfigData)
-			if err := ps.FakeData(entityIn); err != nil {
+			entIn := new(CoreConfigData)
+			if err := ps.FakeData(entIn); err != nil {
 				t.Errorf("IDX[%d]: %+v", i, err)
 				return
 			}
 
-			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CoreConfigData_Entity")(insArtisan.Record("", entityIn).ExecContext(ctx))
-			insArtisan.Reset()
+			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CoreConfigData_Entity")(entINSERTStmtA.Record("", entIn).ExecContext(ctx))
+			entINSERTStmtA.Reset()
 
-			entityOut := new(CoreConfigData)
-			rowCount, err := selArtisan.Int64s(lID).Load(ctx, entityOut)
-			assert.NoError(t, err, "%+v", err)
+			entOut := new(CoreConfigData)
+			rowCount, err := entSELECTStmtA.Int64s(lID).Load(ctx, entOut)
+			assert.NoError(t, err)
 			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
-			assert.Exactly(t, entityIn.ConfigID, entityOut.ConfigID, "IDX%d: ConfigID should match", lID)
-			assert.ExactlyLength(t, 8, &entityIn.Scope, &entityOut.Scope, "IDX%d: Scope should match", lID)
-			assert.Exactly(t, entityIn.ScopeID, entityOut.ScopeID, "IDX%d: ScopeID should match", lID)
-			assert.Exactly(t, entityIn.Expires, entityOut.Expires, "IDX%d: Expires should match", lID)
-			assert.ExactlyLength(t, 255, &entityIn.Path, &entityOut.Path, "IDX%d: Path should match", lID)
-			assert.ExactlyLength(t, 65535, &entityIn.Value, &entityOut.Value, "IDX%d: Value should match", lID)
+			assert.Exactly(t, entIn.ConfigID, entOut.ConfigID, "IDX%d: ConfigID should match", lID)
+			assert.ExactlyLength(t, 8, &entIn.Scope, &entOut.Scope, "IDX%d: Scope should match", lID)
+			assert.Exactly(t, entIn.ScopeID, entOut.ScopeID, "IDX%d: ScopeID should match", lID)
+			assert.Exactly(t, entIn.Expires, entOut.Expires, "IDX%d: Expires should match", lID)
+			assert.ExactlyLength(t, 255, &entIn.Path, &entOut.Path, "IDX%d: Path should match", lID)
+			assert.ExactlyLength(t, 65535, &entIn.Value, &entOut.Value, "IDX%d: Value should match", lID)
 
 		}
+		dmltest.Close(t, entINSERTStmtA)
+
+		entCol := NewCoreConfigDataCollection()
+		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
+		assert.NoError(t, err)
+		t.Logf("Collection load rowCount: %d", rowCount)
+
+		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
+
+		lID := dmltest.CheckLastInsertID(t, "Error: CoreConfigDataCollection")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
+		dmltest.Close(t, entINSERTStmtA)
+		t.Logf("Last insert ID into: %d", lID)
+		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())
+		t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
 	})
 	t.Run("CustomerAddressEntity_Entity", func(t *testing.T) {
-		ccd := tbls.MustTable(TableNameCustomerAddressEntity)
+		tbl := tbls.MustTable(TableNameCustomerAddressEntity)
 
-		inStmt, err := ccd.Insert().BuildValues().Prepare(ctx) // Do not use Ignore() to suppress DB errors.
-		assert.NoError(t, err, "%+v", err)
-		insArtisan := inStmt.WithArgs()
-		defer dmltest.Close(t, inStmt)
+		entINSERT := tbl.Insert().BuildValues()
+		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
 
-		selArtisan := ccd.SelectByPK().WithArgs().ExpandPlaceHolders()
+		entSELECT := tbl.SelectByPK("*")
+		entSELECTStmtA := entSELECT.WithArgs().ExpandPlaceHolders() // WithArgs generates the cached SQL string with key ""
+
+		entSELECT.WithCacheKey("select_10").Wheres.Reset()
+		_, _, err := entSELECT.Where(
+			dml.Column("entity_id").LessOrEqual().Int(10),
+		).ToSQL() // ToSQL generates the new cached SQL string with key select_10
+		assert.NoError(t, err)
 
 		for i := 0; i < 9; i++ {
-			entityIn := new(CustomerAddressEntity)
-			if err := ps.FakeData(entityIn); err != nil {
+			entIn := new(CustomerAddressEntity)
+			if err := ps.FakeData(entIn); err != nil {
 				t.Errorf("IDX[%d]: %+v", i, err)
 				return
 			}
 
-			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CustomerAddressEntity_Entity")(insArtisan.Record("", entityIn).ExecContext(ctx))
-			insArtisan.Reset()
+			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CustomerAddressEntity_Entity")(entINSERTStmtA.Record("", entIn).ExecContext(ctx))
+			entINSERTStmtA.Reset()
 
-			entityOut := new(CustomerAddressEntity)
-			rowCount, err := selArtisan.Int64s(lID).Load(ctx, entityOut)
-			assert.NoError(t, err, "%+v", err)
+			entOut := new(CustomerAddressEntity)
+			rowCount, err := entSELECTStmtA.Int64s(lID).Load(ctx, entOut)
+			assert.NoError(t, err)
 			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
-			assert.Exactly(t, entityIn.EntityID, entityOut.EntityID, "IDX%d: EntityID should match", lID)
-			assert.ExactlyLength(t, 50, &entityIn.IncrementID, &entityOut.IncrementID, "IDX%d: IncrementID should match", lID)
-			assert.Exactly(t, entityIn.ParentID, entityOut.ParentID, "IDX%d: ParentID should match", lID)
-			assert.Exactly(t, entityIn.CreatedAt, entityOut.CreatedAt, "IDX%d: CreatedAt should match", lID)
-			assert.Exactly(t, entityIn.UpdatedAt, entityOut.UpdatedAt, "IDX%d: UpdatedAt should match", lID)
-			assert.Exactly(t, entityIn.IsActive, entityOut.IsActive, "IDX%d: IsActive should match", lID)
-			assert.ExactlyLength(t, 255, &entityIn.City, &entityOut.City, "IDX%d: City should match", lID)
-			assert.ExactlyLength(t, 255, &entityIn.Company, &entityOut.Company, "IDX%d: Company should match", lID)
-			assert.ExactlyLength(t, 255, &entityIn.CountryID, &entityOut.CountryID, "IDX%d: CountryID should match", lID)
-			assert.ExactlyLength(t, 255, &entityIn.Fax, &entityOut.Fax, "IDX%d: Fax should match", lID)
-			assert.ExactlyLength(t, 255, &entityIn.Firstname, &entityOut.Firstname, "IDX%d: Firstname should match", lID)
-			assert.ExactlyLength(t, 255, &entityIn.Lastname, &entityOut.Lastname, "IDX%d: Lastname should match", lID)
-			assert.ExactlyLength(t, 255, &entityIn.Middlename, &entityOut.Middlename, "IDX%d: Middlename should match", lID)
-			assert.ExactlyLength(t, 255, &entityIn.Postcode, &entityOut.Postcode, "IDX%d: Postcode should match", lID)
-			assert.ExactlyLength(t, 40, &entityIn.Prefix, &entityOut.Prefix, "IDX%d: Prefix should match", lID)
-			assert.ExactlyLength(t, 255, &entityIn.Region, &entityOut.Region, "IDX%d: Region should match", lID)
-			assert.Exactly(t, entityIn.RegionID, entityOut.RegionID, "IDX%d: RegionID should match", lID)
-			assert.ExactlyLength(t, 65535, &entityIn.Street, &entityOut.Street, "IDX%d: Street should match", lID)
-			assert.ExactlyLength(t, 40, &entityIn.Suffix, &entityOut.Suffix, "IDX%d: Suffix should match", lID)
-			assert.ExactlyLength(t, 255, &entityIn.Telephone, &entityOut.Telephone, "IDX%d: Telephone should match", lID)
-			assert.ExactlyLength(t, 255, &entityIn.VatID, &entityOut.VatID, "IDX%d: VatID should match", lID)
-			assert.Exactly(t, entityIn.VatIsValid, entityOut.VatIsValid, "IDX%d: VatIsValid should match", lID)
-			assert.ExactlyLength(t, 255, &entityIn.VatRequestDate, &entityOut.VatRequestDate, "IDX%d: VatRequestDate should match", lID)
-			assert.ExactlyLength(t, 255, &entityIn.VatRequestID, &entityOut.VatRequestID, "IDX%d: VatRequestID should match", lID)
-			assert.Exactly(t, entityIn.VatRequestSuccess, entityOut.VatRequestSuccess, "IDX%d: VatRequestSuccess should match", lID)
+			assert.Exactly(t, entIn.EntityID, entOut.EntityID, "IDX%d: EntityID should match", lID)
+			assert.ExactlyLength(t, 50, &entIn.IncrementID, &entOut.IncrementID, "IDX%d: IncrementID should match", lID)
+			assert.Exactly(t, entIn.ParentID, entOut.ParentID, "IDX%d: ParentID should match", lID)
+			assert.Exactly(t, entIn.CreatedAt, entOut.CreatedAt, "IDX%d: CreatedAt should match", lID)
+			assert.Exactly(t, entIn.UpdatedAt, entOut.UpdatedAt, "IDX%d: UpdatedAt should match", lID)
+			assert.Exactly(t, entIn.IsActive, entOut.IsActive, "IDX%d: IsActive should match", lID)
+			assert.ExactlyLength(t, 255, &entIn.City, &entOut.City, "IDX%d: City should match", lID)
+			assert.ExactlyLength(t, 255, &entIn.Company, &entOut.Company, "IDX%d: Company should match", lID)
+			assert.ExactlyLength(t, 255, &entIn.CountryID, &entOut.CountryID, "IDX%d: CountryID should match", lID)
+			assert.ExactlyLength(t, 255, &entIn.Fax, &entOut.Fax, "IDX%d: Fax should match", lID)
+			assert.ExactlyLength(t, 255, &entIn.Firstname, &entOut.Firstname, "IDX%d: Firstname should match", lID)
+			assert.ExactlyLength(t, 255, &entIn.Lastname, &entOut.Lastname, "IDX%d: Lastname should match", lID)
+			assert.ExactlyLength(t, 255, &entIn.Middlename, &entOut.Middlename, "IDX%d: Middlename should match", lID)
+			assert.ExactlyLength(t, 255, &entIn.Postcode, &entOut.Postcode, "IDX%d: Postcode should match", lID)
+			assert.ExactlyLength(t, 40, &entIn.Prefix, &entOut.Prefix, "IDX%d: Prefix should match", lID)
+			assert.ExactlyLength(t, 255, &entIn.Region, &entOut.Region, "IDX%d: Region should match", lID)
+			assert.Exactly(t, entIn.RegionID, entOut.RegionID, "IDX%d: RegionID should match", lID)
+			assert.ExactlyLength(t, 65535, &entIn.Street, &entOut.Street, "IDX%d: Street should match", lID)
+			assert.ExactlyLength(t, 40, &entIn.Suffix, &entOut.Suffix, "IDX%d: Suffix should match", lID)
+			assert.ExactlyLength(t, 255, &entIn.Telephone, &entOut.Telephone, "IDX%d: Telephone should match", lID)
+			assert.ExactlyLength(t, 255, &entIn.VatID, &entOut.VatID, "IDX%d: VatID should match", lID)
+			assert.Exactly(t, entIn.VatIsValid, entOut.VatIsValid, "IDX%d: VatIsValid should match", lID)
+			assert.ExactlyLength(t, 255, &entIn.VatRequestDate, &entOut.VatRequestDate, "IDX%d: VatRequestDate should match", lID)
+			assert.ExactlyLength(t, 255, &entIn.VatRequestID, &entOut.VatRequestID, "IDX%d: VatRequestID should match", lID)
+			assert.Exactly(t, entIn.VatRequestSuccess, entOut.VatRequestSuccess, "IDX%d: VatRequestSuccess should match", lID)
 		}
+		dmltest.Close(t, entINSERTStmtA)
+
+		entCol := NewCustomerAddressEntityCollection()
+		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
+		assert.NoError(t, err)
+		t.Logf("Collection load rowCount: %d", rowCount)
+
+		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
+
+		lID := dmltest.CheckLastInsertID(t, "Error: CustomerAddressEntityCollection")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
+		dmltest.Close(t, entINSERTStmtA)
+		t.Logf("Last insert ID into: %d", lID)
+		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())
+		t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
 	})
 	t.Run("CustomerEntity_Entity", func(t *testing.T) {
-		ccd := tbls.MustTable(TableNameCustomerEntity)
+		tbl := tbls.MustTable(TableNameCustomerEntity)
 
-		inStmt, err := ccd.Insert().BuildValues().Prepare(ctx) // Do not use Ignore() to suppress DB errors.
-		assert.NoError(t, err, "%+v", err)
-		insArtisan := inStmt.WithArgs()
-		defer dmltest.Close(t, inStmt)
+		entINSERT := tbl.Insert().BuildValues()
+		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
 
-		selArtisan := ccd.SelectByPK().WithArgs().ExpandPlaceHolders()
+		entSELECT := tbl.SelectByPK("*")
+		entSELECTStmtA := entSELECT.WithArgs().ExpandPlaceHolders() // WithArgs generates the cached SQL string with key ""
+
+		entSELECT.WithCacheKey("select_10").Wheres.Reset()
+		_, _, err := entSELECT.Where(
+			dml.Column("entity_id").LessOrEqual().Int(10),
+		).ToSQL() // ToSQL generates the new cached SQL string with key select_10
+		assert.NoError(t, err)
 
 		for i := 0; i < 9; i++ {
-			entityIn := new(CustomerEntity)
-			if err := ps.FakeData(entityIn); err != nil {
+			entIn := new(CustomerEntity)
+			if err := ps.FakeData(entIn); err != nil {
 				t.Errorf("IDX[%d]: %+v", i, err)
 				return
 			}
 
-			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CustomerEntity_Entity")(insArtisan.Record("", entityIn).ExecContext(ctx))
-			insArtisan.Reset()
+			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CustomerEntity_Entity")(entINSERTStmtA.Record("", entIn).ExecContext(ctx))
+			entINSERTStmtA.Reset()
 
-			entityOut := new(CustomerEntity)
-			rowCount, err := selArtisan.Int64s(lID).Load(ctx, entityOut)
-			assert.NoError(t, err, "%+v", err)
+			entOut := new(CustomerEntity)
+			rowCount, err := entSELECTStmtA.Int64s(lID).Load(ctx, entOut)
+			assert.NoError(t, err)
 			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
-			assert.Exactly(t, entityIn.EntityID, entityOut.EntityID, "IDX%d: EntityID should match", lID)
-			assert.Exactly(t, entityIn.WebsiteID, entityOut.WebsiteID, "IDX%d: WebsiteID should match", lID)
-			assert.ExactlyLength(t, 255, &entityIn.Email, &entityOut.Email, "IDX%d: Email should match", lID)
-			assert.Exactly(t, entityIn.GroupID, entityOut.GroupID, "IDX%d: GroupID should match", lID)
-			assert.ExactlyLength(t, 50, &entityIn.IncrementID, &entityOut.IncrementID, "IDX%d: IncrementID should match", lID)
-			assert.Exactly(t, entityIn.StoreID, entityOut.StoreID, "IDX%d: StoreID should match", lID)
-			assert.Exactly(t, entityIn.CreatedAt, entityOut.CreatedAt, "IDX%d: CreatedAt should match", lID)
-			assert.Exactly(t, entityIn.UpdatedAt, entityOut.UpdatedAt, "IDX%d: UpdatedAt should match", lID)
-			assert.Exactly(t, entityIn.IsActive, entityOut.IsActive, "IDX%d: IsActive should match", lID)
-			assert.Exactly(t, entityIn.DisableAutoGroupChange, entityOut.DisableAutoGroupChange, "IDX%d: DisableAutoGroupChange should match", lID)
-			assert.ExactlyLength(t, 255, &entityIn.CreatedIn, &entityOut.CreatedIn, "IDX%d: CreatedIn should match", lID)
-			assert.ExactlyLength(t, 40, &entityIn.Prefix, &entityOut.Prefix, "IDX%d: Prefix should match", lID)
-			assert.ExactlyLength(t, 255, &entityIn.Firstname, &entityOut.Firstname, "IDX%d: Firstname should match", lID)
-			assert.ExactlyLength(t, 255, &entityIn.Middlename, &entityOut.Middlename, "IDX%d: Middlename should match", lID)
-			assert.ExactlyLength(t, 255, &entityIn.Lastname, &entityOut.Lastname, "IDX%d: Lastname should match", lID)
-			assert.ExactlyLength(t, 40, &entityIn.Suffix, &entityOut.Suffix, "IDX%d: Suffix should match", lID)
-			assert.Exactly(t, entityIn.Dob, entityOut.Dob, "IDX%d: Dob should match", lID)
-			assert.ExactlyLength(t, 128, &entityIn.passwordHash, &entityOut.passwordHash, "IDX%d: passwordHash should match", lID)
-			assert.ExactlyLength(t, 128, &entityIn.RpToken, &entityOut.RpToken, "IDX%d: RpToken should match", lID)
-			assert.Exactly(t, entityIn.RpTokenCreatedAt, entityOut.RpTokenCreatedAt, "IDX%d: RpTokenCreatedAt should match", lID)
-			assert.Exactly(t, entityIn.DefaultBilling, entityOut.DefaultBilling, "IDX%d: DefaultBilling should match", lID)
-			assert.Exactly(t, entityIn.DefaultShipping, entityOut.DefaultShipping, "IDX%d: DefaultShipping should match", lID)
-			assert.ExactlyLength(t, 50, &entityIn.Taxvat, &entityOut.Taxvat, "IDX%d: Taxvat should match", lID)
-			assert.ExactlyLength(t, 64, &entityIn.Confirmation, &entityOut.Confirmation, "IDX%d: Confirmation should match", lID)
-			assert.Exactly(t, entityIn.Gender, entityOut.Gender, "IDX%d: Gender should match", lID)
-			assert.Exactly(t, entityIn.FailuresNum, entityOut.FailuresNum, "IDX%d: FailuresNum should match", lID)
-			assert.Exactly(t, entityIn.FirstFailure, entityOut.FirstFailure, "IDX%d: FirstFailure should match", lID)
-			assert.Exactly(t, entityIn.LockExpires, entityOut.LockExpires, "IDX%d: LockExpires should match", lID)
+			assert.Exactly(t, entIn.EntityID, entOut.EntityID, "IDX%d: EntityID should match", lID)
+			assert.Exactly(t, entIn.WebsiteID, entOut.WebsiteID, "IDX%d: WebsiteID should match", lID)
+			assert.ExactlyLength(t, 255, &entIn.Email, &entOut.Email, "IDX%d: Email should match", lID)
+			assert.Exactly(t, entIn.GroupID, entOut.GroupID, "IDX%d: GroupID should match", lID)
+			assert.ExactlyLength(t, 50, &entIn.IncrementID, &entOut.IncrementID, "IDX%d: IncrementID should match", lID)
+			assert.Exactly(t, entIn.StoreID, entOut.StoreID, "IDX%d: StoreID should match", lID)
+			assert.Exactly(t, entIn.CreatedAt, entOut.CreatedAt, "IDX%d: CreatedAt should match", lID)
+			assert.Exactly(t, entIn.UpdatedAt, entOut.UpdatedAt, "IDX%d: UpdatedAt should match", lID)
+			assert.Exactly(t, entIn.IsActive, entOut.IsActive, "IDX%d: IsActive should match", lID)
+			assert.Exactly(t, entIn.DisableAutoGroupChange, entOut.DisableAutoGroupChange, "IDX%d: DisableAutoGroupChange should match", lID)
+			assert.ExactlyLength(t, 255, &entIn.CreatedIn, &entOut.CreatedIn, "IDX%d: CreatedIn should match", lID)
+			assert.ExactlyLength(t, 40, &entIn.Prefix, &entOut.Prefix, "IDX%d: Prefix should match", lID)
+			assert.ExactlyLength(t, 255, &entIn.Firstname, &entOut.Firstname, "IDX%d: Firstname should match", lID)
+			assert.ExactlyLength(t, 255, &entIn.Middlename, &entOut.Middlename, "IDX%d: Middlename should match", lID)
+			assert.ExactlyLength(t, 255, &entIn.Lastname, &entOut.Lastname, "IDX%d: Lastname should match", lID)
+			assert.ExactlyLength(t, 40, &entIn.Suffix, &entOut.Suffix, "IDX%d: Suffix should match", lID)
+			assert.Exactly(t, entIn.Dob, entOut.Dob, "IDX%d: Dob should match", lID)
+			assert.ExactlyLength(t, 128, &entIn.passwordHash, &entOut.passwordHash, "IDX%d: passwordHash should match", lID)
+			assert.ExactlyLength(t, 128, &entIn.RpToken, &entOut.RpToken, "IDX%d: RpToken should match", lID)
+			assert.Exactly(t, entIn.RpTokenCreatedAt, entOut.RpTokenCreatedAt, "IDX%d: RpTokenCreatedAt should match", lID)
+			assert.Exactly(t, entIn.DefaultBilling, entOut.DefaultBilling, "IDX%d: DefaultBilling should match", lID)
+			assert.Exactly(t, entIn.DefaultShipping, entOut.DefaultShipping, "IDX%d: DefaultShipping should match", lID)
+			assert.ExactlyLength(t, 50, &entIn.Taxvat, &entOut.Taxvat, "IDX%d: Taxvat should match", lID)
+			assert.ExactlyLength(t, 64, &entIn.Confirmation, &entOut.Confirmation, "IDX%d: Confirmation should match", lID)
+			assert.Exactly(t, entIn.Gender, entOut.Gender, "IDX%d: Gender should match", lID)
+			assert.Exactly(t, entIn.FailuresNum, entOut.FailuresNum, "IDX%d: FailuresNum should match", lID)
+			assert.Exactly(t, entIn.FirstFailure, entOut.FirstFailure, "IDX%d: FirstFailure should match", lID)
+			assert.Exactly(t, entIn.LockExpires, entOut.LockExpires, "IDX%d: LockExpires should match", lID)
 		}
+		dmltest.Close(t, entINSERTStmtA)
+
+		entCol := NewCustomerEntityCollection()
+		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
+		assert.NoError(t, err)
+		t.Logf("Collection load rowCount: %d", rowCount)
+
+		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
+
+		lID := dmltest.CheckLastInsertID(t, "Error: CustomerEntityCollection")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
+		dmltest.Close(t, entINSERTStmtA)
+		t.Logf("Last insert ID into: %d", lID)
+		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())
+		t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
 	})
 	t.Run("DmlgenTypes_Entity", func(t *testing.T) {
-		ccd := tbls.MustTable(TableNameDmlgenTypes)
+		tbl := tbls.MustTable(TableNameDmlgenTypes)
 
-		inStmt, err := ccd.Insert().BuildValues().Prepare(ctx) // Do not use Ignore() to suppress DB errors.
-		assert.NoError(t, err, "%+v", err)
-		insArtisan := inStmt.WithArgs()
-		defer dmltest.Close(t, inStmt)
+		entINSERT := tbl.Insert().BuildValues()
+		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
 
-		selArtisan := ccd.SelectByPK().WithArgs().ExpandPlaceHolders()
+		entSELECT := tbl.SelectByPK("*")
+		entSELECTStmtA := entSELECT.WithArgs().ExpandPlaceHolders() // WithArgs generates the cached SQL string with key ""
+
+		entSELECT.WithCacheKey("select_10").Wheres.Reset()
+		_, _, err := entSELECT.Where(
+			dml.Column("id").LessOrEqual().Int(10),
+		).ToSQL() // ToSQL generates the new cached SQL string with key select_10
+		assert.NoError(t, err)
 
 		for i := 0; i < 9; i++ {
-			entityIn := new(DmlgenTypes)
-			if err := ps.FakeData(entityIn); err != nil {
+			entIn := new(DmlgenTypes)
+			if err := ps.FakeData(entIn); err != nil {
 				t.Errorf("IDX[%d]: %+v", i, err)
 				return
 			}
 
-			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.DmlgenTypes_Entity")(insArtisan.Record("", entityIn).ExecContext(ctx))
-			insArtisan.Reset()
+			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.DmlgenTypes_Entity")(entINSERTStmtA.Record("", entIn).ExecContext(ctx))
+			entINSERTStmtA.Reset()
 
-			entityOut := new(DmlgenTypes)
-			rowCount, err := selArtisan.Int64s(lID).Load(ctx, entityOut)
-			assert.NoError(t, err, "%+v", err)
+			entOut := new(DmlgenTypes)
+			rowCount, err := entSELECTStmtA.Int64s(lID).Load(ctx, entOut)
+			assert.NoError(t, err)
 			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
-			assert.Exactly(t, entityIn.ID, entityOut.ID, "IDX%d: ID should match", lID)
-			assert.Exactly(t, entityIn.ColBigint1, entityOut.ColBigint1, "IDX%d: ColBigint1 should match", lID)
-			assert.Exactly(t, entityIn.ColBigint2, entityOut.ColBigint2, "IDX%d: ColBigint2 should match", lID)
-			assert.Exactly(t, entityIn.ColBigint3, entityOut.ColBigint3, "IDX%d: ColBigint3 should match", lID)
-			assert.Exactly(t, entityIn.ColBigint4, entityOut.ColBigint4, "IDX%d: ColBigint4 should match", lID)
-			assert.ExactlyLength(t, 65535, &entityIn.ColBlob, &entityOut.ColBlob, "IDX%d: ColBlob should match", lID)
-			assert.Exactly(t, entityIn.ColDate1, entityOut.ColDate1, "IDX%d: ColDate1 should match", lID)
-			assert.Exactly(t, entityIn.ColDate2, entityOut.ColDate2, "IDX%d: ColDate2 should match", lID)
-			assert.Exactly(t, entityIn.ColDatetime1, entityOut.ColDatetime1, "IDX%d: ColDatetime1 should match", lID)
-			assert.Exactly(t, entityIn.ColDatetime2, entityOut.ColDatetime2, "IDX%d: ColDatetime2 should match", lID)
-			assert.Exactly(t, entityIn.ColDecimal101, entityOut.ColDecimal101, "IDX%d: ColDecimal101 should match", lID)
-			assert.Exactly(t, entityIn.ColDecimal124, entityOut.ColDecimal124, "IDX%d: ColDecimal124 should match", lID)
-			assert.Exactly(t, entityIn.Price124a, entityOut.Price124a, "IDX%d: Price124a should match", lID)
-			assert.Exactly(t, entityIn.Price124b, entityOut.Price124b, "IDX%d: Price124b should match", lID)
-			assert.Exactly(t, entityIn.ColDecimal123, entityOut.ColDecimal123, "IDX%d: ColDecimal123 should match", lID)
-			assert.Exactly(t, entityIn.ColDecimal206, entityOut.ColDecimal206, "IDX%d: ColDecimal206 should match", lID)
-			assert.Exactly(t, entityIn.ColDecimal2412, entityOut.ColDecimal2412, "IDX%d: ColDecimal2412 should match", lID)
-			assert.Exactly(t, entityIn.ColInt1, entityOut.ColInt1, "IDX%d: ColInt1 should match", lID)
-			assert.Exactly(t, entityIn.ColInt2, entityOut.ColInt2, "IDX%d: ColInt2 should match", lID)
-			assert.Exactly(t, entityIn.ColInt3, entityOut.ColInt3, "IDX%d: ColInt3 should match", lID)
-			assert.Exactly(t, entityIn.ColInt4, entityOut.ColInt4, "IDX%d: ColInt4 should match", lID)
-			assert.ExactlyLength(t, 4294967295, &entityIn.ColLongtext1, &entityOut.ColLongtext1, "IDX%d: ColLongtext1 should match", lID)
-			assert.ExactlyLength(t, 4294967295, &entityIn.ColLongtext2, &entityOut.ColLongtext2, "IDX%d: ColLongtext2 should match", lID)
-			assert.ExactlyLength(t, 16777215, &entityIn.ColMediumblob, &entityOut.ColMediumblob, "IDX%d: ColMediumblob should match", lID)
-			assert.ExactlyLength(t, 16777215, &entityIn.ColMediumtext1, &entityOut.ColMediumtext1, "IDX%d: ColMediumtext1 should match", lID)
-			assert.ExactlyLength(t, 16777215, &entityIn.ColMediumtext2, &entityOut.ColMediumtext2, "IDX%d: ColMediumtext2 should match", lID)
-			assert.Exactly(t, entityIn.ColSmallint1, entityOut.ColSmallint1, "IDX%d: ColSmallint1 should match", lID)
-			assert.Exactly(t, entityIn.ColSmallint2, entityOut.ColSmallint2, "IDX%d: ColSmallint2 should match", lID)
-			assert.Exactly(t, entityIn.ColSmallint3, entityOut.ColSmallint3, "IDX%d: ColSmallint3 should match", lID)
-			assert.Exactly(t, entityIn.ColSmallint4, entityOut.ColSmallint4, "IDX%d: ColSmallint4 should match", lID)
-			assert.Exactly(t, entityIn.HasSmallint5, entityOut.HasSmallint5, "IDX%d: HasSmallint5 should match", lID)
-			assert.Exactly(t, entityIn.IsSmallint5, entityOut.IsSmallint5, "IDX%d: IsSmallint5 should match", lID)
-			assert.ExactlyLength(t, 65535, &entityIn.ColText, &entityOut.ColText, "IDX%d: ColText should match", lID)
-			assert.Exactly(t, entityIn.ColTimestamp1, entityOut.ColTimestamp1, "IDX%d: ColTimestamp1 should match", lID)
-			assert.Exactly(t, entityIn.ColTimestamp2, entityOut.ColTimestamp2, "IDX%d: ColTimestamp2 should match", lID)
-			assert.Exactly(t, entityIn.ColTinyint1, entityOut.ColTinyint1, "IDX%d: ColTinyint1 should match", lID)
-			assert.ExactlyLength(t, 1, &entityIn.ColVarchar1, &entityOut.ColVarchar1, "IDX%d: ColVarchar1 should match", lID)
-			assert.ExactlyLength(t, 100, &entityIn.ColVarchar100, &entityOut.ColVarchar100, "IDX%d: ColVarchar100 should match", lID)
-			assert.ExactlyLength(t, 16, &entityIn.ColVarchar16, &entityOut.ColVarchar16, "IDX%d: ColVarchar16 should match", lID)
-			assert.ExactlyLength(t, 21, &entityIn.ColChar1, &entityOut.ColChar1, "IDX%d: ColChar1 should match", lID)
-			assert.ExactlyLength(t, 17, &entityIn.ColChar2, &entityOut.ColChar2, "IDX%d: ColChar2 should match", lID)
+			assert.Exactly(t, entIn.ID, entOut.ID, "IDX%d: ID should match", lID)
+			assert.Exactly(t, entIn.ColBigint1, entOut.ColBigint1, "IDX%d: ColBigint1 should match", lID)
+			assert.Exactly(t, entIn.ColBigint2, entOut.ColBigint2, "IDX%d: ColBigint2 should match", lID)
+			assert.Exactly(t, entIn.ColBigint3, entOut.ColBigint3, "IDX%d: ColBigint3 should match", lID)
+			assert.Exactly(t, entIn.ColBigint4, entOut.ColBigint4, "IDX%d: ColBigint4 should match", lID)
+			assert.ExactlyLength(t, 65535, &entIn.ColBlob, &entOut.ColBlob, "IDX%d: ColBlob should match", lID)
+			assert.Exactly(t, entIn.ColDate1, entOut.ColDate1, "IDX%d: ColDate1 should match", lID)
+			assert.Exactly(t, entIn.ColDate2, entOut.ColDate2, "IDX%d: ColDate2 should match", lID)
+			assert.Exactly(t, entIn.ColDatetime1, entOut.ColDatetime1, "IDX%d: ColDatetime1 should match", lID)
+			assert.Exactly(t, entIn.ColDatetime2, entOut.ColDatetime2, "IDX%d: ColDatetime2 should match", lID)
+			assert.Exactly(t, entIn.ColDecimal101, entOut.ColDecimal101, "IDX%d: ColDecimal101 should match", lID)
+			assert.Exactly(t, entIn.ColDecimal124, entOut.ColDecimal124, "IDX%d: ColDecimal124 should match", lID)
+			assert.Exactly(t, entIn.Price124a, entOut.Price124a, "IDX%d: Price124a should match", lID)
+			assert.Exactly(t, entIn.Price124b, entOut.Price124b, "IDX%d: Price124b should match", lID)
+			assert.Exactly(t, entIn.ColDecimal123, entOut.ColDecimal123, "IDX%d: ColDecimal123 should match", lID)
+			assert.Exactly(t, entIn.ColDecimal206, entOut.ColDecimal206, "IDX%d: ColDecimal206 should match", lID)
+			assert.Exactly(t, entIn.ColDecimal2412, entOut.ColDecimal2412, "IDX%d: ColDecimal2412 should match", lID)
+			assert.Exactly(t, entIn.ColInt1, entOut.ColInt1, "IDX%d: ColInt1 should match", lID)
+			assert.Exactly(t, entIn.ColInt2, entOut.ColInt2, "IDX%d: ColInt2 should match", lID)
+			assert.Exactly(t, entIn.ColInt3, entOut.ColInt3, "IDX%d: ColInt3 should match", lID)
+			assert.Exactly(t, entIn.ColInt4, entOut.ColInt4, "IDX%d: ColInt4 should match", lID)
+			assert.ExactlyLength(t, 4294967295, &entIn.ColLongtext1, &entOut.ColLongtext1, "IDX%d: ColLongtext1 should match", lID)
+			assert.ExactlyLength(t, 4294967295, &entIn.ColLongtext2, &entOut.ColLongtext2, "IDX%d: ColLongtext2 should match", lID)
+			assert.ExactlyLength(t, 16777215, &entIn.ColMediumblob, &entOut.ColMediumblob, "IDX%d: ColMediumblob should match", lID)
+			assert.ExactlyLength(t, 16777215, &entIn.ColMediumtext1, &entOut.ColMediumtext1, "IDX%d: ColMediumtext1 should match", lID)
+			assert.ExactlyLength(t, 16777215, &entIn.ColMediumtext2, &entOut.ColMediumtext2, "IDX%d: ColMediumtext2 should match", lID)
+			assert.Exactly(t, entIn.ColSmallint1, entOut.ColSmallint1, "IDX%d: ColSmallint1 should match", lID)
+			assert.Exactly(t, entIn.ColSmallint2, entOut.ColSmallint2, "IDX%d: ColSmallint2 should match", lID)
+			assert.Exactly(t, entIn.ColSmallint3, entOut.ColSmallint3, "IDX%d: ColSmallint3 should match", lID)
+			assert.Exactly(t, entIn.ColSmallint4, entOut.ColSmallint4, "IDX%d: ColSmallint4 should match", lID)
+			assert.Exactly(t, entIn.HasSmallint5, entOut.HasSmallint5, "IDX%d: HasSmallint5 should match", lID)
+			assert.Exactly(t, entIn.IsSmallint5, entOut.IsSmallint5, "IDX%d: IsSmallint5 should match", lID)
+			assert.ExactlyLength(t, 65535, &entIn.ColText, &entOut.ColText, "IDX%d: ColText should match", lID)
+			assert.Exactly(t, entIn.ColTimestamp1, entOut.ColTimestamp1, "IDX%d: ColTimestamp1 should match", lID)
+			assert.Exactly(t, entIn.ColTimestamp2, entOut.ColTimestamp2, "IDX%d: ColTimestamp2 should match", lID)
+			assert.Exactly(t, entIn.ColTinyint1, entOut.ColTinyint1, "IDX%d: ColTinyint1 should match", lID)
+			assert.ExactlyLength(t, 1, &entIn.ColVarchar1, &entOut.ColVarchar1, "IDX%d: ColVarchar1 should match", lID)
+			assert.ExactlyLength(t, 100, &entIn.ColVarchar100, &entOut.ColVarchar100, "IDX%d: ColVarchar100 should match", lID)
+			assert.ExactlyLength(t, 16, &entIn.ColVarchar16, &entOut.ColVarchar16, "IDX%d: ColVarchar16 should match", lID)
+			assert.ExactlyLength(t, 21, &entIn.ColChar1, &entOut.ColChar1, "IDX%d: ColChar1 should match", lID)
+			assert.ExactlyLength(t, 17, &entIn.ColChar2, &entOut.ColChar2, "IDX%d: ColChar2 should match", lID)
 		}
+		dmltest.Close(t, entINSERTStmtA)
+
+		entCol := NewDmlgenTypesCollection()
+		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
+		assert.NoError(t, err)
+		t.Logf("Collection load rowCount: %d", rowCount)
+
+		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
+
+		lID := dmltest.CheckLastInsertID(t, "Error: DmlgenTypesCollection")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
+		dmltest.Close(t, entINSERTStmtA)
+		t.Logf("Last insert ID into: %d", lID)
+		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())
+		t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
 	})
 }
