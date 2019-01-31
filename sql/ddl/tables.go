@@ -52,9 +52,9 @@ type TableOption struct {
 type Tables struct {
 	dcp *dml.ConnPool // database connection pool
 	// Schema represents the name of the database. Might be empty.
-	Schema        string
-	previousTable string // the table which has been scanned beforehand
-	mu            sync.RWMutex
+	Schema string
+
+	mu sync.RWMutex
 	// tm a map where key = table name and value the table pointer
 	tm map[string]*Table
 }

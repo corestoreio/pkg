@@ -144,10 +144,6 @@ type BuilderBase struct {
 	// IsUnsafe if set to true the functions AddColumn* will turn any
 	// non valid identifier (not `{a-z}[a-z0-9$_]+`i) into an expression.
 	IsUnsafe bool
-	// propagationStoppedAt position in the slice where the stopped propagation
-	// has been requested. for every new iteration the propagation must stop at
-	// this position.
-	propagationStoppedAt int
 
 	rwmu sync.RWMutex // also protects the whole SQL string building process
 	builderCommon
@@ -440,11 +436,4 @@ func writeInsertPlaceholders(buf *bytes.Buffer, rowCount, columnCount uint) {
 			buf.WriteByte(')')
 		}
 	}
-}
-
-func bufTrySizeByResliceOrNew(buf []byte, size int) []byte {
-	if size <= cap(buf) {
-		return buf[:size]
-	}
-	return make([]byte, size)
 }
