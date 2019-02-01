@@ -114,6 +114,20 @@ func TestTableNameMapper(t *testing.T) {
 
 }
 
+func TestConnPool_Schema(t *testing.T) {
+	t.Parallel()
+
+	cp, err := dml.NewConnPool(dml.WithDSN("xuser:xpassw0rd@tcp(localhost:3307)/t3st?parseTime=true&loc=UTC"))
+	assert.NoError(t, err)
+	assert.Exactly(t, "t3st", cp.Schema())
+	dmltest.Close(t, cp)
+
+	cp, err = dml.NewConnPool()
+	assert.NoError(t, err)
+	assert.Exactly(t, "", cp.Schema())
+	dmltest.Close(t, cp)
+}
+
 func TestTx_Wrap(t *testing.T) {
 	t.Parallel()
 

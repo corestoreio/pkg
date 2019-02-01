@@ -155,7 +155,7 @@ func WithCreateDatabase(ctx context.Context, databaseName string) ConnPoolOption
 		sortOrder: 253,
 		fn: func(c *ConnPool) error {
 
-			if databaseName == "" {
+			if databaseName == "" && c.dsn != nil {
 				databaseName = c.dsn.DBName
 			}
 			if err := WithSetNamesUTF8MB4().fn(c); err != nil {
@@ -406,22 +406,34 @@ func (c *ConnPool) Options(opts ...ConnPoolOption) error {
 	return nil
 }
 
+// Schema returns the database name as provided in the DSN. Returns an empty
+// string if no DSN has been set.
+func (c *ConnPool) Schema() string {
+	if c.dsn != nil {
+		return c.dsn.DBName
+	}
+	return ""
+}
+
 // Close closes the database, releasing any open resources.
 //
 // It is rare to Close a DB, as the DB handle is meant to be long-lived and
 // shared between many goroutines. It logs the time taken, if a logger has been
 // set with Info logging enabled. It runs the ConnPoolOption, marked for running
 // before close.
-func (c *ConnPool) Close() error {
+func (c *ConnPool) Close() (err error) {
 	if c.Log != nil && c.Log.IsDebug() {
-		defer c.Log.Debug("Close", log.Duration("duration", now().Sub(c.start)))
+		defer c.Log.Debug("Close", log.Err(err), log.Duration("duration", now().Sub(c.start)))
 	}
 	for _, opt := range c.runOnClose {
-		if err := opt.fn(c); err != nil {
+		if err = opt.fn(c); err != nil {
 			return errors.WithStack(err)
 		}
 	}
-	return c.DB.Close() // no stack wrap otherwise error is hard to compare
+	if c.DB != nil {
+		err = c.DB.Close() // no stack wrap otherwise error is hard to compare
+	}
+	return
 }
 
 // BeginTx starts a transaction.
