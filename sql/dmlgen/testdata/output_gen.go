@@ -4,14 +4,14 @@ package testdata
 
 import (
 	"context"
-	"sort"
-	"time"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/storage/null"
-
+	"sort"
+	"time"
 )
+
 const (
 	TableNameCoreConfigData        = "core_config_data"
 	TableNameCustomerAddressEntity = "customer_address_entity"
@@ -109,8 +109,7 @@ func NewCoreConfigDataCollection() *CoreConfigDataCollection {
 // AssignLastInsertID traverses through the slice and sets a decrementing new
 // ID to each entity.
 func (cc *CoreConfigDataCollection) AssignLastInsertID(id int64) {
-	id++
-	var j int64 = 1
+	var j int64
 	for i := len(cc.Data) - 1; i >= 0; i-- {
 		cc.Data[i].AssignLastInsertID(id - j)
 		j++
@@ -396,8 +395,7 @@ func NewCustomerAddressEntityCollection() *CustomerAddressEntityCollection {
 // AssignLastInsertID traverses through the slice and sets a decrementing new
 // ID to each entity.
 func (cc *CustomerAddressEntityCollection) AssignLastInsertID(id int64) {
-	id++
-	var j int64 = 1
+	var j int64
 	for i := len(cc.Data) - 1; i >= 0; i-- {
 		cc.Data[i].AssignLastInsertID(id - j)
 		j++
@@ -689,8 +687,7 @@ func NewCustomerEntityCollection() *CustomerEntityCollection {
 // AssignLastInsertID traverses through the slice and sets a decrementing new
 // ID to each entity.
 func (cc *CustomerEntityCollection) AssignLastInsertID(id int64) {
-	id++
-	var j int64 = 1
+	var j int64
 	for i := len(cc.Data) - 1; i >= 0; i-- {
 		cc.Data[i].AssignLastInsertID(id - j)
 		j++
@@ -1009,8 +1006,7 @@ func NewDmlgenTypesCollection() *DmlgenTypesCollection {
 // AssignLastInsertID traverses through the slice and sets a decrementing new
 // ID to each entity.
 func (cc *DmlgenTypesCollection) AssignLastInsertID(id int64) {
-	id++
-	var j int64 = 1
+	var j int64
 	for i := len(cc.Data) - 1; i >= 0; i-- {
 		cc.Data[i].AssignLastInsertID(id - j)
 		j++
