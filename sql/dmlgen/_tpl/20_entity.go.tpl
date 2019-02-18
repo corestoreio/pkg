@@ -119,13 +119,13 @@ func (cc *{{.Collection}}) MapColumns(cm *dml.ColumnMap) error {
 		for cm.Next() {
 			switch c := cm.Column(); c {
 			{{- range .Columns.UniqueColumns -}}
+			{{if not .IsFloat }} case "{{.Field}}"{{range .Aliases}},"{{.}}"{{end}}:
+				cm = cm.{{GoFuncNull .}}s(cc.{{GoCamel .Field}}s()...) {{end}}
+			{{end}}
+			{{- /* {{- range .Columns.UniquifiedColumns}}		// no idea if that is needed
 			case "{{.Field}}"{{range .Aliases}},"{{.}}"{{end}}:
 				cm = cm.{{GoFuncNull .}}s(cc.{{GoCamel .Field}}s()...)
-			{{- end}}
-			{{/* {{- range .Columns.UniquifiedColumns}}		// no idea if that is needed
-			case "{{.Field}}"{{range .Aliases}},"{{.}}"{{end}}:
-				cm = cm.{{GoFuncNull .}}s(cc.{{GoCamel .Field}}s()...)
-			{{- end}} */}}
+			{{- end}} */ -}}
 			default:
 				return errors.NotFound.Newf("[{{.Package}}] {{.Collection}} Column %q not found", c)
 			}

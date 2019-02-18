@@ -7,6 +7,10 @@ DROP TABLE IF EXISTS `store_website`;
 DROP TABLE IF EXISTS `customer_entity`;
 DROP TABLE IF EXISTS `customer_address_entity`;
 DROP TABLE IF EXISTS `core_config_data`;
+DROP VIEW IF EXISTS `view_customer_no_auto_increment`;
+DROP VIEW IF EXISTS `view_customer_auto_increment`;
+DROP TABLE IF EXISTS `catalog_product_index_eav_decimal_idx`;
+DROP TABLE IF EXISTS `sales_order_status_state`;
 
 CREATE TABLE `dmlgen_types` (
   `id`                      INT(11)              NOT NULL           AUTO_INCREMENT,
@@ -173,6 +177,30 @@ CREATE TABLE `customer_address_entity` (
   CONSTRAINT `CUSTOMER_ADDRESS_ENTITY_PARENT_ID_CUSTOMER_ENTITY_ENTITY_ID` FOREIGN KEY (`parent_id`) REFERENCES `customer_entity` (`entity_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Customer Address Entity';
 
+CREATE VIEW `view_customer_no_auto_increment` AS
+  -- this join is logically wrong because demo data needed as parent_id column in
+  -- customer_address_entity is empty.
+SELECT `ce`.`email`,
+       `cae`.`firstname`,
+       `cae`.`lastname`,
+       `cae`.`city`
+FROM `customer_entity` `ce`
+       JOIN `customer_address_entity` `cae` ON `ce`.`entity_id` = `cae`.`entity_id`
+;
+
+CREATE VIEW `view_customer_auto_increment` AS
+  -- this join is logically wrong because demo data needed as parent_id column in
+  -- customer_address_entity is empty.
+SELECT `ce`.`entity_id` AS ce_entity_id,
+      `cae`.`entity_id` AS cae_entity_id,
+       `ce`.`email`,
+       `cae`.`firstname`,
+       `cae`.`lastname`,
+       `cae`.`city`
+FROM `customer_entity` `ce`
+       JOIN `customer_address_entity` `cae` ON `ce`.`entity_id` = `cae`.`entity_id`
+;
+
 CREATE TABLE `core_config_data` (
   `config_id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Id',
   `scope` varchar(8) NOT NULL DEFAULT 'default' COMMENT 'Scope',
@@ -203,5 +231,43 @@ VALUES
 INSERT INTO `store_website` (`website_id`, `code`, `name`, `sort_order`, `default_group_id`, `is_default`)
 VALUES
 	(1,'admin','Admin',0,0,1);
+
+CREATE TABLE `catalog_product_index_eav_decimal_idx` (
+  `entity_id` int(10) unsigned NOT NULL COMMENT 'Entity ID',
+  `attribute_id` smallint(5) unsigned NOT NULL COMMENT 'Attribute ID',
+  `store_id` smallint(5) unsigned NOT NULL COMMENT 'Store ID',
+  `value` decimal(12,4) NOT NULL COMMENT 'Value',
+  `source_id` int(10) unsigned NOT NULL DEFAULT 0 COMMENT 'Original entity Id for attribute value',
+  PRIMARY KEY (`entity_id`,`attribute_id`,`store_id`,`value`,`source_id`),
+  KEY `CATALOG_PRODUCT_INDEX_EAV_DECIMAL_IDX_ATTRIBUTE_ID` (`attribute_id`),
+  KEY `CATALOG_PRODUCT_INDEX_EAV_DECIMAL_IDX_STORE_ID` (`store_id`),
+  KEY `CATALOG_PRODUCT_INDEX_EAV_DECIMAL_IDX_VALUE` (`value`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Catalog Product EAV Decimal Indexer Index Table';
+
+INSERT INTO `catalog_product_index_eav_decimal_idx` (`entity_id`, `attribute_id`, `store_id`, `value`, `source_id`)
+VALUES
+	(1,1,1,1.0000,1),
+	(2,1,1,2.2150,2);
+
+CREATE TABLE `sales_order_status_state` (
+  `status` varchar(32) NOT NULL COMMENT 'Status',
+  `state` varchar(32) NOT NULL COMMENT 'Label',
+  `is_default` smallint(5) unsigned NOT NULL DEFAULT 0 COMMENT 'Is Default',
+  `visible_on_front` smallint(5) unsigned NOT NULL DEFAULT 0 COMMENT 'Visible on front',
+  PRIMARY KEY (`status`,`state`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Sales Order Status Table';
+
+INSERT INTO `sales_order_status_state` (`status`, `state`, `is_default`, `visible_on_front`)
+VALUES
+	('canceled','canceled',1,1),
+	('closed','closed',1,1),
+	('complete','complete',1,1),
+	('fraud','payment_review',0,1),
+	('fraud','processing',0,1),
+	('holded','holded',1,1),
+	('payment_review','payment_review',1,1),
+	('pending','new',1,1),
+	('pending_payment','pending_payment',1,0),
+	('processing','processing',1,1);
 
 SET foreign_key_checks = 1;

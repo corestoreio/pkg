@@ -8,4 +8,9 @@ DROP TABLE IF EXISTS `customer_entity`;
 DROP TABLE IF EXISTS `customer_address_entity`;
 DROP TABLE IF EXISTS `core_config_data`;
 
+DROP VIEW IF EXISTS `view_customer_no_auto_increment`;
+DROP VIEW IF EXISTS `view_customer_auto_increment`;
+DROP TABLE IF EXISTS `catalog_product_index_eav_decimal_idx`;
+DROP TABLE IF EXISTS `sales_order_status_state`;
+
 SET foreign_key_checks = 1;

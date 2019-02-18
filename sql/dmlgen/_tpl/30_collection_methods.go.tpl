@@ -1,11 +1,13 @@
-// FilterThis filters the current slice by predicate f without memory allocation.
+// Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
 func (cc *{{.Collection}}) Filter(f func(*{{.Entity}}) bool) *{{.Collection}} {
-	b := cc.Data[:0]
+	b,i := cc.Data[:0],0
 	for _, e := range cc.Data {
 		if f(e) {
 			b = append(b, e)
+			cc.Data[i] = nil // this avoids the memory leak
 		}
+		i++
 	}
 	cc.Data = b
 	return cc
@@ -20,20 +22,13 @@ func (cc *{{.Collection}}) Each(f func(*{{.Entity}})) *{{.Collection}} {
 	return cc
 }
 
-{{ range .Columns.UniqueColumns -}}
-func (cc *{{$.Collection}}) SortBy{{GoCamel .Field}}() {
-	sort.Slice(cc.Data,func(i, j int) bool {
-		return cc.Data[i].{{GoCamel .Field}} < cc.Data[j].{{GoCamel .Field}}
-	})
-} {{- end}}
-
 // Cut will remove items i through j-1.
 // Auto generated via dmlgen.
 func (cc *{{.Collection}}) Cut(i, j int) *{{.Collection}} {
 	z := cc.Data // copy slice header
 	copy(z[i:], z[j:])
 	for k, n := len(z)-j+i, len(z); k < n; k++ {
-		z[k] = nil // this should avoid the memory leak
+		z[k] = nil // this avoids the memory leak
 	}
 	z = z[:len(z)-j+i]
 	cc.Data = z

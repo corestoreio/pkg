@@ -92,7 +92,12 @@ func TestGenerate_Tables_Protobuf_Json(t *testing.T) {
 
 		dmlgen.WithProtobuf(),
 
-		dmlgen.WithLoadColumns(ctx, db.DB, "dmlgen_types", "core_config_data", "customer_entity", "customer_address_entity"),
+		dmlgen.WithTablesFromDB(ctx, db,
+			"dmlgen_types", "core_config_data", "customer_entity", "customer_address_entity",
+			"catalog_product_index_eav_decimal_idx", "sales_order_status_state",
+			"view_customer_no_auto_increment", "view_customer_auto_increment",
+		),
+
 		dmlgen.WithTableConfig(
 			"customer_entity", &dmlgen.TableConfig{
 				Encoders:      []string{"json", "protobuf"},
@@ -104,6 +109,22 @@ func TestGenerate_Tables_Protobuf_Json(t *testing.T) {
 				Encoders:   []string{"json", "protobuf"},
 				StructTags: []string{"max_len"},
 			}),
+
+		dmlgen.WithTableConfig("catalog_product_index_eav_decimal_idx", &dmlgen.TableConfig{
+			DisableCollectionMethods: true,
+		}),
+		dmlgen.WithTableConfig("sales_order_status_state", &dmlgen.TableConfig{
+			Encoders:   []string{"json", "protobuf"},
+			StructTags: []string{"max_len"},
+		}),
+		dmlgen.WithTableConfig("view_customer_no_auto_increment", &dmlgen.TableConfig{
+			Encoders:   []string{"json", "protobuf"},
+			StructTags: []string{"max_len"},
+		}),
+		dmlgen.WithTableConfig("view_customer_auto_increment", &dmlgen.TableConfig{
+			Encoders:   []string{"json", "protobuf"},
+			StructTags: []string{"max_len"},
+		}),
 
 		dmlgen.WithTableConfig(
 			"core_config_data", &dmlgen.TableConfig{
@@ -201,7 +222,7 @@ func TestInfoSchemaForeignKeys(t *testing.T) {
 			Encoders:          []string{"json", "binary"},
 			UniquifiedColumns: []string{"TABLE_NAME", "COLUMN_NAME"},
 		}),
-		dmlgen.WithLoadColumns(context.Background(), db.DB, "KEY_COLUMN_USAGE"),
+		dmlgen.WithTablesFromDB(context.Background(), db, "KEY_COLUMN_USAGE"),
 	)
 	assert.NoError(t, err)
 

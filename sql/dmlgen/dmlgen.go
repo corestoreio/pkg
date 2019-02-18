@@ -142,7 +142,10 @@ type TableConfig struct {
 	// accidentally leaking through encoders. Appropriate getter/setter methods
 	// get generated.
 	PrivateFields []string
-	lastErr       error
+	// DisableCollectionMethods if set, suppresses the generation of the
+	// collection related functions.
+	DisableCollectionMethods bool
+	lastErr                  error
 }
 
 func (to *TableConfig) applyEncoders(ts *Tables, t *table) {
@@ -305,8 +308,9 @@ func (to *TableConfig) applyUniquifiedColumns(t *table) {
 	}
 }
 
-// WithTableConfig applies options to a table, identified by the table name used
-// as map key. Options are custom struct or different encoders.
+// WithTableConfig applies options to an existing table, identified by the table
+// name used as map key. Options are custom struct or different encoders.
+// Returns a not-found error if the table cannot be found in the `Tables` map.
 func WithTableConfig(tableName string, opt *TableConfig) (o Option) {
 	// Panic as early as possible.
 	if len(opt.CustomStructTags)%2 == 1 {
@@ -325,6 +329,7 @@ func WithTableConfig(tableName string, opt *TableConfig) (o Option) {
 		opt.applyComments(t)
 		opt.applyColumnAliases(t)
 		opt.applyUniquifiedColumns(t)
+		t.DisableCollectionMethods = opt.DisableCollectionMethods
 		return opt.lastErr
 	}
 	return
@@ -410,11 +415,29 @@ func WithReferenceEntitiesByForeignKeys(ctx context.Context, db dml.Querier, str
 }
 
 // WithTable sets a table and its columns. Allows to overwrite a table fetched
-// with function WithLoadColumns. Argument `actions` can only be set to "overwrite".
-func WithTable(tableName string, columns ddl.Columns, actions ...string) (opt Option) {
+// with function WithTablesFromDB. Argument `options` can be set to "overwrite"
+// and/or "view". Each option is its own slice entry.
+func WithTable(tableName string, columns ddl.Columns, options ...string) (opt Option) {
+	checkAutoIncrement := func(previousSetting uint8) uint8 {
+		if previousSetting > 0 {
+			return previousSetting
+		}
+		for _, o := range options {
+			if strings.ToLower(o) == "view" {
+				return 1 // nope
+			}
+		}
+		for _, c := range columns {
+			if c.IsAutoIncrement() {
+				return 2 // yes
+			}
+		}
+		return 1 // nope
+	}
+
 	opt.sortOrder = 10
 	opt.fn = func(ts *Tables) error {
-		isOverwrite := len(actions) > 0 && actions[0] == "overwrite"
+		isOverwrite := len(options) > 0 && options[0] == "overwrite"
 		t, ok := ts.Tables[tableName]
 		if ok && isOverwrite {
 			for ci, ct := range t.Columns {
@@ -430,25 +453,47 @@ func WithTable(tableName string, columns ddl.Columns, actions ...string) (opt Op
 				Columns:   columns,
 			}
 		}
+		t.HasAutoIncrement = checkAutoIncrement(t.HasAutoIncrement)
 		ts.Tables[tableName] = t
 		return nil
 	}
 	return
 }
 
-// WithLoadColumns queries the information_schema table and loads the column
-// definition of the provided `tables` slice.
-func WithLoadColumns(ctx context.Context, db dml.Querier, tables ...string) (opt Option) {
+// WithTablesFromDB queries the information_schema table and loads the column
+// definition of the provided `tables` slice. It adds the tables to the `Tables`
+// map. Once added a call to WithTableConfig can add additional configurations.
+func WithTablesFromDB(ctx context.Context, db *dml.ConnPool, tables ...string) (opt Option) {
 	opt.sortOrder = 1
 	opt.fn = func(ts *Tables) error {
-		tables, err := ddl.LoadColumns(ctx, db, tables...)
+		tables, err := ddl.LoadColumns(ctx, db.DB, tables...)
 		if err != nil {
 			return errors.WithStack(err)
 		}
+		views, err := db.WithRawSQL("SELECT `TABLE_NAME` FROM `information_schema`.`VIEWS` WHERE `TABLE_SCHEMA`=DATABASE()").LoadStrings(ctx, nil)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		checkAutoIncrement := func(tblName string) uint8 {
+			for _, v := range views {
+				if v == tblName {
+					return 1 // nope
+				}
+			}
+			for _, c := range tables[tblName] {
+				if c.IsAutoIncrement() {
+					return 2 // yes
+				}
+			}
+			return 1 // nope
+		}
+
 		for tblName := range tables {
 			ts.Tables[tblName] = &table{
-				TableName: tblName,
-				Columns:   tables[tblName],
+				TableName:        tblName,
+				Columns:          tables[tblName],
+				HasAutoIncrement: checkAutoIncrement(tblName),
 			}
 		}
 		return nil
@@ -785,10 +830,11 @@ func (ts *Tables) GenerateGo(w io.Writer, wTest io.Writer) error {
 
 // table writes one database table into Go source code.
 type table struct {
-	Package   string      // Name of the package
-	TableName string      // Name of the table
-	Comment   string      // Comment above the struct type declaration
-	Columns   ddl.Columns // all columns of a table
+	Package          string      // Name of the package
+	TableName        string      // Name of the table
+	Comment          string      // Comment above the struct type declaration
+	Columns          ddl.Columns // all columns of a table
+	HasAutoIncrement uint8       // 0=nil,1=false (has NO auto increment),2=true has auto increment
 	// ReferencedCollections, map key is the name of the struct field, map value
 	// the target Go collection type.
 	ReferencedCollections    []string

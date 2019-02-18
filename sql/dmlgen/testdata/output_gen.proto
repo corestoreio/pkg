@@ -145,3 +145,41 @@ message DmlgenTypes {
 message DmlgenTypesCollection {
 	repeated DmlgenTypes Data = 1;
 }
+// SalesOrderStatusState represents a single row for DB table `sales_order_status_state`. Auto generated.
+message SalesOrderStatusState {
+	string status = 1 [(gogoproto.customname)="Status"];
+	string state = 2 [(gogoproto.customname)="State"];
+	bool is_default = 3 [(gogoproto.customname)="IsDefault"];
+	uint32 visible_on_front = 4 [(gogoproto.customname)="VisibleOnFront"];
+}
+
+// SalesOrderStatusStateCollection represents multiple rows for DB table `sales_order_status_state`. Auto generated.
+message SalesOrderStatusStateCollection {
+	repeated SalesOrderStatusState Data = 1;
+}
+// ViewCustomerAutoIncrement represents a single row for DB table `view_customer_auto_increment`. Auto generated.
+message ViewCustomerAutoIncrement {
+	uint32 ce_entity_id = 1 [(gogoproto.customname)="CeEntityID"];
+	uint32 cae_entity_id = 2 [(gogoproto.customname)="CaeEntityID"];
+	null.String email = 3 [(gogoproto.customname)="Email",(gogoproto.nullable)=false];
+	string firstname = 4 [(gogoproto.customname)="Firstname"];
+	string lastname = 5 [(gogoproto.customname)="Lastname"];
+	string city = 6 [(gogoproto.customname)="City"];
+}
+
+// ViewCustomerAutoIncrementCollection represents multiple rows for DB table `view_customer_auto_increment`. Auto generated.
+message ViewCustomerAutoIncrementCollection {
+	repeated ViewCustomerAutoIncrement Data = 1;
+}
+// ViewCustomerNoAutoIncrement represents a single row for DB table `view_customer_no_auto_increment`. Auto generated.
+message ViewCustomerNoAutoIncrement {
+	null.String email = 1 [(gogoproto.customname)="Email",(gogoproto.nullable)=false];
+	string firstname = 2 [(gogoproto.customname)="Firstname"];
+	string lastname = 3 [(gogoproto.customname)="Lastname"];
+	string city = 4 [(gogoproto.customname)="City"];
+}
+
+// ViewCustomerNoAutoIncrementCollection represents multiple rows for DB table `view_customer_no_auto_increment`. Auto generated.
+message ViewCustomerNoAutoIncrementCollection {
+	repeated ViewCustomerNoAutoIncrement Data = 1;
+}

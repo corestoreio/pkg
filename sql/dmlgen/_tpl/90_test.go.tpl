@@ -28,13 +28,9 @@ func TestNewTables(t *testing.T) {
 		{{- CustomCode "pseudo.MustNewService.Option" -}}
 	)
 
-	// TODO run those tests in parallel
 	{{- range $table := .Tables }}
 	t.Run("{{GoCamel .TableName}}_Entity", func(t *testing.T) {
 		tbl := tbls.MustTable(TableName{{GoCamel .TableName}})
-
-		entINSERT := tbl.Insert().BuildValues()
-		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
 
 		entSELECT := tbl.SelectByPK("*")
 		entSELECTStmtA := entSELECT.WithArgs().ExpandPlaceHolders() // WithArgs generates the cached SQL string with key ""
@@ -44,6 +40,18 @@ func TestNewTables(t *testing.T) {
 		{{range .Columns}}{{if and .IsPK .IsAutoIncrement}} dml.Column("{{.Field}}").LessOrEqual().Int(10),
 		{{end}}{{end -}}).ToSQL() // ToSQL generates the new cached SQL string with key select_10
 		assert.NoError(t, err)
+		entCol := New{{$table.CollectionName}}()
+
+		if {{lt $table.HasAutoIncrement 2}} {
+			rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
+			assert.NoError(t, err)
+			t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
+			t.Logf("Collection load rowCount: %d", rowCount)
+			return // skip the following tests because we can't insert/read data from the table/view
+		}
+
+		entINSERT := tbl.Insert().BuildValues()
+		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
 
 		for i := 0; i < 9; i++ {
 			entIn := new({{GoCamel .TableName}})
@@ -70,13 +78,11 @@ func TestNewTables(t *testing.T) {
 		}
 		dmltest.Close(t, entINSERTStmtA)
 
-		entCol := New{{$table.CollectionName}}()
 		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
 
 		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
-
 		lID := dmltest.CheckLastInsertID(t, "Error: {{$table.CollectionName}}")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
 		dmltest.Close(t, entINSERTStmtA)
 		t.Logf("Last insert ID into: %d", lID)
