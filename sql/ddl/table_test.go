@@ -347,7 +347,7 @@ func TestTable_Artisan_Methods(t *testing.T) {
 			WithArgs(int64(234), int64(235), int64(236)).
 			WillReturnRows(sqlmock.NewRows([]string{"user_id", "email", "first_name", "username"}))
 
-		rows, err := tblAdmUser.SelectByPK().WithArgs().ExpandPlaceHolders().Int64s(234, 235, 236).QueryContext(context.Background())
+		rows, err := tblAdmUser.SelectByPK("*").WithArgs().ExpandPlaceHolders().Int64s(234, 235, 236).QueryContext(context.Background())
 		assert.NoError(t, err)
 		assert.NoError(t, rows.Close())
 	})
