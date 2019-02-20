@@ -42,13 +42,12 @@ func TestNewTables(t *testing.T) {
 		assert.NoError(t, err)
 		entCol := New{{$table.CollectionName}}()
 
-		if {{lt $table.HasAutoIncrement 2}} {
+		{{if lt $table.HasAutoIncrement 2}} // this table/view does not support auto_increment
 			rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
 			assert.NoError(t, err)
 			t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
 			t.Logf("Collection load rowCount: %d", rowCount)
-			return // skip the following tests because we can't insert/read data from the table/view
-		}
+		{{- else -}}
 
 		entINSERT := tbl.Insert().BuildValues()
 		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
@@ -73,6 +72,8 @@ func TestNewTables(t *testing.T) {
 					assert.ExactlyLength(t, {{$col.CharMaxLength.Int64}}, &entIn.{{$table.GoCamelMaybePrivate $col.Field}}, &entOut.{{$table.GoCamelMaybePrivate $col.Field}}, "IDX%d: {{$table.GoCamelMaybePrivate $col.Field}} should match", lID)
 				{{- else if not $col.IsSystemVersioned -}}
 					assert.Exactly(t, entIn.{{$table.GoCamelMaybePrivate $col.Field}}, entOut.{{$table.GoCamelMaybePrivate $col.Field}}, "IDX%d: {{$table.GoCamelMaybePrivate $col.Field}} should match", lID)
+				{{- else -}}
+					// ignoring: {{$col.Field}}
 				{{- end}}
 			{{- end}}
 		}
@@ -88,6 +89,8 @@ func TestNewTables(t *testing.T) {
 		t.Logf("Last insert ID into: %d", lID)
 		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())
 		t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
+
+		{{- end}}
 	})
 	{{- end}}
 }

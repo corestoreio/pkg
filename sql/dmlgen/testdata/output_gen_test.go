@@ -86,49 +86,11 @@ func TestNewTables(t *testing.T) {
 		assert.NoError(t, err)
 		entCol := NewCatalogProductIndexEAVDecimalIDXCollection()
 
-		if true {
-			rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
-			assert.NoError(t, err)
-			t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
-			t.Logf("Collection load rowCount: %d", rowCount)
-			return // skip the following tests because we can't insert/read data from the table/view
-		}
-
-		entINSERT := tbl.Insert().BuildValues()
-		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
-
-		for i := 0; i < 9; i++ {
-			entIn := new(CatalogProductIndexEAVDecimalIDX)
-			if err := ps.FakeData(entIn); err != nil {
-				t.Errorf("IDX[%d]: %+v", i, err)
-				return
-			}
-
-			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CatalogProductIndexEAVDecimalIDX_Entity")(entINSERTStmtA.Record("", entIn).ExecContext(ctx))
-			entINSERTStmtA.Reset()
-
-			entOut := new(CatalogProductIndexEAVDecimalIDX)
-			rowCount, err := entSELECTStmtA.Int64s(lID).Load(ctx, entOut)
-			assert.NoError(t, err)
-			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
-			assert.Exactly(t, entIn.EntityID, entOut.EntityID, "IDX%d: EntityID should match", lID)
-			assert.Exactly(t, entIn.AttributeID, entOut.AttributeID, "IDX%d: AttributeID should match", lID)
-			assert.Exactly(t, entIn.StoreID, entOut.StoreID, "IDX%d: StoreID should match", lID)
-			assert.Exactly(t, entIn.Value, entOut.Value, "IDX%d: Value should match", lID)
-			assert.Exactly(t, entIn.SourceID, entOut.SourceID, "IDX%d: SourceID should match", lID)
-		}
-		dmltest.Close(t, entINSERTStmtA)
-
+		// this table/view does not support auto_increment
 		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
 		assert.NoError(t, err)
-		t.Logf("Collection load rowCount: %d", rowCount)
-
-		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
-		lID := dmltest.CheckLastInsertID(t, "Error: CatalogProductIndexEAVDecimalIDXCollection")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
-		dmltest.Close(t, entINSERTStmtA)
-		t.Logf("Last insert ID into: %d", lID)
-		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())
 		t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
+		t.Logf("Collection load rowCount: %d", rowCount)
 	})
 	t.Run("CoreConfigData_Entity", func(t *testing.T) {
 		tbl := tbls.MustTable(TableNameCoreConfigData)
@@ -142,14 +104,6 @@ func TestNewTables(t *testing.T) {
 		).ToSQL() // ToSQL generates the new cached SQL string with key select_10
 		assert.NoError(t, err)
 		entCol := NewCoreConfigDataCollection()
-
-		if false {
-			rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
-			assert.NoError(t, err)
-			t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
-			t.Logf("Collection load rowCount: %d", rowCount)
-			return // skip the following tests because we can't insert/read data from the table/view
-		}
 
 		entINSERT := tbl.Insert().BuildValues()
 		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
@@ -174,7 +128,8 @@ func TestNewTables(t *testing.T) {
 			assert.Exactly(t, entIn.Expires, entOut.Expires, "IDX%d: Expires should match", lID)
 			assert.ExactlyLength(t, 255, &entIn.Path, &entOut.Path, "IDX%d: Path should match", lID)
 			assert.ExactlyLength(t, 65535, &entIn.Value, &entOut.Value, "IDX%d: Value should match", lID)
-
+			// ignoring: version_ts
+			// ignoring: version_te
 		}
 		dmltest.Close(t, entINSERTStmtA)
 
@@ -201,14 +156,6 @@ func TestNewTables(t *testing.T) {
 		).ToSQL() // ToSQL generates the new cached SQL string with key select_10
 		assert.NoError(t, err)
 		entCol := NewCustomerAddressEntityCollection()
-
-		if false {
-			rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
-			assert.NoError(t, err)
-			t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
-			t.Logf("Collection load rowCount: %d", rowCount)
-			return // skip the following tests because we can't insert/read data from the table/view
-		}
 
 		entINSERT := tbl.Insert().BuildValues()
 		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
@@ -278,14 +225,6 @@ func TestNewTables(t *testing.T) {
 		).ToSQL() // ToSQL generates the new cached SQL string with key select_10
 		assert.NoError(t, err)
 		entCol := NewCustomerEntityCollection()
-
-		if false {
-			rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
-			assert.NoError(t, err)
-			t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
-			t.Logf("Collection load rowCount: %d", rowCount)
-			return // skip the following tests because we can't insert/read data from the table/view
-		}
 
 		entINSERT := tbl.Insert().BuildValues()
 		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
@@ -358,14 +297,6 @@ func TestNewTables(t *testing.T) {
 		).ToSQL() // ToSQL generates the new cached SQL string with key select_10
 		assert.NoError(t, err)
 		entCol := NewDmlgenTypesCollection()
-
-		if false {
-			rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
-			assert.NoError(t, err)
-			t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
-			t.Logf("Collection load rowCount: %d", rowCount)
-			return // skip the following tests because we can't insert/read data from the table/view
-		}
 
 		entINSERT := tbl.Insert().BuildValues()
 		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
@@ -450,48 +381,11 @@ func TestNewTables(t *testing.T) {
 		assert.NoError(t, err)
 		entCol := NewSalesOrderStatusStateCollection()
 
-		if true {
-			rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
-			assert.NoError(t, err)
-			t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
-			t.Logf("Collection load rowCount: %d", rowCount)
-			return // skip the following tests because we can't insert/read data from the table/view
-		}
-
-		entINSERT := tbl.Insert().BuildValues()
-		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
-
-		for i := 0; i < 9; i++ {
-			entIn := new(SalesOrderStatusState)
-			if err := ps.FakeData(entIn); err != nil {
-				t.Errorf("IDX[%d]: %+v", i, err)
-				return
-			}
-
-			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.SalesOrderStatusState_Entity")(entINSERTStmtA.Record("", entIn).ExecContext(ctx))
-			entINSERTStmtA.Reset()
-
-			entOut := new(SalesOrderStatusState)
-			rowCount, err := entSELECTStmtA.Int64s(lID).Load(ctx, entOut)
-			assert.NoError(t, err)
-			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
-			assert.ExactlyLength(t, 32, &entIn.Status, &entOut.Status, "IDX%d: Status should match", lID)
-			assert.ExactlyLength(t, 32, &entIn.State, &entOut.State, "IDX%d: State should match", lID)
-			assert.Exactly(t, entIn.IsDefault, entOut.IsDefault, "IDX%d: IsDefault should match", lID)
-			assert.Exactly(t, entIn.VisibleOnFront, entOut.VisibleOnFront, "IDX%d: VisibleOnFront should match", lID)
-		}
-		dmltest.Close(t, entINSERTStmtA)
-
+		// this table/view does not support auto_increment
 		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
 		assert.NoError(t, err)
-		t.Logf("Collection load rowCount: %d", rowCount)
-
-		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
-		lID := dmltest.CheckLastInsertID(t, "Error: SalesOrderStatusStateCollection")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
-		dmltest.Close(t, entINSERTStmtA)
-		t.Logf("Last insert ID into: %d", lID)
-		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())
 		t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
+		t.Logf("Collection load rowCount: %d", rowCount)
 	})
 	t.Run("ViewCustomerAutoIncrement_Entity", func(t *testing.T) {
 		tbl := tbls.MustTable(TableNameViewCustomerAutoIncrement)
@@ -504,50 +398,11 @@ func TestNewTables(t *testing.T) {
 		assert.NoError(t, err)
 		entCol := NewViewCustomerAutoIncrementCollection()
 
-		if true {
-			rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
-			assert.NoError(t, err)
-			t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
-			t.Logf("Collection load rowCount: %d", rowCount)
-			return // skip the following tests because we can't insert/read data from the table/view
-		}
-
-		entINSERT := tbl.Insert().BuildValues()
-		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
-
-		for i := 0; i < 9; i++ {
-			entIn := new(ViewCustomerAutoIncrement)
-			if err := ps.FakeData(entIn); err != nil {
-				t.Errorf("IDX[%d]: %+v", i, err)
-				return
-			}
-
-			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.ViewCustomerAutoIncrement_Entity")(entINSERTStmtA.Record("", entIn).ExecContext(ctx))
-			entINSERTStmtA.Reset()
-
-			entOut := new(ViewCustomerAutoIncrement)
-			rowCount, err := entSELECTStmtA.Int64s(lID).Load(ctx, entOut)
-			assert.NoError(t, err)
-			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
-			assert.Exactly(t, entIn.CeEntityID, entOut.CeEntityID, "IDX%d: CeEntityID should match", lID)
-			assert.Exactly(t, entIn.CaeEntityID, entOut.CaeEntityID, "IDX%d: CaeEntityID should match", lID)
-			assert.ExactlyLength(t, 255, &entIn.Email, &entOut.Email, "IDX%d: Email should match", lID)
-			assert.ExactlyLength(t, 255, &entIn.Firstname, &entOut.Firstname, "IDX%d: Firstname should match", lID)
-			assert.ExactlyLength(t, 255, &entIn.Lastname, &entOut.Lastname, "IDX%d: Lastname should match", lID)
-			assert.ExactlyLength(t, 255, &entIn.City, &entOut.City, "IDX%d: City should match", lID)
-		}
-		dmltest.Close(t, entINSERTStmtA)
-
+		// this table/view does not support auto_increment
 		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
 		assert.NoError(t, err)
-		t.Logf("Collection load rowCount: %d", rowCount)
-
-		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
-		lID := dmltest.CheckLastInsertID(t, "Error: ViewCustomerAutoIncrementCollection")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
-		dmltest.Close(t, entINSERTStmtA)
-		t.Logf("Last insert ID into: %d", lID)
-		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())
 		t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
+		t.Logf("Collection load rowCount: %d", rowCount)
 	})
 	t.Run("ViewCustomerNoAutoIncrement_Entity", func(t *testing.T) {
 		tbl := tbls.MustTable(TableNameViewCustomerNoAutoIncrement)
@@ -560,47 +415,10 @@ func TestNewTables(t *testing.T) {
 		assert.NoError(t, err)
 		entCol := NewViewCustomerNoAutoIncrementCollection()
 
-		if true {
-			rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
-			assert.NoError(t, err)
-			t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
-			t.Logf("Collection load rowCount: %d", rowCount)
-			return // skip the following tests because we can't insert/read data from the table/view
-		}
-
-		entINSERT := tbl.Insert().BuildValues()
-		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
-
-		for i := 0; i < 9; i++ {
-			entIn := new(ViewCustomerNoAutoIncrement)
-			if err := ps.FakeData(entIn); err != nil {
-				t.Errorf("IDX[%d]: %+v", i, err)
-				return
-			}
-
-			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.ViewCustomerNoAutoIncrement_Entity")(entINSERTStmtA.Record("", entIn).ExecContext(ctx))
-			entINSERTStmtA.Reset()
-
-			entOut := new(ViewCustomerNoAutoIncrement)
-			rowCount, err := entSELECTStmtA.Int64s(lID).Load(ctx, entOut)
-			assert.NoError(t, err)
-			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
-			assert.ExactlyLength(t, 255, &entIn.Email, &entOut.Email, "IDX%d: Email should match", lID)
-			assert.ExactlyLength(t, 255, &entIn.Firstname, &entOut.Firstname, "IDX%d: Firstname should match", lID)
-			assert.ExactlyLength(t, 255, &entIn.Lastname, &entOut.Lastname, "IDX%d: Lastname should match", lID)
-			assert.ExactlyLength(t, 255, &entIn.City, &entOut.City, "IDX%d: City should match", lID)
-		}
-		dmltest.Close(t, entINSERTStmtA)
-
+		// this table/view does not support auto_increment
 		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
 		assert.NoError(t, err)
-		t.Logf("Collection load rowCount: %d", rowCount)
-
-		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
-		lID := dmltest.CheckLastInsertID(t, "Error: ViewCustomerNoAutoIncrementCollection")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
-		dmltest.Close(t, entINSERTStmtA)
-		t.Logf("Last insert ID into: %d", lID)
-		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())
 		t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
+		t.Logf("Collection load rowCount: %d", rowCount)
 	})
 }
