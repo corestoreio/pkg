@@ -30,6 +30,9 @@ func TestBinLogSyncer(t *testing.T) {
 	if !*runIntegration {
 		t.Skip("Skipping integration tests. You can enable them with via CLI option `-integration`")
 	}
+	if !*testOutputLogs {
+		t.Log("Terminal output for huge amount of raw data disabled, can be enabled with `-syncout`")
+	}
 
 	tss := &testSyncerSuite{}
 	defer tss.TearDownTest(t)
@@ -39,7 +42,7 @@ func TestBinLogSyncer(t *testing.T) {
 
 	tss.TestMysqlGTIDSync(t)
 	tss.TestMariaDBGTIDSync(t)
-	//
+
 	tss.TestMysqlSemiPositionSync(t)
 	tss.TestMysqlBinlogCodec(t)
 }
@@ -82,8 +85,9 @@ func (t *testSyncerSuite) testSync(tst *testing.T, s *BinlogStreamer) {
 	}
 
 	tables, err := ddl.NewTables(
-		ddl.WithDropTable(context.Background(), t.con.DB, "test_json", "test_json_v2", "test_geo"),
-		ddl.WithCreateTable(context.Background(), t.con.DB,
+		ddl.WithDB(t.con.DB),
+		ddl.WithDropTable(context.Background(), "test_json", "test_json_v2", "test_geo"),
+		ddl.WithCreateTable(context.Background(),
 			"test_json", `CREATE TABLE IF NOT EXISTS `+"`test_json`"+` (
 			id BIGINT(64) UNSIGNED  NOT NULL AUTO_INCREMENT,
 			c1 `+tblJSONColumnType+`,
@@ -324,12 +328,13 @@ func (t *testSyncerSuite) testPositionSync(tst *testing.T) {
 	_, err := t.con.WithQueryBuilder(ms).Load(context.Background(), &ms)
 	assert.NoError(tst, err)
 
+	tst.Logf("%q Master Status: %q", t.flavor, ms.String())
 	s, err := t.bls.StartSync(ms)
 	assert.NoError(tst, err, "%+v", err)
 
 	// Test re-sync.
 	time.Sleep(100 * time.Millisecond)
-	t.bls.con.SetReadDeadline(time.Now().Add(time.Millisecond))
+	assert.NoError(tst, t.bls.con.SetReadDeadline(time.Now().Add(time.Millisecond)))
 	time.Sleep(100 * time.Millisecond)
 
 	t.testSync(tst, s)
@@ -427,7 +432,7 @@ func (t *testSyncerSuite) TestMysqlBinlogCodec(tst *testing.T) {
 
 	assert.NoError(tst, os.RemoveAll("./testdata/var"))
 
-	err := t.bls.StartBackup("./testdata/var", ddl.MasterStatus{Position: uint(0)}, 2*time.Second)
+	err := t.bls.StartBackup("./testdata/var", 0700, ddl.MasterStatus{Position: uint(0)}, 2*time.Second)
 	assert.NoError(tst, err, "%+v", err)
 
 	p := NewBinlogParser()

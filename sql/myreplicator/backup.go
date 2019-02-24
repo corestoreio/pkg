@@ -14,7 +14,7 @@ import (
 // StartBackup enables, like the mysqlbinlog command line tool, a remote raw
 // backup. Backup remote binlog from position (filename, offset) and write in
 // backupDir.
-func (b *BinlogSyncer) StartBackup(backupDir string, p ddl.MasterStatus, timeout time.Duration) error {
+func (b *BinlogSyncer) StartBackup(backupDir string, perm os.FileMode, p ddl.MasterStatus, timeout time.Duration) error {
 	if timeout == 0 {
 		// a very long timeout here
 		timeout = 30 * 3600 * 24 * time.Second
@@ -23,11 +23,13 @@ func (b *BinlogSyncer) StartBackup(backupDir string, p ddl.MasterStatus, timeout
 	// Force use raw mode
 	b.parser.SetRawMode(true)
 
-	os.MkdirAll(backupDir, 0755)
+	if err := os.MkdirAll(backupDir, perm); err != nil {
+		return errors.WithStack(err)
+	}
 
 	s, err := b.StartSync(p)
 	if err != nil {
-		return errors.Wrap(err, "[myreplicator]")
+		return errors.WithStack(err)
 	}
 
 	var filename string
@@ -36,7 +38,9 @@ func (b *BinlogSyncer) StartBackup(backupDir string, p ddl.MasterStatus, timeout
 	var f *os.File
 	defer func() {
 		if f != nil {
-			f.Close()
+			if err2 := f.Close(); err2 != nil && err == nil {
+				err = errors.WithStack(err2)
+			}
 		}
 	}()
 
@@ -46,11 +50,10 @@ func (b *BinlogSyncer) StartBackup(backupDir string, p ddl.MasterStatus, timeout
 		cancel()
 
 		if err == context.DeadlineExceeded {
-			return nil
+			return err
 		}
-
 		if err != nil {
-			return errors.Wrap(err, "[myreplicator]")
+			return errors.WithStack(err)
 		}
 
 		offset = e.Header.LogPos
@@ -67,31 +70,31 @@ func (b *BinlogSyncer) StartBackup(backupDir string, p ddl.MasterStatus, timeout
 			// FormateDescriptionEvent is the first event in binlog, we will close old one and create a new
 
 			if f != nil {
-				f.Close()
+				if err2 := f.Close(); err2 != nil && err == nil {
+					return errors.WithStack(err2)
+				}
 			}
 
 			if len(filename) == 0 {
-				return errors.Errorf("empty binlog filename for FormateDescriptionEvent")
+				return errors.Empty.Newf("[myreplicator] empty binlog filename for FormateDescriptionEvent")
 			}
 
 			f, err = os.OpenFile(path.Join(backupDir, filename), os.O_CREATE|os.O_WRONLY, 0644)
 			if err != nil {
-				return errors.Wrap(err, "[myreplicator]")
+				return errors.WithStack(err)
 			}
 
 			// write binlog header fe'bin'
 			if _, err = f.Write(BinLogFileHeader); err != nil {
-				return errors.Wrap(err, "[myreplicator]")
+				return errors.WithStack(err)
 			}
 
 		}
 
 		if n, err := f.Write(e.RawData); err != nil {
-			return errors.Wrap(err, "[myreplicator]")
+			return errors.WithStack(err)
 		} else if n != len(e.RawData) {
-			return errors.Wrap(io.ErrShortWrite, "[myreplicator]")
+			return errors.WithStack(io.ErrShortWrite)
 		}
 	}
-
-	return nil
 }

@@ -67,21 +67,24 @@ func (e *TableMapEvent) decode(data []byte) error {
 
 	var err error
 	var metaData []byte
-	if metaData, _, n, err = mysql.LengthEnodedString(data[pos:]); err != nil {
-		return errors.Wrap(err, "[myreplicator]")
+	if metaData, _, n, err = mysql.LengthEncodedString(data[pos:]); err != nil {
+		return errors.WithStack(err)
 	}
 
 	if err = e.decodeMeta(metaData); err != nil {
-		return errors.Wrap(err, "[myreplicator]")
+		return errors.WithStack(err)
 	}
 
 	pos += n
 
-	if len(data[pos:]) != bitmapByteSize(int(e.ColumnCount)) {
+	nullBitmapSize := bitmapByteSize(int(e.ColumnCount))
+	if len(data[pos:]) < nullBitmapSize {
 		return io.EOF
 	}
 
-	e.NullBitmap = data[pos:]
+	e.NullBitmap = data[pos : pos+nullBitmapSize]
+
+	// TODO: handle optional field meta
 
 	return nil
 }
@@ -279,13 +282,13 @@ func (e *RowsEvent) decode(data []byte) error {
 
 	for pos < len(data) {
 		if n, err = e.decodeRows(data[pos:], e.Table, e.ColumnBitmap1); err != nil {
-			return errors.Wrap(err, "[myreplicator]")
+			return errors.WithStack(err)
 		}
 		pos += n
 
 		if e.needBitmap2 {
 			if n, err = e.decodeRows(data[pos:], e.Table, e.ColumnBitmap2); err != nil {
-				return errors.Wrap(err, "[myreplicator]")
+				return errors.WithStack(err)
 			}
 			pos += n
 		}
@@ -335,7 +338,7 @@ func (e *RowsEvent) decodeRows(data []byte, table *TableMapEvent, bitmap []byte)
 		row[i], n, err = e.decodeValue(data[pos:], table.ColumnType[i], table.ColumnMeta[i])
 
 		if err != nil {
-			return 0, errors.Wrap(err, "[myreplicator] DecodeRows.decodeValue")
+			return 0, errors.WithStack(err)
 		}
 		pos += n
 	}

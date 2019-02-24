@@ -2,6 +2,7 @@ package myreplicator
 
 import (
 	"context"
+	"time"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
@@ -21,7 +22,7 @@ type BinlogStreamer struct {
 // behaviour.
 func (s *BinlogStreamer) GetEvent(ctx context.Context) (*BinlogEvent, error) {
 	if s.err != nil {
-		return nil, errors.Temporary.Newf("[myreplicator] Last sync error or closed, try sync and get event again")
+		return nil, errors.Temporary.New(s.err, "[myreplicator] Last sync error or closed, try sync and get event again")
 	}
 
 	select {
@@ -31,6 +32,26 @@ func (s *BinlogStreamer) GetEvent(ctx context.Context) (*BinlogEvent, error) {
 		return nil, errors.WithStack(s.err)
 	case <-ctx.Done():
 		return nil, errors.WithStack(ctx.Err())
+	}
+}
+
+// GetEventWithStartTime gets the binlog event with a start time, if current
+// binlog event timestamp smaller than specify start time returns a nil event.
+func (s *BinlogStreamer) GetEventWithStartTime(ctx context.Context, startTime time.Time) (*BinlogEvent, error) {
+	if s.err != nil {
+		return nil, errors.Temporary.New(s.err, "[myreplicator] Last sync error or closed, try sync and get event again")
+	}
+	startUnix := startTime.Unix()
+	select {
+	case c := <-s.bleChan:
+		if int64(c.Header.Timestamp) >= startUnix {
+			return c, nil
+		}
+		return nil, nil
+	case s.err = <-s.errChan:
+		return nil, s.err
+	case <-ctx.Done():
+		return nil, ctx.Err()
 	}
 }
 
