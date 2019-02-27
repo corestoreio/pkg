@@ -65,10 +65,6 @@ func (s *BinlogStreamer) DumpEvents() []*BinlogEvent {
 	return events
 }
 
-func (s *BinlogStreamer) close() {
-	s.closeWithError(errors.AlreadyClosed.Newf("[myreplicator] Sync already closed"))
-}
-
 func (s *BinlogStreamer) closeWithError(err error) {
 	if err == nil {
 		err = errors.AlreadyClosed.Newf("[myreplicator] Sync closed")

@@ -126,7 +126,10 @@ func NewBinlogSyncer(cfg *BinlogSyncerConfig) *BinlogSyncer {
 		cfg.Log = log.BlackHole{}
 	}
 	if cfg.Log.IsDebug() {
-		cfg.Log.Debug("NewBinlogSyncer.BinlogSyncerConfig", log.Object("config", cfg))
+		cfg2 := new(BinlogSyncerConfig)
+		*cfg2 = *cfg
+		cfg2.Password = "********"
+		cfg.Log.Debug("NewBinlogSyncer.BinlogSyncerConfig", log.Object("config", cfg2))
 	}
 
 	b := &BinlogSyncer{
@@ -404,9 +407,8 @@ func (b *BinlogSyncer) StartSyncGTID(gset mysql.GTIDSet) (*BinlogStreamer, error
 		// default use MySQL
 		err = b.writeBinlogDumpMysqlGTIDCommand(gset)
 	}
-
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return b.startDumpStream(), nil
@@ -660,7 +662,9 @@ func (b *BinlogSyncer) onStream(s *BinlogStreamer) {
 			for {
 				select {
 				case <-b.ctx.Done():
-					s.close()
+					if b.cfg.Log.IsDebug() {
+						b.cfg.Log.Debug("BinlogSyncer.onStream.connection.context.done")
+					}
 					return
 				case <-time.After(time.Second):
 					b.retryCount++
@@ -735,6 +739,13 @@ func (b *BinlogSyncer) parseEvent(s *BinlogStreamer, data []byte) error {
 	}
 
 	e, err := b.parser.Parse(data)
+	if b.cfg.Log.IsDebug() {
+		b.cfg.Log.Debug("BinlogSyncer.onStream.parseEvent",
+			log.Int("data_len", len(data)),
+			log.String("type", fmt.Sprintf("%T", e.Event)),
+			log.Err(err),
+		)
+	}
 	if err != nil {
 		return errors.WithStack(err)
 	}

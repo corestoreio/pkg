@@ -88,7 +88,7 @@ func (p *BinlogParser) ParseFile(name string, offset int64, onEvent OnEventFunc)
 
 func (p *BinlogParser) parseFormatDescriptionEvent(r io.Reader, onEvent OnEventFunc) error {
 	_, err := p.parseSingleEvent(r, onEvent)
-	return err
+	return errors.WithStack(err)
 }
 
 // ParseSingleEvent parses single binlog event and passes the event to onEvent function.
@@ -189,9 +189,8 @@ func (p *BinlogParser) parseHeader(data []byte) (*EventHeader, error) {
 	h := new(EventHeader)
 	err := h.decode(data)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
-
 	return h, nil
 }
 
@@ -205,7 +204,7 @@ func (p *BinlogParser) parseEvent(h *EventHeader, data []byte, rawData []byte) (
 		if p.format != nil && p.format.ChecksumAlgorithm == BINLOG_CHECKSUM_ALG_CRC32 {
 			err := p.verifyCrc32Checksum(rawData)
 			if err != nil {
-				return nil, err
+				return nil, errors.WithStack(err)
 			}
 			data = data[0 : len(data)-BinlogChecksumLength]
 		}
@@ -265,6 +264,7 @@ func (p *BinlogParser) parseEvent(h *EventHeader, data []byte, rawData []byte) (
 	}
 
 	if err := e.decode(data); err != nil {
+		fmt.Printf("%#v\n\n", e)
 		return nil, &EventError{h, err.Error(), data}
 	}
 
@@ -292,9 +292,8 @@ func (p *BinlogParser) Parse(data []byte) (*BinlogEvent, error) {
 	rawData := data
 
 	h, err := p.parseHeader(data)
-
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	data = data[EventHeaderSize:]
@@ -306,7 +305,7 @@ func (p *BinlogParser) Parse(data []byte) (*BinlogEvent, error) {
 
 	e, err := p.parseEvent(h, data, rawData)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return &BinlogEvent{RawData: rawData, Header: h, Event: e}, nil
