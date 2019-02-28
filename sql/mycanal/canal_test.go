@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package binlogsync
+package mycanal
 
 import (
 	"testing"
@@ -39,12 +39,12 @@ func TestOptions_LoadFromConfigService(t *testing.T) {
 	t.Parallel()
 
 	cfgScp := config.NewFakeService(storage.NewMap(
-		`default/0/sql/binlogsync/include_table_regex`, "^sales_order$,^catalog_[a-z]+$",
-		`default/0/sql/binlogsync/exclude_table_regex`, "wishlist.+,core.+",
-		`default/0/sql/binlogsync/binlog_start_file`, "my.bin.x",
-		`default/0/sql/binlogsync/binlog_start_position`, "123456",
-		`default/0/sql/binlogsync/binlog_slave_id`, "4711",
-		`default/0/sql/binlogsync/server_flavor`, "mysql",
+		`default/0/sql/mycanal/include_table_regex`, "^sales_order$,^catalog_[a-z]+$",
+		`default/0/sql/mycanal/exclude_table_regex`, "wishlist.+,core.+",
+		`default/0/sql/mycanal/binlog_start_file`, "my.bin.x",
+		`default/0/sql/mycanal/binlog_start_position`, "123456",
+		`default/0/sql/mycanal/binlog_slave_id`, "4711",
+		`default/0/sql/mycanal/server_flavor`, "mysql",
 	)).Scoped(1, 1)
 
 	o := &Options{

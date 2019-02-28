@@ -1,4 +1,4 @@
-package binlogsync
+package mycanal
 
 import (
 	"bytes"
@@ -32,13 +32,13 @@ const (
 
 // Configuration paths for config.Service
 const (
-	ConfigPathBackendPosition     = `sql/binlogsync/master_position`
-	ConfigPathIncludeTableRegex   = `sql/binlogsync/include_table_regex`
-	ConfigPathExcludeTableRegex   = `sql/binlogsync/exclude_table_regex`
-	ConfigPathBinlogStartFile     = `sql/binlogsync/binlog_start_file`
-	ConfigPathBinlogStartPosition = `sql/binlogsync/binlog_start_position`
-	ConfigPathBinlogSlaveID       = `sql/binlogsync/binlog_slave_id`
-	ConfigPathServerFlavor        = `sql/binlogsync/server_flavor`
+	ConfigPathBackendPosition     = `sql/mycanal/master_position`
+	ConfigPathIncludeTableRegex   = `sql/mycanal/include_table_regex`
+	ConfigPathExcludeTableRegex   = `sql/mycanal/exclude_table_regex`
+	ConfigPathBinlogStartFile     = `sql/mycanal/binlog_start_file`
+	ConfigPathBinlogStartPosition = `sql/mycanal/binlog_start_position`
+	ConfigPathBinlogSlaveID       = `sql/mycanal/binlog_slave_id`
+	ConfigPathServerFlavor        = `sql/mycanal/server_flavor`
 )
 
 // Canal can sync your MySQL data. MySQL must use the binlog format ROW.
@@ -183,14 +183,15 @@ func withPrepareSyncer(c *Canal) error {
 	}
 
 	cfg := myreplicator.BinlogSyncerConfig{
-		ServerID:  uint32(c.opts.BinlogSlaveId),
-		Flavor:    c.opts.Flavor,
-		Host:      host,
-		Port:      uint16(conv.ToUint(port)),
-		User:      c.dsn.User,
-		Password:  c.dsn.Passwd,
-		Log:       c.opts.Log,
-		TLSConfig: c.opts.TLSConfig,
+		ServerID:             uint32(c.opts.BinlogSlaveId),
+		Flavor:               c.opts.Flavor,
+		Host:                 host,
+		Port:                 uint16(conv.ToUint(port)),
+		User:                 c.dsn.User,
+		Password:             c.dsn.Passwd,
+		Log:                  c.opts.Log,
+		TLSConfig:            c.opts.TLSConfig,
+		MaxReconnectAttempts: c.opts.MaxReconnectAttempts,
 	}
 
 	c.syncer = myreplicator.NewBinlogSyncer(&cfg)
@@ -230,6 +231,10 @@ type Options struct {
 	// names. Default state of WithExcludeTables is empty, ignores exluding and
 	// includes all tables.
 	ExcludeTableRegex []string
+
+	// Set to change the maximum number of attempts to re-establish a broken
+	// connection
+	MaxReconnectAttempts int
 
 	BinlogStartFile     string
 	BinlogStartPosition uint64
@@ -297,9 +302,10 @@ func (o *Options) loadFromConfigService() (err error) {
 }
 
 // NewCanal creates a new canal object to start reading the MySQL binary log.
-// The DSN is need to setup two different connections. One connection for reading the binary stream and the 2nd connection
-// to execute queries. The 2nd argument `db` gets used to executed the queries, like setting variables or getting table information.
-// Default database flavor is `mariadb`.
+// The DSN is need to setup two different connections. One connection for
+// reading the binary stream and the 2nd connection to execute queries. The 2nd
+// argument `db` gets used to executed the queries, like setting variables or
+// getting table information. Default database flavor is `mariadb`.
 // export CS_DSN='root:PASSWORD@tcp(localhost:3306)/DATABASE_NAME
 func NewCanal(dsn string, db DBConFactory, opt *Options) (*Canal, error) {
 	pDSN, err := mysql.ParseDSN(dsn)
@@ -325,6 +331,10 @@ func NewCanal(dsn string, db DBConFactory, opt *Options) (*Canal, error) {
 
 	c.dbcp, err = db(dsn)
 	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if err := c.tables.Options(ddl.WithConnPool(c.dbcp)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
@@ -370,7 +380,7 @@ func (c *Canal) masterSave(fileName string, pos uint) error {
 	}
 
 	var buf bytes.Buffer
-	c.masterStatus.WriteTo(&buf)
+	_, _ = c.masterStatus.WriteTo(&buf)
 	if err := c.opts.ConfigSet.Set(c.configPathBackendPosition, buf.Bytes()); err != nil {
 		if c.opts.Log.IsInfo() {
 			c.opts.Log.Info("[binlogsync] Failed to store Master Status",
@@ -402,17 +412,15 @@ func (c *Canal) Start(ctx context.Context) error {
 }
 
 // run gets executed in its own goroutine
-func (c *Canal) run(ctx context.Context) error {
+func (c *Canal) run(ctx context.Context) {
 	// refactor for better error handling
 	defer c.wg.Done()
 
 	if err := c.startSyncBinlog(ctx); err != nil {
-		if !c.isClosed() {
+		if !c.isClosed() && c.opts.Log.IsInfo() {
 			c.opts.Log.Info("[binlogsync] Canal start has encountered a sync binlog error", log.Err(err))
 		}
-		return errors.WithStack(err)
 	}
-	return nil
 }
 
 func (c *Canal) isClosed() bool {
@@ -431,7 +439,9 @@ func (c *Canal) Close() error {
 	atomic.StoreInt32(c.closed, 1)
 
 	if c.syncer != nil {
-		c.syncer.Close()
+		if err := c.syncer.Close(); err != nil {
+			return errors.WithStack(err)
+		}
 		c.syncer = nil
 	}
 
@@ -506,12 +516,12 @@ func (c *Canal) FindTable(ctx context.Context, tableName string) (*ddl.Table, er
 	if err == nil {
 		return t, nil
 	}
-	if !errors.Is(err, errors.NotFound) {
+	if !errors.NotFound.Match(err) {
 		return nil, errors.WithStack(err)
 	}
 
 	val, err, _ := c.tableSFG.Do(tableName, func() (interface{}, error) {
-		if err := c.tables.Options(ddl.WithCreateTable(ctx, c.dbcp.DB, tableName, "")); err != nil {
+		if err := c.tables.Options(ddl.WithCreateTable(ctx, tableName, "")); err != nil {
 			return nil, errors.WithStack(err)
 		}
 

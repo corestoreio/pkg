@@ -1,4 +1,4 @@
-package binlogsync
+package mycanal
 
 import (
 	"context"
@@ -36,16 +36,20 @@ type RowsEventHandler interface {
 // RegisterRowsEventHandler adds a new event handler to the internal list. If a
 // table name gets provided the event handler is bound to that exact table name,
 // if the table has not been excluded via the global regexes. An empty tableName
-// calls the event handler for all tables.
-func (c *Canal) RegisterRowsEventHandler(tableName string, h ...RowsEventHandler) {
+// calls the event handler for all tables. If a table name already exists, the
+// RowsEventHandler gets appended to that list.
+func (c *Canal) RegisterRowsEventHandler(tableNames []string, h ...RowsEventHandler) {
+	// TODO consider an API to Deregister all handlers for a table name
 	c.rsMu.Lock()
 	defer c.rsMu.Unlock()
 
 	if c.rsHandlers == nil {
 		c.rsHandlers = make(map[string][]RowsEventHandler)
 	}
-	hs := c.rsHandlers[tableName]
-	c.rsHandlers[tableName] = append(hs, h...)
+	for _, tn := range tableNames {
+		hs := c.rsHandlers[tn]
+		c.rsHandlers[tn] = append(hs, h...)
+	}
 }
 
 func (c *Canal) processRowsEventHandler(ctx context.Context, action string, table *ddl.Table, rows [][]interface{}) error {
@@ -58,9 +62,11 @@ func (c *Canal) processRowsEventHandler(ctx context.Context, action string, tabl
 		return func() error {
 			if err := h.Do(ctx, action, table, rows); err != nil {
 				isInterr := errors.Is(err, errors.Interrupted)
-				c.opts.Log.Info("binlogsync.Canal.processRowsEventHandler.Go.Do.error", log.Err(err), log.Stringer("handler_name", h),
-					log.Bool("is_interrupted", isInterr),
-					log.String("action", action), log.String("schema", c.dsn.DBName), log.String("table", table.Name))
+				if c.opts.Log.IsDebug() {
+					c.opts.Log.Debug("myCanal.processRowsEventHandler.Go.Do.error", log.Err(err), log.Stringer("handler_name", h),
+						log.Bool("is_interrupted", isInterr),
+						log.String("action", action), log.String("schema", c.dsn.DBName), log.String("table", table.Name))
+				}
 				if isInterr {
 					return errors.WithStack(err)
 				}
@@ -81,7 +87,7 @@ func (c *Canal) processRowsEventHandler(ctx context.Context, action string, tabl
 }
 
 func (c *Canal) flushEventHandlers(ctx context.Context) error {
-	defer log.WhenDone(c.opts.Log).Info("binlogsync.Canal.flushEventHandlers")
+	defer log.WhenDone(c.opts.Log).Info("myCanal.flushEventHandlers")
 	c.rsMu.RLock()
 	defer c.rsMu.RUnlock()
 
@@ -93,7 +99,7 @@ func (c *Canal) flushEventHandlers(ctx context.Context) error {
 			erg.Go(func() error {
 				if err := h.Complete(ctx); err != nil {
 					isInterr := errors.Is(err, errors.Interrupted)
-					c.opts.Log.Info("binlogsync.Canal.flushEventHandlers.Go.Complete.error",
+					c.opts.Log.Info("myCanal.flushEventHandlers.Go.Complete.error",
 						log.Err(err), log.Bool("is_interrupted", isInterr), log.Stringer("handler_name", h), log.String("table_name", tblName))
 					if isInterr {
 						return errors.WithStack(err)

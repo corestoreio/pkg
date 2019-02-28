@@ -1,4 +1,4 @@
-package binlogsync
+package mycanal
 
 import (
 	"context"
@@ -20,11 +20,12 @@ const (
 )
 
 var (
-	expCreateTable = regexp.MustCompile("(?i)^CREATE\\sTABLE(\\sIF\\sNOT\\sEXISTS)?\\s`{0,1}(.*?)`{0,1}\\.{0,1}`{0,1}([^`\\.]+?)`{0,1}\\s.*")
-	expAlterTable  = regexp.MustCompile("(?i)^ALTER\\sTABLE\\s.*?`{0,1}(.*?)`{0,1}\\.{0,1}`{0,1}([^`\\.]+?)`{0,1}\\s.*")
-	expRenameTable = regexp.MustCompile("(?i)^RENAME\\sTABLE\\s.*?`{0,1}(.*?)`{0,1}\\.{0,1}`{0,1}([^`\\.]+?)`{0,1}\\s{1,}TO\\s.*?")
-	expDropTable   = regexp.MustCompile("(?i)^DROP\\sTABLE(\\sIF\\sEXISTS){0,1}\\s`{0,1}(.*?)`{0,1}\\.{0,1}`{0,1}([^`\\.]+?)`{0,1}(?:$|\\s)")
-	ddlExpressions = [...]*regexp.Regexp{expCreateTable, expAlterTable, expRenameTable, expDropTable}
+	expCreateTable   = regexp.MustCompile("(?i)^CREATE\\sTABLE(\\sIF\\sNOT\\sEXISTS)?\\s`{0,1}(.*?)`{0,1}\\.{0,1}`{0,1}([^`\\.]+?)`{0,1}\\s.*")
+	expAlterTable    = regexp.MustCompile("(?i)^ALTER\\sTABLE\\s.*?`{0,1}(.*?)`{0,1}\\.{0,1}`{0,1}([^`\\.]+?)`{0,1}\\s.*")
+	expRenameTable   = regexp.MustCompile("(?i)^RENAME\\sTABLE\\s.*?`{0,1}(.*?)`{0,1}\\.{0,1}`{0,1}([^`\\.]+?)`{0,1}\\s{1,}TO\\s.*?")
+	expDropTable     = regexp.MustCompile("(?i)^DROP\\sTABLE(\\sIF\\sEXISTS){0,1}\\s`{0,1}(.*?)`{0,1}\\.{0,1}`{0,1}([^`\\.]+?)`{0,1}(?:$|\\s)")
+	expTruncateTable = regexp.MustCompile("(?i)^TRUNCATE\\s+(?:TABLE\\s+)?(?:`?([^`\\s]+)`?\\.`?)?([^`\\s]+)`?")
+	ddlExpressions   = [...]*regexp.Regexp{expCreateTable, expAlterTable, expRenameTable, expDropTable, expTruncateTable}
 )
 
 func extractTableFromQueryEvent(schema, query []byte) (dbName, tableName string) {
@@ -52,11 +53,11 @@ func extractTableFromQueryEvent(schema, query []byte) (dbName, tableName string)
 }
 
 func (c *Canal) clearTableCacheOnDDLStmt(schema, query []byte) {
-	defer log.WhenDone(c.opts.Log).Info("binlogsync.Canal.clearTableCacheOnDDLStmt")
+	defer log.WhenDone(c.opts.Log).Info("myCanal.clearTableCacheOnDDLStmt")
 	if db, tbl := extractTableFromQueryEvent(schema, query); tbl != "" {
 		c.ClearTableCache(db, tbl)
-		if c.opts.Log.IsInfo() {
-			c.opts.Log.Info("[binlogsync] Table structure changed, clear table cache",
+		if c.opts.Log.IsDebug() {
+			c.opts.Log.Debug("[binlogsync] Table structure changed, clear table cache",
 				log.String("database", db), log.String("table", tbl), log.String("query", string(query)))
 		}
 	}
@@ -68,8 +69,8 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 	}
 	pos := c.masterStatus
 
-	if c.opts.Log.IsInfo() {
-		c.opts.Log.Info("[binlogsync] Start syncing of binlog", log.Stringer("position", pos))
+	if c.opts.Log.IsDebug() {
+		c.opts.Log.Debug("myCanal.startSyncBinlog.start", log.Stringer("position", pos))
 	}
 
 	s, err := c.syncer.StartSync(pos)
@@ -83,7 +84,7 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 		ev, err := s.GetEvent(ctx)
 		cancel()
 
-		if err == context.DeadlineExceeded {
+		if errors.Cause(err) == context.DeadlineExceeded {
 			timeout = 2 * timeout
 			continue
 		}
@@ -106,8 +107,8 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 			pos.Position = uint(e.Position)
 			// r.ev <- pos
 
-			if c.opts.Log.IsInfo() {
-				c.opts.Log.Info("[binlogsync] Rotate binlog to a new position", log.Stringer("position", pos))
+			if c.opts.Log.IsDebug() {
+				c.opts.Log.Debug("myCanal.startSyncBinlog.rotateEvent.newPosition", log.Stringer("position", pos))
 			}
 
 			// call event handler OnRotate(e)
@@ -118,8 +119,8 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 			// and an old event pops in.
 			if err = c.handleRowsEvent(ctxArg, ev); err != nil {
 				isNotFound := errors.Is(err, errors.NotFound)
-				if c.opts.Log.IsInfo() {
-					c.opts.Log.Info("[binlogsync] Rotate binlog to a new position", log.Err(err), log.Stringer("position", pos), log.Bool("ignore_not_found_error", isNotFound))
+				if c.opts.Log.IsDebug() {
+					c.opts.Log.Debug("myCanal.startSyncBinlog.rowsEvent.newPosition", log.Err(err), log.Stringer("position", pos), log.Bool("ignore_not_found_error", isNotFound))
 				}
 				if !isNotFound {
 					return errors.WithStack(err)
@@ -159,11 +160,16 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 			// maybe add: *replication.XIDEvent
 			// don't update Master with file and position
 		default:
+			if c.opts.Log.IsDebug() {
+				c.opts.Log.Debug("myCanal.startSyncBinlog.unknown.event", log.ObjectTypeOf("event_type", ev.Event), log.Stringer("position", pos))
+			}
 			continue
 		}
 
 		if err := c.masterSave(pos.File, pos.Position); err != nil {
-			c.opts.Log.Info("[binlogsync] startSyncBinlog: Failed to save master position", log.Err(err), log.Stringer("position", pos))
+			if c.opts.Log.IsInfo() {
+				c.opts.Log.Info("myCanal.startSyncBinlog.Failed to save master position", log.Err(err), log.Stringer("position", pos))
+			}
 		}
 	}
 }
@@ -171,7 +177,9 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 // handleRowsEvent handles an event on the rows and calls all registered rows
 // event handler. can return different error behaviours.
 func (c *Canal) handleRowsEvent(ctx context.Context, e *myreplicator.BinlogEvent) error {
-	defer log.WhenDone(c.opts.Log).Info("binlogsync.Canal.handleRowsEvent")
+	if c.opts.Log.IsDebug() {
+		defer log.WhenDone(c.opts.Log).Debug("myCanal.handleRowsEvent")
+	}
 	ev, ok := e.Event.(*myreplicator.RowsEvent)
 	if !ok {
 		return errors.Fatal.Newf("[binlogsync] handleRowsEvent: Failed to cast to *myreplicator.RowsEvent type")
@@ -181,7 +189,7 @@ func (c *Canal) handleRowsEvent(ctx context.Context, e *myreplicator.BinlogEvent
 	schemaName := string(ev.Table.Schema)
 	if c.dsn.DBName != schemaName {
 		if c.opts.Log.IsDebug() {
-			c.opts.Log.Debug("[binlogsync.Canal.handleRowsEvent.Skipping.database", log.String("database_have", schemaName),
+			c.opts.Log.Debug("myCanal.handleRowsEvent.Skipping.database", log.String("database_have", schemaName),
 				log.String("database_want", c.dsn.DBName), log.Int("table_id", int(ev.TableID)))
 		}
 		return nil
@@ -196,7 +204,7 @@ func (c *Canal) handleRowsEvent(ctx context.Context, e *myreplicator.BinlogEvent
 	case errors.NotAllowed.Match(err):
 		// do not execute the processRowsEventHandler function
 		if c.opts.Log.IsDebug() {
-			c.opts.Log.Debug("binlogsync.Canal.handleRowsEvent.Skipping.not_allowed_table", log.String("database", schemaName),
+			c.opts.Log.Debug("myCanal.handleRowsEvent.Skipping.not_allowed_table", log.String("database", schemaName),
 				log.String("table", table), log.Int("table_id", int(ev.TableID)))
 		}
 		return nil
@@ -249,14 +257,13 @@ func (c *Canal) WaitUntilPos(pos ddl.MasterStatus, timeout time.Duration) error 
 				return nil
 			} else {
 				if c.opts.Log.IsDebug() {
-					c.opts.Log.Debug("binlogsync.Canal.WaitUntilPos",
+					c.opts.Log.Debug("myCanal.WaitUntilPos",
 						log.String("current_pos", curPos.String()), log.String("waiting_for_post", pos.String()))
 				}
 				time.Sleep(100 * time.Millisecond)
 			}
 		}
 	}
-	return nil
 }
 
 // CatchMasterPos reads the current master position and waits until we reached

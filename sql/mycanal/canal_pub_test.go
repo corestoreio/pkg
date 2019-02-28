@@ -12,28 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package binlogsync_test
+package mycanal_test
 
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"reflect"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/pkg/sql/binlogsync"
 	"github.com/corestoreio/pkg/sql/dmltest"
+	"github.com/corestoreio/pkg/sql/mycanal"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestCanal_Option_With_DB_Error(t *testing.T) {
 	t.Run("MySQL Ping", func(t *testing.T) {
-		c, err := binlogsync.NewCanal(
+		c, err := mycanal.NewCanal(
 			`root:@x'(tcp127)/?allowNativePasswords=false&parseTime=true&maxAllowedPacket=0`,
-			binlogsync.WithMySQL(),
-			&binlogsync.Options{})
+			mycanal.WithMySQL(),
+			&mycanal.Options{})
 		assert.Nil(t, c)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), `unknown network x'`)
@@ -41,9 +43,9 @@ func TestCanal_Option_With_DB_Error(t *testing.T) {
 
 	t.Run("DB Ping", func(t *testing.T) {
 		db, err := sql.Open("mysql", "root:root@localhost/db")
-		c, err := binlogsync.NewCanal(
+		c, err := mycanal.NewCanal(
 			`root:@x'(tcp127)/?allowNativePasswords=false&maxAllowedPacket=0`,
-			binlogsync.WithDB(db), &binlogsync.Options{})
+			mycanal.WithDB(db), &mycanal.Options{})
 		assert.Nil(t, c)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), `default addr for network 'localhost' unknown`)
@@ -59,9 +61,9 @@ func TestNewCanal_FailedMasterStatus(t *testing.T) {
 	dbMock.ExpectQuery(`SHOW MASTER STATUS`).
 		WillReturnError(wantErr)
 
-	c, err := binlogsync.NewCanal(
+	c, err := mycanal.NewCanal(
 		`root:@x'err(localhost:3306)/TestDB?allowNativePasswords=false&maxAllowedPacket=0`,
-		binlogsync.WithDB(dbc.DB), &binlogsync.Options{})
+		mycanal.WithDB(dbc.DB), &mycanal.Options{})
 	assert.Nil(t, c)
 	assert.True(t, errors.Is(err, errors.AlreadyClosed), "%+v", err)
 }
@@ -84,9 +86,9 @@ func TestNewCanal_CheckBinlogRowFormat_Wrong(t *testing.T) {
 				FromCSVString(`binlog_format,a cat`),
 		)
 
-	c, err := binlogsync.NewCanal(
+	c, err := mycanal.NewCanal(
 		`root:@x'err(localhost:3306)/TestDB?allowNativePasswords=false&maxAllowedPacket=0`,
-		binlogsync.WithDB(dbc.DB), &binlogsync.Options{})
+		mycanal.WithDB(dbc.DB), &mycanal.Options{})
 	assert.Nil(t, c)
 	assert.True(t, errors.Is(err, errors.NotSupported), "%+v", err)
 	assert.Contains(t, err.Error(), `a cat`)
@@ -113,15 +115,15 @@ func TestNewCanal_CheckBinlogRowFormat_Error(t *testing.T) {
 	dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SHOW VARIABLES WHERE (`Variable_name` LIKE 'binlog_format')")).
 		WillReturnError(wantErr)
 
-	c, err := binlogsync.NewCanal(
+	c, err := mycanal.NewCanal(
 		`root:@x'err(localhost:3306)/TestDB?allowNativePasswords=false&maxAllowedPacket=0`,
-		binlogsync.WithDB(dbc.DB), &binlogsync.Options{})
+		mycanal.WithDB(dbc.DB), &mycanal.Options{})
 	assert.Nil(t, c)
 	assert.True(t, errors.Is(err, errors.NotImplemented), "%+v", err)
 	assert.Contains(t, err.Error(), `MySQL Syntax not implemted`)
 }
 
-func newTestCanal(t *testing.T) (*binlogsync.Canal, sqlmock.Sqlmock, func()) {
+func newTestCanal(t *testing.T) (*mycanal.Canal, sqlmock.Sqlmock, func()) {
 
 	dbc, dbMock := dmltest.MockDB(t)
 
@@ -142,8 +144,8 @@ func newTestCanal(t *testing.T) (*binlogsync.Canal, sqlmock.Sqlmock, func()) {
 				FromCSVString(`binlog_format,row`),
 		)
 
-	c, err := binlogsync.NewCanal(`root:@x'err(localhost:3306)/TestDB?allowNativePasswords=false&maxAllowedPacket=0`,
-		binlogsync.WithDB(dbc.DB), &binlogsync.Options{})
+	c, err := mycanal.NewCanal(`root:@x'err(localhost:3306)/TestDB?allowNativePasswords=false&maxAllowedPacket=0`,
+		mycanal.WithDB(dbc.DB), &mycanal.Options{})
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
@@ -172,25 +174,26 @@ func TestCanal_FindTable_RaceFree(t *testing.T) {
 	const iterations = 10
 	var wg sync.WaitGroup
 	wg.Add(iterations)
+	wantColumns := []string{"config_id", "scope", "scope_id", "path", "value"}
 	for i := 0; i < iterations; i++ {
 		go func(wg *sync.WaitGroup, i int) {
+			// in those goroutines we can't use *testing.T because it causes
+			// race conditions.
 			defer wg.Done()
 
 			if i < 4 {
 				time.Sleep(time.Microsecond * time.Duration(i*10))
 			}
-
 			tbl, err := c.FindTable(context.Background(), "core_config_data")
 			if err != nil {
-				t.Fatalf("%+v", err)
+				panic(fmt.Sprintf("%+v", err))
 			}
-			// assert.Exactly(t,
-			// 	c.dsn.DBName,
-			// 	tbl.Schema,
-			// )
-			assert.Exactly(t, `core_config_data`, tbl.Name)
-			assert.Exactly(t, []string{"config_id", "scope", "scope_id", "path", "value"}, tbl.Columns.FieldNames())
-
+			if want, have := `core_config_data`, tbl.Name; have != want {
+				panic(fmt.Sprintf("have %q want %q", have, want))
+			}
+			if !reflect.DeepEqual(wantColumns, tbl.Columns.FieldNames()) {
+				panic(fmt.Sprintf("have %q want %q", wantColumns, tbl.Columns.FieldNames()))
+			}
 		}(&wg, i)
 	}
 	wg.Wait()
