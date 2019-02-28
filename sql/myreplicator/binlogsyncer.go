@@ -148,42 +148,40 @@ func NewBinlogSyncer(cfg *BinlogSyncerConfig) *BinlogSyncer {
 }
 
 // Close closes the BinlogSyncer.
-func (b *BinlogSyncer) Close() {
+func (b *BinlogSyncer) Close() error {
 	b.m.Lock()
 	defer b.m.Unlock()
-
-	b.close()
+	return b.close()
 }
 
-func (b *BinlogSyncer) close() {
-	if b.isClosed() {
-		return
+func (b *BinlogSyncer) close() (err error) {
+	if b.cfg.Log.IsDebug() {
+		defer log.WhenDone(b.cfg.Log).Debug("BinlogSyncer.close", log.Err(err))
 	}
 
-	if b.cfg.Log.IsDebug() {
-		b.cfg.Log.Debug("BinlogSyncer.close.closing", log.Bool("in_progress", true))
+	if b.isClosed() {
+		return nil
 	}
 
 	b.running = false
 	b.cancel()
 
 	if b.con != nil {
-		if err := b.con.SetReadDeadline(time.Now().Add(100 * time.Millisecond)); err != nil && b.cfg.Log.IsInfo() {
-			b.cfg.Log.Info("BinlogSyncer.SetReadDeadline.error", log.Err(err))
+		if err = b.con.SetReadDeadline(time.Now().Add(100 * time.Millisecond)); err != nil {
+			err = errors.WithStack(err)
+			return
 		}
 	}
 
 	b.wg.Wait()
 
 	if b.con != nil {
-		if err := b.con.Close(); err != nil && b.cfg.Log.IsInfo() {
-			b.cfg.Log.Info("BinlogSyncer.con.close.error", log.Err(err))
+		if err = b.con.Close(); err != nil {
+			err = errors.WithStack(err)
+			return
 		}
 	}
-
-	if b.cfg.Log.IsDebug() {
-		b.cfg.Log.Debug("BinlogSyncer.close.closed", log.Bool("in_progress", false))
-	}
+	return
 }
 
 func (b *BinlogSyncer) isClosed() bool {
