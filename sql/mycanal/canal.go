@@ -22,6 +22,7 @@ import (
 	"github.com/corestoreio/pkg/sync/singleflight"
 	"github.com/corestoreio/pkg/util/conv"
 	"github.com/go-sql-driver/mysql"
+	simysql "github.com/siddontang/go-mysql/mysql"
 )
 
 // Use flavor for different MySQL versions,
@@ -53,9 +54,11 @@ type Canal struct {
 	cfgScope config.Scoped // required
 	syncer   *myreplicator.BinlogSyncer
 
-	masterMu           sync.RWMutex
-	masterStatus       ddl.MasterStatus
-	masterLastSaveTime time.Time
+	masterMu                          sync.RWMutex
+	masterStatus                      ddl.MasterStatus
+	masterGTID                        simysql.GTIDSet
+	masterLastSaveTime                time.Time
+	masterWarningConfigSetIsNilLogged bool
 
 	rsMu sync.RWMutex
 	// the empty map key declares event handler for all tables, filtered  by the regexes.
@@ -175,7 +178,7 @@ func withPrepareSyncer(c *Canal) error {
 
 	host, port, err := net.SplitHostPort(c.dsn.Addr)
 	if err != nil {
-		return errors.Wrapf(err, "[binlogsync] withPrepareSyncer SplitHostPort %q", c.dsn.Addr)
+		return errors.Wrapf(err, "[mycanal] withPrepareSyncer SplitHostPort %q", c.dsn.Addr)
 	}
 
 	if c.opts.BinlogSlaveId == 0 {
@@ -208,7 +211,7 @@ func withCheckBinlogRowFormat(c *Canal) error {
 		return errors.WithStack(err)
 	}
 	if !v.EqualFold(varName, "ROW") {
-		return errors.NotSupported.Newf("[binlogsync] binlog variable %q must have the configured ROW format, but got %q. ROW means: Records events affecting individual table rows.", varName, v.Data[varName])
+		return errors.NotSupported.Newf("[mycanal] binlog variable %q must have the configured ROW format, but got %q. ROW means: Records events affecting individual table rows.", varName, v.Data[varName])
 	}
 	return nil
 }
@@ -372,9 +375,10 @@ func (c *Canal) masterSave(fileName string, pos uint) error {
 	}
 
 	if c.opts.ConfigSet == nil {
-		if c.opts.Log.IsDebug() {
-			c.opts.Log.Debug("[binlogsync] Warning: Master Status cannot be saved because config.Setter is nil",
-				log.String("database", c.dsn.DBName), log.Stringer("master_status", c.masterStatus))
+		if !c.masterWarningConfigSetIsNilLogged && c.opts.Log.IsInfo() {
+			c.masterWarningConfigSetIsNilLogged = true
+			c.opts.Log.Info("mycanal.masterSave.config.setter",
+				log.Bool("config_setter_is_nil", true), log.String("database", c.dsn.DBName), log.Stringer("master_status", c.masterStatus))
 		}
 		return nil
 	}
@@ -383,7 +387,7 @@ func (c *Canal) masterSave(fileName string, pos uint) error {
 	_, _ = c.masterStatus.WriteTo(&buf)
 	if err := c.opts.ConfigSet.Set(c.configPathBackendPosition, buf.Bytes()); err != nil {
 		if c.opts.Log.IsInfo() {
-			c.opts.Log.Info("[binlogsync] Failed to store Master Status",
+			c.opts.Log.Info("mycanal.masterSave.error",
 				log.Time("master_last_save_time", c.masterLastSaveTime),
 				log.Err(err), log.String("database", c.dsn.DBName), log.Stringer("master_status", c.masterStatus))
 		}
@@ -406,7 +410,6 @@ func (c *Canal) SyncedPosition() ddl.MasterStatus {
 // Start starts the sync process in the background as a goroutine. You can stop
 // the goroutine via the context.
 func (c *Canal) Start(ctx context.Context) error {
-	c.wg.Add(1)
 	go c.run(ctx)
 	return nil
 }
@@ -415,10 +418,10 @@ func (c *Canal) Start(ctx context.Context) error {
 func (c *Canal) run(ctx context.Context) {
 	// refactor for better error handling
 	defer c.wg.Done()
-
+	c.wg.Add(1)
 	if err := c.startSyncBinlog(ctx); err != nil {
 		if !c.isClosed() && c.opts.Log.IsInfo() {
-			c.opts.Log.Info("[binlogsync] Canal start has encountered a sync binlog error", log.Err(err))
+			c.opts.Log.Info("[mycanal] Canal start has encountered a sync binlog error", log.Err(err))
 		}
 	}
 }
@@ -498,7 +501,7 @@ type errTableNotAllowed string
 
 func (t errTableNotAllowed) ErrorKind() errors.Kind { return errors.NotAllowed }
 func (t errTableNotAllowed) Error() string {
-	return fmt.Sprintf("[binlogsync] Table %q is not allowed", string(t))
+	return fmt.Sprintf("[mycanal] Table %q is not allowed", string(t))
 }
 
 // FindTable tries to find a table by its ID. If the table cannot be found by
@@ -558,7 +561,7 @@ func (c *Canal) CheckBinlogRowImage(ctx context.Context, image string) error {
 
 		// MySQL has binlog row image from 5.6, so older will return empty
 		if v.EqualFold(varName, image) {
-			return errors.NotSupported.Newf("[binlogsync] MySQL uses %q binlog row image, but we want %q", v.Data[varName], image)
+			return errors.NotSupported.Newf("[mycanal] MySQL uses %q binlog row image, but we want %q", v.Data[varName], image)
 		}
 	}
 	return nil

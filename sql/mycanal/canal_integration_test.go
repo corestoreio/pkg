@@ -21,10 +21,10 @@ import (
 	"time"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/pkg/sql/mycanal"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
+	"github.com/corestoreio/pkg/sql/mycanal"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
@@ -63,10 +63,10 @@ func TestIntegrationNewCanal(t *testing.T) {
 	assert.NoError(t, err, "%+v", err)
 
 	cpe := &catalogProductEvent{idx: 1001, t: t, counter: make(map[string]int)}
-	c.RegisterRowsEventHandler("", cpe)
+	c.RegisterRowsEventHandler(nil, cpe)
 
 	soe := &salesOrderEvent{idx: 1001, t: t, counter: make(map[string]int)}
-	c.RegisterRowsEventHandler("sales_order", soe)
+	c.RegisterRowsEventHandler([]string{"sales_order"}, soe)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()

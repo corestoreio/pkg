@@ -50,6 +50,10 @@ func (c *Canal) RegisterRowsEventHandler(tableNames []string, h ...RowsEventHand
 		hs := c.rsHandlers[tn]
 		c.rsHandlers[tn] = append(hs, h...)
 	}
+	if len(tableNames) == 0 {
+		hs := c.rsHandlers[""]
+		c.rsHandlers[""] = append(hs, h...)
+	}
 }
 
 func (c *Canal) processRowsEventHandler(ctx context.Context, action string, table *ddl.Table, rows [][]interface{}) error {
@@ -109,5 +113,5 @@ func (c *Canal) flushEventHandlers(ctx context.Context) error {
 			})
 		}
 	}
-	return errors.Wrap(erg.Wait(), "[binlogsync] flushEventHandlers errgroup Wait")
+	return errors.Wrap(erg.Wait(), "[mycanal] flushEventHandlers errgroup Wait")
 }

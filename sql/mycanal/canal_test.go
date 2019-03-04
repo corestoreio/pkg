@@ -32,7 +32,7 @@ func TestErrTableNotAllowed(t *testing.T) {
 	t.Parallel()
 	err := errTableNotAllowed("Errr")
 	assert.Exactly(t, errors.NotAllowed, err.ErrorKind())
-	assert.Exactly(t, "[binlogsync] Table \"Errr\" is not allowed", err.Error(), "%q", err.Error())
+	assert.Exactly(t, "[mycanal] Table \"Errr\" is not allowed", err.Error(), "%q", err.Error())
 }
 
 func TestOptions_LoadFromConfigService(t *testing.T) {
