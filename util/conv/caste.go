@@ -385,6 +385,14 @@ func indirectToStringerOrError(a interface{}) interface{} {
 	return v.Interface()
 }
 
+type jsonMarshaler interface {
+	MarshalJSON() ([]byte, error)
+}
+
+type textMarshaler interface {
+	MarshalText() (text []byte, err error)
+}
+
 // ToStringE casts an empty interface to a string.
 func ToStringE(i interface{}) (string, error) {
 	i = indirectToStringerOrError(i) // does not cost neither B/op nor allocs/op
@@ -428,6 +436,12 @@ func ToStringE(i interface{}) (string, error) {
 		return "", nil
 	case fmt.Stringer:
 		return s.String(), nil
+	case jsonMarshaler:
+		data, err := s.MarshalJSON()
+		return string(data), err
+	case textMarshaler:
+		data, err := s.MarshalText()
+		return string(data), err
 	case error:
 		return s.Error(), nil
 	default:

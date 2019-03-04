@@ -140,6 +140,18 @@ func TestToFloat64(t *testing.T) {
 	}
 }
 
+type jsonMarshal string
+
+func (j jsonMarshal) MarshalJSON() ([]byte, error) {
+	return []byte(j), nil
+}
+
+type textMarshal string
+
+func (j textMarshal) MarshalText() ([]byte, error) {
+	return []byte(j), nil
+}
+
 func TestToString(t *testing.T) {
 
 	var foo interface{} = "one more time"
@@ -163,6 +175,9 @@ func TestToString(t *testing.T) {
 	assert.Equal(t, "123", ToString(uint16(123)))
 	assert.Equal(t, "123", ToString(uint32(123)))
 	assert.Equal(t, "123", ToString(uint64(123)))
+
+	assert.Equal(t, "[JSON]", ToString(jsonMarshal("[JSON]")))
+	assert.Equal(t, "[TEXT]", ToString(textMarshal("[TEXT]")))
 }
 
 func TestToByte(t *testing.T) {
