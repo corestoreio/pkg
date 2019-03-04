@@ -143,15 +143,26 @@ func TestToFloat64(t *testing.T) {
 func TestToString(t *testing.T) {
 
 	var foo interface{} = "one more time"
-	assert.Equal(t, ToString(8), "8")
-	assert.Equal(t, ToString(8.12), "8.12")
-	assert.Equal(t, ToString([]byte("one time")), "one time")
-	assert.Equal(t, ToString(template.HTML("one time")), "one time")
-	assert.Equal(t, ToString(template.URL("http://somehost.foo")), "http://somehost.foo")
-	assert.Equal(t, ToString(foo), "one more time")
-	assert.Equal(t, ToString(nil), "")
-	assert.Equal(t, ToString(true), "true")
-	assert.Equal(t, ToString(false), "false")
+	assert.Equal(t, "8", ToString(8))
+	assert.Equal(t, "8.12", ToString(8.12))
+	// assert.Equal(t, "8.1", ToString(float32(8.1)))
+	assert.Equal(t, "one time", ToString([]byte("one time")))
+	assert.Equal(t, "one time", ToString(template.HTML("one time")))
+	assert.Equal(t, "http://somehost.foo", ToString(template.URL("http://somehost.foo")))
+	assert.Equal(t, "one more time", ToString(foo))
+	assert.Equal(t, "", ToString(nil))
+	assert.Equal(t, "true", ToString(true))
+	assert.Equal(t, "false", ToString(false))
+	assert.Equal(t, "123", ToString(int8(123)))
+	assert.Equal(t, "123", ToString(int16(123)))
+	assert.Equal(t, "123", ToString(int32(123)))
+	assert.Equal(t, "123", ToString(int64(123)))
+
+	assert.Equal(t, "123", ToString(uint(123)))
+	assert.Equal(t, "123", ToString(uint8(123)))
+	assert.Equal(t, "123", ToString(uint16(123)))
+	assert.Equal(t, "123", ToString(uint32(123)))
+	assert.Equal(t, "123", ToString(uint64(123)))
 }
 
 func TestToByte(t *testing.T) {
