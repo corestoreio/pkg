@@ -4,13 +4,13 @@ package testdata
 
 import (
 	"context"
+	"time"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/storage/null"
-	"time"
-)
 
+)
 const (
 	TableNameCatalogProductIndexEAVDecimalIDX = "catalog_product_index_eav_decimal_idx"
 	TableNameCoreConfigData                   = "core_config_data"

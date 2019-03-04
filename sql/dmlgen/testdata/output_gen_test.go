@@ -3,18 +3,18 @@
 package testdata
 
 import (
+	"testing"
 	"context"
-	"fmt"
+	"sort"
+	"time"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/pseudo"
-	"sort"
-	"testing"
-	"time"
-)
+	"fmt"
 
+)
 func TestNewTables(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
