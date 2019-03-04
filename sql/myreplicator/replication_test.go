@@ -75,7 +75,7 @@ func (t *testSyncerSuite) testExecute(tst *testing.T, query string) {
 	assert.NoError(tst, err, "Query: %q", query)
 }
 
-func (t *testSyncerSuite) testSync(tst *testing.T, s *BinlogStreamer) {
+func (t *testSyncerSuite) testSync(tst *testing.T, s *BinlogStream) {
 	t.wg.Add(1)
 
 	// https://dba.stackexchange.com/questions/165522/does-mariadb-support-native-json-column-data-type/176959#176959

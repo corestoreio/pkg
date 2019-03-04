@@ -350,7 +350,7 @@ func (b *BinlogSyncer) prepare() error {
 	return nil
 }
 
-func (b *BinlogSyncer) startDumpStream() *BinlogStreamer {
+func (b *BinlogSyncer) startDumpStream() *BinlogStream {
 	b.running = true
 
 	s := newBinlogStreamer(b.cfg.Log)
@@ -361,7 +361,7 @@ func (b *BinlogSyncer) startDumpStream() *BinlogStreamer {
 }
 
 // StartSync starts syncing from the `pos` position.
-func (b *BinlogSyncer) StartSync(pos ddl.MasterStatus) (*BinlogStreamer, error) {
+func (b *BinlogSyncer) StartSync(pos ddl.MasterStatus) (*BinlogStream, error) {
 	if b.cfg.Log.IsDebug() {
 		b.cfg.Log.Debug("BinlogSyncer.StartSync", log.Stringer("position", pos))
 	}
@@ -381,7 +381,7 @@ func (b *BinlogSyncer) StartSync(pos ddl.MasterStatus) (*BinlogStreamer, error) 
 }
 
 // StartSyncGTID starts syncing from the `gset` mysql.GTIDSet.
-func (b *BinlogSyncer) StartSyncGTID(gset mysql.GTIDSet) (*BinlogStreamer, error) {
+func (b *BinlogSyncer) StartSyncGTID(gset mysql.GTIDSet) (*BinlogStream, error) {
 	if b.cfg.Log.IsDebug() {
 		b.cfg.Log.Debug("BinlogSyncer.StartSyncGTID", log.Stringer("gtid", gset))
 	}
@@ -633,7 +633,7 @@ func (b *BinlogSyncer) prepareSyncGTID(gset mysql.GTIDSet) (err error) {
 }
 
 // onStream runs in a goroutine
-func (b *BinlogSyncer) onStream(s *BinlogStreamer) {
+func (b *BinlogSyncer) onStream(s *BinlogStream) {
 	defer func() {
 		if e := recover(); e != nil {
 			s.closeWithError(errors.Fatal.Newf("[myreplicator] onStream.Recovered with error: %v", e))
@@ -725,7 +725,7 @@ func (b *BinlogSyncer) onStream(s *BinlogStreamer) {
 	}
 }
 
-func (b *BinlogSyncer) parseEvent(s *BinlogStreamer, data []byte) error {
+func (b *BinlogSyncer) parseEvent(s *BinlogStream, data []byte) error {
 	// skip OK byte, 0x00
 	data = data[1:]
 

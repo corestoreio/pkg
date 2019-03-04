@@ -8,8 +8,8 @@ import (
 	"github.com/corestoreio/log"
 )
 
-// BinlogStreamer gets the streaming event.
-type BinlogStreamer struct {
+// BinlogStream gets the streaming event.
+type BinlogStream struct {
 	Log     log.Logger
 	bleChan chan *BinlogEvent
 	errChan chan error
@@ -20,7 +20,7 @@ type BinlogStreamer struct {
 // receives any events from MySQL or meets a sync error. You can pass a context
 // (like Cancel or Timeout) to break the block. May return a temporary error
 // behaviour.
-func (s *BinlogStreamer) GetEvent(ctx context.Context) (*BinlogEvent, error) {
+func (s *BinlogStream) GetEvent(ctx context.Context) (*BinlogEvent, error) {
 	if s.err != nil {
 		return nil, errors.Temporary.New(s.err, "[myreplicator] Last sync error or closed, try sync and get event again")
 	}
@@ -31,13 +31,13 @@ func (s *BinlogStreamer) GetEvent(ctx context.Context) (*BinlogEvent, error) {
 	case s.err = <-s.errChan:
 		return nil, errors.WithStack(s.err)
 	case <-ctx.Done():
-		return nil, errors.WithStack(ctx.Err())
+		return nil, ctx.Err()
 	}
 }
 
 // GetEventWithStartTime gets the binlog event with a start time, if current
 // binlog event timestamp smaller than specify start time returns a nil event.
-func (s *BinlogStreamer) GetEventWithStartTime(ctx context.Context, startTime time.Time) (*BinlogEvent, error) {
+func (s *BinlogStream) GetEventWithStartTime(ctx context.Context, startTime time.Time) (*BinlogEvent, error) {
 	if s.err != nil {
 		return nil, errors.Temporary.New(s.err, "[myreplicator] Last sync error or closed, try sync and get event again")
 	}
@@ -56,7 +56,7 @@ func (s *BinlogStreamer) GetEventWithStartTime(ctx context.Context, startTime ti
 }
 
 // DumpEvents dumps all left events
-func (s *BinlogStreamer) DumpEvents() []*BinlogEvent {
+func (s *BinlogStream) DumpEvents() []*BinlogEvent {
 	count := len(s.bleChan)
 	events := make([]*BinlogEvent, 0, count)
 	for i := 0; i < count; i++ {
@@ -65,7 +65,7 @@ func (s *BinlogStreamer) DumpEvents() []*BinlogEvent {
 	return events
 }
 
-func (s *BinlogStreamer) closeWithError(err error) {
+func (s *BinlogStream) closeWithError(err error) {
 	if err == nil {
 		err = errors.AlreadyClosed.Newf("[myreplicator] Sync closed")
 	}
@@ -79,8 +79,8 @@ func (s *BinlogStreamer) closeWithError(err error) {
 	}
 }
 
-func newBinlogStreamer(l log.Logger) *BinlogStreamer {
-	s := new(BinlogStreamer)
+func newBinlogStreamer(l log.Logger) *BinlogStream {
+	s := new(BinlogStream)
 	s.Log = l
 	s.bleChan = make(chan *BinlogEvent, 10240)
 	s.errChan = make(chan error, 4)
