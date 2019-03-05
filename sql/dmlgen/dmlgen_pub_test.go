@@ -77,7 +77,7 @@ func writeFile(t *testing.T, outFile string, wFn func(io.Writer, io.Writer) erro
 	assert.NoError(t, err, "%+v", err)
 }
 
-// TestGenerate_Tables_Protobuf_Json writes a Go and Proto file to the testdata
+// TestGenerate_Tables_Protobuf_Json writes a Go and Proto file to the demltestgenerated
 // directory for manual review for different tables. This test also analyzes the
 // foreign keys pointing to customer_entity.
 func TestGenerate_Tables_Protobuf_Json(t *testing.T) {
@@ -88,8 +88,9 @@ func TestGenerate_Tables_Protobuf_Json(t *testing.T) {
 	dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil)
 
 	ctx := context.Background()
-	ts, err := dmlgen.NewTables("github.com/corestoreio/pkg/sql/dmlgen/testdata",
+	ts, err := dmlgen.NewTables("github.com/corestoreio/pkg/sql/dmlgen/demltestgenerated",
 
+		dmlgen.WithBuildTags("!ignore", "!ignored"),
 		dmlgen.WithProtobuf(),
 
 		dmlgen.WithTablesFromDB(ctx, db,
@@ -162,7 +163,7 @@ func TestGenerate_Tables_Protobuf_Json(t *testing.T) {
 		}),
 
 		dmlgen.WithCustomCode("pseudo.MustNewService.Option", `
-		pseudo.WithTagFakeFunc("testdata.CustomerAddressEntity.ParentID", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("demltestgenerated.CustomerAddressEntity.ParentID", func(maxLen int) (interface{}, error) {
 			return nil, nil 
 		}),
 		pseudo.WithTagFakeFunc("col_date1", func(maxLen int) (interface{}, error) {
@@ -199,14 +200,14 @@ func TestGenerate_Tables_Protobuf_Json(t *testing.T) {
 	assert.NoError(t, err)
 
 	ts.ImportPathsTesting = append(ts.ImportPathsTesting, "fmt") // only needed for pseudo functional options.
-	ts.TestSQLDumpGlobPath = "test_*_tables.sql"
+	ts.TestSQLDumpGlobPath = "../testdata/test_*_tables.sql"
 
-	writeFile(t, "testdata/output_gen.go", ts.GenerateGo)
-	writeFile(t, "testdata/output_gen.proto", ts.GenerateSerializer)
+	writeFile(t, "demltestgenerated/output_gen.go", ts.GenerateGo)
+	writeFile(t, "demltestgenerated/output_gen.proto", ts.GenerateSerializer)
 	// Generates for all proto files the Go source code.
-	err = dmlgen.GenerateProto("./testdata")
+	err = dmlgen.GenerateProto("./demltestgenerated")
 	assert.NoError(t, err, "%+v", err)
-	err = dmlgen.GenerateJSON("./testdata", nil)
+	err = dmlgen.GenerateJSON("./demltestgenerated", nil)
 	assert.NoError(t, err, "%+v", err)
 }
 
@@ -217,7 +218,7 @@ func TestInfoSchemaForeignKeys(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
 
-	ts, err := dmlgen.NewTables("testdata",
+	ts, err := dmlgen.NewTables("demltestgenerated",
 		dmlgen.WithTableConfig("KEY_COLUMN_USAGE", &dmlgen.TableConfig{
 			Encoders:          []string{"json", "binary"},
 			UniquifiedColumns: []string{"TABLE_NAME", "COLUMN_NAME"},
@@ -226,7 +227,7 @@ func TestInfoSchemaForeignKeys(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	writeFile(t, "testdata/KEY_COLUMN_USAGE_gen.go", ts.GenerateGo)
+	writeFile(t, "demltestgenerated/KEY_COLUMN_USAGE_gen.go", ts.GenerateGo)
 }
 
 func TestWithCustomStructTags(t *testing.T) {
@@ -245,7 +246,7 @@ func TestWithCustomStructTags(t *testing.T) {
 			}
 		}()
 
-		tbl, err := dmlgen.NewTables("testdata",
+		tbl, err := dmlgen.NewTables("demltestgenerated",
 			dmlgen.WithTable("table", ddl.Columns{&ddl.Column{Field: "config_id"}}),
 			dmlgen.WithTableConfig("table", &dmlgen.TableConfig{
 				CustomStructTags: []string{"unbalanced"},

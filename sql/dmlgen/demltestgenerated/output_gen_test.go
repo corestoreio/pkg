@@ -1,25 +1,29 @@
+// +build !ignore
+// +build !ignored
+
 // Auto generated via github.com/corestoreio/pkg/sql/dmlgen
 
-package testdata
+package demltestgenerated
 
 import (
-	"testing"
 	"context"
+	"fmt"
 	"sort"
+	"testing"
 	"time"
+
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/pseudo"
-	"fmt"
-
 )
+
 func TestNewTables(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
 
-	defer dmltest.SQLDumpLoad(t, "test_*_tables.sql", &dmltest.SQLDumpOptions{
+	defer dmltest.SQLDumpLoad(t, "../testdata/test_*_tables.sql", &dmltest.SQLDumpOptions{
 		SkipDBCleanup: true,
 	}).Deferred()
 
@@ -42,7 +46,7 @@ func TestNewTables(t *testing.T) {
 		pseudo.WithTagFakeFunc("store_id", func(maxLen int) (interface{}, error) {
 			return 1, nil
 		}),
-		pseudo.WithTagFakeFunc("testdata.CustomerAddressEntity.ParentID", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("demltestgenerated.CustomerAddressEntity.ParentID", func(maxLen int) (interface{}, error) {
 			return nil, nil
 		}),
 		pseudo.WithTagFakeFunc("col_date1", func(maxLen int) (interface{}, error) {

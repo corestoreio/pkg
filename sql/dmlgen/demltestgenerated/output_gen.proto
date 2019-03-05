@@ -1,10 +1,10 @@
 // Auto generated via github.com/corestoreio/pkg/sql/dmlgen
 syntax = "proto3";
-package testdata;
+package demltestgenerated;
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 import "github.com/corestoreio/pkg/storage/null/null.proto";
-option go_package = "testdata";
+option go_package = "demltestgenerated";
 option (gogoproto.typedecl_all) = false;
 option (gogoproto.goproto_getters_all) = false;
 option (gogoproto.unmarshaler_all) = true;

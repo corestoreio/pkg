@@ -1,16 +1,20 @@
+// +build !ignore
+// +build !ignored
+
 // Auto generated via github.com/corestoreio/pkg/sql/dmlgen
 
-package testdata
+package demltestgenerated
 
 import (
 	"context"
 	"time"
+
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/storage/null"
-
 )
+
 const (
 	TableNameCatalogProductIndexEAVDecimalIDX = "catalog_product_index_eav_decimal_idx"
 	TableNameCoreConfigData                   = "core_config_data"
@@ -77,7 +81,7 @@ func (e *CatalogProductIndexEAVDecimalIDX) MapColumns(cm *dml.ColumnMap) error {
 		case "source_id":
 			cm.Uint32(&e.SourceID)
 		default:
-			return errors.NotFound.Newf("[testdata] CatalogProductIndexEAVDecimalIDX Column %q not found", c)
+			return errors.NotFound.Newf("[demltestgenerated] CatalogProductIndexEAVDecimalIDX Column %q not found", c)
 		}
 	}
 	return errors.WithStack(cm.Err())
@@ -162,11 +166,11 @@ func (cc *CatalogProductIndexEAVDecimalIDXCollection) MapColumns(cm *dml.ColumnM
 			case "source_id":
 				cm = cm.Uint32s(cc.SourceIDs()...)
 			default:
-				return errors.NotFound.Newf("[testdata] CatalogProductIndexEAVDecimalIDXCollection Column %q not found", c)
+				return errors.NotFound.Newf("[demltestgenerated] CatalogProductIndexEAVDecimalIDXCollection Column %q not found", c)
 			}
 		}
 	default:
-		return errors.NotSupported.Newf("[testdata] Unknown Mode: %q", string(m))
+		return errors.NotSupported.Newf("[demltestgenerated] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }
@@ -275,7 +279,7 @@ func (e *CoreConfigData) MapColumns(cm *dml.ColumnMap) error {
 		case "version_te":
 			cm.Time(&e.VersionTe)
 		default:
-			return errors.NotFound.Newf("[testdata] CoreConfigData Column %q not found", c)
+			return errors.NotFound.Newf("[demltestgenerated] CoreConfigData Column %q not found", c)
 		}
 	}
 	return errors.WithStack(cm.Err())
@@ -351,11 +355,11 @@ func (cc *CoreConfigDataCollection) MapColumns(cm *dml.ColumnMap) error {
 			case "config_id":
 				cm = cm.Uint32s(cc.ConfigIDs()...)
 			default:
-				return errors.NotFound.Newf("[testdata] CoreConfigDataCollection Column %q not found", c)
+				return errors.NotFound.Newf("[demltestgenerated] CoreConfigDataCollection Column %q not found", c)
 			}
 		}
 	default:
-		return errors.NotSupported.Newf("[testdata] Unknown Mode: %q", string(m))
+		return errors.NotSupported.Newf("[demltestgenerated] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }
@@ -557,7 +561,7 @@ func (e *CustomerAddressEntity) MapColumns(cm *dml.ColumnMap) error {
 		case "vat_request_success":
 			cm.NullUint32(&e.VatRequestSuccess)
 		default:
-			return errors.NotFound.Newf("[testdata] CustomerAddressEntity Column %q not found", c)
+			return errors.NotFound.Newf("[demltestgenerated] CustomerAddressEntity Column %q not found", c)
 		}
 	}
 	return errors.WithStack(cm.Err())
@@ -632,11 +636,11 @@ func (cc *CustomerAddressEntityCollection) MapColumns(cm *dml.ColumnMap) error {
 			case "entity_id":
 				cm = cm.Uint32s(cc.EntityIDs()...)
 			default:
-				return errors.NotFound.Newf("[testdata] CustomerAddressEntityCollection Column %q not found", c)
+				return errors.NotFound.Newf("[demltestgenerated] CustomerAddressEntityCollection Column %q not found", c)
 			}
 		}
 	default:
-		return errors.NotSupported.Newf("[testdata] Unknown Mode: %q", string(m))
+		return errors.NotSupported.Newf("[demltestgenerated] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }
@@ -844,7 +848,7 @@ func (e *CustomerEntity) MapColumns(cm *dml.ColumnMap) error {
 		case "lock_expires":
 			cm.NullTime(&e.LockExpires)
 		default:
-			return errors.NotFound.Newf("[testdata] CustomerEntity Column %q not found", c)
+			return errors.NotFound.Newf("[demltestgenerated] CustomerEntity Column %q not found", c)
 		}
 	}
 	return errors.WithStack(cm.Err())
@@ -919,11 +923,11 @@ func (cc *CustomerEntityCollection) MapColumns(cm *dml.ColumnMap) error {
 			case "entity_id", "parent_id":
 				cm = cm.Uint32s(cc.EntityIDs()...)
 			default:
-				return errors.NotFound.Newf("[testdata] CustomerEntityCollection Column %q not found", c)
+				return errors.NotFound.Newf("[demltestgenerated] CustomerEntityCollection Column %q not found", c)
 			}
 		}
 	default:
-		return errors.NotSupported.Newf("[testdata] Unknown Mode: %q", string(m))
+		return errors.NotSupported.Newf("[demltestgenerated] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }
@@ -1156,7 +1160,7 @@ func (e *DmlgenTypes) MapColumns(cm *dml.ColumnMap) error {
 		case "col_char_2":
 			cm.String(&e.ColChar2)
 		default:
-			return errors.NotFound.Newf("[testdata] DmlgenTypes Column %q not found", c)
+			return errors.NotFound.Newf("[demltestgenerated] DmlgenTypes Column %q not found", c)
 		}
 	}
 	return errors.WithStack(cm.Err())
@@ -1233,11 +1237,11 @@ func (cc *DmlgenTypesCollection) MapColumns(cm *dml.ColumnMap) error {
 			case "id":
 				cm = cm.Int32s(cc.IDs()...)
 			default:
-				return errors.NotFound.Newf("[testdata] DmlgenTypesCollection Column %q not found", c)
+				return errors.NotFound.Newf("[demltestgenerated] DmlgenTypesCollection Column %q not found", c)
 			}
 		}
 	default:
-		return errors.NotSupported.Newf("[testdata] Unknown Mode: %q", string(m))
+		return errors.NotSupported.Newf("[demltestgenerated] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }
@@ -1480,7 +1484,7 @@ func (e *SalesOrderStatusState) MapColumns(cm *dml.ColumnMap) error {
 		case "visible_on_front":
 			cm.Uint32(&e.VisibleOnFront)
 		default:
-			return errors.NotFound.Newf("[testdata] SalesOrderStatusState Column %q not found", c)
+			return errors.NotFound.Newf("[demltestgenerated] SalesOrderStatusState Column %q not found", c)
 		}
 	}
 	return errors.WithStack(cm.Err())
@@ -1557,11 +1561,11 @@ func (cc *SalesOrderStatusStateCollection) MapColumns(cm *dml.ColumnMap) error {
 			case "state":
 				cm = cm.Strings(cc.States()...)
 			default:
-				return errors.NotFound.Newf("[testdata] SalesOrderStatusStateCollection Column %q not found", c)
+				return errors.NotFound.Newf("[demltestgenerated] SalesOrderStatusStateCollection Column %q not found", c)
 			}
 		}
 	default:
-		return errors.NotSupported.Newf("[testdata] Unknown Mode: %q", string(m))
+		return errors.NotSupported.Newf("[demltestgenerated] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }
@@ -1700,7 +1704,7 @@ func (e *ViewCustomerAutoIncrement) MapColumns(cm *dml.ColumnMap) error {
 		case "city":
 			cm.String(&e.City)
 		default:
-			return errors.NotFound.Newf("[testdata] ViewCustomerAutoIncrement Column %q not found", c)
+			return errors.NotFound.Newf("[demltestgenerated] ViewCustomerAutoIncrement Column %q not found", c)
 		}
 	}
 	return errors.WithStack(cm.Err())
@@ -1776,11 +1780,11 @@ func (cc *ViewCustomerAutoIncrementCollection) MapColumns(cm *dml.ColumnMap) err
 		for cm.Next() {
 			switch c := cm.Column(); c {
 			default:
-				return errors.NotFound.Newf("[testdata] ViewCustomerAutoIncrementCollection Column %q not found", c)
+				return errors.NotFound.Newf("[demltestgenerated] ViewCustomerAutoIncrementCollection Column %q not found", c)
 			}
 		}
 	default:
-		return errors.NotSupported.Newf("[testdata] Unknown Mode: %q", string(m))
+		return errors.NotSupported.Newf("[demltestgenerated] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }
@@ -1889,7 +1893,7 @@ func (e *ViewCustomerNoAutoIncrement) MapColumns(cm *dml.ColumnMap) error {
 		case "city":
 			cm.String(&e.City)
 		default:
-			return errors.NotFound.Newf("[testdata] ViewCustomerNoAutoIncrement Column %q not found", c)
+			return errors.NotFound.Newf("[demltestgenerated] ViewCustomerNoAutoIncrement Column %q not found", c)
 		}
 	}
 	return errors.WithStack(cm.Err())
@@ -1965,11 +1969,11 @@ func (cc *ViewCustomerNoAutoIncrementCollection) MapColumns(cm *dml.ColumnMap) e
 		for cm.Next() {
 			switch c := cm.Column(); c {
 			default:
-				return errors.NotFound.Newf("[testdata] ViewCustomerNoAutoIncrementCollection Column %q not found", c)
+				return errors.NotFound.Newf("[demltestgenerated] ViewCustomerNoAutoIncrementCollection Column %q not found", c)
 			}
 		}
 	default:
-		return errors.NotSupported.Newf("[testdata] Unknown Mode: %q", string(m))
+		return errors.NotSupported.Newf("[demltestgenerated] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }

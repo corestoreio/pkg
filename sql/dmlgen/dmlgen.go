@@ -66,6 +66,7 @@ import (
 type Tables struct {
 	Package            string // Name of the package
 	PackageImportPath  string // Name of the package
+	BuildTags          []string
 	ImportPaths        []string
 	ImportPathsTesting []string
 	// Tables uses the table name as map key and the table description as value.
@@ -537,6 +538,17 @@ func WithFlatbuffers(headerOptions ...string) (opt Option) {
 	return
 }
 
+// WithBuildTags adds your build tags to the file header. Each argument
+// represents a build tag line.
+func WithBuildTags(lines ...string) (opt Option) {
+	opt.sortOrder = 112
+	opt.fn = func(ts *Tables) error {
+		ts.BuildTags = append(ts.BuildTags, lines...)
+		return nil
+	}
+	return
+}
+
 // WithCustomCode inserts at the marker position your custom Go code. For
 // available markers search the .go.tpl files for the function call
 // `CustomCode`. An example got written in TestGenerate_Tables_Protobuf_Json. If
@@ -786,6 +798,9 @@ func (ts *Tables) GenerateGo(w io.Writer, wTest io.Writer) error {
 	}
 
 	if !ts.DisableFileHeader {
+
+		ts.writeBuildTags(w)
+
 		// now figure out all used package names in the buffer.
 		fmt.Fprintf(w, "// Auto generated via github.com/corestoreio/pkg/sql/dmlgen\n\npackage %s\n\nimport (\n", ts.Package)
 		// println(buf.String())
@@ -798,6 +813,8 @@ func (ts *Tables) GenerateGo(w io.Writer, wTest io.Writer) error {
 			fmt.Fprintf(w, "\t%q\n", path)
 		}
 		fmt.Fprintf(w, "\n)\n")
+
+		ts.writeBuildTags(wTest)
 
 		// now figure out all used package names in the buffer.
 		fmt.Fprintf(wTest, "// Auto generated via github.com/corestoreio/pkg/sql/dmlgen\n\npackage %s\n\nimport (\n", ts.Package)
@@ -826,6 +843,15 @@ func (ts *Tables) GenerateGo(w io.Writer, wTest io.Writer) error {
 	bufTest.Write(fmted)
 	_, err = bufTest.WriteTo(wTest)
 	return err
+}
+
+func (ts *Tables) writeBuildTags(w io.Writer) {
+	for _, bt := range ts.BuildTags {
+		fmt.Fprintf(w, "// +build %s\n", bt)
+	}
+	if len(ts.BuildTags) > 0 {
+		_, _ = fmt.Fprint(w, "\n")
+	}
 }
 
 // table writes one database table into Go source code.
