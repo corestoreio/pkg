@@ -25,7 +25,9 @@ import (
 )
 
 func init() {
-	hashpool.Register("sha256", sha256.New)
+	if err := hashpool.Register("sha256", sha256.New); err != nil {
+		panic(err)
+	}
 }
 
 func errCheck(t *testing.T) func([]byte, error) []byte {
@@ -98,7 +100,7 @@ func TestNewModifier(t *testing.T) {
 
 	t.Run("custom operator returns error ", func(t *testing.T) {
 		RegisterModifier("csx", func(*config.Path, []byte) ([]byte, error) {
-			return nil, errors.New("An error")
+			return nil, errors.New("an error")
 		})
 
 		ms := MustNewModifier(ModifierArg{

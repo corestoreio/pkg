@@ -288,7 +288,7 @@ func (v ValidateMinMaxInt) Observe(p config.Path, rawData []byte, found bool) (r
 		return rawData, nil
 	}
 	var validations int
-	for i := 0; i < condLen; i = i + 2 {
+	for i := 0; i < condLen; i += 2 {
 		if left, right := v.Conditions[i], v.Conditions[i+1]; validation.InRangeInt64(val, left, right) {
 			validations++
 			if v.PartialValidation {
