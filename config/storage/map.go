@@ -38,7 +38,7 @@ func NewMap(fqPathValue ...string) config.Storager {
 	}
 
 	p := new(config.Path)
-	for i := 0; i < len(fqPathValue); i = i + 2 {
+	for i := 0; i < len(fqPathValue); i += 2 {
 		fq := fqPathValue[i]
 		if err := p.Parse(fq); err != nil {
 			panic(errors.Fatal.New(err, "[config/storage] NewMap with path %q", fq))

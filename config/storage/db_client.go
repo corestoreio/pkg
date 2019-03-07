@@ -14,6 +14,11 @@
 
 // +build csall db
 
+//go:generate go run db_client_main.go
+
+// TODO: only an idea to create program dmlgen
+// go_generate dmlgen -tags "csall db" -filename $GOFILE -pkg $GOPACKAGE core_config_data
+
 package storage
 
 import (
@@ -26,61 +31,10 @@ import (
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/store/scope"
 )
 
-// TableNameCoreConfigData default database table name.
-const TableNameCoreConfigData = `core_config_data`
-
-// NewTableCollection creates a new Tables object for TableNameCoreConfigData.
-func NewTableCollection(db dml.QueryExecPreparer) *ddl.Tables {
-	return ddl.MustNewTables(
-		ddl.WithTable(
-			TableNameCoreConfigData,
-			&ddl.Column{Field: `config_id`, ColumnType: `int(10) unsigned`, Null: `NO`, Key: `PRI`, Extra: `auto_increment`},
-			&ddl.Column{Field: `scope`, ColumnType: `varchar(8)`, Null: `NO`, Key: `MUL`, Default: null.MakeString(`default`), Extra: ""},
-			&ddl.Column{Field: `scope_id`, ColumnType: `int(11)`, Null: `NO`, Key: "", Default: null.MakeString(`0`), Extra: ""},
-			&ddl.Column{Field: `path`, ColumnType: `varchar(255)`, Null: `NO`, Key: "", Default: null.MakeString(`general`), Extra: ""},
-			&ddl.Column{Field: `value`, ColumnType: `text`, Null: `YES`, Key: ``, Extra: ""},
-		),
-		ddl.WithDB(db),
-	)
-}
-
-// TableCoreConfigData represents a type for DB table core_config_data
-// Generated via tableToStruct.
-type TableCoreConfigData struct {
-	ConfigID int64       // config_id int(10) unsigned NOT NULL PRI  auto_increment
-	Scope    string      // scope varchar(8) NOT NULL MUL DEFAULT 'default'
-	ScopeID  int64       // scope_id int(11) NOT NULL  DEFAULT '0'
-	Path     string      // path varchar(255) NOT NULL  DEFAULT 'general'
-	Value    null.String // value text NULL
-}
-
-// MapColumns implements interface ColumnMapper only partially.
-func (p *TableCoreConfigData) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Int64(&p.ConfigID).String(&p.Scope).Int64(&p.ScopeID).String(&p.Path).NullString(&p.Value).Err()
-	}
-	for cm.Next() {
-		switch c := cm.Column(); c {
-		case "config_id": // customer_id is an alias
-			cm.Int64(&p.ConfigID)
-		case "scope":
-			cm.String(&p.Scope)
-		case "scope_id":
-			cm.Int64(&p.ScopeID)
-		case "path":
-			cm.String(&p.Path)
-		case "value":
-			cm.NullString(&p.Value)
-		default:
-			return errors.NotFound.Newf("[config/storage] TableCoreConfigData Column %q not found", c)
-		}
-	}
-	return cm.Err()
-}
+// TODO https://mariadb.com/kb/en/library/system-versioned-tables/
 
 // DBOptions applies options to the `DB` type.
 type DBOptions struct {
@@ -296,7 +250,7 @@ func (dbs *DB) Set(p *config.Path, value []byte) error {
 		if dbs.stmtWrite == nil {
 			dbs.stmtWrite = stmt.WithArgs()
 		} else {
-			dbs.stmtWrite.WithStmt(stmt.Stmt)
+			dbs.stmtWrite.WithPreparedStmt(stmt.Stmt)
 		}
 		dbs.stmtWriteStat.Open++
 	}
@@ -346,7 +300,7 @@ func (dbs *DB) Get(p *config.Path) (v []byte, ok bool, err error) {
 		if dbs.stmtRead == nil {
 			dbs.stmtRead = stmt.WithArgs()
 		} else {
-			dbs.stmtRead.WithStmt(stmt.Stmt)
+			dbs.stmtRead.WithPreparedStmt(stmt.Stmt)
 		}
 		dbs.stmtReadStat.Open++
 	}
@@ -404,8 +358,8 @@ func WithLoadFromDB(tbls *ddl.Tables, o DBOptions) config.LoadDataOption {
 		ctx, cancel := context.WithTimeout(context.Background(), o.ContextTimeoutRead)
 		defer cancel()
 
-		return tbl.SelectAll().WithArgs().IterateSerial(ctx, func(cm *dml.ColumnMap) error {
-			var ccd TableCoreConfigData
+		return tbl.Select("*").WithArgs().IterateSerial(ctx, func(cm *dml.ColumnMap) error {
+			var ccd CoreConfigData
 			if err := ccd.MapColumns(cm); err != nil {
 				return errors.Wrapf(err, "[config/storage] dbs.stmtAll.IterateSerial at row %d", cm.Count)
 			}
@@ -414,7 +368,7 @@ func WithLoadFromDB(tbls *ddl.Tables, o DBOptions) config.LoadDataOption {
 			if ccd.Value.Valid {
 				v = []byte(ccd.Value.String)
 			}
-			scp := scope.FromString(ccd.Scope).WithID(ccd.ScopeID)
+			scp := scope.FromString(ccd.Scope).WithID(int64(ccd.ScopeID))
 			p, err := config.NewPathWithScope(scp, ccd.Path)
 			if err != nil {
 				return errors.Wrapf(err, "[config/storage] WithLoadFromDB.config.NewPathWithScope Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ConfigID)

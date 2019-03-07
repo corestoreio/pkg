@@ -40,7 +40,7 @@ func WithLoadStrings(fqPathValue ...string) config.LoadDataOption {
 		}
 
 		p := new(config.Path)
-		for i := 0; i < len(fqPathValue) && err == nil; i = i + 2 {
+		for i := 0; i < len(fqPathValue) && err == nil; i += 2 {
 			if err = p.Parse(fqPathValue[i]); err != nil {
 				return errors.WithStack(err)
 			}

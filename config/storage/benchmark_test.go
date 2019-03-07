@@ -46,14 +46,16 @@ func BenchmarkFromEnvVar(b *testing.B) {
 	}
 }
 
-//BenchmarkLRUNew_Parallel/single-4         	 2000000	       854 ns/op	       0 B/op	       0 allocs/op
-//BenchmarkLRUNew_Parallel/parallel-4       	 1000000	      1274 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkLRUNew_Parallel/single-4         	 2000000	       854 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkLRUNew_Parallel/parallel-4       	 1000000	      1274 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkLRUNew_Parallel(b *testing.B) {
 	const cacheSize = 5
 	b.Run("single", func(b *testing.B) {
 		lru := storage.NewLRU(cacheSize)
 		for _, tt := range lruGetTests {
-			lru.Set(tt.keyToAdd, testLRUData)
+			if err := lru.Set(tt.keyToAdd, testLRUData); err != nil {
+				b.Fatal(err)
+			}
 		}
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {

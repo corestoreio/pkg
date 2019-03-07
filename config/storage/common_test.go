@@ -28,7 +28,7 @@ type flusher interface {
 	Flush() error
 }
 
-func validateFoundGet(t *testing.T, s config.Storager, scp scope.TypeID, route string, want string) {
+func validateFoundGet(t *testing.T, s config.Storager, scp scope.TypeID, route, want string) {
 	p := config.MustNewPathWithScope(scp, route)
 	data, ok, err := s.Get(p)
 	assert.NoError(t, err)

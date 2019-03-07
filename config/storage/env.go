@@ -129,7 +129,10 @@ func WithLoadEnvironmentVariables(op EnvOp) config.LoadDataOption {
 				}
 			}
 			if s.Log != nil && s.Log.IsDebug() {
-				s.Log.Debug("config.storage.WithLoadEnvironmentVariables", log.String("name", key), log.Bool("found", ok), log.Int("value_length", len(envVal)))
+				// do not log the value of the environment variable as it might
+				// contain sensitive data.
+				s.Log.Debug("config.storage.WithLoadEnvironmentVariables", log.String("name", key), log.Bool("found", ok),
+					log.Int("value_length", len(envVal)))
 			}
 		}
 

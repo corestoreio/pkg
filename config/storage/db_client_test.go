@@ -17,6 +17,7 @@
 package storage_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -25,6 +26,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/storage"
+	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/assert"
@@ -32,6 +34,14 @@ import (
 )
 
 var _ config.Storager = (*storage.DB)(nil)
+
+func mustNewTables(ctx context.Context, opts ...ddl.TableOption) (tm *ddl.Tables) {
+	t, err := storage.NewTables(ctx, opts...)
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
 
 func TestMustNewDB_Panic(t *testing.T) {
 	t.Parallel()
@@ -46,7 +56,7 @@ func TestMustNewDB_Panic(t *testing.T) {
 			t.Error("Expecting a panic but got nothing")
 		}
 	}()
-	_ = storage.MustNewDB(storage.NewTableCollection(nil), storage.DBOptions{
+	_ = storage.MustNewDB(mustNewTables(context.TODO()), storage.DBOptions{
 		TableName:            "non-existent",
 		SkipSchemaValidation: true,
 	})
@@ -59,7 +69,7 @@ func TestService_AllKeys_Mocked(t *testing.T) {
 	defer dmltest.MockClose(t, dbc, dbMock)
 
 	t.Run("table not found", func(t *testing.T) {
-		dbs, err := storage.NewDB(storage.NewTableCollection(dbc.DB), storage.DBOptions{
+		dbs, err := storage.NewDB(mustNewTables(context.TODO()), storage.DBOptions{
 			TableName:            "non-existent",
 			SkipSchemaValidation: true,
 		})
@@ -68,7 +78,12 @@ func TestService_AllKeys_Mocked(t *testing.T) {
 	})
 
 	t.Run("no leaking goroutines", func(t *testing.T) {
-		dbs, err := storage.NewDB(storage.NewTableCollection(dbc.DB), storage.DBOptions{
+
+		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS").WithArgs().WillReturnRows(
+			dmltest.MustMockRows(dmltest.WithFile("testdata", "core_config_data_columns.csv")),
+		)
+
+		dbs, err := storage.NewDB(mustNewTables(context.TODO(), ddl.WithConnPool(dbc)), storage.DBOptions{
 			SkipSchemaValidation: true,
 		})
 		assert.NoError(t, err)
@@ -123,7 +138,11 @@ func TestService_Get(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 		dbMock.MatchExpectationsInOrder(false)
 
-		dbs, err := storage.NewDB(storage.NewTableCollection(dbc.DB), storage.DBOptions{
+		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS").WithArgs().WillReturnRows(
+			dmltest.MustMockRows(dmltest.WithFile("testdata", "core_config_data_columns.csv")),
+		)
+
+		dbs, err := storage.NewDB(mustNewTables(context.TODO(), ddl.WithConnPool(dbc)), storage.DBOptions{
 			SkipSchemaValidation: true,
 		})
 		assert.NoError(t, err)
@@ -136,7 +155,11 @@ func TestService_Get(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 		dbMock.MatchExpectationsInOrder(false)
 
-		dbs, err := storage.NewDB(storage.NewTableCollection(dbc.DB), storage.DBOptions{
+		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS").WithArgs().WillReturnRows(
+			dmltest.MustMockRows(dmltest.WithFile("testdata", "core_config_data_columns.csv")),
+		)
+
+		dbs, err := storage.NewDB(mustNewTables(context.TODO(), ddl.WithConnPool(dbc)), storage.DBOptions{
 			IdleRead:             time.Millisecond * 50,
 			IdleWrite:            time.Millisecond * 50,
 			SkipSchemaValidation: true,
@@ -158,7 +181,11 @@ func TestService_Get(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 		dbMock.MatchExpectationsInOrder(false)
 
-		dbs, err := storage.NewDB(storage.NewTableCollection(dbc.DB), storage.DBOptions{
+		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS").WithArgs().WillReturnRows(
+			dmltest.MustMockRows(dmltest.WithFile("testdata", "core_config_data_columns.csv")),
+		)
+
+		dbs, err := storage.NewDB(mustNewTables(context.TODO(), ddl.WithConnPool(dbc)), storage.DBOptions{
 			ContextTimeoutRead:   time.Millisecond * 50,
 			SkipSchemaValidation: true,
 		})
@@ -211,7 +238,11 @@ func TestService_Set(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 		dbMock.MatchExpectationsInOrder(false)
 
-		dbs, err := storage.NewDB(storage.NewTableCollection(dbc.DB), storage.DBOptions{
+		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS").WithArgs().WillReturnRows(
+			dmltest.MustMockRows(dmltest.WithFile("testdata", "core_config_data_columns.csv")),
+		)
+
+		dbs, err := storage.NewDB(mustNewTables(context.TODO(), ddl.WithConnPool(dbc)), storage.DBOptions{
 			SkipSchemaValidation: true,
 		})
 		assert.NoError(t, err)
@@ -224,7 +255,11 @@ func TestService_Set(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 		dbMock.MatchExpectationsInOrder(false)
 
-		dbs, err := storage.NewDB(storage.NewTableCollection(dbc.DB), storage.DBOptions{
+		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS").WithArgs().WillReturnRows(
+			dmltest.MustMockRows(dmltest.WithFile("testdata", "core_config_data_columns.csv")),
+		)
+
+		dbs, err := storage.NewDB(mustNewTables(context.TODO(), ddl.WithConnPool(dbc)), storage.DBOptions{
 			IdleRead:             time.Millisecond * 5,
 			IdleWrite:            time.Millisecond * 5,
 			SkipSchemaValidation: true,
@@ -246,7 +281,11 @@ func TestService_Set(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 		dbMock.MatchExpectationsInOrder(false)
 
-		dbs, err := storage.NewDB(storage.NewTableCollection(dbc.DB), storage.DBOptions{
+		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS").WithArgs().WillReturnRows(
+			dmltest.MustMockRows(dmltest.WithFile("testdata", "core_config_data_columns.csv")),
+		)
+
+		dbs, err := storage.NewDB(mustNewTables(context.TODO(), ddl.WithConnPool(dbc)), storage.DBOptions{
 			ContextTimeoutWrite:  time.Millisecond * 50,
 			SkipSchemaValidation: true,
 		})
@@ -278,11 +317,15 @@ func Test_WithCoreConfigData(t *testing.T) {
 	dbc, dbMock := dmltest.MockDB(t)
 	defer dmltest.MockClose(t, dbc, dbMock)
 
+	dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS").WithArgs().WillReturnRows(
+		dmltest.MustMockRows(dmltest.WithFile("testdata", "core_config_data_columns.csv")),
+	)
+
 	dbMock.ExpectQuery("SELECT (.+) FROM `core_config_data` AS `main_table`").WillReturnRows(
 		dmltest.MustMockRows(dmltest.WithFile("testdata", "core_config_data.csv")),
 	)
 
-	tbls := storage.NewTableCollection(dbc.DB)
+	tbls := mustNewTables(context.TODO(), ddl.WithConnPool(dbc))
 
 	im := storage.NewMap()
 	s := config.MustNewService(

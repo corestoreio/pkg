@@ -106,8 +106,8 @@ func TestLRUNew_Parallel(t *testing.T) {
 			*/
 			d := []byte(testLRUDataStr)
 			v := []byte(testLRUDataStr)
-			lru.Set(tt.keyToAdd, v)
-			lru.Set(tt.keyToAdd, v) // this is an ugly fix, but not that flaky anymore when running test with -count=40
+			_ = lru.Set(tt.keyToAdd, v)
+			_ = lru.Set(tt.keyToAdd, v) // this is an ugly fix, but not that flaky anymore when running test with -count=40
 
 			val, ok, err := lru.Get(tt.keyToGet)
 			if err != nil {
