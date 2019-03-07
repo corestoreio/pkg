@@ -11,5 +11,4 @@ then
 	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
 fi
 
-golangci-lint run $@\
-	--enable=unconvert,gocyclo,nakedret,prealloc
+golangci-lint run --config=$GOPATH/src/github.com/corestoreio/pkg/.golangci.yml $@\
