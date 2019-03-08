@@ -27,7 +27,7 @@ import (
 	"github.com/corestoreio/pkg/util/assert"
 )
 
-const tableNullTypesCreate = `CREATE TABLE dml_null_types (
+const tableNullTypesCreate = `CREATE TABLE storage_null_types (
   id int(11) NOT NULL AUTO_INCREMENT,
   string_val varchar(255) DEFAULT NULL,
   int64_val int(11) DEFAULT NULL,
@@ -38,16 +38,19 @@ const tableNullTypesCreate = `CREATE TABLE dml_null_types (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
 
-const tableNullTypesDrop = `DROP TABLE IF EXISTS dml_null_types`
+const tableNullTypesDrop = `DROP TABLE IF EXISTS storage_null_types`
 
 func TestDecimal_Select_Integration(t *testing.T) {
 	ctx := context.TODO()
 	dbc := dmltest.MustConnectDB(t, dml.WithSetNamesUTF8MB4(),
-		dml.WithExecSQLOnConnOpen(ctx, tableNullTypesCreate), dml.WithExecSQLOnConnClose(ctx, tableNullTypesDrop))
+		dml.WithExecSQLOnConnOpen(ctx, tableNullTypesDrop),
+		dml.WithExecSQLOnConnOpen(ctx, tableNullTypesCreate),
+		dml.WithExecSQLOnConnClose(ctx, tableNullTypesDrop),
+	)
 	defer dmltest.Close(t, dbc)
 
 	rec := newNullTypedRecordWithData()
-	in := dbc.InsertInto("dml_null_types").
+	in := dbc.InsertInto("storage_null_types").
 		AddColumns("id", "string_val", "int64_val", "float64_val", "time_val", "bool_val", "decimal_val")
 
 	res, err := in.WithArgs().Record("", rec).ExecContext(context.TODO())
@@ -59,7 +62,7 @@ func TestDecimal_Select_Integration(t *testing.T) {
 	nullTypeSet := &nullTypedRecord{}
 	dec := null.Decimal{Precision: 12345, Scale: 3, Valid: true}
 
-	sel := dbc.SelectFrom("dml_null_types").Star().Where(
+	sel := dbc.SelectFrom("storage_null_types").Star().Where(
 		dml.Column("decimal_val").Decimal(dec),
 	)
 
@@ -94,7 +97,7 @@ func TestNullTypeScanning(t *testing.T) {
 
 	for _, test := range tests {
 		// Create the record in the db
-		res, err := dbc.InsertInto("dml_null_types").
+		res, err := dbc.InsertInto("storage_null_types").
 			AddColumns("string_val", "int64_val", "float64_val", "time_val", "bool_val", "decimal_val").
 			WithArgs().Record("", test.record).ExecContext(context.TODO())
 		assert.NoError(t, err)
@@ -104,7 +107,7 @@ func TestNullTypeScanning(t *testing.T) {
 		// Scan it back and check that all fields are of the correct validity and are
 		// equal to the reference record
 		nullTypeSet := &nullTypedRecord{}
-		_, err = dbc.SelectFrom("dml_null_types").Star().Where(
+		_, err = dbc.SelectFrom("storage_null_types").Star().Where(
 			dml.Expr("id = ?").Int64(id),
 		).WithArgs().Load(context.TODO(), nullTypeSet)
 		assert.NoError(t, err)
