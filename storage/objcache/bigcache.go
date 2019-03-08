@@ -25,10 +25,9 @@ import (
 )
 
 // NewBigCacheClient sets the bigcache as underlying storage engine to the
-// This function allows to set custom configuration options to the bigcache
-// instance.
-// Default option: shards 256, LifeWindow 12 hours, Verbose false
-//
+// config service. This function allows to set custom configuration options to
+// the bigcache instance. Default option: shards 256, LifeWindow 12 hours,
+// Verbose false. The duration argument in function Set is not supported.
 // For more details: https://godoc.org/github.com/allegro/bigcache
 func NewBigCacheClient(c bigcache.Config) NewStorageFn {
 	return func() (Storager, error) {
@@ -70,7 +69,7 @@ func (w bigCacheWrapper) Get(_ context.Context, keys []string) (values [][]byte,
 	for _, key := range keys {
 		v, err := w.BigCache.Get(key)
 		if err != nil {
-			if _, ok := err.(*bigcache.EntryNotFoundError); ok {
+			if err == bigcache.ErrEntryNotFound {
 				v = nil
 			} else {
 				return nil, errors.Wrapf(err, "[objcache] With key %q", key)
