@@ -492,6 +492,9 @@ func (a *Artisan) add(v interface{}) *Artisan {
 	return a
 }
 
+// Record sets a record for argument extraction. Qualifier is the name of the
+// table or view or procedure or their alias name. It must be a valid
+// MySQL/MariaDB identifier. An empty qualifier gets assigned to the main table.
 func (a *Artisan) Record(qualifier string, record ColumnMapper) *Artisan {
 	a.recs = append(a.recs, Qualify(qualifier, record))
 	return a
