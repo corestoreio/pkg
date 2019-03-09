@@ -80,7 +80,7 @@ func (s *Service) TimeStamp() string {
 // minimum age of 18 years.
 func (s *Service) Dob18() time.Time {
 	t := time.Unix(s.RandomUnixTime(), 0).Add(-3600 * 24 * 365 * 18)
-	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, s.o.TimeLocation)
+	return t.In(time.UTC).Truncate(time.Hour * 24)
 }
 
 // TimeStamp returns a time in the format 2006-01-02 15:04:05
