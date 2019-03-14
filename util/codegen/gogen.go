@@ -99,6 +99,7 @@ func (g *Go) GenerateFile(w io.Writer) error {
 	fmt.Fprintln(&buf, "// Auto generated source code")
 	g.generateImports(&buf)
 	g.generateConstants(&buf)
+	g.generateInitFunction()
 
 	g.Buffer.WriteTo(&buf)
 
