@@ -22,6 +22,10 @@ import (
 	"github.com/corestoreio/pkg/util/codegen"
 )
 
+func TestEncloseBT(t *testing.T) {
+	assert.Exactly(t, "`a`", codegen.EncloseBT(`a`))
+}
+
 func TestNewGo(t *testing.T) {
 	t.Parallel()
 

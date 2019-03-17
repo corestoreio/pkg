@@ -69,3 +69,8 @@ func (g *common) Out() {
 		g.indent = g.indent[1:]
 	}
 }
+
+// EncloseBT encloses the string s in backticks
+func EncloseBT(s string) string {
+	return "`" + s + "`"
+}
