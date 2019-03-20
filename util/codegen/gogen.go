@@ -20,13 +20,11 @@ import (
 	"go/format"
 	"io"
 	"sort"
-
-	"github.com/corestoreio/errors"
 )
 
 type Go struct {
 	common
-	BuildTags       string
+	BuildTags       []string // each entry is one line
 	init            []string // Lines to emit in the init function.
 	constantsString []string
 }
@@ -91,10 +89,13 @@ func (g *Go) generateConstants(w io.Writer) {
 func (g *Go) GenerateFile(w io.Writer) error {
 
 	var buf bytes.Buffer
-	if g.BuildTags != "" {
-		fmt.Fprintln(&buf, "// +build ", g.BuildTags)
+	for _, bt := range g.BuildTags {
+		fmt.Fprintln(&buf, "// +build", bt)
+	}
+	if len(g.BuildTags) > 0 {
 		fmt.Fprint(&buf, "\n") // the extra line as required from the Go spec
 	}
+
 	fmt.Fprintf(&buf, "package %s\n", g.packageName)
 	fmt.Fprintln(&buf, "// Auto generated source code")
 	g.generateImports(&buf)
@@ -105,7 +106,10 @@ func (g *Go) GenerateFile(w io.Writer) error {
 
 	fmted, err := format.Source(buf.Bytes())
 	if err != nil {
-		return errors.NotAcceptable.New(err, "\nSource Code:\n%s\n", buf.String())
+		return &FormatError{
+			error: err,
+			Code:  buf.String(),
+		}
 	}
 	_, err = w.Write(fmted)
 	return err

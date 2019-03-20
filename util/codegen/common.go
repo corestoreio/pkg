@@ -18,9 +18,21 @@ import (
 	"bytes"
 	"strings"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/conv"
 	"github.com/corestoreio/pkg/util/strs"
 )
+
+// FormatError gets returned when generating the source code in case gofmt or
+// any equal other program for a language can't run the formatting.
+type FormatError struct {
+	error
+	Code string
+}
+
+func (*FormatError) ErrorKind() errors.Kind {
+	return errors.NotAcceptable
+}
 
 type common struct {
 	packageName string
@@ -32,6 +44,14 @@ type common struct {
 // AddImport adds a new import path. importPath required and packageName optional.
 func (g *common) AddImport(importPath, packageName string) {
 	g.packageNames[importPath] = packageName
+}
+
+// AddImports adds multiple import paths at once. They all must have unique base
+// names.
+func (g *common) AddImports(importPaths ...string) {
+	for _, ip := range importPaths {
+		g.packageNames[ip] = ""
+	}
 }
 
 // Writes a multiline comment and formats it to a max width of 80 chars. It adds

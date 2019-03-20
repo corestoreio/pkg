@@ -30,7 +30,7 @@ func TestNewGo(t *testing.T) {
 	t.Parallel()
 
 	g := codegen.NewGo("config")
-	g.BuildTags = "ignoring"
+	g.BuildTags = []string{"ignoring"}
 	g.AddImport("fmt", "")
 	g.AddImport("github.com/corestoreio/pkg/storage/null", "null")
 	g.C("These constants", "are used for testing.", "Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an AS IS BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.")
@@ -48,7 +48,7 @@ func TestNewGo(t *testing.T) {
 	err := g.GenerateFile(&buf)
 	assert.NoError(t, err)
 
-	assert.Exactly(t, `// +build  ignoring
+	assert.Exactly(t, `// +build ignoring
 
 package config
 
