@@ -160,6 +160,14 @@ func (cs Columns) Filter(f func(*Column) bool, cols ...*Column) Columns {
 	return cols
 }
 
+// Each applies function f to all elements.
+func (cs Columns) Each(f func(*Column)) Columns {
+	for _, c := range cs {
+		f(c)
+	}
+	return cs
+}
+
 // FieldNames returns all column names and appends it to `fn`, if provided.
 func (cs Columns) FieldNames(fn ...string) []string {
 	if fn == nil {

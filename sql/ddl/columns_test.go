@@ -261,3 +261,16 @@ func TestColumn_IsBlobDataType(t *testing.T) {
 	assert.True(t, adminUserColumns.ByField("extra").IsBlobDataType(), "extra")
 	assert.True(t, adminUserColumns.ByField("rp_token").IsBlobDataType(), "rp_token")
 }
+
+func TestColumns_Each(t *testing.T) {
+	var cols = ddl.Columns{
+		&ddl.Column{Field: "user_id", Pos: 1, Default: null.String{}, Null: "NO", DataType: "int", Precision: null.MakeInt64(10), Scale: null.MakeInt64(0), ColumnType: "int(10) unsigned", Key: "PRI", Extra: "auto_increment", Comment: "User ID"},
+		&ddl.Column{Field: "firstname", Pos: 2, Default: null.String{}, Null: "YES", DataType: "varchar", CharMaxLength: null.MakeInt64(32), ColumnType: "varchar(32)", Comment: "User First Name"},
+	}
+
+	cols.Each(func(c *ddl.Column) {
+		c.Field = "x"
+	})
+	assert.Exactly(t, "x", cols[0].Field)
+	assert.Exactly(t, "x", cols[1].Field)
+}
