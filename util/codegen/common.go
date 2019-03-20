@@ -65,9 +65,9 @@ func (g *common) C(comments ...string) {
 	}
 }
 
-// P prints the arguments to the generated output. It tries to convert all kind
-// of types to a string.
-func (g *common) P(str ...interface{}) {
+// Pln prints the arguments to the generated output. It tries to convert all kind
+// of types to a string. It adds a line break at the end
+func (g *common) Pln(str ...interface{}) {
 	_, _ = g.WriteString(g.indent)
 	for _, v := range str {
 		s, err := conv.ToStringE(v)
@@ -78,6 +78,18 @@ func (g *common) P(str ...interface{}) {
 		g.WriteByte(' ')
 	}
 	_ = g.WriteByte('\n')
+}
+
+func (g *common) P(str ...interface{}) {
+	_, _ = g.WriteString(g.indent)
+	for _, v := range str {
+		s, err := conv.ToStringE(v)
+		if err != nil {
+			panic(err)
+		}
+		_, _ = g.WriteString(s)
+		g.WriteByte(' ')
+	}
 }
 
 // In Indents the output one tab stop.

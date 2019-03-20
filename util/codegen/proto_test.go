@@ -34,12 +34,12 @@ func TestNewProto(t *testing.T) {
 		"go_package", "dmltestgenerated",
 	)
 
-	g.P("message", "CoreConfigData", "{")
+	g.Pln("message", "CoreConfigData", "{")
 	g.In()
-	g.P("uint32", "config_id", "= 1 [(gogoproto.customname)=", strconv.Quote("ConfigID"), "];")
-	g.P(`google.protobuf.Timestamp`, `version_te`, `= 8 [(gogoproto.customname)=`, strconv.Quote(`VersionTe`), `,(gogoproto.stdtime)=true,(gogoproto.nullable)=false];`)
+	g.Pln("uint32", "config_id", "= 1 [(gogoproto.customname)=", strconv.Quote("ConfigID"), "];")
+	g.Pln(`google.protobuf.Timestamp`, `version_te`, `= 8 [(gogoproto.customname)=`, strconv.Quote(`VersionTe`), `,(gogoproto.stdtime)=true,(gogoproto.nullable)=false];`)
 	g.Out()
-	g.P("}")
+	g.Pln("}")
 
 	var buf bytes.Buffer
 	err := g.GenerateFile(&buf)
