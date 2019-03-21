@@ -121,7 +121,7 @@ func TestGenerate_Tables_Protobuf_Json(t *testing.T) {
 			}),
 
 		dmlgen.WithTableConfig("catalog_product_index_eav_decimal_idx", &dmlgen.TableConfig{
-			DisableCollectionMethods: true,
+			//		DisableCollectionMethods: true,
 		}),
 		dmlgen.WithTableConfig("sales_order_status_state", &dmlgen.TableConfig{
 			Encoders:   []string{"json", "protobuf"},
