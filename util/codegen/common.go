@@ -65,9 +65,15 @@ func (g *common) C(comments ...string) {
 	}
 }
 
-// Pln prints the arguments to the generated output. It tries to convert all kind
-// of types to a string. It adds a line break at the end
+var emptyIString interface{} = ""
+
+// Pln prints the arguments to the generated output. It tries to convert all
+// kind of types to a string. It adds a line break at the end IF there are strs
+// to print.
 func (g *common) Pln(str ...interface{}) {
+	if ls := len(str); ls == 0 || (ls == 1 && str[0] == emptyIString) {
+		return
+	}
 	_, _ = g.WriteString(g.indent)
 	for _, v := range str {
 		s, err := conv.ToStringE(v)

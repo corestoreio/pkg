@@ -41,6 +41,8 @@ func TestNewGo(t *testing.T) {
 	g.Pln("EntityID", "int64")
 	g.Pln("StoreID", "uint32", `// store_id smallint(5) unsigned NOT NULL PRI   "Store ID"`)
 	g.Pln("Value", "null.Decimal", `// value decimal(12,4) NOT NULL PRI   "Value"`)
+	g.Pln()   // no output
+	g.Pln("") // no output
 	g.Out()
 	g.P(`// Hello World`)
 	g.Pln("\n}")
