@@ -329,7 +329,7 @@ func TestWithLogger_Select(t *testing.T) {
 			_, err := pplSel.WithArgs().Int(67896543113).Load(context.TODO(), p)
 			assert.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID$UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\" source: \"s\" error: \"<nil>\"\nDEBUG Load conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 id: \"UNIQ02\" error: \"<nil>\" ColumnMapper: \"*dml_test.dmlPerson\" row_count: 0x0\n",
+			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID$UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\" source: \"s\" error: \"<nil>\"\nDEBUG Load conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 id: \"UNIQ02\" error: \"<nil>\" ColumnMapper: \"*dml_test.dmlPerson\" row_count: 0\n",
 				buf.String())
 		})
 
@@ -461,7 +461,7 @@ func TestWithLogger_Select(t *testing.T) {
 			_, err := pplSel.WithArgs().Load(context.TODO(), p, -2)
 			assert.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID$UNIQ06*/ `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` < ?)\" source: \"s\" error: \"<nil>\"\nDEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 id: \"UNIQ06\" error: \"<nil>\" ColumnMapper: \"*dml_test.dmlPerson\" row_count: 0x0\n",
+			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID$UNIQ06*/ `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` < ?)\" source: \"s\" error: \"<nil>\"\nDEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 id: \"UNIQ06\" error: \"<nil>\" ColumnMapper: \"*dml_test.dmlPerson\" row_count: 0\n",
 				buf.String())
 		})
 
@@ -500,7 +500,7 @@ func TestWithLogger_Select(t *testing.T) {
 				p := &dmlPerson{}
 				_, err := stmt.WithArgs().Load(context.TODO(), p, -6)
 				assert.NoError(t, err)
-				assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"\" source: \"s\" error: \"<nil>\"\nDEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 id: \"UNIQ06\" error: \"<nil>\" ColumnMapper: \"*dml_test.dmlPerson\" row_count: 0x0\n",
+				assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"\" source: \"s\" error: \"<nil>\"\nDEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 id: \"UNIQ06\" error: \"<nil>\" ColumnMapper: \"*dml_test.dmlPerson\" row_count: 0\n",
 					buf.String())
 			})
 
@@ -596,7 +596,7 @@ func TestWithLogger_Union(t *testing.T) {
 			_, err := u.WithArgs().Interpolate().Load(context.TODO(), p)
 			assert.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" union_id: \"UNIQ02\" tables: \"dml_people, dml_people\" duration: 0 sql: \"(SELECT /*ID$UNIQ02*/ `name`, `email` AS `email` FROM `dml_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8)))\" source: \"n\" error: \"<nil>\"\nDEBUG Load conn_pool_id: \"UNIQ01\" union_id: \"UNIQ02\" tables: \"dml_people, dml_people\" duration: 0 id: \"UNIQ02\" error: \"<nil>\" ColumnMapper: \"*dml_test.dmlPerson\" row_count: 0x0\n",
+			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" union_id: \"UNIQ02\" tables: \"dml_people, dml_people\" duration: 0 sql: \"(SELECT /*ID$UNIQ02*/ `name`, `email` AS `email` FROM `dml_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8)))\" source: \"n\" error: \"<nil>\"\nDEBUG Load conn_pool_id: \"UNIQ01\" union_id: \"UNIQ02\" tables: \"dml_people, dml_people\" duration: 0 id: \"UNIQ02\" error: \"<nil>\" ColumnMapper: \"*dml_test.dmlPerson\" row_count: 0\n",
 				buf.String())
 		})
 
@@ -651,7 +651,7 @@ func TestWithLogger_Union(t *testing.T) {
 			_, err := u.WithArgs().Load(context.TODO(), p)
 			assert.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" union_id: \"UNIQ06\" tables: \"dml_people, dml_people\" duration: 0 sql: \"(SELECT /*ID$UNIQ06*/ `name`, `email` AS `email` FROM `dml_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (61,81)))\" source: \"n\" error: \"<nil>\"\nDEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" union_id: \"UNIQ06\" tables: \"dml_people, dml_people\" duration: 0 id: \"UNIQ06\" error: \"<nil>\" ColumnMapper: \"*dml_test.dmlPerson\" row_count: 0x0\n",
+			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" union_id: \"UNIQ06\" tables: \"dml_people, dml_people\" duration: 0 sql: \"(SELECT /*ID$UNIQ06*/ `name`, `email` AS `email` FROM `dml_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (61,81)))\" source: \"n\" error: \"<nil>\"\nDEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" union_id: \"UNIQ06\" tables: \"dml_people, dml_people\" duration: 0 id: \"UNIQ06\" error: \"<nil>\" ColumnMapper: \"*dml_test.dmlPerson\" row_count: 0\n",
 				buf.String())
 		})
 
@@ -874,7 +874,7 @@ func TestWithLogger_WithCTE(t *testing.T) {
 			_, err := wth.WithArgs().Interpolate().Load(context.TODO(), p)
 			assert.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ02\" with_cte_id: \"UNIQ04\" tables: \"zehTeEh\" duration: 0 sql: \"WITH /*ID$UNIQ04*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dml_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\" source: \"w\" error: \"<nil>\"\nDEBUG Load conn_pool_id: \"UNIQ02\" with_cte_id: \"UNIQ04\" tables: \"zehTeEh\" duration: 0 id: \"UNIQ04\" error: \"<nil>\" ColumnMapper: \"*dml_test.dmlPerson\" row_count: 0x0\n",
+			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ02\" with_cte_id: \"UNIQ04\" tables: \"zehTeEh\" duration: 0 sql: \"WITH /*ID$UNIQ04*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dml_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\" source: \"w\" error: \"<nil>\"\nDEBUG Load conn_pool_id: \"UNIQ02\" with_cte_id: \"UNIQ04\" tables: \"zehTeEh\" duration: 0 id: \"UNIQ04\" error: \"<nil>\" ColumnMapper: \"*dml_test.dmlPerson\" row_count: 0\n",
 				buf.String())
 		})
 
@@ -934,7 +934,7 @@ func TestWithLogger_WithCTE(t *testing.T) {
 			_, err := u.WithArgs().Load(context.TODO(), p)
 			assert.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" with_cte_id: \"UNIQ12\" tables: \"zehTeEh\" duration: 0 sql: \"WITH /*ID$UNIQ12*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dml_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\" source: \"w\" error: \"<nil>\"\nDEBUG Load conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" with_cte_id: \"UNIQ12\" tables: \"zehTeEh\" duration: 0 id: \"UNIQ12\" error: \"<nil>\" ColumnMapper: \"*dml_test.dmlPerson\" row_count: 0x0\n",
+			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" with_cte_id: \"UNIQ12\" tables: \"zehTeEh\" duration: 0 sql: \"WITH /*ID$UNIQ12*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dml_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\" source: \"w\" error: \"<nil>\"\nDEBUG Load conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" with_cte_id: \"UNIQ12\" tables: \"zehTeEh\" duration: 0 id: \"UNIQ12\" error: \"<nil>\" ColumnMapper: \"*dml_test.dmlPerson\" row_count: 0\n",
 				buf.String())
 		})
 
