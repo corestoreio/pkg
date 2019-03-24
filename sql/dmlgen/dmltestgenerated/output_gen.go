@@ -6,10 +6,12 @@ package dmltestgenerated
 
 import (
 	"context"
+	"fmt"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/storage/null"
+	"io"
 	"time"
 )
 
@@ -54,9 +56,26 @@ func (e *CatalogProductIndexEAVDecimalIDX) Empty() *CatalogProductIndexEAVDecima
 	return e
 }
 
-// AssignLastInsertID updates the increment ID field with the last inserted ID
-// from an INSERT operation. Implements dml.InsertIDAssigner. Auto generated.
-func (e *CatalogProductIndexEAVDecimalIDX) AssignLastInsertID(id int64) {
+// Copy copies the struct and returns a new pointer
+func (e *CatalogProductIndexEAVDecimalIDX) Copy() *CatalogProductIndexEAVDecimalIDX {
+	e2 := new(CatalogProductIndexEAVDecimalIDX)
+	*e2 = *e // for now a shallow copy
+	return e2
+}
+
+// WriteTo implements io.WriterTo and writes the field names and their values to
+// w. This is especially useful for debugging or or generating a hash of the
+// struct.
+func (e *CatalogProductIndexEAVDecimalIDX) WriteTo(w io.Writer) (n int64, err error) {
+	// for now this printing is good enough. If you need better swap out with your code.
+	n2, err := fmt.Fprint(w,
+		"entity_id:", e.EntityID, "\n",
+		"attribute_id:", e.AttributeID, "\n",
+		"store_id:", e.StoreID, "\n",
+		"value:", e.Value, "\n",
+		"source_id:", e.SourceID, "\n",
+	)
+	return int64(n2), err
 }
 
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
@@ -97,16 +116,6 @@ type CatalogProductIndexEAVDecimalIDXCollection struct {
 func NewCatalogProductIndexEAVDecimalIDXCollection() *CatalogProductIndexEAVDecimalIDXCollection {
 	return &CatalogProductIndexEAVDecimalIDXCollection{
 		Data: make([]*CatalogProductIndexEAVDecimalIDX, 0, 5),
-	}
-}
-
-// AssignLastInsertID traverses through the slice and sets a decrementing new ID
-// to each entity.
-func (cc *CatalogProductIndexEAVDecimalIDXCollection) AssignLastInsertID(id int64) {
-	var j int64
-	for i := len(cc.Data) - 1; i >= 0; i-- {
-		cc.Data[i].AssignLastInsertID(id - j)
-		j++
 	}
 }
 func (cc *CatalogProductIndexEAVDecimalIDXCollection) scanColumns(cm *dml.ColumnMap, e *CatalogProductIndexEAVDecimalIDX, idx uint64) error {
@@ -226,6 +235,20 @@ func (cc *CatalogProductIndexEAVDecimalIDXCollection) SourceIDs(ret ...uint32) [
 	return ret
 }
 
+// WriteTo implements io.WriterTo and writes the field names and their values to
+// w. This is especially useful for debugging or or generating a hash of the
+// struct.
+func (cc *CatalogProductIndexEAVDecimalIDXCollection) WriteTo(w io.Writer) (n int64, err error) {
+	for i, d := range cc.Data {
+		n2, err := d.WriteTo(w)
+		if err != nil {
+			return 0, errors.Wrapf(err, "[dmltestgenerated] WriteTo failed at index %d", i)
+		}
+		n += n2
+	}
+	return n, nil
+}
+
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
 func (cc *CatalogProductIndexEAVDecimalIDXCollection) Filter(f func(*CatalogProductIndexEAVDecimalIDX) bool) *CatalogProductIndexEAVDecimalIDXCollection {
@@ -312,6 +335,31 @@ type CoreConfigData struct {
 
 // Empty empties all the fields of the current object. Also known as Reset.
 func (e *CoreConfigData) Empty() *CoreConfigData { *e = CoreConfigData{}; return e }
+
+// Copy copies the struct and returns a new pointer
+func (e *CoreConfigData) Copy() *CoreConfigData {
+	e2 := new(CoreConfigData)
+	*e2 = *e // for now a shallow copy
+	return e2
+}
+
+// WriteTo implements io.WriterTo and writes the field names and their values to
+// w. This is especially useful for debugging or or generating a hash of the
+// struct.
+func (e *CoreConfigData) WriteTo(w io.Writer) (n int64, err error) {
+	// for now this printing is good enough. If you need better swap out with your code.
+	n2, err := fmt.Fprint(w,
+		"config_id:", e.ConfigID, "\n",
+		"scope:", e.Scope, "\n",
+		"scope_id:", e.ScopeID, "\n",
+		"expires:", e.Expires, "\n",
+		"path:", e.Path, "\n",
+		"value:", e.Value, "\n",
+		"version_ts:", e.VersionTs, "\n",
+		"version_te:", e.VersionTe, "\n",
+	)
+	return int64(n2), err
+}
 
 // AssignLastInsertID updates the increment ID field with the last inserted ID
 // from an INSERT operation. Implements dml.InsertIDAssigner. Auto generated.
@@ -456,6 +504,20 @@ func (cc *CoreConfigDataCollection) UniquePaths(ret ...string) []string {
 	return ret
 }
 
+// WriteTo implements io.WriterTo and writes the field names and their values to
+// w. This is especially useful for debugging or or generating a hash of the
+// struct.
+func (cc *CoreConfigDataCollection) WriteTo(w io.Writer) (n int64, err error) {
+	for i, d := range cc.Data {
+		n2, err := d.WriteTo(w)
+		if err != nil {
+			return 0, errors.Wrapf(err, "[dmltestgenerated] WriteTo failed at index %d", i)
+		}
+		n += n2
+	}
+	return n, nil
+}
+
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
 func (cc *CoreConfigDataCollection) Filter(f func(*CoreConfigData) bool) *CoreConfigDataCollection {
@@ -558,6 +620,48 @@ type CustomerAddressEntity struct {
 func (e *CustomerAddressEntity) Empty() *CustomerAddressEntity {
 	*e = CustomerAddressEntity{}
 	return e
+}
+
+// Copy copies the struct and returns a new pointer
+func (e *CustomerAddressEntity) Copy() *CustomerAddressEntity {
+	e2 := new(CustomerAddressEntity)
+	*e2 = *e // for now a shallow copy
+	return e2
+}
+
+// WriteTo implements io.WriterTo and writes the field names and their values to
+// w. This is especially useful for debugging or or generating a hash of the
+// struct.
+func (e *CustomerAddressEntity) WriteTo(w io.Writer) (n int64, err error) {
+	// for now this printing is good enough. If you need better swap out with your code.
+	n2, err := fmt.Fprint(w,
+		"entity_id:", e.EntityID, "\n",
+		"increment_id:", e.IncrementID, "\n",
+		"parent_id:", e.ParentID, "\n",
+		"created_at:", e.CreatedAt, "\n",
+		"updated_at:", e.UpdatedAt, "\n",
+		"is_active:", e.IsActive, "\n",
+		"city:", e.City, "\n",
+		"company:", e.Company, "\n",
+		"country_id:", e.CountryID, "\n",
+		"fax:", e.Fax, "\n",
+		"firstname:", e.Firstname, "\n",
+		"lastname:", e.Lastname, "\n",
+		"middlename:", e.Middlename, "\n",
+		"postcode:", e.Postcode, "\n",
+		"prefix:", e.Prefix, "\n",
+		"region:", e.Region, "\n",
+		"region_id:", e.RegionID, "\n",
+		"street:", e.Street, "\n",
+		"suffix:", e.Suffix, "\n",
+		"telephone:", e.Telephone, "\n",
+		"vat_id:", e.VatID, "\n",
+		"vat_is_valid:", e.VatIsValid, "\n",
+		"vat_request_date:", e.VatRequestDate, "\n",
+		"vat_request_id:", e.VatRequestID, "\n",
+		"vat_request_success:", e.VatRequestSuccess, "\n",
+	)
+	return int64(n2), err
 }
 
 // AssignLastInsertID updates the increment ID field with the last inserted ID
@@ -719,6 +823,20 @@ func (cc *CustomerAddressEntityCollection) EntityIDs(ret ...uint32) []uint32 {
 	return ret
 }
 
+// WriteTo implements io.WriterTo and writes the field names and their values to
+// w. This is especially useful for debugging or or generating a hash of the
+// struct.
+func (cc *CustomerAddressEntityCollection) WriteTo(w io.Writer) (n int64, err error) {
+	for i, d := range cc.Data {
+		n2, err := d.WriteTo(w)
+		if err != nil {
+			return 0, errors.Wrapf(err, "[dmltestgenerated] WriteTo failed at index %d", i)
+		}
+		n += n2
+	}
+	return n, nil
+}
+
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
 func (cc *CustomerAddressEntityCollection) Filter(f func(*CustomerAddressEntity) bool) *CustomerAddressEntityCollection {
@@ -837,6 +955,50 @@ func (e *CustomerEntity) GetPasswordHash() null.String {
 
 // Empty empties all the fields of the current object. Also known as Reset.
 func (e *CustomerEntity) Empty() *CustomerEntity { *e = CustomerEntity{}; return e }
+
+// Copy copies the struct and returns a new pointer
+func (e *CustomerEntity) Copy() *CustomerEntity {
+	e2 := new(CustomerEntity)
+	*e2 = *e // for now a shallow copy
+	return e2
+}
+
+// WriteTo implements io.WriterTo and writes the field names and their values to
+// w. This is especially useful for debugging or or generating a hash of the
+// struct.
+func (e *CustomerEntity) WriteTo(w io.Writer) (n int64, err error) {
+	// for now this printing is good enough. If you need better swap out with your code.
+	n2, err := fmt.Fprint(w,
+		"entity_id:", e.EntityID, "\n",
+		"website_id:", e.WebsiteID, "\n",
+		"email:", e.Email, "\n",
+		"group_id:", e.GroupID, "\n",
+		"increment_id:", e.IncrementID, "\n",
+		"store_id:", e.StoreID, "\n",
+		"created_at:", e.CreatedAt, "\n",
+		"updated_at:", e.UpdatedAt, "\n",
+		"is_active:", e.IsActive, "\n",
+		"disable_auto_group_change:", e.DisableAutoGroupChange, "\n",
+		"created_in:", e.CreatedIn, "\n",
+		"prefix:", e.Prefix, "\n",
+		"firstname:", e.Firstname, "\n",
+		"middlename:", e.Middlename, "\n",
+		"lastname:", e.Lastname, "\n",
+		"suffix:", e.Suffix, "\n",
+		"dob:", e.Dob, "\n",
+		"rp_token:", e.RpToken, "\n",
+		"rp_token_created_at:", e.RpTokenCreatedAt, "\n",
+		"default_billing:", e.DefaultBilling, "\n",
+		"default_shipping:", e.DefaultShipping, "\n",
+		"taxvat:", e.Taxvat, "\n",
+		"confirmation:", e.Confirmation, "\n",
+		"gender:", e.Gender, "\n",
+		"failures_num:", e.FailuresNum, "\n",
+		"first_failure:", e.FirstFailure, "\n",
+		"lock_expires:", e.LockExpires, "\n",
+	)
+	return int64(n2), err
+}
 
 // AssignLastInsertID updates the increment ID field with the last inserted ID
 // from an INSERT operation. Implements dml.InsertIDAssigner. Auto generated.
@@ -1003,6 +1165,20 @@ func (cc *CustomerEntityCollection) EntityIDs(ret ...uint32) []uint32 {
 	return ret
 }
 
+// WriteTo implements io.WriterTo and writes the field names and their values to
+// w. This is especially useful for debugging or or generating a hash of the
+// struct.
+func (cc *CustomerEntityCollection) WriteTo(w io.Writer) (n int64, err error) {
+	for i, d := range cc.Data {
+		n2, err := d.WriteTo(w)
+		if err != nil {
+			return 0, errors.Wrapf(err, "[dmltestgenerated] WriteTo failed at index %d", i)
+		}
+		n += n2
+	}
+	return n, nil
+}
+
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
 func (cc *CustomerEntityCollection) Filter(f func(*CustomerEntity) bool) *CustomerEntityCollection {
@@ -1121,6 +1297,64 @@ type DmlgenTypes struct {
 
 // Empty empties all the fields of the current object. Also known as Reset.
 func (e *DmlgenTypes) Empty() *DmlgenTypes { *e = DmlgenTypes{}; return e }
+
+// Copy copies the struct and returns a new pointer
+func (e *DmlgenTypes) Copy() *DmlgenTypes {
+	e2 := new(DmlgenTypes)
+	*e2 = *e // for now a shallow copy
+	return e2
+}
+
+// WriteTo implements io.WriterTo and writes the field names and their values to
+// w. This is especially useful for debugging or or generating a hash of the
+// struct.
+func (e *DmlgenTypes) WriteTo(w io.Writer) (n int64, err error) {
+	// for now this printing is good enough. If you need better swap out with your code.
+	n2, err := fmt.Fprint(w,
+		"id:", e.ID, "\n",
+		"col_bigint_1:", e.ColBigint1, "\n",
+		"col_bigint_2:", e.ColBigint2, "\n",
+		"col_bigint_3:", e.ColBigint3, "\n",
+		"col_bigint_4:", e.ColBigint4, "\n",
+		"col_blob:", e.ColBlob, "\n",
+		"col_date_1:", e.ColDate1, "\n",
+		"col_date_2:", e.ColDate2, "\n",
+		"col_datetime_1:", e.ColDatetime1, "\n",
+		"col_datetime_2:", e.ColDatetime2, "\n",
+		"col_decimal_10_1:", e.ColDecimal101, "\n",
+		"col_decimal_12_4:", e.ColDecimal124, "\n",
+		"price_12_4a:", e.Price124a, "\n",
+		"price_12_4b:", e.Price124b, "\n",
+		"col_decimal_12_3:", e.ColDecimal123, "\n",
+		"col_decimal_20_6:", e.ColDecimal206, "\n",
+		"col_decimal_24_12:", e.ColDecimal2412, "\n",
+		"col_int_1:", e.ColInt1, "\n",
+		"col_int_2:", e.ColInt2, "\n",
+		"col_int_3:", e.ColInt3, "\n",
+		"col_int_4:", e.ColInt4, "\n",
+		"col_longtext_1:", e.ColLongtext1, "\n",
+		"col_longtext_2:", e.ColLongtext2, "\n",
+		"col_mediumblob:", e.ColMediumblob, "\n",
+		"col_mediumtext_1:", e.ColMediumtext1, "\n",
+		"col_mediumtext_2:", e.ColMediumtext2, "\n",
+		"col_smallint_1:", e.ColSmallint1, "\n",
+		"col_smallint_2:", e.ColSmallint2, "\n",
+		"col_smallint_3:", e.ColSmallint3, "\n",
+		"col_smallint_4:", e.ColSmallint4, "\n",
+		"has_smallint_5:", e.HasSmallint5, "\n",
+		"is_smallint_5:", e.IsSmallint5, "\n",
+		"col_text:", e.ColText, "\n",
+		"col_timestamp_1:", e.ColTimestamp1, "\n",
+		"col_timestamp_2:", e.ColTimestamp2, "\n",
+		"col_tinyint_1:", e.ColTinyint1, "\n",
+		"col_varchar_1:", e.ColVarchar1, "\n",
+		"col_varchar_100:", e.ColVarchar100, "\n",
+		"col_varchar_16:", e.ColVarchar16, "\n",
+		"col_char_1:", e.ColChar1, "\n",
+		"col_char_2:", e.ColChar2, "\n",
+	)
+	return int64(n2), err
+}
 
 // AssignLastInsertID updates the increment ID field with the last inserted ID
 // from an INSERT operation. Implements dml.InsertIDAssigner. Auto generated.
@@ -1416,6 +1650,20 @@ func (cc *DmlgenTypesCollection) UniqueColVarchar100s(ret ...string) []string {
 	return ret
 }
 
+// WriteTo implements io.WriterTo and writes the field names and their values to
+// w. This is especially useful for debugging or or generating a hash of the
+// struct.
+func (cc *DmlgenTypesCollection) WriteTo(w io.Writer) (n int64, err error) {
+	for i, d := range cc.Data {
+		n2, err := d.WriteTo(w)
+		if err != nil {
+			return 0, errors.Wrapf(err, "[dmltestgenerated] WriteTo failed at index %d", i)
+		}
+		n += n2
+	}
+	return n, nil
+}
+
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
 func (cc *DmlgenTypesCollection) Filter(f func(*DmlgenTypes) bool) *DmlgenTypesCollection {
@@ -1509,9 +1757,25 @@ func (e *SalesOrderStatusState) Empty() *SalesOrderStatusState {
 	return e
 }
 
-// AssignLastInsertID updates the increment ID field with the last inserted ID
-// from an INSERT operation. Implements dml.InsertIDAssigner. Auto generated.
-func (e *SalesOrderStatusState) AssignLastInsertID(id int64) {
+// Copy copies the struct and returns a new pointer
+func (e *SalesOrderStatusState) Copy() *SalesOrderStatusState {
+	e2 := new(SalesOrderStatusState)
+	*e2 = *e // for now a shallow copy
+	return e2
+}
+
+// WriteTo implements io.WriterTo and writes the field names and their values to
+// w. This is especially useful for debugging or or generating a hash of the
+// struct.
+func (e *SalesOrderStatusState) WriteTo(w io.Writer) (n int64, err error) {
+	// for now this printing is good enough. If you need better swap out with your code.
+	n2, err := fmt.Fprint(w,
+		"status:", e.Status, "\n",
+		"state:", e.State, "\n",
+		"is_default:", e.IsDefault, "\n",
+		"visible_on_front:", e.VisibleOnFront, "\n",
+	)
+	return int64(n2), err
 }
 
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
@@ -1550,16 +1814,6 @@ type SalesOrderStatusStateCollection struct {
 func NewSalesOrderStatusStateCollection() *SalesOrderStatusStateCollection {
 	return &SalesOrderStatusStateCollection{
 		Data: make([]*SalesOrderStatusState, 0, 5),
-	}
-}
-
-// AssignLastInsertID traverses through the slice and sets a decrementing new ID
-// to each entity.
-func (cc *SalesOrderStatusStateCollection) AssignLastInsertID(id int64) {
-	var j int64
-	for i := len(cc.Data) - 1; i >= 0; i-- {
-		cc.Data[i].AssignLastInsertID(id - j)
-		j++
 	}
 }
 func (cc *SalesOrderStatusStateCollection) scanColumns(cm *dml.ColumnMap, e *SalesOrderStatusState, idx uint64) error {
@@ -1637,6 +1891,20 @@ func (cc *SalesOrderStatusStateCollection) States(ret ...string) []string {
 		ret = append(ret, e.State)
 	}
 	return ret
+}
+
+// WriteTo implements io.WriterTo and writes the field names and their values to
+// w. This is especially useful for debugging or or generating a hash of the
+// struct.
+func (cc *SalesOrderStatusStateCollection) WriteTo(w io.Writer) (n int64, err error) {
+	for i, d := range cc.Data {
+		n2, err := d.WriteTo(w)
+		if err != nil {
+			return 0, errors.Wrapf(err, "[dmltestgenerated] WriteTo failed at index %d", i)
+		}
+		n += n2
+	}
+	return n, nil
 }
 
 // Filter filters the current slice by predicate f without memory allocation.
@@ -1726,9 +1994,27 @@ func (e *ViewCustomerAutoIncrement) Empty() *ViewCustomerAutoIncrement {
 	return e
 }
 
-// AssignLastInsertID updates the increment ID field with the last inserted ID
-// from an INSERT operation. Implements dml.InsertIDAssigner. Auto generated.
-func (e *ViewCustomerAutoIncrement) AssignLastInsertID(id int64) {
+// Copy copies the struct and returns a new pointer
+func (e *ViewCustomerAutoIncrement) Copy() *ViewCustomerAutoIncrement {
+	e2 := new(ViewCustomerAutoIncrement)
+	*e2 = *e // for now a shallow copy
+	return e2
+}
+
+// WriteTo implements io.WriterTo and writes the field names and their values to
+// w. This is especially useful for debugging or or generating a hash of the
+// struct.
+func (e *ViewCustomerAutoIncrement) WriteTo(w io.Writer) (n int64, err error) {
+	// for now this printing is good enough. If you need better swap out with your code.
+	n2, err := fmt.Fprint(w,
+		"ce_entity_id:", e.CeEntityID, "\n",
+		"cae_entity_id:", e.CaeEntityID, "\n",
+		"email:", e.Email, "\n",
+		"firstname:", e.Firstname, "\n",
+		"lastname:", e.Lastname, "\n",
+		"city:", e.City, "\n",
+	)
+	return int64(n2), err
 }
 
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
@@ -1771,16 +2057,6 @@ type ViewCustomerAutoIncrementCollection struct {
 func NewViewCustomerAutoIncrementCollection() *ViewCustomerAutoIncrementCollection {
 	return &ViewCustomerAutoIncrementCollection{
 		Data: make([]*ViewCustomerAutoIncrement, 0, 5),
-	}
-}
-
-// AssignLastInsertID traverses through the slice and sets a decrementing new ID
-// to each entity.
-func (cc *ViewCustomerAutoIncrementCollection) AssignLastInsertID(id int64) {
-	var j int64
-	for i := len(cc.Data) - 1; i >= 0; i-- {
-		cc.Data[i].AssignLastInsertID(id - j)
-		j++
 	}
 }
 func (cc *ViewCustomerAutoIncrementCollection) scanColumns(cm *dml.ColumnMap, e *ViewCustomerAutoIncrement, idx uint64) error {
@@ -1830,6 +2106,20 @@ func (cc *ViewCustomerAutoIncrementCollection) MapColumns(cm *dml.ColumnMap) err
 		return errors.NotSupported.Newf("[dmltestgenerated] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
+}
+
+// WriteTo implements io.WriterTo and writes the field names and their values to
+// w. This is especially useful for debugging or or generating a hash of the
+// struct.
+func (cc *ViewCustomerAutoIncrementCollection) WriteTo(w io.Writer) (n int64, err error) {
+	for i, d := range cc.Data {
+		n2, err := d.WriteTo(w)
+		if err != nil {
+			return 0, errors.Wrapf(err, "[dmltestgenerated] WriteTo failed at index %d", i)
+		}
+		n += n2
+	}
+	return n, nil
 }
 
 // Filter filters the current slice by predicate f without memory allocation.
@@ -1917,9 +2207,25 @@ func (e *ViewCustomerNoAutoIncrement) Empty() *ViewCustomerNoAutoIncrement {
 	return e
 }
 
-// AssignLastInsertID updates the increment ID field with the last inserted ID
-// from an INSERT operation. Implements dml.InsertIDAssigner. Auto generated.
-func (e *ViewCustomerNoAutoIncrement) AssignLastInsertID(id int64) {
+// Copy copies the struct and returns a new pointer
+func (e *ViewCustomerNoAutoIncrement) Copy() *ViewCustomerNoAutoIncrement {
+	e2 := new(ViewCustomerNoAutoIncrement)
+	*e2 = *e // for now a shallow copy
+	return e2
+}
+
+// WriteTo implements io.WriterTo and writes the field names and their values to
+// w. This is especially useful for debugging or or generating a hash of the
+// struct.
+func (e *ViewCustomerNoAutoIncrement) WriteTo(w io.Writer) (n int64, err error) {
+	// for now this printing is good enough. If you need better swap out with your code.
+	n2, err := fmt.Fprint(w,
+		"email:", e.Email, "\n",
+		"firstname:", e.Firstname, "\n",
+		"lastname:", e.Lastname, "\n",
+		"city:", e.City, "\n",
+	)
+	return int64(n2), err
 }
 
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
@@ -1958,16 +2264,6 @@ type ViewCustomerNoAutoIncrementCollection struct {
 func NewViewCustomerNoAutoIncrementCollection() *ViewCustomerNoAutoIncrementCollection {
 	return &ViewCustomerNoAutoIncrementCollection{
 		Data: make([]*ViewCustomerNoAutoIncrement, 0, 5),
-	}
-}
-
-// AssignLastInsertID traverses through the slice and sets a decrementing new ID
-// to each entity.
-func (cc *ViewCustomerNoAutoIncrementCollection) AssignLastInsertID(id int64) {
-	var j int64
-	for i := len(cc.Data) - 1; i >= 0; i-- {
-		cc.Data[i].AssignLastInsertID(id - j)
-		j++
 	}
 }
 func (cc *ViewCustomerNoAutoIncrementCollection) scanColumns(cm *dml.ColumnMap, e *ViewCustomerNoAutoIncrement, idx uint64) error {
@@ -2017,6 +2313,20 @@ func (cc *ViewCustomerNoAutoIncrementCollection) MapColumns(cm *dml.ColumnMap) e
 		return errors.NotSupported.Newf("[dmltestgenerated] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
+}
+
+// WriteTo implements io.WriterTo and writes the field names and their values to
+// w. This is especially useful for debugging or or generating a hash of the
+// struct.
+func (cc *ViewCustomerNoAutoIncrementCollection) WriteTo(w io.Writer) (n int64, err error) {
+	for i, d := range cc.Data {
+		n2, err := d.WriteTo(w)
+		if err != nil {
+			return 0, errors.Wrapf(err, "[dmltestgenerated] WriteTo failed at index %d", i)
+		}
+		n += n2
+	}
+	return n, nil
 }
 
 // Filter filters the current slice by predicate f without memory allocation.

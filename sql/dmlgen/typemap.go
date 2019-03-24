@@ -392,7 +392,7 @@ func mustGetTypeDef(mysqlDataType, serializer string) *TypeDef {
 	return goType
 }
 
-func (ts *Tables) findType(c *ddl.Column) *TypeDef {
+func (ts *Generator) findType(c *ddl.Column) *TypeDef {
 
 	goType := mustGetTypeDef(c.DataType, ts.Serializer)
 
@@ -410,7 +410,7 @@ func (ts *Tables) findType(c *ddl.Column) *TypeDef {
 // mySQLToGoType calculates the data type of the field DataType. For example
 // bigint, smallint, tinyint will result in "int". If withNull is true the
 // returned type can store a null value.
-func (ts *Tables) mySQLToGoType(c *ddl.Column, withNull bool) string {
+func (ts *Generator) mySQLToGoType(c *ddl.Column, withNull bool) string {
 
 	goType := ts.findType(c)
 
@@ -431,7 +431,7 @@ func (ts *Tables) mySQLToGoType(c *ddl.Column, withNull bool) string {
 // toGoPrimitiveFromNull returns for a Go type or structure the final primitive:
 // int->int but NullInt->.Int. Either it is the struct field name or final type
 // of a composite nullable type.
-func (ts *Tables) toGoPrimitiveFromNull(c *ddl.Column) string {
+func (ts *Generator) toGoPrimitiveFromNull(c *ddl.Column) string {
 	t := ts.mySQLToGoType(c, true)
 	field := strs.ToGoCamelCase(c.Field)
 	if strings.HasPrefix(t, "null.") && t != "null.Decimal" {
@@ -442,7 +442,7 @@ func (ts *Tables) toGoPrimitiveFromNull(c *ddl.Column) string {
 	return t
 }
 
-func (ts *Tables) mySQLToGoDmlColumnMap(c *ddl.Column, withNull bool) string {
+func (ts *Generator) mySQLToGoDmlColumnMap(c *ddl.Column, withNull bool) string {
 
 	gt := ts.mySQLToGoType(c, withNull)
 	switch gt {
@@ -463,7 +463,7 @@ func (ts *Tables) mySQLToGoDmlColumnMap(c *ddl.Column, withNull bool) string {
 	return string(unicode.ToUpper(r)) + gt[n:]
 }
 
-func (ts *Tables) toSerializerType(c *ddl.Column, withNull bool) string {
+func (ts *Generator) toSerializerType(c *ddl.Column, withNull bool) string {
 
 	goType := ts.findType(c)
 

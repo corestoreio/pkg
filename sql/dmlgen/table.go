@@ -23,8 +23,35 @@ import (
 	"github.com/corestoreio/pkg/util/strs"
 )
 
+// FeatureToggle allows certain generated code blocks to be switched off or on.
+type FeatureToggle uint64
+
+// List of available features
+const (
+	FeatureDB FeatureToggle = 1 << iota
+	FeatureCollectionStruct
+	FeatureEntityStruct
+	FeatureEntityGetSetPrivateFields
+	FeatureEntityEmpty
+	FeatureEntityCopy
+	FeatureEntityDBMapColumns
+	FeatureEntityWriteTo
+	FeatureEntityDBAssignLastInsertID
+	FeatureCollectionUniqueGetters
+	FeatureCollectionUniquifiedGetters
+	FeatureCollectionFilter
+	FeatureCollectionEach
+	FeatureCollectionCut
+	FeatureCollectionSwap
+	FeatureCollectionDelete
+	FeatureCollectionInsert
+	FeatureCollectionAppend
+	FeatureCollectionBinaryMarshaler
+	FeatureCollectionDBMapColumns
+)
+
 // table writes one database table into Go source code.
-type table struct {
+type Table struct {
 	Package          string      // Name of the package
 	TableName        string      // Name of the table
 	Comment          string      // Comment above the struct type declaration
@@ -32,25 +59,26 @@ type table struct {
 	HasAutoIncrement uint8       // 0=nil,1=false (has NO auto increment),2=true has auto increment
 	// ReferencedCollections, map key is the name of the struct field, map value
 	// the target Go collection type.
-	ReferencedCollections    []string
-	HasJsonMarshaler         bool
-	HasEasyJsonMarshaler     bool
-	HasBinaryMarshaler       bool
-	HasSerializer            bool // writes the .proto file if true
-	DisableCollectionMethods bool
+	ReferencedCollections []string
+
+	HasJsonMarshaler     bool
+	HasEasyJsonMarshaler bool
+	HasBinaryMarshaler   bool
+	HasSerializer        bool // writes the .proto file if true
+
 	// PrivateFields key=snake case name of the DB column, value=true, the field must be private
 	privateFields map[string]bool
 }
 
-func (t *table) IsFieldPublic(dbColumnName string) bool {
-	return t.privateFields == nil || !t.privateFields[dbColumnName]
+func (t *Table) IsFieldPublic(dbColumnName string) bool {
+	return !t.privateFields[dbColumnName]
 }
 
-func (t *table) IsFieldPrivate(dbColumnName string) bool {
-	return t.privateFields != nil && t.privateFields[dbColumnName]
+func (t *Table) IsFieldPrivate(dbColumnName string) bool {
+	return t.privateFields[dbColumnName]
 }
 
-func (t *table) GoCamelMaybePrivate(fieldName string) string {
+func (t *Table) GoCamelMaybePrivate(fieldName string) string {
 	su := strs.ToGoCamelCase(fieldName)
 	if t.IsFieldPublic(fieldName) {
 		return su
@@ -60,15 +88,19 @@ func (t *table) GoCamelMaybePrivate(fieldName string) string {
 	return string(sr)
 }
 
-func (t *table) CollectionName() string {
+func (t *Table) CollectionName() string {
 	return strs.ToGoCamelCase(t.TableName) + "Collection"
 }
 
-func (t *table) EntityName() string {
+func (t *Table) EntityName() string {
 	return strs.ToGoCamelCase(t.TableName)
 }
 
-func (t *table) collectionStruct(mainGen *codegen.Go, ts *Tables) {
+func (t *Table) collectionStruct(mainGen *codegen.Go, ts *Generator) {
+	if !ts.hasFeature(FeatureCollectionStruct) {
+		return
+	}
+
 	mainGen.C(t.CollectionName(), `represents a collection type for DB table`, t.TableName)
 	mainGen.C(`Not thread safe. Auto generated.`)
 	if t.Comment != "" {
@@ -83,7 +115,9 @@ func (t *table) collectionStruct(mainGen *codegen.Go, ts *Tables) {
 		mainGen.Pln(`Data []*`, t.EntityName(), codegen.EncloseBT(`json:"data,omitempty"`))
 		mainGen.Pln(`BeforeMapColumns	func(uint64, *`, t.EntityName(), `) error`, codegen.EncloseBT(`json:"-"`))
 		mainGen.Pln(`AfterMapColumns 	func(uint64, *`, t.EntityName(), `) error `, codegen.EncloseBT(`json:"-"`))
-		mainGen.Pln(ts.customCode["type_"+t.CollectionName()])
+		if fn, ok := ts.customCode["type_"+t.CollectionName()]; ok {
+			fn(ts, t, mainGen)
+		}
 		mainGen.Out()
 	}
 	mainGen.Pln(`}`)
@@ -107,7 +141,10 @@ func (t *table) collectionStruct(mainGen *codegen.Go, ts *Tables) {
 	mainGen.Pln(`}`)
 }
 
-func (t *table) entityStruct(mainGen *codegen.Go, ts *Tables) {
+func (t *Table) entityStruct(mainGen *codegen.Go, ts *Generator) {
+	if !ts.hasFeature(FeatureEntityStruct) {
+		return
+	}
 
 	mainGen.C(t.EntityName(), ` represents a single row for DB table `, t.TableName, `. Auto generated. `)
 	if t.Comment != "" {
@@ -120,24 +157,30 @@ func (t *table) entityStruct(mainGen *codegen.Go, ts *Tables) {
 	// Generate table structs
 	mainGen.Pln(`type `, t.EntityName(), ` struct {`)
 	{
-		mainGen.In()
-		for _, c := range t.Columns {
-			structTag := ""
-			if c.StructTag != "" {
-				structTag += "`" + c.StructTag + "`"
+		if fn, ok := ts.customCode["type_"+t.EntityName()]; ok {
+			fn(ts, t, mainGen)
+		} else {
+			mainGen.In()
+			for _, c := range t.Columns {
+				structTag := ""
+				if c.StructTag != "" {
+					structTag += "`" + c.StructTag + "`"
+				}
+				mainGen.Pln(t.GoCamelMaybePrivate(c.Field), ts.goTypeNull(c), structTag, c.GoComment())
 			}
-			mainGen.Pln(t.GoCamelMaybePrivate(c.Field), ts.goTypeNull(c), structTag, c.GoComment())
+			for _, c := range t.ReferencedCollections {
+				mainGen.Pln(c)
+			}
+			mainGen.Out()
 		}
-		for _, c := range t.ReferencedCollections {
-			mainGen.Pln(c)
-		}
-		mainGen.Pln(ts.customCode["type_"+t.EntityName()])
-		mainGen.Out()
 	}
 	mainGen.Pln(`}`)
 }
 
-func (t *table) fnEntityGetSetPrivateFields(mainGen *codegen.Go, ts *Tables) {
+func (t *Table) fnEntityGetSetPrivateFields(mainGen *codegen.Go, ts *Generator) {
+	if !ts.hasFeature(FeatureEntityGetSetPrivateFields) {
+		return
+	}
 	// Generates the Getter/Setter for private fields
 	for _, c := range t.Columns {
 		if t.IsFieldPrivate(c.Field) {
@@ -163,13 +206,19 @@ func (t *table) fnEntityGetSetPrivateFields(mainGen *codegen.Go, ts *Tables) {
 	}
 }
 
-func (t *table) fnEntityEmpty(mainGen *codegen.Go, ts *Tables) {
+func (t *Table) fnEntityEmpty(mainGen *codegen.Go, ts *Generator) {
+	if !ts.hasFeature(FeatureEntityEmpty) {
+		return
+	}
 	mainGen.Pln(`// Empty empties all the fields of the current object. Also known as Reset.`)
 	// no idea if pointer dereferencing is bad ...
 	mainGen.Pln(`func (e *`, t.EntityName(), `) Empty() *`, t.EntityName(), ` { *e = `, t.EntityName(), `{}; return e }`)
 }
 
-func (t *table) fnEntityCopy(mainGen *codegen.Go, ts *Tables) {
+func (t *Table) fnEntityCopy(mainGen *codegen.Go, ts *Generator) {
+	if !ts.hasFeature(FeatureEntityCopy) {
+		return
+	}
 	mainGen.Pln(`// Copy copies the struct and returns a new pointer`)
 	mainGen.Pln(`func (e *`, t.EntityName(), `) Copy() *`, t.EntityName(), ` { 
 		e2 := new(`, t.EntityName(), `)
@@ -178,11 +227,64 @@ func (t *table) fnEntityCopy(mainGen *codegen.Go, ts *Tables) {
 }`)
 }
 
-func (t *table) fnEntityDBMapColumns(mainGen *codegen.Go, ts *Tables) {
+func (t *Table) fnEntityWriteTo(mainGen *codegen.Go, ts *Generator) {
+	if !ts.hasFeature(FeatureEntityWriteTo) {
+		return
+	}
+	mainGen.C(`WriteTo implements io.WriterTo and writes the field names and their values to w.`,
+		`This is especially useful for debugging or or generating a hash of the struct.`)
+
+	mainGen.Pln(`func (e *`, t.EntityName(), `) WriteTo(w io.Writer) (n int64, err error) {
+	// for now this printing is good enough. If you need better swap out with your code.`)
+
+	if fn, ok := ts.customCode["func_"+t.EntityName()+"_WriteTo"]; ok {
+		fn(ts, t, mainGen)
+	} else {
+		mainGen.Pln(`n2, err := fmt.Fprint(w,`)
+		mainGen.In()
+		t.Columns.Each(func(c *ddl.Column) {
+			if t.IsFieldPublic(c.Field) {
+				mainGen.Pln(`"`+c.Field+`:"`, `, e.`, strs.ToGoCamelCase(c.Field), `,`, `"\n",`)
+			}
+		})
+		mainGen.Pln(`)`)
+		mainGen.Pln(`return int64(n2), err`)
+		mainGen.Out()
+	}
+	mainGen.Pln(`}`)
+}
+
+func (t *Table) fnCollectionWriteTo(mainGen *codegen.Go, ts *Generator) {
+	if !ts.hasFeature(FeatureEntityWriteTo) {
+		return
+	}
+
+	mainGen.C(`WriteTo implements io.WriterTo and writes the field names and their values to w.`,
+		`This is especially useful for debugging or or generating a hash of the struct.`)
+
+	mainGen.Pln(`func (cc *`, t.CollectionName(), `) WriteTo(w io.Writer) (n int64, err error) {
+		for i,d := range cc.Data {
+			n2,err := d.WriteTo(w)
+			if err != nil {
+				return 0, errors.Wrapf(err,"[`+t.Package+`] WriteTo failed at index %d",i)
+			}
+			n+=n2
+		}
+		return n,nil
+	}`)
+}
+
+func (t *Table) fnEntityDBMapColumns(mainGen *codegen.Go, ts *Generator) {
+	if !ts.hasFeature(FeatureEntityDBMapColumns | FeatureDB) {
+		return
+	}
 	mainGen.C(`MapColumns implements interface ColumnMapper only partially. Auto generated.`)
 	mainGen.Pln(`func (e *`, t.EntityName(), `) MapColumns(cm *dml.ColumnMap) error {`)
 	{
-		mainGen.Pln(ts.customCode["func_"+t.EntityName()+"_MapColumns"])
+		if fn, ok := ts.customCode["func_"+t.EntityName()+"_MapColumns"]; ok {
+			fn(ts, t, mainGen)
+		}
+
 		mainGen.In()
 		mainGen.Pln(`if cm.Mode() == dml.ColumnMapEntityReadAll {`)
 		{
@@ -224,8 +326,27 @@ func (t *table) fnEntityDBMapColumns(mainGen *codegen.Go, ts *Tables) {
 	mainGen.Pln(`}`)
 }
 
-func (t *table) fnEntityDBAssignLastInsertID(mainGen *codegen.Go, ts *Tables) {
-	// Generate functions to access SQL
+func (t *Table) hasPKAutoInc() bool {
+	var hasPKAutoInc bool
+	t.Columns.Each(func(c *ddl.Column) {
+		if c.IsPK() && c.IsAutoIncrement() {
+			hasPKAutoInc = true
+		}
+		if hasPKAutoInc {
+			return
+		}
+	})
+	return hasPKAutoInc
+}
+
+func (t *Table) fnEntityDBAssignLastInsertID(mainGen *codegen.Go, ts *Generator) {
+	if !ts.hasFeature(FeatureEntityDBAssignLastInsertID | FeatureDB) {
+		return
+	}
+	if !t.hasPKAutoInc() {
+		return
+	}
+
 	mainGen.C(`AssignLastInsertID updates the increment ID field with the last inserted ID from an INSERT operation.`,
 		`Implements dml.InsertIDAssigner. Auto generated.`)
 	mainGen.Pln(`func (e *`, t.EntityName(), `) AssignLastInsertID(id int64) {`)
@@ -241,7 +362,14 @@ func (t *table) fnEntityDBAssignLastInsertID(mainGen *codegen.Go, ts *Tables) {
 	mainGen.Pln(`}`)
 }
 
-func (t *table) fnCollectionDBAssignLastInsertID(mainGen *codegen.Go, ts *Tables) {
+func (t *Table) fnCollectionDBAssignLastInsertID(mainGen *codegen.Go, ts *Generator) {
+	if !ts.hasFeature(FeatureEntityDBAssignLastInsertID | FeatureDB) {
+		return
+	}
+	if !t.hasPKAutoInc() {
+		return
+	}
+
 	mainGen.C(`AssignLastInsertID traverses through the slice and sets a decrementing new ID to each entity.`)
 	mainGen.Pln(`func (cc *`, t.CollectionName(), `) AssignLastInsertID(id int64) {`)
 	{
@@ -260,7 +388,11 @@ func (t *table) fnCollectionDBAssignLastInsertID(mainGen *codegen.Go, ts *Tables
 	mainGen.Pln(`}`)
 }
 
-func (t *table) fnCollectionUniqueGetters(mainGen *codegen.Go, ts *Tables) {
+func (t *Table) fnCollectionUniqueGetters(mainGen *codegen.Go, ts *Generator) {
+	if !ts.hasFeature(FeatureCollectionUniqueGetters) {
+		return
+	}
+
 	// Generates functions to return all data as a slice from unique/primary
 	// columns.
 	for _, c := range t.Columns.UniqueColumns() {
@@ -292,7 +424,10 @@ func (t *table) fnCollectionUniqueGetters(mainGen *codegen.Go, ts *Tables) {
 	}
 }
 
-func (t *table) fnCollectionUniquifiedGetters(mainGen *codegen.Go, ts *Tables) {
+func (t *Table) fnCollectionUniquifiedGetters(mainGen *codegen.Go, ts *Generator) {
+	if !ts.hasFeature(FeatureCollectionUniquifiedGetters) {
+		return
+	}
 	// Generates functions to return data with removed duplicates from any
 	// column which has set the flag Uniquified.
 	for _, c := range t.Columns.UniquifiedColumns() {
@@ -335,7 +470,10 @@ func (t *table) fnCollectionUniquifiedGetters(mainGen *codegen.Go, ts *Tables) {
 	}
 }
 
-func (t *table) fnCollectionFilter(mainGen *codegen.Go, ts *Tables) {
+func (t *Table) fnCollectionFilter(mainGen *codegen.Go, ts *Generator) {
+	if !ts.hasFeature(FeatureCollectionFilter) {
+		return
+	}
 	mainGen.C(`Filter filters the current slice by predicate f without memory allocation. Auto generated via dmlgen.`)
 	mainGen.Pln(`func (cc *`, t.CollectionName(), `) Filter(f func(*`, t.EntityName(), `) bool) *`, t.CollectionName(), ` {`)
 	{
@@ -361,7 +499,10 @@ func (t *table) fnCollectionFilter(mainGen *codegen.Go, ts *Tables) {
 	mainGen.Pln(`}`) // function
 }
 
-func (t *table) fnCollectionEach(mainGen *codegen.Go, ts *Tables) {
+func (t *Table) fnCollectionEach(mainGen *codegen.Go, ts *Generator) {
+	if !ts.hasFeature(FeatureCollectionEach) {
+		return
+	}
 	mainGen.C(`Each will run function f on all items in []*`, t.EntityName(), `. Auto generated via dmlgen.`)
 	mainGen.Pln(`func (cc *`, t.CollectionName(), `) Each(f func(*`, t.EntityName(), `)) *`, t.CollectionName(), ` {`)
 	{
@@ -375,7 +516,11 @@ func (t *table) fnCollectionEach(mainGen *codegen.Go, ts *Tables) {
 	mainGen.Pln(`}`)
 }
 
-func (t *table) fnCollectionCut(mainGen *codegen.Go, ts *Tables) {
+func (t *Table) fnCollectionCut(mainGen *codegen.Go, ts *Generator) {
+	if !ts.hasFeature(FeatureCollectionCut) {
+		return
+	}
+
 	mainGen.C(`Cut will remove items i through j-1. Auto generated via dmlgen.`)
 	mainGen.Pln(`func (cc *`, t.CollectionName(), `) Cut(i, j int) *`, t.CollectionName(), ` {`)
 	{
@@ -397,12 +542,20 @@ func (t *table) fnCollectionCut(mainGen *codegen.Go, ts *Tables) {
 	mainGen.Pln(`}`)
 
 }
-func (t *table) fnCollectionSwap(mainGen *codegen.Go, ts *Tables) {
+
+func (t *Table) fnCollectionSwap(mainGen *codegen.Go, ts *Generator) {
+	if !ts.hasFeature(FeatureCollectionSwap) {
+		return
+	}
 	mainGen.C(`Swap will satisfy the sort.Interface. Auto generated via dmlgen.`)
 	mainGen.Pln(`func (cc *`, t.CollectionName(), `) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }`)
 }
 
-func (t *table) fnCollectionDelete(mainGen *codegen.Go, ts *Tables) {
+func (t *Table) fnCollectionDelete(mainGen *codegen.Go, ts *Generator) {
+	if !ts.hasFeature(FeatureCollectionDelete) {
+		return
+	}
+
 	mainGen.C(`Delete will remove an item from the slice. Auto generated via dmlgen.`)
 	mainGen.Pln(`func (cc *`, t.CollectionName(), `) Delete(i int) *`, t.CollectionName(), ` {`)
 	{
@@ -418,7 +571,10 @@ func (t *table) fnCollectionDelete(mainGen *codegen.Go, ts *Tables) {
 	mainGen.Pln(`}`)
 }
 
-func (t *table) fnCollectionInsert(mainGen *codegen.Go, ts *Tables) {
+func (t *Table) fnCollectionInsert(mainGen *codegen.Go, ts *Generator) {
+	if !ts.hasFeature(FeatureCollectionInsert) {
+		return
+	}
 	mainGen.C(`Insert will place a new item at position i. Auto generated via dmlgen.`)
 	mainGen.Pln(`func (cc *`, t.CollectionName(), `) Insert(n *`, t.EntityName(), `, i int) *`, t.CollectionName(), ` {`)
 	{
@@ -432,7 +588,10 @@ func (t *table) fnCollectionInsert(mainGen *codegen.Go, ts *Tables) {
 	mainGen.Pln(`}`)
 }
 
-func (t *table) fnCollectionAppend(mainGen *codegen.Go, ts *Tables) {
+func (t *Table) fnCollectionAppend(mainGen *codegen.Go, ts *Generator) {
+	if !ts.hasFeature(FeatureCollectionAppend) {
+		return
+	}
 	mainGen.C(`Append will add a new item at the end of *`, t.CollectionName(), `. Auto generated via dmlgen.`)
 	mainGen.Pln(`func (cc *`, t.CollectionName(), `) Append(n ...*`, t.EntityName(), `) *`, t.CollectionName(), ` {`)
 	{
@@ -442,7 +601,11 @@ func (t *table) fnCollectionAppend(mainGen *codegen.Go, ts *Tables) {
 	mainGen.Pln(`}`)
 }
 
-func (t *table) fnCollectionBinaryMarshaler(mainGen *codegen.Go, ts *Tables) {
+func (t *Table) fnCollectionBinaryMarshaler(mainGen *codegen.Go, ts *Generator) {
+	if !ts.hasFeature(FeatureCollectionBinaryMarshaler) {
+		return
+	}
+
 	mainGen.C(`UnmarshalBinary implements encoding.BinaryUnmarshaler.`)
 	mainGen.Pln(`func (cc *`, t.CollectionName(), `) UnmarshalBinary(data []byte) error {`)
 	{
@@ -458,7 +621,11 @@ func (t *table) fnCollectionBinaryMarshaler(mainGen *codegen.Go, ts *Tables) {
 	mainGen.Pln(`}`)
 }
 
-func (t *table) fnCollectionDBMapColumns(mainGen *codegen.Go, ts *Tables) {
+func (t *Table) fnCollectionDBMapColumns(mainGen *codegen.Go, ts *Generator) {
+	if !ts.hasFeature(FeatureCollectionDBMapColumns | FeatureDB) {
+		return
+	}
+
 	mainGen.Pln(`func (cc *`, t.CollectionName(), `) scanColumns(cm *dml.ColumnMap,e *`, t.EntityName(), `, idx uint64) error {
 			if cc.BeforeMapColumns != nil {
 				if err := cc.BeforeMapColumns(idx, e); err != nil {
@@ -524,7 +691,7 @@ func (t *table) fnCollectionDBMapColumns(mainGen *codegen.Go, ts *Tables) {
 	mainGen.Pln(`}`) // end func MapColumns
 }
 
-func (t *table) generateTest(testGen *codegen.Go) {
+func (t *Table) generateTest(testGen *codegen.Go) {
 
 	testGen.Pln(`t.Run("` + strs.ToGoCamelCase(t.TableName) + `_Entity", func(t *testing.T) {`)
 	testGen.Pln(`tbl := tbls.MustTable(TableName`+strs.ToGoCamelCase(t.TableName), `)`)

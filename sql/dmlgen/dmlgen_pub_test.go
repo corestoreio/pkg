@@ -97,7 +97,7 @@ func TestGenerate_Tables_Protobuf_Json(t *testing.T) {
 	dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil)
 
 	ctx := context.Background()
-	ts, err := dmlgen.NewTables("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated",
+	ts, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated",
 
 		dmlgen.WithBuildTags("!ignore", "!ignored"),
 		dmlgen.WithProtobuf(),
@@ -227,7 +227,7 @@ func TestInfoSchemaForeignKeys(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
 
-	ts, err := dmlgen.NewTables("dmltestgenerated",
+	ts, err := dmlgen.NewGenerator("dmltestgenerated",
 		dmlgen.WithTableConfig("KEY_COLUMN_USAGE", &dmlgen.TableConfig{
 			Encoders:          []string{"json", "binary"},
 			UniquifiedColumns: []string{"TABLE_NAME", "COLUMN_NAME"},
@@ -255,7 +255,7 @@ func TestWithCustomStructTags(t *testing.T) {
 			}
 		}()
 
-		tbl, err := dmlgen.NewTables("dmltestgenerated",
+		tbl, err := dmlgen.NewGenerator("dmltestgenerated",
 			dmlgen.WithTable("table", ddl.Columns{&ddl.Column{Field: "config_id"}}),
 			dmlgen.WithTableConfig("table", &dmlgen.TableConfig{
 				CustomStructTags: []string{"unbalanced"},
@@ -266,7 +266,7 @@ func TestWithCustomStructTags(t *testing.T) {
 	})
 
 	t.Run("table not found", func(t *testing.T) {
-		tbls, err := dmlgen.NewTables("test",
+		tbls, err := dmlgen.NewGenerator("test",
 			dmlgen.WithTableConfig("tableNOTFOUND", &dmlgen.TableConfig{
 				CustomStructTags: []string{"column", "db:..."},
 			}),
@@ -276,7 +276,7 @@ func TestWithCustomStructTags(t *testing.T) {
 	})
 
 	t.Run("column not found", func(t *testing.T) {
-		tbls, err := dmlgen.NewTables("test",
+		tbls, err := dmlgen.NewGenerator("test",
 			dmlgen.WithTableConfig("core_config_data", &dmlgen.TableConfig{
 				CustomStructTags: []string{"scope_id", "toml:..."},
 			}),
@@ -293,7 +293,7 @@ func TestWithStructTags(t *testing.T) {
 	t.Parallel()
 
 	t.Run("table not found", func(t *testing.T) {
-		tbls, err := dmlgen.NewTables("test",
+		tbls, err := dmlgen.NewGenerator("test",
 			dmlgen.WithTableConfig("tableNOTFOUND", &dmlgen.TableConfig{
 				StructTags: []string{"unbalanced"},
 			}),
@@ -303,7 +303,7 @@ func TestWithStructTags(t *testing.T) {
 	})
 
 	t.Run("struct tag not supported", func(t *testing.T) {
-		tbls, err := dmlgen.NewTables("test",
+		tbls, err := dmlgen.NewGenerator("test",
 			dmlgen.WithTableConfig("core_config_data", &dmlgen.TableConfig{
 				StructTags: []string{"hjson"},
 			}),
@@ -316,7 +316,7 @@ func TestWithStructTags(t *testing.T) {
 	})
 
 	t.Run("al available struct tags", func(t *testing.T) {
-		tbls, err := dmlgen.NewTables("test",
+		tbls, err := dmlgen.NewGenerator("test",
 			dmlgen.WithTableConfig("core_config_data", &dmlgen.TableConfig{
 				StructTags: []string{"bson", "db", "env", "json", "toml", "yaml", "xml"},
 			}),
@@ -334,7 +334,7 @@ func TestWithColumnAliases(t *testing.T) {
 	t.Parallel()
 
 	t.Run("table not found", func(t *testing.T) {
-		tbls, err := dmlgen.NewTables("test",
+		tbls, err := dmlgen.NewGenerator("test",
 			dmlgen.WithTableConfig("tableNOTFOUND", &dmlgen.TableConfig{
 				ColumnAliases: map[string][]string{"column": {"alias"}},
 			}),
@@ -344,7 +344,7 @@ func TestWithColumnAliases(t *testing.T) {
 	})
 
 	t.Run("column not found", func(t *testing.T) {
-		tbls, err := dmlgen.NewTables("test",
+		tbls, err := dmlgen.NewGenerator("test",
 			dmlgen.WithTableConfig("tableNOTFOUND", &dmlgen.TableConfig{
 				ColumnAliases: map[string][]string{"scope_id": {"scopeID"}},
 			}),
@@ -361,7 +361,7 @@ func TestWithUniquifiedColumns(t *testing.T) {
 	t.Parallel()
 
 	t.Run("column not found", func(t *testing.T) {
-		tbls, err := dmlgen.NewTables("test",
+		tbls, err := dmlgen.NewGenerator("test",
 			dmlgen.WithTableConfig("core_config_data", &dmlgen.TableConfig{
 				UniquifiedColumns: []string{"scope_id", "scopeID"},
 			}),

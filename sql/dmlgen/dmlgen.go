@@ -55,18 +55,16 @@ import (
 //  compare the fields, then return the change field names, except autoinc
 //  fields.
 
-// Tables can generated Go source for for database tables once correctly
+// Generator can generated Go source for for database tables once correctly
 // configured.
-type Tables struct {
+type Generator struct {
 	Package            string // Name of the package
 	PackageImportPath  string // Name of the package
 	BuildTags          []string
 	ImportPaths        []string
 	ImportPathsTesting []string
 	// Tables uses the table name as map key and the table description as value.
-	Tables              map[string]*table
-	DisableFileHeader   bool
-	DisableTableSchemas bool
+	Tables map[string]*Table
 	// Serializer defines the de/serializing method to use. Either
 	// `empty`=default (none) or proto=protocol buffers or fbs=flatbuffers. JSON
 	// marshaling is not affected with this config. Only one serializer can be
@@ -86,15 +84,17 @@ type Tables struct {
 
 	// customCode injects custom code to manipulate testing and other generate
 	// code blocks. A few implementations now but more can be added later.
-	customCode map[string]string
+	customCode      map[string]func(*Generator, *Table, io.Writer)
+	featuresInclude FeatureToggle
+	featuresExclude FeatureToggle
 }
 
-// Option represents a sortable option for the NewTables function. Each option
+// Option represents a sortable option for the NewGenerator function. Each option
 // function can be applied in a mixed order.
 type Option struct {
 	// sortOrder specifies the precedence of an option.
 	sortOrder int
-	fn        func(*Tables) error
+	fn        func(*Generator) error
 }
 
 // TableConfig used in conjunction with WithTableConfig to apply different
@@ -135,13 +135,15 @@ type TableConfig struct {
 	// get generated.
 	PrivateFields []string
 
-	FeaturesInclude []string
-	FeaturesExclude []string
+	// FeaturesInclude if set includes only those features, otherwise everything.
+	FeaturesInclude FeatureToggle
+	// FeaturesExclude excludes features while field FeaturesInclude is empty.
+	FeaturesExclude FeatureToggle
 
 	lastErr error
 }
 
-func (to *TableConfig) applyEncoders(ts *Tables, t *table) {
+func (to *TableConfig) applyEncoders(ts *Generator, t *Table) {
 	for i := 0; i < len(to.Encoders) && to.lastErr == nil; i++ {
 		switch enc := to.Encoders[i]; enc {
 		case "json":
@@ -158,7 +160,7 @@ func (to *TableConfig) applyEncoders(ts *Tables, t *table) {
 	}
 }
 
-func (to *TableConfig) applyStructTags(t *table) {
+func (to *TableConfig) applyStructTags(t *Table) {
 	for h := 0; h < len(t.Columns) && to.lastErr == nil; h++ {
 		c := t.Columns[h]
 		var buf strings.Builder
@@ -220,7 +222,7 @@ func (to *TableConfig) applyStructTags(t *table) {
 	} // end Columns loop
 }
 
-func (to *TableConfig) applyCustomStructTags(t *table) {
+func (to *TableConfig) applyCustomStructTags(t *Table) {
 	for i := 0; i < len(to.CustomStructTags) && to.lastErr == nil; i = i + 2 {
 		found := false
 		for _, c := range t.Columns {
@@ -236,7 +238,7 @@ func (to *TableConfig) applyCustomStructTags(t *table) {
 	}
 }
 
-func (to *TableConfig) applyPrivateFields(t *table) {
+func (to *TableConfig) applyPrivateFields(t *Table) {
 	if len(to.PrivateFields) > 0 && t.privateFields == nil {
 		t.privateFields = make(map[string]bool)
 	}
@@ -245,7 +247,7 @@ func (to *TableConfig) applyPrivateFields(t *table) {
 	}
 }
 
-func (to *TableConfig) applyComments(t *table) {
+func (to *TableConfig) applyComments(t *Table) {
 	var buf strings.Builder
 	lines := strings.Split(to.Comment, "\n")
 	for i := 0; i < len(lines) && to.lastErr == nil && to.Comment != ""; i++ {
@@ -259,7 +261,7 @@ func (to *TableConfig) applyComments(t *table) {
 	t.Comment = strings.TrimSpace(buf.String())
 }
 
-func (to *TableConfig) applyColumnAliases(t *table) {
+func (to *TableConfig) applyColumnAliases(t *Table) {
 	if to.lastErr != nil {
 		return
 	}
@@ -284,7 +286,7 @@ func (to *TableConfig) applyColumnAliases(t *table) {
 }
 
 // skips text and blob and varbinary and json and geo
-func (to *TableConfig) applyUniquifiedColumns(t *table) {
+func (to *TableConfig) applyUniquifiedColumns(t *Table) {
 	for i := 0; i < len(to.UniquifiedColumns) && to.lastErr == nil; i++ {
 		cn := to.UniquifiedColumns[i]
 		found := false
@@ -303,14 +305,14 @@ func (to *TableConfig) applyUniquifiedColumns(t *table) {
 
 // WithTableConfig applies options to an existing table, identified by the table
 // name used as map key. Options are custom struct or different encoders.
-// Returns a not-found error if the table cannot be found in the `Tables` map.
+// Returns a not-found error if the table cannot be found in the `Generator` map.
 func WithTableConfig(tableName string, opt *TableConfig) (o Option) {
 	// Panic as early as possible.
 	if len(opt.CustomStructTags)%2 == 1 {
 		panic(errors.Fatal.Newf("[dmlgen] WithTableConfig: Table %q option CustomStructTags must be a balanced slice.", tableName))
 	}
 	o.sortOrder = 150
-	o.fn = func(ts *Tables) (err error) {
+	o.fn = func(ts *Generator) (err error) {
 		t, ok := ts.Tables[tableName]
 		if t == nil || !ok {
 			return errors.NotFound.Newf("[dmlgen] WithTableConfig: Table %q not found.", tableName)
@@ -322,6 +324,8 @@ func WithTableConfig(tableName string, opt *TableConfig) (o Option) {
 		opt.applyComments(t)
 		opt.applyColumnAliases(t)
 		opt.applyUniquifiedColumns(t)
+		ts.featuresInclude = opt.FeaturesInclude
+		ts.featuresExclude = opt.FeaturesExclude
 		return opt.lastErr
 	}
 	return
@@ -337,7 +341,7 @@ func WithTableConfig(tableName string, opt *TableConfig) (o Option) {
 // alias.
 func WithColumnAliasesFromForeignKeys(ctx context.Context, db dml.Querier) (opt Option) {
 	opt.sortOrder = 200 // must run at the end or where the end is near ;-)
-	opt.fn = func(ts *Tables) error {
+	opt.fn = func(ts *Generator) error {
 
 		tblFks, err := ddl.LoadKeyColumnUsage(ctx, db, ts.sortedTableNames()...)
 		if err != nil {
@@ -386,7 +390,7 @@ func WithReferenceEntitiesByForeignKeys(ctx context.Context, db dml.Querier, str
 	}
 
 	opt.sortOrder = 210 // must run at the end or where the end is near ;-)
-	opt.fn = func(ts *Tables) error {
+	opt.fn = func(ts *Generator) error {
 
 		tblFks, err := ddl.LoadKeyColumnUsage(ctx, db, ts.sortedTableNames()...)
 		if err != nil {
@@ -428,7 +432,7 @@ func WithTable(tableName string, columns ddl.Columns, options ...string) (opt Op
 	}
 
 	opt.sortOrder = 10
-	opt.fn = func(ts *Tables) error {
+	opt.fn = func(ts *Generator) error {
 		isOverwrite := len(options) > 0 && options[0] == "overwrite"
 		t, ok := ts.Tables[tableName]
 		if ok && isOverwrite {
@@ -440,7 +444,7 @@ func WithTable(tableName string, columns ddl.Columns, options ...string) (opt Op
 				}
 			}
 		} else {
-			t = &table{
+			t = &Table{
 				TableName: tableName,
 				Columns:   columns,
 			}
@@ -453,11 +457,11 @@ func WithTable(tableName string, columns ddl.Columns, options ...string) (opt Op
 }
 
 // WithTablesFromDB queries the information_schema table and loads the column
-// definition of the provided `tables` slice. It adds the tables to the `Tables`
+// definition of the provided `tables` slice. It adds the tables to the `Generator`
 // map. Once added a call to WithTableConfig can add additional configurations.
 func WithTablesFromDB(ctx context.Context, db *dml.ConnPool, tables ...string) (opt Option) {
 	opt.sortOrder = 1
-	opt.fn = func(ts *Tables) error {
+	opt.fn = func(ts *Generator) error {
 		tables, err := ddl.LoadColumns(ctx, db.DB, tables...)
 		if err != nil {
 			return errors.WithStack(err)
@@ -482,7 +486,7 @@ func WithTablesFromDB(ctx context.Context, db *dml.ConnPool, tables ...string) (
 		}
 
 		for tblName := range tables {
-			ts.Tables[tblName] = &table{
+			ts.Tables[tblName] = &Table{
 				TableName:        tblName,
 				Columns:          tables[tblName],
 				HasAutoIncrement: checkAutoIncrement(tblName),
@@ -497,7 +501,7 @@ func WithTablesFromDB(ctx context.Context, db *dml.ConnPool, tables ...string) (
 // headerOptions is optional.
 func WithProtobuf(headerOptions ...string) (opt Option) {
 	opt.sortOrder = 110
-	opt.fn = func(ts *Tables) error {
+	opt.fn = func(ts *Generator) error {
 		ts.Serializer = "protobuf"
 		if len(headerOptions) == 0 {
 			ts.SerializerHeaderOptions = []string{
@@ -518,7 +522,7 @@ func WithProtobuf(headerOptions ...string) (opt Option) {
 // headerOptions is optional.
 func WithFlatbuffers(headerOptions ...string) (opt Option) {
 	opt.sortOrder = 111
-	opt.fn = func(ts *Tables) error {
+	opt.fn = func(ts *Generator) error {
 		ts.Serializer = "fbs"
 		if len(headerOptions) == 0 {
 			// TODO find sane defaults
@@ -533,7 +537,7 @@ func WithFlatbuffers(headerOptions ...string) (opt Option) {
 // represents a build tag line.
 func WithBuildTags(lines ...string) (opt Option) {
 	opt.sortOrder = 112
-	opt.fn = func(ts *Tables) error {
+	opt.fn = func(ts *Generator) error {
 		ts.BuildTags = append(ts.BuildTags, lines...)
 		return nil
 	}
@@ -547,17 +551,36 @@ func WithBuildTags(lines ...string) (opt Option) {
 // gets written.
 func WithCustomCode(marker, code string) (opt Option) {
 	opt.sortOrder = 112
-	opt.fn = func(ts *Tables) error {
+	opt.fn = func(ts *Generator) error {
 		if ts.customCode == nil {
-			ts.customCode = make(map[string]string)
+			ts.customCode = make(map[string]func(*Generator, *Table, io.Writer))
 		}
-		ts.customCode[marker] = code
+		ts.customCode[marker] = func(_ *Generator, _ *Table, w io.Writer) {
+			w.Write([]byte(code))
+		}
 		return nil
 	}
 	return
 }
 
-func (ts *Tables) sortedTableNames() []string {
+// WithCustomCodeFunc same as WithCustomCode but allows access to meta data. The
+// func fn takes as first argument the main Generator where access to package
+// global configuration is possible. If the scope of the marker is within a
+// table, then argument t gets set, otherwise it is nil. The output must be
+// written to w.
+func WithCustomCodeFunc(marker string, fn func(g *Generator, t *Table, w io.Writer)) (opt Option) {
+	opt.sortOrder = 113
+	opt.fn = func(ts *Generator) error {
+		if ts.customCode == nil {
+			ts.customCode = make(map[string]func(*Generator, *Table, io.Writer))
+		}
+		ts.customCode[marker] = fn
+		return nil
+	}
+	return
+}
+
+func (ts *Generator) sortedTableNames() []string {
 	sortedKeys := make(slices.String, 0, len(ts.Tables))
 	for k := range ts.Tables {
 		sortedKeys = append(sortedKeys, k)
@@ -566,18 +589,20 @@ func (ts *Tables) sortedTableNames() []string {
 	return sortedKeys
 }
 
-// NewTables creates a new instance of the SQL table code generator. The order
+// NewGenerator creates a new instance of the SQL table code generator. The order
 // of the applied options does not matter as they are getting sorted internally.
-func NewTables(packageImportPath string, opts ...Option) (*Tables, error) {
+func NewGenerator(packageImportPath string, opts ...Option) (*Generator, error) {
 	_, pkg := filepath.Split(packageImportPath)
-	ts := &Tables{
-		Tables:            make(map[string]*table),
+	ts := &Generator{
+		Tables:            make(map[string]*Table),
 		Package:           pkg,
 		PackageImportPath: packageImportPath,
 		ImportPaths: []string{
 			"context",
 			"database/sql",
 			"encoding/json",
+			"fmt",
+			"io",
 			"sort",
 			"time",
 
@@ -650,8 +675,23 @@ func NewTables(packageImportPath string, opts ...Option) (*Tables, error) {
 	return ts, nil
 }
 
+func (ts *Generator) hasFeature(feature FeatureToggle) bool {
+	switch {
+	case ts.featuresInclude == 0 && ts.featuresExclude == 0:
+		return true
+	case ts.featuresInclude > 0 && (ts.featuresInclude&feature) != 0 && ts.featuresExclude == 0:
+		return true
+	case ts.featuresInclude == 0 && ts.featuresExclude > 0 && (ts.featuresExclude&feature) != 0:
+		return false
+	case ts.featuresInclude == 0 && ts.featuresExclude > 0 && (ts.featuresExclude&feature) == 0:
+		return true
+	default:
+		return false
+	}
+}
+
 // findUsedPackages checks for needed packages which we must import.
-func (ts *Tables) findUsedPackages(file []byte) ([]string, error) {
+func (ts *Generator) findUsedPackages(file []byte) ([]string, error) {
 
 	af, err := goparser.ParseFile(token.NewFileSet(), "cs_virtual_file.go", append([]byte("package temporarily_main\n\n"), file...), 0)
 	if err != nil {
@@ -679,7 +719,7 @@ func (ts *Tables) findUsedPackages(file []byte) ([]string, error) {
 
 // GenerateSerializer writes the protocol buffer specifications into `w` and its test
 // sources into wTest, if there are any tests.
-func (ts *Tables) GenerateSerializer(w io.Writer, wTest io.Writer) error {
+func (ts *Generator) GenerateSerializer(w io.Writer, wTest io.Writer) error {
 	switch ts.Serializer {
 	case "protobuf", "fbs":
 	// supported
@@ -713,7 +753,7 @@ func (ts *Tables) GenerateSerializer(w io.Writer, wTest io.Writer) error {
 }
 
 // GenerateGo writes the Go source code into `w` and the test code into wTest.
-func (ts *Tables) GenerateGo(wMain io.Writer, wTest io.Writer) error {
+func (ts *Generator) GenerateGo(wMain io.Writer, wTest io.Writer) error {
 
 	mainGen := codegen.NewGo(ts.Package)
 	testGen := codegen.NewGo(ts.Package)
@@ -721,7 +761,7 @@ func (ts *Tables) GenerateGo(wMain io.Writer, wTest io.Writer) error {
 	mainGen.BuildTags = ts.BuildTags
 	testGen.BuildTags = ts.BuildTags
 
-	tables := make([]*table, len(ts.Tables))
+	tables := make([]*Table, len(ts.Tables))
 	for i, tblname := range ts.sortedTableNames() {
 		tables[i] = ts.Tables[tblname] // must panic if table name not found
 	}
@@ -736,6 +776,7 @@ func (ts *Tables) GenerateGo(wMain io.Writer, wTest io.Writer) error {
 		t.fnEntityGetSetPrivateFields(mainGen, ts)
 		t.fnEntityEmpty(mainGen, ts)
 		t.fnEntityCopy(mainGen, ts)
+		t.fnEntityWriteTo(mainGen, ts)
 		t.fnEntityDBAssignLastInsertID(mainGen, ts)
 		t.fnEntityDBMapColumns(mainGen, ts)
 
@@ -744,7 +785,7 @@ func (ts *Tables) GenerateGo(wMain io.Writer, wTest io.Writer) error {
 		t.fnCollectionDBMapColumns(mainGen, ts)
 		t.fnCollectionUniqueGetters(mainGen, ts)
 		t.fnCollectionUniquifiedGetters(mainGen, ts)
-
+		t.fnCollectionWriteTo(mainGen, ts)
 		t.fnCollectionFilter(mainGen, ts)
 		t.fnCollectionEach(mainGen, ts)
 		t.fnCollectionCut(mainGen, ts)
@@ -777,11 +818,11 @@ func (ts *Tables) GenerateGo(wMain io.Writer, wTest io.Writer) error {
 	return nil
 }
 
-func (ts *Tables) goTypeNull(c *ddl.Column) string { return ts.mySQLToGoType(c, true) }
-func (ts *Tables) goType(c *ddl.Column) string     { return ts.mySQLToGoType(c, false) }
-func (ts *Tables) goFuncNull(c *ddl.Column) string { return ts.mySQLToGoDmlColumnMap(c, true) }
+func (ts *Generator) goTypeNull(c *ddl.Column) string { return ts.mySQLToGoType(c, true) }
+func (ts *Generator) goType(c *ddl.Column) string     { return ts.mySQLToGoType(c, false) }
+func (ts *Generator) goFuncNull(c *ddl.Column) string { return ts.mySQLToGoDmlColumnMap(c, true) }
 
-func (ts *Tables) fnDBNewTables(mainGen *codegen.Go) {
+func (ts *Generator) fnDBNewTables(mainGen *codegen.Go) {
 	var tableNames []string
 	var tableCreateStmt []string
 	for _, tblname := range ts.sortedTableNames() {
@@ -808,7 +849,7 @@ func (ts *Tables) fnDBNewTables(mainGen *codegen.Go) {
 	mainGen.Pln(`); err != nil { return nil, errors.WithStack(err); }; return tm, nil; }`)
 }
 
-func (ts *Tables) fnDBTestMain(testGen *codegen.Go, tables []*table) {
+func (ts *Generator) fnDBTestMain(testGen *codegen.Go, tables []*Table) {
 	// Test Header
 	testGen.Pln(`func TestNewTables(t *testing.T) {`)
 	{
@@ -842,7 +883,9 @@ func (ts *Tables) fnDBTestMain(testGen *codegen.Go, tables []*table) {
 		testGen.Pln(`pseudo.WithTagFakeFunc("store_id", func(maxLen int) (interface{}, error) {`)
 		testGen.Pln(`    return 1, nil`)
 		testGen.Pln(`}),`)
-		testGen.Pln(ts.customCode["pseudo.MustNewService.Option"])
+		if fn, ok := ts.customCode["pseudo.MustNewService.Option"]; ok {
+			fn(ts, nil, testGen)
+		}
 		testGen.Out()
 		testGen.Pln(`)`)
 
