@@ -212,12 +212,11 @@ func TestGenerate_Tables_Protobuf_Json(t *testing.T) {
 	ts.TestSQLDumpGlobPath = "../testdata/test_*_tables.sql"
 
 	writeFile(t, "dmltestgenerated/output_gen.go", ts.GenerateGo)
-	// writeFile(t, "dmltestgenerated/output_gen.proto", ts.GenerateSerializer)
+	writeFile(t, "dmltestgenerated/output_gen.proto", ts.GenerateSerializer)
 	// // Generates for all proto files the Go source code.
-	// err = dmlgen.GenerateProto("./dmltestgenerated")
-	// assert.NoError(t, err, "%+v", err)
-	// err = dmlgen.GenerateJSON("./dmltestgenerated", nil)
-	// assert.NoError(t, err, "%+v", err)
+
+	assert.NoError(t, dmlgen.GenerateProto("./dmltestgenerated"))
+	assert.NoError(t, dmlgen.GenerateJSON("./dmltestgenerated", nil))
 }
 
 func TestInfoSchemaForeignKeys(t *testing.T) {

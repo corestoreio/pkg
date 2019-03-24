@@ -35,7 +35,6 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
-	"github.com/corestoreio/pkg/util/bufferpool"
 	"github.com/corestoreio/pkg/util/codegen"
 	"github.com/corestoreio/pkg/util/slices"
 	"github.com/corestoreio/pkg/util/strs"
@@ -643,31 +642,6 @@ func NewGenerator(packageImportPath string, opts ...Option) (*Generator, error) 
 	// ts.FuncMap["IsFieldPublic"] = func(string) bool { return false }
 	// ts.FuncMap["IsFieldPrivate"] = func(string) bool { return false }
 	// ts.FuncMap["GoPrimitiveNull"] = ts.toGoPrimitiveFromNull
-	// ts.FuncMap["SerializerType"] = func(c *ddl.Column) string {
-	// 	pt := ts.toSerializerType(c, true)
-	// 	if strings.IndexByte(pt, '/') > 0 { // slash identifies an import path
-	// 		return "bytes"
-	// 	}
-	// 	return pt
-	// }
-	// ts.FuncMap["SerializerCustomType"] = func(c *ddl.Column) string {
-	// 	pt := ts.toSerializerType(c, true)
-	// 	var buf strings.Builder
-	// 	if pt == "google.protobuf.Timestamp" {
-	// 		fmt.Fprint(&buf, ",(gogoproto.stdtime)=true")
-	// 	}
-	// 	if pt == "bytes" {
-	// 		return "" // bytes can be null
-	// 	}
-	// 	if c.IsNull() || strings.IndexByte(pt, '.') > 0 /*whenever it is a custom type like null. or google.proto.timestamp*/ {
-	// 		// Indeed nullable Go Types must be not-nullable in HasSerializer because we
-	// 		// have a non-pointer struct type which contains the field Valid.
-	// 		// HasSerializer treats nullable fields as pointer fields, but that is
-	// 		// ridiculous.
-	// 		fmt.Fprint(&buf, ",(gogoproto.nullable)=false")
-	// 	}
-	// 	return buf.String()
-	// }
 
 	for _, t := range ts.Tables {
 		t.Package = ts.Package
@@ -717,39 +691,92 @@ func (ts *Generator) findUsedPackages(file []byte) ([]string, error) {
 	return ret, nil
 }
 
+// SerializerType converts the column type to the supported type of the current
+// serializer. For now supports only protobuf.
+func (ts *Generator) SerializerType(c *ddl.Column) string {
+	pt := ts.toSerializerType(c, true)
+	if strings.IndexByte(pt, '/') > 0 { // slash identifies an import path
+		return "bytes"
+	}
+	return pt
+}
+
+// SerializerCustomType switches the default type from function SerializerType
+// to the new type. For now supports only protobuf.
+func (ts *Generator) SerializerCustomType(c *ddl.Column) string {
+	pt := ts.toSerializerType(c, true)
+	var buf strings.Builder
+	if pt == "google.protobuf.Timestamp" {
+		fmt.Fprint(&buf, ",(gogoproto.stdtime)=true")
+	}
+	if pt == "bytes" {
+		return "" // bytes can be null
+	}
+	if c.IsNull() || strings.IndexByte(pt, '.') > 0 /*whenever it is a custom type like null. or google.proto.timestamp*/ {
+		// Indeed nullable Go Types must be not-nullable in HasSerializer because we
+		// have a non-pointer struct type which contains the field Valid.
+		// HasSerializer treats nullable fields as pointer fields, but that is
+		// ridiculous.
+		fmt.Fprint(&buf, ",(gogoproto.nullable)=false")
+	}
+	return buf.String()
+}
+
 // GenerateSerializer writes the protocol buffer specifications into `w` and its test
 // sources into wTest, if there are any tests.
 func (ts *Generator) GenerateSerializer(w io.Writer, wTest io.Writer) error {
 	switch ts.Serializer {
-	case "protobuf", "fbs":
-	// supported
+	case "protobuf":
+		if err := ts.generateProto(w); err != nil {
+			return errors.WithStack(err)
+		}
+	case "fbs":
+
 	case "", "default", "none":
 		return nil // do nothing
 	default:
 		return errors.NotAcceptable.Newf("[dmlgen] Serializer %q not supported.", ts.Serializer)
 	}
 
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
+	return nil
+}
 
-	// if !ts.DisableFileHeader {
-	// 	if err := ts.tpls.Funcs(ts.FuncMap).ExecuteTemplate(buf, ts.Serializer+"_10_header.go.tpl", ts); err != nil {
-	// 		return errors.WriteFailed.New(err, "[dmlgen] For file header")
-	// 	}
-	// }
-	//
-	// tableFileName := ts.Serializer + "_20_message.go.tpl"
-	// for _, tblName := range ts.sortedTableNames() {
-	// 	t := ts.Tables[tblName] // must panic if table name not found
-	// 	ts.FuncMap["IsFieldPublic"] = t.IsFieldPublic
-	// 	if t.HasSerializer {
-	// 		if err := t.writeTo(buf, ts.tpls.Lookup(tableFileName).Funcs(ts.FuncMap)); err != nil {
-	// 			return errors.WriteFailed.New(err, "[dmlgen] For Table %q", t.TableName)
-	// 		}
-	// 	}
-	// }
-	_, err := buf.WriteTo(w)
-	return err
+func (ts *Generator) generateProto(w io.Writer) error {
+	cg := codegen.NewProto(ts.Package)
+	cg.Pln(`import "github.com/gogo/protobuf/gogoproto/gogo.proto";`)
+	cg.Pln(`import "google/protobuf/timestamp.proto";`)
+	cg.Pln(`import "github.com/corestoreio/pkg/storage/null/null.proto";`)
+	cg.Pln(`option go_package = "` + ts.Package + `";`)
+	for _, o := range ts.SerializerHeaderOptions {
+		cg.Pln(`option ` + o + `;`)
+	}
+
+	for _, tblname := range ts.sortedTableNames() {
+		t := ts.Tables[tblname] // must panic if table name not found
+
+		cg.C(t.EntityName(), `represents a single row for DB table`, t.TableName, `. Auto generated.`)
+		cg.Pln(`message`, t.EntityName(), `{`)
+		{
+			cg.In()
+			t.Columns.Each(func(c *ddl.Column) {
+				if t.IsFieldPublic(c.Field) {
+					cg.Pln(ts.SerializerType(c), c.Field+`=`, c.Pos, `[(gogoproto.customname)=`+strconv.Quote(strs.ToGoCamelCase(c.Field)), ts.SerializerCustomType(c)+`];`)
+				}
+			})
+			cg.Out()
+		}
+		cg.Pln(`}`)
+
+		cg.C(t.CollectionName(), `represents multiple rows for DB table`, t.TableName, `. Auto generated.`)
+		cg.Pln(`message`, t.CollectionName(), `{`)
+		{
+			cg.In()
+			cg.Pln(`repeated`, t.EntityName(), `Data = 1;`)
+			cg.Out()
+		}
+		cg.Pln(`}`)
+	}
+	return cg.GenerateFile(w)
 }
 
 // GenerateGo writes the Go source code into `w` and the test code into wTest.
@@ -810,10 +837,10 @@ func (ts *Generator) GenerateGo(wMain io.Writer, wTest io.Writer) error {
 	testGen.AddImports(ts.ImportPathsTesting...)
 
 	if err := mainGen.GenerateFile(wMain); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	if err := testGen.GenerateFile(wTest); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	return nil
 }

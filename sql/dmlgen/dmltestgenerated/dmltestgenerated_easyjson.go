@@ -4,7 +4,6 @@ package dmltestgenerated
 
 import (
 	json "encoding/json"
-
 	easyjson "github.com/mailru/easyjson"
 	jlexer "github.com/mailru/easyjson/jlexer"
 	jwriter "github.com/mailru/easyjson/jwriter"
@@ -18,7 +17,7 @@ var (
 	_ easyjson.Marshaler
 )
 
-func easyjsonCa88ebebDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(in *jlexer.Lexer, out *DmlgenTypesCollection) {
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(in *jlexer.Lexer, out *DmlgenTypesCollection) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -78,7 +77,7 @@ func easyjsonCa88ebebDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(in *
 		in.Consumed()
 	}
 }
-func easyjsonCa88ebebEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(out *jwriter.Writer, in DmlgenTypesCollection) {
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(out *jwriter.Writer, in DmlgenTypesCollection) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -111,27 +110,27 @@ func easyjsonCa88ebebEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(out 
 // MarshalJSON supports json.Marshaler interface
 func (v DmlgenTypesCollection) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjsonCa88ebebEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(&w, v)
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v DmlgenTypesCollection) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjsonCa88ebebEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(w, v)
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *DmlgenTypesCollection) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjsonCa88ebebDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(&r, v)
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *DmlgenTypesCollection) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjsonCa88ebebDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(l, v)
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(l, v)
 }
-func easyjsonCa88ebebDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(in *jlexer.Lexer, out *DmlgenTypes) {
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(in *jlexer.Lexer, out *DmlgenTypes) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -302,7 +301,7 @@ func easyjsonCa88ebebDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(in 
 		in.Consumed()
 	}
 }
-func easyjsonCa88ebebEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(out *jwriter.Writer, in DmlgenTypes) {
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(out *jwriter.Writer, in DmlgenTypes) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -722,27 +721,27 @@ func easyjsonCa88ebebEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(out
 // MarshalJSON supports json.Marshaler interface
 func (v DmlgenTypes) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjsonCa88ebebEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(&w, v)
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v DmlgenTypes) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjsonCa88ebebEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(w, v)
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *DmlgenTypes) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjsonCa88ebebDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(&r, v)
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *DmlgenTypes) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjsonCa88ebebDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(l, v)
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(l, v)
 }
-func easyjsonCa88ebebDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(in *jlexer.Lexer, out *CoreConfigDataCollection) {
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(in *jlexer.Lexer, out *CoreConfigDataCollection) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -802,7 +801,7 @@ func easyjsonCa88ebebDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(in 
 		in.Consumed()
 	}
 }
-func easyjsonCa88ebebEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(out *jwriter.Writer, in CoreConfigDataCollection) {
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(out *jwriter.Writer, in CoreConfigDataCollection) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -835,27 +834,27 @@ func easyjsonCa88ebebEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(out
 // MarshalJSON supports json.Marshaler interface
 func (v CoreConfigDataCollection) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjsonCa88ebebEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(&w, v)
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v CoreConfigDataCollection) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjsonCa88ebebEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(w, v)
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *CoreConfigDataCollection) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjsonCa88ebebDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(&r, v)
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *CoreConfigDataCollection) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjsonCa88ebebDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(l, v)
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(l, v)
 }
-func easyjsonCa88ebebDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(in *jlexer.Lexer, out *CoreConfigData) {
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(in *jlexer.Lexer, out *CoreConfigData) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -908,7 +907,7 @@ func easyjsonCa88ebebDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(in 
 		in.Consumed()
 	}
 }
-func easyjsonCa88ebebEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(out *jwriter.Writer, in CoreConfigData) {
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(out *jwriter.Writer, in CoreConfigData) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -998,23 +997,23 @@ func easyjsonCa88ebebEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(out
 // MarshalJSON supports json.Marshaler interface
 func (v CoreConfigData) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjsonCa88ebebEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(&w, v)
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v CoreConfigData) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjsonCa88ebebEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(w, v)
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *CoreConfigData) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjsonCa88ebebDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(&r, v)
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *CoreConfigData) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjsonCa88ebebDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(l, v)
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(l, v)
 }
