@@ -86,15 +86,15 @@ func writeFile(t *testing.T, outFile string, wFn func(io.Writer, io.Writer) erro
 
 }
 
-// TestGenerate_Tables_Protobuf_Json writes a Go and Proto file to the dmltestgenerated
-// directory for manual review for different tables. This test also analyzes the
-// foreign keys pointing to customer_entity.
-func TestGenerate_Tables_Protobuf_Json(t *testing.T) {
+// TestNewGenerator_Protobuf_Json writes a Go and Proto file to the
+// dmltestgenerated directory for manual review for different tables. This test
+// also analyzes the foreign keys pointing to customer_entity.
+func TestNewGenerator_Protobuf_Json(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
 
-	// defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil)()
-	dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil)
+	defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil).Deferred()
+	// dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil)
 
 	ctx := context.Background()
 	ts, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated",
@@ -372,4 +372,40 @@ func TestWithUniquifiedColumns(t *testing.T) {
 		assert.Nil(t, tbls)
 		assert.ErrorIsKind(t, errors.NotFound, err)
 	})
+}
+
+func TestNewGenerator_NoDB(t *testing.T) {
+	db := dmltest.MustConnectDB(t)
+	defer dmltest.Close(t, db)
+
+	defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil).Deferred()
+	// dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil)
+
+	ctx := context.Background()
+	ts, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated2",
+
+		dmlgen.WithTablesFromDB(ctx, db,
+			"core_config_data", "sales_order_status_state", "view_customer_auto_increment",
+		),
+
+		dmlgen.WithTableConfigDefault(dmlgen.TableConfig{
+			Encoders:        []string{"json", "protobuf"},
+			StructTags:      []string{"max_len"},
+			FeaturesExclude: dmlgen.FeatureDB | dmlgen.FeatureCollectionUniquifiedGetters,
+		}),
+
+		dmlgen.WithTableConfig("view_customer_auto_increment", &dmlgen.TableConfig{
+			StructTags:      []string{"yaml"},
+			FeaturesInclude: dmlgen.FeatureCollectionFilter | dmlgen.FeatureCollectionEach,
+		}),
+	)
+	assert.NoError(t, err)
+
+	ts.ImportPathsTesting = append(ts.ImportPathsTesting, "fmt") // only needed for pseudo functional options.
+	ts.TestSQLDumpGlobPath = "../testdata/test_*_tables.sql"
+
+	writeFile(t, "dmltestgenerated2/xno_features_gen.go", ts.GenerateGo)
+
+	// assert.NoError(t, dmlgen.GenerateProto("./dmltestgenerated"))
+	// assert.NoError(t, dmlgen.GenerateJSON("./dmltestgenerated", nil))
 }

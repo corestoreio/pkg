@@ -17,9 +17,122 @@ import (
 	"time"
 )
 
-const ()
-
-func TestNewTables(t *testing.T) {
+func TestNewTablesNonDB(t *testing.T) {
+	ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de", FloatMaxDecimals: 6})
+	t.Run("CatalogProductIndexEAVDecimalIDX_Empty", func(t *testing.T) {
+		e := new(CatalogProductIndexEAVDecimalIDX)
+		assert.NoError(t, ps.FakeData(e))
+		e.Empty()
+		assert.Exactly(t, *e, CatalogProductIndexEAVDecimalIDX{})
+	})
+	t.Run("CatalogProductIndexEAVDecimalIDX_Copy", func(t *testing.T) {
+		e := new(CatalogProductIndexEAVDecimalIDX)
+		assert.NoError(t, ps.FakeData(e))
+		e2 := e.Copy()
+		assert.Exactly(t, e, e2)
+		assert.NoError(t, ps.FakeData(e))
+		assert.NotEqual(t, e, e2)
+	})
+	t.Run("CoreConfigData_Empty", func(t *testing.T) {
+		e := new(CoreConfigData)
+		assert.NoError(t, ps.FakeData(e))
+		e.Empty()
+		assert.Exactly(t, *e, CoreConfigData{})
+	})
+	t.Run("CoreConfigData_Copy", func(t *testing.T) {
+		e := new(CoreConfigData)
+		assert.NoError(t, ps.FakeData(e))
+		e2 := e.Copy()
+		assert.Exactly(t, e, e2)
+		assert.NoError(t, ps.FakeData(e))
+		assert.NotEqual(t, e, e2)
+	})
+	t.Run("CustomerAddressEntity_Empty", func(t *testing.T) {
+		e := new(CustomerAddressEntity)
+		assert.NoError(t, ps.FakeData(e))
+		e.Empty()
+		assert.Exactly(t, *e, CustomerAddressEntity{})
+	})
+	t.Run("CustomerAddressEntity_Copy", func(t *testing.T) {
+		e := new(CustomerAddressEntity)
+		assert.NoError(t, ps.FakeData(e))
+		e2 := e.Copy()
+		assert.Exactly(t, e, e2)
+		assert.NoError(t, ps.FakeData(e))
+		assert.NotEqual(t, e, e2)
+	})
+	t.Run("CustomerEntity_Empty", func(t *testing.T) {
+		e := new(CustomerEntity)
+		assert.NoError(t, ps.FakeData(e))
+		e.Empty()
+		assert.Exactly(t, *e, CustomerEntity{})
+	})
+	t.Run("CustomerEntity_Copy", func(t *testing.T) {
+		e := new(CustomerEntity)
+		assert.NoError(t, ps.FakeData(e))
+		e2 := e.Copy()
+		assert.Exactly(t, e, e2)
+		assert.NoError(t, ps.FakeData(e))
+		assert.NotEqual(t, e, e2)
+	})
+	t.Run("DmlgenTypes_Empty", func(t *testing.T) {
+		e := new(DmlgenTypes)
+		assert.NoError(t, ps.FakeData(e))
+		e.Empty()
+		assert.Exactly(t, *e, DmlgenTypes{})
+	})
+	t.Run("DmlgenTypes_Copy", func(t *testing.T) {
+		e := new(DmlgenTypes)
+		assert.NoError(t, ps.FakeData(e))
+		e2 := e.Copy()
+		assert.Exactly(t, e, e2)
+		assert.NoError(t, ps.FakeData(e))
+		assert.NotEqual(t, e, e2)
+	})
+	t.Run("SalesOrderStatusState_Empty", func(t *testing.T) {
+		e := new(SalesOrderStatusState)
+		assert.NoError(t, ps.FakeData(e))
+		e.Empty()
+		assert.Exactly(t, *e, SalesOrderStatusState{})
+	})
+	t.Run("SalesOrderStatusState_Copy", func(t *testing.T) {
+		e := new(SalesOrderStatusState)
+		assert.NoError(t, ps.FakeData(e))
+		e2 := e.Copy()
+		assert.Exactly(t, e, e2)
+		assert.NoError(t, ps.FakeData(e))
+		assert.NotEqual(t, e, e2)
+	})
+	t.Run("ViewCustomerAutoIncrement_Empty", func(t *testing.T) {
+		e := new(ViewCustomerAutoIncrement)
+		assert.NoError(t, ps.FakeData(e))
+		e.Empty()
+		assert.Exactly(t, *e, ViewCustomerAutoIncrement{})
+	})
+	t.Run("ViewCustomerAutoIncrement_Copy", func(t *testing.T) {
+		e := new(ViewCustomerAutoIncrement)
+		assert.NoError(t, ps.FakeData(e))
+		e2 := e.Copy()
+		assert.Exactly(t, e, e2)
+		assert.NoError(t, ps.FakeData(e))
+		assert.NotEqual(t, e, e2)
+	})
+	t.Run("ViewCustomerNoAutoIncrement_Empty", func(t *testing.T) {
+		e := new(ViewCustomerNoAutoIncrement)
+		assert.NoError(t, ps.FakeData(e))
+		e.Empty()
+		assert.Exactly(t, *e, ViewCustomerNoAutoIncrement{})
+	})
+	t.Run("ViewCustomerNoAutoIncrement_Copy", func(t *testing.T) {
+		e := new(ViewCustomerNoAutoIncrement)
+		assert.NoError(t, ps.FakeData(e))
+		e2 := e.Copy()
+		assert.Exactly(t, e, e2)
+		assert.NoError(t, ps.FakeData(e))
+		assert.NotEqual(t, e, e2)
+	})
+}
+func TestNewTablesDB(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
 	defer dmltest.SQLDumpLoad(t, "../testdata/test_*_tables.sql", &dmltest.SQLDumpOptions{

@@ -67,7 +67,9 @@ type Table struct {
 	HasSerializer        bool // writes the .proto file if true
 
 	// PrivateFields key=snake case name of the DB column, value=true, the field must be private
-	privateFields map[string]bool
+	privateFields   map[string]bool
+	featuresInclude FeatureToggle
+	featuresExclude FeatureToggle
 }
 
 func (t *Table) IsFieldPublic(dbColumnName string) bool {
@@ -97,7 +99,7 @@ func (t *Table) EntityName() string {
 }
 
 func (t *Table) collectionStruct(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(FeatureCollectionStruct) {
+	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionStruct) {
 		return
 	}
 
@@ -142,7 +144,7 @@ func (t *Table) collectionStruct(mainGen *codegen.Go, ts *Generator) {
 }
 
 func (t *Table) entityStruct(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(FeatureEntityStruct) {
+	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityStruct) {
 		return
 	}
 
@@ -178,7 +180,7 @@ func (t *Table) entityStruct(mainGen *codegen.Go, ts *Generator) {
 }
 
 func (t *Table) fnEntityGetSetPrivateFields(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(FeatureEntityGetSetPrivateFields) {
+	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityGetSetPrivateFields) {
 		return
 	}
 	// Generates the Getter/Setter for private fields
@@ -207,7 +209,7 @@ func (t *Table) fnEntityGetSetPrivateFields(mainGen *codegen.Go, ts *Generator) 
 }
 
 func (t *Table) fnEntityEmpty(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(FeatureEntityEmpty) {
+	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityEmpty) {
 		return
 	}
 	mainGen.Pln(`// Empty empties all the fields of the current object. Also known as Reset.`)
@@ -216,7 +218,7 @@ func (t *Table) fnEntityEmpty(mainGen *codegen.Go, ts *Generator) {
 }
 
 func (t *Table) fnEntityCopy(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(FeatureEntityCopy) {
+	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityCopy) {
 		return
 	}
 	mainGen.Pln(`// Copy copies the struct and returns a new pointer`)
@@ -228,7 +230,7 @@ func (t *Table) fnEntityCopy(mainGen *codegen.Go, ts *Generator) {
 }
 
 func (t *Table) fnEntityWriteTo(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(FeatureEntityWriteTo) {
+	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityWriteTo) {
 		return
 	}
 	mainGen.C(`WriteTo implements io.WriterTo and writes the field names and their values to w.`,
@@ -255,7 +257,7 @@ func (t *Table) fnEntityWriteTo(mainGen *codegen.Go, ts *Generator) {
 }
 
 func (t *Table) fnCollectionWriteTo(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(FeatureEntityWriteTo) {
+	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityWriteTo) {
 		return
 	}
 
@@ -275,7 +277,7 @@ func (t *Table) fnCollectionWriteTo(mainGen *codegen.Go, ts *Generator) {
 }
 
 func (t *Table) fnEntityDBMapColumns(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(FeatureEntityDBMapColumns | FeatureDB) {
+	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityDBMapColumns|FeatureDB) {
 		return
 	}
 	mainGen.C(`MapColumns implements interface ColumnMapper only partially. Auto generated.`)
@@ -340,7 +342,7 @@ func (t *Table) hasPKAutoInc() bool {
 }
 
 func (t *Table) fnEntityDBAssignLastInsertID(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(FeatureEntityDBAssignLastInsertID | FeatureDB) {
+	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityDBAssignLastInsertID|FeatureDB) {
 		return
 	}
 	if !t.hasPKAutoInc() {
@@ -363,7 +365,7 @@ func (t *Table) fnEntityDBAssignLastInsertID(mainGen *codegen.Go, ts *Generator)
 }
 
 func (t *Table) fnCollectionDBAssignLastInsertID(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(FeatureEntityDBAssignLastInsertID | FeatureDB) {
+	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityDBAssignLastInsertID|FeatureDB) {
 		return
 	}
 	if !t.hasPKAutoInc() {
@@ -389,7 +391,7 @@ func (t *Table) fnCollectionDBAssignLastInsertID(mainGen *codegen.Go, ts *Genera
 }
 
 func (t *Table) fnCollectionUniqueGetters(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(FeatureCollectionUniqueGetters) {
+	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionUniqueGetters) {
 		return
 	}
 
@@ -425,7 +427,7 @@ func (t *Table) fnCollectionUniqueGetters(mainGen *codegen.Go, ts *Generator) {
 }
 
 func (t *Table) fnCollectionUniquifiedGetters(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(FeatureCollectionUniquifiedGetters) {
+	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionUniquifiedGetters) {
 		return
 	}
 	// Generates functions to return data with removed duplicates from any
@@ -471,7 +473,7 @@ func (t *Table) fnCollectionUniquifiedGetters(mainGen *codegen.Go, ts *Generator
 }
 
 func (t *Table) fnCollectionFilter(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(FeatureCollectionFilter) {
+	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionFilter) {
 		return
 	}
 	mainGen.C(`Filter filters the current slice by predicate f without memory allocation. Auto generated via dmlgen.`)
@@ -500,7 +502,7 @@ func (t *Table) fnCollectionFilter(mainGen *codegen.Go, ts *Generator) {
 }
 
 func (t *Table) fnCollectionEach(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(FeatureCollectionEach) {
+	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionEach) {
 		return
 	}
 	mainGen.C(`Each will run function f on all items in []*`, t.EntityName(), `. Auto generated via dmlgen.`)
@@ -517,7 +519,7 @@ func (t *Table) fnCollectionEach(mainGen *codegen.Go, ts *Generator) {
 }
 
 func (t *Table) fnCollectionCut(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(FeatureCollectionCut) {
+	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionCut) {
 		return
 	}
 
@@ -544,7 +546,7 @@ func (t *Table) fnCollectionCut(mainGen *codegen.Go, ts *Generator) {
 }
 
 func (t *Table) fnCollectionSwap(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(FeatureCollectionSwap) {
+	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionSwap) {
 		return
 	}
 	mainGen.C(`Swap will satisfy the sort.Interface. Auto generated via dmlgen.`)
@@ -552,7 +554,7 @@ func (t *Table) fnCollectionSwap(mainGen *codegen.Go, ts *Generator) {
 }
 
 func (t *Table) fnCollectionDelete(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(FeatureCollectionDelete) {
+	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionDelete) {
 		return
 	}
 
@@ -572,7 +574,7 @@ func (t *Table) fnCollectionDelete(mainGen *codegen.Go, ts *Generator) {
 }
 
 func (t *Table) fnCollectionInsert(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(FeatureCollectionInsert) {
+	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionInsert) {
 		return
 	}
 	mainGen.C(`Insert will place a new item at position i. Auto generated via dmlgen.`)
@@ -589,7 +591,7 @@ func (t *Table) fnCollectionInsert(mainGen *codegen.Go, ts *Generator) {
 }
 
 func (t *Table) fnCollectionAppend(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(FeatureCollectionAppend) {
+	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionAppend) {
 		return
 	}
 	mainGen.C(`Append will add a new item at the end of *`, t.CollectionName(), `. Auto generated via dmlgen.`)
@@ -602,7 +604,7 @@ func (t *Table) fnCollectionAppend(mainGen *codegen.Go, ts *Generator) {
 }
 
 func (t *Table) fnCollectionBinaryMarshaler(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(FeatureCollectionBinaryMarshaler) {
+	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionBinaryMarshaler) {
 		return
 	}
 
@@ -622,7 +624,7 @@ func (t *Table) fnCollectionBinaryMarshaler(mainGen *codegen.Go, ts *Generator) 
 }
 
 func (t *Table) fnCollectionDBMapColumns(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(FeatureCollectionDBMapColumns | FeatureDB) {
+	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionDBMapColumns|FeatureDB) {
 		return
 	}
 
@@ -691,7 +693,34 @@ func (t *Table) fnCollectionDBMapColumns(mainGen *codegen.Go, ts *Generator) {
 	mainGen.Pln(`}`) // end func MapColumns
 }
 
-func (t *Table) generateTest(testGen *codegen.Go) {
+func (t *Table) generateTestOther(testGen *codegen.Go, ts *Generator) {
+
+	if ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityEmpty) {
+		testGen.Pln(`t.Run("` + strs.ToGoCamelCase(t.TableName) + `_Empty", func(t *testing.T) {`)
+		{
+			testGen.Pln(`e:= new(`, t.EntityName(), `)`)
+			testGen.Pln(`assert.NoError(t, ps.FakeData(e))`)
+			testGen.Pln(`e.Empty()`)
+			testGen.Pln(`assert.Exactly(t, *e, `, t.EntityName(), `{})`)
+		}
+		testGen.Pln(`})`) // end t.Run
+	}
+	if ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityCopy) {
+		testGen.Pln(`t.Run("` + strs.ToGoCamelCase(t.TableName) + `_Copy", func(t *testing.T) {`)
+		{
+			testGen.Pln(`e:= new(`, t.EntityName(), `)`)
+			testGen.Pln(`assert.NoError(t, ps.FakeData(e))`)
+			testGen.Pln(`e2 := e.Copy()`)
+			testGen.Pln(`assert.Exactly(t, e, e2)`)
+			testGen.Pln(`assert.NoError(t, ps.FakeData(e))`)
+			testGen.Pln(`assert.NotEqual(t, e, e2)`)
+		}
+		testGen.Pln(`})`) // end t.Run
+	}
+	// more feature tests to follow
+}
+
+func (t *Table) generateTestDB(testGen *codegen.Go) {
 
 	testGen.Pln(`t.Run("` + strs.ToGoCamelCase(t.TableName) + `_Entity", func(t *testing.T) {`)
 	testGen.Pln(`tbl := tbls.MustTable(TableName`+strs.ToGoCamelCase(t.TableName), `)`)

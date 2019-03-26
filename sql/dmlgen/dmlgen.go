@@ -80,12 +80,10 @@ type Generator struct {
 	// containing the table schemas to run integration tests. If empty no dumps
 	// get loaded and the test program assumes that the tables already exists.
 	TestSQLDumpGlobPath string
-
+	defaultTableConfig  TableConfig
 	// customCode injects custom code to manipulate testing and other generate
 	// code blocks. A few implementations now but more can be added later.
-	customCode      map[string]func(*Generator, *Table, io.Writer)
-	featuresInclude FeatureToggle
-	featuresExclude FeatureToggle
+	customCode map[string]func(*Generator, *Table, io.Writer)
 }
 
 // Option represents a sortable option for the NewGenerator function. Each option
@@ -96,8 +94,9 @@ type Option struct {
 	fn        func(*Generator) error
 }
 
-// TableConfig used in conjunction with WithTableConfig to apply different
-// configurations for a generated struct and its struct collection.
+// TableConfig used in conjunction with WithTableConfig and
+// WithTableConfigDefault to apply different configurations for a generated
+// struct and its struct collection.
 type TableConfig struct {
 	// Encoders add method receivers for, each struct, compatible with the
 	// interface declarations in the various encoding packages. Supported
@@ -133,10 +132,13 @@ type TableConfig struct {
 	// accidentally leaking through encoders. Appropriate getter/setter methods
 	// get generated.
 	PrivateFields []string
-
-	// FeaturesInclude if set includes only those features, otherwise everything.
+	// FeaturesInclude if set includes only those features, otherwise
+	// everything. Some features can only be included on Default level and not
+	// on a per table level.
 	FeaturesInclude FeatureToggle
 	// FeaturesExclude excludes features while field FeaturesInclude is empty.
+	// Some features can only be excluded on Default level and not on a per
+	// table level.
 	FeaturesExclude FeatureToggle
 
 	lastErr error
@@ -302,6 +304,17 @@ func (to *TableConfig) applyUniquifiedColumns(t *Table) {
 	}
 }
 
+// WithTableConfigDefault sets for all tables the same configuration but can be
+// overwritten on a per table basis with function WithTableConfig.
+func WithTableConfigDefault(opt TableConfig) (o Option) {
+	o.sortOrder = 149 // must be applied before WithTableConfig
+	o.fn = func(ts *Generator) (err error) {
+		ts.defaultTableConfig = opt
+		return opt.lastErr
+	}
+	return
+}
+
 // WithTableConfig applies options to an existing table, identified by the table
 // name used as map key. Options are custom struct or different encoders.
 // Returns a not-found error if the table cannot be found in the `Generator` map.
@@ -323,8 +336,8 @@ func WithTableConfig(tableName string, opt *TableConfig) (o Option) {
 		opt.applyComments(t)
 		opt.applyColumnAliases(t)
 		opt.applyUniquifiedColumns(t)
-		ts.featuresInclude = opt.FeaturesInclude
-		ts.featuresExclude = opt.FeaturesExclude
+		t.featuresInclude = opt.FeaturesInclude
+		t.featuresExclude = opt.FeaturesExclude
 		return opt.lastErr
 	}
 	return
@@ -633,31 +646,28 @@ func NewGenerator(packageImportPath string, opts ...Option) (*Generator, error) 
 		}
 	}
 
-	// TODO remove this once Serializer are also working again
-	// ts.FuncMap["CustomCode"] = func(marker string) string { return ts.customCode[marker] }
-	// ts.FuncMap["GoCamel"] = strs.ToGoCamelCase // net_http->NetHTTP entity_id->EntityID
-	// ts.FuncMap["GoCamelMaybePrivate"] = func(s string) string { return s }
-	// ts.FuncMap["GoFuncNull"] = func(c *ddl.Column) string { return ts.mySQLToGoDmlColumnMap(c, true) }
-	// ts.FuncMap["GoFunc"] = func(c *ddl.Column) string { return ts.mySQLToGoDmlColumnMap(c, false) }
-	// ts.FuncMap["IsFieldPublic"] = func(string) bool { return false }
-	// ts.FuncMap["IsFieldPrivate"] = func(string) bool { return false }
-	// ts.FuncMap["GoPrimitiveNull"] = ts.toGoPrimitiveFromNull
-
 	for _, t := range ts.Tables {
 		t.Package = ts.Package
 	}
 	return ts, nil
 }
 
-func (ts *Generator) hasFeature(feature FeatureToggle) bool {
+func (ts *Generator) hasFeature(tableInclude, tableExclude, feature FeatureToggle) bool {
+	if tableInclude == 0 {
+		tableInclude = ts.defaultTableConfig.FeaturesInclude
+	}
+	if tableExclude == 0 {
+		tableExclude = ts.defaultTableConfig.FeaturesExclude
+	}
+
 	switch {
-	case ts.featuresInclude == 0 && ts.featuresExclude == 0:
+	case tableInclude == 0 && tableExclude == 0:
 		return true
-	case ts.featuresInclude > 0 && (ts.featuresInclude&feature) != 0 && ts.featuresExclude == 0:
+	case tableInclude > 0 && (tableInclude&feature) != 0 && tableExclude == 0:
 		return true
-	case ts.featuresInclude == 0 && ts.featuresExclude > 0 && (ts.featuresExclude&feature) != 0:
+	case tableInclude == 0 && tableExclude > 0 && (tableExclude&feature) != 0:
 		return false
-	case ts.featuresInclude == 0 && ts.featuresExclude > 0 && (ts.featuresExclude&feature) == 0:
+	case tableInclude == 0 && tableExclude > 0 && (tableExclude&feature) == 0:
 		return true
 	default:
 		return false
@@ -794,7 +804,8 @@ func (ts *Generator) GenerateGo(wMain io.Writer, wTest io.Writer) error {
 	}
 
 	ts.fnDBNewTables(mainGen)
-	ts.fnDBTestMain(testGen, tables)
+	ts.fnTestMainOther(testGen, tables)
+	ts.fnTestMainDB(testGen, tables)
 
 	// deal with random map to guarantee the persistent code generation.
 	for _, t := range tables {
@@ -850,6 +861,10 @@ func (ts *Generator) goType(c *ddl.Column) string     { return ts.mySQLToGoType(
 func (ts *Generator) goFuncNull(c *ddl.Column) string { return ts.mySQLToGoDmlColumnMap(c, true) }
 
 func (ts *Generator) fnDBNewTables(mainGen *codegen.Go) {
+	if !ts.hasFeature(0, 0, FeatureDB) {
+		return
+	}
+
 	var tableNames []string
 	var tableCreateStmt []string
 	for _, tblname := range ts.sortedTableNames() {
@@ -876,9 +891,26 @@ func (ts *Generator) fnDBNewTables(mainGen *codegen.Go) {
 	mainGen.Pln(`); err != nil { return nil, errors.WithStack(err); }; return tm, nil; }`)
 }
 
-func (ts *Generator) fnDBTestMain(testGen *codegen.Go, tables []*Table) {
+func (ts *Generator) fnTestMainOther(testGen *codegen.Go, tables []*Table) {
 	// Test Header
-	testGen.Pln(`func TestNewTables(t *testing.T) {`)
+	testGen.Pln(`func TestNewTablesNonDB(t *testing.T) {`)
+	{
+		testGen.Pln(`ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de",FloatMaxDecimals:6})`)
+
+		for _, t := range tables {
+			t.generateTestOther(testGen, ts)
+		} // end for tables
+	}
+	testGen.Pln(`}`) // end TestNewTables
+}
+
+func (ts *Generator) fnTestMainDB(testGen *codegen.Go, tables []*Table) {
+	if !ts.hasFeature(0, 0, FeatureDB) {
+		return
+	}
+
+	// Test Header
+	testGen.Pln(`func TestNewTablesDB(t *testing.T) {`)
 	{
 		testGen.Pln(`db := dmltest.MustConnectDB(t)`)
 		testGen.Pln(`defer dmltest.Close(t, db)`)
@@ -917,7 +949,7 @@ func (ts *Generator) fnDBTestMain(testGen *codegen.Go, tables []*Table) {
 		testGen.Pln(`)`)
 
 		for _, t := range tables {
-			t.generateTest(testGen)
+			t.generateTestDB(testGen)
 		} // end for tables
 	}
 	testGen.Pln(`}`) // end TestNewTables
