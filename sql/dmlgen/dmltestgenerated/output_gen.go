@@ -7,12 +7,13 @@ package dmltestgenerated
 import (
 	"context"
 	"fmt"
+	"io"
+	"time"
+
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/storage/null"
-	"io"
-	"time"
 )
 
 const (

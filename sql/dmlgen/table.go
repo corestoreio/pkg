@@ -61,8 +61,8 @@ type Table struct {
 	// the target Go collection type.
 	ReferencedCollections []string
 
-	HasJsonMarshaler     bool
-	HasEasyJsonMarshaler bool
+	HasJSONMarshaler     bool
+	HasEasyJSONMarshaler bool
 	HasBinaryMarshaler   bool
 	HasSerializer        bool // writes the .proto file if true
 
@@ -108,7 +108,7 @@ func (t *Table) collectionStruct(mainGen *codegen.Go, ts *Generator) {
 	if t.Comment != "" {
 		mainGen.C(t.Comment)
 	}
-	if t.HasEasyJsonMarshaler {
+	if t.HasEasyJSONMarshaler {
 		mainGen.Pln(`//easyjson:json`) // do not use C() because it adds a whitespace between "//" and "e"
 	}
 	mainGen.Pln(`type `, t.CollectionName(), ` struct {`)
@@ -152,7 +152,7 @@ func (t *Table) entityStruct(mainGen *codegen.Go, ts *Generator) {
 	if t.Comment != "" {
 		mainGen.C(t.Comment)
 	}
-	if t.HasEasyJsonMarshaler {
+	if t.HasEasyJSONMarshaler {
 		mainGen.Pln(`//easyjson:json`)
 	}
 
@@ -185,26 +185,28 @@ func (t *Table) fnEntityGetSetPrivateFields(mainGen *codegen.Go, ts *Generator) 
 	}
 	// Generates the Getter/Setter for private fields
 	for _, c := range t.Columns {
-		if t.IsFieldPrivate(c.Field) {
-			mainGen.C(`Set`, strs.ToGoCamelCase(c.Field), ` sets the data for a private and security sensitive field.`)
-			mainGen.Pln(`func (e *`, t.EntityName(), `) Set`+strs.ToGoCamelCase(c.Field), `(d `, ts.goTypeNull(c), `) *`, t.EntityName(), ` {`)
-			{
-				mainGen.In()
-				mainGen.Pln(`e.`, t.GoCamelMaybePrivate(c.Field), ` = d`)
-				mainGen.Pln(`return e`)
-				mainGen.Out()
-			}
-			mainGen.Pln(`}`)
-
-			mainGen.C(`Get`, strs.ToGoCamelCase(c.Field), ` returns the data from a private and security sensitive field.`)
-			mainGen.Pln(`func (e *`, t.EntityName(), `) Get`+strs.ToGoCamelCase(c.Field), `() `, ts.goTypeNull(c), `{`)
-			{
-				mainGen.In()
-				mainGen.Pln(`return e.`, t.GoCamelMaybePrivate(c.Field))
-				mainGen.Out()
-			}
-			mainGen.Pln(`}`)
+		if !t.IsFieldPrivate(c.Field) {
+			continue
 		}
+		mainGen.C(`Set`, strs.ToGoCamelCase(c.Field), ` sets the data for a private and security sensitive field.`)
+		mainGen.Pln(`func (e *`, t.EntityName(), `) Set`+strs.ToGoCamelCase(c.Field), `(d `, ts.goTypeNull(c), `) *`, t.EntityName(), ` {`)
+		{
+			mainGen.In()
+			mainGen.Pln(`e.`, t.GoCamelMaybePrivate(c.Field), ` = d`)
+			mainGen.Pln(`return e`)
+			mainGen.Out()
+		}
+		mainGen.Pln(`}`)
+
+		mainGen.C(`Get`, strs.ToGoCamelCase(c.Field), ` returns the data from a private and security sensitive field.`)
+		mainGen.Pln(`func (e *`, t.EntityName(), `) Get`+strs.ToGoCamelCase(c.Field), `() `, ts.goTypeNull(c), `{`)
+		{
+			mainGen.In()
+			mainGen.Pln(`return e.`, t.GoCamelMaybePrivate(c.Field))
+			mainGen.Out()
+		}
+		mainGen.Pln(`}`)
+
 	}
 }
 
@@ -306,7 +308,6 @@ func (t *Table) fnEntityDBMapColumns(mainGen *codegen.Go, ts *Generator) {
 			{
 				mainGen.In()
 				t.Columns.Each(func(c *ddl.Column) {
-					// mainGen.Pln(`case "` + c.Field + `"{{range .Aliases}},"{{.}}"{{end}}:`)
 					mainGen.P(`case`, strconv.Quote(c.Field))
 					for _, a := range c.Aliases {
 						mainGen.P(`,`, strconv.Quote(a))

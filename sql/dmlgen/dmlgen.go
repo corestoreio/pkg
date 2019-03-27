@@ -144,13 +144,13 @@ type TableConfig struct {
 	lastErr error
 }
 
-func (to *TableConfig) applyEncoders(ts *Generator, t *Table) {
+func (to *TableConfig) applyEncoders(t *Table) {
 	for i := 0; i < len(to.Encoders) && to.lastErr == nil; i++ {
 		switch enc := to.Encoders[i]; enc {
 		case "json":
-			t.HasJsonMarshaler = true // for now does nothing
+			t.HasJSONMarshaler = true // for now does nothing
 		case "easyjson":
-			t.HasEasyJsonMarshaler = true
+			t.HasEasyJSONMarshaler = true
 		case "binary":
 			t.HasBinaryMarshaler = true
 		case "protobuf", "fbs":
@@ -224,7 +224,7 @@ func (to *TableConfig) applyStructTags(t *Table) {
 }
 
 func (to *TableConfig) applyCustomStructTags(t *Table) {
-	for i := 0; i < len(to.CustomStructTags) && to.lastErr == nil; i = i + 2 {
+	for i := 0; i < len(to.CustomStructTags) && to.lastErr == nil; i += 2 {
 		found := false
 		for _, c := range t.Columns {
 			if c.Field == to.CustomStructTags[i] {
@@ -292,7 +292,7 @@ func (to *TableConfig) applyUniquifiedColumns(t *Table) {
 		cn := to.UniquifiedColumns[i]
 		found := false
 		for _, c := range t.Columns {
-			if c.Field == cn && false == c.IsBlobDataType() {
+			if c.Field == cn && !c.IsBlobDataType() {
 				c.Uniquified = true
 				found = true
 			}
@@ -312,7 +312,7 @@ func WithTableConfigDefault(opt TableConfig) (o Option) {
 		ts.defaultTableConfig = opt
 		return opt.lastErr
 	}
-	return
+	return o
 }
 
 // WithTableConfig applies options to an existing table, identified by the table
@@ -329,7 +329,7 @@ func WithTableConfig(tableName string, opt *TableConfig) (o Option) {
 		if t == nil || !ok {
 			return errors.NotFound.Newf("[dmlgen] WithTableConfig: Table %q not found.", tableName)
 		}
-		opt.applyEncoders(ts, t)
+		opt.applyEncoders(t)
 		opt.applyStructTags(t)
 		opt.applyCustomStructTags(t)
 		opt.applyPrivateFields(t)
@@ -340,7 +340,7 @@ func WithTableConfig(tableName string, opt *TableConfig) (o Option) {
 		t.featuresExclude = opt.FeaturesExclude
 		return opt.lastErr
 	}
-	return
+	return o
 }
 
 // WithColumnAliasesFromForeignKeys extracts similar column names from foreign
@@ -383,10 +383,10 @@ func WithColumnAliasesFromForeignKeys(ctx context.Context, db dml.Querier) (opt 
 		}
 		return nil
 	}
-	return
+	return opt
 }
 
-// WithReferenceEntitiesByForeignKeys analyses the foreign keys which points to
+// WithReferenceEntitiesByForeignKeys analyzes the foreign keys which points to
 // a table and adds them as a struct field name. For example:
 // customer_address_entity.parent_id is a foreign key to
 // customer_entity.entity_id hence the generated struct CustomerEntity has a new
@@ -408,7 +408,7 @@ func WithReferenceEntitiesByForeignKeys(ctx context.Context, db dml.Querier, str
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		for _, kcuc := range tblFks { // kcuc = keyColumnUsageCollection
+		for _, kcuc := range tblFks { // kcuc short for keyColumnUsageCollection
 			for _, kcuce := range kcuc.Data {
 				if kcuce.ReferencedTableName.Valid {
 					t := ts.Tables[kcuce.ReferencedTableName.String]
@@ -419,7 +419,7 @@ func WithReferenceEntitiesByForeignKeys(ctx context.Context, db dml.Querier, str
 		}
 		return nil
 	}
-	return
+	return opt
 }
 
 // WithTable sets a table and its columns. Allows to overwrite a table fetched
@@ -465,7 +465,7 @@ func WithTable(tableName string, columns ddl.Columns, options ...string) (opt Op
 		ts.Tables[tableName] = t
 		return nil
 	}
-	return
+	return opt
 }
 
 // WithTablesFromDB queries the information_schema table and loads the column
@@ -506,7 +506,7 @@ func WithTablesFromDB(ctx context.Context, db *dml.ConnPool, tables ...string) (
 		}
 		return nil
 	}
-	return
+	return opt
 }
 
 // WithProtobuf enables protocol buffers as a serialization method. Argument
@@ -527,7 +527,7 @@ func WithProtobuf(headerOptions ...string) (opt Option) {
 		}
 		return nil
 	}
-	return
+	return opt
 }
 
 // WithFlatbuffers enables flatbuffers (FBS) as a serialization method. Argument
@@ -536,13 +536,13 @@ func WithFlatbuffers(headerOptions ...string) (opt Option) {
 	opt.sortOrder = 111
 	opt.fn = func(ts *Generator) error {
 		ts.Serializer = "fbs"
-		if len(headerOptions) == 0 {
-			// TODO find sane defaults
-			// ts.SerializerHeaderOptions = []string{}
-		}
+		// if len(headerOptions) == 0 {
+		// TODO find sane defaults
+		// ts.SerializerHeaderOptions = []string{}
+		// }
 		return nil
 	}
-	return
+	return opt
 }
 
 // WithBuildTags adds your build tags to the file header. Each argument
@@ -553,7 +553,7 @@ func WithBuildTags(lines ...string) (opt Option) {
 		ts.BuildTags = append(ts.BuildTags, lines...)
 		return nil
 	}
-	return
+	return opt
 }
 
 // WithCustomCode inserts at the marker position your custom Go code. For
@@ -572,7 +572,7 @@ func WithCustomCode(marker, code string) (opt Option) {
 		}
 		return nil
 	}
-	return
+	return opt
 }
 
 // WithCustomCodeFunc same as WithCustomCode but allows access to meta data. The
@@ -589,7 +589,7 @@ func WithCustomCodeFunc(marker string, fn func(g *Generator, t *Table, w io.Writ
 		ts.customCode[marker] = fn
 		return nil
 	}
-	return
+	return opt
 }
 
 func (ts *Generator) sortedTableNames() []string {
@@ -683,8 +683,7 @@ func (ts *Generator) findUsedPackages(file []byte) ([]string, error) {
 	}
 	idents := map[string]struct{}{}
 	ast.Inspect(af, func(n ast.Node) bool {
-		switch nt := n.(type) {
-		case *ast.Ident:
+		if nt, ok := n.(*ast.Ident); ok {
 			idents[nt.Name] = struct{}{} // will contain too much info
 			// we only need to know: pkg.TYPE
 		}
@@ -734,10 +733,10 @@ func (ts *Generator) SerializerCustomType(c *ddl.Column) string {
 
 // GenerateSerializer writes the protocol buffer specifications into `w` and its test
 // sources into wTest, if there are any tests.
-func (ts *Generator) GenerateSerializer(w io.Writer, wTest io.Writer) error {
+func (ts *Generator) GenerateSerializer(wMain, wTest io.Writer) error {
 	switch ts.Serializer {
 	case "protobuf":
-		if err := ts.generateProto(w); err != nil {
+		if err := ts.generateProto(wMain); err != nil {
 			return errors.WithStack(err)
 		}
 	case "fbs":
@@ -790,7 +789,7 @@ func (ts *Generator) generateProto(w io.Writer) error {
 }
 
 // GenerateGo writes the Go source code into `w` and the test code into wTest.
-func (ts *Generator) GenerateGo(wMain io.Writer, wTest io.Writer) error {
+func (ts *Generator) GenerateGo(wMain, wTest io.Writer) error {
 
 	mainGen := codegen.NewGo(ts.Package)
 	testGen := codegen.NewGo(ts.Package)
@@ -840,7 +839,7 @@ func (ts *Generator) GenerateGo(wMain io.Writer, wTest io.Writer) error {
 	// now figure out all used package names in the buffer.
 	pkgs, err := ts.findUsedPackages(mainGen.Bytes())
 	if err != nil {
-		wMain.Write(mainGen.Bytes()) // write for debug reasons
+		_, _ = wMain.Write(mainGen.Bytes()) // write for debug reasons
 		return errors.WithStack(err)
 	}
 	mainGen.AddImports(pkgs...)
@@ -1022,7 +1021,7 @@ func GenerateJSON(fname string, g *bootstrap.Generator) (err error) {
 		return err
 	}
 
-	p := parser.Parser{}
+	p := new(parser.Parser)
 	if err := p.Parse(fname, fInfo.IsDir()); err != nil {
 		return errors.CorruptData.Newf("[dmlgen] Error parsing failed %v: %v", fname, err)
 	}
@@ -1032,7 +1031,7 @@ func GenerateJSON(fname string, g *bootstrap.Generator) (err error) {
 		outName = filepath.Join(fname, p.PkgName+"_easyjson.go")
 	} else {
 		if s := strings.TrimSuffix(fname, ".go"); s == fname {
-			return errors.New("Filename must end in '.go'")
+			return errors.NotAcceptable.Newf("[dmlgen] GenerateJSON: Filename must end in '.go'")
 		} else {
 			outName = s + "_easyjson.go"
 		}

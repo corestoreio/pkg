@@ -7,14 +7,15 @@ package dmltestgenerated
 import (
 	"context"
 	"fmt"
+	"sort"
+	"testing"
+	"time"
+
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/pseudo"
-	"sort"
-	"testing"
-	"time"
 )
 
 func TestNewTablesNonDB(t *testing.T) {

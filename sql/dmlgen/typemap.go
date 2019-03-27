@@ -445,8 +445,7 @@ func (ts *Generator) toGoPrimitiveFromNull(c *ddl.Column) string {
 func (ts *Generator) mySQLToGoDmlColumnMap(c *ddl.Column, withNull bool) string {
 
 	gt := ts.mySQLToGoType(c, withNull)
-	switch gt {
-	case "[]byte":
+	if gt == "[]byte" {
 		return "Byte"
 	}
 
