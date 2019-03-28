@@ -1,4 +1,4 @@
-CREATE TABLE `core_config_data` (
+CREATE TABLE `core_configuration` (
   `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'ID',
   `scope` varchar(8) NOT NULL DEFAULT 'default' COMMENT 'Scope',
   `scope_id` int(11) NOT NULL DEFAULT 0 COMMENT 'Scope ID',

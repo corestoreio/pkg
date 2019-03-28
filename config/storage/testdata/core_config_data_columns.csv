@@ -1,6 +1,0 @@
-"TABLE_NAME","COLUMN_NAME","ORDINAL_POSITION","COLUMN_DEFAULT","IS_NULLABLE","DATA_TYPE","CHARACTER_MAXIMUM_LENGTH","NUMERIC_PRECISION","NUMERIC_SCALE","COLUMN_TYPE","COLUMN_KEY","EXTRA","COLUMN_COMMENT"
-"core_config_data","config_id",1,NULL,"NO","int",NULL,10,0,"int(10) unsigned","PRI","auto_increment","Config Id"
-"core_config_data","scope",2,"default","NO","varchar",8,NULL,NULL,"varchar(8)","MUL","","Config Scope"
-"core_config_data","scope_id",3,0,"NO","int",NULL,10,0,"int(11)","","","Config Scope Id"
-"core_config_data","path",4,"general","NO","varchar",255,NULL,NULL,"varchar(255)","","","Config Path"
-"core_config_data","value",5,NULL,"YES","text",65535,NULL,NULL,"text","","","Config Value"

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build etcdv3
+// +build csall etcdv3
 
 // build tag above: for some reason it cannot be added build tag "csall" because
 // when running in parent directory `config` the command:`$ go test -tags csall

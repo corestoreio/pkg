@@ -33,7 +33,7 @@ type bcStorage struct {
 // Bigcache delivers under high concurrent and parallel load better results than
 // a simple key value mutex protected map.
 //
-// Maybe implements synchronization with MySQL core_config_data table. Converts
+// Maybe implements synchronization with MySQL core_configuration table. Converts
 // all values to byte slices.
 func NewBigCache(config bigcache.Config) (config.Storager, error) {
 	bc, err := bigcache.NewBigCache(config)

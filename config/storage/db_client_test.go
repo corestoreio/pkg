@@ -80,7 +80,7 @@ func TestService_AllKeys_Mocked(t *testing.T) {
 	t.Run("no leaking goroutines", func(t *testing.T) {
 
 		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS").WithArgs().WillReturnRows(
-			dmltest.MustMockRows(dmltest.WithFile("testdata", "core_config_data_columns.csv")),
+			dmltest.MustMockRows(dmltest.WithFile("testdata", "core_configuration_columns.csv")),
 		)
 
 		dbs, err := storage.NewDB(mustNewTables(context.TODO(), ddl.WithConnPool(dbc)), storage.DBOptions{
@@ -106,7 +106,7 @@ func TestService_Get(t *testing.T) {
 
 	testBody := func(t *testing.T, dbs *storage.DB, dbMock sqlmock.Sqlmock, sleep time.Duration) {
 
-		prepSel := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `value` FROM `core_config_data` AS `main_table` WHERE (`scope` = ?) AND (`scope_id` = ?) AND (`path` = ?)"))
+		prepSel := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `value` FROM `core_configuration` AS `main_table` WHERE (`scope` = ?) AND (`scope_id` = ?) AND (`path` = ?)"))
 		for _, test := range serviceMultiTests {
 			scp, sID := test.scopeID.Unpack()
 			prepSel.ExpectQuery().WithArgs(scp.StrType(), sID, test.path).WillReturnRows(sqlmock.NewRows([]string{"value"}))
@@ -119,7 +119,7 @@ func TestService_Get(t *testing.T) {
 
 		if sleep > 0 {
 			time.Sleep(sleep)
-			prepSel = dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `value` FROM `core_config_data` AS `main_table` WHERE (`scope` = ?) AND (`scope_id` = ?) AND (`path` = ?)"))
+			prepSel = dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `value` FROM `core_configuration` AS `main_table` WHERE (`scope` = ?) AND (`scope_id` = ?) AND (`path` = ?)"))
 		}
 
 		for _, test := range serviceMultiTests {
@@ -139,7 +139,7 @@ func TestService_Get(t *testing.T) {
 		dbMock.MatchExpectationsInOrder(false)
 
 		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS").WithArgs().WillReturnRows(
-			dmltest.MustMockRows(dmltest.WithFile("testdata", "core_config_data_columns.csv")),
+			dmltest.MustMockRows(dmltest.WithFile("testdata", "core_configuration_columns.csv")),
 		)
 
 		dbs, err := storage.NewDB(mustNewTables(context.TODO(), ddl.WithConnPool(dbc)), storage.DBOptions{
@@ -156,7 +156,7 @@ func TestService_Get(t *testing.T) {
 		dbMock.MatchExpectationsInOrder(false)
 
 		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS").WithArgs().WillReturnRows(
-			dmltest.MustMockRows(dmltest.WithFile("testdata", "core_config_data_columns.csv")),
+			dmltest.MustMockRows(dmltest.WithFile("testdata", "core_configuration_columns.csv")),
 		)
 
 		dbs, err := storage.NewDB(mustNewTables(context.TODO(), ddl.WithConnPool(dbc)), storage.DBOptions{
@@ -182,7 +182,7 @@ func TestService_Get(t *testing.T) {
 		dbMock.MatchExpectationsInOrder(false)
 
 		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS").WithArgs().WillReturnRows(
-			dmltest.MustMockRows(dmltest.WithFile("testdata", "core_config_data_columns.csv")),
+			dmltest.MustMockRows(dmltest.WithFile("testdata", "core_configuration_columns.csv")),
 		)
 
 		dbs, err := storage.NewDB(mustNewTables(context.TODO(), ddl.WithConnPool(dbc)), storage.DBOptions{
@@ -192,7 +192,7 @@ func TestService_Get(t *testing.T) {
 		assert.NoError(t, err)
 		defer dmltest.Close(t, dbs)
 
-		prepSel := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `value` FROM `core_config_data` AS `main_table` WHERE (`scope` = ?) AND (`scope_id` = ?) AND (`path` = ?)"))
+		prepSel := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `value` FROM `core_configuration` AS `main_table` WHERE (`scope` = ?) AND (`scope_id` = ?) AND (`path` = ?)"))
 		for _, test := range serviceMultiTests {
 			scp, sID := test.scopeID.Unpack()
 			prepSel.ExpectQuery().WithArgs(scp.StrType(), sID, test.path).WillDelayFor(time.Millisecond * 110).WillReturnRows(sqlmock.NewRows([]string{"value"}))
@@ -213,13 +213,13 @@ func TestService_Set(t *testing.T) {
 
 	testBody := func(t *testing.T, dbs *storage.DB, dbMock sqlmock.Sqlmock, sleep time.Duration) {
 
-		prepIns := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("INSERT INTO `core_config_data` (`scope`,`scope_id`,`path`,`value`) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE `value`=VALUES(`value`)"))
+		prepIns := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("INSERT INTO `core_configuration` (`scope`,`scope_id`,`path`,`value`) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE `value`=VALUES(`value`)"))
 
 		for i, test := range serviceMultiTests {
 			j := int64(i + 1)
 
 			if sleep > 0 && i > 0 {
-				prepIns = dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("INSERT INTO `core_config_data` (`scope`,`scope_id`,`path`,`value`) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE `value`=VALUES(`value`)"))
+				prepIns = dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("INSERT INTO `core_configuration` (`scope`,`scope_id`,`path`,`value`) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE `value`=VALUES(`value`)"))
 			}
 
 			prepIns.ExpectExec().
@@ -239,7 +239,7 @@ func TestService_Set(t *testing.T) {
 		dbMock.MatchExpectationsInOrder(false)
 
 		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS").WithArgs().WillReturnRows(
-			dmltest.MustMockRows(dmltest.WithFile("testdata", "core_config_data_columns.csv")),
+			dmltest.MustMockRows(dmltest.WithFile("testdata", "core_configuration_columns.csv")),
 		)
 
 		dbs, err := storage.NewDB(mustNewTables(context.TODO(), ddl.WithConnPool(dbc)), storage.DBOptions{
@@ -256,7 +256,7 @@ func TestService_Set(t *testing.T) {
 		dbMock.MatchExpectationsInOrder(false)
 
 		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS").WithArgs().WillReturnRows(
-			dmltest.MustMockRows(dmltest.WithFile("testdata", "core_config_data_columns.csv")),
+			dmltest.MustMockRows(dmltest.WithFile("testdata", "core_configuration_columns.csv")),
 		)
 
 		dbs, err := storage.NewDB(mustNewTables(context.TODO(), ddl.WithConnPool(dbc)), storage.DBOptions{
@@ -282,7 +282,7 @@ func TestService_Set(t *testing.T) {
 		dbMock.MatchExpectationsInOrder(false)
 
 		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS").WithArgs().WillReturnRows(
-			dmltest.MustMockRows(dmltest.WithFile("testdata", "core_config_data_columns.csv")),
+			dmltest.MustMockRows(dmltest.WithFile("testdata", "core_configuration_columns.csv")),
 		)
 
 		dbs, err := storage.NewDB(mustNewTables(context.TODO(), ddl.WithConnPool(dbc)), storage.DBOptions{
@@ -292,7 +292,7 @@ func TestService_Set(t *testing.T) {
 		assert.NoError(t, err)
 		defer dmltest.Close(t, dbs)
 
-		prepIns := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("INSERT INTO `core_config_data` (`scope`,`scope_id`,`path`,`value`) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE `value`=VALUES(`value`)"))
+		prepIns := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("INSERT INTO `core_configuration` (`scope`,`scope_id`,`path`,`value`) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE `value`=VALUES(`value`)"))
 		for i, test := range serviceMultiTests {
 
 			prepIns.ExpectExec().
@@ -308,7 +308,7 @@ func TestService_Set(t *testing.T) {
 	})
 }
 
-// Test_WithApplyCoreConfigData reads from the MySQL core_config_data table and applies
+// Test_WithApplyCoreConfigData reads from the MySQL core_configuration table and applies
 // these value to the underlying storage. tries to get back the values from the
 // underlying storage
 func Test_WithCoreConfigData(t *testing.T) {
@@ -318,11 +318,11 @@ func Test_WithCoreConfigData(t *testing.T) {
 	defer dmltest.MockClose(t, dbc, dbMock)
 
 	dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS").WithArgs().WillReturnRows(
-		dmltest.MustMockRows(dmltest.WithFile("testdata", "core_config_data_columns.csv")),
+		dmltest.MustMockRows(dmltest.WithFile("testdata", "core_configuration_columns.csv")),
 	)
 
-	dbMock.ExpectQuery("SELECT (.+) FROM `core_config_data` AS `main_table`").WillReturnRows(
-		dmltest.MustMockRows(dmltest.WithFile("testdata", "core_config_data.csv")),
+	dbMock.ExpectQuery("SELECT (.+) FROM `core_configuration` AS `main_table`").WillReturnRows(
+		dmltest.MustMockRows(dmltest.WithFile("testdata", "core_configuration.csv")),
 	)
 
 	tbls := mustNewTables(context.TODO(), ddl.WithConnPool(dbc))

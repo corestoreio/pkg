@@ -16,9 +16,6 @@
 
 //go:generate go run db_client_main.go
 
-// TODO: only an idea to create program dmlgen
-// go_generate dmlgen -tags "csall db" -filename $GOFILE -pkg $GOPACKAGE core_config_data
-
 package storage
 
 import (
@@ -39,7 +36,7 @@ import (
 // DBOptions applies options to the `DB` type.
 type DBOptions struct {
 	// TableName if set, specifies the alternate table name, default:
-	// `core_config_data` aka constant TableNameCoreConfigData.
+	// `core_configuration` aka constant TableNameCoreConfigData.
 	TableName           string
 	Log                 log.Logger
 	QueryContextTimeout time.Duration
@@ -95,10 +92,10 @@ type DB struct {
 // and once used again, they get re-prepared. The database schema gets
 // validated, but can also be disabled via options struct. Implements interface
 // config.Storager.
-// NewDB uses the MySQL/MariaDB based table `core_config_data`
+// NewDB uses the MySQL/MariaDB based table `core_configuration`
 // for reading and writing configuration paths, scopes and values.
 //
-// It also provides an option function to load data from core_config_data into
+// It also provides an option function to load data from core_configuration into
 // a storage service.
 func NewDB(tbls *ddl.Tables, o DBOptions) (*DB, error) {
 	// TODO reconfigure itself once it is running to load the timeout values
@@ -108,7 +105,7 @@ func NewDB(tbls *ddl.Tables, o DBOptions) (*DB, error) {
 
 	tn := o.TableName
 	if tn == "" {
-		tn = TableNameCoreConfigData
+		tn = TableNameCoreConfiguration
 	}
 
 	if !o.SkipSchemaValidation {
@@ -336,14 +333,14 @@ func (dbs *DB) Statistics() (value dbStats, set dbStats) {
 	return
 }
 
-// WithLoadFromDB reads the table core_config_data into the Service and
+// WithLoadFromDB reads the table core_configuration into the Service and
 // overrides existing values. Stops on errors.
 func WithLoadFromDB(tbls *ddl.Tables, o DBOptions) config.LoadDataOption {
 	return config.MakeLoadDataOption(func(s *config.Service) error {
 
 		tn := o.TableName
 		if tn == "" {
-			tn = TableNameCoreConfigData
+			tn = TableNameCoreConfiguration
 		}
 
 		tbl, err := tbls.Table(tn)
@@ -359,7 +356,7 @@ func WithLoadFromDB(tbls *ddl.Tables, o DBOptions) config.LoadDataOption {
 		defer cancel()
 
 		return tbl.Select("*").WithArgs().IterateSerial(ctx, func(cm *dml.ColumnMap) error {
-			var ccd CoreConfigData
+			var ccd CoreConfiguration
 			if err := ccd.MapColumns(cm); err != nil {
 				return errors.Wrapf(err, "[config/storage] dbs.stmtAll.IterateSerial at row %d", cm.Count)
 			}
@@ -371,10 +368,10 @@ func WithLoadFromDB(tbls *ddl.Tables, o DBOptions) config.LoadDataOption {
 			scp := scope.FromString(ccd.Scope).WithID(int64(ccd.ScopeID))
 			p, err := config.NewPathWithScope(scp, ccd.Path)
 			if err != nil {
-				return errors.Wrapf(err, "[config/storage] WithLoadFromDB.config.NewPathWithScope Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ConfigID)
+				return errors.Wrapf(err, "[config/storage] WithLoadFromDB.config.NewPathWithScope Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ID)
 			}
 			if err = s.Set(p, v); err != nil {
-				return errors.Wrapf(err, "[config/storage] WithLoadFromDB.Service.Write Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ConfigID)
+				return errors.Wrapf(err, "[config/storage] WithLoadFromDB.Service.Write Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ID)
 			}
 
 			return nil

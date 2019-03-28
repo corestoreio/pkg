@@ -28,37 +28,27 @@ import (
 	"github.com/corestoreio/pkg/sql/dmlgen"
 )
 
-func mustCheckErr(err error) {
-	if err != nil {
-		panic(fmt.Sprintf("%+v\n", err))
-	}
-}
-
-func mustCheckCloseErr(c io.Closer) {
-	if err := c.Close(); err != nil {
-		panic(fmt.Sprintf("%+v\n", err))
-	}
-}
-
 func main() {
 
 	dbcp := dml.MustConnectAndVerify(dml.WithDSNfromEnv(""))
 	defer mustCheckCloseErr(dbcp)
 
-	// we assume the table core_config_data already exists
+	// we assume the table core_configuration already exists
 
 	ctx := context.Background()
-	ts, err := dmlgen.NewTables("github.com/corestoreio/pkg/config/storage",
+	ts, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/config/storage",
 
-		dmlgen.WithTablesFromDB(ctx, dbcp, "core_config_data"),
+		dmlgen.WithTablesFromDB(ctx, dbcp, "core_configuration"),
 		dmlgen.WithBuildTags("csall db"),
 		dmlgen.WithTableConfig(
-			"core_config_data", &dmlgen.TableConfig{
+			"core_configuration", &dmlgen.TableConfig{
 				UniquifiedColumns: []string{"path"},
 				// `max_len` defines for Faker package the maximum size/length for
 				// a field. Only used during testing.
-				StructTags:               []string{"max_len"},
-				DisableCollectionMethods: true,
+				StructTags: []string{"max_len"},
+				// DisableCollectionMethods: true,
+				FeaturesInclude: dmlgen.FeatureCollectionStruct | dmlgen.FeatureCollectionUniqueGetters | dmlgen.FeatureEntityStruct |
+					dmlgen.FeatureDB | dmlgen.FeatureEntityWriteTo,
 			}),
 	)
 	mustCheckErr(err)
@@ -84,4 +74,16 @@ func writeFile(outFile string, wFn func(io.Writer, io.Writer) error) {
 	defer mustCheckCloseErr(f)
 	err = wFn(f, testF)
 	mustCheckErr(err)
+}
+
+func mustCheckErr(err error) {
+	if err != nil {
+		panic(fmt.Sprintf("%+v\n", err))
+	}
+}
+
+func mustCheckCloseErr(c io.Closer) {
+	if err := c.Close(); err != nil {
+		panic(fmt.Sprintf("%+v\n", err))
+	}
 }
