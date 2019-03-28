@@ -895,6 +895,11 @@ func (ts *Generator) fnTestMainOther(testGen *codegen.Go, tables []*Table) {
 	testGen.Pln(`func TestNewTablesNonDB(t *testing.T) {`)
 	{
 		testGen.Pln(`ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de",FloatMaxDecimals:6})`)
+		// If some features haven't been enabled, then there are no tests so
+		// assign ps to underscore to avoid the unused variable error.
+		// Alternatively figure out how not to print the whole test function at
+		// all.
+		testGen.Pln(`_ = ps`)
 
 		for _, t := range tables {
 			t.generateTestOther(testGen, ts)
