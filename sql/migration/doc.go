@@ -14,28 +14,8 @@
 
 // Package migration provides tools for database schema migrations.
 //
-// TODO(CyS): https://povilasv.me/2017/02/20/go-schema-migration-tools/
-//
-// TL;DR If your looking for schema migration tool you can use:
-//
-// mattes/migrate, SQL defined schema migrations, with a well defined and
-// documented API, large database support and a useful CLI tool. This tool is
-// actively maintained, has a lot of stars and an A+ from goreport.
-//
-// rubenv/sql-migrate, go struct based or SQL defined schema migrations, with a
-// config file, migration history, prod-dev-test environments. The only drawback
-// is that it got B from goreport.
-// SQL Schema migration tool for Go. Based on gorp and goose.
-// Is better because the API for using it within your code (FOSDEM2016).
-//
-// https://bitbucket.org/liamstask/goose
-// goose is a database migration tool. You can manage your database's evolution by
-// creating incremental SQL or Go scripts.
-// Cons: https://www.reddit.com/r/golang/comments/2dlbz5/database_migration_handling_in_go/
-//
-// github.com/mattes/migrate 744 Stars
-// A migration helper written in Go. Use it in your existing Golang code or run
-// commands via the CLI.
+// The usual problems regarding downtime are not solved. Use vitess or the other
+// tools.
 //
 // https://github.com/golang-migrate/migrate
 package migration
