@@ -90,13 +90,17 @@ func TestLoadKeyRelationships(t *testing.T) {
 	dmltest.SQLDumpLoad(t, "testdata/testLoadForeignKeys*.sql", nil)
 
 	ctx := context.Background()
-	krs, err := ddl.LoadKeyRelationships(ctx, dbc.DB)
+
+	tc, err := ddl.LoadKeyColumnUsage(context.TODO(), dbc.DB)
+	assert.NoError(t, err)
+
+	krs, err := ddl.GenerateKeyRelationships(ctx, dbc.DB, tc)
 	assert.NoError(t, err)
 
 	var buf bytes.Buffer
 	krs.Debug(&buf)
 	t.Log("\n", buf.String())
-	assert.Exactly(t, "catalog_category_entity.entity_id|sequence_catalog_category.sequence_value|PRI\nsequence_catalog_category.sequence_value|catalog_category_entity.entity_id|PRI\nstore.group_id|store_group.group_id|PRI\nstore.store_id|x910cms_block_store.store_id|MUL\nstore.store_id|x910cms_page_store.store_id|MUL\nstore.website_id|store_website.website_id|PRI\nstore_group.group_id|store.group_id|MUL\nstore_group.website_id|store_website.website_id|PRI\nstore_website.website_id|store.website_id|MUL\nstore_website.website_id|store_group.website_id|MUL\nx859admin_passwords.user_id|x859admin_user.user_id|PRI\nx859admin_user.user_id|x859admin_passwords.user_id|MUL\nx910cms_block.block_id|x910cms_block_store.block_id|MUL\nx910cms_block.block_id|x910cms_block_store.block_id|PRI\nx910cms_block_store.block_id|x910cms_block.block_id|PRI\nx910cms_block_store.store_id|store.store_id|PRI\nx910cms_page.page_id|x910cms_page_store.page_id|MUL\nx910cms_page.page_id|x910cms_page_store.page_id|PRI\nx910cms_page_store.page_id|x910cms_page.page_id|PRI\nx910cms_page_store.store_id|store.store_id|PRI\n",
+	assert.Exactly(t, "catalog_category_entity.entity_id|sequence_catalog_category.sequence_value|PRI\ncustomer_address_entity.parent_id|customer_entity.entity_id|PRI\ncustomer_entity.entity_id|customer_address_entity.parent_id|MUL\ncustomer_entity.store_id|store.store_id|PRI\ncustomer_entity.website_id|store_website.website_id|PRI\nsequence_catalog_category.sequence_value|catalog_category_entity.entity_id|PRI\nstore.group_id|store_group.group_id|PRI\nstore.store_id|customer_entity.store_id|MUL\nstore.store_id|x910cms_block_store.store_id|MUL\nstore.store_id|x910cms_page_store.store_id|MUL\nstore.website_id|store_website.website_id|PRI\nstore_group.group_id|store.group_id|MUL\nstore_group.website_id|store_website.website_id|PRI\nstore_website.website_id|customer_entity.website_id|MUL\nstore_website.website_id|store.website_id|MUL\nstore_website.website_id|store_group.website_id|MUL\nx859admin_passwords.user_id|x859admin_user.user_id|PRI\nx859admin_user.user_id|x859admin_passwords.user_id|MUL\nx910cms_block.block_id|x910cms_block_store.block_id|MUL\nx910cms_block.block_id|x910cms_block_store.block_id|PRI\nx910cms_block_store.block_id|x910cms_block.block_id|PRI\nx910cms_block_store.store_id|store.store_id|PRI\nx910cms_page.page_id|x910cms_page_store.page_id|MUL\nx910cms_page.page_id|x910cms_page_store.page_id|PRI\nx910cms_page_store.page_id|x910cms_page.page_id|PRI\nx910cms_page_store.store_id|store.store_id|PRI\n",
 		buf.String())
 
 	tests := []struct {

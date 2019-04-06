@@ -269,7 +269,7 @@ func LoadKeyColumnUsage(ctx context.Context, db dml.Querier, tables ...string) (
 }
 
 // KeyRelationShips contains an internal cache about the database foreign key
-// structure. It can only be created via function LoadKeyRelationships.
+// structure. It can only be created via function GenerateKeyRelationships.
 type KeyRelationShips struct {
 	// making the map private makes this type race free as reading the map from
 	// multiple goroutines is allowed without a lock.
@@ -317,26 +317,21 @@ func (krs *KeyRelationShips) Debug(w io.Writer) {
 	}
 }
 
-// LoadKeyRelationships loads the foreign key relationships between a list of
+// GenerateKeyRelationships loads the foreign key relationships between a list of
 // given tables or all tables in a database. Might not yet work across several
 // databases on the same file system.
-func LoadKeyRelationships(ctx context.Context, db dml.Querier, referencedTables ...string) (krs *KeyRelationShips, err error) {
+func GenerateKeyRelationships(ctx context.Context, db dml.Querier, foreignKeys map[string]KeyColumnUsageCollection) (*KeyRelationShips, error) {
 
-	kcuTables, err := LoadKeyColumnUsage(ctx, db, referencedTables...)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	krs = &KeyRelationShips{
+	krs := &KeyRelationShips{
 		relMap: map[string]bool{},
 	}
 
-	fieldCount, err := countFieldsForTables(ctx, db, referencedTables...)
+	fieldCount, err := countFieldsForTables(ctx, db)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	for _, kcuc := range kcuTables {
+	for _, kcuc := range foreignKeys {
 		for _, kcu := range kcuc.Data {
 
 			// OneToOne relationship
@@ -358,7 +353,7 @@ func LoadKeyRelationships(ctx context.Context, db dml.Querier, referencedTables 
 		}
 	}
 
-	return krs, err
+	return krs, nil
 }
 
 type columnKeyCount struct {
