@@ -18,6 +18,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io"
+	"sort"
+	"strings"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
@@ -260,7 +263,164 @@ func LoadKeyColumnUsage(ctx context.Context, db dml.Querier, tables ...string) (
 		tc[key] = kcuc
 	}
 	if err = rows.Err(); err != nil {
-		err = errors.Wrapf(err, "[ddl] rows.Err Query")
+		err = errors.WithStack(err)
 	}
 	return
+}
+
+// KeyRelationShips contains an internal cache about the database foreign key
+// structure. It can only be created via function LoadKeyRelationships.
+type KeyRelationShips struct {
+	// making the map private makes this type race free as reading the map from
+	// multiple goroutines is allowed without a lock.
+	relMap map[string]bool
+}
+
+const krsMapKeySep = '|'
+
+// IsOneToOne
+func (krs *KeyRelationShips) IsOneToOne(mainTable, mainColumn, referencedTable, referencedColumn string) bool {
+	buf := krs.buildKey(mainTable, mainColumn, referencedTable, referencedColumn, "PRI")
+	return krs.relMap[buf]
+}
+
+// IsOneToMany returns true for a oneToMany or switching the tables for a ManyToOne relationship
+func (krs *KeyRelationShips) IsOneToMany(referencedTable, referencedColumn, mainTable, mainColumn string) bool {
+	buf := krs.buildKey(referencedTable, referencedColumn, mainTable, mainColumn, "MUL")
+	return krs.relMap[buf]
+}
+
+func (krs *KeyRelationShips) buildKey(referencedTable, referencedColumn, mainTable, mainColumn, keyType string) string {
+	var buf strings.Builder
+	buf.WriteString(referencedTable)
+	buf.WriteByte('.')
+	buf.WriteString(referencedColumn)
+	buf.WriteByte(krsMapKeySep)
+	buf.WriteString(mainTable)
+	buf.WriteByte('.')
+	buf.WriteString(mainColumn)
+	buf.WriteByte(krsMapKeySep)
+	buf.WriteString(keyType)
+	return buf.String()
+}
+
+// Debug writes the internal map in a sorted list to w.
+func (krs *KeyRelationShips) Debug(w io.Writer) {
+	keys := make([]string, 0, len(krs.relMap))
+
+	for k := range krs.relMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		fmt.Fprintf(w, "%s\n", k)
+	}
+}
+
+// LoadKeyRelationships loads the foreign key relationships between a list of
+// given tables or all tables in a database. Might not yet work across several
+// databases on the same file system.
+func LoadKeyRelationships(ctx context.Context, db dml.Querier, referencedTables ...string) (krs *KeyRelationShips, err error) {
+
+	kcuTables, err := LoadKeyColumnUsage(ctx, db, referencedTables...)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	krs = &KeyRelationShips{
+		relMap: map[string]bool{},
+	}
+
+	fieldCount, err := countFieldsForTables(ctx, db, referencedTables...)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	for _, kcuc := range kcuTables {
+		for _, kcu := range kcuc.Data {
+
+			// OneToOne relationship
+			key := krs.buildKey(kcu.TableName, kcu.ColumnName, kcu.ReferencedTableName.String, kcu.ReferencedColumnName.String, "PRI")
+			krs.relMap[key] = true
+
+			// if referenced table has only one PK, then the reversed relationship of OneToMany is not possible
+
+			if tc, ok := fieldCount[kcu.ReferencedTableName.String]; ok && tc.Pri == 1 && tc.Empty == 0 && tc.Mul == 0 {
+				// OneToOne reversed is also possible
+				key := krs.buildKey(kcu.ReferencedTableName.String, kcu.ReferencedColumnName.String, kcu.TableName, kcu.ColumnName, "PRI")
+				krs.relMap[key] = true
+
+			}
+			if tc, ok := fieldCount[kcu.TableName]; ok && (tc.Empty > 0 || tc.Pri > 1) {
+				key = krs.buildKey(kcu.ReferencedTableName.String, kcu.ReferencedColumnName.String, kcu.TableName, kcu.ColumnName, "MUL")
+				krs.relMap[key] = true
+			}
+		}
+	}
+
+	return krs, err
+}
+
+type columnKeyCount struct {
+	Empty, Mul, Pri, Uni int
+}
+
+func countFieldsForTables(ctx context.Context, db dml.Querier, referencedTables ...string) (_ map[string]*columnKeyCount, err error) {
+
+	const sqlQry = `SELECT TABLE_NAME, COLUMN_KEY, COUNT(*) AS FIELD_COUNT
+ 	FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() GROUP BY TABLE_NAME,COLUMN_KEY`
+	// TODO limit query to referencedTables, if provided
+
+	rows, err := db.QueryContext(ctx, sqlQry)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	defer func() {
+		// Not testable with the sqlmock package :-(
+		if err2 := rows.Close(); err2 != nil && err == nil {
+			err = errors.WithStack(err2)
+		}
+	}()
+
+	var col3 = &struct {
+		TableName string
+		ColumnKey string
+		Count     int
+	}{
+		"", "", 0,
+	}
+
+	ret := map[string]*columnKeyCount{}
+	for rows.Next() {
+		if err := rows.Scan(&col3.TableName, &col3.ColumnKey, &col3.Count); err != nil {
+			return nil, errors.WithStack(err)
+		}
+		ckc := ret[col3.TableName]
+		if ckc == nil {
+			ret[col3.TableName] = new(columnKeyCount)
+			ckc = ret[col3.TableName]
+		}
+
+		switch col3.ColumnKey {
+		case "":
+			ckc.Empty = col3.Count
+		case "MUL":
+			ckc.Mul = col3.Count
+		case "PRI":
+			ckc.Pri = col3.Count
+		case "UNI":
+			ckc.Uni = col3.Count
+		default:
+			return nil, errors.NotSupported.Newf("[ddl] ColumnKey %q not supported", col3.ColumnKey)
+		}
+
+		col3.TableName = ""
+		col3.ColumnKey = ""
+		col3.Count = 0
+	}
+	if err = rows.Err(); err != nil {
+		err = errors.WithStack(err)
+	}
+	return ret, err
 }

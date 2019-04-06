@@ -15,6 +15,7 @@
 package ddl_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"testing"
@@ -30,8 +31,6 @@ func init() {
 }
 
 func TestLoadForeignKeys_Integration(t *testing.T) {
-	t.Parallel()
-
 	dbc := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, dbc)
 	defer dmltest.SQLDumpLoad(t, "testdata/testLoadForeignKeys*.sql", nil).Deferred()
@@ -82,4 +81,58 @@ func TestLoadForeignKeys_Integration(t *testing.T) {
 		assert.False(t, ok)
 		assert.Nil(t, fkCols.Data)
 	})
+}
+
+func TestLoadKeyRelationships(t *testing.T) {
+	dbc := dmltest.MustConnectDB(t)
+	defer dmltest.Close(t, dbc)
+	// defer dmltest.SQLDumpLoad(t, "testdata/testLoadForeignKeys*.sql", nil).Deferred()
+	dmltest.SQLDumpLoad(t, "testdata/testLoadForeignKeys*.sql", nil)
+
+	ctx := context.Background()
+	krs, err := ddl.LoadKeyRelationships(ctx, dbc.DB)
+	assert.NoError(t, err)
+
+	var buf bytes.Buffer
+	krs.Debug(&buf)
+	t.Log("\n", buf.String())
+	assert.Exactly(t, "catalog_category_entity.entity_id|sequence_catalog_category.sequence_value|PRI\nsequence_catalog_category.sequence_value|catalog_category_entity.entity_id|PRI\nstore.group_id|store_group.group_id|PRI\nstore.store_id|x910cms_block_store.store_id|MUL\nstore.store_id|x910cms_page_store.store_id|MUL\nstore.website_id|store_website.website_id|PRI\nstore_group.group_id|store.group_id|MUL\nstore_group.website_id|store_website.website_id|PRI\nstore_website.website_id|store.website_id|MUL\nstore_website.website_id|store_group.website_id|MUL\nx859admin_passwords.user_id|x859admin_user.user_id|PRI\nx859admin_user.user_id|x859admin_passwords.user_id|MUL\nx910cms_block.block_id|x910cms_block_store.block_id|MUL\nx910cms_block.block_id|x910cms_block_store.block_id|PRI\nx910cms_block_store.block_id|x910cms_block.block_id|PRI\nx910cms_block_store.store_id|store.store_id|PRI\nx910cms_page.page_id|x910cms_page_store.page_id|MUL\nx910cms_page.page_id|x910cms_page_store.page_id|PRI\nx910cms_page_store.page_id|x910cms_page.page_id|PRI\nx910cms_page_store.store_id|store.store_id|PRI\n",
+		buf.String())
+
+	tests := []struct {
+		checkFn                                          func(referencedTable, referencedColumn, table, column string) bool
+		referencedTable, referencedColumn, table, column string
+		want                                             bool
+	}{
+		{krs.IsOneToOne, "x859admin_passwords", "user_id", "x859admin_user", "user_id", true},
+		{krs.IsOneToOne, "x859admin_user", "user_id", "x859admin_passwords", "user_id", false},
+		{krs.IsOneToMany, "x859admin_user", "user_id", "x859admin_passwords", "user_id", true},
+		{krs.IsOneToMany, "x859admin_passwords", "user_id", "x859admin_user", "user_id", false},
+
+		{krs.IsOneToOne, "x910cms_page_store", "page_id", "x910cms_page", "page_id", true},
+		{krs.IsOneToMany, "x910cms_page", "page_id", "x910cms_page_store", "page_id", true},
+
+		{krs.IsOneToMany, "store_group", "website_id", "store", "website_id", false}, // no FK constraint
+		{krs.IsOneToOne, "store_group", "website_id", "store", "website_id", false},  // no FK constraint
+		{krs.IsOneToMany, "store", "website_id", "store_group", "website_id", false}, // no FK constraint
+		{krs.IsOneToOne, "store", "website_id", "store_group", "website_id", false},
+
+		{krs.IsOneToOne, "store_group", "website_id", "store_website", "website_id", true},
+		{krs.IsOneToMany, "store_website", "website_id", "store_group", "website_id", true}, // reversed above
+
+		{krs.IsOneToOne, "catalog_category_entity", "entity_id", "sequence_catalog_category", "sequence_value", true},
+		// reversed must also be true for oneToOne because sequence_catalog_category contains only one column
+		{krs.IsOneToOne, "sequence_catalog_category", "sequence_value", "catalog_category_entity", "entity_id", true},
+		{krs.IsOneToMany, "sequence_catalog_category", "sequence_value", "catalog_category_entity", "entity_id", false},
+		{krs.IsOneToMany, "catalog_category_entity", "entity_id", "sequence_catalog_category", "sequence_value", false},
+	}
+
+	for i, test := range tests {
+		assert.Exactly(t,
+			test.want,
+			test.checkFn(test.referencedTable, test.referencedColumn, test.table, test.column),
+			"IDX %d %q.%q => %q.%q",
+			i, test.referencedTable, test.referencedColumn, test.table, test.column,
+		)
+	}
 }
