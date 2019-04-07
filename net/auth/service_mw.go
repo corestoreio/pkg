@@ -19,7 +19,8 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
-	loghttp "github.com/corestoreio/log/http"
+	"github.com/corestoreio/log/loghttp"
+	"go.opencensus.io/trace"
 )
 
 // WithAuthentication to be used as a middleware for net.Handler. The applied
@@ -28,7 +29,14 @@ import (
 // context a store.FromContextProvider().
 func (s *Service) WithAuthentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		scpCfg, err := s.configByContext(r.Context())
+		// TODO pack this into its own function to decide if opencensus should be used or not
+		ctx, span := trace.StartSpan(r.Context(), "cs.net.auth.WithAuthentication")
+		if len(s.traceAttributes) > 0 {
+			span.AddAttributes(s.traceAttributes...)
+		}
+		defer span.End()
+
+		scpCfg, err := s.configByContext(ctx)
 		if err != nil {
 			if s.Log.IsDebug() {
 				s.Log.Debug("auth.Service.WithAuthentication.configByContext", log.Err(err), loghttp.Request("request", r))
@@ -47,9 +55,14 @@ func (s *Service) WithAuthentication(next http.Handler) http.Handler {
 			if s.Log.IsDebug() {
 				s.Log.Debug("auth.Service.Authenticate.Failed", log.Err(err), log.Stringer("scope", scpCfg.ScopeID), log.Object("scpCfg", scpCfg), loghttp.Request("request", r))
 			}
+			span.SetStatus(trace.Status{
+				Code:    trace.StatusCodePermissionDenied,
+				Message: err.Error(),
+			})
 			scpCfg.UnauthorizedHandler(errors.Wrap(err, "[auth] Authentication failed"))
 			return
 		}
+		span.SetStatus(trace.Status{Code: trace.StatusCodeOK})
 		next.ServeHTTP(w, r)
 	})
 }

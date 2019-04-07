@@ -25,6 +25,7 @@ import (
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/sync/singleflight"
+	"go.opencensus.io/trace"
 )
 
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
@@ -143,6 +144,16 @@ func WithLogger(l log.Logger) Option {
 	}
 }
 
+// WIP
+func WithTraceAttributes(attrs ...trace.Attribute) Option {
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+		s.traceAttributes = append(s.traceAttributes, attrs...)
+		return nil
+	}
+}
+
 // OptionFactoryFunc a closure around a scoped configuration to figure out which
 // options should be returned depending on the scope brought to you during a
 // request.
@@ -156,15 +167,15 @@ type OptionFactoryFunc func(config.Scoped) []Option
 // functions, which accept a scope and a scope ID as an argument, will NOT be
 // overwritten by the new values retrieved from the configuration service.
 //
-//	cfgStruct, err := backendscopedservice.NewConfigStructure()
-//	if err != nil {
-//		panic(err)
-//	}
-//	be := backendscopedservice.New(cfgStruct)
+// 	cfgStruct, err := backendscopedservice.NewConfigStructure()
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	be := backendscopedservice.New(cfgStruct)
 //
-//	srv := scopedservice.MustNewService(
-//		scopedservice.WithOptionFactory(be.PrepareOptions()),
-//	)
+// 	srv := scopedservice.MustNewService(
+// 		scopedservice.WithOptionFactory(be.PrepareOptions()),
+// 	)
 func WithOptionFactory(f OptionFactoryFunc) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()

@@ -27,6 +27,7 @@ import (
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/sync/singleflight"
+	"go.opencensus.io/trace"
 )
 
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
@@ -63,7 +64,8 @@ type service struct {
 	Log log.Logger
 	// config optional backend configuration. Gets only used while running
 	// HTTP related middlewares.
-	config config.Scoper
+	config          config.Scoper
+	traceAttributes []trace.Attribute
 }
 
 func newService(cfg config.Scoper, opts ...Option) (*Service, error) {
