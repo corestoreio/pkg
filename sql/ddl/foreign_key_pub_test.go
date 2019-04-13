@@ -41,7 +41,7 @@ func TestLoadForeignKeys_Integration(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, tc, 1, "Number of returned entries should be as stated")
 
-		fkCols := tc["x859admin_user.user_id"]
+		fkCols := tc["x859admin_passwords"]
 		assert.NotNil(t, fkCols.Data)
 
 		dataJSON, err := json.Marshal(fkCols.Data)
@@ -57,14 +57,14 @@ func TestLoadForeignKeys_Integration(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, tc, 2, "Number of returned entries should be as stated")
 
-		dataJSON, err := json.Marshal(tc["x910cms_block.block_id"].Data)
+		dataJSON, err := json.Marshal(tc["x910cms_block_store"].Data)
 		assert.NoError(t, err)
 		assert.Regexp(t,
 			"[{\"ConstraintCatalog\":\"def\",\"ConstraintSchema\":\"[^\"]+\",\"ConstraintName\":\"CMS_BLOCK_STORE_BLOCK_ID_CMS_BLOCK_BLOCK_ID\",\"TableCatalog\":\"def\",\"TableSchema\":\"[^\"]+\",\"TableName\":\"x910cms_block_store\",\"ColumnName\":\"block_id\",\"OrdinalPosition\":1,\"PositionInUniqueConstraint\":1,\"ReferencedTableSchema\":\"[^\"]+\",\"ReferencedTableName\":\"x910cms_block\",\"ReferencedColumnName\":\"block_id\"}]",
 			string(dataJSON),
 		)
 
-		dataJSON, err = json.Marshal(tc["x910cms_page.page_id"].Data)
+		dataJSON, err = json.Marshal(tc["x910cms_page_store"].Data)
 		assert.NoError(t, err)
 		assert.Regexp(t,
 			"[{\"ConstraintCatalog\":\"def\",\"ConstraintSchema\":\"[^\"]+\",\"ConstraintName\":\"CMS_PAGE_STORE_PAGE_ID_CMS_PAGE_PAGE_ID\",\"TableCatalog\":\"def\",\"TableSchema\":\"[^\"]+\",\"TableName\":\"x910cms_page_store\",\"ColumnName\":\"page_id\",\"OrdinalPosition\":1,\"PositionInUniqueConstraint\":1,\"ReferencedTableSchema\":\"[^\"]+\",\"ReferencedTableName\":\"x910cms_page\",\"ReferencedColumnName\":\"page_id\"}]",
@@ -77,7 +77,7 @@ func TestLoadForeignKeys_Integration(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, tc, 0, "Number of returned entries should be as stated")
 
-		fkCols, ok := tc["x910catalog_eav_attribute.attribute_id"]
+		fkCols, ok := tc["x910catalog_eav_attribute"]
 		assert.False(t, ok)
 		assert.Nil(t, fkCols.Data)
 	})

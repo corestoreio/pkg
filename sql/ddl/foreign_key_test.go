@@ -24,14 +24,14 @@ import (
 func TestKeyRelationShips(t *testing.T) {
 	krs := &KeyRelationShips{
 		relMap: map[string]bool{
-			`store|customer_entity|website_id|MUL`:       true,
-			`store|customer_entity|group_id`:             true,
-			`store|store_group|website_id|MUL`:           true,
-			`store|store_group|group_id|PRI`:             true,
-			`store|store_website|website_id|PRI`:         true,
-			`store_group|customer_entity|website_id|MUL`: true,
-			`store_group|store|website_id|MUL`:           true,
-			`store_group|store_website|website_id|PRI`:   true,
+			`store.website_id|customer_entity.website_id|MUL`:       true,
+			`store.group_id|customer_entity.group_id`:               true,
+			`store.website_id|store_group.website_id|MUL`:           true,
+			`store.group_id|store_group.group_id|PRI`:               true,
+			`store.website_id|store_website.website_id|PRI`:         true,
+			`store_group.website_id|customer_entity.website_id|MUL`: true,
+			`store_group.website_id|store.website_id|MUL`:           true,
+			`store_group.website_id|store_website.website_id|PRI`:   true,
 		},
 	}
 	assert.True(t, krs.IsOneToOne("store_group", "website_id", "store_website", "website_id"))
@@ -42,6 +42,15 @@ func TestKeyRelationShips(t *testing.T) {
 
 	var buf bytes.Buffer
 	krs.Debug(&buf)
+
 	// since Go 1.12 maps are printed sorted
-	assert.Exactly(t, "map[string]bool{\"store_group|customer_entity|website_id|MUL\":true, \"store_group|store_website|website_id|PRI\":true, \"store_group|store|website_id|MUL\":true, \"store|customer_entity|group_id\":true, \"store|customer_entity|website_id|MUL\":true, \"store|store_group|group_id|PRI\":true, \"store|store_group|website_id|MUL\":true, \"store|store_website|website_id|PRI\":true}", buf.String())
+	assert.Exactly(t, `store.group_id|customer_entity.group_id
+store.group_id|store_group.group_id|PRI
+store.website_id|customer_entity.website_id|MUL
+store.website_id|store_group.website_id|MUL
+store.website_id|store_website.website_id|PRI
+store_group.website_id|customer_entity.website_id|MUL
+store_group.website_id|store.website_id|MUL
+store_group.website_id|store_website.website_id|PRI
+`, buf.String())
 }

@@ -28,7 +28,6 @@ import (
 )
 
 // KeyColumnUsage represents a single row for DB table `KEY_COLUMN_USAGE`
-// Generated via dmlgen.
 type KeyColumnUsage struct {
 	ConstraintCatalog          string      // CONSTRAINT_CATALOG varchar(512) NOT NULL  DEFAULT ''''  ""
 	ConstraintSchema           string      // CONSTRAINT_SCHEMA varchar(64) NOT NULL  DEFAULT ''''  ""
@@ -42,11 +41,6 @@ type KeyColumnUsage struct {
 	ReferencedTableSchema      null.String // REFERENCED_TABLE_SCHEMA varchar(64) NULL  DEFAULT 'NULL'  ""
 	ReferencedTableName        null.String // REFERENCED_TABLE_NAME varchar(64) NULL  DEFAULT 'NULL'  ""
 	ReferencedColumnName       null.String // REFERENCED_COLUMN_NAME varchar(64) NULL  DEFAULT 'NULL'  ""
-}
-
-// NewKeyColumnUsage creates a new pointer with pre-initialized fields.
-func NewKeyColumnUsage() *KeyColumnUsage {
-	return &KeyColumnUsage{}
 }
 
 // MapColumns implements interface ColumnMapper only partially.
@@ -134,7 +128,7 @@ func (cc KeyColumnUsageCollection) MapColumns(cm *dml.ColumnMap) error {
 		if cm.Count == 0 {
 			cc.Data = cc.Data[:0]
 		}
-		e := NewKeyColumnUsage()
+		e := new(KeyColumnUsage)
 		if err := cc.scanColumns(cm, e, cm.Count); err != nil {
 			return errors.WithStack(err)
 		}
@@ -192,10 +186,10 @@ func (cc KeyColumnUsageCollection) ColumnNames(ret ...string) []string {
 	return ret
 }
 
-// LoadKeyColumnUsage returns all foreign key columns from a list of table names in
-// the current database. Map key contains
-// REFERENCED_TABLE_NAME.REFERENCED_COLUMN_NAME. All columns from all tables
-// gets selected when you don't provide the argument `tables`.
+// LoadKeyColumnUsage returns all foreign key columns from a list of table names
+// in the current database. Map key contains TABLE_NAME and value
+// contains all of the table foreign keys. All columns from all tables gets
+// selected when you don't provide the argument `tables`.
 func LoadKeyColumnUsage(ctx context.Context, db dml.Querier, tables ...string) (tc map[string]KeyColumnUsageCollection, err error) {
 
 	const selFkWhere = ` AND REFERENCED_TABLE_NAME IN ?`
@@ -239,28 +233,27 @@ func LoadKeyColumnUsage(ctx context.Context, db dml.Querier, tables ...string) (
 
 	tc = make(map[string]KeyColumnUsageCollection)
 	rc := new(dml.ColumnMap)
+
 	for rows.Next() {
 		if err = rc.Scan(rows); err != nil {
-			err = errors.Wrapf(err, "[ddl] LoadKeyColumnUsage Scan Query for tables: %v", tables) // due to the defer
-			return
+			return nil, errors.Wrapf(err, "[ddl] LoadKeyColumnUsage Scan Query for tables: %v", tables) // due to the defer
 		}
-		kcu := NewKeyColumnUsage()
+		kcu := new(KeyColumnUsage)
 		if err = kcu.MapColumns(rc); err != nil {
-			err = errors.WithStack(err)
-			return
+			return nil, errors.WithStack(err)
 		}
 		if !kcu.ReferencedTableName.Valid || !kcu.ReferencedColumnName.Valid {
 			err = errors.Fatal.Newf("[ddl] LoadKeyColumnUsage: The columns ReferencedTableName or ReferencedColumnName cannot be null: %#v", kcu)
 			return
 		}
-		key := fmt.Sprintf("%s.%s", kcu.ReferencedTableName.String, kcu.ReferencedColumnName.String)
-		if _, ok := tc[key]; !ok {
-			tc[key] = MakeKeyColumnUsageCollection()
+
+		if _, ok := tc[kcu.TableName]; !ok {
+			tc[kcu.TableName] = MakeKeyColumnUsageCollection()
 		}
 
-		kcuc := tc[key]
+		kcuc := tc[kcu.TableName]
 		kcuc.Data = append(kcuc.Data, kcu)
-		tc[key] = kcuc
+		tc[kcu.TableName] = kcuc
 	}
 	if err = rows.Err(); err != nil {
 		err = errors.WithStack(err)
