@@ -10,14 +10,15 @@ import (
 
 func TestNewTablesNonDB(t *testing.T) {
 	ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de", FloatMaxDecimals: 6})
-	t.Run("CoreConfigData_Empty", func(t *testing.T) {
-		e := new(CoreConfigData)
+	_ = ps
+	t.Run("CoreConfiguration_Empty", func(t *testing.T) {
+		e := new(CoreConfiguration)
 		assert.NoError(t, ps.FakeData(e))
 		e.Empty()
-		assert.Exactly(t, *e, CoreConfigData{})
+		assert.Exactly(t, *e, CoreConfiguration{})
 	})
-	t.Run("CoreConfigData_Copy", func(t *testing.T) {
-		e := new(CoreConfigData)
+	t.Run("CoreConfiguration_Copy", func(t *testing.T) {
+		e := new(CoreConfiguration)
 		assert.NoError(t, ps.FakeData(e))
 		e2 := e.Copy()
 		assert.Exactly(t, e, e2)

@@ -20,6 +20,7 @@ import (
 
 func TestNewTablesNonDB(t *testing.T) {
 	ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de", FloatMaxDecimals: 6})
+	_ = ps
 	t.Run("CatalogProductIndexEAVDecimalIDX_Empty", func(t *testing.T) {
 		e := new(CatalogProductIndexEAVDecimalIDX)
 		assert.NoError(t, ps.FakeData(e))
@@ -34,14 +35,14 @@ func TestNewTablesNonDB(t *testing.T) {
 		assert.NoError(t, ps.FakeData(e))
 		assert.NotEqual(t, e, e2)
 	})
-	t.Run("CoreConfigData_Empty", func(t *testing.T) {
-		e := new(CoreConfigData)
+	t.Run("CoreConfiguration_Empty", func(t *testing.T) {
+		e := new(CoreConfiguration)
 		assert.NoError(t, ps.FakeData(e))
 		e.Empty()
-		assert.Exactly(t, *e, CoreConfigData{})
+		assert.Exactly(t, *e, CoreConfiguration{})
 	})
-	t.Run("CoreConfigData_Copy", func(t *testing.T) {
-		e := new(CoreConfigData)
+	t.Run("CoreConfiguration_Copy", func(t *testing.T) {
+		e := new(CoreConfiguration)
 		assert.NoError(t, ps.FakeData(e))
 		e2 := e.Copy()
 		assert.Exactly(t, e, e2)
@@ -145,7 +146,7 @@ func TestNewTablesDB(t *testing.T) {
 	assert.NoError(t, err)
 	tblNames := tbls.Tables()
 	sort.Strings(tblNames)
-	assert.Exactly(t, []string{"catalog_product_index_eav_decimal_idx", "core_config_data", "customer_address_entity", "customer_entity", "dmlgen_types", "sales_order_status_state", "view_customer_auto_increment", "view_customer_no_auto_increment"}, tblNames)
+	assert.Exactly(t, []string{"catalog_product_index_eav_decimal_idx", "core_configuration", "customer_address_entity", "customer_entity", "dmlgen_types", "sales_order_status_state", "view_customer_auto_increment", "view_customer_no_auto_increment"}, tblNames)
 	err = tbls.Validate(ctx)
 	assert.NoError(t, err)
 	var ps *pseudo.Service
@@ -205,8 +206,8 @@ func TestNewTablesDB(t *testing.T) {
 		t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
 		t.Logf("Collection load rowCount: %d", rowCount)
 	})
-	t.Run("CoreConfigData_Entity", func(t *testing.T) {
-		tbl := tbls.MustTable(TableNameCoreConfigData)
+	t.Run("CoreConfiguration_Entity", func(t *testing.T) {
+		tbl := tbls.MustTable(TableNameCoreConfiguration)
 		entSELECT := tbl.SelectByPK("*")
 		// WithArgs generates the cached SQL string with empty key "".
 		entSELECTStmtA := entSELECT.WithArgs().ExpandPlaceHolders()
@@ -215,18 +216,18 @@ func TestNewTablesDB(t *testing.T) {
 			dml.Column("config_id").LessOrEqual().Int(10),
 		).ToSQL() // ToSQL generates the new cached SQL string with key select_10
 		assert.NoError(t, err)
-		entCol := NewCoreConfigDataCollection()
+		entCol := NewCoreConfigurationCollection()
 		entINSERT := tbl.Insert().BuildValues()
 		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
 		for i := 0; i < 9; i++ {
-			entIn := new(CoreConfigData)
+			entIn := new(CoreConfiguration)
 			if err := ps.FakeData(entIn); err != nil {
 				t.Errorf("IDX[%d]: %+v", i, err)
 				return
 			}
-			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CoreConfigData_Entity")(entINSERTStmtA.Record("", entIn).ExecContext(ctx))
+			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CoreConfiguration_Entity")(entINSERTStmtA.Record("", entIn).ExecContext(ctx))
 			entINSERTStmtA.Reset()
-			entOut := new(CoreConfigData)
+			entOut := new(CoreConfiguration)
 			rowCount, err := entSELECTStmtA.Int64s(lID).Load(ctx, entOut)
 			assert.NoError(t, err)
 			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
@@ -244,7 +245,7 @@ func TestNewTablesDB(t *testing.T) {
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
 		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
-		lID := dmltest.CheckLastInsertID(t, "Error:  CoreConfigDataCollection ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
+		lID := dmltest.CheckLastInsertID(t, "Error:  CoreConfigurationCollection ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
 		dmltest.Close(t, entINSERTStmtA)
 		t.Logf("Last insert ID into: %d", lID)
 		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())

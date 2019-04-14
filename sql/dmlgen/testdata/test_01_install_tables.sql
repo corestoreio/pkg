@@ -6,7 +6,7 @@ DROP TABLE IF EXISTS `store_group`;
 DROP TABLE IF EXISTS `store_website`;
 DROP TABLE IF EXISTS `customer_entity`;
 DROP TABLE IF EXISTS `customer_address_entity`;
-DROP TABLE IF EXISTS `core_config_data`;
+DROP TABLE IF EXISTS `core_configuration`;
 DROP VIEW IF EXISTS `view_customer_no_auto_increment`;
 DROP VIEW IF EXISTS `view_customer_auto_increment`;
 DROP TABLE IF EXISTS `catalog_product_index_eav_decimal_idx`;
@@ -201,7 +201,7 @@ FROM `customer_entity` `ce`
        JOIN `customer_address_entity` `cae` ON `ce`.`entity_id` = `cae`.`entity_id`
 ;
 
-CREATE TABLE `core_config_data` (
+CREATE TABLE `core_configuration` (
   `config_id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Id',
   `scope` varchar(8) NOT NULL DEFAULT 'default' COMMENT 'Scope',
   `scope_id` int(11) NOT NULL DEFAULT 0 COMMENT 'Scope Id',
@@ -269,5 +269,21 @@ VALUES
 	('pending','new',1,1),
 	('pending_payment','pending_payment',1,0),
 	('processing','processing',1,1);
+
+DROP TABLE IF EXISTS `sequence_catalog_category`;
+CREATE TABLE `sequence_catalog_category` (
+  `sequence_value` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`sequence_value`)
+) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8;
+
+-- catalog_category_entity has a 1:1 to table sequence_catalog_category and cannot be reversed
+DROP TABLE IF EXISTS `catalog_category_entity`;
+CREATE TABLE `catalog_category_entity` (
+  `entity_id` int(10) unsigned NOT NULL COMMENT 'Entity Id',
+  `row_id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Version Id',
+  PRIMARY KEY (`row_id`),
+  KEY `CATALOG_CATEGORY_ENTITY_ENTITY_ID` (`entity_id`),
+  CONSTRAINT `CAT_CTGR_ENTT_ENTT_ID_SEQUENCE_CAT_CTGR_SEQUENCE_VAL` FOREIGN KEY (`entity_id`) REFERENCES `sequence_catalog_category` (`sequence_value`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8 COMMENT='Catalog Category Table';
 
 SET foreign_key_checks = 1;

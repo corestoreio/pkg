@@ -25,9 +25,9 @@ message CatalogProductIndexEAVDecimalIDX {
 message CatalogProductIndexEAVDecimalIDXCollection { 
 	repeated CatalogProductIndexEAVDecimalIDX Data = 1; 
 } 
-// CoreConfigData represents a single row for DB table core_config_data . Auto
-// generated.
-message CoreConfigData { 
+// CoreConfiguration represents a single row for DB table core_configuration .
+// Auto generated.
+message CoreConfiguration { 
 	uint32 config_id= 1 [(gogoproto.customname)="ConfigID" ]; 
 	string scope= 2 [(gogoproto.customname)="Scope" ]; 
 	int32 scope_id= 3 [(gogoproto.customname)="ScopeID" ]; 
@@ -37,10 +37,10 @@ message CoreConfigData {
 	google.protobuf.Timestamp version_ts= 7 [(gogoproto.customname)="VersionTs" ,(gogoproto.stdtime)=true,(gogoproto.nullable)=false]; 
 	google.protobuf.Timestamp version_te= 8 [(gogoproto.customname)="VersionTe" ,(gogoproto.stdtime)=true,(gogoproto.nullable)=false]; 
 } 
-// CoreConfigDataCollection represents multiple rows for DB table
-// core_config_data . Auto generated.
-message CoreConfigDataCollection { 
-	repeated CoreConfigData Data = 1; 
+// CoreConfigurationCollection represents multiple rows for DB table
+// core_configuration . Auto generated.
+message CoreConfigurationCollection { 
+	repeated CoreConfiguration Data = 1; 
 } 
 // CustomerAddressEntity represents a single row for DB table
 // customer_address_entity . Auto generated.

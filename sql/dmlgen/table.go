@@ -37,6 +37,7 @@ const (
 	FeatureEntityDBMapColumns
 	FeatureEntityWriteTo
 	FeatureEntityDBAssignLastInsertID
+	FeatureEntityRelationships
 	FeatureCollectionUniqueGetters
 	FeatureCollectionUniquifiedGetters
 	FeatureCollectionFilter
@@ -52,15 +53,11 @@ const (
 
 // table writes one database table into Go source code.
 type Table struct {
-	Package          string      // Name of the package
-	TableName        string      // Name of the table
-	Comment          string      // Comment above the struct type declaration
-	Columns          ddl.Columns // all columns of a table
-	HasAutoIncrement uint8       // 0=nil,1=false (has NO auto increment),2=true has auto increment
-	// ReferencedCollections, map key is the name of the struct field, map value
-	// the target Go collection type.
-	ReferencedCollections []string
-
+	Package              string      // Name of the package
+	TableName            string      // Name of the table
+	Comment              string      // Comment above the struct type declaration
+	Columns              ddl.Columns // all columns of a table
+	HasAutoIncrement     uint8       // 0=nil,1=false (has NO auto increment),2=true has auto increment
 	HasJSONMarshaler     bool
 	HasEasyJSONMarshaler bool
 	HasBinaryMarshaler   bool
@@ -70,6 +67,7 @@ type Table struct {
 	privateFields   map[string]bool
 	featuresInclude FeatureToggle
 	featuresExclude FeatureToggle
+	fieldMapFn      func(dbIdentifier string) (newName string)
 }
 
 func (t *Table) IsFieldPublic(dbColumnName string) bool {
@@ -115,8 +113,10 @@ func (t *Table) collectionStruct(mainGen *codegen.Go, ts *Generator) {
 	{
 		mainGen.In()
 		mainGen.Pln(`Data []*`, t.EntityName(), codegen.EncloseBT(`json:"data,omitempty"`))
-		mainGen.Pln(`BeforeMapColumns	func(uint64, *`, t.EntityName(), `) error`, codegen.EncloseBT(`json:"-"`))
-		mainGen.Pln(`AfterMapColumns 	func(uint64, *`, t.EntityName(), `) error `, codegen.EncloseBT(`json:"-"`))
+		if ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityDBMapColumns|FeatureDB) {
+			mainGen.Pln(`BeforeMapColumns	func(uint64, *`, t.EntityName(), `) error`, codegen.EncloseBT(`json:"-"`))
+			mainGen.Pln(`AfterMapColumns 	func(uint64, *`, t.EntityName(), `) error `, codegen.EncloseBT(`json:"-"`))
+		}
 		if fn, ok := ts.customCode["type_"+t.CollectionName()]; ok {
 			fn(ts, t, mainGen)
 		}
@@ -126,8 +126,8 @@ func (t *Table) collectionStruct(mainGen *codegen.Go, ts *Generator) {
 
 	mainGen.C(`New`+t.CollectionName(), ` creates a new initialized collection. Auto generated.`)
 	// TODO(idea): use a global pool which can register for each type the
-	// before/after mapcolumn function so that the dev does not need to
-	// assign each time. think if it's worth such a pattern.
+	//  before/after mapcolumn function so that the dev does not need to
+	//  assign each time. think if it's worth such a pattern.
 	mainGen.Pln(`func New`+t.CollectionName(), `() *`, t.CollectionName(), ` {`)
 	{
 		mainGen.In()
@@ -148,7 +148,15 @@ func (t *Table) entityStruct(mainGen *codegen.Go, ts *Generator) {
 		return
 	}
 
-	mainGen.C(t.EntityName(), ` represents a single row for DB table `, t.TableName, `. Auto generated. `)
+	fieldMapFn := ts.defaultTableConfig.FieldMapFn
+	if fieldMapFn == nil {
+		fieldMapFn = t.fieldMapFn
+	}
+	if fieldMapFn == nil {
+		fieldMapFn = defaultFieldMapFn
+	}
+
+	mainGen.C(t.EntityName(), `represents a single row for DB table`, t.TableName+`. Auto generated.`)
 	if t.Comment != "" {
 		mainGen.C(t.Comment)
 	}
@@ -170,8 +178,76 @@ func (t *Table) entityStruct(mainGen *codegen.Go, ts *Generator) {
 				}
 				mainGen.Pln(t.GoCamelMaybePrivate(c.Field), ts.goTypeNull(c), structTag, c.GoComment())
 			}
-			for _, c := range t.ReferencedCollections {
-				mainGen.Pln(c)
+
+			if ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityRelationships) {
+				const debug = true
+				if kcuc, ok := ts.kcu[t.TableName]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
+					for _, kcuce := range kcuc.Data {
+						if !kcuce.ReferencedTableName.Valid {
+							continue
+						}
+
+						// case ONE-TO-MANY
+						isOneToMany := ts.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						isRelationAllowed := !ts.skipRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						hasTable := ts.Tables[kcuce.ReferencedTableName.String] != nil
+						if debug {
+							println("A1: isOneToMany", isOneToMany, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
+								t.TableName, "\t",
+								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+						}
+						if isOneToMany && hasTable && isRelationAllowed {
+							mainGen.Pln(fieldMapFn(kcuce.ReferencedTableName.String), " *", strs.ToGoCamelCase(kcuce.ReferencedTableName.String)+"Collection",
+								"// 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+						}
+
+						// case ONE-TO-ONE
+						isOneToOne := ts.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						if debug {
+							println("B1: IsOneToOne", isOneToOne, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
+								t.TableName, "\t",
+								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+						}
+						if isOneToOne && hasTable && isRelationAllowed {
+							mainGen.Pln(fieldMapFn(kcuce.ReferencedTableName.String), " *", strs.ToGoCamelCase(kcuce.ReferencedTableName.String),
+								"// 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+						}
+					}
+				}
+
+				if kcuc, ok := ts.kcuRev[t.TableName]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
+					for _, kcuce := range kcuc.Data {
+						if !kcuce.ReferencedTableName.Valid {
+							continue
+						}
+
+						// case ONE-TO-MANY
+						isOneToMany := ts.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						isRelationAllowed := !ts.skipRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						hasTable := ts.Tables[kcuce.ReferencedTableName.String] != nil
+						if debug {
+							println("A2: isOneToMany", isOneToMany, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
+								t.TableName, "\t",
+								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+						}
+						if isOneToMany && hasTable && isRelationAllowed {
+							mainGen.Pln(fieldMapFn(kcuce.ReferencedTableName.String), " *", strs.ToGoCamelCase(kcuce.ReferencedTableName.String)+"Collection",
+								"// Reversed 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+						}
+
+						// case ONE-TO-ONE
+						isOneToOne := ts.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						if debug {
+							println("B2: IsOneToOne", isOneToOne, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
+								t.TableName, "\t",
+								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+						}
+						if isOneToOne && hasTable && isRelationAllowed {
+							mainGen.Pln(fieldMapFn(kcuce.ReferencedTableName.String), " *", strs.ToGoCamelCase(kcuce.ReferencedTableName.String),
+								"// Reversed 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+						}
+					}
+				}
 			}
 			mainGen.Out()
 		}

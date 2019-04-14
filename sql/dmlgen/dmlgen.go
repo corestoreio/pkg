@@ -84,6 +84,14 @@ type Generator struct {
 	// customCode injects custom code to manipulate testing and other generate
 	// code blocks. A few implementations now but more can be added later.
 	customCode map[string]func(*Generator, *Table, io.Writer)
+
+	kcu    map[string]ddl.KeyColumnUsageCollection
+	kcuRev map[string]ddl.KeyColumnUsageCollection // rev = reversed relationship to find OneToMany
+	krs    *ddl.KeyRelationShips
+	// "mainTable.mainColumn" : "referencedTable.referencedColumn"
+	// or skips the reversed relationship
+	// "referencedTable.referencedColumn": "mainTable.mainColumn"
+	krsSkip map[string]string
 }
 
 // Option represents a sortable option for the NewGenerator function. Each option
@@ -140,8 +148,11 @@ type TableConfig struct {
 	// Some features can only be excluded on Default level and not on a per
 	// table level.
 	FeaturesExclude FeatureToggle
-
-	lastErr error
+	// FieldMapFn can map a dbIdentifier (database identifier) of the current
+	// table to a new name. dbIdentifier is in most cases the column name and in
+	// cases of foreign keys, it is the table name.
+	FieldMapFn func(dbIdentifier string) (newName string)
+	lastErr    error
 }
 
 func (to *TableConfig) applyEncoders(t *Table) {
@@ -315,6 +326,10 @@ func WithTableConfigDefault(opt TableConfig) (o Option) {
 	return o
 }
 
+func defaultFieldMapFn(s string) string {
+	return strs.ToGoCamelCase(s)
+}
+
 // WithTableConfig applies options to an existing table, identified by the table
 // name used as map key. Options are custom struct or different encoders.
 // Returns a not-found error if the table cannot be found in the `Generator` map.
@@ -338,6 +353,10 @@ func WithTableConfig(tableName string, opt *TableConfig) (o Option) {
 		opt.applyUniquifiedColumns(t)
 		t.featuresInclude = opt.FeaturesInclude
 		t.featuresExclude = opt.FeaturesExclude
+		t.fieldMapFn = opt.FieldMapFn
+		if t.fieldMapFn == nil {
+			t.fieldMapFn = defaultFieldMapFn
+		}
 		return opt.lastErr
 	}
 	return o
@@ -386,37 +405,47 @@ func WithColumnAliasesFromForeignKeys(ctx context.Context, db dml.Querier) (opt 
 	return opt
 }
 
-// WithReferenceEntitiesByForeignKeys analyzes the foreign keys which points to
-// a table and adds them as a struct field name. For example:
+// WithForeignKeyRelationships analyzes the foreign keys which points to a table
+// and adds them as a struct field name. For example:
 // customer_address_entity.parent_id is a foreign key to
 // customer_entity.entity_id hence the generated struct CustomerEntity has a new
 // field which gets named CustomerAddressEntityCollection, pointing to type
-// CustomerAddressEntityCollection. structFieldNameMapperFn can be nil, if so
-// the name of the Go collection type gets used as field name.
-func WithReferenceEntitiesByForeignKeys(ctx context.Context, db dml.Querier, structFieldNameMapperFn func(string) string) (opt Option) {
-	// initial implementation. might not work correctly with the EAV tables as
-	// it might to point to to many tables/structs.
-
-	if structFieldNameMapperFn == nil {
-		structFieldNameMapperFn = func(s string) string { return s }
-	}
-
+// CustomerAddressEntityCollection. skipRelationships must be a balanced slice
+// in the notation of "table1.column1","table2.column2". For example:
+// 		"customer_entity.store_id", "store.store_id"
+// which means that the struct CustomerEntity won't have a field to the Store
+// struct (1:1 relationship). The reverse case can also be added
+// 		"store.store_id", "customer_entity.store_id"
+// which means that the Store struct won't have a field pointing to the
+// CustomerEntityCollection (1:M relationship).
+func WithForeignKeyRelationships(ctx context.Context, db dml.Querier, skipRelationships ...string) (opt Option) {
 	opt.sortOrder = 210 // must run at the end or where the end is near ;-)
-	opt.fn = func(ts *Generator) error {
+	opt.fn = func(ts *Generator) (err error) {
 
-		tblFks, err := ddl.LoadKeyColumnUsage(ctx, db, ts.sortedTableNames()...)
+		if len(skipRelationships)%2 == 1 {
+			return errors.Fatal.Newf("[dmlgen] skipRelationships must be balanced slice. Read the doc.")
+		}
+
+		ts.kcu, err = ddl.LoadKeyColumnUsage(ctx, db, ts.sortedTableNames()...)
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		for _, kcuc := range tblFks { // kcuc short for keyColumnUsageCollection
-			for _, kcuce := range kcuc.Data {
-				if kcuce.ReferencedTableName.Valid {
-					t := ts.Tables[kcuce.ReferencedTableName.String]
-					t.ReferencedCollections = append(t.ReferencedCollections,
-						structFieldNameMapperFn(kcuce.TableName)+" "+strs.ToGoCamelCase(kcuce.TableName)+"Collection")
-				}
-			}
+		ts.kcuRev = ddl.ReverseKeyColumnUsage(ts.kcu)
+
+		ts.krs, err = ddl.GenerateKeyRelationships(ctx, db, ts.kcu)
+		if err != nil {
+			return errors.WithStack(err)
 		}
+
+		ts.krsSkip = make(map[string]string, len(skipRelationships)/2)
+		for i := 0; i < len(skipRelationships); i += 2 {
+			ts.krsSkip[skipRelationships[i]] = skipRelationships[i+1]
+		}
+
+		var buf bytes.Buffer
+		ts.krs.Debug(&buf)
+		println(buf.String())
+
 		return nil
 	}
 	return opt
@@ -650,6 +679,11 @@ func NewGenerator(packageImportPath string, opts ...Option) (*Generator, error) 
 		t.Package = ts.Package
 	}
 	return ts, nil
+}
+
+func (ts *Generator) skipRelationship(table1, column1, table2, column2 string) bool {
+	// println("skip", "key", table1+"."+column1, ": ", ts.krsSkip[table1+"."+column1], "==", table2+"."+column2)
+	return ts.krsSkip[table1+"."+column1] == table2+"."+column2
 }
 
 func (ts *Generator) hasFeature(tableInclude, tableExclude, feature FeatureToggle) bool {

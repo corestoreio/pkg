@@ -29,6 +29,7 @@ import (
 	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/codegen"
+	"github.com/corestoreio/pkg/util/strs"
 )
 
 var _ = null.JSONMarshalFn
@@ -103,7 +104,7 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 		dmlgen.WithProtobuf(),
 
 		dmlgen.WithTablesFromDB(ctx, db,
-			"dmlgen_types", "core_config_data", "customer_entity", "customer_address_entity",
+			"dmlgen_types", "core_configuration", "customer_entity", "customer_address_entity",
 			"catalog_product_index_eav_decimal_idx", "sales_order_status_state",
 			"view_customer_no_auto_increment", "view_customer_auto_increment",
 		),
@@ -121,7 +122,7 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 			}),
 
 		dmlgen.WithTableConfig("catalog_product_index_eav_decimal_idx", &dmlgen.TableConfig{
-			//		DisableCollectionMethods: true,
+			// 		DisableCollectionMethods: true,
 		}),
 		dmlgen.WithTableConfig("sales_order_status_state", &dmlgen.TableConfig{
 			Encoders:   []string{"json", "protobuf"},
@@ -137,7 +138,7 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 		}),
 
 		dmlgen.WithTableConfig(
-			"core_config_data", &dmlgen.TableConfig{
+			"core_configuration", &dmlgen.TableConfig{
 				Encoders: []string{"easyjson", "protobuf"},
 				CustomStructTags: []string{
 					"path", `json:"x_path" xml:"y_path" max_len:"255"`,
@@ -150,7 +151,7 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 				UniquifiedColumns: []string{"path"},
 			}),
 
-		dmlgen.WithTable("core_config_data", ddl.Columns{
+		dmlgen.WithTable("core_configuration", ddl.Columns{
 			&ddl.Column{Field: "path", Pos: 5, Default: null.MakeString("'general'"), Null: "NO", DataType: "varchar", CharMaxLength: null.MakeInt64(255), ColumnType: "varchar(255)", Comment: "Config Path overwritten"},
 		}, "overwrite"),
 
@@ -163,13 +164,7 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 			}),
 
 		dmlgen.WithColumnAliasesFromForeignKeys(ctx, db.DB),
-		dmlgen.WithReferenceEntitiesByForeignKeys(ctx, db.DB, func(tableName string) string {
-			switch tableName {
-			case "customer_address_entity":
-				tableName = "Addresses"
-			}
-			return tableName
-		}),
+		dmlgen.WithForeignKeyRelationships(ctx, db.DB),
 
 		dmlgen.WithCustomCode("pseudo.MustNewService.Option", `
 		pseudo.WithTagFakeFunc("dmltestgenerated.CustomerAddressEntity.ParentID", func(maxLen int) (interface{}, error) {
@@ -276,10 +271,10 @@ func TestWithCustomStructTags(t *testing.T) {
 
 	t.Run("column not found", func(t *testing.T) {
 		tbls, err := dmlgen.NewGenerator("test",
-			dmlgen.WithTableConfig("core_config_data", &dmlgen.TableConfig{
+			dmlgen.WithTableConfig("core_configuration", &dmlgen.TableConfig{
 				CustomStructTags: []string{"scope_id", "toml:..."},
 			}),
-			dmlgen.WithTable("core_config_data", ddl.Columns{
+			dmlgen.WithTable("core_configuration", ddl.Columns{
 				&ddl.Column{Field: "config_id"},
 			}),
 		)
@@ -303,10 +298,10 @@ func TestWithStructTags(t *testing.T) {
 
 	t.Run("struct tag not supported", func(t *testing.T) {
 		tbls, err := dmlgen.NewGenerator("test",
-			dmlgen.WithTableConfig("core_config_data", &dmlgen.TableConfig{
+			dmlgen.WithTableConfig("core_configuration", &dmlgen.TableConfig{
 				StructTags: []string{"hjson"},
 			}),
-			dmlgen.WithTable("core_config_data", ddl.Columns{
+			dmlgen.WithTable("core_configuration", ddl.Columns{
 				&ddl.Column{Field: "config_id"},
 			}),
 		)
@@ -316,15 +311,15 @@ func TestWithStructTags(t *testing.T) {
 
 	t.Run("al available struct tags", func(t *testing.T) {
 		tbls, err := dmlgen.NewGenerator("test",
-			dmlgen.WithTableConfig("core_config_data", &dmlgen.TableConfig{
+			dmlgen.WithTableConfig("core_configuration", &dmlgen.TableConfig{
 				StructTags: []string{"bson", "db", "env", "json", "toml", "yaml", "xml"},
 			}),
-			dmlgen.WithTable("core_config_data", ddl.Columns{
+			dmlgen.WithTable("core_configuration", ddl.Columns{
 				&ddl.Column{Field: "config_id"},
 			}),
 		)
 		assert.NoError(t, err)
-		have := tbls.Tables["core_config_data"].Columns.ByField("config_id").GoString()
+		have := tbls.Tables["core_configuration"].Columns.ByField("config_id").GoString()
 		assert.Exactly(t, "&ddl.Column{Field: \"config_id\", StructTag: \"bson:\\\"config_id,omitempty\\\" db:\\\"config_id\\\" env:\\\"config_id\\\" json:\\\"config_id,omitempty\\\" toml:\\\"config_id\\\" yaml:\\\"config_id,omitempty\\\" xml:\\\"config_id,omitempty\\\"\", }", have)
 	})
 }
@@ -347,7 +342,7 @@ func TestWithColumnAliases(t *testing.T) {
 			dmlgen.WithTableConfig("tableNOTFOUND", &dmlgen.TableConfig{
 				ColumnAliases: map[string][]string{"scope_id": {"scopeID"}},
 			}),
-			dmlgen.WithTable("core_config_data", ddl.Columns{
+			dmlgen.WithTable("core_configuration", ddl.Columns{
 				&ddl.Column{Field: "config_id"},
 			}),
 		)
@@ -361,11 +356,11 @@ func TestWithUniquifiedColumns(t *testing.T) {
 
 	t.Run("column not found", func(t *testing.T) {
 		tbls, err := dmlgen.NewGenerator("test",
-			dmlgen.WithTableConfig("core_config_data", &dmlgen.TableConfig{
+			dmlgen.WithTableConfig("core_configuration", &dmlgen.TableConfig{
 				UniquifiedColumns: []string{"scope_id", "scopeID"},
 			}),
 
-			dmlgen.WithTable("core_config_data", ddl.Columns{
+			dmlgen.WithTable("core_configuration", ddl.Columns{
 				&ddl.Column{Field: "config_id"},
 			}),
 		)
@@ -385,7 +380,7 @@ func TestNewGenerator_NoDB(t *testing.T) {
 	ts, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated2",
 
 		dmlgen.WithTablesFromDB(ctx, db,
-			"core_config_data", "sales_order_status_state", "view_customer_auto_increment",
+			"core_configuration", "sales_order_status_state", "view_customer_auto_increment",
 		),
 
 		dmlgen.WithTableConfigDefault(dmlgen.TableConfig{
@@ -404,8 +399,51 @@ func TestNewGenerator_NoDB(t *testing.T) {
 	ts.ImportPathsTesting = append(ts.ImportPathsTesting, "fmt") // only needed for pseudo functional options.
 	ts.TestSQLDumpGlobPath = "../testdata/test_*_tables.sql"
 
-	writeFile(t, "dmltestgenerated2/xno_features_gen.go", ts.GenerateGo)
+	writeFile(t, "dmltestgenerated2/no_db_gen.go", ts.GenerateGo)
+}
 
-	// assert.NoError(t, dmlgen.GenerateProto("./dmltestgenerated"))
-	// assert.NoError(t, dmlgen.GenerateJSON("./dmltestgenerated", nil))
+func TestNewGenerator_ReversedForeignKeys(t *testing.T) {
+	db := dmltest.MustConnectDB(t)
+	defer dmltest.Close(t, db)
+
+	// defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil).Deferred()
+	dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil)
+
+	ctx := context.Background()
+	ts, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated3",
+
+		dmlgen.WithTablesFromDB(ctx, db,
+			"store", "store_group", "store_website",
+			"customer_entity", "customer_address_entity",
+			"catalog_category_entity", "sequence_catalog_category",
+		),
+
+		dmlgen.WithTableConfigDefault(dmlgen.TableConfig{
+			Encoders:        []string{"json", "protobuf"},
+			StructTags:      []string{"max_len"},
+			FeaturesInclude: dmlgen.FeatureEntityStruct | dmlgen.FeatureCollectionStruct | dmlgen.FeatureEntityRelationships,
+		}),
+		dmlgen.WithForeignKeyRelationships(ctx, db.DB,
+			// "store_website.website_id", "customer_entity.website_id",
+			// "store.store_id", "customer_entity.store_id",
+			// "customer_entity.store_id", "store.store_id",
+			// "customer_entity.website_id", "store_website.website_id",
+			"customer_address_entity.parent_id", "customer_entity.entity_id",
+		),
+		dmlgen.WithTableConfig("customer_entity", &dmlgen.TableConfig{
+			FieldMapFn: func(dbIdentifier string) (fieldName string) {
+				switch dbIdentifier {
+				case "customer_address_entity":
+					return "Address"
+				}
+				return strs.ToGoCamelCase(dbIdentifier)
+			},
+		}),
+	)
+	assert.NoError(t, err)
+
+	ts.ImportPathsTesting = append(ts.ImportPathsTesting, "fmt") // only needed for pseudo functional options.
+	ts.TestSQLDumpGlobPath = "../testdata/test_*_tables.sql"
+
+	writeFile(t, "dmltestgenerated3/rev_fk_gen.go", ts.GenerateGo)
 }

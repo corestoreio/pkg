@@ -10,9 +10,9 @@ import (
 	"github.com/corestoreio/pkg/storage/null"
 )
 
-// CoreConfigData  represents a single row for DB table  core_config_data . Auto
-// generated.
-type CoreConfigData struct {
+// CoreConfiguration  represents a single row for DB table  core_configuration .
+// Auto generated.
+type CoreConfiguration struct {
 	ConfigID  uint32      // config_id int(10) unsigned NOT NULL PRI  auto_increment "Id"
 	Scope     string      // scope varchar(8) NOT NULL MUL DEFAULT ''default''  "Scope"
 	ScopeID   int32       // scope_id int(11) NOT NULL  DEFAULT '0'  "Scope Id"
@@ -24,11 +24,11 @@ type CoreConfigData struct {
 }
 
 // Empty empties all the fields of the current object. Also known as Reset.
-func (e *CoreConfigData) Empty() *CoreConfigData { *e = CoreConfigData{}; return e }
+func (e *CoreConfiguration) Empty() *CoreConfiguration { *e = CoreConfiguration{}; return e }
 
 // Copy copies the struct and returns a new pointer
-func (e *CoreConfigData) Copy() *CoreConfigData {
-	e2 := new(CoreConfigData)
+func (e *CoreConfiguration) Copy() *CoreConfiguration {
+	e2 := new(CoreConfiguration)
 	*e2 = *e // for now a shallow copy
 	return e2
 }
@@ -36,7 +36,7 @@ func (e *CoreConfigData) Copy() *CoreConfigData {
 // WriteTo implements io.WriterTo and writes the field names and their values to
 // w. This is especially useful for debugging or or generating a hash of the
 // struct.
-func (e *CoreConfigData) WriteTo(w io.Writer) (n int64, err error) {
+func (e *CoreConfiguration) WriteTo(w io.Writer) (n int64, err error) {
 	// for now this printing is good enough. If you need better swap out with your code.
 	n2, err := fmt.Fprint(w,
 		"config_id:", e.ConfigID, "\n",
@@ -51,26 +51,26 @@ func (e *CoreConfigData) WriteTo(w io.Writer) (n int64, err error) {
 	return int64(n2), err
 }
 
-// CoreConfigDataCollection represents a collection type for DB table
-// core_config_data
+// CoreConfigurationCollection represents a collection type for DB table
+// core_configuration
 // Not thread safe. Auto generated.
-type CoreConfigDataCollection struct {
-	Data             []*CoreConfigData                   `json:"data,omitempty"`
-	BeforeMapColumns func(uint64, *CoreConfigData) error `json:"-"`
-	AfterMapColumns  func(uint64, *CoreConfigData) error `json:"-"`
+type CoreConfigurationCollection struct {
+	Data             []*CoreConfiguration                   `json:"data,omitempty"`
+	BeforeMapColumns func(uint64, *CoreConfiguration) error `json:"-"`
+	AfterMapColumns  func(uint64, *CoreConfiguration) error `json:"-"`
 }
 
-// NewCoreConfigDataCollection  creates a new initialized collection. Auto
+// NewCoreConfigurationCollection  creates a new initialized collection. Auto
 // generated.
-func NewCoreConfigDataCollection() *CoreConfigDataCollection {
-	return &CoreConfigDataCollection{
-		Data: make([]*CoreConfigData, 0, 5),
+func NewCoreConfigurationCollection() *CoreConfigurationCollection {
+	return &CoreConfigurationCollection{
+		Data: make([]*CoreConfiguration, 0, 5),
 	}
 }
 
 // ConfigIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
-func (cc *CoreConfigDataCollection) ConfigIDs(ret ...uint32) []uint32 {
+func (cc *CoreConfigurationCollection) ConfigIDs(ret ...uint32) []uint32 {
 	if ret == nil {
 		ret = make([]uint32, 0, len(cc.Data))
 	}
@@ -83,7 +83,7 @@ func (cc *CoreConfigDataCollection) ConfigIDs(ret ...uint32) []uint32 {
 // WriteTo implements io.WriterTo and writes the field names and their values to
 // w. This is especially useful for debugging or or generating a hash of the
 // struct.
-func (cc *CoreConfigDataCollection) WriteTo(w io.Writer) (n int64, err error) {
+func (cc *CoreConfigurationCollection) WriteTo(w io.Writer) (n int64, err error) {
 	for i, d := range cc.Data {
 		n2, err := d.WriteTo(w)
 		if err != nil {
@@ -96,7 +96,7 @@ func (cc *CoreConfigDataCollection) WriteTo(w io.Writer) (n int64, err error) {
 
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
-func (cc *CoreConfigDataCollection) Filter(f func(*CoreConfigData) bool) *CoreConfigDataCollection {
+func (cc *CoreConfigurationCollection) Filter(f func(*CoreConfiguration) bool) *CoreConfigurationCollection {
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
@@ -109,9 +109,9 @@ func (cc *CoreConfigDataCollection) Filter(f func(*CoreConfigData) bool) *CoreCo
 	return cc
 }
 
-// Each will run function f on all items in []* CoreConfigData . Auto generated
-// via dmlgen.
-func (cc *CoreConfigDataCollection) Each(f func(*CoreConfigData)) *CoreConfigDataCollection {
+// Each will run function f on all items in []* CoreConfiguration . Auto
+// generated via dmlgen.
+func (cc *CoreConfigurationCollection) Each(f func(*CoreConfiguration)) *CoreConfigurationCollection {
 	for i := range cc.Data {
 		f(cc.Data[i])
 	}
@@ -119,7 +119,7 @@ func (cc *CoreConfigDataCollection) Each(f func(*CoreConfigData)) *CoreConfigDat
 }
 
 // Cut will remove items i through j-1. Auto generated via dmlgen.
-func (cc *CoreConfigDataCollection) Cut(i, j int) *CoreConfigDataCollection {
+func (cc *CoreConfigurationCollection) Cut(i, j int) *CoreConfigurationCollection {
 	z := cc.Data // copy slice header
 	copy(z[i:], z[j:])
 	for k, n := len(z)-j+i, len(z); k < n; k++ {
@@ -131,10 +131,12 @@ func (cc *CoreConfigDataCollection) Cut(i, j int) *CoreConfigDataCollection {
 }
 
 // Swap will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *CoreConfigDataCollection) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
+func (cc *CoreConfigurationCollection) Swap(i, j int) {
+	cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i]
+}
 
 // Delete will remove an item from the slice. Auto generated via dmlgen.
-func (cc *CoreConfigDataCollection) Delete(i int) *CoreConfigDataCollection {
+func (cc *CoreConfigurationCollection) Delete(i int) *CoreConfigurationCollection {
 	z := cc.Data // copy the slice header
 	end := len(z) - 1
 	cc.Swap(i, end)
@@ -146,18 +148,18 @@ func (cc *CoreConfigDataCollection) Delete(i int) *CoreConfigDataCollection {
 }
 
 // Insert will place a new item at position i. Auto generated via dmlgen.
-func (cc *CoreConfigDataCollection) Insert(n *CoreConfigData, i int) *CoreConfigDataCollection {
+func (cc *CoreConfigurationCollection) Insert(n *CoreConfiguration, i int) *CoreConfigurationCollection {
 	z := cc.Data // copy the slice header
-	z = append(z, &CoreConfigData{})
+	z = append(z, &CoreConfiguration{})
 	copy(z[i+1:], z[i:])
 	z[i] = n
 	cc.Data = z
 	return cc
 }
 
-// Append will add a new item at the end of * CoreConfigDataCollection . Auto
+// Append will add a new item at the end of * CoreConfigurationCollection . Auto
 // generated via dmlgen.
-func (cc *CoreConfigDataCollection) Append(n ...*CoreConfigData) *CoreConfigDataCollection {
+func (cc *CoreConfigurationCollection) Append(n ...*CoreConfiguration) *CoreConfigurationCollection {
 	cc.Data = append(cc.Data, n...)
 	return cc
 }
