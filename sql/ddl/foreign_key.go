@@ -95,11 +95,11 @@ type KeyColumnUsageCollection struct {
 	AfterMapColumns  func(uint64, *KeyColumnUsage) error
 }
 
-// MakeKeyColumnUsageCollection creates a new initialized collection.
-func MakeKeyColumnUsageCollection() KeyColumnUsageCollection {
-	return KeyColumnUsageCollection{
-		Data: make([]*KeyColumnUsage, 0, 5),
-	}
+// Sort sorts the collection by constraint name.
+func (cc KeyColumnUsageCollection) Sort() {
+	sort.Slice(cc.Data, func(i, j int) bool {
+		return cc.Data[i].ConstraintName < cc.Data[j].ConstraintName
+	})
 }
 
 func (cc KeyColumnUsageCollection) scanColumns(cm *dml.ColumnMap, e *KeyColumnUsage, idx uint64) error {
@@ -247,10 +247,6 @@ func LoadKeyColumnUsage(ctx context.Context, db dml.Querier, tables ...string) (
 			return
 		}
 
-		if _, ok := tc[kcu.TableName]; !ok {
-			tc[kcu.TableName] = MakeKeyColumnUsageCollection()
-		}
-
 		kcuc := tc[kcu.TableName]
 		kcuc.Data = append(kcuc.Data, kcu)
 		tc[kcu.TableName] = kcuc
@@ -259,6 +255,37 @@ func LoadKeyColumnUsage(ctx context.Context, db dml.Querier, tables ...string) (
 		err = errors.WithStack(err)
 	}
 	return
+}
+
+// ReverseKeyColumnUsage reverses the argument to a new key column usage
+// collection. E.g. customer_entity, catalog_product_entity and other tables
+// have a foreign key to table store.store_id which is a OneToOne relationship.
+// When reversed the table store, as map key, points to customer_entity and
+// catalog_product_entity which becomes then a OneToMany relationship. If that
+// makes sense is another topic.
+func ReverseKeyColumnUsage(kcu map[string]KeyColumnUsageCollection) (kcuRev map[string]KeyColumnUsageCollection) {
+	kcuRev = make(map[string]KeyColumnUsageCollection, len(kcu))
+	for _, kcuc := range kcu {
+		for _, kcucd := range kcuc.Data {
+			kcucRev := kcuRev[kcucd.ReferencedTableName.String]
+			kcucRev.Data = append(kcucRev.Data, &KeyColumnUsage{
+				ConstraintCatalog:          kcucd.ConstraintCatalog,
+				ConstraintSchema:           kcucd.ConstraintSchema,
+				ConstraintName:             kcucd.ConstraintName,
+				TableCatalog:               kcucd.TableCatalog,
+				TableSchema:                kcucd.ReferencedTableSchema.String,
+				TableName:                  kcucd.ReferencedTableName.String,
+				ColumnName:                 kcucd.ReferencedColumnName.String,
+				OrdinalPosition:            kcucd.OrdinalPosition,
+				PositionInUniqueConstraint: kcucd.PositionInUniqueConstraint,
+				ReferencedTableSchema:      null.MakeString(kcucd.TableSchema),
+				ReferencedTableName:        null.MakeString(kcucd.TableName),
+				ReferencedColumnName:       null.MakeString(kcucd.ColumnName),
+			})
+			kcuRev[kcucd.ReferencedTableName.String] = kcucRev
+		}
+	}
+	return kcuRev
 }
 
 // KeyRelationShips contains an internal cache about the database foreign key
