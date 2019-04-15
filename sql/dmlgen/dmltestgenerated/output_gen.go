@@ -41,8 +41,8 @@ func NewTables(ctx context.Context, opts ...ddl.TableOption) (tm *ddl.Tables, er
 	return tm, nil
 }
 
-// CatalogProductIndexEAVDecimalIDX  represents a single row for DB table
-// catalog_product_index_eav_decimal_idx . Auto generated.
+// CatalogProductIndexEAVDecimalIDX represents a single row for DB table
+// catalog_product_index_eav_decimal_idx. Auto generated.
 type CatalogProductIndexEAVDecimalIDX struct {
 	EntityID    uint32       // entity_id int(10) unsigned NOT NULL PRI   "Entity ID"
 	AttributeID uint32       // attribute_id smallint(5) unsigned NOT NULL PRI   "Attribute ID"
@@ -320,7 +320,17 @@ func (cc *CatalogProductIndexEAVDecimalIDXCollection) Append(n ...*CatalogProduc
 	return cc
 }
 
-// CoreConfiguration  represents a single row for DB table  core_configuration .
+// UnmarshalBinary implements encoding.BinaryUnmarshaler.
+func (cc *CatalogProductIndexEAVDecimalIDXCollection) UnmarshalBinary(data []byte) error {
+	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
+}
+
+// MarshalBinary implements encoding.BinaryMarshaler.
+func (cc *CatalogProductIndexEAVDecimalIDXCollection) MarshalBinary() (data []byte, err error) {
+	return cc.Marshal() // Implemented via github.com/gogo/protobuf
+}
+
+// CoreConfiguration represents a single row for DB table core_configuration.
 // Auto generated.
 //easyjson:json
 type CoreConfiguration struct {
@@ -589,8 +599,19 @@ func (cc *CoreConfigurationCollection) Append(n ...*CoreConfiguration) *CoreConf
 	return cc
 }
 
-// CustomerAddressEntity  represents a single row for DB table
-// customer_address_entity . Auto generated.
+// UnmarshalBinary implements encoding.BinaryUnmarshaler.
+func (cc *CoreConfigurationCollection) UnmarshalBinary(data []byte) error {
+	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
+}
+
+// MarshalBinary implements encoding.BinaryMarshaler.
+func (cc *CoreConfigurationCollection) MarshalBinary() (data []byte, err error) {
+	return cc.Marshal() // Implemented via github.com/gogo/protobuf
+}
+
+// CustomerAddressEntity represents a single row for DB table
+// customer_address_entity. Auto generated.
+//easyjson:json
 type CustomerAddressEntity struct {
 	EntityID          uint32      `max_len:"10"` // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
 	IncrementID       null.String `max_len:"50"` // increment_id varchar(50) NULL  DEFAULT 'NULL'  "Increment Id"
@@ -617,7 +638,6 @@ type CustomerAddressEntity struct {
 	VatRequestDate    null.String `max_len:"255"`   // vat_request_date varchar(255) NULL  DEFAULT 'NULL'  "VAT number validation request date"
 	VatRequestID      null.String `max_len:"255"`   // vat_request_id varchar(255) NULL  DEFAULT 'NULL'  "VAT number validation request ID"
 	VatRequestSuccess null.Uint32 `max_len:"10"`    // vat_request_success int(10) unsigned NULL  DEFAULT 'NULL'  "VAT number validation request success"
-	customer_entity   *CustomerEntity
 }
 
 // Empty empties all the fields of the current object. Also known as Reset.
@@ -741,6 +761,7 @@ func (e *CustomerAddressEntity) MapColumns(cm *dml.ColumnMap) error {
 // CustomerAddressEntityCollection represents a collection type for DB table
 // customer_address_entity
 // Not thread safe. Auto generated.
+//easyjson:json
 type CustomerAddressEntityCollection struct {
 	Data             []*CustomerAddressEntity                   `json:"data,omitempty"`
 	BeforeMapColumns func(uint64, *CustomerAddressEntity) error `json:"-"`
@@ -911,37 +932,49 @@ func (cc *CustomerAddressEntityCollection) Append(n ...*CustomerAddressEntity) *
 	return cc
 }
 
-// CustomerEntity  represents a single row for DB table  customer_entity . Auto
+// UnmarshalBinary implements encoding.BinaryUnmarshaler.
+func (cc *CustomerAddressEntityCollection) UnmarshalBinary(data []byte) error {
+	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
+}
+
+// MarshalBinary implements encoding.BinaryMarshaler.
+func (cc *CustomerAddressEntityCollection) MarshalBinary() (data []byte, err error) {
+	return cc.Marshal() // Implemented via github.com/gogo/protobuf
+}
+
+// CustomerEntity represents a single row for DB table customer_entity. Auto
 // generated.
+//easyjson:json
 type CustomerEntity struct {
-	EntityID               uint32      `max_len:"10"`  // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
-	WebsiteID              null.Uint32 `max_len:"5"`   // website_id smallint(5) unsigned NULL MUL DEFAULT 'NULL'  "Website ID"
-	Email                  null.String `max_len:"255"` // email varchar(255) NULL MUL DEFAULT 'NULL'  "Email"
-	GroupID                uint32      `max_len:"5"`   // group_id smallint(5) unsigned NOT NULL  DEFAULT '0'  "Group ID"
-	IncrementID            null.String `max_len:"50"`  // increment_id varchar(50) NULL  DEFAULT 'NULL'  "Increment Id"
-	StoreID                null.Uint32 `max_len:"5"`   // store_id smallint(5) unsigned NULL MUL DEFAULT '0'  "Store ID"
-	CreatedAt              time.Time   // created_at timestamp NOT NULL  DEFAULT 'current_timestamp()'  "Created At"
-	UpdatedAt              time.Time   // updated_at timestamp NOT NULL  DEFAULT 'current_timestamp()' on update current_timestamp() "Updated At"
-	IsActive               bool        `max_len:"5"`   // is_active smallint(5) unsigned NOT NULL  DEFAULT '1'  "Is Active"
-	DisableAutoGroupChange uint32      `max_len:"5"`   // disable_auto_group_change smallint(5) unsigned NOT NULL  DEFAULT '0'  "Disable automatic group change based on VAT ID"
-	CreatedIn              null.String `max_len:"255"` // created_in varchar(255) NULL  DEFAULT 'NULL'  "Created From"
-	Prefix                 null.String `max_len:"40"`  // prefix varchar(40) NULL  DEFAULT 'NULL'  "Name Prefix"
-	Firstname              null.String `max_len:"255"` // firstname varchar(255) NULL MUL DEFAULT 'NULL'  "First Name"
-	Middlename             null.String `max_len:"255"` // middlename varchar(255) NULL  DEFAULT 'NULL'  "Middle Name/Initial"
-	Lastname               null.String `max_len:"255"` // lastname varchar(255) NULL MUL DEFAULT 'NULL'  "Last Name"
-	Suffix                 null.String `max_len:"40"`  // suffix varchar(40) NULL  DEFAULT 'NULL'  "Name Suffix"
-	Dob                    null.Time   // dob date NULL  DEFAULT 'NULL'  "Date of Birth"
-	passwordHash           null.String `max_len:"128"` // password_hash varchar(128) NULL  DEFAULT 'NULL'  "Password_hash"
-	RpToken                null.String `max_len:"128"` // rp_token varchar(128) NULL  DEFAULT 'NULL'  "Reset password token"
-	RpTokenCreatedAt       null.Time   // rp_token_created_at datetime NULL  DEFAULT 'NULL'  "Reset password token creation time"
-	DefaultBilling         null.Uint32 `max_len:"10"` // default_billing int(10) unsigned NULL  DEFAULT 'NULL'  "Default Billing Address"
-	DefaultShipping        null.Uint32 `max_len:"10"` // default_shipping int(10) unsigned NULL  DEFAULT 'NULL'  "Default Shipping Address"
-	Taxvat                 null.String `max_len:"50"` // taxvat varchar(50) NULL  DEFAULT 'NULL'  "Tax/VAT Number"
-	Confirmation           null.String `max_len:"64"` // confirmation varchar(64) NULL  DEFAULT 'NULL'  "Is Confirmed"
-	Gender                 null.Uint32 `max_len:"5"`  // gender smallint(5) unsigned NULL  DEFAULT 'NULL'  "Gender"
-	FailuresNum            null.Int32  `max_len:"5"`  // failures_num smallint(6) NULL  DEFAULT '0'  "Failure Number"
-	FirstFailure           null.Time   // first_failure timestamp NULL  DEFAULT 'NULL'  "First Failure"
-	LockExpires            null.Time   // lock_expires timestamp NULL  DEFAULT 'NULL'  "Lock Expiration Date"
+	EntityID               uint32                           `max_len:"10"`  // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
+	WebsiteID              null.Uint32                      `max_len:"5"`   // website_id smallint(5) unsigned NULL MUL DEFAULT 'NULL'  "Website ID"
+	Email                  null.String                      `max_len:"255"` // email varchar(255) NULL MUL DEFAULT 'NULL'  "Email"
+	GroupID                uint32                           `max_len:"5"`   // group_id smallint(5) unsigned NOT NULL  DEFAULT '0'  "Group ID"
+	IncrementID            null.String                      `max_len:"50"`  // increment_id varchar(50) NULL  DEFAULT 'NULL'  "Increment Id"
+	StoreID                null.Uint32                      `max_len:"5"`   // store_id smallint(5) unsigned NULL MUL DEFAULT '0'  "Store ID"
+	CreatedAt              time.Time                        // created_at timestamp NOT NULL  DEFAULT 'current_timestamp()'  "Created At"
+	UpdatedAt              time.Time                        // updated_at timestamp NOT NULL  DEFAULT 'current_timestamp()' on update current_timestamp() "Updated At"
+	IsActive               bool                             `max_len:"5"`   // is_active smallint(5) unsigned NOT NULL  DEFAULT '1'  "Is Active"
+	DisableAutoGroupChange uint32                           `max_len:"5"`   // disable_auto_group_change smallint(5) unsigned NOT NULL  DEFAULT '0'  "Disable automatic group change based on VAT ID"
+	CreatedIn              null.String                      `max_len:"255"` // created_in varchar(255) NULL  DEFAULT 'NULL'  "Created From"
+	Prefix                 null.String                      `max_len:"40"`  // prefix varchar(40) NULL  DEFAULT 'NULL'  "Name Prefix"
+	Firstname              null.String                      `max_len:"255"` // firstname varchar(255) NULL MUL DEFAULT 'NULL'  "First Name"
+	Middlename             null.String                      `max_len:"255"` // middlename varchar(255) NULL  DEFAULT 'NULL'  "Middle Name/Initial"
+	Lastname               null.String                      `max_len:"255"` // lastname varchar(255) NULL MUL DEFAULT 'NULL'  "Last Name"
+	Suffix                 null.String                      `max_len:"40"`  // suffix varchar(40) NULL  DEFAULT 'NULL'  "Name Suffix"
+	Dob                    null.Time                        // dob date NULL  DEFAULT 'NULL'  "Date of Birth"
+	passwordHash           null.String                      `max_len:"128"` // password_hash varchar(128) NULL  DEFAULT 'NULL'  "Password_hash"
+	RpToken                null.String                      `max_len:"128"` // rp_token varchar(128) NULL  DEFAULT 'NULL'  "Reset password token"
+	RpTokenCreatedAt       null.Time                        // rp_token_created_at datetime NULL  DEFAULT 'NULL'  "Reset password token creation time"
+	DefaultBilling         null.Uint32                      `max_len:"10"` // default_billing int(10) unsigned NULL  DEFAULT 'NULL'  "Default Billing Address"
+	DefaultShipping        null.Uint32                      `max_len:"10"` // default_shipping int(10) unsigned NULL  DEFAULT 'NULL'  "Default Shipping Address"
+	Taxvat                 null.String                      `max_len:"50"` // taxvat varchar(50) NULL  DEFAULT 'NULL'  "Tax/VAT Number"
+	Confirmation           null.String                      `max_len:"64"` // confirmation varchar(64) NULL  DEFAULT 'NULL'  "Is Confirmed"
+	Gender                 null.Uint32                      `max_len:"5"`  // gender smallint(5) unsigned NULL  DEFAULT 'NULL'  "Gender"
+	FailuresNum            null.Int32                       `max_len:"5"`  // failures_num smallint(6) NULL  DEFAULT '0'  "Failure Number"
+	FirstFailure           null.Time                        // first_failure timestamp NULL  DEFAULT 'NULL'  "First Failure"
+	LockExpires            null.Time                        // lock_expires timestamp NULL  DEFAULT 'NULL'  "Lock Expiration Date"
+	CustomerAddressEntity  *CustomerAddressEntityCollection // Reversed 1:M customer_entity.entity_id => customer_address_entity.parent_id
 }
 
 // Set PasswordHash  sets the data for a private and security sensitive field.
@@ -1016,7 +1049,7 @@ func (e *CustomerEntity) MapColumns(cm *dml.ColumnMap) error {
 	}
 	for cm.Next() {
 		switch c := cm.Column(); c {
-		case "entity_id", "parent_id":
+		case "entity_id":
 			cm.Uint32(&e.EntityID)
 		case "website_id":
 			cm.NullUint32(&e.WebsiteID)
@@ -1082,6 +1115,7 @@ func (e *CustomerEntity) MapColumns(cm *dml.ColumnMap) error {
 // CustomerEntityCollection represents a collection type for DB table
 // customer_entity
 // Not thread safe. Auto generated.
+//easyjson:json
 type CustomerEntityCollection struct {
 	Data             []*CustomerEntity                   `json:"data,omitempty"`
 	BeforeMapColumns func(uint64, *CustomerEntity) error `json:"-"`
@@ -1143,7 +1177,7 @@ func (cc *CustomerEntityCollection) MapColumns(cm *dml.ColumnMap) error {
 	case dml.ColumnMapCollectionReadSet:
 		for cm.Next() {
 			switch c := cm.Column(); c {
-			case "entity_id", "parent_id":
+			case "entity_id":
 				cm = cm.Uint32s(cc.EntityIDs()...)
 			default:
 				return errors.NotFound.Newf("[dmltestgenerated] CustomerEntityCollection Column %q not found", c)
@@ -1250,8 +1284,17 @@ func (cc *CustomerEntityCollection) Append(n ...*CustomerEntity) *CustomerEntity
 	return cc
 }
 
-// DmlgenTypes  represents a single row for DB table  dmlgen_types . Auto
-// generated.
+// UnmarshalBinary implements encoding.BinaryUnmarshaler.
+func (cc *CustomerEntityCollection) UnmarshalBinary(data []byte) error {
+	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
+}
+
+// MarshalBinary implements encoding.BinaryMarshaler.
+func (cc *CustomerEntityCollection) MarshalBinary() (data []byte, err error) {
+	return cc.Marshal() // Implemented via github.com/gogo/protobuf
+}
+
+// DmlgenTypes represents a single row for DB table dmlgen_types. Auto generated.
 // // Just another comment.
 //easyjson:json
 type DmlgenTypes struct {
@@ -1745,8 +1788,9 @@ func (cc *DmlgenTypesCollection) MarshalBinary() (data []byte, err error) {
 	return cc.Marshal() // Implemented via github.com/gogo/protobuf
 }
 
-// SalesOrderStatusState  represents a single row for DB table
-// sales_order_status_state . Auto generated.
+// SalesOrderStatusState represents a single row for DB table
+// sales_order_status_state. Auto generated.
+//easyjson:json
 type SalesOrderStatusState struct {
 	Status         string `max_len:"32"` // status varchar(32) NOT NULL PRI   "Status"
 	State          string `max_len:"32"` // state varchar(32) NOT NULL PRI   "Label"
@@ -1806,6 +1850,7 @@ func (e *SalesOrderStatusState) MapColumns(cm *dml.ColumnMap) error {
 // SalesOrderStatusStateCollection represents a collection type for DB table
 // sales_order_status_state
 // Not thread safe. Auto generated.
+//easyjson:json
 type SalesOrderStatusStateCollection struct {
 	Data             []*SalesOrderStatusState                   `json:"data,omitempty"`
 	BeforeMapColumns func(uint64, *SalesOrderStatusState) error `json:"-"`
@@ -1980,8 +2025,19 @@ func (cc *SalesOrderStatusStateCollection) Append(n ...*SalesOrderStatusState) *
 	return cc
 }
 
-// ViewCustomerAutoIncrement  represents a single row for DB table
-// view_customer_auto_increment . Auto generated.
+// UnmarshalBinary implements encoding.BinaryUnmarshaler.
+func (cc *SalesOrderStatusStateCollection) UnmarshalBinary(data []byte) error {
+	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
+}
+
+// MarshalBinary implements encoding.BinaryMarshaler.
+func (cc *SalesOrderStatusStateCollection) MarshalBinary() (data []byte, err error) {
+	return cc.Marshal() // Implemented via github.com/gogo/protobuf
+}
+
+// ViewCustomerAutoIncrement represents a single row for DB table
+// view_customer_auto_increment. Auto generated.
+//easyjson:json
 type ViewCustomerAutoIncrement struct {
 	CeEntityID  uint32      `max_len:"10"`  // ce_entity_id int(10) unsigned NOT NULL  DEFAULT '0'  "Entity ID"
 	CaeEntityID uint32      `max_len:"10"`  // cae_entity_id int(10) unsigned NOT NULL  DEFAULT '0'  "Entity ID"
@@ -2049,6 +2105,7 @@ func (e *ViewCustomerAutoIncrement) MapColumns(cm *dml.ColumnMap) error {
 // ViewCustomerAutoIncrementCollection represents a collection type for DB table
 // view_customer_auto_increment
 // Not thread safe. Auto generated.
+//easyjson:json
 type ViewCustomerAutoIncrementCollection struct {
 	Data             []*ViewCustomerAutoIncrement                   `json:"data,omitempty"`
 	BeforeMapColumns func(uint64, *ViewCustomerAutoIncrement) error `json:"-"`
@@ -2195,8 +2252,19 @@ func (cc *ViewCustomerAutoIncrementCollection) Append(n ...*ViewCustomerAutoIncr
 	return cc
 }
 
-// ViewCustomerNoAutoIncrement  represents a single row for DB table
-// view_customer_no_auto_increment . Auto generated.
+// UnmarshalBinary implements encoding.BinaryUnmarshaler.
+func (cc *ViewCustomerAutoIncrementCollection) UnmarshalBinary(data []byte) error {
+	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
+}
+
+// MarshalBinary implements encoding.BinaryMarshaler.
+func (cc *ViewCustomerAutoIncrementCollection) MarshalBinary() (data []byte, err error) {
+	return cc.Marshal() // Implemented via github.com/gogo/protobuf
+}
+
+// ViewCustomerNoAutoIncrement represents a single row for DB table
+// view_customer_no_auto_increment. Auto generated.
+//easyjson:json
 type ViewCustomerNoAutoIncrement struct {
 	Email     null.String `max_len:"255"` // email varchar(255) NULL  DEFAULT 'NULL'  "Email"
 	Firstname string      `max_len:"255"` // firstname varchar(255) NOT NULL    "First Name"
@@ -2256,6 +2324,7 @@ func (e *ViewCustomerNoAutoIncrement) MapColumns(cm *dml.ColumnMap) error {
 // ViewCustomerNoAutoIncrementCollection represents a collection type for DB
 // table view_customer_no_auto_increment
 // Not thread safe. Auto generated.
+//easyjson:json
 type ViewCustomerNoAutoIncrementCollection struct {
 	Data             []*ViewCustomerNoAutoIncrement                   `json:"data,omitempty"`
 	BeforeMapColumns func(uint64, *ViewCustomerNoAutoIncrement) error `json:"-"`
@@ -2400,4 +2469,14 @@ func (cc *ViewCustomerNoAutoIncrementCollection) Insert(n *ViewCustomerNoAutoInc
 func (cc *ViewCustomerNoAutoIncrementCollection) Append(n ...*ViewCustomerNoAutoIncrement) *ViewCustomerNoAutoIncrementCollection {
 	cc.Data = append(cc.Data, n...)
 	return cc
+}
+
+// UnmarshalBinary implements encoding.BinaryUnmarshaler.
+func (cc *ViewCustomerNoAutoIncrementCollection) UnmarshalBinary(data []byte) error {
+	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
+}
+
+// MarshalBinary implements encoding.BinaryMarshaler.
+func (cc *ViewCustomerNoAutoIncrementCollection) MarshalBinary() (data []byte, err error) {
+	return cc.Marshal() // Implemented via github.com/gogo/protobuf
 }

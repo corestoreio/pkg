@@ -369,6 +369,7 @@ func WithTableConfig(tableName string, opt *TableConfig) (o Option) {
 	return o
 }
 
+// TODO: rethink this if WithColumnAliasesFromForeignKeys is really needed and how it could be used/tested.
 // WithColumnAliasesFromForeignKeys extracts similar column names from foreign
 // key definitions. For the list of tables and their primary/unique keys, this
 // function searches the foreign keys to other tables and uses the column name
@@ -377,40 +378,38 @@ func WithTableConfig(tableName string, opt *TableConfig) (o Option) {
 // `customer_id`. When generation code for customer_entity, the column entity_id
 // can be used additionally with the name customer_id, hence customer_id is the
 // alias.
-func WithColumnAliasesFromForeignKeys(ctx context.Context, db dml.Querier) (opt Option) {
-	opt.sortOrder = 200 // must run at the end or where the end is near ;-)
-	opt.fn = func(g *Generator) error {
-
-		tblFks, err := ddl.LoadKeyColumnUsage(ctx, db, g.sortedTableNames()...)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-
-		for tblPkCol, kcuc := range tblFks {
-			// tblPkCol == REFERENCED_TABLE_NAME.REFERENCED_COLUMN_NAME
-			// REFERENCED_TABLE_NAME is contained in sortedTableNames()
-			dotPos := strings.IndexByte(tblPkCol, '.')
-			refTable := tblPkCol[:dotPos]
-			refColumn := tblPkCol[dotPos+1:]
-
-			t := g.Tables[refTable]
-			for _, c := range t.Columns {
-				// TODO: optimize this and rethink method receivers like Each, on the collection.
-				if c.Field == refColumn {
-					unique := map[string]bool{refColumn: true} // refColumn already seen because field name
-					for _, kcu := range kcuc.Data {
-						if kcu.ReferencedColumnName.String == refColumn && !unique[kcu.ColumnName] {
-							c.Aliases = append(c.Aliases, kcu.ColumnName)
-							unique[kcu.ColumnName] = true
-						}
-					}
-				}
-			}
-		}
-		return nil
-	}
-	return opt
-}
+// func WithColumnAliasesFromForeignKeys(ctx context.Context, db dml.Querier) (opt Option) {
+// 	opt.sortOrder = 200 // must run at the end or where the end is near ;-)
+// 	opt.fn = func(g *Generator) error {
+//
+// 		tblFks, err := ddl.LoadKeyColumnUsage(ctx, db, g.sortedTableNames()...)
+// 		if err != nil {
+// 			return errors.WithStack(err)
+// 		}
+//
+// 		for _, kcuc := range tblFks {
+//
+// 			unique := map[string]bool{refColumn: true} // refColumn already seen because field name
+// 			for _, kcu := range kcuc.Data {
+//
+// 				t := g.Tables[kcu.ReferencedTableName.String]
+// 				for _, c := range t.Columns {
+// 					if c.Field == kcu.ReferencedColumnName.String {
+//
+// 						if kcu.ReferencedColumnName.String == refColumn && !unique[kcu.ColumnName] {
+// 							c.Aliases = append(c.Aliases, kcu.ColumnName)
+// 							unique[kcu.ColumnName] = true
+// 						}
+// 					}
+// 				}
+//
+// 			}
+//
+// 		}
+// 		return nil
+// 	}
+// 	return opt
+// }
 
 // WithForeignKeyRelationships analyzes the foreign keys which points to a table
 // and adds them as a struct field name. For example:

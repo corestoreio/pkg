@@ -10,7 +10,7 @@ import (
 	"github.com/corestoreio/pkg/storage/null"
 )
 
-// CoreConfiguration  represents a single row for DB table  core_configuration .
+// CoreConfiguration represents a single row for DB table core_configuration.
 // Auto generated.
 type CoreConfiguration struct {
 	ConfigID  uint32      // config_id int(10) unsigned NOT NULL PRI  auto_increment "Id"
@@ -55,9 +55,7 @@ func (e *CoreConfiguration) WriteTo(w io.Writer) (n int64, err error) {
 // core_configuration
 // Not thread safe. Auto generated.
 type CoreConfigurationCollection struct {
-	Data             []*CoreConfiguration                   `json:"data,omitempty"`
-	BeforeMapColumns func(uint64, *CoreConfiguration) error `json:"-"`
-	AfterMapColumns  func(uint64, *CoreConfiguration) error `json:"-"`
+	Data []*CoreConfiguration `json:"data,omitempty"`
 }
 
 // NewCoreConfigurationCollection  creates a new initialized collection. Auto
@@ -164,8 +162,18 @@ func (cc *CoreConfigurationCollection) Append(n ...*CoreConfiguration) *CoreConf
 	return cc
 }
 
-// SalesOrderStatusState  represents a single row for DB table
-// sales_order_status_state . Auto generated.
+// UnmarshalBinary implements encoding.BinaryUnmarshaler.
+func (cc *CoreConfigurationCollection) UnmarshalBinary(data []byte) error {
+	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
+}
+
+// MarshalBinary implements encoding.BinaryMarshaler.
+func (cc *CoreConfigurationCollection) MarshalBinary() (data []byte, err error) {
+	return cc.Marshal() // Implemented via github.com/gogo/protobuf
+}
+
+// SalesOrderStatusState represents a single row for DB table
+// sales_order_status_state. Auto generated.
 type SalesOrderStatusState struct {
 	Status         string // status varchar(32) NOT NULL PRI   "Status"
 	State          string // state varchar(32) NOT NULL PRI   "Label"
@@ -204,9 +212,7 @@ func (e *SalesOrderStatusState) WriteTo(w io.Writer) (n int64, err error) {
 // sales_order_status_state
 // Not thread safe. Auto generated.
 type SalesOrderStatusStateCollection struct {
-	Data             []*SalesOrderStatusState                   `json:"data,omitempty"`
-	BeforeMapColumns func(uint64, *SalesOrderStatusState) error `json:"-"`
-	AfterMapColumns  func(uint64, *SalesOrderStatusState) error `json:"-"`
+	Data []*SalesOrderStatusState `json:"data,omitempty"`
 }
 
 // NewSalesOrderStatusStateCollection  creates a new initialized collection. Auto
@@ -323,4 +329,14 @@ func (cc *SalesOrderStatusStateCollection) Insert(n *SalesOrderStatusState, i in
 func (cc *SalesOrderStatusStateCollection) Append(n ...*SalesOrderStatusState) *SalesOrderStatusStateCollection {
 	cc.Data = append(cc.Data, n...)
 	return cc
+}
+
+// UnmarshalBinary implements encoding.BinaryUnmarshaler.
+func (cc *SalesOrderStatusStateCollection) UnmarshalBinary(data []byte) error {
+	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
+}
+
+// MarshalBinary implements encoding.BinaryMarshaler.
+func (cc *SalesOrderStatusStateCollection) MarshalBinary() (data []byte, err error) {
+	return cc.Marshal() // Implemented via github.com/gogo/protobuf
 }

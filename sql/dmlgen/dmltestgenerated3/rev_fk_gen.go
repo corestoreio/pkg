@@ -2,8 +2,9 @@
 package dmltestgenerated3
 
 import (
-	"github.com/corestoreio/pkg/storage/null"
 	"time"
+
+	"github.com/corestoreio/pkg/storage/null"
 )
 
 // CatalogCategoryEntity represents a single row for DB table

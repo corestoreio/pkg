@@ -94,11 +94,11 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
 
-	defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil).Deferred()
-	// dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil)
+	// defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil).Deferred()
+	dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil)
 
 	ctx := context.Background()
-	ts, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated",
+	g, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated",
 
 		dmlgen.WithBuildTags("!ignore", "!ignored"),
 		dmlgen.WithProtobuf(),
@@ -157,14 +157,16 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 
 		dmlgen.WithTableConfig(
 			"dmlgen_types", &dmlgen.TableConfig{
-				Encoders:          []string{"easyjson", "binary", "protobuf"},
+				Encoders:          []string{"easyjson", "protobuf"},
 				StructTags:        []string{"json", "protobuf", "max_len"},
 				UniquifiedColumns: []string{"col_varchar_100", "price_12_4a", "col_int_1", "col_int_2", "has_smallint_5", "col_date_2"},
 				Comment:           "Just another comment.",
 			}),
 
-		dmlgen.WithColumnAliasesFromForeignKeys(ctx, db.DB),
-		dmlgen.WithForeignKeyRelationships(ctx, db.DB),
+		// dmlgen.WithColumnAliasesFromForeignKeys(ctx, db.DB),
+		dmlgen.WithForeignKeyRelationships(ctx, db.DB,
+			"customer_address_entity.parent_id", "customer_entity.entity_id",
+		),
 
 		dmlgen.WithCustomCode("pseudo.MustNewService.Option", `
 		pseudo.WithTagFakeFunc("dmltestgenerated.CustomerAddressEntity.ParentID", func(maxLen int) (interface{}, error) {
@@ -203,11 +205,11 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	ts.ImportPathsTesting = append(ts.ImportPathsTesting, "fmt") // only needed for pseudo functional options.
-	ts.TestSQLDumpGlobPath = "../testdata/test_*_tables.sql"
+	g.ImportPathsTesting = append(g.ImportPathsTesting, "fmt") // only needed for pseudo functional options.
+	g.TestSQLDumpGlobPath = "../testdata/test_*_tables.sql"
 
-	writeFile(t, "dmltestgenerated/output_gen.go", ts.GenerateGo)
-	writeFile(t, "dmltestgenerated/output_gen.proto", ts.GenerateSerializer)
+	writeFile(t, "dmltestgenerated/output_gen.go", g.GenerateGo)
+	writeFile(t, "dmltestgenerated/output_gen.proto", g.GenerateSerializer)
 	// // Generates for all proto files the Go source code.
 
 	assert.NoError(t, dmlgen.GenerateProto("./dmltestgenerated"))
@@ -406,8 +408,8 @@ func TestNewGenerator_ReversedForeignKeys(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
 
-	// defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil).Deferred()
-	dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil)
+	defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil).Deferred()
+	// dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil)
 
 	ctx := context.Background()
 	ts, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated3",

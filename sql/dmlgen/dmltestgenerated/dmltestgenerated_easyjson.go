@@ -18,7 +18,695 @@ var (
 	_ easyjson.Marshaler
 )
 
-func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(in *jlexer.Lexer, out *DmlgenTypesCollection) {
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(in *jlexer.Lexer, out *ViewCustomerNoAutoIncrementCollection) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "data":
+			if in.IsNull() {
+				in.Skip()
+				out.Data = nil
+			} else {
+				in.Delim('[')
+				if out.Data == nil {
+					if !in.IsDelim(']') {
+						out.Data = make([]*ViewCustomerNoAutoIncrement, 0, 8)
+					} else {
+						out.Data = []*ViewCustomerNoAutoIncrement{}
+					}
+				} else {
+					out.Data = (out.Data)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v1 *ViewCustomerNoAutoIncrement
+					if in.IsNull() {
+						in.Skip()
+						v1 = nil
+					} else {
+						if v1 == nil {
+							v1 = new(ViewCustomerNoAutoIncrement)
+						}
+						(*v1).UnmarshalEasyJSON(in)
+					}
+					out.Data = append(out.Data, v1)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(out *jwriter.Writer, in ViewCustomerNoAutoIncrementCollection) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if len(in.Data) != 0 {
+		const prefix string = ",\"data\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		{
+			out.RawByte('[')
+			for v2, v3 := range in.Data {
+				if v2 > 0 {
+					out.RawByte(',')
+				}
+				if v3 == nil {
+					out.RawString("null")
+				} else {
+					(*v3).MarshalEasyJSON(out)
+				}
+			}
+			out.RawByte(']')
+		}
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v ViewCustomerNoAutoIncrementCollection) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v ViewCustomerNoAutoIncrementCollection) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *ViewCustomerNoAutoIncrementCollection) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *ViewCustomerNoAutoIncrementCollection) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(l, v)
+}
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(in *jlexer.Lexer, out *ViewCustomerNoAutoIncrement) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "email":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Email).UnmarshalJSON(data))
+			}
+		case "firstname":
+			out.Firstname = string(in.String())
+		case "lastname":
+			out.Lastname = string(in.String())
+		case "city":
+			out.City = string(in.String())
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(out *jwriter.Writer, in ViewCustomerNoAutoIncrement) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if true {
+		const prefix string = ",\"email\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.Email).MarshalJSON())
+	}
+	if in.Firstname != "" {
+		const prefix string = ",\"firstname\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Firstname))
+	}
+	if in.Lastname != "" {
+		const prefix string = ",\"lastname\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Lastname))
+	}
+	if in.City != "" {
+		const prefix string = ",\"city\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.City))
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v ViewCustomerNoAutoIncrement) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v ViewCustomerNoAutoIncrement) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *ViewCustomerNoAutoIncrement) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *ViewCustomerNoAutoIncrement) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(l, v)
+}
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(in *jlexer.Lexer, out *ViewCustomerAutoIncrementCollection) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "data":
+			if in.IsNull() {
+				in.Skip()
+				out.Data = nil
+			} else {
+				in.Delim('[')
+				if out.Data == nil {
+					if !in.IsDelim(']') {
+						out.Data = make([]*ViewCustomerAutoIncrement, 0, 8)
+					} else {
+						out.Data = []*ViewCustomerAutoIncrement{}
+					}
+				} else {
+					out.Data = (out.Data)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v4 *ViewCustomerAutoIncrement
+					if in.IsNull() {
+						in.Skip()
+						v4 = nil
+					} else {
+						if v4 == nil {
+							v4 = new(ViewCustomerAutoIncrement)
+						}
+						(*v4).UnmarshalEasyJSON(in)
+					}
+					out.Data = append(out.Data, v4)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(out *jwriter.Writer, in ViewCustomerAutoIncrementCollection) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if len(in.Data) != 0 {
+		const prefix string = ",\"data\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		{
+			out.RawByte('[')
+			for v5, v6 := range in.Data {
+				if v5 > 0 {
+					out.RawByte(',')
+				}
+				if v6 == nil {
+					out.RawString("null")
+				} else {
+					(*v6).MarshalEasyJSON(out)
+				}
+			}
+			out.RawByte(']')
+		}
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v ViewCustomerAutoIncrementCollection) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v ViewCustomerAutoIncrementCollection) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *ViewCustomerAutoIncrementCollection) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *ViewCustomerAutoIncrementCollection) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(l, v)
+}
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(in *jlexer.Lexer, out *ViewCustomerAutoIncrement) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "ceEntityID":
+			out.CeEntityID = uint32(in.Uint32())
+		case "caeEntityID":
+			out.CaeEntityID = uint32(in.Uint32())
+		case "email":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Email).UnmarshalJSON(data))
+			}
+		case "firstname":
+			out.Firstname = string(in.String())
+		case "lastname":
+			out.Lastname = string(in.String())
+		case "city":
+			out.City = string(in.String())
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(out *jwriter.Writer, in ViewCustomerAutoIncrement) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if in.CeEntityID != 0 {
+		const prefix string = ",\"ceEntityID\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Uint32(uint32(in.CeEntityID))
+	}
+	if in.CaeEntityID != 0 {
+		const prefix string = ",\"caeEntityID\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Uint32(uint32(in.CaeEntityID))
+	}
+	if true {
+		const prefix string = ",\"email\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.Email).MarshalJSON())
+	}
+	if in.Firstname != "" {
+		const prefix string = ",\"firstname\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Firstname))
+	}
+	if in.Lastname != "" {
+		const prefix string = ",\"lastname\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Lastname))
+	}
+	if in.City != "" {
+		const prefix string = ",\"city\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.City))
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v ViewCustomerAutoIncrement) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v ViewCustomerAutoIncrement) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *ViewCustomerAutoIncrement) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *ViewCustomerAutoIncrement) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(l, v)
+}
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated4(in *jlexer.Lexer, out *SalesOrderStatusStateCollection) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "data":
+			if in.IsNull() {
+				in.Skip()
+				out.Data = nil
+			} else {
+				in.Delim('[')
+				if out.Data == nil {
+					if !in.IsDelim(']') {
+						out.Data = make([]*SalesOrderStatusState, 0, 8)
+					} else {
+						out.Data = []*SalesOrderStatusState{}
+					}
+				} else {
+					out.Data = (out.Data)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v7 *SalesOrderStatusState
+					if in.IsNull() {
+						in.Skip()
+						v7 = nil
+					} else {
+						if v7 == nil {
+							v7 = new(SalesOrderStatusState)
+						}
+						(*v7).UnmarshalEasyJSON(in)
+					}
+					out.Data = append(out.Data, v7)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated4(out *jwriter.Writer, in SalesOrderStatusStateCollection) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if len(in.Data) != 0 {
+		const prefix string = ",\"data\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		{
+			out.RawByte('[')
+			for v8, v9 := range in.Data {
+				if v8 > 0 {
+					out.RawByte(',')
+				}
+				if v9 == nil {
+					out.RawString("null")
+				} else {
+					(*v9).MarshalEasyJSON(out)
+				}
+			}
+			out.RawByte(']')
+		}
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v SalesOrderStatusStateCollection) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated4(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v SalesOrderStatusStateCollection) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated4(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *SalesOrderStatusStateCollection) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated4(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *SalesOrderStatusStateCollection) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated4(l, v)
+}
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated5(in *jlexer.Lexer, out *SalesOrderStatusState) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "status":
+			out.Status = string(in.String())
+		case "state":
+			out.State = string(in.String())
+		case "isDefault":
+			out.IsDefault = bool(in.Bool())
+		case "visibleOnFront":
+			out.VisibleOnFront = uint32(in.Uint32())
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated5(out *jwriter.Writer, in SalesOrderStatusState) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if in.Status != "" {
+		const prefix string = ",\"status\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Status))
+	}
+	if in.State != "" {
+		const prefix string = ",\"state\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.State))
+	}
+	if in.IsDefault {
+		const prefix string = ",\"isDefault\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Bool(bool(in.IsDefault))
+	}
+	if in.VisibleOnFront != 0 {
+		const prefix string = ",\"visibleOnFront\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Uint32(uint32(in.VisibleOnFront))
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v SalesOrderStatusState) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated5(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v SalesOrderStatusState) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated5(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *SalesOrderStatusState) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated5(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *SalesOrderStatusState) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated5(l, v)
+}
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated6(in *jlexer.Lexer, out *DmlgenTypesCollection) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -53,17 +741,17 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(in *
 					out.Data = (out.Data)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v1 *DmlgenTypes
+					var v10 *DmlgenTypes
 					if in.IsNull() {
 						in.Skip()
-						v1 = nil
+						v10 = nil
 					} else {
-						if v1 == nil {
-							v1 = new(DmlgenTypes)
+						if v10 == nil {
+							v10 = new(DmlgenTypes)
 						}
-						(*v1).UnmarshalEasyJSON(in)
+						(*v10).UnmarshalEasyJSON(in)
 					}
-					out.Data = append(out.Data, v1)
+					out.Data = append(out.Data, v10)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -78,7 +766,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(in *
 		in.Consumed()
 	}
 }
-func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(out *jwriter.Writer, in DmlgenTypesCollection) {
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated6(out *jwriter.Writer, in DmlgenTypesCollection) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -92,14 +780,14 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(out 
 		}
 		{
 			out.RawByte('[')
-			for v2, v3 := range in.Data {
-				if v2 > 0 {
+			for v11, v12 := range in.Data {
+				if v11 > 0 {
 					out.RawByte(',')
 				}
-				if v3 == nil {
+				if v12 == nil {
 					out.RawString("null")
 				} else {
-					(*v3).MarshalEasyJSON(out)
+					(*v12).MarshalEasyJSON(out)
 				}
 			}
 			out.RawByte(']')
@@ -111,27 +799,27 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(out 
 // MarshalJSON supports json.Marshaler interface
 func (v DmlgenTypesCollection) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(&w, v)
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated6(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v DmlgenTypesCollection) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(w, v)
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated6(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *DmlgenTypesCollection) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(&r, v)
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated6(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *DmlgenTypesCollection) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(l, v)
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated6(l, v)
 }
-func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(in *jlexer.Lexer, out *DmlgenTypes) {
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated7(in *jlexer.Lexer, out *DmlgenTypes) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -302,7 +990,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(in 
 		in.Consumed()
 	}
 }
-func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(out *jwriter.Writer, in DmlgenTypes) {
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated7(out *jwriter.Writer, in DmlgenTypes) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -722,27 +1410,1095 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(out
 // MarshalJSON supports json.Marshaler interface
 func (v DmlgenTypes) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(&w, v)
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated7(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v DmlgenTypes) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(w, v)
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated7(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *DmlgenTypes) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(&r, v)
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated7(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *DmlgenTypes) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(l, v)
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated7(l, v)
 }
-func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(in *jlexer.Lexer, out *CoreConfigurationCollection) {
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated8(in *jlexer.Lexer, out *CustomerEntityCollection) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "data":
+			if in.IsNull() {
+				in.Skip()
+				out.Data = nil
+			} else {
+				in.Delim('[')
+				if out.Data == nil {
+					if !in.IsDelim(']') {
+						out.Data = make([]*CustomerEntity, 0, 8)
+					} else {
+						out.Data = []*CustomerEntity{}
+					}
+				} else {
+					out.Data = (out.Data)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v19 *CustomerEntity
+					if in.IsNull() {
+						in.Skip()
+						v19 = nil
+					} else {
+						if v19 == nil {
+							v19 = new(CustomerEntity)
+						}
+						(*v19).UnmarshalEasyJSON(in)
+					}
+					out.Data = append(out.Data, v19)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated8(out *jwriter.Writer, in CustomerEntityCollection) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if len(in.Data) != 0 {
+		const prefix string = ",\"data\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		{
+			out.RawByte('[')
+			for v20, v21 := range in.Data {
+				if v20 > 0 {
+					out.RawByte(',')
+				}
+				if v21 == nil {
+					out.RawString("null")
+				} else {
+					(*v21).MarshalEasyJSON(out)
+				}
+			}
+			out.RawByte(']')
+		}
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v CustomerEntityCollection) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated8(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v CustomerEntityCollection) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated8(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *CustomerEntityCollection) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated8(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *CustomerEntityCollection) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated8(l, v)
+}
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(in *jlexer.Lexer, out *CustomerEntity) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "entityID":
+			out.EntityID = uint32(in.Uint32())
+		case "websiteID":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.WebsiteID).UnmarshalJSON(data))
+			}
+		case "email":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Email).UnmarshalJSON(data))
+			}
+		case "groupID":
+			out.GroupID = uint32(in.Uint32())
+		case "incrementID":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.IncrementID).UnmarshalJSON(data))
+			}
+		case "storeID":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.StoreID).UnmarshalJSON(data))
+			}
+		case "createdAt":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.CreatedAt).UnmarshalJSON(data))
+			}
+		case "updatedAt":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.UpdatedAt).UnmarshalJSON(data))
+			}
+		case "isActive":
+			out.IsActive = bool(in.Bool())
+		case "disableAutoGroupChange":
+			out.DisableAutoGroupChange = uint32(in.Uint32())
+		case "createdIn":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.CreatedIn).UnmarshalJSON(data))
+			}
+		case "prefix":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Prefix).UnmarshalJSON(data))
+			}
+		case "firstname":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Firstname).UnmarshalJSON(data))
+			}
+		case "middlename":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Middlename).UnmarshalJSON(data))
+			}
+		case "lastname":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Lastname).UnmarshalJSON(data))
+			}
+		case "suffix":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Suffix).UnmarshalJSON(data))
+			}
+		case "dob":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Dob).UnmarshalJSON(data))
+			}
+		case "rpToken":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.RpToken).UnmarshalJSON(data))
+			}
+		case "rpTokenCreatedAt":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.RpTokenCreatedAt).UnmarshalJSON(data))
+			}
+		case "defaultBilling":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.DefaultBilling).UnmarshalJSON(data))
+			}
+		case "defaultShipping":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.DefaultShipping).UnmarshalJSON(data))
+			}
+		case "taxvat":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Taxvat).UnmarshalJSON(data))
+			}
+		case "confirmation":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Confirmation).UnmarshalJSON(data))
+			}
+		case "gender":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Gender).UnmarshalJSON(data))
+			}
+		case "failuresNum":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.FailuresNum).UnmarshalJSON(data))
+			}
+		case "firstFailure":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.FirstFailure).UnmarshalJSON(data))
+			}
+		case "lockExpires":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.LockExpires).UnmarshalJSON(data))
+			}
+		case "customerAddressEntity":
+			if in.IsNull() {
+				in.Skip()
+				out.CustomerAddressEntity = nil
+			} else {
+				if out.CustomerAddressEntity == nil {
+					out.CustomerAddressEntity = new(CustomerAddressEntityCollection)
+				}
+				(*out.CustomerAddressEntity).UnmarshalEasyJSON(in)
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(out *jwriter.Writer, in CustomerEntity) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if in.EntityID != 0 {
+		const prefix string = ",\"entityID\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Uint32(uint32(in.EntityID))
+	}
+	if true {
+		const prefix string = ",\"websiteID\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.WebsiteID).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"email\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.Email).MarshalJSON())
+	}
+	if in.GroupID != 0 {
+		const prefix string = ",\"groupID\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Uint32(uint32(in.GroupID))
+	}
+	if true {
+		const prefix string = ",\"incrementID\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.IncrementID).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"storeID\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.StoreID).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"createdAt\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.CreatedAt).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"updatedAt\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.UpdatedAt).MarshalJSON())
+	}
+	if in.IsActive {
+		const prefix string = ",\"isActive\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Bool(bool(in.IsActive))
+	}
+	if in.DisableAutoGroupChange != 0 {
+		const prefix string = ",\"disableAutoGroupChange\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Uint32(uint32(in.DisableAutoGroupChange))
+	}
+	if true {
+		const prefix string = ",\"createdIn\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.CreatedIn).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"prefix\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.Prefix).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"firstname\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.Firstname).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"middlename\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.Middlename).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"lastname\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.Lastname).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"suffix\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.Suffix).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"dob\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.Dob).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"rpToken\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.RpToken).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"rpTokenCreatedAt\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.RpTokenCreatedAt).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"defaultBilling\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.DefaultBilling).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"defaultShipping\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.DefaultShipping).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"taxvat\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.Taxvat).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"confirmation\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.Confirmation).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"gender\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.Gender).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"failuresNum\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.FailuresNum).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"firstFailure\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.FirstFailure).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"lockExpires\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.LockExpires).MarshalJSON())
+	}
+	if in.CustomerAddressEntity != nil {
+		const prefix string = ",\"customerAddressEntity\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		(*in.CustomerAddressEntity).MarshalEasyJSON(out)
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v CustomerEntity) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v CustomerEntity) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *CustomerEntity) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *CustomerEntity) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(l, v)
+}
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(in *jlexer.Lexer, out *CustomerAddressEntityCollection) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "data":
+			if in.IsNull() {
+				in.Skip()
+				out.Data = nil
+			} else {
+				in.Delim('[')
+				if out.Data == nil {
+					if !in.IsDelim(']') {
+						out.Data = make([]*CustomerAddressEntity, 0, 8)
+					} else {
+						out.Data = []*CustomerAddressEntity{}
+					}
+				} else {
+					out.Data = (out.Data)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v22 *CustomerAddressEntity
+					if in.IsNull() {
+						in.Skip()
+						v22 = nil
+					} else {
+						if v22 == nil {
+							v22 = new(CustomerAddressEntity)
+						}
+						(*v22).UnmarshalEasyJSON(in)
+					}
+					out.Data = append(out.Data, v22)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(out *jwriter.Writer, in CustomerAddressEntityCollection) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if len(in.Data) != 0 {
+		const prefix string = ",\"data\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		{
+			out.RawByte('[')
+			for v23, v24 := range in.Data {
+				if v23 > 0 {
+					out.RawByte(',')
+				}
+				if v24 == nil {
+					out.RawString("null")
+				} else {
+					(*v24).MarshalEasyJSON(out)
+				}
+			}
+			out.RawByte(']')
+		}
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v CustomerAddressEntityCollection) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v CustomerAddressEntityCollection) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *CustomerAddressEntityCollection) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *CustomerAddressEntityCollection) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(l, v)
+}
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated11(in *jlexer.Lexer, out *CustomerAddressEntity) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "entityID":
+			out.EntityID = uint32(in.Uint32())
+		case "incrementID":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.IncrementID).UnmarshalJSON(data))
+			}
+		case "parentID":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.ParentID).UnmarshalJSON(data))
+			}
+		case "createdAt":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.CreatedAt).UnmarshalJSON(data))
+			}
+		case "updatedAt":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.UpdatedAt).UnmarshalJSON(data))
+			}
+		case "isActive":
+			out.IsActive = bool(in.Bool())
+		case "city":
+			out.City = string(in.String())
+		case "company":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Company).UnmarshalJSON(data))
+			}
+		case "countryID":
+			out.CountryID = string(in.String())
+		case "fax":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Fax).UnmarshalJSON(data))
+			}
+		case "firstname":
+			out.Firstname = string(in.String())
+		case "lastname":
+			out.Lastname = string(in.String())
+		case "middlename":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Middlename).UnmarshalJSON(data))
+			}
+		case "postcode":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Postcode).UnmarshalJSON(data))
+			}
+		case "prefix":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Prefix).UnmarshalJSON(data))
+			}
+		case "region":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Region).UnmarshalJSON(data))
+			}
+		case "regionID":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.RegionID).UnmarshalJSON(data))
+			}
+		case "street":
+			out.Street = string(in.String())
+		case "suffix":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Suffix).UnmarshalJSON(data))
+			}
+		case "telephone":
+			out.Telephone = string(in.String())
+		case "vatID":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.VatID).UnmarshalJSON(data))
+			}
+		case "vatIsValid":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.VatIsValid).UnmarshalJSON(data))
+			}
+		case "vatRequestDate":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.VatRequestDate).UnmarshalJSON(data))
+			}
+		case "vatRequestID":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.VatRequestID).UnmarshalJSON(data))
+			}
+		case "vatRequestSuccess":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.VatRequestSuccess).UnmarshalJSON(data))
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated11(out *jwriter.Writer, in CustomerAddressEntity) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if in.EntityID != 0 {
+		const prefix string = ",\"entityID\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Uint32(uint32(in.EntityID))
+	}
+	if true {
+		const prefix string = ",\"incrementID\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.IncrementID).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"parentID\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.ParentID).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"createdAt\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.CreatedAt).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"updatedAt\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.UpdatedAt).MarshalJSON())
+	}
+	if in.IsActive {
+		const prefix string = ",\"isActive\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Bool(bool(in.IsActive))
+	}
+	if in.City != "" {
+		const prefix string = ",\"city\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.City))
+	}
+	if true {
+		const prefix string = ",\"company\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.Company).MarshalJSON())
+	}
+	if in.CountryID != "" {
+		const prefix string = ",\"countryID\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.CountryID))
+	}
+	if true {
+		const prefix string = ",\"fax\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.Fax).MarshalJSON())
+	}
+	if in.Firstname != "" {
+		const prefix string = ",\"firstname\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Firstname))
+	}
+	if in.Lastname != "" {
+		const prefix string = ",\"lastname\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Lastname))
+	}
+	if true {
+		const prefix string = ",\"middlename\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.Middlename).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"postcode\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.Postcode).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"prefix\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.Prefix).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"region\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.Region).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"regionID\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.RegionID).MarshalJSON())
+	}
+	if in.Street != "" {
+		const prefix string = ",\"street\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Street))
+	}
+	if true {
+		const prefix string = ",\"suffix\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.Suffix).MarshalJSON())
+	}
+	if in.Telephone != "" {
+		const prefix string = ",\"telephone\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Telephone))
+	}
+	if true {
+		const prefix string = ",\"vatID\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.VatID).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"vatIsValid\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.VatIsValid).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"vatRequestDate\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.VatRequestDate).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"vatRequestID\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.VatRequestID).MarshalJSON())
+	}
+	if true {
+		const prefix string = ",\"vatRequestSuccess\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.VatRequestSuccess).MarshalJSON())
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v CustomerAddressEntity) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated11(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v CustomerAddressEntity) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated11(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *CustomerAddressEntity) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated11(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *CustomerAddressEntity) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated11(l, v)
+}
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated12(in *jlexer.Lexer, out *CoreConfigurationCollection) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -777,17 +2533,17 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(in 
 					out.Data = (out.Data)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v10 *CoreConfiguration
+					var v25 *CoreConfiguration
 					if in.IsNull() {
 						in.Skip()
-						v10 = nil
+						v25 = nil
 					} else {
-						if v10 == nil {
-							v10 = new(CoreConfiguration)
+						if v25 == nil {
+							v25 = new(CoreConfiguration)
 						}
-						(*v10).UnmarshalEasyJSON(in)
+						(*v25).UnmarshalEasyJSON(in)
 					}
-					out.Data = append(out.Data, v10)
+					out.Data = append(out.Data, v25)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -802,7 +2558,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(in 
 		in.Consumed()
 	}
 }
-func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(out *jwriter.Writer, in CoreConfigurationCollection) {
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated12(out *jwriter.Writer, in CoreConfigurationCollection) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -816,14 +2572,14 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(out
 		}
 		{
 			out.RawByte('[')
-			for v11, v12 := range in.Data {
-				if v11 > 0 {
+			for v26, v27 := range in.Data {
+				if v26 > 0 {
 					out.RawByte(',')
 				}
-				if v12 == nil {
+				if v27 == nil {
 					out.RawString("null")
 				} else {
-					(*v12).MarshalEasyJSON(out)
+					(*v27).MarshalEasyJSON(out)
 				}
 			}
 			out.RawByte(']')
@@ -835,27 +2591,27 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(out
 // MarshalJSON supports json.Marshaler interface
 func (v CoreConfigurationCollection) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(&w, v)
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated12(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v CoreConfigurationCollection) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(w, v)
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated12(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *CoreConfigurationCollection) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(&r, v)
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated12(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *CoreConfigurationCollection) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(l, v)
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated12(l, v)
 }
-func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(in *jlexer.Lexer, out *CoreConfiguration) {
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated13(in *jlexer.Lexer, out *CoreConfiguration) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -908,7 +2664,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(in 
 		in.Consumed()
 	}
 }
-func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(out *jwriter.Writer, in CoreConfiguration) {
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated13(out *jwriter.Writer, in CoreConfiguration) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -998,23 +2754,23 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(out
 // MarshalJSON supports json.Marshaler interface
 func (v CoreConfiguration) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(&w, v)
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated13(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v CoreConfiguration) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(w, v)
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated13(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *CoreConfiguration) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(&r, v)
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated13(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *CoreConfiguration) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(l, v)
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated13(l, v)
 }
