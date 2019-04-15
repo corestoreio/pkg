@@ -108,8 +108,7 @@ type Option struct {
 type TableConfig struct {
 	// Encoders add method receivers for, each struct, compatible with the
 	// interface declarations in the various encoding packages. Supported
-	// encoder names are: json, binary, and protobuf. Text includes JSON. Binary
-	// includes Gob.
+	// encoder names are: json resp. easyjson.
 	Encoders []string
 	// StructTags enables struct tags proactively for the whole struct. Allowed
 	// values are: bson, db, env, json, protobuf, toml, yaml and xml. For bson,
@@ -155,15 +154,15 @@ type TableConfig struct {
 	lastErr    error
 }
 
-func (to *TableConfig) applyEncoders(t *Table) {
-	for i := 0; i < len(to.Encoders) && to.lastErr == nil; i++ {
-		switch enc := to.Encoders[i]; enc {
-		case "json":
-			t.HasJSONMarshaler = true // for now does nothing
-		case "easyjson":
+func (to *TableConfig) applyEncoders(t *Table, g *Generator) {
+	encoders := make([]string, 0, len(to.Encoders)+len(g.defaultTableConfig.Encoders))
+	encoders = append(encoders, to.Encoders...)
+	encoders = append(encoders, g.defaultTableConfig.Encoders...)
+
+	for i := 0; i < len(encoders) && to.lastErr == nil; i++ {
+		switch enc := encoders[i]; enc {
+		case "json", "easyjson":
 			t.HasEasyJSONMarshaler = true
-		case "binary":
-			t.HasBinaryMarshaler = true
 		case "protobuf", "fbs":
 			t.HasSerializer = true // for now leave it in. maybe later PB gets added to the struct tags.
 		default:
@@ -172,18 +171,23 @@ func (to *TableConfig) applyEncoders(t *Table) {
 	}
 }
 
-func (to *TableConfig) applyStructTags(t *Table) {
+func (to *TableConfig) applyStructTags(t *Table, g *Generator) {
 	for h := 0; h < len(t.Columns) && to.lastErr == nil; h++ {
 		c := t.Columns[h]
 		var buf strings.Builder
-		for lst, i := len(to.StructTags), 0; i < lst && to.lastErr == nil; i++ {
+
+		structTags := make([]string, 0, len(to.StructTags)+len(g.defaultTableConfig.StructTags))
+		structTags = append(structTags, to.StructTags...)
+		structTags = append(structTags, g.defaultTableConfig.StructTags...)
+
+		for lst, i := len(structTags), 0; i < lst && to.lastErr == nil; i++ {
 			if i > 0 {
 				buf.WriteByte(' ')
 			}
 			// Maybe some types in the struct for a table don't need at
 			// all an omitempty so build in some logic which creates the
 			// tags more thoughtfully.
-			switch tagName := to.StructTags[i]; tagName {
+			switch tagName := structTags[i]; tagName {
 			case "bson":
 				fmt.Fprintf(&buf, `bson:"%s,omitempty"`, c.Field)
 			case "db":
@@ -316,11 +320,14 @@ func (to *TableConfig) applyUniquifiedColumns(t *Table) {
 }
 
 // WithTableConfigDefault sets for all tables the same configuration but can be
-// overwritten on a per table basis with function WithTableConfig.
+// overwritten on a per table basis with function WithTableConfig. Current
+// behaviour: Does not apply the default config to all tables but only to those
+// which have set an empty
+// `WithTableConfig("table_name",&dmlgen.TableConfig{})`.
 func WithTableConfigDefault(opt TableConfig) (o Option) {
 	o.sortOrder = 149 // must be applied before WithTableConfig
-	o.fn = func(ts *Generator) (err error) {
-		ts.defaultTableConfig = opt
+	o.fn = func(g *Generator) (err error) {
+		g.defaultTableConfig = opt
 		return opt.lastErr
 	}
 	return o
@@ -339,13 +346,13 @@ func WithTableConfig(tableName string, opt *TableConfig) (o Option) {
 		panic(errors.Fatal.Newf("[dmlgen] WithTableConfig: Table %q option CustomStructTags must be a balanced slice.", tableName))
 	}
 	o.sortOrder = 150
-	o.fn = func(ts *Generator) (err error) {
-		t, ok := ts.Tables[tableName]
+	o.fn = func(g *Generator) (err error) {
+		t, ok := g.Tables[tableName]
 		if t == nil || !ok {
 			return errors.NotFound.Newf("[dmlgen] WithTableConfig: Table %q not found.", tableName)
 		}
-		opt.applyEncoders(t)
-		opt.applyStructTags(t)
+		opt.applyEncoders(t, g)
+		opt.applyStructTags(t, g)
 		opt.applyCustomStructTags(t)
 		opt.applyPrivateFields(t)
 		opt.applyComments(t)
@@ -372,9 +379,9 @@ func WithTableConfig(tableName string, opt *TableConfig) (o Option) {
 // alias.
 func WithColumnAliasesFromForeignKeys(ctx context.Context, db dml.Querier) (opt Option) {
 	opt.sortOrder = 200 // must run at the end or where the end is near ;-)
-	opt.fn = func(ts *Generator) error {
+	opt.fn = func(g *Generator) error {
 
-		tblFks, err := ddl.LoadKeyColumnUsage(ctx, db, ts.sortedTableNames()...)
+		tblFks, err := ddl.LoadKeyColumnUsage(ctx, db, g.sortedTableNames()...)
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -386,7 +393,7 @@ func WithColumnAliasesFromForeignKeys(ctx context.Context, db dml.Querier) (opt 
 			refTable := tblPkCol[:dotPos]
 			refColumn := tblPkCol[dotPos+1:]
 
-			t := ts.Tables[refTable]
+			t := g.Tables[refTable]
 			for _, c := range t.Columns {
 				// TODO: optimize this and rethink method receivers like Each, on the collection.
 				if c.Field == refColumn {
@@ -420,31 +427,35 @@ func WithColumnAliasesFromForeignKeys(ctx context.Context, db dml.Querier) (opt 
 // CustomerEntityCollection (1:M relationship).
 func WithForeignKeyRelationships(ctx context.Context, db dml.Querier, skipRelationships ...string) (opt Option) {
 	opt.sortOrder = 210 // must run at the end or where the end is near ;-)
-	opt.fn = func(ts *Generator) (err error) {
+	opt.fn = func(g *Generator) (err error) {
 
 		if len(skipRelationships)%2 == 1 {
 			return errors.Fatal.Newf("[dmlgen] skipRelationships must be balanced slice. Read the doc.")
 		}
 
-		ts.kcu, err = ddl.LoadKeyColumnUsage(ctx, db, ts.sortedTableNames()...)
+		g.kcu, err = ddl.LoadKeyColumnUsage(ctx, db, g.sortedTableNames()...)
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		ts.kcuRev = ddl.ReverseKeyColumnUsage(ts.kcu)
+		g.kcuRev = ddl.ReverseKeyColumnUsage(g.kcu)
 
-		ts.krs, err = ddl.GenerateKeyRelationships(ctx, db, ts.kcu)
+		g.krs, err = ddl.GenerateKeyRelationships(ctx, db, g.kcu)
 		if err != nil {
 			return errors.WithStack(err)
 		}
 
-		ts.krsSkip = make(map[string]string, len(skipRelationships)/2)
+		// TODO(CSC) myabe skipRelationships can contain a wild card to disable all embedded structs from/to a type.
+		//  e.g. "customer_entity.website_id", "store_website.website_id", for CustomerEntity would become
+		//  "*.website_id", "store_website.website_id", to disable all tables which have a foreign key to store_website.
+
+		g.krsSkip = make(map[string]string, len(skipRelationships)/2)
 		for i := 0; i < len(skipRelationships); i += 2 {
-			ts.krsSkip[skipRelationships[i]] = skipRelationships[i+1]
+			g.krsSkip[skipRelationships[i]] = skipRelationships[i+1]
 		}
 
-		var buf bytes.Buffer
-		ts.krs.Debug(&buf)
-		println(buf.String())
+		// var buf bytes.Buffer
+		// g.krs.Debug(&buf)
+		// println(buf.String())
 
 		return nil
 	}
@@ -473,9 +484,9 @@ func WithTable(tableName string, columns ddl.Columns, options ...string) (opt Op
 	}
 
 	opt.sortOrder = 10
-	opt.fn = func(ts *Generator) error {
+	opt.fn = func(g *Generator) error {
 		isOverwrite := len(options) > 0 && options[0] == "overwrite"
-		t, ok := ts.Tables[tableName]
+		t, ok := g.Tables[tableName]
 		if ok && isOverwrite {
 			for ci, ct := range t.Columns {
 				for _, cc := range columns {
@@ -491,7 +502,7 @@ func WithTable(tableName string, columns ddl.Columns, options ...string) (opt Op
 			}
 		}
 		t.HasAutoIncrement = checkAutoIncrement(t.HasAutoIncrement)
-		ts.Tables[tableName] = t
+		g.Tables[tableName] = t
 		return nil
 	}
 	return opt
@@ -502,7 +513,7 @@ func WithTable(tableName string, columns ddl.Columns, options ...string) (opt Op
 // map. Once added a call to WithTableConfig can add additional configurations.
 func WithTablesFromDB(ctx context.Context, db *dml.ConnPool, tables ...string) (opt Option) {
 	opt.sortOrder = 1
-	opt.fn = func(ts *Generator) error {
+	opt.fn = func(g *Generator) error {
 		tables, err := ddl.LoadColumns(ctx, db.DB, tables...)
 		if err != nil {
 			return errors.WithStack(err)
@@ -527,7 +538,7 @@ func WithTablesFromDB(ctx context.Context, db *dml.ConnPool, tables ...string) (
 		}
 
 		for tblName := range tables {
-			ts.Tables[tblName] = &Table{
+			g.Tables[tblName] = &Table{
 				TableName:        tblName,
 				Columns:          tables[tblName],
 				HasAutoIncrement: checkAutoIncrement(tblName),
@@ -542,10 +553,10 @@ func WithTablesFromDB(ctx context.Context, db *dml.ConnPool, tables ...string) (
 // headerOptions is optional.
 func WithProtobuf(headerOptions ...string) (opt Option) {
 	opt.sortOrder = 110
-	opt.fn = func(ts *Generator) error {
-		ts.Serializer = "protobuf"
+	opt.fn = func(g *Generator) error {
+		g.Serializer = "protobuf"
 		if len(headerOptions) == 0 {
-			ts.SerializerHeaderOptions = []string{
+			g.SerializerHeaderOptions = []string{
 				"(gogoproto.typedecl_all) = false",
 				"(gogoproto.goproto_getters_all) = false",
 				"(gogoproto.unmarshaler_all) = true",
@@ -563,11 +574,11 @@ func WithProtobuf(headerOptions ...string) (opt Option) {
 // headerOptions is optional.
 func WithFlatbuffers(headerOptions ...string) (opt Option) {
 	opt.sortOrder = 111
-	opt.fn = func(ts *Generator) error {
-		ts.Serializer = "fbs"
+	opt.fn = func(g *Generator) error {
+		g.Serializer = "fbs"
 		// if len(headerOptions) == 0 {
 		// TODO find sane defaults
-		// ts.SerializerHeaderOptions = []string{}
+		// g.SerializerHeaderOptions = []string{}
 		// }
 		return nil
 	}
@@ -578,8 +589,8 @@ func WithFlatbuffers(headerOptions ...string) (opt Option) {
 // represents a build tag line.
 func WithBuildTags(lines ...string) (opt Option) {
 	opt.sortOrder = 112
-	opt.fn = func(ts *Generator) error {
-		ts.BuildTags = append(ts.BuildTags, lines...)
+	opt.fn = func(g *Generator) error {
+		g.BuildTags = append(g.BuildTags, lines...)
 		return nil
 	}
 	return opt
@@ -592,11 +603,11 @@ func WithBuildTags(lines ...string) (opt Option) {
 // gets written.
 func WithCustomCode(marker, code string) (opt Option) {
 	opt.sortOrder = 112
-	opt.fn = func(ts *Generator) error {
-		if ts.customCode == nil {
-			ts.customCode = make(map[string]func(*Generator, *Table, io.Writer))
+	opt.fn = func(g *Generator) error {
+		if g.customCode == nil {
+			g.customCode = make(map[string]func(*Generator, *Table, io.Writer))
 		}
-		ts.customCode[marker] = func(_ *Generator, _ *Table, w io.Writer) {
+		g.customCode[marker] = func(_ *Generator, _ *Table, w io.Writer) {
 			w.Write([]byte(code))
 		}
 		return nil
@@ -611,19 +622,19 @@ func WithCustomCode(marker, code string) (opt Option) {
 // written to w.
 func WithCustomCodeFunc(marker string, fn func(g *Generator, t *Table, w io.Writer)) (opt Option) {
 	opt.sortOrder = 113
-	opt.fn = func(ts *Generator) error {
-		if ts.customCode == nil {
-			ts.customCode = make(map[string]func(*Generator, *Table, io.Writer))
+	opt.fn = func(g *Generator) error {
+		if g.customCode == nil {
+			g.customCode = make(map[string]func(*Generator, *Table, io.Writer))
 		}
-		ts.customCode[marker] = fn
+		g.customCode[marker] = fn
 		return nil
 	}
 	return opt
 }
 
-func (ts *Generator) sortedTableNames() []string {
-	sortedKeys := make(slices.String, 0, len(ts.Tables))
-	for k := range ts.Tables {
+func (g *Generator) sortedTableNames() []string {
+	sortedKeys := make(slices.String, 0, len(g.Tables))
+	for k := range g.Tables {
 		sortedKeys = append(sortedKeys, k)
 	}
 	sortedKeys.Sort()
@@ -634,7 +645,7 @@ func (ts *Generator) sortedTableNames() []string {
 // of the applied options does not matter as they are getting sorted internally.
 func NewGenerator(packageImportPath string, opts ...Option) (*Generator, error) {
 	_, pkg := filepath.Split(packageImportPath)
-	ts := &Generator{
+	g := &Generator{
 		Tables:            make(map[string]*Table),
 		Package:           pkg,
 		PackageImportPath: packageImportPath,
@@ -670,28 +681,28 @@ func NewGenerator(packageImportPath string, opts ...Option) (*Generator, error) 
 	})
 
 	for _, opt := range opts {
-		if err := opt.fn(ts); err != nil {
+		if err := opt.fn(g); err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}
 
-	for _, t := range ts.Tables {
-		t.Package = ts.Package
+	for _, t := range g.Tables {
+		t.Package = g.Package
 	}
-	return ts, nil
+	return g, nil
 }
 
-func (ts *Generator) skipRelationship(table1, column1, table2, column2 string) bool {
-	// println("skip", "key", table1+"."+column1, ": ", ts.krsSkip[table1+"."+column1], "==", table2+"."+column2)
-	return ts.krsSkip[table1+"."+column1] == table2+"."+column2
+func (g *Generator) skipRelationship(table1, column1, table2, column2 string) bool {
+	// println("skip", "key", table1+"."+column1, ": ", g.krsSkip[table1+"."+column1], "==", table2+"."+column2)
+	return g.krsSkip[table1+"."+column1] == table2+"."+column2
 }
 
-func (ts *Generator) hasFeature(tableInclude, tableExclude, feature FeatureToggle) bool {
+func (g *Generator) hasFeature(tableInclude, tableExclude, feature FeatureToggle) bool {
 	if tableInclude == 0 {
-		tableInclude = ts.defaultTableConfig.FeaturesInclude
+		tableInclude = g.defaultTableConfig.FeaturesInclude
 	}
 	if tableExclude == 0 {
-		tableExclude = ts.defaultTableConfig.FeaturesExclude
+		tableExclude = g.defaultTableConfig.FeaturesExclude
 	}
 
 	switch {
@@ -709,7 +720,7 @@ func (ts *Generator) hasFeature(tableInclude, tableExclude, feature FeatureToggl
 }
 
 // findUsedPackages checks for needed packages which we must import.
-func (ts *Generator) findUsedPackages(file []byte) ([]string, error) {
+func (g *Generator) findUsedPackages(file []byte) ([]string, error) {
 
 	af, err := goparser.ParseFile(token.NewFileSet(), "cs_virtual_file.go", append([]byte("package temporarily_main\n\n"), file...), 0)
 	if err != nil {
@@ -724,8 +735,8 @@ func (ts *Generator) findUsedPackages(file []byte) ([]string, error) {
 		return true
 	})
 
-	ret := make([]string, 0, len(ts.ImportPaths))
-	for _, path := range ts.ImportPaths {
+	ret := make([]string, 0, len(g.ImportPaths))
+	for _, path := range g.ImportPaths {
 		_, pkg := filepath.Split(path)
 		if _, ok := idents[pkg]; ok {
 			ret = append(ret, path)
@@ -736,8 +747,8 @@ func (ts *Generator) findUsedPackages(file []byte) ([]string, error) {
 
 // SerializerType converts the column type to the supported type of the current
 // serializer. For now supports only protobuf.
-func (ts *Generator) SerializerType(c *ddl.Column) string {
-	pt := ts.toSerializerType(c, true)
+func (g *Generator) SerializerType(c *ddl.Column) string {
+	pt := g.toSerializerType(c, true)
 	if strings.IndexByte(pt, '/') > 0 { // slash identifies an import path
 		return "bytes"
 	}
@@ -746,8 +757,8 @@ func (ts *Generator) SerializerType(c *ddl.Column) string {
 
 // SerializerCustomType switches the default type from function SerializerType
 // to the new type. For now supports only protobuf.
-func (ts *Generator) SerializerCustomType(c *ddl.Column) string {
-	pt := ts.toSerializerType(c, true)
+func (g *Generator) SerializerCustomType(c *ddl.Column) string {
+	pt := g.toSerializerType(c, true)
 	var buf strings.Builder
 	if pt == "google.protobuf.Timestamp" {
 		fmt.Fprint(&buf, ",(gogoproto.stdtime)=true")
@@ -767,10 +778,10 @@ func (ts *Generator) SerializerCustomType(c *ddl.Column) string {
 
 // GenerateSerializer writes the protocol buffer specifications into `w` and its test
 // sources into wTest, if there are any tests.
-func (ts *Generator) GenerateSerializer(wMain, wTest io.Writer) error {
-	switch ts.Serializer {
+func (g *Generator) GenerateSerializer(wMain, wTest io.Writer) error {
+	switch g.Serializer {
 	case "protobuf":
-		if err := ts.generateProto(wMain); err != nil {
+		if err := g.generateProto(wMain); err != nil {
 			return errors.WithStack(err)
 		}
 	case "fbs":
@@ -778,24 +789,24 @@ func (ts *Generator) GenerateSerializer(wMain, wTest io.Writer) error {
 	case "", "default", "none":
 		return nil // do nothing
 	default:
-		return errors.NotAcceptable.Newf("[dmlgen] Serializer %q not supported.", ts.Serializer)
+		return errors.NotAcceptable.Newf("[dmlgen] Serializer %q not supported.", g.Serializer)
 	}
 
 	return nil
 }
 
-func (ts *Generator) generateProto(w io.Writer) error {
-	cg := codegen.NewProto(ts.Package)
+func (g *Generator) generateProto(w io.Writer) error {
+	cg := codegen.NewProto(g.Package)
 	cg.Pln(`import "github.com/gogo/protobuf/gogoproto/gogo.proto";`)
 	cg.Pln(`import "google/protobuf/timestamp.proto";`)
 	cg.Pln(`import "github.com/corestoreio/pkg/storage/null/null.proto";`)
-	cg.Pln(`option go_package = "` + ts.Package + `";`)
-	for _, o := range ts.SerializerHeaderOptions {
+	cg.Pln(`option go_package = "` + g.Package + `";`)
+	for _, o := range g.SerializerHeaderOptions {
 		cg.Pln(`option ` + o + `;`)
 	}
 
-	for _, tblname := range ts.sortedTableNames() {
-		t := ts.Tables[tblname] // must panic if table name not found
+	for _, tblname := range g.sortedTableNames() {
+		t := g.Tables[tblname] // must panic if table name not found
 
 		cg.C(t.EntityName(), `represents a single row for DB table`, t.TableName, `. Auto generated.`)
 		cg.Pln(`message`, t.EntityName(), `{`)
@@ -803,7 +814,7 @@ func (ts *Generator) generateProto(w io.Writer) error {
 			cg.In()
 			t.Columns.Each(func(c *ddl.Column) {
 				if t.IsFieldPublic(c.Field) {
-					cg.Pln(ts.SerializerType(c), c.Field+`=`, c.Pos, `[(gogoproto.customname)=`+strconv.Quote(strs.ToGoCamelCase(c.Field)), ts.SerializerCustomType(c)+`];`)
+					cg.Pln(g.SerializerType(c), c.Field+`=`, c.Pos, `[(gogoproto.customname)=`+strconv.Quote(strs.ToGoCamelCase(c.Field)), g.SerializerCustomType(c)+`];`)
 				}
 			})
 			cg.Out()
@@ -823,62 +834,58 @@ func (ts *Generator) generateProto(w io.Writer) error {
 }
 
 // GenerateGo writes the Go source code into `w` and the test code into wTest.
-func (ts *Generator) GenerateGo(wMain, wTest io.Writer) error {
+func (g *Generator) GenerateGo(wMain, wTest io.Writer) error {
 
-	mainGen := codegen.NewGo(ts.Package)
-	testGen := codegen.NewGo(ts.Package)
+	mainGen := codegen.NewGo(g.Package)
+	testGen := codegen.NewGo(g.Package)
 
-	mainGen.BuildTags = ts.BuildTags
-	testGen.BuildTags = ts.BuildTags
+	mainGen.BuildTags = g.BuildTags
+	testGen.BuildTags = g.BuildTags
 
-	tables := make([]*Table, len(ts.Tables))
-	for i, tblname := range ts.sortedTableNames() {
-		tables[i] = ts.Tables[tblname] // must panic if table name not found
+	tables := make([]*Table, len(g.Tables))
+	for i, tblname := range g.sortedTableNames() {
+		tables[i] = g.Tables[tblname] // must panic if table name not found
 	}
 
-	ts.fnDBNewTables(mainGen)
-	ts.fnTestMainOther(testGen, tables)
-	ts.fnTestMainDB(testGen, tables)
+	g.fnDBNewTables(mainGen)
+	g.fnTestMainOther(testGen, tables)
+	g.fnTestMainDB(testGen, tables)
 
 	// deal with random map to guarantee the persistent code generation.
 	for _, t := range tables {
+		t.entityStruct(mainGen, g)
+		t.fnEntityGetSetPrivateFields(mainGen, g)
+		t.fnEntityEmpty(mainGen, g)
+		t.fnEntityCopy(mainGen, g)
+		t.fnEntityWriteTo(mainGen, g)
+		t.fnEntityDBAssignLastInsertID(mainGen, g)
+		t.fnEntityDBMapColumns(mainGen, g)
 
-		t.entityStruct(mainGen, ts)
-		t.fnEntityGetSetPrivateFields(mainGen, ts)
-		t.fnEntityEmpty(mainGen, ts)
-		t.fnEntityCopy(mainGen, ts)
-		t.fnEntityWriteTo(mainGen, ts)
-		t.fnEntityDBAssignLastInsertID(mainGen, ts)
-		t.fnEntityDBMapColumns(mainGen, ts)
-
-		t.collectionStruct(mainGen, ts)
-		t.fnCollectionDBAssignLastInsertID(mainGen, ts)
-		t.fnCollectionDBMapColumns(mainGen, ts)
-		t.fnCollectionUniqueGetters(mainGen, ts)
-		t.fnCollectionUniquifiedGetters(mainGen, ts)
-		t.fnCollectionWriteTo(mainGen, ts)
-		t.fnCollectionFilter(mainGen, ts)
-		t.fnCollectionEach(mainGen, ts)
-		t.fnCollectionCut(mainGen, ts)
-		t.fnCollectionSwap(mainGen, ts)
-		t.fnCollectionDelete(mainGen, ts)
-		t.fnCollectionInsert(mainGen, ts)
-		t.fnCollectionAppend(mainGen, ts)
-
-		if t.HasBinaryMarshaler {
-			t.fnCollectionBinaryMarshaler(mainGen, ts)
-		}
+		t.collectionStruct(mainGen, g)
+		t.fnCollectionDBAssignLastInsertID(mainGen, g)
+		t.fnCollectionDBMapColumns(mainGen, g)
+		t.fnCollectionUniqueGetters(mainGen, g)
+		t.fnCollectionUniquifiedGetters(mainGen, g)
+		t.fnCollectionWriteTo(mainGen, g)
+		t.fnCollectionFilter(mainGen, g)
+		t.fnCollectionEach(mainGen, g)
+		t.fnCollectionCut(mainGen, g)
+		t.fnCollectionSwap(mainGen, g)
+		t.fnCollectionDelete(mainGen, g)
+		t.fnCollectionInsert(mainGen, g)
+		t.fnCollectionAppend(mainGen, g)
+		t.fnCollectionBinaryMarshaler(mainGen, g)
 	}
 
 	// now figure out all used package names in the buffer.
-	pkgs, err := ts.findUsedPackages(mainGen.Bytes())
+	pkgs, err := g.findUsedPackages(mainGen.Bytes())
 	if err != nil {
 		_, _ = wMain.Write(mainGen.Bytes()) // write for debug reasons
 		return errors.WithStack(err)
 	}
 	mainGen.AddImports(pkgs...)
 
-	testGen.AddImports(ts.ImportPathsTesting...)
+	testGen.AddImports(g.ImportPathsTesting...)
 
 	if err := mainGen.GenerateFile(wMain); err != nil {
 		return errors.WithStack(err)
@@ -889,18 +896,18 @@ func (ts *Generator) GenerateGo(wMain, wTest io.Writer) error {
 	return nil
 }
 
-func (ts *Generator) goTypeNull(c *ddl.Column) string { return ts.mySQLToGoType(c, true) }
-func (ts *Generator) goType(c *ddl.Column) string     { return ts.mySQLToGoType(c, false) }
-func (ts *Generator) goFuncNull(c *ddl.Column) string { return ts.mySQLToGoDmlColumnMap(c, true) }
+func (g *Generator) goTypeNull(c *ddl.Column) string { return g.mySQLToGoType(c, true) }
+func (g *Generator) goType(c *ddl.Column) string     { return g.mySQLToGoType(c, false) }
+func (g *Generator) goFuncNull(c *ddl.Column) string { return g.mySQLToGoDmlColumnMap(c, true) }
 
-func (ts *Generator) fnDBNewTables(mainGen *codegen.Go) {
-	if !ts.hasFeature(0, 0, FeatureDB) {
+func (g *Generator) fnDBNewTables(mainGen *codegen.Go) {
+	if !g.hasFeature(0, 0, FeatureDB) {
 		return
 	}
 
 	var tableNames []string
 	var tableCreateStmt []string
-	for _, tblname := range ts.sortedTableNames() {
+	for _, tblname := range g.sortedTableNames() {
 		constName := `TableName` + strs.ToGoCamelCase(tblname)
 		mainGen.AddConstString(constName, tblname)
 		tableNames = append(tableNames, tblname)
@@ -924,7 +931,7 @@ func (ts *Generator) fnDBNewTables(mainGen *codegen.Go) {
 	mainGen.Pln(`); err != nil { return nil, errors.WithStack(err); }; return tm, nil; }`)
 }
 
-func (ts *Generator) fnTestMainOther(testGen *codegen.Go, tables []*Table) {
+func (g *Generator) fnTestMainOther(testGen *codegen.Go, tables []*Table) {
 	// Test Header
 	testGen.Pln(`func TestNewTablesNonDB(t *testing.T) {`)
 	{
@@ -936,14 +943,14 @@ func (ts *Generator) fnTestMainOther(testGen *codegen.Go, tables []*Table) {
 		testGen.Pln(`_ = ps`)
 
 		for _, t := range tables {
-			t.generateTestOther(testGen, ts)
+			t.generateTestOther(testGen, g)
 		} // end for tables
 	}
 	testGen.Pln(`}`) // end TestNewTables
 }
 
-func (ts *Generator) fnTestMainDB(testGen *codegen.Go, tables []*Table) {
-	if !ts.hasFeature(0, 0, FeatureDB) {
+func (g *Generator) fnTestMainDB(testGen *codegen.Go, tables []*Table) {
+	if !g.hasFeature(0, 0, FeatureDB) {
 		return
 	}
 
@@ -953,8 +960,8 @@ func (ts *Generator) fnTestMainDB(testGen *codegen.Go, tables []*Table) {
 		testGen.Pln(`db := dmltest.MustConnectDB(t)`)
 		testGen.Pln(`defer dmltest.Close(t, db)`)
 
-		if ts.TestSQLDumpGlobPath != "" {
-			testGen.Pln(`defer dmltest.SQLDumpLoad(t,`, strconv.Quote(ts.TestSQLDumpGlobPath), `, &dmltest.SQLDumpOptions{
+		if g.TestSQLDumpGlobPath != "" {
+			testGen.Pln(`defer dmltest.SQLDumpLoad(t,`, strconv.Quote(g.TestSQLDumpGlobPath), `, &dmltest.SQLDumpOptions{
 					SkipDBCleanup: true,
 				}).Deferred()`)
 		}
@@ -966,7 +973,7 @@ func (ts *Generator) fnTestMainDB(testGen *codegen.Go, tables []*Table) {
 
 		testGen.Pln(`tblNames := tbls.Tables()`)
 		testGen.Pln(`sort.Strings(tblNames)`)
-		testGen.Pln(`assert.Exactly(t, `, fmt.Sprintf("%#v", ts.sortedTableNames()), `, tblNames)`)
+		testGen.Pln(`assert.Exactly(t, `, fmt.Sprintf("%#v", g.sortedTableNames()), `, tblNames)`)
 
 		testGen.Pln(`err = tbls.Validate(ctx)`)
 		testGen.Pln(`assert.NoError(t, err)`)
@@ -980,8 +987,8 @@ func (ts *Generator) fnTestMainDB(testGen *codegen.Go, tables []*Table) {
 		testGen.Pln(`pseudo.WithTagFakeFunc("store_id", func(maxLen int) (interface{}, error) {`)
 		testGen.Pln(`    return 1, nil`)
 		testGen.Pln(`}),`)
-		if fn, ok := ts.customCode["pseudo.MustNewService.Option"]; ok {
-			fn(ts, nil, testGen)
+		if fn, ok := g.customCode["pseudo.MustNewService.Option"]; ok {
+			fn(g, nil, testGen)
 		}
 		testGen.Out()
 		testGen.Pln(`)`)

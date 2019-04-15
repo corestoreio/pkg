@@ -423,13 +423,10 @@ func TestNewGenerator_ReversedForeignKeys(t *testing.T) {
 			StructTags:      []string{"max_len"},
 			FeaturesInclude: dmlgen.FeatureEntityStruct | dmlgen.FeatureCollectionStruct | dmlgen.FeatureEntityRelationships,
 		}),
-		dmlgen.WithForeignKeyRelationships(ctx, db.DB,
-			// "store_website.website_id", "customer_entity.website_id",
-			// "store.store_id", "customer_entity.store_id",
-			// "customer_entity.store_id", "store.store_id",
-			// "customer_entity.website_id", "store_website.website_id",
-			"customer_address_entity.parent_id", "customer_entity.entity_id",
-		),
+		// Just an empty TableConfig to trigger the default config update for
+		// this table. Hacky for now.
+		dmlgen.WithTableConfig("customer_address_entity", &dmlgen.TableConfig{}),
+
 		dmlgen.WithTableConfig("customer_entity", &dmlgen.TableConfig{
 			FieldMapFn: func(dbIdentifier string) (fieldName string) {
 				switch dbIdentifier {
@@ -439,6 +436,14 @@ func TestNewGenerator_ReversedForeignKeys(t *testing.T) {
 				return strs.ToGoCamelCase(dbIdentifier)
 			},
 		}),
+
+		dmlgen.WithForeignKeyRelationships(ctx, db.DB,
+			"store_website.website_id", "customer_entity.website_id",
+			"store.store_id", "customer_entity.store_id",
+			"customer_entity.store_id", "store.store_id",
+			"customer_entity.website_id", "store_website.website_id",
+			"customer_address_entity.parent_id", "customer_entity.entity_id",
+		),
 	)
 	assert.NoError(t, err)
 

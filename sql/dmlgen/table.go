@@ -58,9 +58,7 @@ type Table struct {
 	Comment              string      // Comment above the struct type declaration
 	Columns              ddl.Columns // all columns of a table
 	HasAutoIncrement     uint8       // 0=nil,1=false (has NO auto increment),2=true has auto increment
-	HasJSONMarshaler     bool
 	HasEasyJSONMarshaler bool
-	HasBinaryMarshaler   bool
 	HasSerializer        bool // writes the .proto file if true
 
 	// PrivateFields key=snake case name of the DB column, value=true, the field must be private
@@ -180,7 +178,7 @@ func (t *Table) entityStruct(mainGen *codegen.Go, ts *Generator) {
 			}
 
 			if ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityRelationships) {
-				const debug = true
+				const debug = false
 				if kcuc, ok := ts.kcu[t.TableName]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
 					for _, kcuce := range kcuc.Data {
 						if !kcuce.ReferencedTableName.Valid {

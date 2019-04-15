@@ -392,17 +392,17 @@ func mustGetTypeDef(mysqlDataType, serializer string) *TypeDef {
 	return goType
 }
 
-func (ts *Generator) findType(c *ddl.Column) *TypeDef {
+func (g *Generator) findType(c *ddl.Column) *TypeDef {
 
-	goType := mustGetTypeDef(c.DataType, ts.Serializer)
+	goType := mustGetTypeDef(c.DataType, g.Serializer)
 
 	// The switch block overwrites the already retrieved goType by checking for
 	// bool columns and columns which contains a money unit.
 	switch {
 	case c.IsBool():
-		goType = mustGetTypeDef("bit", ts.Serializer)
+		goType = mustGetTypeDef("bit", g.Serializer)
 	case c.IsFloat() && c.IsMoney():
-		goType = mustGetTypeDef("decimal", ts.Serializer)
+		goType = mustGetTypeDef("decimal", g.Serializer)
 	}
 	return goType
 }
@@ -410,9 +410,9 @@ func (ts *Generator) findType(c *ddl.Column) *TypeDef {
 // mySQLToGoType calculates the data type of the field DataType. For example
 // bigint, smallint, tinyint will result in "int". If withNull is true the
 // returned type can store a null value.
-func (ts *Generator) mySQLToGoType(c *ddl.Column, withNull bool) string {
+func (g *Generator) mySQLToGoType(c *ddl.Column, withNull bool) string {
 
-	goType := ts.findType(c)
+	goType := g.findType(c)
 
 	var t string
 	switch {
@@ -431,8 +431,8 @@ func (ts *Generator) mySQLToGoType(c *ddl.Column, withNull bool) string {
 // toGoPrimitiveFromNull returns for a Go type or structure the final primitive:
 // int->int but NullInt->.Int. Either it is the struct field name or final type
 // of a composite nullable type.
-func (ts *Generator) toGoPrimitiveFromNull(c *ddl.Column) string {
-	t := ts.mySQLToGoType(c, true)
+func (g *Generator) toGoPrimitiveFromNull(c *ddl.Column) string {
+	t := g.mySQLToGoType(c, true)
 	field := strs.ToGoCamelCase(c.Field)
 	if strings.HasPrefix(t, "null.") && t != "null.Decimal" {
 		t = field + "." + t[5:] // 5 == len("null.")
@@ -442,9 +442,9 @@ func (ts *Generator) toGoPrimitiveFromNull(c *ddl.Column) string {
 	return t
 }
 
-func (ts *Generator) mySQLToGoDmlColumnMap(c *ddl.Column, withNull bool) string {
+func (g *Generator) mySQLToGoDmlColumnMap(c *ddl.Column, withNull bool) string {
 
-	gt := ts.mySQLToGoType(c, withNull)
+	gt := g.mySQLToGoType(c, withNull)
 	if gt == "[]byte" {
 		return "Byte"
 	}
@@ -462,9 +462,9 @@ func (ts *Generator) mySQLToGoDmlColumnMap(c *ddl.Column, withNull bool) string 
 	return string(unicode.ToUpper(r)) + gt[n:]
 }
 
-func (ts *Generator) toSerializerType(c *ddl.Column, withNull bool) string {
+func (g *Generator) toSerializerType(c *ddl.Column, withNull bool) string {
 
-	goType := ts.findType(c)
+	goType := g.findType(c)
 
 	var t string
 	switch {
