@@ -162,16 +162,6 @@ func (cc *CoreConfigurationCollection) Append(n ...*CoreConfiguration) *CoreConf
 	return cc
 }
 
-// UnmarshalBinary implements encoding.BinaryUnmarshaler.
-func (cc *CoreConfigurationCollection) UnmarshalBinary(data []byte) error {
-	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
-}
-
-// MarshalBinary implements encoding.BinaryMarshaler.
-func (cc *CoreConfigurationCollection) MarshalBinary() (data []byte, err error) {
-	return cc.Marshal() // Implemented via github.com/gogo/protobuf
-}
-
 // SalesOrderStatusState represents a single row for DB table
 // sales_order_status_state. Auto generated.
 type SalesOrderStatusState struct {
@@ -329,14 +319,4 @@ func (cc *SalesOrderStatusStateCollection) Insert(n *SalesOrderStatusState, i in
 func (cc *SalesOrderStatusStateCollection) Append(n ...*SalesOrderStatusState) *SalesOrderStatusStateCollection {
 	cc.Data = append(cc.Data, n...)
 	return cc
-}
-
-// UnmarshalBinary implements encoding.BinaryUnmarshaler.
-func (cc *SalesOrderStatusStateCollection) UnmarshalBinary(data []byte) error {
-	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
-}
-
-// MarshalBinary implements encoding.BinaryMarshaler.
-func (cc *SalesOrderStatusStateCollection) MarshalBinary() (data []byte, err error) {
-	return cc.Marshal() // Implemented via github.com/gogo/protobuf
 }

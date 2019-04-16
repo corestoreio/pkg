@@ -94,8 +94,8 @@ func (t *Table) EntityName() string {
 	return strs.ToGoCamelCase(t.TableName)
 }
 
-func (t *Table) collectionStruct(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionStruct) {
+func (t *Table) collectionStruct(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionStruct) {
 		return
 	}
 
@@ -111,12 +111,12 @@ func (t *Table) collectionStruct(mainGen *codegen.Go, ts *Generator) {
 	{
 		mainGen.In()
 		mainGen.Pln(`Data []*`, t.EntityName(), codegen.EncloseBT(`json:"data,omitempty"`))
-		if ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityDBMapColumns|FeatureDB) {
+		if g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityDBMapColumns|FeatureDB) {
 			mainGen.Pln(`BeforeMapColumns	func(uint64, *`, t.EntityName(), `) error`, codegen.EncloseBT(`json:"-"`))
 			mainGen.Pln(`AfterMapColumns 	func(uint64, *`, t.EntityName(), `) error `, codegen.EncloseBT(`json:"-"`))
 		}
-		if fn, ok := ts.customCode["type_"+t.CollectionName()]; ok {
-			fn(ts, t, mainGen)
+		if fn, ok := g.customCode["type_"+t.CollectionName()]; ok {
+			fn(g, t, mainGen)
 		}
 		mainGen.Out()
 	}
@@ -141,12 +141,12 @@ func (t *Table) collectionStruct(mainGen *codegen.Go, ts *Generator) {
 	mainGen.Pln(`}`)
 }
 
-func (t *Table) entityStruct(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityStruct) {
+func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityStruct) {
 		return
 	}
 
-	fieldMapFn := ts.defaultTableConfig.FieldMapFn
+	fieldMapFn := g.defaultTableConfig.FieldMapFn
 	if fieldMapFn == nil {
 		fieldMapFn = t.fieldMapFn
 	}
@@ -165,8 +165,8 @@ func (t *Table) entityStruct(mainGen *codegen.Go, ts *Generator) {
 	// Generate table structs
 	mainGen.Pln(`type `, t.EntityName(), ` struct {`)
 	{
-		if fn, ok := ts.customCode["type_"+t.EntityName()]; ok {
-			fn(ts, t, mainGen)
+		if fn, ok := g.customCode["type_"+t.EntityName()]; ok {
+			fn(g, t, mainGen)
 		} else {
 			mainGen.In()
 			for _, c := range t.Columns {
@@ -174,21 +174,22 @@ func (t *Table) entityStruct(mainGen *codegen.Go, ts *Generator) {
 				if c.StructTag != "" {
 					structTag += "`" + c.StructTag + "`"
 				}
-				mainGen.Pln(t.GoCamelMaybePrivate(c.Field), ts.goTypeNull(c), structTag, c.GoComment())
+				mainGen.Pln(t.GoCamelMaybePrivate(c.Field), g.goTypeNull(c), structTag, c.GoComment())
 			}
 
-			if ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityRelationships) {
+			// this part is duplicated in the proto file generation function generateProto.
+			if g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityRelationships) {
 				const debug = false
-				if kcuc, ok := ts.kcu[t.TableName]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
+				if kcuc, ok := g.kcu[t.TableName]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
 					for _, kcuce := range kcuc.Data {
 						if !kcuce.ReferencedTableName.Valid {
 							continue
 						}
 
 						// case ONE-TO-MANY
-						isOneToMany := ts.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
-						isRelationAllowed := !ts.skipRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
-						hasTable := ts.Tables[kcuce.ReferencedTableName.String] != nil
+						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						isRelationAllowed := !g.skipRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						hasTable := g.Tables[kcuce.ReferencedTableName.String] != nil
 						if debug {
 							println("A1: isOneToMany", isOneToMany, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
 								t.TableName, "\t",
@@ -200,7 +201,7 @@ func (t *Table) entityStruct(mainGen *codegen.Go, ts *Generator) {
 						}
 
 						// case ONE-TO-ONE
-						isOneToOne := ts.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
 						if debug {
 							println("B1: IsOneToOne", isOneToOne, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
 								t.TableName, "\t",
@@ -213,16 +214,16 @@ func (t *Table) entityStruct(mainGen *codegen.Go, ts *Generator) {
 					}
 				}
 
-				if kcuc, ok := ts.kcuRev[t.TableName]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
+				if kcuc, ok := g.kcuRev[t.TableName]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
 					for _, kcuce := range kcuc.Data {
 						if !kcuce.ReferencedTableName.Valid {
 							continue
 						}
 
 						// case ONE-TO-MANY
-						isOneToMany := ts.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
-						isRelationAllowed := !ts.skipRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
-						hasTable := ts.Tables[kcuce.ReferencedTableName.String] != nil
+						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						isRelationAllowed := !g.skipRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						hasTable := g.Tables[kcuce.ReferencedTableName.String] != nil
 						if debug {
 							println("A2: isOneToMany", isOneToMany, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
 								t.TableName, "\t",
@@ -234,7 +235,7 @@ func (t *Table) entityStruct(mainGen *codegen.Go, ts *Generator) {
 						}
 
 						// case ONE-TO-ONE
-						isOneToOne := ts.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
 						if debug {
 							println("B2: IsOneToOne", isOneToOne, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
 								t.TableName, "\t",
@@ -253,8 +254,8 @@ func (t *Table) entityStruct(mainGen *codegen.Go, ts *Generator) {
 	mainGen.Pln(`}`)
 }
 
-func (t *Table) fnEntityGetSetPrivateFields(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityGetSetPrivateFields) {
+func (t *Table) fnEntityGetSetPrivateFields(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityGetSetPrivateFields) {
 		return
 	}
 	// Generates the Getter/Setter for private fields
@@ -263,7 +264,7 @@ func (t *Table) fnEntityGetSetPrivateFields(mainGen *codegen.Go, ts *Generator) 
 			continue
 		}
 		mainGen.C(`Set`, strs.ToGoCamelCase(c.Field), ` sets the data for a private and security sensitive field.`)
-		mainGen.Pln(`func (e *`, t.EntityName(), `) Set`+strs.ToGoCamelCase(c.Field), `(d `, ts.goTypeNull(c), `) *`, t.EntityName(), ` {`)
+		mainGen.Pln(`func (e *`, t.EntityName(), `) Set`+strs.ToGoCamelCase(c.Field), `(d `, g.goTypeNull(c), `) *`, t.EntityName(), ` {`)
 		{
 			mainGen.In()
 			mainGen.Pln(`e.`, t.GoCamelMaybePrivate(c.Field), ` = d`)
@@ -273,7 +274,7 @@ func (t *Table) fnEntityGetSetPrivateFields(mainGen *codegen.Go, ts *Generator) 
 		mainGen.Pln(`}`)
 
 		mainGen.C(`Get`, strs.ToGoCamelCase(c.Field), ` returns the data from a private and security sensitive field.`)
-		mainGen.Pln(`func (e *`, t.EntityName(), `) Get`+strs.ToGoCamelCase(c.Field), `() `, ts.goTypeNull(c), `{`)
+		mainGen.Pln(`func (e *`, t.EntityName(), `) Get`+strs.ToGoCamelCase(c.Field), `() `, g.goTypeNull(c), `{`)
 		{
 			mainGen.In()
 			mainGen.Pln(`return e.`, t.GoCamelMaybePrivate(c.Field))
@@ -284,8 +285,8 @@ func (t *Table) fnEntityGetSetPrivateFields(mainGen *codegen.Go, ts *Generator) 
 	}
 }
 
-func (t *Table) fnEntityEmpty(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityEmpty) {
+func (t *Table) fnEntityEmpty(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityEmpty) {
 		return
 	}
 	mainGen.Pln(`// Empty empties all the fields of the current object. Also known as Reset.`)
@@ -293,8 +294,8 @@ func (t *Table) fnEntityEmpty(mainGen *codegen.Go, ts *Generator) {
 	mainGen.Pln(`func (e *`, t.EntityName(), `) Empty() *`, t.EntityName(), ` { *e = `, t.EntityName(), `{}; return e }`)
 }
 
-func (t *Table) fnEntityCopy(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityCopy) {
+func (t *Table) fnEntityCopy(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityCopy) {
 		return
 	}
 	mainGen.Pln(`// Copy copies the struct and returns a new pointer`)
@@ -305,8 +306,8 @@ func (t *Table) fnEntityCopy(mainGen *codegen.Go, ts *Generator) {
 }`)
 }
 
-func (t *Table) fnEntityWriteTo(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityWriteTo) {
+func (t *Table) fnEntityWriteTo(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityWriteTo) {
 		return
 	}
 	mainGen.C(`WriteTo implements io.WriterTo and writes the field names and their values to w.`,
@@ -315,8 +316,8 @@ func (t *Table) fnEntityWriteTo(mainGen *codegen.Go, ts *Generator) {
 	mainGen.Pln(`func (e *`, t.EntityName(), `) WriteTo(w io.Writer) (n int64, err error) {
 	// for now this printing is good enough. If you need better swap out with your code.`)
 
-	if fn, ok := ts.customCode["func_"+t.EntityName()+"_WriteTo"]; ok {
-		fn(ts, t, mainGen)
+	if fn, ok := g.customCode["func_"+t.EntityName()+"_WriteTo"]; ok {
+		fn(g, t, mainGen)
 	} else {
 		mainGen.Pln(`n2, err := fmt.Fprint(w,`)
 		mainGen.In()
@@ -332,8 +333,8 @@ func (t *Table) fnEntityWriteTo(mainGen *codegen.Go, ts *Generator) {
 	mainGen.Pln(`}`)
 }
 
-func (t *Table) fnCollectionWriteTo(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityWriteTo) {
+func (t *Table) fnCollectionWriteTo(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityWriteTo) {
 		return
 	}
 
@@ -352,15 +353,15 @@ func (t *Table) fnCollectionWriteTo(mainGen *codegen.Go, ts *Generator) {
 	}`)
 }
 
-func (t *Table) fnEntityDBMapColumns(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityDBMapColumns|FeatureDB) {
+func (t *Table) fnEntityDBMapColumns(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityDBMapColumns|FeatureDB) {
 		return
 	}
 	mainGen.C(`MapColumns implements interface ColumnMapper only partially. Auto generated.`)
 	mainGen.Pln(`func (e *`, t.EntityName(), `) MapColumns(cm *dml.ColumnMap) error {`)
 	{
-		if fn, ok := ts.customCode["func_"+t.EntityName()+"_MapColumns"]; ok {
-			fn(ts, t, mainGen)
+		if fn, ok := g.customCode["func_"+t.EntityName()+"_MapColumns"]; ok {
+			fn(g, t, mainGen)
 		}
 
 		mainGen.In()
@@ -369,7 +370,7 @@ func (t *Table) fnEntityDBMapColumns(mainGen *codegen.Go, ts *Generator) {
 			mainGen.In()
 			mainGen.P(`return cm`)
 			t.Columns.Each(func(c *ddl.Column) {
-				mainGen.P(`.`, ts.goFuncNull(c), `(&e.`, t.GoCamelMaybePrivate(c.Field), `)`)
+				mainGen.P(`.`, g.goFuncNull(c), `(&e.`, t.GoCamelMaybePrivate(c.Field), `)`)
 			})
 			mainGen.Pln(`.Err()`)
 			mainGen.Out()
@@ -387,10 +388,10 @@ func (t *Table) fnEntityDBMapColumns(mainGen *codegen.Go, ts *Generator) {
 						mainGen.P(`,`, strconv.Quote(a))
 					}
 					mainGen.Pln(`:`)
-					mainGen.Pln(`cm.`, ts.goFuncNull(c), `(&e.`, t.GoCamelMaybePrivate(c.Field), `)`)
+					mainGen.Pln(`cm.`, g.goFuncNull(c), `(&e.`, t.GoCamelMaybePrivate(c.Field), `)`)
 				})
 				mainGen.Pln(`default:`)
-				mainGen.Pln(`return errors.NotFound.Newf("[`+ts.Package+`]`, t.EntityName(), `Column %q not found", c)`)
+				mainGen.Pln(`return errors.NotFound.Newf("[`+g.Package+`]`, t.EntityName(), `Column %q not found", c)`)
 				mainGen.Out()
 			}
 			mainGen.Pln(`}`)
@@ -416,8 +417,8 @@ func (t *Table) hasPKAutoInc() bool {
 	return hasPKAutoInc
 }
 
-func (t *Table) fnEntityDBAssignLastInsertID(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityDBAssignLastInsertID|FeatureDB) {
+func (t *Table) fnEntityDBAssignLastInsertID(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityDBAssignLastInsertID|FeatureDB) {
 		return
 	}
 	if !t.hasPKAutoInc() {
@@ -431,7 +432,7 @@ func (t *Table) fnEntityDBAssignLastInsertID(mainGen *codegen.Go, ts *Generator)
 		mainGen.In()
 		t.Columns.Each(func(c *ddl.Column) {
 			if c.IsPK() && c.IsAutoIncrement() {
-				mainGen.Pln(`e.`, t.GoCamelMaybePrivate(c.Field), ` = `, ts.goType(c), `(id)`)
+				mainGen.Pln(`e.`, t.GoCamelMaybePrivate(c.Field), ` = `, g.goType(c), `(id)`)
 			}
 		})
 		mainGen.Out()
@@ -439,8 +440,8 @@ func (t *Table) fnEntityDBAssignLastInsertID(mainGen *codegen.Go, ts *Generator)
 	mainGen.Pln(`}`)
 }
 
-func (t *Table) fnCollectionDBAssignLastInsertID(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityDBAssignLastInsertID|FeatureDB) {
+func (t *Table) fnCollectionDBAssignLastInsertID(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityDBAssignLastInsertID|FeatureDB) {
 		return
 	}
 	if !t.hasPKAutoInc() {
@@ -465,15 +466,15 @@ func (t *Table) fnCollectionDBAssignLastInsertID(mainGen *codegen.Go, ts *Genera
 	mainGen.Pln(`}`)
 }
 
-func (t *Table) fnCollectionUniqueGetters(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionUniqueGetters) {
+func (t *Table) fnCollectionUniqueGetters(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionUniqueGetters) {
 		return
 	}
 
 	// Generates functions to return all data as a slice from unique/primary
 	// columns.
 	for _, c := range t.Columns.UniqueColumns() {
-		gtn := ts.goTypeNull(c)
+		gtn := g.goTypeNull(c)
 		goCamel := strs.ToGoCamelCase(c.Field)
 		mainGen.C(goCamel + `s returns a slice with the data or appends it to a slice.`)
 		mainGen.C(`Auto generated.`)
@@ -501,14 +502,14 @@ func (t *Table) fnCollectionUniqueGetters(mainGen *codegen.Go, ts *Generator) {
 	}
 }
 
-func (t *Table) fnCollectionUniquifiedGetters(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionUniquifiedGetters) {
+func (t *Table) fnCollectionUniquifiedGetters(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionUniquifiedGetters) {
 		return
 	}
 	// Generates functions to return data with removed duplicates from any
 	// column which has set the flag Uniquified.
 	for _, c := range t.Columns.UniquifiedColumns() {
-		goType := ts.goType(c)
+		goType := g.goType(c)
 		goCamel := strs.ToGoCamelCase(c.Field)
 
 		mainGen.C(goCamel+`s belongs to the column`, strconv.Quote(c.Field), `and returns a slice or appends to a slice only`,
@@ -524,7 +525,7 @@ func (t *Table) fnCollectionUniquifiedGetters(mainGen *codegen.Go, ts *Generator
 			// TODO: a reusable map and use different algorithms depending on
 			// the size of the cc.Data slice. Sometimes a for/for loop runs
 			// faster than a map.
-			goPrimNull := ts.toGoPrimitiveFromNull(c)
+			goPrimNull := g.toGoPrimitiveFromNull(c)
 			mainGen.Pln(`dupCheck := make(map[`, goType, `]bool, len(cc.Data))`)
 			mainGen.Pln(`for _, e := range cc.Data {`)
 			{
@@ -547,8 +548,8 @@ func (t *Table) fnCollectionUniquifiedGetters(mainGen *codegen.Go, ts *Generator
 	}
 }
 
-func (t *Table) fnCollectionFilter(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionFilter) {
+func (t *Table) fnCollectionFilter(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionFilter) {
 		return
 	}
 	mainGen.C(`Filter filters the current slice by predicate f without memory allocation. Auto generated via dmlgen.`)
@@ -576,8 +577,8 @@ func (t *Table) fnCollectionFilter(mainGen *codegen.Go, ts *Generator) {
 	mainGen.Pln(`}`) // function
 }
 
-func (t *Table) fnCollectionEach(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionEach) {
+func (t *Table) fnCollectionEach(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionEach) {
 		return
 	}
 	mainGen.C(`Each will run function f on all items in []*`, t.EntityName(), `. Auto generated via dmlgen.`)
@@ -593,8 +594,8 @@ func (t *Table) fnCollectionEach(mainGen *codegen.Go, ts *Generator) {
 	mainGen.Pln(`}`)
 }
 
-func (t *Table) fnCollectionCut(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionCut) {
+func (t *Table) fnCollectionCut(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionCut) {
 		return
 	}
 
@@ -620,16 +621,16 @@ func (t *Table) fnCollectionCut(mainGen *codegen.Go, ts *Generator) {
 
 }
 
-func (t *Table) fnCollectionSwap(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionSwap) {
+func (t *Table) fnCollectionSwap(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionSwap) {
 		return
 	}
 	mainGen.C(`Swap will satisfy the sort.Interface. Auto generated via dmlgen.`)
 	mainGen.Pln(`func (cc *`, t.CollectionName(), `) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }`)
 }
 
-func (t *Table) fnCollectionDelete(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionDelete) {
+func (t *Table) fnCollectionDelete(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionDelete) {
 		return
 	}
 
@@ -648,8 +649,8 @@ func (t *Table) fnCollectionDelete(mainGen *codegen.Go, ts *Generator) {
 	mainGen.Pln(`}`)
 }
 
-func (t *Table) fnCollectionInsert(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionInsert) {
+func (t *Table) fnCollectionInsert(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionInsert) {
 		return
 	}
 	mainGen.C(`Insert will place a new item at position i. Auto generated via dmlgen.`)
@@ -665,8 +666,8 @@ func (t *Table) fnCollectionInsert(mainGen *codegen.Go, ts *Generator) {
 	mainGen.Pln(`}`)
 }
 
-func (t *Table) fnCollectionAppend(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionAppend) {
+func (t *Table) fnCollectionAppend(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionAppend) {
 		return
 	}
 	mainGen.C(`Append will add a new item at the end of *`, t.CollectionName(), `. Auto generated via dmlgen.`)
@@ -678,8 +679,8 @@ func (t *Table) fnCollectionAppend(mainGen *codegen.Go, ts *Generator) {
 	mainGen.Pln(`}`)
 }
 
-func (t *Table) fnCollectionBinaryMarshaler(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionBinaryMarshaler) {
+func (t *Table) fnCollectionBinaryMarshaler(mainGen *codegen.Go, g *Generator) {
+	if !t.HasSerializer || !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionBinaryMarshaler) {
 		return
 	}
 
@@ -698,8 +699,8 @@ func (t *Table) fnCollectionBinaryMarshaler(mainGen *codegen.Go, ts *Generator) 
 	mainGen.Pln(`}`)
 }
 
-func (t *Table) fnCollectionDBMapColumns(mainGen *codegen.Go, ts *Generator) {
-	if !ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionDBMapColumns|FeatureDB) {
+func (t *Table) fnCollectionDBMapColumns(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionDBMapColumns|FeatureDB) {
 		return
 	}
 
@@ -752,7 +753,7 @@ func (t *Table) fnCollectionDBMapColumns(mainGen *codegen.Go, ts *Generator) {
 					mainGen.P(`,`, strconv.Quote(a))
 				}
 				mainGen.Pln(`:`)
-				mainGen.Pln(`cm = cm.`, ts.goFuncNull(c)+`s(cc.`, strs.ToGoCamelCase(c.Field)+`s()...)`)
+				mainGen.Pln(`cm = cm.`, g.goFuncNull(c)+`s(cc.`, strs.ToGoCamelCase(c.Field)+`s()...)`)
 			}
 		})
 		mainGen.Pln(`default:
@@ -768,9 +769,9 @@ func (t *Table) fnCollectionDBMapColumns(mainGen *codegen.Go, ts *Generator) {
 	mainGen.Pln(`}`) // end func MapColumns
 }
 
-func (t *Table) generateTestOther(testGen *codegen.Go, ts *Generator) {
+func (t *Table) generateTestOther(testGen *codegen.Go, g *Generator) {
 
-	if ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityEmpty) {
+	if g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityEmpty) {
 		testGen.Pln(`t.Run("` + strs.ToGoCamelCase(t.TableName) + `_Empty", func(t *testing.T) {`)
 		{
 			testGen.Pln(`e:= new(`, t.EntityName(), `)`)
@@ -780,7 +781,7 @@ func (t *Table) generateTestOther(testGen *codegen.Go, ts *Generator) {
 		}
 		testGen.Pln(`})`) // end t.Run
 	}
-	if ts.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityCopy) {
+	if g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityCopy) {
 		testGen.Pln(`t.Run("` + strs.ToGoCamelCase(t.TableName) + `_Copy", func(t *testing.T) {`)
 		{
 			testGen.Pln(`e:= new(`, t.EntityName(), `)`)

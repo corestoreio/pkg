@@ -106,6 +106,7 @@ message CustomerEntity {
 	null.Int32 failures_num= 26 [(gogoproto.customname)="FailuresNum" ,(gogoproto.nullable)=false]; 
 	null.Time first_failure= 27 [(gogoproto.customname)="FirstFailure" ,(gogoproto.nullable)=false]; 
 	null.Time lock_expires= 28 [(gogoproto.customname)="LockExpires" ,(gogoproto.nullable)=false]; 
+	CustomerAddressEntityCollection CustomerAddressEntity = 29 ; // Reversed 1:M customer_entity.entity_id => customer_address_entity.parent_id 
 } 
 // CustomerEntityCollection represents multiple rows for DB table customer_entity
 // . Auto generated.

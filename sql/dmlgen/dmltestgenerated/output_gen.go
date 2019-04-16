@@ -320,16 +320,6 @@ func (cc *CatalogProductIndexEAVDecimalIDXCollection) Append(n ...*CatalogProduc
 	return cc
 }
 
-// UnmarshalBinary implements encoding.BinaryUnmarshaler.
-func (cc *CatalogProductIndexEAVDecimalIDXCollection) UnmarshalBinary(data []byte) error {
-	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
-}
-
-// MarshalBinary implements encoding.BinaryMarshaler.
-func (cc *CatalogProductIndexEAVDecimalIDXCollection) MarshalBinary() (data []byte, err error) {
-	return cc.Marshal() // Implemented via github.com/gogo/protobuf
-}
-
 // CoreConfiguration represents a single row for DB table core_configuration.
 // Auto generated.
 //easyjson:json

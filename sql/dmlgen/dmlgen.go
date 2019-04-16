@@ -795,41 +795,113 @@ func (g *Generator) GenerateSerializer(wMain, wTest io.Writer) error {
 }
 
 func (g *Generator) generateProto(w io.Writer) error {
-	cg := codegen.NewProto(g.Package)
-	cg.Pln(`import "github.com/gogo/protobuf/gogoproto/gogo.proto";`)
-	cg.Pln(`import "google/protobuf/timestamp.proto";`)
-	cg.Pln(`import "github.com/corestoreio/pkg/storage/null/null.proto";`)
-	cg.Pln(`option go_package = "` + g.Package + `";`)
+	proto := codegen.NewProto(g.Package)
+	proto.Pln(`import "github.com/gogo/protobuf/gogoproto/gogo.proto";`)
+	proto.Pln(`import "google/protobuf/timestamp.proto";`)
+	proto.Pln(`import "github.com/corestoreio/pkg/storage/null/null.proto";`)
+	proto.Pln(`option go_package = "` + g.Package + `";`)
 	for _, o := range g.SerializerHeaderOptions {
-		cg.Pln(`option ` + o + `;`)
+		proto.Pln(`option ` + o + `;`)
 	}
 
 	for _, tblname := range g.sortedTableNames() {
 		t := g.Tables[tblname] // must panic if table name not found
 
-		cg.C(t.EntityName(), `represents a single row for DB table`, t.TableName, `. Auto generated.`)
-		cg.Pln(`message`, t.EntityName(), `{`)
+		fieldMapFn := g.defaultTableConfig.FieldMapFn
+		if fieldMapFn == nil {
+			fieldMapFn = t.fieldMapFn
+		}
+		if fieldMapFn == nil {
+			fieldMapFn = defaultFieldMapFn
+		}
+
+		proto.C(t.EntityName(), `represents a single row for DB table`, t.TableName, `. Auto generated.`)
+		proto.Pln(`message`, t.EntityName(), `{`)
 		{
-			cg.In()
+			proto.In()
+			var lastColumnPos uint64
 			t.Columns.Each(func(c *ddl.Column) {
 				if t.IsFieldPublic(c.Field) {
-					cg.Pln(g.SerializerType(c), c.Field+`=`, c.Pos, `[(gogoproto.customname)=`+strconv.Quote(strs.ToGoCamelCase(c.Field)), g.SerializerCustomType(c)+`];`)
+					proto.Pln(g.SerializerType(c), c.Field+`=`, c.Pos, `[(gogoproto.customname)=`+strconv.Quote(strs.ToGoCamelCase(c.Field)), g.SerializerCustomType(c)+`];`)
+					lastColumnPos = c.Pos
 				}
 			})
-			cg.Out()
-		}
-		cg.Pln(`}`)
+			lastColumnPos++
 
-		cg.C(t.CollectionName(), `represents multiple rows for DB table`, t.TableName, `. Auto generated.`)
-		cg.Pln(`message`, t.CollectionName(), `{`)
-		{
-			cg.In()
-			cg.Pln(`repeated`, t.EntityName(), `Data = 1;`)
-			cg.Out()
+			if g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityRelationships) {
+
+				// for debugging see Table.entityStruct function. This code is only different in the Pln function.
+
+				if kcuc, ok := g.kcu[t.TableName]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
+					for _, kcuce := range kcuc.Data {
+						if !kcuce.ReferencedTableName.Valid {
+							continue
+						}
+
+						// case ONE-TO-MANY
+						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						isRelationAllowed := !g.skipRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						hasTable := g.Tables[kcuce.ReferencedTableName.String] != nil
+						if isOneToMany && hasTable && isRelationAllowed {
+							proto.Pln(strs.ToGoCamelCase(kcuce.ReferencedTableName.String)+"Collection", fieldMapFn(kcuce.ReferencedTableName.String),
+								"=", lastColumnPos, ";",
+								"// 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+							lastColumnPos++
+						}
+
+						// case ONE-TO-ONE
+						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						if isOneToOne && hasTable && isRelationAllowed {
+							proto.Pln(strs.ToGoCamelCase(kcuce.ReferencedTableName.String), fieldMapFn(kcuce.ReferencedTableName.String),
+								"=", lastColumnPos, ";",
+								"// 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+							lastColumnPos++
+						}
+					}
+				}
+
+				if kcuc, ok := g.kcuRev[t.TableName]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
+					for _, kcuce := range kcuc.Data {
+						if !kcuce.ReferencedTableName.Valid {
+							continue
+						}
+
+						// case ONE-TO-MANY
+						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						isRelationAllowed := !g.skipRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						hasTable := g.Tables[kcuce.ReferencedTableName.String] != nil
+						if isOneToMany && hasTable && isRelationAllowed {
+							proto.Pln(strs.ToGoCamelCase(kcuce.ReferencedTableName.String)+"Collection", fieldMapFn(kcuce.ReferencedTableName.String),
+								"=", lastColumnPos, ";",
+								"// Reversed 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+							lastColumnPos++
+						}
+
+						// case ONE-TO-ONE
+						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						if isOneToOne && hasTable && isRelationAllowed {
+							proto.Pln(strs.ToGoCamelCase(kcuce.ReferencedTableName.String), fieldMapFn(kcuce.ReferencedTableName.String),
+								"=", lastColumnPos, ";",
+								"// Reversed 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+							lastColumnPos++
+						}
+					}
+				}
+			}
+			proto.Out()
 		}
-		cg.Pln(`}`)
+		proto.Pln(`}`)
+
+		proto.C(t.CollectionName(), `represents multiple rows for DB table`, t.TableName, `. Auto generated.`)
+		proto.Pln(`message`, t.CollectionName(), `{`)
+		{
+			proto.In()
+			proto.Pln(`repeated`, t.EntityName(), `Data = 1;`)
+			proto.Out()
+		}
+		proto.Pln(`}`)
 	}
-	return cg.GenerateFile(w)
+	return proto.GenerateFile(w)
 }
 
 // GenerateGo writes the Go source code into `w` and the test code into wTest.
