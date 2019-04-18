@@ -35,7 +35,8 @@ func (*FormatError) ErrorKind() errors.Kind {
 }
 
 type common struct {
-	packageName string
+	SecondLineComments []string
+	packageName        string
 	*bytes.Buffer
 	packageNames map[string]string // Imported package names in the current file.
 	indent       string
@@ -57,6 +58,10 @@ func (g *common) AddImports(importPaths ...string) {
 // Writes a multiline comment and formats it to a max width of 80 chars. It adds
 // automatically the comment prefix `//`.
 func (g *common) C(comments ...string) {
+	comment(g.Buffer, comments...)
+}
+
+func comment(g *bytes.Buffer, comments ...string) {
 	cLines := strings.Split(strs.WordWrap(strings.Join(comments, " "), 78), "\n")
 	for _, c := range cLines {
 		g.WriteString("// ")
