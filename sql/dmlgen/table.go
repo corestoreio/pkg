@@ -15,6 +15,9 @@
 package dmlgen
 
 import (
+	"bytes"
+	"crypto/md5"
+	"fmt"
 	"strconv"
 	"unicode"
 
@@ -50,6 +53,35 @@ const (
 	FeatureCollectionBinaryMarshaler
 	FeatureCollectionDBMapColumns
 )
+
+type tables []*Table
+
+// hasFeature returns false when any of the tables does not have the feature/s.
+func (ts tables) hasFeature(g *Generator, feature FeatureToggle) bool {
+	for _, tbl := range ts {
+		if !g.hasFeature(tbl.featuresInclude, tbl.featuresExclude, feature) {
+			return false
+		}
+	}
+	return true
+}
+
+func (ts tables) names() []string {
+	names := make([]string, len(ts))
+	for i, tbl := range ts {
+		names[i] = tbl.TableName
+	}
+	return names
+}
+
+// nameID returns a consistent md5 hash of the table names.
+func (ts tables) nameID() string {
+	var buf bytes.Buffer
+	for _, tbl := range ts {
+		buf.WriteString(tbl.TableName)
+	}
+	return fmt.Sprintf("%x", md5.Sum(buf.Bytes()))
+}
 
 // table writes one database table into Go source code.
 type Table struct {
@@ -111,7 +143,9 @@ func (t *Table) collectionStruct(mainGen *codegen.Go, g *Generator) {
 	{
 		mainGen.In()
 		mainGen.Pln(`Data []*`, t.EntityName(), codegen.EncloseBT(`json:"data,omitempty"`))
-		if g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityDBMapColumns|FeatureDB) {
+
+		// Disabled because not sure if those two functions are really needed.
+		if false && g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityDBMapColumns|FeatureDB) {
 			mainGen.Pln(`BeforeMapColumns	func(uint64, *`, t.EntityName(), `) error`, codegen.EncloseBT(`json:"-"`))
 			mainGen.Pln(`AfterMapColumns 	func(uint64, *`, t.EntityName(), `) error `, codegen.EncloseBT(`json:"-"`))
 		}
@@ -704,20 +738,27 @@ func (t *Table) fnCollectionDBMapColumns(mainGen *codegen.Go, g *Generator) {
 		return
 	}
 
-	mainGen.Pln(`func (cc *`, t.CollectionName(), `) scanColumns(cm *dml.ColumnMap,e *`, t.EntityName(), `, idx uint64) error {
-			if cc.BeforeMapColumns != nil {
-				if err := cc.BeforeMapColumns(idx, e); err != nil {
-					return errors.WithStack(err)
-				}
-			}
+	// mainGen.Pln(`func (cc *`, t.CollectionName(), `) scanColumns(cm *dml.ColumnMap,e *`, t.EntityName(), `, idx uint64) error {
+	// 		if cc.BeforeMapColumns != nil {
+	// 			if err := cc.BeforeMapColumns(idx, e); err != nil {
+	// 				return errors.WithStack(err)
+	// 			}
+	// 		}
+	// 		if err := e.MapColumns(cm); err != nil {
+	// 			return errors.WithStack(err)
+	// 		}
+	// 		if cc.AfterMapColumns != nil {
+	// 			if err := cc.AfterMapColumns(idx, e); err != nil {
+	// 				return errors.WithStack(err)
+	// 			}
+	// 		}
+	// 		return nil
+	// 	}`)
+	mainGen.Pln(`func (cc *`, t.CollectionName(), `) scanColumns(cm *dml.ColumnMap, e *`, t.EntityName(), `, idx uint64) error {
 			if err := e.MapColumns(cm); err != nil {
 				return errors.WithStack(err)
 			}
-			if cc.AfterMapColumns != nil {
-				if err := cc.AfterMapColumns(idx, e); err != nil {
-					return errors.WithStack(err)
-				}
-			}
+			// this function might get extended.
 			return nil
 		}`)
 
@@ -769,8 +810,7 @@ func (t *Table) fnCollectionDBMapColumns(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(`}`) // end func MapColumns
 }
 
-func (t *Table) generateTestOther(testGen *codegen.Go, g *Generator) {
-
+func (t *Table) generateTestOther(testGen *codegen.Go, g *Generator) (codeWritten bool) {
 	if g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityEmpty) {
 		testGen.Pln(`t.Run("` + strs.ToGoCamelCase(t.TableName) + `_Empty", func(t *testing.T) {`)
 		{
@@ -780,6 +820,7 @@ func (t *Table) generateTestOther(testGen *codegen.Go, g *Generator) {
 			testGen.Pln(`assert.Exactly(t, *e, `, t.EntityName(), `{})`)
 		}
 		testGen.Pln(`})`) // end t.Run
+		codeWritten = true
 	}
 	if g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityCopy) {
 		testGen.Pln(`t.Run("` + strs.ToGoCamelCase(t.TableName) + `_Copy", func(t *testing.T) {`)
@@ -792,8 +833,10 @@ func (t *Table) generateTestOther(testGen *codegen.Go, g *Generator) {
 			testGen.Pln(`assert.NotEqual(t, e, e2)`)
 		}
 		testGen.Pln(`})`) // end t.Run
+		codeWritten = true
 	}
 	// more feature tests to follow
+	return
 }
 
 func (t *Table) generateTestDB(testGen *codegen.Go) {
