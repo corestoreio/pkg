@@ -112,7 +112,7 @@ func (s Type) IsWebSiteOrStore() bool {
 
 // WithID calls MakeTypeID for your convenience. It packs the id into a new value
 // containing the Type and its ID ;-).
-func (s Type) WithID(id int64) TypeID {
+func (s Type) WithID(id uint32) TypeID {
 	return MakeTypeID(s, id)
 }
 

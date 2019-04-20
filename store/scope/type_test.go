@@ -224,7 +224,7 @@ func TestType_JSON(t *testing.T) {
 func TestType_Pack(t *testing.T) {
 	tests := []struct {
 		s    Type
-		id   int64
+		id   uint32
 		want TypeID
 	}{
 		{Website, 1, MakeTypeID(Website, 1)},

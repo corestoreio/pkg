@@ -50,28 +50,25 @@ func BenchmarkTypeIDString(b *testing.B) {
 func TestMakeTypeID(t *testing.T) {
 	tests := []struct {
 		scp     scope.Type
-		id      int64
+		id      uint32
 		wantScp scope.Type
-		wantID  int64
+		wantID  uint32
 	}{
 		{scope.Default, 0, scope.Default, 0},
-		{scope.Default, -1, scope.Default, 0},
 		{scope.Default, 1, scope.Default, 0},
 		{scope.Store, 1, scope.Store, 1},
 		{scope.Group, 4, scope.Group, 4},
-		{scope.Group, -4, scope.Absent, 0},
 		{scope.Website, scope.MaxID, scope.Website, scope.MaxID},
-		{scope.Website, -scope.MaxID, scope.Absent, 0},
 		{scope.Website, scope.MaxID + 1, scope.Absent, 0},
 	}
 	for i, test := range tests {
 		t.Logf("ID: %d", scope.MakeTypeID(test.scp, test.id))
 		haveScp, haveID := scope.MakeTypeID(test.scp, test.id).Unpack()
 		if have, want := haveScp, test.wantScp; have != want {
-			t.Errorf("(IDX %d) Type Have: %v Want: %v", i, have, want)
+			t.Fatalf("(IDX %d) Type Have: %v Want: %v", i, have, want)
 		}
 		if have, want := haveID, test.wantID; have != want {
-			t.Errorf("(IDX %d) ID Have: %v Want: %v", i, have, want)
+			t.Fatalf("(IDX %d) ID Have: %v Want: %v", i, have, want)
 		}
 	}
 }
@@ -119,7 +116,7 @@ func TestTypeIDSegment(t *testing.T) {
 		0:  {scope.DefaultTypeID, 0},
 		1:  {scope.MakeTypeID(scope.Type(0), 0), 0},
 		2:  {scope.MakeTypeID(scope.Type(1), 0), 0},
-		3:  {scope.MakeTypeID(scope.Default, -1), 0},
+		3:  {scope.MakeTypeID(scope.Default, 0), 0},
 		4:  {scope.MakeTypeID(scope.Default, 1), 0},
 		5:  {scope.MakeTypeID(scope.Default, 0), 0},
 		6:  {scope.MakeTypeID(scope.Store, 0), 0},
@@ -132,8 +129,7 @@ func TestTypeIDSegment(t *testing.T) {
 		13: {scope.MakeTypeID(scope.Store, scope.MaxID), 255},
 		14: {scope.MakeTypeID(scope.Store, scope.MaxID+1), 0},
 		15: {scope.MakeTypeID(scope.Store, scope.MaxID+2), 0},
-		16: {scope.MakeTypeID(scope.Store, -scope.MaxID), 0},
-		17: {scope.MakeTypeID(scope.Type(7), 1), 1},
+		16: {scope.MakeTypeID(scope.Type(7), 1), 1},
 	}
 	for i, test := range tests {
 		if want, have := test.want, test.h.Segment(); want != have {
@@ -144,7 +140,7 @@ func TestTypeIDSegment(t *testing.T) {
 
 func TestMakeTypeIDError(t *testing.T) {
 
-	h := scope.MakeTypeID(scope.Absent, -1)
+	h := scope.MakeTypeID(scope.Absent, 0)
 	assert.Exactly(t, scope.TypeID(0), h)
 }
 
@@ -152,7 +148,7 @@ func TestFromTypeIDError(t *testing.T) {
 
 	scp, id := scope.TypeID(math.MaxUint32).Unpack()
 	assert.Exactly(t, scope.Absent, scp)
-	assert.Exactly(t, int64(-1), id)
+	assert.Exactly(t, uint32(0), id)
 }
 
 func TestTypeIDValid(t *testing.T) {
@@ -170,7 +166,7 @@ func TestTypeIDValid(t *testing.T) {
 		wg.Add(1)
 		go func(theScp scope.Type) {
 			defer wg.Done()
-			for id := int64(0); id < scope.MaxID; id++ {
+			for id := uint32(0); id < scope.MaxID; id++ {
 				haveTypeID := scope.MakeTypeID(theScp, id)
 
 				haveScp, haveID := haveTypeID.Unpack()
@@ -214,7 +210,7 @@ func TestTypeID_EqualTypes(t *testing.T) {
 		5: {scope.MakeTypeID(scope.Store, scope.MaxID), scope.MakeTypeID(scope.Store, scope.MaxID), true},
 		6: {scope.MakeTypeID(scope.Store, scope.MaxID), scope.MakeTypeID(scope.Store, scope.MaxID+1), false},
 		7: {scope.MakeTypeID(scope.Store, scope.MaxID+1), scope.MakeTypeID(scope.Store, scope.MaxID), false},
-		8: {scope.MakeTypeID(scope.Website, -1), scope.MakeTypeID(scope.Website, 1), false},
+		8: {scope.MakeTypeID(scope.Store, 0), scope.MakeTypeID(scope.Website, 1), false},
 	}
 	for i, test := range tests {
 		if have, want := test.h1.EqualTypes(test.h2), test.wantEqual; have != want {
@@ -242,18 +238,25 @@ func TestTypeID_Type(t *testing.T) {
 
 func TestTypeID_ID(t *testing.T) {
 	tests := []struct {
-		h  scope.TypeID
-		id int64
+		h       scope.TypeID
+		id      uint32
+		wantErr errors.Kind
 	}{
-		0: {0, 0},
-		1: {scope.DefaultTypeID, 0},
-		2: {scope.MakeTypeID(scope.Website, 33), 33},
-		3: {scope.MakeTypeID(scope.Website, scope.MaxID), scope.MaxID},
-		4: {scope.MakeTypeID(scope.Website, scope.MaxID+1), 0},
-		5: {scope.TypeID(scope.Store)<<24 | scope.TypeID(scope.MaxID+1), -1},
+		0: {0, 0, errors.NoKind},
+		1: {scope.DefaultTypeID, 0, errors.NoKind},
+		2: {scope.MakeTypeID(scope.Website, 33), 33, errors.NoKind},
+		3: {scope.MakeTypeID(scope.Website, scope.MaxID), scope.MaxID, errors.NoKind},
+		4: {scope.MakeTypeID(scope.Website, scope.MaxID+1), 0, errors.NoKind},
+		5: {scope.TypeID(scope.Store)<<24 | scope.TypeID(scope.MaxID+1), 0, errors.Overflowed},
 	}
 	for i, test := range tests {
-		if have, want := test.h.ID(), test.id; have != want {
+		hID, err := test.h.ID()
+		if test.wantErr > errors.NoKind {
+			assert.True(t, test.wantErr.Match(err), "IDX %d", i)
+			continue
+		}
+		assert.NoError(t, err, "IDX %d", i)
+		if have, want := hID, test.id; have != want {
 			t.Errorf("IDX %d Have: %v Want: %v", i, have, want)
 		}
 	}
@@ -262,7 +265,7 @@ func TestTypeID_ID(t *testing.T) {
 var benchmarkTypeID scope.TypeID
 var benchmarkTypeIDUnpackTypeID = scope.TypeID(67112005)
 var benchmarkTypeIDUnpackType scope.Type
-var benchmarkTypeIDUnpackID int64
+var benchmarkTypeIDUnpackID uint32
 
 func BenchmarkTypeIDPack(b *testing.B) {
 	const want scope.TypeID = 67112005
@@ -321,24 +324,23 @@ func TestTypeID_ValidParent(t *testing.T) {
 		p    scope.TypeID
 		want bool
 	}{
-		0:  {scope.DefaultTypeID, scope.DefaultTypeID, true},
-		1:  {scope.MakeTypeID(scope.Website, 1), scope.DefaultTypeID, true},
-		2:  {scope.MakeTypeID(scope.Website, 0), scope.DefaultTypeID, true},
-		3:  {scope.MakeTypeID(scope.Store, 1), scope.MakeTypeID(scope.Website, 1), true},
-		4:  {scope.MakeTypeID(scope.Store, -1), scope.MakeTypeID(scope.Website, 1), false},
-		5:  {scope.MakeTypeID(scope.Store, 1), scope.MakeTypeID(scope.Website, -1), true},
-		6:  {scope.MakeTypeID(scope.Store, 0), scope.MakeTypeID(scope.Website, 0), true},
-		7:  {scope.DefaultTypeID, scope.MakeTypeID(scope.Website, 1), false},
-		8:  {0, 0, true},
-		9:  {0, scope.DefaultTypeID, false},
-		10: {scope.DefaultTypeID, 0, true},
-		11: {scope.MakeTypeID(scope.Website, 0), scope.Store.WithID(0), false},
-		12: {scope.MakeTypeID(scope.Website, 1), scope.Store.WithID(2), false},
-		13: {scope.MakeTypeID(scope.Store, 1), scope.Type(5).WithID(2), false},
+		{scope.DefaultTypeID, scope.DefaultTypeID, true},
+		{scope.MakeTypeID(scope.Website, 1), scope.DefaultTypeID, true},
+		{scope.MakeTypeID(scope.Website, 0), scope.DefaultTypeID, true},
+		{scope.MakeTypeID(scope.Store, 1), scope.MakeTypeID(scope.Website, 1), true},
+		{scope.MakeTypeID(scope.Store, 1), scope.MakeTypeID(scope.Website, 0), true},
+		{scope.MakeTypeID(scope.Store, 0), scope.MakeTypeID(scope.Website, 0), true},
+		{scope.DefaultTypeID, scope.MakeTypeID(scope.Website, 1), false},
+		{0, 0, true},
+		{0, scope.DefaultTypeID, false},
+		{scope.DefaultTypeID, 0, true},
+		{scope.MakeTypeID(scope.Website, 0), scope.Store.WithID(0), false},
+		{scope.MakeTypeID(scope.Website, 1), scope.Store.WithID(2), false},
+		{scope.MakeTypeID(scope.Store, 1), scope.Type(5).WithID(2), false},
 	}
 	for i, test := range tests {
 		if have, want := test.c.ValidParent(test.p), test.want; have != want {
-			t.Errorf("(%d) Have: %v Want: %v\nC: %d P: %d", i, have, want, test.c, test.p)
+			t.Fatalf("(%d) Have: %v Want: %v\nC: %d P: %d", i, have, want, test.c, test.p)
 		}
 	}
 }
@@ -479,7 +481,7 @@ func TestTypeID_IsValid(t *testing.T) {
 	assert.NoError(t, scope.Website.WithID(3).IsValid())
 	assert.NoError(t, scope.Group.WithID(4).IsValid())
 	assert.NoError(t, scope.Store.WithID(5).IsValid())
-	assert.NoError(t, scope.TypeID(0).IsValid())
+	assert.True(t, errors.NotValid.Match(scope.TypeID(0).IsValid()))
 	assert.True(t, errors.NotValid.Match(scope.TypeID(485968409).IsValid()))
 }
 

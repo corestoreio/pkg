@@ -49,7 +49,7 @@ func (t TypeID) String() string {
 	_, _ = buf.WriteString("Type(")
 	_, _ = buf.WriteString(scp.String())
 	_, _ = buf.WriteString(") ID(")
-	nb := strconv.AppendInt(buf.Bytes(), id, 10)
+	nb := strconv.AppendUint(buf.Bytes(), uint64(id), 10)
 	buf.Reset()
 	_, _ = buf.Write(nb)
 	_ = buf.WriteByte(')')
@@ -64,7 +64,7 @@ func (t TypeID) GoString() string {
 	_, _ = buf.WriteString("scope.MakeTypeID(scope.")
 	_, _ = buf.WriteString(scp.String())
 	_, _ = buf.WriteString(", ")
-	nb := strconv.AppendInt(buf.Bytes(), id, 10)
+	nb := strconv.AppendUint(buf.Bytes(), uint64(id), 10)
 	buf.Reset()
 	_, _ = buf.Write(nb)
 	_ = buf.WriteByte(')')
@@ -99,7 +99,7 @@ func (t TypeID) AppendHuman(dst []byte, separator byte) (text []byte) {
 	if s, id := t.Unpack(); s.IsWebSiteOrStore() {
 		dst = append(dst, s.StrBytes()...)
 		dst = append(dst, separator)
-		dst = strconv.AppendInt(dst, id, 10)
+		dst = strconv.AppendUint(dst, uint64(id), 10)
 	}
 	return dst
 }
@@ -135,20 +135,21 @@ func (t *TypeID) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
-// Unpack extracts a Scope and its ID from a hash. Returned ID can be -1 when
-// the Hash contains invalid data. An ID of -1 is considered an error.
-func (t TypeID) Unpack() (s Type, id int64) {
+// Unpack extracts a Scope and its ID from a hash. Returned ID can be 0 when the
+// Hash contains invalid data. If the data is invalid the Type gets set to
+// `Absent` constant.
+func (t TypeID) Unpack() (s Type, id uint32) {
 
 	prospectS := t >> 24
 	if prospectS > maxUint8 || prospectS < 0 {
-		return Absent, -1
+		return Absent, 0
 	}
 	s = Type(prospectS)
 
-	h64 := int64(t)
+	h64 := uint32(t)
 	prospectID := h64 ^ (h64>>24)<<24
 	if prospectID > MaxID || prospectID < 0 {
-		return Absent, -1
+		return Absent, 0
 	}
 
 	id = prospectID
@@ -180,14 +181,14 @@ func (t TypeID) Type() Type {
 }
 
 // ID returns the underlying assigned ID. If the ID overflows the MaxID or is
-// smaller than zero then it returns -1.
-func (t TypeID) ID() int64 {
-	h64 := int64(t)
+// smaller than zero then it returns 0.
+func (t TypeID) ID() (uint32, error) {
+	h64 := uint32(t)
 	prospectID := h64 ^ (h64>>24)<<24
 	if prospectID > MaxID || prospectID < 0 {
-		return -1
+		return 0, errors.Overflowed.Newf("[scope] The prospect ID %d overflows (or is lower 0) the MaxID %d", prospectID, MaxID)
 	}
-	return prospectID
+	return prospectID, nil
 }
 
 // ValidParent validates if the parent Type is within the hierarchical chain:
@@ -204,8 +205,8 @@ func (t TypeID) ValidParent(parent TypeID) bool {
 // IsValid checks if the scope and its ID are valid.
 func (t TypeID) IsValid() error {
 	s, id := t.Unpack()
-	if id < 0 {
-		return errors.NotValid.Newf("[scope] TypeID.IsValid: id cannot be negative, got %d", id)
+	if s == Absent {
+		return errors.NotValid.Newf("[scope] TypeID.IsValid: Type cannot be Absent, got %d, %d", id, id)
 	}
 	return s.IsValid()
 }
@@ -230,7 +231,7 @@ func (t TypeID) Segment() uint8 {
 // MakeTypeID creates a new merged value of a Type and its ID. An error is equal
 // to returning 0. An error occurs when id is greater than MaxStoreID or smaller
 // 0. An errors occurs when the Scope is Default and ID anything else than 0.
-func MakeTypeID(t Type, id int64) TypeID {
+func MakeTypeID(t Type, id uint32) TypeID {
 	if id > MaxID || (t > Default && id < 0) {
 		return 0
 	}
@@ -315,30 +316,32 @@ func (t TypeIDs) Lowest() (TypeID, error) {
 			pick = v
 		}
 
+		vID, _ := v.ID()
 		switch v.Type() {
 		case Website:
 			wC++
-			wIDs += float64(v.ID())
+			wIDs += float64(vID)
 		case Group:
 			gC++
-			gIDs += float64(v.ID())
+			gIDs += float64(vID)
 		case Store:
 			sC++
-			sIDs += float64(v.ID())
+			sIDs += float64(vID)
 		}
 	}
 
+	pickID, _ := pick.ID()
 	switch pick.Type() {
 	case Website:
-		if float64(pick.ID()) != wIDs/wC {
+		if float64(pickID) != wIDs/wC {
 			return 0, errors.NotValid.Newf("[scope] Invalid TypeID: %s in slice.", pick)
 		}
 	case Group:
-		if float64(pick.ID()) != gIDs/gC {
+		if float64(pickID) != gIDs/gC {
 			return 0, errors.NotValid.Newf("[scope] Invalid TypeID: %s in slice.", pick)
 		}
 	case Store:
-		if float64(pick.ID()) != sIDs/sC {
+		if float64(pickID) != sIDs/sC {
 			return 0, errors.NotValid.Newf("[scope] Invalid TypeID: %s in slice.", pick)
 		}
 	case Default, Absent:
