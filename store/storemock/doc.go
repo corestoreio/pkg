@@ -12,15 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/*
-Package mock implements mocking of the store.Service for tests.
-
-Please import this package as:
-
-	import (
-		"github.com/corestoreio/pkg/store/storemock"
-	)
-
-To avoid confusion with other mock packages.
-*/
+// Package mock implements mocking of the store.Service for tests.
+//
+// Please import this package as:
+//
+// 	import (
+// 		"github.com/corestoreio/pkg/store/storemock"
+// 	)
+//
+// To avoid confusion with other mock packages.
 package storemock

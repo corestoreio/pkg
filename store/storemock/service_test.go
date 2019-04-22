@@ -17,50 +17,57 @@ package storemock_test
 import (
 	"testing"
 
-	"github.com/corestoreio/pkg/config/cfgmock"
+	"github.com/alecthomas/repr"
 	"github.com/corestoreio/pkg/store/storemock"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewEurozzyService_Euro(t *testing.T) {
 
-	ns := storemock.NewEurozzyService(cfgmock.NewService())
+	ns := storemock.NewServiceEuroOZ()
 	assert.NotNil(t, ns)
 
 	s, err := ns.Store(4)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Exactly(t, "uk", s.Data.Code.String)
+	assert.Exactly(t, "uk", s.Code.String)
 
 	s, err = ns.Store(3)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Exactly(t, "ch", s.Data.Code.String)
+	assert.Exactly(t, "ch", s.Code.String)
 }
 
 func TestNewEurozzyService_ANZ(t *testing.T) {
 
-	ns := storemock.NewEurozzyService(cfgmock.NewService())
+	ns := storemock.NewServiceEuroOZ()
 	assert.NotNil(t, ns)
 
 	s, err := ns.Store(4)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Exactly(t, "uk", s.Data.Code.String)
+	assert.Exactly(t, "uk", s.Code.String)
 
 	s, err = ns.Store(3)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Exactly(t, "ch", s.Data.Code.String)
-	assert.Exactly(t, int64(1), s.WebsiteID())
+	assert.Exactly(t, "ch", s.Code.String)
+	assert.Exactly(t, int64(1), s.WebsiteID)
 
 	s, err = ns.DefaultStoreView()
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Exactly(t, "at", s.Data.Code.String)
+	assert.Exactly(t, "at", s.Code.String)
+}
+
+func TestNewServiceEuroW11G11S19(t *testing.T) {
+	srv := storemock.NewServiceEuroW11G11S19()
+
+	repr.Println(srv)
+
 }

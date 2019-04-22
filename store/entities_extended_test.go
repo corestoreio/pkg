@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,17 @@
 
 package store
 
-import "github.com/corestoreio/pkg/storage/csdb"
+import (
+	"sort"
+	"testing"
+)
 
-// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
-var TableCollection *csdb.Tables
+var (
+	_ sort.Interface = (*sortNaturallyWebsites)(nil)
+	_ sort.Interface = (*sortNaturallyGroups)(nil)
+	_ sort.Interface = (*sortNaturallyStores)(nil)
+)
+
+func TestStoreWebsiteCollection_Default(t *testing.T) {
+
+}

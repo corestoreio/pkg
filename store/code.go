@@ -17,9 +17,9 @@ package store
 import (
 	"net/http"
 
-	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/pkg/util"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util/strs"
 )
 
 // CodeFieldName defines the filed name where store code has been saved. Used in
@@ -63,14 +63,18 @@ const CodeMaxLen = 32
 func CodeIsValid(c string) error {
 	// maybe we can weaken that to allow emoji 8-)
 	if c == "" || len(c) > CodeMaxLen {
-		return errors.NewNotValidf(errStoreCodeInvalid, c)
+		return errors.NotValid.Newf(errStoreCodeInvalid, c)
 	}
 	c1 := c[0]
 	if !((c1 >= 'a' && c1 <= 'z') || (c1 >= 'A' && c1 <= 'Z')) {
-		return errors.NewNotValidf(errStoreCodeInvalid, c)
+		return errors.NotValid.Newf(errStoreCodeInvalid, c)
 	}
-	if !util.StrIsAlNum(c) {
-		return errors.NewNotValidf(errStoreCodeInvalid, c)
+	if !strs.IsAlNum(c) {
+		return errors.NotValid.Newf(errStoreCodeInvalid, c)
 	}
 	return nil
 }
+
+const (
+	errStoreCodeInvalid = "[store] The store code may contain only letters (a-z), numbers (0-9) or underscore(_). The first character must be a letter. Have: %q"
+)

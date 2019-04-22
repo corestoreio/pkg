@@ -15,38 +15,88 @@
 package storemock
 
 import (
-	"github.com/corestoreio/pkg/config"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/store"
-	"github.com/corestoreio/pkg/util/null"
 )
 
-// NewEurozzyService creates a fully initialized store.Service with 3 websites,
+// NewServiceEuroOZ creates a fully initialized store.Service with 3 websites,
 // 4 groups and 7 stores used for testing. Panics on error. Website 1 contains
 // Europe and website 2 contains Australia/New Zealand.
-func NewEurozzyService(cfg config.Getter, opts ...store.Option) *store.Service {
-	// Yes weird naming, but feel free to provide a better name 8-)
-
+func NewServiceEuroOZ(opts ...store.Option) *store.Service {
 	defaultOpts := []store.Option{
-		store.WithTableWebsites(
-			&store.TableWebsite{WebsiteID: 0, Code: null.StringFrom("admin"), Name: null.StringFrom("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: null.BoolFrom(false)},
-			&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)},
-			&store.TableWebsite{WebsiteID: 2, Code: null.StringFrom("oz"), Name: null.StringFrom("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: null.BoolFrom(false)},
+		store.WithWebsites(
+			&store.StoreWebsite{WebsiteID: 0, Code: null.MakeString("admin"), Name: null.MakeString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: false},
+			&store.StoreWebsite{WebsiteID: 1, Code: null.MakeString("euro"), Name: null.MakeString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: true},
+			&store.StoreWebsite{WebsiteID: 2, Code: null.MakeString("oz"), Name: null.MakeString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: false},
 		),
-		store.WithTableGroups(
-			&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
-			&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
-			&store.TableGroup{GroupID: 0, WebsiteID: 0, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
-			&store.TableGroup{GroupID: 2, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4},
+		store.WithGroups(
+			&store.StoreGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
+			&store.StoreGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
+			&store.StoreGroup{GroupID: 0, WebsiteID: 0, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
+			&store.StoreGroup{GroupID: 2, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4},
 		),
-		store.WithTableStores(
-			&store.TableStore{StoreID: 0, Code: null.StringFrom("admin"), WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
-			&store.TableStore{StoreID: 5, Code: null.StringFrom("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
-			&store.TableStore{StoreID: 1, Code: null.StringFrom("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-			&store.TableStore{StoreID: 4, Code: null.StringFrom("uk"), WebsiteID: 1, GroupID: 2, Name: "UK", SortOrder: 10, IsActive: true},
-			&store.TableStore{StoreID: 2, Code: null.StringFrom("at"), WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
-			&store.TableStore{StoreID: 6, Code: null.StringFrom("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
-			&store.TableStore{IsActive: false, StoreID: 3, Code: null.StringFrom("ch"), WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30},
+		store.WithStores(
+			&store.Store{StoreID: 0, Code: null.MakeString("admin"), WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
+			&store.Store{StoreID: 5, Code: null.MakeString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
+			&store.Store{StoreID: 1, Code: null.MakeString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+			&store.Store{StoreID: 4, Code: null.MakeString("uk"), WebsiteID: 1, GroupID: 2, Name: "UK", SortOrder: 10, IsActive: true},
+			&store.Store{StoreID: 2, Code: null.MakeString("at"), WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
+			&store.Store{StoreID: 6, Code: null.MakeString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
+			&store.Store{IsActive: false, StoreID: 3, Code: null.MakeString("ch"), WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30},
 		),
 	}
-	return store.MustNewService(cfg, append(defaultOpts, opts...)...)
+	return store.MustNewService(append(defaultOpts, opts...)...)
+}
+
+func NewServiceEuroW11G11S19(opts ...store.Option) *store.Service {
+	defaultOpts := []store.Option{
+		store.WithWebsites(
+			&store.StoreWebsite{Code: null.MakeString(`admin`), Name: null.MakeString(`Admin`)},
+			&store.StoreWebsite{WebsiteID: 3, Code: null.MakeString(`ch`), Name: null.MakeString(`Schweiz`), SortOrder: 2, DefaultGroupID: 3},
+			&store.StoreWebsite{WebsiteID: 8, Code: null.MakeString(`at`), Name: null.MakeString(`Österreich`), SortOrder: 7, DefaultGroupID: 8},
+			&store.StoreWebsite{WebsiteID: 5, Code: null.MakeString(`fr`), Name: null.MakeString(`Frankreich`), SortOrder: 4, DefaultGroupID: 5},
+			&store.StoreWebsite{WebsiteID: 2, Code: null.MakeString(`de`), Name: null.MakeString(`Deutschland`), SortOrder: 1, DefaultGroupID: 2, IsDefault: true},
+			&store.StoreWebsite{WebsiteID: 4, Code: null.MakeString(`it`), Name: null.MakeString(`Italien`), SortOrder: 3, DefaultGroupID: 4},
+			&store.StoreWebsite{WebsiteID: 6, Code: null.MakeString(`be`), Name: null.MakeString(`Belgien`), SortOrder: 5, DefaultGroupID: 6},
+			&store.StoreWebsite{WebsiteID: 9, Code: null.MakeString(`int`), Name: null.MakeString(`International`), SortOrder: 8, DefaultGroupID: 9},
+			&store.StoreWebsite{WebsiteID: 10, Code: null.MakeString(`nl`), Name: null.MakeString(`Netherlands`), SortOrder: 9, DefaultGroupID: 10},
+			&store.StoreWebsite{WebsiteID: 11, Code: null.MakeString(`uk`), Name: null.MakeString(`United Kingdom`), SortOrder: 10, DefaultGroupID: 11},
+			&store.StoreWebsite{WebsiteID: 7, Code: null.MakeString(`lu`), Name: null.MakeString(`Luxemburg`), SortOrder: 6, DefaultGroupID: 7},
+		),
+		store.WithGroups(
+			&store.StoreGroup{Name: "Default", Code: null.String{}},
+			&store.StoreGroup{GroupID: 2, WebsiteID: 2, Name: "b2c", RootCategoryID: 2, DefaultStoreID: 2},
+			&store.StoreGroup{GroupID: 7, WebsiteID: 7, Name: "b2c", RootCategoryID: 2, DefaultStoreID: 15},
+			&store.StoreGroup{GroupID: 8, WebsiteID: 8, Name: "b2c", RootCategoryID: 2, DefaultStoreID: 17},
+			&store.StoreGroup{GroupID: 11, WebsiteID: 11, Name: "b2c", RootCategoryID: 2, DefaultStoreID: 20},
+			&store.StoreGroup{GroupID: 9, WebsiteID: 9, Name: "b2c", RootCategoryID: 2, DefaultStoreID: 18},
+			&store.StoreGroup{GroupID: 6, WebsiteID: 6, Name: "b2c", RootCategoryID: 2, DefaultStoreID: 13},
+			&store.StoreGroup{GroupID: 4, WebsiteID: 4, Name: "b2c", RootCategoryID: 2, DefaultStoreID: 10},
+			&store.StoreGroup{GroupID: 5, WebsiteID: 5, Name: "b2c", RootCategoryID: 2, DefaultStoreID: 12},
+			&store.StoreGroup{GroupID: 3, WebsiteID: 3, Name: "b2c", RootCategoryID: 2, DefaultStoreID: 6},
+			&store.StoreGroup{GroupID: 10, WebsiteID: 10, Name: "b2c", RootCategoryID: 2, DefaultStoreID: 19},
+		),
+		store.WithStores(
+			&store.Store{Code: null.MakeString(`admin`), Name: "Admin", IsActive: true},
+			&store.Store{StoreID: 16, Code: null.MakeString(`lude`), WebsiteID: 7, GroupID: 7, Name: "de", SortOrder: 2, IsActive: true},
+			&store.Store{StoreID: 3, Code: null.MakeString(`detr`), WebsiteID: 2, GroupID: 2, Name: "tr", SortOrder: 4, IsActive: true},
+			&store.Store{StoreID: 18, Code: null.MakeString(`inten`), WebsiteID: 9, GroupID: 9, Name: "en", SortOrder: 1, IsActive: true},
+			&store.Store{StoreID: 12, Code: null.MakeString(`frfr`), WebsiteID: 5, GroupID: 5, Name: "fr", SortOrder: 1, IsActive: true},
+			&store.Store{StoreID: 2, Code: null.MakeString(`dede`), WebsiteID: 2, GroupID: 2, Name: "de", SortOrder: 1, IsActive: true},
+			&store.Store{StoreID: 10, Code: null.MakeString(`itit`), WebsiteID: 4, GroupID: 4, Name: "it", SortOrder: 1, IsActive: true},
+			&store.Store{StoreID: 20, Code: null.MakeString(`uken`), WebsiteID: 11, GroupID: 11, Name: "en", SortOrder: 1, IsActive: true},
+			&store.Store{StoreID: 15, Code: null.MakeString(`lufr`), WebsiteID: 7, GroupID: 7, Name: "fr", SortOrder: 1, IsActive: true},
+			&store.Store{StoreID: 8, Code: null.MakeString(`chit`), WebsiteID: 3, GroupID: 3, Name: "it", SortOrder: 3, IsActive: true},
+			&store.Store{StoreID: 19, Code: null.MakeString(`nlen`), WebsiteID: 10, GroupID: 10, Name: "en", SortOrder: 1, IsActive: true},
+			&store.Store{StoreID: 6, Code: null.MakeString(`chde`), WebsiteID: 3, GroupID: 3, Name: "de", SortOrder: 1, IsActive: true},
+			&store.Store{StoreID: 7, Code: null.MakeString(`chfr`), WebsiteID: 3, GroupID: 3, Name: "fr", SortOrder: 2, IsActive: true},
+			&store.Store{StoreID: 17, Code: null.MakeString(`atde`), WebsiteID: 8, GroupID: 8, Name: "de", SortOrder: 1, IsActive: true},
+			&store.Store{StoreID: 5, Code: null.MakeString(`deen`), WebsiteID: 2, GroupID: 2, Name: "en", SortOrder: 4, IsActive: true},
+			&store.Store{StoreID: 9, Code: null.MakeString(`chen`), WebsiteID: 3, GroupID: 3, Name: "en", SortOrder: 4, IsActive: true},
+			&store.Store{StoreID: 14, Code: null.MakeString(`been`), WebsiteID: 6, GroupID: 6, Name: "en", SortOrder: 2, IsActive: true},
+			&store.Store{StoreID: 13, Code: null.MakeString(`befr`), WebsiteID: 6, GroupID: 6, Name: "fr", SortOrder: 1, IsActive: true},
+			&store.Store{StoreID: 11, Code: null.MakeString(`itde`), WebsiteID: 4, GroupID: 4, Name: "de", SortOrder: 2, IsActive: true},
+		),
+	}
+	return store.MustNewService(append(defaultOpts, opts...)...)
 }

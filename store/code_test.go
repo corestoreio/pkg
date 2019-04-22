@@ -17,8 +17,8 @@ package store_test
 import (
 	"testing"
 
-	"github.com/corestoreio/pkg/store"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/store"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,26 +26,26 @@ func TestValidateStoreCode(t *testing.T) {
 
 	tests := []struct {
 		have       string
-		wantErrBhf errors.BehaviourFunc
+		wantErrBhf errors.Kind
 	}{
-		{"@de", errors.IsNotValid},
-		{" de", errors.IsNotValid},
-		{"de", nil},
-		{"DE", nil},
-		{"deCH09_", nil},
-		{"_de", errors.IsNotValid},
-		{"", errors.IsNotValid},
-		{"\U0001f41c", errors.IsNotValid},
-		{"au_en", nil},
-		{"au-fr", errors.IsNotValid},
-		{"Hello GoLang", errors.IsNotValid},
-		{"Hello€GoLang", errors.IsNotValid},
-		{"HelloGoLdhashdfkjahdjfhaskjdfhuiwehfiawehfuahweldsnjkasfkjkwejqwehqang", errors.IsNotValid},
+		{"@de", errors.NotValid},
+		{" de", errors.NotValid},
+		{"de", errors.NoKind},
+		{"DE", errors.NoKind},
+		{"deCH09_", errors.NoKind},
+		{"_de", errors.NotValid},
+		{"", errors.NotValid},
+		{"\U0001f41c", errors.NotValid},
+		{"au_en", errors.NoKind},
+		{"au-fr", errors.NotValid},
+		{"Hello GoLang", errors.NotValid},
+		{"Hello€GoLang", errors.NotValid},
+		{"HelloGoLdhashdfkjahdjfhaskjdfhuiwehfiawehfuahweldsnjkasfkjkwejqwehqang", errors.NotValid},
 	}
 	for i, test := range tests {
 		haveErr := store.CodeIsValid(test.have)
-		if test.wantErrBhf != nil {
-			assert.True(t, test.wantErrBhf(haveErr), "Index %d => %s", i, haveErr)
+		if test.wantErrBhf > 0 {
+			assert.True(t, test.wantErrBhf.Match(haveErr), "Index %d => %s", i, haveErr)
 		} else {
 			assert.NoError(t, haveErr, "Index %d", i)
 		}
