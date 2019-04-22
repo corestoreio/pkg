@@ -347,7 +347,7 @@ func TestServiceWithBackend_WithRunMode_Valid_Request(t *testing.T) {
 		req,
 		jwts.WithRunMode(
 			scope.MakeTypeID(scope.Website, 1), // use euro website with default store AT.
-			storemock.NewEurozzyService(cfgSrv),
+			storemock.NewServiceEuroOZ(cfgSrv),
 		)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			tk, ok := jwt.FromContext(r.Context())
 			if !ok {

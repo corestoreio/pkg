@@ -168,7 +168,7 @@ func TestWithRunMode(t *testing.T) {
 }
 
 func TestWithRunMode_StoreService(t *testing.T) {
-	srv := storemock.NewEurozzyService(cfgmock.NewService())
+	srv := storemock.NewServiceEuroOZ(cfgmock.NewService())
 
 	tests := []struct {
 		req           *http.Request

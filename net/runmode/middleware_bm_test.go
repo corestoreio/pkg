@@ -29,7 +29,7 @@ import (
 )
 
 func BenchmarkWithRunMode(b *testing.B) {
-	srv := storemock.NewEurozzyService(cfgmock.NewService())
+	srv := storemock.NewServiceEuroOZ(cfgmock.NewService())
 
 	var runner = func(req *http.Request, runMode scope.TypeID, wantStoreID, wantWebsiteID int64) func(b *testing.B) {
 		return func(b *testing.B) {

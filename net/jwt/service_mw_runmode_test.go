@@ -52,7 +52,7 @@ func testAuth_WithRunMode(t *testing.T, finalHandler http.Handler, opts ...jwt.O
 			w.WriteHeader(http.StatusOK)
 		})
 	}
-	srv := storemock.NewEurozzyService(cfg)
+	srv := storemock.NewServiceEuroOZ(cfg)
 
 	authHandler := jm.WithRunMode(scope.DefaultRunMode, srv)(finalHandler)
 	return authHandler, theToken.Raw
@@ -446,7 +446,7 @@ func TestService_WithRunMode_DifferentScopes(t *testing.T) {
 		atomic.AddInt32(calledFinalHandler, 1)
 	})
 
-	srv := storemock.NewEurozzyService(cfg)
+	srv := storemock.NewServiceEuroOZ(cfg)
 	authHandler := jm.WithRunMode(
 		scope.RunModeFunc(func(r *http.Request) scope.TypeID {
 			switch r.Host {
