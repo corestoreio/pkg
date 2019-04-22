@@ -37,8 +37,7 @@ var now = func() time.Time {
 func init() {
 	// Freeze time in package log
 	log.Now = now
-	null.JSONMarshalFn = json.Marshal
-	null.JSONUnMarshalFn = json.Unmarshal
+	null.MustSetJSONMarshaler(json.Marshal, json.Unmarshal)
 }
 
 var _ dml.ColumnMapper = (*dmlPerson)(nil)

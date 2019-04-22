@@ -27,7 +27,7 @@ import (
 )
 
 func init() {
-	null.JSONMarshalFn = json.Marshal
+	null.MustSetJSONMarshaler(json.Marshal, json.Unmarshal)
 }
 
 func TestLoadForeignKeys_Integration(t *testing.T) {
