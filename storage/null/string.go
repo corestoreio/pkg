@@ -96,7 +96,7 @@ func (a *String) UnmarshalJSON(data []byte) error {
 	var err error
 	var v interface{}
 
-	if err = JSONUnMarshalFn(data, &v); err != nil {
+	if err = jsonUnMarshalFn(data, &v); err != nil {
 		return err
 	}
 
@@ -108,7 +108,7 @@ func (a *String) UnmarshalJSON(data []byte) error {
 			String string
 			Valid  bool
 		}{}
-		err = JSONUnMarshalFn(data, dto)
+		err = jsonUnMarshalFn(data, dto)
 		a.String = dto.String
 		a.Valid = dto.Valid
 	case nil:
@@ -127,7 +127,7 @@ func (a String) MarshalJSON() ([]byte, error) {
 	if !a.Valid {
 		return bTextNullLC, nil
 	}
-	return JSONMarshalFn(a.String)
+	return jsonMarshalFn(a.String)
 }
 
 // MarshalText implements encoding.TextMarshaler.

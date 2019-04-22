@@ -102,19 +102,19 @@ func (a Int32) GoString() string {
 func (a *Int32) UnmarshalJSON(data []byte) error {
 	var err error
 	var v interface{}
-	if err = JSONUnMarshalFn(data, &v); err != nil {
+	if err = jsonUnMarshalFn(data, &v); err != nil {
 		return err
 	}
 	switch v.(type) {
 	case float64:
 		// Unmarshal again, directly to int32, to avoid intermediate float32
-		err = JSONUnMarshalFn(data, &a.Int32)
+		err = jsonUnMarshalFn(data, &a.Int32)
 	case map[string]interface{}:
 		dto := &struct {
 			Int32 int32
 			Valid bool
 		}{}
-		err = JSONUnMarshalFn(data, dto)
+		err = jsonUnMarshalFn(data, dto)
 		a.Int32 = dto.Int32
 		a.Valid = dto.Valid
 	case nil:

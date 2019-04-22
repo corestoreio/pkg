@@ -67,7 +67,7 @@ func (nt Time) MarshalJSON() ([]byte, error) {
 func (nt *Time) UnmarshalJSON(data []byte) error {
 	var err error
 	var v interface{}
-	if err = JSONUnMarshalFn(data, &v); err != nil {
+	if err = jsonUnMarshalFn(data, &v); err != nil {
 		return err
 	}
 	switch x := v.(type) {

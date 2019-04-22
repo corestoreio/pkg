@@ -97,7 +97,7 @@ func (a Bool) GoString() string {
 func (a *Bool) UnmarshalJSON(data []byte) error {
 	var err error
 	var v interface{}
-	if err = JSONUnMarshalFn(data, &v); err != nil {
+	if err = jsonUnMarshalFn(data, &v); err != nil {
 		return err
 	}
 	switch x := v.(type) {
@@ -108,7 +108,7 @@ func (a *Bool) UnmarshalJSON(data []byte) error {
 			Bool  bool
 			Valid bool
 		}{}
-		err = JSONUnMarshalFn(data, dto)
+		err = jsonUnMarshalFn(data, dto)
 		a.Bool = dto.Bool
 		a.Valid = dto.Valid
 	case nil:

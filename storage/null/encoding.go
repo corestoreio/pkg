@@ -14,15 +14,34 @@
 
 package null
 
+import (
+	"sync/atomic"
+
+	"github.com/corestoreio/errors"
+)
+
 // This file contains all interfaces and function signatures for the various
 // encoders and decoders. You must set them in your package before using the
 // encoding/decoding methods.
 
-// JSONMarshalFn and JSONUnMarshalFn functions which must be set if you decide
+// jsonMarshalFn and jsonUnMarshalFn functions which must be set if you decide
 // to use JSON. Otherwise it panics. In your package write somewhere:
-//		null.JSONMarshalFn = json.Marshal
-//		null.JSONUnMarshalFn = json.UnMarshal
+//		null.jsonMarshalFn = json.Marshal
+//		null.jsonUnMarshalFn = json.UnMarshal
 var (
-	JSONMarshalFn   func(v interface{}) ([]byte, error)
-	JSONUnMarshalFn func(data []byte, v interface{}) error
+	jsonMarshalFn   func(v interface{}) ([]byte, error)
+	jsonUnMarshalFn func(data []byte, v interface{}) error
+	jsonFnApplied   = new(int32)
 )
+
+// MustSetJSONMarshaler applies the global JSON marshal functions for encoding and
+// decoding. This function can only be called once. It panics on multiple calls.
+func MustSetJSONMarshaler(marshalFn func(v interface{}) ([]byte, error), unMarshalFn func(data []byte, v interface{}) error) {
+	if atomic.LoadInt32(jsonFnApplied) == 1 {
+		panic(errors.AlreadyExists.Newf("[null] JSON marshal and unmarshal already exists."))
+	}
+	atomic.StoreInt32(jsonFnApplied, 1)
+	jsonMarshalFn = marshalFn
+	jsonUnMarshalFn = unMarshalFn
+
+}

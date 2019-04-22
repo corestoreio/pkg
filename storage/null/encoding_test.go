@@ -24,8 +24,7 @@ type protoMarshalToer interface {
 }
 
 func init() {
-	JSONMarshalFn = json.Marshal
-	JSONUnMarshalFn = json.Unmarshal
+	MustSetJSONMarshaler(json.Marshal, json.Unmarshal)
 }
 
 func maybePanic(err error) {
