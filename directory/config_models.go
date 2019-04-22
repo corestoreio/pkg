@@ -15,10 +15,10 @@
 package directory
 
 import (
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/cfgmodel"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/juju/errors"
 	"golang.org/x/text/currency"
 )
 
@@ -38,12 +38,12 @@ func NewConfigCurrency(path string, opts ...cfgmodel.Option) ConfigCurrency {
 func (cc ConfigCurrency) GetDefault(sg config.Getter) (cur Currency, err error) {
 	p, err := cc.ToPath(scope.Default, 0)
 	if err != nil {
-		err = errors.Mask(err)
+		err = errors.WithStack(err)
 		return
 	}
 	raw, err := sg.String(p)
 	if err != nil {
-		err = errors.Mask(err)
+		err = errors.WithStack(err)
 		return
 	}
 
@@ -55,7 +55,7 @@ func (cc ConfigCurrency) GetDefault(sg config.Getter) (cur Currency, err error) 
 func (cc ConfigCurrency) Get(sg config.Scoped) (cur Currency, err error) {
 	raw, err := cc.Str.Get(sg)
 	if err != nil {
-		err = errors.Mask(err)
+		err = errors.WithStack(err)
 		return
 	}
 	if raw == "" {
@@ -72,7 +72,7 @@ func (cc ConfigCurrency) Write(w config.Setter, v Currency, s scope.Type, id int
 	cur := v.String()
 
 	if err := cc.ValidateString(cur); err != nil {
-		return errors.Mask(err)
+		return errors.WithStack(err)
 	}
 	return cc.Str.Write(w, cur, s, id)
 }

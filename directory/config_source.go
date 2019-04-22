@@ -17,24 +17,24 @@ package directory
 import (
 	"sync"
 
-	"github.com/corestoreio/pkg/config/source"
+	"github.com/corestoreio/pkg/config/cfgsource"
 	"github.com/corestoreio/pkg/storage/dbr"
 	"golang.org/x/text/currency"
 )
 
-// PkgSource a container for all available source.Slice within this package.
+// PkgSource a container for all available cfgsource.Slice within this package.
 // These sources will be applied to the models
 // See fields for more information.
 type PkgSource struct {
 	sync.Mutex
 	// Currency contains all possible currencies on this planet.
-	Currency source.Slice
+	Currency _cfgsource.Slice
 	// Country should contain all countries
-	Country source.Slice
+	Country _cfgsource.Slice
 }
 
 // InitSources initializes the global variable Sources in all models.
-// Changing a source.Slice here affects all
+// Changing a cfgsource.Slice here affects all
 // other models.
 func (be *PkgBackend) InitSources(dbrSess dbr.SessionRunner) (*PkgSource, error) {
 	o := new(PkgSource)
@@ -58,7 +58,7 @@ func (be *PkgBackend) InitCurrency(dbrSess dbr.SessionRunner, o *PkgSource) erro
 	defer o.Unlock()
 
 	// apply all world wide available currencies but extract them from the DB
-	o.Currency = source.NewByStringValue(currency.All()...) // DB query
+	o.Currency = _cfgsource.NewByStringValue(currency.All()...) // DB query
 
 	be.SystemCurrencyInstalled.Source = o.Currency
 	be.CurrencyOptionsBase.Source = o.Currency
@@ -77,7 +77,7 @@ func (be *PkgBackend) InitCountry(dbrsess dbr.SessionRunner, o *PkgSource) error
 
 	// o.Country
 	// TODO load from database the iso code and as value the names
-	o.Country = source.NewByString("AU", "Australia", "FI", "Finland", "DE", "Germany")
+	o.Country = _cfgsource.NewByString("AU", "Australia", "FI", "Finland", "DE", "Germany")
 
 	// apply the list of country codes to:
 	be.GeneralCountryDefault.Source = o.Country

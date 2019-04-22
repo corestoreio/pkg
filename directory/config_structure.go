@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,9 +15,7 @@
 package directory
 
 import (
-	"github.com/corestoreio/pkg/config/cfgpath"
-	"github.com/corestoreio/pkg/config/element"
-	"github.com/corestoreio/pkg/storage/text"
+	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/store/scope"
 )
 
@@ -25,190 +23,192 @@ import (
 // Used in frontend (to display the user all the settings) and in
 // backend (scope checks and default values). See the source code
 // of this function for the overall available sections, groups and fields.
-func NewConfigStructure() (element.Sections, error) {
-	return element.MakeSectionsValidated(
-		element.Section{
-			ID:        cfgpath.MakeRoute("currency"),
-			Label:     text.Chars(`Currency Setup`),
+func NewConfigStructure() (config.Sections, error) {
+	return config.MakeSectionsValidated(
+		&config.Section{
+			ID:        "currency",
+			Label:     `Currency Setup`,
 			SortOrder: 60,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Backend::currency
-			Groups: element.MakeGroups(
-				element.Group{
-					ID:        cfgpath.MakeRoute("options"),
-					Label:     text.Chars(`Currency Options`),
+			Groups: config.MakeGroups(
+				&config.Group{
+					ID:        "options",
+					Label:     `Currency Options`,
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
-					Fields: element.MakeFields(
-						element.Field{
+					Fields: config.MakeFields(
+						&config.Field{
 							// Path: currency/options/base
-							ID:        cfgpath.MakeRoute("base"),
-							Label:     text.Chars(`Base Currency`),
-							Comment:   text.Chars(`Base currency is used for all online payment transactions. If you have more than one store view, the base currency scope is defined by the catalog price scope ("Catalog" > "Price" > "Catalog Price Scope").`),
-							Type:      element.TypeSelect,
+							ID:        "base",
+							Label:     `Base Currency`,
+							Comment:   `Base currency is used for all online payment transactions. If you have more than one store view, the base currency scope is defined by the catalog price scope ("Catalog" > "Price" > "Catalog Price Scope".`,
+							Type:      config.TypeSelect,
 							SortOrder: 1,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermWebsite,
-							Default:   `USD`,
+							Default:   []byte(`USD`),
 							// BackendModel: Magento\Config\Model\Config\Backend\Currency\Base
 							// SourceModel: Magento\Config\Model\Config\Source\Locale\Currency
 						},
 
-						element.Field{
+						&config.Field{
 							// Path: currency/options/default
-							ID:        cfgpath.MakeRoute("default"),
-							Label:     text.Chars(`Default Display Currency`),
-							Type:      element.TypeSelect,
+							ID:        "default",
+							Label:     `Default Display Currency`,
+							Type:      config.TypeSelect,
 							SortOrder: 2,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
-							Default:   `USD`,
+							Default:   []byte(`USD`),
 							// BackendModel: Magento\Config\Model\Config\Backend\Currency\DefaultCurrency
 							// SourceModel: Magento\Config\Model\Config\Source\Locale\Currency
 						},
 
-						element.Field{
+						&config.Field{
 							// Path: currency/options/allow
-							ID:         cfgpath.MakeRoute("allow"),
-							Label:      text.Chars(`Allowed Currencies`),
-							Type:       element.TypeMultiselect,
+							ID:         "allow",
+							Label:      `Allowed Currencies`,
+							Type:       config.TypeMultiselect,
 							SortOrder:  3,
-							Visible:    element.VisibleYes,
+							Visible:    true,
 							Scopes:     scope.PermStore,
 							CanBeEmpty: true,
-							Default:    `USD,EUR`,
+							Default:    []byte(`USD,EUR`),
+
 							// BackendModel: Magento\Config\Model\Config\Backend\Currency\Allow
 							// SourceModel: Magento\Config\Model\Config\Source\Locale\Currency
 						},
 					),
 				},
 
-				element.Group{
-					ID:        cfgpath.MakeRoute("webservicex"),
-					Label:     text.Chars(`Webservicex`),
+				&config.Group{
+					ID:        "webservicex",
+					Label:     `Webservicex`,
 					SortOrder: 40,
 					Scopes:    scope.PermDefault,
-					Fields: element.MakeFields(
-						element.Field{
+					Fields: config.MakeFields(
+						&config.Field{
 							// Path: currency/webservicex/timeout
-							ID:      cfgpath.MakeRoute("timeout"),
-							Label:   text.Chars(`Connection Timeout in Seconds`),
-							Type:    element.TypeText,
-							Visible: element.VisibleYes,
+							ID:      "timeout",
+							Label:   `Connection Timeout in Seconds`,
+							Type:    config.TypeText,
+							Visible: true,
 							Scopes:  scope.PermDefault,
-							Default: 100,
+							Default: []byte(`100`),
 						},
 					),
 				},
 
-				element.Group{
-					ID:        cfgpath.MakeRoute("import"),
-					Label:     text.Chars(`Scheduled Import Settings`),
+				&config.Group{
+					ID:        "import",
+					Label:     `Scheduled Import Settings`,
 					SortOrder: 50,
 					Scopes:    scope.PermDefault,
-					Fields: element.MakeFields(
-						element.Field{
+					Fields: config.MakeFields(
+						&config.Field{
 							// Path: currency/import/enabled
-							ID:        cfgpath.MakeRoute("enabled"),
-							Label:     text.Chars(`Enabled`),
-							Type:      element.TypeSelect,
+							ID:        "enabled",
+							Label:     `Enabled`,
+							Type:      config.TypeSelect,
 							SortOrder: 1,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
-							Default:   false,
+							Default:   []byte(`false`),
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						element.Field{
+						&config.Field{
 							// Path: currency/import/error_email
-							ID:        cfgpath.MakeRoute("error_email"),
-							Label:     text.Chars(`Error Email Recipient`),
-							Type:      element.TypeText,
+							ID:        "error_email",
+							Label:     `Error Email Recipient`,
+							Type:      config.TypeText,
 							SortOrder: 5,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 						},
 
-						element.Field{
+						&config.Field{
 							// Path: currency/import/error_email_identity
-							ID:        cfgpath.MakeRoute("error_email_identity"),
-							Label:     text.Chars(`Error Email Sender`),
-							Type:      element.TypeSelect,
+							ID:        "error_email_identity",
+							Label:     `Error Email Sender`,
+							Type:      config.TypeSelect,
 							SortOrder: 6,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermWebsite,
-							Default:   `general`,
+							Default:   []byte(`general`),
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
-						element.Field{
+						&config.Field{
 							// Path: currency/import/error_email_template
-							ID:        cfgpath.MakeRoute("error_email_template"),
-							Label:     text.Chars(`Error Email Template`),
-							Comment:   text.Chars(`Email template chosen based on theme fallback when "Default" option is selected.`),
-							Type:      element.TypeSelect,
+							ID:        "error_email_template",
+							Label:     `Error Email Template`,
+							Comment:   `Email template chosen based on theme fallback when "Default" option is selected.`,
+							Type:      config.TypeSelect,
 							SortOrder: 7,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermWebsite,
-							Default:   `currency_import_error_email_template`,
+							Default:   []byte(`currency_import_error_email_template`),
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						element.Field{
+						&config.Field{
 							// Path: currency/import/frequency
-							ID:        cfgpath.MakeRoute("frequency"),
-							Label:     text.Chars(`Frequency`),
-							Type:      element.TypeSelect,
+							ID:        "frequency",
+							Label:     `Frequency`,
+							Type:      config.TypeSelect,
 							SortOrder: 4,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// SourceModel: Magento\Cron\Model\Config\Source\Frequency
 						},
 
-						element.Field{
+						&config.Field{
 							// Path: currency/import/service
-							ID:        cfgpath.MakeRoute("service"),
-							Label:     text.Chars(`Service`),
-							Type:      element.TypeSelect,
+							ID:        "service",
+							Label:     `Service`,
+							Type:      config.TypeSelect,
 							SortOrder: 2,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Currency\Cron
 							// SourceModel: Magento\Directory\Model\Currency\Import\Source\Service
 						},
 
-						element.Field{
+						&config.Field{
 							// Path: currency/import/time
-							ID:        cfgpath.MakeRoute("time"),
-							Label:     text.Chars(`Start Time`),
-							Type:      element.TypeTime,
+							ID:        "time",
+							Label:     `Start Time`,
+							Type:      config.TypeTime,
 							SortOrder: 3,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 						},
 					),
 				},
 			),
 		},
-		element.Section{
-			ID: cfgpath.MakeRoute("system"),
-			Groups: element.MakeGroups(
-				element.Group{
-					ID:        cfgpath.MakeRoute("currency"),
-					Label:     text.Chars(`Currency`),
+		&config.Section{
+			ID: "system",
+			Groups: config.MakeGroups(
+				&config.Group{
+					ID:        "currency",
+					Label:     `Currency`,
 					SortOrder: 50,
 					Scopes:    scope.PermDefault,
-					Fields: element.MakeFields(
-						element.Field{
+					Fields: config.MakeFields(
+						&config.Field{
 							// Path: system/currency/installed
-							ID:         cfgpath.MakeRoute("installed"),
-							Label:      text.Chars(`Installed Currencies`),
-							Type:       element.TypeMultiselect,
+							ID:         "installed",
+							Label:      `Installed Currencies`,
+							Type:       config.TypeMultiselect,
 							SortOrder:  1,
-							Visible:    element.VisibleYes,
+							Visible:    true,
 							Scopes:     scope.PermDefault,
 							CanBeEmpty: true,
-							Default:    `AZN,AZM,AFN,ALL,DZD,AOA,ARS,AMD,AWG,AUD,BSD,BHD,BDT,BBD,BYR,BZD,BMD,BTN,BOB,BAM,BWP,BRL,GBP,BND,BGN,BUK,BIF,KHR,CAD,CVE,CZK,KYD,CLP,CNY,COP,KMF,CDF,CRC,HRK,CUP,DKK,DJF,DOP,XCD,EGP,SVC,GQE,ERN,EEK,ETB,EUR,FKP,FJD,GMD,GEK,GEL,GHS,GIP,GTQ,GNF,GYD,HTG,HNL,HKD,HUF,ISK,INR,IDR,IRR,IQD,ILS,JMD,JPY,JOD,KZT,KES,KWD,KGS,LAK,LVL,LBP,LSL,LRD,LYD,LTL,MOP,MKD,MGA,MWK,MYR,MVR,LSM,MRO,MUR,MXN,MDL,MNT,MAD,MZN,MMK,NAD,NPR,ANG,TRL,TRY,NZD,NIC,NGN,KPW,NOK,OMR,PKR,PAB,PGK,PYG,PEN,PHP,PLN,QAR,RHD,RON,ROL,RUB,RWF,SHP,STD,SAR,RSD,SCR,SLL,SGD,SKK,SBD,SOS,ZAR,KRW,LKR,SDG,SRD,SZL,SEK,CHF,SYP,TWD,TJS,TZS,THB,TOP,TTD,TND,TMM,USD,UGX,UAH,AED,UYU,UZS,VUV,VEB,VEF,VND,CHE,CHW,XOF,XPF,WST,YER,ZMK,ZWD`,
+							Default:    []byte(`AZN,AZM,AFN,ALL,DZD,AOA,ARS,AMD,AWG,AUD,BSD,BHD,BDT,BBD,BYR,BZD,BMD,BTN,BOB,BAM,BWP,BRL,GBP,BND,BGN,BUK,BIF,KHR,CAD,CVE,CZK,KYD,CLP,CNY,COP,KMF,CDF,CRC,HRK,CUP,DKK,DJF,DOP,XCD,EGP,SVC,GQE,ERN,EEK,ETB,EUR,FKP,FJD,GMD,GEK,GEL,GHS,GIP,GTQ,GNF,GYD,HTG,HNL,HKD,HUF,ISK,INR,IDR,IRR,IQD,ILS,JMD,JPY,JOD,KZT,KES,KWD,KGS,LAK,LVL,LBP,LSL,LRD,LYD,LTL,MOP,MKD,MGA,MWK,MYR,MVR,LSM,MRO,MUR,MXN,MDL,MNT,MAD,MZN,MMK,NAD,NPR,ANG,TRL,TRY,NZD,NIC,NGN,KPW,NOK,OMR,PKR,PAB,PGK,PYG,PEN,PHP,PLN,QAR,RHD,RON,ROL,RUB,RWF,SHP,STD,SAR,RSD,SCR,SLL,SGD,SKK,SBD,SOS,ZAR,KRW,LKR,SDG,SRD,SZL,SEK,CHF,SYP,TWD,TJS,TZS,THB,TOP,TTD,TND,TMM,USD,UGX,UAH,AED,UYU,UZS,VUV,VEB,VEF,VND,CHE,CHW,XOF,XPF,WST,YER,ZMK,ZWD`),
+
 							// BackendModel: Magento\Config\Model\Config\Backend\Locale
 							// SourceModel: Magento\Config\Model\Config\Source\Locale\Currency\All
 						},
@@ -216,166 +216,168 @@ func NewConfigStructure() (element.Sections, error) {
 				},
 			),
 		},
-		element.Section{
-			ID: cfgpath.MakeRoute("general"),
-			Groups: element.MakeGroups(
-				element.Group{
-					ID:        cfgpath.MakeRoute("country"),
-					Label:     text.Chars(`Country Options`),
+		&config.Section{
+			ID: "general",
+			Groups: config.MakeGroups(
+				&config.Group{
+					ID:        "country",
+					Label:     `Country Options`,
 					SortOrder: 1,
 					Scopes:    scope.PermStore,
-					Fields: element.MakeFields(
-						element.Field{
+					Fields: config.MakeFields(
+						&config.Field{
 							// Path: general/country/allow
-							ID:         cfgpath.MakeRoute("allow"),
-							Label:      text.Chars(`Allow Countries`),
-							Type:       element.TypeMultiselect,
+							ID:         "allow",
+							Label:      `Allow Countries`,
+							Type:       config.TypeMultiselect,
 							SortOrder:  2,
-							Visible:    element.VisibleYes,
+							Visible:    true,
 							Scopes:     scope.PermStore,
 							CanBeEmpty: true,
-							Default:    `AF,AL,DZ,AS,AD,AO,AI,AQ,AG,AR,AM,AW,AU,AT,AX,AZ,BS,BH,BD,BB,BY,BE,BZ,BJ,BM,BL,BT,BO,BA,BW,BV,BR,IO,VG,BN,BG,BF,BI,KH,CM,CA,CD,CV,KY,CF,TD,CL,CN,CX,CC,CO,KM,CG,CK,CR,HR,CU,CY,CZ,DK,DJ,DM,DO,EC,EG,SV,GQ,ER,EE,ET,FK,FO,FJ,FI,FR,GF,PF,TF,GA,GM,GE,DE,GG,GH,GI,GR,GL,GD,GP,GU,GT,GN,GW,GY,HT,HM,HN,HK,HU,IS,IM,IN,ID,IR,IQ,IE,IL,IT,CI,JE,JM,JP,JO,KZ,KE,KI,KW,KG,LA,LV,LB,LS,LR,LY,LI,LT,LU,ME,MF,MO,MK,MG,MW,MY,MV,ML,MT,MH,MQ,MR,MU,YT,FX,MX,FM,MD,MC,MN,MS,MA,MZ,MM,NA,NR,NP,NL,AN,NC,NZ,NI,NE,NG,NU,NF,KP,MP,NO,OM,PK,PW,PA,PG,PY,PE,PH,PN,PL,PS,PT,PR,QA,RE,RO,RS,RU,RW,SH,KN,LC,PM,VC,WS,SM,ST,SA,SN,SC,SL,SG,SK,SI,SB,SO,ZA,GS,KR,ES,LK,SD,SR,SJ,SZ,SE,CH,SY,TL,TW,TJ,TZ,TH,TG,TK,TO,TT,TN,TR,TM,TC,TV,VI,UG,UA,AE,GB,US,UM,UY,UZ,VU,VA,VE,VN,WF,EH,YE,ZM,ZW`,
+							Default:    []byte(`AF,AL,DZ,AS,AD,AO,AI,AQ,AG,AR,AM,AW,AU,AT,AX,AZ,BS,BH,BD,BB,BY,BE,BZ,BJ,BM,BL,BT,BO,BA,BW,BV,BR,IO,VG,BN,BG,BF,BI,KH,CM,CA,CD,CV,KY,CF,TD,CL,CN,CX,CC,CO,KM,CG,CK,CR,HR,CU,CY,CZ,DK,DJ,DM,DO,EC,EG,SV,GQ,ER,EE,ET,FK,FO,FJ,FI,FR,GF,PF,TF,GA,GM,GE,DE,GG,GH,GI,GR,GL,GD,GP,GU,GT,GN,GW,GY,HT,HM,HN,HK,HU,IS,IM,IN,ID,IR,IQ,IE,IL,IT,CI,JE,JM,JP,JO,KZ,KE,KI,KW,KG,LA,LV,LB,LS,LR,LY,LI,LT,LU,ME,MF,MO,MK,MG,MW,MY,MV,ML,MT,MH,MQ,MR,MU,YT,FX,MX,FM,MD,MC,MN,MS,MA,MZ,MM,NA,NR,NP,NL,AN,NC,NZ,NI,NE,NG,NU,NF,KP,MP,NO,OM,PK,PW,PA,PG,PY,PE,PH,PN,PL,PS,PT,PR,QA,RE,RO,RS,RU,RW,SH,KN,LC,PM,VC,WS,SM,ST,SA,SN,SC,SL,SG,SK,SI,SB,SO,ZA,GS,KR,ES,LK,SD,SR,SJ,SZ,SE,CH,SY,TL,TW,TJ,TZ,TH,TG,TK,TO,TT,TN,TR,TM,TC,TV,VI,UG,UA,AE,GB,US,UM,UY,UZ,VU,VA,VE,VN,WF,EH,YE,ZM,ZW`),
+
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
-						element.Field{
+						&config.Field{
 							// Path: general/country/default
-							ID:        cfgpath.MakeRoute("default"),
-							Label:     text.Chars(`Default Country`),
-							Type:      element.TypeSelect,
+							ID:        "default",
+							Label:     `Default Country`,
+							Type:      config.TypeSelect,
 							SortOrder: 1,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
-						element.Field{
+						&config.Field{
 							// Path: general/country/eu_countries
-							ID:        cfgpath.MakeRoute("eu_countries"),
-							Label:     text.Chars(`European Union Countries`),
-							Type:      element.TypeMultiselect,
+							ID:        "eu_countries",
+							Label:     `European Union Countries`,
+							Type:      config.TypeMultiselect,
 							SortOrder: 30,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
-						element.Field{
+						&config.Field{
 							// Path: general/country/destinations
-							ID:        cfgpath.MakeRoute("destinations"),
-							Label:     text.Chars(`Top destinations`),
-							Comment:   text.Chars(`Contains codes of the most used countries. Such countries can be shown on the top of the country list.`),
-							Type:      element.TypeMultiselect,
+							ID:        "destinations",
+							Label:     `Top destinations`,
+							Comment:   `Contains codes of the most used countries. Such countries can be shown on the top of the country list.`,
+							Type:      config.TypeMultiselect,
 							SortOrder: 40,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
-						element.Field{
+						&config.Field{
 							// Path: general/country/optional_zip_countries
-							ID:         cfgpath.MakeRoute("optional_zip_countries"),
-							Label:      text.Chars(`Zip/Postal Code is Optional for`),
-							Type:       element.TypeMultiselect,
+							ID:         "optional_zip_countries",
+							Label:      `Zip/Postal Code is Optional for`,
+							Type:       config.TypeMultiselect,
 							SortOrder:  3,
-							Visible:    element.VisibleYes,
+							Visible:    true,
 							Scopes:     scope.PermDefault,
 							CanBeEmpty: true,
-							Default:    `HK,IE,MO,PA,GB`,
+							Default:    []byte(`HK,IE,MO,PA,GB`),
+
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 					),
 				},
 
-				element.Group{
-					ID:        cfgpath.MakeRoute("locale"),
-					Label:     text.Chars(`Locale Options`),
+				&config.Group{
+					ID:        "locale",
+					Label:     `Locale Options`,
 					SortOrder: 8,
 					Scopes:    scope.PermStore,
-					Fields: element.MakeFields(
-						element.Field{
+					Fields: config.MakeFields(
+						&config.Field{
 							// Path: general/locale/timezone
-							ID:        cfgpath.MakeRoute("timezone"),
-							Label:     text.Chars(`Timezone`),
-							Type:      element.TypeSelect,
+							ID:        "timezone",
+							Label:     `Timezone`,
+							Type:      config.TypeSelect,
 							SortOrder: 1,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermWebsite,
-							Default:   `America/Los_Angeles`,
+							Default:   []byte(`America/Los_Angeles`),
 							// BackendModel: Magento\Config\Model\Config\Backend\Locale\Timezone
 							// SourceModel: Magento\Config\Model\Config\Source\Locale\Timezone
 						},
 
-						element.Field{
+						&config.Field{
 							// Path: general/locale/code
-							ID:        cfgpath.MakeRoute("code"),
-							Label:     text.Chars(`Locale`),
-							Type:      element.TypeSelect,
+							ID:        "code",
+							Label:     `Locale`,
+							Type:      config.TypeSelect,
 							SortOrder: 5,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
-							Default:   `en_US`,
+							Default:   []byte(`en_US`),
 							// SourceModel: Magento\Config\Model\Config\Source\Locale
 						},
 
-						element.Field{
+						&config.Field{
 							// Path: general/locale/firstday
-							ID:        cfgpath.MakeRoute("firstday"),
-							Label:     text.Chars(`First Day of Week`),
-							Type:      element.TypeSelect,
+							ID:        "firstday",
+							Label:     `First Day of Week`,
+							Type:      config.TypeSelect,
 							SortOrder: 10,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Locale\Weekdays
 						},
 
-						element.Field{
+						&config.Field{
 							// Path: general/locale/weekend
-							ID:         cfgpath.MakeRoute("weekend"),
-							Label:      text.Chars(`Weekend Days`),
-							Type:       element.TypeMultiselect,
+							ID:         "weekend",
+							Label:      `Weekend Days`,
+							Type:       config.TypeMultiselect,
 							SortOrder:  15,
-							Visible:    element.VisibleYes,
+							Visible:    true,
 							Scopes:     scope.PermStore,
 							CanBeEmpty: true,
 							// SourceModel: Magento\Config\Model\Config\Source\Locale\Weekdays
 						},
-						element.Field{
+						&config.Field{
 							// Path: general/locale/weight_unit
-							ID:        cfgpath.MakeRoute("weight_unit"),
-							Label:     text.Chars(`Weight Unit`),
-							Type:      element.TypeSelect,
+							ID:        "weight_unit",
+							Label:     `Weight Unit`,
+							Type:      config.TypeSelect,
 							SortOrder: 7,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermStore,
-							Default:   `lbs`,
+							Default:   []byte(`lbs`),
 							// SourceModel: Magento\Directory\Model\Config\Source\WeightUnit
 						},
 					),
 				},
-				element.Group{
-					ID:        cfgpath.MakeRoute("region"),
-					Label:     text.Chars(`State Options`),
+				&config.Group{
+					ID:        "region",
+					Label:     `State Options`,
 					SortOrder: 4,
 					Scopes:    scope.PermDefault,
-					Fields: element.MakeFields(
-						element.Field{
+					Fields: config.MakeFields(
+						&config.Field{
 							// Path: general/region/state_required
-							ID:        cfgpath.MakeRoute("state_required"),
-							Label:     text.Chars(`State is Required for`),
-							Type:      element.TypeMultiselect,
+							ID:        "state_required",
+							Label:     `State is Required for`,
+							Type:      config.TypeMultiselect,
 							SortOrder: 1,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
-						element.Field{
+						&config.Field{
 							// Path: general/region/display_all
-							ID:        cfgpath.MakeRoute("display_all"),
-							Label:     text.Chars(`Allow to Choose State if It is Optional for Country`),
-							Type:      element.TypeSelect,
+							ID:        "display_all",
+							Label:     `Allow to Choose State if It is Optional for Country`,
+							Type:      config.TypeSelect,
 							SortOrder: 8,
-							Visible:   element.VisibleYes,
+							Visible:   true,
 							Scopes:    scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -385,66 +387,66 @@ func NewConfigStructure() (element.Sections, error) {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		element.Section{
-			ID: cfgpath.MakeRoute("general"),
-			Groups: element.MakeGroups(
-				element.Group{
-					ID: cfgpath.MakeRoute("locale"),
-					Fields: element.MakeFields(
-						element.Field{
+		&config.Section{
+			ID: "general",
+			Groups: config.MakeGroups(
+				&config.Group{
+					ID: "locale",
+					Fields: config.MakeFields(
+						&config.Field{
 							// Path: general/locale/datetime_format_long
-							ID:      cfgpath.MakeRoute("datetime_format_long"),
-							Type:    element.TypeHidden,
-							Visible: element.VisibleNo,
-							Default: `%A, %B %e %Y [%I:%M %p]`,
+							ID:      "datetime_format_long",
+							Type:    config.TypeHidden,
+							Visible: false,
+							Default: []byte(`%A, %B %e %Y [%I:%M %p]`),
 						},
 
-						element.Field{
+						&config.Field{
 							// Path: general/locale/datetime_format_medium
-							ID:      cfgpath.MakeRoute("datetime_format_medium"),
-							Type:    element.TypeHidden,
-							Visible: element.VisibleNo,
-							Default: `%a, %b %e %Y [%I:%M %p]`,
+							ID:      "datetime_format_medium",
+							Type:    config.TypeHidden,
+							Visible: false,
+							Default: []byte(`%a, %b %e %Y [%I:%M %p]`),
 						},
 
-						element.Field{
+						&config.Field{
 							// Path: general/locale/datetime_format_short
-							ID:      cfgpath.MakeRoute("datetime_format_short"),
-							Type:    element.TypeHidden,
-							Visible: element.VisibleNo,
-							Default: `%m/%d/%y [%I:%M %p]`,
+							ID:      "datetime_format_short",
+							Type:    config.TypeHidden,
+							Visible: false,
+							Default: []byte(`%m/%d/%y [%I:%M %p]`),
 						},
 
-						element.Field{
+						&config.Field{
 							// Path: general/locale/date_format_long
-							ID:      cfgpath.MakeRoute("date_format_long"),
-							Type:    element.TypeHidden,
-							Visible: element.VisibleNo,
-							Default: `%A, %B %e %Y`,
+							ID:      "date_format_long",
+							Type:    config.TypeHidden,
+							Visible: false,
+							Default: []byte(`%A, %B %e %Y`),
 						},
 
-						element.Field{
+						&config.Field{
 							// Path: general/locale/date_format_medium
-							ID:      cfgpath.MakeRoute("date_format_medium"),
-							Type:    element.TypeHidden,
-							Visible: element.VisibleNo,
-							Default: `%a, %b %e %Y`,
+							ID:      "date_format_medium",
+							Type:    config.TypeHidden,
+							Visible: false,
+							Default: []byte(`%a, %b %e %Y`),
 						},
 
-						element.Field{
+						&config.Field{
 							// Path: general/locale/date_format_short
-							ID:      cfgpath.MakeRoute("date_format_short"),
-							Type:    element.TypeHidden,
-							Visible: element.VisibleNo,
-							Default: `%m/%d/%y`,
+							ID:      "date_format_short",
+							Type:    config.TypeHidden,
+							Visible: false,
+							Default: []byte(`%m/%d/%y`),
 						},
 
-						element.Field{
+						&config.Field{
 							// Path: general/locale/language
-							ID:      cfgpath.MakeRoute("language"),
-							Type:    element.TypeHidden,
-							Visible: element.VisibleNo,
-							Default: `en`,
+							ID:      "language",
+							Type:    config.TypeHidden,
+							Visible: false,
+							Default: []byte(`en`),
 						},
 					),
 				},
