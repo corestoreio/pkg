@@ -549,7 +549,11 @@ func WithTablesFromDB(ctx context.Context, db *dml.ConnPool, tables ...string) (
 }
 
 // WithProtobuf enables protocol buffers as a serialization method. Argument
-// headerOptions is optional.
+// headerOptions is optional. Heads up: This function also sets the internal
+// Serializer field and all types will get adjusted to the minimum protobuf
+// types. E.g. uint32 minimum instead of uint8/uint16. So if the Generator gets
+// created multiple times to separate the creation of code, the WithProtobuf
+// function must get set for Generator objects. See package store.
 func WithProtobuf(headerOptions ...string) (opt Option) {
 	opt.sortOrder = 110
 	opt.fn = func(g *Generator) error {

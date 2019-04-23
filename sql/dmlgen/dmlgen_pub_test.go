@@ -32,8 +32,6 @@ import (
 	"github.com/corestoreio/pkg/util/strs"
 )
 
-var _ = null.JSONMarshalFn
-
 /*
 SELECT
   concat('col_',
