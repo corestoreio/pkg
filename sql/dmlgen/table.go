@@ -94,10 +94,11 @@ type Table struct {
 	HasSerializer        bool // writes the .proto file if true
 
 	// PrivateFields key=snake case name of the DB column, value=true, the field must be private
-	privateFields   map[string]bool
-	featuresInclude FeatureToggle
-	featuresExclude FeatureToggle
-	fieldMapFn      func(dbIdentifier string) (newName string)
+	privateFields         map[string]bool
+	featuresInclude       FeatureToggle
+	featuresExclude       FeatureToggle
+	fieldMapFn            func(dbIdentifier string) (newName string)
+	customStructTagFields map[string]string
 }
 
 func (t *Table) IsFieldPublic(dbColumnName string) bool {
@@ -231,6 +232,7 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 						}
 						if isOneToMany && hasTable && isRelationAllowed {
 							mainGen.Pln(fieldMapFn(kcuce.ReferencedTableName.String), " *", strs.ToGoCamelCase(kcuce.ReferencedTableName.String)+"Collection",
+								t.customStructTagFields[kcuce.ReferencedTableName.String],
 								"// 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
 						}
 
@@ -243,6 +245,7 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 						}
 						if isOneToOne && hasTable && isRelationAllowed {
 							mainGen.Pln(fieldMapFn(kcuce.ReferencedTableName.String), " *", strs.ToGoCamelCase(kcuce.ReferencedTableName.String),
+								t.customStructTagFields[kcuce.ReferencedTableName.String],
 								"// 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
 						}
 					}
@@ -265,6 +268,7 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 						}
 						if isOneToMany && hasTable && isRelationAllowed {
 							mainGen.Pln(fieldMapFn(kcuce.ReferencedTableName.String), " *", strs.ToGoCamelCase(kcuce.ReferencedTableName.String)+"Collection",
+								t.customStructTagFields[kcuce.ReferencedTableName.String],
 								"// Reversed 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
 						}
 
@@ -277,6 +281,7 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 						}
 						if isOneToOne && hasTable && isRelationAllowed {
 							mainGen.Pln(fieldMapFn(kcuce.ReferencedTableName.String), " *", strs.ToGoCamelCase(kcuce.ReferencedTableName.String),
+								t.customStructTagFields[kcuce.ReferencedTableName.String],
 								"// Reversed 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
 						}
 					}

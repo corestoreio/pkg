@@ -268,19 +268,6 @@ func TestWithCustomStructTags(t *testing.T) {
 		assert.Nil(t, tbls)
 		assert.ErrorIsKind(t, errors.NotFound, err)
 	})
-
-	t.Run("column not found", func(t *testing.T) {
-		tbls, err := dmlgen.NewGenerator("test",
-			dmlgen.WithTableConfig("core_configuration", &dmlgen.TableConfig{
-				CustomStructTags: []string{"scope_id", "toml:..."},
-			}),
-			dmlgen.WithTable("core_configuration", ddl.Columns{
-				&ddl.Column{Field: "config_id"},
-			}),
-		)
-		assert.Nil(t, tbls)
-		assert.ErrorIsKind(t, errors.NotFound, err)
-	})
 }
 
 func TestWithStructTags(t *testing.T) {
@@ -434,6 +421,13 @@ func TestNewGenerator_ReversedForeignKeys(t *testing.T) {
 					return "Address"
 				}
 				return strs.ToGoCamelCase(dbIdentifier)
+			},
+		}),
+
+		dmlgen.WithTableConfig("store", &dmlgen.TableConfig{
+			CustomStructTags: []string{
+				"store_website", `json:"-"`,
+				"store_group", `json:"-"`,
 			},
 		}),
 

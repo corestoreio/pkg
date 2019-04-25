@@ -120,6 +120,8 @@ type TableConfig struct {
 	// column. The slice must be balanced, means index i sets to the column name
 	// and index i+1 to the desired struct tag.
 	// 		[]string{"column_a",`json: ",omitempty"`,"column_b","`xml:,omitempty`"}
+	// In case when foreign keys should be referenced:
+	// 		[]string{"FieldNameX",`faker: "-"`,"FieldNameY","`xml:field_name_y,omitempty`"}
 	CustomStructTags []string // balanced slice
 	// Comment adds custom comments to each struct type. Useful when relying on
 	// 3rd party JSON marshaler code generators like easyjson or ffjson. If
@@ -240,17 +242,18 @@ func (to *TableConfig) applyStructTags(t *Table, g *Generator) {
 
 func (to *TableConfig) applyCustomStructTags(t *Table) {
 	for i := 0; i < len(to.CustomStructTags) && to.lastErr == nil; i += 2 {
-		found := false
 		for _, c := range t.Columns {
 			if c.Field == to.CustomStructTags[i] {
 				c.StructTag = to.CustomStructTags[i+1]
-				found = true
 			}
 		}
-		if !found {
-			to.lastErr = errors.NotFound.Newf("[dmlgen] WithTableConfig:CustomStructTags: For table %q the Column %q cannot be found.",
-				t.TableName, to.CustomStructTags[i])
+		if t.customStructTagFields == nil {
+			t.customStructTagFields = make(map[string]string)
 		}
+
+		// copy data to handle foreign keys if they should have struct tags.
+		// as key use the kcuce.ReferencedTableName.String and value the struct tag itself.
+		t.customStructTagFields[to.CustomStructTags[i]] = "`" + to.CustomStructTags[i+1] + "`"
 	}
 }
 
@@ -801,13 +804,17 @@ func (g *Generator) GenerateSerializer(wMain, wTest io.Writer) error {
 func (g *Generator) generateProto(w io.Writer) error {
 	proto := codegen.NewProto(g.Package)
 	proto.Pln(`import "github.com/gogo/protobuf/gogoproto/gogo.proto";`)
-	proto.Pln(`import "google/protobuf/timestamp.proto";`)
+
+	const importTimeStamp = `import "google/protobuf/timestamp.proto";`
+	proto.Pln(importTimeStamp)
 	proto.Pln(`import "github.com/corestoreio/pkg/storage/null/null.proto";`)
 	proto.Pln(`option go_package = "` + g.Package + `";`)
+
 	for _, o := range g.SerializerHeaderOptions {
 		proto.Pln(`option ` + o + `;`)
 	}
 
+	var hasTimestampField bool
 	for _, tblname := range g.sortedTableNames() {
 		t := g.Tables[tblname] // must panic if table name not found
 
@@ -826,7 +833,11 @@ func (g *Generator) generateProto(w io.Writer) error {
 			var lastColumnPos uint64
 			t.Columns.Each(func(c *ddl.Column) {
 				if t.IsFieldPublic(c.Field) {
-					proto.Pln(g.SerializerType(c), c.Field+`=`, c.Pos, `[(gogoproto.customname)=`+strconv.Quote(strs.ToGoCamelCase(c.Field)), g.SerializerCustomType(c)+`];`)
+					serType := g.SerializerType(c)
+					if !hasTimestampField && strings.HasPrefix(serType, "google.protobuf.Timestamp") {
+						hasTimestampField = true
+					}
+					proto.Pln(serType, c.Field+`=`, c.Pos, `[(gogoproto.customname)=`+strconv.Quote(strs.ToGoCamelCase(c.Field)), g.SerializerCustomType(c)+`];`)
 					lastColumnPos = c.Pos
 				}
 			})
@@ -905,6 +916,14 @@ func (g *Generator) generateProto(w io.Writer) error {
 		}
 		proto.Pln(`}`)
 	}
+
+	if !hasTimestampField {
+		// bit hacky to remove the import of timestamp proto but for now OK.
+		removedImport := strings.ReplaceAll(proto.String(), importTimeStamp, "")
+		proto.Reset()
+		proto.WriteString(removedImport)
+	}
+
 	return proto.GenerateFile(w)
 }
 
