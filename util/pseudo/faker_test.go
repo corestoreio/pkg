@@ -14,6 +14,8 @@ import (
 	"github.com/corestoreio/pkg/util/assert"
 )
 
+var _ errors.Kinder = (*errRecursionExceeded)(nil)
+
 type SomeStruct struct {
 	Inta    int
 	Int8    int8
@@ -528,6 +530,7 @@ type MaxStringLen struct {
 	ColLongtext2 string      `json:"col_longtext_2,omitempty"  max_len:"4294967295"`
 }
 
+// TestMaxStringLen is flaky
 func TestMaxStringLen(t *testing.T) {
 	s := MustNewService(0, nil) // defaults to maxLenStringLimit
 
@@ -543,7 +546,6 @@ func TestMaxStringLen(t *testing.T) {
 			assert.Empty(t, a.ColLongtext1.String, "Field ColLongtext1.String")
 		}
 		assert.LenBetween(t, a.ColLongtext2, 1, maxLenStringLimit, "Field ColLongtext2")
-
 	}
 }
 

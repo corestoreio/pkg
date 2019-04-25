@@ -66,7 +66,8 @@ const (
 	tagName       = "faker"
 	tagMaxLenName = "max_len"
 	// Skip indicates a struct tag, that the field should be skipped.
-	Skip = "-"
+	Skip                     = "-"
+	DefaultMaxRecursionLevel = 10
 )
 
 // FakeFunc generates new specific fake values. The returned interface{} type
@@ -96,6 +97,8 @@ type Options struct {
 	// FloatMaxDecimals limits the float generation to this amount of decimals.
 	// Useful for MySQL/MariaDB float column type.
 	FloatMaxDecimals int
+	// MaxRecursionLevel default see DefaultMaxRecursionLevel
+	MaxRecursionLevel int
 }
 
 const maxLenStringLimit = 512
@@ -179,6 +182,9 @@ func NewService(seed uint64, o *Options, opts ...optionFn) (*Service, error) {
 	}
 	if o.MaxLenStringLimit == 0 {
 		o.MaxLenStringLimit = maxLenStringLimit
+	}
+	if o.MaxRecursionLevel == 0 {
+		o.MaxRecursionLevel = DefaultMaxRecursionLevel
 	}
 
 	s := &Service{
@@ -476,8 +482,11 @@ func (s *Service) FakeData(ptr interface{}) error {
 		return errors.NotSupported.Newf("[pseudo] Nil/Non-pointer values are not supported. Argument ptr should be a pointer.")
 	}
 
-	finalValue, err := s.getValue(reflectType.Elem(), 0)
+	finalValue, err := s.getValue(reflectType.Elem(), 0, 0)
 	if err != nil {
+		if errors.Exceeded.Match(err) {
+			err = nil
+		}
 		return err
 	}
 
@@ -490,7 +499,21 @@ type scanner interface {
 	Scan(interface{}) error
 }
 
-func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, err error) {
+type errRecursionExceeded string
+
+func (e errRecursionExceeded) ErrorKind() errors.Kind {
+	return errors.Exceeded
+}
+
+func (e errRecursionExceeded) Error() string {
+	return string(e)
+}
+
+func (s *Service) getValue(t reflect.Type, maxLen uint64, recursionLevel int) (rVal reflect.Value, err error) {
+
+	if recursionLevel > s.o.MaxRecursionLevel {
+		return rVal, errRecursionExceeded("Reached max recursion level")
+	}
 
 	k := t.Kind()
 
@@ -501,7 +524,7 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 	switch k {
 	case reflect.Ptr:
 		v := reflect.New(t.Elem())
-		val, err := s.getValue(t.Elem(), maxLen)
+		val, err := s.getValue(t.Elem(), maxLen, recursionLevel+1)
 		if err != nil {
 			return rVal, err
 		}
@@ -612,7 +635,7 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 					// The check of isConvertibleType protects from a panic of
 					// Convert. Especially useful when an exported field has a
 					// func or interface or channel type.
-					val, err := s.getValue(vf.Type(), maxLen)
+					val, err := s.getValue(vf.Type(), maxLen, recursionLevel+1)
 					if err != nil {
 						return reflect.Value{}, err
 					}
@@ -656,7 +679,7 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 		slLen := s.r.Uint64n(ml)
 		v := reflect.MakeSlice(t, int(slLen), int(slLen))
 		for i := 0; i < v.Len(); i++ {
-			val, err := s.getValue(t.Elem(), ml)
+			val, err := s.getValue(t.Elem(), ml, recursionLevel+1)
 			if err != nil {
 				return rVal, err
 			}
@@ -708,11 +731,11 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64) (rVal reflect.Value, e
 		randLen := s.r.Uint64n(maxLen)
 		var i uint64
 		for ; i < randLen; i++ {
-			key, err := s.getValue(t.Key(), maxLen)
+			key, err := s.getValue(t.Key(), maxLen, recursionLevel+1)
 			if err != nil {
 				return rVal, err
 			}
-			val, err := s.getValue(t.Elem(), maxLen)
+			val, err := s.getValue(t.Elem(), maxLen, recursionLevel+1)
 			if err != nil {
 				return rVal, err
 			}
