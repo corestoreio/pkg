@@ -4,10 +4,9 @@ package store
 
 import (
 	"fmt"
-	"io"
-
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/storage/null"
+	"io"
 )
 
 // Store represents a single row for DB table store. Auto generated.

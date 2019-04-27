@@ -23,6 +23,8 @@ import (
 	"github.com/corestoreio/pkg/store/scope"
 )
 
+//go:generate go run codegen_main.go
+
 // Finder depends on the runMode from package scope and finds the active store
 // depending on the run mode. The Hash argument will be provided via
 // scope.RunMode type or the scope.FromContextRunMode(ctx) function. runMode is

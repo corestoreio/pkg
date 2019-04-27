@@ -1,0 +1,46 @@
+syntax = "proto3";
+package store;
+
+import "entities_gen.proto";
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
+option go_package = "store";
+
+message ProtoIsAllowedStoreIDRequest {
+	uint32 run_mode= 1 [(gogoproto.customname)="RunMode" ];
+	uint32 store_id= 2 [(gogoproto.customname)="StoreID" ];
+
+}
+message ProtoIsAllowedStoreIDResponse {
+	bool is_allowed = 1 [(gogoproto.customname)="IsAllowed" ];
+	string store_code = 2 [(gogoproto.customname)="StoreCode" ];
+	bytes error = 3 [(gogoproto.customname)="Error" ];
+}
+
+service StoreService {
+	rpc IsAllowedStoreID(ProtoIsAllowedStoreIDRequest) returns (ProtoIsAllowedStoreIDResponse){};
+
+	rpc AddStore(Store) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+            post: "/api/v1/users"
+            body: "*"
+        };
+	}
+	rpc ListStores(google.protobuf.Empty) returns (stream Store) {
+//		option (google.api.http) = {
+//            get: "/api/v1/users"
+//        };
+	}
+//	rpc ListStoresByRole(StoreRole) returns (stream Store) {
+//		option (google.api.http) = {
+//            get: "/api/v1/users/role"
+//        };
+//	}
+//	rpc UpdateStore(UpdateStoreRequest) returns (Store) {
+//		option (google.api.http) = {
+//            patch: "/api/v1/users/{user.id}"
+//            body: "user"
+//        };
+//	}
+}

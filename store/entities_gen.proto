@@ -2,7 +2,7 @@
 syntax = "proto3";
 package store;
 import "github.com/gogo/protobuf/gogoproto/gogo.proto"; 
-import "google/protobuf/timestamp.proto"; 
+ 
 import "github.com/corestoreio/pkg/storage/null/null.proto"; 
 option go_package = "store"; 
 option (gogoproto.typedecl_all) = false; 

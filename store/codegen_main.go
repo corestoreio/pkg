@@ -35,7 +35,7 @@ func main() {
 
 	ctx := context.Background()
 
-	ts, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/store",
+	g, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/store",
 		dmlgen.WithTablesFromDB(ctx, dbcp, "store_website", "store_group", "store"),
 		dmlgen.WithTableConfig(
 			"store_website", &dmlgen.TableConfig{
@@ -51,26 +51,31 @@ func main() {
 			}),
 		dmlgen.WithTableConfig(
 			"store", &dmlgen.TableConfig{
-				Encoders:        []string{"easyjson", "protobuf"},
-				FeaturesExclude: dmlgen.FeatureDB,
-				StructTags:      []string{"max_len"},
+				Encoders:         []string{"easyjson", "protobuf"},
+				FeaturesExclude:  dmlgen.FeatureDB,
+				StructTags:       []string{"max_len"},
+				CustomStructTags: []string{"StoreGroup", `faker:"-"`, "StoreWebsite", `faker:"-"`},
 			}),
-		dmlgen.WithProtobuf(),
 		dmlgen.WithForeignKeyRelationships(ctx, dbcp.DB,
 			"store_group.group_id", "store.group_id",
 		),
+		dmlgen.WithProtobuf(),
 	)
 
 	mustCheckErr(err)
-	// 	ts.TestSQLDumpGlobPath = "test_*_tables.sql"
-	writeFile("entities_gen.go", ts.GenerateGo)
-	writeFile("entities_gen.proto", ts.GenerateSerializer)
+	// 	g.TestSQLDumpGlobPath = "test_*_tables.sql"
+	writeFile("entities_gen.go", g.GenerateGo)
 
-	mustCheckErr(dmlgen.GenerateProto("./"))
-	// mustCheckErr(dmlgen.GenerateJSON("./", nil)) TODO enable JSOn generation once code compiles
+	writeFile("entities_gen.proto", g.GenerateSerializer)
+	mustCheckErr(dmlgen.GenerateProto("./", &dmlgen.ProtocOptions{
+		Debug: true,
+		GRPC:  true,
+	}))
+
+	// mustCheckErr(dmlgen.GenerateJSON("./", nil)) TODO enable JSON generation once code compiles
 
 	// write MySQL/MariaDB DB code
-	ts, err = dmlgen.NewGenerator("github.com/corestoreio/pkg/store",
+	g, err = dmlgen.NewGenerator("github.com/corestoreio/pkg/store",
 		dmlgen.WithTablesFromDB(ctx, dbcp, "store_website", "store_group", "store"),
 		dmlgen.WithBuildTags("csall db"),
 		dmlgen.WithTableConfig(
@@ -85,11 +90,13 @@ func main() {
 			"store", &dmlgen.TableConfig{
 				FeaturesInclude: dmlgen.FeatureDB,
 			}),
+		// Protobuf needed here to adjust the DB/Go types to protobuf.
+		dmlgen.WithProtobuf(),
 	)
 	mustCheckErr(err)
 
-	// 	ts.TestSQLDumpGlobPath = "test_*_tables.sql"
-	writeFile("entities_db_gen.go", ts.GenerateGo)
+	// 	g.TestSQLDumpGlobPath = "test_*_tables.sql"
+	writeFile("entities_db_gen.go", g.GenerateGo)
 
 }
 
