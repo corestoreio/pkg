@@ -1103,29 +1103,108 @@ func (g *Generator) fnTestMainDB(testGen *codegen.Go, tbls tables) {
 	testGen.Pln(`}`) // end TestNewTables
 }
 
-// GenerateProto searches all *.proto files in the given path and calls protoc
-// to generate the Go source code.
-func GenerateProto(path string) error {
+// ProtocOptions allows to modify the protoc CLI command.
+type ProtocOptions struct {
+	Debug              bool // prints the final protoc command
+	GRPC               bool
+	GRPCGatewayOutMap  []string // GRPC must be enabled in the above field
+	GRPCGatewayOutPath string   // GRPC must be enabled in the above field
+	ProtoPath          []string
+	GoGoOutPath        string
+	GoGoOutMap         []string
+	SwaggerOutPath     string
+	CustomArgs         []string
+	// TODO add govalidators_out
+}
 
-	path = filepath.Clean(path)
-	if ps := string(os.PathSeparator); !strings.HasSuffix(path, ps) {
-		path += ps
+var defaultProtoPaths = make([]string, 0, 8)
+
+func init() {
+	preDefinedPaths := [...]string{
+		build.Default.GOPATH + "/src/",
+		build.Default.GOPATH + "/src/github.com/gogo/protobuf/protobuf/",
+		build.Default.GOPATH + "/src/github.com/gogo/googleapis/",
+		"vendor/github.com/grpc-ecosystem/grpc-gateway/",
+		"vendor/github.com/gogo/googleapis/",
+		"vendor/",
+		".",
 	}
+	for _, pdp := range preDefinedPaths {
+		if _, err := os.Stat(pdp); !os.IsNotExist(err) {
+			defaultProtoPaths = append(defaultProtoPaths, pdp)
+		}
+	}
+}
 
-	protoFiles, err := filepath.Glob(path + "*.proto")
-	if err != nil {
-		return errors.Wrapf(err, "[dmlgen] Can't access proto files in path %q", path)
+func (po *ProtocOptions) toArgs() []string {
+	gogoOut := make([]string, 0, 4)
+	if po.GRPC {
+		gogoOut = append(gogoOut, "plugins=grpc")
+		if po.GRPCGatewayOutMap == nil {
+			po.GRPCGatewayOutMap = []string{
+				"allow_patch_feature=false",
+				"Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types",
+				"Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types",
+				"Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types",
+				"Mgoogle/api/annotations.proto=github.com/gogo/googleapis/google/api",
+				"Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types",
+			}
+		}
+		if po.GRPCGatewayOutPath == "" {
+			po.GRPCGatewayOutPath = "."
+		}
+	}
+	if po.GoGoOutPath == "" {
+		po.GoGoOutPath = "."
+	}
+	if po.GoGoOutMap == nil {
+		po.GoGoOutMap = []string{
+			"Mgoogle/api/annotations.proto=github.com/gogo/googleapis/google/api",
+			"Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types",
+			"Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types",
+			"Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types",
+			"Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types",
+		}
+	}
+	gogoOut = append(gogoOut, po.GoGoOutMap...)
+
+	if po.ProtoPath == nil {
+		po.ProtoPath = append(po.ProtoPath, defaultProtoPaths...)
 	}
 
 	// To generate PHP Code replace `gogo_out` with `php_out`.
 	// Java bit similar. Java has ~15k LOC, Go ~3.7k
 	args := []string{
-		"--gogo_out", "Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types:.",
-		"--proto_path", fmt.Sprintf("%s/src/:%s/src/github.com/gogo/protobuf/protobuf/:.", build.Default.GOPATH, build.Default.GOPATH),
+		"--gogo_out", fmt.Sprintf("%s:%s", strings.Join(gogoOut, ","), po.GoGoOutPath),
+		"--proto_path", strings.Join(po.ProtoPath, ":"),
 	}
-	args = append(args, protoFiles...)
+	if po.GRPC && len(po.GRPCGatewayOutMap) > 0 {
+		args = append(args, "--grpc-gateway_out="+strings.Join(po.GRPCGatewayOutMap, ",")+":"+po.GRPCGatewayOutPath)
+	}
+	if po.SwaggerOutPath != "" {
+		args = append(args, "--swagger_out="+po.SwaggerOutPath)
+	}
+	return append(args, po.CustomArgs...)
+}
 
-	cmd := exec.Command("protoc", args...)
+// GenerateProto searches all *.proto files in the given path and calls protoc
+// to generate the Go source code.
+func GenerateProto(protoFilesPath string, po *ProtocOptions) error {
+
+	protoFilesPath = filepath.Clean(protoFilesPath)
+	if ps := string(os.PathSeparator); !strings.HasSuffix(protoFilesPath, ps) {
+		protoFilesPath += ps
+	}
+
+	protoFiles, err := filepath.Glob(protoFilesPath + "*.proto")
+	if err != nil {
+		return errors.Wrapf(err, "[dmlgen] Can't access proto files in path %q", protoFilesPath)
+	}
+
+	cmd := exec.Command("protoc", append(po.toArgs(), protoFiles...)...)
+	if po.Debug {
+		fmt.Printf("\n%s\n\n", cmd.String())
+	}
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return errors.Wrapf(err, "[dmlgen] %s", out)
@@ -1143,9 +1222,9 @@ func GenerateProto(path string) error {
 	// "github.com/corestoreio/pkg/storage/null"` because no other way to get
 	// rid of the unused import or reference that import somehow in the
 	// generated file :-( Once there's a better solution, remove this code.
-	pbGoFiles, err := filepath.Glob(path + "*.pb.go")
+	pbGoFiles, err := filepath.Glob(protoFilesPath + "*.pb.go")
 	if err != nil {
-		return errors.Wrapf(err, "[dmlgen] Can't access pb.go files in path %q", path)
+		return errors.Wrapf(err, "[dmlgen] Can't access pb.go files in path %q", protoFilesPath)
 	}
 	removeImport := []byte("import null \"github.com/corestoreio/pkg/storage/null\"\n")
 	for _, file := range pbGoFiles {
