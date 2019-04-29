@@ -97,7 +97,7 @@ OuterLoop:
 }
 
 // FormatPrice returns price formatting information for a given locale.
-// @todo implement
+// @todo implement and use github.com/leekchan/accounting
 func FormatPrice( /*localCode, currencyCode */ ) /*some kind of struct*/ {
 	// if currency code has been provided: load currency from directory package
 	// otherwise determine it from the current loaded store
