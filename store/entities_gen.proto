@@ -51,8 +51,8 @@ message StoreWebsite {
 	uint32 sort_order= 4 [(gogoproto.customname)="SortOrder" ]; 
 	uint32 default_group_id= 5 [(gogoproto.customname)="DefaultGroupID" ]; 
 	bool is_default= 6 [(gogoproto.customname)="IsDefault" ]; 
-	StoreCollection Store = 7 ; // Reversed 1:M store_website.website_id => store.website_id 
-	StoreGroupCollection StoreGroup = 8 ; // Reversed 1:M store_website.website_id => store_group.website_id 
+	StoreGroupCollection StoreGroup = 7 ; // Reversed 1:M store_website.website_id => store_group.website_id 
+	StoreCollection Store = 8 ; // Reversed 1:M store_website.website_id => store.website_id 
 } 
 // StoreWebsiteCollection represents multiple rows for DB table store_website .
 // Auto generated.

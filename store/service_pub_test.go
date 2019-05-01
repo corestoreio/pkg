@@ -22,7 +22,7 @@ import (
 
 	"github.com/alecthomas/repr"
 	"github.com/corestoreio/pkg/storage/null"
-	"github.com/corestoreio/pkg/store/storemock"
+	storemock "github.com/corestoreio/pkg/store/mock"
 	"github.com/corestoreio/pkg/util/assert"
 )
 

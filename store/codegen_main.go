@@ -30,54 +30,61 @@ import (
 
 func main() {
 
+	const pkgPath = "github.com/corestoreio/pkg/store"
+
 	dbcp := dml.MustConnectAndVerify(dml.WithDSNfromEnv(""))
 	defer mustCheckCloseErr(dbcp)
 
 	ctx := context.Background()
 
-	g, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/store",
+	g, err := dmlgen.NewGenerator(pkgPath,
 		dmlgen.WithTablesFromDB(ctx, dbcp, "store_website", "store_group", "store"),
 		dmlgen.WithTableConfig(
 			"store_website", &dmlgen.TableConfig{
 				Encoders:        []string{"easyjson", "protobuf"},
-				FeaturesExclude: dmlgen.FeatureDB,
+				FeaturesExclude: dmlgen.FeatureDB | dmlgen.FeatureCollectionBinaryMarshaler,
 				StructTags:      []string{"max_len"},
 			}),
 		dmlgen.WithTableConfig(
 			"store_group", &dmlgen.TableConfig{
 				Encoders:        []string{"easyjson", "protobuf"},
-				FeaturesExclude: dmlgen.FeatureDB,
+				FeaturesExclude: dmlgen.FeatureDB | dmlgen.FeatureCollectionBinaryMarshaler,
 				StructTags:      []string{"max_len"},
 			}),
 		dmlgen.WithTableConfig(
 			"store", &dmlgen.TableConfig{
 				Encoders:         []string{"easyjson", "protobuf"},
-				FeaturesExclude:  dmlgen.FeatureDB,
+				FeaturesExclude:  dmlgen.FeatureDB | dmlgen.FeatureCollectionBinaryMarshaler,
 				StructTags:       []string{"max_len"},
 				CustomStructTags: []string{"StoreGroup", `faker:"-"`, "StoreWebsite", `faker:"-"`},
 			}),
 		dmlgen.WithForeignKeyRelationships(ctx, dbcp.DB,
 			"store_group.group_id", "store.group_id",
 		),
-		dmlgen.WithProtobuf(),
+		dmlgen.WithProtobuf(&dmlgen.SerializerConfig{
+			PackageImportPath: pkgPath,
+		}),
 	)
 
 	mustCheckErr(err)
 	// 	g.TestSQLDumpGlobPath = "test_*_tables.sql"
 	writeFile("entities_gen.go", g.GenerateGo)
-
 	writeFile("entities_gen.proto", g.GenerateSerializer)
 	mustCheckErr(dmlgen.GenerateProto("./", &dmlgen.ProtocOptions{
-		Debug: true,
-		GRPC:  true,
+		BuildTags: []string{"csall proto"},
+		Debug:     true,
+		GRPC:      true,
 	}))
+	mustCheckErr(dmlgen.GenerateJSON("./", "csall http json", nil))
 
-	// mustCheckErr(dmlgen.GenerateJSON("./", nil)) TODO enable JSON generation once code compiles
+	//
 
 	// write MySQL/MariaDB DB code
-	g, err = dmlgen.NewGenerator("github.com/corestoreio/pkg/store",
+	g, err = dmlgen.NewGenerator(pkgPath,
 		dmlgen.WithTablesFromDB(ctx, dbcp, "store_website", "store_group", "store"),
+
 		dmlgen.WithBuildTags("csall db"),
+
 		dmlgen.WithTableConfig(
 			"store_website", &dmlgen.TableConfig{
 				FeaturesInclude: dmlgen.FeatureDB,
@@ -91,10 +98,9 @@ func main() {
 				FeaturesInclude: dmlgen.FeatureDB,
 			}),
 		// Protobuf needed here to adjust the DB/Go types to protobuf.
-		dmlgen.WithProtobuf(),
+		dmlgen.WithProtobuf(&dmlgen.SerializerConfig{}),
 	)
 	mustCheckErr(err)
-
 	// 	g.TestSQLDumpGlobPath = "test_*_tables.sql"
 	writeFile("entities_db_gen.go", g.GenerateGo)
 

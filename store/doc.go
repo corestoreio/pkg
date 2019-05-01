@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -47,6 +47,10 @@
 //
 // The subpackage scope depends on these structure except that the group has
 // been removed and a default scope has been introduced.
+//
+// Supported build tags
+//
+// The following build tags
 //
 // More explanation @todo
 // Read more:

@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storemock_test
+package mock_test
 
 import (
 	"testing"
 
 	"github.com/alecthomas/repr"
-	"github.com/corestoreio/pkg/store/storemock"
+	"github.com/corestoreio/pkg/store/mock"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewEurozzyService_Euro(t *testing.T) {
 
-	ns := storemock.NewServiceEuroOZ()
+	ns := mock.NewServiceEuroOZ()
 	assert.NotNil(t, ns)
 
 	s, err := ns.Store(4)
@@ -42,7 +42,7 @@ func TestNewEurozzyService_Euro(t *testing.T) {
 
 func TestNewEurozzyService_ANZ(t *testing.T) {
 
-	ns := storemock.NewServiceEuroOZ()
+	ns := mock.NewServiceEuroOZ()
 	assert.NotNil(t, ns)
 
 	s, err := ns.Store(4)
@@ -66,7 +66,7 @@ func TestNewEurozzyService_ANZ(t *testing.T) {
 }
 
 func TestNewServiceEuroW11G11S19(t *testing.T) {
-	srv := storemock.NewServiceEuroW11G11S19()
+	srv := mock.NewServiceEuroW11G11S19()
 
 	repr.Println(srv)
 

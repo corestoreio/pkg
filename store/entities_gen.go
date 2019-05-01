@@ -4,9 +4,10 @@ package store
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/storage/null"
-	"io"
 )
 
 // Store represents a single row for DB table store. Auto generated.
@@ -173,16 +174,6 @@ func (cc *StoreCollection) Append(n ...*Store) *StoreCollection {
 	return cc
 }
 
-// UnmarshalBinary implements encoding.BinaryUnmarshaler.
-func (cc *StoreCollection) UnmarshalBinary(data []byte) error {
-	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
-}
-
-// MarshalBinary implements encoding.BinaryMarshaler.
-func (cc *StoreCollection) MarshalBinary() (data []byte, err error) {
-	return cc.Marshal() // Implemented via github.com/gogo/protobuf
-}
-
 // StoreGroup represents a single row for DB table store_group. Auto generated.
 //easyjson:json
 type StoreGroup struct {
@@ -344,16 +335,6 @@ func (cc *StoreGroupCollection) Append(n ...*StoreGroup) *StoreGroupCollection {
 	return cc
 }
 
-// UnmarshalBinary implements encoding.BinaryUnmarshaler.
-func (cc *StoreGroupCollection) UnmarshalBinary(data []byte) error {
-	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
-}
-
-// MarshalBinary implements encoding.BinaryMarshaler.
-func (cc *StoreGroupCollection) MarshalBinary() (data []byte, err error) {
-	return cc.Marshal() // Implemented via github.com/gogo/protobuf
-}
-
 // StoreWebsite represents a single row for DB table store_website. Auto
 // generated.
 //easyjson:json
@@ -364,8 +345,8 @@ type StoreWebsite struct {
 	SortOrder      uint32                `max_len:"5"`   // sort_order smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Sort Order"
 	DefaultGroupID uint32                `max_len:"5"`   // default_group_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Default Group ID"
 	IsDefault      bool                  `max_len:"5"`   // is_default smallint(5) unsigned NOT NULL  DEFAULT '0'  "Defines Is Website Default"
-	Store          *StoreCollection      // Reversed 1:M store_website.website_id => store.website_id
 	StoreGroup     *StoreGroupCollection // Reversed 1:M store_website.website_id => store_group.website_id
+	Store          *StoreCollection      // Reversed 1:M store_website.website_id => store.website_id
 }
 
 // Empty empties all the fields of the current object. Also known as Reset.
@@ -516,14 +497,4 @@ func (cc *StoreWebsiteCollection) Insert(n *StoreWebsite, i int) *StoreWebsiteCo
 func (cc *StoreWebsiteCollection) Append(n ...*StoreWebsite) *StoreWebsiteCollection {
 	cc.Data = append(cc.Data, n...)
 	return cc
-}
-
-// UnmarshalBinary implements encoding.BinaryUnmarshaler.
-func (cc *StoreWebsiteCollection) UnmarshalBinary(data []byte) error {
-	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
-}
-
-// MarshalBinary implements encoding.BinaryMarshaler.
-func (cc *StoreWebsiteCollection) MarshalBinary() (data []byte, err error) {
-	return cc.Marshal() // Implemented via github.com/gogo/protobuf
 }
