@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,11 +57,13 @@ import (
 // Generator can generated Go source for for database tables once correctly
 // configured.
 type Generator struct {
-	Package            string // Name of the package
-	PackageImportPath  string // Name of the package
-	BuildTags          []string
-	ImportPaths        []string
-	ImportPathsTesting []string
+	Package                     string // Name of the package
+	PackageImportPath           string // Name of the package
+	PackageSerializer           string // Name of the package, if empty uses field Package
+	PackageSerializerImportPath string // Name of the package, if empty uses field PackageImportPath
+	BuildTags                   []string
+	ImportPaths                 []string
+	ImportPathsTesting          []string
 	// Tables uses the table name as map key and the table description as value.
 	Tables map[string]*Table
 	// Serializer defines the de/serializing method to use. Either
@@ -551,17 +553,28 @@ func WithTablesFromDB(ctx context.Context, db *dml.ConnPool, tables ...string) (
 	return opt
 }
 
+// SerializerConfig applies various optional settings to WithProtobuf and/or
+// WithFlatbuffers and/or WithTypeScript.
+type SerializerConfig struct {
+	PackageImportPath string
+	Headers           []string
+}
+
 // WithProtobuf enables protocol buffers as a serialization method. Argument
 // headerOptions is optional. Heads up: This function also sets the internal
 // Serializer field and all types will get adjusted to the minimum protobuf
 // types. E.g. uint32 minimum instead of uint8/uint16. So if the Generator gets
 // created multiple times to separate the creation of code, the WithProtobuf
 // function must get set for Generator objects. See package store.
-func WithProtobuf(headerOptions ...string) (opt Option) {
+func WithProtobuf(sc *SerializerConfig) (opt Option) {
+	_, pkg := filepath.Split(sc.PackageImportPath)
+
 	opt.sortOrder = 110
 	opt.fn = func(g *Generator) error {
 		g.Serializer = "protobuf"
-		if len(headerOptions) == 0 {
+		g.PackageSerializer = pkg
+		g.PackageSerializerImportPath = sc.PackageImportPath
+		if len(sc.Headers) == 0 {
 			g.SerializerHeaderOptions = []string{
 				"(gogoproto.typedecl_all) = false",
 				"(gogoproto.goproto_getters_all) = false",
@@ -578,16 +591,16 @@ func WithProtobuf(headerOptions ...string) (opt Option) {
 
 // WithFlatbuffers enables flatbuffers (FBS) as a serialization method. Argument
 // headerOptions is optional.
-func WithFlatbuffers(headerOptions ...string) (opt Option) {
-	opt.sortOrder = 111
-	opt.fn = func(g *Generator) error {
-		g.Serializer = "fbs"
-		// if len(headerOptions) == 0 {
-		// TODO find sane defaults
-		// g.SerializerHeaderOptions = []string{}
-		// }
-		return nil
-	}
+func WithFlatbuffers(sc *SerializerConfig) (opt Option) {
+	panic("TODO implement WithFlatbuffers")
+	// opt.sortOrder = 111
+	// opt.fn = func(g *Generator) error {
+	// 	g.Serializer = "fbs"
+	// 	// if len(headerOptions) == 0 {
+	// 	// g.SerializerHeaderOptions = []string{}
+	// 	// }
+	// 	return nil
+	// }
 	return opt
 }
 
@@ -802,13 +815,18 @@ func (g *Generator) GenerateSerializer(wMain, wTest io.Writer) error {
 }
 
 func (g *Generator) generateProto(w io.Writer) error {
-	proto := codegen.NewProto(g.Package)
+	pPkg := g.PackageSerializer
+	if pPkg == "" {
+		pPkg = g.Package
+	}
+
+	proto := codegen.NewProto(pPkg)
 	proto.Pln(`import "github.com/gogo/protobuf/gogoproto/gogo.proto";`)
 
 	const importTimeStamp = `import "google/protobuf/timestamp.proto";`
 	proto.Pln(importTimeStamp)
 	proto.Pln(`import "github.com/corestoreio/pkg/storage/null/null.proto";`)
-	proto.Pln(`option go_package = "` + g.Package + `";`)
+	proto.Pln(`option go_package = "` + pPkg + `";`)
 
 	for _, o := range g.SerializerHeaderOptions {
 		proto.Pln(`option ` + o + `;`)
@@ -1105,7 +1123,10 @@ func (g *Generator) fnTestMainDB(testGen *codegen.Go, tbls tables) {
 
 // ProtocOptions allows to modify the protoc CLI command.
 type ProtocOptions struct {
-	Debug              bool // prints the final protoc command
+	BuildTags          []string
+	WorkingDirectory   string
+	ProtoGen           string // default gofast, options: gogo, gogofast, gogofaster
+	Debug              bool   // prints the final protoc command
 	GRPC               bool
 	GRPCGatewayOutMap  []string // GRPC must be enabled in the above field
 	GRPCGatewayOutPath string   // GRPC must be enabled in the above field
@@ -1114,7 +1135,9 @@ type ProtocOptions struct {
 	GoGoOutMap         []string
 	SwaggerOutPath     string
 	CustomArgs         []string
-	// TODO add govalidators_out
+	// TODO add validation plugin, either https://github.com/mwitkow/go-proto-validators as used in github.com/gogo/grpc-example/proto/example.proto
+	//  or https://github.com/envoyproxy/protoc-gen-validate
+	//  Requirement: error messages must be translatable and maybe use an errors.Kind type
 }
 
 var defaultProtoPaths = make([]string, 0, 8)
@@ -1172,10 +1195,21 @@ func (po *ProtocOptions) toArgs() []string {
 		po.ProtoPath = append(po.ProtoPath, defaultProtoPaths...)
 	}
 
+	if po.ProtoGen == "" {
+		po.ProtoGen = "gofast"
+	} else {
+		switch po.ProtoGen {
+		case "gofast", "gogo", "gogofast", "gogofaster":
+			// ok
+		default:
+			panic(fmt.Sprintf("[dmlgen] ProtoGen CLI command %q not supported, allowed: gofast, gogo, gogofast, gogofaster", po.ProtoGen))
+		}
+	}
+
 	// To generate PHP Code replace `gogo_out` with `php_out`.
 	// Java bit similar. Java has ~15k LOC, Go ~3.7k
 	args := []string{
-		"--gogo_out", fmt.Sprintf("%s:%s", strings.Join(gogoOut, ","), po.GoGoOutPath),
+		"--" + po.ProtoGen + "_out", fmt.Sprintf("%s:%s", strings.Join(gogoOut, ","), po.GoGoOutPath),
 		"--proto_path", strings.Join(po.ProtoPath, ":"),
 	}
 	if po.GRPC && len(po.GRPCGatewayOutMap) > 0 {
@@ -1187,9 +1221,31 @@ func (po *ProtocOptions) toArgs() []string {
 	return append(args, po.CustomArgs...)
 }
 
+func (po *ProtocOptions) chdir() (deferred func(), _ error) {
+	deferred = func() {}
+	if po.WorkingDirectory != "" {
+		oldWD, err := os.Getwd()
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		if err := os.Chdir(po.WorkingDirectory); err != nil {
+			return nil, errors.Wrapf(err, "[dmlgen] Failed to chdir to %q", po.WorkingDirectory)
+		}
+		deferred = func() {
+			_ = os.Chdir(oldWD)
+		}
+	}
+	return deferred, nil
+}
+
 // GenerateProto searches all *.proto files in the given path and calls protoc
 // to generate the Go source code.
 func GenerateProto(protoFilesPath string, po *ProtocOptions) error {
+	restoreFn, err := po.chdir()
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	defer restoreFn()
 
 	protoFilesPath = filepath.Clean(protoFilesPath)
 	if ps := string(os.PathSeparator); !strings.HasSuffix(protoFilesPath, ps) {
@@ -1203,7 +1259,10 @@ func GenerateProto(protoFilesPath string, po *ProtocOptions) error {
 
 	cmd := exec.Command("protoc", append(po.toArgs(), protoFiles...)...)
 	if po.Debug {
-		fmt.Printf("\n%s\n\n", cmd.String())
+		if po.WorkingDirectory == "" {
+			po.WorkingDirectory = "."
+		}
+		fmt.Printf("\ncd %s && %s\n\n", po.WorkingDirectory, cmd.String())
 	}
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -1222,17 +1281,34 @@ func GenerateProto(protoFilesPath string, po *ProtocOptions) error {
 	// "github.com/corestoreio/pkg/storage/null"` because no other way to get
 	// rid of the unused import or reference that import somehow in the
 	// generated file :-( Once there's a better solution, remove this code.
-	pbGoFiles, err := filepath.Glob(protoFilesPath + "*.pb.go")
+	pbGoFiles, err := filepath.Glob(protoFilesPath + "*.pb.*go")
 	if err != nil {
 		return errors.Wrapf(err, "[dmlgen] Can't access pb.go files in path %q", protoFilesPath)
 	}
-	removeImport := []byte("import null \"github.com/corestoreio/pkg/storage/null\"\n")
+
+	removeImports := [][]byte{
+		[]byte("import null \"github.com/corestoreio/pkg/storage/null\"\n"),
+		[]byte("null \"github.com/corestoreio/pkg/storage/null\"\n"),
+	}
 	for _, file := range pbGoFiles {
 		fContent, err := ioutil.ReadFile(file)
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		fContent = bytes.Replace(fContent, removeImport, nil, -1)
+		for _, ri := range removeImports {
+			fContent = bytes.Replace(fContent, ri, nil, -1)
+		}
+
+		var buf bytes.Buffer
+		for _, bt := range po.BuildTags {
+			fmt.Fprintf(&buf, "// +build %s\n", bt)
+		}
+		if buf.Len() > 0 {
+			buf.WriteByte('\n')
+			buf.Write(fContent)
+			fContent = buf.Bytes()
+		}
+
 		if err := ioutil.WriteFile(file, fContent, 0644); err != nil {
 			return errors.WithStack(err)
 		}
@@ -1243,35 +1319,35 @@ func GenerateProto(protoFilesPath string, po *ProtocOptions) error {
 
 // GenerateJSON creates the easysjon code for a specific file or a whole
 // directory. argument `g` can be nil.
-func GenerateJSON(fname string, g *bootstrap.Generator) (err error) {
-	fInfo, err := os.Stat(fname)
+func GenerateJSON(fileNameOrDirectory, buildTags string, g *bootstrap.Generator) error {
+	fInfo, err := os.Stat(fileNameOrDirectory)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	p := new(parser.Parser)
-	if err := p.Parse(fname, fInfo.IsDir()); err != nil {
-		return errors.CorruptData.Newf("[dmlgen] Error parsing failed %v: %v", fname, err)
+	if err := p.Parse(fileNameOrDirectory, fInfo.IsDir()); err != nil {
+		return errors.CorruptData.Newf("[dmlgen] Error parsing failed %q: %v", fileNameOrDirectory, err)
 	}
 
 	var outName string
 	if fInfo.IsDir() {
-		outName = filepath.Join(fname, p.PkgName+"_easyjson.go")
+		outName = filepath.Join(fileNameOrDirectory, p.PkgName+"_easyjson.go")
 	} else {
-		if s := strings.TrimSuffix(fname, ".go"); s == fname {
+		if s := strings.TrimSuffix(fileNameOrDirectory, ".go"); s == fileNameOrDirectory {
 			return errors.NotAcceptable.Newf("[dmlgen] GenerateJSON: Filename must end in '.go'")
 		} else {
 			outName = s + "_easyjson.go"
 		}
 	}
 
-	var trimmedBuildTags string
-	// if *buildTags != "" {
-	// 	trimmedBuildTags = strings.TrimSpace(*buildTags)
-	// }
+	if len(p.StructNames) == 0 {
+		return errors.NotFound.Newf("[dmlgen] Can't find any StructNames in the Go files of %q", fileNameOrDirectory)
+	}
+
 	if g == nil {
 		g = &bootstrap.Generator{
-			BuildTags:             trimmedBuildTags,
+			BuildTags:             buildTags,
 			PkgPath:               p.PkgPath,
 			PkgName:               p.PkgName,
 			Types:                 p.StructNames,
@@ -1285,6 +1361,8 @@ func GenerateJSON(fname string, g *bootstrap.Generator) (err error) {
 			StubsOnly:             false,
 			NoFormat:              false,
 		}
+	} else {
+		g.Types = p.StructNames
 	}
 	if err := g.Run(); err != nil {
 		return errors.Fatal.Newf("[dmlgen] easyJSON: Bootstrap failed: %v", err)

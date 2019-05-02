@@ -99,7 +99,7 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 	g, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated",
 
 		dmlgen.WithBuildTags("!ignore", "!ignored"),
-		dmlgen.WithProtobuf(),
+		dmlgen.WithProtobuf(&dmlgen.SerializerConfig{}),
 
 		dmlgen.WithTablesFromDB(ctx, db,
 			"dmlgen_types", "core_configuration", "customer_entity", "customer_address_entity",
@@ -210,8 +210,10 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 	writeFile(t, "dmltestgenerated/output_gen.proto", g.GenerateSerializer)
 	// // Generates for all proto files the Go source code.
 
-	assert.NoError(t, dmlgen.GenerateProto("./dmltestgenerated"))
-	assert.NoError(t, dmlgen.GenerateJSON("./dmltestgenerated", nil))
+	assert.NoError(t, dmlgen.GenerateProto("./dmltestgenerated", &dmlgen.ProtocOptions{
+		ProtoGen: "gogo",
+	}))
+	assert.NoError(t, dmlgen.GenerateJSON("./dmltestgenerated", "", nil))
 }
 
 func TestInfoSchemaForeignKeys(t *testing.T) {
