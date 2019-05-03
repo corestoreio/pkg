@@ -484,10 +484,7 @@ func (s *Service) FakeData(ptr interface{}) error {
 
 	finalValue, err := s.getValue(reflectType.Elem(), 0, 0)
 	if err != nil {
-		if errors.Exceeded.Match(err) {
-			err = nil
-		}
-		return err
+		return errors.WithStack(err)
 	}
 
 	rVal := reflect.ValueOf(ptr)
@@ -499,21 +496,7 @@ type scanner interface {
 	Scan(interface{}) error
 }
 
-type errRecursionExceeded string
-
-func (e errRecursionExceeded) ErrorKind() errors.Kind {
-	return errors.Exceeded
-}
-
-func (e errRecursionExceeded) Error() string {
-	return string(e)
-}
-
 func (s *Service) getValue(t reflect.Type, maxLen uint64, recursionLevel int) (rVal reflect.Value, err error) {
-
-	if recursionLevel > s.o.MaxRecursionLevel {
-		return rVal, errRecursionExceeded("Reached max recursion level")
-	}
 
 	k := t.Kind()
 
@@ -523,13 +506,15 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64, recursionLevel int) (r
 
 	switch k {
 	case reflect.Ptr:
-		v := reflect.New(t.Elem())
-		val, err := s.getValue(t.Elem(), maxLen, recursionLevel+1)
-		if err != nil {
-			return rVal, err
+		if recursionLevel < s.o.MaxRecursionLevel {
+			v := reflect.New(t.Elem())
+			val, err := s.getValue(t.Elem(), maxLen, recursionLevel+1)
+			if err != nil {
+				return rVal, err
+			}
+			v.Elem().Set(val.Convert(t.Elem()))
+			return v, nil
 		}
-		v.Elem().Set(val.Convert(t.Elem()))
-		return v, nil
 	case reflect.Struct:
 
 		switch ts := t.String(); ts {
@@ -635,15 +620,17 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64, recursionLevel int) (r
 					// The check of isConvertibleType protects from a panic of
 					// Convert. Especially useful when an exported field has a
 					// func or interface or channel type.
-					val, err := s.getValue(vf.Type(), maxLen, recursionLevel+1)
-					if err != nil {
-						return reflect.Value{}, err
-					}
-					if isConvertibleType(vf.Kind()) {
-						val = val.Convert(vf.Type())
-					}
-					if val.IsValid() {
-						vf.Set(val)
+					if recursionLevel < s.o.MaxRecursionLevel {
+						val, err := s.getValue(vf.Type(), maxLen, recursionLevel+1)
+						if err != nil {
+							return reflect.Value{}, err
+						}
+						if isConvertibleType(vf.Kind()) && val.IsValid() {
+							val = val.Convert(vf.Type())
+						}
+						if val.IsValid() {
+							vf.Set(val)
+						}
 					}
 				default:
 					err := s.setDataWithTag(vf.Addr(), tag, maxLen, false)
@@ -672,20 +659,22 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64, recursionLevel int) (r
 		res := s.randomString(ml)
 		return reflect.ValueOf(res), nil
 	case reflect.Array, reflect.Slice:
-		ml := maxLen
-		if ml > s.o.MaxLenStringLimit {
-			ml = s.o.MaxLenStringLimit
-		}
-		slLen := s.r.Uint64n(ml)
-		v := reflect.MakeSlice(t, int(slLen), int(slLen))
-		for i := 0; i < v.Len(); i++ {
-			val, err := s.getValue(t.Elem(), ml, recursionLevel+1)
-			if err != nil {
-				return rVal, err
+		if recursionLevel < s.o.MaxRecursionLevel {
+			ml := maxLen
+			if ml > s.o.MaxLenStringLimit {
+				ml = s.o.MaxLenStringLimit
 			}
-			v.Index(i).Set(val)
+			slLen := s.r.Uint64n(ml)
+			v := reflect.MakeSlice(t, int(slLen), int(slLen))
+			for i := 0; i < v.Len(); i++ {
+				val, err := s.getValue(t.Elem(), ml, recursionLevel+1)
+				if err != nil {
+					return rVal, err
+				}
+				v.Index(i).Set(val)
+			}
+			return v, nil
 		}
-		return v, nil
 	case reflect.Int:
 		return reflect.ValueOf(int(s.r.Uint64n(maxLen))), nil
 	case reflect.Int8:
@@ -727,26 +716,28 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64, recursionLevel int) (r
 		return reflect.ValueOf(uint64(s.r.Uint64n(maxLen))), nil
 
 	case reflect.Map:
-		v := reflect.MakeMap(t)
-		randLen := s.r.Uint64n(maxLen)
-		var i uint64
-		for ; i < randLen; i++ {
-			key, err := s.getValue(t.Key(), maxLen, recursionLevel+1)
-			if err != nil {
-				return rVal, err
+		if recursionLevel < s.o.MaxRecursionLevel {
+			v := reflect.MakeMap(t)
+			randLen := s.r.Uint64n(maxLen)
+			var i uint64
+			for ; i < randLen; i++ {
+				key, err := s.getValue(t.Key(), maxLen, recursionLevel+1)
+				if err != nil {
+					return rVal, err
+				}
+				val, err := s.getValue(t.Elem(), maxLen, recursionLevel+1)
+				if err != nil {
+					return rVal, err
+				}
+				v.SetMapIndex(key, val)
 			}
-			val, err := s.getValue(t.Elem(), maxLen, recursionLevel+1)
-			if err != nil {
-				return rVal, err
-			}
-			v.SetMapIndex(key, val)
+			return v, nil
 		}
-		return v, nil
 	case reflect.Func, reflect.Chan, reflect.Interface, reflect.Complex64, reflect.Complex128:
 		// ignore
 		return rVal, nil
 	}
-	return rVal, errors.NotSupported.Newf("[pseudo] Type %+v not supported", t)
+	return rVal, nil // ignore any other type
 }
 
 func isConvertibleType(k reflect.Kind) bool {

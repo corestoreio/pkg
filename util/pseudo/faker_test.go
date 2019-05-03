@@ -14,8 +14,6 @@ import (
 	"github.com/corestoreio/pkg/util/assert"
 )
 
-var _ errors.Kinder = (*errRecursionExceeded)(nil)
-
 type SomeStruct struct {
 	Inta    int
 	Int8    int8
@@ -517,7 +515,7 @@ func TestCustomerEntity_Fieldnames(t *testing.T) {
 		err := s.FakeData(&a)
 		assert.NoError(t, err, "\n%+v", err)
 		// t.Logf("%#v", a)
-		assert.LenBetween(t, fmt.Sprintf("%#v", a), 260, 535)
+		assert.LenBetween(t, fmt.Sprintf("%#v", a), 260, 545)
 		if a.Email.Valid {
 			assert.Regexp(t, "^[a-z0-9\\-_]+@.+\\.[a-z0-9\\-]+$", a.Email.String, "Email address")
 		}

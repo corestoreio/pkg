@@ -65,11 +65,25 @@ func TestRecursion(t *testing.T) {
 	ps, err := pseudo.NewService(100, &pseudo.Options{})
 	assert.NoError(t, err)
 
-	st := new(Store)
-	err = ps.FakeData(st)
-	assert.NoError(t, err)
+	t.Run("Store", func(t *testing.T) {
+		st := new(Store)
+		err = ps.FakeData(st)
+		assert.NoError(t, err)
 
-	// just check that it works an no stack overflow happens.
-	_, err = json.Marshal(st)
-	assert.NoError(t, err)
+		// just check that it works an no stack overflow happens.
+		data, err := json.Marshal(st)
+		assert.NoError(t, err)
+		assert.LenBetween(t, data, 2000, 4000)
+	})
+
+	t.Run("StoreWebsite", func(t *testing.T) {
+		st := new(StoreWebsite)
+		err = ps.FakeData(st)
+		assert.NoError(t, err)
+
+		// just check that it works an no stack overflow happens.
+		data, err := json.Marshal(st)
+		assert.NoError(t, err)
+		assert.LenBetween(t, data, 170, 220)
+	})
 }
