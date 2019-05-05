@@ -8,14 +8,16 @@ package dmltestgenerated
 import (
 	"context"
 	"fmt"
+	"sort"
+	"testing"
+	"time"
+
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/pseudo"
-	"sort"
-	"testing"
-	"time"
 )
 
 func TestNewTablesNonDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
@@ -35,6 +37,10 @@ func TestNewTablesNonDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.NoError(t, ps.FakeData(e))
 		assert.NotEqual(t, e, e2)
 	})
+	t.Run("CatalogProductIndexEAVDecimalIDXCollection_Validate", func(t *testing.T) {
+		c := CatalogProductIndexEAVDecimalIDXCollection{Data: []*CatalogProductIndexEAVDecimalIDX{nil}}
+		assert.True(t, errors.NotValid.Match(c.Validate()))
+	})
 	t.Run("CoreConfiguration_Empty", func(t *testing.T) {
 		e := new(CoreConfiguration)
 		assert.NoError(t, ps.FakeData(e))
@@ -48,6 +54,10 @@ func TestNewTablesNonDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.Exactly(t, e, e2)
 		assert.NoError(t, ps.FakeData(e))
 		assert.NotEqual(t, e, e2)
+	})
+	t.Run("CoreConfigurationCollection_Validate", func(t *testing.T) {
+		c := CoreConfigurationCollection{Data: []*CoreConfiguration{nil}}
+		assert.True(t, errors.NotValid.Match(c.Validate()))
 	})
 	t.Run("CustomerAddressEntity_Empty", func(t *testing.T) {
 		e := new(CustomerAddressEntity)
@@ -63,6 +73,10 @@ func TestNewTablesNonDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.NoError(t, ps.FakeData(e))
 		assert.NotEqual(t, e, e2)
 	})
+	t.Run("CustomerAddressEntityCollection_Validate", func(t *testing.T) {
+		c := CustomerAddressEntityCollection{Data: []*CustomerAddressEntity{nil}}
+		assert.True(t, errors.NotValid.Match(c.Validate()))
+	})
 	t.Run("CustomerEntity_Empty", func(t *testing.T) {
 		e := new(CustomerEntity)
 		assert.NoError(t, ps.FakeData(e))
@@ -76,6 +90,10 @@ func TestNewTablesNonDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.Exactly(t, e, e2)
 		assert.NoError(t, ps.FakeData(e))
 		assert.NotEqual(t, e, e2)
+	})
+	t.Run("CustomerEntityCollection_Validate", func(t *testing.T) {
+		c := CustomerEntityCollection{Data: []*CustomerEntity{nil}}
+		assert.True(t, errors.NotValid.Match(c.Validate()))
 	})
 	t.Run("DmlgenTypes_Empty", func(t *testing.T) {
 		e := new(DmlgenTypes)
@@ -91,6 +109,10 @@ func TestNewTablesNonDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.NoError(t, ps.FakeData(e))
 		assert.NotEqual(t, e, e2)
 	})
+	t.Run("DmlgenTypesCollection_Validate", func(t *testing.T) {
+		c := DmlgenTypesCollection{Data: []*DmlgenTypes{nil}}
+		assert.True(t, errors.NotValid.Match(c.Validate()))
+	})
 	t.Run("SalesOrderStatusState_Empty", func(t *testing.T) {
 		e := new(SalesOrderStatusState)
 		assert.NoError(t, ps.FakeData(e))
@@ -104,6 +126,10 @@ func TestNewTablesNonDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.Exactly(t, e, e2)
 		assert.NoError(t, ps.FakeData(e))
 		assert.NotEqual(t, e, e2)
+	})
+	t.Run("SalesOrderStatusStateCollection_Validate", func(t *testing.T) {
+		c := SalesOrderStatusStateCollection{Data: []*SalesOrderStatusState{nil}}
+		assert.True(t, errors.NotValid.Match(c.Validate()))
 	})
 	t.Run("ViewCustomerAutoIncrement_Empty", func(t *testing.T) {
 		e := new(ViewCustomerAutoIncrement)
@@ -119,6 +145,10 @@ func TestNewTablesNonDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.NoError(t, ps.FakeData(e))
 		assert.NotEqual(t, e, e2)
 	})
+	t.Run("ViewCustomerAutoIncrementCollection_Validate", func(t *testing.T) {
+		c := ViewCustomerAutoIncrementCollection{Data: []*ViewCustomerAutoIncrement{nil}}
+		assert.True(t, errors.NotValid.Match(c.Validate()))
+	})
 	t.Run("ViewCustomerNoAutoIncrement_Empty", func(t *testing.T) {
 		e := new(ViewCustomerNoAutoIncrement)
 		assert.NoError(t, ps.FakeData(e))
@@ -132,6 +162,10 @@ func TestNewTablesNonDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.Exactly(t, e, e2)
 		assert.NoError(t, ps.FakeData(e))
 		assert.NotEqual(t, e, e2)
+	})
+	t.Run("ViewCustomerNoAutoIncrementCollection_Validate", func(t *testing.T) {
+		c := ViewCustomerNoAutoIncrementCollection{Data: []*ViewCustomerNoAutoIncrement{nil}}
+		assert.True(t, errors.NotValid.Match(c.Validate()))
 	})
 }
 func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {

@@ -616,10 +616,10 @@ func WithBuildTags(lines ...string) (opt Option) {
 }
 
 // WithCustomCode inserts at the marker position your custom Go code. For
-// available markers search the .go.tpl files for the function call
-// `CustomCode`. An example got written in TestGenerate_Tables_Protobuf_Json. If
-// the marker does not exists or has a typo, no error gets reported and no code
-// gets written.
+// available markers search these .go files for the map access of field
+// *Generator.customCode. An example got written in
+// TestGenerate_Tables_Protobuf_Json. If the marker does not exists or has a
+// typo, no error gets reported and no code gets written.
 func WithCustomCode(marker, code string) (opt Option) {
 	opt.sortOrder = 112
 	opt.fn = func(g *Generator) error {
@@ -687,6 +687,8 @@ func NewGenerator(packageImportPath string, opts ...Option) (*Generator, error) 
 			"context",
 			"sort",
 			"time",
+
+			"github.com/corestoreio/errors",
 			"github.com/corestoreio/pkg/sql/ddl",
 			"github.com/corestoreio/pkg/sql/dml",
 			"github.com/corestoreio/pkg/sql/dmltest",
@@ -964,32 +966,37 @@ func (g *Generator) GenerateGo(wMain, wTest io.Writer) error {
 
 	g.fnDBNewTables(mainGen, tables)
 	g.fnTestMainOther(testGen, tables)
+
 	g.fnTestMainDB(testGen, tables)
 
 	// deal with random map to guarantee the persistent code generation.
 	for _, t := range tables {
 		t.entityStruct(mainGen, g)
-		t.fnEntityGetSetPrivateFields(mainGen, g)
-		t.fnEntityEmpty(mainGen, g)
+
 		t.fnEntityCopy(mainGen, g)
-		t.fnEntityWriteTo(mainGen, g)
 		t.fnEntityDBAssignLastInsertID(mainGen, g)
 		t.fnEntityDBMapColumns(mainGen, g)
+		t.fnEntityEmpty(mainGen, g)
+		t.fnEntityGetSetPrivateFields(mainGen, g)
+		t.fnEntityValidate(mainGen, g)
+		t.fnEntityWriteTo(mainGen, g)
 
 		t.collectionStruct(mainGen, g)
-		t.fnCollectionDBAssignLastInsertID(mainGen, g)
-		t.fnCollectionDBMapColumns(mainGen, g)
-		t.fnCollectionUniqueGetters(mainGen, g)
-		t.fnCollectionUniquifiedGetters(mainGen, g)
-		t.fnCollectionWriteTo(mainGen, g)
-		t.fnCollectionFilter(mainGen, g)
-		t.fnCollectionEach(mainGen, g)
-		t.fnCollectionCut(mainGen, g)
-		t.fnCollectionSwap(mainGen, g)
-		t.fnCollectionDelete(mainGen, g)
-		t.fnCollectionInsert(mainGen, g)
+
 		t.fnCollectionAppend(mainGen, g)
 		t.fnCollectionBinaryMarshaler(mainGen, g)
+		t.fnCollectionCut(mainGen, g)
+		t.fnCollectionDBAssignLastInsertID(mainGen, g)
+		t.fnCollectionDBMapColumns(mainGen, g)
+		t.fnCollectionDelete(mainGen, g)
+		t.fnCollectionEach(mainGen, g)
+		t.fnCollectionFilter(mainGen, g)
+		t.fnCollectionInsert(mainGen, g)
+		t.fnCollectionSwap(mainGen, g)
+		t.fnCollectionUniqueGetters(mainGen, g)
+		t.fnCollectionUniquifiedGetters(mainGen, g)
+		t.fnCollectionValidate(mainGen, g)
+		t.fnCollectionWriteTo(mainGen, g)
 	}
 
 	// now figure out all used package names in the buffer.
@@ -1005,6 +1012,7 @@ func (g *Generator) GenerateGo(wMain, wTest io.Writer) error {
 	if err := mainGen.GenerateFile(wMain); err != nil {
 		return errors.WithStack(err)
 	}
+
 	if err := testGen.GenerateFile(wTest); err != nil {
 		return errors.WithStack(err)
 	}
@@ -1049,7 +1057,7 @@ func (g *Generator) fnDBNewTables(mainGen *codegen.Go, tbls []*Table) {
 func (g *Generator) fnTestMainOther(testGen *codegen.Go, tbls tables) {
 	// Test Header
 	lenBefore := testGen.Len()
-	var codeWritten bool
+	var codeWritten int
 
 	testGen.Pln(`func TestNewTablesNonDB_` + tbls.nameID() + `(t *testing.T) {`)
 	{
@@ -1060,12 +1068,12 @@ func (g *Generator) fnTestMainOther(testGen *codegen.Go, tbls tables) {
 		// all.
 		testGen.Pln(`_ = ps`)
 		for _, t := range tbls {
-			codeWritten = t.generateTestOther(testGen, g)
+			codeWritten += t.generateTestOther(testGen, g)
 		}
 	}
 	testGen.Pln(`}`) // end TestNewTables
 
-	if !codeWritten {
+	if codeWritten == 0 {
 		testGen.Truncate(lenBefore)
 	}
 }
@@ -1135,7 +1143,9 @@ type ProtocOptions struct {
 	GoGoOutMap         []string
 	SwaggerOutPath     string
 	CustomArgs         []string
-	// TODO add validation plugin, either https://github.com/mwitkow/go-proto-validators as used in github.com/gogo/grpc-example/proto/example.proto
+	// TODO add validation plugin, either
+	//  https://github.com/mwitkow/go-proto-validators as used in github.com/gogo/grpc-example/proto/example.proto
+	//  This github.com/mwitkow/go-proto-validators seems dead.
 	//  or https://github.com/envoyproxy/protoc-gen-validate
 	//  Requirement: error messages must be translatable and maybe use an errors.Kind type
 }

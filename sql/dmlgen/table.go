@@ -32,26 +32,28 @@ type FeatureToggle uint64
 // List of available features
 const (
 	FeatureDB FeatureToggle = 1 << iota
-	FeatureCollectionStruct
-	FeatureEntityStruct
-	FeatureEntityGetSetPrivateFields
-	FeatureEntityEmpty
 	FeatureEntityCopy
-	FeatureEntityDBMapColumns
-	FeatureEntityWriteTo
 	FeatureEntityDBAssignLastInsertID
+	FeatureEntityDBMapColumns
+	FeatureEntityEmpty
+	FeatureEntityGetSetPrivateFields
 	FeatureEntityRelationships
-	FeatureCollectionUniqueGetters
-	FeatureCollectionUniquifiedGetters
-	FeatureCollectionFilter
-	FeatureCollectionEach
-	FeatureCollectionCut
-	FeatureCollectionSwap
-	FeatureCollectionDelete
-	FeatureCollectionInsert
+	FeatureEntityStruct
+	FeatureEntityValidate
+	FeatureEntityWriteTo
 	FeatureCollectionAppend
 	FeatureCollectionBinaryMarshaler
+	FeatureCollectionCut
 	FeatureCollectionDBMapColumns
+	FeatureCollectionDelete
+	FeatureCollectionEach
+	FeatureCollectionFilter
+	FeatureCollectionInsert
+	FeatureCollectionStruct
+	FeatureCollectionSwap
+	FeatureCollectionUniqueGetters
+	FeatureCollectionUniquifiedGetters
+	FeatureCollectionValidate
 )
 
 type tables []*Table
@@ -328,7 +330,7 @@ func (t *Table) fnEntityEmpty(mainGen *codegen.Go, g *Generator) {
 	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityEmpty) {
 		return
 	}
-	mainGen.Pln(`// Empty empties all the fields of the current object. Also known as Reset.`)
+	mainGen.C(`Empty empties all the fields of the current object. Also known as Reset.`)
 	// no idea if pointer dereferencing is bad ...
 	mainGen.Pln(`func (e *`, t.EntityName(), `) Empty() *`, t.EntityName(), ` { *e = `, t.EntityName(), `{}; return e }`)
 }
@@ -337,7 +339,7 @@ func (t *Table) fnEntityCopy(mainGen *codegen.Go, g *Generator) {
 	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityCopy) {
 		return
 	}
-	mainGen.Pln(`// Copy copies the struct and returns a new pointer`)
+	mainGen.C(`Copy copies the struct and returns a new pointer`)
 	mainGen.Pln(`func (e *`, t.EntityName(), `) Copy() *`, t.EntityName(), ` { 
 		e2 := new(`, t.EntityName(), `)
 		*e2 = *e // for now a shallow copy
@@ -741,6 +743,52 @@ func (t *Table) fnCollectionBinaryMarshaler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(`}`)
 }
 
+func (t *Table) fnEntityValidate(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityValidate) {
+		return
+	}
+
+	fn, ok := g.customCode[t.EntityName()+".Validate"]
+
+	if !ok {
+		mainGen.C(`This variable can be set in another file to provide a custom validator.`)
+		mainGen.Pln(`var validate`+t.EntityName(), ` func(*`, t.EntityName(), `) error `)
+	}
+	mainGen.C(`Validate runs internal consistency tests.`)
+	mainGen.Pln(`func (e *`, t.EntityName(), `) Validate() error {`)
+	{
+		mainGen.In()
+		mainGen.Pln(`if e == nil { return errors.NotValid.Newf("Type %T cannot be nil", e) }`)
+		if ok {
+			fn(g, t, mainGen)
+		} else {
+			mainGen.Pln(`if validate`+t.EntityName(), ` != nil { return validate`+t.EntityName(), `(e) }`)
+		}
+
+		mainGen.Out()
+	}
+	mainGen.Pln(`return nil }`)
+}
+
+func (t *Table) fnCollectionValidate(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionValidate) {
+		return
+	}
+	mainGen.C(`Validate runs internal consistency tests on all items.`)
+	mainGen.Pln(`func (cc *`, t.CollectionName(), `) Validate() (err error) {`)
+	{
+		mainGen.In()
+		mainGen.Pln(`if len(cc.Data) == 0 { return nil }`)
+		mainGen.Pln(`for i,ld := 0, len(cc.Data); i < ld && err == nil; i++ {`)
+		{
+			mainGen.Pln(`err = cc.Data[i].Validate()`)
+		}
+		mainGen.Pln(`}`)
+		mainGen.Out()
+	}
+	mainGen.Pln(`return }`)
+}
+
 func (t *Table) fnCollectionDBMapColumns(mainGen *codegen.Go, g *Generator) {
 	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionDBMapColumns|FeatureDB) {
 		return
@@ -818,9 +866,9 @@ func (t *Table) fnCollectionDBMapColumns(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(`}`) // end func MapColumns
 }
 
-func (t *Table) generateTestOther(testGen *codegen.Go, g *Generator) (codeWritten bool) {
+func (t *Table) generateTestOther(testGen *codegen.Go, g *Generator) (codeWritten int) {
 	if g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityEmpty) {
-		testGen.Pln(`t.Run("` + strs.ToGoCamelCase(t.TableName) + `_Empty", func(t *testing.T) {`)
+		testGen.Pln(`t.Run("` + t.EntityName() + `_Empty", func(t *testing.T) {`)
 		{
 			testGen.Pln(`e:= new(`, t.EntityName(), `)`)
 			testGen.Pln(`assert.NoError(t, ps.FakeData(e))`)
@@ -828,10 +876,10 @@ func (t *Table) generateTestOther(testGen *codegen.Go, g *Generator) (codeWritte
 			testGen.Pln(`assert.Exactly(t, *e, `, t.EntityName(), `{})`)
 		}
 		testGen.Pln(`})`) // end t.Run
-		codeWritten = true
+		codeWritten++
 	}
 	if g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityCopy) {
-		testGen.Pln(`t.Run("` + strs.ToGoCamelCase(t.TableName) + `_Copy", func(t *testing.T) {`)
+		testGen.Pln(`t.Run("` + t.EntityName() + `_Copy", func(t *testing.T) {`)
 		{
 			testGen.Pln(`e:= new(`, t.EntityName(), `)`)
 			testGen.Pln(`assert.NoError(t, ps.FakeData(e))`)
@@ -841,7 +889,16 @@ func (t *Table) generateTestOther(testGen *codegen.Go, g *Generator) (codeWritte
 			testGen.Pln(`assert.NotEqual(t, e, e2)`)
 		}
 		testGen.Pln(`})`) // end t.Run
-		codeWritten = true
+		codeWritten++
+	}
+	if g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityValidate) {
+		testGen.Pln(`t.Run("` + t.CollectionName() + `_Validate", func(t *testing.T) {`)
+		{
+			testGen.Pln(`c := `, t.CollectionName(), `{ Data: []*`, t.EntityName(), `{nil} }`)
+			testGen.Pln(`assert.True(t, errors.NotValid.Match(c.Validate()))`)
+		}
+		testGen.Pln(`})`) // end t.Run
+		codeWritten++
 	}
 	// more feature tests to follow
 	return

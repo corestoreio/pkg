@@ -3,8 +3,9 @@
 package dmltestgenerated3
 
 import (
-	"github.com/corestoreio/pkg/storage/null"
 	"time"
+
+	"github.com/corestoreio/pkg/storage/null"
 )
 
 // CatalogCategoryEntity represents a single row for DB table
@@ -212,8 +213,8 @@ type StoreWebsite struct {
 	SortOrder      uint16                // sort_order smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Sort Order"
 	DefaultGroupID uint16                // default_group_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Default Group Id"
 	IsDefault      null.Bool             // is_default smallint(5) unsigned NULL  DEFAULT '0'  "Defines Is Website Default"
-	Store          *StoreCollection      // Reversed 1:M store_website.website_id => store.website_id
 	StoreGroup     *StoreGroupCollection // Reversed 1:M store_website.website_id => store_group.website_id
+	Store          *StoreCollection      // Reversed 1:M store_website.website_id => store.website_id
 }
 
 // StoreWebsiteCollection represents a collection type for DB table store_website
