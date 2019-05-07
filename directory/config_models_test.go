@@ -22,7 +22,7 @@ import (
 	"github.com/corestoreio/pkg/config/cfgpath"
 	"github.com/corestoreio/pkg/directory"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestNewConfigCurrencyGetDefault(t *testing.T) {

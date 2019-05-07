@@ -20,7 +20,7 @@ import (
 
 	"net/http/httptest"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestContextWithError(t *testing.T) {

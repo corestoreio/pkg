@@ -1,4 +1,4 @@
-// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package codegen
-
-import (
-	"testing"
-
-	"github.com/corestoreio/pkg/util/assert"
-)
-
-func TestEntityTypeMapKeys(t *testing.T) {
-	assert.Len(t, ConfigEntityType.Keys(), len(ConfigEntityType))
-}
+// Package eavgen generates code for concrete normalized EAV models.
+package eavgen

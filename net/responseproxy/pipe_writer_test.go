@@ -21,7 +21,7 @@ import (
 
 	"github.com/corestoreio/pkg/net/responseproxy"
 	"github.com/corestoreio/log"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestWrapPipe(t *testing.T) {

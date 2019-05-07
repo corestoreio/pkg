@@ -19,7 +19,7 @@ import (
 
 	"github.com/corestoreio/pkg/i18n"
 	"github.com/corestoreio/pkg/util/slices"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestLocaleAvailable(t *testing.T) {

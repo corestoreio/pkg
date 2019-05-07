@@ -19,7 +19,7 @@ import (
 
 	"github.com/corestoreio/pkg/eav"
 	"github.com/corestoreio/pkg/storage/dbr"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestIfNull(t *testing.T) {

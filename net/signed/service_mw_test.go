@@ -33,7 +33,7 @@ import (
 	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/corestoreio/pkg/util/hashpool"
 	"github.com/corestoreio/errors"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 	_ "golang.org/x/crypto/blake2b"
 )
 

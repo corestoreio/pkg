@@ -30,7 +30,7 @@ import (
 	"github.com/corestoreio/pkg/util/hashpool"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var testData = []byte(`“The most important property of a program is whether it accomplishes the intention of its user.” ― C.A.R. Hoare`)

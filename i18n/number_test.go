@@ -24,7 +24,7 @@ import (
 
 	"github.com/corestoreio/pkg/i18n"
 	"github.com/corestoreio/errors"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var testDefaultNumberSymbols = i18n.Symbols{

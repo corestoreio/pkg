@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var _ scope.RunModeCalculater = (*scope.RunModeFunc)(nil)

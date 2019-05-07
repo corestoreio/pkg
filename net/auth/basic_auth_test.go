@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/errors"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestBasicAuthValidator_UnknownHash(t *testing.T) {

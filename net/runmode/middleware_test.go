@@ -28,7 +28,7 @@ import (
 	"github.com/corestoreio/pkg/store/storemock"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func getReq(m, t string, c *http.Cookie) *http.Request {

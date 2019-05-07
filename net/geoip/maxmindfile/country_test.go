@@ -23,7 +23,7 @@ import (
 
 	"github.com/corestoreio/pkg/net/geoip"
 	"github.com/corestoreio/errors"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var _ geoip.Finder = (*mmdb)(nil)

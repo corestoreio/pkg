@@ -20,7 +20,7 @@ import (
 
 	"github.com/corestoreio/pkg/net/jwt"
 	"github.com/corestoreio/pkg/util/csjwt"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestInternalOptionNoLeakage(t *testing.T) {

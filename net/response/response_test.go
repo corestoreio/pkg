@@ -25,7 +25,7 @@ import (
 	"github.com/corestoreio/pkg/net/response"
 	"github.com/corestoreio/errors"
 	"github.com/spf13/afero"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var nonMarshallableChannel chan bool

@@ -29,7 +29,7 @@ import (
 	"github.com/corestoreio/pkg/net/response"
 	"github.com/klauspost/compress/flate"
 	"github.com/klauspost/compress/gzip"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var testJson string

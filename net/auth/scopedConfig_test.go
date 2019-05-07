@@ -25,7 +25,7 @@ import (
 	"github.com/corestoreio/pkg/net/auth"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/hashpool"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/stretchr/testify/require"
 )
 

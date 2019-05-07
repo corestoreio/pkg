@@ -23,7 +23,7 @@ import (
 
 	"github.com/corestoreio/pkg/net/runmode"
 	"github.com/corestoreio/pkg/store"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var _ store.CodeProcessor = (*runmode.ProcessStoreCodeCookie)(nil)

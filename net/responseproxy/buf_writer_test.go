@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/pkg/net/responseproxy"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestWrapBuffered(t *testing.T) {

@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/pkg/net"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/stretchr/testify/require"
 )
 

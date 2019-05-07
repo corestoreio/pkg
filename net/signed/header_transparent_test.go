@@ -20,7 +20,7 @@ import (
 
 	"github.com/corestoreio/pkg/net/signed"
 	"github.com/corestoreio/pkg/storage/containable"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var _ signed.Cacher = (*set.InMemory)(nil)

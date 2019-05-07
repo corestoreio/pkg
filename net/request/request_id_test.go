@@ -26,7 +26,7 @@ import (
 	"github.com/corestoreio/pkg/net/request"
 	"github.com/corestoreio/pkg/sync/bgwork"
 	"github.com/corestoreio/pkg/util/cstesting"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var _ mw.Middleware = (&request.ID{}).With() // test if function signature matches

@@ -23,7 +23,7 @@ import (
 	csnet "github.com/corestoreio/pkg/net"
 	"github.com/corestoreio/pkg/net/auth"
 	"github.com/corestoreio/pkg/net/request"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 // check if the returned function conforms with the auth package

@@ -24,7 +24,7 @@ import (
 	"github.com/corestoreio/pkg/util/csjwt/jwtclaim"
 	"github.com/corestoreio/pkg/util/shortid"
 	"github.com/corestoreio/errors"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestScopedConfig_ParseFromRequest_Valid(t *testing.T) {

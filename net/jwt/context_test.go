@@ -20,7 +20,7 @@ import (
 	"context"
 
 	"github.com/corestoreio/pkg/util/csjwt"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestFromContext_Token(t *testing.T) {

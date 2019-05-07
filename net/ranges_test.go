@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	csnet "github.com/corestoreio/pkg/net"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestIPRanges_In(t *testing.T) {

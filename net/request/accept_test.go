@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/pkg/net/request"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func getReq(accept string) *http.Request {

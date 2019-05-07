@@ -28,7 +28,7 @@ import (
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/log/logw"
 	"github.com/rs/xstats"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 var _ xstats.XStater = (*accesslog.BlackholeXStat)(nil)

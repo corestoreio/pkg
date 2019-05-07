@@ -23,7 +23,7 @@ import (
 	"github.com/corestoreio/pkg/net/ratelimit/redigostore"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/errors"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestWithGCRARedis(t *testing.T) {
