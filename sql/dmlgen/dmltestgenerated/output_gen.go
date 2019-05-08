@@ -118,30 +118,30 @@ func (e *CatalogProductIndexEAVDecimalIDX) WriteTo(w io.Writer) (n int64, err er
 	return int64(n2), err
 }
 
-// CatalogProductIndexEAVDecimalIDXCollection represents a collection type for DB
-// table catalog_product_index_eav_decimal_idx
+// CatalogProductIndexEAVDecimalIDXes represents a collection type for DB table
+// catalog_product_index_eav_decimal_idx
 // Not thread safe. Auto generated.
-type CatalogProductIndexEAVDecimalIDXCollection struct {
+type CatalogProductIndexEAVDecimalIDXes struct {
 	Data []*CatalogProductIndexEAVDecimalIDX `json:"data,omitempty"`
 }
 
-// NewCatalogProductIndexEAVDecimalIDXCollection  creates a new initialized
-// collection. Auto generated.
-func NewCatalogProductIndexEAVDecimalIDXCollection() *CatalogProductIndexEAVDecimalIDXCollection {
-	return &CatalogProductIndexEAVDecimalIDXCollection{
+// NewCatalogProductIndexEAVDecimalIDXes  creates a new initialized collection.
+// Auto generated.
+func NewCatalogProductIndexEAVDecimalIDXes() *CatalogProductIndexEAVDecimalIDXes {
+	return &CatalogProductIndexEAVDecimalIDXes{
 		Data: make([]*CatalogProductIndexEAVDecimalIDX, 0, 5),
 	}
 }
 
-// Append will add a new item at the end of *
-// CatalogProductIndexEAVDecimalIDXCollection . Auto generated via dmlgen.
-func (cc *CatalogProductIndexEAVDecimalIDXCollection) Append(n ...*CatalogProductIndexEAVDecimalIDX) *CatalogProductIndexEAVDecimalIDXCollection {
+// Append will add a new item at the end of * CatalogProductIndexEAVDecimalIDXes
+// . Auto generated via dmlgen.
+func (cc *CatalogProductIndexEAVDecimalIDXes) Append(n ...*CatalogProductIndexEAVDecimalIDX) *CatalogProductIndexEAVDecimalIDXes {
 	cc.Data = append(cc.Data, n...)
 	return cc
 }
 
 // Cut will remove items i through j-1. Auto generated via dmlgen.
-func (cc *CatalogProductIndexEAVDecimalIDXCollection) Cut(i, j int) *CatalogProductIndexEAVDecimalIDXCollection {
+func (cc *CatalogProductIndexEAVDecimalIDXes) Cut(i, j int) *CatalogProductIndexEAVDecimalIDXes {
 	z := cc.Data // copy slice header
 	copy(z[i:], z[j:])
 	for k, n := len(z)-j+i, len(z); k < n; k++ {
@@ -151,7 +151,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXCollection) Cut(i, j int) *CatalogProd
 	cc.Data = z
 	return cc
 }
-func (cc *CatalogProductIndexEAVDecimalIDXCollection) scanColumns(cm *dml.ColumnMap, e *CatalogProductIndexEAVDecimalIDX, idx uint64) error {
+func (cc *CatalogProductIndexEAVDecimalIDXes) scanColumns(cm *dml.ColumnMap, e *CatalogProductIndexEAVDecimalIDX, idx uint64) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
@@ -160,7 +160,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXCollection) scanColumns(cm *dml.Column
 }
 
 // MapColumns implements dml.ColumnMapper interface. Auto generated.
-func (cc *CatalogProductIndexEAVDecimalIDXCollection) MapColumns(cm *dml.ColumnMap) error {
+func (cc *CatalogProductIndexEAVDecimalIDXes) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
 		for i, e := range cc.Data {
@@ -189,7 +189,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXCollection) MapColumns(cm *dml.ColumnM
 			case "source_id":
 				cm = cm.Uint32s(cc.SourceIDs()...)
 			default:
-				return errors.NotFound.Newf("[dmltestgenerated] CatalogProductIndexEAVDecimalIDXCollection Column %q not found", c)
+				return errors.NotFound.Newf("[dmltestgenerated] CatalogProductIndexEAVDecimalIDXes Column %q not found", c)
 			}
 		} // end for cm.Next
 
@@ -200,7 +200,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXCollection) MapColumns(cm *dml.ColumnM
 }
 
 // Delete will remove an item from the slice. Auto generated via dmlgen.
-func (cc *CatalogProductIndexEAVDecimalIDXCollection) Delete(i int) *CatalogProductIndexEAVDecimalIDXCollection {
+func (cc *CatalogProductIndexEAVDecimalIDXes) Delete(i int) *CatalogProductIndexEAVDecimalIDXes {
 	z := cc.Data // copy the slice header
 	end := len(z) - 1
 	cc.Swap(i, end)
@@ -213,7 +213,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXCollection) Delete(i int) *CatalogProd
 
 // Each will run function f on all items in []* CatalogProductIndexEAVDecimalIDX
 // . Auto generated via dmlgen.
-func (cc *CatalogProductIndexEAVDecimalIDXCollection) Each(f func(*CatalogProductIndexEAVDecimalIDX)) *CatalogProductIndexEAVDecimalIDXCollection {
+func (cc *CatalogProductIndexEAVDecimalIDXes) Each(f func(*CatalogProductIndexEAVDecimalIDX)) *CatalogProductIndexEAVDecimalIDXes {
 	for i := range cc.Data {
 		f(cc.Data[i])
 	}
@@ -222,7 +222,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXCollection) Each(f func(*CatalogProduc
 
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
-func (cc *CatalogProductIndexEAVDecimalIDXCollection) Filter(f func(*CatalogProductIndexEAVDecimalIDX) bool) *CatalogProductIndexEAVDecimalIDXCollection {
+func (cc *CatalogProductIndexEAVDecimalIDXes) Filter(f func(*CatalogProductIndexEAVDecimalIDX) bool) *CatalogProductIndexEAVDecimalIDXes {
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
@@ -236,7 +236,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXCollection) Filter(f func(*CatalogProd
 }
 
 // Insert will place a new item at position i. Auto generated via dmlgen.
-func (cc *CatalogProductIndexEAVDecimalIDXCollection) Insert(n *CatalogProductIndexEAVDecimalIDX, i int) *CatalogProductIndexEAVDecimalIDXCollection {
+func (cc *CatalogProductIndexEAVDecimalIDXes) Insert(n *CatalogProductIndexEAVDecimalIDX, i int) *CatalogProductIndexEAVDecimalIDXes {
 	z := cc.Data // copy the slice header
 	z = append(z, &CatalogProductIndexEAVDecimalIDX{})
 	copy(z[i+1:], z[i:])
@@ -246,16 +246,16 @@ func (cc *CatalogProductIndexEAVDecimalIDXCollection) Insert(n *CatalogProductIn
 }
 
 // Swap will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *CatalogProductIndexEAVDecimalIDXCollection) Swap(i, j int) {
+func (cc *CatalogProductIndexEAVDecimalIDXes) Swap(i, j int) {
 	cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i]
 }
 
 // Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *CatalogProductIndexEAVDecimalIDXCollection) Len() int { return len(cc.Data) }
+func (cc *CatalogProductIndexEAVDecimalIDXes) Len() int { return len(cc.Data) }
 
 // EntityIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
-func (cc *CatalogProductIndexEAVDecimalIDXCollection) EntityIDs(ret ...uint32) []uint32 {
+func (cc *CatalogProductIndexEAVDecimalIDXes) EntityIDs(ret ...uint32) []uint32 {
 	if ret == nil {
 		ret = make([]uint32, 0, len(cc.Data))
 	}
@@ -267,7 +267,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXCollection) EntityIDs(ret ...uint32) [
 
 // AttributeIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
-func (cc *CatalogProductIndexEAVDecimalIDXCollection) AttributeIDs(ret ...uint32) []uint32 {
+func (cc *CatalogProductIndexEAVDecimalIDXes) AttributeIDs(ret ...uint32) []uint32 {
 	if ret == nil {
 		ret = make([]uint32, 0, len(cc.Data))
 	}
@@ -279,7 +279,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXCollection) AttributeIDs(ret ...uint32
 
 // StoreIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
-func (cc *CatalogProductIndexEAVDecimalIDXCollection) StoreIDs(ret ...uint32) []uint32 {
+func (cc *CatalogProductIndexEAVDecimalIDXes) StoreIDs(ret ...uint32) []uint32 {
 	if ret == nil {
 		ret = make([]uint32, 0, len(cc.Data))
 	}
@@ -291,7 +291,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXCollection) StoreIDs(ret ...uint32) []
 
 // Values returns a slice with the data or appends it to a slice.
 // Auto generated.
-func (cc *CatalogProductIndexEAVDecimalIDXCollection) Values(ret ...null.Decimal) []null.Decimal {
+func (cc *CatalogProductIndexEAVDecimalIDXes) Values(ret ...null.Decimal) []null.Decimal {
 	if ret == nil {
 		ret = make([]null.Decimal, 0, len(cc.Data))
 	}
@@ -303,7 +303,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXCollection) Values(ret ...null.Decimal
 
 // SourceIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
-func (cc *CatalogProductIndexEAVDecimalIDXCollection) SourceIDs(ret ...uint32) []uint32 {
+func (cc *CatalogProductIndexEAVDecimalIDXes) SourceIDs(ret ...uint32) []uint32 {
 	if ret == nil {
 		ret = make([]uint32, 0, len(cc.Data))
 	}
@@ -314,7 +314,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXCollection) SourceIDs(ret ...uint32) [
 }
 
 // Validate runs internal consistency tests on all items.
-func (cc *CatalogProductIndexEAVDecimalIDXCollection) Validate() (err error) {
+func (cc *CatalogProductIndexEAVDecimalIDXes) Validate() (err error) {
 	if len(cc.Data) == 0 {
 		return nil
 	}
@@ -327,7 +327,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXCollection) Validate() (err error) {
 // WriteTo implements io.WriterTo and writes the field names and their values to
 // w. This is especially useful for debugging or or generating a hash of the
 // struct.
-func (cc *CatalogProductIndexEAVDecimalIDXCollection) WriteTo(w io.Writer) (n int64, err error) {
+func (cc *CatalogProductIndexEAVDecimalIDXes) WriteTo(w io.Writer) (n int64, err error) {
 	for i, d := range cc.Data {
 		n2, err := d.WriteTo(w)
 		if err != nil {
@@ -430,41 +430,40 @@ func (e *CoreConfiguration) WriteTo(w io.Writer) (n int64, err error) {
 	return int64(n2), err
 }
 
-// CoreConfigurationCollection represents a collection type for DB table
+// CoreConfigurations represents a collection type for DB table
 // core_configuration
 // Not thread safe. Auto generated.
 //easyjson:json
-type CoreConfigurationCollection struct {
+type CoreConfigurations struct {
 	Data []*CoreConfiguration `json:"data,omitempty"`
 }
 
-// NewCoreConfigurationCollection  creates a new initialized collection. Auto
-// generated.
-func NewCoreConfigurationCollection() *CoreConfigurationCollection {
-	return &CoreConfigurationCollection{
+// NewCoreConfigurations  creates a new initialized collection. Auto generated.
+func NewCoreConfigurations() *CoreConfigurations {
+	return &CoreConfigurations{
 		Data: make([]*CoreConfiguration, 0, 5),
 	}
 }
 
-// Append will add a new item at the end of * CoreConfigurationCollection . Auto
-// generated via dmlgen.
-func (cc *CoreConfigurationCollection) Append(n ...*CoreConfiguration) *CoreConfigurationCollection {
+// Append will add a new item at the end of * CoreConfigurations . Auto generated
+// via dmlgen.
+func (cc *CoreConfigurations) Append(n ...*CoreConfiguration) *CoreConfigurations {
 	cc.Data = append(cc.Data, n...)
 	return cc
 }
 
 // UnmarshalBinary implements encoding.BinaryUnmarshaler.
-func (cc *CoreConfigurationCollection) UnmarshalBinary(data []byte) error {
+func (cc *CoreConfigurations) UnmarshalBinary(data []byte) error {
 	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
 }
 
 // MarshalBinary implements encoding.BinaryMarshaler.
-func (cc *CoreConfigurationCollection) MarshalBinary() (data []byte, err error) {
+func (cc *CoreConfigurations) MarshalBinary() (data []byte, err error) {
 	return cc.Marshal() // Implemented via github.com/gogo/protobuf
 }
 
 // Cut will remove items i through j-1. Auto generated via dmlgen.
-func (cc *CoreConfigurationCollection) Cut(i, j int) *CoreConfigurationCollection {
+func (cc *CoreConfigurations) Cut(i, j int) *CoreConfigurations {
 	z := cc.Data // copy slice header
 	copy(z[i:], z[j:])
 	for k, n := len(z)-j+i, len(z); k < n; k++ {
@@ -477,14 +476,14 @@ func (cc *CoreConfigurationCollection) Cut(i, j int) *CoreConfigurationCollectio
 
 // AssignLastInsertID traverses through the slice and sets a decrementing new ID
 // to each entity.
-func (cc *CoreConfigurationCollection) AssignLastInsertID(id int64) {
+func (cc *CoreConfigurations) AssignLastInsertID(id int64) {
 	var j int64
 	for i := len(cc.Data) - 1; i >= 0; i-- {
 		cc.Data[i].AssignLastInsertID(id - j)
 		j++
 	}
 }
-func (cc *CoreConfigurationCollection) scanColumns(cm *dml.ColumnMap, e *CoreConfiguration, idx uint64) error {
+func (cc *CoreConfigurations) scanColumns(cm *dml.ColumnMap, e *CoreConfiguration, idx uint64) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
@@ -493,7 +492,7 @@ func (cc *CoreConfigurationCollection) scanColumns(cm *dml.ColumnMap, e *CoreCon
 }
 
 // MapColumns implements dml.ColumnMapper interface. Auto generated.
-func (cc *CoreConfigurationCollection) MapColumns(cm *dml.ColumnMap) error {
+func (cc *CoreConfigurations) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
 		for i, e := range cc.Data {
@@ -516,7 +515,7 @@ func (cc *CoreConfigurationCollection) MapColumns(cm *dml.ColumnMap) error {
 			case "config_id":
 				cm = cm.Uint32s(cc.ConfigIDs()...)
 			default:
-				return errors.NotFound.Newf("[dmltestgenerated] CoreConfigurationCollection Column %q not found", c)
+				return errors.NotFound.Newf("[dmltestgenerated] CoreConfigurations Column %q not found", c)
 			}
 		} // end for cm.Next
 
@@ -527,7 +526,7 @@ func (cc *CoreConfigurationCollection) MapColumns(cm *dml.ColumnMap) error {
 }
 
 // Delete will remove an item from the slice. Auto generated via dmlgen.
-func (cc *CoreConfigurationCollection) Delete(i int) *CoreConfigurationCollection {
+func (cc *CoreConfigurations) Delete(i int) *CoreConfigurations {
 	z := cc.Data // copy the slice header
 	end := len(z) - 1
 	cc.Swap(i, end)
@@ -540,7 +539,7 @@ func (cc *CoreConfigurationCollection) Delete(i int) *CoreConfigurationCollectio
 
 // Each will run function f on all items in []* CoreConfiguration . Auto
 // generated via dmlgen.
-func (cc *CoreConfigurationCollection) Each(f func(*CoreConfiguration)) *CoreConfigurationCollection {
+func (cc *CoreConfigurations) Each(f func(*CoreConfiguration)) *CoreConfigurations {
 	for i := range cc.Data {
 		f(cc.Data[i])
 	}
@@ -549,7 +548,7 @@ func (cc *CoreConfigurationCollection) Each(f func(*CoreConfiguration)) *CoreCon
 
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
-func (cc *CoreConfigurationCollection) Filter(f func(*CoreConfiguration) bool) *CoreConfigurationCollection {
+func (cc *CoreConfigurations) Filter(f func(*CoreConfiguration) bool) *CoreConfigurations {
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
@@ -563,7 +562,7 @@ func (cc *CoreConfigurationCollection) Filter(f func(*CoreConfiguration) bool) *
 }
 
 // Insert will place a new item at position i. Auto generated via dmlgen.
-func (cc *CoreConfigurationCollection) Insert(n *CoreConfiguration, i int) *CoreConfigurationCollection {
+func (cc *CoreConfigurations) Insert(n *CoreConfiguration, i int) *CoreConfigurations {
 	z := cc.Data // copy the slice header
 	z = append(z, &CoreConfiguration{})
 	copy(z[i+1:], z[i:])
@@ -573,16 +572,14 @@ func (cc *CoreConfigurationCollection) Insert(n *CoreConfiguration, i int) *Core
 }
 
 // Swap will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *CoreConfigurationCollection) Swap(i, j int) {
-	cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i]
-}
+func (cc *CoreConfigurations) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
 
 // Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *CoreConfigurationCollection) Len() int { return len(cc.Data) }
+func (cc *CoreConfigurations) Len() int { return len(cc.Data) }
 
 // ConfigIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
-func (cc *CoreConfigurationCollection) ConfigIDs(ret ...uint32) []uint32 {
+func (cc *CoreConfigurations) ConfigIDs(ret ...uint32) []uint32 {
 	if ret == nil {
 		ret = make([]uint32, 0, len(cc.Data))
 	}
@@ -595,7 +592,7 @@ func (cc *CoreConfigurationCollection) ConfigIDs(ret ...uint32) []uint32 {
 // Paths belongs to the column "path" and returns a slice or appends to a slice
 // only unique values of that column. The values will be filtered internally in a
 // Go map. No DB query gets executed. Auto generated.
-func (cc *CoreConfigurationCollection) UniquePaths(ret ...string) []string {
+func (cc *CoreConfigurations) UniquePaths(ret ...string) []string {
 	if ret == nil {
 		ret = make([]string, 0, len(cc.Data))
 	}
@@ -610,7 +607,7 @@ func (cc *CoreConfigurationCollection) UniquePaths(ret ...string) []string {
 }
 
 // Validate runs internal consistency tests on all items.
-func (cc *CoreConfigurationCollection) Validate() (err error) {
+func (cc *CoreConfigurations) Validate() (err error) {
 	if len(cc.Data) == 0 {
 		return nil
 	}
@@ -623,7 +620,7 @@ func (cc *CoreConfigurationCollection) Validate() (err error) {
 // WriteTo implements io.WriterTo and writes the field names and their values to
 // w. This is especially useful for debugging or or generating a hash of the
 // struct.
-func (cc *CoreConfigurationCollection) WriteTo(w io.Writer) (n int64, err error) {
+func (cc *CoreConfigurations) WriteTo(w io.Writer) (n int64, err error) {
 	for i, d := range cc.Data {
 		n2, err := d.WriteTo(w)
 		if err != nil {
@@ -797,41 +794,41 @@ func (e *CustomerAddressEntity) WriteTo(w io.Writer) (n int64, err error) {
 	return int64(n2), err
 }
 
-// CustomerAddressEntityCollection represents a collection type for DB table
+// CustomerAddressEntities represents a collection type for DB table
 // customer_address_entity
 // Not thread safe. Auto generated.
 //easyjson:json
-type CustomerAddressEntityCollection struct {
+type CustomerAddressEntities struct {
 	Data []*CustomerAddressEntity `json:"data,omitempty"`
 }
 
-// NewCustomerAddressEntityCollection  creates a new initialized collection. Auto
+// NewCustomerAddressEntities  creates a new initialized collection. Auto
 // generated.
-func NewCustomerAddressEntityCollection() *CustomerAddressEntityCollection {
-	return &CustomerAddressEntityCollection{
+func NewCustomerAddressEntities() *CustomerAddressEntities {
+	return &CustomerAddressEntities{
 		Data: make([]*CustomerAddressEntity, 0, 5),
 	}
 }
 
-// Append will add a new item at the end of * CustomerAddressEntityCollection .
-// Auto generated via dmlgen.
-func (cc *CustomerAddressEntityCollection) Append(n ...*CustomerAddressEntity) *CustomerAddressEntityCollection {
+// Append will add a new item at the end of * CustomerAddressEntities . Auto
+// generated via dmlgen.
+func (cc *CustomerAddressEntities) Append(n ...*CustomerAddressEntity) *CustomerAddressEntities {
 	cc.Data = append(cc.Data, n...)
 	return cc
 }
 
 // UnmarshalBinary implements encoding.BinaryUnmarshaler.
-func (cc *CustomerAddressEntityCollection) UnmarshalBinary(data []byte) error {
+func (cc *CustomerAddressEntities) UnmarshalBinary(data []byte) error {
 	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
 }
 
 // MarshalBinary implements encoding.BinaryMarshaler.
-func (cc *CustomerAddressEntityCollection) MarshalBinary() (data []byte, err error) {
+func (cc *CustomerAddressEntities) MarshalBinary() (data []byte, err error) {
 	return cc.Marshal() // Implemented via github.com/gogo/protobuf
 }
 
 // Cut will remove items i through j-1. Auto generated via dmlgen.
-func (cc *CustomerAddressEntityCollection) Cut(i, j int) *CustomerAddressEntityCollection {
+func (cc *CustomerAddressEntities) Cut(i, j int) *CustomerAddressEntities {
 	z := cc.Data // copy slice header
 	copy(z[i:], z[j:])
 	for k, n := len(z)-j+i, len(z); k < n; k++ {
@@ -844,14 +841,14 @@ func (cc *CustomerAddressEntityCollection) Cut(i, j int) *CustomerAddressEntityC
 
 // AssignLastInsertID traverses through the slice and sets a decrementing new ID
 // to each entity.
-func (cc *CustomerAddressEntityCollection) AssignLastInsertID(id int64) {
+func (cc *CustomerAddressEntities) AssignLastInsertID(id int64) {
 	var j int64
 	for i := len(cc.Data) - 1; i >= 0; i-- {
 		cc.Data[i].AssignLastInsertID(id - j)
 		j++
 	}
 }
-func (cc *CustomerAddressEntityCollection) scanColumns(cm *dml.ColumnMap, e *CustomerAddressEntity, idx uint64) error {
+func (cc *CustomerAddressEntities) scanColumns(cm *dml.ColumnMap, e *CustomerAddressEntity, idx uint64) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
@@ -860,7 +857,7 @@ func (cc *CustomerAddressEntityCollection) scanColumns(cm *dml.ColumnMap, e *Cus
 }
 
 // MapColumns implements dml.ColumnMapper interface. Auto generated.
-func (cc *CustomerAddressEntityCollection) MapColumns(cm *dml.ColumnMap) error {
+func (cc *CustomerAddressEntities) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
 		for i, e := range cc.Data {
@@ -883,7 +880,7 @@ func (cc *CustomerAddressEntityCollection) MapColumns(cm *dml.ColumnMap) error {
 			case "entity_id":
 				cm = cm.Uint32s(cc.EntityIDs()...)
 			default:
-				return errors.NotFound.Newf("[dmltestgenerated] CustomerAddressEntityCollection Column %q not found", c)
+				return errors.NotFound.Newf("[dmltestgenerated] CustomerAddressEntities Column %q not found", c)
 			}
 		} // end for cm.Next
 
@@ -894,7 +891,7 @@ func (cc *CustomerAddressEntityCollection) MapColumns(cm *dml.ColumnMap) error {
 }
 
 // Delete will remove an item from the slice. Auto generated via dmlgen.
-func (cc *CustomerAddressEntityCollection) Delete(i int) *CustomerAddressEntityCollection {
+func (cc *CustomerAddressEntities) Delete(i int) *CustomerAddressEntities {
 	z := cc.Data // copy the slice header
 	end := len(z) - 1
 	cc.Swap(i, end)
@@ -907,7 +904,7 @@ func (cc *CustomerAddressEntityCollection) Delete(i int) *CustomerAddressEntityC
 
 // Each will run function f on all items in []* CustomerAddressEntity . Auto
 // generated via dmlgen.
-func (cc *CustomerAddressEntityCollection) Each(f func(*CustomerAddressEntity)) *CustomerAddressEntityCollection {
+func (cc *CustomerAddressEntities) Each(f func(*CustomerAddressEntity)) *CustomerAddressEntities {
 	for i := range cc.Data {
 		f(cc.Data[i])
 	}
@@ -916,7 +913,7 @@ func (cc *CustomerAddressEntityCollection) Each(f func(*CustomerAddressEntity)) 
 
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
-func (cc *CustomerAddressEntityCollection) Filter(f func(*CustomerAddressEntity) bool) *CustomerAddressEntityCollection {
+func (cc *CustomerAddressEntities) Filter(f func(*CustomerAddressEntity) bool) *CustomerAddressEntities {
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
@@ -930,7 +927,7 @@ func (cc *CustomerAddressEntityCollection) Filter(f func(*CustomerAddressEntity)
 }
 
 // Insert will place a new item at position i. Auto generated via dmlgen.
-func (cc *CustomerAddressEntityCollection) Insert(n *CustomerAddressEntity, i int) *CustomerAddressEntityCollection {
+func (cc *CustomerAddressEntities) Insert(n *CustomerAddressEntity, i int) *CustomerAddressEntities {
 	z := cc.Data // copy the slice header
 	z = append(z, &CustomerAddressEntity{})
 	copy(z[i+1:], z[i:])
@@ -940,16 +937,14 @@ func (cc *CustomerAddressEntityCollection) Insert(n *CustomerAddressEntity, i in
 }
 
 // Swap will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *CustomerAddressEntityCollection) Swap(i, j int) {
-	cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i]
-}
+func (cc *CustomerAddressEntities) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
 
 // Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *CustomerAddressEntityCollection) Len() int { return len(cc.Data) }
+func (cc *CustomerAddressEntities) Len() int { return len(cc.Data) }
 
 // EntityIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
-func (cc *CustomerAddressEntityCollection) EntityIDs(ret ...uint32) []uint32 {
+func (cc *CustomerAddressEntities) EntityIDs(ret ...uint32) []uint32 {
 	if ret == nil {
 		ret = make([]uint32, 0, len(cc.Data))
 	}
@@ -960,7 +955,7 @@ func (cc *CustomerAddressEntityCollection) EntityIDs(ret ...uint32) []uint32 {
 }
 
 // Validate runs internal consistency tests on all items.
-func (cc *CustomerAddressEntityCollection) Validate() (err error) {
+func (cc *CustomerAddressEntities) Validate() (err error) {
 	if len(cc.Data) == 0 {
 		return nil
 	}
@@ -973,7 +968,7 @@ func (cc *CustomerAddressEntityCollection) Validate() (err error) {
 // WriteTo implements io.WriterTo and writes the field names and their values to
 // w. This is especially useful for debugging or or generating a hash of the
 // struct.
-func (cc *CustomerAddressEntityCollection) WriteTo(w io.Writer) (n int64, err error) {
+func (cc *CustomerAddressEntities) WriteTo(w io.Writer) (n int64, err error) {
 	for i, d := range cc.Data {
 		n2, err := d.WriteTo(w)
 		if err != nil {
@@ -988,35 +983,35 @@ func (cc *CustomerAddressEntityCollection) WriteTo(w io.Writer) (n int64, err er
 // generated.
 //easyjson:json
 type CustomerEntity struct {
-	EntityID               uint32                           `max_len:"10"`  // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
-	WebsiteID              null.Uint32                      `max_len:"5"`   // website_id smallint(5) unsigned NULL MUL DEFAULT 'NULL'  "Website ID"
-	Email                  null.String                      `max_len:"255"` // email varchar(255) NULL MUL DEFAULT 'NULL'  "Email"
-	GroupID                uint32                           `max_len:"5"`   // group_id smallint(5) unsigned NOT NULL  DEFAULT '0'  "Group ID"
-	IncrementID            null.String                      `max_len:"50"`  // increment_id varchar(50) NULL  DEFAULT 'NULL'  "Increment Id"
-	StoreID                null.Uint32                      `max_len:"5"`   // store_id smallint(5) unsigned NULL MUL DEFAULT '0'  "Store ID"
-	CreatedAt              time.Time                        // created_at timestamp NOT NULL  DEFAULT 'current_timestamp()'  "Created At"
-	UpdatedAt              time.Time                        // updated_at timestamp NOT NULL  DEFAULT 'current_timestamp()' on update current_timestamp() "Updated At"
-	IsActive               bool                             `max_len:"5"`   // is_active smallint(5) unsigned NOT NULL  DEFAULT '1'  "Is Active"
-	DisableAutoGroupChange uint32                           `max_len:"5"`   // disable_auto_group_change smallint(5) unsigned NOT NULL  DEFAULT '0'  "Disable automatic group change based on VAT ID"
-	CreatedIn              null.String                      `max_len:"255"` // created_in varchar(255) NULL  DEFAULT 'NULL'  "Created From"
-	Prefix                 null.String                      `max_len:"40"`  // prefix varchar(40) NULL  DEFAULT 'NULL'  "Name Prefix"
-	Firstname              null.String                      `max_len:"255"` // firstname varchar(255) NULL MUL DEFAULT 'NULL'  "First Name"
-	Middlename             null.String                      `max_len:"255"` // middlename varchar(255) NULL  DEFAULT 'NULL'  "Middle Name/Initial"
-	Lastname               null.String                      `max_len:"255"` // lastname varchar(255) NULL MUL DEFAULT 'NULL'  "Last Name"
-	Suffix                 null.String                      `max_len:"40"`  // suffix varchar(40) NULL  DEFAULT 'NULL'  "Name Suffix"
-	Dob                    null.Time                        // dob date NULL  DEFAULT 'NULL'  "Date of Birth"
-	passwordHash           null.String                      `max_len:"128"` // password_hash varchar(128) NULL  DEFAULT 'NULL'  "Password_hash"
-	RpToken                null.String                      `max_len:"128"` // rp_token varchar(128) NULL  DEFAULT 'NULL'  "Reset password token"
-	RpTokenCreatedAt       null.Time                        // rp_token_created_at datetime NULL  DEFAULT 'NULL'  "Reset password token creation time"
-	DefaultBilling         null.Uint32                      `max_len:"10"` // default_billing int(10) unsigned NULL  DEFAULT 'NULL'  "Default Billing Address"
-	DefaultShipping        null.Uint32                      `max_len:"10"` // default_shipping int(10) unsigned NULL  DEFAULT 'NULL'  "Default Shipping Address"
-	Taxvat                 null.String                      `max_len:"50"` // taxvat varchar(50) NULL  DEFAULT 'NULL'  "Tax/VAT Number"
-	Confirmation           null.String                      `max_len:"64"` // confirmation varchar(64) NULL  DEFAULT 'NULL'  "Is Confirmed"
-	Gender                 null.Uint32                      `max_len:"5"`  // gender smallint(5) unsigned NULL  DEFAULT 'NULL'  "Gender"
-	FailuresNum            null.Int32                       `max_len:"5"`  // failures_num smallint(6) NULL  DEFAULT '0'  "Failure Number"
-	FirstFailure           null.Time                        // first_failure timestamp NULL  DEFAULT 'NULL'  "First Failure"
-	LockExpires            null.Time                        // lock_expires timestamp NULL  DEFAULT 'NULL'  "Lock Expiration Date"
-	CustomerAddressEntity  *CustomerAddressEntityCollection // Reversed 1:M customer_entity.entity_id => customer_address_entity.parent_id
+	EntityID                uint32                   `max_len:"10"`  // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
+	WebsiteID               null.Uint32              `max_len:"5"`   // website_id smallint(5) unsigned NULL MUL DEFAULT 'NULL'  "Website ID"
+	Email                   null.String              `max_len:"255"` // email varchar(255) NULL MUL DEFAULT 'NULL'  "Email"
+	GroupID                 uint32                   `max_len:"5"`   // group_id smallint(5) unsigned NOT NULL  DEFAULT '0'  "Group ID"
+	IncrementID             null.String              `max_len:"50"`  // increment_id varchar(50) NULL  DEFAULT 'NULL'  "Increment Id"
+	StoreID                 null.Uint32              `max_len:"5"`   // store_id smallint(5) unsigned NULL MUL DEFAULT '0'  "Store ID"
+	CreatedAt               time.Time                // created_at timestamp NOT NULL  DEFAULT 'current_timestamp()'  "Created At"
+	UpdatedAt               time.Time                // updated_at timestamp NOT NULL  DEFAULT 'current_timestamp()' on update current_timestamp() "Updated At"
+	IsActive                bool                     `max_len:"5"`   // is_active smallint(5) unsigned NOT NULL  DEFAULT '1'  "Is Active"
+	DisableAutoGroupChange  uint32                   `max_len:"5"`   // disable_auto_group_change smallint(5) unsigned NOT NULL  DEFAULT '0'  "Disable automatic group change based on VAT ID"
+	CreatedIn               null.String              `max_len:"255"` // created_in varchar(255) NULL  DEFAULT 'NULL'  "Created From"
+	Prefix                  null.String              `max_len:"40"`  // prefix varchar(40) NULL  DEFAULT 'NULL'  "Name Prefix"
+	Firstname               null.String              `max_len:"255"` // firstname varchar(255) NULL MUL DEFAULT 'NULL'  "First Name"
+	Middlename              null.String              `max_len:"255"` // middlename varchar(255) NULL  DEFAULT 'NULL'  "Middle Name/Initial"
+	Lastname                null.String              `max_len:"255"` // lastname varchar(255) NULL MUL DEFAULT 'NULL'  "Last Name"
+	Suffix                  null.String              `max_len:"40"`  // suffix varchar(40) NULL  DEFAULT 'NULL'  "Name Suffix"
+	Dob                     null.Time                // dob date NULL  DEFAULT 'NULL'  "Date of Birth"
+	passwordHash            null.String              `max_len:"128"` // password_hash varchar(128) NULL  DEFAULT 'NULL'  "Password_hash"
+	RpToken                 null.String              `max_len:"128"` // rp_token varchar(128) NULL  DEFAULT 'NULL'  "Reset password token"
+	RpTokenCreatedAt        null.Time                // rp_token_created_at datetime NULL  DEFAULT 'NULL'  "Reset password token creation time"
+	DefaultBilling          null.Uint32              `max_len:"10"` // default_billing int(10) unsigned NULL  DEFAULT 'NULL'  "Default Billing Address"
+	DefaultShipping         null.Uint32              `max_len:"10"` // default_shipping int(10) unsigned NULL  DEFAULT 'NULL'  "Default Shipping Address"
+	Taxvat                  null.String              `max_len:"50"` // taxvat varchar(50) NULL  DEFAULT 'NULL'  "Tax/VAT Number"
+	Confirmation            null.String              `max_len:"64"` // confirmation varchar(64) NULL  DEFAULT 'NULL'  "Is Confirmed"
+	Gender                  null.Uint32              `max_len:"5"`  // gender smallint(5) unsigned NULL  DEFAULT 'NULL'  "Gender"
+	FailuresNum             null.Int32               `max_len:"5"`  // failures_num smallint(6) NULL  DEFAULT '0'  "Failure Number"
+	FirstFailure            null.Time                // first_failure timestamp NULL  DEFAULT 'NULL'  "First Failure"
+	LockExpires             null.Time                // lock_expires timestamp NULL  DEFAULT 'NULL'  "Lock Expiration Date"
+	CustomerAddressEntities *CustomerAddressEntities // Reversed 1:M customer_entity.entity_id => customer_address_entity.parent_id
 }
 
 // Copy copies the struct and returns a new pointer
@@ -1168,41 +1163,39 @@ func (e *CustomerEntity) WriteTo(w io.Writer) (n int64, err error) {
 	return int64(n2), err
 }
 
-// CustomerEntityCollection represents a collection type for DB table
-// customer_entity
+// CustomerEntities represents a collection type for DB table customer_entity
 // Not thread safe. Auto generated.
 //easyjson:json
-type CustomerEntityCollection struct {
+type CustomerEntities struct {
 	Data []*CustomerEntity `json:"data,omitempty"`
 }
 
-// NewCustomerEntityCollection  creates a new initialized collection. Auto
-// generated.
-func NewCustomerEntityCollection() *CustomerEntityCollection {
-	return &CustomerEntityCollection{
+// NewCustomerEntities  creates a new initialized collection. Auto generated.
+func NewCustomerEntities() *CustomerEntities {
+	return &CustomerEntities{
 		Data: make([]*CustomerEntity, 0, 5),
 	}
 }
 
-// Append will add a new item at the end of * CustomerEntityCollection . Auto
-// generated via dmlgen.
-func (cc *CustomerEntityCollection) Append(n ...*CustomerEntity) *CustomerEntityCollection {
+// Append will add a new item at the end of * CustomerEntities . Auto generated
+// via dmlgen.
+func (cc *CustomerEntities) Append(n ...*CustomerEntity) *CustomerEntities {
 	cc.Data = append(cc.Data, n...)
 	return cc
 }
 
 // UnmarshalBinary implements encoding.BinaryUnmarshaler.
-func (cc *CustomerEntityCollection) UnmarshalBinary(data []byte) error {
+func (cc *CustomerEntities) UnmarshalBinary(data []byte) error {
 	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
 }
 
 // MarshalBinary implements encoding.BinaryMarshaler.
-func (cc *CustomerEntityCollection) MarshalBinary() (data []byte, err error) {
+func (cc *CustomerEntities) MarshalBinary() (data []byte, err error) {
 	return cc.Marshal() // Implemented via github.com/gogo/protobuf
 }
 
 // Cut will remove items i through j-1. Auto generated via dmlgen.
-func (cc *CustomerEntityCollection) Cut(i, j int) *CustomerEntityCollection {
+func (cc *CustomerEntities) Cut(i, j int) *CustomerEntities {
 	z := cc.Data // copy slice header
 	copy(z[i:], z[j:])
 	for k, n := len(z)-j+i, len(z); k < n; k++ {
@@ -1215,14 +1208,14 @@ func (cc *CustomerEntityCollection) Cut(i, j int) *CustomerEntityCollection {
 
 // AssignLastInsertID traverses through the slice and sets a decrementing new ID
 // to each entity.
-func (cc *CustomerEntityCollection) AssignLastInsertID(id int64) {
+func (cc *CustomerEntities) AssignLastInsertID(id int64) {
 	var j int64
 	for i := len(cc.Data) - 1; i >= 0; i-- {
 		cc.Data[i].AssignLastInsertID(id - j)
 		j++
 	}
 }
-func (cc *CustomerEntityCollection) scanColumns(cm *dml.ColumnMap, e *CustomerEntity, idx uint64) error {
+func (cc *CustomerEntities) scanColumns(cm *dml.ColumnMap, e *CustomerEntity, idx uint64) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
@@ -1231,7 +1224,7 @@ func (cc *CustomerEntityCollection) scanColumns(cm *dml.ColumnMap, e *CustomerEn
 }
 
 // MapColumns implements dml.ColumnMapper interface. Auto generated.
-func (cc *CustomerEntityCollection) MapColumns(cm *dml.ColumnMap) error {
+func (cc *CustomerEntities) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
 		for i, e := range cc.Data {
@@ -1254,7 +1247,7 @@ func (cc *CustomerEntityCollection) MapColumns(cm *dml.ColumnMap) error {
 			case "entity_id":
 				cm = cm.Uint32s(cc.EntityIDs()...)
 			default:
-				return errors.NotFound.Newf("[dmltestgenerated] CustomerEntityCollection Column %q not found", c)
+				return errors.NotFound.Newf("[dmltestgenerated] CustomerEntities Column %q not found", c)
 			}
 		} // end for cm.Next
 
@@ -1265,7 +1258,7 @@ func (cc *CustomerEntityCollection) MapColumns(cm *dml.ColumnMap) error {
 }
 
 // Delete will remove an item from the slice. Auto generated via dmlgen.
-func (cc *CustomerEntityCollection) Delete(i int) *CustomerEntityCollection {
+func (cc *CustomerEntities) Delete(i int) *CustomerEntities {
 	z := cc.Data // copy the slice header
 	end := len(z) - 1
 	cc.Swap(i, end)
@@ -1278,7 +1271,7 @@ func (cc *CustomerEntityCollection) Delete(i int) *CustomerEntityCollection {
 
 // Each will run function f on all items in []* CustomerEntity . Auto generated
 // via dmlgen.
-func (cc *CustomerEntityCollection) Each(f func(*CustomerEntity)) *CustomerEntityCollection {
+func (cc *CustomerEntities) Each(f func(*CustomerEntity)) *CustomerEntities {
 	for i := range cc.Data {
 		f(cc.Data[i])
 	}
@@ -1287,7 +1280,7 @@ func (cc *CustomerEntityCollection) Each(f func(*CustomerEntity)) *CustomerEntit
 
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
-func (cc *CustomerEntityCollection) Filter(f func(*CustomerEntity) bool) *CustomerEntityCollection {
+func (cc *CustomerEntities) Filter(f func(*CustomerEntity) bool) *CustomerEntities {
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
@@ -1301,7 +1294,7 @@ func (cc *CustomerEntityCollection) Filter(f func(*CustomerEntity) bool) *Custom
 }
 
 // Insert will place a new item at position i. Auto generated via dmlgen.
-func (cc *CustomerEntityCollection) Insert(n *CustomerEntity, i int) *CustomerEntityCollection {
+func (cc *CustomerEntities) Insert(n *CustomerEntity, i int) *CustomerEntities {
 	z := cc.Data // copy the slice header
 	z = append(z, &CustomerEntity{})
 	copy(z[i+1:], z[i:])
@@ -1311,14 +1304,14 @@ func (cc *CustomerEntityCollection) Insert(n *CustomerEntity, i int) *CustomerEn
 }
 
 // Swap will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *CustomerEntityCollection) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
+func (cc *CustomerEntities) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
 
 // Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *CustomerEntityCollection) Len() int { return len(cc.Data) }
+func (cc *CustomerEntities) Len() int { return len(cc.Data) }
 
 // EntityIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
-func (cc *CustomerEntityCollection) EntityIDs(ret ...uint32) []uint32 {
+func (cc *CustomerEntities) EntityIDs(ret ...uint32) []uint32 {
 	if ret == nil {
 		ret = make([]uint32, 0, len(cc.Data))
 	}
@@ -1329,7 +1322,7 @@ func (cc *CustomerEntityCollection) EntityIDs(ret ...uint32) []uint32 {
 }
 
 // Validate runs internal consistency tests on all items.
-func (cc *CustomerEntityCollection) Validate() (err error) {
+func (cc *CustomerEntities) Validate() (err error) {
 	if len(cc.Data) == 0 {
 		return nil
 	}
@@ -1342,7 +1335,7 @@ func (cc *CustomerEntityCollection) Validate() (err error) {
 // WriteTo implements io.WriterTo and writes the field names and their values to
 // w. This is especially useful for debugging or or generating a hash of the
 // struct.
-func (cc *CustomerEntityCollection) WriteTo(w io.Writer) (n int64, err error) {
+func (cc *CustomerEntities) WriteTo(w io.Writer) (n int64, err error) {
 	for i, d := range cc.Data {
 		n2, err := d.WriteTo(w)
 		if err != nil {
@@ -1369,8 +1362,8 @@ type DmlgenTypes struct {
 	ColDatetime2   time.Time    `json:"col_datetime_2,omitempty"  `                     // col_datetime_2 datetime NOT NULL  DEFAULT ''0000-00-00 00:00:00''  ""
 	ColDecimal101  null.Decimal `json:"col_decimal_10_1,omitempty"  max_len:"10"`       // col_decimal_10_1 decimal(10,1) unsigned NULL  DEFAULT 'NULL'  ""
 	ColDecimal124  null.Decimal `json:"col_decimal_12_4,omitempty"  max_len:"12"`       // col_decimal_12_4 decimal(12,4) NULL  DEFAULT 'NULL'  ""
-	Price124a      null.Decimal `json:"price_12_4a,omitempty"  max_len:"12"`            // price_12_4a decimal(12,4) NULL  DEFAULT 'NULL'  ""
-	Price124b      null.Decimal `json:"price_12_4b,omitempty"  max_len:"12"`            // price_12_4b decimal(12,4) NOT NULL  DEFAULT '0.0000'  ""
+	PriceA124      null.Decimal `json:"price_a_12_4,omitempty"  max_len:"12"`           // price_a_12_4 decimal(12,4) NULL  DEFAULT 'NULL'  ""
+	PriceB124      null.Decimal `json:"price_b_12_4,omitempty"  max_len:"12"`           // price_b_12_4 decimal(12,4) NOT NULL  DEFAULT '0.0000'  ""
 	ColDecimal123  null.Decimal `json:"col_decimal_12_3,omitempty"  max_len:"12"`       // col_decimal_12_3 decimal(12,3) NOT NULL  DEFAULT '0.000'  ""
 	ColDecimal206  null.Decimal `json:"col_decimal_20_6,omitempty"  max_len:"20"`       // col_decimal_20_6 decimal(20,6) NOT NULL  DEFAULT '0.000000'  ""
 	ColDecimal2412 null.Decimal `json:"col_decimal_24_12,omitempty"  max_len:"24"`      // col_decimal_24_12 decimal(24,12) NOT NULL  DEFAULT '0.000000000000'  ""
@@ -1416,7 +1409,7 @@ func (e *DmlgenTypes) AssignLastInsertID(id int64) {
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *DmlgenTypes) MapColumns(cm *dml.ColumnMap) error {
 	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Int32(&e.ID).NullInt64(&e.ColBigint1).Int64(&e.ColBigint2).NullUint64(&e.ColBigint3).Uint64(&e.ColBigint4).Byte(&e.ColBlob).NullTime(&e.ColDate1).Time(&e.ColDate2).NullTime(&e.ColDatetime1).Time(&e.ColDatetime2).Decimal(&e.ColDecimal101).Decimal(&e.ColDecimal124).Decimal(&e.Price124a).Decimal(&e.Price124b).Decimal(&e.ColDecimal123).Decimal(&e.ColDecimal206).Decimal(&e.ColDecimal2412).NullInt32(&e.ColInt1).Int32(&e.ColInt2).NullUint32(&e.ColInt3).Uint32(&e.ColInt4).NullString(&e.ColLongtext1).String(&e.ColLongtext2).Byte(&e.ColMediumblob).NullString(&e.ColMediumtext1).String(&e.ColMediumtext2).NullInt32(&e.ColSmallint1).Int32(&e.ColSmallint2).NullUint32(&e.ColSmallint3).Uint32(&e.ColSmallint4).Bool(&e.HasSmallint5).NullBool(&e.IsSmallint5).NullString(&e.ColText).Time(&e.ColTimestamp1).NullTime(&e.ColTimestamp2).Int32(&e.ColTinyint1).String(&e.ColVarchar1).NullString(&e.ColVarchar100).String(&e.ColVarchar16).NullString(&e.ColChar1).String(&e.ColChar2).Err()
+		return cm.Int32(&e.ID).NullInt64(&e.ColBigint1).Int64(&e.ColBigint2).NullUint64(&e.ColBigint3).Uint64(&e.ColBigint4).Byte(&e.ColBlob).NullTime(&e.ColDate1).Time(&e.ColDate2).NullTime(&e.ColDatetime1).Time(&e.ColDatetime2).Decimal(&e.ColDecimal101).Decimal(&e.ColDecimal124).Decimal(&e.PriceA124).Decimal(&e.PriceB124).Decimal(&e.ColDecimal123).Decimal(&e.ColDecimal206).Decimal(&e.ColDecimal2412).NullInt32(&e.ColInt1).Int32(&e.ColInt2).NullUint32(&e.ColInt3).Uint32(&e.ColInt4).NullString(&e.ColLongtext1).String(&e.ColLongtext2).Byte(&e.ColMediumblob).NullString(&e.ColMediumtext1).String(&e.ColMediumtext2).NullInt32(&e.ColSmallint1).Int32(&e.ColSmallint2).NullUint32(&e.ColSmallint3).Uint32(&e.ColSmallint4).Bool(&e.HasSmallint5).NullBool(&e.IsSmallint5).NullString(&e.ColText).Time(&e.ColTimestamp1).NullTime(&e.ColTimestamp2).Int32(&e.ColTinyint1).String(&e.ColVarchar1).NullString(&e.ColVarchar100).String(&e.ColVarchar16).NullString(&e.ColChar1).String(&e.ColChar2).Err()
 	}
 	for cm.Next() {
 		switch c := cm.Column(); c {
@@ -1444,10 +1437,10 @@ func (e *DmlgenTypes) MapColumns(cm *dml.ColumnMap) error {
 			cm.Decimal(&e.ColDecimal101)
 		case "col_decimal_12_4":
 			cm.Decimal(&e.ColDecimal124)
-		case "price_12_4a":
-			cm.Decimal(&e.Price124a)
-		case "price_12_4b":
-			cm.Decimal(&e.Price124b)
+		case "price_a_12_4":
+			cm.Decimal(&e.PriceA124)
+		case "price_b_12_4":
+			cm.Decimal(&e.PriceB124)
 		case "col_decimal_12_3":
 			cm.Decimal(&e.ColDecimal123)
 		case "col_decimal_20_6":
@@ -1544,8 +1537,8 @@ func (e *DmlgenTypes) WriteTo(w io.Writer) (n int64, err error) {
 		"col_datetime_2:", e.ColDatetime2, "\n",
 		"col_decimal_10_1:", e.ColDecimal101, "\n",
 		"col_decimal_12_4:", e.ColDecimal124, "\n",
-		"price_12_4a:", e.Price124a, "\n",
-		"price_12_4b:", e.Price124b, "\n",
+		"price_a_12_4:", e.PriceA124, "\n",
+		"price_b_12_4:", e.PriceB124, "\n",
 		"col_decimal_12_3:", e.ColDecimal123, "\n",
 		"col_decimal_20_6:", e.ColDecimal206, "\n",
 		"col_decimal_24_12:", e.ColDecimal2412, "\n",
@@ -1754,18 +1747,18 @@ func (cc *DmlgenTypesCollection) UniqueColDate2s(ret ...time.Time) []time.Time {
 	return ret
 }
 
-// Price124as belongs to the column "price_12_4a" and returns a slice or appends
+// PriceA124s belongs to the column "price_a_12_4" and returns a slice or appends
 // to a slice only unique values of that column. The values will be filtered
 // internally in a Go map. No DB query gets executed. Auto generated.
-func (cc *DmlgenTypesCollection) UniquePrice124as(ret ...null.Decimal) []null.Decimal {
+func (cc *DmlgenTypesCollection) UniquePriceA124s(ret ...null.Decimal) []null.Decimal {
 	if ret == nil {
 		ret = make([]null.Decimal, 0, len(cc.Data))
 	}
 	dupCheck := make(map[null.Decimal]bool, len(cc.Data))
 	for _, e := range cc.Data {
-		if !dupCheck[e.Price124a] {
-			ret = append(ret, e.Price124a)
-			dupCheck[e.Price124a] = true
+		if !dupCheck[e.PriceA124] {
+			ret = append(ret, e.PriceA124)
+			dupCheck[e.PriceA124] = true
 		}
 	}
 	return ret
@@ -1937,41 +1930,41 @@ func (e *SalesOrderStatusState) WriteTo(w io.Writer) (n int64, err error) {
 	return int64(n2), err
 }
 
-// SalesOrderStatusStateCollection represents a collection type for DB table
+// SalesOrderStatusStates represents a collection type for DB table
 // sales_order_status_state
 // Not thread safe. Auto generated.
 //easyjson:json
-type SalesOrderStatusStateCollection struct {
+type SalesOrderStatusStates struct {
 	Data []*SalesOrderStatusState `json:"data,omitempty"`
 }
 
-// NewSalesOrderStatusStateCollection  creates a new initialized collection. Auto
+// NewSalesOrderStatusStates  creates a new initialized collection. Auto
 // generated.
-func NewSalesOrderStatusStateCollection() *SalesOrderStatusStateCollection {
-	return &SalesOrderStatusStateCollection{
+func NewSalesOrderStatusStates() *SalesOrderStatusStates {
+	return &SalesOrderStatusStates{
 		Data: make([]*SalesOrderStatusState, 0, 5),
 	}
 }
 
-// Append will add a new item at the end of * SalesOrderStatusStateCollection .
-// Auto generated via dmlgen.
-func (cc *SalesOrderStatusStateCollection) Append(n ...*SalesOrderStatusState) *SalesOrderStatusStateCollection {
+// Append will add a new item at the end of * SalesOrderStatusStates . Auto
+// generated via dmlgen.
+func (cc *SalesOrderStatusStates) Append(n ...*SalesOrderStatusState) *SalesOrderStatusStates {
 	cc.Data = append(cc.Data, n...)
 	return cc
 }
 
 // UnmarshalBinary implements encoding.BinaryUnmarshaler.
-func (cc *SalesOrderStatusStateCollection) UnmarshalBinary(data []byte) error {
+func (cc *SalesOrderStatusStates) UnmarshalBinary(data []byte) error {
 	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
 }
 
 // MarshalBinary implements encoding.BinaryMarshaler.
-func (cc *SalesOrderStatusStateCollection) MarshalBinary() (data []byte, err error) {
+func (cc *SalesOrderStatusStates) MarshalBinary() (data []byte, err error) {
 	return cc.Marshal() // Implemented via github.com/gogo/protobuf
 }
 
 // Cut will remove items i through j-1. Auto generated via dmlgen.
-func (cc *SalesOrderStatusStateCollection) Cut(i, j int) *SalesOrderStatusStateCollection {
+func (cc *SalesOrderStatusStates) Cut(i, j int) *SalesOrderStatusStates {
 	z := cc.Data // copy slice header
 	copy(z[i:], z[j:])
 	for k, n := len(z)-j+i, len(z); k < n; k++ {
@@ -1981,7 +1974,7 @@ func (cc *SalesOrderStatusStateCollection) Cut(i, j int) *SalesOrderStatusStateC
 	cc.Data = z
 	return cc
 }
-func (cc *SalesOrderStatusStateCollection) scanColumns(cm *dml.ColumnMap, e *SalesOrderStatusState, idx uint64) error {
+func (cc *SalesOrderStatusStates) scanColumns(cm *dml.ColumnMap, e *SalesOrderStatusState, idx uint64) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
@@ -1990,7 +1983,7 @@ func (cc *SalesOrderStatusStateCollection) scanColumns(cm *dml.ColumnMap, e *Sal
 }
 
 // MapColumns implements dml.ColumnMapper interface. Auto generated.
-func (cc *SalesOrderStatusStateCollection) MapColumns(cm *dml.ColumnMap) error {
+func (cc *SalesOrderStatusStates) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
 		for i, e := range cc.Data {
@@ -2015,7 +2008,7 @@ func (cc *SalesOrderStatusStateCollection) MapColumns(cm *dml.ColumnMap) error {
 			case "state":
 				cm = cm.Strings(cc.States()...)
 			default:
-				return errors.NotFound.Newf("[dmltestgenerated] SalesOrderStatusStateCollection Column %q not found", c)
+				return errors.NotFound.Newf("[dmltestgenerated] SalesOrderStatusStates Column %q not found", c)
 			}
 		} // end for cm.Next
 
@@ -2026,7 +2019,7 @@ func (cc *SalesOrderStatusStateCollection) MapColumns(cm *dml.ColumnMap) error {
 }
 
 // Delete will remove an item from the slice. Auto generated via dmlgen.
-func (cc *SalesOrderStatusStateCollection) Delete(i int) *SalesOrderStatusStateCollection {
+func (cc *SalesOrderStatusStates) Delete(i int) *SalesOrderStatusStates {
 	z := cc.Data // copy the slice header
 	end := len(z) - 1
 	cc.Swap(i, end)
@@ -2039,7 +2032,7 @@ func (cc *SalesOrderStatusStateCollection) Delete(i int) *SalesOrderStatusStateC
 
 // Each will run function f on all items in []* SalesOrderStatusState . Auto
 // generated via dmlgen.
-func (cc *SalesOrderStatusStateCollection) Each(f func(*SalesOrderStatusState)) *SalesOrderStatusStateCollection {
+func (cc *SalesOrderStatusStates) Each(f func(*SalesOrderStatusState)) *SalesOrderStatusStates {
 	for i := range cc.Data {
 		f(cc.Data[i])
 	}
@@ -2048,7 +2041,7 @@ func (cc *SalesOrderStatusStateCollection) Each(f func(*SalesOrderStatusState)) 
 
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
-func (cc *SalesOrderStatusStateCollection) Filter(f func(*SalesOrderStatusState) bool) *SalesOrderStatusStateCollection {
+func (cc *SalesOrderStatusStates) Filter(f func(*SalesOrderStatusState) bool) *SalesOrderStatusStates {
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
@@ -2062,7 +2055,7 @@ func (cc *SalesOrderStatusStateCollection) Filter(f func(*SalesOrderStatusState)
 }
 
 // Insert will place a new item at position i. Auto generated via dmlgen.
-func (cc *SalesOrderStatusStateCollection) Insert(n *SalesOrderStatusState, i int) *SalesOrderStatusStateCollection {
+func (cc *SalesOrderStatusStates) Insert(n *SalesOrderStatusState, i int) *SalesOrderStatusStates {
 	z := cc.Data // copy the slice header
 	z = append(z, &SalesOrderStatusState{})
 	copy(z[i+1:], z[i:])
@@ -2072,16 +2065,14 @@ func (cc *SalesOrderStatusStateCollection) Insert(n *SalesOrderStatusState, i in
 }
 
 // Swap will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *SalesOrderStatusStateCollection) Swap(i, j int) {
-	cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i]
-}
+func (cc *SalesOrderStatusStates) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
 
 // Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *SalesOrderStatusStateCollection) Len() int { return len(cc.Data) }
+func (cc *SalesOrderStatusStates) Len() int { return len(cc.Data) }
 
 // Statuss returns a slice with the data or appends it to a slice.
 // Auto generated.
-func (cc *SalesOrderStatusStateCollection) Statuss(ret ...string) []string {
+func (cc *SalesOrderStatusStates) Statuss(ret ...string) []string {
 	if ret == nil {
 		ret = make([]string, 0, len(cc.Data))
 	}
@@ -2093,7 +2084,7 @@ func (cc *SalesOrderStatusStateCollection) Statuss(ret ...string) []string {
 
 // States returns a slice with the data or appends it to a slice.
 // Auto generated.
-func (cc *SalesOrderStatusStateCollection) States(ret ...string) []string {
+func (cc *SalesOrderStatusStates) States(ret ...string) []string {
 	if ret == nil {
 		ret = make([]string, 0, len(cc.Data))
 	}
@@ -2104,7 +2095,7 @@ func (cc *SalesOrderStatusStateCollection) States(ret ...string) []string {
 }
 
 // Validate runs internal consistency tests on all items.
-func (cc *SalesOrderStatusStateCollection) Validate() (err error) {
+func (cc *SalesOrderStatusStates) Validate() (err error) {
 	if len(cc.Data) == 0 {
 		return nil
 	}
@@ -2117,7 +2108,7 @@ func (cc *SalesOrderStatusStateCollection) Validate() (err error) {
 // WriteTo implements io.WriterTo and writes the field names and their values to
 // w. This is especially useful for debugging or or generating a hash of the
 // struct.
-func (cc *SalesOrderStatusStateCollection) WriteTo(w io.Writer) (n int64, err error) {
+func (cc *SalesOrderStatusStates) WriteTo(w io.Writer) (n int64, err error) {
 	for i, d := range cc.Data {
 		n2, err := d.WriteTo(w)
 		if err != nil {
@@ -2209,41 +2200,41 @@ func (e *ViewCustomerAutoIncrement) WriteTo(w io.Writer) (n int64, err error) {
 	return int64(n2), err
 }
 
-// ViewCustomerAutoIncrementCollection represents a collection type for DB table
+// ViewCustomerAutoIncrements represents a collection type for DB table
 // view_customer_auto_increment
 // Not thread safe. Auto generated.
 //easyjson:json
-type ViewCustomerAutoIncrementCollection struct {
+type ViewCustomerAutoIncrements struct {
 	Data []*ViewCustomerAutoIncrement `json:"data,omitempty"`
 }
 
-// NewViewCustomerAutoIncrementCollection  creates a new initialized collection.
-// Auto generated.
-func NewViewCustomerAutoIncrementCollection() *ViewCustomerAutoIncrementCollection {
-	return &ViewCustomerAutoIncrementCollection{
+// NewViewCustomerAutoIncrements  creates a new initialized collection. Auto
+// generated.
+func NewViewCustomerAutoIncrements() *ViewCustomerAutoIncrements {
+	return &ViewCustomerAutoIncrements{
 		Data: make([]*ViewCustomerAutoIncrement, 0, 5),
 	}
 }
 
-// Append will add a new item at the end of * ViewCustomerAutoIncrementCollection
-// . Auto generated via dmlgen.
-func (cc *ViewCustomerAutoIncrementCollection) Append(n ...*ViewCustomerAutoIncrement) *ViewCustomerAutoIncrementCollection {
+// Append will add a new item at the end of * ViewCustomerAutoIncrements . Auto
+// generated via dmlgen.
+func (cc *ViewCustomerAutoIncrements) Append(n ...*ViewCustomerAutoIncrement) *ViewCustomerAutoIncrements {
 	cc.Data = append(cc.Data, n...)
 	return cc
 }
 
 // UnmarshalBinary implements encoding.BinaryUnmarshaler.
-func (cc *ViewCustomerAutoIncrementCollection) UnmarshalBinary(data []byte) error {
+func (cc *ViewCustomerAutoIncrements) UnmarshalBinary(data []byte) error {
 	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
 }
 
 // MarshalBinary implements encoding.BinaryMarshaler.
-func (cc *ViewCustomerAutoIncrementCollection) MarshalBinary() (data []byte, err error) {
+func (cc *ViewCustomerAutoIncrements) MarshalBinary() (data []byte, err error) {
 	return cc.Marshal() // Implemented via github.com/gogo/protobuf
 }
 
 // Cut will remove items i through j-1. Auto generated via dmlgen.
-func (cc *ViewCustomerAutoIncrementCollection) Cut(i, j int) *ViewCustomerAutoIncrementCollection {
+func (cc *ViewCustomerAutoIncrements) Cut(i, j int) *ViewCustomerAutoIncrements {
 	z := cc.Data // copy slice header
 	copy(z[i:], z[j:])
 	for k, n := len(z)-j+i, len(z); k < n; k++ {
@@ -2253,7 +2244,7 @@ func (cc *ViewCustomerAutoIncrementCollection) Cut(i, j int) *ViewCustomerAutoIn
 	cc.Data = z
 	return cc
 }
-func (cc *ViewCustomerAutoIncrementCollection) scanColumns(cm *dml.ColumnMap, e *ViewCustomerAutoIncrement, idx uint64) error {
+func (cc *ViewCustomerAutoIncrements) scanColumns(cm *dml.ColumnMap, e *ViewCustomerAutoIncrement, idx uint64) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
@@ -2262,7 +2253,7 @@ func (cc *ViewCustomerAutoIncrementCollection) scanColumns(cm *dml.ColumnMap, e 
 }
 
 // MapColumns implements dml.ColumnMapper interface. Auto generated.
-func (cc *ViewCustomerAutoIncrementCollection) MapColumns(cm *dml.ColumnMap) error {
+func (cc *ViewCustomerAutoIncrements) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
 		for i, e := range cc.Data {
@@ -2283,7 +2274,7 @@ func (cc *ViewCustomerAutoIncrementCollection) MapColumns(cm *dml.ColumnMap) err
 		for cm.Next() {
 			switch c := cm.Column(); c {
 			default:
-				return errors.NotFound.Newf("[dmltestgenerated] ViewCustomerAutoIncrementCollection Column %q not found", c)
+				return errors.NotFound.Newf("[dmltestgenerated] ViewCustomerAutoIncrements Column %q not found", c)
 			}
 		} // end for cm.Next
 
@@ -2294,7 +2285,7 @@ func (cc *ViewCustomerAutoIncrementCollection) MapColumns(cm *dml.ColumnMap) err
 }
 
 // Delete will remove an item from the slice. Auto generated via dmlgen.
-func (cc *ViewCustomerAutoIncrementCollection) Delete(i int) *ViewCustomerAutoIncrementCollection {
+func (cc *ViewCustomerAutoIncrements) Delete(i int) *ViewCustomerAutoIncrements {
 	z := cc.Data // copy the slice header
 	end := len(z) - 1
 	cc.Swap(i, end)
@@ -2307,7 +2298,7 @@ func (cc *ViewCustomerAutoIncrementCollection) Delete(i int) *ViewCustomerAutoIn
 
 // Each will run function f on all items in []* ViewCustomerAutoIncrement . Auto
 // generated via dmlgen.
-func (cc *ViewCustomerAutoIncrementCollection) Each(f func(*ViewCustomerAutoIncrement)) *ViewCustomerAutoIncrementCollection {
+func (cc *ViewCustomerAutoIncrements) Each(f func(*ViewCustomerAutoIncrement)) *ViewCustomerAutoIncrements {
 	for i := range cc.Data {
 		f(cc.Data[i])
 	}
@@ -2316,7 +2307,7 @@ func (cc *ViewCustomerAutoIncrementCollection) Each(f func(*ViewCustomerAutoIncr
 
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
-func (cc *ViewCustomerAutoIncrementCollection) Filter(f func(*ViewCustomerAutoIncrement) bool) *ViewCustomerAutoIncrementCollection {
+func (cc *ViewCustomerAutoIncrements) Filter(f func(*ViewCustomerAutoIncrement) bool) *ViewCustomerAutoIncrements {
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
@@ -2330,7 +2321,7 @@ func (cc *ViewCustomerAutoIncrementCollection) Filter(f func(*ViewCustomerAutoIn
 }
 
 // Insert will place a new item at position i. Auto generated via dmlgen.
-func (cc *ViewCustomerAutoIncrementCollection) Insert(n *ViewCustomerAutoIncrement, i int) *ViewCustomerAutoIncrementCollection {
+func (cc *ViewCustomerAutoIncrements) Insert(n *ViewCustomerAutoIncrement, i int) *ViewCustomerAutoIncrements {
 	z := cc.Data // copy the slice header
 	z = append(z, &ViewCustomerAutoIncrement{})
 	copy(z[i+1:], z[i:])
@@ -2340,15 +2331,15 @@ func (cc *ViewCustomerAutoIncrementCollection) Insert(n *ViewCustomerAutoIncreme
 }
 
 // Swap will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *ViewCustomerAutoIncrementCollection) Swap(i, j int) {
+func (cc *ViewCustomerAutoIncrements) Swap(i, j int) {
 	cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i]
 }
 
 // Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *ViewCustomerAutoIncrementCollection) Len() int { return len(cc.Data) }
+func (cc *ViewCustomerAutoIncrements) Len() int { return len(cc.Data) }
 
 // Validate runs internal consistency tests on all items.
-func (cc *ViewCustomerAutoIncrementCollection) Validate() (err error) {
+func (cc *ViewCustomerAutoIncrements) Validate() (err error) {
 	if len(cc.Data) == 0 {
 		return nil
 	}
@@ -2361,7 +2352,7 @@ func (cc *ViewCustomerAutoIncrementCollection) Validate() (err error) {
 // WriteTo implements io.WriterTo and writes the field names and their values to
 // w. This is especially useful for debugging or or generating a hash of the
 // struct.
-func (cc *ViewCustomerAutoIncrementCollection) WriteTo(w io.Writer) (n int64, err error) {
+func (cc *ViewCustomerAutoIncrements) WriteTo(w io.Writer) (n int64, err error) {
 	for i, d := range cc.Data {
 		n2, err := d.WriteTo(w)
 		if err != nil {
@@ -2445,41 +2436,41 @@ func (e *ViewCustomerNoAutoIncrement) WriteTo(w io.Writer) (n int64, err error) 
 	return int64(n2), err
 }
 
-// ViewCustomerNoAutoIncrementCollection represents a collection type for DB
-// table view_customer_no_auto_increment
+// ViewCustomerNoAutoIncrements represents a collection type for DB table
+// view_customer_no_auto_increment
 // Not thread safe. Auto generated.
 //easyjson:json
-type ViewCustomerNoAutoIncrementCollection struct {
+type ViewCustomerNoAutoIncrements struct {
 	Data []*ViewCustomerNoAutoIncrement `json:"data,omitempty"`
 }
 
-// NewViewCustomerNoAutoIncrementCollection  creates a new initialized
-// collection. Auto generated.
-func NewViewCustomerNoAutoIncrementCollection() *ViewCustomerNoAutoIncrementCollection {
-	return &ViewCustomerNoAutoIncrementCollection{
+// NewViewCustomerNoAutoIncrements  creates a new initialized collection. Auto
+// generated.
+func NewViewCustomerNoAutoIncrements() *ViewCustomerNoAutoIncrements {
+	return &ViewCustomerNoAutoIncrements{
 		Data: make([]*ViewCustomerNoAutoIncrement, 0, 5),
 	}
 }
 
-// Append will add a new item at the end of *
-// ViewCustomerNoAutoIncrementCollection . Auto generated via dmlgen.
-func (cc *ViewCustomerNoAutoIncrementCollection) Append(n ...*ViewCustomerNoAutoIncrement) *ViewCustomerNoAutoIncrementCollection {
+// Append will add a new item at the end of * ViewCustomerNoAutoIncrements . Auto
+// generated via dmlgen.
+func (cc *ViewCustomerNoAutoIncrements) Append(n ...*ViewCustomerNoAutoIncrement) *ViewCustomerNoAutoIncrements {
 	cc.Data = append(cc.Data, n...)
 	return cc
 }
 
 // UnmarshalBinary implements encoding.BinaryUnmarshaler.
-func (cc *ViewCustomerNoAutoIncrementCollection) UnmarshalBinary(data []byte) error {
+func (cc *ViewCustomerNoAutoIncrements) UnmarshalBinary(data []byte) error {
 	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
 }
 
 // MarshalBinary implements encoding.BinaryMarshaler.
-func (cc *ViewCustomerNoAutoIncrementCollection) MarshalBinary() (data []byte, err error) {
+func (cc *ViewCustomerNoAutoIncrements) MarshalBinary() (data []byte, err error) {
 	return cc.Marshal() // Implemented via github.com/gogo/protobuf
 }
 
 // Cut will remove items i through j-1. Auto generated via dmlgen.
-func (cc *ViewCustomerNoAutoIncrementCollection) Cut(i, j int) *ViewCustomerNoAutoIncrementCollection {
+func (cc *ViewCustomerNoAutoIncrements) Cut(i, j int) *ViewCustomerNoAutoIncrements {
 	z := cc.Data // copy slice header
 	copy(z[i:], z[j:])
 	for k, n := len(z)-j+i, len(z); k < n; k++ {
@@ -2489,7 +2480,7 @@ func (cc *ViewCustomerNoAutoIncrementCollection) Cut(i, j int) *ViewCustomerNoAu
 	cc.Data = z
 	return cc
 }
-func (cc *ViewCustomerNoAutoIncrementCollection) scanColumns(cm *dml.ColumnMap, e *ViewCustomerNoAutoIncrement, idx uint64) error {
+func (cc *ViewCustomerNoAutoIncrements) scanColumns(cm *dml.ColumnMap, e *ViewCustomerNoAutoIncrement, idx uint64) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
@@ -2498,7 +2489,7 @@ func (cc *ViewCustomerNoAutoIncrementCollection) scanColumns(cm *dml.ColumnMap, 
 }
 
 // MapColumns implements dml.ColumnMapper interface. Auto generated.
-func (cc *ViewCustomerNoAutoIncrementCollection) MapColumns(cm *dml.ColumnMap) error {
+func (cc *ViewCustomerNoAutoIncrements) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
 		for i, e := range cc.Data {
@@ -2519,7 +2510,7 @@ func (cc *ViewCustomerNoAutoIncrementCollection) MapColumns(cm *dml.ColumnMap) e
 		for cm.Next() {
 			switch c := cm.Column(); c {
 			default:
-				return errors.NotFound.Newf("[dmltestgenerated] ViewCustomerNoAutoIncrementCollection Column %q not found", c)
+				return errors.NotFound.Newf("[dmltestgenerated] ViewCustomerNoAutoIncrements Column %q not found", c)
 			}
 		} // end for cm.Next
 
@@ -2530,7 +2521,7 @@ func (cc *ViewCustomerNoAutoIncrementCollection) MapColumns(cm *dml.ColumnMap) e
 }
 
 // Delete will remove an item from the slice. Auto generated via dmlgen.
-func (cc *ViewCustomerNoAutoIncrementCollection) Delete(i int) *ViewCustomerNoAutoIncrementCollection {
+func (cc *ViewCustomerNoAutoIncrements) Delete(i int) *ViewCustomerNoAutoIncrements {
 	z := cc.Data // copy the slice header
 	end := len(z) - 1
 	cc.Swap(i, end)
@@ -2543,7 +2534,7 @@ func (cc *ViewCustomerNoAutoIncrementCollection) Delete(i int) *ViewCustomerNoAu
 
 // Each will run function f on all items in []* ViewCustomerNoAutoIncrement .
 // Auto generated via dmlgen.
-func (cc *ViewCustomerNoAutoIncrementCollection) Each(f func(*ViewCustomerNoAutoIncrement)) *ViewCustomerNoAutoIncrementCollection {
+func (cc *ViewCustomerNoAutoIncrements) Each(f func(*ViewCustomerNoAutoIncrement)) *ViewCustomerNoAutoIncrements {
 	for i := range cc.Data {
 		f(cc.Data[i])
 	}
@@ -2552,7 +2543,7 @@ func (cc *ViewCustomerNoAutoIncrementCollection) Each(f func(*ViewCustomerNoAuto
 
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
-func (cc *ViewCustomerNoAutoIncrementCollection) Filter(f func(*ViewCustomerNoAutoIncrement) bool) *ViewCustomerNoAutoIncrementCollection {
+func (cc *ViewCustomerNoAutoIncrements) Filter(f func(*ViewCustomerNoAutoIncrement) bool) *ViewCustomerNoAutoIncrements {
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
@@ -2566,7 +2557,7 @@ func (cc *ViewCustomerNoAutoIncrementCollection) Filter(f func(*ViewCustomerNoAu
 }
 
 // Insert will place a new item at position i. Auto generated via dmlgen.
-func (cc *ViewCustomerNoAutoIncrementCollection) Insert(n *ViewCustomerNoAutoIncrement, i int) *ViewCustomerNoAutoIncrementCollection {
+func (cc *ViewCustomerNoAutoIncrements) Insert(n *ViewCustomerNoAutoIncrement, i int) *ViewCustomerNoAutoIncrements {
 	z := cc.Data // copy the slice header
 	z = append(z, &ViewCustomerNoAutoIncrement{})
 	copy(z[i+1:], z[i:])
@@ -2576,15 +2567,15 @@ func (cc *ViewCustomerNoAutoIncrementCollection) Insert(n *ViewCustomerNoAutoInc
 }
 
 // Swap will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *ViewCustomerNoAutoIncrementCollection) Swap(i, j int) {
+func (cc *ViewCustomerNoAutoIncrements) Swap(i, j int) {
 	cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i]
 }
 
 // Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *ViewCustomerNoAutoIncrementCollection) Len() int { return len(cc.Data) }
+func (cc *ViewCustomerNoAutoIncrements) Len() int { return len(cc.Data) }
 
 // Validate runs internal consistency tests on all items.
-func (cc *ViewCustomerNoAutoIncrementCollection) Validate() (err error) {
+func (cc *ViewCustomerNoAutoIncrements) Validate() (err error) {
 	if len(cc.Data) == 0 {
 		return nil
 	}
@@ -2597,7 +2588,7 @@ func (cc *ViewCustomerNoAutoIncrementCollection) Validate() (err error) {
 // WriteTo implements io.WriterTo and writes the field names and their values to
 // w. This is especially useful for debugging or or generating a hash of the
 // struct.
-func (cc *ViewCustomerNoAutoIncrementCollection) WriteTo(w io.Writer) (n int64, err error) {
+func (cc *ViewCustomerNoAutoIncrements) WriteTo(w io.Writer) (n int64, err error) {
 	for i, d := range cc.Data {
 		n2, err := d.WriteTo(w)
 		if err != nil {

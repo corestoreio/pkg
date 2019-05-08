@@ -37,8 +37,8 @@ func TestNewTablesNonDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.NoError(t, ps.FakeData(e))
 		assert.NotEqual(t, e, e2)
 	})
-	t.Run("CatalogProductIndexEAVDecimalIDXCollection_Validate", func(t *testing.T) {
-		c := CatalogProductIndexEAVDecimalIDXCollection{Data: []*CatalogProductIndexEAVDecimalIDX{nil}}
+	t.Run("CatalogProductIndexEAVDecimalIDXes_Validate", func(t *testing.T) {
+		c := CatalogProductIndexEAVDecimalIDXes{Data: []*CatalogProductIndexEAVDecimalIDX{nil}}
 		assert.True(t, errors.NotValid.Match(c.Validate()))
 	})
 	t.Run("CoreConfiguration_Empty", func(t *testing.T) {
@@ -55,8 +55,8 @@ func TestNewTablesNonDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.NoError(t, ps.FakeData(e))
 		assert.NotEqual(t, e, e2)
 	})
-	t.Run("CoreConfigurationCollection_Validate", func(t *testing.T) {
-		c := CoreConfigurationCollection{Data: []*CoreConfiguration{nil}}
+	t.Run("CoreConfigurations_Validate", func(t *testing.T) {
+		c := CoreConfigurations{Data: []*CoreConfiguration{nil}}
 		assert.True(t, errors.NotValid.Match(c.Validate()))
 	})
 	t.Run("CustomerAddressEntity_Empty", func(t *testing.T) {
@@ -73,8 +73,8 @@ func TestNewTablesNonDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.NoError(t, ps.FakeData(e))
 		assert.NotEqual(t, e, e2)
 	})
-	t.Run("CustomerAddressEntityCollection_Validate", func(t *testing.T) {
-		c := CustomerAddressEntityCollection{Data: []*CustomerAddressEntity{nil}}
+	t.Run("CustomerAddressEntities_Validate", func(t *testing.T) {
+		c := CustomerAddressEntities{Data: []*CustomerAddressEntity{nil}}
 		assert.True(t, errors.NotValid.Match(c.Validate()))
 	})
 	t.Run("CustomerEntity_Empty", func(t *testing.T) {
@@ -91,8 +91,8 @@ func TestNewTablesNonDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.NoError(t, ps.FakeData(e))
 		assert.NotEqual(t, e, e2)
 	})
-	t.Run("CustomerEntityCollection_Validate", func(t *testing.T) {
-		c := CustomerEntityCollection{Data: []*CustomerEntity{nil}}
+	t.Run("CustomerEntities_Validate", func(t *testing.T) {
+		c := CustomerEntities{Data: []*CustomerEntity{nil}}
 		assert.True(t, errors.NotValid.Match(c.Validate()))
 	})
 	t.Run("DmlgenTypes_Empty", func(t *testing.T) {
@@ -127,8 +127,8 @@ func TestNewTablesNonDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.NoError(t, ps.FakeData(e))
 		assert.NotEqual(t, e, e2)
 	})
-	t.Run("SalesOrderStatusStateCollection_Validate", func(t *testing.T) {
-		c := SalesOrderStatusStateCollection{Data: []*SalesOrderStatusState{nil}}
+	t.Run("SalesOrderStatusStates_Validate", func(t *testing.T) {
+		c := SalesOrderStatusStates{Data: []*SalesOrderStatusState{nil}}
 		assert.True(t, errors.NotValid.Match(c.Validate()))
 	})
 	t.Run("ViewCustomerAutoIncrement_Empty", func(t *testing.T) {
@@ -145,8 +145,8 @@ func TestNewTablesNonDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.NoError(t, ps.FakeData(e))
 		assert.NotEqual(t, e, e2)
 	})
-	t.Run("ViewCustomerAutoIncrementCollection_Validate", func(t *testing.T) {
-		c := ViewCustomerAutoIncrementCollection{Data: []*ViewCustomerAutoIncrement{nil}}
+	t.Run("ViewCustomerAutoIncrements_Validate", func(t *testing.T) {
+		c := ViewCustomerAutoIncrements{Data: []*ViewCustomerAutoIncrement{nil}}
 		assert.True(t, errors.NotValid.Match(c.Validate()))
 	})
 	t.Run("ViewCustomerNoAutoIncrement_Empty", func(t *testing.T) {
@@ -163,8 +163,8 @@ func TestNewTablesNonDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.NoError(t, ps.FakeData(e))
 		assert.NotEqual(t, e, e2)
 	})
-	t.Run("ViewCustomerNoAutoIncrementCollection_Validate", func(t *testing.T) {
-		c := ViewCustomerNoAutoIncrementCollection{Data: []*ViewCustomerNoAutoIncrement{nil}}
+	t.Run("ViewCustomerNoAutoIncrements_Validate", func(t *testing.T) {
+		c := ViewCustomerNoAutoIncrements{Data: []*ViewCustomerNoAutoIncrement{nil}}
 		assert.True(t, errors.NotValid.Match(c.Validate()))
 	})
 }
@@ -233,7 +233,7 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		entSELECT.WithCacheKey("select_10").Wheres.Reset()
 		_, _, err := entSELECT.Where().ToSQL() // ToSQL generates the new cached SQL string with key select_10
 		assert.NoError(t, err)
-		entCol := NewCatalogProductIndexEAVDecimalIDXCollection()
+		entCol := NewCatalogProductIndexEAVDecimalIDXes()
 		// this table/view does not support auto_increment
 		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
 		assert.NoError(t, err)
@@ -250,7 +250,7 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 			dml.Column("config_id").LessOrEqual().Int(10),
 		).ToSQL() // ToSQL generates the new cached SQL string with key select_10
 		assert.NoError(t, err)
-		entCol := NewCoreConfigurationCollection()
+		entCol := NewCoreConfigurations()
 		entINSERT := tbl.Insert().BuildValues()
 		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
 		for i := 0; i < 9; i++ {
@@ -279,7 +279,7 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
 		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
-		lID := dmltest.CheckLastInsertID(t, "Error:  CoreConfigurationCollection ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
+		lID := dmltest.CheckLastInsertID(t, "Error:  CoreConfigurations ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
 		dmltest.Close(t, entINSERTStmtA)
 		t.Logf("Last insert ID into: %d", lID)
 		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())
@@ -295,7 +295,7 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 			dml.Column("entity_id").LessOrEqual().Int(10),
 		).ToSQL() // ToSQL generates the new cached SQL string with key select_10
 		assert.NoError(t, err)
-		entCol := NewCustomerAddressEntityCollection()
+		entCol := NewCustomerAddressEntities()
 		entINSERT := tbl.Insert().BuildValues()
 		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
 		for i := 0; i < 9; i++ {
@@ -341,7 +341,7 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
 		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
-		lID := dmltest.CheckLastInsertID(t, "Error:  CustomerAddressEntityCollection ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
+		lID := dmltest.CheckLastInsertID(t, "Error:  CustomerAddressEntities ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
 		dmltest.Close(t, entINSERTStmtA)
 		t.Logf("Last insert ID into: %d", lID)
 		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())
@@ -357,7 +357,7 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 			dml.Column("entity_id").LessOrEqual().Int(10),
 		).ToSQL() // ToSQL generates the new cached SQL string with key select_10
 		assert.NoError(t, err)
-		entCol := NewCustomerEntityCollection()
+		entCol := NewCustomerEntities()
 		entINSERT := tbl.Insert().BuildValues()
 		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
 		for i := 0; i < 9; i++ {
@@ -406,7 +406,7 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
 		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
-		lID := dmltest.CheckLastInsertID(t, "Error:  CustomerEntityCollection ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
+		lID := dmltest.CheckLastInsertID(t, "Error:  CustomerEntities ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
 		dmltest.Close(t, entINSERTStmtA)
 		t.Logf("Last insert ID into: %d", lID)
 		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())
@@ -449,8 +449,8 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 			assert.Exactly(t, entIn.ColDatetime2, entOut.ColDatetime2, "IDX%d: ColDatetime2 should match", lID)
 			assert.Exactly(t, entIn.ColDecimal101, entOut.ColDecimal101, "IDX%d: ColDecimal101 should match", lID)
 			assert.Exactly(t, entIn.ColDecimal124, entOut.ColDecimal124, "IDX%d: ColDecimal124 should match", lID)
-			assert.Exactly(t, entIn.Price124a, entOut.Price124a, "IDX%d: Price124a should match", lID)
-			assert.Exactly(t, entIn.Price124b, entOut.Price124b, "IDX%d: Price124b should match", lID)
+			assert.Exactly(t, entIn.PriceA124, entOut.PriceA124, "IDX%d: PriceA124 should match", lID)
+			assert.Exactly(t, entIn.PriceB124, entOut.PriceB124, "IDX%d: PriceB124 should match", lID)
 			assert.Exactly(t, entIn.ColDecimal123, entOut.ColDecimal123, "IDX%d: ColDecimal123 should match", lID)
 			assert.Exactly(t, entIn.ColDecimal206, entOut.ColDecimal206, "IDX%d: ColDecimal206 should match", lID)
 			assert.Exactly(t, entIn.ColDecimal2412, entOut.ColDecimal2412, "IDX%d: ColDecimal2412 should match", lID)
@@ -498,7 +498,7 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		entSELECT.WithCacheKey("select_10").Wheres.Reset()
 		_, _, err := entSELECT.Where().ToSQL() // ToSQL generates the new cached SQL string with key select_10
 		assert.NoError(t, err)
-		entCol := NewSalesOrderStatusStateCollection()
+		entCol := NewSalesOrderStatusStates()
 		// this table/view does not support auto_increment
 		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
 		assert.NoError(t, err)
@@ -513,7 +513,7 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		entSELECT.WithCacheKey("select_10").Wheres.Reset()
 		_, _, err := entSELECT.Where().ToSQL() // ToSQL generates the new cached SQL string with key select_10
 		assert.NoError(t, err)
-		entCol := NewViewCustomerAutoIncrementCollection()
+		entCol := NewViewCustomerAutoIncrements()
 		// this table/view does not support auto_increment
 		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
 		assert.NoError(t, err)
@@ -528,7 +528,7 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		entSELECT.WithCacheKey("select_10").Wheres.Reset()
 		_, _, err := entSELECT.Where().ToSQL() // ToSQL generates the new cached SQL string with key select_10
 		assert.NoError(t, err)
-		entCol := NewViewCustomerNoAutoIncrementCollection()
+		entCol := NewViewCustomerNoAutoIncrements()
 		// this table/view does not support auto_increment
 		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
 		assert.NoError(t, err)

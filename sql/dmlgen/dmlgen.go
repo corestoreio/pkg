@@ -339,7 +339,7 @@ func WithTableConfigDefault(opt TableConfig) (o Option) {
 }
 
 func defaultFieldMapFn(s string) string {
-	return strs.ToGoCamelCase(s)
+	return s
 }
 
 // WithTableConfig applies options to an existing table, identified by the table
@@ -778,23 +778,23 @@ func (g *Generator) SerializerType(c *ddl.Column) string {
 
 // SerializerCustomType switches the default type from function SerializerType
 // to the new type. For now supports only protobuf.
-func (g *Generator) SerializerCustomType(c *ddl.Column) string {
+func (g *Generator) SerializerCustomType(c *ddl.Column) []string {
 	pt := g.toSerializerType(c, true)
-	var buf strings.Builder
+	var buf []string
 	if pt == "google.protobuf.Timestamp" {
-		fmt.Fprint(&buf, ",(gogoproto.stdtime)=true")
+		buf = append(buf, "(gogoproto.stdtime)=true")
 	}
 	if pt == "bytes" {
-		return "" // bytes can be null
+		return nil // bytes can be null
 	}
 	if c.IsNull() || strings.IndexByte(pt, '.') > 0 /*whenever it is a custom type like null. or google.proto.timestamp*/ {
 		// Indeed nullable Go Types must be not-nullable in HasSerializer because we
 		// have a non-pointer struct type which contains the field Valid.
 		// HasSerializer treats nullable fields as pointer fields, but that is
 		// ridiculous.
-		fmt.Fprint(&buf, ",(gogoproto.nullable)=false")
+		buf = append(buf, "(gogoproto.nullable)=false")
 	}
-	return buf.String()
+	return buf
 }
 
 // GenerateSerializer writes the protocol buffer specifications into `w` and its test
@@ -857,7 +857,12 @@ func (g *Generator) generateProto(w io.Writer) error {
 					if !hasTimestampField && strings.HasPrefix(serType, "google.protobuf.Timestamp") {
 						hasTimestampField = true
 					}
-					proto.Pln(serType, c.Field+`=`, c.Pos, `[(gogoproto.customname)=`+strconv.Quote(strs.ToGoCamelCase(c.Field)), g.SerializerCustomType(c)+`];`)
+					var optionConcret string
+					if options := g.SerializerCustomType(c); len(options) > 0 {
+						optionConcret = `[` + strings.Join(options, ",") + `]`
+					}
+					// extend here with a custom code option, if someone needs
+					proto.Pln(serType, strs.ToGoCamelCase(c.Field), `=`, c.Pos, optionConcret+`;`)
 					lastColumnPos = c.Pos
 				}
 			})
@@ -878,7 +883,7 @@ func (g *Generator) generateProto(w io.Writer) error {
 						isRelationAllowed := !g.skipRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
 						hasTable := g.Tables[kcuce.ReferencedTableName.String] != nil
 						if isOneToMany && hasTable && isRelationAllowed {
-							proto.Pln(strs.ToGoCamelCase(kcuce.ReferencedTableName.String)+"Collection", fieldMapFn(kcuce.ReferencedTableName.String),
+							proto.Pln(collectionName(kcuce.ReferencedTableName.String), fieldMapFn(collectionName(kcuce.ReferencedTableName.String)),
 								"=", lastColumnPos, ";",
 								"// 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
 							lastColumnPos++
@@ -887,7 +892,7 @@ func (g *Generator) generateProto(w io.Writer) error {
 						// case ONE-TO-ONE
 						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
 						if isOneToOne && hasTable && isRelationAllowed {
-							proto.Pln(strs.ToGoCamelCase(kcuce.ReferencedTableName.String), fieldMapFn(kcuce.ReferencedTableName.String),
+							proto.Pln(strs.ToGoCamelCase(kcuce.ReferencedTableName.String), fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.String)),
 								"=", lastColumnPos, ";",
 								"// 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
 							lastColumnPos++
@@ -906,7 +911,7 @@ func (g *Generator) generateProto(w io.Writer) error {
 						isRelationAllowed := !g.skipRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
 						hasTable := g.Tables[kcuce.ReferencedTableName.String] != nil
 						if isOneToMany && hasTable && isRelationAllowed {
-							proto.Pln(strs.ToGoCamelCase(kcuce.ReferencedTableName.String)+"Collection", fieldMapFn(kcuce.ReferencedTableName.String),
+							proto.Pln(collectionName(kcuce.ReferencedTableName.String), fieldMapFn(collectionName(kcuce.ReferencedTableName.String)),
 								"=", lastColumnPos, ";",
 								"// Reversed 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
 							lastColumnPos++
@@ -915,7 +920,7 @@ func (g *Generator) generateProto(w io.Writer) error {
 						// case ONE-TO-ONE
 						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
 						if isOneToOne && hasTable && isRelationAllowed {
-							proto.Pln(strs.ToGoCamelCase(kcuce.ReferencedTableName.String), fieldMapFn(kcuce.ReferencedTableName.String),
+							proto.Pln(strs.ToGoCamelCase(kcuce.ReferencedTableName.String), fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.String)),
 								"=", lastColumnPos, ";",
 								"// Reversed 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
 							lastColumnPos++

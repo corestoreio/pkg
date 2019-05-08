@@ -12,10 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package dmlgen provides code generation templates and library code for
-// sql/dml.
+// Package dmlgen generates Go code and protocol buffer files from database tables.
 //
-// To generated the protocol buffer file
-// $ protoc --gogo_out=Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types:. --proto_path=/Users/kiri/GoPro/src/:/Users/kiri/GoPro/src/github.com/gogo/protobuf/protobuf/:. *.proto
-//
+// TODO check for https://github.com/improbable-eng/ts-protoc-gen and https://github.com/improbable-eng/grpc-web
 package dmlgen

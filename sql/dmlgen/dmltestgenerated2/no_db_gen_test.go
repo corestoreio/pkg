@@ -27,8 +27,8 @@ func TestNewTablesNonDB_48a8450c0b62e880b2d40acd0bbbd0dc(t *testing.T) {
 		assert.NoError(t, ps.FakeData(e))
 		assert.NotEqual(t, e, e2)
 	})
-	t.Run("CoreConfigurationCollection_Validate", func(t *testing.T) {
-		c := CoreConfigurationCollection{Data: []*CoreConfiguration{nil}}
+	t.Run("CoreConfigurations_Validate", func(t *testing.T) {
+		c := CoreConfigurations{Data: []*CoreConfiguration{nil}}
 		assert.True(t, errors.NotValid.Match(c.Validate()))
 	})
 	t.Run("SalesOrderStatusState_Empty", func(t *testing.T) {
@@ -45,8 +45,8 @@ func TestNewTablesNonDB_48a8450c0b62e880b2d40acd0bbbd0dc(t *testing.T) {
 		assert.NoError(t, ps.FakeData(e))
 		assert.NotEqual(t, e, e2)
 	})
-	t.Run("SalesOrderStatusStateCollection_Validate", func(t *testing.T) {
-		c := SalesOrderStatusStateCollection{Data: []*SalesOrderStatusState{nil}}
+	t.Run("SalesOrderStatusStates_Validate", func(t *testing.T) {
+		c := SalesOrderStatusStates{Data: []*SalesOrderStatusState{nil}}
 		assert.True(t, errors.NotValid.Match(c.Validate()))
 	})
 }

@@ -66,30 +66,29 @@ func (e *CoreConfiguration) WriteTo(w io.Writer) (n int64, err error) {
 	return int64(n2), err
 }
 
-// CoreConfigurationCollection represents a collection type for DB table
+// CoreConfigurations represents a collection type for DB table
 // core_configuration
 // Not thread safe. Auto generated.
-type CoreConfigurationCollection struct {
+type CoreConfigurations struct {
 	Data []*CoreConfiguration `json:"data,omitempty"`
 }
 
-// NewCoreConfigurationCollection  creates a new initialized collection. Auto
-// generated.
-func NewCoreConfigurationCollection() *CoreConfigurationCollection {
-	return &CoreConfigurationCollection{
+// NewCoreConfigurations  creates a new initialized collection. Auto generated.
+func NewCoreConfigurations() *CoreConfigurations {
+	return &CoreConfigurations{
 		Data: make([]*CoreConfiguration, 0, 5),
 	}
 }
 
-// Append will add a new item at the end of * CoreConfigurationCollection . Auto
-// generated via dmlgen.
-func (cc *CoreConfigurationCollection) Append(n ...*CoreConfiguration) *CoreConfigurationCollection {
+// Append will add a new item at the end of * CoreConfigurations . Auto generated
+// via dmlgen.
+func (cc *CoreConfigurations) Append(n ...*CoreConfiguration) *CoreConfigurations {
 	cc.Data = append(cc.Data, n...)
 	return cc
 }
 
 // Cut will remove items i through j-1. Auto generated via dmlgen.
-func (cc *CoreConfigurationCollection) Cut(i, j int) *CoreConfigurationCollection {
+func (cc *CoreConfigurations) Cut(i, j int) *CoreConfigurations {
 	z := cc.Data // copy slice header
 	copy(z[i:], z[j:])
 	for k, n := len(z)-j+i, len(z); k < n; k++ {
@@ -101,7 +100,7 @@ func (cc *CoreConfigurationCollection) Cut(i, j int) *CoreConfigurationCollectio
 }
 
 // Delete will remove an item from the slice. Auto generated via dmlgen.
-func (cc *CoreConfigurationCollection) Delete(i int) *CoreConfigurationCollection {
+func (cc *CoreConfigurations) Delete(i int) *CoreConfigurations {
 	z := cc.Data // copy the slice header
 	end := len(z) - 1
 	cc.Swap(i, end)
@@ -114,7 +113,7 @@ func (cc *CoreConfigurationCollection) Delete(i int) *CoreConfigurationCollectio
 
 // Each will run function f on all items in []* CoreConfiguration . Auto
 // generated via dmlgen.
-func (cc *CoreConfigurationCollection) Each(f func(*CoreConfiguration)) *CoreConfigurationCollection {
+func (cc *CoreConfigurations) Each(f func(*CoreConfiguration)) *CoreConfigurations {
 	for i := range cc.Data {
 		f(cc.Data[i])
 	}
@@ -123,7 +122,7 @@ func (cc *CoreConfigurationCollection) Each(f func(*CoreConfiguration)) *CoreCon
 
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
-func (cc *CoreConfigurationCollection) Filter(f func(*CoreConfiguration) bool) *CoreConfigurationCollection {
+func (cc *CoreConfigurations) Filter(f func(*CoreConfiguration) bool) *CoreConfigurations {
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
@@ -137,7 +136,7 @@ func (cc *CoreConfigurationCollection) Filter(f func(*CoreConfiguration) bool) *
 }
 
 // Insert will place a new item at position i. Auto generated via dmlgen.
-func (cc *CoreConfigurationCollection) Insert(n *CoreConfiguration, i int) *CoreConfigurationCollection {
+func (cc *CoreConfigurations) Insert(n *CoreConfiguration, i int) *CoreConfigurations {
 	z := cc.Data // copy the slice header
 	z = append(z, &CoreConfiguration{})
 	copy(z[i+1:], z[i:])
@@ -147,16 +146,14 @@ func (cc *CoreConfigurationCollection) Insert(n *CoreConfiguration, i int) *Core
 }
 
 // Swap will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *CoreConfigurationCollection) Swap(i, j int) {
-	cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i]
-}
+func (cc *CoreConfigurations) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
 
 // Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *CoreConfigurationCollection) Len() int { return len(cc.Data) }
+func (cc *CoreConfigurations) Len() int { return len(cc.Data) }
 
 // ConfigIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
-func (cc *CoreConfigurationCollection) ConfigIDs(ret ...uint32) []uint32 {
+func (cc *CoreConfigurations) ConfigIDs(ret ...uint32) []uint32 {
 	if ret == nil {
 		ret = make([]uint32, 0, len(cc.Data))
 	}
@@ -167,7 +164,7 @@ func (cc *CoreConfigurationCollection) ConfigIDs(ret ...uint32) []uint32 {
 }
 
 // Validate runs internal consistency tests on all items.
-func (cc *CoreConfigurationCollection) Validate() (err error) {
+func (cc *CoreConfigurations) Validate() (err error) {
 	if len(cc.Data) == 0 {
 		return nil
 	}
@@ -180,7 +177,7 @@ func (cc *CoreConfigurationCollection) Validate() (err error) {
 // WriteTo implements io.WriterTo and writes the field names and their values to
 // w. This is especially useful for debugging or or generating a hash of the
 // struct.
-func (cc *CoreConfigurationCollection) WriteTo(w io.Writer) (n int64, err error) {
+func (cc *CoreConfigurations) WriteTo(w io.Writer) (n int64, err error) {
 	for i, d := range cc.Data {
 		n2, err := d.WriteTo(w)
 		if err != nil {
@@ -241,30 +238,30 @@ func (e *SalesOrderStatusState) WriteTo(w io.Writer) (n int64, err error) {
 	return int64(n2), err
 }
 
-// SalesOrderStatusStateCollection represents a collection type for DB table
+// SalesOrderStatusStates represents a collection type for DB table
 // sales_order_status_state
 // Not thread safe. Auto generated.
-type SalesOrderStatusStateCollection struct {
+type SalesOrderStatusStates struct {
 	Data []*SalesOrderStatusState `json:"data,omitempty"`
 }
 
-// NewSalesOrderStatusStateCollection  creates a new initialized collection. Auto
+// NewSalesOrderStatusStates  creates a new initialized collection. Auto
 // generated.
-func NewSalesOrderStatusStateCollection() *SalesOrderStatusStateCollection {
-	return &SalesOrderStatusStateCollection{
+func NewSalesOrderStatusStates() *SalesOrderStatusStates {
+	return &SalesOrderStatusStates{
 		Data: make([]*SalesOrderStatusState, 0, 5),
 	}
 }
 
-// Append will add a new item at the end of * SalesOrderStatusStateCollection .
-// Auto generated via dmlgen.
-func (cc *SalesOrderStatusStateCollection) Append(n ...*SalesOrderStatusState) *SalesOrderStatusStateCollection {
+// Append will add a new item at the end of * SalesOrderStatusStates . Auto
+// generated via dmlgen.
+func (cc *SalesOrderStatusStates) Append(n ...*SalesOrderStatusState) *SalesOrderStatusStates {
 	cc.Data = append(cc.Data, n...)
 	return cc
 }
 
 // Cut will remove items i through j-1. Auto generated via dmlgen.
-func (cc *SalesOrderStatusStateCollection) Cut(i, j int) *SalesOrderStatusStateCollection {
+func (cc *SalesOrderStatusStates) Cut(i, j int) *SalesOrderStatusStates {
 	z := cc.Data // copy slice header
 	copy(z[i:], z[j:])
 	for k, n := len(z)-j+i, len(z); k < n; k++ {
@@ -276,7 +273,7 @@ func (cc *SalesOrderStatusStateCollection) Cut(i, j int) *SalesOrderStatusStateC
 }
 
 // Delete will remove an item from the slice. Auto generated via dmlgen.
-func (cc *SalesOrderStatusStateCollection) Delete(i int) *SalesOrderStatusStateCollection {
+func (cc *SalesOrderStatusStates) Delete(i int) *SalesOrderStatusStates {
 	z := cc.Data // copy the slice header
 	end := len(z) - 1
 	cc.Swap(i, end)
@@ -289,7 +286,7 @@ func (cc *SalesOrderStatusStateCollection) Delete(i int) *SalesOrderStatusStateC
 
 // Each will run function f on all items in []* SalesOrderStatusState . Auto
 // generated via dmlgen.
-func (cc *SalesOrderStatusStateCollection) Each(f func(*SalesOrderStatusState)) *SalesOrderStatusStateCollection {
+func (cc *SalesOrderStatusStates) Each(f func(*SalesOrderStatusState)) *SalesOrderStatusStates {
 	for i := range cc.Data {
 		f(cc.Data[i])
 	}
@@ -298,7 +295,7 @@ func (cc *SalesOrderStatusStateCollection) Each(f func(*SalesOrderStatusState)) 
 
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
-func (cc *SalesOrderStatusStateCollection) Filter(f func(*SalesOrderStatusState) bool) *SalesOrderStatusStateCollection {
+func (cc *SalesOrderStatusStates) Filter(f func(*SalesOrderStatusState) bool) *SalesOrderStatusStates {
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
@@ -312,7 +309,7 @@ func (cc *SalesOrderStatusStateCollection) Filter(f func(*SalesOrderStatusState)
 }
 
 // Insert will place a new item at position i. Auto generated via dmlgen.
-func (cc *SalesOrderStatusStateCollection) Insert(n *SalesOrderStatusState, i int) *SalesOrderStatusStateCollection {
+func (cc *SalesOrderStatusStates) Insert(n *SalesOrderStatusState, i int) *SalesOrderStatusStates {
 	z := cc.Data // copy the slice header
 	z = append(z, &SalesOrderStatusState{})
 	copy(z[i+1:], z[i:])
@@ -322,16 +319,14 @@ func (cc *SalesOrderStatusStateCollection) Insert(n *SalesOrderStatusState, i in
 }
 
 // Swap will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *SalesOrderStatusStateCollection) Swap(i, j int) {
-	cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i]
-}
+func (cc *SalesOrderStatusStates) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
 
 // Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *SalesOrderStatusStateCollection) Len() int { return len(cc.Data) }
+func (cc *SalesOrderStatusStates) Len() int { return len(cc.Data) }
 
 // Statuss returns a slice with the data or appends it to a slice.
 // Auto generated.
-func (cc *SalesOrderStatusStateCollection) Statuss(ret ...string) []string {
+func (cc *SalesOrderStatusStates) Statuss(ret ...string) []string {
 	if ret == nil {
 		ret = make([]string, 0, len(cc.Data))
 	}
@@ -343,7 +338,7 @@ func (cc *SalesOrderStatusStateCollection) Statuss(ret ...string) []string {
 
 // States returns a slice with the data or appends it to a slice.
 // Auto generated.
-func (cc *SalesOrderStatusStateCollection) States(ret ...string) []string {
+func (cc *SalesOrderStatusStates) States(ret ...string) []string {
 	if ret == nil {
 		ret = make([]string, 0, len(cc.Data))
 	}
@@ -354,7 +349,7 @@ func (cc *SalesOrderStatusStateCollection) States(ret ...string) []string {
 }
 
 // Validate runs internal consistency tests on all items.
-func (cc *SalesOrderStatusStateCollection) Validate() (err error) {
+func (cc *SalesOrderStatusStates) Validate() (err error) {
 	if len(cc.Data) == 0 {
 		return nil
 	}
@@ -367,7 +362,7 @@ func (cc *SalesOrderStatusStateCollection) Validate() (err error) {
 // WriteTo implements io.WriterTo and writes the field names and their values to
 // w. This is especially useful for debugging or or generating a hash of the
 // struct.
-func (cc *SalesOrderStatusStateCollection) WriteTo(w io.Writer) (n int64, err error) {
+func (cc *SalesOrderStatusStates) WriteTo(w io.Writer) (n int64, err error) {
 	for i, d := range cc.Data {
 		n2, err := d.WriteTo(w)
 		if err != nil {

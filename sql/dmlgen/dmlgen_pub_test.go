@@ -119,9 +119,7 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 				StructTags: []string{"max_len"},
 			}),
 
-		dmlgen.WithTableConfig("catalog_product_index_eav_decimal_idx", &dmlgen.TableConfig{
-			// 		DisableCollectionMethods: true,
-		}),
+		dmlgen.WithTableConfig("catalog_product_index_eav_decimal_idx", &dmlgen.TableConfig{}),
 		dmlgen.WithTableConfig("sales_order_status_state", &dmlgen.TableConfig{
 			Encoders:   []string{"json", "protobuf"},
 			StructTags: []string{"max_len"},
@@ -157,7 +155,7 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 			"dmlgen_types", &dmlgen.TableConfig{
 				Encoders:          []string{"easyjson", "protobuf"},
 				StructTags:        []string{"json", "protobuf", "max_len"},
-				UniquifiedColumns: []string{"col_varchar_100", "price_12_4a", "col_int_1", "col_int_2", "has_smallint_5", "col_date_2"},
+				UniquifiedColumns: []string{"col_varchar_100", "price_a_12_4", "col_int_1", "col_int_2", "has_smallint_5", "col_date_2"},
 				Comment:           "Just another comment.",
 			}),
 

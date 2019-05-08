@@ -19,6 +19,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"strconv"
+	"strings"
 	"unicode"
 
 	"github.com/corestoreio/pkg/sql/ddl"
@@ -122,7 +123,27 @@ func (t *Table) GoCamelMaybePrivate(fieldName string) string {
 }
 
 func (t *Table) CollectionName() string {
-	return strs.ToGoCamelCase(t.TableName) + "Collection"
+	return collectionName(t.TableName)
+}
+
+func collectionName(name string) string {
+	tg := strs.ToGoCamelCase(name)
+	switch {
+	case strings.HasSuffix(name, "y"):
+		return tg[:len(tg)-1] + "ies"
+	case strings.HasSuffix(name, "ch"):
+		return tg + "es"
+	case strings.HasSuffix(name, "x"):
+		return tg + "es"
+	case strings.HasSuffix(name, "us"):
+		return tg + "i" // status -> stati
+	case strings.HasSuffix(name, "um"):
+		return tg + "en" // datum -> daten
+	case strings.HasSuffix(name, "s"):
+		return tg + "Collection" // stupid case, better ideas?
+	default:
+		return tg + "s"
+	}
 }
 
 func (t *Table) EntityName() string {
@@ -233,7 +254,7 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
 						}
 						if isOneToMany && hasTable && isRelationAllowed {
-							mainGen.Pln(fieldMapFn(kcuce.ReferencedTableName.String), " *", strs.ToGoCamelCase(kcuce.ReferencedTableName.String)+"Collection",
+							mainGen.Pln(fieldMapFn(collectionName(kcuce.ReferencedTableName.String)), " *", collectionName(kcuce.ReferencedTableName.String),
 								t.customStructTagFields[kcuce.ReferencedTableName.String],
 								"// 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
 						}
@@ -246,7 +267,7 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
 						}
 						if isOneToOne && hasTable && isRelationAllowed {
-							mainGen.Pln(fieldMapFn(kcuce.ReferencedTableName.String), " *", strs.ToGoCamelCase(kcuce.ReferencedTableName.String),
+							mainGen.Pln(fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.String)), " *", strs.ToGoCamelCase(kcuce.ReferencedTableName.String),
 								t.customStructTagFields[kcuce.ReferencedTableName.String],
 								"// 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
 						}
@@ -269,7 +290,7 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
 						}
 						if isOneToMany && hasTable && isRelationAllowed {
-							mainGen.Pln(fieldMapFn(kcuce.ReferencedTableName.String), " *", strs.ToGoCamelCase(kcuce.ReferencedTableName.String)+"Collection",
+							mainGen.Pln(fieldMapFn(collectionName(kcuce.ReferencedTableName.String)), " *", collectionName(kcuce.ReferencedTableName.String),
 								t.customStructTagFields[kcuce.ReferencedTableName.String],
 								"// Reversed 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
 						}
@@ -282,7 +303,7 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
 						}
 						if isOneToOne && hasTable && isRelationAllowed {
-							mainGen.Pln(fieldMapFn(kcuce.ReferencedTableName.String), " *", strs.ToGoCamelCase(kcuce.ReferencedTableName.String),
+							mainGen.Pln(fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.String)), " *", strs.ToGoCamelCase(kcuce.ReferencedTableName.String),
 								t.customStructTagFields[kcuce.ReferencedTableName.String],
 								"// Reversed 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
 						}

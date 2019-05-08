@@ -18,7 +18,7 @@ var (
 	_ easyjson.Marshaler
 )
 
-func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(in *jlexer.Lexer, out *ViewCustomerNoAutoIncrementCollection) {
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(in *jlexer.Lexer, out *ViewCustomerNoAutoIncrements) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -78,7 +78,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(in *
 		in.Consumed()
 	}
 }
-func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(out *jwriter.Writer, in ViewCustomerNoAutoIncrementCollection) {
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(out *jwriter.Writer, in ViewCustomerNoAutoIncrements) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -109,26 +109,26 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(out 
 }
 
 // MarshalJSON supports json.Marshaler interface
-func (v ViewCustomerNoAutoIncrementCollection) MarshalJSON() ([]byte, error) {
+func (v ViewCustomerNoAutoIncrements) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
 	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
-func (v ViewCustomerNoAutoIncrementCollection) MarshalEasyJSON(w *jwriter.Writer) {
+func (v ViewCustomerNoAutoIncrements) MarshalEasyJSON(w *jwriter.Writer) {
 	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
-func (v *ViewCustomerNoAutoIncrementCollection) UnmarshalJSON(data []byte) error {
+func (v *ViewCustomerNoAutoIncrements) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *ViewCustomerNoAutoIncrementCollection) UnmarshalEasyJSON(l *jlexer.Lexer) {
+func (v *ViewCustomerNoAutoIncrements) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(l, v)
 }
 func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(in *jlexer.Lexer, out *ViewCustomerNoAutoIncrement) {
@@ -240,7 +240,7 @@ func (v *ViewCustomerNoAutoIncrement) UnmarshalJSON(data []byte) error {
 func (v *ViewCustomerNoAutoIncrement) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(l, v)
 }
-func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(in *jlexer.Lexer, out *ViewCustomerAutoIncrementCollection) {
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(in *jlexer.Lexer, out *ViewCustomerAutoIncrements) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -300,7 +300,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(in 
 		in.Consumed()
 	}
 }
-func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(out *jwriter.Writer, in ViewCustomerAutoIncrementCollection) {
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(out *jwriter.Writer, in ViewCustomerAutoIncrements) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -331,26 +331,26 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(out
 }
 
 // MarshalJSON supports json.Marshaler interface
-func (v ViewCustomerAutoIncrementCollection) MarshalJSON() ([]byte, error) {
+func (v ViewCustomerAutoIncrements) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
 	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
-func (v ViewCustomerAutoIncrementCollection) MarshalEasyJSON(w *jwriter.Writer) {
+func (v ViewCustomerAutoIncrements) MarshalEasyJSON(w *jwriter.Writer) {
 	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
-func (v *ViewCustomerAutoIncrementCollection) UnmarshalJSON(data []byte) error {
+func (v *ViewCustomerAutoIncrements) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *ViewCustomerAutoIncrementCollection) UnmarshalEasyJSON(l *jlexer.Lexer) {
+func (v *ViewCustomerAutoIncrements) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(l, v)
 }
 func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(in *jlexer.Lexer, out *ViewCustomerAutoIncrement) {
@@ -486,7 +486,7 @@ func (v *ViewCustomerAutoIncrement) UnmarshalJSON(data []byte) error {
 func (v *ViewCustomerAutoIncrement) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(l, v)
 }
-func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated4(in *jlexer.Lexer, out *SalesOrderStatusStateCollection) {
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated4(in *jlexer.Lexer, out *SalesOrderStatusStates) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -546,7 +546,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated4(in 
 		in.Consumed()
 	}
 }
-func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated4(out *jwriter.Writer, in SalesOrderStatusStateCollection) {
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated4(out *jwriter.Writer, in SalesOrderStatusStates) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -577,26 +577,26 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated4(out
 }
 
 // MarshalJSON supports json.Marshaler interface
-func (v SalesOrderStatusStateCollection) MarshalJSON() ([]byte, error) {
+func (v SalesOrderStatusStates) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
 	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated4(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
-func (v SalesOrderStatusStateCollection) MarshalEasyJSON(w *jwriter.Writer) {
+func (v SalesOrderStatusStates) MarshalEasyJSON(w *jwriter.Writer) {
 	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated4(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
-func (v *SalesOrderStatusStateCollection) UnmarshalJSON(data []byte) error {
+func (v *SalesOrderStatusStates) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated4(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *SalesOrderStatusStateCollection) UnmarshalEasyJSON(l *jlexer.Lexer) {
+func (v *SalesOrderStatusStates) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated4(l, v)
 }
 func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated5(in *jlexer.Lexer, out *SalesOrderStatusState) {
@@ -883,13 +883,13 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated7(in 
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.ColDecimal124).UnmarshalJSON(data))
 			}
-		case "price_12_4a":
+		case "price_a_12_4":
 			if data := in.Raw(); in.Ok() {
-				in.AddError((out.Price124a).UnmarshalJSON(data))
+				in.AddError((out.PriceA124).UnmarshalJSON(data))
 			}
-		case "price_12_4b":
+		case "price_b_12_4":
 			if data := in.Raw(); in.Ok() {
-				in.AddError((out.Price124b).UnmarshalJSON(data))
+				in.AddError((out.PriceB124).UnmarshalJSON(data))
 			}
 		case "col_decimal_12_3":
 			if data := in.Raw(); in.Ok() {
@@ -1115,24 +1115,24 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated7(out
 		out.Raw((in.ColDecimal124).MarshalJSON())
 	}
 	if true {
-		const prefix string = ",\"price_12_4a\":"
+		const prefix string = ",\"price_a_12_4\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
 		} else {
 			out.RawString(prefix)
 		}
-		out.Raw((in.Price124a).MarshalJSON())
+		out.Raw((in.PriceA124).MarshalJSON())
 	}
 	if true {
-		const prefix string = ",\"price_12_4b\":"
+		const prefix string = ",\"price_b_12_4\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
 		} else {
 			out.RawString(prefix)
 		}
-		out.Raw((in.Price124b).MarshalJSON())
+		out.Raw((in.PriceB124).MarshalJSON())
 	}
 	if true {
 		const prefix string = ",\"col_decimal_12_3\":"
@@ -1430,120 +1430,7 @@ func (v *DmlgenTypes) UnmarshalJSON(data []byte) error {
 func (v *DmlgenTypes) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated7(l, v)
 }
-func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated8(in *jlexer.Lexer, out *CustomerEntityCollection) {
-	isTopLevel := in.IsStart()
-	if in.IsNull() {
-		if isTopLevel {
-			in.Consumed()
-		}
-		in.Skip()
-		return
-	}
-	in.Delim('{')
-	for !in.IsDelim('}') {
-		key := in.UnsafeString()
-		in.WantColon()
-		if in.IsNull() {
-			in.Skip()
-			in.WantComma()
-			continue
-		}
-		switch key {
-		case "data":
-			if in.IsNull() {
-				in.Skip()
-				out.Data = nil
-			} else {
-				in.Delim('[')
-				if out.Data == nil {
-					if !in.IsDelim(']') {
-						out.Data = make([]*CustomerEntity, 0, 8)
-					} else {
-						out.Data = []*CustomerEntity{}
-					}
-				} else {
-					out.Data = (out.Data)[:0]
-				}
-				for !in.IsDelim(']') {
-					var v19 *CustomerEntity
-					if in.IsNull() {
-						in.Skip()
-						v19 = nil
-					} else {
-						if v19 == nil {
-							v19 = new(CustomerEntity)
-						}
-						(*v19).UnmarshalEasyJSON(in)
-					}
-					out.Data = append(out.Data, v19)
-					in.WantComma()
-				}
-				in.Delim(']')
-			}
-		default:
-			in.SkipRecursive()
-		}
-		in.WantComma()
-	}
-	in.Delim('}')
-	if isTopLevel {
-		in.Consumed()
-	}
-}
-func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated8(out *jwriter.Writer, in CustomerEntityCollection) {
-	out.RawByte('{')
-	first := true
-	_ = first
-	if len(in.Data) != 0 {
-		const prefix string = ",\"data\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
-		{
-			out.RawByte('[')
-			for v20, v21 := range in.Data {
-				if v20 > 0 {
-					out.RawByte(',')
-				}
-				if v21 == nil {
-					out.RawString("null")
-				} else {
-					(*v21).MarshalEasyJSON(out)
-				}
-			}
-			out.RawByte(']')
-		}
-	}
-	out.RawByte('}')
-}
-
-// MarshalJSON supports json.Marshaler interface
-func (v CustomerEntityCollection) MarshalJSON() ([]byte, error) {
-	w := jwriter.Writer{}
-	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated8(&w, v)
-	return w.Buffer.BuildBytes(), w.Error
-}
-
-// MarshalEasyJSON supports easyjson.Marshaler interface
-func (v CustomerEntityCollection) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated8(w, v)
-}
-
-// UnmarshalJSON supports json.Unmarshaler interface
-func (v *CustomerEntityCollection) UnmarshalJSON(data []byte) error {
-	r := jlexer.Lexer{Data: data}
-	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated8(&r, v)
-	return r.Error()
-}
-
-// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *CustomerEntityCollection) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated8(l, v)
-}
-func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(in *jlexer.Lexer, out *CustomerEntity) {
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated8(in *jlexer.Lexer, out *CustomerEntity) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -1662,15 +1549,15 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(in 
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.LockExpires).UnmarshalJSON(data))
 			}
-		case "customerAddressEntity":
+		case "customerAddressEntities":
 			if in.IsNull() {
 				in.Skip()
-				out.CustomerAddressEntity = nil
+				out.CustomerAddressEntities = nil
 			} else {
-				if out.CustomerAddressEntity == nil {
-					out.CustomerAddressEntity = new(CustomerAddressEntityCollection)
+				if out.CustomerAddressEntities == nil {
+					out.CustomerAddressEntities = new(CustomerAddressEntities)
 				}
-				(*out.CustomerAddressEntity).UnmarshalEasyJSON(in)
+				(*out.CustomerAddressEntities).UnmarshalEasyJSON(in)
 			}
 		default:
 			in.SkipRecursive()
@@ -1682,7 +1569,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(in 
 		in.Consumed()
 	}
 }
-func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(out *jwriter.Writer, in CustomerEntity) {
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated8(out *jwriter.Writer, in CustomerEntity) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -1956,15 +1843,15 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(out
 		}
 		out.Raw((in.LockExpires).MarshalJSON())
 	}
-	if in.CustomerAddressEntity != nil {
-		const prefix string = ",\"customerAddressEntity\":"
+	if in.CustomerAddressEntities != nil {
+		const prefix string = ",\"customerAddressEntities\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
 		} else {
 			out.RawString(prefix)
 		}
-		(*in.CustomerAddressEntity).MarshalEasyJSON(out)
+		(*in.CustomerAddressEntities).MarshalEasyJSON(out)
 	}
 	out.RawByte('}')
 }
@@ -1972,27 +1859,27 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(out
 // MarshalJSON supports json.Marshaler interface
 func (v CustomerEntity) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(&w, v)
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated8(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v CustomerEntity) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(w, v)
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated8(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *CustomerEntity) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(&r, v)
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated8(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *CustomerEntity) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(l, v)
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated8(l, v)
 }
-func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(in *jlexer.Lexer, out *CustomerAddressEntityCollection) {
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(in *jlexer.Lexer, out *CustomerEntities) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -2019,25 +1906,25 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(in
 				in.Delim('[')
 				if out.Data == nil {
 					if !in.IsDelim(']') {
-						out.Data = make([]*CustomerAddressEntity, 0, 8)
+						out.Data = make([]*CustomerEntity, 0, 8)
 					} else {
-						out.Data = []*CustomerAddressEntity{}
+						out.Data = []*CustomerEntity{}
 					}
 				} else {
 					out.Data = (out.Data)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v22 *CustomerAddressEntity
+					var v19 *CustomerEntity
 					if in.IsNull() {
 						in.Skip()
-						v22 = nil
+						v19 = nil
 					} else {
-						if v22 == nil {
-							v22 = new(CustomerAddressEntity)
+						if v19 == nil {
+							v19 = new(CustomerEntity)
 						}
-						(*v22).UnmarshalEasyJSON(in)
+						(*v19).UnmarshalEasyJSON(in)
 					}
-					out.Data = append(out.Data, v22)
+					out.Data = append(out.Data, v19)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -2052,7 +1939,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(in
 		in.Consumed()
 	}
 }
-func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(out *jwriter.Writer, in CustomerAddressEntityCollection) {
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(out *jwriter.Writer, in CustomerEntities) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -2066,14 +1953,14 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(ou
 		}
 		{
 			out.RawByte('[')
-			for v23, v24 := range in.Data {
-				if v23 > 0 {
+			for v20, v21 := range in.Data {
+				if v20 > 0 {
 					out.RawByte(',')
 				}
-				if v24 == nil {
+				if v21 == nil {
 					out.RawString("null")
 				} else {
-					(*v24).MarshalEasyJSON(out)
+					(*v21).MarshalEasyJSON(out)
 				}
 			}
 			out.RawByte(']')
@@ -2083,29 +1970,29 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(ou
 }
 
 // MarshalJSON supports json.Marshaler interface
-func (v CustomerAddressEntityCollection) MarshalJSON() ([]byte, error) {
+func (v CustomerEntities) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(&w, v)
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
-func (v CustomerAddressEntityCollection) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(w, v)
+func (v CustomerEntities) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
-func (v *CustomerAddressEntityCollection) UnmarshalJSON(data []byte) error {
+func (v *CustomerEntities) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(&r, v)
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *CustomerAddressEntityCollection) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(l, v)
+func (v *CustomerEntities) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(l, v)
 }
-func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated11(in *jlexer.Lexer, out *CustomerAddressEntity) {
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(in *jlexer.Lexer, out *CustomerAddressEntity) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -2218,7 +2105,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated11(in
 		in.Consumed()
 	}
 }
-func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated11(out *jwriter.Writer, in CustomerAddressEntity) {
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(out *jwriter.Writer, in CustomerAddressEntity) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -2478,27 +2365,140 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated11(ou
 // MarshalJSON supports json.Marshaler interface
 func (v CustomerAddressEntity) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated11(&w, v)
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v CustomerAddressEntity) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated11(w, v)
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *CustomerAddressEntity) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *CustomerAddressEntity) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(l, v)
+}
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated11(in *jlexer.Lexer, out *CustomerAddressEntities) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "data":
+			if in.IsNull() {
+				in.Skip()
+				out.Data = nil
+			} else {
+				in.Delim('[')
+				if out.Data == nil {
+					if !in.IsDelim(']') {
+						out.Data = make([]*CustomerAddressEntity, 0, 8)
+					} else {
+						out.Data = []*CustomerAddressEntity{}
+					}
+				} else {
+					out.Data = (out.Data)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v22 *CustomerAddressEntity
+					if in.IsNull() {
+						in.Skip()
+						v22 = nil
+					} else {
+						if v22 == nil {
+							v22 = new(CustomerAddressEntity)
+						}
+						(*v22).UnmarshalEasyJSON(in)
+					}
+					out.Data = append(out.Data, v22)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated11(out *jwriter.Writer, in CustomerAddressEntities) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if len(in.Data) != 0 {
+		const prefix string = ",\"data\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		{
+			out.RawByte('[')
+			for v23, v24 := range in.Data {
+				if v23 > 0 {
+					out.RawByte(',')
+				}
+				if v24 == nil {
+					out.RawString("null")
+				} else {
+					(*v24).MarshalEasyJSON(out)
+				}
+			}
+			out.RawByte(']')
+		}
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v CustomerAddressEntities) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated11(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v CustomerAddressEntities) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated11(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *CustomerAddressEntities) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated11(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *CustomerAddressEntity) UnmarshalEasyJSON(l *jlexer.Lexer) {
+func (v *CustomerAddressEntities) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated11(l, v)
 }
-func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated12(in *jlexer.Lexer, out *CoreConfigurationCollection) {
+func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated12(in *jlexer.Lexer, out *CoreConfigurations) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -2558,7 +2558,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated12(in
 		in.Consumed()
 	}
 }
-func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated12(out *jwriter.Writer, in CoreConfigurationCollection) {
+func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated12(out *jwriter.Writer, in CoreConfigurations) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -2589,26 +2589,26 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated12(ou
 }
 
 // MarshalJSON supports json.Marshaler interface
-func (v CoreConfigurationCollection) MarshalJSON() ([]byte, error) {
+func (v CoreConfigurations) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
 	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated12(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
-func (v CoreConfigurationCollection) MarshalEasyJSON(w *jwriter.Writer) {
+func (v CoreConfigurations) MarshalEasyJSON(w *jwriter.Writer) {
 	easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated12(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
-func (v *CoreConfigurationCollection) UnmarshalJSON(data []byte) error {
+func (v *CoreConfigurations) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated12(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *CoreConfigurationCollection) UnmarshalEasyJSON(l *jlexer.Lexer) {
+func (v *CoreConfigurations) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated12(l, v)
 }
 func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated13(in *jlexer.Lexer, out *CoreConfiguration) {
