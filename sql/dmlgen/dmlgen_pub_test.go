@@ -180,7 +180,7 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 		pseudo.WithTagFakeFunc("col_decimal101", func(maxLen int) (interface{}, error) {
 			return fmt.Sprintf("%.1f", ps.Price()), nil
 		}),
-		pseudo.WithTagFakeFunc("price124b", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("price_b124", func(maxLen int) (interface{}, error) {
 			return fmt.Sprintf("%.4f", ps.Price()), nil
 		}),
 		pseudo.WithTagFakeFunc("col_decimal123", func(maxLen int) (interface{}, error) {
@@ -193,8 +193,8 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 			return fmt.Sprintf("%.12f", ps.Float64()), nil
 		}),
 		pseudo.WithTagFakeFuncAlias(
-			"col_decimal124", "price124b",
-			"price124a", "price124b",
+			"col_decimal124", "price_b124",
+			"price_a124", "price_b124",
 			"col_float", "col_decimal206",
 		),
 `),
