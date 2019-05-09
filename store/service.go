@@ -35,14 +35,14 @@ import (
 type Finder interface {
 	// DefaultStoreID returns the default active store ID and its website ID
 	// depending on the run mode. Error behaviour is mostly of type NotValid.
-	DefaultStoreID(runMode scope.TypeID) (storeID, websiteID int64, err error)
+	DefaultStoreID(runMode scope.TypeID) (storeID, websiteID uint32, err error)
 	// StoreIDbyCode returns, depending on the runMode, for a storeCode its
 	// active store ID and its website ID. An empty runMode hash falls back to
 	// select the default website, with its default group, and the slice of
 	// default stores. A not-found error behaviour gets returned if the code
 	// cannot be found. If the runMode equals to scope.DefaultTypeID, the
 	// returned ID is always 0 and error is nil.
-	StoreIDbyCode(runMode scope.TypeID, storeCode string) (storeID, websiteID int64, err error)
+	StoreIDbyCode(runMode scope.TypeID, storeCode string) (storeID, websiteID uint32, err error)
 }
 
 // Service represents type which handles the underlying storage and takes care
@@ -61,9 +61,9 @@ type Service struct {
 	// mu protects the following fields ... maybe use more mutexes
 	mu sync.RWMutex
 	// in general these caches can be optimized
-	websites StoreWebsiteCollection
-	groups   StoreGroupCollection
-	stores   StoreCollection
+	websites StoreWebsites
+	groups   StoreGroups
+	stores   Stores
 
 	// uint32 key identifies a website, group or store
 	cacheWebsite map[uint32]*StoreWebsite
@@ -113,8 +113,8 @@ func (s *Service) Options(opts ...Option) error {
 		}
 	}
 	s.sort()
-	s.recalculateHierarchy()
-	return nil
+	s.apply2ndLevelData()
+	return s.validate()
 }
 
 func (s *Service) sort() {
@@ -144,24 +144,32 @@ func (s *Service) IsAllowedStoreID(runMode scope.TypeID, storeID uint32) (isAllo
 		if err != nil {
 			return false, "", errors.WithStack(err)
 		}
-		return st.IsActive && st.Code.Valid, st.Code.String, nil
+		return st.IsActive && st.Code != "", st.Code, nil
 
 	case scope.Group:
 		for _, st := range s.stores.Data {
-			if st.IsActive && st.GroupID == scpID && st.StoreID == storeID && st.Code.Valid {
-				return true, st.Code.String, nil
+			if st.IsActive && st.GroupID == scpID && st.StoreID == storeID && st.Code != "" {
+				return true, st.Code, nil
 			}
 		}
 		return false, "", nil
 	case scope.Website:
 		for _, st := range s.stores.Data {
-			if st.IsActive && st.WebsiteID == scpID && st.StoreID == storeID && st.Code.Valid {
-				return true, st.Code.String, nil
+			if st.IsActive && st.WebsiteID == scpID && st.StoreID == storeID && st.Code != "" {
+				return true, st.Code, nil
 			}
 		}
 		return false, "", nil
 	default:
-		return false, "", errors.NotImplemented.Newf("[store] Scope %s not yet implemented.", scp)
+		w, err := s.websites.Default()
+		if err != nil {
+			return false, "", errors.WithStack(err)
+		}
+		st, err := w.DefaultStore()
+		if err != nil {
+			return false, "", errors.WithStack(err)
+		}
+		return true, st.Code, nil
 	}
 }
 
@@ -282,19 +290,19 @@ func (s *Service) StoreIDbyCode(runMode scope.TypeID, storeCode string) (storeID
 	switch runMode.Type() {
 	case scope.Store:
 		for _, st := range s.stores.Data {
-			if st.IsActive && st.Code.String == storeCode {
+			if st.IsActive && st.Code == storeCode {
 				return st.StoreID, st.WebsiteID, nil
 			}
 		}
 	case scope.Group:
 		for _, st := range s.stores.Data {
-			if st.IsActive && st.GroupID == runModeID && st.Code.String == storeCode {
+			if st.IsActive && st.GroupID == runModeID && st.Code == storeCode {
 				return st.StoreID, st.WebsiteID, nil
 			}
 		}
 	case scope.Website:
 		for _, st := range s.stores.Data {
-			if st.IsActive && st.WebsiteID == runModeID && st.Code.String == storeCode {
+			if st.IsActive && st.WebsiteID == runModeID && st.Code == storeCode {
 				return st.StoreID, st.WebsiteID, nil
 			}
 		}
@@ -307,7 +315,7 @@ func (s *Service) StoreIDbyCode(runMode scope.TypeID, storeCode string) (storeID
 		if err != nil {
 			return 0, 0, errors.WithStack(err)
 		}
-		if st.Code.Valid && st.Code.String == storeCode {
+		if st.Code != "" && st.Code == storeCode {
 			return st.StoreID, st.WebsiteID, nil
 		}
 	}
@@ -317,11 +325,11 @@ func (s *Service) StoreIDbyCode(runMode scope.TypeID, storeCode string) (storeID
 // AllowedStores creates a new slice containing all active stores depending on
 // the current runMode. The returned slice and its pointers are owned by the
 // callee.
-func (s *Service) AllowedStores(runMode scope.TypeID) (*StoreCollection, error) {
+func (s *Service) AllowedStores(runMode scope.TypeID) (*Stores, error) {
 	scp, scpID := runMode.Unpack()
 
 	// copy because Filter function reuses backing slice array
-	storeCol := &StoreCollection{
+	storeCol := &Stores{
 		Data: make([]*Store, len(s.stores.Data)),
 	}
 	copy(storeCol.Data, s.stores.Data)
@@ -370,7 +378,7 @@ func (s *Service) Website(id uint32) (*StoreWebsite, error) {
 
 // Websites returns a cached slice containing all Websites with its associated
 // groups and stores. You shall not modify the returned slice.
-func (s *Service) Websites() StoreWebsiteCollection {
+func (s *Service) Websites() StoreWebsites {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.websites
@@ -398,7 +406,7 @@ func (s *Service) Group(id uint32) (*StoreGroup, error) {
 
 // Groups returns a cached slice containing all  Groups with its associated
 // stores and websites. You shall not modify the returned slice.
-func (s *Service) Groups() StoreGroupCollection {
+func (s *Service) Groups() StoreGroups {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.groups
@@ -426,7 +434,7 @@ func (s *Service) Store(id uint32) (*Store, error) {
 
 // Stores returns a cached Store slice containing all related websites and groups.
 // You shall not modify the returned slice.
-func (s *Service) Stores() StoreCollection {
+func (s *Service) Stores() Stores {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.stores

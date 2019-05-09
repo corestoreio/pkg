@@ -14,7 +14,7 @@ import (
 //easyjson:json
 type Store struct {
 	StoreID      uint32        `max_len:"5"`   // store_id smallint(5) unsigned NOT NULL PRI  auto_increment "Store ID"
-	Code         null.String   `max_len:"64"`  // code varchar(64) NULL UNI DEFAULT 'NULL'  "Code"
+	Code         string        `max_len:"64"`  // code varchar(64) NOT NULL UNI   "Code"
 	WebsiteID    uint32        `max_len:"5"`   // website_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Website ID"
 	GroupID      uint32        `max_len:"5"`   // group_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Group ID"
 	Name         string        `max_len:"255"` // name varchar(255) NOT NULL    "Store Name"
@@ -24,14 +24,28 @@ type Store struct {
 	StoreWebsite *StoreWebsite // 1:1 store.website_id => store_website.website_id
 }
 
-// Empty empties all the fields of the current object. Also known as Reset.
-func (e *Store) Empty() *Store { *e = Store{}; return e }
-
 // Copy copies the struct and returns a new pointer
 func (e *Store) Copy() *Store {
 	e2 := new(Store)
 	*e2 = *e // for now a shallow copy
 	return e2
+}
+
+// Empty empties all the fields of the current object. Also known as Reset.
+func (e *Store) Empty() *Store { *e = Store{}; return e }
+
+// This variable can be set in another file to provide a custom validator.
+var validateStore func(*Store) error
+
+// Validate runs internal consistency tests.
+func (e *Store) Validate() error {
+	if e == nil {
+		return errors.NotValid.Newf("Type %T cannot be nil", e)
+	}
+	if validateStore != nil {
+		return validateStore(e)
+	}
+	return nil
 }
 
 // WriteTo implements io.WriterTo and writes the field names and their values to
@@ -51,61 +65,62 @@ func (e *Store) WriteTo(w io.Writer) (n int64, err error) {
 	return int64(n2), err
 }
 
-// StoreCollection represents a collection type for DB table store
+// Stores represents a collection type for DB table store
 // Not thread safe. Auto generated.
 //easyjson:json
-type StoreCollection struct {
+type Stores struct {
 	Data []*Store `json:"data,omitempty"`
 }
 
-// NewStoreCollection  creates a new initialized collection. Auto generated.
-func NewStoreCollection() *StoreCollection {
-	return &StoreCollection{
+// NewStores  creates a new initialized collection. Auto generated.
+func NewStores() *Stores {
+	return &Stores{
 		Data: make([]*Store, 0, 5),
 	}
 }
 
-// StoreIDs returns a slice with the data or appends it to a slice.
-// Auto generated.
-func (cc *StoreCollection) StoreIDs(ret ...uint32) []uint32 {
-	if ret == nil {
-		ret = make([]uint32, 0, len(cc.Data))
-	}
-	for _, e := range cc.Data {
-		ret = append(ret, e.StoreID)
-	}
-	return ret
+// Append will add a new item at the end of * Stores . Auto generated via dmlgen.
+func (cc *Stores) Append(n ...*Store) *Stores {
+	cc.Data = append(cc.Data, n...)
+	return cc
 }
 
-// Codes returns a slice with the data or appends it to a slice.
-// Auto generated.
-func (cc *StoreCollection) Codes(ret ...null.String) []null.String {
-	if ret == nil {
-		ret = make([]null.String, 0, len(cc.Data))
+// Cut will remove items i through j-1. Auto generated via dmlgen.
+func (cc *Stores) Cut(i, j int) *Stores {
+	z := cc.Data // copy slice header
+	copy(z[i:], z[j:])
+	for k, n := len(z)-j+i, len(z); k < n; k++ {
+		z[k] = nil // this avoids the memory leak
 	}
-	for _, e := range cc.Data {
-		ret = append(ret, e.Code)
-	}
-	return ret
+	z = z[:len(z)-j+i]
+	cc.Data = z
+	return cc
 }
 
-// WriteTo implements io.WriterTo and writes the field names and their values to
-// w. This is especially useful for debugging or or generating a hash of the
-// struct.
-func (cc *StoreCollection) WriteTo(w io.Writer) (n int64, err error) {
-	for i, d := range cc.Data {
-		n2, err := d.WriteTo(w)
-		if err != nil {
-			return 0, errors.Wrapf(err, "[store] WriteTo failed at index %d", i)
-		}
-		n += n2
+// Delete will remove an item from the slice. Auto generated via dmlgen.
+func (cc *Stores) Delete(i int) *Stores {
+	z := cc.Data // copy the slice header
+	end := len(z) - 1
+	cc.Swap(i, end)
+	copy(z[i:], z[i+1:])
+	z[end] = nil // this should avoid the memory leak
+	z = z[:end]
+	cc.Data = z
+	return cc
+}
+
+// Each will run function f on all items in []* Store . Auto generated via
+// dmlgen.
+func (cc *Stores) Each(f func(*Store)) *Stores {
+	for i := range cc.Data {
+		f(cc.Data[i])
 	}
-	return n, nil
+	return cc
 }
 
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
-func (cc *StoreCollection) Filter(f func(*Store) bool) *StoreCollection {
+func (cc *Stores) Filter(f func(*Store) bool) *Stores {
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
@@ -118,47 +133,8 @@ func (cc *StoreCollection) Filter(f func(*Store) bool) *StoreCollection {
 	return cc
 }
 
-// Each will run function f on all items in []* Store . Auto generated via
-// dmlgen.
-func (cc *StoreCollection) Each(f func(*Store)) *StoreCollection {
-	for i := range cc.Data {
-		f(cc.Data[i])
-	}
-	return cc
-}
-
-// Cut will remove items i through j-1. Auto generated via dmlgen.
-func (cc *StoreCollection) Cut(i, j int) *StoreCollection {
-	z := cc.Data // copy slice header
-	copy(z[i:], z[j:])
-	for k, n := len(z)-j+i, len(z); k < n; k++ {
-		z[k] = nil // this avoids the memory leak
-	}
-	z = z[:len(z)-j+i]
-	cc.Data = z
-	return cc
-}
-
-// Swap will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *StoreCollection) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
-
-// Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *StoreCollection) Len() int { return len(cc.Data) }
-
-// Delete will remove an item from the slice. Auto generated via dmlgen.
-func (cc *StoreCollection) Delete(i int) *StoreCollection {
-	z := cc.Data // copy the slice header
-	end := len(z) - 1
-	cc.Swap(i, end)
-	copy(z[i:], z[i+1:])
-	z[end] = nil // this should avoid the memory leak
-	z = z[:end]
-	cc.Data = z
-	return cc
-}
-
 // Insert will place a new item at position i. Auto generated via dmlgen.
-func (cc *StoreCollection) Insert(n *Store, i int) *StoreCollection {
+func (cc *Stores) Insert(n *Store, i int) *Stores {
 	z := cc.Data // copy the slice header
 	z = append(z, &Store{})
 	copy(z[i+1:], z[i:])
@@ -167,11 +143,59 @@ func (cc *StoreCollection) Insert(n *Store, i int) *StoreCollection {
 	return cc
 }
 
-// Append will add a new item at the end of * StoreCollection . Auto generated
-// via dmlgen.
-func (cc *StoreCollection) Append(n ...*Store) *StoreCollection {
-	cc.Data = append(cc.Data, n...)
-	return cc
+// Swap will satisfy the sort.Interface. Auto generated via dmlgen.
+func (cc *Stores) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
+
+// Len will satisfy the sort.Interface. Auto generated via dmlgen.
+func (cc *Stores) Len() int { return len(cc.Data) }
+
+// StoreIDs returns a slice with the data or appends it to a slice.
+// Auto generated.
+func (cc *Stores) StoreIDs(ret ...uint32) []uint32 {
+	if ret == nil {
+		ret = make([]uint32, 0, len(cc.Data))
+	}
+	for _, e := range cc.Data {
+		ret = append(ret, e.StoreID)
+	}
+	return ret
+}
+
+// Codes returns a slice with the data or appends it to a slice.
+// Auto generated.
+func (cc *Stores) Codes(ret ...string) []string {
+	if ret == nil {
+		ret = make([]string, 0, len(cc.Data))
+	}
+	for _, e := range cc.Data {
+		ret = append(ret, e.Code)
+	}
+	return ret
+}
+
+// Validate runs internal consistency tests on all items.
+func (cc *Stores) Validate() (err error) {
+	if len(cc.Data) == 0 {
+		return nil
+	}
+	for i, ld := 0, len(cc.Data); i < ld && err == nil; i++ {
+		err = cc.Data[i].Validate()
+	}
+	return
+}
+
+// WriteTo implements io.WriterTo and writes the field names and their values to
+// w. This is especially useful for debugging or or generating a hash of the
+// struct.
+func (cc *Stores) WriteTo(w io.Writer) (n int64, err error) {
+	for i, d := range cc.Data {
+		n2, err := d.WriteTo(w)
+		if err != nil {
+			return 0, errors.Wrapf(err, "[store] WriteTo failed at index %d", i)
+		}
+		n += n2
+	}
+	return n, nil
 }
 
 // StoreGroup represents a single row for DB table store_group. Auto generated.
@@ -186,14 +210,28 @@ type StoreGroup struct {
 	StoreWebsite   *StoreWebsite // 1:1 store_group.website_id => store_website.website_id
 }
 
-// Empty empties all the fields of the current object. Also known as Reset.
-func (e *StoreGroup) Empty() *StoreGroup { *e = StoreGroup{}; return e }
-
 // Copy copies the struct and returns a new pointer
 func (e *StoreGroup) Copy() *StoreGroup {
 	e2 := new(StoreGroup)
 	*e2 = *e // for now a shallow copy
 	return e2
+}
+
+// Empty empties all the fields of the current object. Also known as Reset.
+func (e *StoreGroup) Empty() *StoreGroup { *e = StoreGroup{}; return e }
+
+// This variable can be set in another file to provide a custom validator.
+var validateStoreGroup func(*StoreGroup) error
+
+// Validate runs internal consistency tests.
+func (e *StoreGroup) Validate() error {
+	if e == nil {
+		return errors.NotValid.Newf("Type %T cannot be nil", e)
+	}
+	if validateStoreGroup != nil {
+		return validateStoreGroup(e)
+	}
+	return nil
 }
 
 // WriteTo implements io.WriterTo and writes the field names and their values to
@@ -212,61 +250,63 @@ func (e *StoreGroup) WriteTo(w io.Writer) (n int64, err error) {
 	return int64(n2), err
 }
 
-// StoreGroupCollection represents a collection type for DB table store_group
+// StoreGroups represents a collection type for DB table store_group
 // Not thread safe. Auto generated.
 //easyjson:json
-type StoreGroupCollection struct {
+type StoreGroups struct {
 	Data []*StoreGroup `json:"data,omitempty"`
 }
 
-// NewStoreGroupCollection  creates a new initialized collection. Auto generated.
-func NewStoreGroupCollection() *StoreGroupCollection {
-	return &StoreGroupCollection{
+// NewStoreGroups  creates a new initialized collection. Auto generated.
+func NewStoreGroups() *StoreGroups {
+	return &StoreGroups{
 		Data: make([]*StoreGroup, 0, 5),
 	}
 }
 
-// GroupIDs returns a slice with the data or appends it to a slice.
-// Auto generated.
-func (cc *StoreGroupCollection) GroupIDs(ret ...uint32) []uint32 {
-	if ret == nil {
-		ret = make([]uint32, 0, len(cc.Data))
-	}
-	for _, e := range cc.Data {
-		ret = append(ret, e.GroupID)
-	}
-	return ret
+// Append will add a new item at the end of * StoreGroups . Auto generated via
+// dmlgen.
+func (cc *StoreGroups) Append(n ...*StoreGroup) *StoreGroups {
+	cc.Data = append(cc.Data, n...)
+	return cc
 }
 
-// Codes returns a slice with the data or appends it to a slice.
-// Auto generated.
-func (cc *StoreGroupCollection) Codes(ret ...null.String) []null.String {
-	if ret == nil {
-		ret = make([]null.String, 0, len(cc.Data))
+// Cut will remove items i through j-1. Auto generated via dmlgen.
+func (cc *StoreGroups) Cut(i, j int) *StoreGroups {
+	z := cc.Data // copy slice header
+	copy(z[i:], z[j:])
+	for k, n := len(z)-j+i, len(z); k < n; k++ {
+		z[k] = nil // this avoids the memory leak
 	}
-	for _, e := range cc.Data {
-		ret = append(ret, e.Code)
-	}
-	return ret
+	z = z[:len(z)-j+i]
+	cc.Data = z
+	return cc
 }
 
-// WriteTo implements io.WriterTo and writes the field names and their values to
-// w. This is especially useful for debugging or or generating a hash of the
-// struct.
-func (cc *StoreGroupCollection) WriteTo(w io.Writer) (n int64, err error) {
-	for i, d := range cc.Data {
-		n2, err := d.WriteTo(w)
-		if err != nil {
-			return 0, errors.Wrapf(err, "[store] WriteTo failed at index %d", i)
-		}
-		n += n2
+// Delete will remove an item from the slice. Auto generated via dmlgen.
+func (cc *StoreGroups) Delete(i int) *StoreGroups {
+	z := cc.Data // copy the slice header
+	end := len(z) - 1
+	cc.Swap(i, end)
+	copy(z[i:], z[i+1:])
+	z[end] = nil // this should avoid the memory leak
+	z = z[:end]
+	cc.Data = z
+	return cc
+}
+
+// Each will run function f on all items in []* StoreGroup . Auto generated via
+// dmlgen.
+func (cc *StoreGroups) Each(f func(*StoreGroup)) *StoreGroups {
+	for i := range cc.Data {
+		f(cc.Data[i])
 	}
-	return n, nil
+	return cc
 }
 
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
-func (cc *StoreGroupCollection) Filter(f func(*StoreGroup) bool) *StoreGroupCollection {
+func (cc *StoreGroups) Filter(f func(*StoreGroup) bool) *StoreGroups {
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
@@ -279,47 +319,8 @@ func (cc *StoreGroupCollection) Filter(f func(*StoreGroup) bool) *StoreGroupColl
 	return cc
 }
 
-// Each will run function f on all items in []* StoreGroup . Auto generated via
-// dmlgen.
-func (cc *StoreGroupCollection) Each(f func(*StoreGroup)) *StoreGroupCollection {
-	for i := range cc.Data {
-		f(cc.Data[i])
-	}
-	return cc
-}
-
-// Cut will remove items i through j-1. Auto generated via dmlgen.
-func (cc *StoreGroupCollection) Cut(i, j int) *StoreGroupCollection {
-	z := cc.Data // copy slice header
-	copy(z[i:], z[j:])
-	for k, n := len(z)-j+i, len(z); k < n; k++ {
-		z[k] = nil // this avoids the memory leak
-	}
-	z = z[:len(z)-j+i]
-	cc.Data = z
-	return cc
-}
-
-// Swap will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *StoreGroupCollection) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
-
-// Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *StoreGroupCollection) Len() int { return len(cc.Data) }
-
-// Delete will remove an item from the slice. Auto generated via dmlgen.
-func (cc *StoreGroupCollection) Delete(i int) *StoreGroupCollection {
-	z := cc.Data // copy the slice header
-	end := len(z) - 1
-	cc.Swap(i, end)
-	copy(z[i:], z[i+1:])
-	z[end] = nil // this should avoid the memory leak
-	z = z[:end]
-	cc.Data = z
-	return cc
-}
-
 // Insert will place a new item at position i. Auto generated via dmlgen.
-func (cc *StoreGroupCollection) Insert(n *StoreGroup, i int) *StoreGroupCollection {
+func (cc *StoreGroups) Insert(n *StoreGroup, i int) *StoreGroups {
 	z := cc.Data // copy the slice header
 	z = append(z, &StoreGroup{})
 	copy(z[i+1:], z[i:])
@@ -328,35 +329,97 @@ func (cc *StoreGroupCollection) Insert(n *StoreGroup, i int) *StoreGroupCollecti
 	return cc
 }
 
-// Append will add a new item at the end of * StoreGroupCollection . Auto
-// generated via dmlgen.
-func (cc *StoreGroupCollection) Append(n ...*StoreGroup) *StoreGroupCollection {
-	cc.Data = append(cc.Data, n...)
-	return cc
+// Swap will satisfy the sort.Interface. Auto generated via dmlgen.
+func (cc *StoreGroups) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
+
+// Len will satisfy the sort.Interface. Auto generated via dmlgen.
+func (cc *StoreGroups) Len() int { return len(cc.Data) }
+
+// GroupIDs returns a slice with the data or appends it to a slice.
+// Auto generated.
+func (cc *StoreGroups) GroupIDs(ret ...uint32) []uint32 {
+	if ret == nil {
+		ret = make([]uint32, 0, len(cc.Data))
+	}
+	for _, e := range cc.Data {
+		ret = append(ret, e.GroupID)
+	}
+	return ret
+}
+
+// Codes returns a slice with the data or appends it to a slice.
+// Auto generated.
+func (cc *StoreGroups) Codes(ret ...null.String) []null.String {
+	if ret == nil {
+		ret = make([]null.String, 0, len(cc.Data))
+	}
+	for _, e := range cc.Data {
+		ret = append(ret, e.Code)
+	}
+	return ret
+}
+
+// Validate runs internal consistency tests on all items.
+func (cc *StoreGroups) Validate() (err error) {
+	if len(cc.Data) == 0 {
+		return nil
+	}
+	for i, ld := 0, len(cc.Data); i < ld && err == nil; i++ {
+		err = cc.Data[i].Validate()
+	}
+	return
+}
+
+// WriteTo implements io.WriterTo and writes the field names and their values to
+// w. This is especially useful for debugging or or generating a hash of the
+// struct.
+func (cc *StoreGroups) WriteTo(w io.Writer) (n int64, err error) {
+	for i, d := range cc.Data {
+		n2, err := d.WriteTo(w)
+		if err != nil {
+			return 0, errors.Wrapf(err, "[store] WriteTo failed at index %d", i)
+		}
+		n += n2
+	}
+	return n, nil
 }
 
 // StoreWebsite represents a single row for DB table store_website. Auto
 // generated.
 //easyjson:json
 type StoreWebsite struct {
-	WebsiteID      uint32                `max_len:"5"`   // website_id smallint(5) unsigned NOT NULL PRI  auto_increment "Website ID"
-	Code           null.String           `max_len:"64"`  // code varchar(64) NULL UNI DEFAULT 'NULL'  "Code"
-	Name           null.String           `max_len:"128"` // name varchar(128) NULL  DEFAULT 'NULL'  "Website Name"
-	SortOrder      uint32                `max_len:"5"`   // sort_order smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Sort Order"
-	DefaultGroupID uint32                `max_len:"5"`   // default_group_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Default Group ID"
-	IsDefault      bool                  `max_len:"5"`   // is_default smallint(5) unsigned NOT NULL  DEFAULT '0'  "Defines Is Website Default"
-	StoreGroup     *StoreGroupCollection // Reversed 1:M store_website.website_id => store_group.website_id
-	Store          *StoreCollection      // Reversed 1:M store_website.website_id => store.website_id
+	WebsiteID      uint32       `max_len:"5"`   // website_id smallint(5) unsigned NOT NULL PRI  auto_increment "Website ID"
+	Code           string       `max_len:"64"`  // code varchar(64) NOT NULL UNI   "Code"
+	Name           null.String  `max_len:"128"` // name varchar(128) NULL  DEFAULT 'NULL'  "Website Name"
+	SortOrder      uint32       `max_len:"5"`   // sort_order smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Sort Order"
+	DefaultGroupID uint32       `max_len:"5"`   // default_group_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Default Group ID"
+	IsDefault      bool         `max_len:"5"`   // is_default smallint(5) unsigned NOT NULL  DEFAULT '0'  "Defines Is Website Default"
+	Stores         *Stores      // Reversed 1:M store_website.website_id => store.website_id
+	StoreGroups    *StoreGroups // Reversed 1:M store_website.website_id => store_group.website_id
 }
-
-// Empty empties all the fields of the current object. Also known as Reset.
-func (e *StoreWebsite) Empty() *StoreWebsite { *e = StoreWebsite{}; return e }
 
 // Copy copies the struct and returns a new pointer
 func (e *StoreWebsite) Copy() *StoreWebsite {
 	e2 := new(StoreWebsite)
 	*e2 = *e // for now a shallow copy
 	return e2
+}
+
+// Empty empties all the fields of the current object. Also known as Reset.
+func (e *StoreWebsite) Empty() *StoreWebsite { *e = StoreWebsite{}; return e }
+
+// This variable can be set in another file to provide a custom validator.
+var validateStoreWebsite func(*StoreWebsite) error
+
+// Validate runs internal consistency tests.
+func (e *StoreWebsite) Validate() error {
+	if e == nil {
+		return errors.NotValid.Newf("Type %T cannot be nil", e)
+	}
+	if validateStoreWebsite != nil {
+		return validateStoreWebsite(e)
+	}
+	return nil
 }
 
 // WriteTo implements io.WriterTo and writes the field names and their values to
@@ -375,62 +438,63 @@ func (e *StoreWebsite) WriteTo(w io.Writer) (n int64, err error) {
 	return int64(n2), err
 }
 
-// StoreWebsiteCollection represents a collection type for DB table store_website
+// StoreWebsites represents a collection type for DB table store_website
 // Not thread safe. Auto generated.
 //easyjson:json
-type StoreWebsiteCollection struct {
+type StoreWebsites struct {
 	Data []*StoreWebsite `json:"data,omitempty"`
 }
 
-// NewStoreWebsiteCollection  creates a new initialized collection. Auto
-// generated.
-func NewStoreWebsiteCollection() *StoreWebsiteCollection {
-	return &StoreWebsiteCollection{
+// NewStoreWebsites  creates a new initialized collection. Auto generated.
+func NewStoreWebsites() *StoreWebsites {
+	return &StoreWebsites{
 		Data: make([]*StoreWebsite, 0, 5),
 	}
 }
 
-// WebsiteIDs returns a slice with the data or appends it to a slice.
-// Auto generated.
-func (cc *StoreWebsiteCollection) WebsiteIDs(ret ...uint32) []uint32 {
-	if ret == nil {
-		ret = make([]uint32, 0, len(cc.Data))
-	}
-	for _, e := range cc.Data {
-		ret = append(ret, e.WebsiteID)
-	}
-	return ret
+// Append will add a new item at the end of * StoreWebsites . Auto generated via
+// dmlgen.
+func (cc *StoreWebsites) Append(n ...*StoreWebsite) *StoreWebsites {
+	cc.Data = append(cc.Data, n...)
+	return cc
 }
 
-// Codes returns a slice with the data or appends it to a slice.
-// Auto generated.
-func (cc *StoreWebsiteCollection) Codes(ret ...null.String) []null.String {
-	if ret == nil {
-		ret = make([]null.String, 0, len(cc.Data))
+// Cut will remove items i through j-1. Auto generated via dmlgen.
+func (cc *StoreWebsites) Cut(i, j int) *StoreWebsites {
+	z := cc.Data // copy slice header
+	copy(z[i:], z[j:])
+	for k, n := len(z)-j+i, len(z); k < n; k++ {
+		z[k] = nil // this avoids the memory leak
 	}
-	for _, e := range cc.Data {
-		ret = append(ret, e.Code)
-	}
-	return ret
+	z = z[:len(z)-j+i]
+	cc.Data = z
+	return cc
 }
 
-// WriteTo implements io.WriterTo and writes the field names and their values to
-// w. This is especially useful for debugging or or generating a hash of the
-// struct.
-func (cc *StoreWebsiteCollection) WriteTo(w io.Writer) (n int64, err error) {
-	for i, d := range cc.Data {
-		n2, err := d.WriteTo(w)
-		if err != nil {
-			return 0, errors.Wrapf(err, "[store] WriteTo failed at index %d", i)
-		}
-		n += n2
+// Delete will remove an item from the slice. Auto generated via dmlgen.
+func (cc *StoreWebsites) Delete(i int) *StoreWebsites {
+	z := cc.Data // copy the slice header
+	end := len(z) - 1
+	cc.Swap(i, end)
+	copy(z[i:], z[i+1:])
+	z[end] = nil // this should avoid the memory leak
+	z = z[:end]
+	cc.Data = z
+	return cc
+}
+
+// Each will run function f on all items in []* StoreWebsite . Auto generated via
+// dmlgen.
+func (cc *StoreWebsites) Each(f func(*StoreWebsite)) *StoreWebsites {
+	for i := range cc.Data {
+		f(cc.Data[i])
 	}
-	return n, nil
+	return cc
 }
 
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
-func (cc *StoreWebsiteCollection) Filter(f func(*StoreWebsite) bool) *StoreWebsiteCollection {
+func (cc *StoreWebsites) Filter(f func(*StoreWebsite) bool) *StoreWebsites {
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
@@ -443,47 +507,8 @@ func (cc *StoreWebsiteCollection) Filter(f func(*StoreWebsite) bool) *StoreWebsi
 	return cc
 }
 
-// Each will run function f on all items in []* StoreWebsite . Auto generated via
-// dmlgen.
-func (cc *StoreWebsiteCollection) Each(f func(*StoreWebsite)) *StoreWebsiteCollection {
-	for i := range cc.Data {
-		f(cc.Data[i])
-	}
-	return cc
-}
-
-// Cut will remove items i through j-1. Auto generated via dmlgen.
-func (cc *StoreWebsiteCollection) Cut(i, j int) *StoreWebsiteCollection {
-	z := cc.Data // copy slice header
-	copy(z[i:], z[j:])
-	for k, n := len(z)-j+i, len(z); k < n; k++ {
-		z[k] = nil // this avoids the memory leak
-	}
-	z = z[:len(z)-j+i]
-	cc.Data = z
-	return cc
-}
-
-// Swap will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *StoreWebsiteCollection) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
-
-// Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *StoreWebsiteCollection) Len() int { return len(cc.Data) }
-
-// Delete will remove an item from the slice. Auto generated via dmlgen.
-func (cc *StoreWebsiteCollection) Delete(i int) *StoreWebsiteCollection {
-	z := cc.Data // copy the slice header
-	end := len(z) - 1
-	cc.Swap(i, end)
-	copy(z[i:], z[i+1:])
-	z[end] = nil // this should avoid the memory leak
-	z = z[:end]
-	cc.Data = z
-	return cc
-}
-
 // Insert will place a new item at position i. Auto generated via dmlgen.
-func (cc *StoreWebsiteCollection) Insert(n *StoreWebsite, i int) *StoreWebsiteCollection {
+func (cc *StoreWebsites) Insert(n *StoreWebsite, i int) *StoreWebsites {
 	z := cc.Data // copy the slice header
 	z = append(z, &StoreWebsite{})
 	copy(z[i+1:], z[i:])
@@ -492,9 +517,57 @@ func (cc *StoreWebsiteCollection) Insert(n *StoreWebsite, i int) *StoreWebsiteCo
 	return cc
 }
 
-// Append will add a new item at the end of * StoreWebsiteCollection . Auto
-// generated via dmlgen.
-func (cc *StoreWebsiteCollection) Append(n ...*StoreWebsite) *StoreWebsiteCollection {
-	cc.Data = append(cc.Data, n...)
-	return cc
+// Swap will satisfy the sort.Interface. Auto generated via dmlgen.
+func (cc *StoreWebsites) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
+
+// Len will satisfy the sort.Interface. Auto generated via dmlgen.
+func (cc *StoreWebsites) Len() int { return len(cc.Data) }
+
+// WebsiteIDs returns a slice with the data or appends it to a slice.
+// Auto generated.
+func (cc *StoreWebsites) WebsiteIDs(ret ...uint32) []uint32 {
+	if ret == nil {
+		ret = make([]uint32, 0, len(cc.Data))
+	}
+	for _, e := range cc.Data {
+		ret = append(ret, e.WebsiteID)
+	}
+	return ret
+}
+
+// Codes returns a slice with the data or appends it to a slice.
+// Auto generated.
+func (cc *StoreWebsites) Codes(ret ...string) []string {
+	if ret == nil {
+		ret = make([]string, 0, len(cc.Data))
+	}
+	for _, e := range cc.Data {
+		ret = append(ret, e.Code)
+	}
+	return ret
+}
+
+// Validate runs internal consistency tests on all items.
+func (cc *StoreWebsites) Validate() (err error) {
+	if len(cc.Data) == 0 {
+		return nil
+	}
+	for i, ld := 0, len(cc.Data); i < ld && err == nil; i++ {
+		err = cc.Data[i].Validate()
+	}
+	return
+}
+
+// WriteTo implements io.WriterTo and writes the field names and their values to
+// w. This is especially useful for debugging or or generating a hash of the
+// struct.
+func (cc *StoreWebsites) WriteTo(w io.Writer) (n int64, err error) {
+	for i, d := range cc.Data {
+		n2, err := d.WriteTo(w)
+		if err != nil {
+			return 0, errors.Wrapf(err, "[store] WriteTo failed at index %d", i)
+		}
+		n += n2
+	}
+	return n, nil
 }

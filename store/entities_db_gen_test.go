@@ -48,7 +48,7 @@ func TestNewTablesDB_8fbf75a91e4e6bd670de701be5c9ec85(t *testing.T) {
 			dml.Column("store_id").LessOrEqual().Int(10),
 		).ToSQL() // ToSQL generates the new cached SQL string with key select_10
 		assert.NoError(t, err)
-		entCol := NewStoreCollection()
+		entCol := NewStores()
 		entINSERT := tbl.Insert().BuildValues()
 		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
 		for i := 0; i < 9; i++ {
@@ -76,7 +76,7 @@ func TestNewTablesDB_8fbf75a91e4e6bd670de701be5c9ec85(t *testing.T) {
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
 		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
-		lID := dmltest.CheckLastInsertID(t, "Error:  StoreCollection ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
+		lID := dmltest.CheckLastInsertID(t, "Error:  Stores ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
 		dmltest.Close(t, entINSERTStmtA)
 		t.Logf("Last insert ID into: %d", lID)
 		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())
@@ -92,7 +92,7 @@ func TestNewTablesDB_8fbf75a91e4e6bd670de701be5c9ec85(t *testing.T) {
 			dml.Column("group_id").LessOrEqual().Int(10),
 		).ToSQL() // ToSQL generates the new cached SQL string with key select_10
 		assert.NoError(t, err)
-		entCol := NewStoreGroupCollection()
+		entCol := NewStoreGroups()
 		entINSERT := tbl.Insert().BuildValues()
 		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
 		for i := 0; i < 9; i++ {
@@ -119,7 +119,7 @@ func TestNewTablesDB_8fbf75a91e4e6bd670de701be5c9ec85(t *testing.T) {
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
 		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
-		lID := dmltest.CheckLastInsertID(t, "Error:  StoreGroupCollection ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
+		lID := dmltest.CheckLastInsertID(t, "Error:  StoreGroups ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
 		dmltest.Close(t, entINSERTStmtA)
 		t.Logf("Last insert ID into: %d", lID)
 		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())
@@ -135,7 +135,7 @@ func TestNewTablesDB_8fbf75a91e4e6bd670de701be5c9ec85(t *testing.T) {
 			dml.Column("website_id").LessOrEqual().Int(10),
 		).ToSQL() // ToSQL generates the new cached SQL string with key select_10
 		assert.NoError(t, err)
-		entCol := NewStoreWebsiteCollection()
+		entCol := NewStoreWebsites()
 		entINSERT := tbl.Insert().BuildValues()
 		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
 		for i := 0; i < 9; i++ {
@@ -162,7 +162,7 @@ func TestNewTablesDB_8fbf75a91e4e6bd670de701be5c9ec85(t *testing.T) {
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
 		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
-		lID := dmltest.CheckLastInsertID(t, "Error:  StoreWebsiteCollection ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
+		lID := dmltest.CheckLastInsertID(t, "Error:  StoreWebsites ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
 		dmltest.Close(t, entINSERTStmtA)
 		t.Logf("Last insert ID into: %d", lID)
 		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())

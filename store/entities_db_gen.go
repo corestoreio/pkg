@@ -38,14 +38,14 @@ func (e *Store) AssignLastInsertID(id int64) {
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *Store) MapColumns(cm *dml.ColumnMap) error {
 	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Uint32(&e.StoreID).NullString(&e.Code).Uint32(&e.WebsiteID).Uint32(&e.GroupID).String(&e.Name).Uint32(&e.SortOrder).Bool(&e.IsActive).Err()
+		return cm.Uint32(&e.StoreID).String(&e.Code).Uint32(&e.WebsiteID).Uint32(&e.GroupID).String(&e.Name).Uint32(&e.SortOrder).Bool(&e.IsActive).Err()
 	}
 	for cm.Next() {
 		switch c := cm.Column(); c {
 		case "store_id":
 			cm.Uint32(&e.StoreID)
 		case "code":
-			cm.NullString(&e.Code)
+			cm.String(&e.Code)
 		case "website_id":
 			cm.Uint32(&e.WebsiteID)
 		case "group_id":
@@ -65,14 +65,14 @@ func (e *Store) MapColumns(cm *dml.ColumnMap) error {
 
 // AssignLastInsertID traverses through the slice and sets a decrementing new ID
 // to each entity.
-func (cc *StoreCollection) AssignLastInsertID(id int64) {
+func (cc *Stores) AssignLastInsertID(id int64) {
 	var j int64
 	for i := len(cc.Data) - 1; i >= 0; i-- {
 		cc.Data[i].AssignLastInsertID(id - j)
 		j++
 	}
 }
-func (cc *StoreCollection) scanColumns(cm *dml.ColumnMap, e *Store, idx uint64) error {
+func (cc *Stores) scanColumns(cm *dml.ColumnMap, e *Store, idx uint64) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
@@ -81,7 +81,7 @@ func (cc *StoreCollection) scanColumns(cm *dml.ColumnMap, e *Store, idx uint64) 
 }
 
 // MapColumns implements dml.ColumnMapper interface. Auto generated.
-func (cc *StoreCollection) MapColumns(cm *dml.ColumnMap) error {
+func (cc *Stores) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
 		for i, e := range cc.Data {
@@ -104,9 +104,9 @@ func (cc *StoreCollection) MapColumns(cm *dml.ColumnMap) error {
 			case "store_id":
 				cm = cm.Uint32s(cc.StoreIDs()...)
 			case "code":
-				cm = cm.NullStrings(cc.Codes()...)
+				cm = cm.Strings(cc.Codes()...)
 			default:
-				return errors.NotFound.Newf("[store] StoreCollection Column %q not found", c)
+				return errors.NotFound.Newf("[store] Stores Column %q not found", c)
 			}
 		} // end for cm.Next
 
@@ -150,14 +150,14 @@ func (e *StoreGroup) MapColumns(cm *dml.ColumnMap) error {
 
 // AssignLastInsertID traverses through the slice and sets a decrementing new ID
 // to each entity.
-func (cc *StoreGroupCollection) AssignLastInsertID(id int64) {
+func (cc *StoreGroups) AssignLastInsertID(id int64) {
 	var j int64
 	for i := len(cc.Data) - 1; i >= 0; i-- {
 		cc.Data[i].AssignLastInsertID(id - j)
 		j++
 	}
 }
-func (cc *StoreGroupCollection) scanColumns(cm *dml.ColumnMap, e *StoreGroup, idx uint64) error {
+func (cc *StoreGroups) scanColumns(cm *dml.ColumnMap, e *StoreGroup, idx uint64) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
@@ -166,7 +166,7 @@ func (cc *StoreGroupCollection) scanColumns(cm *dml.ColumnMap, e *StoreGroup, id
 }
 
 // MapColumns implements dml.ColumnMapper interface. Auto generated.
-func (cc *StoreGroupCollection) MapColumns(cm *dml.ColumnMap) error {
+func (cc *StoreGroups) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
 		for i, e := range cc.Data {
@@ -191,7 +191,7 @@ func (cc *StoreGroupCollection) MapColumns(cm *dml.ColumnMap) error {
 			case "code":
 				cm = cm.NullStrings(cc.Codes()...)
 			default:
-				return errors.NotFound.Newf("[store] StoreGroupCollection Column %q not found", c)
+				return errors.NotFound.Newf("[store] StoreGroups Column %q not found", c)
 			}
 		} // end for cm.Next
 
@@ -210,14 +210,14 @@ func (e *StoreWebsite) AssignLastInsertID(id int64) {
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *StoreWebsite) MapColumns(cm *dml.ColumnMap) error {
 	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Uint32(&e.WebsiteID).NullString(&e.Code).NullString(&e.Name).Uint32(&e.SortOrder).Uint32(&e.DefaultGroupID).Bool(&e.IsDefault).Err()
+		return cm.Uint32(&e.WebsiteID).String(&e.Code).NullString(&e.Name).Uint32(&e.SortOrder).Uint32(&e.DefaultGroupID).Bool(&e.IsDefault).Err()
 	}
 	for cm.Next() {
 		switch c := cm.Column(); c {
 		case "website_id":
 			cm.Uint32(&e.WebsiteID)
 		case "code":
-			cm.NullString(&e.Code)
+			cm.String(&e.Code)
 		case "name":
 			cm.NullString(&e.Name)
 		case "sort_order":
@@ -235,14 +235,14 @@ func (e *StoreWebsite) MapColumns(cm *dml.ColumnMap) error {
 
 // AssignLastInsertID traverses through the slice and sets a decrementing new ID
 // to each entity.
-func (cc *StoreWebsiteCollection) AssignLastInsertID(id int64) {
+func (cc *StoreWebsites) AssignLastInsertID(id int64) {
 	var j int64
 	for i := len(cc.Data) - 1; i >= 0; i-- {
 		cc.Data[i].AssignLastInsertID(id - j)
 		j++
 	}
 }
-func (cc *StoreWebsiteCollection) scanColumns(cm *dml.ColumnMap, e *StoreWebsite, idx uint64) error {
+func (cc *StoreWebsites) scanColumns(cm *dml.ColumnMap, e *StoreWebsite, idx uint64) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
@@ -251,7 +251,7 @@ func (cc *StoreWebsiteCollection) scanColumns(cm *dml.ColumnMap, e *StoreWebsite
 }
 
 // MapColumns implements dml.ColumnMapper interface. Auto generated.
-func (cc *StoreWebsiteCollection) MapColumns(cm *dml.ColumnMap) error {
+func (cc *StoreWebsites) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
 		for i, e := range cc.Data {
@@ -274,9 +274,9 @@ func (cc *StoreWebsiteCollection) MapColumns(cm *dml.ColumnMap) error {
 			case "website_id":
 				cm = cm.Uint32s(cc.WebsiteIDs()...)
 			case "code":
-				cm = cm.NullStrings(cc.Codes()...)
+				cm = cm.Strings(cc.Codes()...)
 			default:
-				return errors.NotFound.Newf("[store] StoreWebsiteCollection Column %q not found", c)
+				return errors.NotFound.Newf("[store] StoreWebsites Column %q not found", c)
 			}
 		} // end for cm.Next
 

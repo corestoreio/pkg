@@ -27,7 +27,7 @@ func (m *Store) Reset()         { *m = Store{} }
 func (m *Store) String() string { return proto.CompactTextString(m) }
 func (*Store) ProtoMessage()    {}
 func (*Store) Descriptor() ([]byte, []int) {
-	return fileDescriptor_entities_gen_9c6330bb2a5fc4e2, []int{0}
+	return fileDescriptor_entities_gen_2e5cb26d38efad33, []int{0}
 }
 func (m *Store) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -56,18 +56,18 @@ func (m *Store) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Store proto.InternalMessageInfo
 
-func (m *StoreCollection) Reset()         { *m = StoreCollection{} }
-func (m *StoreCollection) String() string { return proto.CompactTextString(m) }
-func (*StoreCollection) ProtoMessage()    {}
-func (*StoreCollection) Descriptor() ([]byte, []int) {
-	return fileDescriptor_entities_gen_9c6330bb2a5fc4e2, []int{1}
+func (m *Stores) Reset()         { *m = Stores{} }
+func (m *Stores) String() string { return proto.CompactTextString(m) }
+func (*Stores) ProtoMessage()    {}
+func (*Stores) Descriptor() ([]byte, []int) {
+	return fileDescriptor_entities_gen_2e5cb26d38efad33, []int{1}
 }
-func (m *StoreCollection) XXX_Unmarshal(b []byte) error {
+func (m *Stores) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *StoreCollection) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Stores) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_StoreCollection.Marshal(b, m, deterministic)
+		return xxx_messageInfo_Stores.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalTo(b)
@@ -77,23 +77,23 @@ func (m *StoreCollection) XXX_Marshal(b []byte, deterministic bool) ([]byte, err
 		return b[:n], nil
 	}
 }
-func (dst *StoreCollection) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_StoreCollection.Merge(dst, src)
+func (dst *Stores) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Stores.Merge(dst, src)
 }
-func (m *StoreCollection) XXX_Size() int {
+func (m *Stores) XXX_Size() int {
 	return m.Size()
 }
-func (m *StoreCollection) XXX_DiscardUnknown() {
-	xxx_messageInfo_StoreCollection.DiscardUnknown(m)
+func (m *Stores) XXX_DiscardUnknown() {
+	xxx_messageInfo_Stores.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_StoreCollection proto.InternalMessageInfo
+var xxx_messageInfo_Stores proto.InternalMessageInfo
 
 func (m *StoreGroup) Reset()         { *m = StoreGroup{} }
 func (m *StoreGroup) String() string { return proto.CompactTextString(m) }
 func (*StoreGroup) ProtoMessage()    {}
 func (*StoreGroup) Descriptor() ([]byte, []int) {
-	return fileDescriptor_entities_gen_9c6330bb2a5fc4e2, []int{2}
+	return fileDescriptor_entities_gen_2e5cb26d38efad33, []int{2}
 }
 func (m *StoreGroup) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -122,18 +122,18 @@ func (m *StoreGroup) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_StoreGroup proto.InternalMessageInfo
 
-func (m *StoreGroupCollection) Reset()         { *m = StoreGroupCollection{} }
-func (m *StoreGroupCollection) String() string { return proto.CompactTextString(m) }
-func (*StoreGroupCollection) ProtoMessage()    {}
-func (*StoreGroupCollection) Descriptor() ([]byte, []int) {
-	return fileDescriptor_entities_gen_9c6330bb2a5fc4e2, []int{3}
+func (m *StoreGroups) Reset()         { *m = StoreGroups{} }
+func (m *StoreGroups) String() string { return proto.CompactTextString(m) }
+func (*StoreGroups) ProtoMessage()    {}
+func (*StoreGroups) Descriptor() ([]byte, []int) {
+	return fileDescriptor_entities_gen_2e5cb26d38efad33, []int{3}
 }
-func (m *StoreGroupCollection) XXX_Unmarshal(b []byte) error {
+func (m *StoreGroups) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *StoreGroupCollection) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *StoreGroups) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_StoreGroupCollection.Marshal(b, m, deterministic)
+		return xxx_messageInfo_StoreGroups.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalTo(b)
@@ -143,23 +143,23 @@ func (m *StoreGroupCollection) XXX_Marshal(b []byte, deterministic bool) ([]byte
 		return b[:n], nil
 	}
 }
-func (dst *StoreGroupCollection) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_StoreGroupCollection.Merge(dst, src)
+func (dst *StoreGroups) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_StoreGroups.Merge(dst, src)
 }
-func (m *StoreGroupCollection) XXX_Size() int {
+func (m *StoreGroups) XXX_Size() int {
 	return m.Size()
 }
-func (m *StoreGroupCollection) XXX_DiscardUnknown() {
-	xxx_messageInfo_StoreGroupCollection.DiscardUnknown(m)
+func (m *StoreGroups) XXX_DiscardUnknown() {
+	xxx_messageInfo_StoreGroups.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_StoreGroupCollection proto.InternalMessageInfo
+var xxx_messageInfo_StoreGroups proto.InternalMessageInfo
 
 func (m *StoreWebsite) Reset()         { *m = StoreWebsite{} }
 func (m *StoreWebsite) String() string { return proto.CompactTextString(m) }
 func (*StoreWebsite) ProtoMessage()    {}
 func (*StoreWebsite) Descriptor() ([]byte, []int) {
-	return fileDescriptor_entities_gen_9c6330bb2a5fc4e2, []int{4}
+	return fileDescriptor_entities_gen_2e5cb26d38efad33, []int{4}
 }
 func (m *StoreWebsite) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -188,18 +188,18 @@ func (m *StoreWebsite) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_StoreWebsite proto.InternalMessageInfo
 
-func (m *StoreWebsiteCollection) Reset()         { *m = StoreWebsiteCollection{} }
-func (m *StoreWebsiteCollection) String() string { return proto.CompactTextString(m) }
-func (*StoreWebsiteCollection) ProtoMessage()    {}
-func (*StoreWebsiteCollection) Descriptor() ([]byte, []int) {
-	return fileDescriptor_entities_gen_9c6330bb2a5fc4e2, []int{5}
+func (m *StoreWebsites) Reset()         { *m = StoreWebsites{} }
+func (m *StoreWebsites) String() string { return proto.CompactTextString(m) }
+func (*StoreWebsites) ProtoMessage()    {}
+func (*StoreWebsites) Descriptor() ([]byte, []int) {
+	return fileDescriptor_entities_gen_2e5cb26d38efad33, []int{5}
 }
-func (m *StoreWebsiteCollection) XXX_Unmarshal(b []byte) error {
+func (m *StoreWebsites) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *StoreWebsiteCollection) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *StoreWebsites) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_StoreWebsiteCollection.Marshal(b, m, deterministic)
+		return xxx_messageInfo_StoreWebsites.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalTo(b)
@@ -209,25 +209,25 @@ func (m *StoreWebsiteCollection) XXX_Marshal(b []byte, deterministic bool) ([]by
 		return b[:n], nil
 	}
 }
-func (dst *StoreWebsiteCollection) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_StoreWebsiteCollection.Merge(dst, src)
+func (dst *StoreWebsites) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_StoreWebsites.Merge(dst, src)
 }
-func (m *StoreWebsiteCollection) XXX_Size() int {
+func (m *StoreWebsites) XXX_Size() int {
 	return m.Size()
 }
-func (m *StoreWebsiteCollection) XXX_DiscardUnknown() {
-	xxx_messageInfo_StoreWebsiteCollection.DiscardUnknown(m)
+func (m *StoreWebsites) XXX_DiscardUnknown() {
+	xxx_messageInfo_StoreWebsites.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_StoreWebsiteCollection proto.InternalMessageInfo
+var xxx_messageInfo_StoreWebsites proto.InternalMessageInfo
 
 func init() {
 	proto.RegisterType((*Store)(nil), "store.Store")
-	proto.RegisterType((*StoreCollection)(nil), "store.StoreCollection")
+	proto.RegisterType((*Stores)(nil), "store.Stores")
 	proto.RegisterType((*StoreGroup)(nil), "store.StoreGroup")
-	proto.RegisterType((*StoreGroupCollection)(nil), "store.StoreGroupCollection")
+	proto.RegisterType((*StoreGroups)(nil), "store.StoreGroups")
 	proto.RegisterType((*StoreWebsite)(nil), "store.StoreWebsite")
-	proto.RegisterType((*StoreWebsiteCollection)(nil), "store.StoreWebsiteCollection")
+	proto.RegisterType((*StoreWebsites)(nil), "store.StoreWebsites")
 }
 func (m *Store) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
@@ -249,14 +249,12 @@ func (m *Store) MarshalTo(dAtA []byte) (int, error) {
 		i++
 		i = encodeVarintEntitiesGen(dAtA, i, uint64(m.StoreID))
 	}
-	dAtA[i] = 0x12
-	i++
-	i = encodeVarintEntitiesGen(dAtA, i, uint64(m.Code.Size()))
-	n1, err := m.Code.MarshalTo(dAtA[i:])
-	if err != nil {
-		return 0, err
+	if len(m.Code) > 0 {
+		dAtA[i] = 0x12
+		i++
+		i = encodeVarintEntitiesGen(dAtA, i, uint64(len(m.Code)))
+		i += copy(dAtA[i:], m.Code)
 	}
-	i += n1
 	if m.WebsiteID != 0 {
 		dAtA[i] = 0x18
 		i++
@@ -292,26 +290,26 @@ func (m *Store) MarshalTo(dAtA []byte) (int, error) {
 		dAtA[i] = 0x42
 		i++
 		i = encodeVarintEntitiesGen(dAtA, i, uint64(m.StoreGroup.Size()))
-		n2, err := m.StoreGroup.MarshalTo(dAtA[i:])
+		n1, err := m.StoreGroup.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n2
+		i += n1
 	}
 	if m.StoreWebsite != nil {
 		dAtA[i] = 0x4a
 		i++
 		i = encodeVarintEntitiesGen(dAtA, i, uint64(m.StoreWebsite.Size()))
-		n3, err := m.StoreWebsite.MarshalTo(dAtA[i:])
+		n2, err := m.StoreWebsite.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n3
+		i += n2
 	}
 	return i, nil
 }
 
-func (m *StoreCollection) Marshal() (dAtA []byte, err error) {
+func (m *Stores) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalTo(dAtA)
@@ -321,7 +319,7 @@ func (m *StoreCollection) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *StoreCollection) MarshalTo(dAtA []byte) (int, error) {
+func (m *Stores) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -385,25 +383,25 @@ func (m *StoreGroup) MarshalTo(dAtA []byte) (int, error) {
 	dAtA[i] = 0x32
 	i++
 	i = encodeVarintEntitiesGen(dAtA, i, uint64(m.Code.Size()))
-	n4, err := m.Code.MarshalTo(dAtA[i:])
+	n3, err := m.Code.MarshalTo(dAtA[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n4
+	i += n3
 	if m.StoreWebsite != nil {
 		dAtA[i] = 0x3a
 		i++
 		i = encodeVarintEntitiesGen(dAtA, i, uint64(m.StoreWebsite.Size()))
-		n5, err := m.StoreWebsite.MarshalTo(dAtA[i:])
+		n4, err := m.StoreWebsite.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n5
+		i += n4
 	}
 	return i, nil
 }
 
-func (m *StoreGroupCollection) Marshal() (dAtA []byte, err error) {
+func (m *StoreGroups) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalTo(dAtA)
@@ -413,7 +411,7 @@ func (m *StoreGroupCollection) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *StoreGroupCollection) MarshalTo(dAtA []byte) (int, error) {
+func (m *StoreGroups) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -453,22 +451,20 @@ func (m *StoreWebsite) MarshalTo(dAtA []byte) (int, error) {
 		i++
 		i = encodeVarintEntitiesGen(dAtA, i, uint64(m.WebsiteID))
 	}
-	dAtA[i] = 0x12
-	i++
-	i = encodeVarintEntitiesGen(dAtA, i, uint64(m.Code.Size()))
-	n6, err := m.Code.MarshalTo(dAtA[i:])
-	if err != nil {
-		return 0, err
+	if len(m.Code) > 0 {
+		dAtA[i] = 0x12
+		i++
+		i = encodeVarintEntitiesGen(dAtA, i, uint64(len(m.Code)))
+		i += copy(dAtA[i:], m.Code)
 	}
-	i += n6
 	dAtA[i] = 0x1a
 	i++
 	i = encodeVarintEntitiesGen(dAtA, i, uint64(m.Name.Size()))
-	n7, err := m.Name.MarshalTo(dAtA[i:])
+	n5, err := m.Name.MarshalTo(dAtA[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n7
+	i += n5
 	if m.SortOrder != 0 {
 		dAtA[i] = 0x20
 		i++
@@ -489,30 +485,30 @@ func (m *StoreWebsite) MarshalTo(dAtA []byte) (int, error) {
 		}
 		i++
 	}
-	if m.StoreGroup != nil {
+	if m.Stores != nil {
 		dAtA[i] = 0x3a
 		i++
-		i = encodeVarintEntitiesGen(dAtA, i, uint64(m.StoreGroup.Size()))
-		n8, err := m.StoreGroup.MarshalTo(dAtA[i:])
+		i = encodeVarintEntitiesGen(dAtA, i, uint64(m.Stores.Size()))
+		n6, err := m.Stores.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n8
+		i += n6
 	}
-	if m.Store != nil {
+	if m.StoreGroups != nil {
 		dAtA[i] = 0x42
 		i++
-		i = encodeVarintEntitiesGen(dAtA, i, uint64(m.Store.Size()))
-		n9, err := m.Store.MarshalTo(dAtA[i:])
+		i = encodeVarintEntitiesGen(dAtA, i, uint64(m.StoreGroups.Size()))
+		n7, err := m.StoreGroups.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n9
+		i += n7
 	}
 	return i, nil
 }
 
-func (m *StoreWebsiteCollection) Marshal() (dAtA []byte, err error) {
+func (m *StoreWebsites) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalTo(dAtA)
@@ -522,7 +518,7 @@ func (m *StoreWebsiteCollection) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *StoreWebsiteCollection) MarshalTo(dAtA []byte) (int, error) {
+func (m *StoreWebsites) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -560,8 +556,10 @@ func (m *Store) Size() (n int) {
 	if m.StoreID != 0 {
 		n += 1 + sovEntitiesGen(uint64(m.StoreID))
 	}
-	l = m.Code.Size()
-	n += 1 + l + sovEntitiesGen(uint64(l))
+	l = len(m.Code)
+	if l > 0 {
+		n += 1 + l + sovEntitiesGen(uint64(l))
+	}
 	if m.WebsiteID != 0 {
 		n += 1 + sovEntitiesGen(uint64(m.WebsiteID))
 	}
@@ -589,7 +587,7 @@ func (m *Store) Size() (n int) {
 	return n
 }
 
-func (m *StoreCollection) Size() (n int) {
+func (m *Stores) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -635,7 +633,7 @@ func (m *StoreGroup) Size() (n int) {
 	return n
 }
 
-func (m *StoreGroupCollection) Size() (n int) {
+func (m *StoreGroups) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -659,8 +657,10 @@ func (m *StoreWebsite) Size() (n int) {
 	if m.WebsiteID != 0 {
 		n += 1 + sovEntitiesGen(uint64(m.WebsiteID))
 	}
-	l = m.Code.Size()
-	n += 1 + l + sovEntitiesGen(uint64(l))
+	l = len(m.Code)
+	if l > 0 {
+		n += 1 + l + sovEntitiesGen(uint64(l))
+	}
 	l = m.Name.Size()
 	n += 1 + l + sovEntitiesGen(uint64(l))
 	if m.SortOrder != 0 {
@@ -672,18 +672,18 @@ func (m *StoreWebsite) Size() (n int) {
 	if m.IsDefault {
 		n += 2
 	}
-	if m.StoreGroup != nil {
-		l = m.StoreGroup.Size()
+	if m.Stores != nil {
+		l = m.Stores.Size()
 		n += 1 + l + sovEntitiesGen(uint64(l))
 	}
-	if m.Store != nil {
-		l = m.Store.Size()
+	if m.StoreGroups != nil {
+		l = m.StoreGroups.Size()
 		n += 1 + l + sovEntitiesGen(uint64(l))
 	}
 	return n
 }
 
-func (m *StoreWebsiteCollection) Size() (n int) {
+func (m *StoreWebsites) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -763,7 +763,7 @@ func (m *Store) Unmarshal(dAtA []byte) error {
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Code", wireType)
 			}
-			var msglen int
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowEntitiesGen
@@ -773,21 +773,20 @@ func (m *Store) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
+				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if msglen < 0 {
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
 				return ErrInvalidLengthEntitiesGen
 			}
-			postIndex := iNdEx + msglen
+			postIndex := iNdEx + intStringLen
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.Code.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
+			m.Code = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 0 {
@@ -982,7 +981,7 @@ func (m *Store) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *StoreCollection) Unmarshal(dAtA []byte) error {
+func (m *Stores) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1005,10 +1004,10 @@ func (m *StoreCollection) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: StoreCollection: wiretype end group for non-group")
+			return fmt.Errorf("proto: Stores: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: StoreCollection: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: Stores: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1281,7 +1280,7 @@ func (m *StoreGroup) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *StoreGroupCollection) Unmarshal(dAtA []byte) error {
+func (m *StoreGroups) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1304,10 +1303,10 @@ func (m *StoreGroupCollection) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: StoreGroupCollection: wiretype end group for non-group")
+			return fmt.Errorf("proto: StoreGroups: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: StoreGroupCollection: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: StoreGroups: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1414,7 +1413,7 @@ func (m *StoreWebsite) Unmarshal(dAtA []byte) error {
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Code", wireType)
 			}
-			var msglen int
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowEntitiesGen
@@ -1424,21 +1423,20 @@ func (m *StoreWebsite) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
+				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if msglen < 0 {
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
 				return ErrInvalidLengthEntitiesGen
 			}
-			postIndex := iNdEx + msglen
+			postIndex := iNdEx + intStringLen
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.Code.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
+			m.Code = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -1530,7 +1528,7 @@ func (m *StoreWebsite) Unmarshal(dAtA []byte) error {
 			m.IsDefault = bool(v != 0)
 		case 7:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field StoreGroup", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Stores", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1554,16 +1552,16 @@ func (m *StoreWebsite) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.StoreGroup == nil {
-				m.StoreGroup = &StoreGroupCollection{}
+			if m.Stores == nil {
+				m.Stores = &Stores{}
 			}
-			if err := m.StoreGroup.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Stores.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 8:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Store", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field StoreGroups", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1587,10 +1585,10 @@ func (m *StoreWebsite) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Store == nil {
-				m.Store = &StoreCollection{}
+			if m.StoreGroups == nil {
+				m.StoreGroups = &StoreGroups{}
 			}
-			if err := m.Store.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.StoreGroups.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1615,7 +1613,7 @@ func (m *StoreWebsite) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *StoreWebsiteCollection) Unmarshal(dAtA []byte) error {
+func (m *StoreWebsites) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1638,10 +1636,10 @@ func (m *StoreWebsiteCollection) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: StoreWebsiteCollection: wiretype end group for non-group")
+			return fmt.Errorf("proto: StoreWebsites: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: StoreWebsiteCollection: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: StoreWebsites: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1801,48 +1799,41 @@ var (
 	ErrIntOverflowEntitiesGen   = fmt.Errorf("proto: integer overflow")
 )
 
-func init() { proto.RegisterFile("entities_gen.proto", fileDescriptor_entities_gen_9c6330bb2a5fc4e2) }
+func init() { proto.RegisterFile("entities_gen.proto", fileDescriptor_entities_gen_2e5cb26d38efad33) }
 
-var fileDescriptor_entities_gen_9c6330bb2a5fc4e2 = []byte{
-	// 637 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x94, 0xcb, 0x6e, 0xd3, 0x4c,
-	0x14, 0xc7, 0xe3, 0x26, 0x69, 0xec, 0x69, 0xda, 0xef, 0x63, 0x40, 0x95, 0x55, 0x90, 0x63, 0x05,
-	0x01, 0x41, 0x2a, 0x8e, 0x68, 0x17, 0x2c, 0x80, 0x45, 0xd3, 0x48, 0x95, 0x37, 0x20, 0x4d, 0x17,
-	0x48, 0x6c, 0x2c, 0xc7, 0x9e, 0x9a, 0x11, 0xa9, 0xa7, 0x1a, 0x4f, 0x40, 0xbc, 0x05, 0xcb, 0x6e,
-	0x79, 0x03, 0x1e, 0xa3, 0x4b, 0x9e, 0xc0, 0x02, 0x57, 0xbc, 0x07, 0xf2, 0xb1, 0x5d, 0x8f, 0x7b,
-	0x21, 0x65, 0x13, 0xcd, 0xb9, 0xcd, 0x9c, 0xfc, 0x7f, 0xe7, 0x18, 0x61, 0x1a, 0x4b, 0x26, 0x19,
-	0x4d, 0xbc, 0x88, 0xc6, 0xce, 0x89, 0xe0, 0x92, 0xe3, 0x6e, 0x22, 0xb9, 0xa0, 0x5b, 0xcf, 0x22,
-	0x26, 0x3f, 0x2c, 0x66, 0x4e, 0xc0, 0x8f, 0xc7, 0x11, 0x8f, 0xf8, 0x18, 0xa2, 0xb3, 0xc5, 0x11,
-	0x58, 0x60, 0xc0, 0xa9, 0xa8, 0xda, 0xda, 0x51, 0xd2, 0x03, 0x2e, 0x28, 0x5c, 0xc2, 0xf8, 0xf8,
-	0xe4, 0x63, 0x34, 0xce, 0xcf, 0x7e, 0x44, 0xc7, 0xf1, 0x62, 0x3e, 0x87, 0x9f, 0xa2, 0x66, 0x78,
-	0xda, 0x46, 0xdd, 0xc3, 0x3c, 0x0f, 0x3f, 0x46, 0x3a, 0x14, 0x78, 0x2c, 0x34, 0x35, 0x5b, 0x1b,
-	0xad, 0x4f, 0xd6, 0xb2, 0x74, 0xd0, 0x83, 0xa0, 0x3b, 0x25, 0x3d, 0x08, 0xba, 0x21, 0x76, 0x50,
-	0x27, 0xe0, 0x21, 0x35, 0x57, 0x6c, 0x6d, 0xb4, 0xb6, 0xd3, 0x77, 0xe0, 0xb2, 0x43, 0x29, 0x58,
-	0x1c, 0x4d, 0xfa, 0x67, 0xe9, 0xa0, 0x95, 0xa5, 0x83, 0xce, 0x3e, 0x0f, 0x29, 0x81, 0x3c, 0xbc,
-	0x8d, 0xd0, 0x67, 0x3a, 0x4b, 0x98, 0x84, 0x9b, 0xdb, 0x70, 0xf3, 0x7a, 0x96, 0x0e, 0x8c, 0x77,
-	0x85, 0xd7, 0x9d, 0x12, 0xa3, 0x4c, 0x70, 0xc3, 0xbc, 0x8b, 0x48, 0xf0, 0xc5, 0x49, 0x9e, 0xdb,
-	0xa9, 0xbb, 0x38, 0xc8, 0x7d, 0x79, 0x17, 0x10, 0x74, 0x43, 0xfc, 0x00, 0x75, 0x62, 0xff, 0x98,
-	0x9a, 0x5d, 0x5b, 0x1b, 0x19, 0x13, 0x3d, 0x7f, 0xf3, 0x8d, 0x7f, 0x4c, 0x09, 0x78, 0xf3, 0x37,
-	0x13, 0x2e, 0xa4, 0xc7, 0x45, 0x48, 0x85, 0xb9, 0x5a, 0xbf, 0x79, 0xc8, 0x85, 0x7c, 0x9b, 0x3b,
-	0x89, 0x91, 0x54, 0x47, 0xfc, 0x14, 0x19, 0x2c, 0xf1, 0xfc, 0x40, 0xb2, 0x4f, 0xd4, 0xec, 0xd9,
-	0xda, 0x48, 0x9f, 0xf4, 0xb3, 0x74, 0xa0, 0xbb, 0xc9, 0x1e, 0xf8, 0x88, 0xce, 0xca, 0x13, 0x7e,
-	0x8e, 0x10, 0x08, 0x02, 0xfd, 0x98, 0x3a, 0x48, 0x70, 0xc7, 0x01, 0x69, 0x9c, 0x3a, 0x40, 0x94,
-	0x24, 0xfc, 0x02, 0xf5, 0xc1, 0x2a, 0xff, 0xae, 0x69, 0x40, 0xd1, 0x5d, 0xb5, 0xa8, 0x0c, 0x91,
-	0x46, 0xe2, 0x70, 0x17, 0xfd, 0x07, 0xf6, 0x3e, 0x9f, 0xcf, 0x69, 0x20, 0x19, 0x8f, 0xb1, 0x8d,
-	0x3a, 0x53, 0x5f, 0xfa, 0xa6, 0x66, 0xb7, 0x41, 0x7b, 0xe5, 0x0e, 0x02, 0x91, 0xe1, 0xef, 0x15,
-	0xb5, 0xc3, 0x86, 0x9c, 0xda, 0x5f, 0xe4, 0x6c, 0x42, 0x5a, 0x59, 0x02, 0xa9, 0x12, 0xbf, 0x7d,
-	0xad, 0xf8, 0xaf, 0xd0, 0xff, 0x82, 0x73, 0xe9, 0x05, 0xbe, 0xa4, 0x11, 0x17, 0x5f, 0x6a, 0x94,
-	0x38, 0x4b, 0x07, 0x1b, 0x84, 0x73, 0xb9, 0x5f, 0x86, 0xdc, 0x29, 0xd9, 0x10, 0xaa, 0x1d, 0xe6,
-	0xd5, 0x21, 0x3d, 0xf2, 0x17, 0x73, 0xe9, 0x5d, 0x8c, 0x63, 0xb7, 0xae, 0x9e, 0x16, 0xb1, 0x6a,
-	0x2a, 0x37, 0x42, 0xd5, 0xae, 0x87, 0x73, 0xf5, 0x96, 0xc3, 0x79, 0x19, 0x4e, 0xef, 0xb6, 0x70,
-	0x5e, 0xa3, 0x7b, 0xb5, 0xcc, 0x0a, 0xa1, 0x47, 0x0d, 0x42, 0xd7, 0x8c, 0x46, 0x81, 0xe9, 0x5b,
-	0xbb, 0xf9, 0xf0, 0x25, 0x00, 0xda, 0x12, 0x00, 0xff, 0xba, 0x83, 0x8e, 0x02, 0xec, 0xc6, 0xfc,
-	0x1b, 0xf7, 0xa7, 0xb3, 0x64, 0x7f, 0x14, 0x64, 0x17, 0xc3, 0x76, 0x15, 0x59, 0x35, 0x73, 0x15,
-	0xb2, 0x83, 0x7a, 0xf4, 0x58, 0xe2, 0x95, 0x4e, 0x00, 0xa7, 0x17, 0x6f, 0xb9, 0x49, 0x59, 0x49,
-	0x0c, 0x56, 0x1d, 0xf1, 0xcb, 0xc6, 0x02, 0x16, 0xb8, 0xee, 0x5f, 0x51, 0xb9, 0x06, 0xd2, 0x58,
-	0xc5, 0xed, 0xf2, 0x5b, 0x57, 0x2e, 0xee, 0xa6, 0x5a, 0xa7, 0x94, 0x14, 0x49, 0xc3, 0x3d, 0xb4,
-	0xa9, 0x22, 0x52, 0x20, 0x3f, 0x69, 0x40, 0xbe, 0x76, 0x5a, 0x20, 0x61, 0xf2, 0xf0, 0xec, 0x97,
-	0xd5, 0x3a, 0xcb, 0x2c, 0xed, 0x47, 0x66, 0x69, 0x3f, 0x33, 0x4b, 0xfb, 0x7a, 0x6e, 0xb5, 0x4e,
-	0xcf, 0xad, 0xd6, 0xf7, 0x73, 0xab, 0xf5, 0xbe, 0xf8, 0xca, 0xcf, 0x56, 0xe1, 0x4b, 0xbc, 0xfb,
-	0x27, 0x00, 0x00, 0xff, 0xff, 0x62, 0x76, 0x18, 0x35, 0x09, 0x06, 0x00, 0x00,
+var fileDescriptor_entities_gen_2e5cb26d38efad33 = []byte{
+	// 521 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x94, 0xcf, 0xaa, 0xd3, 0x40,
+	0x14, 0xc6, 0x33, 0xb9, 0xe9, 0xbf, 0x69, 0x2b, 0x38, 0x6e, 0x86, 0x22, 0x31, 0x54, 0x6e, 0x0d,
+	0x82, 0x09, 0x56, 0x41, 0xb7, 0xde, 0x5b, 0x90, 0x6e, 0x14, 0xa6, 0x0b, 0xc1, 0x8d, 0xa4, 0xbd,
+	0x73, 0x63, 0xb0, 0xb7, 0x53, 0x32, 0x13, 0xc1, 0x47, 0x70, 0xe7, 0xd2, 0x37, 0x10, 0x77, 0x3e,
+	0x46, 0x97, 0x3e, 0x81, 0x68, 0xfb, 0x22, 0x92, 0x93, 0xa4, 0x99, 0x69, 0x2b, 0xb8, 0x29, 0xe7,
+	0x9c, 0xf9, 0xce, 0xd7, 0x99, 0xdf, 0x39, 0x04, 0x13, 0xbe, 0x52, 0x89, 0x4a, 0xb8, 0x7c, 0x17,
+	0xf3, 0x55, 0xb0, 0x4e, 0x85, 0x12, 0xa4, 0x21, 0x95, 0x48, 0xf9, 0xe0, 0x51, 0x9c, 0xa8, 0xf7,
+	0xd9, 0x3c, 0x58, 0x88, 0x9b, 0x30, 0x16, 0xb1, 0x08, 0xe1, 0x74, 0x9e, 0x5d, 0x43, 0x06, 0x09,
+	0x44, 0x45, 0xd7, 0x60, 0xac, 0xc9, 0x17, 0x22, 0xe5, 0x60, 0x92, 0x88, 0x70, 0xfd, 0x21, 0x0e,
+	0xf3, 0x38, 0x8a, 0x79, 0xb8, 0xca, 0x96, 0x4b, 0xf8, 0x29, 0x7a, 0x86, 0xdf, 0x6c, 0xdc, 0x98,
+	0xe5, 0x3a, 0x42, 0x71, 0x0b, 0x82, 0xe9, 0x84, 0x22, 0x0f, 0xf9, 0x7d, 0x56, 0xa5, 0x84, 0x60,
+	0xe7, 0x52, 0x5c, 0x71, 0x6a, 0x7b, 0xc8, 0xef, 0x30, 0x88, 0xc9, 0x5d, 0xdc, 0x79, 0xc3, 0xe7,
+	0x32, 0x51, 0xb9, 0xfe, 0x0c, 0xf4, 0x75, 0x21, 0xf7, 0x7a, 0x99, 0x8a, 0x6c, 0x3d, 0x9d, 0x50,
+	0xa7, 0xf0, 0x2a, 0xd3, 0xdc, 0xeb, 0x55, 0x74, 0xc3, 0x69, 0xa3, 0xf0, 0xca, 0xe3, 0xdc, 0x6b,
+	0x26, 0x52, 0xf5, 0x3a, 0xbd, 0xe2, 0x29, 0x6d, 0x16, 0x5e, 0xfb, 0x02, 0x19, 0xe0, 0xf6, 0x54,
+	0xbe, 0x58, 0xa8, 0xe4, 0x23, 0xa7, 0x2d, 0x0f, 0xf9, 0x6d, 0xb6, 0xcf, 0xc9, 0x63, 0x8c, 0xe1,
+	0x92, 0xe0, 0x4e, 0xdb, 0x1e, 0xf2, 0xbb, 0xe3, 0xdb, 0x01, 0xbc, 0x3b, 0xa8, 0x0f, 0x98, 0x26,
+	0x22, 0xcf, 0x70, 0x0f, 0xb2, 0xf2, 0xb2, 0xb4, 0x03, 0x4d, 0x77, 0xf4, 0xa6, 0xf2, 0x88, 0x19,
+	0xc2, 0xe1, 0x43, 0xdc, 0x84, 0x5c, 0x12, 0x0f, 0x3b, 0x93, 0x48, 0x45, 0x14, 0x79, 0x67, 0x7e,
+	0x77, 0xdc, 0xd3, 0x5b, 0x19, 0x9c, 0x0c, 0x3f, 0xdb, 0xfa, 0xc5, 0x74, 0x1c, 0xc8, 0xc4, 0x61,
+	0x60, 0xb4, 0x0f, 0x31, 0x56, 0xb0, 0xce, 0x34, 0x58, 0x23, 0x7c, 0x8b, 0x09, 0xa1, 0x2e, 0x23,
+	0xc5, 0x63, 0x91, 0x7e, 0xda, 0x13, 0x3e, 0xa8, 0xe6, 0xba, 0x09, 0xbf, 0x8e, 0xb2, 0xa5, 0xaa,
+	0xa6, 0xda, 0x28, 0x74, 0x66, 0x95, 0x8c, 0xca, 0xe1, 0x36, 0x81, 0x43, 0x2f, 0x80, 0xdd, 0x98,
+	0xa9, 0x34, 0x59, 0xc5, 0x17, 0xce, 0xe6, 0xd7, 0x3d, 0xab, 0x1c, 0xf8, 0x21, 0xb7, 0xd6, 0xff,
+	0x72, 0x7b, 0x8a, 0xbb, 0x35, 0x0a, 0x49, 0xce, 0x0d, 0x78, 0x27, 0x86, 0x55, 0x10, 0xfc, 0x6e,
+	0x9b, 0xff, 0x67, 0x92, 0x42, 0x27, 0x48, 0x1d, 0xad, 0xe8, 0x48, 0xa3, 0xf7, 0x8f, 0x97, 0x1d,
+	0xaf, 0x9f, 0x73, 0xb8, 0x7e, 0x35, 0xc7, 0x6a, 0x84, 0x26, 0x47, 0x6d, 0x92, 0x53, 0x59, 0xd6,
+	0x00, 0x66, 0x9b, 0xd5, 0x05, 0x72, 0x5e, 0x2d, 0x4f, 0xc9, 0xad, 0xaf, 0xbf, 0x5b, 0xb2, 0x6a,
+	0xb3, 0x4c, 0x56, 0xe5, 0x42, 0x93, 0x23, 0x46, 0x92, 0xe9, 0xb2, 0xe1, 0x73, 0xdc, 0xd7, 0x51,
+	0x49, 0xf2, 0xc0, 0x60, 0x7c, 0x72, 0x46, 0x20, 0xb8, 0xb8, 0xbf, 0xf9, 0xe3, 0x5a, 0x9b, 0xad,
+	0x8b, 0x7e, 0x6e, 0x5d, 0xf4, 0x7b, 0xeb, 0xa2, 0x2f, 0x3b, 0xd7, 0xfa, 0xba, 0x73, 0xad, 0x1f,
+	0x3b, 0xd7, 0x7a, 0x5b, 0x7c, 0x85, 0xe6, 0x4d, 0xf8, 0x52, 0x3c, 0xf9, 0x1b, 0x00, 0x00, 0xff,
+	0xff, 0x71, 0x83, 0x35, 0xa8, 0xa9, 0x04, 0x00, 0x00,
 }

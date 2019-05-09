@@ -45,6 +45,15 @@ func WithLoadFromDB(ctx context.Context, db dml.QueryExecPreparer) Option {
 			if _, err := stmtWebsite.Load(ctx, &s.websites); err != nil {
 				return errors.WithStack(err)
 			}
+			if err := s.stores.Validate(); err != nil {
+				return errors.WithStack(err)
+			}
+			if err := s.groups.Validate(); err != nil {
+				return errors.WithStack(err)
+			}
+			if err := s.websites.Validate(); err != nil {
+				return errors.WithStack(err)
+			}
 			return nil
 		},
 	}

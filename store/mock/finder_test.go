@@ -19,7 +19,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/store/mock"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestFind(t *testing.T) {
@@ -27,26 +27,26 @@ func TestFind(t *testing.T) {
 		f *mock.Find
 	}{
 		{
-			mock.NewDefaultStoreID(-1, -2, errors.Fatal.Newf("Whooops2"),
-				mock.NewStoreIDbyCode(-3, -4, errors.Fatal.Newf("Whooops1")),
+			mock.NewDefaultStoreID(1, 2, errors.Fatal.Newf("Whooops2"),
+				mock.NewStoreIDbyCode(3, 4, errors.Fatal.Newf("Whooops1")),
 			),
 		},
 		{
-			mock.NewStoreIDbyCode(-3, -4, errors.Fatal.Newf("Whooops1"),
-				mock.NewDefaultStoreID(-1, -2, errors.Fatal.Newf("Whooops2")),
+			mock.NewStoreIDbyCode(3, 4, errors.Fatal.Newf("Whooops1"),
+				mock.NewDefaultStoreID(1, 2, errors.Fatal.Newf("Whooops2")),
 			),
 		},
 	}
 	for _, test := range tests {
 		sID, wID, err := test.f.DefaultStoreID(0)
-		assert.Exactly(t, int64(-1), sID)
-		assert.Exactly(t, int64(-2), wID)
+		assert.Exactly(t, uint32(1), sID)
+		assert.Exactly(t, uint32(2), wID)
 		assert.True(t, errors.Fatal.Match(err))
 		assert.Exactly(t, 1, test.f.DefaultStoreIDInvoked())
 
 		sID, wID, err = test.f.StoreIDbyCode(0, "x")
-		assert.Exactly(t, int64(-3), sID)
-		assert.Exactly(t, int64(-4), wID)
+		assert.Exactly(t, uint32(3), sID)
+		assert.Exactly(t, uint32(4), wID)
 		assert.True(t, errors.Fatal.Match(err))
 		assert.Exactly(t, 1, test.f.StoreIDbyCodeInvoked())
 	}

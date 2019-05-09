@@ -17,9 +17,8 @@ package mock_test
 import (
 	"testing"
 
-	"github.com/alecthomas/repr"
 	"github.com/corestoreio/pkg/store/mock"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestNewEurozzyService_Euro(t *testing.T) {
@@ -31,13 +30,13 @@ func TestNewEurozzyService_Euro(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Exactly(t, "uk", s.Code.String)
+	assert.Exactly(t, "uk", s.Code)
 
 	s, err = ns.Store(3)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Exactly(t, "ch", s.Code.String)
+	assert.Exactly(t, "ch", s.Code)
 }
 
 func TestNewEurozzyService_ANZ(t *testing.T) {
@@ -49,25 +48,18 @@ func TestNewEurozzyService_ANZ(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Exactly(t, "uk", s.Code.String)
+	assert.Exactly(t, "uk", s.Code)
 
 	s, err = ns.Store(3)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Exactly(t, "ch", s.Code.String)
-	assert.Exactly(t, int64(1), s.WebsiteID)
+	assert.Exactly(t, "ch", s.Code)
+	assert.Exactly(t, uint32(1), s.WebsiteID)
 
 	s, err = ns.DefaultStoreView()
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Exactly(t, "at", s.Code.String)
-}
-
-func TestNewServiceEuroW11G11S19(t *testing.T) {
-	srv := mock.NewServiceEuroW11G11S19()
-
-	repr.Println(srv)
-
+	assert.Exactly(t, "at", s.Code)
 }

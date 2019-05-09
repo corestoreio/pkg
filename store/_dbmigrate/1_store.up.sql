@@ -5,7 +5,7 @@ DROP TABLE IF EXISTS `store_website`;
 
 CREATE TABLE `store_website` (
     `website_id`       SMALLINT(5) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Website ID',
-    `code`             VARCHAR(64)                   DEFAULT NULL COMMENT 'Code',
+    `code`             VARCHAR(64)                   NOT NULL COMMENT 'Code',
     `name`             VARCHAR(128)                  DEFAULT NULL COMMENT 'Website Name',
     `sort_order`       SMALLINT(5) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Sort Order',
     `default_group_id` SMALLINT(5) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Default Group ID',
@@ -36,7 +36,7 @@ CREATE TABLE `store_group` (
 
 CREATE TABLE `store` (
     `store_id`   SMALLINT(5) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Store ID',
-    `code`       VARCHAR(64)                   DEFAULT NULL COMMENT 'Code',
+    `code`       VARCHAR(64)                   NOT NULL COMMENT 'Code',
     `website_id` SMALLINT(5) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Website ID',
     `group_id`   SMALLINT(5) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Group ID',
     `name`       VARCHAR(255)         NOT NULL COMMENT 'Store Name',

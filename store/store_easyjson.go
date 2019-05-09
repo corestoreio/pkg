@@ -20,7 +20,120 @@ var (
 	_ easyjson.Marshaler
 )
 
-func easyjson55774c79DecodeGithubComCorestoreioPkgStore(in *jlexer.Lexer, out *StoreWebsiteCollection) {
+func easyjson55774c79DecodeGithubComCorestoreioPkgStore(in *jlexer.Lexer, out *Stores) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "data":
+			if in.IsNull() {
+				in.Skip()
+				out.Data = nil
+			} else {
+				in.Delim('[')
+				if out.Data == nil {
+					if !in.IsDelim(']') {
+						out.Data = make([]*Store, 0, 8)
+					} else {
+						out.Data = []*Store{}
+					}
+				} else {
+					out.Data = (out.Data)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v1 *Store
+					if in.IsNull() {
+						in.Skip()
+						v1 = nil
+					} else {
+						if v1 == nil {
+							v1 = new(Store)
+						}
+						(*v1).UnmarshalEasyJSON(in)
+					}
+					out.Data = append(out.Data, v1)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson55774c79EncodeGithubComCorestoreioPkgStore(out *jwriter.Writer, in Stores) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if len(in.Data) != 0 {
+		const prefix string = ",\"data\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		{
+			out.RawByte('[')
+			for v2, v3 := range in.Data {
+				if v2 > 0 {
+					out.RawByte(',')
+				}
+				if v3 == nil {
+					out.RawString("null")
+				} else {
+					(*v3).MarshalEasyJSON(out)
+				}
+			}
+			out.RawByte(']')
+		}
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v Stores) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjson55774c79EncodeGithubComCorestoreioPkgStore(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v Stores) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjson55774c79EncodeGithubComCorestoreioPkgStore(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *Stores) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjson55774c79DecodeGithubComCorestoreioPkgStore(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *Stores) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjson55774c79DecodeGithubComCorestoreioPkgStore(l, v)
+}
+func easyjson55774c79DecodeGithubComCorestoreioPkgStore1(in *jlexer.Lexer, out *StoreWebsites) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -55,17 +168,17 @@ func easyjson55774c79DecodeGithubComCorestoreioPkgStore(in *jlexer.Lexer, out *S
 					out.Data = (out.Data)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v1 *StoreWebsite
+					var v4 *StoreWebsite
 					if in.IsNull() {
 						in.Skip()
-						v1 = nil
+						v4 = nil
 					} else {
-						if v1 == nil {
-							v1 = new(StoreWebsite)
+						if v4 == nil {
+							v4 = new(StoreWebsite)
 						}
-						(*v1).UnmarshalEasyJSON(in)
+						(*v4).UnmarshalEasyJSON(in)
 					}
-					out.Data = append(out.Data, v1)
+					out.Data = append(out.Data, v4)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -80,7 +193,7 @@ func easyjson55774c79DecodeGithubComCorestoreioPkgStore(in *jlexer.Lexer, out *S
 		in.Consumed()
 	}
 }
-func easyjson55774c79EncodeGithubComCorestoreioPkgStore(out *jwriter.Writer, in StoreWebsiteCollection) {
+func easyjson55774c79EncodeGithubComCorestoreioPkgStore1(out *jwriter.Writer, in StoreWebsites) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -94,14 +207,14 @@ func easyjson55774c79EncodeGithubComCorestoreioPkgStore(out *jwriter.Writer, in 
 		}
 		{
 			out.RawByte('[')
-			for v2, v3 := range in.Data {
-				if v2 > 0 {
+			for v5, v6 := range in.Data {
+				if v5 > 0 {
 					out.RawByte(',')
 				}
-				if v3 == nil {
+				if v6 == nil {
 					out.RawString("null")
 				} else {
-					(*v3).MarshalEasyJSON(out)
+					(*v6).MarshalEasyJSON(out)
 				}
 			}
 			out.RawByte(']')
@@ -111,29 +224,29 @@ func easyjson55774c79EncodeGithubComCorestoreioPkgStore(out *jwriter.Writer, in 
 }
 
 // MarshalJSON supports json.Marshaler interface
-func (v StoreWebsiteCollection) MarshalJSON() ([]byte, error) {
+func (v StoreWebsites) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson55774c79EncodeGithubComCorestoreioPkgStore(&w, v)
+	easyjson55774c79EncodeGithubComCorestoreioPkgStore1(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
-func (v StoreWebsiteCollection) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson55774c79EncodeGithubComCorestoreioPkgStore(w, v)
+func (v StoreWebsites) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjson55774c79EncodeGithubComCorestoreioPkgStore1(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
-func (v *StoreWebsiteCollection) UnmarshalJSON(data []byte) error {
+func (v *StoreWebsites) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson55774c79DecodeGithubComCorestoreioPkgStore(&r, v)
+	easyjson55774c79DecodeGithubComCorestoreioPkgStore1(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *StoreWebsiteCollection) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson55774c79DecodeGithubComCorestoreioPkgStore(l, v)
+func (v *StoreWebsites) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjson55774c79DecodeGithubComCorestoreioPkgStore1(l, v)
 }
-func easyjson55774c79DecodeGithubComCorestoreioPkgStore1(in *jlexer.Lexer, out *StoreWebsite) {
+func easyjson55774c79DecodeGithubComCorestoreioPkgStore2(in *jlexer.Lexer, out *StoreWebsite) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -155,9 +268,7 @@ func easyjson55774c79DecodeGithubComCorestoreioPkgStore1(in *jlexer.Lexer, out *
 		case "websiteID":
 			out.WebsiteID = uint32(in.Uint32())
 		case "code":
-			if data := in.Raw(); in.Ok() {
-				in.AddError((out.Code).UnmarshalJSON(data))
-			}
+			out.Code = string(in.String())
 		case "name":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.Name).UnmarshalJSON(data))
@@ -168,25 +279,25 @@ func easyjson55774c79DecodeGithubComCorestoreioPkgStore1(in *jlexer.Lexer, out *
 			out.DefaultGroupID = uint32(in.Uint32())
 		case "isDefault":
 			out.IsDefault = bool(in.Bool())
-		case "storeGroup":
+		case "stores":
 			if in.IsNull() {
 				in.Skip()
-				out.StoreGroup = nil
+				out.Stores = nil
 			} else {
-				if out.StoreGroup == nil {
-					out.StoreGroup = new(StoreGroupCollection)
+				if out.Stores == nil {
+					out.Stores = new(Stores)
 				}
-				(*out.StoreGroup).UnmarshalEasyJSON(in)
+				(*out.Stores).UnmarshalEasyJSON(in)
 			}
-		case "store":
+		case "storeGroups":
 			if in.IsNull() {
 				in.Skip()
-				out.Store = nil
+				out.StoreGroups = nil
 			} else {
-				if out.Store == nil {
-					out.Store = new(StoreCollection)
+				if out.StoreGroups == nil {
+					out.StoreGroups = new(StoreGroups)
 				}
-				(*out.Store).UnmarshalEasyJSON(in)
+				(*out.StoreGroups).UnmarshalEasyJSON(in)
 			}
 		default:
 			in.SkipRecursive()
@@ -198,7 +309,7 @@ func easyjson55774c79DecodeGithubComCorestoreioPkgStore1(in *jlexer.Lexer, out *
 		in.Consumed()
 	}
 }
-func easyjson55774c79EncodeGithubComCorestoreioPkgStore1(out *jwriter.Writer, in StoreWebsite) {
+func easyjson55774c79EncodeGithubComCorestoreioPkgStore2(out *jwriter.Writer, in StoreWebsite) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -212,7 +323,7 @@ func easyjson55774c79EncodeGithubComCorestoreioPkgStore1(out *jwriter.Writer, in
 		}
 		out.Uint32(uint32(in.WebsiteID))
 	}
-	if true {
+	if in.Code != "" {
 		const prefix string = ",\"code\":"
 		if first {
 			first = false
@@ -220,7 +331,7 @@ func easyjson55774c79EncodeGithubComCorestoreioPkgStore1(out *jwriter.Writer, in
 		} else {
 			out.RawString(prefix)
 		}
-		out.Raw((in.Code).MarshalJSON())
+		out.String(string(in.Code))
 	}
 	if true {
 		const prefix string = ",\"name\":"
@@ -262,25 +373,25 @@ func easyjson55774c79EncodeGithubComCorestoreioPkgStore1(out *jwriter.Writer, in
 		}
 		out.Bool(bool(in.IsDefault))
 	}
-	if in.StoreGroup != nil {
-		const prefix string = ",\"storeGroup\":"
+	if in.Stores != nil {
+		const prefix string = ",\"stores\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
 		} else {
 			out.RawString(prefix)
 		}
-		(*in.StoreGroup).MarshalEasyJSON(out)
+		(*in.Stores).MarshalEasyJSON(out)
 	}
-	if in.Store != nil {
-		const prefix string = ",\"store\":"
+	if in.StoreGroups != nil {
+		const prefix string = ",\"storeGroups\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
 		} else {
 			out.RawString(prefix)
 		}
-		(*in.Store).MarshalEasyJSON(out)
+		(*in.StoreGroups).MarshalEasyJSON(out)
 	}
 	out.RawByte('}')
 }
@@ -288,27 +399,27 @@ func easyjson55774c79EncodeGithubComCorestoreioPkgStore1(out *jwriter.Writer, in
 // MarshalJSON supports json.Marshaler interface
 func (v StoreWebsite) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson55774c79EncodeGithubComCorestoreioPkgStore1(&w, v)
+	easyjson55774c79EncodeGithubComCorestoreioPkgStore2(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v StoreWebsite) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson55774c79EncodeGithubComCorestoreioPkgStore1(w, v)
+	easyjson55774c79EncodeGithubComCorestoreioPkgStore2(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *StoreWebsite) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson55774c79DecodeGithubComCorestoreioPkgStore1(&r, v)
+	easyjson55774c79DecodeGithubComCorestoreioPkgStore2(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *StoreWebsite) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson55774c79DecodeGithubComCorestoreioPkgStore1(l, v)
+	easyjson55774c79DecodeGithubComCorestoreioPkgStore2(l, v)
 }
-func easyjson55774c79DecodeGithubComCorestoreioPkgStore2(in *jlexer.Lexer, out *StoreGroupCollection) {
+func easyjson55774c79DecodeGithubComCorestoreioPkgStore3(in *jlexer.Lexer, out *StoreGroups) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -343,17 +454,17 @@ func easyjson55774c79DecodeGithubComCorestoreioPkgStore2(in *jlexer.Lexer, out *
 					out.Data = (out.Data)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v4 *StoreGroup
+					var v7 *StoreGroup
 					if in.IsNull() {
 						in.Skip()
-						v4 = nil
+						v7 = nil
 					} else {
-						if v4 == nil {
-							v4 = new(StoreGroup)
+						if v7 == nil {
+							v7 = new(StoreGroup)
 						}
-						(*v4).UnmarshalEasyJSON(in)
+						(*v7).UnmarshalEasyJSON(in)
 					}
-					out.Data = append(out.Data, v4)
+					out.Data = append(out.Data, v7)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -368,7 +479,7 @@ func easyjson55774c79DecodeGithubComCorestoreioPkgStore2(in *jlexer.Lexer, out *
 		in.Consumed()
 	}
 }
-func easyjson55774c79EncodeGithubComCorestoreioPkgStore2(out *jwriter.Writer, in StoreGroupCollection) {
+func easyjson55774c79EncodeGithubComCorestoreioPkgStore3(out *jwriter.Writer, in StoreGroups) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -382,14 +493,14 @@ func easyjson55774c79EncodeGithubComCorestoreioPkgStore2(out *jwriter.Writer, in
 		}
 		{
 			out.RawByte('[')
-			for v5, v6 := range in.Data {
-				if v5 > 0 {
+			for v8, v9 := range in.Data {
+				if v8 > 0 {
 					out.RawByte(',')
 				}
-				if v6 == nil {
+				if v9 == nil {
 					out.RawString("null")
 				} else {
-					(*v6).MarshalEasyJSON(out)
+					(*v9).MarshalEasyJSON(out)
 				}
 			}
 			out.RawByte(']')
@@ -399,29 +510,29 @@ func easyjson55774c79EncodeGithubComCorestoreioPkgStore2(out *jwriter.Writer, in
 }
 
 // MarshalJSON supports json.Marshaler interface
-func (v StoreGroupCollection) MarshalJSON() ([]byte, error) {
+func (v StoreGroups) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson55774c79EncodeGithubComCorestoreioPkgStore2(&w, v)
+	easyjson55774c79EncodeGithubComCorestoreioPkgStore3(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
-func (v StoreGroupCollection) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson55774c79EncodeGithubComCorestoreioPkgStore2(w, v)
+func (v StoreGroups) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjson55774c79EncodeGithubComCorestoreioPkgStore3(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
-func (v *StoreGroupCollection) UnmarshalJSON(data []byte) error {
+func (v *StoreGroups) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson55774c79DecodeGithubComCorestoreioPkgStore2(&r, v)
+	easyjson55774c79DecodeGithubComCorestoreioPkgStore3(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *StoreGroupCollection) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson55774c79DecodeGithubComCorestoreioPkgStore2(l, v)
+func (v *StoreGroups) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjson55774c79DecodeGithubComCorestoreioPkgStore3(l, v)
 }
-func easyjson55774c79DecodeGithubComCorestoreioPkgStore3(in *jlexer.Lexer, out *StoreGroup) {
+func easyjson55774c79DecodeGithubComCorestoreioPkgStore4(in *jlexer.Lexer, out *StoreGroup) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -474,7 +585,7 @@ func easyjson55774c79DecodeGithubComCorestoreioPkgStore3(in *jlexer.Lexer, out *
 		in.Consumed()
 	}
 }
-func easyjson55774c79EncodeGithubComCorestoreioPkgStore3(out *jwriter.Writer, in StoreGroup) {
+func easyjson55774c79EncodeGithubComCorestoreioPkgStore4(out *jwriter.Writer, in StoreGroup) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -554,137 +665,24 @@ func easyjson55774c79EncodeGithubComCorestoreioPkgStore3(out *jwriter.Writer, in
 // MarshalJSON supports json.Marshaler interface
 func (v StoreGroup) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson55774c79EncodeGithubComCorestoreioPkgStore3(&w, v)
-	return w.Buffer.BuildBytes(), w.Error
-}
-
-// MarshalEasyJSON supports easyjson.Marshaler interface
-func (v StoreGroup) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson55774c79EncodeGithubComCorestoreioPkgStore3(w, v)
-}
-
-// UnmarshalJSON supports json.Unmarshaler interface
-func (v *StoreGroup) UnmarshalJSON(data []byte) error {
-	r := jlexer.Lexer{Data: data}
-	easyjson55774c79DecodeGithubComCorestoreioPkgStore3(&r, v)
-	return r.Error()
-}
-
-// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *StoreGroup) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson55774c79DecodeGithubComCorestoreioPkgStore3(l, v)
-}
-func easyjson55774c79DecodeGithubComCorestoreioPkgStore4(in *jlexer.Lexer, out *StoreCollection) {
-	isTopLevel := in.IsStart()
-	if in.IsNull() {
-		if isTopLevel {
-			in.Consumed()
-		}
-		in.Skip()
-		return
-	}
-	in.Delim('{')
-	for !in.IsDelim('}') {
-		key := in.UnsafeString()
-		in.WantColon()
-		if in.IsNull() {
-			in.Skip()
-			in.WantComma()
-			continue
-		}
-		switch key {
-		case "data":
-			if in.IsNull() {
-				in.Skip()
-				out.Data = nil
-			} else {
-				in.Delim('[')
-				if out.Data == nil {
-					if !in.IsDelim(']') {
-						out.Data = make([]*Store, 0, 8)
-					} else {
-						out.Data = []*Store{}
-					}
-				} else {
-					out.Data = (out.Data)[:0]
-				}
-				for !in.IsDelim(']') {
-					var v7 *Store
-					if in.IsNull() {
-						in.Skip()
-						v7 = nil
-					} else {
-						if v7 == nil {
-							v7 = new(Store)
-						}
-						(*v7).UnmarshalEasyJSON(in)
-					}
-					out.Data = append(out.Data, v7)
-					in.WantComma()
-				}
-				in.Delim(']')
-			}
-		default:
-			in.SkipRecursive()
-		}
-		in.WantComma()
-	}
-	in.Delim('}')
-	if isTopLevel {
-		in.Consumed()
-	}
-}
-func easyjson55774c79EncodeGithubComCorestoreioPkgStore4(out *jwriter.Writer, in StoreCollection) {
-	out.RawByte('{')
-	first := true
-	_ = first
-	if len(in.Data) != 0 {
-		const prefix string = ",\"data\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
-		{
-			out.RawByte('[')
-			for v8, v9 := range in.Data {
-				if v8 > 0 {
-					out.RawByte(',')
-				}
-				if v9 == nil {
-					out.RawString("null")
-				} else {
-					(*v9).MarshalEasyJSON(out)
-				}
-			}
-			out.RawByte(']')
-		}
-	}
-	out.RawByte('}')
-}
-
-// MarshalJSON supports json.Marshaler interface
-func (v StoreCollection) MarshalJSON() ([]byte, error) {
-	w := jwriter.Writer{}
 	easyjson55774c79EncodeGithubComCorestoreioPkgStore4(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
-func (v StoreCollection) MarshalEasyJSON(w *jwriter.Writer) {
+func (v StoreGroup) MarshalEasyJSON(w *jwriter.Writer) {
 	easyjson55774c79EncodeGithubComCorestoreioPkgStore4(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
-func (v *StoreCollection) UnmarshalJSON(data []byte) error {
+func (v *StoreGroup) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
 	easyjson55774c79DecodeGithubComCorestoreioPkgStore4(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *StoreCollection) UnmarshalEasyJSON(l *jlexer.Lexer) {
+func (v *StoreGroup) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson55774c79DecodeGithubComCorestoreioPkgStore4(l, v)
 }
 func easyjson55774c79DecodeGithubComCorestoreioPkgStore5(in *jlexer.Lexer, out *Store) {
@@ -709,9 +707,7 @@ func easyjson55774c79DecodeGithubComCorestoreioPkgStore5(in *jlexer.Lexer, out *
 		case "storeID":
 			out.StoreID = uint32(in.Uint32())
 		case "code":
-			if data := in.Raw(); in.Ok() {
-				in.AddError((out.Code).UnmarshalJSON(data))
-			}
+			out.Code = string(in.String())
 		case "websiteID":
 			out.WebsiteID = uint32(in.Uint32())
 		case "groupID":
@@ -766,7 +762,7 @@ func easyjson55774c79EncodeGithubComCorestoreioPkgStore5(out *jwriter.Writer, in
 		}
 		out.Uint32(uint32(in.StoreID))
 	}
-	if true {
+	if in.Code != "" {
 		const prefix string = ",\"code\":"
 		if first {
 			first = false
@@ -774,7 +770,7 @@ func easyjson55774c79EncodeGithubComCorestoreioPkgStore5(out *jwriter.Writer, in
 		} else {
 			out.RawString(prefix)
 		}
-		out.Raw((in.Code).MarshalJSON())
+		out.String(string(in.Code))
 	}
 	if in.WebsiteID != 0 {
 		const prefix string = ",\"websiteID\":"

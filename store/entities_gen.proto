@@ -13,49 +13,49 @@ option (gogoproto.sizer_all) = true;
 option (gogoproto.goproto_unrecognized_all) = false; 
 // Store represents a single row for DB table store . Auto generated.
 message Store { 
-	uint32 store_id= 1 [(gogoproto.customname)="StoreID" ]; 
-	null.String code= 2 [(gogoproto.customname)="Code" ,(gogoproto.nullable)=false]; 
-	uint32 website_id= 3 [(gogoproto.customname)="WebsiteID" ]; 
-	uint32 group_id= 4 [(gogoproto.customname)="GroupID" ]; 
-	string name= 5 [(gogoproto.customname)="Name" ]; 
-	uint32 sort_order= 6 [(gogoproto.customname)="SortOrder" ]; 
-	bool is_active= 7 [(gogoproto.customname)="IsActive" ]; 
+	uint32 StoreID = 1 ; 
+	string Code = 2 ; 
+	uint32 WebsiteID = 3 ; 
+	uint32 GroupID = 4 ; 
+	string Name = 5 ; 
+	uint32 SortOrder = 6 ; 
+	bool IsActive = 7 ; 
 	StoreGroup StoreGroup = 8 ; // 1:1 store.group_id => store_group.group_id 
 	StoreWebsite StoreWebsite = 9 ; // 1:1 store.website_id => store_website.website_id 
 } 
-// StoreCollection represents multiple rows for DB table store . Auto generated.
-message StoreCollection { 
+// Stores represents multiple rows for DB table store . Auto generated.
+message Stores { 
 	repeated Store Data = 1; 
 } 
 // StoreGroup represents a single row for DB table store_group . Auto generated.
 message StoreGroup { 
-	uint32 group_id= 1 [(gogoproto.customname)="GroupID" ]; 
-	uint32 website_id= 2 [(gogoproto.customname)="WebsiteID" ]; 
-	string name= 3 [(gogoproto.customname)="Name" ]; 
-	uint32 root_category_id= 4 [(gogoproto.customname)="RootCategoryID" ]; 
-	uint32 default_store_id= 5 [(gogoproto.customname)="DefaultStoreID" ]; 
-	null.String code= 6 [(gogoproto.customname)="Code" ,(gogoproto.nullable)=false]; 
+	uint32 GroupID = 1 ; 
+	uint32 WebsiteID = 2 ; 
+	string Name = 3 ; 
+	uint32 RootCategoryID = 4 ; 
+	uint32 DefaultStoreID = 5 ; 
+	null.String Code = 6 [(gogoproto.nullable)=false]; 
 	StoreWebsite StoreWebsite = 7 ; // 1:1 store_group.website_id => store_website.website_id 
 } 
-// StoreGroupCollection represents multiple rows for DB table store_group . Auto
+// StoreGroups represents multiple rows for DB table store_group . Auto
 // generated.
-message StoreGroupCollection { 
+message StoreGroups { 
 	repeated StoreGroup Data = 1; 
 } 
 // StoreWebsite represents a single row for DB table store_website . Auto
 // generated.
 message StoreWebsite { 
-	uint32 website_id= 1 [(gogoproto.customname)="WebsiteID" ]; 
-	null.String code= 2 [(gogoproto.customname)="Code" ,(gogoproto.nullable)=false]; 
-	null.String name= 3 [(gogoproto.customname)="Name" ,(gogoproto.nullable)=false]; 
-	uint32 sort_order= 4 [(gogoproto.customname)="SortOrder" ]; 
-	uint32 default_group_id= 5 [(gogoproto.customname)="DefaultGroupID" ]; 
-	bool is_default= 6 [(gogoproto.customname)="IsDefault" ]; 
-	StoreGroupCollection StoreGroup = 7 ; // Reversed 1:M store_website.website_id => store_group.website_id 
-	StoreCollection Store = 8 ; // Reversed 1:M store_website.website_id => store.website_id 
+	uint32 WebsiteID = 1 ; 
+	string Code = 2 ; 
+	null.String Name = 3 [(gogoproto.nullable)=false]; 
+	uint32 SortOrder = 4 ; 
+	uint32 DefaultGroupID = 5 ; 
+	bool IsDefault = 6 ; 
+	Stores Stores = 7 ; // Reversed 1:M store_website.website_id => store.website_id 
+	StoreGroups StoreGroups = 8 ; // Reversed 1:M store_website.website_id => store_group.website_id 
 } 
-// StoreWebsiteCollection represents multiple rows for DB table store_website .
-// Auto generated.
-message StoreWebsiteCollection { 
+// StoreWebsites represents multiple rows for DB table store_website . Auto
+// generated.
+message StoreWebsites { 
 	repeated StoreWebsite Data = 1; 
 } 

@@ -46,5 +46,5 @@ func TestWithLoadFromDB(t *testing.T) {
 
 	st, err := srv.DefaultStoreView()
 	assert.NoError(t, err)
-	t.Logf("%q", st.Code.String)
+	t.Logf("%q", st.Code)
 }

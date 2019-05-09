@@ -70,14 +70,6 @@ func main() {
 	// 	g.TestSQLDumpGlobPath = "test_*_tables.sql"
 	writeFile("entities_gen.go", g.GenerateGo)
 	writeFile("entities_gen.proto", g.GenerateSerializer)
-	mustCheckErr(dmlgen.GenerateProto("./", &dmlgen.ProtocOptions{
-		BuildTags: []string{"csall proto"},
-		Debug:     true,
-		GRPC:      true,
-	}))
-	mustCheckErr(dmlgen.GenerateJSON("./", "csall http json", nil))
-
-	//
 
 	// write MySQL/MariaDB DB code
 	g, err = dmlgen.NewGenerator(pkgPath,
@@ -104,6 +96,12 @@ func main() {
 	// 	g.TestSQLDumpGlobPath = "test_*_tables.sql"
 	writeFile("entities_db_gen.go", g.GenerateGo)
 
+	mustCheckErr(dmlgen.GenerateProto("./", &dmlgen.ProtocOptions{
+		BuildTags: []string{"csall proto"},
+		Debug:     true,
+		GRPC:      true,
+	}))
+	mustCheckErr(dmlgen.GenerateJSON("./", "csall http json", nil))
 }
 
 func writeFile(outFile string, wFn func(io.Writer, io.Writer) error) {

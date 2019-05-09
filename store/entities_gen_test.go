@@ -5,6 +5,7 @@ package store
 import (
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/pseudo"
 )
@@ -26,6 +27,10 @@ func TestNewTablesNonDB_8fbf75a91e4e6bd670de701be5c9ec85(t *testing.T) {
 		assert.NoError(t, ps.FakeData(e))
 		assert.NotEqual(t, e, e2)
 	})
+	t.Run("Stores_Validate", func(t *testing.T) {
+		c := Stores{Data: []*Store{nil}}
+		assert.True(t, errors.NotValid.Match(c.Validate()))
+	})
 	t.Run("StoreGroup_Empty", func(t *testing.T) {
 		e := new(StoreGroup)
 		assert.NoError(t, ps.FakeData(e))
@@ -40,6 +45,10 @@ func TestNewTablesNonDB_8fbf75a91e4e6bd670de701be5c9ec85(t *testing.T) {
 		assert.NoError(t, ps.FakeData(e))
 		assert.NotEqual(t, e, e2)
 	})
+	t.Run("StoreGroups_Validate", func(t *testing.T) {
+		c := StoreGroups{Data: []*StoreGroup{nil}}
+		assert.True(t, errors.NotValid.Match(c.Validate()))
+	})
 	t.Run("StoreWebsite_Empty", func(t *testing.T) {
 		e := new(StoreWebsite)
 		assert.NoError(t, ps.FakeData(e))
@@ -53,5 +62,9 @@ func TestNewTablesNonDB_8fbf75a91e4e6bd670de701be5c9ec85(t *testing.T) {
 		assert.Exactly(t, e, e2)
 		assert.NoError(t, ps.FakeData(e))
 		assert.NotEqual(t, e, e2)
+	})
+	t.Run("StoreWebsites_Validate", func(t *testing.T) {
+		c := StoreWebsites{Data: []*StoreWebsite{nil}}
+		assert.True(t, errors.NotValid.Match(c.Validate()))
 	})
 }
