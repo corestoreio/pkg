@@ -125,10 +125,149 @@ func (s *Service) sort() {
 	s.mu.Unlock()
 }
 
-func (s *Service) recalculateHierarchy() {
+func (s *Service) apply2ndLevelData() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	// todo implement
+
+	// Websites
+	for _, w := range s.websites.Data {
+		// Stores
+		if w.Stores == nil {
+			w.Stores = NewStores()
+		} else {
+			for i := range w.Stores.Data {
+				w.Stores.Data[i] = nil
+			}
+			w.Stores.Data = w.Stores.Data[:0]
+		}
+		for _, st := range s.stores.Data {
+			if w.WebsiteID == st.WebsiteID {
+				st2 := st.Copy()
+				st2.StoreWebsite = nil
+				st2.StoreGroup = nil
+				w.Stores.Append(st2)
+			}
+		}
+		// Groups
+		if w.StoreGroups == nil {
+			w.StoreGroups = NewStoreGroups()
+		} else {
+			for i := range w.StoreGroups.Data {
+				w.StoreGroups.Data[i] = nil
+			}
+			w.StoreGroups.Data = w.StoreGroups.Data[:0]
+		}
+		for _, g := range s.groups.Data {
+			if w.WebsiteID == g.WebsiteID {
+				g2 := g.Copy()
+				g2.StoreWebsite = nil
+				w.StoreGroups.Append(g2)
+			}
+		}
+	}
+
+	// Groups
+	for _, g := range s.groups.Data {
+		for _, w := range s.websites.Data {
+			if w.WebsiteID == g.WebsiteID {
+				w2 := w.Copy()
+				w2.Stores = nil
+				w2.StoreGroups = nil
+				g.StoreWebsite = w2
+			}
+		}
+	}
+	// Stores
+	for _, st := range s.stores.Data {
+		for _, g := range s.groups.Data {
+			if st.WebsiteID == g.WebsiteID {
+				g2 := g.Copy()
+				g2.StoreWebsite = nil
+				st.StoreGroup = g2
+			}
+		}
+		for _, w := range s.websites.Data {
+			if st.WebsiteID == w.WebsiteID {
+				w2 := w.Copy()
+				w2.Stores = nil
+				w2.StoreGroups = nil
+				st.StoreWebsite = w2
+			}
+		}
+	}
+}
+
+func (s *Service) validate() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// These checks are usually database constraints and logic checks
+
+	// Website: Check for default website and DefaultGroupIDs
+	var defaultWebsiteCounter int
+	for _, w := range s.websites.Data {
+		if w.IsDefault {
+			defaultWebsiteCounter++
+		}
+
+		var foundGroupID bool
+		for _, g := range s.groups.Data {
+			if w.DefaultGroupID == g.GroupID && !foundGroupID {
+				foundGroupID = true
+			}
+		}
+		if !foundGroupID {
+			return errors.NotValid.Newf("[store] Website[%d].DefaultGroupID[%d] not found in Groups.", w.WebsiteID, w.DefaultGroupID)
+		}
+	} // end each websites
+	if len(s.websites.Data) > 0 && defaultWebsiteCounter != 1 {
+		return errors.NotValid.Newf("[store] Only one Website can be the default Website. Found %d default websites", defaultWebsiteCounter)
+	}
+
+	// Groups: Check for website ID and default store ID
+	for _, g := range s.groups.Data {
+		var foundWebsiteID bool
+		for _, w := range s.websites.Data {
+			if g.WebsiteID == w.WebsiteID && !foundWebsiteID {
+				foundWebsiteID = true
+			}
+		}
+		if !foundWebsiteID {
+			return errors.NotValid.Newf("[store] Group[%d].WebsiteID[%d] not found in Websites.", g.GroupID, g.WebsiteID)
+		}
+		var foundStoreID bool
+		for _, s := range s.stores.Data {
+			if g.DefaultStoreID == s.StoreID && !foundStoreID {
+				foundStoreID = true
+			}
+		}
+		if !foundStoreID {
+			return errors.NotValid.Newf("[store] Group[%d].DefaultStoreID[%d] not found in Websites.", g.GroupID, g.DefaultStoreID)
+		}
+	}
+
+	for _, st := range s.stores.Data {
+		var foundWebsiteID bool
+		for _, w := range s.websites.Data {
+			if st.WebsiteID == w.WebsiteID && !foundWebsiteID {
+				foundWebsiteID = true
+			}
+		}
+		if !foundWebsiteID {
+			return errors.NotValid.Newf("[store] Store[%d].WebsiteID[%d] not found in Websites.", st.StoreID, st.WebsiteID)
+		}
+		var foundGroupID bool
+		for _, g := range s.groups.Data {
+			if st.GroupID == g.GroupID && !foundGroupID {
+				foundGroupID = true
+			}
+		}
+		if !foundGroupID {
+			return errors.NotValid.Newf("[store] Store[%d].GroupID[%d] not found in Group.", st.StoreID, st.GroupID)
+		}
+	}
+
+	return nil
 }
 
 // IsAllowedStoreID checks if the store ID is allowed within the runMode.
@@ -165,11 +304,16 @@ func (s *Service) IsAllowedStoreID(runMode scope.TypeID, storeID uint32) (isAllo
 		if err != nil {
 			return false, "", errors.WithStack(err)
 		}
-		st, err := w.DefaultStore()
+		g, err := w.DefaultGroup()
 		if err != nil {
 			return false, "", errors.WithStack(err)
 		}
-		return true, st.Code, nil
+		for _, st := range s.stores.Data {
+			if st.IsActive && st.WebsiteID == w.WebsiteID && st.GroupID == g.GroupID && st.StoreID == storeID {
+				return true, st.Code, nil
+			}
+		}
+		return false, "", nil
 	}
 }
 
@@ -248,6 +392,16 @@ func (s *Service) DefaultStoreID(runMode scope.TypeID) (storeID, websiteID uint3
 		if err != nil {
 			return 0, 0, errors.Wrapf(err, "[store] DefaultStoreID.Website Scope %s ID %d", scp, id)
 		}
+
+		// Special case for admin scope, all zero
+		if w.WebsiteID == 0 && w.DefaultGroupID == 0 {
+			st, err := s.Store(0)
+			if err != nil {
+				return 0, 0, errors.Wrapf(err, "[store] DefaultStoreID.Website.Store Scope %s ID %d", scp, id)
+			}
+			return st.StoreID, st.WebsiteID, nil
+		}
+
 		st, err := w.DefaultStore()
 		if err != nil {
 			return 0, 0, errors.Wrapf(err, "[store] DefaultStoreID.Website.DefaultStore Scope %s ID %d", scp, id)

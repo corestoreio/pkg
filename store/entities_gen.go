@@ -206,7 +206,7 @@ type StoreGroup struct {
 	Name           string        `max_len:"255"` // name varchar(255) NOT NULL    "Store Group Name"
 	RootCategoryID uint32        `max_len:"10"`  // root_category_id int(10) unsigned NOT NULL  DEFAULT '0'  "Root Category ID"
 	DefaultStoreID uint32        `max_len:"5"`   // default_store_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Default Store ID"
-	Code           null.String   `max_len:"64"`  // code varchar(64) NULL UNI DEFAULT 'NULL'  "Store group unique code"
+	Code           string        `max_len:"64"`  // code varchar(64) NOT NULL UNI   "Store group unique code"
 	StoreWebsite   *StoreWebsite // 1:1 store_group.website_id => store_website.website_id
 }
 
@@ -349,9 +349,9 @@ func (cc *StoreGroups) GroupIDs(ret ...uint32) []uint32 {
 
 // Codes returns a slice with the data or appends it to a slice.
 // Auto generated.
-func (cc *StoreGroups) Codes(ret ...null.String) []null.String {
+func (cc *StoreGroups) Codes(ret ...string) []string {
 	if ret == nil {
-		ret = make([]null.String, 0, len(cc.Data))
+		ret = make([]string, 0, len(cc.Data))
 	}
 	for _, e := range cc.Data {
 		ret = append(ret, e.Code)

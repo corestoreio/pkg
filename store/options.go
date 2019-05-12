@@ -14,6 +14,8 @@
 
 package store
 
+import "github.com/corestoreio/errors"
+
 // DefaultStoreID is always 0.
 const DefaultStoreID int64 = 0
 
@@ -38,6 +40,9 @@ func WithStores(stores ...*Store) Option {
 				if !containsS1 {
 					s.stores.Data = append(s.stores.Data, s1)
 				}
+			}
+			if err := s.stores.Validate(); err != nil {
+				return errors.WithStack(err)
 			}
 			s.cacheStore = make(map[uint32]*Store, len(s.stores.Data))
 			return nil
@@ -67,6 +72,9 @@ func WithGroups(groups ...*StoreGroup) Option {
 					s.groups.Data = append(s.groups.Data, s1)
 				}
 			}
+			if err := s.groups.Validate(); err != nil {
+				return errors.WithStack(err)
+			}
 			s.cacheGroup = make(map[uint32]*StoreGroup, len(s.groups.Data))
 			return nil
 		},
@@ -94,6 +102,9 @@ func WithWebsites(websites ...*StoreWebsite) Option {
 				if !containsS1 {
 					s.websites.Data = append(s.websites.Data, s1)
 				}
+			}
+			if err := s.websites.Validate(); err != nil {
+				return errors.WithStack(err)
 			}
 			s.cacheWebsite = make(map[uint32]*StoreWebsite, len(s.websites.Data))
 			return nil

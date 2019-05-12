@@ -34,7 +34,7 @@ message StoreGroup {
 	string Name = 3 ; 
 	uint32 RootCategoryID = 4 ; 
 	uint32 DefaultStoreID = 5 ; 
-	null.String Code = 6 [(gogoproto.nullable)=false]; 
+	string Code = 6 ; 
 	StoreWebsite StoreWebsite = 7 ; // 1:1 store_group.website_id => store_website.website_id 
 } 
 // StoreGroups represents multiple rows for DB table store_group . Auto

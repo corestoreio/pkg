@@ -1,0 +1,1230 @@
+[
+{
+  "data": [
+    {
+      "WebsiteID": 0,
+      "Code": "admin",
+      "Name": "Admin",
+      "SortOrder": 0,
+      "DefaultGroupID": 0,
+      "IsDefault": false,
+      "Stores": {
+        "data": [
+          {
+            "StoreID": 0,
+            "Code": "admin",
+            "WebsiteID": 0,
+            "GroupID": 0,
+            "Name": "Admin",
+            "SortOrder": 0,
+            "IsActive": true,
+            "StoreGroup": null,
+            "StoreWebsite": null
+          }
+        ]
+      },
+      "StoreGroups": {
+        "data": [
+          {
+            "GroupID": 0,
+            "WebsiteID": 0,
+            "Name": "Admin",
+            "RootCategoryID": 0,
+            "DefaultStoreID": 0,
+            "Code": "admin",
+            "StoreWebsite": null
+          }
+        ]
+      }
+    },
+    {
+      "WebsiteID": 2,
+      "Code": "de",
+      "Name": "Deutschland",
+      "SortOrder": 1,
+      "DefaultGroupID": 2,
+      "IsDefault": true,
+      "Stores": {
+        "data": [
+          {
+            "StoreID": 2,
+            "Code": "dede",
+            "WebsiteID": 2,
+            "GroupID": 2,
+            "Name": "de",
+            "SortOrder": 1,
+            "IsActive": true,
+            "StoreGroup": null,
+            "StoreWebsite": null
+          },
+          {
+            "StoreID": 3,
+            "Code": "detr",
+            "WebsiteID": 2,
+            "GroupID": 2,
+            "Name": "tr",
+            "SortOrder": 4,
+            "IsActive": true,
+            "StoreGroup": null,
+            "StoreWebsite": null
+          },
+          {
+            "StoreID": 5,
+            "Code": "deen",
+            "WebsiteID": 2,
+            "GroupID": 2,
+            "Name": "en",
+            "SortOrder": 4,
+            "IsActive": true,
+            "StoreGroup": null,
+            "StoreWebsite": null
+          }
+        ]
+      },
+      "StoreGroups": {
+        "data": [
+          {
+            "GroupID": 2,
+            "WebsiteID": 2,
+            "Name": "b2c",
+            "RootCategoryID": 2,
+            "DefaultStoreID": 2,
+            "Code": "b2c",
+            "StoreWebsite": null
+          }
+        ]
+      }
+    },
+    {
+      "WebsiteID": 3,
+      "Code": "ch",
+      "Name": "Schweiz",
+      "SortOrder": 2,
+      "DefaultGroupID": 3,
+      "IsDefault": false,
+      "Stores": {
+        "data": [
+          {
+            "StoreID": 6,
+            "Code": "chde",
+            "WebsiteID": 3,
+            "GroupID": 3,
+            "Name": "de",
+            "SortOrder": 1,
+            "IsActive": true,
+            "StoreGroup": null,
+            "StoreWebsite": null
+          },
+          {
+            "StoreID": 7,
+            "Code": "chfr",
+            "WebsiteID": 3,
+            "GroupID": 3,
+            "Name": "fr",
+            "SortOrder": 2,
+            "IsActive": true,
+            "StoreGroup": null,
+            "StoreWebsite": null
+          },
+          {
+            "StoreID": 8,
+            "Code": "chit",
+            "WebsiteID": 3,
+            "GroupID": 3,
+            "Name": "it",
+            "SortOrder": 3,
+            "IsActive": true,
+            "StoreGroup": null,
+            "StoreWebsite": null
+          },
+          {
+            "StoreID": 9,
+            "Code": "chen",
+            "WebsiteID": 3,
+            "GroupID": 3,
+            "Name": "en",
+            "SortOrder": 4,
+            "IsActive": true,
+            "StoreGroup": null,
+            "StoreWebsite": null
+          }
+        ]
+      },
+      "StoreGroups": {
+        "data": [
+          {
+            "GroupID": 3,
+            "WebsiteID": 3,
+            "Name": "b2c",
+            "RootCategoryID": 2,
+            "DefaultStoreID": 6,
+            "Code": "b2c",
+            "StoreWebsite": null
+          }
+        ]
+      }
+    },
+    {
+      "WebsiteID": 4,
+      "Code": "it",
+      "Name": "Italien",
+      "SortOrder": 3,
+      "DefaultGroupID": 4,
+      "IsDefault": false,
+      "Stores": {
+        "data": [
+          {
+            "StoreID": 10,
+            "Code": "itit",
+            "WebsiteID": 4,
+            "GroupID": 4,
+            "Name": "it",
+            "SortOrder": 1,
+            "IsActive": true,
+            "StoreGroup": null,
+            "StoreWebsite": null
+          },
+          {
+            "StoreID": 11,
+            "Code": "itde",
+            "WebsiteID": 4,
+            "GroupID": 4,
+            "Name": "de",
+            "SortOrder": 2,
+            "IsActive": true,
+            "StoreGroup": null,
+            "StoreWebsite": null
+          }
+        ]
+      },
+      "StoreGroups": {
+        "data": [
+          {
+            "GroupID": 4,
+            "WebsiteID": 4,
+            "Name": "b2c",
+            "RootCategoryID": 2,
+            "DefaultStoreID": 10,
+            "Code": "b2c",
+            "StoreWebsite": null
+          }
+        ]
+      }
+    },
+    {
+      "WebsiteID": 5,
+      "Code": "fr",
+      "Name": "Frankreich",
+      "SortOrder": 4,
+      "DefaultGroupID": 5,
+      "IsDefault": false,
+      "Stores": {
+        "data": [
+          {
+            "StoreID": 12,
+            "Code": "frfr",
+            "WebsiteID": 5,
+            "GroupID": 5,
+            "Name": "fr",
+            "SortOrder": 1,
+            "IsActive": true,
+            "StoreGroup": null,
+            "StoreWebsite": null
+          }
+        ]
+      },
+      "StoreGroups": {
+        "data": [
+          {
+            "GroupID": 5,
+            "WebsiteID": 5,
+            "Name": "b2c",
+            "RootCategoryID": 2,
+            "DefaultStoreID": 12,
+            "Code": "b2c",
+            "StoreWebsite": null
+          }
+        ]
+      }
+    },
+    {
+      "WebsiteID": 6,
+      "Code": "be",
+      "Name": "Belgien",
+      "SortOrder": 5,
+      "DefaultGroupID": 6,
+      "IsDefault": false,
+      "Stores": {
+        "data": [
+          {
+            "StoreID": 13,
+            "Code": "befr",
+            "WebsiteID": 6,
+            "GroupID": 6,
+            "Name": "fr",
+            "SortOrder": 1,
+            "IsActive": true,
+            "StoreGroup": null,
+            "StoreWebsite": null
+          },
+          {
+            "StoreID": 14,
+            "Code": "been",
+            "WebsiteID": 6,
+            "GroupID": 6,
+            "Name": "en",
+            "SortOrder": 2,
+            "IsActive": true,
+            "StoreGroup": null,
+            "StoreWebsite": null
+          }
+        ]
+      },
+      "StoreGroups": {
+        "data": [
+          {
+            "GroupID": 6,
+            "WebsiteID": 6,
+            "Name": "b2c",
+            "RootCategoryID": 2,
+            "DefaultStoreID": 13,
+            "Code": "b2c",
+            "StoreWebsite": null
+          }
+        ]
+      }
+    },
+    {
+      "WebsiteID": 7,
+      "Code": "lu",
+      "Name": "Luxemburg",
+      "SortOrder": 6,
+      "DefaultGroupID": 7,
+      "IsDefault": false,
+      "Stores": {
+        "data": [
+          {
+            "StoreID": 15,
+            "Code": "lufr",
+            "WebsiteID": 7,
+            "GroupID": 7,
+            "Name": "fr",
+            "SortOrder": 1,
+            "IsActive": true,
+            "StoreGroup": null,
+            "StoreWebsite": null
+          },
+          {
+            "StoreID": 16,
+            "Code": "lude",
+            "WebsiteID": 7,
+            "GroupID": 7,
+            "Name": "de",
+            "SortOrder": 2,
+            "IsActive": true,
+            "StoreGroup": null,
+            "StoreWebsite": null
+          }
+        ]
+      },
+      "StoreGroups": {
+        "data": [
+          {
+            "GroupID": 7,
+            "WebsiteID": 7,
+            "Name": "b2c",
+            "RootCategoryID": 2,
+            "DefaultStoreID": 15,
+            "Code": "b2c",
+            "StoreWebsite": null
+          }
+        ]
+      }
+    },
+    {
+      "WebsiteID": 8,
+      "Code": "at",
+      "Name": "Österreich",
+      "SortOrder": 7,
+      "DefaultGroupID": 8,
+      "IsDefault": false,
+      "Stores": {
+        "data": [
+          {
+            "StoreID": 17,
+            "Code": "atde",
+            "WebsiteID": 8,
+            "GroupID": 8,
+            "Name": "de",
+            "SortOrder": 1,
+            "IsActive": true,
+            "StoreGroup": null,
+            "StoreWebsite": null
+          }
+        ]
+      },
+      "StoreGroups": {
+        "data": [
+          {
+            "GroupID": 8,
+            "WebsiteID": 8,
+            "Name": "b2c",
+            "RootCategoryID": 2,
+            "DefaultStoreID": 17,
+            "Code": "b2c",
+            "StoreWebsite": null
+          }
+        ]
+      }
+    },
+    {
+      "WebsiteID": 9,
+      "Code": "int",
+      "Name": "International",
+      "SortOrder": 8,
+      "DefaultGroupID": 9,
+      "IsDefault": false,
+      "Stores": {
+        "data": [
+          {
+            "StoreID": 18,
+            "Code": "inten",
+            "WebsiteID": 9,
+            "GroupID": 9,
+            "Name": "en",
+            "SortOrder": 1,
+            "IsActive": true,
+            "StoreGroup": null,
+            "StoreWebsite": null
+          }
+        ]
+      },
+      "StoreGroups": {
+        "data": [
+          {
+            "GroupID": 9,
+            "WebsiteID": 9,
+            "Name": "b2c",
+            "RootCategoryID": 2,
+            "DefaultStoreID": 18,
+            "Code": "b2c",
+            "StoreWebsite": null
+          }
+        ]
+      }
+    },
+    {
+      "WebsiteID": 10,
+      "Code": "nl",
+      "Name": "Netherlands",
+      "SortOrder": 9,
+      "DefaultGroupID": 10,
+      "IsDefault": false,
+      "Stores": {
+        "data": [
+          {
+            "StoreID": 19,
+            "Code": "nlen",
+            "WebsiteID": 10,
+            "GroupID": 10,
+            "Name": "en",
+            "SortOrder": 1,
+            "IsActive": true,
+            "StoreGroup": null,
+            "StoreWebsite": null
+          }
+        ]
+      },
+      "StoreGroups": {
+        "data": [
+          {
+            "GroupID": 10,
+            "WebsiteID": 10,
+            "Name": "b2c",
+            "RootCategoryID": 2,
+            "DefaultStoreID": 19,
+            "Code": "b2c",
+            "StoreWebsite": null
+          }
+        ]
+      }
+    },
+    {
+      "WebsiteID": 11,
+      "Code": "uk",
+      "Name": "United Kingdom",
+      "SortOrder": 10,
+      "DefaultGroupID": 11,
+      "IsDefault": false,
+      "Stores": {
+        "data": [
+          {
+            "StoreID": 20,
+            "Code": "uken",
+            "WebsiteID": 11,
+            "GroupID": 11,
+            "Name": "en",
+            "SortOrder": 1,
+            "IsActive": true,
+            "StoreGroup": null,
+            "StoreWebsite": null
+          }
+        ]
+      },
+      "StoreGroups": {
+        "data": [
+          {
+            "GroupID": 11,
+            "WebsiteID": 11,
+            "Name": "b2c",
+            "RootCategoryID": 2,
+            "DefaultStoreID": 20,
+            "Code": "b2c",
+            "StoreWebsite": null
+          }
+        ]
+      }
+    }
+  ]
+}
+,
+{
+  "data": [
+    {
+      "GroupID": 0,
+      "WebsiteID": 0,
+      "Name": "Admin",
+      "RootCategoryID": 0,
+      "DefaultStoreID": 0,
+      "Code": "admin",
+      "StoreWebsite": {
+        "WebsiteID": 0,
+        "Code": "admin",
+        "Name": "Admin",
+        "SortOrder": 0,
+        "DefaultGroupID": 0,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "GroupID": 2,
+      "WebsiteID": 2,
+      "Name": "b2c",
+      "RootCategoryID": 2,
+      "DefaultStoreID": 2,
+      "Code": "b2c",
+      "StoreWebsite": {
+        "WebsiteID": 2,
+        "Code": "de",
+        "Name": "Deutschland",
+        "SortOrder": 1,
+        "DefaultGroupID": 2,
+        "IsDefault": true,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "GroupID": 3,
+      "WebsiteID": 3,
+      "Name": "b2c",
+      "RootCategoryID": 2,
+      "DefaultStoreID": 6,
+      "Code": "b2c",
+      "StoreWebsite": {
+        "WebsiteID": 3,
+        "Code": "ch",
+        "Name": "Schweiz",
+        "SortOrder": 2,
+        "DefaultGroupID": 3,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "GroupID": 4,
+      "WebsiteID": 4,
+      "Name": "b2c",
+      "RootCategoryID": 2,
+      "DefaultStoreID": 10,
+      "Code": "b2c",
+      "StoreWebsite": {
+        "WebsiteID": 4,
+        "Code": "it",
+        "Name": "Italien",
+        "SortOrder": 3,
+        "DefaultGroupID": 4,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "GroupID": 5,
+      "WebsiteID": 5,
+      "Name": "b2c",
+      "RootCategoryID": 2,
+      "DefaultStoreID": 12,
+      "Code": "b2c",
+      "StoreWebsite": {
+        "WebsiteID": 5,
+        "Code": "fr",
+        "Name": "Frankreich",
+        "SortOrder": 4,
+        "DefaultGroupID": 5,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "GroupID": 6,
+      "WebsiteID": 6,
+      "Name": "b2c",
+      "RootCategoryID": 2,
+      "DefaultStoreID": 13,
+      "Code": "b2c",
+      "StoreWebsite": {
+        "WebsiteID": 6,
+        "Code": "be",
+        "Name": "Belgien",
+        "SortOrder": 5,
+        "DefaultGroupID": 6,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "GroupID": 7,
+      "WebsiteID": 7,
+      "Name": "b2c",
+      "RootCategoryID": 2,
+      "DefaultStoreID": 15,
+      "Code": "b2c",
+      "StoreWebsite": {
+        "WebsiteID": 7,
+        "Code": "lu",
+        "Name": "Luxemburg",
+        "SortOrder": 6,
+        "DefaultGroupID": 7,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "GroupID": 8,
+      "WebsiteID": 8,
+      "Name": "b2c",
+      "RootCategoryID": 2,
+      "DefaultStoreID": 17,
+      "Code": "b2c",
+      "StoreWebsite": {
+        "WebsiteID": 8,
+        "Code": "at",
+        "Name": "Österreich",
+        "SortOrder": 7,
+        "DefaultGroupID": 8,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "GroupID": 9,
+      "WebsiteID": 9,
+      "Name": "b2c",
+      "RootCategoryID": 2,
+      "DefaultStoreID": 18,
+      "Code": "b2c",
+      "StoreWebsite": {
+        "WebsiteID": 9,
+        "Code": "int",
+        "Name": "International",
+        "SortOrder": 8,
+        "DefaultGroupID": 9,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "GroupID": 10,
+      "WebsiteID": 10,
+      "Name": "b2c",
+      "RootCategoryID": 2,
+      "DefaultStoreID": 19,
+      "Code": "b2c",
+      "StoreWebsite": {
+        "WebsiteID": 10,
+        "Code": "nl",
+        "Name": "Netherlands",
+        "SortOrder": 9,
+        "DefaultGroupID": 10,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "GroupID": 11,
+      "WebsiteID": 11,
+      "Name": "b2c",
+      "RootCategoryID": 2,
+      "DefaultStoreID": 20,
+      "Code": "b2c",
+      "StoreWebsite": {
+        "WebsiteID": 11,
+        "Code": "uk",
+        "Name": "United Kingdom",
+        "SortOrder": 10,
+        "DefaultGroupID": 11,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    }
+  ]
+}
+,
+{
+  "data": [
+    {
+      "StoreID": 0,
+      "Code": "admin",
+      "WebsiteID": 0,
+      "GroupID": 0,
+      "Name": "Admin",
+      "SortOrder": 0,
+      "IsActive": true,
+      "StoreGroup": {
+        "GroupID": 0,
+        "WebsiteID": 0,
+        "Name": "Admin",
+        "RootCategoryID": 0,
+        "DefaultStoreID": 0,
+        "Code": "admin",
+        "StoreWebsite": null
+      },
+      "StoreWebsite": {
+        "WebsiteID": 0,
+        "Code": "admin",
+        "Name": "Admin",
+        "SortOrder": 0,
+        "DefaultGroupID": 0,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "StoreID": 2,
+      "Code": "dede",
+      "WebsiteID": 2,
+      "GroupID": 2,
+      "Name": "de",
+      "SortOrder": 1,
+      "IsActive": true,
+      "StoreGroup": {
+        "GroupID": 2,
+        "WebsiteID": 2,
+        "Name": "b2c",
+        "RootCategoryID": 2,
+        "DefaultStoreID": 2,
+        "Code": "b2c",
+        "StoreWebsite": null
+      },
+      "StoreWebsite": {
+        "WebsiteID": 2,
+        "Code": "de",
+        "Name": "Deutschland",
+        "SortOrder": 1,
+        "DefaultGroupID": 2,
+        "IsDefault": true,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "StoreID": 3,
+      "Code": "detr",
+      "WebsiteID": 2,
+      "GroupID": 2,
+      "Name": "tr",
+      "SortOrder": 4,
+      "IsActive": true,
+      "StoreGroup": {
+        "GroupID": 2,
+        "WebsiteID": 2,
+        "Name": "b2c",
+        "RootCategoryID": 2,
+        "DefaultStoreID": 2,
+        "Code": "b2c",
+        "StoreWebsite": null
+      },
+      "StoreWebsite": {
+        "WebsiteID": 2,
+        "Code": "de",
+        "Name": "Deutschland",
+        "SortOrder": 1,
+        "DefaultGroupID": 2,
+        "IsDefault": true,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "StoreID": 5,
+      "Code": "deen",
+      "WebsiteID": 2,
+      "GroupID": 2,
+      "Name": "en",
+      "SortOrder": 4,
+      "IsActive": true,
+      "StoreGroup": {
+        "GroupID": 2,
+        "WebsiteID": 2,
+        "Name": "b2c",
+        "RootCategoryID": 2,
+        "DefaultStoreID": 2,
+        "Code": "b2c",
+        "StoreWebsite": null
+      },
+      "StoreWebsite": {
+        "WebsiteID": 2,
+        "Code": "de",
+        "Name": "Deutschland",
+        "SortOrder": 1,
+        "DefaultGroupID": 2,
+        "IsDefault": true,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "StoreID": 6,
+      "Code": "chde",
+      "WebsiteID": 3,
+      "GroupID": 3,
+      "Name": "de",
+      "SortOrder": 1,
+      "IsActive": true,
+      "StoreGroup": {
+        "GroupID": 3,
+        "WebsiteID": 3,
+        "Name": "b2c",
+        "RootCategoryID": 2,
+        "DefaultStoreID": 6,
+        "Code": "b2c",
+        "StoreWebsite": null
+      },
+      "StoreWebsite": {
+        "WebsiteID": 3,
+        "Code": "ch",
+        "Name": "Schweiz",
+        "SortOrder": 2,
+        "DefaultGroupID": 3,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "StoreID": 7,
+      "Code": "chfr",
+      "WebsiteID": 3,
+      "GroupID": 3,
+      "Name": "fr",
+      "SortOrder": 2,
+      "IsActive": true,
+      "StoreGroup": {
+        "GroupID": 3,
+        "WebsiteID": 3,
+        "Name": "b2c",
+        "RootCategoryID": 2,
+        "DefaultStoreID": 6,
+        "Code": "b2c",
+        "StoreWebsite": null
+      },
+      "StoreWebsite": {
+        "WebsiteID": 3,
+        "Code": "ch",
+        "Name": "Schweiz",
+        "SortOrder": 2,
+        "DefaultGroupID": 3,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "StoreID": 8,
+      "Code": "chit",
+      "WebsiteID": 3,
+      "GroupID": 3,
+      "Name": "it",
+      "SortOrder": 3,
+      "IsActive": true,
+      "StoreGroup": {
+        "GroupID": 3,
+        "WebsiteID": 3,
+        "Name": "b2c",
+        "RootCategoryID": 2,
+        "DefaultStoreID": 6,
+        "Code": "b2c",
+        "StoreWebsite": null
+      },
+      "StoreWebsite": {
+        "WebsiteID": 3,
+        "Code": "ch",
+        "Name": "Schweiz",
+        "SortOrder": 2,
+        "DefaultGroupID": 3,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "StoreID": 9,
+      "Code": "chen",
+      "WebsiteID": 3,
+      "GroupID": 3,
+      "Name": "en",
+      "SortOrder": 4,
+      "IsActive": true,
+      "StoreGroup": {
+        "GroupID": 3,
+        "WebsiteID": 3,
+        "Name": "b2c",
+        "RootCategoryID": 2,
+        "DefaultStoreID": 6,
+        "Code": "b2c",
+        "StoreWebsite": null
+      },
+      "StoreWebsite": {
+        "WebsiteID": 3,
+        "Code": "ch",
+        "Name": "Schweiz",
+        "SortOrder": 2,
+        "DefaultGroupID": 3,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "StoreID": 10,
+      "Code": "itit",
+      "WebsiteID": 4,
+      "GroupID": 4,
+      "Name": "it",
+      "SortOrder": 1,
+      "IsActive": true,
+      "StoreGroup": {
+        "GroupID": 4,
+        "WebsiteID": 4,
+        "Name": "b2c",
+        "RootCategoryID": 2,
+        "DefaultStoreID": 10,
+        "Code": "b2c",
+        "StoreWebsite": null
+      },
+      "StoreWebsite": {
+        "WebsiteID": 4,
+        "Code": "it",
+        "Name": "Italien",
+        "SortOrder": 3,
+        "DefaultGroupID": 4,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "StoreID": 11,
+      "Code": "itde",
+      "WebsiteID": 4,
+      "GroupID": 4,
+      "Name": "de",
+      "SortOrder": 2,
+      "IsActive": true,
+      "StoreGroup": {
+        "GroupID": 4,
+        "WebsiteID": 4,
+        "Name": "b2c",
+        "RootCategoryID": 2,
+        "DefaultStoreID": 10,
+        "Code": "b2c",
+        "StoreWebsite": null
+      },
+      "StoreWebsite": {
+        "WebsiteID": 4,
+        "Code": "it",
+        "Name": "Italien",
+        "SortOrder": 3,
+        "DefaultGroupID": 4,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "StoreID": 12,
+      "Code": "frfr",
+      "WebsiteID": 5,
+      "GroupID": 5,
+      "Name": "fr",
+      "SortOrder": 1,
+      "IsActive": true,
+      "StoreGroup": {
+        "GroupID": 5,
+        "WebsiteID": 5,
+        "Name": "b2c",
+        "RootCategoryID": 2,
+        "DefaultStoreID": 12,
+        "Code": "b2c",
+        "StoreWebsite": null
+      },
+      "StoreWebsite": {
+        "WebsiteID": 5,
+        "Code": "fr",
+        "Name": "Frankreich",
+        "SortOrder": 4,
+        "DefaultGroupID": 5,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "StoreID": 13,
+      "Code": "befr",
+      "WebsiteID": 6,
+      "GroupID": 6,
+      "Name": "fr",
+      "SortOrder": 1,
+      "IsActive": true,
+      "StoreGroup": {
+        "GroupID": 6,
+        "WebsiteID": 6,
+        "Name": "b2c",
+        "RootCategoryID": 2,
+        "DefaultStoreID": 13,
+        "Code": "b2c",
+        "StoreWebsite": null
+      },
+      "StoreWebsite": {
+        "WebsiteID": 6,
+        "Code": "be",
+        "Name": "Belgien",
+        "SortOrder": 5,
+        "DefaultGroupID": 6,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "StoreID": 14,
+      "Code": "been",
+      "WebsiteID": 6,
+      "GroupID": 6,
+      "Name": "en",
+      "SortOrder": 2,
+      "IsActive": true,
+      "StoreGroup": {
+        "GroupID": 6,
+        "WebsiteID": 6,
+        "Name": "b2c",
+        "RootCategoryID": 2,
+        "DefaultStoreID": 13,
+        "Code": "b2c",
+        "StoreWebsite": null
+      },
+      "StoreWebsite": {
+        "WebsiteID": 6,
+        "Code": "be",
+        "Name": "Belgien",
+        "SortOrder": 5,
+        "DefaultGroupID": 6,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "StoreID": 15,
+      "Code": "lufr",
+      "WebsiteID": 7,
+      "GroupID": 7,
+      "Name": "fr",
+      "SortOrder": 1,
+      "IsActive": true,
+      "StoreGroup": {
+        "GroupID": 7,
+        "WebsiteID": 7,
+        "Name": "b2c",
+        "RootCategoryID": 2,
+        "DefaultStoreID": 15,
+        "Code": "b2c",
+        "StoreWebsite": null
+      },
+      "StoreWebsite": {
+        "WebsiteID": 7,
+        "Code": "lu",
+        "Name": "Luxemburg",
+        "SortOrder": 6,
+        "DefaultGroupID": 7,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "StoreID": 16,
+      "Code": "lude",
+      "WebsiteID": 7,
+      "GroupID": 7,
+      "Name": "de",
+      "SortOrder": 2,
+      "IsActive": true,
+      "StoreGroup": {
+        "GroupID": 7,
+        "WebsiteID": 7,
+        "Name": "b2c",
+        "RootCategoryID": 2,
+        "DefaultStoreID": 15,
+        "Code": "b2c",
+        "StoreWebsite": null
+      },
+      "StoreWebsite": {
+        "WebsiteID": 7,
+        "Code": "lu",
+        "Name": "Luxemburg",
+        "SortOrder": 6,
+        "DefaultGroupID": 7,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "StoreID": 17,
+      "Code": "atde",
+      "WebsiteID": 8,
+      "GroupID": 8,
+      "Name": "de",
+      "SortOrder": 1,
+      "IsActive": true,
+      "StoreGroup": {
+        "GroupID": 8,
+        "WebsiteID": 8,
+        "Name": "b2c",
+        "RootCategoryID": 2,
+        "DefaultStoreID": 17,
+        "Code": "b2c",
+        "StoreWebsite": null
+      },
+      "StoreWebsite": {
+        "WebsiteID": 8,
+        "Code": "at",
+        "Name": "Österreich",
+        "SortOrder": 7,
+        "DefaultGroupID": 8,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "StoreID": 18,
+      "Code": "inten",
+      "WebsiteID": 9,
+      "GroupID": 9,
+      "Name": "en",
+      "SortOrder": 1,
+      "IsActive": true,
+      "StoreGroup": {
+        "GroupID": 9,
+        "WebsiteID": 9,
+        "Name": "b2c",
+        "RootCategoryID": 2,
+        "DefaultStoreID": 18,
+        "Code": "b2c",
+        "StoreWebsite": null
+      },
+      "StoreWebsite": {
+        "WebsiteID": 9,
+        "Code": "int",
+        "Name": "International",
+        "SortOrder": 8,
+        "DefaultGroupID": 9,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "StoreID": 19,
+      "Code": "nlen",
+      "WebsiteID": 10,
+      "GroupID": 10,
+      "Name": "en",
+      "SortOrder": 1,
+      "IsActive": true,
+      "StoreGroup": {
+        "GroupID": 10,
+        "WebsiteID": 10,
+        "Name": "b2c",
+        "RootCategoryID": 2,
+        "DefaultStoreID": 19,
+        "Code": "b2c",
+        "StoreWebsite": null
+      },
+      "StoreWebsite": {
+        "WebsiteID": 10,
+        "Code": "nl",
+        "Name": "Netherlands",
+        "SortOrder": 9,
+        "DefaultGroupID": 10,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    },
+    {
+      "StoreID": 20,
+      "Code": "uken",
+      "WebsiteID": 11,
+      "GroupID": 11,
+      "Name": "en",
+      "SortOrder": 1,
+      "IsActive": true,
+      "StoreGroup": {
+        "GroupID": 11,
+        "WebsiteID": 11,
+        "Name": "b2c",
+        "RootCategoryID": 2,
+        "DefaultStoreID": 20,
+        "Code": "b2c",
+        "StoreWebsite": null
+      },
+      "StoreWebsite": {
+        "WebsiteID": 11,
+        "Code": "uk",
+        "Name": "United Kingdom",
+        "SortOrder": 10,
+        "DefaultGroupID": 11,
+        "IsDefault": false,
+        "Stores": null,
+        "StoreGroups": null
+      }
+    }
+  ]
+}
+]

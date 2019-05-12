@@ -562,9 +562,7 @@ func easyjson55774c79DecodeGithubComCorestoreioPkgStore4(in *jlexer.Lexer, out *
 		case "defaultStoreID":
 			out.DefaultStoreID = uint32(in.Uint32())
 		case "code":
-			if data := in.Raw(); in.Ok() {
-				in.AddError((out.Code).UnmarshalJSON(data))
-			}
+			out.Code = string(in.String())
 		case "storeWebsite":
 			if in.IsNull() {
 				in.Skip()
@@ -639,7 +637,7 @@ func easyjson55774c79EncodeGithubComCorestoreioPkgStore4(out *jwriter.Writer, in
 		}
 		out.Uint32(uint32(in.DefaultStoreID))
 	}
-	if true {
+	if in.Code != "" {
 		const prefix string = ",\"code\":"
 		if first {
 			first = false
@@ -647,7 +645,7 @@ func easyjson55774c79EncodeGithubComCorestoreioPkgStore4(out *jwriter.Writer, in
 		} else {
 			out.RawString(prefix)
 		}
-		out.Raw((in.Code).MarshalJSON())
+		out.String(string(in.Code))
 	}
 	if in.StoreWebsite != nil {
 		const prefix string = ",\"storeWebsite\":"

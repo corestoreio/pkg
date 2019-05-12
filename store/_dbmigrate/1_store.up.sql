@@ -24,7 +24,7 @@ CREATE TABLE `store_group` (
     `name`             VARCHAR(255)         NOT NULL COMMENT 'Store Group Name',
     `root_category_id` INT(10) UNSIGNED     NOT NULL DEFAULT 0 COMMENT 'Root Category ID',
     `default_store_id` SMALLINT(5) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Default Store ID',
-    `code`             VARCHAR(64)                   DEFAULT NULL COMMENT 'Store group unique code',
+    `code`             VARCHAR(64)                   NOT NULL COMMENT 'Store group unique code',
     PRIMARY KEY (`group_id`),
     UNIQUE KEY `STORE_GROUP_CODE` (`code`),
     KEY `STORE_GROUP_WEBSITE_ID` (`website_id`),

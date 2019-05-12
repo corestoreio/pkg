@@ -125,7 +125,7 @@ func (e *StoreGroup) AssignLastInsertID(id int64) {
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *StoreGroup) MapColumns(cm *dml.ColumnMap) error {
 	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Uint32(&e.GroupID).Uint32(&e.WebsiteID).String(&e.Name).Uint32(&e.RootCategoryID).Uint32(&e.DefaultStoreID).NullString(&e.Code).Err()
+		return cm.Uint32(&e.GroupID).Uint32(&e.WebsiteID).String(&e.Name).Uint32(&e.RootCategoryID).Uint32(&e.DefaultStoreID).String(&e.Code).Err()
 	}
 	for cm.Next() {
 		switch c := cm.Column(); c {
@@ -140,7 +140,7 @@ func (e *StoreGroup) MapColumns(cm *dml.ColumnMap) error {
 		case "default_store_id":
 			cm.Uint32(&e.DefaultStoreID)
 		case "code":
-			cm.NullString(&e.Code)
+			cm.String(&e.Code)
 		default:
 			return errors.NotFound.Newf("[store] StoreGroup Column %q not found", c)
 		}
@@ -189,7 +189,7 @@ func (cc *StoreGroups) MapColumns(cm *dml.ColumnMap) error {
 			case "group_id":
 				cm = cm.Uint32s(cc.GroupIDs()...)
 			case "code":
-				cm = cm.NullStrings(cc.Codes()...)
+				cm = cm.Strings(cc.Codes()...)
 			default:
 				return errors.NotFound.Newf("[store] StoreGroups Column %q not found", c)
 			}

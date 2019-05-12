@@ -20,8 +20,8 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/alecthomas/repr"
 	"github.com/corestoreio/pkg/storage/null"
+	"github.com/corestoreio/pkg/store"
 	storemock "github.com/corestoreio/pkg/store/mock"
 	"github.com/corestoreio/pkg/util/assert"
 )
@@ -30,26 +30,37 @@ func init() {
 	null.MustSetJSONMarshaler(json.Marshal, json.Unmarshal)
 }
 
+func toJSON(t *testing.T, srv *store.Service) []byte {
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetIndent("", "  ")
+	buf.WriteString("[\n")
+	assert.NoError(t, enc.Encode(srv.Websites()))
+	buf.WriteString(",\n")
+	assert.NoError(t, enc.Encode(srv.Groups()))
+	buf.WriteString(",\n")
+	assert.NoError(t, enc.Encode(srv.Stores()))
+	buf.WriteString("]\n")
+	return buf.Bytes()
+}
+
 func TestService_Sorting(t *testing.T) {
 
 	t.Run("EuroW11G11S19", func(t *testing.T) {
 		srv := storemock.NewServiceEuroW11G11S19()
-		var buf bytes.Buffer
-		rp := repr.New(&buf)
-		rp.Println(srv.Websites(), srv.Groups(), srv.Stores())
-		goldenData, err := ioutil.ReadFile("testdata/sort_euroW11G11S19.golden.txt")
+		haveData := toJSON(t, srv)
+
+		goldenData, err := ioutil.ReadFile("testdata/sort_euroW11G11S19.golden.json")
 		assert.NoError(t, err)
-		assert.Exactly(t, goldenData, buf.Bytes())
+		assert.Exactly(t, goldenData, haveData)
 	})
 
-	t.Run("asd", func(t *testing.T) {
+	t.Run("EuroOZ", func(t *testing.T) {
 		srv := storemock.NewServiceEuroOZ()
-		var buf bytes.Buffer
-		rp := repr.New(&buf)
-		rp.Println(srv.Websites(), srv.Groups(), srv.Stores())
+		haveData := toJSON(t, srv)
 
-		goldenData, err := ioutil.ReadFile("testdata/sort_euroOZ.golden.txt")
+		goldenData, err := ioutil.ReadFile("testdata/sort_euroOZ.golden.json")
 		assert.NoError(t, err)
-		assert.Exactly(t, goldenData, buf.Bytes())
+		assert.Exactly(t, goldenData, haveData)
 	})
 }
