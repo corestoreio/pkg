@@ -68,14 +68,20 @@ func TestTransactionRollbackReal(t *testing.T) {
 }
 
 func TestWithDSNfromEnv(t *testing.T) {
-	t.Parallel()
 
-	os.Setenv("TEST_CS_DSN_WithDSNfromEnv", "errrrr")
-	defer func() {
-		os.Unsetenv("TEST_CS_DSN_WithDSNfromEnv")
-	}()
+	t.Run("incorrect env", func(t *testing.T) {
+		os.Setenv("TEST_CS_DSN_WithDSNfromEnv", "errrrr")
+		defer func() {
+			os.Unsetenv("TEST_CS_DSN_WithDSNfromEnv")
+		}()
 
-	cp, err := NewConnPool(WithDSNfromEnv("TEST_CS_DSN_WithDSNfromEnv"))
-	assert.Nil(t, cp)
-	assert.ErrorIsKind(t, errors.NotImplemented, err)
+		cp, err := NewConnPool(WithDSNfromEnv("TEST_CS_DSN_WithDSNfromEnv"))
+		assert.Nil(t, cp)
+		assert.ErrorIsKind(t, errors.NotImplemented, err)
+	})
+	t.Run("env is missing", func(t *testing.T) {
+		cp, err := NewConnPool(WithDSNfromEnv("TEST_CS_DSN_WithDSNFromEnv2"))
+		assert.Nil(t, cp)
+		assert.ErrorIsKind(t, errors.NotExists, err)
+	})
 }

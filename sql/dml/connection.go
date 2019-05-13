@@ -295,7 +295,16 @@ func WithDSNfromEnv(dsnEnvName string, cb ...DriverCallBack) ConnPoolOption {
 	if dsnEnvName == "" {
 		dsnEnvName = EnvDSN
 	}
-	return WithDSN(os.Getenv(dsnEnvName), cb...)
+	env := os.Getenv(dsnEnvName)
+	if env == "" {
+		return ConnPoolOption{
+			sortOrder: 0,
+			fn: func(c *ConnPool) (err error) {
+				return errors.NotExists.Newf("[dml] The environment variable %q does not exists.", dsnEnvName)
+			},
+		}
+	}
+	return WithDSN(env, cb...)
 }
 
 // dsnConnector implements a type to open a connection to the DB. It makes the
