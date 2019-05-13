@@ -112,6 +112,9 @@ func (cc *Stores) Delete(i int) *Stores {
 // Each will run function f on all items in []* Store . Auto generated via
 // dmlgen.
 func (cc *Stores) Each(f func(*Store)) *Stores {
+	if cc == nil {
+		return nil
+	}
 	for i := range cc.Data {
 		f(cc.Data[i])
 	}
@@ -121,13 +124,18 @@ func (cc *Stores) Each(f func(*Store)) *Stores {
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
 func (cc *Stores) Filter(f func(*Store) bool) *Stores {
+	if cc == nil {
+		return nil
+	}
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
 			b = append(b, e)
-			cc.Data[i] = nil // this avoids the memory leak
 		}
 		i++
+	}
+	for i := len(b); i < len(cc.Data); i++ {
+		cc.Data[i] = nil // this should avoid the memory leak
 	}
 	cc.Data = b
 	return cc
@@ -152,6 +160,9 @@ func (cc *Stores) Len() int { return len(cc.Data) }
 // StoreIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
 func (cc *Stores) StoreIDs(ret ...uint32) []uint32 {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]uint32, 0, len(cc.Data))
 	}
@@ -164,6 +175,9 @@ func (cc *Stores) StoreIDs(ret ...uint32) []uint32 {
 // Codes returns a slice with the data or appends it to a slice.
 // Auto generated.
 func (cc *Stores) Codes(ret ...string) []string {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]string, 0, len(cc.Data))
 	}
@@ -298,6 +312,9 @@ func (cc *StoreGroups) Delete(i int) *StoreGroups {
 // Each will run function f on all items in []* StoreGroup . Auto generated via
 // dmlgen.
 func (cc *StoreGroups) Each(f func(*StoreGroup)) *StoreGroups {
+	if cc == nil {
+		return nil
+	}
 	for i := range cc.Data {
 		f(cc.Data[i])
 	}
@@ -307,13 +324,18 @@ func (cc *StoreGroups) Each(f func(*StoreGroup)) *StoreGroups {
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
 func (cc *StoreGroups) Filter(f func(*StoreGroup) bool) *StoreGroups {
+	if cc == nil {
+		return nil
+	}
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
 			b = append(b, e)
-			cc.Data[i] = nil // this avoids the memory leak
 		}
 		i++
+	}
+	for i := len(b); i < len(cc.Data); i++ {
+		cc.Data[i] = nil // this should avoid the memory leak
 	}
 	cc.Data = b
 	return cc
@@ -338,6 +360,9 @@ func (cc *StoreGroups) Len() int { return len(cc.Data) }
 // GroupIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
 func (cc *StoreGroups) GroupIDs(ret ...uint32) []uint32 {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]uint32, 0, len(cc.Data))
 	}
@@ -350,6 +375,9 @@ func (cc *StoreGroups) GroupIDs(ret ...uint32) []uint32 {
 // Codes returns a slice with the data or appends it to a slice.
 // Auto generated.
 func (cc *StoreGroups) Codes(ret ...string) []string {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]string, 0, len(cc.Data))
 	}
@@ -394,8 +422,8 @@ type StoreWebsite struct {
 	SortOrder      uint32       `max_len:"5"`   // sort_order smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Sort Order"
 	DefaultGroupID uint32       `max_len:"5"`   // default_group_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Default Group ID"
 	IsDefault      bool         `max_len:"5"`   // is_default smallint(5) unsigned NOT NULL  DEFAULT '0'  "Defines Is Website Default"
-	Stores         *Stores      // Reversed 1:M store_website.website_id => store.website_id
 	StoreGroups    *StoreGroups // Reversed 1:M store_website.website_id => store_group.website_id
+	Stores         *Stores      // Reversed 1:M store_website.website_id => store.website_id
 }
 
 // Copy copies the struct and returns a new pointer
@@ -486,6 +514,9 @@ func (cc *StoreWebsites) Delete(i int) *StoreWebsites {
 // Each will run function f on all items in []* StoreWebsite . Auto generated via
 // dmlgen.
 func (cc *StoreWebsites) Each(f func(*StoreWebsite)) *StoreWebsites {
+	if cc == nil {
+		return nil
+	}
 	for i := range cc.Data {
 		f(cc.Data[i])
 	}
@@ -495,13 +526,18 @@ func (cc *StoreWebsites) Each(f func(*StoreWebsite)) *StoreWebsites {
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
 func (cc *StoreWebsites) Filter(f func(*StoreWebsite) bool) *StoreWebsites {
+	if cc == nil {
+		return nil
+	}
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
 			b = append(b, e)
-			cc.Data[i] = nil // this avoids the memory leak
 		}
 		i++
+	}
+	for i := len(b); i < len(cc.Data); i++ {
+		cc.Data[i] = nil // this should avoid the memory leak
 	}
 	cc.Data = b
 	return cc
@@ -526,6 +562,9 @@ func (cc *StoreWebsites) Len() int { return len(cc.Data) }
 // WebsiteIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
 func (cc *StoreWebsites) WebsiteIDs(ret ...uint32) []uint32 {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]uint32, 0, len(cc.Data))
 	}
@@ -538,6 +577,9 @@ func (cc *StoreWebsites) WebsiteIDs(ret ...uint32) []uint32 {
 // Codes returns a slice with the data or appends it to a slice.
 // Auto generated.
 func (cc *StoreWebsites) Codes(ret ...string) []string {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]string, 0, len(cc.Data))
 	}

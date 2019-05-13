@@ -8,6 +8,19 @@
       "SortOrder": 0,
       "DefaultGroupID": 0,
       "IsDefault": false,
+      "StoreGroups": {
+        "data": [
+          {
+            "GroupID": 0,
+            "WebsiteID": 0,
+            "Name": "Admin",
+            "RootCategoryID": 0,
+            "DefaultStoreID": 0,
+            "Code": "admin",
+            "StoreWebsite": null
+          }
+        ]
+      },
       "Stores": {
         "data": [
           {
@@ -22,19 +35,6 @@
             "StoreWebsite": null
           }
         ]
-      },
-      "StoreGroups": {
-        "data": [
-          {
-            "GroupID": 0,
-            "WebsiteID": 0,
-            "Name": "Admin",
-            "RootCategoryID": 0,
-            "DefaultStoreID": 0,
-            "Code": "admin",
-            "StoreWebsite": null
-          }
-        ]
       }
     },
     {
@@ -44,6 +44,19 @@
       "SortOrder": 1,
       "DefaultGroupID": 2,
       "IsDefault": true,
+      "StoreGroups": {
+        "data": [
+          {
+            "GroupID": 2,
+            "WebsiteID": 2,
+            "Name": "b2c",
+            "RootCategoryID": 2,
+            "DefaultStoreID": 2,
+            "Code": "b2c",
+            "StoreWebsite": null
+          }
+        ]
+      },
       "Stores": {
         "data": [
           {
@@ -80,19 +93,6 @@
             "StoreWebsite": null
           }
         ]
-      },
-      "StoreGroups": {
-        "data": [
-          {
-            "GroupID": 2,
-            "WebsiteID": 2,
-            "Name": "b2c",
-            "RootCategoryID": 2,
-            "DefaultStoreID": 2,
-            "Code": "b2c",
-            "StoreWebsite": null
-          }
-        ]
       }
     },
     {
@@ -102,6 +102,19 @@
       "SortOrder": 2,
       "DefaultGroupID": 3,
       "IsDefault": false,
+      "StoreGroups": {
+        "data": [
+          {
+            "GroupID": 3,
+            "WebsiteID": 3,
+            "Name": "b2c",
+            "RootCategoryID": 2,
+            "DefaultStoreID": 6,
+            "Code": "b2c",
+            "StoreWebsite": null
+          }
+        ]
+      },
       "Stores": {
         "data": [
           {
@@ -149,19 +162,6 @@
             "StoreWebsite": null
           }
         ]
-      },
-      "StoreGroups": {
-        "data": [
-          {
-            "GroupID": 3,
-            "WebsiteID": 3,
-            "Name": "b2c",
-            "RootCategoryID": 2,
-            "DefaultStoreID": 6,
-            "Code": "b2c",
-            "StoreWebsite": null
-          }
-        ]
       }
     },
     {
@@ -171,6 +171,19 @@
       "SortOrder": 3,
       "DefaultGroupID": 4,
       "IsDefault": false,
+      "StoreGroups": {
+        "data": [
+          {
+            "GroupID": 4,
+            "WebsiteID": 4,
+            "Name": "b2c",
+            "RootCategoryID": 2,
+            "DefaultStoreID": 10,
+            "Code": "b2c",
+            "StoreWebsite": null
+          }
+        ]
+      },
       "Stores": {
         "data": [
           {
@@ -196,19 +209,6 @@
             "StoreWebsite": null
           }
         ]
-      },
-      "StoreGroups": {
-        "data": [
-          {
-            "GroupID": 4,
-            "WebsiteID": 4,
-            "Name": "b2c",
-            "RootCategoryID": 2,
-            "DefaultStoreID": 10,
-            "Code": "b2c",
-            "StoreWebsite": null
-          }
-        ]
       }
     },
     {
@@ -218,6 +218,19 @@
       "SortOrder": 4,
       "DefaultGroupID": 5,
       "IsDefault": false,
+      "StoreGroups": {
+        "data": [
+          {
+            "GroupID": 5,
+            "WebsiteID": 5,
+            "Name": "b2c",
+            "RootCategoryID": 2,
+            "DefaultStoreID": 12,
+            "Code": "b2c",
+            "StoreWebsite": null
+          }
+        ]
+      },
       "Stores": {
         "data": [
           {
@@ -232,19 +245,6 @@
             "StoreWebsite": null
           }
         ]
-      },
-      "StoreGroups": {
-        "data": [
-          {
-            "GroupID": 5,
-            "WebsiteID": 5,
-            "Name": "b2c",
-            "RootCategoryID": 2,
-            "DefaultStoreID": 12,
-            "Code": "b2c",
-            "StoreWebsite": null
-          }
-        ]
       }
     },
     {
@@ -254,6 +254,19 @@
       "SortOrder": 5,
       "DefaultGroupID": 6,
       "IsDefault": false,
+      "StoreGroups": {
+        "data": [
+          {
+            "GroupID": 6,
+            "WebsiteID": 6,
+            "Name": "b2c",
+            "RootCategoryID": 2,
+            "DefaultStoreID": 13,
+            "Code": "b2c",
+            "StoreWebsite": null
+          }
+        ]
+      },
       "Stores": {
         "data": [
           {
@@ -279,19 +292,6 @@
             "StoreWebsite": null
           }
         ]
-      },
-      "StoreGroups": {
-        "data": [
-          {
-            "GroupID": 6,
-            "WebsiteID": 6,
-            "Name": "b2c",
-            "RootCategoryID": 2,
-            "DefaultStoreID": 13,
-            "Code": "b2c",
-            "StoreWebsite": null
-          }
-        ]
       }
     },
     {
@@ -301,6 +301,19 @@
       "SortOrder": 6,
       "DefaultGroupID": 7,
       "IsDefault": false,
+      "StoreGroups": {
+        "data": [
+          {
+            "GroupID": 7,
+            "WebsiteID": 7,
+            "Name": "b2c",
+            "RootCategoryID": 2,
+            "DefaultStoreID": 15,
+            "Code": "b2c",
+            "StoreWebsite": null
+          }
+        ]
+      },
       "Stores": {
         "data": [
           {
@@ -326,19 +339,6 @@
             "StoreWebsite": null
           }
         ]
-      },
-      "StoreGroups": {
-        "data": [
-          {
-            "GroupID": 7,
-            "WebsiteID": 7,
-            "Name": "b2c",
-            "RootCategoryID": 2,
-            "DefaultStoreID": 15,
-            "Code": "b2c",
-            "StoreWebsite": null
-          }
-        ]
       }
     },
     {
@@ -348,6 +348,19 @@
       "SortOrder": 7,
       "DefaultGroupID": 8,
       "IsDefault": false,
+      "StoreGroups": {
+        "data": [
+          {
+            "GroupID": 8,
+            "WebsiteID": 8,
+            "Name": "b2c",
+            "RootCategoryID": 2,
+            "DefaultStoreID": 17,
+            "Code": "b2c",
+            "StoreWebsite": null
+          }
+        ]
+      },
       "Stores": {
         "data": [
           {
@@ -362,19 +375,6 @@
             "StoreWebsite": null
           }
         ]
-      },
-      "StoreGroups": {
-        "data": [
-          {
-            "GroupID": 8,
-            "WebsiteID": 8,
-            "Name": "b2c",
-            "RootCategoryID": 2,
-            "DefaultStoreID": 17,
-            "Code": "b2c",
-            "StoreWebsite": null
-          }
-        ]
       }
     },
     {
@@ -384,6 +384,19 @@
       "SortOrder": 8,
       "DefaultGroupID": 9,
       "IsDefault": false,
+      "StoreGroups": {
+        "data": [
+          {
+            "GroupID": 9,
+            "WebsiteID": 9,
+            "Name": "b2c",
+            "RootCategoryID": 2,
+            "DefaultStoreID": 18,
+            "Code": "b2c",
+            "StoreWebsite": null
+          }
+        ]
+      },
       "Stores": {
         "data": [
           {
@@ -398,19 +411,6 @@
             "StoreWebsite": null
           }
         ]
-      },
-      "StoreGroups": {
-        "data": [
-          {
-            "GroupID": 9,
-            "WebsiteID": 9,
-            "Name": "b2c",
-            "RootCategoryID": 2,
-            "DefaultStoreID": 18,
-            "Code": "b2c",
-            "StoreWebsite": null
-          }
-        ]
       }
     },
     {
@@ -420,6 +420,19 @@
       "SortOrder": 9,
       "DefaultGroupID": 10,
       "IsDefault": false,
+      "StoreGroups": {
+        "data": [
+          {
+            "GroupID": 10,
+            "WebsiteID": 10,
+            "Name": "b2c",
+            "RootCategoryID": 2,
+            "DefaultStoreID": 19,
+            "Code": "b2c",
+            "StoreWebsite": null
+          }
+        ]
+      },
       "Stores": {
         "data": [
           {
@@ -434,19 +447,6 @@
             "StoreWebsite": null
           }
         ]
-      },
-      "StoreGroups": {
-        "data": [
-          {
-            "GroupID": 10,
-            "WebsiteID": 10,
-            "Name": "b2c",
-            "RootCategoryID": 2,
-            "DefaultStoreID": 19,
-            "Code": "b2c",
-            "StoreWebsite": null
-          }
-        ]
       }
     },
     {
@@ -456,6 +456,19 @@
       "SortOrder": 10,
       "DefaultGroupID": 11,
       "IsDefault": false,
+      "StoreGroups": {
+        "data": [
+          {
+            "GroupID": 11,
+            "WebsiteID": 11,
+            "Name": "b2c",
+            "RootCategoryID": 2,
+            "DefaultStoreID": 20,
+            "Code": "b2c",
+            "StoreWebsite": null
+          }
+        ]
+      },
       "Stores": {
         "data": [
           {
@@ -467,19 +480,6 @@
             "SortOrder": 1,
             "IsActive": true,
             "StoreGroup": null,
-            "StoreWebsite": null
-          }
-        ]
-      },
-      "StoreGroups": {
-        "data": [
-          {
-            "GroupID": 11,
-            "WebsiteID": 11,
-            "Name": "b2c",
-            "RootCategoryID": 2,
-            "DefaultStoreID": 20,
-            "Code": "b2c",
             "StoreWebsite": null
           }
         ]
@@ -504,8 +504,8 @@
         "SortOrder": 0,
         "DefaultGroupID": 0,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -522,8 +522,8 @@
         "SortOrder": 1,
         "DefaultGroupID": 2,
         "IsDefault": true,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -540,8 +540,8 @@
         "SortOrder": 2,
         "DefaultGroupID": 3,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -558,8 +558,8 @@
         "SortOrder": 3,
         "DefaultGroupID": 4,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -576,8 +576,8 @@
         "SortOrder": 4,
         "DefaultGroupID": 5,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -594,8 +594,8 @@
         "SortOrder": 5,
         "DefaultGroupID": 6,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -612,8 +612,8 @@
         "SortOrder": 6,
         "DefaultGroupID": 7,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -630,8 +630,8 @@
         "SortOrder": 7,
         "DefaultGroupID": 8,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -648,8 +648,8 @@
         "SortOrder": 8,
         "DefaultGroupID": 9,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -666,8 +666,8 @@
         "SortOrder": 9,
         "DefaultGroupID": 10,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -684,8 +684,8 @@
         "SortOrder": 10,
         "DefaultGroupID": 11,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     }
   ]
@@ -717,8 +717,8 @@
         "SortOrder": 0,
         "DefaultGroupID": 0,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -745,8 +745,8 @@
         "SortOrder": 1,
         "DefaultGroupID": 2,
         "IsDefault": true,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -773,8 +773,8 @@
         "SortOrder": 1,
         "DefaultGroupID": 2,
         "IsDefault": true,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -801,8 +801,8 @@
         "SortOrder": 1,
         "DefaultGroupID": 2,
         "IsDefault": true,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -829,8 +829,8 @@
         "SortOrder": 2,
         "DefaultGroupID": 3,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -857,8 +857,8 @@
         "SortOrder": 2,
         "DefaultGroupID": 3,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -885,8 +885,8 @@
         "SortOrder": 2,
         "DefaultGroupID": 3,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -913,8 +913,8 @@
         "SortOrder": 2,
         "DefaultGroupID": 3,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -941,8 +941,8 @@
         "SortOrder": 3,
         "DefaultGroupID": 4,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -969,8 +969,8 @@
         "SortOrder": 3,
         "DefaultGroupID": 4,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -997,8 +997,8 @@
         "SortOrder": 4,
         "DefaultGroupID": 5,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -1025,8 +1025,8 @@
         "SortOrder": 5,
         "DefaultGroupID": 6,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -1053,8 +1053,8 @@
         "SortOrder": 5,
         "DefaultGroupID": 6,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -1081,8 +1081,8 @@
         "SortOrder": 6,
         "DefaultGroupID": 7,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -1109,8 +1109,8 @@
         "SortOrder": 6,
         "DefaultGroupID": 7,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -1137,8 +1137,8 @@
         "SortOrder": 7,
         "DefaultGroupID": 8,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -1165,8 +1165,8 @@
         "SortOrder": 8,
         "DefaultGroupID": 9,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -1193,8 +1193,8 @@
         "SortOrder": 9,
         "DefaultGroupID": 10,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     },
     {
@@ -1221,8 +1221,8 @@
         "SortOrder": 10,
         "DefaultGroupID": 11,
         "IsDefault": false,
-        "Stores": null,
-        "StoreGroups": null
+        "StoreGroups": null,
+        "Stores": null
       }
     }
   ]

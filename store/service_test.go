@@ -36,7 +36,7 @@ var serviceStoreSimpleTest = store.MustNewService(
 )
 
 func TestNewServiceStore_QueryInvalidStore(t *testing.T) {
-
+	t.Parallel()
 	assert.True(t, serviceStoreSimpleTest.IsCacheEmpty())
 
 	s, err := serviceStoreSimpleTest.Store(10000)
@@ -51,6 +51,7 @@ func TestNewServiceStore_QueryInvalidStore(t *testing.T) {
 }
 
 func TestMustNewService_Panic(t *testing.T) {
+	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
@@ -66,6 +67,7 @@ func TestMustNewService_Panic(t *testing.T) {
 }
 
 func TestNewService_Validate(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		opts    []store.Option
@@ -202,7 +204,7 @@ func TestNewService_Validate(t *testing.T) {
 }
 
 func TestNewService_DefaultStoreView(t *testing.T) {
-
+	t.Parallel()
 	srv := store.MustNewService(
 		store.WithWebsites(&store.StoreWebsite{WebsiteID: 1, Code: "euro", Name: null.MakeString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: true}),
 		store.WithGroups(&store.StoreGroup{GroupID: 1, WebsiteID: 1, Code: "dach", Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 1}),
@@ -224,6 +226,7 @@ func TestNewService_DefaultStoreView(t *testing.T) {
 }
 
 func TestNewService_WebsiteGroupStore(t *testing.T) {
+	t.Parallel()
 	stores := store.Stores{
 		Data: []*store.Store{
 			{StoreID: 1, Code: "de", WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
@@ -289,7 +292,7 @@ func TestNewService_WebsiteGroupStore(t *testing.T) {
 }
 
 func TestService_IsAllowedStoreID(t *testing.T) {
-
+	t.Parallel()
 	tests := []struct {
 		runMode       scope.TypeID
 		storeID       uint32
@@ -337,6 +340,7 @@ func TestService_IsAllowedStoreID(t *testing.T) {
 }
 
 func TestService_DefaultStoreID(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		runMode       scope.TypeID
 		wantStoreID   uint32
@@ -390,153 +394,99 @@ func TestService_DefaultStoreID(t *testing.T) {
 	})
 }
 
-// func TestService_StoreIDbyCode(t *testing.T) {
-// 	eurSrv := storemock.NewEurozzyService(cfgmock.NewService())
-// 	tests := []struct {
-// 		srv           *Service
-// 		runMode       scope.TypeID
-// 		code          string
-// 		wantStoreID   int64
-// 		wantWebsiteID int64
-// 		wantErrBhf    errors.Kind
-// 	}{
-// 		{eurSrv, 0, "", 2, 1, errors.NoKind},
-// 		{eurSrv, scope.DefaultTypeID, "x", 0, 0, errors.NotFound},
-// 		{eurSrv, scope.DefaultTypeID, "uk", 0, 0, errors.NotFound},
-// 		{eurSrv, scope.Website.WithID(0), "admin", 0, 0, nil},
-// 		{eurSrv, scope.Website.WithID(1), "de", 1, 1, nil},
-// 		{eurSrv, scope.Website.WithID(2), "nz", 6, 2, nil},
-// 		{eurSrv, scope.Website.WithID(3), "uk", 0, 0, errors.NotFound},
-// 		{eurSrv, scope.Absent.WithID(0), "uk", 0, 0, errors.NotFound},
-// 		{eurSrv, scope.Absent.WithID(0), "at", 2, 1, nil},
-// 		{eurSrv, scope.Group.WithID(2), "uk", 4, 1, nil},
-// 		{eurSrv, scope.Group.WithID(99), "uk", 0, 0, errors.NotFound},
-// 		{eurSrv, scope.Store.WithID(0), "admin", 0, 0, nil},
-// 		{eurSrv, scope.Store.WithID(0), "au", 5, 2, nil},
-// 		{eurSrv, scope.Store.WithID(0), "xx", 0, 0, errors.NotFound},
-// 	}
-// 	for i, test := range tests {
-// 		haveStoreID, haveWebsiteID, haveErr := test.srv.StoreIDbyCode(test.runMode, test.code)
-// 		if test.wantErrBhf != nil {
-// 			assert.True(t, test.wantErrBhf(haveErr), "(%d) %+v", i, haveErr)
-// 			assert.Exactly(t, test.wantStoreID, haveStoreID, "Index %d", i)
-// 			assert.Exactly(t, test.wantWebsiteID, haveWebsiteID, "Index %d", i)
-// 			continue
-// 		}
-// 		assert.NoError(t, haveErr, "(%d) %+v", i, haveErr)
-// 		assert.Exactly(t, test.wantStoreID, haveStoreID, "Index %d", i)
-// 		assert.Exactly(t, test.wantWebsiteID, haveWebsiteID, "Index %d", i)
-// 	}
-// }
-//
-// func TestService_AllowedStores(t *testing.T) {
-// 	eurSrv := storemock.NewEurozzyService(cfgmock.NewService())
-// 	tests := []struct {
-// 		srv          *Service
-// 		runMode      scope.TypeID
-// 		wantStoreIDs []int64
-// 		wantErrBhf   errors.BehaviourFunc
-// 	}{
-// 		{eurSrv, 0, []int64{1, 2}, nil},
-// 		{eurSrv, scope.DefaultTypeID, []int64{1, 2}, nil},
-// 		{eurSrv, scope.Website.WithID(0), []int64{0}, nil},
-// 		{eurSrv, scope.Website.WithID(1), []int64{1, 4, 2}, nil},
-// 		{eurSrv, scope.Website.WithID(2), []int64{5, 6}, nil},
-// 		{eurSrv, scope.Website.WithID(3), nil, nil},
-// 		{eurSrv, scope.Absent.WithID(0), []int64{1, 2}, nil},
-// 		{eurSrv, scope.Group.WithID(2), []int64{4}, nil},
-// 		{eurSrv, scope.Group.WithID(99), nil, nil},
-// 		{eurSrv, scope.Store.WithID(0), []int64{0, 5, 1, 4, 2, 6}, nil},
-// 	}
-// 	for i, test := range tests {
-// 		haveStores, haveErr := test.srv.AllowedStores(test.runMode)
-// 		if test.wantErrBhf != nil {
-// 			assert.True(t, test.wantErrBhf(haveErr), "(%d) %+v", i, haveErr)
-// 			assert.Exactly(t, test.wantStoreIDs, haveStores.IDs(), "Index %d", i)
-// 			continue
-// 		}
-// 		assert.NoError(t, haveErr, "(%d) %+v", i, haveErr)
-// 		assert.Exactly(t, test.wantStoreIDs, haveStores.IDs(), "Index %d", i)
-// 	}
-// }
-//
-// func TestService_HasSingleStore(t *testing.T) {
-// 	s := MustNewService(
-// 		store.WithWebsites(&store.StoreWebsite{WebsiteID: 1, Code: ("euro"), Name: null.MakeString("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: (true)}),
-// 	)
-// 	s1 := MustNewService(
-// 		store.WithWebsites(&store.StoreWebsite{WebsiteID: 1, Code: ("euro"), Name: null.MakeString("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: (true)}),
-// 	)
-// 	s1.SingleStoreModeEnabled = false
-//
-// 	s2 := storemock.NewEurozzyService(cfgmock.NewService())
-//
-// 	const iterations = 10
-// 	var wg sync.WaitGroup
-// 	wg.Add(iterations)
-// 	for i := 0; i < iterations; i++ {
-// 		go func(wg *sync.WaitGroup) {
-// 			defer wg.Done()
-// 			assert.True(t, s.HasSingleStore())   // no stores so true
-// 			assert.False(t, s1.HasSingleStore()) // no stores but globally disabled so false
-// 			assert.False(t, s2.HasSingleStore()) // lots of stores so false
-// 		}(&wg)
-// 	}
-// 	wg.Wait()
-// }
-//
-// func TestService_IsSingleStoreMode(t *testing.T) {
-//
-// 	const xPath = `general/single_store_mode/enabled`
-//
-// 	s := MustNewService(
-// 		store.WithWebsites(&store.StoreWebsite{WebsiteID: 1, Code: ("euro"), Name: null.MakeString("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: (true)}),
-// 	)
-//
-// 	// no stores and backend not set so true
-// 	sCfg := cfgmock.NewService().NewScoped(0, 0)
-// 	b, err := s.IsSingleStoreMode(sCfg)
-// 	assert.NoError(t, err, "%+v", err)
-// 	assert.True(t, b)
-//
-// 	// no stores and backend set but configured with false
-// 	s.ClearCache()
-// 	sCfg = cfgmock.NewService(cfgmock.PathValue{
-// 		cfgpath.MustMakeByString(xPath).BindStore(2).String(): 0,
-// 	}).NewScoped(1, 2)
-// 	s.BackendSingleStore = cfgmodel.NewBool(xPath, cfgmodel.WithScopeStore())
-// 	b, err = s.IsSingleStoreMode(sCfg)
-// 	assert.NoError(t, err, "%+v", err)
-// 	assert.False(t, b)
-//
-// 	// no stores and backend set but returns an error
-// 	s.ClearCache()
-// 	tErr := errors.NewNotImplementedf("Ups")
-// 	s.BackendSingleStore = cfgmodel.NewBool(xPath)
-// 	s.BackendSingleStore.LastError = tErr
-// 	b, err = s.IsSingleStoreMode(config.Scoped{})
-// 	assert.True(t, errors.IsNotImplemented(tErr), "%+v", tErr)
-// 	assert.False(t, b)
-//
-// 	s2 := storemock.NewEurozzyService(cfgmock.NewService())
-// 	s2.BackendSingleStore = cfgmodel.NewBool(xPath) // returns false always no error
-// 	assert.False(t, s2.HasSingleStore())
-//
-// 	b, err = s2.IsSingleStoreMode(sCfg)
-// 	assert.NoError(t, err, "%+v", err)
-// 	assert.False(t, b)
-//
-// 	s2.ClearCache()
-// 	s2.BackendSingleStore = cfgmodel.NewBool(xPath, cfgmodel.WithField(&element.Field{ID: cfgpath.MakeRoute(`enabled`), Default: `1`})) // returns true
-// 	b, err = s2.IsSingleStoreMode(sCfg)
-// 	assert.NoError(t, err, "%+v", err)
-// 	assert.True(t, b)
-//
-// 	// call it twice to test cache
-// 	b, err = s2.IsSingleStoreMode(sCfg)
-// 	assert.NoError(t, err, "%+v", err)
-// 	assert.True(t, b)
-// }
+func TestService_StoreIDbyCode(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		runMode       scope.TypeID
+		code          string
+		wantStoreID   uint32
+		wantWebsiteID uint32
+		wantErrBhf    errors.Kind
+	}{
+		{0, "", 2, 1, errors.NoKind},
+		{scope.DefaultTypeID, "x", 0, 0, errors.NotFound},
+		{scope.DefaultTypeID, "uk", 0, 0, errors.NotFound},
+		{scope.Website.WithID(0), "admin", 0, 0, errors.NoKind},
+		{scope.Website.WithID(1), "de", 1, 1, errors.NoKind},
+		{scope.Website.WithID(2), "nz", 6, 2, errors.NoKind},
+		{scope.Website.WithID(3), "uk", 0, 0, errors.NotFound},
+		{scope.Absent.WithID(0), "uk", 0, 0, errors.NotFound},
+		{scope.Absent.WithID(0), "at", 2, 1, errors.NoKind},
+		{scope.Group.WithID(2), "uk", 4, 1, errors.NoKind},
+		{scope.Group.WithID(99), "uk", 0, 0, errors.NotFound},
+		{scope.Store.WithID(0), "admin", 0, 0, errors.NoKind},
+		{scope.Store.WithID(0), "au", 5, 2, errors.NoKind},
+		{scope.Store.WithID(0), "xx", 0, 0, errors.NotFound},
+	}
+	eurSrv := storemock.NewServiceEuroOZ()
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("Index_%02d", i), func(t *testing.T) {
+			haveStoreID, haveWebsiteID, haveErr := eurSrv.StoreIDbyCode(test.runMode, test.code)
+			if test.wantErrBhf > 0 {
+				assert.ErrorIsKind(t, test.wantErrBhf, haveErr)
+				assert.Exactly(t, test.wantStoreID, haveStoreID)
+				assert.Exactly(t, test.wantWebsiteID, haveWebsiteID)
+				return
+			}
+			assert.NoError(t, haveErr)
+			assert.Exactly(t, test.wantStoreID, haveStoreID)
+			assert.Exactly(t, test.wantWebsiteID, haveWebsiteID)
+		})
+	}
+}
+
+func TestService_AllowedStores_Implementation(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		runMode      scope.TypeID
+		wantStoreIDs []uint32
+		wantErrBhf   errors.Kind
+	}{
+		{0, nil, errors.NotImplemented},
+		{scope.DefaultTypeID, []uint32{0}, errors.NoKind},
+		{scope.Website.WithID(0), []uint32{0}, errors.NoKind},
+		{scope.Website.WithID(1), []uint32{1, 2, 4}, errors.NoKind},
+		{scope.Website.WithID(2), []uint32{5, 6}, errors.NoKind},
+		{scope.Website.WithID(3), []uint32{}, errors.NoKind},
+		{scope.Absent.WithID(0), nil, errors.NotImplemented},
+		{scope.Group.WithID(2), []uint32{4}, errors.NoKind},
+		{scope.Group.WithID(99), []uint32{}, errors.NoKind},
+		{scope.Store.WithID(0), []uint32{0, 1, 2, 4, 5, 6}, errors.NoKind},
+		{87987, nil, errors.NotImplemented},
+		{2789987, nil, errors.NotImplemented},
+	}
+	eurSrv := storemock.NewServiceEuroOZ()
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("Index_%02d_%s", i, test.runMode.String()), func(t *testing.T) {
+			haveStores, haveErr := eurSrv.AllowedStores(test.runMode)
+			if test.wantErrBhf > 0 {
+				assert.ErrorIsKind(t, test.wantErrBhf, haveErr)
+				assert.Exactly(t, test.wantStoreIDs, haveStores.StoreIDs())
+				return
+			}
+			assert.NoError(t, haveErr)
+			assert.Exactly(t, test.wantStoreIDs, haveStores.StoreIDs())
+
+			// todo check if store pointer not returned still exists.
+		})
+	}
+}
+
+func TestService_AllowedStores_PointerCheck(t *testing.T) {
+	eurSrv := storemock.NewServiceEuroOZ()
+	sts, err := eurSrv.AllowedStores(scope.Website.WithID(1))
+	assert.NoError(t, err)
+
+	assert.Exactly(t, []uint32{1, 2, 4}, sts.StoreIDs())
+
+	st, err := eurSrv.Store(5)
+	assert.NoError(t, err)
+	assert.Exactly(t, uint32(5), st.StoreID)
+
+	st, err = eurSrv.Store(6)
+	assert.NoError(t, err)
+	assert.Exactly(t, uint32(5), st.StoreID)
+}
 
 func TestService_LoadFromDB_OK(t *testing.T) {
 
@@ -575,59 +525,4 @@ func TestService_LoadFromDB_OK(t *testing.T) {
 	// assert.Exactly(t,
 	// 	`{"scope":"Default","id":0,"scopes":[{"scope":"Website","id":0,"scopes":[{"scope":"Group","id":0,"scopes":[{"scope":"Store","id":0}]}]},{"scope":"Website","id":2,"scopes":[{"scope":"Group","id":2,"scopes":[{"scope":"Store","id":2},{"scope":"Store","id":5}]}]},{"scope":"Website","id":3,"scopes":[{"scope":"Group","id":3,"scopes":[{"scope":"Store","id":6},{"scope":"Store","id":7},{"scope":"Store","id":8},{"scope":"Store","id":9}]}]},{"scope":"Website","id":4,"scopes":[{"scope":"Group","id":4,"scopes":[{"scope":"Store","id":10},{"scope":"Store","id":11}]}]},{"scope":"Website","id":5,"scopes":[{"scope":"Group","id":5,"scopes":[{"scope":"Store","id":12}]}]},{"scope":"Website","id":6,"scopes":[{"scope":"Group","id":6,"scopes":[{"scope":"Store","id":13},{"scope":"Store","id":14}]}]},{"scope":"Website","id":7,"scopes":[{"scope":"Group","id":7,"scopes":[{"scope":"Store","id":15},{"scope":"Store","id":16}]}]},{"scope":"Website","id":8,"scopes":[{"scope":"Group","id":8,"scopes":[{"scope":"Store","id":17}]}]},{"scope":"Website","id":9,"scopes":[{"scope":"Group","id":9,"scopes":[{"scope":"Store","id":18}]}]}]}`,
 	// 	string(tree))
-}
-
-func TestService_LoadFromDB_NOK_Store(t *testing.T) {
-	t.Skip("TODO")
-
-	// dbrCon, dbMock := cstesting.MockDB(t)
-	//
-	// wsErr := errors.NewAlreadyClosedf("DB Already closed")
-	// dbMock.ExpectQuery("SELECT (.+) FROM `store`(.+) ORDER BY CASE WHEN(.+)").WillReturnError(wsErr)
-	// dbMock.ExpectQuery("SELECT (.+) FROM `store_website`(.+) ORDER BY(.+)").WillReturnRows(
-	// 	cstesting.MustMockRows(cstesting.WithFile("testdata", "m1_core_website_view.csv")),
-	// )
-	// dbMock.ExpectQuery("SELECT (.+) FROM `store_group`(.+) ORDER BY main_table(.+)").WillReturnRows(
-	// 	cstesting.MustMockRows(cstesting.WithFile("testdata", "m1_core_store_group_view.csv")),
-	// )
-	// dbMock.MatchExpectationsInOrder(false) // we're using goroutines!
-	//
-	// srv := MustNewService(cfgmock.NewService())
-	// err := srv.LoadFromResource(dbrCon.NewSession())
-	// assert.True(t, errors.IsAlreadyClosed(err))
-	//
-	// if err := dbMock.ExpectationsWereMet(); err != nil {
-	// 	t.Fatalf("%+v", err)
-	// }
-	// assert.Len(t, srv.Websites(), 0)
-	// assert.Len(t, srv.Groups(), 0)
-	// assert.Len(t, srv.Stores(), 0)
-
-}
-
-func TestService_LoadFromDB_NOK_All(t *testing.T) {
-
-	t.Skip("TODO")
-
-	// dbrCon, dbMock := cstesting.MockDB(t)
-	//
-	// wsErr1 := errors.NewAlreadyClosedf("DB Already closed")
-	// wsErr2 := errors.NewNotImplementedf("DB is NoSQL")
-	// wsErr3 := errors.NewEmptyf("DB empty")
-	// dbMock.ExpectQuery("SELECT (.+) FROM `store`(.+) ORDER BY CASE WHEN(.+)").WillReturnError(wsErr1)
-	// dbMock.ExpectQuery("SELECT (.+) FROM `store_website`(.+) ORDER BY(.+)").WillReturnError(wsErr2)
-	// dbMock.ExpectQuery("SELECT (.+) FROM `store_group`(.+) ORDER BY main_table(.+)").WillReturnError(wsErr3)
-	// dbMock.MatchExpectationsInOrder(false) // we're using goroutines!
-	//
-	// srv := MustNewService(cfgmock.NewService())
-	// err := srv.LoadFromResource(dbrCon.NewSession())
-	// assert.True(t, errors.IsAlreadyClosed(err) || errors.IsNotImplemented(err) || errors.IsEmpty(err), "%+v", err)
-	//
-	// if err := dbMock.ExpectationsWereMet(); err != nil {
-	// 	t.Fatalf("%+v", err)
-	// }
-	// assert.Len(t, srv.Websites(), 0)
-	// assert.Len(t, srv.Groups(), 0)
-	// assert.Len(t, srv.Stores(), 0)
-
 }

@@ -279,16 +279,6 @@ func easyjson55774c79DecodeGithubComCorestoreioPkgStore2(in *jlexer.Lexer, out *
 			out.DefaultGroupID = uint32(in.Uint32())
 		case "isDefault":
 			out.IsDefault = bool(in.Bool())
-		case "stores":
-			if in.IsNull() {
-				in.Skip()
-				out.Stores = nil
-			} else {
-				if out.Stores == nil {
-					out.Stores = new(Stores)
-				}
-				(*out.Stores).UnmarshalEasyJSON(in)
-			}
 		case "storeGroups":
 			if in.IsNull() {
 				in.Skip()
@@ -298,6 +288,16 @@ func easyjson55774c79DecodeGithubComCorestoreioPkgStore2(in *jlexer.Lexer, out *
 					out.StoreGroups = new(StoreGroups)
 				}
 				(*out.StoreGroups).UnmarshalEasyJSON(in)
+			}
+		case "stores":
+			if in.IsNull() {
+				in.Skip()
+				out.Stores = nil
+			} else {
+				if out.Stores == nil {
+					out.Stores = new(Stores)
+				}
+				(*out.Stores).UnmarshalEasyJSON(in)
 			}
 		default:
 			in.SkipRecursive()
@@ -373,16 +373,6 @@ func easyjson55774c79EncodeGithubComCorestoreioPkgStore2(out *jwriter.Writer, in
 		}
 		out.Bool(bool(in.IsDefault))
 	}
-	if in.Stores != nil {
-		const prefix string = ",\"stores\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
-		(*in.Stores).MarshalEasyJSON(out)
-	}
 	if in.StoreGroups != nil {
 		const prefix string = ",\"storeGroups\":"
 		if first {
@@ -392,6 +382,16 @@ func easyjson55774c79EncodeGithubComCorestoreioPkgStore2(out *jwriter.Writer, in
 			out.RawString(prefix)
 		}
 		(*in.StoreGroups).MarshalEasyJSON(out)
+	}
+	if in.Stores != nil {
+		const prefix string = ",\"stores\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		(*in.Stores).MarshalEasyJSON(out)
 	}
 	out.RawByte('}')
 }

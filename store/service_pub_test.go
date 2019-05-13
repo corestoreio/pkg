@@ -17,50 +17,83 @@ package store_test
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
 	"testing"
 
 	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/store"
 	storemock "github.com/corestoreio/pkg/store/mock"
-	"github.com/corestoreio/pkg/util/assert"
 )
 
 func init() {
 	null.MustSetJSONMarshaler(json.Marshal, json.Unmarshal)
 }
 
-func toJSON(t *testing.T, srv *store.Service) []byte {
+/*
+std library vs easyjson with json.Encoder
+name                     old time/op    new time/op    delta
+Service_Json_Encoding-4     251µs ± 1%     272µs ± 1%   +8.34%  (p=0.016 n=5+4)
+
+name                     old alloc/op   new alloc/op   delta
+Service_Json_Encoding-4     149kB ± 0%     144kB ± 0%   -3.26%  (p=0.008 n=5+5)
+
+name                     old allocs/op  new allocs/op  delta
+Service_Json_Encoding-4       195 ± 0%       149 ± 0%  -23.59%  (p=0.008 n=5+5)
+
+
+std library vs pure easyjson
+name                     old time/op    new time/op    delta
+Service_Json_Encoding-4     251µs ± 1%      30µs ± 2%  -88.11%  (p=0.008 n=5+5)
+
+name                     old alloc/op   new alloc/op   delta
+Service_Json_Encoding-4     149kB ± 0%      15kB ± 0%  -89.66%  (p=0.008 n=5+5)
+
+name                     old allocs/op  new allocs/op  delta
+Service_Json_Encoding-4       195 ± 0%        75 ± 0%  -61.54%  (p=0.008 n=5+5)
+*/
+
+// func toJSON2(srv *store.Service) []byte {
+// 	jw := &jwriter.Writer{}
+//
+// 	jw.Buffer.AppendString("[\n")
+// 	srv.Websites().MarshalEasyJSON(jw)
+// 	jw.Buffer.AppendString(",\n")
+// 	srv.Websites().MarshalEasyJSON(jw)
+// 	jw.Buffer.AppendString(",\n")
+// 	srv.Websites().MarshalEasyJSON(jw)
+// 	jw.Buffer.AppendString("]\n")
+// 	data, err := jw.BuildBytes()
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	return data
+// }
+
+func toJSON(srv *store.Service) []byte {
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
 	enc.SetIndent("", "  ")
 	buf.WriteString("[\n")
-	assert.NoError(t, enc.Encode(srv.Websites()))
+	if err := enc.Encode(srv.Websites()); err != nil {
+		panic(err)
+	}
 	buf.WriteString(",\n")
-	assert.NoError(t, enc.Encode(srv.Groups()))
+	if err := enc.Encode(srv.Groups()); err != nil {
+		panic(err)
+	}
 	buf.WriteString(",\n")
-	assert.NoError(t, enc.Encode(srv.Stores()))
+	if err := enc.Encode(srv.Stores()); err != nil {
+		panic(err)
+	}
 	buf.WriteString("]\n")
 	return buf.Bytes()
 }
 
-func TestService_Sorting(t *testing.T) {
+var benchmarkService_Json_Encoding []byte
 
-	t.Run("EuroW11G11S19", func(t *testing.T) {
-		srv := storemock.NewServiceEuroW11G11S19()
-		haveData := toJSON(t, srv)
-
-		goldenData, err := ioutil.ReadFile("testdata/sort_euroW11G11S19.golden.json")
-		assert.NoError(t, err)
-		assert.Exactly(t, goldenData, haveData)
-	})
-
-	t.Run("EuroOZ", func(t *testing.T) {
-		srv := storemock.NewServiceEuroOZ()
-		haveData := toJSON(t, srv)
-
-		goldenData, err := ioutil.ReadFile("testdata/sort_euroOZ.golden.json")
-		assert.NoError(t, err)
-		assert.Exactly(t, goldenData, haveData)
-	})
+func BenchmarkService_Json_Encoding(b *testing.B) {
+	srv := storemock.NewServiceEuroW11G11S19()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		benchmarkService_Json_Encoding = toJSON(srv)
+	}
 }

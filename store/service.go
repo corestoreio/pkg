@@ -489,6 +489,11 @@ func (s *Service) AllowedStores(runMode scope.TypeID) (*Stores, error) {
 	copy(storeCol.Data, s.stores.Data)
 
 	switch scp {
+	case scope.Default:
+		return storeCol.Filter(func(st *Store) bool {
+			return st.IsActive && st.StoreID == 0
+		}), nil
+
 	case scope.Store:
 		return storeCol.Filter(func(st *Store) bool {
 			return st.IsActive

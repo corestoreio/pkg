@@ -1,0 +1,353 @@
+[
+{
+  "data": [
+    {
+      "code": "admin",
+      "name": "Admin",
+      "storeGroups": {
+        "data": [
+          {
+            "name": "Default",
+            "code": "admin"
+          }
+        ]
+      },
+      "stores": {
+        "data": [
+          {
+            "code": "admin",
+            "name": "Admin",
+            "isActive": true
+          }
+        ]
+      }
+    },
+    {
+      "websiteID": 1,
+      "code": "euro",
+      "name": "Europe",
+      "defaultGroupID": 1,
+      "isDefault": true,
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 1,
+            "websiteID": 1,
+            "name": "DACH Group",
+            "rootCategoryID": 2,
+            "defaultStoreID": 2,
+            "code": "dach"
+          },
+          {
+            "groupID": 2,
+            "websiteID": 1,
+            "name": "UK Group",
+            "rootCategoryID": 2,
+            "defaultStoreID": 4,
+            "code": "uk"
+          }
+        ]
+      },
+      "stores": {
+        "data": [
+          {
+            "storeID": 1,
+            "code": "de",
+            "websiteID": 1,
+            "groupID": 1,
+            "name": "Germany",
+            "sortOrder": 10,
+            "isActive": true
+          },
+          {
+            "storeID": 2,
+            "code": "at",
+            "websiteID": 1,
+            "groupID": 1,
+            "name": "Österreich",
+            "sortOrder": 20,
+            "isActive": true
+          },
+          {
+            "storeID": 3,
+            "code": "ch",
+            "websiteID": 1,
+            "groupID": 1,
+            "name": "Schweiz",
+            "sortOrder": 30
+          },
+          {
+            "storeID": 4,
+            "code": "uk",
+            "websiteID": 1,
+            "groupID": 2,
+            "name": "UK",
+            "sortOrder": 10,
+            "isActive": true
+          }
+        ]
+      }
+    },
+    {
+      "websiteID": 2,
+      "code": "oz",
+      "name": "OZ",
+      "sortOrder": 20,
+      "defaultGroupID": 3,
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 3,
+            "websiteID": 2,
+            "name": "Australia",
+            "rootCategoryID": 2,
+            "defaultStoreID": 5,
+            "code": "au"
+          }
+        ]
+      },
+      "stores": {
+        "data": [
+          {
+            "storeID": 5,
+            "code": "au",
+            "websiteID": 2,
+            "groupID": 3,
+            "name": "Australia",
+            "sortOrder": 10,
+            "isActive": true
+          },
+          {
+            "storeID": 6,
+            "code": "nz",
+            "websiteID": 2,
+            "groupID": 3,
+            "name": "Kiwi",
+            "sortOrder": 30,
+            "isActive": true
+          }
+        ]
+      }
+    }
+  ]
+}
+,
+{
+  "data": [
+    {
+      "name": "Default",
+      "code": "admin",
+      "storeWebsite": {
+        "code": "admin",
+        "name": "Admin"
+      }
+    },
+    {
+      "groupID": 1,
+      "websiteID": 1,
+      "name": "DACH Group",
+      "rootCategoryID": 2,
+      "defaultStoreID": 2,
+      "code": "dach",
+      "storeWebsite": {
+        "websiteID": 1,
+        "code": "euro",
+        "name": "Europe",
+        "defaultGroupID": 1,
+        "isDefault": true
+      }
+    },
+    {
+      "groupID": 2,
+      "websiteID": 1,
+      "name": "UK Group",
+      "rootCategoryID": 2,
+      "defaultStoreID": 4,
+      "code": "uk",
+      "storeWebsite": {
+        "websiteID": 1,
+        "code": "euro",
+        "name": "Europe",
+        "defaultGroupID": 1,
+        "isDefault": true
+      }
+    },
+    {
+      "groupID": 3,
+      "websiteID": 2,
+      "name": "Australia",
+      "rootCategoryID": 2,
+      "defaultStoreID": 5,
+      "code": "au",
+      "storeWebsite": {
+        "websiteID": 2,
+        "code": "oz",
+        "name": "OZ",
+        "sortOrder": 20,
+        "defaultGroupID": 3
+      }
+    }
+  ]
+}
+,
+{
+  "data": [
+    {
+      "code": "admin",
+      "name": "Admin",
+      "isActive": true,
+      "storeGroup": {
+        "name": "Default",
+        "code": "admin"
+      },
+      "storeWebsite": {
+        "code": "admin",
+        "name": "Admin"
+      }
+    },
+    {
+      "storeID": 1,
+      "code": "de",
+      "websiteID": 1,
+      "groupID": 1,
+      "name": "Germany",
+      "sortOrder": 10,
+      "isActive": true,
+      "storeGroup": {
+        "groupID": 2,
+        "websiteID": 1,
+        "name": "UK Group",
+        "rootCategoryID": 2,
+        "defaultStoreID": 4,
+        "code": "uk"
+      },
+      "storeWebsite": {
+        "websiteID": 1,
+        "code": "euro",
+        "name": "Europe",
+        "defaultGroupID": 1,
+        "isDefault": true
+      }
+    },
+    {
+      "storeID": 2,
+      "code": "at",
+      "websiteID": 1,
+      "groupID": 1,
+      "name": "Österreich",
+      "sortOrder": 20,
+      "isActive": true,
+      "storeGroup": {
+        "groupID": 2,
+        "websiteID": 1,
+        "name": "UK Group",
+        "rootCategoryID": 2,
+        "defaultStoreID": 4,
+        "code": "uk"
+      },
+      "storeWebsite": {
+        "websiteID": 1,
+        "code": "euro",
+        "name": "Europe",
+        "defaultGroupID": 1,
+        "isDefault": true
+      }
+    },
+    {
+      "storeID": 3,
+      "code": "ch",
+      "websiteID": 1,
+      "groupID": 1,
+      "name": "Schweiz",
+      "sortOrder": 30,
+      "storeGroup": {
+        "groupID": 2,
+        "websiteID": 1,
+        "name": "UK Group",
+        "rootCategoryID": 2,
+        "defaultStoreID": 4,
+        "code": "uk"
+      },
+      "storeWebsite": {
+        "websiteID": 1,
+        "code": "euro",
+        "name": "Europe",
+        "defaultGroupID": 1,
+        "isDefault": true
+      }
+    },
+    {
+      "storeID": 4,
+      "code": "uk",
+      "websiteID": 1,
+      "groupID": 2,
+      "name": "UK",
+      "sortOrder": 10,
+      "isActive": true,
+      "storeGroup": {
+        "groupID": 2,
+        "websiteID": 1,
+        "name": "UK Group",
+        "rootCategoryID": 2,
+        "defaultStoreID": 4,
+        "code": "uk"
+      },
+      "storeWebsite": {
+        "websiteID": 1,
+        "code": "euro",
+        "name": "Europe",
+        "defaultGroupID": 1,
+        "isDefault": true
+      }
+    },
+    {
+      "storeID": 5,
+      "code": "au",
+      "websiteID": 2,
+      "groupID": 3,
+      "name": "Australia",
+      "sortOrder": 10,
+      "isActive": true,
+      "storeGroup": {
+        "groupID": 3,
+        "websiteID": 2,
+        "name": "Australia",
+        "rootCategoryID": 2,
+        "defaultStoreID": 5,
+        "code": "au"
+      },
+      "storeWebsite": {
+        "websiteID": 2,
+        "code": "oz",
+        "name": "OZ",
+        "sortOrder": 20,
+        "defaultGroupID": 3
+      }
+    },
+    {
+      "storeID": 6,
+      "code": "nz",
+      "websiteID": 2,
+      "groupID": 3,
+      "name": "Kiwi",
+      "sortOrder": 30,
+      "isActive": true,
+      "storeGroup": {
+        "groupID": 3,
+        "websiteID": 2,
+        "name": "Australia",
+        "rootCategoryID": 2,
+        "defaultStoreID": 5,
+        "code": "au"
+      },
+      "storeWebsite": {
+        "websiteID": 2,
+        "code": "oz",
+        "name": "OZ",
+        "sortOrder": 20,
+        "defaultGroupID": 3
+      }
+    }
+  ]
+}
+]
