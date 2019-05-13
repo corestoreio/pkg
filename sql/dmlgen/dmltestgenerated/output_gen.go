@@ -214,6 +214,9 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) Delete(i int) *CatalogProductIndex
 // Each will run function f on all items in []* CatalogProductIndexEAVDecimalIDX
 // . Auto generated via dmlgen.
 func (cc *CatalogProductIndexEAVDecimalIDXes) Each(f func(*CatalogProductIndexEAVDecimalIDX)) *CatalogProductIndexEAVDecimalIDXes {
+	if cc == nil {
+		return nil
+	}
 	for i := range cc.Data {
 		f(cc.Data[i])
 	}
@@ -223,13 +226,18 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) Each(f func(*CatalogProductIndexEA
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
 func (cc *CatalogProductIndexEAVDecimalIDXes) Filter(f func(*CatalogProductIndexEAVDecimalIDX) bool) *CatalogProductIndexEAVDecimalIDXes {
+	if cc == nil {
+		return nil
+	}
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
 			b = append(b, e)
-			cc.Data[i] = nil // this avoids the memory leak
 		}
 		i++
+	}
+	for i := len(b); i < len(cc.Data); i++ {
+		cc.Data[i] = nil // this should avoid the memory leak
 	}
 	cc.Data = b
 	return cc
@@ -256,6 +264,9 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) Len() int { return len(cc.Data) }
 // EntityIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
 func (cc *CatalogProductIndexEAVDecimalIDXes) EntityIDs(ret ...uint32) []uint32 {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]uint32, 0, len(cc.Data))
 	}
@@ -268,6 +279,9 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) EntityIDs(ret ...uint32) []uint32 
 // AttributeIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
 func (cc *CatalogProductIndexEAVDecimalIDXes) AttributeIDs(ret ...uint32) []uint32 {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]uint32, 0, len(cc.Data))
 	}
@@ -280,6 +294,9 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) AttributeIDs(ret ...uint32) []uint
 // StoreIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
 func (cc *CatalogProductIndexEAVDecimalIDXes) StoreIDs(ret ...uint32) []uint32 {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]uint32, 0, len(cc.Data))
 	}
@@ -292,6 +309,9 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) StoreIDs(ret ...uint32) []uint32 {
 // Values returns a slice with the data or appends it to a slice.
 // Auto generated.
 func (cc *CatalogProductIndexEAVDecimalIDXes) Values(ret ...null.Decimal) []null.Decimal {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]null.Decimal, 0, len(cc.Data))
 	}
@@ -304,6 +324,9 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) Values(ret ...null.Decimal) []null
 // SourceIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
 func (cc *CatalogProductIndexEAVDecimalIDXes) SourceIDs(ret ...uint32) []uint32 {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]uint32, 0, len(cc.Data))
 	}
@@ -540,6 +563,9 @@ func (cc *CoreConfigurations) Delete(i int) *CoreConfigurations {
 // Each will run function f on all items in []* CoreConfiguration . Auto
 // generated via dmlgen.
 func (cc *CoreConfigurations) Each(f func(*CoreConfiguration)) *CoreConfigurations {
+	if cc == nil {
+		return nil
+	}
 	for i := range cc.Data {
 		f(cc.Data[i])
 	}
@@ -549,13 +575,18 @@ func (cc *CoreConfigurations) Each(f func(*CoreConfiguration)) *CoreConfiguratio
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
 func (cc *CoreConfigurations) Filter(f func(*CoreConfiguration) bool) *CoreConfigurations {
+	if cc == nil {
+		return nil
+	}
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
 			b = append(b, e)
-			cc.Data[i] = nil // this avoids the memory leak
 		}
 		i++
+	}
+	for i := len(b); i < len(cc.Data); i++ {
+		cc.Data[i] = nil // this should avoid the memory leak
 	}
 	cc.Data = b
 	return cc
@@ -580,6 +611,9 @@ func (cc *CoreConfigurations) Len() int { return len(cc.Data) }
 // ConfigIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
 func (cc *CoreConfigurations) ConfigIDs(ret ...uint32) []uint32 {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]uint32, 0, len(cc.Data))
 	}
@@ -593,6 +627,9 @@ func (cc *CoreConfigurations) ConfigIDs(ret ...uint32) []uint32 {
 // only unique values of that column. The values will be filtered internally in a
 // Go map. No DB query gets executed. Auto generated.
 func (cc *CoreConfigurations) UniquePaths(ret ...string) []string {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]string, 0, len(cc.Data))
 	}
@@ -905,6 +942,9 @@ func (cc *CustomerAddressEntities) Delete(i int) *CustomerAddressEntities {
 // Each will run function f on all items in []* CustomerAddressEntity . Auto
 // generated via dmlgen.
 func (cc *CustomerAddressEntities) Each(f func(*CustomerAddressEntity)) *CustomerAddressEntities {
+	if cc == nil {
+		return nil
+	}
 	for i := range cc.Data {
 		f(cc.Data[i])
 	}
@@ -914,13 +954,18 @@ func (cc *CustomerAddressEntities) Each(f func(*CustomerAddressEntity)) *Custome
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
 func (cc *CustomerAddressEntities) Filter(f func(*CustomerAddressEntity) bool) *CustomerAddressEntities {
+	if cc == nil {
+		return nil
+	}
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
 			b = append(b, e)
-			cc.Data[i] = nil // this avoids the memory leak
 		}
 		i++
+	}
+	for i := len(b); i < len(cc.Data); i++ {
+		cc.Data[i] = nil // this should avoid the memory leak
 	}
 	cc.Data = b
 	return cc
@@ -945,6 +990,9 @@ func (cc *CustomerAddressEntities) Len() int { return len(cc.Data) }
 // EntityIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
 func (cc *CustomerAddressEntities) EntityIDs(ret ...uint32) []uint32 {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]uint32, 0, len(cc.Data))
 	}
@@ -1272,6 +1320,9 @@ func (cc *CustomerEntities) Delete(i int) *CustomerEntities {
 // Each will run function f on all items in []* CustomerEntity . Auto generated
 // via dmlgen.
 func (cc *CustomerEntities) Each(f func(*CustomerEntity)) *CustomerEntities {
+	if cc == nil {
+		return nil
+	}
 	for i := range cc.Data {
 		f(cc.Data[i])
 	}
@@ -1281,13 +1332,18 @@ func (cc *CustomerEntities) Each(f func(*CustomerEntity)) *CustomerEntities {
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
 func (cc *CustomerEntities) Filter(f func(*CustomerEntity) bool) *CustomerEntities {
+	if cc == nil {
+		return nil
+	}
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
 			b = append(b, e)
-			cc.Data[i] = nil // this avoids the memory leak
 		}
 		i++
+	}
+	for i := len(b); i < len(cc.Data); i++ {
+		cc.Data[i] = nil // this should avoid the memory leak
 	}
 	cc.Data = b
 	return cc
@@ -1312,6 +1368,9 @@ func (cc *CustomerEntities) Len() int { return len(cc.Data) }
 // EntityIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
 func (cc *CustomerEntities) EntityIDs(ret ...uint32) []uint32 {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]uint32, 0, len(cc.Data))
 	}
@@ -1681,6 +1740,9 @@ func (cc *DmlgenTypesCollection) Delete(i int) *DmlgenTypesCollection {
 // Each will run function f on all items in []* DmlgenTypes . Auto generated via
 // dmlgen.
 func (cc *DmlgenTypesCollection) Each(f func(*DmlgenTypes)) *DmlgenTypesCollection {
+	if cc == nil {
+		return nil
+	}
 	for i := range cc.Data {
 		f(cc.Data[i])
 	}
@@ -1690,13 +1752,18 @@ func (cc *DmlgenTypesCollection) Each(f func(*DmlgenTypes)) *DmlgenTypesCollecti
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
 func (cc *DmlgenTypesCollection) Filter(f func(*DmlgenTypes) bool) *DmlgenTypesCollection {
+	if cc == nil {
+		return nil
+	}
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
 			b = append(b, e)
-			cc.Data[i] = nil // this avoids the memory leak
 		}
 		i++
+	}
+	for i := len(b); i < len(cc.Data); i++ {
+		cc.Data[i] = nil // this should avoid the memory leak
 	}
 	cc.Data = b
 	return cc
@@ -1721,6 +1788,9 @@ func (cc *DmlgenTypesCollection) Len() int { return len(cc.Data) }
 // IDs returns a slice with the data or appends it to a slice.
 // Auto generated.
 func (cc *DmlgenTypesCollection) IDs(ret ...int32) []int32 {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]int32, 0, len(cc.Data))
 	}
@@ -1734,6 +1804,9 @@ func (cc *DmlgenTypesCollection) IDs(ret ...int32) []int32 {
 // a slice only unique values of that column. The values will be filtered
 // internally in a Go map. No DB query gets executed. Auto generated.
 func (cc *DmlgenTypesCollection) UniqueColDate2s(ret ...time.Time) []time.Time {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]time.Time, 0, len(cc.Data))
 	}
@@ -1751,6 +1824,9 @@ func (cc *DmlgenTypesCollection) UniqueColDate2s(ret ...time.Time) []time.Time {
 // to a slice only unique values of that column. The values will be filtered
 // internally in a Go map. No DB query gets executed. Auto generated.
 func (cc *DmlgenTypesCollection) UniquePriceA124s(ret ...null.Decimal) []null.Decimal {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]null.Decimal, 0, len(cc.Data))
 	}
@@ -1768,6 +1844,9 @@ func (cc *DmlgenTypesCollection) UniquePriceA124s(ret ...null.Decimal) []null.De
 // slice only unique values of that column. The values will be filtered
 // internally in a Go map. No DB query gets executed. Auto generated.
 func (cc *DmlgenTypesCollection) UniqueColInt1s(ret ...int32) []int32 {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]int32, 0, len(cc.Data))
 	}
@@ -1785,6 +1864,9 @@ func (cc *DmlgenTypesCollection) UniqueColInt1s(ret ...int32) []int32 {
 // slice only unique values of that column. The values will be filtered
 // internally in a Go map. No DB query gets executed. Auto generated.
 func (cc *DmlgenTypesCollection) UniqueColInt2s(ret ...int32) []int32 {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]int32, 0, len(cc.Data))
 	}
@@ -1802,6 +1884,9 @@ func (cc *DmlgenTypesCollection) UniqueColInt2s(ret ...int32) []int32 {
 // appends to a slice only unique values of that column. The values will be
 // filtered internally in a Go map. No DB query gets executed. Auto generated.
 func (cc *DmlgenTypesCollection) UniqueHasSmallint5s(ret ...bool) []bool {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]bool, 0, len(cc.Data))
 	}
@@ -1819,6 +1904,9 @@ func (cc *DmlgenTypesCollection) UniqueHasSmallint5s(ret ...bool) []bool {
 // appends to a slice only unique values of that column. The values will be
 // filtered internally in a Go map. No DB query gets executed. Auto generated.
 func (cc *DmlgenTypesCollection) UniqueColVarchar100s(ret ...string) []string {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]string, 0, len(cc.Data))
 	}
@@ -2033,6 +2121,9 @@ func (cc *SalesOrderStatusStates) Delete(i int) *SalesOrderStatusStates {
 // Each will run function f on all items in []* SalesOrderStatusState . Auto
 // generated via dmlgen.
 func (cc *SalesOrderStatusStates) Each(f func(*SalesOrderStatusState)) *SalesOrderStatusStates {
+	if cc == nil {
+		return nil
+	}
 	for i := range cc.Data {
 		f(cc.Data[i])
 	}
@@ -2042,13 +2133,18 @@ func (cc *SalesOrderStatusStates) Each(f func(*SalesOrderStatusState)) *SalesOrd
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
 func (cc *SalesOrderStatusStates) Filter(f func(*SalesOrderStatusState) bool) *SalesOrderStatusStates {
+	if cc == nil {
+		return nil
+	}
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
 			b = append(b, e)
-			cc.Data[i] = nil // this avoids the memory leak
 		}
 		i++
+	}
+	for i := len(b); i < len(cc.Data); i++ {
+		cc.Data[i] = nil // this should avoid the memory leak
 	}
 	cc.Data = b
 	return cc
@@ -2073,6 +2169,9 @@ func (cc *SalesOrderStatusStates) Len() int { return len(cc.Data) }
 // Statuss returns a slice with the data or appends it to a slice.
 // Auto generated.
 func (cc *SalesOrderStatusStates) Statuss(ret ...string) []string {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]string, 0, len(cc.Data))
 	}
@@ -2085,6 +2184,9 @@ func (cc *SalesOrderStatusStates) Statuss(ret ...string) []string {
 // States returns a slice with the data or appends it to a slice.
 // Auto generated.
 func (cc *SalesOrderStatusStates) States(ret ...string) []string {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]string, 0, len(cc.Data))
 	}
@@ -2299,6 +2401,9 @@ func (cc *ViewCustomerAutoIncrements) Delete(i int) *ViewCustomerAutoIncrements 
 // Each will run function f on all items in []* ViewCustomerAutoIncrement . Auto
 // generated via dmlgen.
 func (cc *ViewCustomerAutoIncrements) Each(f func(*ViewCustomerAutoIncrement)) *ViewCustomerAutoIncrements {
+	if cc == nil {
+		return nil
+	}
 	for i := range cc.Data {
 		f(cc.Data[i])
 	}
@@ -2308,13 +2413,18 @@ func (cc *ViewCustomerAutoIncrements) Each(f func(*ViewCustomerAutoIncrement)) *
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
 func (cc *ViewCustomerAutoIncrements) Filter(f func(*ViewCustomerAutoIncrement) bool) *ViewCustomerAutoIncrements {
+	if cc == nil {
+		return nil
+	}
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
 			b = append(b, e)
-			cc.Data[i] = nil // this avoids the memory leak
 		}
 		i++
+	}
+	for i := len(b); i < len(cc.Data); i++ {
+		cc.Data[i] = nil // this should avoid the memory leak
 	}
 	cc.Data = b
 	return cc
@@ -2535,6 +2645,9 @@ func (cc *ViewCustomerNoAutoIncrements) Delete(i int) *ViewCustomerNoAutoIncreme
 // Each will run function f on all items in []* ViewCustomerNoAutoIncrement .
 // Auto generated via dmlgen.
 func (cc *ViewCustomerNoAutoIncrements) Each(f func(*ViewCustomerNoAutoIncrement)) *ViewCustomerNoAutoIncrements {
+	if cc == nil {
+		return nil
+	}
 	for i := range cc.Data {
 		f(cc.Data[i])
 	}
@@ -2544,13 +2657,18 @@ func (cc *ViewCustomerNoAutoIncrements) Each(f func(*ViewCustomerNoAutoIncrement
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
 func (cc *ViewCustomerNoAutoIncrements) Filter(f func(*ViewCustomerNoAutoIncrement) bool) *ViewCustomerNoAutoIncrements {
+	if cc == nil {
+		return nil
+	}
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
 			b = append(b, e)
-			cc.Data[i] = nil // this avoids the memory leak
 		}
 		i++
+	}
+	for i := len(b); i < len(cc.Data); i++ {
+		cc.Data[i] = nil // this should avoid the memory leak
 	}
 	cc.Data = b
 	return cc

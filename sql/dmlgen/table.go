@@ -543,6 +543,7 @@ func (t *Table) fnCollectionUniqueGetters(mainGen *codegen.Go, g *Generator) {
 		mainGen.Pln(`func (cc *`, t.CollectionName(), `) `, goCamel+`s(ret ...`+gtn, `) []`+gtn, ` {`)
 		{
 			mainGen.In()
+			mainGen.Pln(`if cc == nil {	return nil }`)
 			mainGen.Pln(`if ret == nil {`)
 			{
 				mainGen.In()
@@ -580,6 +581,7 @@ func (t *Table) fnCollectionUniquifiedGetters(mainGen *codegen.Go, g *Generator)
 		mainGen.Pln(`func (cc *`, t.CollectionName(), `) Unique`+goCamel+`s(ret ...`, goType, `) []`, goType, ` {`)
 		{
 			mainGen.In()
+			mainGen.Pln(`if cc == nil {	return nil }`)
 			mainGen.Pln(`if ret == nil {
 					ret = make([]`, goType, `, 0, len(cc.Data))
 				}`)
@@ -618,6 +620,7 @@ func (t *Table) fnCollectionFilter(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(`func (cc *`, t.CollectionName(), `) Filter(f func(*`, t.EntityName(), `) bool) *`, t.CollectionName(), ` {`)
 	{
 		mainGen.In()
+		mainGen.Pln(`if cc == nil {	return nil }`)
 		mainGen.Pln(`b,i := cc.Data[:0],0`)
 		mainGen.Pln(`for _, e := range cc.Data {`)
 		{
@@ -625,13 +628,16 @@ func (t *Table) fnCollectionFilter(mainGen *codegen.Go, g *Generator) {
 			mainGen.Pln(`if f(e) {`)
 			{
 				mainGen.Pln(`b = append(b, e)`)
-				mainGen.Pln(`cc.Data[i] = nil // this avoids the memory leak`)
 			}
 			mainGen.Pln(`}`) // endif
 			mainGen.Pln(`i++`)
 		}
 		mainGen.Out()
 		mainGen.Pln(`}`) // for loop
+		mainGen.Pln(`for i := len(b); i < len(cc.Data); i++ {
+				cc.Data[i] = nil // this should avoid the memory leak
+			}`)
+
 		mainGen.Pln(`cc.Data = b`)
 		mainGen.Pln(`return cc`)
 		mainGen.Out()
@@ -646,6 +652,7 @@ func (t *Table) fnCollectionEach(mainGen *codegen.Go, g *Generator) {
 	mainGen.C(`Each will run function f on all items in []*`, t.EntityName(), `. Auto generated via dmlgen.`)
 	mainGen.Pln(`func (cc *`, t.CollectionName(), `) Each(f func(*`, t.EntityName(), `)) *`, t.CollectionName(), ` {`)
 	{
+		mainGen.Pln(`if cc == nil {	return nil }`)
 		mainGen.Pln(`for i := range cc.Data {`)
 		{
 			mainGen.Pln(`f(cc.Data[i])`)

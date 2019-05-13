@@ -114,6 +114,9 @@ func (cc *CoreConfigurations) Delete(i int) *CoreConfigurations {
 // Each will run function f on all items in []* CoreConfiguration . Auto
 // generated via dmlgen.
 func (cc *CoreConfigurations) Each(f func(*CoreConfiguration)) *CoreConfigurations {
+	if cc == nil {
+		return nil
+	}
 	for i := range cc.Data {
 		f(cc.Data[i])
 	}
@@ -123,13 +126,18 @@ func (cc *CoreConfigurations) Each(f func(*CoreConfiguration)) *CoreConfiguratio
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
 func (cc *CoreConfigurations) Filter(f func(*CoreConfiguration) bool) *CoreConfigurations {
+	if cc == nil {
+		return nil
+	}
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
 			b = append(b, e)
-			cc.Data[i] = nil // this avoids the memory leak
 		}
 		i++
+	}
+	for i := len(b); i < len(cc.Data); i++ {
+		cc.Data[i] = nil // this should avoid the memory leak
 	}
 	cc.Data = b
 	return cc
@@ -154,6 +162,9 @@ func (cc *CoreConfigurations) Len() int { return len(cc.Data) }
 // ConfigIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
 func (cc *CoreConfigurations) ConfigIDs(ret ...uint32) []uint32 {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]uint32, 0, len(cc.Data))
 	}
@@ -287,6 +298,9 @@ func (cc *SalesOrderStatusStates) Delete(i int) *SalesOrderStatusStates {
 // Each will run function f on all items in []* SalesOrderStatusState . Auto
 // generated via dmlgen.
 func (cc *SalesOrderStatusStates) Each(f func(*SalesOrderStatusState)) *SalesOrderStatusStates {
+	if cc == nil {
+		return nil
+	}
 	for i := range cc.Data {
 		f(cc.Data[i])
 	}
@@ -296,13 +310,18 @@ func (cc *SalesOrderStatusStates) Each(f func(*SalesOrderStatusState)) *SalesOrd
 // Filter filters the current slice by predicate f without memory allocation.
 // Auto generated via dmlgen.
 func (cc *SalesOrderStatusStates) Filter(f func(*SalesOrderStatusState) bool) *SalesOrderStatusStates {
+	if cc == nil {
+		return nil
+	}
 	b, i := cc.Data[:0], 0
 	for _, e := range cc.Data {
 		if f(e) {
 			b = append(b, e)
-			cc.Data[i] = nil // this avoids the memory leak
 		}
 		i++
+	}
+	for i := len(b); i < len(cc.Data); i++ {
+		cc.Data[i] = nil // this should avoid the memory leak
 	}
 	cc.Data = b
 	return cc
@@ -327,6 +346,9 @@ func (cc *SalesOrderStatusStates) Len() int { return len(cc.Data) }
 // Statuss returns a slice with the data or appends it to a slice.
 // Auto generated.
 func (cc *SalesOrderStatusStates) Statuss(ret ...string) []string {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]string, 0, len(cc.Data))
 	}
@@ -339,6 +361,9 @@ func (cc *SalesOrderStatusStates) Statuss(ret ...string) []string {
 // States returns a slice with the data or appends it to a slice.
 // Auto generated.
 func (cc *SalesOrderStatusStates) States(ret ...string) []string {
+	if cc == nil {
+		return nil
+	}
 	if ret == nil {
 		ret = make([]string, 0, len(cc.Data))
 	}
