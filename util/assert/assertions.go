@@ -2,7 +2,6 @@ package assert
 
 import (
 	"bufio"
-	"bytes"
 	"fmt"
 	"math"
 	"reflect"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/alecthomas/repr"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
 // TestingT is an interface wrapper around *testing.T
@@ -39,12 +39,7 @@ func ObjectsAreEqual(expected, actual interface{}) bool {
 		return expected == actual
 	}
 
-	if reflect.DeepEqual(expected, actual) {
-		return true
-	}
-
-	return false
-
+	return reflect.DeepEqual(expected, actual)
 }
 
 // ObjectsAreEqualValues gets whether two objects are equal, or if their
@@ -178,7 +173,8 @@ func messageFromMsgAndArgs(msgAndArgs ...interface{}) string {
 // Indents all lines of the message by appending a number of tabs to each line, in an output format compatible with Go's
 // test printing (see inner comment for specifics)
 func indentMessageLines(message string, tabs int) string {
-	var outBuf bytes.Buffer
+	outBuf := bufferpool.Get()
+	defer bufferpool.Put(outBuf)
 
 	for i, scanner := 0, bufio.NewScanner(strings.NewReader(message)); scanner.Scan(); i++ {
 		if i != 0 {
@@ -427,7 +423,7 @@ func isEmpty(object interface{}) bool {
 		fallthrough
 	case reflect.Slice, reflect.Chan:
 		{
-			return (objValue.Len() == 0)
+			return objValue.Len() == 0
 		}
 	case reflect.Ptr:
 		{
