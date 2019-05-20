@@ -14,7 +14,10 @@
 
 package cstesting
 
-import "os"
+import (
+	"io"
+	"os"
+)
 
 // fataler describes the function needed to print the output and stop the
 // current running goroutine and hence fail the test.
@@ -53,5 +56,13 @@ func fatalIfError(t fataler, err error) {
 		} else {
 			panic(err)
 		}
+	}
+}
+
+// Close for usage in conjunction with defer.
+// 		defer cstesting.Close(t, con)
+func Close(t errorFormatter, c io.Closer) {
+	if err := c.Close(); err != nil {
+		t.Errorf("%+v", err)
 	}
 }
