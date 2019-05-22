@@ -31,6 +31,8 @@ func TestService_Sorting_JSON(t *testing.T) {
 		srv := storemock.NewServiceEuroW11G11S19()
 		haveData := toJSON(srv)
 
+		// ioutil.WriteFile("testdata/sort_euroW11G11S19.golden.json", haveData, 0644)
+
 		goldenData, err := ioutil.ReadFile("testdata/sort_euroW11G11S19.golden.json")
 		assert.NoError(t, err)
 		assert.Exactly(t, goldenData, haveData)
@@ -39,6 +41,8 @@ func TestService_Sorting_JSON(t *testing.T) {
 	t.Run("EuroOZ", func(t *testing.T) {
 		srv := storemock.NewServiceEuroOZ()
 		haveData := toJSON(srv)
+
+		// ioutil.WriteFile("testdata/sort_euroOZ.golden.json", haveData, 0644)
 
 		goldenData, err := ioutil.ReadFile("testdata/sort_euroOZ.golden.json")
 		assert.NoError(t, err)

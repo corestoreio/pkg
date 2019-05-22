@@ -485,44 +485,15 @@ func TestService_AllowedStores_PointerCheck(t *testing.T) {
 
 	st, err = eurSrv.Store(6)
 	assert.NoError(t, err)
-	assert.Exactly(t, uint32(5), st.StoreID)
+	assert.Exactly(t, uint32(6), st.StoreID)
 }
 
-func TestService_LoadFromDB_OK(t *testing.T) {
-
-	t.Skip("TODO")
-
-	// dbrCon, dbMock := cstesting.MockDB(t)
-	//
-	// dbMock.ExpectQuery("SELECT (.+) FROM `store`(.+) ORDER BY CASE WHEN(.+)").WillReturnRows(
-	// 	cstesting.MustMockRows(cstesting.WithFile("testdata", "m1_core_store_view.csv")),
-	// )
-	// dbMock.ExpectQuery("SELECT (.+) FROM `store_website`(.+) ORDER BY(.+)").WillReturnRows(
-	// 	cstesting.MustMockRows(cstesting.WithFile("testdata", "m1_core_website_view.csv")),
-	// )
-	// dbMock.ExpectQuery("SELECT (.+) FROM `store_group`(.+) ORDER BY main_table(.+)").WillReturnRows(
-	// 	cstesting.MustMockRows(cstesting.WithFile("testdata", "m1_core_store_group_view.csv")),
-	// )
-	// dbMock.MatchExpectationsInOrder(false) // we're using goroutines!
-	//
-	// srv := MustNewService(cfgmock.NewService())
-	// if err := srv.LoadFromResource(dbrCon.NewSession()); err != nil {
-	// 	t.Fatalf("%+v", err)
-	// }
-	//
-	// if err := dbMock.ExpectationsWereMet(); err != nil {
-	// 	t.Fatalf("%+v", err)
-	// }
-	// assert.Len(t, srv.Websites(), 9)
-	// assert.Len(t, srv.Groups(), 9)
-	// assert.Len(t, srv.Stores(), 16)
-	//
-	// tree, err := json.Marshal(srv.Websites().Tree())
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
-	//
-	// assert.Exactly(t,
-	// 	`{"scope":"Default","id":0,"scopes":[{"scope":"Website","id":0,"scopes":[{"scope":"Group","id":0,"scopes":[{"scope":"Store","id":0}]}]},{"scope":"Website","id":2,"scopes":[{"scope":"Group","id":2,"scopes":[{"scope":"Store","id":2},{"scope":"Store","id":5}]}]},{"scope":"Website","id":3,"scopes":[{"scope":"Group","id":3,"scopes":[{"scope":"Store","id":6},{"scope":"Store","id":7},{"scope":"Store","id":8},{"scope":"Store","id":9}]}]},{"scope":"Website","id":4,"scopes":[{"scope":"Group","id":4,"scopes":[{"scope":"Store","id":10},{"scope":"Store","id":11}]}]},{"scope":"Website","id":5,"scopes":[{"scope":"Group","id":5,"scopes":[{"scope":"Store","id":12}]}]},{"scope":"Website","id":6,"scopes":[{"scope":"Group","id":6,"scopes":[{"scope":"Store","id":13},{"scope":"Store","id":14}]}]},{"scope":"Website","id":7,"scopes":[{"scope":"Group","id":7,"scopes":[{"scope":"Store","id":15},{"scope":"Store","id":16}]}]},{"scope":"Website","id":8,"scopes":[{"scope":"Group","id":8,"scopes":[{"scope":"Store","id":17}]}]},{"scope":"Website","id":9,"scopes":[{"scope":"Group","id":9,"scopes":[{"scope":"Store","id":18}]}]}]}`,
-	// 	string(tree))
+func TestNewServiceEuroOZ_WithStores(t *testing.T) {
+	eurSrv := storemock.NewServiceEuroOZ()
+	err := eurSrv.Options(
+		store.WithWebsites(&store.StoreWebsite{WebsiteID: 3, Code: `africa`, Name: null.MakeString(`Africa Continent`), SortOrder: 30, DefaultGroupID: 3, IsDefault: false}),
+		store.WithGroups(&store.StoreGroup{GroupID: 4, WebsiteID: 3, Name: `Northern States`, Code: `afno`, RootCategoryID: 2, DefaultStoreID: 0}),
+		store.WithStores(&store.Store{StoreID: 7, Code: `mo`, WebsiteID: 3, GroupID: 4, Name: `Morocco`, SortOrder: 40, IsActive: true}),
+	)
+	assert.NoError(t, err)
 }

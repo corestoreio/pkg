@@ -155,7 +155,12 @@ func (cc *Stores) Insert(n *Store, i int) *Stores {
 func (cc *Stores) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
 
 // Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *Stores) Len() int { return len(cc.Data) }
+func (cc *Stores) Len() int {
+	if cc == nil {
+		return 0
+	}
+	return len(cc.Data)
+}
 
 // StoreIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
@@ -355,7 +360,12 @@ func (cc *StoreGroups) Insert(n *StoreGroup, i int) *StoreGroups {
 func (cc *StoreGroups) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
 
 // Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *StoreGroups) Len() int { return len(cc.Data) }
+func (cc *StoreGroups) Len() int {
+	if cc == nil {
+		return 0
+	}
+	return len(cc.Data)
+}
 
 // GroupIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
@@ -422,8 +432,8 @@ type StoreWebsite struct {
 	SortOrder      uint32       `max_len:"5"`   // sort_order smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Sort Order"
 	DefaultGroupID uint32       `max_len:"5"`   // default_group_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Default Group ID"
 	IsDefault      bool         `max_len:"5"`   // is_default smallint(5) unsigned NOT NULL  DEFAULT '0'  "Defines Is Website Default"
-	StoreGroups    *StoreGroups // Reversed 1:M store_website.website_id => store_group.website_id
 	Stores         *Stores      // Reversed 1:M store_website.website_id => store.website_id
+	StoreGroups    *StoreGroups // Reversed 1:M store_website.website_id => store_group.website_id
 }
 
 // Copy copies the struct and returns a new pointer
@@ -557,7 +567,12 @@ func (cc *StoreWebsites) Insert(n *StoreWebsite, i int) *StoreWebsites {
 func (cc *StoreWebsites) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
 
 // Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *StoreWebsites) Len() int { return len(cc.Data) }
+func (cc *StoreWebsites) Len() int {
+	if cc == nil {
+		return 0
+	}
+	return len(cc.Data)
+}
 
 // WebsiteIDs returns a slice with the data or appends it to a slice.
 // Auto generated.

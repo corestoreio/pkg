@@ -8,39 +8,127 @@ import "google/api/annotations.proto";
 option go_package = "store";
 
 message ProtoIsAllowedStoreIDRequest {
-	uint32 run_mode= 1 [(gogoproto.customname)="RunMode" ];
-	uint32 store_id= 2 [(gogoproto.customname)="StoreID" ];
-
+	uint32 RunMode = 1;
+	uint32 StoreID = 2;
 }
+
 message ProtoIsAllowedStoreIDResponse {
-	bool is_allowed = 1 [(gogoproto.customname)="IsAllowed" ];
-	string store_code = 2 [(gogoproto.customname)="StoreCode" ];
-	bytes error = 3 [(gogoproto.customname)="Error" ];
+	bool IsAllowed = 1;
+	string StoreCode = 2;
+}
+
+message ProtoRunModeRequest {
+	uint32 RunMode = 1;
+}
+
+message ProtoIDRequest {
+	uint32 ID = 1;
+}
+
+message ProtoStoreIDWebsiteIDResponse {
+	uint32 StoreID = 1;
+	uint32 WebsiteID = 2;
+}
+
+message ProtoStoreIDbyCodeRequest {
+	uint32 RunMode = 1;
+	string StoreCode = 2;
 }
 
 service StoreService {
-	rpc IsAllowedStoreID(ProtoIsAllowedStoreIDRequest) returns (ProtoIsAllowedStoreIDResponse){};
-
-	rpc AddStore(Store) returns (google.protobuf.Empty) {
+	rpc IsAllowedStoreID(ProtoIsAllowedStoreIDRequest) returns (ProtoIsAllowedStoreIDResponse){
 		option (google.api.http) = {
-            post: "/api/v1/users"
+            post: "/api/v1/stores/isAllowedStoreID"
+            body: "*"
+        };
+	};
+	rpc DefaultStoreView(google.protobuf.Empty) returns (Store){
+		option (google.api.http) = {
+            post: "/api/v1/stores/defaultStoreView"
+        };
+	};
+	rpc DefaultStoreID(ProtoRunModeRequest) returns (ProtoStoreIDWebsiteIDResponse){
+		option (google.api.http) = {
+            post: "/api/v1/stores/defaultStoreID"
+            body: "*"
+        };
+	};
+	rpc StoreIDbyCode(ProtoStoreIDbyCodeRequest) returns (ProtoStoreIDWebsiteIDResponse){
+		option (google.api.http) = {
+            post: "/api/v1/stores/storeIDByCode"
+            body: "*"
+        };
+	};
+	rpc AllowedStores(ProtoRunModeRequest) returns (Stores){
+		option (google.api.http) = {
+            post: "/api/v1/stores/allowedStores"
+            body: "*"
+        };
+	};
+
+	rpc AddWebsite(StoreWebsite) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+            post: "/api/v1/stores/website"
             body: "*"
         };
 	}
-	rpc ListStores(google.protobuf.Empty) returns (stream Store) {
-//		option (google.api.http) = {
-//            get: "/api/v1/users"
-//        };
+	rpc DeleteWebsite(ProtoIDRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+            delete: "/api/v1/stores/website"
+        };
 	}
-//	rpc ListStoresByRole(StoreRole) returns (stream Store) {
-//		option (google.api.http) = {
-//            get: "/api/v1/users/role"
-//        };
-//	}
-//	rpc UpdateStore(UpdateStoreRequest) returns (Store) {
-//		option (google.api.http) = {
-//            patch: "/api/v1/users/{user.id}"
-//            body: "user"
-//        };
-//	}
+	rpc WebsiteByID(ProtoIDRequest) returns (StoreWebsite) {
+		option (google.api.http) = {
+            get: "/api/v1/stores/website"
+        };
+	}
+	rpc ListWebsites(google.protobuf.Empty) returns (StoreWebsites) {
+		option (google.api.http) = {
+            get: "/api/v1/stores/websites"
+        };
+	}
+
+	rpc AddGroup(StoreGroup) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+            post: "/api/v1/stores/group"
+            body: "*"
+        };
+	}
+	rpc DeleteGroup(ProtoIDRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+            delete: "/api/v1/stores/group"
+        };
+	}
+	rpc GroupByID(ProtoIDRequest) returns (StoreGroup) {
+		option (google.api.http) = {
+            get: "/api/v1/stores/group"
+        };
+	}
+	rpc ListGroups(google.protobuf.Empty) returns (StoreGroups) {
+		option (google.api.http) = {
+            get: "/api/v1/stores/groups"
+        };
+	}
+
+	rpc AddStore(Store) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+            post: "/api/v1/stores/store"
+            body: "*"
+        };
+	}
+	rpc DeleteStore(ProtoIDRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+            delete: "/api/v1/stores/store"
+        };
+	}
+	rpc StoreByID(ProtoIDRequest) returns (Store) {
+		option (google.api.http) = {
+            get: "/api/v1/stores/store"
+        };
+	}
+	rpc ListStores(google.protobuf.Empty) returns (Stores) {
+		option (google.api.http) = {
+            get: "/api/v1/stores/stores"
+        };
+	}
 }

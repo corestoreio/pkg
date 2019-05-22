@@ -20,15 +20,17 @@ import (
 	"context"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/sql/ddl"
 )
 
 // WithLoadFromDB loads the store,group and website data from the database.
-// Before loading it clears the cache.
-func WithLoadFromDB(ctx context.Context, db dml.QueryExecPreparer) Option {
-	stmtStore := dml.NewSelect("*").From(TableNameStore).WithDB(db).WithArgs()
-	stmtGroup := dml.NewSelect("*").From(TableNameStoreGroup).WithDB(db).WithArgs()
-	stmtWebsite := dml.NewSelect("*").From(TableNameStoreWebsite).WithDB(db).WithArgs()
+// Before loading it clears the cache. This function panics if the tables do not
+// exists in the ddl.Tables object.
+func WithLoadFromDB(ctx context.Context, tbls *ddl.Tables) Option {
+	stmtStore := tbls.MustTable(TableNameStore).Select("*").WithArgs()
+	stmtGroup := tbls.MustTable(TableNameStoreGroup).Select("*").WithArgs()
+	stmtWebsite := tbls.MustTable(TableNameStoreWebsite).Select("*").WithArgs()
+
 	return Option{
 		sortOrder: 199,
 		fn: func(s *Service) error {

@@ -51,8 +51,8 @@ message StoreWebsite {
 	uint32 SortOrder = 4 ; 
 	uint32 DefaultGroupID = 5 ; 
 	bool IsDefault = 6 ; 
-	StoreGroups StoreGroups = 7 ; // Reversed 1:M store_website.website_id => store_group.website_id 
-	Stores Stores = 8 ; // Reversed 1:M store_website.website_id => store.website_id 
+	Stores Stores = 7 ; // Reversed 1:M store_website.website_id => store.website_id 
+	StoreGroups StoreGroups = 8 ; // Reversed 1:M store_website.website_id => store_group.website_id 
 } 
 // StoreWebsites represents multiple rows for DB table store_website . Auto
 // generated.

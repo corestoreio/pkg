@@ -14,16 +14,18 @@
 
 // +build csall db
 
-package store
+package store_test
 
 import (
 	"context"
 	"flag"
+	"fmt"
 	"testing"
 
-	"github.com/alecthomas/repr"
+	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dmltest"
-
+	"github.com/corestoreio/pkg/store"
+	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
@@ -39,12 +41,25 @@ func TestWithLoadFromDB(t *testing.T) {
 	dbc := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, dbc)
 
-	srv, err := NewService(WithLoadFromDB(context.TODO(), dbc.DB))
+	defer dmltest.SQLDumpLoad(t, "testdata/large_store*sql", &dmltest.SQLDumpOptions{
+		SkipDBCleanup: false,
+	}).Deferred()
+
+	tbls, err := store.NewTables(context.Background(), ddl.WithConnPool(dbc))
 	assert.NoError(t, err)
 
-	repr.Println(srv.stores, srv.groups, srv.websites)
+	srv, err := store.NewService(store.WithLoadFromDB(context.TODO(), tbls))
+	assert.NoError(t, err)
+
+	// repr.Println(srv.Stores())
+	// repr.Println(srv.Groups())
+	// repr.Println(srv.Websites())
 
 	st, err := srv.DefaultStoreView()
 	assert.NoError(t, err)
-	t.Logf("%q", st.Code)
+	assert.Exactly(t, "world_en", st.Code)
+
+	storeID, websiteID, err := srv.DefaultStoreID(scope.Group.WithID(8))
+	assert.NoError(t, err)
+	assert.Exactly(t, "StoreID 7 WebsiteID 1", fmt.Sprintf("StoreID %d WebsiteID %d", storeID, websiteID))
 }

@@ -180,7 +180,7 @@ func (s *Service) apply2ndLevelData() {
 	// Stores
 	for _, st := range s.stores.Data {
 		for _, g := range s.groups.Data {
-			if st.WebsiteID == g.WebsiteID {
+			if st.GroupID == g.GroupID {
 				g2 := g.Copy()
 				g2.StoreWebsite = nil
 				st.StoreGroup = g2
@@ -597,6 +597,10 @@ func (s *Service) Stores() Stores {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.stores
+}
+
+func (s *Service) Save() error {
+	return errors.NotImplemented.Newf("TODO implement saving")
 }
 
 // ClearCache resets the internal caches which stores the pointers to Websites,

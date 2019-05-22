@@ -4,20 +4,20 @@
     {
       "code": "admin",
       "name": "Admin",
-      "storeGroups": {
-        "data": [
-          {
-            "name": "Admin",
-            "code": "admin"
-          }
-        ]
-      },
       "stores": {
         "data": [
           {
             "code": "admin",
             "name": "Admin",
             "isActive": true
+          }
+        ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "name": "Admin",
+            "code": "admin"
           }
         ]
       }
@@ -29,18 +29,6 @@
       "sortOrder": 1,
       "defaultGroupID": 2,
       "isDefault": true,
-      "storeGroups": {
-        "data": [
-          {
-            "groupID": 2,
-            "websiteID": 2,
-            "name": "b2c",
-            "rootCategoryID": 2,
-            "defaultStoreID": 2,
-            "code": "b2c"
-          }
-        ]
-      },
       "stores": {
         "data": [
           {
@@ -71,6 +59,18 @@
             "isActive": true
           }
         ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 2,
+            "websiteID": 2,
+            "name": "b2c",
+            "rootCategoryID": 2,
+            "defaultStoreID": 2,
+            "code": "b2c"
+          }
+        ]
       }
     },
     {
@@ -79,18 +79,6 @@
       "name": "Schweiz",
       "sortOrder": 2,
       "defaultGroupID": 3,
-      "storeGroups": {
-        "data": [
-          {
-            "groupID": 3,
-            "websiteID": 3,
-            "name": "b2c",
-            "rootCategoryID": 2,
-            "defaultStoreID": 6,
-            "code": "b2c"
-          }
-        ]
-      },
       "stores": {
         "data": [
           {
@@ -130,6 +118,18 @@
             "isActive": true
           }
         ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 3,
+            "websiteID": 3,
+            "name": "b2c",
+            "rootCategoryID": 2,
+            "defaultStoreID": 6,
+            "code": "b2c"
+          }
+        ]
       }
     },
     {
@@ -138,18 +138,6 @@
       "name": "Italien",
       "sortOrder": 3,
       "defaultGroupID": 4,
-      "storeGroups": {
-        "data": [
-          {
-            "groupID": 4,
-            "websiteID": 4,
-            "name": "b2c",
-            "rootCategoryID": 2,
-            "defaultStoreID": 10,
-            "code": "b2c"
-          }
-        ]
-      },
       "stores": {
         "data": [
           {
@@ -171,6 +159,18 @@
             "isActive": true
           }
         ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 4,
+            "websiteID": 4,
+            "name": "b2c",
+            "rootCategoryID": 2,
+            "defaultStoreID": 10,
+            "code": "b2c"
+          }
+        ]
       }
     },
     {
@@ -179,18 +179,6 @@
       "name": "Frankreich",
       "sortOrder": 4,
       "defaultGroupID": 5,
-      "storeGroups": {
-        "data": [
-          {
-            "groupID": 5,
-            "websiteID": 5,
-            "name": "b2c",
-            "rootCategoryID": 2,
-            "defaultStoreID": 12,
-            "code": "b2c"
-          }
-        ]
-      },
       "stores": {
         "data": [
           {
@@ -203,6 +191,18 @@
             "isActive": true
           }
         ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 5,
+            "websiteID": 5,
+            "name": "b2c",
+            "rootCategoryID": 2,
+            "defaultStoreID": 12,
+            "code": "b2c"
+          }
+        ]
       }
     },
     {
@@ -211,18 +211,6 @@
       "name": "Belgien",
       "sortOrder": 5,
       "defaultGroupID": 6,
-      "storeGroups": {
-        "data": [
-          {
-            "groupID": 6,
-            "websiteID": 6,
-            "name": "b2c",
-            "rootCategoryID": 2,
-            "defaultStoreID": 13,
-            "code": "b2c"
-          }
-        ]
-      },
       "stores": {
         "data": [
           {
@@ -244,6 +232,18 @@
             "isActive": true
           }
         ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 6,
+            "websiteID": 6,
+            "name": "b2c",
+            "rootCategoryID": 2,
+            "defaultStoreID": 13,
+            "code": "b2c"
+          }
+        ]
       }
     },
     {
@@ -252,18 +252,6 @@
       "name": "Luxemburg",
       "sortOrder": 6,
       "defaultGroupID": 7,
-      "storeGroups": {
-        "data": [
-          {
-            "groupID": 7,
-            "websiteID": 7,
-            "name": "b2c",
-            "rootCategoryID": 2,
-            "defaultStoreID": 15,
-            "code": "b2c"
-          }
-        ]
-      },
       "stores": {
         "data": [
           {
@@ -285,6 +273,18 @@
             "isActive": true
           }
         ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 7,
+            "websiteID": 7,
+            "name": "b2c",
+            "rootCategoryID": 2,
+            "defaultStoreID": 15,
+            "code": "b2c"
+          }
+        ]
       }
     },
     {
@@ -293,18 +293,6 @@
       "name": "Österreich",
       "sortOrder": 7,
       "defaultGroupID": 8,
-      "storeGroups": {
-        "data": [
-          {
-            "groupID": 8,
-            "websiteID": 8,
-            "name": "b2c",
-            "rootCategoryID": 2,
-            "defaultStoreID": 17,
-            "code": "b2c"
-          }
-        ]
-      },
       "stores": {
         "data": [
           {
@@ -317,6 +305,18 @@
             "isActive": true
           }
         ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 8,
+            "websiteID": 8,
+            "name": "b2c",
+            "rootCategoryID": 2,
+            "defaultStoreID": 17,
+            "code": "b2c"
+          }
+        ]
       }
     },
     {
@@ -325,18 +325,6 @@
       "name": "International",
       "sortOrder": 8,
       "defaultGroupID": 9,
-      "storeGroups": {
-        "data": [
-          {
-            "groupID": 9,
-            "websiteID": 9,
-            "name": "b2c",
-            "rootCategoryID": 2,
-            "defaultStoreID": 18,
-            "code": "b2c"
-          }
-        ]
-      },
       "stores": {
         "data": [
           {
@@ -349,6 +337,18 @@
             "isActive": true
           }
         ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 9,
+            "websiteID": 9,
+            "name": "b2c",
+            "rootCategoryID": 2,
+            "defaultStoreID": 18,
+            "code": "b2c"
+          }
+        ]
       }
     },
     {
@@ -357,18 +357,6 @@
       "name": "Netherlands",
       "sortOrder": 9,
       "defaultGroupID": 10,
-      "storeGroups": {
-        "data": [
-          {
-            "groupID": 10,
-            "websiteID": 10,
-            "name": "b2c",
-            "rootCategoryID": 2,
-            "defaultStoreID": 19,
-            "code": "b2c"
-          }
-        ]
-      },
       "stores": {
         "data": [
           {
@@ -381,6 +369,18 @@
             "isActive": true
           }
         ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 10,
+            "websiteID": 10,
+            "name": "b2c",
+            "rootCategoryID": 2,
+            "defaultStoreID": 19,
+            "code": "b2c"
+          }
+        ]
       }
     },
     {
@@ -389,18 +389,6 @@
       "name": "United Kingdom",
       "sortOrder": 10,
       "defaultGroupID": 11,
-      "storeGroups": {
-        "data": [
-          {
-            "groupID": 11,
-            "websiteID": 11,
-            "name": "b2c",
-            "rootCategoryID": 2,
-            "defaultStoreID": 20,
-            "code": "b2c"
-          }
-        ]
-      },
       "stores": {
         "data": [
           {
@@ -411,6 +399,18 @@
             "name": "en",
             "sortOrder": 1,
             "isActive": true
+          }
+        ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 11,
+            "websiteID": 11,
+            "name": "b2c",
+            "rootCategoryID": 2,
+            "defaultStoreID": 20,
+            "code": "b2c"
           }
         ]
       }

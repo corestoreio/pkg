@@ -31,8 +31,8 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type ProtoIsAllowedStoreIDRequest struct {
-	RunMode              uint32   `protobuf:"varint,1,opt,name=run_mode,json=runMode,proto3" json:"run_mode,omitempty"`
-	StoreID              uint32   `protobuf:"varint,2,opt,name=store_id,json=storeId,proto3" json:"store_id,omitempty"`
+	RunMode              uint32   `protobuf:"varint,1,opt,name=RunMode,proto3" json:"RunMode,omitempty"`
+	StoreID              uint32   `protobuf:"varint,2,opt,name=StoreID,proto3" json:"StoreID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -42,7 +42,7 @@ func (m *ProtoIsAllowedStoreIDRequest) Reset()         { *m = ProtoIsAllowedStor
 func (m *ProtoIsAllowedStoreIDRequest) String() string { return proto.CompactTextString(m) }
 func (*ProtoIsAllowedStoreIDRequest) ProtoMessage()    {}
 func (*ProtoIsAllowedStoreIDRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_032172dd8c8be800, []int{0}
+	return fileDescriptor_service_7d2c94df95620827, []int{0}
 }
 func (m *ProtoIsAllowedStoreIDRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -86,9 +86,8 @@ func (m *ProtoIsAllowedStoreIDRequest) GetStoreID() uint32 {
 }
 
 type ProtoIsAllowedStoreIDResponse struct {
-	IsAllowed            bool     `protobuf:"varint,1,opt,name=is_allowed,json=isAllowed,proto3" json:"is_allowed,omitempty"`
-	StoreCode            string   `protobuf:"bytes,2,opt,name=store_code,json=storeCode,proto3" json:"store_code,omitempty"`
-	Error                []byte   `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
+	IsAllowed            bool     `protobuf:"varint,1,opt,name=IsAllowed,proto3" json:"IsAllowed,omitempty"`
+	StoreCode            string   `protobuf:"bytes,2,opt,name=StoreCode,proto3" json:"StoreCode,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -98,7 +97,7 @@ func (m *ProtoIsAllowedStoreIDResponse) Reset()         { *m = ProtoIsAllowedSto
 func (m *ProtoIsAllowedStoreIDResponse) String() string { return proto.CompactTextString(m) }
 func (*ProtoIsAllowedStoreIDResponse) ProtoMessage()    {}
 func (*ProtoIsAllowedStoreIDResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_032172dd8c8be800, []int{1}
+	return fileDescriptor_service_7d2c94df95620827, []int{1}
 }
 func (m *ProtoIsAllowedStoreIDResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -141,16 +140,217 @@ func (m *ProtoIsAllowedStoreIDResponse) GetStoreCode() string {
 	return ""
 }
 
-func (m *ProtoIsAllowedStoreIDResponse) GetError() []byte {
-	if m != nil {
-		return m.Error
+type ProtoRunModeRequest struct {
+	RunMode              uint32   `protobuf:"varint,1,opt,name=RunMode,proto3" json:"RunMode,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ProtoRunModeRequest) Reset()         { *m = ProtoRunModeRequest{} }
+func (m *ProtoRunModeRequest) String() string { return proto.CompactTextString(m) }
+func (*ProtoRunModeRequest) ProtoMessage()    {}
+func (*ProtoRunModeRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_service_7d2c94df95620827, []int{2}
+}
+func (m *ProtoRunModeRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ProtoRunModeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ProtoRunModeRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalTo(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
 	}
-	return nil
+}
+func (dst *ProtoRunModeRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProtoRunModeRequest.Merge(dst, src)
+}
+func (m *ProtoRunModeRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ProtoRunModeRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ProtoRunModeRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ProtoRunModeRequest proto.InternalMessageInfo
+
+func (m *ProtoRunModeRequest) GetRunMode() uint32 {
+	if m != nil {
+		return m.RunMode
+	}
+	return 0
+}
+
+type ProtoIDRequest struct {
+	ID                   uint32   `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ProtoIDRequest) Reset()         { *m = ProtoIDRequest{} }
+func (m *ProtoIDRequest) String() string { return proto.CompactTextString(m) }
+func (*ProtoIDRequest) ProtoMessage()    {}
+func (*ProtoIDRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_service_7d2c94df95620827, []int{3}
+}
+func (m *ProtoIDRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ProtoIDRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ProtoIDRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalTo(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (dst *ProtoIDRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProtoIDRequest.Merge(dst, src)
+}
+func (m *ProtoIDRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ProtoIDRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ProtoIDRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ProtoIDRequest proto.InternalMessageInfo
+
+func (m *ProtoIDRequest) GetID() uint32 {
+	if m != nil {
+		return m.ID
+	}
+	return 0
+}
+
+type ProtoStoreIDWebsiteIDResponse struct {
+	StoreID              uint32   `protobuf:"varint,1,opt,name=StoreID,proto3" json:"StoreID,omitempty"`
+	WebsiteID            uint32   `protobuf:"varint,2,opt,name=WebsiteID,proto3" json:"WebsiteID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ProtoStoreIDWebsiteIDResponse) Reset()         { *m = ProtoStoreIDWebsiteIDResponse{} }
+func (m *ProtoStoreIDWebsiteIDResponse) String() string { return proto.CompactTextString(m) }
+func (*ProtoStoreIDWebsiteIDResponse) ProtoMessage()    {}
+func (*ProtoStoreIDWebsiteIDResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_service_7d2c94df95620827, []int{4}
+}
+func (m *ProtoStoreIDWebsiteIDResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ProtoStoreIDWebsiteIDResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ProtoStoreIDWebsiteIDResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalTo(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (dst *ProtoStoreIDWebsiteIDResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProtoStoreIDWebsiteIDResponse.Merge(dst, src)
+}
+func (m *ProtoStoreIDWebsiteIDResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ProtoStoreIDWebsiteIDResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ProtoStoreIDWebsiteIDResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ProtoStoreIDWebsiteIDResponse proto.InternalMessageInfo
+
+func (m *ProtoStoreIDWebsiteIDResponse) GetStoreID() uint32 {
+	if m != nil {
+		return m.StoreID
+	}
+	return 0
+}
+
+func (m *ProtoStoreIDWebsiteIDResponse) GetWebsiteID() uint32 {
+	if m != nil {
+		return m.WebsiteID
+	}
+	return 0
+}
+
+type ProtoStoreIDbyCodeRequest struct {
+	RunMode              uint32   `protobuf:"varint,1,opt,name=RunMode,proto3" json:"RunMode,omitempty"`
+	StoreCode            string   `protobuf:"bytes,2,opt,name=StoreCode,proto3" json:"StoreCode,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ProtoStoreIDbyCodeRequest) Reset()         { *m = ProtoStoreIDbyCodeRequest{} }
+func (m *ProtoStoreIDbyCodeRequest) String() string { return proto.CompactTextString(m) }
+func (*ProtoStoreIDbyCodeRequest) ProtoMessage()    {}
+func (*ProtoStoreIDbyCodeRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_service_7d2c94df95620827, []int{5}
+}
+func (m *ProtoStoreIDbyCodeRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ProtoStoreIDbyCodeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ProtoStoreIDbyCodeRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalTo(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (dst *ProtoStoreIDbyCodeRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProtoStoreIDbyCodeRequest.Merge(dst, src)
+}
+func (m *ProtoStoreIDbyCodeRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ProtoStoreIDbyCodeRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ProtoStoreIDbyCodeRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ProtoStoreIDbyCodeRequest proto.InternalMessageInfo
+
+func (m *ProtoStoreIDbyCodeRequest) GetRunMode() uint32 {
+	if m != nil {
+		return m.RunMode
+	}
+	return 0
+}
+
+func (m *ProtoStoreIDbyCodeRequest) GetStoreCode() string {
+	if m != nil {
+		return m.StoreCode
+	}
+	return ""
 }
 
 func init() {
 	proto.RegisterType((*ProtoIsAllowedStoreIDRequest)(nil), "store.ProtoIsAllowedStoreIDRequest")
 	proto.RegisterType((*ProtoIsAllowedStoreIDResponse)(nil), "store.ProtoIsAllowedStoreIDResponse")
+	proto.RegisterType((*ProtoRunModeRequest)(nil), "store.ProtoRunModeRequest")
+	proto.RegisterType((*ProtoIDRequest)(nil), "store.ProtoIDRequest")
+	proto.RegisterType((*ProtoStoreIDWebsiteIDResponse)(nil), "store.ProtoStoreIDWebsiteIDResponse")
+	proto.RegisterType((*ProtoStoreIDbyCodeRequest)(nil), "store.ProtoStoreIDbyCodeRequest")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -166,8 +366,22 @@ const _ = grpc.SupportPackageIsVersion4
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type StoreServiceClient interface {
 	IsAllowedStoreID(ctx context.Context, in *ProtoIsAllowedStoreIDRequest, opts ...grpc.CallOption) (*ProtoIsAllowedStoreIDResponse, error)
+	DefaultStoreView(ctx context.Context, in *types.Empty, opts ...grpc.CallOption) (*Store, error)
+	DefaultStoreID(ctx context.Context, in *ProtoRunModeRequest, opts ...grpc.CallOption) (*ProtoStoreIDWebsiteIDResponse, error)
+	StoreIDbyCode(ctx context.Context, in *ProtoStoreIDbyCodeRequest, opts ...grpc.CallOption) (*ProtoStoreIDWebsiteIDResponse, error)
+	AllowedStores(ctx context.Context, in *ProtoRunModeRequest, opts ...grpc.CallOption) (*Stores, error)
+	AddWebsite(ctx context.Context, in *StoreWebsite, opts ...grpc.CallOption) (*types.Empty, error)
+	DeleteWebsite(ctx context.Context, in *ProtoIDRequest, opts ...grpc.CallOption) (*types.Empty, error)
+	WebsiteByID(ctx context.Context, in *ProtoIDRequest, opts ...grpc.CallOption) (*StoreWebsite, error)
+	ListWebsites(ctx context.Context, in *types.Empty, opts ...grpc.CallOption) (*StoreWebsites, error)
+	AddGroup(ctx context.Context, in *StoreGroup, opts ...grpc.CallOption) (*types.Empty, error)
+	DeleteGroup(ctx context.Context, in *ProtoIDRequest, opts ...grpc.CallOption) (*types.Empty, error)
+	GroupByID(ctx context.Context, in *ProtoIDRequest, opts ...grpc.CallOption) (*StoreGroup, error)
+	ListGroups(ctx context.Context, in *types.Empty, opts ...grpc.CallOption) (*StoreGroups, error)
 	AddStore(ctx context.Context, in *Store, opts ...grpc.CallOption) (*types.Empty, error)
-	ListStores(ctx context.Context, in *types.Empty, opts ...grpc.CallOption) (StoreService_ListStoresClient, error)
+	DeleteStore(ctx context.Context, in *ProtoIDRequest, opts ...grpc.CallOption) (*types.Empty, error)
+	StoreByID(ctx context.Context, in *ProtoIDRequest, opts ...grpc.CallOption) (*Store, error)
+	ListStores(ctx context.Context, in *types.Empty, opts ...grpc.CallOption) (*Stores, error)
 }
 
 type storeServiceClient struct {
@@ -187,6 +401,114 @@ func (c *storeServiceClient) IsAllowedStoreID(ctx context.Context, in *ProtoIsAl
 	return out, nil
 }
 
+func (c *storeServiceClient) DefaultStoreView(ctx context.Context, in *types.Empty, opts ...grpc.CallOption) (*Store, error) {
+	out := new(Store)
+	err := c.cc.Invoke(ctx, "/store.StoreService/DefaultStoreView", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeServiceClient) DefaultStoreID(ctx context.Context, in *ProtoRunModeRequest, opts ...grpc.CallOption) (*ProtoStoreIDWebsiteIDResponse, error) {
+	out := new(ProtoStoreIDWebsiteIDResponse)
+	err := c.cc.Invoke(ctx, "/store.StoreService/DefaultStoreID", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeServiceClient) StoreIDbyCode(ctx context.Context, in *ProtoStoreIDbyCodeRequest, opts ...grpc.CallOption) (*ProtoStoreIDWebsiteIDResponse, error) {
+	out := new(ProtoStoreIDWebsiteIDResponse)
+	err := c.cc.Invoke(ctx, "/store.StoreService/StoreIDbyCode", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeServiceClient) AllowedStores(ctx context.Context, in *ProtoRunModeRequest, opts ...grpc.CallOption) (*Stores, error) {
+	out := new(Stores)
+	err := c.cc.Invoke(ctx, "/store.StoreService/AllowedStores", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeServiceClient) AddWebsite(ctx context.Context, in *StoreWebsite, opts ...grpc.CallOption) (*types.Empty, error) {
+	out := new(types.Empty)
+	err := c.cc.Invoke(ctx, "/store.StoreService/AddWebsite", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeServiceClient) DeleteWebsite(ctx context.Context, in *ProtoIDRequest, opts ...grpc.CallOption) (*types.Empty, error) {
+	out := new(types.Empty)
+	err := c.cc.Invoke(ctx, "/store.StoreService/DeleteWebsite", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeServiceClient) WebsiteByID(ctx context.Context, in *ProtoIDRequest, opts ...grpc.CallOption) (*StoreWebsite, error) {
+	out := new(StoreWebsite)
+	err := c.cc.Invoke(ctx, "/store.StoreService/WebsiteByID", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeServiceClient) ListWebsites(ctx context.Context, in *types.Empty, opts ...grpc.CallOption) (*StoreWebsites, error) {
+	out := new(StoreWebsites)
+	err := c.cc.Invoke(ctx, "/store.StoreService/ListWebsites", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeServiceClient) AddGroup(ctx context.Context, in *StoreGroup, opts ...grpc.CallOption) (*types.Empty, error) {
+	out := new(types.Empty)
+	err := c.cc.Invoke(ctx, "/store.StoreService/AddGroup", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeServiceClient) DeleteGroup(ctx context.Context, in *ProtoIDRequest, opts ...grpc.CallOption) (*types.Empty, error) {
+	out := new(types.Empty)
+	err := c.cc.Invoke(ctx, "/store.StoreService/DeleteGroup", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeServiceClient) GroupByID(ctx context.Context, in *ProtoIDRequest, opts ...grpc.CallOption) (*StoreGroup, error) {
+	out := new(StoreGroup)
+	err := c.cc.Invoke(ctx, "/store.StoreService/GroupByID", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeServiceClient) ListGroups(ctx context.Context, in *types.Empty, opts ...grpc.CallOption) (*StoreGroups, error) {
+	out := new(StoreGroups)
+	err := c.cc.Invoke(ctx, "/store.StoreService/ListGroups", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *storeServiceClient) AddStore(ctx context.Context, in *Store, opts ...grpc.CallOption) (*types.Empty, error) {
 	out := new(types.Empty)
 	err := c.cc.Invoke(ctx, "/store.StoreService/AddStore", in, out, opts...)
@@ -196,43 +518,52 @@ func (c *storeServiceClient) AddStore(ctx context.Context, in *Store, opts ...gr
 	return out, nil
 }
 
-func (c *storeServiceClient) ListStores(ctx context.Context, in *types.Empty, opts ...grpc.CallOption) (StoreService_ListStoresClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_StoreService_serviceDesc.Streams[0], "/store.StoreService/ListStores", opts...)
+func (c *storeServiceClient) DeleteStore(ctx context.Context, in *ProtoIDRequest, opts ...grpc.CallOption) (*types.Empty, error) {
+	out := new(types.Empty)
+	err := c.cc.Invoke(ctx, "/store.StoreService/DeleteStore", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &storeServiceListStoresClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
+	return out, nil
 }
 
-type StoreService_ListStoresClient interface {
-	Recv() (*Store, error)
-	grpc.ClientStream
-}
-
-type storeServiceListStoresClient struct {
-	grpc.ClientStream
-}
-
-func (x *storeServiceListStoresClient) Recv() (*Store, error) {
-	m := new(Store)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
+func (c *storeServiceClient) StoreByID(ctx context.Context, in *ProtoIDRequest, opts ...grpc.CallOption) (*Store, error) {
+	out := new(Store)
+	err := c.cc.Invoke(ctx, "/store.StoreService/StoreByID", in, out, opts...)
+	if err != nil {
 		return nil, err
 	}
-	return m, nil
+	return out, nil
+}
+
+func (c *storeServiceClient) ListStores(ctx context.Context, in *types.Empty, opts ...grpc.CallOption) (*Stores, error) {
+	out := new(Stores)
+	err := c.cc.Invoke(ctx, "/store.StoreService/ListStores", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 // StoreServiceServer is the server API for StoreService service.
 type StoreServiceServer interface {
 	IsAllowedStoreID(context.Context, *ProtoIsAllowedStoreIDRequest) (*ProtoIsAllowedStoreIDResponse, error)
+	DefaultStoreView(context.Context, *types.Empty) (*Store, error)
+	DefaultStoreID(context.Context, *ProtoRunModeRequest) (*ProtoStoreIDWebsiteIDResponse, error)
+	StoreIDbyCode(context.Context, *ProtoStoreIDbyCodeRequest) (*ProtoStoreIDWebsiteIDResponse, error)
+	AllowedStores(context.Context, *ProtoRunModeRequest) (*Stores, error)
+	AddWebsite(context.Context, *StoreWebsite) (*types.Empty, error)
+	DeleteWebsite(context.Context, *ProtoIDRequest) (*types.Empty, error)
+	WebsiteByID(context.Context, *ProtoIDRequest) (*StoreWebsite, error)
+	ListWebsites(context.Context, *types.Empty) (*StoreWebsites, error)
+	AddGroup(context.Context, *StoreGroup) (*types.Empty, error)
+	DeleteGroup(context.Context, *ProtoIDRequest) (*types.Empty, error)
+	GroupByID(context.Context, *ProtoIDRequest) (*StoreGroup, error)
+	ListGroups(context.Context, *types.Empty) (*StoreGroups, error)
 	AddStore(context.Context, *Store) (*types.Empty, error)
-	ListStores(*types.Empty, StoreService_ListStoresServer) error
+	DeleteStore(context.Context, *ProtoIDRequest) (*types.Empty, error)
+	StoreByID(context.Context, *ProtoIDRequest) (*Store, error)
+	ListStores(context.Context, *types.Empty) (*Stores, error)
 }
 
 func RegisterStoreServiceServer(s *grpc.Server, srv StoreServiceServer) {
@@ -257,6 +588,222 @@ func _StoreService_IsAllowedStoreID_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StoreService_DefaultStoreView_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(types.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreServiceServer).DefaultStoreView(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/store.StoreService/DefaultStoreView",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreServiceServer).DefaultStoreView(ctx, req.(*types.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StoreService_DefaultStoreID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProtoRunModeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreServiceServer).DefaultStoreID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/store.StoreService/DefaultStoreID",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreServiceServer).DefaultStoreID(ctx, req.(*ProtoRunModeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StoreService_StoreIDbyCode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProtoStoreIDbyCodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreServiceServer).StoreIDbyCode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/store.StoreService/StoreIDbyCode",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreServiceServer).StoreIDbyCode(ctx, req.(*ProtoStoreIDbyCodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StoreService_AllowedStores_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProtoRunModeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreServiceServer).AllowedStores(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/store.StoreService/AllowedStores",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreServiceServer).AllowedStores(ctx, req.(*ProtoRunModeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StoreService_AddWebsite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StoreWebsite)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreServiceServer).AddWebsite(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/store.StoreService/AddWebsite",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreServiceServer).AddWebsite(ctx, req.(*StoreWebsite))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StoreService_DeleteWebsite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProtoIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreServiceServer).DeleteWebsite(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/store.StoreService/DeleteWebsite",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreServiceServer).DeleteWebsite(ctx, req.(*ProtoIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StoreService_WebsiteByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProtoIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreServiceServer).WebsiteByID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/store.StoreService/WebsiteByID",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreServiceServer).WebsiteByID(ctx, req.(*ProtoIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StoreService_ListWebsites_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(types.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreServiceServer).ListWebsites(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/store.StoreService/ListWebsites",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreServiceServer).ListWebsites(ctx, req.(*types.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StoreService_AddGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StoreGroup)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreServiceServer).AddGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/store.StoreService/AddGroup",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreServiceServer).AddGroup(ctx, req.(*StoreGroup))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StoreService_DeleteGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProtoIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreServiceServer).DeleteGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/store.StoreService/DeleteGroup",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreServiceServer).DeleteGroup(ctx, req.(*ProtoIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StoreService_GroupByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProtoIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreServiceServer).GroupByID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/store.StoreService/GroupByID",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreServiceServer).GroupByID(ctx, req.(*ProtoIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StoreService_ListGroups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(types.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreServiceServer).ListGroups(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/store.StoreService/ListGroups",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreServiceServer).ListGroups(ctx, req.(*types.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _StoreService_AddStore_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Store)
 	if err := dec(in); err != nil {
@@ -275,25 +822,58 @@ func _StoreService_AddStore_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _StoreService_ListStores_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(types.Empty)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
+func _StoreService_DeleteStore_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProtoIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
 	}
-	return srv.(StoreServiceServer).ListStores(m, &storeServiceListStoresServer{stream})
+	if interceptor == nil {
+		return srv.(StoreServiceServer).DeleteStore(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/store.StoreService/DeleteStore",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreServiceServer).DeleteStore(ctx, req.(*ProtoIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-type StoreService_ListStoresServer interface {
-	Send(*Store) error
-	grpc.ServerStream
+func _StoreService_StoreByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProtoIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreServiceServer).StoreByID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/store.StoreService/StoreByID",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreServiceServer).StoreByID(ctx, req.(*ProtoIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-type storeServiceListStoresServer struct {
-	grpc.ServerStream
-}
-
-func (x *storeServiceListStoresServer) Send(m *Store) error {
-	return x.ServerStream.SendMsg(m)
+func _StoreService_ListStores_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(types.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreServiceServer).ListStores(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/store.StoreService/ListStores",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreServiceServer).ListStores(ctx, req.(*types.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _StoreService_serviceDesc = grpc.ServiceDesc{
@@ -305,17 +885,71 @@ var _StoreService_serviceDesc = grpc.ServiceDesc{
 			Handler:    _StoreService_IsAllowedStoreID_Handler,
 		},
 		{
+			MethodName: "DefaultStoreView",
+			Handler:    _StoreService_DefaultStoreView_Handler,
+		},
+		{
+			MethodName: "DefaultStoreID",
+			Handler:    _StoreService_DefaultStoreID_Handler,
+		},
+		{
+			MethodName: "StoreIDbyCode",
+			Handler:    _StoreService_StoreIDbyCode_Handler,
+		},
+		{
+			MethodName: "AllowedStores",
+			Handler:    _StoreService_AllowedStores_Handler,
+		},
+		{
+			MethodName: "AddWebsite",
+			Handler:    _StoreService_AddWebsite_Handler,
+		},
+		{
+			MethodName: "DeleteWebsite",
+			Handler:    _StoreService_DeleteWebsite_Handler,
+		},
+		{
+			MethodName: "WebsiteByID",
+			Handler:    _StoreService_WebsiteByID_Handler,
+		},
+		{
+			MethodName: "ListWebsites",
+			Handler:    _StoreService_ListWebsites_Handler,
+		},
+		{
+			MethodName: "AddGroup",
+			Handler:    _StoreService_AddGroup_Handler,
+		},
+		{
+			MethodName: "DeleteGroup",
+			Handler:    _StoreService_DeleteGroup_Handler,
+		},
+		{
+			MethodName: "GroupByID",
+			Handler:    _StoreService_GroupByID_Handler,
+		},
+		{
+			MethodName: "ListGroups",
+			Handler:    _StoreService_ListGroups_Handler,
+		},
+		{
 			MethodName: "AddStore",
 			Handler:    _StoreService_AddStore_Handler,
 		},
-	},
-	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "ListStores",
-			Handler:       _StoreService_ListStores_Handler,
-			ServerStreams: true,
+			MethodName: "DeleteStore",
+			Handler:    _StoreService_DeleteStore_Handler,
+		},
+		{
+			MethodName: "StoreByID",
+			Handler:    _StoreService_StoreByID_Handler,
+		},
+		{
+			MethodName: "ListStores",
+			Handler:    _StoreService_ListStores_Handler,
 		},
 	},
+	Streams:  []grpc.StreamDesc{},
 	Metadata: "service.proto",
 }
 
@@ -381,11 +1015,120 @@ func (m *ProtoIsAllowedStoreIDResponse) MarshalTo(dAtA []byte) (int, error) {
 		i = encodeVarintService(dAtA, i, uint64(len(m.StoreCode)))
 		i += copy(dAtA[i:], m.StoreCode)
 	}
-	if len(m.Error) > 0 {
-		dAtA[i] = 0x1a
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
+}
+
+func (m *ProtoRunModeRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ProtoRunModeRequest) MarshalTo(dAtA []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.RunMode != 0 {
+		dAtA[i] = 0x8
 		i++
-		i = encodeVarintService(dAtA, i, uint64(len(m.Error)))
-		i += copy(dAtA[i:], m.Error)
+		i = encodeVarintService(dAtA, i, uint64(m.RunMode))
+	}
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
+}
+
+func (m *ProtoIDRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ProtoIDRequest) MarshalTo(dAtA []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.ID != 0 {
+		dAtA[i] = 0x8
+		i++
+		i = encodeVarintService(dAtA, i, uint64(m.ID))
+	}
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
+}
+
+func (m *ProtoStoreIDWebsiteIDResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ProtoStoreIDWebsiteIDResponse) MarshalTo(dAtA []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.StoreID != 0 {
+		dAtA[i] = 0x8
+		i++
+		i = encodeVarintService(dAtA, i, uint64(m.StoreID))
+	}
+	if m.WebsiteID != 0 {
+		dAtA[i] = 0x10
+		i++
+		i = encodeVarintService(dAtA, i, uint64(m.WebsiteID))
+	}
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
+}
+
+func (m *ProtoStoreIDbyCodeRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ProtoStoreIDbyCodeRequest) MarshalTo(dAtA []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.RunMode != 0 {
+		dAtA[i] = 0x8
+		i++
+		i = encodeVarintService(dAtA, i, uint64(m.RunMode))
+	}
+	if len(m.StoreCode) > 0 {
+		dAtA[i] = 0x12
+		i++
+		i = encodeVarintService(dAtA, i, uint64(len(m.StoreCode)))
+		i += copy(dAtA[i:], m.StoreCode)
 	}
 	if m.XXX_unrecognized != nil {
 		i += copy(dAtA[i:], m.XXX_unrecognized)
@@ -433,7 +1176,70 @@ func (m *ProtoIsAllowedStoreIDResponse) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovService(uint64(l))
 	}
-	l = len(m.Error)
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ProtoRunModeRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.RunMode != 0 {
+		n += 1 + sovService(uint64(m.RunMode))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ProtoIDRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ID != 0 {
+		n += 1 + sovService(uint64(m.ID))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ProtoStoreIDWebsiteIDResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.StoreID != 0 {
+		n += 1 + sovService(uint64(m.StoreID))
+	}
+	if m.WebsiteID != 0 {
+		n += 1 + sovService(uint64(m.WebsiteID))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ProtoStoreIDbyCodeRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.RunMode != 0 {
+		n += 1 + sovService(uint64(m.RunMode))
+	}
+	l = len(m.StoreCode)
 	if l > 0 {
 		n += 1 + l + sovService(uint64(l))
 	}
@@ -623,11 +1429,62 @@ func (m *ProtoIsAllowedStoreIDResponse) Unmarshal(dAtA []byte) error {
 			}
 			m.StoreCode = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Error", wireType)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipService(dAtA[iNdEx:])
+			if err != nil {
+				return err
 			}
-			var byteLen int
+			if skippy < 0 {
+				return ErrInvalidLengthService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ProtoRunModeRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ProtoRunModeRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ProtoRunModeRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RunMode", wireType)
+			}
+			m.RunMode = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowService
@@ -637,22 +1494,268 @@ func (m *ProtoIsAllowedStoreIDResponse) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				byteLen |= (int(b) & 0x7F) << shift
+				m.RunMode |= (uint32(b) & 0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if byteLen < 0 {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
 				return ErrInvalidLengthService
 			}
-			postIndex := iNdEx + byteLen
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ProtoIDRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ProtoIDRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ProtoIDRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ID", wireType)
+			}
+			m.ID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ID |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ProtoStoreIDWebsiteIDResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ProtoStoreIDWebsiteIDResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ProtoStoreIDWebsiteIDResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StoreID", wireType)
+			}
+			m.StoreID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.StoreID |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field WebsiteID", wireType)
+			}
+			m.WebsiteID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.WebsiteID |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ProtoStoreIDbyCodeRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ProtoStoreIDbyCodeRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ProtoStoreIDbyCodeRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RunMode", wireType)
+			}
+			m.RunMode = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RunMode |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StoreCode", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthService
+			}
+			postIndex := iNdEx + intStringLen
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Error = append(m.Error[:0], dAtA[iNdEx:postIndex]...)
-			if m.Error == nil {
-				m.Error = []byte{}
-			}
+			m.StoreCode = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -781,35 +1884,53 @@ var (
 	ErrIntOverflowService   = fmt.Errorf("proto: integer overflow")
 )
 
-func init() { proto.RegisterFile("service.proto", fileDescriptor_service_032172dd8c8be800) }
+func init() { proto.RegisterFile("service.proto", fileDescriptor_service_7d2c94df95620827) }
 
-var fileDescriptor_service_032172dd8c8be800 = []byte{
-	// 417 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x52, 0x4d, 0xab, 0xd3, 0x40,
-	0x14, 0xed, 0x3c, 0xa9, 0x6d, 0xc6, 0x06, 0x64, 0x16, 0x1a, 0xe2, 0x33, 0x79, 0x44, 0x91, 0x87,
-	0x68, 0xe2, 0x07, 0xb8, 0x70, 0xd7, 0x68, 0x17, 0x15, 0x05, 0x49, 0x77, 0x6e, 0x42, 0xda, 0x5c,
-	0xe3, 0x40, 0x3b, 0x13, 0x67, 0x26, 0x15, 0xb7, 0xfe, 0x05, 0x37, 0x2e, 0xfc, 0x41, 0x2e, 0x05,
-	0xf7, 0x45, 0xa2, 0xff, 0xc0, 0x3f, 0x20, 0x33, 0x93, 0x58, 0x7c, 0xd0, 0xee, 0xee, 0xbd, 0xe7,
-	0x9c, 0x7b, 0xee, 0xe4, 0x04, 0xbb, 0x12, 0xc4, 0x96, 0xae, 0x20, 0xae, 0x05, 0x57, 0x9c, 0x0c,
-	0xa5, 0xe2, 0x02, 0x7c, 0x02, 0x4c, 0x51, 0x45, 0x41, 0xe6, 0x15, 0x30, 0x0b, 0xf9, 0xf7, 0x2b,
-	0xaa, 0xde, 0x35, 0xcb, 0x78, 0xc5, 0x37, 0x49, 0xc5, 0x2b, 0x9e, 0x98, 0xf1, 0xb2, 0x79, 0x6b,
-	0x3a, 0xd3, 0x98, 0xaa, 0xa3, 0xdf, 0xa8, 0x38, 0xaf, 0xd6, 0xb0, 0x67, 0xc1, 0xa6, 0x56, 0x1f,
-	0x3b, 0xf0, 0xb4, 0x03, 0x8b, 0x9a, 0x26, 0x05, 0x63, 0x5c, 0x15, 0x8a, 0x72, 0x26, 0x2d, 0x1a,
-	0x31, 0x7c, 0xfa, 0x5a, 0x17, 0x73, 0x39, 0x5d, 0xaf, 0xf9, 0x07, 0x28, 0x17, 0xfa, 0xa8, 0xf9,
-	0xf3, 0x0c, 0xde, 0x37, 0x20, 0x15, 0xb9, 0x83, 0xc7, 0xa2, 0x61, 0xf9, 0x86, 0x97, 0xe0, 0xa1,
-	0x33, 0x74, 0xee, 0xa6, 0x57, 0xda, 0x5d, 0x38, 0xca, 0x1a, 0xf6, 0x8a, 0x97, 0x90, 0x8d, 0x84,
-	0x2d, 0x34, 0xcf, 0x3c, 0x27, 0xa7, 0xa5, 0x77, 0xb2, 0xe7, 0xf5, 0xdb, 0x46, 0x06, 0x9c, 0x97,
-	0xd1, 0x57, 0x84, 0x6f, 0x1e, 0x30, 0x94, 0x35, 0x67, 0x12, 0xc8, 0x3d, 0x8c, 0xa9, 0xcc, 0x0b,
-	0x0b, 0x1a, 0xcf, 0x71, 0xea, 0xb6, 0xbb, 0xd0, 0xf9, 0xa7, 0xc8, 0x1c, 0xda, 0x97, 0x9a, 0x6d,
-	0x7d, 0x57, 0xfa, 0x42, 0xed, 0xec, 0x58, 0xb6, 0x59, 0xfb, 0x4c, 0xdf, 0xe8, 0xc8, 0xbe, 0x24,
-	0x21, 0x1e, 0x82, 0x10, 0x5c, 0x78, 0x97, 0xce, 0xd0, 0xf9, 0x24, 0x75, 0xda, 0x5d, 0x38, 0x9c,
-	0xe9, 0x41, 0x66, 0xe7, 0x8f, 0xfe, 0x20, 0x3c, 0x31, 0xca, 0x85, 0x8d, 0x8a, 0xe4, 0xf8, 0xea,
-	0xc5, 0x4b, 0xc9, 0xad, 0xd8, 0x6c, 0x8c, 0x8f, 0x7d, 0x38, 0xff, 0xf6, 0x71, 0x92, 0x7d, 0x6c,
-	0x34, 0x20, 0x2f, 0xf0, 0x78, 0x5a, 0xda, 0x39, 0x99, 0x74, 0x1a, 0xd3, 0xf9, 0xd7, 0x62, 0x9b,
-	0x5c, 0xdc, 0xc7, 0x1a, 0xcf, 0x74, 0xac, 0x91, 0xf7, 0xe9, 0xc7, 0xef, 0xcf, 0x27, 0x24, 0x72,
-	0x4d, 0xa4, 0xdb, 0x87, 0x49, 0x23, 0x41, 0xc8, 0xa7, 0xe8, 0x2e, 0x79, 0x82, 0xf1, 0x4b, 0x2a,
-	0x95, 0x91, 0x4b, 0x72, 0x40, 0xef, 0xff, 0xe7, 0x12, 0x0d, 0x1e, 0xa0, 0xf4, 0xfa, 0xb7, 0x36,
-	0x40, 0xdf, 0xdb, 0x00, 0xfd, 0x6c, 0x03, 0xf4, 0xe5, 0x57, 0x30, 0x78, 0x63, 0xff, 0xcd, 0xe5,
-	0x65, 0x23, 0x7d, 0xfc, 0x37, 0x00, 0x00, 0xff, 0xff, 0x9a, 0x97, 0xfc, 0x48, 0xba, 0x02, 0x00,
-	0x00,
+var fileDescriptor_service_7d2c94df95620827 = []byte{
+	// 719 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x96, 0x5d, 0x4f, 0x13, 0x4d,
+	0x14, 0xc7, 0x9f, 0x6d, 0xf2, 0x28, 0x1c, 0x58, 0x82, 0xc3, 0x5b, 0x29, 0xa5, 0xc0, 0x48, 0x22,
+	0x69, 0xe2, 0x36, 0xea, 0x9d, 0x77, 0xc0, 0x1a, 0xd3, 0x44, 0x8d, 0x6e, 0x13, 0x88, 0xf8, 0x96,
+	0x96, 0x1d, 0xd6, 0x4d, 0xca, 0x4e, 0xed, 0x6c, 0x21, 0x24, 0x5e, 0x18, 0xef, 0xbc, 0x33, 0xf1,
+	0xc6, 0x8f, 0xe4, 0xa5, 0x89, 0x5f, 0xc0, 0xa0, 0x1f, 0xc4, 0xcc, 0x99, 0x69, 0xbb, 0xbb, 0xec,
+	0xac, 0x90, 0x78, 0xb5, 0x9d, 0x39, 0x67, 0x7e, 0xff, 0x73, 0xfe, 0x73, 0x32, 0x00, 0xb6, 0x60,
+	0xfd, 0x93, 0xf0, 0x90, 0x39, 0xbd, 0x3e, 0x8f, 0x39, 0xf9, 0x5f, 0xc4, 0xbc, 0xcf, 0x2a, 0x84,
+	0x45, 0x71, 0x18, 0x87, 0x4c, 0xbc, 0x09, 0x58, 0xa4, 0x42, 0x95, 0xdb, 0x41, 0x18, 0xbf, 0x1d,
+	0x74, 0x9c, 0x43, 0x7e, 0xdc, 0x08, 0x78, 0xc0, 0x1b, 0xb8, 0xdd, 0x19, 0x1c, 0xe1, 0x0a, 0x17,
+	0xf8, 0x4b, 0xa7, 0xaf, 0x04, 0x9c, 0x07, 0x5d, 0x36, 0xce, 0x62, 0xc7, 0xbd, 0xf8, 0x4c, 0x07,
+	0xab, 0x3a, 0xd8, 0xee, 0x85, 0x8d, 0x76, 0x14, 0xf1, 0xb8, 0x1d, 0x87, 0x3c, 0x12, 0x2a, 0x4a,
+	0x3d, 0xa8, 0x3e, 0x95, 0x3f, 0x9a, 0x62, 0xbb, 0xdb, 0xe5, 0xa7, 0xcc, 0x6f, 0xc9, 0xa2, 0x9a,
+	0xae, 0xc7, 0xde, 0x0d, 0x98, 0x88, 0x49, 0x19, 0xae, 0x7b, 0x83, 0xe8, 0x31, 0xf7, 0x59, 0xd9,
+	0x5a, 0xb7, 0xb6, 0x6c, 0x6f, 0xb8, 0x94, 0x11, 0x9d, 0x5b, 0x2e, 0xa9, 0x88, 0x5e, 0xd2, 0x17,
+	0xb0, 0x6a, 0x60, 0x8a, 0x1e, 0x8f, 0x04, 0x23, 0x55, 0x98, 0x1c, 0xc5, 0x10, 0x3b, 0xe1, 0x8d,
+	0x37, 0x64, 0x14, 0x0f, 0xec, 0x4a, 0x51, 0x89, 0x9e, 0xf4, 0xc6, 0x1b, 0xb4, 0x01, 0x73, 0x08,
+	0xd7, 0x65, 0xfc, 0xb5, 0x4e, 0xba, 0x0e, 0x33, 0xaa, 0x9a, 0x51, 0x4f, 0x33, 0x50, 0x6a, 0xba,
+	0x3a, 0xad, 0xd4, 0x74, 0xe9, 0xbe, 0xae, 0x57, 0x97, 0xb9, 0xcf, 0x3a, 0x22, 0x8c, 0x93, 0xf5,
+	0x26, 0x5a, 0xb5, 0x52, 0xad, 0xca, 0x5a, 0x47, 0xe9, 0xda, 0x86, 0xf1, 0x06, 0x6d, 0xc1, 0x72,
+	0x12, 0xdc, 0x39, 0xdb, 0xbd, 0x4c, 0xc5, 0xc5, 0x06, 0xdc, 0xfd, 0x6c, 0xc3, 0x34, 0xae, 0x5a,
+	0x6a, 0x9a, 0xc8, 0x27, 0x0b, 0x66, 0xb3, 0x56, 0x93, 0x9b, 0x0e, 0x4e, 0x97, 0x53, 0x74, 0xb9,
+	0x95, 0xcd, 0xe2, 0x24, 0xd5, 0x3d, 0xad, 0x7f, 0xfc, 0xf1, 0xfb, 0x4b, 0x69, 0x93, 0xae, 0xe1,
+	0x08, 0x9d, 0xdc, 0x69, 0xe0, 0x21, 0xd1, 0x08, 0x33, 0x07, 0xee, 0x5b, 0x75, 0xd2, 0x86, 0x59,
+	0x97, 0x1d, 0xb5, 0x07, 0xdd, 0x18, 0x37, 0xf7, 0x42, 0x76, 0x4a, 0x16, 0x1d, 0x35, 0x81, 0xce,
+	0x70, 0x3c, 0x9d, 0x07, 0x72, 0x3c, 0x2b, 0xd3, 0x5a, 0x1d, 0x33, 0xe9, 0x2d, 0x54, 0xd9, 0xb8,
+	0xa0, 0xe2, 0x67, 0x71, 0xef, 0x61, 0x26, 0x29, 0xd1, 0x74, 0x49, 0x25, 0xd9, 0x46, 0x7a, 0x2e,
+	0xd2, 0x2d, 0x9a, 0x2e, 0x98, 0x6e, 0xa1, 0x38, 0xa5, 0xab, 0x05, 0xe2, 0xaa, 0xc1, 0x0f, 0x16,
+	0xd8, 0xa9, 0xeb, 0x24, 0xeb, 0x39, 0x0a, 0xa9, 0x9b, 0xbe, 0x64, 0x0d, 0x43, 0x03, 0xaa, 0x99,
+	0x1a, 0x84, 0x3a, 0xb0, 0x83, 0x48, 0x59, 0xc2, 0x21, 0xd8, 0x49, 0xe3, 0x45, 0x61, 0xff, 0x76,
+	0xd2, 0x64, 0x61, 0x14, 0x69, 0x27, 0x81, 0x52, 0xe4, 0x25, 0xc0, 0xb6, 0xef, 0xeb, 0x2a, 0xc9,
+	0x5c, 0x92, 0xa2, 0x37, 0x2b, 0x86, 0x7b, 0xa5, 0x1b, 0xa8, 0xb1, 0x42, 0x17, 0x33, 0x1a, 0xa7,
+	0xea, 0x9c, 0xa4, 0xbf, 0x06, 0xdb, 0x65, 0x5d, 0x16, 0x0f, 0x59, 0x64, 0x21, 0x35, 0x89, 0xa3,
+	0x01, 0x35, 0x49, 0xd4, 0x50, 0xa2, 0x5c, 0x37, 0x48, 0x90, 0xe7, 0x30, 0xa5, 0xc9, 0x3b, 0x67,
+	0x4d, 0xd7, 0x44, 0xcf, 0xeb, 0x6a, 0x88, 0x26, 0x26, 0xf4, 0x2b, 0x98, 0x7e, 0x14, 0x8a, 0x58,
+	0xa7, 0x0b, 0xe3, 0x74, 0xcf, 0xe7, 0xc0, 0x05, 0x5d, 0x43, 0xfa, 0x32, 0x59, 0xca, 0xa7, 0x0b,
+	0xb2, 0x07, 0x13, 0xdb, 0xbe, 0xff, 0xb0, 0xcf, 0x07, 0x3d, 0x72, 0x23, 0x89, 0xc0, 0x2d, 0xa3,
+	0x21, 0x9a, 0x4b, 0xe7, 0x33, 0xdc, 0x40, 0x9e, 0x92, 0x8e, 0x1f, 0xc0, 0x94, 0x72, 0x5c, 0xa1,
+	0xaf, 0xe8, 0x77, 0x15, 0xf1, 0x8b, 0xf5, 0x5c, 0x3c, 0x69, 0xc1, 0x24, 0x52, 0x8b, 0xbc, 0xbe,
+	0xd8, 0xcb, 0x10, 0x4a, 0xf2, 0xa1, 0xfb, 0x00, 0xd2, 0x67, 0x4c, 0x35, 0xbb, 0x4c, 0x2e, 0x60,
+	0x05, 0x5d, 0x45, 0xee, 0x12, 0x59, 0xc8, 0xe3, 0x0a, 0xf2, 0x0c, 0x1d, 0xc6, 0x03, 0x24, 0xf5,
+	0x04, 0x5d, 0xd9, 0x5c, 0xfc, 0xa4, 0xcc, 0x55, 0xd4, 0x7f, 0x64, 0x2e, 0x7e, 0xc8, 0x13, 0xfd,
+	0xc7, 0xa0, 0xc8, 0xdc, 0xf4, 0x4b, 0x6a, 0xf2, 0x55, 0xf1, 0x3c, 0xe5, 0xab, 0x7e, 0x3a, 0x4c,
+	0xbe, 0x66, 0x9e, 0x0d, 0x93, 0xa5, 0xea, 0xb3, 0xb3, 0xf4, 0xed, 0xbc, 0x66, 0x7d, 0x3f, 0xaf,
+	0x59, 0x3f, 0xcf, 0x6b, 0xd6, 0xd7, 0x5f, 0xb5, 0xff, 0x0e, 0xd4, 0xff, 0x36, 0x9d, 0x6b, 0x88,
+	0xbd, 0xf7, 0x27, 0x00, 0x00, 0xff, 0xff, 0xb2, 0x38, 0x4e, 0x00, 0xfa, 0x08, 0x00, 0x00,
 }

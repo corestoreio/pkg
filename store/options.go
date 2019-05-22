@@ -29,6 +29,10 @@ func WithStores(stores ...*Store) Option {
 			defer s.mu.Unlock()
 
 			for _, s1 := range stores {
+				if err := s1.Validate(); err != nil {
+					return errors.WithStack(err)
+				}
+
 				var containsS1 bool
 				for idx, s2 := range s.stores.Data {
 					if s2.StoreID == s1.StoreID {
@@ -60,6 +64,10 @@ func WithGroups(groups ...*StoreGroup) Option {
 			defer s.mu.Unlock()
 
 			for _, s1 := range groups {
+				if err := s1.Validate(); err != nil {
+					return errors.WithStack(err)
+				}
+
 				var containsS1 bool
 				for idx, s2 := range s.groups.Data {
 					if s2.GroupID == s1.GroupID {
@@ -91,6 +99,10 @@ func WithWebsites(websites ...*StoreWebsite) Option {
 			defer s.mu.Unlock()
 
 			for _, s1 := range websites {
+				if err := s1.Validate(); err != nil {
+					return errors.WithStack(err)
+				}
+
 				var containsS1 bool
 				for idx, s2 := range s.websites.Data {
 					if s2.WebsiteID == s1.WebsiteID {

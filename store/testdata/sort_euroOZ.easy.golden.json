@@ -4,20 +4,20 @@
     {
       "code": "admin",
       "name": "Admin",
-      "storeGroups": {
-        "data": [
-          {
-            "name": "Default",
-            "code": "admin"
-          }
-        ]
-      },
       "stores": {
         "data": [
           {
             "code": "admin",
             "name": "Admin",
             "isActive": true
+          }
+        ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "name": "Default",
+            "code": "admin"
           }
         ]
       }
@@ -28,26 +28,6 @@
       "name": "Europe",
       "defaultGroupID": 1,
       "isDefault": true,
-      "storeGroups": {
-        "data": [
-          {
-            "groupID": 1,
-            "websiteID": 1,
-            "name": "DACH Group",
-            "rootCategoryID": 2,
-            "defaultStoreID": 2,
-            "code": "dach"
-          },
-          {
-            "groupID": 2,
-            "websiteID": 1,
-            "name": "UK Group",
-            "rootCategoryID": 2,
-            "defaultStoreID": 4,
-            "code": "uk"
-          }
-        ]
-      },
       "stores": {
         "data": [
           {
@@ -86,6 +66,26 @@
             "isActive": true
           }
         ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 1,
+            "websiteID": 1,
+            "name": "DACH Group",
+            "rootCategoryID": 2,
+            "defaultStoreID": 2,
+            "code": "dach"
+          },
+          {
+            "groupID": 2,
+            "websiteID": 1,
+            "name": "UK Group",
+            "rootCategoryID": 2,
+            "defaultStoreID": 4,
+            "code": "uk"
+          }
+        ]
       }
     },
     {
@@ -94,18 +94,6 @@
       "name": "OZ",
       "sortOrder": 20,
       "defaultGroupID": 3,
-      "storeGroups": {
-        "data": [
-          {
-            "groupID": 3,
-            "websiteID": 2,
-            "name": "Australia",
-            "rootCategoryID": 2,
-            "defaultStoreID": 5,
-            "code": "au"
-          }
-        ]
-      },
       "stores": {
         "data": [
           {
@@ -125,6 +113,18 @@
             "name": "Kiwi",
             "sortOrder": 30,
             "isActive": true
+          }
+        ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 3,
+            "websiteID": 2,
+            "name": "Australia",
+            "rootCategoryID": 2,
+            "defaultStoreID": 5,
+            "code": "au"
           }
         ]
       }
