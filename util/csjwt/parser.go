@@ -16,6 +16,7 @@ package csjwt
 
 import (
 	"bytes"
+	"encoding"
 	"net/http"
 	"unicode"
 
@@ -54,10 +55,41 @@ func NewVerification(availableSigners ...Signer) *Verification {
 	}
 }
 
+func (vf *Verification) unmarshal(src []byte, dst interface{}) error {
+	switch dt := dst.(type) {
+	case encoding.BinaryUnmarshaler:
+		if err := dt.UnmarshalBinary(src); err != nil {
+			return errors.NotValid.New(err, errTokenMalformed)
+		}
+	case encoding.TextUnmarshaler:
+		if err := dt.UnmarshalText(src); err != nil {
+			return errors.NotValid.New(err, errTokenMalformed)
+		}
+	case interface{ UnmarshalJSON(data []byte) error }:
+		if err := dt.UnmarshalJSON(src); err != nil {
+			return errors.NotValid.New(err, errTokenMalformed)
+		}
+	case interface{ Unmarshal(dAtA []byte) error }:
+		if err := dt.Unmarshal(src); err != nil {
+			return errors.NotValid.New(err, errTokenMalformed)
+		}
+	default:
+		dec := vf.Deserializer
+		if dec == nil {
+			dec = JSONEncoding{}
+		}
+		if err := dec.Deserialize(src, dst); err != nil {
+			return errors.NotValid.New(err, errTokenMalformed)
+		}
+	}
+	return nil
+}
+
 // Parse parses a rawToken into the destination token and may return an error.
 // You must make sure to set the correct expected headers and claims in the
 // template Token. The Header and Claims field in the destination token must be
-// a pointer as the token itself. Error behaviour: Empty, NotFound, NotValid
+// a pointer as the token itself. Error behaviour: Empty, NotFound, NotValid.
+// Parse supports custom binary, text, json, protobuf decoding.
 func (vf *Verification) Parse(dst *Token, rawToken []byte, keyFunc Keyfunc) error {
 	pos, valid := dotPositions(rawToken)
 	if !valid {
@@ -68,25 +100,17 @@ func (vf *Verification) Parse(dst *Token, rawToken []byte, keyFunc Keyfunc) erro
 		return errors.NotValid.Newf(errTokenBaseNil)
 	}
 
-	dec := vf.Deserializer
-	if dec == nil {
-		dec = JSONEncoding{}
-	}
-
 	dst.Raw = rawToken
 
 	if startsWithBearer(dst.Raw) {
 		return errors.NotValid.Newf(errTokenShouldNotContainBearer)
 	}
 
-	// parse Header
-	if err := dec.Deserialize(dst.Raw[:pos[0]], dst.Header); err != nil {
-		return errors.NotValid.Newf(errTokenMalformed, err)
+	if err := vf.unmarshal(dst.Raw[:pos[0]], dst.Header); err != nil {
+		return errors.WithStack(err)
 	}
-
-	// parse Claims
-	if err := dec.Deserialize(dst.Raw[pos[0]+1:pos[1]], dst.Claims); err != nil {
-		return errors.NotValid.Newf(errTokenMalformed, err)
+	if err := vf.unmarshal(dst.Raw[pos[0]+1:pos[1]], dst.Claims); err != nil {
+		return errors.WithStack(err)
 	}
 
 	// validate Claims

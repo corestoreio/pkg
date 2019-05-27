@@ -110,13 +110,13 @@ func WithPassword(password []byte) Key {
 	}
 }
 
-const randomPasswordLenght = 32
+const randomPasswordLength = 32
 
 // WithPasswordRandom creates cryptographically secure random password which you
 // cannot obtain. Whenever you restart your app with a random password, all
 // HMAC-SHA tokens get invalided.
 func WithPasswordRandom() Key {
-	var pw [randomPasswordLenght]byte
+	var pw [randomPasswordLength]byte
 	_, err := rand.Read(pw[:])
 	return Key{
 		hmacPassword: pw[:],

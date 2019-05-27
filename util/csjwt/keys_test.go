@@ -18,11 +18,11 @@ func TestNewKeyFunc(t *testing.T) {
 	tests := []struct {
 		s           Signer
 		key         Key
-		token       Token
+		token       *Token
 		wantKey     Key
 		wantErrKind errors.Kind
 	}{
-		{nil, Key{Error: errors.AlreadyClosed.Newf("idx1")}, Token{}, Key{}, errors.AlreadyClosed},
+		{nil, Key{Error: errors.AlreadyClosed.Newf("idx1")}, &Token{}, Key{}, errors.AlreadyClosed},
 		{
 			&SigningMethodHMAC{Name: "Rost"},
 			WithPasswordRandom(),
@@ -33,7 +33,7 @@ func TestNewKeyFunc(t *testing.T) {
 		{
 			NewSigningMethodHS256(),
 			WithPassword([]byte(`123456`)),
-			Token{
+			&Token{
 				Header: &Head{Algorithm: HS256},
 			},
 			WithPassword([]byte(`123456`)),
@@ -41,7 +41,7 @@ func TestNewKeyFunc(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		haveKey, haveErr := NewKeyFunc(test.s, test.key)(&test.token)
+		haveKey, haveErr := NewKeyFunc(test.s, test.key)(test.token)
 		assert.Exactly(t, test.wantKey, haveKey, "Index %d", i)
 		if !test.wantErrKind.Empty() {
 			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => %s", i, haveErr)
@@ -124,8 +124,8 @@ func TestKeyParsing(t *testing.T) {
 func TestKeyWithPasswordRandom(t *testing.T) {
 
 	key := WithPasswordRandom()
-	assert.Len(t, key.hmacPassword, randomPasswordLenght)
-	if len(fmt.Sprintf("%x", key.hmacPassword)) < randomPasswordLenght {
+	assert.Len(t, key.hmacPassword, randomPasswordLength)
+	if len(fmt.Sprintf("%x", key.hmacPassword)) < randomPasswordLength {
 		t.Fatalf("Generated password is too short: %x", key.hmacPassword)
 	}
 }

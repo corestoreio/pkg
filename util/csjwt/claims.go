@@ -15,7 +15,6 @@
 package csjwt
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/corestoreio/errors"
@@ -103,19 +102,6 @@ func (s *Head) Alg() string {
 // Typ returns the token type.
 func (s *Head) Typ() string {
 	return s.Type
-}
-
-// String prints the Go representation of the Head.
-func (s *Head) String() string {
-	if s.Algorithm == "" {
-		return `csjwt.NewHead()`
-	}
-	return fmt.Sprintf("csjwt.NewHead(%q)", s.Alg())
-}
-
-// GoString prints the Go representation of the Head.
-func (s *Head) GoString() string {
-	return s.String()
 }
 
 const errHeaderKeyNotSupported = "[csjwt] Header %q not yet supported. Please switch to type jwtclaim.HeadSegments."

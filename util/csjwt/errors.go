@@ -18,7 +18,7 @@ package csjwt
 const (
 	errSignatureInvalid         = "[csjwt] signature is invalid: %s\nToken: %#v\n"
 	errTokenNotInRequest        = `[csjwt] token not present in request`
-	errTokenMalformed           = `[csjwt] token is malformed: %s`
+	errTokenMalformed           = `[csjwt] token is malformed`
 	errTokenUnverifiable        = `[csjwt] token is unverifiable: %s`
 	errValidationClaimsInvalid  = `[csjwt] token claims validation failed`
 	errVerificationMethodsEmpty = `[csjwt] No methods supplied to the Verfication Method slice`

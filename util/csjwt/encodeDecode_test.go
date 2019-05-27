@@ -39,7 +39,7 @@ func init() {
 }
 
 func TestGobEncoding(t *testing.T) {
-	// todo(CS): test for races
+
 	storeClaim := jwtclaim.NewStore()
 
 	gobEncDec := csjwt.NewGobEncoding(csjwt.NewHead(), storeClaim)
@@ -58,7 +58,7 @@ func TestGobEncoding(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Log("gob", tkChar)
+	t.Logf("gob %q", tkChar)
 	if have, want := len(tkChar), 178; have != want {
 		t.Errorf("Gob length tkChar mismatch: Have: %d Want: %d", have, want)
 	}
@@ -73,9 +73,7 @@ func TestGobEncoding(t *testing.T) {
 
 	newTk := csjwt.NewToken(jwtclaim.NewStore())
 
-	if err := vrf.Parse(&newTk, tkChar, csjwt.NewKeyFunc(m, pw)); err != nil {
-		t.Fatalf("%+v", err)
-	}
+	assert.NoError(t, vrf.Parse(newTk, tkChar, csjwt.NewKeyFunc(m, pw)))
 
 	haveStoreClaim := newTk.Claims.(*jwtclaim.Store)
 	assert.Exactly(t, "ch-en", haveStoreClaim.Store)
@@ -112,7 +110,7 @@ func BenchmarkTokenDecode(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			newTk := csjwt.NewToken(jwtclaim.NewStore())
-			if err := vrf.Parse(&newTk, tkChar, csjwt.NewKeyFunc(m, pw)); err != nil {
+			if err := vrf.Parse(newTk, tkChar, csjwt.NewKeyFunc(m, pw)); err != nil {
 				b.Fatalf("%+v", err)
 			}
 			haveStoreClaim := newTk.Claims.(*jwtclaim.Store)

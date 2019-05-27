@@ -15,7 +15,6 @@
 package csjwt_test
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -26,8 +25,6 @@ import (
 )
 
 var _ csjwt.Header = (*csjwt.Head)(nil)
-var _ fmt.Stringer = (*csjwt.Head)(nil)
-var _ fmt.GoStringer = (*csjwt.Head)(nil)
 
 type claimMock struct {
 	validErr error
@@ -42,15 +39,6 @@ func (c claimMock) Get(key string) (interface{}, error) {
 	return nil, c.getErr
 }
 func (c claimMock) Keys() []string { return []string{"k1"} }
-
-func TestNewHeadStringer(t *testing.T) {
-
-	var h csjwt.Header
-	h = csjwt.NewHead("Quantum")
-	assert.Exactly(t, "csjwt.NewHead(\"Quantum\")", fmt.Sprintf("%s", h))
-	assert.Exactly(t, "csjwt.NewHead(\"Quantum\")", fmt.Sprintf("%v", h))
-	assert.Exactly(t, "csjwt.NewHead(\"Quantum\")", fmt.Sprintf("%#v", h))
-}
 
 func TestNewHead(t *testing.T) {
 
@@ -84,7 +72,7 @@ func TestHeadSetGet(t *testing.T) {
 func TestMergeClaims(t *testing.T) {
 
 	tests := []struct {
-		dst               csjwt.Token
+		dst               *csjwt.Token
 		srcs              csjwt.Claimer
 		wantSigningString string
 		wantErrKind       errors.Kind
@@ -94,8 +82,7 @@ func TestMergeClaims(t *testing.T) {
 		{csjwt.NewToken(jwtclaim.Map{"k1": "v1"}), jwtclaim.Map{"k2": 2}, `eyJ0eXAiOiJKV1QifQo.eyJrMSI6InYxIiwiazIiOjJ9Cg`, errors.NoKind},
 		{csjwt.NewToken(jwtclaim.NewStore()), jwtclaim.Map{"k2": 2}, ``, errors.NotSupported},
 		{csjwt.NewToken(&jwtclaim.Standard{}), &jwtclaim.Store{
-			Standard: &jwtclaim.Standard{},
-			UserID:   "Gopher",
+			UserID: "Gopher",
 		}, ``, errors.NotSupported},
 	}
 	for i, test := range tests {
@@ -108,11 +95,11 @@ func TestMergeClaims(t *testing.T) {
 			t.Fatalf("Index %d => %s", i, haveErr)
 		}
 
-		buf, err := test.dst.SigningString()
+		buf, err := test.dst.SigningString(nil)
 		if err != nil {
 			t.Fatalf("Index %d => %s", i, err)
 		}
-		assert.Exactly(t, test.wantSigningString, buf.String(), "Index %d", i)
+		assert.Exactly(t, test.wantSigningString, string(buf), "Index %d", i)
 	}
 }
 
@@ -133,21 +120,21 @@ func TestClaimExpiresSkew(t *testing.T) {
 	vrf := csjwt.NewVerification(hs256)
 
 	parsedTK := csjwt.NewToken(&jwtclaim.Store{
-		Standard: &jwtclaim.Standard{
+		Standard: jwtclaim.Standard{
 			TimeSkew: 0,
 		},
 	})
-	parsedErr := vrf.Parse(&parsedTK, token, csjwt.NewKeyFunc(hs256, pwKey))
-	assert.True(t, errors.NotValid.Match(parsedErr), "Error: %s", parsedErr)
+	parsedErr := vrf.Parse(parsedTK, token, csjwt.NewKeyFunc(hs256, pwKey))
+	assert.ErrorIsKind(t, errors.NotValid, parsedErr)
 	assert.False(t, parsedTK.Valid, "Token must be not valid")
 
 	// now adjust skew
 	parsedTK = csjwt.NewToken(&jwtclaim.Store{
-		Standard: &jwtclaim.Standard{
+		Standard: jwtclaim.Standard{
 			TimeSkew: time.Second * 3,
 		},
 	})
-	parsedErr = vrf.Parse(&parsedTK, token, csjwt.NewKeyFunc(hs256, pwKey))
+	parsedErr = vrf.Parse(parsedTK, token, csjwt.NewKeyFunc(hs256, pwKey))
 	assert.NoError(t, parsedErr, "Error: %s", parsedErr)
 	assert.True(t, parsedTK.Valid, "Token must be valid")
 

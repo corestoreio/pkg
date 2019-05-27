@@ -142,7 +142,7 @@ func TestVerification_ParseFromRequest_WithMap(t *testing.T) {
 			data.tokenString = makeSample(data.claims)
 		}
 		token := csjwt.NewToken(&jwtclaim.Map{})
-		err := data.parser.Parse(&token, data.tokenString, data.keyfunc)
+		err := data.parser.Parse(token, data.tokenString, data.keyfunc)
 
 		if !reflect.DeepEqual(&data.claims, token.Claims) {
 			t.Errorf("[%v] Claims mismatch. Expecting: %v  Got: %v", data.name, data.claims, token.Claims)
@@ -181,7 +181,7 @@ func TestVerification_ParseFromRequest_LoopTestData(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/", nil)
 		r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", data.tokenString))
 		token := csjwt.NewToken(&jwtclaim.Map{})
-		err := data.parser.ParseFromRequest(&token, data.keyfunc, r)
+		err := data.parser.ParseFromRequest(token, data.keyfunc, r)
 
 		if token.Raw == nil {
 			t.Errorf("[%v] Token was not found: %v", data.name, err)
@@ -224,7 +224,7 @@ func TestVerification_ParseFromRequest_Complex(t *testing.T) {
 
 	var newClaim = make(jwtclaim.Map)
 	rToken := csjwt.NewToken(&newClaim)
-	err = csjwt.NewVerification(sm512).ParseFromRequest(&rToken, func(t *csjwt.Token) (csjwt.Key, error) {
+	err = csjwt.NewVerification(sm512).ParseFromRequest(rToken, func(t *csjwt.Token) (csjwt.Key, error) {
 		if have, want := t.Alg(), sm512.Alg(); have != want {
 			return csjwt.Key{}, fmt.Errorf("Have: %s Want: %s", have, want)
 		}
@@ -242,7 +242,7 @@ func TestVerification_Parse_BearerInHeader(t *testing.T) {
 	token = append(token, jwtTestData[0].tokenString...)
 
 	haveToken := csjwt.NewToken(&jwtclaim.Map{})
-	haveErr := csjwt.NewVerification().Parse(&haveToken, token, nil)
+	haveErr := csjwt.NewVerification().Parse(haveToken, token, nil)
 	assert.NotNil(t, haveToken)
 	assert.NotNil(t, haveToken.Claims)
 	assert.Exactly(t, haveToken.Raw, token)
@@ -252,7 +252,7 @@ func TestVerification_Parse_BearerInHeader(t *testing.T) {
 
 func TestVerification_Parse_InvalidSegments(t *testing.T) {
 	token := csjwt.NewToken(nil)
-	haveErr := csjwt.NewVerification().Parse(&token, []byte(`hello.gopher`), nil)
+	haveErr := csjwt.NewVerification().Parse(token, []byte(`hello.gopher`), nil)
 	assert.False(t, token.Valid)
 	assert.True(t, errors.NotValid.Match(haveErr), "Error: %s", haveErr)
 }
@@ -277,7 +277,7 @@ func TestVerification_ParseFromRequest_Cookie(t *testing.T) {
 	pubKey := csjwt.WithRSAPublicKeyFromFile("test/sample_key.pub")
 
 	haveToken := csjwt.NewToken(&jwtclaim.Map{})
-	haveErr := vf.ParseFromRequest(&haveToken, csjwt.NewKeyFunc(rs256, pubKey), r)
+	haveErr := vf.ParseFromRequest(haveToken, csjwt.NewKeyFunc(rs256, pubKey), r)
 	if haveErr != nil {
 		t.Fatalf("%+v", haveErr)
 	}
@@ -311,7 +311,7 @@ func TestVerification_ParseFromRequest_Form(t *testing.T) {
 
 	pubKey := csjwt.WithRSAPublicKeyFromFile("test/sample_key.pub")
 	haveToken := csjwt.NewToken(&jwtclaim.Map{})
-	haveErr := vf.ParseFromRequest(&haveToken, csjwt.NewKeyFunc(rs256, pubKey), r)
+	haveErr := vf.ParseFromRequest(haveToken, csjwt.NewKeyFunc(rs256, pubKey), r)
 	if haveErr != nil {
 		t.Fatalf("%+v", haveErr)
 	}
@@ -334,7 +334,7 @@ func TestVerification_ParseFromRequest_NoTokenInRequest(t *testing.T) {
 
 	pubKey := csjwt.WithRSAPublicKeyFromFile("test/sample_key.pub")
 	haveToken := csjwt.NewToken(&jwtclaim.Map{})
-	haveErr := vf.ParseFromRequest(&haveToken, csjwt.NewKeyFunc(rs256, pubKey), r)
+	haveErr := vf.ParseFromRequest(haveToken, csjwt.NewKeyFunc(rs256, pubKey), r)
 	assert.True(t, errors.NotFound.Match(haveErr), "Error: %s", haveErr)
 	assert.Empty(t, haveToken.Raw)
 	assert.False(t, haveToken.Valid)
@@ -499,7 +499,7 @@ func benchmarkParseFromRequest(b *testing.B, sm csjwt.Signer, key csjwt.Key, key
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		rToken := csjwt.NewToken(mc)
-		err := veri.ParseFromRequest(&rToken, keyFunc, r)
+		err := veri.ParseFromRequest(rToken, keyFunc, r)
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}

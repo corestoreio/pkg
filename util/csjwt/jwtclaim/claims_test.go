@@ -117,7 +117,7 @@ func TestClaimsGetSet(t *testing.T) {
 		wantSetErrBhf errors.Kind
 		wantGetErrBhf errors.Kind
 	}{
-		{&jwtclaim.Standard{}, jwtclaim.KeyAudience, '', errors.NotValid, errors.NoKind},
+		{&jwtclaim.Standard{}, jwtclaim.KeyAudience, '', errors.NoKind, errors.NoKind},
 		{&jwtclaim.Standard{}, jwtclaim.KeyAudience, "Go", errors.NoKind, errors.NoKind},
 		{&jwtclaim.Standard{}, jwtclaim.KeyExpiresAt, time.Now().Unix(), errors.NoKind, errors.NoKind},
 		{&jwtclaim.Standard{}, "Not Supported", time.Now().Unix(), errors.NotSupported, errors.NotSupported},
@@ -130,7 +130,7 @@ func TestClaimsGetSet(t *testing.T) {
 	for i, test := range tests {
 
 		haveSetErr := test.sc.Set(test.key, test.val)
-		if !test.wantSetErrBhf.Empty() {
+		if test.wantSetErrBhf > 0 {
 			assert.True(t, test.wantSetErrBhf.Match(haveSetErr), "Index %d => %s", i, haveSetErr)
 		} else {
 			assert.NoError(t, haveSetErr, "Index %d", i)
@@ -144,7 +144,7 @@ func TestClaimsGetSet(t *testing.T) {
 			assert.NoError(t, haveGetErr, "Index %d", i)
 		}
 
-		if test.wantSetErrBhf.Empty() {
+		if test.wantSetErrBhf > 0 {
 			assert.Exactly(t, test.val, haveVal, "Index %d", i)
 		}
 	}

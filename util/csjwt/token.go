@@ -15,12 +15,13 @@
 package csjwt
 
 import (
-	"bytes"
+	"encoding"
 	"fmt"
 	"time"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/util/bufferpool"
 	"github.com/corestoreio/pkg/util/conv"
 )
 
@@ -51,15 +52,15 @@ type Token struct {
 // consists of a two field struct for the minimum requirements. If you need more
 // header fields consider using a map or the jwtclaim.HeadSegments type. Default
 // header from function NewHead().
-func NewToken(c Claimer) Token {
-	return Token{
+func NewToken(c Claimer) *Token {
+	return &Token{
 		Header: NewHead(),
 		Claims: c,
 	}
 }
 
 // Alg returns the assigned algorithm to this token. Can return an empty string.
-func (t Token) Alg() string {
+func (t *Token) Alg() string {
 	if t.Header == nil {
 		return ""
 	}
@@ -71,75 +72,90 @@ func (t Token) Alg() string {
 // provided Signer.Alg() value. Returns a byte slice, save for further
 // processing. This functions allows to sign a token with different signing
 // methods.
-func (t Token) SignedString(method Signer, key Key) ([]byte, error) {
+func (t *Token) SignedString(method Signer, key Key) ([]byte, error) {
 
 	if err := t.Header.Set(headerAlg, method.Alg()); err != nil {
-		return nil, errors.Wrap(err, "[csjwt] Header.Set")
+		return nil, errors.WithStack(err)
 	}
 
-	buf, err := t.SigningString()
+	buf, err := t.SigningString(make([]byte, 0, 512))
 	if err != nil {
-		return nil, errors.Wrap(err, "[csjwt] Token.SignedString.SigningString")
+		return nil, errors.WithStack(err)
 	}
-	sig, err := method.Sign(buf.Bytes(), key)
+	sig, err := method.Sign(buf, key)
 	if err != nil {
-		return nil, errors.Wrap(err, "[csjwt] Token.SignedString.SigningString")
+		return nil, errors.WithStack(err)
 	}
+	buf = append(buf, '.')
+	buf = append(buf, sig...)
+	return buf, nil
+}
 
-	if _, err := buf.WriteRune('.'); err != nil {
-		return nil, errors.WriteFailed.New(err, "[csjwt] Token.SignedString.WriteRune")
+func (t *Token) marshal(dst interface{}) (data []byte, err error) {
+	switch dt := dst.(type) {
+	case encoding.BinaryMarshaler:
+		data, err = dt.MarshalBinary()
+		if err != nil {
+			err = errors.WithStack(err)
+		}
+	case encoding.TextMarshaler:
+		data, err = dt.MarshalText()
+		if err != nil {
+			err = errors.WithStack(err)
+		}
+	case interface{ MarshalJSON() ([]byte, error) }:
+		data, err = dt.MarshalJSON()
+		if err != nil {
+			err = errors.WithStack(err)
+		}
+	case interface{ Marshal() ([]byte, error) }:
+		data, err = dt.Marshal()
+		if err != nil {
+			err = errors.WithStack(err)
+		}
+	default:
+		enc := t.Serializer
+		if enc == nil {
+			enc = JSONEncoding{}
+		}
+		data, err = enc.Serialize(dst)
+		if err != nil {
+			err = errors.WithStack(err)
+		}
 	}
-	if _, err := buf.Write(sig); err != nil {
-		return nil, errors.WriteFailed.New(err, "[csjwt] Token.SignedString.Write")
-	}
-	return buf.Bytes(), nil
+	return data, err
 }
 
 // SigningString generates the signing string. This is the most expensive part
 // of the whole deal.  Unless you need this for something special, just go
 // straight for the SignedString. Returns a buffer which can be used for further
 // modifications.
-func (t Token) SigningString() (buf bytes.Buffer, err error) {
-
-	ser := t.Serializer
-	if ser == nil {
-		ser = JSONEncoding{}
-	}
-
-	var j []byte
-	j, err = ser.Serialize(t.Header)
+// SigningString supports custom binary, text, json, protobuf encoding.
+func (t *Token) SigningString(buf []byte) ([]byte, error) {
+	data, err := t.marshal(t.Header)
 	if err != nil {
-		err = errors.Wrap(err, "[csjwt] Token.SigningString.Serialize")
-		return
+		return nil, errors.WithStack(err)
 	}
-	if _, err = buf.Write(j); err != nil {
-		err = errors.WriteFailed.New(err, "[csjwt] Token.SigningString.Write")
-		return
-	}
-	if _, err = buf.WriteRune('.'); err != nil {
-		err = errors.WriteFailed.New(err, "[csjwt] Token.SigningString.Write")
-		return
-	}
-	j, err = ser.Serialize(t.Claims)
+	buf = append(buf, data...)
+	buf = append(buf, '.')
+
+	data, err = t.marshal(t.Claims)
 	if err != nil {
-		err = errors.Wrap(err, "[csjwt] Token.SigningString.Serialize")
-		return
+		return nil, errors.WithStack(err)
 	}
-	if _, err = buf.Write(j); err != nil {
-		err = errors.WriteFailed.New(err, "[csjwt] Token.SigningString.Write")
-		return
-	}
-	return
+	buf = append(buf, data...)
+	return buf, nil
 }
 
 // MarshalLog marshals the token into an unsigned log.Field. It uses the function
 // SigningString().
-func (t Token) MarshalLog(kv log.KeyValuer) error {
-	buf, err := t.SigningString()
-	if err != nil {
+func (t *Token) MarshalLog(kv log.KeyValuer) error {
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	if tk, err := t.SigningString(buf.Bytes()); err != nil {
 		kv.AddString("token_error", fmt.Sprintf("%+v", err))
 	} else {
-		kv.AddString("token", buf.String())
+		kv.AddString("token", string(tk))
 	}
 	return nil
 }

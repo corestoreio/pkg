@@ -33,9 +33,7 @@ const (
 // NewStore creates a new Store pointer and makes sure that all sub pointer
 // types will also be created.
 func NewStore() *Store {
-	return &Store{
-		Standard: new(Standard),
-	}
+	return &Store{}
 }
 
 // Store extends the StandardClaim with important fields for requesting the
@@ -43,7 +41,7 @@ func NewStore() *Store {
 // for your convenience.
 // ffjson: noencoder
 type Store struct {
-	*Standard
+	Standard
 	Store string `json:"store,omitempty"`
 	// UserID add here any user ID you might will be but always bear in mind
 	// that when adding a numeric auto increment ID, like customer_id from the
