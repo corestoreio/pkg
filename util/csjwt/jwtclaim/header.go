@@ -19,6 +19,7 @@ const ContentTypeJWT = `JWT`
 
 // HeadSegments represents a structured version of Header Section, as
 // referenced at http://self-issued.info/docs/draft-jones-json-web-token-01.html#anchor5
+//easyjson:json
 type HeadSegments struct {
 	// Alg (algorithm) header parameter identifies the cryptographic algorithm
 	// used to secure the JWT. A list of reserved alg values is in Table 4. The

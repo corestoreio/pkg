@@ -8,11 +8,9 @@ import (
 	"github.com/corestoreio/pkg/util/conv"
 )
 
-//go:generate ffjson $GOFILE
-
 // Standard represents a structured version of Claims Section, as
 // referenced at https://tools.ietf.org/html/rfc7519#section-4.1
-// ffjson: noencoder
+//easyjson:json
 type Standard struct {
 	// TimeSkew duration of time skew we allow between signer and verifier.
 	TimeSkew time.Duration `json:"-"`

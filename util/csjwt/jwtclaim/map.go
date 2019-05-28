@@ -24,7 +24,8 @@ import (
 
 // Map default type for the Claim field in a token. Slowest but most flexible
 // type. For speed, use a custom struct type with embedding StandardClaims and
-// ffjson generated en-/decoder.
+// generated en-/decoder.
+//easyjson:json
 type Map map[string]interface{}
 
 // VerifyAudience compares the aud claim against cmp. If required is false, this
@@ -146,9 +147,4 @@ func (m Map) String() string {
 		return errors.Fatal.Newf("[jwtclaim] Map.String(): json.Marshal Error: %s", err).Error()
 	}
 	return string(b)
-}
-
-// GoString returns valid Go code.
-func (m Map) GoString() string {
-	return "jwtclaim.Map" + m.String()
 }

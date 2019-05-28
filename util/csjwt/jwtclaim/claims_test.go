@@ -35,7 +35,6 @@ var _ fmt.Stringer = (*jwtclaim.Store)(nil)
 
 var _ csjwt.Claimer = (*jwtclaim.Map)(nil)
 var _ fmt.Stringer = (*jwtclaim.Map)(nil)
-var _ fmt.GoStringer = (*jwtclaim.Map)(nil)
 
 func TestStandardClaimsParseJSON(t *testing.T) {
 

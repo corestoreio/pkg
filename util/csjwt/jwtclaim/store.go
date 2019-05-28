@@ -21,8 +21,6 @@ import (
 	"github.com/corestoreio/pkg/util/conv"
 )
 
-//go:generate ffjson $GOFILE
-
 // Key.... are available claims in struct Store.
 // KeyStore is equal to github.com/corestoreio/pkg/store/storenet.ParamName
 const (
@@ -39,7 +37,7 @@ func NewStore() *Store {
 // Store extends the StandardClaim with important fields for requesting the
 // correct store view, user ID and maybe some more useful fields. This struct is
 // for your convenience.
-// ffjson: noencoder
+//easyjson:json
 type Store struct {
 	Standard
 	Store string `json:"store,omitempty"`
