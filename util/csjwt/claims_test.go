@@ -15,6 +15,7 @@
 package csjwt_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -77,29 +78,26 @@ func TestMergeClaims(t *testing.T) {
 		wantSigningString string
 		wantErrKind       errors.Kind
 	}{
-		{csjwt.NewToken(nil), nil, `eyJ0eXAiOiJKV1QifQo.bnVsbAo`, errors.NoKind},
+		{csjwt.NewToken(nil), nil, `eyJ0eXAiOiJKV1QifQ.bnVsbAo`, errors.NoKind},
 		{csjwt.NewToken(jwtclaim.Map{}), claimMock{getErr: errors.Fatal.Newf("claimMerge get error")}, ``, errors.Fatal},
-		{csjwt.NewToken(jwtclaim.Map{"k1": "v1"}), jwtclaim.Map{"k2": 2}, `eyJ0eXAiOiJKV1QifQo.eyJrMSI6InYxIiwiazIiOjJ9Cg`, errors.NoKind},
+		{csjwt.NewToken(jwtclaim.Map{"k1": "v1"}), jwtclaim.Map{"k2": 2}, `eyJ0eXAiOiJKV1QifQ.eyJrMSI6InYxIiwiazIiOjJ9`, errors.NoKind},
 		{csjwt.NewToken(jwtclaim.NewStore()), jwtclaim.Map{"k2": 2}, ``, errors.NotSupported},
 		{csjwt.NewToken(&jwtclaim.Standard{}), &jwtclaim.Store{
 			UserID: "Gopher",
 		}, ``, errors.NotSupported},
 	}
 	for i, test := range tests {
-		haveErr := csjwt.MergeClaims(test.dst.Claims, test.srcs)
-		if !test.wantErrKind.Empty() {
-			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => %s", i, haveErr)
-			continue
-		}
-		if haveErr != nil {
-			t.Fatalf("Index %d => %s", i, haveErr)
-		}
-
-		buf, err := test.dst.SigningString(nil)
-		if err != nil {
-			t.Fatalf("Index %d => %s", i, err)
-		}
-		assert.Exactly(t, test.wantSigningString, string(buf), "Index %d", i)
+		t.Run(fmt.Sprintf("Index_%02d", i), func(t *testing.T) {
+			haveErr := csjwt.MergeClaims(test.dst.Claims, test.srcs)
+			if !test.wantErrKind.Empty() {
+				assert.ErrorIsKind(t, test.wantErrKind, haveErr)
+				return
+			}
+			assert.NoError(t, haveErr)
+			buf, err := test.dst.SigningString(nil)
+			assert.NoError(t, err)
+			assert.Exactly(t, test.wantSigningString, string(buf), "Index %d", i)
+		})
 	}
 }
 

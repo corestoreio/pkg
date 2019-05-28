@@ -34,12 +34,11 @@ type Verification struct {
 	// FormInputName defines the name of the HTML form input type in which the
 	// token has been stored. If empty, the form the gets ignored.
 	FormInputName string
-	// CookieName defines the name of the cookie where the token has been stored. If
-	// empty, cookie parsing gets ignored.
+	// CookieName defines the name of the cookie where the token has been
+	// stored. If empty, cookie parsing gets ignored.
 	CookieName string
 	// Methods for verifying and signing a token
 	Methods SignerSlice
-
 	// Decoder interface to pass in a custom decoder parser. Can be nil, falls
 	// back to JSON.
 	Deserializer
@@ -50,12 +49,24 @@ type Verification struct {
 // forbidden.
 func NewVerification(availableSigners ...Signer) *Verification {
 	return &Verification{
-		Methods:      availableSigners,
-		Deserializer: JSONEncoding{},
+		Methods: availableSigners,
 	}
 }
 
 func (vf *Verification) unmarshal(src []byte, dst interface{}) error {
+	src, err := DecodeSegment(src)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	if vf.Deserializer != nil {
+		if err := vf.Deserializer.Deserialize(src, dst); err != nil {
+			return errors.NotValid.New(err, errTokenMalformed)
+		}
+		return nil
+	}
+	// the order of the cases is important as JSON can be embedded but main type
+	// has e.g. TextMarshaler.
 	switch dt := dst.(type) {
 	case encoding.BinaryUnmarshaler:
 		if err := dt.UnmarshalBinary(src); err != nil {
@@ -65,19 +76,16 @@ func (vf *Verification) unmarshal(src []byte, dst interface{}) error {
 		if err := dt.UnmarshalText(src); err != nil {
 			return errors.NotValid.New(err, errTokenMalformed)
 		}
-	case interface{ UnmarshalJSON(data []byte) error }:
-		if err := dt.UnmarshalJSON(src); err != nil {
-			return errors.NotValid.New(err, errTokenMalformed)
-		}
-	case interface{ Unmarshal(dAtA []byte) error }:
+	case interface{ Unmarshal([]byte) error }:
 		if err := dt.Unmarshal(src); err != nil {
 			return errors.NotValid.New(err, errTokenMalformed)
 		}
-	default:
-		dec := vf.Deserializer
-		if dec == nil {
-			dec = JSONEncoding{}
+	case interface{ UnmarshalJSON([]byte) error }:
+		if err := dt.UnmarshalJSON(src); err != nil {
+			return errors.NotValid.New(err, errTokenMalformed)
 		}
+	default:
+		dec := jsonEncoding{}
 		if err := dec.Deserialize(src, dst); err != nil {
 			return errors.NotValid.New(err, errTokenMalformed)
 		}

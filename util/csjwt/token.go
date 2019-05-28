@@ -92,6 +92,16 @@ func (t *Token) SignedString(method Signer, key Key) ([]byte, error) {
 }
 
 func (t *Token) marshal(dst interface{}) (data []byte, err error) {
+	if t.Serializer != nil {
+		data, err = t.Serializer.Serialize(dst)
+		if err != nil {
+			err = errors.WithStack(err)
+		}
+		return EncodeSegment(data), err
+	}
+
+	// the order of the cases is important as JSON can be embedded but main type
+	// has e.g. TextMarshaler.
 	switch dt := dst.(type) {
 	case encoding.BinaryMarshaler:
 		data, err = dt.MarshalBinary()
@@ -103,27 +113,24 @@ func (t *Token) marshal(dst interface{}) (data []byte, err error) {
 		if err != nil {
 			err = errors.WithStack(err)
 		}
-	case interface{ MarshalJSON() ([]byte, error) }:
-		data, err = dt.MarshalJSON()
-		if err != nil {
-			err = errors.WithStack(err)
-		}
 	case interface{ Marshal() ([]byte, error) }:
 		data, err = dt.Marshal()
 		if err != nil {
 			err = errors.WithStack(err)
 		}
-	default:
-		enc := t.Serializer
-		if enc == nil {
-			enc = JSONEncoding{}
+	case interface{ MarshalJSON() ([]byte, error) }:
+		data, err = dt.MarshalJSON()
+		if err != nil {
+			err = errors.WithStack(err)
 		}
+	default:
+		enc := jsonEncoding{}
 		data, err = enc.Serialize(dst)
 		if err != nil {
 			err = errors.WithStack(err)
 		}
 	}
-	return data, err
+	return EncodeSegment(data), err
 }
 
 // SigningString generates the signing string. This is the most expensive part

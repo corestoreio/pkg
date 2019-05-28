@@ -15,11 +15,10 @@
 package csjwt_test
 
 import (
+	"bytes"
 	"encoding"
 	"encoding/json"
 	"testing"
-
-	"bytes"
 
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/log/logw"
@@ -53,11 +52,11 @@ func TestTokenAlg(t *testing.T) {
 }
 
 func TestToken_MarshalLog_Ok(t *testing.T) {
-	tk := csjwt.NewToken(jwtclaim.Map{"lang": "Golang", "extractMe": 3.14159})
+	tk := csjwt.NewToken(&jwtclaim.Store{Store: "Golang", UserID: "extractMe"})
 	buf := bytes.Buffer{}
 	lg := logw.NewLog(logw.WithWriter(&buf), logw.WithLevel(logw.LevelDebug))
 	lg.Debug("tokenTest", log.Marshal("xtoken", tk))
-	have := `tokenTest token: "eyJ0eXAiOiJKV1QifQo.eyJleHRyYWN0TWUiOjMuMTQxNTksImxhbmciOiJHb2xhbmcifQo"`
+	have := `tokenTest token: "eyJ0eXAiOiJKV1QifQ.eyJzdG9yZSI6IkdvbGFuZyIsInVzZXJpZCI6ImV4dHJhY3RNZSJ9"`
 	assert.Contains(t, buf.String(), have)
 }
 
@@ -175,6 +174,11 @@ func TestToken_AllMarshalers(t *testing.T) {
 			tkChar, err := tk.SignedString(m, pwKey)
 			assert.NoError(t, err)
 			t.Log(string(tkChar))
+
+			tokenParts := bytes.Split(tkChar, []byte(`.`))
+			decClaim, err := csjwt.DecodeSegment(tokenParts[1])
+			assert.NoError(t, err)
+			assert.Exactly(t, test.name, string(decClaim), "Token claim must match")
 
 			tk2 := csjwt.NewToken(test.emptyClaim)
 			err = v.Parse(tk2, tkChar, hs256KeyFn)

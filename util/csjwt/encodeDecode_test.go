@@ -25,9 +25,6 @@ import (
 	"github.com/corestoreio/pkg/util/csjwt/jwtclaim"
 )
 
-var _ csjwt.Deserializer = (*csjwt.JSONEncoding)(nil)
-var _ csjwt.Serializer = (*csjwt.JSONEncoding)(nil)
-
 func isBase64Token(str []byte) bool {
 	r, _ := regexp.Compile(`^[A-Za-z0-9\-_\.]+$`)
 	return r.Match(str)
@@ -55,18 +52,22 @@ func TestGobEncoding(t *testing.T) {
 	m := csjwt.NewSigningMethodHS512()
 	pw := csjwt.WithPasswordRandom()
 	tkChar, err := tk.SignedString(m, pw)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
+
+	// correct old token:
+	// D_-EAQVIUzUxMgEDSldUAA.Mv-GAQP8udiHwAEYMjM0Mi0yMzQzNDUtMjM0MjM0LTIzNDM1Afy52IbQAAEFY2gtZW4A.VvwSTTBuaY7kxbbrZ44YXjFDoyhLXFEpIYjHI-mOOKzhZKpBiq3z3qqyqwyYlYxLzA914PGMmNiQCk1UdY7HZg
+
+	// invalid new token:
+	// D_-EAQVIUzUxMgEDSldUAA.eyJzdG9yZSI6ImNoLWVuIiwiZXhwIjoxNTU4OTg3NjczLCJqdGkiOiIyMzQyLTIzNDM0NS0yMzQyMzQtMjM0MzUiLCJpYXQiOjE1NTg5ODc1NTN9.JrFW-ex4BW1e4ICTGsnWRoIm-OLN_TCdMINy5q74v47G7BWXVyIFtnNzcuE6BdWaZhTcSp4J-3WTyKw5XQgIHQ
+
 	t.Logf("gob %q", tkChar)
+
 	if have, want := len(tkChar), 178; have != want {
 		t.Errorf("Gob length tkChar mismatch: Have: %d Want: %d", have, want)
 	}
 
 	// check if it is base64 encoded
-	if !isBase64Token(tkChar) {
-		t.Fatalf("Token is not base64 encoded! %q", tkChar)
-	}
+	assert.True(t, isBase64Token(tkChar), "Token is not base64 encoded! %q", tkChar)
 
 	vrf := csjwt.NewVerification(m)
 	vrf.Deserializer = gobEncDec
@@ -124,6 +125,6 @@ func BenchmarkTokenDecode(b *testing.B) {
 		testRunner(b, csjwt.NewGobEncoding(csjwt.NewHead(), jwtclaim.NewStore()))
 	})
 	b.Run("Json_HS256", func(b *testing.B) {
-		testRunner(b, csjwt.JSONEncoding{})
+		testRunner(b, nil) // falls back to default JSON serializer
 	})
 }

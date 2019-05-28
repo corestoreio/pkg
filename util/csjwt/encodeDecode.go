@@ -35,26 +35,22 @@ type Serializer interface {
 	Serialize(src interface{}) ([]byte, error)
 }
 
-// JSONEncoding default JSON de- & serializer with base64 support
-type JSONEncoding struct{}
+// jsonEncoding default JSON de- & serializer with base64 support
+type jsonEncoding struct{}
 
 // Deserialize decodes a value using encoding/json.
-func (jp JSONEncoding) Deserialize(src []byte, dst interface{}) error {
-	dec, err := DecodeSegment(src)
-	if err != nil {
-		return errors.Wrap(err, "[csjwt] JSONEncoding.Deserialize.DecodeSegment")
-	}
-	return errors.Wrap(json.Unmarshal(dec, dst), "[csjwt] JSONEncoding.Deserialize.Unmarshal")
+func (jp jsonEncoding) Deserialize(src []byte, dst interface{}) error {
+	return errors.Wrap(json.Unmarshal(src, dst), "[csjwt] jsonEncoding.Deserialize.Unmarshal")
 }
 
 // Serialize encodes a value using encoding/json.
-func (jp JSONEncoding) Serialize(src interface{}) ([]byte, error) {
+func (jp jsonEncoding) Serialize(src interface{}) ([]byte, error) {
 	buf := bufPool.Get()
 	defer bufPool.Put(buf)
 	if err := json.NewEncoder(buf).Encode(src); err != nil {
-		return nil, errors.Wrap(err, "[csjwt] JSONEncoding.Serialize.Encode")
+		return nil, errors.WithStack(err)
 	}
-	return EncodeSegment(buf.Bytes()), nil
+	return buf.Bytes(), nil
 }
 
 // GobEncoding encodes JWT values using encoding/gob. This is the simplest
@@ -106,30 +102,27 @@ func (e *gobEncoding) Serialize(src interface{}) ([]byte, error) {
 	defer e.mu.Unlock()
 	defer e.pipe.Reset()
 	if err := e.enc.Encode(src); err != nil {
-		return nil, errors.Wrap(err, "[csjwt] GobEncoding.Serialize.Encode")
+		return nil, errors.WithStack(err)
 	}
-	return EncodeSegment(e.pipe.Bytes()), nil
+	return e.pipe.Bytes(), nil
 }
 
 // Deserialize decodes a value using gob.
 func (e *gobEncoding) Deserialize(src []byte, dst interface{}) error {
-	srcDec, err := DecodeSegment(src)
-	if err != nil {
-		return errors.Wrap(err, "[csjwt] JSONEncoding.Deserialize.DecodeSegment")
-	}
-
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.pipe.Reset()
 
-	if _, err := e.pipe.Write(srcDec); err != nil {
-		return errors.Wrap(err, "[csjwt] GobEncoding.Deserialize.Write")
+	if _, err := e.pipe.Write(src); err != nil {
+		return errors.WithStack(err)
 	}
 	if err := e.dec.Decode(dst); err != nil {
-		return errors.Wrap(err, "[csjwt] GobEncoding.Deserialize.Decode")
+		return errors.WithStack(err)
 	}
 	return nil
 }
+
+// TODO make it possible to use base128 globally
 
 // EncodeSegment encodes JWT specific base64url encoding with padding stripped.
 // Returns a new byte slice.
@@ -144,5 +137,8 @@ func EncodeSegment(seg []byte) []byte {
 func DecodeSegment(seg []byte) ([]byte, error) {
 	dbuf := make([]byte, base64.RawURLEncoding.DecodedLen(len(seg)))
 	n, err := base64.RawURLEncoding.Decode(dbuf, seg)
-	return dbuf[:n], errors.NotValid.New(err, "[csjwt] DecodeSegment")
+	if err != nil {
+		return nil, errors.NotValid.New(err, "[csjwt] DecodeSegment")
+	}
+	return dbuf[:n], nil
 }

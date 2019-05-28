@@ -20,6 +20,8 @@ import (
 	"github.com/corestoreio/errors"
 )
 
+// generate: $ easyjson -lower_camel_case -omit_empty -pkg -snake_case .
+
 // Claimer for a type to be a Claims object
 type Claimer interface {
 	// Valid method that determines if the token is invalid for any supported reason.
@@ -64,6 +66,7 @@ type Header interface {
 
 // Head minimum default header. To extend this header please use the struct
 // jwtclaim.HeadSegments
+//easyjson:json
 type Head struct {
 	// Alg (algorithm) header parameter identifies the cryptographic algorithm
 	// used to secure the JWT. A list of reserved alg values is in Table 4. The
