@@ -51,7 +51,7 @@ func NewSigningMethodPS512() *SigningMethodRSAPSS {
 // NotImplemented, WriteFailed, NotValid
 func (m *SigningMethodRSAPSS) Verify(signingString, signature []byte, key Key) error {
 	if key.Error != nil {
-		return errors.Wrap(key.Error, "[csjwt] SigningMethodRSAPSS.Verify.key")
+		return errors.WithStack(key.Error)
 	}
 	if key.rsaKeyPub == nil {
 		return errors.Empty.Newf(errRSAPublicKeyEmpty)
@@ -60,7 +60,7 @@ func (m *SigningMethodRSAPSS) Verify(signingString, signature []byte, key Key) e
 	// Decode the signature
 	sig, err := DecodeSegment(signature)
 	if err != nil {
-		return errors.Wrap(err, "[csjwt] SigningMethodRSAPSS.Verify.DecodeSegment")
+		return errors.WithStack(err)
 	}
 
 	// Create hasher
@@ -72,7 +72,10 @@ func (m *SigningMethodRSAPSS) Verify(signingString, signature []byte, key Key) e
 		return errors.WriteFailed.New(err, "[csjwt] SigningMethodRSA.Verify.hasher.Write")
 	}
 
-	return errors.NotValid.New(rsa.VerifyPSS(key.rsaKeyPub, m.Hash, hasher.Sum(nil), sig, &m.Options), "[csjwt] SigningMethodRSAPSS.Verify.VerifyPSS")
+	if err := rsa.VerifyPSS(key.rsaKeyPub, m.Hash, hasher.Sum(nil), sig, &m.Options); err != nil {
+		return errors.NotValid.New(err, "[csjwt] SigningMethodRSAPSS.Verify.VerifyPSS")
+	}
+	return nil
 }
 
 // Sign implements the Sign method from SigningMethod interface. For the key you

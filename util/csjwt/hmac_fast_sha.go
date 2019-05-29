@@ -33,7 +33,7 @@ type SigningMethodHSFast struct {
 
 func newHSFast(a string, h crypto.Hash, key Key) (Signer, error) {
 	if key.Error != nil {
-		return nil, errors.Wrap(key.Error, "[csjwt] newHMACFast.key")
+		return nil, errors.WithStack(key.Error)
 	}
 	if len(key.hmacPassword) == 0 {
 		return nil, errors.Empty.Newf(errHmacPasswordEmpty)
@@ -79,7 +79,7 @@ func (m *SigningMethodHSFast) Verify(signingString, signature []byte, _ Key) err
 	// Decode signature, for comparison
 	sig, err := DecodeSegment(signature)
 	if err != nil {
-		return errors.Wrap(err, "[csjwt] SigningMethodHMACFast.Verify.DecodeSegment")
+		return errors.WithStack(err)
 	}
 
 	// This signing method is symmetric, so we validate the signature by

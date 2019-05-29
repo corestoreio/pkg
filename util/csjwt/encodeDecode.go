@@ -122,8 +122,6 @@ func (e *gobEncoding) Deserialize(src []byte, dst interface{}) error {
 	return nil
 }
 
-// TODO make it possible to use base128 globally
-
 // EncodeSegment encodes JWT specific base64url encoding with padding stripped.
 // Returns a new byte slice.
 func EncodeSegment(seg []byte) []byte {

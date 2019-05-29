@@ -42,7 +42,7 @@ func (m *SigningMethodRSA) Alg() string {
 // NotImplemented, WriteFailed, NotValid
 func (m *SigningMethodRSA) Verify(signingString, signature []byte, key Key) error {
 	if key.Error != nil {
-		return errors.Wrap(key.Error, "[csjwt] SigningMethodRSA.Verify.key")
+		return errors.WithStack(key.Error)
 	}
 	if key.rsaKeyPub == nil {
 		return errors.Empty.Newf(errRSAPublicKeyEmpty)
@@ -51,7 +51,7 @@ func (m *SigningMethodRSA) Verify(signingString, signature []byte, key Key) erro
 	// Decode the signature
 	sig, err := DecodeSegment(signature)
 	if err != nil {
-		return errors.Wrap(err, "[csjwt] SigningMethodRSA.Verify.DecodeSegment")
+		return errors.WithStack(err)
 	}
 
 	// Create hasher
@@ -72,7 +72,7 @@ func (m *SigningMethodRSA) Verify(signingString, signature []byte, key Key) erro
 // NotImplemented, WriteFailed, NotValid.
 func (m *SigningMethodRSA) Sign(signingString []byte, key Key) ([]byte, error) {
 	if key.Error != nil {
-		return nil, errors.Wrap(key.Error, "[csjwt] SigningMethodRSA.Sign.key")
+		return nil, errors.WithStack(key.Error)
 	}
 	if key.rsaKeyPriv == nil {
 		return nil, errors.Empty.Newf(errRSAPrivateKeyEmpty)

@@ -54,12 +54,6 @@ func TestGobEncoding(t *testing.T) {
 	tkChar, err := tk.SignedString(m, pw)
 	assert.NoError(t, err)
 
-	// correct old token:
-	// D_-EAQVIUzUxMgEDSldUAA.Mv-GAQP8udiHwAEYMjM0Mi0yMzQzNDUtMjM0MjM0LTIzNDM1Afy52IbQAAEFY2gtZW4A.VvwSTTBuaY7kxbbrZ44YXjFDoyhLXFEpIYjHI-mOOKzhZKpBiq3z3qqyqwyYlYxLzA914PGMmNiQCk1UdY7HZg
-
-	// invalid new token:
-	// D_-EAQVIUzUxMgEDSldUAA.eyJzdG9yZSI6ImNoLWVuIiwiZXhwIjoxNTU4OTg3NjczLCJqdGkiOiIyMzQyLTIzNDM0NS0yMzQyMzQtMjM0MzUiLCJpYXQiOjE1NTg5ODc1NTN9.JrFW-ex4BW1e4ICTGsnWRoIm-OLN_TCdMINy5q74v47G7BWXVyIFtnNzcuE6BdWaZhTcSp4J-3WTyKw5XQgIHQ
-
 	t.Logf("gob %q", tkChar)
 
 	if have, want := len(tkChar), 178; have != want {
@@ -127,4 +121,35 @@ func BenchmarkTokenDecode(b *testing.B) {
 	b.Run("Json_HS256", func(b *testing.B) {
 		testRunner(b, nil) // falls back to default JSON serializer
 	})
+}
+
+var BenchmarkencodeSegment []byte
+
+func BenchmarkBase64(b *testing.B) {
+	data := []byte(`assert.True(t, isBase64Token(tkChar), "Token is not base64 encoded! %q", tkChar)`)
+	dataDec := []byte(`YXNzZXJ0LlRydWUodCwgaXNCYXNlNjRUb2tlbih0a0NoYXIpLCAiVG9rZW4gaXMgbm90IGJhc2U2NCBlbmNvZGVkISAlcSIsIHRrQ2hhcik`)
+
+	// BenchmarkBase64/Encode-4         	20000000	       106 ns/op	     112 B/op	       1 allocs/op
+	// BenchmarkBase64/Encode-4         	20000000	       105 ns/op	     112 B/op	       1 allocs/op
+	b.Run("Encode", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			BenchmarkencodeSegment = csjwt.EncodeSegment(data)
+		}
+		if have, want := len(BenchmarkencodeSegment), len(dataDec); have != want {
+			b.Fatalf("Invalid length of BenchmarkencodeSegment:\n%d => %q\n%d => %q", have, BenchmarkencodeSegment, want, dataDec)
+		}
+	})
+
+	// BenchmarkBase64/Decode-4         	10000000	       160 ns/op	      80 B/op	       1 allocs/op
+	// BenchmarkBase64/Decode-4         	10000000	       165 ns/op	      80 B/op	       1 allocs/op
+	b.Run("Decode", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			var err error
+			BenchmarkencodeSegment, err = csjwt.DecodeSegment(dataDec)
+			if err != nil {
+				b.Fatalf("%+v", err)
+			}
+		}
+	})
+
 }

@@ -52,7 +52,7 @@ func NewKeyFunc(s Signer, key Key) Keyfunc {
 	return func(t *Token) (Key, error) {
 
 		if key.Error != nil {
-			return Key{}, errors.Wrap(key.Error, "[csjwt] NewKeyFunc.Key")
+			return Key{}, errors.WithStack(key.Error)
 		}
 		if a := s.Alg(); a != "" && a == t.Header.Alg() {
 			return key, nil
