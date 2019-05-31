@@ -17,26 +17,13 @@ package csjwt
 import (
 	"bytes"
 	"encoding"
-	"net/http"
 	"unicode"
 
 	"github.com/corestoreio/errors"
 )
 
-// HTTPHeaderAuthorization identifies the bearer token in this header key
-const HTTPHeaderAuthorization = `Authorization`
-
-// HTTPFormInputName default name for the HTML form field name
-const HTTPFormInputName = `access_token`
-
 // Verification allows to parse and verify a token with custom options.
 type Verification struct {
-	// FormInputName defines the name of the HTML form input type in which the
-	// token has been stored. If empty, the form the gets ignored.
-	FormInputName string
-	// CookieName defines the name of the cookie where the token has been
-	// stored. If empty, cookie parsing gets ignored.
-	CookieName string
 	// Methods for verifying and signing a token
 	Methods SignerSlice
 	// Decoder interface to pass in a custom decoder parser. Can be nil, falls
@@ -110,7 +97,7 @@ func (vf *Verification) Parse(dst *Token, rawToken []byte, keyFunc Keyfunc) erro
 
 	dst.Raw = rawToken
 
-	if startsWithBearer(dst.Raw) {
+	if StartsWithBearer(dst.Raw) {
 		return errors.NotValid.Newf(errTokenShouldNotContainBearer)
 	}
 
@@ -170,53 +157,6 @@ func (vf *Verification) getMethod(t *Token) (Signer, error) {
 	return nil, errors.NotFound.Newf(errAlgorithmNotFound, alg, vf.Methods)
 }
 
-// ParseFromRequest same as Parse but extracts the token from a request. First
-// it searches for the token bearer in the header HTTPHeaderAuthorization. If
-// not found the request POST form gets parsed and the FormInputName gets used
-// to lookup the token value.
-func (vf *Verification) ParseFromRequest(dst *Token, keyFunc Keyfunc, req *http.Request) error {
-	// Look for an Authorization header
-	if ah := req.Header.Get(HTTPHeaderAuthorization); ah != "" {
-		// Should be a bearer token
-		auth := []byte(ah)
-		if startsWithBearer(auth) {
-			return vf.Parse(dst, auth[7:], keyFunc)
-		}
-	}
-
-	if vf.CookieName != "" {
-		if err := vf.parseCookie(dst, keyFunc, req); err != nil && err != http.ErrNoCookie {
-			return errors.Wrap(err, "[csjwt] Verification.ParseFromRequest.parseCookie")
-		}
-		if dst.Valid {
-			return nil
-		}
-		// try next, the form
-	}
-
-	if vf.FormInputName != "" {
-		return vf.parseForm(dst, keyFunc, req)
-	}
-
-	return errors.NotFound.Newf(errTokenNotInRequest)
-}
-
-func (vf *Verification) parseCookie(dst *Token, keyFunc Keyfunc, req *http.Request) error {
-	keks, err := req.Cookie(vf.CookieName)
-	if keks != nil && keks.Value != "" {
-		return vf.Parse(dst, []byte(keks.Value), keyFunc)
-	}
-	return err // error can be http.ErrNoCookie
-}
-
-func (vf *Verification) parseForm(dst *Token, keyFunc Keyfunc, req *http.Request) error {
-	_ = req.ParseMultipartForm(10e6) // ignore errors
-	if tokStr := req.Form.Get(vf.FormInputName); tokStr != "" {
-		return vf.Parse(dst, []byte(tokStr), keyFunc)
-	}
-	return errors.NotFound.Newf(errTokenNotInRequest)
-}
-
 // SplitForVerify splits the token into two parts: the payload and the
 // signature. An error gets returned if the number of dots don't match with the
 // JWT standard.
@@ -252,8 +192,8 @@ const prefixBearerLen = 7
 
 var prefixBearer = []byte(`bearer `)
 
-// startsWithBearer checks if token starts with bearer
-func startsWithBearer(token []byte) bool {
+// StartsWithBearer checks if token starts with bearer
+func StartsWithBearer(token []byte) bool {
 	if len(token) <= prefixBearerLen {
 		return false
 	}
