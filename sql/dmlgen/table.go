@@ -698,7 +698,7 @@ func (t *Table) fnCollectionSwap(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(`func (cc *`, t.CollectionName(), `) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }`)
 
 	mainGen.C(`Len will satisfy the sort.Interface. Auto generated via dmlgen.`)
-	mainGen.Pln(`func (cc *`, t.CollectionName(), `) Len() int { return len(cc.Data) }`)
+	mainGen.Pln(`func (cc *`, t.CollectionName(), `) Len() int { if cc == nil { return 0; }; return len(cc.Data); }`)
 }
 
 func (t *Table) fnCollectionDelete(mainGen *codegen.Go, g *Generator) {
