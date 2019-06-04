@@ -47,6 +47,10 @@ type Verification struct {
 	// CookieName defines the name of the cookie where the token has been
 	// stored. If empty, cookie parsing gets ignored.
 	CookieName string
+	// ExtractTokenFn for extracting a token from an HTTP request. The
+	// ExtractToken method should return a token string or an error.
+	// This function can be nil
+	ExtractTokenFn func(*http.Request) (string, error)
 }
 
 // ParseFromRequest same as Parse but extracts the token from a request. First
@@ -54,6 +58,14 @@ type Verification struct {
 // not found the request POST form gets parsed and the FormInputName gets used
 // to lookup the token value.
 func (vf *Verification) ParseFromRequest(dst *csjwt.Token, keyFunc csjwt.Keyfunc, req *http.Request) error {
+	if vf.ExtractTokenFn != nil {
+		tkn, err := vf.ExtractTokenFn(req)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		return vf.Parse(dst, []byte(tkn), keyFunc)
+	}
+
 	// Look for an Authorization header
 	if ah := req.Header.Get(HTTPHeaderAuthorization); ah != "" {
 		// Should be a bearer token

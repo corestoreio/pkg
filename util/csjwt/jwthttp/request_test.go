@@ -143,3 +143,30 @@ func TestVerification_ParseFromRequest_NoTokenInRequest(t *testing.T) {
 	assert.Empty(t, haveToken.Raw)
 	assert.False(t, haveToken.Valid)
 }
+
+func TestVerification_ParseFromRequest_ExtractTokenFn(t *testing.T) {
+
+	r, _ := http.NewRequest("GET", "/", nil)
+
+	rs256 := csjwt.NewSigningMethodRS256()
+	vf := jwthttp.NewVerification(rs256)
+	vf.ExtractTokenFn = func(req *http.Request) (string, error) {
+		s := makeSample(jwtclaim.Map{
+			"where": "in the form dude!",
+		})
+		return string(s), nil
+	}
+
+	pubKey := csjwt.WithRSAPublicKeyFromFile("../test/sample_key.pub")
+	haveToken := csjwt.NewToken(&jwtclaim.Map{})
+	haveErr := vf.ParseFromRequest(haveToken, csjwt.NewKeyFunc(rs256, pubKey), r)
+	if haveErr != nil {
+		t.Fatalf("%+v", haveErr)
+	}
+
+	where, err := haveToken.Claims.Get(`where`)
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
+	assert.Exactly(t, `in the form dude!`, conv.ToString(where))
+}
