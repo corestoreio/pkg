@@ -23,24 +23,23 @@ import (
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/gogo/protobuf/types"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"go.opencensus.io/stats"
 	"go.opencensus.io/stats/view"
-	"go.opencensus.io/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 // todo think about an instrumented service with opentracing, metrics, etc
-// todo authentication with different roles and permissions
 
 type ServiceRPCOptions struct {
 	// TODO use config package, except for logger
-	Trace   bool
 	Metrics bool
 	Log     log.Logger
+	Auth    grpc_auth.ServiceAuthFuncOverride
 }
 
-func NewServiceRPC(serice *Service, o ServiceRPCOptions) (*ServiceRPC, error) {
+func NewServiceRPC(s *Service, o ServiceRPCOptions) (*ServiceRPC, error) {
 	var mErrors *stats.Int64Measure
 	if o.Metrics {
 		mErrors = stats.Int64("store/ServiceRPC/errors", "The number of errors encountered", stats.UnitDimensionless)
@@ -54,7 +53,7 @@ func NewServiceRPC(serice *Service, o ServiceRPCOptions) (*ServiceRPC, error) {
 		}
 	}
 	return &ServiceRPC{
-		service:     serice,
+		service:     s,
 		opt:         o,
 		statsErrors: mErrors,
 	}, nil
@@ -72,11 +71,18 @@ func (sp *ServiceRPC) recordError(ctx context.Context) {
 	}
 }
 
-func (sp *ServiceRPC) IsAllowedStoreID(ctx context.Context, r *ProtoIsAllowedStoreIDRequest) (*ProtoIsAllowedStoreIDResponse, error) {
-	if sp.opt.Trace {
-		_, span := trace.StartSpan(ctx, "store/ServiceRPC.IsAllowedStoreID")
-		defer span.End()
+// AuthFuncOverride calls the custom authentication function provided by
+// ServiceRPCOptions. AuthFuncOverride gets called by the middleware of package
+// "github.com/grpc-ecosystem/go-grpc-middleware/auth". When implementing, make
+// sure that `grpc_auth.UnaryServerInterceptor(nil)` has the nil argument.
+func (sp *ServiceRPC) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	if sp.opt.Auth == nil {
+		return ctx, nil
 	}
+	return sp.opt.Auth.AuthFuncOverride(ctx, fullMethodName)
+}
+
+func (sp *ServiceRPC) IsAllowedStoreID(ctx context.Context, r *ProtoIsAllowedStoreIDRequest) (*ProtoIsAllowedStoreIDResponse, error) {
 	isAllowed, storeCode, err := sp.service.IsAllowedStoreID(scope.TypeID(r.RunMode), r.StoreID)
 	if sp.opt.Log != nil && sp.opt.Log.IsInfo() {
 		sp.opt.Log.Info("store.ServiceRPC.IsAllowedStoreID", log.Err(err),
@@ -93,10 +99,6 @@ func (sp *ServiceRPC) IsAllowedStoreID(ctx context.Context, r *ProtoIsAllowedSto
 }
 
 func (sp *ServiceRPC) DefaultStoreView(ctx context.Context, _ *types.Empty) (*Store, error) {
-	if sp.opt.Trace {
-		_, span := trace.StartSpan(ctx, "store/ServiceRPC.DefaultStoreView")
-		defer span.End()
-	}
 	store, err := sp.service.DefaultStoreView()
 	if sp.opt.Log != nil && sp.opt.Log.IsInfo() {
 		sp.opt.Log.Info("store.ServiceRPC.DefaultStoreView", log.Err(err),
@@ -110,10 +112,6 @@ func (sp *ServiceRPC) DefaultStoreView(ctx context.Context, _ *types.Empty) (*St
 }
 
 func (sp *ServiceRPC) DefaultStoreID(ctx context.Context, r *ProtoRunModeRequest) (*ProtoStoreIDWebsiteIDResponse, error) {
-	if sp.opt.Trace {
-		_, span := trace.StartSpan(ctx, "store/ServiceRPC.DefaultStoreID")
-		defer span.End()
-	}
 	storeID, websiteID, err := sp.service.DefaultStoreID(scope.TypeID(r.RunMode))
 	if sp.opt.Log != nil && sp.opt.Log.IsInfo() {
 		sp.opt.Log.Info("store.ServiceRPC.DefaultStoreID", log.Err(err),
@@ -130,10 +128,6 @@ func (sp *ServiceRPC) DefaultStoreID(ctx context.Context, r *ProtoRunModeRequest
 }
 
 func (sp *ServiceRPC) StoreIDbyCode(ctx context.Context, r *ProtoStoreIDbyCodeRequest) (*ProtoStoreIDWebsiteIDResponse, error) {
-	if sp.opt.Trace {
-		_, span := trace.StartSpan(ctx, "store/ServiceRPC.StoreIDbyCode")
-		defer span.End()
-	}
 	storeID, websiteID, err := sp.service.StoreIDbyCode(scope.TypeID(r.RunMode), r.StoreCode)
 	if sp.opt.Log != nil && sp.opt.Log.IsInfo() {
 		sp.opt.Log.Info("store.ServiceRPC.StoreIDbyCode", log.Err(err),
@@ -150,10 +144,6 @@ func (sp *ServiceRPC) StoreIDbyCode(ctx context.Context, r *ProtoStoreIDbyCodeRe
 }
 
 func (sp *ServiceRPC) AllowedStores(ctx context.Context, r *ProtoRunModeRequest) (*Stores, error) {
-	if sp.opt.Trace {
-		_, span := trace.StartSpan(ctx, "store/ServiceRPC.AllowedStores")
-		defer span.End()
-	}
 	stores, err := sp.service.AllowedStores(scope.TypeID(r.RunMode))
 	if sp.opt.Log != nil && sp.opt.Log.IsInfo() {
 		sp.opt.Log.Info("store.ServiceRPC.AllowedStores", log.Err(err),
@@ -167,10 +157,6 @@ func (sp *ServiceRPC) AllowedStores(ctx context.Context, r *ProtoRunModeRequest)
 }
 
 func (sp *ServiceRPC) AddWebsite(ctx context.Context, r *StoreWebsite) (*types.Empty, error) {
-	if sp.opt.Trace {
-		_, span := trace.StartSpan(ctx, "store/ServiceRPC.AddWebsite")
-		defer span.End()
-	}
 	err := sp.service.Options(WithWebsites(r))
 	if sp.opt.Log != nil && sp.opt.Log.IsInfo() {
 		sp.opt.Log.Info("store.ServiceRPC.AddWebsite", log.Err(err), log.Stringer("request", r))
@@ -187,10 +173,6 @@ func (sp *ServiceRPC) DeleteWebsite(context.Context, *ProtoIDRequest) (*types.Em
 }
 
 func (sp *ServiceRPC) WebsiteByID(ctx context.Context, r *ProtoIDRequest) (*StoreWebsite, error) {
-	if sp.opt.Trace {
-		_, span := trace.StartSpan(ctx, "store/ServiceRPC.WebsiteByID")
-		defer span.End()
-	}
 	w, err := sp.service.Website(r.ID)
 	if sp.opt.Log != nil && sp.opt.Log.IsInfo() {
 		sp.opt.Log.Info("store.ServiceRPC.WebsiteByID", log.Err(err), log.Stringer("request", r))
@@ -203,19 +185,11 @@ func (sp *ServiceRPC) WebsiteByID(ctx context.Context, r *ProtoIDRequest) (*Stor
 }
 
 func (sp *ServiceRPC) ListWebsites(ctx context.Context, _ *types.Empty) (*StoreWebsites, error) {
-	if sp.opt.Trace {
-		_, span := trace.StartSpan(context.Background(), "store/ServiceRPC.ListWebsites")
-		defer span.End()
-	}
 	d := sp.service.Websites()
 	return &d, nil
 }
 
 func (sp *ServiceRPC) AddGroup(ctx context.Context, r *StoreGroup) (*types.Empty, error) {
-	if sp.opt.Trace {
-		_, span := trace.StartSpan(ctx, "store/ServiceRPC.AddGroup")
-		defer span.End()
-	}
 	err := sp.service.Options(WithGroups(r))
 	if sp.opt.Log != nil && sp.opt.Log.IsInfo() {
 		sp.opt.Log.Info("store.ServiceRPC.AddGroup", log.Err(err), log.Stringer("request", r))
@@ -232,10 +206,6 @@ func (sp *ServiceRPC) DeleteGroup(context.Context, *ProtoIDRequest) (*types.Empt
 }
 
 func (sp *ServiceRPC) GroupByID(ctx context.Context, r *ProtoIDRequest) (*StoreGroup, error) {
-	if sp.opt.Trace {
-		_, span := trace.StartSpan(ctx, "store/ServiceRPC.GroupByID")
-		defer span.End()
-	}
 	w, err := sp.service.Group(r.ID)
 	if sp.opt.Log != nil && sp.opt.Log.IsInfo() {
 		sp.opt.Log.Info("store.ServiceRPC.GroupByID", log.Err(err), log.Stringer("request", r))
@@ -248,19 +218,11 @@ func (sp *ServiceRPC) GroupByID(ctx context.Context, r *ProtoIDRequest) (*StoreG
 }
 
 func (sp *ServiceRPC) ListGroups(context.Context, *types.Empty) (*StoreGroups, error) {
-	if sp.opt.Trace {
-		_, span := trace.StartSpan(context.Background(), "store/ServiceRPC.ListGroups")
-		defer span.End()
-	}
 	d := sp.service.Groups()
 	return &d, nil
 }
 
 func (sp *ServiceRPC) AddStore(ctx context.Context, r *Store) (*types.Empty, error) {
-	if sp.opt.Trace {
-		_, span := trace.StartSpan(ctx, "store/ServiceRPC.AddStore")
-		defer span.End()
-	}
 	err := sp.service.Options(WithStores(r))
 	if sp.opt.Log != nil && sp.opt.Log.IsInfo() {
 		sp.opt.Log.Info("store.ServiceRPC.AddStore", log.Err(err), log.Stringer("request", r))
@@ -277,10 +239,6 @@ func (sp *ServiceRPC) DeleteStore(context.Context, *ProtoIDRequest) (*types.Empt
 }
 
 func (sp *ServiceRPC) StoreByID(ctx context.Context, r *ProtoIDRequest) (*Store, error) {
-	if sp.opt.Trace {
-		_, span := trace.StartSpan(ctx, "store/ServiceRPC.StoreByID")
-		defer span.End()
-	}
 	w, err := sp.service.Store(r.ID)
 	if sp.opt.Log != nil && sp.opt.Log.IsInfo() {
 		sp.opt.Log.Info("store.ServiceRPC.StoreByID", log.Err(err), log.Stringer("request", r))
@@ -293,10 +251,6 @@ func (sp *ServiceRPC) StoreByID(ctx context.Context, r *ProtoIDRequest) (*Store,
 }
 
 func (sp *ServiceRPC) ListStores(ctx context.Context, _ *types.Empty) (*Stores, error) {
-	if sp.opt.Trace {
-		_, span := trace.StartSpan(context.Background(), "store/ServiceRPC.ListStores")
-		defer span.End()
-	}
 	d := sp.service.Stores()
 	return &d, nil
 }

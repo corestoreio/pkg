@@ -281,12 +281,12 @@
       "SortOrder": 10,
       "IsActive": true,
       "StoreGroup": {
-        "GroupID": 2,
+        "GroupID": 1,
         "WebsiteID": 1,
-        "Name": "UK Group",
+        "Name": "DACH Group",
         "RootCategoryID": 2,
-        "DefaultStoreID": 4,
-        "Code": "uk",
+        "DefaultStoreID": 2,
+        "Code": "dach",
         "StoreWebsite": null
       },
       "StoreWebsite": {
@@ -309,12 +309,12 @@
       "SortOrder": 20,
       "IsActive": true,
       "StoreGroup": {
-        "GroupID": 2,
+        "GroupID": 1,
         "WebsiteID": 1,
-        "Name": "UK Group",
+        "Name": "DACH Group",
         "RootCategoryID": 2,
-        "DefaultStoreID": 4,
-        "Code": "uk",
+        "DefaultStoreID": 2,
+        "Code": "dach",
         "StoreWebsite": null
       },
       "StoreWebsite": {
@@ -337,12 +337,12 @@
       "SortOrder": 30,
       "IsActive": false,
       "StoreGroup": {
-        "GroupID": 2,
+        "GroupID": 1,
         "WebsiteID": 1,
-        "Name": "UK Group",
+        "Name": "DACH Group",
         "RootCategoryID": 2,
-        "DefaultStoreID": 4,
-        "Code": "uk",
+        "DefaultStoreID": 2,
+        "Code": "dach",
         "StoreWebsite": null
       },
       "StoreWebsite": {

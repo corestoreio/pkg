@@ -30,21 +30,58 @@ import (
 	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/gogo/grpc-example/insecure"
 	"github.com/gogo/protobuf/types"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
+	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	"github.com/opentracing/opentracing-go/mocktracer"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
+
+const validToken = `im_a_valid_good_token'`
+const headerScheme = `bearer`
+
+func ctxWithToken(ctx context.Context, scheme string, token string) context.Context {
+	md := metadata.Pairs("authorization", fmt.Sprintf("%s %v", scheme, token))
+	nCtx := metautils.NiceMD(md).ToOutgoing(ctx)
+	return nCtx
+}
+
+type storeServiceRPCAuth struct{}
+
+func (s storeServiceRPCAuth) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	// HTTP Header: Authorization: bearer yourJSONwebTokenOrAnyOtherString
+	token, err := grpc_auth.AuthFromMD(ctx, headerScheme)
+	if err != nil {
+		return nil, err
+	}
+	if token != validToken {
+		return nil, status.Errorf(codes.Unauthenticated, "Route %q Invalid token: %q", fullMethodName, token)
+	}
+	return ctx, nil
+}
 
 func TestNewServiceRPC(t *testing.T) {
 
+	mockTracerServer := mocktracer.New()
+	mockTracerClient := mocktracer.New()
 	srv := mock.NewServiceEuroOZ()
 	srvRPC, err := store.NewServiceRPC(srv, store.ServiceRPCOptions{
-		Trace:   true,
 		Metrics: true,
+		Auth:    storeServiceRPCAuth{},
 	})
 	assert.NoError(t, err)
 
 	s := grpc.NewServer(
 		grpc.Creds(credentials.NewServerTLSFromCert(&insecure.Cert)),
+		grpc_middleware.WithUnaryServerChain(
+			grpc_opentracing.UnaryServerInterceptor(grpc_opentracing.WithTracer(mockTracerServer)),
+			grpc_auth.UnaryServerInterceptor(nil),
+		),
 	)
 
 	store.RegisterStoreServiceServer(s, srvRPC)
@@ -67,14 +104,24 @@ func TestNewServiceRPC(t *testing.T) {
 		dialAddr,
 		grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(insecure.CertPool, "")),
 		grpc.WithBlock(),
+		grpc.WithUnaryInterceptor(grpc_opentracing.UnaryClientInterceptor(grpc_opentracing.WithTracer(mockTracerClient))),
 	)
 	assert.NoError(t, err)
 	defer cstesting.Close(t, conn)
 
 	client := store.NewStoreServiceClient(conn)
+	ctxToken := ctxWithToken(context.Background(), headerScheme, validToken)
 
-	t.Run("IsAllowedStoreID_OK", func(t *testing.T) {
+	t.Run("Missing Token", func(t *testing.T) {
 		rpcResp, err := client.IsAllowedStoreID(context.Background(), &store.ProtoIsAllowedStoreIDRequest{
+			RunMode: uint32(scope.Website.WithID(2)),
+			StoreID: 6,
+		})
+		assert.Nil(t, rpcResp)
+		assert.EqualError(t, err, "rpc error: code = Unauthenticated desc = Request unauthenticated with bearer")
+	})
+	t.Run("IsAllowedStoreID_OK", func(t *testing.T) {
+		rpcResp, err := client.IsAllowedStoreID(ctxToken, &store.ProtoIsAllowedStoreIDRequest{
 			RunMode: uint32(scope.Website.WithID(2)),
 			StoreID: 6,
 		})
@@ -83,7 +130,7 @@ func TestNewServiceRPC(t *testing.T) {
 		assert.True(t, rpcResp.IsAllowed)
 	})
 	t.Run("IsAllowedStoreID_Err", func(t *testing.T) {
-		rpcResp, err := client.IsAllowedStoreID(context.Background(), &store.ProtoIsAllowedStoreIDRequest{
+		rpcResp, err := client.IsAllowedStoreID(ctxToken, &store.ProtoIsAllowedStoreIDRequest{
 			RunMode: uint32(scope.Store.WithID(0)),
 			StoreID: 666,
 		})
@@ -92,7 +139,7 @@ func TestNewServiceRPC(t *testing.T) {
 	})
 
 	t.Run("DefaultStoreID_OK", func(t *testing.T) {
-		rpcResp, err := client.DefaultStoreID(context.Background(), &store.ProtoRunModeRequest{
+		rpcResp, err := client.DefaultStoreID(ctxToken, &store.ProtoRunModeRequest{
 			RunMode: uint32(scope.Website.WithID(2)),
 		})
 		assert.NoError(t, err)
@@ -100,21 +147,21 @@ func TestNewServiceRPC(t *testing.T) {
 		assert.Exactly(t, uint32(2), rpcResp.WebsiteID)
 	})
 	t.Run("DefaultStoreID_Err", func(t *testing.T) {
-		rpcResp, err := client.DefaultStoreID(context.Background(), &store.ProtoRunModeRequest{
+		rpcResp, err := client.DefaultStoreID(ctxToken, &store.ProtoRunModeRequest{
 			RunMode: uint32(scope.Group.WithID(110)),
 		})
 		assert.Nil(t, rpcResp)
 		assert.EqualError(t, err, "rpc error: code = InvalidArgument desc = [store] DefaultStoreID Scope Group ID 110: [store] Cannot find Group ID 110")
 	})
 	t.Run("DefaultStoreView_OK", func(t *testing.T) {
-		rpcResp, err := client.DefaultStoreView(context.Background(), &types.Empty{})
+		rpcResp, err := client.DefaultStoreView(ctxToken, &types.Empty{})
 		assert.NoError(t, err)
 		assert.Exactly(t, uint32(2), rpcResp.StoreID)
 		assert.Exactly(t, "at", rpcResp.Code)
 	})
 
 	t.Run("StoreIDbyCode_OK", func(t *testing.T) {
-		rpcResp, err := client.StoreIDbyCode(context.Background(), &store.ProtoStoreIDbyCodeRequest{
+		rpcResp, err := client.StoreIDbyCode(ctxToken, &store.ProtoStoreIDbyCodeRequest{
 			RunMode:   uint32(scope.Website.WithID(1)),
 			StoreCode: "uk",
 		})
@@ -123,7 +170,7 @@ func TestNewServiceRPC(t *testing.T) {
 		assert.Exactly(t, uint32(1), rpcResp.WebsiteID)
 	})
 	t.Run("StoreIDbyCode_Err", func(t *testing.T) {
-		rpcResp, err := client.StoreIDbyCode(context.Background(), &store.ProtoStoreIDbyCodeRequest{
+		rpcResp, err := client.StoreIDbyCode(ctxToken, &store.ProtoStoreIDbyCodeRequest{
 			RunMode:   uint32(scope.Group.WithID(3)),
 			StoreCode: "nsw",
 		})
@@ -132,7 +179,7 @@ func TestNewServiceRPC(t *testing.T) {
 	})
 
 	t.Run("AllowedStores_OK", func(t *testing.T) {
-		rpcResp, err := client.AllowedStores(context.Background(), &store.ProtoRunModeRequest{
+		rpcResp, err := client.AllowedStores(ctxToken, &store.ProtoRunModeRequest{
 			RunMode: uint32(scope.Website.WithID(1)),
 		})
 		assert.NoError(t, err)
@@ -141,14 +188,14 @@ func TestNewServiceRPC(t *testing.T) {
 		assert.Exactly(t, uint32(4), rpcResp.Data[2].StoreID)
 	})
 	t.Run("AllowedStores_Empty", func(t *testing.T) {
-		rpcResp, err := client.AllowedStores(context.Background(), &store.ProtoRunModeRequest{
+		rpcResp, err := client.AllowedStores(ctxToken, &store.ProtoRunModeRequest{
 			RunMode: uint32(scope.Group.WithID(333)),
 		})
 		assert.NoError(t, err)
 		assert.Exactly(t, &store.Stores{}, rpcResp)
 	})
 	t.Run("AllowedStores_Err", func(t *testing.T) {
-		rpcResp, err := client.AllowedStores(context.Background(), &store.ProtoRunModeRequest{
+		rpcResp, err := client.AllowedStores(ctxToken, &store.ProtoRunModeRequest{
 			RunMode: uint32(999999),
 		})
 		assert.EqualError(t, err, "rpc error: code = InvalidArgument desc = [store] Scope Absent not yet implemented.")
@@ -156,27 +203,27 @@ func TestNewServiceRPC(t *testing.T) {
 	})
 
 	t.Run("AddWebsite_OK", func(t *testing.T) {
-		_, err := client.AddWebsite(context.Background(),
+		_, err := client.AddWebsite(ctxToken,
 			&store.StoreWebsite{WebsiteID: 3, Code: `africa`, Name: null.MakeString(`Africa Continent`), SortOrder: 30, DefaultGroupID: 3, IsDefault: false},
 		)
 		assert.NoError(t, err)
 	})
 	t.Run("AddWebsite_Empty", func(t *testing.T) {
-		_, err := client.AddWebsite(context.Background(), &store.StoreWebsite{})
+		_, err := client.AddWebsite(ctxToken, &store.StoreWebsite{})
 		assert.EqualError(t, err, `rpc error: code = InvalidArgument desc = [store] Website 0: Empty code`)
 	})
 	t.Run("WebsiteByID_OK", func(t *testing.T) {
-		protoW, err := client.WebsiteByID(context.Background(), &store.ProtoIDRequest{ID: 3})
+		protoW, err := client.WebsiteByID(ctxToken, &store.ProtoIDRequest{ID: 3})
 		assert.NoError(t, err)
 		assert.Exactly(t, "africa", protoW.Code)
 	})
 	t.Run("WebsiteByID_Err", func(t *testing.T) {
-		protoW, err := client.WebsiteByID(context.Background(), &store.ProtoIDRequest{ID: 3333})
+		protoW, err := client.WebsiteByID(ctxToken, &store.ProtoIDRequest{ID: 3333})
 		assert.Nil(t, protoW)
 		assert.EqualError(t, err, "rpc error: code = InvalidArgument desc = [store] Cannot find Website ID 3333")
 	})
 	t.Run("ListWebsites_OK", func(t *testing.T) {
-		protoWs, err := client.ListWebsites(context.Background(), &types.Empty{})
+		protoWs, err := client.ListWebsites(ctxToken, &types.Empty{})
 		assert.NoError(t, err)
 		assert.Exactly(t, "admin", protoWs.Data[0].Code)
 		assert.Exactly(t, "euro", protoWs.Data[1].Code)
@@ -185,27 +232,27 @@ func TestNewServiceRPC(t *testing.T) {
 	})
 
 	t.Run("AddGroup_OK", func(t *testing.T) {
-		_, err := client.AddGroup(context.Background(),
+		_, err := client.AddGroup(ctxToken,
 			&store.StoreGroup{GroupID: 4, WebsiteID: 3, Name: `Northern States`, Code: `afno`, RootCategoryID: 2, DefaultStoreID: 0},
 		)
 		assert.NoError(t, err)
 	})
 	t.Run("AddGroup_Empty", func(t *testing.T) {
-		_, err := client.AddGroup(context.Background(), &store.StoreGroup{})
+		_, err := client.AddGroup(ctxToken, &store.StoreGroup{})
 		assert.EqualError(t, err, `rpc error: code = InvalidArgument desc = [store] Group 0: Empty code`)
 	})
 	t.Run("GroupByID_OK", func(t *testing.T) {
-		protoW, err := client.GroupByID(context.Background(), &store.ProtoIDRequest{ID: 4})
+		protoW, err := client.GroupByID(ctxToken, &store.ProtoIDRequest{ID: 4})
 		assert.NoError(t, err)
 		assert.Exactly(t, "afno", protoW.Code)
 	})
 	t.Run("GroupByID_Err", func(t *testing.T) {
-		protoW, err := client.GroupByID(context.Background(), &store.ProtoIDRequest{ID: 3333})
+		protoW, err := client.GroupByID(ctxToken, &store.ProtoIDRequest{ID: 3333})
 		assert.Nil(t, protoW)
 		assert.EqualError(t, err, "rpc error: code = InvalidArgument desc = [store] Cannot find Group ID 3333")
 	})
 	t.Run("ListGroups_OK", func(t *testing.T) {
-		protoWs, err := client.ListGroups(context.Background(), &types.Empty{})
+		protoWs, err := client.ListGroups(ctxToken, &types.Empty{})
 		assert.NoError(t, err)
 		assert.Exactly(t, "admin", protoWs.Data[0].Code)
 		assert.Exactly(t, "dach", protoWs.Data[1].Code)
@@ -215,27 +262,27 @@ func TestNewServiceRPC(t *testing.T) {
 	})
 
 	t.Run("AddStore_OK", func(t *testing.T) {
-		_, err := client.AddStore(context.Background(),
+		_, err := client.AddStore(ctxToken,
 			&store.Store{StoreID: 7, Code: `mo`, WebsiteID: 3, GroupID: 4, Name: `Morocco`, SortOrder: 40, IsActive: true},
 		)
 		assert.NoError(t, err)
 	})
 	t.Run("AddStore_Empty", func(t *testing.T) {
-		_, err := client.AddStore(context.Background(), &store.Store{})
+		_, err := client.AddStore(ctxToken, &store.Store{})
 		assert.EqualError(t, err, `rpc error: code = InvalidArgument desc = [store] Store 0: Empty code`)
 	})
 	t.Run("StoreByID_OK", func(t *testing.T) {
-		protoW, err := client.StoreByID(context.Background(), &store.ProtoIDRequest{ID: 7})
+		protoW, err := client.StoreByID(ctxToken, &store.ProtoIDRequest{ID: 7})
 		assert.NoError(t, err)
 		assert.Exactly(t, "mo", protoW.Code)
 	})
 	t.Run("StoreByID_Err", func(t *testing.T) {
-		protoW, err := client.StoreByID(context.Background(), &store.ProtoIDRequest{ID: 3333})
+		protoW, err := client.StoreByID(ctxToken, &store.ProtoIDRequest{ID: 3333})
 		assert.Nil(t, protoW)
 		assert.EqualError(t, err, "rpc error: code = InvalidArgument desc = [store] Cannot find Store ID 3333")
 	})
 	t.Run("ListStores_OK", func(t *testing.T) {
-		protoWs, err := client.ListStores(context.Background(), &types.Empty{})
+		protoWs, err := client.ListStores(ctxToken, &types.Empty{})
 		assert.NoError(t, err)
 		assert.Exactly(t, "admin", protoWs.Data[0].Code)
 		assert.Exactly(t, "de", protoWs.Data[1].Code)
@@ -246,4 +293,10 @@ func TestNewServiceRPC(t *testing.T) {
 		assert.Exactly(t, "nz", protoWs.Data[6].Code)
 		assert.Exactly(t, "mo", protoWs.Data[7].Code)
 	})
+
+	t.Run("FinishedSpans", func(t *testing.T) {
+		assert.Len(t, mockTracerServer.FinishedSpans(), 26)
+		assert.Len(t, mockTracerClient.FinishedSpans(), 26)
+	})
+
 }

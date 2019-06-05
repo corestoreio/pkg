@@ -214,12 +214,12 @@
       "sortOrder": 10,
       "isActive": true,
       "storeGroup": {
-        "groupID": 2,
+        "groupID": 1,
         "websiteID": 1,
-        "name": "UK Group",
+        "name": "DACH Group",
         "rootCategoryID": 2,
-        "defaultStoreID": 4,
-        "code": "uk"
+        "defaultStoreID": 2,
+        "code": "dach"
       },
       "storeWebsite": {
         "websiteID": 1,
@@ -238,12 +238,12 @@
       "sortOrder": 20,
       "isActive": true,
       "storeGroup": {
-        "groupID": 2,
+        "groupID": 1,
         "websiteID": 1,
-        "name": "UK Group",
+        "name": "DACH Group",
         "rootCategoryID": 2,
-        "defaultStoreID": 4,
-        "code": "uk"
+        "defaultStoreID": 2,
+        "code": "dach"
       },
       "storeWebsite": {
         "websiteID": 1,
@@ -261,12 +261,12 @@
       "name": "Schweiz",
       "sortOrder": 30,
       "storeGroup": {
-        "groupID": 2,
+        "groupID": 1,
         "websiteID": 1,
-        "name": "UK Group",
+        "name": "DACH Group",
         "rootCategoryID": 2,
-        "defaultStoreID": 4,
-        "code": "uk"
+        "defaultStoreID": 2,
+        "code": "dach"
       },
       "storeWebsite": {
         "websiteID": 1,

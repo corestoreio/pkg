@@ -37,7 +37,7 @@ func TestService_Sorting_JSON(t *testing.T) {
 		assert.Exactly(t, goldenData, haveData)
 	})
 
-	t.Run("EuroOZ", func(t *testing.T) {
+	t.Run("EuroOZ (flaky)", func(t *testing.T) {
 		srv := storemock.NewServiceEuroOZ()
 		haveData := toJSON(srv)
 		// ioutil.WriteFile("testdata/sort_euroOZ.easy.golden.json", haveData, 0644)
