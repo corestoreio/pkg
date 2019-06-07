@@ -109,6 +109,7 @@ from the geniuses listed below:
 | Google Youtube | [storage/lru](http://github.com/youtube/vitess) | Apache License, Version 2.0 |
 | Iman Tumorang | util/pseudo | Copyright (c) 2017 Iman Tumorang |
 | Dmitry Afanasyev | util/pseudo | Copyright (c) 2014 Dmitry Afanasyev |
+| Michal Witkowski | net/csgrpc/auth | Copyright (c) 2016 Michal Witkowski, Apache 2 |
 
 ## Licensing
 
