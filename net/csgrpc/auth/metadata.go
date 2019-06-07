@@ -12,8 +12,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var (
-	headerAuthorize = "authorization"
+const (
+	// HeaderAuthorize defines the HTTP header name where to find the token
+	HeaderAuthorize = "authorization"
 )
 
 // AuthFromMD is a helper function for extracting the :authorization header from the gRPC metadata of the request.
@@ -22,7 +23,7 @@ var (
 // case-insensitive format (see rfc2617, sec 1.2). If no such authorization is found, or the token
 // is of wrong scheme, an error with gRPC status `Unauthenticated` is returned.
 func AuthFromMD(ctx context.Context, expectedScheme string) (string, error) {
-	val := metautils.ExtractIncoming(ctx).Get(headerAuthorize)
+	val := metautils.ExtractIncoming(ctx).Get(HeaderAuthorize)
 	if val == "" {
 		return "", status.Errorf(codes.Unauthenticated, "Request unauthenticated with %q", expectedScheme)
 

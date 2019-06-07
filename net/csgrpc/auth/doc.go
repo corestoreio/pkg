@@ -11,7 +11,7 @@
 // retrieval.
 //
 // It also allows for per-service implementation overrides of `AuthFunc`. See
-// `ServiceAuthFuncOverride`.
+// `ServiceAuthFuncOverrider`.
 //
 // Please see examples for simple examples of use.
 package grpc_auth

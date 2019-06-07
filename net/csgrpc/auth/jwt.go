@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// JWT parses and verifies tokens.
 type JWT struct {
 	KeyFunc             csjwt.Keyfunc // required
 	*csjwt.Verification               // required
@@ -31,8 +32,10 @@ type JWT struct {
 	SchemeName string
 	// NewClaim optional creates a new custom claim, defaults to jwtclaim.Store.
 	NewClaim func() csjwt.Claimer
+	NewHead  func() csjwt.Header
 }
 
+// NewJWT helper function to create a JWT authentication
 func NewJWT(keyFunc csjwt.Keyfunc, availableSigners []csjwt.Signer) *JWT {
 	return &JWT{
 		KeyFunc:      keyFunc,
@@ -40,16 +43,25 @@ func NewJWT(keyFunc csjwt.Keyfunc, availableSigners []csjwt.Signer) *JWT {
 	}
 }
 
+func (j *JWT) claim() csjwt.Claimer {
+	if j.NewClaim != nil {
+		return j.NewClaim()
+	}
+	return &jwtclaim.Store{}
+}
+
+func (j *JWT) header(t *csjwt.Token) {
+	if j.NewHead != nil {
+		t.Header = j.NewHead()
+	}
+}
+
+// AuthFuncOverride parses and verifies a token. Puts the parsed token into the
+// context for later reuse. To extract the token use: csjwt.FromContextToken
 func (j *JWT) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	scheme := "bearer"
 	if j.SchemeName != "" {
 		scheme = j.SchemeName
-	}
-	var claim csjwt.Claimer
-	if j.NewClaim != nil {
-		claim = j.NewClaim()
-	} else {
-		claim = &jwtclaim.Store{}
 	}
 
 	tokenRaw, err := AuthFromMD(ctx, scheme)
@@ -57,10 +69,10 @@ func (j *JWT) AuthFuncOverride(ctx context.Context, fullMethodName string) (cont
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
-	t := csjwt.NewToken(claim)
+	t := csjwt.NewToken(j.claim())
+	j.header(t)
 	if err := j.Verification.Parse(t, []byte(tokenRaw), j.KeyFunc); err != nil {
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
-
 	return csjwt.WithContextToken(ctx, t), nil
 }
