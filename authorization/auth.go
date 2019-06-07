@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,16 +14,6 @@
 
 package authorization
 
-import "github.com/corestoreio/pkg/storage/csdb"
-
-// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
-var TableCollection csdb.TableManager
-
-type UserType uint8
-
-const (
-	UserTypeIntegration UserType = iota + 1 // must start with 1 because Magento/Authorization/Model/UserContextInterface.php
-	UserTypeAdmin
-	UserTypeCustomer
-	UserTypeGuest
-)
+type TokenAuthorizer interface {
+	AuthorizeToken(token, resource string) error
+}
