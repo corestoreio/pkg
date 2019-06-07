@@ -12,8 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package cspb provides basics for CoreStore protocol buffer implementation.
-//
-// http://www.gophersre.com/2017/08/16/why-not-to-use-protos-in-code/
-// https://github.com/gogo/protobuf <-- Rely on this
-package cspb
+// Package csgrpc provides basics types for grpc servers and clients.
+package csgrpc

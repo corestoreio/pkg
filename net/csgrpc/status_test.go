@@ -12,27 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cspb_test
+package csgrpc_test
 
 import (
-	"errors"
 	"testing"
 
-	"github.com/alecthomas/assert"
-	"github.com/corestoreio/pkg/net/cspb"
+	"github.com/corestoreio/pkg/net/csgrpc"
+	"github.com/corestoreio/pkg/util/assert"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 func TestNewStatusBadRequestError(t *testing.T) {
-	err := cspb.NewStatusBadRequestError(codes.Aborted, "error message", "field1", "desc1", "field2", "desc2")
+	err := csgrpc.NewStatusBadRequestError(codes.Aborted, "error message", "field1", "desc1", "field2", "desc2")
 	assert.EqualError(t, err, "rpc error: code = Aborted desc = error message")
 
 	st, ok := status.FromError(err)
 	assert.True(t, ok)
 	assert.Exactly(t, codes.Aborted, st.Code())
 
-	assert.Exactly(t,
-		[]interface{}{errors.New("any: message type \"google.rpc.BadRequest\" isn't linked in")},
-		st.Details())
+	assert.EqualError(t,
+		st.Details()[0].(error),
+		"any: message type \"google.rpc.BadRequest\" isn't linked in",
+	)
 }
