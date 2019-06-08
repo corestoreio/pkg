@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
+	grpc_auth "github.com/corestoreio/pkg/net/csgrpc/auth"
 	"github.com/corestoreio/pkg/util/assert"
-	"github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/grpc-ecosystem/go-grpc-middleware/testing"
 	pb_testproto "github.com/grpc-ecosystem/go-grpc-middleware/testing/testproto"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"

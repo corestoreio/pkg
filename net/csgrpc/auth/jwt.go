@@ -36,7 +36,7 @@ type JWT struct {
 }
 
 // NewJWT helper function to create a JWT authentication
-func NewJWT(keyFunc csjwt.Keyfunc, availableSigners []csjwt.Signer) *JWT {
+func NewJWT(keyFunc csjwt.Keyfunc, availableSigners ...csjwt.Signer) *JWT {
 	return &JWT{
 		KeyFunc:      keyFunc,
 		Verification: csjwt.NewVerification(availableSigners...),
