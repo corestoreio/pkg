@@ -24,16 +24,15 @@ import (
 
 func TestFromContext(t *testing.T) {
 	tests := []struct {
-		stID int64
-		wID  int64
+		stID uint32
+		wID  uint32
 		want bool
 	}{
 		{0, 0, true},
 		{1, 1, true},
+		{11, 11, true},
 		{0, 1, true},
 		{1, 0, true},
-		{-1, 1, false},
-		{1, -1, false},
 	}
 	for i, test := range tests {
 		ctx := scope.WithContext(context.TODO(), test.wID, test.stID)
@@ -49,7 +48,7 @@ func TestFromContext(t *testing.T) {
 		}
 	}
 	w, st, ok := scope.FromContext(context.Background())
-	assert.Exactly(t, int64(0), st)
-	assert.Exactly(t, int64(0), w)
+	assert.Exactly(t, uint32(0), st)
+	assert.Exactly(t, uint32(0), w)
 	assert.False(t, ok)
 }

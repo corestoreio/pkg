@@ -21,8 +21,8 @@ import (
 type ctxScopeKey uint8
 
 type ctxScopeWrapper struct {
-	websiteID int64
-	storeID   int64
+	websiteID uint32
+	storeID   uint32
 }
 
 // WithContext adds the store scope with its parent website scope to the
@@ -31,7 +31,7 @@ type ctxScopeWrapper struct {
 // can set a scope because the JWT contains a new store code. Or a geoip
 // middleware can set the scope depending on geo location information. These IDs
 // will be later used to e.g. read the scoped configuration.
-func WithContext(ctx context.Context, websiteID, storeID int64) context.Context {
+func WithContext(ctx context.Context, websiteID, storeID uint32) context.Context {
 	return context.WithValue(ctx, ctxScopeKey(0), ctxScopeWrapper{websiteID: websiteID, storeID: storeID})
 }
 
@@ -39,7 +39,7 @@ func WithContext(ctx context.Context, websiteID, storeID int64) context.Context 
 // scope from a context. This scope is only valid for the current context in a
 // request. A scope gets set via HTTP form, cookie, JSON Web Token or GeoIP or
 // other fancy features.
-func FromContext(ctx context.Context) (websiteID, storeID int64, ok bool) {
+func FromContext(ctx context.Context) (websiteID, storeID uint32, ok bool) {
 	w, ok := ctx.Value(ctxScopeKey(0)).(ctxScopeWrapper)
 	return w.websiteID, w.storeID, ok && w.websiteID >= 0 && w.storeID >= 0
 }
