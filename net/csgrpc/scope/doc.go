@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package grpc_auth
-
-// Basic todo implement basic auth
-type Basic struct{}
+// Package grpc_scope handles setting and retrieving the store/scope for clients
+// and servers.
+package grpc_scope
