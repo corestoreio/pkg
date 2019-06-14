@@ -18,10 +18,10 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/corestoreio/pkg/net/request"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	loghttp "github.com/corestoreio/log/http"
+	"github.com/corestoreio/pkg/net/request"
 )
 
 // CountryByIP searches a country by an IP address and returns the found
@@ -140,7 +140,7 @@ func (s *Service) WithIsCountryAllowedByIP(next http.Handler) http.Handler {
 //			r = r.WithContext(scope.WithContextRunMode(r.Context(), runMode))
 //
 //			// find the default store ID for the runMode
-//			storeID, websiteID, err := sf.DefaultStoreID(runMode)
+//			  websiteID,storeID, err := sf.DefaultStoreID(runMode)
 //			if err != nil {
 //				if s.Log.IsDebug() {
 //					s.Log.Debug("jwt.Service.WithRunMode.DefaultStoreID.Error", log.Err(err),
@@ -198,7 +198,7 @@ func (s *Service) WithIsCountryAllowedByIP(next http.Handler) http.Handler {
 //			}
 //
 //			// convert the code string into its internal ID depending on the scope.
-//			newStoreID, newWebsiteID, err := sf.StoreIDbyCode(runMode, reqCode)
+//			newWebsiteID, newStoreID, err := sf.StoreIDbyCode(runMode, reqCode)
 //			if err != nil && !errors.IsNotFound(err) {
 //				if s.Log.IsDebug() {
 //					s.Log.Debug("jwt.Service.WithRunMode.IDbyCode.Error", log.Err(err), log.String("http_store_code", reqCode),

@@ -365,7 +365,7 @@ func TestService_DefaultStoreID(t *testing.T) {
 	eurSrv := storemock.NewServiceEuroOZ()
 	for i, test := range tests {
 		t.Run(fmt.Sprintf("Index_%02d", i), func(t *testing.T) {
-			haveStoreID, haveWebsiteID, haveErr := eurSrv.DefaultStoreID(test.runMode)
+			haveWebsiteID, haveStoreID, haveErr := eurSrv.DefaultStoreID(test.runMode)
 			if test.wantErrBhf > 0 {
 				assert.ErrorIsKind(t, test.wantErrBhf, haveErr)
 				assert.Exactly(t, test.wantStoreID, haveStoreID)
@@ -385,7 +385,7 @@ func TestService_DefaultStoreID(t *testing.T) {
 			store.WithGroups(&store.StoreGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 1, Code: "dach"}),
 			store.WithStores(&store.Store{StoreID: 1, Code: "de", WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: false}),
 		)
-		haveStoreID, haveWebsiteID, haveErr := srv.DefaultStoreID(scope.MakeTypeID(scope.Website, 1))
+		haveWebsiteID, haveStoreID, haveErr := srv.DefaultStoreID(scope.MakeTypeID(scope.Website, 1))
 		assert.ErrorIsKind(t, errors.NotFound, haveErr)
 		assert.Exactly(t,
 			fmt.Sprintf("StoreID %d WebsiteID %d", 0, 0),
@@ -421,7 +421,7 @@ func TestService_StoreIDbyCode(t *testing.T) {
 	eurSrv := storemock.NewServiceEuroOZ()
 	for i, test := range tests {
 		t.Run(fmt.Sprintf("Index_%02d", i), func(t *testing.T) {
-			haveStoreID, haveWebsiteID, haveErr := eurSrv.StoreIDbyCode(test.runMode, test.code)
+			haveWebsiteID, haveStoreID, haveErr := eurSrv.StoreIDbyCode(test.runMode, test.code)
 			if test.wantErrBhf > 0 {
 				assert.ErrorIsKind(t, test.wantErrBhf, haveErr)
 				assert.Exactly(t, test.wantStoreID, haveStoreID)

@@ -17,13 +17,13 @@ package jwt
 import (
 	"net/http"
 
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
+	loghttp "github.com/corestoreio/log/http"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/conv"
 	"github.com/corestoreio/pkg/util/csjwt"
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
-	loghttp "github.com/corestoreio/log/http"
 )
 
 // SetHeaderAuthorization convenience function to set the Authorization Bearer
@@ -52,7 +52,7 @@ func (s *Service) WithRunMode(rm scope.RunModeCalculater, sf StoreFinder) mw.Mid
 			r = r.WithContext(scope.WithContextRunMode(r.Context(), runMode))
 
 			// find the default store ID for the runMode
-			storeID, websiteID, err := sf.DefaultStoreID(runMode)
+			websiteID, storeID, err := sf.DefaultStoreID(runMode)
 			if err != nil {
 				if s.Log.IsDebug() {
 					s.Log.Debug("jwt.Service.WithRunMode.DefaultStoreID.Error", log.Err(err),
@@ -110,7 +110,7 @@ func (s *Service) WithRunMode(rm scope.RunModeCalculater, sf StoreFinder) mw.Mid
 			}
 
 			// convert the code string into its internal ID depending on the scope.
-			newStoreID, newWebsiteID, err := sf.StoreIDbyCode(runMode, reqCode)
+			newWebsiteID, newStoreID, err := sf.StoreIDbyCode(runMode, reqCode)
 			if err != nil && !errors.IsNotFound(err) {
 				if s.Log.IsDebug() {
 					s.Log.Debug("jwt.Service.WithRunMode.IDbyCode.Error", log.Err(err), log.String("http_store_code", reqCode),

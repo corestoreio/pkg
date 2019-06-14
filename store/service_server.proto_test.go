@@ -22,6 +22,8 @@ import (
 	"net"
 	"testing"
 
+	"github.com/corestoreio/pkg/net/csgrpc"
+	grpc_auth "github.com/corestoreio/pkg/net/csgrpc/auth"
 	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/store"
 	"github.com/corestoreio/pkg/store/mock"
@@ -31,15 +33,12 @@ import (
 	"github.com/gogo/grpc-example/insecure"
 	"github.com/gogo/protobuf/types"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/opentracing/opentracing-go/mocktracer"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
 )
 
 const validToken = `im_a_valid_good_token'`
@@ -51,51 +50,55 @@ func ctxWithToken(ctx context.Context, scheme string, token string) context.Cont
 	return nCtx
 }
 
-type storeServiceRPCAuth struct{}
-
-func (s storeServiceRPCAuth) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	// HTTP Header: Authorization: bearer yourJSONwebTokenOrAnyOtherString
-	token, err := grpc_auth.AuthFromMD(ctx, headerScheme)
-	if err != nil {
-		return nil, err
-	}
-	if token != validToken {
-		return nil, status.Errorf(codes.Unauthenticated, "Route %q Invalid token: %q", fullMethodName, token)
-	}
-	return ctx, nil
-}
-
-func TestNewServiceRPC(t *testing.T) {
-
+func initServer(t *testing.T) (port int, _ func()) {
 	mockTracerServer := mocktracer.New()
-	mockTracerClient := mocktracer.New()
 	srv := mock.NewServiceEuroOZ()
-	srvRPC, err := store.NewServiceRPC(srv, store.ServiceRPCOptions{
-		Metrics: true,
-		Auth:    storeServiceRPCAuth{},
-	})
+	srvRPC, err := store.NewServiceServer(srv,
+		csgrpc.WithErrorMetrics("store"), // overwrite default settings, just for testing
+		csgrpc.WithServerAuthFuncOverrider(
+			grpc_auth.NewService(
+				grpc_auth.WithTokenAuth(grpc_auth.TokenOptions{
+					Token: validToken,
+				}),
+				grpc_auth.WithBasicAuth(
+					grpc_auth.BasicOptions{
+						Username: "t3st",
+						Password: "fa!l3d",
+					},
+				),
+			),
+		),
+	)
 	assert.NoError(t, err)
 
 	s := grpc.NewServer(
 		grpc.Creds(credentials.NewServerTLSFromCert(&insecure.Cert)),
 		grpc_middleware.WithUnaryServerChain(
 			grpc_opentracing.UnaryServerInterceptor(grpc_opentracing.WithTracer(mockTracerServer)),
-			grpc_auth.UnaryServerInterceptor(nil),
+			grpc_auth.UnaryServerInterceptor(nil), // must be nil because srvRPC implements the interface
 		),
 	)
 
 	store.RegisterStoreServiceServer(s, srvRPC)
 
-	port := cstesting.MustFreePort()
+	port = cstesting.MustFreePort()
 	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", port))
-	defer lis.Close() // do not check for error "close tcp 127.0.0.1:61497: use of closed network connection"; no idea
-	defer s.Stop()
 	go func() {
 		if err := s.Serve(lis); err != nil {
 			panic(err)
 		}
 	}()
+	return port, func() {
+		t.Run("FinishedSpans Server", func(t *testing.T) {
+			assert.Len(t, mockTracerServer.FinishedSpans(), 26)
+		})
+		s.Stop()
+		lis.Close() // do not check for error "close tcp 127.0.0.1:61497: use of closed network connection"; no idea
+	}
+}
 
+func initClient(t *testing.T, port int) (store.StoreServiceClient, func()) {
+	mockTracerClient := mocktracer.New()
 	// See https://github.com/grpc/grpc/blob/master/doc/naming.md
 	// for gRPC naming standard information.
 	dialAddr := fmt.Sprintf("passthrough://localhost/localhost:%d", port)
@@ -107,9 +110,23 @@ func TestNewServiceRPC(t *testing.T) {
 		grpc.WithUnaryInterceptor(grpc_opentracing.UnaryClientInterceptor(grpc_opentracing.WithTracer(mockTracerClient))),
 	)
 	assert.NoError(t, err)
-	defer cstesting.Close(t, conn)
 
 	client := store.NewStoreServiceClient(conn)
+	return client, func() {
+		t.Run("FinishedSpans Client", func(t *testing.T) {
+			assert.Len(t, mockTracerClient.FinishedSpans(), 26)
+		})
+		cstesting.Close(t, conn)
+	}
+}
+
+func TestNewServiceRPC(t *testing.T) {
+
+	port, srvClose := initServer(t)
+	defer srvClose()
+	client, clientClose := initClient(t, port)
+	defer clientClose()
+
 	ctxToken := ctxWithToken(context.Background(), headerScheme, validToken)
 
 	t.Run("Missing Token", func(t *testing.T) {
@@ -293,10 +310,4 @@ func TestNewServiceRPC(t *testing.T) {
 		assert.Exactly(t, "nz", protoWs.Data[6].Code)
 		assert.Exactly(t, "mo", protoWs.Data[7].Code)
 	})
-
-	t.Run("FinishedSpans", func(t *testing.T) {
-		assert.Len(t, mockTracerServer.FinishedSpans(), 26)
-		assert.Len(t, mockTracerClient.FinishedSpans(), 26)
-	})
-
 }

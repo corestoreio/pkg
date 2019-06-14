@@ -26,8 +26,8 @@ message ProtoIDRequest {
 }
 
 message ProtoStoreIDWebsiteIDResponse {
-	uint32 StoreID = 1;
 	uint32 WebsiteID = 2;
+	uint32 StoreID = 1;
 }
 
 message ProtoStoreIDbyCodeRequest {

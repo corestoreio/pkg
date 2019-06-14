@@ -38,11 +38,11 @@ func TestRunModeNewOutgoingContext(t *testing.T) {
 
 type storeFinder struct{}
 
-func (storeFinder) DefaultStoreID(runMode scope.TypeID) (storeID, websiteID uint32, err error) {
-	return 11, 21, nil
+func (storeFinder) DefaultStoreID(runMode scope.TypeID) (websiteID, storeID uint32, err error) {
+	return 21, 11, nil
 }
 
-func (storeFinder) StoreIDbyCode(runMode scope.TypeID, storeCode string) (storeID, websiteID uint32, err error) {
+func (storeFinder) StoreIDbyCode(runMode scope.TypeID, storeCode string) (websiteID, storeID uint32, err error) {
 	panic("implement me")
 }
 

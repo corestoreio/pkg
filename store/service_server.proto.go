@@ -28,30 +28,28 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// todo think about an instrumented service with opentracing, metrics, etc
-
-// NewServiceRPC creates a new object for a gRPC server.
-func NewServiceRPC(s *Service, opts ...csgrpc.ServiceOptionFn) (*ServiceRPC, error) {
-	gs, err := csgrpc.NewService(append([]csgrpc.ServiceOptionFn{csgrpc.WithErrorMetrics("store/ServiceRPC/errors")}, opts...)...)
+// NewServiceServer creates a new object for a gRPC server.
+func NewServiceServer(s *Service, opts ...csgrpc.Option) (*ServiceServer, error) {
+	gs, err := csgrpc.NewAbstractServer(append([]csgrpc.Option{csgrpc.WithErrorMetrics("store/ServiceServer/errors")}, opts...)...)
 	if err != nil {
 		return nil, err
 	}
-	return &ServiceRPC{
-		service: s,
-		Service: gs,
+	return &ServiceServer{
+		service:        s,
+		AbstractServer: gs,
 	}, nil
 }
 
-// ServiceRPC a wrapper type for the main Service to be used in a gRPC server.
-type ServiceRPC struct {
-	*csgrpc.Service
+// ServiceServer a wrapper type for the main Service to be used in a gRPC server.
+type ServiceServer struct {
+	*csgrpc.AbstractServer
 	service *Service
 }
 
-func (sp *ServiceRPC) IsAllowedStoreID(ctx context.Context, r *ProtoIsAllowedStoreIDRequest) (*ProtoIsAllowedStoreIDResponse, error) {
+func (sp *ServiceServer) IsAllowedStoreID(ctx context.Context, r *ProtoIsAllowedStoreIDRequest) (*ProtoIsAllowedStoreIDResponse, error) {
 	isAllowed, storeCode, err := sp.service.IsAllowedStoreID(scope.TypeID(r.RunMode), r.StoreID)
 	if sp.Log != nil && sp.Log.IsInfo() {
-		sp.Log.Info("store.ServiceRPC.IsAllowedStoreID", log.Err(err),
+		sp.Log.Info("store.ServiceServer.IsAllowedStoreID", log.Err(err),
 			log.String("request", r.String()), log.Bool("is_allowed", isAllowed), log.String("store_code", storeCode))
 	}
 	if err != nil {
@@ -64,10 +62,10 @@ func (sp *ServiceRPC) IsAllowedStoreID(ctx context.Context, r *ProtoIsAllowedSto
 	}, nil
 }
 
-func (sp *ServiceRPC) DefaultStoreView(ctx context.Context, _ *types.Empty) (*Store, error) {
+func (sp *ServiceServer) DefaultStoreView(ctx context.Context, _ *types.Empty) (*Store, error) {
 	store, err := sp.service.DefaultStoreView()
 	if sp.Log != nil && sp.Log.IsInfo() {
-		sp.Log.Info("store.ServiceRPC.DefaultStoreView", log.Err(err),
+		sp.Log.Info("store.ServiceServer.DefaultStoreView", log.Err(err),
 			log.String("request", ""), log.Stringer("store_code", store))
 	}
 	if err != nil {
@@ -77,10 +75,10 @@ func (sp *ServiceRPC) DefaultStoreView(ctx context.Context, _ *types.Empty) (*St
 	return store, nil
 }
 
-func (sp *ServiceRPC) DefaultStoreID(ctx context.Context, r *ProtoRunModeRequest) (*ProtoStoreIDWebsiteIDResponse, error) {
-	storeID, websiteID, err := sp.service.DefaultStoreID(scope.TypeID(r.RunMode))
+func (sp *ServiceServer) DefaultStoreID(ctx context.Context, r *ProtoRunModeRequest) (*ProtoStoreIDWebsiteIDResponse, error) {
+	websiteID, storeID, err := sp.service.DefaultStoreID(scope.TypeID(r.RunMode))
 	if sp.Log != nil && sp.Log.IsInfo() {
-		sp.Log.Info("store.ServiceRPC.DefaultStoreID", log.Err(err),
+		sp.Log.Info("store.ServiceServer.DefaultStoreID", log.Err(err),
 			log.String("request", ""), log.Uint("store_id", uint(storeID)), log.Uint("website_id", uint(websiteID)))
 	}
 	if err != nil {
@@ -93,10 +91,10 @@ func (sp *ServiceRPC) DefaultStoreID(ctx context.Context, r *ProtoRunModeRequest
 	}, nil
 }
 
-func (sp *ServiceRPC) StoreIDbyCode(ctx context.Context, r *ProtoStoreIDbyCodeRequest) (*ProtoStoreIDWebsiteIDResponse, error) {
-	storeID, websiteID, err := sp.service.StoreIDbyCode(scope.TypeID(r.RunMode), r.StoreCode)
+func (sp *ServiceServer) StoreIDbyCode(ctx context.Context, r *ProtoStoreIDbyCodeRequest) (*ProtoStoreIDWebsiteIDResponse, error) {
+	websiteID, storeID, err := sp.service.StoreIDbyCode(scope.TypeID(r.RunMode), r.StoreCode)
 	if sp.Log != nil && sp.Log.IsInfo() {
-		sp.Log.Info("store.ServiceRPC.StoreIDbyCode", log.Err(err),
+		sp.Log.Info("store.ServiceServer.StoreIDbyCode", log.Err(err),
 			log.String("request", ""), log.Uint("store_id", uint(storeID)), log.Uint("website_id", uint(websiteID)))
 	}
 	if err != nil {
@@ -109,10 +107,10 @@ func (sp *ServiceRPC) StoreIDbyCode(ctx context.Context, r *ProtoStoreIDbyCodeRe
 	}, nil
 }
 
-func (sp *ServiceRPC) AllowedStores(ctx context.Context, r *ProtoRunModeRequest) (*Stores, error) {
+func (sp *ServiceServer) AllowedStores(ctx context.Context, r *ProtoRunModeRequest) (*Stores, error) {
 	stores, err := sp.service.AllowedStores(scope.TypeID(r.RunMode))
 	if sp.Log != nil && sp.Log.IsInfo() {
-		sp.Log.Info("store.ServiceRPC.AllowedStores", log.Err(err),
+		sp.Log.Info("store.ServiceServer.AllowedStores", log.Err(err),
 			log.String("request", ""), log.Int("store_count", stores.Len()))
 	}
 	if err != nil {
@@ -122,10 +120,10 @@ func (sp *ServiceRPC) AllowedStores(ctx context.Context, r *ProtoRunModeRequest)
 	return stores, nil
 }
 
-func (sp *ServiceRPC) AddWebsite(ctx context.Context, r *StoreWebsite) (*types.Empty, error) {
+func (sp *ServiceServer) AddWebsite(ctx context.Context, r *StoreWebsite) (*types.Empty, error) {
 	err := sp.service.Options(WithWebsites(r))
 	if sp.Log != nil && sp.Log.IsInfo() {
-		sp.Log.Info("store.ServiceRPC.AddWebsite", log.Err(err), log.Stringer("request", r))
+		sp.Log.Info("store.ServiceServer.AddWebsite", log.Err(err), log.Stringer("request", r))
 	}
 	if err != nil {
 		sp.RecordError(ctx)
@@ -134,14 +132,14 @@ func (sp *ServiceRPC) AddWebsite(ctx context.Context, r *StoreWebsite) (*types.E
 	return &types.Empty{}, nil
 }
 
-func (sp *ServiceRPC) DeleteWebsite(context.Context, *ProtoIDRequest) (*types.Empty, error) {
+func (sp *ServiceServer) DeleteWebsite(context.Context, *ProtoIDRequest) (*types.Empty, error) {
 	return nil, errors.NotImplemented.Newf("[store] DeleteWebsite not yet implemented")
 }
 
-func (sp *ServiceRPC) WebsiteByID(ctx context.Context, r *ProtoIDRequest) (*StoreWebsite, error) {
+func (sp *ServiceServer) WebsiteByID(ctx context.Context, r *ProtoIDRequest) (*StoreWebsite, error) {
 	w, err := sp.service.Website(r.ID)
 	if sp.Log != nil && sp.Log.IsInfo() {
-		sp.Log.Info("store.ServiceRPC.WebsiteByID", log.Err(err), log.Stringer("request", r))
+		sp.Log.Info("store.ServiceServer.WebsiteByID", log.Err(err), log.Stringer("request", r))
 	}
 	if err != nil {
 		sp.RecordError(ctx)
@@ -150,15 +148,15 @@ func (sp *ServiceRPC) WebsiteByID(ctx context.Context, r *ProtoIDRequest) (*Stor
 	return w, nil
 }
 
-func (sp *ServiceRPC) ListWebsites(ctx context.Context, _ *types.Empty) (*StoreWebsites, error) {
+func (sp *ServiceServer) ListWebsites(ctx context.Context, _ *types.Empty) (*StoreWebsites, error) {
 	d := sp.service.Websites()
 	return &d, nil
 }
 
-func (sp *ServiceRPC) AddGroup(ctx context.Context, r *StoreGroup) (*types.Empty, error) {
+func (sp *ServiceServer) AddGroup(ctx context.Context, r *StoreGroup) (*types.Empty, error) {
 	err := sp.service.Options(WithGroups(r))
 	if sp.Log != nil && sp.Log.IsInfo() {
-		sp.Log.Info("store.ServiceRPC.AddGroup", log.Err(err), log.Stringer("request", r))
+		sp.Log.Info("store.ServiceServer.AddGroup", log.Err(err), log.Stringer("request", r))
 	}
 	if err != nil {
 		sp.RecordError(ctx)
@@ -167,14 +165,14 @@ func (sp *ServiceRPC) AddGroup(ctx context.Context, r *StoreGroup) (*types.Empty
 	return &types.Empty{}, nil
 }
 
-func (sp *ServiceRPC) DeleteGroup(context.Context, *ProtoIDRequest) (*types.Empty, error) {
+func (sp *ServiceServer) DeleteGroup(context.Context, *ProtoIDRequest) (*types.Empty, error) {
 	return nil, errors.NotImplemented.Newf("[store] DeleteGroup not yet implemented")
 }
 
-func (sp *ServiceRPC) GroupByID(ctx context.Context, r *ProtoIDRequest) (*StoreGroup, error) {
+func (sp *ServiceServer) GroupByID(ctx context.Context, r *ProtoIDRequest) (*StoreGroup, error) {
 	w, err := sp.service.Group(r.ID)
 	if sp.Log != nil && sp.Log.IsInfo() {
-		sp.Log.Info("store.ServiceRPC.GroupByID", log.Err(err), log.Stringer("request", r))
+		sp.Log.Info("store.ServiceServer.GroupByID", log.Err(err), log.Stringer("request", r))
 	}
 	if err != nil {
 		sp.RecordError(ctx)
@@ -183,15 +181,15 @@ func (sp *ServiceRPC) GroupByID(ctx context.Context, r *ProtoIDRequest) (*StoreG
 	return w, nil
 }
 
-func (sp *ServiceRPC) ListGroups(context.Context, *types.Empty) (*StoreGroups, error) {
+func (sp *ServiceServer) ListGroups(context.Context, *types.Empty) (*StoreGroups, error) {
 	d := sp.service.Groups()
 	return &d, nil
 }
 
-func (sp *ServiceRPC) AddStore(ctx context.Context, r *Store) (*types.Empty, error) {
+func (sp *ServiceServer) AddStore(ctx context.Context, r *Store) (*types.Empty, error) {
 	err := sp.service.Options(WithStores(r))
 	if sp.Log != nil && sp.Log.IsInfo() {
-		sp.Log.Info("store.ServiceRPC.AddStore", log.Err(err), log.Stringer("request", r))
+		sp.Log.Info("store.ServiceServer.AddStore", log.Err(err), log.Stringer("request", r))
 	}
 	if err != nil {
 		sp.RecordError(ctx)
@@ -200,14 +198,14 @@ func (sp *ServiceRPC) AddStore(ctx context.Context, r *Store) (*types.Empty, err
 	return &types.Empty{}, nil
 }
 
-func (sp *ServiceRPC) DeleteStore(context.Context, *ProtoIDRequest) (*types.Empty, error) {
+func (sp *ServiceServer) DeleteStore(context.Context, *ProtoIDRequest) (*types.Empty, error) {
 	return nil, errors.NotImplemented.Newf("[store] DeleteStore not yet implemented")
 }
 
-func (sp *ServiceRPC) StoreByID(ctx context.Context, r *ProtoIDRequest) (*Store, error) {
+func (sp *ServiceServer) StoreByID(ctx context.Context, r *ProtoIDRequest) (*Store, error) {
 	w, err := sp.service.Store(r.ID)
 	if sp.Log != nil && sp.Log.IsInfo() {
-		sp.Log.Info("store.ServiceRPC.StoreByID", log.Err(err), log.Stringer("request", r))
+		sp.Log.Info("store.ServiceServer.StoreByID", log.Err(err), log.Stringer("request", r))
 	}
 	if err != nil {
 		sp.RecordError(ctx)
@@ -216,7 +214,7 @@ func (sp *ServiceRPC) StoreByID(ctx context.Context, r *ProtoIDRequest) (*Store,
 	return w, nil
 }
 
-func (sp *ServiceRPC) ListStores(ctx context.Context, _ *types.Empty) (*Stores, error) {
+func (sp *ServiceServer) ListStores(ctx context.Context, _ *types.Empty) (*Stores, error) {
 	d := sp.service.Stores()
 	return &d, nil
 }

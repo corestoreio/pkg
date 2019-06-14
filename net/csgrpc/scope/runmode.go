@@ -68,7 +68,7 @@ func UnaryServerInterceptor(sf store.Finder) grpc.UnaryServerInterceptor {
 			return nil, status.Errorf(codes.InvalidArgument, "[grpc_scope] Cannot parse run mode: %s", err)
 		}
 
-		storeID, websiteID, err := sf.DefaultStoreID(runMode)
+		websiteID, storeID, err := sf.DefaultStoreID(runMode)
 		if err != nil {
 			return nil, status.Errorf(codes.FailedPrecondition, "[grpc_scope] Failed to query DefaultStoreID with run mode %s. Error: %s", runMode, err)
 		}
@@ -93,7 +93,7 @@ func StreamServerInterceptor(sf store.Finder) grpc.StreamServerInterceptor {
 			return status.Errorf(codes.InvalidArgument, "[grpc_scope] Cannot parse run mode: %s", err)
 		}
 
-		storeID, websiteID, err := sf.DefaultStoreID(runMode)
+		websiteID, storeID, err := sf.DefaultStoreID(runMode)
 		if err != nil {
 			return status.Errorf(codes.FailedPrecondition, "[grpc_scope] Failed to query DefaultStoreID with run mode %s. Error: %s", runMode, err)
 		}

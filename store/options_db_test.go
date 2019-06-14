@@ -59,7 +59,7 @@ func TestWithLoadFromDB(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Exactly(t, "world_en", st.Code)
 
-	storeID, websiteID, err := srv.DefaultStoreID(scope.Group.WithID(8))
+	websiteID, storeID, err := srv.DefaultStoreID(scope.Group.WithID(8))
 	assert.NoError(t, err)
 	assert.Exactly(t, "StoreID 7 WebsiteID 1", fmt.Sprintf("StoreID %d WebsiteID %d", storeID, websiteID))
 }

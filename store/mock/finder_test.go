@@ -27,24 +27,24 @@ func TestFind(t *testing.T) {
 		f *mock.Find
 	}{
 		{
-			mock.NewDefaultStoreID(1, 2, errors.Fatal.Newf("Whooops2"),
-				mock.NewStoreIDbyCode(3, 4, errors.Fatal.Newf("Whooops1")),
+			mock.NewDefaultStoreID(2, 1, errors.Fatal.Newf("Whooops2"),
+				mock.NewStoreIDbyCode(4, 3, errors.Fatal.Newf("Whooops1")),
 			),
 		},
 		{
-			mock.NewStoreIDbyCode(3, 4, errors.Fatal.Newf("Whooops1"),
-				mock.NewDefaultStoreID(1, 2, errors.Fatal.Newf("Whooops2")),
+			mock.NewStoreIDbyCode(4, 3, errors.Fatal.Newf("Whooops1"),
+				mock.NewDefaultStoreID(2, 1, errors.Fatal.Newf("Whooops2")),
 			),
 		},
 	}
 	for _, test := range tests {
-		sID, wID, err := test.f.DefaultStoreID(0)
+		wID, sID, err := test.f.DefaultStoreID(0)
 		assert.Exactly(t, uint32(1), sID)
 		assert.Exactly(t, uint32(2), wID)
 		assert.True(t, errors.Fatal.Match(err))
 		assert.Exactly(t, 1, test.f.DefaultStoreIDInvoked())
 
-		sID, wID, err = test.f.StoreIDbyCode(0, "x")
+		wID, sID, err = test.f.StoreIDbyCode(0, "x")
 		assert.Exactly(t, uint32(3), sID)
 		assert.Exactly(t, uint32(4), wID)
 		assert.True(t, errors.Fatal.Match(err))

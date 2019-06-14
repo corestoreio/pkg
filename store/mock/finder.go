@@ -25,16 +25,16 @@ var _ store.Finder = (*Find)(nil)
 
 // Find implements interface store.Finder for mocking in tests. Thread safe.
 type Find struct {
-	DefaultStoreIDFn      func(runMode scope.TypeID) (storeID, websiteID uint32, err error)
+	DefaultStoreIDFn      func(runMode scope.TypeID) (websiteID, storeID uint32, err error)
 	defaultStoreIDInvoked int32
 
-	StoreIDbyCodeFn      func(runMode scope.TypeID, storeCode string) (storeID, websiteID uint32, err error)
+	StoreIDbyCodeFn      func(runMode scope.TypeID, storeCode string) (websiteID, storeID uint32, err error)
 	storeIDbyCodeInvoked int32
 }
 
 // NewFindDefaultStoreID creates a new closure for the function DefaultStoreID.
 // The last variadic argument allows to append the other NewFind*() function.
-func NewDefaultStoreID(storeID, websiteID uint32, err error, fs ...*Find) *Find {
+func NewDefaultStoreID(websiteID, storeID uint32, err error, fs ...*Find) *Find {
 	f := func(runMode scope.TypeID, storeCode string) (uint32, uint32, error) {
 		return 0, 0, nil
 	}
@@ -43,7 +43,7 @@ func NewDefaultStoreID(storeID, websiteID uint32, err error, fs ...*Find) *Find 
 	}
 	return &Find{
 		DefaultStoreIDFn: func(runMode scope.TypeID) (uint32, uint32, error) {
-			return storeID, websiteID, err
+			return websiteID, storeID, err
 		},
 		StoreIDbyCodeFn: f,
 	}
@@ -51,7 +51,7 @@ func NewDefaultStoreID(storeID, websiteID uint32, err error, fs ...*Find) *Find 
 
 // NewStoreIDbyCode creates a new closure for the function StoreIDbyCode.
 // The last variadic argument allows to append the other NewFind*() function.
-func NewStoreIDbyCode(storeID, websiteID uint32, err error, fs ...*Find) *Find {
+func NewStoreIDbyCode(websiteID, storeID uint32, err error, fs ...*Find) *Find {
 	f := func(runMode scope.TypeID) (uint32, uint32, error) {
 		return 0, 0, nil
 	}
@@ -61,12 +61,12 @@ func NewStoreIDbyCode(storeID, websiteID uint32, err error, fs ...*Find) *Find {
 	return &Find{
 		DefaultStoreIDFn: f,
 		StoreIDbyCodeFn: func(runMode scope.TypeID, storeCode string) (uint32, uint32, error) {
-			return storeID, websiteID, err
+			return websiteID, storeID, err
 		},
 	}
 }
 
-func (s *Find) DefaultStoreID(runMode scope.TypeID) (storeID, websiteID uint32, err error) {
+func (s *Find) DefaultStoreID(runMode scope.TypeID) (websiteID, storeID uint32, err error) {
 	atomic.AddInt32(&s.defaultStoreIDInvoked, 1)
 	return s.DefaultStoreIDFn(runMode)
 }
@@ -76,7 +76,7 @@ func (s *Find) DefaultStoreIDInvoked() int {
 	return int(atomic.LoadInt32(&s.defaultStoreIDInvoked))
 }
 
-func (s *Find) StoreIDbyCode(runMode scope.TypeID, storeCode string) (storeID, websiteID uint32, err error) {
+func (s *Find) StoreIDbyCode(runMode scope.TypeID, storeCode string) (websiteID, storeID uint32, err error) {
 	atomic.AddInt32(&s.storeIDbyCodeInvoked, 1)
 	return s.StoreIDbyCodeFn(runMode, storeCode)
 }

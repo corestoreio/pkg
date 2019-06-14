@@ -35,14 +35,14 @@ import (
 type Finder interface {
 	// DefaultStoreID returns the default active store ID and its website ID
 	// depending on the run mode. Error behaviour is mostly of type NotValid.
-	DefaultStoreID(runMode scope.TypeID) (storeID, websiteID uint32, err error)
+	DefaultStoreID(runMode scope.TypeID) (websiteID, storeID uint32, err error)
 	// StoreIDbyCode returns, depending on the runMode, for a storeCode its
 	// active store ID and its website ID. An empty runMode hash falls back to
 	// select the default website, with its default group, and the slice of
 	// default stores. A not-found error behaviour gets returned if the code
 	// cannot be found. If the runMode equals to scope.DefaultTypeID, the
 	// returned ID is always 0 and error is nil.
-	StoreIDbyCode(runMode scope.TypeID, storeCode string) (storeID, websiteID uint32, err error)
+	StoreIDbyCode(runMode scope.TypeID, storeCode string) (websiteID, storeID uint32, err error)
 }
 
 // Service represents type which handles the underlying storage and takes care
@@ -361,7 +361,7 @@ WebsiteLoop:
 
 // DefaultStoreID returns the default active store ID depending on the run mode.
 // Error behaviour is mostly of type NotValid.
-func (s *Service) DefaultStoreID(runMode scope.TypeID) (storeID, websiteID uint32, _ error) {
+func (s *Service) DefaultStoreID(runMode scope.TypeID) (websiteID, storeID uint32, _ error) {
 	switch scp, id := runMode.Unpack(); scp {
 	case scope.Store:
 		st, err := s.Store(id)
@@ -371,7 +371,7 @@ func (s *Service) DefaultStoreID(runMode scope.TypeID) (storeID, websiteID uint3
 		if !st.IsActive {
 			return 0, 0, errors.NotValid.Newf("[store] DefaultStoreID %s the store ID %d is not active", runMode, st.StoreID)
 		}
-		return st.StoreID, st.WebsiteID, nil
+		return st.WebsiteID, st.StoreID, nil
 
 	case scope.Group:
 		g, err := s.Group(id)
@@ -385,7 +385,7 @@ func (s *Service) DefaultStoreID(runMode scope.TypeID) (storeID, websiteID uint3
 		if !st.IsActive {
 			return 0, 0, errors.NotValid.Newf("[store] DefaultStoreID %s the store ID %d is not active", runMode, st.StoreID)
 		}
-		return st.StoreID, st.WebsiteID, nil
+		return st.WebsiteID, st.StoreID, nil
 
 	case scope.Website:
 		w, err := s.Website(id)
@@ -399,14 +399,14 @@ func (s *Service) DefaultStoreID(runMode scope.TypeID) (storeID, websiteID uint3
 			if err != nil {
 				return 0, 0, errors.Wrapf(err, "[store] DefaultStoreID.Website.Store Scope %s ID %d", scp, id)
 			}
-			return st.StoreID, st.WebsiteID, nil
+			return st.WebsiteID, st.StoreID, nil
 		}
 
 		st, err := w.DefaultStore()
 		if err != nil {
 			return 0, 0, errors.Wrapf(err, "[store] DefaultStoreID.Website.DefaultStore Scope %s ID %d", scp, id)
 		}
-		return st.StoreID, st.WebsiteID, nil
+		return st.WebsiteID, st.StoreID, nil
 
 	default:
 		w, err := s.websites.Default()
@@ -417,7 +417,7 @@ func (s *Service) DefaultStoreID(runMode scope.TypeID) (storeID, websiteID uint3
 		if err != nil {
 			return 0, 0, errors.Wrapf(err, "[store] DefaultStoreID.Website.DefaultStore Scope %s ID %d", scp, id)
 		}
-		return st.StoreID, st.WebsiteID, nil
+		return st.WebsiteID, st.StoreID, nil
 	}
 }
 
@@ -427,10 +427,10 @@ func (s *Service) DefaultStoreID(runMode scope.TypeID) (storeID, websiteID uint3
 // not-found error behaviour gets returned if the code cannot be found. If the
 // runMode equals to scope.DefaultTypeID, the returned ID is always 0 and error
 // is nil. Implements interface Finder.
-func (s *Service) StoreIDbyCode(runMode scope.TypeID, storeCode string) (storeID, websiteID uint32, err error) {
+func (s *Service) StoreIDbyCode(runMode scope.TypeID, storeCode string) (websiteID, storeID uint32, err error) {
 	if storeCode == "" {
-		sID, wID, err := s.DefaultStoreID(0)
-		return sID, wID, errors.WithStack(err)
+		wID, sID, err := s.DefaultStoreID(0)
+		return wID, sID, errors.WithStack(err)
 	}
 
 	runModeID, err := runMode.ID()
@@ -445,19 +445,19 @@ func (s *Service) StoreIDbyCode(runMode scope.TypeID, storeCode string) (storeID
 	case scope.Store:
 		for _, st := range s.stores.Data {
 			if st.IsActive && st.Code == storeCode {
-				return st.StoreID, st.WebsiteID, nil
+				return st.WebsiteID, st.StoreID, nil
 			}
 		}
 	case scope.Group:
 		for _, st := range s.stores.Data {
 			if st.IsActive && st.GroupID == runModeID && st.Code == storeCode {
-				return st.StoreID, st.WebsiteID, nil
+				return st.WebsiteID, st.StoreID, nil
 			}
 		}
 	case scope.Website:
 		for _, st := range s.stores.Data {
 			if st.IsActive && st.WebsiteID == runModeID && st.Code == storeCode {
-				return st.StoreID, st.WebsiteID, nil
+				return st.WebsiteID, st.StoreID, nil
 			}
 		}
 	default:
@@ -470,7 +470,7 @@ func (s *Service) StoreIDbyCode(runMode scope.TypeID, storeCode string) (storeID
 			return 0, 0, errors.WithStack(err)
 		}
 		if st.Code != "" && st.Code == storeCode {
-			return st.StoreID, st.WebsiteID, nil
+			return st.WebsiteID, st.StoreID, nil
 		}
 	}
 	return 0, 0, errors.NotFound.Newf("[store] Code %q not found for runMode %s", storeCode, runMode)

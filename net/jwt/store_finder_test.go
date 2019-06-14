@@ -22,11 +22,11 @@ import (
 
 type storeFinderMock struct{}
 
-func (storeFinderMock) DefaultStoreID(runMode scope.TypeID) (storeID, websiteID int64, err error) {
+func (storeFinderMock) DefaultStoreID(runMode scope.TypeID) (websiteID, storeID uint32, err error) {
 	return
 }
 
-func (storeFinderMock) StoreIDbyCode(runMode scope.TypeID, storeCode string) (storeID, websiteID int64, err error) {
+func (storeFinderMock) StoreIDbyCode(runMode scope.TypeID, storeCode string) (websiteID, storeID uint32, err error) {
 	return
 }
 

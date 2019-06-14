@@ -155,7 +155,7 @@ func WithRunMode(sf store.Finder, o Options) mw.Middleware {
 			r = r.WithContext(WithContextRunMode(r.Context(), runMode))
 
 			// find the default store ID for the runMode
-			storeID, websiteID, err := sf.DefaultStoreID(runMode)
+			websiteID, storeID, err := sf.DefaultStoreID(runMode)
 			if err != nil {
 				if lg.IsDebug() {
 					lg.Debug("runmode.WithRunMode.DefaultStoreID.Error", log.Err(err),
@@ -184,7 +184,7 @@ func WithRunMode(sf store.Finder, o Options) mw.Middleware {
 
 			// we have a new store code and must validate it.
 			// convert the code string into its internal ID depending on the scope.
-			newStoreID, newWebsiteID, err := sf.StoreIDbyCode(runMode, reqCode)
+			newWebsiteID, newStoreID, err := sf.StoreIDbyCode(runMode, reqCode)
 			if err != nil && !errors.IsNotFound(err) {
 				if lg.IsDebug() {
 					lg.Debug("runmode.WithRunMode.StoreIDbyCode.Error", log.Err(err), log.String("http_store_code", reqCode),
