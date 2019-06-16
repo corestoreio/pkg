@@ -42,7 +42,7 @@ func (m *ProtoIsAllowedStoreIDRequest) Reset()         { *m = ProtoIsAllowedStor
 func (m *ProtoIsAllowedStoreIDRequest) String() string { return proto.CompactTextString(m) }
 func (*ProtoIsAllowedStoreIDRequest) ProtoMessage()    {}
 func (*ProtoIsAllowedStoreIDRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_7d2c94df95620827, []int{0}
+	return fileDescriptor_service_2bc2abef0d40ef3c, []int{0}
 }
 func (m *ProtoIsAllowedStoreIDRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -97,7 +97,7 @@ func (m *ProtoIsAllowedStoreIDResponse) Reset()         { *m = ProtoIsAllowedSto
 func (m *ProtoIsAllowedStoreIDResponse) String() string { return proto.CompactTextString(m) }
 func (*ProtoIsAllowedStoreIDResponse) ProtoMessage()    {}
 func (*ProtoIsAllowedStoreIDResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_7d2c94df95620827, []int{1}
+	return fileDescriptor_service_2bc2abef0d40ef3c, []int{1}
 }
 func (m *ProtoIsAllowedStoreIDResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -151,7 +151,7 @@ func (m *ProtoRunModeRequest) Reset()         { *m = ProtoRunModeRequest{} }
 func (m *ProtoRunModeRequest) String() string { return proto.CompactTextString(m) }
 func (*ProtoRunModeRequest) ProtoMessage()    {}
 func (*ProtoRunModeRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_7d2c94df95620827, []int{2}
+	return fileDescriptor_service_2bc2abef0d40ef3c, []int{2}
 }
 func (m *ProtoRunModeRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -198,7 +198,7 @@ func (m *ProtoIDRequest) Reset()         { *m = ProtoIDRequest{} }
 func (m *ProtoIDRequest) String() string { return proto.CompactTextString(m) }
 func (*ProtoIDRequest) ProtoMessage()    {}
 func (*ProtoIDRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_7d2c94df95620827, []int{3}
+	return fileDescriptor_service_2bc2abef0d40ef3c, []int{3}
 }
 func (m *ProtoIDRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -235,8 +235,8 @@ func (m *ProtoIDRequest) GetID() uint32 {
 }
 
 type ProtoStoreIDWebsiteIDResponse struct {
-	StoreID              uint32   `protobuf:"varint,1,opt,name=StoreID,proto3" json:"StoreID,omitempty"`
 	WebsiteID            uint32   `protobuf:"varint,2,opt,name=WebsiteID,proto3" json:"WebsiteID,omitempty"`
+	StoreID              uint32   `protobuf:"varint,1,opt,name=StoreID,proto3" json:"StoreID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -246,7 +246,7 @@ func (m *ProtoStoreIDWebsiteIDResponse) Reset()         { *m = ProtoStoreIDWebsi
 func (m *ProtoStoreIDWebsiteIDResponse) String() string { return proto.CompactTextString(m) }
 func (*ProtoStoreIDWebsiteIDResponse) ProtoMessage()    {}
 func (*ProtoStoreIDWebsiteIDResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_7d2c94df95620827, []int{4}
+	return fileDescriptor_service_2bc2abef0d40ef3c, []int{4}
 }
 func (m *ProtoStoreIDWebsiteIDResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -275,16 +275,16 @@ func (m *ProtoStoreIDWebsiteIDResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ProtoStoreIDWebsiteIDResponse proto.InternalMessageInfo
 
-func (m *ProtoStoreIDWebsiteIDResponse) GetStoreID() uint32 {
+func (m *ProtoStoreIDWebsiteIDResponse) GetWebsiteID() uint32 {
 	if m != nil {
-		return m.StoreID
+		return m.WebsiteID
 	}
 	return 0
 }
 
-func (m *ProtoStoreIDWebsiteIDResponse) GetWebsiteID() uint32 {
+func (m *ProtoStoreIDWebsiteIDResponse) GetStoreID() uint32 {
 	if m != nil {
-		return m.WebsiteID
+		return m.StoreID
 	}
 	return 0
 }
@@ -301,7 +301,7 @@ func (m *ProtoStoreIDbyCodeRequest) Reset()         { *m = ProtoStoreIDbyCodeReq
 func (m *ProtoStoreIDbyCodeRequest) String() string { return proto.CompactTextString(m) }
 func (*ProtoStoreIDbyCodeRequest) ProtoMessage()    {}
 func (*ProtoStoreIDbyCodeRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_7d2c94df95620827, []int{5}
+	return fileDescriptor_service_2bc2abef0d40ef3c, []int{5}
 }
 func (m *ProtoStoreIDbyCodeRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1884,9 +1884,9 @@ var (
 	ErrIntOverflowService   = fmt.Errorf("proto: integer overflow")
 )
 
-func init() { proto.RegisterFile("service.proto", fileDescriptor_service_7d2c94df95620827) }
+func init() { proto.RegisterFile("service.proto", fileDescriptor_service_2bc2abef0d40ef3c) }
 
-var fileDescriptor_service_7d2c94df95620827 = []byte{
+var fileDescriptor_service_2bc2abef0d40ef3c = []byte{
 	// 719 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x96, 0x5d, 0x4f, 0x13, 0x4d,
 	0x14, 0xc7, 0x9f, 0x6d, 0xf2, 0x28, 0x1c, 0x58, 0x82, 0xc3, 0x5b, 0x29, 0xa5, 0xc0, 0x48, 0x22,

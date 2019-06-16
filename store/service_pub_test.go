@@ -17,11 +17,9 @@ package store_test
 import (
 	"bytes"
 	"encoding/json"
-	"testing"
 
 	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/store"
-	storemock "github.com/corestoreio/pkg/store/mock"
 )
 
 func init() {
@@ -86,14 +84,4 @@ func toJSON(srv *store.Service) []byte {
 	}
 	buf.WriteString("]\n")
 	return buf.Bytes()
-}
-
-var benchmarkService_Json_Encoding []byte
-
-func BenchmarkService_Json_Encoding(b *testing.B) {
-	srv := storemock.NewServiceEuroW11G11S19()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		benchmarkService_Json_Encoding = toJSON(srv)
-	}
 }
