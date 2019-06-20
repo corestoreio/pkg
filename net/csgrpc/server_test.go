@@ -28,7 +28,7 @@ import (
 func TestNewService(t *testing.T) {
 	s, err := csgrpc.NewService(
 		csgrpc.WithErrorMetrics("randomName"),
-		csgrpc.WithLogging(log.BlackHole{}),
+		csgrpc.WithLogger(log.BlackHole{}),
 		csgrpc.WithServiceAuthFuncOverrider(grpc_auth.ServiceAuthFunc(func(ctx context.Context, fullMethodName string) (context.Context, error) {
 			return nil, errors.NotAcceptable.Newf("upssss")
 		})),
