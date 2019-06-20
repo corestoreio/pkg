@@ -14,6 +14,13 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+func TestAddBasicAuthToOutgoingContext(t *testing.T) {
+	ctx := AddBasicAuthToOutgoingContext(context.Background(), "un", "pw")
+	md, ok := metadata.FromOutgoingContext(ctx)
+	assert.True(t, ok)
+	assert.Exactly(t, "Basic dW46cHc=", md.Get(HeaderAuthorize)[0])
+}
+
 func TestAuthFromMD(t *testing.T) {
 	for _, run := range []struct {
 		md      metadata.MD
