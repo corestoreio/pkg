@@ -135,7 +135,7 @@ func TestNewServiceRPC(t *testing.T) {
 			StoreID: 6,
 		})
 		assert.Nil(t, rpcResp)
-		assert.EqualError(t, err, "rpc error: code = Unauthenticated desc = Request unauthenticated with bearer")
+		assert.EqualError(t, err, "rpc error: code = Unauthenticated desc = [auth] No successful auth function found")
 	})
 	t.Run("IsAllowedStoreID_OK", func(t *testing.T) {
 		rpcResp, err := client.IsAllowedStoreID(ctxToken, &store.ProtoIsAllowedStoreIDRequest{

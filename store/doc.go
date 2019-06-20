@@ -48,9 +48,8 @@
 // The subpackage scope depends on these structure except that the group has
 // been removed and a default scope has been introduced.
 //
-// Supported build tags
+// Supported build tags: csall or proto or db
 //
-// The following build tags
 //
 // More explanation @todo
 // Read more:

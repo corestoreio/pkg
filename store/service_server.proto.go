@@ -42,7 +42,7 @@ func NewServiceServer(s *Service, opts ...csgrpc.Option) (*ServiceServer, error)
 
 // ServiceServer a wrapper type for the main Service to be used in a gRPC server.
 type ServiceServer struct {
-	*csgrpc.AbstractServer
+	csgrpc.AbstractServer
 	service *Service
 }
 
