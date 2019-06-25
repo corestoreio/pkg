@@ -20,6 +20,7 @@ import (
 	"sync/atomic"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/store/scope"
 )
 
@@ -56,7 +57,10 @@ type Finder interface {
 type Service struct {
 	// defaultStore someone must be always the default guy. Handled via atomic
 	// package.
-	defaultStoreID int64
+	defaultStoreID      int64
+	chanClose           chan struct{}
+	chanEventSubscriber []chan int
+	log                 log.Logger
 
 	// mu protects the following fields ... maybe use more mutexes
 	mu sync.RWMutex
@@ -77,11 +81,17 @@ type Option struct {
 	fn        func(*Service) error
 }
 
+const (
+	eventOptionsApplied = iota + 1
+	eventClose
+)
+
 // NewService creates a new store Service which handles websites, groups and
 // stores. You must either provide the functional options or call LoadFromDB()
 // to setup the internal cache.
 func NewService(opts ...Option) (*Service, error) {
 	srv := &Service{
+		chanClose:      make(chan struct{}),
 		defaultStoreID: -1, // means not set, because 0 can be admin store.
 		cacheWebsite:   make(map[uint32]*StoreWebsite),
 		cacheGroup:     make(map[uint32]*StoreGroup),
@@ -114,7 +124,11 @@ func (s *Service) Options(opts ...Option) error {
 	}
 	s.sort()
 	s.apply2ndLevelData()
-	return s.validate()
+	if err := s.validate(); err != nil {
+		return errors.WithStack(err)
+	}
+	s.dispatchEvent(eventOptionsApplied)
+	return nil
 }
 
 func (s *Service) sort() {
@@ -220,7 +234,7 @@ func (s *Service) validate() error {
 			return errors.NotValid.Newf("[store] Website[%d].DefaultGroupID[%d] not found in Groups.", w.WebsiteID, w.DefaultGroupID)
 		}
 	} // end each websites
-	if len(s.websites.Data) > 0 && defaultWebsiteCounter != 1 {
+	if len(s.websites.Data) > 0 && defaultWebsiteCounter > 1 {
 		return errors.NotValid.Newf("[store] Only one Website can be the default Website. Found %d default websites", defaultWebsiteCounter)
 	}
 
@@ -267,6 +281,18 @@ func (s *Service) validate() error {
 		}
 	}
 
+	return nil
+}
+
+func (s *Service) dispatchEvent(id int) {
+	for _, ces := range s.chanEventSubscriber {
+		ces <- id
+	}
+}
+
+func (s *Service) Close() error {
+	s.dispatchEvent(eventClose)
+	close(s.chanClose)
 	return nil
 }
 
@@ -597,10 +623,6 @@ func (s *Service) Stores() Stores {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.stores
-}
-
-func (s *Service) Save() error {
-	return errors.NotImplemented.Newf("TODO implement saving")
 }
 
 // ClearCache resets the internal caches which stores the pointers to Websites,

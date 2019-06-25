@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/sql/ddl"
 )
 
@@ -56,6 +57,74 @@ func WithLoadFromDB(ctx context.Context, tbls *ddl.Tables) Option {
 			if err := s.websites.Validate(); err != nil {
 				return errors.WithStack(err)
 			}
+			return nil
+		},
+	}
+}
+
+func WithSaveToDB(ctx context.Context, tbls *ddl.Tables, chanErr chan<- error) Option {
+
+	panic("TODO write test")
+
+	stmtStore := tbls.MustTable(TableNameStore).Insert().OnDuplicateKey().WithArgs()
+	stmtGroup := tbls.MustTable(TableNameStoreGroup).Insert().OnDuplicateKey().WithArgs()
+	stmtWebsite := tbls.MustTable(TableNameStoreWebsite).Insert().OnDuplicateKey().WithArgs()
+
+	return Option{
+		sortOrder: 199,
+		fn: func(s *Service) error {
+
+			s.chanEventSubscriber = append(s.chanEventSubscriber, make(chan int))
+			newEventIDX := len(s.chanEventSubscriber) - 1
+
+			handleChanErr := func(msg string, err error) {
+				if err != nil {
+					if s.log != nil && s.log.IsInfo() {
+						s.log.Info(msg, log.Err(err))
+					}
+					chanErr <- errors.WithStack(err)
+				}
+			}
+
+			go func() {
+				defer func() {
+					close(s.chanEventSubscriber[newEventIDX])
+					s.chanEventSubscriber[newEventIDX] = nil
+
+					handleChanErr("store.WithSaveToDB.stmtStore.Close", stmtStore.Close())
+					handleChanErr("store.WithSaveToDB.stmtGroup.Close", stmtGroup.Close())
+					handleChanErr("store.WithSaveToDB.stmtWebsite.Close", stmtWebsite.Close())
+				}()
+				for {
+					var eventID int
+					select {
+					case eventID = <-s.chanEventSubscriber[newEventIDX]:
+					case <-ctx.Done():
+						if s.log != nil && s.log.IsDebug() {
+							s.log.Debug("store.WithSaveToDB.Context", log.Err(ctx.Err()))
+						}
+						return
+					case <-s.chanClose:
+						if s.log != nil && s.log.IsDebug() {
+							s.log.Debug("store.WithSaveToDB.Close")
+						}
+						return
+					}
+
+					if s.log != nil && s.log.IsDebug() {
+						s.log.Debug("store.WithSaveToDB.Event", log.Int("event_id", eventID))
+					}
+
+					// now save the data from memory to DB
+					s.mu.RLock()
+					_ = stmtStore
+					_ = stmtGroup
+					_ = stmtWebsite
+					chanErr <- errors.ConnectionFailed.Newf("todo error handling")
+					s.mu.RUnlock()
+				}
+			}()
+
 			return nil
 		},
 	}

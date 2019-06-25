@@ -23,7 +23,7 @@ const DefaultStoreID int64 = 0
 // cache store and sorts the stores by StoreID.
 func WithStores(stores ...*Store) Option {
 	return Option{
-		sortOrder: 202,
+		sortOrder: 302,
 		fn: func(s *Service) error {
 			s.mu.Lock()
 			defer s.mu.Unlock()
@@ -58,7 +58,7 @@ func WithStores(stores ...*Store) Option {
 // cache group and sorts the groups by GroupID.
 func WithGroups(groups ...*StoreGroup) Option {
 	return Option{
-		sortOrder: 201,
+		sortOrder: 301,
 		fn: func(s *Service) error {
 			s.mu.Lock()
 			defer s.mu.Unlock()
@@ -93,7 +93,7 @@ func WithGroups(groups ...*StoreGroup) Option {
 // cache website and sorts the websites by WebsiteID.
 func WithWebsites(websites ...*StoreWebsite) Option {
 	return Option{
-		sortOrder: 200,
+		sortOrder: 300,
 		fn: func(s *Service) error {
 			s.mu.Lock()
 			defer s.mu.Unlock()

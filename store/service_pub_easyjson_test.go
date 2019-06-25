@@ -28,7 +28,7 @@ func TestService_Sorting_JSON(t *testing.T) {
 
 	t.Run("EuroW11G11S19", func(t *testing.T) {
 		srv := storemock.NewServiceEuroW11G11S19()
-		haveData := toJSON(srv)
+		haveData := toJSON(srv, true)
 
 		// ioutil.WriteFile("testdata/sort_euroW11G11S19.easy.golden.json", haveData, 0644)
 
@@ -39,7 +39,7 @@ func TestService_Sorting_JSON(t *testing.T) {
 
 	t.Run("EuroOZ (flaky)", func(t *testing.T) {
 		srv := storemock.NewServiceEuroOZ()
-		haveData := toJSON(srv)
+		haveData := toJSON(srv, true)
 		// ioutil.WriteFile("testdata/sort_euroOZ.easy.golden.json", haveData, 0644)
 
 		goldenData, err := ioutil.ReadFile("testdata/sort_euroOZ.easy.golden.json")

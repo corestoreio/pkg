@@ -66,10 +66,12 @@ Service_Json_Encoding-4       195 ± 0%        75 ± 0%  -61.54%  (p=0.008 n=5+5
 // 	return data
 // }
 
-func toJSON(srv *store.Service) []byte {
+func toJSON(srv *store.Service, ident bool) []byte {
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
-	enc.SetIndent("", "  ")
+	if ident {
+		enc.SetIndent("", "  ")
+	}
 	buf.WriteString("[\n")
 	if err := enc.Encode(srv.Websites()); err != nil {
 		panic(err)

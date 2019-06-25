@@ -30,16 +30,16 @@ func (sl sortNaturallyWebsites) Less(i, j int) bool {
 	case sl.Data[i].SortOrder > sl.Data[j].SortOrder:
 		return false
 
-		// 2nd
-	case sl.Data[i].WebsiteID < sl.Data[j].WebsiteID:
-		return true
-	case sl.Data[i].WebsiteID > sl.Data[j].WebsiteID:
-		return false
-
-		// 3rd
+		// 2rd
 	case sl.Data[i].DefaultGroupID < sl.Data[j].DefaultGroupID:
 		return true
 	case sl.Data[i].DefaultGroupID > sl.Data[j].DefaultGroupID:
+		return false
+
+		// 3nd
+	case sl.Data[i].WebsiteID < sl.Data[j].WebsiteID:
+		return true
+	case sl.Data[i].WebsiteID > sl.Data[j].WebsiteID:
 		return false
 
 	default:
