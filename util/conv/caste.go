@@ -71,7 +71,7 @@ func ToDurationE(i interface{}) (d time.Duration, err error) {
 }
 
 // ToBoolE casts an empty interface to a bool. If a type implements function
-//		ToBool() bool
+// 		ToBool() bool
 // this function will get called.
 func ToBoolE(i interface{}) (bool, error) {
 
@@ -483,29 +483,29 @@ func ToByteE(i interface{}) ([]byte, error) {
 
 // ToStringMapStringE casts an empty interface to a map[string]string.
 func ToStringMapStringE(i interface{}) (map[string]string, error) {
-
-	var m = map[string]string{}
-
 	switch v := i.(type) {
 	case map[string]string:
 		return v, nil
 	case map[string]interface{}:
+		m := make(map[string]string, len(v))
 		for k, val := range v {
 			m[ToString(k)] = ToString(val)
 		}
 		return m, nil
 	case map[interface{}]string:
+		m := make(map[string]string, len(v))
 		for k, val := range v {
 			m[ToString(k)] = ToString(val)
 		}
 		return m, nil
 	case map[interface{}]interface{}:
+		m := make(map[string]string, len(v))
 		for k, val := range v {
 			m[ToString(k)] = ToString(val)
 		}
 		return m, nil
 	default:
-		return m, errors.NotValid.Newf("[conv] Unable to cast %#v to map[string]string", i)
+		return nil, errors.NotValid.Newf("[conv] Unable to cast %#v to map[string]string", i)
 	}
 }
 
