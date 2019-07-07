@@ -358,6 +358,7 @@ var mysqlTypeToGo = map[string]map[string]*TypeDef{ // immutable
 	"date":       mustTMK("time"),
 	"datetime":   mustTMK("time"),
 	"timestamp":  mustTMK("time"),
+	"time":       mustTMK("time"),
 	"char":       mustTMK("string"),
 	"varchar":    mustTMK("string"),
 	"enum":       mustTMK("string"),
