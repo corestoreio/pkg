@@ -34,7 +34,6 @@ import (
 )
 
 func TestSelect_QueryContext(t *testing.T) {
-
 	t.Run("ToSQL Error because empty select", func(t *testing.T) {
 		sel := (&dml.Select{}).WithDB(dbMock{})
 		rows, err := sel.WithArgs().QueryContext(context.TODO())
@@ -311,7 +310,6 @@ func TestSelect_Prepare(t *testing.T) {
 		defer dmltest.Close(t, stmt)
 
 		t.Run("Context", func(t *testing.T) {
-
 			rows, err := stmt.WithArgs().QueryContext(context.TODO(), 6789)
 			assert.NoError(t, err)
 			defer dmltest.Close(t, rows)
@@ -396,7 +394,6 @@ func TestSelect_Prepare(t *testing.T) {
 	})
 
 	t.Run("Load", func(t *testing.T) {
-
 		t.Run("multi rows", func(t *testing.T) {
 			dbc, dbMock := dmltest.MockDB(t)
 			defer dmltest.MockClose(t, dbc, dbMock)
@@ -469,7 +466,6 @@ func TestSelect_Prepare(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Exactly(t, []int64{36, 37}, val)
 		})
-
 	})
 }
 
@@ -503,7 +499,6 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 
 			var counter int
 			err := selExec.IterateSerial(context.Background(), func(cm *dml.ColumnMap) error {
-
 				fp := &fakePerson{}
 				if err := fp.MapColumns(cm); err != nil {
 					return err
@@ -520,7 +515,6 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 		})
 
 		t.Run("serial parallel", func(t *testing.T) {
-
 			// Do not run such a construct in production.
 
 			type processor interface {
@@ -556,7 +550,6 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 				Limit(0, limit).OrderBy("id")
 
 			t.Run("WG01 (query, conn pool)", func(t *testing.T) {
-
 				bgwork.Wait(concurrencyLevel, func(index int) {
 					// Every goroutine creates its own underlying connection to the
 					// SQL server. This makes sense because each dataset is unique.
@@ -565,7 +558,6 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 			})
 
 			t.Run("WG02 (prepared,multi conn)", func(t *testing.T) {
-
 				stmt, err := fpSel.Prepare(context.Background())
 				assert.NoError(t, err)
 				defer dmltest.Close(t, stmt)
@@ -583,7 +575,6 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 	const concurrencyLevel = 4
 
 	t.Run("parallel", func(t *testing.T) {
-
 		t.Run("error wrong concurrency level", func(t *testing.T) {
 			err := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
 				Limit(0, 50).
@@ -610,13 +601,12 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 		})
 
 		t.Run("successful 40 rows fibonacci", func(t *testing.T) {
-
 			fpSel := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
 				Where(dml.Column("id").LessOrEqual().Int(60)).
 				Limit(0, 40)
 			fpSel.IsOrderByRand = true
 
-			var rowsLoadedCounter = new(int32)
+			rowsLoadedCounter := new(int32)
 			err := fpSel.WithArgs().IterateParallel(context.Background(), concurrencyLevel, func(cm *dml.ColumnMap) error {
 				var fp fakePerson
 
@@ -630,13 +620,13 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 
 				if fp.ID < 41 {
 					_ = fib(uint(fp.ID))
-					//fi := fib(uint(fp.ID))
-					//println("a 591", int(cm.Count), fp.ID, fi)
+					// fi := fib(uint(fp.ID))
+					// println("a 591", int(cm.Count), fp.ID, fi)
 				} /* else {
 					println("a 597", int(cm.Count), fp.ID)
 				} */
 
-				//fmt.Printf("%d: FIB:%d: fakePerson ID %d\n", cm.Count, fib(uint(fp.ID)), fp.ID)
+				// fmt.Printf("%d: FIB:%d: fakePerson ID %d\n", cm.Count, fib(uint(fp.ID)), fp.ID)
 				atomic.AddInt32(rowsLoadedCounter, 1)
 				return nil
 			})
@@ -727,7 +717,6 @@ func TestSelect_When_Unless(t *testing.T) {
 }
 
 func TestPrepareWithArgs(t *testing.T) {
-
 	t.Run("all dml types", func(t *testing.T) {
 		dbc, dbMock := dmltest.MockDB(t)
 		// defer dmltest.MockClose(t, dbc, dbMock)

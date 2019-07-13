@@ -132,5 +132,4 @@ func TestShow(t *testing.T) {
 			[]string{"", "SHOW TABLE STATUS WHERE (`Name` REGEXP '.*catalog[_]+')", "XsalesX", "SHOW TABLE STATUS WHERE (`Name` REGEXP 'sales$')"},
 			s.CachedQueries())
 	})
-
 }

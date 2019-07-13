@@ -31,7 +31,7 @@ func TestMakeAlias(t *testing.T) {
 	assert.Exactly(t, "`table1`", MakeIdentifier("table1").String())
 }
 
-//func TestMakeExpressionAlias(t *testing.T) {
+// func TestMakeExpressionAlias(t *testing.T) {
 //	t.Parallel()
 //	assert.Exactly(t, "(table1)", MakeExpressionAlias("(table1)", "").String())
 //	assert.Exactly(t, "(table1) AS `x`", MakeExpressionAlias("(table1)", "x").String())

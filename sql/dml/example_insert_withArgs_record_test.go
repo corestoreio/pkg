@@ -63,7 +63,6 @@ func (pe productEntity) MapColumns(cm *dml.ColumnMap) error {
 // names. In the second example all columns values are getting inserted and you
 // specify the number of place holders per record.
 func ExampleInsert_WithArgs_record() {
-
 	objs := []productEntity{
 		{1, 5, "simple", null.MakeString("SOA9"), false},
 		{2, 5, "virtual", null.String{}, true},
@@ -79,21 +78,21 @@ func ExampleInsert_WithArgs_record() {
 	writeToSQLAndInterpolate(i)
 
 	// Output:
-	//Prepared Statement:
-	//INSERT INTO `catalog_product_entity`
+	// Prepared Statement:
+	// INSERT INTO `catalog_product_entity`
 	//(`attribute_set_id`,`type_id`,`sku`,`has_options`) VALUES (?,?,?,?),(?,?,?,?)
-	//Arguments: [5 simple SOA9 false 5 virtual <nil> true]
+	// Arguments: [5 simple SOA9 false 5 virtual <nil> true]
 	//
-	//Interpolated Statement:
-	//INSERT INTO `catalog_product_entity`
+	// Interpolated Statement:
+	// INSERT INTO `catalog_product_entity`
 	//(`attribute_set_id`,`type_id`,`sku`,`has_options`) VALUES
 	//(5,'simple','SOA9',0),(5,'virtual',NULL,1)
 	//
-	//Prepared Statement:
-	//INSERT INTO `catalog_product_entity` VALUES (?,?,?,?,?),(?,?,?,?,?)
-	//Arguments: [1 5 simple SOA9 false 2 5 virtual <nil> true]
+	// Prepared Statement:
+	// INSERT INTO `catalog_product_entity` VALUES (?,?,?,?,?),(?,?,?,?,?)
+	// Arguments: [1 5 simple SOA9 false 2 5 virtual <nil> true]
 	//
-	//Interpolated Statement:
-	//INSERT INTO `catalog_product_entity` VALUES
+	// Interpolated Statement:
+	// INSERT INTO `catalog_product_entity` VALUES
 	//(1,5,'simple','SOA9',0),(2,5,'virtual',NULL,1)
 }

@@ -280,7 +280,8 @@ func TestUpdate_DisableBuildCache(t *testing.T) {
 		[]string{
 			"index_0", "UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = ?)",
 			"index_1", "UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = ?)",
-			"index_2", "UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = ?)"},
+			"index_2", "UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = ?)",
+		},
 		up.CachedQueries(),
 		"%#v",
 		up.CachedQueries(),

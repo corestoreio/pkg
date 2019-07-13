@@ -69,9 +69,9 @@ func TestArgBytes(t *testing.T) {
 		} else {
 			t.Logf("Test is flaky, Malloc should be zero but was: %d", malloc)
 		}
-		//t.Logf("Alloc %d", msAfter.Alloc-msBefore.Alloc)
-		//t.Logf("TotalAlloc %d", msAfter.TotalAlloc-msBefore.TotalAlloc)
-		//t.Logf("Mallocs %d", msAfter.Mallocs-msBefore.Mallocs)
+		// t.Logf("Alloc %d", msAfter.Alloc-msBefore.Alloc)
+		// t.Logf("TotalAlloc %d", msAfter.TotalAlloc-msBefore.TotalAlloc)
+		// t.Logf("Mallocs %d", msAfter.Mallocs-msBefore.Mallocs)
 	})
 
 	t.Run("allocate 5 new blocks but use different args (flaky)", func(t *testing.T) {
@@ -105,9 +105,9 @@ func TestArgBytes(t *testing.T) {
 		} else {
 			t.Logf("Test is flaky, Malloc should be zero but was: %d", malloc)
 		}
-		//t.Logf("Alloc %d", msAfter.Alloc-msBefore.Alloc)
-		//t.Logf("TotalAlloc %d", msAfter.TotalAlloc-msBefore.TotalAlloc)
-		//t.Logf("Mallocs %d", msAfter.Mallocs-msBefore.Mallocs)
+		// t.Logf("Alloc %d", msAfter.Alloc-msBefore.Alloc)
+		// t.Logf("TotalAlloc %d", msAfter.TotalAlloc-msBefore.TotalAlloc)
+		// t.Logf("Mallocs %d", msAfter.Mallocs-msBefore.Mallocs)
 	})
 
 	t.Run("all types", func(t *testing.T) {
@@ -139,6 +139,5 @@ func TestArgBytes(t *testing.T) {
 
 		assert.Exactly(t, "0:{3} 1:{4,5,6} 2:{30} 3:{40,50,60} 4:{4294967295} 5:{800,900} 6:{3.4028234663852886e+38} 7:{80.549,3.141592653589793} 8:{Finally, how will we ship and deliver Go 2?} 9:{Finally, how will we fly and deliver Go 1?,Finally, how will we run and deliver Go 3?,Finally, how will we walk and deliver Go 3?} 10:{1} 11:{0} 12:{0,1,1,0,1} 13:{2006-01-02 15:04:05} 14:{2006-01-02 15:04:05,2006-01-02 15:06:05,2006-01-02 15:04:05} 15:{NULL,Hello} 16:{2.718281828459045,NULL} 17:{987654321,NULL} 18:{NULL,1,NULL} 19:{2006-01-02 15:04:05,NULL}",
 			ac.DebugBytes())
-
 	})
 }

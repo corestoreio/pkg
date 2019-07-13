@@ -54,8 +54,10 @@ func TestArguments_Interfaces(t *testing.T) {
 			NullString(null.String{}).NullInt64(null.Int64{}).NullFloat64(null.Float64{}).
 			NullBool(null.Bool{}).NullTime(null.Time{})
 		assert.Exactly(t,
-			[]interface{}{nil, int64(-1), int64(1), int64(2), 3.1, true, "eCom1", []uint8{0x65, 0x43, 0x6f, 0x6d, 0x32}, now(),
-				nil, nil, nil, nil, nil},
+			[]interface{}{
+				nil, int64(-1), int64(1), int64(2), 3.1, true, "eCom1", []uint8{0x65, 0x43, 0x6f, 0x6d, 0x32}, now(),
+				nil, nil, nil, nil, nil,
+			},
 			args.Interfaces(container...))
 		container = container[:0]
 	})
@@ -67,11 +69,13 @@ func TestArguments_Interfaces(t *testing.T) {
 			NullFloat64s(null.MakeFloat64(2.7), null.MakeFloat64(2.7)).
 			NullBools(null.MakeBool(true)).NullTimes(null.MakeTime(now()), null.MakeTime(now()))
 		assert.Exactly(t,
-			[]interface{}{nil, int64(-1), int64(-2), int64(1), int64(2), int64(568), int64(766), int64(2), 1.2, 3.1, false, true,
+			[]interface{}{
+				nil, int64(-1), int64(-2), int64(1), int64(2), int64(568), int64(766), int64(2), 1.2, 3.1, false, true,
 				"eCom1", "eCom11", []uint8{0x65, 0x43, 0x6f, 0x6d, 0x32}, now(), now(),
 				"eCom3", "eCom3", int64(4), int64(4),
 				2.7, 2.7,
-				true, now(), now()},
+				true, now(), now(),
+			},
 			args.Interfaces())
 	})
 	t.Run("returns nil interface", func(t *testing.T) {
@@ -91,8 +95,10 @@ func TestArguments_DriverValue(t *testing.T) {
 				driverValueBytes(`Invoice`), null.MakeString("Creditmemo"), nowSentinel{}, null.MakeTime(now()),
 			)
 		assert.Exactly(t,
-			[]interface{}{nil, []uint8(nil), int64(3), 2.7, true,
-				[]uint8{0x49, 0x6e, 0x76, 0x6f, 0x69, 0x63, 0x65}, "Creditmemo", "2006-01-02 19:04:05", now()},
+			[]interface{}{
+				nil, []uint8(nil), int64(3), 2.7, true,
+				[]uint8{0x49, 0x6e, 0x76, 0x6f, 0x69, 0x63, 0x65}, "Creditmemo", "2006-01-02 19:04:05", now(),
+			},
 			args.Interfaces())
 	})
 
@@ -109,8 +115,10 @@ func TestArguments_DriverValue(t *testing.T) {
 			DriverValue(null.MakeTime(now()))
 
 		assert.Exactly(t,
-			[]interface{}{nil, []uint8(nil), int64(3), 2.7, true,
-				[]uint8{0x49, 0x6e, 0x76, 0x6f, 0x69, 0x63, 0x65}, "Creditmemo", "2006-01-02 19:04:05", now()},
+			[]interface{}{
+				nil, []uint8(nil), int64(3), 2.7, true,
+				[]uint8{0x49, 0x6e, 0x76, 0x6f, 0x69, 0x63, 0x65}, "Creditmemo", "2006-01-02 19:04:05", now(),
+			},
 			args.Interfaces())
 	})
 
@@ -218,7 +226,6 @@ func TestArguments_WriteTo(t *testing.T) {
 			if r := recover(); r != nil {
 				if err, ok := r.(error); ok {
 					assert.ErrorIsKind(t, errors.NotSupported, err)
-
 				} else {
 					t.Errorf("Panic should contain an error but got:\n%+v", r)
 				}
@@ -469,7 +476,6 @@ func TestArtisan_PreGeneratedQueries(t *testing.T) {
 	t.Parallel()
 
 	t.Run("SELECT", func(t *testing.T) {
-
 		sel := NewSelect("a", "b").From("c").Where(
 			Column("id").Greater().PlaceHolder(),
 			Column("email").Like().PlaceHolder())

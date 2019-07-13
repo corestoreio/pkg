@@ -160,7 +160,6 @@ func TestUnion_Prepare(t *testing.T) {
 		}()
 
 		t.Run("Context", func(t *testing.T) {
-
 			rows, err := stmt.WithArgs().QueryContext(context.TODO(), 6889)
 			assert.NoError(t, err)
 			defer rows.Close()

@@ -364,7 +364,6 @@ func (a *Artisan) appendConvertedRecordsToArguments(collectedArgs arguments) (ar
 // returned interface slice is the same as the `extArgs` slice. extArgs =
 // external arguments.
 func (a *Artisan) prepareArgsInsert(extArgs ...interface{}) (string, []interface{}, error) {
-
 	// cm := pooledColumnMapGet()
 	sqlBuf := bufferpool.GetTwin()
 	defer bufferpool.PutTwin(sqlBuf)
@@ -841,7 +840,7 @@ func (a *Artisan) IterateParallel(ctx context.Context, concurrencyLevel int, cal
 	var wg sync.WaitGroup
 	for i := 0; i < concurrencyLevel; i++ {
 		wg.Add(1)
-		//i := i
+		// i := i
 		go func(wg *sync.WaitGroup, rowChan <-chan *ColumnMap, errChan chan<- error) {
 			defer wg.Done()
 			for cmr := range rowChan {

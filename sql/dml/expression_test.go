@@ -22,7 +22,6 @@ import (
 )
 
 func TestSQLCase_PlaceHolders(t *testing.T) {
-
 	t.Run("placeholders in case", func(t *testing.T) {
 		var start int64 = 20180101
 		var end int64 = 20180201
@@ -48,5 +47,4 @@ func TestSQLCase_PlaceHolders(t *testing.T) {
 
 		assert.Exactly(t, []string{"promotion_id"}, s.qualifiedColumns)
 	})
-
 }

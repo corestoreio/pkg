@@ -38,7 +38,7 @@ type Union struct {
 	IsExcept    bool // See Except()
 
 	// When using Union as a template, only one *Select is required.
-	oldNew [][]string //use for string replacement with `repls` field
+	oldNew [][]string // use for string replacement with `repls` field
 	repls  []*strings.Replacer
 }
 

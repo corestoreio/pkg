@@ -88,12 +88,12 @@ func ExampleNewInsert() {
 	writeToSQLAndInterpolate(i)
 
 	// Output:
-	//Prepared Statement:
-	//INSERT INTO `tableA` (`b`,`c`,`d`,`e`) VALUES (?,?,?,?),(?,?,?,?)
-	//Arguments: [1 2 Three <nil> 5 6 Seven 3.14156]
+	// Prepared Statement:
+	// INSERT INTO `tableA` (`b`,`c`,`d`,`e`) VALUES (?,?,?,?),(?,?,?,?)
+	// Arguments: [1 2 Three <nil> 5 6 Seven 3.14156]
 	//
-	//Interpolated Statement:
-	//INSERT INTO `tableA` (`b`,`c`,`d`,`e`) VALUES
+	// Interpolated Statement:
+	// INSERT INTO `tableA` (`b`,`c`,`d`,`e`) VALUES
 	//(1,2,'Three',NULL),(5,6,'Seven',3.14156)
 }
 
@@ -104,8 +104,8 @@ func ExampleInsert_SetRowCount() {
 	writeToSQLAndInterpolate(i)
 
 	// Output:
-	//Statement:
-	//INSERT INTO `dml_people` (`id`,`name`,`email`) VALUES
+	// Statement:
+	// INSERT INTO `dml_people` (`id`,`name`,`email`) VALUES
 	//(?,?,?),(?,?,?),(?,?,?),(?,?,?)
 }
 
@@ -117,12 +117,12 @@ func ExampleInsert_SetRowCount_withdata() {
 	writeToSQLAndInterpolate(i)
 
 	// Output:
-	//Prepared Statement:
-	//INSERT INTO `catalog_product_link` VALUES (?,?,?),(?,?,?),(?,?,?)
-	//Arguments: [2046 33 3 2046 34 3 2046 35 3]
+	// Prepared Statement:
+	// INSERT INTO `catalog_product_link` VALUES (?,?,?),(?,?,?),(?,?,?)
+	// Arguments: [2046 33 3 2046 34 3 2046 35 3]
 	//
-	//Interpolated Statement:
-	//INSERT INTO `catalog_product_link` VALUES (2046,33,3),(2046,34,3),(2046,35,3)
+	// Interpolated Statement:
+	// INSERT INTO `catalog_product_link` VALUES (2046,33,3),(2046,34,3),(2046,35,3)
 }
 
 // ExampleInsert_WithArgs_rawData cannot interpolate because raw interfaces are
@@ -148,14 +148,14 @@ func ExampleInsert_WithArgs_rawData() {
 	writeToSQL(i)
 
 	// Output:
-	//Prepared Statement:
-	//INSERT INTO `catalog_product_link` VALUES (?,?,?),(?,?,?),(?,?,?)
-	//Arguments: [2046 33 3 2046 34 3 2046 35 3]
+	// Prepared Statement:
+	// INSERT INTO `catalog_product_link` VALUES (?,?,?),(?,?,?),(?,?,?)
+	// Arguments: [2046 33 3 2046 34 3 2046 35 3]
 	//
-	//Prepared Statement:
-	//INSERT INTO `catalog_product_link`
+	// Prepared Statement:
+	// INSERT INTO `catalog_product_link`
 	//(`product_id`,`linked_product_id`,`link_type_id`) VALUES (?,?,?),(?,?,?),(?,?,?)
-	//Arguments: [2046 33 3 2046 34 3 2046 35 3]
+	// Arguments: [2046 33 3 2046 34 3 2046 35 3]
 }
 
 // ExampleInsert_AddOnDuplicateKey this example assumes you are not using a any
@@ -170,19 +170,18 @@ func ExampleInsert_AddOnDuplicateKey() {
 	writeToSQLAndInterpolate(i)
 
 	// Output:
-	//Prepared Statement:
-	//INSERT INTO `dml_people` (`id`,`name`,`email`) VALUES (?,?,?) ON DUPLICATE KEY
-	//UPDATE `name`='Pik3', `email`=VALUES(`email`)
-	//Arguments: [1 Pik'e pikes@peak.com]
+	// Prepared Statement:
+	// INSERT INTO `dml_people` (`id`,`name`,`email`) VALUES (?,?,?) ON DUPLICATE KEY
+	// UPDATE `name`='Pik3', `email`=VALUES(`email`)
+	// Arguments: [1 Pik'e pikes@peak.com]
 	//
-	//Interpolated Statement:
-	//INSERT INTO `dml_people` (`id`,`name`,`email`) VALUES
+	// Interpolated Statement:
+	// INSERT INTO `dml_people` (`id`,`name`,`email`) VALUES
 	//(1,'Pik\'e','pikes@peak.com') ON DUPLICATE KEY UPDATE `name`='Pik3',
 	//`email`=VALUES(`email`)
 }
 
 func ExampleInsert_FromSelect_withPlaceHolders() {
-
 	ins := dml.NewInsert("tableA").FromSelect(
 		dml.NewSelect().AddColumns("something_id", "user_id").
 			AddColumns("other").
@@ -199,15 +198,15 @@ func ExampleInsert_FromSelect_withPlaceHolders() {
 	).WithArgs().Int64(4).Name("i64BIn").Int64s(9, 8, 7)
 	writeToSQLAndInterpolate(ins)
 	// Output:
-	//Prepared Statement:
-	//INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table`
-	//WHERE ((`int64A` >= ?) OR (`string` = 'wat')) AND (`int64B` IN ?) ORDER BY `id`
-	//DESC LIMIT 0,20
-	//Arguments: [4 9 8 7]
+	// Prepared Statement:
+	// INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table`
+	// WHERE ((`int64A` >= ?) OR (`string` = 'wat')) AND (`int64B` IN ?) ORDER BY `id`
+	// DESC LIMIT 0,20
+	// Arguments: [4 9 8 7]
 	//
-	//Interpolated Statement:
-	//INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table`
-	//WHERE ((`int64A` >= 4) OR (`string` = 'wat')) AND (`int64B` IN (9,8,7)) ORDER BY
+	// Interpolated Statement:
+	// INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table`
+	// WHERE ((`int64A` >= 4) OR (`string` = 'wat')) AND (`int64B` IN (9,8,7)) ORDER BY
 	//`id` DESC LIMIT 0,20
 }
 
@@ -230,9 +229,9 @@ func ExampleInsert_FromSelect_withoutPlaceHolders() {
 	)
 	writeToSQLAndInterpolate(ins)
 	// Output:
-	//Statement:
-	//INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table`
-	//WHERE ((`int64A` >= 1) OR (`string` = 'wat')) AND (`int64B` IN (1,2,3)) ORDER BY
+	// Statement:
+	// INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table`
+	// WHERE ((`int64A` >= 1) OR (`string` = 'wat')) AND (`int64B` IN (1,2,3)) ORDER BY
 	//`id` DESC LIMIT 0,20
 }
 
@@ -253,13 +252,13 @@ func ExampleInsert_WithPairs() {
 		).WithArgs()
 	writeToSQLAndInterpolate(ins)
 	// Output:
-	//Prepared Statement:
-	//INSERT INTO `catalog_product_link`
+	// Prepared Statement:
+	// INSERT INTO `catalog_product_link`
 	//(`product_id`,`linked_product_id`,`link_type_id`) VALUES (?,?,?),(?,?,?)
-	//Arguments: [2046 33 3 2046 34 3]
+	// Arguments: [2046 33 3 2046 34 3]
 	//
-	//Interpolated Statement:
-	//INSERT INTO `catalog_product_link`
+	// Interpolated Statement:
+	// INSERT INTO `catalog_product_link`
 	//(`product_id`,`linked_product_id`,`link_type_id`) VALUES (2046,33,3),(2046,34,3)
 }
 
@@ -280,15 +279,14 @@ func ExampleInsert_BuildValues() {
 		).BuildValues()
 	writeToSQLAndInterpolate(ins)
 	// Output:
-	//Statement:
-	//INSERT INTO `catalog_product_link`
+	// Statement:
+	// INSERT INTO `catalog_product_link`
 	//(`product_id`,`linked_product_id`,`link_type_id`) VALUES (2046,33,3),(2046,34,3)
 }
 
 // ExampleInsert_expressionInVALUES contains an expression in the VALUES part.
 // You must provide the column names.
 func ExampleInsert_expressionInVALUES() {
-
 	ins := dml.NewInsert("catalog_product_customer_relation").
 		AddColumns("product_id", "sort_order").
 		WithPairs(
@@ -301,10 +299,10 @@ func ExampleInsert_expressionInVALUES() {
 		).BuildValues()
 	writeToSQLAndInterpolate(ins)
 	// Output:
-	//Statement:
-	//INSERT INTO `catalog_product_customer_relation`
+	// Statement:
+	// INSERT INTO `catalog_product_customer_relation`
 	//(`product_id`,`sort_order`,`customer_id`,`group_id`) VALUES (?,?,IFNULL(SELECT
-	//entity_id FROM customer_entity WHERE email like ?,0),(SELECT `group_id` FROM
+	// entity_id FROM customer_entity WHERE email like ?,0),(SELECT `group_id` FROM
 	//`customer_group` WHERE (`name` = ?)))
 }
 
@@ -316,8 +314,8 @@ func ExampleDelete() {
 		Limit(1).OrderBy("id")
 	writeToSQLAndInterpolate(d)
 	// Output:
-	//Statement:
-	//DELETE FROM `tableA` WHERE (`a` LIKE 'b\'%') AND (`b` IN (3,4,5,6)) ORDER BY
+	// Statement:
+	// DELETE FROM `tableA` WHERE (`a` LIKE 'b\'%') AND (`b` IN (3,4,5,6)) ORDER BY
 	//`id` LIMIT 1
 }
 
@@ -338,18 +336,17 @@ func ExampleDelete_FromTables() {
 		Limit(1).OrderBy("id")
 	writeToSQLAndInterpolate(d)
 	// Output:
-	//Statement:
-	//DELETE `ce`,`customer_address`,`customer_company` FROM `customer_entity` AS `ce`
-	//INNER JOIN `customer_company` AS `cc` USING (`ce.entity_id`,`cc.customer_id`)
-	//RIGHT JOIN `customer_address` AS `ca` ON (`ce`.`entity_id` = `ca`.`parent_id`)
-	//WHERE (`ce`.`created_at` < ?) ORDER BY `id` LIMIT 1
+	// Statement:
+	// DELETE `ce`,`customer_address`,`customer_company` FROM `customer_entity` AS `ce`
+	// INNER JOIN `customer_company` AS `cc` USING (`ce.entity_id`,`cc.customer_id`)
+	// RIGHT JOIN `customer_address` AS `ca` ON (`ce`.`entity_id` = `ca`.`parent_id`)
+	// WHERE (`ce`.`created_at` < ?) ORDER BY `id` LIMIT 1
 }
 
 // ExampleNewUnion constructs a UNION with three SELECTs. It preserves the
 // results sets of each SELECT by simply adding an internal index to the columns
 // list and sort ascending with the internal index.
 func ExampleNewUnion() {
-
 	u := dml.NewUnion(
 		dml.NewSelect().AddColumnsAliases("a1", "A", "a2", "B").From("tableA").Where(dml.Column("a1").Int64(3)),
 		dml.NewSelect().AddColumnsAliases("b1", "A", "b2", "B").From("tableB").Where(dml.Column("b1").Int64(4)),
@@ -370,16 +367,16 @@ func ExampleNewUnion() {
 	// table in MySQL.
 	writeToSQLAndInterpolate(u)
 	// Output:
-	//Statement:
+	// Statement:
 	//(SELECT `a1` AS `A`, `a2` AS `B`, 0 AS `_preserve_result_set` FROM `tableA`
-	//WHERE (`a1` = 3))
-	//UNION ALL
+	// WHERE (`a1` = 3))
+	// UNION ALL
 	//(SELECT `b1` AS `A`, `b2` AS `B`, 1 AS `_preserve_result_set` FROM `tableB`
-	//WHERE (`b1` = 4))
-	//UNION ALL
+	// WHERE (`b1` = 4))
+	// UNION ALL
 	//(SELECT concat(c1,'-',c2) AS `A`, `c2` AS `B`, 2 AS `_preserve_result_set` FROM
 	//`tableC` WHERE (`c2` = 'ArgForC2'))
-	//ORDER BY `_preserve_result_set`, `A`, `B` DESC
+	// ORDER BY `_preserve_result_set`, `A`, `B` DESC
 }
 
 // ExampleNewUnion_template interpolates the SQL string with its placeholders
@@ -389,7 +386,6 @@ func ExampleNewUnion() {
 // you execute a query multiple times within a short time you should use
 // prepared statements.
 func ExampleNewUnion_template() {
-
 	u := dml.NewUnion(
 		dml.NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").
 			FromAlias("catalog_product_entity_$type$", "t").
@@ -400,27 +396,27 @@ func ExampleNewUnion_template() {
 		All().OrderBy("attribute_id", "store_id")
 	writeToSQLAndInterpolate(u)
 	// Output:
-	//Statement:
+	// Statement:
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS
 	//`_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE
 	//(`entity_id` = 1561) AND (`store_id` IN (1,0)))
-	//UNION ALL
+	// UNION ALL
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS
 	//`_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE
 	//(`entity_id` = 1561) AND (`store_id` IN (1,0)))
-	//UNION ALL
+	// UNION ALL
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS
 	//`_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE
 	//(`entity_id` = 1561) AND (`store_id` IN (1,0)))
-	//UNION ALL
+	// UNION ALL
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS
 	//`_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE
 	//(`entity_id` = 1561) AND (`store_id` IN (1,0)))
-	//UNION ALL
+	// UNION ALL
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS
 	//`_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE
 	//(`entity_id` = 1561) AND (`store_id` IN (1,0)))
-	//ORDER BY `_preserve_result_set`, `attribute_id`, `store_id`
+	// ORDER BY `_preserve_result_set`, `attribute_id`, `store_id`
 }
 
 func ExampleInterpolate() {
@@ -470,7 +466,6 @@ func argPrinter(wf *dml.Condition) {
 
 // ExampleCondition is duplicate of ExampleColumn
 func ExampleCondition() {
-
 	argPrinter(dml.Column("d").Null())
 	argPrinter(dml.Column("d").NotNull())
 	argPrinter(dml.Column("d").Int(2))
@@ -494,7 +489,7 @@ func ExampleCondition() {
 	argPrinter(dml.Column("d").Like().Str("Goph%"))
 	argPrinter(dml.Column("d").NotLike().Str("Cat%"))
 
-	//Output:
+	// Output:
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NOT NULL)"
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` = 2)"
@@ -519,7 +514,6 @@ func ExampleCondition() {
 
 // ExampleColumn is a duplicate of ExampleCondition
 func ExampleColumn() {
-
 	argPrinter(dml.Column("d").Null())
 	argPrinter(dml.Column("d").NotNull())
 	argPrinter(dml.Column("d").Int(2))
@@ -543,7 +537,7 @@ func ExampleColumn() {
 	argPrinter(dml.Column("d").Like().Str("Goph%"))
 	argPrinter(dml.Column("d").NotLike().Str("Cat%"))
 
-	//Output:
+	// Output:
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NOT NULL)"
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` = 2)"
@@ -575,10 +569,10 @@ func ExampleCondition_Sub() {
 		))
 	writeToSQLAndInterpolate(s)
 	// Output:
-	//Statement:
-	//SELECT `sku`, `type_id` FROM `catalog_product_entity` WHERE (`entity_id` IN
+	// Statement:
+	// SELECT `sku`, `type_id` FROM `catalog_product_entity` WHERE (`entity_id` IN
 	//(SELECT `entity_id` FROM `catalog_category_product` WHERE (`category_id` =
-	//234)))
+	// 234)))
 }
 
 func ExampleNewSelectWithDerivedTable() {
@@ -600,15 +594,15 @@ func ExampleNewSelectWithDerivedTable() {
 		OrderBy("t1.period", "t1.product_id")
 	writeToSQLAndInterpolate(sel1)
 	// Output:
-	//Statement:
-	//SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`,
+	// Statement:
+	// SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`,
 	//`t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT DATE_FORMAT(t3.period,
 	//'%Y-%m-01') AS `period`, `t3`.`store_id`, `t3`.`product_id`,
 	//`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`,
-	//SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS
+	// SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS
 	//`t3` WHERE (`product_name` = 'Canon%') GROUP BY `t3`.`store_id`,
-	//DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` ORDER
-	//BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty` DESC) AS
+	// DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` ORDER
+	// BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty` DESC) AS
 	//`t1` WHERE (`product_name` = 'Sony%') ORDER BY `t1`.`period`, `t1`.`product_id`
 }
 
@@ -629,18 +623,18 @@ func ExampleSQLIfNull() {
 	sStr, _, _ := s.ToSQL()
 	fmt.Print(strings.Replace(sStr, ", ", ",\n", -1))
 
-	//Output:
-	//SELECT IFNULL(`column1`,NULL),
-	//IFNULL(`table1`.`column1`,NULL),
-	//IFNULL(`column1`,`column2`),
-	//IFNULL(`table1`.`column1`,`table2`.`column2`),
-	//IFNULL(`column2`,1/0) AS `alias`,
-	//IFNULL(SELECT * FROM x,8) AS `alias`,
-	//IFNULL(SELECT * FROM x,9 ) AS `alias`,
-	//IFNULL(`column1`,`column2`) AS `alias`,
-	//IFNULL(`table1`.`column1`,`table2`.`column2`) AS `alias`,
-	//IFNULL(`table1`.`column1`,`table2`.`column2`),
-	//IFNULL(`table1`.`column1`,`table2`.`column2`) AS `alias` FROM `table1`
+	// Output:
+	// SELECT IFNULL(`column1`,NULL),
+	// IFNULL(`table1`.`column1`,NULL),
+	// IFNULL(`column1`,`column2`),
+	// IFNULL(`table1`.`column1`,`table2`.`column2`),
+	// IFNULL(`column2`,1/0) AS `alias`,
+	// IFNULL(SELECT * FROM x,8) AS `alias`,
+	// IFNULL(SELECT * FROM x,9 ) AS `alias`,
+	// IFNULL(`column1`,`column2`) AS `alias`,
+	// IFNULL(`table1`.`column1`,`table2`.`column2`) AS `alias`,
+	// IFNULL(`table1`.`column1`,`table2`.`column2`),
+	// IFNULL(`table1`.`column1`,`table2`.`column2`) AS `alias` FROM `table1`
 }
 
 func ExampleSQLIf() {
@@ -653,8 +647,8 @@ func ExampleSQLIf() {
 	writeToSQLAndInterpolate(s)
 
 	// Output:
-	//Statement:
-	//SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > 4711)
+	// Statement:
+	// SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > 4711)
 }
 
 func ExampleSQLCase_update() {
@@ -671,10 +665,10 @@ func ExampleSQLCase_update() {
 	writeToSQLAndInterpolate(u)
 
 	// Output:
-	//Statement:
-	//UPDATE `cataloginventory_stock_item` SET `qty`=CASE `product_id` WHEN 3456 THEN
-	//qty+3 WHEN 3457 THEN qty+4 WHEN 3458 THEN qty+5 ELSE qty END WHERE (`product_id`
-	//IN (345,567,897)) AND (`website_id` = 6)
+	// Statement:
+	// UPDATE `cataloginventory_stock_item` SET `qty`=CASE `product_id` WHEN 3456 THEN
+	// qty+3 WHEN 3457 THEN qty+4 WHEN 3458 THEN qty+5 ELSE qty END WHERE (`product_id`
+	// IN (345,567,897)) AND (`website_id` = 6)
 }
 
 // ExampleSQLCase_select is a duplicate of ExampleSelect_AddArguments
@@ -696,24 +690,23 @@ func ExampleSQLCase_select() {
 	writeToSQLAndInterpolate(s)
 
 	// Output:
-	//Prepared Statement:
-	//SELECT `price`, `sku`, `name`, `title`, `description`, CASE  WHEN date_start <=
+	// Prepared Statement:
+	// SELECT `price`, `sku`, `name`, `title`, `description`, CASE  WHEN date_start <=
 	//? AND date_end >= ? THEN `open` WHEN date_start > ? AND date_end > ? THEN
 	//`upcoming` ELSE `closed` END AS `is_on_sale` FROM `catalog_promotions` WHERE
 	//(`promotion_id` NOT IN (?,?,?))
-	//Arguments: [2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 4711 815 42]
+	// Arguments: [2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 4711 815 42]
 	//
-	//Interpolated Statement:
-	//SELECT `price`, `sku`, `name`, `title`, `description`, CASE  WHEN date_start <=
+	// Interpolated Statement:
+	// SELECT `price`, `sku`, `name`, `title`, `description`, CASE  WHEN date_start <=
 	//'2009-11-11 00:00:00' AND date_end >= '2009-11-12 00:00:00' THEN `open` WHEN
-	//date_start > '2009-11-11 00:00:00' AND date_end > '2009-11-12 00:00:00' THEN
+	// date_start > '2009-11-11 00:00:00' AND date_end > '2009-11-12 00:00:00' THEN
 	//`upcoming` ELSE `closed` END AS `is_on_sale` FROM `catalog_promotions` WHERE
 	//(`promotion_id` NOT IN (4711,815,42))
 }
 
 // ExampleSelect_AddColumnsConditions is duplicate of ExampleSQLCase_select
 func ExampleSelect_AddColumnsConditions() {
-
 	start := time.Unix(1257894000, 0)
 	end := time.Unix(1257980400, 0)
 
@@ -729,10 +722,10 @@ func ExampleSelect_AddColumnsConditions() {
 	writeToSQLAndInterpolate(s.WithArgs())
 
 	// Output:
-	//Statement:
-	//SELECT `price`, `sku`, `name`, `title`, `description`, CASE  WHEN date_start <=
+	// Statement:
+	// SELECT `price`, `sku`, `name`, `title`, `description`, CASE  WHEN date_start <=
 	//'2009-11-11 00:00:00' AND date_end >= '2009-11-12 00:00:00' THEN `open` WHEN
-	//date_start > '2009-11-11 00:00:00' AND date_end > '2009-11-12 00:00:00' THEN
+	// date_start > '2009-11-11 00:00:00' AND date_end > '2009-11-12 00:00:00' THEN
 	//`upcoming` ELSE `closed` END AS `is_on_sale` FROM `catalog_promotions` WHERE
 	//(`promotion_id` NOT IN (4711,815,42))
 }
@@ -761,8 +754,8 @@ func ExampleParenthesisOpen() {
 	writeToSQLAndInterpolate(s)
 
 	// Output:
-	//Statement:
-	//SELECT DISTINCT `columnA`, `columnB` FROM `tableC` AS `ccc` WHERE ((`d` = 1) OR
+	// Statement:
+	// SELECT DISTINCT `columnA`, `columnB` FROM `tableC` AS `ccc` WHERE ((`d` = 1) OR
 	//(`e` = 'wat')) AND (`f` = 2) GROUP BY `ab` HAVING (j = k) AND ((`m` = 33) OR
 	//(`n` = 'wh3r3')) ORDER BY `l` LIMIT 8,7
 }
@@ -771,16 +764,19 @@ func ExampleWith_Union() {
 	// Non-recursive CTE
 	// Sales: Find best and worst month:
 	cte := dml.NewWith(
-		dml.WithCTE{Name: "sales_by_month", Columns: []string{"month", "total"},
+		dml.WithCTE{
+			Name: "sales_by_month", Columns: []string{"month", "total"},
 			Select: dml.NewSelect().Unsafe().AddColumns("Month(day_of_sale)", "Sum(amount)").From("sales_days").
 				Where(dml.Expr("Year(day_of_sale) = ?").Int(2015)).
 				GroupBy("Month(day_of_sale))"),
 		},
-		dml.WithCTE{Name: "best_month", Columns: []string{"month", "total", "award"},
+		dml.WithCTE{
+			Name: "best_month", Columns: []string{"month", "total", "award"},
 			Select: dml.NewSelect().Unsafe().AddColumns("month", "total").AddColumns(`"best"`).From("sales_by_month").
 				Where(dml.Column("total").Equal().Sub(dml.NewSelect().Unsafe().AddColumns("Max(total)").From("sales_by_month"))),
 		},
-		dml.WithCTE{Name: "worst_month", Columns: []string{"month", "total", "award"},
+		dml.WithCTE{
+			Name: "worst_month", Columns: []string{"month", "total", "award"},
 			Select: dml.NewSelect().Unsafe().AddColumns("month", "total").AddColumns(`"worst"`).From("sales_by_month").
 				Where(dml.Column("total").Equal().Sub(dml.NewSelect().Unsafe().AddColumns("Min(total)").From("sales_by_month"))),
 		},
@@ -790,7 +786,7 @@ func ExampleWith_Union() {
 	).All())
 	writeToSQLAndInterpolate(cte)
 
-	//Result:
+	// Result:
 	//+-------+-------+-------+
 	//| month | total | award |
 	//+-------+-------+-------+
@@ -799,16 +795,16 @@ func ExampleWith_Union() {
 	//+-------+-------+-------+
 
 	// Output:
-	//Statement:
-	//WITH `sales_by_month` (`month`,`total`) AS (SELECT Month(day_of_sale),
-	//Sum(amount) FROM `sales_days` WHERE (Year(day_of_sale) = 2015) GROUP BY
-	//Month(day_of_sale))),
+	// Statement:
+	// WITH `sales_by_month` (`month`,`total`) AS (SELECT Month(day_of_sale),
+	// Sum(amount) FROM `sales_days` WHERE (Year(day_of_sale) = 2015) GROUP BY
+	// Month(day_of_sale))),
 	//`best_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, "best" FROM
 	//`sales_by_month` WHERE (`total` = (SELECT Max(total) FROM `sales_by_month`))),
 	//`worst_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, "worst"
-	//FROM `sales_by_month` WHERE (`total` = (SELECT Min(total) FROM
+	// FROM `sales_by_month` WHERE (`total` = (SELECT Min(total) FROM
 	//`sales_by_month`)))
 	//(SELECT * FROM `best_month`)
-	//UNION ALL
+	// UNION ALL
 	//(SELECT * FROM `worst_month`)
 }

@@ -178,7 +178,7 @@ func (ps *dmlPersons) Emails(ret ...null.String) []null.String {
 	return ret
 }
 
-//func (ps *dmlPersons) AssignLastInsertID(uint64) error {
+// func (ps *dmlPersons) AssignLastInsertID(uint64) error {
 //	// todo iterate and assign to the last item in the slice and assign
 //	// decremented IDs to the previous items in the slice.
 //	return nil
@@ -224,6 +224,7 @@ func (p *nullTypedRecord) MapColumns(cm *ColumnMap) error {
 	}
 	return cm.Err()
 }
+
 func newNullTypedRecordWithData() *nullTypedRecord {
 	return &nullTypedRecord{
 		ID:         2,
@@ -376,7 +377,6 @@ func compareToSQL2(
 }
 
 func compareExecContext(t testing.TB, ex StmtExecer, lastInsertID, rowsAffected int64) (retLastInsertID, retRowsAffected int64) {
-
 	res, err := ex.ExecContext(context.Background())
 	assert.NoError(t, err)
 	assert.NotNil(t, res, "Returned result from ExecContext should not be nil")

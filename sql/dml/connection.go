@@ -154,7 +154,6 @@ func WithCreateDatabase(ctx context.Context, databaseName string) ConnPoolOption
 	return ConnPoolOption{
 		sortOrder: 253,
 		fn: func(c *ConnPool) error {
-
 			if databaseName == "" && c.dsn != nil {
 				databaseName = c.dsn.DBName
 			}

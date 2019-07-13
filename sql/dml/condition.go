@@ -356,70 +356,87 @@ func (c *Condition) Null() *Condition {
 	c.Operator = Null
 	return c
 }
+
 func (c *Condition) NotNull() *Condition {
 	c.Operator = NotNull
 	return c
 }
+
 func (c *Condition) In() *Condition {
 	c.Operator = In
 	return c
 }
+
 func (c *Condition) NotIn() *Condition {
 	c.Operator = NotIn
 	return c
 }
+
 func (c *Condition) Between() *Condition {
 	c.Operator = Between
 	return c
 }
+
 func (c *Condition) NotBetween() *Condition {
 	c.Operator = NotBetween
 	return c
 }
+
 func (c *Condition) Like() *Condition {
 	c.Operator = Like
 	return c
 }
+
 func (c *Condition) NotLike() *Condition {
 	c.Operator = NotLike
 	return c
 }
+
 func (c *Condition) Greatest() *Condition {
 	c.Operator = Greatest
 	return c
 }
+
 func (c *Condition) Least() *Condition {
 	c.Operator = Least
 	return c
 }
+
 func (c *Condition) Equal() *Condition {
 	c.Operator = Equal
 	return c
 }
+
 func (c *Condition) NotEqual() *Condition {
 	c.Operator = NotEqual
 	return c
 }
+
 func (c *Condition) Exists() *Condition {
 	c.Operator = Exists
 	return c
 }
+
 func (c *Condition) NotExists() *Condition {
 	c.Operator = NotExists
 	return c
 }
+
 func (c *Condition) Less() *Condition {
 	c.Operator = Less
 	return c
 }
+
 func (c *Condition) Greater() *Condition {
 	c.Operator = Greater
 	return c
 }
+
 func (c *Condition) LessOrEqual() *Condition {
 	c.Operator = LessOrEqual
 	return c
 }
+
 func (c *Condition) GreaterOrEqual() *Condition {
 	c.Operator = GreaterOrEqual
 	return c
@@ -568,7 +585,7 @@ func (c *Condition) Uint64s(i ...uint64) *Condition {
 }
 
 // Add when needed
-//func (c *Condition) Decimals(d ...Decimal) *Condition {}
+// func (c *Condition) Decimals(d ...Decimal) *Condition {}
 
 func (c *Condition) Decimal(d null.Decimal) *Condition {
 	v := d.String()
@@ -596,6 +613,7 @@ func (c *Condition) Float64(f float64) *Condition {
 	c.Right.arg.set(f)
 	return c
 }
+
 func (c *Condition) Float64s(f ...float64) *Condition {
 	if c.isExpression() {
 		c.Right.args = c.Right.args.add(f)
@@ -604,6 +622,7 @@ func (c *Condition) Float64s(f ...float64) *Condition {
 	c.Right.arg.set(f)
 	return c
 }
+
 func (c *Condition) Str(s string) *Condition {
 	if c.isExpression() {
 		c.Right.args = c.Right.args.add(s)

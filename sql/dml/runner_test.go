@@ -115,7 +115,6 @@ func TestScannedColumn_Scan(t *testing.T) {
 
 	err := sc.Scan(uint8(1))
 	assert.ErrorIsKind(t, errors.NotSupported, err)
-
 }
 
 func TestColumnMap_Scan_Empty_Bytes(t *testing.T) {

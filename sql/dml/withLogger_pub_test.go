@@ -30,12 +30,11 @@ import (
 )
 
 func TestWithLogger_Insert(t *testing.T) {
-
 	uniID := new(int32)
 	rConn := createRealSession(t)
 	defer dmltest.Close(t, rConn)
 
-	var uniqueIDFunc = func() string {
+	uniqueIDFunc := func() string {
 		return fmt.Sprintf("UNIQ%02d", atomic.AddInt32(uniID, 4))
 	}
 
@@ -162,7 +161,6 @@ func TestWithLogger_Insert(t *testing.T) {
 			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ44\"\nDEBUG Exec conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ44\" duration: 0 sql: \"REPLACE INTO `dml_people` (`email`,`name`) VALUES (?,?)\" source: \"i\" error: \"<nil>\"\nDEBUG Commit conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ44\" duration: 0\n",
 				buf.String())
 		})
-
 	})
 }
 
@@ -171,7 +169,7 @@ func TestWithLogger_Delete(t *testing.T) {
 	rConn := createRealSession(t)
 	defer dmltest.Close(t, rConn)
 
-	var uniqueIDFunc = func() string {
+	uniqueIDFunc := func() string {
 		return fmt.Sprintf("UNIQUEID%02d", atomic.AddInt32(uniID, 1))
 	}
 
@@ -292,7 +290,7 @@ func TestWithLogger_Select(t *testing.T) {
 	rConn := createRealSession(t)
 	defer dmltest.Close(t, rConn)
 
-	var uniqueIDFunc = func() string {
+	uniqueIDFunc := func() string {
 		return fmt.Sprintf("UNIQ%02d", atomic.AddInt32(uniID, 1))
 	}
 
@@ -334,7 +332,6 @@ func TestWithLogger_Select(t *testing.T) {
 		})
 
 		t.Run("LoadInt64", func(t *testing.T) {
-
 			defer buf.Reset()
 			_, _, err := pplSel.WithArgs().Raw(67896543124).LoadNullInt64(context.TODO())
 			if !errors.NotFound.Match(err) {
@@ -466,7 +463,6 @@ func TestWithLogger_Select(t *testing.T) {
 		})
 
 		t.Run("Prepare", func(t *testing.T) {
-
 			stmt, err := pplSel.Prepare(context.TODO())
 			assert.NoError(t, err)
 			defer dmltest.Close(t, stmt)
@@ -522,7 +518,6 @@ func TestWithLogger_Select(t *testing.T) {
 				assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 sql: \"\" source: \"s\" error: \"<nil>\"\nDEBUG LoadInt64s conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dml_people\" duration: 0 row_count: 0 error: \"<nil>\"\n",
 					buf.String())
 			})
-
 		})
 
 		t.Run("Tx Commit", func(t *testing.T) {
@@ -557,12 +552,11 @@ func TestWithLogger_Select(t *testing.T) {
 }
 
 func TestWithLogger_Union(t *testing.T) {
-
 	uniID := new(int32)
 	rConn := createRealSession(t)
 	defer dmltest.Close(t, rConn)
 
-	var uniqueIDFunc = func() string {
+	uniqueIDFunc := func() string {
 		return fmt.Sprintf("UNIQ%02d", atomic.AddInt32(uniID, 1))
 	}
 
@@ -702,12 +696,11 @@ func TestWithLogger_Union(t *testing.T) {
 }
 
 func TestWithLogger_Update(t *testing.T) {
-
 	uniID := new(int32)
 	rConn := createRealSession(t)
 	defer dmltest.Close(t, rConn)
 
-	var uniqueIDFunc = func() string {
+	uniqueIDFunc := func() string {
 		return fmt.Sprintf("UNIQ%02d", atomic.AddInt32(uniID, 3))
 	}
 
@@ -832,7 +825,7 @@ func TestWithLogger_WithCTE(t *testing.T) {
 	rConn := createRealSession(t)
 	defer dmltest.Close(t, rConn)
 
-	var uniqueIDFunc = func() string {
+	uniqueIDFunc := func() string {
 		return fmt.Sprintf("UNIQ%02d", atomic.AddInt32(uniID, 2))
 	}
 
@@ -855,7 +848,6 @@ func TestWithLogger_WithCTE(t *testing.T) {
 	cteSel := dml.NewSelect().Star().From("zehTeEh")
 
 	t.Run("ConnPool", func(t *testing.T) {
-
 		wth := rConn.With(cte).Select(cteSel)
 
 		t.Run("Query", func(t *testing.T) {

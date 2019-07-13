@@ -40,7 +40,6 @@ func TestUpdate_WithArgs(t *testing.T) {
 	})
 
 	t.Run("alias mismatch Exec", func(t *testing.T) {
-
 		res, err := dml.NewUpdate("catalog_product_entity").
 			AddColumns("sku", "updated_at").
 			Where(dml.Column("entity_id").In().PlaceHolder()).WithDB(dbMock{
@@ -194,7 +193,6 @@ func TestUpdate_WithArgs(t *testing.T) {
 			stmtA.Reset()
 		}
 	})
-
 }
 
 // Make sure that type salesInvoice implements interface.
@@ -340,9 +338,9 @@ func TestUpdate_BindRecord(t *testing.T) {
 		u := dml.NewUpdate("catalog_category_entity").Alias("ce").
 			AddColumns("attribute_set_id", "parent_id", "path").
 			Where(
-				dml.Column("ce.entity_id").Greater().PlaceHolder(), //678
+				dml.Column("ce.entity_id").Greater().PlaceHolder(), // 678
 				dml.Column("cpe.entity_id").In().Int64s(66, 77),
-				dml.Column("cpei.attribute_set_id").Equal().PlaceHolder(), //6
+				dml.Column("cpei.attribute_set_id").Equal().PlaceHolder(), // 6
 			).WithArgs().Records(dml.Qualify("", ce), dml.Qualify("cpei", ce))
 		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `catalog_category_entity` AS `ce` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`ce`.`entity_id` > ?) AND (`cpe`.`entity_id` IN (66,77)) AND (`cpei`.`attribute_set_id` = ?)",
@@ -369,9 +367,9 @@ func TestUpdate_Clone(t *testing.T) {
 		d := dbc.Update("catalog_category_entity").Alias("ce").
 			AddColumns("attribute_set_id", "parent_id", "path").
 			Where(
-				dml.Column("ce.entity_id").Greater().PlaceHolder(), //678
+				dml.Column("ce.entity_id").Greater().PlaceHolder(), // 678
 				dml.Column("cpe.entity_id").In().Int64s(66, 77),
-				dml.Column("cpei.attribute_set_id").Equal().PlaceHolder(), //6
+				dml.Column("cpei.attribute_set_id").Equal().PlaceHolder(), // 6
 			)
 		d2 := d.Clone()
 		notEqualPointers(t, d, d2)

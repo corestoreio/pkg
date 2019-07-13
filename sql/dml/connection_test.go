@@ -68,7 +68,6 @@ func TestTransactionRollbackReal(t *testing.T) {
 }
 
 func TestWithDSNfromEnv(t *testing.T) {
-
 	t.Run("incorrect env", func(t *testing.T) {
 		os.Setenv("TEST_CS_DSN_WithDSNfromEnv", "errrrr")
 		defer func() {

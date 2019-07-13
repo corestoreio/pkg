@@ -32,7 +32,6 @@ var cmCustomers = &customerCollection{
 // collection does not get qualified because SELECT happens from one table
 // without an alias.
 func ExampleColumnMapper_selectWhereInCollection() {
-
 	q := dml.NewSelect("entity_id", "firstname", "lifetime_sales").From("customer_entity").
 		Where(
 			dml.Column("entity_id").In().PlaceHolder(),
@@ -42,13 +41,13 @@ func ExampleColumnMapper_selectWhereInCollection() {
 	writeToSQLAndInterpolate(q)
 
 	// Output:
-	//Prepared Statement:
-	//SELECT `entity_id`, `firstname`, `lifetime_sales` FROM `customer_entity` WHERE
+	// Prepared Statement:
+	// SELECT `entity_id`, `firstname`, `lifetime_sales` FROM `customer_entity` WHERE
 	//(`entity_id` IN ?)
-	//Arguments: [11 12 13]
+	// Arguments: [11 12 13]
 	//
-	//Interpolated Statement:
-	//SELECT `entity_id`, `firstname`, `lifetime_sales` FROM `customer_entity` WHERE
+	// Interpolated Statement:
+	// SELECT `entity_id`, `firstname`, `lifetime_sales` FROM `customer_entity` WHERE
 	//(`entity_id` IN (11,12,13))
 }
 
@@ -56,7 +55,6 @@ func ExampleColumnMapper_selectWhereInCollection() {
 // collection. The qualifier maps to the alias name of the customer_entity
 // table.
 func ExampleColumnMapper_selectJoinCollection() {
-
 	q := dml.NewSelect("ce.entity_id", "ce.firstname", "cg.customer_group_code", "cg.tax_class_id").FromAlias("customer_entity", "ce").
 		Join(dml.MakeIdentifier("customer_group").Alias("cg"),
 			dml.Column("ce.group_id").Equal().Column("cg.customer_group_id"),
@@ -69,43 +67,41 @@ func ExampleColumnMapper_selectJoinCollection() {
 	writeToSQLAndInterpolate(q)
 
 	// Output:
-	//Prepared Statement:
-	//SELECT `ce`.`entity_id`, `ce`.`firstname`, `cg`.`customer_group_code`,
+	// Prepared Statement:
+	// SELECT `ce`.`entity_id`, `ce`.`firstname`, `cg`.`customer_group_code`,
 	//`cg`.`tax_class_id` FROM `customer_entity` AS `ce` INNER JOIN `customer_group`
-	//AS `cg` ON (`ce`.`group_id` = `cg`.`customer_group_id`) WHERE (`ce`.`entity_id`
-	//IN ?)
-	//Arguments: [11 12 13]
+	// AS `cg` ON (`ce`.`group_id` = `cg`.`customer_group_id`) WHERE (`ce`.`entity_id`
+	// IN ?)
+	// Arguments: [11 12 13]
 	//
-	//Interpolated Statement:
-	//SELECT `ce`.`entity_id`, `ce`.`firstname`, `cg`.`customer_group_code`,
+	// Interpolated Statement:
+	// SELECT `ce`.`entity_id`, `ce`.`firstname`, `cg`.`customer_group_code`,
 	//`cg`.`tax_class_id` FROM `customer_entity` AS `ce` INNER JOIN `customer_group`
-	//AS `cg` ON (`ce`.`group_id` = `cg`.`customer_group_id`) WHERE (`ce`.`entity_id`
-	//IN (11,12,13))
+	// AS `cg` ON (`ce`.`group_id` = `cg`.`customer_group_id`) WHERE (`ce`.`entity_id`
+	// IN (11,12,13))
 }
 
 // ExampleColumnMapper_updateEntity updates an entity with the defined fields.
 func ExampleColumnMapper_updateEntity() {
-
 	q := dml.NewUpdate("customer_entity").AddColumns("firstname", "lifetime_sales", "voucher_codes").
 		Where(dml.Column("entity_id").Equal().PlaceHolder()).
 		WithArgs().Record("", cmCustomers.Data[0]) // Empty string is the qualifier
 
 	writeToSQLAndInterpolate(q)
 	// Output:
-	//Prepared Statement:
-	//UPDATE `customer_entity` SET `firstname`=?, `lifetime_sales`=?,
+	// Prepared Statement:
+	// UPDATE `customer_entity` SET `firstname`=?, `lifetime_sales`=?,
 	//`voucher_codes`=? WHERE (`entity_id` = ?)
-	//Arguments: [Karl Gopher 47.11 1FE9983E|28E76FBC 11]
+	// Arguments: [Karl Gopher 47.11 1FE9983E|28E76FBC 11]
 	//
-	//Interpolated Statement:
-	//UPDATE `customer_entity` SET `firstname`='Karl Gopher', `lifetime_sales`=47.11,
+	// Interpolated Statement:
+	// UPDATE `customer_entity` SET `firstname`='Karl Gopher', `lifetime_sales`=47.11,
 	//`voucher_codes`='1FE9983E|28E76FBC' WHERE (`entity_id` = 11)
 }
 
 // ExampleColumnMapper_insertEntities inserts multiple entities into a table.
 // Collection not yet supported.
 func ExampleColumnMapper_insertEntitiesWithColumns() {
-
 	q := dml.NewInsert("customer_entity").AddColumns("firstname", "lifetime_sales", "store_id", "voucher_codes").
 		WithArgs().
 		// might get optimized in the future, but it depends.
@@ -115,24 +111,23 @@ func ExampleColumnMapper_insertEntitiesWithColumns() {
 
 	writeToSQLAndInterpolate(q)
 	// Output:
-	//Prepared Statement:
-	//INSERT INTO `customer_entity`
+	// Prepared Statement:
+	// INSERT INTO `customer_entity`
 	//(`firstname`,`lifetime_sales`,`store_id`,`voucher_codes`) VALUES
 	//(?,?,?,?),(?,?,?,?),(?,?,?,?)
-	//Arguments: [Karl Gopher 47.11 7 1FE9983E|28E76FBC Fung Go Roo 28.94 7 4FE7787E|15E59FBB|794EFDE8 John Doe 138.54 6 ]
+	// Arguments: [Karl Gopher 47.11 7 1FE9983E|28E76FBC Fung Go Roo 28.94 7 4FE7787E|15E59FBB|794EFDE8 John Doe 138.54 6 ]
 	//
-	//Interpolated Statement:
-	//INSERT INTO `customer_entity`
+	// Interpolated Statement:
+	// INSERT INTO `customer_entity`
 	//(`firstname`,`lifetime_sales`,`store_id`,`voucher_codes`) VALUES ('Karl
-	//Gopher',47.11,7,'1FE9983E|28E76FBC'),('Fung Go
-	//Roo',28.94,7,'4FE7787E|15E59FBB|794EFDE8'),('John Doe',138.54,6,'')
+	// Gopher',47.11,7,'1FE9983E|28E76FBC'),('Fung Go
+	// Roo',28.94,7,'4FE7787E|15E59FBB|794EFDE8'),('John Doe',138.54,6,'')
 }
 
 // ExampleColumnMapper_insertEntitiesWithoutColumns inserts multiple entities
 // into a table. It includes all fields in the sruct. In this case 5 fields
 // including the autoincrement field.
 func ExampleColumnMapper_insertEntitiesWithoutColumns() {
-
 	q := dml.NewInsert("customer_entity").
 		// SetRecordPlaceHolderCount mandatory because no columns provided!
 		// customerEntity has five fields and all fields are requested. For
@@ -145,32 +140,31 @@ func ExampleColumnMapper_insertEntitiesWithoutColumns() {
 
 	writeToSQLAndInterpolate(q)
 	// Output:
-	//Prepared Statement:
-	//INSERT INTO `customer_entity` VALUES (?,?,?,?,?),(?,?,?,?,?),(?,?,?,?,?)
-	//Arguments: [11 Karl Gopher 7 47.11 1FE9983E|28E76FBC 12 Fung Go Roo 7 28.94 4FE7787E|15E59FBB|794EFDE8 13 John Doe 6 138.54 ]
+	// Prepared Statement:
+	// INSERT INTO `customer_entity` VALUES (?,?,?,?,?),(?,?,?,?,?),(?,?,?,?,?)
+	// Arguments: [11 Karl Gopher 7 47.11 1FE9983E|28E76FBC 12 Fung Go Roo 7 28.94 4FE7787E|15E59FBB|794EFDE8 13 John Doe 6 138.54 ]
 	//
-	//Interpolated Statement:
-	//INSERT INTO `customer_entity` VALUES (11,'Karl
-	//Gopher',7,47.11,'1FE9983E|28E76FBC'),(12,'Fung Go
-	//Roo',7,28.94,'4FE7787E|15E59FBB|794EFDE8'),(13,'John Doe',6,138.54,'')
+	// Interpolated Statement:
+	// INSERT INTO `customer_entity` VALUES (11,'Karl
+	// Gopher',7,47.11,'1FE9983E|28E76FBC'),(12,'Fung Go
+	// Roo',7,28.94,'4FE7787E|15E59FBB|794EFDE8'),(13,'John Doe',6,138.54,'')
 }
 
 func ExampleColumnMapper_insertCollectionWithoutColumns() {
-
-	q := dml.NewInsert("customer_entity"). //AddColumns("firstname", "lifetime_sales", "store_id", "voucher_codes").
+	q := dml.NewInsert("customer_entity"). // AddColumns("firstname", "lifetime_sales", "store_id", "voucher_codes").
 						SetRecordPlaceHolderCount(5).
 						SetRowCount(len(cmCustomers.Data)).WithArgs().Record("", cmCustomers)
 
 	writeToSQLAndInterpolate(q)
 	// Output:
-	//Prepared Statement:
-	//INSERT INTO `customer_entity` VALUES (?,?,?,?,?),(?,?,?,?,?),(?,?,?,?,?)
-	//Arguments: [11 Karl Gopher 7 47.11 1FE9983E|28E76FBC 12 Fung Go Roo 7 28.94 4FE7787E|15E59FBB|794EFDE8 13 John Doe 6 138.54 ]
+	// Prepared Statement:
+	// INSERT INTO `customer_entity` VALUES (?,?,?,?,?),(?,?,?,?,?),(?,?,?,?,?)
+	// Arguments: [11 Karl Gopher 7 47.11 1FE9983E|28E76FBC 12 Fung Go Roo 7 28.94 4FE7787E|15E59FBB|794EFDE8 13 John Doe 6 138.54 ]
 	//
-	//Interpolated Statement:
-	//INSERT INTO `customer_entity` VALUES (11,'Karl
-	//Gopher',7,47.11,'1FE9983E|28E76FBC'),(12,'Fung Go
-	//Roo',7,28.94,'4FE7787E|15E59FBB|794EFDE8'),(13,'John Doe',6,138.54,'')
+	// Interpolated Statement:
+	// INSERT INTO `customer_entity` VALUES (11,'Karl
+	// Gopher',7,47.11,'1FE9983E|28E76FBC'),(12,'Fung Go
+	// Roo',7,28.94,'4FE7787E|15E59FBB|794EFDE8'),(13,'John Doe',6,138.54,'')
 }
 
 // ExampleColumnMapper_selectSalesOrdersFromSpecificCustomers this query should
@@ -186,12 +180,12 @@ func ExampleColumnMapper_selectSalesOrdersFromSpecificCustomers() {
 
 	writeToSQLAndInterpolate(q)
 	// Output:
-	//Prepared Statement:
-	//SELECT `entity_id`, `status`, `increment_id`, `grand_total`, `tax_total` FROM
+	// Prepared Statement:
+	// SELECT `entity_id`, `status`, `increment_id`, `grand_total`, `tax_total` FROM
 	//`sales_order_entity` WHERE (`customer_id` IN ?)
-	//Arguments: [11 12 13]
+	// Arguments: [11 12 13]
 	//
-	//Interpolated Statement:
-	//SELECT `entity_id`, `status`, `increment_id`, `grand_total`, `tax_total` FROM
+	// Interpolated Statement:
+	// SELECT `entity_id`, `status`, `increment_id`, `grand_total`, `tax_total` FROM
 	//`sales_order_entity` WHERE (`customer_id` IN (11,12,13))
 }

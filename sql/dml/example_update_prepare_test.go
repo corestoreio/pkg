@@ -123,6 +123,6 @@ func ExampleUpdate_Prepare() {
 	}
 
 	// Output:
-	//RowsAffected 1
-	//RowsAffected 1
+	// RowsAffected 1
+	// RowsAffected 1
 }

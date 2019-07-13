@@ -42,7 +42,6 @@ func TestWith_Query(t *testing.T) {
 		rows, err := sel.WithArgs().QueryContext(context.TODO())
 		assert.Nil(t, rows)
 		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
-
 	})
 }
 
@@ -138,17 +137,17 @@ func TestNewWith(t *testing.T) {
 			"WITH RECURSIVE `my_cte` (`n`) AS ((SELECT 1)\nUNION ALL\n(SELECT 1+n FROM `my_cte` WHERE (`n` < 6)))\nUPDATE `numbers` SET `n`=0 WHERE (n=my_cte.n*my_cte.n)",
 			"WITH RECURSIVE `my_cte` (`n`) AS ((SELECT 1)\nUNION ALL\n(SELECT 1+n FROM `my_cte` WHERE (`n` < 6)))\nUPDATE `numbers` SET `n`=0 WHERE (n=my_cte.n*my_cte.n)",
 		)
-		//WITH RECURSIVE my_cte(n) AS
+		// WITH RECURSIVE my_cte(n) AS
 		//(
 		//	SELECT 1
-		//UNION ALL
-		//SELECT 1+n FROM my_cte WHERE n<6
+		// UNION ALL
+		// SELECT 1+n FROM my_cte WHERE n<6
 		//)
-		//UPDATE numbers, my_cte
+		// UPDATE numbers, my_cte
 		//# Change to 0...
 		//	SET numbers.n=0
 		//# ... the numbers which are squares, i.e. 1 and 4
-		//WHERE numbers.n=my_cte.n*my_cte.n;
+		// WHERE numbers.n=my_cte.n*my_cte.n;
 	})
 
 	t.Run("error EMPTY top clause", func(t *testing.T) {
@@ -212,7 +211,6 @@ func TestWith_Prepare(t *testing.T) {
 		}()
 
 		t.Run("Context", func(t *testing.T) {
-
 			rows, err := stmt.WithArgs().QueryContext(context.TODO(), 6889)
 			assert.NoError(t, err)
 			defer rows.Close()
@@ -223,7 +221,6 @@ func TestWith_Prepare(t *testing.T) {
 		})
 
 		t.Run("RowContext", func(t *testing.T) {
-
 			row := stmt.WithArgs().QueryRowContext(context.TODO(), 6890)
 			assert.NoError(t, err)
 			n, e := "", ""

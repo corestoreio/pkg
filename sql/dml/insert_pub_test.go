@@ -90,7 +90,6 @@ func TestInsert_Bind(t *testing.T) {
 		)
 	})
 	t.Run("without columns, all columns requested", func(t *testing.T) {
-
 		customers := []*customerEntity{
 			{EntityID: 11, Firstname: "Karl Gopher", StoreID: 0x7, LifetimeSales: null.MakeFloat64(47.11), VoucherCodes: exampleStringSlice{"1FE9983E", "28E76FBC"}},
 			{EntityID: 12, Firstname: "Fung Go Roo", StoreID: 0x7, LifetimeSales: null.MakeFloat64(28.94), VoucherCodes: exampleStringSlice{"4FE7787E", "15E59FBB", "794EFDE8"}},
@@ -106,7 +105,6 @@ func TestInsert_Bind(t *testing.T) {
 			"INSERT INTO `customer_entity` VALUES (11,'Karl Gopher',7,47.11,'1FE9983E|28E76FBC'),(12,'Fung Go Roo',7,28.94,'4FE7787E|15E59FBB|794EFDE8'),(13,'John Doe',6,138.54,'')",
 			int64(11), "Karl Gopher", int64(7), 47.11, "1FE9983E|28E76FBC", int64(12), "Fung Go Roo", int64(7), 28.94, "4FE7787E|15E59FBB|794EFDE8", int64(13), "John Doe", int64(6), 138.54, "",
 		)
-
 	})
 	t.Run("column not found", func(t *testing.T) {
 		objs := []someRecord{{1, 88, false}, {2, 99, true}}
@@ -320,7 +318,6 @@ func TestInsert_BuildValues(t *testing.T) {
 	t.Parallel()
 
 	t.Run("WithArgs", func(t *testing.T) {
-
 		p := &dmlPerson{
 			Name:  "Pike",
 			Email: null.MakeString("pikes@peak.co"),
@@ -340,7 +337,6 @@ func TestInsert_BuildValues(t *testing.T) {
 	})
 
 	t.Run("WithoutArgs", func(t *testing.T) {
-
 		ins := dml.NewInsert("alpha").
 			AddColumns("name", "email").BuildValues()
 
@@ -390,7 +386,6 @@ func TestInsert_Clone(t *testing.T) {
 		assert.Exactly(t, i.Log, i2.Log)
 	})
 	t.Run("non-nil OnDulicateKey", func(t *testing.T) {
-
 		i := dml.NewInsert("a").
 			AddColumns("something_id", "user_id", "other").
 			AddOnDuplicateKey(

@@ -39,12 +39,15 @@ type benchMockQuerier struct{}
 func (benchMockQuerier) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
 	return new(sql.Rows), nil
 }
+
 func (benchMockQuerier) PrepareContext(ctx context.Context, query string) (*sql.Stmt, error) {
 	return new(sql.Stmt), nil
 }
+
 func (benchMockQuerier) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
 	return nil, nil
 }
+
 func (benchMockQuerier) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
 	return new(sql.Row)
 }
@@ -53,7 +56,6 @@ func (benchMockQuerier) QueryRowContext(ctx context.Context, query string, args 
 // BenchmarkSelect_Rows-4   	  500000	      2919 ns/op	    5411 B/op	      18 allocs/op
 // BenchmarkSelect_Rows-4   	  500000	      2504 ns/op	    4239 B/op	      17 allocs/op
 func BenchmarkSelect_Rows(b *testing.B) {
-
 	tables := []string{"eav_attribute"}
 	ctx := context.TODO()
 	db := benchMockQuerier{}
@@ -148,7 +150,6 @@ func BenchmarkSelectExcessConditions(b *testing.B) {
 }
 
 func BenchmarkSelectFullSQL(b *testing.B) {
-
 	sqlObj := dml.NewSelect("a", "b", "z", "y", "x").From("c").
 		Distinct().
 		Where(
@@ -220,7 +221,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 
 func BenchmarkSelect_Large_IN(b *testing.B) {
 	// This tests simulates selecting many varchar attribute values for specific products.
-	var entityIDs = make([]int64, 1024)
+	entityIDs := make([]int64, 1024)
 	for i := 0; i < 1024; i++ {
 		entityIDs[i] = int64(i + 1600)
 	}
@@ -325,11 +326,9 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 			selA.Reset()
 		}
 	})
-
 }
 
 func BenchmarkSelect_ComplexAddColumns(b *testing.B) {
-
 	var haveSQL string
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -351,7 +350,7 @@ func BenchmarkSelect_ComplexAddColumns(b *testing.B) {
 		benchmarkGlobalVals = args
 	}
 	_ = haveSQL
-	//b.Logf("%s", haveSQL)
+	// b.Logf("%s", haveSQL)
 	/*
 		SELECT entity_id,
 		       value,
@@ -402,7 +401,6 @@ func BenchmarkSelect_SQLCase(b *testing.B) {
 }
 
 func BenchmarkDeleteSQL(b *testing.B) {
-
 	b.Run("NewDelete", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			var err error
@@ -437,7 +435,6 @@ func BenchmarkDeleteSQL(b *testing.B) {
 }
 
 func BenchmarkInsertValuesSQL(b *testing.B) {
-
 	b.Run("NewInsert", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			var err error
@@ -481,7 +478,6 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 }
 
 func BenchmarkInsertRecordsSQL(b *testing.B) {
-
 	obj := someRecord{SomethingID: 1, UserID: 99, Other: false}
 	insA := dml.NewInsert("alpha").
 		AddColumns("something_id", "user_id", "other").
@@ -499,7 +495,6 @@ func BenchmarkInsertRecordsSQL(b *testing.B) {
 }
 
 func BenchmarkRepeat(b *testing.B) {
-
 	b.Run("multi", func(b *testing.B) {
 		args := dml.MakeArgs(3).Ints(5, 7, 9, 11).Strings("a", "b", "c", "d", "e").Int(22)
 		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?) AND name IN (?,?,?,?,?) AND status IN (?)"
@@ -605,7 +600,6 @@ func BenchmarkIfNull(b *testing.B) {
 }
 
 func BenchmarkUnion(b *testing.B) {
-
 	newUnion5 := func() *dml.Union {
 		// not valid SQL
 		return dml.NewUnion(
@@ -722,7 +716,7 @@ func BenchmarkUpdateValuesSQL(b *testing.B) {
 
 func BenchmarkArgUnion(b *testing.B) {
 	reflectIFaceContainer := make([]interface{}, 0, 25)
-	var finalArgs = make([]interface{}, 0, 30)
+	finalArgs := make([]interface{}, 0, 30)
 	drvVal := []driver.Valuer{null.MakeString("I'm a valid null string: See the License for the specific language governing permissions and See the License for the specific language governing permissions and See the License for the specific language governing permissions and")}
 	argUnion := dml.MakeArgs(30)
 	now1 := dml.Now.UTC()
@@ -746,7 +740,7 @@ func BenchmarkArgUnion(b *testing.B) {
 			if err != nil {
 				b.Fatal(err)
 			}
-			//b.Fatal("%#v", finalArgs)
+			// b.Fatal("%#v", finalArgs)
 			reflectIFaceContainer = reflectIFaceContainer[:0]
 			finalArgs = finalArgs[:0]
 		}
@@ -769,7 +763,7 @@ func BenchmarkArgUnion(b *testing.B) {
 				Time(now1)
 
 			finalArgs = argUnion.Interfaces(finalArgs...)
-			//b.Fatal("%#v", finalArgs)
+			// b.Fatal("%#v", finalArgs)
 			argUnion = argUnion.Reset()
 			finalArgs = finalArgs[:0]
 		}
@@ -788,7 +782,7 @@ func BenchmarkArgUnion(b *testing.B) {
 			if err != nil {
 				b.Fatal(err)
 			}
-			//b.Fatal("%#v", finalArgs)
+			// b.Fatal("%#v", finalArgs)
 			reflectIFaceContainer = reflectIFaceContainer[:0]
 			finalArgs = finalArgs[:0]
 		}
@@ -805,16 +799,14 @@ func BenchmarkArgUnion(b *testing.B) {
 				Null()
 
 			finalArgs = argUnion.Interfaces(finalArgs...)
-			//b.Fatal("%#v", finalArgs)
+			// b.Fatal("%#v", finalArgs)
 			argUnion = argUnion.Reset()
 			finalArgs = finalArgs[:0]
 		}
 	})
-
 }
 
 func encodePlaceholder(args []interface{}, value interface{}) ([]interface{}, error) {
-
 	if valuer, ok := value.(driver.Valuer); ok {
 		// get driver.Valuer's data
 		var err error

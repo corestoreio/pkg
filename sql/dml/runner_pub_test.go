@@ -51,7 +51,6 @@ func TestColumnMap_BinaryText(t *testing.T) {
 	cm.CheckValidUTF8 = true
 	err := cm.Text(&textBinaryEncoder{data: []byte("\xc0\x80")}).Err()
 	assert.ErrorIsKind(t, errors.NotValid, err)
-
 }
 
 type textBinaryEncoder struct {
@@ -64,6 +63,7 @@ func (be textBinaryEncoder) MarshalBinary() (data []byte, err error) {
 	}
 	return be.data, nil
 }
+
 func (be *textBinaryEncoder) UnmarshalBinary(data []byte) error {
 	if bytes.Equal(data, []byte(`error`)) {
 		return errors.Empty.Newf("test error empty")
@@ -71,12 +71,14 @@ func (be *textBinaryEncoder) UnmarshalBinary(data []byte) error {
 	be.data = append(be.data, data...)
 	return nil
 }
+
 func (be textBinaryEncoder) MarshalText() (text []byte, err error) {
 	if bytes.Equal(be.data, []byte(`error`)) {
 		return nil, errors.DecryptionFailed.Newf("internal validation failed test error")
 	}
 	return be.data, nil
 }
+
 func (be *textBinaryEncoder) UnmarshalText(text []byte) error {
 	if bytes.Equal(text, []byte(`error`)) {
 		return errors.Empty.Newf("test error empty")
@@ -374,7 +376,6 @@ func TestColumnMap_Query(t *testing.T) {
 	})
 
 	t.Run("invalid UTF8 Str", func(t *testing.T) {
-
 		r := sqlmock.NewRows(columns).AddRow(
 			"True", nil,
 			-1, -64, nil,
@@ -394,7 +395,6 @@ func TestColumnMap_Query(t *testing.T) {
 	})
 
 	t.Run("invalid UTF8 NullStr", func(t *testing.T) {
-
 		r := sqlmock.NewRows(columns).AddRow(
 			"True", nil,
 			-1, -64, nil,
@@ -908,5 +908,4 @@ func TestColumnMap_Prepared(t *testing.T) {
 		48.98,                //	"decimal",
 		nil, []byte("error"), // "text", "binary",
 	))
-
 }

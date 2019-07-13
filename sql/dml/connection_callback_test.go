@@ -33,7 +33,7 @@ var _ driver.Pinger = (*cbConn)(nil)
 var _ driver.ConnBeginTx = (*cbConn)(nil)
 var _ fullStmter = (*cbStmt)(nil)
 
-//var _ driver.ResetSessioner = (*cbConn)(nil)
+// var _ driver.ResetSessioner = (*cbConn)(nil)
 
 func TestWrapDriver_Connection_Error(t *testing.T) {
 	t.Parallel()
@@ -189,12 +189,15 @@ func (mc SQLErrDriverCon) Prepare(query string) (driver.Stmt, error) {
 func (mc SQLErrDriverCon) PrepareContext(ctx context.Context, query string) (driver.Stmt, error) {
 	return mc.Stmt, mc.PrepareError
 }
+
 func (mc SQLErrDriverCon) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
 	return nil, mc.ExecError
 }
+
 func (mc SQLErrDriverCon) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
 	return nil, mc.QueryError
 }
+
 func (mc SQLErrDriverCon) Ping(ctx context.Context) (err error) {
 	return mc.PingError
 }

@@ -61,7 +61,7 @@ func (pe *categoryEntity) MapColumns(cm *dml.ColumnMap) error {
 			}
 		case "fk_teaser_id_s": // TODO ...
 			panic("TODO")
-			//cm.Strings(pe.TeaserIDs...)
+			// cm.Strings(pe.TeaserIDs...)
 		default:
 			return errors.NotFound.Newf("[dml_test] Column %q not found", c)
 		}
@@ -74,7 +74,6 @@ func (pe *categoryEntity) MapColumns(cm *dml.ColumnMap) error {
 // categoryEntity implements the dml.ColumnMapper interface and can provide the
 // required arguments.
 func ExampleUpdate_WithArgs_record() {
-
 	ce := &categoryEntity{345, 6, "p123", null.MakeString("4/5/6/7"), []string{"saleAutumn", "saleShoe"}}
 
 	// Updates all rows in the table because of missing WHERE statement.
@@ -96,21 +95,21 @@ func ExampleUpdate_WithArgs_record() {
 	writeToSQLAndInterpolate(u.WithCacheKey("update by entity_id").WithArgs().Record("", ce))
 
 	// Output:
-	//Prepared Statement:
-	//UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?,
+	// Prepared Statement:
+	// UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?,
 	//`path`=?, `teaser_id_s`=?
-	//Arguments: [6 p123 4/5/6/7 saleAutumn|saleShoe]
+	// Arguments: [6 p123 4/5/6/7 saleAutumn|saleShoe]
 	//
-	//Interpolated Statement:
-	//UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p123',
+	// Interpolated Statement:
+	// UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p123',
 	//`path`='4/5/6/7', `teaser_id_s`='saleAutumn|saleShoe'
 	//
-	//Prepared Statement:
-	//UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?,
+	// Prepared Statement:
+	// UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?,
 	//`path`=?, `teaser_id_s`=? WHERE (`entity_id` = ?)
-	//Arguments: [6 p456 <nil> <nil> 678]
+	// Arguments: [6 p456 <nil> <nil> 678]
 	//
-	//Interpolated Statement:
-	//UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456',
+	// Interpolated Statement:
+	// UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456',
 	//`path`=NULL, `teaser_id_s`=NULL WHERE (`entity_id` = 678)
 }

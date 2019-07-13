@@ -109,9 +109,9 @@ func (tx *Tx) DeleteFrom(from string) *Delete {
 
 // FromTables specifies additional tables to delete from besides the default table.
 func (b *Delete) FromTables(tables ...string) *Delete {
-	//DELETE [LOW_PRIORITY] [QUICK] [IGNORE]
-	//tbl_name[.*] [, tbl_name[.*]] ...	<-- MultiTables/FromTables
-	//FROM table_references
+	// DELETE [LOW_PRIORITY] [QUICK] [IGNORE]
+	// tbl_name[.*] [, tbl_name[.*]] ...	<-- MultiTables/FromTables
+	// FROM table_references
 	//[WHERE where_condition]
 	for _, t := range tables {
 		b.MultiTables = append(b.MultiTables, MakeIdentifier(t))

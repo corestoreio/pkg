@@ -187,7 +187,6 @@ func TestOpArgs(t *testing.T) {
 		)
 	})
 	t.Run("BytesSlice IN binary", func(t *testing.T) {
-
 		compareToSQL(t,
 			NewSelect("a", "b").From("t1").Where(
 				Column("a316").In().BytesSlice([]byte{66, 250, 67}, []byte(`Rust`), []byte("\xFB\xBF\xBF\xBF\xBF")),
@@ -198,7 +197,6 @@ func TestOpArgs(t *testing.T) {
 		)
 	})
 	t.Run("ArgValue IN", func(t *testing.T) {
-
 		compareToSQL(t,
 			NewSelect("a", "b").From("t1").Where(
 				Column("a3419").In().DriverValues(
@@ -258,11 +256,11 @@ func TestConditions_writeOnDuplicateKey(t *testing.T) {
 			ph, err := cnds.writeOnDuplicateKey(buf, nil)
 			assert.Nil(t, ph, "TODO check me")
 			assert.NoError(t, err)
-			//args := MakeArgs(2)
-			//args, _, err = cnds.appendArgs(args, appendArgsDUPKEY)
-			//assert.NoError(t, err)
-			//assert.Exactly(t, wantSQL, buf.String(), t.Name())
-			//assert.Exactly(t, wantArgs, args.Interfaces(), t.Name())
+			// args := MakeArgs(2)
+			// args, _, err = cnds.appendArgs(args, appendArgsDUPKEY)
+			// assert.NoError(t, err)
+			// assert.Exactly(t, wantSQL, buf.String(), t.Name())
+			// assert.Exactly(t, wantArgs, args.Interfaces(), t.Name())
 		}
 	}
 	t.Run("empty columns does nothing", runner(Conditions{}, ""))
@@ -407,7 +405,6 @@ func TestCondition_Column(t *testing.T) {
 			"SELECT `t_d`.`attribute_id`, `e`.`entity_id` FROM `catalog_category_entity` AS `e` WHERE (`e`.`entity_id` IN (28,16,25,17)) AND (`t_d`.`attribute_id` IN (45))",
 		)
 	})
-
 }
 
 func TestExpr(t *testing.T) {
@@ -587,6 +584,7 @@ func TestConditions_Reset(t *testing.T) {
 
 	assert.Exactly(t, []string{
 		"", "SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = ?) AND (`t_d`.`attribute_id` IN (45))",
-		"resetted_where", "SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id2` = ?)"},
+		"resetted_where", "SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id2` = ?)",
+	},
 		s.CachedQueries(), "CachedQueries")
 }

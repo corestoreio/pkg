@@ -107,7 +107,6 @@ func BenchmarkDialectEscapeTime(b *testing.B) {
 var benchmarkArgEnc argEncoded
 
 func BenchmarkArgumentEncoding(b *testing.B) {
-
 	b.Run("all types without warm up", func(b *testing.B) {
 		t1 := now()
 		t2 := now().Add(time.Minute * 2)
@@ -139,7 +138,6 @@ func BenchmarkArgumentEncoding(b *testing.B) {
 	})
 
 	b.Run("all types with warm up", func(b *testing.B) {
-
 		t1 := now()
 		t2 := now().Add(time.Minute * 2)
 

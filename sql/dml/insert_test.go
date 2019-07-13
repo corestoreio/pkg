@@ -37,7 +37,6 @@ func TestInsert_NoArguments(t *testing.T) {
 		compareToSQL2(t, ins, errors.NoKind,
 			"INSERT INTO `tableA` (`a`,`b`) VALUES (?,?)")
 	})
-
 }
 
 func TestInsert_SetValuesCount(t *testing.T) {
@@ -114,7 +113,6 @@ func TestInsertReal(t *testing.T) {
 }
 
 func validateInsertingBarack(t *testing.T, c *ConnPool, lastInsertID int64) {
-
 	var person dmlPerson
 	_, err := c.SelectFrom("dml_people").Star().Where(Column("id").Int64(lastInsertID)).WithArgs().Load(context.TODO(), &person)
 	assert.NoError(t, err)
@@ -126,7 +124,6 @@ func validateInsertingBarack(t *testing.T, c *ConnPool, lastInsertID int64) {
 }
 
 func TestInsertReal_OnDuplicateKey(t *testing.T) {
-
 	s := createRealSessionWithFixtures(t, nil)
 	defer testCloser(t, s)
 
@@ -201,7 +198,6 @@ func TestInsert_FromSelect(t *testing.T) {
 			int64(897),
 		)
 		assert.Exactly(t, []string{"d"}, ins.qualifiedColumns)
-
 	})
 
 	t.Run("one PH, complex SELECT", func(t *testing.T) {
@@ -350,7 +346,7 @@ func TestInsert_Pair(t *testing.T) {
 		)
 	})
 	// TODO implement expression handling, requires some refactorings
-	//t.Run("expression no args", func(t *testing.T) {
+	// t.Run("expression no args", func(t *testing.T) {
 	//	compareToSQL(t, NewInsert("catalog_product_link").
 	//		WithPairs(
 	//			Column("product_id").Int64(2046),
@@ -589,7 +585,6 @@ func TestInsert_Parallel_Bind_Slice(t *testing.T) {
 		insA.Reset().Record("", persons)
 		compareToSQL(t, insA, errors.NoKind, wantPH, wantIP, wantArgs...)
 	})
-
 }
 
 func TestInsert_Expressions_In_Values(t *testing.T) {
@@ -607,7 +602,7 @@ func TestInsert_Expressions_In_Values(t *testing.T) {
 		)
 	})
 	// TODO Not yet supported. some calculations necessary in Insert.toSQL
-	//t.Run("2 string expression multiple rows", func(t *testing.T) {
+	// t.Run("2 string expression multiple rows", func(t *testing.T) {
 	//	ins := NewInsert("catalog_product_customer_relation").
 	//		AddColumns("product_id", "sort_order").
 	//		WithPairs(

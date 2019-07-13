@@ -98,7 +98,6 @@ func (ts *tableStore) MapColumns(cm *dml.ColumnMap) error {
 }
 
 func ExampleSelect_WithArgs_record() {
-
 	ce := &catalogCategoryEntity{678, 6, 670, "2/13/670/678", 0, now()}
 	st := &tableStore{17, "ch-en", 2, 4, "Swiss EN Store"}
 
@@ -126,25 +125,24 @@ func ExampleSelect_WithArgs_record() {
 	fmt.Print("\n\n")
 
 	// Output:
-	//Prepared Statement:
-	//SELECT `t_d`.`attribute_id`, `e`.`entity_id`, `t_d`.`value` AS `default_value`,
-	//IF((t_s.value_id IS NULL), t_d.value, t_s.value) AS `value` FROM
+	// Prepared Statement:
+	// SELECT `t_d`.`attribute_id`, `e`.`entity_id`, `t_d`.`value` AS `default_value`,
+	// IF((t_s.value_id IS NULL), t_d.value, t_s.value) AS `value` FROM
 	//`catalog_category_entity` AS `e` INNER JOIN `catalog_category_entity_varchar` AS
 	//`t_d` ON (`e`.`entity_id` = `t_d`.`entity_id`) LEFT JOIN
 	//`catalog_category_entity_varchar` AS `t_s` ON (`t_s`.`attribute_id` =
 	//`t_d`.`attribute_id`) WHERE (`e`.`entity_id` IN ?) AND (`t_d`.`attribute_id` IN
 	//(45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0)) AND (`t_d`.`store_id`
 	//= ?)
-	//Arguments: [678 17]
+	// Arguments: [678 17]
 	//
-	//Interpolated Statement:
-	//SELECT `t_d`.`attribute_id`, `e`.`entity_id`, `t_d`.`value` AS `default_value`,
-	//IF((t_s.value_id IS NULL), t_d.value, t_s.value) AS `value` FROM
+	// Interpolated Statement:
+	// SELECT `t_d`.`attribute_id`, `e`.`entity_id`, `t_d`.`value` AS `default_value`,
+	// IF((t_s.value_id IS NULL), t_d.value, t_s.value) AS `value` FROM
 	//`catalog_category_entity` AS `e` INNER JOIN `catalog_category_entity_varchar` AS
 	//`t_d` ON (`e`.`entity_id` = `t_d`.`entity_id`) LEFT JOIN
 	//`catalog_category_entity_varchar` AS `t_s` ON (`t_s`.`attribute_id` =
 	//`t_d`.`attribute_id`) WHERE (`e`.`entity_id` IN 678) AND (`t_d`.`attribute_id`
-	//IN (45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0)) AND
+	// IN (45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0)) AND
 	//(`t_d`.`store_id` = 17)
-
 }

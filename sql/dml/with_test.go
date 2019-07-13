@@ -83,18 +83,21 @@ func TestWith_ToSQL(t *testing.T) {
 			FROM   worst_month;
 		*/
 		cte := NewWith(
-			WithCTE{Name: "sales_by_month", Columns: []string{"month", "total"},
+			WithCTE{
+				Name: "sales_by_month", Columns: []string{"month", "total"},
 				Select: NewSelect().Unsafe().AddColumns("Month(day_of_sale)", "Sum(amount)").
 					From("sales_days").
 					Where(Expr("Year(day_of_sale) = ?").Int(2015)).
 					GroupBy("Month(day_of_sale))"),
 			},
-			WithCTE{Name: "best_month", Columns: []string{"month", "total", "award"},
+			WithCTE{
+				Name: "best_month", Columns: []string{"month", "total", "award"},
 				Select: NewSelect().AddColumns("month", "total").AddColumnsConditions(Expr(`"best"`)).From("sales_by_month").
 					Where(
 						Column("total").Equal().Sub(NewSelect().AddColumnsConditions(Expr("Max(total)")).From("sales_by_month"))),
 			},
-			WithCTE{Name: "worst_month", Columns: []string{"month", "total", "award"},
+			WithCTE{
+				Name: "worst_month", Columns: []string{"month", "total", "award"},
 				Select: NewSelect().AddColumns("month", "total").AddColumnsConditions(Expr(`"worst"`)).From("sales_by_month").
 					Where(
 						Column("total").Equal().Sub(NewSelect().AddColumnsConditions(Expr("Min(total)")).From("sales_by_month"))),
@@ -117,5 +120,4 @@ func TestWith_ToSQL(t *testing.T) {
 			[]string{"", "WITH `sales_by_month` (`month`,`total`) AS (SELECT Month(day_of_sale), Sum(amount) FROM `sales_days` WHERE (Year(day_of_sale) = 2015) GROUP BY Month(day_of_sale))),\n`best_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, \"best\" FROM `sales_by_month` WHERE (`total` = (SELECT Max(total) FROM `sales_by_month`))),\n`worst_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, \"worst\" FROM `sales_by_month` WHERE (`total` = (SELECT Min(total) FROM `sales_by_month`)))\n(SELECT * FROM `best_month`)\nUNION ALL\n(SELECT * FROM `worst_month`)"},
 			cte.CachedQueries())
 	})
-
 }

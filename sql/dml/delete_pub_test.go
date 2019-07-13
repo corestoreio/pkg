@@ -195,7 +195,6 @@ func TestDelete_Join(t *testing.T) {
 	})
 
 	t.Run("LeftJoin USING without alias", func(t *testing.T) {
-
 		del := dml.NewDelete("customer_entity").
 			FromTables("customer_address").
 			LeftJoin(
@@ -213,7 +212,6 @@ func TestDelete_Join(t *testing.T) {
 	})
 
 	t.Run("OuterJoin USING without alias", func(t *testing.T) {
-
 		del := dml.NewDelete("customer_entity").
 			FromTables("customer_address").
 			OuterJoin(
@@ -228,7 +226,6 @@ func TestDelete_Join(t *testing.T) {
 	})
 
 	t.Run("JOIN USING without FromTables", func(t *testing.T) {
-
 		del := dml.NewDelete("customer_entity").
 			CrossJoin(
 				dml.MakeIdentifier("customer_address").Alias("ca"),
@@ -301,6 +298,5 @@ func TestDelete_Clone(t *testing.T) {
 		notEqualPointers(t, d.MultiTables, d2.MultiTables)
 		assert.Exactly(t, d.DB, d2.DB)
 		assert.Exactly(t, d.Log, d2.Log)
-
 	})
 }

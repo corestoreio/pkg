@@ -522,7 +522,6 @@ func (b *ColumnMap) Int16(ptr *int16) *ColumnMap {
 		b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 	}
 	return b
-
 }
 
 // Int8 reads a int8 value and appends it to the arguments slice or assigns

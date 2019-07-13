@@ -76,7 +76,7 @@ func (a id) Clone() id {
 // uncomment this functions and its test once needed
 // MakeExpressionAlias creates a new unquoted expression with an optional alias
 // `a`, which can be empty.
-//func MakeExpressionAlias(expression []string, a string) identifier {
+// func MakeExpressionAlias(expression []string, a string) identifier {
 //	return identifier{
 //		Expression: expression,
 //		Aliased:      a,

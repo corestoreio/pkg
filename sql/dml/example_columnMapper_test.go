@@ -54,6 +54,7 @@ type exampleStringSlice []string
 func (sl exampleStringSlice) ToString() string {
 	return strings.Join(sl, "|")
 }
+
 func (sl exampleStringSlice) FromString(s string) []string {
 	return strings.Split(s, "|")
 }
@@ -176,7 +177,7 @@ func ExampleColumnMapper() {
 	}
 
 	// Output:
-	//Result of "SELECT * FROM `customer_entity`" query:
+	// Result of "SELECT * FROM `customer_entity`" query:
 	//[entity_id firstname store_id lifetime_sales voucher_codes]
 	//{18446744073700551613 Karl Gopher 7 47.11 [1FE9983E 28E76FBC]}
 	//{18446744073700551614 Fung Go Roo 7 28.94 [4FE7787E 15E59FBB 794EFDE8]}

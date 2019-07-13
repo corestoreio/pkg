@@ -35,7 +35,7 @@ type Select struct {
 	// http://stackoverflow.com/questions/3639861/why-is-select-considered-harmful
 	Columns ids
 
-	//TODO: create a possibility of the Select type which has a half-pre-rendered
+	// TODO: create a possibility of the Select type which has a half-pre-rendered
 	// SQL statement where a developer can only modify or append WHERE clauses.
 	// especially useful during code generation
 

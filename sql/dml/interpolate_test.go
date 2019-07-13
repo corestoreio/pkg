@@ -434,7 +434,7 @@ func TestInterpolate_Slices_Strings_Between(t *testing.T) {
 		)
 	})
 	t.Run("empty args triggers incorrect interpolation of values", func(t *testing.T) {
-		var sl = make([]string, 0, 2)
+		sl := make([]string, 0, 2)
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a IN ? AND b = ? OR c = ?").Strs("a", "b").Str("c").Strs(sl...),
 			errors.NoKind,
@@ -464,8 +464,10 @@ func TestInterpolate_Different(t *testing.T) {
 		errKind errors.Kind
 	}{
 		// NULL
-		{"SELECT * FROM x WHERE a = ?", MakeArgs(1).Null(),
-			"SELECT * FROM x WHERE a = NULL", errors.NoKind},
+		{
+			"SELECT * FROM x WHERE a = ?", MakeArgs(1).Null(),
+			"SELECT * FROM x WHERE a = NULL", errors.NoKind,
+		},
 
 		// integers
 		{
@@ -485,18 +487,28 @@ func TestInterpolate_Different(t *testing.T) {
 		},
 
 		// boolean
-		{"SELECT * FROM x WHERE a = ? AND b = ?", MakeArgs(2).Bool(true).Bool(false),
-			"SELECT * FROM x WHERE a = 1 AND b = 0", errors.NoKind},
-		{"SELECT * FROM x WHERE a IN ?", MakeArgs(1).Bools(true, false),
-			"SELECT * FROM x WHERE a IN (1,0)", errors.NoKind},
+		{
+			"SELECT * FROM x WHERE a = ? AND b = ?", MakeArgs(2).Bool(true).Bool(false),
+			"SELECT * FROM x WHERE a = 1 AND b = 0", errors.NoKind,
+		},
+		{
+			"SELECT * FROM x WHERE a IN ?", MakeArgs(1).Bools(true, false),
+			"SELECT * FROM x WHERE a IN (1,0)", errors.NoKind,
+		},
 
 		// floats
-		{"SELECT * FROM x WHERE a = ? AND b = ?", MakeArgs(2).Float64(0.15625).Float64(3.14159),
-			"SELECT * FROM x WHERE a = 0.15625 AND b = 3.14159", errors.NoKind},
-		{"SELECT * FROM x WHERE a IN ?", MakeArgs(1).Float64s(0.15625, 3.14159),
-			"SELECT * FROM x WHERE a IN (0.15625,3.14159)", errors.NoKind},
-		{"SELECT * FROM x WHERE a = ? AND b = ? and C = ?", MakeArgs(1).Float64s(0.15625, 3.14159),
-			"", errors.Mismatch},
+		{
+			"SELECT * FROM x WHERE a = ? AND b = ?", MakeArgs(2).Float64(0.15625).Float64(3.14159),
+			"SELECT * FROM x WHERE a = 0.15625 AND b = 3.14159", errors.NoKind,
+		},
+		{
+			"SELECT * FROM x WHERE a IN ?", MakeArgs(1).Float64s(0.15625, 3.14159),
+			"SELECT * FROM x WHERE a IN (0.15625,3.14159)", errors.NoKind,
+		},
+		{
+			"SELECT * FROM x WHERE a = ? AND b = ? and C = ?", MakeArgs(1).Float64s(0.15625, 3.14159),
+			"", errors.Mismatch,
+		},
 		{
 			`SELECT * FROM x WHERE a IN ?`,
 			MakeArgs(1).Float64s(1.1, -2.2, 3.3),
@@ -523,9 +535,11 @@ func TestInterpolate_Different(t *testing.T) {
 		},
 
 		// slices
-		{"SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ?",
+		{
+			"SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ?",
 			MakeArgs(4).Int(1).Ints(1, 2, 3).Ints(5, 6, 7).Strings("wat", "ok"),
-			"SELECT * FROM x WHERE a = 1 AND b = (1,2,3) AND c = (5,6,7) AND d = ('wat','ok')", errors.NoKind},
+			"SELECT * FROM x WHERE a = 1 AND b = (1,2,3) AND c = (5,6,7) AND d = ('wat','ok')", errors.NoKind,
+		},
 		//
 		////// TODO valuers
 		////{"SELECT * FROM x WHERE a = ? AND b = ?",
@@ -533,14 +547,20 @@ func TestInterpolate_Different(t *testing.T) {
 		////	"SELECT * FROM x WHERE a = 'wat' AND b = NULL", nil},
 
 		// errors
-		{"SELECT * FROM x WHERE a = ? AND b = ?", MakeArgs(1).Int64(1),
-			"", errors.Mismatch},
+		{
+			"SELECT * FROM x WHERE a = ? AND b = ?", MakeArgs(1).Int64(1),
+			"", errors.Mismatch,
+		},
 
-		{"SELECT * FROM x WHERE", MakeArgs(1).Int(1),
-			"", errors.Mismatch},
+		{
+			"SELECT * FROM x WHERE", MakeArgs(1).Int(1),
+			"", errors.Mismatch,
+		},
 
-		{"SELECT * FROM x WHERE a = ?", MakeArgs(1).String(string([]byte{0x34, 0xFF, 0xFE})),
-			"", errors.NotValid},
+		{
+			"SELECT * FROM x WHERE a = ?", MakeArgs(1).String(string([]byte{0x34, 0xFF, 0xFE})),
+			"", errors.NotValid,
+		},
 
 		// String() without arguments is equal to empty interface in the previous version.
 		{"SELECT 'hello", MakeArgs(1).String(""), "", errors.Mismatch},
@@ -568,7 +588,7 @@ func TestInterpolate_Different(t *testing.T) {
 				t.Errorf("IDX %q\ngot error: %v\nwant: %t", test.sql, err, isErr)
 			}
 		}
-		//assert.NoError(t, err, "IDX %d", i)
+		// assert.NoError(t, err, "IDX %d", i)
 		if str != test.expSQL {
 			t.Errorf("IDX %q\ngot: %v\nwant: %v\nError: %+v", test.sql, str, test.expSQL, err)
 		}

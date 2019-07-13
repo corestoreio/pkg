@@ -64,7 +64,7 @@ type fullConner interface {
 	driver.QueryerContext
 	driver.Pinger
 	driver.ConnBeginTx
-	//driver.ResetSessioner // later
+	// driver.ResetSessioner // later
 }
 
 type cbConn struct {

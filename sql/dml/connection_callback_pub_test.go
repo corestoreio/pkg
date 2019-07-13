@@ -30,7 +30,7 @@ import (
 
 func TestDriverCallBack(t *testing.T) {
 	// Test assumes that the table dml_people does still exists.
-	var counter = new(int32)
+	counter := new(int32)
 
 	buf := new(bytes.Buffer)
 	db := dmltest.MustConnectDB(t,

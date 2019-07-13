@@ -285,7 +285,6 @@ func writeInterpolate(buf *bytes.Buffer, sql string, args arguments) error {
 // here some magic to avoid duplicate code, but for now we stick with a copy of
 // the above original function writeInterpolateByte.
 func writeInterpolateBytes(buf *bytes.Buffer, sql []byte, args arguments) error {
-
 	phCount, argCount := bytes.Count(sql, placeHolderByte), len(args)
 	if argCount > 0 && phCount != argCount {
 		return errors.Mismatch.Newf("[dml] Number of place holders (%d) vs number of arguments (%d) do not match.", phCount, argCount)

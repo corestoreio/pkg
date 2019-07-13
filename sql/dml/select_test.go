@@ -165,7 +165,6 @@ func TestSelect_BasicToSQL(t *testing.T) {
 			"SELECT `email` FROM `tableX` WHERE (`id` IN ())",
 		)
 	})
-
 }
 
 func TestSelect_FullToSQL(t *testing.T) {
@@ -218,7 +217,7 @@ func TestSelect_ComplexExpr(t *testing.T) {
 
 		compareToSQL2(t, sel, errors.NoKind,
 			"SELECT DISTINCT `a`, `b`, `z`, `y`, `x` FROM `c` WHERE (`d` = 1 OR `e` = 'wat') AND (`g` = 3) AND (`h` IN (1,2,3)) GROUP BY `ab`, `ii`, `iii` HAVING (j = k) AND (`jj` = 1) AND (`jjj` = 2) ORDER BY `l1`, `l2`, `l3` LIMIT 8,7",
-			//int64(1), "wat", int64(3), int64(1), int64(2), int64(3), int64(1), int64(2),
+			// int64(1), "wat", int64(3), int64(1), int64(2), int64(3), int64(1), int64(2),
 		)
 	})
 }
@@ -428,7 +427,6 @@ func TestSelect_ConditionColumn(t *testing.T) {
 		Column("d").GreaterOrEqual().Float64(5.1),
 		"SELECT `a`, `b` FROM `c` WHERE (`d` >= 5.1)",
 	))
-
 }
 
 func TestSelect_Null(t *testing.T) {
@@ -806,7 +804,6 @@ func TestSelect_WithArgs_LoadType_Slices(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Nil(t, names)
 	})
-
 }
 
 func TestSelect_Join(t *testing.T) {
@@ -826,7 +823,6 @@ func TestSelect_Join(t *testing.T) {
 		compareToSQL2(t, sqlObj, errors.NoKind,
 			"SELECT DISTINCT STRAIGHT_JOIN SQL_NO_CACHE `p1`.*, `p2`.* FROM `dml_people` AS `p1` INNER JOIN `dml_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = 42)",
 		)
-
 	})
 
 	t.Run("inner", func(t *testing.T) {
@@ -961,7 +957,6 @@ func TestSelect_Columns(t *testing.T) {
 		}()
 		NewSelect().From("t3").
 			AddColumnsAliases("t3.name", "t3Name", "t3.sku")
-
 	})
 
 	t.Run("AddColumnsConditions", func(t *testing.T) {
@@ -984,7 +979,6 @@ func TestSelect_Columns(t *testing.T) {
 			AddColumnsConditions(Expr("SUM(price)+?-?").Float64(3.14159).Alias("total_price"))
 		compareToSQL2(t, s, errors.Mismatch, "")
 	})
-
 }
 
 func TestSelect_SubSelect(t *testing.T) {
@@ -1136,7 +1130,6 @@ func TestSelect_Subselect_Compact(t *testing.T) {
 func TestSelect_ParenthesisOpen_Close(t *testing.T) {
 	t.Parallel()
 	t.Run("beginning of WHERE", func(t *testing.T) {
-
 		sel := NewSelect("a", "b").
 			FromAlias("c", "cc").
 			Where(
@@ -1309,7 +1302,6 @@ func TestSelect_NamedArguments(t *testing.T) {
 		)
 		assert.Exactly(t, []string{":configID", ":configID", "value"}, sel.qualifiedColumns, "qualifiedColumns should match")
 	})
-
 }
 
 func TestSelect_SetRecord(t *testing.T) {
@@ -1374,7 +1366,7 @@ func TestSelect_SetRecord(t *testing.T) {
 			int64(6666),
 		)
 	})
-	//t.Run("Warning when nothing got matched", func(t *testing.T) {
+	// t.Run("Warning when nothing got matched", func(t *testing.T) {
 	//	sel := NewSelect("a").From("dml_people").
 	//		Where(
 	//			Column("id").PlaceHolder(),

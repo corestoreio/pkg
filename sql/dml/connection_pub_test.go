@@ -34,7 +34,6 @@ func TestTableNameMapper(t *testing.T) {
 	defer dmltest.MockClose(t, dbc, dbMock)
 
 	t.Run("ConnPool", func(t *testing.T) {
-
 		t.Run("DELETE", func(t *testing.T) {
 			dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("DELETE FROM `prefix_tableZ`")).WillReturnResult(sqlmock.NewResult(0, 0))
 			_, err := dbc.DeleteFrom("tableZ").WithArgs().ExecContext(context.TODO())
@@ -111,7 +110,6 @@ func TestTableNameMapper(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	})
-
 }
 
 func TestConnPool_Schema(t *testing.T) {
@@ -179,7 +177,6 @@ func TestWithRawSQL(t *testing.T) {
 	defer dmltest.MockClose(t, dbc, mock)
 
 	t.Run("ConnPool", func(t *testing.T) {
-
 		compareToSQL(t,
 			dbc.WithRawSQL("SELECT * FROM users WHERE x = ? AND y IN (?,?,?)").Int(9).Int(5).Int(6).Int(7),
 			errors.NoKind,
@@ -320,7 +317,6 @@ func TestWithExecSQLOnConn(t *testing.T) {
 		err = dbc.Close()
 		assert.ErrorIsKind(t, errors.NotAcceptable, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
-
 	})
 }
 
@@ -367,7 +363,6 @@ func TestWithCreateDatabase(t *testing.T) {
 }
 
 func TestConnPool_WithDisabledForeignKeyChecks(t *testing.T) {
-
 	t.Run("success", func(t *testing.T) {
 		dbc, dbMock := dmltest.MockDB(t)
 		defer dmltest.MockClose(t, dbc, dbMock)
@@ -421,5 +416,4 @@ func TestConnPool_WithDisabledForeignKeyChecks(t *testing.T) {
 		})
 		assert.ErrorIsKind(t, errors.Blocked, err)
 	})
-
 }

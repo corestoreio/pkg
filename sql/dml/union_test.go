@@ -147,7 +147,6 @@ func TestUnion_DisableBuildCache(t *testing.T) {
 	})
 
 	t.Run("with interpolate", func(t *testing.T) {
-
 		const cachedSQLInterpolated = "(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = 3.14159))\nORDER BY `_preserve_result_set`, `a`, `b` DESC, concat(\"c\",b,\"d\")"
 		for i := 0; i < 3; i++ {
 			compareToSQL(t, u, errors.NoKind,
@@ -290,7 +289,6 @@ func TestNewUnionTemplate(t *testing.T) {
 		).
 			StringReplace("$type$", "varchar", "int", "decimal", "datetime", "text").
 			StringReplace("$column$", "varcharX", "intX", "decimalX", "datetimeX")
-
 	})
 	t.Run("StringReplace 2nd call too many values and nothing should happen", func(t *testing.T) {
 		u := NewUnion(

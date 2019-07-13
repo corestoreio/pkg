@@ -103,7 +103,6 @@ func BenchmarkSelectRows2007(b *testing.B) {
 			ccd.Data = ccd.Data[:0]
 		}
 	})
-
 }
 
 // BenchmarkInsert_Prepared/ExecRecord-4       	    5000	    320371 ns/op	     512 B/op	      12 allocs/op
