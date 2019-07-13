@@ -124,7 +124,9 @@ type TableConfig struct {
 	// 		[]string{"column_a",`json: ",omitempty"`,"column_b","`xml:,omitempty`"}
 	// In case when foreign keys should be referenced:
 	// 		[]string{"FieldNameX",`faker: "-"`,"FieldNameY","`xml:field_name_y,omitempty`"}
+	// TODO CustomStructTags should be appended to StructTags
 	CustomStructTags []string // balanced slice
+	// AppendCustomStructTags []string // balanced slice TODO maybe this additionally
 	// Comment adds custom comments to each struct type. Useful when relying on
 	// 3rd party JSON marshaler code generators like easyjson or ffjson. If
 	// comment spans over multiple lines each line will be checked if it starts
@@ -432,7 +434,6 @@ func WithTableConfig(tableName string, opt *TableConfig) (o Option) {
 func WithForeignKeyRelationships(ctx context.Context, db dml.Querier, skipRelationships ...string) (opt Option) {
 	opt.sortOrder = 210 // must run at the end or where the end is near ;-)
 	opt.fn = func(g *Generator) (err error) {
-
 		if len(skipRelationships)%2 == 1 {
 			return errors.Fatal.Newf("[dmlgen] skipRelationships must be balanced slice. Read the doc.")
 		}
@@ -742,7 +743,6 @@ func (g *Generator) hasFeature(tableInclude, tableExclude, feature FeatureToggle
 
 // findUsedPackages checks for needed packages which we must import.
 func (g *Generator) findUsedPackages(file []byte) ([]string, error) {
-
 	af, err := goparser.ParseFile(token.NewFileSet(), "cs_virtual_file.go", append([]byte("package temporarily_main\n\n"), file...), 0)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -954,7 +954,6 @@ func (g *Generator) generateProto(w io.Writer) error {
 
 // GenerateGo writes the Go source code into `w` and the test code into wTest.
 func (g *Generator) GenerateGo(wMain, wTest io.Writer) error {
-
 	mainGen := codegen.NewGo(g.Package)
 	testGen := codegen.NewGo(g.Package)
 
@@ -1277,7 +1276,7 @@ func GenerateProto(protoFilesPath string, po *ProtocOptions) error {
 		if po.WorkingDirectory == "" {
 			po.WorkingDirectory = "."
 		}
-		fmt.Printf("\ncd %s && %s\n\n", po.WorkingDirectory, cmd.String())
+		fmt.Printf("\ncd %s && %s\n\n", po.WorkingDirectory, cmd)
 	}
 	out, err := cmd.CombinedOutput()
 	if err != nil {

@@ -322,7 +322,8 @@ var typeMap = map[string]map[string]*TypeDef{ // immutable
 			SerializerUNull:    "bytes",
 			SerializerUNotNull: "bytes",
 			SerializerNull:     "bytes",
-			SerializerNotNull:  "bytes"},
+			SerializerNotNull:  "bytes",
+		},
 		"fbs": {
 			GoUNull:            "[]byte",
 			GoUNotNull:         "[]byte",
@@ -331,7 +332,8 @@ var typeMap = map[string]map[string]*TypeDef{ // immutable
 			SerializerUNull:    "[ubyte]",
 			SerializerUNotNull: "[ubyte]",
 			SerializerNull:     "[ubyte]",
-			SerializerNotNull:  "[ubyte]"},
+			SerializerNotNull:  "[ubyte]",
+		},
 	},
 }
 
@@ -394,7 +396,6 @@ func mustGetTypeDef(mysqlDataType, serializer string) *TypeDef {
 }
 
 func (g *Generator) findType(c *ddl.Column) *TypeDef {
-
 	goType := mustGetTypeDef(c.DataType, g.Serializer)
 
 	// The switch block overwrites the already retrieved goType by checking for
@@ -412,7 +413,6 @@ func (g *Generator) findType(c *ddl.Column) *TypeDef {
 // bigint, smallint, tinyint will result in "int". If withNull is true the
 // returned type can store a null value.
 func (g *Generator) mySQLToGoType(c *ddl.Column, withNull bool) string {
-
 	goType := g.findType(c)
 
 	var t string
@@ -444,7 +444,6 @@ func (g *Generator) toGoPrimitiveFromNull(c *ddl.Column) string {
 }
 
 func (g *Generator) mySQLToGoDmlColumnMap(c *ddl.Column, withNull bool) string {
-
 	gt := g.mySQLToGoType(c, withNull)
 	if gt == "[]byte" {
 		return "Byte"
@@ -464,7 +463,6 @@ func (g *Generator) mySQLToGoDmlColumnMap(c *ddl.Column, withNull bool) string {
 }
 
 func (g *Generator) toSerializerType(c *ddl.Column, withNull bool) string {
-
 	goType := g.findType(c)
 
 	var t string

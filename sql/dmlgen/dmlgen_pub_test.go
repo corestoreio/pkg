@@ -82,7 +82,6 @@ func writeFile(t *testing.T, outFile string, wFn func(io.Writer, io.Writer) erro
 		}
 	}
 	assert.NoError(t, err, "%+v", err)
-
 }
 
 // TestNewGenerator_Protobuf_Json writes a Go and Proto file to the
@@ -215,7 +214,6 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 }
 
 func TestInfoSchemaForeignKeys(t *testing.T) {
-
 	t.Skip("One time test. Use when needed to regenerate the code")
 
 	db := dmltest.MustConnectDB(t)

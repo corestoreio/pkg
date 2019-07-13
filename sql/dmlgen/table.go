@@ -687,7 +687,6 @@ func (t *Table) fnCollectionCut(mainGen *codegen.Go, g *Generator) {
 		mainGen.Out()
 	}
 	mainGen.Pln(`}`)
-
 }
 
 func (t *Table) fnCollectionSwap(mainGen *codegen.Go, g *Generator) {
@@ -933,7 +932,6 @@ func (t *Table) generateTestOther(testGen *codegen.Go, g *Generator) (codeWritte
 }
 
 func (t *Table) generateTestDB(testGen *codegen.Go) {
-
 	testGen.Pln(`t.Run("` + strs.ToGoCamelCase(t.TableName) + `_Entity", func(t *testing.T) {`)
 	testGen.Pln(`tbl := tbls.MustTable(TableName`+strs.ToGoCamelCase(t.TableName), `)`)
 
