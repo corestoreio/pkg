@@ -713,7 +713,7 @@ func TestWithLogger_Update(t *testing.T) {
 	assert.NoError(t, rConn.Options(dml.WithLogger(lg, uniqueIDFunc)))
 
 	t.Run("ConnPool", func(t *testing.T) {
-		d := rConn.Update("dml_people").Set(
+		d := rConn.Update("dml_people").AddClauses(
 			dml.Column("email").Str("new@email.com"),
 		).Where(dml.Column("id").GreaterOrEqual().Float64(78.31))
 
@@ -739,7 +739,7 @@ func TestWithLogger_Update(t *testing.T) {
 		t.Run("Tx Commit", func(t *testing.T) {
 			defer buf.Reset()
 			assert.NoError(t, rConn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
-				_, err := tx.Update("dml_people").Set(
+				_, err := tx.Update("dml_people").AddClauses(
 					dml.Column("email").Str("new@email.com"),
 				).Where(dml.Column("id").GreaterOrEqual().Float64(36.56)).WithArgs().ExecContext(context.TODO())
 				return err
@@ -753,7 +753,7 @@ func TestWithLogger_Update(t *testing.T) {
 		conn, err := rConn.Conn(context.TODO())
 		assert.NoError(t, err)
 
-		d := conn.Update("dml_people").Set(
+		d := conn.Update("dml_people").AddClauses(
 			dml.Column("email").Str("new@email.com"),
 		).Where(dml.Column("id").GreaterOrEqual().Float64(21.56))
 
@@ -795,7 +795,7 @@ func TestWithLogger_Update(t *testing.T) {
 		t.Run("Tx Commit", func(t *testing.T) {
 			defer buf.Reset()
 			assert.NoError(t, conn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
-				_, err := tx.Update("dml_people").Set(
+				_, err := tx.Update("dml_people").AddClauses(
 					dml.Column("email").Str("new@email.com"),
 				).Where(dml.Column("id").GreaterOrEqual().Float64(39.56)).WithArgs().ExecContext(context.TODO())
 				return err
@@ -808,7 +808,7 @@ func TestWithLogger_Update(t *testing.T) {
 		t.Run("Tx Rollback", func(t *testing.T) {
 			defer buf.Reset()
 			assert.Error(t, conn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
-				_, err := tx.Update("dml_people").Set(
+				_, err := tx.Update("dml_people").AddClauses(
 					dml.Column("email").Str("new@email.com"),
 				).Where(dml.Column("id").GreaterOrEqual().PlaceHolder()).WithArgs().ExecContext(context.TODO())
 				return err

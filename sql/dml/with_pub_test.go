@@ -130,7 +130,7 @@ func TestNewWith(t *testing.T) {
 				dml.NewSelect().Unsafe().AddColumns("1+n").From("my_cte").Where(dml.Column("n").Less().Int(6)),
 			).All()},
 			// UPDATE statement is wrong because we're missing a JOIN which is not yet implemented.
-		).Update(dml.NewUpdate("numbers").Set(dml.Column("n").Int(0)).Where(dml.Expr("n=my_cte.n*my_cte.n"))).
+		).Update(dml.NewUpdate("numbers").AddClauses(dml.Column("n").Int(0)).Where(dml.Expr("n=my_cte.n*my_cte.n"))).
 			Recursive()
 
 		compareToSQL(t, cte, errors.NoKind,

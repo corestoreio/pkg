@@ -95,15 +95,25 @@ func (b *Update) Unsafe() *Update {
 	return b
 }
 
-// Set appends a column/value pair for the statement.
-func (b *Update) Set(c ...*Condition) *Update {
+// AddClauses appends a column/value pair for the statement.
+func (b *Update) AddClauses(c ...*Condition) *Update {
 	b.SetClauses = append(b.SetClauses, c...)
 	return b
 }
 
-// AddColumns adds columns which values gets later derived from a ColumnMapper.
+// AddColumns adds columns whose values gets later derived from a ColumnMapper.
 // Those columns will get passed to the ColumnMapper implementation.
 func (b *Update) AddColumns(columnNames ...string) *Update {
+	for _, col := range columnNames {
+		b.SetClauses = append(b.SetClauses, Column(col))
+	}
+	return b
+}
+
+// SetColumns resets the SetClauses slice and adds the columns. Same behaviour
+// as AddColumns.
+func (b *Update) SetColumns(columnNames ...string) *Update {
+	b.SetClauses = b.SetClauses[:0]
 	for _, col := range columnNames {
 		b.SetClauses = append(b.SetClauses, Column(col))
 	}

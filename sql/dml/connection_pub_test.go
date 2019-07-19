@@ -139,7 +139,7 @@ func TestTx_Wrap(t *testing.T) {
 
 		assert.NoError(t, dbc.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
 			// this creates an interpolated statement
-			res, err := tx.Update("tableX").Set(dml.Column("value").Int(5)).Where(dml.Column("scope").Str("default")).WithArgs().ExecContext(context.TODO())
+			res, err := tx.Update("tableX").AddClauses(dml.Column("value").Int(5)).Where(dml.Column("scope").Str("default")).WithArgs().ExecContext(context.TODO())
 			if err != nil {
 				return err
 			}
@@ -162,7 +162,7 @@ func TestTx_Wrap(t *testing.T) {
 
 		err := dbc.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
 			// Interpolated statement
-			res, err := tx.Update("tableX").Set(dml.Column("value").Int(5)).Where(dml.Column("scope").Str("default")).WithArgs().ExecContext(context.TODO())
+			res, err := tx.Update("tableX").AddClauses(dml.Column("value").Int(5)).Where(dml.Column("scope").Str("default")).WithArgs().ExecContext(context.TODO())
 			assert.Nil(t, res)
 			return err
 		})

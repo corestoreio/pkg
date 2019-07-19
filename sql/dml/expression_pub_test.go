@@ -200,7 +200,7 @@ func TestSQLCase(t *testing.T) {
 		*/
 
 		u := dml.NewUpdate("cataloginventory_stock_item").
-			Set(dml.Column("qty").SQLCase("`product_id`", "qty",
+			AddClauses(dml.Column("qty").SQLCase("`product_id`", "qty",
 				"3456", "qty+?",
 				"3457", "qty+?",
 				"3458", "qty+?",
@@ -218,7 +218,7 @@ func TestSQLCase(t *testing.T) {
 
 	t.Run("UPDATE in columns with args and with place holders", func(t *testing.T) {
 		u := dml.NewUpdate("cataloginventory_stock_item").
-			Set(dml.Column("qty").SQLCase("`product_id`", "qty",
+			AddClauses(dml.Column("qty").SQLCase("`product_id`", "qty",
 				"3456", "qty+?",
 				"3457", "qty+?",
 				"3458", "qty+?",

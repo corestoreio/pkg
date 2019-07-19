@@ -653,7 +653,7 @@ func ExampleSQLIf() {
 
 func ExampleSQLCase_update() {
 	u := dml.NewUpdate("cataloginventory_stock_item").
-		Set(dml.Column("qty").SQLCase("`product_id`", "qty",
+		AddClauses(dml.Column("qty").SQLCase("`product_id`", "qty",
 			"3456", "qty+?",
 			"3457", "qty+?",
 			"3458", "qty+?",

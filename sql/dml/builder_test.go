@@ -62,7 +62,7 @@ func TestSqlObjToString(t *testing.T) {
 		assert.Exactly(t, "SELECT `columnA` FROM `tableX` AS `X` WHERE (`columnA` <= 2.4)", b.String())
 	})
 	t.Run("UPDATE", func(t *testing.T) {
-		b := NewUpdate("tableX").Set(
+		b := NewUpdate("tableX").AddClauses(
 			Column("columnA").Int64(4),
 		).Where(Column("columnB").Between().Ints(5, 7))
 		// keep the place holder for columnA because we're not using interpolation

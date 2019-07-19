@@ -70,7 +70,7 @@ func TestDriverCallBack(t *testing.T) {
 	con, err := db.Conn(ctx)
 	assert.NoError(t, err)
 
-	upd := con.Update("dml_people").Set(dml.Column("name").PlaceHolder())
+	upd := con.Update("dml_people").AddClauses(dml.Column("name").PlaceHolder())
 	_, err = upd.WithArgs().ExecContext(ctx, "Hugo")
 	assert.NoError(t, err)
 

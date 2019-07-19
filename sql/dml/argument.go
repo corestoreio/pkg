@@ -32,7 +32,7 @@ import (
 const (
 	sqlStrNullUC             = "NULL"
 	sqlStar                  = "*"
-	defaultArgumentsCapacity = 5
+	defaultArgumentsCapacity = 5 // todo maybe remove this as its might not be worth
 )
 
 // QualifiedRecord is a ColumnMapper with a qualifier. A QualifiedRecord gets

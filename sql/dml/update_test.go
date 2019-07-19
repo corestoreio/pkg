@@ -27,14 +27,14 @@ func TestUpdate_Basics(t *testing.T) {
 	t.Parallel()
 
 	t.Run("all rows", func(t *testing.T) {
-		qb := NewUpdate("a").Set(
+		qb := NewUpdate("a").AddClauses(
 			Column("b").Int64(1),
 			Column("c").Int(2))
 		compareToSQL(t, qb, errors.NoKind, "UPDATE `a` SET `b`=1, `c`=2", "")
 	})
 	t.Run("single row", func(t *testing.T) {
 		compareToSQL(t, NewUpdate("a").
-			Set(
+			AddClauses(
 				Column("b").Int(1), Column("c").Int(2),
 			).Where(Column("id").Int(1)),
 			errors.NoKind,
@@ -42,27 +42,27 @@ func TestUpdate_Basics(t *testing.T) {
 			"UPDATE `a` SET `b`=1, `c`=2 WHERE (`id` = 1)")
 	})
 	t.Run("order by", func(t *testing.T) {
-		qb := NewUpdate("a").Set(Column("b").Int(1), Column("c").Int(2)).
+		qb := NewUpdate("a").AddClauses(Column("b").Int(1), Column("c").Int(2)).
 			OrderBy("col1", "col2").OrderByDesc("col2", "col3").Unsafe().OrderBy("concat(1,2,3)")
 		compareToSQL(t, qb, errors.NoKind,
 			"UPDATE `a` SET `b`=1, `c`=2 ORDER BY `col1`, `col2`, `col2` DESC, `col3` DESC, concat(1,2,3)",
 			"UPDATE `a` SET `b`=1, `c`=2 ORDER BY `col1`, `col2`, `col2` DESC, `col3` DESC, concat(1,2,3)")
 	})
 	t.Run("limit offset", func(t *testing.T) {
-		compareToSQL(t, NewUpdate("a").Set(Column("b").Int(1)).Limit(10),
+		compareToSQL(t, NewUpdate("a").AddClauses(Column("b").Int(1)).Limit(10),
 			errors.NoKind,
 			"UPDATE `a` SET `b`=1 LIMIT 10",
 			"UPDATE `a` SET `b`=1 LIMIT 10")
 	})
 	t.Run("same column name in SET and WHERE", func(t *testing.T) {
-		compareToSQL(t, NewUpdate("dml_people").Set(Column("key").Str("6-revoked")).Where(Column("key").Str("6")),
+		compareToSQL(t, NewUpdate("dml_people").AddClauses(Column("key").Str("6-revoked")).Where(Column("key").Str("6")),
 			errors.NoKind,
 			"UPDATE `dml_people` SET `key`='6-revoked' WHERE (`key` = '6')",
 			"UPDATE `dml_people` SET `key`='6-revoked' WHERE (`key` = '6')")
 	})
 
 	t.Run("placeholder in columns", func(t *testing.T) {
-		u := NewUpdate("dml_people").Set(
+		u := NewUpdate("dml_people").AddClauses(
 			Column("key").PlaceHolder(),
 		).Where(Column("key").Str("6")).WithArgs().String("Ke' --yX")
 		compareToSQL(t, u,
@@ -78,7 +78,7 @@ func TestUpdate_SetExprToSQL(t *testing.T) {
 
 	t.Run("no placeholder", func(t *testing.T) {
 		compareToSQL(t, NewUpdate("a").
-			Set(
+			AddClauses(
 				Column("foo").Int(1),
 				Column("bar").Expr("COALESCE(bar, 0) + 1"),
 			).Where(Column("id").Int(9)),
@@ -90,7 +90,7 @@ func TestUpdate_SetExprToSQL(t *testing.T) {
 
 	t.Run("with slice in WHERE clause", func(t *testing.T) {
 		compareToSQL(t, NewUpdate("a").
-			Set(
+			AddClauses(
 				Column("foo").Int(1),
 				Column("bar").Expr("COALESCE(bar, 0) + 1"),
 			).Where(Column("id").In().Int64s(10, 11)),
@@ -102,7 +102,7 @@ func TestUpdate_SetExprToSQL(t *testing.T) {
 
 	t.Run("with placeholder", func(t *testing.T) {
 		u := NewUpdate("a").
-			Set(
+			AddClauses(
 				Column("fooNULL").PlaceHolder(),
 				Column("bar99").Expr("COALESCE(bar, 0) + ?"),
 			).
@@ -126,7 +126,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Update the key
-	res, err := s.Update("dml_people").Set(Column("key").Str("6-revoked")).Where(Column("key").Str("6")).WithArgs().ExecContext(context.TODO())
+	res, err := s.Update("dml_people").AddClauses(Column("key").Str("6-revoked")).Where(Column("key").Str("6")).WithArgs().ExecContext(context.TODO())
 	assert.NoError(t, err)
 
 	// Assert our record was updated (and only our record)
@@ -158,7 +158,7 @@ func TestUpdateReal(t *testing.T) {
 
 	// Rename our George to Barack
 	_, err = s.Update("dml_people").
-		Set(Column("name").Str("Barack"), Column("email").Str("barack@whitehouse.gov")).
+		AddClauses(Column("name").Str("Barack"), Column("email").Str("barack@whitehouse.gov")).
 		Where(Column("id").In().Int64s(id, 8888)).WithArgs().ExecContext(context.TODO())
 	// Meaning of 8888: Just to see if the SQL with place holders gets created correctly
 	assert.NoError(t, err)
@@ -177,7 +177,7 @@ func TestUpdate_Prepare(t *testing.T) {
 	t.Parallel()
 	t.Run("ToSQL Error", func(t *testing.T) {
 		in := &Update{}
-		in.Set(Column("a").Int(1))
+		in.AddClauses(Column("a").Int(1))
 		stmt, err := in.Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.ErrorIsKind(t, errors.Empty, err)
@@ -189,7 +189,7 @@ func TestUpdate_Prepare(t *testing.T) {
 			error: errors.AlreadyClosed.Newf("Who closed myself?"),
 		}
 		u.Table.Name = "tableY"
-		u.Set(Column("a").Int(1))
+		u.AddClauses(Column("a").Int(1))
 
 		stmt, err := u.Prepare(context.TODO())
 		assert.Nil(t, stmt)
@@ -247,7 +247,7 @@ func TestUpdate_SetRecord(t *testing.T) {
 	})
 	t.Run("fails column `key` not in entity object", func(t *testing.T) {
 		u := NewUpdate("dml_person").AddColumns("name", "email").
-			Set(Column("keyXXX").PlaceHolder()).
+			AddClauses(Column("keyXXX").PlaceHolder()).
 			Where(Column("id").PlaceHolder()).
 			WithArgs().Record("", pRec)
 		compareToSQL(t, u, errors.NotFound,
@@ -257,11 +257,23 @@ func TestUpdate_SetRecord(t *testing.T) {
 	})
 }
 
+func TestUpdate_SetColumns(t *testing.T) {
+	u := NewUpdate("dml_person").AddColumns("name", "email").
+		AddClauses(Column("keyXXX").PlaceHolder()).
+		Where(Column("id").PlaceHolder())
+
+	u.SetColumns("firstname", "dob")
+	compareToSQL(t, u, errors.NoKind,
+		"UPDATE `dml_person` SET `firstname`=?, `dob`=? WHERE (`id` = ?)",
+		"",
+	)
+}
+
 func TestUpdate_DisableBuildCache(t *testing.T) {
 	t.Parallel()
 
 	up := NewUpdate("a").
-		Set(
+		AddClauses(
 			Column("foo").Int(1),
 			Column("bar").Expr("COALESCE(bar, 0) + ?").Int(2)).
 		Where(Column("id").PlaceHolder())

@@ -703,7 +703,7 @@ func BenchmarkUpdateValuesSQL(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var err error
 		benchmarkSelectStr, benchmarkGlobalVals, err = dml.NewUpdate("alpha").
-			Set(
+			AddClauses(
 				dml.Column("something_id").Int64(1),
 			).Where(
 			dml.Column("id").Int64(1),
