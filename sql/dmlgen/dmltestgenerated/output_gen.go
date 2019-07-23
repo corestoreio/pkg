@@ -259,7 +259,12 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) Swap(i, j int) {
 }
 
 // Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *CatalogProductIndexEAVDecimalIDXes) Len() int { return len(cc.Data) }
+func (cc *CatalogProductIndexEAVDecimalIDXes) Len() int {
+	if cc == nil {
+		return 0
+	}
+	return len(cc.Data)
+}
 
 // EntityIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
@@ -371,8 +376,8 @@ type CoreConfiguration struct {
 	Expires   null.Time   `json:"expires,omitempty" `                // expires datetime NULL  DEFAULT 'NULL'  "Value expiration time"
 	Path      string      `json:"x_path" xml:"y_path" max_len:"255"` // path varchar(255) NOT NULL  DEFAULT ''general''  "Config Path overwritten"
 	Value     null.String `json:"value,omitempty" max_len:"65535"`   // value text NULL  DEFAULT 'NULL'  "Value"
-	VersionTs time.Time   `json:"version_ts,omitempty" `             // version_ts timestamp(6) NOT NULL    "Timestamp Start Versioning"
-	VersionTe time.Time   `json:"version_te,omitempty" `             // version_te timestamp(6) NOT NULL PRI   "Timestamp End Versioning"
+	VersionTs time.Time   `json:"version_ts,omitempty" `             // version_ts timestamp(6) NOT NULL   STORED GENERATED "Timestamp Start Versioning"
+	VersionTe time.Time   `json:"version_te,omitempty" `             // version_te timestamp(6) NOT NULL PRI  STORED GENERATED "Timestamp End Versioning"
 }
 
 // Copy copies the struct and returns a new pointer
@@ -606,7 +611,12 @@ func (cc *CoreConfigurations) Insert(n *CoreConfiguration, i int) *CoreConfigura
 func (cc *CoreConfigurations) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
 
 // Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *CoreConfigurations) Len() int { return len(cc.Data) }
+func (cc *CoreConfigurations) Len() int {
+	if cc == nil {
+		return 0
+	}
+	return len(cc.Data)
+}
 
 // ConfigIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
@@ -985,7 +995,12 @@ func (cc *CustomerAddressEntities) Insert(n *CustomerAddressEntity, i int) *Cust
 func (cc *CustomerAddressEntities) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
 
 // Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *CustomerAddressEntities) Len() int { return len(cc.Data) }
+func (cc *CustomerAddressEntities) Len() int {
+	if cc == nil {
+		return 0
+	}
+	return len(cc.Data)
+}
 
 // EntityIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
@@ -1363,7 +1378,12 @@ func (cc *CustomerEntities) Insert(n *CustomerEntity, i int) *CustomerEntities {
 func (cc *CustomerEntities) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
 
 // Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *CustomerEntities) Len() int { return len(cc.Data) }
+func (cc *CustomerEntities) Len() int {
+	if cc == nil {
+		return 0
+	}
+	return len(cc.Data)
+}
 
 // EntityIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
@@ -1783,7 +1803,12 @@ func (cc *DmlgenTypesCollection) Insert(n *DmlgenTypes, i int) *DmlgenTypesColle
 func (cc *DmlgenTypesCollection) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
 
 // Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *DmlgenTypesCollection) Len() int { return len(cc.Data) }
+func (cc *DmlgenTypesCollection) Len() int {
+	if cc == nil {
+		return 0
+	}
+	return len(cc.Data)
+}
 
 // IDs returns a slice with the data or appends it to a slice.
 // Auto generated.
@@ -2164,7 +2189,12 @@ func (cc *SalesOrderStatusStates) Insert(n *SalesOrderStatusState, i int) *Sales
 func (cc *SalesOrderStatusStates) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
 
 // Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *SalesOrderStatusStates) Len() int { return len(cc.Data) }
+func (cc *SalesOrderStatusStates) Len() int {
+	if cc == nil {
+		return 0
+	}
+	return len(cc.Data)
+}
 
 // Statuss returns a slice with the data or appends it to a slice.
 // Auto generated.
@@ -2446,7 +2476,12 @@ func (cc *ViewCustomerAutoIncrements) Swap(i, j int) {
 }
 
 // Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *ViewCustomerAutoIncrements) Len() int { return len(cc.Data) }
+func (cc *ViewCustomerAutoIncrements) Len() int {
+	if cc == nil {
+		return 0
+	}
+	return len(cc.Data)
+}
 
 // Validate runs internal consistency tests on all items.
 func (cc *ViewCustomerAutoIncrements) Validate() (err error) {
@@ -2690,7 +2725,12 @@ func (cc *ViewCustomerNoAutoIncrements) Swap(i, j int) {
 }
 
 // Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *ViewCustomerNoAutoIncrements) Len() int { return len(cc.Data) }
+func (cc *ViewCustomerNoAutoIncrements) Len() int {
+	if cc == nil {
+		return 0
+	}
+	return len(cc.Data)
+}
 
 // Validate runs internal consistency tests on all items.
 func (cc *ViewCustomerNoAutoIncrements) Validate() (err error) {

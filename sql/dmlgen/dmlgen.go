@@ -90,10 +90,10 @@ type Generator struct {
 	kcu    map[string]ddl.KeyColumnUsageCollection
 	kcuRev map[string]ddl.KeyColumnUsageCollection // rev = reversed relationship to find OneToMany
 	krs    *ddl.KeyRelationShips
-	// "mainTable.mainColumn" : "referencedTable.referencedColumn"
+	// "mainTable.mainColumn":"referencedTable.referencedColumn"
 	// or skips the reversed relationship
-	// "referencedTable.referencedColumn": "mainTable.mainColumn"
-	krsSkip map[string]string
+	// "referencedTable.referencedColumn":"mainTable.mainColumn"
+	krsSkip map[string]bool
 }
 
 // Option represents a sortable option for the NewGenerator function. Each option
@@ -453,9 +453,13 @@ func WithForeignKeyRelationships(ctx context.Context, db dml.Querier, skipRelati
 		//  e.g. "customer_entity.website_id", "store_website.website_id", for CustomerEntity would become
 		//  "*.website_id", "store_website.website_id", to disable all tables which have a foreign key to store_website.
 
-		g.krsSkip = make(map[string]string, len(skipRelationships)/2)
+		g.krsSkip = make(map[string]bool, len(skipRelationships)/2)
 		for i := 0; i < len(skipRelationships); i += 2 {
-			g.krsSkip[skipRelationships[i]] = skipRelationships[i+1]
+			var buf strings.Builder
+			buf.WriteString(skipRelationships[i])
+			buf.WriteByte(':')
+			buf.WriteString(skipRelationships[i+1])
+			g.krsSkip[buf.String()] = true
 		}
 
 		// var buf bytes.Buffer
@@ -716,7 +720,15 @@ func NewGenerator(packageImportPath string, opts ...Option) (*Generator, error) 
 
 func (g *Generator) skipRelationship(table1, column1, table2, column2 string) bool {
 	// println("skip", "key", table1+"."+column1, ": ", g.krsSkip[table1+"."+column1], "==", table2+"."+column2)
-	return g.krsSkip[table1+"."+column1] == table2+"."+column2
+	var buf strings.Builder
+	buf.WriteString(table1)
+	buf.WriteByte('.')
+	buf.WriteString(column1)
+	buf.WriteByte(':')
+	buf.WriteString(table2)
+	buf.WriteByte('.')
+	buf.WriteString(column2)
+	return g.krsSkip[buf.String()]
 }
 
 func (g *Generator) hasFeature(tableInclude, tableExclude, feature FeatureToggle) bool {
@@ -1276,7 +1288,8 @@ func GenerateProto(protoFilesPath string, po *ProtocOptions) error {
 		if po.WorkingDirectory == "" {
 			po.WorkingDirectory = "."
 		}
-		fmt.Printf("\ncd %s && %s\n\n", po.WorkingDirectory, cmd)
+		// TODO fix ./dmlgen.go:1291:59: cmd.String undefined (type *exec.Cmd has no field or method String)
+		// fmt.Printf("\ncd %s && %s\n\n", po.WorkingDirectory, cmd.String())
 	}
 	out, err := cmd.CombinedOutput()
 	if err != nil {

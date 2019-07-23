@@ -20,8 +20,8 @@ type CoreConfiguration struct {
 	Expires   null.Time   // expires datetime NULL  DEFAULT 'NULL'  "Value expiration time"
 	Path      string      // path varchar(255) NOT NULL    "Path"
 	Value     null.String // value text NULL  DEFAULT 'NULL'  "Value"
-	VersionTs time.Time   // version_ts timestamp(6) NOT NULL    "Timestamp Start Versioning"
-	VersionTe time.Time   // version_te timestamp(6) NOT NULL PRI   "Timestamp End Versioning"
+	VersionTs time.Time   // version_ts timestamp(6) NOT NULL   STORED GENERATED "Timestamp Start Versioning"
+	VersionTe time.Time   // version_te timestamp(6) NOT NULL PRI  STORED GENERATED "Timestamp End Versioning"
 }
 
 // Copy copies the struct and returns a new pointer
@@ -157,7 +157,12 @@ func (cc *CoreConfigurations) Insert(n *CoreConfiguration, i int) *CoreConfigura
 func (cc *CoreConfigurations) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
 
 // Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *CoreConfigurations) Len() int { return len(cc.Data) }
+func (cc *CoreConfigurations) Len() int {
+	if cc == nil {
+		return 0
+	}
+	return len(cc.Data)
+}
 
 // ConfigIDs returns a slice with the data or appends it to a slice.
 // Auto generated.
@@ -341,7 +346,12 @@ func (cc *SalesOrderStatusStates) Insert(n *SalesOrderStatusState, i int) *Sales
 func (cc *SalesOrderStatusStates) Swap(i, j int) { cc.Data[i], cc.Data[j] = cc.Data[j], cc.Data[i] }
 
 // Len will satisfy the sort.Interface. Auto generated via dmlgen.
-func (cc *SalesOrderStatusStates) Len() int { return len(cc.Data) }
+func (cc *SalesOrderStatusStates) Len() int {
+	if cc == nil {
+		return 0
+	}
+	return len(cc.Data)
+}
 
 // Statuss returns a slice with the data or appends it to a slice.
 // Auto generated.
