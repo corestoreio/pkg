@@ -48,8 +48,8 @@ type Table struct {
 	columnsPK    []string // only primary key columns
 	columnsNonPK []string // all columns, except PK and system-versioned
 	columnsAll   []string // all columns, except system-versioned
-	// columnsUpsert contains all non-virtual, non-system versioned and non
-	// auto_increment columns for update or insert operations.
+	// columnsIsEligibleForUpsert contains all non-current-timestamp, non-virtual, non-system
+	// versioned and non auto_increment columns for update or insert operations.
 	columnsUpsert []string
 }
 
@@ -78,7 +78,7 @@ func (t *Table) update() *Table {
 	t.columnsAll = t.Columns.Filter(colIsNotSysVers).FieldNames(t.columnsAll...)
 
 	t.columnsUpsert = t.columnsUpsert[:0]
-	t.columnsUpsert = t.Columns.Filter(colIsNotGeneratedNonPK).FieldNames(t.columnsUpsert...)
+	t.columnsUpsert = t.Columns.Filter(columnsIsEligibleForUpsert).FieldNames(t.columnsUpsert...)
 
 	return t
 }

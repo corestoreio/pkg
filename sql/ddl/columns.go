@@ -193,8 +193,20 @@ func colIsNotSysVers(c *Column) bool {
 	return !c.IsSystemVersioned()
 }
 
-func colIsNotGeneratedNonPK(c *Column) bool {
-	return !c.IsGenerated() && !c.IsSystemVersioned() && c.Extra != "auto_increment"
+// columnsIsEligibleForUpsert filters out all current-timestamp, virtual, system versioned
+// and auto_increment columns for update or insert operations.
+func columnsIsEligibleForUpsert(c *Column) bool {
+	var d, e string         // d = default; e = extra
+	var hasCTd, hasCTe bool // CT = current time
+	if c.Default.Valid {
+		d = strings.ToLower(c.Default.String)
+		hasCTd = strings.Contains(d, "current_timestamp")
+	}
+	if c.Extra != "" {
+		e = strings.ToLower(c.Extra)
+		hasCTe = strings.Contains(e, "current_timestamp")
+	}
+	return !c.IsGenerated() && !c.IsSystemVersioned() && e != "auto_increment" && !hasCTd && !hasCTe
 }
 
 // PrimaryKeys returns all primary key columns. It may append the columns to the
