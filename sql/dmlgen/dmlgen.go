@@ -93,7 +93,8 @@ type Generator struct {
 	// "mainTable.mainColumn":"referencedTable.referencedColumn"
 	// or skips the reversed relationship
 	// "referencedTable.referencedColumn":"mainTable.mainColumn"
-	krsSkip map[string]bool
+	krsExclude map[string]bool
+	krsInclude map[string]bool
 }
 
 // Option represents a sortable option for the NewGenerator function. Each option
@@ -423,19 +424,24 @@ func WithTableConfig(tableName string, opt *TableConfig) (o Option) {
 // customer_address_entity.parent_id is a foreign key to
 // customer_entity.entity_id hence the generated struct CustomerEntity has a new
 // field which gets named CustomerAddressEntityCollection, pointing to type
-// CustomerAddressEntityCollection. skipRelationships must be a balanced slice
-// in the notation of "table1.column1","table2.column2". For example:
-// 		"customer_entity.store_id", "store.store_id"
-// which means that the struct CustomerEntity won't have a field to the Store
-// struct (1:1 relationship). The reverse case can also be added
-// 		"store.store_id", "customer_entity.store_id"
-// which means that the Store struct won't have a field pointing to the
+// CustomerAddressEntityCollection. includeRelationShips and
+// excludeRelationships must be a balanced slice in the notation of
+// "table1.column1","table2.column2". For example:
+// 		"customer_entity.store_id", "store.store_id" which means that the
+// struct CustomerEntity won't have a field to the Store struct (1:1
+// relationship) (in case of excluding). The reverse case can also be added
+// 		"store.store_id", "customer_entity.store_id" which means that the
+// Store struct won't or will have a field pointing to the
 // CustomerEntityCollection (1:M relationship).
-func WithForeignKeyRelationships(ctx context.Context, db dml.Querier, skipRelationships ...string) (opt Option) {
+// Setting includeRelationShips to nil will include all relationships.
+func WithForeignKeyRelationships(ctx context.Context, db dml.Querier, includeRelationShips, excludeRelationships []string) (opt Option) {
 	opt.sortOrder = 210 // must run at the end or where the end is near ;-)
 	opt.fn = func(g *Generator) (err error) {
-		if len(skipRelationships)%2 == 1 {
-			return errors.Fatal.Newf("[dmlgen] skipRelationships must be balanced slice. Read the doc.")
+		if len(excludeRelationships)%2 == 1 {
+			return errors.Fatal.Newf("[dmlgen] excludeRelationships must be balanced slice. Read the doc.")
+		}
+		if len(includeRelationShips)%2 == 1 {
+			return errors.Fatal.Newf("[dmlgen] includeRelationShips must be balanced slice. Read the doc.")
 		}
 
 		g.kcu, err = ddl.LoadKeyColumnUsage(ctx, db, g.sortedTableNames()...)
@@ -449,23 +455,28 @@ func WithForeignKeyRelationships(ctx context.Context, db dml.Querier, skipRelati
 			return errors.WithStack(err)
 		}
 
-		// TODO(CSC) myabe skipRelationships can contain a wild card to disable all embedded structs from/to a type.
+		// TODO(CSC) myabe excludeRelationships can contain a wild card to disable all embedded structs from/to a type.
 		//  e.g. "customer_entity.website_id", "store_website.website_id", for CustomerEntity would become
 		//  "*.website_id", "store_website.website_id", to disable all tables which have a foreign key to store_website.
 
-		g.krsSkip = make(map[string]bool, len(skipRelationships)/2)
-		for i := 0; i < len(skipRelationships); i += 2 {
+		g.krsExclude = make(map[string]bool, len(excludeRelationships)/2)
+		for i := 0; i < len(excludeRelationships); i += 2 {
 			var buf strings.Builder
-			buf.WriteString(skipRelationships[i])
+			buf.WriteString(excludeRelationships[i])
 			buf.WriteByte(':')
-			buf.WriteString(skipRelationships[i+1])
-			g.krsSkip[buf.String()] = true
+			buf.WriteString(excludeRelationships[i+1])
+			g.krsExclude[buf.String()] = true
 		}
-
-		// var buf bytes.Buffer
-		// g.krs.Debug(&buf)
-		// println(buf.String())
-
+		if len(includeRelationShips) > 0 {
+			g.krsInclude = make(map[string]bool, len(includeRelationShips)/2)
+			for i := 0; i < len(includeRelationShips); i += 2 {
+				var buf strings.Builder
+				buf.WriteString(includeRelationShips[i])
+				buf.WriteByte(':')
+				buf.WriteString(includeRelationShips[i+1])
+				g.krsInclude[buf.String()] = true
+			}
+		}
 		return nil
 	}
 	return opt
@@ -718,8 +729,7 @@ func NewGenerator(packageImportPath string, opts ...Option) (*Generator, error) 
 	return g, nil
 }
 
-func (g *Generator) skipRelationship(table1, column1, table2, column2 string) bool {
-	// println("skip", "key", table1+"."+column1, ": ", g.krsSkip[table1+"."+column1], "==", table2+"."+column2)
+func (g *Generator) isAllowedRelationship(table1, column1, table2, column2 string) bool {
 	var buf strings.Builder
 	buf.WriteString(table1)
 	buf.WriteByte('.')
@@ -728,7 +738,19 @@ func (g *Generator) skipRelationship(table1, column1, table2, column2 string) bo
 	buf.WriteString(table2)
 	buf.WriteByte('.')
 	buf.WriteString(column2)
-	return g.krsSkip[buf.String()]
+
+	var allowed bool
+	switch {
+	case g.krsExclude[buf.String()]:
+		allowed = false
+	case g.krsInclude == nil:
+		allowed = true
+	default:
+		allowed = g.krsInclude[buf.String()]
+	}
+
+	// println("isAllowedRelationship","allowed",allowed, "key", buf.String())
+	return allowed
 }
 
 func (g *Generator) hasFeature(tableInclude, tableExclude, feature FeatureToggle) bool {
@@ -892,7 +914,7 @@ func (g *Generator) generateProto(w io.Writer) error {
 
 						// case ONE-TO-MANY
 						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
-						isRelationAllowed := !g.skipRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
 						hasTable := g.Tables[kcuce.ReferencedTableName.String] != nil
 						if isOneToMany && hasTable && isRelationAllowed {
 							proto.Pln(collectionName(kcuce.ReferencedTableName.String), fieldMapFn(collectionName(kcuce.ReferencedTableName.String)),
@@ -920,7 +942,7 @@ func (g *Generator) generateProto(w io.Writer) error {
 
 						// case ONE-TO-MANY
 						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
-						isRelationAllowed := !g.skipRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
 						hasTable := g.Tables[kcuce.ReferencedTableName.String] != nil
 						if isOneToMany && hasTable && isRelationAllowed {
 							proto.Pln(collectionName(kcuce.ReferencedTableName.String), fieldMapFn(collectionName(kcuce.ReferencedTableName.String)),

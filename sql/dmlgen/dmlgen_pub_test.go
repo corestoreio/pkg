@@ -159,8 +159,8 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 			}),
 
 		// dmlgen.WithColumnAliasesFromForeignKeys(ctx, db.DB),
-		dmlgen.WithForeignKeyRelationships(ctx, db.DB,
-			"customer_address_entity.parent_id", "customer_entity.entity_id",
+		dmlgen.WithForeignKeyRelationships(ctx, db.DB, nil,
+			[]string{"customer_address_entity.parent_id", "customer_entity.entity_id"},
 		),
 
 		dmlgen.WithCustomCode("pseudo.MustNewService.Option", `
@@ -429,12 +429,14 @@ func TestNewGenerator_ReversedForeignKeys(t *testing.T) {
 			},
 		}),
 
-		dmlgen.WithForeignKeyRelationships(ctx, db.DB,
-			"store_website.website_id", "customer_entity.website_id",
-			"store.store_id", "customer_entity.store_id",
-			"customer_entity.store_id", "store.store_id",
-			"customer_entity.website_id", "store_website.website_id",
-			"customer_address_entity.parent_id", "customer_entity.entity_id",
+		dmlgen.WithForeignKeyRelationships(ctx, db.DB, nil,
+			[]string{
+				"store_website.website_id", "customer_entity.website_id",
+				"store.store_id", "customer_entity.store_id",
+				"customer_entity.store_id", "store.store_id",
+				"customer_entity.website_id", "store_website.website_id",
+				"customer_address_entity.parent_id", "customer_entity.entity_id",
+			},
 		),
 	)
 	assert.NoError(t, err)

@@ -246,7 +246,7 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 
 						// case ONE-TO-MANY
 						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
-						isRelationAllowed := !g.skipRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
 						hasTable := g.Tables[kcuce.ReferencedTableName.String] != nil
 						if debug {
 							println("A1: isOneToMany", isOneToMany, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
@@ -282,7 +282,7 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 
 						// case ONE-TO-MANY
 						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
-						isRelationAllowed := !g.skipRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
 						hasTable := g.Tables[kcuce.ReferencedTableName.String] != nil
 						if debug {
 							println("A2: isOneToMany", isOneToMany, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
