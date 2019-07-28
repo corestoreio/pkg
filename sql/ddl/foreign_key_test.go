@@ -24,15 +24,21 @@ import (
 
 func TestKeyRelationShips(t *testing.T) {
 	krs := &KeyRelationShips{
-		relMap: map[string]bool{
-			`store.website_id|customer_entity.website_id|MUL`:       true,
-			`store.group_id|customer_entity.group_id`:               true,
-			`store.website_id|store_group.website_id|MUL`:           true,
-			`store.group_id|store_group.group_id|PRI`:               true,
-			`store.website_id|store_website.website_id|PRI`:         true,
-			`store_group.website_id|customer_entity.website_id|MUL`: true,
-			`store_group.website_id|store.website_id|MUL`:           true,
-			`store_group.website_id|store_website.website_id|PRI`:   true,
+		relMap: map[string]relTargets{
+			"store": {
+				// column , referencedTable , referencedColumn , relationKeyType
+				{"group_id", "customer_entity", "group_id", fKeyTypeNone},
+				{"group_id", "store_group", "group_id", fKeyTypePRI},
+				{"website_id", "customer_entity", "website_id", fKeyTypeMUL},
+				{"website_id", "store_group", "website_id", fKeyTypeMUL},
+				{"website_id", "store_website", "website_id", fKeyTypePRI},
+			},
+			"store_group": {
+				// column , referencedTable , referencedColumn , relationKeyType
+				{"website_id", "customer_entity", "website_id", fKeyTypeMUL},
+				{"website_id", "store", "website_id", fKeyTypeMUL},
+				{"website_id", "store_website", "website_id", fKeyTypePRI},
+			},
 		},
 	}
 	assert.True(t, krs.IsOneToOne("store_group", "website_id", "store_website", "website_id"))
@@ -43,16 +49,14 @@ func TestKeyRelationShips(t *testing.T) {
 
 	var buf bytes.Buffer
 	krs.Debug(&buf)
-
-	// since Go 1.12 maps are printed sorted
-	assert.Exactly(t, `store.group_id|customer_entity.group_id
-store.group_id|store_group.group_id|PRI
-store.website_id|customer_entity.website_id|MUL
-store.website_id|store_group.website_id|MUL
-store.website_id|store_website.website_id|PRI
-store_group.website_id|customer_entity.website_id|MUL
-store_group.website_id|store.website_id|MUL
-store_group.website_id|store_website.website_id|PRI
+	assert.Exactly(t, `main: store.group_id => ref: customer_entity.group_id => relKey:none
+main: store.group_id => ref: store_group.group_id => relKey:PRI
+main: store.website_id => ref: customer_entity.website_id => relKey:MUL
+main: store.website_id => ref: store_group.website_id => relKey:MUL
+main: store.website_id => ref: store_website.website_id => relKey:PRI
+main: store_group.website_id => ref: customer_entity.website_id => relKey:MUL
+main: store_group.website_id => ref: store.website_id => relKey:MUL
+main: store_group.website_id => ref: store_website.website_id => relKey:PRI
 `, buf.String())
 }
 

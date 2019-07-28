@@ -36,7 +36,6 @@ func TestLoadForeignKeys_Integration(t *testing.T) {
 	defer dmltest.SQLDumpLoad(t, "testdata/testLoadForeignKeys*.sql", nil).Deferred()
 
 	t.Run("x859admin_user", func(t *testing.T) {
-
 		tc, err := ddl.LoadKeyColumnUsage(context.TODO(), dbc.DB, "x859admin_user")
 		assert.NoError(t, err)
 		assert.Len(t, tc, 1, "Number of returned entries should be as stated")
@@ -100,43 +99,56 @@ func TestLoadKeyRelationships(t *testing.T) {
 	var buf bytes.Buffer
 	krs.Debug(&buf)
 	t.Log("\n", buf.String())
-	assert.Exactly(t, "catalog_category_entity.entity_id|sequence_catalog_category.sequence_value|PRI\ncustomer_address_entity.parent_id|customer_entity.entity_id|PRI\ncustomer_entity.entity_id|customer_address_entity.parent_id|MUL\ncustomer_entity.store_id|store.store_id|PRI\ncustomer_entity.website_id|store_website.website_id|PRI\nsequence_catalog_category.sequence_value|catalog_category_entity.entity_id|PRI\nstore.group_id|store_group.group_id|PRI\nstore.store_id|customer_entity.store_id|MUL\nstore.store_id|x910cms_block_store.store_id|MUL\nstore.store_id|x910cms_page_store.store_id|MUL\nstore.website_id|store_website.website_id|PRI\nstore_group.group_id|store.group_id|MUL\nstore_group.website_id|store_website.website_id|PRI\nstore_website.website_id|customer_entity.website_id|MUL\nstore_website.website_id|store.website_id|MUL\nstore_website.website_id|store_group.website_id|MUL\nx859admin_passwords.user_id|x859admin_user.user_id|PRI\nx859admin_user.user_id|x859admin_passwords.user_id|MUL\nx910cms_block.block_id|x910cms_block_store.block_id|MUL\nx910cms_block.block_id|x910cms_block_store.block_id|PRI\nx910cms_block_store.block_id|x910cms_block.block_id|PRI\nx910cms_block_store.store_id|store.store_id|PRI\nx910cms_page.page_id|x910cms_page_store.page_id|MUL\nx910cms_page.page_id|x910cms_page_store.page_id|PRI\nx910cms_page_store.page_id|x910cms_page.page_id|PRI\nx910cms_page_store.store_id|store.store_id|PRI\n",
-		buf.String())
+	assert.LenBetween(t, buf.String(), 100, 2000)
 
-	tests := []struct {
-		checkFn                                          func(referencedTable, referencedColumn, table, column string) bool
-		referencedTable, referencedColumn, table, column string
-		want                                             bool
-	}{
-		{krs.IsOneToOne, "x859admin_passwords", "user_id", "x859admin_user", "user_id", true},
-		{krs.IsOneToOne, "x859admin_user", "user_id", "x859admin_passwords", "user_id", false},
-		{krs.IsOneToMany, "x859admin_user", "user_id", "x859admin_passwords", "user_id", true},
-		{krs.IsOneToMany, "x859admin_passwords", "user_id", "x859admin_user", "user_id", false},
+	t.Run("ManyToMany", func(t *testing.T) {
+		targetTable, targetColumn := krs.ManyToManyTarget("athlete_team_member", "team_id", "athlete_team", "team_id")
+		assert.Exactly(t, "athlete", targetTable)
+		assert.Exactly(t, "athlete_id", targetColumn)
+		targetTable, targetColumn = krs.ManyToManyTarget("athlete_team_member", "athlete_id", "athlete", "athlete_id")
+		assert.Exactly(t, "athlete_team", targetTable)
+		assert.Exactly(t, "team_id", targetColumn)
+		targetTable, targetColumn = krs.ManyToManyTarget("athlete_team_member", "athlete_idx", "athlete", "athlete_idx")
+		assert.Exactly(t, "", targetTable)
+		assert.Exactly(t, "", targetColumn)
+	})
 
-		{krs.IsOneToOne, "x910cms_page_store", "page_id", "x910cms_page", "page_id", true},
-		{krs.IsOneToMany, "x910cms_page", "page_id", "x910cms_page_store", "page_id", true},
+	t.Run("OneToX", func(t *testing.T) {
+		tests := []struct {
+			checkFn                                          func(referencedTable, referencedColumn, table, column string) bool
+			referencedTable, referencedColumn, table, column string
+			want                                             bool
+		}{
+			{krs.IsOneToOne, "x859admin_passwords", "user_id", "x859admin_user", "user_id", true},
+			{krs.IsOneToOne, "x859admin_user", "user_id", "x859admin_passwords", "user_id", false},
+			{krs.IsOneToMany, "x859admin_user", "user_id", "x859admin_passwords", "user_id", true},
+			{krs.IsOneToMany, "x859admin_passwords", "user_id", "x859admin_user", "user_id", false},
 
-		{krs.IsOneToMany, "store_group", "website_id", "store", "website_id", false}, // no FK constraint
-		{krs.IsOneToOne, "store_group", "website_id", "store", "website_id", false},  // no FK constraint
-		{krs.IsOneToMany, "store", "website_id", "store_group", "website_id", false}, // no FK constraint
-		{krs.IsOneToOne, "store", "website_id", "store_group", "website_id", false},
+			{krs.IsOneToOne, "x910cms_page_store", "page_id", "x910cms_page", "page_id", true},
+			{krs.IsOneToMany, "x910cms_page", "page_id", "x910cms_page_store", "page_id", true},
 
-		{krs.IsOneToOne, "store_group", "website_id", "store_website", "website_id", true},
-		{krs.IsOneToMany, "store_website", "website_id", "store_group", "website_id", true}, // reversed above
+			{krs.IsOneToMany, "store_group", "website_id", "store", "website_id", false}, // no FK constraint
+			{krs.IsOneToOne, "store_group", "website_id", "store", "website_id", false},  // no FK constraint
+			{krs.IsOneToMany, "store", "website_id", "store_group", "website_id", false}, // no FK constraint
+			{krs.IsOneToOne, "store", "website_id", "store_group", "website_id", false},
 
-		{krs.IsOneToOne, "catalog_category_entity", "entity_id", "sequence_catalog_category", "sequence_value", true},
-		// reversed must also be true for oneToOne because sequence_catalog_category contains only one column
-		{krs.IsOneToOne, "sequence_catalog_category", "sequence_value", "catalog_category_entity", "entity_id", true},
-		{krs.IsOneToMany, "sequence_catalog_category", "sequence_value", "catalog_category_entity", "entity_id", false},
-		{krs.IsOneToMany, "catalog_category_entity", "entity_id", "sequence_catalog_category", "sequence_value", false},
-	}
+			{krs.IsOneToOne, "store_group", "website_id", "store_website", "website_id", true},
+			{krs.IsOneToMany, "store_website", "website_id", "store_group", "website_id", true}, // reversed above
 
-	for i, test := range tests {
-		assert.Exactly(t,
-			test.want,
-			test.checkFn(test.referencedTable, test.referencedColumn, test.table, test.column),
-			"IDX %d %q.%q => %q.%q",
-			i, test.referencedTable, test.referencedColumn, test.table, test.column,
-		)
-	}
+			{krs.IsOneToOne, "catalog_category_entity", "entity_id", "sequence_catalog_category", "sequence_value", true},
+			// reversed must also be true for oneToOne because sequence_catalog_category contains only one column
+			{krs.IsOneToOne, "sequence_catalog_category", "sequence_value", "catalog_category_entity", "entity_id", true},
+			{krs.IsOneToMany, "sequence_catalog_category", "sequence_value", "catalog_category_entity", "entity_id", false},
+			{krs.IsOneToMany, "catalog_category_entity", "entity_id", "sequence_catalog_category", "sequence_value", false},
+		}
+
+		for i, test := range tests {
+			assert.Exactly(t,
+				test.want,
+				test.checkFn(test.referencedTable, test.referencedColumn, test.table, test.column),
+				"IDX %d %q.%q => %q.%q",
+				i, test.referencedTable, test.referencedColumn, test.table, test.column,
+			)
+		}
+	})
 }

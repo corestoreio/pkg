@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"io"
 	"sort"
-	"strings"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
@@ -191,7 +190,6 @@ func (cc KeyColumnUsageCollection) ColumnNames(ret ...string) []string {
 // contains all of the table foreign keys. All columns from all tables gets
 // selected when you don't provide the argument `tables`.
 func LoadKeyColumnUsage(ctx context.Context, db dml.Querier, tables ...string) (tc map[string]KeyColumnUsageCollection, err error) {
-
 	const selFkWhere = ` AND REFERENCED_TABLE_NAME IN ?`
 	const selFkOrderBy = ` ORDER BY TABLE_SCHEMA,TABLE_NAME,ORDINAL_POSITION, COLUMN_NAME`
 
@@ -288,44 +286,93 @@ func ReverseKeyColumnUsage(kcu map[string]KeyColumnUsageCollection) (kcuRev map[
 	return kcuRev
 }
 
+type relationKeyType int
+
+func (r relationKeyType) String() string {
+	switch r {
+	case fKeyTypeNone:
+		return "relKey:none"
+	case fKeyTypePRI:
+		return "relKey:PRI"
+	case fKeyTypeMUL:
+		return "relKey:MUL"
+	default:
+		panic("relationKeyType unknown type")
+	}
+}
+
+const (
+	fKeyTypeNone relationKeyType = iota
+	fKeyTypePRI
+	fKeyTypeMUL
+)
+
+type relTarget struct {
+	column           string
+	referencedTable  string
+	referencedColumn string
+	relationKeyType
+}
+
+type relTargets []relTarget
+
+func (rt relTargets) hasManyToMany() bool {
+	if len(rt) != 2 {
+		return false
+	}
+	// 1. both main columns must be different named.
+	// 2. key relation type must be equal and PRI
+	// 3. referenced tables must be different
+	return rt[0].column != rt[1].column && rt[0].relationKeyType == fKeyTypePRI && rt[0].relationKeyType == rt[1].relationKeyType &&
+		rt[0].referencedTable != rt[1].referencedTable && rt[0].referencedColumn != rt[1].referencedColumn
+}
+
 // KeyRelationShips contains an internal cache about the database foreign key
 // structure. It can only be created via function GenerateKeyRelationships.
 type KeyRelationShips struct {
 	// making the map private makes this type race free as reading the map from
 	// multiple goroutines is allowed without a lock.
-	relMap map[string]bool
+	// map[mainTable][]relTarget
+	relMap map[string]relTargets
 }
 
-const krsMapKeySep = '|'
-
 // IsOneToOne
-func (krs *KeyRelationShips) IsOneToOne(mainTable, mainColumn, referencedTable, referencedColumn string) bool {
-	buf := krs.buildKey(mainTable, mainColumn, referencedTable, referencedColumn, "PRI")
-	return krs.relMap[buf]
+func (krs KeyRelationShips) IsOneToOne(mainTable, mainColumn, referencedTable, referencedColumn string) bool {
+	for _, rel := range krs.relMap[mainTable] {
+		if rel.column == mainColumn && rel.referencedTable == referencedTable && rel.referencedColumn == referencedColumn && rel.relationKeyType == fKeyTypePRI {
+			return true
+		}
+	}
+	return false
 }
 
 // IsOneToMany returns true for a oneToMany or switching the tables for a ManyToOne relationship
-func (krs *KeyRelationShips) IsOneToMany(referencedTable, referencedColumn, mainTable, mainColumn string) bool {
-	buf := krs.buildKey(referencedTable, referencedColumn, mainTable, mainColumn, "MUL")
-	return krs.relMap[buf]
+func (krs KeyRelationShips) IsOneToMany(referencedTable, referencedColumn, mainTable, mainColumn string) bool {
+	for _, rel := range krs.relMap[referencedTable] {
+		if rel.column == referencedColumn && rel.referencedTable == mainTable && rel.referencedColumn == mainColumn && rel.relationKeyType == fKeyTypeMUL {
+			return true
+		}
+	}
+	return false
 }
 
-func (krs *KeyRelationShips) buildKey(referencedTable, referencedColumn, mainTable, mainColumn, keyType string) string {
-	var buf strings.Builder
-	buf.WriteString(referencedTable)
-	buf.WriteByte('.')
-	buf.WriteString(referencedColumn)
-	buf.WriteByte(krsMapKeySep)
-	buf.WriteString(mainTable)
-	buf.WriteByte('.')
-	buf.WriteString(mainColumn)
-	buf.WriteByte(krsMapKeySep)
-	buf.WriteString(keyType)
-	return buf.String()
+// ManyToManyTarget figures out if a table has M:N relationships and returns the
+// target table and its column or empty strings if not found.
+func (krs KeyRelationShips) ManyToManyTarget(referencedTable, referencedColumn, mainTable, mainColumn string) (table string, column string) {
+	if krs.relMap[mainTable].hasManyToMany() {
+		targetRefs := krs.relMap[mainTable]
+		if targetRefs[0].column == mainColumn {
+			return targetRefs[1].referencedTable, targetRefs[1].referencedColumn
+		}
+		if targetRefs[1].column == mainColumn {
+			return targetRefs[0].referencedTable, targetRefs[0].referencedColumn
+		}
+	}
+	return "", ""
 }
 
 // Debug writes the internal map in a sorted list to w.
-func (krs *KeyRelationShips) Debug(w io.Writer) {
+func (krs KeyRelationShips) Debug(w io.Writer) {
 	keys := make([]string, 0, len(krs.relMap))
 
 	for k := range krs.relMap {
@@ -333,42 +380,53 @@ func (krs *KeyRelationShips) Debug(w io.Writer) {
 	}
 	sort.Strings(keys)
 	for _, k := range keys {
-		fmt.Fprintf(w, "%s\n", k)
+		for _, rel := range krs.relMap[k] {
+			fmt.Fprintf(w, "main: %s.%s => ref: %s.%s => %s\n", k, rel.column, rel.referencedTable, rel.referencedColumn, rel.relationKeyType)
+		}
 	}
 }
 
 // GenerateKeyRelationships loads the foreign key relationships between a list of
 // given tables or all tables in a database. Might not yet work across several
 // databases on the same file system.
-func GenerateKeyRelationships(ctx context.Context, db dml.Querier, foreignKeys map[string]KeyColumnUsageCollection) (*KeyRelationShips, error) {
-
-	krs := &KeyRelationShips{
-		relMap: map[string]bool{},
+func GenerateKeyRelationships(ctx context.Context, db dml.Querier, foreignKeys map[string]KeyColumnUsageCollection) (KeyRelationShips, error) {
+	krs := KeyRelationShips{
+		relMap: map[string]relTargets{},
 	}
 
 	fieldCount, err := countFieldsForTables(ctx, db)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return KeyRelationShips{}, errors.WithStack(err)
 	}
 
 	for _, kcuc := range foreignKeys {
 		for _, kcu := range kcuc.Data {
 
 			// OneToOne relationship
-			key := krs.buildKey(kcu.TableName, kcu.ColumnName, kcu.ReferencedTableName.String, kcu.ReferencedColumnName.String, "PRI")
-			krs.relMap[key] = true
+			krs.relMap[kcu.TableName] = append(krs.relMap[kcu.TableName], relTarget{
+				column:           kcu.ColumnName,
+				referencedTable:  kcu.ReferencedTableName.String,
+				referencedColumn: kcu.ReferencedColumnName.String,
+				relationKeyType:  fKeyTypePRI,
+			})
 
 			// if referenced table has only one PK, then the reversed relationship of OneToMany is not possible
-
 			if tc, ok := fieldCount[kcu.ReferencedTableName.String]; ok && tc.Pri == 1 && tc.Empty == 0 && tc.Mul == 0 {
 				// OneToOne reversed is also possible
-				key := krs.buildKey(kcu.ReferencedTableName.String, kcu.ReferencedColumnName.String, kcu.TableName, kcu.ColumnName, "PRI")
-				krs.relMap[key] = true
-
+				krs.relMap[kcu.ReferencedTableName.String] = append(krs.relMap[kcu.ReferencedTableName.String], relTarget{
+					column:           kcu.ReferencedColumnName.String,
+					referencedTable:  kcu.TableName,
+					referencedColumn: kcu.ColumnName,
+					relationKeyType:  fKeyTypePRI,
+				})
 			}
 			if tc, ok := fieldCount[kcu.TableName]; ok && (tc.Empty > 0 || tc.Pri > 1) {
-				key = krs.buildKey(kcu.ReferencedTableName.String, kcu.ReferencedColumnName.String, kcu.TableName, kcu.ColumnName, "MUL")
-				krs.relMap[key] = true
+				krs.relMap[kcu.ReferencedTableName.String] = append(krs.relMap[kcu.ReferencedTableName.String], relTarget{
+					column:           kcu.ReferencedColumnName.String,
+					referencedTable:  kcu.TableName,
+					referencedColumn: kcu.ColumnName,
+					relationKeyType:  fKeyTypeMUL,
+				})
 			}
 		}
 	}
@@ -381,7 +439,6 @@ type columnKeyCount struct {
 }
 
 func countFieldsForTables(ctx context.Context, db dml.Querier, referencedTables ...string) (_ map[string]*columnKeyCount, err error) {
-
 	const sqlQry = `SELECT TABLE_NAME, COLUMN_KEY, COUNT(*) AS FIELD_COUNT
  	FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() GROUP BY TABLE_NAME,COLUMN_KEY`
 	// TODO limit query to referencedTables, if provided
@@ -398,7 +455,7 @@ func countFieldsForTables(ctx context.Context, db dml.Querier, referencedTables 
 		}
 	}()
 
-	var col3 = &struct {
+	col3 := &struct {
 		TableName string
 		ColumnKey string
 		Count     int
