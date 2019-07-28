@@ -89,7 +89,7 @@ type Generator struct {
 
 	kcu    map[string]ddl.KeyColumnUsageCollection
 	kcuRev map[string]ddl.KeyColumnUsageCollection // rev = reversed relationship to find OneToMany
-	krs    *ddl.KeyRelationShips
+	krs    ddl.KeyRelationShips
 	// "mainTable.mainColumn":"referencedTable.referencedColumn"
 	// or skips the reversed relationship
 	// "referencedTable.referencedColumn":"mainTable.mainColumn"
@@ -377,47 +377,12 @@ func WithTableConfig(tableName string, opt *TableConfig) (o Option) {
 	return o
 }
 
-// TODO: rethink this if WithColumnAliasesFromForeignKeys is really needed and how it could be used/tested.
-// WithColumnAliasesFromForeignKeys extracts similar column names from foreign
-// key definitions. For the list of tables and their primary/unique keys, this
-// function searches the foreign keys to other tables and uses the column name
-// as the alias. For example the table `customer_entity` and its PK column
-// `entity_id` has a foreign key in table `sales_order` whose name is
-// `customer_id`. When generation code for customer_entity, the column entity_id
-// can be used additionally with the name customer_id, hence customer_id is the
-// alias.
-// func WithColumnAliasesFromForeignKeys(ctx context.Context, db dml.Querier) (opt Option) {
-// 	opt.sortOrder = 200 // must run at the end or where the end is near ;-)
-// 	opt.fn = func(g *Generator) error {
-//
-// 		tblFks, err := ddl.LoadKeyColumnUsage(ctx, db, g.sortedTableNames()...)
-// 		if err != nil {
-// 			return errors.WithStack(err)
-// 		}
-//
-// 		for _, kcuc := range tblFks {
-//
-// 			unique := map[string]bool{refColumn: true} // refColumn already seen because field name
-// 			for _, kcu := range kcuc.Data {
-//
-// 				t := g.Tables[kcu.ReferencedTableName.String]
-// 				for _, c := range t.Columns {
-// 					if c.Field == kcu.ReferencedColumnName.String {
-//
-// 						if kcu.ReferencedColumnName.String == refColumn && !unique[kcu.ColumnName] {
-// 							c.Aliases = append(c.Aliases, kcu.ColumnName)
-// 							unique[kcu.ColumnName] = true
-// 						}
-// 					}
-// 				}
-//
-// 			}
-//
-// 		}
-// 		return nil
-// 	}
-// 	return opt
-// }
+// ForeignKeyOptions applies to WithForeignKeyRelationships
+type ForeignKeyOptions struct {
+	IncludeRelationShips []string
+	ExcludeRelationships []string
+	// MToMRelations        bool
+}
 
 // WithForeignKeyRelationships analyzes the foreign keys which points to a table
 // and adds them as a struct field name. For example:
@@ -434,13 +399,13 @@ func WithTableConfig(tableName string, opt *TableConfig) (o Option) {
 // Store struct won't or will have a field pointing to the
 // CustomerEntityCollection (1:M relationship).
 // Setting includeRelationShips to nil will include all relationships.
-func WithForeignKeyRelationships(ctx context.Context, db dml.Querier, includeRelationShips, excludeRelationships []string) (opt Option) {
+func WithForeignKeyRelationships(ctx context.Context, db dml.Querier, o ForeignKeyOptions) (opt Option) {
 	opt.sortOrder = 210 // must run at the end or where the end is near ;-)
 	opt.fn = func(g *Generator) (err error) {
-		if len(excludeRelationships)%2 == 1 {
+		if len(o.ExcludeRelationships)%2 == 1 {
 			return errors.Fatal.Newf("[dmlgen] excludeRelationships must be balanced slice. Read the doc.")
 		}
-		if len(includeRelationShips)%2 == 1 {
+		if len(o.IncludeRelationShips)%2 == 1 {
 			return errors.Fatal.Newf("[dmlgen] includeRelationShips must be balanced slice. Read the doc.")
 		}
 
@@ -459,21 +424,21 @@ func WithForeignKeyRelationships(ctx context.Context, db dml.Querier, includeRel
 		//  e.g. "customer_entity.website_id", "store_website.website_id", for CustomerEntity would become
 		//  "*.website_id", "store_website.website_id", to disable all tables which have a foreign key to store_website.
 
-		g.krsExclude = make(map[string]bool, len(excludeRelationships)/2)
-		for i := 0; i < len(excludeRelationships); i += 2 {
+		g.krsExclude = make(map[string]bool, len(o.ExcludeRelationships)/2)
+		for i := 0; i < len(o.ExcludeRelationships); i += 2 {
 			var buf strings.Builder
-			buf.WriteString(excludeRelationships[i])
+			buf.WriteString(o.ExcludeRelationships[i])
 			buf.WriteByte(':')
-			buf.WriteString(excludeRelationships[i+1])
+			buf.WriteString(o.ExcludeRelationships[i+1])
 			g.krsExclude[buf.String()] = true
 		}
-		if len(includeRelationShips) > 0 {
-			g.krsInclude = make(map[string]bool, len(includeRelationShips)/2)
-			for i := 0; i < len(includeRelationShips); i += 2 {
+		if len(o.IncludeRelationShips) > 0 {
+			g.krsInclude = make(map[string]bool, len(o.IncludeRelationShips)/2)
+			for i := 0; i < len(o.IncludeRelationShips); i += 2 {
 				var buf strings.Builder
-				buf.WriteString(includeRelationShips[i])
+				buf.WriteString(o.IncludeRelationShips[i])
 				buf.WriteByte(':')
-				buf.WriteString(includeRelationShips[i+1])
+				buf.WriteString(o.IncludeRelationShips[i+1])
 				g.krsInclude[buf.String()] = true
 			}
 		}
@@ -748,8 +713,6 @@ func (g *Generator) isAllowedRelationship(table1, column1, table2, column2 strin
 	default:
 		allowed = g.krsInclude[buf.String()]
 	}
-
-	// println("isAllowedRelationship","allowed",allowed, "key", buf.String())
 	return allowed
 }
 

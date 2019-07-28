@@ -286,4 +286,37 @@ CREATE TABLE `catalog_category_entity` (
   CONSTRAINT `CAT_CTGR_ENTT_ENTT_ID_SEQUENCE_CAT_CTGR_SEQUENCE_VAL` FOREIGN KEY (`entity_id`) REFERENCES `sequence_catalog_category` (`sequence_value`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8 COMMENT='Catalog Category Table';
 
+DROP TABLE IF EXISTS `athlete_team_member`;
+CREATE TABLE `athlete_team_member` (
+    `id`         INT(12) UNSIGNED NOT NULL AUTO_INCREMENT,
+    `team_id`    INT(10) UNSIGNED NOT NULL COMMENT 'Athlete Team ID or AID',
+    `athlete_id` INT(10) UNSIGNED NOT NULL COMMENT 'Athlete ID or AGID',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `UNQ_ATHLETE_TEAM_MEMBER_TEAM_ATHLETE` (`team_id`, `athlete_id`),
+    CONSTRAINT `FK_ATHLETE_TEAM_MEMBER_TEAM_ID` FOREIGN KEY (`team_id`) REFERENCES `athlete_team` (`team_id`) ON DELETE CASCADE,
+    CONSTRAINT `FK_ATHLETE_TEAM_MEMBER_ATHLETE_ID` FOREIGN KEY (`athlete_id`) REFERENCES `athlete` (`athlete_id`) ON DELETE CASCADE
+)
+    ENGINE = InnoDB
+    DEFAULT CHARSET = `utf8mb4` COMMENT ='Athlete Team Members';
+
+DROP TABLE IF EXISTS `athlete_team`;
+CREATE TABLE `athlete_team` (
+    `team_id`          INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+    `name`             VARCHAR(340)     NOT NULL COMMENT 'Team name',
+    PRIMARY KEY (`team_id`)
+)
+    ENGINE = InnoDB
+    DEFAULT CHARSET = `utf8mb4` COMMENT ='Athlete Team';
+
+DROP TABLE IF EXISTS `athlete`;
+CREATE TABLE `athlete` (
+    `athlete_id`          INT(10) UNSIGNED     NOT NULL AUTO_INCREMENT COMMENT 'Athlete ID',
+    `firstname`           VARCHAR(340) COMMENT 'First Name',
+    `lastname`            VARCHAR(340) COMMENT 'Last Name',
+    PRIMARY KEY (`athlete_id`)
+)
+    ENGINE = InnoDB
+    DEFAULT CHARSET = `utf8mb4` COMMENT ='Athletes';
+
+
 SET foreign_key_checks = 1;

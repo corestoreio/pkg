@@ -271,6 +271,22 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 								t.customStructTagFields[kcuce.ReferencedTableName.String],
 								"// 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
 						}
+
+						// case MANY-TO-MANY
+						targetTbl, targetColumn := g.krs.ManyToManyTarget(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						if debug {
+							println("C1: ManyToManyTarget", true, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
+								"targetTbl>", targetTbl, "<\t", "targetColumn>", targetColumn, "<\t",
+								t.TableName, "\t",
+								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+						}
+						if targetTbl != "" && targetColumn != "" {
+							mainGen.Pln(fieldMapFn(collectionName(targetTbl)), " *", collectionName(targetTbl),
+								t.customStructTagFields[targetTbl],
+								"// M:N", kcuce.TableName+"."+kcuce.ColumnName, "via", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String,
+								"=>", targetTbl+"."+targetColumn,
+							)
+						}
 					}
 				}
 
@@ -306,6 +322,22 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 							mainGen.Pln(fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.String)), " *", strs.ToGoCamelCase(kcuce.ReferencedTableName.String),
 								t.customStructTagFields[kcuce.ReferencedTableName.String],
 								"// Reversed 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+						}
+
+						// case MANY-TO-MANY
+						targetTbl, targetColumn := g.krs.ManyToManyTarget(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						if debug {
+							println("C2: ManyToManyTarget", true, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
+								"targetTbl>", targetTbl, "<\t", "targetColumn>", targetColumn, "<\t",
+								t.TableName, "\t",
+								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+						}
+						if targetTbl != "" && targetColumn != "" {
+							mainGen.Pln(fieldMapFn(collectionName(targetTbl)), " *", collectionName(targetTbl),
+								t.customStructTagFields[targetTbl],
+								"// Reversed M:N", kcuce.TableName+"."+kcuce.ColumnName, "via", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String,
+								"=>", targetTbl+"."+targetColumn,
+							)
 						}
 					}
 				}
