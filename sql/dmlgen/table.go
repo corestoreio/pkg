@@ -280,7 +280,8 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 								t.TableName, "\t",
 								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
 						}
-						if targetTbl != "" && targetColumn != "" {
+						// hasTable shall not be added because usually the link table does not get loaded.
+						if isRelationAllowed && targetTbl != "" && targetColumn != "" {
 							mainGen.Pln(fieldMapFn(collectionName(targetTbl)), " *", collectionName(targetTbl),
 								t.customStructTagFields[targetTbl],
 								"// M:N", kcuce.TableName+"."+kcuce.ColumnName, "via", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String,
@@ -332,7 +333,8 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 								t.TableName, "\t",
 								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
 						}
-						if targetTbl != "" && targetColumn != "" {
+						// hasTable shall not be added because usually the link table does not get loaded.
+						if isRelationAllowed && targetTbl != "" && targetColumn != "" {
 							mainGen.Pln(fieldMapFn(collectionName(targetTbl)), " *", collectionName(targetTbl),
 								t.customStructTagFields[targetTbl],
 								"// Reversed M:N", kcuce.TableName+"."+kcuce.ColumnName, "via", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String,
