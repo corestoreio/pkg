@@ -27,6 +27,7 @@ import (
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/bufferpool"
+	"golang.org/x/sync/errgroup"
 )
 
 // Artisan prepares the SQL string from a DML type, collects and build a list of
@@ -783,7 +784,7 @@ func (a *Artisan) IterateSerial(ctx context.Context, callBack func(*ColumnMap) e
 // iterateParallelForNextLoop has been extracted from IterateParallel to not
 // mess around with closing channels in different locations of the source code
 // when an error occurs.
-func iterateParallelForNextLoop(r *sql.Rows, rowChan chan<- *ColumnMap, errChan <-chan error) (err error) {
+func iterateParallelForNextLoop(ctx context.Context, r *sql.Rows, rowChan chan<- *ColumnMap) (err error) {
 	defer func() {
 		if err2 := r.Err(); err2 != nil && err == nil {
 			err = errors.WithStack(err)
@@ -803,10 +804,7 @@ func iterateParallelForNextLoop(r *sql.Rows, rowChan chan<- *ColumnMap, errChan 
 		cm.Count = idx
 		select {
 		case rowChan <- &cm:
-		case errC := <-errChan:
-			if errC != nil {
-				err = errC
-			}
+		case <-ctx.Done():
 			return
 		}
 		idx++
@@ -834,44 +832,27 @@ func (a *Artisan) IterateParallel(ctx context.Context, concurrencyLevel int, cal
 		return
 	}
 
+	g, ctx := errgroup.WithContext(ctx)
+
 	// start workers and a channel for communicating
 	rowChan := make(chan *ColumnMap)
-	errChan := make(chan error, concurrencyLevel)
-	var wg sync.WaitGroup
 	for i := 0; i < concurrencyLevel; i++ {
-		wg.Add(1)
-		// i := i
-		go func(wg *sync.WaitGroup, rowChan <-chan *ColumnMap, errChan chan<- error) {
-			defer wg.Done()
+		g.Go(func() error {
 			for cmr := range rowChan {
 				if cbErr := callBack(cmr); cbErr != nil {
-					errChan <- errors.WithStack(cbErr)
-					return
+					return errors.WithStack(cbErr)
 				}
 			}
-		}(&wg, rowChan, errChan)
+			return nil
+		})
 	}
 
-	if err2 := iterateParallelForNextLoop(r, rowChan, errChan); err2 != nil {
+	if err2 := iterateParallelForNextLoop(ctx, r, rowChan); err2 != nil {
 		err = err2
 	}
 	close(rowChan)
-	wg.Wait()
-	close(errChan)
 
-	var multiErr *errors.MultiErr
-	i := 0
-	for errC2 := range errChan {
-		if i == 0 && err != nil {
-			multiErr = multiErr.AppendErrors(err)
-		}
-		multiErr = multiErr.AppendErrors(errC2)
-		i++
-	}
-	if multiErr != nil {
-		err = multiErr
-	}
-	return
+	return errors.WithStack(g.Wait())
 }
 
 // Load loads data from a query into an object. Load can load a single row or

@@ -591,13 +591,7 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 				return errors.Blocked.Newf("Mapping blocked error")
 			})
 
-			// this is a bit flaky sometimes ...
-			switch err.(type) {
-			case *errors.MultiErr:
-				assert.True(t, errors.MultiErrMatchAll(err, errors.Blocked), "MultiErr should have all errors of kind errors.Blocked")
-			default:
-				assert.ErrorIsKind(t, errors.Blocked, err)
-			}
+			assert.ErrorIsKind(t, errors.Blocked, err)
 		})
 
 		t.Run("successful 40 rows fibonacci", func(t *testing.T) {
