@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ventu-io/go-shortid"
+	"github.com/corestoreio/pkg/util/shortid"
 )
 
 func Test_onGetDefault_defaultInstance(t *testing.T) {
@@ -298,7 +298,6 @@ func TestAbc_onMustEncode_onError_panics(t *testing.T) {
 		}
 	}()
 	abc.MustEncode(25, 0, 2)
-
 }
 
 func TestAbc_onAlphabet_success(t *testing.T) {
