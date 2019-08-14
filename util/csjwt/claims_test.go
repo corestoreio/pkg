@@ -42,7 +42,6 @@ func (c claimMock) Get(key string) (interface{}, error) {
 func (c claimMock) Keys() []string { return []string{"k1"} }
 
 func TestNewHead(t *testing.T) {
-
 	var h csjwt.Header
 	h = csjwt.NewHead("X")
 	assert.Exactly(t, "X", h.Alg())
@@ -50,7 +49,6 @@ func TestNewHead(t *testing.T) {
 }
 
 func TestHeadSetGet(t *testing.T) {
-
 	var h csjwt.Header
 	h = csjwt.NewHead("X")
 
@@ -71,7 +69,6 @@ func TestHeadSetGet(t *testing.T) {
 }
 
 func TestMergeClaims(t *testing.T) {
-
 	tests := []struct {
 		dst               *csjwt.Token
 		srcs              csjwt.Claimer
@@ -80,7 +77,7 @@ func TestMergeClaims(t *testing.T) {
 	}{
 		{csjwt.NewToken(nil), nil, `eyJ0eXAiOiJKV1QifQ.bnVsbAo`, errors.NoKind},
 		{csjwt.NewToken(jwtclaim.Map{}), claimMock{getErr: errors.Fatal.Newf("claimMerge get error")}, ``, errors.Fatal},
-		{csjwt.NewToken(jwtclaim.Map{"k1": "v1"}), jwtclaim.Map{"k2": 2}, `eyJ0eXAiOiJKV1QifQ.eyJrMSI6InYxIiwiazIiOjJ9`, errors.NoKind},
+		{csjwt.NewToken(jwtclaim.Map{"k1": "v1"}), jwtclaim.Map{"k2": 2}, `eyJ0eXAiOiJKV1QifQ.eyJrMSI6InYxIiwiazIiOjJ9Cg`, errors.NoKind},
 		{csjwt.NewToken(jwtclaim.NewStore()), jwtclaim.Map{"k2": 2}, ``, errors.NotSupported},
 		{csjwt.NewToken(&jwtclaim.Standard{}), &jwtclaim.Store{
 			UserID: "Gopher",
@@ -102,7 +99,6 @@ func TestMergeClaims(t *testing.T) {
 }
 
 func TestClaimExpiresSkew(t *testing.T) {
-
 	st := jwtclaim.NewStore()
 	st.ExpiresAt = time.Now().Unix() - 2
 	st.Store = "HelloWorld"

@@ -56,7 +56,7 @@ func TestToken_MarshalLog_Ok(t *testing.T) {
 	buf := bytes.Buffer{}
 	lg := logw.NewLog(logw.WithWriter(&buf), logw.WithLevel(logw.LevelDebug))
 	lg.Debug("tokenTest", log.Marshal("xtoken", tk))
-	have := `tokenTest token: "eyJ0eXAiOiJKV1QifQ.eyJzdG9yZSI6IkdvbGFuZyIsInVzZXJpZCI6ImV4dHJhY3RNZSJ9"`
+	have := `tokenTest token: "eyJ0eXAiOiJKV1QifQ.eyJzdG9yZSI6IkdvbGFuZyIsInVzZXJpZCI6ImV4dHJhY3RNZSJ9Cg"`
 	assert.Contains(t, buf.String(), have)
 }
 
@@ -133,7 +133,6 @@ func (m *claimMapProto) Unmarshal(data []byte) error {
 }
 
 func TestToken_AllMarshalers(t *testing.T) {
-
 	pwKey := csjwt.WithPasswordRandom()
 	m := csjwt.NewSigningMethodHS256()
 	v := csjwt.NewVerification(m)
@@ -188,5 +187,4 @@ func TestToken_AllMarshalers(t *testing.T) {
 			assert.Exactly(t, test.name, k1.(string))
 		})
 	}
-
 }
