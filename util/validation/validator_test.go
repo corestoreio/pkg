@@ -47,7 +47,7 @@ import (
 func TestIsAlpha(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -68,9 +68,9 @@ func TestIsAlpha(t *testing.T) {
 		{"달기&Co.", false},
 		{"〩Hours", false},
 		{"\ufff0", false},
-		{"\u0070", true},  //UTF-8(ASCII): p
-		{"\u0026", false}, //UTF-8(ASCII): &
-		{"\u0030", false}, //UTF-8(ASCII): 0
+		{"\u0070", true},  // UTF-8(ASCII): p
+		{"\u0026", false}, // UTF-8(ASCII): &
+		{"\u0030", false}, // UTF-8(ASCII): 0
 		{"123", false},
 		{"0123", false},
 		{"-00123", false},
@@ -106,7 +106,7 @@ func TestIsAlpha(t *testing.T) {
 func TestIsUTFLetter(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -128,9 +128,9 @@ func TestIsUTFLetter(t *testing.T) {
 		{"달기&Co.", false},
 		{"〩Hours", false},
 		{"\ufff0", false},
-		{"\u0070", true},  //UTF-8(ASCII): p
-		{"\u0026", false}, //UTF-8(ASCII): &
-		{"\u0030", false}, //UTF-8(ASCII): 0
+		{"\u0070", true},  // UTF-8(ASCII): p
+		{"\u0026", false}, // UTF-8(ASCII): &
+		{"\u0030", false}, // UTF-8(ASCII): 0
 		{"123", false},
 		{"0123", false},
 		{"-00123", false},
@@ -166,7 +166,7 @@ func TestIsUTFLetter(t *testing.T) {
 func TestIsAlphanumeric(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -189,9 +189,9 @@ func TestIsAlphanumeric(t *testing.T) {
 		{"달기&Co.", false},
 		{"〩Hours", false},
 		{"\ufff0", false},
-		{"\u0070", true},  //UTF-8(ASCII): p
-		{"\u0026", false}, //UTF-8(ASCII): &
-		{"\u0030", true},  //UTF-8(ASCII): 0
+		{"\u0070", true},  // UTF-8(ASCII): p
+		{"\u0026", false}, // UTF-8(ASCII): &
+		{"\u0030", true},  // UTF-8(ASCII): 0
 		{"123", true},
 		{"0123", true},
 		{"-00123", false},
@@ -227,7 +227,7 @@ func TestIsAlphanumeric(t *testing.T) {
 func TestIsUTFLetterNumeric(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -248,9 +248,9 @@ func TestIsUTFLetterNumeric(t *testing.T) {
 		{"달기&Co.", false},
 		{"〩Hours", true},
 		{"\ufff0", false},
-		{"\u0070", true},  //UTF-8(ASCII): p
-		{"\u0026", false}, //UTF-8(ASCII): &
-		{"\u0030", true},  //UTF-8(ASCII): 0
+		{"\u0070", true},  // UTF-8(ASCII): p
+		{"\u0026", false}, // UTF-8(ASCII): &
+		{"\u0030", true},  // UTF-8(ASCII): 0
 		{"123", true},
 		{"0123", true},
 		{"-00123", false},
@@ -286,7 +286,7 @@ func TestIsUTFLetterNumeric(t *testing.T) {
 func TestIsNumeric(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -307,9 +307,9 @@ func TestIsNumeric(t *testing.T) {
 		{"달기&Co.", false},
 		{"〩Hours", false},
 		{"\ufff0", false},
-		{"\u0070", false}, //UTF-8(ASCII): p
-		{"\u0026", false}, //UTF-8(ASCII): &
-		{"\u0030", true},  //UTF-8(ASCII): 0
+		{"\u0070", false}, // UTF-8(ASCII): p
+		{"\u0026", false}, // UTF-8(ASCII): &
+		{"\u0030", true},  // UTF-8(ASCII): 0
 		{"123", true},
 		{"0123", true},
 		{"-00123", false},
@@ -347,7 +347,7 @@ func TestIsNumeric(t *testing.T) {
 func TestIsUTFNumeric(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -368,9 +368,9 @@ func TestIsUTFNumeric(t *testing.T) {
 		{"달기&Co.", false},
 		{"〩Hours", false},
 		{"\ufff0", false},
-		{"\u0070", false}, //UTF-8(ASCII): p
-		{"\u0026", false}, //UTF-8(ASCII): &
-		{"\u0030", true},  //UTF-8(ASCII): 0
+		{"\u0070", false}, // UTF-8(ASCII): p
+		{"\u0026", false}, // UTF-8(ASCII): &
+		{"\u0030", true},  // UTF-8(ASCII): 0
 		{"123", true},
 		{"0123", true},
 		{"-00123", true},
@@ -405,7 +405,7 @@ func TestIsUTFNumeric(t *testing.T) {
 func TestIsUTFDigit(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -427,9 +427,9 @@ func TestIsUTFDigit(t *testing.T) {
 		{"달기&Co.", false},
 		{"〩Hours", false},
 		{"\ufff0", false},
-		{"\u0070", false}, //UTF-8(ASCII): p
-		{"\u0026", false}, //UTF-8(ASCII): &
-		{"\u0030", true},  //UTF-8(ASCII): 0
+		{"\u0070", false}, // UTF-8(ASCII): p
+		{"\u0026", false}, // UTF-8(ASCII): &
+		{"\u0030", true},  // UTF-8(ASCII): 0
 		{"123", true},
 		{"0123", true},
 		{"-00123", true},
@@ -468,7 +468,7 @@ func TestIsUTFDigit(t *testing.T) {
 func TestIsLowerCase(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -499,7 +499,7 @@ func TestIsLowerCase(t *testing.T) {
 func TestIsUpperCase(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -530,7 +530,7 @@ func TestIsUpperCase(t *testing.T) {
 func TestHasLowerCase(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -564,7 +564,7 @@ func TestHasLowerCase(t *testing.T) {
 func TestHasUpperCase(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -598,22 +598,22 @@ func TestHasUpperCase(t *testing.T) {
 func TestIsInt(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
-		{"-2147483648", true},          //Signed 32 Bit Min Int
-		{"2147483647", true},           //Signed 32 Bit Max Int
-		{"-2147483649", true},          //Signed 32 Bit Min Int - 1
-		{"2147483648", true},           //Signed 32 Bit Max Int + 1
-		{"4294967295", true},           //Unsigned 32 Bit Max Int
-		{"4294967296", true},           //Unsigned 32 Bit Max Int + 1
-		{"-9223372036854775808", true}, //Signed 64 Bit Min Int
-		{"9223372036854775807", true},  //Signed 64 Bit Max Int
-		{"-9223372036854775809", true}, //Signed 64 Bit Min Int - 1
-		{"9223372036854775808", true},  //Signed 64 Bit Max Int + 1
-		{"18446744073709551615", true}, //Unsigned 64 Bit Max Int
-		{"18446744073709551616", true}, //Unsigned 64 Bit Max Int + 1
+		{"-2147483648", true},          // Signed 32 Bit Min Int
+		{"2147483647", true},           // Signed 32 Bit Max Int
+		{"-2147483649", true},          // Signed 32 Bit Min Int - 1
+		{"2147483648", true},           // Signed 32 Bit Max Int + 1
+		{"4294967295", true},           // Unsigned 32 Bit Max Int
+		{"4294967296", true},           // Unsigned 32 Bit Max Int + 1
+		{"-9223372036854775808", true}, // Signed 64 Bit Min Int
+		{"9223372036854775807", true},  // Signed 64 Bit Max Int
+		{"-9223372036854775809", true}, // Signed 64 Bit Min Int - 1
+		{"9223372036854775808", true},  // Signed 64 Bit Max Int + 1
+		{"18446744073709551615", true}, // Unsigned 64 Bit Max Int
+		{"18446744073709551616", true}, // Unsigned 64 Bit Max Int + 1
 		{"", true},
 		{"123", true},
 		{"0", true},
@@ -635,7 +635,7 @@ func TestIsInt(t *testing.T) {
 func TestIsBool(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -682,7 +682,7 @@ func BenchmarkIsInt(b *testing.B) {
 func TestIsHash(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		algo     string
 		expected bool
@@ -712,7 +712,7 @@ func TestIsHash(t *testing.T) {
 func TestIsExistingEmail(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -720,7 +720,7 @@ func TestIsExistingEmail(t *testing.T) {
 		{"foo@bar.com", true},
 		{"foo@bar.com.au", true},
 		{"foo+bar@bar.com", true},
-		{"foo@bar.coffee", true},
+		{"foo@bar.coffee", false},
 		{"foo@bar.coffee..coffee", false},
 		{"invalidemail@", false},
 		{"invalid.com", false},
@@ -739,7 +739,7 @@ func TestIsExistingEmail(t *testing.T) {
 func TestIsEmailRegexp(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -772,7 +772,7 @@ func TestIsEmailRegexp(t *testing.T) {
 func TestIsEmailSimple(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -807,7 +807,7 @@ func TestIsEmailSimple(t *testing.T) {
 func TestIsURL(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -913,7 +913,7 @@ func TestIsURL(t *testing.T) {
 func TestIsRequestURL(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -962,7 +962,7 @@ func TestIsRequestURL(t *testing.T) {
 func TestIsRequestURI(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1010,7 +1010,7 @@ func TestIsRequestURI(t *testing.T) {
 func TestIsFloat(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1045,7 +1045,7 @@ func TestIsFloat(t *testing.T) {
 func TestIsHexadecimal(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1066,7 +1066,7 @@ func TestIsHexadecimal(t *testing.T) {
 func TestIsHexcolor(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1089,7 +1089,7 @@ func TestIsHexcolor(t *testing.T) {
 func TestIsRGBcolor(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1112,7 +1112,7 @@ func TestIsRGBcolor(t *testing.T) {
 func TestIsNull(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1130,7 +1130,7 @@ func TestIsNull(t *testing.T) {
 func TestIsNotEmpty(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1148,7 +1148,7 @@ func TestIsNotEmpty(t *testing.T) {
 func TestIsNotEmptyTrimSpace(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1175,7 +1175,7 @@ func TestIsNotEmptyTrimSpace(t *testing.T) {
 func TestIsDivisibleBy(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param1   string
 		param2   string
 		expected bool
@@ -1202,7 +1202,7 @@ func ExampleIsDivisibleBy() {
 func TestIsByteLength(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param1   string
 		param2   int
 		param3   int
@@ -1225,7 +1225,7 @@ func TestIsByteLength(t *testing.T) {
 func TestIsMultibyte(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1251,7 +1251,7 @@ func TestIsMultibyte(t *testing.T) {
 func TestIsASCII(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1277,7 +1277,7 @@ func TestIsASCII(t *testing.T) {
 func TestIsPrintableASCII(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1304,7 +1304,7 @@ func TestIsPrintableASCII(t *testing.T) {
 func TestIsFullWidth(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1329,7 +1329,7 @@ func TestIsFullWidth(t *testing.T) {
 func TestIsHalfWidth(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1353,7 +1353,7 @@ func TestIsHalfWidth(t *testing.T) {
 func TestIsVariableWidth(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1382,7 +1382,7 @@ func TestIsUUID(t *testing.T) {
 	t.Parallel()
 
 	// Tests without version
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1465,7 +1465,7 @@ func TestIsUUID(t *testing.T) {
 func TestIsCreditCard(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1491,7 +1491,7 @@ func TestIsISBN(t *testing.T) {
 	t.Parallel()
 
 	// Without version
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1562,7 +1562,7 @@ func TestIsISBN(t *testing.T) {
 func TestIsDataURI(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1590,7 +1590,7 @@ func TestIsDataURI(t *testing.T) {
 func TestIsBase64(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1620,7 +1620,7 @@ func TestIsBase64(t *testing.T) {
 func TestIsISO3166Alpha2(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1649,7 +1649,7 @@ func TestIsISO3166Alpha2(t *testing.T) {
 func TestIsISO3166Alpha3(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1677,7 +1677,7 @@ func TestIsISO3166Alpha3(t *testing.T) {
 func TestIsISO693Alpha2(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1706,7 +1706,7 @@ func TestIsISO693Alpha2(t *testing.T) {
 func TestIsISO693Alpha3b(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1768,7 +1768,7 @@ func TestIsIP(t *testing.T) {
 	t.Parallel()
 
 	// Without version
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1834,7 +1834,7 @@ func TestIsIP(t *testing.T) {
 func TestIsPort(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1856,7 +1856,7 @@ func TestIsPort(t *testing.T) {
 func TestIsDNSName(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1897,7 +1897,7 @@ func TestIsDNSName(t *testing.T) {
 
 func TestIsHost(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1917,13 +1917,12 @@ func TestIsHost(t *testing.T) {
 			t.Errorf("Expected IsHost(%q) to be %v, got %v", test.param, test.expected, actual)
 		}
 	}
-
 }
 
 func TestIsDialString(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1952,7 +1951,7 @@ func TestIsDialString(t *testing.T) {
 func TestIsMAC(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1973,12 +1972,12 @@ func TestIsMAC(t *testing.T) {
 func TestFilePath(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 		osType   int
 	}{
-		{"c:\\" + strings.Repeat("a", 32767), true, Win}, //See http://msdn.microsoft.com/en-us/library/aa365247(VS.85).aspx#maxpath
+		{"c:\\" + strings.Repeat("a", 32767), true, Win}, // See http://msdn.microsoft.com/en-us/library/aa365247(VS.85).aspx#maxpath
 		{"c:\\" + strings.Repeat("a", 32768), false, Win},
 		{"c:\\path\\file (x86)\bar", true, Win},
 		{"c:\\path\\file", true, Win},
@@ -2009,7 +2008,7 @@ func TestFilePath(t *testing.T) {
 func TestIsLatitude(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -2031,7 +2030,7 @@ func TestIsLatitude(t *testing.T) {
 func TestIsLongitude(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -2053,7 +2052,7 @@ func TestIsLongitude(t *testing.T) {
 func TestIsSSN(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -2074,7 +2073,7 @@ func TestIsSSN(t *testing.T) {
 func TestIsMongoID(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -2094,7 +2093,7 @@ func TestIsMongoID(t *testing.T) {
 
 func TestIsSemver(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -2130,7 +2129,7 @@ func TestIsSemver(t *testing.T) {
 
 func TestIsTime(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		format   string
 		expected bool
@@ -2163,7 +2162,7 @@ func TestIsTime(t *testing.T) {
 
 func TestIsRFC3339(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -2189,7 +2188,7 @@ func TestIsRFC3339(t *testing.T) {
 func TestIsISO4217(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -2211,7 +2210,7 @@ func TestIsISO4217(t *testing.T) {
 func TestByteLength(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		value    string
 		min      int
 		max      int
@@ -2234,7 +2233,7 @@ func TestByteLength(t *testing.T) {
 func TestStringLength(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		value    string
 		min      int
 		max      int
@@ -2260,7 +2259,7 @@ func TestStringLength(t *testing.T) {
 func TestIsIn(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		value    string
 		params   []string
 		expected bool
@@ -2284,7 +2283,7 @@ func TestIsIn(t *testing.T) {
 func TestIsCIDR(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -2304,7 +2303,7 @@ func TestIsCIDR(t *testing.T) {
 }
 
 func TestIsRsaPublicKey(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		rsastr   string
 		keylen   int
 		expected bool
