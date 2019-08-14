@@ -82,6 +82,7 @@ func (s *Service) Prefix() string {
 	}
 	return s.prefix(s.randGender())
 }
+
 func (s *Service) prefix(gender string) string {
 	return s.lookup(s.o.Lang, gender+"_name_prefixes", false)
 }

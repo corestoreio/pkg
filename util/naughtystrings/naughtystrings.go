@@ -33,7 +33,7 @@ func Unencoded() []string {
 }
 
 func load(file string) []string {
-	var asset, err = internal.Asset(file)
+	asset, err := internal.Asset(file)
 
 	if err != nil {
 		panic(err)

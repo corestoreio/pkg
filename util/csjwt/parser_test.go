@@ -135,7 +135,6 @@ func makeSample(c jwtclaim.Map) []byte {
 }
 
 func TestVerification_ParseFromRequest_LoopTestData(t *testing.T) {
-
 	// Bearer token request
 	for _, data := range jwtTestData {
 
@@ -166,7 +165,6 @@ func TestVerification_ParseFromRequest_LoopTestData(t *testing.T) {
 }
 
 func TestVerification_Parse_WithMap(t *testing.T) {
-
 	for _, data := range jwtTestData {
 		if len(data.tokenString) == 0 {
 			data.tokenString = makeSample(data.claims)
@@ -187,7 +185,6 @@ func TestVerification_Parse_WithMap(t *testing.T) {
 			if err == nil {
 				t.Errorf("[%v] Expecting error.  Didn't get one.", data.name)
 			} else {
-
 				if !data.wantErrKind.Match(err) {
 					t.Errorf("[%v] Errors don't match expectation: %s\n", data.name, err)
 				}
@@ -200,7 +197,6 @@ func TestVerification_Parse_WithMap(t *testing.T) {
 }
 
 func TestVerification_Parse_BearerInHeader(t *testing.T) {
-
 	token := []byte(`BEaRER `)
 	token = append(token, jwtTestData[0].tokenString...)
 
@@ -221,7 +217,6 @@ func TestVerification_Parse_InvalidSegments(t *testing.T) {
 }
 
 func TestSplitForVerify(t *testing.T) {
-
 	tests := []struct {
 		rawToken      []byte
 		signingString []byte
@@ -302,6 +297,7 @@ func BenchmarkParseFromRequest_HS256(b *testing.B) {
 		},
 	)
 }
+
 func BenchmarkParseFromRequest_HS384(b *testing.B) {
 	key := csjwt.WithPassword([]byte(`csjwt.SigningMethodHS384!`))
 	hmacFast, err := csjwt.NewSigningMethodHS384Fast(key)
@@ -320,6 +316,7 @@ func BenchmarkParseFromRequest_HS384(b *testing.B) {
 		},
 	)
 }
+
 func BenchmarkParseFromRequest_HS512(b *testing.B) {
 	key := csjwt.WithPassword([]byte(`csjwt.SigningMethodHS512!`))
 	hmacFast, err := csjwt.NewSigningMethodHS512Fast(key)
@@ -349,7 +346,6 @@ type ShoppingCartClaim struct {
 }
 
 func benchmarkParseFromRequest(b *testing.B, sm csjwt.Signer, key csjwt.Key, keyFunc csjwt.Keyfunc) {
-
 	clm := &ShoppingCartClaim{
 		Standard: &jwtclaim.Standard{
 			ExpiresAt: time.Now().Add(time.Hour * 72).Unix(),
@@ -391,5 +387,5 @@ func benchmarkParseFromRequest(b *testing.B, sm csjwt.Signer, key csjwt.Key, key
 	if have, want := mc.ExpiresAt, clm.ExpiresAt; have != want {
 		b.Fatalf("Mismatch of claims: Have %d Want %d", have, want)
 	}
-	//b.Log("GC Pause:", gcPause())
+	// b.Log("GC Pause:", gcPause())
 }

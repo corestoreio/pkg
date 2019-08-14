@@ -47,38 +47,42 @@ func benchmarkToBoolF(b *testing.B, s interface{}) {
 }
 
 func BenchmarkToString_String(b *testing.B) {
-	var val = "Hello cute little Goph3rs out there! Eat an  :-)"
+	val := "Hello cute little Goph3rs out there! Eat an  :-)"
 	benchmarkToStringF(b, val)
 }
+
 func BenchmarkToString_Bytes(b *testing.B) {
-	var val = []byte("Hello cute little Goph3rs out there! Eat an  :-)")
+	val := []byte("Hello cute little Goph3rs out there! Eat an  :-)")
 	benchmarkToStringF(b, val)
 }
+
 func BenchmarkToString_Float64(b *testing.B) {
-	var val = math.Pi * 33
+	val := math.Pi * 33
 	benchmarkToStringF(b, val)
 }
+
 func BenchmarkToString_Int(b *testing.B) {
-	var val = int(math.MaxInt16)
+	val := int(math.MaxInt16)
 	benchmarkToStringF(b, val)
 }
+
 func BenchmarkToString_Error(b *testing.B) {
-	var val = errors.New("Luke, I'm not your father.")
+	val := errors.New("Luke, I'm not your father.")
 	benchmarkToStringF(b, val)
 }
 
 func BenchmarkToFloat64_Float64(b *testing.B) {
-	var val = math.Pi
+	val := math.Pi
 	benchmarkToFloat64F(b, val)
 }
 
 func BenchmarkToFloat64_Int64(b *testing.B) {
-	var val = math.MaxInt64 - int64(math.MaxInt16)
+	val := math.MaxInt64 - int64(math.MaxInt16)
 	benchmarkToFloat64F(b, val)
 }
 
 func BenchmarkToFloat64_String(b *testing.B) {
-	var val = fmt.Sprintf("%.10f", math.E)
+	val := fmt.Sprintf("%.10f", math.E)
 	benchmarkToFloat64F(b, val)
 }
 

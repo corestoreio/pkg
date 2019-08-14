@@ -25,7 +25,6 @@ import (
 var _ fmt.Stringer = (*SignerSlice)(nil)
 
 func TestMethodsSlice(t *testing.T) {
-
 	var ms SignerSlice = []Signer{NewSigningMethodRS256(), NewSigningMethodPS256()}
 	assert.Exactly(t, `RS256, PS256`, ms.String())
 	assert.True(t, ms.Contains("PS256"))
@@ -36,7 +35,6 @@ func TestMethodsSlice(t *testing.T) {
 }
 
 func TestMustSigningMethodFactory(t *testing.T) {
-
 	defer func() {
 		if r := recover(); r != nil {
 			err, ok := r.(error)
@@ -52,7 +50,6 @@ func TestMustSigningMethodFactory(t *testing.T) {
 }
 
 func TestSigningMethodFactory(t *testing.T) {
-
 	tests := []struct {
 		alg string
 	}{

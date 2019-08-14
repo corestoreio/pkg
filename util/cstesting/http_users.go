@@ -82,8 +82,7 @@ func (hpu HTTPParallelUsers) sleepPerServeHTTP(userID int) time.Duration {
 
 // serve runs the benchmark. r or rf can be nil, but not both.
 func (hpu HTTPParallelUsers) serve(rf func() *http.Request, h http.Handler) {
-
-	var user = func(wg *sync.WaitGroup, userID int) {
+	user := func(wg *sync.WaitGroup, userID int) {
 		for i := 1; i <= hpu.Loops; i++ {
 			sl := hpu.sleepPerServeHTTP(userID)
 			// go func(sl time.Duration) { // if go, then add WaitGroup
@@ -104,8 +103,8 @@ func (hpu HTTPParallelUsers) serve(rf func() *http.Request, h http.Handler) {
 
 	var wg sync.WaitGroup
 	wg.Add(hpu.Users)
-	var startDelay = hpu.RampUpPeriod / hpu.Users
-	var delay = new(int32)
+	startDelay := hpu.RampUpPeriod / hpu.Users
+	delay := new(int32)
 	for j := 1; j <= hpu.Users; j++ {
 		go func(userID int) {
 			if startDelay > 0 && userID > 1 {

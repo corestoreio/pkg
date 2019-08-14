@@ -10,7 +10,6 @@ import (
 
 // Parse PEM encoded Elliptic Curve Private Key Structure
 func parseECPrivateKeyFromPEM(key []byte, password ...[]byte) (*ecdsa.PrivateKey, error) {
-
 	// Parse PEM block
 	pemBlock, _ := pem.Decode(key)
 	if pemBlock == nil {
@@ -36,7 +35,6 @@ func parseECPrivateKeyFromPEM(key []byte, password ...[]byte) (*ecdsa.PrivateKey
 
 // Parse PEM encoded PKCS1 or PKCS8 public key
 func parseECPublicKeyFromPEM(key []byte) (*ecdsa.PublicKey, error) {
-
 	// Parse PEM block
 	block, _ := pem.Decode(key)
 	if block == nil {

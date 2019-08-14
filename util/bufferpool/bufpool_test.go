@@ -37,9 +37,7 @@ func TestBufferPoolSize(t *testing.T) {
 
 			assert.Exactly(t, 4096, b.Cap())
 			assert.Exactly(t, 0, b.Len())
-
 		}(&wg)
 	}
 	wg.Wait()
-
 }

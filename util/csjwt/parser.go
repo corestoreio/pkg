@@ -139,7 +139,6 @@ func (vf *Verification) Parse(dst *Token, rawToken []byte, keyFunc Keyfunc) erro
 }
 
 func (vf *Verification) getMethod(t *Token) (Signer, error) {
-
 	if len(vf.Methods) == 0 {
 		return nil, errors.Empty.Newf(errVerificationMethodsEmpty)
 	}

@@ -52,7 +52,6 @@ var rsaPSSTestData = []struct {
 }
 
 func TestRSAPSSVerify(t *testing.T) {
-
 	key := csjwt.WithRSAPublicKeyFromFile("test/sample_key.pub")
 	for _, data := range rsaPSSTestData {
 
@@ -72,7 +71,6 @@ func TestRSAPSSVerify(t *testing.T) {
 }
 
 func TestRSAPSSSign(t *testing.T) {
-
 	key := csjwt.WithRSAPrivateKeyFromFile("test/sample_key")
 	for _, data := range rsaPSSTestData {
 		if data.valid {

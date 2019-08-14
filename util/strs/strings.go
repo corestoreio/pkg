@@ -92,9 +92,7 @@ func FromCamelCase(str string) string {
 			if firstTime == true {
 				firstTime = false
 			} else {
-
 				newstr = append(newstr, '_')
-
 			}
 			chr -= ('A' - 'a')
 		}

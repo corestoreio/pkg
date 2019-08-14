@@ -29,7 +29,7 @@ import (
 func TestGetReader(t *testing.T) {
 	data := []byte(`The quick brown fox jumps over the lazy farmer.`)
 
-	var counter = new(int32)
+	counter := new(int32)
 
 	bgwork.Wait(100, func(_ int) {
 		var buf bytes.Buffer

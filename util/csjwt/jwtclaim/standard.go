@@ -72,14 +72,13 @@ type Standard struct {
 // clock skew. As well, if any of the above claims are not in the token, it will
 // still be considered a valid claim. Error behaviour: NotValid
 func (s *Standard) Valid() error {
-
 	now := TimeFunc().Unix()
 
 	// The claims below are optional, by default, so if they are set to the
 	// default value in Go, let's not fail the verification for them.
 
 	switch {
-	//case s.ExpiresAt == 0 && s.IssuedAt == 0 && s.NotBefore == 0:
+	// case s.ExpiresAt == 0 && s.IssuedAt == 0 && s.NotBefore == 0:
 	//	return errors.NotValid.Newf(`[jwtclaim] token claims validation failed`)
 
 	case !s.VerifyExpiresAt(now, false):

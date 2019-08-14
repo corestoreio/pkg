@@ -139,5 +139,4 @@ func (m *SigningMethodECDSA) Sign(signingString []byte, key Key) ([]byte, error)
 	out := append(rBytesPadded, sBytesPadded...)
 
 	return EncodeSegment(out), nil
-
 }

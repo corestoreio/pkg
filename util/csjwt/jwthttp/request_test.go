@@ -25,7 +25,6 @@ func makeSample(c jwtclaim.Map) []byte {
 }
 
 func TestVerification_ParseFromRequest_Complex(t *testing.T) {
-
 	key := csjwt.WithPassword([]byte(`csjwt.SigningMethodHS512!`))
 	clm := jwtclaim.Map{
 		"foo":               "bar",
@@ -47,7 +46,7 @@ func TestVerification_ParseFromRequest_Complex(t *testing.T) {
 	r, _ := http.NewRequest("GET", "/", nil)
 	r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tokenString))
 
-	var newClaim = make(jwtclaim.Map)
+	newClaim := make(jwtclaim.Map)
 	rToken := csjwt.NewToken(&newClaim)
 	err = jwthttp.NewVerification(sm512).ParseFromRequest(rToken, func(t *csjwt.Token) (csjwt.Key, error) {
 		if have, want := t.Alg(), sm512.Alg(); have != want {
@@ -62,7 +61,6 @@ func TestVerification_ParseFromRequest_Complex(t *testing.T) {
 }
 
 func TestVerification_ParseFromRequest_Cookie(t *testing.T) {
-
 	const cookieName = "store_bearer"
 	token := makeSample(jwtclaim.Map{
 		"where": "in the cookie dude!",
@@ -94,7 +92,6 @@ func TestVerification_ParseFromRequest_Cookie(t *testing.T) {
 }
 
 func TestVerification_ParseFromRequest_Form(t *testing.T) {
-
 	token := makeSample(jwtclaim.Map{
 		"where": "in the form dude!",
 	})
@@ -128,7 +125,6 @@ func TestVerification_ParseFromRequest_Form(t *testing.T) {
 }
 
 func TestVerification_ParseFromRequest_NoTokenInRequest(t *testing.T) {
-
 	r, _ := http.NewRequest("GET", "/", nil)
 
 	rs256 := csjwt.NewSigningMethodRS256()
@@ -145,7 +141,6 @@ func TestVerification_ParseFromRequest_NoTokenInRequest(t *testing.T) {
 }
 
 func TestVerification_ParseFromRequest_ExtractTokenFn(t *testing.T) {
-
 	r, _ := http.NewRequest("GET", "/", nil)
 
 	rs256 := csjwt.NewSigningMethodRS256()

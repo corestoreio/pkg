@@ -32,8 +32,8 @@ func (m *mockErrorf) Errorf(format string, args ...interface{}) {
 
 func TestEqualPointers(t *testing.T) {
 	t.Parallel()
-	var p1 = new(string)
-	var p2 = new(string)
+	p1 := new(string)
+	p2 := new(string)
 
 	me := &mockErrorf{}
 	if have, want := cstesting.EqualPointers(me, p1, p2), false; have != want {

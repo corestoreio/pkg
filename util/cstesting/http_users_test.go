@@ -37,7 +37,6 @@ func TestHTTPParallelUsers_WrongInterval(t *testing.T) {
 				if have, want := s, "Unknown interval 2s. Only allowed time.Nanosecond, time.Microsecond, etc"; have != want {
 					t.Errorf("Have: %v Want: %v", have, want)
 				}
-
 			} else {
 				t.Fatalf("Expecting a string in the panic; Got: %#v", r)
 			}
@@ -80,9 +79,9 @@ func TestHTTPParallelUsers_Long(t *testing.T) {
 		assert.NotEmpty(t, rec.Header().Get(cstesting.HeaderSleep))
 	}
 
-	var reqCount = new(int32)
+	reqCount := new(int32)
 	tg.ServeHTTP(req, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//t.Logf("UserID %s LoopID %s Sleeping %s",
+		// t.Logf("UserID %s LoopID %s Sleeping %s",
 		//	rec.Header().Get(cstesting.HeaderUserID),
 		//	rec.Header().Get(cstesting.HeaderLoopID),
 		//	rec.Header().Get(cstesting.HeaderSleep),
@@ -90,7 +89,7 @@ func TestHTTPParallelUsers_Long(t *testing.T) {
 		atomic.AddInt32(reqCount, 1)
 	}))
 
-	//t.Logf("Users %d Loops %d, RampUp %d", users, loops, rampUpPeriod)
+	// t.Logf("Users %d Loops %d, RampUp %d", users, loops, rampUpPeriod)
 
 	if have, want := *reqCount, int32(users*loops); have != want {
 		t.Errorf("Request count mismatch! Have: %v Want: %v", have, want)
@@ -117,7 +116,7 @@ func TestHTTPParallelUsers_ServeHTTPNewRequest(t *testing.T) {
 		assert.NotEmpty(t, rec.Header().Get(cstesting.HeaderSleep))
 	}
 
-	var reqCount = new(int32)
+	reqCount := new(int32)
 	// if you now use ServeHTTP() the below HanderFunc code will trigger a race condition
 	tg.ServeHTTPNewRequest(func() *http.Request {
 		return httptest.NewRequest("POST", "http://corestore.io", strings.NewReader(`#golang proverb: A little copying is better than a little dependency.`))
@@ -148,7 +147,7 @@ func TestHTTPParallelUsers_ServeHTTPNewRequest(t *testing.T) {
 		atomic.AddInt32(reqCount, 1)
 	}))
 
-	//t.Logf("Users %d Loops %d, RampUp %d", users, loops, rampUpPeriod)
+	// t.Logf("Users %d Loops %d, RampUp %d", users, loops, rampUpPeriod)
 
 	if have, want := *reqCount, int32(users*loops); have != want {
 		t.Errorf("Request count mismatch! Have: %v Want: %v", have, want)

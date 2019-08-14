@@ -419,7 +419,7 @@ var charMap = map[rune][]rune{
 	'™': {'t', 'm'},
 }
 
-//var translitConvertTableExtended = map[rune]string{
+// var translitConvertTableExtended = map[rune]string{
 //	'\U00000021': "excl",
 //	'\U00000022': "quot",
 //	'\U00000023': "num",

@@ -18,7 +18,6 @@ type NullString struct {
 }
 
 func TestExactlyLength(t *testing.T) {
-
 	t.Run("strings", func(t *testing.T) {
 		a, b := "abcdef", "abcdefgh"
 		assert.ExactlyLength(t, 6, &a, &b, "Strings must match")
@@ -36,7 +35,6 @@ func TestExactlyLength(t *testing.T) {
 }
 
 func TestLenBetween(t *testing.T) {
-
 	t.Run("slice", func(t *testing.T) {
 		sl := [10]int{}
 		assert.LenBetween(t, sl, 10, 10)

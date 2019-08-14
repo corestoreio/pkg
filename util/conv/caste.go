@@ -74,7 +74,6 @@ func ToDurationE(i interface{}) (d time.Duration, err error) {
 // 		ToBool() bool
 // this function will get called.
 func ToBoolE(i interface{}) (bool, error) {
-
 	// if a type implements an iFacer interface then we call this. we call it
 	// only at the end of the type switch because it costs performance to assert
 	// to the iFacer interface. TODO(CyS): Implement for all other functions.
@@ -452,23 +451,22 @@ func ToStringE(i interface{}) (string, error) {
 // ToByteE casts an empty interface to a byte slice. Faster than ToStringE because
 // ToByteE avoids some copying of data. Use wisely.
 func ToByteE(i interface{}) ([]byte, error) {
-
 	switch s := i.(type) {
 	case []byte:
 		return s, nil
 	case string:
 		return []byte(s), nil
 	case bool:
-		var empty = make([]byte, 0, 4)
+		empty := make([]byte, 0, 4)
 		return strconv.AppendBool(empty, s), nil
 	case float64:
-		var empty = make([]byte, 0, 8)
+		empty := make([]byte, 0, 8)
 		return strconv.AppendFloat(empty, i.(float64), 'f', -1, 64), nil
 	case int:
-		var empty = make([]byte, 0, 8)
+		empty := make([]byte, 0, 8)
 		return strconv.AppendInt(empty, int64(i.(int)), 10), nil
 	case int64:
-		var empty = make([]byte, 0, 8)
+		empty := make([]byte, 0, 8)
 		return strconv.AppendInt(empty, i.(int64), 10), nil
 	case template.HTML:
 		return []byte(s), nil
@@ -511,8 +509,7 @@ func ToStringMapStringE(i interface{}) (map[string]string, error) {
 
 // ToStringMapStringSliceE casts an empty interface to a map[string][]string.
 func ToStringMapStringSliceE(i interface{}) (map[string][]string, error) {
-
-	var m = map[string][]string{}
+	m := map[string][]string{}
 
 	switch v := i.(type) {
 	case map[string][]string:
@@ -566,8 +563,7 @@ func ToStringMapStringSliceE(i interface{}) (map[string][]string, error) {
 
 // ToStringMapBoolE casts an empty interface to a map[string]bool.
 func ToStringMapBoolE(i interface{}) (map[string]bool, error) {
-
-	var m = map[string]bool{}
+	m := map[string]bool{}
 
 	switch v := i.(type) {
 	case map[interface{}]interface{}:
@@ -589,8 +585,7 @@ func ToStringMapBoolE(i interface{}) (map[string]bool, error) {
 
 // ToStringMapE casts an empty interface to a map[string]interface{}.
 func ToStringMapE(i interface{}) (map[string]interface{}, error) {
-
-	var m = map[string]interface{}{}
+	m := map[string]interface{}{}
 
 	switch v := i.(type) {
 	case map[interface{}]interface{}:
@@ -607,7 +602,6 @@ func ToStringMapE(i interface{}) (map[string]interface{}, error) {
 
 // ToSliceE casts an empty interface to a []interface{}.
 func ToSliceE(i interface{}) ([]interface{}, error) {
-
 	var s []interface{}
 
 	switch v := i.(type) {
@@ -628,7 +622,6 @@ func ToSliceE(i interface{}) ([]interface{}, error) {
 
 // ToStringSliceE casts an empty interface to a []string.
 func ToStringSliceE(i interface{}) ([]string, error) {
-
 	var a []string
 
 	switch v := i.(type) {
@@ -654,7 +647,6 @@ func ToStringSliceE(i interface{}) ([]string, error) {
 
 // ToIntSliceE casts an empty interface to a []int.
 func ToIntSliceE(i interface{}) ([]int, error) {
-
 	if i == nil {
 		return []int{}, errors.NotValid.Newf("[conv] Unable to cast %#v to []int", i)
 	}

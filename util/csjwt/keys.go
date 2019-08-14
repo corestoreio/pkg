@@ -50,7 +50,6 @@ type Key struct {
 // is more specific and returns the correct key to check the signature.
 func NewKeyFunc(s Signer, key Key) Keyfunc {
 	return func(t *Token) (Key, error) {
-
 		if key.Error != nil {
 			return Key{}, errors.WithStack(key.Error)
 		}

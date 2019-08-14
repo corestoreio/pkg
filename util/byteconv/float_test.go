@@ -31,7 +31,6 @@ import (
 )
 
 func TestParseNullFloatSQL_ParseFloatSQL(t *testing.T) {
-
 	runner := func(have string, want sql.NullFloat64, wantErr bool) func(*testing.T) {
 		return func(t *testing.T) {
 			b := sql.RawBytes(have)

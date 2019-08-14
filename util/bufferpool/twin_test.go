@@ -47,7 +47,6 @@ func TestBufferPoolMultiSize(t *testing.T) {
 			assert.Exactly(t, string(have), buf.First.String())
 			assert.Exactly(t, string(have), buf.Second.String())
 			assert.Exactly(t, "\"Unless required by applicable law or agreed to in writing, software\"\n\"Unless required by applicable law or agreed to in writing, software\"", buf.String())
-
 		}(&wg)
 	}
 	wg.Wait()

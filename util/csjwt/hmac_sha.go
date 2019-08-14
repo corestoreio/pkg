@@ -84,7 +84,6 @@ func (m *SigningMethodHMAC) Verify(signingString, signature []byte, key Key) err
 // can use any of the WithPassword*() functions. Error behaviour: Empty,
 // NotImplemented, WriteFailed
 func (m *SigningMethodHMAC) Sign(signingString []byte, key Key) ([]byte, error) {
-
 	if key.Error != nil {
 		return nil, errors.Wrap(key.Error, "[csjwt] SigningMethodHMAC.Sign.key")
 	}

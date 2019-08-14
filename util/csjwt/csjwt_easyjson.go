@@ -51,6 +51,7 @@ func easyjsonE36a3abfDecodeGithubComCorestoreioPkgUtilCsjwt(in *jlexer.Lexer, ou
 		in.Consumed()
 	}
 }
+
 func easyjsonE36a3abfEncodeGithubComCorestoreioPkgUtilCsjwt(out *jwriter.Writer, in Head) {
 	out.RawByte('{')
 	first := true

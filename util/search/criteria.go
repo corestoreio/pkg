@@ -42,6 +42,7 @@ type Filter struct {
 	Value     string
 	Condition string // default 'eq'
 }
+
 type Filters struct {
 	Filters  []Filter
 	JoinType string // and/or

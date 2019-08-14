@@ -82,7 +82,6 @@ func IsEmailSimple(str string) bool {
 // IsExistingEmail check if the string is an email of existing domain. Looks up
 // the MX record.
 func IsExistingEmail(email string) bool {
-
 	if len(email) < 6 || len(email) > 254 {
 		return false
 	}
@@ -141,10 +140,10 @@ func IsURL(str string) bool {
 func IsRequestURL(rawurl string) bool {
 	url, err := url.ParseRequestURI(rawurl)
 	if err != nil {
-		return false //Couldn't even parse the rawurl
+		return false // Couldn't even parse the rawurl
 	}
 	if len(url.Scheme) == 0 {
-		return false //No Scheme found
+		return false // No Scheme found
 	}
 	return true
 }
@@ -179,8 +178,8 @@ func IsAlpha(str string) bool {
 	return true
 }
 
-//IsUTFLetter check if the string contains only unicode letter characters.
-//Similar to IsAlpha but for all languages. Empty string is valid.
+// IsUTFLetter check if the string contains only unicode letter characters.
+// Similar to IsAlpha but for all languages. Empty string is valid.
 func IsUTFLetter(str string) bool {
 	if IsNull(str) {
 		return true
@@ -192,7 +191,6 @@ func IsUTFLetter(str string) bool {
 		}
 	}
 	return true
-
 }
 
 // IsAlphanumeric check if the string contains only letters and numbers. Empty string is valid.
@@ -223,12 +221,11 @@ func IsUTFLetterNumeric(str string) bool {
 		return true
 	}
 	for _, c := range str {
-		if !unicode.IsLetter(c) && !unicode.IsNumber(c) { //letters && numbers are ok
+		if !unicode.IsLetter(c) && !unicode.IsNumber(c) { // letters && numbers are ok
 			return false
 		}
 	}
 	return true
-
 }
 
 // IsNumeric check if the string contains only numbers. Empty string is valid.
@@ -266,12 +263,11 @@ func IsUTFNumeric(str string) bool {
 		str = strings.TrimPrefix(str, "+")
 	}
 	for _, c := range str {
-		if !unicode.IsNumber(c) { //numbers && minus sign are ok
+		if !unicode.IsNumber(c) { // numbers && minus sign are ok
 			return false
 		}
 	}
 	return true
-
 }
 
 // IsUTFDigit check if the string contains only unicode radix-10 decimal digits. Empty string is valid.
@@ -287,12 +283,11 @@ func IsUTFDigit(str string) bool {
 		str = strings.TrimPrefix(str, "+")
 	}
 	for _, c := range str {
-		if !unicode.IsDigit(c) { //digits && minus sign are ok
+		if !unicode.IsDigit(c) { // digits && minus sign are ok
 			return false
 		}
 	}
 	return true
-
 }
 
 // IsHexadecimal check if the string is a hexadecimal number.
@@ -672,13 +667,12 @@ func IsBase64(str string) bool {
 		}
 	}
 	return equals <= 3
-
 }
 
 // IsFilePath check is a string is Win or Unix file path and returns it's type.
 func IsFilePath(str string) (bool, int) {
 	if rxWinPath.MatchString(str) {
-		//check windows path limit see:
+		// check windows path limit see:
 		//  http://msdn.microsoft.com/en-us/library/aa365247(VS.85).aspx#maxpath
 		if len(str[3:]) > 32767 {
 			return false, Win
@@ -807,7 +801,6 @@ func IsHash(str string, algorithm string) bool {
 
 // IsDialString validates the given string for usage with the various Dial() functions
 func IsDialString(str string) bool {
-
 	if h, p, err := net.SplitHostPort(str); err == nil && h != "" && p != "" && (IsDNSName(h) || IsIP(h)) && IsPort(p) {
 		return true
 	}

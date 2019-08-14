@@ -46,7 +46,6 @@ func TestHeadSegmentsParseJSON(t *testing.T) {
 }
 
 func TestHeadSegmentsAlgTyp(t *testing.T) {
-
 	var sc csjwt.Header
 	sc = jwtclaim.NewHeadSegments(`ES999`)
 	assert.Exactly(t, "ES999", sc.Alg())

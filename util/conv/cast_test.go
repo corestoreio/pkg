@@ -17,7 +17,6 @@ import (
 )
 
 func TestToInt(t *testing.T) {
-
 	var eight interface{} = 8
 	i_8 := int(8)
 	assert.Exactly(t, i_8, ToInt(8))
@@ -29,9 +28,8 @@ func TestToInt(t *testing.T) {
 }
 
 func TestToInt64(t *testing.T) {
-
 	var eight interface{} = 8
-	var i64_8 = int64(8)
+	i64_8 := int64(8)
 	assert.Exactly(t, i64_8, ToInt64(8))
 	assert.Exactly(t, i64_8, ToInt64(8.31))
 	assert.Exactly(t, i64_8, ToInt64("8"))
@@ -103,7 +101,6 @@ func TestToUint(t *testing.T) {
 }
 
 func TestToFloat64(t *testing.T) {
-
 	tests := []struct {
 		have    interface{}
 		want    float64
@@ -153,7 +150,6 @@ func (j textMarshal) MarshalText() ([]byte, error) {
 }
 
 func TestToString(t *testing.T) {
-
 	var foo interface{} = "one more time"
 	assert.Equal(t, "8", ToString(8))
 	assert.Equal(t, "8.12", ToString(8.12))
@@ -181,7 +177,6 @@ func TestToString(t *testing.T) {
 }
 
 func TestToByte(t *testing.T) {
-
 	var foo interface{} = []byte("one more time")
 	assert.Equal(t, ToByte(8), []byte("8"))
 	assert.Equal(t, ToByte(int64(8888)), []byte("8888"))
@@ -208,7 +203,6 @@ func (x foo) String() string {
 }
 
 func TestStringerToString(t *testing.T) {
-
 	var x foo
 	x.val = "bar"
 	assert.Equal(t, "bar", ToString(x))
@@ -223,32 +217,30 @@ func (x fu) Error() string {
 }
 
 func TestErrorToString(t *testing.T) {
-
 	var x fu
 	x.val = "bar"
 	assert.Equal(t, "bar", ToString(x))
 }
 
 func TestMaps(t *testing.T) {
-
-	var taxonomies = map[interface{}]interface{}{"tag": "tags", "group": "groups"}
-	var stringMapBool = map[interface{}]interface{}{"v1": true, "v2": false}
+	taxonomies := map[interface{}]interface{}{"tag": "tags", "group": "groups"}
+	stringMapBool := map[interface{}]interface{}{"v1": true, "v2": false}
 
 	// ToStringMapString inputs/outputs
-	var stringMapString = map[string]string{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
-	var stringMapInterface = map[string]interface{}{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
-	var interfaceMapString = map[interface{}]string{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
-	var interfaceMapInterface = map[interface{}]interface{}{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
+	stringMapString := map[string]string{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
+	stringMapInterface := map[string]interface{}{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
+	interfaceMapString := map[interface{}]string{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
+	interfaceMapInterface := map[interface{}]interface{}{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
 
 	// ToStringMapStringSlice inputs/outputs
-	var stringMapStringSlice = map[string][]string{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
-	var stringMapInterfaceSlice = map[string][]interface{}{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
-	var stringMapStringSingleSliceFieldsResult = map[string][]string{"key 1": {"value", "1"}, "key 2": {"value", "2"}, "key 3": {"value", "3"}}
-	var interfaceMapStringSlice = map[interface{}][]string{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
-	var interfaceMapInterfaceSlice = map[interface{}][]interface{}{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
+	stringMapStringSlice := map[string][]string{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
+	stringMapInterfaceSlice := map[string][]interface{}{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
+	stringMapStringSingleSliceFieldsResult := map[string][]string{"key 1": {"value", "1"}, "key 2": {"value", "2"}, "key 3": {"value", "3"}}
+	interfaceMapStringSlice := map[interface{}][]string{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
+	interfaceMapInterfaceSlice := map[interface{}][]interface{}{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
 
-	var stringMapStringSliceMultiple = map[string][]string{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
-	var stringMapStringSliceSingle = map[string][]string{"key 1": {"value 1"}, "key 2": {"value 2"}, "key 3": {"value 3"}}
+	stringMapStringSliceMultiple := map[string][]string{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
+	stringMapStringSliceSingle := map[string][]string{"key 1": {"value 1"}, "key 2": {"value 2"}, "key 3": {"value 3"}}
 
 	assert.Equal(t, ToStringMap(taxonomies), map[string]interface{}{"tag": "tags", "group": "groups"})
 	assert.Equal(t, ToStringMapBool(stringMapBool), map[string]bool{"v1": true, "v2": false})
@@ -273,7 +265,6 @@ func TestMaps(t *testing.T) {
 }
 
 func TestSlices(t *testing.T) {
-
 	assert.Equal(t, []string{"a", "b"}, ToStringSlice([]string{"a", "b"}))
 	assert.Equal(t, []string{"1", "3"}, ToStringSlice([]interface{}{1, 3}))
 	assert.Equal(t, []int{1, 3}, ToIntSlice([]int{1, 3}))
@@ -283,7 +274,6 @@ func TestSlices(t *testing.T) {
 }
 
 func TestToBool2(t *testing.T) {
-
 	assert.Equal(t, ToBool(0), false)
 	assert.Equal(t, ToBool(int64(0)), false)
 	assert.Equal(t, ToBool(nil), false)
@@ -393,7 +383,6 @@ func TestToBool(t *testing.T) {
 }
 
 func TestIndirectPointers(t *testing.T) {
-
 	x := 13
 	y := &x
 	z := &y
@@ -403,7 +392,6 @@ func TestIndirectPointers(t *testing.T) {
 }
 
 func TestToDuration(t *testing.T) {
-
 	a := time.Second * 5
 	ai := int64(a)
 	b := time.Second * 5
@@ -432,7 +420,6 @@ func getMockTime(format string) time.Time {
 }
 
 func TestStringToDate(t *testing.T) {
-
 	for i, f := range TimeFormats {
 		now := getMockTime(f)
 		nowS := now.Format(f)
@@ -446,7 +433,6 @@ func TestStringToDate(t *testing.T) {
 }
 
 func TestToTimeE(t *testing.T) {
-
 	now := time.Now()
 
 	fUnix := float64(now.Unix()) + (float64(now.Nanosecond()) / 1e9)

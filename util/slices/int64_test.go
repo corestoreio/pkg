@@ -23,21 +23,18 @@ import (
 )
 
 func TestInt64Sort(t *testing.T) {
-
 	is := slices.Int64{100, 10, 3, 20, 9, 30, -1}
 	assert.EqualValues(t, []int64{-1, 3, 9, 10, 20, 30, 100}, is.Sort().ToInt64())
 	assert.EqualValues(t, []int64{100, 30, 20, 10, 9, 3, -1}, is.Reverse().ToInt64())
 }
 
 func TestInt64Append(t *testing.T) {
-
 	is := slices.Int64{30, -1}
 	is.Append(6)
 	assert.EqualValues(t, []int64{30, -1, 6}, is.ToInt64())
 }
 
 func TestInt64Update(t *testing.T) {
-
 	is := slices.Int64{-29, 30, -1}
 	assert.NoError(t, is.Update(1, 31))
 	assert.EqualValues(t, 31, is[1])
@@ -45,7 +42,6 @@ func TestInt64Update(t *testing.T) {
 }
 
 func TestInt64Delete(t *testing.T) {
-
 	is := slices.Int64{-29, 30, -1}
 	assert.NoError(t, is.Delete(1))
 	assert.EqualValues(t, []int64{-29, -1}, is.ToInt64())
@@ -53,21 +49,18 @@ func TestInt64Delete(t *testing.T) {
 }
 
 func TestInt64Index(t *testing.T) {
-
 	is := slices.Int64{-29, 30, -1}
 	assert.EqualValues(t, 2, is.Index(-1))
 	assert.EqualValues(t, -1, is.Index(123))
 }
 
 func TestInt64Contains(t *testing.T) {
-
 	is := slices.Int64{-29, 30, -1}
 	assert.True(t, is.Contains(-1))
 	assert.False(t, is.Contains(-100))
 }
 
 func TestInt64Any(t *testing.T) {
-
 	l := slices.Int64{33, 44, 55, 66}
 	assert.True(t, l.Any(func(i int64) bool {
 		return i == 44
@@ -78,7 +71,6 @@ func TestInt64Any(t *testing.T) {
 }
 
 func TestInt64All(t *testing.T) {
-
 	af := func(i int64) bool {
 		return (i & 1) == 0
 	}
@@ -89,7 +81,6 @@ func TestInt64All(t *testing.T) {
 }
 
 func TestInt64Reduce(t *testing.T) {
-
 	af := func(i int64) bool {
 		return (i & 1) == 1
 	}
@@ -100,7 +91,6 @@ func TestInt64Reduce(t *testing.T) {
 }
 
 func TestInt64Map(t *testing.T) {
-
 	af := func(i int64) int64 {
 		return i + 1
 	}
@@ -109,13 +99,11 @@ func TestInt64Map(t *testing.T) {
 }
 
 func TestInt64Sum(t *testing.T) {
-
 	l := slices.Int64{2, 4, 30, 22}
 	assert.EqualValues(t, 58, l.Sum())
 }
 
 func TestInt64Unique(t *testing.T) {
-
 	l := slices.Int64{30, 2, 4, 30, 2, 22}
 	assert.EqualValues(t, []int64{30, 2, 4, 22}, l.Unique().ToInt64())
 }
@@ -139,5 +127,4 @@ func BenchmarkInt64_Unique(b *testing.B) {
 	if have, want := size-1, len(have); have != want {
 		b.Errorf("Have: %v Want: %v", have, want)
 	}
-
 }

@@ -34,7 +34,6 @@ type Comparison func() (success bool)
 //
 // This function does no assertion of any kind.
 func ObjectsAreEqual(expected, actual interface{}) bool {
-
 	if expected == nil || actual == nil {
 		return expected == actual
 	}
@@ -69,7 +68,6 @@ the problem actually occured in calling code.*/
 // of each stack frame leading from the current test to the assert call that
 // failed.
 func CallerInfo() []string {
-
 	pc := uintptr(0)
 	file := ""
 	line := 0
@@ -145,7 +143,6 @@ func isTest(name, prefix string) bool {
 // getWhitespaceString returns a string that is long enough to overwrite the default
 // output from the go testing framework.
 func getWhitespaceString() string {
-
 	_, file, line, ok := runtime.Caller(1)
 	if !ok {
 		return ""
@@ -154,7 +151,6 @@ func getWhitespaceString() string {
 	file = parts[len(parts)-1]
 
 	return strings.Repeat(" ", len(fmt.Sprintf("%s:%d:      ", file, line)))
-
 }
 
 func messageFromMsgAndArgs(msgAndArgs ...interface{}) string {
@@ -198,7 +194,6 @@ func indentMessageLines(message string, tabs int) string {
 
 // Fail reports a failure through
 func Fail(t TestingT, failureMessage string, msgAndArgs ...interface{}) {
-
 	message := messageFromMsgAndArgs(msgAndArgs...)
 
 	errorTrace := strings.Join(CallerInfo(), "\n\r\t\t\t")
@@ -225,18 +220,15 @@ func Fail(t TestingT, failureMessage string, msgAndArgs ...interface{}) {
 //
 //    assert.Implements(t, (*MyInterface)(nil), new(MyObject), "MyObject")
 func Implements(t TestingT, interfaceObject interface{}, object interface{}, msgAndArgs ...interface{}) {
-
 	interfaceType := reflect.TypeOf(interfaceObject).Elem()
 
 	if !reflect.TypeOf(object).Implements(interfaceType) {
 		Fail(t, fmt.Sprintf("Object must implement %v", interfaceType), msgAndArgs...)
 	}
-
 }
 
 // IsType asserts that the specified objects are of the same type.
 func IsType(t TestingT, expectedType interface{}, object interface{}, msgAndArgs ...interface{}) {
-
 	if !ObjectsAreEqual(reflect.TypeOf(object), reflect.TypeOf(expectedType)) {
 		Fail(t, fmt.Sprintf("Object expected to be of type %v, but was %v", reflect.TypeOf(expectedType), reflect.TypeOf(object)), msgAndArgs...)
 	}
@@ -248,7 +240,6 @@ func IsType(t TestingT, expectedType interface{}, object interface{}, msgAndArgs
 //
 // Returns whether the assertion was successful (true) or not (false).
 func Equal(t TestingT, expected, actual interface{}, msgAndArgs ...interface{}) {
-
 	if !ObjectsAreEqual(expected, actual) {
 		Fail(t, fmt.Sprintf("Not equal: %s", DiffValues(expected, actual)), msgAndArgs...)
 	}
@@ -261,7 +252,6 @@ func Equal(t TestingT, expected, actual interface{}, msgAndArgs ...interface{}) 
 //
 // Returns whether the assertion was successful (true) or not (false).
 func EqualValues(t TestingT, expected, actual interface{}, msgAndArgs ...interface{}) {
-
 	if !ObjectsAreEqualValues(expected, actual) {
 		Fail(t, fmt.Sprintf("Not equal: %s", DiffValues(expected, actual)), msgAndArgs...)
 	}
@@ -273,7 +263,6 @@ func EqualValues(t TestingT, expected, actual interface{}, msgAndArgs ...interfa
 //
 // Returns whether the assertion was successful (true) or not (false).
 func Exactly(t TestingT, expected, actual interface{}, msgAndArgs ...interface{}) {
-
 	aType := reflect.TypeOf(expected)
 	bType := reflect.TypeOf(actual)
 
@@ -282,7 +271,6 @@ func Exactly(t TestingT, expected, actual interface{}, msgAndArgs ...interface{}
 	}
 
 	Equal(t, expected, actual, msgAndArgs...)
-
 }
 
 // ExactlyLength asserts that two objects with maximum length of their string
@@ -293,7 +281,6 @@ func Exactly(t TestingT, expected, actual interface{}, msgAndArgs ...interface{}
 // Shorts aaa to aa and checks if aa is equal to aa. This function is needed
 // when writing random strings to the database table with short column length.
 func ExactlyLength(t TestingT, maxLength int, ptrExpected, ptrActual interface{}, msgAndArgs ...interface{}) {
-
 	aVal := reflect.ValueOf(ptrExpected)
 	bVal := reflect.ValueOf(ptrActual)
 
@@ -401,7 +388,6 @@ var numericZeros = []interface{}{
 
 // isEmpty gets whether the specified object is considered empty or not.
 func isEmpty(object interface{}) bool {
-
 	if object == nil {
 		return true
 	} else if object == "" {
@@ -445,7 +431,6 @@ func isEmpty(object interface{}) bool {
 //
 // Returns whether the assertion was successful (true) or not (false).
 func Empty(t TestingT, object interface{}, msgAndArgs ...interface{}) {
-
 	pass := isEmpty(object)
 	if !pass {
 		Fail(t, fmt.Sprintf("Should be empty, but was %v", object), msgAndArgs...)
@@ -460,7 +445,6 @@ func Empty(t TestingT, object interface{}, msgAndArgs ...interface{}) {
 //
 // Returns whether the assertion was successful (true) or not (false).
 func NotEmpty(t TestingT, object interface{}, msgAndArgs ...interface{}) {
-
 	pass := !isEmpty(object)
 	if !pass {
 		Fail(t, fmt.Sprintf("Should NOT be empty, but was %v", object), msgAndArgs...)
@@ -530,7 +514,6 @@ func LenBetween(t TestingT, object interface{}, min, maxLength int, msgAndArgs .
 //
 // Returns whether the assertion was successful (true) or not (false).
 func True(t TestingT, value bool, msgAndArgs ...interface{}) {
-
 	if value != true {
 		Fail(t, "Should be true", msgAndArgs...)
 	}
@@ -542,7 +525,6 @@ func True(t TestingT, value bool, msgAndArgs ...interface{}) {
 //
 // Returns whether the assertion was successful (true) or not (false).
 func False(t TestingT, value bool, msgAndArgs ...interface{}) {
-
 	if value != false {
 		Fail(t, "Should be false", msgAndArgs...)
 	}
@@ -554,7 +536,6 @@ func False(t TestingT, value bool, msgAndArgs ...interface{}) {
 //
 // Returns whether the assertion was successful (true) or not (false).
 func NotEqual(t TestingT, expected, actual interface{}, msgAndArgs ...interface{}) {
-
 	if ObjectsAreEqual(expected, actual) {
 		Fail(t, fmt.Sprintf("Should not be: %s\n", repr.String(actual, repr.OmitEmpty(true))), msgAndArgs...)
 	}
@@ -565,7 +546,6 @@ func NotEqual(t TestingT, expected, actual interface{}, msgAndArgs ...interface{
 // return (true, false) if element was not found.
 // return (true, true) if element was found.
 func includeElement(list interface{}, element interface{}) (ok, found bool) {
-
 	listValue := reflect.ValueOf(list)
 	elementValue := reflect.ValueOf(element)
 	defer func() {
@@ -585,7 +565,6 @@ func includeElement(list interface{}, element interface{}) (ok, found bool) {
 		}
 	}
 	return true, false
-
 }
 
 // Contains asserts that the specified string or list(array, slice...) contains the
@@ -596,7 +575,6 @@ func includeElement(list interface{}, element interface{}) (ok, found bool) {
 //
 // Returns whether the assertion was successful (true) or not (false).
 func Contains(t TestingT, s, contains interface{}, msgAndArgs ...interface{}) {
-
 	ok, found := includeElement(s, contains)
 	if !ok {
 		Fail(t, fmt.Sprintf("\"%s\" could not be applied builtin len()", s), msgAndArgs...)
@@ -614,7 +592,6 @@ func Contains(t TestingT, s, contains interface{}, msgAndArgs ...interface{}) {
 //
 // Returns whether the assertion was successful (true) or not (false).
 func NotContains(t TestingT, s, contains interface{}, msgAndArgs ...interface{}) {
-
 	ok, found := includeElement(s, contains)
 	if !ok {
 		Fail(t, fmt.Sprintf("\"%s\" could not be applied builtin len()", s), msgAndArgs...)
@@ -638,11 +615,9 @@ type PanicTestFunc func()
 
 // didPanic returns true if the function passed to it panics. Otherwise, it returns false.
 func didPanic(f PanicTestFunc) (bool, interface{}) {
-
 	didPanic := false
 	var message interface{}
 	func() {
-
 		defer func() {
 			if message = recover(); message != nil {
 				didPanic = true
@@ -651,11 +626,9 @@ func didPanic(f PanicTestFunc) (bool, interface{}) {
 
 		// call the target function
 		f()
-
 	}()
 
 	return didPanic, message
-
 }
 
 // Panics asserts that the code inside the specified PanicTestFunc panics.
@@ -666,7 +639,6 @@ func didPanic(f PanicTestFunc) (bool, interface{}) {
 //
 // Returns whether the assertion was successful (true) or not (false).
 func Panics(t TestingT, f PanicTestFunc, msgAndArgs ...interface{}) {
-
 	if funcDidPanic, panicValue := didPanic(f); !funcDidPanic {
 		Fail(t, fmt.Sprintf("func %#v should panic\n\r\tPanic value:\t%v", f, panicValue), msgAndArgs...)
 	}
@@ -680,7 +652,6 @@ func Panics(t TestingT, f PanicTestFunc, msgAndArgs ...interface{}) {
 //
 // Returns whether the assertion was successful (true) or not (false).
 func NotPanics(t TestingT, f PanicTestFunc, msgAndArgs ...interface{}) {
-
 	if funcDidPanic, panicValue := didPanic(f); funcDidPanic {
 		Fail(t, fmt.Sprintf("func %#v should not panic\n\r\tPanic value:\t%v", f, panicValue), msgAndArgs...)
 	}
@@ -692,7 +663,6 @@ func NotPanics(t TestingT, f PanicTestFunc, msgAndArgs ...interface{}) {
 //
 // Returns whether the assertion was successful (true) or not (false).
 func WithinDuration(t TestingT, expected, actual time.Time, delta time.Duration, msgAndArgs ...interface{}) {
-
 	dt := expected.Sub(actual)
 	if dt < -delta || dt > delta {
 		Fail(t, fmt.Sprintf("Max difference between %v and %v allowed is %v, but difference was %v", expected, actual, delta, dt), msgAndArgs...)
@@ -739,7 +709,6 @@ func toFloat(x interface{}) (float64, bool) {
 //
 // Returns whether the assertion was successful (true) or not (false).
 func InDelta(t TestingT, expected, actual interface{}, delta float64, msgAndArgs ...interface{}) {
-
 	af, aok := toFloat(expected)
 	bf, bok := toFloat(actual)
 
@@ -888,7 +857,6 @@ func EqualError(t TestingT, theError error, errString string, msgAndArgs ...inte
 
 // matchRegexp return true if a specified regexp matches a string.
 func matchRegexp(rx interface{}, str interface{}) bool {
-
 	var r *regexp.Regexp
 	if rr, ok := rx.(*regexp.Regexp); ok {
 		r = rr
@@ -897,7 +865,6 @@ func matchRegexp(rx interface{}, str interface{}) bool {
 	}
 
 	return (r.FindStringIndex(fmt.Sprint(str)) != nil)
-
 }
 
 // Regexp asserts that a specified regexp matches a string.

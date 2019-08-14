@@ -1,7 +1,7 @@
 package csjwt_test
 
 //
-//import (
+// import (
 //	"fmt"
 //	"time"
 //
@@ -10,7 +10,7 @@ package csjwt_test
 //	"github.com/corestoreio/pkg/util/csjwt/jwtclaim"
 //)
 //
-//func ExampleVerification(myToken []byte, myLookupKey func(interface{}) (csjwt.Key, error)) {
+// func ExampleVerification(myToken []byte, myLookupKey func(interface{}) (csjwt.Key, error)) {
 //	base := csjwt.NewToken(&jwtclaim.Map{})
 //	token, err := csjwt.NewVerification().Parse(base, myToken, func(token csjwt.Token) (csjwt.Key, error) {
 //		kid, err := token.Header.Get("kid")
@@ -27,7 +27,7 @@ package csjwt_test
 //	}
 //}
 //
-//func ExampleToken() {
+// func ExampleToken() {
 //	// Create the token
 //	token := csjwt.NewToken(&jwtclaim.Map{})
 //
@@ -45,7 +45,7 @@ package csjwt_test
 //	//Output: <*jwtclaim.Map> foo:bar foo:err:%!s(<nil>) exp:59m
 //}
 //
-//func ExampleToken_WithClaims() {
+// func ExampleToken_WithClaims() {
 //	// {"alg":"HS256","typ":"JWT"}
 //
 //	// Create the Claims
@@ -60,7 +60,7 @@ package csjwt_test
 //	//Output: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9Cg.eyJleHAiOjE1MDAwLCJpc3MiOiJ0ZXN0In0K.SY9CGIVRoJ_TBDxtPfv3C8h_qsmOLqd9YrYQcMp-rFM <nil>
 //}
 //
-//func ExampleToken_customType() {
+// func ExampleToken_customType() {
 //
 //	type MyCustomClaims struct {
 //		Foo string `json:"foo"`
@@ -87,7 +87,7 @@ package csjwt_test
 //	// eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9Cg.eyJmb28iOiJiYXIiLCJleHAiOjE1MDAwLCJpc3MiOiJ0ZXN0In0K.zy8pbCUubZKYssrZaHN5riSWvvM7utQO4aeflq9Y5PN_ibL75lEJ3JKOmzgRNGbEUMpGv1MMIFnP9JQ6zUzTMw <nil>
 //}
 //
-//func ExampleVerification_errorChecking(myToken []byte, myLookupKey func(interface{}) (csjwt.Key, error)) {
+// func ExampleVerification_errorChecking(myToken []byte, myLookupKey func(interface{}) (csjwt.Key, error)) {
 //	baseToken := csjwt.Token{
 //		Header: jwtclaim.NewHeadSegments(),
 //		Claims: jwtclaim.Map{},

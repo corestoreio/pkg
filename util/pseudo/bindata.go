@@ -160,21 +160,27 @@ type bindataFileInfo struct {
 func (fi bindataFileInfo) Name() string {
 	return fi.name
 }
+
 func (fi bindataFileInfo) Size() int64 {
 	return fi.size
 }
+
 func (fi bindataFileInfo) Mode() os.FileMode {
 	return fi.mode
 }
+
 func (fi bindataFileInfo) ModTime() time.Time {
 	return fi.modTime
 }
+
 func (fi bindataFileInfo) MD5Checksum() string {
 	return fi.md5checksum
 }
+
 func (fi bindataFileInfo) IsDir() bool {
 	return false
 }
+
 func (fi bindataFileInfo) Sys() interface{} {
 	return nil
 }

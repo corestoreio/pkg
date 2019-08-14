@@ -30,7 +30,6 @@ const dataStr = `Don't communicate by sharing memory, share memory by communicat
 var dataByte = []byte(`Design the architecture, name the components, document the details. €`)
 
 func TestFnv64aWrite(t *testing.T) {
-
 	f64 := fnv.New64a()
 	_, _ = f64.Write(dataByte)
 	_, _ = f64.Write([]byte(dataStr))
@@ -76,7 +75,6 @@ func TestMustFromRegister(t *testing.T) {
 }
 
 func TestRegisterDeregister(t *testing.T) {
-
 	_ = sha256.BlockSize // init the hash and register it in the crypto package
 
 	assert.NoError(t, Register("sha256", crypto.SHA256.New))
@@ -100,7 +98,6 @@ func TestFromRegistryHMAC_Error(t *testing.T) {
 }
 
 func TestFromRegistryHMAC(t *testing.T) {
-
 	_ = sha512.BlockSize
 
 	assert.NoError(t, Register("sha512", crypto.SHA512.New))

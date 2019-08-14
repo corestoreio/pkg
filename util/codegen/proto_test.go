@@ -61,5 +61,4 @@ message CoreConfigData {
 	google.protobuf.Timestamp version_te = 8 [(gogoproto.customname)= "VersionTe" ,(gogoproto.stdtime)=true,(gogoproto.nullable)=false]; 
 } 
 `, buf.String())
-
 }

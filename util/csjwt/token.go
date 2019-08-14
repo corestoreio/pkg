@@ -73,7 +73,6 @@ func (t *Token) Alg() string {
 // processing. This functions allows to sign a token with different signing
 // methods.
 func (t *Token) SignedString(method Signer, key Key) ([]byte, error) {
-
 	if err := t.Header.Set(headerAlg, method.Alg()); err != nil {
 		return nil, errors.WithStack(err)
 	}

@@ -34,9 +34,11 @@ type Store struct {
 	StoreGroup   *StoreGroup   // 1:1 store.group_id => store_group.group_id
 	StoreWebsite *StoreWebsite // 1:1 store.website_id => store_website.website_id
 }
+
 type StoreCollection struct {
 	Data []*Store `json:"data,omitempty"`
 }
+
 type StoreGroup struct {
 	GroupID        uint32        `max_len:"5"`   // group_id smallint(5) unsigned NOT NULL PRI  auto_increment "Group ID"
 	WebsiteID      uint32        `max_len:"5"`   // website_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Website ID"

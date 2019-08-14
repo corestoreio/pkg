@@ -23,7 +23,6 @@ import (
 )
 
 func TestStringSliceReduceContains(t *testing.T) {
-
 	tests := []struct {
 		haveSL slices.String
 		haveIN []string
@@ -62,7 +61,6 @@ var benchStringSliceReduceContainsData = []string{"is_required", "default_value"
 // BenchmarkStringSliceReduceContains	 1000000	      1841 ns/op	      96 B/op	       2 allocs/op <- Go 1.4.2
 // BenchmarkStringSliceReduceContains-4	 1000000	      1250 ns/op	      64 B/op	       1 allocs/op <- Go 1.5
 func BenchmarkStringSliceReduceContains(b *testing.B) {
-
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		l := slices.String{
@@ -77,7 +75,6 @@ func BenchmarkStringSliceReduceContains(b *testing.B) {
 }
 
 func TestStringSliceUpdate(t *testing.T) {
-
 	tests := []struct {
 		haveSL  slices.String
 		haveD   string
@@ -131,7 +128,6 @@ func TestStringSliceUpdate(t *testing.T) {
 }
 
 func TestStringSlice(t *testing.T) {
-
 	l := slices.String{"Maybe", "GoLang", "should", "have", "generics", "but", "who", "needs", "them", "?", ";-)"}
 	assert.Len(t, l, l.Len())
 	assert.Equal(t, 1, l.Index("GoLang"))
@@ -146,11 +142,9 @@ func TestStringSlice(t *testing.T) {
 	assert.Equal(t, []string{"Maybe2", "GoLang2"}, l2.ToString())
 	l2.Append("will", "be")
 	assert.Equal(t, []string{"Maybe2", "GoLang2", "will", "be"}, l2.ToString())
-
 }
 
 func TestStringSliceDelete(t *testing.T) {
-
 	l := slices.String{"Maybe", "GoLang", "should"}
 	assert.NoError(t, l.Delete(1))
 	assert.Equal(t, []string{"Maybe", "should"}, l.ToString())
@@ -168,7 +162,6 @@ func TestStringSliceReduce(t *testing.T) {
 }
 
 func TestStringSliceFilter(t *testing.T) {
-
 	l := slices.String{"All", "Go", "Code", "is"}
 	rl := l.Filter(func(s string) bool {
 		return s == "Go"
@@ -182,7 +175,6 @@ func TestStringSliceFilter(t *testing.T) {
 }
 
 func TestStringSliceUnique(t *testing.T) {
-
 	l := slices.String{"Maybe", "GoLang", "GoLang", "GoLang", "or", "or", "RostLang", "RostLang"}
 	assert.Equal(t, []string{"Maybe", "GoLang", "or", "RostLang"}, l.Unique().ToString())
 }
@@ -201,26 +193,22 @@ func BenchmarkStringSliceUnique(b *testing.B) {
 }
 
 func TestStringSliceSplit(t *testing.T) {
-
 	l := slices.String{"a", "b"}
 	assert.Equal(t, []string{"a", "b", "c", "d"}, l.Split("c,d", ",").ToString())
 	assert.Equal(t, []string{"a", "b", "c", "d", "e", "f", ""}, l.Split("e,f,", ",").ToString())
 }
 
 func TestStringSliceJoin(t *testing.T) {
-
 	l := slices.String{"a", "b"}
 	assert.Equal(t, "a,b", l.Join(","))
 }
 
 func TestStringSliceSort(t *testing.T) {
-
 	l := slices.String{"c", "a", "z", "b"}
 	assert.Equal(t, "a,b,c,z", l.Sort().Join(","))
 }
 
 func TestStringSliceAny(t *testing.T) {
-
 	l := slices.String{"c", "a", "z", "b"}
 	assert.True(t, l.Any(func(s string) bool {
 		return s == "z"
@@ -231,7 +219,6 @@ func TestStringSliceAny(t *testing.T) {
 }
 
 func TestStringSliceAll(t *testing.T) {
-
 	l := slices.String{"c", "a", "z", "b"}
 	assert.True(t, l.All(func(s string) bool {
 		return len(s) == 1
@@ -243,7 +230,6 @@ func TestStringSliceAll(t *testing.T) {
 }
 
 func TestStringSliceSplitStringer8(t *testing.T) {
-
 	tests := []struct {
 		haveName  string
 		haveIndex []uint8
@@ -273,7 +259,7 @@ var benchStringSliceSplitStringer8 slices.String
 // BenchmarkStringSliceSplitStringer8-4	 2000000	       673 ns/op	     240 B/op	       4 allocs/op <- Go 1.5
 func BenchmarkStringSliceSplitStringer8(b *testing.B) {
 	const _ScopeGroup_name = "ScopeAbsentScopeDefaultScopeWebsiteScopeGroupScopeStore"
-	var _ScopeGroup_index = [...]uint8{0, 11, 23, 35, 45, 55}
+	_ScopeGroup_index := [...]uint8{0, 11, 23, 35, 45, 55}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -283,7 +269,6 @@ func BenchmarkStringSliceSplitStringer8(b *testing.B) {
 }
 
 func TestStringSliceContainsReverse(t *testing.T) {
-
 	tests := []struct {
 		have string
 		in   slices.String
@@ -301,7 +286,6 @@ func TestStringSliceContainsReverse(t *testing.T) {
 }
 
 func TestStringSliceStartsWithReverse(t *testing.T) {
-
 	tests := []struct {
 		have string
 		in   slices.String

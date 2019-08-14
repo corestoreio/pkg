@@ -80,5 +80,4 @@ type CatalogProductEntity struct {
 	// Hello World
 }
 `, buf.String())
-
 }

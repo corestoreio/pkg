@@ -1,9 +1,9 @@
 package example
 
 import (
-	"github.com/corestoreio/pkg/util/assert"
-
 	"testing"
+
+	"github.com/corestoreio/pkg/util/assert"
 )
 
 type Person struct {

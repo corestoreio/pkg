@@ -27,7 +27,7 @@ import "testing"
 func TestAbs(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    float64
 		expected float64
 	}{
@@ -49,7 +49,7 @@ func TestAbs(t *testing.T) {
 func TestSign(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    float64
 		expected float64
 	}{
@@ -71,7 +71,7 @@ func TestSign(t *testing.T) {
 func TestIsNegative(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    float64
 		expected bool
 	}{
@@ -93,7 +93,7 @@ func TestIsNegative(t *testing.T) {
 func TestIsNonNegative(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    float64
 		expected bool
 	}{
@@ -115,7 +115,7 @@ func TestIsNonNegative(t *testing.T) {
 func TestIsPositive(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    float64
 		expected bool
 	}{
@@ -137,7 +137,7 @@ func TestIsPositive(t *testing.T) {
 func TestIsNonPositive(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    float64
 		expected bool
 	}{
@@ -159,7 +159,7 @@ func TestIsNonPositive(t *testing.T) {
 func TestIsWhole(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    float64
 		expected bool
 	}{
@@ -181,7 +181,7 @@ func TestIsWhole(t *testing.T) {
 func TestIsNatural(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    float64
 		expected bool
 	}{
@@ -203,7 +203,7 @@ func TestIsNatural(t *testing.T) {
 func TestInRangeInt64(t *testing.T) {
 	t.Parallel()
 
-	var testAsInt64s = []struct {
+	testAsInt64s := []struct {
 		param    int64
 		left     int64
 		right    int64
@@ -225,7 +225,7 @@ func TestInRangeInt64(t *testing.T) {
 		}
 	}
 
-	var testAsUInt64s = []struct {
+	testAsUInt64s := []struct {
 		param    uint64
 		left     uint64
 		right    uint64
@@ -242,13 +242,12 @@ func TestInRangeInt64(t *testing.T) {
 			t.Errorf("Expected InRangeInt64(%v, %v, %v) to be %v, got %v using type uint", test.param, test.left, test.right, test.expected, actual)
 		}
 	}
-
 }
 
 func TestInRangeFloat64(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    float64
 		left     float64
 		right    float64

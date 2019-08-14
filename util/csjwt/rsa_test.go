@@ -51,7 +51,6 @@ var rsaTestData = []struct {
 }
 
 func TestRSAVerify(t *testing.T) {
-
 	key := csjwt.WithRSAPublicKeyFromFile("test/sample_key.pub")
 	for _, data := range rsaTestData {
 		signing, signature, err := csjwt.SplitForVerify(data.tokenString)
@@ -70,7 +69,6 @@ func TestRSAVerify(t *testing.T) {
 }
 
 func TestRSASign(t *testing.T) {
-
 	key := csjwt.WithRSAPrivateKeyFromFile("test/sample_key")
 
 	for _, data := range rsaTestData {
@@ -92,7 +90,6 @@ func TestRSASign(t *testing.T) {
 }
 
 func TestRSAVerifyWithPreParsedPrivateKey(t *testing.T) {
-
 	key := csjwt.WithRSAPublicKeyFromFile("test/sample_key.pub")
 
 	testData := rsaTestData[0]
@@ -110,7 +107,6 @@ func TestRSAVerifyWithPreParsedPrivateKey(t *testing.T) {
 }
 
 func TestRSAWithPreParsedPrivateKey(t *testing.T) {
-
 	key := csjwt.WithRSAPrivateKeyFromFile("test/sample_key")
 
 	testData := rsaTestData[0]

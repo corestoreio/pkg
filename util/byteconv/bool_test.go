@@ -57,8 +57,8 @@ func TestParseNullBool(t *testing.T) {
 
 var benchmarkParseBool bool
 
-//BenchmarkParseBool/no-std-map-4         	50000000	        29.7 ns/op	       0 B/op	       0 allocs/op
-//BenchmarkParseBool/with-stdlib-4        	50000000	        30.2 ns/op	       4 B/op	       1 allocs/op
+// BenchmarkParseBool/no-std-map-4         	50000000	        29.7 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkParseBool/with-stdlib-4        	50000000	        30.2 ns/op	       4 B/op	       1 allocs/op
 func BenchmarkParseBool(b *testing.B) {
 	var err error
 	tr := true

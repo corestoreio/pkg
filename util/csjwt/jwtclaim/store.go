@@ -53,7 +53,6 @@ type Store struct {
 // Set allows to set StoreClaim specific fields and then falls back to the set
 // function in StandardClaims
 func (s *Store) Set(key string, value interface{}) (err error) {
-
 	switch key {
 	case KeyStore:
 		s.Store, err = conv.ToStringE(value)

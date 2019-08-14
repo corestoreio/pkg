@@ -65,7 +65,6 @@ var hmacTestData = []struct {
 }
 
 func TestHMACVerify(t *testing.T) {
-
 	for _, data := range hmacTestData {
 		signing, signature, err := csjwt.SplitForVerify(data.tokenString)
 		if err != nil {
@@ -83,7 +82,6 @@ func TestHMACVerify(t *testing.T) {
 }
 
 func TestHMACSign(t *testing.T) {
-
 	for _, data := range hmacTestData {
 		if data.valid {
 			signing, signature, err := csjwt.SplitForVerify(data.tokenString)
@@ -137,6 +135,7 @@ func BenchmarkHS512SigningFast(b *testing.B) {
 	}
 	benchmarkSigning(b, hf, csjwt.Key{})
 }
+
 func BenchmarkBlake2b256SigningFast(b *testing.B) {
 	hf, err := csjwt.NewSigningMethodBlake2b256(csjwt.WithPassword(hmacTestKey))
 	if err != nil {
@@ -144,6 +143,7 @@ func BenchmarkBlake2b256SigningFast(b *testing.B) {
 	}
 	benchmarkSigning(b, hf, csjwt.Key{})
 }
+
 func BenchmarkBlake2b512SigningFast(b *testing.B) {
 	hf, err := csjwt.NewSigningMethodBlake2b512(csjwt.WithPassword(hmacTestKey))
 	if err != nil {
@@ -159,6 +159,7 @@ func BenchmarkHS256Verify(b *testing.B) {
 	}
 	benchmarkMethodVerify(b, csjwt.NewSigningMethodHS256(), signing, signature, csjwt.WithPassword(hmacTestKey))
 }
+
 func BenchmarkHS384Verify(b *testing.B) {
 	signing, signature, err := csjwt.SplitForVerify(hmacTestData[1].tokenString) // HS384 token
 	if err != nil {
@@ -166,6 +167,7 @@ func BenchmarkHS384Verify(b *testing.B) {
 	}
 	benchmarkMethodVerify(b, csjwt.NewSigningMethodHS384(), signing, signature, csjwt.WithPassword(hmacTestKey))
 }
+
 func BenchmarkHS512Verify(b *testing.B) {
 	signing, signature, err := csjwt.SplitForVerify(hmacTestData[2].tokenString) // HS512 token
 	if err != nil {
@@ -185,6 +187,7 @@ func BenchmarkHS256VerifyFast(b *testing.B) {
 	}
 	benchmarkMethodVerify(b, hf, signing, signature, csjwt.Key{})
 }
+
 func BenchmarkHS384VerifyFast(b *testing.B) {
 	signing, signature, err := csjwt.SplitForVerify(hmacTestData[1].tokenString) // HS384 token
 	if err != nil {
@@ -196,6 +199,7 @@ func BenchmarkHS384VerifyFast(b *testing.B) {
 	}
 	benchmarkMethodVerify(b, hf, signing, signature, csjwt.Key{})
 }
+
 func BenchmarkHS512VerifyFast(b *testing.B) {
 	signing, signature, err := csjwt.SplitForVerify(hmacTestData[2].tokenString) // HS512 token
 	if err != nil {
@@ -207,6 +211,7 @@ func BenchmarkHS512VerifyFast(b *testing.B) {
 	}
 	benchmarkMethodVerify(b, hf, signing, signature, csjwt.Key{})
 }
+
 func BenchmarkBlake2b256VerifyFast(b *testing.B) {
 	signing, signature, err := csjwt.SplitForVerify(hmacFastTestData[4].tokenString)
 	if err != nil {
@@ -218,6 +223,7 @@ func BenchmarkBlake2b256VerifyFast(b *testing.B) {
 	}
 	benchmarkMethodVerify(b, hf, signing, signature, csjwt.Key{})
 }
+
 func BenchmarkBlake2b512VerifyFast(b *testing.B) {
 	signing, signature, err := csjwt.SplitForVerify(hmacFastTestData[5].tokenString)
 	if err != nil {

@@ -22,7 +22,6 @@ import (
 )
 
 func TestParseUint(t *testing.T) {
-
 	tests := []struct {
 		raw     sql.RawBytes
 		base    int

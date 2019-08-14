@@ -75,7 +75,6 @@ func (m *SigningMethodHSFast) Alg() string {
 // Verify the signature of HSXXX tokens.  Returns nil if the signature is valid.
 // Error behaviour: NotImplemented, WriteFailed, NotValid
 func (m *SigningMethodHSFast) Verify(signingString, signature []byte, _ Key) error {
-
 	// Decode signature, for comparison
 	sig, err := DecodeSegment(signature)
 	if err != nil {
@@ -103,7 +102,6 @@ func (m *SigningMethodHSFast) Verify(signingString, signature []byte, _ Key) err
 // Sign implements the Sign method from SigningMethod interface.
 // Error behaviour: WriteFailed
 func (m *SigningMethodHSFast) Sign(signingString []byte, _ Key) ([]byte, error) {
-
 	hasher := m.ht.Get()
 	defer m.ht.Put(hasher)
 

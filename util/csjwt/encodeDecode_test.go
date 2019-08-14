@@ -36,7 +36,6 @@ func init() {
 }
 
 func TestGobEncoding(t *testing.T) {
-
 	storeClaim := jwtclaim.NewStore()
 
 	gobEncDec := csjwt.NewGobEncoding(csjwt.NewHead(), storeClaim)
@@ -76,8 +75,7 @@ func TestGobEncoding(t *testing.T) {
 }
 
 func BenchmarkTokenDecode(b *testing.B) {
-
-	var testRunner = func(b *testing.B, encDec interface {
+	testRunner := func(b *testing.B, encDec interface {
 		csjwt.Serializer
 		csjwt.Deserializer
 	}) {
@@ -151,5 +149,4 @@ func BenchmarkBase64(b *testing.B) {
 			}
 		}
 	})
-
 }

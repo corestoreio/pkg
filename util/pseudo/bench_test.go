@@ -49,7 +49,6 @@ func BenchmarkCustomerEntity(b *testing.B) {
 			}
 		}
 	})
-
 }
 
 type CustomerEntityTagged struct {

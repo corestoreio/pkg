@@ -22,7 +22,6 @@ import (
 )
 
 func TestVerificationGetMethod(t *testing.T) {
-
 	tests := []struct {
 		vf           *Verification
 		token        *Token
@@ -77,7 +76,6 @@ func TestVerificationGetMethod(t *testing.T) {
 
 // BenchmarkVerificationGetMethod-4	50000000	        37.8 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkVerificationGetMethod(b *testing.B) {
-
 	vf := NewVerification(NewSigningMethodPS256(), NewSigningMethodRS384(), NewSigningMethodHS512(), NewSigningMethodES256(), NewSigningMethodHS256())
 
 	tokens := [2]*Token{

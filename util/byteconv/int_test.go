@@ -31,7 +31,6 @@ import (
 )
 
 func TestParseNullInt64SQL_ParseIntSQL(t *testing.T) {
-
 	runner := func(have string, want sql.NullInt64, wantErr bool) func(*testing.T) {
 		return func(t *testing.T) {
 			b := sql.RawBytes(have)
@@ -118,25 +117,23 @@ func TestLenInt(t *testing.T) {
 		{1000000000000000000, 19},
 	}
 	for _, tt := range lenIntTests {
-
 		if li := LenInt(tt.number); li != tt.expected {
 			t.Fatalf("Have %d Want %d", li, tt.expected)
 		}
-
 	}
 }
 
 ////////////////////////////////////////////////////////////////
 
-//var num []int64
+// var num []int64
 //
-//func TestMain(t *testing.T) {
+// func TestMain(t *testing.T) {
 //	for j := 0; j < 1000; j++ {
 //		num = append(num, rand.Int63n(1000))
 //	}
 //}
 //
-//func BenchmarkLenIntLog(b *testing.B) {
+// func BenchmarkLenIntLog(b *testing.B) {
 //	n := 0
 //	for i := 0; i < b.N; i++ {
 //		for j := 0; j < 1000; j++ {
@@ -145,7 +142,7 @@ func TestLenInt(t *testing.T) {
 //	}
 //}
 //
-//func BenchmarkLenIntSwitch(b *testing.B) {
+// func BenchmarkLenIntSwitch(b *testing.B) {
 //	n := 0
 //	for i := 0; i < b.N; i++ {
 //		for j := 0; j < 1000; j++ {

@@ -475,7 +475,6 @@ func (s *Service) readFile(lang, cat string) (_ []byte, err error) {
 // automated data. You don't need to Create your own data for your testing.
 // Unsupported types are getting ignored.
 func (s *Service) FakeData(ptr interface{}) error {
-
 	reflectType := reflect.TypeOf(ptr)
 
 	if ptr == nil || reflectType.Kind() != reflect.Ptr || reflect.ValueOf(ptr).IsNil() {
@@ -497,7 +496,6 @@ type scanner interface {
 }
 
 func (s *Service) getValue(t reflect.Type, maxLen uint64, recursionLevel int) (rVal reflect.Value, err error) {
-
 	k := t.Kind()
 
 	if maxLen == 0 {

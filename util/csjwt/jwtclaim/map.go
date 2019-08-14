@@ -83,14 +83,13 @@ func (m Map) VerifyNotBefore(cmp int64, req bool) bool {
 // skew. As well, if any of the above claims are not in the token, it will still
 // be considered a valid claim.
 func (m Map) Valid() error {
-
 	now := TimeFunc().Unix()
 
 	switch {
 	case len(m) == 0:
 		return errors.NotValid.Newf(`[jwtclaim] token claims validation failed1`)
 
-	//case m.exp() == 0 && m.iat() == 0 && m.nbf() == 0:
+	// case m.exp() == 0 && m.iat() == 0 && m.nbf() == 0:
 	//	return errors.NotValid.Newf(`[jwtclaim] token claims validation failed2`)
 
 	case !m.VerifyExpiresAt(now, false):

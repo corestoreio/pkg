@@ -23,7 +23,6 @@ import (
 )
 
 func TestContextWithError(t *testing.T) {
-
 	req := httptest.NewRequest("GET", "http://localhost", nil)
 
 	assert.NotNil(t, req)
