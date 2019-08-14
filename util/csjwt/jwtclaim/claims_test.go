@@ -37,7 +37,6 @@ var _ csjwt.Claimer = (*jwtclaim.Map)(nil)
 var _ fmt.Stringer = (*jwtclaim.Map)(nil)
 
 func TestStandardClaimsParseJSON(t *testing.T) {
-
 	sc := jwtclaim.Standard{
 		Audience:  `LOTR`,
 		ExpiresAt: time.Now().Add(time.Hour).Unix(),
@@ -129,7 +128,7 @@ func TestClaimsGetSet(t *testing.T) {
 	for i, test := range tests {
 
 		haveSetErr := test.sc.Set(test.key, test.val)
-		if test.wantSetErrBhf > 0 {
+		if test.wantSetErrBhf != "" {
 			assert.True(t, test.wantSetErrBhf.Match(haveSetErr), "Index %d => %s", i, haveSetErr)
 		} else {
 			assert.NoError(t, haveSetErr, "Index %d", i)
@@ -143,7 +142,7 @@ func TestClaimsGetSet(t *testing.T) {
 			assert.NoError(t, haveGetErr, "Index %d", i)
 		}
 
-		if test.wantSetErrBhf > 0 {
+		if test.wantSetErrBhf != "" {
 			assert.Exactly(t, test.val, haveVal, "Index %d", i)
 		}
 	}
@@ -237,7 +236,7 @@ func TestMap_String_error(t *testing.T) {
 		"k2": 3.14159,
 		"k3": make(chan int),
 	}
-	assert.Exactly(t, "[jwtclaim] Map.String(): json.Marshal Error: json: error calling MarshalJSON for type jwtclaim.Map: json: unsupported type: chan int", m.String())
+	assert.Exactly(t, "[jwtclaim] Map.String(): json.Marshal Error: json: unsupported type: chan int", m.String())
 }
 
 func TestStandard_String(t *testing.T) {
@@ -254,5 +253,5 @@ func TestStore_String(t *testing.T) {
 	s.ID = "1"
 	s.Store = "nz"
 	s.UserID = "23642736"
-	assert.Exactly(t, "{\"store\":\"nz\",\"userid\":\"23642736\",\"aud\":\"Gopher\",\"jti\":\"1\"}", s.String())
+	assert.Exactly(t, "{\"aud\":\"Gopher\",\"jti\":\"1\",\"store\":\"nz\",\"userid\":\"23642736\"}", s.String())
 }
