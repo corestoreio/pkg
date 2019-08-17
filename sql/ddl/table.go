@@ -199,14 +199,14 @@ func (t *Table) Truncate(ctx context.Context) error {
 // another. RENAME TABLE also works for views, as long as you do not try to
 // rename a view into a different database. To use a custom connection, call
 // WithDB before.
-func (t *Table) Rename(ctx context.Context, new string) error {
+func (t *Table) Rename(ctx context.Context, newTableName string) error {
 	if err := dml.IsValidIdentifier(t.Name); err != nil {
 		return errors.WithStack(err)
 	}
-	if err := dml.IsValidIdentifier(new); err != nil {
+	if err := dml.IsValidIdentifier(newTableName); err != nil {
 		return errors.WithStack(err)
 	}
-	return t.runExec(ctx, "RENAME TABLE "+dml.Quoter.QualifierName(t.Schema, t.Name)+" TO "+dml.Quoter.NameAlias(new, ""))
+	return t.runExec(ctx, "RENAME TABLE "+dml.Quoter.QualifierName(t.Schema, t.Name)+" TO "+dml.Quoter.NameAlias(newTableName, ""))
 }
 
 // Swap swaps the current table with the other table of the same structure.
@@ -403,7 +403,7 @@ func (t *Table) LoadDataInfile(ctx context.Context, filePath string, o InfileOpt
 
 	if ls := len(o.Set); ls > 0 && ls%2 == 0 {
 		buf.WriteString("SET ")
-		for i := 0; i < ls; i = i + 2 {
+		for i := 0; i < ls; i += 2 {
 			buf.WriteString(o.Set[i])
 			buf.WriteRune('=')
 			buf.WriteString(o.Set[i+1])

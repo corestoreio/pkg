@@ -77,12 +77,32 @@ func TestTables_DeleteAllFromCache(t *testing.T) {
 	assert.Exactly(t, 0, ts.Len())
 }
 
+func TestTables_Truncate(t *testing.T) {
+	t.Parallel()
+
+	db, mock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, db, mock)
+
+	mock.MatchExpectationsInOrder(false) // because we're dealing with a table map, hence tables truncates are random.
+	mock.ExpectExec("SET foreign_key_checks = 0;").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec("TRUNCATE TABLE `a3`").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec("TRUNCATE TABLE `b5`").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec("TRUNCATE TABLE `c7`").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec("SET foreign_key_checks = 1;").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+
+	ctx := context.TODO()
+	ts := ddl.MustNewTables(ddl.WithCreateTable(ctx, "a3", "", "b5", "", "c7", ""))
+	_ = ts.Options(ddl.WithConnPool(db))
+	err := ts.Truncate(ctx)
+	assert.NoError(t, err)
+}
+
 func TestTables_Upsert_Update(t *testing.T) {
 	t.Parallel()
 
 	ts := ddl.MustNewTables(ddl.WithCreateTable(context.TODO(), "a3", "", "b5", "", "c7", ""))
 	t.Run("One", func(t *testing.T) {
-		ts.Upsert(ddl.NewTable("x5"))
+		_ = ts.Upsert(ddl.NewTable("x5"))
 		assert.Exactly(t, 4, ts.Len())
 		tb, err := ts.Table("x5")
 		assert.NoError(t, err, "%+v", err)
@@ -150,7 +170,7 @@ func TestWithCreateTable_Mock_DoesNotCreateTable(t *testing.T) {
 
 	table := tm0.MustTable("admin_user")
 	assert.Exactly(t, []string{"user_id", "firsname", "modified"}, table.Columns.FieldNames())
-	//t.Log(table.Columns.GoString())
+	// t.Log(table.Columns.GoString())
 }
 
 func TestWithCreateTable_Mock_DoesCreateTable(t *testing.T) {
@@ -177,7 +197,7 @@ func TestWithCreateTable_Mock_DoesCreateTable(t *testing.T) {
 
 	table := tm0.MustTable("admin_user")
 	assert.Exactly(t, []string{"user_id", "firsname", "modified"}, table.Columns.FieldNames())
-	//t.Log(table.Columns.GoString())
+	// t.Log(table.Columns.GoString())
 }
 
 func TestWithCreateTableFromFile(t *testing.T) {
@@ -266,14 +286,12 @@ func TestWithCreateTableFromFile(t *testing.T) {
 		assert.Exactly(t, []string{"config_id"}, tm0.MustTable("core_config_data").Columns.FieldNames())
 		assert.Exactly(t, []string{"id"}, tm0.MustTable("admin_user").Columns.FieldNames())
 	})
-
 }
 
 func TestWithDropTable(t *testing.T) {
 	t.Parallel()
 
 	t.Run("not previously registered", func(t *testing.T) {
-
 		t.Run("with DISABLE_FOREIGN_KEY_CHECKS", func(t *testing.T) {
 			dbc, dbMock := dmltest.MockDB(t)
 			defer dmltest.MockClose(t, dbc, dbMock)
@@ -325,7 +343,6 @@ func TestWithDropTable(t *testing.T) {
 	})
 
 	t.Run("previously registered at Tables", func(t *testing.T) {
-
 		t.Run("with DISABLE_FOREIGN_KEY_CHECKS", func(t *testing.T) {
 			dbc, dbMock := dmltest.MockDB(t)
 			defer dmltest.MockClose(t, dbc, dbMock)
@@ -468,7 +485,6 @@ func TestTables_Validate(t *testing.T) {
 	})
 
 	t.Run("less columns", func(t *testing.T) {
-
 		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS WHERE").
 			WillReturnRows(
 				dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_columns_less.csv")))
@@ -479,12 +495,10 @@ func TestTables_Validate(t *testing.T) {
 	})
 
 	t.Run("more columns", func(t *testing.T) {
-
 		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS WHERE").
 			WillReturnRows(
 				dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_columns_more.csv")))
 		err := tbls.Validate(context.Background())
 		assert.NoError(t, err)
 	})
-
 }

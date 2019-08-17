@@ -111,13 +111,14 @@ func WithTable(tableName string, cols ...*Column) TableOption {
 	}
 }
 
-// WithCreateTable upserts tables to the current `Tables` object. Either it adds a new
-// table/view or overwrites existing entries. Argument `identifierCreateSyntax`
-// must be balanced slice where index i is the table/view name and i+1 can be
-// either empty or contain the SQL CREATE statement. In case a SQL CREATE
-// statement has been supplied, it gets executed otherwise ignored. After table
-// initialization the create syntax and the column specifications are getting
-// loaded. Write the SQL CREATE statement in upper case.
+// WithCreateTable upserts tables to the current `Tables` object. Either it adds
+// a new table/view or overwrites existing entries. Argument
+// `identifierCreateSyntax` must be balanced slice where index i is the
+// table/view name and i+1 can be either empty or contain the SQL CREATE
+// statement. In case a SQL CREATE statement has been supplied, it gets executed
+// otherwise ignored. After table initialization the create syntax and the
+// column specifications are getting loaded but only if a connection has been
+// set beforehand. Write the SQL CREATE statement in upper case.
 //		WithCreateTable(
 //			"sales_order_history", "CREATE TABLE `sales_order_history` ( ... )", // table created if not exists
 //			"sales_order_stat", "CREATE VIEW `sales_order_stat` AS SELECT ...", // table created if not exists
@@ -481,4 +482,18 @@ func (tm *Tables) Validate(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// Truncate force truncates all tables by also disabling foreign keys.
+func (tm *Tables) Truncate(ctx context.Context) error {
+	tm.mu.RLock()
+	defer tm.mu.RUnlock()
+	return DisableForeignKeys(ctx, tm.dcp.DB, func() error {
+		for _, t := range tm.tm {
+			if err := t.Truncate(ctx); err != nil {
+				return errors.WithStack(err)
+			}
+		}
+		return nil
+	})
 }

@@ -438,7 +438,7 @@ type columnKeyCount struct {
 	Empty, Mul, Pri, Uni int
 }
 
-func countFieldsForTables(ctx context.Context, db dml.Querier, referencedTables ...string) (_ map[string]*columnKeyCount, err error) {
+func countFieldsForTables(ctx context.Context, db dml.Querier) (_ map[string]*columnKeyCount, err error) {
 	const sqlQry = `SELECT TABLE_NAME, COLUMN_KEY, COUNT(*) AS FIELD_COUNT
  	FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() GROUP BY TABLE_NAME,COLUMN_KEY`
 	// TODO limit query to referencedTables, if provided
@@ -465,7 +465,7 @@ func countFieldsForTables(ctx context.Context, db dml.Querier, referencedTables 
 
 	ret := map[string]*columnKeyCount{}
 	for rows.Next() {
-		if err := rows.Scan(&col3.TableName, &col3.ColumnKey, &col3.Count); err != nil {
+		if err = rows.Scan(&col3.TableName, &col3.ColumnKey, &col3.Count); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		ckc := ret[col3.TableName]
@@ -495,4 +495,19 @@ func countFieldsForTables(ctx context.Context, db dml.Querier, referencedTables 
 		err = errors.WithStack(err)
 	}
 	return ret, err
+}
+
+func DisableForeignKeys(ctx context.Context, db dml.Execer, callBack func() error) (err error) {
+	if _, err = db.ExecContext(ctx, "SET foreign_key_checks = 0;"); err != nil {
+		return errors.WithStack(err)
+	}
+	defer func() {
+		if _, err2 := db.ExecContext(ctx, "SET foreign_key_checks = 1;"); err2 != nil && err == nil {
+			err = errors.WithStack(err2)
+		}
+	}()
+	if err = callBack(); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
 }

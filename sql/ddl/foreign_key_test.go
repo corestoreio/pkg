@@ -16,8 +16,12 @@ package ddl
 
 import (
 	"bytes"
+	"context"
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
+
+	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/assert"
 )
@@ -508,4 +512,17 @@ func TestReverseKeyColumnUsage(t *testing.T) {
 		kcucRev[key].Sort()
 		assert.Exactly(t, wantKcucRev[key], kcucRev[key], "Mismatch at key %q", key)
 	}
+}
+
+func TestDisableForeignKeys(t *testing.T) {
+	db, mock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, db, mock)
+
+	mock.ExpectExec("SET foreign_key_checks = 0;").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec("SET foreign_key_checks = 1;").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+
+	err := DisableForeignKeys(context.Background(), db.DB, func() error {
+		return nil
+	})
+	assert.NoError(t, err)
 }
