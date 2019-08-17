@@ -146,6 +146,18 @@ func TestWithTableNames(t *testing.T) {
 	})
 }
 
+func TestWithCreateTable_IsView(t *testing.T) {
+	t.Parallel()
+
+	ts := ddl.MustNewTables(ddl.WithCreateTable(context.TODO(), "view_a3", "", "b5_view", "", "c7", "CREATEA VIEW `c7` ...", "d2", ""))
+	t.Run("IsView", func(t *testing.T) {
+		assert.True(t, ts.MustTable("view_a3").IsView)
+		assert.True(t, ts.MustTable("b5_view").IsView)
+		assert.True(t, ts.MustTable("c7").IsView)
+		assert.False(t, ts.MustTable("d2").IsView)
+	})
+}
+
 func TestWithCreateTable_Mock_DoesNotCreateTable(t *testing.T) {
 	t.Parallel()
 

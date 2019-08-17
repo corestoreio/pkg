@@ -34,6 +34,7 @@ const (
 	// PrefixView  is an anti-pattern I've seen many such systems where at some point a view will become a table.
 	// deprecated
 	PrefixView      = "view_" // If identifier starts with this, it is considered a view.
+	SuffixView      = "_view" // If identifier ends with this, it is considered a view.
 	MainTable       = "main_table"
 	AdditionalTable = "additional_table"
 	ScopeTable      = "scope_table"
@@ -149,9 +150,9 @@ func WithCreateTable(ctx context.Context, identifierCreateSyntax ...string) Tabl
 				tvNames = append(tvNames, tvName)
 				t := NewTable(tvName)
 				tm.tm[tvName] = t
+				t.IsView = strings.Contains(tvCreate, " VIEW ") || strings.HasPrefix(tvName, PrefixView) || strings.HasSuffix(tvName, SuffixView)
 
 				if isCreateStmt(tvName, tvCreate) {
-					t.IsView = strings.Contains(tvCreate, " VIEW ") || strings.HasPrefix(tvName, PrefixView)
 					if _, err := tm.dcp.DB.ExecContext(ctx, tvCreate); err != nil {
 						return errors.Wrapf(err, "[ddl] WithCreateTable failed to run for table %q the query: %q", tvName, tvCreate)
 					}
