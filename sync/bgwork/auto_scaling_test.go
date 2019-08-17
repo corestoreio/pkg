@@ -36,13 +36,13 @@ func TestRun(t *testing.T) {
 	time.Sleep(4 * time.Second)
 	cancel()
 	time.Sleep(1 * time.Second)
-	assert.Exactly(t, `Total Init 11
+	assert.Regexp(t, `Total Init 10
 Total WIP 100
-Total Waiting 111
+Total Waiting 110
 Total Terminate 9
-Total Terminated 9
-WrkrID:9 State: idle
-WrkrID:10 State: idle`+"\n", lastStatistics)
+Total Terminated 8
+WrkrID:[0-9] State: idle
+WrkrID:[0-9] State: idle`+"\n", lastStatistics)
 }
 
 func randInt(min int, max int) time.Duration {

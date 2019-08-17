@@ -46,14 +46,17 @@ type internalState struct {
 }
 
 type statePool struct {
+	minWorkers uint16
+
 	mu         sync.RWMutex
 	state      map[uint]internalState
 	statistics [eventWorkerStateMax]int
 }
 
-func newWrkrState(maxWorkers uint16) *statePool {
+func newWrkrState(minWorkers, maxWorkers uint16) *statePool {
 	return &statePool{
-		state: make(map[uint]internalState, maxWorkers),
+		minWorkers: minWorkers,
+		state:      make(map[uint]internalState, maxWorkers),
 	}
 }
 
@@ -70,14 +73,21 @@ func (ws *statePool) init(wrkr uint) chan struct{} {
 }
 
 func (ws *statePool) terminateWaiting() {
+	_, allCount := ws.countState(eventWorkerStateTerminate)
 	ws.mu.Lock()
 	for wrkrID, is := range ws.state {
 		if is.state == eventWorkerStateTerminate {
-			close(is.die)
-			ws.statistics[eventWorkerStateTerminated]++
-			// remove entry from map to free space and dont let the map grow
-			// unlimited.
-			delete(ws.state, wrkrID)
+			if allCount > ws.minWorkers {
+				close(is.die)
+				ws.statistics[eventWorkerStateTerminated]++
+				// remove entry from map to free space and dont let the map grow
+				// unlimited.
+				delete(ws.state, wrkrID)
+				allCount--
+			} else {
+				is.state = eventWorkerStateIdle
+				ws.state[wrkrID] = is
+			}
 		}
 	}
 	ws.mu.Unlock()
@@ -143,7 +153,7 @@ func (ws *statePool) printStat() string {
 type ScalingOptions struct {
 	// MinWorkers defaults to 2
 	MinWorkers uint16
-	// MaxWorkers defaults to 8
+	// MaxWorkers defaults to 16
 	MaxWorkers uint16
 	// WorkerCheckInterval defaults to one second. Duration when to check for
 	// termination and/or creation of workers. Each interval the GetStatistics
@@ -153,20 +163,22 @@ type ScalingOptions struct {
 	GetStatistics func(string)
 }
 
-// AutoScaling runs the same task across min to max background workers. Idle workers are getting terminated until
-// the min amount of workers get reached. There won't be more workers than max amount.
+// AutoScaling runs the same task across min to max background workers. Idle
+// workers are getting terminated until the min amount of workers get reached.
+// There won't be more workers than max amount. AutoScaling blocks once called
+// so it must start in its own goroutine.
 func AutoScaling(ctx context.Context, chanEvents <-chan interface{}, jobFn func(event interface{}), opt ScalingOptions) {
 	if opt.MinWorkers == 0 {
 		opt.MinWorkers = 2
 	}
 	if opt.MaxWorkers == 0 {
-		opt.MaxWorkers = 8
+		opt.MaxWorkers = 16
 	}
 	if opt.WorkerCheckInterval < 1 {
 		opt.WorkerCheckInterval = time.Second
 	}
 
-	wrkrMngr := newWrkrState(opt.MaxWorkers)
+	wrkrMngr := newWrkrState(opt.MinWorkers, opt.MaxWorkers)
 
 	// wrkrFn runs in a goroutine
 	wrkrFn := func(wrkrID uint, jobFn func(interface{})) {
