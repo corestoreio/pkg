@@ -45,12 +45,11 @@ func (jp jsonEncoding) Deserialize(src []byte, dst interface{}) error {
 
 // Serialize encodes a value using encoding/json.
 func (jp jsonEncoding) Serialize(src interface{}) ([]byte, error) {
-	buf := bufPool.Get()
-	defer bufPool.Put(buf)
-	if err := json.NewEncoder(buf).Encode(src); err != nil {
+	data, err := json.Marshal(src)
+	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return buf.Bytes(), nil
+	return data, nil
 }
 
 // GobEncoding encodes JWT values using encoding/gob. This is the simplest
