@@ -302,7 +302,7 @@ func TestArguments_HasNamedArgs(t *testing.T) {
 			Column("email").Like().NamedArg("ema1l")).WithArgs()
 		_, _, err := a.ToSQL()
 		assert.NoError(t, err)
-		assert.Exactly(t, uint8(1), a.hasNamedArgs)
+		assert.Exactly(t, uint8(0), a.hasNamedArgs)
 	})
 	t.Run("hasNamedArgs in condition, with args", func(t *testing.T) {
 		a := NewSelect("a", "b").From("c").Where(
@@ -318,7 +318,7 @@ func TestArguments_HasNamedArgs(t *testing.T) {
 			Column("email").Like().Str("em@1l.de")).WithArgs()
 		_, _, err := a.ToSQL()
 		assert.NoError(t, err)
-		assert.Exactly(t, uint8(1), a.hasNamedArgs)
+		assert.Exactly(t, uint8(0), a.hasNamedArgs)
 	})
 }
 

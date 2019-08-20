@@ -551,7 +551,7 @@ func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err 
 // Provided arguments or records in the Select are getting ignored. The provided
 // context is used for the preparation of the statement, not for the execution
 // of the statement. The returned Stmter is not safe for concurrent use, despite
-// the underlying *sql.Stmt is.
+// the underlying *sql.Stmt is (really? TODO investigate).
 func (b *Select) Prepare(ctx context.Context) (*Stmt, error) {
 	return b.prepare(ctx, b.DB, b, dmlSourceSelect)
 }

@@ -189,13 +189,12 @@ func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}
 	}
 
 	if a.isEmpty() { // no arguments provided
-		a.hasNamedArgs = 1
 		if a.isPrepared {
 			return "", extArgs, nil
 		}
 
 		if len(a.OrderBys) == 0 && !a.LimitValid {
-			return string(cachedSQL), extArgs, nil
+			return cachedSQL, extArgs, nil
 		}
 		buf := bufferpool.Get()
 		defer bufferpool.Put(buf)
@@ -510,8 +509,12 @@ func (a *Artisan) Arguments(args *Artisan) *Artisan {
 	return a
 }
 
+// Records sets an object which implementes interface ColumnMapper
+// deprecated use interface slice argument in Exec/Query TODO implement that.
 func (a *Artisan) Records(records ...QualifiedRecord) *Artisan { a.recs = records; return a }
-func (a *Artisan) Raw(raw ...interface{}) *Artisan             { a.raw = raw; return a }
+
+// TODO keep Raw maybe and remove all other types
+func (a *Artisan) Raw(raw ...interface{}) *Artisan { a.raw = raw; return a }
 
 func (a *Artisan) Null() *Artisan                           { return a.add(nil) }
 func (a *Artisan) Int(i int) *Artisan                       { return a.add(i) }
@@ -1180,6 +1183,9 @@ func (a *Artisan) exec(ctx context.Context, args ...interface{}) (result sql.Res
 	if err != nil {
 		err = errors.WithStack(err)
 		return
+	}
+	if lID == 0 {
+		return // in case of non-insert statement
 	}
 	for i, rec := range a.recs {
 		if a, ok := rec.Record.(LastInsertIDAssigner); ok {

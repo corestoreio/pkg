@@ -258,8 +258,8 @@ func WithDB(db *sql.DB) ConnPoolOption {
 	}
 }
 
-// WithDSN sets the data source name for a connection.
-// Second argument DriverCallBack adds a low level call back function on MySQL driver level to
+// WithDSN sets the data source name for a connection. Second argument
+// DriverCallBack adds a low level call back function on MySQL driver level to
 // create a a new instrumented driver. No need to call `sql.Register`!
 func WithDSN(dsn string, cb ...DriverCallBack) ConnPoolOption {
 	if len(cb) > 1 {
