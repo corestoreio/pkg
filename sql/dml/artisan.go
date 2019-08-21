@@ -491,7 +491,7 @@ func (a *Artisan) add(v interface{}) *Artisan {
 	return a
 }
 
-// Record sets a record for argument extraction. Qualifier is the name of the
+// Record appends a record for argument extraction. Qualifier is the name of the
 // table or view or procedure or their alias name. It must be a valid
 // MySQL/MariaDB identifier. An empty qualifier gets assigned to the main table.
 func (a *Artisan) Record(qualifier string, record ColumnMapper) *Artisan {
@@ -499,21 +499,6 @@ func (a *Artisan) Record(qualifier string, record ColumnMapper) *Artisan {
 	return a
 }
 
-// Arguments sets the internal arguments slice to the provided `args`. Those are
-// the slices arguments, records and raw.
-func (a *Artisan) Arguments(args *Artisan) *Artisan {
-	// maybe deprecated this function.
-	a.arguments = args.arguments
-	a.recs = args.recs
-	a.raw = args.raw
-	return a
-}
-
-// Records sets an object which implementes interface ColumnMapper
-// deprecated use interface slice argument in Exec/Query TODO implement that.
-func (a *Artisan) Records(records ...QualifiedRecord) *Artisan { a.recs = records; return a }
-
-// TODO keep Raw maybe and remove all other types
 func (a *Artisan) Raw(raw ...interface{}) *Artisan { a.raw = raw; return a }
 
 func (a *Artisan) Null() *Artisan                           { return a.add(nil) }
@@ -551,6 +536,7 @@ func (a *Artisan) NullTimes(nv ...null.Time) *Artisan       { return a.add(nv) }
 // always follow a call to a function type like Int, Float64s or null.Time.
 // Name may contain the placeholder prefix colon.
 func (a *Artisan) Name(n string) *Artisan {
+	// TODO remove completely and use sql.NamedArg
 	a.arguments = append(a.arguments, argument{name: n})
 	return a
 }

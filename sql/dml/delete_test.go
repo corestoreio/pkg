@@ -172,7 +172,7 @@ func TestDelete_Bind(t *testing.T) {
 				Column("email").PlaceHolder(),
 				Column("int_e").Int(2718281),
 			).OrderBy("id").
-			WithArgs().Records(Qualify("", p))
+			WithArgs().Record("", p)
 
 		compareToSQL2(t, del, errors.NoKind,
 			"DELETE FROM `dml_people` WHERE (`idI64` > 4) AND (`id` = ?) AND (`float64_pi` = 3.14159) AND (`email` = ?) AND (`int_e` = 2718281) ORDER BY `id`",
@@ -184,7 +184,7 @@ func TestDelete_Bind(t *testing.T) {
 			Where(
 				Column("id").PlaceHolder(),
 			).OrderBy("id").
-			WithArgs().Records(Qualify("", p))
+			WithArgs().Record("", p)
 
 		compareToSQL2(t, del, errors.NoKind,
 			"DELETE FROM `dml_people` WHERE (`id` = ?) ORDER BY `id`",
@@ -197,7 +197,7 @@ func TestDelete_Bind(t *testing.T) {
 			Where(
 				Column("id").PlaceHolder(),
 			).OrderBy("id").
-			WithArgs().Records(Qualify("dmlPpl", p))
+			WithArgs().Record("dmlPpl", p)
 
 		compareToSQL(t, del, errors.NoKind,
 			"DELETE FROM `dml_people` AS `dmlPpl` WHERE (`id` = ?) ORDER BY `id`",

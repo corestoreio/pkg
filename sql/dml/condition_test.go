@@ -460,7 +460,7 @@ func TestAppendArgs(t *testing.T) {
 				Column("t_d.store_id").Equal().PlaceHolder(),                  // 17
 			)
 
-		compareToSQL(t, s.WithArgs().Records(Qualify("e", appendInt(678)), Qualify("t_d", appendInt(17))),
+		compareToSQL(t, s.WithArgs().Record("e", appendInt(678)).Record("t_d", appendInt(17)),
 			errors.NoKind,
 			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = ?) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0)) AND (`t_d`.`store_id` = ?)",
 			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = 678) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0)) AND (`t_d`.`store_id` = 17)",
@@ -477,7 +477,7 @@ func TestAppendArgs(t *testing.T) {
 				Column("t_d.store_id").Equal().PlaceHolder(), // 17
 			)
 
-		compareToSQL(t, s.WithArgs().Records(Qualify("e", appendInt(678)), Qualify("t_d", appendInt(17))),
+		compareToSQL(t, s.WithArgs().Record("e", appendInt(678)).Record("t_d", appendInt(17)),
 			errors.NoKind,
 			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = ?) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = ?)",
 			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = 678) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = 17)",

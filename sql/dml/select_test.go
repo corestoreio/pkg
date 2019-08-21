@@ -1334,10 +1334,9 @@ func TestSelect_SetRecord(t *testing.T) {
 				Column("n").Str("wh3r3"),
 			).
 			OrderBy("l").
-			WithArgs().Records(
-			Qualify("dp", p),
-			Qualify("dg", MakeArgs(1).Name("dob").Int(1970)),
-		).Name("dbSIZE").Uint(201801)
+			WithArgs().Record("dp", p).
+			Record("dg", MakeArgs(1).Name("dob").Int(1970)).
+			Name("dbSIZE").Uint(201801)
 
 		compareToSQL2(t, sel, errors.NoKind,
 			"SELECT `a`, `b` FROM `dml_person` AS `dp` INNER JOIN `dml_group` AS `dg` ON (`dp`.`id` = ?) WHERE (`dg`.`dob` > ?) AND (`dg`.`size` < ?) AND (`age` < 56) AND ((`dp`.`name` = ?) OR (`e` = 'wat')) AND (`f` <= 2) AND (`g` > 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING (`dp`.`email` = ?) AND (`n` = 'wh3r3') ORDER BY `l`",

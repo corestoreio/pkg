@@ -341,7 +341,7 @@ func TestUpdate_BindRecord(t *testing.T) {
 				dml.Column("ce.entity_id").Greater().PlaceHolder(), // 678
 				dml.Column("cpe.entity_id").In().Int64s(66, 77),
 				dml.Column("cpei.attribute_set_id").Equal().PlaceHolder(), // 6
-			).WithArgs().Records(dml.Qualify("", ce), dml.Qualify("cpei", ce))
+			).WithArgs().Record("", ce).Record("cpei", ce)
 		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `catalog_category_entity` AS `ce` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`ce`.`entity_id` > ?) AND (`cpe`.`entity_id` IN (66,77)) AND (`cpei`.`attribute_set_id` = ?)",
 			"UPDATE `catalog_category_entity` AS `ce` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`ce`.`entity_id` > 678) AND (`cpe`.`entity_id` IN (66,77)) AND (`cpei`.`attribute_set_id` = 6)",

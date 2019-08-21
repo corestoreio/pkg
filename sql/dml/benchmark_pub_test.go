@@ -250,8 +250,6 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 	})
 
 	b.Run("interpolate", func(b *testing.B) {
-		args := dml.MakeArgs(3).Int64(4).Int64s(entityIDs...).Int64s(174, 175).Int(0)
-
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			sel := dml.NewSelect("entity_id", "attribute_id", "value").
@@ -263,7 +261,7 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 
 			sel.EstimatedCachedSQLSize = 8192
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithArgs().Interpolate().Arguments(args).ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithArgs().Interpolate().Int64(4).Int64s(entityIDs...).Int64s(174, 175).Int(0).ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -274,11 +272,6 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 	})
 
 	b.Run("interpolate named", func(b *testing.B) {
-		args := dml.MakeArgs(3).
-			Name("EntityTypeId").Int64(4).
-			Name("EntityId").Int64s(entityIDs...).
-			Name("AttributeId").Int64s(174, 175).
-			Name("StoreId").Int(0)
 		for i := 0; i < b.N; i++ {
 			sel := dml.NewSelect("entity_id", "attribute_id", "value").
 				From("catalog_product_entity_varchar").
@@ -289,7 +282,10 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 
 			sel.EstimatedCachedSQLSize = 8192
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithArgs().Interpolate().Arguments(args).ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithArgs().Interpolate().Name("EntityTypeId").Int64(4).
+				Name("EntityId").Int64s(entityIDs...).
+				Name("AttributeId").Int64s(174, 175).
+				Name("StoreId").Int(0).ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -300,8 +296,6 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 	})
 
 	b.Run("interpolate optimized", func(b *testing.B) {
-		args := dml.MakeArgs(3).Int64(4).Int64s(entityIDs...).Int64s(174, 175).Int(0)
-
 		sel := dml.NewSelect("entity_id", "attribute_id", "value").
 			From("catalog_product_entity_varchar").
 			Where(dml.Column("entity_type_id").PlaceHolder()).
@@ -316,7 +310,7 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			var err error
 			// the generated string benchmarkSelectStr is 5300 characters long
-			benchmarkSelectStr, benchmarkGlobalVals, err = selA.Arguments(args).ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = selA.Int64(4).Int64s(entityIDs...).Int64s(174, 175).Int(0).ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}

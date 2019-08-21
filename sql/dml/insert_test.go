@@ -287,10 +287,9 @@ func TestInsert_FromSelect(t *testing.T) {
 			).
 			OrderBy("l")
 
-		ins := NewInsert("tableA").AddColumns("a", "b").FromSelect(sel).WithArgs().Records(
-			Qualify("dp", p),
-			Qualify("dg", MakeArgs(1).Name("dob").Int(1970)),
-		).Name("xSize").Int(678).Float64( /*fPlaceholder*/ 3.14159)
+		ins := NewInsert("tableA").AddColumns("a", "b").FromSelect(sel).WithArgs().Record("dp", p).
+			Record("dg", MakeArgs(1).Name("dob").Int(1970)).
+			Name("xSize").Int(678).Float64( /*fPlaceholder*/ 3.14159)
 
 		compareToSQL(t, ins, errors.NoKind,
 			"INSERT INTO `tableA` (`a`,`b`) SELECT `a`, `b` FROM `dml_person` AS `dp` INNER JOIN `dml_group` AS `dg` ON (`dp`.`id` = ?) WHERE (`dg`.`dob` > ?) AND (`age` < 56) AND (`size` > ?) AND ((`dp`.`name` = ?) OR (`e` = 'wat')) AND (`fPlaceholder` <= ?) AND (`g` > 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING (`dp`.`email` = ?) AND (`n` = 'wh3r3') ORDER BY `l`",
