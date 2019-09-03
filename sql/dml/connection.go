@@ -344,7 +344,7 @@ func (t dsnConnector) Driver() driver.Driver {
 // When you want to set it for longer than an hour, discuss that with an
 // infrastructure/network engineer.
 func NewConnPool(opts ...ConnPoolOption) (*ConnPool, error) {
-	c := &ConnPool{}
+	var c ConnPool
 	if err := c.Options(opts...); err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -355,9 +355,9 @@ func NewConnPool(opts ...ConnPoolOption) (*ConnPool, error) {
 	if c.mapTableName == nil {
 		c.mapTableName = mapTableNameNoOp
 	}
-	// validate that DSN contains the utf8mb4 setting
+	// validate that DSN contains the utf8mb4 setting, if DSN is set
 
-	return c, nil
+	return &c, nil
 }
 
 // MustConnectAndVerify at like NewConnPool but it verifies the connection
@@ -560,6 +560,7 @@ func (c *ConnPool) Conn(ctx context.Context) (*Conn, error) {
 
 // WithRawSQL creates a new Artisan for the given SQL string. It does not
 // prepare the query nor runs place holder substitution.
+// Supports expanding the placeholders in case of argument slices.
 func (c *ConnPool) WithRawSQL(query string) *Artisan {
 	id := c.makeUniqueID()
 	l := c.Log
@@ -739,16 +740,17 @@ func (c *Conn) WithQueryBuilder(qb QueryBuilder) *Artisan {
 
 // WithRawSQL creates a new Artisan for the given SQL string in the current
 // connection.
-func (c *Conn) WithRawSQL(sql string) *Artisan {
+// Supports expanding the placeholders in case of argument slices.
+func (c *Conn) WithRawSQL(query string) *Artisan {
 	id := c.makeUniqueID()
 	l := c.Log
 	if l != nil {
-		l = l.With(log.String("conn_pool_raw_sql_id", id), log.String("sql", sql))
+		l = l.With(log.String("conn_pool_raw_sql_id", id), log.String("sql", query))
 	}
 	var args [defaultArgumentsCapacity]argument
 	return &Artisan{
 		base: builderCommon{
-			cachedSQL: map[string]string{"": sql},
+			cachedSQL: map[string]string{"": query},
 			Log:       l,
 			id:        id,
 			DB:        c.DB,
@@ -759,16 +761,17 @@ func (c *Conn) WithRawSQL(sql string) *Artisan {
 
 // WithRawSQL creates a new Artisan for the given SQL string in the current
 // transaction.
-func (tx *Tx) WithRawSQL(sql string) *Artisan {
+// Supports expanding the placeholders in case of argument slices.
+func (tx *Tx) WithRawSQL(query string) *Artisan {
 	id := tx.makeUniqueID()
 	l := tx.Log
 	if l != nil {
-		l = l.With(log.String("tx_raw_sql_id", id), log.String("sql", sql))
+		l = l.With(log.String("tx_raw_sql_id", id), log.String("sql", query))
 	}
 	var args [defaultArgumentsCapacity]argument
 	return &Artisan{
 		base: builderCommon{
-			cachedSQL: map[string]string{"": sql},
+			cachedSQL: map[string]string{"": query},
 			Log:       l,
 			id:        id,
 			DB:        tx.DB,

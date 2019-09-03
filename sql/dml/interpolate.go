@@ -35,38 +35,25 @@ const (
 
 var placeHolderByte = []byte(placeHolderStr)
 
-// ExpandPlaceHolders takes a SQL string and repeats the question marks with the provided
+// expandPlaceHolders takes a SQL string and repeats the question marks with the provided
 // arguments. If the amount of arguments does not match the number of questions
 // marks, a Mismatch error gets returned. The arguments are getting converted to
 // an interface slice to easy passing into the db.Query/db.Exec/etc functions at
 // an argument.
-//		ExpandPlaceHolders("SELECT * FROM table WHERE id IN (?) AND status IN (?)", Int(myIntSlice...), String(myStrSlice...))
+//		ExpandPlaceHolders("SELECT * FROM table WHERE id IN (?) AND status IN (?)").Int(myIntSlice...), String(myStrSlice...)
 // Gets converted to:
 //		SELECT * FROM table WHERE id IN (?,?) AND status IN (?,?,?)
 // The questions marks are of course depending on the values in the Arg*
 // functions. This function should be generally used when dealing with prepared
 // statements.
-func ExpandPlaceHolders(sql string, args *Artisan) (string, error) {
-	var a arguments
-	if args != nil {
-		a = args.arguments
-	}
-
-	phCount := strings.Count(sql, placeHolderStr)
-	if want := len(a); phCount != want || want == 0 {
-		return "", errors.Mismatch.Newf("[dml] ExpandPlaceHolders: Number of %s:%d do not match the number of repetitions: %d", placeHolderStr, phCount, want)
-	}
-
-	var buf strings.Builder
-	buf.Grow(len(sql) * 3 / 2) // *1.5
-	err := expandPlaceHolders(&buf, []byte(sql), a)
-	return buf.String(), errors.WithStack(err)
-}
-
-// expandPlaceHolders multiplies the place holder with the arguments internal len.
 func expandPlaceHolders(buf writer, sql []byte, args arguments) error {
 	i := 0
 	pos := 0
+
+	if phCount, la := bytes.Count(sql, placeHolderByte), len(args); phCount < la {
+		return errors.Mismatch.Newf("[dml] ExpandPlaceHolders has wrong place holder (%d) vs argument count (%d)", phCount, la)
+	}
+
 	for pos < len(sql) {
 		r, w := utf8.DecodeRune(sql[pos:])
 		pos += w

@@ -489,12 +489,16 @@ func BenchmarkInsertRecordsSQL(b *testing.B) {
 }
 
 func BenchmarkRepeat(b *testing.B) {
+	cp, err := dml.NewConnPool()
+	if err != nil {
+		b.Fatal(err)
+	}
 	b.Run("multi", func(b *testing.B) {
-		args := dml.MakeArgs(3).Ints(5, 7, 9, 11).Strings("a", "b", "c", "d", "e").Int(22)
 		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?) AND name IN (?,?,?,?,?) AND status IN (?)"
+		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ? AND name IN ? AND status IN (?)")
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			s, err := dml.ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN ? AND name IN ? AND status IN (?)", args)
+			s, _, err := a.Ints(5, 7, 9, 11).Strings("a", "b", "c", "d", "e").Int(22).ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -505,11 +509,11 @@ func BenchmarkRepeat(b *testing.B) {
 	})
 
 	b.Run("single", func(b *testing.B) {
-		args := dml.MakeArgs(1).Ints(9, 8, 7, 6)
 		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?)"
+		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ?")
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			s, err := dml.ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN ?", args)
+			s, _, err := a.Ints(9, 8, 7, 6).ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}

@@ -437,14 +437,19 @@ func ExampleInterpolate() {
 }
 
 func ExampleExpandPlaceHolders() {
-	args := dml.MakeArgs(2).Ints(5, 7, 9).Strings("a", "b", "c", "d", "e")
-	sqlStr, err := dml.ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN ? AND name IN ?", args)
+	cp, err := dml.NewConnPool()
+	if err != nil {
+		panic(err)
+	}
+	sqlStr, args, err := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ? AND name IN ?").
+		ExpandPlaceHolders().
+		Ints(5, 7, 9).Strings("a", "b", "c", "d", "e").ToSQL()
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		return
 	}
 
-	fmt.Printf("%s\nArguments: %v\n", sqlStr, args.Interfaces())
+	fmt.Printf("%s\nArguments: %v\n", sqlStr, args)
 	// Output:
 	// SELECT * FROM `table` WHERE id IN (?,?,?) AND name IN (?,?,?,?,?)
 	// Arguments: [5 7 9 a b c d e]
@@ -674,8 +679,8 @@ func ExampleSQLCase_update() {
 // ExampleSQLCase_select is a duplicate of ExampleSelect_AddArguments
 func ExampleSQLCase_select() {
 	// time stamp has no special meaning ;-)
-	start := time.Unix(1257894000, 0)
-	end := time.Unix(1257980400, 0)
+	start := time.Unix(1257894000, 0).In(time.UTC)
+	end := time.Unix(1257980400, 0).In(time.UTC)
 
 	s := dml.NewSelect().AddColumns("price", "sku", "name", "title", "description").
 		AddColumnsConditions(
@@ -695,20 +700,20 @@ func ExampleSQLCase_select() {
 	//? AND date_end >= ? THEN `open` WHEN date_start > ? AND date_end > ? THEN
 	//`upcoming` ELSE `closed` END AS `is_on_sale` FROM `catalog_promotions` WHERE
 	//(`promotion_id` NOT IN (?,?,?))
-	// Arguments: [2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 4711 815 42]
+	// Arguments: [2009-11-10 23:00:00 +0000 UTC 2009-11-11 23:00:00 +0000 UTC 2009-11-10 23:00:00 +0000 UTC 2009-11-11 23:00:00 +0000 UTC 4711 815 42]
 	//
 	// Interpolated Statement:
 	// SELECT `price`, `sku`, `name`, `title`, `description`, CASE  WHEN date_start <=
-	//'2009-11-11 00:00:00' AND date_end >= '2009-11-12 00:00:00' THEN `open` WHEN
-	// date_start > '2009-11-11 00:00:00' AND date_end > '2009-11-12 00:00:00' THEN
+	//'2009-11-10 23:00:00' AND date_end >= '2009-11-11 23:00:00' THEN `open` WHEN
+	// date_start > '2009-11-10 23:00:00' AND date_end > '2009-11-11 23:00:00' THEN
 	//`upcoming` ELSE `closed` END AS `is_on_sale` FROM `catalog_promotions` WHERE
 	//(`promotion_id` NOT IN (4711,815,42))
 }
 
 // ExampleSelect_AddColumnsConditions is duplicate of ExampleSQLCase_select
 func ExampleSelect_AddColumnsConditions() {
-	start := time.Unix(1257894000, 0)
-	end := time.Unix(1257980400, 0)
+	start := time.Unix(1257894000, 0).In(time.UTC)
+	end := time.Unix(1257980400, 0).In(time.UTC)
 
 	s := dml.NewSelect().AddColumns("price", "sku", "name", "title", "description").
 		AddColumnsConditions(
@@ -724,8 +729,8 @@ func ExampleSelect_AddColumnsConditions() {
 	// Output:
 	// Statement:
 	// SELECT `price`, `sku`, `name`, `title`, `description`, CASE  WHEN date_start <=
-	//'2009-11-11 00:00:00' AND date_end >= '2009-11-12 00:00:00' THEN `open` WHEN
-	// date_start > '2009-11-11 00:00:00' AND date_end > '2009-11-12 00:00:00' THEN
+	//'2009-11-10 23:00:00' AND date_end >= '2009-11-11 23:00:00' THEN `open` WHEN
+	// date_start > '2009-11-10 23:00:00' AND date_end > '2009-11-11 23:00:00' THEN
 	//`upcoming` ELSE `closed` END AS `is_on_sale` FROM `catalog_promotions` WHERE
 	//(`promotion_id` NOT IN (4711,815,42))
 }

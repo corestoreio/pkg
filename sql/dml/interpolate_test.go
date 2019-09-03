@@ -32,41 +32,34 @@ var _ QueryBuilder = (*ip)(nil)
 func TestExpandPlaceHolders(t *testing.T) {
 	t.Parallel()
 
+	cp, err := NewConnPool()
+	assert.NoError(t, err)
+
 	t.Run("MisMatch", func(t *testing.T) {
-		s, err := ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN (?)", nil)
-		assert.Empty(t, s)
-		assert.ErrorIsKind(t, errors.Mismatch, err)
+		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN (?)").ExpandPlaceHolders()
+		compareToSQL2(t, a, errors.NoKind, "SELECT * FROM `table` WHERE id IN (?)")
 	})
 	t.Run("MisMatch length reps", func(t *testing.T) {
-		s, err := ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN (?)", MakeArgs(2).Int64s(1, 2).Strings("d", "3"))
-		assert.Empty(t, s)
-		assert.ErrorIsKind(t, errors.Mismatch, err)
+		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ?").ExpandPlaceHolders().Int64s(1, 2).Strings("d", "3")
+		compareToSQL2(t, a, errors.Mismatch, "")
 	})
 	t.Run("MisMatch qMarks", func(t *testing.T) {
-		s, err := ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN(!)", MakeArgs(1).Int64(3))
-		assert.Empty(t, s)
-		assert.ErrorIsKind(t, errors.Mismatch, err)
+		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN(!)").ExpandPlaceHolders().Int64(3)
+		compareToSQL2(t, a, errors.Mismatch, "")
 	})
 	t.Run("one arg with one value", func(t *testing.T) {
-		args := MakeArgs(1).Int64(1)
-		s, err := ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN (?)", args)
-		assert.NoError(t, err)
-		assert.Exactly(t, "SELECT * FROM `table` WHERE id IN (?)", s)
-		assert.Exactly(t, []interface{}{int64(1)}, args.Interfaces())
+		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN (?)").ExpandPlaceHolders().Int64(1)
+		compareToSQL2(t, a, errors.NoKind, "SELECT * FROM `table` WHERE id IN (?)", int64(1))
 	})
 	t.Run("one arg with three values", func(t *testing.T) {
-		args := MakeArgs(1).Int64s(11, 3, 5)
-		s, err := ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN ?", args)
-		assert.NoError(t, err)
-		assert.Exactly(t, "SELECT * FROM `table` WHERE id IN (?,?,?)", s)
-		assert.Exactly(t, []interface{}{int64(11), int64(3), int64(5)}, args.Interfaces())
+		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ?").ExpandPlaceHolders().Int64s(11, 3, 5)
+		compareToSQL2(t, a, errors.NoKind, "SELECT * FROM `table` WHERE id IN (?,?,?)", int64(11), int64(3), int64(5))
 	})
 	t.Run("multi 3,5 times replacement", func(t *testing.T) {
-		args := MakeArgs(3).Int64s(5, 7, 9).Strings("a", "b", "c", "d", "e")
-		s, err := ExpandPlaceHolders("SELECT * FROM `table` WHERE id IN ? AND name IN ?", args)
-		assert.NoError(t, err)
-		assert.Exactly(t, "SELECT * FROM `table` WHERE id IN (?,?,?) AND name IN (?,?,?,?,?)", s)
-		assert.Exactly(t, []interface{}{int64(5), int64(7), int64(9), "a", "b", "c", "d", "e"}, args.Interfaces())
+		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ? AND name IN ?").ExpandPlaceHolders().Int64s(5, 7, 9).Strings("a", "b", "c", "d", "e")
+		compareToSQL2(t, a, errors.NoKind, "SELECT * FROM `table` WHERE id IN (?,?,?) AND name IN (?,?,?,?,?)",
+			int64(5), int64(7), int64(9), "a", "b", "c", "d", "e",
+		)
 	})
 }
 
