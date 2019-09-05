@@ -138,21 +138,26 @@ func (in *ip) ToSQL() (_ string, alwaysNil []interface{}, _ error) {
 
 // Reset resets the internal argument cache for reuse. Avoids lots of
 // allocations.
-func (in *ip) Reset() *ip                 { in.args = in.args[:0]; return in }
-func (in *ip) Null() *ip                  { in.args = in.args.add(nil); return in }
-func (in *ip) Unsafe(arg interface{}) *ip { in.args = in.args.add(arg); return in }
-func (in *ip) Int(i int) *ip              { in.args = in.args.add(i); return in }
-func (in *ip) Ints(i ...int) *ip          { in.args = in.args.add(i); return in }
-func (in *ip) Int64(i int64) *ip          { in.args = in.args.add(i); return in }
-func (in *ip) Int64s(i ...int64) *ip      { in.args = in.args.add(i); return in }
-func (in *ip) Uint64(i uint64) *ip        { in.args = in.args.add(i); return in }
-func (in *ip) Uint64s(i ...uint64) *ip    { in.args = in.args.add(i); return in }
-func (in *ip) Float64(f float64) *ip      { in.args = in.args.add(f); return in }
-func (in *ip) Float64s(f ...float64) *ip  { in.args = in.args.add(f); return in }
-func (in *ip) Str(s string) *ip           { in.args = in.args.add(s); return in }
-func (in *ip) Strs(s ...string) *ip       { in.args = in.args.add(s); return in }
-func (in *ip) Bool(b bool) *ip            { in.args = in.args.add(b); return in }
-func (in *ip) Bools(b ...bool) *ip        { in.args = in.args.add(b); return in }
+func (in *ip) Reset() *ip { in.args = in.args[:0]; return in }
+func (in *ip) Null() *ip  { in.args = in.args.add(nil); return in }
+func (in *ip) Unsafe(args ...interface{}) *ip {
+	for _, arg := range args {
+		in.args = in.args.add(arg)
+	}
+	return in
+}
+func (in *ip) Int(i int) *ip             { in.args = in.args.add(i); return in }
+func (in *ip) Ints(i ...int) *ip         { in.args = in.args.add(i); return in }
+func (in *ip) Int64(i int64) *ip         { in.args = in.args.add(i); return in }
+func (in *ip) Int64s(i ...int64) *ip     { in.args = in.args.add(i); return in }
+func (in *ip) Uint64(i uint64) *ip       { in.args = in.args.add(i); return in }
+func (in *ip) Uint64s(i ...uint64) *ip   { in.args = in.args.add(i); return in }
+func (in *ip) Float64(f float64) *ip     { in.args = in.args.add(f); return in }
+func (in *ip) Float64s(f ...float64) *ip { in.args = in.args.add(f); return in }
+func (in *ip) Str(s string) *ip          { in.args = in.args.add(s); return in }
+func (in *ip) Strs(s ...string) *ip      { in.args = in.args.add(s); return in }
+func (in *ip) Bool(b bool) *ip           { in.args = in.args.add(b); return in }
+func (in *ip) Bools(b ...bool) *ip       { in.args = in.args.add(b); return in }
 
 // Bytes uses a byte slice for comparison. Providing a nil value returns a
 // NULL type. Detects between valid UTF-8 strings and binary data. Later gets
@@ -189,15 +194,6 @@ func (in *ip) DriverValue(dvs ...driver.Valuer) *ip {
 		return in
 	}
 	in.args, in.ärgErr = driverValue(in.args, dvs...)
-	return in
-}
-
-// Arguments sets the internal arguments slice and nothing else. It overwrites
-// previously set arguments.
-func (in *ip) Arguments(args *Artisan) *ip {
-	if args != nil {
-		in.args = args.arguments
-	}
 	return in
 }
 
