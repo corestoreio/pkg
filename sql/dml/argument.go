@@ -17,7 +17,6 @@ package dml
 import (
 	"bytes"
 	"database/sql/driver"
-	"fmt"
 	"math"
 	"strconv"
 	"time"
@@ -374,148 +373,6 @@ func (arg argument) writeTo(w *bytes.Buffer, pos uint) (err error) {
 	return err
 }
 
-func (arg argument) GoString() string {
-	buf := new(bytes.Buffer)
-	if arg.name != "" {
-		fmt.Fprintf(buf, ".Name(%q)", arg.name)
-	}
-	switch v := arg.value.(type) {
-	case int:
-		fmt.Fprintf(buf, ".Int(%d)", v)
-	case []int:
-		fmt.Fprintf(buf, ".Ints(%#v...)", v)
-
-	case int64:
-		fmt.Fprintf(buf, ".Int64(%d)", v)
-	case []int64:
-		fmt.Fprintf(buf, ".Int64s(%#v...)", v)
-	case null.Int64:
-		buf.WriteString(".NullInt64(")
-		buf.WriteString(v.GoString())
-		buf.WriteByte(')')
-	case []null.Int64:
-		buf.WriteString(".NullInt64s(")
-		for i, nv := range v {
-			if i > 0 {
-				buf.WriteByte(',')
-			}
-			buf.WriteString(nv.GoString())
-		}
-		buf.WriteByte(')')
-
-	case uint64:
-		fmt.Fprintf(buf, ".Uint64(%d)", v)
-	case []uint64:
-		fmt.Fprintf(buf, ".Uint64s(%#v...)", v)
-	case []uint:
-		fmt.Fprintf(buf, ".Uints(%#v...)", v)
-
-	case float64:
-		fmt.Fprintf(buf, ".Float64(%f)", v)
-	case []float64:
-		fmt.Fprintf(buf, ".Float64s(%#v...)", v) // the lazy way; prints `[]float64{2.76, 3.141}...` but should `2.76, 3.141`
-	case null.Float64:
-		buf.WriteString(".NullFloat64(")
-		buf.WriteString(v.GoString())
-		buf.WriteByte(')')
-	case []null.Float64:
-		buf.WriteString(".NullFloat64s(")
-		for i, nv := range v {
-			if i > 0 {
-				buf.WriteByte(',')
-			}
-			buf.WriteString(nv.GoString())
-		}
-		buf.WriteByte(')')
-
-	case bool:
-		fmt.Fprintf(buf, ".Bool(%v)", v)
-	case []bool:
-		fmt.Fprintf(buf, ".Bools(%#v...)", v)
-	case null.Bool:
-		buf.WriteString(".NullBool(")
-		buf.WriteString(v.GoString())
-		buf.WriteByte(')')
-	case []null.Bool:
-		buf.WriteString(".NullBools(")
-		for i, nv := range v {
-			if i > 0 {
-				buf.WriteByte(',')
-			}
-			buf.WriteString(nv.GoString())
-		}
-		buf.WriteByte(')')
-
-	case string:
-		fmt.Fprintf(buf, ".String(%q)", v)
-	case []string:
-		buf.WriteString(".Strings(")
-		for i, nv := range v {
-			if i > 0 {
-				buf.WriteByte(',')
-			}
-			fmt.Fprintf(buf, "%q", nv)
-		}
-		buf.WriteByte(')')
-	case null.String:
-		buf.WriteString(".NullString(")
-		buf.WriteString(v.GoString())
-		buf.WriteByte(')')
-	case []null.String:
-		buf.WriteString(".NullStrings(")
-		for i, nv := range v {
-			if i > 0 {
-				buf.WriteByte(',')
-			}
-			buf.WriteString(nv.GoString())
-		}
-		buf.WriteByte(')')
-
-	case []byte:
-		fmt.Fprintf(buf, ".Bytes(%#v)", v)
-	case [][]byte:
-		buf.WriteString(".BytesSlice(")
-		for i, nv := range v {
-			if i > 0 {
-				buf.WriteByte(',')
-			}
-			fmt.Fprintf(buf, "%#v", nv)
-		}
-		buf.WriteByte(')')
-
-	case time.Time:
-		fmt.Fprintf(buf, ".Time(time.Unix(%d,%d))", v.Unix(), v.Nanosecond())
-	case []time.Time:
-		buf.WriteString(".Times(")
-		for i, t := range v {
-			if i > 0 {
-				buf.WriteByte(',')
-			}
-			fmt.Fprintf(buf, "time.Unix(%d,%d)", t.Unix(), t.Nanosecond())
-		}
-		buf.WriteByte(')')
-	case null.Time:
-		buf.WriteString(".NullTime(")
-		buf.WriteString(v.GoString())
-		buf.WriteByte(')')
-	case []null.Time:
-		buf.WriteString(".NullTimes(")
-		for i, nv := range v {
-			if i > 0 {
-				buf.WriteByte(',')
-			}
-			buf.WriteString(nv.GoString())
-		}
-		buf.WriteByte(')')
-
-	case nil:
-		fmt.Fprint(buf, ".Null()")
-	default:
-		panic(errors.NotSupported.Newf("[dml] Unsupported field type: %T", arg.value))
-	}
-	return buf.String()
-}
-
 // MakeArgs creates a new argument slice with the desired capacity.
 func MakeArgs(cap int) *Artisan { return &Artisan{arguments: make(arguments, 0, cap)} }
 
@@ -544,15 +401,6 @@ func (as arguments) multiplyArguments(factor int) arguments {
 		copy(newA[i*lArgs:], as)
 	}
 	return newA
-}
-
-func (as arguments) GoString() string {
-	buf := new(bytes.Buffer)
-	fmt.Fprintf(buf, "dml.MakeArgs(%d)", len(as))
-	for _, arg := range as {
-		buf.WriteString(arg.GoString())
-	}
-	return buf.String()
 }
 
 // Len returns the total length of all arguments.

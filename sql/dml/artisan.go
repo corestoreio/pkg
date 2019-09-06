@@ -485,7 +485,7 @@ func (a *Artisan) MapColumns(cm *ColumnMap) error {
 
 func (a *Artisan) add(v interface{}) *Artisan {
 	if a == nil {
-		a = MakeArgs(defaultArgumentsCapacity)
+		a = &Artisan{arguments: make(arguments, 0, defaultArgumentsCapacity)}
 	}
 	a.arguments = a.arguments.add(v)
 	return a
@@ -565,7 +565,7 @@ func (a *Artisan) Reset() *Artisan {
 // result in []int.
 func (a *Artisan) DriverValue(dvs ...driver.Valuer) *Artisan {
 	if a == nil {
-		a = MakeArgs(len(dvs))
+		a = &Artisan{arguments: make(arguments, 0, len(dvs))}
 	}
 	a.arguments, a.base.ärgErr = driverValue(a.arguments, dvs...)
 	return a
@@ -576,7 +576,7 @@ func (a *Artisan) DriverValue(dvs ...driver.Valuer) *Artisan {
 // interface driver.Valuer.
 func (a *Artisan) DriverValues(dvs ...driver.Valuer) *Artisan {
 	if a == nil {
-		a = MakeArgs(len(dvs))
+		a = &Artisan{arguments: make(arguments, 0, len(dvs))}
 	}
 	a.arguments, a.base.ärgErr = driverValues(a.arguments, dvs...)
 	return a

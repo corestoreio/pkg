@@ -49,9 +49,8 @@ func TestColumnMap_Nil_Pointers(t *testing.T) {
 		Uint64(nil).
 		Uint8(nil)
 
-	assert.Exactly(t,
-		"dml.MakeArgs(17).Null().Null().Null().Null().Null().Null().Null().Null().Null().Null().Null().Null().Null().Null().Null().Null().Null()",
-		cm.arguments.GoString())
+	assert.Exactly(t, []interface{}{nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil},
+		cm.arguments.Interfaces())
 }
 
 func TestScannedColumn_String(t *testing.T) {

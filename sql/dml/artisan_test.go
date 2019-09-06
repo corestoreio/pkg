@@ -16,7 +16,6 @@ package dml
 
 import (
 	"bytes"
-	"fmt"
 	"testing"
 
 	"github.com/corestoreio/errors"
@@ -26,8 +25,6 @@ import (
 )
 
 var _ ColumnMapper = (*Artisan)(nil)
-var _ fmt.GoStringer = (*Artisan)(nil)
-var _ fmt.GoStringer = (*argument)(nil)
 
 func TestArguments_Interfaces(t *testing.T) {
 	t.Parallel()
@@ -241,48 +238,6 @@ func TestArguments_WriteTo(t *testing.T) {
 	})
 }
 
-func TestArguments_Named(t *testing.T) {
-	t.Parallel()
-
-	assert.Exactly(t,
-		"dml.MakeArgs(4).String(\"Rusty\").Name(\"entity_id\").Null().Name(\"entity_sku\").Int64(4).Float64(3.141000)",
-		MakeArgs(2).
-			String("Rusty").
-			Name("entity_id").Name("entity_sku").Int64(4).
-			Float64(3.141).
-			GoString())
-
-	assert.Exactly(t,
-		"dml.MakeArgs(3).Name(\"entity_id\").Null().Name(\"entity_sku\").Int64(4).Float64(3.141000)",
-		MakeArgs(2).
-			Name("entity_id").Name("entity_sku").Int64(4).
-			Float64(3.141).
-			GoString())
-
-	assert.Exactly(t,
-		"dml.MakeArgs(2).Name(\"entity_id\").Int64(4).Float64(3.141000)",
-		MakeArgs(2).
-			Name("entity_id").Int64(4).
-			Float64(3.141).
-			GoString())
-
-	assert.Exactly(t,
-		"dml.MakeArgs(2).Float64(3.141000).Name(\"entity_id\").Int64(4)",
-		MakeArgs(2).
-			Float64(3.141).
-			Name("entity_id").Int64(4).
-			GoString())
-
-	assert.Exactly(t,
-		"dml.MakeArgs(4).Float64s([]float64{2.76, 3.141}...).Name(\"entity_id\").Int64(4).Name(\"store_id\").Uint64(5678).Time(time.Unix(1136228645,2))",
-		MakeArgs(2).
-			Float64s(2.76, 3.141).
-			Name("entity_id").Int64(4).
-			Name("store_id").Uint64(5678).
-			Time(now()).
-			GoString())
-}
-
 func TestArguments_HasNamedArgs(t *testing.T) {
 	t.Parallel()
 
@@ -333,9 +288,8 @@ func TestArguments_MapColumns(t *testing.T) {
 		if err := from.MapColumns(cm); err != nil {
 			t.Fatal(err)
 		}
-		assert.Exactly(t,
-			"dml.MakeArgs(1).Name(\"colA\").Strings(\"a\",\"b\")",
-			cm.arguments.GoString())
+		assert.Exactly(t, []interface{}{"a", "b"},
+			cm.arguments.Interfaces())
 	})
 
 	t.Run("len=0", func(t *testing.T) {
@@ -344,9 +298,8 @@ func TestArguments_MapColumns(t *testing.T) {
 		if err := from.MapColumns(cm); err != nil {
 			t.Fatal(err)
 		}
-		assert.Exactly(t,
-			"dml.MakeArgs(3).Name(\"colZ\").Int64(3).Float64(2.200000).Name(\"colA\").Strings(\"a\",\"b\")",
-			cm.arguments.GoString())
+		assert.Exactly(t, []interface{}{int64(3), 2.200000, "a", "b"},
+			cm.arguments.Interfaces())
 	})
 
 	t.Run("len>1", func(t *testing.T) {
@@ -356,8 +309,8 @@ func TestArguments_MapColumns(t *testing.T) {
 			t.Fatal(err)
 		}
 		assert.Exactly(t,
-			"dml.MakeArgs(2).Name(\"colA\").Strings(\"a\",\"b\").Name(\"colB\").Float64(2.200000)",
-			cm.arguments.GoString())
+			[]interface{}{"a", "b", 2.200000},
+			cm.arguments.Interfaces())
 	})
 }
 
