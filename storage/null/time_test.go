@@ -57,7 +57,6 @@ var (
 )
 
 func TestNullTime_JsonUnmarshal(t *testing.T) {
-
 	var ti Time
 	err := json.Unmarshal(timeJSON, &ti)
 	maybePanic(err)
@@ -101,7 +100,6 @@ func TestNullTime_JsonUnmarshal(t *testing.T) {
 }
 
 func TestNullTime_UnmarshalText(t *testing.T) {
-
 	ti := MakeTime(timeValue)
 	txt, err := ti.MarshalText()
 	maybePanic(err)
@@ -129,7 +127,6 @@ func TestNullTime_UnmarshalText(t *testing.T) {
 }
 
 func TestNullTime_JsonMarshal(t *testing.T) {
-
 	ti := MakeTime(timeValue)
 	data, err := json.Marshal(ti)
 	maybePanic(err)
@@ -142,7 +139,6 @@ func TestNullTime_JsonMarshal(t *testing.T) {
 }
 
 func TestNullTime_BinaryEncoding(t *testing.T) {
-
 	runner := func(nv Time, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
 			data, err := nv.GobEncode()
@@ -169,7 +165,6 @@ func TestNullTime_BinaryEncoding(t *testing.T) {
 				wantS = wantS[:35]
 			}
 			assert.Exactly(t, haveS, wantS)
-
 		}
 	}
 	t.Run("now fixed", runner(MakeTime(now()), []byte{0x1, 0x0, 0x0, 0x0, 0xe, 0xbb, 0x4b, 0x37, 0xe5, 0x0, 0x0, 0x0, 0x2, 0x0, 0x0}))
@@ -177,19 +172,16 @@ func TestNullTime_BinaryEncoding(t *testing.T) {
 }
 
 func TestNullTime_Size(t *testing.T) {
-
 	assert.Exactly(t, 0, Time{}.Size())
 	assert.Exactly(t, 8, MakeTime(now()).Size())
 }
 
 func TestTimeFrom(t *testing.T) {
-
 	ti := MakeTime(timeValue)
 	assertTime(t, ti, "MakeTime() time.Time")
 }
 
 func TestTimeSetValid(t *testing.T) {
-
 	var ti time.Time
 	change := MakeTime(ti).SetNull() // stupid code
 	assertNullTime(t, change, "SetValid()")
@@ -197,7 +189,6 @@ func TestTimeSetValid(t *testing.T) {
 }
 
 func TestTimePointer(t *testing.T) {
-
 	ti := MakeTime(timeValue)
 	ptr := ti.Ptr()
 	if *ptr != timeValue {
@@ -212,7 +203,6 @@ func TestTimePointer(t *testing.T) {
 }
 
 func TestTimeScanValue(t *testing.T) {
-
 	var ti Time
 	maybePanic(ti.Scan(timeValue))
 	assertTime(t, ti, "scanned time")
@@ -227,11 +217,16 @@ func TestTimeScanValue(t *testing.T) {
 		t.Error("bad value or err:", v, err)
 	}
 
-	var wrong Time
-	if err := wrong.Scan(int64(42)); err == nil {
+	var t42 Time
+	if err := t42.Scan(int64(42)); err == nil {
 		t.Error("expected error")
 	}
-	assertNullTime(t, wrong, "scanned wrong")
+	assert.Exactly(t, "0001-01-01 00:00:00 +0000 UTC", t42.String())
+
+	if err := t42.Scan(int32(timeValue.Unix())); err == nil {
+		t.Error("expected error")
+	}
+	assert.Exactly(t, "0001-01-01 00:00:00 +0000 UTC", t42.String())
 }
 
 func assertTime(t *testing.T, ti Time, from string) {
@@ -250,8 +245,7 @@ func assertNullTime(t *testing.T, ti Time, from string) {
 }
 
 func TestNewNullTime(t *testing.T) {
-
-	var test = time.Now()
+	test := time.Now()
 	assert.Equal(t, test, MakeTime(test).Time)
 	assert.True(t, MakeTime(test).Valid)
 	assert.True(t, MakeTime(time.Time{}).Valid)

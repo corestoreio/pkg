@@ -9,7 +9,7 @@
 package null
 
 import (
-	"database/sql/driver"
+	"database/sql"
 	"strings"
 	"time"
 
@@ -35,45 +35,7 @@ import (
 //
 // This Time implementation is not driver-specific
 type Time struct {
-	Time  time.Time
-	Valid bool // Valid is true if Time is not NULL
-}
-
-// Scan implements the Scanner interface.
-// The value type must be time.Time or string / []byte (formatted time-string),
-// otherwise Scan fails.
-func (nt *Time) Scan(value interface{}) (err error) {
-	nt.Time, nt.Valid = time.Time{}, false
-	if value == nil {
-		return
-	}
-
-	switch v := value.(type) {
-	case time.Time:
-		nt.Time = v
-	case []byte:
-		if v == nil {
-			return
-		}
-		*nt, err = ParseDateTime(string(v), time.UTC)
-	case string:
-		if v == "" {
-			return
-		}
-		*nt, err = ParseDateTime(v, time.UTC)
-	default:
-		err = errors.NotValid.Newf("[dml] Can't convert %T to time.Time. Maybe not yet implemented.", value)
-	}
-	nt.Valid = err == nil
-	return
-}
-
-// Value implements the driver.Valuer interface.
-func (nt Time) Value() (driver.Value, error) {
-	if !nt.Valid {
-		return nil, nil
-	}
-	return nt.Time, nil
+	sql.NullTime
 }
 
 // ParseDateTime parses a string into a Time type. Empty string is considered NULL.

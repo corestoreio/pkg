@@ -16,7 +16,7 @@ package null
 
 import (
 	"bytes"
-	"database/sql/driver"
+	"database/sql"
 	"encoding/binary"
 	"strconv"
 
@@ -32,8 +32,7 @@ import (
 // It will decode to null, not zero, if null. Int32 implements interface
 // Argument.
 type Int32 struct {
-	Int32 int32
-	Valid bool // Valid is true if Int32 is not NULL
+	sql.NullInt32
 }
 
 // MakeInt32 creates a new Int32. Setting the second optional argument
@@ -41,8 +40,7 @@ type Int32 struct {
 // implements interface Argument.
 func MakeInt32(i int32) Int32 {
 	return Int32{
-		Int32: i,
-		Valid: true,
+		NullInt32: sql.NullInt32{Int32: i, Valid: true},
 	}
 }
 
@@ -178,14 +176,6 @@ func (a Int32) Ptr() *int32 {
 // A non-null Int32 with a 0 value will not be considered zero.
 func (a Int32) IsZero() bool {
 	return !a.Valid
-}
-
-// Value implements the driver.Valuer interface.
-func (a Int32) Value() (driver.Value, error) {
-	if !a.Valid {
-		return nil, nil
-	}
-	return a.Int32, nil
 }
 
 // GobEncode implements the gob.GobEncoder interface for gob serialization.

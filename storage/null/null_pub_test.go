@@ -16,6 +16,7 @@ package null_test
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"testing"
 	"time"
@@ -126,7 +127,6 @@ func TestNullTypeScanning(t *testing.T) {
 }
 
 func TestNullTypeJSONMarshal(t *testing.T) {
-
 	type nullTypeJSONTest struct {
 		record       *nullTypedRecord
 		expectedJSON []byte
@@ -196,13 +196,14 @@ func (p *nullTypedRecord) MapColumns(cm *dml.ColumnMap) error {
 	}
 	return cm.Err()
 }
+
 func newNullTypedRecordWithData() *nullTypedRecord {
 	return &nullTypedRecord{
 		ID:         2,
 		StringVal:  null.String{String: "wow", Valid: true},
 		Int64Val:   null.Int64{Int64: 42, Valid: true},
 		Float64Val: null.Float64{Float64: 1.618, Valid: true},
-		TimeVal:    null.Time{Time: time.Date(2009, 1, 3, 18, 15, 5, 0, time.UTC), Valid: true},
+		TimeVal:    null.Time{NullTime: sql.NullTime{Time: time.Date(2009, 1, 3, 18, 15, 5, 0, time.UTC), Valid: true}},
 		BoolVal:    null.Bool{Bool: true, Valid: true},
 		DecimalVal: null.Decimal{Precision: 12345, Scale: 3, Valid: true},
 	}

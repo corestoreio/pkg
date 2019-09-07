@@ -16,6 +16,7 @@ package null
 
 import (
 	"bytes"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -31,8 +32,7 @@ import (
 // interface Argument.
 func MakeTime(t time.Time) Time {
 	return Time{
-		Time:  t,
-		Valid: true,
+		NullTime: sql.NullTime{Time: t, Valid: true},
 	}
 }
 
