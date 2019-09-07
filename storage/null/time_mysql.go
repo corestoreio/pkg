@@ -38,6 +38,35 @@ type Time struct {
 	sql.NullTime
 }
 
+// Scan implements the Scanner interface. The value type must be time.Time or
+// string / []byte (formatted time-string), otherwise Scan fails. It supports
+// more input data than database/sql.NullTime.Scan
+func (nt *Time) Scan(value interface{}) (err error) {
+	nt.Time, nt.Valid = time.Time{}, false
+	if value == nil {
+		return
+	}
+
+	switch v := value.(type) {
+	case time.Time:
+		nt.Time = v
+	case []byte:
+		if v == nil {
+			return
+		}
+		*nt, err = ParseDateTime(string(v), time.UTC)
+	case string:
+		if v == "" {
+			return
+		}
+		*nt, err = ParseDateTime(v, time.UTC)
+	default:
+		err = errors.NotValid.Newf("[dml] Can't convert %T to time.Time. Maybe not yet implemented.", value)
+	}
+	nt.Valid = err == nil
+	return
+}
+
 // ParseDateTime parses a string into a Time type. Empty string is considered NULL.
 func ParseDateTime(str string, loc *time.Location) (t Time, err error) {
 	if str == "" {

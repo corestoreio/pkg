@@ -217,16 +217,11 @@ func TestTimeScanValue(t *testing.T) {
 		t.Error("bad value or err:", v, err)
 	}
 
-	var t42 Time
-	if err := t42.Scan(int64(42)); err == nil {
+	var wrong Time
+	if err := wrong.Scan(int64(42)); err == nil {
 		t.Error("expected error")
 	}
-	assert.Exactly(t, "0001-01-01 00:00:00 +0000 UTC", t42.String())
-
-	if err := t42.Scan(int32(timeValue.Unix())); err == nil {
-		t.Error("expected error")
-	}
-	assert.Exactly(t, "0001-01-01 00:00:00 +0000 UTC", t42.String())
+	assertNullTime(t, wrong, "scanned wrong")
 }
 
 func assertTime(t *testing.T, ti Time, from string) {
