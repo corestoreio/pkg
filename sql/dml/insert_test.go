@@ -264,6 +264,9 @@ func TestInsert_FromSelect(t *testing.T) {
 			Name:  "Hans Wurst",
 			Email: null.MakeString("hans@wurst.com"),
 		}
+		p2 := &dmlPerson{
+			Dob: 1970,
+		}
 
 		sel := NewSelect("a", "b").
 			FromAlias("dml_person", "dp").
@@ -288,7 +291,7 @@ func TestInsert_FromSelect(t *testing.T) {
 			OrderBy("l")
 
 		ins := NewInsert("tableA").AddColumns("a", "b").FromSelect(sel).WithArgs().Record("dp", p).
-			Record("dg", MakeArgs(1).Name("dob").Int(1970)).
+			Record("dg", p2).
 			Name("xSize").Int(678).Float64( /*fPlaceholder*/ 3.14159)
 
 		compareToSQL(t, ins, errors.NoKind,

@@ -273,26 +273,26 @@ BenchmarkUpdateValuesSQL-4                                    	 1000000	      12
 BenchmarkUpdateValuesSQL-4                                    	 1000000	      1267 ns/op	    3248 B/op	      10 allocs/op
 BenchmarkUpdateValuesSQL-4                                    	 1000000	      1265 ns/op	    3248 B/op	      10 allocs/op
 BenchmarkUpdateValuesSQL-4                                    	 1000000	      1266 ns/op	    3248 B/op	      10 allocs/op
-BenchmarkArgUnion/reflection_all_types-4                      	 1000000	      1837 ns/op	     672 B/op	      44 allocs/op
-BenchmarkArgUnion/reflection_all_types-4                      	 1000000	      1855 ns/op	     672 B/op	      44 allocs/op
-BenchmarkArgUnion/reflection_all_types-4                      	 1000000	      1846 ns/op	     672 B/op	      44 allocs/op
-BenchmarkArgUnion/reflection_all_types-4                      	 1000000	      1844 ns/op	     672 B/op	      44 allocs/op
-BenchmarkArgUnion/reflection_all_types-4                      	 1000000	      1829 ns/op	     672 B/op	      44 allocs/op
-BenchmarkArgUnion/args_all_types-4                            	 2000000	       817 ns/op	     560 B/op	      31 allocs/op
-BenchmarkArgUnion/args_all_types-4                            	 2000000	       819 ns/op	     560 B/op	      31 allocs/op
-BenchmarkArgUnion/args_all_types-4                            	 2000000	       817 ns/op	     560 B/op	      31 allocs/op
-BenchmarkArgUnion/args_all_types-4                            	 2000000	       818 ns/op	     560 B/op	      31 allocs/op
-BenchmarkArgUnion/args_all_types-4                            	 2000000	       818 ns/op	     560 B/op	      31 allocs/op
-BenchmarkArgUnion/reflection_numbers-4                        	  500000	      2412 ns/op	     984 B/op	      78 allocs/op
-BenchmarkArgUnion/reflection_numbers-4                        	  500000	      2408 ns/op	     984 B/op	      78 allocs/op
-BenchmarkArgUnion/reflection_numbers-4                        	  500000	      2433 ns/op	     984 B/op	      78 allocs/op
-BenchmarkArgUnion/reflection_numbers-4                        	 1000000	      2407 ns/op	     984 B/op	      78 allocs/op
-BenchmarkArgUnion/reflection_numbers-4                        	 1000000	      2424 ns/op	     984 B/op	      78 allocs/op
-BenchmarkArgUnion/args_numbers-4                              	 2000000	       786 ns/op	     688 B/op	      44 allocs/op
-BenchmarkArgUnion/args_numbers-4                              	 2000000	       788 ns/op	     688 B/op	      44 allocs/op
-BenchmarkArgUnion/args_numbers-4                              	 2000000	       788 ns/op	     688 B/op	      44 allocs/op
-BenchmarkArgUnion/args_numbers-4                              	 2000000	       789 ns/op	     688 B/op	      44 allocs/op
-BenchmarkArgUnion/args_numbers-4                              	 2000000	       784 ns/op	     688 B/op	      44 allocs/op
+BenchmarkArgsToIFace/reflection_all_types-4                      	 1000000	      1837 ns/op	     672 B/op	      44 allocs/op
+BenchmarkArgsToIFace/reflection_all_types-4                      	 1000000	      1855 ns/op	     672 B/op	      44 allocs/op
+BenchmarkArgsToIFace/reflection_all_types-4                      	 1000000	      1846 ns/op	     672 B/op	      44 allocs/op
+BenchmarkArgsToIFace/reflection_all_types-4                      	 1000000	      1844 ns/op	     672 B/op	      44 allocs/op
+BenchmarkArgsToIFace/reflection_all_types-4                      	 1000000	      1829 ns/op	     672 B/op	      44 allocs/op
+BenchmarkArgsToIFace/args_all_types-4                            	 2000000	       817 ns/op	     560 B/op	      31 allocs/op
+BenchmarkArgsToIFace/args_all_types-4                            	 2000000	       819 ns/op	     560 B/op	      31 allocs/op
+BenchmarkArgsToIFace/args_all_types-4                            	 2000000	       817 ns/op	     560 B/op	      31 allocs/op
+BenchmarkArgsToIFace/args_all_types-4                            	 2000000	       818 ns/op	     560 B/op	      31 allocs/op
+BenchmarkArgsToIFace/args_all_types-4                            	 2000000	       818 ns/op	     560 B/op	      31 allocs/op
+BenchmarkArgsToIFace/reflection_numbers-4                        	  500000	      2412 ns/op	     984 B/op	      78 allocs/op
+BenchmarkArgsToIFace/reflection_numbers-4                        	  500000	      2408 ns/op	     984 B/op	      78 allocs/op
+BenchmarkArgsToIFace/reflection_numbers-4                        	  500000	      2433 ns/op	     984 B/op	      78 allocs/op
+BenchmarkArgsToIFace/reflection_numbers-4                        	 1000000	      2407 ns/op	     984 B/op	      78 allocs/op
+BenchmarkArgsToIFace/reflection_numbers-4                        	 1000000	      2424 ns/op	     984 B/op	      78 allocs/op
+BenchmarkArgsToIFace/args_numbers-4                              	 2000000	       786 ns/op	     688 B/op	      44 allocs/op
+BenchmarkArgsToIFace/args_numbers-4                              	 2000000	       788 ns/op	     688 B/op	      44 allocs/op
+BenchmarkArgsToIFace/args_numbers-4                              	 2000000	       788 ns/op	     688 B/op	      44 allocs/op
+BenchmarkArgsToIFace/args_numbers-4                              	 2000000	       789 ns/op	     688 B/op	      44 allocs/op
+BenchmarkArgsToIFace/args_numbers-4                              	 2000000	       784 ns/op	     688 B/op	      44 allocs/op
 FAIL
 exit status 1
 FAIL	github.com/corestoreio/pkg/sql/dml	622.425s

@@ -373,12 +373,9 @@ func (arg argument) writeTo(w *bytes.Buffer, pos uint) (err error) {
 	return err
 }
 
-// MakeArgs creates a new argument slice with the desired capacity.
-func MakeArgs(cap int) *Artisan { return &Artisan{arguments: make(arguments, 0, cap)} }
-
 type arguments []argument
 
-func (as arguments) Clone() arguments {
+func (as arguments) clone() arguments {
 	if as == nil {
 		return nil
 	}
@@ -424,7 +421,7 @@ func (as arguments) totalSliceLen() (l int, containsAtLeastOneSlice bool) {
 }
 
 // Write writes all arguments into buf and separates by a comma.
-func (as arguments) Write(buf *bytes.Buffer) error {
+func (as arguments) write(buf *bytes.Buffer) error {
 	if len(as) > 1 {
 		buf.WriteByte('(')
 	}
@@ -442,10 +439,10 @@ func (as arguments) Write(buf *bytes.Buffer) error {
 	return nil
 }
 
-// Interfaces creates an interface slice with flatend values. Each type is one
+// toInterfaces creates an interface slice with flatend values. Each type is one
 // of the allowed types in driver.Value. It appends its values to the `args`
 // slice.
-func (as arguments) Interfaces(args ...interface{}) []interface{} {
+func (as arguments) toInterfaces(args ...interface{}) []interface{} {
 	if len(as) == 0 {
 		return args
 	}

@@ -43,11 +43,14 @@ func TestSelect_BasicToSQL(t *testing.T) {
 		)
 	})
 	t.Run("no table with placeholders Args as Records", func(t *testing.T) {
+		p := &dmlPerson{
+			Name: "a'bc",
+		}
 		sel := NewSelect().
 			AddColumnsConditions(
 				Expr("?").Alias("n").Int64(1),
-				Expr("CAST(:abc AS CHAR(20))").Alias("str"),
-			).WithArgs().Record("", MakeArgs(2).Name("abc").String("a'bc"))
+				Expr("CAST(:name AS CHAR(20))").Alias("str"),
+			).WithArgs().Record("", p)
 
 		compareToSQL(t, sel, errors.NoKind,
 			"SELECT 1 AS `n`, CAST(? AS CHAR(20)) AS `str`",
@@ -1311,6 +1314,9 @@ func TestSelect_SetRecord(t *testing.T) {
 		Name:  "Hans Wurst",
 		Email: null.MakeString("hans@wurst.com"),
 	}
+	p2 := &dmlPerson{
+		Dob: 1970,
+	}
 
 	t.Run("multiple args from record", func(t *testing.T) {
 		sel := NewSelect("a", "b").
@@ -1335,7 +1341,7 @@ func TestSelect_SetRecord(t *testing.T) {
 			).
 			OrderBy("l").
 			WithArgs().Record("dp", p).
-			Record("dg", MakeArgs(1).Name("dob").Int(1970)).
+			Record("dg", p2).
 			Name("dbSIZE").Uint(201801)
 
 		compareToSQL2(t, sel, errors.NoKind,

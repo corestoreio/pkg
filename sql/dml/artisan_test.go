@@ -32,7 +32,7 @@ func TestArguments_Interfaces(t *testing.T) {
 	container := make([]interface{}, 0, 48)
 
 	t.Run("no slices, nulls valid", func(t *testing.T) {
-		args := MakeArgs(10).
+		args := newArtisanArgs().
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
 			NullString(null.MakeString("eCom3")).NullInt64(null.MakeInt64(4)).NullFloat64(null.MakeFloat64(2.7)).
 			NullBool(null.MakeBool(true)).NullTime(null.MakeTime(now()))
@@ -42,11 +42,11 @@ func TestArguments_Interfaces(t *testing.T) {
 				nil, int64(-1), int64(1), int64(2), 3.1, true, "eCom1", []uint8{0x65, 0x43, 0x6f, 0x6d, 0x32}, now(),
 				"eCom3", int64(4), 2.7, true, now(),
 			},
-			args.Interfaces(container...))
+			args.toInterfaces(container...))
 		container = container[:0]
 	})
 	t.Run("no slices, nulls invalid", func(t *testing.T) {
-		args := MakeArgs(10).
+		args := newArtisanArgs().
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
 			NullString(null.String{}).NullInt64(null.Int64{}).NullFloat64(null.Float64{}).
 			NullBool(null.Bool{}).NullTime(null.Time{})
@@ -55,11 +55,11 @@ func TestArguments_Interfaces(t *testing.T) {
 				nil, int64(-1), int64(1), int64(2), 3.1, true, "eCom1", []uint8{0x65, 0x43, 0x6f, 0x6d, 0x32}, now(),
 				nil, nil, nil, nil, nil,
 			},
-			args.Interfaces(container...))
+			args.toInterfaces(container...))
 		container = container[:0]
 	})
 	t.Run("slices, nulls valid", func(t *testing.T) {
-		args := MakeArgs(10).
+		args := newArtisanArgs().
 			Null().Ints(-1, -2).Int64s(1, 2).Uints(568, 766).Uint64s(2).Float64s(1.2, 3.1).Bools(false, true).
 			Strings("eCom1", "eCom11").BytesSlice([]byte(`eCom2`)).Times(now(), now()).
 			NullStrings(null.MakeString("eCom3"), null.MakeString("eCom3")).NullInt64s(null.MakeInt64(4), null.MakeInt64(4)).
@@ -73,11 +73,11 @@ func TestArguments_Interfaces(t *testing.T) {
 				2.7, 2.7,
 				true, now(), now(),
 			},
-			args.Interfaces())
+			args.toInterfaces())
 	})
 	t.Run("returns nil interface", func(t *testing.T) {
-		args := MakeArgs(10)
-		assert.Nil(t, args.Interfaces(), "args.Interfaces() must return nil")
+		args := newArtisanArgs()
+		assert.Nil(t, args.toInterfaces(), "args.toInterfaces() must return nil")
 	})
 }
 
@@ -85,7 +85,7 @@ func TestArguments_DriverValue(t *testing.T) {
 	t.Parallel()
 
 	t.Run("Driver.Values supported types", func(t *testing.T) {
-		args := MakeArgs(10).
+		args := newArtisanArgs().
 			DriverValues(
 				driverValueNil(0),
 				driverValueBytes(nil), null.MakeInt64(3), null.MakeFloat64(2.7), null.MakeBool(true),
@@ -96,11 +96,11 @@ func TestArguments_DriverValue(t *testing.T) {
 				nil, []uint8(nil), int64(3), 2.7, true,
 				[]uint8{0x49, 0x6e, 0x76, 0x6f, 0x69, 0x63, 0x65}, "Creditmemo", "2006-01-02 19:04:05", now(),
 			},
-			args.Interfaces())
+			args.toInterfaces())
 	})
 
 	t.Run("Driver.Value supported types", func(t *testing.T) {
-		args := MakeArgs(10).
+		args := newArtisanArgs().
 			DriverValue(driverValueNil(0)).
 			DriverValue(driverValueBytes(nil)).
 			DriverValue(null.MakeInt64(3)).
@@ -116,11 +116,11 @@ func TestArguments_DriverValue(t *testing.T) {
 				nil, []uint8(nil), int64(3), 2.7, true,
 				[]uint8{0x49, 0x6e, 0x76, 0x6f, 0x69, 0x63, 0x65}, "Creditmemo", "2006-01-02 19:04:05", now(),
 			},
-			args.Interfaces())
+			args.toInterfaces())
 	})
 
 	t.Run("Driver.Values panics because not supported", func(t *testing.T) {
-		_, _, err := MakeArgs(10).
+		_, _, err := newArtisanArgs().
 			DriverValue(
 				driverValueNotSupported(4),
 			).ToSQL()
@@ -128,7 +128,7 @@ func TestArguments_DriverValue(t *testing.T) {
 	})
 
 	t.Run("Driver.Values panics because Value error", func(t *testing.T) {
-		_, _, err := MakeArgs(10).
+		_, _, err := newArtisanArgs().
 			DriverValue(
 				driverValueError(0),
 			).ToSQL()
@@ -140,82 +140,82 @@ func TestArguments_WriteTo(t *testing.T) {
 	t.Parallel()
 
 	t.Run("no slices, nulls valid", func(t *testing.T) {
-		args := MakeArgs(10).
+		args := newArtisanArgs().
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
 			NullString(null.MakeString("eCom3")).NullInt64(null.MakeInt64(4)).NullFloat64(null.MakeFloat64(2.7)).
 			NullBool(null.MakeBool(true)).NullTime(null.MakeTime(now()))
 
 		buf := new(bytes.Buffer)
-		err := args.Write(buf)
+		err := args.write(buf)
 		assert.NoError(t, err)
 		assert.Exactly(t,
 			"(NULL,-1,1,2,3.1,1,'eCom1','eCom2','2006-01-02 15:04:05','eCom3',4,2.7,1,'2006-01-02 15:04:05')",
 			buf.String())
 	})
 	t.Run("no slices, nulls invalid", func(t *testing.T) {
-		args := MakeArgs(10).
+		args := newArtisanArgs().
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
 			NullString(null.String{}).NullInt64(null.Int64{}).NullFloat64(null.Float64{}).
 			NullBool(null.Bool{}).NullTime(null.Time{})
 
 		buf := new(bytes.Buffer)
-		err := args.Write(buf)
+		err := args.write(buf)
 		assert.NoError(t, err)
 		assert.Exactly(t,
 			"(NULL,-1,1,2,3.1,1,'eCom1','eCom2','2006-01-02 15:04:05',NULL,NULL,NULL,NULL,NULL)",
 			buf.String())
 	})
 	t.Run("slices, nulls valid", func(t *testing.T) {
-		args := MakeArgs(10).
+		args := newArtisanArgs().
 			Null().Ints(-1, -2).Int64s(1, 2).Uint64s(2).Float64s(1.2, 3.1).Bools(false, true).Strings("eCom1", "eCom11").BytesSlice([]byte(`eCom2`)).Times(now(), now()).
 			NullStrings(null.MakeString("eCom3"), null.MakeString("eCom3")).NullInt64s(null.MakeInt64(4), null.MakeInt64(5)).NullFloat64s(null.MakeFloat64(2.71), null.MakeFloat64(2.72)).
 			NullBools(null.MakeBool(true)).NullTimes(null.MakeTime(now()), null.MakeTime(now()))
 
 		buf := new(bytes.Buffer)
-		err := args.Write(buf)
+		err := args.write(buf)
 		assert.NoError(t, err)
 		assert.Exactly(t,
 			"(NULL,(-1,-2),(1,2),(2),(1.2,3.1),(0,1),('eCom1','eCom11'),('eCom2'),('2006-01-02 15:04:05','2006-01-02 15:04:05'),('eCom3','eCom3'),(4,5),(2.71,2.72),(1),('2006-01-02 15:04:05','2006-01-02 15:04:05'))",
 			buf.String())
 	})
 	t.Run("non-utf8 string", func(t *testing.T) {
-		args := MakeArgs(2).String("\xc0\x80")
+		args := newArtisanArgs().String("\xc0\x80")
 		buf := new(bytes.Buffer)
-		err := args.Write(buf)
+		err := args.write(buf)
 		assert.Empty(t, buf.String(), "Buffer should be empty")
 		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
 	t.Run("non-utf8 strings", func(t *testing.T) {
-		args := MakeArgs(2).Strings("Go", "\xc0\x80")
+		args := newArtisanArgs().Strings("Go", "\xc0\x80")
 		buf := new(bytes.Buffer)
-		err := args.Write(buf)
+		err := args.write(buf)
 		assert.Exactly(t, `('Go',)`, buf.String())
 		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
 	t.Run("non-utf8 NullStrings", func(t *testing.T) {
-		args := MakeArgs(2).NullStrings(null.MakeString("Go2"), null.MakeString("Hello\xc0\x80World"))
+		args := newArtisanArgs().NullStrings(null.MakeString("Go2"), null.MakeString("Hello\xc0\x80World"))
 		buf := new(bytes.Buffer)
-		err := args.Write(buf)
+		err := args.write(buf)
 		assert.Exactly(t, "('Go2',)", buf.String())
 		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
 	t.Run("non-utf8 NullString", func(t *testing.T) {
-		args := MakeArgs(2).NullString(null.MakeString("Hello\xc0\x80World"))
+		args := newArtisanArgs().NullString(null.MakeString("Hello\xc0\x80World"))
 		buf := new(bytes.Buffer)
-		err := args.Write(buf)
+		err := args.write(buf)
 		assert.Empty(t, buf.String())
 		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
 	t.Run("bytes as binary", func(t *testing.T) {
-		args := MakeArgs(2).Bytes([]byte("\xc0\x80"))
+		args := newArtisanArgs().Bytes([]byte("\xc0\x80"))
 		buf := new(bytes.Buffer)
-		assert.NoError(t, args.Write(buf))
+		assert.NoError(t, args.write(buf))
 		assert.Exactly(t, "0xc080", buf.String())
 	})
 	t.Run("bytesSlice as binary", func(t *testing.T) {
-		args := MakeArgs(2).BytesSlice([]byte(`Rusty`), []byte("Go\xc0\x80"))
+		args := newArtisanArgs().BytesSlice([]byte(`Rusty`), []byte("Go\xc0\x80"))
 		buf := new(bytes.Buffer)
-		assert.NoError(t, args.Write(buf))
+		assert.NoError(t, args.write(buf))
 		assert.Exactly(t, "('Rusty',0x476fc080)", buf.String())
 	})
 	t.Run("should panic because unknown field type", func(t *testing.T) {
@@ -242,11 +242,15 @@ func TestArguments_HasNamedArgs(t *testing.T) {
 	t.Parallel()
 
 	t.Run("hasNamedArgs in expression", func(t *testing.T) {
+		p := &dmlPerson{
+			Name: "a'bc",
+		}
+
 		a := NewSelect().
 			AddColumnsConditions(
 				Expr("?").Alias("n").Int64(1),
-				Expr("CAST(:abc AS CHAR(20))").Alias("str"),
-			).WithArgs().Record("", MakeArgs(1).Name("abc").String("a'bc"))
+				Expr("CAST(:name AS CHAR(20))").Alias("str"),
+			).WithArgs().Record("", p)
 		_, _, err := a.ToSQL()
 		assert.NoError(t, err)
 		assert.Exactly(t, uint8(2), a.hasNamedArgs)
@@ -280,7 +284,7 @@ func TestArguments_HasNamedArgs(t *testing.T) {
 func TestArguments_MapColumns(t *testing.T) {
 	t.Parallel()
 
-	from := MakeArgs(3)
+	from := newArtisanArgs()
 
 	t.Run("len=1", func(t *testing.T) {
 		from = from.Reset().Int64(3).Float64(2.2).Name("colA").Strings("a", "b")
@@ -289,7 +293,7 @@ func TestArguments_MapColumns(t *testing.T) {
 			t.Fatal(err)
 		}
 		assert.Exactly(t, []interface{}{"a", "b"},
-			cm.arguments.Interfaces())
+			cm.arguments.toInterfaces())
 	})
 
 	t.Run("len=0", func(t *testing.T) {
@@ -299,7 +303,7 @@ func TestArguments_MapColumns(t *testing.T) {
 			t.Fatal(err)
 		}
 		assert.Exactly(t, []interface{}{int64(3), 2.200000, "a", "b"},
-			cm.arguments.Interfaces())
+			cm.arguments.toInterfaces())
 	})
 
 	t.Run("len>1", func(t *testing.T) {
@@ -310,7 +314,7 @@ func TestArguments_MapColumns(t *testing.T) {
 		}
 		assert.Exactly(t,
 			[]interface{}{"a", "b", 2.200000},
-			cm.arguments.Interfaces())
+			cm.arguments.toInterfaces())
 	})
 }
 
@@ -318,7 +322,7 @@ func TestArguments_NextUnnamedArg(t *testing.T) {
 	t.Parallel()
 
 	t.Run("three occurrences", func(t *testing.T) {
-		args := MakeArgs(5).Name("colZ").Int64(3).Uint64(6).Name("colB").Float64(2.2).String("c").Name("colA").Strings("a", "b")
+		args := newArtisanArgs().Name("colZ").Int64(3).Uint64(6).Name("colB").Float64(2.2).String("c").Name("colA").Strings("a", "b")
 
 		a, ok := args.nextUnnamedArg()
 		assert.True(t, ok, "Should find an unnamed argument")
@@ -352,7 +356,7 @@ func TestArguments_NextUnnamedArg(t *testing.T) {
 	})
 
 	t.Run("zero occurrences", func(t *testing.T) {
-		args := MakeArgs(5).Name("colZ").Int64(3).Name("colB").Float64(2.2).Name("colA").Strings("a", "b")
+		args := newArtisanArgs().Name("colZ").Int64(3).Name("colB").Float64(2.2).Name("colA").Strings("a", "b")
 
 		a, ok := args.nextUnnamedArg()
 		assert.False(t, ok, "Should NOT find an unnamed argument")

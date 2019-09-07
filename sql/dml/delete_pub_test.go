@@ -73,12 +73,9 @@ func TestDelete_Prepare(t *testing.T) {
 			{"a@b.c", 33, 1},
 			{"x@y.z", 44, 2},
 		}
-
-		args := dml.MakeArgs(3)
+		args := stmt.WithArgs()
 		for i, test := range tests {
-			args = args.Reset()
-
-			res, err := stmt.WithArgs().String(test.email).Int(test.groupID).ExecContext(context.TODO())
+			res, err := args.String(test.email).Int(test.groupID).ExecContext(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -87,6 +84,7 @@ func TestDelete_Prepare(t *testing.T) {
 				t.Fatalf("Result index %d with error: %s", i, err)
 			}
 			assert.Exactly(t, test.affRows, ra, "Index %d has different RowsAffected", i)
+			args.Reset()
 		}
 	})
 

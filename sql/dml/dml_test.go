@@ -72,6 +72,7 @@ type dmlPerson struct {
 	Name  string
 	Email null.String
 	Key   null.String
+	Dob   int
 }
 
 func (p *dmlPerson) AssignLastInsertID(id int64) {
@@ -81,7 +82,7 @@ func (p *dmlPerson) AssignLastInsertID(id int64) {
 // RowScan loads a single row from a SELECT statement returning only one row
 func (p *dmlPerson) MapColumns(cm *ColumnMap) error {
 	if cm.Mode() == ColumnMapEntityReadAll {
-		return cm.Uint64(&p.ID).String(&p.Name).NullString(&p.Email).NullString(&p.Key).Err()
+		return cm.Uint64(&p.ID).String(&p.Name).NullString(&p.Email).NullString(&p.Key).Int(&p.Dob).Err()
 	}
 	for cm.Next() {
 		c := cm.Column()
@@ -94,6 +95,8 @@ func (p *dmlPerson) MapColumns(cm *ColumnMap) error {
 			cm.NullString(&p.Email)
 		case "key":
 			cm.NullString(&p.Key)
+		case "dob":
+			cm.Int(&p.Dob)
 		case "store_id", "created_at", "total_income", "avg_income":
 			// noop don't trigger the default case
 		default:
@@ -231,7 +234,7 @@ func newNullTypedRecordWithData() *nullTypedRecord {
 		StringVal:  null.String{String: "wow", Valid: true},
 		Int64Val:   null.Int64{Int64: 42, Valid: true},
 		Float64Val: null.Float64{Float64: 1.618, Valid: true},
-		TimeVal:    null.Time{Time: time.Date(2009, 1, 3, 18, 15, 5, 0, time.UTC), Valid: true},
+		TimeVal:    null.MakeTime(time.Date(2009, 1, 3, 18, 15, 5, 0, time.UTC)),
 		BoolVal:    null.Bool{Bool: true, Valid: true},
 		DecimalVal: null.Decimal{Precision: 12345, Scale: 3, Valid: true},
 	}

@@ -15,6 +15,8 @@
 package dml
 
 import (
+	"bytes"
+	"encoding"
 	"fmt"
 	"testing"
 	"time"
@@ -25,6 +27,60 @@ import (
 )
 
 var _ fmt.Stringer = (*scannedColumn)(nil)
+
+var (
+	_ encoding.TextMarshaler     = (*textBinaryEncoder)(nil)
+	_ encoding.TextUnmarshaler   = (*textBinaryEncoder)(nil)
+	_ encoding.BinaryMarshaler   = (*textBinaryEncoder)(nil)
+	_ encoding.BinaryUnmarshaler = (*textBinaryEncoder)(nil)
+)
+
+type textBinaryEncoder struct {
+	data []byte
+}
+
+func (be textBinaryEncoder) MarshalBinary() (data []byte, err error) {
+	if bytes.Equal(be.data, []byte(`error`)) {
+		return nil, errors.DecryptionFailed.Newf("decryption failed test error")
+	}
+	return be.data, nil
+}
+
+func (be *textBinaryEncoder) UnmarshalBinary(data []byte) error {
+	if bytes.Equal(data, []byte(`error`)) {
+		return errors.Empty.Newf("test error empty")
+	}
+	be.data = append(be.data, data...)
+	return nil
+}
+
+func (be textBinaryEncoder) MarshalText() (text []byte, err error) {
+	if bytes.Equal(be.data, []byte(`error`)) {
+		return nil, errors.DecryptionFailed.Newf("internal validation failed test error")
+	}
+	return be.data, nil
+}
+
+func (be *textBinaryEncoder) UnmarshalText(text []byte) error {
+	if bytes.Equal(text, []byte(`error`)) {
+		return errors.Empty.Newf("test error empty")
+	}
+	be.data = append(be.data, text...)
+	return nil
+}
+
+func TestColumnMap_BinaryText(t *testing.T) {
+	cm := NewColumnMap(1)
+
+	assert.NoError(t, cm.Binary(&textBinaryEncoder{data: []byte(`BinaryTest`)}).Err())
+	assert.Exactly(t, []interface{}{[]byte{0x42, 0x69, 0x6e, 0x61, 0x72, 0x79, 0x54, 0x65, 0x73, 0x74}}, cm.toInterfaces())
+	assert.NoError(t, cm.Text(&textBinaryEncoder{data: []byte(`TextTest`)}).Err())
+	assert.Exactly(t, []interface{}{[]byte{0x42, 0x69, 0x6e, 0x61, 0x72, 0x79, 0x54, 0x65, 0x73, 0x74}, []byte{0x54, 0x65, 0x78, 0x74, 0x54, 0x65, 0x73, 0x74}}, cm.toInterfaces())
+
+	cm.CheckValidUTF8 = true
+	err := cm.Text(&textBinaryEncoder{data: []byte("\xc0\x80")}).Err()
+	assert.ErrorIsKind(t, errors.NotValid, err)
+}
 
 func TestColumnMap_Nil_Pointers(t *testing.T) {
 	t.Parallel()
@@ -50,7 +106,7 @@ func TestColumnMap_Nil_Pointers(t *testing.T) {
 		Uint8(nil)
 
 	assert.Exactly(t, []interface{}{nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil},
-		cm.arguments.Interfaces())
+		cm.arguments.toInterfaces())
 }
 
 func TestScannedColumn_String(t *testing.T) {

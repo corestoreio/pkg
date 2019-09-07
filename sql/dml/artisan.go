@@ -236,7 +236,7 @@ func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}
 	}
 
 	if a.isPrepared {
-		return "", collectedArgs.Interfaces(extArgs...), nil
+		return "", collectedArgs.toInterfaces(extArgs...), nil
 	}
 
 	// Make a copy of the original SQL statement because it gets modified in the
@@ -275,7 +275,7 @@ func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}
 		return sqlBuf.Second.String(), nil, nil
 	}
 
-	extArgs = collectedArgs.Interfaces(extArgs...)
+	extArgs = collectedArgs.toInterfaces(extArgs...)
 	return sqlBuf.First.String(), extArgs, nil
 }
 
@@ -396,7 +396,7 @@ func (a *Artisan) prepareArgsInsert(extArgs ...interface{}) (string, []interface
 
 	if a.isPrepared {
 		// TODO above construct can be more optimized when using prepared statements
-		return "", cm.arguments.Interfaces(extArgs...), nil
+		return "", cm.arguments.toInterfaces(extArgs...), nil
 	}
 
 	extArgs = append(extArgs, a.raw...)
@@ -439,7 +439,7 @@ func (a *Artisan) prepareArgsInsert(extArgs ...interface{}) (string, []interface
 			return sqlBuf.Second.String(), nil, nil
 		}
 	}
-	return a.insertCachedSQL, cm.arguments.Interfaces(extArgs...), nil
+	return a.insertCachedSQL, cm.arguments.toInterfaces(extArgs...), nil
 }
 
 // nextUnnamedArg returns an unnamed argument by its position.

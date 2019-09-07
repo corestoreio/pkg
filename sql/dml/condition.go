@@ -90,7 +90,7 @@ func (o Op) write(w *bytes.Buffer, args arguments) (err error) {
 		_, err = w.WriteString(" IS NOT NULL")
 	case In, NotIn:
 		w.WriteString(" IN ")
-		err = args.Write(w)
+		err = args.write(w)
 	case Like, NotLike:
 		w.WriteString(" LIKE ")
 		err = arg.writeTo(w, 0)
@@ -113,19 +113,19 @@ func (o Op) write(w *bytes.Buffer, args arguments) (err error) {
 		}
 	case Greatest:
 		w.WriteString(" GREATEST ")
-		err = args.Write(w)
+		err = args.write(w)
 	case Least:
 		w.WriteString(" LEAST ")
-		err = args.Write(w)
+		err = args.write(w)
 	case Coalesce:
 		w.WriteString(" COALESCE ")
-		err = args.Write(w)
+		err = args.write(w)
 	case Xor:
 		w.WriteString(" XOR ")
 		err = arg.writeTo(w, 0)
 	case Exists, NotExists:
 		w.WriteString(" EXISTS ")
-		err = args.Write(w)
+		err = args.write(w)
 	case Less:
 		w.WriteString(" < ")
 		err = arg.writeTo(w, 0)
@@ -273,7 +273,7 @@ func (c *Condition) Clone() *Condition {
 	}
 	c2 := *c
 	c2.previousErr = nil
-	c2.Right.args = c.Right.args.Clone()
+	c2.Right.args = c.Right.args.clone()
 	c2.Right.Sub = c.Right.Sub.Clone()
 	c2.Columns = cloneStringSlice(c.Columns)
 	return &c2
