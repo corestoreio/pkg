@@ -145,7 +145,7 @@ func TestForeignKeyName(t *testing.T) {
 
 func TestAlias(t *testing.T) {
 	t.Parallel()
-	var testData = map[string]string{
+	testData := map[string]string{
 		"passwords":                              "pa",
 		"p":                                      "p",
 		"admin_passwords":                        "adpa",
@@ -177,6 +177,6 @@ func TestAlias(t *testing.T) {
 	}
 
 	for have, want := range testData {
-		assert.Exactly(t, want, ddl.Shorten(have), "Input: %q", have)
+		assert.Exactly(t, want, ddl.ShortAlias(have), "Input: %q", have)
 	}
 }

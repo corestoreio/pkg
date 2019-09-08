@@ -56,7 +56,7 @@ func TestShowMasterStatus(t *testing.T) {
 	dbc, dbMock := dmltest.MockDB(t)
 	defer dmltest.MockClose(t, dbc, dbMock)
 
-	var mockedRows = sqlmock.NewRows([]string{"File", "Position", "Binlog_Do_DB", "Binlog_Ignore_DB", "Executed_Gtid_Set"}).
+	mockedRows := sqlmock.NewRows([]string{"File", "Position", "Binlog_Do_DB", "Binlog_Ignore_DB", "Executed_Gtid_Set"}).
 		FromCSVString("mysql-bin.000001,3581378,test,mysql,123-456-789")
 
 	dbMock.ExpectQuery("SHOW MASTER STATUS").WillReturnRows(mockedRows)
@@ -85,7 +85,7 @@ func TestMasterStatus_FromString(t *testing.T) {
 		{"mysql-bin.000004", "", 0, errors.NotFound, ""},
 	}
 	for i, test := range tests {
-		var haveMS = &ddl.MasterStatus{}
+		haveMS := &ddl.MasterStatus{}
 		haveErr := haveMS.FromString(test.in)
 		if !test.wantErrKind.Empty() {
 			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d: %+v", i, haveErr)
@@ -104,7 +104,7 @@ func TestMasterStatus_FromString(t *testing.T) {
 func TestMasterStatus_WriteTo(t *testing.T) {
 	t.Parallel()
 
-	var ms = &ddl.MasterStatus{}
+	ms := &ddl.MasterStatus{}
 	err := ms.FromString("mysql-bin.000004;545460")
 	assert.NoError(t, err)
 	var buf bytes.Buffer

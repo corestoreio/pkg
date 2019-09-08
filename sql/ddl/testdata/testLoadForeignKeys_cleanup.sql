@@ -18,4 +18,8 @@ DROP TABLE IF EXISTS `store_website`;
 DROP TABLE IF EXISTS `catalog_category_entity`;
 DROP TABLE IF EXISTS `sequence_catalog_category`;
 
+DROP TABLE IF EXISTS `athlete_team_member`;
+DROP TABLE IF EXISTS `athlete_team`;
+DROP TABLE IF EXISTS `athlete`;
+
 SET foreign_key_checks = 1;

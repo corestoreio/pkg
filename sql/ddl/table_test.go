@@ -293,7 +293,6 @@ func TestTable_LoadDataInfile(t *testing.T) {
 }
 
 func TestTable_Artisan_Methods(t *testing.T) {
-
 	dbc, dbMock := dmltest.MockDB(t)
 	defer dmltest.MockClose(t, dbc, dbMock)
 	assert.NoError(t, tableMap.Options(ddl.WithDB(dbc.DB)), "Cant set sql.DB on tableMap")

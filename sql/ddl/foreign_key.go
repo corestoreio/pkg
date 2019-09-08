@@ -358,7 +358,7 @@ func (krs KeyRelationShips) IsOneToMany(referencedTable, referencedColumn, mainT
 
 // ManyToManyTarget figures out if a table has M:N relationships and returns the
 // target table and its column or empty strings if not found.
-func (krs KeyRelationShips) ManyToManyTarget(referencedTable, referencedColumn, mainTable, mainColumn string) (table string, column string) {
+func (krs KeyRelationShips) ManyToManyTarget(mainTable, mainColumn, referencedTable, referencedColumn string) (table string, column string) {
 	if krs.relMap[mainTable].hasManyToMany() {
 		targetRefs := krs.relMap[mainTable]
 		if targetRefs[0].column == mainColumn {

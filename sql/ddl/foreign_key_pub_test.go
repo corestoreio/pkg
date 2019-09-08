@@ -85,8 +85,8 @@ func TestLoadForeignKeys_Integration(t *testing.T) {
 func TestLoadKeyRelationships(t *testing.T) {
 	dbc := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, dbc)
-	// defer dmltest.SQLDumpLoad(t, "testdata/testLoadForeignKeys*.sql", nil).Deferred()
-	dmltest.SQLDumpLoad(t, "testdata/testLoadForeignKeys*.sql", nil)
+	defer dmltest.SQLDumpLoad(t, "testdata/testLoadForeignKeys*.sql", nil).Deferred()
+	// dmltest.SQLDumpLoad(t, "testdata/testLoadForeignKeys*.sql", nil)
 
 	ctx := context.Background()
 
@@ -99,11 +99,11 @@ func TestLoadKeyRelationships(t *testing.T) {
 	var buf bytes.Buffer
 	krs.Debug(&buf)
 	t.Log("\n", buf.String())
-	assert.LenBetween(t, buf.String(), 100, 2000)
+	assert.LenBetween(t, buf.String(), 100, 2300)
 
 	t.Run("ManyToMany", func(t *testing.T) {
 		targetTable, targetColumn := krs.ManyToManyTarget("athlete_team_member", "team_id", "athlete_team", "team_id")
-		assert.Exactly(t, "athlete", targetTable)
+		assert.Exactly(t, "athlete", targetTable, "targetTable.targetColumn: %q.%q", targetTable, targetColumn)
 		assert.Exactly(t, "athlete_id", targetColumn)
 		targetTable, targetColumn = krs.ManyToManyTarget("athlete_team_member", "athlete_id", "athlete", "athlete_id")
 		assert.Exactly(t, "athlete_team", targetTable)

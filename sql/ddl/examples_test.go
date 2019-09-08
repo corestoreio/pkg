@@ -15,5 +15,4 @@
 package ddl_test
 
 func ExampleMasterStatus_MapColumns() {
-
 }

@@ -60,12 +60,12 @@ func cleanIdentifier(upper bool, name []byte) string {
 	return string(bytes.Map(fn, name))
 }
 
-// Shorten creates a short alias name from a table name using the first two
+// ShortAlias creates a short alias name from a table name using the first two
 // characters.
 //		catalog_category_entity_datetime => cacaenda
 //		catalog_category_entity_decimal => cacaende
-func Shorten(tableName string) string {
-	var buf = new(bytes.Buffer)
+func ShortAlias(tableName string) string {
+	var buf strings.Builder
 	next := 2
 	for i, s := range tableName {
 		if i < 2 || next < 2 {
@@ -90,7 +90,7 @@ func TableName(prefix, name string, suffixes ...string) string {
 	}
 
 	var cBuf [dml.MaxIdentifierLength]byte
-	var buf = cBuf[:0]
+	buf := cBuf[:0]
 	if !strings.HasPrefix(name, prefix) {
 		buf = append(buf, prefix...)
 	}
@@ -107,7 +107,7 @@ func TableName(prefix, name string, suffixes ...string) string {
 // it falls back to `index`. The returned string represents a valid identifier
 // within MySQL.
 func IndexName(indexType, tableName string, fields ...string) string {
-	var prefix = "IDX_"
+	prefix := "IDX_"
 	switch indexType {
 	case "unique":
 		prefix = "UNQ_"
@@ -116,7 +116,7 @@ func IndexName(indexType, tableName string, fields ...string) string {
 	}
 
 	var cBuf [dml.MaxIdentifierLength]byte
-	var buf = cBuf[:0]
+	buf := cBuf[:0]
 	buf = append(buf, tableName...)
 	for i, f := range fields {
 		if i == 0 {
@@ -136,7 +136,7 @@ func IndexName(indexType, tableName string, fields ...string) string {
 // `delete`
 func TriggerName(tableName, time, event string) string {
 	var cBuf [dml.MaxIdentifierLength]byte
-	var buf = cBuf[:0]
+	buf := cBuf[:0]
 	buf = append(buf, tableName...)
 	buf = append(buf, '_')
 	buf = append(buf, time...)
@@ -149,7 +149,7 @@ func TriggerName(tableName, time, event string) string {
 // a valid identifier within MySQL.
 func ForeignKeyName(priTableName, priColumnName, refTableName, refColumnName string) string {
 	var cBuf [dml.MaxIdentifierLength]byte
-	var buf = cBuf[:0]
+	buf := cBuf[:0]
 	buf = append(buf, priTableName...)
 	buf = append(buf, '_')
 	buf = append(buf, priColumnName...)

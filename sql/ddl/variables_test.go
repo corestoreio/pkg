@@ -64,7 +64,7 @@ func TestNewVariables_Mock(t *testing.T) {
 	defer dmltest.MockClose(t, dbc, dbMock)
 
 	t.Run("one with LIKE", func(t *testing.T) {
-		var mockedRows = sqlmock.NewRows([]string{"Variable_name", "Value"}).
+		mockedRows := sqlmock.NewRows([]string{"Variable_name", "Value"}).
 			FromCSVString("keyVal11,helloAustralia")
 
 		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SHOW VARIABLES WHERE (`Variable_name` LIKE 'keyVal11')")).
@@ -82,7 +82,7 @@ func TestNewVariables_Mock(t *testing.T) {
 	})
 
 	t.Run("many with WHERE", func(t *testing.T) {
-		var mockedRows = sqlmock.NewRows([]string{"Variable_name", "Value"}).
+		mockedRows := sqlmock.NewRows([]string{"Variable_name", "Value"}).
 			FromCSVString("keyVal11,helloAustralia\nkeyVal22,helloNewZealand")
 
 		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SHOW VARIABLES WHERE (`Variable_name` IN ('keyVal11','keyVal22'))")).
@@ -217,5 +217,4 @@ func TestVariables_Types(t *testing.T) {
 		assert.False(t, ok)
 		assert.Exactly(t, uint64(0), val)
 	})
-
 }

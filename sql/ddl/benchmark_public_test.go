@@ -178,7 +178,6 @@ func BenchmarkLoadColumns(b *testing.B) {
 // BenchmarkVariables-4   	    2000	   1027245 ns/op	   22417 B/op	     935 allocs/op <= pre alloc slice
 // BenchmarkVariables-4   	    2000	   1008059 ns/op	   19506 B/op	     750 allocs/op
 func BenchmarkVariables(b *testing.B) {
-
 	ctx := context.TODO()
 
 	db := dmltest.MustConnectDB(b)
