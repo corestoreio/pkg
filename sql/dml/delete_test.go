@@ -89,7 +89,7 @@ func TestDelete_Interpolate(t *testing.T) {
 			Column("colA").GreaterOrEqual().Float64(3.14159),
 			Column("colB").In().NamedArg("colB2"),
 		).
-		Limit(10).OrderBy("id").WithArgs().Name("colB2").Int64s(3, 4, 7, 8).Interpolate(), errors.NoKind,
+		Limit(10).OrderBy("id").WithArgs().NamedArg("colB2", []int64{3, 4, 7, 8}).Interpolate(), errors.NoKind,
 		"DELETE FROM `tableA` WHERE (`colA` >= 3.14159) AND (`colB` IN (3,4,7,8)) ORDER BY `id` LIMIT 10",
 	)
 }

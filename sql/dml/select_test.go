@@ -16,6 +16,7 @@ package dml
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 
 	"github.com/corestoreio/errors"
@@ -1287,7 +1288,7 @@ func TestSelect_NamedArguments(t *testing.T) {
 			Column("value").Like().PlaceHolder(),
 		)
 
-	selArgs := sel.WithArgs().Name("configID").Int(3).String("GopherValue")
+	selArgs := sel.WithArgs().NamedArg("configID", 3).String("GopherValue")
 
 	t.Run("With ID 3", func(t *testing.T) {
 		compareToSQL2(t, selArgs, errors.NoKind,
@@ -1298,7 +1299,7 @@ func TestSelect_NamedArguments(t *testing.T) {
 	})
 	t.Run("With ID 6", func(t *testing.T) {
 		// Here positions are switched
-		selArgs.Reset().String("G0pherValue").Name("configID").Int(6)
+		selArgs.Reset().String("G0pherValue").NamedArgs(sql.Named("configID", 6))
 		compareToSQL2(t, selArgs, errors.NoKind,
 			"SELECT `config_id`, `value` FROM `core_config_data` WHERE (`config_id1` < ?) AND (`config_id2` > ?) AND (`scope_id` > 5) AND (`value` LIKE ?)",
 			int64(6), int64(6), "G0pherValue",
@@ -1342,7 +1343,7 @@ func TestSelect_SetRecord(t *testing.T) {
 			OrderBy("l").
 			WithArgs().Record("dp", p).
 			Record("dg", p2).
-			Name("dbSIZE").Uint(201801)
+			NamedArg("dbSIZE", uint(201801))
 
 		compareToSQL2(t, sel, errors.NoKind,
 			"SELECT `a`, `b` FROM `dml_person` AS `dp` INNER JOIN `dml_group` AS `dg` ON (`dp`.`id` = ?) WHERE (`dg`.`dob` > ?) AND (`dg`.`size` < ?) AND (`age` < 56) AND ((`dp`.`name` = ?) OR (`e` = 'wat')) AND (`f` <= 2) AND (`g` > 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING (`dp`.`email` = ?) AND (`n` = 'wh3r3') ORDER BY `l`",

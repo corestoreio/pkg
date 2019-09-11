@@ -16,6 +16,7 @@ package dml
 
 import (
 	"bytes"
+	"database/sql"
 	"database/sql/driver"
 	"math"
 	"strconv"
@@ -61,9 +62,6 @@ type argument struct {
 	// isSet indicates if an argument is really set, because `argument` gets
 	// used as an embedded non-pointer type in type Condition.
 	isSet bool
-	// name for named place holders sql.NamedArg. Write a converter to and from
-	// sql.NamedArg
-	name  string
 	value interface{}
 }
 
@@ -126,16 +124,20 @@ func (arg *argument) sliceLen() (l int, isSlice bool) {
 }
 
 // writeTo mainly used in interpolate function
-func (arg argument) writeTo(w *bytes.Buffer, pos uint) (err error) {
+func (arg argument) writeTo(w *bytes.Buffer, pos uint) error {
 	if !arg.isSet {
 		return nil
 	}
+	return writeIFaceValue(arg.value, w, pos)
+}
+
+func writeIFaceValue(arg interface{}, w *bytes.Buffer, pos uint) (err error) {
 	var requestPos bool
 	if pos > 0 {
 		requestPos = true
 		pos-- // because we cannot use zero as index 0 when calling writeTo somewhere
 	}
-	switch v := arg.value.(type) {
+	switch v := arg.(type) {
 	case int:
 		err = writeInt64(w, int64(v))
 	case []int:
@@ -366,9 +368,10 @@ func (arg argument) writeTo(w *bytes.Buffer, pos uint) (err error) {
 		}
 	case nil:
 		_, err = w.WriteString(sqlStrNullUC)
-
+	case sql.NamedArg:
+		return writeIFaceValue(v.Value, w, pos)
 	default:
-		panic(errors.NotSupported.Newf("[dml] Unsupported field type: %T => %#v", arg.value, arg.value))
+		panic(errors.NotSupported.Newf("[dml] Unsupported field type: %T => %#v", arg, arg))
 	}
 	return err
 }
@@ -451,196 +454,192 @@ func (as arguments) toInterfaces(args ...interface{}) []interface{} {
 	}
 
 	for _, arg := range as {
-		switch vv := arg.value.(type) {
+		args = flattenIFace(args, arg.value)
+	}
+	return args
+}
 
-		case bool, string, []byte, time.Time, float64, int64, nil:
-			args = append(args, arg.value)
+func flattenIFace(args []interface{}, arg interface{}) []interface{} {
+	switch vv := arg.(type) {
 
-		case int:
-			args = append(args, int64(vv))
-		case []int:
-			for _, v := range vv {
-				args = append(args, int64(v))
-			}
-		case int8:
-			args = append(args, int64(vv))
-		case []int8:
-			for _, v := range vv {
-				args = append(args, int64(v))
-			}
-		case int16:
-			args = append(args, int64(vv))
-		case []int16:
-			for _, v := range vv {
-				args = append(args, int64(v))
-			}
-		case int32:
-			args = append(args, int64(vv))
-		case []int32:
-			for _, v := range vv {
-				args = append(args, int64(v))
-			}
+	case bool, string, []byte, time.Time, float64, int64, nil:
+		args = append(args, arg)
 
-		case []int64:
-			for _, v := range vv {
-				args = append(args, v)
-			}
-		case null.Int8:
-			args = vv.Append(args)
-		case []null.Int8:
-			for _, v := range vv {
-				args = v.Append(args)
-			}
-		case null.Int16:
-			args = vv.Append(args)
-		case []null.Int16:
-			for _, v := range vv {
-				args = v.Append(args)
-			}
-		case null.Int32:
-			args = vv.Append(args)
-		case []null.Int32:
-			for _, v := range vv {
-				args = v.Append(args)
-			}
-		case null.Int64:
-			args = vv.Append(args)
-		case []null.Int64:
-			for _, v := range vv {
-				args = v.Append(args)
-			}
-
-			// Get send as text in a byte slice. The MySQL/MariaDB Server type
-			// casts it into a bigint. If you change this, a test will fail.
-		case uint64:
-			if vv > math.MaxInt64 {
-				args = append(args, strconv.AppendUint([]byte{}, vv, 10))
-			} else {
-				args = append(args, int64(vv))
-			}
-		case null.Uint8:
-			args = vv.Append(args)
-		case []null.Uint8:
-			for _, v := range vv {
-				args = v.Append(args)
-			}
-		case null.Uint16:
-			args = vv.Append(args)
-		case []null.Uint16:
-			for _, v := range vv {
-				args = v.Append(args)
-			}
-		case null.Uint32:
-			args = vv.Append(args) // TODO check all uints for overflow of MaxInt64
-		case []null.Uint32:
-			for _, v := range vv {
-				args = v.Append(args)
-			}
-		case null.Uint64:
-			args = vv.Append(args)
-		case []null.Uint64:
-			for _, v := range vv {
-				args = v.Append(args)
-			}
-
-		case uint:
-			if vv > math.MaxInt64 {
-				args = append(args, strconv.AppendUint([]byte{}, uint64(vv), 10))
-			} else {
-				args = append(args, int64(vv))
-			}
-
-		case uint8:
-			args = append(args, int64(vv))
-		case uint16:
-			args = append(args, int64(vv))
-		case uint32:
-			args = append(args, int64(vv))
-
-		case []uint64:
-			for _, v := range vv {
-				if v > math.MaxInt64 {
-					args = append(args, strconv.AppendUint([]byte{}, v, 10))
-				} else {
-					args = append(args, int64(v))
-				}
-			}
-		case []uint:
-			for _, v := range vv {
-				if v > math.MaxInt64 {
-					args = append(args, strconv.AppendUint([]byte{}, uint64(v), 10))
-				} else {
-					args = append(args, int64(v))
-				}
-			}
-
-		case []float64:
-			for _, v := range vv {
-				args = append(args, v)
-			}
-		case null.Float64:
-			args = vv.Append(args)
-		case []null.Float64:
-			for _, v := range vv {
-				args = v.Append(args)
-			}
-
-		case []bool:
-			for _, v := range vv {
-				args = append(args, v)
-			}
-		case null.Bool:
-			args = vv.Append(args)
-		case []null.Bool:
-			for _, v := range vv {
-				args = v.Append(args)
-			}
-
-		case []string:
-			for _, v := range vv {
-				args = append(args, v)
-			}
-		case null.String:
-			args = vv.Append(args)
-		case []null.String:
-			for _, v := range vv {
-				args = v.Append(args)
-			}
-
-		case [][]byte:
-			for _, v := range vv {
-				args = append(args, v)
-			}
-
-		case []time.Time:
-			for _, v := range vv {
-				args = append(args, v)
-			}
-		case null.Time:
-			args = vv.Append(args)
-		case []null.Time:
-			for _, v := range vv {
-				args = v.Append(args)
-			}
-		default:
-			panic(errors.NotSupported.Newf("[dml] Unsupported field type: %T", arg.value))
+	case int:
+		args = append(args, int64(vv))
+	case []int:
+		for _, v := range vv {
+			args = append(args, int64(v))
 		}
+	case int8:
+		args = append(args, int64(vv))
+	case []int8:
+		for _, v := range vv {
+			args = append(args, int64(v))
+		}
+	case int16:
+		args = append(args, int64(vv))
+	case []int16:
+		for _, v := range vv {
+			args = append(args, int64(v))
+		}
+	case int32:
+		args = append(args, int64(vv))
+	case []int32:
+		for _, v := range vv {
+			args = append(args, int64(v))
+		}
+
+	case []int64:
+		for _, v := range vv {
+			args = append(args, v)
+		}
+	case null.Int8:
+		args = vv.Append(args)
+	case []null.Int8:
+		for _, v := range vv {
+			args = v.Append(args)
+		}
+	case null.Int16:
+		args = vv.Append(args)
+	case []null.Int16:
+		for _, v := range vv {
+			args = v.Append(args)
+		}
+	case null.Int32:
+		args = vv.Append(args)
+	case []null.Int32:
+		for _, v := range vv {
+			args = v.Append(args)
+		}
+	case null.Int64:
+		args = vv.Append(args)
+	case []null.Int64:
+		for _, v := range vv {
+			args = v.Append(args)
+		}
+
+		// Get send as text in a byte slice. The MySQL/MariaDB Server type
+		// casts it into a bigint. If you change this, a test will fail.
+	case uint64:
+		if vv > math.MaxInt64 {
+			args = append(args, strconv.AppendUint([]byte{}, vv, 10))
+		} else {
+			args = append(args, int64(vv))
+		}
+	case null.Uint8:
+		args = vv.Append(args)
+	case []null.Uint8:
+		for _, v := range vv {
+			args = v.Append(args)
+		}
+	case null.Uint16:
+		args = vv.Append(args)
+	case []null.Uint16:
+		for _, v := range vv {
+			args = v.Append(args)
+		}
+	case null.Uint32:
+		args = vv.Append(args) // TODO check all uints for overflow of MaxInt64
+	case []null.Uint32:
+		for _, v := range vv {
+			args = v.Append(args)
+		}
+	case null.Uint64:
+		args = vv.Append(args)
+	case []null.Uint64:
+		for _, v := range vv {
+			args = v.Append(args)
+		}
+
+	case uint:
+		if vv > math.MaxInt64 {
+			args = append(args, strconv.AppendUint([]byte{}, uint64(vv), 10))
+		} else {
+			args = append(args, int64(vv))
+		}
+
+	case uint8:
+		args = append(args, int64(vv))
+	case uint16:
+		args = append(args, int64(vv))
+	case uint32:
+		args = append(args, int64(vv))
+
+	case []uint64:
+		for _, v := range vv {
+			if v > math.MaxInt64 {
+				args = append(args, strconv.AppendUint([]byte{}, v, 10))
+			} else {
+				args = append(args, int64(v))
+			}
+		}
+	case []uint:
+		for _, v := range vv {
+			if v > math.MaxInt64 {
+				args = append(args, strconv.AppendUint([]byte{}, uint64(v), 10))
+			} else {
+				args = append(args, int64(v))
+			}
+		}
+
+	case []float64:
+		for _, v := range vv {
+			args = append(args, v)
+		}
+	case null.Float64:
+		args = vv.Append(args)
+	case []null.Float64:
+		for _, v := range vv {
+			args = v.Append(args)
+		}
+
+	case []bool:
+		for _, v := range vv {
+			args = append(args, v)
+		}
+	case null.Bool:
+		args = vv.Append(args)
+	case []null.Bool:
+		for _, v := range vv {
+			args = v.Append(args)
+		}
+
+	case []string:
+		for _, v := range vv {
+			args = append(args, v)
+		}
+	case null.String:
+		args = vv.Append(args)
+	case []null.String:
+		for _, v := range vv {
+			args = v.Append(args)
+		}
+
+	case [][]byte:
+		for _, v := range vv {
+			args = append(args, v)
+		}
+
+	case []time.Time:
+		for _, v := range vv {
+			args = append(args, v)
+		}
+	case null.Time:
+		args = vv.Append(args)
+	case []null.Time:
+		for _, v := range vv {
+			args = v.Append(args)
+		}
+	case sql.NamedArg:
+		args = flattenIFace(args, vv.Value)
+	default:
+		panic(errors.NotSupported.Newf("[dml] Unsupported field type: %T", arg))
 	}
 	return args
 }
 
 func (as arguments) add(v interface{}) arguments {
-	if l := len(as); l > 0 {
-		// look back if there might be a name.
-		if arg := as[l-1]; !arg.isSet {
-			// The previous call Name() has set the name and now we set the
-			// value, but don't append a new entry.
-			arg.isSet = true
-			arg.value = v
-			as[l-1] = arg
-			return as
-		}
-	}
 	return append(as, argument{isSet: true, value: v})
 }
 

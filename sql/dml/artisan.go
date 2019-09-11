@@ -217,7 +217,7 @@ func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}
 			a.hasNamedArgs = 2
 		case !found && len(a.recs) == 0 && la > 0:
 			for _, arg := range a.arguments {
-				if arg.name != "" {
+				if sn, ok := arg.value.(sql.NamedArg); ok && sn.Name != "" {
 					a.hasNamedArgs = 2
 					break
 				}
@@ -447,10 +447,10 @@ func (a *Artisan) nextUnnamedArg() (argument, bool) {
 	var unnamedCounter int
 	lenArg := len(a.arguments)
 	for i := 0; i < lenArg && a.nextUnnamedArgPos >= 0; i++ {
-		if arg := a.arguments[i]; arg.name == "" {
+		if _, ok := a.arguments[i].value.(sql.NamedArg); !ok {
 			if unnamedCounter == a.nextUnnamedArgPos {
 				a.nextUnnamedArgPos++
-				return arg, true
+				return a.arguments[i], true
 			}
 			unnamedCounter++
 		}
@@ -474,9 +474,11 @@ func (a *Artisan) MapColumns(cm *ColumnMap) error {
 		c := cm.Column()
 		for _, arg := range a.arguments {
 			// Case sensitive comparison
-			if c != "" && arg.name == c {
-				cm.arguments = append(cm.arguments, arg)
-				break
+			if c != "" {
+				if sn, ok := arg.value.(sql.NamedArg); ok && sn.Name == c {
+					cm.arguments = append(cm.arguments, arg)
+					break
+				}
 			}
 		}
 	}
@@ -531,13 +533,19 @@ func (a *Artisan) NullBools(nv ...null.Bool) *Artisan       { return a.add(nv) }
 func (a *Artisan) NullTime(nv null.Time) *Artisan           { return a.add(nv) }
 func (a *Artisan) NullTimes(nv ...null.Time) *Artisan       { return a.add(nv) }
 
-// Name sets the name for the following argument. Calling Name two times after
-// each other sets the first call to Name to a NULL value. A call to Name should
-// always follow a call to a function type like Int, Float64s or null.Time.
-// Name may contain the placeholder prefix colon.
-func (a *Artisan) Name(n string) *Artisan {
-	// TODO remove completely and use sql.NamedArg
-	a.arguments = append(a.arguments, argument{name: n})
+// NamedArg converts to sql.NamedArg and as go-sql-driver/mysql does not (yet)
+// support named args, they get resolved, converted to question mark place
+// holders.
+func (a *Artisan) NamedArg(name string, value interface{}) *Artisan {
+	a.arguments = append(a.arguments, argument{isSet: true, value: sql.Named(name, value)})
+	return a
+}
+
+// NamedArgs appends multiple
+func (a *Artisan) NamedArgs(sns ...sql.NamedArg) *Artisan {
+	for _, sn := range sns {
+		a.arguments = append(a.arguments, argument{isSet: true, value: sn})
+	}
 	return a
 }
 

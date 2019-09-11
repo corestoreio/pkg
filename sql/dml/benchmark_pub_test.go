@@ -277,10 +277,10 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 
 			sel.EstimatedCachedSQLSize = 8192
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithArgs().Interpolate().Name("EntityTypeId").Int64(4).
-				Name("EntityId").Int64s(entityIDs...).
-				Name("AttributeId").Int64s(174, 175).
-				Name("StoreId").Int(0).ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithArgs().Interpolate().NamedArg("EntityTypeId", int64(4)).
+				NamedArg("EntityId", entityIDs).
+				NamedArg("AttributeId", []int64{174, 175}).
+				NamedArg("StoreId", 0).ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}

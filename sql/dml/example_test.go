@@ -195,7 +195,7 @@ func ExampleInsert_FromSelect_withPlaceHolders() {
 			).
 			OrderByDesc("id").
 			Paginate(1, 20),
-	).WithArgs().Int64(4).Name("i64BIn").Int64s(9, 8, 7)
+	).WithArgs().Int64(4).NamedArg("i64BIn", []int64{9, 8, 7})
 	writeToSQLAndInterpolate(ins)
 	// Output:
 	// Prepared Statement:

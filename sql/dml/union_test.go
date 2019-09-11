@@ -394,7 +394,7 @@ func TestUnionTemplate_ReuseArgs(t *testing.T) {
 		"ORDER BY `_preserve_result_set`, `attribute_id`, `store_id`"
 
 	t.Run("run1", func(t *testing.T) {
-		compareToSQL(t, u.WithArgs().Name("storeID").Int64s(4, 6).Name("entityID").Int(5), errors.NoKind,
+		compareToSQL(t, u.WithArgs().NamedArg("storeID", []int64{4, 6}).NamedArg("entityID", 5), errors.NoKind,
 			wantSQLPH,
 			"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 5) AND (`store_id` IN (4,6)))\n"+
 				"UNION ALL\n"+
@@ -416,7 +416,7 @@ func TestUnionTemplate_ReuseArgs(t *testing.T) {
 	})
 
 	t.Run("with interpolate", func(t *testing.T) {
-		compareToSQL(t, u.WithArgs().Name("entityID").Int(4).Name("storeID").Int64s(8, 11), errors.NoKind,
+		compareToSQL(t, u.WithArgs().NamedArg("entityID", 4).NamedArg("storeID", []int64{8, 11}), errors.NoKind,
 			wantSQLPH,
 			"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 4) AND (`store_id` IN (8,11)))\n"+
 				"UNION ALL\n"+

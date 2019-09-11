@@ -330,6 +330,38 @@ func TestSelect_Prepare(t *testing.T) {
 		})
 	})
 
+	t.Run("Records in final args", func(t *testing.T) {
+		t.Skip("TODO implement Query(ctx,dml.Qualify)")
+
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `name`, `email` FROM `dml_person` WHERE (`id` = ?) AND (`name` = ?)"))
+		prep.ExpectQuery().WithArgs(4211, "Peter Gopher").
+			WillReturnRows(sqlmock.NewRows([]string{"name", "email"}).AddRow("Peter Gopher", "peter@gopher.go"))
+
+		stmt, err := dml.NewSelect("name", "email").From("dml_person").
+			Where(dml.Column("id").PlaceHolder(), dml.Column("name").PlaceHolder()).
+			WithDB(dbc.DB).Prepare(context.TODO())
+		assert.NoError(t, err)
+		sa := stmt.WithArgs()
+
+		t.Run("Context", func(t *testing.T) {
+			p := &dmlPerson{
+				ID:   4211,
+				Name: "Peter Gopher",
+			}
+
+			rows, err := sa.QueryContext(context.TODO(), dml.Qualify("", p))
+			assert.NoError(t, err)
+			defer dmltest.Close(t, rows)
+
+			cols, err := rows.Columns()
+			assert.NoError(t, err)
+			assert.Exactly(t, []string{"name", "email"}, cols)
+		})
+	})
+
 	t.Run("Exec", func(t *testing.T) {
 		dbc, dbMock := dmltest.MockDB(t)
 		defer dmltest.MockClose(t, dbc, dbMock)

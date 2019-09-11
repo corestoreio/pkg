@@ -292,7 +292,7 @@ func TestInsert_FromSelect(t *testing.T) {
 
 		ins := NewInsert("tableA").AddColumns("a", "b").FromSelect(sel).WithArgs().Record("dp", p).
 			Record("dg", p2).
-			Name("xSize").Int(678).Float64( /*fPlaceholder*/ 3.14159)
+			NamedArg("xSize", 678).Float64( /*fPlaceholder*/ 3.14159)
 
 		compareToSQL(t, ins, errors.NoKind,
 			"INSERT INTO `tableA` (`a`,`b`) SELECT `a`, `b` FROM `dml_person` AS `dp` INNER JOIN `dml_group` AS `dg` ON (`dp`.`id` = ?) WHERE (`dg`.`dob` > ?) AND (`age` < 56) AND (`size` > ?) AND ((`dp`.`name` = ?) OR (`e` = 'wat')) AND (`fPlaceholder` <= ?) AND (`g` > 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING (`dp`.`email` = ?) AND (`n` = 'wh3r3') ORDER BY `l`",
@@ -497,7 +497,7 @@ func TestInsert_OnDuplicateKey(t *testing.T) {
 			AddColumns("entity_id", "name", "email", "group_id", "created_at", "website_id").
 			AddOnDuplicateKeyExclude("entity_id").
 			AddOnDuplicateKey(Column("created_at").PlaceHolder())
-		insA := ins.WithArgs().Int(1).String("Martin").String("martin@go.go").Int(3).String("2019-01-01").Int(2).Name("time").Time(now())
+		insA := ins.WithArgs().Int(1).String("Martin").String("martin@go.go").Int(3).String("2019-01-01").Int(2).NamedArg("time", now())
 		compareToSQL(t, insA, errors.NoKind,
 			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `website_id`=VALUES(`website_id`), `created_at`=?",
 			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (1,'Martin','martin@go.go',3,'2019-01-01',2) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `website_id`=VALUES(`website_id`), `created_at`='2006-01-02 15:04:05'",
@@ -524,7 +524,7 @@ func TestInsert_OnDuplicateKey(t *testing.T) {
 			AddColumns("entity_id", "name", "email", "group_id", "created_at", "website_id").
 			AddOnDuplicateKeyExclude("entity_id").
 			AddOnDuplicateKey(Column("created_at").NamedArg("time")).
-			WithArgs().Int(1).String("Martin").String("martin@go.go").Int(3).String("2019-01-01").Int(2).Name("time").Time(now())
+			WithArgs().Int(1).String("Martin").String("martin@go.go").Int(3).String("2019-01-01").Int(2).NamedArg("time", now())
 		compareToSQL(t, ins, errors.NoKind,
 			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `website_id`=VALUES(`website_id`), `created_at`=?",
 			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (1,'Martin','martin@go.go',3,'2019-01-01',2) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `website_id`=VALUES(`website_id`), `created_at`='2006-01-02 15:04:05'",
