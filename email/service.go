@@ -19,8 +19,7 @@ import (
 
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/pkg/util"
-	"github.com/go-gomail/gomail"
+	"github.com/go-gomail/gomail" // outdated TODO use new version
 )
 
 // PathSmtp* defines the configuration settings for a SMTP daemon.
@@ -55,14 +54,7 @@ type Service struct {
 	dialer map[uint64]Dialer
 }
 
-var _ error = (*Service)(nil)
 var _ config.MessageReceiver = (*Service)(nil)
-
-// Error implements the error interface. Returns a string where each error has
-// been separated by a line break.
-func (s *Service) Error() string {
-	return util.Errors(s.lastErrs...)
-}
 
 // Options applies optional arguments to the daemon
 // struct. It returns the last set option. More info about the returned function:
@@ -77,7 +69,6 @@ func (s *Service) Option(opts ...ServiceOption) *Service {
 }
 
 func (s *Service) Send(sc scope.Type, id int64, m *gomail.Message) error {
-
 	return nil
 }
 
@@ -137,7 +128,7 @@ func (s *Service) allocate(dm *Daemon) Dialer {
 func NewService(opts ...ServiceOption) (*Service, error) {
 	// load available configs from DB ... implement auto refresh
 	s := &Service{
-		//emailConfig: newEmailConfig(config.DefaultService),
+		// emailConfig: newEmailConfig(config.DefaultService),
 		dialer: make(map[uint64]Dialer),
 	}
 	s.Option(opts...)

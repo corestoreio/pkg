@@ -85,7 +85,6 @@ func TestDaemonOfflineLogger(t *testing.T) {
 	//
 	//	assert.Contains(t, logBufI.String(), `Send from: "gopher@earth" to: []string{"apple@mothership"} msg: "Mime-Version: 1.0`)
 	//	assert.Empty(t, logBufE.String())
-
 }
 
 func TestDaemonDaemonOptionErrors(t *testing.T) {
@@ -122,7 +121,6 @@ func TestDaemonWorkerDialSend(t *testing.T) {
 	//	go func() { assert.NoError(t, dm.Worker()) }()
 	//	assert.NoError(t, dm.SendPlain("rust@lang", "apple@cupertino", "Spagetti", "Pastafari meets Rustafari"))
 	//	assert.NoError(t, dm.Stop())
-
 }
 
 func TestDaemonWorkerDialCloseError(t *testing.T) {
@@ -151,7 +149,6 @@ func TestDaemonWorkerDialCloseError(t *testing.T) {
 	//	time.Sleep(time.Millisecond * 100)
 	//	assert.NoError(t, dm.Stop())
 	//	assert.Contains(t, errLogBuf.String(), "mail.daemon.workerDial.timeout.Close err: Test Close Error")
-
 }
 
 func TestDaemonWorkerReDialCloseError(t *testing.T) {
@@ -179,5 +176,4 @@ func TestDaemonWorkerReDialCloseError(t *testing.T) {
 	//	time.Sleep(time.Millisecond * 100)
 	//	assert.NoError(t, dm.Stop())
 	//	assert.Contains(t, errLogBuf.String(), "mail.daemon.workerDial.timeout.Close err: Test Close Error")
-
 }

@@ -21,9 +21,9 @@ import (
 	"io"
 	"time"
 
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/util"
-	"github.com/corestoreio/pkg/util/log"
 	"github.com/go-gomail/gomail"
 )
 
@@ -169,7 +169,6 @@ func (dm *Daemon) workerDial() error {
 				open = false
 			}
 		}
-
 	}
 }
 
@@ -193,16 +192,16 @@ func (dm *Daemon) Send(m *gomail.Message) error {
 }
 
 //// SendPlain sends a simple plain text email
-//func (dm *Daemon) SendPlain(from, to, subject, body string) error {
+// func (dm *Daemon) SendPlain(from, to, subject, body string) error {
 //	return dm.sendMsg(from, to, subject, body, false)
 //}
 //
 //// SendPlain sends a simple html email
-//func (dm *Daemon) SendHtml(from, to, subject, body string) error {
+// func (dm *Daemon) SendHtml(from, to, subject, body string) error {
 //	return dm.sendMsg(from, to, subject, body, true)
 //}
 //
-//func (dm *Daemon) sendMsg(from, to, subject, body string, isHtml bool) error {
+// func (dm *Daemon) sendMsg(from, to, subject, body string, isHtml bool) error {
 //	if dm.closed {
 //		return ErrMailChannelClosed
 //	}

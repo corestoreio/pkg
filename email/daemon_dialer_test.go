@@ -16,7 +16,7 @@ package email
 
 import "testing"
 
-//var configMock = config.NewMockGetter(
+// var configMock = config.NewMockGetter(
 //	config.WithMockInt(func(path string) int {
 //		//		println("int", path)
 //		switch path {
@@ -92,5 +92,4 @@ func TestDialerPoolSingleton(t *testing.T) {
 	//
 	//	dp3 := dm3.dialer
 	//	assert.True(t, dp1 == dp2 && dp1 != dp3 && dp2 != dp3, "dm1.dialer == dm2.dialer && dm1.dialer != dm3.dialer")
-
 }

@@ -61,7 +61,6 @@ func SetMandrill(opts ...MandrillOptions) DaemonOption {
 		}
 
 		da.sendFunc = func(from string, to []string, msg io.WriterTo) error {
-
 			// @todo figure out if "to" contains To, CC and BCC addresses.
 
 			addr, err := mail.ParseAddress(from)
