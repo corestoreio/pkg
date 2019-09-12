@@ -14,17 +14,7 @@
 
 package user
 
-import (
-	"sync"
-
-	"github.com/corestoreio/pkg/config"
-)
-
-type Manager struct {
-	cr config.Getter
-
-	users UserSlice
-	mu    sync.RWMutex
+type Service struct {
 }
 
 // In which case I'd expect the slice of errors to be a 1:1 mapping based on
