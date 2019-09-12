@@ -17,9 +17,11 @@
 package catattr
 
 import (
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/eav"
-	"github.com/juju/errgo"
 )
+
+// TODO(CyS) this code is so wrong in so many cases. delete it and build it new.s
 
 type (
 	// AttributeSlice implements eav.AttributeSliceGetter @todo website must be present in the slice
@@ -129,8 +131,8 @@ func NewCatalog(
 	searchWeight int64,
 ) *Catalog {
 	return &Catalog{
-		Attribute: a,
-		wa:        nil,
+		Attribute:                 a,
+		wa:                        nil,
 		frontendInputRenderer:     fir,
 		isGlobal:                  isGlobal,
 		isVisible:                 isVisible,
@@ -251,7 +253,7 @@ func (s AttributeSlice) ByID(g eav.AttributeGetter, id int64) (interface{}, erro
 	}
 	i, err := g.ByID(id)
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, errors.Wrap(err)
 	}
 	return s.Index(i), nil
 }
@@ -263,7 +265,7 @@ func (s AttributeSlice) ByCode(g eav.AttributeGetter, code string) (interface{},
 	}
 	i, err := g.ByCode(code)
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, errors.Wrap(err)
 	}
 	return s.Index(i), nil
 }

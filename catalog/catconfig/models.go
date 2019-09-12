@@ -15,11 +15,11 @@
 package catconfig
 
 import (
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/cfgmodel"
 	"github.com/corestoreio/pkg/config/source"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/juju/errors"
 )
 
 const (
@@ -54,7 +54,7 @@ func NewPriceScope(path string, opts ...cfgmodel.Option) PriceScope {
 func (p PriceScope) IsGlobal(sg config.Scoped) (bool, error) {
 	g, err := p.Get(sg)
 	if err != nil {
-		return false, errors.Mask(err)
+		return false, errors.Wrap(err)
 	}
 	return g == PriceScopeGlobal, nil
 }
@@ -68,7 +68,7 @@ func (p PriceScope) Write(w config.Setter, v int, s scope.Type, id int64, idx in
 	}
 
 	if err := p.Int.Write(w, v, s, id); err != nil {
-		return errors.Mask(err)
+		return errors.Wrap(err)
 	}
 
 	if idx != nil {

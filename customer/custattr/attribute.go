@@ -16,7 +16,7 @@ package custattr
 
 import (
 	"github.com/corestoreio/pkg/eav"
-	"github.com/juju/errgo"
+	"github.com/corestoreio/errors"
 )
 
 type (
@@ -166,7 +166,7 @@ func (s AttributeSlice) ByID(g eav.AttributeGetter, id int64) (interface{}, erro
 	}
 	i, err := g.ByID(id)
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, errors.Wrap(err)
 	}
 	return s[i], nil
 }
@@ -178,7 +178,7 @@ func (s AttributeSlice) ByCode(g eav.AttributeGetter, code string) (interface{},
 	}
 	i, err := g.ByCode(code)
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, errors.Wrap(err)
 	}
 	return s[i], nil
 }

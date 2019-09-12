@@ -14,73 +14,73 @@
 
 package main
 
-import (
-	"runtime"
-	"sync"
-
-	"github.com/corestoreio/pkg/codegen"
-	"github.com/corestoreio/pkg/eav"
-	"github.com/corestoreio/pkg/storage/csdb"
-	"github.com/corestoreio/pkg/storage/dbr"
-	"github.com/corestoreio/pkg/util/cstesting"
-	"github.com/corestoreio/errors"
-)
-
-// depends on generated code from tableToStruct
-type context struct {
-	wg  sync.WaitGroup
-	dbc *dbr.ConnPool
-	// will be updated each iteration in materializeAttributes
-	et *eav.TableEntityType
-	// goSrcPath will be used in conjunction with ImportPath to write a file into that directory
-	goSrcPath string
-	// aat = additional attribute table
-	aat *codegen.AddAttrTables
-}
-
-// Connect creates a new database connection from a DSN stored in an
-// environment variable CS_DSN.
-func Connect(opts ...dbr.ConnPoolOption) (*dbr.ConnPool, error) {
-	c, err := dbr.NewConnPool(dbr.WithDSN(csdb.MustGetDSN()))
-	if err != nil {
-		return nil, errors.Wrap(err, "[csdb] dbr.NewConnPool")
-	}
-	if err := c.Options(opts...); err != nil {
-		return nil, errors.Wrap(err, "[csdb] dbr.NewConnPool.Options")
-	}
-	return c, err
-}
-
-func newContext() *context {
-	dbc, err := Connect()
-	codegen.LogFatal(err)
-
-	return &context{
-		wg:        sync.WaitGroup{},
-		dbc:       dbc,
-		goSrcPath: cstesting.RootPath,
-	}
-}
-
+//import (
+//	"runtime"
+//	"sync"
+//
+//	"github.com/corestoreio/pkg/codegen"
+//	"github.com/corestoreio/pkg/eav"
+//	"github.com/corestoreio/pkg/storage/csdb"
+//	"github.com/corestoreio/pkg/storage/dbr"
+//	"github.com/corestoreio/pkg/util/cstesting"
+//	"github.com/corestoreio/errors"
+//)
+//
+//// depends on generated code from tableToStruct
+//type context struct {
+//	wg  sync.WaitGroup
+//	dbc *dbr.ConnPool
+//	// will be updated each iteration in materializeAttributes
+//	et *eav.TableEntityType
+//	// goSrcPath will be used in conjunction with ImportPath to write a file into that directory
+//	goSrcPath string
+//	// aat = additional attribute table
+//	aat *codegen.AddAttrTables
+//}
+//
+//// Connect creates a new database connection from a DSN stored in an
+//// environment variable CS_DSN.
+//func Connect(opts ...dbr.ConnPoolOption) (*dbr.ConnPool, error) {
+//	c, err := dbr.NewConnPool(dbr.WithDSN(csdb.MustGetDSN()))
+//	if err != nil {
+//		return nil, errors.Wrap(err, "[csdb] dbr.NewConnPool")
+//	}
+//	if err := c.Options(opts...); err != nil {
+//		return nil, errors.Wrap(err, "[csdb] dbr.NewConnPool.Options")
+//	}
+//	return c, err
+//}
+//
+//func newContext() *context {
+//	dbc, err := Connect()
+//	codegen.LogFatal(err)
+//
+//	return &context{
+//		wg:        sync.WaitGroup{},
+//		dbc:       dbc,
+//		goSrcPath: cstesting.RootPath,
+//	}
+//}
+//
 func main() {
-
-	runtime.GOMAXPROCS(runtime.NumCPU())
-
-	ctx := newContext()
-	defer ctx.dbc.Close()
-
-	ctx.wg.Add(1)
-	go materializeEntityType(ctx)
-
-	ctx.wg.Add(1)
-	go materializeAttributes(ctx)
-
-	// EAV -> Create queries for AttributeSets and AttributeGroups
-	//    ctx.wg.Add(1)
-	//    go materializeAttributeSets(ctx)
 	//
-	//    ctx.wg.Add(1)
-	//    go materializeAttributeGroups(ctx)
-
-	ctx.wg.Wait()
+	//	runtime.GOMAXPROCS(runtime.NumCPU())
+	//
+	//	ctx := newContext()
+	//	defer ctx.dbc.Close()
+	//
+	//	ctx.wg.Add(1)
+	//	go materializeEntityType(ctx)
+	//
+	//	ctx.wg.Add(1)
+	//	go materializeAttributes(ctx)
+	//
+	//	// EAV -> Create queries for AttributeSets and AttributeGroups
+	//	//    ctx.wg.Add(1)
+	//	//    go materializeAttributeSets(ctx)
+	//	//
+	//	//    ctx.wg.Add(1)
+	//	//    go materializeAttributeGroups(ctx)
+	//
+	//	ctx.wg.Wait()
 }

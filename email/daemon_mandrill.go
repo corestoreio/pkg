@@ -21,7 +21,7 @@ import (
 	"net/http"
 	"net/mail"
 
-	"github.com/juju/errgo"
+	"github.com/corestoreio/errors"
 	"github.com/mattbaird/gochimp"
 )
 
@@ -66,7 +66,7 @@ func SetMandrill(opts ...MandrillOptions) DaemonOption {
 			addr, err := mail.ParseAddress(from)
 			if err != nil {
 				PkgLog.Info("mail.daemon.Mandrill.ParseAddress", "err", err, "from", from, "to", to)
-				return errgo.Mask(err)
+				return errors.Wrap(err)
 			}
 
 			r := gochimp.Recipient{
@@ -77,13 +77,13 @@ func SetMandrill(opts ...MandrillOptions) DaemonOption {
 			var buf bytes.Buffer
 			if _, err := msg.WriteTo(&buf); err != nil {
 				PkgLog.Info("mail.daemon.Mandrill.MessageWriteTo", "err", err, "from", from, "to", to, "msg", buf.String())
-				return errgo.Mask(err)
+				return errors.Wrap(err)
 			}
 
 			resp, err := md.MessageSendRaw(buf.String(), to, r, false)
 			if err != nil {
 				PkgLog.Info("mail.daemon.Mandrill.MessageSendRaw", "err", err, "from", from, "to", to, "msg", buf.String())
-				return errgo.Mask(err)
+				return errors.Wrap(err)
 			}
 			if PkgLog.IsDebug() {
 				PkgLog.Debug("mail.daemon.Mandrill.MessageSendRaw", "resp", resp, "from", from, "to", to, "msg", buf.String())
