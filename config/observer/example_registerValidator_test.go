@@ -31,7 +31,6 @@ import (
 // example) The validator `check_xyzUser` gets activated for route
 // `payment/serviceX/username` with event after_get.
 func ExampleRegisterValidator() {
-
 	observer.RegisterValidator("check_xyzUser", func(s string) bool {
 		return s == "xyzUser"
 	})

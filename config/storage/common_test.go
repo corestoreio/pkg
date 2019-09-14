@@ -59,7 +59,6 @@ func TestWithLoadStrings(t *testing.T) {
 	})
 
 	t.Run("successful level 1", func(t *testing.T) {
-
 		pUserName := config.MustNewPath("payment/stripe/user_name").BindWebsite(2)
 
 		cfgSrv, err := config.NewService(
@@ -72,7 +71,6 @@ func TestWithLoadStrings(t *testing.T) {
 		assert.Exactly(t, "\"alph\\uf8ffZ\"", cfgSrv.Get(pUserName).String())
 	})
 	t.Run("successful level 1+2", func(t *testing.T) {
-
 		pUserName := config.MustNewPath("payment/stripe/user_name").BindWebsite(2)
 
 		cfgSrv, err := config.NewService(
@@ -86,7 +84,6 @@ func TestWithLoadStrings(t *testing.T) {
 		assert.Exactly(t, "\"alph\\uf8ffZ\"", cfgSrv.Get(pUserName).String())
 	})
 	t.Run("successful sort order", func(t *testing.T) {
-
 		pUserName := config.MustNewPath("payment/stripe/user_name").BindWebsite(2)
 
 		cfgSrv, err := config.NewService(

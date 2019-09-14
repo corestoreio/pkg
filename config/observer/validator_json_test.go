@@ -26,9 +26,7 @@ import (
 	"github.com/mailru/easyjson"
 )
 
-var (
-	_ easyjson.Marshaler = (*observer.ValidateMinMaxInt)(nil)
-)
+var _ easyjson.Marshaler = (*observer.ValidateMinMaxInt)(nil)
 
 func TestMinMaxInt64_MarshalJSON(t *testing.T) {
 	t.Parallel()
@@ -71,7 +69,6 @@ func TestStrings_UnmarshalJSON(t *testing.T) {
 	nValue, err := sv.Observe(config.Path{}, value, true)
 	assert.NoError(t, err)
 	assert.Exactly(t, value, nValue)
-
 }
 
 func TestStrings_MarshalJSON(t *testing.T) {

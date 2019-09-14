@@ -68,7 +68,6 @@ func TestDeregisterObservers(t *testing.T) {
 		}]}`))
 		assert.NoError(t, err)
 	})
-
 }
 
 func TestRegisterObservers(t *testing.T) {
@@ -360,5 +359,4 @@ func TestValidators_Validate(t *testing.T) {
 		}
 		assert.True(t, errors.Empty.Match(valis.Validate()))
 	})
-
 }

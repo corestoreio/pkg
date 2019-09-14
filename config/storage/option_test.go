@@ -27,7 +27,6 @@ import (
 )
 
 func TestWithGlob_Placeholder(t *testing.T) {
-
 	cfgSrv, err := config.NewService(
 		storage.NewMap(), config.Options{
 			EnvName: "path",

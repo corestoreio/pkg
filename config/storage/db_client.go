@@ -196,7 +196,6 @@ func (dbs *DB) closeStmtWrite(t time.Time) {
 }
 
 func (dbs *DB) runStateCheckers() {
-
 	dbs.tickerRead = time.NewTicker(dbs.cfg.IdleRead)
 	dbs.tickerWrite = time.NewTicker(dbs.cfg.IdleWrite)
 
@@ -337,7 +336,6 @@ func (dbs *DB) Statistics() (value dbStats, set dbStats) {
 // overrides existing values. Stops on errors.
 func WithLoadFromDB(tbls *ddl.Tables, o DBOptions) config.LoadDataOption {
 	return config.MakeLoadDataOption(func(s *config.Service) error {
-
 		tn := o.TableName
 		if tn == "" {
 			tn = TableNameCoreConfiguration

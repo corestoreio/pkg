@@ -78,7 +78,6 @@ func TestService_AllKeys_Mocked(t *testing.T) {
 	})
 
 	t.Run("no leaking goroutines", func(t *testing.T) {
-
 		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS").WithArgs().WillReturnRows(
 			dmltest.MustMockRows(dmltest.WithFile("testdata", "core_configuration_columns.csv")),
 		)
@@ -105,7 +104,6 @@ func TestService_Get(t *testing.T) {
 	defer leaktest.CheckTimeout(t, time.Second)()
 
 	testBody := func(t *testing.T, dbs *storage.DB, dbMock sqlmock.Sqlmock, sleep time.Duration) {
-
 		prepSel := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `value` FROM `core_configuration` AS `main_table` WHERE (`scope` = ?) AND (`scope_id` = ?) AND (`path` = ?)"))
 		for _, test := range serviceMultiTests {
 			scp, sID := test.scopeID.Unpack()
@@ -204,7 +202,6 @@ func TestService_Get(t *testing.T) {
 			assert.EqualError(t, causeErr, "canceling query due to user request")
 			return
 		}
-
 	})
 }
 
@@ -212,7 +209,6 @@ func TestService_Set(t *testing.T) {
 	defer leaktest.CheckTimeout(t, time.Second)()
 
 	testBody := func(t *testing.T, dbs *storage.DB, dbMock sqlmock.Sqlmock, sleep time.Duration) {
-
 		prepIns := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("INSERT INTO `core_configuration` (`scope`,`scope_id`,`path`,`value`) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE `value`=VALUES(`value`)"))
 
 		for i, test := range serviceMultiTests {
@@ -304,7 +300,6 @@ func TestService_Set(t *testing.T) {
 			causeErr := errors.Cause(haveErr)
 			assert.EqualError(t, causeErr, "canceling query due to user request")
 		}
-
 	})
 }
 

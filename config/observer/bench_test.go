@@ -82,7 +82,6 @@ func BenchmarkStrings_CSV_Locale(b *testing.B) {
 			AdditionalAllowedValues: []string{"tlh"}, // tlh for klingon
 			CSVComma:                ";",
 		})
-
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -128,7 +127,6 @@ func BenchmarkStrings_CSV_Locale(b *testing.B) {
 				}
 			}
 		})
-
 	})
 }
 

@@ -30,7 +30,6 @@ func TestWithLoadJSON(t *testing.T) {
 	pUserName := config.MustNewPath("payment/stripe/user_name")
 
 	t.Run("success", func(t *testing.T) {
-
 		cfgSrv, err := config.NewService(
 			storage.NewMap(), config.Options{},
 			storage.WithLoadJSON(storage.WithFile("testdata", "example.json")),
@@ -60,7 +59,7 @@ func TestWithLoadJSON(t *testing.T) {
 			assert.True(t, errKind.Match(err), "%+v", err)
 			assert.Nil(t, cfgSrv)
 			assert.Contains(t, err.Error(), errTxt)
-			//t.Logf("%+v", err)
+			// t.Logf("%+v", err)
 		}
 	}
 	t.Run("malformed_v1", runner("malformed_v1.json", errors.CorruptData,
@@ -74,5 +73,4 @@ func TestWithLoadJSON(t *testing.T) {
 
 	t.Run("malformed_v2t_dataIF", runner("malformed_v2t_dataIF.json", errors.CorruptData,
 		`WithLoadJSON unexpected data in []interface {}{}`))
-
 }

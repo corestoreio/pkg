@@ -123,6 +123,7 @@ func (cc *CoreConfigurationCollection) AssignLastInsertID(id int64) {
 		j++
 	}
 }
+
 func (cc *CoreConfigurationCollection) scanColumns(cm *dml.ColumnMap, e *CoreConfiguration, idx uint64) error {
 	if cc.BeforeMapColumns != nil {
 		if err := cc.BeforeMapColumns(idx, e); err != nil {

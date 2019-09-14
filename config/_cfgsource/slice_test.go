@@ -27,7 +27,6 @@ var _ json.Marshaler = (*_cfgsource.Pair)(nil)
 var _ json.Unmarshaler = (*_cfgsource.Pair)(nil)
 
 func TestNewByStringValue(t *testing.T) {
-
 	sl := _cfgsource.NewByStringValue("a", "b", "c")
 	j, err := sl.ToJSON()
 	assert.NoError(t, err)
@@ -35,7 +34,6 @@ func TestNewByStringValue(t *testing.T) {
 }
 
 func TestSliceString(t *testing.T) {
-
 	// TODO(cs) go fuzz testing
 	tests := []struct {
 		have      _cfgsource.Slice
@@ -77,7 +75,6 @@ func TestSliceString(t *testing.T) {
 }
 
 func TestNewByIntValue(t *testing.T) {
-
 	sl := _cfgsource.NewByIntValue(-1, 0, 5, 3, 2, -1)
 	j, err := sl.ToJSON()
 	assert.NoError(t, err)
@@ -85,7 +82,6 @@ func TestNewByIntValue(t *testing.T) {
 }
 
 func TestSliceInt(t *testing.T) {
-
 	tests := []struct {
 		have      _cfgsource.Slice
 		wantValue string
@@ -135,7 +131,6 @@ func TestSliceInt(t *testing.T) {
 }
 
 func TestSliceFloat64(t *testing.T) {
-
 	tests := []struct {
 		have      _cfgsource.Slice
 		wantValue string
@@ -190,11 +185,9 @@ func TestSliceFloat64(t *testing.T) {
 	})
 	assert.Equal(t, "-432.4323", vli[0].Value())
 	assert.Equal(t, "-432.4324", vli[1].Value())
-
 }
 
 func TestSliceBool(t *testing.T) {
-
 	tests := []struct {
 		have      _cfgsource.Slice
 		wantValue string
@@ -243,11 +236,9 @@ func TestSliceBool(t *testing.T) {
 	})
 	assert.Equal(t, "false", vli[0].Value())
 	assert.Equal(t, "true", vli[1].Value())
-
 }
 
 func TestSliceNull(t *testing.T) {
-
 	nullSlice := _cfgsource.Slice{
 		_cfgsource.Pair{},
 		_cfgsource.Pair{},
@@ -256,18 +247,15 @@ func TestSliceNull(t *testing.T) {
 	j, err := nullSlice.ToJSON()
 	assert.NoError(t, err)
 	assert.Equal(t, `[{"Value":"","Label":""},{"Value":"","Label":""}]`+"\n", j)
-
 }
 
 func TestSliceContainsValString(t *testing.T) {
-
 	sl := _cfgsource.MustNewByString("k1", "v1", "k2", "v2")
 	assert.True(t, sl.ContainsValString("k1"), "Search for k1 failed")
 	assert.False(t, sl.ContainsValString("k0"), "Found k0 despite it is not in the slice")
 }
 
 func TestSliceContainsValInt(t *testing.T) {
-
 	sl := _cfgsource.NewByInt(_cfgsource.Ints{
 		{1, "v1"},
 		{2, "v2"},
@@ -278,7 +266,6 @@ func TestSliceContainsValInt(t *testing.T) {
 }
 
 func TestSliceContainsValFloat64(t *testing.T) {
-
 	sl := _cfgsource.NewByFloat64(_cfgsource.F64s{
 		{1.0, "v1"},
 		{2.2 * 0.3, "v2"},
@@ -289,14 +276,12 @@ func TestSliceContainsValFloat64(t *testing.T) {
 }
 
 func TestSliceContainsValBool(t *testing.T) {
-
 	sl := _cfgsource.NewByBool(_cfgsource.Bools{{true, "v1"}})
 	assert.True(t, sl.ContainsValBool(true), "Search for k1 failed")
 	assert.False(t, sl.ContainsValBool(false), "Found k0 despite it is not in the slice")
 }
 
 func TestSliceContainsLabel(t *testing.T) {
-
 	sl := _cfgsource.NewByInt(_cfgsource.Ints{
 		{1, "v1"},
 		{2, "v2"},
@@ -307,7 +292,6 @@ func TestSliceContainsLabel(t *testing.T) {
 }
 
 func TestSliceEquality(t *testing.T) {
-
 	func(sl _cfgsource.Slice, vlPairs ..._cfgsource.Pair) {
 		vlsl := _cfgsource.Slice(vlPairs)
 		assert.Exactly(t, sl, vlsl)
@@ -315,7 +299,6 @@ func TestSliceEquality(t *testing.T) {
 }
 
 func TestSliceMerge(t *testing.T) {
-
 	tests := []struct {
 		in    _cfgsource.Slice
 		merge _cfgsource.Slice
@@ -353,7 +336,6 @@ func TestSliceMerge(t *testing.T) {
 }
 
 func TestSliceUnique(t *testing.T) {
-
 	tests := []struct {
 		in   _cfgsource.Slice
 		want string
@@ -386,7 +368,6 @@ func TestSliceUnique(t *testing.T) {
 }
 
 func TestSliceUnmarshalJSON(t *testing.T) {
-
 	tests := []struct {
 		in      []byte
 		want    _cfgsource.Slice

@@ -73,10 +73,10 @@ func TestSectionValidateShortPath(t *testing.T) {
 
 	ss := config.MakeSections(
 		&config.Section{
-			//ID: `aa`,
+			// ID: `aa`,
 			Groups: config.MakeGroups(
 				&config.Group{
-					//ID: `b`,
+					// ID: `b`,
 					Fields: config.MakeFields(
 						&config.Field{ID: `ca`},
 						&config.Field{ID: `cb`},
@@ -92,7 +92,6 @@ func TestSectionValidateShortPath(t *testing.T) {
 }
 
 func TestSectionUpdateField(t *testing.T) {
-
 	ss := config.MakeSections(
 		&config.Section{
 			ID: `aa`,
@@ -135,7 +134,6 @@ func TestSectionUpdateField(t *testing.T) {
 }
 
 func TestNewConfiguration(t *testing.T) {
-
 	tests := []struct {
 		have       config.Sections
 		wantErrBhf errors.Kind
@@ -162,16 +160,16 @@ func TestNewConfiguration(t *testing.T) {
 					),
 				},
 			),
-			wantErrBhf: 0,
+			wantErrBhf: errors.NoKind,
 			wantLen:    3,
 		},
 		{
 			have:       config.MakeSections(&config.Section{ID: `aa`, Groups: config.MakeGroups()}),
-			wantErrBhf: 0,
+			wantErrBhf: errors.NoKind,
 		},
 		{
 			have:       config.MakeSections(&config.Section{ID: `aa`, Groups: config.MakeGroups(&config.Group{ID: `bb`, Fields: nil})}),
-			wantErrBhf: 0,
+			wantErrBhf: errors.NoKind,
 		},
 		{
 			have: config.MakeSections(
@@ -192,7 +190,7 @@ func TestNewConfiguration(t *testing.T) {
 	for i, test := range tests {
 
 		haveSlice, err := config.MakeSectionsValidated(test.have...)
-		if test.wantErrBhf > 0 {
+		if !test.wantErrBhf.Empty() {
 			assert.Nil(t, haveSlice, "Index %d", i)
 			assert.True(t, test.wantErrBhf.Match(err), "IDX %d: %+v", i, err)
 		} else {
@@ -204,7 +202,6 @@ func TestNewConfiguration(t *testing.T) {
 }
 
 func TestSectionSliceMerge(t *testing.T) {
-
 	// Got stuck in comparing JSON?
 	// Use a Webservice to compare the JSON output!
 
@@ -443,7 +440,6 @@ func TestSectionSliceMerge(t *testing.T) {
 }
 
 func TestFieldSliceMerge(t *testing.T) {
-
 	tests := []struct {
 		have config.Fields
 		want string
@@ -491,7 +487,6 @@ func TestFieldSliceMerge(t *testing.T) {
 }
 
 func TestGroupSliceMerge(t *testing.T) {
-
 	tests := []struct {
 		have config.Groups
 		want string
@@ -667,7 +662,6 @@ func TestSectionSliceFindGroupByID(t *testing.T) {
 }
 
 func TestSectionSliceFindFieldByID(t *testing.T) {
-
 	tests := []struct {
 		haveSlice config.Sections
 		haveRoute string
@@ -731,7 +725,6 @@ func TestSectionSliceFindFieldByID(t *testing.T) {
 }
 
 func TestFieldSliceSort(t *testing.T) {
-
 	want := []int{-10, 1, 10, 11, 20}
 	fs := config.MakeFields(
 		&config.Field{ID: `aa`, SortOrder: 20},
@@ -747,7 +740,6 @@ func TestFieldSliceSort(t *testing.T) {
 }
 
 func TestGroupSliceSort(t *testing.T) {
-
 	want := []int{-10, 1, 10, 11, 20}
 	gs := config.MakeGroups(
 		&config.Group{ID: `aa`, SortOrder: 20},
@@ -760,6 +752,7 @@ func TestGroupSliceSort(t *testing.T) {
 		assert.EqualValues(t, want[i], f.SortOrder)
 	}
 }
+
 func TestSectionSliceSort(t *testing.T) {
 	t.Parallel()
 	want := []int{-10, 1, 10, 11, 20}
@@ -773,7 +766,6 @@ func TestSectionSliceSort(t *testing.T) {
 	for i, f := range ss.Sort() {
 		assert.EqualValues(t, want[i], f.SortOrder)
 	}
-
 }
 
 func TestSectionSliceSortAll(t *testing.T) {
@@ -830,19 +822,20 @@ func TestSectionSliceSortAll(t *testing.T) {
 }
 
 func TestSectionSliceAppendFields(t *testing.T) {
-
 	want := `[{"ID":"aa","Groups":[{"ID":"aa","Fields":[{"ID":"aa"},{"ID":"bb"},{"ID":"cc"}]}]}]`
 	ss := config.MustMakeSectionsValidate(
 		&config.Section{
 			ID: `aa`,
 			Groups: config.MakeGroups(
-				&config.Group{ID: `aa`,
+				&config.Group{
+					ID: `aa`,
 					Fields: config.MakeFields(
 						&config.Field{ID: `aa`},
 						&config.Field{ID: `bb`},
 					),
 				},
-			)},
+			),
+		},
 	)
 	ss, idx := ss.AppendFields("aa/XX/YY")
 	assert.Exactly(t, -2, idx)

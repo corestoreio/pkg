@@ -52,7 +52,6 @@ type aesGCM struct {
 // encryption and config.EventOnAfterGet for decryption. For security reasons
 // this function cannot be accessed via JSON or protocol buffers.
 func NewAESGCM(eventType uint8, eo *AESGCMOptions) (config.Observer, error) {
-
 	if eventType != config.EventOnBeforeSet && eventType != config.EventOnAfterGet {
 		return nil, errors.NotValid.Newf("[config/observer] Event type can only be: EventOnBeforeSet (encryption) or EventOnAfterGet (decryption)")
 	}

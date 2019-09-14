@@ -23,9 +23,7 @@ import (
 	"github.com/corestoreio/pkg/util/assert"
 )
 
-var (
-	_ config.Observer = (*ValidateMinMaxInt)(nil)
-)
+var _ config.Observer = (*ValidateMinMaxInt)(nil)
 
 func TestMinMaxInt_Observe(t *testing.T) {
 	t.Parallel()
@@ -151,7 +149,6 @@ func TestNewValidator(t *testing.T) {
 		wantObserveErr errors.Kind,
 	) func(*testing.T) {
 		return func(t *testing.T) {
-
 			s, err := NewValidator(ValidatorArg{
 				Funcs:                   validationType,
 				PartialValidation:       partialValidation,
@@ -368,7 +365,6 @@ func TestNewValidator(t *testing.T) {
 	t.Run("RegisterValidator is_euro nok",
 		runner(sl("is_euro"), sl(), "", false, []byte(""), true, errors.NoKind, errors.NotValid),
 	)
-
 }
 
 func isEuro(s string) bool {

@@ -98,7 +98,7 @@ func (s Slice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 // ToJSON returns a JSON string, convenience function.
 func (s Slice) ToJSON() (string, error) {
-	var buf = bufferpool.Get()
+	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 	if err := json.NewEncoder(buf).Encode(s); err != nil {
 		return "", errors.Wrap(err, "[source] json.Encode")
@@ -199,9 +199,8 @@ func (s Slice) IndexLabel(l string) int {
 // Merge integrates the argument Slice into the receiver slice and overwrites
 // the existing values of the receiver slice.
 func (s *Slice) Merge(sl Slice) Slice {
-
 	for _, p := range sl {
-		var idx = -1
+		idx := -1
 
 		switch p.NotNull {
 		case NotNullString:

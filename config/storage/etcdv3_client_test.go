@@ -43,13 +43,12 @@ var (
 )
 
 func TestStorage_Get(t *testing.T) {
-	var testData = []byte(`You should turn it to eleven.`)
-	//scpID := scope.Website.WithID(3)
+	testData := []byte(`You should turn it to eleven.`)
+	// scpID := scope.Website.WithID(3)
 	const path = "path/to/orion"
 	p := config.MustNewPathWithScope(scope.Website.WithID(3), "path/to/orion")
 
 	t.Run("Get found", func(t *testing.T) {
-
 		mo := Etcdv3FakeClient{
 			GetKey:   []byte(Etcdv3DefaultKeyPrefix + `websites/3/` + path),
 			GetValue: testData,
@@ -65,7 +64,6 @@ func TestStorage_Get(t *testing.T) {
 	})
 
 	t.Run("Get not found", func(t *testing.T) {
-
 		mo := Etcdv3FakeClient{
 			GetKey:   []byte(`websites/3/`),
 			GetValue: testData,
@@ -82,7 +80,6 @@ func TestStorage_Get(t *testing.T) {
 
 	testGetErrors := func(getErr error) func(*testing.T) {
 		return func(t *testing.T) {
-
 			mo := Etcdv3FakeClient{
 				GetError: getErr,
 			}
@@ -101,7 +98,6 @@ func TestStorage_Get(t *testing.T) {
 	t.Run("Get context.DeadlineExceeded", testGetErrors(context.DeadlineExceeded))
 	t.Run("Get rpctypes.ErrEmptyKey", testGetErrors(rpctypes.ErrEmptyKey))
 	t.Run("Get any other error", func(t *testing.T) {
-
 		mo := Etcdv3FakeClient{
 			GetError: errors.ConnectionLost.Newf("Ups"),
 		}
@@ -116,7 +112,6 @@ func TestStorage_Get(t *testing.T) {
 	})
 
 	t.Run("Set no error ", func(t *testing.T) {
-
 		mo := Etcdv3FakeClient{}
 
 		s, err := NewEtcdv3Client(mo, Etcdv3Options{})
@@ -126,7 +121,6 @@ func TestStorage_Get(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run("Set no error ", func(t *testing.T) {
-
 		mo := Etcdv3FakeClient{
 			PutError: errors.ConnectionLost.Newf("Ups"),
 		}
@@ -137,7 +131,6 @@ func TestStorage_Get(t *testing.T) {
 		err = s.Set(p, testData)
 		assert.True(t, errors.ConnectionLost.Match(err), "Should have error kind connection lost")
 	})
-
 }
 
 func TestNewStorage_Integration(t *testing.T) {
@@ -178,11 +171,9 @@ func TestNewStorage_Integration(t *testing.T) {
 	data, _, err = srv.Get(p2)
 	assert.NoError(t, err)
 	assert.Exactly(t, []byte(`19.2`), data)
-
 }
 
 func TestWithLoadData_Success(t *testing.T) {
-
 	fc := Etcdv3FakeClient{
 		GetFn: func(ctx context.Context, key string, opts ...clientv3.OpOption) (*clientv3.GetResponse, error) {
 			return &clientv3.GetResponse{
@@ -216,5 +207,4 @@ func TestWithLoadData_Success(t *testing.T) {
 	assert.Exactly(t, `"fc9d6fd2d8db223be4a7484a8619f26b"`, cfgSrv.Get(p).String())
 	assert.Exactly(t, `"46aaccbebf47d8f8fce8c02d621aa573"`, cfgSrv.Get(p.BindStore(1)).String())
 	assert.Exactly(t, `"e30d8df9810bc36105c96ad3ae76ffd3"`, cfgSrv.Get(p.BindDefault()).String())
-
 }

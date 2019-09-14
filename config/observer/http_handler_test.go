@@ -58,6 +58,7 @@ func (orf observerRegistererFake) DeregisterObserver(event uint8, route string) 
 
 	return nil
 }
+
 func TestRegisterObserversFromJSON(t *testing.T) {
 	t.Parallel()
 

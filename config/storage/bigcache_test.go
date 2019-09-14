@@ -28,7 +28,6 @@ import (
 )
 
 func TestCacheGet(t *testing.T) {
-
 	bgc, err := storage.NewBigCache(bigcache.Config{
 		Shards: 64,
 	})

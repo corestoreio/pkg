@@ -70,8 +70,7 @@ func (p Pair) Value() string {
 
 // UnmarshalJSON decodes a pair from JSON
 func (p *Pair) UnmarshalJSON(data []byte) error {
-
-	var rawPair = struct {
+	rawPair := struct {
 		Value interface{}
 		Label string
 	}{}
@@ -120,7 +119,7 @@ func (p Pair) MarshalJSON() ([]byte, error) {
 			return nil, errors.Wrapf(err, "[source] String Marshal: %v", p.Int)
 		}
 	case NotNullFloat64:
-		var n = p.Float64
+		n := p.Float64
 		switch {
 		case math.IsInf(p.Float64, 1):
 			n = math.MaxFloat64
@@ -145,7 +144,7 @@ func (p Pair) MarshalJSON() ([]byte, error) {
 		return nil, errors.Wrapf(err, "[source] Label Marshal: %q", p.Label())
 	}
 
-	var buf = bufferpool.Get()
+	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 	buf.WriteString(`{"Value":`)
 	if len(data) == 0 {

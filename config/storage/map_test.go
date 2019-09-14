@@ -43,5 +43,4 @@ func TestNewMap_OneKey(t *testing.T) {
 	assert.NoError(t, fl.Flush())
 
 	validateNotFoundGet(t, sp, scope.Store.WithID(55), "aa/bb/cc")
-
 }

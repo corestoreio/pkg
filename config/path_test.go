@@ -84,13 +84,14 @@ func TestRoute_IsValid(t *testing.T) {
 	}
 	for i, test := range tests {
 		haveErr := Route(test.have).IsValid()
-		if test.wantErrKind > 0 {
+		if !test.wantErrKind.Empty() {
 			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => %s", i, haveErr)
 		} else {
 			assert.NoError(t, haveErr, "Index %d", i)
 		}
 	}
 }
+
 func assertStrErr(t *testing.T, want string, msgAndArgs ...interface{}) func(string, error) {
 	return func(s string, err error) {
 		assert.NoError(t, err, "%+v", err)
@@ -125,7 +126,7 @@ func TestNewByParts(t *testing.T) {
 	}
 	for i, test := range tests {
 		haveP, haveErr := NewPath(test.path)
-		if test.wantErrKind > 0 {
+		if !test.wantErrKind.Empty() {
 			assert.Nil(t, haveP, "Index %d", i)
 			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => %s", i, haveErr)
 			continue
@@ -167,7 +168,7 @@ func TestMakePath(t *testing.T) {
 	tests := []struct {
 		route       string
 		s           scope.Type
-		id          int64
+		id          uint32
 		wantFQ      string
 		wantErrKind errors.Kind
 	}{
@@ -180,7 +181,7 @@ func TestMakePath(t *testing.T) {
 	}
 	for i, test := range tests {
 		haveP, haveErr := NewPath(test.route)
-		if test.wantErrKind > 0 {
+		if !test.wantErrKind.Empty() {
 			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d", i)
 			continue
 		}
@@ -193,7 +194,7 @@ func TestPath_FQ(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		scp         scope.Type
-		id          int64
+		id          uint32
 		route       string
 		want        string
 		wantErrKind errors.Kind
@@ -215,7 +216,7 @@ func TestPath_FQ(t *testing.T) {
 		}
 		p = p.Bind(test.scp.WithID(test.id))
 		have, haveErr := p.FQ()
-		if test.wantErrKind > 0 {
+		if !test.wantErrKind.Empty() {
 			assert.Empty(t, have, "Index %d", i)
 			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => %s", i, haveErr)
 			continue
@@ -243,7 +244,7 @@ func TestShouldNotPanicBecauseOfIncorrectStrScope(t *testing.T) {
 
 func TestShouldPanicIncorrectPath(t *testing.T) {
 	t.Parallel()
-	assert.Exactly(t, "default/0/xxxxx/yyyyy/zzzzz", MustNewPath("xxxxx/yyyyy/zzzzz").Bind(345).String())
+	// assert.Exactly(t, "default/0/xxxxx/yyyyy/zzzzz", MustNewPath("xxxxx/yyyyy/zzzzz").Bind(345).String())
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
@@ -273,7 +274,7 @@ func TestPath_ParseStrings(t *testing.T) {
 	for i, test := range tests {
 		p := new(Path)
 		haveErr := p.ParseStrings(test.scp, test.id, test.route)
-		if test.wantErr > 0 {
+		if !test.wantErr.Empty() {
 			assert.True(t, test.wantErr.Match(haveErr), "IDX:%d %+v", i, haveErr)
 			continue
 		}
@@ -286,7 +287,7 @@ func TestPath_Parse(t *testing.T) {
 	tests := []struct {
 		have        string
 		wantScope   string
-		wantScopeID int64
+		wantScopeID uint32
 		wantPath    string
 		wantErrKind errors.Kind
 	}{
@@ -305,12 +306,14 @@ func TestPath_Parse(t *testing.T) {
 	for i, test := range tests {
 		haveErr := havePath.Parse(test.have)
 
-		if test.wantErrKind > 0 {
+		if !test.wantErrKind.Empty() {
 			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => Error: %s", i, haveErr)
 		} else {
 			assert.NoError(t, haveErr, "Test %v", test)
 			assert.Exactly(t, test.wantScope, havePath.ScopeID.Type().StrType(), "Index %d", i)
-			assert.Exactly(t, test.wantScopeID, havePath.ScopeID.ID(), "Index %d", i)
+			id, err := havePath.ScopeID.ID()
+			assert.NoError(t, err)
+			assert.Exactly(t, test.wantScopeID, id, "Index %d", i)
 			ls, _ := havePath.Level(-1)
 			assert.Exactly(t, test.wantPath, ls, "Index %d", i)
 		}
@@ -336,7 +339,7 @@ func TestPath_IsValid1(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		s           scope.Type
-		id          int64
+		id          uint32
 		have        string
 		wantErrKind errors.Kind
 	}{
@@ -360,7 +363,7 @@ func TestPath_IsValid1(t *testing.T) {
 			route:   Route(test.have),
 		}
 		haveErr := p.IsValid()
-		if test.wantErrKind > 0 {
+		if !test.wantErrKind.Empty() {
 			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => %s", i, haveErr)
 		} else {
 			assert.NoError(t, haveErr, "Index %d", i)
@@ -440,11 +443,10 @@ func TestPathHashWebsite(t *testing.T) {
 
 	t.Log(p.String())
 	assert.Exactly(t, uint64(0xe79edc1df8f88eb0), hv, "hashes do not match")
-
 }
 
 func TestPath_Hash64ByLevel(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	t.Run("level 4 different to full hash", func(t *testing.T) {
 		p := MustNewPath("general/single_store_mode/enabled")
@@ -472,11 +474,10 @@ func TestPath_Hash64ByLevel(t *testing.T) {
 			{"general/single_store_mode/enabled", 5, 0xa317445783c664e3, "default/0/general/single_store_mode/enabled"},
 		}
 		for i, test := range tests {
-			p := &Path{
-				route: Route(test.have),
-			}
+			p, err := NewPath(test.have)
+			assert.NoError(t, err)
 
-			assert.Exactly(t, test.wantHash, p.Hash64ByLevel(test.level), "Index %d", i)
+			assert.Exactly(t, test.wantHash, p.Hash64ByLevel(test.level), "Index %d %q", i, test.have)
 
 			if test.level < 0 {
 				test.level = -3
@@ -602,7 +603,6 @@ func TestPathSlice_Sort(t *testing.T) {
 			&Path{route: `zz/aa/bb`, ScopeID: scope.Store.WithID(4)},
 		},
 	))
-
 }
 
 func TestPathEqual(t *testing.T) {
@@ -662,7 +662,6 @@ func TestPathPartPosition(t *testing.T) {
 	})
 
 	t.Run("valid routes", func(t *testing.T) {
-
 		tests := []struct {
 			have     string
 			pos      int
@@ -713,7 +712,7 @@ func TestPathValidate(t *testing.T) {
 	}
 	for i, test := range tests {
 		_, haveErr := NewPath(test.have)
-		if test.wantErrKind > 0 {
+		if !test.wantErrKind.Empty() {
 			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => %s", i, haveErr)
 		} else {
 			assert.NoError(t, haveErr, "Index %d", i)
@@ -784,7 +783,7 @@ func TestPath_MarshalText(t *testing.T) {
 		var p2 Path
 		err := p2.UnmarshalText([]byte(`websites/x/aa/bb/cc/dd`))
 		assert.True(t, errors.NotValid.Match(err), "%+v", err)
-		assert.EqualError(t, err, "[config] ParseInt: strconv.ParseInt: parsing \"x\": invalid syntax")
+		assert.EqualError(t, err, "[config] ParseInt: strconv.ParseUint: parsing \"x\": invalid syntax")
 	})
 }
 

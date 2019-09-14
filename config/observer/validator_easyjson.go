@@ -96,6 +96,7 @@ func easyjson32b9832cDecodeGithubComCorestoreioPkgConfigObserver(in *jlexer.Lexe
 		in.Consumed()
 	}
 }
+
 func easyjson32b9832cEncodeGithubComCorestoreioPkgConfigObserver(out *jwriter.Writer, in ValidatorArg) {
 	out.RawByte('{')
 	first := true
@@ -194,6 +195,7 @@ func (v *ValidatorArg) UnmarshalJSON(data []byte) error {
 func (v *ValidatorArg) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson32b9832cDecodeGithubComCorestoreioPkgConfigObserver(l, v)
 }
+
 func easyjson32b9832cDecodeGithubComCorestoreioPkgConfigObserver1(in *jlexer.Lexer, out *ValidateMinMaxInt) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
@@ -248,6 +250,7 @@ func easyjson32b9832cDecodeGithubComCorestoreioPkgConfigObserver1(in *jlexer.Lex
 		in.Consumed()
 	}
 }
+
 func easyjson32b9832cEncodeGithubComCorestoreioPkgConfigObserver1(out *jwriter.Writer, in ValidateMinMaxInt) {
 	out.RawByte('{')
 	first := true

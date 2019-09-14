@@ -67,6 +67,7 @@ func easyjson97f69e47DecodeGithubComCorestoreioPkgConfigObserver(in *jlexer.Lexe
 		in.Consumed()
 	}
 }
+
 func easyjson97f69e47EncodeGithubComCorestoreioPkgConfigObserver(out *jwriter.Writer, in ModifierArg) {
 	out.RawByte('{')
 	first := true

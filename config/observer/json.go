@@ -166,7 +166,6 @@ func (m *Configuration) MakeObserver() (event uint8, route string, _ config.Obse
 // creates the appropriate observers and registers them with the config.Service.
 // The data in io.Reader must have the structure of type `Configurations`.
 func RegisterWithJSON(or config.ObserverRegisterer, r io.Reader) error {
-
 	jsonData, err := ioutil.ReadAll(r)
 	if err != nil {
 		return errors.ReadFailed.New(err, "[config/validation/json] Reading failed")
@@ -194,7 +193,6 @@ func RegisterWithJSON(or config.ObserverRegisterer, r io.Reader) error {
 // removes the appropriate observers which matches the route and the event.
 // The data in io.Reader must have the structure of type `Configurations`.
 func DeregisterWithJSON(or config.ObserverRegisterer, r io.Reader) error {
-
 	jsonData, err := ioutil.ReadAll(r)
 	if err != nil {
 		return errors.ReadFailed.New(err, "[config/validation/json] Reading failed")

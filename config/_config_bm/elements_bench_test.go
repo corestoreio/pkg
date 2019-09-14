@@ -91,7 +91,7 @@ func BenchmarkSectionSliceFindFieldByID1(b *testing.B) {
 // BenchmarkSectionSliceFindFieldByID5-4	 2000000	       851 ns/op	       0 B/op	       0 allocs/op => cfgpath.Routes with Sum32 + array with pointers
 // BenchmarkSectionSliceFindFieldByID5-4	  500000	      3045 ns/op	       0 B/op	       0 allocs/op => removed pointers
 func BenchmarkSectionSliceFindFieldByID5(b *testing.B) {
-	var routePaths = [...]cfgpath.Route{
+	routePaths := [...]cfgpath.Route{
 		cfgpath.MakeRoute("carriers", "usps", "gateway_url"),
 		cfgpath.MakeRoute("wishlist", "email", "number_limit"),
 		cfgpath.MakeRoute("tax", "calculation", "apply_tax_on"),
@@ -113,7 +113,7 @@ func BenchmarkSectionSliceFindFieldByID5(b *testing.B) {
 
 // BenchmarkSectionSliceFindFieldByID5_Parallel-4	 1000000	      1576 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkSectionSliceFindFieldByID5_Parallel(b *testing.B) {
-	var routePaths = [...]cfgpath.Route{
+	routePaths := [...]cfgpath.Route{
 		cfgpath.MakeRoute("carriers", "usps", "gateway_url"),
 		cfgpath.MakeRoute("wishlist", "email", "number_limit"),
 		cfgpath.MakeRoute("tax", "calculation", "apply_tax_on"),

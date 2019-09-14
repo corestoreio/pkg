@@ -61,7 +61,6 @@ type pubSub struct {
 	subAutoInc int // subAutoInc increased whenever a Subscriber has been added
 	pubPath    chan Path
 	stop       chan struct{} // terminates the goroutine
-	closeErr   chan error    // this one tells us that the go routine has really been terminated
 	closed     bool          // if Close() has been called the config.Service can still Write() without panic
 	log        log.Logger
 }
@@ -75,13 +74,11 @@ func (s *pubSub) Close() error {
 	if s.closed {
 		return errors.AlreadyClosed.Newf("[config] PubSub Service already closed")
 	}
-	defer func() { close(s.closeErr) }() // last close(s.closeErr) does not work and panics
+
 	s.closed = true
-	s.stop <- struct{}{}
-	close(s.pubPath)
 	close(s.stop)
-	//close(s.closeErr)
-	return <-s.closeErr
+	close(s.pubPath)
+	return nil
 }
 
 // Subscribe adds a Subscriber to be called when a write event happens. See
@@ -141,7 +138,6 @@ func (s *pubSub) publish() {
 	for {
 		select {
 		case <-s.stop:
-			s.closeErr <- nil
 			return
 		case p, ok := <-s.pubPath:
 			if !ok {
@@ -151,8 +147,8 @@ func (s *pubSub) publish() {
 			if len(s.subMap) == 0 {
 				break
 			}
-
 			var evict []int
+
 			evict = append(evict, s.readMapAndSend(p, 1)...)  // e.g.: StrScope
 			evict = append(evict, s.readMapAndSend(p, 2)...)  // e.g.: StrScope/ID
 			evict = append(evict, s.readMapAndSend(p, 3)...)  // e.g.: StrScope/ID/system
@@ -217,10 +213,9 @@ func (s *pubSub) sendMsgRecoverable(id int, sl MessageReceiver, p Path) (err err
 
 func newPubSub(l log.Logger) *pubSub {
 	return &pubSub{
-		subMap:   make(map[string]map[int]MessageReceiver),
-		pubPath:  make(chan Path),
-		stop:     make(chan struct{}),
-		closeErr: make(chan error),
-		log:      l,
+		subMap:  make(map[string]map[int]MessageReceiver),
+		pubPath: make(chan Path),
+		stop:    make(chan struct{}),
+		log:     l,
 	}
 }

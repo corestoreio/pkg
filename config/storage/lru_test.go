@@ -48,7 +48,6 @@ var testLRUData = []byte(testLRUDataStr)
 // var testLRUVal = *config.NewValue(testLRUData)
 
 func TestLRUGet(t *testing.T) {
-
 	newDistinctLRUSize := func(size int) func(*testing.T) {
 		return func(t *testing.T) {
 			for _, tt := range lruGetTests {
@@ -88,7 +87,6 @@ func TestLRUGet(t *testing.T) {
 }
 
 func TestLRUNew_Parallel(t *testing.T) {
-
 	t.Run("add in parallel", func(t *testing.T) {
 		lru := storage.NewLRU(2)
 		bgwork.Wait(len(lruGetTests), func(idx int) {
@@ -142,5 +140,4 @@ func TestLRUNew_Parallel(t *testing.T) {
 			}
 		})
 	})
-
 }

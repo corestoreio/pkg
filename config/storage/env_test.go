@@ -26,7 +26,6 @@ import (
 )
 
 func TestToEnvVar(t *testing.T) {
-
 	tests := []struct {
 		scpID scope.TypeID
 		route string
@@ -74,7 +73,6 @@ func TestFromEnvVar(t *testing.T) {
 }
 
 func TestWithLoadEnvironmentVariables(t *testing.T) {
-
 	t.Run("success", func(t *testing.T) {
 		const wantValue = "Pear 🍐"
 		assert.NoError(t, os.Setenv("CONFIG__STORES__345__XX__BB__CC", wantValue))

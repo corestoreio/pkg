@@ -38,7 +38,7 @@ type Scoper interface {
 // scopes.
 type Setter interface {
 	// Write writes a configuration entry and may return an error
-	Set(p *Path, value []byte) error
+	Set(p *Path, value []byte) error // TODO write benchmark to see if pointer or non pointer is faster. same with Storager interface
 }
 
 // Storager is the underlying data storage for holding the keys and its values.
@@ -97,7 +97,6 @@ type Service struct {
 // go routine will be startet for the publish and subscribe feature.
 // Level2 is the required underlying data holding provider.
 func NewService(level2 Storager, o Options, fns ...LoadDataOption) (s *Service, err error) {
-
 	s = &Service{
 		level2:      level2,
 		config:      o,
@@ -232,7 +231,6 @@ func (s *Service) ReplaceEnvName(str string) string {
 
 // Close closes and terminates the internal goroutines and connections.
 func (s *Service) Close() error {
-
 	if s.config.EnableHotReload {
 		signal.Stop(s.hotReloadSignal)
 		close(s.hotReloadSignal)
@@ -273,7 +271,7 @@ func (s *Service) Flush() error {
 
 // Scoped creates a new scope base configuration reader which has the
 // implemented fall back hierarchy.
-func (s *Service) Scoped(websiteID, storeID int64) Scoped {
+func (s *Service) Scoped(websiteID, storeID uint32) Scoped {
 	return makeScoped(s, websiteID, storeID)
 }
 
@@ -491,8 +489,8 @@ type Scoped struct {
 	// Root holds the main functions for retrieving values by paths from the
 	// storage or a fake service.
 	rootSrv   getter
-	websiteID int64
-	storeID   int64
+	websiteID uint32
+	storeID   uint32
 }
 
 // TODO: Scoped should support websites/0/ and stores/0/ to provide a top level websites or stores specific configuration.
@@ -503,7 +501,7 @@ type getter interface {
 
 // makeScoped instantiates a ScopedGetter implementation.  Getter
 // specifies the root Getter which does not know about any scope.
-func makeScoped(s getter, websiteID, storeID int64) Scoped {
+func makeScoped(s getter, websiteID, storeID uint32) Scoped {
 	return Scoped{
 		rootSrv:   s,
 		websiteID: websiteID,
@@ -543,7 +541,7 @@ func (ss Scoped) ScopeID() scope.TypeID {
 // position zero and ParentID() on position one. This function guarantees that
 // the returned slice contains at least two entries.
 func (ss Scoped) ScopeIDs() scope.TypeIDs {
-	var ids = [2]scope.TypeID{
+	ids := [2]scope.TypeID{
 		ss.ScopeID(),
 		ss.ParentID(),
 	}

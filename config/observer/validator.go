@@ -191,7 +191,6 @@ type validators struct {
 }
 
 func (v *validators) isValid(val string) error {
-
 	var validations int
 	for _, valFn := range v.valFns {
 		if valFn(val) {
@@ -215,7 +214,6 @@ func (v *validators) isValid(val string) error {
 
 // Observe validates the given rawData value. This functions runs in a hot path.
 func (v *validators) Observe(_ config.Path, rawData []byte, found bool) (rawData2 []byte, err error) {
-
 	if !utf8.Valid(rawData) {
 		return nil, errors.NotValid.Newf("[config/observer] Input data (length:%d) matches no valid UTF8 rune.", len(rawData))
 	}

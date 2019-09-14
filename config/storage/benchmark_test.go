@@ -90,5 +90,4 @@ func BenchmarkLRUNew_Parallel(b *testing.B) {
 			_ = val2 // ;-)
 		})
 	})
-
 }

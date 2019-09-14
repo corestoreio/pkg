@@ -50,7 +50,6 @@ func (a *allowed) Observe(p config.Path, rawData []byte, found bool) (newRawData
 // ExampleRegisterFactory shows how to create a custom observer based on the
 // JSON input data. Usually the JSON data gets send via HTTP or protobuf.
 func ExampleRegisterFactory() {
-
 	observer.RegisterFactory("path_allowed", NewAllowedObserver)
 
 	cfgSrv := config.MustNewService(nil, config.Options{})

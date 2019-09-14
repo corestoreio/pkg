@@ -28,9 +28,7 @@ import (
 )
 
 func TestWithLoadYAML(t *testing.T) {
-
 	t.Run("success", func(t *testing.T) {
-
 		cfgSrv, err := config.NewService(
 			storage.NewMap(), config.Options{},
 			storage.WithLoadYAML(storage.WithFiles([]string{"testdata", "example.yaml"})),
@@ -45,7 +43,6 @@ func TestWithLoadYAML(t *testing.T) {
 	})
 
 	t.Run("malformed path", func(t *testing.T) {
-
 		cfgSrv, err := config.NewService(
 			storage.NewMap(), config.Options{},
 			storage.WithLoadYAML(storage.WithFiles([]string{"testdata", "malformed_path.yaml"})),
@@ -56,7 +53,6 @@ func TestWithLoadYAML(t *testing.T) {
 	})
 
 	t.Run("malformed yaml", func(t *testing.T) {
-
 		cfgSrv, err := config.NewService(
 			storage.NewMap(), config.Options{},
 			storage.WithLoadYAML(storage.WithFiles([]string{"testdata", "malformed_yaml.yaml"})),
@@ -70,7 +66,6 @@ func TestWithLoadFieldMetaYAML(t *testing.T) {
 	defer leaktest.Check(t)()
 
 	t.Run("success", func(t *testing.T) {
-
 		cfgSrv, err := config.NewService(
 			storage.NewMap(), config.Options{},
 			storage.WithLoadFieldMetaYAML(storage.WithFiles([]string{"testdata", "example_field_meta.yaml"})),

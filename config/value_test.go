@@ -40,6 +40,7 @@ func (m *myTestUnmarshal) UnmarshalText(text []byte) error {
 	m.result = string(text)
 	return nil
 }
+
 func (m *myTestUnmarshal) UnmarshalBinary(data []byte) error {
 	m.result = string(data)
 	return nil
@@ -466,13 +467,13 @@ func TestValue(t *testing.T) {
 		v := NewValue([]byte(`2018-04-02,2018-X4-02,`))
 		val, err := v.Times()
 		assert.Nil(t, val)
-		assert.EqualError(t, err, "[config] Value.Times with index 1 and entry \"2018-X4-02\": parsing time \"2018-X4-02\": month out of range")
+		assert.EqualError(t, err, "[config] Value.Times with index 1 and entry \"2018-X4-02\": parsing time \"2018-X4-02\" as \"2006-01-02\": cannot parse \"X4-02\" as \"01\"")
 	})
 	t.Run("Times3", func(t *testing.T) {
 		v := NewValue([]byte(`2018-04-02,,2018-X4-02`))
 		val, err := v.Times()
 		assert.Nil(t, val)
-		assert.EqualError(t, err, "[config] Value.Times with index 2 and entry \"2018-X4-02\": parsing time \"2018-X4-02\": month out of range")
+		assert.EqualError(t, err, "[config] Value.Times with index 2 and entry \"2018-X4-02\": parsing time \"2018-X4-02\" as \"2006-01-02\": cannot parse \"X4-02\" as \"01\"")
 	})
 
 	t.Run("Duration", func(t *testing.T) {

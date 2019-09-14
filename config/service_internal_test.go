@@ -28,9 +28,9 @@ func TestScopedService_Parent(t *testing.T) {
 	tests := []struct {
 		sg               Scoped
 		wantCurrentScope scope.Type
-		wantCurrentId    int64
+		wantCurrentId    uint32
 		wantParentScope  scope.Type
-		wantParentID     int64
+		wantParentID     uint32
 	}{
 		{makeScoped(nil, 33, 1), scope.Store, 1, scope.Website, 33},
 		{makeScoped(nil, 3, 0), scope.Website, 3, scope.Default, 0},

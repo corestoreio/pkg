@@ -29,7 +29,6 @@ import (
 )
 
 func main() {
-
 	dbcp := dml.MustConnectAndVerify(dml.WithDSNfromEnv(""))
 	defer mustCheckCloseErr(dbcp)
 

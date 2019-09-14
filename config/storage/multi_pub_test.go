@@ -27,7 +27,6 @@ import (
 )
 
 func TestMakeMulti(t *testing.T) {
-
 	p := config.MustNewPathWithScope(scope.Store.WithID(44), "aa/bb/cc")
 
 	cmpGet := func(t *testing.T, s config.Storager, wantData []byte) {
@@ -49,7 +48,6 @@ func TestMakeMulti(t *testing.T) {
 		cmpGet(t, inMem1, testVal)
 		cmpGet(t, inMem2, testVal)
 		cmpGet(t, m, testVal)
-
 	})
 
 	t.Run("write timeout", func(t *testing.T) {
@@ -69,7 +67,6 @@ func TestMakeMulti(t *testing.T) {
 		cmpGet(t, inMem1, testVal)
 		cmpGet(t, inMem2, testVal)
 		cmpGet(t, m, testVal)
-
 	})
 
 	t.Run("write error (racy)", func(t *testing.T) {

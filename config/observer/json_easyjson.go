@@ -75,6 +75,7 @@ func easyjson42239ddeDecodeGithubComCorestoreioPkgConfigObserver(in *jlexer.Lexe
 		in.Consumed()
 	}
 }
+
 func easyjson42239ddeEncodeGithubComCorestoreioPkgConfigObserver(out *jwriter.Writer, in Configurations) {
 	out.RawByte('{')
 	first := true
@@ -128,6 +129,7 @@ func (m *Configurations) UnmarshalJSON(data []byte) error {
 func (m *Configurations) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson42239ddeDecodeGithubComCorestoreioPkgConfigObserver(l, m)
 }
+
 func easyjson42239ddeDecodeGithubComCorestoreioPkgConfigObserver1(in *jlexer.Lexer, out *Configuration) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
@@ -167,6 +169,7 @@ func easyjson42239ddeDecodeGithubComCorestoreioPkgConfigObserver1(in *jlexer.Lex
 		in.Consumed()
 	}
 }
+
 func easyjson42239ddeEncodeGithubComCorestoreioPkgConfigObserver1(out *jwriter.Writer, in Configuration) {
 	out.RawByte('{')
 	first := true

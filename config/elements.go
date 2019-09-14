@@ -562,7 +562,6 @@ func (fs Fields) Merge(fields ...*Field) Fields {
 
 // merge merges field f into the slice. Appends the field if the Id is new.
 func (fs Fields) merge(f *Field) Fields {
-
 	cf, idx := fs.Find(f.ID) // cf current field
 	if idx < 0 {
 		cf = f

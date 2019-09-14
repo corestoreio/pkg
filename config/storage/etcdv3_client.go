@@ -54,7 +54,6 @@ type etcdv3Client struct {
 // NewEtcdv3Client creates a new storage client with either a concret or a mocked
 // object of the etcd v3.
 func NewEtcdv3Client(c clientv3.KV, o Etcdv3Options) (config.Storager, error) {
-
 	s := &etcdv3Client{
 		options: o,
 		client:  c,
@@ -183,13 +182,11 @@ func (cm Etcdv3FakeClient) Txn(ctx context.Context) clientv3.Txn { return nil }
 // etcd key prefix and applies it to the config.service. This function option
 // can be set when creating a new config.service or updating its internal DB.
 func WithLoadFromEtcdv3(c clientv3.KV, o Etcdv3Options) config.LoadDataOption {
-
 	if o.KeyPrefix == "" {
 		o.KeyPrefix = Etcdv3DefaultKeyPrefix
 	}
 
 	return config.MakeLoadDataOption(func(s *config.Service) error {
-
 		ctx := context.Background()
 		if o.RequestTimeout > 0 {
 			var cancel context.CancelFunc

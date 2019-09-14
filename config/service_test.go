@@ -65,7 +65,6 @@ func TestMustNewService_ShouldPanic(t *testing.T) {
 }
 
 func TestNotKeyNotFoundError(t *testing.T) {
-
 	srv := config.MustNewService(storage.NewMap(), config.Options{})
 	assert.NotNil(t, srv)
 
@@ -81,7 +80,6 @@ func TestNotKeyNotFoundError(t *testing.T) {
 }
 
 func TestService_Put(t *testing.T) {
-
 	srv := config.MustNewService(storage.NewMap(), config.Options{})
 	assert.NotNil(t, srv)
 
@@ -91,7 +89,6 @@ func TestService_Put(t *testing.T) {
 }
 
 func TestService_Write_Get_Value_Success(t *testing.T) {
-
 	runner := func(p *config.Path, value []byte) func(*testing.T) {
 		return func(t *testing.T) {
 			srv := config.MustNewService(storage.NewMap(), config.Options{})
@@ -101,7 +98,6 @@ func TestService_Write_Get_Value_Success(t *testing.T) {
 			assert.NoError(t, haveErr, "No error should occur when retrieving a value")
 			assert.True(t, ok)
 			assert.Exactly(t, string(value), haveStr)
-
 		}
 	}
 
@@ -110,15 +106,14 @@ func TestService_Write_Get_Value_Success(t *testing.T) {
 	t.Run("stringDefault", runner(basePath, []byte("Gopher")))
 	t.Run("stringWebsite", runner(basePath.BindWebsite(10), []byte("Gopher")))
 	t.Run("stringStore", runner(basePath.BindStore(22), []byte("Gopher")))
-
 }
 
 func TestScoped_IsValid(t *testing.T) {
 	t.Parallel()
 	cfg := config.NewFakeService(storage.NewMap())
 	tests := []struct {
-		websiteID int64
-		storeID   int64
+		websiteID uint32
+		storeID   uint32
 		want      bool
 	}{
 		{0, 0, true},
@@ -128,8 +123,6 @@ func TestScoped_IsValid(t *testing.T) {
 		{1, 0, true},
 		{1, 1, true},
 		{0, 1, false},
-		{1, -1, false},
-		{-1, -1, false},
 	}
 	for i, test := range tests {
 		s := cfg.Scoped(test.websiteID, test.storeID)
@@ -142,9 +135,9 @@ func TestScoped_IsValid(t *testing.T) {
 func TestScopedServiceScope(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		websiteID, storeID int64
+		websiteID, storeID uint32
 		wantScope          scope.Type
-		wantID             int64
+		wantID             uint32
 	}{
 		{0, 0, scope.Default, 0},
 		{1, 0, scope.Website, 1},
@@ -167,7 +160,7 @@ func TestScopedServicePath(t *testing.T) {
 		fqpath             string
 		route              string
 		perm               scope.Type
-		websiteID, storeID int64
+		websiteID, storeID uint32
 		wantErrKind        errors.Kind
 		wantTypeIDs        scope.TypeIDs
 	}{
@@ -217,7 +210,7 @@ func TestScopedServicePath(t *testing.T) {
 			sg := cg.Scoped(test.websiteID, test.storeID)
 			haveVal := sg.Get(test.perm, test.route)
 
-			if test.wantErrKind > 0 {
+			if !test.wantErrKind.Empty() {
 				assert.False(t, haveVal.IsValid(), "Index %d/%d scoped path value must be found ", vi, xi)
 				continue
 			}
@@ -295,7 +288,7 @@ func TestScopedServicePermission_All(t *testing.T) {
 		assert.Exactly(t, test.want, s, "Index %d", i)
 		assert.Exactly(t, test.wantIDs, srv.Invokes().ScopeIDs(), "Index %d", i)
 	}
-	//assert.Exactly(t, []string{"default/0/aa/bb/cc", "stores/1/aa/bb/cc", "websites/1/aa/bb/cc"}, sm.Invokes().Paths())
+	// assert.Exactly(t, []string{"default/0/aa/bb/cc", "stores/1/aa/bb/cc", "websites/1/aa/bb/cc"}, sm.Invokes().Paths())
 }
 
 func TestScopedServicePermission_One(t *testing.T) {
@@ -361,7 +354,6 @@ func TestScopedServicePermission_One(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Exactly(t, "cc3", s) // because ScopedGetter bound to store scope
 	})
-
 }
 
 func TestWithLRU(t *testing.T) {
@@ -478,12 +470,10 @@ func TestService_Scoped_LRU_Parallel(t *testing.T) {
 		if v2 {
 			panic("route2 Value must be false")
 		}
-
 	})
 }
 
 func TestService_EnvName_From_OSEnv(t *testing.T) {
-
 	t.Run("success", func(t *testing.T) {
 		defer leaktest.Check(t)()
 
@@ -512,7 +502,7 @@ func TestHotReload(t *testing.T) {
 	defer leaktest.Check(t)()
 
 	p := config.MustNewPath("ww/ee/rr")
-	var reloadCounter = new(int64)
+	reloadCounter := new(int64)
 	srv := config.MustNewService(storage.NewMap(), config.Options{
 		EnableHotReload:  true,
 		HotReloadSignals: []os.Signal{syscall.SIGUSR1},
@@ -547,7 +537,6 @@ type keyer interface {
 }
 
 func TestService_PathWithEnvName(t *testing.T) {
-
 	p := config.MustNewPath("payment/datatrans/username").BindWebsite(4).WithEnvSuffix()
 
 	sMap := storage.NewMap()
@@ -568,7 +557,8 @@ func TestService_PathWithEnvName(t *testing.T) {
 	sort.Strings(keys)
 	assert.Exactly(t, []string{
 		"Type(Website) ID(4)/payment/datatrans/username",
-		"Type(Website) ID(4)/payment/datatrans/username/MY_LOCAL_MACBOOK"}, keys)
+		"Type(Website) ID(4)/payment/datatrans/username/MY_LOCAL_MACBOOK",
+	}, keys)
 }
 
 func TestService_DifferentStorageLevels(t *testing.T) {
@@ -594,7 +584,6 @@ func (to testObserver) Observe(p config.Path, rawData []byte, found bool) (rawDa
 }
 
 func TestService_Observer(t *testing.T) {
-
 	srv := config.MustNewService(storage.NewMap(), config.Options{})
 	defer func() { assert.NoError(t, srv.Close()) }()
 
@@ -850,7 +839,6 @@ func TestService_FieldMetaData_Fallbacks(t *testing.T) {
 		assert.False(t, ok)
 		assert.NoError(t, err, "%+v", err)
 		assert.Empty(t, str) // direct hit must return empty value because no default value for default scope set.
-
 	})
 	t.Run("username: website scope 3 can access website scope and gets default scope default value", func(t *testing.T) {
 		scpd := srv.Scoped(3, 4)
@@ -858,7 +846,6 @@ func TestService_FieldMetaData_Fallbacks(t *testing.T) {
 		assert.Exactly(t, `"prdUser0"`, str)
 	})
 	t.Run("username: website scope 1 can access website scope and gets its scope default value", func(t *testing.T) {
-
 		scpd := srv.Scoped(1, 4)
 		str := scpd.Get(scope.Store, "carrier/dhl/username").String()
 		assert.Exactly(t, `"prdUser1"`, str)
@@ -874,5 +861,4 @@ func TestService_FieldMetaData_Fallbacks(t *testing.T) {
 		str := scpd.Get(scope.Website, "customer/address/prefix_options").String()
 		assert.Exactly(t, "\"Bitte wählen;Frau;Herr\"", str)
 	})
-
 }

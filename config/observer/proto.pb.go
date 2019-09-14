@@ -35,9 +35,11 @@ func (*Configurations) ProtoMessage()    {}
 func (*Configurations) Descriptor() ([]byte, []int) {
 	return fileDescriptor_proto_48777797b914ee35, []int{0}
 }
+
 func (m *Configurations) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
+
 func (m *Configurations) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Configurations.Marshal(b, m, deterministic)
@@ -50,12 +52,15 @@ func (m *Configurations) XXX_Marshal(b []byte, deterministic bool) ([]byte, erro
 		return b[:n], nil
 	}
 }
+
 func (dst *Configurations) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_Configurations.Merge(dst, src)
 }
+
 func (m *Configurations) XXX_Size() int {
 	return m.Size()
 }
+
 func (m *Configurations) XXX_DiscardUnknown() {
 	xxx_messageInfo_Configurations.DiscardUnknown(m)
 }
@@ -71,9 +76,11 @@ func (*Configuration) ProtoMessage()    {}
 func (*Configuration) Descriptor() ([]byte, []int) {
 	return fileDescriptor_proto_48777797b914ee35, []int{1}
 }
+
 func (m *Configuration) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
+
 func (m *Configuration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Configuration.Marshal(b, m, deterministic)
@@ -86,12 +93,15 @@ func (m *Configuration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error
 		return b[:n], nil
 	}
 }
+
 func (dst *Configuration) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_Configuration.Merge(dst, src)
 }
+
 func (m *Configuration) XXX_Size() int {
 	return m.Size()
 }
+
 func (m *Configuration) XXX_DiscardUnknown() {
 	xxx_messageInfo_Configuration.DiscardUnknown(m)
 }
@@ -101,6 +111,7 @@ var xxx_messageInfo_Configuration proto.InternalMessageInfo
 func (*Configuration) XXX_MessageName() string {
 	return "observer.Configuration"
 }
+
 func init() {
 	proto.RegisterType((*Configurations)(nil), "observer.Configurations")
 	proto.RegisterType((*Configuration)(nil), "observer.Configuration")
@@ -293,6 +304,7 @@ func encodeVarintProto(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return offset + 1
 }
+
 func (m *Configurations) Size() (n int) {
 	var l int
 	_ = l
@@ -337,9 +349,11 @@ func sovProto(x uint64) (n int) {
 	}
 	return n
 }
+
 func sozProto(x uint64) (n int) {
 	return sovProto(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
+
 func (m *Configurations) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -421,6 +435,7 @@ func (m *Configurations) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func (m *Configuration) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -589,6 +604,7 @@ func (m *Configuration) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+
 func skipProto(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0

@@ -53,7 +53,6 @@ func (s *bcStorage) Set(p *config.Path, value []byte) error {
 
 // Get returns a value from the cache.
 func (s *bcStorage) Get(p *config.Path) (v []byte, found bool, err error) {
-
 	val, err := s.bc.Get(p.String())
 	isNotFound := err == bigcache.ErrEntryNotFound
 	if err != nil && !isNotFound {

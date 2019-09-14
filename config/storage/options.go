@@ -47,7 +47,7 @@ func processFile(file string, s *config.Service, cb func(config.Setter, io.Reade
 }
 
 // If someone needs it, uncomment and add a test
-//func WithIOReader(r io.Reader) option {
+// func WithIOReader(r io.Reader) option {
 //	return func(s *config.Service, cb func(config.Setter, io.Reader) error) error {
 //		return errors.WithStack(cb(s, r))
 //	}

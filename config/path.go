@@ -85,7 +85,7 @@ func (r Route) Bind(s scope.TypeID) *Path {
 }
 
 // BindWebsite creates a new Path and binds it to a website scope and its ID.
-func (r Route) BindWebsite(id int64) *Path {
+func (r Route) BindWebsite(id uint32) *Path {
 	return &Path{
 		route:   r,
 		ScopeID: scope.MakeTypeID(scope.Website, id),
@@ -93,7 +93,7 @@ func (r Route) BindWebsite(id int64) *Path {
 }
 
 // BindStore creates a new Path and binds it to a store scope and its ID.
-func (r Route) BindStore(id int64) *Path {
+func (r Route) BindStore(id uint32) *Path {
 	return &Path{
 		route:   r,
 		ScopeID: scope.MakeTypeID(scope.Store, id),
@@ -235,7 +235,7 @@ func (p Path) Bind(s scope.TypeID) *Path {
 // BindWebsite binds a path to a website scope and its ID. Returns a new Path
 // pointer and does not apply the changes to the current Path. Convenience
 // helper function. Fluent API design.
-func (p Path) BindWebsite(id int64) *Path {
+func (p Path) BindWebsite(id uint32) *Path {
 	p.ScopeID = scope.MakeTypeID(scope.Website, id)
 	return &p
 }
@@ -243,7 +243,7 @@ func (p Path) BindWebsite(id int64) *Path {
 // BindStore binds a path to a store scope and its ID. Returns a new Path
 // pointer and does not apply the changes to the current Path. Convenience
 // helper function. Fluent API design.
-func (p Path) BindStore(id int64) *Path {
+func (p Path) BindStore(id uint32) *Path {
 	p.ScopeID = scope.MakeTypeID(scope.Store, id)
 	return &p
 }
@@ -328,7 +328,7 @@ func (p *Path) AppendFQ(buf *bytes.Buffer) error {
 	buf.WriteByte(PathSeparator)
 
 	bufRaw := buf.Bytes()
-	bufRaw = strconv.AppendInt(bufRaw, id, 10)
+	bufRaw = strconv.AppendUint(bufRaw, uint64(id), 10)
 	buf.Reset()
 	buf.Write(bufRaw)
 	buf.WriteByte(PathSeparator)
@@ -346,7 +346,7 @@ func (p *Path) AppendFQ(buf *bytes.Buffer) error {
 //		route: 		catalog/frontend/list_allow_all
 // Zero allocations to memory. Useful to reduce allocations by reusing Path
 // pointer because it calls internally Reset.
-func (p *Path) Parse(routeOrFQPath string) (err error) {
+func (p *Path) Parse(routeOrFQPath string) error {
 	p.Reset()
 	routeOrFQPath = p.stripEnvSuffixStr(routeOrFQPath)
 	// this is the most fast version I come up with.
@@ -362,12 +362,11 @@ func (p *Path) Parse(routeOrFQPath string) (err error) {
 	fi2 := strings.Index(routeOrFQPath[fi1+1:], sPathSeparator)
 	scopeIDStr := routeOrFQPath[fi1+1 : fi1+1+fi2]
 
-	var scopeID int64
 	p.route = Route(routeOrFQPath)
 	p.ScopeID = scope.DefaultTypeID
 
 	if isDigitOnly(scopeIDStr) {
-		scopeID, err = strconv.ParseInt(scopeIDStr, 10, 64)
+		scopeID, err := strconv.ParseUint(scopeIDStr, 10, 32)
 		if err != nil {
 			return errors.NotValid.New(err, "[config] ParseInt with value: %q", scopeIDStr)
 		}
@@ -376,7 +375,7 @@ func (p *Path) Parse(routeOrFQPath string) (err error) {
 			return errors.NotSupported.Newf("[config] Unknown Scope: %q", scopeStr)
 		}
 		p.route = Route(routeOrFQPath[fi1+1+fi2+1:])
-		p.ScopeID = scope.MakeTypeID(scope.FromString(scopeStr), scopeID)
+		p.ScopeID = scope.MakeTypeID(scope.FromString(scopeStr), uint32(scopeID))
 	}
 
 	return p.IsValid()
@@ -396,7 +395,7 @@ func (p *Path) ParseStrings(scp, id, route string) error {
 		return errors.CorruptData.New(err, "[config] %q failed to parse %q to uint", route, id)
 	}
 	p.route = Route(route)
-	p.ScopeID = scope.FromString(scp).WithID(int64(id2))
+	p.ScopeID = scope.FromString(scp).WithID(uint32(id2))
 	return p.IsValid()
 }
 
@@ -504,13 +503,13 @@ func (p *Path) UnmarshalText(txt []byte) error {
 
 	txt = txt[fi+1:]
 	fi = bytes.Index(txt, bSeparator)
-	scopeID, _, err := byteconv.ParseInt(txt[:fi])
+	scopeID, _, err := byteconv.ParseUint(txt[:fi], 10, 32)
 	if err != nil {
 		return errors.NotValid.New(err, "[config] ParseInt")
 	}
 
 	p.route = Route(txt[fi+1:])
-	p.ScopeID = scope.MakeTypeID(scope.FromBytes(scopeStr), scopeID)
+	p.ScopeID = scope.MakeTypeID(scope.FromBytes(scopeStr), uint32(scopeID))
 	return errors.NotValid.New(p.IsValid(), "[config] ParseInt")
 }
 

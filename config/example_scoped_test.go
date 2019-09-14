@@ -14,7 +14,7 @@
 
 package config_test
 
-//import (
+// import (
 //	"fmt"
 //
 //	"github.com/corestoreio/errors"
@@ -27,10 +27,10 @@ package config_test
 //// Config Service, the Default storage engine with build-in in-memory map. The
 //// config.NewService or config.MustNewService gets only instantiated once during
 //// app start up.
-//var configService = config.MustNewService(config.NewInMemoryStore() /*options*/)
+// var configService = config.MustNewService(config.NewInMemoryStore() /*options*/)
 //
 //// The store.MustNewService gets only instantiated once during app start up.
-//var storeSrv = store.MustNewService(
+// var storeSrv = store.MustNewService(
 //	configService,
 //
 //	// Storage gets usually loaded from the database tables containing
@@ -58,13 +58,13 @@ package config_test
 //	),
 //)
 //
-//const exampleRoute = "scope/test/demo_path"
+// const exampleRoute = "scope/test/demo_path"
 //
 //// We focus here on type Int() other primitive types are of course also available.
 //// The int numbers here are converted floats. Can you spot the origin?
-//var myConfigPath = config.MustNewPath(exampleRoute) // panics on incorrect argument. Use only during app start up.
+// var myConfigPath = config.MustNewPath(exampleRoute) // panics on incorrect argument. Use only during app start up.
 //
-//var defaultsInt = []struct {
+// var defaultsInt = []struct {
 //	key config.Path
 //	val []byte
 //}{
@@ -73,7 +73,7 @@ package config_test
 //	{myConfigPath.BindStore(2), []byte(`ScopeStoreTwoATValue`)},       // Scope 2 = Store at
 //}
 //
-//func ExampleScopedGetter() {
+// func ExampleScopedGetter() {
 //
 //	// now add some configuration values with different scopes.
 //	// normally these config values will be loaded from the core_config_data table

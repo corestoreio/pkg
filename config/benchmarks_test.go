@@ -43,8 +43,8 @@ var benchmarkPathFQ string
 
 // BenchmarkPathFQ-4     	 3000000	       401 ns/op	     112 B/op	       1 allocs/op
 func BenchmarkPathFQ(b *testing.B) {
-	var scopeID int64 = 11
-	want := scope.StrWebsites.String() + "/" + strconv.FormatInt(scopeID, 10) + "/system/dev/debug"
+	var scopeID uint32 = 11
+	want := scope.StrWebsites.String() + "/" + strconv.FormatUint(uint64(scopeID), 10) + "/system/dev/debug"
 	p := "system/dev/debug"
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -220,7 +220,7 @@ func BenchmarkScopedServiceStringDefault(b *testing.B) {
 	benchmarkScopedServiceStringRun(b, 0, 0)
 }
 
-func benchmarkScopedServiceStringRun(b *testing.B, websiteID, storeID int64) {
+func benchmarkScopedServiceStringRun(b *testing.B, websiteID, storeID uint32) {
 	route := "aa/bb/cc"
 	want := strings.Repeat("Gopher", 100)
 
@@ -296,13 +296,13 @@ func BenchmarkPath_Marshal(b *testing.B) {
 	})
 	// BenchmarkPath_Marshal/UnmarshalText-4       	 3000000	       546 ns/op	      48 B/op	       1 allocs/op
 	b.Run("UnmarshalText", func(b *testing.B) {
-		var bData = []byte(want)
+		bData := []byte(want)
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			if err := benchmarkPath.UnmarshalText(bData); err != nil {
 				b.Fatal(err)
 			}
-			//b.Fatalf(benchmarkPath.String())
+			// b.Fatalf(benchmarkPath.String())
 			if benchmarkPath.ScopeID != scope.TypeID(67108987) {
 				b.Fatalf("Invalid scope: %d", benchmarkPath.ScopeID)
 			}
@@ -323,7 +323,7 @@ func BenchmarkPath_Marshal(b *testing.B) {
 	})
 	// BenchmarkPath_Marshal/UnmarshalBinary-4     	 3000000	       500 ns/op	      48 B/op	       1 allocs/op
 	b.Run("UnmarshalBinary", func(b *testing.B) {
-		var bData = []byte("{\x00\x00\x04\x00\x00\x00\x00system/full_page_cache/varnish/backend_port")
+		bData := []byte("{\x00\x00\x04\x00\x00\x00\x00system/full_page_cache/varnish/backend_port")
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			if err := benchmarkPath.UnmarshalBinary(bData); err != nil {

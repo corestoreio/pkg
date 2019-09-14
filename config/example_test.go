@@ -58,14 +58,14 @@ func ExamplePath() {
 	fmt.Println("dev/css/merge_css_files => ", rs[0], rs[1], rs[2])
 
 	// Output:
-	//default/0/system/smtp/host
-	//websites/1/system/smtp/host
-	//websites/1/system/smtp/host
-	//stores/3/system/smtp/host
-	//stores/3/system/smtp/host
-	//default/0/system/smtp/host
-	//default/0/system/smtp/host
-	//dev/css/merge_css_files =>  dev css merge_css_files
+	// default/0/system/smtp/host
+	// websites/1/system/smtp/host
+	// websites/1/system/smtp/host
+	// stores/3/system/smtp/host
+	// stores/3/system/smtp/host
+	// default/0/system/smtp/host
+	// default/0/system/smtp/host
+	// dev/css/merge_css_files =>  dev css merge_css_files
 }
 
 // ExampleValue shows how to use the Value type to convert the raw byte slice
@@ -116,8 +116,8 @@ func ExampleValue() {
 	fmt.Printf("%s: found: %t %#v\n", routeCookieLifetime, ok, keksLifetime)
 
 	// Output:
-	//carriers/freeshipping/specificcountry: []string{"CH", "LI", "DE"}
-	//carriers/freeshipping/specificcountry: "CH,LI,DE"
-	//catalog/frontend/list_per_page_values: []int{5, 10, 15, 20, 25}
-	//web/cookie/cookie_lifetime: found: true 7200000000000
+	// carriers/freeshipping/specificcountry: []string{"CH", "LI", "DE"}
+	// carriers/freeshipping/specificcountry: "CH,LI,DE"
+	// catalog/frontend/list_per_page_values: []int{5, 10, 15, 20, 25}
+	// web/cookie/cookie_lifetime: found: true 7200000000000
 }

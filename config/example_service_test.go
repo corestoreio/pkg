@@ -89,8 +89,8 @@ func ExampleService() {
 	fmt.Printf("Scope4: Is Key ok: %t\n", ok)
 
 	// Output:
-	//Scope1: true DefaultGopher
-	//Scope2: true WebsiteGopher
-	//Scope3: true StoreGopher
-	//Scope4: Is Key ok: false
+	// Scope1: true DefaultGopher
+	// Scope2: true WebsiteGopher
+	// Scope3: true StoreGopher
+	// Scope4: Is Key ok: false
 }

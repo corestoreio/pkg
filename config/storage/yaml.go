@@ -38,7 +38,6 @@ func WithLoadYAML(opts ...option) config.LoadDataOption {
 }
 
 func loadYAML(s config.Setter, r io.Reader) error {
-
 	d := yaml.NewDecoder(r)
 	d.SetStrict(true)
 	p := new(config.Path)
@@ -73,7 +72,6 @@ func loadYAML(s config.Setter, r io.Reader) error {
 // the whole file into memory.
 func WithLoadFieldMetaYAML(opts ...option) config.LoadDataOption {
 	return config.WithFieldMetaGenerator(func(s *config.Service) (<-chan *config.FieldMeta, <-chan error) {
-
 		fmC := make(chan *config.FieldMeta)
 		errC := make(chan error)
 
@@ -81,7 +79,6 @@ func WithLoadFieldMetaYAML(opts ...option) config.LoadDataOption {
 			defer func() { close(fmC); close(errC) }()
 
 			loadYaml := func(_ config.Setter, r io.Reader) error {
-
 				d := yaml.NewDecoder(r)
 				d.SetStrict(true)
 
@@ -135,7 +132,6 @@ func WithLoadFieldMetaYAML(opts ...option) config.LoadDataOption {
 
 		return fmC, errC
 	})
-
 }
 
 func sendFM(fmC chan *config.FieldMeta, data map[int64]string, route string, scp scope.Type) {

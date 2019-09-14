@@ -20,6 +20,7 @@ func TestNewTablesNonDB(t *testing.T) {
 	ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de", FloatMaxDecimals: 6})
 	_ = ps
 }
+
 func TestNewTablesDB(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)

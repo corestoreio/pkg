@@ -112,6 +112,5 @@ func TestNewModifier(t *testing.T) {
 		have, err := ms.Observe(p, data, true)
 		assert.Nil(t, have)
 		assert.True(t, errors.Interrupted.Match(err), "%+v", err)
-
 	})
 }
