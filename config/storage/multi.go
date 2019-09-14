@@ -20,7 +20,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
-	"github.com/golang/sync/errgroup"
+	"golang.org/x/sync/errgroup"
 )
 
 // MultiOptions provides options for function MakeMulti.
