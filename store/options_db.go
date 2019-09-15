@@ -62,16 +62,16 @@ func WithLoadFromDB(ctx context.Context, tbls *ddl.Tables) Option {
 	}
 }
 
+// WithSaveToDB persists the stores, groups and websites to the database when
+// options have been applied.
 func WithSaveToDB(ctx context.Context, tbls *ddl.Tables, chanErr chan<- error) Option {
-
-	panic("TODO write test")
 
 	stmtStore := tbls.MustTable(TableNameStore).Insert().OnDuplicateKey().WithArgs()
 	stmtGroup := tbls.MustTable(TableNameStoreGroup).Insert().OnDuplicateKey().WithArgs()
 	stmtWebsite := tbls.MustTable(TableNameStoreWebsite).Insert().OnDuplicateKey().WithArgs()
 
 	return Option{
-		sortOrder: 199,
+		sortOrder: 100000,
 		fn: func(s *Service) error {
 
 			s.chanEventSubscriber = append(s.chanEventSubscriber, make(chan int))

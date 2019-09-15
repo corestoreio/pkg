@@ -35,7 +35,7 @@ type FakeWrite struct {
 }
 
 // Set writes to a black hole, may return an error
-func (w *FakeWrite) Set(p *Path, value []byte) error {
+func (w *FakeWrite) Set(p Path, value []byte) error {
 	w.ArgPath = p.String()
 	w.ArgValue = value
 	return w.WriteError
@@ -93,7 +93,7 @@ type FakeService struct {
 	mu      sync.Mutex
 	// GetFn can be set optionally. If set then Storage will be ignored.
 	// Must return a guaranteed non-nil Value.
-	GetFn       func(p *Path) (v *Value)
+	GetFn       func(p Path) (v *Value)
 	invocations invocations // contains path and count of how many times the typed function has been called
 
 	SubscribeFn      func(string, MessageReceiver) (subscriptionID int, err error)
@@ -124,14 +124,14 @@ func (s *FakeService) AllInvocations() invocations {
 }
 
 // Get looks up a configuration value for a given path.
-func (s *FakeService) Get(p *Path) *Value {
+func (s *FakeService) Get(p Path) *Value {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.invocations == nil {
 		s.invocations = make(invocations)
 	}
 
-	s.invocations[*p]++
+	s.invocations[p]++
 
 	if s.GetFn != nil {
 		return s.GetFn(p)
@@ -146,7 +146,7 @@ func (s *FakeService) Get(p *Path) *Value {
 		found = valFoundL2
 	}
 	return &Value{
-		Path:    *p,
+		Path:    p,
 		data:    vb,
 		found:   found,
 		lastErr: err,

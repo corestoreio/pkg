@@ -38,7 +38,7 @@ type Scoper interface {
 // scopes.
 type Setter interface {
 	// Write writes a configuration entry and may return an error
-	Set(p *Path, value []byte) error // TODO write benchmark to see if pointer or non pointer is faster. same with Storager interface
+	Set(p Path, value []byte) error // TODO write benchmark to see if pointer or non pointer is faster. same with Storager interface
 }
 
 // Storager is the underlying data storage for holding the keys and its values.
@@ -53,7 +53,7 @@ type Storager interface {
 	// because the value has been found. If the value cannot be found for the
 	// desired path, return value `found` must be false. A nil value `v`
 	// indicates also a value and hence `found` is true, if found.
-	Get(p *Path) (v []byte, found bool, err error)
+	Get(p Path) (v []byte, found bool, err error)
 	// Delete(p *Path) error TODO
 }
 
@@ -316,7 +316,7 @@ func (s *Service) DeregisterObserver(event uint8, route string) error {
 //		// Store Scope
 //		// 6 for example comes from core_store/store database table
 //		err := Write(p.Bind(scope.StoreID, 6), "CHF")
-func (s *Service) Set(p *Path, v []byte) (err error) { // TODO v should be an immutable string
+func (s *Service) Set(p Path, v []byte) (err error) { // TODO v should be an immutable string
 	// wow so many IFs :-\
 	if p.UseEnvSuffix && p.envSuffix != s.envName {
 		p.envSuffix = s.envName
@@ -348,7 +348,7 @@ func (s *Service) Set(p *Path, v []byte) (err error) { // TODO v should be an im
 		return errors.Wrap(err, "[config] Service.level2.Set")
 	}
 	if s.pubSub != nil {
-		s.pubSub.sendMsg(*p)
+		s.pubSub.sendMsg(p)
 	}
 
 	return
@@ -375,7 +375,7 @@ func (s *Service) Set(p *Path, v []byte) (err error) { // TODO v should be an im
 // if a path is allowed to access a specific scope.
 //
 // Returns a guaranteed non-nil value.
-func (s *Service) Get(p *Path) (v *Value) {
+func (s *Service) Get(p Path) (v *Value) {
 	if p.UseEnvSuffix && p.envSuffix != s.envName {
 		p.envSuffix = s.envName
 	}
@@ -390,7 +390,7 @@ func (s *Service) Get(p *Path) (v *Value) {
 
 	var ok bool
 	v = &Value{
-		Path: *p,
+		Path: p,
 	}
 
 	s.mu.RLock()
@@ -496,7 +496,7 @@ type Scoped struct {
 // TODO: Scoped should support websites/0/ and stores/0/ to provide a top level websites or stores specific configuration.
 
 type getter interface {
-	Get(p *Path) *Value
+	Get(p Path) *Value
 }
 
 // makeScoped instantiates a ScopedGetter implementation.  Getter
@@ -578,7 +578,7 @@ func (ss Scoped) Get(restrictUpTo scope.Type, route string) (v *Value) {
 	}
 	if ss.isAllowedStore(restrictUpTo) {
 		p.ScopeID = scope.Store.WithID(ss.storeID)
-		v := ss.rootSrv.Get(&p)
+		v := ss.rootSrv.Get(p)
 		if v.found > valFoundNo || v.lastErr != nil {
 			// value found or err is not a NotFound error
 			if v.lastErr != nil {
@@ -589,7 +589,7 @@ func (ss Scoped) Get(restrictUpTo scope.Type, route string) (v *Value) {
 	}
 	if ss.isAllowedWebsite(restrictUpTo) {
 		p.ScopeID = scope.Website.WithID(ss.websiteID)
-		v := ss.rootSrv.Get(&p)
+		v := ss.rootSrv.Get(p)
 		if v.found > valFoundNo || v.lastErr != nil {
 			if v.lastErr != nil {
 				v.lastErr = errors.WithStack(v.lastErr) // hmm, maybe can be removed if no one gets confused
@@ -598,5 +598,5 @@ func (ss Scoped) Get(restrictUpTo scope.Type, route string) (v *Value) {
 		}
 	}
 	p.ScopeID = scope.DefaultTypeID
-	return ss.rootSrv.Get(&p)
+	return ss.rootSrv.Get(p)
 }

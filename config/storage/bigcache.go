@@ -47,12 +47,12 @@ func NewBigCache(config bigcache.Config) (config.Storager, error) {
 
 // Set writes a key with its value into the storage. The value
 // gets converted to a byte slice.
-func (s *bcStorage) Set(p *config.Path, value []byte) error {
+func (s *bcStorage) Set(p config.Path, value []byte) error {
 	return s.bc.Set(p.String(), value)
 }
 
 // Get returns a value from the cache.
-func (s *bcStorage) Get(p *config.Path) (v []byte, found bool, err error) {
+func (s *bcStorage) Get(p config.Path) (v []byte, found bool, err error) {
 	val, err := s.bc.Get(p.String())
 	isNotFound := err == bigcache.ErrEntryNotFound
 	if err != nil && !isNotFound {

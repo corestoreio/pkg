@@ -81,7 +81,7 @@ func TestMakeMulti(t *testing.T) {
 		err := m.Set(p, testVal)
 		assert.Error(t, err)
 		assert.Exactly(t, "resource in use", err.Error())
-
+		time.Sleep(time.Millisecond)
 		cmpGet(t, inMem1, testVal)
 		cmpGet(t, inMem2, testVal)
 		cmpGet(t, m, testVal)
@@ -99,13 +99,13 @@ type sleepWriter struct {
 	setErr error
 }
 
-func (sw sleepWriter) Set(_ *config.Path, _ []byte) error {
+func (sw sleepWriter) Set(_ config.Path, _ []byte) error {
 	if sw.d > 0 {
 		time.Sleep(sw.d)
 	}
 	return sw.setErr
 }
 
-func (sw sleepWriter) Get(_ *config.Path) (v []byte, found bool, err error) {
+func (sw sleepWriter) Get(_ config.Path) (v []byte, found bool, err error) {
 	return
 }

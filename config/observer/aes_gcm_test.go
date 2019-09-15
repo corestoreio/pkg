@@ -33,7 +33,7 @@ func TestNewAESGCM(t *testing.T) {
 		obDec, err := observer.NewAESGCM(config.EventOnAfterGet, o) // o contains now the random nonce value
 		assert.NoError(t, err)
 
-		p := *config.MustNewPath("aa/bb/cc")
+		p := config.MustNewPath("aa/bb/cc")
 		plainText := []byte(`X-Fit Games 2018`)
 		encText, err := obEnc.Observe(p, plainText, false)
 		assert.NoError(t, err)
@@ -58,7 +58,7 @@ func TestNewAESGCM(t *testing.T) {
 		}
 		obEnc, err := observer.NewAESGCM(config.EventOnAfterGet, o)
 		assert.NoError(t, err)
-		p := *config.MustNewPath("aa/bb/cc")
+		p := config.MustNewPath("aa/bb/cc")
 		decText, err := obEnc.Observe(p, nil, false)
 		assert.NoError(t, err, "%+v", err)
 		assert.Nil(t, decText)
@@ -81,7 +81,7 @@ func TestNewAESGCM(t *testing.T) {
 		obDec, err := observer.NewAESGCM(config.EventOnAfterGet, o) // o contains now the random nonce value
 		assert.NoError(t, err)
 
-		p := *config.MustNewPath("aa/bb/cc")
+		p := config.MustNewPath("aa/bb/cc")
 		plainText := []byte(`X-Fit Games 2018`)
 		encText, err := obEnc.Observe(p, plainText, false)
 		assert.NoError(t, err)

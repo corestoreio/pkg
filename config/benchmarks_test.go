@@ -24,7 +24,7 @@ import (
 	"github.com/corestoreio/pkg/store/scope"
 )
 
-var benchmarkNewByParts *config.Path
+var benchmarkNewByParts config.Path
 
 // BenchmarkNewByParts-4	 5000000	       297 ns/op	      48 B/op	       1 allocs/op
 func BenchmarkNewByParts(b *testing.B) {

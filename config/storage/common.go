@@ -39,7 +39,7 @@ func WithLoadStrings(fqPathValue ...string) config.LoadDataOption {
 			return errors.NotAcceptable.Newf("[config/storage] WithLoadStrings: the argument slice fqPathValue is not balanced: length %d", lpv)
 		}
 
-		p := new(config.Path)
+		var p config.Path
 		for i := 0; i < len(fqPathValue) && err == nil; i += 2 {
 			if err = p.Parse(fqPathValue[i]); err != nil {
 				return errors.WithStack(err)

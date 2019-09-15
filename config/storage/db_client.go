@@ -226,7 +226,7 @@ func (dbs *DB) Close() error {
 
 // Set puts a value with its key. Database errors get logged as Info message.
 // Enabled debug level logs the insert ID or rows affected.
-func (dbs *DB) Set(p *config.Path, value []byte) error {
+func (dbs *DB) Set(p config.Path, value []byte) error {
 	dbs.muWrite.Lock()
 	prevState := dbs.stmtWriteState
 	dbs.stmtWriteState = stateInUse
@@ -276,7 +276,7 @@ func (dbs *DB) Set(p *config.Path, value []byte) error {
 // Get performs a read operation from the database and returns a value from
 // the table. The `ok` return argument can be true even if byte slice `v` is
 // nil, which means that the path and scope are stored in the database table.
-func (dbs *DB) Get(p *config.Path) (v []byte, ok bool, err error) {
+func (dbs *DB) Get(p config.Path) (v []byte, ok bool, err error) {
 	dbs.muRead.Lock()
 	prevState := dbs.stmtReadState
 	dbs.stmtReadState = stateInUse
@@ -305,7 +305,8 @@ func (dbs *DB) Get(p *config.Path) (v []byte, ok bool, err error) {
 	defer cancel()
 	scp, path := p.ScopeRoute()
 	s, id := scp.Unpack()
-	nv, found, err := dbs.stmtRead.String(s.StrType()).Int64(id).String(path).LoadNullString(ctx)
+	nv, found, err := dbs.stmtRead.String(s.StrType()).Uint(uint(id)).String(path).LoadNullString(ctx)
+	defer dbs.stmtRead.Reset()
 	if err != nil {
 		return nil, false, errors.Wrapf(err, "[config/storage] DB Scope %q Path %q", scp.String(), path)
 	}
@@ -363,7 +364,7 @@ func WithLoadFromDB(tbls *ddl.Tables, o DBOptions) config.LoadDataOption {
 			if ccd.Value.Valid {
 				v = []byte(ccd.Value.String)
 			}
-			scp := scope.FromString(ccd.Scope).WithID(int64(ccd.ScopeID))
+			scp := scope.FromString(ccd.Scope).WithID(uint32(ccd.ScopeID))
 			p, err := config.NewPathWithScope(scp, ccd.Path)
 			if err != nil {
 				return errors.Wrapf(err, "[config/storage] WithLoadFromDB.config.NewPathWithScope Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ID)

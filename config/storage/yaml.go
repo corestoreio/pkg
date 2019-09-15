@@ -40,7 +40,7 @@ func WithLoadYAML(opts ...option) config.LoadDataOption {
 func loadYAML(s config.Setter, r io.Reader) error {
 	d := yaml.NewDecoder(r)
 	d.SetStrict(true)
-	p := new(config.Path)
+	var p config.Path
 
 	for {
 		var yd map[string]map[string]map[string]string
@@ -139,7 +139,7 @@ func sendFM(fmC chan *config.FieldMeta, data map[int64]string, route string, scp
 		// prevent race condition
 		fmC <- &config.FieldMeta{
 			Route:        route,
-			ScopeID:      scp.WithID(id),
+			ScopeID:      scp.WithID(uint32(id)),
 			DefaultValid: defaultVal != "",
 			Default:      defaultVal,
 		}

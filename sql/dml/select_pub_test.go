@@ -331,7 +331,7 @@ func TestSelect_Prepare(t *testing.T) {
 	})
 
 	t.Run("Records in final args", func(t *testing.T) {
-		t.Skip("TODO implement Query(ctx,dml.Qualify)")
+		t.Skip("TODO implement Query(ctx,dml.Qualify), needs larger refactorings")
 
 		dbc, dbMock := dmltest.MockDB(t)
 		defer dmltest.MockClose(t, dbc, dbMock)

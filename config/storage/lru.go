@@ -62,17 +62,17 @@ func NewLRU(maxEntries int) config.Storager {
 }
 
 // Add adds a value to the cache. Panics on nil Path.
-func (c *lruCache) Set(p *config.Path, value []byte) error {
+func (c *lruCache) Set(p config.Path, value []byte) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	key := makeCacheKey(p.ScopeRoute())
 	if ee, ok := c.cache[key]; ok {
-		ee.Value = liElem{Path: *p, bVal: value}
+		ee.Value = liElem{Path: p, bVal: value}
 		c.ll.MoveToFront(ee)
 		return nil
 	}
-	ele := c.ll.PushFront(liElem{Path: *p, bVal: value})
+	ele := c.ll.PushFront(liElem{Path: p, bVal: value})
 	c.cache[key] = ele
 	if c.maxEntries > 0 && c.ll.Len() > c.maxEntries {
 		c.removeOldest()
@@ -81,7 +81,7 @@ func (c *lruCache) Set(p *config.Path, value []byte) error {
 }
 
 // Get looks up a key's value from the cache.
-func (c *lruCache) Get(p *config.Path) (v []byte, found bool, err error) {
+func (c *lruCache) Get(p config.Path) (v []byte, found bool, err error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 

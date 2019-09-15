@@ -1143,7 +1143,7 @@ func (a *Artisan) query(ctx context.Context, args ...interface{}) (rows *sql.Row
 	if err != nil {
 		if sqlStr == "" {
 			cachedSQL, _ := a.base.cachedSQL[a.base.CacheKey]
-			sqlStr = "PREPARED:" + string(cachedSQL)
+			sqlStr = "PREPARED:" + cachedSQL
 		}
 		err = errors.Wrapf(err, "[dml] Query.QueryContext with query %q", sqlStr)
 	}

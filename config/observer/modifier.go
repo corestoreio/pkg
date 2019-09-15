@@ -31,7 +31,7 @@ import (
 )
 
 // ModifierFn defines the function signature for altering the data.
-type ModifierFn func(*config.Path, []byte) ([]byte, error)
+type ModifierFn func(config.Path, []byte) ([]byte, error)
 
 type modReg struct {
 	sync.RWMutex
@@ -125,9 +125,8 @@ type modifiers struct {
 // Observe validates the given rawData value. This functions runs in a hot path.
 func (v *modifiers) Observe(p config.Path, rawData []byte, found bool) (rawData2 []byte, err error) {
 	rawData2 = rawData
-	p2 := &p
 	for idx, valFn := range v.opFns {
-		if rawData2, err = valFn(p2, rawData2); err != nil {
+		if rawData2, err = valFn(p, rawData2); err != nil {
 			return nil, errors.Interrupted.New(err, "[config/observer] Function %q interrupted", v.opType[idx])
 		}
 	}
@@ -137,41 +136,41 @@ func (v *modifiers) Observe(p config.Path, rawData []byte, found bool) (rawData2
 // as long as we don't see a use case for those modifiers in other packages,
 // they stay private. might be refactored later.
 
-func trim(_ *config.Path, data []byte) ([]byte, error) {
+func trim(_ config.Path, data []byte) ([]byte, error) {
 	return bytes.TrimSpace(data), nil
 }
 
-func toUpper(_ *config.Path, data []byte) ([]byte, error) {
+func toUpper(_ config.Path, data []byte) ([]byte, error) {
 	return bytes.ToUpper(data), nil
 }
 
-func toLower(_ *config.Path, data []byte) ([]byte, error) {
+func toLower(_ config.Path, data []byte) ([]byte, error) {
 	return bytes.ToLower(data), nil
 }
 
-func toTitle(_ *config.Path, data []byte) ([]byte, error) {
+func toTitle(_ config.Path, data []byte) ([]byte, error) {
 	return bytes.Title(data), nil
 }
 
-func base64Encode(_ *config.Path, src []byte) (dst []byte, _ error) {
+func base64Encode(_ config.Path, src []byte) (dst []byte, _ error) {
 	dst = make([]byte, base64.StdEncoding.EncodedLen(len(src)))
 	base64.StdEncoding.Encode(dst, src)
 	return
 }
 
-func base64Decode(_ *config.Path, src []byte) (dst []byte, err error) {
+func base64Decode(_ config.Path, src []byte) (dst []byte, err error) {
 	dst = make([]byte, base64.StdEncoding.DecodedLen(len(src)))
 	_, err = base64.StdEncoding.Decode(dst, src)
 	return
 }
 
-func hexEncode(_ *config.Path, src []byte) (dst []byte, _ error) {
+func hexEncode(_ config.Path, src []byte) (dst []byte, _ error) {
 	dst = make([]byte, hex.EncodedLen(len(src)))
 	hex.Encode(dst, src)
 	return dst, nil
 }
 
-func hexDecode(_ *config.Path, src []byte) (dst []byte, err error) {
+func hexDecode(_ config.Path, src []byte) (dst []byte, err error) {
 	dst = make([]byte, hex.DecodedLen(len(src)))
 	_, err = hex.Decode(dst, src)
 	return
@@ -179,7 +178,7 @@ func hexDecode(_ *config.Path, src []byte) (dst []byte, err error) {
 
 // hash256 prefix the fully qualified path to src and then hashes it. Higher
 // security.
-func hash256(p *config.Path, src []byte) ([]byte, error) {
+func hash256(p config.Path, src []byte) ([]byte, error) {
 	tnk, err := hashpool.FromRegistry("sha256")
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -195,7 +194,7 @@ func hash256(p *config.Path, src []byte) ([]byte, error) {
 	return tnk.Sum(buf.Bytes(), dst[:0]), nil
 }
 
-func dataGzip(_ *config.Path, src []byte) (dst []byte, _ error) {
+func dataGzip(_ config.Path, src []byte) (dst []byte, _ error) {
 	var buf bytes.Buffer
 	buf.Grow(len(src) * 9 / 10) // *0.9
 	zw := gzippool.GetWriter(&buf)
@@ -209,7 +208,7 @@ func dataGzip(_ *config.Path, src []byte) (dst []byte, _ error) {
 	return buf.Bytes(), nil
 }
 
-func dataGunzip(_ *config.Path, src []byte) (dst []byte, _ error) {
+func dataGunzip(_ config.Path, src []byte) (dst []byte, _ error) {
 	r := bufferpool.GetReader(src)
 	zr := gzippool.GetReader(r)
 	defer func() {

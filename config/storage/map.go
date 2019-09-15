@@ -51,7 +51,7 @@ func NewMap(fqPathValue ...string) config.Storager {
 }
 
 // Set implements Storager interface
-func (sp *kvmap) Set(p *config.Path, value []byte) error {
+func (sp *kvmap) Set(p config.Path, value []byte) error {
 	sp.Lock()
 	sp.kv[makeCacheKey(p.ScopeRoute())] = string(value)
 	sp.Unlock()
@@ -60,7 +60,7 @@ func (sp *kvmap) Set(p *config.Path, value []byte) error {
 
 // Get implements Storager interface and returns a byte slice available for
 // modifications.
-func (sp *kvmap) Get(p *config.Path) (v []byte, found bool, err error) {
+func (sp *kvmap) Get(p config.Path) (v []byte, found bool, err error) {
 	sp.RLock()
 	defer sp.RUnlock()
 	data, found := sp.kv[makeCacheKey(p.ScopeRoute())]

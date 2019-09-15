@@ -33,7 +33,7 @@ func TestNewMap_OneKey(t *testing.T) {
 
 	validateFoundGet(t, sp, scope.Store.WithID(55), "aa/bb/cc", "19.99")
 	validateNotFoundGet(t, sp, scope.Store.WithID(55), "ff/gg/hh")
-	validateNotFoundGet(t, sp, 0, "rr/ss/tt")
+	validateNotFoundGet(t, sp, scope.DefaultTypeID, "rr/ss/tt")
 
 	fl, ok := sp.(flusher)
 	if !ok {

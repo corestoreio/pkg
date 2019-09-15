@@ -40,15 +40,15 @@ func errCheck(t *testing.T) func([]byte, error) []byte {
 func TestOperators(t *testing.T) {
 	t.Parallel()
 
-	assert.Exactly(t, []byte(`X`), errCheck(t)(trim(nil, []byte(" X\t\n"))))
-	assert.Exactly(t, []byte(`HELLO`), errCheck(t)(toUpper(nil, []byte("helLo"))))
-	assert.Exactly(t, []byte(`wor€d`), errCheck(t)(toLower(nil, []byte("WOr€D"))))
-	assert.Exactly(t, []byte(`The Small Universe`), errCheck(t)(toTitle(nil, []byte("the small universe"))))
-	assert.Exactly(t, []byte(`dGhlIHNtYWxsIHVuaXZlcnNl`), errCheck(t)(base64Encode(nil, []byte("the small universe"))))
-	assert.Exactly(t, []byte(`the small universe`), errCheck(t)(base64Decode(nil, []byte("dGhlIHNtYWxsIHVuaXZlcnNl"))))
+	assert.Exactly(t, []byte(`X`), errCheck(t)(trim(config.Path{}, []byte(" X\t\n"))))
+	assert.Exactly(t, []byte(`HELLO`), errCheck(t)(toUpper(config.Path{}, []byte("helLo"))))
+	assert.Exactly(t, []byte(`wor€d`), errCheck(t)(toLower(config.Path{}, []byte("WOr€D"))))
+	assert.Exactly(t, []byte(`The Small Universe`), errCheck(t)(toTitle(config.Path{}, []byte("the small universe"))))
+	assert.Exactly(t, []byte(`dGhlIHNtYWxsIHVuaXZlcnNl`), errCheck(t)(base64Encode(config.Path{}, []byte("the small universe"))))
+	assert.Exactly(t, []byte(`the small universe`), errCheck(t)(base64Decode(config.Path{}, []byte("dGhlIHNtYWxsIHVuaXZlcnNl"))))
 
-	assert.Exactly(t, []byte(`74686520736d616c6c20756e697665727365`), errCheck(t)(hexEncode(nil, []byte("the small universe"))))
-	assert.Exactly(t, []byte(`the small universe`), errCheck(t)(hexDecode(nil, []byte("74686520736d616c6c20756e697665727365"))))
+	assert.Exactly(t, []byte(`74686520736d616c6c20756e697665727365`), errCheck(t)(hexEncode(config.Path{}, []byte("the small universe"))))
+	assert.Exactly(t, []byte(`the small universe`), errCheck(t)(hexDecode(config.Path{}, []byte("74686520736d616c6c20756e697665727365"))))
 
 	p0 := config.MustNewPath("general/store_information/address")
 	p1 := p0.BindStore(2)
@@ -59,10 +59,10 @@ func TestOperators(t *testing.T) {
 		errCheck(t)(hash256(p1, []byte("The Small Universe"))))
 
 	assert.Exactly(t, []byte("\x1f\x8b\b\x00\x00\x00\x00\x00\x00\xff\n\xc9HU\b\xceM\xcc\xc9Q\b\xcd\xcb,K-*N\x05\x04\x00\x00\xff\xff\x05\xd1r\xe9\x12\x00\x00\x00"),
-		errCheck(t)(dataGzip(nil, []byte("The Small Universe"))))
+		errCheck(t)(dataGzip(config.Path{}, []byte("The Small Universe"))))
 
 	assert.Exactly(t, []byte("The Small Universe"),
-		errCheck(t)(dataGunzip(nil, []byte("\x1f\x8b\b\x00\x00\x00\x00\x00\x00\xff\n\xc9HU\b\xceM\xcc\xc9Q\b\xcd\xcb,K-*N\x05\x04\x00\x00\xff\xff\x05\xd1r\xe9\x12\x00\x00\x00"))))
+		errCheck(t)(dataGunzip(config.Path{}, []byte("\x1f\x8b\b\x00\x00\x00\x00\x00\x00\xff\n\xc9HU\b\xceM\xcc\xc9Q\b\xcd\xcb,K-*N\x05\x04\x00\x00\xff\xff\x05\xd1r\xe9\x12\x00\x00\x00"))))
 }
 
 func TestMustNewModifier(t *testing.T) {
@@ -99,7 +99,7 @@ func TestNewModifier(t *testing.T) {
 	})
 
 	t.Run("custom operator returns error ", func(t *testing.T) {
-		RegisterModifier("csx", func(*config.Path, []byte) ([]byte, error) {
+		RegisterModifier("csx", func(config.Path, []byte) ([]byte, error) {
 			return nil, errors.New("an error")
 		})
 

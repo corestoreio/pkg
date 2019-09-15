@@ -155,7 +155,7 @@ func TestNewValidator(t *testing.T) {
 				AdditionalAllowedValues: allowedValues,
 				CSVComma:                csvComma,
 			})
-			if wantNewErr > 0 {
+			if !wantNewErr.Empty() {
 				assert.Nil(t, s, "validation object s should be nil")
 				assert.True(t, wantNewErr.Match(err), "%+v", err)
 				return
@@ -164,7 +164,7 @@ func TestNewValidator(t *testing.T) {
 			assert.NotNil(t, s)
 
 			haveData, haveErr := s.Observe(config.Path{}, data, found)
-			if wantObserveErr > 0 {
+			if !wantObserveErr.Empty() {
 				assert.Nil(t, haveData, "returned haveData should be nil: %q", string(haveData))
 				assert.True(t, wantObserveErr.Match(haveErr), "%+v", haveErr)
 				return

@@ -58,7 +58,7 @@ func MakeMulti(o MultiOptions, ss ...config.Storager) config.Storager {
 
 // Set writes concurrently to the backends. A ContextTimeout can be defined to
 // cancel the internal goroutine. It returns the first error.
-func (ms *multi) Set(p *config.Path, value []byte) error {
+func (ms *multi) Set(p config.Path, value []byte) error {
 	// investigate if that concept of timeout and cancellation is good enough
 	ctx := context.Background()
 	if ms.op.ContextTimeout > 0 {
@@ -71,8 +71,6 @@ func (ms *multi) Set(p *config.Path, value []byte) error {
 
 	for _, s := range ms.backends {
 		s := s
-		p2 := new(config.Path)
-		*p2 = *p // shallow copy to avoid race conditions
 		g.Go(func() error {
 			errChan := make(chan error)
 			stopChan := make(chan struct{})
@@ -81,7 +79,7 @@ func (ms *multi) Set(p *config.Path, value []byte) error {
 				select {
 				case <-stopChan:
 					return
-				case errChan <- errors.WithStack(s.Set(p2, value)):
+				case errChan <- errors.WithStack(s.Set(p, value)):
 				}
 			}()
 
@@ -101,7 +99,7 @@ func (ms *multi) Set(p *config.Path, value []byte) error {
 }
 
 // Get returns the first found value from the backend storage.
-func (ms *multi) Get(p *config.Path) (v []byte, found bool, err error) {
+func (ms *multi) Get(p config.Path) (v []byte, found bool, err error) {
 	for idx, s := range ms.backends {
 		v, found, err = s.Get(p)
 		if err != nil {

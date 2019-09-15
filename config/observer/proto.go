@@ -21,7 +21,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
-	"github.com/corestoreio/pkg/net/cspb"
+	"github.com/corestoreio/pkg/net/csgrpc"
 	"github.com/gogo/protobuf/types"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
@@ -41,7 +41,7 @@ func NewProtoServiceServer(or config.ObserverRegisterer) ProtoServiceServer {
 
 func (r registrar) Register(ctx context.Context, vs *Configurations) (*types.Empty, error) {
 	if err := vs.Validate(); err != nil {
-		return nil, cspb.NewStatusBadRequestError(codes.InvalidArgument, "[config/validation/proto]",
+		return nil, csgrpc.NewStatusBadRequestError(codes.InvalidArgument, "[config/validation/proto]",
 			"Configurations.Validate",
 			err.Error(),
 		)
@@ -50,13 +50,13 @@ func (r registrar) Register(ctx context.Context, vs *Configurations) (*types.Emp
 	for idx, v := range vs.Collection {
 		event, route, o, err := v.MakeObserver()
 		if err != nil {
-			return nil, cspb.NewStatusBadRequestError(codes.InvalidArgument, "[config/validation/proto]",
+			return nil, csgrpc.NewStatusBadRequestError(codes.InvalidArgument, "[config/validation/proto]",
 				fmt.Sprintf("validator_%d", idx),
 				err.Error(),
 			)
 		}
 		if err := r.or.RegisterObserver(event, route, o); err != nil {
-			return nil, cspb.NewStatusBadRequestError(codes.Internal, "[config/validation/proto]",
+			return nil, csgrpc.NewStatusBadRequestError(codes.Internal, "[config/validation/proto]",
 				fmt.Sprintf("validator_%d", idx),
 				err.Error(),
 				"event",

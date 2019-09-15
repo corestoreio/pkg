@@ -1,0 +1,41 @@
+// Copyright 2015-present, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package config;
+
+import "google/protobuf/empty.proto";
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
+option go_package = "config";
+option (gogoproto.typedecl_all) = false;
+option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.sizer_all) = true;
+option (gogoproto.goproto_unrecognized_all) = false;
+// Enable generation of XXX_MessageName methods for grpc-go/status.
+option (gogoproto.messagename_all) = true;
+
+message Value {
+	string path = 1 [(gogoproto.customname)="Path"];
+	bytes data = 2 [(gogoproto.customname)="Data"];
+}
+
+
+service ProtoService {
+	rpc Set (Value) returns (google.protobuf.Empty) {}
+	rpc Get (string) returns (Value ) {}
+}

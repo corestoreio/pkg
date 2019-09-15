@@ -83,13 +83,13 @@ func TestService_Put(t *testing.T) {
 	srv := config.MustNewService(storage.NewMap(), config.Options{})
 	assert.NotNil(t, srv)
 
-	p1 := new(config.Path)
+	var p1 config.Path
 	err := srv.Set(p1, []byte{})
 	assert.True(t, errors.Empty.Match(err), "Error: %s", err)
 }
 
 func TestService_Write_Get_Value_Success(t *testing.T) {
-	runner := func(p *config.Path, value []byte) func(*testing.T) {
+	runner := func(p config.Path, value []byte) func(*testing.T) {
 		return func(t *testing.T) {
 			srv := config.MustNewService(storage.NewMap(), config.Options{})
 			assert.NoError(t, srv.Set(p, value), "Writing Value in Test %q should not fail", t.Name())

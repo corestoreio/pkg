@@ -43,7 +43,7 @@ var (
 // ToEnvVar converts a Path to a valid environment key. Returns an empty string
 // in case of an error.
 //	scope.DefaultTypeID, etc/credentials/user_name => CONFIG__ETCD__CREDENTIALS__USER_NAME
-func ToEnvVar(p *config.Path) string {
+func ToEnvVar(p config.Path) string {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 	buf.WriteString(Prefix)
@@ -56,7 +56,7 @@ func ToEnvVar(p *config.Path) string {
 
 // FromEnvVar parses an environment key into a config.Path.
 //	CONFIG__ETCD__CREDENTIALS__USER_NAME => scope.DefaultTypeID, etc/credentials/user_name
-func FromEnvVar(prefix, envVar string) (*config.Path, error) {
+func FromEnvVar(prefix, envVar string) (config.Path, error) {
 	lp := len(prefix)
 	if len(envVar) > lp {
 		envVar = envVar[lp:]
@@ -72,9 +72,9 @@ func FromEnvVar(prefix, envVar string) (*config.Path, error) {
 
 	var p config.Path
 	if err := p.Parse(envVar); err != nil {
-		return nil, errors.WithStack(err)
+		return config.Path{}, errors.WithStack(err)
 	}
-	return &p, nil
+	return p, nil
 }
 
 // EnvOp allows to set options when creating a new Environment storage service.

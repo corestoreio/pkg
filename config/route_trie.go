@@ -84,13 +84,12 @@ type Observer interface {
 
 type observers []Observer
 
-func (fns observers) dispatch(p *Path, v []byte, found bool) (_ []byte, err error) {
+func (fns observers) dispatch(p Path, v []byte, found bool) (_ []byte, err error) {
 	if len(fns) == 0 {
 		return v, nil
 	}
-	p2 := *p
 	for _, fn := range fns {
-		if v, err = fn.Observe(p2, v, found); err != nil {
+		if v, err = fn.Observe(p, v, found); err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}
@@ -185,7 +184,7 @@ func (trie *trieRoute) Get(key string) FieldMeta {
 
 // process runs on each tree level and dispatches the events and checks for
 // scope permission and default value.
-func (trie *trieRoute) process(key string, event uint8, p *Path, v []byte, found bool) (v2 []byte, found2 bool, err error) {
+func (trie *trieRoute) process(key string, event uint8, p Path, v []byte, found bool) (v2 []byte, found2 bool, err error) {
 	if trie == nil {
 		return v, found, nil
 	}

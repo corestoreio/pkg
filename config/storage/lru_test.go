@@ -29,8 +29,8 @@ import (
 
 var lruGetTests = []struct {
 	name       string
-	keyToAdd   *config.Path
-	keyToGet   *config.Path
+	keyToAdd   config.Path
+	keyToGet   config.Path
 	expectedOk bool
 }{
 	{"01 hit", config.MustNewPath("aa/bb/cc"), config.MustNewPath("aa/bb/cc"), true},

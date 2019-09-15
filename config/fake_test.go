@@ -28,7 +28,7 @@ var _ config.Setter = (*config.FakeWrite)(nil)
 func TestService_FnInvokes(t *testing.T) {
 	called := 0
 	s := config.FakeService{
-		GetFn: func(p *config.Path) (v *config.Value) {
+		GetFn: func(p config.Path) (v *config.Value) {
 			called++
 			return
 		},
@@ -40,7 +40,7 @@ func TestService_FnInvokes(t *testing.T) {
 
 func TestService_FnInvokes_Map(t *testing.T) {
 	s := config.FakeService{
-		GetFn: func(p *config.Path) (v *config.Value) {
+		GetFn: func(p config.Path) (v *config.Value) {
 			return
 		},
 	}

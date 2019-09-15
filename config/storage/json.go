@@ -55,7 +55,7 @@ func loadJSON(s config.Setter, r io.Reader) error {
 
 		for scp, v2 := range k2 {
 
-			p := new(config.Path)
+			var p config.Path
 			switch v2t := v2.(type) {
 			case map[string]interface{}:
 				for scpID, dataIF := range v2t {

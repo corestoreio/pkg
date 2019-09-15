@@ -29,7 +29,7 @@ import (
 // `append_test` which appends the word TEST. The modifier `append_test` gets
 // activated for pre-route `payment/serviceX` with event after_get.
 func ExampleRegisterModifier() {
-	observer.RegisterModifier("append_test", func(_ *config.Path, data []byte) ([]byte, error) {
+	observer.RegisterModifier("append_test", func(_ config.Path, data []byte) ([]byte, error) {
 		return append(data, []byte(` - TEST`)...), nil
 	})
 

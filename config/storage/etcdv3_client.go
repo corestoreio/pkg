@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build csall etcdv3
+// +build etcdv3
 
 // build tag above: for some reason it cannot be added build tag "csall" because
 // when running in parent directory `config` the command:`$ go test -tags csall
@@ -65,7 +65,7 @@ func NewEtcdv3Client(c clientv3.KV, o Etcdv3Options) (config.Storager, error) {
 	return s, nil
 }
 
-func (s *etcdv3Client) toKey(p *config.Path) (string, error) {
+func (s *etcdv3Client) toKey(p config.Path) (string, error) {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 
@@ -75,7 +75,7 @@ func (s *etcdv3Client) toKey(p *config.Path) (string, error) {
 }
 
 // Set puts a key to the etcd service.
-func (s *etcdv3Client) Set(p *config.Path, value []byte) error {
+func (s *etcdv3Client) Set(p config.Path, value []byte) error {
 	ctx := context.Background()
 	if s.options.RequestTimeout > 0 {
 		var cancel context.CancelFunc
@@ -95,7 +95,7 @@ func (s *etcdv3Client) Set(p *config.Path, value []byte) error {
 }
 
 // Get returns a value from the etcd service.
-func (s *etcdv3Client) Get(p *config.Path) (v []byte, found bool, err error) {
+func (s *etcdv3Client) Get(p config.Path) (v []byte, found bool, err error) {
 	ctx := context.Background()
 	if s.options.RequestTimeout > 0 {
 		var cancel context.CancelFunc
@@ -198,7 +198,7 @@ func WithLoadFromEtcdv3(c clientv3.KV, o Etcdv3Options) config.LoadDataOption {
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		p := new(config.Path)
+		var p config.Path
 		var buf strings.Builder
 		for _, ev := range resp.Kvs {
 			buf.Write(ev.Key)

@@ -33,7 +33,7 @@ func BenchmarkToEnvVar(b *testing.B) {
 	}
 }
 
-var benchmarkFromEnvVar *config.Path
+var benchmarkFromEnvVar config.Path
 
 // BenchmarkFromEnvVar-4   	 3000000	       501 ns/op	     184 B/op	       7 allocs/op
 func BenchmarkFromEnvVar(b *testing.B) {

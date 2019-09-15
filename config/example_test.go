@@ -89,7 +89,7 @@ func ExampleValue() {
 		{routeListingCount, `5,10,15,20,25`},
 		{routeCookieLifetime, `7200s`},
 	}
-	p := new(config.Path)
+	var p config.Path
 	for _, pv := range routesVals {
 		panicIfErr(
 			p.Parse(pv.route),

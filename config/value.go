@@ -556,7 +556,7 @@ func (v *Value) IsValid() bool {
 // Equal compares if current object is fully equal to v2 object. Path and data
 // must be equal. Nil safe.
 func (v *Value) Equal(v2 *Value) bool {
-	return v != nil && v2 != nil && v.Path.Equal(&v2.Path) && v.EqualData(v2)
+	return v != nil && v2 != nil && v.Path.Equal(v2.Path) && v.EqualData(v2)
 }
 
 // EqualData compares if the data part of the current value is equal to v2. Nil

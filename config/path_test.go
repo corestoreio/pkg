@@ -109,7 +109,7 @@ func TestMakePathWithScope(t *testing.T) {
 	t.Run("fails", func(t *testing.T) {
 		p, err := NewPathWithScope(scope.Store.WithID(23), "")
 		assert.True(t, errors.Empty.Match(err), "%+v", err)
-		assert.Nil(t, p)
+		assert.Exactly(t, Path{}, p)
 	})
 }
 
@@ -127,7 +127,7 @@ func TestNewByParts(t *testing.T) {
 	for i, test := range tests {
 		haveP, haveErr := NewPath(test.path)
 		if !test.wantErrKind.Empty() {
-			assert.Nil(t, haveP, "Index %d", i)
+			assert.Exactly(t, Path{}, haveP, "Index %d", i)
 			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d => %s", i, haveErr)
 			continue
 		}
@@ -509,7 +509,7 @@ func TestPathSlice_Contains(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		paths  PathSlice
-		search *Path
+		search Path
 		want   bool
 	}{
 		{
@@ -550,9 +550,9 @@ func TestPathSlice_Sort(t *testing.T) {
 			MustNewPath("aa/bb/cc"),
 		},
 		PathSlice{
-			&Path{route: `aa/bb/cc`, ScopeID: scope.DefaultTypeID},
-			&Path{route: `bb/cc/dd`, ScopeID: scope.DefaultTypeID},
-			&Path{route: `xx/yy/zz`, ScopeID: scope.DefaultTypeID},
+			Path{route: `aa/bb/cc`, ScopeID: scope.DefaultTypeID},
+			Path{route: `bb/cc/dd`, ScopeID: scope.DefaultTypeID},
+			Path{route: `xx/yy/zz`, ScopeID: scope.DefaultTypeID},
 		},
 	))
 
@@ -567,13 +567,13 @@ func TestPathSlice_Sort(t *testing.T) {
 			MustNewPath("aa/bb/cc"),
 		},
 		PathSlice{
-			&Path{route: `aa/bb/cc`, ScopeID: scope.DefaultTypeID},
-			&Path{route: `aa/bb/cc`, ScopeID: scope.Website.WithID(2)},
-			&Path{route: `bb/cc/dd`, ScopeID: scope.DefaultTypeID},
-			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.WithID(1)},
-			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.WithID(2)},
-			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.WithID(3)},
-			&Path{route: `zz/aa/bb`, ScopeID: scope.Website.WithID(1)},
+			Path{route: `aa/bb/cc`, ScopeID: scope.DefaultTypeID},
+			Path{route: `aa/bb/cc`, ScopeID: scope.Website.WithID(2)},
+			Path{route: `bb/cc/dd`, ScopeID: scope.DefaultTypeID},
+			Path{route: `xx/yy/zz`, ScopeID: scope.Website.WithID(1)},
+			Path{route: `xx/yy/zz`, ScopeID: scope.Website.WithID(2)},
+			Path{route: `xx/yy/zz`, ScopeID: scope.Website.WithID(3)},
+			Path{route: `zz/aa/bb`, ScopeID: scope.Website.WithID(1)},
 		},
 	))
 
@@ -591,16 +591,16 @@ func TestPathSlice_Sort(t *testing.T) {
 			MustNewPath("aa/bb/cc"),
 		},
 		PathSlice{
-			&Path{route: `aa/bb/cc`, ScopeID: scope.DefaultTypeID},
-			&Path{route: `aa/bb/cc`, ScopeID: scope.Website.WithID(2)},
-			&Path{route: `bb/cc/dd`, ScopeID: scope.DefaultTypeID},
-			&Path{route: `bb/cc/dd`, ScopeID: scope.Store.WithID(2)},
-			&Path{route: `bb/cc/dd`, ScopeID: scope.Store.WithID(3)},
-			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.WithID(1)},
-			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.WithID(2)},
-			&Path{route: `xx/yy/zz`, ScopeID: scope.Website.WithID(3)},
-			&Path{route: `zz/aa/bb`, ScopeID: scope.Website.WithID(1)},
-			&Path{route: `zz/aa/bb`, ScopeID: scope.Store.WithID(4)},
+			Path{route: `aa/bb/cc`, ScopeID: scope.DefaultTypeID},
+			Path{route: `aa/bb/cc`, ScopeID: scope.Website.WithID(2)},
+			Path{route: `bb/cc/dd`, ScopeID: scope.DefaultTypeID},
+			Path{route: `bb/cc/dd`, ScopeID: scope.Store.WithID(2)},
+			Path{route: `bb/cc/dd`, ScopeID: scope.Store.WithID(3)},
+			Path{route: `xx/yy/zz`, ScopeID: scope.Website.WithID(1)},
+			Path{route: `xx/yy/zz`, ScopeID: scope.Website.WithID(2)},
+			Path{route: `xx/yy/zz`, ScopeID: scope.Website.WithID(3)},
+			Path{route: `zz/aa/bb`, ScopeID: scope.Website.WithID(1)},
+			Path{route: `zz/aa/bb`, ScopeID: scope.Store.WithID(4)},
 		},
 	))
 }
@@ -653,7 +653,7 @@ func TestPathPartPosition(t *testing.T) {
 	t.Parallel()
 
 	t.Run("invalid route", func(t *testing.T) {
-		p := &Path{
+		p := Path{
 			route: "general/single_\x80store_mode/enabled",
 		}
 		part, haveErr := p.Part(0)
@@ -723,7 +723,7 @@ func TestPathValidate(t *testing.T) {
 func TestPathSplit(t *testing.T) {
 	t.Parallel()
 	t.Run("invalid", func(t *testing.T) {
-		p := &Path{
+		p := Path{
 			ScopeID: scope.Store.WithID(1),
 			route:   "general",
 		}
@@ -847,7 +847,7 @@ func TestPath_Equal(t *testing.T) {
 
 func TestPath_HasRoutePrefix(t *testing.T) {
 	t.Parallel()
-	p := &Path{route: `xx/yy/zz`, ScopeID: scope.Website.WithID(3)}
+	p := Path{route: `xx/yy/zz`, ScopeID: scope.Website.WithID(3)}
 
 	assert.False(t, p.RouteHasPrefix(""))
 	assert.True(t, p.RouteHasPrefix("xx"))
@@ -870,7 +870,7 @@ func TestPath_EnvName(t *testing.T) {
 		assertStrErr(t, `default/0/tt/ww/de`)(p.FQ())
 	})
 	t.Run("Parse", func(t *testing.T) {
-		p := &Path{
+		p := Path{
 			envSuffix: "STAGING",
 		}
 		err := p.Parse(`stores/3/tt/ww/de/STAGING`)
@@ -882,7 +882,7 @@ func TestPath_EnvName(t *testing.T) {
 		assertStrErr(t, `stores/3/tt/ww/de`)(p.FQ())
 	})
 	t.Run("ParseStrings", func(t *testing.T) {
-		p := &Path{
+		p := Path{
 			envSuffix: "STAGING",
 		}
 		err := p.ParseStrings(`stores`, "3", `tt/ww/de/STAGING`)
@@ -894,7 +894,7 @@ func TestPath_EnvName(t *testing.T) {
 		assertStrErr(t, `stores/3/tt/ww/de`)(p.FQ())
 	})
 	t.Run("UnmarshalText", func(t *testing.T) {
-		p := &Path{
+		p := Path{
 			envSuffix: "STAGING",
 		}
 		err := p.UnmarshalText([]byte(`stores/3/tt/ww/de/STAGING`))
@@ -906,7 +906,7 @@ func TestPath_EnvName(t *testing.T) {
 		assertStrErr(t, `stores/3/tt/ww/de`)(p.FQ())
 	})
 	t.Run("UnmarshalBinary", func(t *testing.T) {
-		p := &Path{
+		p := Path{
 			envSuffix: "STAGING",
 		}
 		err := p.UnmarshalBinary([]byte("\x03\x00\x00\x04\x00\x00\x00\x00tt/ww/de/STAGING"))

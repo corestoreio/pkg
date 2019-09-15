@@ -62,9 +62,9 @@ func TestFromEnvVar(t *testing.T) {
 	}
 	for i, test := range tests {
 		haveP, haveErr := storage.FromEnvVar(storage.Prefix, test.envVar)
-		if test.wantErr > 0 {
-			assert.Nil(t, haveP, "Index %d", i)
+		if !test.wantErr.Empty() {
 			assert.True(t, test.wantErr.Match(haveErr), "%d: Kind %q\n%+v", i, errors.UnwrapKind(haveErr).String(), haveErr)
+			assert.Exactly(t, config.Path{}, haveP, "Index %d", i)
 		} else {
 			assert.NoError(t, haveErr, "Index %d. Kind %q", i, errors.UnwrapKind(haveErr).String())
 			assert.Exactly(t, test.wantPath, haveP.String(), "Index %d", i)
