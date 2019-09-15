@@ -26,7 +26,7 @@ var benchmarkToEnvVar string
 
 // BenchmarkToEnvVar-4   	 3000000	       570 ns/op	     163 B/op	       6 allocs/op
 func BenchmarkToEnvVar(b *testing.B) {
-	p := config.MustNewPathWithScope(scope.Store.WithID(543), "aa/bb/cc")
+	p := config.MustMakePathWithScope(scope.Store.WithID(543), "aa/bb/cc")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		benchmarkToEnvVar = storage.ToEnvVar(p)

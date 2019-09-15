@@ -23,7 +23,7 @@ import (
 
 func ExampleService() {
 	// We focus here on type String() other primitive types are of course also available.
-	p := config.MustNewPath("scope/test/string") // panics on incorrect argument.
+	p := config.MustMakePath("scope/test/string") // panics on incorrect argument.
 
 	// Default storage engine with build-in in-memory map.
 	// the NewService gets only instantiated once during app start up.

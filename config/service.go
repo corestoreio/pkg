@@ -359,7 +359,7 @@ func (s *Service) Set(p Path, v []byte) (err error) { // TODO v should be an imm
 // Example usage:
 //
 //		// Default Scope
-//		dp := config.MustNewPath("general/locale/timezone")
+//		dp := config.MustMakePath("general/locale/timezone")
 //
 //		// Website Scope
 //		// 3 for example comes from store_website database table

@@ -192,8 +192,8 @@ type Path struct {
 	// Suffix string
 }
 
-// NewPathWithScope creates a new validate Path with a custom scope.
-func NewPathWithScope(scp scope.TypeID, route string) (Path, error) {
+// MakePathWithScope creates a new validate Path with a custom scope.
+func MakePathWithScope(scp scope.TypeID, route string) (Path, error) {
 	p := Path{
 		route:   Route(route),
 		ScopeID: scp,
@@ -204,24 +204,24 @@ func NewPathWithScope(scp scope.TypeID, route string) (Path, error) {
 	return p, nil
 }
 
-// MustNewPathWithScope creates a new validate Path with a custom scope but
+// MustMakePathWithScope creates a new validate Path with a custom scope but
 // panics on error. E.g. invalid path.
-func MustNewPathWithScope(scp scope.TypeID, route string) Path {
-	p, err := NewPathWithScope(scp, route)
+func MustMakePathWithScope(scp scope.TypeID, route string) Path {
+	p, err := MakePathWithScope(scp, route)
 	if err != nil {
 		panic(err)
 	}
 	return p
 }
 
-// NewPath makes a new validated Path. Scope is assigned to Default.
-func NewPath(route string) (Path, error) {
-	return NewPathWithScope(scope.DefaultTypeID, route)
+// MakePath makes a new validated Path. Scope is assigned to Default.
+func MakePath(route string) (Path, error) {
+	return MakePathWithScope(scope.DefaultTypeID, route)
 }
 
-// MustNewPath same as NewPath but panics on error.
-func MustNewPath(route string) Path {
-	return MustNewPathWithScope(scope.DefaultTypeID, route)
+// MustMakePath same as MakePath but panics on error.
+func MustMakePath(route string) Path {
+	return MustMakePathWithScope(scope.DefaultTypeID, route)
 }
 
 // Bind binds a path to a new scope with its scope ID. Returns a new Path

@@ -109,7 +109,7 @@ func TestService_Get(t *testing.T) {
 			scp, sID := test.scopeID.Unpack()
 			prepSel.ExpectQuery().WithArgs(scp.StrType(), sID, test.path).WillReturnRows(sqlmock.NewRows([]string{"value"}))
 
-			haveVal, haveOK, haveErr := dbs.Get(config.MustNewPathWithScope(test.scopeID, test.path))
+			haveVal, haveOK, haveErr := dbs.Get(config.MustMakePathWithScope(test.scopeID, test.path))
 			assert.NoError(t, haveErr)
 			assert.False(t, haveOK, "%s Value with path %q should NOT be found", test.scopeID, test.path)
 			assert.Exactly(t, []byte(nil), haveVal)
@@ -124,7 +124,7 @@ func TestService_Get(t *testing.T) {
 			scp, sID := test.scopeID.Unpack()
 			prepSel.ExpectQuery().WithArgs(scp.StrType(), sID, test.path).WillReturnRows(sqlmock.NewRows([]string{"value"}).AddRow(test.value))
 
-			haveVal, haveOK, haveErr := dbs.Get(config.MustNewPathWithScope(test.scopeID, test.path))
+			haveVal, haveOK, haveErr := dbs.Get(config.MustMakePathWithScope(test.scopeID, test.path))
 			assert.NoError(t, haveErr)
 			assert.True(t, haveOK, "%s Value with path %q should be found", test.scopeID, test.path)
 			assert.Exactly(t, test.value, haveVal)
@@ -195,7 +195,7 @@ func TestService_Get(t *testing.T) {
 			scp, sID := test.scopeID.Unpack()
 			prepSel.ExpectQuery().WithArgs(scp.StrType(), sID, test.path).WillDelayFor(time.Millisecond * 110).WillReturnRows(sqlmock.NewRows([]string{"value"}))
 
-			haveVal, haveOK, haveErr := dbs.Get(config.MustNewPathWithScope(test.scopeID, test.path))
+			haveVal, haveOK, haveErr := dbs.Get(config.MustMakePathWithScope(test.scopeID, test.path))
 			assert.Nil(t, haveVal)
 			assert.False(t, haveOK)
 			causeErr := errors.Cause(haveErr)
@@ -221,7 +221,7 @@ func TestService_Set(t *testing.T) {
 			prepIns.ExpectExec().
 				WithArgs(test.scopeID, test.path, test.value).
 				WillReturnResult(sqlmock.NewResult(j, 0))
-			assert.NoError(t, dbs.Set(config.MustNewPathWithScope(test.scopeID, test.path), test.value))
+			assert.NoError(t, dbs.Set(config.MustMakePathWithScope(test.scopeID, test.path), test.value))
 
 			if sleep > 0 {
 				time.Sleep(sleep)
@@ -295,7 +295,7 @@ func TestService_Set(t *testing.T) {
 				WithArgs(test.scopeID, test.path, test.value).
 				WillDelayFor(time.Millisecond * 110).
 				WillReturnResult(sqlmock.NewResult(int64(i), 0))
-			haveErr := dbs.Set(config.MustNewPathWithScope(test.scopeID, test.path), test.value)
+			haveErr := dbs.Set(config.MustMakePathWithScope(test.scopeID, test.path), test.value)
 
 			causeErr := errors.Cause(haveErr)
 			assert.EqualError(t, causeErr, "canceling query due to user request")
@@ -330,7 +330,7 @@ func Test_WithCoreConfigData(t *testing.T) {
 	)
 	defer dmltest.Close(t, s)
 
-	p1 := config.MustNewPath("web/secure/offloader_header").BindStore(987)
+	p1 := config.MustMakePath("web/secure/offloader_header").BindStore(987)
 	assert.NoError(t, s.Set(p1, []byte("SSL_OFFLOADED")))
 
 	v, ok, err := s.Get(p1).Str()
@@ -338,7 +338,7 @@ func Test_WithCoreConfigData(t *testing.T) {
 	assert.True(t, ok)
 	assert.Exactly(t, "SSL_OFFLOADED", v)
 
-	p2 := config.MustNewPath("web/unsecure/base_skin_url").BindWebsite(44)
+	p2 := config.MustMakePath("web/unsecure/base_skin_url").BindWebsite(44)
 	v, ok, err = s.Get(p2).Str()
 	assert.NoError(t, err)
 	assert.True(t, ok)

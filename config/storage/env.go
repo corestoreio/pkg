@@ -66,7 +66,7 @@ func FromEnvVar(prefix, envVar string) (config.Path, error) {
 	slashes := strings.Count(envVar, string(config.PathSeparator))
 	if slashes == 2 {
 		// Looks like: etcd/credentials/user_name for default scope
-		return config.NewPathWithScope(scope.DefaultTypeID, envVar)
+		return config.MakePathWithScope(scope.DefaultTypeID, envVar)
 	}
 	// looks like: stores/2/carrier/dhl/title
 

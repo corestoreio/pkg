@@ -26,7 +26,7 @@ import (
 func TestNewMap_OneKey(t *testing.T) {
 	t.Parallel()
 
-	p := config.MustNewPathWithScope(scope.Store.WithID(55), "aa/bb/cc")
+	p := config.MustMakePathWithScope(scope.Store.WithID(55), "aa/bb/cc")
 	sp := storage.NewMap()
 
 	assert.NoError(t, sp.Set(p, []byte(`19.99`)))

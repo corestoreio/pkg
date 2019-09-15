@@ -33,8 +33,8 @@ func TestService_FnInvokes(t *testing.T) {
 			return
 		},
 	}
-	_ = s.Get(config.MustNewPath("test/service/invokes"))
-	_ = s.Get(config.MustNewPath("test/service/invokes"))
+	_ = s.Get(config.MustMakePath("test/service/invokes"))
+	_ = s.Get(config.MustMakePath("test/service/invokes"))
 	assert.Exactly(t, 2, called)
 }
 
@@ -52,7 +52,7 @@ func TestService_FnInvokes_Map(t *testing.T) {
 		// food for the race detector
 		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
-			_ = s.Get(config.MustNewPath("test/service/invokes"))
+			_ = s.Get(config.MustMakePath("test/service/invokes"))
 		}(&wg)
 	}
 	wg.Wait()

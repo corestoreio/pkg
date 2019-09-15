@@ -50,7 +50,7 @@ func TestOperators(t *testing.T) {
 	assert.Exactly(t, []byte(`74686520736d616c6c20756e697665727365`), errCheck(t)(hexEncode(config.Path{}, []byte("the small universe"))))
 	assert.Exactly(t, []byte(`the small universe`), errCheck(t)(hexDecode(config.Path{}, []byte("74686520736d616c6c20756e697665727365"))))
 
-	p0 := config.MustNewPath("general/store_information/address")
+	p0 := config.MustMakePath("general/store_information/address")
 	p1 := p0.BindStore(2)
 
 	assert.Exactly(t, []byte("\xfa\x93\xfcRzW,p=\x1fV1\x9b\xb8n\x05\xa3\xc4\xe3A\xb7\xdbU%\xbd݇3ñ\x8f\xbf"),

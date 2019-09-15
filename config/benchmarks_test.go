@@ -28,11 +28,11 @@ var benchmarkNewByParts config.Path
 
 // BenchmarkNewByParts-4	 5000000	       297 ns/op	      48 B/op	       1 allocs/op
 func BenchmarkNewByParts(b *testing.B) {
-	want := config.MustNewPath("general/single_store_mode/enabled")
+	want := config.MustMakePath("general/single_store_mode/enabled")
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		benchmarkNewByParts = config.MustNewPath("general/single_store_mode/enabled")
+		benchmarkNewByParts = config.MustMakePath("general/single_store_mode/enabled")
 	}
 	if !benchmarkNewByParts.Equal(want) {
 		b.Errorf("Want: %s; Have, %s", want, benchmarkNewByParts)
@@ -50,7 +50,7 @@ func BenchmarkPathFQ(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkPathFQ, err = config.MustNewPath(p).BindWebsite(scopeID).FQ()
+		benchmarkPathFQ, err = config.MustMakePath(p).BindWebsite(scopeID).FQ()
 		if err != nil {
 			b.Error(err)
 		}
@@ -70,7 +70,7 @@ func BenchmarkPathHashFull(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		benchmarkPathHash = config.MustNewPath(p).BindWebsite(scopeID).Hash64ByLevel(-1)
+		benchmarkPathHash = config.MustMakePath(p).BindWebsite(scopeID).Hash64ByLevel(-1)
 	}
 	if benchmarkPathHash != want {
 		b.Errorf("Want: %d; Have, %d", want, benchmarkPathHash)
@@ -84,7 +84,7 @@ func BenchmarkPathHashLevel2(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		benchmarkPathHash = config.MustNewPath(p).BindWebsite(scopeID).Hash64ByLevel(2)
+		benchmarkPathHash = config.MustMakePath(p).BindWebsite(scopeID).Hash64ByLevel(2)
 	}
 	if benchmarkPathHash != want {
 		b.Errorf("Want: %d; Have, %d", want, benchmarkPathHash)
@@ -124,7 +124,7 @@ func BenchmarkPath_Level_All(b *testing.B) {
 }
 
 func benchmarkRouteLevelRun(b *testing.B, level int, have, want string) {
-	hp := config.MustNewPath(have)
+	hp := config.MustMakePath(have)
 
 	b.ResetTimer()
 	var err error
@@ -143,7 +143,7 @@ var benchmarkPath_Part string
 
 // BenchmarkPath_Part-4	 5000000	       240 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkPath_Part(b *testing.B) {
-	have := config.MustNewPath("general/single_store_mode/enabled")
+	have := config.MustMakePath("general/single_store_mode/enabled")
 	want := "enabled"
 
 	var err error
@@ -166,7 +166,7 @@ func BenchmarkPath_Part(b *testing.B) {
 var benchmarkPath_Validate error
 
 func BenchmarkPath_Validate(b *testing.B) {
-	have := config.MustNewPath("system/dEv/d3bug")
+	have := config.MustMakePath("system/dEv/d3bug")
 	want := "system/dev/debug"
 
 	b.ReportAllocs()
@@ -183,7 +183,7 @@ var benchmarkRouteSplit = make([]string, 0, 4)
 
 // BenchmarkPath_Split-4    	 5000000	       286 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkPath_Split(b *testing.B) {
-	have := config.MustNewPath("general/single_store_mode/enabled")
+	have := config.MustMakePath("general/single_store_mode/enabled")
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -225,7 +225,7 @@ func benchmarkScopedServiceStringRun(b *testing.B, websiteID, storeID uint32) {
 	want := strings.Repeat("Gopher", 100)
 
 	sg := config.NewFakeService(storage.NewMap(
-		config.MustNewPath(route).String(), want,
+		config.MustMakePath(route).String(), want,
 	)).Scoped(websiteID, storeID)
 
 	b.ResetTimer()
@@ -255,16 +255,16 @@ func BenchmarkPathSlice_Sort(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		ps := config.PathSlice{
-			config.MustNewPathWithScope(scope.Store.WithID(3), "bb/cc/dd"),
-			config.MustNewPathWithScope(scope.Store.WithID(2), "bb/cc/dd"),
-			config.MustNewPath("bb/cc/dd"),
-			config.MustNewPathWithScope(scope.Website.WithID(3), "xx/yy/zz"),
-			config.MustNewPathWithScope(scope.Website.WithID(1), "xx/yy/zz"),
-			config.MustNewPathWithScope(scope.Website.WithID(2), "xx/yy/zz"),
-			config.MustNewPathWithScope(scope.Store.WithID(4), "zz/aa/bb"),
-			config.MustNewPathWithScope(scope.Website.WithID(1), "zz/aa/bb"),
-			config.MustNewPathWithScope(scope.Website.WithID(2), "aa/bb/cc"),
-			config.MustNewPath("aa/bb/cc"),
+			config.MustMakePathWithScope(scope.Store.WithID(3), "bb/cc/dd"),
+			config.MustMakePathWithScope(scope.Store.WithID(2), "bb/cc/dd"),
+			config.MustMakePath("bb/cc/dd"),
+			config.MustMakePathWithScope(scope.Website.WithID(3), "xx/yy/zz"),
+			config.MustMakePathWithScope(scope.Website.WithID(1), "xx/yy/zz"),
+			config.MustMakePathWithScope(scope.Website.WithID(2), "xx/yy/zz"),
+			config.MustMakePathWithScope(scope.Store.WithID(4), "zz/aa/bb"),
+			config.MustMakePathWithScope(scope.Website.WithID(1), "zz/aa/bb"),
+			config.MustMakePathWithScope(scope.Website.WithID(2), "aa/bb/cc"),
+			config.MustMakePath("aa/bb/cc"),
 		}
 		ps.Sort()
 		if len(ps) != 10 {
@@ -283,7 +283,7 @@ func BenchmarkPath_Marshal(b *testing.B) {
 
 	// BenchmarkPath_Marshal/MarshalText-4         	 3000000	       592 ns/op	     112 B/op	       1 allocs/op
 	b.Run("MarshalText", func(b *testing.B) {
-		p := config.MustNewPath(path).BindStore(123)
+		p := config.MustMakePath(path).BindStore(123)
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			if data, err = p.MarshalText(); err != nil {
@@ -310,7 +310,7 @@ func BenchmarkPath_Marshal(b *testing.B) {
 	})
 	// BenchmarkPath_Marshal/MarshalBinary-4       	20000000	        95.5 ns/op	     112 B/op	       1 allocs/op
 	b.Run("MarshalBinary", func(b *testing.B) {
-		p := config.MustNewPath(path).BindStore(123)
+		p := config.MustMakePath(path).BindStore(123)
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			if data, err = p.MarshalBinary(); err != nil {

@@ -365,9 +365,9 @@ func WithLoadFromDB(tbls *ddl.Tables, o DBOptions) config.LoadDataOption {
 				v = []byte(ccd.Value.String)
 			}
 			scp := scope.FromString(ccd.Scope).WithID(uint32(ccd.ScopeID))
-			p, err := config.NewPathWithScope(scp, ccd.Path)
+			p, err := config.MakePathWithScope(scp, ccd.Path)
 			if err != nil {
-				return errors.Wrapf(err, "[config/storage] WithLoadFromDB.config.NewPathWithScope Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ID)
+				return errors.Wrapf(err, "[config/storage] WithLoadFromDB.config.MakePathWithScope Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ID)
 			}
 			if err = s.Set(p, v); err != nil {
 				return errors.Wrapf(err, "[config/storage] WithLoadFromDB.Service.Write Path %q Scope: %q ID: %d", ccd.Path, scp, ccd.ID)

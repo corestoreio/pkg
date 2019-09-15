@@ -63,7 +63,7 @@ func ExampleRegisterFactory() {
 		return
 	}
 
-	ps3 := config.MustNewPath("aa/gg/kk").BindStore(3)
+	ps3 := config.MustMakePath("aa/gg/kk").BindStore(3)
 	err = cfgSrv.Set(ps3, []byte(`GopherCon in San Diego`))
 	fmt.Printf("%s\n", err)
 

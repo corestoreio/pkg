@@ -33,12 +33,12 @@ var lruGetTests = []struct {
 	keyToGet   config.Path
 	expectedOk bool
 }{
-	{"01 hit", config.MustNewPath("aa/bb/cc"), config.MustNewPath("aa/bb/cc"), true},
-	{"02 miss", config.MustNewPath("aa/bb/cc"), config.MustNewPath("aa/bb/cc").BindStore(11), false},
-	{"03 hit", config.MustNewPath("aa/bb/cc").BindWebsite(3), config.MustNewPath("aa/bb/cc").BindWebsite(3), true},
-	{"04 miss", config.MustNewPath("aa/bb/cc").BindStore(44), config.MustNewPath("aa/bb/cc").BindWebsite(4), false},
-	{"05 miss", config.MustNewPath("aa/bb/cc").BindStore(55), config.MustNewPath("aa/bb/cc").BindStore(56), false},
-	{"06 hit", config.MustNewPath("aa/bb/cc").BindStore(6), config.MustNewPath("aa/bb/cc").BindStore(6), true},
+	{"01 hit", config.MustMakePath("aa/bb/cc"), config.MustMakePath("aa/bb/cc"), true},
+	{"02 miss", config.MustMakePath("aa/bb/cc"), config.MustMakePath("aa/bb/cc").BindStore(11), false},
+	{"03 hit", config.MustMakePath("aa/bb/cc").BindWebsite(3), config.MustMakePath("aa/bb/cc").BindWebsite(3), true},
+	{"04 miss", config.MustMakePath("aa/bb/cc").BindStore(44), config.MustMakePath("aa/bb/cc").BindWebsite(4), false},
+	{"05 miss", config.MustMakePath("aa/bb/cc").BindStore(55), config.MustMakePath("aa/bb/cc").BindStore(56), false},
+	{"06 hit", config.MustMakePath("aa/bb/cc").BindStore(6), config.MustMakePath("aa/bb/cc").BindStore(6), true},
 }
 
 const testLRUDataStr = `Just a dummy text entry! 😇`

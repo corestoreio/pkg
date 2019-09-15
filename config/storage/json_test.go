@@ -27,7 +27,7 @@ import (
 )
 
 func TestWithLoadJSON(t *testing.T) {
-	pUserName := config.MustNewPath("payment/stripe/user_name")
+	pUserName := config.MustMakePath("payment/stripe/user_name")
 
 	t.Run("success", func(t *testing.T) {
 		cfgSrv, err := config.NewService(
@@ -46,8 +46,8 @@ func TestWithLoadJSON(t *testing.T) {
 		assert.Exactly(t, `"SO5Username"`, cfgSrv.Get(pUserName.BindStore(5)).String())
 		assert.Exactly(t, `"SO11Username"`, cfgSrv.Get(pUserName.BindStore(11)).String())
 
-		assert.Exactly(t, `"1234"`, cfgSrv.Get(config.MustNewPath("payment/stripe/port")).String())
-		assert.Exactly(t, `"true"`, cfgSrv.Get(config.MustNewPathWithScope(scope.Website.WithID(0), "payment/stripe/enable")).String())
+		assert.Exactly(t, `"1234"`, cfgSrv.Get(config.MustMakePath("payment/stripe/port")).String())
+		assert.Exactly(t, `"true"`, cfgSrv.Get(config.MustMakePathWithScope(scope.Website.WithID(0), "payment/stripe/enable")).String())
 	})
 
 	runner := func(file string, errKind errors.Kind, errTxt string) func(*testing.T) {

@@ -62,7 +62,7 @@ package config_test
 //
 //// We focus here on type Int() other primitive types are of course also available.
 //// The int numbers here are converted floats. Can you spot the origin?
-// var myConfigPath = config.MustNewPath(exampleRoute) // panics on incorrect argument. Use only during app start up.
+// var myConfigPath = config.MustMakePath(exampleRoute) // panics on incorrect argument. Use only during app start up.
 //
 // var defaultsInt = []struct {
 //	key config.Path

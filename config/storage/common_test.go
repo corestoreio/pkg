@@ -29,7 +29,7 @@ type flusher interface {
 }
 
 func validateFoundGet(t *testing.T, s config.Storager, scp scope.TypeID, route, want string) {
-	p := config.MustNewPathWithScope(scp, route)
+	p := config.MustMakePathWithScope(scp, route)
 	data, ok, err := s.Get(p)
 	assert.NoError(t, err)
 	assert.True(t, ok, "env value must be found")
@@ -37,7 +37,7 @@ func validateFoundGet(t *testing.T, s config.Storager, scp scope.TypeID, route, 
 }
 
 func validateNotFoundGet(t *testing.T, s config.Storager, scp scope.TypeID, route string) {
-	p := config.MustNewPathWithScope(scp, route)
+	p := config.MustMakePathWithScope(scp, route)
 	data, ok, err := s.Get(p)
 	assert.NoError(t, err)
 	assert.False(t, ok, "env value must NOT be found")
@@ -59,7 +59,7 @@ func TestWithLoadStrings(t *testing.T) {
 	})
 
 	t.Run("successful level 1", func(t *testing.T) {
-		pUserName := config.MustNewPath("payment/stripe/user_name").BindWebsite(2)
+		pUserName := config.MustMakePath("payment/stripe/user_name").BindWebsite(2)
 
 		cfgSrv, err := config.NewService(
 			nil, config.Options{
@@ -71,7 +71,7 @@ func TestWithLoadStrings(t *testing.T) {
 		assert.Exactly(t, "\"alph\\uf8ffZ\"", cfgSrv.Get(pUserName).String())
 	})
 	t.Run("successful level 1+2", func(t *testing.T) {
-		pUserName := config.MustNewPath("payment/stripe/user_name").BindWebsite(2)
+		pUserName := config.MustMakePath("payment/stripe/user_name").BindWebsite(2)
 
 		cfgSrv, err := config.NewService(
 			storage.NewMap(), config.Options{
@@ -84,7 +84,7 @@ func TestWithLoadStrings(t *testing.T) {
 		assert.Exactly(t, "\"alph\\uf8ffZ\"", cfgSrv.Get(pUserName).String())
 	})
 	t.Run("successful sort order", func(t *testing.T) {
-		pUserName := config.MustNewPath("payment/stripe/user_name").BindWebsite(2)
+		pUserName := config.MustMakePath("payment/stripe/user_name").BindWebsite(2)
 
 		cfgSrv, err := config.NewService(
 			storage.NewMap(), config.Options{},

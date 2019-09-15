@@ -322,7 +322,7 @@ func NewCanal(dsn string, db DBConFactory, opt *Options) (*Canal, error) {
 
 	c := &Canal{
 		opts:                      *opt,
-		configPathBackendPosition: config.MustNewPath(ConfigPathBackendPosition),
+		configPathBackendPosition: config.MustMakePath(ConfigPathBackendPosition),
 		dsn:                       pDSN,
 		closed:                    new(int32),
 		tables:                    ddl.MustNewTables(),

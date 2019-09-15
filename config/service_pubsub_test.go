@@ -58,7 +58,7 @@ func initLogger() (*log.MutexBuffer, log.Logger) {
 }
 
 func TestPubSubBubbling(t *testing.T) {
-	testPath := config.MustNewPath("aa/bb/cc")
+	testPath := config.MustMakePath("aa/bb/cc")
 
 	s := config.MustNewService(storage.NewMap(), config.Options{
 		EnablePubSub: true,
@@ -101,7 +101,7 @@ func TestPubSubPanicSimple(t *testing.T) {
 		Log:          logger,
 	})
 
-	testPath := config.MustNewPath("xx/yy/zz")
+	testPath := config.MustMakePath("xx/yy/zz")
 
 	subID, err := s.Subscribe(testPath.BindStore(123).String(), &testSubscriber{
 		t: t,
@@ -126,7 +126,7 @@ func TestPubSubPanicError(t *testing.T) {
 		Log:          logger,
 	})
 
-	testPath := config.MustNewPath("aa/bb/cc")
+	testPath := config.MustMakePath("aa/bb/cc")
 
 	pErr := errors.New("OMG! Panic!")
 
@@ -191,7 +191,7 @@ func TestPubSubPanicMultiple(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, subID > 0)
 
-	assert.NoError(t, s.Set(config.MustNewPath("xx/yy/zz"), []byte(`any kind of data`)))
+	assert.NoError(t, s.Set(config.MustMakePath("xx/yy/zz"), []byte(`any kind of data`)))
 	assert.NoError(t, s.Close())
 	time.Sleep(time.Millisecond)
 	// t.Log(debugBuf.String())
@@ -207,7 +207,7 @@ func TestPubSubUnsubscribe(t *testing.T) {
 		Log:          logger,
 	})
 
-	p := config.MustNewPath("xx/yy/zz").BindStore(123)
+	p := config.MustMakePath("xx/yy/zz").BindStore(123)
 	pErr := errors.New("WTF? Panic!")
 	subID, err := s.Subscribe(p.String(), &testSubscriber{
 		t: t,
@@ -268,9 +268,9 @@ func TestPubSubEvict(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, subID)
 
-	assert.NoError(t, s.Set(config.MustNewPath("xx/yy/zz").BindStore(123), []byte(`321`)))
-	assert.NoError(t, s.Set(config.MustNewPath("xx/yy/aa").BindStore(123), []byte(`321`)))
-	assert.NoError(t, s.Set(config.MustNewPath("xx/yy/zz").BindStore(123), []byte(`321`)))
+	assert.NoError(t, s.Set(config.MustMakePath("xx/yy/zz").BindStore(123), []byte(`321`)))
+	assert.NoError(t, s.Set(config.MustMakePath("xx/yy/aa").BindStore(123), []byte(`321`)))
+	assert.NoError(t, s.Set(config.MustMakePath("xx/yy/zz").BindStore(123), []byte(`321`)))
 
 	assert.NoError(t, s.Close())
 	time.Sleep(time.Millisecond)

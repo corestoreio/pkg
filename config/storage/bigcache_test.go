@@ -46,7 +46,7 @@ func TestCacheGet(t *testing.T) {
 		{scope.Store.WithID(3), "aa/bb/cc", []byte(`DataXYA`), nil, nil},
 	}
 	for idx, test := range tests {
-		p := config.MustNewPathWithScope(test.scp, test.path)
+		p := config.MustMakePathWithScope(test.scp, test.path)
 		haveSetErr := bgc.Set(p, test.val)
 		if test.wantSetErr != nil {
 			assert.EqualError(t, haveSetErr, test.wantSetErr.Error(), "Index %d", idx)
@@ -73,7 +73,7 @@ func TestCacheGetNotFound(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	haveVal, haveFound, haveGetErr := sc.Get(config.MustNewPath("aa/bb/cc"))
+	haveVal, haveFound, haveGetErr := sc.Get(config.MustMakePath("aa/bb/cc"))
 	assert.False(t, haveFound)
 	assert.NoError(t, haveGetErr)
 	assert.Empty(t, haveVal)

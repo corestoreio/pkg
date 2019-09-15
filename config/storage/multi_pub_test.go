@@ -27,7 +27,7 @@ import (
 )
 
 func TestMakeMulti(t *testing.T) {
-	p := config.MustNewPathWithScope(scope.Store.WithID(44), "aa/bb/cc")
+	p := config.MustMakePathWithScope(scope.Store.WithID(44), "aa/bb/cc")
 
 	cmpGet := func(t *testing.T, s config.Storager, wantData []byte) {
 		v, found, err := s.Get(p)

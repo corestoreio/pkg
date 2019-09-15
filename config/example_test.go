@@ -31,7 +31,7 @@ func panicIfErr(errs ...error) {
 }
 
 func ExamplePath() {
-	p := config.MustNewPath("system/smtp/host")
+	p := config.MustMakePath("system/smtp/host")
 
 	fmt.Println(p.String())
 	fmt.Println(p.BindWebsite(1).String())
@@ -44,13 +44,13 @@ func ExamplePath() {
 	// Group is not supported and falls back to default
 	fmt.Println(p.Bind(scope.Group.WithID(4)).String())
 
-	p, err := config.NewPath("system/smtp/host")
+	p, err := config.MakePath("system/smtp/host")
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}
 	fmt.Println(p.String())
 
-	routes := config.MustNewPath("dev/css/merge_css_files")
+	routes := config.MustMakePath("dev/css/merge_css_files")
 	rs, err := routes.Split()
 	if err != nil {
 		fmt.Printf("%s\n", err)

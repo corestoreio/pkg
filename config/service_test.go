@@ -101,7 +101,7 @@ func TestService_Write_Get_Value_Success(t *testing.T) {
 		}
 	}
 
-	basePath := config.MustNewPath("aa/bb/cc")
+	basePath := config.MustMakePath("aa/bb/cc")
 
 	t.Run("stringDefault", runner(basePath, []byte("Gopher")))
 	t.Run("stringWebsite", runner(basePath.BindWebsite(10), []byte("Gopher")))
@@ -154,7 +154,7 @@ func TestScopedServiceScope(t *testing.T) {
 
 func TestScopedServicePath(t *testing.T) {
 	t.Parallel()
-	basePath := config.MustNewPath("aa/bb/cc")
+	basePath := config.MustMakePath("aa/bb/cc")
 	tests := []struct {
 		desc               string
 		fqpath             string
@@ -258,7 +258,7 @@ func TestScopedServicePath(t *testing.T) {
 
 func TestScopedServicePermission_All(t *testing.T) {
 	t.Parallel()
-	basePath := config.MustNewPath("aa/bb/cc")
+	basePath := config.MustMakePath("aa/bb/cc")
 	mapStorage := storage.NewMap(
 		basePath.Bind(scope.DefaultTypeID).String(), "a",
 		basePath.BindWebsite(1).String(), "b",
@@ -293,9 +293,9 @@ func TestScopedServicePermission_All(t *testing.T) {
 
 func TestScopedServicePermission_One(t *testing.T) {
 	t.Parallel()
-	basePath1 := config.MustNewPath("aa/bb/cc")
-	basePath2 := config.MustNewPath("dd/ee/ff")
-	basePath3 := config.MustNewPath("dd/ee/gg")
+	basePath1 := config.MustMakePath("aa/bb/cc")
+	basePath2 := config.MustMakePath("dd/ee/ff")
+	basePath3 := config.MustMakePath("dd/ee/gg")
 
 	const WebsiteID = 3
 	const StoreID = 5
@@ -376,7 +376,7 @@ func TestWithLRU(t *testing.T) {
 		Log:    l,
 	})
 
-	p1 := config.MustNewPath("carrier/dhl/enabled")
+	p1 := config.MustMakePath("carrier/dhl/enabled")
 	p2 := p1.BindWebsite(2)
 	p3 := p1.BindStore(3)
 
@@ -424,8 +424,8 @@ func TestService_Scoped_LRU_Parallel(t *testing.T) {
 
 	const route1 = "carrier/dhl/enabled"
 	const route2 = "payment/paypal/active"
-	p1 := config.MustNewPath(route1)
-	p2 := config.MustNewPath(route2)
+	p1 := config.MustMakePath(route1)
+	p2 := config.MustMakePath(route2)
 	paths := config.PathSlice{
 		p1,
 		p1.BindWebsite(2),
@@ -501,7 +501,7 @@ func TestService_EnvName_From_OSEnv(t *testing.T) {
 func TestHotReload(t *testing.T) {
 	defer leaktest.Check(t)()
 
-	p := config.MustNewPath("ww/ee/rr")
+	p := config.MustMakePath("ww/ee/rr")
 	reloadCounter := new(int64)
 	srv := config.MustNewService(storage.NewMap(), config.Options{
 		EnableHotReload:  true,
@@ -528,7 +528,7 @@ func TestHotReload(t *testing.T) {
 	time.Sleep(time.Millisecond * 2)
 	assert.Exactly(t, `"2"`, srv.Get(p).String())
 
-	pTimeout := config.MustNewPath("carrier/dhl/timeout")
+	pTimeout := config.MustMakePath("carrier/dhl/timeout")
 	assert.Exactly(t, `"3601s"`, srv.Get(pTimeout).String())
 }
 
@@ -537,7 +537,7 @@ type keyer interface {
 }
 
 func TestService_PathWithEnvName(t *testing.T) {
-	p := config.MustNewPath("payment/datatrans/username").BindWebsite(4).WithEnvSuffix()
+	p := config.MustMakePath("payment/datatrans/username").BindWebsite(4).WithEnvSuffix()
 
 	sMap := storage.NewMap()
 	srv := config.MustNewService(sMap, config.Options{
@@ -587,7 +587,7 @@ func TestService_Observer(t *testing.T) {
 	srv := config.MustNewService(storage.NewMap(), config.Options{})
 	defer func() { assert.NoError(t, srv.Close()) }()
 
-	pUser := config.MustNewPath("carrier/dhl/username")
+	pUser := config.MustMakePath("carrier/dhl/username")
 	dUserName := []byte(`96703400169141436bc769418a3577e5`)
 
 	assert.NoError(t, srv.Set(pUser, dUserName))
@@ -632,7 +632,7 @@ func TestService_Observer(t *testing.T) {
 			err: errors.AlreadyInUse.Newf("Ups"),
 		}))
 
-		p := config.MustNewPathWithScope(scope.Website.WithID(2), "aa/bb/cc")
+		p := config.MustMakePathWithScope(scope.Website.WithID(2), "aa/bb/cc")
 		data := []byte(`4711`)
 		err := srv.Set(p, data)
 		assert.True(t, errors.AlreadyInUse.Match(err), "%+v", err)
@@ -645,7 +645,7 @@ func TestService_Observer(t *testing.T) {
 			err: errors.AlreadyCaptured.Newf("Ups"),
 		}))
 
-		p := config.MustNewPathWithScope(scope.Website.WithID(2), "aa/bb/cc")
+		p := config.MustMakePathWithScope(scope.Website.WithID(2), "aa/bb/cc")
 		data := []byte(`4711`)
 		err := srv.Set(p, data)
 		assert.True(t, errors.AlreadyCaptured.Match(err), "%+v", err)
@@ -678,7 +678,7 @@ func TestService_Observer(t *testing.T) {
 			},
 		}))
 
-		p := config.MustNewPathWithScope(scope.Website.WithID(2), "aa/bb/dd")
+		p := config.MustMakePathWithScope(scope.Website.WithID(2), "aa/bb/dd")
 		data := []byte(`4711`)
 		assert.NoError(t, srv.Set(p, data))
 
@@ -797,8 +797,8 @@ func TestService_FieldMetaData_Fallbacks(t *testing.T) {
 	)
 	defer func() { assert.NoError(t, srv.Close()) }()
 
-	dhlTimeout := config.MustNewPath("carrier/dhl/timeout")
-	dhlUsername := config.MustNewPath("carrier/dhl/username")
+	dhlTimeout := config.MustMakePath("carrier/dhl/timeout")
+	dhlUsername := config.MustMakePath("carrier/dhl/username")
 
 	t.Run("timeout: store scope cannot write default scope", func(t *testing.T) {
 		dhlTimeout := dhlTimeout.BindStore(3)

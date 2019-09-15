@@ -44,7 +44,7 @@ func ExampleRegisterModifier() {
 		return
 	}
 
-	ps2 := config.MustNewPath("payment/serviceX/username").BindStore(2)
+	ps2 := config.MustMakePath("payment/serviceX/username").BindStore(2)
 	val := cfgSrv.Get(ps2)
 	fmt.Printf("%s\n", val.String())
 

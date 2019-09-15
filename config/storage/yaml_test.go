@@ -37,9 +37,9 @@ func TestWithLoadYAML(t *testing.T) {
 			t.Fatalf("%+v", err)
 		}
 
-		assert.Exactly(t, `"false"`, cfgSrv.Get(config.MustNewPathWithScope(scope.Website.WithID(2), "google/analytics/active")).String())
-		assert.Exactly(t, 2.002, cfgSrv.Get(config.MustNewPathWithScope(scope.Store.WithID(2), "dev/js/merge_files")).UnsafeFloat64())
-		assert.Exactly(t, `"http://eshop.dev/"`, cfgSrv.Get(config.MustNewPath("web/unsecure/base_url")).String())
+		assert.Exactly(t, `"false"`, cfgSrv.Get(config.MustMakePathWithScope(scope.Website.WithID(2), "google/analytics/active")).String())
+		assert.Exactly(t, 2.002, cfgSrv.Get(config.MustMakePathWithScope(scope.Store.WithID(2), "dev/js/merge_files")).UnsafeFloat64())
+		assert.Exactly(t, `"http://eshop.dev/"`, cfgSrv.Get(config.MustMakePath("web/unsecure/base_url")).String())
 	})
 
 	t.Run("malformed path", func(t *testing.T) {
@@ -84,9 +84,9 @@ func TestWithLoadFieldMetaYAML(t *testing.T) {
 		assert.Exactly(t, `"prdUser1"`, scpd13.Get(scope.Store, "carrier/dpd/username").String())
 		assert.Exactly(t, `"prdUser2"`, scpd24.Get(scope.Store, "carrier/dpd/username").String())
 
-		err = cfgSrv.Set(config.MustNewPath("carrier/dpd/port").BindWebsite(1), []byte(`return error`))
+		err = cfgSrv.Set(config.MustMakePath("carrier/dpd/port").BindWebsite(1), []byte(`return error`))
 		assert.True(t, errors.NotAllowed.Match(err), "%+v", err)
-		err = cfgSrv.Set(config.MustNewPath("carrier/dpd/timeout").BindStore(1), []byte(`return error`))
+		err = cfgSrv.Set(config.MustMakePath("carrier/dpd/timeout").BindStore(1), []byte(`return error`))
 		assert.True(t, errors.NotAllowed.Match(err), "%+v", err)
 	})
 

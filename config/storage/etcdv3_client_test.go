@@ -48,7 +48,7 @@ func TestStorage_Get(t *testing.T) {
 	testData := []byte(`You should turn it to eleven.`)
 	// scpID := scope.Website.WithID(3)
 	const path = "path/to/orion"
-	p := config.MustNewPathWithScope(scope.Website.WithID(3), "path/to/orion")
+	p := config.MustMakePathWithScope(scope.Website.WithID(3), "path/to/orion")
 
 	t.Run("Get found", func(t *testing.T) {
 		mo := Etcdv3FakeClient{
@@ -160,7 +160,7 @@ func TestNewStorage_Integration(t *testing.T) {
 		t.Fatalf("%+v", err)
 	}
 
-	p := config.MustNewPath("tax/calculation/rate")
+	p := config.MustMakePath("tax/calculation/rate")
 	p2 := p.BindStore(2)
 
 	assert.NoError(t, srv.Set(p, []byte(`19.0`)))
@@ -204,7 +204,7 @@ func TestWithLoadData_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
-	p := config.MustNewPathWithScope(scope.Website.WithID(2), "payment/datatr/sha1")
+	p := config.MustMakePathWithScope(scope.Website.WithID(2), "payment/datatr/sha1")
 
 	assert.Exactly(t, `"fc9d6fd2d8db223be4a7484a8619f26b"`, cfgSrv.Get(p).String())
 	assert.Exactly(t, `"46aaccbebf47d8f8fce8c02d621aa573"`, cfgSrv.Get(p.BindStore(1)).String())

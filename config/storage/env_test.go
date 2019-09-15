@@ -39,7 +39,7 @@ func TestToEnvVar(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		assert.Exactly(t, test.want, storage.ToEnvVar(config.MustNewPathWithScope(test.scpID, test.route)), "Index %d", i)
+		assert.Exactly(t, test.want, storage.ToEnvVar(config.MustMakePathWithScope(test.scpID, test.route)), "Index %d", i)
 	}
 }
 
@@ -92,9 +92,9 @@ func TestWithLoadEnvironmentVariables(t *testing.T) {
 			t.Fatalf("%+v", err)
 		}
 
-		assert.Exactly(t, "\"Pear 🍐\"", cfgSrv.Get(config.MustNewPathWithScope(scope.Store.WithID(345), "xx/bb/cc")).String())
-		assert.Exactly(t, `""`, cfgSrv.Get(config.MustNewPathWithScope(scope.Store.WithID(345), "xy/bb/cc")).String())
-		assert.Exactly(t, 42.1234, cfgSrv.Get(config.MustNewPath("general/gps/lat")).UnsafeFloat64())
+		assert.Exactly(t, "\"Pear 🍐\"", cfgSrv.Get(config.MustMakePathWithScope(scope.Store.WithID(345), "xx/bb/cc")).String())
+		assert.Exactly(t, `""`, cfgSrv.Get(config.MustMakePathWithScope(scope.Store.WithID(345), "xy/bb/cc")).String())
+		assert.Exactly(t, 42.1234, cfgSrv.Get(config.MustMakePath("general/gps/lat")).UnsafeFloat64())
 	})
 
 	t.Run("malformed path", func(t *testing.T) {
