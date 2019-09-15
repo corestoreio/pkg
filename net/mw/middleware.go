@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/log"
-	loghttp "github.com/corestoreio/log/http"
+	"github.com/corestoreio/log/loghttp"
 )
 
 // Middleware is a wrapper for the interface http.Handler to create
@@ -49,14 +49,14 @@ func ChainFunc(hf http.HandlerFunc, mws ...Middleware) http.Handler {
 
 // Chain will iterate over all middleware functions, calling them one by one
 // in a chained manner, returning the result of the final middleware.
-func (mws MiddlewareSlice) Chain(h http.Handler) http.Handler {
-	return Chain(h, mws...)
+func (c MiddlewareSlice) Chain(h http.Handler) http.Handler {
+	return Chain(h, c...)
 }
 
 // Chain will iterate over all middleware functions, calling them one by one
 // in a chained manner, returning the result of the final middleware.
-func (mws MiddlewareSlice) ChainFunc(hf http.HandlerFunc) http.Handler {
-	return Chain(hf, mws...)
+func (c MiddlewareSlice) ChainFunc(hf http.HandlerFunc) http.Handler {
+	return Chain(hf, c...)
 }
 
 // Append extends a slice, adding the specified Middleware
@@ -131,7 +131,7 @@ func WithCloseNotify(opts ...Option) Middleware {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Cancel the context if the client closes the connection
-			if wcn, ok := w.(http.CloseNotifier); ok {
+			if wcn, ok := w.(http.CloseNotifier); ok { // TODO refactor CloseNotifier
 				ctx, cancel := context.WithCancel(r.Context())
 				defer cancel()
 				r = r.WithContext(ctx)

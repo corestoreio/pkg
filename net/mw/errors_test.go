@@ -53,7 +53,6 @@ func TestErrorWithPanic(t *testing.T) {
 }
 
 func TestLogErrorWithStatusCode(t *testing.T) {
-
 	var buf bytes.Buffer
 	lg := logw.NewLog(logw.WithWriter(&buf), logw.WithLevel(logw.LevelDebug))
 

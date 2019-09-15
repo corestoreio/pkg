@@ -19,7 +19,7 @@ import (
 	"net/http"
 
 	"github.com/corestoreio/log"
-	loghttp "github.com/corestoreio/log/http"
+	"github.com/corestoreio/log/loghttp"
 )
 
 // ErrorHandler passes an error to an handler and returns the handler with the
@@ -42,7 +42,6 @@ func ErrorWithStatusCode(code int) ErrorHandler {
 func LogErrorWithStatusCode(l log.Logger, code int) ErrorHandler {
 	return func(err error) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 			http.Error(w, http.StatusText(code), code)
 
 			fields := log.Fields{

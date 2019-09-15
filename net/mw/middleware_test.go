@@ -46,7 +46,6 @@ func serveHTTPContext(w http.ResponseWriter, r *http.Request) {
 		val += " canceled"
 	}
 	_, _ = w.Write([]byte(val))
-
 }
 
 type closeNotifyWriter struct {
@@ -62,7 +61,7 @@ func (w *closeNotifyWriter) CloseNotify() <-chan bool {
 
 func TestWithCloseHandler(t *testing.T) {
 	ctx := context.WithValue(context.Background(), ctxKey, "gopher life")
-	var mws = mw.MiddlewareSlice{mw.WithCloseNotify()}
+	mws := mw.MiddlewareSlice{mw.WithCloseNotify()}
 	finalCH := mws.Chain(http.HandlerFunc(serveHTTPContext))
 
 	w := &closeNotifyWriter{httptest.NewRecorder()}
@@ -105,7 +104,6 @@ func TestWithHeader(t *testing.T) {
 }
 
 func TestWithXHTTPMethodOverrideForm(t *testing.T) {
-
 	var mws mw.MiddlewareSlice
 	mws = mws.Append(mw.WithXHTTPMethodOverride(mw.SetMethodOverrideFormKey("_mykey")))
 
