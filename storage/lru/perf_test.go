@@ -27,14 +27,59 @@ func (mv MyValue) Size() int {
 }
 
 func BenchmarkGet(b *testing.B) {
-	cache := NewLRUCache(64 * 1024 * 1024)
+	cache := New(64 * 1024 * 1024)
 	value := make(MyValue, 1000)
-	cache.Set("stuff", value)
-	for i := 0; i < b.N; i++ {
-		val, ok := cache.Get("stuff")
-		if !ok {
-			panic("error")
-		}
-		_ = val
-	}
+	cache.Set("stuff1", value)
+	value2 := make(MyValue, 1100)
+	cache.Set("stuff2", value2)
+
+	b.Run("one key", func(b *testing.B) {
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				val, ok := cache.Get("stuff1")
+				if !ok {
+					panic("error")
+				}
+				_ = val
+			}
+		})
+	})
+
+	b.Run("two keys", func(b *testing.B) {
+		b.RunParallel(func(pb *testing.PB) {
+			i := 0
+			for pb.Next() {
+				key := "stuff1"
+				if i%2 == 0 {
+					key = "stuff2"
+				}
+				val, ok := cache.Get(key)
+				if !ok {
+					panic("error")
+				}
+				_ = val
+				i++
+			}
+		})
+	})
+	b.Run("set get, two keys", func(b *testing.B) {
+		b.RunParallel(func(pb *testing.PB) {
+			i := 0
+			for pb.Next() {
+				key := "stuff1"
+				if i%2 == 0 {
+					key = "stuff2"
+				}
+				val, ok := cache.Get(key)
+				if !ok {
+					panic("error")
+				}
+				_ = val
+				if i%4 == 0 {
+					cache.Set("stuff3", value)
+				}
+				i++
+			}
+		})
+	})
 }

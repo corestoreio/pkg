@@ -28,7 +28,7 @@ type LRUOptions struct {
 	Capacity           int64 // default 5000 objects
 	TrackBySize        bool
 	TrackByObjectCount bool // default
-	LRUCache           *lru.LRUCache
+	LRUCache           *lru.Cache
 }
 
 // lruCache is an LRU cache. It is safe for concurrent access.
@@ -56,7 +56,7 @@ func NewLRU(o *LRUOptions) NewStorageFn {
 		o.Capacity = 5000
 	}
 	if o.LRUCache == nil {
-		o.LRUCache = lru.NewLRUCache(o.Capacity)
+		o.LRUCache = lru.New(o.Capacity)
 	}
 	return func() (Storager, error) {
 		return lruCache{

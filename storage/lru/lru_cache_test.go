@@ -31,7 +31,7 @@ func (cv *CacheValue) Size() int {
 }
 
 func TestInitialState(t *testing.T) {
-	cache := NewLRUCache(5)
+	cache := New(5)
 	l, sz, c, e, _ := cache.Stats()
 	if l != 0 {
 		t.Errorf("length = %v, want 0", l)
@@ -48,7 +48,7 @@ func TestInitialState(t *testing.T) {
 }
 
 func TestSetInsertsValue(t *testing.T) {
-	cache := NewLRUCache(100)
+	cache := New(100)
 	data := &CacheValue{0}
 	key := "key"
 	cache.Set(key, data)
@@ -69,7 +69,7 @@ func TestSetInsertsValue(t *testing.T) {
 }
 
 func TestSetIfAbsent(t *testing.T) {
-	cache := NewLRUCache(100)
+	cache := New(100)
 	data := &CacheValue{0}
 	key := "key"
 	cache.SetIfAbsent(key, data)
@@ -88,7 +88,7 @@ func TestSetIfAbsent(t *testing.T) {
 }
 
 func TestGetValueWithMultipleTypes(t *testing.T) {
-	cache := NewLRUCache(100)
+	cache := New(100)
 	data := &CacheValue{0}
 	key := "key"
 	cache.Set(key, data)
@@ -105,7 +105,7 @@ func TestGetValueWithMultipleTypes(t *testing.T) {
 }
 
 func TestSetUpdatesSize(t *testing.T) {
-	cache := NewLRUCache(100)
+	cache := New(100)
 	emptyValue := &CacheValue{0}
 	key := "key1"
 	cache.Set(key, emptyValue)
@@ -121,7 +121,7 @@ func TestSetUpdatesSize(t *testing.T) {
 }
 
 func TestSetWithOldKeyUpdatesValue(t *testing.T) {
-	cache := NewLRUCache(100)
+	cache := New(100)
 	emptyValue := &CacheValue{0}
 	key := "key1"
 	cache.Set(key, emptyValue)
@@ -135,7 +135,7 @@ func TestSetWithOldKeyUpdatesValue(t *testing.T) {
 }
 
 func TestSetWithOldKeyUpdatesSize(t *testing.T) {
-	cache := NewLRUCache(100)
+	cache := New(100)
 	emptyValue := &CacheValue{0}
 	key := "key1"
 	cache.Set(key, emptyValue)
@@ -153,7 +153,7 @@ func TestSetWithOldKeyUpdatesSize(t *testing.T) {
 }
 
 func TestGetNonExistent(t *testing.T) {
-	cache := NewLRUCache(100)
+	cache := New(100)
 
 	if _, ok := cache.Get("notthere"); ok {
 		t.Error("Cache returned a notthere value after no inserts.")
@@ -161,7 +161,7 @@ func TestGetNonExistent(t *testing.T) {
 }
 
 func TestPeek(t *testing.T) {
-	cache := NewLRUCache(2)
+	cache := New(2)
 	val1 := &CacheValue{1}
 	cache.Set("key1", val1)
 	val2 := &CacheValue{1}
@@ -180,7 +180,7 @@ func TestPeek(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	cache := NewLRUCache(100)
+	cache := New(100)
 	value := &CacheValue{1}
 	key := "key"
 
@@ -204,7 +204,7 @@ func TestDelete(t *testing.T) {
 }
 
 func TestClear(t *testing.T) {
-	cache := NewLRUCache(100)
+	cache := New(100)
 	value := &CacheValue{1}
 	key := "key"
 
@@ -218,7 +218,7 @@ func TestClear(t *testing.T) {
 
 func TestCapacityIsObeyed(t *testing.T) {
 	size := int64(3)
-	cache := NewLRUCache(100)
+	cache := New(100)
 	cache.SetCapacity(size)
 	value := &CacheValue{1}
 
@@ -269,7 +269,7 @@ func TestCapacityIsObeyed(t *testing.T) {
 
 func TestLRUIsEvicted(t *testing.T) {
 	size := int64(3)
-	cache := NewLRUCache(size)
+	cache := New(size)
 
 	cache.Set("key1", &CacheValue{1})
 	cache.Set("key2", &CacheValue{1})
