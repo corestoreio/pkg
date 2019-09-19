@@ -521,7 +521,7 @@ func (c *ConnPool) Transaction(ctx context.Context, opts *sql.TxOptions, fns ...
 func (c *ConnPool) WithQueryBuilder(qb QueryBuilder) *Artisan {
 	sql, argsRaw, err := qb.ToSQL()
 	var args [defaultArgumentsCapacity]argument
-	return &Artisan{
+	a := &Artisan{
 		base: builderCommon{
 			cachedSQL: map[string]string{"": sql},
 			Log:       c.Log,
@@ -529,9 +529,9 @@ func (c *ConnPool) WithQueryBuilder(qb QueryBuilder) *Artisan {
 			DB:        c.DB,
 			ärgErr:    errors.WithStack(err),
 		},
-		raw:       argsRaw,
 		arguments: args[:0],
 	}
+	return a.Raw(argsRaw...)
 }
 
 // Conn returns a single connection by either opening a new connection
@@ -725,7 +725,7 @@ func (c *Conn) WithQueryBuilder(qb QueryBuilder) *Artisan {
 		l = l.With(log.String("query_builder_id", id), log.String("sql", sql))
 	}
 	var args [defaultArgumentsCapacity]argument
-	return &Artisan{
+	a := &Artisan{
 		base: builderCommon{
 			cachedSQL: map[string]string{"": sql},
 			Log:       l,
@@ -733,9 +733,9 @@ func (c *Conn) WithQueryBuilder(qb QueryBuilder) *Artisan {
 			DB:        c.DB,
 			ärgErr:    errors.WithStack(err),
 		},
-		raw:       argsRaw,
 		arguments: args[:0],
 	}
+	return a.Raw(argsRaw...)
 }
 
 // WithRawSQL creates a new Artisan for the given SQL string in the current
@@ -833,7 +833,7 @@ func (tx *Tx) Rollback() error {
 func (tx *Tx) WithQueryBuilder(qb QueryBuilder) *Artisan {
 	sql, argsRaw, err := qb.ToSQL()
 	var args [defaultArgumentsCapacity]argument
-	return &Artisan{
+	a := &Artisan{
 		base: builderCommon{
 			cachedSQL: map[string]string{"": sql},
 			Log:       tx.Log,
@@ -841,7 +841,7 @@ func (tx *Tx) WithQueryBuilder(qb QueryBuilder) *Artisan {
 			DB:        tx.DB,
 			ärgErr:    errors.WithStack(err),
 		},
-		raw:       argsRaw,
 		arguments: args[:0],
 	}
+	return a.Raw(argsRaw...)
 }

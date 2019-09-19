@@ -308,8 +308,8 @@ func TestWithLogger_Select(t *testing.T) {
 		t.Run("Query Error interpolation with iFace slice", func(t *testing.T) {
 			defer buf.Reset()
 			rows, err := pplSel.WithArgs().Raw(67896543123).Interpolate().QueryContext(context.TODO())
-			assert.Nil(t, rows)
-			assert.ErrorIsKind(t, errors.NotAllowed, err)
+			assert.NotNil(t, rows)
+			assert.NoError(t, err)
 		})
 		t.Run("Query Correct", func(t *testing.T) {
 			defer buf.Reset()

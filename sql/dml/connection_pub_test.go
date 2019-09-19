@@ -209,7 +209,7 @@ func TestWithRawSQL(t *testing.T) {
 			errors.NoKind,
 			"wat",
 			"",
-			9, 5, 6, 7,
+			int64(9), int64(5), int64(6), int64(7),
 		)
 	})
 
@@ -230,7 +230,7 @@ func TestWithRawSQL(t *testing.T) {
 			errors.NoKind,
 			"wat",
 			"",
-			9, 5, 6, 7,
+			int64(9), int64(5), int64(6), int64(7),
 		)
 	})
 
@@ -254,7 +254,7 @@ func TestWithRawSQL(t *testing.T) {
 			errors.NoKind,
 			"wat",
 			"",
-			9, 5, 6, 7,
+			int64(9), int64(5), int64(6), int64(7),
 		)
 	})
 }

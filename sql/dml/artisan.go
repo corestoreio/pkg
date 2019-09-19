@@ -65,8 +65,8 @@ type Artisan struct {
 	// named arguments. 0 not yet checked, 1=does not contain, 2 = yes
 	hasNamedArgs      uint8 // 0 not checked, 1=no, 2=yes
 	nextUnnamedArgPos int
-	raw               []interface{} // set by developer
 	arguments
+	// recs defines some kind of permanent records which provides data
 	recs []QualifiedRecord
 }
 
@@ -167,7 +167,7 @@ func (a *Artisan) isEmpty() bool {
 	if a == nil {
 		return true
 	}
-	return len(a.raw) == 0 && len(a.arguments) == 0 && len(a.recs) == 0
+	return len(a.arguments) == 0 && len(a.recs) == 0
 }
 
 // prepareArgs transforms mainly the Artisan into []interface{}. It appends
@@ -230,7 +230,6 @@ func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}
 	defer pooledArgumentsPut(collectedArgs, sqlBuf)
 	collectedArgs = append(collectedArgs, a.arguments...)
 
-	extArgs = append(extArgs, a.raw...)
 	if collectedArgs, err = a.appendConvertedRecordsToArguments(collectedArgs); err != nil {
 		return "", nil, errors.WithStack(err)
 	}
@@ -399,7 +398,6 @@ func (a *Artisan) prepareArgsInsert(extArgs ...interface{}) (string, []interface
 		return "", cm.arguments.toInterfaces(extArgs...), nil
 	}
 
-	extArgs = append(extArgs, a.raw...)
 	totalArgLen := uint(len(cm.arguments) + len(extArgs))
 
 	if !a.insertIsBuildValues && lenInsertCachedSQL == 0 { // Write placeholder list e.g. "VALUES (?,?),(?,?)"
@@ -501,7 +499,16 @@ func (a *Artisan) Record(qualifier string, record ColumnMapper) *Artisan {
 	return a
 }
 
-func (a *Artisan) Raw(raw ...interface{}) *Artisan { a.raw = raw; return a }
+func (a *Artisan) Raw(raw ...interface{}) *Artisan {
+	for _, r := range raw {
+		if qr, ok := r.(QualifiedRecord); ok {
+			a.recs = append(a.recs, qr)
+		} else {
+			a.add(r)
+		}
+	}
+	return a
+}
 
 func (a *Artisan) Null() *Artisan                           { return a.add(nil) }
 func (a *Artisan) Int(i int) *Artisan                       { return a.add(i) }
@@ -560,7 +567,6 @@ func (a *Artisan) Reset() *Artisan {
 	}
 	a.recs = a.recs[:0]
 	a.arguments = a.arguments[:0]
-	a.raw = a.raw[:0]
 	a.nextUnnamedArgPos = 0
 	a.insertIsBuildValues = false
 	a.insertCachedSQL = a.insertCachedSQL[:0]
@@ -620,7 +626,6 @@ func (a *Artisan) Clone() *Artisan {
 	c := new(Artisan)
 	*c = *a
 
-	c.raw = nil
 	c.arguments = make(arguments, 0, len(a.arguments))
 	c.recs = nil
 	c.base.DB = nil

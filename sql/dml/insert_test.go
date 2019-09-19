@@ -394,7 +394,7 @@ func TestInsert_DisableBuildCache(t *testing.T) {
 			sql, args, err := insA.Raw(1, 2, 3, 4, 5, 6).ToSQL()
 			assert.NoError(t, err)
 			assert.Exactly(t, cachedSQLPlaceHolder, sql)
-			assert.Exactly(t, []interface{}{1, 2, 3, 4, 5, 6}, args)
+			assert.Exactly(t, []interface{}{int64(1), int64(2), int64(3), int64(4), int64(5), int64(6)}, args)
 			insA.Reset()
 		}
 		assert.Exactly(t, []string{"", "INSERT INTO `a` (`b`,`c`) VALUES  ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)"},
