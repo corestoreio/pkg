@@ -301,7 +301,7 @@ func TestWith_Prepare(t *testing.T) {
 		t.Run("WithRecords Error", func(t *testing.T) {
 			p := &TableCoreConfigDataSlice{err: errors.Duplicated.Newf("Found a duplicate")}
 
-			stmtA := stmt.WithArgs().Record("", p)
+			stmtA := stmt.WithArgs().Raw(dml.Qualify("", p))
 			rows, err := stmtA.QueryContext(context.TODO())
 			assert.ErrorIsKind(t, errors.Duplicated, err)
 			assert.Nil(t, rows)

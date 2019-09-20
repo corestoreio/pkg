@@ -130,7 +130,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 		}
 	})
 
-	t.Run("ExecContext", func(t *testing.T) {
+	t.Run("ExecContext no record", func(t *testing.T) {
 		dbc, dbMock := dmltest.MockDB(t)
 		defer dmltest.MockClose(t, dbc, dbMock)
 
@@ -145,6 +145,36 @@ func TestUpdate_WithArgs(t *testing.T) {
 		defer dmltest.Close(t, stmt)
 
 		res, err := stmt.WithArgs().ExecContext(context.TODO(), "Peter Gopher", "peter@gopher.go", 3456)
+		assert.NoError(t, err, "failed to execute ExecContext")
+
+		ra, err := res.RowsAffected()
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Exactly(t, int64(9), ra, "Different LastInsertIDs")
+	})
+
+	t.Run("ExecContext Records in final args", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`=?, `email`=? WHERE (`id` = ?)"))
+		prep.ExpectExec().WithArgs("Peter Gopher", "peter@gopher.go", 3456).WillReturnResult(sqlmock.NewResult(0, 9))
+
+		stmt, err := dml.NewUpdate("customer_entity").Alias("ce").
+			AddColumns("name", "email").
+			Where(dml.Column("id").Equal().PlaceHolder()).
+			WithDB(dbc.DB).Prepare(context.TODO())
+		assert.NoError(t, err, "failed creating a prepared statement")
+		defer dmltest.Close(t, stmt)
+
+		p := &dmlPerson{
+			ID:      3456,
+			Name:    "Peter Gopher",
+			Email:   null.MakeString("peter@gopher.go"),
+			StoreID: 3,
+		}
+		res, err := stmt.WithArgs().ExecContext(context.TODO(), dml.Qualify("", p))
 		assert.NoError(t, err, "failed to execute ExecContext")
 
 		ra, err := res.RowsAffected()

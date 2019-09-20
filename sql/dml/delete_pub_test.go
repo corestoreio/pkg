@@ -121,7 +121,7 @@ func TestDelete_Prepare(t *testing.T) {
 				Email: null.MakeString(test.email),
 			}
 
-			res, err := stmt.WithArgs().Record("", p).ExecContext(context.TODO())
+			res, err := stmt.WithArgs().Raw(dml.Qualify("", p)).ExecContext(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}

@@ -123,7 +123,8 @@ func (a *Artisan) WithQualifiedColumnsAliases(aliases ...string) *Artisan {
 
 // ToSQL the returned interface slice is owned by the callee.
 func (a *Artisan) ToSQL() (string, []interface{}, error) {
-	return a.prepareArgs()
+	sql, args, _, err := a.prepareArgs()
+	return sql, args, err
 }
 
 func (a *Artisan) CachedQueries(queries ...string) []string {
@@ -175,33 +176,43 @@ func (a *Artisan) isEmpty() bool {
 // This allows for a developer to reuse the interface slice and save
 // allocations. All method receivers are not thread safe. The returned interface
 // slice is the same as `extArgs`.
-func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}, err error) {
+func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}, _ []QualifiedRecord, err error) {
 	if a.base.ärgErr != nil {
-		return "", nil, errors.WithStack(a.base.ärgErr)
+		return "", nil, nil, errors.WithStack(a.base.ärgErr)
 	}
-
+	var recs []QualifiedRecord
+	extArgs2 := extArgs[:0]
+	for _, ea := range extArgs {
+		if qr, ok := ea.(QualifiedRecord); ok {
+			recs = append(recs, qr)
+		} else {
+			extArgs2 = append(extArgs2, ea)
+		}
+	}
+	extArgs = extArgs2
+	recs = append(recs, a.recs...)
 	if a.base.source == dmlSourceInsert {
-		return a.prepareArgsInsert(extArgs...)
+		return a.prepareArgsInsert(extArgs, recs)
 	}
 	cachedSQL, ok := a.base.cachedSQL[a.base.CacheKey]
 	if !a.isPrepared && !ok {
-		return "", nil, errors.Empty.Newf("[dml] Artisan: The SQL string is empty.")
+		return "", nil, nil, errors.Empty.Newf("[dml] Artisan: The SQL string is empty.")
 	}
 
-	if a.isEmpty() { // no arguments provided
+	if a.isEmpty() && len(recs) == 0 { // no internal arguments and qualified records provided
 		if a.isPrepared {
-			return "", extArgs, nil
+			return "", extArgs, nil, nil
 		}
 
 		if len(a.OrderBys) == 0 && !a.LimitValid {
-			return cachedSQL, extArgs, nil
+			return cachedSQL, extArgs, nil, nil
 		}
 		buf := bufferpool.Get()
 		defer bufferpool.Put(buf)
 		buf.WriteString(cachedSQL)
 		sqlWriteOrderBy(buf, a.OrderBys, false)
 		sqlWriteLimitOffset(buf, a.LimitValid, a.OffsetValid, a.OffsetCount, a.LimitCount)
-		return buf.String(), extArgs, nil
+		return buf.String(), extArgs, nil, nil
 	}
 
 	if !a.isPrepared && a.hasNamedArgs == 0 {
@@ -215,7 +226,7 @@ func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}
 		switch la := len(a.arguments); true {
 		case found:
 			a.hasNamedArgs = 2
-		case !found && len(a.recs) == 0 && la > 0:
+		case !found && len(recs) == 0 && la > 0:
 			for _, arg := range a.arguments {
 				if sn, ok := arg.value.(sql.NamedArg); ok && sn.Name != "" {
 					a.hasNamedArgs = 2
@@ -230,12 +241,12 @@ func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}
 	defer pooledArgumentsPut(collectedArgs, sqlBuf)
 	collectedArgs = append(collectedArgs, a.arguments...)
 
-	if collectedArgs, err = a.appendConvertedRecordsToArguments(collectedArgs); err != nil {
-		return "", nil, errors.WithStack(err)
+	if collectedArgs, err = a.appendConvertedRecordsToArguments(collectedArgs, recs); err != nil {
+		return "", nil, nil, errors.WithStack(err)
 	}
 
 	if a.isPrepared {
-		return "", collectedArgs.toInterfaces(extArgs...), nil
+		return "", collectedArgs.toInterfaces(extArgs...), recs, nil
 	}
 
 	// Make a copy of the original SQL statement because it gets modified in the
@@ -243,15 +254,15 @@ func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}
 	// bytes.Buffer from the pool! TODO(CYS) optimize this and only acquire a
 	// buffer from the pool in the worse case.
 	if _, err := sqlBuf.First.WriteString(cachedSQL); err != nil {
-		return "", nil, errors.WithStack(err)
+		return "", nil, nil, errors.WithStack(err)
 	}
 
 	sqlWriteOrderBy(sqlBuf.First, a.OrderBys, false)
 	sqlWriteLimitOffset(sqlBuf.First, a.LimitValid, a.OffsetValid, a.OffsetCount, a.LimitCount)
 
 	// `switch` statement no suitable.
-	if a.Options > 0 && len(extArgs) > 0 && len(a.recs) == 0 && len(a.arguments) == 0 {
-		return "", nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
+	if a.Options > 0 && len(extArgs) > 0 && len(recs) == 0 && len(a.arguments) == 0 {
+		return "", nil, nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
 	}
 
 	// TODO more advanced caching of the final non-expanded SQL string
@@ -260,33 +271,35 @@ func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}
 		phCount := bytes.Count(sqlBuf.First.Bytes(), placeHolderByte)
 		if aLen, hasSlice := a.totalSliceLen(); phCount < aLen || hasSlice {
 			if err := expandPlaceHolders(sqlBuf.Second, sqlBuf.First.Bytes(), collectedArgs); err != nil {
-				return "", nil, errors.WithStack(err)
+				return "", nil, nil, errors.WithStack(err)
 			}
 			if _, err := sqlBuf.CopySecondToFirst(); err != nil {
-				return "", nil, errors.WithStack(err)
+				return "", nil, nil, errors.WithStack(err)
 			}
 		}
 	}
 	if a.Options&argOptionInterpolate != 0 {
 		if err := writeInterpolateBytes(sqlBuf.Second, sqlBuf.First.Bytes(), collectedArgs); err != nil {
-			return "", nil, errors.Wrapf(err, "[dml] Interpolation failed: %q", sqlBuf.String())
+			return "", nil, nil, errors.Wrapf(err, "[dml] Interpolation failed: %q", sqlBuf.String())
 		}
-		return sqlBuf.Second.String(), nil, nil
+		return sqlBuf.Second.String(), nil, nil, nil
 	}
 
 	extArgs = collectedArgs.toInterfaces(extArgs...)
-	return sqlBuf.First.String(), extArgs, nil
+	return sqlBuf.First.String(), extArgs, recs, nil
 }
 
-func (a *Artisan) appendConvertedRecordsToArguments(collectedArgs arguments) (arguments, error) {
+func (a *Artisan) appendConvertedRecordsToArguments(collectedArgs arguments, recs []QualifiedRecord) (arguments, error) {
+	// argument recs includes a.recs and the qualified records pass as argument to
+	// any Load*,Query* or Exec* function.
 	if a.base.templateStmtCount == 0 {
 		a.base.templateStmtCount = 1
 	}
-	if len(a.arguments) == 0 && len(a.recs) == 0 {
+	if len(a.arguments) == 0 && len(recs) == 0 {
 		return collectedArgs, nil
 	}
 
-	if len(a.arguments) > 0 && len(a.recs) == 0 && a.hasNamedArgs < 2 {
+	if len(a.arguments) > 0 && len(recs) == 0 && a.hasNamedArgs < 2 {
 		if a.base.templateStmtCount > 1 {
 			collectedArgs = a.multiplyArguments(a.base.templateStmtCount)
 		}
@@ -305,7 +318,7 @@ func (a *Artisan) appendConvertedRecordsToArguments(collectedArgs arguments) (ar
 	}
 
 	// TODO refactor prototype and make it performant and beautiful code
-	cm := NewColumnMap(len(a.arguments)+len(a.recs), "") // can use an arg pool Artisan sync.Pool, nope.
+	cm := NewColumnMap(len(a.arguments)+len(recs), "") // can use an arg pool Artisan sync.Pool, nope.
 
 	for tsc := 0; tsc < a.base.templateStmtCount; tsc++ { // only in case of UNION statements in combination with a template SELECT, can be optimized later
 
@@ -326,7 +339,7 @@ func (a *Artisan) appendConvertedRecordsToArguments(collectedArgs arguments) (ar
 				}
 			} else {
 				found := false
-				for _, qRec := range a.recs {
+				for _, qRec := range recs {
 					if qRec.Qualifier == "" && qualifier != "" {
 						qRec.Qualifier = a.base.defaultQualifier
 					}
@@ -362,7 +375,7 @@ func (a *Artisan) appendConvertedRecordsToArguments(collectedArgs arguments) (ar
 // prepareArgsInsert prepares the special arguments for an INSERT statement. The
 // returned interface slice is the same as the `extArgs` slice. extArgs =
 // external arguments.
-func (a *Artisan) prepareArgsInsert(extArgs ...interface{}) (string, []interface{}, error) {
+func (a *Artisan) prepareArgsInsert(extArgs []interface{}, recs []QualifiedRecord) (string, []interface{}, []QualifiedRecord, error) {
 	// cm := pooledColumnMapGet()
 	sqlBuf := bufferpool.GetTwin()
 	defer bufferpool.PutTwin(sqlBuf)
@@ -379,23 +392,23 @@ func (a *Artisan) prepareArgsInsert(extArgs ...interface{}) (string, []interface
 			cachedSQL = a.insertCachedSQL
 		}
 		if _, err := sqlBuf.First.WriteString(cachedSQL); err != nil {
-			return "", nil, errors.WithStack(err)
+			return "", nil, nil, errors.WithStack(err)
 		}
 
-		for _, qRec := range a.recs {
+		for _, qRec := range recs {
 			if qRec.Qualifier != "" {
-				return "", nil, errors.Fatal.Newf("[dml] Qualifier in %T is not supported and not needed.", qRec)
+				return "", nil, nil, errors.Fatal.Newf("[dml] Qualifier in %T is not supported and not needed.", qRec)
 			}
 
 			if err := qRec.Record.MapColumns(cm); err != nil {
-				return "", nil, errors.WithStack(err)
+				return "", nil, nil, errors.WithStack(err)
 			}
 		}
 	}
 
 	if a.isPrepared {
 		// TODO above construct can be more optimized when using prepared statements
-		return "", cm.arguments.toInterfaces(extArgs...), nil
+		return "", cm.arguments.toInterfaces(extArgs...), recs, nil
 	}
 
 	totalArgLen := uint(len(cm.arguments) + len(extArgs))
@@ -426,18 +439,18 @@ func (a *Artisan) prepareArgsInsert(extArgs ...interface{}) (string, []interface
 	}
 
 	if a.Options > 0 {
-		if len(extArgs) > 0 && len(a.recs) == 0 && len(cm.arguments) == 0 {
-			return "", nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
+		if len(extArgs) > 0 && len(recs) == 0 && len(cm.arguments) == 0 {
+			return "", nil, nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
 		}
 
 		if a.Options&argOptionInterpolate != 0 {
 			if err := writeInterpolateBytes(sqlBuf.Second, sqlBuf.First.Bytes(), cm.arguments); err != nil {
-				return "", nil, errors.Wrapf(err, "[dml] Interpolation failed: %q", sqlBuf.First.String())
+				return "", nil, nil, errors.Wrapf(err, "[dml] Interpolation failed: %q", sqlBuf.First.String())
 			}
-			return sqlBuf.Second.String(), nil, nil
+			return sqlBuf.Second.String(), nil, recs, nil
 		}
 	}
-	return a.insertCachedSQL, cm.arguments.toInterfaces(extArgs...), nil
+	return a.insertCachedSQL, cm.arguments.toInterfaces(extArgs...), recs, nil
 }
 
 // nextUnnamedArg returns an unnamed argument by its position.
@@ -741,7 +754,7 @@ func (a *Artisan) QueryContext(ctx context.Context, args ...interface{}) (*sql.R
 
 // QueryRowContext traditional way of the databasel/sql package.
 func (a *Artisan) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row {
-	sqlStr, args, err := a.prepareArgs(args...)
+	sqlStr, args, _, err := a.prepareArgs(args...)
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug("QueryRowContext", log.String("sql", sqlStr), log.String("source", string(a.base.source)), log.Err(err))
 	}
@@ -1137,9 +1150,10 @@ func (a *Artisan) query(ctx context.Context, args ...interface{}) (rows *sql.Row
 	pArgs = append(pArgs, args...)
 
 	var sqlStr string
-	sqlStr, pArgs, err = a.prepareArgs(pArgs...)
+	var recs []QualifiedRecord
+	sqlStr, pArgs, recs, err = a.prepareArgs(pArgs...)
 	if a.base.Log != nil && a.base.Log.IsDebug() {
-		defer log.WhenDone(a.base.Log).Debug("Query", log.String("sql", sqlStr), log.String("source", string(a.base.source)), log.Err(err))
+		defer log.WhenDone(a.base.Log).Debug("Query", log.String("sql", sqlStr), log.Int("length_recs", len(recs)), log.Int("length_args", len(pArgs)), log.String("source", string(a.base.source)), log.Err(err))
 	}
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -1150,9 +1164,9 @@ func (a *Artisan) query(ctx context.Context, args ...interface{}) (rows *sql.Row
 			cachedSQL, _ := a.base.cachedSQL[a.base.CacheKey]
 			sqlStr = "PREPARED:" + cachedSQL
 		}
-		err = errors.Wrapf(err, "[dml] Query.QueryContext with query %q", sqlStr)
+		return nil, errors.Wrapf(err, "[dml] Query.QueryContext with query %q", sqlStr)
 	}
-	return
+	return rows, err
 }
 
 func (a *Artisan) exec(ctx context.Context, args ...interface{}) (result sql.Result, err error) {
@@ -1161,9 +1175,10 @@ func (a *Artisan) exec(ctx context.Context, args ...interface{}) (result sql.Res
 	pArgs = append(pArgs, args...)
 
 	var sqlStr string
-	sqlStr, pArgs, err = a.prepareArgs(pArgs...)
+	var recs []QualifiedRecord
+	sqlStr, pArgs, recs, err = a.prepareArgs(pArgs...)
 	if a.base.Log != nil && a.base.Log.IsDebug() {
-		defer log.WhenDone(a.base.Log).Debug("Exec", log.String("sql", sqlStr), log.String("source", string(a.base.source)), log.Err(err))
+		defer log.WhenDone(a.base.Log).Debug("Exec", log.String("sql", sqlStr), log.Int("length_recs", len(recs)), log.Int("length_args", len(pArgs)), log.String("source", string(a.base.source)), log.Err(err))
 	}
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -1171,25 +1186,22 @@ func (a *Artisan) exec(ctx context.Context, args ...interface{}) (result sql.Res
 
 	result, err = a.base.DB.ExecContext(ctx, sqlStr, pArgs...)
 	if err != nil {
-		err = errors.Wrapf(err, "[dml] ExecContext with query %q", sqlStr) // err gets catched by the defer
-		return
+		return nil, errors.Wrapf(err, "[dml] ExecContext with query %q", sqlStr) // err gets catched by the defer
 	}
-
-	if a.recs == nil {
+	if len(recs) == 0 {
 		return result, nil
 	}
 	lID, err := result.LastInsertId()
 	if err != nil {
-		err = errors.WithStack(err)
-		return
+		return nil, errors.WithStack(err)
 	}
 	if lID == 0 {
 		return // in case of non-insert statement
 	}
-	for i, rec := range a.recs {
+	for i, rec := range recs {
 		if a, ok := rec.Record.(LastInsertIDAssigner); ok {
 			a.AssignLastInsertID(lID + int64(i))
 		}
 	}
-	return
+	return result, nil
 }
