@@ -742,7 +742,9 @@ func pooledInterfacesPut(a []interface{}) {
 // inserted row only. The reason for this at to make it possible to reproduce
 // easily the same INSERT statement against some other server. If a record resp.
 // and object implements the interface LastInsertIDAssigner then the
-// LastInsertID gets assigned incrementally to the objects.
+// LastInsertID gets assigned incrementally to the objects. Pro tip: you can use
+// function ExecValidateOneAffectedRow to check if the underlying SQL statement
+// has affected only one row.
 func (a *Artisan) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
 	return a.exec(ctx, args...)
 }
@@ -1204,4 +1206,22 @@ func (a *Artisan) exec(ctx context.Context, args ...interface{}) (result sql.Res
 		}
 	}
 	return result, nil
+}
+
+// ExecValidateOneAffectedRow checks the sql.Result.RowsAffected if it returns
+// one. If not returns an error of type NotValid. This function is
+// useful for ExecContext function.
+func ExecValidateOneAffectedRow(res sql.Result, err error) error {
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	rowCount, err := res.RowsAffected()
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	const expectedAffectedRows = 1
+	if rowCount != expectedAffectedRows {
+		return errors.NotValid.Newf("[dml] ExecValidateOneAffectedRow can't validate affected rows. Have %d Want %d", rowCount, expectedAffectedRows)
+	}
+	return nil
 }

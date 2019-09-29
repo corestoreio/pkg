@@ -452,3 +452,39 @@ func TestArtisan_PreGeneratedQueries(t *testing.T) {
 		compareToSQL2(t, selA.WithCacheKey("id_not_found"), errors.Empty, "")
 	})
 }
+
+func TestExecValidateOneAffectedRow(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		m := mockSQLRes{int64: 1}
+		err := ExecValidateOneAffectedRow(m, nil)
+		assert.NoError(t, err)
+	})
+	t.Run("RowsAffected fails", func(t *testing.T) {
+		m := mockSQLRes{int64: 1, error: errors.ConnectionFailed.Newf("ups")}
+		err := ExecValidateOneAffectedRow(m, nil)
+		assert.ErrorIsKind(t, errors.ConnectionFailed, err)
+	})
+	t.Run("mismatch", func(t *testing.T) {
+		m := mockSQLRes{int64: 2}
+		err := ExecValidateOneAffectedRow(m, nil)
+		assert.ErrorIsKind(t, errors.NotValid, err)
+	})
+	t.Run("first error", func(t *testing.T) {
+		m := mockSQLRes{int64: 2}
+		err := ExecValidateOneAffectedRow(m, errors.AlreadyInUse.Newf("uppps"))
+		assert.ErrorIsKind(t, errors.AlreadyInUse, err)
+	})
+}
+
+type mockSQLRes struct {
+	int64
+	error
+}
+
+func (mockSQLRes) LastInsertId() (int64, error) {
+	panic("implement me")
+}
+
+func (m mockSQLRes) RowsAffected() (int64, error) {
+	return m.int64, m.error
+}
