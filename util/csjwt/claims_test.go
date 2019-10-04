@@ -75,9 +75,9 @@ func TestMergeClaims(t *testing.T) {
 		wantSigningString string
 		wantErrKind       errors.Kind
 	}{
-		{csjwt.NewToken(nil), nil, `eyJ0eXAiOiJKV1QifQ.bnVsbAo`, errors.NoKind},
+		{csjwt.NewToken(nil), nil, `eyJ0eXAiOiJKV1QifQ.bnVsbA`, errors.NoKind},
 		{csjwt.NewToken(jwtclaim.Map{}), claimMock{getErr: errors.Fatal.Newf("claimMerge get error")}, ``, errors.Fatal},
-		{csjwt.NewToken(jwtclaim.Map{"k1": "v1"}), jwtclaim.Map{"k2": 2}, `eyJ0eXAiOiJKV1QifQ.eyJrMSI6InYxIiwiazIiOjJ9Cg`, errors.NoKind},
+		{csjwt.NewToken(jwtclaim.Map{"k1": "v1"}), jwtclaim.Map{"k2": 2}, `eyJ0eXAiOiJKV1QifQ.eyJrMSI6InYxIiwiazIiOjJ9`, errors.NoKind},
 		{csjwt.NewToken(jwtclaim.NewStore()), jwtclaim.Map{"k2": 2}, ``, errors.NotSupported},
 		{csjwt.NewToken(&jwtclaim.Standard{}), &jwtclaim.Store{
 			UserID: "Gopher",

@@ -108,12 +108,10 @@ func (vf *Verification) Parse(dst *Token, rawToken []byte, keyFunc Keyfunc) erro
 		return errors.WithStack(err)
 	}
 
-	// validate Claims
 	if err := dst.Claims.Valid(); err != nil {
 		return errors.Wrap(err, errValidationClaimsInvalid)
 	}
 
-	// Lookup key
 	if keyFunc == nil {
 		return errors.Empty.Newf(errMissingKeyFunc)
 	}
@@ -122,19 +120,58 @@ func (vf *Verification) Parse(dst *Token, rawToken []byte, keyFunc Keyfunc) erro
 		return errors.NotValid.Newf(errTokenUnverifiable, err)
 	}
 
-	// Lookup signature method
 	method, err := vf.getMethod(dst)
 	if err != nil {
 		return errors.Wrap(err, "[csjwt] Verification.Parse.getMethod")
 	}
 
-	// Perform validation
 	dst.Signature = dst.Raw[pos[1]+1:]
 	if err := method.Verify(dst.Raw[:pos[1]], dst.Signature, key); err != nil {
 		return errors.NotValid.Newf(errSignatureInvalid, err, dst)
 	}
 
 	dst.Valid = true
+	return nil
+}
+
+// ParseUnverified parses a rawToken into the unverified destination token and
+// may return an error. Uses this function only during testing.
+func (vf *Verification) ParseUnverified(dst *Token, rawToken []byte) error {
+	pos, valid := dotPositions(rawToken)
+	if !valid {
+		return errors.NotValid.Newf(errTokenInvalidSegmentCounts)
+	}
+
+	if dst.Header == nil || dst.Claims == nil {
+		return errors.NotValid.Newf(errTokenBaseNil)
+	}
+
+	dst.Raw = rawToken
+
+	if StartsWithBearer(dst.Raw) {
+		return errors.NotValid.Newf(errTokenShouldNotContainBearer)
+	}
+
+	if err := vf.unmarshal(dst.Raw[:pos[0]], dst.Header); err != nil {
+		return errors.WithStack(err)
+	}
+	if err := vf.unmarshal(dst.Raw[pos[0]+1:pos[1]], dst.Claims); err != nil {
+		return errors.WithStack(err)
+	}
+
+	if err := dst.Claims.Valid(); err != nil {
+		return errors.Wrap(err, errValidationClaimsInvalid)
+	}
+
+	// Lookup signature method
+	_, err := vf.getMethod(dst)
+	if err != nil {
+		return errors.Wrap(err, "[csjwt] Verification.Parse.getMethod")
+	}
+
+	dst.Signature = dst.Raw[pos[1]+1:]
+
+	dst.Valid = false
 	return nil
 }
 

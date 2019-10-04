@@ -196,6 +196,27 @@ func TestVerification_Parse_WithMap(t *testing.T) {
 	}
 }
 
+func TestVerification_ParseUnverified(t *testing.T) {
+	for _, data := range jwtTestData {
+		if len(data.tokenString) == 0 {
+			data.tokenString = makeSample(data.claims)
+		}
+		token := csjwt.NewToken(&jwtclaim.Map{})
+		err := data.parser.ParseUnverified(token, data.tokenString)
+
+		if !reflect.DeepEqual(&data.claims, token.Claims) {
+			t.Errorf("[%v] Claims mismatch. Expecting: %v  Got: %v", data.name, data.claims, token.Claims)
+		}
+		if data.valid && err != nil {
+			t.Errorf("[%v] Error while verifying token: %T:%v", data.name, err, err)
+		}
+
+		if data.valid && len(token.Signature) == 0 {
+			t.Errorf("[%v] Signature is left unpopulated after parsing", data.name)
+		}
+	}
+}
+
 func TestVerification_Parse_BearerInHeader(t *testing.T) {
 	token := []byte(`BEaRER `)
 	token = append(token, jwtTestData[0].tokenString...)
