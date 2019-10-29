@@ -103,7 +103,6 @@ func TestMakeDecimalBytes(t *testing.T) {
 }
 
 func TestMakeDecimalInt64(t *testing.T) {
-
 	d := MakeDecimalInt64(-math.MaxInt64, 13)
 	assert.True(t, d.Negative)
 	assert.Exactly(t, uint64(math.MaxInt64), d.Precision)
@@ -111,7 +110,6 @@ func TestMakeDecimalInt64(t *testing.T) {
 }
 
 func TestMakeDecimalFloat64(t *testing.T) {
-
 	tests := []struct {
 		have    float64
 		want    string
@@ -141,7 +139,6 @@ func TestMakeDecimalFloat64(t *testing.T) {
 }
 
 func TestDecimal_GoString(t *testing.T) {
-
 	tests := []struct {
 		have Decimal
 		want string
@@ -169,8 +166,10 @@ func TestDecimal_GoString(t *testing.T) {
 			Negative:  true,
 			Quote:     true,
 		}, "null.Decimal{Precision:65535,Scale:8,Negative:true,Valid:true,Quote:true,}"},
-		{MustMakeDecimalBytes([]byte("12345678912345.12345678")),
-			`null.Decimal{PrecisionStr:"1234567891234512345678",Scale:8,Valid:true,}`},
+		{
+			MustMakeDecimalBytes([]byte("12345678912345.12345678")),
+			`null.Decimal{PrecisionStr:"1234567891234512345678",Scale:8,Valid:true,}`,
+		},
 	}
 	for i, test := range tests {
 		assert.Exactly(t, test.want, test.have.GoString(), "Index %d", i)
@@ -193,7 +192,6 @@ func TestMustMakeDecimalBytes(t *testing.T) {
 }
 
 func TestDecimal_String(t *testing.T) {
-
 	tests := []struct {
 		have Decimal
 		want string
@@ -257,7 +255,6 @@ func TestDecimal_String(t *testing.T) {
 }
 
 func TestDecimal_MarshalJSON(t *testing.T) {
-
 	runner := func(d Decimal, want string) func(*testing.T) {
 		return func(t *testing.T) {
 			raw, err := d.MarshalJSON()
@@ -321,7 +318,6 @@ func TestDecimal_MarshalJSON(t *testing.T) {
 }
 
 func TestDecimal_MarshalText(t *testing.T) {
-
 	runner := func(d Decimal, want string) func(*testing.T) {
 		return func(t *testing.T) {
 			raw, err := d.MarshalText()
@@ -366,7 +362,6 @@ func TestDecimal_MarshalText(t *testing.T) {
 }
 
 func TestDecimal_GobEncode(t *testing.T) {
-
 	runner := func(d Decimal, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
 			raw, err := d.GobEncode()
@@ -410,7 +405,6 @@ func TestDecimal_GobEncode(t *testing.T) {
 }
 
 func TestDecimal_Int64(t *testing.T) {
-
 	t.Run("1234", func(t *testing.T) {
 		d := Decimal{
 			Valid:     true,
@@ -446,7 +440,6 @@ func TestDecimal_Int64(t *testing.T) {
 }
 
 func TestDecimal_Float64(t *testing.T) {
-
 	t.Run("0.0", func(t *testing.T) {
 		d := Decimal{
 			Valid: true,
@@ -486,7 +479,6 @@ func TestDecimal_Float64(t *testing.T) {
 }
 
 func TestDecimal_Scan(t *testing.T) {
-
 	t.Run("nil", func(t *testing.T) {
 		var nv Decimal
 		assert.NoError(t, nv.Scan(nil))

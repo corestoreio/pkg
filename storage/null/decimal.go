@@ -222,8 +222,8 @@ func (d Decimal) String() string {
 	return buf.String()
 }
 
-//when needed
-//func (d Decimal) AppendString(b []byte) []byte {
+// when needed
+// func (d Decimal) AppendString(b []byte) []byte {
 //	buf := bytes.NewBuffer(b)
 //	d.string(buf)
 //	return buf.Bytes()

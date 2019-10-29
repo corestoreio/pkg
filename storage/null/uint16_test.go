@@ -47,6 +47,7 @@ var (
 	_ protoMarshalToer           = (*Uint16)(nil)
 	_ sql.Scanner                = (*Uint16)(nil)
 )
+
 var (
 	uint16JSON     = []byte(fmt.Sprintf("%d", math.MaxUint16))
 	nullUint16JSON = []byte(fmt.Sprintf(`{"Uint16":%d,"Valid":true}`, math.MaxUint16))
@@ -54,7 +55,6 @@ var (
 )
 
 func TestMakeNullUint16(t *testing.T) {
-
 	i := MakeUint16(math.MaxUint16)
 	assertUint16(t, i, "MakeUint16()")
 
@@ -72,7 +72,6 @@ func TestMakeNullUint16(t *testing.T) {
 }
 
 func TestUint16_GoString(t *testing.T) {
-
 	tests := []struct {
 		i16  Uint16
 		want string
@@ -94,7 +93,6 @@ func TestMakeUint16FromByte(t *testing.T) {
 }
 
 func TestNullUint16_JsonUnmarshal(t *testing.T) {
-
 	var err error
 	var i Uint16
 	err = json.Unmarshal(uint16JSON, &i)
@@ -127,7 +125,6 @@ func TestNullUint16_JsonUnmarshal(t *testing.T) {
 }
 
 func TestNullUint16_JsonUnmarshalNonIntegerNumber(t *testing.T) {
-
 	var i Uint16
 	err := json.Unmarshal(float16JSON, &i)
 	if err == nil {
@@ -136,7 +133,6 @@ func TestNullUint16_JsonUnmarshalNonIntegerNumber(t *testing.T) {
 }
 
 func TestNullUint16_UnmarshalText(t *testing.T) {
-
 	var i Uint16
 	err := i.UnmarshalText(uint16JSON)
 	maybePanic(err)
@@ -154,7 +150,6 @@ func TestNullUint16_UnmarshalText(t *testing.T) {
 }
 
 func TestNullUint16_JsonMarshal(t *testing.T) {
-
 	i := MakeUint16(math.MaxUint16)
 	data, err := json.Marshal(i)
 	maybePanic(err)
@@ -168,7 +163,6 @@ func TestNullUint16_JsonMarshal(t *testing.T) {
 }
 
 func TestNullUint16_MarshalText(t *testing.T) {
-
 	i := MakeUint16(math.MaxUint16)
 	data, err := i.MarshalText()
 	maybePanic(err)
@@ -182,7 +176,6 @@ func TestNullUint16_MarshalText(t *testing.T) {
 }
 
 func TestNullUint16_BinaryEncoding(t *testing.T) {
-
 	runner := func(b Uint16, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
 			data, err := b.GobEncode()
@@ -206,7 +199,6 @@ func TestNullUint16_BinaryEncoding(t *testing.T) {
 }
 
 func TestUint16Pointer(t *testing.T) {
-
 	i := MakeUint16(math.MaxUint16)
 	ptr := i.Ptr()
 	if *ptr != math.MaxUint16 {
@@ -221,7 +213,6 @@ func TestUint16Pointer(t *testing.T) {
 }
 
 func TestUint16IsZero(t *testing.T) {
-
 	i := MakeUint16(math.MaxUint16)
 	if i.IsZero() {
 		t.Errorf("IsZero() should be false")
@@ -239,7 +230,6 @@ func TestUint16IsZero(t *testing.T) {
 }
 
 func TestUint16SetValid(t *testing.T) {
-
 	change := MakeUint16(0).SetNull()
 	assertNullUint16(t, change, "SetValid()")
 
@@ -247,7 +237,6 @@ func TestUint16SetValid(t *testing.T) {
 }
 
 func TestUint16Scan(t *testing.T) {
-
 	var i Uint16
 	err := i.Scan(uint16JSON)
 	maybePanic(err)
@@ -275,7 +264,6 @@ func assertNullUint16(t *testing.T, i Uint16, from string) {
 }
 
 func TestNewNullUint16(t *testing.T) {
-
 	assert.EqualValues(t, 65531, MakeUint16(65531).Uint16)
 	assert.True(t, MakeUint16(65531).Valid)
 	assert.True(t, MakeUint16(0).Valid)
@@ -285,7 +273,6 @@ func TestNewNullUint16(t *testing.T) {
 }
 
 func TestNullUint16_Scan(t *testing.T) {
-
 	t.Run("nil", func(t *testing.T) {
 		var nv Uint16
 		assert.NoError(t, nv.Scan(nil))

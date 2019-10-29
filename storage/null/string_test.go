@@ -44,6 +44,7 @@ var (
 	_ proto.Sizer                = (*String)(nil)
 	_ protoMarshalToer           = (*String)(nil)
 )
+
 var (
 	stringJSON      = []byte(`"test"`)
 	blankStringJSON = []byte(`""`)
@@ -54,7 +55,6 @@ var (
 )
 
 func TestStringFrom(t *testing.T) {
-
 	str := MakeString("test")
 	assertStr(t, str, "MakeString() string")
 	assert.Exactly(t, 4, str.Size())
@@ -67,7 +67,6 @@ func TestStringFrom(t *testing.T) {
 }
 
 func TestNullString_JsonUnmarshal(t *testing.T) {
-
 	var str String
 	maybePanic(json.Unmarshal(stringJSON, &str))
 	assertStr(t, str, "string json")
@@ -102,7 +101,6 @@ func TestNullString_JsonUnmarshal(t *testing.T) {
 }
 
 func TestNullString_TextUnmarshal(t *testing.T) {
-
 	var str String
 	err := str.UnmarshalText([]byte("test"))
 	maybePanic(err)
@@ -119,7 +117,6 @@ func TestNullString_TextUnmarshal(t *testing.T) {
 }
 
 func TestNullString_MarshalText(t *testing.T) {
-
 	str := MakeString("test")
 	data, err := json.Marshal(str)
 	maybePanic(err)
@@ -144,7 +141,6 @@ func TestNullString_MarshalText(t *testing.T) {
 }
 
 func TestNullString_BinaryEncoding(t *testing.T) {
-
 	runner := func(b String, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
 			data, err := b.GobEncode()
@@ -167,7 +163,6 @@ func TestNullString_BinaryEncoding(t *testing.T) {
 }
 
 func TestNullString_MarshalTo(t *testing.T) {
-
 	str := MakeString("HelloWorld")
 	var buf4 [4]byte
 	n, err := str.MarshalTo(buf4[:])
@@ -183,7 +178,6 @@ func TestNullString_MarshalTo(t *testing.T) {
 }
 
 func TestStringPointer(t *testing.T) {
-
 	str := MakeString("test")
 	ptr := str.Ptr()
 	if *ptr != "test" {
@@ -198,7 +192,6 @@ func TestStringPointer(t *testing.T) {
 }
 
 func TestStringIsZero(t *testing.T) {
-
 	str := MakeString("test")
 	if str.IsZero() {
 		t.Errorf("IsZero() should be false")
@@ -222,7 +215,6 @@ func TestStringSetValid(t *testing.T) {
 }
 
 func TestNullString_Scan(t *testing.T) {
-
 	t.Run("nil", func(t *testing.T) {
 		var nv String
 		assert.NoError(t, nv.Scan(nil))
@@ -247,7 +239,6 @@ func TestNullString_Scan(t *testing.T) {
 }
 
 func TestString_GoString(t *testing.T) {
-
 	s := MakeString("test")
 	assert.Exactly(t, "null.MakeString(`test`)", s.GoString())
 
@@ -283,10 +274,9 @@ func assertJSONEquals(t *testing.T, data []byte, cmp string, from string) {
 }
 
 func TestNullStringFrom(t *testing.T) {
-
 	assert.Equal(t, "product", MakeString("product").String)
 	assert.True(t, MakeString("product").Valid)
-	//assert.False(t, NullStringFromPtr(nil).Valid)
+	// assert.False(t, NullStringFromPtr(nil).Valid)
 	assert.True(t, MakeString("").Valid)
 	v, err := MakeString("product").Value()
 	assert.NoError(t, err)

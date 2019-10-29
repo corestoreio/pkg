@@ -55,7 +55,6 @@ var (
 )
 
 func TestMakeNullInt32(t *testing.T) {
-
 	i := MakeInt32(math.MaxInt32)
 	assertInt32(t, i, "MakeInt32()")
 
@@ -73,7 +72,6 @@ func TestMakeNullInt32(t *testing.T) {
 }
 
 func TestInt32_GoString(t *testing.T) {
-
 	tests := []struct {
 		i32  Int32
 		want string
@@ -89,7 +87,6 @@ func TestInt32_GoString(t *testing.T) {
 }
 
 func TestNullInt32_JsonUnmarshal(t *testing.T) {
-
 	var i Int32
 	err := json.Unmarshal(int32JSON, &i)
 	maybePanic(err)
@@ -121,7 +118,6 @@ func TestNullInt32_JsonUnmarshal(t *testing.T) {
 }
 
 func TestNullInt32_JsonUnmarshalNonIntegerNumber(t *testing.T) {
-
 	var i Int32
 	err := json.Unmarshal(float32JSON, &i)
 	if err == nil {
@@ -130,7 +126,6 @@ func TestNullInt32_JsonUnmarshalNonIntegerNumber(t *testing.T) {
 }
 
 func TestNullInt32_JsonUnmarshalInt32Overflow(t *testing.T) {
-
 	int32Overflow := uint32(math.MaxInt32)
 
 	// Max int32 should decode successfully
@@ -147,7 +142,6 @@ func TestNullInt32_JsonUnmarshalInt32Overflow(t *testing.T) {
 }
 
 func TestNullInt32_UnmarshalText(t *testing.T) {
-
 	var i Int32
 	err := i.UnmarshalText(int32JSON)
 	maybePanic(err)
@@ -165,7 +159,6 @@ func TestNullInt32_UnmarshalText(t *testing.T) {
 }
 
 func TestNullInt32_JsonMarshal(t *testing.T) {
-
 	i := MakeInt32(math.MaxInt32)
 	data, err := json.Marshal(i)
 	maybePanic(err)
@@ -179,7 +172,6 @@ func TestNullInt32_JsonMarshal(t *testing.T) {
 }
 
 func TestNullInt32_MarshalText(t *testing.T) {
-
 	i := MakeInt32(math.MaxInt32)
 	data, err := i.MarshalText()
 	maybePanic(err)
@@ -193,7 +185,6 @@ func TestNullInt32_MarshalText(t *testing.T) {
 }
 
 func TestNullInt32_BinaryEncoding(t *testing.T) {
-
 	runner := func(b Int32, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
 			data, err := b.GobEncode()
@@ -219,7 +210,6 @@ func TestNullInt32_BinaryEncoding(t *testing.T) {
 }
 
 func TestInt32Pointer(t *testing.T) {
-
 	i := MakeInt32(math.MaxInt32)
 	ptr := i.Ptr()
 	if *ptr != math.MaxInt32 {
@@ -234,7 +224,6 @@ func TestInt32Pointer(t *testing.T) {
 }
 
 func TestInt32IsZero(t *testing.T) {
-
 	i := MakeInt32(math.MaxInt32)
 	if i.IsZero() {
 		t.Errorf("IsZero() should be false")
@@ -252,7 +241,6 @@ func TestInt32IsZero(t *testing.T) {
 }
 
 func TestInt32SetValid(t *testing.T) {
-
 	change := MakeInt32(0).SetNull()
 	assertNullInt32(t, change, "SetValid()")
 
@@ -260,7 +248,6 @@ func TestInt32SetValid(t *testing.T) {
 }
 
 func TestInt32Scan(t *testing.T) {
-
 	var i Int32
 	err := i.Scan(math.MaxInt32)
 	maybePanic(err)
@@ -288,7 +275,6 @@ func assertNullInt32(t *testing.T, i Int32, from string) {
 }
 
 func TestNewNullInt32(t *testing.T) {
-
 	assert.EqualValues(t, 1257894000, MakeInt32(1257894000).Int32)
 	assert.True(t, MakeInt32(1257894000).Valid)
 	assert.True(t, MakeInt32(0).Valid)
@@ -298,7 +284,6 @@ func TestNewNullInt32(t *testing.T) {
 }
 
 func TestNullInt32_Scan(t *testing.T) {
-
 	t.Run("nil", func(t *testing.T) {
 		var nv Int32
 		assert.NoError(t, nv.Scan(nil))

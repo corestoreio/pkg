@@ -50,7 +50,6 @@ var (
 )
 
 func TestMakeNullBool(t *testing.T) {
-
 	b := MakeBool(true)
 	assertBool(t, b, "MakeBool()")
 	assert.Exactly(t, "true", b.String())
@@ -66,7 +65,6 @@ func TestMakeNullBool(t *testing.T) {
 }
 
 func TestNullBool_UnmarshalJSON(t *testing.T) {
-
 	var b Bool
 	err := json.Unmarshal(boolJSON, &b)
 	maybePanic(err)
@@ -97,7 +95,6 @@ func TestNullBool_UnmarshalJSON(t *testing.T) {
 }
 
 func TestNullBool_UnmarshalText(t *testing.T) {
-
 	var b Bool
 	err := b.UnmarshalText([]byte("true"))
 	maybePanic(err)
@@ -127,7 +124,6 @@ func TestNullBool_UnmarshalText(t *testing.T) {
 }
 
 func TestNullBool_JsonMarshal(t *testing.T) {
-
 	b := MakeBool(true)
 	data, err := json.Marshal(b)
 	maybePanic(err)
@@ -146,7 +142,6 @@ func TestNullBool_JsonMarshal(t *testing.T) {
 }
 
 func TestNullBool_MarshalText(t *testing.T) {
-
 	b := MakeBool(true)
 	data, err := b.MarshalText()
 	maybePanic(err)
@@ -165,7 +160,6 @@ func TestNullBool_MarshalText(t *testing.T) {
 }
 
 func TestNullBool_BinaryEncoding(t *testing.T) {
-
 	runner := func(b Bool, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
 			data, err := b.GobEncode()
@@ -189,7 +183,6 @@ func TestNullBool_BinaryEncoding(t *testing.T) {
 }
 
 func TestNullBool_BinaryDecoding(t *testing.T) {
-
 	runner := func(data []byte, want Bool) func(*testing.T) {
 		return func(t *testing.T) {
 			var have Bool
@@ -208,7 +201,6 @@ func TestNullBool_BinaryDecoding(t *testing.T) {
 }
 
 func TestBoolPointer(t *testing.T) {
-
 	b := MakeBool(true)
 	ptr := b.Ptr()
 	if !*ptr {
@@ -223,7 +215,6 @@ func TestBoolPointer(t *testing.T) {
 }
 
 func TestBoolIsZero(t *testing.T) {
-
 	b := MakeBool(true)
 	if b.IsZero() {
 		t.Errorf("IsZero() should be false")
@@ -241,14 +232,12 @@ func TestBoolIsZero(t *testing.T) {
 }
 
 func TestBoolSetValid(t *testing.T) {
-
 	change := MakeBool(false).SetNull()
 	assertNullBool(t, change, "SetValid()")
 	assertBool(t, change.SetValid(true), "SetValid()")
 }
 
 func TestBoolScan(t *testing.T) {
-
 	var b Bool
 	err := b.Scan(true)
 	maybePanic(err)
@@ -285,7 +274,6 @@ func assertNullBool(t *testing.T, b Bool, from string) {
 }
 
 func TestNewNullBool(t *testing.T) {
-
 	assert.Equal(t, true, MakeBool(true).Bool)
 	assert.True(t, MakeBool(true).Valid)
 	assert.True(t, MakeBool(false).Valid)

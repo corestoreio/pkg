@@ -47,12 +47,10 @@ var (
 	_ protoMarshalToer           = (*Uint64)(nil)
 	_ sql.Scanner                = (*Uint64)(nil)
 )
-var (
-	nullUint64JSON = []byte(`{"Uint64":9223372036854775806,"Valid":true}`)
-)
+
+var nullUint64JSON = []byte(`{"Uint64":9223372036854775806,"Valid":true}`)
 
 func TestMakeNullUint64(t *testing.T) {
-
 	i := MakeUint64(9223372036854775806)
 	assertUint64(t, i, "MakeUint64()")
 
@@ -70,7 +68,6 @@ func TestMakeNullUint64(t *testing.T) {
 }
 
 func TestUint64_GoString(t *testing.T) {
-
 	tests := []struct {
 		i64  Uint64
 		want string
@@ -92,7 +89,6 @@ func TestMakeUint64FromByte(t *testing.T) {
 }
 
 func TestNullUint64_JsonUnmarshal(t *testing.T) {
-
 	var i Uint64
 	err := json.Unmarshal(int64JSON, &i)
 	maybePanic(err)
@@ -124,7 +120,6 @@ func TestNullUint64_JsonUnmarshal(t *testing.T) {
 }
 
 func TestNullUint64_JsonUnmarshalNonIntegerNumber(t *testing.T) {
-
 	var i Uint64
 	err := json.Unmarshal(float64JSON, &i)
 	if err == nil {
@@ -133,7 +128,6 @@ func TestNullUint64_JsonUnmarshalNonIntegerNumber(t *testing.T) {
 }
 
 func TestNullUint64_UnmarshalText(t *testing.T) {
-
 	var i Uint64
 	err := i.UnmarshalText([]byte("9223372036854775806"))
 	maybePanic(err)
@@ -151,7 +145,6 @@ func TestNullUint64_UnmarshalText(t *testing.T) {
 }
 
 func TestNullUint64_JsonMarshal(t *testing.T) {
-
 	i := MakeUint64(9223372036854775806)
 	data, err := json.Marshal(i)
 	maybePanic(err)
@@ -165,7 +158,6 @@ func TestNullUint64_JsonMarshal(t *testing.T) {
 }
 
 func TestNullUint64_MarshalText(t *testing.T) {
-
 	i := MakeUint64(9223372036854775806)
 	data, err := i.MarshalText()
 	maybePanic(err)
@@ -179,7 +171,6 @@ func TestNullUint64_MarshalText(t *testing.T) {
 }
 
 func TestNullUint64_BinaryEncoding(t *testing.T) {
-
 	runner := func(b Uint64, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
 			data, err := b.GobEncode()
@@ -203,7 +194,6 @@ func TestNullUint64_BinaryEncoding(t *testing.T) {
 }
 
 func TestUint64Pointer(t *testing.T) {
-
 	i := MakeUint64(9223372036854775806)
 	ptr := i.Ptr()
 	if *ptr != 9223372036854775806 {
@@ -218,7 +208,6 @@ func TestUint64Pointer(t *testing.T) {
 }
 
 func TestUint64IsZero(t *testing.T) {
-
 	i := MakeUint64(9223372036854775806)
 	if i.IsZero() {
 		t.Errorf("IsZero() should be false")
@@ -236,7 +225,6 @@ func TestUint64IsZero(t *testing.T) {
 }
 
 func TestUint64SetValid(t *testing.T) {
-
 	change := MakeUint64(0).SetNull()
 	assertNullUint64(t, change, "SetValid()")
 
@@ -244,7 +232,6 @@ func TestUint64SetValid(t *testing.T) {
 }
 
 func TestUint64Scan(t *testing.T) {
-
 	var i Uint64
 	err := i.Scan([]byte(`9223372036854775806`))
 	maybePanic(err)
@@ -272,7 +259,6 @@ func assertNullUint64(t *testing.T, i Uint64, from string) {
 }
 
 func TestNewNullUint64(t *testing.T) {
-
 	assert.EqualValues(t, 1257894000, MakeUint64(1257894000).Uint64)
 	assert.True(t, MakeUint64(1257894000).Valid)
 	assert.True(t, MakeUint64(0).Valid)
@@ -282,7 +268,6 @@ func TestNewNullUint64(t *testing.T) {
 }
 
 func TestNullUint64_Scan(t *testing.T) {
-
 	t.Run("nil", func(t *testing.T) {
 		var nv Uint64
 		assert.NoError(t, nv.Scan(nil))

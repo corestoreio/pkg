@@ -43,5 +43,4 @@ func MustSetJSONMarshaler(marshalFn func(v interface{}) ([]byte, error), unMarsh
 	atomic.StoreInt32(jsonFnApplied, 1)
 	jsonMarshalFn = marshalFn
 	jsonUnMarshalFn = unMarshalFn
-
 }

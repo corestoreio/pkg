@@ -47,6 +47,7 @@ var (
 	_ protoMarshalToer           = (*Uint32)(nil)
 	_ sql.Scanner                = (*Uint32)(nil)
 )
+
 var (
 	uint32JSON     = []byte(fmt.Sprintf("%d", math.MaxUint32))
 	nullUint32JSON = []byte(fmt.Sprintf(`{"Uint32":%d,"Valid":true}`, math.MaxUint32))
@@ -54,7 +55,6 @@ var (
 )
 
 func TestMakeNullUint32(t *testing.T) {
-
 	i := MakeUint32(math.MaxUint32)
 	assertUint32(t, i, "MakeUint32()")
 
@@ -72,7 +72,6 @@ func TestMakeNullUint32(t *testing.T) {
 }
 
 func TestUint32_GoString(t *testing.T) {
-
 	tests := []struct {
 		i32  Uint32
 		want string
@@ -94,7 +93,6 @@ func TestMakeUint32FromByte(t *testing.T) {
 }
 
 func TestNullUint32_JsonUnmarshal(t *testing.T) {
-
 	var err error
 	var i Uint32
 	err = json.Unmarshal(uint32JSON, &i)
@@ -127,7 +125,6 @@ func TestNullUint32_JsonUnmarshal(t *testing.T) {
 }
 
 func TestNullUint32_JsonUnmarshalNonIntegerNumber(t *testing.T) {
-
 	var i Uint32
 	err := json.Unmarshal(float32JSON, &i)
 	if err == nil {
@@ -136,7 +133,6 @@ func TestNullUint32_JsonUnmarshalNonIntegerNumber(t *testing.T) {
 }
 
 func TestNullUint32_UnmarshalText(t *testing.T) {
-
 	var i Uint32
 	err := i.UnmarshalText(uint32JSON)
 	maybePanic(err)
@@ -154,7 +150,6 @@ func TestNullUint32_UnmarshalText(t *testing.T) {
 }
 
 func TestNullUint32_JsonMarshal(t *testing.T) {
-
 	i := MakeUint32(math.MaxUint32)
 	data, err := json.Marshal(i)
 	maybePanic(err)
@@ -168,7 +163,6 @@ func TestNullUint32_JsonMarshal(t *testing.T) {
 }
 
 func TestNullUint32_MarshalText(t *testing.T) {
-
 	i := MakeUint32(math.MaxUint32)
 	data, err := i.MarshalText()
 	maybePanic(err)
@@ -182,7 +176,6 @@ func TestNullUint32_MarshalText(t *testing.T) {
 }
 
 func TestNullUint32_BinaryEncoding(t *testing.T) {
-
 	runner := func(b Uint32, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
 			data, err := b.GobEncode()
@@ -206,7 +199,6 @@ func TestNullUint32_BinaryEncoding(t *testing.T) {
 }
 
 func TestUint32Pointer(t *testing.T) {
-
 	i := MakeUint32(math.MaxUint32)
 	ptr := i.Ptr()
 	if *ptr != math.MaxUint32 {
@@ -221,7 +213,6 @@ func TestUint32Pointer(t *testing.T) {
 }
 
 func TestUint32IsZero(t *testing.T) {
-
 	i := MakeUint32(math.MaxUint32)
 	if i.IsZero() {
 		t.Errorf("IsZero() should be false")
@@ -239,7 +230,6 @@ func TestUint32IsZero(t *testing.T) {
 }
 
 func TestUint32SetValid(t *testing.T) {
-
 	change := MakeUint32(0).SetNull()
 	assertNullUint32(t, change, "SetValid()")
 
@@ -247,7 +237,6 @@ func TestUint32SetValid(t *testing.T) {
 }
 
 func TestUint32Scan(t *testing.T) {
-
 	var i Uint32
 	err := i.Scan(uint32JSON)
 	maybePanic(err)
@@ -275,7 +264,6 @@ func assertNullUint32(t *testing.T, i Uint32, from string) {
 }
 
 func TestNewNullUint32(t *testing.T) {
-
 	assert.EqualValues(t, 1257894000, MakeUint32(1257894000).Uint32)
 	assert.True(t, MakeUint32(1257894000).Valid)
 	assert.True(t, MakeUint32(0).Valid)
@@ -285,7 +273,6 @@ func TestNewNullUint32(t *testing.T) {
 }
 
 func TestNullUint32_Scan(t *testing.T) {
-
 	t.Run("nil", func(t *testing.T) {
 		var nv Uint32
 		assert.NoError(t, nv.Scan(nil))

@@ -54,7 +54,6 @@ var (
 )
 
 func TestFloat64From(t *testing.T) {
-
 	f := MakeFloat64(1.2345)
 	assertFloat64(t, f, "MakeFloat64()")
 
@@ -77,7 +76,6 @@ func TestNullFloat64_GoString(t *testing.T) {
 }
 
 func TestNullFloat64_JsonUnmarshal(t *testing.T) {
-
 	var f Float64
 	err := json.Unmarshal(float64JSON, &f)
 	maybePanic(err)
@@ -108,7 +106,6 @@ func TestNullFloat64_JsonUnmarshal(t *testing.T) {
 }
 
 func TestNullFloat64_UnmarshalText(t *testing.T) {
-
 	var f Float64
 	err := f.UnmarshalText([]byte("1.2345"))
 	maybePanic(err)
@@ -126,7 +123,6 @@ func TestNullFloat64_UnmarshalText(t *testing.T) {
 }
 
 func TestNullFloat64_JsonMarshal(t *testing.T) {
-
 	f := MakeFloat64(1.2345)
 	data, err := json.Marshal(f)
 	maybePanic(err)
@@ -140,7 +136,6 @@ func TestNullFloat64_JsonMarshal(t *testing.T) {
 }
 
 func TestNullFloat64_MarshalText(t *testing.T) {
-
 	f := MakeFloat64(1.2345)
 	data, err := f.MarshalText()
 	maybePanic(err)
@@ -154,7 +149,6 @@ func TestNullFloat64_MarshalText(t *testing.T) {
 }
 
 func TestNullFloat64_BinaryEncoding(t *testing.T) {
-
 	runner := func(b Float64, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
 			data, err := b.GobEncode()
@@ -242,8 +236,7 @@ func assertNullFloat64(t *testing.T, f Float64, from string) {
 }
 
 func TestNewNullFloat64(t *testing.T) {
-
-	var test = 1257894000.93445000001
+	test := 1257894000.93445000001
 	assert.Equal(t, test, MakeFloat64(test).Float64)
 	assert.True(t, MakeFloat64(test).Valid)
 	assert.True(t, MakeFloat64(0).Valid)
@@ -253,7 +246,6 @@ func TestNewNullFloat64(t *testing.T) {
 }
 
 func TestNullFloat64_Scan(t *testing.T) {
-
 	t.Run("nil", func(t *testing.T) {
 		var nv Float64
 		assert.NoError(t, nv.Scan(nil))

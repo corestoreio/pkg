@@ -100,13 +100,11 @@ func BenchmarkSQLScanner(b *testing.B) {
 	_ = valUint64
 	_ = valString
 	_ = valTime
-
 }
 
 var benchmarkDecimal_String string
 
 func BenchmarkDecimal_String(b *testing.B) {
-
 	b.Run("123456789", func(b *testing.B) {
 		d := null.Decimal{
 			Precision: 123456789,
@@ -174,7 +172,6 @@ func BenchmarkDecimal_String(b *testing.B) {
 var benchmarkDecimal_MarshalBinary []byte
 
 func BenchmarkDecimal_Binary(b *testing.B) {
-
 	b.Run("Marshal", func(b *testing.B) {
 		d := null.Decimal{
 			Precision: 123456789,

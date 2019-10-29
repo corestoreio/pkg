@@ -47,6 +47,7 @@ var (
 	_ protoMarshalToer           = (*Uint8)(nil)
 	_ sql.Scanner                = (*Uint8)(nil)
 )
+
 var (
 	uint8JSON     = []byte(fmt.Sprintf("%d", math.MaxUint8))
 	nullUint8JSON = []byte(fmt.Sprintf(`{"Uint8":%d,"Valid":true}`, math.MaxUint8))
@@ -54,7 +55,6 @@ var (
 )
 
 func TestMakeNullUint8(t *testing.T) {
-
 	i := MakeUint8(math.MaxUint8)
 	assertUint8(t, i, "MakeUint8()")
 
@@ -72,7 +72,6 @@ func TestMakeNullUint8(t *testing.T) {
 }
 
 func TestUint8_GoString(t *testing.T) {
-
 	tests := []struct {
 		i8   Uint8
 		want string
@@ -94,7 +93,6 @@ func TestMakeUint8FromByte(t *testing.T) {
 }
 
 func TestNullUint8_JsonUnmarshal(t *testing.T) {
-
 	var err error
 	var i Uint8
 	err = json.Unmarshal(uint8JSON, &i)
@@ -127,7 +125,6 @@ func TestNullUint8_JsonUnmarshal(t *testing.T) {
 }
 
 func TestNullUint8_JsonUnmarshalNonIntegerNumber(t *testing.T) {
-
 	var i Uint8
 	err := json.Unmarshal(float8JSON, &i)
 	if err == nil {
@@ -136,7 +133,6 @@ func TestNullUint8_JsonUnmarshalNonIntegerNumber(t *testing.T) {
 }
 
 func TestNullUint8_UnmarshalText(t *testing.T) {
-
 	var i Uint8
 	err := i.UnmarshalText(uint8JSON)
 	maybePanic(err)
@@ -154,7 +150,6 @@ func TestNullUint8_UnmarshalText(t *testing.T) {
 }
 
 func TestNullUint8_JsonMarshal(t *testing.T) {
-
 	i := MakeUint8(math.MaxUint8)
 	data, err := json.Marshal(i)
 	maybePanic(err)
@@ -168,7 +163,6 @@ func TestNullUint8_JsonMarshal(t *testing.T) {
 }
 
 func TestNullUint8_MarshalText(t *testing.T) {
-
 	i := MakeUint8(math.MaxUint8)
 	data, err := i.MarshalText()
 	maybePanic(err)
@@ -182,7 +176,6 @@ func TestNullUint8_MarshalText(t *testing.T) {
 }
 
 func TestNullUint8_BinaryEncoding(t *testing.T) {
-
 	runner := func(b Uint8, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
 			data, err := b.GobEncode()
@@ -206,7 +199,6 @@ func TestNullUint8_BinaryEncoding(t *testing.T) {
 }
 
 func TestUint8Pointer(t *testing.T) {
-
 	i := MakeUint8(math.MaxUint8)
 	ptr := i.Ptr()
 	if *ptr != math.MaxUint8 {
@@ -221,7 +213,6 @@ func TestUint8Pointer(t *testing.T) {
 }
 
 func TestUint8IsZero(t *testing.T) {
-
 	i := MakeUint8(math.MaxUint8)
 	if i.IsZero() {
 		t.Errorf("IsZero() should be false")
@@ -239,7 +230,6 @@ func TestUint8IsZero(t *testing.T) {
 }
 
 func TestUint8SetValid(t *testing.T) {
-
 	change := MakeUint8(0).SetNull()
 	assertNullUint8(t, change, "SetValid()")
 
@@ -247,7 +237,6 @@ func TestUint8SetValid(t *testing.T) {
 }
 
 func TestUint8Scan(t *testing.T) {
-
 	var i Uint8
 	err := i.Scan(uint8JSON)
 	maybePanic(err)
@@ -275,7 +264,6 @@ func assertNullUint8(t *testing.T, i Uint8, from string) {
 }
 
 func TestNewNullUint8(t *testing.T) {
-
 	assert.EqualValues(t, math.MaxUint8, MakeUint8(math.MaxUint8).Uint8)
 	assert.True(t, MakeUint8(math.MaxUint8).Valid)
 	assert.True(t, MakeUint8(0).Valid)
@@ -285,7 +273,6 @@ func TestNewNullUint8(t *testing.T) {
 }
 
 func TestNullUint8_Scan(t *testing.T) {
-
 	t.Run("nil", func(t *testing.T) {
 		var nv Uint8
 		assert.NoError(t, nv.Scan(nil))
