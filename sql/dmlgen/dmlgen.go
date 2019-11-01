@@ -420,9 +420,11 @@ func WithForeignKeyRelationships(ctx context.Context, db dml.Querier, o ForeignK
 			return errors.WithStack(err)
 		}
 
-		// TODO(CSC) myabe excludeRelationships can contain a wild card to disable all embedded structs from/to a type.
-		//  e.g. "customer_entity.website_id", "store_website.website_id", for CustomerEntity would become
-		//  "*.website_id", "store_website.website_id", to disable all tables which have a foreign key to store_website.
+		// TODO(CSC) maybe excludeRelationships can contain a wild card to disable
+		//  all embedded structs from/to a type. e.g. "customer_entity.website_id",
+		//  "store_website.website_id", for CustomerEntity would become
+		//  "*.website_id", "store_website.website_id", to disable all tables which
+		//  have a foreign key to store_website.
 
 		g.krsExclude = make(map[string]bool, len(o.ExcludeRelationships)/2)
 		for i := 0; i < len(o.ExcludeRelationships); i += 2 {
@@ -484,6 +486,7 @@ func WithTable(tableName string, columns ddl.Columns, options ...string) (opt Op
 			t = &Table{
 				TableName: tableName,
 				Columns:   columns,
+				debug:     os.Getenv("DEBUG") != "",
 			}
 		}
 		t.HasAutoIncrement = checkAutoIncrement(t.HasAutoIncrement)
@@ -527,6 +530,7 @@ func WithTablesFromDB(ctx context.Context, db *dml.ConnPool, tables ...string) (
 				TableName:        tblName,
 				Columns:          tables[tblName],
 				HasAutoIncrement: checkAutoIncrement(tblName),
+				debug:            os.Getenv("DEBUG") != "",
 			}
 		}
 		return nil

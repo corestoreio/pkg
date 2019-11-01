@@ -97,6 +97,7 @@ type Table struct {
 	HasSerializer        bool // writes the .proto file if true
 
 	// PrivateFields key=snake case name of the DB column, value=true, the field must be private
+	debug                 bool // gets set via os.Getenv(DEBUG) != ""
 	privateFields         map[string]bool
 	featuresInclude       FeatureToggle
 	featuresExclude       FeatureToggle
@@ -237,7 +238,6 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 
 			// this part is duplicated in the proto file generation function generateProto.
 			if g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityRelationships) {
-				const debug = false
 				if kcuc, ok := g.kcu[t.TableName]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
 					for _, kcuce := range kcuc.Data {
 						if !kcuce.ReferencedTableName.Valid {
@@ -248,7 +248,7 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
 						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
 						hasTable := g.Tables[kcuce.ReferencedTableName.String] != nil
-						if debug {
+						if t.debug {
 							println("A1: isOneToMany", isOneToMany, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
 								t.TableName, "\t",
 								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
@@ -261,7 +261,7 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 
 						// case ONE-TO-ONE
 						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
-						if debug {
+						if t.debug {
 							println("B1: IsOneToOne", isOneToOne, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
 								t.TableName, "\t",
 								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
@@ -274,7 +274,7 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 
 						// case MANY-TO-MANY
 						targetTbl, targetColumn := g.krs.ManyToManyTarget(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
-						if debug {
+						if t.debug {
 							println("C1: ManyToManyTarget", true, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
 								"targetTbl>", targetTbl, "<\t", "targetColumn>", targetColumn, "<\t",
 								t.TableName, "\t",
@@ -301,7 +301,7 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
 						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
 						hasTable := g.Tables[kcuce.ReferencedTableName.String] != nil
-						if debug {
+						if t.debug {
 							println("A2: isOneToMany", isOneToMany, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
 								t.TableName, "\t",
 								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
@@ -314,7 +314,7 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 
 						// case ONE-TO-ONE
 						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
-						if debug {
+						if t.debug {
 							println("B2: IsOneToOne", isOneToOne, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
 								t.TableName, "\t",
 								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
@@ -327,7 +327,7 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 
 						// case MANY-TO-MANY
 						targetTbl, targetColumn := g.krs.ManyToManyTarget(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
-						if debug {
+						if t.debug {
 							println("C2: ManyToManyTarget", true, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
 								"targetTbl>", targetTbl, "<\t", "targetColumn>", targetColumn, "<\t",
 								t.TableName, "\t",
@@ -395,10 +395,10 @@ func (t *Table) fnEntityCopy(mainGen *codegen.Go, g *Generator) {
 		return
 	}
 	mainGen.C(`Copy copies the struct and returns a new pointer`)
-	mainGen.Pln(`func (e *`, t.EntityName(), `) Copy() *`, t.EntityName(), ` { 
+	mainGen.Pln(`func (e *`, t.EntityName(), `) Copy() *`, t.EntityName(), ` {
 		e2 := new(`, t.EntityName(), `)
 		*e2 = *e // for now a shallow copy
-		return e2 
+		return e2
 }`)
 }
 
