@@ -145,6 +145,15 @@ func (t *Table) DeleteByPK() *dml.Delete {
 	return d
 }
 
+// Delete creates a new `DELETE FROM table` statement.
+func (t *Table) Delete() *dml.Delete {
+	d := t.dcp.DeleteFrom(t.Name)
+	if t.customDB != nil {
+		d.DB = t.customDB
+	}
+	return d
+}
+
 // UpdateByPK creates a new `UPDATE table SET ... WHERE id = ?`. The SET clause
 // contains all non primary columns.
 func (t *Table) UpdateByPK() *dml.Update {
