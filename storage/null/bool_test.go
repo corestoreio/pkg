@@ -17,7 +17,6 @@ package null
 import (
 	"database/sql/driver"
 	"encoding"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -40,8 +39,6 @@ var (
 	_ encoding.BinaryUnmarshaler = (*Bool)(nil)
 	_ encoding.TextMarshaler     = (*Bool)(nil)
 	_ encoding.TextUnmarshaler   = (*Bool)(nil)
-	_ gob.GobEncoder             = (*Bool)(nil)
-	_ gob.GobDecoder             = (*Bool)(nil)
 	_ driver.Valuer              = (*Bool)(nil)
 	_ proto.Marshaler            = (*Bool)(nil)
 	_ proto.Unmarshaler          = (*Bool)(nil)
@@ -59,7 +56,7 @@ func TestMakeNullBool(t *testing.T) {
 		t.Error("MakeBool(false)", "is invalid, but should be valid")
 	}
 	assert.Exactly(t, "false", zero.String())
-	assert.Exactly(t, 1, zero.Size())
+	assert.Exactly(t, 2, zero.Size())
 	assert.Exactly(t, "null", Bool{}.String())
 	assert.Exactly(t, 0, Bool{}.Size())
 }
@@ -162,10 +159,7 @@ func TestNullBool_MarshalText(t *testing.T) {
 func TestNullBool_BinaryEncoding(t *testing.T) {
 	runner := func(b Bool, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
-			data, err := b.GobEncode()
-			assert.NoError(t, err)
-			assert.Exactly(t, want, data, "GobEncode")
-			data, err = b.MarshalBinary()
+			data, err := b.MarshalBinary()
 			assert.NoError(t, err)
 			assert.Exactly(t, want, data, "MarshalBinary")
 			data, err = b.Marshal()
@@ -177,27 +171,29 @@ func TestNullBool_BinaryEncoding(t *testing.T) {
 			assert.Exactly(t, b, decoded)
 		}
 	}
-	t.Run("true", runner(MakeBool(true), []byte{1}))
-	t.Run("false", runner(MakeBool(false), []byte{0}))
-	t.Run("null", runner(Bool{}, nil))
+	t.Run("true", runner(MakeBool(true), []byte("\b\x01\x10\x01")))
+	t.Run("false", runner(MakeBool(false), []byte("\x10\x01")))
+	t.Run("null", runner(Bool{}, []byte("")))
 }
 
 func TestNullBool_BinaryDecoding(t *testing.T) {
 	runner := func(data []byte, want Bool) func(*testing.T) {
 		return func(t *testing.T) {
 			var have Bool
-			assert.NoError(t, have.GobDecode(data), "GobDecode")
-			assert.Exactly(t, want, have, "GobDecode")
 			assert.NoError(t, have.UnmarshalBinary(data), "UnmarshalBinary")
 			assert.Exactly(t, want, have, "UnmarshalBinary")
 			assert.NoError(t, have.Unmarshal(data), "Unmarshal")
 			assert.Exactly(t, want, have, "Unmarshal")
 		}
 	}
-	t.Run("true", runner([]byte{1}, MakeBool(true)))
-	t.Run("false", runner([]byte{0}, MakeBool(false)))
-	t.Run("null", runner(nil, Bool{}))
-	t.Run("junk", runner([]byte{2, 1, 3}, Bool{}))
+	t.Run("true", runner([]byte("\b\x01\x10\x01"), MakeBool(true)))
+	t.Run("false", runner([]byte("\x10\x01"), MakeBool(false)))
+	t.Run("null", runner([]byte(""), Bool{}))
+	t.Run("junk", func(t *testing.T) {
+		var have Bool
+		err := have.UnmarshalBinary([]byte{2, 1, 3})
+		assert.EqualError(t, err, "proto: Bool: illegal tag 0 (wire type 2)")
+	})
 }
 
 func TestBoolPointer(t *testing.T) {

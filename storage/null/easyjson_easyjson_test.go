@@ -53,6 +53,7 @@ func easyjson8d5c760DecodeGithubComCorestoreioPkgStorageNull(in *jlexer.Lexer, o
 		in.Consumed()
 	}
 }
+
 func easyjson8d5c760EncodeGithubComCorestoreioPkgStorageNull(out *jwriter.Writer, in StringEmbedded) {
 	out.RawByte('{')
 	first := true

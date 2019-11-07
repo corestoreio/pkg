@@ -121,7 +121,7 @@ func TestNullTypeScanning(t *testing.T) {
 		assert.Equal(t, test.valid, nullTypeSet.BoolVal.Valid)
 		assert.Equal(t, test.valid, nullTypeSet.DecimalVal.Valid)
 
-		nullTypeSet.StringVal.String = "newStringVal"
+		nullTypeSet.StringVal.Data = "newStringVal"
 		assert.NotEqual(t, test.record, nullTypeSet)
 	}
 }
@@ -200,7 +200,7 @@ func (p *nullTypedRecord) MapColumns(cm *dml.ColumnMap) error {
 func newNullTypedRecordWithData() *nullTypedRecord {
 	return &nullTypedRecord{
 		ID:         2,
-		StringVal:  null.String{String: "wow", Valid: true},
+		StringVal:  null.String{Data: "wow", Valid: true},
 		Int64Val:   null.Int64{Int64: 42, Valid: true},
 		Float64Val: null.Float64{Float64: 1.618, Valid: true},
 		TimeVal:    null.Time{NullTime: sql.NullTime{Time: time.Date(2009, 1, 3, 18, 15, 5, 0, time.UTC), Valid: true}},

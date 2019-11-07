@@ -18,7 +18,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -43,8 +42,6 @@ var (
 	_ encoding.BinaryUnmarshaler = (*Float64)(nil)
 	_ encoding.TextMarshaler     = (*Float64)(nil)
 	_ encoding.TextUnmarshaler   = (*Float64)(nil)
-	_ gob.GobEncoder             = (*Float64)(nil)
-	_ gob.GobDecoder             = (*Float64)(nil)
 	_ driver.Valuer              = (*Float64)(nil)
 	_ proto.Marshaler            = (*Float64)(nil)
 	_ proto.Unmarshaler          = (*Float64)(nil)
@@ -62,7 +59,7 @@ func TestFloat64From(t *testing.T) {
 		t.Error("MakeFloat64(0)", "is invalid, but should be valid")
 	}
 	assert.Exactly(t, "null", Float64{}.String())
-	assert.Exactly(t, 8, zero.Size())
+	assert.Exactly(t, 2, zero.Size())
 	assert.Exactly(t, "0", zero.String())
 	assert.Exactly(t, "1.2345", f.String())
 	assert.Exactly(t, 0, Float64{}.Size())
@@ -151,10 +148,7 @@ func TestNullFloat64_MarshalText(t *testing.T) {
 func TestNullFloat64_BinaryEncoding(t *testing.T) {
 	runner := func(b Float64, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
-			data, err := b.GobEncode()
-			assert.NoError(t, err)
-			assert.Exactly(t, want, data, t.Name()+": GobEncode")
-			data, err = b.MarshalBinary()
+			data, err := b.MarshalBinary()
 			assert.NoError(t, err)
 			assert.Exactly(t, want, data, t.Name()+": MarshalBinary")
 			data, err = b.Marshal()
@@ -166,9 +160,9 @@ func TestNullFloat64_BinaryEncoding(t *testing.T) {
 			assert.Exactly(t, b, decoded)
 		}
 	}
-	t.Run("9.87654321", runner(MakeFloat64(9.87654321), []byte{0x33, 0xf6, 0x88, 0x45, 0xca, 0xc0, 0x23, 0x40}))
-	t.Run("maxfloat64", runner(MakeFloat64(math.MaxFloat64), []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xef, 0x7f}))
-	t.Run("null", runner(Float64{}, nil))
+	t.Run("9.87654321", runner(MakeFloat64(9.87654321), []byte("\t3\xf6\x88E\xca\xc0#@\x10\x01")))
+	t.Run("maxfloat64", runner(MakeFloat64(math.MaxFloat64), []byte("\t\xff\xff\xff\xff\xff\xff\xef\u007f\x10\x01")))
+	t.Run("null", runner(Float64{}, []byte("")))
 }
 
 func TestFloat64Pointer(t *testing.T) {

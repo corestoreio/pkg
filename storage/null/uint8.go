@@ -17,7 +17,6 @@ package null
 import (
 	"bytes"
 	"database/sql/driver"
-	"encoding/binary"
 	"strconv"
 
 	"github.com/corestoreio/errors"
@@ -193,16 +192,6 @@ func (a Uint8) Value() (driver.Value, error) {
 	return strconv.AppendUint([]byte{}, uint64(a.Uint8), 10), nil
 }
 
-// GobEncode implements the gob.GobEncoder interface for gob serialization.
-func (a Uint8) GobEncode() ([]byte, error) {
-	return a.Marshal()
-}
-
-// GobDecode implements the gob.GobDecoder interface for gob serialization.
-func (a *Uint8) GobDecode(data []byte) error {
-	return a.Unmarshal(data)
-}
-
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
 func (a *Uint8) UnmarshalBinary(data []byte) error {
 	return a.Unmarshal(data)
@@ -211,46 +200,6 @@ func (a *Uint8) UnmarshalBinary(data []byte) error {
 // MarshalBinary implements the encoding.BinaryMarshaler interface.
 func (a Uint8) MarshalBinary() (data []byte, err error) {
 	return a.Marshal()
-}
-
-// Marshal binary encoder for protocol buffers. Implements proto.Marshaler.
-func (a Uint8) Marshal() ([]byte, error) {
-	if !a.Valid {
-		return nil, nil
-	}
-	var buf [8]byte
-	_, err := a.MarshalTo(buf[:])
-	return buf[:], err
-}
-
-// MarshalTo binary encoder for protocol buffers which writes into data.
-func (a Uint8) MarshalTo(data []byte) (n int, err error) {
-	if !a.Valid {
-		return 0, nil
-	}
-	binary.LittleEndian.PutUint16(data, uint16(a.Uint8))
-	return 2, nil
-}
-
-// Unmarshal binary decoder for protocol buffers. Implements proto.Unmarshaler.
-func (a *Uint8) Unmarshal(data []byte) error {
-	if len(data) < 2 {
-		a.Valid = false
-		return nil
-	}
-	u16 := binary.LittleEndian.Uint16(data)
-	a.Uint8 = uint8(u16)
-	a.Valid = u16 > 0 && u16 <= (1<<8-1)
-	return nil
-}
-
-// Size returns the size of the underlying type. If not valid, the size will be
-// 0. Implements proto.Sizer.
-func (a Uint8) Size() (s int) {
-	if a.Valid {
-		s = 8
-	}
-	return
 }
 
 // WriteTo uses a special dialect to encode the value and write it into w. w

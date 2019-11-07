@@ -18,7 +18,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -40,8 +39,6 @@ var (
 	_ encoding.BinaryUnmarshaler = (*Decimal)(nil)
 	_ encoding.TextMarshaler     = (*Decimal)(nil)
 	_ encoding.TextUnmarshaler   = (*Decimal)(nil)
-	_ gob.GobEncoder             = (*Decimal)(nil)
-	_ gob.GobDecoder             = (*Decimal)(nil)
 	_ driver.Valuer              = (*Decimal)(nil)
 	_ proto.Marshaler            = (*Decimal)(nil)
 	_ proto.Unmarshaler          = (*Decimal)(nil)
@@ -357,49 +354,6 @@ func TestDecimal_MarshalText(t *testing.T) {
 			Scale:     2,
 		}
 		assert.NoError(t, dNull.UnmarshalText([]byte("")))
-		assert.Exactly(t, Decimal{}, dNull)
-	})
-}
-
-func TestDecimal_GobEncode(t *testing.T) {
-	runner := func(d Decimal, want []byte) func(*testing.T) {
-		return func(t *testing.T) {
-			raw, err := d.GobEncode()
-			assert.NoError(t, err, t.Name())
-			assert.Exactly(t, want, raw, t.Name())
-
-			var d2 Decimal
-			assert.NoError(t, d2.GobDecode(raw), t.Name())
-			assert.Exactly(t, d, d2, t.Name())
-		}
-	}
-
-	// TODO: Fuzzy testing
-
-	t.Run("not valid", runner(Decimal{}, nil))
-
-	t.Run("quoted", runner(Decimal{
-		Valid:     true,
-		Precision: math.MaxUint64 - 987654,
-		Scale:     7, // large Scales not yet supported
-		Negative:  true,
-		Quote:     true,
-	}, []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xf0, 0xed, 0xf9, 0x0, 0x0, 0x0, 0x7, 0x0, 0xf})) // does not quote
-
-	t.Run("unquoted", runner(Decimal{
-		Valid:     true,
-		Precision: 1234,
-		Scale:     2,
-		Negative:  true,
-	}, []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x4, 0xd2, 0x0, 0x0, 0x0, 0x2, 0x0, 0xb}))
-
-	t.Run("GobDecode nil", func(t *testing.T) {
-		dNull := Decimal{
-			Valid:     true,
-			Precision: 1234,
-			Scale:     2,
-		}
-		assert.NoError(t, dNull.GobDecode([]byte("")))
 		assert.Exactly(t, Decimal{}, dNull)
 	})
 }

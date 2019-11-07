@@ -18,7 +18,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -45,8 +44,6 @@ var (
 	_ encoding.BinaryUnmarshaler = (*Int8)(nil)
 	_ encoding.TextMarshaler     = (*Int8)(nil)
 	_ encoding.TextUnmarshaler   = (*Int8)(nil)
-	_ gob.GobEncoder             = (*Int8)(nil)
-	_ gob.GobDecoder             = (*Int8)(nil)
 	_ driver.Valuer              = (*Int8)(nil)
 	_ proto.Marshaler            = (*Int8)(nil)
 	_ proto.Unmarshaler          = (*Int8)(nil)
@@ -64,9 +61,9 @@ func TestMakeNullInt8(t *testing.T) {
 		t.Error("MakeInt8(0)", "is invalid, but should be valid")
 	}
 	assert.Exactly(t, "null", Int8{}.String())
-	assert.Exactly(t, 8, zero.Size())
-	assert.Exactly(t, 8, MakeInt8(125).Size())
-	assert.Exactly(t, 8, MakeInt8(math.MaxInt8).Size())
+	assert.Exactly(t, 2, zero.Size())
+	assert.Exactly(t, 4, MakeInt8(125).Size())
+	assert.Exactly(t, 4, MakeInt8(math.MaxInt8).Size())
 	assert.Exactly(t, "0", zero.String())
 	assert.Exactly(t, string(int8JSON), i.String())
 	assert.Exactly(t, 0, Int8{}.Size())
@@ -188,10 +185,7 @@ func TestNullInt8_MarshalText(t *testing.T) {
 func TestNullInt8_BinaryEncoding(t *testing.T) {
 	runner := func(b Int8, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
-			data, err := b.GobEncode()
-			assert.NoError(t, err)
-			assert.Exactly(t, want, data, t.Name()+": GobEncode: %q", data)
-			data, err = b.MarshalBinary()
+			data, err := b.MarshalBinary()
 			assert.NoError(t, err)
 			assert.Exactly(t, want, data, t.Name()+": MarshalBinary: %q", data)
 			data, err = b.Marshal()
@@ -203,11 +197,11 @@ func TestNullInt8_BinaryEncoding(t *testing.T) {
 			assert.Exactly(t, b, decoded)
 		}
 	}
-	t.Run("-98765481", runner(MakeInt8(-math.MaxInt8), []byte("\x81\xff\x00\x00\x00\x00\x00\x00")))
-	t.Run("98765481", runner(MakeInt8(math.MaxInt8), []byte("\u007f\x00\x00\x00\x00\x00\x00\x00")))
-	t.Run("-maxInt8", runner(MakeInt8(-math.MaxInt8), []byte("\x81\xff\x00\x00\x00\x00\x00\x00")))
-	t.Run("maxInt8", runner(MakeInt8(math.MaxInt8), []byte("\u007f\x00\x00\x00\x00\x00\x00\x00")))
-	t.Run("null", runner(Int8{}, nil))
+	t.Run("-98765481", runner(MakeInt8(-math.MaxInt8), []byte("\b\x81\xff\xff\xff\xff\xff\xff\xff\xff\x01\x10\x01")))
+	t.Run("98765481", runner(MakeInt8(math.MaxInt8), []byte("\b\u007f\x10\x01")))
+	t.Run("-maxInt8", runner(MakeInt8(-math.MaxInt8), []byte("\b\x81\xff\xff\xff\xff\xff\xff\xff\xff\x01\x10\x01")))
+	t.Run("maxInt8", runner(MakeInt8(math.MaxInt8), []byte("\b\u007f\x10\x01")))
+	t.Run("null", runner(Int8{}, []byte("")))
 }
 
 func TestInt8Pointer(t *testing.T) {

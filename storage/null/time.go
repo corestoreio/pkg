@@ -122,23 +122,6 @@ func (nt Time) MarshalBinary() (data []byte, err error) {
 	return nt.Time.MarshalBinary()
 }
 
-// GobEncode implements the gob.GobEncoder interface for gob serialization.
-func (nt Time) GobEncode() ([]byte, error) {
-	if !nt.Valid {
-		return nil, nil
-	}
-	return nt.Time.GobEncode()
-}
-
-// GobDecode implements the gob.GobDecoder interface for gob serialization.
-func (nt *Time) GobDecode(data []byte) error {
-	if len(data) == 0 {
-		nt.Valid = false
-		return nil
-	}
-	return nt.Time.GobDecode(data)
-}
-
 // UnmarshalBinary parses the byte slice to create a time type.
 func (nt *Time) UnmarshalBinary(data []byte) error {
 	if len(data) == 0 {
@@ -163,42 +146,6 @@ func (nt Time) Ptr() *time.Time {
 		return nil
 	}
 	return &nt.Time
-}
-
-// Marshal binary encoder for protocol buffers. Implements proto.Marshaler.
-func (nt Time) Marshal() ([]byte, error) {
-	return nt.MarshalBinary()
-}
-
-// MarshalTo binary encoder for protocol buffers which writes into data.
-func (nt Time) MarshalTo(data []byte) (int, error) {
-	if !nt.Valid {
-		return 0, nil
-	}
-	raw, err := nt.Time.MarshalBinary()
-	return copy(data, raw), err
-}
-
-// Unmarshal binary decoder for protocol buffers. Implements proto.Unmarshaler.
-func (nt *Time) Unmarshal(data []byte) error {
-	return nt.UnmarshalBinary(data)
-}
-
-// Size returns the size of the underlying type. If not valid, the size will be
-// 0. Implements proto.Sizer.
-func (nt Time) Size() (n int) {
-	if !nt.Valid {
-		return 0
-	}
-	secs := nt.Time.Unix()
-	nano := nt.Time.Nanosecond()
-	if secs != 0 {
-		n += 1 + uint64Size(uint64(secs))
-	}
-	if nano != 0 {
-		n += 1 + uint64Size(uint64(nano))
-	}
-	return n
 }
 
 // WriteTo uses a special dialect to encode the value and write it into w. w

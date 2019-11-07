@@ -379,7 +379,7 @@ func (d Decimal) MarshalJSON() ([]byte, error) {
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface. As a string representation
 // is already used when encoding to text, this method stores that string as []byte
 func (d *Decimal) UnmarshalBinary(data []byte) error {
-	const validLength = 14
+	const validLength = 19
 	ld := len(data)
 	if ld == 0 {
 		*d = Decimal{}
@@ -412,7 +412,7 @@ func (d Decimal) MarshalBinary() (data []byte, err error) {
 	if !d.Valid {
 		return nil, nil
 	}
-	var v0 [14]byte
+	var v0 [19]byte
 	_, err = d.MarshalTo(v0[:])
 	return v0[:], err
 }
@@ -439,62 +439,6 @@ func (d Decimal) MarshalText() (text []byte, err error) {
 	var buf bytes.Buffer
 	d.string(&buf)
 	return buf.Bytes(), nil
-}
-
-// GobEncode implements the gob.GobEncoder interface for gob serialization.
-func (d Decimal) GobEncode() ([]byte, error) {
-	return d.MarshalBinary()
-}
-
-// GobDecode implements the gob.GobDecoder interface for gob serialization.
-func (d *Decimal) GobDecode(data []byte) error {
-	return d.UnmarshalBinary(data)
-}
-
-// Marshal binary encoder for protocol buffers. Implements proto.Marshaler.
-func (d Decimal) Marshal() ([]byte, error) {
-	return d.MarshalBinary()
-}
-
-// MarshalTo binary encoder for protocol buffers which writes into [14]data.
-func (d Decimal) MarshalTo(data []byte) (n int, err error) {
-	if !d.Valid {
-		return 0, nil
-	}
-
-	binary.BigEndian.PutUint64(data[:8], d.Precision)
-
-	binary.BigEndian.PutUint32(data[8:12], uint32(d.Scale))
-
-	var flags uint16
-	flags |= decimalBinaryVersion01
-	if d.Negative {
-		flags |= decimalFlagNegative
-	}
-	if d.Valid {
-		flags |= decimalFlagValid
-	}
-	if d.Quote {
-		flags |= decimalFlagQuote
-	}
-
-	binary.BigEndian.PutUint16(data[12:14], flags)
-
-	return 14, nil
-}
-
-// Unmarshal binary decoder for protocol buffers. Implements proto.Unmarshaler.
-func (d *Decimal) Unmarshal(data []byte) error {
-	return d.UnmarshalBinary(data)
-}
-
-// Size returns the size of the underlying type. If not valid, the size will be
-// 0. Implements proto.Sizer.
-func (d Decimal) Size() (s int) {
-	if d.Valid {
-		s = 14
-	}
-	return
 }
 
 // Fake implements pseudo.Faker interface to generate custom fake data for

@@ -18,7 +18,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -38,8 +37,6 @@ var (
 	_ encoding.BinaryUnmarshaler = (*Uint64)(nil)
 	_ encoding.TextMarshaler     = (*Uint64)(nil)
 	_ encoding.TextUnmarshaler   = (*Uint64)(nil)
-	_ gob.GobEncoder             = (*Uint64)(nil)
-	_ gob.GobDecoder             = (*Uint64)(nil)
 	_ driver.Valuer              = (*Uint64)(nil)
 	_ proto.Marshaler            = (*Uint64)(nil)
 	_ proto.Unmarshaler          = (*Uint64)(nil)
@@ -59,9 +56,9 @@ func TestMakeNullUint64(t *testing.T) {
 		t.Error("MakeUint64(0)", "is invalid, but should be valid")
 	}
 	assert.Exactly(t, "null", Uint64{}.String())
-	assert.Exactly(t, 8, zero.Size())
-	assert.Exactly(t, 8, MakeUint64(125).Size())
-	assert.Exactly(t, 8, MakeUint64(128).Size())
+	assert.Exactly(t, 2, zero.Size())
+	assert.Exactly(t, 4, MakeUint64(125).Size())
+	assert.Exactly(t, 5, MakeUint64(128).Size())
 	assert.Exactly(t, "0", zero.String())
 	assert.Exactly(t, "9223372036854775806", i.String())
 	assert.Exactly(t, 0, Uint64{}.Size())
@@ -173,24 +170,21 @@ func TestNullUint64_MarshalText(t *testing.T) {
 func TestNullUint64_BinaryEncoding(t *testing.T) {
 	runner := func(b Uint64, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
-			data, err := b.GobEncode()
+			data, err := b.MarshalBinary()
 			assert.NoError(t, err)
-			assert.Exactly(t, want, data, t.Name()+": GobEncode")
-			data, err = b.MarshalBinary()
-			assert.NoError(t, err)
-			assert.Exactly(t, want, data, t.Name()+": MarshalBinary")
+			assert.Exactly(t, want, data, t.Name()+": MarshalBinary %q", data)
 			data, err = b.Marshal()
 			assert.NoError(t, err)
-			assert.Exactly(t, want, data, t.Name()+": Marshal")
+			assert.Exactly(t, want, data, t.Name()+": Marshal %q", data)
 
 			var decoded Uint64
-			assert.NoError(t, decoded.UnmarshalBinary(data), "UnmarshalBinary")
+			assert.NoError(t, decoded.UnmarshalBinary(data), "UnmarshalBinary %q", data)
 			assert.Exactly(t, b, decoded)
 		}
 	}
-	t.Run("987654321", runner(MakeUint64(987654321), []byte{0xb1, 0x68, 0xde, 0x3a, 0x0, 0x0, 0x0, 0x0}))
-	t.Run("maxUint64", runner(MakeUint64(math.MaxUint64), []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}))
-	t.Run("null", runner(Uint64{}, nil))
+	t.Run("987654321", runner(MakeUint64(987654321), []byte("\b\xb1\xd1\xf9\xd6\x03\x10\x01")))
+	t.Run("maxUint64", runner(MakeUint64(math.MaxUint64), []byte("\b\xff\xff\xff\xff\xff\xff\xff\xff\xff\x01\x10\x01")))
+	t.Run("null", runner(Uint64{}, []byte("")))
 }
 
 func TestUint64Pointer(t *testing.T) {

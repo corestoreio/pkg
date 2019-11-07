@@ -31,8 +31,11 @@ import (
 // It will marshal to null if null. Blank string input will be considered null.
 // String implements interface Argument.
 type String struct {
-	String string
-	Valid  bool // Valid is true if String is not NULL
+	// Data should be called String but there is String() method or should be
+	// called Value but there is a Value() method. Now it's called Data because
+	// there is no Data() method. Calling it Str would be weird...
+	Data  string
+	Valid bool // Valid is true if String is not NULL
 }
 
 // MakeString creates a new String. Setting the second optional argument
@@ -40,8 +43,8 @@ type String struct {
 // implements interface Argument.
 func MakeString(s string) String {
 	return String{
-		String: s,
-		Valid:  true,
+		Data:  s,
+		Valid: true,
 	}
 }
 
@@ -51,15 +54,15 @@ func (a *String) Scan(value interface{}) (err error) {
 	// stdlib		BenchmarkSQLScanner/String-4        	10000000	       117 ns/op	      80 B/op	       3 allocs/op
 	// this code	BenchmarkSQLScanner/String-4        	20000000	        78.5 ns/op	      48 B/op	       2 allocs/op
 	if value == nil {
-		a.String, a.Valid = "", false
+		a.Data, a.Valid = "", false
 		return nil
 	}
 	switch v := value.(type) {
 	case []byte:
-		a.String = string(v) // must be copied
+		a.Data = string(v) // must be copied
 		a.Valid = err == nil
 	case string:
-		a.String = v
+		a.Data = v
 		a.Valid = err == nil
 	default:
 		err = errors.NotSupported.Newf("[dml] Type %T not supported in String.Scan", value)
@@ -72,21 +75,29 @@ func (a String) Value() (driver.Value, error) {
 	if !a.Valid {
 		return nil, nil
 	}
-	return a.String, nil
+	return a.Data, nil
+}
+
+// GoString prints an optimized Go representation.
+func (a String) String() string {
+	if !a.Valid {
+		return "null"
+	}
+	return a.Data
 }
 
 // GoString prints an optimized Go representation. Takes are of backticks.
 // Looses the information of the private operator. That might get fixed.
 func (a String) GoString() string {
-	if a.Valid && strings.ContainsRune(a.String, '`') {
+	if a.Valid && strings.ContainsRune(a.Data, '`') {
 		// `This is my`string`
-		a.String = strings.Join(strings.Split(a.String, "`"), "`+\"`\"+`")
+		a.Data = strings.Join(strings.Split(a.Data, "`"), "`+\"`\"+`")
 		// `This is my`+"`"+`string`
 	}
 	if !a.Valid {
 		return "null.String{}"
 	}
-	return "null.MakeString(`" + a.String + "`)"
+	return "null.MakeString(`" + a.Data + "`)"
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -102,14 +113,14 @@ func (a *String) UnmarshalJSON(data []byte) error {
 
 	switch x := v.(type) {
 	case string:
-		a.String = x
+		a.Data = x
 	case map[string]interface{}:
 		dto := &struct {
 			String string
 			Valid  bool
 		}{}
 		err = jsonUnMarshalFn(data, dto)
-		a.String = dto.String
+		a.Data = dto.String
 		a.Valid = dto.Valid
 	case nil:
 		a.Valid = false
@@ -127,7 +138,7 @@ func (a String) MarshalJSON() ([]byte, error) {
 	if !a.Valid {
 		return bTextNullLC, nil
 	}
-	return jsonMarshalFn(a.String)
+	return jsonMarshalFn(a.Data)
 }
 
 // MarshalText implements encoding.TextMarshaler.
@@ -136,7 +147,7 @@ func (a String) MarshalText() ([]byte, error) {
 	if !a.Valid {
 		return nil, nil
 	}
-	return []byte(a.String), nil
+	return []byte(a.Data), nil
 }
 
 // UnmarshalText implements encoding.TextUnmarshaler.
@@ -145,13 +156,13 @@ func (a *String) UnmarshalText(text []byte) error {
 	if !utf8.Valid(text) {
 		return errors.NotValid.Newf("[dml] Input bytes are not valid UTF-8 encoded.")
 	}
-	a.String = string(text)
-	a.Valid = a.String != ""
+	a.Data = string(text)
+	a.Valid = a.Data != ""
 	return nil
 }
 
 // SetValid changes this String's value and also sets it to be non-null.
-func (a String) SetValid(v string) String { a.String = v; a.Valid = true; return a }
+func (a String) SetValid(v string) String { a.Data = v; a.Valid = true; return a }
 
 // SetNull sets the value to Go's default value and Valid to false.
 func (a String) SetNull() String { return String{} }
@@ -161,22 +172,12 @@ func (a String) Ptr() *string {
 	if !a.Valid {
 		return nil
 	}
-	return &a.String
+	return &a.Data
 }
 
 // IsZero returns true for null strings, for potential future omitempty support.
 func (a String) IsZero() bool {
 	return !a.Valid
-}
-
-// GobEncode implements the gob.GobEncoder interface for gob serialization.
-func (a String) GobEncode() ([]byte, error) {
-	return a.Marshal()
-}
-
-// GobDecode implements the gob.GobDecoder interface for gob serialization.
-func (a *String) GobDecode(data []byte) error {
-	return a.Unmarshal(data)
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
@@ -189,40 +190,15 @@ func (a String) MarshalBinary() (data []byte, err error) {
 	return a.Marshal()
 }
 
-// Marshal binary encoder for protocol buffers. Implements proto.Marshaler.
-func (a String) Marshal() ([]byte, error) {
-	return a.MarshalText()
-}
-
-// MarshalTo binary encoder for protocol buffers which writes into data.
-func (a String) MarshalTo(data []byte) (n int, err error) {
-	if !a.Valid {
-		return 0, nil
-	}
-	n = copy(data, a.String)
-	return
-}
-
-// Unmarshal binary decoder for protocol buffers. Implements proto.Unmarshaler.
-func (a *String) Unmarshal(data []byte) error {
-	return a.UnmarshalText(data)
-}
-
-// Size returns the size of the underlying type. If not valid, the size will be
-// 0. Implements proto.Sizer.
-func (a String) Size() (s int) {
-	return len(a.String)
-}
-
 // WriteTo uses a special dialect to encode the value and write it into w. w
 // cannot be replaced by io.Writer and shall not be replaced by an interface
 // because of inlining features of the compiler.
 func (a String) WriteTo(d Dialecter, w *bytes.Buffer) (err error) {
 	if a.Valid {
-		if utf8.ValidString(a.String) {
-			d.EscapeString(w, a.String)
+		if utf8.ValidString(a.Data) {
+			d.EscapeString(w, a.Data)
 		} else {
-			err = errors.NotValid.Newf("[dml] String.writeTo: String is not UTF-8: %q", a.String)
+			err = errors.NotValid.Newf("[dml] String.writeTo: String is not UTF-8: %q", a.Data)
 		}
 	} else {
 		_, err = w.WriteString(sqlStrNullUC)
@@ -233,7 +209,7 @@ func (a String) WriteTo(d Dialecter, w *bytes.Buffer) (err error) {
 // Append appends the value or its nil type to the interface slice.
 func (a String) Append(args []interface{}) []interface{} {
 	if a.Valid {
-		return append(args, a.String)
+		return append(args, a.Data)
 	}
 	return append(args, nil)
 }

@@ -30,8 +30,8 @@ func TestEasyJSON(t *testing.T) {
 	}
 
 	t.Run("String Raw", runner(&null.String{
-		Valid:  true,
-		String: "pple",
+		Valid: true,
+		Data:  "pple",
 	}, &null.String{}, "\"\uf8ffpple\""))
 
 	t.Run("StringEmbedded all fields", runner(&StringEmbedded{
@@ -48,7 +48,6 @@ func TestEasyJSON(t *testing.T) {
 	}, &StringEmbedded{}, "{\"string_1\":\"\uf8ffp\\\"ple\",\"string_2\":null}"))
 
 	t.Run("StringEmbedded empty", runner(&StringEmbedded{}, &StringEmbedded{}, "{\"string_2\":null}"))
-
 }
 
 //easyjson:json

@@ -178,16 +178,6 @@ func (a Bool) IsZero() bool {
 	return !a.Valid
 }
 
-// GobEncode implements the gob.GobEncoder interface for gob serialization.
-func (a Bool) GobEncode() ([]byte, error) {
-	return a.Marshal()
-}
-
-// GobDecode implements the gob.GobDecoder interface for gob serialization.
-func (a *Bool) GobDecode(data []byte) error {
-	return a.Unmarshal(data)
-}
-
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
 func (a *Bool) UnmarshalBinary(data []byte) error {
 	return a.Unmarshal(data)
@@ -196,48 +186,6 @@ func (a *Bool) UnmarshalBinary(data []byte) error {
 // MarshalBinary implements the encoding.BinaryMarshaler interface.
 func (a Bool) MarshalBinary() (data []byte, err error) {
 	return a.Marshal()
-}
-
-// Marshal binary encoder for protocol buffers. Implements proto.Marshaler.
-func (a Bool) Marshal() ([]byte, error) {
-	if !a.Valid {
-		return nil, nil
-	}
-	var buf [1]byte
-	_, err := a.MarshalTo(buf[:])
-	return buf[:], err
-}
-
-// MarshalTo binary encoder for protocol buffers which writes into data.
-func (a Bool) MarshalTo(data []byte) (n int, err error) {
-	if !a.Valid {
-		return 0, nil
-	}
-	data[0] = 0
-	if a.Bool {
-		data[0] = 1
-	}
-	return 1, nil
-}
-
-// Unmarshal binary decoder for protocol buffers. Implements proto.Unmarshaler.
-func (a *Bool) Unmarshal(data []byte) error {
-	if len(data) != 1 {
-		a.Valid = false
-		return nil
-	}
-	a.Bool = data[0] == 1
-	a.Valid = true
-	return nil
-}
-
-// Size returns the size of the underlying type. If not valid, the size will be
-// 0. Implements proto.Sizer.
-func (a Bool) Size() (s int) {
-	if a.Valid {
-		s = 1
-	}
-	return
 }
 
 // WriteTo uses a special dialect to encode the value and write it into w. w

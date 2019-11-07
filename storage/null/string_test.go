@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"database/sql/driver"
 	"encoding"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -36,8 +35,6 @@ var (
 	_ encoding.BinaryUnmarshaler = (*String)(nil)
 	_ encoding.TextMarshaler     = (*String)(nil)
 	_ encoding.TextUnmarshaler   = (*String)(nil)
-	_ gob.GobEncoder             = (*String)(nil)
-	_ gob.GobDecoder             = (*String)(nil)
 	_ driver.Valuer              = (*String)(nil)
 	_ proto.Marshaler            = (*String)(nil)
 	_ proto.Unmarshaler          = (*String)(nil)
@@ -57,13 +54,13 @@ var (
 func TestStringFrom(t *testing.T) {
 	str := MakeString("test")
 	assertStr(t, str, "MakeString() string")
-	assert.Exactly(t, 4, str.Size())
+	assert.Exactly(t, 8, str.Size())
 
 	zero := MakeString("")
 	if !zero.Valid {
 		t.Error("MakeString(0)", "is invalid, but should be valid")
 	}
-	assert.Exactly(t, 0, zero.Size())
+	assert.Exactly(t, 2, zero.Size())
 }
 
 func TestNullString_JsonUnmarshal(t *testing.T) {
@@ -143,38 +140,35 @@ func TestNullString_MarshalText(t *testing.T) {
 func TestNullString_BinaryEncoding(t *testing.T) {
 	runner := func(b String, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
-			data, err := b.GobEncode()
+			data, err := b.MarshalBinary()
 			assert.NoError(t, err)
-			assert.Exactly(t, want, data, t.Name()+": GobEncode")
-			data, err = b.MarshalBinary()
-			assert.NoError(t, err)
-			assert.Exactly(t, want, data, t.Name()+": MarshalBinary")
+			assert.Exactly(t, want, data, t.Name()+": MarshalBinary %q", data)
 			data, err = b.Marshal()
 			assert.NoError(t, err)
-			assert.Exactly(t, want, data, t.Name()+": Marshal")
+			assert.Exactly(t, want, data, t.Name()+": Marshal %q", data)
 
 			var decoded String
 			assert.NoError(t, decoded.UnmarshalBinary(data), "UnmarshalBinary")
 			assert.Exactly(t, b, decoded)
 		}
 	}
-	t.Run("HelloWorld", runner(MakeString("HelloWorld"), []byte{0x48, 0x65, 0x6c, 0x6c, 0x6f, 0xef, 0xa3, 0xbf, 0x57, 0x6f, 0x72, 0x6c, 0x64}))
-	t.Run("null", runner(String{}, nil))
+	t.Run("HelloWorld", runner(MakeString("HelloWorld"), []byte("\n\rHello\uf8ffWorld\x10\x01")))
+	t.Run("null", runner(String{}, []byte("")))
 }
 
 func TestNullString_MarshalTo(t *testing.T) {
 	str := MakeString("HelloWorld")
-	var buf4 [4]byte
+	var buf4 [17]byte
 	n, err := str.MarshalTo(buf4[:])
 	maybePanic(err)
-	assert.Exactly(t, 4, n)
-	assert.Exactly(t, []byte(`Hell`), buf4[:])
+	assert.Exactly(t, 17, n)
+	assert.Exactly(t, []byte("\n\rHello\uf8ffWorld\x10\x01"), buf4[:])
 
 	bufFit := make([]byte, str.Size())
 	n, err = str.MarshalTo(bufFit)
 	maybePanic(err)
-	assert.Exactly(t, 13, n)
-	assert.Exactly(t, []byte(`HelloWorld`), bufFit)
+	assert.Exactly(t, 17, n)
+	assert.Exactly(t, []byte("\n\rHello\uf8ffWorld\x10\x01"), bufFit)
 }
 
 func TestStringPointer(t *testing.T) {
@@ -253,8 +247,8 @@ func TestString_GoString(t *testing.T) {
 }
 
 func assertStr(t *testing.T, s String, from string) {
-	if s.String != "test" {
-		t.Errorf("bad %s string: %s ≠ %s\n", from, s.String, "test")
+	if s.Data != "test" {
+		t.Errorf("bad %s string: %s ≠ %s\n", from, s.Data, "test")
 	}
 	if !s.Valid {
 		t.Error(from, "is invalid, but should be valid")
@@ -274,7 +268,7 @@ func assertJSONEquals(t *testing.T, data []byte, cmp string, from string) {
 }
 
 func TestNullStringFrom(t *testing.T) {
-	assert.Equal(t, "product", MakeString("product").String)
+	assert.Equal(t, "product", MakeString("product").Data)
 	assert.True(t, MakeString("product").Valid)
 	// assert.False(t, NullStringFromPtr(nil).Valid)
 	assert.True(t, MakeString("").Valid)

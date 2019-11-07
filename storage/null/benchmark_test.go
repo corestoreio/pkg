@@ -75,10 +75,10 @@ func BenchmarkSQLScanner(b *testing.B) {
 			if err := nv.Scan(val); err != nil {
 				b.Fatal(err)
 			}
-			if nv.String != want {
-				b.Fatalf("Have %q Want %q", nv.String, want)
+			if nv.Data != want {
+				b.Fatalf("Have %q Want %q", nv.Data, want)
 			}
-			valString = nv.String
+			valString = nv.Data
 		}
 	})
 	b.Run("NullTime", func(b *testing.B) {

@@ -17,7 +17,6 @@ package null
 import (
 	"database/sql/driver"
 	"encoding"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -47,8 +46,6 @@ var (
 	_ encoding.BinaryUnmarshaler = (*Time)(nil)
 	_ encoding.TextMarshaler     = (*Time)(nil)
 	_ encoding.TextUnmarshaler   = (*Time)(nil)
-	_ gob.GobEncoder             = (*Time)(nil)
-	_ gob.GobDecoder             = (*Time)(nil)
 	_ driver.Valuer              = (*Time)(nil)
 	_ proto.Marshaler            = (*Time)(nil)
 	_ proto.Unmarshaler          = (*Time)(nil)
@@ -139,20 +136,17 @@ func TestNullTime_JsonMarshal(t *testing.T) {
 }
 
 func TestNullTime_BinaryEncoding(t *testing.T) {
-	runner := func(nv Time, want []byte) func(*testing.T) {
+	runner := func(nv Time, wantMB, wantM []byte) func(*testing.T) {
 		return func(t *testing.T) {
-			data, err := nv.GobEncode()
+			dataMB, err := nv.MarshalBinary()
 			assert.NoError(t, err)
-			assert.Exactly(t, want, data, t.Name()+": GobEncode")
-			data, err = nv.MarshalBinary()
+			assert.Exactly(t, wantMB, dataMB, t.Name()+": MarshalBinary %q", dataMB)
+			dataM, err := nv.Marshal()
 			assert.NoError(t, err)
-			assert.Exactly(t, want, data, t.Name()+": MarshalBinary")
-			data, err = nv.Marshal()
-			assert.NoError(t, err)
-			assert.Exactly(t, want, data, t.Name()+": Marshal")
+			assert.Exactly(t, wantM, dataM, t.Name()+": Marshal %q", dataM)
 
 			var decoded Time
-			assert.NoError(t, decoded.UnmarshalBinary(data), "UnmarshalBinary")
+			assert.NoError(t, decoded.UnmarshalBinary(dataMB), "UnmarshalBinary")
 
 			haveS := nv.String()
 			wantS := decoded.String()
@@ -167,13 +161,13 @@ func TestNullTime_BinaryEncoding(t *testing.T) {
 			assert.Exactly(t, haveS, wantS)
 		}
 	}
-	t.Run("now fixed", runner(MakeTime(now()), []byte{0x1, 0x0, 0x0, 0x0, 0xe, 0xbb, 0x4b, 0x37, 0xe5, 0x0, 0x0, 0x0, 0x2, 0x0, 0x0}))
-	t.Run("null", runner(Time{}, nil))
+	t.Run("now fixed", runner(MakeTime(now()), []byte("\x01\x00\x00\x00\x0e\xbbK7\xe5\x00\x00\x00\x02\x00\x00"), []byte("\n\b\b\xe5\x81\xe5\x9d\x04\x10\x02\x10\x01")))
+	t.Run("null", runner(Time{}, nil, []byte("\n\v\b\x80\x92\xb8Ø\xfe\xff\xff\xff\x01")))
 }
 
 func TestNullTime_Size(t *testing.T) {
-	assert.Exactly(t, 0, Time{}.Size())
-	assert.Exactly(t, 8, MakeTime(now()).Size())
+	assert.Exactly(t, 13, Time{}.Size())
+	assert.Exactly(t, 12, MakeTime(now()).Size())
 }
 
 func TestTimeFrom(t *testing.T) {

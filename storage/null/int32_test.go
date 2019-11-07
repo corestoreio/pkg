@@ -18,7 +18,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -44,8 +43,6 @@ var (
 	_ encoding.BinaryUnmarshaler = (*Int32)(nil)
 	_ encoding.TextMarshaler     = (*Int32)(nil)
 	_ encoding.TextUnmarshaler   = (*Int32)(nil)
-	_ gob.GobEncoder             = (*Int32)(nil)
-	_ gob.GobDecoder             = (*Int32)(nil)
 	_ driver.Valuer              = (*Int32)(nil)
 	_ proto.Marshaler            = (*Int32)(nil)
 	_ proto.Unmarshaler          = (*Int32)(nil)
@@ -63,9 +60,9 @@ func TestMakeNullInt32(t *testing.T) {
 		t.Error("MakeInt32(0)", "is invalid, but should be valid")
 	}
 	assert.Exactly(t, "null", Int32{}.String())
-	assert.Exactly(t, 8, zero.Size())
-	assert.Exactly(t, 8, MakeInt32(125).Size())
-	assert.Exactly(t, 8, MakeInt32(128).Size())
+	assert.Exactly(t, 2, zero.Size())
+	assert.Exactly(t, 4, MakeInt32(125).Size())
+	assert.Exactly(t, 5, MakeInt32(128).Size())
 	assert.Exactly(t, "0", zero.String())
 	assert.Exactly(t, string(int32JSON), i.String())
 	assert.Exactly(t, 0, Int32{}.Size())
@@ -187,10 +184,7 @@ func TestNullInt32_MarshalText(t *testing.T) {
 func TestNullInt32_BinaryEncoding(t *testing.T) {
 	runner := func(b Int32, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
-			data, err := b.GobEncode()
-			assert.NoError(t, err)
-			assert.Exactly(t, want, data, t.Name()+": GobEncode: %q", data)
-			data, err = b.MarshalBinary()
+			data, err := b.MarshalBinary()
 			assert.NoError(t, err)
 			assert.Exactly(t, want, data, t.Name()+": MarshalBinary: %q", data)
 			data, err = b.Marshal()
@@ -202,11 +196,11 @@ func TestNullInt32_BinaryEncoding(t *testing.T) {
 			assert.Exactly(t, b, decoded)
 		}
 	}
-	t.Run("-987654321", runner(MakeInt32(-987654321), []byte("O\x97!\xc5\x00\x00\x00\x00")))
-	t.Run("987654321", runner(MakeInt32(987654321), []byte{0xb1, 0x68, 0xde, 0x3a, 0x0, 0x0, 0x0, 0x0}))
-	t.Run("-maxInt32", runner(MakeInt32(-math.MaxInt32), []byte("\x01\x00\x00\x80\x00\x00\x00\x00")))
-	t.Run("maxInt32", runner(MakeInt32(math.MaxInt32), []byte("\xff\xff\xff\u007f\x00\x00\x00\x00")))
-	t.Run("null", runner(Int32{}, nil))
+	t.Run("-987654321", runner(MakeInt32(-987654321), []byte("\bϮ\x86\xa9\xfc\xff\xff\xff\xff\x01\x10\x01")))
+	t.Run("987654321", runner(MakeInt32(987654321), []byte("\b\xb1\xd1\xf9\xd6\x03\x10\x01")))
+	t.Run("-maxInt32", runner(MakeInt32(-math.MaxInt32), []byte("\b\x81\x80\x80\x80\xf8\xff\xff\xff\xff\x01\x10\x01")))
+	t.Run("maxInt32", runner(MakeInt32(math.MaxInt32), []byte("\b\xff\xff\xff\xff\a\x10\x01")))
+	t.Run("null", runner(Int32{}, []byte("")))
 }
 
 func TestInt32Pointer(t *testing.T) {

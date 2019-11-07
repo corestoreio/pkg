@@ -20,18 +20,18 @@ func (a String) MarshalEasyJSON(w *jwriter.Writer) {
 		w.Raw(nil, nil)
 		return
 	}
-	w.String(a.String)
+	w.String(a.Data)
 }
 
 func (a *String) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	if l.IsNull() {
 		a.Valid = false
-		a.String = ""
+		a.Data = ""
 		return
 	}
 
 	a.Valid = true
-	a.String = l.String()
+	a.Data = l.String()
 }
 
 // IsDefined implements easyjson.Optional interface, same as function IsZero of

@@ -18,7 +18,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -38,8 +37,6 @@ var (
 	_ encoding.BinaryUnmarshaler = (*Uint16)(nil)
 	_ encoding.TextMarshaler     = (*Uint16)(nil)
 	_ encoding.TextUnmarshaler   = (*Uint16)(nil)
-	_ gob.GobEncoder             = (*Uint16)(nil)
-	_ gob.GobDecoder             = (*Uint16)(nil)
 	_ driver.Valuer              = (*Uint16)(nil)
 	_ proto.Marshaler            = (*Uint16)(nil)
 	_ proto.Unmarshaler          = (*Uint16)(nil)
@@ -63,9 +60,9 @@ func TestMakeNullUint16(t *testing.T) {
 		t.Error("MakeUint16(0)", "is invalid, but should be valid")
 	}
 	assert.Exactly(t, "null", Uint16{}.String())
-	assert.Exactly(t, 8, zero.Size())
-	assert.Exactly(t, 8, MakeUint16(125).Size())
-	assert.Exactly(t, 8, MakeUint16(128).Size())
+	assert.Exactly(t, 2, zero.Size())
+	assert.Exactly(t, 4, MakeUint16(125).Size())
+	assert.Exactly(t, 5, MakeUint16(128).Size())
 	assert.Exactly(t, "0", zero.String())
 	assert.Exactly(t, "65535", i.String(), "Want: %q", i.String())
 	assert.Exactly(t, 0, Uint16{}.Size())
@@ -178,10 +175,7 @@ func TestNullUint16_MarshalText(t *testing.T) {
 func TestNullUint16_BinaryEncoding(t *testing.T) {
 	runner := func(b Uint16, want []byte) func(*testing.T) {
 		return func(t *testing.T) {
-			data, err := b.GobEncode()
-			assert.NoError(t, err)
-			assert.Exactly(t, want, data, t.Name()+": GobEncode: %q", data)
-			data, err = b.MarshalBinary()
+			data, err := b.MarshalBinary()
 			assert.NoError(t, err)
 			assert.Exactly(t, want, data, t.Name()+": MarshalBinary: %q", data)
 			data, err = b.Marshal()
@@ -193,9 +187,9 @@ func TestNullUint16_BinaryEncoding(t *testing.T) {
 			assert.Exactly(t, b, decoded)
 		}
 	}
-	t.Run("987654161", runner(MakeUint16(math.MaxUint16), []byte("\xff\xff\x00\x00\x00\x00\x00\x00")))
-	t.Run("maxUint16", runner(MakeUint16(math.MaxUint16), []byte("\xff\xff\x00\x00\x00\x00\x00\x00")))
-	t.Run("null", runner(Uint16{}, nil))
+	t.Run("987654161", runner(MakeUint16(math.MaxUint16), []byte("\b\xff\xff\x03\x10\x01")))
+	t.Run("maxUint16", runner(MakeUint16(math.MaxUint16), []byte("\b\xff\xff\x03\x10\x01")))
+	t.Run("null", runner(Uint16{}, []byte("")))
 }
 
 func TestUint16Pointer(t *testing.T) {
