@@ -315,7 +315,7 @@ func (dbs *DB) Get(p config.Path) (v []byte, ok bool, err error) {
 	}
 	var ret []byte
 	if nv.Valid {
-		ret = []byte(nv.String)
+		ret = []byte(nv.Data)
 	}
 	return ret, true, nil
 }
@@ -362,7 +362,7 @@ func WithLoadFromDB(tbls *ddl.Tables, o DBOptions) config.LoadDataOption {
 
 			var v []byte
 			if ccd.Value.Valid {
-				v = []byte(ccd.Value.String)
+				v = []byte(ccd.Value.Data)
 			}
 			scp := scope.FromString(ccd.Scope).WithID(uint32(ccd.ScopeID))
 			p, err := config.MakePathWithScope(scp, ccd.Path)

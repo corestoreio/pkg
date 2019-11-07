@@ -131,7 +131,7 @@ func TestArgBytes(t *testing.T) {
 			appendBools(false, true, true, false, true).
 			appendTime(t1).
 			appendTimes(t1, t2, t1).
-			appendNullString(null.String{}, null.String{Valid: true, String: "Hello"}).
+			appendNullString(null.String{}, null.String{Valid: true, Data: "Hello"}).
 			appendNullFloat64(null.Float64{Valid: true, Float64: math.E}, null.Float64{}).
 			appendNullInt64(null.Int64{Valid: true, Int64: 987654321}, null.Int64{}).
 			appendNullBool(null.Bool{}, null.Bool{Valid: true, Bool: true}, null.Bool{Valid: false, Bool: true}).

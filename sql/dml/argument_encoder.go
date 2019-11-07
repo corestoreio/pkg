@@ -218,7 +218,7 @@ func (ae argEncoded) appendNullString(args ...null.String) argEncoded {
 	c := ae.growOrNewContainer(len(args))
 	for i, a := range args {
 		if a.Valid {
-			c[i] = append(c[i], []byte(a.String)...) // todo use copy
+			c[i] = append(c[i], []byte(a.Data)...) // todo use copy
 		} else {
 			c[i] = append(c[i], bTextNullUC...) // todo use copy
 		}

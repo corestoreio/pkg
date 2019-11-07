@@ -353,7 +353,7 @@ func (t *testSyncerSuite) TestMysqlGTIDSync(tst *testing.T) {
 	gtMode, ok, err := t.con.WithRawSQL("SELECT @@gtid_mode").LoadNullString(context.Background())
 	assert.NoError(tst, err, "%+v", err)
 
-	if !ok || gtMode.String != "ON" {
+	if !ok || gtMode.Data != "ON" {
 		tst.Skipf("GTID mode is not ON; got: %#v", gtMode)
 	}
 
@@ -361,8 +361,8 @@ func (t *testSyncerSuite) TestMysqlGTIDSync(tst *testing.T) {
 	assert.NoError(tst, err, "%+v", err)
 
 	var masterUuid uuid.UUID
-	if srvUUID.String != "" && srvUUID.String != "NONE" {
-		masterUuid, err = uuid.FromString(srvUUID.String)
+	if srvUUID.Data != "" && srvUUID.Data != "NONE" {
+		masterUuid, err = uuid.FromString(srvUUID.Data)
 		assert.NoError(tst, err, "%+v", err)
 	}
 

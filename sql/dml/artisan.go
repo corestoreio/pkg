@@ -1135,7 +1135,7 @@ func (a *Artisan) LoadStrings(ctx context.Context, dest []string, args ...interf
 			return
 		}
 		if value.Valid {
-			dest = append(dest, value.String)
+			dest = append(dest, value.Data)
 		}
 	}
 	if err = rows.Err(); err != nil {

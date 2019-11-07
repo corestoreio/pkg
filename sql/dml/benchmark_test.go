@@ -284,7 +284,7 @@ func BenchmarkArgumentEncoding(b *testing.B) {
 				appendBools(false, true, true, false, true).
 				appendTime(t1).
 				appendTimes(t1, t2, t1).
-				appendNullString(null.String{}, null.String{Valid: true, String: "Hello"}).
+				appendNullString(null.String{}, null.String{Valid: true, Data: "Hello"}).
 				appendNullFloat64(null.Float64{Valid: true, Float64: math.E}, null.Float64{}).
 				appendNullInt64(null.Int64{Valid: true, Int64: 987654321}, null.Int64{}).
 				appendNullBool(null.Bool{}, null.Bool{Valid: true, Bool: true}, null.Bool{Valid: false, Bool: true}).
@@ -312,13 +312,13 @@ func BenchmarkArgumentEncoding(b *testing.B) {
 			appendBools(false, true, true, false, true).
 			appendTime(t1).
 			appendTimes(t1, t2, t1).
-			appendNullString(null.String{}, null.String{Valid: true, String: "Hello"}).
+			appendNullString(null.String{}, null.String{Valid: true, Data: "Hello"}).
 			appendNullFloat64(null.Float64{Valid: true, Float64: math.E}, null.Float64{}).
 			appendNullInt64(null.Int64{Valid: true, Int64: 987654321}, null.Int64{}).
 			appendNullBool(null.Bool{}, null.Bool{Valid: true, Bool: true}, null.Bool{Valid: false, Bool: true}).
 			appendNullTime(null.MakeTime(t1), null.Time{})
 
-		ns := []null.String{{}, {Valid: true, String: "Hello"}}
+		ns := []null.String{{}, {Valid: true, Data: "Hello"}}
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {

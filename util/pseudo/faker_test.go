@@ -435,7 +435,7 @@ func TestMaxLen(t *testing.T) {
 			assert.LenBetween(t, ccd.ScopeID, 0, math.MaxInt32)
 			assert.LenBetween(t, ccd.Path, 1, 255)
 			if ccd.Value.Valid {
-				assert.LenBetween(t, ccd.Value.String, 1, 65535)
+				assert.LenBetween(t, ccd.Value.Data, 1, 65535)
 			} else {
 				assert.Exactly(t, null.String{}, ccd.Value)
 			}
@@ -512,7 +512,7 @@ func TestCustomerEntity_Fieldnames(t *testing.T) {
 		// t.Logf("%#v", a)
 		assert.LenBetween(t, fmt.Sprintf("%#v", a), 260, 545)
 		if a.Email.Valid {
-			assert.Regexp(t, "^[a-z0-9\\-_]+@.+\\.[a-z0-9\\-]+$", a.Email.String, "Email address")
+			assert.Regexp(t, "^[a-z0-9\\-_]+@.+\\.[a-z0-9\\-]+$", a.Email.Data, "Email address")
 		}
 	}
 }
@@ -534,9 +534,9 @@ func TestMaxStringLen(t *testing.T) {
 
 		assert.LenBetween(t, a.ColBlob, 1, maxLenStringLimit, "Field a.ColBlob")
 		if a.ColLongtext1.Valid {
-			assert.LenBetween(t, a.ColLongtext1.String, 1, maxLenStringLimit, "Field ColLongtext1.String")
+			assert.LenBetween(t, a.ColLongtext1.Data, 1, maxLenStringLimit, "Field ColLongtext1.String")
 		} else {
-			assert.Empty(t, a.ColLongtext1.String, "Field ColLongtext1.String")
+			assert.Empty(t, a.ColLongtext1.Data, "Field ColLongtext1.String")
 		}
 		assert.LenBetween(t, a.ColLongtext2, 1, maxLenStringLimit, "Field ColLongtext2")
 	}

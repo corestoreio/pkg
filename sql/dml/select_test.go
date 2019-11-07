@@ -546,10 +546,10 @@ func TestSelect_Load_Slice_Scanner(t *testing.T) {
 
 		assert.Exactly(t, "Sir George", people.Data[0].Name)
 		assert.True(t, people.Data[0].Email.Valid)
-		assert.Exactly(t, "SirGeorge@GoIsland.com", people.Data[0].Email.String)
+		assert.Exactly(t, "SirGeorge@GoIsland.com", people.Data[0].Email.Data)
 		assert.Exactly(t, "Dmitri", people.Data[1].Name)
 		assert.True(t, people.Data[1].Email.Valid)
-		assert.Exactly(t, "zavorotni@jadius.com", people.Data[1].Email.String)
+		assert.Exactly(t, "zavorotni@jadius.com", people.Data[1].Email.Data)
 	}
 }
 
@@ -565,7 +565,7 @@ func TestSelect_Load_Rows(t *testing.T) {
 		assert.True(t, person.ID > 0)
 		assert.Exactly(t, "Sir George", person.Name)
 		assert.True(t, person.Email.Valid)
-		assert.Exactly(t, "SirGeorge@GoIsland.com", person.Email.String)
+		assert.Exactly(t, "SirGeorge@GoIsland.com", person.Email.Data)
 	})
 
 	t.Run("not found", func(t *testing.T) {
@@ -594,7 +594,7 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 			assert.Exactly(t, "Sir George", people.Data[0].Name)
 			assert.Exactly(t, uint64(0), people.Data[0].ID)      // not set
 			assert.Exactly(t, false, people.Data[0].Email.Valid) // not set
-			assert.Exactly(t, "", people.Data[0].Email.String)   // not set
+			assert.Exactly(t, "", people.Data[0].Email.Data)     // not set
 		}
 	})
 
@@ -640,7 +640,7 @@ func TestSelect_LoadType_Single(t *testing.T) {
 		name, found, err := s.SelectFrom("dml_people").AddColumns("name", "email").Where(Expr("email = 'SirGeorge@GoIsland.com'")).WithArgs().LoadNullString(context.TODO())
 		assert.Error(t, err)
 		assert.False(t, found)
-		assert.Empty(t, name.String)
+		assert.Empty(t, name.Data)
 	})
 	t.Run("LoadNullString not found", func(t *testing.T) {
 		name, found, err := s.SelectFrom("dml_people").AddColumns("name").Where(Expr("email = 'notfound@example.com'")).WithArgs().LoadNullString(context.TODO())

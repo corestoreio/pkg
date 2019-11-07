@@ -1221,18 +1221,18 @@ func (b *ColumnMap) NullString(ptr *null.String) *ColumnMap {
 			if b.CheckValidUTF8 && !utf8.ValidString(v.string) {
 				b.scanErr = errors.NotValid.Newf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
 			} else {
-				ptr.String = v.string
+				ptr.Data = v.string
 				ptr.Valid = true
 			}
 		case 'y':
 			if b.CheckValidUTF8 && !utf8.Valid(v.byte) {
 				b.scanErr = errors.NotValid.Newf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
 			} else {
-				ptr.String = string(v.byte)
+				ptr.Data = string(v.byte)
 				ptr.Valid = v.byte != nil
 			}
 		case 'n':
-			ptr.String = ""
+			ptr.Data = ""
 			ptr.Valid = false
 		default:
 			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)

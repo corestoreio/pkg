@@ -265,22 +265,22 @@ func ReverseKeyColumnUsage(kcu map[string]KeyColumnUsageCollection) (kcuRev map[
 	kcuRev = make(map[string]KeyColumnUsageCollection, len(kcu))
 	for _, kcuc := range kcu {
 		for _, kcucd := range kcuc.Data {
-			kcucRev := kcuRev[kcucd.ReferencedTableName.String]
+			kcucRev := kcuRev[kcucd.ReferencedTableName.Data]
 			kcucRev.Data = append(kcucRev.Data, &KeyColumnUsage{
 				ConstraintCatalog:          kcucd.ConstraintCatalog,
 				ConstraintSchema:           kcucd.ConstraintSchema,
 				ConstraintName:             kcucd.ConstraintName,
 				TableCatalog:               kcucd.TableCatalog,
-				TableSchema:                kcucd.ReferencedTableSchema.String,
-				TableName:                  kcucd.ReferencedTableName.String,
-				ColumnName:                 kcucd.ReferencedColumnName.String,
+				TableSchema:                kcucd.ReferencedTableSchema.Data,
+				TableName:                  kcucd.ReferencedTableName.Data,
+				ColumnName:                 kcucd.ReferencedColumnName.Data,
 				OrdinalPosition:            kcucd.OrdinalPosition,
 				PositionInUniqueConstraint: kcucd.PositionInUniqueConstraint,
 				ReferencedTableSchema:      null.MakeString(kcucd.TableSchema),
 				ReferencedTableName:        null.MakeString(kcucd.TableName),
 				ReferencedColumnName:       null.MakeString(kcucd.ColumnName),
 			})
-			kcuRev[kcucd.ReferencedTableName.String] = kcucRev
+			kcuRev[kcucd.ReferencedTableName.Data] = kcucRev
 		}
 	}
 	return kcuRev
@@ -405,24 +405,24 @@ func GenerateKeyRelationships(ctx context.Context, db dml.Querier, foreignKeys m
 			// OneToOne relationship
 			krs.relMap[kcu.TableName] = append(krs.relMap[kcu.TableName], relTarget{
 				column:           kcu.ColumnName,
-				referencedTable:  kcu.ReferencedTableName.String,
-				referencedColumn: kcu.ReferencedColumnName.String,
+				referencedTable:  kcu.ReferencedTableName.Data,
+				referencedColumn: kcu.ReferencedColumnName.Data,
 				relationKeyType:  fKeyTypePRI,
 			})
 
 			// if referenced table has only one PK, then the reversed relationship of OneToMany is not possible
-			if tc, ok := fieldCount[kcu.ReferencedTableName.String]; ok && tc.Pri == 1 && tc.Empty == 0 && tc.Mul == 0 {
+			if tc, ok := fieldCount[kcu.ReferencedTableName.Data]; ok && tc.Pri == 1 && tc.Empty == 0 && tc.Mul == 0 {
 				// OneToOne reversed is also possible
-				krs.relMap[kcu.ReferencedTableName.String] = append(krs.relMap[kcu.ReferencedTableName.String], relTarget{
-					column:           kcu.ReferencedColumnName.String,
+				krs.relMap[kcu.ReferencedTableName.Data] = append(krs.relMap[kcu.ReferencedTableName.Data], relTarget{
+					column:           kcu.ReferencedColumnName.Data,
 					referencedTable:  kcu.TableName,
 					referencedColumn: kcu.ColumnName,
 					relationKeyType:  fKeyTypePRI,
 				})
 			}
 			if tc, ok := fieldCount[kcu.TableName]; ok && (tc.Empty > 0 || tc.Pri > 1) {
-				krs.relMap[kcu.ReferencedTableName.String] = append(krs.relMap[kcu.ReferencedTableName.String], relTarget{
-					column:           kcu.ReferencedColumnName.String,
+				krs.relMap[kcu.ReferencedTableName.Data] = append(krs.relMap[kcu.ReferencedTableName.Data], relTarget{
+					column:           kcu.ReferencedColumnName.Data,
 					referencedTable:  kcu.TableName,
 					referencedColumn: kcu.ColumnName,
 					relationKeyType:  fKeyTypeMUL,

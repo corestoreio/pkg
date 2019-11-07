@@ -199,7 +199,7 @@ func columnsIsEligibleForUpsert(c *Column) bool {
 	var d, e string         // d = default; e = extra
 	var hasCTd, hasCTe bool // CT = current time
 	if c.Default.Valid {
-		d = strings.ToLower(c.Default.String)
+		d = strings.ToLower(c.Default.Data)
 		hasCTd = strings.Contains(d, "current_timestamp")
 	}
 	if c.Extra != "" {
@@ -248,7 +248,7 @@ func (cs Columns) UniqueColumns(cols ...*Column) Columns {
 }
 
 func colIsNotPK(c *Column) bool {
-	return !c.IsPK() && !c.IsUnique() && c.GenerationExpression.String == ""
+	return !c.IsPK() && !c.IsUnique() && c.GenerationExpression.Data == ""
 }
 
 // NonPrimaryColumns returns all non primary key and non-unique key columns.
@@ -278,7 +278,7 @@ func (cs Columns) Contains(fieldName string) bool {
 }
 
 func colIsNotUniquified(c *Column) bool {
-	return c.Uniquified && c.GenerationExpression.String == ""
+	return c.Uniquified && c.GenerationExpression.Data == ""
 }
 
 // UniquifiedColumns returns all columns which have the flag Uniquified set to
@@ -408,7 +408,7 @@ func (c *Column) GoComment() string {
 	}
 	sqlDefault := ""
 	if c.Default.Valid {
-		sqlDefault = "DEFAULT '" + c.Default.String + "'"
+		sqlDefault = "DEFAULT '" + c.Default.Data + "'"
 	}
 	return fmt.Sprintf("// %s %s %s %s %s %s %q",
 		c.Field, c.ColumnType, sqlNull, c.Key, sqlDefault, c.Extra, c.Comment,
@@ -428,7 +428,7 @@ func (c *Column) GoString() string {
 		fmt.Fprintf(buf, "Pos: %d, ", c.Pos)
 	}
 	if c.Default.Valid {
-		fmt.Fprintf(buf, "Default: null.MakeString(%q), ", c.Default.String)
+		fmt.Fprintf(buf, "Default: null.MakeString(%q), ", c.Default.Data)
 	}
 	if c.Null != "" {
 		fmt.Fprintf(buf, "Null: %q, ", c.Null)
@@ -470,7 +470,7 @@ func (c *Column) GoString() string {
 		fmt.Fprintf(buf, "Generated: %q, ", c.Generated)
 	}
 	if c.GenerationExpression.Valid {
-		fmt.Fprintf(buf, "GenerationExpression: %q, ", c.GenerationExpression.String)
+		fmt.Fprintf(buf, "GenerationExpression: %q, ", c.GenerationExpression.Data)
 	}
 	_ = buf.WriteByte('}')
 	return buf.String()
@@ -503,7 +503,7 @@ func (c *Column) IsUnsigned() bool {
 
 // IsCurrentTimestamp checks if the Default field is a current timestamp
 func (c *Column) IsCurrentTimestamp() bool {
-	return c.Default.String == columnCurrentTimestamp
+	return c.Default.Data == columnCurrentTimestamp
 }
 
 // IsGenerated returns true if the column is a virtual generated column.
@@ -514,7 +514,7 @@ func (c *Column) IsGenerated() bool {
 // IsSystemVersioned returns true if the column gets used for system versioning.
 // https://mariadb.com/kb/en/library/system-versioned-tables/
 func (c *Column) IsSystemVersioned() bool {
-	return c.GenerationExpression.Valid && (c.GenerationExpression.String == "ROW START" || c.GenerationExpression.String == "ROW END")
+	return c.GenerationExpression.Valid && (c.GenerationExpression.Data == "ROW START" || c.GenerationExpression.Data == "ROW END")
 }
 
 // IsFloat returns true if a column is of one of the types: decimal, double or

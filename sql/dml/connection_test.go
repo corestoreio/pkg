@@ -44,7 +44,7 @@ func TestTransactionReal(t *testing.T) {
 	assert.Exactly(t, lastInsertID, int64(person.ID))
 	assert.Exactly(t, "Barack", person.Name)
 	assert.Exactly(t, true, person.Email.Valid)
-	assert.Exactly(t, "obama@whitehouse.gov", person.Email.String)
+	assert.Exactly(t, "obama@whitehouse.gov", person.Email.Data)
 
 	err = tx.Commit()
 	assert.NoError(t, err)

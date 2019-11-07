@@ -192,7 +192,7 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 	b.Run("ExecContext", func(b *testing.B) { // TODO rewrite this in many different ways.
 		truncate(c.DB)
 		name := "Maria Gopher ExecContext"
-		email := null.String{String: "maria@gopherExecContext.go", Valid: true}
+		email := null.String{Data: "maria@gopherExecContext.go", Valid: true}
 		stmtA := stmt.WithArgs()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {

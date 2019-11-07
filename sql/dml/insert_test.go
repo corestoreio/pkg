@@ -74,7 +74,7 @@ func TestInsert_SetValuesCount(t *testing.T) {
 	t.Run("with record", func(t *testing.T) {
 		person := dmlPerson{Name: "Barack"}
 		person.Email.Valid = true
-		person.Email.String = "obama@whitehouse.gov"
+		person.Email.Data = "obama@whitehouse.gov"
 		compareToSQL2(t,
 			NewInsert("dml_people").AddColumns("name", "email").WithArgs().Record("", &person),
 			errors.NoKind,
@@ -105,7 +105,7 @@ func TestInsertReal(t *testing.T) {
 
 	person := dmlPerson{Name: "Barack"}
 	person.Email.Valid = true
-	person.Email.String = "obama@whitehouse.gov"
+	person.Email.Data = "obama@whitehouse.gov"
 	ins = s.InsertInto("dml_people").AddColumns("name", "email").WithArgs().Record("", &person)
 	lastInsertID, _ = compareExecContext(t, ins, 4, 0)
 
@@ -120,7 +120,7 @@ func validateInsertingBarack(t *testing.T, c *ConnPool, lastInsertID int64) {
 	assert.Exactly(t, lastInsertID, int64(person.ID))
 	assert.Exactly(t, "Barack", person.Name)
 	assert.Exactly(t, true, person.Email.Valid)
-	assert.Exactly(t, "obama@whitehouse.gov", person.Email.String)
+	assert.Exactly(t, "obama@whitehouse.gov", person.Email.Data)
 }
 
 func TestInsertReal_OnDuplicateKey(t *testing.T) {
@@ -149,11 +149,11 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 		_, err = s.SelectFrom("dml_people").Star().Where(Column("id").Int64(inID)).WithArgs().Load(context.TODO(), &p)
 		assert.NoError(t, err)
 		assert.Exactly(t, "Pike", p.Name)
-		assert.Exactly(t, "pikes@peak.co", p.Email.String)
+		assert.Exactly(t, "pikes@peak.co", p.Email.Data)
 	}
 
 	p.Name = "-"
-	p.Email.String = "pikes@peak.com"
+	p.Email.Data = "pikes@peak.com"
 	res, err = s.InsertInto("dml_people").
 		AddColumns("id", "name", "email").
 		AddOnDuplicateKey(Column("name").Str("Pik3"), Column("email").Values()).
@@ -173,7 +173,7 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 		_, err = s.SelectFrom("dml_people").Star().Where(Column("id").Int64(inID)).WithArgs().Load(context.TODO(), &p)
 		assert.NoError(t, err)
 		assert.Exactly(t, "Pik3", p.Name)
-		assert.Exactly(t, "pikes@peak.com", p.Email.String)
+		assert.Exactly(t, "pikes@peak.com", p.Email.Data)
 	}
 }
 

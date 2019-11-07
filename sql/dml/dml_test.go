@@ -231,7 +231,7 @@ func (p *nullTypedRecord) MapColumns(cm *ColumnMap) error {
 func newNullTypedRecordWithData() *nullTypedRecord {
 	return &nullTypedRecord{
 		ID:         2,
-		StringVal:  null.String{String: "wow", Valid: true},
+		StringVal:  null.String{Data: "wow", Valid: true},
 		Int64Val:   null.Int64{Int64: 42, Valid: true},
 		Float64Val: null.Float64{Float64: 1.618, Valid: true},
 		TimeVal:    null.MakeTime(time.Date(2009, 1, 3, 18, 15, 5, 0, time.UTC)),

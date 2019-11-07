@@ -140,7 +140,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Exactly(t, "Benjamin", person.Name)
-	assert.Exactly(t, "6-revoked", person.Key.String)
+	assert.Exactly(t, "6-revoked", person.Key.Data)
 }
 
 func TestUpdateReal(t *testing.T) {
@@ -170,7 +170,7 @@ func TestUpdateReal(t *testing.T) {
 	assert.Exactly(t, id, int64(person.ID))
 	assert.Exactly(t, "Barack", person.Name)
 	assert.Exactly(t, true, person.Email.Valid)
-	assert.Exactly(t, "barack@whitehouse.gov", person.Email.String)
+	assert.Exactly(t, "barack@whitehouse.gov", person.Email.Data)
 }
 
 func TestUpdate_Prepare(t *testing.T) {
