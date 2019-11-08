@@ -166,7 +166,7 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 
 		dmlgen.WithCustomCode("pseudo.MustNewService.Option", `
 		pseudo.WithTagFakeFunc("dmltestgenerated.CustomerAddressEntity.ParentID", func(maxLen int) (interface{}, error) {
-			return nil, nil 
+			return nil, nil
 		}),
 		pseudo.WithTagFakeFunc("col_date1", func(maxLen int) (interface{}, error) {
 			if ps.Intn(1000)%3 == 0 {

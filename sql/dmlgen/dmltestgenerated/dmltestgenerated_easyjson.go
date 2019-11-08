@@ -84,12 +84,8 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(out 
 	_ = first
 	if len(in.Data) != 0 {
 		const prefix string = ",\"data\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		{
 			out.RawByte('[')
 			for v2, v3 := range in.Data {
@@ -176,12 +172,8 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(out
 	_ = first
 	if true {
 		const prefix string = ",\"email\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		out.Raw((in.Email).MarshalJSON())
 	}
 	if in.Firstname != "" {
@@ -306,12 +298,8 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(out
 	_ = first
 	if len(in.Data) != 0 {
 		const prefix string = ",\"data\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		{
 			out.RawByte('[')
 			for v5, v6 := range in.Data {
@@ -402,12 +390,8 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(out
 	_ = first
 	if in.CeEntityID != 0 {
 		const prefix string = ",\"ceEntityID\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		out.Uint32(uint32(in.CeEntityID))
 	}
 	if in.CaeEntityID != 0 {
@@ -552,12 +536,8 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated4(out
 	_ = first
 	if len(in.Data) != 0 {
 		const prefix string = ",\"data\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		{
 			out.RawByte('[')
 			for v8, v9 := range in.Data {
@@ -642,12 +622,8 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated5(out
 	_ = first
 	if in.Status != "" {
 		const prefix string = ",\"status\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		out.String(string(in.Status))
 	}
 	if in.State != "" {
@@ -772,12 +748,8 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated6(out
 	_ = first
 	if len(in.Data) != 0 {
 		const prefix string = ",\"data\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		{
 			out.RawByte('[')
 			for v11, v12 := range in.Data {
@@ -996,12 +968,8 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated7(out
 	_ = first
 	if in.ID != 0 {
 		const prefix string = ",\"id\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		out.Int32(int32(in.ID))
 	}
 	if true {
@@ -1575,12 +1543,8 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated8(out
 	_ = first
 	if in.EntityID != 0 {
 		const prefix string = ",\"entityID\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		out.Uint32(uint32(in.EntityID))
 	}
 	if true {
@@ -1945,12 +1909,8 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(out
 	_ = first
 	if len(in.Data) != 0 {
 		const prefix string = ",\"data\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		{
 			out.RawByte('[')
 			for v20, v21 := range in.Data {
@@ -2111,12 +2071,8 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(ou
 	_ = first
 	if in.EntityID != 0 {
 		const prefix string = ",\"entityID\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		out.Uint32(uint32(in.EntityID))
 	}
 	if true {
@@ -2451,12 +2407,8 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated11(ou
 	_ = first
 	if len(in.Data) != 0 {
 		const prefix string = ",\"data\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		{
 			out.RawByte('[')
 			for v23, v24 := range in.Data {
@@ -2564,12 +2516,8 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated12(ou
 	_ = first
 	if len(in.Data) != 0 {
 		const prefix string = ",\"data\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		{
 			out.RawByte('[')
 			for v26, v27 := range in.Data {
@@ -2670,12 +2618,8 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated13(ou
 	_ = first
 	if in.ConfigID != 0 {
 		const prefix string = ",\"config_id\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		out.Uint32(uint32(in.ConfigID))
 	}
 	if in.Scope != "" {

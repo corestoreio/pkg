@@ -245,46 +245,46 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 						}
 
 						// case ONE-TO-MANY
-						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
-						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
-						hasTable := g.Tables[kcuce.ReferencedTableName.String] != nil
+						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
+						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
+						hasTable := g.Tables[kcuce.ReferencedTableName.Data] != nil
 						if t.debug {
 							println("A1: isOneToMany", isOneToMany, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
 								t.TableName, "\t",
-								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 						}
 						if isOneToMany && hasTable && isRelationAllowed {
-							mainGen.Pln(fieldMapFn(collectionName(kcuce.ReferencedTableName.String)), " *", collectionName(kcuce.ReferencedTableName.String),
-								t.customStructTagFields[kcuce.ReferencedTableName.String],
-								"// 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+							mainGen.Pln(fieldMapFn(collectionName(kcuce.ReferencedTableName.Data)), " *", collectionName(kcuce.ReferencedTableName.Data),
+								t.customStructTagFields[kcuce.ReferencedTableName.Data],
+								"// 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 						}
 
 						// case ONE-TO-ONE
-						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
 						if t.debug {
 							println("B1: IsOneToOne", isOneToOne, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
 								t.TableName, "\t",
-								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 						}
 						if isOneToOne && hasTable && isRelationAllowed {
-							mainGen.Pln(fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.String)), " *", strs.ToGoCamelCase(kcuce.ReferencedTableName.String),
-								t.customStructTagFields[kcuce.ReferencedTableName.String],
-								"// 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+							mainGen.Pln(fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.Data)), " *", strs.ToGoCamelCase(kcuce.ReferencedTableName.Data),
+								t.customStructTagFields[kcuce.ReferencedTableName.Data],
+								"// 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 						}
 
 						// case MANY-TO-MANY
-						targetTbl, targetColumn := g.krs.ManyToManyTarget(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						targetTbl, targetColumn := g.krs.ManyToManyTarget(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
 						if t.debug {
 							println("C1: ManyToManyTarget", true, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
 								"targetTbl>", targetTbl, "<\t", "targetColumn>", targetColumn, "<\t",
 								t.TableName, "\t",
-								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 						}
 						// hasTable shall not be added because usually the link table does not get loaded.
 						if isRelationAllowed && targetTbl != "" && targetColumn != "" {
 							mainGen.Pln(fieldMapFn(collectionName(targetTbl)), " *", collectionName(targetTbl),
 								t.customStructTagFields[targetTbl],
-								"// M:N", kcuce.TableName+"."+kcuce.ColumnName, "via", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String,
+								"// M:N", kcuce.TableName+"."+kcuce.ColumnName, "via", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data,
 								"=>", targetTbl+"."+targetColumn,
 							)
 						}
@@ -298,46 +298,46 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 						}
 
 						// case ONE-TO-MANY
-						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
-						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
-						hasTable := g.Tables[kcuce.ReferencedTableName.String] != nil
+						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
+						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
+						hasTable := g.Tables[kcuce.ReferencedTableName.Data] != nil
 						if t.debug {
 							println("A2: isOneToMany", isOneToMany, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
 								t.TableName, "\t",
-								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 						}
 						if isOneToMany && hasTable && isRelationAllowed {
-							mainGen.Pln(fieldMapFn(collectionName(kcuce.ReferencedTableName.String)), " *", collectionName(kcuce.ReferencedTableName.String),
-								t.customStructTagFields[kcuce.ReferencedTableName.String],
-								"// Reversed 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+							mainGen.Pln(fieldMapFn(collectionName(kcuce.ReferencedTableName.Data)), " *", collectionName(kcuce.ReferencedTableName.Data),
+								t.customStructTagFields[kcuce.ReferencedTableName.Data],
+								"// Reversed 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 						}
 
 						// case ONE-TO-ONE
-						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
 						if t.debug {
 							println("B2: IsOneToOne", isOneToOne, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
 								t.TableName, "\t",
-								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 						}
 						if isOneToOne && hasTable && isRelationAllowed {
-							mainGen.Pln(fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.String)), " *", strs.ToGoCamelCase(kcuce.ReferencedTableName.String),
-								t.customStructTagFields[kcuce.ReferencedTableName.String],
-								"// Reversed 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+							mainGen.Pln(fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.Data)), " *", strs.ToGoCamelCase(kcuce.ReferencedTableName.Data),
+								t.customStructTagFields[kcuce.ReferencedTableName.Data],
+								"// Reversed 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 						}
 
 						// case MANY-TO-MANY
-						targetTbl, targetColumn := g.krs.ManyToManyTarget(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						targetTbl, targetColumn := g.krs.ManyToManyTarget(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
 						if t.debug {
 							println("C2: ManyToManyTarget", true, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
 								"targetTbl>", targetTbl, "<\t", "targetColumn>", targetColumn, "<\t",
 								t.TableName, "\t",
-								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 						}
 						// hasTable shall not be added because usually the link table does not get loaded.
 						if isRelationAllowed && targetTbl != "" && targetColumn != "" {
 							mainGen.Pln(fieldMapFn(collectionName(targetTbl)), " *", collectionName(targetTbl),
 								t.customStructTagFields[targetTbl],
-								"// Reversed M:N", kcuce.TableName+"."+kcuce.ColumnName, "via", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String,
+								"// Reversed M:N", kcuce.TableName+"."+kcuce.ColumnName, "via", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data,
 								"=>", targetTbl+"."+targetColumn,
 							)
 						}

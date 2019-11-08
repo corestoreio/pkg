@@ -436,7 +436,11 @@ func (g *Generator) toGoPrimitiveFromNull(c *ddl.Column) string {
 	t := g.mySQLToGoType(c, true)
 	field := strs.ToGoCamelCase(c.Field)
 	if strings.HasPrefix(t, "null.") && t != "null.Decimal" {
-		t = field + "." + t[5:] // 5 == len("null.")
+		f := t[5:] // 5 == len("null.")
+		if t == "null.String" {
+			f = "Data" // null.String type has field name `Data` instead of `String`
+		}
+		t = field + "." + f
 	} else {
 		t = field
 	}

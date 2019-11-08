@@ -880,22 +880,22 @@ func (g *Generator) generateProto(w io.Writer) error {
 						}
 
 						// case ONE-TO-MANY
-						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
-						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
-						hasTable := g.Tables[kcuce.ReferencedTableName.String] != nil
+						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
+						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
+						hasTable := g.Tables[kcuce.ReferencedTableName.Data] != nil
 						if isOneToMany && hasTable && isRelationAllowed {
-							proto.Pln(collectionName(kcuce.ReferencedTableName.String), fieldMapFn(collectionName(kcuce.ReferencedTableName.String)),
+							proto.Pln(collectionName(kcuce.ReferencedTableName.Data), fieldMapFn(collectionName(kcuce.ReferencedTableName.Data)),
 								"=", lastColumnPos, ";",
-								"// 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+								"// 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 							lastColumnPos++
 						}
 
 						// case ONE-TO-ONE
-						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
 						if isOneToOne && hasTable && isRelationAllowed {
-							proto.Pln(strs.ToGoCamelCase(kcuce.ReferencedTableName.String), fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.String)),
+							proto.Pln(strs.ToGoCamelCase(kcuce.ReferencedTableName.Data), fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.Data)),
 								"=", lastColumnPos, ";",
-								"// 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+								"// 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 							lastColumnPos++
 						}
 					}
@@ -908,22 +908,22 @@ func (g *Generator) generateProto(w io.Writer) error {
 						}
 
 						// case ONE-TO-MANY
-						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
-						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
-						hasTable := g.Tables[kcuce.ReferencedTableName.String] != nil
+						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
+						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
+						hasTable := g.Tables[kcuce.ReferencedTableName.Data] != nil
 						if isOneToMany && hasTable && isRelationAllowed {
-							proto.Pln(collectionName(kcuce.ReferencedTableName.String), fieldMapFn(collectionName(kcuce.ReferencedTableName.String)),
+							proto.Pln(collectionName(kcuce.ReferencedTableName.Data), fieldMapFn(collectionName(kcuce.ReferencedTableName.Data)),
 								"=", lastColumnPos, ";",
-								"// Reversed 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+								"// Reversed 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 							lastColumnPos++
 						}
 
 						// case ONE-TO-ONE
-						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.String, kcuce.ReferencedColumnName.String)
+						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
 						if isOneToOne && hasTable && isRelationAllowed {
-							proto.Pln(strs.ToGoCamelCase(kcuce.ReferencedTableName.String), fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.String)),
+							proto.Pln(strs.ToGoCamelCase(kcuce.ReferencedTableName.Data), fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.Data)),
 								"=", lastColumnPos, ";",
-								"// Reversed 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.String+"."+kcuce.ReferencedColumnName.String)
+								"// Reversed 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 							lastColumnPos++
 						}
 					}

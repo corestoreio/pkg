@@ -1937,9 +1937,9 @@ func (cc *DmlgenTypesCollection) UniqueColVarchar100s(ret ...string) []string {
 	}
 	dupCheck := make(map[string]bool, len(cc.Data))
 	for _, e := range cc.Data {
-		if !dupCheck[e.ColVarchar100.String] {
-			ret = append(ret, e.ColVarchar100.String)
-			dupCheck[e.ColVarchar100.String] = true
+		if !dupCheck[e.ColVarchar100.Data] {
+			ret = append(ret, e.ColVarchar100.Data)
+			dupCheck[e.ColVarchar100.Data] = true
 		}
 	}
 	return ret
