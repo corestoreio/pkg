@@ -2,7 +2,7 @@
 
 // TODO easyjson does not yet respect build tags to be included when parsing
 //  files to generate the code. yet there is a PR which refactores easyjson
-//  parser to go/types.
+//  parser to go/types. git@github.com:frioux/easyjson.git
 
 package null
 
@@ -11,9 +11,9 @@ import (
 	"github.com/mailru/easyjson/jwriter"
 )
 
-// TODO use the athlete struct and run a benchmark comparison between easyjson, stdlib and json-iterator
-// TODO add all other types
-// TODO fuzzy testing gofuzz
+// 1. TODO add all other types
+// 2. TODO use the athlete struct and run a benchmark comparison between easyjson, stdlib and json-iterator
+// 3. TODO fuzzy testing gofuzz
 
 func (a String) MarshalEasyJSON(w *jwriter.Writer) {
 	if !a.Valid {

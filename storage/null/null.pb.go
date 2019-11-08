@@ -20,22 +20,22 @@ import (
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-func (m *Decimal) Reset()      { *m = Decimal{} }
+func (d *Decimal) Reset()      { *d = Decimal{} }
 func (*Decimal) ProtoMessage() {}
 func (*Decimal) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bf5db73f817afc81, []int{0}
 }
 
-func (m *Decimal) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (d *Decimal) XXX_Unmarshal(b []byte) error {
+	return d.Unmarshal(b)
 }
 
-func (m *Decimal) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (d *Decimal) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_Decimal.Marshal(b, m, deterministic)
+		return xxx_messageInfo_Decimal.Marshal(b, d, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := d.MarshalToSizedBuffer(b)
 		if err != nil {
 			return nil, err
 		}
@@ -43,16 +43,16 @@ func (m *Decimal) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	}
 }
 
-func (m *Decimal) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Decimal.Merge(m, src)
+func (d *Decimal) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Decimal.Merge(d, src)
 }
 
-func (m *Decimal) XXX_Size() int {
-	return m.Size()
+func (d *Decimal) XXX_Size() int {
+	return d.Size()
 }
 
-func (m *Decimal) XXX_DiscardUnknown() {
-	xxx_messageInfo_Decimal.DiscardUnknown(m)
+func (d *Decimal) XXX_DiscardUnknown() {
+	xxx_messageInfo_Decimal.DiscardUnknown(d)
 }
 
 var xxx_messageInfo_Decimal proto.InternalMessageInfo
@@ -390,22 +390,22 @@ func (m *Uint16) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Uint16 proto.InternalMessageInfo
 
-func (m *Uint8) Reset()      { *m = Uint8{} }
+func (a *Uint8) Reset()      { *a = Uint8{} }
 func (*Uint8) ProtoMessage() {}
 func (*Uint8) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bf5db73f817afc81, []int{10}
 }
 
-func (m *Uint8) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (a *Uint8) XXX_Unmarshal(b []byte) error {
+	return a.Unmarshal(b)
 }
 
-func (m *Uint8) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (a *Uint8) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_Uint8.Marshal(b, m, deterministic)
+		return xxx_messageInfo_Uint8.Marshal(b, a, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := a.MarshalToSizedBuffer(b)
 		if err != nil {
 			return nil, err
 		}
@@ -413,36 +413,36 @@ func (m *Uint8) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	}
 }
 
-func (m *Uint8) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Uint8.Merge(m, src)
+func (a *Uint8) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Uint8.Merge(a, src)
 }
 
-func (m *Uint8) XXX_Size() int {
-	return m.Size()
+func (a *Uint8) XXX_Size() int {
+	return a.Size()
 }
 
-func (m *Uint8) XXX_DiscardUnknown() {
-	xxx_messageInfo_Uint8.DiscardUnknown(m)
+func (a *Uint8) XXX_DiscardUnknown() {
+	xxx_messageInfo_Uint8.DiscardUnknown(a)
 }
 
 var xxx_messageInfo_Uint8 proto.InternalMessageInfo
 
-func (m *String) Reset()      { *m = String{} }
+func (a *String) Reset()      { *a = String{} }
 func (*String) ProtoMessage() {}
 func (*String) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bf5db73f817afc81, []int{11}
 }
 
-func (m *String) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (a *String) XXX_Unmarshal(b []byte) error {
+	return a.Unmarshal(b)
 }
 
-func (m *String) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (a *String) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_String.Marshal(b, m, deterministic)
+		return xxx_messageInfo_String.Marshal(b, a, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := a.MarshalToSizedBuffer(b)
 		if err != nil {
 			return nil, err
 		}
@@ -450,36 +450,36 @@ func (m *String) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	}
 }
 
-func (m *String) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_String.Merge(m, src)
+func (a *String) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_String.Merge(a, src)
 }
 
-func (m *String) XXX_Size() int {
-	return m.Size()
+func (a *String) XXX_Size() int {
+	return a.Size()
 }
 
-func (m *String) XXX_DiscardUnknown() {
-	xxx_messageInfo_String.DiscardUnknown(m)
+func (a *String) XXX_DiscardUnknown() {
+	xxx_messageInfo_String.DiscardUnknown(a)
 }
 
 var xxx_messageInfo_String proto.InternalMessageInfo
 
-func (m *Time) Reset()      { *m = Time{} }
+func (a *Time) Reset()      { *a = Time{} }
 func (*Time) ProtoMessage() {}
 func (*Time) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bf5db73f817afc81, []int{12}
 }
 
-func (m *Time) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (a *Time) XXX_Unmarshal(b []byte) error {
+	return a.Unmarshal(b)
 }
 
-func (m *Time) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (a *Time) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_Time.Marshal(b, m, deterministic)
+		return xxx_messageInfo_Time.Marshal(b, a, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := a.MarshalToSizedBuffer(b)
 		if err != nil {
 			return nil, err
 		}
@@ -487,16 +487,16 @@ func (m *Time) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	}
 }
 
-func (m *Time) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Time.Merge(m, src)
+func (a *Time) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Time.Merge(a, src)
 }
 
-func (m *Time) XXX_Size() int {
-	return m.Size()
+func (a *Time) XXX_Size() int {
+	return a.Size()
 }
 
-func (m *Time) XXX_DiscardUnknown() {
-	xxx_messageInfo_Time.DiscardUnknown(m)
+func (a *Time) XXX_DiscardUnknown() {
+	xxx_messageInfo_Time.DiscardUnknown(a)
 }
 
 var xxx_messageInfo_Time proto.InternalMessageInfo
@@ -555,29 +555,29 @@ var fileDescriptor_bf5db73f817afc81 = []byte{
 	0xf6, 0xf1, 0x1f, 0x03, 0x00, 0x00, 0xff, 0xff, 0x18, 0xc5, 0x3b, 0x54, 0x32, 0x04, 0x00, 0x00,
 }
 
-func (m *Decimal) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
+func (d *Decimal) Marshal() (dAtA []byte, err error) {
+	size := d.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := d.MarshalToSizedBuffer(dAtA[:size])
 	if err != nil {
 		return nil, err
 	}
 	return dAtA[:n], nil
 }
 
-func (m *Decimal) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
+func (d *Decimal) MarshalTo(dAtA []byte) (int, error) {
+	size := d.Size()
+	return d.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Decimal) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (d *Decimal) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if m.Quote {
+	if d.Quote {
 		i--
-		if m.Quote {
+		if d.Quote {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
@@ -585,9 +585,9 @@ func (m *Decimal) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x30
 	}
-	if m.Valid {
+	if d.Valid {
 		i--
-		if m.Valid {
+		if d.Valid {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
@@ -595,9 +595,9 @@ func (m *Decimal) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x28
 	}
-	if m.Negative {
+	if d.Negative {
 		i--
-		if m.Negative {
+		if d.Negative {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
@@ -605,20 +605,20 @@ func (m *Decimal) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x20
 	}
-	if m.Scale != 0 {
-		i = encodeVarintNull(dAtA, i, uint64(m.Scale))
+	if d.Scale != 0 {
+		i = encodeVarintNull(dAtA, i, uint64(d.Scale))
 		i--
 		dAtA[i] = 0x18
 	}
-	if m.Precision != 0 {
-		i = encodeVarintNull(dAtA, i, uint64(m.Precision))
+	if d.Precision != 0 {
+		i = encodeVarintNull(dAtA, i, uint64(d.Precision))
 		i--
 		dAtA[i] = 0x10
 	}
-	if len(m.PrecisionStr) > 0 {
-		i -= len(m.PrecisionStr)
-		copy(dAtA[i:], m.PrecisionStr)
-		i = encodeVarintNull(dAtA, i, uint64(len(m.PrecisionStr)))
+	if len(d.PrecisionStr) > 0 {
+		i -= len(d.PrecisionStr)
+		copy(dAtA[i:], d.PrecisionStr)
+		i = encodeVarintNull(dAtA, i, uint64(len(d.PrecisionStr)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -973,29 +973,29 @@ func (m *Uint16) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Uint8) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
+func (a *Uint8) Marshal() (dAtA []byte, err error) {
+	size := a.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := a.MarshalToSizedBuffer(dAtA[:size])
 	if err != nil {
 		return nil, err
 	}
 	return dAtA[:n], nil
 }
 
-func (m *Uint8) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
+func (a *Uint8) MarshalTo(dAtA []byte) (int, error) {
+	size := a.Size()
+	return a.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Uint8) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (a *Uint8) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if m.Valid {
+	if a.Valid {
 		i--
-		if m.Valid {
+		if a.Valid {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
@@ -1003,37 +1003,37 @@ func (m *Uint8) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x10
 	}
-	if m.Uint8 != 0 {
-		i = encodeVarintNull(dAtA, i, uint64(m.Uint8))
+	if a.Uint8 != 0 {
+		i = encodeVarintNull(dAtA, i, uint64(a.Uint8))
 		i--
 		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *String) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
+func (a *String) Marshal() (dAtA []byte, err error) {
+	size := a.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := a.MarshalToSizedBuffer(dAtA[:size])
 	if err != nil {
 		return nil, err
 	}
 	return dAtA[:n], nil
 }
 
-func (m *String) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
+func (a *String) MarshalTo(dAtA []byte) (int, error) {
+	size := a.Size()
+	return a.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *String) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (a *String) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if m.Valid {
+	if a.Valid {
 		i--
-		if m.Valid {
+		if a.Valid {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
@@ -1041,39 +1041,39 @@ func (m *String) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x10
 	}
-	if len(m.Data) > 0 {
-		i -= len(m.Data)
-		copy(dAtA[i:], m.Data)
-		i = encodeVarintNull(dAtA, i, uint64(len(m.Data)))
+	if len(a.Data) > 0 {
+		i -= len(a.Data)
+		copy(dAtA[i:], a.Data)
+		i = encodeVarintNull(dAtA, i, uint64(len(a.Data)))
 		i--
 		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *Time) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
+func (a *Time) Marshal() (dAtA []byte, err error) {
+	size := a.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := a.MarshalToSizedBuffer(dAtA[:size])
 	if err != nil {
 		return nil, err
 	}
 	return dAtA[:n], nil
 }
 
-func (m *Time) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
+func (a *Time) MarshalTo(dAtA []byte) (int, error) {
+	size := a.Size()
+	return a.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Time) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (a *Time) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if m.Valid {
+	if a.Valid {
 		i--
-		if m.Valid {
+		if a.Valid {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
@@ -1081,7 +1081,7 @@ func (m *Time) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x10
 	}
-	n1, err1 := github_com_gogo_protobuf_types.StdTimeMarshalTo(m.Time, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdTime(m.Time):])
+	n1, err1 := github_com_gogo_protobuf_types.StdTimeMarshalTo(a.Time, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdTime(a.Time):])
 	if err1 != nil {
 		return 0, err1
 	}
@@ -1104,26 +1104,26 @@ func encodeVarintNull(dAtA []byte, offset int, v uint64) int {
 	return base
 }
 
-func (m Decimal) Size() (n int) {
+func (d Decimal) Size() (n int) {
 	var l int
 	_ = l
-	l = len(m.PrecisionStr)
+	l = len(d.PrecisionStr)
 	if l > 0 {
 		n += 1 + l + sovNull(uint64(l))
 	}
-	if m.Precision != 0 {
-		n += 1 + sovNull(uint64(m.Precision))
+	if d.Precision != 0 {
+		n += 1 + sovNull(uint64(d.Precision))
 	}
-	if m.Scale != 0 {
-		n += 1 + sovNull(uint64(m.Scale))
+	if d.Scale != 0 {
+		n += 1 + sovNull(uint64(d.Scale))
 	}
-	if m.Negative {
+	if d.Negative {
 		n += 2
 	}
-	if m.Valid {
+	if d.Valid {
 		n += 2
 	}
-	if m.Quote {
+	if d.Quote {
 		n += 2
 	}
 	return n
@@ -1237,37 +1237,37 @@ func (m Uint16) Size() (n int) {
 	return n
 }
 
-func (m Uint8) Size() (n int) {
+func (a Uint8) Size() (n int) {
 	var l int
 	_ = l
-	if m.Uint8 != 0 {
-		n += 1 + sovNull(uint64(m.Uint8))
+	if a.Uint8 != 0 {
+		n += 1 + sovNull(uint64(a.Uint8))
 	}
-	if m.Valid {
+	if a.Valid {
 		n += 2
 	}
 	return n
 }
 
-func (m String) Size() (n int) {
+func (a String) Size() (n int) {
 	var l int
 	_ = l
-	l = len(m.Data)
+	l = len(a.Data)
 	if l > 0 {
 		n += 1 + l + sovNull(uint64(l))
 	}
-	if m.Valid {
+	if a.Valid {
 		n += 2
 	}
 	return n
 }
 
-func (m Time) Size() (n int) {
+func (a Time) Size() (n int) {
 	var l int
 	_ = l
-	l = github_com_gogo_protobuf_types.SizeOfStdTime(m.Time)
+	l = github_com_gogo_protobuf_types.SizeOfStdTime(a.Time)
 	n += 1 + l + sovNull(uint64(l))
-	if m.Valid {
+	if a.Valid {
 		n += 2
 	}
 	return n
@@ -1281,7 +1281,7 @@ func sozNull(x uint64) (n int) {
 	return sovNull(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
 
-func (m *Decimal) Unmarshal(dAtA []byte) error {
+func (d *Decimal) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1340,13 +1340,13 @@ func (m *Decimal) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.PrecisionStr = string(dAtA[iNdEx:postIndex])
+			d.PrecisionStr = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Precision", wireType)
 			}
-			m.Precision = 0
+			d.Precision = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowNull
@@ -1356,7 +1356,7 @@ func (m *Decimal) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Precision |= uint64(b&0x7F) << shift
+				d.Precision |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -1365,7 +1365,7 @@ func (m *Decimal) Unmarshal(dAtA []byte) error {
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Scale", wireType)
 			}
-			m.Scale = 0
+			d.Scale = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowNull
@@ -1375,7 +1375,7 @@ func (m *Decimal) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Scale |= int32(b&0x7F) << shift
+				d.Scale |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -1399,7 +1399,7 @@ func (m *Decimal) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-			m.Negative = bool(v != 0)
+			d.Negative = bool(v != 0)
 		case 5:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Valid", wireType)
@@ -1419,7 +1419,7 @@ func (m *Decimal) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-			m.Valid = bool(v != 0)
+			d.Valid = bool(v != 0)
 		case 6:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Quote", wireType)
@@ -1439,7 +1439,7 @@ func (m *Decimal) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-			m.Quote = bool(v != 0)
+			d.Quote = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipNull(dAtA[iNdEx:])
@@ -2295,7 +2295,7 @@ func (m *Uint16) Unmarshal(dAtA []byte) error {
 	return nil
 }
 
-func (m *Uint8) Unmarshal(dAtA []byte) error {
+func (a *Uint8) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2328,7 +2328,7 @@ func (m *Uint8) Unmarshal(dAtA []byte) error {
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Uint8", wireType)
 			}
-			m.Uint8 = 0
+			a.Uint8 = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowNull
@@ -2338,7 +2338,7 @@ func (m *Uint8) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Uint8 |= uint8(b&0x7F) << shift
+				a.Uint8 |= uint8(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -2362,7 +2362,7 @@ func (m *Uint8) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-			m.Valid = bool(v != 0)
+			a.Valid = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipNull(dAtA[iNdEx:])
@@ -2388,7 +2388,7 @@ func (m *Uint8) Unmarshal(dAtA []byte) error {
 	return nil
 }
 
-func (m *String) Unmarshal(dAtA []byte) error {
+func (a *String) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2447,7 +2447,7 @@ func (m *String) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Data = string(dAtA[iNdEx:postIndex])
+			a.Data = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
@@ -2468,7 +2468,7 @@ func (m *String) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-			m.Valid = bool(v != 0)
+			a.Valid = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipNull(dAtA[iNdEx:])
@@ -2494,7 +2494,7 @@ func (m *String) Unmarshal(dAtA []byte) error {
 	return nil
 }
 
-func (m *Time) Unmarshal(dAtA []byte) error {
+func (a *Time) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2552,7 +2552,7 @@ func (m *Time) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := github_com_gogo_protobuf_types.StdTimeUnmarshal(&m.Time, dAtA[iNdEx:postIndex]); err != nil {
+			if err := github_com_gogo_protobuf_types.StdTimeUnmarshal(&a.Time, dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2575,7 +2575,7 @@ func (m *Time) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-			m.Valid = bool(v != 0)
+			a.Valid = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipNull(dAtA[iNdEx:])

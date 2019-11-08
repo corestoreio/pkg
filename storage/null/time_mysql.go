@@ -41,29 +41,29 @@ type Time struct {
 // Scan implements the Scanner interface. The value type must be time.Time or
 // string / []byte (formatted time-string), otherwise Scan fails. It supports
 // more input data than database/sql.NullTime.Scan
-func (nt *Time) Scan(value interface{}) (err error) {
-	nt.Time, nt.Valid = time.Time{}, false
+func (a *Time) Scan(value interface{}) (err error) {
+	a.Time, a.Valid = time.Time{}, false
 	if value == nil {
 		return
 	}
 
 	switch v := value.(type) {
 	case time.Time:
-		nt.Time = v
+		a.Time = v
 	case []byte:
 		if v == nil {
 			return
 		}
-		*nt, err = ParseDateTime(string(v), time.UTC)
+		*a, err = ParseDateTime(string(v), time.UTC)
 	case string:
 		if v == "" {
 			return
 		}
-		*nt, err = ParseDateTime(v, time.UTC)
+		*a, err = ParseDateTime(v, time.UTC)
 	default:
 		err = errors.NotValid.Newf("[dml] Can't convert %T to time.Time. Maybe not yet implemented.", value)
 	}
-	nt.Valid = err == nil
+	a.Valid = err == nil
 	return
 }
 
