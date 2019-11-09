@@ -20,40 +20,105 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestKeyRelationShips(t *testing.T) {
-	krs := &KeyRelationShips{
-		relMap: map[string]relTargets{
-			"store": {
-				// column , referencedTable , referencedColumn , relationKeyType
-				{"group_id", "customer_entity", "group_id", fKeyTypeNone},
-				{"group_id", "store_group", "group_id", fKeyTypePRI},
-				{"website_id", "customer_entity", "website_id", fKeyTypeMUL},
-				{"website_id", "store_group", "website_id", fKeyTypeMUL},
-				{"website_id", "store_website", "website_id", fKeyTypePRI},
+	t.Run("ManyToMany", func(t *testing.T) {
+		krs := KeyRelationShips{
+			relMap: map[string]relTargets{
+				"athlete_team_member": {
+					relTarget{
+						column:           "athlete_id",
+						referencedTable:  "athlete",
+						referencedColumn: "athlete_id",
+						relationKeyType:  fKeyTypePRI,
+					},
+					relTarget{
+						column:           "team_id",
+						referencedTable:  "athlete_team",
+						referencedColumn: "team_id",
+						relationKeyType:  fKeyTypePRI,
+					},
+				},
+				"athlete": {
+					relTarget{
+						column:           "athlete_id",
+						referencedTable:  "athlete_team_member",
+						referencedColumn: "athlete_id",
+						relationKeyType:  fKeyTypeMUL,
+					},
+				},
+				"athlete_team": {
+					relTarget{
+						column:           "team_id",
+						referencedTable:  "athlete_team_member",
+						referencedColumn: "team_id",
+						relationKeyType:  fKeyTypeMUL,
+					},
+				},
 			},
-			"store_group": {
-				// column , referencedTable , referencedColumn , relationKeyType
-				{"website_id", "customer_entity", "website_id", fKeyTypeMUL},
-				{"website_id", "store", "website_id", fKeyTypeMUL},
-				{"website_id", "store_website", "website_id", fKeyTypePRI},
-			},
-		},
-	}
-	assert.True(t, krs.IsOneToOne("store_group", "website_id", "store_website", "website_id"))
-	assert.True(t, krs.IsOneToOne("store", "group_id", "store_group", "group_id"))
-	assert.False(t, krs.IsOneToMany("store", "group_id", "store_group", "group_id"))
-	assert.True(t, krs.IsOneToMany("store_group", "website_id", "store", "website_id"))
-	assert.False(t, krs.IsOneToOne("store_group", "website_id", "store", "website_id"))
+		}
+		t.Run("ok athlete_team_member.team_id => athlete.athlete_id", func(t *testing.T) {
+			// table athlete_team has primary column team_id and links via
+			// athlete_team_member.team_id. Function ManyToManyTarget returns now the
+			// opposite relation ship from athlete_team_member.athlete_id to
+			// athlete.athlete_id. But only if link table athlete_team_member has two
+			// foreign keys.
+			targetTable, targetColumn := krs.ManyToManyTarget("athlete_team_member", "team_id")
+			assert.Exactly(t, "athlete", targetTable, "targetTable.targetColumn: %q.%q", targetTable, targetColumn)
+			assert.Exactly(t, "athlete_id", targetColumn)
+		})
 
-	var buf bytes.Buffer
-	krs.Debug(&buf)
-	assert.Exactly(t, `main: store.group_id => ref: customer_entity.group_id => relKey:none
+		t.Run("ok athlete_team_member.athlete_id => athlete_team.team_id", func(t *testing.T) {
+			targetTable, targetColumn := krs.ManyToManyTarget("athlete_team_member", "athlete_id")
+			assert.Exactly(t, "athlete_team", targetTable)
+			assert.Exactly(t, "team_id", targetColumn)
+		})
+
+		t.Run("fails athlete_team_member.athlete_idx => null.null", func(t *testing.T) {
+			targetTable, targetColumn := krs.ManyToManyTarget("athlete_team_member", "athlete_idx")
+			assert.Empty(t, targetTable)
+			assert.Empty(t, targetColumn)
+		})
+
+		t.Run("fails athlete_team.team_id => null.null", func(t *testing.T) {
+			targetTable, targetColumn := krs.ManyToManyTarget("athlete_team", "team_id")
+			assert.Empty(t, targetTable)
+			assert.Empty(t, targetColumn)
+		})
+	})
+
+	t.Run("OneToX", func(t *testing.T) {
+		krs := &KeyRelationShips{
+			relMap: map[string]relTargets{
+				"store": {
+					// column , referencedTable , referencedColumn , relationKeyType
+					{"group_id", "customer_entity", "group_id", fKeyTypeNone},
+					{"group_id", "store_group", "group_id", fKeyTypePRI},
+					{"website_id", "customer_entity", "website_id", fKeyTypeMUL},
+					{"website_id", "store_group", "website_id", fKeyTypeMUL},
+					{"website_id", "store_website", "website_id", fKeyTypePRI},
+				},
+				"store_group": {
+					// column , referencedTable , referencedColumn , relationKeyType
+					{"website_id", "customer_entity", "website_id", fKeyTypeMUL},
+					{"website_id", "store", "website_id", fKeyTypeMUL},
+					{"website_id", "store_website", "website_id", fKeyTypePRI},
+				},
+			},
+		}
+		assert.True(t, krs.IsOneToOne("store_group", "website_id", "store_website", "website_id"))
+		assert.True(t, krs.IsOneToOne("store", "group_id", "store_group", "group_id"))
+		assert.False(t, krs.IsOneToMany("store", "group_id", "store_group", "group_id"))
+		assert.True(t, krs.IsOneToMany("store_group", "website_id", "store", "website_id"))
+		assert.False(t, krs.IsOneToOne("store_group", "website_id", "store", "website_id"))
+
+		var buf bytes.Buffer
+		krs.Debug(&buf)
+		assert.Exactly(t, `main: store.group_id => ref: customer_entity.group_id => relKey:none
 main: store.group_id => ref: store_group.group_id => relKey:PRI
 main: store.website_id => ref: customer_entity.website_id => relKey:MUL
 main: store.website_id => ref: store_group.website_id => relKey:MUL
@@ -62,6 +127,7 @@ main: store_group.website_id => ref: customer_entity.website_id => relKey:MUL
 main: store_group.website_id => ref: store.website_id => relKey:MUL
 main: store_group.website_id => ref: store_website.website_id => relKey:PRI
 `, buf.String())
+	})
 }
 
 func TestReverseKeyColumnUsage(t *testing.T) {

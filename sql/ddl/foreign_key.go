@@ -358,13 +358,13 @@ func (krs KeyRelationShips) IsOneToMany(referencedTable, referencedColumn, mainT
 
 // ManyToManyTarget figures out if a table has M:N relationships and returns the
 // target table and its column or empty strings if not found.
-func (krs KeyRelationShips) ManyToManyTarget(mainTable, mainColumn, referencedTable, referencedColumn string) (table string, column string) {
-	if krs.relMap[mainTable].hasManyToMany() {
-		targetRefs := krs.relMap[mainTable]
-		if targetRefs[0].column == mainColumn {
+func (krs KeyRelationShips) ManyToManyTarget(linkTable, linkColumn string) (oppositeTable string, oppositeColumn string) {
+	targetRefs := krs.relMap[linkTable]
+	if targetRefs.hasManyToMany() {
+		if targetRefs[0].column == linkColumn {
 			return targetRefs[1].referencedTable, targetRefs[1].referencedColumn
 		}
-		if targetRefs[1].column == mainColumn {
+		if targetRefs[1].column == linkColumn {
 			return targetRefs[0].referencedTable, targetRefs[0].referencedColumn
 		}
 	}
@@ -420,7 +420,7 @@ func GenerateKeyRelationships(ctx context.Context, db dml.Querier, foreignKeys m
 					relationKeyType:  fKeyTypePRI,
 				})
 			}
-			if tc, ok := fieldCount[kcu.TableName]; ok && (tc.Empty > 0 || tc.Pri > 1) {
+			if tc, ok := fieldCount[kcu.TableName]; ok && (tc.Empty > 0 || tc.Pri > 1 || tc.Mul == 2) {
 				krs.relMap[kcu.ReferencedTableName.Data] = append(krs.relMap[kcu.ReferencedTableName.Data], relTarget{
 					column:           kcu.ReferencedColumnName.Data,
 					referencedTable:  kcu.TableName,

@@ -99,16 +99,18 @@ func TestLoadKeyRelationships(t *testing.T) {
 	var buf bytes.Buffer
 	krs.Debug(&buf)
 	t.Log("\n", buf.String())
-	assert.LenBetween(t, buf.String(), 100, 2300)
+	assert.LenBetween(t, buf.String(), 1950, 2380)
 
 	t.Run("ManyToMany", func(t *testing.T) {
-		targetTable, targetColumn := krs.ManyToManyTarget("athlete_team_member", "team_id", "athlete_team", "team_id")
+		targetTable, targetColumn := krs.ManyToManyTarget("athlete_team_member", "team_id")
 		assert.Exactly(t, "athlete", targetTable, "targetTable.targetColumn: %q.%q", targetTable, targetColumn)
 		assert.Exactly(t, "athlete_id", targetColumn)
-		targetTable, targetColumn = krs.ManyToManyTarget("athlete_team_member", "athlete_id", "athlete", "athlete_id")
+
+		targetTable, targetColumn = krs.ManyToManyTarget("athlete_team_member", "athlete_id")
 		assert.Exactly(t, "athlete_team", targetTable)
 		assert.Exactly(t, "team_id", targetColumn)
-		targetTable, targetColumn = krs.ManyToManyTarget("athlete_team_member", "athlete_idx", "athlete", "athlete_idx")
+
+		targetTable, targetColumn = krs.ManyToManyTarget("athlete_team_member", "athlete_idx")
 		assert.Exactly(t, "", targetTable)
 		assert.Exactly(t, "", targetColumn)
 	})
