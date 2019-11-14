@@ -172,7 +172,7 @@ func TestToGoPrimitive(t *testing.T) {
 		{"ColBigint3.Uint64", &ddl.Column{Field: "col_bigint_3", Pos: 4, Default: null.MakeString("NULL"), Null: "YES", DataType: "bigint", Precision: null.MakeInt64(20), Scale: null.MakeInt64(0), ColumnType: "bigint(20) unsigned", Generated: "NEVER"}},
 		{"ColBigint4", &ddl.Column{Field: "col_bigint_4", Pos: 5, Default: null.MakeString("0"), Null: "NO", DataType: "bigint", Precision: null.MakeInt64(20), Scale: null.MakeInt64(0), ColumnType: "bigint(20) unsigned", Generated: "NEVER"}},
 		{"ColBlob", &ddl.Column{Field: "col_blob", Pos: 6, Default: null.MakeString("NULL"), Null: "YES", DataType: "blob", CharMaxLength: null.MakeInt64(65535), ColumnType: "blob", Generated: "NEVER"}},
-		{"ColMediumText.String", &ddl.Column{Field: "col_medium_text", Pos: 6, Default: null.MakeString("NULL"), Null: "YES", DataType: "mediumtext", CharMaxLength: null.MakeInt64(65535), ColumnType: "blob", Generated: "NEVER"}},
+		{"ColMediumText.Data", &ddl.Column{Field: "col_medium_text", Pos: 6, Default: null.MakeString("NULL"), Null: "YES", DataType: "mediumtext", CharMaxLength: null.MakeInt64(65535), ColumnType: "blob", Generated: "NEVER"}},
 		{"ColDate1.Time", &ddl.Column{Field: "col_date_1", Pos: 7, Default: null.MakeString("NULL"), Null: "YES", DataType: "date", ColumnType: "date", Generated: "NEVER"}},
 		{"ColDate2", &ddl.Column{Field: "col_date_2", Pos: 8, Default: null.MakeString("'0000-00-00'"), Null: "NO", DataType: "date", ColumnType: "date", Generated: "NEVER"}},
 		{"ColDatetime1.Time", &ddl.Column{Field: "col_datetime_1", Pos: 9, Default: null.MakeString("NULL"), Null: "YES", DataType: "datetime", ColumnType: "datetime", Generated: "NEVER"}},

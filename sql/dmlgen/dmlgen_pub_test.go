@@ -454,13 +454,17 @@ func TestNewGenerator_MToMForeignKeys(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
 
-	// defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil).Deferred()
-	dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil)
+	defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil).Deferred()
+	// dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil)
 
 	ctx := context.Background()
 	ts, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgeneratedMToM",
 
-		dmlgen.WithTablesFromDB(ctx, db, "athlete_team_member", "athlete_team", "athlete"),
+		dmlgen.WithTablesFromDB(ctx, db,
+			//"athlete_team_member",
+			"athlete_team", "athlete",
+			"customer_entity", "customer_address_entity",
+		),
 
 		dmlgen.WithTableConfigDefault(dmlgen.TableConfig{
 			StructTags:      []string{"max_len"},
@@ -471,24 +475,26 @@ func TestNewGenerator_MToMForeignKeys(t *testing.T) {
 		dmlgen.WithTableConfig("athlete_team", &dmlgen.TableConfig{}),
 		dmlgen.WithTableConfig("athlete", &dmlgen.TableConfig{}),
 
-		// dmlgen.WithTableConfig("customer_entity", &dmlgen.TableConfig{
-		// 	FieldMapFn: func(dbIdentifier string) (fieldName string) {
-		// 		switch dbIdentifier {
-		// 		case "customer_address_entity":
-		// 			return "Address"
-		// 		}
-		// 		return strs.ToGoCamelCase(dbIdentifier)
-		// 	},
-		// }),
+		dmlgen.WithTableConfig("customer_entity", &dmlgen.TableConfig{
+			FieldMapFn: func(dbIdentifier string) (fieldName string) {
+				switch dbIdentifier {
+				case "customer_address_entity":
+					return "Address"
+				}
+				return strs.ToGoCamelCase(dbIdentifier)
+			},
+		}),
 
 		dmlgen.WithForeignKeyRelationships(ctx, db.DB, dmlgen.ForeignKeyOptions{
 			// IncludeRelationShips: []string{"what are the names?"},
 			ExcludeRelationships: []string{
-				"athlete_team_member.athlete_id", "athlete.athlete_id",
-				"athlete_team_member.team_id", "athlete_team.team_id",
-				// "customer_entity.store_id", "store.store_id",
-				// "customer_entity.website_id", "store_website.website_id",
-				// "customer_address_entity.parent_id", "customer_entity.entity_id",
+				//"athlete.athlete_id", "athlete_team_member.athlete_id",
+
+				"athlete_team.team_id", "athlete_team_member.team_id",
+				//"athlete_team.team_id", "athlete.athlete_id",
+				"athlete_team_member.*", "*.*", // do not print relations for the relation table itself.
+
+				"customer_address_entity.parent_id", "customer_entity.entity_id",
 			},
 		},
 		),

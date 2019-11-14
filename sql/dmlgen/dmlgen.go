@@ -408,16 +408,19 @@ func WithForeignKeyRelationships(ctx context.Context, db dml.Querier, o ForeignK
 		if len(o.IncludeRelationShips)%2 == 1 {
 			return errors.Fatal.Newf("[dmlgen] includeRelationShips must be balanced slice. Read the doc.")
 		}
+		if db != nil {
+			g.kcu, err = ddl.LoadKeyColumnUsage(ctx, db, g.sortedTableNames()...)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			g.kcuRev = ddl.ReverseKeyColumnUsage(g.kcu)
 
-		g.kcu, err = ddl.LoadKeyColumnUsage(ctx, db, g.sortedTableNames()...)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		g.kcuRev = ddl.ReverseKeyColumnUsage(g.kcu)
-
-		g.krs, err = ddl.GenerateKeyRelationships(ctx, db, g.kcu)
-		if err != nil {
-			return errors.WithStack(err)
+			g.krs, err = ddl.GenerateKeyRelationships(ctx, db, g.kcu)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+		} else if isDebug() {
+			println("DEBUG[WithForeignKeyRelationships] db dml.Querier is nil. Did not load LoadKeyColumnUsage and GenerateKeyRelationships.")
 		}
 
 		// TODO(CSC) maybe excludeRelationships can contain a wild card to disable
@@ -425,22 +428,65 @@ func WithForeignKeyRelationships(ctx context.Context, db dml.Querier, o ForeignK
 		//  "store_website.website_id", for CustomerEntity would become
 		//  "*.website_id", "store_website.website_id", to disable all tables which
 		//  have a foreign key to store_website.
+		// TODO optimize code.
 
 		g.krsExclude = make(map[string]bool, len(o.ExcludeRelationships)/2)
 		for i := 0; i < len(o.ExcludeRelationships); i += 2 {
+			mainTable := strings.Split(o.ExcludeRelationships[i], ".") // mainTable.mainColumn
+			mainTab := mainTable[0]
+			mainCol := mainTable[1]
+			referencedTable := strings.Split(o.ExcludeRelationships[i+1], ".") // referencedTable.referencedColumn
+			referencedTab := referencedTable[0]
+			referencedCol := referencedTable[1]
+
 			var buf strings.Builder
-			buf.WriteString(o.ExcludeRelationships[i])
+			buf.WriteString(mainTab)
+			if mainCol == "*" {
+				g.krsExclude[buf.String()] = true
+			}
+			buf.WriteByte('.')
+			buf.WriteString(mainCol)
+			if referencedTab == "*" && referencedCol == "*" {
+				g.krsExclude[buf.String()] = true
+			}
+
 			buf.WriteByte(':')
-			buf.WriteString(o.ExcludeRelationships[i+1])
+			buf.WriteString(referencedTab)
+			if referencedCol == "*" {
+				g.krsExclude[buf.String()] = true
+			}
+			buf.WriteByte('.')
+			buf.WriteString(referencedCol)
 			g.krsExclude[buf.String()] = true
 		}
+
 		if len(o.IncludeRelationShips) > 0 {
 			g.krsInclude = make(map[string]bool, len(o.IncludeRelationShips)/2)
 			for i := 0; i < len(o.IncludeRelationShips); i += 2 {
+				mainTable := strings.Split(o.IncludeRelationShips[i], ".") // mainTable.mainColumn
+				mainTab := mainTable[0]
+				mainCol := mainTable[1]
+				referencedTable := strings.Split(o.IncludeRelationShips[i+1], ".") // referencedTable.referencedColumn
+				referencedTab := referencedTable[0]
+				referencedCol := referencedTable[1]
+
 				var buf strings.Builder
-				buf.WriteString(o.IncludeRelationShips[i])
+				buf.WriteString(mainTab)
+				if mainCol == "*" {
+					g.krsInclude[buf.String()] = true
+				}
+				buf.WriteByte('.')
+				buf.WriteString(mainCol)
+				if referencedTab == "*" && referencedCol == "*" {
+					g.krsInclude[buf.String()] = true
+				}
 				buf.WriteByte(':')
-				buf.WriteString(o.IncludeRelationShips[i+1])
+				buf.WriteString(referencedTab)
+				if referencedCol == "*" {
+					g.krsInclude[buf.String()] = true
+				}
+				buf.WriteByte('.')
+				buf.WriteString(referencedCol)
 				g.krsInclude[buf.String()] = true
 			}
 		}
@@ -486,7 +532,7 @@ func WithTable(tableName string, columns ddl.Columns, options ...string) (opt Op
 			t = &Table{
 				TableName: tableName,
 				Columns:   columns,
-				debug:     os.Getenv("DEBUG") != "",
+				debug:     isDebug(),
 			}
 		}
 		t.HasAutoIncrement = checkAutoIncrement(t.HasAutoIncrement)
@@ -530,7 +576,7 @@ func WithTablesFromDB(ctx context.Context, db *dml.ConnPool, tables ...string) (
 				TableName:        tblName,
 				Columns:          tables[tblName],
 				HasAutoIncrement: checkAutoIncrement(tblName),
-				debug:            os.Getenv("DEBUG") != "",
+				debug:            isDebug(),
 			}
 		}
 		return nil
@@ -571,21 +617,6 @@ func WithProtobuf(sc *SerializerConfig) (opt Option) {
 		}
 		return nil
 	}
-	return opt
-}
-
-// WithFlatbuffers enables flatbuffers (FBS) as a serialization method. Argument
-// headerOptions is optional.
-func WithFlatbuffers(sc *SerializerConfig) (opt Option) {
-	panic("TODO implement WithFlatbuffers")
-	// opt.sortOrder = 111
-	// opt.fn = func(g *Generator) error {
-	// 	g.Serializer = "fbs"
-	// 	// if len(headerOptions) == 0 {
-	// 	// g.SerializerHeaderOptions = []string{}
-	// 	// }
-	// 	return nil
-	// }
 	return opt
 }
 
@@ -699,25 +730,55 @@ func NewGenerator(packageImportPath string, opts ...Option) (*Generator, error) 
 }
 
 func (g *Generator) isAllowedRelationship(table1, column1, table2, column2 string) bool {
-	var buf strings.Builder
-	buf.WriteString(table1)
-	buf.WriteByte('.')
-	buf.WriteString(column1)
-	buf.WriteByte(':')
-	buf.WriteString(table2)
-	buf.WriteByte('.')
-	buf.WriteString(column2)
-
-	var allowed bool
-	switch {
-	case g.krsExclude[buf.String()]:
-		allowed = false
-	case g.krsInclude == nil:
-		allowed = true
-	default:
-		allowed = g.krsInclude[buf.String()]
+	// krsExclude
+	{
+		var buf strings.Builder
+		buf.WriteString(table1)
+		if g.krsExclude[buf.String()] { // tableName
+			return false
+		}
+		buf.WriteByte('.')
+		buf.WriteString(column1)
+		if g.krsExclude[buf.String()] { // tableName.columnName
+			return false
+		}
+		buf.WriteByte(':')
+		buf.WriteString(table2)
+		if g.krsExclude[buf.String()] { // tableName.columnName.referencedTableName
+			return false
+		}
+		buf.WriteByte('.')
+		buf.WriteString(column2)
+		if g.krsExclude[buf.String()] { // tableName.columnName.referencedTableName.referencedColumnName
+			return false
+		}
 	}
-	return allowed
+	if g.krsInclude == nil { // must be a nil check, only when not nil, then more restrictions apply.
+		return true
+	}
+
+	// krsInclude block
+	{
+		var buf strings.Builder
+		buf.WriteString(table1)
+		if g.krsInclude[buf.String()] { // tableName
+			return true
+		}
+		buf.WriteByte('.')
+		buf.WriteString(column1)
+		if g.krsInclude[buf.String()] { // tableName.columnName
+			return true
+		}
+
+		buf.WriteByte(':')
+		buf.WriteString(table2)
+		if g.krsInclude[buf.String()] { // tableName.columnName.referencedTableName
+			return true
+		}
+		buf.WriteByte('.')
+		buf.WriteString(column2)
+		return g.krsInclude[buf.String()] // tableName.columnName.referencedTableName.referencedColumnName
+	}
 }
 
 func (g *Generator) hasFeature(tableInclude, tableExclude, feature FeatureToggle) bool {
@@ -901,6 +962,7 @@ func (g *Generator) generateProto(w io.Writer) error {
 					}
 				}
 
+				// TODO reversed M:N might be buggy as this code is not equal to the table.go code.
 				if kcuc, ok := g.kcuRev[t.TableName]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
 					for _, kcuce := range kcuc.Data {
 						if !kcuce.ReferencedTableName.Valid {
@@ -1384,4 +1446,8 @@ func GenerateJSON(fileNameOrDirectory, buildTags string, g *bootstrap.Generator)
 		return errors.Fatal.Newf("[dmlgen] easyJSON: Bootstrap failed: %v", err)
 	}
 	return nil
+}
+
+func isDebug() bool {
+	return os.Getenv("DEBUG") != ""
 }
