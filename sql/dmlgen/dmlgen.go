@@ -490,6 +490,13 @@ func WithForeignKeyRelationships(ctx context.Context, db dml.Querier, o ForeignK
 				g.krsInclude[buf.String()] = true
 			}
 		}
+
+		if isDebug() {
+			g.krs.Debug(os.Stdout)
+			debugMapSB("krsInclude", g.krsInclude)
+			debugMapSB("krsExclude", g.krsExclude)
+		}
+
 		return nil
 	}
 	return opt
@@ -988,6 +995,22 @@ func (g *Generator) generateProto(w io.Writer) error {
 								"// Reversed 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 							lastColumnPos++
 						}
+
+						// case MANY-TO-MANY
+						targetTbl, targetColumn := g.krs.ManyToManyTarget(kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
+						if targetTbl != "" && targetColumn != "" {
+							isRelationAllowed = g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, targetTbl, targetColumn)
+						}
+
+						// case MANY-TO-MANY
+						if isRelationAllowed && targetTbl != "" && targetColumn != "" {
+							proto.Pln(strs.ToGoCamelCase(collectionName(targetTbl)), fieldMapFn(strs.ToGoCamelCase(collectionName(targetTbl))),
+								"=", lastColumnPos, ";",
+								"// Reversed M:N", kcuce.TableName+"."+kcuce.ColumnName, "via", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data,
+								"=>", targetTbl+"."+targetColumn)
+							lastColumnPos++
+						}
+
 					}
 				}
 			}
@@ -1450,4 +1473,15 @@ func GenerateJSON(fileNameOrDirectory, buildTags string, g *bootstrap.Generator)
 
 func isDebug() bool {
 	return os.Getenv("DEBUG") != ""
+}
+
+func debugMapSB(name string, m map[string]bool) {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		fmt.Printf("%s: %q\n", name, k)
+	}
 }
