@@ -33,7 +33,7 @@ $ xgo run xcodegen/tableToStruct/*.go
 Setup database for Magento 2 and fill them with
 the provided [testdata](https://github.com/corestoreio/pkg/tree/master/testData).
 
-Create a DSN env var `CS_DSN` and point it to Magento 2 database. Run the tests. 
+Create a DSN env var `CS_DSN` and point it to Magento 2 database. Run the tests.
 
 ## TODO
 
@@ -110,6 +110,7 @@ from the geniuses listed below:
 | Iman Tumorang | util/pseudo | Copyright (c) 2017 Iman Tumorang |
 | Dmitry Afanasyev | util/pseudo | Copyright (c) 2014 Dmitry Afanasyev |
 | Michal Witkowski | net/csgrpc/auth | Copyright (c) 2016 Michal Witkowski, Apache 2 |
+| go-pg/pg Authors | sql/urlvalues | Copyright (c) 2013 MIT |
 
 ## Licensing
 

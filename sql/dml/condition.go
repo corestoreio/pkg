@@ -352,6 +352,12 @@ func ParenthesisClose() *Condition {
 // COMPARIONS OPERATOR
 ///////////////////////////////////////////////////////////////////////////////
 
+// Op sets a custom operator
+func (c *Condition) Op(o Op) *Condition {
+	c.Operator = o
+	return c
+}
+
 func (c *Condition) Null() *Condition {
 	c.Operator = Null
 	return c
