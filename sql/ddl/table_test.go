@@ -130,6 +130,15 @@ func init() {
 	}
 }
 
+func TestTable_HasColumn(t *testing.T) {
+	t.Parallel()
+
+	tbl := tableMap.MustTable("catalog_category_anc_categs_index_idx")
+	assert.True(t, tbl.HasColumn("category_id"))
+	assert.False(t, tbl.HasColumn("category_idx"))
+	assert.False(t, tbl.HasColumn("category_ID"))
+}
+
 func TestTable_Select(t *testing.T) {
 	t.Parallel()
 

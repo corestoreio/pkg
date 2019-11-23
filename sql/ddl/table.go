@@ -51,6 +51,7 @@ type Table struct {
 	// columnsIsEligibleForUpsert contains all non-current-timestamp, non-virtual, non-system
 	// versioned and non auto_increment columns for update or insert operations.
 	columnsUpsert []string
+	colset        map[string]struct{}
 }
 
 // NewTable initializes a new table structure
@@ -64,7 +65,7 @@ func NewTable(tableName string, cs ...*Column) *Table {
 
 // update recalculates the internal cached columns
 func (t *Table) update() *Table {
-	if len(t.Columns) == 0 {
+	if t.Columns.Len() == 0 {
 		return t
 	}
 
@@ -79,6 +80,13 @@ func (t *Table) update() *Table {
 
 	t.columnsUpsert = t.columnsUpsert[:0]
 	t.columnsUpsert = t.Columns.Filter(columnsIsEligibleForUpsert).FieldNames(t.columnsUpsert...)
+
+	if t.colset == nil {
+		t.colset = make(map[string]struct{}, t.Columns.Len())
+	}
+	t.Columns.Each(func(c *Column) {
+		t.colset[c.Field] = struct{}{}
+	})
 
 	return t
 }
@@ -264,6 +272,13 @@ func (t *Table) Drop(ctx context.Context) error {
 		return errors.Wrap(err, "[ddl] Drop table name")
 	}
 	return t.runExec(ctx, "DROP "+t.getTyp()+" IF EXISTS "+dml.Quoter.QualifierName(t.Schema, t.Name))
+}
+
+// HasColumn uses the internal cache to check if a column exists in a table and
+// if so returns true. Case sensitive.
+func (t *Table) HasColumn(columnName string) bool {
+	_, ok := t.colset[columnName]
+	return ok
 }
 
 // InfileOptions provides options for the function LoadDataInfile. Some columns
