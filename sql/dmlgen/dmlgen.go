@@ -1004,7 +1004,7 @@ func (g *Generator) generateProto(w io.Writer) error {
 
 						// case MANY-TO-MANY
 						if isRelationAllowed && targetTbl != "" && targetColumn != "" {
-							proto.Pln(strs.ToGoCamelCase(collectionName(targetTbl)), fieldMapFn(strs.ToGoCamelCase(collectionName(targetTbl))),
+							proto.Pln(collectionName(targetTbl), fieldMapFn(collectionName(targetTbl)),
 								"=", lastColumnPos, ";",
 								"// Reversed M:N", kcuce.TableName+"."+kcuce.ColumnName, "via", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data,
 								"=>", targetTbl+"."+targetColumn)
@@ -1034,7 +1034,6 @@ func (g *Generator) generateProto(w io.Writer) error {
 		proto.Reset()
 		proto.WriteString(removedImport)
 	}
-
 	return proto.GenerateFile(w)
 }
 
@@ -1224,7 +1223,6 @@ type ProtocOptions struct {
 	BuildTags          []string
 	WorkingDirectory   string
 	ProtoGen           string // default gofast, options: gogo, gogofast, gogofaster
-	Debug              bool   // prints the final protoc command
 	GRPC               bool
 	GRPCGatewayOutMap  []string // GRPC must be enabled in the above field
 	GRPCGatewayOutPath string   // GRPC must be enabled in the above field
@@ -1358,16 +1356,16 @@ func GenerateProto(protoFilesPath string, po *ProtocOptions) error {
 	}
 
 	cmd := exec.Command("protoc", append(po.toArgs(), protoFiles...)...)
-	if po.Debug {
+	cmdStr := fmt.Sprintf("\ncd %s && %s\n\n", po.WorkingDirectory, cmd)
+	if isDebug() {
 		if po.WorkingDirectory == "" {
 			po.WorkingDirectory = "."
 		}
-		// TODO fix ./dmlgen.go:1291:59: cmd.String undefined (type *exec.Cmd has no field or method String)
-		// fmt.Printf("\ncd %s && %s\n\n", po.WorkingDirectory, cmd.String())
+		print(cmdStr)
 	}
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return errors.Wrapf(err, "[dmlgen] %s", out)
+		return errors.Wrapf(err, "[dmlgen] %s%s", out, cmdStr)
 	}
 
 	scanner := bufio.NewScanner(bytes.NewReader(out))
