@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"text/tabwriter"
 	"unicode"
 
 	"github.com/corestoreio/pkg/sql/ddl"
@@ -238,21 +239,24 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 
 			// this part is duplicated in the proto file generation function generateProto.
 			if g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityRelationships) {
+				var debugBuf bytes.Buffer
+				tabW := tabwriter.NewWriter(&debugBuf, 6, 0, 2, ' ', 0)
+				var hasAtLeastOneRelationShip int
+				fmt.Fprintf(&debugBuf, "RelationInfo for: %q\n", t.TableName)
+				fmt.Fprintf(tabW, "Case\tis1:M\tis1:1\tseen?\tisRelAl\thasTable\tTarget Tbl M:N\tRelation\n")
+				relationShipSeen := map[string]bool{}
 				if kcuc, ok := g.kcu[t.TableName]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
 					for _, kcuce := range kcuc.Data {
 						if !kcuce.ReferencedTableName.Valid {
 							continue
 						}
-
+						hasAtLeastOneRelationShip++
 						// case ONE-TO-MANY
 						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
 						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
 						hasTable := g.Tables[kcuce.ReferencedTableName.Data] != nil
-						if t.debug {
-							println("A1: isOneToMany", isOneToMany, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
-								t.TableName, "\t",
-								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
-						}
+						fmt.Fprintf(tabW, "A1_1:M\t%t\t%t\t%t\t%t\t%t\t-\t%s => %s\n", isOneToMany, false, false, isRelationAllowed, hasTable,
+							kcuce.TableName+"."+kcuce.ColumnName, kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 						if isOneToMany && hasTable && isRelationAllowed {
 							mainGen.Pln(fieldMapFn(collectionName(kcuce.ReferencedTableName.Data)), " *", collectionName(kcuce.ReferencedTableName.Data),
 								t.customStructTagFields[kcuce.ReferencedTableName.Data],
@@ -261,11 +265,8 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 
 						// case ONE-TO-ONE
 						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
-						if t.debug {
-							println("B1: IsOneToOne", isOneToOne, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
-								t.TableName, "\t",
-								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
-						}
+						fmt.Fprintf(tabW, "B1_1:1\t%t\t%t\t%t\t%t\t%t\t-\t%s => %s\n", isOneToMany, isOneToOne, false, isRelationAllowed, hasTable,
+							kcuce.TableName+"."+kcuce.ColumnName, kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 						if isOneToOne && hasTable && isRelationAllowed {
 							mainGen.Pln(fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.Data)), " *", strs.ToGoCamelCase(kcuce.ReferencedTableName.Data),
 								t.customStructTagFields[kcuce.ReferencedTableName.Data],
@@ -274,13 +275,10 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 
 						// case MANY-TO-MANY
 						targetTbl, targetColumn := g.krs.ManyToManyTarget(kcuce.TableName, kcuce.ColumnName)
-						if t.debug {
-							println("C1: ManyToManyTarget", true, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
-								"targetTbl>", targetTbl, "<\t", "targetColumn>", targetColumn, "<\t",
-								t.TableName, "\t",
-								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
-						}
-						// hasTable shall not be added because usually the link table does not get loaded.
+						fmt.Fprintf(tabW, "C1_M:N\t%t\t%t\t%t\t%t\t%t\t%s\t%s => %s\n", isOneToMany, isOneToOne, false, isRelationAllowed, hasTable,
+							targetTbl+"."+targetColumn,
+							kcuce.TableName+"."+kcuce.ColumnName, kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
+						// hasTable variable shall not be added because usually the link table does not get loaded.
 						if isRelationAllowed && targetTbl != "" && targetColumn != "" {
 							mainGen.Pln(fieldMapFn(collectionName(targetTbl)), " *", collectionName(targetTbl),
 								t.customStructTagFields[targetTbl],
@@ -296,31 +294,27 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 						if !kcuce.ReferencedTableName.Valid {
 							continue
 						}
-
+						hasAtLeastOneRelationShip++
 						// case ONE-TO-MANY
 						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
 						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
 						hasTable := g.Tables[kcuce.ReferencedTableName.Data] != nil
-
+						keySeen := fieldMapFn(collectionName(kcuce.ReferencedTableName.Data))
+						relationShipSeenAlready := relationShipSeen[keySeen]
 						// case ONE-TO-MANY
-						if t.debug {
-							println("A2: isOneToMany", isOneToMany, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
-								t.TableName, "\t",
-								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
-						}
-						if isRelationAllowed && isOneToMany && hasTable {
+						fmt.Fprintf(tabW, "A2_1:M rev\t%t\t%t\t%t\t%t\t%t\t-\t%s => %s\n", isOneToMany, false, relationShipSeenAlready, isRelationAllowed, hasTable,
+							kcuce.TableName+"."+kcuce.ColumnName, kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
+						if isRelationAllowed && isOneToMany && hasTable && !relationShipSeenAlready {
 							mainGen.Pln(fieldMapFn(collectionName(kcuce.ReferencedTableName.Data)), " *", collectionName(kcuce.ReferencedTableName.Data),
 								t.customStructTagFields[kcuce.ReferencedTableName.Data],
 								"// Reversed 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
+							relationShipSeen[keySeen] = true
 						}
 
 						// case ONE-TO-ONE
 						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
-						if t.debug {
-							println("B2: IsOneToOne", isOneToOne, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
-								t.TableName, "\t",
-								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
-						}
+						fmt.Fprintf(tabW, "B2_1:1 rev\t%t\t%t\t%t\t%t\t%t\t-\t%s => %s\n", isOneToMany, isOneToOne, relationShipSeenAlready, isRelationAllowed, hasTable,
+							kcuce.TableName+"."+kcuce.ColumnName, kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 						if isRelationAllowed && isOneToOne && hasTable {
 							mainGen.Pln(fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.Data)), " *", strs.ToGoCamelCase(kcuce.ReferencedTableName.Data),
 								t.customStructTagFields[kcuce.ReferencedTableName.Data],
@@ -330,16 +324,16 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 						// case MANY-TO-MANY
 						targetTbl, targetColumn := g.krs.ManyToManyTarget(kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
 						if targetTbl != "" && targetColumn != "" {
-							isRelationAllowed = g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, targetTbl, targetColumn)
+							keySeen := fieldMapFn(collectionName(targetTbl))
+							isRelationAllowed = g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, targetTbl, targetColumn) &&
+								!relationShipSeen[keySeen]
+							relationShipSeen[keySeen] = true
 						}
 
 						// case MANY-TO-MANY
-						if t.debug {
-							println("C2: ManyToManyTarget", true, "\tisRelationAllowed", isRelationAllowed, "\thasTable", hasTable, "\t",
-								"targetTbl>", targetTbl, "<\t", "targetColumn>", targetColumn, "<\t",
-								t.TableName, "\t",
-								kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
-						}
+						fmt.Fprintf(tabW, "C2_M:N rev\t%t\t%t\t%t\t%t\t%t\t%s\t%s => %s\n", isOneToMany, isOneToOne, relationShipSeenAlready, isRelationAllowed, hasTable,
+							targetTbl+"."+targetColumn,
+							kcuce.TableName+"."+kcuce.ColumnName, kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 						// hasTable shall not be added because usually the link table does not get loaded.
 						if isRelationAllowed && targetTbl != "" && targetColumn != "" {
 							mainGen.Pln(fieldMapFn(collectionName(targetTbl)), " *", collectionName(targetTbl),
@@ -349,6 +343,11 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 							)
 						}
 					}
+				}
+				if t.debug && hasAtLeastOneRelationShip > 0 {
+					_ = tabW.Flush()
+					fmt.Fprintf(&debugBuf, "Relationship count: %d\n", hasAtLeastOneRelationShip)
+					fmt.Println(debugBuf.String())
 				}
 			}
 			mainGen.Out()
