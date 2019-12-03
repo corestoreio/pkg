@@ -199,7 +199,6 @@ func TestTable_Truncate(t *testing.T) {
 
 	t.Run("Invalid table Name", func(t *testing.T) {
 		tbl := ddl.NewTable("product")
-		tbl.IsView = true
 		err := tbl.Rename(context.TODO(), "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
 		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
@@ -219,7 +218,6 @@ func TestTable_Rename(t *testing.T) {
 
 	t.Run("Invalid table Name", func(t *testing.T) {
 		tbl := ddl.NewTable("product")
-		tbl.IsView = true
 		err := tbl.Rename(context.TODO(), "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
 		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
@@ -240,7 +238,6 @@ func TestTable_Swap(t *testing.T) {
 
 	t.Run("Invalid table Name", func(t *testing.T) {
 		tbl := ddl.NewTable("product")
-		tbl.IsView = true
 		err := tbl.Swap(context.TODO(), "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
 		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
@@ -259,7 +256,6 @@ func TestTable_Drop(t *testing.T) {
 	})
 	t.Run("Invalid table Name", func(t *testing.T) {
 		tbl := ddl.NewTable("produ™€ct")
-		tbl.IsView = true
 		err := tbl.Drop(context.TODO())
 		assert.ErrorIsKind(t, errors.NotValid, err)
 	})

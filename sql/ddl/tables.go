@@ -31,8 +31,8 @@ import (
 )
 
 const (
-	// PrefixView  is an anti-pattern I've seen many such systems where at some point a view will become a table.
-	// deprecated
+	// Warning: PrefixView/SuffixView is an anti-pattern I've seen many such
+	// systems where at some point a view will become a table.
 	PrefixView      = "view_" // If identifier starts with this, it is considered a view.
 	SuffixView      = "_view" // If identifier ends with this, it is considered a view.
 	MainTable       = "main_table"
@@ -150,7 +150,9 @@ func WithCreateTable(ctx context.Context, identifierCreateSyntax ...string) Tabl
 				tvNames = append(tvNames, tvName)
 				t := NewTable(tvName)
 				tm.tm[tvName] = t
-				t.IsView = strings.Contains(tvCreate, " VIEW ") || strings.HasPrefix(tvName, PrefixView) || strings.HasSuffix(tvName, SuffixView)
+				if strings.Contains(tvCreate, " VIEW ") || strings.HasPrefix(tvName, PrefixView) || strings.HasSuffix(tvName, SuffixView) {
+					t.Type = "VIEW"
+				}
 
 				if isCreateStmt(tvName, tvCreate) {
 					if _, err := tm.dcp.DB.ExecContext(ctx, tvCreate); err != nil {
@@ -277,6 +279,88 @@ func withDropTable(ctx context.Context, tm *Tables, db dml.QueryExecPreparer, ta
 		}
 	}
 	return nil
+}
+
+const (
+	selTablessBaseSelect = `SELECT TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE, ENGINE,
+ VERSION, ROW_FORMAT, TABLE_ROWS, AVG_ROW_LENGTH, DATA_LENGTH,
+ MAX_DATA_LENGTH, INDEX_LENGTH, DATA_FREE, AUTO_INCREMENT,
+ CREATE_TIME, UPDATE_TIME, CHECK_TIME, TABLE_COLLATION, CHECKSUM,
+ CREATE_OPTIONS, TABLE_COMMENT, MAX_INDEX_LENGTH FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE()`
+	// DMLLoadColumns specifies the data manipulation language for retrieving
+	// all columns in the current database for a specific table. TABLE_NAME is
+	// always lower case.
+	selTables    = selTablessBaseSelect + ` AND TABLE_NAME IN ? ORDER BY TABLE_NAME, ORDINAL_POSITION`
+	selAllTables = selTablessBaseSelect + ` ORDER BY TABLE_NAME, ORDINAL_POSITION`
+)
+
+// WithLoadTables loads all tables and their columns in a database or only the specified tables.
+// Uses INFORMATION_SCHEMA.COLUMNS and INFORMATION_SCHEMA.TABLES system views.
+func WithLoadTables(ctx context.Context, db dml.Querier, tableNames ...string) TableOption {
+	return TableOption{
+		sortOrder: 70,
+		fn: func(tm *Tables) error {
+			for _, tn := range tableNames {
+				if err := dml.IsValidIdentifier(tn); err != nil {
+					return errors.WithStack(err)
+				}
+			}
+
+			// load all columns for all tables
+			tblColMap, err := LoadColumns(ctx, db, tableNames...)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
+			var rows *sql.Rows
+			if len(tableNames) == 0 {
+				var err error
+				rows, err = db.QueryContext(ctx, selAllTables)
+				if err != nil {
+					return errors.WithStack(err)
+				}
+			} else {
+				sqlStr, _, err := dml.Interpolate(selTables).Strs(tableNames...).ToSQL()
+				if err != nil {
+					return errors.Wrapf(err, "[ddl] WithLoadTables dml.ExpandPlaceHolders for tables %v", tableNames)
+				}
+				rows, err = db.QueryContext(ctx, sqlStr)
+				if err != nil {
+					return errors.Wrapf(err, "[ddl] WithLoadTables QueryContext for tables %v with WHERE clause", tableNames)
+				}
+			}
+
+			defer func() {
+				// Not testable with the sqlmock package :-(
+				if err2 := rows.Close(); err2 != nil && err == nil {
+					err = errors.WithStack(err2)
+				}
+			}()
+
+			rc := new(dml.ColumnMap)
+			for rows.Next() {
+				if err = rc.Scan(rows); err != nil {
+					return errors.Wrapf(err, "[ddl] Scan Query for tables: %v", tableNames)
+				}
+
+				nt, err := newTable(rc)
+				if err != nil {
+					return errors.WithStack(err)
+				}
+
+				nt.Columns = tblColMap[nt.Name]
+
+				if err := tm.Upsert(nt); err != nil {
+					return errors.WithStack(err)
+				}
+			}
+			if err = rows.Err(); err != nil {
+				return errors.WithStack(err)
+			}
+
+			return err
+		},
+	}
 }
 
 // NewTables creates a new TableService satisfying interface Manager.

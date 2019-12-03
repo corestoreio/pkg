@@ -151,10 +151,10 @@ func TestWithCreateTable_IsView(t *testing.T) {
 
 	ts := ddl.MustNewTables(ddl.WithCreateTable(context.TODO(), "view_a3", "", "b5_view", "", "c7", "CREATEA VIEW `c7` ...", "d2", ""))
 	t.Run("IsView", func(t *testing.T) {
-		assert.True(t, ts.MustTable("view_a3").IsView)
-		assert.True(t, ts.MustTable("b5_view").IsView)
-		assert.True(t, ts.MustTable("c7").IsView)
-		assert.False(t, ts.MustTable("d2").IsView)
+		assert.True(t, ts.MustTable("view_a3").IsView())
+		assert.True(t, ts.MustTable("b5_view").IsView())
+		assert.True(t, ts.MustTable("c7").IsView())
+		assert.False(t, ts.MustTable("d2").IsView())
 	})
 }
 
@@ -512,5 +512,45 @@ func TestTables_Validate(t *testing.T) {
 				dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_columns_more.csv")))
 		err := tbls.Validate(context.Background())
 		assert.NoError(t, err)
+	})
+}
+
+func TestWithLoadTables(t *testing.T) {
+	dbc, dbMock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, dbc, dbMock)
+	ctx := context.TODO()
+
+	t.Run("one table", func(t *testing.T) {
+		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS WHERE.+TABLE_NAME IN.+").
+			WillReturnRows(
+				dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_columns.csv")))
+
+		dbMock.ExpectQuery("SELECT.+FROM information_schema.TABLES WHERE.+TABLE_NAME IN.+").
+			WithArgs(). // no args because interpolation due to valid identifier
+			WillReturnRows(
+				dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_tables.csv")))
+
+		tbls, err := ddl.NewTables(ddl.WithLoadTables(ctx, dbc.DB, "core_config_data"))
+		assert.NoError(t, err)
+		tbl := tbls.MustTable("core_config_data")
+		assert.Exactly(t, "Config Data", tbl.TableComment)
+		assert.False(t, tbl.IsView())
+	})
+
+	t.Run("multiple tables", func(t *testing.T) {
+		dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS WHERE.+DATABASE\\(\\) ORDER.+").
+			WillReturnRows(
+				dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_columns.csv")))
+
+		dbMock.ExpectQuery("SELECT.+FROM information_schema.TABLES WHERE.+DATABASE\\(\\) ORDER.+").
+			WithArgs(). // no args because interpolation due to valid identifier
+			WillReturnRows(
+				dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data_tables.csv")))
+
+		tbls, err := ddl.NewTables(ddl.WithLoadTables(ctx, dbc.DB)) // loads all tables in a DB
+		assert.NoError(t, err)
+		tbl := tbls.MustTable("core_config_data")
+		assert.Exactly(t, "Config Data", tbl.TableComment)
+		assert.False(t, tbl.IsView())
 	})
 }

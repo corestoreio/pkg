@@ -99,7 +99,7 @@ func TestLoadKeyRelationships(t *testing.T) {
 	var buf bytes.Buffer
 	krs.Debug(&buf)
 	t.Log("\n", buf.String())
-	assert.LenBetween(t, buf.String(), 1950, 2380)
+	assert.LenBetween(t, buf.String(), 1840, 2380)
 
 	t.Run("ManyToMany", func(t *testing.T) {
 		targetTable, targetColumn := krs.ManyToManyTarget("athlete_team_member", "team_id")

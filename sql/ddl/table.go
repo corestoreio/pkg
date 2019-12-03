@@ -25,6 +25,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
@@ -35,15 +36,65 @@ type Table struct {
 	// dcp represents a Database Connection Pool. Shall not be nil
 	dcp      *dml.ConnPool
 	customDB dml.QueryExecPreparer // if set we have a shallow copy
-	// Schema represents the name of the database. Might be empty.
+
+	// Always def.
+	Catalog string
+	// Database name.
 	Schema string
-	// Name of the table
+	// Table name.
 	Name string
+	// One of BASE TABLE for a regular table, VIEW for a view, SYSTEM VIEW for
+	// Information Schema tables or SYSTEM VERSIONED for system-versioned tables.
+	Type string
+	// Storage Engine.
+	Engine null.String
+	// Version number from the table's .frm file
+	Version null.Uint64
+	// Row format (see InnoDB, Aria and MyISAM row formats).
+	RowFormat null.String
+	// Number of rows in the table. Some engines, such as XtraDB and InnoDB may
+	// store an estimate.
+	TableRows null.Uint64
+	// Average row length in the table.
+	AvgRowLength null.Uint64
+	// For InnoDB/XtraDB, the index size, in pages, multiplied by the page size.
+	// For Aria and MyISAM, length of the data file, in bytes. For MEMORY, the
+	// approximate allocated memory.
+	DataLength null.Uint64
+	// Maximum length of the data file, ie the total number of bytes that could be
+	// stored in the table. Not used in XtraDB and InnoDB.
+	MaxDataLength null.Uint64
+	// Length of the index file.
+	IndexLength null.Uint64
+	// Bytes allocated but unused. For InnoDB tables in a shared tablespace, the
+	// free space of the shared tablespace with small safety margin. An estimate
+	// in the case of partitioned tables - see the PARTITIONS table.
+	DataFree null.Uint64
+	// Next AUTO_INCREMENT value.
+	AutoIncrement null.Uint64
+	// Time the table was created.
+	CreateTime null.Time
+	// Time the table was last updated. On Windows, the timestamp is not updated on
+	// update, so MyISAM values will be inaccurate. In InnoDB, if shared
+	// tablespaces are used, will be NULL, while buffering can also delay the
+	// update, so the value will differ from the actual time of the last UPDATE,
+	// INSERT or DELETE.
+	UpdateTime null.Time
+	// Time the table was last checked. Not kept by all storage engines, in which
+	// case will be NULL.
+	CheckTime null.Time
+	// Character set and collation.
+	TableCollation null.String
+	// Live checksum value, if any.
+	Checksum null.Uint64
+	// Extra CREATE TABLE options.
+	CreateOptions null.String
+	// Table comment provided when MariaDB created the table.
+	TableComment   string
+	MaxIndexLength null.Uint64
 	// Columns all table columns. They do not get used to create or alter a
 	// table.
 	Columns Columns
-	// IsView set to true to mark if the table is a view.
-	IsView bool
 	// optimized column selection for specific DML operations.
 	columnsPK    []string // only primary key columns
 	columnsNonPK []string // all columns, except PK and system-versioned
@@ -54,13 +105,75 @@ type Table struct {
 	colset        map[string]struct{}
 }
 
-// NewTable initializes a new table structure
+// NewTable initializes a new table structure with minimal information.
 func NewTable(tableName string, cs ...*Column) *Table {
 	ts := &Table{
 		Name:    tableName,
 		Columns: Columns(cs),
 	}
 	return ts.update()
+}
+
+func newTable(rc *dml.ColumnMap) (*Table, error) {
+	t := new(Table)
+	for rc.Next() {
+		switch col := rc.Column(); col {
+		case "TABLE_CATALOG":
+			rc.String(&t.Catalog)
+		case "TABLE_SCHEMA":
+			rc.String(&t.Schema)
+		case "TABLE_NAME":
+			rc.String(&t.Name)
+		case "TABLE_TYPE":
+			rc.String(&t.Type)
+		case "ENGINE":
+			rc.NullString(&t.Engine)
+		case "VERSION":
+			rc.NullUint64(&t.Version)
+		case "ROW_FORMAT":
+			rc.NullString(&t.RowFormat)
+		case "TABLE_ROWS":
+			rc.NullUint64(&t.TableRows)
+		case "AVG_ROW_LENGTH":
+			rc.NullUint64(&t.AvgRowLength)
+		case "DATA_LENGTH":
+			rc.NullUint64(&t.DataLength)
+		case "MAX_DATA_LENGTH":
+			rc.NullUint64(&t.MaxDataLength)
+		case "INDEX_LENGTH":
+			rc.NullUint64(&t.IndexLength)
+		case "DATA_FREE":
+			rc.NullUint64(&t.DataFree)
+		case "AUTO_INCREMENT":
+			rc.NullUint64(&t.AutoIncrement)
+		case "CREATE_TIME":
+			rc.NullTime(&t.CreateTime)
+		case "UPDATE_TIME":
+			rc.NullTime(&t.UpdateTime)
+		case "CHECK_TIME":
+			rc.NullTime(&t.CheckTime)
+		case "TABLE_COLLATION":
+			rc.NullString(&t.TableCollation)
+		case "CHECKSUM":
+			rc.NullUint64(&t.Checksum)
+		case "CREATE_OPTIONS":
+			rc.NullString(&t.CreateOptions)
+		case "TABLE_COMMENT":
+			rc.String(&t.TableComment)
+		case "MAX_INDEX_LENGTH":
+			rc.NullUint64(&t.MaxIndexLength)
+		default:
+			return nil, errors.NotSupported.Newf("[ddl] Column %q not supported", col)
+		}
+	}
+	return t, errors.WithStack(rc.Err())
+}
+
+// IsView determines if a table is a view. Either via system attribute or via
+// its table name.
+func (t *Table) IsView() bool {
+	return t.Type == "VIEW" || t.Type == "SYSTEM VIEW" ||
+		strings.HasPrefix(t.Name, PrefixView) || strings.HasSuffix(t.Name, SuffixView)
 }
 
 // update recalculates the internal cached columns
@@ -201,7 +314,7 @@ func (t *Table) runExec(ctx context.Context, qry string) error {
 // zero. Just like a CREATE TABLE statement. To use a custom connection, call
 // WithDB before.
 func (t *Table) Truncate(ctx context.Context) error {
-	if t.IsView {
+	if t.IsView() {
 		return nil
 	}
 	if err := dml.IsValidIdentifier(t.Name); err != nil {
@@ -259,7 +372,7 @@ func (t *Table) Swap(ctx context.Context, other string) error {
 }
 
 func (t *Table) getTyp() string {
-	if t.IsView || strings.HasPrefix(t.Name, PrefixView) {
+	if t.IsView() {
 		return "VIEW"
 	}
 	return "TABLE"
@@ -335,7 +448,7 @@ type InfileOptions struct {
 // foreign key constraints during the load operation, issue a SET
 // foreign_key_checks = 0 statement before executing LOAD DATA.
 func (t *Table) LoadDataInfile(ctx context.Context, filePath string, o InfileOptions) error {
-	if t.IsView {
+	if t.IsView() {
 		return nil
 	}
 	if o.Log == nil {

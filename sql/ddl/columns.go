@@ -77,7 +77,7 @@ type Column struct {
 
 // TODO check DB flavor: if MySQL or MariaDB, first one does not have column IS_GENERATED
 const (
-	selBaseSelect = `SELECT
+	selTablesColumnsBaseSelect = `SELECT
 	TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE,
 		DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE,
 		COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT, IS_GENERATED, GENERATION_EXPRESSION
@@ -85,8 +85,8 @@ const (
 	// DMLLoadColumns specifies the data manipulation language for retrieving
 	// all columns in the current database for a specific table. TABLE_NAME is
 	// always lower case.
-	selTablesColumns    = selBaseSelect + ` AND TABLE_NAME IN ? ORDER BY TABLE_NAME, ORDINAL_POSITION`
-	selAllTablesColumns = selBaseSelect + ` ORDER BY TABLE_NAME, ORDINAL_POSITION`
+	selTablesColumns    = selTablesColumnsBaseSelect + ` AND TABLE_NAME IN ? ORDER BY TABLE_NAME, ORDINAL_POSITION`
+	selAllTablesColumns = selTablesColumnsBaseSelect + ` ORDER BY TABLE_NAME, ORDINAL_POSITION`
 )
 
 // LoadColumns returns all columns from a list of table names in the current
@@ -128,7 +128,7 @@ func LoadColumns(ctx context.Context, db dml.Querier, tables ...string) (map[str
 		}
 		var c *Column
 		var tableName string
-		c, tableName, err = NewColumn(rc)
+		c, tableName, err = newColumn(rc)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -344,9 +344,9 @@ func (cs Columns) JoinFields(sep string) string {
 	return buf.String()
 }
 
-// NewColumn creates a new column pointer and maps it from a raw database row
+// newColumn creates a new column pointer and maps it from a raw database row
 // its bytes into the type Column.
-func NewColumn(rc *dml.ColumnMap) (c *Column, tableName string, err error) {
+func newColumn(rc *dml.ColumnMap) (c *Column, tableName string, err error) {
 	c = new(Column)
 	for rc.Next() {
 		switch col := rc.Column(); col {
