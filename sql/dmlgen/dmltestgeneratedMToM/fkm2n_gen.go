@@ -9,6 +9,7 @@ import (
 )
 
 // Athlete represents a single row for DB table athlete. Auto generated.
+// Table comment: Athletes
 type Athlete struct {
 	AthleteID    uint32        `max_len:"10"`  // athlete_id int(10) unsigned NOT NULL PRI  auto_increment "Athlete ID"
 	Firstname    null.String   `max_len:"340"` // firstname varchar(340) NULL  DEFAULT 'NULL'  "First Name"
@@ -30,6 +31,7 @@ func NewAthletes() *Athletes {
 }
 
 // AthleteTeam represents a single row for DB table athlete_team. Auto generated.
+// Table comment: Athlete Team
 type AthleteTeam struct {
 	TeamID   uint32    `max_len:"10"`  // team_id int(10) unsigned NOT NULL PRI  auto_increment ""
 	Name     string    `max_len:"340"` // name varchar(340) NOT NULL    "Team name"
@@ -51,6 +53,7 @@ func NewAthleteTeams() *AthleteTeams {
 
 // CustomerAddressEntity represents a single row for DB table
 // customer_address_entity. Auto generated.
+// Table comment: Customer Address Entity
 type CustomerAddressEntity struct {
 	EntityID          uint32      // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
 	IncrementID       null.String // increment_id varchar(50) NULL  DEFAULT 'NULL'  "Increment Id"
@@ -96,6 +99,7 @@ func NewCustomerAddressEntities() *CustomerAddressEntities {
 
 // CustomerEntity represents a single row for DB table customer_entity. Auto
 // generated.
+// Table comment: Customer Entity
 type CustomerEntity struct {
 	EntityID                uint32                   `max_len:"10"`  // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
 	WebsiteID               null.Uint16              `max_len:"5"`   // website_id smallint(5) unsigned NULL MUL DEFAULT 'NULL'  "Website ID"

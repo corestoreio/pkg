@@ -73,7 +73,7 @@ func (ts tables) hasFeature(g *Generator, feature FeatureToggle) bool {
 func (ts tables) names() []string {
 	names := make([]string, len(ts))
 	for i, tbl := range ts {
-		names[i] = tbl.TableName
+		names[i] = tbl.Table.Name
 	}
 	return names
 }
@@ -82,18 +82,17 @@ func (ts tables) names() []string {
 func (ts tables) nameID() string {
 	var buf bytes.Buffer
 	for _, tbl := range ts {
-		buf.WriteString(tbl.TableName)
+		buf.WriteString(tbl.Table.Name)
 	}
 	return fmt.Sprintf("%x", md5.Sum(buf.Bytes()))
 }
 
 // table writes one database table into Go source code.
 type Table struct {
-	Package              string      // Name of the package
-	TableName            string      // Name of the table
-	Comment              string      // Comment above the struct type declaration
-	Columns              ddl.Columns // all columns of a table
-	HasAutoIncrement     uint8       // 0=nil,1=false (has NO auto increment),2=true has auto increment
+	Package              string // Name of the package
+	Table                *ddl.Table
+	Comment              string // Comment above the struct type declaration
+	HasAutoIncrement     uint8  // 0=nil,1=false (has NO auto increment),2=true has auto increment
 	HasEasyJSONMarshaler bool
 	HasSerializer        bool // writes the .proto file if true
 
@@ -125,7 +124,7 @@ func (t *Table) GoCamelMaybePrivate(fieldName string) string {
 }
 
 func (t *Table) CollectionName() string {
-	return collectionName(t.TableName)
+	return collectionName(t.Table.Name)
 }
 
 func collectionName(name string) string {
@@ -149,7 +148,7 @@ func collectionName(name string) string {
 }
 
 func (t *Table) EntityName() string {
-	return strs.ToGoCamelCase(t.TableName)
+	return strs.ToGoCamelCase(t.Table.Name)
 }
 
 func (t *Table) collectionStruct(mainGen *codegen.Go, g *Generator) {
@@ -157,7 +156,7 @@ func (t *Table) collectionStruct(mainGen *codegen.Go, g *Generator) {
 		return
 	}
 
-	mainGen.C(t.CollectionName(), `represents a collection type for DB table`, t.TableName)
+	mainGen.C(t.CollectionName(), `represents a collection type for DB table`, t.Table.Name)
 	mainGen.C(`Not thread safe. Auto generated.`)
 	if t.Comment != "" {
 		mainGen.C(t.Comment)
@@ -214,9 +213,12 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 		fieldMapFn = defaultFieldMapFn
 	}
 
-	mainGen.C(t.EntityName(), `represents a single row for DB table`, t.TableName+`. Auto generated.`)
+	mainGen.C(t.EntityName(), `represents a single row for DB table`, t.Table.Name+`. Auto generated.`)
 	if t.Comment != "" {
 		mainGen.C(t.Comment)
+	}
+	if t.Table.TableComment != "" {
+		mainGen.C("Table comment:", t.Table.TableComment)
 	}
 	if t.HasEasyJSONMarshaler {
 		mainGen.Pln(`//easyjson:json`)
@@ -229,7 +231,7 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 			fn(g, t, mainGen)
 		} else {
 			mainGen.In()
-			for _, c := range t.Columns {
+			for _, c := range t.Table.Columns {
 				structTag := ""
 				if c.StructTag != "" {
 					structTag += "`" + c.StructTag + "`"
@@ -242,10 +244,10 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 				var debugBuf bytes.Buffer
 				tabW := tabwriter.NewWriter(&debugBuf, 6, 0, 2, ' ', 0)
 				var hasAtLeastOneRelationShip int
-				fmt.Fprintf(&debugBuf, "RelationInfo for: %q\n", t.TableName)
+				fmt.Fprintf(&debugBuf, "RelationInfo for: %q\n", t.Table.Name)
 				fmt.Fprintf(tabW, "Case\tis1:M\tis1:1\tseen?\tisRelAl\thasTable\tTarget Tbl M:N\tRelation\n")
 				relationShipSeen := map[string]bool{}
-				if kcuc, ok := g.kcu[t.TableName]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
+				if kcuc, ok := g.kcu[t.Table.Name]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
 					for _, kcuce := range kcuc.Data {
 						if !kcuce.ReferencedTableName.Valid {
 							continue
@@ -289,7 +291,7 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 					}
 				}
 
-				if kcuc, ok := g.kcuRev[t.TableName]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
+				if kcuc, ok := g.kcuRev[t.Table.Name]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
 					for _, kcuce := range kcuc.Data {
 						if !kcuce.ReferencedTableName.Valid {
 							continue
@@ -361,7 +363,7 @@ func (t *Table) fnEntityGetSetPrivateFields(mainGen *codegen.Go, g *Generator) {
 		return
 	}
 	// Generates the Getter/Setter for private fields
-	for _, c := range t.Columns {
+	for _, c := range t.Table.Columns {
 		if !t.IsFieldPrivate(c.Field) {
 			continue
 		}
@@ -423,7 +425,7 @@ func (t *Table) fnEntityWriteTo(mainGen *codegen.Go, g *Generator) {
 	} else {
 		mainGen.Pln(`n2, err := fmt.Fprint(w,`)
 		mainGen.In()
-		t.Columns.Each(func(c *ddl.Column) {
+		t.Table.Columns.Each(func(c *ddl.Column) {
 			if t.IsFieldPublic(c.Field) {
 				mainGen.Pln(`"`+c.Field+`:"`, `, e.`, strs.ToGoCamelCase(c.Field), `,`, `"\n",`)
 			}
@@ -471,7 +473,7 @@ func (t *Table) fnEntityDBMapColumns(mainGen *codegen.Go, g *Generator) {
 		{
 			mainGen.In()
 			mainGen.P(`return cm`)
-			t.Columns.Each(func(c *ddl.Column) {
+			t.Table.Columns.Each(func(c *ddl.Column) {
 				mainGen.P(`.`, g.goFuncNull(c), `(&e.`, t.GoCamelMaybePrivate(c.Field), `)`)
 			})
 			mainGen.Pln(`.Err()`)
@@ -484,7 +486,7 @@ func (t *Table) fnEntityDBMapColumns(mainGen *codegen.Go, g *Generator) {
 			mainGen.Pln(`switch c := cm.Column(); c {`)
 			{
 				mainGen.In()
-				t.Columns.Each(func(c *ddl.Column) {
+				t.Table.Columns.Each(func(c *ddl.Column) {
 					mainGen.P(`case`, strconv.Quote(c.Field))
 					for _, a := range c.Aliases {
 						mainGen.P(`,`, strconv.Quote(a))
@@ -508,7 +510,7 @@ func (t *Table) fnEntityDBMapColumns(mainGen *codegen.Go, g *Generator) {
 
 func (t *Table) hasPKAutoInc() bool {
 	var hasPKAutoInc bool
-	t.Columns.Each(func(c *ddl.Column) {
+	t.Table.Columns.Each(func(c *ddl.Column) {
 		if c.IsPK() && c.IsAutoIncrement() {
 			hasPKAutoInc = true
 		}
@@ -532,7 +534,7 @@ func (t *Table) fnEntityDBAssignLastInsertID(mainGen *codegen.Go, g *Generator) 
 	mainGen.Pln(`func (e *`, t.EntityName(), `) AssignLastInsertID(id int64) {`)
 	{
 		mainGen.In()
-		t.Columns.Each(func(c *ddl.Column) {
+		t.Table.Columns.Each(func(c *ddl.Column) {
 			if c.IsPK() && c.IsAutoIncrement() {
 				mainGen.Pln(`e.`, t.GoCamelMaybePrivate(c.Field), ` = `, g.goType(c), `(id)`)
 			}
@@ -575,7 +577,7 @@ func (t *Table) fnCollectionUniqueGetters(mainGen *codegen.Go, g *Generator) {
 
 	// Generates functions to return all data as a slice from unique/primary
 	// columns.
-	for _, c := range t.Columns.UniqueColumns() {
+	for _, c := range t.Table.Columns.UniqueColumns() {
 		gtn := g.goTypeNull(c)
 		goCamel := strs.ToGoCamelCase(c.Field)
 		mainGen.C(goCamel + `s returns a slice with the data or appends it to a slice.`)
@@ -611,7 +613,7 @@ func (t *Table) fnCollectionUniquifiedGetters(mainGen *codegen.Go, g *Generator)
 	}
 	// Generates functions to return data with removed duplicates from any
 	// column which has set the flag Uniquified.
-	for _, c := range t.Columns.UniquifiedColumns() {
+	for _, c := range t.Table.Columns.UniquifiedColumns() {
 		goType := g.goType(c)
 		goCamel := strs.ToGoCamelCase(c.Field)
 
@@ -910,7 +912,7 @@ func (t *Table) fnCollectionDBMapColumns(mainGen *codegen.Go, g *Generator) {
 							for cm.Next() {
 								switch c := cm.Column(); c {`)
 
-		t.Columns.UniqueColumns().Each(func(c *ddl.Column) {
+		t.Table.Columns.UniqueColumns().Each(func(c *ddl.Column) {
 			if !c.IsFloat() {
 				mainGen.P(`case`, strconv.Quote(c.Field))
 				for _, a := range c.Aliases {
@@ -972,8 +974,8 @@ func (t *Table) generateTestOther(testGen *codegen.Go, g *Generator) (codeWritte
 }
 
 func (t *Table) generateTestDB(testGen *codegen.Go) {
-	testGen.Pln(`t.Run("` + strs.ToGoCamelCase(t.TableName) + `_Entity", func(t *testing.T) {`)
-	testGen.Pln(`tbl := tbls.MustTable(TableName`+strs.ToGoCamelCase(t.TableName), `)`)
+	testGen.Pln(`t.Run("` + strs.ToGoCamelCase(t.Table.Name) + `_Entity", func(t *testing.T) {`)
+	testGen.Pln(`tbl := tbls.MustTable(TableName`+strs.ToGoCamelCase(t.Table.Name), `)`)
 
 	testGen.Pln(`entSELECT := tbl.SelectByPK("*")`)
 	testGen.C(`WithArgs generates the cached SQL string with empty key "".`)
@@ -982,7 +984,7 @@ func (t *Table) generateTestDB(testGen *codegen.Go) {
 	testGen.Pln(`entSELECT.WithCacheKey("select_10").Wheres.Reset()`)
 	testGen.Pln(`_, _, err := entSELECT.Where(`)
 
-	for _, c := range t.Columns {
+	for _, c := range t.Table.Columns {
 		if c.IsPK() && c.IsAutoIncrement() {
 			testGen.Pln(`dml.Column(`, strconv.Quote(c.Field), `).LessOrEqual().Int(10),`)
 		}
@@ -1005,7 +1007,7 @@ func (t *Table) generateTestDB(testGen *codegen.Go) {
 		testGen.Pln(`for i := 0; i < 9; i++ {`)
 		{
 			testGen.In()
-			testGen.Pln(`entIn := new(`, strs.ToGoCamelCase(t.TableName), `)`)
+			testGen.Pln(`entIn := new(`, strs.ToGoCamelCase(t.Table.Name), `)`)
 			testGen.Pln(`if err := ps.FakeData(entIn); err != nil {`)
 			{
 				testGen.In()
@@ -1015,15 +1017,15 @@ func (t *Table) generateTestDB(testGen *codegen.Go) {
 			}
 			testGen.Pln(`}`)
 
-			testGen.Pln(`lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.` + strs.ToGoCamelCase(t.TableName) + `_Entity")(entINSERTStmtA.Record("", entIn).ExecContext(ctx))`)
+			testGen.Pln(`lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.` + strs.ToGoCamelCase(t.Table.Name) + `_Entity")(entINSERTStmtA.Record("", entIn).ExecContext(ctx))`)
 			testGen.Pln(`entINSERTStmtA.Reset()`)
 
-			testGen.Pln(`entOut := new(`, strs.ToGoCamelCase(t.TableName), `)`)
+			testGen.Pln(`entOut := new(`, strs.ToGoCamelCase(t.Table.Name), `)`)
 			testGen.Pln(`rowCount, err := entSELECTStmtA.Int64s(lID).Load(ctx, entOut)`)
 			testGen.Pln(`assert.NoError(t, err)`)
 			testGen.Pln(`assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)`)
 
-			for _, c := range t.Columns {
+			for _, c := range t.Table.Columns {
 				fn := t.GoCamelMaybePrivate(c.Field)
 				switch {
 				case c.IsString():

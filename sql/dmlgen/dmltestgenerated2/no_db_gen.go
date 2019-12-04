@@ -13,6 +13,7 @@ import (
 
 // CoreConfiguration represents a single row for DB table core_configuration.
 // Auto generated.
+// Table comment: Config Data
 type CoreConfiguration struct {
 	ConfigID  uint32      // config_id int(10) unsigned NOT NULL PRI  auto_increment "Id"
 	Scope     string      // scope varchar(8) NOT NULL MUL DEFAULT ''default''  "Scope"
@@ -206,6 +207,7 @@ func (cc *CoreConfigurations) WriteTo(w io.Writer) (n int64, err error) {
 
 // SalesOrderStatusState represents a single row for DB table
 // sales_order_status_state. Auto generated.
+// Table comment: Sales Order Status Table
 type SalesOrderStatusState struct {
 	Status         string // status varchar(32) NOT NULL PRI   "Status"
 	State          string // state varchar(32) NOT NULL PRI   "Label"

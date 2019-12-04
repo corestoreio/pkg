@@ -173,14 +173,14 @@ func (to *TableConfig) applyEncoders(t *Table, g *Generator) {
 		case "protobuf", "fbs":
 			t.HasSerializer = true // for now leave it in. maybe later PB gets added to the struct tags.
 		default:
-			to.lastErr = errors.NotSupported.Newf("[dmlgen] WithTableConfig: Table %q Encoder %q not supported", t.TableName, enc)
+			to.lastErr = errors.NotSupported.Newf("[dmlgen] WithTableConfig: Table %q Encoder %q not supported", t.Table.Name, enc)
 		}
 	}
 }
 
 func (to *TableConfig) applyStructTags(t *Table, g *Generator) {
-	for h := 0; h < len(t.Columns) && to.lastErr == nil; h++ {
-		c := t.Columns[h]
+	for h := 0; h < len(t.Table.Columns) && to.lastErr == nil; h++ {
+		c := t.Table.Columns[h]
 		var buf strings.Builder
 
 		structTags := make([]string, 0, len(to.StructTags)+len(g.defaultTableConfig.StructTags))
@@ -238,7 +238,7 @@ func (to *TableConfig) applyStructTags(t *Table, g *Generator) {
 				// customType := ",customtype=github.com/gogo/protobuf/test.TODO"
 				// fmt.Fprintf(&buf, `protobuf:"%s,%d,opt,name=%s%s"`, pbType, c.Pos, c.Field, customType)
 			default:
-				to.lastErr = errors.NotSupported.Newf("[dmlgen] WithTableConfig: Table %q Tag %q not supported", t.TableName, tagName)
+				to.lastErr = errors.NotSupported.Newf("[dmlgen] WithTableConfig: Table %q Tag %q not supported", t.Table.Name, tagName)
 			}
 		}
 		c.StructTag = buf.String()
@@ -247,7 +247,7 @@ func (to *TableConfig) applyStructTags(t *Table, g *Generator) {
 
 func (to *TableConfig) applyCustomStructTags(t *Table) {
 	for i := 0; i < len(to.CustomStructTags) && to.lastErr == nil; i += 2 {
-		for _, c := range t.Columns {
+		for _, c := range t.Table.Columns {
 			if c.Field == to.CustomStructTags[i] {
 				c.StructTag = to.CustomStructTags[i+1]
 			}
@@ -295,7 +295,7 @@ func (to *TableConfig) applyColumnAliases(t *Table) {
 	// column can't be found.
 	for colName, aliases := range to.ColumnAliases {
 		found := false
-		for _, col := range t.Columns {
+		for _, col := range t.Table.Columns {
 			if col.Field == colName {
 				found = true
 				col.Aliases = aliases
@@ -303,7 +303,7 @@ func (to *TableConfig) applyColumnAliases(t *Table) {
 		}
 		if !found {
 			to.lastErr = errors.NotFound.Newf("[dmlgen] WithTableConfig:ColumnAliases: For table %q the Column %q cannot be found.",
-				t.TableName, colName)
+				t.Table.Name, colName)
 			return
 		}
 	}
@@ -314,7 +314,7 @@ func (to *TableConfig) applyUniquifiedColumns(t *Table) {
 	for i := 0; i < len(to.UniquifiedColumns) && to.lastErr == nil; i++ {
 		cn := to.UniquifiedColumns[i]
 		found := false
-		for _, c := range t.Columns {
+		for _, c := range t.Table.Columns {
 			if c.Field == cn && !c.IsBlobDataType() {
 				c.Uniquified = true
 				found = true
@@ -322,7 +322,7 @@ func (to *TableConfig) applyUniquifiedColumns(t *Table) {
 		}
 		if !found {
 			to.lastErr = errors.NotFound.Newf("[dmlgen] WithTableConfig:UniquifiedColumns: For table %q the Column %q cannot be found in the list of available columns or its data type is not allowed.",
-				t.TableName, cn)
+				t.Table.Name, cn)
 		}
 	}
 }
@@ -528,18 +528,17 @@ func WithTable(tableName string, columns ddl.Columns, options ...string) (opt Op
 		isOverwrite := len(options) > 0 && options[0] == "overwrite"
 		t, ok := g.Tables[tableName]
 		if ok && isOverwrite {
-			for ci, ct := range t.Columns {
+			for ci, ct := range t.Table.Columns {
 				for _, cc := range columns {
 					if ct.Field == cc.Field {
-						t.Columns[ci] = cc
+						t.Table.Columns[ci] = cc
 					}
 				}
 			}
 		} else {
 			t = &Table{
-				TableName: tableName,
-				Columns:   columns,
-				debug:     isDebug(),
+				Table: ddl.NewTable(tableName, columns...),
+				debug: isDebug(),
 			}
 		}
 		t.HasAutoIncrement = checkAutoIncrement(t.HasAutoIncrement)
@@ -553,36 +552,34 @@ func WithTable(tableName string, columns ddl.Columns, options ...string) (opt Op
 // definition of the provided `tables` slice. It adds the tables to the `Generator`
 // map. Once added a call to WithTableConfig can add additional configurations.
 func WithTablesFromDB(ctx context.Context, db *dml.ConnPool, tables ...string) (opt Option) {
-	opt.sortOrder = 1
-	opt.fn = func(g *Generator) error {
-		tables, err := ddl.LoadColumns(ctx, db.DB, tables...)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		views, err := db.WithRawSQL("SELECT `TABLE_NAME` FROM `information_schema`.`VIEWS` WHERE `TABLE_SCHEMA`=DATABASE()").LoadStrings(ctx, nil)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-
-		checkAutoIncrement := func(tblName string) uint8 {
-			for _, v := range views {
-				if v == tblName {
-					return 1 // nope
-				}
-			}
-			for _, c := range tables[tblName] {
-				if c.IsAutoIncrement() {
-					return 2 // yes
-				}
-			}
+	checkAutoIncrement := func(oneTbl *ddl.Table) uint8 {
+		if oneTbl.IsView() {
 			return 1 // nope
 		}
+		for _, c := range oneTbl.Columns {
+			if c.IsAutoIncrement() {
+				return 2 // yes
+			}
+		}
+		return 1 // nope
+	}
 
-		for tblName := range tables {
+	opt.sortOrder = 1
+	opt.fn = func(g *Generator) error {
+		nt, err := ddl.NewTables(ddl.WithLoadTables(ctx, db.DB, tables...))
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		if len(tables) == 0 {
+			tables = nt.Tables() // use all tables from the DB
+		}
+
+		for _, tblName := range tables {
+			oneTbl := nt.MustTable(tblName)
 			g.Tables[tblName] = &Table{
-				TableName:        tblName,
-				Columns:          tables[tblName],
-				HasAutoIncrement: checkAutoIncrement(tblName),
+				Table:            oneTbl,
+				HasAutoIncrement: checkAutoIncrement(oneTbl),
 				debug:            isDebug(),
 			}
 		}
@@ -915,12 +912,12 @@ func (g *Generator) generateProto(w io.Writer) error {
 			fieldMapFn = defaultFieldMapFn
 		}
 
-		proto.C(t.EntityName(), `represents a single row for DB table`, t.TableName, `. Auto generated.`)
+		proto.C(t.EntityName(), `represents a single row for DB table`, t.Table.Name, `. Auto generated.`)
 		proto.Pln(`message`, t.EntityName(), `{`)
 		{
 			proto.In()
 			var lastColumnPos uint64
-			t.Columns.Each(func(c *ddl.Column) {
+			t.Table.Columns.Each(func(c *ddl.Column) {
 				if t.IsFieldPublic(c.Field) {
 					serType := g.SerializerType(c)
 					if !hasTimestampField && strings.HasPrefix(serType, "google.protobuf.Timestamp") {
@@ -941,7 +938,7 @@ func (g *Generator) generateProto(w io.Writer) error {
 
 				// for debugging see Table.entityStruct function. This code is only different in the Pln function.
 
-				if kcuc, ok := g.kcu[t.TableName]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
+				if kcuc, ok := g.kcu[t.Table.Name]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
 					for _, kcuce := range kcuc.Data {
 						if !kcuce.ReferencedTableName.Valid {
 							continue
@@ -970,7 +967,7 @@ func (g *Generator) generateProto(w io.Writer) error {
 				}
 
 				// TODO reversed M:N might be buggy as this code is not equal to the table.go code.
-				if kcuc, ok := g.kcuRev[t.TableName]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
+				if kcuc, ok := g.kcuRev[t.Table.Name]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
 					for _, kcuce := range kcuc.Data {
 						if !kcuce.ReferencedTableName.Valid {
 							continue
@@ -1018,7 +1015,7 @@ func (g *Generator) generateProto(w io.Writer) error {
 		}
 		proto.Pln(`}`)
 
-		proto.C(t.CollectionName(), `represents multiple rows for DB table`, t.TableName, `. Auto generated.`)
+		proto.C(t.CollectionName(), `represents multiple rows for DB table`, t.Table.Name, `. Auto generated.`)
 		proto.Pln(`message`, t.CollectionName(), `{`)
 		{
 			proto.In()

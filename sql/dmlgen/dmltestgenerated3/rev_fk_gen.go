@@ -10,6 +10,7 @@ import (
 
 // CatalogCategoryEntity represents a single row for DB table
 // catalog_category_entity. Auto generated.
+// Table comment: Catalog Category Table
 type CatalogCategoryEntity struct {
 	EntityID                uint32                   // entity_id int(10) unsigned NOT NULL MUL   "Entity Id"
 	RowID                   uint32                   // row_id int(10) unsigned NOT NULL PRI  auto_increment "Version Id"
@@ -33,6 +34,7 @@ func NewCatalogCategoryEntities() *CatalogCategoryEntities {
 
 // CustomerAddressEntity represents a single row for DB table
 // customer_address_entity. Auto generated.
+// Table comment: Customer Address Entity
 //easyjson:json
 type CustomerAddressEntity struct {
 	EntityID          uint32      `max_len:"10"` // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
@@ -80,6 +82,7 @@ func NewCustomerAddressEntities() *CustomerAddressEntities {
 
 // CustomerEntity represents a single row for DB table customer_entity. Auto
 // generated.
+// Table comment: Customer Entity
 //easyjson:json
 type CustomerEntity struct {
 	EntityID                uint32                   `max_len:"10"`  // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
@@ -150,6 +153,7 @@ func NewSequenceCatalogCategories() *SequenceCatalogCategories {
 }
 
 // Store represents a single row for DB table store. Auto generated.
+// Table comment: Stores
 //easyjson:json
 type Store struct {
 	StoreID      uint16        `max_len:"5"`   // store_id smallint(5) unsigned NOT NULL PRI  auto_increment "Store Id"
@@ -178,6 +182,7 @@ func NewStores() *Stores {
 }
 
 // StoreGroup represents a single row for DB table store_group. Auto generated.
+// Table comment: Store Groups
 type StoreGroup struct {
 	GroupID        uint16        // group_id smallint(5) unsigned NOT NULL PRI  auto_increment "Group Id"
 	WebsiteID      uint16        // website_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Website Id"
@@ -204,6 +209,7 @@ func NewStoreGroups() *StoreGroups {
 
 // StoreWebsite represents a single row for DB table store_website. Auto
 // generated.
+// Table comment: Websites
 type StoreWebsite struct {
 	WebsiteID      uint16       // website_id smallint(5) unsigned NOT NULL PRI  auto_increment "Website Id"
 	Code           null.String  // code varchar(32) NULL UNI DEFAULT 'NULL'  "Code"

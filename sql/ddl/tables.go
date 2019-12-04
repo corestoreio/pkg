@@ -290,8 +290,8 @@ const (
 	// DMLLoadColumns specifies the data manipulation language for retrieving
 	// all columns in the current database for a specific table. TABLE_NAME is
 	// always lower case.
-	selTables    = selTablessBaseSelect + ` AND TABLE_NAME IN ? ORDER BY TABLE_NAME, ORDINAL_POSITION`
-	selAllTables = selTablessBaseSelect + ` ORDER BY TABLE_NAME, ORDINAL_POSITION`
+	selTables    = selTablessBaseSelect + ` AND TABLE_NAME IN ? ORDER BY TABLE_NAME`
+	selAllTables = selTablessBaseSelect + ` ORDER BY TABLE_NAME`
 )
 
 // WithLoadTables loads all tables and their columns in a database or only the specified tables.

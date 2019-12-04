@@ -44,6 +44,7 @@ func NewTables(ctx context.Context, opts ...ddl.TableOption) (tm *ddl.Tables, er
 
 // CatalogProductIndexEAVDecimalIDX represents a single row for DB table
 // catalog_product_index_eav_decimal_idx. Auto generated.
+// Table comment: Catalog Product EAV Decimal Indexer Index Table
 type CatalogProductIndexEAVDecimalIDX struct {
 	EntityID    uint32       // entity_id int(10) unsigned NOT NULL PRI   "Entity ID"
 	AttributeID uint32       // attribute_id smallint(5) unsigned NOT NULL PRI   "Attribute ID"
@@ -368,6 +369,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) WriteTo(w io.Writer) (n int64, err
 
 // CoreConfiguration represents a single row for DB table core_configuration.
 // Auto generated.
+// Table comment: Config Data
 //easyjson:json
 type CoreConfiguration struct {
 	ConfigID  uint32      `json:"config_id,omitempty" max_len:"10"`  // config_id int(10) unsigned NOT NULL PRI  auto_increment "Id"
@@ -680,6 +682,7 @@ func (cc *CoreConfigurations) WriteTo(w io.Writer) (n int64, err error) {
 
 // CustomerAddressEntity represents a single row for DB table
 // customer_address_entity. Auto generated.
+// Table comment: Customer Address Entity
 //easyjson:json
 type CustomerAddressEntity struct {
 	EntityID          uint32      `max_len:"10"` // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
@@ -1044,6 +1047,7 @@ func (cc *CustomerAddressEntities) WriteTo(w io.Writer) (n int64, err error) {
 
 // CustomerEntity represents a single row for DB table customer_entity. Auto
 // generated.
+// Table comment: Customer Entity
 //easyjson:json
 type CustomerEntity struct {
 	EntityID                uint32                   `max_len:"10"`  // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
@@ -1972,6 +1976,7 @@ func (cc *DmlgenTypesCollection) WriteTo(w io.Writer) (n int64, err error) {
 
 // SalesOrderStatusState represents a single row for DB table
 // sales_order_status_state. Auto generated.
+// Table comment: Sales Order Status Table
 //easyjson:json
 type SalesOrderStatusState struct {
 	Status         string `max_len:"32"` // status varchar(32) NOT NULL PRI   "Status"
@@ -2253,6 +2258,7 @@ func (cc *SalesOrderStatusStates) WriteTo(w io.Writer) (n int64, err error) {
 
 // ViewCustomerAutoIncrement represents a single row for DB table
 // view_customer_auto_increment. Auto generated.
+// Table comment: VIEW
 //easyjson:json
 type ViewCustomerAutoIncrement struct {
 	CeEntityID  uint32      `max_len:"10"`  // ce_entity_id int(10) unsigned NOT NULL  DEFAULT '0'  "Entity ID"
@@ -2510,6 +2516,7 @@ func (cc *ViewCustomerAutoIncrements) WriteTo(w io.Writer) (n int64, err error) 
 
 // ViewCustomerNoAutoIncrement represents a single row for DB table
 // view_customer_no_auto_increment. Auto generated.
+// Table comment: VIEW
 //easyjson:json
 type ViewCustomerNoAutoIncrement struct {
 	Email     null.String `max_len:"255"` // email varchar(255) NULL  DEFAULT 'NULL'  "Email"

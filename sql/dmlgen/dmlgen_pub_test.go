@@ -305,7 +305,7 @@ func TestWithStructTags(t *testing.T) {
 			}),
 		)
 		assert.NoError(t, err)
-		have := tbls.Tables["core_configuration"].Columns.ByField("config_id").GoString()
+		have := tbls.Tables["core_configuration"].Table.Columns.ByField("config_id").GoString()
 		assert.Exactly(t, "&ddl.Column{Field: \"config_id\", StructTag: \"bson:\\\"config_id,omitempty\\\" db:\\\"config_id\\\" env:\\\"config_id\\\" json:\\\"config_id,omitempty\\\" toml:\\\"config_id\\\" yaml:\\\"config_id,omitempty\\\" xml:\\\"config_id,omitempty\\\"\", }", have)
 	})
 }
