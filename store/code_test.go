@@ -23,7 +23,6 @@ import (
 )
 
 func TestValidateStoreCode(t *testing.T) {
-
 	tests := []struct {
 		have       string
 		wantErrBhf errors.Kind
@@ -44,7 +43,7 @@ func TestValidateStoreCode(t *testing.T) {
 	}
 	for i, test := range tests {
 		haveErr := store.CodeIsValid(test.have)
-		if test.wantErrBhf > 0 {
+		if !test.wantErrBhf.Empty() {
 			assert.True(t, test.wantErrBhf.Match(haveErr), "Index %d => %s", i, haveErr)
 		} else {
 			assert.NoError(t, haveErr, "Index %d", i)

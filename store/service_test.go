@@ -47,7 +47,6 @@ func TestNewServiceStore_QueryInvalidStore(t *testing.T) {
 	assert.True(t, serviceStoreSimpleTest.IsCacheEmpty())
 	serviceStoreSimpleTest.ClearCache()
 	assert.True(t, serviceStoreSimpleTest.IsCacheEmpty())
-
 }
 
 func TestMustNewService_Panic(t *testing.T) {
@@ -73,127 +72,160 @@ func TestNewService_Validate(t *testing.T) {
 		opts    []store.Option
 		wantErr errors.Kind
 	}{
-		{"All valid",
+		{
+			"All valid",
 			[]store.Option{
 				store.WithWebsites(&store.StoreWebsite{WebsiteID: 1, DefaultGroupID: 1, IsDefault: true, Code: "dach"}),
 				store.WithGroups(&store.StoreGroup{GroupID: 1, WebsiteID: 1, DefaultStoreID: 1, Code: "dach"}),
 				store.WithStores(&store.Store{StoreID: 1, WebsiteID: 1, GroupID: 1, Code: "de-de"}),
 			},
-			errors.NoKind},
+			errors.NoKind,
+		},
 
-		{"Website DefaultGroupID not found",
+		{
+			"Website DefaultGroupID not found",
 			[]store.Option{
 				store.WithWebsites(&store.StoreWebsite{WebsiteID: 1, DefaultGroupID: 1, IsDefault: true}),
 				store.WithGroups(&store.StoreGroup{GroupID: 1, WebsiteID: 0, DefaultStoreID: 2}),
 			},
-			errors.NotValid},
-		{"No Default Website found",
+			errors.NotValid,
+		},
+		{
+			"No Default Website found",
 			[]store.Option{
 				store.WithWebsites(&store.StoreWebsite{WebsiteID: 1, DefaultGroupID: 1, IsDefault: false}),
 				store.WithGroups(&store.StoreGroup{GroupID: 1, WebsiteID: 0, DefaultStoreID: 1}),
 				store.WithStores(&store.Store{StoreID: 1, WebsiteID: 1, GroupID: 1}),
 			},
-			errors.NotValid},
-		{"too many Default Websites",
+			errors.NotValid,
+		},
+		{
+			"too many Default Websites",
 			[]store.Option{
 				store.WithWebsites(&store.StoreWebsite{WebsiteID: 1, DefaultGroupID: 1, IsDefault: true}),
 				store.WithWebsites(&store.StoreWebsite{WebsiteID: 2, DefaultGroupID: 1, IsDefault: true}),
 				store.WithGroups(&store.StoreGroup{GroupID: 1, WebsiteID: 0, DefaultStoreID: 1}),
 				store.WithStores(&store.Store{StoreID: 1, WebsiteID: 1, GroupID: 1}),
 			},
-			errors.NotValid},
-		{"Group WebsiteID not found",
+			errors.NotValid,
+		},
+		{
+			"Group WebsiteID not found",
 			[]store.Option{
 				store.WithWebsites(&store.StoreWebsite{WebsiteID: 1, DefaultGroupID: 1, IsDefault: true}),
 				store.WithGroups(&store.StoreGroup{GroupID: 1, WebsiteID: 10000, DefaultStoreID: 1}),
 				store.WithStores(&store.Store{StoreID: 1, WebsiteID: 1, GroupID: 1}),
 			},
-			errors.NotValid},
-		{"Group DefaultStoreID not found",
+			errors.NotValid,
+		},
+		{
+			"Group DefaultStoreID not found",
 			[]store.Option{
 				store.WithWebsites(&store.StoreWebsite{WebsiteID: 1, DefaultGroupID: 1, IsDefault: true}),
 				store.WithGroups(&store.StoreGroup{GroupID: 1, WebsiteID: 1, DefaultStoreID: 100000}),
 				store.WithStores(&store.Store{StoreID: 1, WebsiteID: 1, GroupID: 1}),
 			},
-			errors.NotValid},
-		{"Store WebsiteID not found",
+			errors.NotValid,
+		},
+		{
+			"Store WebsiteID not found",
 			[]store.Option{
 				store.WithWebsites(&store.StoreWebsite{WebsiteID: 1, DefaultGroupID: 1, IsDefault: true}),
 				store.WithGroups(&store.StoreGroup{GroupID: 1, WebsiteID: 1, DefaultStoreID: 1}),
 				store.WithStores(&store.Store{StoreID: 1, WebsiteID: 10000, GroupID: 1}),
 			},
-			errors.NotValid},
-		{"Store GroupID not found",
+			errors.NotValid,
+		},
+		{
+			"Store GroupID not found",
 			[]store.Option{
 				store.WithWebsites(&store.StoreWebsite{WebsiteID: 1, DefaultGroupID: 1, IsDefault: true}),
 				store.WithGroups(&store.StoreGroup{GroupID: 1, WebsiteID: 1, DefaultStoreID: 1}),
 				store.WithStores(&store.Store{StoreID: 1, WebsiteID: 1, GroupID: 10000}),
 			},
-			errors.NotValid},
-		{"Missing Store Code",
+			errors.NotValid,
+		},
+		{
+			"Missing Store Code",
 			[]store.Option{
 				store.WithWebsites(&store.StoreWebsite{WebsiteID: 1, DefaultGroupID: 1, IsDefault: true, Code: "dach"}),
 				store.WithGroups(&store.StoreGroup{GroupID: 1, WebsiteID: 1, DefaultStoreID: 1}),
 				store.WithStores(&store.Store{StoreID: 1, WebsiteID: 1, GroupID: 1}),
 			},
-			errors.NotValid},
-		{"Store.StoreWebsite.WebsiteID not found in Store",
+			errors.NotValid,
+		},
+		{
+			"Store.StoreWebsite.WebsiteID not found in Store",
 			[]store.Option{
 				store.WithWebsites(&store.StoreWebsite{WebsiteID: 1, DefaultGroupID: 1, IsDefault: true, Code: "dach"}),
 				store.WithGroups(&store.StoreGroup{GroupID: 1, WebsiteID: 1, DefaultStoreID: 1}),
-				store.WithStores(&store.Store{StoreID: 1, WebsiteID: 2220, GroupID: 1, Code: "de-de",
+				store.WithStores(&store.Store{
+					StoreID: 1, WebsiteID: 2220, GroupID: 1, Code: "de-de",
 					StoreWebsite: &store.StoreWebsite{
 						WebsiteID: 2221, DefaultGroupID: 1, IsDefault: true, Code: "dach",
 					},
 				}),
 			},
-			errors.NotValid},
-		{"Store.StoreGroup.WebsiteID not found in Store",
+			errors.NotValid,
+		},
+		{
+			"Store.StoreGroup.WebsiteID not found in Store",
 			[]store.Option{
 				store.WithWebsites(&store.StoreWebsite{WebsiteID: 1, DefaultGroupID: 1, IsDefault: true, Code: "dach"}),
 				store.WithGroups(&store.StoreGroup{GroupID: 1, WebsiteID: 1, DefaultStoreID: 1}),
-				store.WithStores(&store.Store{StoreID: 1, WebsiteID: 2220, GroupID: 1, Code: "de-de",
+				store.WithStores(&store.Store{
+					StoreID: 1, WebsiteID: 2220, GroupID: 1, Code: "de-de",
 					StoreGroup: &store.StoreGroup{GroupID: 1, WebsiteID: 2221, DefaultStoreID: 1},
 				}),
 			},
-			errors.NotValid},
-		{"Store.StoreGroup.GroupID not found in Store",
+			errors.NotValid,
+		},
+		{
+			"Store.StoreGroup.GroupID not found in Store",
 			[]store.Option{
 				store.WithWebsites(&store.StoreWebsite{WebsiteID: 1, DefaultGroupID: 1, IsDefault: true, Code: "dach"}),
 				store.WithGroups(&store.StoreGroup{GroupID: 1, WebsiteID: 1, DefaultStoreID: 1}),
-				store.WithStores(&store.Store{StoreID: 1, WebsiteID: 2220, GroupID: 1, Code: "de-de",
+				store.WithStores(&store.Store{
+					StoreID: 1, WebsiteID: 2220, GroupID: 1, Code: "de-de",
 					StoreGroup: &store.StoreGroup{GroupID: 1, WebsiteID: 2221, DefaultStoreID: 1},
 				}),
 			},
-			errors.NotValid},
-		{"Website.Code is empty",
+			errors.NotValid,
+		},
+		{
+			"Website.Code is empty",
 			[]store.Option{
 				store.WithWebsites(&store.StoreWebsite{WebsiteID: 1, DefaultGroupID: 1, IsDefault: true}),
 				store.WithGroups(&store.StoreGroup{GroupID: 1, WebsiteID: 1, DefaultStoreID: 1, Code: "dach"}),
 				store.WithStores(&store.Store{StoreID: 1, WebsiteID: 1, GroupID: 1, Code: "de-de"}),
 			},
-			errors.NotValid},
-		{"Group.Code is empty",
+			errors.NotValid,
+		},
+		{
+			"Group.Code is empty",
 			[]store.Option{
 				store.WithWebsites(&store.StoreWebsite{WebsiteID: 1, DefaultGroupID: 1, IsDefault: true, Code: "dach"}),
 				store.WithGroups(&store.StoreGroup{GroupID: 1, WebsiteID: 1, DefaultStoreID: 1}),
 				store.WithStores(&store.Store{StoreID: 1, WebsiteID: 1, GroupID: 1, Code: "de-de"}),
 			},
-			errors.NotValid},
-		{"Store.Code is empty",
+			errors.NotValid,
+		},
+		{
+			"Store.Code is empty",
 			[]store.Option{
 				store.WithWebsites(&store.StoreWebsite{WebsiteID: 1, DefaultGroupID: 1, IsDefault: true, Code: "dach"}),
 				store.WithGroups(&store.StoreGroup{GroupID: 1, WebsiteID: 1, DefaultStoreID: 1, Code: "dach"}),
 				store.WithStores(&store.Store{StoreID: 1, WebsiteID: 1, GroupID: 1}),
 			},
-			errors.NotValid},
+			errors.NotValid,
+		},
 		// TODO add Website.Validate and Group.Validate
 	}
 
 	s := store.MustNewService()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if err := s.Options(test.opts...); test.wantErr > 0 {
+			if err := s.Options(test.opts...); !test.wantErr.Empty() {
 				assert.ErrorIsKind(t, test.wantErr, err)
 			} else {
 				assert.NoError(t, err)
@@ -263,7 +295,6 @@ func TestNewService_WebsiteGroupStore(t *testing.T) {
 			assert.ErrorIsKind(t, errors.NotFound, err)
 			assert.Nil(t, st)
 		})
-
 	})
 	t.Run("Group", func(t *testing.T) {
 		assert.Exactly(t, groups, srv.Groups())
@@ -366,7 +397,7 @@ func TestService_DefaultStoreID(t *testing.T) {
 	for i, test := range tests {
 		t.Run(fmt.Sprintf("Index_%02d", i), func(t *testing.T) {
 			haveWebsiteID, haveStoreID, haveErr := eurSrv.DefaultStoreID(test.runMode)
-			if test.wantErrBhf > 0 {
+			if !test.wantErrBhf.Empty() {
 				assert.ErrorIsKind(t, test.wantErrBhf, haveErr)
 				assert.Exactly(t, test.wantStoreID, haveStoreID)
 				return
@@ -422,7 +453,7 @@ func TestService_StoreIDbyCode(t *testing.T) {
 	for i, test := range tests {
 		t.Run(fmt.Sprintf("Index_%02d", i), func(t *testing.T) {
 			haveWebsiteID, haveStoreID, haveErr := eurSrv.StoreIDbyCode(test.runMode, test.code)
-			if test.wantErrBhf > 0 {
+			if !test.wantErrBhf.Empty() {
 				assert.ErrorIsKind(t, test.wantErrBhf, haveErr)
 				assert.Exactly(t, test.wantStoreID, haveStoreID)
 				assert.Exactly(t, test.wantWebsiteID, haveWebsiteID)
@@ -459,7 +490,7 @@ func TestService_AllowedStores_Implementation(t *testing.T) {
 	for i, test := range tests {
 		t.Run(fmt.Sprintf("Index_%02d_%s", i, test.runMode.String()), func(t *testing.T) {
 			haveStores, haveErr := eurSrv.AllowedStores(test.runMode)
-			if test.wantErrBhf > 0 {
+			if !test.wantErrBhf.Empty() {
 				assert.ErrorIsKind(t, test.wantErrBhf, haveErr)
 				assert.Exactly(t, test.wantStoreIDs, haveStores.StoreIDs())
 				return

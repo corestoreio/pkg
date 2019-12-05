@@ -21,9 +21,12 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/corestoreio/pkg/store"
 	storemock "github.com/corestoreio/pkg/store/mock"
 	jsoniter "github.com/json-iterator/go"
+	jlexer "github.com/mailru/easyjson/jlexer"
 	"github.com/mailru/easyjson/jwriter"
+	segjson "github.com/segmentio/encoding/json"
 )
 
 var benchmarkServiceJSONBytes []byte
@@ -67,6 +70,16 @@ func BenchmarkService_Json_Encoding(b *testing.B) {
 			// b.Fatal(string(benchmarkServiceJSONBytes))
 		}
 	})
+	b.Run("segmentioNewEncoder", func(b *testing.B) {
+		var buf bytes.Buffer
+		for i := 0; i < b.N; i++ {
+			je := segjson.NewEncoder(&buf)
+			_ = je.Encode(srv.Websites())
+			benchmarkServiceJSONBytes = buf.Bytes()
+			buf.Reset()
+			// b.Fatal(string(benchmarkServiceJSONBytes))
+		}
+	})
 	// jsoniter "github.com/json-iterator/go" Version 0039f4ac3d5680243e7d0650c581e7ec0885ef5a
 	b.Run("jsoniterFastestStream", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
@@ -82,6 +95,468 @@ func BenchmarkService_Json_Encoding(b *testing.B) {
 	})
 	_ = benchmarkServiceJSONBytes
 }
+
+func BenchmarkService_Json_Decoding(b *testing.B) {
+	b.Run("easyjson_______", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			var w store.StoreWebsites
+			l := jlexer.Lexer{Data: rawJSONData}
+			w.UnmarshalEasyJSON(&l)
+			if l.Error() != nil {
+				b.Fatal(l.Error())
+			}
+		}
+	})
+
+	b.Run("stdlibNewDecoder", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			var w store.StoreWebsites
+			je := json.NewDecoder(bytes.NewReader(rawJSONData))
+			if err := je.Decode(&w); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+	b.Run("segmentioNewDecoder", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			var w store.StoreWebsites
+			je := segjson.NewDecoder(bytes.NewReader(rawJSONData))
+			if err := je.Decode(&w); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+
+	b.Run("jsoniterFastestStream", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			var w store.StoreWebsites
+			je := jsoniter.ConfigFastest.NewDecoder(bytes.NewReader(rawJSONData))
+			if err := je.Decode(&w); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+	_ = benchmarkServiceJSONBytes
+}
+
+var rawJSONData = []byte(`{
+  "data": [
+    {
+      "code": "admin",
+      "name": "Admin",
+      "stores": {
+        "data": [
+          {
+            "code": "admin",
+            "name": "Admin",
+            "isActive": true
+          }
+        ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "name": "Admin",
+            "code": "admin"
+          }
+        ]
+      }
+    },
+    {
+      "websiteID": 2,
+      "code": "de",
+      "name": "Deutschland",
+      "sortOrder": 1,
+      "defaultGroupID": 2,
+      "isDefault": true,
+      "stores": {
+        "data": [
+          {
+            "storeID": 2,
+            "code": "dede",
+            "websiteID": 2,
+            "groupID": 2,
+            "name": "de",
+            "sortOrder": 1,
+            "isActive": true
+          },
+          {
+            "storeID": 3,
+            "code": "detr",
+            "websiteID": 2,
+            "groupID": 2,
+            "name": "tr",
+            "sortOrder": 4,
+            "isActive": true
+          },
+          {
+            "storeID": 5,
+            "code": "deen",
+            "websiteID": 2,
+            "groupID": 2,
+            "name": "en",
+            "sortOrder": 4,
+            "isActive": true
+          }
+        ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 2,
+            "websiteID": 2,
+            "name": "b2c",
+            "rootCategoryID": 2,
+            "defaultStoreID": 2,
+            "code": "b2c"
+          }
+        ]
+      }
+    },
+    {
+      "websiteID": 3,
+      "code": "ch",
+      "name": "Schweiz",
+      "sortOrder": 2,
+      "defaultGroupID": 3,
+      "stores": {
+        "data": [
+          {
+            "storeID": 6,
+            "code": "chde",
+            "websiteID": 3,
+            "groupID": 3,
+            "name": "de",
+            "sortOrder": 1,
+            "isActive": true
+          },
+          {
+            "storeID": 7,
+            "code": "chfr",
+            "websiteID": 3,
+            "groupID": 3,
+            "name": "fr",
+            "sortOrder": 2,
+            "isActive": true
+          },
+          {
+            "storeID": 8,
+            "code": "chit",
+            "websiteID": 3,
+            "groupID": 3,
+            "name": "it",
+            "sortOrder": 3,
+            "isActive": true
+          },
+          {
+            "storeID": 9,
+            "code": "chen",
+            "websiteID": 3,
+            "groupID": 3,
+            "name": "en",
+            "sortOrder": 4,
+            "isActive": true
+          }
+        ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 3,
+            "websiteID": 3,
+            "name": "b2c",
+            "rootCategoryID": 2,
+            "defaultStoreID": 6,
+            "code": "b2c"
+          }
+        ]
+      }
+    },
+    {
+      "websiteID": 4,
+      "code": "it",
+      "name": "Italien",
+      "sortOrder": 3,
+      "defaultGroupID": 4,
+      "stores": {
+        "data": [
+          {
+            "storeID": 10,
+            "code": "itit",
+            "websiteID": 4,
+            "groupID": 4,
+            "name": "it",
+            "sortOrder": 1,
+            "isActive": true
+          },
+          {
+            "storeID": 11,
+            "code": "itde",
+            "websiteID": 4,
+            "groupID": 4,
+            "name": "de",
+            "sortOrder": 2,
+            "isActive": true
+          }
+        ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 4,
+            "websiteID": 4,
+            "name": "b2c",
+            "rootCategoryID": 2,
+            "defaultStoreID": 10,
+            "code": "b2c"
+          }
+        ]
+      }
+    },
+    {
+      "websiteID": 5,
+      "code": "fr",
+      "name": "Frankreich",
+      "sortOrder": 4,
+      "defaultGroupID": 5,
+      "stores": {
+        "data": [
+          {
+            "storeID": 12,
+            "code": "frfr",
+            "websiteID": 5,
+            "groupID": 5,
+            "name": "fr",
+            "sortOrder": 1,
+            "isActive": true
+          }
+        ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 5,
+            "websiteID": 5,
+            "name": "b2c",
+            "rootCategoryID": 2,
+            "defaultStoreID": 12,
+            "code": "b2c"
+          }
+        ]
+      }
+    },
+    {
+      "websiteID": 6,
+      "code": "be",
+      "name": "Belgien",
+      "sortOrder": 5,
+      "defaultGroupID": 6,
+      "stores": {
+        "data": [
+          {
+            "storeID": 13,
+            "code": "befr",
+            "websiteID": 6,
+            "groupID": 6,
+            "name": "fr",
+            "sortOrder": 1,
+            "isActive": true
+          },
+          {
+            "storeID": 14,
+            "code": "been",
+            "websiteID": 6,
+            "groupID": 6,
+            "name": "en",
+            "sortOrder": 2,
+            "isActive": true
+          }
+        ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 6,
+            "websiteID": 6,
+            "name": "b2c",
+            "rootCategoryID": 2,
+            "defaultStoreID": 13,
+            "code": "b2c"
+          }
+        ]
+      }
+    },
+    {
+      "websiteID": 7,
+      "code": "lu",
+      "name": "Luxemburg",
+      "sortOrder": 6,
+      "defaultGroupID": 7,
+      "stores": {
+        "data": [
+          {
+            "storeID": 15,
+            "code": "lufr",
+            "websiteID": 7,
+            "groupID": 7,
+            "name": "fr",
+            "sortOrder": 1,
+            "isActive": true
+          },
+          {
+            "storeID": 16,
+            "code": "lude",
+            "websiteID": 7,
+            "groupID": 7,
+            "name": "de",
+            "sortOrder": 2,
+            "isActive": true
+          }
+        ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 7,
+            "websiteID": 7,
+            "name": "b2c",
+            "rootCategoryID": 2,
+            "defaultStoreID": 15,
+            "code": "b2c"
+          }
+        ]
+      }
+    },
+    {
+      "websiteID": 8,
+      "code": "at",
+      "name": "Österreich",
+      "sortOrder": 7,
+      "defaultGroupID": 8,
+      "stores": {
+        "data": [
+          {
+            "storeID": 17,
+            "code": "atde",
+            "websiteID": 8,
+            "groupID": 8,
+            "name": "de",
+            "sortOrder": 1,
+            "isActive": true
+          }
+        ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 8,
+            "websiteID": 8,
+            "name": "b2c",
+            "rootCategoryID": 2,
+            "defaultStoreID": 17,
+            "code": "b2c"
+          }
+        ]
+      }
+    },
+    {
+      "websiteID": 9,
+      "code": "int",
+      "name": "International",
+      "sortOrder": 8,
+      "defaultGroupID": 9,
+      "stores": {
+        "data": [
+          {
+            "storeID": 18,
+            "code": "inten",
+            "websiteID": 9,
+            "groupID": 9,
+            "name": "en",
+            "sortOrder": 1,
+            "isActive": true
+          }
+        ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 9,
+            "websiteID": 9,
+            "name": "b2c",
+            "rootCategoryID": 2,
+            "defaultStoreID": 18,
+            "code": "b2c"
+          }
+        ]
+      }
+    },
+    {
+      "websiteID": 10,
+      "code": "nl",
+      "name": "Netherlands",
+      "sortOrder": 9,
+      "defaultGroupID": 10,
+      "stores": {
+        "data": [
+          {
+            "storeID": 19,
+            "code": "nlen",
+            "websiteID": 10,
+            "groupID": 10,
+            "name": "en",
+            "sortOrder": 1,
+            "isActive": true
+          }
+        ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 10,
+            "websiteID": 10,
+            "name": "b2c",
+            "rootCategoryID": 2,
+            "defaultStoreID": 19,
+            "code": "b2c"
+          }
+        ]
+      }
+    },
+    {
+      "websiteID": 11,
+      "code": "uk",
+      "name": "United Kingdom",
+      "sortOrder": 10,
+      "defaultGroupID": 11,
+      "stores": {
+        "data": [
+          {
+            "storeID": 20,
+            "code": "uken",
+            "websiteID": 11,
+            "groupID": 11,
+            "name": "en",
+            "sortOrder": 1,
+            "isActive": true
+          }
+        ]
+      },
+      "storeGroups": {
+        "data": [
+          {
+            "groupID": 11,
+            "websiteID": 11,
+            "name": "b2c",
+            "rootCategoryID": 2,
+            "defaultStoreID": 20,
+            "code": "b2c"
+          }
+        ]
+      }
+    }
+  ]
+}`)
 
 // import (
 // 	"testing"
