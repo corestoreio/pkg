@@ -912,7 +912,10 @@ func (g *Generator) generateProto(w io.Writer) error {
 			fieldMapFn = defaultFieldMapFn
 		}
 
-		proto.C(t.EntityName(), `represents a single row for DB table`, t.Table.Name, `. Auto generated.`)
+		proto.C(t.EntityName(), `represents a single row for`, t.Table.Name, `DB table. Auto generated.`)
+		if t.Table.TableComment != "" {
+			proto.C("Table comment:", t.Table.TableComment)
+		}
 		proto.Pln(`message`, t.EntityName(), `{`)
 		{
 			proto.In()
@@ -1015,7 +1018,7 @@ func (g *Generator) generateProto(w io.Writer) error {
 		}
 		proto.Pln(`}`)
 
-		proto.C(t.CollectionName(), `represents multiple rows for DB table`, t.Table.Name, `. Auto generated.`)
+		proto.C(t.CollectionName(), `represents multiple rows for the`, t.Table.Name, `DB table. Auto generated.`)
 		proto.Pln(`message`, t.CollectionName(), `{`)
 		{
 			proto.In()
