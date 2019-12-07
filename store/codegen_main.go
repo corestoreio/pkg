@@ -29,7 +29,6 @@ import (
 )
 
 func main() {
-
 	const pkgPath = "github.com/corestoreio/pkg/store"
 
 	dbcp := dml.MustConnectAndVerify(dml.WithDSNfromEnv(""))
@@ -101,7 +100,6 @@ func main() {
 		Debug:     true,
 		GRPC:      true,
 	}))
-	mustCheckErr(dmlgen.GenerateJSON("./", "csall http json", nil))
 }
 
 func writeFile(outFile string, wFn func(io.Writer, io.Writer) error) {

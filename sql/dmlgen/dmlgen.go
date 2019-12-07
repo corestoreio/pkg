@@ -1418,6 +1418,7 @@ func GenerateProto(protoFilesPath string, po *ProtocOptions) error {
 
 // GenerateJSON creates the easysjon code for a specific file or a whole
 // directory. argument `g` can be nil.
+// deprecated as there are stdlib compatible packages which have the same speed without code gen.
 func GenerateJSON(fileNameOrDirectory, buildTags string, g *bootstrap.Generator) error {
 	fInfo, err := os.Stat(fileNameOrDirectory)
 	if err != nil {

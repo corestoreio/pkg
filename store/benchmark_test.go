@@ -24,8 +24,8 @@ import (
 	"github.com/corestoreio/pkg/store"
 	storemock "github.com/corestoreio/pkg/store/mock"
 	jsoniter "github.com/json-iterator/go"
-	jlexer "github.com/mailru/easyjson/jlexer"
-	"github.com/mailru/easyjson/jwriter"
+	// jlexer "github.com/mailru/easyjson/jlexer"
+	//"github.com/mailru/easyjson/jwriter"
 	segjson "github.com/segmentio/encoding/json"
 )
 
@@ -35,35 +35,25 @@ func BenchmarkService_Json_Encoding(b *testing.B) {
 	srv := storemock.NewServiceEuroW11G11S19()
 	b.ResetTimer()
 
-	// name                                           time/op
-	// Service_Json_Encoding/easyjson_______-4        9.86µs ± 0%
-	// Service_Json_Encoding/stdlibNewEncoder-4      40.60µs ± 0%
-	// Service_Json_Encoding/jsoniterFastestStream-4 42.00µs ± 1%
-	//
-	// name                                           alloc/op
-	// Service_Json_Encoding/easyjson_______-4        5.92kB ± 0%
-	// Service_Json_Encoding/stdlibNewEncoder-4       6.14kB ± 0%
-	// Service_Json_Encoding/jsoniterFastestStream-4 11.00kB ± 0%
-	//
-	// name                                           allocs/op
-	// Service_Json_Encoding/easyjson_______-4          30.0 ± 0%
-	// Service_Json_Encoding/stdlibNewEncoder-4         36.0 ± 0%
-	// Service_Json_Encoding/jsoniterFastestStream-4    37.0 ± 0%
+	// b.Run("easyjsonMEJ_____", func(b *testing.B) {
+	//	var jw jwriter.Writer
+	//	for i := 0; i < b.N; i++ {
+	//		srv.Websites().MarshalEasyJSON(&jw)
+	//		benchmarkServiceJSONBytes, _ = jw.BuildBytes()
+	//		// b.Fatal(string(benchmarkServiceJSONBytes))
+	//	}
+	//})
+	// b.Run("easyjsonMJ_____", func(b *testing.B) {
+	//	for i := 0; i < b.N; i++ {
+	//		benchmarkServiceJSONBytes, _ = srv.Websites().MarshalJSON()
+	//		// b.Fatal(string(benchmarkServiceJSONBytes))
+	//	}
+	//})
 
-	// "github.com/mailru/easyjson/jwriter" Version 498e5971837e6d60575592b3e7afdfc9873ece5b on git@github.com:SchumacherFM/easyjson.git
-	b.Run("easyjson_______", func(b *testing.B) {
-		var jw jwriter.Writer
-		for i := 0; i < b.N; i++ {
-			srv.Websites().MarshalEasyJSON(&jw)
-			benchmarkServiceJSONBytes, _ = jw.BuildBytes()
-			// b.Fatal(string(benchmarkServiceJSONBytes))
-		}
-	})
-	// Version 06e34e58150a5cb77afdd3807a93f270a3068456 aka. Go 1.13
 	b.Run("stdlibNewEncoder", func(b *testing.B) {
 		var buf bytes.Buffer
+		je := json.NewEncoder(&buf)
 		for i := 0; i < b.N; i++ {
-			je := json.NewEncoder(&buf)
 			_ = je.Encode(srv.Websites())
 			benchmarkServiceJSONBytes = buf.Bytes()
 			buf.Reset()
@@ -77,6 +67,18 @@ func BenchmarkService_Json_Encoding(b *testing.B) {
 			_ = je.Encode(srv.Websites())
 			benchmarkServiceJSONBytes = buf.Bytes()
 			buf.Reset()
+			// b.Fatal(string(benchmarkServiceJSONBytes))
+		}
+	})
+	b.Run("stdlibMarshal", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			benchmarkServiceJSONBytes, _ = json.Marshal(srv.Websites())
+			// b.Fatal(string(benchmarkServiceJSONBytes))
+		}
+	})
+	b.Run("segmentioMarshal", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			benchmarkServiceJSONBytes, _ = segjson.Marshal(srv.Websites())
 			// b.Fatal(string(benchmarkServiceJSONBytes))
 		}
 	})
@@ -97,16 +99,16 @@ func BenchmarkService_Json_Encoding(b *testing.B) {
 }
 
 func BenchmarkService_Json_Decoding(b *testing.B) {
-	b.Run("easyjson_______", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			var w store.StoreWebsites
-			l := jlexer.Lexer{Data: rawJSONData}
-			w.UnmarshalEasyJSON(&l)
-			if l.Error() != nil {
-				b.Fatal(l.Error())
-			}
-		}
-	})
+	// b.Run("easyjson_______", func(b *testing.B) {
+	//	for i := 0; i < b.N; i++ {
+	//		var w store.StoreWebsites
+	//		l := jlexer.Lexer{Data: rawJSONData}
+	//		w.UnmarshalEasyJSON(&l)
+	//		if l.Error() != nil {
+	//			b.Fatal(l.Error())
+	//		}
+	//	}
+	//})
 
 	b.Run("stdlibNewDecoder", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
@@ -122,6 +124,22 @@ func BenchmarkService_Json_Decoding(b *testing.B) {
 			var w store.StoreWebsites
 			je := segjson.NewDecoder(bytes.NewReader(rawJSONData))
 			if err := je.Decode(&w); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+	b.Run("stdlibUnmarshal", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			var w store.StoreWebsites
+			if err := json.Unmarshal(rawJSONData, &w); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+	b.Run("segmentioUnmarshal", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			var w store.StoreWebsites
+			if err := segjson.Unmarshal(rawJSONData, &w); err != nil {
 				b.Fatal(err)
 			}
 		}
