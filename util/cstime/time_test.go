@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package util_test
+package cstime_test
 
 import (
 	"errors"
 	"testing"
+	"time"
 
-	"github.com/corestoreio/pkg/util"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/corestoreio/pkg/util/cstime"
 )
 
 func TestParseTimeStrict(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		layout  string
 		value   string
@@ -35,12 +35,43 @@ func TestParseTimeStrict(t *testing.T) {
 	}
 	for _, test := range tests {
 
-		tt, err := util.ParseTimeStrict(test.layout, test.value)
+		tt, err := cstime.ParseTimeStrict(test.layout, test.value)
 		if test.wantErr != nil {
 			assert.Error(t, err, "Test %v", test)
 			continue
 		}
 		assert.NoError(t, err, "Test %v", test)
 		assert.Equal(t, test.want, tt.String(), "Test %v", test)
+	}
+}
+
+func TestRandTicker(t *testing.T) {
+	const min = 10 * time.Millisecond
+	const max = 20 * time.Millisecond
+
+	// tick can take a little longer since we're not adjusting it to account for
+	// processing.
+	const precision = 5 * time.Millisecond
+
+	rt := cstime.NewRandTicker(min, max)
+	for i := 0; i < 5; i++ {
+		t0 := time.Now()
+		t1 := <-rt.C
+		td := t1.Sub(t0)
+		if td < min {
+			t.Fatalf("tick was shorter than expected: %s", td)
+		} else if td > (max + precision) {
+			t.Fatalf("tick was longer than expected: %s", td)
+		}
+	}
+	rt.Stop()
+	time.Sleep(max + precision)
+	select {
+	case v, ok := <-rt.C:
+		if ok || !v.IsZero() {
+			t.Fatal("ticker did not shut down")
+		}
+	default:
+		t.Fatal("expected to receive close channel signal")
 	}
 }
