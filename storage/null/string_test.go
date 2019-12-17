@@ -106,7 +106,12 @@ func TestNullString_TextUnmarshal(t *testing.T) {
 	var null String
 	err = null.UnmarshalText([]byte(""))
 	maybePanic(err)
-	assertNullStr(t, null, "UnmarshalText() empty string")
+	assertEmptyStr(t, null, "UnmarshalText() empty string")
+
+	var null2 String
+	err = null2.UnmarshalText(nil)
+	maybePanic(err)
+	assertNullStr(t, null2, "UnmarshalText() empty string")
 
 	var iv String
 	err = iv.UnmarshalText([]byte{0x44, 0xff, 0x01})
@@ -247,8 +252,19 @@ func TestString_GoString(t *testing.T) {
 }
 
 func assertStr(t *testing.T, s String, from string) {
+	t.Helper()
 	if s.Data != "test" {
-		t.Errorf("bad %s string: %s ≠ %s\n", from, s.Data, "test")
+		t.Errorf("bad %q string: %q ≠ %q\n", from, s.Data, "test")
+	}
+	if !s.Valid {
+		t.Error(from, "is invalid, but should be valid")
+	}
+}
+
+func assertEmptyStr(t *testing.T, s String, from string) {
+	t.Helper()
+	if s.Data != "" {
+		t.Errorf("bad %q string: %q ≠ %q\n", from, s.Data, "test")
 	}
 	if !s.Valid {
 		t.Error(from, "is invalid, but should be valid")
@@ -256,12 +272,14 @@ func assertStr(t *testing.T, s String, from string) {
 }
 
 func assertNullStr(t *testing.T, s String, from string) {
+	t.Helper()
 	if s.Valid {
 		t.Error(from, "is valid, but should be invalid")
 	}
 }
 
 func assertJSONEquals(t *testing.T, data []byte, cmp string, from string) {
+	t.Helper()
 	if string(data) != cmp {
 		t.Errorf("bad %s data: %s ≠ %s\n", from, data, cmp)
 	}

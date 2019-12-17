@@ -17,6 +17,7 @@ package null
 import (
 	"bytes"
 	"database/sql/driver"
+	"math"
 	"strconv"
 
 	"github.com/corestoreio/errors"
@@ -99,6 +100,17 @@ func (a Int8) GoString() string {
 // 0 will not be considered a null Int8. It also supports unmarshalling a
 // sql.Int8.
 func (a *Int8) UnmarshalJSON(data []byte) error {
+	if len(data) == 0 || bytes.Equal(bTextNullLC, data) {
+		a.Valid = false
+		a.Int8 = 0
+		return nil
+	}
+	if v, ok, err := byteconv.ParseInt(data); ok && err == nil && v >= -math.MaxInt8 && v <= math.MaxInt8 {
+		a.Valid = true
+		a.Int8 = int8(v)
+		return nil
+	}
+
 	var err error
 	var v interface{}
 	if err = jsonUnMarshalFn(data, &v); err != nil {
@@ -130,9 +142,9 @@ func (a *Int8) UnmarshalJSON(data []byte) error {
 // It will unmarshal to a null Int8 if the input is a blank or not an integer.
 // It will return an error if the input is not an integer, blank, or sqlStrNullLC.
 func (a *Int8) UnmarshalText(text []byte) error {
-	str := string(text)
-	if str == "" || str == sqlStrNullLC {
+	if len(text) == 0 || bytes.Equal(bTextNullLC, text) {
 		a.Valid = false
+		a.Int8 = 0
 		return nil
 	}
 	ni, ok, err := byteconv.ParseInt(text)

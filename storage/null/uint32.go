@@ -17,6 +17,7 @@ package null
 import (
 	"bytes"
 	"database/sql/driver"
+	"math"
 	"strconv"
 
 	"github.com/corestoreio/errors"
@@ -98,6 +99,16 @@ func (a Uint32) GoString() string {
 // 0 will not be considered a null Uint32. It also supports unmarshalling a
 // sql.Uint32.
 func (a *Uint32) UnmarshalJSON(data []byte) error {
+	if len(data) == 0 || bytes.Equal(bTextNullLC, data) {
+		a.Valid = false
+		a.Uint32 = 0
+		return nil
+	}
+	if v, ok, err := byteconv.ParseUint(data, 10, 32); ok && err == nil && v >= 0 && v <= math.MaxUint32 {
+		a.Valid = true
+		a.Uint32 = uint32(v)
+		return nil
+	}
 	var err error
 	var v interface{}
 	if err = jsonUnMarshalFn(data, &v); err != nil {
@@ -114,7 +125,7 @@ func (a *Uint32) UnmarshalJSON(data []byte) error {
 			Valid  bool
 		}{}
 		err = jsonUnMarshalFn(data, dto)
-		a.Uint32 = uint32(dto.Uint32)
+		a.Uint32 = dto.Uint32
 		a.Valid = dto.Valid
 	case nil:
 		a.Valid = false
@@ -130,9 +141,9 @@ func (a *Uint32) UnmarshalJSON(data []byte) error {
 // It will unmarshal to a null Uint32 if the input is a blank or not an integer.
 // It will return an error if the input is not an integer, blank, or sqlStrNullLC.
 func (a *Uint32) UnmarshalText(text []byte) (err error) {
-	str := string(text)
-	if str == "" || str == sqlStrNullLC {
+	if len(text) == 0 || bytes.Equal(bTextNullLC, text) {
 		a.Valid = false
+		a.Uint32 = 0
 		return nil
 	}
 	var i64 uint64

@@ -104,6 +104,12 @@ func (a String) GoString() string {
 // It supports string and null input. Blank string input does not produce a null String.
 // It also supports unmarshalling a sql.String.
 func (a *String) UnmarshalJSON(data []byte) error {
+	if len(data) == 0 || bytes.Equal(bTextNullLC, data) {
+		a.Valid = false
+		a.Data = ""
+		return nil
+	}
+
 	var err error
 	var v interface{}
 
@@ -153,11 +159,11 @@ func (a String) MarshalText() ([]byte, error) {
 // UnmarshalText implements encoding.TextUnmarshaler.
 // It will unmarshal to a null String if the input is a blank string.
 func (a *String) UnmarshalText(text []byte) error {
-	if !utf8.Valid(text) {
+	if text != nil && !utf8.Valid(text) {
 		return errors.NotValid.Newf("[dml] Input bytes are not valid UTF-8 encoded.")
 	}
 	a.Data = string(text)
-	a.Valid = a.Data != ""
+	a.Valid = text != nil
 	return nil
 }
 

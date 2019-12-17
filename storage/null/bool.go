@@ -95,6 +95,17 @@ func (a Bool) GoString() string {
 // 0 will not be considered a null Bool. It also supports unmarshalling a
 // sql.Bool.
 func (a *Bool) UnmarshalJSON(data []byte) error {
+	if len(data) == 0 || bytes.Equal(bTextNullLC, data) {
+		a.Valid = false
+		a.Bool = false
+		return nil
+	}
+	if v, ok, err := byteconv.ParseBool(data); ok && err == nil {
+		a.Valid = true
+		a.Bool = v
+		return nil
+	}
+
 	var err error
 	var v interface{}
 	if err = jsonUnMarshalFn(data, &v); err != nil {
@@ -127,6 +138,7 @@ func (a *Bool) UnmarshalJSON(data []byte) error {
 func (a *Bool) UnmarshalText(text []byte) (err error) {
 	if len(text) == 0 || bytes.Equal(text, bTextNullUC) || bytes.Equal(text, bTextNullLC) {
 		a.Valid = false
+		a.Bool = false
 		return nil
 	}
 	a.Bool, a.Valid, err = byteconv.ParseBool(text)

@@ -95,6 +95,16 @@ func (a Int64) GoString() string {
 // 0 will not be considered a null Int64. It also supports unmarshalling a
 // sql.Int64.
 func (a *Int64) UnmarshalJSON(data []byte) error {
+	if len(data) == 0 || bytes.Equal(bTextNullLC, data) {
+		a.Valid = false
+		a.Int64 = 0
+		return nil
+	}
+	if v, ok, err := byteconv.ParseInt(data); ok && err == nil {
+		a.Int64 = v
+		a.Valid = true
+		return nil
+	}
 	var err error
 	var v interface{}
 	if err = jsonUnMarshalFn(data, &v); err != nil {
@@ -126,9 +136,9 @@ func (a *Int64) UnmarshalJSON(data []byte) error {
 // It will unmarshal to a null Int64 if the input is a blank or not an integer.
 // It will return an error if the input is not an integer, blank, or sqlStrNullLC.
 func (a *Int64) UnmarshalText(text []byte) error {
-	str := string(text)
-	if str == "" || str == sqlStrNullLC {
+	if len(text) == 0 || bytes.Equal(bTextNullLC, text) {
 		a.Valid = false
+		a.Int64 = 0
 		return nil
 	}
 	ni, ok, err := byteconv.ParseInt(text)

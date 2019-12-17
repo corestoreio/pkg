@@ -65,6 +65,11 @@ func (a Time) MarshalJSON() ([]byte, error) {
 // It supports string, object (e.g. pq.Time and friends)
 // and null input.
 func (a *Time) UnmarshalJSON(data []byte) error {
+	if len(data) == 0 || bytes.Equal(bTextNullLC, data) {
+		a.Valid = false
+		a.Time = time.Time{}
+		return nil
+	}
 	var err error
 	var v interface{}
 	if err = jsonUnMarshalFn(data, &v); err != nil {
@@ -102,9 +107,9 @@ func (a Time) MarshalText() ([]byte, error) {
 
 // UnmarshalText parses the byte slice to create a time type.
 func (a *Time) UnmarshalText(text []byte) error {
-	str := string(text)
-	if str == "" || str == sqlStrNullLC {
+	if len(text) == 0 || bytes.Equal(bTextNullLC, text) {
 		a.Valid = false
+		a.Time = time.Time{}
 		return nil
 	}
 	if err := a.Time.UnmarshalText(text); err != nil {

@@ -17,6 +17,7 @@ package null
 import (
 	"bytes"
 	"database/sql/driver"
+	"math"
 	"strconv"
 
 	"github.com/corestoreio/errors"
@@ -94,6 +95,16 @@ func (a Uint64) GoString() string {
 // 0 will not be considered a null Uint64. It also supports unmarshalling a
 // sql.Uint64.
 func (a *Uint64) UnmarshalJSON(data []byte) error {
+	if len(data) == 0 || bytes.Equal(bTextNullLC, data) {
+		a.Valid = false
+		a.Uint64 = 0
+		return nil
+	}
+	if v, ok, err := byteconv.ParseUint(data, 10, 64); ok && err == nil && v >= 0 && v <= math.MaxUint64 {
+		a.Valid = true
+		a.Uint64 = v
+		return nil
+	}
 	var err error
 	var v interface{}
 	if err = jsonUnMarshalFn(data, &v); err != nil {
@@ -125,9 +136,9 @@ func (a *Uint64) UnmarshalJSON(data []byte) error {
 // It will unmarshal to a null Uint64 if the input is a blank or not an integer.
 // It will return an error if the input is not an integer, blank, or sqlStrNullLC.
 func (a *Uint64) UnmarshalText(text []byte) (err error) {
-	str := string(text)
-	if str == "" || str == sqlStrNullLC {
+	if len(text) == 0 || bytes.Equal(bTextNullLC, text) {
 		a.Valid = false
+		a.Uint64 = 0
 		return nil
 	}
 	a.Uint64, a.Valid, err = byteconv.ParseUint(text, 10, 64)

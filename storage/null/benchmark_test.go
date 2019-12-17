@@ -15,11 +15,13 @@
 package null_test
 
 import (
+	"encoding/json"
 	"math"
 	"testing"
 	"time"
 
 	"github.com/corestoreio/pkg/storage/null"
+	segjson "github.com/segmentio/encoding/json"
 )
 
 func BenchmarkSQLScanner(b *testing.B) {
@@ -221,6 +223,62 @@ func BenchmarkMakeDecimalBytes(b *testing.B) {
 		`6789012345678912345678901234.123`,
 	}
 	for _, data := range tests {
-		b.Run(string(data), benchMakeDecimalBytes([]byte(data)))
+		b.Run(data, benchMakeDecimalBytes([]byte(data)))
 	}
+}
+
+func BenchmarkJSON(b *testing.B) {
+	subBench := func(b *testing.B, data []byte) {
+		b.Run("stdlib", func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				var at AllTypes
+				if err := json.Unmarshal(data, &at); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+		b.Run("segmentio", func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				var at AllTypes
+				if err := segjson.Unmarshal(data, &at); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
+
+	b.Run("no sub object", func(b *testing.B) {
+		data := []byte(`{
+  "bool": true,
+  "decimal": 0.0000987654321,
+  "float64": 3.141592653589793,
+  "int8": 8,
+  "int16": 66,
+  "int32": 72,
+  "int64": 30,
+  "uint8": 62,
+  "uint16": 95,
+  "uint32": 8955412,
+  "uint64": 74,
+  "string": "OVRkYjbyamYIZiyBzBPQRGyLzyvEEbKjWMekMlSkbdNPFjIlVRAvjHMMlHwTeavthSaxjeoWuIoHNateBjTJhGranNSxPnezotCMnahKKQBqkOPqtMDeIZuvhRnHkWr"
+}`)
+		subBench(b, data)
+	})
+	b.Run("with sub object", func(b *testing.B) {
+		data := []byte(`{
+  "bool": true,
+  "decimal": 0.0000987654321,
+  "float64": {"Float64":3.141592653589793,"Valid":true},
+  "int8": {"Int8":8,"Valid":true},
+  "int16": {"Int16":66,"Valid":true},
+  "int32": {"Int32":72,"Valid":true},
+  "int64": {"Int64":30,"Valid":true},
+  "uint8": {"Uint8":62,"Valid":true},
+  "uint16": {"Uint16":95,"Valid":true},
+  "uint32": {"Uint32":8955412,"Valid":true},
+  "uint64": {"Uint64":74,"Valid":true},
+  "string": "OVRkYjbyamYIZiyBzBPQRGyLzyvEEbKjWMekMlSkbdNPFjIlVRAvjHMMlHwTeavthSaxjeoWuIoHNateBjTJhGranNSxPnezotCMnahKKQBqkOPqtMDeIZuvhRnHkWr"
+}`)
+		subBench(b, data)
+	})
 }

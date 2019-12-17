@@ -100,6 +100,17 @@ func (a Float64) GoString() string {
 // 0 will not be considered a null Float64.
 // It also supports unmarshalling a sql.Float64.
 func (a *Float64) UnmarshalJSON(data []byte) error {
+	if len(data) == 0 || bytes.Equal(bTextNullLC, data) {
+		a.Valid = false
+		a.Float64 = 0
+		return nil
+	}
+	if f, ok, err := byteconv.ParseFloat(data); ok && err == nil {
+		a.Valid = true
+		a.Float64 = f
+		return nil
+	}
+
 	var err error
 	var v interface{}
 	if err = jsonUnMarshalFn(data, &v); err != nil {
@@ -129,15 +140,15 @@ func (a *Float64) UnmarshalJSON(data []byte) error {
 // UnmarshalText implements encoding.TextUnmarshaler.
 // It will unmarshal to a null Float64 if the input is a blank or not an integer.
 // It will return an error if the input is not an integer, blank, or "null".
-func (a *Float64) UnmarshalText(text []byte) error {
-	str := string(text)
-	if str == "" || str == sqlStrNullLC {
+func (a *Float64) UnmarshalText(text []byte) (err error) {
+	if len(text) == 0 || bytes.Equal(bTextNullLC, text) {
 		a.Valid = false
+		a.Float64 = 0
 		return nil
 	}
-	var err error
-	a.Float64, err = strconv.ParseFloat(string(text), 64)
-	a.Valid = err == nil
+	var ok bool
+	a.Float64, ok, err = byteconv.ParseFloat(text)
+	a.Valid = ok && err == nil
 	return err
 }
 
