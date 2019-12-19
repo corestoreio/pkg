@@ -31,6 +31,29 @@ func TestMakeAlias(t *testing.T) {
 	assert.Exactly(t, "`table1`", MakeIdentifier("table1").String())
 }
 
+func TestIds_AppendColumns(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		have, want ids
+	}{
+		{
+			ids{}.AppendColumns(false, "aa", "bb"),
+			ids{{Name: "aa"}, {Name: "bb"}},
+		},
+		{
+			ids{}.AppendColumns(false, "aa ASC", "bb"),
+			ids{{Name: "aa", Sort: sortAscending}, {Name: "bb"}},
+		},
+		{
+			ids{}.AppendColumns(false, "aa ASC", "bb DESC"),
+			ids{{Name: "aa", Sort: sortAscending}, {Name: "bb", Sort: sortDescending}},
+		},
+	}
+	for i, test := range tests {
+		assert.Exactly(t, test.want, test.have, "Index %d", i)
+	}
+}
+
 // func TestMakeExpressionAlias(t *testing.T) {
 //	t.Parallel()
 //	assert.Exactly(t, "(table1)", MakeExpressionAlias("(table1)", "").String())

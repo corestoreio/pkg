@@ -162,6 +162,9 @@ func (u *Union) PreserveResultSet() *Union {
 // expression. MySQL might order the result set in a temporary table, which is
 // slow. Under different conditions sorting can skip the temporary table.
 // https://dev.mysql.com/doc/relnotes/mysql/5.7/en/news-5-7-3.html
+// A column name can also contain the suffix words " ASC" or " DESC" to indicate
+// the sorting. This avoids using the method OrderByDesc when sorting certain
+// columns descending.
 func (u *Union) OrderBy(columns ...string) *Union {
 	u.OrderBys = u.OrderBys.AppendColumns(u.IsUnsafe, columns...)
 	return u

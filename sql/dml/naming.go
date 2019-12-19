@@ -24,8 +24,10 @@ import (
 	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
-const quote = "`"
-const quoteRune = '`'
+const (
+	quote     = "`"
+	quoteRune = '`'
+)
 
 // Quoter at the quoter to use for quoting text; use Mysql quoting by default.
 var Quoter = MysqlQuoter{
@@ -181,15 +183,27 @@ func (idc ids) applySort(lastNindexes int, sort byte) ids {
 }
 
 // AppendColumns adds new columns to the identifier slice. If a column name is
-// not valid identifier that column gets switched into an expression. You should
-// use this function when no arguments should be attached to an expression,
-// otherwise use the function appendConditions.
+// not a valid identifier that column gets switched into an expression. You
+// should use this function when no arguments should be attached to an
+// expression, otherwise use the function appendConditions. If a column name
+// contains " ASC" or " DESC" as a suffix, the internal sorting flag gets set
+// and the words ASC or DESC removed.
 func (idc ids) AppendColumns(isUnsafe bool, columns ...string) ids {
 	if cap(idc) == 0 {
 		idc = make(ids, 0, len(columns)*2)
 	}
 	for _, c := range columns {
-		ident := id{Name: c}
+		var sorting byte
+		switch {
+		case strings.HasSuffix(c, " ASC"):
+			c = c[:len(c)-4]
+			sorting = sortAscending
+		case strings.HasSuffix(c, " DESC"):
+			c = c[:len(c)-5]
+			sorting = sortDescending
+		}
+
+		ident := id{Name: c, Sort: sorting}
 		if isUnsafe && isValidIdentifier(c) != 0 {
 			ident.Expression = ident.Name
 			ident.Name = ""

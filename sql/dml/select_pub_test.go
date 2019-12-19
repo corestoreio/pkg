@@ -448,8 +448,8 @@ func TestSelect_Prepare(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Exactly(t, uint64(2), rc)
 
-			assert.Exactly(t, "&{3  4 a/b/c { false}}", fmt.Sprintf("%v", ccd.Data[0]))
-			assert.Exactly(t, "&{4  4 a/b/d { false}}", fmt.Sprintf("%v", ccd.Data[1]))
+			assert.Exactly(t, "&{3  4 a/b/c null}", fmt.Sprintf("%v", ccd.Data[0]))
+			assert.Exactly(t, "&{4  4 a/b/d null}", fmt.Sprintf("%v", ccd.Data[1]))
 		})
 
 		t.Run("Int64", func(t *testing.T) {

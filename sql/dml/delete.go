@@ -190,6 +190,9 @@ func (b *Delete) Where(wf ...*Condition) *Delete {
 // treated as an expression. When you use ORDER BY or GROUP BY to sort a column
 // in a DELETE, the server sorts arguments using only the initial number of
 // bytes indicated by the max_sort_length system variable.
+// A column name can also contain the suffix words " ASC" or " DESC" to indicate
+// the sorting. This avoids using the method OrderByDesc when sorting certain
+// columns descending.
 func (b *Delete) OrderBy(columns ...string) *Delete {
 	b.OrderBys = b.OrderBys.AppendColumns(b.IsUnsafe, columns...)
 	return b

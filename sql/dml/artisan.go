@@ -80,6 +80,9 @@ const (
 // treated as an expression. This ORDER BY clause gets appended to the current
 // internal cached SQL string independently if the SQL statement supports it or
 // not or if there exists already an ORDER BY clause.
+// A column name can also contain the suffix words " ASC" or " DESC" to indicate
+// the sorting. This avoids using the method OrderByDesc when sorting certain
+// columns descending.
 func (a *Artisan) OrderBy(columns ...string) *Artisan {
 	a.OrderBys = a.OrderBys.AppendColumns(false, columns...)
 	return a

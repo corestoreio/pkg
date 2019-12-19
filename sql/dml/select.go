@@ -320,6 +320,9 @@ func (b *Select) OrderByDeactivated() *Select {
 // treated as an expression. When you use ORDER BY or GROUP BY to sort a column
 // in a SELECT, the server sorts values using only the initial number of bytes
 // indicated by the max_sort_length system variable.
+// A column name can also contain the suffix words " ASC" or " DESC" to indicate
+// the sorting. This avoids using the method OrderByDesc when sorting certain
+// columns descending.
 func (b *Select) OrderBy(columns ...string) *Select {
 	b.OrderBys = b.OrderBys.AppendColumns(b.IsUnsafe, columns...)
 	return b
