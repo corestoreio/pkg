@@ -17,23 +17,20 @@ import (
 //   - ?foo__gte=42 - Where(`"foo" >= 42`)
 //   - ?foo__lt=42 - Where(`"foo" < 42`)
 //   - ?foo__lte=42 - Where(`"foo" <= 42`)
+//   - ?foo__lte=42&foo__sort=desc - WHERE `foo` <= 42 ORDER BY `foo` DESC
+//   - ?foo__lte=42&foo__sort=asc - WHERE `foo` <= 42 ORDER BY `foo` ASC
 //   - ?foo__ieq=bar - Where(`"foo" ILIKE 'bar'`)
 //   - ?foo__match=bar - Where(`"foo" SIMILAR TO 'bar'`)
 type Filter struct {
 	Deterministic bool // if true internal map gets printed in its order, otherwise flaky tests.
-	values        Values
+	Values        Values
 	allowed       map[string]struct{}
 }
 
 func NewFilter(values Values) *Filter {
 	return &Filter{
-		values: values,
+		Values: values,
 	}
-}
-
-// Values returns URL values.
-func (f *Filter) Values() Values {
-	return f.values
 }
 
 // Allow only columnName__operators are allowed
@@ -54,35 +51,36 @@ func (f *Filter) isAllowed(filter string) bool {
 	return ok
 }
 
-func (f *Filter) Filters(tbl *ddl.Table, cond dml.Conditions) dml.Conditions {
+// Filters builds the SQL conditions by appending to slice `cond` and returning it.
+func (f *Filter) Filters(tbl *ddl.Table, cond dml.Conditions) (_ dml.Conditions, sortOrder []string) {
 	if f == nil {
-		return cond
+		return cond, sortOrder
 	}
 	if f.Deterministic {
-		keys := make([]string, 0, len(f.values))
-		for filter := range f.values {
+		keys := make([]string, 0, len(f.Values))
+		for filter := range f.Values {
 			keys = append(keys, filter)
 		}
 		sort.Strings(keys)
 		for _, filter := range keys {
-			cond = f.iterate(tbl, cond, filter, f.values[filter])
+			cond, sortOrder = f.iterate(tbl, cond, sortOrder, filter, f.Values[filter])
 		}
-		return cond
+		return cond, sortOrder
 	}
-	for filter, values := range f.values {
-		cond = f.iterate(tbl, cond, filter, values)
+	for filter, values := range f.Values {
+		cond, sortOrder = f.iterate(tbl, cond, sortOrder, filter, values)
 	}
 
-	return cond
+	return cond, sortOrder
 }
 
-func (f *Filter) iterate(tbl *ddl.Table, cond dml.Conditions, filter string, values []string) dml.Conditions {
+func (f *Filter) iterate(tbl *ddl.Table, cond dml.Conditions, sortOrder []string, filter string, values []string) (_ dml.Conditions, _sortOrder []string) {
 	if strings.HasSuffix(filter, "[]") {
 		filter = filter[:len(filter)-2]
 	}
 
 	if !f.isAllowed(filter) {
-		return cond
+		return cond, sortOrder
 	}
 
 	var operation string
@@ -92,12 +90,12 @@ func (f *Filter) iterate(tbl *ddl.Table, cond dml.Conditions, filter string, val
 
 	if tbl.HasColumn(filter) {
 		// TODO AND or OR
-		cond = addOperator(cond, filter, operation, values)
+		cond, sortOrder = addOperator(cond, sortOrder, filter, operation, values)
 	}
-	return cond
+	return cond, sortOrder
 }
 
-func addOperator(b dml.Conditions, field, op string, values []string) dml.Conditions {
+func addOperator(b dml.Conditions, sortOrder []string, field, op string, values []string) (_ dml.Conditions, _sortOrder []string) {
 	switch op {
 	case "", "eq", "include":
 		b = forAllValues(b, field, values, dml.Equal, dml.In)
@@ -119,10 +117,23 @@ func addOperator(b dml.Conditions, field, op string, values []string) dml.Condit
 		b = forAllValues(b, field, values, dml.Equal, dml.Between)
 	case "nbw":
 		b = forAllValues(b, field, values, dml.NotEqual, dml.NotBetween)
-		// case "match":
-		//	b = forEachValue(b, field, values, " SIMILAR TO ")
+	// case "match":
+	//	b = forEachValue(b, field, values, " SIMILAR TO ")
+	case "sort":
+		var ascDesc string
+		if len(values) == 1 {
+			switch vRaw := strings.ToUpper(values[0]); vRaw {
+			case "":
+				// do nothing
+			case "ASC":
+				ascDesc = " ASC"
+			case "DESC":
+				ascDesc = " DESC"
+			}
+		}
+		sortOrder = append(sortOrder, field+ascDesc)
 	}
-	return b
+	return b, sortOrder
 }
 
 func forEachValue(b dml.Conditions, field string, values []string, opValue dml.Op) dml.Conditions {

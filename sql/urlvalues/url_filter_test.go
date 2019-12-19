@@ -25,7 +25,7 @@ func BenchmarkNewFilter_Filters(b *testing.B) {
 		uv := urlvalues.Values(values)
 		uf := urlvalues.NewFilter(uv)
 
-		cond = uf.Filters(tbl, cond)
+		cond, _ = uf.Filters(tbl, cond)
 	}
 }
 
@@ -64,6 +64,12 @@ func TestNewFilter_AllAllowed(t *testing.T) {
 		{"name__bw=55", query + " WHERE (`name` = '55')"},
 		{"name__nbw=33&name__nbw=44", query + " WHERE (`name` NOT BETWEEN '33' AND '44')"},
 		{"name__nbw=55", query + " WHERE (`name` != '55')"},
+		// sorting
+		{"id__lt=10&id__sort=asc", query + " WHERE (`id` < '10') ORDER BY `id` ASC"},
+		{"id__lt=10&id__sort=desc", query + " WHERE (`id` < '10') ORDER BY `id` DESC"},
+		{"id__lt=10&id__sort=", query + " WHERE (`id` < '10') ORDER BY `id`"},
+		{"id__lt=10&id__sort=", query + " WHERE (`id` < '10') ORDER BY `id`"},
+		{"name__include=Peter&name__include=Mike&id__sort=desc&name__sort=asc", query + " WHERE (`name` IN ('Peter','Mike')) ORDER BY `id` DESC, `name` ASC"},
 	}
 	for _, test := range tests {
 		t.Run(test.queryString, func(t *testing.T) {
@@ -74,10 +80,10 @@ func TestNewFilter_AllAllowed(t *testing.T) {
 			uf := urlvalues.NewFilter(uv)
 			uf.Deterministic = true
 
-			var cond dml.Conditions
+			cond, sortOrder := uf.Filters(tbl, nil)
+			dmlSelect := dml.NewSelect(tbl.Columns.FieldNames()...).From(tbl.Name).Where(cond...)
 
-			cond = uf.Filters(tbl, cond)
-			sqlStr, _, err := dml.NewSelect(tbl.Columns.FieldNames()...).From(tbl.Name).Where(cond...).ToSQL()
+			sqlStr, _, err := dmlSelect.OrderBy(sortOrder...).ToSQL()
 			assert.NoError(t, err)
 			assert.Exactly(t, test.wantQuery, sqlStr, "%q", sqlStr)
 		})
@@ -101,6 +107,7 @@ func TestNewFilter_SomeAllowed(t *testing.T) {
 		{"name__lte=Peter", query},
 		{"name__gt=1&name__lt=2", query},
 		{"name__gt=1&name__lt=2", query},
+		{"name__gt=1&name__lt=2&city_sort=asc", query}, // city not allowed and should now be shown
 	}
 	for _, test := range tests {
 		t.Run(test.queryString, func(t *testing.T) {
@@ -112,10 +119,9 @@ func TestNewFilter_SomeAllowed(t *testing.T) {
 			uf.Deterministic = true
 			uf.Allow("id__gt")
 			uf.Allow("name__gte")
-			var cond dml.Conditions
 
-			cond = uf.Filters(tbl, cond)
-			sqlStr, _, err := dml.NewSelect(tbl.Columns.FieldNames()...).From(tbl.Name).Where(cond...).ToSQL()
+			cond, sortOrder := uf.Filters(tbl, nil)
+			sqlStr, _, err := dml.NewSelect(tbl.Columns.FieldNames()...).From(tbl.Name).Where(cond...).OrderBy(sortOrder...).ToSQL()
 			assert.NoError(t, err)
 			assert.Exactly(t, test.wantQuery, sqlStr, "%q", sqlStr)
 		})
