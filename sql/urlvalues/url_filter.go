@@ -8,19 +8,27 @@ import (
 	"github.com/corestoreio/pkg/sql/dml"
 )
 
+//'regexp'        => "{{fieldName}} REGEXP ?",
+
 // URLFilter is used with Query.Apply to add WHERE clauses from the URL values:
 //   - ?foo=bar - Where(`"foo" = 'bar'`)
 //   - ?foo=hello&foo=world - Where(`"foo" IN ('hello','world')`)
+//   - ?foo__eq=bar - Where(`"foo" = 'bar'`)
 //   - ?foo__neq=bar - Where(`"foo" != 'bar'`)
 //   - ?foo__exclude=bar - Where(`"foo" != 'bar'`)
 //   - ?foo__gt=42 - Where(`"foo" > 42`)
 //   - ?foo__gte=42 - Where(`"foo" >= 42`)
+//   - ?foo__from=42&foo__to=100 - Where(`"foo" >= 42` AND `foo` <= 100)
 //   - ?foo__lt=42 - Where(`"foo" < 42`)
 //   - ?foo__lte=42 - Where(`"foo" <= 42`)
+//   - ?foo__null= - Where(`"foo" IS NULL`)
+//   - ?foo__notnull= - Where(`"foo" IS NOT NULL`)
 //   - ?foo__lte=42&foo__sort=desc - WHERE `foo` <= 42 ORDER BY `foo` DESC
 //   - ?foo__lte=42&foo__sort=asc - WHERE `foo` <= 42 ORDER BY `foo` ASC
-//   - ?foo__ieq=bar - Where(`"foo" ILIKE 'bar'`)
+//   - ?foo__like=bar - Where(`"foo" LIKE 'bar'`)
+//   - ?foo__nlike=bar - Where(`"foo" NOT LIKE 'bar'`)
 //   - ?foo__match=bar - Where(`"foo" SIMILAR TO 'bar'`)
+//   - ?foo__ss=bar - Where(`"foo" <=> 'bar'`) // space ship operator
 type Filter struct {
 	Deterministic bool // if true internal map gets printed in its order, otherwise flaky tests.
 	Values        Values
@@ -97,22 +105,28 @@ func (f *Filter) iterate(tbl *ddl.Table, cond dml.Conditions, sortOrder []string
 
 func addOperator(b dml.Conditions, sortOrder []string, field, op string, values []string) (_ dml.Conditions, _sortOrder []string) {
 	switch op {
-	case "", "eq", "include":
+	case "", "eq", "include", "in":
 		b = forAllValues(b, field, values, dml.Equal, dml.In)
-	case "exclude", "neq":
+	case "exclude", "neq", "nin":
 		b = forAllValues(b, field, values, dml.NotEqual, dml.NotIn)
 	case "gt":
 		b = forEachValue(b, field, values, dml.Greater)
-	case "gte":
+	case "gte", "from":
 		b = forEachValue(b, field, values, dml.GreaterOrEqual)
 	case "lt":
 		b = forEachValue(b, field, values, dml.Less)
-	case "lte":
+	case "lte", "to":
 		b = forEachValue(b, field, values, dml.LessOrEqual)
-	case "ieq":
+	case "like":
 		b = forEachValue(b, field, values, dml.Like)
-	case "ineq":
+	case "nlike":
 		b = forEachValue(b, field, values, dml.NotLike)
+	case "null":
+		b = forEachValue(b, field, values, dml.Null)
+	case "notnull":
+		b = forEachValue(b, field, values, dml.NotNull)
+	case "ss":
+		b = forEachValue(b, field, values, dml.SpaceShip)
 	case "bw":
 		b = forAllValues(b, field, values, dml.Equal, dml.Between)
 	case "nbw":

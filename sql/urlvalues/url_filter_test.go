@@ -50,9 +50,18 @@ func TestNewFilter_AllAllowed(t *testing.T) {
 		{"name=Mike", query + " WHERE (`name` = 'Mike')"},
 		{"name__eq=Mike", query + " WHERE (`name` = 'Mike')"},
 		{"name__eq=Mi%27ke", query + " WHERE (`name` = 'Mi\\'ke')"},
-		{"name__ieq=mik_", query + " WHERE (`name` LIKE 'mik_')"},
-		{"name__ineq=mik_", query + " WHERE (`name` NOT LIKE 'mik_')"},
-		{"name__ineq=mik%25", query + " WHERE (`name` NOT LIKE 'mik%')"},
+
+		{"name__like=mik_", query + " WHERE (`name` LIKE 'mik_')"},
+		{"name__nlike=mik_", query + " WHERE (`name` NOT LIKE 'mik_')"},
+		{"name__nlike=mik%25", query + " WHERE (`name` NOT LIKE 'mik%')"},
+
+		{"name__null=Mike", query + " WHERE (`name` IS NULL)"},
+		{"name__notnull=Mike", query + " WHERE (`name` IS NOT NULL)"},
+		{"name__null=", query + " WHERE (`name` IS NULL)"},
+		{"name__notnull=", query + " WHERE (`name` IS NOT NULL)"},
+
+		{"name__ss=Peter", query + " WHERE (`name` <=> 'Peter')"},
+
 		{"name__include=Peter&name__include=Mike", query + " WHERE (`name` IN ('Peter','Mike'))"},
 		{"name=Mike&name=Peter", query + " WHERE (`name` IN ('Mike','Peter'))"},
 		{"name[]=Mike&name[]=Peter", query + " WHERE (`name` IN ('Mike','Peter'))"},
