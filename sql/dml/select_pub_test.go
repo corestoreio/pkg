@@ -548,7 +548,7 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 			// Do not run such a construct in production.
 
 			type processor interface {
-				WithArgs() *dml.Artisan
+				WithArgs() *dml.DBR
 			}
 			const limit = 5
 			const concurrencyLevel = 10
@@ -754,7 +754,7 @@ func TestPrepareWithArgs(t *testing.T) {
 
 		ctx := context.TODO()
 
-		for _, a := range []*dml.Artisan{
+		for _, a := range []*dml.DBR{
 			dbc.SelectFrom("a").AddColumns("a1").PrepareWithArgs(ctx),
 			dbc.Union(dml.NewSelect("*").From("b1"), dml.NewSelect("*").From("b2")).PrepareWithArgs(ctx),
 			dbc.Update("c").AddColumns("c1").PrepareWithArgs(ctx),

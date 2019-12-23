@@ -30,13 +30,13 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// Artisan prepares the SQL string from a DML type, collects and build a list of
-// arguments for later sending and execution in the database server. Arguments
-// are collections of primitive types or slices of primitive types. An Artisan
-// type acts like a prepared statement. In fact it can contain under the hood
-// different connection types. Artisan is optimized for reuse and allow saving
-// memory allocations.
-type Artisan struct {
+// DBR is a DataBaseRunner which prepares the SQL string from a DML type,
+// collects and build a list of arguments for later sending and execution in the
+// database server. Arguments are collections of primitive types or slices of
+// primitive types. An DBR type acts like a prepared statement. In fact it can
+// contain under the hood different connection types. DBR is optimized for reuse
+// and allow saving memory allocations.
+type DBR struct {
 	base builderCommon
 	// QualifiedColumnsAliases allows to overwrite the internal qualified
 	// columns slice with custom names. Only in the use case when records are
@@ -75,6 +75,21 @@ const (
 	argOptionInterpolate
 )
 
+// DBRFunc defines a call back function used in other packages to allow
+// modifications to the DBR object.
+type DBRFunc func(*DBR)
+
+// ApplyCallBacks applies various function to the current DBR instance.
+func (a *DBR) ApplyCallBacks(afs ...DBRFunc) *DBR {
+	if len(afs) == 0 {
+		return a
+	}
+	for _, af := range afs {
+		af(a)
+	}
+	return a
+}
+
 // OrderBy appends columns to the ORDER BY statement for ascending sorting. A
 // column gets always quoted if it is a valid identifier otherwise it will be
 // treated as an expression. This ORDER BY clause gets appended to the current
@@ -83,7 +98,7 @@ const (
 // A column name can also contain the suffix words " ASC" or " DESC" to indicate
 // the sorting. This avoids using the method OrderByDesc when sorting certain
 // columns descending.
-func (a *Artisan) OrderBy(columns ...string) *Artisan {
+func (a *DBR) OrderBy(columns ...string) *DBR {
 	a.OrderBys = a.OrderBys.AppendColumns(false, columns...)
 	return a
 }
@@ -93,7 +108,7 @@ func (a *Artisan) OrderBy(columns ...string) *Artisan {
 // treated as an expression. This ORDER BY clause gets appended to the current
 // internal cached SQL string independently if the SQL statement supports it or
 // not or if there exists already an ORDER BY clause.
-func (a *Artisan) OrderByDesc(columns ...string) *Artisan {
+func (a *DBR) OrderByDesc(columns ...string) *DBR {
 	a.OrderBys = a.OrderBys.AppendColumns(false, columns...).applySort(len(columns), sortDescending)
 	return a
 }
@@ -102,7 +117,7 @@ func (a *Artisan) OrderByDesc(columns ...string) *Artisan {
 // This LIMIT clause gets appended to the current internal cached SQL string
 // independently if the SQL statement supports it or not or if there exists
 // already a LIMIT clause.
-func (a *Artisan) Limit(offset uint64, limit uint64) *Artisan {
+func (a *DBR) Limit(offset uint64, limit uint64) *DBR {
 	a.OffsetCount = offset
 	a.LimitCount = limit
 	a.OffsetValid = true
@@ -112,25 +127,25 @@ func (a *Artisan) Limit(offset uint64, limit uint64) *Artisan {
 
 // Paginate sets LIMIT/OFFSET for the statement based on the given page/perPage
 // Assumes page/perPage are valid. Page and perPage must be >= 1
-func (a *Artisan) Paginate(page, perPage uint64) *Artisan {
+func (a *DBR) Paginate(page, perPage uint64) *DBR {
 	a.Limit((page-1)*perPage, perPage)
 	return a
 }
 
 // WithQualifiedColumnsAliases for documentation please see:
-// Artisan.QualifiedColumnsAliases.
-func (a *Artisan) WithQualifiedColumnsAliases(aliases ...string) *Artisan {
+// DBR.QualifiedColumnsAliases.
+func (a *DBR) WithQualifiedColumnsAliases(aliases ...string) *DBR {
 	a.QualifiedColumnsAliases = aliases
 	return a
 }
 
 // ToSQL the returned interface slice is owned by the callee.
-func (a *Artisan) ToSQL() (string, []interface{}, error) {
+func (a *DBR) ToSQL() (string, []interface{}, error) {
 	sql, args, _, err := a.prepareArgs()
 	return sql, args, err
 }
 
-func (a *Artisan) CachedQueries(queries ...string) []string {
+func (a *DBR) CachedQueries(queries ...string) []string {
 	return a.base.CachedQueries(queries...)
 }
 
@@ -140,7 +155,7 @@ func (a *Artisan) CachedQueries(queries ...string) []string {
 // current object. E.g. different where clauses or different row counts in
 // INSERT ... VALUES statements. The empty string defines the default cache key.
 // If the `args` argument contains values, then fmt.Sprintf gets used.
-func (a *Artisan) WithCacheKey(key string, args ...interface{}) *Artisan {
+func (a *DBR) WithCacheKey(key string, args ...interface{}) *DBR {
 	a.base.withCacheKey(key, args...)
 	return a
 }
@@ -148,7 +163,7 @@ func (a *Artisan) WithCacheKey(key string, args ...interface{}) *Artisan {
 // Interpolate if set stringyfies the arguments into the SQL string and returns
 // pre-processed SQL command when calling the function ToSQL. Not suitable for
 // prepared statements. ToSQLs second argument `args` will then be nil.
-func (a *Artisan) Interpolate() *Artisan {
+func (a *DBR) Interpolate() *DBR {
 	a.Options = a.Options | argOptionInterpolate
 	return a
 }
@@ -162,24 +177,24 @@ func (a *Artisan) Interpolate() *Artisan {
 // The place holders are of course depending on the values in the Arg*
 // functions. This function should be generally used when dealing with prepared
 // statements or interpolation.
-func (a *Artisan) ExpandPlaceHolders() *Artisan {
+func (a *DBR) ExpandPlaceHolders() *DBR {
 	a.Options = a.Options | argOptionExpandPlaceholder
 	return a
 }
 
-func (a *Artisan) isEmpty() bool {
+func (a *DBR) isEmpty() bool {
 	if a == nil {
 		return true
 	}
 	return len(a.arguments) == 0 && len(a.recs) == 0
 }
 
-// prepareArgs transforms mainly the Artisan into []interface{}. It appends
+// prepareArgs transforms mainly the DBR into []interface{}. It appends
 // its arguments to the `extArgs` arguments from the Exec+ or Query+ function.
 // This allows for a developer to reuse the interface slice and save
 // allocations. All method receivers are not thread safe. The returned interface
 // slice is the same as `extArgs`.
-func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}, _ []QualifiedRecord, err error) {
+func (a *DBR) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}, _ []QualifiedRecord, err error) {
 	if a.base.ärgErr != nil {
 		return "", nil, nil, errors.WithStack(a.base.ärgErr)
 	}
@@ -199,7 +214,7 @@ func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}
 	}
 	cachedSQL, ok := a.base.cachedSQL[a.base.CacheKey]
 	if !a.isPrepared && !ok {
-		return "", nil, nil, errors.Empty.Newf("[dml] Artisan: The SQL string is empty.")
+		return "", nil, nil, errors.Empty.Newf("[dml] DBR: The SQL string is empty.")
 	}
 
 	if a.isEmpty() && len(recs) == 0 { // no internal arguments and qualified records provided
@@ -292,7 +307,7 @@ func (a *Artisan) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}
 	return sqlBuf.First.String(), extArgs, recs, nil
 }
 
-func (a *Artisan) appendConvertedRecordsToArguments(collectedArgs arguments, recs []QualifiedRecord) (arguments, error) {
+func (a *DBR) appendConvertedRecordsToArguments(collectedArgs arguments, recs []QualifiedRecord) (arguments, error) {
 	// argument recs includes a.recs and the qualified records pass as argument to
 	// any Load*,Query* or Exec* function.
 	if a.base.templateStmtCount == 0 {
@@ -321,7 +336,7 @@ func (a *Artisan) appendConvertedRecordsToArguments(collectedArgs arguments, rec
 	}
 
 	// TODO refactor prototype and make it performant and beautiful code
-	cm := NewColumnMap(len(a.arguments)+len(recs), "") // can use an arg pool Artisan sync.Pool, nope.
+	cm := NewColumnMap(len(a.arguments)+len(recs), "") // can use an arg pool DBR sync.Pool, nope.
 
 	for tsc := 0; tsc < a.base.templateStmtCount; tsc++ { // only in case of UNION statements in combination with a template SELECT, can be optimized later
 
@@ -378,7 +393,7 @@ func (a *Artisan) appendConvertedRecordsToArguments(collectedArgs arguments, rec
 // prepareArgsInsert prepares the special arguments for an INSERT statement. The
 // returned interface slice is the same as the `extArgs` slice. extArgs =
 // external arguments.
-func (a *Artisan) prepareArgsInsert(extArgs []interface{}, recs []QualifiedRecord) (string, []interface{}, []QualifiedRecord, error) {
+func (a *DBR) prepareArgsInsert(extArgs []interface{}, recs []QualifiedRecord) (string, []interface{}, []QualifiedRecord, error) {
 	// cm := pooledColumnMapGet()
 	sqlBuf := bufferpool.GetTwin()
 	defer bufferpool.PutTwin(sqlBuf)
@@ -457,7 +472,7 @@ func (a *Artisan) prepareArgsInsert(extArgs []interface{}, recs []QualifiedRecor
 }
 
 // nextUnnamedArg returns an unnamed argument by its position.
-func (a *Artisan) nextUnnamedArg() (argument, bool) {
+func (a *DBR) nextUnnamedArg() (argument, bool) {
 	var unnamedCounter int
 	lenArg := len(a.arguments)
 	for i := 0; i < lenArg && a.nextUnnamedArgPos >= 0; i++ {
@@ -476,7 +491,7 @@ func (a *Artisan) nextUnnamedArg() (argument, bool) {
 // MapColumns allows to merge one argument slice with another depending on the
 // matched columns. Each argument in the slice must be a named argument.
 // Implements interface ColumnMapper.
-func (a *Artisan) MapColumns(cm *ColumnMap) error {
+func (a *DBR) MapColumns(cm *ColumnMap) error {
 	if cm.Mode() == ColumnMapEntityReadAll {
 		cm.arguments = append(cm.arguments, a.arguments...)
 		return cm.Err()
@@ -499,9 +514,9 @@ func (a *Artisan) MapColumns(cm *ColumnMap) error {
 	return cm.Err()
 }
 
-func (a *Artisan) add(v interface{}) *Artisan {
+func (a *DBR) add(v interface{}) *DBR {
 	if a == nil {
-		a = &Artisan{arguments: make(arguments, 0, defaultArgumentsCapacity)}
+		a = &DBR{arguments: make(arguments, 0, defaultArgumentsCapacity)}
 	}
 	a.arguments = a.arguments.add(v)
 	return a
@@ -510,12 +525,12 @@ func (a *Artisan) add(v interface{}) *Artisan {
 // Record appends a record for argument extraction. Qualifier is the name of the
 // table or view or procedure or their alias name. It must be a valid
 // MySQL/MariaDB identifier. An empty qualifier gets assigned to the main table.
-func (a *Artisan) Record(qualifier string, record ColumnMapper) *Artisan {
+func (a *DBR) Record(qualifier string, record ColumnMapper) *DBR {
 	a.recs = append(a.recs, Qualify(qualifier, record))
 	return a
 }
 
-func (a *Artisan) Raw(raw ...interface{}) *Artisan {
+func (a *DBR) Raw(raw ...interface{}) *DBR {
 	for _, r := range raw {
 		if qr, ok := r.(QualifiedRecord); ok {
 			a.recs = append(a.recs, qr)
@@ -526,46 +541,46 @@ func (a *Artisan) Raw(raw ...interface{}) *Artisan {
 	return a
 }
 
-func (a *Artisan) Null() *Artisan                           { return a.add(nil) }
-func (a *Artisan) Int(i int) *Artisan                       { return a.add(i) }
-func (a *Artisan) Ints(i ...int) *Artisan                   { return a.add(i) }
-func (a *Artisan) Int64(i int64) *Artisan                   { return a.add(i) }
-func (a *Artisan) Int64s(i ...int64) *Artisan               { return a.add(i) }
-func (a *Artisan) Uint(i uint) *Artisan                     { return a.add(uint64(i)) }
-func (a *Artisan) Uints(i ...uint) *Artisan                 { return a.add(i) }
-func (a *Artisan) Uint64(i uint64) *Artisan                 { return a.add(i) }
-func (a *Artisan) Uint64s(i ...uint64) *Artisan             { return a.add(i) }
-func (a *Artisan) Float64(f float64) *Artisan               { return a.add(f) }
-func (a *Artisan) Float64s(f ...float64) *Artisan           { return a.add(f) }
-func (a *Artisan) Bool(b bool) *Artisan                     { return a.add(b) }
-func (a *Artisan) Bools(b ...bool) *Artisan                 { return a.add(b) }
-func (a *Artisan) String(s string) *Artisan                 { return a.add(s) }
-func (a *Artisan) Strings(s ...string) *Artisan             { return a.add(s) }
-func (a *Artisan) Time(t time.Time) *Artisan                { return a.add(t) }
-func (a *Artisan) Times(t ...time.Time) *Artisan            { return a.add(t) }
-func (a *Artisan) Bytes(b []byte) *Artisan                  { return a.add(b) }
-func (a *Artisan) BytesSlice(b ...[]byte) *Artisan          { return a.add(b) }
-func (a *Artisan) NullString(nv null.String) *Artisan       { return a.add(nv) }
-func (a *Artisan) NullStrings(nv ...null.String) *Artisan   { return a.add(nv) }
-func (a *Artisan) NullFloat64(nv null.Float64) *Artisan     { return a.add(nv) }
-func (a *Artisan) NullFloat64s(nv ...null.Float64) *Artisan { return a.add(nv) }
-func (a *Artisan) NullInt64(nv null.Int64) *Artisan         { return a.add(nv) }
-func (a *Artisan) NullInt64s(nv ...null.Int64) *Artisan     { return a.add(nv) }
-func (a *Artisan) NullBool(nv null.Bool) *Artisan           { return a.add(nv) }
-func (a *Artisan) NullBools(nv ...null.Bool) *Artisan       { return a.add(nv) }
-func (a *Artisan) NullTime(nv null.Time) *Artisan           { return a.add(nv) }
-func (a *Artisan) NullTimes(nv ...null.Time) *Artisan       { return a.add(nv) }
+func (a *DBR) Null() *DBR                           { return a.add(nil) }
+func (a *DBR) Int(i int) *DBR                       { return a.add(i) }
+func (a *DBR) Ints(i ...int) *DBR                   { return a.add(i) }
+func (a *DBR) Int64(i int64) *DBR                   { return a.add(i) }
+func (a *DBR) Int64s(i ...int64) *DBR               { return a.add(i) }
+func (a *DBR) Uint(i uint) *DBR                     { return a.add(uint64(i)) }
+func (a *DBR) Uints(i ...uint) *DBR                 { return a.add(i) }
+func (a *DBR) Uint64(i uint64) *DBR                 { return a.add(i) }
+func (a *DBR) Uint64s(i ...uint64) *DBR             { return a.add(i) }
+func (a *DBR) Float64(f float64) *DBR               { return a.add(f) }
+func (a *DBR) Float64s(f ...float64) *DBR           { return a.add(f) }
+func (a *DBR) Bool(b bool) *DBR                     { return a.add(b) }
+func (a *DBR) Bools(b ...bool) *DBR                 { return a.add(b) }
+func (a *DBR) String(s string) *DBR                 { return a.add(s) }
+func (a *DBR) Strings(s ...string) *DBR             { return a.add(s) }
+func (a *DBR) Time(t time.Time) *DBR                { return a.add(t) }
+func (a *DBR) Times(t ...time.Time) *DBR            { return a.add(t) }
+func (a *DBR) Bytes(b []byte) *DBR                  { return a.add(b) }
+func (a *DBR) BytesSlice(b ...[]byte) *DBR          { return a.add(b) }
+func (a *DBR) NullString(nv null.String) *DBR       { return a.add(nv) }
+func (a *DBR) NullStrings(nv ...null.String) *DBR   { return a.add(nv) }
+func (a *DBR) NullFloat64(nv null.Float64) *DBR     { return a.add(nv) }
+func (a *DBR) NullFloat64s(nv ...null.Float64) *DBR { return a.add(nv) }
+func (a *DBR) NullInt64(nv null.Int64) *DBR         { return a.add(nv) }
+func (a *DBR) NullInt64s(nv ...null.Int64) *DBR     { return a.add(nv) }
+func (a *DBR) NullBool(nv null.Bool) *DBR           { return a.add(nv) }
+func (a *DBR) NullBools(nv ...null.Bool) *DBR       { return a.add(nv) }
+func (a *DBR) NullTime(nv null.Time) *DBR           { return a.add(nv) }
+func (a *DBR) NullTimes(nv ...null.Time) *DBR       { return a.add(nv) }
 
 // NamedArg converts to sql.NamedArg and as go-sql-driver/mysql does not (yet)
 // support named args, they get resolved, converted to question mark place
 // holders.
-func (a *Artisan) NamedArg(name string, value interface{}) *Artisan {
+func (a *DBR) NamedArg(name string, value interface{}) *DBR {
 	a.arguments = append(a.arguments, argument{isSet: true, value: sql.Named(name, value)})
 	return a
 }
 
 // NamedArgs appends multiple
-func (a *Artisan) NamedArgs(sns ...sql.NamedArg) *Artisan {
+func (a *DBR) NamedArgs(sns ...sql.NamedArg) *DBR {
 	for _, sn := range sns {
 		a.arguments = append(a.arguments, argument{isSet: true, value: sn})
 	}
@@ -576,7 +591,7 @@ func (a *Artisan) NamedArgs(sns ...sql.NamedArg) *Artisan {
 // allocated memory. Reset gets called automatically in many Load* functions. In
 // case of an INSERT statement, Reset triggers a new build of the VALUES part.
 // This function must be called when the number of argument changes.
-func (a *Artisan) Reset() *Artisan {
+func (a *DBR) Reset() *DBR {
 	for i := range a.recs {
 		a.recs[i].Qualifier = ""
 		a.recs[i].Record = nil // remove pointers for GC
@@ -593,9 +608,9 @@ func (a *Artisan) Reset() *Artisan {
 // slice. When using different values, the last applied value wins and gets
 // added to the argument slice. For example driver.Values of type `int` will
 // result in []int.
-func (a *Artisan) DriverValue(dvs ...driver.Valuer) *Artisan {
+func (a *DBR) DriverValue(dvs ...driver.Valuer) *DBR {
 	if a == nil {
-		a = &Artisan{arguments: make(arguments, 0, len(dvs))}
+		a = &DBR{arguments: make(arguments, 0, len(dvs))}
 	}
 	a.arguments, a.base.ärgErr = driverValue(a.arguments, dvs...)
 	return a
@@ -604,29 +619,29 @@ func (a *Artisan) DriverValue(dvs ...driver.Valuer) *Artisan {
 // DriverValues adds each driver.Value as its own argument to the argument
 // slice. It panics if the underlying type is not one of the allowed of
 // interface driver.Valuer.
-func (a *Artisan) DriverValues(dvs ...driver.Valuer) *Artisan {
+func (a *DBR) DriverValues(dvs ...driver.Valuer) *DBR {
 	if a == nil {
-		a = &Artisan{arguments: make(arguments, 0, len(dvs))}
+		a = &DBR{arguments: make(arguments, 0, len(dvs))}
 	}
 	a.arguments, a.base.ärgErr = driverValues(a.arguments, dvs...)
 	return a
 }
 
 // WithDB sets the database query object.
-func (a *Artisan) WithDB(db QueryExecPreparer) *Artisan {
+func (a *DBR) WithDB(db QueryExecPreparer) *DBR {
 	a.base.DB = db
 	return a
 }
 
 // WithPreparedStmt uses a SQL statement as DB connection.
-func (a *Artisan) WithPreparedStmt(stmt *sql.Stmt) *Artisan {
+func (a *DBR) WithPreparedStmt(stmt *sql.Stmt) *DBR {
 	a.base.DB = stmtWrapper{stmt: stmt}
 	return a
 }
 
 // WithTx sets the transaction query executor and the logger to run this query
 // within a transaction.
-func (a *Artisan) WithTx(tx *Tx) *Artisan {
+func (a *DBR) WithTx(tx *Tx) *DBR {
 	if a.base.id == "" {
 		a.base.id = tx.makeUniqueID()
 	}
@@ -637,9 +652,9 @@ func (a *Artisan) WithTx(tx *Tx) *Artisan {
 
 // Clone creates a shallow clone of the current pointer and sets the field `DB`
 // to nil. The logger gets copied. Some underlying slices for the cached SQL
-// statements are still referring to the source Artisan object.
-func (a *Artisan) Clone() *Artisan {
-	c := new(Artisan)
+// statements are still referring to the source DBR object.
+func (a *DBR) Clone() *DBR {
+	c := new(DBR)
 	*c = *a
 
 	c.arguments = make(arguments, 0, len(a.arguments))
@@ -652,7 +667,7 @@ func (a *Artisan) Clone() *Artisan {
 // Close tries to close the underlying DB connection. Useful in cases of
 // prepared statements. If the underlying DB connection does not implement
 // io.Closer, nothing will happen.
-func (a *Artisan) Close() error {
+func (a *DBR) Close() error {
 	if a.base.ärgErr != nil {
 		return errors.WithStack(a.base.ärgErr)
 	}
@@ -748,17 +763,17 @@ func pooledInterfacesPut(a []interface{}) {
 // LastInsertID gets assigned incrementally to the objects. Pro tip: you can use
 // function ExecValidateOneAffectedRow to check if the underlying SQL statement
 // has affected only one row.
-func (a *Artisan) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
+func (a *DBR) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
 	return a.exec(ctx, args...)
 }
 
 // QueryContext traditional way of the databasel/sql package.
-func (a *Artisan) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error) {
+func (a *DBR) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error) {
 	return a.query(ctx, args...)
 }
 
 // QueryRowContext traditional way of the databasel/sql package.
-func (a *Artisan) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row {
+func (a *DBR) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row {
 	sqlStr, args, _, err := a.prepareArgs(args...)
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug("QueryRowContext", log.String("sql", sqlStr), log.String("source", string(a.base.source)), log.Err(err))
@@ -769,7 +784,7 @@ func (a *Artisan) QueryRowContext(ctx context.Context, args ...interface{}) *sql
 // IterateSerial iterates in serial order over the result set by loading one row each
 // iteration and then discarding it. Handles records one by one. The context
 // gets only used in the Query function.
-func (a *Artisan) IterateSerial(ctx context.Context, callBack func(*ColumnMap) error, args ...interface{}) (err error) {
+func (a *DBR) IterateSerial(ctx context.Context, callBack func(*ColumnMap) error, args ...interface{}) (err error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug("IterateSerial", log.String("id", a.base.id), log.Err(err))
 	}
@@ -838,12 +853,12 @@ func iterateParallelForNextLoop(ctx context.Context, r *sql.Rows, rowChan chan<-
 // worker. concurrencyLevel should be the number of CPUs. You should use this
 // function when you expect to process large amount of rows returned from a
 // query.
-func (a *Artisan) IterateParallel(ctx context.Context, concurrencyLevel int, callBack func(*ColumnMap) error, args ...interface{}) (err error) {
+func (a *DBR) IterateParallel(ctx context.Context, concurrencyLevel int, callBack func(*ColumnMap) error, args ...interface{}) (err error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug("IterateParallel", log.String("id", a.base.id), log.Err(err))
 	}
 	if concurrencyLevel < 1 {
-		return errors.OutOfRange.Newf("[dml] Artisan.IterateParallel concurrencyLevel %d for query ID %q cannot be smaller zero.", concurrencyLevel, a.base.id)
+		return errors.OutOfRange.Newf("[dml] DBR.IterateParallel concurrencyLevel %d for query ID %q cannot be smaller zero.", concurrencyLevel, a.base.id)
 	}
 
 	r, err := a.query(ctx, args...)
@@ -878,14 +893,14 @@ func (a *Artisan) IterateParallel(ctx context.Context, concurrencyLevel int, cal
 // Load loads data from a query into an object. Load can load a single row or
 // muliple-rows. It checks on top if ColumnMapper `s` implements io.Closer, to
 // call the custom close function. This is useful for e.g. unlocking a mutex.
-func (a *Artisan) Load(ctx context.Context, s ColumnMapper, args ...interface{}) (rowCount uint64, err error) {
+func (a *DBR) Load(ctx context.Context, s ColumnMapper, args ...interface{}) (rowCount uint64, err error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug("Load", log.String("id", a.base.id), log.Err(err), log.ObjectTypeOf("ColumnMapper", s), log.Uint64("row_count", rowCount))
 	}
 
 	r, err := a.query(ctx, args...)
 	if err != nil {
-		err = errors.Wrapf(err, "[dml] Artisan.Load.QueryContext failed with queryID %q and ColumnMapper %T", a.base.id, s)
+		err = errors.Wrapf(err, "[dml] DBR.Load.QueryContext failed with queryID %q and ColumnMapper %T", a.base.id, s)
 		return
 	}
 	cm := pooledColumnMapGet()
@@ -893,11 +908,11 @@ func (a *Artisan) Load(ctx context.Context, s ColumnMapper, args ...interface{})
 		a.Reset()
 		// Not testable with the sqlmock package :-(
 		if err2 := r.Close(); err2 != nil && err == nil {
-			err = errors.Wrap(err2, "[dml] Artisan.Load.Rows.Close")
+			err = errors.Wrap(err2, "[dml] DBR.Load.Rows.Close")
 		}
 		if rc, ok := s.(ioCloser); ok {
 			if err2 := rc.Close(); err2 != nil && err == nil {
-				err = errors.Wrap(err2, "[dml] Artisan.Load.ColumnMapper.Close")
+				err = errors.Wrap(err2, "[dml] DBR.Load.ColumnMapper.Close")
 			}
 		}
 	})
@@ -907,7 +922,7 @@ func (a *Artisan) Load(ctx context.Context, s ColumnMapper, args ...interface{})
 			return 0, errors.WithStack(err)
 		}
 		if err = s.MapColumns(cm); err != nil {
-			return 0, errors.Wrapf(err, "[dml] Artisan.Load failed with queryID %q and ColumnMapper %T", a.base.id, s)
+			return 0, errors.Wrapf(err, "[dml] DBR.Load failed with queryID %q and ColumnMapper %T", a.base.id, s)
 		}
 	}
 	if err = r.Err(); err != nil {
@@ -922,7 +937,7 @@ func (a *Artisan) Load(ctx context.Context, s ColumnMapper, args ...interface{})
 
 // LoadNullInt64 executes the query and returns the first row parsed into the
 // current type. `Found` might be false if there are no matching rows.
-func (a *Artisan) LoadNullInt64(ctx context.Context, args ...interface{}) (nv null.Int64, found bool, err error) {
+func (a *DBR) LoadNullInt64(ctx context.Context, args ...interface{}) (nv null.Int64, found bool, err error) {
 	found, err = a.loadPrimitive(ctx, &nv, args...)
 	return
 }
@@ -931,40 +946,40 @@ func (a *Artisan) LoadNullInt64(ctx context.Context, args ...interface{}) (nv nu
 // current type. `Found` might be false if there are no matching rows.
 // This function with ptr type uint64 comes in handy when performing
 // a COUNT(*) query. See function `Select.Count`.
-func (a *Artisan) LoadNullUint64(ctx context.Context, args ...interface{}) (nv null.Uint64, found bool, err error) {
+func (a *DBR) LoadNullUint64(ctx context.Context, args ...interface{}) (nv null.Uint64, found bool, err error) {
 	found, err = a.loadPrimitive(ctx, &nv, args...)
 	return
 }
 
 // LoadNullFloat64 executes the query and returns the first row parsed into the
 // current type. `Found` might be false if there are no matching rows.
-func (a *Artisan) LoadNullFloat64(ctx context.Context, args ...interface{}) (nv null.Float64, found bool, err error) {
+func (a *DBR) LoadNullFloat64(ctx context.Context, args ...interface{}) (nv null.Float64, found bool, err error) {
 	found, err = a.loadPrimitive(ctx, &nv, args...)
 	return
 }
 
 // LoadNullString executes the query and returns the first row parsed into the
 // current type. `Found` might be false if there are no matching rows.
-func (a *Artisan) LoadNullString(ctx context.Context, args ...interface{}) (nv null.String, found bool, err error) {
+func (a *DBR) LoadNullString(ctx context.Context, args ...interface{}) (nv null.String, found bool, err error) {
 	found, err = a.loadPrimitive(ctx, &nv, args...)
 	return
 }
 
 // LoadNullTime executes the query and returns the first row parsed into the
 // current type. `Found` might be false if there are no matching rows.
-func (a *Artisan) LoadNullTime(ctx context.Context, args ...interface{}) (nv null.Time, found bool, err error) {
+func (a *DBR) LoadNullTime(ctx context.Context, args ...interface{}) (nv null.Time, found bool, err error) {
 	found, err = a.loadPrimitive(ctx, &nv, args...)
 	return
 }
 
 // LoadDecimal executes the query and returns the first row parsed into the
 // current type. `Found` might be false if there are no matching rows.
-func (a *Artisan) LoadDecimal(ctx context.Context, args ...interface{}) (nv null.Decimal, found bool, err error) {
+func (a *DBR) LoadDecimal(ctx context.Context, args ...interface{}) (nv null.Decimal, found bool, err error) {
 	found, err = a.loadPrimitive(ctx, &nv, args...)
 	return
 }
 
-func (a *Artisan) loadPrimitive(ctx context.Context, ptr interface{}, args ...interface{}) (found bool, err error) {
+func (a *DBR) loadPrimitive(ctx context.Context, ptr interface{}, args ...interface{}) (found bool, err error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
 		defer log.WhenDone(a.base.Log).Debug("LoadPrimitive", log.String("id", a.base.id), log.Err(err), log.ObjectTypeOf("ptr_type", ptr))
@@ -997,7 +1012,7 @@ func (a *Artisan) loadPrimitive(ctx context.Context, ptr interface{}, args ...in
 
 // LoadInt64s executes the query and returns the values appended to slice
 // dest. It ignores and skips NULL values.
-func (a *Artisan) LoadInt64s(ctx context.Context, dest []int64, args ...interface{}) (_ []int64, err error) {
+func (a *DBR) LoadInt64s(ctx context.Context, dest []int64, args ...interface{}) (_ []int64, err error) {
 	var rowCount int
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
@@ -1036,7 +1051,7 @@ func (a *Artisan) LoadInt64s(ctx context.Context, dest []int64, args ...interfac
 
 // LoadUint64s executes the query and returns the values appended to slice
 // dest. It ignores and skips NULL values.
-func (a *Artisan) LoadUint64s(ctx context.Context, dest []uint64, args ...interface{}) (_ []uint64, err error) {
+func (a *DBR) LoadUint64s(ctx context.Context, dest []uint64, args ...interface{}) (_ []uint64, err error) {
 	var rowCount int
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
@@ -1075,7 +1090,7 @@ func (a *Artisan) LoadUint64s(ctx context.Context, dest []uint64, args ...interf
 
 // LoadFloat64s executes the query and returns the values appended to slice
 // dest. It ignores and skips NULL values.
-func (a *Artisan) LoadFloat64s(ctx context.Context, dest []float64, args ...interface{}) (_ []float64, err error) {
+func (a *DBR) LoadFloat64s(ctx context.Context, dest []float64, args ...interface{}) (_ []float64, err error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
 		defer log.WhenDone(a.base.Log).Debug("LoadFloat64s", log.String("id", a.base.id), log.Err(err))
@@ -1112,7 +1127,7 @@ func (a *Artisan) LoadFloat64s(ctx context.Context, dest []float64, args ...inte
 
 // LoadStrings executes the query and returns the values appended to slice
 // dest. It ignores and skips NULL values.
-func (a *Artisan) LoadStrings(ctx context.Context, dest []string, args ...interface{}) (_ []string, err error) {
+func (a *DBR) LoadStrings(ctx context.Context, dest []string, args ...interface{}) (_ []string, err error) {
 	var rowCount int
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
@@ -1149,7 +1164,7 @@ func (a *Artisan) LoadStrings(ctx context.Context, dest []string, args ...interf
 	return dest, err
 }
 
-func (a *Artisan) query(ctx context.Context, args ...interface{}) (rows *sql.Rows, err error) {
+func (a *DBR) query(ctx context.Context, args ...interface{}) (rows *sql.Rows, err error) {
 	pArgs := pooledInterfacesGet()
 	defer pooledInterfacesPut(pArgs)
 	pArgs = append(pArgs, args...)
@@ -1174,7 +1189,7 @@ func (a *Artisan) query(ctx context.Context, args ...interface{}) (rows *sql.Row
 	return rows, err
 }
 
-func (a *Artisan) exec(ctx context.Context, args ...interface{}) (result sql.Result, err error) {
+func (a *DBR) exec(ctx context.Context, args ...interface{}) (result sql.Result, err error) {
 	pArgs := pooledInterfacesGet()
 	defer pooledInterfacesPut(pArgs)
 	pArgs = append(pArgs, args...)

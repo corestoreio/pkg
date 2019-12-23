@@ -233,10 +233,10 @@ func (u *Union) StringReplace(key string, values ...string) *Union {
 // Update, Union, With, etc.). The field DB can still be overwritten.
 // Interpolation does not support the raw interfaces. It's an architecture bug
 // to use WithArgs inside a loop. WithArgs does support thread safety and can be
-// used in parallel. Each goroutine must have its own dedicated *Artisan
+// used in parallel. Each goroutine must have its own dedicated *DBR
 // pointer.
-func (u *Union) WithArgs() *Artisan {
-	return u.withArtisan(u)
+func (u *Union) WithArgs() *DBR {
+	return u.newDBR(u)
 }
 
 // ToSQL converts the statements into a string and returns its arguments.
@@ -324,12 +324,12 @@ func (u *Union) Prepare(ctx context.Context) (*Stmt, error) {
 }
 
 // PrepareWithArgs same as Prepare but forwards the possible error of creating a
-// prepared statement into the Artisan type. Reduces boilerplate code. You must
-// call Artisan.Close to deallocate the prepared statement in the SQL server.
-func (u *Union) PrepareWithArgs(ctx context.Context) *Artisan {
+// prepared statement into the DBR type. Reduces boilerplate code. You must
+// call DBR.Close to deallocate the prepared statement in the SQL server.
+func (u *Union) PrepareWithArgs(ctx context.Context) *DBR {
 	stmt, err := u.prepare(ctx, u.DB, u, dmlSourceUnion)
 	if err != nil {
-		a := &Artisan{
+		a := &DBR{
 			base: builderCommon{
 				ärgErr: errors.WithStack(err),
 			},

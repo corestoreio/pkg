@@ -287,10 +287,10 @@ func WithDSN(dsn string, cb ...DriverCallBack) ConnPoolOption {
 // EnvDSN is the name of the environment variable
 const EnvDSN string = "CS_DSN"
 
-// WithDSNfromEnv loads the DSN string from an environment variable named by
+// WithDSNFromEnv loads the DSN string from an environment variable named by
 // `dsnEnvName`. If `dsnEnvName` is empty, then it falls back to the environment
 // variable name of constant `EnvDSN`.
-func WithDSNfromEnv(dsnEnvName string, cb ...DriverCallBack) ConnPoolOption {
+func WithDSNFromEnv(dsnEnvName string, cb ...DriverCallBack) ConnPoolOption {
 	if dsnEnvName == "" {
 		dsnEnvName = EnvDSN
 	}
@@ -515,13 +515,13 @@ func (c *ConnPool) Transaction(ctx context.Context, opts *sql.TxOptions, fns ...
 	return errors.WithStack(tx.Commit())
 }
 
-// WithQueryBuilder creates a new Artisan for handling the arguments with the
+// WithQueryBuilder creates a new DBR for handling the arguments with the
 // assigned connection and builds the SQL string. The returned arguments and
-// errors of the QueryBuilder will be forwarded to the Artisan type.
-func (c *ConnPool) WithQueryBuilder(qb QueryBuilder) *Artisan {
+// errors of the QueryBuilder will be forwarded to the DBR type.
+func (c *ConnPool) WithQueryBuilder(qb QueryBuilder) *DBR {
 	sql, argsRaw, err := qb.ToSQL()
 	var args [defaultArgumentsCapacity]argument
-	a := &Artisan{
+	a := &DBR{
 		base: builderCommon{
 			cachedSQL: map[string]string{"": sql},
 			Log:       c.Log,
@@ -558,17 +558,17 @@ func (c *ConnPool) Conn(ctx context.Context) (*Conn, error) {
 	}, errors.WithStack(err)
 }
 
-// WithRawSQL creates a new Artisan for the given SQL string. It does not
+// WithRawSQL creates a new DBR for the given SQL string. It does not
 // prepare the query nor runs place holder substitution.
 // Supports expanding the placeholders in case of argument slices.
-func (c *ConnPool) WithRawSQL(query string) *Artisan {
+func (c *ConnPool) WithRawSQL(query string) *DBR {
 	id := c.makeUniqueID()
 	l := c.Log
 	if l != nil {
 		l = l.With(log.String("conn_pool_raw_sql_id", id), log.String("query", query))
 	}
 	var args [defaultArgumentsCapacity]argument
-	return &Artisan{
+	return &DBR{
 		base: builderCommon{
 			cachedSQL: map[string]string{"": query},
 			Log:       l,
@@ -585,7 +585,7 @@ func (c *ConnPool) WithRawSQL(query string) *Artisan {
 // context is used for the preparation of the statement, not for the execution
 // of the statement. The returned Stmter is not safe for concurrent use, despite
 // the underlying *sql.Stmt is.
-func (c *ConnPool) WithPrepare(ctx context.Context, query string) *Artisan {
+func (c *ConnPool) WithPrepare(ctx context.Context, query string) *DBR {
 	id := c.makeUniqueID()
 	l := c.Log
 	if l != nil {
@@ -595,7 +595,7 @@ func (c *ConnPool) WithPrepare(ctx context.Context, query string) *Artisan {
 	stmt, err := c.DB.PrepareContext(ctx, query)
 
 	var args [defaultArgumentsCapacity]argument
-	a := &Artisan{
+	a := &DBR{
 		base: builderCommon{
 			id:     id,
 			ärgErr: err,
@@ -714,10 +714,10 @@ func (c *Conn) Close() error {
 	return c.DB.Close() // no stack wrap otherwise error is hard to compare
 }
 
-// WithQueryBuilder creates a new Artisan for handling the arguments with the
+// WithQueryBuilder creates a new DBR for handling the arguments with the
 // assigned connection and builds the SQL string. The returned arguments and
-// errors of the QueryBuilder will be forwarded to the Artisan type.
-func (c *Conn) WithQueryBuilder(qb QueryBuilder) *Artisan {
+// errors of the QueryBuilder will be forwarded to the DBR type.
+func (c *Conn) WithQueryBuilder(qb QueryBuilder) *DBR {
 	sql, argsRaw, err := qb.ToSQL()
 	id := c.makeUniqueID()
 	l := c.Log
@@ -725,7 +725,7 @@ func (c *Conn) WithQueryBuilder(qb QueryBuilder) *Artisan {
 		l = l.With(log.String("query_builder_id", id), log.String("sql", sql))
 	}
 	var args [defaultArgumentsCapacity]argument
-	a := &Artisan{
+	a := &DBR{
 		base: builderCommon{
 			cachedSQL: map[string]string{"": sql},
 			Log:       l,
@@ -738,17 +738,17 @@ func (c *Conn) WithQueryBuilder(qb QueryBuilder) *Artisan {
 	return a.Raw(argsRaw...)
 }
 
-// WithRawSQL creates a new Artisan for the given SQL string in the current
+// WithRawSQL creates a new DBR for the given SQL string in the current
 // connection.
 // Supports expanding the placeholders in case of argument slices.
-func (c *Conn) WithRawSQL(query string) *Artisan {
+func (c *Conn) WithRawSQL(query string) *DBR {
 	id := c.makeUniqueID()
 	l := c.Log
 	if l != nil {
 		l = l.With(log.String("conn_pool_raw_sql_id", id), log.String("sql", query))
 	}
 	var args [defaultArgumentsCapacity]argument
-	return &Artisan{
+	return &DBR{
 		base: builderCommon{
 			cachedSQL: map[string]string{"": query},
 			Log:       l,
@@ -759,17 +759,17 @@ func (c *Conn) WithRawSQL(query string) *Artisan {
 	}
 }
 
-// WithRawSQL creates a new Artisan for the given SQL string in the current
+// WithRawSQL creates a new DBR for the given SQL string in the current
 // transaction.
 // Supports expanding the placeholders in case of argument slices.
-func (tx *Tx) WithRawSQL(query string) *Artisan {
+func (tx *Tx) WithRawSQL(query string) *DBR {
 	id := tx.makeUniqueID()
 	l := tx.Log
 	if l != nil {
 		l = l.With(log.String("tx_raw_sql_id", id), log.String("sql", query))
 	}
 	var args [defaultArgumentsCapacity]argument
-	return &Artisan{
+	return &DBR{
 		base: builderCommon{
 			cachedSQL: map[string]string{"": query},
 			Log:       l,
@@ -786,7 +786,7 @@ func (tx *Tx) WithRawSQL(query string) *Artisan {
 // context is used for the preparation of the statement, not for the execution
 // of the statement. The returned Stmter is not safe for concurrent use, despite
 // the underlying *sql.Stmt is.
-func (tx *Tx) WithPrepare(ctx context.Context, query string) *Artisan {
+func (tx *Tx) WithPrepare(ctx context.Context, query string) *DBR {
 	id := tx.makeUniqueID()
 	l := tx.Log
 	if l != nil {
@@ -796,7 +796,7 @@ func (tx *Tx) WithPrepare(ctx context.Context, query string) *Artisan {
 	stmt, err := tx.DB.PrepareContext(ctx, query)
 
 	var args [defaultArgumentsCapacity]argument
-	a := &Artisan{
+	a := &DBR{
 		base: builderCommon{
 			id:     id,
 			ärgErr: err,
@@ -827,15 +827,15 @@ func (tx *Tx) Rollback() error {
 	return tx.DB.Rollback()
 }
 
-// WithQueryBuilder creates a new Artisan for handling the arguments with the
+// WithQueryBuilder creates a new DBR for handling the arguments with the
 // assigned connection and builds the SQL string. The returned arguments and
-// errors of the QueryBuilder will be forwarded to the Artisan type.
-func (tx *Tx) WithQueryBuilder(qb QueryBuilder) *Artisan {
-	sql, argsRaw, err := qb.ToSQL()
+// errors of the QueryBuilder will be forwarded to the DBR type.
+func (tx *Tx) WithQueryBuilder(qb QueryBuilder) *DBR {
+	sqlStr, argsRaw, err := qb.ToSQL()
 	var args [defaultArgumentsCapacity]argument
-	a := &Artisan{
+	a := &DBR{
 		base: builderCommon{
-			cachedSQL: map[string]string{"": sql},
+			cachedSQL: map[string]string{"": sqlStr},
 			Log:       tx.Log,
 			id:        tx.makeUniqueID(),
 			DB:        tx.DB,

@@ -619,7 +619,7 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 	t.Run("Scan string into arg UINT returns error", func(t *testing.T) {
 		var people dmlPersons
 		rc, err := s.SelectFrom("dml_people").AddColumnsAliases("email", "id", "name", "email").WithArgs().Load(context.TODO(), &people)
-		assert.EqualError(t, err, "[dml] Artisan.Load failed with queryID \"\" and ColumnMapper *dml.dmlPersons: [dml] Column \"id\": strconv.ParseUint: parsing \"SirGeorge@GoIsland.com\": invalid syntax")
+		assert.EqualError(t, err, "[dml] DBR.Load failed with queryID \"\" and ColumnMapper *dml.dmlPersons: [dml] Column \"id\": strconv.ParseUint: parsing \"SirGeorge@GoIsland.com\": invalid syntax")
 		assert.EqualError(t, errors.Cause(err), "strconv.ParseUint: parsing \"SirGeorge@GoIsland.com\": invalid syntax")
 		assert.Empty(t, rc)
 	})
@@ -1452,7 +1452,7 @@ func TestSelect_SetRecord(t *testing.T) {
 	})
 }
 
-func TestSelect_Artisan_Load_Slices_Null(t *testing.T) {
+func TestSelect_DBR_Load_Slices_Null(t *testing.T) {
 	s := createRealSessionWithFixtures(t, nil)
 	defer testCloser(t, s)
 

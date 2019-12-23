@@ -74,12 +74,12 @@ func TestWithDSNfromEnv(t *testing.T) {
 			os.Unsetenv("TEST_CS_DSN_WithDSNfromEnv")
 		}()
 
-		cp, err := NewConnPool(WithDSNfromEnv("TEST_CS_DSN_WithDSNfromEnv"))
+		cp, err := NewConnPool(WithDSNFromEnv("TEST_CS_DSN_WithDSNfromEnv"))
 		assert.Nil(t, cp)
 		assert.ErrorIsKind(t, errors.NotImplemented, err)
 	})
 	t.Run("env is missing", func(t *testing.T) {
-		cp, err := NewConnPool(WithDSNfromEnv("TEST_CS_DSN_WithDSNFromEnv2"))
+		cp, err := NewConnPool(WithDSNFromEnv("TEST_CS_DSN_WithDSNFromEnv2"))
 		assert.Nil(t, cp)
 		assert.ErrorIsKind(t, errors.NotExists, err)
 	})

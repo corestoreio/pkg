@@ -32,7 +32,7 @@ func BenchmarkArgsToIFace(b *testing.B) {
 	reflectIFaceContainer := make([]interface{}, 0, 25)
 	finalArgs := make([]interface{}, 0, 30)
 	drvVal := []driver.Valuer{null.MakeString("I'm a valid null string: See the License for the specific language governing permissions and See the License for the specific language governing permissions and See the License for the specific language governing permissions and")}
-	argUnion := &Artisan{arguments: make(arguments, 0, 30)}
+	argUnion := &DBR{arguments: make(arguments, 0, 30)}
 	now1 := Now.UTC()
 	b.ResetTimer()
 
@@ -190,7 +190,7 @@ func BenchmarkInterpolate(b *testing.B) {
 
 	const want = `SELECT * FROM x WHERE a = 1 AND b = -2 AND c = 3 AND d = 4 AND e = 5 AND f = 6 AND g = 7 AND h = 8 AND i = 9 AND j = 10 AND k = 'Hello' AND l = 1`
 	const sqlBytes = `SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ? AND e = ? AND f = ? AND g = ? AND h = ? AND i = ? AND j = ? AND k = ? AND l = ?`
-	args := &Artisan{}
+	args := &DBR{}
 	args = args.Int(1).Int(-2).Int(3).Int(4).Int(5).Int(6).Int(7).Int(8).Int(9).Int(10).
 		String("Hello").
 		Bool(true)

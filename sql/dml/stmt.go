@@ -72,9 +72,9 @@ type Stmt struct {
 }
 
 // WithArgs creates a new argument handler. Not safe for concurrent use.
-func (st *Stmt) WithArgs() *Artisan {
+func (st *Stmt) WithArgs() *DBR {
 	var args [defaultArgumentsCapacity]argument
-	a := &Artisan{
+	a := &DBR{
 		base:       st.base,
 		arguments:  args[:0],
 		isPrepared: true,

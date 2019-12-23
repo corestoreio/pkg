@@ -24,7 +24,7 @@ import (
 	"github.com/corestoreio/pkg/util/assert"
 )
 
-var _ ColumnMapper = (*Artisan)(nil)
+var _ ColumnMapper = (*DBR)(nil)
 
 func TestArguments_Interfaces(t *testing.T) {
 	t.Parallel()
@@ -32,7 +32,7 @@ func TestArguments_Interfaces(t *testing.T) {
 	container := make([]interface{}, 0, 48)
 
 	t.Run("no slices, nulls valid", func(t *testing.T) {
-		args := newArtisanArgs().
+		args := newDBRArgs().
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
 			NullString(null.MakeString("eCom3")).NullInt64(null.MakeInt64(4)).NullFloat64(null.MakeFloat64(2.7)).
 			NullBool(null.MakeBool(true)).NullTime(null.MakeTime(now()))
@@ -46,7 +46,7 @@ func TestArguments_Interfaces(t *testing.T) {
 		container = container[:0]
 	})
 	t.Run("no slices, nulls invalid", func(t *testing.T) {
-		args := newArtisanArgs().
+		args := newDBRArgs().
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
 			NullString(null.String{}).NullInt64(null.Int64{}).NullFloat64(null.Float64{}).
 			NullBool(null.Bool{}).NullTime(null.Time{})
@@ -59,7 +59,7 @@ func TestArguments_Interfaces(t *testing.T) {
 		container = container[:0]
 	})
 	t.Run("slices, nulls valid", func(t *testing.T) {
-		args := newArtisanArgs().
+		args := newDBRArgs().
 			Null().Ints(-1, -2).Int64s(1, 2).Uints(568, 766).Uint64s(2).Float64s(1.2, 3.1).Bools(false, true).
 			Strings("eCom1", "eCom11").BytesSlice([]byte(`eCom2`)).Times(now(), now()).
 			NullStrings(null.MakeString("eCom3"), null.MakeString("eCom3")).NullInt64s(null.MakeInt64(4), null.MakeInt64(4)).
@@ -76,7 +76,7 @@ func TestArguments_Interfaces(t *testing.T) {
 			args.toInterfaces())
 	})
 	t.Run("returns nil interface", func(t *testing.T) {
-		args := newArtisanArgs()
+		args := newDBRArgs()
 		assert.Nil(t, args.toInterfaces(), "args.toInterfaces() must return nil")
 	})
 }
@@ -85,7 +85,7 @@ func TestArguments_DriverValue(t *testing.T) {
 	t.Parallel()
 
 	t.Run("Driver.Values supported types", func(t *testing.T) {
-		args := newArtisanArgs().
+		args := newDBRArgs().
 			DriverValues(
 				driverValueNil(0),
 				driverValueBytes(nil), null.MakeInt64(3), null.MakeFloat64(2.7), null.MakeBool(true),
@@ -100,7 +100,7 @@ func TestArguments_DriverValue(t *testing.T) {
 	})
 
 	t.Run("Driver.Value supported types", func(t *testing.T) {
-		args := newArtisanArgs().
+		args := newDBRArgs().
 			DriverValue(driverValueNil(0)).
 			DriverValue(driverValueBytes(nil)).
 			DriverValue(null.MakeInt64(3)).
@@ -120,7 +120,7 @@ func TestArguments_DriverValue(t *testing.T) {
 	})
 
 	t.Run("Driver.Values panics because not supported", func(t *testing.T) {
-		_, _, err := newArtisanArgs().
+		_, _, err := newDBRArgs().
 			DriverValue(
 				driverValueNotSupported(4),
 			).ToSQL()
@@ -128,7 +128,7 @@ func TestArguments_DriverValue(t *testing.T) {
 	})
 
 	t.Run("Driver.Values panics because Value error", func(t *testing.T) {
-		_, _, err := newArtisanArgs().
+		_, _, err := newDBRArgs().
 			DriverValue(
 				driverValueError(0),
 			).ToSQL()
@@ -140,7 +140,7 @@ func TestArguments_WriteTo(t *testing.T) {
 	t.Parallel()
 
 	t.Run("no slices, nulls valid", func(t *testing.T) {
-		args := newArtisanArgs().
+		args := newDBRArgs().
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
 			NullString(null.MakeString("eCom3")).NullInt64(null.MakeInt64(4)).NullFloat64(null.MakeFloat64(2.7)).
 			NullBool(null.MakeBool(true)).NullTime(null.MakeTime(now()))
@@ -153,7 +153,7 @@ func TestArguments_WriteTo(t *testing.T) {
 			buf.String())
 	})
 	t.Run("no slices, nulls invalid", func(t *testing.T) {
-		args := newArtisanArgs().
+		args := newDBRArgs().
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
 			NullString(null.String{}).NullInt64(null.Int64{}).NullFloat64(null.Float64{}).
 			NullBool(null.Bool{}).NullTime(null.Time{})
@@ -166,7 +166,7 @@ func TestArguments_WriteTo(t *testing.T) {
 			buf.String())
 	})
 	t.Run("slices, nulls valid", func(t *testing.T) {
-		args := newArtisanArgs().
+		args := newDBRArgs().
 			Null().Ints(-1, -2).Int64s(1, 2).Uint64s(2).Float64s(1.2, 3.1).Bools(false, true).Strings("eCom1", "eCom11").BytesSlice([]byte(`eCom2`)).Times(now(), now()).
 			NullStrings(null.MakeString("eCom3"), null.MakeString("eCom3")).NullInt64s(null.MakeInt64(4), null.MakeInt64(5)).NullFloat64s(null.MakeFloat64(2.71), null.MakeFloat64(2.72)).
 			NullBools(null.MakeBool(true)).NullTimes(null.MakeTime(now()), null.MakeTime(now()))
@@ -179,41 +179,41 @@ func TestArguments_WriteTo(t *testing.T) {
 			buf.String())
 	})
 	t.Run("non-utf8 string", func(t *testing.T) {
-		args := newArtisanArgs().String("\xc0\x80")
+		args := newDBRArgs().String("\xc0\x80")
 		buf := new(bytes.Buffer)
 		err := args.write(buf)
 		assert.Empty(t, buf.String(), "Buffer should be empty")
 		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
 	t.Run("non-utf8 strings", func(t *testing.T) {
-		args := newArtisanArgs().Strings("Go", "\xc0\x80")
+		args := newDBRArgs().Strings("Go", "\xc0\x80")
 		buf := new(bytes.Buffer)
 		err := args.write(buf)
 		assert.Exactly(t, `('Go',)`, buf.String())
 		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
 	t.Run("non-utf8 NullStrings", func(t *testing.T) {
-		args := newArtisanArgs().NullStrings(null.MakeString("Go2"), null.MakeString("Hello\xc0\x80World"))
+		args := newDBRArgs().NullStrings(null.MakeString("Go2"), null.MakeString("Hello\xc0\x80World"))
 		buf := new(bytes.Buffer)
 		err := args.write(buf)
 		assert.Exactly(t, "('Go2',)", buf.String())
 		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
 	t.Run("non-utf8 NullString", func(t *testing.T) {
-		args := newArtisanArgs().NullString(null.MakeString("Hello\xc0\x80World"))
+		args := newDBRArgs().NullString(null.MakeString("Hello\xc0\x80World"))
 		buf := new(bytes.Buffer)
 		err := args.write(buf)
 		assert.Empty(t, buf.String())
 		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
 	t.Run("bytes as binary", func(t *testing.T) {
-		args := newArtisanArgs().Bytes([]byte("\xc0\x80"))
+		args := newDBRArgs().Bytes([]byte("\xc0\x80"))
 		buf := new(bytes.Buffer)
 		assert.NoError(t, args.write(buf))
 		assert.Exactly(t, "0xc080", buf.String())
 	})
 	t.Run("bytesSlice as binary", func(t *testing.T) {
-		args := newArtisanArgs().BytesSlice([]byte(`Rusty`), []byte("Go\xc0\x80"))
+		args := newDBRArgs().BytesSlice([]byte(`Rusty`), []byte("Go\xc0\x80"))
 		buf := new(bytes.Buffer)
 		assert.NoError(t, args.write(buf))
 		assert.Exactly(t, "('Rusty',0x476fc080)", buf.String())
@@ -284,7 +284,7 @@ func TestArguments_HasNamedArgs(t *testing.T) {
 func TestArguments_MapColumns(t *testing.T) {
 	t.Parallel()
 
-	from := newArtisanArgs()
+	from := newDBRArgs()
 
 	t.Run("len=1", func(t *testing.T) {
 		from = from.Reset().Int64(3).Float64(2.2).NamedArg("colA", []string{"a", "b"})
@@ -322,7 +322,7 @@ func TestArguments_NextUnnamedArg(t *testing.T) {
 	t.Parallel()
 
 	t.Run("three occurrences", func(t *testing.T) {
-		args := newArtisanArgs().NamedArg("colZ", int64(3)).Uint64(6).NamedArg("colB", 2.2).String("c").NamedArg("colA", []string{"a", "b"})
+		args := newDBRArgs().NamedArg("colZ", int64(3)).Uint64(6).NamedArg("colB", 2.2).String("c").NamedArg("colA", []string{"a", "b"})
 
 		a, ok := args.nextUnnamedArg()
 		assert.True(t, ok, "Should find an unnamed argument")
@@ -352,7 +352,7 @@ func TestArguments_NextUnnamedArg(t *testing.T) {
 	})
 
 	t.Run("zero occurrences", func(t *testing.T) {
-		args := newArtisanArgs().NamedArg("colZ", int64(3)).NamedArg("colB", 2.2).NamedArg("colA", []string{"a", "b"})
+		args := newDBRArgs().NamedArg("colZ", int64(3)).NamedArg("colB", 2.2).NamedArg("colA", []string{"a", "b"})
 
 		a, ok := args.nextUnnamedArg()
 		assert.False(t, ok, "Should NOT find an unnamed argument")
@@ -364,7 +364,7 @@ func TestArguments_NextUnnamedArg(t *testing.T) {
 	})
 }
 
-func TestArtisan_Clone(t *testing.T) {
+func TestDBR_Clone(t *testing.T) {
 	t.Parallel()
 	sel := NewSelect("a", "b").From("c").WithDB(dbMock{})
 	sel.qualifiedColumns = []string{"x", "y"}
@@ -379,7 +379,7 @@ func TestArtisan_Clone(t *testing.T) {
 	assert.Exactly(t, selA.QualifiedColumnsAliases, selB.QualifiedColumnsAliases)
 }
 
-func TestArtisan_OrderByLimit(t *testing.T) {
+func TestDBR_OrderByLimit(t *testing.T) {
 	t.Parallel()
 
 	t.Run("WithoutArgs", func(t *testing.T) {
@@ -425,7 +425,7 @@ func TestArtisan_OrderByLimit(t *testing.T) {
 	})
 }
 
-func TestArtisan_PreGeneratedQueries(t *testing.T) {
+func TestDBR_PreGeneratedQueries(t *testing.T) {
 	t.Parallel()
 
 	t.Run("SELECT", func(t *testing.T) {

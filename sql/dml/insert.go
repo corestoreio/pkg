@@ -263,7 +263,7 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 	return b
 }
 
-// WithArgs returns a new Artisan type to support multiple executions of the
+// WithArgs returns a new DBR type to support multiple executions of the
 // underlying SQL statement and reuse of memory allocations for the arguments.
 // WithArgs builds the SQL string in a thread safe way. It copies the underlying
 // connection and settings from the current DML type (Delete, Insert, Select,
@@ -273,21 +273,21 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 // automatically out how the VALUES section must look like depending on the
 // number of arguments. In some cases type Insert needs to know the RowCount to
 // build the appropriate amount of placeholders.
-func (b *Insert) WithArgs() *Artisan {
+func (b *Insert) WithArgs() *DBR {
 	var pairArgs arguments
 	b.rwmu.RLock()
-	isSelect := b.Select != nil // b.withArtisan unsets the Select field if caching is enabled
+	isSelect := b.Select != nil // b.newDBR unsets the Select field if caching is enabled
 	for _, cv := range b.Pairs {
 		pairArgs = append(pairArgs, cv.Right.arg)
 	}
 	b.rwmu.RUnlock()
 
-	a := b.withArtisan(b)
+	a := b.newDBR(b)
 	a.base.source = dmlSourceInsert
 
 	if isSelect {
 		// Must change to this source because to trigger a different argument
-		// collector in Artisan.prepareArgs. It is not a real INSERT statement
+		// collector in DBR.prepareArgs. It is not a real INSERT statement
 		// anymore.
 		a.base.source = dmlSourceInsertSelect
 		return a
@@ -476,12 +476,12 @@ func (b *Insert) Prepare(ctx context.Context) (*Stmt, error) {
 }
 
 // PrepareWithArgs same as Prepare but forwards the possible error of creating a
-// prepared statement into the Artisan type. Reduces boilerplate code. You must
-// call Artisan.Close to deallocate the prepared statement in the SQL server.
-func (b *Insert) PrepareWithArgs(ctx context.Context) *Artisan {
+// prepared statement into the DBR type. Reduces boilerplate code. You must
+// call DBR.Close to deallocate the prepared statement in the SQL server.
+func (b *Insert) PrepareWithArgs(ctx context.Context) *DBR {
 	stmt, err := b.prepare(ctx, b.DB, b, dmlSourceInsert)
 	if err != nil {
-		a := &Artisan{
+		a := &DBR{
 			base: builderCommon{
 				ärgErr: errors.WithStack(err),
 			},

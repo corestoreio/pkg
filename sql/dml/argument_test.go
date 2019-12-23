@@ -54,14 +54,14 @@ func (a driverValueError) Value() (driver.Value, error) {
 	return nil, errors.Aborted.Newf("WE've aborted something")
 }
 
-func newArtisanArgs() *Artisan { return &Artisan{arguments: make(arguments, 0, 10)} }
+func newDBRArgs() *DBR { return &DBR{arguments: make(arguments, 0, 10)} }
 
 func TestArguments_Length_and_Stringer(t *testing.T) {
 	t.Parallel()
 	nt := now().In(time.UTC)
 
 	t.Run("no slices, nulls valid", func(t *testing.T) {
-		args := newArtisanArgs().
+		args := newDBRArgs().
 			Null().Int(-1).Int64(1).Uint(9898).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(nt).
 			NullString(null.MakeString("eCom3")).NullInt64(null.MakeInt64(4)).NullFloat64(null.MakeFloat64(2.7)).
 			NullBool(null.MakeBool(true)).NullTime(null.MakeTime(nt))
@@ -73,7 +73,7 @@ func TestArguments_Length_and_Stringer(t *testing.T) {
 	})
 
 	t.Run("no slices, nulls invalid", func(t *testing.T) {
-		args := newArtisanArgs().
+		args := newDBRArgs().
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(nt).
 			NullString(null.String{}).NullInt64(null.Int64{}).NullFloat64(null.Float64{}).
 			NullBool(null.Bool{}).NullTime(null.Time{})
@@ -87,7 +87,7 @@ func TestArguments_Length_and_Stringer(t *testing.T) {
 	})
 
 	t.Run("slices, nulls valid", func(t *testing.T) {
-		args := newArtisanArgs().
+		args := newDBRArgs().
 			Null().Int(-1).Int64s(1, 2).Uints(567, 765).Uint64s(2).Float64s(1.2, 3.1).Bools(false, true).Strings("eCom1", "eCom11").BytesSlice(nil, []byte(`eCom2`)).Times(nt, nt).
 			NullStrings(null.MakeString("eCom3"), null.MakeString("eCom3")).NullInt64s(null.MakeInt64(4), null.MakeInt64(4)).NullFloat64s(null.MakeFloat64(2.7), null.MakeFloat64(2.7)).
 			NullBools(null.MakeBool(true)).NullTimes(null.MakeTime(nt), null.MakeTime(nt))
@@ -136,7 +136,7 @@ func TestIFaceToArgs(t *testing.T) {
 func TestArguments_Clone(t *testing.T) {
 	t.Parallel()
 
-	args := newArtisanArgs().Int64(1).String("S1").arguments
+	args := newDBRArgs().Int64(1).String("S1").arguments
 	args2 := args.clone()
 	args2[0].value = int(2)
 	args2[1].value = "S1a"

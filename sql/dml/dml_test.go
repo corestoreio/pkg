@@ -346,7 +346,7 @@ func compareToSQL(
 		return
 	}
 
-	if dml, ok := qb.(*Artisan); ok {
+	if dml, ok := qb.(*DBR); ok {
 		prev := dml.Options
 		qb = dml.Interpolate()
 		defer func() { dml.Options = prev; qb = dml }()
@@ -359,7 +359,7 @@ func compareToSQL(
 		assert.ErrorIsKind(t, wantErrKind, err)
 	}
 	assert.Exactly(t, wantSQLInterpolated, sqlStr, "Interpolated SQL strings do not match")
-	assert.Nil(t, args, "Artisan should be nil when the SQL string gets interpolated")
+	assert.Nil(t, args, "DBR should be nil when the SQL string gets interpolated")
 }
 
 // compareToSQL2 This function also exists in file dml_public_test.go to

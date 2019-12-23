@@ -211,13 +211,13 @@ func (bb *BuilderBase) prepare(ctx context.Context, db Preparer, qb queryBuilder
 	return stmt, nil
 }
 
-// withArtisan builds the SQl string and creates a new Artisan object for
+// newDBR builds the SQl string and creates a new DBR object for
 // collecting arguments and later querying.
-func (bb *BuilderBase) withArtisan(qb queryBuilder) *Artisan {
+func (bb *BuilderBase) newDBR(qb queryBuilder) *DBR {
 	var args [defaultArgumentsCapacity]argument
 	bb.rwmu.Lock()
 	_, err := bb.buildToSQL(qb)
-	a := Artisan{
+	a := DBR{
 		base:      bb.builderCommon,
 		arguments: args[:0],
 	}

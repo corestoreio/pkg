@@ -189,10 +189,10 @@ func (b *With) Recursive() *With {
 // Update, Union, With, etc.). The field DB can still be overwritten.
 // Interpolation does not support the raw interfaces. It's an architecture bug
 // to use WithArgs inside a loop. WithArgs does support thread safety and can be
-// used in parallel. Each goroutine must have its own dedicated *Artisan
+// used in parallel. Each goroutine must have its own dedicated *DBR
 // pointer.
-func (b *With) WithArgs() *Artisan {
-	return b.withArtisan(b)
+func (b *With) WithArgs() *DBR {
+	return b.newDBR(b)
 }
 
 // ToSQL converts the select statement into a string and returns its arguments.
@@ -297,12 +297,12 @@ func (b *With) Prepare(ctx context.Context) (*Stmt, error) {
 }
 
 // PrepareWithArgs same as Prepare but forwards the possible error of creating a
-// prepared statement into the Artisan type. Reduces boilerplate code. You must
-// call Artisan.Close to deallocate the prepared statement in the SQL server.
-func (b *With) PrepareWithArgs(ctx context.Context) *Artisan {
+// prepared statement into the DBR type. Reduces boilerplate code. You must
+// call DBR.Close to deallocate the prepared statement in the SQL server.
+func (b *With) PrepareWithArgs(ctx context.Context) *DBR {
 	stmt, err := b.prepare(ctx, b.DB, b, dmlSourceWith)
 	if err != nil {
-		a := &Artisan{
+		a := &DBR{
 			base: builderCommon{
 				ärgErr: errors.WithStack(err),
 			},

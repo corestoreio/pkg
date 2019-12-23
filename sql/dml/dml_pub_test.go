@@ -118,14 +118,14 @@ func compareToSQL(
 		return
 	}
 
-	if dmlArgs, ok := qb.(*dml.Artisan); ok {
+	if dmlArgs, ok := qb.(*dml.DBR); ok {
 		prev := dmlArgs.Options
 		qb = dmlArgs.Interpolate()
 		defer func() { dmlArgs.Options = prev; qb = dmlArgs }()
 	}
 
 	sqlStr, args, err = qb.ToSQL() // Call with enabled interpolation
-	assert.Nil(t, args, "Artisan should be nil when the SQL string gets interpolated")
+	assert.Nil(t, args, "DBR should be nil when the SQL string gets interpolated")
 	if wantErrKind.Empty() {
 		assert.NoError(t, err)
 	} else {

@@ -298,7 +298,7 @@ func BenchmarkJackC_GoDBBench(b *testing.B) {
 
 	b.ResetTimer()
 
-	b.Run("SelectMultipleRowsCollect Artisan", func(b *testing.B) {
+	b.Run("SelectMultipleRowsCollect DBR", func(b *testing.B) {
 		ctx := context.Background()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -329,7 +329,7 @@ func BenchmarkJackC_GoDBBench(b *testing.B) {
 		}
 	})
 
-	b.Run("SelectMultipleRowsEntity Artisan", func(b *testing.B) {
+	b.Run("SelectMultipleRowsEntity DBR", func(b *testing.B) {
 		ctx := context.Background()
 		adb := stmt.WithArgs()
 		b.ResetTimer()
