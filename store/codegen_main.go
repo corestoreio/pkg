@@ -31,7 +31,7 @@ import (
 func main() {
 	const pkgPath = "github.com/corestoreio/pkg/store"
 
-	dbcp := dml.MustConnectAndVerify(dml.WithDSNfromEnv(""))
+	dbcp := dml.MustConnectAndVerify(dml.WithDSNFromEnv(""))
 	defer mustCheckCloseErr(dbcp)
 
 	ctx := context.Background()

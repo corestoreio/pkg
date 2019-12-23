@@ -77,12 +77,12 @@ type DB struct {
 	tickerWrite      *time.Ticker
 
 	muRead        sync.Mutex
-	stmtRead      *dml.Artisan
+	stmtRead      *dml.DBR
 	stmtReadState uint8
 	stmtReadStat  dbStats
 
 	muWrite        sync.Mutex
-	stmtWrite      *dml.Artisan
+	stmtWrite      *dml.DBR
 	stmtWriteState uint8
 	stmtWriteStat  dbStats
 }

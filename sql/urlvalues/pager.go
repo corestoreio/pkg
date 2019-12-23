@@ -81,7 +81,7 @@ func (p *Pager) GetOffset() uint64 {
 	return p.Offset
 }
 
-func (p *Pager) Pagination(a *dml.Artisan) (*dml.Artisan, error) {
+func (p *Pager) Pagination(a *dml.DBR) (*dml.DBR, error) {
 	if p == nil {
 		return a, nil
 	}

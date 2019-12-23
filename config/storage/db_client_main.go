@@ -29,7 +29,7 @@ import (
 )
 
 func main() {
-	dbcp := dml.MustConnectAndVerify(dml.WithDSNfromEnv(""))
+	dbcp := dml.MustConnectAndVerify(dml.WithDSNFromEnv(""))
 	defer mustCheckCloseErr(dbcp)
 
 	// we assume the table core_configuration already exists

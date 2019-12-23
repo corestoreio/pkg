@@ -268,7 +268,7 @@ func (t *testSyncerSuite) setupTest(tst *testing.T, testedFlavor string) bool {
 		assert.NoError(tst, t.con.Close())
 	}
 
-	t.con, err = dml.NewConnPool(dml.WithVerifyConnection(), dml.WithDSNfromEnv(dml.EnvDSN))
+	t.con, err = dml.NewConnPool(dml.WithVerifyConnection(), dml.WithDSNFromEnv(dml.EnvDSN))
 	if err != nil {
 		tst.Fatal(err.Error())
 	}

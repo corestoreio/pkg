@@ -14,7 +14,7 @@ import (
 // the go-bindata archive so that you only need to deploy one runable file.
 func Run() error {
 	// Idea
-	dbPool, err := dml.NewConnPool(dml.WithDSNfromEnv(""))
+	dbPool, err := dml.NewConnPool(dml.WithDSNFromEnv(""))
 	if err != nil {
 		return errors.WithStack(err)
 	}
