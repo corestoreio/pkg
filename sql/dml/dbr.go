@@ -79,15 +79,17 @@ const (
 // modifications to the DBR object.
 type DBRFunc func(*DBR)
 
-// ApplyCallBacks applies various function to the current DBR instance.
-func (a *DBR) ApplyCallBacks(afs ...DBRFunc) *DBR {
-	if len(afs) == 0 {
+// ApplyCallBacks may clone the DBR object and applies various functions to the new
+// DBR instance. It only clones if slice `fns` has at least one entry.
+func (a *DBR) ApplyCallBacks(fns ...DBRFunc) *DBR {
+	if len(fns) == 0 {
 		return a
 	}
-	for _, af := range afs {
-		af(a)
+	ac := a.Clone()
+	for _, af := range fns {
+		af(ac)
 	}
-	return a
+	return ac
 }
 
 // OrderBy appends columns to the ORDER BY statement for ascending sorting. A
@@ -650,18 +652,14 @@ func (a *DBR) WithTx(tx *Tx) *DBR {
 	return a
 }
 
-// Clone creates a shallow clone of the current pointer and sets the field `DB`
-// to nil. The logger gets copied. Some underlying slices for the cached SQL
-// statements are still referring to the source DBR object.
+// Clone creates a shallow clone of the current pointer. The logger gets copied.
+// Some underlying slices for the cached SQL statements are still referring to
+// the source DBR object.
 func (a *DBR) Clone() *DBR {
-	c := new(DBR)
-	*c = *a
-
+	c := *a
 	c.arguments = make(arguments, 0, len(a.arguments))
 	c.recs = nil
-	c.base.DB = nil
-
-	return c
+	return &c
 }
 
 // Close tries to close the underlying DB connection. Useful in cases of
