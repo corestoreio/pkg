@@ -244,7 +244,7 @@ func (dbs *DB) Set(p config.Path, value []byte) error {
 			return errors.WithStack(err)
 		}
 		if dbs.stmtWrite == nil {
-			dbs.stmtWrite = stmt.WithArgs()
+			dbs.stmtWrite = stmt.WithDBR()
 		} else {
 			dbs.stmtWrite.WithPreparedStmt(stmt.Stmt)
 		}
@@ -294,7 +294,7 @@ func (dbs *DB) Get(p config.Path) (v []byte, ok bool, err error) {
 			return nil, false, errors.WithStack(err)
 		}
 		if dbs.stmtRead == nil {
-			dbs.stmtRead = stmt.WithArgs()
+			dbs.stmtRead = stmt.WithDBR()
 		} else {
 			dbs.stmtRead.WithPreparedStmt(stmt.Stmt)
 		}
@@ -354,7 +354,7 @@ func WithLoadFromDB(tbls *ddl.Tables, o DBOptions) config.LoadDataOption {
 		ctx, cancel := context.WithTimeout(context.Background(), o.ContextTimeoutRead)
 		defer cancel()
 
-		return tbl.Select("*").WithArgs().IterateSerial(ctx, func(cm *dml.ColumnMap) error {
+		return tbl.Select("*").WithDBR().IterateSerial(ctx, func(cm *dml.ColumnMap) error {
 			var ccd CoreConfiguration
 			if err := ccd.MapColumns(cm); err != nil {
 				return errors.Wrapf(err, "[config/storage] dbs.stmtAll.IterateSerial at row %d", cm.Count)

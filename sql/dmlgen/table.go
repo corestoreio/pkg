@@ -978,8 +978,8 @@ func (t *Table) generateTestDB(testGen *codegen.Go) {
 	testGen.Pln(`tbl := tbls.MustTable(TableName`+strs.ToGoCamelCase(t.Table.Name), `)`)
 
 	testGen.Pln(`entSELECT := tbl.SelectByPK("*")`)
-	testGen.C(`WithArgs generates the cached SQL string with empty key "".`)
-	testGen.Pln(`entSELECTStmtA := entSELECT.WithArgs().ExpandPlaceHolders()`)
+	testGen.C(`WithDBR generates the cached SQL string with empty key "".`)
+	testGen.Pln(`entSELECTStmtA := entSELECT.WithDBR().ExpandPlaceHolders()`)
 
 	testGen.Pln(`entSELECT.WithCacheKey("select_10").Wheres.Reset()`)
 	testGen.Pln(`_, _, err := entSELECT.Where(`)
@@ -1002,7 +1002,7 @@ func (t *Table) generateTestDB(testGen *codegen.Go) {
 		testGen.Pln(`t.Logf("Collection load rowCount: %d", rowCount)`)
 	} else {
 		testGen.Pln(`entINSERT := tbl.Insert().BuildValues()`)
-		testGen.Pln(`entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)`)
+		testGen.Pln(`entINSERTStmtA := entINSERT.PrepareWithDBR(ctx)`)
 
 		testGen.Pln(`for i := 0; i < 9; i++ {`)
 		{
@@ -1045,7 +1045,7 @@ func (t *Table) generateTestDB(testGen *codegen.Go) {
 		testGen.Pln(`assert.NoError(t, err)`)
 		testGen.Pln(`t.Logf("Collection load rowCount: %d", rowCount)`)
 
-		testGen.Pln(`entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)`)
+		testGen.Pln(`entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithDBR(ctx)`)
 		testGen.Pln(`lID := dmltest.CheckLastInsertID(t, "Error: `, t.CollectionName(), `")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))`)
 		testGen.Pln(`dmltest.Close(t, entINSERTStmtA)`)
 		testGen.Pln(`t.Logf("Last insert ID into: %d", lID)`)

@@ -45,8 +45,8 @@ func TestNewTablesDB(t *testing.T) {
 	t.Run("CoreConfiguration_Entity", func(t *testing.T) {
 		tbl := tbls.MustTable(TableNameCoreConfiguration)
 		entSELECT := tbl.SelectByPK("*")
-		// WithArgs generates the cached SQL string with empty key "".
-		entSELECTStmtA := entSELECT.WithArgs().ExpandPlaceHolders()
+		// WithDBR generates the cached SQL string with empty key "".
+		entSELECTStmtA := entSELECT.WithDBR().ExpandPlaceHolders()
 		entSELECT.WithCacheKey("select_10").Wheres.Reset()
 		_, _, err := entSELECT.Where(
 			dml.Column("id").LessOrEqual().Int(10),
@@ -54,7 +54,7 @@ func TestNewTablesDB(t *testing.T) {
 		assert.NoError(t, err)
 		entCol := NewCoreConfigurationCollection()
 		entINSERT := tbl.Insert().BuildValues()
-		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
+		entINSERTStmtA := entINSERT.PrepareWithDBR(ctx)
 		for i := 0; i < 9; i++ {
 			entIn := new(CoreConfiguration)
 			if err := ps.FakeData(entIn); err != nil {
@@ -80,7 +80,7 @@ func TestNewTablesDB(t *testing.T) {
 		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
-		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
+		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithDBR(ctx)
 		lID := dmltest.CheckLastInsertID(t, "Error:  CoreConfigurationCollection ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
 		dmltest.Close(t, entINSERTStmtA)
 		t.Logf("Last insert ID into: %d", lID)

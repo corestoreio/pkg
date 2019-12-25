@@ -228,8 +228,8 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 	t.Run("CatalogProductIndexEAVDecimalIDX_Entity", func(t *testing.T) {
 		tbl := tbls.MustTable(TableNameCatalogProductIndexEAVDecimalIDX)
 		entSELECT := tbl.SelectByPK("*")
-		// WithArgs generates the cached SQL string with empty key "".
-		entSELECTStmtA := entSELECT.WithArgs().ExpandPlaceHolders()
+		// WithDBR generates the cached SQL string with empty key "".
+		entSELECTStmtA := entSELECT.WithDBR().ExpandPlaceHolders()
 		entSELECT.WithCacheKey("select_10").Wheres.Reset()
 		_, _, err := entSELECT.Where().ToSQL() // ToSQL generates the new cached SQL string with key select_10
 		assert.NoError(t, err)
@@ -243,8 +243,8 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 	t.Run("CoreConfiguration_Entity", func(t *testing.T) {
 		tbl := tbls.MustTable(TableNameCoreConfiguration)
 		entSELECT := tbl.SelectByPK("*")
-		// WithArgs generates the cached SQL string with empty key "".
-		entSELECTStmtA := entSELECT.WithArgs().ExpandPlaceHolders()
+		// WithDBR generates the cached SQL string with empty key "".
+		entSELECTStmtA := entSELECT.WithDBR().ExpandPlaceHolders()
 		entSELECT.WithCacheKey("select_10").Wheres.Reset()
 		_, _, err := entSELECT.Where(
 			dml.Column("config_id").LessOrEqual().Int(10),
@@ -252,7 +252,7 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.NoError(t, err)
 		entCol := NewCoreConfigurations()
 		entINSERT := tbl.Insert().BuildValues()
-		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
+		entINSERTStmtA := entINSERT.PrepareWithDBR(ctx)
 		for i := 0; i < 9; i++ {
 			entIn := new(CoreConfiguration)
 			if err := ps.FakeData(entIn); err != nil {
@@ -278,7 +278,7 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
-		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
+		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithDBR(ctx)
 		lID := dmltest.CheckLastInsertID(t, "Error:  CoreConfigurations ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
 		dmltest.Close(t, entINSERTStmtA)
 		t.Logf("Last insert ID into: %d", lID)
@@ -288,8 +288,8 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 	t.Run("CustomerAddressEntity_Entity", func(t *testing.T) {
 		tbl := tbls.MustTable(TableNameCustomerAddressEntity)
 		entSELECT := tbl.SelectByPK("*")
-		// WithArgs generates the cached SQL string with empty key "".
-		entSELECTStmtA := entSELECT.WithArgs().ExpandPlaceHolders()
+		// WithDBR generates the cached SQL string with empty key "".
+		entSELECTStmtA := entSELECT.WithDBR().ExpandPlaceHolders()
 		entSELECT.WithCacheKey("select_10").Wheres.Reset()
 		_, _, err := entSELECT.Where(
 			dml.Column("entity_id").LessOrEqual().Int(10),
@@ -297,7 +297,7 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.NoError(t, err)
 		entCol := NewCustomerAddressEntities()
 		entINSERT := tbl.Insert().BuildValues()
-		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
+		entINSERTStmtA := entINSERT.PrepareWithDBR(ctx)
 		for i := 0; i < 9; i++ {
 			entIn := new(CustomerAddressEntity)
 			if err := ps.FakeData(entIn); err != nil {
@@ -340,7 +340,7 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
-		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
+		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithDBR(ctx)
 		lID := dmltest.CheckLastInsertID(t, "Error:  CustomerAddressEntities ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
 		dmltest.Close(t, entINSERTStmtA)
 		t.Logf("Last insert ID into: %d", lID)
@@ -350,8 +350,8 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 	t.Run("CustomerEntity_Entity", func(t *testing.T) {
 		tbl := tbls.MustTable(TableNameCustomerEntity)
 		entSELECT := tbl.SelectByPK("*")
-		// WithArgs generates the cached SQL string with empty key "".
-		entSELECTStmtA := entSELECT.WithArgs().ExpandPlaceHolders()
+		// WithDBR generates the cached SQL string with empty key "".
+		entSELECTStmtA := entSELECT.WithDBR().ExpandPlaceHolders()
 		entSELECT.WithCacheKey("select_10").Wheres.Reset()
 		_, _, err := entSELECT.Where(
 			dml.Column("entity_id").LessOrEqual().Int(10),
@@ -359,7 +359,7 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.NoError(t, err)
 		entCol := NewCustomerEntities()
 		entINSERT := tbl.Insert().BuildValues()
-		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
+		entINSERTStmtA := entINSERT.PrepareWithDBR(ctx)
 		for i := 0; i < 9; i++ {
 			entIn := new(CustomerEntity)
 			if err := ps.FakeData(entIn); err != nil {
@@ -405,7 +405,7 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
-		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
+		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithDBR(ctx)
 		lID := dmltest.CheckLastInsertID(t, "Error:  CustomerEntities ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
 		dmltest.Close(t, entINSERTStmtA)
 		t.Logf("Last insert ID into: %d", lID)
@@ -415,8 +415,8 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 	t.Run("DmlgenTypes_Entity", func(t *testing.T) {
 		tbl := tbls.MustTable(TableNameDmlgenTypes)
 		entSELECT := tbl.SelectByPK("*")
-		// WithArgs generates the cached SQL string with empty key "".
-		entSELECTStmtA := entSELECT.WithArgs().ExpandPlaceHolders()
+		// WithDBR generates the cached SQL string with empty key "".
+		entSELECTStmtA := entSELECT.WithDBR().ExpandPlaceHolders()
 		entSELECT.WithCacheKey("select_10").Wheres.Reset()
 		_, _, err := entSELECT.Where(
 			dml.Column("id").LessOrEqual().Int(10),
@@ -424,7 +424,7 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.NoError(t, err)
 		entCol := NewDmlgenTypesCollection()
 		entINSERT := tbl.Insert().BuildValues()
-		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
+		entINSERTStmtA := entINSERT.PrepareWithDBR(ctx)
 		for i := 0; i < 9; i++ {
 			entIn := new(DmlgenTypes)
 			if err := ps.FakeData(entIn); err != nil {
@@ -483,7 +483,7 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
-		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
+		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithDBR(ctx)
 		lID := dmltest.CheckLastInsertID(t, "Error:  DmlgenTypesCollection ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
 		dmltest.Close(t, entINSERTStmtA)
 		t.Logf("Last insert ID into: %d", lID)
@@ -493,8 +493,8 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 	t.Run("SalesOrderStatusState_Entity", func(t *testing.T) {
 		tbl := tbls.MustTable(TableNameSalesOrderStatusState)
 		entSELECT := tbl.SelectByPK("*")
-		// WithArgs generates the cached SQL string with empty key "".
-		entSELECTStmtA := entSELECT.WithArgs().ExpandPlaceHolders()
+		// WithDBR generates the cached SQL string with empty key "".
+		entSELECTStmtA := entSELECT.WithDBR().ExpandPlaceHolders()
 		entSELECT.WithCacheKey("select_10").Wheres.Reset()
 		_, _, err := entSELECT.Where().ToSQL() // ToSQL generates the new cached SQL string with key select_10
 		assert.NoError(t, err)
@@ -508,8 +508,8 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 	t.Run("ViewCustomerAutoIncrement_Entity", func(t *testing.T) {
 		tbl := tbls.MustTable(TableNameViewCustomerAutoIncrement)
 		entSELECT := tbl.SelectByPK("*")
-		// WithArgs generates the cached SQL string with empty key "".
-		entSELECTStmtA := entSELECT.WithArgs().ExpandPlaceHolders()
+		// WithDBR generates the cached SQL string with empty key "".
+		entSELECTStmtA := entSELECT.WithDBR().ExpandPlaceHolders()
 		entSELECT.WithCacheKey("select_10").Wheres.Reset()
 		_, _, err := entSELECT.Where().ToSQL() // ToSQL generates the new cached SQL string with key select_10
 		assert.NoError(t, err)
@@ -523,8 +523,8 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 	t.Run("ViewCustomerNoAutoIncrement_Entity", func(t *testing.T) {
 		tbl := tbls.MustTable(TableNameViewCustomerNoAutoIncrement)
 		entSELECT := tbl.SelectByPK("*")
-		// WithArgs generates the cached SQL string with empty key "".
-		entSELECTStmtA := entSELECT.WithArgs().ExpandPlaceHolders()
+		// WithDBR generates the cached SQL string with empty key "".
+		entSELECTStmtA := entSELECT.WithDBR().ExpandPlaceHolders()
 		entSELECT.WithCacheKey("select_10").Wheres.Reset()
 		_, _, err := entSELECT.Where().ToSQL() // ToSQL generates the new cached SQL string with key select_10
 		assert.NoError(t, err)

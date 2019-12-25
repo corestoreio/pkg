@@ -28,9 +28,9 @@ import (
 // Before loading it clears the cache. This function panics if the tables do not
 // exists in the ddl.Tables object.
 func WithLoadFromDB(ctx context.Context, tbls *ddl.Tables) Option {
-	stmtStore := tbls.MustTable(TableNameStore).Select("*").WithArgs()
-	stmtGroup := tbls.MustTable(TableNameStoreGroup).Select("*").WithArgs()
-	stmtWebsite := tbls.MustTable(TableNameStoreWebsite).Select("*").WithArgs()
+	stmtStore := tbls.MustTable(TableNameStore).Select("*").WithDBR()
+	stmtGroup := tbls.MustTable(TableNameStoreGroup).Select("*").WithDBR()
+	stmtWebsite := tbls.MustTable(TableNameStoreWebsite).Select("*").WithDBR()
 
 	return Option{
 		sortOrder: 199,
@@ -66,9 +66,9 @@ func WithLoadFromDB(ctx context.Context, tbls *ddl.Tables) Option {
 // options have been applied.
 func WithSaveToDB(ctx context.Context, tbls *ddl.Tables, chanErr chan<- error) Option {
 
-	stmtStore := tbls.MustTable(TableNameStore).Insert().OnDuplicateKey().WithArgs()
-	stmtGroup := tbls.MustTable(TableNameStoreGroup).Insert().OnDuplicateKey().WithArgs()
-	stmtWebsite := tbls.MustTable(TableNameStoreWebsite).Insert().OnDuplicateKey().WithArgs()
+	stmtStore := tbls.MustTable(TableNameStore).Insert().OnDuplicateKey().WithDBR()
+	stmtGroup := tbls.MustTable(TableNameStoreGroup).Insert().OnDuplicateKey().WithDBR()
+	stmtWebsite := tbls.MustTable(TableNameStoreWebsite).Insert().OnDuplicateKey().WithDBR()
 
 	return Option{
 		sortOrder: 100000,

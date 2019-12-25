@@ -41,8 +41,8 @@ func TestNewTablesDB_8fbf75a91e4e6bd670de701be5c9ec85(t *testing.T) {
 	t.Run("Store_Entity", func(t *testing.T) {
 		tbl := tbls.MustTable(TableNameStore)
 		entSELECT := tbl.SelectByPK("*")
-		// WithArgs generates the cached SQL string with empty key "".
-		entSELECTStmtA := entSELECT.WithArgs().ExpandPlaceHolders()
+		// WithDBR generates the cached SQL string with empty key "".
+		entSELECTStmtA := entSELECT.WithDBR().ExpandPlaceHolders()
 		entSELECT.WithCacheKey("select_10").Wheres.Reset()
 		_, _, err := entSELECT.Where(
 			dml.Column("store_id").LessOrEqual().Int(10),
@@ -50,7 +50,7 @@ func TestNewTablesDB_8fbf75a91e4e6bd670de701be5c9ec85(t *testing.T) {
 		assert.NoError(t, err)
 		entCol := NewStores()
 		entINSERT := tbl.Insert().BuildValues()
-		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
+		entINSERTStmtA := entINSERT.PrepareWithDBR(ctx)
 		for i := 0; i < 9; i++ {
 			entIn := new(Store)
 			if err := ps.FakeData(entIn); err != nil {
@@ -75,7 +75,7 @@ func TestNewTablesDB_8fbf75a91e4e6bd670de701be5c9ec85(t *testing.T) {
 		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
-		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
+		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithDBR(ctx)
 		lID := dmltest.CheckLastInsertID(t, "Error:  Stores ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
 		dmltest.Close(t, entINSERTStmtA)
 		t.Logf("Last insert ID into: %d", lID)
@@ -85,8 +85,8 @@ func TestNewTablesDB_8fbf75a91e4e6bd670de701be5c9ec85(t *testing.T) {
 	t.Run("StoreGroup_Entity", func(t *testing.T) {
 		tbl := tbls.MustTable(TableNameStoreGroup)
 		entSELECT := tbl.SelectByPK("*")
-		// WithArgs generates the cached SQL string with empty key "".
-		entSELECTStmtA := entSELECT.WithArgs().ExpandPlaceHolders()
+		// WithDBR generates the cached SQL string with empty key "".
+		entSELECTStmtA := entSELECT.WithDBR().ExpandPlaceHolders()
 		entSELECT.WithCacheKey("select_10").Wheres.Reset()
 		_, _, err := entSELECT.Where(
 			dml.Column("group_id").LessOrEqual().Int(10),
@@ -94,7 +94,7 @@ func TestNewTablesDB_8fbf75a91e4e6bd670de701be5c9ec85(t *testing.T) {
 		assert.NoError(t, err)
 		entCol := NewStoreGroups()
 		entINSERT := tbl.Insert().BuildValues()
-		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
+		entINSERTStmtA := entINSERT.PrepareWithDBR(ctx)
 		for i := 0; i < 9; i++ {
 			entIn := new(StoreGroup)
 			if err := ps.FakeData(entIn); err != nil {
@@ -118,7 +118,7 @@ func TestNewTablesDB_8fbf75a91e4e6bd670de701be5c9ec85(t *testing.T) {
 		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
-		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
+		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithDBR(ctx)
 		lID := dmltest.CheckLastInsertID(t, "Error:  StoreGroups ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
 		dmltest.Close(t, entINSERTStmtA)
 		t.Logf("Last insert ID into: %d", lID)
@@ -128,8 +128,8 @@ func TestNewTablesDB_8fbf75a91e4e6bd670de701be5c9ec85(t *testing.T) {
 	t.Run("StoreWebsite_Entity", func(t *testing.T) {
 		tbl := tbls.MustTable(TableNameStoreWebsite)
 		entSELECT := tbl.SelectByPK("*")
-		// WithArgs generates the cached SQL string with empty key "".
-		entSELECTStmtA := entSELECT.WithArgs().ExpandPlaceHolders()
+		// WithDBR generates the cached SQL string with empty key "".
+		entSELECTStmtA := entSELECT.WithDBR().ExpandPlaceHolders()
 		entSELECT.WithCacheKey("select_10").Wheres.Reset()
 		_, _, err := entSELECT.Where(
 			dml.Column("website_id").LessOrEqual().Int(10),
@@ -137,7 +137,7 @@ func TestNewTablesDB_8fbf75a91e4e6bd670de701be5c9ec85(t *testing.T) {
 		assert.NoError(t, err)
 		entCol := NewStoreWebsites()
 		entINSERT := tbl.Insert().BuildValues()
-		entINSERTStmtA := entINSERT.PrepareWithArgs(ctx)
+		entINSERTStmtA := entINSERT.PrepareWithDBR(ctx)
 		for i := 0; i < 9; i++ {
 			entIn := new(StoreWebsite)
 			if err := ps.FakeData(entIn); err != nil {
@@ -161,7 +161,7 @@ func TestNewTablesDB_8fbf75a91e4e6bd670de701be5c9ec85(t *testing.T) {
 		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
-		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithArgs(ctx)
+		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithDBR(ctx)
 		lID := dmltest.CheckLastInsertID(t, "Error:  StoreWebsites ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
 		dmltest.Close(t, entINSERTStmtA)
 		t.Logf("Last insert ID into: %d", lID)

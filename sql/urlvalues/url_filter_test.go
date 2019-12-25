@@ -169,7 +169,7 @@ func TestNewPager(t *testing.T) {
 			p.MaxOffset = 100
 			var cond dml.Conditions
 
-			a := dml.NewSelect(tbl.Columns.FieldNames()...).From(tbl.Name).Where(cond...).WithArgs()
+			a := dml.NewSelect(tbl.Columns.FieldNames()...).From(tbl.Name).Where(cond...).WithDBR()
 			a, err = p.Pagination(a)
 			assert.NoError(t, err)
 

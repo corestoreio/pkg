@@ -54,7 +54,7 @@ func TestDecimal_Select_Integration(t *testing.T) {
 	in := dbc.InsertInto("storage_null_types").
 		AddColumns("id", "string_val", "int64_val", "float64_val", "time_val", "bool_val", "decimal_val")
 
-	res, err := in.WithArgs().Record("", rec).ExecContext(context.TODO())
+	res, err := in.WithDBR().Record("", rec).ExecContext(context.TODO())
 	assert.NoError(t, err)
 	id, err := res.LastInsertId()
 	assert.NoError(t, err)
@@ -67,7 +67,7 @@ func TestDecimal_Select_Integration(t *testing.T) {
 		dml.Column("decimal_val").Decimal(dec),
 	)
 
-	rc, err := sel.WithArgs().Load(context.TODO(), nullTypeSet)
+	rc, err := sel.WithDBR().Load(context.TODO(), nullTypeSet)
 	assert.NoError(t, err)
 	assert.Exactly(t, uint64(1), rc)
 
@@ -100,7 +100,7 @@ func TestNullTypeScanning(t *testing.T) {
 		// Create the record in the db
 		res, err := dbc.InsertInto("storage_null_types").
 			AddColumns("string_val", "int64_val", "float64_val", "time_val", "bool_val", "decimal_val").
-			WithArgs().Record("", test.record).ExecContext(context.TODO())
+			WithDBR().Record("", test.record).ExecContext(context.TODO())
 		assert.NoError(t, err)
 		id, err := res.LastInsertId()
 		assert.NoError(t, err)
@@ -110,7 +110,7 @@ func TestNullTypeScanning(t *testing.T) {
 		nullTypeSet := &nullTypedRecord{}
 		_, err = dbc.SelectFrom("storage_null_types").Star().Where(
 			dml.Expr("id = ?").Int64(id),
-		).WithArgs().Load(context.TODO(), nullTypeSet)
+		).WithDBR().Load(context.TODO(), nullTypeSet)
 		assert.NoError(t, err)
 
 		assert.Equal(t, test.record, nullTypeSet)
