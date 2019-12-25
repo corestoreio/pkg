@@ -64,7 +64,7 @@ func BenchmarkSelect_Rows(b *testing.B) {
 
 		sel.Where(dml.Column("TABLE_NAME").In().PlaceHolder())
 
-		rows, err := sel.WithArgs().Strings(tables...).QueryContext(ctx)
+		rows, err := sel.WithDBR().Strings(tables...).QueryContext(ctx)
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
@@ -256,7 +256,7 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 
 			sel.EstimatedCachedSQLSize = 8192
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithArgs().Interpolate().Int64(4).Int64s(entityIDs...).Int64s(174, 175).Int(0).ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithDBR().Interpolate().Int64(4).Int64s(entityIDs...).Int64s(174, 175).Int(0).ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -277,7 +277,7 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 
 			sel.EstimatedCachedSQLSize = 8192
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithArgs().Interpolate().NamedArg("EntityTypeId", int64(4)).
+			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithDBR().Interpolate().NamedArg("EntityTypeId", int64(4)).
 				NamedArg("EntityId", entityIDs).
 				NamedArg("AttributeId", []int64{174, 175}).
 				NamedArg("StoreId", 0).ToSQL()
@@ -299,7 +299,7 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 			Where(dml.Column("store_id").PlaceHolder())
 		sel.EstimatedCachedSQLSize = 8192
 
-		selA := sel.WithArgs().Interpolate()
+		selA := sel.WithDBR().Interpolate()
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -429,7 +429,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 			var err error
 			benchmarkSelectStr, benchmarkGlobalVals, err = dml.NewInsert("alpha").
 				AddColumns("something_id", "user_id", "other").
-				WithArgs().
+				WithDBR().
 				Int64(1).Int64(2).Bool(true).
 				ToSQL()
 			if err != nil {
@@ -443,7 +443,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			var err error
-			sqlObjA := sqlObj.WithCacheKey("index_%d", i).WithArgs().Int64(1).Int64(2).Bool(true)
+			sqlObjA := sqlObj.WithCacheKey("index_%d", i).WithDBR().Int64(1).Int64(2).Bool(true)
 			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObjA.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
@@ -453,7 +453,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 
 	b.Run("ToSQL with cache", func(b *testing.B) {
 		sqlObj := dml.NewInsert("alpha").AddColumns("something_id", "user_id", "other")
-		delA := sqlObj.WithArgs()
+		delA := sqlObj.WithDBR()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			var err error
@@ -470,7 +470,7 @@ func BenchmarkInsertRecordsSQL(b *testing.B) {
 	obj := someRecord{SomethingID: 1, UserID: 99, Other: false}
 	insA := dml.NewInsert("alpha").
 		AddColumns("something_id", "user_id", "other").
-		WithArgs()
+		WithDBR()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -651,8 +651,8 @@ func BenchmarkUnion(b *testing.B) {
 			}
 		}
 	})
-	b.Run("5 SELECTs WithArgs", func(b *testing.B) {
-		u := newUnion5().WithArgs()
+	b.Run("5 SELECTs WithDBR", func(b *testing.B) {
+		u := newUnion5().WithDBR()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			var err error

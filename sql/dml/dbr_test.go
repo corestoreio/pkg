@@ -250,7 +250,7 @@ func TestArguments_HasNamedArgs(t *testing.T) {
 			AddColumnsConditions(
 				Expr("?").Alias("n").Int64(1),
 				Expr("CAST(:name AS CHAR(20))").Alias("str"),
-			).WithArgs().Record("", p)
+			).WithDBR().Record("", p)
 		_, _, err := a.ToSQL()
 		assert.NoError(t, err)
 		assert.Exactly(t, uint8(2), a.hasNamedArgs)
@@ -258,7 +258,7 @@ func TestArguments_HasNamedArgs(t *testing.T) {
 	t.Run("hasNamedArgs in condition, no args", func(t *testing.T) {
 		a := NewSelect("a", "b").From("c").Where(
 			Column("id").Greater().PlaceHolder(),
-			Column("email").Like().NamedArg("ema1l")).WithArgs()
+			Column("email").Like().NamedArg("ema1l")).WithDBR()
 		_, _, err := a.ToSQL()
 		assert.NoError(t, err)
 		assert.Exactly(t, uint8(0), a.hasNamedArgs)
@@ -266,7 +266,7 @@ func TestArguments_HasNamedArgs(t *testing.T) {
 	t.Run("hasNamedArgs in condition, with args", func(t *testing.T) {
 		a := NewSelect("a", "b").From("c").Where(
 			Column("id").Greater().PlaceHolder(),
-			Column("email").Like().NamedArg("ema1l")).WithArgs().String("my@email.org")
+			Column("email").Like().NamedArg("ema1l")).WithDBR().String("my@email.org")
 		_, _, err := a.ToSQL()
 		assert.NoError(t, err)
 		assert.Exactly(t, uint8(1), a.hasNamedArgs)
@@ -274,7 +274,7 @@ func TestArguments_HasNamedArgs(t *testing.T) {
 	t.Run("hasNamedArgs none", func(t *testing.T) {
 		a := NewSelect("a", "b").From("c").Where(
 			Column("id").Greater().Int(221),
-			Column("email").Like().Str("em@1l.de")).WithArgs()
+			Column("email").Like().Str("em@1l.de")).WithDBR()
 		_, _, err := a.ToSQL()
 		assert.NoError(t, err)
 		assert.Exactly(t, uint8(0), a.hasNamedArgs)
@@ -368,11 +368,11 @@ func TestDBR_Clone(t *testing.T) {
 	t.Parallel()
 	sel := NewSelect("a", "b").From("c").WithDB(dbMock{})
 	sel.qualifiedColumns = []string{"x", "y"}
-	selA := sel.WithArgs()
+	selA := sel.WithDBR()
 	selA.base.Log = log.BlackHole{}
 
 	selB := selA.Clone()
-	assert.Nil(t, selB.base.DB)
+	assert.NotNil(t, selB.base.DB)
 	assert.Exactly(t, selA.base.Log, selB.base.Log)
 	assert.Exactly(t, selA.base.cachedSQL, selB.base.cachedSQL)
 
@@ -385,7 +385,7 @@ func TestDBR_OrderByLimit(t *testing.T) {
 	t.Run("WithoutArgs", func(t *testing.T) {
 		a := NewSelect("a", "b").From("c").Where(
 			Column("id").Greater().Int(221),
-			Column("email").Like().Str("em@1l.de")).WithArgs().Limit(44, 55)
+			Column("email").Like().Str("em@1l.de")).WithDBR().Limit(44, 55)
 
 		t.Run("ASC", func(t *testing.T) {
 			a.OrderBy("email", "id")
@@ -402,10 +402,10 @@ func TestDBR_OrderByLimit(t *testing.T) {
 		})
 	})
 
-	t.Run("WithArgs", func(t *testing.T) {
+	t.Run("WithDBR", func(t *testing.T) {
 		a := NewSelect("a", "b").From("c").Where(
 			Column("id").Greater().PlaceHolder(),
-			Column("email").Like().Str("em@1l.de")).WithArgs().Int(87653).Limit(44, 55)
+			Column("email").Like().Str("em@1l.de")).WithDBR().Int(87653).Limit(44, 55)
 
 		t.Run("ASC", func(t *testing.T) {
 			a.OrderBy("email", "id")
@@ -441,7 +441,7 @@ func TestDBR_PreGeneratedQueries(t *testing.T) {
 		_, _, err = sel.WithCacheKey("id_less").ToSQL() // build cache 2
 		assert.NoError(t, err)
 
-		selA := sel.WithArgs()
+		selA := sel.WithDBR()
 
 		compareToSQL2(t, selA.WithCacheKey("id_greater"), errors.NoKind,
 			"SELECT `a`, `b` FROM `c` WHERE (`id` > ?) AND (`email` LIKE ?)",

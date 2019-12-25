@@ -39,7 +39,7 @@ func TestWith_Query(t *testing.T) {
 		sel := dml.NewWith(dml.WithCTE{Name: "sel", Select: dml.NewSelect().Unsafe().AddColumns("1")}).
 			Select(dml.NewSelect().Star().From("sel")).
 			WithDB(dbc.DB)
-		rows, err := sel.WithArgs().QueryContext(context.TODO())
+		rows, err := sel.WithDBR().QueryContext(context.TODO())
 		assert.Nil(t, rows)
 		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
@@ -58,7 +58,7 @@ func TestWith_Load(t *testing.T) {
 		sel := dml.NewWith(dml.WithCTE{Name: "sel", Select: dml.NewSelect().Unsafe().AddColumns("1")}).
 			Select(dml.NewSelect().Star().From("sel")).
 			WithDB(dbc.DB)
-		rows, err := sel.WithArgs().Load(context.TODO(), nil)
+		rows, err := sel.WithDBR().Load(context.TODO(), nil)
 		assert.Exactly(t, uint64(0), rows)
 		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
@@ -211,7 +211,7 @@ func TestWith_Prepare(t *testing.T) {
 		}()
 
 		t.Run("Context", func(t *testing.T) {
-			rows, err := stmt.WithArgs().QueryContext(context.TODO(), 6889)
+			rows, err := stmt.WithDBR().QueryContext(context.TODO(), 6889)
 			assert.NoError(t, err)
 			defer rows.Close()
 
@@ -221,7 +221,7 @@ func TestWith_Prepare(t *testing.T) {
 		})
 
 		t.Run("RowContext", func(t *testing.T) {
-			row := stmt.WithArgs().QueryRowContext(context.TODO(), 6890)
+			row := stmt.WithDBR().QueryRowContext(context.TODO(), 6890)
 			assert.NoError(t, err)
 			n, e := "", ""
 			assert.NoError(t, row.Scan(&n, &e))
@@ -265,7 +265,7 @@ func TestWith_Prepare(t *testing.T) {
 					WillReturnRows(sqlmock.NewRows([]string{"name", "email"}).AddRow("Peter Gopher", "peter@gopher.go"))
 			}
 			// use loop with Query and add args before
-			stmtA := stmt.WithArgs().Int(6899)
+			stmtA := stmt.WithDBR().Int(6899)
 
 			for i := 0; i < iterations; i++ {
 				rows, err := stmtA.QueryContext(context.TODO())
@@ -285,7 +285,7 @@ func TestWith_Prepare(t *testing.T) {
 			}
 
 			p := &dmlPerson{ID: 6900}
-			stmtA := stmt.WithArgs().Record("", p)
+			stmtA := stmt.WithDBR().Record("", p)
 
 			for i := 0; i < iterations; i++ {
 				rows, err := stmtA.QueryContext(context.TODO())
@@ -301,7 +301,7 @@ func TestWith_Prepare(t *testing.T) {
 		t.Run("WithRecords Error", func(t *testing.T) {
 			p := &TableCoreConfigDataSlice{err: errors.Duplicated.Newf("Found a duplicate")}
 
-			stmtA := stmt.WithArgs().Raw(dml.Qualify("", p))
+			stmtA := stmt.WithDBR().Raw(dml.Qualify("", p))
 			rows, err := stmtA.QueryContext(context.TODO())
 			assert.ErrorIsKind(t, errors.Duplicated, err)
 			assert.Nil(t, rows)

@@ -34,7 +34,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 	t.Run("no columns provided", func(t *testing.T) {
 		mu := dml.NewUpdate("catalog_product_entity").Where(dml.Column("entity_id").In().PlaceHolder())
 
-		res, err := mu.WithArgs().ExecContext(context.TODO())
+		res, err := mu.WithDBR().ExecContext(context.TODO())
 		assert.Nil(t, res)
 		assert.ErrorIsKind(t, errors.Empty, err)
 	})
@@ -47,7 +47,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 				return nil, nil
 			},
 		}).
-			WithArgs().WithQualifiedColumnsAliases("update_sku").
+			WithDBR().WithQualifiedColumnsAliases("update_sku").
 			Record("", nil).ExecContext(context.TODO())
 		assert.Nil(t, res)
 		assert.ErrorIsKind(t, errors.Mismatch, err)
@@ -72,7 +72,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 			Name:  "Alf",
 			Email: null.MakeString("alf@m') -- el.mac"),
 		}
-		res, err := stmt.WithArgs().Record("", p).WithQualifiedColumnsAliases("update_sku").ExecContext(context.TODO())
+		res, err := stmt.WithDBR().Record("", p).WithQualifiedColumnsAliases("update_sku").ExecContext(context.TODO())
 		assert.ErrorIsKind(t, errors.Mismatch, err)
 		assert.Nil(t, res, "No result is expected")
 	})
@@ -83,7 +83,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 			error: errors.AlreadyClosed.Newf("Who closed myself?"),
 		})
 
-		res, err := mu.WithArgs().ExecContext(context.TODO())
+		res, err := mu.WithDBR().ExecContext(context.TODO())
 		assert.Nil(t, res)
 		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
@@ -120,7 +120,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 		defer dmltest.Close(t, stmt)
 
 		for i, record := range records {
-			results, err := stmt.WithArgs().Record("ce", record).ExecContext(context.TODO())
+			results, err := stmt.WithDBR().Record("ce", record).ExecContext(context.TODO())
 			assert.NoError(t, err)
 			aff, err := results.RowsAffected()
 			if err != nil {
@@ -144,7 +144,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 		assert.NoError(t, err, "failed creating a prepared statement")
 		defer dmltest.Close(t, stmt)
 
-		res, err := stmt.WithArgs().ExecContext(context.TODO(), "Peter Gopher", "peter@gopher.go", 3456)
+		res, err := stmt.WithDBR().ExecContext(context.TODO(), "Peter Gopher", "peter@gopher.go", 3456)
 		assert.NoError(t, err, "failed to execute ExecContext")
 
 		ra, err := res.RowsAffected()
@@ -174,7 +174,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 			Email:   null.MakeString("peter@gopher.go"),
 			StoreID: 3,
 		}
-		res, err := stmt.WithArgs().ExecContext(context.TODO(), dml.Qualify("", p))
+		res, err := stmt.WithDBR().ExecContext(context.TODO(), dml.Qualify("", p))
 		assert.NoError(t, err, "failed to execute ExecContext")
 
 		ra, err := res.RowsAffected()
@@ -209,7 +209,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 			{"Petra Gopher", "petra@gopher.go", 3457, 21},
 		}
 
-		stmtA := stmt.WithArgs()
+		stmtA := stmt.WithDBR()
 		for i, test := range tests {
 			res, err := stmtA.String(test.name).String(test.email).Int(test.id).ExecContext(context.TODO())
 			if err != nil {
@@ -297,7 +297,7 @@ func TestArguments_WithQualifiedColumnsAliases(t *testing.T) {
 		Prepare(context.TODO())
 	assert.NoError(t, err)
 
-	stmtExec := stmt.WithArgs().WithQualifiedColumnsAliases("state", "alias_customer_id", "grand_total", "entity_id")
+	stmtExec := stmt.WithDBR().WithQualifiedColumnsAliases("state", "alias_customer_id", "grand_total", "entity_id")
 
 	for i, record := range collection {
 		results, err := stmtExec.Record("sales_invoice", record).ExecContext(context.TODO())
@@ -325,7 +325,7 @@ func TestUpdate_BindRecord(t *testing.T) {
 		u := dml.NewUpdate("catalog_category_entity").
 			AddColumns("attribute_set_id", "parent_id", "path").
 			Where(dml.Column("entity_id").Greater().PlaceHolder()).
-			WithArgs().Record("", ce)
+			WithDBR().Record("", ce)
 
 		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`entity_id` > ?)",
@@ -340,7 +340,7 @@ func TestUpdate_BindRecord(t *testing.T) {
 			Where(
 				dml.Column("x").In().Int64s(66, 77),
 				dml.Column("entity_id").Greater().PlaceHolder(),
-			).WithArgs().Record("", ce)
+			).WithDBR().Record("", ce)
 		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`x` IN (66,77)) AND (`entity_id` > ?)",
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`x` IN (66,77)) AND (`entity_id` > 678)",
@@ -354,7 +354,7 @@ func TestUpdate_BindRecord(t *testing.T) {
 				dml.Column("entity_id").Greater().PlaceHolder(),
 				dml.Column("x").In().Int64s(66, 77),
 				dml.Column("y").Greater().Int64(99),
-			).WithArgs().Record("", ce)
+			).WithDBR().Record("", ce)
 		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`entity_id` > ?) AND (`x` IN (66,77)) AND (`y` > 99)",
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`entity_id` > 678) AND (`x` IN (66,77)) AND (`y` > 99)",
@@ -371,7 +371,7 @@ func TestUpdate_BindRecord(t *testing.T) {
 				dml.Column("ce.entity_id").Greater().PlaceHolder(), // 678
 				dml.Column("cpe.entity_id").In().Int64s(66, 77),
 				dml.Column("cpei.attribute_set_id").Equal().PlaceHolder(), // 6
-			).WithArgs().Record("", ce).Record("cpei", ce)
+			).WithDBR().Record("", ce).Record("cpei", ce)
 		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `catalog_category_entity` AS `ce` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`ce`.`entity_id` > ?) AND (`cpe`.`entity_id` IN (66,77)) AND (`cpei`.`attribute_set_id` = ?)",
 			"UPDATE `catalog_category_entity` AS `ce` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`ce`.`entity_id` > 678) AND (`cpe`.`entity_id` IN (66,77)) AND (`cpei`.`attribute_set_id` = 6)",

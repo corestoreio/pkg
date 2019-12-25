@@ -108,7 +108,7 @@ type Insert struct {
 	// IsIgnore ignores error. See function Ignore().
 	IsIgnore bool
 	// IsBuildValues if true the VALUES part gets build when calling ToSQL.
-	// VALUES do not need to get build by default because mostly WithArgs gets
+	// VALUES do not need to get build by default because mostly WithDBR gets
 	// called to build the VALUES part dynamically.
 	IsBuildValues bool
 }
@@ -250,7 +250,7 @@ func (b *Insert) OnDuplicateKey() *Insert {
 // WithPairs appends a column/value pair to the statement. Calling this function
 // multiple times with the same column name produces next rows for insertion.
 // Slice values and right/left side expressions are not supported and ignored.
-// You must call WithArgs afterwards to activate the `Pairs`.
+// You must call WithDBR afterwards to activate the `Pairs`.
 func (b *Insert) WithPairs(cvs ...*Condition) *Insert {
 	b.Pairs = append(b.Pairs, cvs...)
 	return b
@@ -263,17 +263,17 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 	return b
 }
 
-// WithArgs returns a new DBR type to support multiple executions of the
+// WithDBR returns a new DBR type to support multiple executions of the
 // underlying SQL statement and reuse of memory allocations for the arguments.
-// WithArgs builds the SQL string in a thread safe way. It copies the underlying
+// WithDBR builds the SQL string in a thread safe way. It copies the underlying
 // connection and settings from the current DML type (Delete, Insert, Select,
 // Update, Union, With, etc.). The field DB can still be overwritten.
 // Interpolation does not support the raw interfaces. It's an architecture bug
-// to use WithArgs inside a loop. In case of INSERT statement, WithArgs figures
+// to use WithDBR inside a loop. In case of INSERT statement, WithDBR figures
 // automatically out how the VALUES section must look like depending on the
 // number of arguments. In some cases type Insert needs to know the RowCount to
 // build the appropriate amount of placeholders.
-func (b *Insert) WithArgs() *DBR {
+func (b *Insert) WithDBR() *DBR {
 	var pairArgs arguments
 	b.rwmu.RLock()
 	isSelect := b.Select != nil // b.newDBR unsets the Select field if caching is enabled
@@ -475,10 +475,10 @@ func (b *Insert) Prepare(ctx context.Context) (*Stmt, error) {
 	return b.prepare(ctx, b.DB, b, dmlSourceInsert)
 }
 
-// PrepareWithArgs same as Prepare but forwards the possible error of creating a
+// PrepareWithDBR same as Prepare but forwards the possible error of creating a
 // prepared statement into the DBR type. Reduces boilerplate code. You must
 // call DBR.Close to deallocate the prepared statement in the SQL server.
-func (b *Insert) PrepareWithArgs(ctx context.Context) *DBR {
+func (b *Insert) PrepareWithDBR(ctx context.Context) *DBR {
 	stmt, err := b.prepare(ctx, b.DB, b, dmlSourceInsert)
 	if err != nil {
 		a := &DBR{
@@ -488,7 +488,7 @@ func (b *Insert) PrepareWithArgs(ctx context.Context) *DBR {
 		}
 		return a
 	}
-	return stmt.WithArgs()
+	return stmt.WithDBR()
 }
 
 // Clone creates a clone of the current object, leaving fields DB and Log

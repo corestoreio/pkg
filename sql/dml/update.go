@@ -156,16 +156,16 @@ func (b *Update) Limit(limit uint64) *Update {
 	return b
 }
 
-// WithArgs returns a new type to support multiple executions of the underlying
-// SQL statement and reuse of memory allocations for the arguments. WithArgs
+// WithDBR returns a new type to support multiple executions of the underlying
+// SQL statement and reuse of memory allocations for the arguments. WithDBR
 // builds the SQL string in a thread safe way. It copies the underlying
 // connection and settings from the current DML type (Delete, Insert, Select,
 // Update, Union, With, etc.). The field DB can still be overwritten.
 // Interpolation does not support the raw interfaces. It's an architecture bug
-// to use WithArgs inside a loop. WithArgs does support thread safety and can be
+// to use WithDBR inside a loop. WithDBR does support thread safety and can be
 // used in parallel. Each goroutine must have its own dedicated *DBR
 // pointer.
-func (b *Update) WithArgs() *DBR {
+func (b *Update) WithDBR() *DBR {
 	return b.newDBR(b)
 }
 
@@ -234,10 +234,10 @@ func (b *Update) Prepare(ctx context.Context) (*Stmt, error) {
 	return b.prepare(ctx, b.DB, b, dmlSourceUpdate)
 }
 
-// PrepareWithArgs same as Prepare but forwards the possible error of creating a
+// PrepareWithDBR same as Prepare but forwards the possible error of creating a
 // prepared statement into the DBR type. Reduces boilerplate code. You must
 // call DBR.Close to deallocate the prepared statement in the SQL server.
-func (b *Update) PrepareWithArgs(ctx context.Context) *DBR {
+func (b *Update) PrepareWithDBR(ctx context.Context) *DBR {
 	stmt, err := b.prepare(ctx, b.DB, b, dmlSourceUpdate)
 	if err != nil {
 		a := &DBR{
@@ -247,7 +247,7 @@ func (b *Update) PrepareWithArgs(ctx context.Context) *DBR {
 		}
 		return a
 	}
-	return stmt.WithArgs()
+	return stmt.WithDBR()
 }
 
 // Clone creates a clone of the current object, leaving fields DB and Log

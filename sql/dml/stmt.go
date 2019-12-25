@@ -71,12 +71,10 @@ type Stmt struct {
 	Stmt *sql.Stmt
 }
 
-// WithArgs creates a new argument handler. Not safe for concurrent use.
-func (st *Stmt) WithArgs() *DBR {
-	var args [defaultArgumentsCapacity]argument
+// WithDBR creates a new argument handler. Not safe for concurrent use.
+func (st *Stmt) WithDBR() *DBR {
 	a := &DBR{
 		base:       st.base,
-		arguments:  args[:0],
 		isPrepared: true,
 	}
 	a.base.DB = stmtWrapper{stmt: st.Stmt}

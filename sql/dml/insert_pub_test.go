@@ -68,7 +68,7 @@ func TestInsert_Bind(t *testing.T) {
 				AddOnDuplicateKey(
 					dml.Column("something_id").Int64(99),
 					dml.Column("user_id").Values(),
-				).WithArgs().Record("", objs[0]).Record("", objs[1]).Record("", objs[2]),
+				).WithDBR().Record("", objs[0]).Record("", objs[1]).Record("", objs[2]),
 			errors.NoKind,
 			"INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?),(?,?,?) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
 			"INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (1,88,0),(2,99,1),(3,101,1) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
@@ -82,7 +82,7 @@ func TestInsert_Bind(t *testing.T) {
 				AddOnDuplicateKey(
 					dml.Column("something_id").Int64(99),
 					dml.Column("user_id").Values(),
-				).WithArgs().Record("", objs[0]).Record("", objs[1]).Record("", objs[2]),
+				).WithDBR().Record("", objs[0]).Record("", objs[1]).Record("", objs[2]),
 			errors.NoKind,
 			"INSERT INTO `a` VALUES (?,?,?),(?,?,?),(?,?,?) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
 			"INSERT INTO `a` VALUES (1,88,0),(2,99,1),(3,101,1) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
@@ -99,7 +99,7 @@ func TestInsert_Bind(t *testing.T) {
 		compareToSQL(t,
 			dml.NewInsert("customer_entity").
 				SetRecordPlaceHolderCount(5). // mandatory because no columns provided!
-				WithArgs().Record("", customers[0]).Record("", customers[1]).Record("", customers[2]),
+				WithDBR().Record("", customers[0]).Record("", customers[1]).Record("", customers[2]),
 			errors.NoKind,
 			"INSERT INTO `customer_entity` VALUES (?,?,?,?,?),(?,?,?,?,?),(?,?,?,?,?)",
 			"INSERT INTO `customer_entity` VALUES (11,'Karl Gopher',7,47.11,'1FE9983E|28E76FBC'),(12,'Fung Go Roo',7,28.94,'4FE7787E|15E59FBB|794EFDE8'),(13,'John Doe',6,138.54,'')",
@@ -109,7 +109,7 @@ func TestInsert_Bind(t *testing.T) {
 	t.Run("column not found", func(t *testing.T) {
 		objs := []someRecord{{1, 88, false}, {2, 99, true}}
 		compareToSQL(t,
-			dml.NewInsert("a").AddColumns("something_it", "user_id", "other").WithArgs().Record("", objs[0]).Record("", objs[1]),
+			dml.NewInsert("a").AddColumns("something_it", "user_id", "other").WithDBR().Record("", objs[0]).Record("", objs[1]),
 			errors.NotFound,
 			"",
 			"",
@@ -177,7 +177,7 @@ func TestInsert_Prepare(t *testing.T) {
 			{"x@y.z", 44, now().Add(time.Minute), 5},
 		}
 
-		stmtA := stmt.WithArgs()
+		stmtA := stmt.WithDBR()
 		for i, test := range tests {
 			res, err := stmtA.String(test.email).Int(test.groupID).Time(test.created_at).ExecContext(context.TODO())
 			if err != nil {
@@ -222,7 +222,7 @@ func TestInsert_Prepare(t *testing.T) {
 			{"x@y.z", 44, "u@v.w", 44, 7},
 		}
 
-		stmtA := stmt.WithArgs()
+		stmtA := stmt.WithDBR()
 		for i, test := range tests {
 
 			res, err := stmtA.String(test.email1).Int(test.groupID1).String(test.email2).Int(test.groupID2).
@@ -273,7 +273,7 @@ func TestInsert_Prepare(t *testing.T) {
 				Email: null.MakeString(test.email),
 			}
 
-			res, err := stmt.WithArgs().Record("", p).ExecContext(context.TODO())
+			res, err := stmt.WithDBR().Record("", p).ExecContext(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -303,7 +303,7 @@ func TestInsert_Prepare(t *testing.T) {
 			assert.NoError(t, stmt.Close(), "Close on a prepared statement")
 		}()
 
-		res, err := stmt.WithArgs().ExecContext(context.TODO(), "Peter Gopher", "peter@gopher.go")
+		res, err := stmt.WithDBR().ExecContext(context.TODO(), "Peter Gopher", "peter@gopher.go")
 		assert.NoError(t, err, "failed to execute ExecContext")
 
 		lid, err := res.LastInsertId()
@@ -317,7 +317,7 @@ func TestInsert_Prepare(t *testing.T) {
 func TestInsert_BuildValues(t *testing.T) {
 	t.Parallel()
 
-	t.Run("WithArgs", func(t *testing.T) {
+	t.Run("WithDBR", func(t *testing.T) {
 		p := &dmlPerson{
 			Name:  "Pike",
 			Email: null.MakeString("pikes@peak.co"),
@@ -325,7 +325,7 @@ func TestInsert_BuildValues(t *testing.T) {
 
 		insA := dml.NewInsert("alpha").
 			AddColumns("name", "email").BuildValues().
-			WithArgs()
+			WithDBR()
 
 		// bug
 

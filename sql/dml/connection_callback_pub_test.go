@@ -61,20 +61,20 @@ func TestDriverCallBack(t *testing.T) {
 	ctx := context.TODO()
 	sel := db.SelectFrom("dml_people").Star().Where(dml.Column("name").PlaceHolder())
 	var ppl dmlPerson
-	_, err := sel.WithArgs().String("Bernd").Load(ctx, &ppl)
+	_, err := sel.WithDBR().String("Bernd").Load(ctx, &ppl)
 	assert.NoError(t, err)
 
-	_, err = sel.WithCacheKey("NoCache").SQLNoCache().WithArgs().Interpolate().String("Das Brot").Load(context.Background(), &ppl)
+	_, err = sel.WithCacheKey("NoCache").SQLNoCache().WithDBR().Interpolate().String("Das Brot").Load(context.Background(), &ppl)
 	assert.NoError(t, err)
 
 	con, err := db.Conn(ctx)
 	assert.NoError(t, err)
 
 	upd := con.Update("dml_people").AddClauses(dml.Column("name").PlaceHolder())
-	_, err = upd.WithArgs().ExecContext(ctx, "Hugo")
+	_, err = upd.WithDBR().ExecContext(ctx, "Hugo")
 	assert.NoError(t, err)
 
-	_, err = upd.WithArgs().String("Bernie").Interpolate().ExecContext(ctx)
+	_, err = upd.WithDBR().String("Bernie").Interpolate().ExecContext(ctx)
 	assert.NoError(t, err)
 
 	assert.NoError(t, con.Close())

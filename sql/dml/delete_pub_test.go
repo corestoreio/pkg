@@ -73,7 +73,7 @@ func TestDelete_Prepare(t *testing.T) {
 			{"a@b.c", 33, 1},
 			{"x@y.z", 44, 2},
 		}
-		args := stmt.WithArgs()
+		args := stmt.WithDBR()
 		for i, test := range tests {
 			res, err := args.String(test.email).Int(test.groupID).ExecContext(context.TODO())
 			if err != nil {
@@ -121,7 +121,7 @@ func TestDelete_Prepare(t *testing.T) {
 				Email: null.MakeString(test.email),
 			}
 
-			res, err := stmt.WithArgs().Raw(dml.Qualify("", p)).ExecContext(context.TODO())
+			res, err := stmt.WithDBR().Raw(dml.Qualify("", p)).ExecContext(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -149,7 +149,7 @@ func TestDelete_Prepare(t *testing.T) {
 			assert.NoError(t, stmt.Close(), "Close on a prepared statement")
 		}()
 
-		res, err := stmt.WithArgs().ExecContext(context.TODO(), "Peter Gopher", "peter@gopher.go")
+		res, err := stmt.WithDBR().ExecContext(context.TODO(), "Peter Gopher", "peter@gopher.go")
 		assert.NoError(t, err, "failed to execute ExecContext")
 
 		lid, err := res.RowsAffected()
@@ -184,8 +184,8 @@ func TestDelete_Join(t *testing.T) {
 		)
 	})
 
-	t.Run("JOIN USING with alias WithArgs", func(t *testing.T) {
-		compareToSQL(t, del1.WithArgs().Time(now()), errors.NoKind,
+	t.Run("JOIN USING with alias WithDBR", func(t *testing.T) {
+		compareToSQL(t, del1.WithDBR().Time(now()), errors.NoKind,
 			"DELETE `ce`,`customer_address`,`customer_company` FROM `customer_entity` AS `ce` INNER JOIN `customer_company` AS `cc` USING (`ce.entity_id`,`cc.customer_id`) RIGHT JOIN `customer_address` AS `ca` USING (`ce.entity_id`,`ca.parent_id`) WHERE (`ce`.`created_at` < ?)",
 			"DELETE `ce`,`customer_address`,`customer_company` FROM `customer_entity` AS `ce` INNER JOIN `customer_company` AS `cc` USING (`ce.entity_id`,`cc.customer_id`) RIGHT JOIN `customer_address` AS `ca` USING (`ce.entity_id`,`ca.parent_id`) WHERE (`ce`.`created_at` < '2006-01-02 15:04:05')",
 			now(),

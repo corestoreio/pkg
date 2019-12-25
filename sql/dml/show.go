@@ -175,16 +175,16 @@ func (b *Show) Like() *Show {
 	return b
 }
 
-// WithArgs returns a new type to support multiple executions of the underlying
-// SQL statement and reuse of memory allocations for the arguments. WithArgs
+// WithDBR returns a new type to support multiple executions of the underlying
+// SQL statement and reuse of memory allocations for the arguments. WithDBR
 // builds the SQL string in a thread safe way. It copies the underlying
 // connection and settings from the current DML type (Delete, Insert, Select,
 // Update, Union, With, etc.). The field DB can still be overwritten.
 // Interpolation does not support the raw interfaces. It's an architecture bug
-// to use WithArgs inside a loop. WithArgs does support thread safety and can be
+// to use WithDBR inside a loop. WithDBR does support thread safety and can be
 // used in parallel. Each goroutine must have its own dedicated *DBR
 // pointer.
-func (b *Show) WithArgs() *DBR {
+func (b *Show) WithDBR() *DBR {
 	return b.newDBR(b)
 }
 

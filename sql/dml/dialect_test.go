@@ -35,7 +35,7 @@ func TestEscapeWith_NaughtyStrings(t *testing.T) {
 	for _, nstr := range naughtystrings.Unencoded() {
 		var people dmlPersons
 		sel.Where(Column("name").Str(nstr))
-		count, err := sel.WithArgs().Load(context.TODO(), &people)
+		count, err := sel.WithDBR().Load(context.TODO(), &people)
 		if err != nil {
 			t.Fatalf("DB Error: %+v\n\nWith string: %q", err, nstr)
 		}

@@ -226,16 +226,16 @@ func (u *Union) StringReplace(key string, values ...string) *Union {
 	return u
 }
 
-// WithArgs returns a new type to support multiple executions of the underlying
-// SQL statement and reuse of memory allocations for the arguments. WithArgs
+// WithDBR returns a new type to support multiple executions of the underlying
+// SQL statement and reuse of memory allocations for the arguments. WithDBR
 // builds the SQL string in a thread safe way. It copies the underlying
 // connection and settings from the current DML type (Delete, Insert, Select,
 // Update, Union, With, etc.). The field DB can still be overwritten.
 // Interpolation does not support the raw interfaces. It's an architecture bug
-// to use WithArgs inside a loop. WithArgs does support thread safety and can be
+// to use WithDBR inside a loop. WithDBR does support thread safety and can be
 // used in parallel. Each goroutine must have its own dedicated *DBR
 // pointer.
-func (u *Union) WithArgs() *DBR {
+func (u *Union) WithDBR() *DBR {
 	return u.newDBR(u)
 }
 
@@ -323,10 +323,10 @@ func (u *Union) Prepare(ctx context.Context) (*Stmt, error) {
 	return u.prepare(ctx, u.DB, u, dmlSourceUnion)
 }
 
-// PrepareWithArgs same as Prepare but forwards the possible error of creating a
+// PrepareWithDBR same as Prepare but forwards the possible error of creating a
 // prepared statement into the DBR type. Reduces boilerplate code. You must
 // call DBR.Close to deallocate the prepared statement in the SQL server.
-func (u *Union) PrepareWithArgs(ctx context.Context) *DBR {
+func (u *Union) PrepareWithDBR(ctx context.Context) *DBR {
 	stmt, err := u.prepare(ctx, u.DB, u, dmlSourceUnion)
 	if err != nil {
 		a := &DBR{
@@ -336,7 +336,7 @@ func (u *Union) PrepareWithArgs(ctx context.Context) *DBR {
 		}
 		return a
 	}
-	return stmt.WithArgs()
+	return stmt.WithDBR()
 }
 
 // Clone creates a clone of the current object, leaving fields DB and Log

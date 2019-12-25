@@ -32,8 +32,8 @@ func TestInsert_NoArguments(t *testing.T) {
 		compareToSQL2(t, ins, errors.NoKind,
 			"INSERT INTO `tableA` (`a`,`b`) VALUES (?,?)")
 	})
-	t.Run("WithArgs.ToSQL", func(t *testing.T) {
-		ins := NewInsert("tableA").AddColumns("a", "b").WithArgs()
+	t.Run("WithDBR.ToSQL", func(t *testing.T) {
+		ins := NewInsert("tableA").AddColumns("a", "b").WithDBR()
 		compareToSQL2(t, ins, errors.NoKind,
 			"INSERT INTO `tableA` (`a`,`b`) VALUES (?,?)")
 	})
@@ -65,7 +65,7 @@ func TestInsert_SetValuesCount(t *testing.T) {
 	})
 	t.Run("with values", func(t *testing.T) {
 		ins := NewInsert("dml_people").AddColumns("name", "key")
-		inA := ins.WithArgs().Raw("Barack", "44")
+		inA := ins.WithDBR().Raw("Barack", "44")
 		compareToSQL2(t, inA, errors.NoKind, "INSERT INTO `dml_people` (`name`,`key`) VALUES (?,?)",
 			"Barack", "44",
 		)
@@ -76,7 +76,7 @@ func TestInsert_SetValuesCount(t *testing.T) {
 		person.Email.Valid = true
 		person.Email.Data = "obama@whitehouse.gov"
 		compareToSQL2(t,
-			NewInsert("dml_people").AddColumns("name", "email").WithArgs().Record("", &person),
+			NewInsert("dml_people").AddColumns("name", "email").WithDBR().Record("", &person),
 			errors.NoKind,
 			"INSERT INTO `dml_people` (`name`,`email`) VALUES (?,?)",
 			"Barack", "obama@whitehouse.gov",
@@ -88,7 +88,7 @@ func TestInsertKeywordColumnName(t *testing.T) {
 	// Insert a column whose name is reserved
 	s := createRealSessionWithFixtures(t, nil)
 	defer testCloser(t, s)
-	ins := s.InsertInto("dml_people").AddColumns("name", "key").WithArgs().Raw("Barack", "44")
+	ins := s.InsertInto("dml_people").AddColumns("name", "key").WithDBR().Raw("Barack", "44")
 
 	compareExecContext(t, ins, 0, 1)
 }
@@ -97,7 +97,7 @@ func TestInsertReal(t *testing.T) {
 	// Insert by specifying values
 	s := createRealSessionWithFixtures(t, nil)
 	defer testCloser(t, s)
-	ins := s.InsertInto("dml_people").AddColumns("name", "email").WithArgs().Raw("Barack", "obama@whitehouse.gov")
+	ins := s.InsertInto("dml_people").AddColumns("name", "email").WithDBR().Raw("Barack", "obama@whitehouse.gov")
 	lastInsertID, _ := compareExecContext(t, ins, 3, 0)
 	validateInsertingBarack(t, s, lastInsertID)
 
@@ -106,7 +106,7 @@ func TestInsertReal(t *testing.T) {
 	person := dmlPerson{Name: "Barack"}
 	person.Email.Valid = true
 	person.Email.Data = "obama@whitehouse.gov"
-	ins = s.InsertInto("dml_people").AddColumns("name", "email").WithArgs().Record("", &person)
+	ins = s.InsertInto("dml_people").AddColumns("name", "email").WithDBR().Record("", &person)
 	lastInsertID, _ = compareExecContext(t, ins, 4, 0)
 
 	validateInsertingBarack(t, s, lastInsertID)
@@ -114,7 +114,7 @@ func TestInsertReal(t *testing.T) {
 
 func validateInsertingBarack(t *testing.T, c *ConnPool, lastInsertID int64) {
 	var person dmlPerson
-	_, err := c.SelectFrom("dml_people").Star().Where(Column("id").Int64(lastInsertID)).WithArgs().Load(context.TODO(), &person)
+	_, err := c.SelectFrom("dml_people").Star().Where(Column("id").Int64(lastInsertID)).WithDBR().Load(context.TODO(), &person)
 	assert.NoError(t, err)
 
 	assert.Exactly(t, lastInsertID, int64(person.ID))
@@ -134,7 +134,7 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 
 	res, err := s.InsertInto("dml_people").
 		AddColumns("name", "email").
-		WithArgs().Record("", p).ExecContext(context.TODO())
+		WithDBR().Record("", p).ExecContext(context.TODO())
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
@@ -146,7 +146,7 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 	}
 	{
 		var p dmlPerson
-		_, err = s.SelectFrom("dml_people").Star().Where(Column("id").Int64(inID)).WithArgs().Load(context.TODO(), &p)
+		_, err = s.SelectFrom("dml_people").Star().Where(Column("id").Int64(inID)).WithDBR().Load(context.TODO(), &p)
 		assert.NoError(t, err)
 		assert.Exactly(t, "Pike", p.Name)
 		assert.Exactly(t, "pikes@peak.co", p.Email.Data)
@@ -157,7 +157,7 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 	res, err = s.InsertInto("dml_people").
 		AddColumns("id", "name", "email").
 		AddOnDuplicateKey(Column("name").Str("Pik3"), Column("email").Values()).
-		WithArgs().Record("", p).
+		WithDBR().Record("", p).
 		ExecContext(context.TODO())
 	if err != nil {
 		t.Fatalf("%+v", err)
@@ -170,7 +170,7 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 
 	{
 		var p dmlPerson
-		_, err = s.SelectFrom("dml_people").Star().Where(Column("id").Int64(inID)).WithArgs().Load(context.TODO(), &p)
+		_, err = s.SelectFrom("dml_people").Star().Where(Column("id").Int64(inID)).WithDBR().Load(context.TODO(), &p)
 		assert.NoError(t, err)
 		assert.Exactly(t, "Pik3", p.Name)
 		assert.Exactly(t, "pikes@peak.com", p.Email.Data)
@@ -191,7 +191,7 @@ func TestInsert_FromSelect(t *testing.T) {
 			).
 			OrderByDesc("id"),
 		).
-			WithArgs().Int(897),
+			WithDBR().Int(897),
 			errors.NoKind,
 			"INSERT INTO `tableA` (`a`,`b`) SELECT `something_id`, `user_id` FROM `some_table` WHERE (`d` = ?) AND (`e` = 'wat') ORDER BY `id` DESC ON DUPLICATE KEY UPDATE `a`=VALUES(`a`), `b`=VALUES(`b`)",
 			"INSERT INTO `tableA` (`a`,`b`) SELECT `something_id`, `user_id` FROM `some_table` WHERE (`d` = 897) AND (`e` = 'wat') ORDER BY `id` DESC ON DUPLICATE KEY UPDATE `a`=VALUES(`a`), `b`=VALUES(`b`)",
@@ -215,7 +215,7 @@ func TestInsert_FromSelect(t *testing.T) {
 			OrderByDesc("id").
 			Paginate(1, 20),
 		).
-			WithArgs().Int(4444),
+			WithDBR().Int(4444),
 			errors.NoKind,
 			"INSERT INTO `tableA` (`a`,`b`,`c`) SELECT `something_id`, `user_id`, `other` FROM `some_table` WHERE ((`d` = ?) OR (`e` = 'wat')) AND (`a` IN (1,2,3)) ORDER BY `id` DESC LIMIT 0,20",
 			"INSERT INTO `tableA` (`a`,`b`,`c`) SELECT `something_id`, `user_id`, `other` FROM `some_table` WHERE ((`d` = 4444) OR (`e` = 'wat')) AND (`a` IN (1,2,3)) ORDER BY `id` DESC LIMIT 0,20",
@@ -234,7 +234,7 @@ func TestInsert_FromSelect(t *testing.T) {
 				Column("a").In().Int64s(1, 2, 3),
 				Column("e").PlaceHolder(),
 			),
-		).WithArgs().String("Guys!").Int(4444),
+		).WithDBR().String("Guys!").Int(4444),
 			errors.NoKind,
 			"INSERT INTO `tableA` (`a`,`b`) SELECT `something_id`, `user_id` FROM `some_table` WHERE (`d` = ?) AND (`a` IN (1,2,3)) AND (`e` = ?)",
 			"INSERT INTO `tableA` (`a`,`b`) SELECT `something_id`, `user_id` FROM `some_table` WHERE (`d` = 'Guys!') AND (`a` IN (1,2,3)) AND (`e` = 4444)",
@@ -250,7 +250,7 @@ func TestInsert_FromSelect(t *testing.T) {
 		}
 
 		ins := NewInsert("dml_people").AddColumns("name", "email").
-			WithArgs().Record("", p)
+			WithDBR().Record("", p)
 		compareToSQL(t, ins, errors.NoKind,
 			"INSERT INTO `dml_people` (`name`,`email`) VALUES (?,?)",
 			"INSERT INTO `dml_people` (`name`,`email`) VALUES ('Pike','pikes@peak.co')",
@@ -290,7 +290,7 @@ func TestInsert_FromSelect(t *testing.T) {
 			).
 			OrderBy("l")
 
-		ins := NewInsert("tableA").AddColumns("a", "b").FromSelect(sel).WithArgs().Record("dp", p).
+		ins := NewInsert("tableA").AddColumns("a", "b").FromSelect(sel).WithDBR().Record("dp", p).
 			Record("dg", p2).
 			NamedArg("xSize", 678).Float64( /*fPlaceholder*/ 3.14159)
 
@@ -309,7 +309,7 @@ func TestInsert_Replace_Ignore(t *testing.T) {
 	compareToSQL(t, NewInsert("a").
 		Replace().Ignore().
 		AddColumns("b", "c").
-		WithArgs().Int(1).Int(2).Int(3).Int(4),
+		WithDBR().Int(1).Int(2).Int(3).Int(4),
 		errors.NoKind,
 		"REPLACE IGNORE INTO `a` (`b`,`c`) VALUES (?,?),(?,?)",
 		"REPLACE IGNORE INTO `a` (`b`,`c`) VALUES (1,2),(3,4)",
@@ -322,7 +322,7 @@ func TestInsert_WithoutColumns(t *testing.T) {
 
 	t.Run("each column in its own Arg", func(t *testing.T) {
 		compareToSQL(t, NewInsert("catalog_product_link").SetRowCount(3).
-			WithArgs().Int(2046).Int(33).Int(3).Int(2046).Int(34).Int(3).Int(2046).Int(35).Int(3),
+			WithDBR().Int(2046).Int(33).Int(3).Int(2046).Int(34).Int(3).Int(2046).Int(35).Int(3),
 			errors.NoKind,
 			"INSERT INTO `catalog_product_link` VALUES (?,?,?),(?,?,?),(?,?,?)",
 			"INSERT INTO `catalog_product_link` VALUES (2046,33,3),(2046,34,3),(2046,35,3)",
@@ -340,7 +340,7 @@ func TestInsert_Pair(t *testing.T) {
 				Column("product_id").Int64(2046),
 				Column("linked_product_id").Int64(33),
 				Column("link_type_id").Int64(3),
-			).WithArgs(),
+			).WithDBR(),
 			errors.NoKind,
 			"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (?,?,?)",
 			"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (2046,33,3)",
@@ -373,7 +373,7 @@ func TestInsert_Pair(t *testing.T) {
 				Column("product_id").Int64(2046),
 				Column("linked_product_id").Int64(34),
 				Column("link_type_id").Int64(3),
-			).WithArgs(),
+			).WithDBR(),
 			errors.NoKind,
 			"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (?,?,?),(?,?,?)",
 			"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (2046,33,3),(2046,34,3)",
@@ -386,7 +386,7 @@ func TestInsert_DisableBuildCache(t *testing.T) {
 	t.Parallel()
 
 	insA := NewInsert("a").AddColumns("b", "c").
-		OnDuplicateKey().WithArgs()
+		OnDuplicateKey().WithDBR()
 
 	const cachedSQLPlaceHolder = "INSERT INTO `a` (`b`,`c`) VALUES (?,?),(?,?),(?,?) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)"
 	t.Run("without interpolate", func(t *testing.T) {
@@ -420,20 +420,20 @@ func TestInsert_DisableBuildCache(t *testing.T) {
 func TestInsert_AddArguments(t *testing.T) {
 	t.Parallel()
 
-	t.Run("single WithArgs", func(t *testing.T) {
+	t.Run("single WithDBR", func(t *testing.T) {
 		compareToSQL(t,
-			NewInsert("a").AddColumns("b", "c").WithArgs().Int(1).Int(2),
+			NewInsert("a").AddColumns("b", "c").WithDBR().Int(1).Int(2),
 			errors.NoKind,
 			"INSERT INTO `a` (`b`,`c`) VALUES (?,?)",
 			"INSERT INTO `a` (`b`,`c`) VALUES (1,2)",
 			int64(1), int64(2),
 		)
 	})
-	t.Run("multi WithArgs on duplicate key", func(t *testing.T) {
+	t.Run("multi WithDBR on duplicate key", func(t *testing.T) {
 		compareToSQL(t,
 			NewInsert("a").AddColumns("b", "c").
 				OnDuplicateKey().
-				WithArgs().Int(1).Int(2).Int(3).Int(4).Int(5).Int(6),
+				WithDBR().Int(1).Int(2).Int(3).Int(4).Int(5).Int(6),
 			errors.NoKind,
 			"INSERT INTO `a` (`b`,`c`) VALUES (?,?),(?,?),(?,?) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)",
 			"INSERT INTO `a` (`b`,`c`) VALUES (1,2),(3,4),(5,6) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)",
@@ -442,7 +442,7 @@ func TestInsert_AddArguments(t *testing.T) {
 	})
 	t.Run("single AddValues", func(t *testing.T) {
 		compareToSQL(t,
-			NewInsert("a").AddColumns("b", "c").WithArgs().Int64(1).Int64(2),
+			NewInsert("a").AddColumns("b", "c").WithDBR().Int64(1).Int64(2),
 			errors.NoKind,
 			"INSERT INTO `a` (`b`,`c`) VALUES (?,?)",
 			"INSERT INTO `a` (`b`,`c`) VALUES (1,2)",
@@ -452,7 +452,7 @@ func TestInsert_AddArguments(t *testing.T) {
 	t.Run("multi AddValues on duplicate key", func(t *testing.T) {
 		compareToSQL(t,
 			NewInsert("a").AddColumns("b", "c").
-				OnDuplicateKey().WithArgs().
+				OnDuplicateKey().WithDBR().
 				Int64(1).Int64(2).
 				Int64(3).Int64(4).
 				Int64(5).Int64(6),
@@ -471,7 +471,7 @@ func TestInsert_OnDuplicateKey(t *testing.T) {
 		compareToSQL(t, NewInsert("customer_gr1d_flat").
 			AddColumns("entity_id", "name", "email", "group_id", "created_at", "website_id").
 			AddOnDuplicateKeyExclude("entity_id").
-			WithArgs().Int(1).String("Martin").String("martin@go.go").Int(3).String("2019-01-01").Int(2),
+			WithDBR().Int(1).String("Martin").String("martin@go.go").Int(3).String("2019-01-01").Int(2),
 			errors.NoKind,
 			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `created_at`=VALUES(`created_at`), `website_id`=VALUES(`website_id`)",
 			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (1,'Martin','martin@go.go',3,'2019-01-01',2) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `created_at`=VALUES(`created_at`), `website_id`=VALUES(`website_id`)",
@@ -484,7 +484,7 @@ func TestInsert_OnDuplicateKey(t *testing.T) {
 			AddColumns("entity_id", "name", "email", "group_id", "created_at", "website_id").
 			AddOnDuplicateKeyExclude("entity_id").
 			AddOnDuplicateKey(Column("created_at").Time(now())).
-			WithArgs().Int(1).String("Martin").String("martin@go.go").Int(3).String("2019-01-01").Int(2),
+			WithDBR().Int(1).String("Martin").String("martin@go.go").Int(3).String("2019-01-01").Int(2),
 			errors.NoKind,
 			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `website_id`=VALUES(`website_id`), `created_at`='2006-01-02 15:04:05'",
 			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (1,'Martin','martin@go.go',3,'2019-01-01',2) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `website_id`=VALUES(`website_id`), `created_at`='2006-01-02 15:04:05'",
@@ -497,7 +497,7 @@ func TestInsert_OnDuplicateKey(t *testing.T) {
 			AddColumns("entity_id", "name", "email", "group_id", "created_at", "website_id").
 			AddOnDuplicateKeyExclude("entity_id").
 			AddOnDuplicateKey(Column("created_at").PlaceHolder())
-		insA := ins.WithArgs().Int(1).String("Martin").String("martin@go.go").Int(3).String("2019-01-01").Int(2).NamedArg("time", now())
+		insA := ins.WithDBR().Int(1).String("Martin").String("martin@go.go").Int(3).String("2019-01-01").Int(2).NamedArg("time", now())
 		compareToSQL(t, insA, errors.NoKind,
 			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `website_id`=VALUES(`website_id`), `created_at`=?",
 			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (1,'Martin','martin@go.go',3,'2019-01-01',2) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `website_id`=VALUES(`website_id`), `created_at`='2006-01-02 15:04:05'",
@@ -511,7 +511,7 @@ func TestInsert_OnDuplicateKey(t *testing.T) {
 			AddColumns("entity_id", "name", "email", "group_id", "created_at", "website_id").
 			AddOnDuplicateKeyExclude("entity_id").
 			AddOnDuplicateKey(Column("created_at").PlaceHolder())
-		insA := ins.WithArgs().Int(1).String("Martin").String("martin@go.go").Int(3).String("2019-01-01").Int(2).Time(now())
+		insA := ins.WithDBR().Int(1).String("Martin").String("martin@go.go").Int(3).String("2019-01-01").Int(2).Time(now())
 		compareToSQL2(t, insA, errors.NoKind,
 			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `website_id`=VALUES(`website_id`), `created_at`=?",
 			int64(1), "Martin", "martin@go.go", int64(3), "2019-01-01", int64(2), now(),
@@ -524,7 +524,7 @@ func TestInsert_OnDuplicateKey(t *testing.T) {
 			AddColumns("entity_id", "name", "email", "group_id", "created_at", "website_id").
 			AddOnDuplicateKeyExclude("entity_id").
 			AddOnDuplicateKey(Column("created_at").NamedArg("time")).
-			WithArgs().Int(1).String("Martin").String("martin@go.go").Int(3).String("2019-01-01").Int(2).NamedArg("time", now())
+			WithDBR().Int(1).String("Martin").String("martin@go.go").Int(3).String("2019-01-01").Int(2).NamedArg("time", now())
 		compareToSQL(t, ins, errors.NoKind,
 			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `website_id`=VALUES(`website_id`), `created_at`=?",
 			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (1,'Martin','martin@go.go',3,'2019-01-01',2) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `website_id`=VALUES(`website_id`), `created_at`='2006-01-02 15:04:05'",
@@ -536,7 +536,7 @@ func TestInsert_OnDuplicateKey(t *testing.T) {
 	t.Run("Enabled for all columns", func(t *testing.T) {
 		ins := NewInsert("customer_gr1d_flat").
 			AddColumns("name", "email", "group_id", "created_at", "website_id").
-			OnDuplicateKey().WithArgs().String("Martin").String("martin@go.go").Int(3).String("2019-01-01").Int(2)
+			OnDuplicateKey().WithDBR().String("Martin").String("martin@go.go").Int(3).String("2019-01-01").Int(2)
 		compareToSQL(t, ins, errors.NoKind,
 			"INSERT INTO `customer_gr1d_flat` (`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `created_at`=VALUES(`created_at`), `website_id`=VALUES(`website_id`)",
 			"INSERT INTO `customer_gr1d_flat` (`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES ('Martin','martin@go.go',3,'2019-01-01',2) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `created_at`=VALUES(`created_at`), `website_id`=VALUES(`website_id`)",
@@ -581,7 +581,7 @@ func TestInsert_Parallel_Bind_Slice(t *testing.T) {
 	bgwork.Wait(concurrencyLevel, func(index int) {
 		// Don't use such a construct in production code!
 
-		insA := ins.WithArgs().Record("", persons)
+		insA := ins.WithDBR().Record("", persons)
 
 		compareToSQL(t, insA, errors.NoKind, wantPH, wantIP, wantArgs...)
 		insA.Reset().Record("", persons)

@@ -432,7 +432,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 			stmt, err := dbc.SelectFrom("test").Star().Prepare(context.TODO())
 			assert.NoError(t, err)
 
-			rc, err := stmt.WithArgs().Load(context.TODO(), tbl)
+			rc, err := stmt.WithDBR().Load(context.TODO(), tbl)
 			if scanErrWantKind != errors.NoKind {
 				assert.True(t, errors.Is(err, scanErrWantKind), "Should be Error Kind %s; Got: %s\n%+v", scanErrWantKind, errors.UnwrapKind(err), err)
 			} else {

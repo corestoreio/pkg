@@ -22,6 +22,7 @@ import (
 	"io"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
@@ -33,10 +34,71 @@ import (
 	"github.com/corestoreio/pkg/util/assert"
 )
 
+type fakePerson struct {
+	ID         int
+	FirstName  string
+	LastName   string
+	Sex        string
+	BirthDate  time.Time
+	Weight     int
+	Height     int
+	UpdateTime time.Time
+}
+
+// MapColumns implements interface ColumnMapper only partially.
+func (p *fakePerson) MapColumns(cm *dml.ColumnMap) error {
+	for cm.Next() {
+		switch c := cm.Column(); c {
+		case "id":
+			cm.Int(&p.ID)
+		case "first_name":
+			cm.String(&p.FirstName)
+		case "last_name":
+			cm.String(&p.LastName)
+		case "sex":
+			cm.String(&p.Sex)
+		case "birth_date":
+			cm.Time(&p.BirthDate)
+		case "weight":
+			cm.Int(&p.Weight)
+		case "height":
+			cm.Int(&p.Height)
+		case "update_time":
+			cm.Time(&p.UpdateTime)
+		default:
+			return errors.NotFound.Newf("[dml_test] fakePerson Column %q not found", c)
+		}
+	}
+	return cm.Err()
+}
+
+type fakePersons struct {
+	Data []fakePerson
+}
+
+func (cc *fakePersons) MapColumns(cm *dml.ColumnMap) error {
+	switch m := cm.Mode(); m {
+
+	case dml.ColumnMapScan:
+		if cm.Count == 0 {
+			cc.Data = cc.Data[:0]
+		}
+		var p fakePerson
+		if err := p.MapColumns(cm); err != nil {
+			return errors.WithStack(err)
+		}
+		cc.Data = append(cc.Data, p)
+
+	default:
+		return errors.NotSupported.Newf("[dml] Unknown Mode: %q", string(m))
+	}
+	return cm.Err()
+}
+
 func TestSelect_QueryContext(t *testing.T) {
 	t.Run("ToSQL Error because empty select", func(t *testing.T) {
 		sel := (&dml.Select{}).WithDB(dbMock{})
-		rows, err := sel.WithArgs().QueryContext(context.TODO())
+		rows, err := sel.WithDBR().QueryContext(context.TODO())
 		assert.Nil(t, rows)
 		assert.ErrorIsKind(t, errors.Empty, err)
 	})
@@ -52,7 +114,7 @@ func TestSelect_QueryContext(t *testing.T) {
 			error: errors.AlreadyClosed.Newf("Who closed myself?"),
 		}
 
-		rows, err := sel.WithArgs().QueryContext(context.TODO())
+		rows, err := sel.WithDBR().QueryContext(context.TODO())
 		assert.Nil(t, rows)
 		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
@@ -66,7 +128,7 @@ func TestSelect_QueryContext(t *testing.T) {
 
 		sel := dml.NewSelect("a").From("tableX")
 		sel.DB = dbc.DB
-		rows, err := sel.WithArgs().QueryContext(context.TODO())
+		rows, err := sel.WithDBR().QueryContext(context.TODO())
 		assert.NoError(t, err)
 		defer dmltest.Close(t, rows)
 
@@ -168,7 +230,7 @@ func TestSelect_Load(t *testing.T) {
 
 		ccd := &TableCoreConfigDataSlice{}
 
-		_, err := s.WithArgs().Load(context.TODO(), ccd)
+		_, err := s.WithDBR().Load(context.TODO(), ccd)
 		assert.NoError(t, err)
 
 		buf := new(bytes.Buffer)
@@ -196,7 +258,7 @@ func TestSelect_Load(t *testing.T) {
 		)
 
 		var dst []int64
-		dst, err := s.WithArgs().ExpandPlaceHolders().Int64s(199).LoadInt64s(context.TODO(), dst)
+		dst, err := s.WithDBR().ExpandPlaceHolders().Int64s(199).LoadInt64s(context.TODO(), dst)
 		assert.NoError(t, err)
 
 		// wrong result set for correct query. maybe some one can fix the returned data.
@@ -215,7 +277,7 @@ func TestSelect_Load(t *testing.T) {
 		)
 
 		var dst []int64
-		dst, err := s.WithArgs().Int64s(199, 217).ExpandPlaceHolders().LoadInt64s(context.TODO(), dst)
+		dst, err := s.WithDBR().Int64s(199, 217).ExpandPlaceHolders().LoadInt64s(context.TODO(), dst)
 		assert.NoError(t, err)
 
 		assert.Exactly(t, []int64{2, 3, 4, 16, 17}, dst)
@@ -232,7 +294,7 @@ func TestSelect_Load(t *testing.T) {
 		s.DB = dbc.DB
 
 		ccd := &TableCoreConfigDataSlice{}
-		_, err := s.WithArgs().Load(context.TODO(), ccd)
+		_, err := s.WithDBR().Load(context.TODO(), ccd)
 		assert.ErrorIsKind(t, errors.ConnectionFailed, err)
 	})
 
@@ -248,7 +310,7 @@ func TestSelect_Load(t *testing.T) {
 		ccd := &TableCoreConfigDataSlice{
 			err: errors.Duplicated.Newf("Somewhere exists a duplicate entry"),
 		}
-		_, err := s.WithArgs().Load(context.TODO(), ccd)
+		_, err := s.WithDBR().Load(context.TODO(), ccd)
 		assert.ErrorIsKind(t, errors.Duplicated, err)
 	})
 }
@@ -286,7 +348,7 @@ func TestSelect_Prepare(t *testing.T) {
 		sel := dml.NewSelect("id").From("tableX").Where(dml.Column("id").In().PlaceHolders(2)).WithDB(dbc.DB)
 		stmt, err := sel.Prepare(context.TODO())
 		assert.NoError(t, err)
-		ints, err := stmt.WithArgs().LoadInt64s(context.TODO(), nil, 3739, 3740)
+		ints, err := stmt.WithDBR().LoadInt64s(context.TODO(), nil, 3739, 3740)
 		assert.NoError(t, err)
 		assert.Exactly(t, []int64{78}, ints)
 	})
@@ -310,7 +372,7 @@ func TestSelect_Prepare(t *testing.T) {
 		defer dmltest.Close(t, stmt)
 
 		t.Run("Context", func(t *testing.T) {
-			rows, err := stmt.WithArgs().QueryContext(context.TODO(), 6789)
+			rows, err := stmt.WithDBR().QueryContext(context.TODO(), 6789)
 			assert.NoError(t, err)
 			defer dmltest.Close(t, rows)
 
@@ -320,7 +382,7 @@ func TestSelect_Prepare(t *testing.T) {
 		})
 
 		t.Run("RowContext", func(t *testing.T) {
-			row := stmt.WithArgs().QueryRowContext(context.TODO(), 6790)
+			row := stmt.WithDBR().QueryRowContext(context.TODO(), 6790)
 			assert.NoError(t, err)
 			n, e := "", ""
 			assert.NoError(t, row.Scan(&n, &e))
@@ -342,7 +404,7 @@ func TestSelect_Prepare(t *testing.T) {
 			Where(dml.Column("id").PlaceHolder(), dml.Column("name").PlaceHolder()).
 			WithDB(dbc.DB).Prepare(context.TODO())
 		assert.NoError(t, err)
-		sa := stmt.WithArgs()
+		sa := stmt.WithDBR()
 
 		t.Run("Context", func(t *testing.T) {
 			p := &dmlPerson{
@@ -381,7 +443,7 @@ func TestSelect_Prepare(t *testing.T) {
 					WillReturnRows(sqlmock.NewRows([]string{"name", "email"}).AddRow("Peter Gopher", "peter@gopher.go"))
 			}
 			// use loop with Query+ and add args before
-			stmtA := stmt.WithArgs().Int(6899)
+			stmtA := stmt.WithDBR().Int(6899)
 
 			for i := 0; i < iterations; i++ {
 				rows, err := stmtA.QueryContext(context.TODO())
@@ -401,7 +463,7 @@ func TestSelect_Prepare(t *testing.T) {
 			}
 
 			p := &dmlPerson{ID: 6900}
-			stmtA := stmt.WithArgs().Record("", p)
+			stmtA := stmt.WithDBR().Record("", p)
 
 			for i := 0; i < iterations; i++ {
 				rows, err := stmtA.QueryContext(context.TODO())
@@ -416,7 +478,7 @@ func TestSelect_Prepare(t *testing.T) {
 
 		t.Run("WithRecords_Error", func(t *testing.T) {
 			p := &TableCoreConfigDataSlice{err: errors.Duplicated.Newf("Found a duplicate")}
-			stmtA := stmt.WithArgs().Record("", p)
+			stmtA := stmt.WithDBR().Record("", p)
 			rows, err := stmtA.QueryContext(context.TODO())
 			assert.ErrorIsKind(t, errors.Duplicated, err)
 			assert.Nil(t, rows)
@@ -444,7 +506,7 @@ func TestSelect_Prepare(t *testing.T) {
 
 			ccd := &TableCoreConfigDataSlice{}
 
-			rc, err := stmt.WithArgs().Load(context.TODO(), ccd, 345)
+			rc, err := stmt.WithDBR().Load(context.TODO(), ccd, 345)
 			assert.NoError(t, err)
 			assert.Exactly(t, uint64(2), rc)
 
@@ -469,7 +531,7 @@ func TestSelect_Prepare(t *testing.T) {
 
 			prep.ExpectQuery().WithArgs(346).WillReturnRows(sqlmock.NewRows(columns).AddRow(35))
 
-			val, found, err := stmt.WithArgs().Int64(346).LoadNullInt64(context.TODO())
+			val, found, err := stmt.WithDBR().Int64(346).LoadNullInt64(context.TODO())
 			assert.NoError(t, err)
 			assert.True(t, found)
 			assert.Exactly(t, null.MakeInt64(35), val)
@@ -492,7 +554,7 @@ func TestSelect_Prepare(t *testing.T) {
 
 			prep.ExpectQuery().WithArgs(346, 347).WillReturnRows(sqlmock.NewRows(columns).AddRow(36).AddRow(37))
 
-			val, err := stmt.WithArgs().Int64s(346, 347).LoadInt64s(context.TODO(), nil)
+			val, err := stmt.WithDBR().Int64s(346, 347).LoadInt64s(context.TODO(), nil)
 			assert.NoError(t, err)
 			assert.Exactly(t, []int64{36, 37}, val)
 		})
@@ -504,7 +566,7 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 	defer dmltest.Close(t, dbc)
 	defer dmltest.SQLDumpLoad(t, "testdata/person_ffaker*", nil).Deferred()
 
-	rowCount, found, err := dbc.SelectFrom("dml_fake_person").Count().WithArgs().LoadNullInt64(context.Background())
+	rowCount, found, err := dbc.SelectFrom("dml_fake_person").Count().WithDBR().LoadNullInt64(context.Background())
 	assert.NoError(t, err)
 	assert.True(t, found)
 	if rowCount.Int64 < 10000 {
@@ -515,7 +577,7 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 		t.Run("error in mapper", func(t *testing.T) {
 			err := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
 				Limit(0, 5).
-				OrderBy("id").WithArgs().IterateSerial(context.Background(), func(cm *dml.ColumnMap) error {
+				OrderBy("id").WithDBR().IterateSerial(context.Background(), func(cm *dml.ColumnMap) error {
 				return errors.Blocked.Newf("Mapping blocked")
 			})
 			assert.ErrorIsKind(t, errors.Blocked, err)
@@ -525,7 +587,7 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 			const rowCount = 500
 			selExec := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
 				OrderByRandom("id", rowCount).
-				WithArgs()
+				WithDBR()
 
 			var counter int
 			err := selExec.IterateSerial(context.Background(), func(cm *dml.ColumnMap) error {
@@ -548,7 +610,7 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 			// Do not run such a construct in production.
 
 			type processor interface {
-				WithArgs() *dml.DBR
+				WithDBR() *dml.DBR
 			}
 			const limit = 5
 			const concurrencyLevel = 10
@@ -558,7 +620,7 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 
 				fp := &fakePerson{}
 				var counter int
-				err := selProc.WithArgs().Interpolate().Int(i).Int(i+5).IterateSerial(context.Background(), func(cm *dml.ColumnMap) error {
+				err := selProc.WithDBR().Interpolate().Int(i).Int(i+5).IterateSerial(context.Background(), func(cm *dml.ColumnMap) error {
 					if err := fp.MapColumns(cm); err != nil {
 						return err
 					}
@@ -608,7 +670,7 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 		t.Run("error wrong concurrency level", func(t *testing.T) {
 			err := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
 				Limit(0, 50).
-				OrderBy("id").WithArgs().IterateParallel(context.Background(), 0, func(cm *dml.ColumnMap) error {
+				OrderBy("id").WithDBR().IterateParallel(context.Background(), 0, func(cm *dml.ColumnMap) error {
 				return nil
 			})
 			assert.ErrorIsKind(t, errors.OutOfRange, err)
@@ -617,7 +679,7 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 		t.Run("error in mapper of all workers", func(t *testing.T) {
 			err := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
 				Limit(0, 50).
-				OrderBy("id").WithArgs().IterateParallel(context.Background(), concurrencyLevel, func(cm *dml.ColumnMap) error {
+				OrderBy("id").WithDBR().IterateParallel(context.Background(), concurrencyLevel, func(cm *dml.ColumnMap) error {
 				return errors.Blocked.Newf("Mapping blocked error")
 			})
 
@@ -631,7 +693,7 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 			fpSel.IsOrderByRand = true
 
 			rowsLoadedCounter := new(int32)
-			err := fpSel.WithArgs().IterateParallel(context.Background(), concurrencyLevel, func(cm *dml.ColumnMap) error {
+			err := fpSel.WithDBR().IterateParallel(context.Background(), concurrencyLevel, func(cm *dml.ColumnMap) error {
 				var fp fakePerson
 
 				if err := fp.MapColumns(cm); err != nil {
@@ -740,7 +802,7 @@ func TestSelect_When_Unless(t *testing.T) {
 	})
 }
 
-func TestPrepareWithArgs(t *testing.T) {
+func TestPrepareWithDBR(t *testing.T) {
 	t.Run("all dml types", func(t *testing.T) {
 		dbc, dbMock := dmltest.MockDB(t)
 		// defer dmltest.MockClose(t, dbc, dbMock)
@@ -755,14 +817,14 @@ func TestPrepareWithArgs(t *testing.T) {
 		ctx := context.TODO()
 
 		for _, a := range []*dml.DBR{
-			dbc.SelectFrom("a").AddColumns("a1").PrepareWithArgs(ctx),
-			dbc.Union(dml.NewSelect("*").From("b1"), dml.NewSelect("*").From("b2")).PrepareWithArgs(ctx),
-			dbc.Update("c").AddColumns("c1").PrepareWithArgs(ctx),
+			dbc.SelectFrom("a").AddColumns("a1").PrepareWithDBR(ctx),
+			dbc.Union(dml.NewSelect("*").From("b1"), dml.NewSelect("*").From("b2")).PrepareWithDBR(ctx),
+			dbc.Update("c").AddColumns("c1").PrepareWithDBR(ctx),
 			dbc.With(
 				dml.WithCTE{Name: "one", Select: dml.NewSelect().Unsafe().AddColumns("1")},
-			).Select(dml.NewSelect().Star().From("one")).PrepareWithArgs(ctx),
-			dbc.DeleteFrom("e").PrepareWithArgs(ctx),
-			dbc.InsertInto("d").AddColumns("d1").BuildValues().PrepareWithArgs(ctx),
+			).Select(dml.NewSelect().Star().From("one")).PrepareWithDBR(ctx),
+			dbc.DeleteFrom("e").PrepareWithDBR(ctx),
+			dbc.InsertInto("d").AddColumns("d1").BuildValues().PrepareWithDBR(ctx),
 		} {
 			dmltest.Close(t, a)
 		}
@@ -773,7 +835,7 @@ func TestPrepareWithArgs(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 		ctx := context.TODO()
 
-		err := dbc.SelectFrom("a").PrepareWithArgs(ctx).Close()
+		err := dbc.SelectFrom("a").PrepareWithDBR(ctx).Close()
 		assert.ErrorIsKind(t, errors.Empty, err)
 	})
 
@@ -782,7 +844,7 @@ func TestPrepareWithArgs(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 		ctx := context.TODO()
 
-		err := dbc.Union(dml.NewSelect("*").From("b")).PrepareWithArgs(ctx).Close()
+		err := dbc.Union(dml.NewSelect("*").From("b")).PrepareWithDBR(ctx).Close()
 		assert.ErrorIsKind(t, errors.Empty, err)
 	})
 }

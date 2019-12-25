@@ -104,7 +104,7 @@ func TestUnion_Basics(t *testing.T) {
 			NewSelect("a", "b").From("tableAD").Where(Column("a").Like().PlaceHolder()),
 			NewSelect("a", "b").From("tableAB").Where(Column("c").Between().PlaceHolder()),
 		).All().OrderBy("a").OrderByDesc("b").PreserveResultSet().
-			WithArgs().String("XMEEN").Float64(3.141).Float64(6.283)
+			WithDBR().String("XMEEN").Float64(3.141).Float64(6.283)
 		// TODO(CYS) there is a small bug when using BETWEEN operator together
 		// with named arguments. fix it. write a 2nd test function like this
 		// used NamedArg.
@@ -241,7 +241,7 @@ func TestNewUnionTemplate(t *testing.T) {
 			All().
 			OrderByDesc("col_type")
 
-		ua := u.WithArgs().Int(1563).Ints(3, 4)
+		ua := u.WithDBR().Int(1563).Ints(3, 4)
 
 		// testing idempotent function ToSQL
 		for i := 0; i < 3; i++ {
@@ -394,7 +394,7 @@ func TestUnionTemplate_ReuseArgs(t *testing.T) {
 		"ORDER BY `_preserve_result_set`, `attribute_id`, `store_id`"
 
 	t.Run("run1", func(t *testing.T) {
-		compareToSQL(t, u.WithArgs().NamedArg("storeID", []int64{4, 6}).NamedArg("entityID", 5), errors.NoKind,
+		compareToSQL(t, u.WithDBR().NamedArg("storeID", []int64{4, 6}).NamedArg("entityID", 5), errors.NoKind,
 			wantSQLPH,
 			"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 5) AND (`store_id` IN (4,6)))\n"+
 				"UNION ALL\n"+
@@ -416,7 +416,7 @@ func TestUnionTemplate_ReuseArgs(t *testing.T) {
 	})
 
 	t.Run("with interpolate", func(t *testing.T) {
-		compareToSQL(t, u.WithArgs().NamedArg("entityID", 4).NamedArg("storeID", []int64{8, 11}), errors.NoKind,
+		compareToSQL(t, u.WithDBR().NamedArg("entityID", 4).NamedArg("storeID", []int64{8, 11}), errors.NoKind,
 			wantSQLPH,
 			"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 4) AND (`store_id` IN (8,11)))\n"+
 				"UNION ALL\n"+

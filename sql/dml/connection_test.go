@@ -30,7 +30,7 @@ func TestTransactionReal(t *testing.T) {
 	tx, err := s.BeginTx(context.TODO(), nil)
 	assert.NoError(t, err)
 
-	txIns := tx.InsertInto("dml_people").AddColumns("name", "email").WithArgs().Raw(
+	txIns := tx.InsertInto("dml_people").AddColumns("name", "email").WithDBR().Raw(
 		"Barack", "obama@whitehouse.gov",
 		"Obama", "barack@whitehouse.gov",
 	)
@@ -38,7 +38,7 @@ func TestTransactionReal(t *testing.T) {
 	lastInsertID, _ := compareExecContext(t, txIns, 3, 2)
 
 	var person dmlPerson
-	_, err = tx.SelectFrom("dml_people").Star().Where(Column("id").Int64(lastInsertID)).WithArgs().Load(context.TODO(), &person)
+	_, err = tx.SelectFrom("dml_people").Star().Where(Column("id").Int64(lastInsertID)).WithDBR().Load(context.TODO(), &person)
 	assert.NoError(t, err)
 
 	assert.Exactly(t, lastInsertID, int64(person.ID))
@@ -59,7 +59,7 @@ func TestTransactionRollbackReal(t *testing.T) {
 	assert.NoError(t, err)
 
 	var person dmlPerson
-	_, err = tx.SelectFrom("dml_people").Star().Where(Column("email").PlaceHolder()).WithArgs().Load(context.TODO(), &person, "SirGeorge@GoIsland.com")
+	_, err = tx.SelectFrom("dml_people").Star().Where(Column("email").PlaceHolder()).WithDBR().Load(context.TODO(), &person, "SirGeorge@GoIsland.com")
 	assert.NoError(t, err)
 	assert.Exactly(t, "Sir George", person.Name)
 

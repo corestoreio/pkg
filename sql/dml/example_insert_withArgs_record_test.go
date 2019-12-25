@@ -69,12 +69,12 @@ func ExampleInsert_WithArgs_record() {
 	}
 
 	i := dml.NewInsert("catalog_product_entity").AddColumns("attribute_set_id", "type_id", "sku", "has_options").
-		WithArgs().Record("", objs[0]).Record("", objs[1])
+		WithDBR().Record("", objs[0]).Record("", objs[1])
 	writeToSQLAndInterpolate(i)
 
 	fmt.Print("\n\n")
 	i = dml.NewInsert("catalog_product_entity").SetRecordPlaceHolderCount(5).
-		WithArgs().Record("", objs[0]).Record("", objs[1])
+		WithDBR().Record("", objs[0]).Record("", objs[1])
 	writeToSQLAndInterpolate(i)
 
 	// Output:

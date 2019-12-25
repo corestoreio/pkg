@@ -81,7 +81,7 @@ func ExampleUpdate_WithArgs_record() {
 		AddColumns("attribute_set_id", "parent_id", "path", "teaser_id_s")
 
 	// qualifier can be empty because no alias and no additional tables.
-	writeToSQLAndInterpolate(u.WithCacheKey("update all").WithArgs().Record("", ce))
+	writeToSQLAndInterpolate(u.WithCacheKey("update all").WithDBR().Record("", ce))
 
 	fmt.Print("\n\n")
 
@@ -92,7 +92,7 @@ func ExampleUpdate_WithArgs_record() {
 	// reassemble the arguments from the ColumnMapper, that means you can
 	// exchange WithRecords with different objects.
 	u.Where(dml.Column("entity_id").PlaceHolder())
-	writeToSQLAndInterpolate(u.WithCacheKey("update by entity_id").WithArgs().Record("", ce))
+	writeToSQLAndInterpolate(u.WithCacheKey("update by entity_id").WithDBR().Record("", ce))
 
 	// Output:
 	// Prepared Statement:
