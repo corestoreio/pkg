@@ -23,8 +23,10 @@ import (
 )
 
 // Make sure that type catalogCategoryEntity implements interface
-var _ dml.ColumnMapper = (*catalogCategoryEntity)(nil)
-var _ dml.ColumnMapper = (*tableStore)(nil)
+var (
+	_ dml.ColumnMapper = (*catalogCategoryEntity)(nil)
+	_ dml.ColumnMapper = (*tableStore)(nil)
+)
 
 // catalogCategoryEntity defined somewhere in a different package.
 type catalogCategoryEntity struct {
@@ -119,7 +121,7 @@ func ExampleSelect_WithArgs_record() {
 			dml.Column("t_d.store_id").Equal().SQLIfNull("t_s.store_id", "0"), // Just for testing
 			dml.Column("t_d.store_id").Equal().PlaceHolder(),                  // 17
 		).
-		WithDBR().Record("e", ce).Record("t_d", st)
+		WithDBR().TestWithArgs(dml.Qualify("e", ce), dml.Qualify("t_d", st))
 
 	writeToSQLAndInterpolate(s)
 	fmt.Print("\n\n")

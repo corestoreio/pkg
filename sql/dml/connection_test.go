@@ -30,12 +30,12 @@ func TestTransactionReal(t *testing.T) {
 	tx, err := s.BeginTx(context.TODO(), nil)
 	assert.NoError(t, err)
 
-	txIns := tx.InsertInto("dml_people").AddColumns("name", "email").WithDBR().Raw(
+	txIns := tx.InsertInto("dml_people").AddColumns("name", "email").WithDBR()
+
+	lastInsertID, _ := compareExecContext(t, txIns, []interface{}{
 		"Barack", "obama@whitehouse.gov",
 		"Obama", "barack@whitehouse.gov",
-	)
-
-	lastInsertID, _ := compareExecContext(t, txIns, 3, 2)
+	}, 3, 2)
 
 	var person dmlPerson
 	_, err = tx.SelectFrom("dml_people").Star().Where(Column("id").Int64(lastInsertID)).WithDBR().Load(context.TODO(), &person)

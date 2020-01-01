@@ -63,9 +63,11 @@ func testCloser(t testing.TB, c ioCloser) {
 	}
 }
 
-var _ ColumnMapper = (*dmlPerson)(nil)
-var _ LastInsertIDAssigner = (*dmlPerson)(nil)
-var _ ColumnMapper = (*dmlPersons)(nil)
+var (
+	_ ColumnMapper         = (*dmlPerson)(nil)
+	_ LastInsertIDAssigner = (*dmlPerson)(nil)
+	_ ColumnMapper         = (*dmlPersons)(nil)
+)
 
 type dmlPerson struct {
 	ID    uint64
@@ -289,8 +291,10 @@ func installFixtures(t testing.TB, db *sql.DB, c *installFixturesConfig) {
 	}
 }
 
-var _ QueryExecPreparer = (*dbMock)(nil)
-var _ Execer = (*dbMock)(nil)
+var (
+	_ QueryExecPreparer = (*dbMock)(nil)
+	_ Execer            = (*dbMock)(nil)
+)
 
 type dbMock struct {
 	error
@@ -379,8 +383,8 @@ func compareToSQL2(
 	assert.Exactly(t, wantArgs, args, "Arguments do not match")
 }
 
-func compareExecContext(t testing.TB, ex StmtExecer, lastInsertID, rowsAffected int64) (retLastInsertID, retRowsAffected int64) {
-	res, err := ex.ExecContext(context.Background())
+func compareExecContext(t testing.TB, ex StmtExecer, args []interface{}, lastInsertID, rowsAffected int64) (retLastInsertID, retRowsAffected int64) {
+	res, err := ex.ExecContext(context.Background(), args...)
 	assert.NoError(t, err)
 	assert.NotNil(t, res, "Returned result from ExecContext should not be nil")
 

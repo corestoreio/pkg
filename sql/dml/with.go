@@ -196,7 +196,7 @@ func (b *With) WithDBR() *DBR {
 }
 
 // ToSQL converts the select statement into a string and returns its arguments.
-func (b *With) ToSQL() (string, []interface{}, error) {
+func (b *With)ToSQL() (string, []interface{}, error) {
 	b.source = dmlSourceWith
 	rawSQL, err := b.buildToSQL(b)
 	if err != nil {

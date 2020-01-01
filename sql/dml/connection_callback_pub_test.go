@@ -61,10 +61,10 @@ func TestDriverCallBack(t *testing.T) {
 	ctx := context.TODO()
 	sel := db.SelectFrom("dml_people").Star().Where(dml.Column("name").PlaceHolder())
 	var ppl dmlPerson
-	_, err := sel.WithDBR().String("Bernd").Load(ctx, &ppl)
+	_, err := sel.WithDBR().Load(ctx, &ppl, "Bernd")
 	assert.NoError(t, err)
 
-	_, err = sel.WithCacheKey("NoCache").SQLNoCache().WithDBR().Interpolate().String("Das Brot").Load(context.Background(), &ppl)
+	_, err = sel.WithCacheKey("NoCache").SQLNoCache().WithDBR().Interpolate().Load(context.Background(), &ppl, "Das Brot")
 	assert.NoError(t, err)
 
 	con, err := db.Conn(ctx)
@@ -74,7 +74,7 @@ func TestDriverCallBack(t *testing.T) {
 	_, err = upd.WithDBR().ExecContext(ctx, "Hugo")
 	assert.NoError(t, err)
 
-	_, err = upd.WithDBR().String("Bernie").Interpolate().ExecContext(ctx)
+	_, err = upd.WithDBR().Interpolate().ExecContext(ctx, "Bernie")
 	assert.NoError(t, err)
 
 	assert.NoError(t, con.Close())

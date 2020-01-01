@@ -12,21 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dml_test
+package dml
 
 import (
 	"context"
 	"database/sql"
 	"testing"
 	"time"
-
-	"github.com/corestoreio/pkg/sql/dml"
 )
 
 var (
 	benchmarkGlobalVals []interface{}
 	benchmarkSelectStr  string
-	_                   dml.QueryExecPreparer = (*benchMockQuerier)(nil)
+	_                   QueryExecPreparer = (*benchMockQuerier)(nil)
 )
 
 type benchMockQuerier struct{}
@@ -57,14 +55,14 @@ func BenchmarkSelect_Rows(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 
-		sel := dml.NewSelect("TABLE_NAME", "COLUMN_NAME", "ORDINAL_POSITION", "COLUMN_DEFAULT", "IS_NULLABLE",
+		sel := NewSelect("TABLE_NAME", "COLUMN_NAME", "ORDINAL_POSITION", "COLUMN_DEFAULT", "IS_NULLABLE",
 			"DATA_TYPE", "CHARACTER_MAXIMUM_LENGTH", "NUMERIC_PRECISION", "NUMERIC_SCALE",
 			"COLUMN_TYPE", "COLUMN_KEY", "EXTRA", "COLUMN_COMMENT").From("information_schema.COLUMNS").
-			Where(dml.Expr(`TABLE_SCHEMA=DATABASE()`)).WithDB(db)
+			Where(Expr(`TABLE_SCHEMA=DATABASE()`)).WithDB(db)
 
-		sel.Where(dml.Column("TABLE_NAME").In().PlaceHolder())
+		sel.Where(Column("TABLE_NAME").In().PlaceHolder())
 
-		rows, err := sel.WithDBR().Strings(tables...).QueryContext(ctx)
+		rows, err := sel.WithDBR().QueryContext(ctx, tables)
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
@@ -90,11 +88,11 @@ func BenchmarkSelectBasicSQL(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkSelectStr, benchmarkGlobalVals, err = dml.NewSelect("something_id", "user_id", "other").
+		benchmarkSelectStr, benchmarkGlobalVals, err = NewSelect("something_id", "user_id", "other").
 			From("some_table").
 			Where(
-				dml.Expr("d = ? OR e = ?").Int64(1).Str("wat"),
-				dml.Column("a").In().Int64s(aVal...),
+				Expr("d = ? OR e = ?").Int64(1).Str("wat"),
+				Column("a").In().Int64s(aVal...),
 			).
 			OrderByDesc("id").
 			Paginate(1, 20).
@@ -120,20 +118,20 @@ func BenchmarkSelectExcessConditions(b *testing.B) {
 	b.ResetTimer()
 	var err error
 	for i := 0; i < b.N; i++ {
-		benchmarkSelectStr, benchmarkGlobalVals, err = dml.NewSelect("entity_id", "name", "q.total_sum").
+		benchmarkSelectStr, benchmarkGlobalVals, err = NewSelect("entity_id", "name", "q.total_sum").
 			FromAlias("customer", "c").
-			Join(dml.MakeIdentifier("quote").Alias("q"),
-				dml.Column("c.entity_id").Column("q.customer_id"),
-				dml.Column("c.group_id").Column("q.group_id"),
-				dml.Column("c.shop_id").NotEqual().PlaceHolders(10),
+			Join(MakeIdentifier("quote").Alias("q"),
+				Column("c.entity_id").Column("q.customer_id"),
+				Column("c.group_id").Column("q.group_id"),
+				Column("c.shop_id").NotEqual().PlaceHolders(10),
 			).
 			Where(
-				dml.Expr("d = ? OR e = ?").Int64(1).Str("wat"),
-				dml.Column("a").In().PlaceHolder(),
-				dml.Column("q.product_id").In().Int64s(i64Vals...),
-				dml.Column("q.sub_total").NotBetween().Float64s(3.141, 6.2831),
-				dml.Column("q.qty").GreaterOrEqual().PlaceHolder(),
-				dml.Column("q.coupon_code").SpaceShip().Str("400EA8BBE4"),
+				Expr("d = ? OR e = ?").Int64(1).Str("wat"),
+				Column("a").In().PlaceHolder(),
+				Column("q.product_id").In().Int64s(i64Vals...),
+				Column("q.sub_total").NotBetween().Float64s(3.141, 6.2831),
+				Column("q.qty").GreaterOrEqual().PlaceHolder(),
+				Column("q.coupon_code").SpaceShip().Str("400EA8BBE4"),
 			).
 			OrderByDesc("id").
 			Paginate(1, 20).
@@ -145,18 +143,18 @@ func BenchmarkSelectExcessConditions(b *testing.B) {
 }
 
 func BenchmarkSelectFullSQL(b *testing.B) {
-	sqlObj := dml.NewSelect("a", "b", "z", "y", "x").From("c").
+	sqlObj := NewSelect("a", "b", "z", "y", "x").From("c").
 		Distinct().
 		Where(
-			dml.Expr("`d` = ? OR `e` = ?").Int64(1).Str("wat"),
-			dml.Column("f").Int64(2),
-			dml.Column("x").Str("hi"),
-			dml.Column("g").Int64(3),
-			dml.Column("h").In().Ints(1, 2, 3),
+			Expr("`d` = ? OR `e` = ?").Int64(1).Str("wat"),
+			Column("f").Int64(2),
+			Column("x").Str("hi"),
+			Column("g").Int64(3),
+			Column("h").In().Ints(1, 2, 3),
 		).
 		GroupBy("ab").GroupBy("ii").GroupBy("iii").
-		Having(dml.Expr("j = k"), dml.Column("jj").Int64(1)).
-		Having(dml.Column("jjj").Int64(2)).
+		Having(Expr("j = k"), Column("jj").Int64(1)).
+		Having(Column("jjj").Int64(2)).
 		OrderBy("l1").OrderBy("l2").OrderBy("l3").
 		Limit(8, 7)
 
@@ -171,18 +169,18 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 	b.Run("NewSelect", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = dml.NewSelect("a", "b", "z", "y", "x").From("c").
+			benchmarkSelectStr, benchmarkGlobalVals, err = NewSelect("a", "b", "z", "y", "x").From("c").
 				Distinct().
 				Where(
-					dml.Expr("`d` = ? OR `e` = ?").Int64(1).Str("wat"),
-					dml.Column("f").Int64(2),
-					dml.Column("x").Str("hi"),
-					dml.Column("g").Int64(3),
-					dml.Column("h").In().Ints(1, 2, 3),
+					Expr("`d` = ? OR `e` = ?").Int64(1).Str("wat"),
+					Column("f").Int64(2),
+					Column("x").Str("hi"),
+					Column("g").Int64(3),
+					Column("h").In().Ints(1, 2, 3),
 				).
 				GroupBy("ab").GroupBy("ii").GroupBy("iii").
-				Having(dml.Expr("j = k"), dml.Column("jj").Int64(1)).
-				Having(dml.Column("jjj").Int64(2)).
+				Having(Expr("j = k"), Column("jj").Int64(1)).
+				Having(Column("jjj").Int64(2)).
 				OrderBy("l1").OrderBy("l2").OrderBy("l3").
 				Limit(8, 7).
 				ToSQL()
@@ -226,12 +224,12 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 
 	b.Run("SQL", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			sel := dml.NewSelect("entity_id", "attribute_id", "value").
+			sel := NewSelect("entity_id", "attribute_id", "value").
 				From("catalog_product_entity_varchar").
-				Where(dml.Column("entity_type_id").Int64(4)).
-				Where(dml.Column("entity_id").In().Int64s(entityIDs...)).
-				Where(dml.Column("attribute_id").In().Int64s(174, 175)).
-				Where(dml.Column("store_id").Int(0))
+				Where(Column("entity_type_id").Int64(4)).
+				Where(Column("entity_id").In().Int64s(entityIDs...)).
+				Where(Column("attribute_id").In().Int64s(174, 175)).
+				Where(Column("store_id").Int(0))
 			sel.EstimatedCachedSQLSize = 10240
 			var err error
 			benchmarkSelectStr, benchmarkGlobalVals, err = sel.ToSQL()
@@ -247,16 +245,16 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 	b.Run("interpolate", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			sel := dml.NewSelect("entity_id", "attribute_id", "value").
+			sel := NewSelect("entity_id", "attribute_id", "value").
 				From("catalog_product_entity_varchar").
-				Where(dml.Column("entity_type_id").PlaceHolder()).
-				Where(dml.Column("entity_id").In().PlaceHolder()).
-				Where(dml.Column("attribute_id").In().PlaceHolder()).
-				Where(dml.Column("store_id").PlaceHolder())
+				Where(Column("entity_type_id").PlaceHolder()).
+				Where(Column("entity_id").In().PlaceHolder()).
+				Where(Column("attribute_id").In().PlaceHolder()).
+				Where(Column("store_id").PlaceHolder())
 
 			sel.EstimatedCachedSQLSize = 8192
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithDBR().Interpolate().Int64(4).Int64s(entityIDs...).Int64s(174, 175).Int(0).ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithDBR().Interpolate().testWithArgs(4, entityIDs, []int64{174, 175}, 0).ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -268,19 +266,21 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 
 	b.Run("interpolate named", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			sel := dml.NewSelect("entity_id", "attribute_id", "value").
+			sel := NewSelect("entity_id", "attribute_id", "value").
 				From("catalog_product_entity_varchar").
-				Where(dml.Column("entity_type_id").NamedArg("EntityTypeId")).
-				Where(dml.Column("entity_id").In().NamedArg("EntityId")).
-				Where(dml.Column("attribute_id").In().NamedArg("AttributeId")).
-				Where(dml.Column("store_id").NamedArg("StoreId"))
+				Where(Column("entity_type_id").NamedArg("EntityTypeId")).
+				Where(Column("entity_id").In().NamedArg("EntityId")).
+				Where(Column("attribute_id").In().NamedArg("AttributeId")).
+				Where(Column("store_id").NamedArg("StoreId"))
 
 			sel.EstimatedCachedSQLSize = 8192
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithDBR().Interpolate().NamedArg("EntityTypeId", int64(4)).
-				NamedArg("EntityId", entityIDs).
-				NamedArg("AttributeId", []int64{174, 175}).
-				NamedArg("StoreId", 0).ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithDBR().Interpolate().testWithArgs(
+				sql.Named("EntityTypeId", int64(4)),
+				sql.Named("EntityId", entityIDs),
+				sql.Named("AttributeId", []int64{174, 175}),
+				sql.Named("StoreId", 0),
+			).ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -291,12 +291,12 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 	})
 
 	b.Run("interpolate optimized", func(b *testing.B) {
-		sel := dml.NewSelect("entity_id", "attribute_id", "value").
+		sel := NewSelect("entity_id", "attribute_id", "value").
 			From("catalog_product_entity_varchar").
-			Where(dml.Column("entity_type_id").PlaceHolder()).
-			Where(dml.Column("entity_id").In().PlaceHolder()).
-			Where(dml.Column("attribute_id").In().PlaceHolder()).
-			Where(dml.Column("store_id").PlaceHolder())
+			Where(Column("entity_type_id").PlaceHolder()).
+			Where(Column("entity_id").In().PlaceHolder()).
+			Where(Column("attribute_id").In().PlaceHolder()).
+			Where(Column("store_id").PlaceHolder())
 		sel.EstimatedCachedSQLSize = 8192
 
 		selA := sel.WithDBR().Interpolate()
@@ -305,7 +305,7 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			var err error
 			// the generated string benchmarkSelectStr is 5300 characters long
-			benchmarkSelectStr, benchmarkGlobalVals, err = selA.Int64(4).Int64s(entityIDs...).Int64s(174, 175).Int(0).ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = selA.testWithArgs(4, entityIDs, []int64{174, 175}, 0).ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -323,15 +323,15 @@ func BenchmarkSelect_ComplexAddColumns(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var args []interface{}
 		var err error
-		haveSQL, args, err = dml.NewSelect().
+		haveSQL, args, err = NewSelect().
 			AddColumns(" entity_id ,   value").
 			AddColumns("cpev.entity_type_id", "cpev.attribute_id").
 			AddColumnsAliases("(cpev.id*3)", "weirdID").
 			AddColumnsAliases("cpev.value", "value2nd").
 			FromAlias("catalog_product_entity_varchar", "cpev").
-			Where(dml.Column("entity_type_id").Int64(4)).
-			Where(dml.Column("attribute_id").In().Int64s(174, 175)).
-			Where(dml.Column("store_id").Int64(0)).
+			Where(Column("entity_type_id").Int64(4)).
+			Where(Column("attribute_id").In().Int64s(174, 175)).
+			Where(Column("store_id").Int64(0)).
 			ToSQL()
 		if err != nil {
 			b.Fatalf("%+v", err)
@@ -367,17 +367,17 @@ func BenchmarkSelect_SQLCase(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		haveSQL, benchmarkGlobalVals, err = dml.NewSelect().
+		haveSQL, benchmarkGlobalVals, err = NewSelect().
 			AddColumns("price", "sku", "name").
 			AddColumnsConditions(
-				dml.SQLCase("", "`closed`",
+				SQLCase("", "`closed`",
 					"date_start <= ? AND date_end >= ?", "`open`",
 					"date_start > ? AND date_end > ?", "`upcoming`",
 				).Alias("is_on_sale").Time(start).Time(end).Time(start).Time(end),
 			).
 			From("catalog_promotions").
 			Where(
-				dml.Column("promotion_id").
+				Column("promotion_id").
 					NotIn().
 					Ints(pid...),
 			).
@@ -393,14 +393,14 @@ func BenchmarkDeleteSQL(b *testing.B) {
 	b.Run("NewDelete", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			var err error
-			_, benchmarkGlobalVals, err = dml.NewDelete("alpha").Where(dml.Column("a").Str("b")).Limit(1).OrderBy("id").ToSQL()
+			_, benchmarkGlobalVals, err = NewDelete("alpha").Where(Column("a").Str("b")).Limit(1).OrderBy("id").ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
 		}
 	})
 
-	sqlObj := dml.NewDelete("alpha").Where(dml.Column("a").Str("b")).Limit(1).OrderBy("id")
+	sqlObj := NewDelete("alpha").Where(Column("a").Str("b")).Limit(1).OrderBy("id")
 	b.Run("ToSQL no cache", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			var err error
@@ -427,11 +427,9 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	b.Run("NewInsert", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = dml.NewInsert("alpha").
+			benchmarkSelectStr, benchmarkGlobalVals, err = NewInsert("alpha").
 				AddColumns("something_id", "user_id", "other").
-				WithDBR().
-				Int64(1).Int64(2).Bool(true).
-				ToSQL()
+				WithDBR().testWithArgs(1, 2, true).ToSQL()
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -439,11 +437,11 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	})
 
 	b.Run("ToSQL no cache", func(b *testing.B) {
-		sqlObj := dml.NewInsert("alpha").AddColumns("something_id", "user_id", "other")
+		sqlObj := NewInsert("alpha").AddColumns("something_id", "user_id", "other")
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			var err error
-			sqlObjA := sqlObj.WithCacheKey("index_%d", i).WithDBR().Int64(1).Int64(2).Bool(true)
+			sqlObjA := sqlObj.WithCacheKey("index_%d", i).WithDBR().testWithArgs(1, 2, true)
 			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObjA.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
@@ -452,12 +450,12 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	})
 
 	b.Run("ToSQL with cache", func(b *testing.B) {
-		sqlObj := dml.NewInsert("alpha").AddColumns("something_id", "user_id", "other")
+		sqlObj := NewInsert("alpha").AddColumns("something_id", "user_id", "other")
 		delA := sqlObj.WithDBR()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = delA.Int64(1).Int64(2).Bool(true).ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = delA.testWithArgs(1, 2, true).ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -468,14 +466,14 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 
 func BenchmarkInsertRecordsSQL(b *testing.B) {
 	obj := someRecord{SomethingID: 1, UserID: 99, Other: false}
-	insA := dml.NewInsert("alpha").
+	insA := NewInsert("alpha").
 		AddColumns("something_id", "user_id", "other").
 		WithDBR()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkSelectStr, benchmarkGlobalVals, err = insA.Record("", obj).ToSQL()
+		benchmarkSelectStr, benchmarkGlobalVals, err = insA.testWithArgs(Qualify("", obj)).ToSQL()
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -484,7 +482,7 @@ func BenchmarkInsertRecordsSQL(b *testing.B) {
 }
 
 func BenchmarkRepeat(b *testing.B) {
-	cp, err := dml.NewConnPool()
+	cp, err := NewConnPool()
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -493,7 +491,7 @@ func BenchmarkRepeat(b *testing.B) {
 		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ? AND name IN ? AND status = ?").ExpandPlaceHolders()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			s, _, err := a.Ints(5, 7, 9, 11).Strings("a", "b", "c", "d", "e").Int(22).ToSQL()
+			s, _, err := a.testWithArgs([]int{5, 7, 9, 11}, []string{"a", "b", "c", "d", "e"}, 22).ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -509,7 +507,7 @@ func BenchmarkRepeat(b *testing.B) {
 		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ?").ExpandPlaceHolders()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			s, _, err := a.Ints(9, 8, 7, 6).ToSQL()
+			s, _, err := a.testWithArgs([]int{9, 8, 7, 6}).ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -525,7 +523,7 @@ func BenchmarkQuoteAs(b *testing.B) {
 	const want = "`e`.`entity_id` AS `ee`"
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if have := dml.Quoter.NameAlias("e.entity_id", "ee"); have != want {
+		if have := Quoter.NameAlias("e.entity_id", "ee"); have != want {
 			b.Fatalf("Have %s\nWant %s\n", have, want)
 		}
 	}
@@ -538,21 +536,21 @@ func BenchmarkQuoteQuote(b *testing.B) {
 	b.ResetTimer()
 	b.Run("Worse Case", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			if have := dml.Quoter.QualifierName("database`Name", "table`Name"); have != want {
+			if have := Quoter.QualifierName("database`Name", "table`Name"); have != want {
 				b.Fatalf("Have %s\nWant %s\n", have, want)
 			}
 		}
 	})
 	b.Run("Best Case", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			if have := dml.Quoter.QualifierName("databaseName", "tableName"); have != want {
+			if have := Quoter.QualifierName("databaseName", "tableName"); have != want {
 				b.Fatalf("Have %s\nWant %s\n", have, want)
 			}
 		}
 	})
 }
 
-var benchmarkIfNull *dml.Condition
+var benchmarkIfNull *Condition
 
 func BenchmarkIfNull(b *testing.B) {
 	runner := func(want string, have ...string) func(*testing.B) {
@@ -564,7 +562,7 @@ func BenchmarkIfNull(b *testing.B) {
 					alias = have[lh-1]
 					have = have[:lh-1]
 				}
-				ifn := dml.SQLIfNull(have...)
+				ifn := SQLIfNull(have...)
 				if alias != "" {
 					ifn = ifn.Alias(alias)
 				}
@@ -595,23 +593,23 @@ func BenchmarkIfNull(b *testing.B) {
 }
 
 func BenchmarkUnion(b *testing.B) {
-	newUnion5 := func() *dml.Union {
+	newUnion5 := func() *Union {
 		// not valid SQL
-		return dml.NewUnion(
-			dml.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAliases("'varchar'", "col_type").FromAlias("catalog_product_entity_varchar", "t").
-				Where(dml.Column("entity_id").Int64(1561), dml.Column("store_id").In().Int64s(1, 0)).
+		return NewUnion(
+			NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAliases("'varchar'", "col_type").FromAlias("catalog_product_entity_varchar", "t").
+				Where(Column("entity_id").Int64(1561), Column("store_id").In().Int64s(1, 0)).
 				OrderByDesc("t.varchar_store_id"),
-			dml.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAliases("'int'", "col_type").FromAlias("catalog_product_entity_int", "t").
-				Where(dml.Column("entity_id").Int64(1561), dml.Column("store_id").In().Int64s(1, 0)).
+			NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAliases("'int'", "col_type").FromAlias("catalog_product_entity_int", "t").
+				Where(Column("entity_id").Int64(1561), Column("store_id").In().Int64s(1, 0)).
 				OrderByDesc("t.int_store_id"),
-			dml.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAliases("'decimal'", "col_type").FromAlias("catalog_product_entity_decimal", "t").
-				Where(dml.Column("entity_id").Int64(1561), dml.Column("store_id").In().Int64s(1, 0)).
+			NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAliases("'decimal'", "col_type").FromAlias("catalog_product_entity_decimal", "t").
+				Where(Column("entity_id").Int64(1561), Column("store_id").In().Int64s(1, 0)).
 				OrderByDesc("t.decimal_store_id"),
-			dml.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAliases("'datetime'", "col_type").FromAlias("catalog_product_entity_datetime", "t").
-				Where(dml.Column("entity_id").Int64(1561), dml.Column("store_id").In().Int64s(1, 0)).
+			NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAliases("'datetime'", "col_type").FromAlias("catalog_product_entity_datetime", "t").
+				Where(Column("entity_id").Int64(1561), Column("store_id").In().Int64s(1, 0)).
 				OrderByDesc("t.datetime_store_id"),
-			dml.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAliases("'text'", "col_type").FromAlias("catalog_product_entity_text", "t").
-				Where(dml.Column("entity_id").Int64(1561), dml.Column("store_id").In().Int64s(1, 0)).
+			NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAliases("'text'", "col_type").FromAlias("catalog_product_entity_text", "t").
+				Where(Column("entity_id").Int64(1561), Column("store_id").In().Int64s(1, 0)).
 				OrderByDesc("t.text_store_id"),
 		).
 			All().
@@ -619,10 +617,10 @@ func BenchmarkUnion(b *testing.B) {
 			OrderByDesc("b").PreserveResultSet()
 	}
 
-	newUnionTpl := func() *dml.Union {
-		return dml.NewUnion(
-			dml.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAliases("'{column}'", "col_type").FromAlias("catalog_product_entity_{type}", "t").
-				Where(dml.Column("entity_id").Int64(1561), dml.Column("store_id").In().Int64s(1, 0)).
+	newUnionTpl := func() *Union {
+		return NewUnion(
+			NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAliases("'{column}'", "col_type").FromAlias("catalog_product_entity_{type}", "t").
+				Where(Column("entity_id").Int64(1561), Column("store_id").In().Int64s(1, 0)).
 				OrderByDesc("t.{column}_store_id"),
 		).
 			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
@@ -697,11 +695,11 @@ func BenchmarkUpdateValuesSQL(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkSelectStr, benchmarkGlobalVals, err = dml.NewUpdate("alpha").
+		benchmarkSelectStr, benchmarkGlobalVals, err = NewUpdate("alpha").
 			AddClauses(
-				dml.Column("something_id").Int64(1),
+				Column("something_id").Int64(1),
 			).Where(
-			dml.Column("id").Int64(1),
+			Column("id").Int64(1),
 		).ToSQL()
 		if err != nil {
 			b.Fatalf("%+v", err)

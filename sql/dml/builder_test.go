@@ -25,22 +25,25 @@ import (
 
 // check if the types implement the interfaces
 
-var _ fmt.Stringer = (*Delete)(nil)
-var _ fmt.Stringer = (*Insert)(nil)
-var _ fmt.Stringer = (*Update)(nil)
-var _ fmt.Stringer = (*Select)(nil)
-var _ fmt.Stringer = (*Union)(nil)
-var _ fmt.Stringer = (*With)(nil)
-var _ fmt.Stringer = (*Show)(nil)
+var (
+	_ fmt.Stringer = (*Delete)(nil)
+	_ fmt.Stringer = (*Insert)(nil)
+	_ fmt.Stringer = (*Update)(nil)
+	_ fmt.Stringer = (*Select)(nil)
+	_ fmt.Stringer = (*Union)(nil)
+	_ fmt.Stringer = (*With)(nil)
+	_ fmt.Stringer = (*Show)(nil)
+)
 
-var _ QueryBuilder = (*Select)(nil)
-var _ QueryBuilder = (*Delete)(nil)
-var _ QueryBuilder = (*Update)(nil)
-var _ QueryBuilder = (*Insert)(nil)
-var _ QueryBuilder = (*Show)(nil)
-var _ QueryBuilder = (*Union)(nil)
-var _ QueryBuilder = (*With)(nil)
-var _ QueryBuilder = (*QuerySQL)(nil)
+var (
+	_ QueryBuilder = (*Select)(nil)
+	_ QueryBuilder = (*Delete)(nil)
+	_ QueryBuilder = (*Update)(nil)
+	_ QueryBuilder = (*Insert)(nil)
+	_ QueryBuilder = (*Show)(nil)
+	_ QueryBuilder = (*Union)(nil)
+	_ QueryBuilder = (*With)(nil)
+)
 
 func TestSqlObjToString(t *testing.T) {
 	t.Parallel()

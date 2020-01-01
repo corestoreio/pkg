@@ -53,7 +53,7 @@ func TestShow(t *testing.T) {
 		)
 	})
 	t.Run("variables LIKE interpolated", func(t *testing.T) {
-		s := NewShow().Variable().Like().WithDBR().String("aria%")
+		s := NewShow().Variable().Like().WithDBR().TestWithArgs("aria%")
 		compareToSQL(t, s, errors.NoKind,
 			"SHOW VARIABLES LIKE ?",
 			"SHOW VARIABLES LIKE 'aria%'",
@@ -63,8 +63,8 @@ func TestShow(t *testing.T) {
 	t.Run("variables LIKE place holder", func(t *testing.T) {
 		s := NewShow().Variable().
 			Where(Column("Variable_name").PlaceHolder()).
-			WithDBR().String("aria%")
-		compareToSQL(t, s, errors.NoKind,
+			WithDBR()
+		compareToSQL(t, s.TestWithArgs("aria%"), errors.NoKind,
 			"SHOW VARIABLES WHERE (`Variable_name` = ?)",
 			"SHOW VARIABLES WHERE (`Variable_name` = 'aria%')",
 			"aria%",
@@ -81,7 +81,7 @@ func TestShow(t *testing.T) {
 	t.Run("variables WHERE placeholder", func(t *testing.T) {
 		s := NewShow().Variable().
 			Where(Column("Variable_name").In().PlaceHolder()).
-			WithDBR().Strings("basedir", "back_log")
+			WithDBR().TestWithArgs([]string{"basedir", "back_log"})
 		compareToSQL(t, s, errors.NoKind,
 			"SHOW VARIABLES WHERE (`Variable_name` IN ?)",
 			"SHOW VARIABLES WHERE (`Variable_name` IN ('basedir','back_log'))",

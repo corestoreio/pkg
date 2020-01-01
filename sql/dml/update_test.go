@@ -64,7 +64,7 @@ func TestUpdate_Basics(t *testing.T) {
 	t.Run("placeholder in columns", func(t *testing.T) {
 		u := NewUpdate("dml_people").AddClauses(
 			Column("key").PlaceHolder(),
-		).Where(Column("key").Str("6")).WithDBR().String("Ke' --yX")
+		).Where(Column("key").Str("6")).WithDBR().TestWithArgs("Ke' --yX")
 		compareToSQL(t, u,
 			errors.NoKind,
 			"UPDATE `dml_people` SET `key`=? WHERE (`key` = '6')",
@@ -107,8 +107,8 @@ func TestUpdate_SetExprToSQL(t *testing.T) {
 				Column("bar99").Expr("COALESCE(bar, 0) + ?"),
 			).
 			Where(Column("id").Int(9)).
-			WithDBR().NullString(null.String{}).Uint(99)
-		compareToSQL(t, u, errors.NoKind,
+			WithDBR()
+		compareToSQL(t, u.TestWithArgs(null.String{}, uint(99)), errors.NoKind,
 			"UPDATE `a` SET `fooNULL`=?, `bar99`=COALESCE(bar, 0) + ? WHERE (`id` = 9)",
 			"", //"UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = 9)",
 			nil, int64(99))
@@ -122,7 +122,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 
 	// Insert a user with a key
 	_, err := s.InsertInto("dml_people").AddColumns("name", "email", "key").
-		WithDBR().Raw("Benjamin", "ben@whitehouse.gov", "6").ExecContext(context.TODO())
+		WithDBR().ExecContext(context.TODO(), "Benjamin", "ben@whitehouse.gov", "6")
 	assert.NoError(t, err)
 
 	// Update the key
@@ -228,7 +228,7 @@ func TestUpdate_SetRecord(t *testing.T) {
 	}
 
 	t.Run("without where", func(t *testing.T) {
-		u := NewUpdate("dml_person").AddColumns("name", "email").WithDBR().Record("", pRec)
+		u := NewUpdate("dml_person").AddColumns("name", "email").WithDBR().TestWithArgs(Qualify("", pRec))
 		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `dml_person` SET `name`=?, `email`=?",
 			"UPDATE `dml_person` SET `name`='Gopher', `email`='gopher@g00gle.c0m'",
@@ -237,8 +237,8 @@ func TestUpdate_SetRecord(t *testing.T) {
 	})
 	t.Run("with where", func(t *testing.T) {
 		u := NewUpdate("dml_person").AddColumns("name", "email").
-			Where(Column("id").PlaceHolder()).WithDBR().Record("", pRec)
-		compareToSQL(t, u, errors.NoKind,
+			Where(Column("id").PlaceHolder()).WithDBR()
+		compareToSQL(t, u.TestWithArgs(Qualify("", pRec)), errors.NoKind,
 			"UPDATE `dml_person` SET `name`=?, `email`=? WHERE (`id` = ?)",
 			"UPDATE `dml_person` SET `name`='Gopher', `email`='gopher@g00gle.c0m' WHERE (`id` = 12345)",
 			"Gopher", "gopher@g00gle.c0m", int64(12345),
@@ -249,7 +249,7 @@ func TestUpdate_SetRecord(t *testing.T) {
 		u := NewUpdate("dml_person").AddColumns("name", "email").
 			AddClauses(Column("keyXXX").PlaceHolder()).
 			Where(Column("id").PlaceHolder()).
-			WithDBR().Record("", pRec)
+			WithDBR().TestWithArgs(Qualify("", pRec))
 		compareToSQL(t, u, errors.NotFound,
 			"",
 			"",
@@ -282,7 +282,7 @@ func TestUpdate_DisableBuildCache(t *testing.T) {
 	const cachedSQLInterpolated = "UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = 987654321)"
 
 	for i := 0; i < 3; i++ {
-		compareToSQL(t, up.WithCacheKey("index_%d", i).WithDBR().Uint(987654321), errors.NoKind,
+		compareToSQL(t, up.WithCacheKey("index_%d", i).WithDBR().TestWithArgs(987654321), errors.NoKind,
 			cachedSQLPlaceHolder,
 			cachedSQLInterpolated,
 			int64(987654321),

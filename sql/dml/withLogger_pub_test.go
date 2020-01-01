@@ -61,7 +61,7 @@ func TestWithLogger_Insert(t *testing.T) {
 
 		t.Run("Exec", func(t *testing.T) {
 			defer buf.Reset()
-			_, err := d.WithDBR().String("a@b.c").String("John").Interpolate().ExecContext(context.TODO())
+			_, err := d.WithDBR().Interpolate().ExecContext(context.TODO(), "a@b.c", "John")
 			assert.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQ04\" insert_id: \"UNIQ08\" table: \"dml_people\" duration: 0 sql: \"REPLACE /*ID$UNIQ08*/ INTO `dml_people` (`email`,`name`) VALUES ('a@b.c','John')\" length_recs: 0 length_args: 0 source: \"i\" error: \"<nil>\"\n",
@@ -88,7 +88,7 @@ func TestWithLogger_Insert(t *testing.T) {
 
 		t.Run("Exec", func(t *testing.T) {
 			defer buf.Reset()
-			_, err := oIns.WithDBR().String("a@b.zeh").String("J0hn").Interpolate().ExecContext(context.TODO())
+			_, err := oIns.WithDBR().Interpolate().ExecContext(context.TODO(), "a@b.zeh", "J0hn")
 			assert.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" insert_id: \"UNIQ24\" table: \"dml_people\" duration: 0 sql: \"REPLACE /*ID$UNIQ24*/ INTO `dml_people` (`email`,`name`) VALUES ('a@b.zeh','J0hn')\" length_recs: 0 length_args: 0 source: \"i\" error: \"<nil>\"\n",
@@ -124,7 +124,7 @@ func TestWithLogger_Insert(t *testing.T) {
 			defer buf.Reset()
 
 			err := conn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
-				_, err := tx.InsertInto("dml_people").Replace().AddColumns("email", "name").WithDBR().Raw("a@b.c", "John").ExecContext(context.TODO())
+				_, err := tx.InsertInto("dml_people").Replace().AddColumns("email", "name").WithDBR().ExecContext(context.TODO(), "a@b.c", "John")
 				return err
 			})
 			assert.NoError(t, err)
@@ -138,7 +138,7 @@ func TestWithLogger_Insert(t *testing.T) {
 
 			assert.Error(t, conn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
 				_, err := tx.InsertInto("dml_people").Replace().AddColumns("email", "name").
-					WithDBR().String("only one arg provided").Interpolate().ExecContext(context.TODO())
+					WithDBR().Interpolate().ExecContext(context.TODO(), "only one arg provided")
 				return err
 			}))
 
@@ -153,7 +153,7 @@ func TestWithLogger_Insert(t *testing.T) {
 			insA := dml.NewInsert("dml_people").Replace().AddColumns("email", "name").WithDBR()
 
 			err := conn.Transaction(context.TODO(), nil, func(tx *dml.Tx) error {
-				_, err := insA.WithTx(tx).String("a@b.c").String("John").ExecContext(context.TODO())
+				_, err := insA.WithTx(tx).ExecContext(context.TODO(), "a@b.c", "John")
 				return err
 			})
 			assert.NoError(t, err)
@@ -226,7 +226,7 @@ func TestWithLogger_Delete(t *testing.T) {
 				buf.Reset()
 			}()
 
-			_, err := d.WithDBR().Float64(39.56).Interpolate().ExecContext(context.TODO())
+			_, err := d.WithDBR().Interpolate().ExecContext(context.TODO(), 39.56)
 			assert.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQUEID01\" conn_id: \"UNIQUEID05\" delete_id: \"UNIQUEID06\" table: \"dml_people\" duration: 0 sql: \"DELETE /*ID$UNIQUEID06*/ FROM `dml_people` WHERE (`id` >= 39.56)\" length_recs: 0 length_args: 0 source: \"d\" error: \"<nil>\"\n",
@@ -307,13 +307,13 @@ func TestWithLogger_Select(t *testing.T) {
 
 		t.Run("Query Error interpolation with iFace slice", func(t *testing.T) {
 			defer buf.Reset()
-			rows, err := pplSel.WithDBR().Raw(67896543123).Interpolate().QueryContext(context.TODO())
+			rows, err := pplSel.WithDBR().Interpolate().QueryContext(context.TODO(), 67896543123)
 			assert.NotNil(t, rows)
 			assert.NoError(t, err)
 		})
 		t.Run("Query Correct", func(t *testing.T) {
 			defer buf.Reset()
-			rows, err := pplSel.WithDBR().Int(67896543123).QueryContext(context.TODO())
+			rows, err := pplSel.WithDBR().QueryContext(context.TODO(), 67896543123)
 			assert.NoError(t, err)
 			assert.NoError(t, rows.Close())
 
@@ -324,7 +324,7 @@ func TestWithLogger_Select(t *testing.T) {
 		t.Run("Load", func(t *testing.T) {
 			defer buf.Reset()
 			p := &dmlPerson{}
-			_, err := pplSel.WithDBR().Int(67896543113).Load(context.TODO(), p)
+			_, err := pplSel.WithDBR().Load(context.TODO(), p, 67896543113)
 			assert.NoError(t, err)
 
 			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 sql: \"SELECT /*ID$UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)\" length_recs: 0 length_args: 1 source: \"s\" error: \"<nil>\"\nDEBUG Load conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dml_people\" duration: 0 id: \"UNIQ02\" error: \"<nil>\" ColumnMapper: \"*dml_test.dmlPerson\" row_count: 0\n",
@@ -333,7 +333,7 @@ func TestWithLogger_Select(t *testing.T) {
 
 		t.Run("LoadInt64", func(t *testing.T) {
 			defer buf.Reset()
-			_, _, err := pplSel.WithDBR().Raw(67896543124).LoadNullInt64(context.TODO())
+			_, _, err := pplSel.WithDBR().LoadNullInt64(context.TODO(), 67896543124)
 			if !errors.NotFound.Match(err) {
 				assert.NoError(t, err)
 			}
@@ -444,7 +444,7 @@ func TestWithLogger_Select(t *testing.T) {
 		t.Run("Query", func(t *testing.T) {
 			defer buf.Reset()
 
-			rows, err := pplSel.WithDBR().Raw(-3).QueryContext(context.TODO())
+			rows, err := pplSel.WithDBR().QueryContext(context.TODO(), -3)
 			assert.NoError(t, err)
 			dmltest.Close(t, rows)
 

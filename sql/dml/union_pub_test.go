@@ -204,10 +204,10 @@ func TestUnion_Prepare(t *testing.T) {
 					WillReturnRows(sqlmock.NewRows([]string{"name", "email"}).AddRow("Peter Gopher", "peter@gopher.go"))
 			}
 			// use loop with Query and add args before
-			stmtA := stmt.WithDBR().Int(6899)
+			stmtA := stmt.WithDBR()
 
 			for i := 0; i < iterations; i++ {
-				rows, err := stmtA.QueryContext(context.TODO())
+				rows, err := stmtA.QueryContext(context.TODO(), 6899)
 				assert.NoError(t, err)
 
 				cols, err := rows.Columns()
@@ -224,10 +224,10 @@ func TestUnion_Prepare(t *testing.T) {
 			}
 
 			p := &dmlPerson{ID: 6900}
-			stmtA := stmt.WithDBR().Record("", p)
+			stmtA := stmt.WithDBR()
 
 			for i := 0; i < iterations; i++ {
-				rows, err := stmtA.QueryContext(context.TODO())
+				rows, err := stmtA.QueryContext(context.TODO(), dml.Qualify("", p))
 				assert.NoError(t, err)
 
 				cols, err := rows.Columns()
@@ -239,7 +239,7 @@ func TestUnion_Prepare(t *testing.T) {
 
 		t.Run("WithRecords Error", func(t *testing.T) {
 			p := &TableCoreConfigDataSlice{err: errors.Duplicated.Newf("Found a duplicate")}
-			rows, err := stmt.WithDBR().Record("", p).QueryContext(context.TODO())
+			rows, err := stmt.WithDBR().QueryContext(context.TODO(), dml.Qualify("", p))
 			assert.ErrorIsKind(t, errors.Duplicated, err)
 			assert.Nil(t, rows)
 		})

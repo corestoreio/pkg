@@ -15,10 +15,12 @@
 package dml
 
 import (
+	"database/sql"
 	"testing"
 
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/storage/null"
+
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
@@ -39,7 +41,7 @@ func TestWith_Placeholder(t *testing.T) {
 			Select(NewSelect().Star().From("cte").Where(Column("a").GreaterOrEqual().PlaceHolder()))
 
 		compareToSQL(t,
-			cte.WithDBR().NamedArg("nArg2", "hello%").NullString(null.MakeString("arg1")).Float64(2.7182),
+			cte.WithDBR().TestWithArgs(sql.Named("nArg2", "hello%"), null.MakeString("arg1"), 2.7182),
 			errors.NoKind,
 			"WITH RECURSIVE `cte` (`n`) AS ((SELECT `a`, `d` AS `b` FROM `tableAD` WHERE (`b` = ?))\nUNION ALL\n(SELECT `a`, `b` FROM `tableAB` WHERE (`b` LIKE ?)))\nSELECT * FROM `cte` WHERE (`a` >= ?)",
 			"WITH RECURSIVE `cte` (`n`) AS ((SELECT `a`, `d` AS `b` FROM `tableAD` WHERE (`b` = 'arg1'))\nUNION ALL\n(SELECT `a`, `b` FROM `tableAB` WHERE (`b` LIKE 'hello%')))\nSELECT * FROM `cte` WHERE (`a` >= 2.7182)",

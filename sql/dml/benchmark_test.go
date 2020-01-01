@@ -32,7 +32,7 @@ func BenchmarkArgsToIFace(b *testing.B) {
 	reflectIFaceContainer := make([]interface{}, 0, 25)
 	finalArgs := make([]interface{}, 0, 30)
 	drvVal := []driver.Valuer{null.MakeString("I'm a valid null string: See the License for the specific language governing permissions and See the License for the specific language governing permissions and See the License for the specific language governing permissions and")}
-	argUnion := &DBR{arguments: make(arguments, 0, 30)}
+	argUnion := make(arguments, 0, 30)
 	now1 := Now.UTC()
 	b.ResetTimer()
 
@@ -66,19 +66,19 @@ func BenchmarkArgsToIFace(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			argUnion = argUnion.
-				Int64(5).Int64s(6, 7, 8).
-				Uint64(9).Uint64s(10, 11, 12).
-				Float64(3.14159).Float64s(33.44, 55.66, 77.88).
-				Bool(true).Bools(true, false, true).
-				String(`Licensed under the Apache License, Version 2.0 (the "License");`).
-				Strings(`Unless required by applicable law or agreed to in writing, software`, `Licensed under the Apache License, Version 2.0 (the "License");`).
-				DriverValue(drvVal...).
-				Null().
-				Time(now1)
+				add(5, []int64{6, 7, 8}).
+				add(uint64(9)).add([]uint64{10, 11, 12}).
+				add(3.14159, []float64{33.44, 55.66, 77.88}).
+				add(true, []bool{true, false, true}).
+				add(`Licensed under the Apache License, Version 2.0 (the "License");`,
+					[]string{`Unless required by applicable law or agreed to in writing, software`, `Licensed under the Apache License, Version 2.0 (the "License");`},
+					drvVal[0],
+					nil,
+					now1)
 
-			finalArgs = argUnion.toInterfaces(finalArgs...)
+			finalArgs = argUnion.toInterfaces(finalArgs)
 			// b.Fatal("%#v", finalArgs)
-			argUnion = argUnion.Reset()
+			argUnion = argUnion[:0]
 			finalArgs = finalArgs[:0]
 		}
 	})
@@ -107,14 +107,14 @@ func BenchmarkArgsToIFace(b *testing.B) {
 		finalArgs = finalArgs[:0]
 		for i := 0; i < b.N; i++ {
 			argUnion = argUnion.
-				Int64(5).Int64s(6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19).
-				Uint64(9).Uint64s(10, 11, 12, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29).
-				Float64(3.14159).Float64s(33.44, 55.66, 77.88, 11.22, math.Pi, math.E, math.Sqrt2).
-				Null()
+				add(int64(5), []int64{6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19}).
+				add(uint64(9), []uint64{10, 11, 12, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29}).
+				add(3.14159, []float64{33.44, 55.66, 77.88, 11.22, math.Pi, math.E, math.Sqrt2}).
+				add(nil)
 
-			finalArgs = argUnion.toInterfaces(finalArgs...)
+			finalArgs = argUnion.toInterfaces(finalArgs)
 			// b.Fatal("%#v", finalArgs)
-			argUnion = argUnion.Reset()
+			argUnion = argUnion[:0]
 			finalArgs = finalArgs[:0]
 		}
 	})
@@ -190,14 +190,12 @@ func BenchmarkInterpolate(b *testing.B) {
 
 	const want = `SELECT * FROM x WHERE a = 1 AND b = -2 AND c = 3 AND d = 4 AND e = 5 AND f = 6 AND g = 7 AND h = 8 AND i = 9 AND j = 10 AND k = 'Hello' AND l = 1`
 	const sqlBytes = `SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ? AND e = ? AND f = ? AND g = ? AND h = ? AND i = ? AND j = ? AND k = ? AND l = ?`
-	args := &DBR{}
-	args = args.Int(1).Int(-2).Int(3).Int(4).Int(5).Int(6).Int(7).Int(8).Int(9).Int(10).
-		String("Hello").
-		Bool(true)
+
+	args := arguments{}.add(1, -2, 3, 4, 5, 6, 7, 8, 9, 10, "Hello", true)
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		if err := writeInterpolate(ipBuf, sqlBytes, args.arguments); err != nil {
+		if err := writeInterpolate(ipBuf, sqlBytes, args); err != nil {
 			b.Fatal(err)
 		}
 		preprocessSink = ipBuf.String()

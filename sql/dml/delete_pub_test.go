@@ -75,7 +75,7 @@ func TestDelete_Prepare(t *testing.T) {
 		}
 		args := stmt.WithDBR()
 		for i, test := range tests {
-			res, err := args.String(test.email).Int(test.groupID).ExecContext(context.TODO())
+			res, err := args.ExecContext(context.TODO(), test.email, test.groupID)
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -121,7 +121,7 @@ func TestDelete_Prepare(t *testing.T) {
 				Email: null.MakeString(test.email),
 			}
 
-			res, err := stmt.WithDBR().Raw(dml.Qualify("", p)).ExecContext(context.TODO())
+			res, err := stmt.WithDBR().ExecContext(context.TODO(), dml.Qualify("", p))
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -185,7 +185,7 @@ func TestDelete_Join(t *testing.T) {
 	})
 
 	t.Run("JOIN USING with alias WithDBR", func(t *testing.T) {
-		compareToSQL(t, del1.WithDBR().Time(now()), errors.NoKind,
+		compareToSQL(t, del1.WithDBR().TestWithArgs(now()), errors.NoKind,
 			"DELETE `ce`,`customer_address`,`customer_company` FROM `customer_entity` AS `ce` INNER JOIN `customer_company` AS `cc` USING (`ce.entity_id`,`cc.customer_id`) RIGHT JOIN `customer_address` AS `ca` USING (`ce.entity_id`,`ca.parent_id`) WHERE (`ce`.`created_at` < ?)",
 			"DELETE `ce`,`customer_address`,`customer_company` FROM `customer_entity` AS `ce` INNER JOIN `customer_company` AS `cc` USING (`ce.entity_id`,`cc.customer_id`) RIGHT JOIN `customer_address` AS `ca` USING (`ce.entity_id`,`ca.parent_id`) WHERE (`ce`.`created_at` < '2006-01-02 15:04:05')",
 			now(),

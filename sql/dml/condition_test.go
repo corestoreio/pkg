@@ -126,7 +126,7 @@ func TestOpArgs(t *testing.T) {
 			NewSelect("a", "b").From("t1").Where(
 				Column("a315").In().Null(),
 				Column("a316").In().PlaceHolder(),
-			).WithDBR().Strings("aa"),
+			).WithDBR().TestWithArgs([]string{"aa"}),
 			errors.NoKind,
 			"SELECT `a`, `b` FROM `t1` WHERE (`a315` IS NULL) AND (`a316` IN ?)",
 			"SELECT `a`, `b` FROM `t1` WHERE (`a315` IS NULL) AND (`a316` IN ('aa'))",
@@ -138,7 +138,7 @@ func TestOpArgs(t *testing.T) {
 			NewSelect("a", "b").From("t1").Where(
 				Column("a315").In().Null(),
 				Column("a316").In().PlaceHolder(),
-			).WithDBR().Strings("aa", "bb"),
+			).WithDBR().TestWithArgs([]string{"aa", "bb"}),
 			errors.NoKind,
 			"SELECT `a`, `b` FROM `t1` WHERE (`a315` IS NULL) AND (`a316` IN ?)",
 			"SELECT `a`, `b` FROM `t1` WHERE (`a315` IS NULL) AND (`a316` IN ('aa','bb'))",
@@ -460,7 +460,7 @@ func TestAppendArgs(t *testing.T) {
 				Column("t_d.store_id").Equal().PlaceHolder(),                  // 17
 			)
 
-		compareToSQL(t, s.WithDBR().Record("e", appendInt(678)).Record("t_d", appendInt(17)),
+		compareToSQL(t, s.WithDBR().TestWithArgs(Qualify("e", appendInt(678)), Qualify("t_d", appendInt(17))),
 			errors.NoKind,
 			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = ?) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0)) AND (`t_d`.`store_id` = ?)",
 			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = 678) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0)) AND (`t_d`.`store_id` = 17)",
@@ -477,7 +477,7 @@ func TestAppendArgs(t *testing.T) {
 				Column("t_d.store_id").Equal().PlaceHolder(), // 17
 			)
 
-		compareToSQL(t, s.WithDBR().Record("e", appendInt(678)).Record("t_d", appendInt(17)),
+		compareToSQL(t, s.WithDBR().TestWithArgs(Qualify("e", appendInt(678)), Qualify("t_d", appendInt(17))),
 			errors.NoKind,
 			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = ?) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = ?)",
 			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = 678) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = 17)",

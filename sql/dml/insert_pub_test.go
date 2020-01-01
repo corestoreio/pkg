@@ -68,7 +68,7 @@ func TestInsert_Bind(t *testing.T) {
 				AddOnDuplicateKey(
 					dml.Column("something_id").Int64(99),
 					dml.Column("user_id").Values(),
-				).WithDBR().Record("", objs[0]).Record("", objs[1]).Record("", objs[2]),
+				).WithDBR().TestWithArgs(dml.Qualify("", objs[0]), dml.Qualify("", objs[1]), dml.Qualify("", objs[2])),
 			errors.NoKind,
 			"INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?),(?,?,?) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
 			"INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (1,88,0),(2,99,1),(3,101,1) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
@@ -82,7 +82,7 @@ func TestInsert_Bind(t *testing.T) {
 				AddOnDuplicateKey(
 					dml.Column("something_id").Int64(99),
 					dml.Column("user_id").Values(),
-				).WithDBR().Record("", objs[0]).Record("", objs[1]).Record("", objs[2]),
+				).WithDBR().TestWithArgs(dml.Qualify("", objs[0]), dml.Qualify("", objs[1]), dml.Qualify("", objs[2])),
 			errors.NoKind,
 			"INSERT INTO `a` VALUES (?,?,?),(?,?,?),(?,?,?) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
 			"INSERT INTO `a` VALUES (1,88,0),(2,99,1),(3,101,1) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
@@ -99,7 +99,7 @@ func TestInsert_Bind(t *testing.T) {
 		compareToSQL(t,
 			dml.NewInsert("customer_entity").
 				SetRecordPlaceHolderCount(5). // mandatory because no columns provided!
-				WithDBR().Record("", customers[0]).Record("", customers[1]).Record("", customers[2]),
+				WithDBR().TestWithArgs(dml.Qualify("", customers[0]), dml.Qualify("", customers[1]), dml.Qualify("", customers[2])),
 			errors.NoKind,
 			"INSERT INTO `customer_entity` VALUES (?,?,?,?,?),(?,?,?,?,?),(?,?,?,?,?)",
 			"INSERT INTO `customer_entity` VALUES (11,'Karl Gopher',7,47.11,'1FE9983E|28E76FBC'),(12,'Fung Go Roo',7,28.94,'4FE7787E|15E59FBB|794EFDE8'),(13,'John Doe',6,138.54,'')",
@@ -109,7 +109,9 @@ func TestInsert_Bind(t *testing.T) {
 	t.Run("column not found", func(t *testing.T) {
 		objs := []someRecord{{1, 88, false}, {2, 99, true}}
 		compareToSQL(t,
-			dml.NewInsert("a").AddColumns("something_it", "user_id", "other").WithDBR().Record("", objs[0]).Record("", objs[1]),
+			dml.NewInsert("a").AddColumns("something_it", "user_id", "other").WithDBR().TestWithArgs(
+				dml.Qualify("", objs[0]), dml.Qualify("", objs[1]),
+			),
 			errors.NotFound,
 			"",
 			"",
@@ -179,7 +181,7 @@ func TestInsert_Prepare(t *testing.T) {
 
 		stmtA := stmt.WithDBR()
 		for i, test := range tests {
-			res, err := stmtA.String(test.email).Int(test.groupID).Time(test.created_at).ExecContext(context.TODO())
+			res, err := stmtA.ExecContext(context.TODO(), test.email, test.groupID, test.created_at)
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -225,8 +227,7 @@ func TestInsert_Prepare(t *testing.T) {
 		stmtA := stmt.WithDBR()
 		for i, test := range tests {
 
-			res, err := stmtA.String(test.email1).Int(test.groupID1).String(test.email2).Int(test.groupID2).
-				ExecContext(context.TODO())
+			res, err := stmtA.ExecContext(context.TODO(), test.email1, test.groupID1, test.email2, test.groupID2)
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -273,7 +274,7 @@ func TestInsert_Prepare(t *testing.T) {
 				Email: null.MakeString(test.email),
 			}
 
-			res, err := stmt.WithDBR().Record("", p).ExecContext(context.TODO())
+			res, err := stmt.WithDBR().ExecContext(context.TODO(), dml.Qualify("", p))
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -329,7 +330,7 @@ func TestInsert_BuildValues(t *testing.T) {
 
 		// bug
 
-		compareToSQL(t, insA.Record("", p), errors.NoKind,
+		compareToSQL(t, insA.TestWithArgs(dml.Qualify("", p)), errors.NoKind,
 			"INSERT INTO `alpha` (`name`,`email`) VALUES (?,?)",
 			"",
 			"Pike", "pikes@peak.co",

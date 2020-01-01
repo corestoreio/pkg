@@ -189,7 +189,7 @@ func (b *Show) WithDBR() *DBR {
 }
 
 // ToSQL converts the select statement into a string and returns its arguments.
-func (b *Show) ToSQL() (string, []interface{}, error) {
+func (b *Show)ToSQL() (string, []interface{}, error) {
 	b.source = dmlSourceShow
 	rawSQL, err := b.buildToSQL(b)
 	if err != nil {

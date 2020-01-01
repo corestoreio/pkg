@@ -37,9 +37,9 @@ func TestSQLCase_PlaceHolders(t *testing.T) {
 			Where(
 				Column("promotion_id").NotIn().PlaceHolder(),
 			)
-		sa := s.WithDBR().Int64(start).Int64(end).Int64(start).Int64(end).Ints(4711, 815, 42)
+		sa := s.WithDBR()
 
-		compareToSQL(t, sa, errors.NoKind,
+		compareToSQL(t, sa.TestWithArgs(start, end, start, end, []int{4711, 815, 42}), errors.NoKind,
 			"SELECT `price`, `sku`, `name`, `title`, `description`, CASE  WHEN date_start <= ? AND date_end >= ? THEN `open` WHEN date_start > ? AND date_end > ? THEN `upcoming` ELSE `closed` END AS `is_on_sale` FROM `catalog_promotions` WHERE (`promotion_id` NOT IN ?)",
 			"SELECT `price`, `sku`, `name`, `title`, `description`, CASE  WHEN date_start <= 20180101 AND date_end >= 20180201 THEN `open` WHEN date_start > 20180101 AND date_end > 20180201 THEN `upcoming` ELSE `closed` END AS `is_on_sale` FROM `catalog_promotions` WHERE (`promotion_id` NOT IN (4711,815,42))",
 			start, end, start, end, int64(4711), int64(815), int64(42),

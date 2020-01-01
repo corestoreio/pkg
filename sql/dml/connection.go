@@ -519,8 +519,7 @@ func (c *ConnPool) Transaction(ctx context.Context, opts *sql.TxOptions, fns ...
 // assigned connection and builds the SQL string. The returned arguments and
 // errors of the QueryBuilder will be forwarded to the DBR type.
 func (c *ConnPool) WithQueryBuilder(qb QueryBuilder) *DBR {
-	sql, argsRaw, err := qb.ToSQL()
-	var args [defaultArgumentsCapacity]argument
+	sql, _, err := qb.ToSQL()
 	a := &DBR{
 		base: builderCommon{
 			cachedSQL: map[string]string{"": sql},
@@ -529,9 +528,8 @@ func (c *ConnPool) WithQueryBuilder(qb QueryBuilder) *DBR {
 			DB:        c.DB,
 			ärgErr:    errors.WithStack(err),
 		},
-		arguments: args[:0],
 	}
-	return a.Raw(argsRaw...)
+	return a
 }
 
 // Conn returns a single connection by either opening a new connection
@@ -567,7 +565,6 @@ func (c *ConnPool) WithRawSQL(query string) *DBR {
 	if l != nil {
 		l = l.With(log.String("conn_pool_raw_sql_id", id), log.String("query", query))
 	}
-	var args [defaultArgumentsCapacity]argument
 	return &DBR{
 		base: builderCommon{
 			cachedSQL: map[string]string{"": query},
@@ -575,7 +572,6 @@ func (c *ConnPool) WithRawSQL(query string) *DBR {
 			id:        id,
 			DB:        c.DB,
 		},
-		arguments: args[:0],
 	}
 }
 
@@ -593,8 +589,6 @@ func (c *ConnPool) WithPrepare(ctx context.Context, query string) *DBR {
 	}
 
 	stmt, err := c.DB.PrepareContext(ctx, query)
-
-	var args [defaultArgumentsCapacity]argument
 	a := &DBR{
 		base: builderCommon{
 			id:     id,
@@ -602,7 +596,6 @@ func (c *ConnPool) WithPrepare(ctx context.Context, query string) *DBR {
 			Log:    l,
 			DB:     stmtWrapper{stmt: stmt},
 		},
-		arguments:  args[:0],
 		isPrepared: true,
 	}
 	return a
@@ -718,13 +711,12 @@ func (c *Conn) Close() error {
 // assigned connection and builds the SQL string. The returned arguments and
 // errors of the QueryBuilder will be forwarded to the DBR type.
 func (c *Conn) WithQueryBuilder(qb QueryBuilder) *DBR {
-	sql, argsRaw, err := qb.ToSQL()
+	sql, _, err := qb.ToSQL()
 	id := c.makeUniqueID()
 	l := c.Log
 	if l != nil {
 		l = l.With(log.String("query_builder_id", id), log.String("sql", sql))
 	}
-	var args [defaultArgumentsCapacity]argument
 	a := &DBR{
 		base: builderCommon{
 			cachedSQL: map[string]string{"": sql},
@@ -733,9 +725,8 @@ func (c *Conn) WithQueryBuilder(qb QueryBuilder) *DBR {
 			DB:        c.DB,
 			ärgErr:    errors.WithStack(err),
 		},
-		arguments: args[:0],
 	}
-	return a.Raw(argsRaw...)
+	return a
 }
 
 // WithRawSQL creates a new DBR for the given SQL string in the current
@@ -747,7 +738,6 @@ func (c *Conn) WithRawSQL(query string) *DBR {
 	if l != nil {
 		l = l.With(log.String("conn_pool_raw_sql_id", id), log.String("sql", query))
 	}
-	var args [defaultArgumentsCapacity]argument
 	return &DBR{
 		base: builderCommon{
 			cachedSQL: map[string]string{"": query},
@@ -755,7 +745,6 @@ func (c *Conn) WithRawSQL(query string) *DBR {
 			id:        id,
 			DB:        c.DB,
 		},
-		arguments: args[:0],
 	}
 }
 
@@ -768,7 +757,6 @@ func (tx *Tx) WithRawSQL(query string) *DBR {
 	if l != nil {
 		l = l.With(log.String("tx_raw_sql_id", id), log.String("sql", query))
 	}
-	var args [defaultArgumentsCapacity]argument
 	return &DBR{
 		base: builderCommon{
 			cachedSQL: map[string]string{"": query},
@@ -776,7 +764,6 @@ func (tx *Tx) WithRawSQL(query string) *DBR {
 			id:        id,
 			DB:        tx.DB,
 		},
-		arguments: args[:0],
 	}
 }
 
@@ -794,8 +781,6 @@ func (tx *Tx) WithPrepare(ctx context.Context, query string) *DBR {
 	}
 
 	stmt, err := tx.DB.PrepareContext(ctx, query)
-
-	var args [defaultArgumentsCapacity]argument
 	a := &DBR{
 		base: builderCommon{
 			id:     id,
@@ -803,7 +788,6 @@ func (tx *Tx) WithPrepare(ctx context.Context, query string) *DBR {
 			Log:    l,
 			DB:     stmtWrapper{stmt: stmt},
 		},
-		arguments:  args[:0],
 		isPrepared: true,
 	}
 	return a
@@ -831,8 +815,7 @@ func (tx *Tx) Rollback() error {
 // assigned connection and builds the SQL string. The returned arguments and
 // errors of the QueryBuilder will be forwarded to the DBR type.
 func (tx *Tx) WithQueryBuilder(qb QueryBuilder) *DBR {
-	sqlStr, argsRaw, err := qb.ToSQL()
-	var args [defaultArgumentsCapacity]argument
+	sqlStr, _, err := qb.ToSQL()
 	a := &DBR{
 		base: builderCommon{
 			cachedSQL: map[string]string{"": sqlStr},
@@ -841,7 +824,6 @@ func (tx *Tx) WithQueryBuilder(qb QueryBuilder) *DBR {
 			DB:        tx.DB,
 			ärgErr:    errors.WithStack(err),
 		},
-		arguments: args[:0],
 	}
-	return a.Raw(argsRaw...)
+	return a
 }

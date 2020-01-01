@@ -124,7 +124,7 @@ func (in *ip) MustString() string {
 }
 
 // ToSQL implements dml.QueryBuilder. The interface slice is always nil.
-func (in *ip) ToSQL() (_ string, alwaysNil []interface{}, _ error) {
+func (in *ip)ToSQL() (_ string, alwaysNil []interface{}, _ error) {
 	if in.ärgErr != nil {
 		return "", nil, in.ärgErr
 	}

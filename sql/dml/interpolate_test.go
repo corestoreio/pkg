@@ -26,8 +26,10 @@ import (
 	"github.com/corestoreio/pkg/util/assert"
 )
 
-var _ fmt.Stringer = (*ip)(nil)
-var _ QueryBuilder = (*ip)(nil)
+var (
+	_ fmt.Stringer = (*ip)(nil)
+	_ QueryBuilder = (*ip)(nil)
+)
 
 func TestExpandPlaceHolders(t *testing.T) {
 	t.Parallel()
@@ -40,23 +42,24 @@ func TestExpandPlaceHolders(t *testing.T) {
 		compareToSQL2(t, a, errors.NoKind, "SELECT * FROM `table` WHERE id IN (?)")
 	})
 	t.Run("MisMatch length reps", func(t *testing.T) {
-		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ?").ExpandPlaceHolders().Int64s(1, 2).Strings("d", "3")
+		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ?").ExpandPlaceHolders().TestWithArgs([]int64{1, 2}, []string{"d", "3"})
 		compareToSQL2(t, a, errors.Mismatch, "")
 	})
 	t.Run("MisMatch qMarks", func(t *testing.T) {
-		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN(!)").ExpandPlaceHolders().Int64(3)
+		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN(!)").ExpandPlaceHolders().TestWithArgs(3)
 		compareToSQL2(t, a, errors.Mismatch, "")
 	})
 	t.Run("one arg with one value", func(t *testing.T) {
-		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN (?)").ExpandPlaceHolders().Int64(1)
+		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN (?)").ExpandPlaceHolders().TestWithArgs(1)
 		compareToSQL2(t, a, errors.NoKind, "SELECT * FROM `table` WHERE id IN (?)", int64(1))
 	})
 	t.Run("one arg with three values", func(t *testing.T) {
-		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ?").ExpandPlaceHolders().Int64s(11, 3, 5)
+		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ?").ExpandPlaceHolders().TestWithArgs([]int64{11, 3, 5})
 		compareToSQL2(t, a, errors.NoKind, "SELECT * FROM `table` WHERE id IN (?,?,?)", int64(11), int64(3), int64(5))
 	})
 	t.Run("multi 3,5 times replacement", func(t *testing.T) {
-		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ? AND name IN ?").ExpandPlaceHolders().Int64s(5, 7, 9).Strings("a", "b", "c", "d", "e")
+		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ? AND name IN ?").ExpandPlaceHolders().
+			TestWithArgs([]int64{5, 7, 9}, []string{"a", "b", "c", "d", "e"})
 		compareToSQL2(t, a, errors.NoKind, "SELECT * FROM `table` WHERE id IN (?,?,?) AND name IN (?,?,?,?,?)",
 			int64(5), int64(7), int64(9), "a", "b", "c", "d", "e",
 		)

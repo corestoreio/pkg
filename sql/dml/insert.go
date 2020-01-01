@@ -248,7 +248,7 @@ func (b *Insert) OnDuplicateKey() *Insert {
 }
 
 // WithPairs appends a column/value pair to the statement. Calling this function
-// multiple times with the same column name produces next rows for insertion.
+// multiple times with the same column name will trigger an error.
 // Slice values and right/left side expressions are not supported and ignored.
 // You must call WithDBR afterwards to activate the `Pairs`.
 func (b *Insert) WithPairs(cvs ...*Condition) *Insert {
@@ -274,12 +274,8 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 // number of arguments. In some cases type Insert needs to know the RowCount to
 // build the appropriate amount of placeholders.
 func (b *Insert) WithDBR() *DBR {
-	var pairArgs arguments
 	b.rwmu.RLock()
 	isSelect := b.Select != nil // b.newDBR unsets the Select field if caching is enabled
-	for _, cv := range b.Pairs {
-		pairArgs = append(pairArgs, cv.Right.arg)
-	}
 	b.rwmu.RUnlock()
 
 	a := b.newDBR(b)
@@ -293,7 +289,6 @@ func (b *Insert) WithDBR() *DBR {
 		return a
 	}
 
-	a.arguments = append(a.arguments, pairArgs...)
 	a.insertColumnCount = uint(len(b.Columns))
 	if b.RecordPlaceHolderCount > 0 {
 		a.insertColumnCount = uint(b.RecordPlaceHolderCount)
@@ -304,14 +299,14 @@ func (b *Insert) WithDBR() *DBR {
 }
 
 // ToSQL serialized the Insert to a SQL string
-// It returns the string with placeholders and a slice of query arguments
+// It returns the string with placeholders and a slice of query arguments.
 func (b *Insert) ToSQL() (string, []interface{}, error) {
 	b.source = dmlSourceInsert
 	rawSQL, err := b.buildToSQL(b)
 	if err != nil {
 		return "", nil, errors.WithStack(err)
 	}
-	return string(rawSQL), nil, nil
+	return rawSQL, nil, nil
 }
 
 // WithCacheKey sets the currently used cache key when generating a SQL string.

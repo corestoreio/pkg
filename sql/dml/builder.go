@@ -46,19 +46,20 @@ type writer interface {
 }
 
 // QueryBuilder assembles a query and returns the raw SQL without parameter
-// substitution and the arguments.
+// substitution and the arguments. The input arguments might be modified and
+// returned as plain primitive types.
 type QueryBuilder interface {
 	ToSQL() (string, []interface{}, error)
 }
 
 // QuerySQL a helper type to transform a string into a QueryBuilder compatible
 // type.
-type QuerySQL string
+type QuerySQLFn func() (string, []interface{}, error)
 
 // ToSQL satisfies interface QueryBuilder and returns always nil arguments and
 // nil error.
-func (s QuerySQL) ToSQL() (string, []interface{}, error) {
-	return string(s), nil, nil
+func (fn QuerySQLFn) ToSQL() (string, []interface{}, error) {
+	return fn()
 }
 
 // queryBuilder must support thread safety when writing and reading the cache.
@@ -214,12 +215,10 @@ func (bb *BuilderBase) prepare(ctx context.Context, db Preparer, qb queryBuilder
 // newDBR builds the SQl string and creates a new DBR object for
 // collecting arguments and later querying.
 func (bb *BuilderBase) newDBR(qb queryBuilder) *DBR {
-	var args [defaultArgumentsCapacity]argument
 	bb.rwmu.Lock()
 	_, err := bb.buildToSQL(qb)
 	a := DBR{
-		base:      bb.builderCommon,
-		arguments: args[:0],
+		base: bb.builderCommon,
 	}
 	if err != nil {
 		a.base.ärgErr = errors.WithStack(err)

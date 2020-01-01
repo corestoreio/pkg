@@ -376,6 +376,18 @@ func writeIFaceValue(arg interface{}, w *bytes.Buffer, pos uint) (err error) {
 	return err
 }
 
+func newArgumentsFromIfaces(inArgs []interface{}) arguments {
+	// TODO this can come from a sync.Pool
+	args := make(arguments, len(inArgs))
+	for i, ia := range inArgs {
+		args[i] = argument{
+			isSet: true,
+			value: ia,
+		}
+	}
+	return args
+}
+
 type arguments []argument
 
 func (as arguments) clone() arguments {
@@ -445,7 +457,7 @@ func (as arguments) write(buf *bytes.Buffer) error {
 // toInterfaces creates an interface slice with flatend values. Each type is one
 // of the allowed types in driver.Value. It appends its values to the `args`
 // slice.
-func (as arguments) toInterfaces(args ...interface{}) []interface{} {
+func (as arguments) toInterfaces(args []interface{}) []interface{} {
 	if len(as) == 0 {
 		return args
 	}
@@ -633,14 +645,25 @@ func flattenIFace(args []interface{}, arg interface{}) []interface{} {
 		}
 	case sql.NamedArg:
 		args = flattenIFace(args, vv.Value)
+	case []sql.NamedArg:
+		for _, v := range vv {
+			args = flattenIFace(args, v.Value)
+		}
+	case driver.Valuer:
+		dvv, _ := vv.Value()
+		args = flattenIFace(args, dvv)
 	default:
 		panic(errors.NotSupported.Newf("[dml] Unsupported field type: %T", arg))
 	}
 	return args
 }
 
-func (as arguments) add(v interface{}) arguments {
-	return append(as, argument{isSet: true, value: v})
+func (as arguments) add(vals ...interface{}) arguments {
+	as2 := as
+	for _, v := range vals {
+		as2 = append(as2, argument{isSet: true, value: v})
+	}
+	return as2
 }
 
 func driverValue(appendTo arguments, dvs ...driver.Valuer) (arguments, error) {

@@ -51,7 +51,7 @@ func TestSelect_BasicToSQL(t *testing.T) {
 			AddColumnsConditions(
 				Expr("?").Alias("n").Int64(1),
 				Expr("CAST(:name AS CHAR(20))").Alias("str"),
-			).WithDBR().Record("", p)
+			).WithDBR().TestWithArgs(Qualify("", p))
 
 		compareToSQL(t, sel, errors.NoKind,
 			"SELECT 1 AS `n`, CAST(? AS CHAR(20)) AS `str`",
@@ -135,16 +135,15 @@ func TestSelect_BasicToSQL(t *testing.T) {
 			Column("name").NotIn().PlaceHolder(),
 		)
 
-		selA := sel.WithDBR().ExpandPlaceHolders().Ints(3, 4, 5).NullStrings(null.MakeString("A1"), null.String{}, null.MakeString("A2"))
+		selA := sel.WithDBR().ExpandPlaceHolders()
 
-		compareToSQL(t, selA, errors.NoKind,
+		compareToSQL(t, selA.TestWithArgs([]int{3, 4, 5}, []null.String{null.MakeString("A1"), {}, null.MakeString("A2")}), errors.NoKind,
 			"SELECT `sku`, `name` FROM `products` WHERE (`id` IN (?,?,?)) AND (`name` NOT IN (?,?,?))",
 			"",
 			int64(3), int64(4), int64(5), "A1", nil, "A2",
 		)
 
-		selA.Reset().Ints(3, 4, 5, 6, 7).NullStrings(null.String{}, null.MakeString("A2"))
-		compareToSQL(t, selA, errors.NoKind,
+		compareToSQL(t, selA.TestWithArgs([]int{3, 4, 5, 6, 7}, []null.String{{}, null.MakeString("A2")}), errors.NoKind,
 			"SELECT `sku`, `name` FROM `products` WHERE (`id` IN (?,?,?,?,?)) AND (`name` NOT IN (?,?))",
 			"",
 			int64(3), int64(4), int64(5), int64(6), int64(7), nil, "A2",
@@ -586,7 +585,7 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 	t.Run("single slice item", func(t *testing.T) {
 		var people dmlPersons
 		count, err := s.WithRawSQL("SELECT `name` FROM `dml_people` WHERE `email` = ?").
-			String("SirGeorge@GoIsland.com").Load(context.TODO(), &people)
+			Load(context.TODO(), &people, "SirGeorge@GoIsland.com")
 
 		assert.NoError(t, err)
 		assert.Exactly(t, uint64(1), count)
@@ -631,7 +630,7 @@ func TestSelect_LoadType_Single(t *testing.T) {
 
 	t.Run("LoadNullString", func(t *testing.T) {
 		name, found, err := s.SelectFrom("dml_people").AddColumns("name").Where(Column("email").PlaceHolder()).
-			WithDBR().String("SirGeorge@GoIsland.com").LoadNullString(context.TODO())
+			WithDBR().LoadNullString(context.TODO(), "SirGeorge@GoIsland.com")
 		assert.NoError(t, err)
 		assert.True(t, found)
 		assert.Exactly(t, null.MakeString("Sir George"), name)
@@ -1260,7 +1259,7 @@ func TestSelect_DisableBuildCache(t *testing.T) {
 	const run1 = "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 8,7"
 	const run2 = "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) AND (`added_col` = 3.14159) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 8,7"
 
-	compareToSQL(t, sel.WithCacheKey("key1").WithDBR().Int(87654), errors.NoKind,
+	compareToSQL(t, sel.WithCacheKey("key1").WithDBR().TestWithArgs(87654), errors.NoKind,
 		run1,
 		"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 87654) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 8,7",
 		int64(87654))
@@ -1268,10 +1267,10 @@ func TestSelect_DisableBuildCache(t *testing.T) {
 	sel.Where(
 		Column("added_col").Float64(3.14159),
 	)
-	compareToSQL(t, sel.WithCacheKey("key2").WithDBR().Int(87654), errors.NoKind, run2, "", int64(87654))
+	compareToSQL(t, sel.WithCacheKey("key2").WithDBR().TestWithArgs(87654), errors.NoKind, run2, "", int64(87654))
 	// key2 still applies to the next 2 calls
-	compareToSQL(t, sel.WithDBR().Int(87654), errors.NoKind, run2, "", int64(87654))
-	compareToSQL(t, sel.WithDBR().Int(87654), errors.NoKind, run2,
+	compareToSQL(t, sel.WithDBR().TestWithArgs(87654), errors.NoKind, run2, "", int64(87654))
+	compareToSQL(t, sel.WithDBR().TestWithArgs(87654), errors.NoKind, run2,
 		"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 87654) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) AND (`added_col` = 3.14159) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 8,7",
 		int64(87654))
 }
@@ -1288,10 +1287,10 @@ func TestSelect_NamedArguments(t *testing.T) {
 			Column("value").Like().PlaceHolder(),
 		)
 
-	selArgs := sel.WithDBR().NamedArg("configID", 3).String("GopherValue")
+	selDBR := sel.WithDBR()
 
 	t.Run("With ID 3", func(t *testing.T) {
-		compareToSQL2(t, selArgs, errors.NoKind,
+		compareToSQL2(t, selDBR.TestWithArgs(sql.Named("configID", 3), "GopherValue"), errors.NoKind,
 			"SELECT `config_id`, `value` FROM `core_config_data` WHERE (`config_id1` < ?) AND (`config_id2` > ?) AND (`scope_id` > 5) AND (`value` LIKE ?)",
 			int64(3), int64(3), "GopherValue",
 		)
@@ -1299,8 +1298,7 @@ func TestSelect_NamedArguments(t *testing.T) {
 	})
 	t.Run("With ID 6", func(t *testing.T) {
 		// Here positions are switched
-		selArgs.Reset().String("G0pherValue").NamedArgs(sql.Named("configID", 6))
-		compareToSQL2(t, selArgs, errors.NoKind,
+		compareToSQL2(t, selDBR.TestWithArgs("G0pherValue", sql.Named("configID", 6)), errors.NoKind,
 			"SELECT `config_id`, `value` FROM `core_config_data` WHERE (`config_id1` < ?) AND (`config_id2` > ?) AND (`scope_id` > 5) AND (`value` LIKE ?)",
 			int64(6), int64(6), "G0pherValue",
 		)
@@ -1341,9 +1339,7 @@ func TestSelect_SetRecord(t *testing.T) {
 				Column("n").Str("wh3r3"),
 			).
 			OrderBy("l").
-			WithDBR().Record("dp", p).
-			Record("dg", p2).
-			NamedArg("dbSIZE", uint(201801))
+			WithDBR().TestWithArgs(Qualify("dp", p), Qualify("dg", p2), sql.Named("dbSIZE", uint(201801)))
 
 		compareToSQL2(t, sel, errors.NoKind,
 			"SELECT `a`, `b` FROM `dml_person` AS `dp` INNER JOIN `dml_group` AS `dg` ON (`dp`.`id` = ?) WHERE (`dg`.`dob` > ?) AND (`dg`.`size` < ?) AND (`age` < 56) AND ((`dp`.`name` = ?) OR (`e` = 'wat')) AND (`f` <= 2) AND (`g` > 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING (`dp`.`email` = ?) AND (`n` = 'wh3r3') ORDER BY `l`",
@@ -1353,7 +1349,7 @@ func TestSelect_SetRecord(t *testing.T) {
 	t.Run("single arg JOIN", func(t *testing.T) {
 		sel := NewSelect("a").FromAlias("dml_people", "dp").
 			Join(MakeIdentifier("dml_group").Alias("dg"), Column("dp.id").PlaceHolder(), Column("dg.name").Strs("XY%")).
-			OrderBy("id").WithDBR().Record("dp", p)
+			OrderBy("id").WithDBR().TestWithArgs(Qualify("dp", p))
 
 		compareToSQL2(t, sel, errors.NoKind,
 			"SELECT `a` FROM `dml_people` AS `dp` INNER JOIN `dml_group` AS `dg` ON (`dp`.`id` = ?) AND (`dg`.`name` = ('XY%')) ORDER BY `id`",
@@ -1365,7 +1361,7 @@ func TestSelect_SetRecord(t *testing.T) {
 			Where(
 				Column("id").PlaceHolder(),
 			).
-			OrderBy("id").WithDBR().Record("", p)
+			OrderBy("id").WithDBR().TestWithArgs(Qualify("", p))
 
 		compareToSQL2(t, sel, errors.NoKind,
 			"SELECT `a` FROM `dml_people` WHERE (`id` = ?) ORDER BY `id`",
@@ -1389,7 +1385,7 @@ func TestSelect_SetRecord(t *testing.T) {
 				Column("id").PlaceHolder(),
 				Column("name").Like().PlaceHolder(),
 			).
-			OrderBy("id").WithDBR().Record("", p)
+			OrderBy("id").WithDBR().TestWithArgs(Qualify("", p))
 
 		compareToSQL2(t, sel, errors.NoKind,
 			"SELECT `a` FROM `dml_people` HAVING (`id` = ?) AND (`name` LIKE ?) ORDER BY `id`",
@@ -1411,7 +1407,7 @@ func TestSelect_SetRecord(t *testing.T) {
 					Where(
 						Column("id").In().PlaceHolder(),
 					).
-					WithDBR().Record("", persons),
+					WithDBR().TestWithArgs(Qualify("", persons)),
 				errors.NoKind,
 				"SELECT `name`, `email` FROM `dml_person` WHERE (`id` IN ?)",
 				int64(33), int64(44), int64(55),
@@ -1424,7 +1420,7 @@ func TestSelect_SetRecord(t *testing.T) {
 						Column("name").In().PlaceHolder(),
 						Column("email").In().PlaceHolder(),
 					).
-					WithDBR().Record("", persons),
+					WithDBR().TestWithArgs(Qualify("", persons)),
 				errors.NoKind,
 				"SELECT `name`, `email` FROM `dml_person` WHERE (`name` IN ?) AND (`email` IN ?)",
 				// "SELECT `name`, `email` FROM `dml_person` WHERE (`name` IN ('Muffin Hat','Marianne Phyllis Finch','Daphne Augusta Perry')) AND (`email` IN ('Muffin@Hat.head','marianne@phyllis.finch','daphne@augusta.perry'))",
@@ -1440,7 +1436,7 @@ func TestSelect_SetRecord(t *testing.T) {
 						Column("name").In().PlaceHolder(),
 						Column("id").In().PlaceHolder(),
 					).
-					WithDBR().Record("", persons),
+					WithDBR().TestWithArgs(Qualify("", persons)),
 				errors.NoKind,
 				"SELECT `name`, `email` FROM `dml_person` WHERE (`email` IN ?) AND (`name` IN ?) AND (`id` IN ?)",
 				//"SELECT `name`, `email` FROM `dml_person` WHERE (`email` IN ('Muffin@Hat.head','marianne@phyllis.finch','daphne@augusta.perry')) AND (`name` IN ('Muffin Hat','Marianne Phyllis Finch','Daphne Augusta Perry')) AND (`id` IN (33,44,55))",
@@ -1457,12 +1453,13 @@ func TestSelect_DBR_Load_Slices_Null(t *testing.T) {
 	defer testCloser(t, s)
 
 	inA := s.InsertInto("dml_null_types").AddColumns("string_val", "int64_val", "float64_val", "time_val", "bool_val", "decimal_val").WithDBR()
-	inA.String("A1").Int64(11).Float64(11.11).Time(now()).Bool(true).Float64(11.111)
-	inA.Null().Null().Null().Null().Null().Null()
-	inA.String("A2").Int64(22).Float64(22.22).Time(now()).Bool(false).Float64(22.222)
-	inA.Null().Null().Null().Null().Null().Null()
-	inA.String("-A3").Int64(-33).Float64(-33.33).Time(now()).Bool(true).Float64(-33.333)
-	res, err := inA.ExecContext(context.Background())
+	res, err := inA.ExecContext(context.Background(),
+		"A1", 11, 11.11, now(), true, 11.111,
+		nil, nil, nil, nil, nil, nil,
+		"A2", 22, 22.22, now(), false, 22.222,
+		nil, nil, nil, nil, nil, nil,
+		"-A3", -33, -33.33, now(), true, -33.333,
+	)
 	assert.NoError(t, err)
 	lid, err := res.LastInsertId()
 	assert.NoError(t, err)

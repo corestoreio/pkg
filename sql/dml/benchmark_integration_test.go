@@ -136,11 +136,11 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 			TotalIncome: totalIncome,
 		}
 
-		argStmt := stmt.WithDBR().Record("", p)
+		argStmt := stmt.WithDBR()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			p.TotalIncome = totalIncome * float64(i)
-			res, err := argStmt.ExecContext(ctx) // TODO verify how the DB table looks like
+			res, err := argStmt.ExecContext(ctx, dml.Qualify("", p)) // TODO verify how the DB table looks like
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -160,8 +160,7 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 		stmtA := stmt.WithDBR()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			res, err := stmtA.String("Maria Gopher ExecArgs").NullString(null.MakeString("maria@gopherExecArgs.go")).
-				Int64(storeID).Time(now()).Float64(totalIncome * float64(i)).ExecContext(ctx)
+			res, err := stmtA.ExecContext(ctx, "Maria Gopher ExecArgs", null.MakeString("maria@gopherExecArgs.go"), storeID, now(), totalIncome*float64(i))
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -227,7 +226,7 @@ func BenchmarkJackC_GoDBBench(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			id := randPersonIDs[i%len(randPersonIDs)]
 			var fp fakePersons
-			if _, err := stmt.WithDBR().Int(id).Int(id+maxSelectID).Load(ctx, &fp); err != nil {
+			if _, err := stmt.WithDBR().Load(ctx, &fp, id, id+maxSelectID); err != nil {
 				b.Fatalf("%+v", err)
 			}
 			for i := range fp.Data {
@@ -259,7 +258,7 @@ func BenchmarkJackC_GoDBBench(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			id := randPersonIDs[i%len(randPersonIDs)]
 			var fp fakePerson
-			if _, err := adb.Int(id).Int(id+maxSelectID).Load(ctx, &fp); err != nil {
+			if _, err := adb.Load(ctx, &fp, id, id+maxSelectID); err != nil {
 				b.Fatalf("%+v", err)
 			}
 			checkPersonWasFilled(b, fp)

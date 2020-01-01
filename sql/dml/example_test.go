@@ -15,10 +15,13 @@
 package dml_test
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/fatih/color"
 
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/util/strs"
@@ -60,12 +63,16 @@ func writeToSQLAndInterpolate(qb dml.QueryBuilder) {
 	}
 
 	switch dmlArg := qb.(type) {
+	case dml.QuerySQLFn:
+		// do nothing because 2nd call to ToSQL interpolates
 	case *dml.DBR:
 		prev := dmlArg.Options
 		qb = dmlArg.Interpolate()
 		defer func() { dmlArg.Options = prev; qb = dmlArg }()
+	case *dml.Insert:
+		return // abort
 	default:
-		panic(fmt.Sprintf("func compareToSQL: the type %#v is not (yet) supported.", qb))
+		panic(fmt.Sprintf("func compareToSQL: the type %T is not (yet) supported.", qb))
 	}
 
 	sqlStr, args, err = qb.ToSQL()
@@ -73,18 +80,22 @@ func writeToSQLAndInterpolate(qb dml.QueryBuilder) {
 		fmt.Printf("%+v\n", err)
 		return
 	}
-	if len(args) > 0 {
-		panic(fmt.Sprintf("func compareToSQL should not return arguments when interpolation is enabled, got: %#v\n\n", args))
-	}
 	fmt.Println("Interpolated Statement:")
 	strs.FwordWrap(os.Stdout, sqlStr, 80)
+	if len(args) > 0 {
+		// Must be fmt.Println or output will be mixed ... so can't use color.Red
+		// function.
+		fmt.Println(color.RedString("\nfunc compareToSQL should not return arguments when interpolation is enabled.\nGot: %#v\n", args))
+	}
 }
 
 func ExampleNewInsert() {
 	i := dml.NewInsert("tableA").
-		AddColumns("b", "c", "d", "e").SetRowCount(2).WithDBR().
-		Int(1).Int(2).String("Three").Null().
-		Int(5).Int(6).String("Seven").Float64(3.14156)
+		AddColumns("b", "c", "d", "e").SetRowCount(2).WithDBR().TestWithArgs(
+		1, 2, "Three", nil,
+		5, 6, "Seven", 3.14156,
+	)
+
 	writeToSQLAndInterpolate(i)
 
 	// Output:
@@ -110,10 +121,11 @@ func ExampleInsert_SetRowCount() {
 }
 
 func ExampleInsert_SetRowCount_withdata() {
-	i := dml.NewInsert("catalog_product_link").SetRowCount(3).WithDBR().
-		Int(2046).Int(33).Int(3).
-		Int(2046).Int(34).Int(3).
-		Int(2046).Int(35).Int(3)
+	i := dml.NewInsert("catalog_product_link").SetRowCount(3).WithDBR().TestWithArgs(
+		2046, 33, 3,
+		2046, 34, 3,
+		2046, 35, 3,
+	)
 	writeToSQLAndInterpolate(i)
 
 	// Output:
@@ -130,7 +142,7 @@ func ExampleInsert_SetRowCount_withdata() {
 func ExampleInsert_WithArgs_rawData() {
 	// Without any columns you must for each row call AddArgs. Here we insert
 	// three rows at once.
-	i := dml.NewInsert("catalog_product_link").SetRowCount(3).WithDBR().Raw(
+	i := dml.NewInsert("catalog_product_link").SetRowCount(3).WithDBR().TestWithArgs(
 		2046, 33, 3,
 		2046, 34, 3,
 		2046, 35, 3,
@@ -141,7 +153,7 @@ func ExampleInsert_WithArgs_rawData() {
 	// three rows at once. Of course you can also insert only one row ;-)
 	i = dml.NewInsert("catalog_product_link").
 		AddColumns("product_id", "linked_product_id", "link_type_id").
-		WithDBR().Raw(
+		WithDBR().TestWithArgs(
 		2046, 33, 3,
 		2046, 34, 3,
 		2046, 35, 3)
@@ -166,7 +178,7 @@ func ExampleInsert_AddOnDuplicateKey() {
 		AddOnDuplicateKey(
 			dml.Column("name").Str("Pik3"),
 			dml.Column("email").Values(),
-		).WithDBR().Int(1).String("Pik'e").String("pikes@peak.com")
+		).WithDBR().TestWithArgs(1, "Pik'e", "pikes@peak.com")
 	writeToSQLAndInterpolate(i)
 
 	// Output:
@@ -195,7 +207,7 @@ func ExampleInsert_FromSelect_withPlaceHolders() {
 			).
 			OrderByDesc("id").
 			Paginate(1, 20),
-	).WithDBR().Int64(4).NamedArg("i64BIn", []int64{9, 8, 7})
+	).WithDBR().TestWithArgs(4, sql.Named("i64BIn", []int64{9, 8, 7}))
 	writeToSQLAndInterpolate(ins)
 	// Output:
 	// Prepared Statement:
@@ -238,18 +250,16 @@ func ExampleInsert_FromSelect_withoutPlaceHolders() {
 // ExampleInsert_WithPairs this example uses WithDBR to build the final SQL
 // string.
 func ExampleInsert_WithPairs() {
-	ins := dml.NewInsert("catalog_product_link").
-		WithPairs(
-			// First row
-			dml.Column("product_id").Int64(2046),
-			dml.Column("linked_product_id").Int64(33),
-			dml.Column("link_type_id").Int64(3),
+	ins := dml.NewInsert("catalog_product_link").AddColumns("product_id", "linked_product_id", "link_type_id").
+		WithDBR().TestWithArgs([]sql.NamedArg{
+		{Name: "product_id", Value: 2046},
+		{Name: "linked_product_id", Value: 33},
+		{Name: "link_type_id", Value: 3},
 
-			// second row
-			dml.Column("product_id").Int64(2046),
-			dml.Column("linked_product_id").Int64(34),
-			dml.Column("link_type_id").Int64(3),
-		).WithDBR()
+		{Name: "product_id", Value: 2046},
+		{Name: "linked_product_id", Value: 34},
+		{Name: "link_type_id", Value: 3},
+	})
 	writeToSQLAndInterpolate(ins)
 	// Output:
 	// Prepared Statement:
@@ -442,8 +452,9 @@ func ExampleExpandPlaceHolders() {
 		panic(err)
 	}
 	sqlStr, args, err := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ? AND name IN ?").
-		ExpandPlaceHolders().
-		Ints(5, 7, 9).Strings("a", "b", "c", "d", "e").ToSQL()
+		ExpandPlaceHolders().TestWithArgs(
+		[]int{5, 7, 9}, []string{"a", "b", "c", "d", "e"},
+	).ToSQL()
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		return
@@ -691,7 +702,7 @@ func ExampleSQLCase_select() {
 		).
 		From("catalog_promotions").Where(
 		dml.Column("promotion_id").NotIn().PlaceHolders(3)).
-		WithDBR().Time(start).Time(end).Time(start).Time(end).Int(4711).Int(815).Int(42)
+		WithDBR().TestWithArgs(start, end, start, end, 4711, 815, 42)
 	writeToSQLAndInterpolate(s)
 
 	// Output:

@@ -18,10 +18,8 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"database/sql/driver"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
@@ -61,13 +59,6 @@ type DBR struct {
 	isPrepared bool
 	// Options like enable interpolation or expanding placeholders.
 	Options uint
-	// hasNamedArgs checks if the SQL string in the cachedSQL field contains
-	// named arguments. 0 not yet checked, 1=does not contain, 2 = yes
-	hasNamedArgs      uint8 // 0 not checked, 1=no, 2=yes
-	nextUnnamedArgPos int
-	arguments
-	// recs defines some kind of permanent records which provides data
-	recs []QualifiedRecord
 }
 
 const (
@@ -141,12 +132,40 @@ func (a *DBR) WithQualifiedColumnsAliases(aliases ...string) *DBR {
 	return a
 }
 
-// ToSQL the returned interface slice is owned by the callee.
+// ToSQL generates the SQL string.
 func (a *DBR) ToSQL() (string, []interface{}, error) {
-	sql, args, _, err := a.prepareArgs()
-	return sql, args, err
+	sqlStr, _, _, err := a.prepareArgs()
+	return sqlStr, nil, err
 }
 
+// TestWithArgs returns a QueryBuilder with resolved arguments. Mostly used for
+// testing and in examples to skip the calls to ExecContext or QueryContext.
+// Every 2nd call arguments are getting interpolated.
+func (a *DBR) TestWithArgs(args ...interface{}) QueryBuilder {
+	var secondCallInterpolates uint
+	return QuerySQLFn(func() (string, []interface{}, error) {
+		if secondCallInterpolates > 0 && secondCallInterpolates%2 == 1 {
+			a.Interpolate()
+		} else {
+			if a.Options&argOptionInterpolate != 0 {
+				a.Options = a.Options ^ argOptionInterpolate // removes interpolation AND NOT
+			}
+		}
+		secondCallInterpolates++
+
+		sqlStr, args, _, err := a.prepareArgs(args...)
+		return sqlStr, args, err
+	})
+}
+
+func (a *DBR) testWithArgs(args ...interface{}) QueryBuilder {
+	return QuerySQLFn(func() (string, []interface{}, error) {
+		sqlStr, args, _, err := a.prepareArgs(args...)
+		return sqlStr, args, err
+	})
+}
+
+// CachedQueries returns a list with all cached SQL queries.
 func (a *DBR) CachedQueries(queries ...string) []string {
 	return a.base.CachedQueries(queries...)
 }
@@ -184,13 +203,6 @@ func (a *DBR) ExpandPlaceHolders() *DBR {
 	return a
 }
 
-func (a *DBR) isEmpty() bool {
-	if a == nil {
-		return true
-	}
-	return len(a.arguments) == 0 && len(a.recs) == 0
-}
-
 // prepareArgs transforms mainly the DBR into []interface{}. It appends
 // its arguments to the `extArgs` arguments from the Exec+ or Query+ function.
 // This allows for a developer to reuse the interface slice and save
@@ -200,73 +212,76 @@ func (a *DBR) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}, _ 
 	if a.base.ärgErr != nil {
 		return "", nil, nil, errors.WithStack(a.base.ärgErr)
 	}
+	lenExtArgs := len(extArgs)
+	var hasNamedArgs uint8
 	var recs []QualifiedRecord
-	extArgs2 := extArgs[:0]
+	args := make(arguments, 0, lenExtArgs) // TODO sync.Pool
 	for _, ea := range extArgs {
-		if qr, ok := ea.(QualifiedRecord); ok {
-			recs = append(recs, qr)
-		} else {
-			extArgs2 = append(extArgs2, ea)
+		switch eat := ea.(type) {
+		case QualifiedRecord:
+			recs = append(recs, eat)
+		case sql.NamedArg:
+			args = append(args, argument{value: ea, isSet: true})
+			hasNamedArgs = 2
+		case []sql.NamedArg: // insert statement with key/value pairs
+			for _, na := range eat {
+				args = append(args, argument{value: na.Value, isSet: true})
+			}
+		default:
+			args = append(args, argument{value: ea, isSet: true})
 		}
 	}
-	extArgs = extArgs2
-	recs = append(recs, a.recs...)
+
+	// reuse the interface slice to avoid allocations when converting the
+	// arguments slice to an interface slice.
+	// extArgs = make([]interface{}, 0, 1)
+	extArgs = nil
 	if a.base.source == dmlSourceInsert {
-		return a.prepareArgsInsert(extArgs, recs)
+		return a.prepareArgsInsert(args, recs)
 	}
+
 	cachedSQL, ok := a.base.cachedSQL[a.base.CacheKey]
 	if !a.isPrepared && !ok {
 		return "", nil, nil, errors.Empty.Newf("[dml] DBR: The SQL string is empty.")
 	}
 
-	if a.isEmpty() && len(recs) == 0 { // no internal arguments and qualified records provided
+	if a.base.templateStmtCount < 2 && hasNamedArgs == 0 && len(recs) == 0 && a.Options == 0 { // no options and qualified records provided
 		if a.isPrepared {
-			return "", extArgs, nil, nil
+			return "", args.toInterfaces(extArgs), nil, nil
 		}
 
-		if len(a.OrderBys) == 0 && !a.LimitValid {
-			return cachedSQL, extArgs, nil, nil
+		if a.Options == 0 && len(a.OrderBys) == 0 && !a.LimitValid {
+			return cachedSQL, args.toInterfaces(extArgs), nil, nil
 		}
 		buf := bufferpool.Get()
 		defer bufferpool.Put(buf)
 		buf.WriteString(cachedSQL)
 		sqlWriteOrderBy(buf, a.OrderBys, false)
 		sqlWriteLimitOffset(buf, a.LimitValid, a.OffsetValid, a.OffsetCount, a.LimitCount)
-		return buf.String(), extArgs, nil, nil
+		return buf.String(), args.toInterfaces(extArgs), nil, nil
 	}
 
-	if !a.isPrepared && a.hasNamedArgs == 0 {
+	if !a.isPrepared && hasNamedArgs == 0 {
 		var found bool
-		a.hasNamedArgs = 1
+		hasNamedArgs = 1
 		cachedSQL, a.base.qualifiedColumns, found = extractReplaceNamedArgs(cachedSQL, a.base.qualifiedColumns)
 		if found {
 			a.base.cachedSQLUpsert(a.base.CacheKey, cachedSQL)
-		}
-
-		switch la := len(a.arguments); true {
-		case found:
-			a.hasNamedArgs = 2
-		case !found && len(recs) == 0 && la > 0:
-			for _, arg := range a.arguments {
-				if sn, ok := arg.value.(sql.NamedArg); ok && sn.Name != "" {
-					a.hasNamedArgs = 2
-					break
-				}
-			}
+			hasNamedArgs = 2
 		}
 	}
 
 	sqlBuf := bufferpool.GetTwin()
 	collectedArgs := pooledArgumentsGet()
 	defer pooledArgumentsPut(collectedArgs, sqlBuf)
-	collectedArgs = append(collectedArgs, a.arguments...)
+	collectedArgs = append(collectedArgs, args...)
 
-	if collectedArgs, err = a.appendConvertedRecordsToArguments(collectedArgs, recs); err != nil {
+	if collectedArgs, err = a.appendConvertedRecordsToArguments(hasNamedArgs, collectedArgs, recs); err != nil {
 		return "", nil, nil, errors.WithStack(err)
 	}
 
 	if a.isPrepared {
-		return "", collectedArgs.toInterfaces(extArgs...), recs, nil
+		return "", collectedArgs.toInterfaces(extArgs), recs, nil
 	}
 
 	// Make a copy of the original SQL statement because it gets modified in the
@@ -281,7 +296,7 @@ func (a *DBR) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}, _ 
 	sqlWriteLimitOffset(sqlBuf.First, a.LimitValid, a.OffsetValid, a.OffsetCount, a.LimitCount)
 
 	// `switch` statement no suitable.
-	if a.Options > 0 && len(extArgs) > 0 && len(recs) == 0 && len(a.arguments) == 0 {
+	if a.Options > 0 && lenExtArgs > 0 && len(recs) == 0 && len(args) == 0 {
 		return "", nil, nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
 	}
 
@@ -289,7 +304,7 @@ func (a *DBR) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}, _ 
 
 	if a.Options&argOptionExpandPlaceholder != 0 {
 		phCount := bytes.Count(sqlBuf.First.Bytes(), placeHolderByte)
-		if aLen, hasSlice := a.totalSliceLen(); phCount < aLen || hasSlice {
+		if aLen, hasSlice := args.totalSliceLen(); phCount < aLen || hasSlice {
 			if err := expandPlaceHolders(sqlBuf.Second, sqlBuf.First.Bytes(), collectedArgs); err != nil {
 				return "", nil, nil, errors.WithStack(err)
 			}
@@ -305,23 +320,23 @@ func (a *DBR) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}, _ 
 		return sqlBuf.Second.String(), nil, nil, nil
 	}
 
-	extArgs = collectedArgs.toInterfaces(extArgs...)
-	return sqlBuf.First.String(), extArgs, recs, nil
+	return sqlBuf.First.String(), collectedArgs.toInterfaces(nil), recs, nil
 }
 
-func (a *DBR) appendConvertedRecordsToArguments(collectedArgs arguments, recs []QualifiedRecord) (arguments, error) {
-	// argument recs includes a.recs and the qualified records pass as argument to
+func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArgs arguments, recs []QualifiedRecord) (arguments, error) {
+	// argument,recs includes a.recs and the qualified records pass as argument to
 	// any Load*,Query* or Exec* function.
 	if a.base.templateStmtCount == 0 {
 		a.base.templateStmtCount = 1
 	}
-	if len(a.arguments) == 0 && len(recs) == 0 {
+
+	if len(recs) == 0 && hasNamedArgs == 0 {
 		return collectedArgs, nil
 	}
 
-	if len(a.arguments) > 0 && len(recs) == 0 && a.hasNamedArgs < 2 {
+	if len(recs) == 0 && hasNamedArgs < 2 {
 		if a.base.templateStmtCount > 1 {
-			collectedArgs = a.multiplyArguments(a.base.templateStmtCount)
+			collectedArgs = collectedArgs.multiplyArguments(a.base.templateStmtCount)
 		}
 		// This is also a case where there are no records and only arguments and
 		// those arguments do not contain any name. Then we can skip the column
@@ -337,8 +352,9 @@ func (a *DBR) appendConvertedRecordsToArguments(collectedArgs arguments, recs []
 		qualifiedColumns = a.QualifiedColumnsAliases
 	}
 
+	var nextUnnamedArgPos int
 	// TODO refactor prototype and make it performant and beautiful code
-	cm := NewColumnMap(len(a.arguments)+len(recs), "") // can use an arg pool DBR sync.Pool, nope.
+	cm := NewColumnMap(len(collectedArgs)+len(recs), "") // can use an arg pool DBR sync.Pool, nope.
 
 	for tsc := 0; tsc < a.base.templateStmtCount; tsc++ { // only in case of UNION statements in combination with a template SELECT, can be optimized later
 
@@ -352,9 +368,9 @@ func (a *DBR) appendConvertedRecordsToArguments(collectedArgs arguments, recs []
 			column, isNamedArg := cutNamedArgStartStr(column) // removes the colon for named arguments
 			cm.columns[0] = column                            // length is always one, as created in NewColumnMap
 
-			if isNamedArg && len(a.arguments) > 0 {
+			if isNamedArg && len(collectedArgs) > 0 {
 				// if the colon : cannot be found then a simple place holder ? has been detected
-				if err := a.MapColumns(cm); err != nil {
+				if err := a.mapColumns(collectedArgs, cm); err != nil {
 					return collectedArgs, errors.WithStack(err)
 				}
 			} else {
@@ -377,13 +393,15 @@ func (a *DBR) appendConvertedRecordsToArguments(collectedArgs arguments, recs []
 				if !found {
 					// If the argument cannot be found in the records then we assume the argument
 					// has a numerical position and we grab just the next unnamed argument.
-					if pArg, ok := a.nextUnnamedArg(); ok {
+					var ok bool
+					var pArg argument
+					if pArg, nextUnnamedArgPos, ok = a.nextUnnamedArg(nextUnnamedArgPos, collectedArgs); ok {
 						cm.arguments = append(cm.arguments, pArg)
 					}
 				}
 			}
 		}
-		a.nextUnnamedArgPos = 0
+		nextUnnamedArgPos = 0
 	}
 	if len(cm.arguments) > 0 {
 		collectedArgs = cm.arguments
@@ -395,16 +413,14 @@ func (a *DBR) appendConvertedRecordsToArguments(collectedArgs arguments, recs []
 // prepareArgsInsert prepares the special arguments for an INSERT statement. The
 // returned interface slice is the same as the `extArgs` slice. extArgs =
 // external arguments.
-func (a *DBR) prepareArgsInsert(extArgs []interface{}, recs []QualifiedRecord) (string, []interface{}, []QualifiedRecord, error) {
+func (a *DBR) prepareArgsInsert(extArgs arguments, recs []QualifiedRecord) (string, []interface{}, []QualifiedRecord, error) {
 	// cm := pooledColumnMapGet()
 	sqlBuf := bufferpool.GetTwin()
 	defer bufferpool.PutTwin(sqlBuf)
-	// defer pooledBufferColumnMapPut(cm, sqlBuf, nil)
-
+	lenExtArgs := len(extArgs)
 	cm := NewColumnMap(16)
 	cm.setColumns(a.base.qualifiedColumns)
-	// defer bufferpool.PutTwin(sqlBuf)
-	cm.arguments = append(cm.arguments, a.arguments...)
+	cm.arguments = extArgs
 	lenInsertCachedSQL := len(a.insertCachedSQL)
 	cachedSQL, _ := a.base.cachedSQL[a.base.CacheKey]
 	{
@@ -428,10 +444,10 @@ func (a *DBR) prepareArgsInsert(extArgs []interface{}, recs []QualifiedRecord) (
 
 	if a.isPrepared {
 		// TODO above construct can be more optimized when using prepared statements
-		return "", cm.arguments.toInterfaces(extArgs...), recs, nil
+		return "", cm.arguments.toInterfaces(nil), recs, nil
 	}
 
-	totalArgLen := uint(len(cm.arguments) + len(extArgs))
+	totalArgLen := uint(len(cm.arguments))
 
 	if !a.insertIsBuildValues && lenInsertCachedSQL == 0 { // Write placeholder list e.g. "VALUES (?,?),(?,?)"
 		odkPos := strings.Index(cachedSQL, onDuplicateKeyPartS)
@@ -459,7 +475,7 @@ func (a *DBR) prepareArgsInsert(extArgs []interface{}, recs []QualifiedRecord) (
 	}
 
 	if a.Options > 0 {
-		if len(extArgs) > 0 && len(recs) == 0 && len(cm.arguments) == 0 {
+		if lenExtArgs > 0 && len(recs) == 0 && len(cm.arguments) == 0 {
 			return "", nil, nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
 		}
 
@@ -470,32 +486,33 @@ func (a *DBR) prepareArgsInsert(extArgs []interface{}, recs []QualifiedRecord) (
 			return sqlBuf.Second.String(), nil, recs, nil
 		}
 	}
-	return a.insertCachedSQL, cm.arguments.toInterfaces(extArgs...), recs, nil
+
+	return a.insertCachedSQL, cm.arguments.toInterfaces(nil), recs, nil
 }
 
 // nextUnnamedArg returns an unnamed argument by its position.
-func (a *DBR) nextUnnamedArg() (argument, bool) {
+func (a *DBR) nextUnnamedArg(nextUnnamedArgPos int, args arguments) (argument, int, bool) {
 	var unnamedCounter int
-	lenArg := len(a.arguments)
-	for i := 0; i < lenArg && a.nextUnnamedArgPos >= 0; i++ {
-		if _, ok := a.arguments[i].value.(sql.NamedArg); !ok {
-			if unnamedCounter == a.nextUnnamedArgPos {
-				a.nextUnnamedArgPos++
-				return a.arguments[i], true
+	lenArg := len(args)
+	for i := 0; i < lenArg && nextUnnamedArgPos >= 0; i++ {
+		if _, ok := args[i].value.(sql.NamedArg); !ok {
+			if unnamedCounter == nextUnnamedArgPos {
+				nextUnnamedArgPos++
+				return args[i], nextUnnamedArgPos, true
 			}
 			unnamedCounter++
 		}
 	}
-	a.nextUnnamedArgPos = -1 // nothing found, so no need to further iterate through the []argument slice.
-	return argument{}, false
+	nextUnnamedArgPos = -1 // nothing found, so no need to further iterate through the []argument slice.
+	return argument{}, nextUnnamedArgPos, false
 }
 
-// MapColumns allows to merge one argument slice with another depending on the
+// mapColumns allows to merge one argument slice with another depending on the
 // matched columns. Each argument in the slice must be a named argument.
 // Implements interface ColumnMapper.
-func (a *DBR) MapColumns(cm *ColumnMap) error {
+func (a *DBR) mapColumns(args arguments, cm *ColumnMap) error {
 	if cm.Mode() == ColumnMapEntityReadAll {
-		cm.arguments = append(cm.arguments, a.arguments...)
+		cm.arguments = append(cm.arguments, args...)
 		return cm.Err()
 	}
 	for cm.Next() {
@@ -503,7 +520,7 @@ func (a *DBR) MapColumns(cm *ColumnMap) error {
 		// access, but first benchmark it. This for loop can be the 3rd one in the
 		// overall chain.
 		c := cm.Column()
-		for _, arg := range a.arguments {
+		for _, arg := range args {
 			// Case sensitive comparison
 			if c != "" {
 				if sn, ok := arg.value.(sql.NamedArg); ok && sn.Name == c {
@@ -516,116 +533,13 @@ func (a *DBR) MapColumns(cm *ColumnMap) error {
 	return cm.Err()
 }
 
-func (a *DBR) add(v interface{}) *DBR {
-	if a == nil {
-		a = &DBR{arguments: make(arguments, 0, defaultArgumentsCapacity)}
-	}
-	a.arguments = a.arguments.add(v)
-	return a
-}
-
-// Record appends a record for argument extraction. Qualifier is the name of the
-// table or view or procedure or their alias name. It must be a valid
-// MySQL/MariaDB identifier. An empty qualifier gets assigned to the main table.
-func (a *DBR) Record(qualifier string, record ColumnMapper) *DBR {
-	a.recs = append(a.recs, Qualify(qualifier, record))
-	return a
-}
-
-func (a *DBR) Raw(raw ...interface{}) *DBR {
-	for _, r := range raw {
-		if qr, ok := r.(QualifiedRecord); ok {
-			a.recs = append(a.recs, qr)
-		} else {
-			a.add(r)
-		}
-	}
-	return a
-}
-
-func (a *DBR) Null() *DBR                           { return a.add(nil) }
-func (a *DBR) Int(i int) *DBR                       { return a.add(i) }
-func (a *DBR) Ints(i ...int) *DBR                   { return a.add(i) }
-func (a *DBR) Int64(i int64) *DBR                   { return a.add(i) }
-func (a *DBR) Int64s(i ...int64) *DBR               { return a.add(i) }
-func (a *DBR) Uint(i uint) *DBR                     { return a.add(uint64(i)) }
-func (a *DBR) Uints(i ...uint) *DBR                 { return a.add(i) }
-func (a *DBR) Uint64(i uint64) *DBR                 { return a.add(i) }
-func (a *DBR) Uint64s(i ...uint64) *DBR             { return a.add(i) }
-func (a *DBR) Float64(f float64) *DBR               { return a.add(f) }
-func (a *DBR) Float64s(f ...float64) *DBR           { return a.add(f) }
-func (a *DBR) Bool(b bool) *DBR                     { return a.add(b) }
-func (a *DBR) Bools(b ...bool) *DBR                 { return a.add(b) }
-func (a *DBR) String(s string) *DBR                 { return a.add(s) }
-func (a *DBR) Strings(s ...string) *DBR             { return a.add(s) }
-func (a *DBR) Time(t time.Time) *DBR                { return a.add(t) }
-func (a *DBR) Times(t ...time.Time) *DBR            { return a.add(t) }
-func (a *DBR) Bytes(b []byte) *DBR                  { return a.add(b) }
-func (a *DBR) BytesSlice(b ...[]byte) *DBR          { return a.add(b) }
-func (a *DBR) NullString(nv null.String) *DBR       { return a.add(nv) }
-func (a *DBR) NullStrings(nv ...null.String) *DBR   { return a.add(nv) }
-func (a *DBR) NullFloat64(nv null.Float64) *DBR     { return a.add(nv) }
-func (a *DBR) NullFloat64s(nv ...null.Float64) *DBR { return a.add(nv) }
-func (a *DBR) NullInt64(nv null.Int64) *DBR         { return a.add(nv) }
-func (a *DBR) NullInt64s(nv ...null.Int64) *DBR     { return a.add(nv) }
-func (a *DBR) NullBool(nv null.Bool) *DBR           { return a.add(nv) }
-func (a *DBR) NullBools(nv ...null.Bool) *DBR       { return a.add(nv) }
-func (a *DBR) NullTime(nv null.Time) *DBR           { return a.add(nv) }
-func (a *DBR) NullTimes(nv ...null.Time) *DBR       { return a.add(nv) }
-
-// NamedArg converts to sql.NamedArg and as go-sql-driver/mysql does not (yet)
-// support named args, they get resolved, converted to question mark place
-// holders.
-func (a *DBR) NamedArg(name string, value interface{}) *DBR {
-	a.arguments = append(a.arguments, argument{isSet: true, value: sql.Named(name, value)})
-	return a
-}
-
-// NamedArgs appends multiple
-func (a *DBR) NamedArgs(sns ...sql.NamedArg) *DBR {
-	for _, sn := range sns {
-		a.arguments = append(a.arguments, argument{isSet: true, value: sn})
-	}
-	return a
-}
-
 // Reset resets the internal slices for new usage retaining the already
 // allocated memory. Reset gets called automatically in many Load* functions. In
 // case of an INSERT statement, Reset triggers a new build of the VALUES part.
 // This function must be called when the number of argument changes.
 func (a *DBR) Reset() *DBR {
-	for i := range a.recs {
-		a.recs[i].Qualifier = ""
-		a.recs[i].Record = nil // remove pointers for GC
-	}
-	a.recs = a.recs[:0]
-	a.arguments = a.arguments[:0]
-	a.nextUnnamedArgPos = 0
 	a.insertIsBuildValues = false
 	a.insertCachedSQL = a.insertCachedSQL[:0]
-	return a
-}
-
-// DriverValue adds multiple of the same underlying values to the argument
-// slice. When using different values, the last applied value wins and gets
-// added to the argument slice. For example driver.Values of type `int` will
-// result in []int.
-func (a *DBR) DriverValue(dvs ...driver.Valuer) *DBR {
-	if a == nil {
-		a = &DBR{arguments: make(arguments, 0, len(dvs))}
-	}
-	a.arguments, a.base.ärgErr = driverValue(a.arguments, dvs...)
-	return a
-}
-
-// DriverValues adds each driver.Value as its own argument to the argument
-// slice. It panics if the underlying type is not one of the allowed of
-// interface driver.Valuer.
-func (a *DBR) DriverValues(dvs ...driver.Valuer) *DBR {
-	if a == nil {
-		a = &DBR{arguments: make(arguments, 0, len(dvs))}
-	}
-	a.arguments, a.base.ärgErr = driverValues(a.arguments, dvs...)
 	return a
 }
 
@@ -657,8 +571,6 @@ func (a *DBR) WithTx(tx *Tx) *DBR {
 // the source DBR object.
 func (a *DBR) Clone() *DBR {
 	c := *a
-	c.arguments = make(arguments, 0, len(a.arguments))
-	c.recs = nil
 	return &c
 }
 

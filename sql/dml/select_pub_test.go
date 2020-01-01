@@ -258,7 +258,7 @@ func TestSelect_Load(t *testing.T) {
 		)
 
 		var dst []int64
-		dst, err := s.WithDBR().ExpandPlaceHolders().Int64s(199).LoadInt64s(context.TODO(), dst)
+		dst, err := s.WithDBR().ExpandPlaceHolders().LoadInt64s(context.TODO(), dst, []int64{199})
 		assert.NoError(t, err)
 
 		// wrong result set for correct query. maybe some one can fix the returned data.
@@ -277,7 +277,7 @@ func TestSelect_Load(t *testing.T) {
 		)
 
 		var dst []int64
-		dst, err := s.WithDBR().Int64s(199, 217).ExpandPlaceHolders().LoadInt64s(context.TODO(), dst)
+		dst, err := s.WithDBR().ExpandPlaceHolders().LoadInt64s(context.TODO(), dst, []int64{199, 217})
 		assert.NoError(t, err)
 
 		assert.Exactly(t, []int64{2, 3, 4, 16, 17}, dst)
@@ -443,10 +443,10 @@ func TestSelect_Prepare(t *testing.T) {
 					WillReturnRows(sqlmock.NewRows([]string{"name", "email"}).AddRow("Peter Gopher", "peter@gopher.go"))
 			}
 			// use loop with Query+ and add args before
-			stmtA := stmt.WithDBR().Int(6899)
+			stmtA := stmt.WithDBR()
 
 			for i := 0; i < iterations; i++ {
-				rows, err := stmtA.QueryContext(context.TODO())
+				rows, err := stmtA.QueryContext(context.TODO(), 6899)
 				assert.NoError(t, err)
 
 				cols, err := rows.Columns()
@@ -463,10 +463,10 @@ func TestSelect_Prepare(t *testing.T) {
 			}
 
 			p := &dmlPerson{ID: 6900}
-			stmtA := stmt.WithDBR().Record("", p)
+			stmtA := stmt.WithDBR()
 
 			for i := 0; i < iterations; i++ {
-				rows, err := stmtA.QueryContext(context.TODO())
+				rows, err := stmtA.QueryContext(context.TODO(), dml.Qualify("", p))
 				assert.NoError(t, err)
 
 				cols, err := rows.Columns()
@@ -478,8 +478,8 @@ func TestSelect_Prepare(t *testing.T) {
 
 		t.Run("WithRecords_Error", func(t *testing.T) {
 			p := &TableCoreConfigDataSlice{err: errors.Duplicated.Newf("Found a duplicate")}
-			stmtA := stmt.WithDBR().Record("", p)
-			rows, err := stmtA.QueryContext(context.TODO())
+			stmtA := stmt.WithDBR()
+			rows, err := stmtA.QueryContext(context.TODO(), dml.Qualify("", p))
 			assert.ErrorIsKind(t, errors.Duplicated, err)
 			assert.Nil(t, rows)
 		})
@@ -531,7 +531,7 @@ func TestSelect_Prepare(t *testing.T) {
 
 			prep.ExpectQuery().WithArgs(346).WillReturnRows(sqlmock.NewRows(columns).AddRow(35))
 
-			val, found, err := stmt.WithDBR().Int64(346).LoadNullInt64(context.TODO())
+			val, found, err := stmt.WithDBR().LoadNullInt64(context.TODO(), 346)
 			assert.NoError(t, err)
 			assert.True(t, found)
 			assert.Exactly(t, null.MakeInt64(35), val)
@@ -554,7 +554,7 @@ func TestSelect_Prepare(t *testing.T) {
 
 			prep.ExpectQuery().WithArgs(346, 347).WillReturnRows(sqlmock.NewRows(columns).AddRow(36).AddRow(37))
 
-			val, err := stmt.WithDBR().Int64s(346, 347).LoadInt64s(context.TODO(), nil)
+			val, err := stmt.WithDBR().LoadInt64s(context.TODO(), nil, []int64{346, 347})
 			assert.NoError(t, err)
 			assert.Exactly(t, []int64{36, 37}, val)
 		})
@@ -620,7 +620,7 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 
 				fp := &fakePerson{}
 				var counter int
-				err := selProc.WithDBR().Interpolate().Int(i).Int(i+5).IterateSerial(context.Background(), func(cm *dml.ColumnMap) error {
+				err := selProc.WithDBR().Interpolate().IterateSerial(context.Background(), func(cm *dml.ColumnMap) error {
 					if err := fp.MapColumns(cm); err != nil {
 						return err
 					}
@@ -630,7 +630,7 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 					}
 					counter++
 					return nil
-				})
+				}, i, i+5)
 				ifErrPanic(err)
 				ifNotEqualPanic(counter, limit, "Should have loaded this amount of rows")
 			}
