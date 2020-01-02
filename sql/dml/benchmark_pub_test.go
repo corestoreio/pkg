@@ -488,33 +488,35 @@ func BenchmarkRepeat(b *testing.B) {
 	}
 	b.Run("multi", func(b *testing.B) {
 		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?) AND name IN (?,?,?,?,?) AND status = ?"
-		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ? AND name IN ? AND status = ?").ExpandPlaceHolders()
+		dbr := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ? AND name IN ? AND status = ?").
+			ExpandPlaceHolders().
+			testWithArgs([]int{5, 7, 9, 11}, []string{"a", "b", "c", "d", "e"}, 22)
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			s, _, err := a.testWithArgs([]int{5, 7, 9, 11}, []string{"a", "b", "c", "d", "e"}, 22).ToSQL()
+			s, _, err := dbr.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
 			if s != want {
 				b.Fatalf("\nHave: %q\nWant: %q", s, want)
 			}
-			a.Reset()
 		}
 	})
 
 	b.Run("single", func(b *testing.B) {
 		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?)"
-		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ?").ExpandPlaceHolders()
+		dbr := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ?").
+			ExpandPlaceHolders().
+			testWithArgs([]int{9, 8, 7, 6})
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			s, _, err := a.testWithArgs([]int{9, 8, 7, 6}).ToSQL()
+			s, _, err := dbr.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
 			if s != want {
 				b.Fatalf("\nHave: %q\nWant: %q", s, want)
 			}
-			a.Reset()
 		}
 	})
 }

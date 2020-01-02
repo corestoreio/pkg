@@ -27,7 +27,7 @@ import (
 
 var _ fmt.Stringer = Op(0)
 
-func TestOpRune(t *testing.T) {
+func TestConditionOpRune(t *testing.T) {
 	t.Parallel()
 	s := NewSelect().From("tableA").AddColumns("a", "b").
 		Where(
@@ -99,14 +99,14 @@ func TestOpRune(t *testing.T) {
 	)
 }
 
-func TestOp_String(t *testing.T) {
+func TestConditionOp_String(t *testing.T) {
 	t.Parallel()
 	var o Op
 	assert.Exactly(t, "=", o.String())
 	assert.Exactly(t, "🚀", SpaceShip.String())
 }
 
-func TestOpArgs(t *testing.T) {
+func TestConditionOpArgs(t *testing.T) {
 	t.Parallel()
 	t.Run("Null with place holder IN,Regexp", func(t *testing.T) {
 		compareToSQL(t,
@@ -114,10 +114,10 @@ func TestOpArgs(t *testing.T) {
 				Column("a315").In().Null(),
 				Column("a316").In().PlaceHolder(),
 				Column("a317").Regexp().PlaceHolder(),
-				Column("a317").NotRegexp().PlaceHolder(),
+				Column("a318").NotRegexp().PlaceHolder(),
 			),
 			errors.NoKind,
-			"SELECT `a`, `b` FROM `t1` WHERE (`a315` IS NULL) AND (`a316` IN ?) AND (`a317` REGEXP ?) AND (`a317` NOT REGEXP ?)",
+			"SELECT `a`, `b` FROM `t1` WHERE (`a315` IS NULL) AND (`a316` IN ?) AND (`a317` REGEXP ?) AND (`a318` NOT REGEXP ?)",
 			"",
 		)
 	})
@@ -225,7 +225,7 @@ func TestOpArgs(t *testing.T) {
 	})
 }
 
-func TestColumn(t *testing.T) {
+func TestConditionColumn(t *testing.T) {
 	t.Parallel()
 
 	t.Run("invalid column name", func(t *testing.T) {
@@ -294,7 +294,7 @@ func TestConditions_writeOnDuplicateKey(t *testing.T) {
 	))
 }
 
-func TestExpr_Arguments(t *testing.T) {
+func TestConditionExpr_Arguments(t *testing.T) {
 	t.Parallel()
 
 	t.Run("ints", func(t *testing.T) {
@@ -407,7 +407,7 @@ func TestCondition_Column(t *testing.T) {
 	})
 }
 
-func TestExpr(t *testing.T) {
+func TestConditionExpr(t *testing.T) {
 	t.Parallel()
 	t.Run("quoted string", func(t *testing.T) {
 		s := NewSelect().AddColumns("month", "total").AddColumnsConditions(Expr(`"best"`)).From("sales_by_month")
@@ -418,7 +418,7 @@ func TestExpr(t *testing.T) {
 	})
 }
 
-func TestSplitColumn(t *testing.T) {
+func TestConditionSplitColumn(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -448,7 +448,7 @@ func (ai appendInt) MapColumns(cm *ColumnMap) error {
 	return cm.Int(&i).Err()
 }
 
-func TestAppendArgs(t *testing.T) {
+func TestConditionAppendArgs(t *testing.T) {
 	t.Parallel()
 	t.Run("PH,val,expr,PH", func(t *testing.T) {
 		s := NewSelect("sku").FromAlias("catalog", "e").
@@ -538,7 +538,7 @@ func TestConditions_Clone(t *testing.T) {
 	})
 }
 
-func TestJoins_Clone(t *testing.T) {
+func TestConditionJoins_Clone(t *testing.T) {
 	t.Parallel()
 
 	jn := Joins{
@@ -553,7 +553,6 @@ func TestJoins_Clone(t *testing.T) {
 		nil,
 	}
 	jn2 := jn.Clone()
-
 	assert.Exactly(t, jn, jn2)
 
 	notEqualPointers(t, jn[0], jn2[0])

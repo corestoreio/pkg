@@ -215,27 +215,27 @@ func (a *DBR) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}, _ 
 	lenExtArgs := len(extArgs)
 	var hasNamedArgs uint8
 	var recs []QualifiedRecord
-	args := make(arguments, 0, lenExtArgs) // TODO sync.Pool
-	for _, ea := range extArgs {
-		switch eat := ea.(type) {
-		case QualifiedRecord:
-			recs = append(recs, eat)
-		case sql.NamedArg:
-			args = append(args, argument{value: ea, isSet: true})
-			hasNamedArgs = 2
-		case []sql.NamedArg: // insert statement with key/value pairs
-			for _, na := range eat {
-				args = append(args, argument{value: na.Value, isSet: true})
+	var args []interface{}
+	if lenExtArgs > 0 {
+		args = make([]interface{}, 0, 2*lenExtArgs) // TODO sync.Pool
+		for _, ea := range extArgs {
+			switch eaTypeValue := ea.(type) {
+			case nil:
+				args = append(args, internalNULLNIL{})
+			case QualifiedRecord:
+				recs = append(recs, eaTypeValue)
+			case sql.NamedArg:
+				args = append(args, ea)
+				hasNamedArgs = 2
+			case []sql.NamedArg: // insert statement with key/value pairs
+				for _, na := range eaTypeValue {
+					args = append(args, na.Value)
+				}
+			default:
+				args = append(args, ea)
 			}
-		default:
-			args = append(args, argument{value: ea, isSet: true})
 		}
 	}
-
-	// reuse the interface slice to avoid allocations when converting the
-	// arguments slice to an interface slice.
-	// extArgs = make([]interface{}, 0, 1)
-	extArgs = nil
 	if a.base.source == dmlSourceInsert {
 		return a.prepareArgsInsert(args, recs)
 	}
@@ -247,18 +247,18 @@ func (a *DBR) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}, _ 
 
 	if a.base.templateStmtCount < 2 && hasNamedArgs == 0 && len(recs) == 0 && a.Options == 0 { // no options and qualified records provided
 		if a.isPrepared {
-			return "", args.toInterfaces(extArgs), nil, nil
+			return "", toInterfaces(args, nil), nil, nil
 		}
 
 		if a.Options == 0 && len(a.OrderBys) == 0 && !a.LimitValid {
-			return cachedSQL, args.toInterfaces(extArgs), nil, nil
+			return cachedSQL, toInterfaces(args, nil), nil, nil
 		}
 		buf := bufferpool.Get()
 		defer bufferpool.Put(buf)
 		buf.WriteString(cachedSQL)
 		sqlWriteOrderBy(buf, a.OrderBys, false)
 		sqlWriteLimitOffset(buf, a.LimitValid, a.OffsetValid, a.OffsetCount, a.LimitCount)
-		return buf.String(), args.toInterfaces(extArgs), nil, nil
+		return buf.String(), toInterfaces(args, nil), nil, nil
 	}
 
 	if !a.isPrepared && hasNamedArgs == 0 {
@@ -272,16 +272,15 @@ func (a *DBR) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}, _ 
 	}
 
 	sqlBuf := bufferpool.GetTwin()
-	collectedArgs := pooledArgumentsGet()
-	defer pooledArgumentsPut(collectedArgs, sqlBuf)
-	collectedArgs = append(collectedArgs, args...)
+	defer bufferpool.PutTwin(sqlBuf)
+	collectedArgs := args
 
 	if collectedArgs, err = a.appendConvertedRecordsToArguments(hasNamedArgs, collectedArgs, recs); err != nil {
 		return "", nil, nil, errors.WithStack(err)
 	}
 
 	if a.isPrepared {
-		return "", collectedArgs.toInterfaces(extArgs), recs, nil
+		return "", toInterfaces(collectedArgs, nil), recs, nil
 	}
 
 	// Make a copy of the original SQL statement because it gets modified in the
@@ -304,7 +303,7 @@ func (a *DBR) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}, _ 
 
 	if a.Options&argOptionExpandPlaceholder != 0 {
 		phCount := bytes.Count(sqlBuf.First.Bytes(), placeHolderByte)
-		if aLen, hasSlice := args.totalSliceLen(); phCount < aLen || hasSlice {
+		if aLen, hasSlice := totalSliceLen(args); phCount < aLen || hasSlice {
 			if err := expandPlaceHolders(sqlBuf.Second, sqlBuf.First.Bytes(), collectedArgs); err != nil {
 				return "", nil, nil, errors.WithStack(err)
 			}
@@ -320,10 +319,10 @@ func (a *DBR) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}, _ 
 		return sqlBuf.Second.String(), nil, nil, nil
 	}
 
-	return sqlBuf.First.String(), collectedArgs.toInterfaces(nil), recs, nil
+	return sqlBuf.First.String(), toInterfaces(collectedArgs, nil), recs, nil
 }
 
-func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArgs arguments, recs []QualifiedRecord) (arguments, error) {
+func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArgs []interface{}, recs []QualifiedRecord) ([]interface{}, error) {
 	// argument,recs includes a.recs and the qualified records pass as argument to
 	// any Load*,Query* or Exec* function.
 	if a.base.templateStmtCount == 0 {
@@ -336,7 +335,7 @@ func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArg
 
 	if len(recs) == 0 && hasNamedArgs < 2 {
 		if a.base.templateStmtCount > 1 {
-			collectedArgs = collectedArgs.multiplyArguments(a.base.templateStmtCount)
+			collectedArgs = multiplyInterfaceValues(collectedArgs, a.base.templateStmtCount)
 		}
 		// This is also a case where there are no records and only arguments and
 		// those arguments do not contain any name. Then we can skip the column
@@ -394,17 +393,17 @@ func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArg
 					// If the argument cannot be found in the records then we assume the argument
 					// has a numerical position and we grab just the next unnamed argument.
 					var ok bool
-					var pArg argument
+					var pArg interface{}
 					if pArg, nextUnnamedArgPos, ok = a.nextUnnamedArg(nextUnnamedArgPos, collectedArgs); ok {
-						cm.arguments = append(cm.arguments, pArg)
+						cm.args = append(cm.args, pArg)
 					}
 				}
 			}
 		}
 		nextUnnamedArgPos = 0
 	}
-	if len(cm.arguments) > 0 {
-		collectedArgs = cm.arguments
+	if len(cm.args) > 0 {
+		collectedArgs = cm.args
 	}
 
 	return collectedArgs, nil
@@ -413,14 +412,14 @@ func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArg
 // prepareArgsInsert prepares the special arguments for an INSERT statement. The
 // returned interface slice is the same as the `extArgs` slice. extArgs =
 // external arguments.
-func (a *DBR) prepareArgsInsert(extArgs arguments, recs []QualifiedRecord) (string, []interface{}, []QualifiedRecord, error) {
+func (a *DBR) prepareArgsInsert(extArgs []interface{}, recs []QualifiedRecord) (string, []interface{}, []QualifiedRecord, error) {
 	// cm := pooledColumnMapGet()
 	sqlBuf := bufferpool.GetTwin()
 	defer bufferpool.PutTwin(sqlBuf)
 	lenExtArgs := len(extArgs)
 	cm := NewColumnMap(16)
 	cm.setColumns(a.base.qualifiedColumns)
-	cm.arguments = extArgs
+	cm.args = extArgs
 	lenInsertCachedSQL := len(a.insertCachedSQL)
 	cachedSQL, _ := a.base.cachedSQL[a.base.CacheKey]
 	{
@@ -444,10 +443,10 @@ func (a *DBR) prepareArgsInsert(extArgs arguments, recs []QualifiedRecord) (stri
 
 	if a.isPrepared {
 		// TODO above construct can be more optimized when using prepared statements
-		return "", cm.arguments.toInterfaces(nil), recs, nil
+		return "", toInterfaces(cm.args, nil), recs, nil
 	}
 
-	totalArgLen := uint(len(cm.arguments))
+	totalArgLen := uint(len(cm.args))
 
 	if !a.insertIsBuildValues && lenInsertCachedSQL == 0 { // Write placeholder list e.g. "VALUES (?,?),(?,?)"
 		odkPos := strings.Index(cachedSQL, onDuplicateKeyPartS)
@@ -475,27 +474,27 @@ func (a *DBR) prepareArgsInsert(extArgs arguments, recs []QualifiedRecord) (stri
 	}
 
 	if a.Options > 0 {
-		if lenExtArgs > 0 && len(recs) == 0 && len(cm.arguments) == 0 {
+		if lenExtArgs > 0 && len(recs) == 0 && len(cm.args) == 0 {
 			return "", nil, nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
 		}
 
 		if a.Options&argOptionInterpolate != 0 {
-			if err := writeInterpolateBytes(sqlBuf.Second, sqlBuf.First.Bytes(), cm.arguments); err != nil {
+			if err := writeInterpolateBytes(sqlBuf.Second, sqlBuf.First.Bytes(), cm.args); err != nil {
 				return "", nil, nil, errors.Wrapf(err, "[dml] Interpolation failed: %q", sqlBuf.First.String())
 			}
 			return sqlBuf.Second.String(), nil, recs, nil
 		}
 	}
 
-	return a.insertCachedSQL, cm.arguments.toInterfaces(nil), recs, nil
+	return a.insertCachedSQL, toInterfaces(cm.args, nil), recs, nil
 }
 
 // nextUnnamedArg returns an unnamed argument by its position.
-func (a *DBR) nextUnnamedArg(nextUnnamedArgPos int, args arguments) (argument, int, bool) {
+func (a *DBR) nextUnnamedArg(nextUnnamedArgPos int, args []interface{}) (interface{}, int, bool) {
 	var unnamedCounter int
 	lenArg := len(args)
 	for i := 0; i < lenArg && nextUnnamedArgPos >= 0; i++ {
-		if _, ok := args[i].value.(sql.NamedArg); !ok {
+		if _, ok := args[i].(sql.NamedArg); !ok {
 			if unnamedCounter == nextUnnamedArgPos {
 				nextUnnamedArgPos++
 				return args[i], nextUnnamedArgPos, true
@@ -504,15 +503,15 @@ func (a *DBR) nextUnnamedArg(nextUnnamedArgPos int, args arguments) (argument, i
 		}
 	}
 	nextUnnamedArgPos = -1 // nothing found, so no need to further iterate through the []argument slice.
-	return argument{}, nextUnnamedArgPos, false
+	return nil, nextUnnamedArgPos, false
 }
 
 // mapColumns allows to merge one argument slice with another depending on the
 // matched columns. Each argument in the slice must be a named argument.
 // Implements interface ColumnMapper.
-func (a *DBR) mapColumns(args arguments, cm *ColumnMap) error {
+func (a *DBR) mapColumns(args []interface{}, cm *ColumnMap) error {
 	if cm.Mode() == ColumnMapEntityReadAll {
-		cm.arguments = append(cm.arguments, args...)
+		cm.args = append(cm.args, args...)
 		return cm.Err()
 	}
 	for cm.Next() {
@@ -523,8 +522,8 @@ func (a *DBR) mapColumns(args arguments, cm *ColumnMap) error {
 		for _, arg := range args {
 			// Case sensitive comparison
 			if c != "" {
-				if sn, ok := arg.value.(sql.NamedArg); ok && sn.Name == c {
-					cm.arguments = append(cm.arguments, arg)
+				if sn, ok := arg.(sql.NamedArg); ok && sn.Name == c {
+					cm.args = append(cm.args, arg)
 					break
 				}
 			}
@@ -617,38 +616,9 @@ const argumentPoolMaxSize = 32
 // regarding the returned slices in both pools: https://github.com/golang/go/blob/7e394a2/src/net/http/h2_bundle.go#L998-L1043
 // they also uses a []byte slice in the pool and not a pointer
 
-var pooledArguments = sync.Pool{
-	New: func() interface{} {
-		var a [argumentPoolMaxSize]argument
-		return arguments(a[:0])
-	},
-}
-
-func pooledArgumentsGet() arguments {
-	return pooledArguments.Get().(arguments)
-}
-
-func pooledArgumentsPut(a arguments, buf *bufferpool.TwinBuffer) {
-	// @see https://go-review.googlesource.com/c/go/+/136116/4/src/fmt/print.go
-	// Proper usage of a sync.Pool requires each entry to have approximately
-	// the same memory cost. To obtain this property when the stored type
-	// contains a variably-sized buffer, we add a hard limit on the maximum buffer
-	// to place back in the pool.
-	//
-	// See https://golang.org/issue/23199
-	if cap(a) <= argumentPoolMaxSize {
-		a = a[:0]
-		pooledArguments.Put(a)
-	}
-	if buf != nil {
-		bufferpool.PutTwin(buf)
-	}
-}
-
 var pooledInterfaces = sync.Pool{
 	New: func() interface{} {
-		var a [argumentPoolMaxSize]interface{}
-		return a[:0]
+		return make([]interface{}, 0, argumentPoolMaxSize)
 	},
 }
 

@@ -401,8 +401,10 @@ func (b *Insert) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 					buf.WriteByte(',')
 				}
 				switch {
-				case cv.Right.arg.isSet:
-					cv.Right.arg.writeTo(buf, 0)
+				case cv.Right.arg != nil:
+					if err := writeInterfaceValue(cv.Right.arg, buf, 0); err != nil {
+						return nil, errors.WithStack(err)
+					}
 				case cv.Right.IsExpression:
 					buf.WriteString(cv.Right.Column)
 				case cv.Right.Sub != nil:

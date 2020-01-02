@@ -48,7 +48,7 @@ type ColumnMapper interface {
 // database/sql does :-(  The method receiver functions have the same names as
 // in type ColumnMap.
 type ColumnMap struct {
-	arguments
+	args []interface{}
 
 	// initialized gets set to true after the first call to Scan to initialize
 	// the internal slices.
@@ -75,19 +75,19 @@ type ColumnMap struct {
 
 // NewColumnMap exported for testing reasons.
 func NewColumnMap(cap int, columns ...string) *ColumnMap {
-	var a arguments
+	var a []interface{}
 	if cap > 0 {
 		// Need the IF in case whe use sync.Pool
-		a = make(arguments, 0, cap)
+		a = make([]interface{}, 0, cap)
 	}
-	cm := &ColumnMap{arguments: a}
+	cm := &ColumnMap{args: a}
 	cm.setColumns(columns)
 	return cm
 }
 
 // reset gets called when returning into the pool
 func (b *ColumnMap) reset() {
-	b.arguments = b.arguments[:0]
+	b.args = b.args[:0]
 	b.initialized = false
 	b.HasRows = false
 	b.Count = 0
@@ -246,7 +246,7 @@ func (s *scannedColumn) Scan(src interface{}) (err error) {
 }
 
 func (b *ColumnMap) shouldCollectArgs() bool {
-	return len(b.scanArgs) == 0 && cap(b.arguments) > 0
+	return len(b.scanArgs) == 0 && cap(b.args) > 0
 }
 
 // Scan calls rows.Scan and builds an internal stack of sql.RawBytes for further
@@ -319,9 +319,9 @@ func (b *ColumnMap) Next() bool {
 func (b *ColumnMap) Bool(ptr *bool) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -355,9 +355,9 @@ func (b *ColumnMap) Bool(ptr *bool) *ColumnMap {
 func (b *ColumnMap) NullBool(ptr *null.Bool) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -401,9 +401,9 @@ func (b *ColumnMap) NullBool(ptr *null.Bool) *ColumnMap {
 func (b *ColumnMap) Int(ptr *int) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -431,9 +431,9 @@ func (b *ColumnMap) Int(ptr *int) *ColumnMap {
 func (b *ColumnMap) Int64(ptr *int64) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -460,9 +460,9 @@ func (b *ColumnMap) Int64(ptr *int64) *ColumnMap {
 func (b *ColumnMap) Int32(ptr *int32) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -495,9 +495,9 @@ func (b *ColumnMap) Int32(ptr *int32) *ColumnMap {
 func (b *ColumnMap) Int16(ptr *int16) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -530,9 +530,9 @@ func (b *ColumnMap) Int16(ptr *int16) *ColumnMap {
 func (b *ColumnMap) Int8(ptr *int8) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -565,9 +565,9 @@ func (b *ColumnMap) Int8(ptr *int8) *ColumnMap {
 func (b *ColumnMap) NullInt64(ptr *null.Int64) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -597,9 +597,9 @@ func (b *ColumnMap) NullInt64(ptr *null.Int64) *ColumnMap {
 func (b *ColumnMap) NullInt32(ptr *null.Int32) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -629,9 +629,9 @@ func (b *ColumnMap) NullInt32(ptr *null.Int32) *ColumnMap {
 func (b *ColumnMap) NullInt16(ptr *null.Int16) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -661,9 +661,9 @@ func (b *ColumnMap) NullInt16(ptr *null.Int16) *ColumnMap {
 func (b *ColumnMap) NullInt8(ptr *null.Int8) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -693,9 +693,9 @@ func (b *ColumnMap) NullInt8(ptr *null.Int8) *ColumnMap {
 func (b *ColumnMap) NullUint64(ptr *null.Uint64) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -725,9 +725,9 @@ func (b *ColumnMap) NullUint64(ptr *null.Uint64) *ColumnMap {
 func (b *ColumnMap) NullUint32(ptr *null.Uint32) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -757,9 +757,9 @@ func (b *ColumnMap) NullUint32(ptr *null.Uint32) *ColumnMap {
 func (b *ColumnMap) NullUint16(ptr *null.Uint16) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -789,9 +789,9 @@ func (b *ColumnMap) NullUint16(ptr *null.Uint16) *ColumnMap {
 func (b *ColumnMap) NullUint8(ptr *null.Uint8) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -821,9 +821,9 @@ func (b *ColumnMap) NullUint8(ptr *null.Uint8) *ColumnMap {
 func (b *ColumnMap) Float64(ptr *float64) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -849,9 +849,9 @@ func (b *ColumnMap) Float64(ptr *float64) *ColumnMap {
 func (b *ColumnMap) Decimal(ptr *null.Decimal) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if v := ptr.String(); ptr == nil || v == sqlStrNullUC {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(v)
+			b.args = append(b.args, v)
 		}
 		return b
 	}
@@ -878,9 +878,9 @@ func (b *ColumnMap) Decimal(ptr *null.Decimal) *ColumnMap {
 func (b *ColumnMap) NullFloat64(ptr *null.Float64) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -909,9 +909,9 @@ func (b *ColumnMap) NullFloat64(ptr *null.Float64) *ColumnMap {
 func (b *ColumnMap) Uint(ptr *uint) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -939,9 +939,9 @@ func (b *ColumnMap) Uint(ptr *uint) *ColumnMap {
 func (b *ColumnMap) Uint8(ptr *uint8) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -969,9 +969,9 @@ func (b *ColumnMap) Uint8(ptr *uint8) *ColumnMap {
 func (b *ColumnMap) Uint16(ptr *uint16) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -999,9 +999,9 @@ func (b *ColumnMap) Uint16(ptr *uint16) *ColumnMap {
 func (b *ColumnMap) Uint32(ptr *uint32) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -1029,9 +1029,9 @@ func (b *ColumnMap) Uint32(ptr *uint32) *ColumnMap {
 func (b *ColumnMap) Uint64(ptr *uint64) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -1083,9 +1083,9 @@ func (b *ColumnMap) Debug(w ioWriter) (err error) {
 func (b *ColumnMap) Byte(ptr *[]byte) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -1121,7 +1121,7 @@ func (b *ColumnMap) Text(enc interface {
 		if b.CheckValidUTF8 && !utf8.Valid(data) {
 			b.scanErr = errors.NotValid.Newf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
 		} else {
-			b.arguments = b.arguments.add(data)
+			b.args = append(b.args, data)
 		}
 		return b
 	}
@@ -1153,7 +1153,7 @@ func (b *ColumnMap) Binary(enc interface {
 	if b.shouldCollectArgs() {
 		var data []byte
 		data, b.scanErr = enc.MarshalBinary()
-		b.arguments = b.arguments.add(data)
+		b.args = append(b.args, data)
 		return b
 	}
 
@@ -1174,9 +1174,9 @@ func (b *ColumnMap) Binary(enc interface {
 func (b *ColumnMap) String(ptr *string) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -1208,9 +1208,9 @@ func (b *ColumnMap) String(ptr *string) *ColumnMap {
 func (b *ColumnMap) NullString(ptr *null.String) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -1248,9 +1248,9 @@ func (b *ColumnMap) NullString(ptr *null.String) *ColumnMap {
 func (b *ColumnMap) Time(ptr *time.Time) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -1282,9 +1282,9 @@ func (b *ColumnMap) Time(ptr *time.Time) *ColumnMap {
 func (b *ColumnMap) NullTime(ptr *null.Time) *ColumnMap {
 	if b.shouldCollectArgs() {
 		if ptr == nil {
-			b.arguments = b.arguments.add(nil)
+			b.args = append(b.args, internalNULLNIL{})
 		} else {
-			b.arguments = b.arguments.add(*ptr)
+			b.args = append(b.args, *ptr)
 		}
 		return b
 	}
@@ -1315,7 +1315,7 @@ const columnMapErrMsgSlices = "[dml] ColumnMap.%s does only support mode ColumnM
 
 func (b *ColumnMap) addSlice(fnName string, slice interface{}) *ColumnMap {
 	if b.shouldCollectArgs() && b.scanErr == nil && b.Mode() == ColumnMapCollectionReadSet {
-		b.arguments = b.arguments.add(slice)
+		b.args = append(b.args, slice)
 	} else {
 		b.scanErr = errors.NotSupported.Newf(columnMapErrMsgSlices, fnName)
 	}

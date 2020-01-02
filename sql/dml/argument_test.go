@@ -60,48 +60,46 @@ func (a driverValueError) Value() (driver.Value, error) {
 	return nil, errors.Aborted.Newf("WE've aborted something")
 }
 
-func makeArguments10() arguments { return make(arguments, 0, 10) }
-
 func TestArguments_Length_and_Stringer(t *testing.T) {
 	t.Parallel()
 	nt := now().In(time.UTC)
 
 	t.Run("no slices, nulls valid", func(t *testing.T) {
-		args := makeArguments10().
-			add(nil).add(-1).add(int64(1)).add(uint64(9898)).add(uint64(2)).add(3.1).add(true).add("eCom1").add([]byte(`eCom2`)).add(nt).
-			add(null.MakeString("eCom3")).add(null.MakeInt64(4)).add(null.MakeFloat64(2.7)).
-			add(null.MakeBool(true)).add(null.MakeTime(nt))
-		assert.Exactly(t, 15, args.Len(), "Length mismatch")
+		args := append([]interface{}{},
+			nil, -1, int64(1), uint64(9898), uint64(2), 3.1, true, "eCom1", []byte(`eCom2`), nt,
+			null.MakeString("eCom3"), null.MakeInt64(4), null.MakeFloat64(2.7),
+			null.MakeBool(true), null.MakeTime(nt))
+		assert.Exactly(t, 15, totalSliceLenSimple(args), "Length mismatch")
 
 		assert.Exactly(t,
 			fmt.Sprint([]interface{}{nil, -1, 1, 9898, 2, 3.1, true, "eCom1", []byte("eCom2"), nt, "eCom3", 4, 2.7, true, nt}),
-			fmt.Sprint(args.toInterfaces(nil)))
+			fmt.Sprint(toInterfaces(args, nil)))
 	})
 
 	t.Run("no slices, nulls invalid", func(t *testing.T) {
-		args := makeArguments10().
-			add(nil).add(-1).add(int64(1)).add(uint64(2)).add(3.1).add(true).add("eCom1").add([]byte(`eCom2`)).add(nt).
-			add(null.String{}).add(null.Int64{}).add(null.Float64{}).
-			add(null.Bool{}).add(null.Time{})
-		assert.Exactly(t, 14, args.Len(), "Length mismatch")
+		args := append([]interface{}{},
+			nil, -1, int64(1), uint64(2), 3.1, true, "eCom1", []byte(`eCom2`), nt,
+			null.String{}, null.Int64{}, null.Float64{},
+			null.Bool{}, null.Time{})
+		assert.Exactly(t, 14, totalSliceLenSimple(args), "Length mismatch")
 		assert.Exactly(t,
 			fmt.Sprint([]interface{}{
 				nil, -1, int64(1), uint64(2), 3.1, true, "eCom1", []byte("eCom2"), nt, nil, nil, nil, nil, nil,
 			}),
-			fmt.Sprint(args.toInterfaces(nil)),
+			fmt.Sprint(toInterfaces(args, nil)),
 		)
 	})
 
 	t.Run("slices, nulls valid", func(t *testing.T) {
-		args := makeArguments10().
-			add(nil).add(-1).add([]int64{1, 2}).add([]uint{567, 765}).add([]uint64{2}).add([]float64{1.2, 3.1}).
-			add([]bool{false, true}).add([]string{"eCom1", "eCom11"}).add([][]byte{nil, []byte(`eCom2`)}).add([]time.Time{nt, nt}).
-			add([]null.String{null.MakeString("eCom3"), null.MakeString("eCom3")}).
-			add([]null.Int64{null.MakeInt64(4), null.MakeInt64(4)}).
-			add([]null.Float64{null.MakeFloat64(2.7), null.MakeFloat64(2.7)}).
-			add([]null.Bool{null.MakeBool(true)}).
-			add([]null.Time{null.MakeTime(nt), null.MakeTime(nt)})
-		assert.Exactly(t, 26, args.Len(), "Length mismatch")
+		args := append([]interface{}{},
+			nil, -1, []int64{1, 2}, []uint{567, 765}, []uint64{2}, []float64{1.2, 3.1},
+			[]bool{false, true}, []string{"eCom1", "eCom11"}, [][]byte{nil, []byte(`eCom2`)}, []time.Time{nt, nt},
+			[]null.String{null.MakeString("eCom3"), null.MakeString("eCom3")},
+			[]null.Int64{null.MakeInt64(4), null.MakeInt64(4)},
+			[]null.Float64{null.MakeFloat64(2.7), null.MakeFloat64(2.7)},
+			[]null.Bool{null.MakeBool(true)},
+			[]null.Time{null.MakeTime(nt), null.MakeTime(nt)})
+		assert.Exactly(t, 26, totalSliceLenSimple(args), "Length mismatch")
 		assert.Exactly(t,
 			fmt.Sprint([]interface{}{
 				nil, -1, 1, 2, 567, 765, 2, 1.2, 3.1, false, true, "eCom1", "eCom11", []byte(nil), []byte("eCom2"),
@@ -111,7 +109,7 @@ func TestArguments_Length_and_Stringer(t *testing.T) {
 				nt,
 				nt,
 			}),
-			fmt.Sprint(args.toInterfaces(nil)),
+			fmt.Sprint(toInterfaces(args, nil)),
 		)
 	})
 }
@@ -119,12 +117,12 @@ func TestArguments_Length_and_Stringer(t *testing.T) {
 func TestIFaceToArgs(t *testing.T) {
 	t.Parallel()
 	t.Run("not supported", func(t *testing.T) {
-		_, err := iFaceToArgs(arguments{}, time.Minute)
+		_, err := iFaceToArgs(nil, time.Minute)
 		assert.ErrorIsKind(t, errors.NotSupported, err)
 	})
 	t.Run("all types", func(t *testing.T) {
 		nt := now()
-		args, err := iFaceToArgs(arguments{},
+		args, err := iFaceToArgs(nil,
 			float32(2.3), float64(2.2),
 			int64(5), int(6), int32(7), int16(8), int8(9),
 			uint32(math.MaxUint32), uint16(math.MaxUint16), uint8(math.MaxUint8),
@@ -139,18 +137,6 @@ func TestIFaceToArgs(t *testing.T) {
 			int64(math.MaxUint32), int64(math.MaxUint16), int64(math.MaxUint8),
 			true, "Gopher", []uint8{0x48, 0x65, 0x6c, 0x6c, 0x6f},
 			now(), now(), nil,
-		}, args.toInterfaces(nil))
+		}, toInterfaces(args, nil))
 	})
-}
-
-func TestArguments_Clone(t *testing.T) {
-	t.Parallel()
-
-	args := makeArguments10().add(1).add("S1")
-	args2 := args.clone()
-	args2[0].value = int(2)
-	args2[1].value = "S1a"
-
-	assert.Exactly(t, []interface{}{int64(1), "S1"}, args.toInterfaces(nil))
-	assert.Exactly(t, []interface{}{int64(2), "S1a"}, args2.toInterfaces(nil))
 }

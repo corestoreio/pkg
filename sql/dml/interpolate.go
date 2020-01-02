@@ -46,7 +46,7 @@ var placeHolderByte = []byte(placeHolderStr)
 // The questions marks are of course depending on the values in the Arg*
 // functions. This function should be generally used when dealing with prepared
 // statements.
-func expandPlaceHolders(buf writer, sql []byte, args arguments) error {
+func expandPlaceHolders(buf writer, sql []byte, args []interface{}) error {
 	i := 0
 	pos := 0
 
@@ -61,7 +61,7 @@ func expandPlaceHolders(buf writer, sql []byte, args arguments) error {
 		switch r {
 		case placeHolderRune:
 			if i < len(args) {
-				reps, isSlice := args[i].sliceLen()
+				reps, isSlice := sliceLen(args[i])
 				if isSlice {
 					buf.WriteByte('(')
 				}
@@ -87,7 +87,7 @@ func expandPlaceHolders(buf writer, sql []byte, args arguments) error {
 // pool for optimal slice usage.
 type ip struct {
 	queryCache string
-	args       arguments
+	args       []interface{}
 	// ärgErr represents an argument error caused in any of the other functions.
 	// A stack has been attached to the error to identify properly the source.
 	ärgErr error // Sorry Germans for that terrible pun #notSorry
@@ -100,7 +100,7 @@ type ip struct {
 func Interpolate(sql string) *ip {
 	return &ip{
 		queryCache: sql,
-		args:       make(arguments, 0, defaultArgumentsCapacity),
+		args:       make([]interface{}, 0, 10),
 	}
 }
 
@@ -124,7 +124,7 @@ func (in *ip) MustString() string {
 }
 
 // ToSQL implements dml.QueryBuilder. The interface slice is always nil.
-func (in *ip)ToSQL() (_ string, alwaysNil []interface{}, _ error) {
+func (in *ip) ToSQL() (_ string, alwaysNil []interface{}, _ error) {
 	if in.ärgErr != nil {
 		return "", nil, in.ärgErr
 	}
@@ -138,44 +138,54 @@ func (in *ip)ToSQL() (_ string, alwaysNil []interface{}, _ error) {
 
 // Reset resets the internal argument cache for reuse. Avoids lots of
 // allocations.
-func (in *ip) Reset() *ip { in.args = in.args[:0]; return in }
-func (in *ip) Null() *ip  { in.args = in.args.add(nil); return in }
-func (in *ip) Unsafe(args ...interface{}) *ip {
-	for _, arg := range args {
-		in.args = in.args.add(arg)
+func (in *ip) Reset() *ip {
+	for i := range in.args {
+		var v interface{}
+		in.args[i] = v
 	}
+	in.args = in.args[:0]
 	return in
 }
-func (in *ip) Int(i int) *ip             { in.args = in.args.add(i); return in }
-func (in *ip) Ints(i ...int) *ip         { in.args = in.args.add(i); return in }
-func (in *ip) Int64(i int64) *ip         { in.args = in.args.add(i); return in }
-func (in *ip) Int64s(i ...int64) *ip     { in.args = in.args.add(i); return in }
-func (in *ip) Uint64(i uint64) *ip       { in.args = in.args.add(i); return in }
-func (in *ip) Uint64s(i ...uint64) *ip   { in.args = in.args.add(i); return in }
-func (in *ip) Float64(f float64) *ip     { in.args = in.args.add(f); return in }
-func (in *ip) Float64s(f ...float64) *ip { in.args = in.args.add(f); return in }
-func (in *ip) Str(s string) *ip          { in.args = in.args.add(s); return in }
-func (in *ip) Strs(s ...string) *ip      { in.args = in.args.add(s); return in }
-func (in *ip) Bool(b bool) *ip           { in.args = in.args.add(b); return in }
-func (in *ip) Bools(b ...bool) *ip       { in.args = in.args.add(b); return in }
+func (in *ip) Null() *ip { in.args = append(in.args, internalNULLNIL{}); return in }
+func (in *ip) Unsafe(args ...interface{}) *ip {
+	for i, a := range args {
+		if a == nil {
+			args[i] = internalNULLNIL{}
+		}
+	}
+	in.args = append(in.args, args...)
+	return in
+}
+func (in *ip) Int(i int) *ip             { in.args = append(in.args, i); return in }
+func (in *ip) Ints(i ...int) *ip         { in.args = append(in.args, i); return in }
+func (in *ip) Int64(i int64) *ip         { in.args = append(in.args, i); return in }
+func (in *ip) Int64s(i ...int64) *ip     { in.args = append(in.args, i); return in }
+func (in *ip) Uint64(i uint64) *ip       { in.args = append(in.args, i); return in }
+func (in *ip) Uint64s(i ...uint64) *ip   { in.args = append(in.args, i); return in }
+func (in *ip) Float64(f float64) *ip     { in.args = append(in.args, f); return in }
+func (in *ip) Float64s(f ...float64) *ip { in.args = append(in.args, f); return in }
+func (in *ip) Str(s string) *ip          { in.args = append(in.args, s); return in }
+func (in *ip) Strs(s ...string) *ip      { in.args = append(in.args, s); return in }
+func (in *ip) Bool(b bool) *ip           { in.args = append(in.args, b); return in }
+func (in *ip) Bools(b ...bool) *ip       { in.args = append(in.args, b); return in }
 
 // Bytes uses a byte slice for comparison. Providing a nil value returns a
 // NULL type. Detects between valid UTF-8 strings and binary data. Later gets
 // hex encoded.
-func (in *ip) Bytes(p []byte) *ip                  { in.args = in.args.add(p); return in }
-func (in *ip) BytesSlice(p ...[]byte) *ip          { in.args = in.args.add(p); return in }
-func (in *ip) Time(t time.Time) *ip                { in.args = in.args.add(t); return in }
-func (in *ip) Times(t ...time.Time) *ip            { in.args = in.args.add(t); return in }
-func (in *ip) NullString(nv null.String) *ip       { in.args = in.args.add(nv); return in }
-func (in *ip) NullStrings(nv ...null.String) *ip   { in.args = in.args.add(nv); return in }
-func (in *ip) NullFloat64(nv null.Float64) *ip     { in.args = in.args.add(nv); return in }
-func (in *ip) NullFloat64s(nv ...null.Float64) *ip { in.args = in.args.add(nv); return in }
-func (in *ip) NullInt64(nv null.Int64) *ip         { in.args = in.args.add(nv); return in }
-func (in *ip) NullInt64s(nv ...null.Int64) *ip     { in.args = in.args.add(nv); return in }
-func (in *ip) NullBool(nv null.Bool) *ip           { in.args = in.args.add(nv); return in }
-func (in *ip) NullBools(nv ...null.Bool) *ip       { in.args = in.args.add(nv); return in }
-func (in *ip) NullTime(nv null.Time) *ip           { in.args = in.args.add(nv); return in }
-func (in *ip) NullTimes(nv ...null.Time) *ip       { in.args = in.args.add(nv); return in }
+func (in *ip) Bytes(p []byte) *ip                  { in.args = append(in.args, p); return in }
+func (in *ip) BytesSlice(p ...[]byte) *ip          { in.args = append(in.args, p); return in }
+func (in *ip) Time(t time.Time) *ip                { in.args = append(in.args, t); return in }
+func (in *ip) Times(t ...time.Time) *ip            { in.args = append(in.args, t); return in }
+func (in *ip) NullString(nv null.String) *ip       { in.args = append(in.args, nv); return in }
+func (in *ip) NullStrings(nv ...null.String) *ip   { in.args = append(in.args, nv); return in }
+func (in *ip) NullFloat64(nv null.Float64) *ip     { in.args = append(in.args, nv); return in }
+func (in *ip) NullFloat64s(nv ...null.Float64) *ip { in.args = append(in.args, nv); return in }
+func (in *ip) NullInt64(nv null.Int64) *ip         { in.args = append(in.args, nv); return in }
+func (in *ip) NullInt64s(nv ...null.Int64) *ip     { in.args = append(in.args, nv); return in }
+func (in *ip) NullBool(nv null.Bool) *ip           { in.args = append(in.args, nv); return in }
+func (in *ip) NullBools(nv ...null.Bool) *ip       { in.args = append(in.args, nv); return in }
+func (in *ip) NullTime(nv null.Time) *ip           { in.args = append(in.args, nv); return in }
+func (in *ip) NullTimes(nv ...null.Time) *ip       { in.args = append(in.args, nv); return in }
 
 // DriverValues adds each Valuer as its own argument.
 func (in *ip) DriverValues(dvs ...driver.Valuer) *ip {
@@ -218,7 +228,7 @@ func (in *ip) Named(nArgs ...sql.NamedArg) *ip {
 
 // writeInterpolate merges `args` into `sql` and writes the result into `buf`. `sql`
 // stays unchanged.
-func writeInterpolate(buf *bytes.Buffer, sql string, args arguments) error {
+func writeInterpolate(buf *bytes.Buffer, sql string, args []interface{}) error {
 	// TODO support :name identifier and the name field in argument
 
 	phCount, argCount := strings.Count(sql, placeHolderStr), len(args)
@@ -235,7 +245,7 @@ func writeInterpolate(buf *bytes.Buffer, sql string, args arguments) error {
 		switch {
 		case r == placeHolderRune && argCount > 0:
 			if phCounter < argCount { // protect for index out of bounds
-				if err := args[phCounter].writeTo(buf, 0); err != nil {
+				if err := writeInterfaceValue(args[phCounter], buf, 0); err != nil {
 					return errors.WithStack(err)
 				}
 			}
@@ -267,7 +277,7 @@ func writeInterpolate(buf *bytes.Buffer, sql string, args arguments) error {
 // writeInterpolateByte same as writeInterpolate. Maybe package unsafe can do
 // here some magic to avoid duplicate code, but for now we stick with a copy of
 // the above original function writeInterpolateByte.
-func writeInterpolateBytes(buf *bytes.Buffer, sql []byte, args arguments) error {
+func writeInterpolateBytes(buf *bytes.Buffer, sql []byte, args []interface{}) error {
 	phCount, argCount := bytes.Count(sql, placeHolderByte), len(args)
 	if argCount > 0 && phCount != argCount {
 		return errors.Mismatch.Newf("[dml] Number of place holders (%d) vs number of arguments (%d) do not match.", phCount, argCount)
@@ -282,7 +292,7 @@ func writeInterpolateBytes(buf *bytes.Buffer, sql []byte, args arguments) error 
 		switch {
 		case r == placeHolderRune && argCount > 0:
 			if phCounter < argCount { // protect for index out of bounds
-				if err := args[phCounter].writeTo(buf, 0); err != nil {
+				if err := writeInterfaceValue(args[phCounter], buf, 0); err != nil {
 					return errors.WithStack(err)
 				}
 			}

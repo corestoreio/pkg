@@ -30,18 +30,17 @@ import (
 
 func BenchmarkArgsToIFace(b *testing.B) {
 	reflectIFaceContainer := make([]interface{}, 0, 25)
-	finalArgs := make([]interface{}, 0, 30)
+	finalArgs := make([]interface{}, 0, 40)
 	drvVal := []driver.Valuer{null.MakeString("I'm a valid null string: See the License for the specific language governing permissions and See the License for the specific language governing permissions and See the License for the specific language governing permissions and")}
-	argUnion := make(arguments, 0, 30)
 	now1 := Now.UTC()
+	argUnion := make([]interface{}, 0, 30)
 	b.ResetTimer()
-
 	b.Run("reflection all types", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			reflectIFaceContainer = append(reflectIFaceContainer,
 				int64(5), []int64{6, 7, 8},
 				uint64(9), []uint64{10, 11, 12},
-				float64(3.14159), []float64{33.44, 55.66, 77.88},
+				3.14159, []float64{33.44, 55.66, 77.88},
 				true, []bool{true, false, true},
 				`Licensed under the Apache License, Version 2.0 (the "License");`,
 				[]string{`Unless required by applicable law or agreed to in writing, software`, `Licensed under the Apache License, Version 2.0 (the "License");`},
@@ -61,22 +60,16 @@ func BenchmarkArgsToIFace(b *testing.B) {
 	})
 	b.Run("args all types", func(b *testing.B) {
 		// two times faster than the reflection version
-
 		finalArgs = finalArgs[:0]
-
 		for i := 0; i < b.N; i++ {
-			argUnion = argUnion.
-				add(5, []int64{6, 7, 8}).
-				add(uint64(9)).add([]uint64{10, 11, 12}).
-				add(3.14159, []float64{33.44, 55.66, 77.88}).
-				add(true, []bool{true, false, true}).
-				add(`Licensed under the Apache License, Version 2.0 (the "License");`,
-					[]string{`Unless required by applicable law or agreed to in writing, software`, `Licensed under the Apache License, Version 2.0 (the "License");`},
-					drvVal[0],
-					nil,
-					now1)
+			argUnion = append(argUnion,
+				5, []int64{6, 7, 8}, uint64(9), []uint64{10, 11, 12},
+				3.14159, []float64{33.44, 55.66, 77.88}, true, []bool{true, false, true},
+				`Licensed under the Apache License, Version 2.0 (the "License");`,
+				[]string{`Unless required by applicable law or agreed to in writing, software`, `Licensed under the Apache License, Version 2.0 (the "License");`},
+				drvVal[0], nil, now1)
 
-			finalArgs = argUnion.toInterfaces(finalArgs)
+			finalArgs = toInterfaces(argUnion, finalArgs)
 			// b.Fatal("%#v", finalArgs)
 			argUnion = argUnion[:0]
 			finalArgs = finalArgs[:0]
@@ -106,13 +99,13 @@ func BenchmarkArgsToIFace(b *testing.B) {
 
 		finalArgs = finalArgs[:0]
 		for i := 0; i < b.N; i++ {
-			argUnion = argUnion.
-				add(int64(5), []int64{6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19}).
-				add(uint64(9), []uint64{10, 11, 12, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29}).
-				add(3.14159, []float64{33.44, 55.66, 77.88, 11.22, math.Pi, math.E, math.Sqrt2}).
-				add(nil)
+			argUnion = append(argUnion,
+				int64(5), []int64{6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19},
+				uint64(9), []uint64{10, 11, 12, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29},
+				3.14159, []float64{33.44, 55.66, 77.88, 11.22, math.Pi, math.E, math.Sqrt2},
+				nil)
 
-			finalArgs = argUnion.toInterfaces(finalArgs)
+			finalArgs = toInterfaces(argUnion, finalArgs)
 			// b.Fatal("%#v", finalArgs)
 			argUnion = argUnion[:0]
 			finalArgs = finalArgs[:0]
@@ -191,7 +184,7 @@ func BenchmarkInterpolate(b *testing.B) {
 	const want = `SELECT * FROM x WHERE a = 1 AND b = -2 AND c = 3 AND d = 4 AND e = 5 AND f = 6 AND g = 7 AND h = 8 AND i = 9 AND j = 10 AND k = 'Hello' AND l = 1`
 	const sqlBytes = `SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ? AND e = ? AND f = ? AND g = ? AND h = ? AND i = ? AND j = ? AND k = ? AND l = ?`
 
-	args := arguments{}.add(1, -2, 3, 4, 5, 6, 7, 8, 9, 10, "Hello", true)
+	args := []interface{}{1, -2, 3, 4, 5, 6, 7, 8, 9, 10, "Hello", true}
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {

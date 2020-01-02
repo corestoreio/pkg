@@ -30,9 +30,8 @@ import (
 // https://www.adampalmer.me/iodigitalsec/2013/08/18/mysql_real_escape_string-wont-magically-solve-your-sql-injection-problems/
 
 const (
-	sqlStrNullUC             = "NULL"
-	sqlStar                  = "*"
-	defaultArgumentsCapacity = 5 // todo maybe remove this as its might not be worth
+	sqlStrNullUC = "NULL"
+	sqlStar      = "*"
 )
 
 // QualifiedRecord is a ColumnMapper with a qualifier. A QualifiedRecord gets
@@ -55,23 +54,13 @@ func Qualify(q string, record ColumnMapper) QualifiedRecord {
 	return QualifiedRecord{Qualifier: q, Record: record}
 }
 
-// argument is union type for different Go primitives and their slice
-// representation. argument must be used as a pointer because it slows
-// everything down. Check the benchmarks.
-type argument struct {
-	// isSet indicates if an argument is really set, because `argument` gets
-	// used as an embedded non-pointer type in type Condition.
-	isSet bool
-	value interface{}
-}
+// internalNULLNIL represent an internal indicator that the value NULL should be
+// written, if an interface{} is nil, then nothing gets written in function
+// writeInterfaceValue.
+type internalNULLNIL struct{}
 
-func (arg *argument) set(v interface{}) {
-	arg.isSet = true
-	arg.value = v
-}
-
-func (arg *argument) sliceLen() (l int, isSlice bool) {
-	switch v := arg.value.(type) {
+func sliceLen(arg interface{}) (l int, isSlice bool) {
+	switch v := arg.(type) {
 	case nil, int, int64, uint64, float64, bool, string, []byte, time.Time, null.String, null.Int64, null.Float64, null.Bool, null.Time:
 		l = 1
 	case []int:
@@ -123,15 +112,7 @@ func (arg *argument) sliceLen() (l int, isSlice bool) {
 	return
 }
 
-// writeTo mainly used in interpolate function
-func (arg argument) writeTo(w *bytes.Buffer, pos uint) error {
-	if !arg.isSet {
-		return nil
-	}
-	return writeIFaceValue(arg.value, w, pos)
-}
-
-func writeIFaceValue(arg interface{}, w *bytes.Buffer, pos uint) (err error) {
+func writeInterfaceValue(arg interface{}, w *bytes.Buffer, pos uint) (err error) {
 	var requestPos bool
 	if pos > 0 {
 		requestPos = true
@@ -366,67 +347,47 @@ func writeIFaceValue(arg interface{}, w *bytes.Buffer, pos uint) (err error) {
 			}
 			w.WriteByte(')')
 		}
-	case nil:
+	case internalNULLNIL:
 		_, err = w.WriteString(sqlStrNullUC)
+	case nil:
+		// do nothing
+		// _, err = w.WriteString("[PLEASE USE type internalNULLNIL]")
 	case sql.NamedArg:
-		return writeIFaceValue(v.Value, w, pos)
+		return writeInterfaceValue(v.Value, w, pos)
 	default:
-		panic(errors.NotSupported.Newf("[dml] Unsupported field type: %T => %#v", arg, arg))
+		return errors.NotSupported.Newf("[dml] Unsupported field type: %T => %#v", arg, arg)
 	}
 	return err
 }
 
-func newArgumentsFromIfaces(inArgs []interface{}) arguments {
-	// TODO this can come from a sync.Pool
-	args := make(arguments, len(inArgs))
-	for i, ia := range inArgs {
-		args[i] = argument{
-			isSet: true,
-			value: ia,
-		}
-	}
-	return args
-}
-
-type arguments []argument
-
-func (as arguments) clone() arguments {
-	if as == nil {
-		return nil
-	}
-	c := make(arguments, len(as))
-	copy(c, as)
-	return c
-}
-
-// multiplyArguments is only applicable when using *Union as a template.
-// multiplyArguments repeats the `args` variable n-times to match the number of
+// multiplyInterfaceValues is only applicable when using *Union as a template.
+// multiplyInterfaceValues repeats the `args` variable n-times to match the number of
 // generated SELECT queries in the final UNION statement. It should be called
 // after all calls to `StringReplace` have been made.
-func (as arguments) multiplyArguments(factor int) arguments {
+func multiplyInterfaceValues(inArg []interface{}, factor int) []interface{} {
 	if factor < 2 {
-		return as
+		return inArg
 	}
-	lArgs := len(as)
-	newA := make(arguments, lArgs*factor)
+	lArgs := len(inArg)
+	newA := make([]interface{}, lArgs*factor)
 	for i := 0; i < factor; i++ {
-		copy(newA[i*lArgs:], as)
+		copy(newA[i*lArgs:], inArg)
 	}
 	return newA
 }
 
 // Len returns the total length of all arguments.
-func (as arguments) Len() (l int) {
-	for _, arg := range as {
-		al, _ := arg.sliceLen()
+func totalSliceLenSimple(args []interface{}) (l int) {
+	for _, arg := range args {
+		al, _ := sliceLen(arg)
 		l += al
 	}
 	return l
 }
 
-func (as arguments) totalSliceLen() (l int, containsAtLeastOneSlice bool) {
-	for _, arg := range as {
-		al, isSlice := arg.sliceLen()
+func totalSliceLen(args []interface{}) (l int, containsAtLeastOneSlice bool) {
+	for _, arg := range args {
+		al, isSlice := sliceLen(arg)
 		if isSlice {
 			containsAtLeastOneSlice = true
 		}
@@ -436,19 +397,19 @@ func (as arguments) totalSliceLen() (l int, containsAtLeastOneSlice bool) {
 }
 
 // Write writes all arguments into buf and separates by a comma.
-func (as arguments) write(buf *bytes.Buffer) error {
-	if len(as) > 1 {
+func writeInterfaces(buf *bytes.Buffer, args []interface{}) error {
+	if len(args) > 1 {
 		buf.WriteByte('(')
 	}
-	for j, arg := range as {
+	for j, arg := range args {
 		if j > 0 {
 			buf.WriteByte(',')
 		}
-		if err := arg.writeTo(buf, 0); err != nil {
+		if err := writeInterfaceValue(arg, buf, 0); err != nil {
 			return errors.Wrapf(err, "[dml] args write failed at pos %d with argument %#v", j, arg)
 		}
 	}
-	if len(as) > 1 {
+	if len(args) > 1 {
 		buf.WriteByte(')')
 	}
 	return nil
@@ -457,18 +418,18 @@ func (as arguments) write(buf *bytes.Buffer) error {
 // toInterfaces creates an interface slice with flatend values. Each type is one
 // of the allowed types in driver.Value. It appends its values to the `args`
 // slice.
-func (as arguments) toInterfaces(args []interface{}) []interface{} {
-	if len(as) == 0 {
-		return args
+func toInterfaces(args []interface{}, appendTo []interface{}) []interface{} {
+	if len(args) == 0 {
+		return appendTo
 	}
-	if args == nil {
-		args = make([]interface{}, 0, 2*len(as))
+	if appendTo == nil {
+		appendTo = make([]interface{}, 0, 3*len(args))
 	}
 
-	for _, arg := range as {
-		args = flattenIFace(args, arg.value)
+	for _, arg := range args {
+		appendTo = flattenIFace(appendTo, arg)
 	}
-	return args
+	return appendTo
 }
 
 func flattenIFace(args []interface{}, arg interface{}) []interface{} {
@@ -652,21 +613,15 @@ func flattenIFace(args []interface{}, arg interface{}) []interface{} {
 	case driver.Valuer:
 		dvv, _ := vv.Value()
 		args = flattenIFace(args, dvv)
+	case internalNULLNIL:
+		args = flattenIFace(args, nil)
 	default:
 		panic(errors.NotSupported.Newf("[dml] Unsupported field type: %T", arg))
 	}
 	return args
 }
 
-func (as arguments) add(vals ...interface{}) arguments {
-	as2 := as
-	for _, v := range vals {
-		as2 = append(as2, argument{isSet: true, value: v})
-	}
-	return as2
-}
-
-func driverValue(appendTo arguments, dvs ...driver.Valuer) (arguments, error) {
+func driverValue(appendTo []interface{}, dvs ...driver.Valuer) ([]interface{}, error) {
 	// value is a value that drivers must be able to handle.
 	// It is either nil or an instance of one of these types:
 	//
@@ -676,7 +631,6 @@ func driverValue(appendTo arguments, dvs ...driver.Valuer) (arguments, error) {
 	//   []byte
 	//   string
 	//   time.Time
-	var arg argument
 	var i64s []int64
 	var f64s []float64
 	var bs []bool
@@ -709,26 +663,25 @@ func driverValue(appendTo arguments, dvs ...driver.Valuer) (arguments, error) {
 		}
 	}
 
-	arg.isSet = true
-
+	var arg interface{}
 	switch {
 	case len(i64s) > 0:
-		arg.value = i64s
+		arg = i64s
 	case len(f64s) > 0:
-		arg.value = f64s
+		arg = f64s
 	case len(bs) > 0:
-		arg.value = bs
+		arg = bs
 	case len(bytess) > 0:
-		arg.value = bytess
+		arg = bytess
 	case len(strs) > 0:
-		arg.value = strs
+		arg = strs
 	case len(times) > 0:
-		arg.value = times
+		arg = times
 	}
 	return append(appendTo, arg), nil
 }
 
-func driverValues(appendToArgs arguments, dvs ...driver.Valuer) (arguments, error) {
+func driverValues(appendToArgs []interface{}, dvs ...driver.Valuer) ([]interface{}, error) {
 	// value is a value that drivers must be able to handle.
 	// It is either nil or an instance of one of these types:
 	//
@@ -740,21 +693,19 @@ func driverValues(appendToArgs arguments, dvs ...driver.Valuer) (arguments, erro
 	//   time.Time
 	for _, dv := range dvs {
 		if dv == nil {
-			var a argument
-			a.set(nil)
-			appendToArgs = append(appendToArgs, a)
+			appendToArgs = append(appendToArgs, nil) // TODO consider internal NIL type
 			continue
 		}
 		v, err := dv.Value()
 		if err != nil {
 			return nil, errors.Fatal.New(err, "[dml] Driver.Values error for %#v", dv)
 		}
-		var a argument
+		var a interface{}
 		switch t := v.(type) {
 		case nil:
-			a.set(nil)
+			// nothing to do or TODO consider internal nil type
 		case int64, float64, bool, []byte, string, time.Time:
-			a.set(t)
+			a = t
 		default:
 			return nil, errors.NotSupported.Newf("[dml] Type %#v not supported in Driver.Values slice: %#v", t, dvs)
 		}
@@ -763,43 +714,45 @@ func driverValues(appendToArgs arguments, dvs ...driver.Valuer) (arguments, erro
 	return appendToArgs, nil
 }
 
-func iFaceToArgs(args arguments, values ...interface{}) (arguments, error) {
+func iFaceToArgs(args []interface{}, values ...interface{}) ([]interface{}, error) {
 	for _, val := range values {
 		switch v := val.(type) {
 		case float32:
-			args = args.add(float64(v))
+			args = append(args, float64(v))
 		case float64:
-			args = args.add(v)
+			args = append(args, v)
 		case int64:
-			args = args.add(v)
+			args = append(args, v)
 		case int:
-			args = args.add(int64(v))
+			args = append(args, int64(v))
 		case int32:
-			args = args.add(int64(v))
+			args = append(args, int64(v))
 		case int16:
-			args = args.add(int64(v))
+			args = append(args, int64(v))
 		case int8:
-			args = args.add(int64(v))
+			args = append(args, int64(v))
+		case uint64:
+			args = append(args, int64(v))
 		case uint32:
-			args = args.add(int64(v))
+			args = append(args, int64(v))
 		case uint16:
-			args = args.add(int64(v))
+			args = append(args, int64(v))
 		case uint8:
-			args = args.add(int64(v))
+			args = append(args, int64(v))
 		case bool:
-			args = args.add(v)
+			args = append(args, v)
 		case string:
-			args = args.add(v)
+			args = append(args, v)
 		case []byte:
-			args = args.add(v)
+			args = append(args, v)
 		case time.Time:
-			args = args.add(v)
+			args = append(args, v)
 		case *time.Time:
 			if v != nil {
-				args = args.add(*v)
+				args = append(args, *v)
 			}
 		case nil:
-			args = args.add(nil)
+			args = append(args, nil)
 		default:
 			return nil, errors.NotSupported.Newf("[dml] iFaceToArgs type %#v not yet supported", v)
 		}
