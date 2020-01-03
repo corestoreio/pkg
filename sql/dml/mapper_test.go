@@ -75,11 +75,11 @@ func TestColumnMap_BinaryText(t *testing.T) {
 	assert.NoError(t, cm.Binary(&textBinaryEncoder{data: []byte(`BinaryTest`)}).Err())
 	assert.Exactly(t,
 		[]interface{}{[]byte{0x42, 0x69, 0x6e, 0x61, 0x72, 0x79, 0x54, 0x65, 0x73, 0x74}},
-		toInterfaces(cm.args, nil))
+		expandInterfaces(cm.args))
 	assert.NoError(t, cm.Text(&textBinaryEncoder{data: []byte(`TextTest`)}).Err())
 	assert.Exactly(t,
 		[]interface{}{[]byte{0x42, 0x69, 0x6e, 0x61, 0x72, 0x79, 0x54, 0x65, 0x73, 0x74}, []byte{0x54, 0x65, 0x78, 0x74, 0x54, 0x65, 0x73, 0x74}},
-		toInterfaces(cm.args, nil))
+		expandInterfaces(cm.args))
 
 	cm.CheckValidUTF8 = true
 	err := cm.Text(&textBinaryEncoder{data: []byte("\xc0\x80")}).Err()
@@ -110,7 +110,7 @@ func TestColumnMap_Nil_Pointers(t *testing.T) {
 		Uint8(nil)
 
 	assert.Exactly(t, []interface{}{nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil},
-		toInterfaces(cm.args, nil))
+		expandInterfaces(cm.args))
 }
 
 func TestScannedColumn_String(t *testing.T) {

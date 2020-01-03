@@ -415,210 +415,208 @@ func writeInterfaces(buf *bytes.Buffer, args []interface{}) error {
 	return nil
 }
 
-// toInterfaces creates an interface slice with flatend values. Each type is one
-// of the allowed types in driver.Value. It appends its values to the `args`
-// slice.
-func toInterfaces(args []interface{}, appendTo []interface{}) []interface{} {
-	if len(args) == 0 {
-		return appendTo
+// expandInterfaces creates an interface slice with flatten values. E.g. a
+// string slice gets expanded into its strings. Each type is one of the allowed
+// types in driver.Value. It appends its values to the `args` slice.
+func expandInterfaces(args []interface{}) []interface{} {
+	lenArgs := len(args)
+	if lenArgs == 0 {
+		return nil
 	}
-	if appendTo == nil {
-		appendTo = make([]interface{}, 0, 3*len(args))
-	}
-
+	appendTo := make([]interface{}, 0, 3*lenArgs)
 	for _, arg := range args {
-		appendTo = flattenIFace(appendTo, arg)
+		appendTo = expandInterface(appendTo, arg)
 	}
 	return appendTo
 }
 
-func flattenIFace(args []interface{}, arg interface{}) []interface{} {
+func expandInterface(appendTo []interface{}, arg interface{}) []interface{} {
 	switch vv := arg.(type) {
 
 	case bool, string, []byte, time.Time, float64, int64, nil:
-		args = append(args, arg)
+		appendTo = append(appendTo, arg)
 
 	case int:
-		args = append(args, int64(vv))
+		appendTo = append(appendTo, int64(vv))
 	case []int:
 		for _, v := range vv {
-			args = append(args, int64(v))
+			appendTo = append(appendTo, int64(v))
 		}
 	case int8:
-		args = append(args, int64(vv))
+		appendTo = append(appendTo, int64(vv))
 	case []int8:
 		for _, v := range vv {
-			args = append(args, int64(v))
+			appendTo = append(appendTo, int64(v))
 		}
 	case int16:
-		args = append(args, int64(vv))
+		appendTo = append(appendTo, int64(vv))
 	case []int16:
 		for _, v := range vv {
-			args = append(args, int64(v))
+			appendTo = append(appendTo, int64(v))
 		}
 	case int32:
-		args = append(args, int64(vv))
+		appendTo = append(appendTo, int64(vv))
 	case []int32:
 		for _, v := range vv {
-			args = append(args, int64(v))
+			appendTo = append(appendTo, int64(v))
 		}
 
 	case []int64:
 		for _, v := range vv {
-			args = append(args, v)
+			appendTo = append(appendTo, v)
 		}
 	case null.Int8:
-		args = vv.Append(args)
+		appendTo = vv.Append(appendTo)
 	case []null.Int8:
 		for _, v := range vv {
-			args = v.Append(args)
+			appendTo = v.Append(appendTo)
 		}
 	case null.Int16:
-		args = vv.Append(args)
+		appendTo = vv.Append(appendTo)
 	case []null.Int16:
 		for _, v := range vv {
-			args = v.Append(args)
+			appendTo = v.Append(appendTo)
 		}
 	case null.Int32:
-		args = vv.Append(args)
+		appendTo = vv.Append(appendTo)
 	case []null.Int32:
 		for _, v := range vv {
-			args = v.Append(args)
+			appendTo = v.Append(appendTo)
 		}
 	case null.Int64:
-		args = vv.Append(args)
+		appendTo = vv.Append(appendTo)
 	case []null.Int64:
 		for _, v := range vv {
-			args = v.Append(args)
+			appendTo = v.Append(appendTo)
 		}
 
 		// Get send as text in a byte slice. The MySQL/MariaDB Server type
 		// casts it into a bigint. If you change this, a test will fail.
 	case uint64:
 		if vv > math.MaxInt64 {
-			args = append(args, strconv.AppendUint([]byte{}, vv, 10))
+			appendTo = append(appendTo, strconv.AppendUint([]byte{}, vv, 10))
 		} else {
-			args = append(args, int64(vv))
+			appendTo = append(appendTo, int64(vv))
 		}
 	case null.Uint8:
-		args = vv.Append(args)
+		appendTo = vv.Append(appendTo)
 	case []null.Uint8:
 		for _, v := range vv {
-			args = v.Append(args)
+			appendTo = v.Append(appendTo)
 		}
 	case null.Uint16:
-		args = vv.Append(args)
+		appendTo = vv.Append(appendTo)
 	case []null.Uint16:
 		for _, v := range vv {
-			args = v.Append(args)
+			appendTo = v.Append(appendTo)
 		}
 	case null.Uint32:
-		args = vv.Append(args) // TODO check all uints for overflow of MaxInt64
+		appendTo = vv.Append(appendTo) // TODO check all uints for overflow of MaxInt64
 	case []null.Uint32:
 		for _, v := range vv {
-			args = v.Append(args)
+			appendTo = v.Append(appendTo)
 		}
 	case null.Uint64:
-		args = vv.Append(args)
+		appendTo = vv.Append(appendTo)
 	case []null.Uint64:
 		for _, v := range vv {
-			args = v.Append(args)
+			appendTo = v.Append(appendTo)
 		}
 
 	case uint:
 		if vv > math.MaxInt64 {
-			args = append(args, strconv.AppendUint([]byte{}, uint64(vv), 10))
+			appendTo = append(appendTo, strconv.AppendUint([]byte{}, uint64(vv), 10))
 		} else {
-			args = append(args, int64(vv))
+			appendTo = append(appendTo, int64(vv))
 		}
 
 	case uint8:
-		args = append(args, int64(vv))
+		appendTo = append(appendTo, int64(vv))
 	case uint16:
-		args = append(args, int64(vv))
+		appendTo = append(appendTo, int64(vv))
 	case uint32:
-		args = append(args, int64(vv))
+		appendTo = append(appendTo, int64(vv))
 
 	case []uint64:
 		for _, v := range vv {
 			if v > math.MaxInt64 {
-				args = append(args, strconv.AppendUint([]byte{}, v, 10))
+				appendTo = append(appendTo, strconv.AppendUint([]byte{}, v, 10))
 			} else {
-				args = append(args, int64(v))
+				appendTo = append(appendTo, int64(v))
 			}
 		}
 	case []uint:
 		for _, v := range vv {
 			if v > math.MaxInt64 {
-				args = append(args, strconv.AppendUint([]byte{}, uint64(v), 10))
+				appendTo = append(appendTo, strconv.AppendUint([]byte{}, uint64(v), 10))
 			} else {
-				args = append(args, int64(v))
+				appendTo = append(appendTo, int64(v))
 			}
 		}
 
 	case []float64:
 		for _, v := range vv {
-			args = append(args, v)
+			appendTo = append(appendTo, v)
 		}
 	case null.Float64:
-		args = vv.Append(args)
+		appendTo = vv.Append(appendTo)
 	case []null.Float64:
 		for _, v := range vv {
-			args = v.Append(args)
+			appendTo = v.Append(appendTo)
 		}
 
 	case []bool:
 		for _, v := range vv {
-			args = append(args, v)
+			appendTo = append(appendTo, v)
 		}
 	case null.Bool:
-		args = vv.Append(args)
+		appendTo = vv.Append(appendTo)
 	case []null.Bool:
 		for _, v := range vv {
-			args = v.Append(args)
+			appendTo = v.Append(appendTo)
 		}
 
 	case []string:
 		for _, v := range vv {
-			args = append(args, v)
+			appendTo = append(appendTo, v)
 		}
 	case null.String:
-		args = vv.Append(args)
+		appendTo = vv.Append(appendTo)
 	case []null.String:
 		for _, v := range vv {
-			args = v.Append(args)
+			appendTo = v.Append(appendTo)
 		}
 
 	case [][]byte:
 		for _, v := range vv {
-			args = append(args, v)
+			appendTo = append(appendTo, v)
 		}
 
 	case []time.Time:
 		for _, v := range vv {
-			args = append(args, v)
+			appendTo = append(appendTo, v)
 		}
 	case null.Time:
-		args = vv.Append(args)
+		appendTo = vv.Append(appendTo)
 	case []null.Time:
 		for _, v := range vv {
-			args = v.Append(args)
+			appendTo = v.Append(appendTo)
 		}
 	case sql.NamedArg:
-		args = flattenIFace(args, vv.Value)
+		appendTo = expandInterface(appendTo, vv.Value)
 	case []sql.NamedArg:
 		for _, v := range vv {
-			args = flattenIFace(args, v.Value)
+			appendTo = expandInterface(appendTo, v.Value)
 		}
 	case driver.Valuer:
 		dvv, _ := vv.Value()
-		args = flattenIFace(args, dvv)
+		appendTo = expandInterface(appendTo, dvv)
 	case internalNULLNIL:
-		args = flattenIFace(args, nil)
+		appendTo = expandInterface(appendTo, nil)
 	default:
 		panic(errors.NotSupported.Newf("[dml] Unsupported field type: %T", arg))
 	}
-	return args
+	return appendTo
 }
 
 func driverValue(appendTo []interface{}, dvs ...driver.Valuer) ([]interface{}, error) {

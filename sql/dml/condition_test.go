@@ -260,7 +260,7 @@ func TestConditions_writeOnDuplicateKey(t *testing.T) {
 			// args, _, err = cnds.appendArgs(args, appendArgsDUPKEY)
 			// assert.NoError(t, err)
 			// assert.Exactly(t, wantSQL, buf.String(), t.Name())
-			// assert.Exactly(t, wantArgs, args.toInterfaces(), t.Name())
+			// assert.Exactly(t, wantArgs, args.expandInterfaces(), t.Name())
 		}
 	}
 	t.Run("empty columns does nothing", runner(Conditions{}, ""))

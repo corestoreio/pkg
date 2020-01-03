@@ -234,7 +234,7 @@ func BenchmarkJackC_GoDBBench(b *testing.B) {
 			}
 		}
 	})
-	b.Run("SelectMultipleRowsCollect toInterfaces", func(b *testing.B) {
+	b.Run("SelectMultipleRowsCollect expandInterfaces", func(b *testing.B) {
 		ctx := context.Background()
 		adb := stmt.WithDBR()
 		b.ResetTimer()

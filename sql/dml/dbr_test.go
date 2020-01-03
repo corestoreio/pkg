@@ -51,7 +51,7 @@ func TestArguments_Interfaces(t *testing.T) {
 				nil, int64(-1), int64(1), int64(2), 3.1, true, "eCom1", []uint8{0x65, 0x43, 0x6f, 0x6d, 0x32}, now(),
 				"eCom3", int64(4), 2.7, true, now(),
 			},
-			toInterfaces(args, container))
+			expandInterfaces(args))
 		container = container[:0]
 	})
 	t.Run("no slices, nulls invalid", func(t *testing.T) {
@@ -64,7 +64,7 @@ func TestArguments_Interfaces(t *testing.T) {
 				nil, int64(-1), int64(1), int64(2), 3.1, true, "eCom1", []uint8{0x65, 0x43, 0x6f, 0x6d, 0x32}, now(),
 				nil, nil, nil, nil, nil,
 			},
-			toInterfaces(args, container))
+			expandInterfaces(args))
 		container = container[:0]
 	})
 	t.Run("slices, nulls valid", func(t *testing.T) {
@@ -82,10 +82,10 @@ func TestArguments_Interfaces(t *testing.T) {
 				2.7, 2.7,
 				true, now(), now(),
 			},
-			toInterfaces(args, nil))
+			expandInterfaces(args))
 	})
 	t.Run("returns nil interface", func(t *testing.T) {
-		assert.Nil(t, toInterfaces([]interface{}{}, nil), "args.toInterfaces() must return nil")
+		assert.Nil(t, expandInterfaces([]interface{}{}), "args.expandInterfaces() must return nil")
 	})
 }
 
@@ -103,7 +103,7 @@ func TestArguments_DriverValue(t *testing.T) {
 				nil, []uint8(nil), int64(3), 2.7, true,
 				[]uint8{0x49, 0x6e, 0x76, 0x6f, 0x69, 0x63, 0x65}, "Creditmemo", "2006-01-02 19:04:05", now(),
 			},
-			toInterfaces(args, nil))
+			expandInterfaces(args))
 	})
 
 	t.Run("Driver.Value supported types", func(t *testing.T) {
@@ -123,7 +123,7 @@ func TestArguments_DriverValue(t *testing.T) {
 				nil, []uint8(nil), int64(3), 2.7, true,
 				[]uint8{0x49, 0x6e, 0x76, 0x6f, 0x69, 0x63, 0x65}, "Creditmemo", "2006-01-02 19:04:05", now(),
 			},
-			toInterfaces(args, nil))
+			expandInterfaces(args))
 	})
 
 	t.Run("Driver.Values panics because not supported", func(t *testing.T) {

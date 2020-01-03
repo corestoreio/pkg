@@ -134,7 +134,7 @@ func (a *DBR) WithQualifiedColumnsAliases(aliases ...string) *DBR {
 
 // ToSQL generates the SQL string.
 func (a *DBR) ToSQL() (string, []interface{}, error) {
-	sqlStr, _, _, err := a.prepareArgs()
+	sqlStr, _, _, err := a.prepareArgs(nil)
 	return sqlStr, nil, err
 }
 
@@ -153,14 +153,14 @@ func (a *DBR) TestWithArgs(args ...interface{}) QueryBuilder {
 		}
 		secondCallInterpolates++
 
-		sqlStr, args, _, err := a.prepareArgs(args...)
+		sqlStr, args, _, err := a.prepareArgs(args)
 		return sqlStr, args, err
 	})
 }
 
 func (a *DBR) testWithArgs(args ...interface{}) QueryBuilder {
 	return QuerySQLFn(func() (string, []interface{}, error) {
-		sqlStr, args, _, err := a.prepareArgs(args...)
+		sqlStr, args, _, err := a.prepareArgs(args)
 		return sqlStr, args, err
 	})
 }
@@ -208,7 +208,7 @@ func (a *DBR) ExpandPlaceHolders() *DBR {
 // This allows for a developer to reuse the interface slice and save
 // allocations. All method receivers are not thread safe. The returned interface
 // slice is the same as `extArgs`.
-func (a *DBR) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}, _ []QualifiedRecord, err error) {
+func (a *DBR) prepareArgs(extArgs []interface{}) (_ string, _ []interface{}, _ []QualifiedRecord, err error) {
 	if a.base.ärgErr != nil {
 		return "", nil, nil, errors.WithStack(a.base.ärgErr)
 	}
@@ -217,7 +217,9 @@ func (a *DBR) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}, _ 
 	var recs []QualifiedRecord
 	var args []interface{}
 	if lenExtArgs > 0 {
-		args = make([]interface{}, 0, 2*lenExtArgs) // TODO sync.Pool
+		args = pooledInterfacesGet()
+		defer pooledInterfacesPut(args)
+
 		for _, ea := range extArgs {
 			switch eaTypeValue := ea.(type) {
 			case nil:
@@ -247,18 +249,18 @@ func (a *DBR) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}, _ 
 
 	if a.base.templateStmtCount < 2 && hasNamedArgs == 0 && len(recs) == 0 && a.Options == 0 { // no options and qualified records provided
 		if a.isPrepared {
-			return "", toInterfaces(args, nil), nil, nil
+			return "", expandInterfaces(args), nil, nil
 		}
 
 		if a.Options == 0 && len(a.OrderBys) == 0 && !a.LimitValid {
-			return cachedSQL, toInterfaces(args, nil), nil, nil
+			return cachedSQL, expandInterfaces(args), nil, nil
 		}
 		buf := bufferpool.Get()
 		defer bufferpool.Put(buf)
 		buf.WriteString(cachedSQL)
 		sqlWriteOrderBy(buf, a.OrderBys, false)
 		sqlWriteLimitOffset(buf, a.LimitValid, a.OffsetValid, a.OffsetCount, a.LimitCount)
-		return buf.String(), toInterfaces(args, nil), nil, nil
+		return buf.String(), expandInterfaces(args), nil, nil
 	}
 
 	if !a.isPrepared && hasNamedArgs == 0 {
@@ -280,7 +282,7 @@ func (a *DBR) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}, _ 
 	}
 
 	if a.isPrepared {
-		return "", toInterfaces(collectedArgs, nil), recs, nil
+		return "", expandInterfaces(collectedArgs), recs, nil
 	}
 
 	// Make a copy of the original SQL statement because it gets modified in the
@@ -319,7 +321,7 @@ func (a *DBR) prepareArgs(extArgs ...interface{}) (_ string, _ []interface{}, _ 
 		return sqlBuf.Second.String(), nil, nil, nil
 	}
 
-	return sqlBuf.First.String(), toInterfaces(collectedArgs, nil), recs, nil
+	return sqlBuf.First.String(), expandInterfaces(collectedArgs), recs, nil
 }
 
 func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArgs []interface{}, recs []QualifiedRecord) ([]interface{}, error) {
@@ -353,8 +355,7 @@ func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArg
 
 	var nextUnnamedArgPos int
 	// TODO refactor prototype and make it performant and beautiful code
-	cm := NewColumnMap(len(collectedArgs)+len(recs), "") // can use an arg pool DBR sync.Pool, nope.
-
+	cm := NewColumnMap(len(collectedArgs)+len(recs), "")  // can use an arg pool DBR sync.Pool, nope.
 	for tsc := 0; tsc < a.base.templateStmtCount; tsc++ { // only in case of UNION statements in combination with a template SELECT, can be optimized later
 
 		// `qualifiedColumns` contains the correct order as the place holders
@@ -413,12 +414,10 @@ func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArg
 // returned interface slice is the same as the `extArgs` slice. extArgs =
 // external arguments.
 func (a *DBR) prepareArgsInsert(extArgs []interface{}, recs []QualifiedRecord) (string, []interface{}, []QualifiedRecord, error) {
-	// cm := pooledColumnMapGet()
 	sqlBuf := bufferpool.GetTwin()
 	defer bufferpool.PutTwin(sqlBuf)
 	lenExtArgs := len(extArgs)
-	cm := NewColumnMap(16)
-	cm.setColumns(a.base.qualifiedColumns)
+	cm := NewColumnMap(2*lenExtArgs, a.base.qualifiedColumns...)
 	cm.args = extArgs
 	lenInsertCachedSQL := len(a.insertCachedSQL)
 	cachedSQL, _ := a.base.cachedSQL[a.base.CacheKey]
@@ -443,7 +442,7 @@ func (a *DBR) prepareArgsInsert(extArgs []interface{}, recs []QualifiedRecord) (
 
 	if a.isPrepared {
 		// TODO above construct can be more optimized when using prepared statements
-		return "", toInterfaces(cm.args, nil), recs, nil
+		return "", expandInterfaces(cm.args), recs, nil
 	}
 
 	totalArgLen := uint(len(cm.args))
@@ -486,7 +485,7 @@ func (a *DBR) prepareArgsInsert(extArgs []interface{}, recs []QualifiedRecord) (
 		}
 	}
 
-	return a.insertCachedSQL, toInterfaces(cm.args, nil), recs, nil
+	return a.insertCachedSQL, expandInterfaces(cm.args), recs, nil
 }
 
 // nextUnnamedArg returns an unnamed argument by its position.
@@ -592,7 +591,7 @@ func (a *DBR) Close() error {
 
 var pooledColumnMap = sync.Pool{
 	New: func() interface{} {
-		return NewColumnMap(20, "")
+		return NewColumnMap(30, "")
 	},
 }
 
@@ -611,7 +610,7 @@ func pooledBufferColumnMapPut(cm *ColumnMap, buf *bufferpool.TwinBuffer, fn func
 	pooledColumnMap.Put(cm)
 }
 
-const argumentPoolMaxSize = 32
+const argumentPoolMaxSize = 256
 
 // regarding the returned slices in both pools: https://github.com/golang/go/blob/7e394a2/src/net/http/h2_bundle.go#L998-L1043
 // they also uses a []byte slice in the pool and not a pointer
@@ -626,10 +625,13 @@ func pooledInterfacesGet() []interface{} {
 	return pooledInterfaces.Get().([]interface{})
 }
 
-func pooledInterfacesPut(a []interface{}) {
-	if cap(a) <= argumentPoolMaxSize {
-		a = a[:0]
-		pooledInterfaces.Put(a)
+func pooledInterfacesPut(args []interface{}) {
+	if cap(args) <= argumentPoolMaxSize {
+		// for i := range args {
+		//	args[i] = nil
+		//}
+		args = args[:0]
+		pooledInterfaces.Put(args)
 	}
 }
 
@@ -644,17 +646,17 @@ func pooledInterfacesPut(a []interface{}) {
 // function ExecValidateOneAffectedRow to check if the underlying SQL statement
 // has affected only one row.
 func (a *DBR) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
-	return a.exec(ctx, args...)
+	return a.exec(ctx, args)
 }
 
 // QueryContext traditional way of the databasel/sql package.
 func (a *DBR) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error) {
-	return a.query(ctx, args...)
+	return a.query(ctx, args)
 }
 
 // QueryRowContext traditional way of the databasel/sql package.
 func (a *DBR) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row {
-	sqlStr, args, _, err := a.prepareArgs(args...)
+	sqlStr, args, _, err := a.prepareArgs(args)
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug("QueryRowContext", log.String("sql", sqlStr), log.String("source", string(a.base.source)), log.Err(err))
 	}
@@ -669,7 +671,7 @@ func (a *DBR) IterateSerial(ctx context.Context, callBack func(*ColumnMap) error
 		defer log.WhenDone(a.base.Log).Debug("IterateSerial", log.String("id", a.base.id), log.Err(err))
 	}
 
-	r, err := a.query(ctx, args...)
+	r, err := a.query(ctx, args)
 	if err != nil {
 		err = errors.Wrapf(err, "[dml] IterateSerial.Query with query ID %q", a.base.id)
 		return
@@ -741,7 +743,7 @@ func (a *DBR) IterateParallel(ctx context.Context, concurrencyLevel int, callBac
 		return errors.OutOfRange.Newf("[dml] DBR.IterateParallel concurrencyLevel %d for query ID %q cannot be smaller zero.", concurrencyLevel, a.base.id)
 	}
 
-	r, err := a.query(ctx, args...)
+	r, err := a.query(ctx, args)
 	if err != nil {
 		err = errors.Wrapf(err, "[dml] IterateParallel.Query with query ID %q", a.base.id)
 		return
@@ -778,7 +780,7 @@ func (a *DBR) Load(ctx context.Context, s ColumnMapper, args ...interface{}) (ro
 		defer log.WhenDone(a.base.Log).Debug("Load", log.String("id", a.base.id), log.Err(err), log.ObjectTypeOf("ColumnMapper", s), log.Uint64("row_count", rowCount))
 	}
 
-	r, err := a.query(ctx, args...)
+	r, err := a.query(ctx, args)
 	if err != nil {
 		err = errors.Wrapf(err, "[dml] DBR.Load.QueryContext failed with queryID %q and ColumnMapper %T", a.base.id, s)
 		return
@@ -865,7 +867,7 @@ func (a *DBR) loadPrimitive(ctx context.Context, ptr interface{}, args ...interf
 		defer log.WhenDone(a.base.Log).Debug("LoadPrimitive", log.String("id", a.base.id), log.Err(err), log.ObjectTypeOf("ptr_type", ptr))
 	}
 	var rows *sql.Rows
-	rows, err = a.query(ctx, args...)
+	rows, err = a.query(ctx, args)
 	if err != nil {
 		err = errors.WithStack(err)
 		return
@@ -899,7 +901,7 @@ func (a *DBR) LoadInt64s(ctx context.Context, dest []int64, args ...interface{})
 		defer log.WhenDone(a.base.Log).Debug("LoadInt64s", log.Int("row_count", rowCount), log.Err(err))
 	}
 	var r *sql.Rows
-	r, err = a.query(ctx, args...)
+	r, err = a.query(ctx, args)
 	if err != nil {
 		err = errors.WithStack(err)
 		return
@@ -938,7 +940,7 @@ func (a *DBR) LoadUint64s(ctx context.Context, dest []uint64, args ...interface{
 		defer log.WhenDone(a.base.Log).Debug("LoadUint64s", log.Int("row_count", rowCount), log.String("id", a.base.id), log.Err(err))
 	}
 
-	rows, err := a.query(ctx, args...)
+	rows, err := a.query(ctx, args)
 	if err != nil {
 		err = errors.WithStack(err)
 		return
@@ -977,7 +979,7 @@ func (a *DBR) LoadFloat64s(ctx context.Context, dest []float64, args ...interfac
 	}
 
 	var rows *sql.Rows
-	if rows, err = a.query(ctx, args...); err != nil {
+	if rows, err = a.query(ctx, args); err != nil {
 		err = errors.WithStack(err)
 		return
 	}
@@ -1014,7 +1016,7 @@ func (a *DBR) LoadStrings(ctx context.Context, dest []string, args ...interface{
 		defer log.WhenDone(a.base.Log).Debug("LoadStrings", log.Int("row_count", rowCount), log.String("id", a.base.id), log.Err(err))
 	}
 
-	rows, err := a.query(ctx, args...)
+	rows, err := a.query(ctx, args)
 	if err != nil {
 		err = errors.WithStack(err)
 		return
@@ -1044,21 +1046,16 @@ func (a *DBR) LoadStrings(ctx context.Context, dest []string, args ...interface{
 	return dest, err
 }
 
-func (a *DBR) query(ctx context.Context, args ...interface{}) (rows *sql.Rows, err error) {
-	pArgs := pooledInterfacesGet()
-	defer pooledInterfacesPut(pArgs)
-	pArgs = append(pArgs, args...)
-
-	var sqlStr string
-	var recs []QualifiedRecord
-	sqlStr, pArgs, recs, err = a.prepareArgs(pArgs...)
+func (a *DBR) query(ctx context.Context, args []interface{}) (rows *sql.Rows, err error) {
+	sqlStr, args, recs, err := a.prepareArgs(args)
 	if a.base.Log != nil && a.base.Log.IsDebug() {
-		defer log.WhenDone(a.base.Log).Debug("Query", log.String("sql", sqlStr), log.Int("length_recs", len(recs)), log.Int("length_args", len(pArgs)), log.String("source", string(a.base.source)), log.Err(err))
+		defer log.WhenDone(a.base.Log).Debug("Query", log.String("sql", sqlStr), log.Int("length_recs", len(recs)),
+			log.Int("length_args", len(args)), log.String("source", string(a.base.source)), log.Err(err))
 	}
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	rows, err = a.base.DB.QueryContext(ctx, sqlStr, pArgs...)
+	rows, err = a.base.DB.QueryContext(ctx, sqlStr, args...)
 	if err != nil {
 		if sqlStr == "" {
 			cachedSQL, _ := a.base.cachedSQL[a.base.CacheKey]
@@ -1069,22 +1066,16 @@ func (a *DBR) query(ctx context.Context, args ...interface{}) (rows *sql.Rows, e
 	return rows, err
 }
 
-func (a *DBR) exec(ctx context.Context, args ...interface{}) (result sql.Result, err error) {
-	pArgs := pooledInterfacesGet()
-	defer pooledInterfacesPut(pArgs)
-	pArgs = append(pArgs, args...)
-
-	var sqlStr string
-	var recs []QualifiedRecord
-	sqlStr, pArgs, recs, err = a.prepareArgs(pArgs...)
+func (a *DBR) exec(ctx context.Context, args []interface{}) (result sql.Result, err error) {
+	sqlStr, args, recs, err := a.prepareArgs(args)
 	if a.base.Log != nil && a.base.Log.IsDebug() {
-		defer log.WhenDone(a.base.Log).Debug("Exec", log.String("sql", sqlStr), log.Int("length_recs", len(recs)), log.Int("length_args", len(pArgs)), log.String("source", string(a.base.source)), log.Err(err))
+		defer log.WhenDone(a.base.Log).Debug("Exec", log.String("sql", sqlStr), log.Int("length_recs", len(recs)), log.Int("length_args", len(args)), log.String("source", string(a.base.source)), log.Err(err))
 	}
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	result, err = a.base.DB.ExecContext(ctx, sqlStr, pArgs...)
+	result, err = a.base.DB.ExecContext(ctx, sqlStr, args...)
 	if err != nil {
 		return nil, errors.Wrapf(err, "[dml] ExecContext with query %q", sqlStr) // err gets catched by the defer
 	}

@@ -69,7 +69,7 @@ func BenchmarkArgsToIFace(b *testing.B) {
 				[]string{`Unless required by applicable law or agreed to in writing, software`, `Licensed under the Apache License, Version 2.0 (the "License");`},
 				drvVal[0], nil, now1)
 
-			finalArgs = toInterfaces(argUnion, finalArgs)
+			finalArgs = expandInterfaces(argUnion)
 			// b.Fatal("%#v", finalArgs)
 			argUnion = argUnion[:0]
 			finalArgs = finalArgs[:0]
@@ -105,7 +105,7 @@ func BenchmarkArgsToIFace(b *testing.B) {
 				3.14159, []float64{33.44, 55.66, 77.88, 11.22, math.Pi, math.E, math.Sqrt2},
 				nil)
 
-			finalArgs = toInterfaces(argUnion, finalArgs)
+			finalArgs = expandInterfaces(argUnion)
 			// b.Fatal("%#v", finalArgs)
 			argUnion = argUnion[:0]
 			finalArgs = finalArgs[:0]

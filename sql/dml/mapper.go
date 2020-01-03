@@ -87,6 +87,9 @@ func NewColumnMap(cap int, columns ...string) *ColumnMap {
 
 // reset gets called when returning into the pool
 func (b *ColumnMap) reset() {
+	for i := range b.args {
+		b.args[i] = nil
+	}
 	b.args = b.args[:0]
 	b.initialized = false
 	b.HasRows = false

@@ -73,7 +73,7 @@ func TestArguments_Length_and_Stringer(t *testing.T) {
 
 		assert.Exactly(t,
 			fmt.Sprint([]interface{}{nil, -1, 1, 9898, 2, 3.1, true, "eCom1", []byte("eCom2"), nt, "eCom3", 4, 2.7, true, nt}),
-			fmt.Sprint(toInterfaces(args, nil)))
+			fmt.Sprint(expandInterfaces(args)))
 	})
 
 	t.Run("no slices, nulls invalid", func(t *testing.T) {
@@ -86,7 +86,7 @@ func TestArguments_Length_and_Stringer(t *testing.T) {
 			fmt.Sprint([]interface{}{
 				nil, -1, int64(1), uint64(2), 3.1, true, "eCom1", []byte("eCom2"), nt, nil, nil, nil, nil, nil,
 			}),
-			fmt.Sprint(toInterfaces(args, nil)),
+			fmt.Sprint(expandInterfaces(args)),
 		)
 	})
 
@@ -109,7 +109,7 @@ func TestArguments_Length_and_Stringer(t *testing.T) {
 				nt,
 				nt,
 			}),
-			fmt.Sprint(toInterfaces(args, nil)),
+			fmt.Sprint(expandInterfaces(args)),
 		)
 	})
 }
@@ -137,6 +137,6 @@ func TestIFaceToArgs(t *testing.T) {
 			int64(math.MaxUint32), int64(math.MaxUint16), int64(math.MaxUint8),
 			true, "Gopher", []uint8{0x48, 0x65, 0x6c, 0x6c, 0x6f},
 			now(), now(), nil,
-		}, toInterfaces(args, nil))
+		}, expandInterfaces(args))
 	})
 }
