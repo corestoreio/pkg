@@ -134,7 +134,7 @@ func (a *DBR) WithQualifiedColumnsAliases(aliases ...string) *DBR {
 
 // ToSQL generates the SQL string.
 func (a *DBR) ToSQL() (string, []interface{}, error) {
-	sqlStr, _, _, err := a.prepareArgs(nil)
+	sqlStr, _, _, err := a.prepareQueryAndArgs(nil)
 	return sqlStr, nil, err
 }
 
@@ -153,14 +153,14 @@ func (a *DBR) TestWithArgs(args ...interface{}) QueryBuilder {
 		}
 		secondCallInterpolates++
 
-		sqlStr, args, _, err := a.prepareArgs(args)
+		sqlStr, args, _, err := a.prepareQueryAndArgs(args)
 		return sqlStr, args, err
 	})
 }
 
 func (a *DBR) testWithArgs(args ...interface{}) QueryBuilder {
 	return QuerySQLFn(func() (string, []interface{}, error) {
-		sqlStr, args, _, err := a.prepareArgs(args)
+		sqlStr, args, _, err := a.prepareQueryAndArgs(args)
 		return sqlStr, args, err
 	})
 }
@@ -203,12 +203,13 @@ func (a *DBR) ExpandPlaceHolders() *DBR {
 	return a
 }
 
-// prepareArgs transforms mainly the DBR into []interface{}. It appends
+// prepareQueryAndArgs transforms mainly the DBR into []interface{}. It appends
 // its arguments to the `extArgs` arguments from the Exec+ or Query+ function.
 // This allows for a developer to reuse the interface slice and save
 // allocations. All method receivers are not thread safe. The returned interface
 // slice is the same as `extArgs`.
-func (a *DBR) prepareArgs(extArgs []interface{}) (_ string, _ []interface{}, _ []QualifiedRecord, err error) {
+// The returned []QualifiedRecord slice is needed to use interface LastInsertIDAssigner.
+func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interface{}, _ []QualifiedRecord, err error) {
 	if a.base.ärgErr != nil {
 		return "", nil, nil, errors.WithStack(a.base.ärgErr)
 	}
@@ -239,7 +240,7 @@ func (a *DBR) prepareArgs(extArgs []interface{}) (_ string, _ []interface{}, _ [
 		}
 	}
 	if a.base.source == dmlSourceInsert {
-		return a.prepareArgsInsert(args, recs)
+		return a.prepareQueryAndArgsInsert(args, recs)
 	}
 
 	cachedSQL, ok := a.base.cachedSQL[a.base.CacheKey]
@@ -410,10 +411,10 @@ func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArg
 	return collectedArgs, nil
 }
 
-// prepareArgsInsert prepares the special arguments for an INSERT statement. The
+// prepareQueryAndArgsInsert prepares the special arguments for an INSERT statement. The
 // returned interface slice is the same as the `extArgs` slice. extArgs =
 // external arguments.
-func (a *DBR) prepareArgsInsert(extArgs []interface{}, recs []QualifiedRecord) (string, []interface{}, []QualifiedRecord, error) {
+func (a *DBR) prepareQueryAndArgsInsert(extArgs []interface{}, recs []QualifiedRecord) (string, []interface{}, []QualifiedRecord, error) {
 	sqlBuf := bufferpool.GetTwin()
 	defer bufferpool.PutTwin(sqlBuf)
 	lenExtArgs := len(extArgs)
@@ -656,9 +657,13 @@ func (a *DBR) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows,
 
 // QueryRowContext traditional way of the databasel/sql package.
 func (a *DBR) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row {
-	sqlStr, args, _, err := a.prepareArgs(args)
+	sqlStr, args, _, err := a.prepareQueryAndArgs(args)
 	if a.base.Log != nil && a.base.Log.IsDebug() {
-		defer log.WhenDone(a.base.Log).Debug("QueryRowContext", log.String("sql", sqlStr), log.String("source", string(a.base.source)), log.Err(err))
+		defer log.WhenDone(a.base.Log).Debug(
+			"QueryRowContext",
+			log.String("sql", sqlStr),
+			log.String("source", string(a.base.source)),
+			log.Err(err))
 	}
 	return a.base.DB.QueryRowContext(ctx, sqlStr, args...)
 }
@@ -668,7 +673,10 @@ func (a *DBR) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row
 // gets only used in the Query function.
 func (a *DBR) IterateSerial(ctx context.Context, callBack func(*ColumnMap) error, args ...interface{}) (err error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {
-		defer log.WhenDone(a.base.Log).Debug("IterateSerial", log.String("id", a.base.id), log.Err(err))
+		defer log.WhenDone(a.base.Log).Debug(
+			"IterateSerial",
+			log.String("id", a.base.id),
+			log.Err(err))
 	}
 
 	r, err := a.query(ctx, args)
@@ -1047,9 +1055,10 @@ func (a *DBR) LoadStrings(ctx context.Context, dest []string, args ...interface{
 }
 
 func (a *DBR) query(ctx context.Context, args []interface{}) (rows *sql.Rows, err error) {
-	sqlStr, args, recs, err := a.prepareArgs(args)
+	sqlStr, args, recs, err := a.prepareQueryAndArgs(args)
 	if a.base.Log != nil && a.base.Log.IsDebug() {
-		defer log.WhenDone(a.base.Log).Debug("Query", log.String("sql", sqlStr), log.Int("length_recs", len(recs)),
+		defer log.WhenDone(a.base.Log).Debug(
+			"Query", log.String("sql", sqlStr), log.Int("length_recs", len(recs)),
 			log.Int("length_args", len(args)), log.String("source", string(a.base.source)), log.Err(err))
 	}
 	if err != nil {
@@ -1067,7 +1076,7 @@ func (a *DBR) query(ctx context.Context, args []interface{}) (rows *sql.Rows, er
 }
 
 func (a *DBR) exec(ctx context.Context, args []interface{}) (result sql.Result, err error) {
-	sqlStr, args, recs, err := a.prepareArgs(args)
+	sqlStr, args, recs, err := a.prepareQueryAndArgs(args)
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug("Exec", log.String("sql", sqlStr), log.Int("length_recs", len(recs)), log.Int("length_args", len(args)), log.String("source", string(a.base.source)), log.Err(err))
 	}

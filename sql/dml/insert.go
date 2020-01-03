@@ -283,7 +283,7 @@ func (b *Insert) WithDBR() *DBR {
 
 	if isSelect {
 		// Must change to this source because to trigger a different argument
-		// collector in DBR.prepareArgs. It is not a real INSERT statement
+		// collector in DBR.prepareQueryAndArgs. It is not a real INSERT statement
 		// anymore.
 		a.base.source = dmlSourceInsertSelect
 		return a
