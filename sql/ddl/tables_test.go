@@ -18,10 +18,12 @@ import (
 	"context"
 	"database/sql"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
+	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/assert"
@@ -93,8 +95,119 @@ func TestTables_Truncate(t *testing.T) {
 	ctx := context.TODO()
 	ts := ddl.MustNewTables(ddl.WithCreateTable(ctx, "a3", "", "b5", "", "c7", ""))
 	_ = ts.Options(ddl.WithConnPool(db))
-	err := ts.Truncate(ctx)
+	err := ts.Truncate(ctx, ddl.Options{})
 	assert.NoError(t, err)
+}
+
+func TestTables_Optimize(t *testing.T) {
+	t.Parallel()
+	t.Run("ok", func(t *testing.T) {
+		db, mock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, db, mock)
+
+		mock.ExpectExec("OPTIMIZE TABLE `a3`,`b5`,`c7`").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+
+		ctx := context.TODO()
+		ts := ddl.MustNewTables(ddl.WithCreateTable(ctx, "a3", "", "b5", "", "c7", ""))
+		_ = ts.Options(ddl.WithConnPool(db))
+		err := ts.Optimize(ctx, ddl.Options{})
+		assert.NoError(t, err)
+	})
+	t.Run("wait", func(t *testing.T) {
+		db, mock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, db, mock)
+
+		mock.ExpectExec("OPTIMIZE TABLE `a3`,`b5`,`c7` WAIT 1").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+
+		ctx := context.TODO()
+		ts := ddl.MustNewTables(ddl.WithCreateTable(ctx, "a3", "", "b5", "", "c7", ""))
+		_ = ts.Options(ddl.WithConnPool(db))
+		err := ts.Optimize(ctx, ddl.Options{Wait: time.Second})
+		assert.NoError(t, err)
+	})
+	t.Run("nowait", func(t *testing.T) {
+		db, mock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, db, mock)
+
+		mock.ExpectExec("OPTIMIZE TABLE `a3`,`b5`,`c7` NOWAIT").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+
+		ctx := context.TODO()
+		ts := ddl.MustNewTables(ddl.WithCreateTable(ctx, "a3", "", "b5", "", "c7", ""))
+		_ = ts.Options(ddl.WithConnPool(db))
+		err := ts.Optimize(ctx, ddl.Options{Nowait: true})
+		assert.NoError(t, err)
+	})
+}
+
+func TestTables_Lock(t *testing.T) {
+	dbc, mock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, dbc, mock)
+	ctx := context.TODO()
+
+	ts := ddl.MustNewTables(ddl.WithCreateTable(ctx, "store_website", "", "store_group", "", "store", "", "x910cms_block", ""))
+	_ = ts.Options(ddl.WithConnPool(dbc)) // set connection after call to WithCreateTable to avoid SELECT FROM information_schema
+
+	for _, sqlStr := range [...]string{
+		"LOCK TABLES `store_website` READ",
+		"LOCK TABLES `store_website` READ ,`store_group` WRITE",
+		"LOCK TABLES `store_website` AS `sw` READ ,`store_group` AS `sg` READ LOCAL",
+		"LOCK TABLES `store_website` AS `sw` LOW_PRIORITY WRITE ,`store_group` AS `sg` WRITE CONCURRENT",
+		"LOCK TABLES `store_website` READ ,`store_group` WRITE  WAIT 1",
+		"LOCK TABLES `store_website` READ ,`store_group` WRITE  NOWAIT",
+	} {
+		mock.ExpectExec(sqlStr).WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+		mock.ExpectExec("UNLOCK TABLES").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+	}
+
+	runner := func(o ddl.Options, tl []ddl.TableLock) func(*testing.T) {
+		return func(t *testing.T) {
+			var called int
+			err := ts.Lock(ctx, o, tl,
+				func(conn *dml.Conn) error {
+					called++
+					return nil
+				})
+			assert.NoError(t, err)
+			assert.Exactly(t, 1, called)
+		}
+	}
+
+	t.Run("one table lock read", runner(ddl.Options{}, []ddl.TableLock{
+		{Name: "store_website", LockTypeREAD: true},
+	}))
+	t.Run("two tables lock read,write", runner(ddl.Options{}, []ddl.TableLock{
+		{Name: "store_website", LockTypeREAD: true},
+		{Name: "store_group", LockTypeWRITE: true},
+	}))
+	t.Run("two tables with aliases lock read,read local", runner(ddl.Options{}, []ddl.TableLock{
+		{Name: "store_website", Alias: "sw", LockTypeREAD: true},
+		{Name: "store_group", Alias: "sg", LockTypeREADLOCAL: true},
+	}))
+	t.Run("two tables with aliases lock low prio,write concurrent", runner(ddl.Options{}, []ddl.TableLock{
+		{Name: "store_website", Alias: "sw", LockTypeLowPriorityWrite: true},
+		{Name: "store_group", Alias: "sg", LockTypeWriteConcurrent: true},
+	}))
+	t.Run("two tables lock read,write, wait", runner(ddl.Options{Wait: time.Second}, []ddl.TableLock{
+		{Name: "store_website", LockTypeREAD: true},
+		{Name: "store_group", LockTypeWRITE: true},
+	}))
+	t.Run("two tables lock read,write, nowait", runner(ddl.Options{Nowait: true}, []ddl.TableLock{
+		{Name: "store_website", LockTypeREAD: true},
+		{Name: "store_group", LockTypeWRITE: true},
+	}))
+
+	mock.ExpectExec("LOCK TABLES `x910cms_block` READ").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec("UNLOCK TABLES").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+
+	t.Run("one table lock read, returns error", func(t *testing.T) {
+		err := ts.Lock(ctx, ddl.Options{}, []ddl.TableLock{
+			{Name: "x910cms_block", LockTypeREAD: true},
+		},
+			func(conn *dml.Conn) error {
+				return errors.Fatal.Newf("Upsssss")
+			})
+		assert.ErrorIsKind(t, errors.Fatal, err)
+	})
 }
 
 func TestTables_Upsert_Update(t *testing.T) {

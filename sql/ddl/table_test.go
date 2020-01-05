@@ -17,6 +17,7 @@ package ddl_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
@@ -193,13 +194,29 @@ func TestTable_Truncate(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 
 		dbMock.ExpectExec("TRUNCATE TABLE `catalog_category_anc_categs_index_tmp`").WillReturnResult(sqlmock.NewResult(0, 0))
-		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").WithDB(dbc.DB).Truncate(context.TODO())
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Truncate(context.TODO(), ddl.Options{Execer: dbc.DB})
+		assert.NoError(t, err, "%+v", err)
+	})
+	t.Run("wait", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		dbMock.ExpectExec("TRUNCATE TABLE `catalog_category_anc_categs_index_tmp` WAIT 5 ").WillReturnResult(sqlmock.NewResult(0, 0))
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Truncate(context.TODO(), ddl.Options{Execer: dbc.DB, Wait: 5 * time.Second, Nowait: true})
+		assert.NoError(t, err, "%+v", err)
+	})
+	t.Run("nowait", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		dbMock.ExpectExec("TRUNCATE TABLE `catalog_category_anc_categs_index_tmp` NOWAIT ").WillReturnResult(sqlmock.NewResult(0, 0))
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Truncate(context.TODO(), ddl.Options{Execer: dbc.DB, Nowait: true})
 		assert.NoError(t, err, "%+v", err)
 	})
 
 	t.Run("Invalid table Name", func(t *testing.T) {
 		tbl := ddl.NewTable("product")
-		err := tbl.Rename(context.TODO(), "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
+		err := tbl.Rename(context.TODO(), "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_", ddl.Options{})
 		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
 }
@@ -212,13 +229,37 @@ func TestTable_Rename(t *testing.T) {
 
 		dbMock.ExpectExec("RENAME TABLE `catalog_category_anc_categs_index_tmp` TO `catalog_category_anc_categs`").
 			WillReturnResult(sqlmock.NewResult(0, 0))
-		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").WithDB(dbc.DB).Rename(context.TODO(), "catalog_category_anc_categs")
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Rename(
+			context.TODO(), "catalog_category_anc_categs", ddl.Options{Execer: dbc.DB},
+		)
+		assert.NoError(t, err, "%+v", err)
+	})
+	t.Run("wait", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		dbMock.ExpectExec("RENAME TABLE `catalog_category_anc_categs_index_tmp`  WAIT 5  TO `catalog_category_anc_categs`").
+			WillReturnResult(sqlmock.NewResult(0, 0))
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Rename(
+			context.TODO(), "catalog_category_anc_categs", ddl.Options{Execer: dbc.DB, Wait: 5 * time.Second, Nowait: true},
+		)
+		assert.NoError(t, err, "%+v", err)
+	})
+	t.Run("nowait", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		dbMock.ExpectExec("RENAME TABLE `catalog_category_anc_categs_index_tmp`  NOWAIT  TO `catalog_category_anc_categs`").
+			WillReturnResult(sqlmock.NewResult(0, 0))
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Rename(
+			context.TODO(), "catalog_category_anc_categs", ddl.Options{Execer: dbc.DB, Nowait: true},
+		)
 		assert.NoError(t, err, "%+v", err)
 	})
 
 	t.Run("Invalid table Name", func(t *testing.T) {
 		tbl := ddl.NewTable("product")
-		err := tbl.Rename(context.TODO(), "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
+		err := tbl.Rename(context.TODO(), "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_", ddl.Options{})
 		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
 }
@@ -232,13 +273,33 @@ func TestTable_Swap(t *testing.T) {
 
 		dbMock.ExpectExec("RENAME TABLE `catalog_category_anc_categs_index_tmp` TO `catalog_category_anc_categs_index_tmp_[0-9]+`, `catalog_category_anc_categs_NEW` TO `catalog_category_anc_categs_index_tmp`,`catalog_category_anc_categs_index_tmp_[0-9]+` TO `catalog_category_anc_categs_NEW`").
 			WillReturnResult(sqlmock.NewResult(0, 0))
-		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").WithDB(dbc.DB).Swap(context.TODO(), "catalog_category_anc_categs_NEW")
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Swap(context.TODO(), "catalog_category_anc_categs_NEW", ddl.Options{Execer: dbc.DB})
+		assert.NoError(t, err, "%+v", err)
+	})
+
+	t.Run("wait", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		dbMock.ExpectExec("RENAME TABLE `catalog_category_anc_categs_index_tmp`  WAIT 5  TO `catalog_category_anc_categs_index_tmp_[0-9]+`, `catalog_category_anc_categs_NEW` TO `catalog_category_anc_categs_index_tmp`,`catalog_category_anc_categs_index_tmp_[0-9]+` TO `catalog_category_anc_categs_NEW`").
+			WillReturnResult(sqlmock.NewResult(0, 0))
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Swap(context.TODO(), "catalog_category_anc_categs_NEW", ddl.Options{Execer: dbc.DB, Wait: 5 * time.Second, Nowait: true})
+		assert.NoError(t, err, "%+v", err)
+	})
+
+	t.Run("nowait", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		dbMock.ExpectExec("RENAME TABLE `catalog_category_anc_categs_index_tmp`  NOWAIT  TO `catalog_category_anc_categs_index_tmp_[0-9]+`, `catalog_category_anc_categs_NEW` TO `catalog_category_anc_categs_index_tmp`,`catalog_category_anc_categs_index_tmp_[0-9]+` TO `catalog_category_anc_categs_NEW`").
+			WillReturnResult(sqlmock.NewResult(0, 0))
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Swap(context.TODO(), "catalog_category_anc_categs_NEW", ddl.Options{Execer: dbc.DB, Nowait: true})
 		assert.NoError(t, err, "%+v", err)
 	})
 
 	t.Run("Invalid table Name", func(t *testing.T) {
 		tbl := ddl.NewTable("product")
-		err := tbl.Swap(context.TODO(), "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
+		err := tbl.Swap(context.TODO(), "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_", ddl.Options{})
 		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
 }
@@ -251,12 +312,91 @@ func TestTable_Drop(t *testing.T) {
 
 		dbMock.ExpectExec("DROP TABLE IF EXISTS `catalog_category_anc_categs_index_tmp`").
 			WillReturnResult(sqlmock.NewResult(0, 0))
-		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").WithDB(dbc.DB).Drop(context.TODO())
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Drop(context.TODO(),
+			ddl.Options{Execer: dbc.DB},
+		)
 		assert.NoError(t, err, "%+v", err)
 	})
+	t.Run("wait", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		dbMock.ExpectExec("DROP TABLE IF EXISTS `catalog_category_anc_categs_index_tmp` WAIT 1 ").
+			WillReturnResult(sqlmock.NewResult(0, 0))
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Drop(context.TODO(),
+			ddl.Options{Execer: dbc.DB, Wait: time.Second, Nowait: true},
+		)
+		assert.NoError(t, err, "%+v", err)
+	})
+	t.Run("nowait", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		dbMock.ExpectExec("DROP TABLE IF EXISTS `catalog_category_anc_categs_index_tmp` NOWAIT ").
+			WillReturnResult(sqlmock.NewResult(0, 0))
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Drop(context.TODO(),
+			ddl.Options{Execer: dbc.DB, Nowait: true},
+		)
+		assert.NoError(t, err, "%+v", err)
+	})
+	t.Run("comment", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("DROP TABLE IF EXISTS /*X*/ `catalog_category_anc_categs_index_tmp` WAIT 2")).
+			WillReturnResult(sqlmock.NewResult(0, 0))
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Drop(context.TODO(),
+			ddl.Options{Execer: dbc.DB, Wait: 2 * time.Second, Comment: "X"},
+		)
+		assert.NoError(t, err, "%+v", err)
+	})
+
 	t.Run("Invalid table Name", func(t *testing.T) {
 		tbl := ddl.NewTable("produ™€ct")
-		err := tbl.Drop(context.TODO())
+		err := tbl.Drop(context.TODO(), ddl.Options{})
+		assert.ErrorIsKind(t, errors.NotValid, err)
+	})
+}
+
+func TestTable_Optimize(t *testing.T) {
+	t.Parallel()
+	t.Run("ok", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		dbMock.ExpectExec("OPTIMIZE TABLE `catalog_category_anc_categs_index_tmp`").
+			WillReturnResult(sqlmock.NewResult(0, 0))
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Optimize(context.TODO(),
+			ddl.Options{Execer: dbc.DB},
+		)
+		assert.NoError(t, err, "%+v", err)
+	})
+	t.Run("wait", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		dbMock.ExpectExec("OPTIMIZE TABLE `catalog_category_anc_categs_index_tmp` WAIT 1 ").
+			WillReturnResult(sqlmock.NewResult(0, 0))
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Optimize(context.TODO(),
+			ddl.Options{Execer: dbc.DB, Wait: time.Second, Nowait: true},
+		)
+		assert.NoError(t, err, "%+v", err)
+	})
+	t.Run("nowait", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+
+		dbMock.ExpectExec("OPTIMIZE TABLE `catalog_category_anc_categs_index_tmp` NOWAIT ").
+			WillReturnResult(sqlmock.NewResult(0, 0))
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Optimize(context.TODO(),
+			ddl.Options{Execer: dbc.DB, Nowait: true},
+		)
+		assert.NoError(t, err, "%+v", err)
+	})
+
+	t.Run("Invalid table Name", func(t *testing.T) {
+		tbl := ddl.NewTable("produ™€ct")
+		err := tbl.Optimize(context.TODO(), ddl.Options{})
 		assert.ErrorIsKind(t, errors.NotValid, err)
 	})
 }
@@ -271,7 +411,7 @@ func TestTable_LoadDataInfile(t *testing.T) {
 		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("LOAD DATA LOCAL INFILE 'non-existent.csv' INTO TABLE `admin_user` (user_id,email,first_name,username) ;")).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
-		err := tableMap.MustTable("admin_user").WithDB(dbc.DB).LoadDataInfile(context.TODO(), "non-existent.csv", ddl.InfileOptions{})
+		err := tableMap.MustTable("admin_user").LoadDataInfile(context.TODO(), "non-existent.csv", ddl.InfileOptions{Execer: dbc.DB})
 		assert.NoError(t, err, "%+v", err)
 	})
 
@@ -281,7 +421,7 @@ func TestTable_LoadDataInfile(t *testing.T) {
 
 		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("LOAD DATA LOCAL INFILE 'non-existent.csv' REPLACE INTO TABLE `admin_user` FIELDS TERMINATED BY '|' OPTIONALLY ENCLOSED BY '+' ESCAPED BY '\"' LINES TERMINATED BY ' ' STARTING BY '###' IGNORE 1 LINES (user_id,@email,@username,) SET username=UPPER(@username), email=UPPER(@email);")).
 			WillReturnResult(sqlmock.NewResult(0, 0))
-		err := tableMap.MustTable("admin_user").WithDB(dbc.DB).LoadDataInfile(context.TODO(), "non-existent.csv", ddl.InfileOptions{
+		err := tableMap.MustTable("admin_user").LoadDataInfile(context.TODO(), "non-existent.csv", ddl.InfileOptions{
 			Replace:                    true,
 			FieldsTerminatedBy:         "|",
 			FieldsOptionallyEnclosedBy: true,
@@ -292,6 +432,7 @@ func TestTable_LoadDataInfile(t *testing.T) {
 			IgnoreLinesAtStart:         1,
 			Columns:                    []string{"user_id", "@email", "@username"},
 			Set:                        []string{"username", "UPPER(@username)", "email", "UPPER(@email)"},
+			Execer:                     dbc.DB,
 		})
 		assert.NoError(t, err, "%+v", err)
 	})
@@ -309,10 +450,10 @@ func TestTable_Artisan_Methods(t *testing.T) {
 			WithArgs("a@b.c", "Franz", "franz", "d@e.f", "Sissi", "sissi").
 			WillReturnResult(sqlmock.NewResult(11, 0))
 
-		res, err := tblAdmUser.Insert().WithArgs().
-			String("a@b.c").String("Franz").String("franz").
-			String("d@e.f").String("Sissi").String("sissi").
-			ExecContext(context.Background())
+		res, err := tblAdmUser.Insert().WithDBR().ExecContext(context.Background(),
+			"a@b.c", "Franz", "franz",
+			"d@e.f", "Sissi", "sissi",
+		)
 		assert.NoError(t, err)
 		id, err := res.LastInsertId()
 		assert.NoError(t, err)
@@ -324,9 +465,8 @@ func TestTable_Artisan_Methods(t *testing.T) {
 			WithArgs("a@b.c", "d@e.f").
 			WillReturnResult(sqlmock.NewResult(0, 2))
 
-		res, err := tblAdmUser.DeleteByPK().WithArgs().ExpandPlaceHolders().
-			Strings("a@b.c", "d@e.f").
-			ExecContext(context.Background())
+		res, err := tblAdmUser.DeleteByPK().WithDBR().ExpandPlaceHolders().
+			ExecContext(context.Background(), []string{"a@b.c", "d@e.f"})
 		assert.NoError(t, err)
 		id, err := res.RowsAffected()
 		assert.NoError(t, err)
@@ -337,9 +477,8 @@ func TestTable_Artisan_Methods(t *testing.T) {
 			WithArgs().
 			WillReturnResult(sqlmock.NewResult(0, 2))
 
-		res, err := tblAdmUser.DeleteByPK().WithArgs().Interpolate().
-			Strings("a@b.c", "d@e.f").
-			ExecContext(context.Background())
+		res, err := tblAdmUser.DeleteByPK().WithDBR().Interpolate().
+			ExecContext(context.Background(), []string{"a@b.c", "d@e.f"})
 		assert.NoError(t, err, "%+v", err)
 		id, err := res.RowsAffected()
 		assert.NoError(t, err)
@@ -351,7 +490,7 @@ func TestTable_Artisan_Methods(t *testing.T) {
 			WithArgs(int64(234), int64(235), int64(236)).
 			WillReturnRows(sqlmock.NewRows([]string{"user_id", "email", "first_name", "username"}))
 
-		rows, err := tblAdmUser.SelectByPK("*").WithArgs().ExpandPlaceHolders().Int64s(234, 235, 236).QueryContext(context.Background())
+		rows, err := tblAdmUser.SelectByPK("*").WithDBR().ExpandPlaceHolders().QueryContext(context.Background(), []int64{234, 235, 236})
 		assert.NoError(t, err)
 		assert.NoError(t, rows.Close())
 	})
@@ -361,7 +500,7 @@ func TestTable_Artisan_Methods(t *testing.T) {
 			WithArgs().
 			WillReturnRows(sqlmock.NewRows([]string{"user_id", "email", "first_name", "username"}))
 
-		rows, err := tblAdmUser.Select("*").WithArgs().QueryContext(context.Background())
+		rows, err := tblAdmUser.Select("*").WithDBR().QueryContext(context.Background())
 		assert.NoError(t, err)
 		assert.NoError(t, rows.Close())
 	})
@@ -371,10 +510,9 @@ func TestTable_Artisan_Methods(t *testing.T) {
 			WithArgs("a@b.c", "Franz", "franz", int64(3)).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
-		res, err := tblAdmUser.UpdateByPK().WithArgs().
-			String("a@b.c").String("Franz").String("franz").
-			Int64(3).
-			ExecContext(context.Background())
+		res, err := tblAdmUser.UpdateByPK().WithDBR().ExecContext(context.Background(),
+			"a@b.c", "Franz", "franz", 3,
+		)
 		assert.NoError(t, err)
 		id, err := res.RowsAffected()
 		assert.NoError(t, err)

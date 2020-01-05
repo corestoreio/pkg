@@ -33,9 +33,9 @@ import (
 // connection pool. Its fields are not secure to use in concurrent context and
 // hence might cause a race condition if used not properly.
 type Table struct {
-	// dcp represents a Database Connection Pool. Shall not be nil
-	dcp      *dml.ConnPool
-	customDB dml.QueryExecPreparer // if set we have a shallow copy
+	// dcp represents a Database Connection Pool inherited from the Tables type.
+	// Shall not be nil.
+	dcp *dml.ConnPool
 
 	// Always def.
 	Catalog string
@@ -99,13 +99,15 @@ type Table struct {
 	columnsPK    []string // only primary key columns
 	columnsNonPK []string // all columns, except PK and system-versioned
 	columnsAll   []string // all columns, except system-versioned
-	// columnsIsEligibleForUpsert contains all non-current-timestamp, non-virtual, non-system
+	// columnsUpsert contains all non-current-timestamp, non-virtual, non-system
 	// versioned and non auto_increment columns for update or insert operations.
 	columnsUpsert []string
-	colset        map[string]struct{}
+	// colset is a set to check case-sensitively if a table has a column.
+	colset map[string]struct{}
 }
 
-// NewTable initializes a new table structure with minimal information.
+// NewTable initializes a new table structure with minimal information and
+// without a database connection.
 func NewTable(tableName string, cs ...*Column) *Table {
 	ts := &Table{
 		Name:    tableName,
@@ -204,28 +206,13 @@ func (t *Table) update() *Table {
 	return t
 }
 
-// WithDB creates a shallow clone of the current Table object and uses argument
-// `db` as the current connection. `db` can be a connection pool, a single
-// connection or a transaction. This method might cause a race condition if use
-// not properly. One shall not modify the slices in the returned *Table.
-func (t *Table) WithDB(db dml.QueryExecPreparer) *Table {
-	t2 := new(Table)
-	*t2 = *t // dereference pointer and copy object. retains the slice storage.
-	t2.customDB = db
-	return t2
-}
-
 // Insert creates a new INSERT statement with all non primary key columns. If
 // OnDuplicateKey() gets called, the INSERT can be used as an update or create
 // statement. Adding multiple VALUES section is allowed. Using this statement to
 // prepare a query, a call to `BuildValues()` triggers building the VALUES
 // clause, otherwise a SQL parse error will occur.
 func (t *Table) Insert() *dml.Insert {
-	i := t.dcp.InsertInto(t.Name).AddColumns(t.columnsUpsert...)
-	if t.customDB != nil {
-		i.DB = t.customDB
-	}
-	return i
+	return t.dcp.InsertInto(t.Name).AddColumns(t.columnsUpsert...)
 }
 
 // Select creates a new SELECT statement. If "*" gets set as an argument, then
@@ -234,11 +221,7 @@ func (t *Table) Select(columns ...string) *dml.Select {
 	if len(columns) == 1 && columns[0] == "*" {
 		columns = t.columnsAll
 	}
-	s := t.dcp.SelectFrom(t.Name, MainTable).AddColumns(columns...)
-	if t.customDB != nil {
-		s.DB = t.customDB
-	}
-	return s
+	return t.dcp.SelectFrom(t.Name, MainTable).AddColumns(columns...)
 }
 
 // SelectByPK creates a new `SELECT columns FROM table WHERE id IN (?)`. If "*"
@@ -250,9 +233,6 @@ func (t *Table) SelectByPK(columns ...string) *dml.Select {
 	}
 	s := t.dcp.SelectFrom(t.Name, MainTable).AddColumns(columns...)
 	s.Wheres = t.whereByPK(dml.In)
-	if t.customDB != nil {
-		s.DB = t.customDB
-	}
 	return s
 }
 
@@ -260,18 +240,12 @@ func (t *Table) SelectByPK(columns ...string) *dml.Select {
 func (t *Table) DeleteByPK() *dml.Delete {
 	d := t.dcp.DeleteFrom(t.Name)
 	d.Wheres = t.whereByPK(dml.In)
-	if t.customDB != nil {
-		d.DB = t.customDB
-	}
 	return d
 }
 
 // Delete creates a new `DELETE FROM table` statement.
 func (t *Table) Delete() *dml.Delete {
 	d := t.dcp.DeleteFrom(t.Name)
-	if t.customDB != nil {
-		d.DB = t.customDB
-	}
 	return d
 }
 
@@ -280,9 +254,6 @@ func (t *Table) Delete() *dml.Delete {
 func (t *Table) UpdateByPK() *dml.Update {
 	u := t.dcp.Update(t.Name).AddColumns(t.columnsUpsert...)
 	u.Wheres = t.whereByPK(dml.Equal)
-	if t.customDB != nil {
-		u.DB = t.customDB
-	}
 	return u
 }
 
@@ -296,15 +267,12 @@ func (t *Table) whereByPK(op dml.Op) dml.Conditions {
 	return cnds
 }
 
-func (t *Table) runExec(ctx context.Context, qry string) error {
-	var db dml.QueryExecPreparer
+func (t *Table) runExec(ctx context.Context, o Options, qry string) error {
+	var te dml.Execer
 	if t.dcp != nil {
-		db = t.dcp.DB
+		te = t.dcp.DB
 	}
-	if t.customDB != nil {
-		db = t.customDB
-	}
-	if _, err := db.ExecContext(ctx, qry); err != nil {
+	if _, err := o.exec(te).ExecContext(ctx, qry); err != nil {
 		return errors.Wrapf(err, "[ddl] failed to exec %q", qry) // please do change this return signature, saves an alloc
 	}
 	return nil
@@ -313,30 +281,40 @@ func (t *Table) runExec(ctx context.Context, qry string) error {
 // Truncate truncates the table. Removes all rows and sets the auto increment to
 // zero. Just like a CREATE TABLE statement. To use a custom connection, call
 // WithDB before.
-func (t *Table) Truncate(ctx context.Context) error {
+func (t *Table) Truncate(ctx context.Context, o Options) error {
 	if t.IsView() {
 		return nil
 	}
 	if err := dml.IsValidIdentifier(t.Name); err != nil {
 		return errors.WithStack(err)
 	}
-	return t.runExec(ctx, "TRUNCATE TABLE "+dml.Quoter.QualifierName(t.Schema, t.Name))
+	var buf strings.Builder
+	buf.WriteString("TRUNCATE TABLE ")
+	buf.WriteString(dml.Quoter.QualifierName(t.Schema, t.Name))
+	o.sqlAddShouldWait(&buf)
+	return t.runExec(ctx, o, buf.String())
 }
 
 // Rename renames the current table to the new table name. Renaming is an atomic
 // operation in the database. As long as two databases are on the same file
 // system, you can use RENAME TABLE to move a table from one database to
 // another. RENAME TABLE also works for views, as long as you do not try to
-// rename a view into a different database. To use a custom connection, call
-// WithDB before.
-func (t *Table) Rename(ctx context.Context, newTableName string) error {
+// rename a view into a different database. To use a custom connection.
+// https://mariadb.com/kb/en/rename-table/
+func (t *Table) Rename(ctx context.Context, newTableName string, o Options) error {
 	if err := dml.IsValidIdentifier(t.Name); err != nil {
 		return errors.WithStack(err)
 	}
 	if err := dml.IsValidIdentifier(newTableName); err != nil {
 		return errors.WithStack(err)
 	}
-	return t.runExec(ctx, "RENAME TABLE "+dml.Quoter.QualifierName(t.Schema, t.Name)+" TO "+dml.Quoter.NameAlias(newTableName, ""))
+	var buf strings.Builder
+	buf.WriteString("RENAME TABLE ")
+	buf.WriteString(dml.Quoter.QualifierName(t.Schema, t.Name))
+	o.sqlAddShouldWait(&buf)
+	buf.WriteString(" TO ")
+	buf.WriteString(dml.Quoter.NameAlias(newTableName, ""))
+	return t.runExec(ctx, o, buf.String())
 }
 
 // Swap swaps the current table with the other table of the same structure.
@@ -344,7 +322,12 @@ func (t *Table) Rename(ctx context.Context, newTableName string) error {
 // swapped! As long as two databases are on the same file system, you can use
 // RENAME TABLE to move a table from one database to another. To use a custom
 // connection, call WithDB before.
-func (t *Table) Swap(ctx context.Context, other string) error {
+// RENAME TABLE has to wait for existing queries on
+// the table to finish until it can be executed. That would be fine, but it also
+// locks out other queries while waiting for RENAME to happen! This can cause a
+// serious locking up of your database tables.
+// https://mariadb.com/kb/en/rename-table/
+func (t *Table) Swap(ctx context.Context, other string, o Options) error {
 	if err := dml.IsValidIdentifier(t.Name); err != nil {
 		return errors.WithStack(err)
 	}
@@ -358,6 +341,7 @@ func (t *Table) Swap(ctx context.Context, other string) error {
 	defer bufferpool.Put(buf)
 	buf.WriteString("RENAME TABLE ")
 	dml.Quoter.WriteQualifierName(buf, t.Schema, t.Name)
+	o.sqlAddShouldWait(buf)
 	buf.WriteString(" TO ")
 	dml.Quoter.WriteIdentifier(buf, tmp)
 	buf.WriteString(", ")
@@ -368,7 +352,7 @@ func (t *Table) Swap(ctx context.Context, other string) error {
 	dml.Quoter.WriteIdentifier(buf, tmp)
 	buf.WriteString(" TO ")
 	dml.Quoter.WriteIdentifier(buf, other)
-	return t.runExec(ctx, buf.String())
+	return t.runExec(ctx, o, buf.String())
 }
 
 func (t *Table) getTyp() string {
@@ -380,11 +364,34 @@ func (t *Table) getTyp() string {
 
 // Drop drops, if exists, the table or the view. To use a custom connection,
 // call WithDB before.
-func (t *Table) Drop(ctx context.Context) error {
+func (t *Table) Drop(ctx context.Context, o Options) error {
 	if err := dml.IsValidIdentifier(t.Name); err != nil {
 		return errors.Wrap(err, "[ddl] Drop table name")
 	}
-	return t.runExec(ctx, "DROP "+t.getTyp()+" IF EXISTS "+dml.Quoter.QualifierName(t.Schema, t.Name))
+	var buf strings.Builder
+	buf.WriteString("DROP ")
+	buf.WriteString(t.getTyp())
+	buf.WriteString(" IF EXISTS ")
+	if o.Comment != "" {
+		buf.WriteString("/*")
+		buf.WriteString(o.Comment)
+		buf.WriteString("*/ ")
+	}
+	buf.WriteString(dml.Quoter.QualifierName(t.Schema, t.Name))
+	o.sqlAddShouldWait(&buf)
+	return t.runExec(ctx, o, buf.String())
+}
+
+// Optimize optimizes a table. https://mariadb.com/kb/en/optimize-table/
+func (t *Table) Optimize(ctx context.Context, o Options) error {
+	if err := dml.IsValidIdentifier(t.Name); err != nil {
+		return errors.Wrap(err, "[ddl] Optimize table name")
+	}
+	var buf strings.Builder
+	buf.WriteString("OPTIMIZE TABLE ")
+	buf.WriteString(dml.Quoter.QualifierName(t.Schema, t.Name))
+	o.sqlAddShouldWait(&buf)
+	return t.runExec(ctx, o, buf.String())
 }
 
 // HasColumn uses the internal cache to check if a column exists in a table and
@@ -436,7 +443,8 @@ type InfileOptions struct {
 	// differs from the CSV file. Column names do NOT get automatically quoted.
 	Columns []string
 	// Log optional logger for debugging purposes
-	Log log.Logger
+	Log    log.Logger
+	Execer dml.Execer
 }
 
 // LoadDataInfile loads a local CSV file into a MySQL table. For more details
@@ -555,5 +563,5 @@ func (t *Table) LoadDataInfile(ctx context.Context, filePath string, o InfileOpt
 	if o.Log.IsDebug() {
 		o.Log.Debug("ddl.Table.Infile.SQL", log.String("sql", buf.String()))
 	}
-	return t.runExec(ctx, buf.String())
+	return t.runExec(ctx, Options{Execer: o.Execer}, buf.String())
 }

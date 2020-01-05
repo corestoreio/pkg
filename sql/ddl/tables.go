@@ -19,12 +19,16 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 	"sync"
+	"time"
+
+	"github.com/corestoreio/pkg/util/bufferpool"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
@@ -39,6 +43,40 @@ const (
 	AdditionalTable = "additional_table"
 	ScopeTable      = "scope_table"
 )
+
+// Options allows to set custom options in the database manipulation functions.
+// More fields might be added.
+type Options struct {
+	Execer dml.Execer
+	// Wait see https://mariadb.com/kb/en/wait-and-nowait/ The lock wait timeout
+	// can be explicitly set in the statement by using either WAIT n (to set the
+	// wait in seconds) or NOWAIT, in which case the statement will immediately
+	// fail if the lock cannot be obtained. WAIT 0 is equivalent to NOWAIT.
+	Wait time.Duration
+	// Nowait see https://mariadb.com/kb/en/wait-and-nowait/ or see field Wait.
+	// If both are set, Wait wins.
+	Nowait bool
+	// Comment only supported in the DROP statement. Do not add /* and */ in the
+	// comment string. Since MariaDB 5.5.27, the comment before the tablenames
+	// (that /*COMMENT TO SAVE*/) is stored in the binary log. That feature can be
+	// used by replication tools to send their internal messages.
+	Comment string
+}
+
+func (o Options) exec(exec1 dml.Execer) dml.Execer {
+	if o.Execer != nil {
+		return o.Execer
+	}
+	return exec1
+}
+
+func (o Options) sqlAddShouldWait(w io.Writer) {
+	if o.Wait.Seconds() > 0 {
+		fmt.Fprintf(w, " WAIT %d ", int(o.Wait.Seconds()))
+	} else if o.Nowait {
+		fmt.Fprintf(w, " NOWAIT ")
+	}
+}
 
 // TableOption applies options and helper functions when creating a new table.
 // For example loading column definitions.
@@ -236,8 +274,8 @@ func loadSQLFiles(fileNames, tableNames []string) ([]string, error) {
 }
 
 // WithDropTable drops the tables or views listed in argument `tableViewNames`.
-// If argument `option` contains the string "DISABLE_FOREIGN_KEY_CHECKS", then foreign keys get disabled
-// and at the end re-enabled.
+// If argument `option` contains the string "DISABLE_FOREIGN_KEY_CHECKS", then
+// foreign keys are getting disabled and at the end re-enabled.
 func WithDropTable(ctx context.Context, option string, tableViewNames ...string) TableOption {
 	return TableOption{
 		sortOrder: 11,
@@ -255,15 +293,12 @@ func WithDropTable(ctx context.Context, option string, tableViewNames ...string)
 	}
 }
 
-func withDropTable(ctx context.Context, tm *Tables, db dml.QueryExecPreparer, tableViewNames []string) (err error) {
+func withDropTable(ctx context.Context, tm *Tables, db dml.Execer, tableViewNames []string) (err error) {
 	for _, name := range tableViewNames {
 		if t, ok := tm.tm[name]; ok {
-			t.customDB = db
-			if err = t.Drop(ctx); err != nil {
-				t.customDB = nil
+			if err = t.Drop(ctx, Options{Execer: db}); err != nil {
 				return errors.WithStack(err)
 			}
-			t.customDB = nil
 			continue
 		}
 
@@ -569,16 +604,164 @@ func (tm *Tables) Validate(ctx context.Context) error {
 	return nil
 }
 
-// Truncate force truncates all tables by also disabling foreign keys.
-func (tm *Tables) Truncate(ctx context.Context) error {
+// Truncate force truncates all tables by also disabling foreign keys. Does not
+// guarantee to run all commands over the same connection but you can set a
+// custom dml.Execer.
+func (tm *Tables) Truncate(ctx context.Context, o Options) error {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
-	return DisableForeignKeys(ctx, tm.dcp.DB, func() error {
+	return DisableForeignKeys(ctx, o.exec(tm.dcp.DB), func() error {
 		for _, t := range tm.tm {
-			if err := t.Truncate(ctx); err != nil {
+			if err := t.Truncate(ctx, o); err != nil {
 				return errors.WithStack(err)
 			}
 		}
 		return nil
 	})
+}
+
+// Optimize optimizes all tables. https://mariadb.com/kb/en/optimize-table/
+// NO_WRITE_TO_BINLOG is not yet supported.
+func (tm *Tables) Optimize(ctx context.Context, o Options) error {
+	tbls := tm.Tables()
+	sort.Strings(tbls)
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	buf.WriteString("OPTIMIZE TABLE ")
+	for i, tn := range tbls {
+		if i > 0 {
+			buf.WriteByte(',')
+		}
+		dml.Quoter.WriteQualifierName(buf, tm.Schema, tn)
+	}
+	o.sqlAddShouldWait(buf)
+	_, err := o.exec(tm.dcp.DB).ExecContext(ctx, buf.String())
+	return errors.WithStack(err)
+}
+
+// TableLock defines the tables which are getting locked. Only one of the five
+// lock types can be set. https://mariadb.com/kb/en/lock-tables/
+type TableLock struct {
+	Schema                   string // optional
+	Name                     string // required
+	Alias                    string // optional
+	LockTypeREAD             bool   // Read lock, no writes allowed
+	LockTypeREADLOCAL        bool   // Read lock, but allow concurrent inserts
+	LockTypeWRITE            bool   // Exclusive write lock. No other connections can read or write to this table
+	LockTypeLowPriorityWrite bool   // Exclusive write lock, but allow new read locks on the table until we get the write lock.
+	LockTypeWriteConcurrent  bool   // Exclusive write lock, but allow READ LOCAL locks to the table.
+}
+
+func (tl TableLock) writeTable(buf *bytes.Buffer) error {
+	if err := dml.IsValidIdentifier(tl.Name); err != nil {
+		return errors.WithStack(err)
+	}
+
+	dml.Quoter.WriteQualifierName(buf, tl.Schema, tl.Name)
+
+	if tl.Alias != "" {
+		if err := dml.IsValidIdentifier(tl.Alias); err != nil {
+			return errors.WithStack(err)
+		}
+		buf.WriteString(" AS ")
+		dml.Quoter.WriteQualifierName(buf, "", tl.Alias)
+	}
+	switch {
+	case tl.LockTypeREAD:
+		buf.WriteString(" READ ")
+	case tl.LockTypeREADLOCAL:
+		buf.WriteString(" READ LOCAL ")
+	case tl.LockTypeWRITE:
+		buf.WriteString(" WRITE ")
+	case tl.LockTypeLowPriorityWrite:
+		buf.WriteString(" LOW_PRIORITY WRITE ")
+	case tl.LockTypeWriteConcurrent:
+		buf.WriteString(" WRITE CONCURRENT ")
+	}
+
+	return nil
+}
+
+// Lock runs the functions within the acquired table locks. On error or
+// success the lock gets automatically released. The Options do not support the
+// Execer field. All queries run in a single database connection (*sql.Conn).
+// Locks may be used to emulate transactions or to get more speed when updating tables.
+func (tm *Tables) Lock(ctx context.Context, o Options, tables []TableLock, fns ...func(*dml.Conn) error) (err error) {
+	// maybe to do to look into the Tables map to see if the table/view name is
+	// included in the Tables map. for now you can use any table to lock.
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+
+	buf.WriteString("LOCK TABLES ")
+	for i, t := range tables {
+		if t.Schema == "" {
+			t.Schema = tm.Schema
+		}
+		if i > 0 {
+			buf.WriteByte(',')
+		}
+		if err := t.writeTable(buf); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	o.sqlAddShouldWait(buf)
+
+	return tm.SingleConnection(ctx,
+		func(singleCon *dml.Conn) error {
+			if _, err = singleCon.DB.ExecContext(ctx, buf.String()); err != nil {
+				return errors.WithStack(err)
+			}
+			for _, fn := range fns {
+				if err := fn(singleCon); err != nil {
+					return errors.WithStack(err)
+				}
+			}
+			return nil
+		},
+		func(singleCon *dml.Conn) error { // this function rus in a defer block.
+			_, err := singleCon.DB.ExecContext(ctx, "UNLOCK TABLES")
+			return errors.WithStack(err)
+		},
+	)
+}
+
+// Transaction runs all fns within a transaction. On error it calls
+// automatically ROLLBACK and on success (no error) COMMIT.
+func (tm *Tables) Transaction(ctx context.Context, opts *sql.TxOptions, fns ...func(*dml.Tx) error) error {
+	return tm.dcp.Transaction(ctx, opts, fns...)
+}
+
+// SingleConnection runs all fns in a single connection and guarantees no change
+// to the connection. Single session. If more than one `fns` gets added, the
+// last function of the fns slice runs in a defer statement before the
+// connection close.
+func (tm *Tables) SingleConnection(ctx context.Context, fns ...func(*dml.Conn) error) (err error) {
+	c, err := tm.dcp.Conn(ctx)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	deferFunc := func(*dml.Conn) error { return nil }
+	if lfns := len(fns); lfns > 1 {
+		deferFunc = fns[lfns-1]
+		fns = fns[:lfns-1]
+	}
+	defer func() {
+		if err2 := deferFunc(c); err == nil && err2 != nil {
+			err = errors.WithStack(err2)
+		}
+		if err2 := c.Close(); err == nil && err2 != nil {
+			err = errors.WithStack(err2)
+		}
+	}()
+	for _, fn := range fns {
+		if err := fn(c); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return nil
+}
+
+// WithRawSQL creates a database runner with a raw SQL string.
+func (tm *Tables) WithRawSQL(query string) *dml.DBR {
+	return tm.dcp.WithRawSQL(query)
 }
