@@ -232,7 +232,7 @@ func TestNullString_Scan(t *testing.T) {
 	t.Run("[]rune unsupported", func(t *testing.T) {
 		var nv String
 		err := nv.Scan([]rune(`1234567`))
-		assert.True(t, errors.Is(err, errors.NotSupported), "Error behaviour should be errors.NotSupported")
+		assert.True(t, errors.MatchKind(err, errors.NotSupported), "Error behaviour should be errors.NotSupported")
 		assert.Exactly(t, String{}, nv)
 	})
 }

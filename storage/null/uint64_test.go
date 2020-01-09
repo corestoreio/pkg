@@ -285,7 +285,7 @@ func TestNullUint64_Scan(t *testing.T) {
 	t.Run("string unsupported", func(t *testing.T) {
 		var nv Uint64
 		err := nv.Scan(`1234567`)
-		assert.True(t, errors.Is(err, errors.NotSupported), "Error behaviour should be errors.NotSupported")
+		assert.True(t, errors.MatchKind(err, errors.NotSupported), "Error behaviour should be errors.NotSupported")
 		assert.Exactly(t, Uint64{}, nv)
 	})
 	t.Run("parse error negative", func(t *testing.T) {

@@ -302,7 +302,7 @@ func TestNullInt8_Scan(t *testing.T) {
 	t.Run("string unsupported", func(t *testing.T) {
 		var nv Int8
 		err := nv.Scan(string(int8JSONNeg))
-		assert.True(t, errors.Is(err, errors.NotSupported), "Error behaviour should be errors.NotSupported")
+		assert.True(t, errors.MatchKind(err, errors.NotSupported), "Error behaviour should be errors.NotSupported")
 		assert.Exactly(t, Int8{}, nv)
 	})
 }

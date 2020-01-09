@@ -302,7 +302,7 @@ func TestNullInt64_Scan(t *testing.T) {
 	t.Run("string unsupported", func(t *testing.T) {
 		var nv Int64
 		err := nv.Scan(`-1234567`)
-		assert.True(t, errors.Is(err, errors.NotSupported), "Error behaviour should be errors.NotSupported")
+		assert.True(t, errors.MatchKind(err, errors.NotSupported), "Error behaviour should be errors.NotSupported")
 		assert.Exactly(t, Int64{}, nv)
 	})
 }

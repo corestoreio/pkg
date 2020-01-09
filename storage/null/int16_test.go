@@ -302,7 +302,7 @@ func TestNullInt16_Scan(t *testing.T) {
 	t.Run("string unsupported", func(t *testing.T) {
 		var nv Int16
 		err := nv.Scan(string(int16JSONNeg))
-		assert.True(t, errors.Is(err, errors.NotSupported), "Error behaviour should be errors.NotSupported")
+		assert.True(t, errors.MatchKind(err, errors.NotSupported), "Error behaviour should be errors.NotSupported")
 		assert.Exactly(t, Int16{}, nv)
 	})
 }
