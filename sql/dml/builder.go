@@ -88,16 +88,13 @@ type builderCommon struct {
 	// created SELECT statements. This value  gets stored in templateStmtCount.
 	// An example exists in TestUnionTemplate_ReuseArgs.
 	templateStmtCount int
-	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
-	// dedicated database session) or a *sql.Tx (an in-progress database
-	// transaction).
-	DB QueryExecPreparer
 	// EstimatedCachedSQLSize specifies the estimated size in bytes of the final
 	// SQL string. This value gets used during SQL string building process to
 	// reduce the allocations and speed up the process. Default Value is xxxx
 	// Bytes.
 	EstimatedCachedSQLSize uint16
-	CacheKey               string
+
+	cacheKey string
 	// SingleUseCacheKey      bool // TODO implement, should panic when setting the same cahce key the 2nd time
 	// cachedSQL contains the final SQL string which gets send to the server.
 	// Using the CacheKey allows a dml type (insert,update,select ... ) to build
@@ -106,13 +103,17 @@ type builderCommon struct {
 	// qualifiedColumns gets collected before calling ToSQL, and clearing the all
 	// pointers, to know which columns need values from the QualifiedRecords
 	qualifiedColumns []string
+	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
+	// dedicated database session) or a *sql.Tx (an in-progress database
+	// transaction).
+	db QueryExecPreparer
 }
 
 func (bc *builderCommon) withCacheKey(key string, args ...interface{}) {
 	if len(args) > 0 {
 		key = fmt.Sprintf(key, args...)
 	}
-	bc.CacheKey = key
+	bc.cacheKey = key
 }
 
 func (bc *builderCommon) CachedQueries(queries ...string) []string {
@@ -168,7 +169,7 @@ func (bb *BuilderBase) buildToSQL(qb queryBuilder) (string, error) {
 		return "", errors.WithStack(bb.ärgErr)
 	}
 
-	rawSQL, ok := bb.cachedSQL[bb.CacheKey]
+	rawSQL, ok := bb.cachedSQL[bb.cacheKey]
 	if !ok {
 		buf := bufferpool.Get()
 		defer bufferpool.Put(buf)
@@ -178,7 +179,7 @@ func (bb *BuilderBase) buildToSQL(qb queryBuilder) (string, error) {
 		}
 		rawSQL = buf.String()
 		bb.qualifiedColumns = qualifiedColumns
-		bb.cachedSQLUpsert(bb.CacheKey, rawSQL)
+		bb.cachedSQLUpsert(bb.cacheKey, rawSQL)
 	}
 	return rawSQL, nil
 }
@@ -205,9 +206,9 @@ func (bb *BuilderBase) prepare(ctx context.Context, db Preparer, qb queryBuilder
 		base: bb.builderCommon,
 		Stmt: sqlStmt,
 	}
-	stmt.base.CacheKey = bb.CacheKey
-	stmt.base.cachedSQLUpsert(bb.CacheKey, rawQuery)
-	stmt.base.DB = stmtWrapper{stmt: sqlStmt}
+	stmt.base.cacheKey = bb.cacheKey
+	stmt.base.cachedSQLUpsert(bb.cacheKey, rawQuery)
+	stmt.base.db = stmtWrapper{stmt: sqlStmt}
 	stmt.base.source = source
 	return stmt, nil
 }

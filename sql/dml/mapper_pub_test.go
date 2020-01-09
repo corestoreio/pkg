@@ -434,7 +434,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 
 			rc, err := stmt.WithDBR().Load(context.TODO(), tbl)
 			if scanErrWantKind != errors.NoKind {
-				assert.True(t, errors.Is(err, scanErrWantKind), "Should be Error Kind %s; Got: %s\n%+v", scanErrWantKind, errors.UnwrapKind(err), err)
+				assert.True(t, errors.MatchKind(err, scanErrWantKind), "Should be Error Kind %s; Got: %s\n%+v", scanErrWantKind, errors.UnwrapKind(err), err)
 			} else {
 				assert.NoError(t, err)
 				assert.Exactly(t, uint64(1), rc, "Should return one loaded row")

@@ -102,7 +102,7 @@ func (c *ConnPool) With(expressions ...WithCTE) *With {
 			builderCommon: builderCommon{
 				id:  id,
 				Log: withInitLog(c.Log, expressions, id),
-				DB:  c.DB,
+				db:  c.DB,
 			},
 		},
 		Subclauses: expressions,
@@ -117,7 +117,7 @@ func (c *Conn) With(expressions ...WithCTE) *With {
 			builderCommon: builderCommon{
 				id:  id,
 				Log: withInitLog(c.Log, expressions, id),
-				DB:  c.DB,
+				db:  c.DB,
 			},
 		},
 		Subclauses: expressions,
@@ -132,7 +132,7 @@ func (tx *Tx) With(expressions ...WithCTE) *With {
 			builderCommon: builderCommon{
 				id:  id,
 				Log: withInitLog(tx.Log, expressions, id),
-				DB:  tx.DB,
+				db:  tx.DB,
 			},
 		},
 		Subclauses: expressions,
@@ -141,7 +141,7 @@ func (tx *Tx) With(expressions ...WithCTE) *With {
 
 // WithDB sets the database query object.
 func (b *With) WithDB(db QueryExecPreparer) *With {
-	b.DB = db
+	b.db = db
 	return b
 }
 
@@ -243,13 +243,13 @@ func (b *With) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err er
 		w.WriteString(" AS (")
 		switch {
 		case sc.Select != nil:
-			sc.Select.CacheKey = b.CacheKey
+			sc.Select.cacheKey = b.cacheKey
 			placeHolders, err = sc.Select.toSQL(w, placeHolders)
 			if err != nil {
 				return nil, errors.WithStack(err)
 			}
 		case sc.Union != nil:
-			sc.Union.CacheKey = b.CacheKey
+			sc.Union.cacheKey = b.cacheKey
 			placeHolders, err = sc.Union.toSQL(w, placeHolders)
 			if err != nil {
 				return nil, errors.WithStack(err)
@@ -264,22 +264,22 @@ func (b *With) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err er
 
 	switch {
 	case b.TopLevel.Select != nil:
-		b.TopLevel.Select.CacheKey = b.CacheKey
+		b.TopLevel.Select.cacheKey = b.cacheKey
 		placeHolders, err = b.TopLevel.Select.toSQL(w, placeHolders)
 		return placeHolders, errors.WithStack(err)
 
 	case b.TopLevel.Union != nil:
-		b.TopLevel.Union.CacheKey = b.CacheKey
+		b.TopLevel.Union.cacheKey = b.cacheKey
 		placeHolders, err = b.TopLevel.Union.toSQL(w, placeHolders)
 		return placeHolders, errors.WithStack(err)
 
 	case b.TopLevel.Update != nil:
-		b.TopLevel.Update.CacheKey = b.CacheKey
+		b.TopLevel.Update.cacheKey = b.cacheKey
 		placeHolders, err = b.TopLevel.Update.toSQL(w, placeHolders)
 		return placeHolders, errors.WithStack(err)
 
 	case b.TopLevel.Delete != nil:
-		b.TopLevel.Delete.CacheKey = b.CacheKey
+		b.TopLevel.Delete.cacheKey = b.cacheKey
 		placeHolders, err = b.TopLevel.Delete.toSQL(w, placeHolders)
 		return placeHolders, errors.WithStack(err)
 	}
@@ -293,14 +293,14 @@ func (b *With) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err er
 // of the statement. The returned Stmter is not safe for concurrent use, despite
 // the underlying *sql.Stmt is.
 func (b *With) Prepare(ctx context.Context) (*Stmt, error) {
-	return b.prepare(ctx, b.DB, b, dmlSourceWith)
+	return b.prepare(ctx, b.db, b, dmlSourceWith)
 }
 
 // PrepareWithDBR same as Prepare but forwards the possible error of creating a
 // prepared statement into the DBR type. Reduces boilerplate code. You must
 // call DBR.Close to deallocate the prepared statement in the SQL server.
 func (b *With) PrepareWithDBR(ctx context.Context) *DBR {
-	stmt, err := b.prepare(ctx, b.DB, b, dmlSourceWith)
+	stmt, err := b.prepare(ctx, b.db, b, dmlSourceWith)
 	if err != nil {
 		a := &DBR{
 			base: builderCommon{

@@ -77,7 +77,7 @@ func (st *Stmt) WithDBR() *DBR {
 		base:       st.base,
 		isPrepared: true,
 	}
-	a.base.DB = stmtWrapper{stmt: st.Stmt}
+	a.base.db = stmtWrapper{stmt: st.Stmt}
 	return a
 }
 

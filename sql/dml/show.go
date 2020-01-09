@@ -58,7 +58,7 @@ func (c *ConnPool) Show() *Show {
 			builderCommon: builderCommon{
 				id:  id,
 				Log: l,
-				DB:  c.DB,
+				db:  c.DB,
 			},
 		},
 	}
@@ -76,7 +76,7 @@ func (c *Conn) Show() *Show {
 			builderCommon: builderCommon{
 				id:  id,
 				Log: l,
-				DB:  c.DB,
+				db:  c.DB,
 			},
 		},
 	}
@@ -94,7 +94,7 @@ func (tx *Tx) Show() *Show {
 			builderCommon: builderCommon{
 				id:  id,
 				Log: l,
-				DB:  tx.DB,
+				db:  tx.DB,
 			},
 		},
 	}
@@ -102,7 +102,7 @@ func (tx *Tx) Show() *Show {
 
 // WithDB sets the database query object.
 func (b *Show) WithDB(db QueryExecPreparer) *Show {
-	b.DB = db
+	b.db = db
 	return b
 }
 

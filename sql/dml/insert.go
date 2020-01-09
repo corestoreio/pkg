@@ -134,7 +134,7 @@ func newInsertInto(db QueryExecPreparer, cCom *connCommon, into string) *Insert 
 			builderCommon: builderCommon{
 				id:  id,
 				Log: l,
-				DB:  db,
+				db:  db,
 			},
 		},
 		Into: into,
@@ -161,7 +161,7 @@ func (tx *Tx) InsertInto(into string) *Insert {
 
 // WithDB sets the database query object.
 func (b *Insert) WithDB(db QueryExecPreparer) *Insert {
-	b.DB = db
+	b.db = db
 	return b
 }
 
@@ -469,14 +469,14 @@ func strInSlice(search string, sl []string) bool {
 // of the statement. The returned Stmter is not safe for concurrent use, despite
 // the underlying *sql.Stmt is.
 func (b *Insert) Prepare(ctx context.Context) (*Stmt, error) {
-	return b.prepare(ctx, b.DB, b, dmlSourceInsert)
+	return b.prepare(ctx, b.db, b, dmlSourceInsert)
 }
 
 // PrepareWithDBR same as Prepare but forwards the possible error of creating a
 // prepared statement into the DBR type. Reduces boilerplate code. You must
 // call DBR.Close to deallocate the prepared statement in the SQL server.
 func (b *Insert) PrepareWithDBR(ctx context.Context) *DBR {
-	stmt, err := b.prepare(ctx, b.DB, b, dmlSourceInsert)
+	stmt, err := b.prepare(ctx, b.db, b, dmlSourceInsert)
 	if err != nil {
 		a := &DBR{
 			base: builderCommon{

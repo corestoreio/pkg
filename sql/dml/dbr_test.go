@@ -326,7 +326,7 @@ func TestDBR_Clone(t *testing.T) {
 	selA.base.Log = log.BlackHole{}
 
 	selB := selA.Clone()
-	assert.NotNil(t, selB.base.DB)
+	assert.NotNil(t, selB.base.db)
 	assert.Exactly(t, selA.base.Log, selB.base.Log)
 	assert.Exactly(t, selA.base.cachedSQL, selB.base.cachedSQL)
 

@@ -110,9 +110,9 @@ func TestSelect_QueryContext(t *testing.T) {
 			},
 		}
 		sel.AddColumns("a", "b")
-		sel.DB = dbMock{
+		sel = sel.WithDB(dbMock{
 			error: errors.AlreadyClosed.Newf("Who closed myself?"),
-		}
+		})
 
 		rows, err := sel.WithDBR().QueryContext(context.TODO())
 		assert.Nil(t, rows)
@@ -127,7 +127,7 @@ func TestSelect_QueryContext(t *testing.T) {
 		dbMock.ExpectQuery("SELECT `a` FROM `tableX`").WillReturnRows(smr)
 
 		sel := dml.NewSelect("a").From("tableX")
-		sel.DB = dbc.DB
+		sel = sel.WithDB(dbc.DB)
 		rows, err := sel.WithDBR().QueryContext(context.TODO())
 		assert.NoError(t, err)
 		defer dmltest.Close(t, rows)
@@ -226,7 +226,7 @@ func TestSelect_Load(t *testing.T) {
 		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT * FROM `core_config_data`")).
 			WillReturnRows(dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data.csv")))
 		s := dml.NewSelect("*").From("core_config_data")
-		s.DB = dbc.DB
+		s = s.WithDB(dbc.DB)
 
 		ccd := &TableCoreConfigDataSlice{}
 
@@ -291,7 +291,7 @@ func TestSelect_Load(t *testing.T) {
 			RowError(1, errors.ConnectionFailed.Newf("Con failed"))
 		dbMock.ExpectQuery("SELECT").WillReturnRows(r)
 		s := dml.NewSelect("config_id").From("core_config_data")
-		s.DB = dbc.DB
+		s = s.WithDB(dbc.DB)
 
 		ccd := &TableCoreConfigDataSlice{}
 		_, err := s.WithDBR().Load(context.TODO(), ccd)
@@ -305,7 +305,7 @@ func TestSelect_Load(t *testing.T) {
 		r := sqlmock.NewRows([]string{"config_id"}).FromCSVString("222\n333\n").AddRow("3456")
 		dbMock.ExpectQuery("SELECT").WillReturnRows(r)
 		s := dml.NewSelect("config_id").From("core_config_data")
-		s.DB = dbc.DB
+		s = s.WithDB(dbc.DB)
 
 		ccd := &TableCoreConfigDataSlice{
 			err: errors.Duplicated.Newf("Somewhere exists a duplicate entry"),
@@ -769,7 +769,7 @@ func TestSelect_Clone(t *testing.T) {
 		notEqualPointers(t, s.BuilderConditional.OrderBys, s2.BuilderConditional.OrderBys)
 		notEqualPointers(t, s.GroupBys, s2.GroupBys)
 		notEqualPointers(t, s.Havings, s2.Havings)
-		assert.Exactly(t, s.DB, s2.DB)
+		// assert.Exactly(t, s.db, s2.db) // test it via fmt.Sprintf?
 		assert.Exactly(t, s.Log, s2.Log)
 	})
 }

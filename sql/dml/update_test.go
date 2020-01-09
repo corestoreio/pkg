@@ -185,7 +185,7 @@ func TestUpdate_Prepare(t *testing.T) {
 
 	t.Run("Prepare Error", func(t *testing.T) {
 		u := &Update{}
-		u.DB = dbMock{
+		u.db = dbMock{
 			error: errors.AlreadyClosed.Newf("Who closed myself?"),
 		}
 		u.Table.Name = "tableY"

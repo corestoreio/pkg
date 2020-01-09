@@ -525,7 +525,7 @@ func (c *ConnPool) WithQueryBuilder(qb QueryBuilder) *DBR {
 			cachedSQL: map[string]string{"": sql},
 			Log:       c.Log,
 			id:        c.makeUniqueID(),
-			DB:        c.DB,
+			db:        c.DB,
 			ärgErr:    errors.WithStack(err),
 		},
 	}
@@ -570,7 +570,7 @@ func (c *ConnPool) WithRawSQL(query string) *DBR {
 			cachedSQL: map[string]string{"": query},
 			Log:       l,
 			id:        id,
-			DB:        c.DB,
+			db:        c.DB,
 		},
 	}
 }
@@ -594,7 +594,7 @@ func (c *ConnPool) WithPrepare(ctx context.Context, query string) *DBR {
 			id:     id,
 			ärgErr: err,
 			Log:    l,
-			DB:     stmtWrapper{stmt: stmt},
+			db:     stmtWrapper{stmt: stmt},
 		},
 		isPrepared: true,
 	}
@@ -722,7 +722,7 @@ func (c *Conn) WithQueryBuilder(qb QueryBuilder) *DBR {
 			cachedSQL: map[string]string{"": sql},
 			Log:       l,
 			id:        id,
-			DB:        c.DB,
+			db:        c.DB,
 			ärgErr:    errors.WithStack(err),
 		},
 	}
@@ -743,7 +743,7 @@ func (c *Conn) WithRawSQL(query string) *DBR {
 			cachedSQL: map[string]string{"": query},
 			Log:       l,
 			id:        id,
-			DB:        c.DB,
+			db:        c.DB,
 		},
 	}
 }
@@ -762,7 +762,7 @@ func (tx *Tx) WithRawSQL(query string) *DBR {
 			cachedSQL: map[string]string{"": query},
 			Log:       l,
 			id:        id,
-			DB:        tx.DB,
+			db:        tx.DB,
 		},
 	}
 }
@@ -786,7 +786,7 @@ func (tx *Tx) WithPrepare(ctx context.Context, query string) *DBR {
 			id:     id,
 			ärgErr: err,
 			Log:    l,
-			DB:     stmtWrapper{stmt: stmt},
+			db:     stmtWrapper{stmt: stmt},
 		},
 		isPrepared: true,
 	}
@@ -821,7 +821,7 @@ func (tx *Tx) WithQueryBuilder(qb QueryBuilder) *DBR {
 			cachedSQL: map[string]string{"": sqlStr},
 			Log:       tx.Log,
 			id:        tx.makeUniqueID(),
-			DB:        tx.DB,
+			db:        tx.DB,
 			ärgErr:    errors.WithStack(err),
 		},
 	}

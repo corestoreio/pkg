@@ -69,7 +69,7 @@ func (c *ConnPool) Union(selects ...*Select) *Union {
 			builderCommon: builderCommon{
 				id:  id,
 				Log: unionInitLog(c.Log, selects, id),
-				DB:  c.DB,
+				db:  c.DB,
 			},
 		},
 		Selects: selects,
@@ -84,7 +84,7 @@ func (c *Conn) Union(selects ...*Select) *Union {
 			builderCommon: builderCommon{
 				id:  id,
 				Log: unionInitLog(c.Log, selects, id),
-				DB:  c.DB,
+				db:  c.DB,
 			},
 		},
 		Selects: selects,
@@ -100,7 +100,7 @@ func (tx *Tx) Union(selects ...*Select) *Union {
 			builderCommon: builderCommon{
 				id:  id,
 				Log: unionInitLog(tx.Log, selects, id),
-				DB:  tx.DB,
+				db:  tx.DB,
 			},
 		},
 		Selects: selects,
@@ -109,7 +109,7 @@ func (tx *Tx) Union(selects ...*Select) *Union {
 
 // WithDB sets the database query object.
 func (u *Union) WithDB(db QueryExecPreparer) *Union {
-	u.DB = db
+	u.db = db
 	return u
 }
 
@@ -320,14 +320,14 @@ func (u *Union) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err e
 // of the statement. The returned Stmter is not safe for concurrent use, despite
 // the underlying *sql.Stmt is.
 func (u *Union) Prepare(ctx context.Context) (*Stmt, error) {
-	return u.prepare(ctx, u.DB, u, dmlSourceUnion)
+	return u.prepare(ctx, u.db, u, dmlSourceUnion)
 }
 
 // PrepareWithDBR same as Prepare but forwards the possible error of creating a
 // prepared statement into the DBR type. Reduces boilerplate code. You must
 // call DBR.Close to deallocate the prepared statement in the SQL server.
 func (u *Union) PrepareWithDBR(ctx context.Context) *DBR {
-	stmt, err := u.prepare(ctx, u.DB, u, dmlSourceUnion)
+	stmt, err := u.prepare(ctx, u.db, u, dmlSourceUnion)
 	if err != nil {
 		a := &DBR{
 			base: builderCommon{

@@ -142,9 +142,9 @@ func TestInsert_Prepare(t *testing.T) {
 		in := &dml.Insert{
 			Into: "table",
 		}
-		in.DB = dbMock{
+		in = in.WithDB(dbMock{
 			error: errors.AlreadyClosed.Newf("Who closed myself?"),
-		}
+		})
 		in.AddColumns("a", "b").BuildValues()
 
 		stmt, err := in.Prepare(context.TODO())
@@ -369,7 +369,7 @@ func TestInsert_Clone(t *testing.T) {
 		notEqualPointers(t, i.Columns, i2.Columns)
 		assert.Exactly(t, i.Pairs, i2.Pairs)
 		assert.Exactly(t, i.RecordPlaceHolderCount, i2.RecordPlaceHolderCount)
-		assert.Exactly(t, i.DB, i2.DB)
+		// assert.Exactly(t, i.db, i2.db) // how to test this as it is now unexported? fmt.Sprintf?
 		assert.Exactly(t, i.Log, i2.Log)
 	})
 	t.Run("non-nil AddColumns", func(t *testing.T) {
@@ -383,7 +383,7 @@ func TestInsert_Clone(t *testing.T) {
 		assert.Exactly(t, i.Columns, i2.Columns)
 		notEqualPointers(t, i.Pairs, i2.Pairs)
 		assert.Exactly(t, i.RecordPlaceHolderCount, i2.RecordPlaceHolderCount)
-		assert.Exactly(t, i.DB, i2.DB)
+		// assert.Exactly(t, i.db, i2.db) // how to test this as it is now unexported? fmt.Sprintf?
 		assert.Exactly(t, i.Log, i2.Log)
 	})
 	t.Run("non-nil OnDulicateKey", func(t *testing.T) {

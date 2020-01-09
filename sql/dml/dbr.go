@@ -33,7 +33,7 @@ import (
 // database server. Arguments are collections of primitive types or slices of
 // primitive types. An DBR type acts like a prepared statement. In fact it can
 // contain under the hood different connection types. DBR is optimized for reuse
-// and allow saving memory allocations.
+// and allow saving memory allocations. It can't be used in concurrent context.
 type DBR struct {
 	base builderCommon
 	// QualifiedColumnsAliases allows to overwrite the internal qualified
@@ -76,7 +76,8 @@ func (a *DBR) ApplyCallBacks(fns ...DBRFunc) *DBR {
 	if len(fns) == 0 {
 		return a
 	}
-	ac := a.Clone()
+
+	ac := a.Clone() // locks
 	for _, af := range fns {
 		af(ac)
 	}
@@ -134,7 +135,7 @@ func (a *DBR) WithQualifiedColumnsAliases(aliases ...string) *DBR {
 
 // ToSQL generates the SQL string.
 func (a *DBR) ToSQL() (string, []interface{}, error) {
-	sqlStr, _, _, err := a.prepareQueryAndArgs(nil)
+	sqlStr, _, err := a.prepareQueryAndArgs(nil)
 	return sqlStr, nil, err
 }
 
@@ -153,14 +154,14 @@ func (a *DBR) TestWithArgs(args ...interface{}) QueryBuilder {
 		}
 		secondCallInterpolates++
 
-		sqlStr, args, _, err := a.prepareQueryAndArgs(args)
+		sqlStr, args, err := a.prepareQueryAndArgs(args)
 		return sqlStr, args, err
 	})
 }
 
 func (a *DBR) testWithArgs(args ...interface{}) QueryBuilder {
 	return QuerySQLFn(func() (string, []interface{}, error) {
-		sqlStr, args, _, err := a.prepareQueryAndArgs(args)
+		sqlStr, args, err := a.prepareQueryAndArgs(args)
 		return sqlStr, args, err
 	})
 }
@@ -209,13 +210,15 @@ func (a *DBR) ExpandPlaceHolders() *DBR {
 // allocations. All method receivers are not thread safe. The returned interface
 // slice is the same as `extArgs`.
 // The returned []QualifiedRecord slice is needed to use interface LastInsertIDAssigner.
-func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interface{}, _ []QualifiedRecord, err error) {
+func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interface{}, err error) {
+	// TODO remove recs from prepareQueryAndArgs, the 3rd return arg
 	if a.base.ärgErr != nil {
-		return "", nil, nil, errors.WithStack(a.base.ärgErr)
+		return "", nil, errors.WithStack(a.base.ärgErr)
 	}
 	lenExtArgs := len(extArgs)
 	var hasNamedArgs uint8
 	var recs []QualifiedRecord
+	var containsQualifiedRecords int
 	var args []interface{}
 	if lenExtArgs > 0 {
 		args = pooledInterfacesGet()
@@ -226,6 +229,7 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 			case nil:
 				args = append(args, internalNULLNIL{})
 			case QualifiedRecord:
+				containsQualifiedRecords++
 				recs = append(recs, eaTypeValue)
 			case sql.NamedArg:
 				args = append(args, ea)
@@ -243,25 +247,25 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 		return a.prepareQueryAndArgsInsert(args, recs)
 	}
 
-	cachedSQL, ok := a.base.cachedSQL[a.base.CacheKey]
+	cachedSQL, ok := a.base.cachedSQL[a.base.cacheKey]
 	if !a.isPrepared && !ok {
-		return "", nil, nil, errors.Empty.Newf("[dml] DBR: The SQL string is empty.")
+		return "", nil, errors.Empty.Newf("[dml] DBR: The SQL string is empty.")
 	}
 
-	if a.base.templateStmtCount < 2 && hasNamedArgs == 0 && len(recs) == 0 && a.Options == 0 { // no options and qualified records provided
+	if a.base.templateStmtCount < 2 && hasNamedArgs == 0 && containsQualifiedRecords == 0 && a.Options == 0 { // no options and qualified records provided
 		if a.isPrepared {
-			return "", expandInterfaces(args), nil, nil
+			return "", expandInterfaces(args), nil
 		}
 
 		if a.Options == 0 && len(a.OrderBys) == 0 && !a.LimitValid {
-			return cachedSQL, expandInterfaces(args), nil, nil
+			return cachedSQL, expandInterfaces(args), nil
 		}
 		buf := bufferpool.Get()
 		defer bufferpool.Put(buf)
 		buf.WriteString(cachedSQL)
 		sqlWriteOrderBy(buf, a.OrderBys, false)
 		sqlWriteLimitOffset(buf, a.LimitValid, a.OffsetValid, a.OffsetCount, a.LimitCount)
-		return buf.String(), expandInterfaces(args), nil, nil
+		return buf.String(), expandInterfaces(args), nil
 	}
 
 	if !a.isPrepared && hasNamedArgs == 0 {
@@ -269,21 +273,20 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 		hasNamedArgs = 1
 		cachedSQL, a.base.qualifiedColumns, found = extractReplaceNamedArgs(cachedSQL, a.base.qualifiedColumns)
 		if found {
-			a.base.cachedSQLUpsert(a.base.CacheKey, cachedSQL)
+			a.base.cachedSQLUpsert(a.base.cacheKey, cachedSQL)
 			hasNamedArgs = 2
 		}
 	}
 
 	sqlBuf := bufferpool.GetTwin()
 	defer bufferpool.PutTwin(sqlBuf)
-	collectedArgs := args
 
-	if collectedArgs, err = a.appendConvertedRecordsToArguments(hasNamedArgs, collectedArgs, recs); err != nil {
-		return "", nil, nil, errors.WithStack(err)
+	if args, err = a.appendConvertedRecordsToArguments(hasNamedArgs, args, recs); err != nil {
+		return "", nil, errors.WithStack(err)
 	}
 
 	if a.isPrepared {
-		return "", expandInterfaces(collectedArgs), recs, nil
+		return "", expandInterfaces(args), nil
 	}
 
 	// Make a copy of the original SQL statement because it gets modified in the
@@ -291,15 +294,15 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 	// bytes.Buffer from the pool! TODO(CYS) optimize this and only acquire a
 	// buffer from the pool in the worse case.
 	if _, err := sqlBuf.First.WriteString(cachedSQL); err != nil {
-		return "", nil, nil, errors.WithStack(err)
+		return "", nil, errors.WithStack(err)
 	}
 
 	sqlWriteOrderBy(sqlBuf.First, a.OrderBys, false)
 	sqlWriteLimitOffset(sqlBuf.First, a.LimitValid, a.OffsetValid, a.OffsetCount, a.LimitCount)
 
 	// `switch` statement no suitable.
-	if a.Options > 0 && lenExtArgs > 0 && len(recs) == 0 && len(args) == 0 {
-		return "", nil, nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
+	if a.Options > 0 && lenExtArgs > 0 && containsQualifiedRecords == 0 && len(args) == 0 {
+		return "", nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
 	}
 
 	// TODO more advanced caching of the final non-expanded SQL string
@@ -307,29 +310,30 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 	if a.Options&argOptionExpandPlaceholder != 0 {
 		phCount := bytes.Count(sqlBuf.First.Bytes(), placeHolderByte)
 		if aLen, hasSlice := totalSliceLen(args); phCount < aLen || hasSlice {
-			if err := expandPlaceHolders(sqlBuf.Second, sqlBuf.First.Bytes(), collectedArgs); err != nil {
-				return "", nil, nil, errors.WithStack(err)
+			if err := expandPlaceHolders(sqlBuf.Second, sqlBuf.First.Bytes(), args); err != nil {
+				return "", nil, errors.WithStack(err)
 			}
 			if _, err := sqlBuf.CopySecondToFirst(); err != nil {
-				return "", nil, nil, errors.WithStack(err)
+				return "", nil, errors.WithStack(err)
 			}
 		}
 	}
 	if a.Options&argOptionInterpolate != 0 {
-		if err := writeInterpolateBytes(sqlBuf.Second, sqlBuf.First.Bytes(), collectedArgs); err != nil {
-			return "", nil, nil, errors.Wrapf(err, "[dml] Interpolation failed: %q", sqlBuf.String())
+		if err := writeInterpolateBytes(sqlBuf.Second, sqlBuf.First.Bytes(), args); err != nil {
+			return "", nil, errors.Wrapf(err, "[dml] Interpolation failed: %q", sqlBuf.String())
 		}
-		return sqlBuf.Second.String(), nil, nil, nil
+		return sqlBuf.Second.String(), nil, nil
 	}
 
-	return sqlBuf.First.String(), expandInterfaces(collectedArgs), recs, nil
+	return sqlBuf.First.String(), expandInterfaces(args), nil
 }
 
 func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArgs []interface{}, recs []QualifiedRecord) ([]interface{}, error) {
 	// argument,recs includes a.recs and the qualified records pass as argument to
 	// any Load*,Query* or Exec* function.
+	templateStmtCount := a.base.templateStmtCount
 	if a.base.templateStmtCount == 0 {
-		a.base.templateStmtCount = 1
+		templateStmtCount = 1
 	}
 
 	if len(recs) == 0 && hasNamedArgs == 0 {
@@ -337,8 +341,8 @@ func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArg
 	}
 
 	if len(recs) == 0 && hasNamedArgs < 2 {
-		if a.base.templateStmtCount > 1 {
-			collectedArgs = multiplyInterfaceValues(collectedArgs, a.base.templateStmtCount)
+		if templateStmtCount > 1 {
+			collectedArgs = multiplyInterfaceValues(collectedArgs, templateStmtCount)
 		}
 		// This is also a case where there are no records and only arguments and
 		// those arguments do not contain any name. Then we can skip the column
@@ -356,8 +360,8 @@ func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArg
 
 	var nextUnnamedArgPos int
 	// TODO refactor prototype and make it performant and beautiful code
-	cm := NewColumnMap(len(collectedArgs)+len(recs), "")  // can use an arg pool DBR sync.Pool, nope.
-	for tsc := 0; tsc < a.base.templateStmtCount; tsc++ { // only in case of UNION statements in combination with a template SELECT, can be optimized later
+	cm := NewColumnMap(len(collectedArgs)+len(recs), "") // can use an arg pool DBR sync.Pool, nope.
+	for tsc := 0; tsc < templateStmtCount; tsc++ {       // only in case of UNION statements in combination with a template SELECT, can be optimized later
 
 		// `qualifiedColumns` contains the correct order as the place holders
 		// appear in the SQL string.
@@ -414,36 +418,36 @@ func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArg
 // prepareQueryAndArgsInsert prepares the special arguments for an INSERT statement. The
 // returned interface slice is the same as the `extArgs` slice. extArgs =
 // external arguments.
-func (a *DBR) prepareQueryAndArgsInsert(extArgs []interface{}, recs []QualifiedRecord) (string, []interface{}, []QualifiedRecord, error) {
+func (a *DBR) prepareQueryAndArgsInsert(extArgs []interface{}, recs []QualifiedRecord) (string, []interface{}, error) {
 	sqlBuf := bufferpool.GetTwin()
 	defer bufferpool.PutTwin(sqlBuf)
 	lenExtArgs := len(extArgs)
 	cm := NewColumnMap(2*lenExtArgs, a.base.qualifiedColumns...)
 	cm.args = extArgs
 	lenInsertCachedSQL := len(a.insertCachedSQL)
-	cachedSQL, _ := a.base.cachedSQL[a.base.CacheKey]
+	cachedSQL, _ := a.base.cachedSQL[a.base.cacheKey]
 	{
 		if lenInsertCachedSQL > 0 {
 			cachedSQL = a.insertCachedSQL
 		}
 		if _, err := sqlBuf.First.WriteString(cachedSQL); err != nil {
-			return "", nil, nil, errors.WithStack(err)
+			return "", nil, errors.WithStack(err)
 		}
 
 		for _, qRec := range recs {
 			if qRec.Qualifier != "" {
-				return "", nil, nil, errors.Fatal.Newf("[dml] Qualifier in %T is not supported and not needed.", qRec)
+				return "", nil, errors.Fatal.Newf("[dml] Qualifier in %T is not supported and not needed.", qRec)
 			}
 
 			if err := qRec.Record.MapColumns(cm); err != nil {
-				return "", nil, nil, errors.WithStack(err)
+				return "", nil, errors.WithStack(err)
 			}
 		}
 	}
 
 	if a.isPrepared {
 		// TODO above construct can be more optimized when using prepared statements
-		return "", expandInterfaces(cm.args), recs, nil
+		return "", expandInterfaces(cm.args), nil
 	}
 
 	totalArgLen := uint(len(cm.args))
@@ -475,18 +479,18 @@ func (a *DBR) prepareQueryAndArgsInsert(extArgs []interface{}, recs []QualifiedR
 
 	if a.Options > 0 {
 		if lenExtArgs > 0 && len(recs) == 0 && len(cm.args) == 0 {
-			return "", nil, nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
+			return "", nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
 		}
 
 		if a.Options&argOptionInterpolate != 0 {
 			if err := writeInterpolateBytes(sqlBuf.Second, sqlBuf.First.Bytes(), cm.args); err != nil {
-				return "", nil, nil, errors.Wrapf(err, "[dml] Interpolation failed: %q", sqlBuf.First.String())
+				return "", nil, errors.Wrapf(err, "[dml] Interpolation failed: %q", sqlBuf.First.String())
 			}
-			return sqlBuf.Second.String(), nil, recs, nil
+			return sqlBuf.Second.String(), nil, nil
 		}
 	}
 
-	return a.insertCachedSQL, expandInterfaces(cm.args), recs, nil
+	return a.insertCachedSQL, expandInterfaces(cm.args), nil
 }
 
 // nextUnnamedArg returns an unnamed argument by its position.
@@ -544,13 +548,13 @@ func (a *DBR) Reset() *DBR {
 
 // WithDB sets the database query object.
 func (a *DBR) WithDB(db QueryExecPreparer) *DBR {
-	a.base.DB = db
+	a.base.db = db
 	return a
 }
 
 // WithPreparedStmt uses a SQL statement as DB connection.
 func (a *DBR) WithPreparedStmt(stmt *sql.Stmt) *DBR {
-	a.base.DB = stmtWrapper{stmt: stmt}
+	a.base.db = stmtWrapper{stmt: stmt}
 	return a
 }
 
@@ -561,7 +565,7 @@ func (a *DBR) WithTx(tx *Tx) *DBR {
 		a.base.id = tx.makeUniqueID()
 	}
 	a.base.Log = tx.Log
-	a.base.DB = tx.DB
+	a.base.db = tx.DB
 	return a
 }
 
@@ -570,6 +574,10 @@ func (a *DBR) WithTx(tx *Tx) *DBR {
 // the source DBR object.
 func (a *DBR) Clone() *DBR {
 	c := *a
+	if a.QualifiedColumnsAliases != nil {
+		c.QualifiedColumnsAliases = make([]string, len(a.QualifiedColumnsAliases))
+		copy(c.QualifiedColumnsAliases, a.QualifiedColumnsAliases)
+	}
 	return &c
 }
 
@@ -580,7 +588,7 @@ func (a *DBR) Close() error {
 	if a.base.ärgErr != nil {
 		return errors.WithStack(a.base.ärgErr)
 	}
-	if c, ok := a.base.DB.(ioCloser); ok {
+	if c, ok := a.base.db.(ioCloser); ok {
 		return errors.WithStack(c.Close())
 	}
 	return nil
@@ -657,7 +665,7 @@ func (a *DBR) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows,
 
 // QueryRowContext traditional way of the databasel/sql package.
 func (a *DBR) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row {
-	sqlStr, args, _, err := a.prepareQueryAndArgs(args)
+	sqlStr, args, err := a.prepareQueryAndArgs(args)
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug(
 			"QueryRowContext",
@@ -665,7 +673,7 @@ func (a *DBR) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row
 			log.String("source", string(a.base.source)),
 			log.Err(err))
 	}
-	return a.base.DB.QueryRowContext(ctx, sqlStr, args...)
+	return a.base.db.QueryRowContext(ctx, sqlStr, args...)
 }
 
 // IterateSerial iterates in serial order over the result set by loading one row each
@@ -1055,19 +1063,18 @@ func (a *DBR) LoadStrings(ctx context.Context, dest []string, args ...interface{
 }
 
 func (a *DBR) query(ctx context.Context, args []interface{}) (rows *sql.Rows, err error) {
-	sqlStr, args, recs, err := a.prepareQueryAndArgs(args)
+	sqlStr, args, err := a.prepareQueryAndArgs(args)
 	if a.base.Log != nil && a.base.Log.IsDebug() {
 		defer log.WhenDone(a.base.Log).Debug(
-			"Query", log.String("sql", sqlStr), log.Int("length_recs", len(recs)),
-			log.Int("length_args", len(args)), log.String("source", string(a.base.source)), log.Err(err))
+			"Query", log.String("sql", sqlStr), log.Int("length_args", len(args)), log.String("source", string(a.base.source)), log.Err(err))
 	}
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	rows, err = a.base.DB.QueryContext(ctx, sqlStr, args...)
+	rows, err = a.base.db.QueryContext(ctx, sqlStr, args...)
 	if err != nil {
 		if sqlStr == "" {
-			cachedSQL, _ := a.base.cachedSQL[a.base.CacheKey]
+			cachedSQL, _ := a.base.cachedSQL[a.base.cacheKey]
 			sqlStr = "PREPARED:" + cachedSQL
 		}
 		return nil, errors.Wrapf(err, "[dml] Query.QueryContext with query %q", sqlStr)
@@ -1075,21 +1082,20 @@ func (a *DBR) query(ctx context.Context, args []interface{}) (rows *sql.Rows, er
 	return rows, err
 }
 
-func (a *DBR) exec(ctx context.Context, args []interface{}) (result sql.Result, err error) {
-	sqlStr, args, recs, err := a.prepareQueryAndArgs(args)
+func (a *DBR) exec(ctx context.Context, rawArgs []interface{}) (result sql.Result, err error) {
+	sqlStr, args, err := a.prepareQueryAndArgs(rawArgs)
 	if a.base.Log != nil && a.base.Log.IsDebug() {
-		defer log.WhenDone(a.base.Log).Debug("Exec", log.String("sql", sqlStr), log.Int("length_recs", len(recs)), log.Int("length_args", len(args)), log.String("source", string(a.base.source)), log.Err(err))
+		defer log.WhenDone(a.base.Log).Debug("Exec", log.String("sql", sqlStr),
+			log.Int("length_args", len(args)), log.Int("length_raw_args", len(rawArgs)), log.String("source", string(a.base.source)),
+			log.Err(err))
 	}
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	result, err = a.base.DB.ExecContext(ctx, sqlStr, args...)
+	result, err = a.base.db.ExecContext(ctx, sqlStr, args...)
 	if err != nil {
 		return nil, errors.Wrapf(err, "[dml] ExecContext with query %q", sqlStr) // err gets catched by the defer
-	}
-	if len(recs) == 0 {
-		return result, nil
 	}
 	lID, err := result.LastInsertId()
 	if err != nil {
@@ -1098,9 +1104,17 @@ func (a *DBR) exec(ctx context.Context, args []interface{}) (result sql.Result, 
 	if lID == 0 {
 		return // in case of non-insert statement
 	}
-	for i, rec := range recs {
-		if a, ok := rec.Record.(LastInsertIDAssigner); ok {
-			a.AssignLastInsertID(lID + int64(i))
+	var j int64
+	for _, arg := range rawArgs {
+		switch a := arg.(type) {
+		case LastInsertIDAssigner:
+			a.AssignLastInsertID(lID + j)
+			j++
+		case QualifiedRecord:
+			if rLIDA, ok := a.Record.(LastInsertIDAssigner); ok {
+				rLIDA.AssignLastInsertID(lID + j)
+				j++
+			}
 		}
 	}
 	return result, nil

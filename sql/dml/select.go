@@ -93,7 +93,7 @@ func newSelect(db QueryExecPreparer, cCom *connCommon, from []string) *Select {
 			builderCommon: builderCommon{
 				id:  id,
 				Log: l,
-				DB:  db,
+				db:  db,
 			},
 			Table: MakeIdentifier(from[0]),
 		},
@@ -124,7 +124,7 @@ func (tx *Tx) SelectFrom(fromAlias ...string) *Select {
 
 // WithDB sets the database query object.
 func (b *Select) WithDB(db QueryExecPreparer) *Select {
-	b.DB = db
+	b.db = db
 	return b
 }
 
@@ -556,14 +556,14 @@ func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err 
 // of the statement. The returned Stmter is not safe for concurrent use, despite
 // the underlying *sql.Stmt is (really? TODO investigate).
 func (b *Select) Prepare(ctx context.Context) (*Stmt, error) {
-	return b.prepare(ctx, b.DB, b, dmlSourceSelect)
+	return b.prepare(ctx, b.db, b, dmlSourceSelect)
 }
 
 // PrepareWithDBR same as Prepare but forwards the possible error of creating a
 // prepared statement into the DBR type. Reduces boilerplate code. You must
 // call DBR.Close to deallocate the prepared statement in the SQL server.
 func (b *Select) PrepareWithDBR(ctx context.Context) *DBR {
-	stmt, err := b.prepare(ctx, b.DB, b, dmlSourceInsert)
+	stmt, err := b.prepare(ctx, b.db, b, dmlSourceInsert)
 	if err != nil {
 		a := &DBR{
 			base: builderCommon{

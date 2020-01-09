@@ -79,7 +79,7 @@ func newDeleteFrom(db QueryExecPreparer, cCom *connCommon, from string) *Delete 
 			builderCommon: builderCommon{
 				id:  id,
 				Log: l,
-				DB:  db,
+				db:  db,
 			},
 			Table: MakeIdentifier(from),
 		},
@@ -167,7 +167,7 @@ func (b *Delete) Alias(alias string) *Delete {
 // pool), a *sql.Conn (a single dedicated database session) or a *sql.Tx (an
 // in-progress database transaction).
 func (b *Delete) WithDB(db QueryExecPreparer) *Delete {
-	b.DB = db
+	b.db = db
 	return b
 }
 
@@ -332,14 +332,14 @@ func (b *Delete) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err 
 // duration taken and the SQL string. The returned Stmter is not safe for
 // concurrent use, despite the underlying *sql.Stmt is.
 func (b *Delete) Prepare(ctx context.Context) (*Stmt, error) {
-	return b.prepare(ctx, b.DB, b, dmlSourceDelete)
+	return b.prepare(ctx, b.db, b, dmlSourceDelete)
 }
 
 // PrepareWithDBR same as Prepare but forwards the possible error of creating a
 // prepared statement into the DBR type. Reduces boilerplate code. You must
 // call DBR.Close to deallocate the prepared statement in the SQL server.
 func (b *Delete) PrepareWithDBR(ctx context.Context) *DBR {
-	stmt, err := b.prepare(ctx, b.DB, b, dmlSourceDelete)
+	stmt, err := b.prepare(ctx, b.db, b, dmlSourceDelete)
 	if err != nil {
 		a := &DBR{
 			base: builderCommon{

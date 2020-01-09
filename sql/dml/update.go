@@ -53,7 +53,7 @@ func newUpdate(db QueryExecPreparer, cComm *connCommon, table string) *Update {
 			builderCommon: builderCommon{
 				id:  id,
 				Log: l,
-				DB:  db,
+				db:  db,
 			},
 			Table: MakeIdentifier(table),
 		},
@@ -84,7 +84,7 @@ func (b *Update) Alias(alias string) *Update {
 
 // WithDB sets the database query object.
 func (b *Update) WithDB(db QueryExecPreparer) *Update {
-	b.DB = db
+	b.db = db
 	return b
 }
 
@@ -231,14 +231,14 @@ func (b *Update) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 // of the statement. The returned Stmter is not safe for concurrent use, despite
 // the underlying *sql.Stmt is.
 func (b *Update) Prepare(ctx context.Context) (*Stmt, error) {
-	return b.prepare(ctx, b.DB, b, dmlSourceUpdate)
+	return b.prepare(ctx, b.db, b, dmlSourceUpdate)
 }
 
 // PrepareWithDBR same as Prepare but forwards the possible error of creating a
 // prepared statement into the DBR type. Reduces boilerplate code. You must
 // call DBR.Close to deallocate the prepared statement in the SQL server.
 func (b *Update) PrepareWithDBR(ctx context.Context) *DBR {
-	stmt, err := b.prepare(ctx, b.DB, b, dmlSourceUpdate)
+	stmt, err := b.prepare(ctx, b.db, b, dmlSourceUpdate)
 	if err != nil {
 		a := &DBR{
 			base: builderCommon{
