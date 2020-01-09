@@ -65,7 +65,7 @@ func (c *Canal) processRowsEventHandler(ctx context.Context, action string, tabl
 	errGoFn := func(h RowsEventHandler) func() error {
 		return func() error {
 			if err := h.Do(ctx, action, table, rows); err != nil {
-				isInterr := errors.Is(err, errors.Interrupted)
+				isInterr := errors.MatchKind(err, errors.Interrupted)
 				if c.opts.Log.IsDebug() {
 					c.opts.Log.Debug("myCanal.processRowsEventHandler.Go.Do.error", log.Err(err), log.Stringer("handler_name", h),
 						log.Bool("is_interrupted", isInterr),
@@ -102,7 +102,7 @@ func (c *Canal) flushEventHandlers(ctx context.Context) error {
 			h := h
 			erg.Go(func() error {
 				if err := h.Complete(ctx); err != nil {
-					isInterr := errors.Is(err, errors.Interrupted)
+					isInterr := errors.MatchKind(err, errors.Interrupted)
 					c.opts.Log.Info("myCanal.flushEventHandlers.Go.Complete.error",
 						log.Err(err), log.Bool("is_interrupted", isInterr), log.Stringer("handler_name", h), log.String("table_name", tblName))
 					if isInterr {

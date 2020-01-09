@@ -135,7 +135,7 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 			// NotFound errors get ignores. For example table has been deleted
 			// and an old event pops in.
 			if err = c.handleRowsEvent(ctxArg, ev); err != nil {
-				isNotFound := errors.Is(err, errors.NotFound)
+				isNotFound := errors.MatchKind(err, errors.NotFound)
 				if c.opts.Log.IsDebug() {
 					c.opts.Log.Debug("myCanal.startSyncBinlog.rowsEvent.newPosition", log.Err(err),
 						log.Stringer("header_position", pos), log.Stringer("current_position", currentPos),

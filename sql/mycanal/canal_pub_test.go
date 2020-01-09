@@ -65,7 +65,7 @@ func TestNewCanal_FailedMasterStatus(t *testing.T) {
 		`root:@x'err(localhost:3306)/TestDB?allowNativePasswords=false&maxAllowedPacket=0`,
 		mycanal.WithDB(dbc.DB), &mycanal.Options{})
 	assert.Nil(t, c)
-	assert.True(t, errors.Is(err, errors.AlreadyClosed), "%+v", err)
+	assert.True(t, errors.MatchKind(err, errors.AlreadyClosed), "%+v", err)
 }
 
 func TestNewCanal_CheckBinlogRowFormat_Wrong(t *testing.T) {
@@ -90,7 +90,7 @@ func TestNewCanal_CheckBinlogRowFormat_Wrong(t *testing.T) {
 		`root:@x'err(localhost:3306)/TestDB?allowNativePasswords=false&maxAllowedPacket=0`,
 		mycanal.WithDB(dbc.DB), &mycanal.Options{})
 	assert.Nil(t, c)
-	assert.True(t, errors.Is(err, errors.NotSupported), "%+v", err)
+	assert.True(t, errors.MatchKind(err, errors.NotSupported), "%+v", err)
 	assert.Contains(t, err.Error(), `a cat`)
 }
 
@@ -119,7 +119,7 @@ func TestNewCanal_CheckBinlogRowFormat_Error(t *testing.T) {
 		`root:@x'err(localhost:3306)/TestDB?allowNativePasswords=false&maxAllowedPacket=0`,
 		mycanal.WithDB(dbc.DB), &mycanal.Options{})
 	assert.Nil(t, c)
-	assert.True(t, errors.Is(err, errors.NotImplemented), "%+v", err)
+	assert.True(t, errors.MatchKind(err, errors.NotImplemented), "%+v", err)
 	assert.Contains(t, err.Error(), `MySQL Syntax not implemted`)
 }
 
