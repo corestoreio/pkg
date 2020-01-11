@@ -6,6 +6,7 @@
 package conv
 
 import (
+	"bytes"
 	"fmt"
 	"html/template"
 	"math"
@@ -369,8 +370,10 @@ func indirect(a interface{}) interface{} {
 // indirectToStringerOrError returns the value, after dereferencing as many times
 // as necessary to reach the base type (or nil) or an implementation of fmt.Stringer
 // or error,
-var errorType = reflect.TypeOf((*error)(nil)).Elem()
-var fmtStringerType = reflect.TypeOf((*fmt.Stringer)(nil)).Elem()
+var (
+	errorType       = reflect.TypeOf((*error)(nil)).Elem()
+	fmtStringerType = reflect.TypeOf((*fmt.Stringer)(nil)).Elem()
+)
 
 func indirectToStringerOrError(a interface{}) interface{} {
 	if a == nil {
@@ -395,7 +398,7 @@ type textMarshaler interface {
 // ToStringE casts an empty interface to a string.
 func ToStringE(i interface{}) (string, error) {
 	i = indirectToStringerOrError(i) // does not cost neither B/op nor allocs/op
-
+	const sliceItemSeparator = ", "
 	switch s := i.(type) {
 	case string:
 		return s, nil
@@ -414,7 +417,7 @@ func ToStringE(i interface{}) (string, error) {
 	case int32:
 		return strconv.FormatInt(int64(i.(int32)), 10), nil
 	case int64:
-		return strconv.FormatInt(int64(i.(int64)), 10), nil
+		return strconv.FormatInt(i.(int64), 10), nil
 	case uint:
 		return strconv.FormatUint(uint64(i.(uint)), 10), nil
 	case uint8:
@@ -424,9 +427,13 @@ func ToStringE(i interface{}) (string, error) {
 	case uint32:
 		return strconv.FormatUint(uint64(i.(uint32)), 10), nil
 	case uint64:
-		return strconv.FormatUint(uint64(i.(uint64)), 10), nil
+		return strconv.FormatUint(i.(uint64), 10), nil
 	case []byte:
 		return string(s), nil
+	case []string:
+		return strings.Join(s, sliceItemSeparator), nil
+	case [][]byte:
+		return string(bytes.Join(s, []byte(sliceItemSeparator))), nil
 	case template.HTML:
 		return string(s), nil
 	case template.URL:

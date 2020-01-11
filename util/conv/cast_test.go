@@ -171,6 +171,10 @@ func TestToString(t *testing.T) {
 	assert.Equal(t, "123", ToString(uint16(123)))
 	assert.Equal(t, "123", ToString(uint32(123)))
 	assert.Equal(t, "123", ToString(uint64(123)))
+	assert.Equal(t, "a, b", ToString([]string{"a", "b"}))
+	assert.Equal(t, "a", ToString([]string{"a"}))
+	assert.Equal(t, "a, b", ToString([][]byte{[]byte(`a`), []byte(`b`)}))
+	assert.Equal(t, "a", ToString([][]byte{[]byte(`a`)}))
 
 	assert.Equal(t, "[JSON]", ToString(jsonMarshal("[JSON]")))
 	assert.Equal(t, "[TEXT]", ToString(textMarshal("[TEXT]")))
