@@ -89,7 +89,7 @@ func TestInsert_Bind(t *testing.T) {
 			wantArgs...,
 		)
 	})
-	t.Run("without columns, all columns requested", func(t *testing.T) {
+	t.Run("without columns, all columns requested, no dup key", func(t *testing.T) {
 		customers := []*customerEntity{
 			{EntityID: 11, Firstname: "Karl Gopher", StoreID: 0x7, LifetimeSales: null.MakeFloat64(47.11), VoucherCodes: exampleStringSlice{"1FE9983E", "28E76FBC"}},
 			{EntityID: 12, Firstname: "Fung Go Roo", StoreID: 0x7, LifetimeSales: null.MakeFloat64(28.94), VoucherCodes: exampleStringSlice{"4FE7787E", "15E59FBB", "794EFDE8"}},

@@ -211,14 +211,13 @@ func (a *DBR) ExpandPlaceHolders() *DBR {
 // slice is the same as `extArgs`.
 // The returned []QualifiedRecord slice is needed to use interface LastInsertIDAssigner.
 func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interface{}, err error) {
-	// TODO remove recs from prepareQueryAndArgs, the 3rd return arg
 	if a.base.ärgErr != nil {
 		return "", nil, errors.WithStack(a.base.ärgErr)
 	}
 	lenExtArgs := len(extArgs)
 	var hasNamedArgs uint8
-	var recs []QualifiedRecord
 	var containsQualifiedRecords int
+	var primitiveCounts int
 	var args []interface{}
 	if lenExtArgs > 0 {
 		args = pooledInterfacesGet()
@@ -228,23 +227,27 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 			switch eaTypeValue := ea.(type) {
 			case nil:
 				args = append(args, internalNULLNIL{})
-			case QualifiedRecord:
+				primitiveCounts++
+			case QualifiedRecord, ColumnMapper:
 				containsQualifiedRecords++
-				recs = append(recs, eaTypeValue)
+				args = append(args, eaTypeValue)
 			case sql.NamedArg:
 				args = append(args, ea)
 				hasNamedArgs = 2
+				primitiveCounts++
 			case []sql.NamedArg: // insert statement with key/value pairs
 				for _, na := range eaTypeValue {
 					args = append(args, na.Value)
+					primitiveCounts++
 				}
 			default:
 				args = append(args, ea)
+				primitiveCounts++
 			}
 		}
 	}
 	if a.base.source == dmlSourceInsert {
-		return a.prepareQueryAndArgsInsert(args, recs)
+		return a.prepareQueryAndArgsInsert(args, primitiveCounts)
 	}
 
 	cachedSQL, ok := a.base.cachedSQL[a.base.cacheKey]
@@ -281,7 +284,7 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 	sqlBuf := bufferpool.GetTwin()
 	defer bufferpool.PutTwin(sqlBuf)
 
-	if args, err = a.appendConvertedRecordsToArguments(hasNamedArgs, args, recs); err != nil {
+	if args, err = a.appendConvertedRecordsToArguments(hasNamedArgs, args, containsQualifiedRecords); err != nil {
 		return "", nil, errors.WithStack(err)
 	}
 
@@ -328,19 +331,17 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 	return sqlBuf.First.String(), expandInterfaces(args), nil
 }
 
-func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArgs []interface{}, recs []QualifiedRecord) ([]interface{}, error) {
-	// argument,recs includes a.recs and the qualified records pass as argument to
-	// any Load*,Query* or Exec* function.
+func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArgs []interface{}, containsQualifiedRecords int) ([]interface{}, error) {
 	templateStmtCount := a.base.templateStmtCount
 	if a.base.templateStmtCount == 0 {
 		templateStmtCount = 1
 	}
 
-	if len(recs) == 0 && hasNamedArgs == 0 {
+	if containsQualifiedRecords == 0 && hasNamedArgs == 0 {
 		return collectedArgs, nil
 	}
 
-	if len(recs) == 0 && hasNamedArgs < 2 {
+	if containsQualifiedRecords == 0 && hasNamedArgs < 2 {
 		if templateStmtCount > 1 {
 			collectedArgs = multiplyInterfaceValues(collectedArgs, templateStmtCount)
 		}
@@ -360,8 +361,8 @@ func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArg
 
 	var nextUnnamedArgPos int
 	// TODO refactor prototype and make it performant and beautiful code
-	cm := NewColumnMap(len(collectedArgs)+len(recs), "") // can use an arg pool DBR sync.Pool, nope.
-	for tsc := 0; tsc < templateStmtCount; tsc++ {       // only in case of UNION statements in combination with a template SELECT, can be optimized later
+	cm := NewColumnMap(len(collectedArgs)+containsQualifiedRecords, "") // can use an arg pool DBR sync.Pool, nope.
+	for tsc := 0; tsc < templateStmtCount; tsc++ {                      // only in case of UNION statements in combination with a template SELECT, can be optimized later
 
 		// `qualifiedColumns` contains the correct order as the place holders
 		// appear in the SQL string.
@@ -375,24 +376,33 @@ func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArg
 
 			if isNamedArg && len(collectedArgs) > 0 {
 				// if the colon : cannot be found then a simple place holder ? has been detected
-				if err := a.mapColumns(collectedArgs, cm); err != nil {
+				if err := a.mapColumns(containsQualifiedRecords, collectedArgs, cm); err != nil {
 					return collectedArgs, errors.WithStack(err)
 				}
 			} else {
 				found := false
-				for _, qRec := range recs {
-					if qRec.Qualifier == "" && qualifier != "" {
-						qRec.Qualifier = a.base.defaultQualifier
-					}
-					if qRec.Qualifier != "" && qualifier == "" {
-						qualifier = a.base.defaultQualifier
-					}
+				for _, arg := range collectedArgs {
+					switch qRec := arg.(type) {
+					case QualifiedRecord:
+						if qRec.Qualifier == "" && qualifier != "" {
+							qRec.Qualifier = a.base.defaultQualifier
+						}
+						if qRec.Qualifier != "" && qualifier == "" {
+							qualifier = a.base.defaultQualifier
+						}
 
-					if qRec.Qualifier == qualifier {
-						if err := qRec.Record.MapColumns(cm); err != nil {
+						if qRec.Qualifier == qualifier {
+							if err := qRec.Record.MapColumns(cm); err != nil {
+								return collectedArgs, errors.WithStack(err)
+							}
+							found = true
+						}
+
+					case ColumnMapper:
+						if err := qRec.MapColumns(cm); err != nil {
 							return collectedArgs, errors.WithStack(err)
 						}
-						found = true
+
 					}
 				}
 				if !found {
@@ -418,14 +428,15 @@ func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArg
 // prepareQueryAndArgsInsert prepares the special arguments for an INSERT statement. The
 // returned interface slice is the same as the `extArgs` slice. extArgs =
 // external arguments.
-func (a *DBR) prepareQueryAndArgsInsert(extArgs []interface{}, recs []QualifiedRecord) (string, []interface{}, error) {
+func (a *DBR) prepareQueryAndArgsInsert(extArgs []interface{}, primitiveCounts int) (string, []interface{}, error) {
 	sqlBuf := bufferpool.GetTwin()
 	defer bufferpool.PutTwin(sqlBuf)
-	lenExtArgs := len(extArgs)
-	cm := NewColumnMap(2*lenExtArgs, a.base.qualifiedColumns...)
+	cm := NewColumnMap(2*primitiveCounts, a.base.qualifiedColumns...)
 	cm.args = extArgs
+	lenExtArgsBefore := len(extArgs)
 	lenInsertCachedSQL := len(a.insertCachedSQL)
 	cachedSQL, _ := a.base.cachedSQL[a.base.cacheKey]
+	var containsRecords bool
 	{
 		if lenInsertCachedSQL > 0 {
 			cachedSQL = a.insertCachedSQL
@@ -434,23 +445,30 @@ func (a *DBR) prepareQueryAndArgsInsert(extArgs []interface{}, recs []QualifiedR
 			return "", nil, errors.WithStack(err)
 		}
 
-		for _, qRec := range recs {
-			if qRec.Qualifier != "" {
-				return "", nil, errors.Fatal.Newf("[dml] Qualifier in %T is not supported and not needed.", qRec)
-			}
-
-			if err := qRec.Record.MapColumns(cm); err != nil {
-				return "", nil, errors.WithStack(err)
+		for _, arg := range extArgs {
+			switch qRec := arg.(type) {
+			case QualifiedRecord:
+				if qRec.Qualifier != "" {
+					return "", nil, errors.Fatal.Newf("[dml] Qualifier in %T is not supported and not needed.", qRec)
+				}
+				if err := qRec.Record.MapColumns(cm); err != nil {
+					return "", nil, errors.WithStack(err)
+				}
+				containsRecords = true
+			case ColumnMapper:
+				if err := qRec.MapColumns(cm); err != nil {
+					return "", nil, errors.WithStack(err)
+				}
+				containsRecords = true
 			}
 		}
+		primitiveCounts += len(cm.args) - lenExtArgsBefore
 	}
 
 	if a.isPrepared {
 		// TODO above construct can be more optimized when using prepared statements
 		return "", expandInterfaces(cm.args), nil
 	}
-
-	totalArgLen := uint(len(cm.args))
 
 	if !a.insertIsBuildValues && lenInsertCachedSQL == 0 { // Write placeholder list e.g. "VALUES (?,?),(?,?)"
 		odkPos := strings.Index(cachedSQL, onDuplicateKeyPartS)
@@ -460,10 +478,10 @@ func (a *DBR) prepareQueryAndArgsInsert(extArgs []interface{}, recs []QualifiedR
 		}
 
 		if a.insertRowCount > 0 {
-			columnCount := totalArgLen / a.insertRowCount
+			columnCount := uint(primitiveCounts) / a.insertRowCount
 			writeInsertPlaceholders(sqlBuf.First, a.insertRowCount, columnCount)
 		} else if a.insertColumnCount > 0 {
-			rowCount := totalArgLen / a.insertColumnCount
+			rowCount := uint(primitiveCounts) / a.insertColumnCount
 			if rowCount == 0 {
 				rowCount = 1
 			}
@@ -478,7 +496,7 @@ func (a *DBR) prepareQueryAndArgsInsert(extArgs []interface{}, recs []QualifiedR
 	}
 
 	if a.Options > 0 {
-		if lenExtArgs > 0 && len(recs) == 0 && len(cm.args) == 0 {
+		if primitiveCounts > 0 && !containsRecords && len(cm.args) == 0 {
 			return "", nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
 		}
 
@@ -496,12 +514,14 @@ func (a *DBR) prepareQueryAndArgsInsert(extArgs []interface{}, recs []QualifiedR
 // nextUnnamedArg returns an unnamed argument by its position.
 func (a *DBR) nextUnnamedArg(nextUnnamedArgPos int, args []interface{}) (interface{}, int, bool) {
 	var unnamedCounter int
-	lenArg := len(args)
-	for i := 0; i < lenArg && nextUnnamedArgPos >= 0; i++ {
-		if _, ok := args[i].(sql.NamedArg); !ok {
+	for _, arg := range args {
+		switch arg.(type) {
+		case sql.NamedArg, QualifiedRecord, ColumnMapper:
+		// skip
+		default:
 			if unnamedCounter == nextUnnamedArgPos {
 				nextUnnamedArgPos++
-				return args[i], nextUnnamedArgPos, true
+				return arg, nextUnnamedArgPos, true
 			}
 			unnamedCounter++
 		}
@@ -513,23 +533,37 @@ func (a *DBR) nextUnnamedArg(nextUnnamedArgPos int, args []interface{}) (interfa
 // mapColumns allows to merge one argument slice with another depending on the
 // matched columns. Each argument in the slice must be a named argument.
 // Implements interface ColumnMapper.
-func (a *DBR) mapColumns(args []interface{}, cm *ColumnMap) error {
+func (a *DBR) mapColumns(containsQualifiedRecords int, args []interface{}, cm *ColumnMap) error {
 	if cm.Mode() == ColumnMapEntityReadAll {
 		cm.args = append(cm.args, args...)
 		return cm.Err()
 	}
+	var cm2 *ColumnMap
+	if containsQualifiedRecords > 0 {
+		cm2 = NewColumnMap(1)
+	}
 	for cm.Next() {
-		// now a bit slow ... but will be refactored later with constant time
-		// access, but first benchmark it. This for loop can be the 3rd one in the
-		// overall chain.
+		// now a bit slow ...
 		c := cm.Column()
-		for _, arg := range args {
-			// Case sensitive comparison
-			if c != "" {
-				if sn, ok := arg.(sql.NamedArg); ok && sn.Name == c {
-					cm.args = append(cm.args, arg)
-					break
+		if containsQualifiedRecords > 0 {
+			cm2.setColumns([]string{c})
+		}
+
+		keepOnRolling := true
+		for i := 0; i < len(args) && keepOnRolling && c != ""; i++ {
+			switch at := args[i].(type) {
+			case sql.NamedArg:
+				if at.Name == c {
+					cm.args = append(cm.args, at.Value) // at.Value was previously just at
+					keepOnRolling = false
 				}
+			case QualifiedRecord:
+				// ignore the returned error as the mapper might not find the column.
+				// in the upper switch case we compare Name==c and so we know which
+				// column but with the mapper we don't know.
+				_ = at.Record.MapColumns(cm2)
+				cm.args = append(cm.args, cm2.args...)
+				// do not break the loop like in the upper switch case.
 			}
 		}
 	}

@@ -613,6 +613,9 @@ func expandInterface(appendTo []interface{}, arg interface{}) []interface{} {
 		appendTo = expandInterface(appendTo, dvv)
 	case internalNULLNIL:
 		appendTo = expandInterface(appendTo, nil)
+
+	case QualifiedRecord, ColumnMapper:
+		// skip and do nothing
 	default:
 		panic(errors.NotSupported.Newf("[dml] Unsupported field type: %T", arg))
 	}
