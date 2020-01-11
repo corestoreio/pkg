@@ -111,7 +111,7 @@ func (a *DBR) OrderByDesc(columns ...string) *DBR {
 // This LIMIT clause gets appended to the current internal cached SQL string
 // independently if the SQL statement supports it or not or if there exists
 // already a LIMIT clause.
-func (a *DBR) Limit(offset uint64, limit uint64) *DBR {
+func (a *DBR) Limit(offset, limit uint64) *DBR {
 	a.OffsetCount = offset
 	a.LimitCount = limit
 	a.OffsetValid = true
@@ -147,10 +147,8 @@ func (a *DBR) TestWithArgs(args ...interface{}) QueryBuilder {
 	return QuerySQLFn(func() (string, []interface{}, error) {
 		if secondCallInterpolates > 0 && secondCallInterpolates%2 == 1 {
 			a.Interpolate()
-		} else {
-			if a.Options&argOptionInterpolate != 0 {
-				a.Options = a.Options ^ argOptionInterpolate // removes interpolation AND NOT
-			}
+		} else if a.Options&argOptionInterpolate != 0 {
+			a.Options ^= argOptionInterpolate // removes interpolation AND NOT
 		}
 		secondCallInterpolates++
 
@@ -186,7 +184,7 @@ func (a *DBR) WithCacheKey(key string, args ...interface{}) *DBR {
 // pre-processed SQL command when calling the function ToSQL. Not suitable for
 // prepared statements. ToSQLs second argument `args` will then be nil.
 func (a *DBR) Interpolate() *DBR {
-	a.Options = a.Options | argOptionInterpolate
+	a.Options |= argOptionInterpolate
 	return a
 }
 
@@ -200,7 +198,7 @@ func (a *DBR) Interpolate() *DBR {
 // functions. This function should be generally used when dealing with prepared
 // statements or interpolation.
 func (a *DBR) ExpandPlaceHolders() *DBR {
-	a.Options = a.Options | argOptionExpandPlaceholder
+	a.Options |= argOptionExpandPlaceholder
 	return a
 }
 
@@ -670,9 +668,6 @@ func pooledInterfacesGet() []interface{} {
 
 func pooledInterfacesPut(args []interface{}) {
 	if cap(args) <= argumentPoolMaxSize {
-		// for i := range args {
-		//	args[i] = nil
-		//}
 		args = args[:0]
 		pooledInterfaces.Put(args)
 	}
@@ -823,7 +818,7 @@ func (a *DBR) IterateParallel(ctx context.Context, concurrencyLevel int, callBac
 }
 
 // Load loads data from a query into an object. Load can load a single row or
-// muliple-rows. It checks on top if ColumnMapper `s` implements io.Closer, to
+// multiple-rows. It checks on top if ColumnMapper `s` implements io.Closer, to
 // call the custom close function. This is useful for e.g. unlocking a mutex.
 func (a *DBR) Load(ctx context.Context, s ColumnMapper, args ...interface{}) (rowCount uint64, err error) {
 	if a.base.Log != nil && a.base.Log.IsDebug() {

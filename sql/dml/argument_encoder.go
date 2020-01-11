@@ -77,7 +77,6 @@ func (ae argEncoded) growOrNewContainer(sliceCount int) [][]byte {
 	if l := len(ae); l+n <= cap(ae) {
 		ae = ae[:l+n] // grow
 		buf := ae[l]  // get the new slice
-		// ae = ae[:l]   // shrink, because of a later append.
 		if cap(buf) < sliceCount {
 			buf = make([][]byte, sliceCount)
 		}

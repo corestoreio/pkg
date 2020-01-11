@@ -170,7 +170,7 @@ func (b *Update) WithDBR() *DBR {
 }
 
 // ToSQL converts the select statement into a string and returns its arguments.
-func (b *Update)ToSQL() (string, []interface{}, error) {
+func (b *Update) ToSQL() (string, []interface{}, error) {
 	b.source = dmlSourceUpdate
 	rawSQL, err := b.buildToSQL(b)
 	if err != nil {
@@ -196,7 +196,7 @@ func (b *Update) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 	b.defaultQualifier = b.Table.qualifier()
 	b.source = dmlSourceUpdate
 
-	if len(b.Table.Name) == 0 {
+	if b.Table.Name == "" {
 		return nil, errors.Empty.Newf("[dml] Update: Table at empty")
 	}
 	if len(b.SetClauses) == 0 {

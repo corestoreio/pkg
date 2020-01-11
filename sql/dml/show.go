@@ -111,7 +111,7 @@ func (b *Show) WithDB(db QueryExecPreparer) *Show {
 // session variables for new connections to MySQL. If a variable has no global
 // value, no value is displayed.
 func (b *Show) Global() *Show {
-	b.Type = b.Type | showGlobal
+	b.Type |= showGlobal
 	return b
 }
 
@@ -120,7 +120,7 @@ func (b *Show) Global() *Show {
 // has no session value, the global value is displayed. LOCAL is a synonym for
 // SESSION. If no modifier is present, the default is SESSION.
 func (b *Show) Session() *Show {
-	b.Type = b.Type | showSession
+	b.Type |= showSession
 	return b
 }
 
@@ -128,14 +128,14 @@ func (b *Show) Session() *Show {
 // Variables”). This statement does not require any privilege. It requires only
 // the ability to connect to the server.
 func (b *Show) Variable() *Show {
-	b.Type = b.Type | showVariables
+	b.Type |= showVariables
 	return b
 }
 
 // MasterStatus provides status information about the binary log files of the
 // master. It requires either the SUPER or REPLICATION CLIENT privilege.
 func (b *Show) MasterStatus() *Show {
-	b.Type = b.Type | showMasterStatus
+	b.Type |= showMasterStatus
 	return b
 }
 
@@ -144,20 +144,20 @@ func (b *Show) MasterStatus() *Show {
 // names to match. The WHERE clause can be given to select rows using more
 // general conditions. This statement also displays information about views.
 func (b *Show) TableStatus() *Show {
-	b.Type = b.Type | showTableStatus
+	b.Type |= showTableStatus
 	return b
 }
 
 // Status provides server status information. This statement does not require
 // any privilege. It requires only the ability to connect to the server.
 func (b *Show) Status() *Show {
-	b.Type = b.Type | showStatus
+	b.Type |= showStatus
 	return b
 }
 
 // BinaryLog lists the binary log files on the server.
 func (b *Show) BinaryLog() *Show {
-	b.Type = b.Type | showBinaryLog
+	b.Type |= showBinaryLog
 	return b
 }
 

@@ -1071,10 +1071,8 @@ func (b *ColumnMap) Debug(w ioWriter) (err error) {
 		b := b.scanCol[i]
 		if b.field == 'n' {
 			_, _ = w.Write(tNil)
-		} else {
-			if _, err = fmt.Fprintf(w, ": %q", b); err != nil {
-				return errors.WithStack(err)
-			}
+		} else if _, err = fmt.Fprintf(w, ": %q", b); err != nil {
+			return errors.WithStack(err)
 		}
 	}
 	return nil

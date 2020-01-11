@@ -24,8 +24,8 @@ import (
 // wrapDriver is used to create a new instrumented driver, it takes a vendor specific
 // driver, and a call back instance to produce a new driver instance. It's usually
 // used inside a sql.Register() statement
-func wrapDriver(driver driver.Driver, cb DriverCallBack) driver.Driver {
-	return cbDriver{drv: driver, cb: cb}
+func wrapDriver(drv driver.Driver, cb DriverCallBack) driver.Driver {
+	return cbDriver{drv: drv, cb: cb}
 }
 
 // DriverCallBack defines the call back signature used in every driver function.

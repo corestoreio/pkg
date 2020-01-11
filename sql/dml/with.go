@@ -196,7 +196,7 @@ func (b *With) WithDBR() *DBR {
 }
 
 // ToSQL converts the select statement into a string and returns its arguments.
-func (b *With)ToSQL() (string, []interface{}, error) {
+func (b *With) ToSQL() (string, []interface{}, error) {
 	b.source = dmlSourceWith
 	rawSQL, err := b.buildToSQL(b)
 	if err != nil {
@@ -224,9 +224,6 @@ func (b *With) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err er
 		w.WriteString("RECURSIVE ")
 	}
 
-	// for i, ls := 0, len(b.Subclauses); i < ls && err == nil; i++ {
-	//	sc := b.Subclauses[i]
-	//	}
 	for i, sc := range b.Subclauses {
 		Quoter.quote(w, sc.Name)
 		if len(sc.Columns) > 0 {

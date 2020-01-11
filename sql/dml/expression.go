@@ -141,7 +141,7 @@ func sqlCase(value, defaultValue string, compareResult ...string) string {
 	}
 	buf.WriteString("CASE ")
 	buf.WriteString(value)
-	for i := 0; i < lcr; i = i + 2 {
+	for i := 0; i < lcr; i += 2 {
 		buf.WriteString(" WHEN ")
 		buf.WriteString(compareResult[i])
 		buf.WriteString(" THEN ")

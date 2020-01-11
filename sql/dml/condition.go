@@ -353,7 +353,7 @@ func ParenthesisClose() *Condition {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// COMPARIONS OPERATOR
+// COMPARISON OPERATOR
 ///////////////////////////////////////////////////////////////////////////////
 
 // Op sets a custom operator
@@ -917,7 +917,7 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 		w.WriteByte('(')
 		// Code is a bit duplicated but can be refactored later. The order of
 		// the `case`s has been carefully implemented.
-		switch lenArgs := len(cnd.Right.args); true {
+		switch lenArgs := len(cnd.Right.args); {
 		case cnd.IsLeftExpression:
 			var phCount int
 			phCount, err = writeExpression(w, cnd.Left, cnd.Right.args)

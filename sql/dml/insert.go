@@ -327,7 +327,7 @@ func (b *Insert) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 		}
 	}
 
-	if len(b.Into) == 0 {
+	if b.Into == "" {
 		return nil, errors.Empty.Newf("[dml] Inserted table is missing")
 	}
 

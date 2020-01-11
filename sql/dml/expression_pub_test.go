@@ -262,7 +262,7 @@ func TestSQLCase(t *testing.T) {
 		assert.Exactly(t, "CASE  WHEN 1=1 THEN 2 WHEN 3=2 THEN 4 END", ce.Left)
 		assert.True(t, ce.IsLeftExpression, "IsLeftExpression should be true")
 	})
-	t.Run("case panics because of invalid length of comparions", func(t *testing.T) {
+	t.Run("case panics because of invalid length of comparisons", func(t *testing.T) {
 		defer func() {
 			if r := recover(); r != nil {
 				if err, ok := r.(error); ok {

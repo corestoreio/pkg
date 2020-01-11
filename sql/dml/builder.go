@@ -128,7 +128,7 @@ func (bc *builderCommon) CachedQueries(queries ...string) []string {
 	return queries
 }
 
-func (bc *builderCommon) cachedSQLUpsert(key string, sql string) {
+func (bc *builderCommon) cachedSQLUpsert(key, sql string) {
 	if bc.cachedSQL == nil {
 		bc.cachedSQL = make(map[string]string, 32) // 32 is just a guess
 	}
@@ -309,7 +309,7 @@ func (b *Show) String() string {
 	return sqlObjToString(b.buildToSQL(b))
 }
 
-func sqlWriteUnionAll(w *bytes.Buffer, isAll bool, isIntersect bool, isExcept bool) {
+func sqlWriteUnionAll(w *bytes.Buffer, isAll, isIntersect, isExcept bool) {
 	w.WriteByte('\n')
 	switch {
 	case isIntersect:
