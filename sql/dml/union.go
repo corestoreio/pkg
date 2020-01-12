@@ -240,7 +240,7 @@ func (u *Union) WithDBR() *DBR {
 }
 
 // ToSQL converts the statements into a string and returns its arguments.
-func (u *Union)ToSQL() (string, []interface{}, error) {
+func (u *Union) ToSQL() (string, []interface{}, error) {
 	u.source = dmlSourceUnion
 	rawSQL, err := u.buildToSQL(u)
 	if err != nil {

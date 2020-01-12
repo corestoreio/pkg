@@ -23,8 +23,10 @@ import (
 )
 
 // They both must be kept in sync
-var _ null.Dialecter = (*mysqlDialect)(nil)
-var _ dialecter = (*mysqlDialect)(nil)
+var (
+	_ null.Dialecter = (*mysqlDialect)(nil)
+	_ dialecter      = (*mysqlDialect)(nil)
+)
 
 func TestEscapeWith_NaughtyStrings(t *testing.T) {
 	s := createRealSessionWithFixtures(t, nil)

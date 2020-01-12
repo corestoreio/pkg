@@ -24,14 +24,16 @@ import (
 	"github.com/corestoreio/pkg/util/assert"
 )
 
-var _ fullConner = (*cbConn)(nil)
-var _ driver.Conn = (*cbConn)(nil)
-var _ driver.ConnPrepareContext = (*cbConn)(nil)
-var _ driver.ExecerContext = (*cbConn)(nil)
-var _ driver.QueryerContext = (*cbConn)(nil)
-var _ driver.Pinger = (*cbConn)(nil)
-var _ driver.ConnBeginTx = (*cbConn)(nil)
-var _ fullStmter = (*cbStmt)(nil)
+var (
+	_ fullConner                = (*cbConn)(nil)
+	_ driver.Conn               = (*cbConn)(nil)
+	_ driver.ConnPrepareContext = (*cbConn)(nil)
+	_ driver.ExecerContext      = (*cbConn)(nil)
+	_ driver.QueryerContext     = (*cbConn)(nil)
+	_ driver.Pinger             = (*cbConn)(nil)
+	_ driver.ConnBeginTx        = (*cbConn)(nil)
+	_ fullStmter                = (*cbStmt)(nil)
+)
 
 // var _ driver.ResetSessioner = (*cbConn)(nil)
 

@@ -26,8 +26,10 @@ import (
 )
 
 // Make sure that type customerEntity implements interface.
-var _ dml.ColumnMapper = (*customerCollection)(nil)
-var _ dml.ColumnMapper = (*customerEntity)(nil)
+var (
+	_ dml.ColumnMapper = (*customerCollection)(nil)
+	_ dml.ColumnMapper = (*customerEntity)(nil)
+)
 
 // customerCollection a slice of customer entities.
 type customerCollection struct {

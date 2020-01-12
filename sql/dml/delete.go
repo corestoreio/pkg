@@ -230,7 +230,7 @@ func (b *Delete) WithDBR() *DBR {
 
 // ToSQL generates the SQL string and might caches it internally, if not
 // disabled. The returned interface slice is always nil.
-func (b *Delete)ToSQL() (string, []interface{}, error) {
+func (b *Delete) ToSQL() (string, []interface{}, error) {
 	b.source = dmlSourceDelete
 	rawSQL, err := b.buildToSQL(b)
 	if err != nil {
