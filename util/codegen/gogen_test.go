@@ -35,8 +35,7 @@ func TestNewGo(t *testing.T) {
 	g.AddImport("fmt", "")
 	g.AddImport("github.com/corestoreio/pkg/storage/null", "null")
 	g.C("These constants", "are used for testing.", "Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an AS IS BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.")
-	g.AddConstString("TableA", "table_a")
-
+	g.WriteConstants(`TableA = "table_a"`)
 	g.Pln("type", "CatalogProductEntity", "struct {")
 	g.In()
 	g.Pln("EntityID", "int64")
@@ -64,15 +63,15 @@ import (
 	null "github.com/corestoreio/pkg/storage/null"
 )
 
-const (
-	TableA = "table_a"
-)
-
 // These constants are used for testing. Unless required by applicable law or
 // agreed to in writing, software distributed under the License is distributed on
 // an AS IS BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied. See the License for the specific language governing permissions
 // and limitations under the License.
+const (
+	TableA = "table_a"
+)
+
 type CatalogProductEntity struct {
 	EntityID int64
 	StoreID  uint32       // store_id smallint(5) unsigned NOT NULL PRI   "Store ID"

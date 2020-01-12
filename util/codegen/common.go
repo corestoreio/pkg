@@ -56,9 +56,18 @@ func (g *common) AddImports(importPaths ...string) {
 }
 
 // Writes a multiline comment and formats it to a max width of 80 chars. It adds
-// automatically the comment prefix `//`.
-func (g *common) C(comments ...string) {
-	comment(g.Buffer, comments...)
+// automatically the comment prefix `//`. It converts all types to string, if it
+// can't it panics.
+func (g *common) C(comments ...interface{}) {
+	cs := make([]string, 0, len(comments))
+	for _, cIF := range comments {
+		s, err := conv.ToStringE(cIF)
+		if err != nil {
+			panic(err)
+		}
+		cs = append(cs, s)
+	}
+	comment(g.Buffer, cs...)
 }
 
 func comment(g *bytes.Buffer, comments ...string) {
@@ -71,6 +80,21 @@ func comment(g *bytes.Buffer, comments ...string) {
 }
 
 var emptyIString interface{} = ""
+
+// SkipWS converts all arguments to type string, panics if it does not support a
+// type, and merges all arguments to one single string without white space
+// concatenation. This function can be used as argument to Pln or P or C.
+func SkipWS(str ...interface{}) []byte {
+	var buf bytes.Buffer
+	for _, v := range str {
+		s, err := conv.ToStringE(v)
+		if err != nil {
+			panic(err)
+		}
+		buf.WriteString(s)
+	}
+	return buf.Bytes()
+}
 
 // Pln prints the arguments to the generated output. It tries to convert all
 // kind of types to a string. It adds a line break at the end IF there are strs
