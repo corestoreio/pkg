@@ -1485,10 +1485,18 @@ func TestSelect_DBR_Load_Slices_Null(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Exactly(t, []uint64{11, 22}, vals)
 	})
-	t.Run("LoadUint64s", func(t *testing.T) {
+	t.Run("LoadStrings found", func(t *testing.T) {
 		vals := []string{}
 		vals, err := s.SelectFrom("dml_null_types").AddColumns("string_val").OrderBy("id").WithDBR().LoadStrings(context.Background(), vals)
 		assert.NoError(t, err)
 		assert.Exactly(t, []string{"A1", "A2", "-A3"}, vals)
+	})
+	t.Run("LoadStrings not found", func(t *testing.T) {
+		var vals []string
+		vals, err := s.SelectFrom("dml_null_types").Where(
+			Column("int64_val").Equal().Int64(-34),
+		).AddColumns("string_val").OrderBy("id").WithDBR().LoadStrings(context.Background(), vals)
+		assert.NoError(t, err)
+		assert.Exactly(t, []string(nil), vals)
 	})
 }
