@@ -96,6 +96,25 @@ type Tables struct {
 	mu sync.RWMutex
 	// tm a map where key = table name and value the table pointer
 	tm map[string]*Table
+	// queries contains the query key, e.g. if the query is select or update or
+	// etc, and the associated object with the final query
+	queries map[string]*dml.DBR
+}
+
+// WithQueryDBR adds a pre-defined query with its key to the Tables object.
+func WithQueryDBR(key string, dbr *dml.DBR) TableOption {
+	return TableOption{
+		sortOrder: 255,
+		fn: func(tm *Tables) error {
+			tm.mu.Lock()
+			defer tm.mu.Unlock()
+			if tm.queries == nil {
+				tm.queries = map[string]*dml.DBR{}
+			}
+			tm.queries[key] = dbr
+			return nil
+		},
+	}
 }
 
 // WithDB sets the DB object to the Tables and all sub Table types to handle the
@@ -441,6 +460,27 @@ func (tm *Tables) Options(opts ...TableOption) error {
 	return nil
 }
 
+// CachedQuery returns a SQL query string by its cache key. If a cache key does
+// not exists, it returns nil. Do not share the returned pointer by multiple
+// goroutines.
+func (tm *Tables) CachedQuery(key string) *dml.DBR {
+	tm.mu.RLock()
+	defer tm.mu.RUnlock()
+	return tm.queries[key]
+}
+
+// CachedQueries returns a copy of the cached SQL queries. cache key => SQL string
+func (tm *Tables) CachedQueries() map[string]string {
+	tm.mu.RLock()
+	defer tm.mu.RUnlock()
+	ret := make(map[string]string, len(tm.queries))
+	for k, v := range tm.queries {
+		sqlStr, _, _ := v.ToSQL()
+		ret[k] = sqlStr
+	}
+	return ret
+}
+
 // errTableNotFound provides a custom error behaviour with not capturing the
 // stack trace and hence less allocs.
 type errTableNotFound string
@@ -537,12 +577,13 @@ func (tm *Tables) DeleteFromCache(tableNames ...string) {
 	}
 }
 
-// DeleteAllFromCache clears the internal table cache and resets the map.
+// DeleteAllFromCache clears the internal table cache and resets the maps.
 func (tm *Tables) DeleteAllFromCache() {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
 	// maybe clear each pointer in the Table struct to avoid a memory leak
 	tm.tm = make(map[string]*Table)
+	tm.queries = make(map[string]*dml.DBR)
 }
 
 // Validate validates the table names and their column against the current

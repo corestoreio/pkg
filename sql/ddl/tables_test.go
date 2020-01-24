@@ -667,3 +667,14 @@ func TestWithLoadTables(t *testing.T) {
 		assert.False(t, tbl.IsView())
 	})
 }
+
+func TestWithQueryDBR(t *testing.T) {
+	ts := ddl.MustNewTables()
+	dbr := dml.NewSelect("*").From("a1").WithDBR()
+	err := ts.Options(ddl.WithQueryDBR("key1", dbr))
+	assert.NoError(t, err)
+	assert.Exactly(t, map[string]string{"key1": "SELECT * FROM `a1`"}, ts.CachedQueries())
+	sqlStr, _, err := ts.CachedQuery("key1").ToSQL()
+	assert.NoError(t, err)
+	assert.Exactly(t, "SELECT * FROM `a1`", sqlStr)
+}
