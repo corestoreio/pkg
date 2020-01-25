@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"html/template"
 	"math"
+	"strings"
 	"testing"
 	"time"
 
@@ -178,6 +179,9 @@ func TestToString(t *testing.T) {
 
 	assert.Equal(t, "[JSON]", ToString(jsonMarshal("[JSON]")))
 	assert.Equal(t, "[TEXT]", ToString(textMarshal("[TEXT]")))
+	var buf strings.Builder
+	buf.WriteString("[TEXTBuilder]")
+	assert.Equal(t, "[TEXTBuilder]", ToString(&buf)) // fmt.Stringer
 }
 
 func TestToByte(t *testing.T) {
