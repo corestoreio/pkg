@@ -208,6 +208,11 @@ func TestFloat64Scan(t *testing.T) {
 	maybePanic(err)
 	assertFloat64(t, f, "scanned float64")
 
+	var f2 Float64
+	err = f2.Scan(float32(1.2345))
+	maybePanic(err)
+	assertFloat64(t, f, "scanned float64")
+
 	var null Float64
 	err = null.Scan(nil)
 	maybePanic(err)

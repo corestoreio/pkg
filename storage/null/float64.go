@@ -65,6 +65,9 @@ func (a *Float64) Scan(value interface{}) (err error) {
 	case float64:
 		a.Float64 = v
 		a.Valid = true
+	case float32:
+		a.Float64 = float64(v) // we loose precision
+		a.Valid = true
 	default:
 		err = errors.NotSupported.Newf("[dml] Type %T not yet supported in Float64.Scan", value)
 	}

@@ -54,7 +54,7 @@ func TestDecimal_Select_Integration(t *testing.T) {
 	in := dbc.InsertInto("storage_null_types").
 		AddColumns("id", "string_val", "int64_val", "float64_val", "time_val", "bool_val", "decimal_val")
 
-	res, err := in.WithDBR().Record("", rec).ExecContext(context.TODO())
+	res, err := in.WithDBR().ExecContext(context.TODO(), dml.Qualify("", rec))
 	assert.NoError(t, err)
 	id, err := res.LastInsertId()
 	assert.NoError(t, err)
@@ -100,7 +100,7 @@ func TestNullTypeScanning(t *testing.T) {
 		// Create the record in the db
 		res, err := dbc.InsertInto("storage_null_types").
 			AddColumns("string_val", "int64_val", "float64_val", "time_val", "bool_val", "decimal_val").
-			WithDBR().Record("", test.record).ExecContext(context.TODO())
+			WithDBR().ExecContext(context.TODO(), dml.Qualify("", test.record))
 		assert.NoError(t, err)
 		id, err := res.LastInsertId()
 		assert.NoError(t, err)
