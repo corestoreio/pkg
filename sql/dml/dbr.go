@@ -25,6 +25,7 @@ import (
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/bufferpool"
+	"github.com/corestoreio/pkg/util/byteconv"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -801,6 +802,9 @@ func (a *DBR) IterateParallel(ctx context.Context, concurrencyLevel int, callBac
 	for i := 0; i < concurrencyLevel; i++ {
 		g.Go(func() error {
 			for cmr := range rowChan {
+				if ctx.Err() != nil {
+					return ctx.Err() // terminate this goroutine once the context gets canceled.
+				}
 				if cbErr := callBack(cmr); cbErr != nil {
 					return errors.WithStack(cbErr)
 				}
@@ -832,7 +836,6 @@ func (a *DBR) Load(ctx context.Context, s ColumnMapper, args ...interface{}) (ro
 	}
 	cm := pooledColumnMapGet()
 	defer pooledBufferColumnMapPut(cm, nil, func() {
-		a.Reset()
 		// Not testable with the sqlmock package :-(
 		if err2 := r.Close(); err2 != nil && err == nil {
 			err = errors.Wrap(err2, "[dml] DBR.Load.Rows.Close")
@@ -914,11 +917,9 @@ func (a *DBR) loadPrimitive(ctx context.Context, ptr interface{}, args ...interf
 	var rows *sql.Rows
 	rows, err = a.query(ctx, args)
 	if err != nil {
-		err = errors.WithStack(err)
-		return
+		return false, errors.WithStack(err)
 	}
 	defer func() {
-		a.Reset() // reset the internal slices to avoid adding more and more arguments when a query gets executed
 		if errC := rows.Close(); err == nil && errC != nil {
 			err = errors.WithStack(errC)
 		}
@@ -926,8 +927,7 @@ func (a *DBR) loadPrimitive(ctx context.Context, ptr interface{}, args ...interf
 
 	for rows.Next() && !found {
 		if err = rows.Scan(ptr); err != nil {
-			err = errors.WithStack(err)
-			return
+			return false, errors.WithStack(err)
 		}
 		found = true
 	}
@@ -948,28 +948,26 @@ func (a *DBR) LoadInt64s(ctx context.Context, dest []int64, args ...interface{})
 	var r *sql.Rows
 	r, err = a.query(ctx, args)
 	if err != nil {
-		err = errors.WithStack(err)
-		return
+		return nil, errors.WithStack(err)
 	}
 	defer func() {
-		a.Reset() // reset the internal slices to avoid adding more and more arguments when a query gets executed
 		if cErr := r.Close(); err == nil && cErr != nil {
 			err = errors.WithStack(cErr)
 		}
 	}()
 	for r.Next() {
-		var nv null.Int64
+		var nv sql.RawBytes
 		if err = r.Scan(&nv); err != nil {
-			err = errors.WithStack(err)
-			return
+			return nil, errors.WithStack(err)
 		}
-		if nv.Valid {
-			dest = append(dest, nv.Int64)
+		if i64, ok, err := byteconv.ParseInt(nv); ok && err == nil {
+			dest = append(dest, i64)
+		} else if err != nil {
+			return nil, errors.WithStack(err)
 		}
 	}
 	if err = r.Err(); err != nil {
-		err = errors.WithStack(err)
-		return
+		return nil, errors.WithStack(err)
 	}
 
 	rowCount = len(dest)
@@ -987,29 +985,27 @@ func (a *DBR) LoadUint64s(ctx context.Context, dest []uint64, args ...interface{
 
 	rows, err := a.query(ctx, args)
 	if err != nil {
-		err = errors.WithStack(err)
-		return
+		return nil, errors.WithStack(err)
 	}
 	defer func() {
-		a.Reset() // reset the internal slices to avoid adding more and more arguments when a query gets executed
 		if errC := rows.Close(); errC != nil && err == nil {
 			err = errors.WithStack(errC)
 		}
 	}()
 
 	for rows.Next() {
-		var nv null.Uint64
+		var nv sql.RawBytes
 		if err = rows.Scan(&nv); err != nil {
-			err = errors.WithStack(err)
-			return
+			return nil, errors.WithStack(err)
 		}
-		if nv.Valid {
-			dest = append(dest, nv.Uint64)
+		if u64, ok, err := byteconv.ParseUint(nv, 10, 64); ok && err == nil {
+			dest = append(dest, u64)
+		} else if err != nil {
+			return nil, errors.WithStack(err)
 		}
 	}
 	if err = rows.Err(); err != nil {
-		err = errors.WithStack(err)
-		return
+		return nil, errors.WithStack(err)
 	}
 	rowCount = len(dest)
 	return dest, err
@@ -1025,29 +1021,27 @@ func (a *DBR) LoadFloat64s(ctx context.Context, dest []float64, args ...interfac
 
 	var rows *sql.Rows
 	if rows, err = a.query(ctx, args); err != nil {
-		err = errors.WithStack(err)
-		return
+		return nil, errors.WithStack(err)
 	}
 	defer func() {
-		a.Reset() // reset the internal slices to avoid adding more and more arguments when a query gets executed
 		if errC := rows.Close(); errC != nil && err == nil {
 			err = errors.WithStack(errC)
 		}
 	}()
 
 	for rows.Next() {
-		var nv null.Float64
+		var nv sql.RawBytes
 		if err = rows.Scan(&nv); err != nil {
-			err = errors.WithStack(err)
-			return
+			return nil, errors.WithStack(err)
 		}
-		if nv.Valid {
-			dest = append(dest, nv.Float64)
+		if f64, ok, err := byteconv.ParseFloat(nv); ok && err == nil {
+			dest = append(dest, f64)
+		} else if err != nil {
+			return nil, errors.WithStack(err)
 		}
 	}
 	if err = rows.Err(); err != nil {
-		err = errors.WithStack(err)
-		return
+		return nil, errors.WithStack(err)
 	}
 	return dest, err
 }
@@ -1063,29 +1057,25 @@ func (a *DBR) LoadStrings(ctx context.Context, dest []string, args ...interface{
 
 	rows, err := a.query(ctx, args)
 	if err != nil {
-		err = errors.WithStack(err)
-		return
+		return nil, errors.WithStack(err)
 	}
 	defer func() {
-		a.Reset() // reset the internal slices to avoid adding more and more arguments when a query gets executed
 		if errC := rows.Close(); errC != nil && err == nil {
 			err = errors.WithStack(errC)
 		}
 	}()
 
 	for rows.Next() {
-		var value null.String
+		var value sql.RawBytes
 		if err = rows.Scan(&value); err != nil {
-			err = errors.WithStack(err)
-			return
+			return nil, errors.WithStack(err)
 		}
-		if value.Valid {
-			dest = append(dest, value.Data)
+		if value != nil {
+			dest = append(dest, string(value))
 		}
 	}
 	if err = rows.Err(); err != nil {
-		err = errors.WithStack(err)
-		return
+		return nil, errors.WithStack(err)
 	}
 	rowCount = len(dest)
 	return dest, err

@@ -17,6 +17,7 @@ package dml
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"testing"
 
 	"github.com/corestoreio/errors"
@@ -1448,7 +1449,7 @@ func TestSelect_SetRecord(t *testing.T) {
 	})
 }
 
-func TestSelect_DBR_Load_Slices_Null(t *testing.T) {
+func TestSelect_DBR_Load_Functions(t *testing.T) {
 	s := createRealSessionWithFixtures(t, nil)
 	defer testCloser(t, s)
 
@@ -1465,28 +1466,42 @@ func TestSelect_DBR_Load_Slices_Null(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Exactly(t, int64(1), lid)
 
-	t.Run("LoadFloat64s", func(t *testing.T) {
-		vals := []float64{}
+	t.Run("LoadFloat64s all rows", func(t *testing.T) {
+		var vals []float64
 		vals, err := s.SelectFrom("dml_null_types").AddColumns("float64_val").OrderBy("id").WithDBR().LoadFloat64s(context.Background(), vals)
 		assert.NoError(t, err)
 		assert.Exactly(t, []float64{11.11, 22.22, -33.33}, vals)
 	})
 
+	t.Run("LoadFloat64s IN with one arg", func(t *testing.T) {
+		var vals []float64
+		vals, err := s.SelectFrom("dml_null_types").AddColumns("float64_val").Where(
+			Column("int64_val").In().PlaceHolders(1),
+			// do not interpolate because we want a prepare statement
+		).WithDBR().LoadFloat64s(context.Background(), vals, []int{11})
+		assert.NoError(t, err)
+		// the mariaDB field type of float64_val is float and go-sql-driver/mysql
+		// converts it to float32 as we use internally null.Float64 we must convert
+		// float32 to float64 and so loose precision. If the mariaDB field type of
+		// field float64_val would be double, then we have float64.
+		assert.Exactly(t, "11.11", fmt.Sprintf("%.2f", vals[0]))
+	})
+
 	t.Run("LoadInt64s", func(t *testing.T) {
-		vals := []int64{}
+		var vals []int64
 		vals, err := s.SelectFrom("dml_null_types").AddColumns("int64_val").OrderBy("id").WithDBR().LoadInt64s(context.Background(), vals)
 		assert.NoError(t, err)
 		assert.Exactly(t, []int64{11, 22, -33}, vals)
 	})
 
 	t.Run("LoadUint64s", func(t *testing.T) {
-		vals := []uint64{}
+		var vals []uint64
 		vals, err := s.SelectFrom("dml_null_types").AddColumns("int64_val").Where(Column("int64_val").GreaterOrEqual().Int(0)).OrderBy("id").WithDBR().LoadUint64s(context.Background(), vals)
 		assert.NoError(t, err)
 		assert.Exactly(t, []uint64{11, 22}, vals)
 	})
 	t.Run("LoadStrings found", func(t *testing.T) {
-		vals := []string{}
+		var vals []string
 		vals, err := s.SelectFrom("dml_null_types").AddColumns("string_val").OrderBy("id").WithDBR().LoadStrings(context.Background(), vals)
 		assert.NoError(t, err)
 		assert.Exactly(t, []string{"A1", "A2", "-A3"}, vals)
