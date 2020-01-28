@@ -527,6 +527,15 @@ func (c *Column) IsFloat() bool {
 	return false
 }
 
+// IsTime returns true if the column is a date, datetime, time or timestamp.
+func (c *Column) IsTime() bool {
+	switch c.DataType {
+	case "date", "datetime", "time", "timestamp":
+		return true
+	}
+	return false
+}
+
 // IsMoney checks if a column contains a MySQL decimal or float type and if the
 // column name has a special naming.
 // This function needs a lot of care ...
@@ -556,8 +565,8 @@ func (c *Column) IsBool() (ok bool) {
 	return ok && columnTypes.byName.bool.ContainsReverse(c.Field)
 }
 
-// IsString returns true if the column can contain a string or byte values.
-func (c *Column) IsString() bool {
+// IsChar returns true if the column can contain a string or byte values.
+func (c *Column) IsChar() bool {
 	return c.CharMaxLength.Valid && c.CharMaxLength.Int64 > 0
 }
 

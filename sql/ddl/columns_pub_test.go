@@ -30,10 +30,12 @@ import (
 )
 
 // Check that type adheres to interfaces
-var _ fmt.Stringer = (*ddl.Columns)(nil)
-var _ fmt.GoStringer = (*ddl.Columns)(nil)
-var _ fmt.GoStringer = (*ddl.Column)(nil)
-var _ sort.Interface = (*ddl.Columns)(nil)
+var (
+	_ fmt.Stringer   = (*ddl.Columns)(nil)
+	_ fmt.GoStringer = (*ddl.Columns)(nil)
+	_ fmt.GoStringer = (*ddl.Column)(nil)
+	_ sort.Interface = (*ddl.Columns)(nil)
+)
 
 func TestLoadColumns_Integration(t *testing.T) {
 	ctx := context.TODO()
@@ -208,6 +210,7 @@ var adminUserColumns = ddl.Columns{
 	&ddl.Column{Field: "stored_b", Pos: 21, Null: "YES", DataType: "timestamp", ColumnType: "timestamp", Extra: "STORED GENERATED", Generated: "ALWAYS", GenerationExpression: null.MakeString("left(`rp_token`,5)")},
 	&ddl.Column{Field: "version_ts", Pos: 22, Null: "YES", DataType: "timestamp", ColumnType: "timestamp(6)", Extra: "STORED GENERATED", Comment: "Timestamp Start Versioning", Generated: "ALWAYS", GenerationExpression: null.MakeString("ROW START")},
 	&ddl.Column{Field: "version_te", Pos: 23, Null: "YES", DataType: "timestamp", ColumnType: "timestamp(6)", Key: "PRI", Extra: "STORED GENERATED", Comment: "Timestamp End Versioning", Generated: "ALWAYS", GenerationExpression: null.MakeString("ROW END")},
+	&ddl.Column{Field: "account_value", Pos: 24, Null: "NO", DataType: "decimal", ColumnType: "decimal(12,4)", Key: "", Extra: "", Comment: "A decimal column"},
 }
 
 func TestColumns_UniqueColumns(t *testing.T) {
@@ -250,10 +253,20 @@ func TestColumn_IsSystemVersioned(t *testing.T) {
 	assert.False(t, adminUserColumns.ByField("virtual_a").IsSystemVersioned())
 }
 
-func TestColumn_IsString(t *testing.T) {
-	assert.False(t, adminUserColumns.ByField("version_ts").IsString())
-	assert.True(t, adminUserColumns.ByField("firstname").IsString())
-	assert.True(t, adminUserColumns.ByField("extra").IsString())
+func TestColumn_IsChar(t *testing.T) {
+	assert.False(t, adminUserColumns.ByField("version_ts").IsChar())
+	assert.True(t, adminUserColumns.ByField("firstname").IsChar())
+	assert.True(t, adminUserColumns.ByField("extra").IsChar())
+}
+
+func TestColumn_IsFloat(t *testing.T) {
+	assert.False(t, adminUserColumns.ByField("firstname").IsFloat())
+	assert.True(t, adminUserColumns.ByField("account_value").IsFloat())
+}
+
+func TestColumn_IsTime(t *testing.T) {
+	assert.False(t, adminUserColumns.ByField("firstname").IsTime())
+	assert.True(t, adminUserColumns.ByField("created").IsTime())
 }
 
 func TestColumn_IsBlobDataType(t *testing.T) {
