@@ -224,7 +224,7 @@ func (t *Table) Select(columns ...string) *dml.Select {
 	return t.dcp.SelectFrom(t.Name, MainTable).AddColumns(columns...)
 }
 
-// SelectByPK creates a new `SELECT columns FROM table WHERE id IN (?)`. If "*"
+// SelectByPK creates a new `SELECT columns FROM table WHERE id = ?`. If "*"
 // gets set as an argument, then all columns will be added to to list of
 // columns.
 func (t *Table) SelectByPK(columns ...string) *dml.Select {
@@ -232,14 +232,14 @@ func (t *Table) SelectByPK(columns ...string) *dml.Select {
 		columns = t.columnsAll
 	}
 	s := t.dcp.SelectFrom(t.Name, MainTable).AddColumns(columns...)
-	s.Wheres = t.whereByPK(dml.In)
+	s.Wheres = t.whereByPK(dml.Equal)
 	return s
 }
 
-// DeleteByPK creates a new `DELETE FROM table WHERE id IN (?)`
+// DeleteByPK creates a new `DELETE FROM table WHERE id = ?`
 func (t *Table) DeleteByPK() *dml.Delete {
 	d := t.dcp.DeleteFrom(t.Name)
-	d.Wheres = t.whereByPK(dml.In)
+	d.Wheres = t.whereByPK(dml.Equal)
 	return d
 }
 
