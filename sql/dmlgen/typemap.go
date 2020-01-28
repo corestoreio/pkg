@@ -483,3 +483,31 @@ func (g *Generator) toSerializerType(c *ddl.Column, withNull bool) string {
 
 	return t
 }
+
+func mySQLType2GoComparisonOperator(c *ddl.Column) string {
+	switch c.DataType {
+
+	case "blob", "char", "longblob", "longtext", "mediumblob", "mediumtext",
+		"text", "tinytext", "varbinary", "varchar", "enum", "set":
+		return ` != ""`
+
+	case "date", "datetime", "time", "timestamp":
+		return ".IsZero() == false"
+
+	case "decimal":
+		return ".Valid "
+
+	case "bigint", "double", "float", "int", "smallint", "tinyint":
+		if c.IsNull() {
+			return ".Valid"
+		}
+		if c.IsUnsigned() {
+			return " > 0"
+		}
+
+		return " != 0"
+
+	default:
+		return " > 0 /*TODO find correct case*/"
+	}
+}

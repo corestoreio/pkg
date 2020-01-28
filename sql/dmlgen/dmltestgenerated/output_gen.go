@@ -15,6 +15,8 @@ import (
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/storage/null"
+	"github.com/corestoreio/pkg/util/cstrace"
+	"go.opentelemetry.io/otel/api/trace"
 )
 
 const (
@@ -28,19 +30,772 @@ const (
 	TableNameViewCustomerNoAutoIncrement      = "view_customer_no_auto_increment"
 )
 
-// NewTables returns a goified version of the MySQL/MariaDB table schema for the
-// tables:  catalog_product_index_eav_decimal_idx, core_configuration,
+// DBMOption provides various options to the DBM object.
+type DBMOption struct {
+	Trace                                     trace.Tracer
+	TableOptions                              []ddl.TableOption
+	InitSelectFn                              func(*dml.Select) *dml.Select
+	InitUpdateFn                              func(*dml.Update) *dml.Update
+	InitDeleteFn                              func(*dml.Delete) *dml.Delete
+	InitInsertFn                              func(*dml.Insert) *dml.Insert
+	eventCatalogProductIndexEAVDecimalIDXFunc [dml.EventFlagMax][]func(context.Context, *CatalogProductIndexEAVDecimalIDX) error
+	eventCoreConfigurationFunc                [dml.EventFlagMax][]func(context.Context, *CoreConfiguration) error
+	eventCustomerAddressEntityFunc            [dml.EventFlagMax][]func(context.Context, *CustomerAddressEntity) error
+	eventCustomerEntityFunc                   [dml.EventFlagMax][]func(context.Context, *CustomerEntity) error
+	eventDmlgenTypesFunc                      [dml.EventFlagMax][]func(context.Context, *DmlgenTypes) error
+	eventSalesOrderStatusStateFunc            [dml.EventFlagMax][]func(context.Context, *SalesOrderStatusState) error
+	eventViewCustomerAutoIncrementFunc        [dml.EventFlagMax][]func(context.Context, *ViewCustomerAutoIncrement) error
+	eventViewCustomerNoAutoIncrementFunc      [dml.EventFlagMax][]func(context.Context, *ViewCustomerNoAutoIncrement) error
+}
+
+// AddEventCatalogProductIndexEAVDecimalIDX adds a specific defined event call
+// back to the DBM. It panics if the event argument is larger than
+// dml.EventFlagMax.
+func (o *DBMOption) AddEventCatalogProductIndexEAVDecimalIDX(event dml.EventFlag, fn func(context.Context, *CatalogProductIndexEAVDecimalIDX) error) *DBMOption {
+	o.eventCatalogProductIndexEAVDecimalIDXFunc[event] = append(o.eventCatalogProductIndexEAVDecimalIDXFunc[event], fn)
+	return o
+}
+
+// AddEventCoreConfiguration adds a specific defined event call back to the DBM.
+// It panics if the event argument is larger than dml.EventFlagMax.
+func (o *DBMOption) AddEventCoreConfiguration(event dml.EventFlag, fn func(context.Context, *CoreConfiguration) error) *DBMOption {
+	o.eventCoreConfigurationFunc[event] = append(o.eventCoreConfigurationFunc[event], fn)
+	return o
+}
+
+// AddEventCustomerAddressEntity adds a specific defined event call back to the
+// DBM. It panics if the event argument is larger than dml.EventFlagMax.
+func (o *DBMOption) AddEventCustomerAddressEntity(event dml.EventFlag, fn func(context.Context, *CustomerAddressEntity) error) *DBMOption {
+	o.eventCustomerAddressEntityFunc[event] = append(o.eventCustomerAddressEntityFunc[event], fn)
+	return o
+}
+
+// AddEventCustomerEntity adds a specific defined event call back to the DBM. It
+// panics if the event argument is larger than dml.EventFlagMax.
+func (o *DBMOption) AddEventCustomerEntity(event dml.EventFlag, fn func(context.Context, *CustomerEntity) error) *DBMOption {
+	o.eventCustomerEntityFunc[event] = append(o.eventCustomerEntityFunc[event], fn)
+	return o
+}
+
+// AddEventDmlgenTypes adds a specific defined event call back to the DBM. It
+// panics if the event argument is larger than dml.EventFlagMax.
+func (o *DBMOption) AddEventDmlgenTypes(event dml.EventFlag, fn func(context.Context, *DmlgenTypes) error) *DBMOption {
+	o.eventDmlgenTypesFunc[event] = append(o.eventDmlgenTypesFunc[event], fn)
+	return o
+}
+
+// AddEventSalesOrderStatusState adds a specific defined event call back to the
+// DBM. It panics if the event argument is larger than dml.EventFlagMax.
+func (o *DBMOption) AddEventSalesOrderStatusState(event dml.EventFlag, fn func(context.Context, *SalesOrderStatusState) error) *DBMOption {
+	o.eventSalesOrderStatusStateFunc[event] = append(o.eventSalesOrderStatusStateFunc[event], fn)
+	return o
+}
+
+// AddEventViewCustomerAutoIncrement adds a specific defined event call back to
+// the DBM. It panics if the event argument is larger than dml.EventFlagMax.
+func (o *DBMOption) AddEventViewCustomerAutoIncrement(event dml.EventFlag, fn func(context.Context, *ViewCustomerAutoIncrement) error) *DBMOption {
+	o.eventViewCustomerAutoIncrementFunc[event] = append(o.eventViewCustomerAutoIncrementFunc[event], fn)
+	return o
+}
+
+// AddEventViewCustomerNoAutoIncrement adds a specific defined event call back to
+// the DBM. It panics if the event argument is larger than dml.EventFlagMax.
+func (o *DBMOption) AddEventViewCustomerNoAutoIncrement(event dml.EventFlag, fn func(context.Context, *ViewCustomerNoAutoIncrement) error) *DBMOption {
+	o.eventViewCustomerNoAutoIncrementFunc[event] = append(o.eventViewCustomerNoAutoIncrementFunc[event], fn)
+	return o
+}
+
+// DBM defines the DataBaseManagement object for the tables
+// catalog_product_index_eav_decimal_idx, core_configuration,
+// customer_address_entity, customer_entity, dmlgen_types,
+// sales_order_status_state, view_customer_auto_increment,
+// view_customer_no_auto_increment
+type DBM struct {
+	*ddl.Tables
+	option *DBMOption
+}
+
+func (dbm DBM) eventCatalogProductIndexEAVDecimalIDXFunc(ctx context.Context, ef dml.EventFlag, e *CatalogProductIndexEAVDecimalIDX) error {
+	if dbm.option == nil || len(dbm.option.eventCatalogProductIndexEAVDecimalIDXFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
+		return nil
+	}
+	for _, fn := range dbm.option.eventCatalogProductIndexEAVDecimalIDXFunc[ef] {
+		if err := fn(ctx, e); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return nil
+}
+
+func (dbm DBM) eventCoreConfigurationFunc(ctx context.Context, ef dml.EventFlag, e *CoreConfiguration) error {
+	if dbm.option == nil || len(dbm.option.eventCoreConfigurationFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
+		return nil
+	}
+	for _, fn := range dbm.option.eventCoreConfigurationFunc[ef] {
+		if err := fn(ctx, e); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return nil
+}
+
+func (dbm DBM) eventCustomerAddressEntityFunc(ctx context.Context, ef dml.EventFlag, e *CustomerAddressEntity) error {
+	if dbm.option == nil || len(dbm.option.eventCustomerAddressEntityFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
+		return nil
+	}
+	for _, fn := range dbm.option.eventCustomerAddressEntityFunc[ef] {
+		if err := fn(ctx, e); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return nil
+}
+
+func (dbm DBM) eventCustomerEntityFunc(ctx context.Context, ef dml.EventFlag, e *CustomerEntity) error {
+	if dbm.option == nil || len(dbm.option.eventCustomerEntityFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
+		return nil
+	}
+	for _, fn := range dbm.option.eventCustomerEntityFunc[ef] {
+		if err := fn(ctx, e); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return nil
+}
+
+func (dbm DBM) eventDmlgenTypesFunc(ctx context.Context, ef dml.EventFlag, e *DmlgenTypes) error {
+	if dbm.option == nil || len(dbm.option.eventDmlgenTypesFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
+		return nil
+	}
+	for _, fn := range dbm.option.eventDmlgenTypesFunc[ef] {
+		if err := fn(ctx, e); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return nil
+}
+
+func (dbm DBM) eventSalesOrderStatusStateFunc(ctx context.Context, ef dml.EventFlag, e *SalesOrderStatusState) error {
+	if dbm.option == nil || len(dbm.option.eventSalesOrderStatusStateFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
+		return nil
+	}
+	for _, fn := range dbm.option.eventSalesOrderStatusStateFunc[ef] {
+		if err := fn(ctx, e); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return nil
+}
+
+func (dbm DBM) eventViewCustomerAutoIncrementFunc(ctx context.Context, ef dml.EventFlag, e *ViewCustomerAutoIncrement) error {
+	if dbm.option == nil || len(dbm.option.eventViewCustomerAutoIncrementFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
+		return nil
+	}
+	for _, fn := range dbm.option.eventViewCustomerAutoIncrementFunc[ef] {
+		if err := fn(ctx, e); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return nil
+}
+
+func (dbm DBM) eventViewCustomerNoAutoIncrementFunc(ctx context.Context, ef dml.EventFlag, e *ViewCustomerNoAutoIncrement) error {
+	if dbm.option == nil || len(dbm.option.eventViewCustomerNoAutoIncrementFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
+		return nil
+	}
+	for _, fn := range dbm.option.eventViewCustomerNoAutoIncrementFunc[ef] {
+		if err := fn(ctx, e); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return nil
+}
+
+// NewDBManager returns a goified version of the MySQL/MariaDB table schema for
+// the tables:  catalog_product_index_eav_decimal_idx, core_configuration,
 // customer_address_entity, customer_entity, dmlgen_types,
 // sales_order_status_state, view_customer_auto_increment,
 // view_customer_no_auto_increment Auto generated by dmlgen.
-func NewTables(ctx context.Context, opts ...ddl.TableOption) (tm *ddl.Tables, err error) {
-	if tm, err = ddl.NewTables(
-		append(opts, ddl.WithCreateTable(ctx, TableNameCatalogProductIndexEAVDecimalIDX, "", TableNameCoreConfiguration, "", TableNameCustomerAddressEntity, "", TableNameCustomerEntity, "", TableNameDmlgenTypes, "", TableNameSalesOrderStatusState, "", TableNameViewCustomerAutoIncrement, "", TableNameViewCustomerNoAutoIncrement, ""))...,
-	); err != nil {
+func NewDBManager(ctx context.Context, dbmo *DBMOption) (*DBM, error) {
+	tbls, err := ddl.NewTables(append([]ddl.TableOption{ddl.WithCreateTable(ctx, TableNameCatalogProductIndexEAVDecimalIDX, "", TableNameCoreConfiguration, "", TableNameCustomerAddressEntity, "", TableNameCustomerEntity, "", TableNameDmlgenTypes, "", TableNameSalesOrderStatusState, "", TableNameViewCustomerAutoIncrement, "", TableNameViewCustomerNoAutoIncrement, "")}, dbmo.TableOptions...)...)
+	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return tm, nil
+	if dbmo.InitSelectFn == nil {
+		dbmo.InitSelectFn = func(s *dml.Select) *dml.Select { return s }
+	}
+	if dbmo.InitUpdateFn == nil {
+		dbmo.InitUpdateFn = func(s *dml.Update) *dml.Update { return s }
+	}
+	if dbmo.InitDeleteFn == nil {
+		dbmo.InitDeleteFn = func(s *dml.Delete) *dml.Delete { return s }
+	}
+	if dbmo.InitInsertFn == nil {
+		dbmo.InitInsertFn = func(s *dml.Insert) *dml.Insert { return s }
+	}
+	_ = tbls.Options(
+		ddl.WithQueryDBR("CatalogProductIndexEAVDecimalIDXSelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameCatalogProductIndexEAVDecimalIDX).SelectByPK("*")).WithDBR().Interpolate()),
+		ddl.WithQueryDBR("CatalogProductIndexEAVDecimalIDXUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameCatalogProductIndexEAVDecimalIDX).UpdateByPK()).WithDBR()),
+		ddl.WithQueryDBR("CatalogProductIndexEAVDecimalIDXDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameCatalogProductIndexEAVDecimalIDX).DeleteByPK()).WithDBR().Interpolate()),
+		ddl.WithQueryDBR("CatalogProductIndexEAVDecimalIDXInsert", dbmo.InitInsertFn(tbls.MustTable(TableNameCatalogProductIndexEAVDecimalIDX).Insert()).WithDBR()),
+		ddl.WithQueryDBR("CatalogProductIndexEAVDecimalIDXUpsertByPK", dbmo.InitInsertFn(tbls.MustTable(TableNameCatalogProductIndexEAVDecimalIDX).Insert()).OnDuplicateKey().WithDBR()),
+		ddl.WithQueryDBR("CoreConfigurationSelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameCoreConfiguration).SelectByPK("*")).WithDBR().Interpolate()),
+		ddl.WithQueryDBR("CoreConfigurationUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameCoreConfiguration).UpdateByPK()).WithDBR()),
+		ddl.WithQueryDBR("CoreConfigurationDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameCoreConfiguration).DeleteByPK()).WithDBR().Interpolate()),
+		ddl.WithQueryDBR("CoreConfigurationInsert", dbmo.InitInsertFn(tbls.MustTable(TableNameCoreConfiguration).Insert()).WithDBR()),
+		ddl.WithQueryDBR("CoreConfigurationUpsertByPK", dbmo.InitInsertFn(tbls.MustTable(TableNameCoreConfiguration).Insert()).OnDuplicateKey().WithDBR()),
+		ddl.WithQueryDBR("CustomerAddressEntitySelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameCustomerAddressEntity).SelectByPK("*")).WithDBR().Interpolate()),
+		ddl.WithQueryDBR("CustomerAddressEntityUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameCustomerAddressEntity).UpdateByPK()).WithDBR()),
+		ddl.WithQueryDBR("CustomerAddressEntityDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameCustomerAddressEntity).DeleteByPK()).WithDBR().Interpolate()),
+		ddl.WithQueryDBR("CustomerAddressEntityInsert", dbmo.InitInsertFn(tbls.MustTable(TableNameCustomerAddressEntity).Insert()).WithDBR()),
+		ddl.WithQueryDBR("CustomerAddressEntityUpsertByPK", dbmo.InitInsertFn(tbls.MustTable(TableNameCustomerAddressEntity).Insert()).OnDuplicateKey().WithDBR()),
+		ddl.WithQueryDBR("CustomerEntitySelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameCustomerEntity).SelectByPK("*")).WithDBR().Interpolate()),
+		ddl.WithQueryDBR("CustomerEntityUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameCustomerEntity).UpdateByPK()).WithDBR()),
+		ddl.WithQueryDBR("CustomerEntityDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameCustomerEntity).DeleteByPK()).WithDBR().Interpolate()),
+		ddl.WithQueryDBR("CustomerEntityInsert", dbmo.InitInsertFn(tbls.MustTable(TableNameCustomerEntity).Insert()).WithDBR()),
+		ddl.WithQueryDBR("CustomerEntityUpsertByPK", dbmo.InitInsertFn(tbls.MustTable(TableNameCustomerEntity).Insert()).OnDuplicateKey().WithDBR()),
+		ddl.WithQueryDBR("DmlgenTypesSelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameDmlgenTypes).SelectByPK("*")).WithDBR().Interpolate()),
+		ddl.WithQueryDBR("DmlgenTypesUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameDmlgenTypes).UpdateByPK()).WithDBR()),
+		ddl.WithQueryDBR("DmlgenTypesDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameDmlgenTypes).DeleteByPK()).WithDBR().Interpolate()),
+		ddl.WithQueryDBR("DmlgenTypesInsert", dbmo.InitInsertFn(tbls.MustTable(TableNameDmlgenTypes).Insert()).WithDBR()),
+		ddl.WithQueryDBR("DmlgenTypesUpsertByPK", dbmo.InitInsertFn(tbls.MustTable(TableNameDmlgenTypes).Insert()).OnDuplicateKey().WithDBR()),
+		ddl.WithQueryDBR("SalesOrderStatusStateSelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameSalesOrderStatusState).SelectByPK("*")).WithDBR().Interpolate()),
+		ddl.WithQueryDBR("SalesOrderStatusStateUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameSalesOrderStatusState).UpdateByPK()).WithDBR()),
+		ddl.WithQueryDBR("SalesOrderStatusStateDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameSalesOrderStatusState).DeleteByPK()).WithDBR().Interpolate()),
+		ddl.WithQueryDBR("SalesOrderStatusStateInsert", dbmo.InitInsertFn(tbls.MustTable(TableNameSalesOrderStatusState).Insert()).WithDBR()),
+		ddl.WithQueryDBR("SalesOrderStatusStateUpsertByPK", dbmo.InitInsertFn(tbls.MustTable(TableNameSalesOrderStatusState).Insert()).OnDuplicateKey().WithDBR()),
+		ddl.WithQueryDBR("ViewCustomerAutoIncrementSelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameViewCustomerAutoIncrement).SelectByPK("*")).WithDBR().Interpolate()),
+		ddl.WithQueryDBR("ViewCustomerAutoIncrementUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameViewCustomerAutoIncrement).UpdateByPK()).WithDBR()),
+		ddl.WithQueryDBR("ViewCustomerAutoIncrementDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameViewCustomerAutoIncrement).DeleteByPK()).WithDBR().Interpolate()),
+		ddl.WithQueryDBR("ViewCustomerAutoIncrementInsert", dbmo.InitInsertFn(tbls.MustTable(TableNameViewCustomerAutoIncrement).Insert()).WithDBR()),
+		ddl.WithQueryDBR("ViewCustomerAutoIncrementUpsertByPK", dbmo.InitInsertFn(tbls.MustTable(TableNameViewCustomerAutoIncrement).Insert()).OnDuplicateKey().WithDBR()),
+		ddl.WithQueryDBR("ViewCustomerNoAutoIncrementSelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameViewCustomerNoAutoIncrement).SelectByPK("*")).WithDBR().Interpolate()),
+		ddl.WithQueryDBR("ViewCustomerNoAutoIncrementUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameViewCustomerNoAutoIncrement).UpdateByPK()).WithDBR()),
+		ddl.WithQueryDBR("ViewCustomerNoAutoIncrementDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameViewCustomerNoAutoIncrement).DeleteByPK()).WithDBR().Interpolate()),
+		ddl.WithQueryDBR("ViewCustomerNoAutoIncrementInsert", dbmo.InitInsertFn(tbls.MustTable(TableNameViewCustomerNoAutoIncrement).Insert()).WithDBR()),
+		ddl.WithQueryDBR("ViewCustomerNoAutoIncrementUpsertByPK", dbmo.InitInsertFn(tbls.MustTable(TableNameViewCustomerNoAutoIncrement).Insert()).OnDuplicateKey().WithDBR()),
+	)
+	if dbmo.Trace == nil {
+		dbmo.Trace = trace.NoopTracer{}
+	}
+	return &DBM{Tables: tbls, option: dbmo}, nil
 }
+
+func (dbm DBM) CatalogProductIndexEAVDecimalIDXFindByPK(ctx context.Context, entityID uint32, attributeID uint32, storeID uint32, value null.Decimal, sourceID uint32, opts ...dml.DBRFunc) (_ *CatalogProductIndexEAVDecimalIDX, err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXFindByPK")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	var e CatalogProductIndexEAVDecimalIDX
+	// put the IDs entityID,attributeID,storeID,value,sourceID into the context as value to search for a cache entry in the event function.
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeSelect, &e); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if e.IsSet() {
+		return &e, nil // returns data from cache
+	}
+	if _, err = dbm.CachedQuery("CatalogProductIndexEAVDecimalIDXFindByPK").ApplyCallBacks(opts...).Load(ctx, &e, entityID, attributeID, storeID, value, sourceID); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterSelect, &e); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return &e, nil
+}
+
+func (dbm DBM) CatalogProductIndexEAVDecimalIDXDeleteByPK(ctx context.Context, entityID uint32, attributeID uint32, storeID uint32, value null.Decimal, sourceID uint32, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXDeleteByPK")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeDelete, nil); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("CatalogProductIndexEAVDecimalIDXDeleteByPK").ApplyCallBacks(opts...).ExecContext(ctx, entityID, attributeID, storeID, value, sourceID); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterDelete, nil); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (dbm DBM) CatalogProductIndexEAVDecimalIDXUpdateByPK(ctx context.Context, e *CatalogProductIndexEAVDecimalIDX, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXUpdateByPK")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeUpdate, e); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("CatalogProductIndexEAVDecimalIDXUpdateByPK").ApplyCallBacks(opts...).ExecContext(ctx, &e); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterUpdate, e); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (dbm DBM) CatalogProductIndexEAVDecimalIDXInsert(ctx context.Context, e *CatalogProductIndexEAVDecimalIDX, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXInsert")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeInsert, e); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("CatalogProductIndexEAVDecimalIDXInsert").ApplyCallBacks(opts...).ExecContext(ctx, &e); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterInsert, e); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (dbm DBM) CatalogProductIndexEAVDecimalIDXUpsert(ctx context.Context, e *CatalogProductIndexEAVDecimalIDX, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXUpsert")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeUpsert, e); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("CatalogProductIndexEAVDecimalIDXUpsert").ApplyCallBacks(opts...).ExecContext(ctx, &e); err != nil {
+		return errors.WithStack(err)
+	}
+	var e2 CatalogProductIndexEAVDecimalIDX
+	if _, err = dbm.CachedQuery("CatalogProductIndexEAVDecimalIDXFindByPK").ApplyCallBacks(opts...).Load(ctx, &e2, e.EntityID, e.AttributeID, e.StoreID, e.Value, e.SourceID); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterUpsert, &e2); err != nil {
+		return errors.WithStack(err)
+	}
+	*e = e2
+	return nil
+}
+
+func (dbm DBM) CoreConfigurationFindByPK(ctx context.Context, configID uint32, opts ...dml.DBRFunc) (_ *CoreConfiguration, err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationFindByPK")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	var e CoreConfiguration
+	// put the IDs configID into the context as value to search for a cache entry in the event function.
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeSelect, &e); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if e.IsSet() {
+		return &e, nil // returns data from cache
+	}
+	if _, err = dbm.CachedQuery("CoreConfigurationFindByPK").ApplyCallBacks(opts...).Load(ctx, &e, configID); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterSelect, &e); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return &e, nil
+}
+
+func (dbm DBM) CoreConfigurationDeleteByPK(ctx context.Context, configID uint32, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationDeleteByPK")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeDelete, nil); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("CoreConfigurationDeleteByPK").ApplyCallBacks(opts...).ExecContext(ctx, configID); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterDelete, nil); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (dbm DBM) CoreConfigurationUpdateByPK(ctx context.Context, e *CoreConfiguration, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationUpdateByPK")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpdate, e); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("CoreConfigurationUpdateByPK").ApplyCallBacks(opts...).ExecContext(ctx, &e); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpdate, e); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (dbm DBM) CoreConfigurationInsert(ctx context.Context, e *CoreConfiguration, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationInsert")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeInsert, e); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("CoreConfigurationInsert").ApplyCallBacks(opts...).ExecContext(ctx, &e); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterInsert, e); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (dbm DBM) CoreConfigurationUpsert(ctx context.Context, e *CoreConfiguration, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationUpsert")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpsert, e); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("CoreConfigurationUpsert").ApplyCallBacks(opts...).ExecContext(ctx, &e); err != nil {
+		return errors.WithStack(err)
+	}
+	var e2 CoreConfiguration
+	if _, err = dbm.CachedQuery("CoreConfigurationFindByPK").ApplyCallBacks(opts...).Load(ctx, &e2, e.ConfigID); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpsert, &e2); err != nil {
+		return errors.WithStack(err)
+	}
+	*e = e2
+	return nil
+}
+
+func (dbm DBM) CustomerAddressEntityFindByPK(ctx context.Context, entityID uint32, opts ...dml.DBRFunc) (_ *CustomerAddressEntity, err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntityFindByPK")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	var e CustomerAddressEntity
+	// put the IDs entityID into the context as value to search for a cache entry in the event function.
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeSelect, &e); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if e.IsSet() {
+		return &e, nil // returns data from cache
+	}
+	if _, err = dbm.CachedQuery("CustomerAddressEntityFindByPK").ApplyCallBacks(opts...).Load(ctx, &e, entityID); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterSelect, &e); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return &e, nil
+}
+
+func (dbm DBM) CustomerAddressEntityDeleteByPK(ctx context.Context, entityID uint32, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntityDeleteByPK")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeDelete, nil); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("CustomerAddressEntityDeleteByPK").ApplyCallBacks(opts...).ExecContext(ctx, entityID); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterDelete, nil); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (dbm DBM) CustomerAddressEntityUpdateByPK(ctx context.Context, e *CustomerAddressEntity, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntityUpdateByPK")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeUpdate, e); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("CustomerAddressEntityUpdateByPK").ApplyCallBacks(opts...).ExecContext(ctx, &e); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterUpdate, e); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (dbm DBM) CustomerAddressEntityInsert(ctx context.Context, e *CustomerAddressEntity, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntityInsert")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeInsert, e); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("CustomerAddressEntityInsert").ApplyCallBacks(opts...).ExecContext(ctx, &e); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterInsert, e); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (dbm DBM) CustomerAddressEntityUpsert(ctx context.Context, e *CustomerAddressEntity, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntityUpsert")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeUpsert, e); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("CustomerAddressEntityUpsert").ApplyCallBacks(opts...).ExecContext(ctx, &e); err != nil {
+		return errors.WithStack(err)
+	}
+	var e2 CustomerAddressEntity
+	if _, err = dbm.CachedQuery("CustomerAddressEntityFindByPK").ApplyCallBacks(opts...).Load(ctx, &e2, e.EntityID); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterUpsert, &e2); err != nil {
+		return errors.WithStack(err)
+	}
+	*e = e2
+	return nil
+}
+
+func (dbm DBM) CustomerEntityFindByPK(ctx context.Context, entityID uint32, opts ...dml.DBRFunc) (_ *CustomerEntity, err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntityFindByPK")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	var e CustomerEntity
+	// put the IDs entityID into the context as value to search for a cache entry in the event function.
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeSelect, &e); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if e.IsSet() {
+		return &e, nil // returns data from cache
+	}
+	if _, err = dbm.CachedQuery("CustomerEntityFindByPK").ApplyCallBacks(opts...).Load(ctx, &e, entityID); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterSelect, &e); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return &e, nil
+}
+
+func (dbm DBM) CustomerEntityDeleteByPK(ctx context.Context, entityID uint32, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntityDeleteByPK")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeDelete, nil); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("CustomerEntityDeleteByPK").ApplyCallBacks(opts...).ExecContext(ctx, entityID); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterDelete, nil); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (dbm DBM) CustomerEntityUpdateByPK(ctx context.Context, e *CustomerEntity, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntityUpdateByPK")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeUpdate, e); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("CustomerEntityUpdateByPK").ApplyCallBacks(opts...).ExecContext(ctx, &e); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterUpdate, e); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (dbm DBM) CustomerEntityInsert(ctx context.Context, e *CustomerEntity, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntityInsert")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeInsert, e); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("CustomerEntityInsert").ApplyCallBacks(opts...).ExecContext(ctx, &e); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterInsert, e); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (dbm DBM) CustomerEntityUpsert(ctx context.Context, e *CustomerEntity, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntityUpsert")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeUpsert, e); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("CustomerEntityUpsert").ApplyCallBacks(opts...).ExecContext(ctx, &e); err != nil {
+		return errors.WithStack(err)
+	}
+	var e2 CustomerEntity
+	if _, err = dbm.CachedQuery("CustomerEntityFindByPK").ApplyCallBacks(opts...).Load(ctx, &e2, e.EntityID); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterUpsert, &e2); err != nil {
+		return errors.WithStack(err)
+	}
+	*e = e2
+	return nil
+}
+
+func (dbm DBM) DmlgenTypesFindByPK(ctx context.Context, iD int32, opts ...dml.DBRFunc) (_ *DmlgenTypes, err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesFindByPK")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	var e DmlgenTypes
+	// put the IDs iD into the context as value to search for a cache entry in the event function.
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeSelect, &e); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if e.IsSet() {
+		return &e, nil // returns data from cache
+	}
+	if _, err = dbm.CachedQuery("DmlgenTypesFindByPK").ApplyCallBacks(opts...).Load(ctx, &e, iD); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterSelect, &e); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return &e, nil
+}
+
+func (dbm DBM) DmlgenTypesDeleteByPK(ctx context.Context, iD int32, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesDeleteByPK")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeDelete, nil); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("DmlgenTypesDeleteByPK").ApplyCallBacks(opts...).ExecContext(ctx, iD); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterDelete, nil); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (dbm DBM) DmlgenTypesUpdateByPK(ctx context.Context, e *DmlgenTypes, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesUpdateByPK")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeUpdate, e); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("DmlgenTypesUpdateByPK").ApplyCallBacks(opts...).ExecContext(ctx, &e); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterUpdate, e); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (dbm DBM) DmlgenTypesInsert(ctx context.Context, e *DmlgenTypes, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesInsert")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeInsert, e); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("DmlgenTypesInsert").ApplyCallBacks(opts...).ExecContext(ctx, &e); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterInsert, e); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (dbm DBM) DmlgenTypesUpsert(ctx context.Context, e *DmlgenTypes, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesUpsert")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeUpsert, e); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("DmlgenTypesUpsert").ApplyCallBacks(opts...).ExecContext(ctx, &e); err != nil {
+		return errors.WithStack(err)
+	}
+	var e2 DmlgenTypes
+	if _, err = dbm.CachedQuery("DmlgenTypesFindByPK").ApplyCallBacks(opts...).Load(ctx, &e2, e.ID); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterUpsert, &e2); err != nil {
+		return errors.WithStack(err)
+	}
+	*e = e2
+	return nil
+}
+
+func (dbm DBM) SalesOrderStatusStateFindByPK(ctx context.Context, status string, state string, opts ...dml.DBRFunc) (_ *SalesOrderStatusState, err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStateFindByPK")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	var e SalesOrderStatusState
+	// put the IDs status,state into the context as value to search for a cache entry in the event function.
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeSelect, &e); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if e.IsSet() {
+		return &e, nil // returns data from cache
+	}
+	if _, err = dbm.CachedQuery("SalesOrderStatusStateFindByPK").ApplyCallBacks(opts...).Load(ctx, &e, status, state); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterSelect, &e); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return &e, nil
+}
+
+func (dbm DBM) SalesOrderStatusStateDeleteByPK(ctx context.Context, status string, state string, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStateDeleteByPK")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeDelete, nil); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("SalesOrderStatusStateDeleteByPK").ApplyCallBacks(opts...).ExecContext(ctx, status, state); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterDelete, nil); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (dbm DBM) SalesOrderStatusStateUpdateByPK(ctx context.Context, e *SalesOrderStatusState, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStateUpdateByPK")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeUpdate, e); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("SalesOrderStatusStateUpdateByPK").ApplyCallBacks(opts...).ExecContext(ctx, &e); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterUpdate, e); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (dbm DBM) SalesOrderStatusStateInsert(ctx context.Context, e *SalesOrderStatusState, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStateInsert")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeInsert, e); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("SalesOrderStatusStateInsert").ApplyCallBacks(opts...).ExecContext(ctx, &e); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterInsert, e); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (dbm DBM) SalesOrderStatusStateUpsert(ctx context.Context, e *SalesOrderStatusState, opts ...dml.DBRFunc) (err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStateUpsert")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeUpsert, e); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = dbm.CachedQuery("SalesOrderStatusStateUpsert").ApplyCallBacks(opts...).ExecContext(ctx, &e); err != nil {
+		return errors.WithStack(err)
+	}
+	var e2 SalesOrderStatusState
+	if _, err = dbm.CachedQuery("SalesOrderStatusStateFindByPK").ApplyCallBacks(opts...).Load(ctx, &e2, e.Status, e.State); err != nil {
+		return errors.WithStack(err)
+	}
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterUpsert, &e2); err != nil {
+		return errors.WithStack(err)
+	}
+	*e = e2
+	return nil
+}
+
+// The table ViewCustomerAutoIncrement does not have a primary key. SKipping to
+// generate DML functions based on the PK.
+
+// The table ViewCustomerNoAutoIncrement does not have a primary key. SKipping to
+// generate DML functions based on the PK.
 
 // CatalogProductIndexEAVDecimalIDX represents a single row for DB table
 // catalog_product_index_eav_decimal_idx. Auto generated.
@@ -53,7 +808,8 @@ type CatalogProductIndexEAVDecimalIDX struct {
 	SourceID    uint32       // source_id int(10) unsigned NOT NULL PRI DEFAULT '0'  "Original entity Id for attribute value"
 }
 
-// Copy copies the struct and returns a new pointer
+// Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
+// generate code afterwards
 func (e *CatalogProductIndexEAVDecimalIDX) Copy() *CatalogProductIndexEAVDecimalIDX {
 	e2 := new(CatalogProductIndexEAVDecimalIDX)
 	*e2 = *e // for now a shallow copy
@@ -88,6 +844,11 @@ func (e *CatalogProductIndexEAVDecimalIDX) MapColumns(cm *dml.ColumnMap) error {
 func (e *CatalogProductIndexEAVDecimalIDX) Empty() *CatalogProductIndexEAVDecimalIDX {
 	*e = CatalogProductIndexEAVDecimalIDX{}
 	return e
+}
+
+// IsSet returns true if the entity has non-empty primary keys.
+func (e *CatalogProductIndexEAVDecimalIDX) IsSet() bool {
+	return e.EntityID > 0 && e.AttributeID > 0 && e.StoreID > 0 && e.Value.Valid && e.SourceID > 0
 }
 
 // This variable can be set in another file to provide a custom validator.
@@ -152,6 +913,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) Cut(i, j int) *CatalogProductIndex
 	cc.Data = z
 	return cc
 }
+
 func (cc *CatalogProductIndexEAVDecimalIDXes) scanColumns(cm *dml.ColumnMap, e *CatalogProductIndexEAVDecimalIDX, idx uint64) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
@@ -382,7 +1144,8 @@ type CoreConfiguration struct {
 	VersionTe time.Time   `json:"version_te,omitempty" `             // version_te timestamp(6) NOT NULL PRI  STORED GENERATED "Timestamp End Versioning"
 }
 
-// Copy copies the struct and returns a new pointer
+// Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
+// generate code afterwards
 func (e *CoreConfiguration) Copy() *CoreConfiguration {
 	e2 := new(CoreConfiguration)
 	*e2 = *e // for now a shallow copy
@@ -427,6 +1190,9 @@ func (e *CoreConfiguration) MapColumns(cm *dml.ColumnMap) error {
 
 // Empty empties all the fields of the current object. Also known as Reset.
 func (e *CoreConfiguration) Empty() *CoreConfiguration { *e = CoreConfiguration{}; return e }
+
+// IsSet returns true if the entity has non-empty primary keys.
+func (e *CoreConfiguration) IsSet() bool { return e.ConfigID > 0 }
 
 // This variable can be set in another file to provide a custom validator.
 var validateCoreConfiguration func(*CoreConfiguration) error
@@ -513,6 +1279,7 @@ func (cc *CoreConfigurations) AssignLastInsertID(id int64) {
 		j++
 	}
 }
+
 func (cc *CoreConfigurations) scanColumns(cm *dml.ColumnMap, e *CoreConfiguration, idx uint64) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
@@ -712,7 +1479,8 @@ type CustomerAddressEntity struct {
 	VatRequestSuccess null.Uint32 `max_len:"10"`    // vat_request_success int(10) unsigned NULL  DEFAULT 'NULL'  "VAT number validation request success"
 }
 
-// Copy copies the struct and returns a new pointer
+// Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
+// generate code afterwards
 func (e *CustomerAddressEntity) Copy() *CustomerAddressEntity {
 	e2 := new(CustomerAddressEntity)
 	*e2 = *e // for now a shallow copy
@@ -794,6 +1562,9 @@ func (e *CustomerAddressEntity) Empty() *CustomerAddressEntity {
 	*e = CustomerAddressEntity{}
 	return e
 }
+
+// IsSet returns true if the entity has non-empty primary keys.
+func (e *CustomerAddressEntity) IsSet() bool { return e.EntityID > 0 }
 
 // This variable can be set in another file to provide a custom validator.
 var validateCustomerAddressEntity func(*CustomerAddressEntity) error
@@ -898,6 +1669,7 @@ func (cc *CustomerAddressEntities) AssignLastInsertID(id int64) {
 		j++
 	}
 }
+
 func (cc *CustomerAddressEntities) scanColumns(cm *dml.ColumnMap, e *CustomerAddressEntity, idx uint64) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
@@ -1081,7 +1853,8 @@ type CustomerEntity struct {
 	CustomerAddressEntities *CustomerAddressEntities // Reversed 1:M customer_entity.entity_id => customer_address_entity.parent_id
 }
 
-// Copy copies the struct and returns a new pointer
+// Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
+// generate code afterwards
 func (e *CustomerEntity) Copy() *CustomerEntity {
 	e2 := new(CustomerEntity)
 	*e2 = *e // for now a shallow copy
@@ -1166,6 +1939,9 @@ func (e *CustomerEntity) MapColumns(cm *dml.ColumnMap) error {
 
 // Empty empties all the fields of the current object. Also known as Reset.
 func (e *CustomerEntity) Empty() *CustomerEntity { *e = CustomerEntity{}; return e }
+
+// IsSet returns true if the entity has non-empty primary keys.
+func (e *CustomerEntity) IsSet() bool { return e.EntityID > 0 }
 
 // Set PasswordHash  sets the data for a private and security sensitive field.
 func (e *CustomerEntity) SetPasswordHash(d null.String) *CustomerEntity {
@@ -1282,6 +2058,7 @@ func (cc *CustomerEntities) AssignLastInsertID(id int64) {
 		j++
 	}
 }
+
 func (cc *CustomerEntities) scanColumns(cm *dml.ColumnMap, e *CustomerEntity, idx uint64) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
@@ -1476,7 +2253,8 @@ type DmlgenTypes struct {
 	ColChar2       string       `json:"col_char_2,omitempty"  max_len:"17"`             // col_char_2 char(17) NOT NULL  DEFAULT ''xchar''  ""
 }
 
-// Copy copies the struct and returns a new pointer
+// Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
+// generate code afterwards
 func (e *DmlgenTypes) Copy() *DmlgenTypes {
 	e2 := new(DmlgenTypes)
 	*e2 = *e // for now a shallow copy
@@ -1587,6 +2365,9 @@ func (e *DmlgenTypes) MapColumns(cm *dml.ColumnMap) error {
 
 // Empty empties all the fields of the current object. Also known as Reset.
 func (e *DmlgenTypes) Empty() *DmlgenTypes { *e = DmlgenTypes{}; return e }
+
+// IsSet returns true if the entity has non-empty primary keys.
+func (e *DmlgenTypes) IsSet() bool { return e.ID != 0 }
 
 // This variable can be set in another file to provide a custom validator.
 var validateDmlgenTypes func(*DmlgenTypes) error
@@ -1707,6 +2488,7 @@ func (cc *DmlgenTypesCollection) AssignLastInsertID(id int64) {
 		j++
 	}
 }
+
 func (cc *DmlgenTypesCollection) scanColumns(cm *dml.ColumnMap, e *DmlgenTypes, idx uint64) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
@@ -1985,7 +2767,8 @@ type SalesOrderStatusState struct {
 	VisibleOnFront uint32 `max_len:"5"`  // visible_on_front smallint(5) unsigned NOT NULL  DEFAULT '0'  "Visible on front"
 }
 
-// Copy copies the struct and returns a new pointer
+// Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
+// generate code afterwards
 func (e *SalesOrderStatusState) Copy() *SalesOrderStatusState {
 	e2 := new(SalesOrderStatusState)
 	*e2 = *e // for now a shallow copy
@@ -2019,6 +2802,9 @@ func (e *SalesOrderStatusState) Empty() *SalesOrderStatusState {
 	*e = SalesOrderStatusState{}
 	return e
 }
+
+// IsSet returns true if the entity has non-empty primary keys.
+func (e *SalesOrderStatusState) IsSet() bool { return e.Status != "" && e.State != "" }
 
 // This variable can be set in another file to provide a custom validator.
 var validateSalesOrderStatusState func(*SalesOrderStatusState) error
@@ -2092,6 +2878,7 @@ func (cc *SalesOrderStatusStates) Cut(i, j int) *SalesOrderStatusStates {
 	cc.Data = z
 	return cc
 }
+
 func (cc *SalesOrderStatusStates) scanColumns(cm *dml.ColumnMap, e *SalesOrderStatusState, idx uint64) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
@@ -2269,7 +3056,8 @@ type ViewCustomerAutoIncrement struct {
 	City        string      `max_len:"255"` // city varchar(255) NOT NULL    "City"
 }
 
-// Copy copies the struct and returns a new pointer
+// Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
+// generate code afterwards
 func (e *ViewCustomerAutoIncrement) Copy() *ViewCustomerAutoIncrement {
 	e2 := new(ViewCustomerAutoIncrement)
 	*e2 = *e // for now a shallow copy
@@ -2382,6 +3170,7 @@ func (cc *ViewCustomerAutoIncrements) Cut(i, j int) *ViewCustomerAutoIncrements 
 	cc.Data = z
 	return cc
 }
+
 func (cc *ViewCustomerAutoIncrements) scanColumns(cm *dml.ColumnMap, e *ViewCustomerAutoIncrement, idx uint64) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
@@ -2525,7 +3314,8 @@ type ViewCustomerNoAutoIncrement struct {
 	City      string      `max_len:"255"` // city varchar(255) NOT NULL    "City"
 }
 
-// Copy copies the struct and returns a new pointer
+// Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
+// generate code afterwards
 func (e *ViewCustomerNoAutoIncrement) Copy() *ViewCustomerNoAutoIncrement {
 	e2 := new(ViewCustomerNoAutoIncrement)
 	*e2 = *e // for now a shallow copy
@@ -2632,6 +3422,7 @@ func (cc *ViewCustomerNoAutoIncrements) Cut(i, j int) *ViewCustomerNoAutoIncreme
 	cc.Data = z
 	return cc
 }
+
 func (cc *ViewCustomerNoAutoIncrements) scanColumns(cm *dml.ColumnMap, e *ViewCustomerNoAutoIncrement, idx uint64) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)

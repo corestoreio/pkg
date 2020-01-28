@@ -21,7 +21,6 @@ import (
 	"strconv"
 	"strings"
 	"text/tabwriter"
-	"unicode"
 
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/util/codegen"
@@ -37,7 +36,9 @@ const (
 	FeatureEntityCopy
 	FeatureEntityDBAssignLastInsertID
 	FeatureEntityDBMapColumns
+	FeatureEntityDBTracing // opentelemetry tracing
 	FeatureEntityEmpty
+	FeatureEntityIsSet
 	FeatureEntityGetSetPrivateFields
 	FeatureEntityRelationships
 	FeatureEntityStruct
@@ -118,33 +119,11 @@ func (t *Table) GoCamelMaybePrivate(fieldName string) string {
 	if t.IsFieldPublic(fieldName) {
 		return su
 	}
-	sr := []rune(su)
-	sr[0] = unicode.ToLower(sr[0])
-	return string(sr)
+	return lcFirst(su)
 }
 
 func (t *Table) CollectionName() string {
 	return collectionName(t.Table.Name)
-}
-
-func collectionName(name string) string {
-	tg := strs.ToGoCamelCase(name)
-	switch {
-	case strings.HasSuffix(name, "y"):
-		return tg[:len(tg)-1] + "ies"
-	case strings.HasSuffix(name, "ch"):
-		return tg + "es"
-	case strings.HasSuffix(name, "x"):
-		return tg + "es"
-	case strings.HasSuffix(name, "us"):
-		return tg + "i" // status -> stati
-	case strings.HasSuffix(name, "um"):
-		return tg + "en" // datum -> daten
-	case strings.HasSuffix(name, "s"):
-		return tg + "Collection" // stupid case, better ideas?
-	default:
-		return tg + "s"
-	}
 }
 
 func (t *Table) EntityName() string {
@@ -398,11 +377,34 @@ func (t *Table) fnEntityEmpty(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(`func (e *`, t.EntityName(), `) Empty() *`, t.EntityName(), ` { *e = `, t.EntityName(), `{}; return e }`)
 }
 
+func (t *Table) fnEntityIsSet(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityIsSet|FeatureDB) {
+		return
+	}
+	// TODO maybe unique keys should also be added.
+	var buf strings.Builder
+	i := 0
+	t.Table.Columns.PrimaryKeys().Each(func(c *ddl.Column) {
+		if i > 0 {
+			buf.WriteString(" && ")
+		}
+		buf.WriteString("e.")
+		buf.WriteString(strs.ToGoCamelCase(c.Field))
+		buf.WriteString(mySQLType2GoComparisonOperator(c))
+		i++
+	})
+	if i == 0 {
+		return // no PK fields found
+	}
+	mainGen.C(`IsSet returns true if the entity has non-empty primary keys.`)
+	mainGen.Pln(`func (e *`, t.EntityName(), `) IsSet() bool { return `, buf.String(), ` }`)
+}
+
 func (t *Table) fnEntityCopy(mainGen *codegen.Go, g *Generator) {
 	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityCopy) {
 		return
 	}
-	mainGen.C(`Copy copies the struct and returns a new pointer`)
+	mainGen.C(`Copy copies the struct and returns a new pointer. TODO use deepcopy tool to generate code afterwards`)
 	mainGen.Pln(`func (e *`, t.EntityName(), `) Copy() *`, t.EntityName(), ` {
 		e2 := new(`, t.EntityName(), `)
 		*e2 = *e // for now a shallow copy
@@ -1017,18 +1019,20 @@ func (t *Table) generateTestDB(testGen *codegen.Go) {
 			}
 			testGen.Pln(`}`)
 
-			testGen.Pln(`lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.` + strs.ToGoCamelCase(t.Table.Name) + `_Entity")(entINSERTStmtA.Record("", entIn).ExecContext(ctx))`)
+			testGen.Pln(`lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.` + strs.ToGoCamelCase(t.Table.Name) + `_Entity")(entINSERTStmtA.ExecContext(ctx,dml.Qualify("", entIn)))`)
 			testGen.Pln(`entINSERTStmtA.Reset()`)
 
 			testGen.Pln(`entOut := new(`, strs.ToGoCamelCase(t.Table.Name), `)`)
-			testGen.Pln(`rowCount, err := entSELECTStmtA.Int64s(lID).Load(ctx, entOut)`)
+			testGen.Pln(`rowCount, err := entSELECTStmtA.Load(ctx, entOut, lID)`)
 			testGen.Pln(`assert.NoError(t, err)`)
 			testGen.Pln(`assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)`)
 
 			for _, c := range t.Table.Columns {
 				fn := t.GoCamelMaybePrivate(c.Field)
 				switch {
-				case c.IsString():
+				case c.IsTime():
+					// skip comparison as we can't mock time (yet) :-(
+				case c.IsChar():
 					testGen.Pln(`assert.ExactlyLength(t,`, c.CharMaxLength.Int64, `, `, `&entIn.`, fn, `,`, `&entOut.`, fn, `,`, `"IDX%d:`, fn, `should match", lID)`)
 				case !c.IsSystemVersioned():
 					testGen.Pln(`assert.Exactly(t, entIn.`, fn, `,`, `entOut.`, fn, `,`, `"IDX%d:`, fn, `should match", lID)`)
@@ -1046,7 +1050,7 @@ func (t *Table) generateTestDB(testGen *codegen.Go) {
 		testGen.Pln(`t.Logf("Collection load rowCount: %d", rowCount)`)
 
 		testGen.Pln(`entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithDBR(ctx)`)
-		testGen.Pln(`lID := dmltest.CheckLastInsertID(t, "Error: `, t.CollectionName(), `")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))`)
+		testGen.Pln(`lID := dmltest.CheckLastInsertID(t, "Error: `, t.CollectionName(), `")(entINSERTStmtA.ExecContext(ctx, dml.Qualify("", entCol)))`)
 		testGen.Pln(`dmltest.Close(t, entINSERTStmtA)`)
 		testGen.Pln(`t.Logf("Last insert ID into: %d", lID)`)
 		testGen.Pln(`t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())`)

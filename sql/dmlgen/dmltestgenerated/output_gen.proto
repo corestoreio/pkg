@@ -11,8 +11,9 @@ option (gogoproto.unmarshaler_all) = true;
 option (gogoproto.marshaler_all) = true; 
 option (gogoproto.sizer_all) = true; 
 option (gogoproto.goproto_unrecognized_all) = false; 
-// CatalogProductIndexEAVDecimalIDX represents a single row for DB table
-// catalog_product_index_eav_decimal_idx . Auto generated.
+// CatalogProductIndexEAVDecimalIDX represents a single row for
+// catalog_product_index_eav_decimal_idx DB table. Auto generated.
+// Table comment: Catalog Product EAV Decimal Indexer Index Table
 message CatalogProductIndexEAVDecimalIDX { 
 	uint32 EntityID = 1 ; 
 	uint32 AttributeID = 2 ; 
@@ -20,13 +21,14 @@ message CatalogProductIndexEAVDecimalIDX {
 	null.Decimal Value = 4 [(gogoproto.nullable)=false]; 
 	uint32 SourceID = 5 ; 
 } 
-// CatalogProductIndexEAVDecimalIDXes represents multiple rows for DB table
-// catalog_product_index_eav_decimal_idx . Auto generated.
+// CatalogProductIndexEAVDecimalIDXes represents multiple rows for the
+// catalog_product_index_eav_decimal_idx DB table. Auto generated.
 message CatalogProductIndexEAVDecimalIDXes { 
 	repeated CatalogProductIndexEAVDecimalIDX Data = 1; 
 } 
-// CoreConfiguration represents a single row for DB table core_configuration .
+// CoreConfiguration represents a single row for core_configuration DB table.
 // Auto generated.
+// Table comment: Config Data
 message CoreConfiguration { 
 	uint32 ConfigID = 1 ; 
 	string Scope = 2 ; 
@@ -37,13 +39,14 @@ message CoreConfiguration {
 	google.protobuf.Timestamp VersionTs = 7 [(gogoproto.stdtime)=true,(gogoproto.nullable)=false]; 
 	google.protobuf.Timestamp VersionTe = 8 [(gogoproto.stdtime)=true,(gogoproto.nullable)=false]; 
 } 
-// CoreConfigurations represents multiple rows for DB table core_configuration .
-// Auto generated.
+// CoreConfigurations represents multiple rows for the core_configuration DB
+// table. Auto generated.
 message CoreConfigurations { 
 	repeated CoreConfiguration Data = 1; 
 } 
-// CustomerAddressEntity represents a single row for DB table
-// customer_address_entity . Auto generated.
+// CustomerAddressEntity represents a single row for customer_address_entity DB
+// table. Auto generated.
+// Table comment: Customer Address Entity
 message CustomerAddressEntity { 
 	uint32 EntityID = 1 ; 
 	null.String IncrementID = 2 [(gogoproto.nullable)=false]; 
@@ -71,13 +74,14 @@ message CustomerAddressEntity {
 	null.String VatRequestID = 24 [(gogoproto.nullable)=false]; 
 	null.Uint32 VatRequestSuccess = 25 [(gogoproto.nullable)=false]; 
 } 
-// CustomerAddressEntities represents multiple rows for DB table
-// customer_address_entity . Auto generated.
+// CustomerAddressEntities represents multiple rows for the
+// customer_address_entity DB table. Auto generated.
 message CustomerAddressEntities { 
 	repeated CustomerAddressEntity Data = 1; 
 } 
-// CustomerEntity represents a single row for DB table customer_entity . Auto
+// CustomerEntity represents a single row for customer_entity DB table. Auto
 // generated.
+// Table comment: Customer Entity
 message CustomerEntity { 
 	uint32 EntityID = 1 ; 
 	null.Uint32 WebsiteID = 2 [(gogoproto.nullable)=false]; 
@@ -108,13 +112,12 @@ message CustomerEntity {
 	null.Time LockExpires = 28 [(gogoproto.nullable)=false]; 
 	CustomerAddressEntities CustomerAddressEntities = 29 ; // Reversed 1:M customer_entity.entity_id => customer_address_entity.parent_id 
 } 
-// CustomerEntities represents multiple rows for DB table customer_entity . Auto
-// generated.
+// CustomerEntities represents multiple rows for the customer_entity DB table.
+// Auto generated.
 message CustomerEntities { 
 	repeated CustomerEntity Data = 1; 
 } 
-// DmlgenTypes represents a single row for DB table dmlgen_types . Auto
-// generated.
+// DmlgenTypes represents a single row for dmlgen_types DB table. Auto generated.
 message DmlgenTypes { 
 	int32 ID = 1 ; 
 	null.Int64 ColBigint1 = 2 [(gogoproto.nullable)=false]; 
@@ -158,26 +161,28 @@ message DmlgenTypes {
 	null.String ColChar1 = 40 [(gogoproto.nullable)=false]; 
 	string ColChar2 = 41 ; 
 } 
-// DmlgenTypesCollection represents multiple rows for DB table dmlgen_types .
+// DmlgenTypesCollection represents multiple rows for the dmlgen_types DB table.
 // Auto generated.
 message DmlgenTypesCollection { 
 	repeated DmlgenTypes Data = 1; 
 } 
-// SalesOrderStatusState represents a single row for DB table
-// sales_order_status_state . Auto generated.
+// SalesOrderStatusState represents a single row for sales_order_status_state DB
+// table. Auto generated.
+// Table comment: Sales Order Status Table
 message SalesOrderStatusState { 
 	string Status = 1 ; 
 	string State = 2 ; 
 	bool IsDefault = 3 ; 
 	uint32 VisibleOnFront = 4 ; 
 } 
-// SalesOrderStatusStates represents multiple rows for DB table
-// sales_order_status_state . Auto generated.
+// SalesOrderStatusStates represents multiple rows for the
+// sales_order_status_state DB table. Auto generated.
 message SalesOrderStatusStates { 
 	repeated SalesOrderStatusState Data = 1; 
 } 
-// ViewCustomerAutoIncrement represents a single row for DB table
-// view_customer_auto_increment . Auto generated.
+// ViewCustomerAutoIncrement represents a single row for
+// view_customer_auto_increment DB table. Auto generated.
+// Table comment: VIEW
 message ViewCustomerAutoIncrement { 
 	uint32 CeEntityID = 1 ; 
 	uint32 CaeEntityID = 2 ; 
@@ -186,21 +191,22 @@ message ViewCustomerAutoIncrement {
 	string Lastname = 5 ; 
 	string City = 6 ; 
 } 
-// ViewCustomerAutoIncrements represents multiple rows for DB table
-// view_customer_auto_increment . Auto generated.
+// ViewCustomerAutoIncrements represents multiple rows for the
+// view_customer_auto_increment DB table. Auto generated.
 message ViewCustomerAutoIncrements { 
 	repeated ViewCustomerAutoIncrement Data = 1; 
 } 
-// ViewCustomerNoAutoIncrement represents a single row for DB table
-// view_customer_no_auto_increment . Auto generated.
+// ViewCustomerNoAutoIncrement represents a single row for
+// view_customer_no_auto_increment DB table. Auto generated.
+// Table comment: VIEW
 message ViewCustomerNoAutoIncrement { 
 	null.String Email = 1 [(gogoproto.nullable)=false]; 
 	string Firstname = 2 ; 
 	string Lastname = 3 ; 
 	string City = 4 ; 
 } 
-// ViewCustomerNoAutoIncrements represents multiple rows for DB table
-// view_customer_no_auto_increment . Auto generated.
+// ViewCustomerNoAutoIncrements represents multiple rows for the
+// view_customer_no_auto_increment DB table. Auto generated.
 message ViewCustomerNoAutoIncrements { 
 	repeated ViewCustomerNoAutoIncrement Data = 1; 
 } 

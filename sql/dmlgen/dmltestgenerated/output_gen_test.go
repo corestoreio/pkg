@@ -20,7 +20,7 @@ import (
 	"github.com/corestoreio/pkg/util/pseudo"
 )
 
-func TestNewTablesNonDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
+func TestNewDBManagerNonDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 	ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de", FloatMaxDecimals: 6})
 	_ = ps
 	t.Run("CatalogProductIndexEAVDecimalIDX_Empty", func(t *testing.T) {
@@ -168,7 +168,8 @@ func TestNewTablesNonDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.True(t, errors.NotValid.Match(c.Validate()))
 	})
 }
-func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
+
+func TestNewDBManagerDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
 	defer dmltest.SQLDumpLoad(t, "../testdata/test_*_tables.sql", &dmltest.SQLDumpOptions{
@@ -176,9 +177,9 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 	}).Deferred()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
-	tbls, err := NewTables(ctx, ddl.WithConnPool(db))
+	tbls, err := NewDBManager(ctx, &DBMOption{TableOptions: []ddl.TableOption{ddl.WithConnPool(db)}})
 	assert.NoError(t, err)
-	tblNames := tbls.Tables()
+	tblNames := tbls.Tables.Tables()
 	sort.Strings(tblNames)
 	assert.Exactly(t, []string{"catalog_product_index_eav_decimal_idx", "core_configuration", "customer_address_entity", "customer_entity", "dmlgen_types", "sales_order_status_state", "view_customer_auto_increment", "view_customer_no_auto_increment"}, tblNames)
 	err = tbls.Validate(ctx)
@@ -259,27 +260,24 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 				t.Errorf("IDX[%d]: %+v", i, err)
 				return
 			}
-			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CoreConfiguration_Entity")(entINSERTStmtA.Record("", entIn).ExecContext(ctx))
+			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CoreConfiguration_Entity")(entINSERTStmtA.ExecContext(ctx, dml.Qualify("", entIn)))
 			entINSERTStmtA.Reset()
 			entOut := new(CoreConfiguration)
-			rowCount, err := entSELECTStmtA.Int64s(lID).Load(ctx, entOut)
+			rowCount, err := entSELECTStmtA.Load(ctx, entOut, lID)
 			assert.NoError(t, err)
 			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
 			assert.Exactly(t, entIn.ConfigID, entOut.ConfigID, "IDX%d: ConfigID should match", lID)
 			assert.ExactlyLength(t, 8, &entIn.Scope, &entOut.Scope, "IDX%d: Scope should match", lID)
 			assert.Exactly(t, entIn.ScopeID, entOut.ScopeID, "IDX%d: ScopeID should match", lID)
-			assert.Exactly(t, entIn.Expires, entOut.Expires, "IDX%d: Expires should match", lID)
 			assert.ExactlyLength(t, 255, &entIn.Path, &entOut.Path, "IDX%d: Path should match", lID)
 			assert.ExactlyLength(t, 65535, &entIn.Value, &entOut.Value, "IDX%d: Value should match", lID)
-			// ignoring: version_ts
-			// ignoring: version_te
 		}
 		dmltest.Close(t, entINSERTStmtA)
 		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
 		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithDBR(ctx)
-		lID := dmltest.CheckLastInsertID(t, "Error:  CoreConfigurations ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
+		lID := dmltest.CheckLastInsertID(t, "Error:  CoreConfigurations ")(entINSERTStmtA.ExecContext(ctx, dml.Qualify("", entCol)))
 		dmltest.Close(t, entINSERTStmtA)
 		t.Logf("Last insert ID into: %d", lID)
 		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())
@@ -304,17 +302,15 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 				t.Errorf("IDX[%d]: %+v", i, err)
 				return
 			}
-			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CustomerAddressEntity_Entity")(entINSERTStmtA.Record("", entIn).ExecContext(ctx))
+			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CustomerAddressEntity_Entity")(entINSERTStmtA.ExecContext(ctx, dml.Qualify("", entIn)))
 			entINSERTStmtA.Reset()
 			entOut := new(CustomerAddressEntity)
-			rowCount, err := entSELECTStmtA.Int64s(lID).Load(ctx, entOut)
+			rowCount, err := entSELECTStmtA.Load(ctx, entOut, lID)
 			assert.NoError(t, err)
 			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
 			assert.Exactly(t, entIn.EntityID, entOut.EntityID, "IDX%d: EntityID should match", lID)
 			assert.ExactlyLength(t, 50, &entIn.IncrementID, &entOut.IncrementID, "IDX%d: IncrementID should match", lID)
 			assert.Exactly(t, entIn.ParentID, entOut.ParentID, "IDX%d: ParentID should match", lID)
-			assert.Exactly(t, entIn.CreatedAt, entOut.CreatedAt, "IDX%d: CreatedAt should match", lID)
-			assert.Exactly(t, entIn.UpdatedAt, entOut.UpdatedAt, "IDX%d: UpdatedAt should match", lID)
 			assert.Exactly(t, entIn.IsActive, entOut.IsActive, "IDX%d: IsActive should match", lID)
 			assert.ExactlyLength(t, 255, &entIn.City, &entOut.City, "IDX%d: City should match", lID)
 			assert.ExactlyLength(t, 255, &entIn.Company, &entOut.Company, "IDX%d: Company should match", lID)
@@ -341,7 +337,7 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
 		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithDBR(ctx)
-		lID := dmltest.CheckLastInsertID(t, "Error:  CustomerAddressEntities ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
+		lID := dmltest.CheckLastInsertID(t, "Error:  CustomerAddressEntities ")(entINSERTStmtA.ExecContext(ctx, dml.Qualify("", entCol)))
 		dmltest.Close(t, entINSERTStmtA)
 		t.Logf("Last insert ID into: %d", lID)
 		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())
@@ -366,10 +362,10 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 				t.Errorf("IDX[%d]: %+v", i, err)
 				return
 			}
-			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CustomerEntity_Entity")(entINSERTStmtA.Record("", entIn).ExecContext(ctx))
+			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CustomerEntity_Entity")(entINSERTStmtA.ExecContext(ctx, dml.Qualify("", entIn)))
 			entINSERTStmtA.Reset()
 			entOut := new(CustomerEntity)
-			rowCount, err := entSELECTStmtA.Int64s(lID).Load(ctx, entOut)
+			rowCount, err := entSELECTStmtA.Load(ctx, entOut, lID)
 			assert.NoError(t, err)
 			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
 			assert.Exactly(t, entIn.EntityID, entOut.EntityID, "IDX%d: EntityID should match", lID)
@@ -378,8 +374,6 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 			assert.Exactly(t, entIn.GroupID, entOut.GroupID, "IDX%d: GroupID should match", lID)
 			assert.ExactlyLength(t, 50, &entIn.IncrementID, &entOut.IncrementID, "IDX%d: IncrementID should match", lID)
 			assert.Exactly(t, entIn.StoreID, entOut.StoreID, "IDX%d: StoreID should match", lID)
-			assert.Exactly(t, entIn.CreatedAt, entOut.CreatedAt, "IDX%d: CreatedAt should match", lID)
-			assert.Exactly(t, entIn.UpdatedAt, entOut.UpdatedAt, "IDX%d: UpdatedAt should match", lID)
 			assert.Exactly(t, entIn.IsActive, entOut.IsActive, "IDX%d: IsActive should match", lID)
 			assert.Exactly(t, entIn.DisableAutoGroupChange, entOut.DisableAutoGroupChange, "IDX%d: DisableAutoGroupChange should match", lID)
 			assert.ExactlyLength(t, 255, &entIn.CreatedIn, &entOut.CreatedIn, "IDX%d: CreatedIn should match", lID)
@@ -388,25 +382,21 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 			assert.ExactlyLength(t, 255, &entIn.Middlename, &entOut.Middlename, "IDX%d: Middlename should match", lID)
 			assert.ExactlyLength(t, 255, &entIn.Lastname, &entOut.Lastname, "IDX%d: Lastname should match", lID)
 			assert.ExactlyLength(t, 40, &entIn.Suffix, &entOut.Suffix, "IDX%d: Suffix should match", lID)
-			assert.Exactly(t, entIn.Dob, entOut.Dob, "IDX%d: Dob should match", lID)
 			assert.ExactlyLength(t, 128, &entIn.passwordHash, &entOut.passwordHash, "IDX%d: passwordHash should match", lID)
 			assert.ExactlyLength(t, 128, &entIn.RpToken, &entOut.RpToken, "IDX%d: RpToken should match", lID)
-			assert.Exactly(t, entIn.RpTokenCreatedAt, entOut.RpTokenCreatedAt, "IDX%d: RpTokenCreatedAt should match", lID)
 			assert.Exactly(t, entIn.DefaultBilling, entOut.DefaultBilling, "IDX%d: DefaultBilling should match", lID)
 			assert.Exactly(t, entIn.DefaultShipping, entOut.DefaultShipping, "IDX%d: DefaultShipping should match", lID)
 			assert.ExactlyLength(t, 50, &entIn.Taxvat, &entOut.Taxvat, "IDX%d: Taxvat should match", lID)
 			assert.ExactlyLength(t, 64, &entIn.Confirmation, &entOut.Confirmation, "IDX%d: Confirmation should match", lID)
 			assert.Exactly(t, entIn.Gender, entOut.Gender, "IDX%d: Gender should match", lID)
 			assert.Exactly(t, entIn.FailuresNum, entOut.FailuresNum, "IDX%d: FailuresNum should match", lID)
-			assert.Exactly(t, entIn.FirstFailure, entOut.FirstFailure, "IDX%d: FirstFailure should match", lID)
-			assert.Exactly(t, entIn.LockExpires, entOut.LockExpires, "IDX%d: LockExpires should match", lID)
 		}
 		dmltest.Close(t, entINSERTStmtA)
 		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
 		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithDBR(ctx)
-		lID := dmltest.CheckLastInsertID(t, "Error:  CustomerEntities ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
+		lID := dmltest.CheckLastInsertID(t, "Error:  CustomerEntities ")(entINSERTStmtA.ExecContext(ctx, dml.Qualify("", entCol)))
 		dmltest.Close(t, entINSERTStmtA)
 		t.Logf("Last insert ID into: %d", lID)
 		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())
@@ -431,10 +421,10 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 				t.Errorf("IDX[%d]: %+v", i, err)
 				return
 			}
-			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.DmlgenTypes_Entity")(entINSERTStmtA.Record("", entIn).ExecContext(ctx))
+			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.DmlgenTypes_Entity")(entINSERTStmtA.ExecContext(ctx, dml.Qualify("", entIn)))
 			entINSERTStmtA.Reset()
 			entOut := new(DmlgenTypes)
-			rowCount, err := entSELECTStmtA.Int64s(lID).Load(ctx, entOut)
+			rowCount, err := entSELECTStmtA.Load(ctx, entOut, lID)
 			assert.NoError(t, err)
 			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
 			assert.Exactly(t, entIn.ID, entOut.ID, "IDX%d: ID should match", lID)
@@ -443,10 +433,6 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 			assert.Exactly(t, entIn.ColBigint3, entOut.ColBigint3, "IDX%d: ColBigint3 should match", lID)
 			assert.Exactly(t, entIn.ColBigint4, entOut.ColBigint4, "IDX%d: ColBigint4 should match", lID)
 			assert.ExactlyLength(t, 65535, &entIn.ColBlob, &entOut.ColBlob, "IDX%d: ColBlob should match", lID)
-			assert.Exactly(t, entIn.ColDate1, entOut.ColDate1, "IDX%d: ColDate1 should match", lID)
-			assert.Exactly(t, entIn.ColDate2, entOut.ColDate2, "IDX%d: ColDate2 should match", lID)
-			assert.Exactly(t, entIn.ColDatetime1, entOut.ColDatetime1, "IDX%d: ColDatetime1 should match", lID)
-			assert.Exactly(t, entIn.ColDatetime2, entOut.ColDatetime2, "IDX%d: ColDatetime2 should match", lID)
 			assert.Exactly(t, entIn.ColDecimal101, entOut.ColDecimal101, "IDX%d: ColDecimal101 should match", lID)
 			assert.Exactly(t, entIn.ColDecimal124, entOut.ColDecimal124, "IDX%d: ColDecimal124 should match", lID)
 			assert.Exactly(t, entIn.PriceA124, entOut.PriceA124, "IDX%d: PriceA124 should match", lID)
@@ -470,8 +456,6 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 			assert.Exactly(t, entIn.HasSmallint5, entOut.HasSmallint5, "IDX%d: HasSmallint5 should match", lID)
 			assert.Exactly(t, entIn.IsSmallint5, entOut.IsSmallint5, "IDX%d: IsSmallint5 should match", lID)
 			assert.ExactlyLength(t, 65535, &entIn.ColText, &entOut.ColText, "IDX%d: ColText should match", lID)
-			assert.Exactly(t, entIn.ColTimestamp1, entOut.ColTimestamp1, "IDX%d: ColTimestamp1 should match", lID)
-			assert.Exactly(t, entIn.ColTimestamp2, entOut.ColTimestamp2, "IDX%d: ColTimestamp2 should match", lID)
 			assert.Exactly(t, entIn.ColTinyint1, entOut.ColTinyint1, "IDX%d: ColTinyint1 should match", lID)
 			assert.ExactlyLength(t, 1, &entIn.ColVarchar1, &entOut.ColVarchar1, "IDX%d: ColVarchar1 should match", lID)
 			assert.ExactlyLength(t, 100, &entIn.ColVarchar100, &entOut.ColVarchar100, "IDX%d: ColVarchar100 should match", lID)
@@ -484,7 +468,7 @@ func TestNewTablesDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
 		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithDBR(ctx)
-		lID := dmltest.CheckLastInsertID(t, "Error:  DmlgenTypesCollection ")(entINSERTStmtA.Record("", entCol).ExecContext(ctx))
+		lID := dmltest.CheckLastInsertID(t, "Error:  DmlgenTypesCollection ")(entINSERTStmtA.ExecContext(ctx, dml.Qualify("", entCol)))
 		dmltest.Close(t, entINSERTStmtA)
 		t.Logf("Last insert ID into: %d", lID)
 		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())

@@ -25,7 +25,8 @@ type CoreConfiguration struct {
 	VersionTe time.Time   // version_te timestamp(6) NOT NULL PRI  STORED GENERATED "Timestamp End Versioning"
 }
 
-// Copy copies the struct and returns a new pointer
+// Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
+// generate code afterwards
 func (e *CoreConfiguration) Copy() *CoreConfiguration {
 	e2 := new(CoreConfiguration)
 	*e2 = *e // for now a shallow copy
@@ -215,7 +216,8 @@ type SalesOrderStatusState struct {
 	VisibleOnFront uint16 // visible_on_front smallint(5) unsigned NOT NULL  DEFAULT '0'  "Visible on front"
 }
 
-// Copy copies the struct and returns a new pointer
+// Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
+// generate code afterwards
 func (e *SalesOrderStatusState) Copy() *SalesOrderStatusState {
 	e2 := new(SalesOrderStatusState)
 	*e2 = *e // for now a shallow copy
