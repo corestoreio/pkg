@@ -509,6 +509,17 @@ func (c *Condition) PlaceHolder() *Condition {
 // variable count. Mostly used in prepared statements and for interpolation and
 // when using the IN clause.
 func (c *Condition) PlaceHolders(count int) *Condition {
+	switch count {
+	case 1:
+		c.Right.PlaceHolder = "(?)"
+	case 2:
+		c.Right.PlaceHolder = "(?,?)"
+	case 3:
+		c.Right.PlaceHolder = "(?,?,?)"
+	}
+	if c.Right.PlaceHolder != "" {
+		return c
+	}
 	var buf strings.Builder
 	buf.WriteByte('(')
 	for i := 0; i < count; i++ {
