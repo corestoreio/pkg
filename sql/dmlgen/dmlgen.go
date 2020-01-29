@@ -1231,6 +1231,11 @@ func (g *Generator) optionsSQLBuildQueriesForTable(mainGen *codegen.Go, tbl *Tab
 	mainGen.Pln(`ddl.WithQueryDBR( `,
 		codegen.SkipWS(`"`, tbl.EntityName(), `SelectByPK"`),
 		`, dbmo.InitSelectFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, tbl.EntityName()), `).SelectByPK("*")).WithDBR().Interpolate()),`)
+
+	if tbl.Table.IsView() {
+		return
+	}
+
 	mainGen.Pln(`ddl.WithQueryDBR( `,
 		codegen.SkipWS(`"`, tbl.EntityName(), `UpdateByPK"`),
 		`, dbmo.InitUpdateFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, tbl.EntityName()), `).UpdateByPK()).WithDBR()),`)
@@ -1279,7 +1284,8 @@ func (g *Generator) fnCreateDBMHandler(mainGen *codegen.Go, tbl *Table) {
 		i++
 	})
 	if i == 0 {
-		// table or view does not have a primary key
+		// table or view does not have a primary key.
+		// TODO find a way to figure out the PK of a view
 		mainGen.C("The table", tbl.EntityName(), "does not have a primary key. SKipping to generate DML functions based on the PK.")
 		mainGen.Pln("\n")
 		return
@@ -1310,6 +1316,11 @@ func (g *Generator) fnCreateDBMHandler(mainGen *codegen.Go, tbl *Table) {
 	}
 	return &e, nil
 }`)
+
+	if tbl.Table.IsView() {
+		// skip here the delete,insert,update and upsert functions.
+		return
+	}
 
 	entityFuncName = codegen.SkipWS(tbl.EntityName(), "DeleteByPK")
 	mainGen.Pln(`func (dbm DBM) `, entityFuncName, `(ctx context.Context, `, &bufPKNameTypes, `, opts ...dml.DBRFunc) (err error) {`)

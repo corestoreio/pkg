@@ -265,15 +265,7 @@ func NewDBManager(ctx context.Context, dbmo *DBMOption) (*DBM, error) {
 		ddl.WithQueryDBR("SalesOrderStatusStateInsert", dbmo.InitInsertFn(tbls.MustTable(TableNameSalesOrderStatusState).Insert()).WithDBR()),
 		ddl.WithQueryDBR("SalesOrderStatusStateUpsertByPK", dbmo.InitInsertFn(tbls.MustTable(TableNameSalesOrderStatusState).Insert()).OnDuplicateKey().WithDBR()),
 		ddl.WithQueryDBR("ViewCustomerAutoIncrementSelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameViewCustomerAutoIncrement).SelectByPK("*")).WithDBR().Interpolate()),
-		ddl.WithQueryDBR("ViewCustomerAutoIncrementUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameViewCustomerAutoIncrement).UpdateByPK()).WithDBR()),
-		ddl.WithQueryDBR("ViewCustomerAutoIncrementDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameViewCustomerAutoIncrement).DeleteByPK()).WithDBR().Interpolate()),
-		ddl.WithQueryDBR("ViewCustomerAutoIncrementInsert", dbmo.InitInsertFn(tbls.MustTable(TableNameViewCustomerAutoIncrement).Insert()).WithDBR()),
-		ddl.WithQueryDBR("ViewCustomerAutoIncrementUpsertByPK", dbmo.InitInsertFn(tbls.MustTable(TableNameViewCustomerAutoIncrement).Insert()).OnDuplicateKey().WithDBR()),
 		ddl.WithQueryDBR("ViewCustomerNoAutoIncrementSelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameViewCustomerNoAutoIncrement).SelectByPK("*")).WithDBR().Interpolate()),
-		ddl.WithQueryDBR("ViewCustomerNoAutoIncrementUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameViewCustomerNoAutoIncrement).UpdateByPK()).WithDBR()),
-		ddl.WithQueryDBR("ViewCustomerNoAutoIncrementDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameViewCustomerNoAutoIncrement).DeleteByPK()).WithDBR().Interpolate()),
-		ddl.WithQueryDBR("ViewCustomerNoAutoIncrementInsert", dbmo.InitInsertFn(tbls.MustTable(TableNameViewCustomerNoAutoIncrement).Insert()).WithDBR()),
-		ddl.WithQueryDBR("ViewCustomerNoAutoIncrementUpsertByPK", dbmo.InitInsertFn(tbls.MustTable(TableNameViewCustomerNoAutoIncrement).Insert()).OnDuplicateKey().WithDBR()),
 	)
 	if dbmo.Trace == nil {
 		dbmo.Trace = trace.NoopTracer{}
@@ -3048,12 +3040,11 @@ func (cc *SalesOrderStatusStates) WriteTo(w io.Writer) (n int64, err error) {
 // Table comment: VIEW
 //easyjson:json
 type ViewCustomerAutoIncrement struct {
-	CeEntityID  uint32      `max_len:"10"`  // ce_entity_id int(10) unsigned NOT NULL  DEFAULT '0'  "Entity ID"
-	CaeEntityID uint32      `max_len:"10"`  // cae_entity_id int(10) unsigned NOT NULL  DEFAULT '0'  "Entity ID"
-	Email       null.String `max_len:"255"` // email varchar(255) NULL  DEFAULT 'NULL'  "Email"
-	Firstname   string      `max_len:"255"` // firstname varchar(255) NOT NULL    "First Name"
-	Lastname    string      `max_len:"255"` // lastname varchar(255) NOT NULL    "Last Name"
-	City        string      `max_len:"255"` // city varchar(255) NOT NULL    "City"
+	CeEntityID uint32      `max_len:"10"`  // ce_entity_id int(10) unsigned NOT NULL  DEFAULT '0'  "Entity ID"
+	Email      null.String `max_len:"255"` // email varchar(255) NULL  DEFAULT 'NULL'  "Email"
+	Firstname  string      `max_len:"255"` // firstname varchar(255) NOT NULL    "First Name"
+	Lastname   string      `max_len:"255"` // lastname varchar(255) NOT NULL    "Last Name"
+	City       string      `max_len:"255"` // city varchar(255) NOT NULL    "City"
 }
 
 // Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
@@ -3067,14 +3058,12 @@ func (e *ViewCustomerAutoIncrement) Copy() *ViewCustomerAutoIncrement {
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *ViewCustomerAutoIncrement) MapColumns(cm *dml.ColumnMap) error {
 	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Uint32(&e.CeEntityID).Uint32(&e.CaeEntityID).NullString(&e.Email).String(&e.Firstname).String(&e.Lastname).String(&e.City).Err()
+		return cm.Uint32(&e.CeEntityID).NullString(&e.Email).String(&e.Firstname).String(&e.Lastname).String(&e.City).Err()
 	}
 	for cm.Next() {
 		switch c := cm.Column(); c {
 		case "ce_entity_id":
 			cm.Uint32(&e.CeEntityID)
-		case "cae_entity_id":
-			cm.Uint32(&e.CaeEntityID)
 		case "email":
 			cm.NullString(&e.Email)
 		case "firstname":
@@ -3117,7 +3106,6 @@ func (e *ViewCustomerAutoIncrement) WriteTo(w io.Writer) (n int64, err error) {
 	// for now this printing is good enough. If you need better swap out with your code.
 	n2, err := fmt.Fprint(w,
 		"ce_entity_id:", e.CeEntityID, "\n",
-		"cae_entity_id:", e.CaeEntityID, "\n",
 		"email:", e.Email, "\n",
 		"firstname:", e.Firstname, "\n",
 		"lastname:", e.Lastname, "\n",

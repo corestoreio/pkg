@@ -362,8 +362,6 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(in 
 		switch key {
 		case "ceEntityID":
 			out.CeEntityID = uint32(in.Uint32())
-		case "caeEntityID":
-			out.CaeEntityID = uint32(in.Uint32())
 		case "email":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.Email).UnmarshalJSON(data))
@@ -393,16 +391,6 @@ func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(out
 		first = false
 		out.RawString(prefix[1:])
 		out.Uint32(uint32(in.CeEntityID))
-	}
-	if in.CaeEntityID != 0 {
-		const prefix string = ",\"caeEntityID\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
-		out.Uint32(uint32(in.CaeEntityID))
 	}
 	if true {
 		const prefix string = ",\"email\":"

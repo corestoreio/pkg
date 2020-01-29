@@ -185,11 +185,10 @@ message SalesOrderStatusStates {
 // Table comment: VIEW
 message ViewCustomerAutoIncrement { 
 	uint32 CeEntityID = 1 ; 
-	uint32 CaeEntityID = 2 ; 
-	null.String Email = 3 [(gogoproto.nullable)=false]; 
-	string Firstname = 4 ; 
-	string Lastname = 5 ; 
-	string City = 6 ; 
+	null.String Email = 2 [(gogoproto.nullable)=false]; 
+	string Firstname = 3 ; 
+	string Lastname = 4 ; 
+	string City = 5 ; 
 } 
 // ViewCustomerAutoIncrements represents multiple rows for the
 // view_customer_auto_increment DB table. Auto generated.

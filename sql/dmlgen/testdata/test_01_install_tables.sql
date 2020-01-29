@@ -192,7 +192,6 @@ CREATE VIEW `view_customer_auto_increment` AS
   -- this join is logically wrong because demo data needed as parent_id column in
   -- customer_address_entity is empty.
 SELECT `ce`.`entity_id` AS ce_entity_id,
-      `cae`.`entity_id` AS cae_entity_id,
        `ce`.`email`,
        `cae`.`firstname`,
        `cae`.`lastname`,
