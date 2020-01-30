@@ -109,6 +109,18 @@ func TestLoadColumns_Integration(t *testing.T) {
 	}
 }
 
+func TestColumns_ViewPrimaryKeys(t *testing.T) {
+	pks := tableMap.MustTable("catalog_category_anc_categs_index_idx").Columns.ViewPrimaryKeys()
+	assert.Exactly(t, "category_id", pks.First().Field)
+	l := pks.Len()
+	assert.Exactly(t, 1, l)
+
+	pks = tableMap.MustTable("price").Columns.ViewPrimaryKeys()
+	assert.Exactly(t, "id", pks.First().Field)
+	l = pks.Len()
+	assert.Exactly(t, 1, l)
+}
+
 func TestColumns(t *testing.T) {
 	tests := []struct {
 		have  int

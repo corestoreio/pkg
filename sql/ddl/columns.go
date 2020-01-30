@@ -185,6 +185,11 @@ func colIsPK(c *Column) bool {
 	return c.IsPK() && !c.IsSystemVersioned()
 }
 
+// colIsPKView use the field name to guess if that might be a primary key. must be improved.
+func colIsPKView(c *Column) bool {
+	return (c.Field == "id" || strings.HasSuffix(c.Field, "_id")) && !c.IsSystemVersioned()
+}
+
 func colIsUnique(c *Column) bool {
 	return c.IsUnique() && !c.IsSystemVersioned()
 }
@@ -213,6 +218,14 @@ func columnsIsEligibleForUpsert(c *Column) bool {
 // provided argument slice.
 func (cs Columns) PrimaryKeys(cols ...*Column) Columns {
 	return cs.Filter(colIsPK, cols...)
+}
+
+// ViewPrimaryKeys is a special function for views which might be able to figure
+// out the primary key columns. Neither MySQL nor MariaDB do not report which
+// columns are primary keys in a view. Current implementation checks if a column
+// name ends with `_id` or is `id` to consider it as a primary key.
+func (cs Columns) ViewPrimaryKeys(cols ...*Column) Columns {
+	return cs.Filter(colIsPKView, cols...)
 }
 
 // UniqueKeys returns all unique key columns. It may append the columns to the

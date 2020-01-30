@@ -129,6 +129,18 @@ func init() {
 	); err != nil {
 		panic(err)
 	}
+	if err := tableMap.Upsert(ddl.NewTable(
+		"price",
+		&ddl.Column{
+			Field:      "id",
+			ColumnType: "int(10) unsigned",
+			Key:        "PRI",
+			Extra:      "auto_increment",
+		},
+	),
+	); err != nil {
+		panic(err)
+	}
 }
 
 func TestTable_HasColumn(t *testing.T) {
