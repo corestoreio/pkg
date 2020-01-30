@@ -1228,10 +1228,15 @@ func (g *Generator) fnCreateDBM(mainGen *codegen.Go, tbls []*Table) {
 }
 
 func (g *Generator) optionsSQLBuildQueriesForTable(mainGen *codegen.Go, tbl *Table) {
-	mainGen.Pln(`ddl.WithQueryDBR( `,
-		codegen.SkipWS(`"`, tbl.EntityName(), `SelectByPK"`),
-		`, dbmo.InitSelectFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, tbl.EntityName()), `).SelectByPK("*")).WithDBR().Interpolate()),`)
-
+	tblPKLen := tbl.Table.Columns.PrimaryKeys().Len()
+	if tbl.Table.IsView() {
+		tblPKLen = tbl.Table.Columns.ViewPrimaryKeys().Len()
+	}
+	if tblPKLen > 0 {
+		mainGen.Pln(`ddl.WithQueryDBR( `,
+			codegen.SkipWS(`"`, tbl.EntityName(), `FindByPK"`),
+			`, dbmo.InitSelectFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, tbl.EntityName()), `).SelectByPK("*")).WithDBR().Interpolate()),`)
+	}
 	if tbl.Table.IsView() {
 		return
 	}
@@ -1265,7 +1270,13 @@ func (g *Generator) fnCreateDBMHandler(mainGen *codegen.Go, tbl *Table) {
 	var bufPKNames strings.Builder
 	var bufPKNamesAsArgs strings.Builder
 	i := 0
-	tbl.Table.Columns.PrimaryKeys().Each(func(c *ddl.Column) {
+
+	tblCols := tbl.Table.Columns.PrimaryKeys()
+	if tbl.Table.IsView() {
+		tblCols = tbl.Table.Columns.ViewPrimaryKeys()
+	}
+
+	tblCols.Each(func(c *ddl.Column) {
 		if i > 0 {
 			bufPKNameTypes.WriteByte(',')
 			bufPKNames.WriteByte(',')
@@ -1284,9 +1295,7 @@ func (g *Generator) fnCreateDBMHandler(mainGen *codegen.Go, tbl *Table) {
 		i++
 	})
 	if i == 0 {
-		// table or view does not have a primary key.
-		// TODO find a way to figure out the PK of a view
-		mainGen.C("The table", tbl.EntityName(), "does not have a primary key. SKipping to generate DML functions based on the PK.")
+		mainGen.C("The table/view", tbl.EntityName(), "does not have a primary key. SKipping to generate DML functions based on the PK.")
 		mainGen.Pln("\n")
 		return
 	}

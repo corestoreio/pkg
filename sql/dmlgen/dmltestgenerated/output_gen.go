@@ -234,38 +234,37 @@ func NewDBManager(ctx context.Context, dbmo *DBMOption) (*DBM, error) {
 		dbmo.InitInsertFn = func(s *dml.Insert) *dml.Insert { return s }
 	}
 	_ = tbls.Options(
-		ddl.WithQueryDBR("CatalogProductIndexEAVDecimalIDXSelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameCatalogProductIndexEAVDecimalIDX).SelectByPK("*")).WithDBR().Interpolate()),
+		ddl.WithQueryDBR("CatalogProductIndexEAVDecimalIDXFindByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameCatalogProductIndexEAVDecimalIDX).SelectByPK("*")).WithDBR().Interpolate()),
 		ddl.WithQueryDBR("CatalogProductIndexEAVDecimalIDXUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameCatalogProductIndexEAVDecimalIDX).UpdateByPK()).WithDBR()),
 		ddl.WithQueryDBR("CatalogProductIndexEAVDecimalIDXDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameCatalogProductIndexEAVDecimalIDX).DeleteByPK()).WithDBR().Interpolate()),
 		ddl.WithQueryDBR("CatalogProductIndexEAVDecimalIDXInsert", dbmo.InitInsertFn(tbls.MustTable(TableNameCatalogProductIndexEAVDecimalIDX).Insert()).WithDBR()),
 		ddl.WithQueryDBR("CatalogProductIndexEAVDecimalIDXUpsertByPK", dbmo.InitInsertFn(tbls.MustTable(TableNameCatalogProductIndexEAVDecimalIDX).Insert()).OnDuplicateKey().WithDBR()),
-		ddl.WithQueryDBR("CoreConfigurationSelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameCoreConfiguration).SelectByPK("*")).WithDBR().Interpolate()),
+		ddl.WithQueryDBR("CoreConfigurationFindByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameCoreConfiguration).SelectByPK("*")).WithDBR().Interpolate()),
 		ddl.WithQueryDBR("CoreConfigurationUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameCoreConfiguration).UpdateByPK()).WithDBR()),
 		ddl.WithQueryDBR("CoreConfigurationDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameCoreConfiguration).DeleteByPK()).WithDBR().Interpolate()),
 		ddl.WithQueryDBR("CoreConfigurationInsert", dbmo.InitInsertFn(tbls.MustTable(TableNameCoreConfiguration).Insert()).WithDBR()),
 		ddl.WithQueryDBR("CoreConfigurationUpsertByPK", dbmo.InitInsertFn(tbls.MustTable(TableNameCoreConfiguration).Insert()).OnDuplicateKey().WithDBR()),
-		ddl.WithQueryDBR("CustomerAddressEntitySelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameCustomerAddressEntity).SelectByPK("*")).WithDBR().Interpolate()),
+		ddl.WithQueryDBR("CustomerAddressEntityFindByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameCustomerAddressEntity).SelectByPK("*")).WithDBR().Interpolate()),
 		ddl.WithQueryDBR("CustomerAddressEntityUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameCustomerAddressEntity).UpdateByPK()).WithDBR()),
 		ddl.WithQueryDBR("CustomerAddressEntityDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameCustomerAddressEntity).DeleteByPK()).WithDBR().Interpolate()),
 		ddl.WithQueryDBR("CustomerAddressEntityInsert", dbmo.InitInsertFn(tbls.MustTable(TableNameCustomerAddressEntity).Insert()).WithDBR()),
 		ddl.WithQueryDBR("CustomerAddressEntityUpsertByPK", dbmo.InitInsertFn(tbls.MustTable(TableNameCustomerAddressEntity).Insert()).OnDuplicateKey().WithDBR()),
-		ddl.WithQueryDBR("CustomerEntitySelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameCustomerEntity).SelectByPK("*")).WithDBR().Interpolate()),
+		ddl.WithQueryDBR("CustomerEntityFindByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameCustomerEntity).SelectByPK("*")).WithDBR().Interpolate()),
 		ddl.WithQueryDBR("CustomerEntityUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameCustomerEntity).UpdateByPK()).WithDBR()),
 		ddl.WithQueryDBR("CustomerEntityDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameCustomerEntity).DeleteByPK()).WithDBR().Interpolate()),
 		ddl.WithQueryDBR("CustomerEntityInsert", dbmo.InitInsertFn(tbls.MustTable(TableNameCustomerEntity).Insert()).WithDBR()),
 		ddl.WithQueryDBR("CustomerEntityUpsertByPK", dbmo.InitInsertFn(tbls.MustTable(TableNameCustomerEntity).Insert()).OnDuplicateKey().WithDBR()),
-		ddl.WithQueryDBR("DmlgenTypesSelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameDmlgenTypes).SelectByPK("*")).WithDBR().Interpolate()),
+		ddl.WithQueryDBR("DmlgenTypesFindByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameDmlgenTypes).SelectByPK("*")).WithDBR().Interpolate()),
 		ddl.WithQueryDBR("DmlgenTypesUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameDmlgenTypes).UpdateByPK()).WithDBR()),
 		ddl.WithQueryDBR("DmlgenTypesDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameDmlgenTypes).DeleteByPK()).WithDBR().Interpolate()),
 		ddl.WithQueryDBR("DmlgenTypesInsert", dbmo.InitInsertFn(tbls.MustTable(TableNameDmlgenTypes).Insert()).WithDBR()),
 		ddl.WithQueryDBR("DmlgenTypesUpsertByPK", dbmo.InitInsertFn(tbls.MustTable(TableNameDmlgenTypes).Insert()).OnDuplicateKey().WithDBR()),
-		ddl.WithQueryDBR("SalesOrderStatusStateSelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameSalesOrderStatusState).SelectByPK("*")).WithDBR().Interpolate()),
+		ddl.WithQueryDBR("SalesOrderStatusStateFindByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameSalesOrderStatusState).SelectByPK("*")).WithDBR().Interpolate()),
 		ddl.WithQueryDBR("SalesOrderStatusStateUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameSalesOrderStatusState).UpdateByPK()).WithDBR()),
 		ddl.WithQueryDBR("SalesOrderStatusStateDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameSalesOrderStatusState).DeleteByPK()).WithDBR().Interpolate()),
 		ddl.WithQueryDBR("SalesOrderStatusStateInsert", dbmo.InitInsertFn(tbls.MustTable(TableNameSalesOrderStatusState).Insert()).WithDBR()),
 		ddl.WithQueryDBR("SalesOrderStatusStateUpsertByPK", dbmo.InitInsertFn(tbls.MustTable(TableNameSalesOrderStatusState).Insert()).OnDuplicateKey().WithDBR()),
-		ddl.WithQueryDBR("ViewCustomerAutoIncrementSelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameViewCustomerAutoIncrement).SelectByPK("*")).WithDBR().Interpolate()),
-		ddl.WithQueryDBR("ViewCustomerNoAutoIncrementSelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameViewCustomerNoAutoIncrement).SelectByPK("*")).WithDBR().Interpolate()),
+		ddl.WithQueryDBR("ViewCustomerAutoIncrementFindByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameViewCustomerAutoIncrement).SelectByPK("*")).WithDBR().Interpolate()),
 	)
 	if dbmo.Trace == nil {
 		dbmo.Trace = trace.NoopTracer{}
@@ -783,11 +782,28 @@ func (dbm DBM) SalesOrderStatusStateUpsert(ctx context.Context, e *SalesOrderSta
 	return nil
 }
 
-// The table ViewCustomerAutoIncrement does not have a primary key. SKipping to
-// generate DML functions based on the PK.
+func (dbm DBM) ViewCustomerAutoIncrementFindByPK(ctx context.Context, ceEntityID uint32, opts ...dml.DBRFunc) (_ *ViewCustomerAutoIncrement, err error) {
+	ctx, span := dbm.option.Trace.Start(ctx, "ViewCustomerAutoIncrementFindByPK")
+	defer func() { cstrace.Status(span, err); span.End() }()
+	var e ViewCustomerAutoIncrement
+	// put the IDs ceEntityID into the context as value to search for a cache entry in the event function.
+	if err = dbm.eventViewCustomerAutoIncrementFunc(ctx, dml.EventFlagBeforeSelect, &e); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if e.IsSet() {
+		return &e, nil // returns data from cache
+	}
+	if _, err = dbm.CachedQuery("ViewCustomerAutoIncrementFindByPK").ApplyCallBacks(opts...).Load(ctx, &e, ceEntityID); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if err = dbm.eventViewCustomerAutoIncrementFunc(ctx, dml.EventFlagAfterSelect, &e); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return &e, nil
+}
 
-// The table ViewCustomerNoAutoIncrement does not have a primary key. SKipping to
-// generate DML functions based on the PK.
+// The table/view ViewCustomerNoAutoIncrement does not have a primary key.
+// SKipping to generate DML functions based on the PK.
 
 // CatalogProductIndexEAVDecimalIDX represents a single row for DB table
 // catalog_product_index_eav_decimal_idx. Auto generated.
@@ -3084,6 +3100,9 @@ func (e *ViewCustomerAutoIncrement) Empty() *ViewCustomerAutoIncrement {
 	*e = ViewCustomerAutoIncrement{}
 	return e
 }
+
+// IsSet returns true if the entity has non-empty primary keys.
+func (e *ViewCustomerAutoIncrement) IsSet() bool { return e.CeEntityID > 0 }
 
 // This variable can be set in another file to provide a custom validator.
 var validateViewCustomerAutoIncrement func(*ViewCustomerAutoIncrement) error

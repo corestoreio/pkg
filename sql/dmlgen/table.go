@@ -381,10 +381,15 @@ func (t *Table) fnEntityIsSet(mainGen *codegen.Go, g *Generator) {
 	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityIsSet|FeatureDB) {
 		return
 	}
+	tblPKs := t.Table.Columns.PrimaryKeys()
+	if t.Table.IsView() {
+		tblPKs = t.Table.Columns.ViewPrimaryKeys()
+	}
+
 	// TODO maybe unique keys should also be added.
 	var buf strings.Builder
 	i := 0
-	t.Table.Columns.PrimaryKeys().Each(func(c *ddl.Column) {
+	tblPKs.Each(func(c *ddl.Column) {
 		if i > 0 {
 			buf.WriteString(" && ")
 		}
