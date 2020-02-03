@@ -36,7 +36,8 @@ func TestNewGo(t *testing.T) {
 	g.AddImport("github.com/corestoreio/pkg/storage/null", "null")
 	g.C("These constants", "are used for testing.", "Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an AS IS BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.")
 	g.WriteConstants(`TableA = "table_a"`)
-	g.Pln("type", "CatalogProductEntity", "struct {")
+	g.Pln(true, "type", "CatalogProductEntity", "struct {")  // should get written
+	g.Pln(false, "type", "CatalogProductEntity", "struct {") // must not get written or error
 	g.In()
 	g.Pln("EntityID", "int64")
 	g.Pln("StoreID", "uint32", `// store_id smallint(5) unsigned NOT NULL PRI   "Store ID"`)
@@ -44,7 +45,8 @@ func TestNewGo(t *testing.T) {
 	g.Pln()   // no output
 	g.Pln("") // no output
 	g.Out()
-	g.P(`// Hello World`)
+	g.P(true, `// Hello World`)
+	g.P(false, `// Hello World`)
 	g.Pln("\n}")
 
 	var buf bytes.Buffer

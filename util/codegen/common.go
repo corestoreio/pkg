@@ -57,8 +57,14 @@ func (g *common) AddImports(importPaths ...string) {
 
 // Writes a multiline comment and formats it to a max width of 80 chars. It adds
 // automatically the comment prefix `//`. It converts all types to string, if it
-// can't it panics.
+// can't it panics. If the first argument is a boolean and true, the subsequent
+// data gets printed, otherwise not.
 func (g *common) C(comments ...interface{}) {
+	if b, ok := comments[0].(bool); ok && !b { // do not print as condition is false.
+		return
+	} else if ok {
+		comments = comments[1:] // remove the first bool value to not print it
+	}
 	cs := make([]string, 0, len(comments))
 	for _, cIF := range comments {
 		s, err := conv.ToStringE(cIF)
@@ -98,10 +104,16 @@ func SkipWS(str ...interface{}) []byte {
 
 // Pln prints the arguments to the generated output. It tries to convert all
 // kind of types to a string. It adds a line break at the end IF there are strs
-// to print.
+// to print. If the first argument is a boolean and true, the subsequent data
+// gets printed, otherwise not.
 func (g *common) Pln(str ...interface{}) {
 	if ls := len(str); ls == 0 || (ls == 1 && str[0] == emptyIString) {
 		return
+	}
+	if b, ok := str[0].(bool); ok && !b { // do not print as condition is false.
+		return
+	} else if ok {
+		str = str[1:] // remove the first bool value to not print it
 	}
 	_, _ = g.WriteString(g.indent)
 	for _, v := range str {
@@ -115,7 +127,16 @@ func (g *common) Pln(str ...interface{}) {
 	_ = g.WriteByte('\n')
 }
 
+// P same as Pln but without the line break at the end.
 func (g *common) P(str ...interface{}) {
+	if ls := len(str); ls == 0 || (ls == 1 && str[0] == emptyIString) {
+		return
+	}
+	if b, ok := str[0].(bool); ok && b { // do not print as condition is false.
+		return
+	} else if ok {
+		str = str[1:] // remove the first bool value to not print it
+	}
 	_, _ = g.WriteString(g.indent)
 	for _, v := range str {
 		s, err := conv.ToStringE(v)
