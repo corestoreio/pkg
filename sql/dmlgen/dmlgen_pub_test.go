@@ -506,3 +506,35 @@ func TestNewGenerator_MToMForeignKeys(t *testing.T) {
 
 	writeFile(t, "dmltestgeneratedMToM/fkm2n_gen.go", ts.GenerateGo)
 }
+
+func TestNewGenerator_DB_Partial_SQL_Queries(t *testing.T) {
+	db := dmltest.MustConnectDB(t)
+	defer dmltest.Close(t, db)
+
+	defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil).Deferred()
+	// dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil)
+
+	ctx := context.Background()
+	ts, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated2",
+
+		dmlgen.WithTablesFromDB(ctx, db,
+			"core_configuration", "sales_order_status_state", "view_customer_auto_increment",
+		),
+
+		dmlgen.WithTableConfigDefault(dmlgen.TableConfig{
+			StructTags: []string{"max_len"},
+			FeaturesInclude: dmlgen.FeatureEntityStruct | dmlgen.FeatureCollectionStruct |
+				dmlgen.FeatureCollectionDBMapColumns | dmlgen.FeatureEntityDBSelect,
+		}),
+
+		dmlgen.WithTableConfig("core_configuration", &dmlgen.TableConfig{
+			FeaturesInclude: dmlgen.FeatureEntityDBUpsert,
+		}),
+	)
+	assert.NoError(t, err)
+
+	ts.ImportPathsTesting = append(ts.ImportPathsTesting, "fmt") // only needed for pseudo functional options.
+	ts.TestSQLDumpGlobPath = "../testdata/test_*_tables.sql"
+
+	writeFile(t, "dmltestgenerated4/db_part_query_gen.go", ts.GenerateGo)
+}
