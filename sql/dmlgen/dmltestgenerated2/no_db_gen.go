@@ -166,21 +166,6 @@ func (cc *CoreConfigurations) Len() int {
 	return len(cc.Data)
 }
 
-// ConfigIDs returns a slice with the data or appends it to a slice.
-// Auto generated.
-func (cc *CoreConfigurations) ConfigIDs(ret ...uint32) []uint32 {
-	if cc == nil {
-		return nil
-	}
-	if ret == nil {
-		ret = make([]uint32, 0, len(cc.Data))
-	}
-	for _, e := range cc.Data {
-		ret = append(ret, e.ConfigID)
-	}
-	return ret
-}
-
 // Validate runs internal consistency tests on all items.
 func (cc *CoreConfigurations) Validate() (err error) {
 	if len(cc.Data) == 0 {
@@ -355,36 +340,6 @@ func (cc *SalesOrderStatusStates) Len() int {
 		return 0
 	}
 	return len(cc.Data)
-}
-
-// Statuss returns a slice with the data or appends it to a slice.
-// Auto generated.
-func (cc *SalesOrderStatusStates) Statuss(ret ...string) []string {
-	if cc == nil {
-		return nil
-	}
-	if ret == nil {
-		ret = make([]string, 0, len(cc.Data))
-	}
-	for _, e := range cc.Data {
-		ret = append(ret, e.Status)
-	}
-	return ret
-}
-
-// States returns a slice with the data or appends it to a slice.
-// Auto generated.
-func (cc *SalesOrderStatusStates) States(ret ...string) []string {
-	if cc == nil {
-		return nil
-	}
-	if ret == nil {
-		ret = make([]string, 0, len(cc.Data))
-	}
-	for _, e := range cc.Data {
-		ret = append(ret, e.State)
-	}
-	return ret
 }
 
 // Validate runs internal consistency tests on all items.

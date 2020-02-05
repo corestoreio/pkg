@@ -62,18 +62,67 @@ const (
 	FeatureEntityStruct // creates the struct type
 	FeatureEntityValidate
 	FeatureEntityWriteTo
+	featureMax
 )
+
+var featureNames = map[FeatureToggle]string{
+	FeatureCollectionAppend:            "FeatureCollectionAppend",
+	FeatureCollectionBinaryMarshaler:   "FeatureCollectionBinaryMarshaler",
+	FeatureCollectionCut:               "FeatureCollectionCut",
+	FeatureCollectionDBMapColumns:      "FeatureCollectionDBMapColumns",
+	FeatureCollectionDelete:            "FeatureCollectionDelete",
+	FeatureCollectionEach:              "FeatureCollectionEach",
+	FeatureCollectionFilter:            "FeatureCollectionFilter",
+	FeatureCollectionInsert:            "FeatureCollectionInsert",
+	FeatureCollectionStruct:            "FeatureCollectionStruct",
+	FeatureCollectionSwap:              "FeatureCollectionSwap",
+	FeatureCollectionUniqueGetters:     "FeatureCollectionUniqueGetters",
+	FeatureCollectionUniquifiedGetters: "FeatureCollectionUniquifiedGetters",
+	FeatureCollectionValidate:          "FeatureCollectionValidate",
+	FeatureDB:                          "FeatureDB",
+	FeatureEntityCopy:                  "FeatureEntityCopy",
+	FeatureEntityDBAssignLastInsertID:  "FeatureEntityDBAssignLastInsertID",
+	FeatureEntityDBDelete:              "FeatureEntityDBDelete",
+	FeatureEntityDBInsert:              "FeatureEntityDBInsert",
+	FeatureEntityDBMapColumns:          "FeatureEntityDBMapColumns",
+	FeatureEntityDBSelect:              "FeatureEntityDBSelect",
+	FeatureEntityDBTracing:             "FeatureEntityDBTracing",
+	FeatureEntityDBUpdate:              "FeatureEntityDBUpdate",
+	FeatureEntityDBUpsert:              "FeatureEntityDBUpsert",
+	FeatureEntityEmpty:                 "FeatureEntityEmpty",
+	FeatureEntityGetSetPrivateFields:   "FeatureEntityGetSetPrivateFields",
+	FeatureEntityIsSet:                 "FeatureEntityIsSet",
+	FeatureEntityRelationships:         "FeatureEntityRelationships",
+	FeatureEntityStruct:                "FeatureEntityStruct",
+	FeatureEntityValidate:              "FeatureEntityValidate",
+	FeatureEntityWriteTo:               "FeatureEntityWriteTo",
+}
+
+func (f FeatureToggle) String() string {
+	var buf strings.Builder
+	j := 0
+	for i, k := 0, 0; i <= int(featureMax); i, k = 1<<k, k+1 {
+		if int(f)&i > 0 {
+			if j > 0 {
+				buf.WriteByte(',')
+			}
+			buf.WriteString(featureNames[FeatureToggle(i)])
+			j++
+		}
+	}
+	return buf.String()
+}
 
 type tables []*Table
 
 // hasFeature returns false when any of the tables does not have the feature/s.
 func (ts tables) hasFeature(g *Generator, feature FeatureToggle) bool {
 	for _, tbl := range ts {
-		if !g.hasFeature(tbl.featuresInclude, tbl.featuresExclude, feature) {
-			return false
+		if g.hasFeature(tbl.featuresInclude, tbl.featuresExclude, feature) {
+			return true
 		}
 	}
-	return true
+	return false
 }
 
 func (ts tables) names() []string {
@@ -382,7 +431,7 @@ func (t *Table) fnEntityEmpty(mainGen *codegen.Go, g *Generator) {
 }
 
 func (t *Table) fnEntityIsSet(mainGen *codegen.Go, g *Generator) {
-	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityIsSet|FeatureDB) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityIsSet|FeatureDB|FeatureEntityDBSelect) {
 		return
 	}
 	tblPKs := t.Table.Columns.PrimaryKeys()
@@ -469,7 +518,9 @@ func (t *Table) fnCollectionWriteTo(mainGen *codegen.Go, g *Generator) {
 }
 
 func (t *Table) fnEntityDBMapColumns(mainGen *codegen.Go, g *Generator) {
-	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityDBMapColumns|FeatureDB) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityDBMapColumns|
+		FeatureDB|FeatureEntityDBSelect|FeatureEntityDBDelete|
+		FeatureEntityDBInsert|FeatureEntityDBUpdate|FeatureEntityDBUpsert) {
 		return
 	}
 	mainGen.C(`MapColumns implements interface ColumnMapper only partially. Auto generated.`)
@@ -582,7 +633,9 @@ func (t *Table) fnCollectionDBAssignLastInsertID(mainGen *codegen.Go, g *Generat
 }
 
 func (t *Table) fnCollectionUniqueGetters(mainGen *codegen.Go, g *Generator) {
-	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionUniqueGetters) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionUniqueGetters|
+		FeatureDB|FeatureEntityDBSelect|FeatureEntityDBDelete|
+		FeatureEntityDBInsert|FeatureEntityDBUpdate|FeatureEntityDBUpsert) {
 		return
 	}
 

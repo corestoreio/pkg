@@ -4,12 +4,12 @@ package dmltestgenerated2
 
 import (
 	"context"
+	"time"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/storage/null"
-	"go.opentelemetry.io/otel/api/trace"
 )
 
 const (
@@ -21,6 +21,8 @@ const (
 // DBMOption provides various options to the DBM object.
 type DBMOption struct {
 	TableOptions                       []ddl.TableOption
+	InitSelectFn                       func(*dml.Select) *dml.Select
+	InitInsertFn                       func(*dml.Insert) *dml.Insert
 	eventCoreConfigurationFunc         [dml.EventFlagMax][]func(context.Context, *CoreConfiguration) error
 	eventSalesOrderStatusStateFunc     [dml.EventFlagMax][]func(context.Context, *SalesOrderStatusState) error
 	eventViewCustomerAutoIncrementFunc [dml.EventFlagMax][]func(context.Context, *ViewCustomerAutoIncrement) error
@@ -98,15 +100,37 @@ func NewDBManager(ctx context.Context, dbmo *DBMOption) (*DBM, error) {
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+	if dbmo.InitSelectFn == nil {
+		dbmo.InitSelectFn = func(s *dml.Select) *dml.Select { return s }
+	}
+	if dbmo.InitInsertFn == nil {
+		dbmo.InitInsertFn = func(s *dml.Insert) *dml.Insert { return s }
+	}
 	_ = tbls.Options(
+		ddl.WithQueryDBR("CoreConfigurationFindByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameCoreConfiguration).SelectByPK("*")).WithDBR().Interpolate()),
 		ddl.WithQueryDBR("CoreConfigurationUpsertByPK", dbmo.InitInsertFn(tbls.MustTable(TableNameCoreConfiguration).Insert()).OnDuplicateKey().WithDBR()),
 		ddl.WithQueryDBR("SalesOrderStatusStateFindByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameSalesOrderStatusState).SelectByPK("*")).WithDBR().Interpolate()),
 		ddl.WithQueryDBR("ViewCustomerAutoIncrementFindByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameViewCustomerAutoIncrement).SelectByPK("*")).WithDBR().Interpolate()),
 	)
-	if dbmo.Trace == nil {
-		dbmo.Trace = trace.NoopTracer{}
-	}
 	return &DBM{Tables: tbls, option: dbmo}, nil
+}
+
+func (dbm DBM) CoreConfigurationFindByPK(ctx context.Context, configID uint32, opts ...dml.DBRFunc) (_ *CoreConfiguration, err error) {
+	var e CoreConfiguration
+	// put the IDs configID into the context as value to search for a cache entry in the event function.
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeSelect, &e); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if e.IsSet() {
+		return &e, nil // returns data from cache
+	}
+	if _, err = dbm.CachedQuery("CoreConfigurationFindByPK").ApplyCallBacks(opts...).Load(ctx, &e, configID); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterSelect, &e); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return &e, nil
 }
 
 func (dbm DBM) CoreConfigurationUpsert(ctx context.Context, e *CoreConfiguration, opts ...dml.DBRFunc) (err error) {
@@ -163,6 +187,124 @@ func (dbm DBM) ViewCustomerAutoIncrementFindByPK(ctx context.Context, ceEntityID
 	return &e, nil
 }
 
+// CoreConfiguration represents a single row for DB table core_configuration.
+// Auto generated.
+// Table comment: Config Data
+type CoreConfiguration struct {
+	ConfigID  uint32      `max_len:"10"` // config_id int(10) unsigned NOT NULL PRI  auto_increment "Id"
+	Scope     string      `max_len:"8"`  // scope varchar(8) NOT NULL MUL DEFAULT ''default''  "Scope"
+	ScopeID   int32       `max_len:"10"` // scope_id int(11) NOT NULL  DEFAULT '0'  "Scope Id"
+	Expires   null.Time   // expires datetime NULL  DEFAULT 'NULL'  "Value expiration time"
+	Path      string      `max_len:"255"`   // path varchar(255) NOT NULL    "Path"
+	Value     null.String `max_len:"65535"` // value text NULL  DEFAULT 'NULL'  "Value"
+	VersionTs time.Time   // version_ts timestamp(6) NOT NULL   STORED GENERATED "Timestamp Start Versioning"
+	VersionTe time.Time   // version_te timestamp(6) NOT NULL PRI  STORED GENERATED "Timestamp End Versioning"
+}
+
+// MapColumns implements interface ColumnMapper only partially. Auto generated.
+func (e *CoreConfiguration) MapColumns(cm *dml.ColumnMap) error {
+	if cm.Mode() == dml.ColumnMapEntityReadAll {
+		return cm.Uint32(&e.ConfigID).String(&e.Scope).Int32(&e.ScopeID).NullTime(&e.Expires).String(&e.Path).NullString(&e.Value).Time(&e.VersionTs).Time(&e.VersionTe).Err()
+	}
+	for cm.Next() {
+		switch c := cm.Column(); c {
+		case "config_id":
+			cm.Uint32(&e.ConfigID)
+		case "scope":
+			cm.String(&e.Scope)
+		case "scope_id":
+			cm.Int32(&e.ScopeID)
+		case "expires":
+			cm.NullTime(&e.Expires)
+		case "path":
+			cm.String(&e.Path)
+		case "value":
+			cm.NullString(&e.Value)
+		case "version_ts":
+			cm.Time(&e.VersionTs)
+		case "version_te":
+			cm.Time(&e.VersionTe)
+		default:
+			return errors.NotFound.Newf("[dmltestgenerated2] CoreConfiguration Column %q not found", c)
+		}
+	}
+	return errors.WithStack(cm.Err())
+}
+
+// IsSet returns true if the entity has non-empty primary keys.
+func (e *CoreConfiguration) IsSet() bool { return e.ConfigID > 0 }
+
+// CoreConfigurations represents a collection type for DB table
+// core_configuration
+// Not thread safe. Auto generated.
+type CoreConfigurations struct {
+	Data []*CoreConfiguration `json:"data,omitempty"`
+}
+
+// NewCoreConfigurations  creates a new initialized collection. Auto generated.
+func NewCoreConfigurations() *CoreConfigurations {
+	return &CoreConfigurations{
+		Data: make([]*CoreConfiguration, 0, 5),
+	}
+}
+
+func (cc *CoreConfigurations) scanColumns(cm *dml.ColumnMap, e *CoreConfiguration, idx uint64) error {
+	if err := e.MapColumns(cm); err != nil {
+		return errors.WithStack(err)
+	}
+	// this function might get extended.
+	return nil
+}
+
+// MapColumns implements dml.ColumnMapper interface. Auto generated.
+func (cc *CoreConfigurations) MapColumns(cm *dml.ColumnMap) error {
+	switch m := cm.Mode(); m {
+	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
+		for i, e := range cc.Data {
+			if err := cc.scanColumns(cm, e, uint64(i)); err != nil {
+				return errors.WithStack(err)
+			}
+		}
+	case dml.ColumnMapScan:
+		if cm.Count == 0 {
+			cc.Data = cc.Data[:0]
+		}
+		e := new(CoreConfiguration)
+		if err := cc.scanColumns(cm, e, cm.Count); err != nil {
+			return errors.WithStack(err)
+		}
+		cc.Data = append(cc.Data, e)
+	case dml.ColumnMapCollectionReadSet:
+		for cm.Next() {
+			switch c := cm.Column(); c {
+			case "config_id":
+				cm = cm.Uint32s(cc.ConfigIDs()...)
+			default:
+				return errors.NotFound.Newf("[dmltestgenerated2] CoreConfigurations Column %q not found", c)
+			}
+		} // end for cm.Next
+
+	default:
+		return errors.NotSupported.Newf("[dmltestgenerated2] Unknown Mode: %q", string(m))
+	}
+	return cm.Err()
+}
+
+// ConfigIDs returns a slice with the data or appends it to a slice.
+// Auto generated.
+func (cc *CoreConfigurations) ConfigIDs(ret ...uint32) []uint32 {
+	if cc == nil {
+		return nil
+	}
+	if ret == nil {
+		ret = make([]uint32, 0, len(cc.Data))
+	}
+	for _, e := range cc.Data {
+		ret = append(ret, e.ConfigID)
+	}
+	return ret
+}
+
 // SalesOrderStatusState represents a single row for DB table
 // sales_order_status_state. Auto generated.
 // Table comment: Sales Order Status Table
@@ -172,6 +314,31 @@ type SalesOrderStatusState struct {
 	IsDefault      bool   // is_default smallint(5) unsigned NOT NULL  DEFAULT '0'  "Is Default"
 	VisibleOnFront uint16 // visible_on_front smallint(5) unsigned NOT NULL  DEFAULT '0'  "Visible on front"
 }
+
+// MapColumns implements interface ColumnMapper only partially. Auto generated.
+func (e *SalesOrderStatusState) MapColumns(cm *dml.ColumnMap) error {
+	if cm.Mode() == dml.ColumnMapEntityReadAll {
+		return cm.String(&e.Status).String(&e.State).Bool(&e.IsDefault).Uint16(&e.VisibleOnFront).Err()
+	}
+	for cm.Next() {
+		switch c := cm.Column(); c {
+		case "status":
+			cm.String(&e.Status)
+		case "state":
+			cm.String(&e.State)
+		case "is_default":
+			cm.Bool(&e.IsDefault)
+		case "visible_on_front":
+			cm.Uint16(&e.VisibleOnFront)
+		default:
+			return errors.NotFound.Newf("[dmltestgenerated2] SalesOrderStatusState Column %q not found", c)
+		}
+	}
+	return errors.WithStack(cm.Err())
+}
+
+// IsSet returns true if the entity has non-empty primary keys.
+func (e *SalesOrderStatusState) IsSet() bool { return e.Status != "" && e.State != "" }
 
 // SalesOrderStatusStates represents a collection type for DB table
 // sales_order_status_state
@@ -232,6 +399,36 @@ func (cc *SalesOrderStatusStates) MapColumns(cm *dml.ColumnMap) error {
 	return cm.Err()
 }
 
+// Statuss returns a slice with the data or appends it to a slice.
+// Auto generated.
+func (cc *SalesOrderStatusStates) Statuss(ret ...string) []string {
+	if cc == nil {
+		return nil
+	}
+	if ret == nil {
+		ret = make([]string, 0, len(cc.Data))
+	}
+	for _, e := range cc.Data {
+		ret = append(ret, e.Status)
+	}
+	return ret
+}
+
+// States returns a slice with the data or appends it to a slice.
+// Auto generated.
+func (cc *SalesOrderStatusStates) States(ret ...string) []string {
+	if cc == nil {
+		return nil
+	}
+	if ret == nil {
+		ret = make([]string, 0, len(cc.Data))
+	}
+	for _, e := range cc.Data {
+		ret = append(ret, e.State)
+	}
+	return ret
+}
+
 // ViewCustomerAutoIncrement represents a single row for DB table
 // view_customer_auto_increment. Auto generated.
 // Table comment: VIEW
@@ -242,6 +439,33 @@ type ViewCustomerAutoIncrement struct {
 	Lastname   string      // lastname varchar(255) NOT NULL    "Last Name"
 	City       string      // city varchar(255) NOT NULL    "City"
 }
+
+// MapColumns implements interface ColumnMapper only partially. Auto generated.
+func (e *ViewCustomerAutoIncrement) MapColumns(cm *dml.ColumnMap) error {
+	if cm.Mode() == dml.ColumnMapEntityReadAll {
+		return cm.Uint32(&e.CeEntityID).NullString(&e.Email).String(&e.Firstname).String(&e.Lastname).String(&e.City).Err()
+	}
+	for cm.Next() {
+		switch c := cm.Column(); c {
+		case "ce_entity_id":
+			cm.Uint32(&e.CeEntityID)
+		case "email":
+			cm.NullString(&e.Email)
+		case "firstname":
+			cm.String(&e.Firstname)
+		case "lastname":
+			cm.String(&e.Lastname)
+		case "city":
+			cm.String(&e.City)
+		default:
+			return errors.NotFound.Newf("[dmltestgenerated2] ViewCustomerAutoIncrement Column %q not found", c)
+		}
+	}
+	return errors.WithStack(cm.Err())
+}
+
+// IsSet returns true if the entity has non-empty primary keys.
+func (e *ViewCustomerAutoIncrement) IsSet() bool { return e.CeEntityID > 0 }
 
 // ViewCustomerAutoIncrements represents a collection type for DB table
 // view_customer_auto_increment

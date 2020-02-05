@@ -366,8 +366,8 @@ func WithTableConfig(tableName string, opt *TableConfig) (o Option) {
 		opt.applyComments(t)
 		opt.applyColumnAliases(t)
 		opt.applyUniquifiedColumns(t)
-		t.featuresInclude = opt.FeaturesInclude
-		t.featuresExclude = opt.FeaturesExclude
+		t.featuresInclude = opt.FeaturesInclude | g.defaultTableConfig.FeaturesInclude
+		t.featuresExclude = opt.FeaturesExclude | g.defaultTableConfig.FeaturesExclude
 		t.fieldMapFn = opt.FieldMapFn
 		if t.fieldMapFn == nil {
 			t.fieldMapFn = defaultFieldMapFn
@@ -1225,7 +1225,7 @@ func (g *Generator) fnCreateDBM(mainGen *codegen.Go, tbls tables) {
 		mainGen.Out()
 	}
 
-	mainGen.Pln(`	if dbmo.Trace == nil { dbmo.Trace = trace.NoopTracer{}; }`)
+	mainGen.Pln(tbls.hasFeature(g, FeatureEntityDBTracing), `	if dbmo.Trace == nil { dbmo.Trace = trace.NoopTracer{}; }`)
 	mainGen.Pln(`return &DBM{	Tables: tbls, option: dbmo, }, nil }`)
 }
 
