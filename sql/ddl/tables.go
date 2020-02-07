@@ -461,15 +461,20 @@ func (tm *Tables) Options(opts ...TableOption) error {
 }
 
 // CachedQuery returns a SQL query string by its cache key. If a cache key does
-// not exists, it returns nil. Do not share the returned pointer by multiple
-// goroutines.
+// not exists, it panics. Do not share the returned pointer by multiple
+// goroutines. This function must only be used by generated code.
 func (tm *Tables) CachedQuery(key string) *dml.DBR {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
-	return tm.queries[key]
+	d, ok := tm.queries[key]
+	if !ok || d == nil {
+		// during dev we keep the panic because a programmer made a mistake.
+		panic(fmt.Sprintf("cache key %q not found", key))
+	}
+	return d
 }
 
-// CachedQueries returns a copy of the cached SQL queries. cache key => SQL string
+// CachedQueries returns a copy of the cached SQL queries. cache key => SQL string.
 func (tm *Tables) CachedQueries() map[string]string {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
