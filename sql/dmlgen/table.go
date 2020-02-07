@@ -584,7 +584,8 @@ func (t *Table) hasPKAutoInc() bool {
 }
 
 func (t *Table) fnEntityDBAssignLastInsertID(mainGen *codegen.Go, g *Generator) {
-	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityDBAssignLastInsertID|FeatureDB) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityDBAssignLastInsertID|
+		FeatureDB|FeatureEntityDBInsert|FeatureEntityDBUpsert) {
 		return
 	}
 	if !t.hasPKAutoInc() {
@@ -607,7 +608,8 @@ func (t *Table) fnEntityDBAssignLastInsertID(mainGen *codegen.Go, g *Generator) 
 }
 
 func (t *Table) fnCollectionDBAssignLastInsertID(mainGen *codegen.Go, g *Generator) {
-	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityDBAssignLastInsertID|FeatureDB) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityDBAssignLastInsertID|
+		FeatureDB|FeatureEntityDBInsert|FeatureEntityDBUpsert) {
 		return
 	}
 	if !t.hasPKAutoInc() {
@@ -1119,7 +1121,7 @@ func (tbl *Table) fnCreateDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpsert, e); err != nil {
 			return errors.WithStack(err)
 		}
-		if _, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, &e); err != nil {
+		if _, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, entityFuncName, `ByPK"`), `).ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", e)); err != nil {
 			return errors.WithStack(err)
 		}
 		var e2 `, tbl.EntityName(), `

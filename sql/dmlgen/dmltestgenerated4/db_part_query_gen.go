@@ -137,7 +137,7 @@ func (dbm DBM) CoreConfigurationUpsert(ctx context.Context, e *CoreConfiguration
 	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpsert, e); err != nil {
 		return errors.WithStack(err)
 	}
-	if _, err = dbm.CachedQuery("CoreConfigurationUpsert").ApplyCallBacks(opts...).ExecContext(ctx, &e); err != nil {
+	if _, err = dbm.CachedQuery("CoreConfigurationUpsertByPK").ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", e)); err != nil {
 		return errors.WithStack(err)
 	}
 	var e2 CoreConfiguration
@@ -201,6 +201,12 @@ type CoreConfiguration struct {
 	VersionTe time.Time   // version_te timestamp(6) NOT NULL PRI  STORED GENERATED "Timestamp End Versioning"
 }
 
+// AssignLastInsertID updates the increment ID field with the last inserted ID
+// from an INSERT operation. Implements dml.InsertIDAssigner. Auto generated.
+func (e *CoreConfiguration) AssignLastInsertID(id int64) {
+	e.ConfigID = uint32(id)
+}
+
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *CoreConfiguration) MapColumns(cm *dml.ColumnMap) error {
 	if cm.Mode() == dml.ColumnMapEntityReadAll {
@@ -245,6 +251,16 @@ type CoreConfigurations struct {
 func NewCoreConfigurations() *CoreConfigurations {
 	return &CoreConfigurations{
 		Data: make([]*CoreConfiguration, 0, 5),
+	}
+}
+
+// AssignLastInsertID traverses through the slice and sets a decrementing new ID
+// to each entity.
+func (cc *CoreConfigurations) AssignLastInsertID(id int64) {
+	var j int64
+	for i := len(cc.Data) - 1; i >= 0; i-- {
+		cc.Data[i].AssignLastInsertID(id - j)
+		j++
 	}
 }
 
