@@ -8,8 +8,8 @@ func TestFeatureToggle_String(t *testing.T) {
 		f    FeatureToggle
 		want string
 	}{
-		{"one", FeatureEntityDBUpsert, "FeatureEntityDBUpsert"},
-		{"two", FeatureEntityDBUpsert | FeatureEntityDBSelect, "FeatureEntityDBSelect,FeatureEntityDBUpsert"},
+		{"one", FeatureDBUpsert, "FeatureDBUpsert"},
+		{"two", FeatureDBUpsert | FeatureDBSelect, "FeatureDBSelect,FeatureDBUpsert"},
 		{"none", 0, ""},
 	}
 	for _, tt := range tests {

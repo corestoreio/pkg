@@ -1056,7 +1056,6 @@ func (g *Generator) GenerateGo(wMain, wTest io.Writer) error {
 	}
 
 	g.fnCreateDBM(mainGen, tables)
-	g.fnCreateDBMHandlers(mainGen, tables)
 	g.fnTestMainOther(testGen, tables)
 	g.fnTestMainDB(testGen, tables)
 
@@ -1067,6 +1066,7 @@ func (g *Generator) GenerateGo(wMain, wTest io.Writer) error {
 		t.fnEntityCopy(mainGen, g)
 		t.fnEntityDBAssignLastInsertID(mainGen, g)
 		t.fnEntityDBMapColumns(mainGen, g)
+		t.fnEntityDBMHandler(mainGen, g)
 		t.fnEntityEmpty(mainGen, g)
 		t.fnEntityIsSet(mainGen, g)
 		t.fnEntityGetSetPrivateFields(mainGen, g)
@@ -1080,6 +1080,7 @@ func (g *Generator) GenerateGo(wMain, wTest io.Writer) error {
 		t.fnCollectionCut(mainGen, g)
 		t.fnCollectionDBAssignLastInsertID(mainGen, g)
 		t.fnCollectionDBMapColumns(mainGen, g)
+		t.fnCollectionDBMHandler(mainGen, g)
 		t.fnCollectionDelete(mainGen, g)
 		t.fnCollectionEach(mainGen, g)
 		t.fnCollectionFilter(mainGen, g)
@@ -1116,8 +1117,8 @@ func (g *Generator) goType(c *ddl.Column) string     { return g.mySQLToGoType(c,
 func (g *Generator) goFuncNull(c *ddl.Column) string { return g.mySQLToGoDmlColumnMap(c, true) }
 
 func (g *Generator) fnCreateDBM(mainGen *codegen.Go, tbls tables) {
-	if !tbls.hasFeature(g, FeatureDB|FeatureEntityDBTracing|FeatureEntityDBSelect|FeatureEntityDBDelete|
-		FeatureEntityDBInsert|FeatureEntityDBUpdate|FeatureEntityDBUpsert) {
+	if !tbls.hasFeature(g, FeatureDB|FeatureDBTracing|FeatureDBSelect|FeatureDBDelete|
+		FeatureDBInsert|FeatureDBUpdate|FeatureDBUpsert) {
 		return
 	}
 
@@ -1137,14 +1138,14 @@ func (g *Generator) fnCreateDBM(mainGen *codegen.Go, tbls tables) {
 	mainGen.C(`DBMOption provides various options to the DBM object.`)
 	mainGen.Pln(`type DBMOption struct {`)
 	{
-		mainGen.Pln(tbls.hasFeature(g, FeatureEntityDBTracing), `Trace                trace.Tracer`)
+		mainGen.Pln(tbls.hasFeature(g, FeatureDBTracing), `Trace                trace.Tracer`)
 		mainGen.Pln(`TableOptions         []ddl.TableOption`)
-		mainGen.Pln(tbls.hasFeature(g, FeatureEntityDBSelect), `InitSelectFn         func(*dml.Select) *dml.Select`)
-		mainGen.Pln(tbls.hasFeature(g, FeatureEntityDBUpdate), `InitUpdateFn         func(*dml.Update) *dml.Update`)
-		mainGen.Pln(tbls.hasFeature(g, FeatureEntityDBDelete), `InitDeleteFn         func(*dml.Delete) *dml.Delete`)
-		mainGen.Pln(tbls.hasFeature(g, FeatureEntityDBInsert|FeatureEntityDBUpsert), `InitInsertFn         func(*dml.Insert) *dml.Insert`)
+		mainGen.Pln(tbls.hasFeature(g, FeatureDBSelect), `InitSelectFn         func(*dml.Select) *dml.Select`)
+		mainGen.Pln(tbls.hasFeature(g, FeatureDBUpdate), `InitUpdateFn         func(*dml.Update) *dml.Update`)
+		mainGen.Pln(tbls.hasFeature(g, FeatureDBDelete), `InitDeleteFn         func(*dml.Delete) *dml.Delete`)
+		mainGen.Pln(tbls.hasFeature(g, FeatureDBInsert|FeatureDBUpsert), `InitInsertFn         func(*dml.Insert) *dml.Insert`)
 		for _, tbl := range tbls {
-			mainGen.Pln(`event` + tbl.EntityName() + `Func [dml.EventFlagMax][]func(context.Context, *` + tbl.EntityName() + `) error`)
+			mainGen.Pln(`event`+tbl.EntityName()+`Func [dml.EventFlagMax][]func(context.Context, `, codegen.SkipWS(`*`, tbl.CollectionName(), `, *`, tbl.EntityName()), `) error`)
 		}
 	}
 	mainGen.Pln(`}`)
@@ -1152,8 +1153,10 @@ func (g *Generator) fnCreateDBM(mainGen *codegen.Go, tbls tables) {
 
 	// <event adder>
 	for _, tbl := range tbls {
-		mainGen.C(codegen.SkipWS(`AddEvent`, tbl.EntityName()), `adds a specific defined event call back to the DBM. It panics if the event argument is larger than dml.EventFlagMax.`)
-		mainGen.Pln(`func (o *DBMOption) AddEvent` + tbl.EntityName() + `(event dml.EventFlag, fn func(context.Context, *` + tbl.EntityName() + `) error) *DBMOption {`)
+		mainGen.C(codegen.SkipWS(`AddEvent`, tbl.EntityName()), `adds a specific defined event call back to the DBM.
+It panics if the event argument is larger than dml.EventFlagMax.`)
+		mainGen.Pln(`func (o *DBMOption) `, codegen.SkipWS(`AddEvent`, tbl.EntityName(), `(`), `event dml.EventFlag,`,
+			`fn func(context.Context, *`+tbl.CollectionName()+`, *`+tbl.EntityName()+`) error) *DBMOption {`)
 		{
 			mainGen.In()
 			mainGen.Pln(`o.event` + tbl.EntityName() + `Func[event] = append(o.event` + tbl.EntityName() + `Func[event], fn)`)
@@ -1165,14 +1168,14 @@ func (g *Generator) fnCreateDBM(mainGen *codegen.Go, tbls tables) {
 	// </event adder>
 
 	mainGen.C(`DBM defines the DataBaseManagement object for the tables `, tableNames)
-	mainGen.Pln(`type DBM struct { *ddl.Tables; option *DBMOption }`)
+	mainGen.Pln(`type DBM struct { *ddl.Tables; option DBMOption }`)
 
 	// <event dispatcher>
 	for _, tbl := range tbls {
-		mainGen.Pln(codegen.SkipWS(`func (dbm DBM) event`, tbl.EntityName(), `Func(ctx context.Context, ef dml.EventFlag, e `, codegen.SkipWS(`*`, tbl.EntityName()), `) error`), ` {`)
+		mainGen.Pln(codegen.SkipWS(`func (dbm DBM) event`, tbl.EntityName(), `Func(ctx context.Context, ef dml.EventFlag, ec `, codegen.SkipWS(`*`, tbl.CollectionName()), `, e `, codegen.SkipWS(`*`, tbl.EntityName()), `) error`), ` {`)
 		{
 			mainGen.In()
-			mainGen.Pln(`if dbm.option == nil || len(dbm.option.`, codegen.SkipWS(`event`, tbl.EntityName(), `Func`), `[ef]) == 0 || dml.EventsAreSkipped(ctx) {`)
+			mainGen.Pln(`if len(dbm.option.`, codegen.SkipWS(`event`, tbl.EntityName(), `Func`), `[ef]) == 0 || dml.EventsAreSkipped(ctx) {`)
 			mainGen.In()
 			{
 				mainGen.Pln(`return nil`)
@@ -1183,13 +1186,9 @@ func (g *Generator) fnCreateDBM(mainGen *codegen.Go, tbls tables) {
 			mainGen.Pln(`for _, fn := range dbm.option.`, codegen.SkipWS(`event`, tbl.EntityName(), `Func`), `[ef] {`)
 			{
 				mainGen.In()
-				mainGen.Pln(`if err := fn(ctx, e); err != nil {`)
-				{
-					mainGen.In()
-					mainGen.Pln(`return errors.WithStack(err)`)
-					mainGen.Out()
-				}
-				mainGen.Pln(`}`)
+				mainGen.Pln(`if err := fn(ctx, ec, e); err != nil {
+				return errors.WithStack(err)
+			}`)
 				mainGen.Out()
 			}
 			mainGen.Pln(`}`)
@@ -1206,38 +1205,27 @@ func (g *Generator) fnCreateDBM(mainGen *codegen.Go, tbls tables) {
 		mainGen.Pln(`tbls, err := ddl.NewTables(append([]ddl.TableOption{ddl.WithCreateTable(ctx, `, tableCreateStmt, `)},dbmo.TableOptions...)...)`)
 		mainGen.Pln(`if err != nil { return nil, errors.WithStack(err); }`)
 
-		mainGen.Pln(tbls.hasFeature(g, FeatureEntityDBSelect),
+		mainGen.Pln(tbls.hasFeature(g, FeatureDBSelect),
 			`	if dbmo.InitSelectFn == nil { dbmo.InitSelectFn = func(s *dml.Select) *dml.Select { return s; }; } `)
-		mainGen.Pln(tbls.hasFeature(g, FeatureEntityDBUpdate),
+		mainGen.Pln(tbls.hasFeature(g, FeatureDBUpdate),
 			`	if dbmo.InitUpdateFn == nil { dbmo.InitUpdateFn = func(s *dml.Update) *dml.Update { return s; }; } `)
-		mainGen.Pln(tbls.hasFeature(g, FeatureEntityDBDelete),
+		mainGen.Pln(tbls.hasFeature(g, FeatureDBDelete),
 			`	if dbmo.InitDeleteFn == nil { dbmo.InitDeleteFn = func(s *dml.Delete) *dml.Delete { return s; }; } `)
-		mainGen.Pln(tbls.hasFeature(g, FeatureEntityDBInsert|FeatureEntityDBUpsert),
+		mainGen.Pln(tbls.hasFeature(g, FeatureDBInsert|FeatureDBUpsert),
 			`	if dbmo.InitInsertFn == nil { dbmo.InitInsertFn = func(s *dml.Insert) *dml.Insert { return s; }; } `)
 
 		{
 			mainGen.Pln(`_ = tbls.Options(`)
 			for _, tbl := range tbls {
-				tbl.optionsSQLBuildQueries(mainGen, g)
+				tbl.fnDBMOptionsSQLBuildQueries(mainGen, g)
 			}
 			mainGen.Pln(`)`) // end options
 		}
 		mainGen.Out()
 	}
 
-	mainGen.Pln(tbls.hasFeature(g, FeatureEntityDBTracing), `	if dbmo.Trace == nil { dbmo.Trace = trace.NoopTracer{}; }`)
-	mainGen.Pln(`return &DBM{	Tables: tbls, option: dbmo, }, nil }`)
-}
-
-func (g *Generator) fnCreateDBMHandlers(mainGen *codegen.Go, tbls []*Table) {
-	if !tables(tbls).hasFeature(g, FeatureDB|FeatureEntityDBTracing|FeatureEntityDBSelect|FeatureEntityDBDelete|
-		FeatureEntityDBInsert|FeatureEntityDBUpdate|FeatureEntityDBUpsert) {
-		return
-	}
-	_ = mainGen.WriteByte('\n')
-	for _, tbl := range tbls {
-		tbl.fnCreateDBMHandler(mainGen, g)
-	}
+	mainGen.Pln(tbls.hasFeature(g, FeatureDBTracing), `	if dbmo.Trace == nil { dbmo.Trace = trace.NoopTracer{}; }`)
+	mainGen.Pln(`return &DBM{	Tables: tbls, option: *dbmo, }, nil }`)
 }
 
 func (g *Generator) fnTestMainOther(testGen *codegen.Go, tbls tables) {

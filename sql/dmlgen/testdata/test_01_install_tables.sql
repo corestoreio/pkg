@@ -235,18 +235,18 @@ CREATE TABLE `catalog_product_index_eav_decimal_idx` (
   `entity_id` int(10) unsigned NOT NULL COMMENT 'Entity ID',
   `attribute_id` smallint(5) unsigned NOT NULL COMMENT 'Attribute ID',
   `store_id` smallint(5) unsigned NOT NULL COMMENT 'Store ID',
-  `value` decimal(12,4) NOT NULL COMMENT 'Value',
   `source_id` int(10) unsigned NOT NULL DEFAULT 0 COMMENT 'Original entity Id for attribute value',
-  PRIMARY KEY (`entity_id`,`attribute_id`,`store_id`,`value`,`source_id`),
+  `value` decimal(12,4) NOT NULL COMMENT 'Value',
+  PRIMARY KEY (`entity_id`,`attribute_id`,`store_id`,`source_id`),
   KEY `CATALOG_PRODUCT_INDEX_EAV_DECIMAL_IDX_ATTRIBUTE_ID` (`attribute_id`),
   KEY `CATALOG_PRODUCT_INDEX_EAV_DECIMAL_IDX_STORE_ID` (`store_id`),
   KEY `CATALOG_PRODUCT_INDEX_EAV_DECIMAL_IDX_VALUE` (`value`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Catalog Product EAV Decimal Indexer Index Table';
 
-INSERT INTO `catalog_product_index_eav_decimal_idx` (`entity_id`, `attribute_id`, `store_id`, `value`, `source_id`)
+INSERT INTO `catalog_product_index_eav_decimal_idx` (`entity_id`, `attribute_id`, `store_id`, `source_id`, `value`)
 VALUES
-	(1,1,1,1.0000,1),
-	(2,1,1,2.2150,2);
+	(1,1,1,1,1.0000),
+	(2,1,1,2,2.2150);
 
 CREATE TABLE `sales_order_status_state` (
   `status` varchar(32) NOT NULL COMMENT 'Status',

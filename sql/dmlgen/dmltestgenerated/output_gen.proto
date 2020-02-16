@@ -18,8 +18,8 @@ message CatalogProductIndexEAVDecimalIDX {
 	uint32 EntityID = 1 ; 
 	uint32 AttributeID = 2 ; 
 	uint32 StoreID = 3 ; 
-	null.Decimal Value = 4 [(gogoproto.nullable)=false]; 
-	uint32 SourceID = 5 ; 
+	uint32 SourceID = 4 ; 
+	null.Decimal Value = 5 [(gogoproto.nullable)=false]; 
 } 
 // CatalogProductIndexEAVDecimalIDXes represents multiple rows for the
 // catalog_product_index_eav_decimal_idx DB table. Auto generated.

@@ -50,10 +50,11 @@ func TestNewDBManager_Manual(t *testing.T) {
 	var eFake CoreConfiguration // e=entity => entityFake or entityLoaded
 	assert.NoError(t, ps.FakeData(&eFake))
 
-	err = dbm.CoreConfigurationUpsert(ctx, &eFake)
+	err = eFake.Upsert(ctx, dbm) // INSERT and SELECT
 	assert.NoError(t, err)
 
-	eLoaded, err := dbm.CoreConfigurationFindByPK(ctx, eFake.ConfigID)
+	eLoaded := &CoreConfiguration{}
+	err = eLoaded.Load(ctx, dbm, eFake.ConfigID)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, eLoaded.ConfigID)
 	assert.NotEmpty(t, eLoaded.Scope)
