@@ -239,7 +239,7 @@ func (b *Show) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err er
 		Like.write(w)
 		w.WriteByte(placeHolderRune)
 	} else {
-		placeHolders, err = b.WhereFragments.write(w, 'w', placeHolders)
+		placeHolders, err = b.WhereFragments.write(w, 'w', placeHolders, false)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}

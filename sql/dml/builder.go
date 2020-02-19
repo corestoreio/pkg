@@ -107,6 +107,11 @@ type builderCommon struct {
 	// dedicated database session) or a *sql.Tx (an in-progress database
 	// transaction).
 	db QueryExecPreparer
+	// containsTuples indicates if a SQL query contains the tuples placeholder
+	// (see constant placeHolderTuples) and if true the function
+	// DBR.prepareQueryAndArgs will replace the tuples placeholder with the
+	// correct amount of MySQL/MariaDB placeholders.
+	containsTuples bool
 }
 
 func (bc *builderCommon) withCacheKey(key string, args ...interface{}) {
@@ -178,7 +183,18 @@ func (bb *BuilderBase) buildToSQL(qb queryBuilder) (string, error) {
 			return "", errors.WithStack(err)
 		}
 		rawSQL = buf.String()
-		bb.qualifiedColumns = qualifiedColumns
+
+		// the qualifiedColumns might have an entry from Conditions.write to
+		// indicate there is a tuple placeholder.
+		qualifiedColumns2 := qualifiedColumns[:0]
+		for _, pc := range qualifiedColumns {
+			if pc != placeHolderTuples {
+				qualifiedColumns2 = append(qualifiedColumns2, pc)
+			} else {
+				bb.containsTuples = true
+			}
+		}
+		bb.qualifiedColumns = qualifiedColumns2
 		bb.cachedSQLUpsert(bb.cacheKey, rawSQL)
 	}
 	return rawSQL, nil
@@ -240,6 +256,7 @@ type BuilderConditional struct {
 	OrderByRandColumnName string
 	LimitCount            uint64
 	LimitValid            bool
+	isWithDBR             bool
 }
 
 // Clone creates a new clone of the current object.
@@ -394,8 +411,8 @@ func writeStmtID(w *bytes.Buffer, id string) {
 }
 
 const (
-	insertTemplate      = `(?)(?,?)(?,?,?)(?,?,?,?)(?,?,?,?,?)(?,?,?,?,?,?)(?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
-	insertTemplateCount = 15
+	tupleTemplate      = `(?)(?,?)(?,?,?)(?,?,?,?)(?,?,?,?,?)(?,?,?,?,?,?)(?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?,?,?,?,?,?)(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+	tupleTemplateCount = 15
 )
 
 // i = 1 => pos = 0:3 | 1 + 0 + 2
@@ -417,14 +434,14 @@ func calcInsertTemplatePlaceholderPos(columnCount uint) (start, end uint) {
 	return
 }
 
-func writeInsertPlaceholders(buf *bytes.Buffer, rowCount, columnCount uint) {
+func writeTuplePlaceholders(buf *bytes.Buffer, rowCount, columnCount uint) {
 	start, end := calcInsertTemplatePlaceholderPos(columnCount)
 	for r := uint(0); r < rowCount; r++ {
 		if r > 0 {
 			buf.WriteByte(',')
 		}
-		if columnCount <= insertTemplateCount {
-			buf.WriteString(insertTemplate[start:end])
+		if columnCount <= tupleTemplateCount {
+			buf.WriteString(tupleTemplate[start:end])
 		} else {
 			buf.WriteByte('(')
 			for c := uint(0); c < columnCount; c++ {

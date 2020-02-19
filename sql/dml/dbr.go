@@ -54,7 +54,7 @@ type DBR struct {
 	// amount of placeholders.
 	insertCachedSQL     string
 	insertColumnCount   uint
-	insertRowCount      uint
+	tupleRowCount       uint
 	insertIsBuildValues bool
 	// isPrepared if true the cachedSQL field in base gets ignored
 	isPrepared bool
@@ -312,6 +312,14 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 	if a.Options&argOptionExpandPlaceholder != 0 {
 		phCount := bytes.Count(sqlBuf.First.Bytes(), placeHolderByte)
 		if aLen, hasSlice := totalSliceLen(args); phCount < aLen || hasSlice {
+			if a.base.containsTuples {
+				if err := expandPlaceHolderTuples(sqlBuf.Second, sqlBuf.First.Bytes(), aLen); err != nil {
+					return "", nil, errors.WithStack(err)
+				}
+				if _, err := sqlBuf.CopySecondToFirst(); err != nil {
+					return "", nil, errors.WithStack(err)
+				}
+			}
 			if err := expandPlaceHolders(sqlBuf.Second, sqlBuf.First.Bytes(), args); err != nil {
 				return "", nil, errors.WithStack(err)
 			}
@@ -476,15 +484,15 @@ func (a *DBR) prepareQueryAndArgsInsert(extArgs []interface{}, primitiveCounts i
 			sqlBuf.First.WriteString(cachedSQL[:odkPos])
 		}
 
-		if a.insertRowCount > 0 {
-			columnCount := uint(primitiveCounts) / a.insertRowCount
-			writeInsertPlaceholders(sqlBuf.First, a.insertRowCount, columnCount)
+		if a.tupleRowCount > 0 {
+			columnCount := uint(primitiveCounts) / a.tupleRowCount
+			writeTuplePlaceholders(sqlBuf.First, a.tupleRowCount, columnCount)
 		} else if a.insertColumnCount > 0 {
 			rowCount := uint(primitiveCounts) / a.insertColumnCount
 			if rowCount == 0 {
 				rowCount = 1
 			}
-			writeInsertPlaceholders(sqlBuf.First, rowCount, a.insertColumnCount)
+			writeTuplePlaceholders(sqlBuf.First, rowCount, a.insertColumnCount)
 		}
 		if odkPos > 0 {
 			sqlBuf.First.WriteString(cachedSQL[odkPos:])

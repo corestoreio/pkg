@@ -18,7 +18,9 @@ import (
 	"bytes"
 	"database/sql"
 	"database/sql/driver"
+	"fmt"
 	"strings"
+	"text/scanner"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -29,11 +31,46 @@ import (
 )
 
 const (
-	placeHolderRune = '?'
-	placeHolderStr  = `?`
+	placeHolderRune   = '?'
+	placeHolderStr    = `?`
+	placeHolderTuples = `/*TUPLES=%03d*/` // %03d indicates the number of columns
 )
 
 var placeHolderByte = []byte(placeHolderStr)
+
+func expandPlaceHolderTuples(buf *bytes.Buffer, sql []byte, argCount int) error {
+	var tupleCount uint
+	var idxPlaceHolderTuples int
+	// TODO ugly code, needs refactoring
+
+	var s scanner.Scanner
+	s.Init(bytes.NewReader(sql))
+	s.Whitespace ^= 1<<'\t' | 1<<'\n' // don't skip tabs and new lines
+	s.Mode ^= scanner.SkipComments    // don't skip comments
+
+	for tok := s.Scan(); tok != scanner.EOF; tok = s.Scan() {
+		if strings.HasPrefix(s.TokenText(), "/*TUPLES") {
+			if _, err := fmt.Fscanf(strings.NewReader(s.TokenText()), placeHolderTuples, &tupleCount); err == nil {
+				idxPlaceHolderTuples = s.Offset
+			}
+		}
+	}
+
+	if tupleCount == 0 {
+		return errors.NotValid.Newf("[dml] expandPlaceHolderTuples failed to scan SQL string. Can't find number of tuples.")
+	}
+
+	if idxPlaceHolderTuples > 0 {
+		buf.Write(sql[:idxPlaceHolderTuples])
+		if uint(argCount)%tupleCount != 0 {
+			return errors.NotValid.Newf("[dml] expandPlaceHolderTuples rowCount can be zero. argCount must be at least %d but got %d", tupleCount, argCount)
+		}
+		writeTuplePlaceholders(buf, uint(argCount)/tupleCount, tupleCount)
+		buf.Write(sql[idxPlaceHolderTuples+14:])
+	}
+
+	return nil
+}
 
 // expandPlaceHolders takes a SQL string and repeats the question marks with the provided
 // arguments. If the amount of arguments does not match the number of questions

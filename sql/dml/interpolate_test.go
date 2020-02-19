@@ -15,6 +15,7 @@
 package dml
 
 import (
+	"bytes"
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
@@ -669,5 +670,40 @@ func TestExtractNamedArgs(t *testing.T) {
 	t.Run("single quote escaped", runner(
 		"date_start = 'It\\'s xmas' ORDER BY X",
 		"date_start = 'It\\'s xmas' ORDER BY X",
+	))
+}
+
+func Test_expandPlaceHolderTuples(t *testing.T) {
+	runner := func(sql string, argCount int, wantErr errors.Kind, wantSQL string) func(*testing.T) {
+		return func(t *testing.T) {
+			var buf bytes.Buffer
+			haveErr := expandPlaceHolderTuples(&buf, []byte(sql), argCount)
+			if wantErr.Empty() {
+				assert.NoError(t, haveErr)
+				assert.Exactly(t, wantSQL, buf.String())
+			} else {
+				assert.ErrorIsKind(t, wantErr, haveErr)
+			}
+		}
+	}
+	t.Run("valid 12 args", runner(
+		" WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN /*TUPLES=004*/)",
+		12, errors.NoKind,
+		" WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN (?,?,?,?),(?,?,?,?),(?,?,?,?))",
+	))
+	t.Run("invalid 1", runner(
+		" WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN /*TUPLES=004*/)",
+		1, errors.NotValid,
+		"",
+	))
+	t.Run("no tuple count", runner(
+		" WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN /*TUPLES=*/)",
+		1, errors.NotValid,
+		"",
+	))
+	t.Run("valid 1 arg", runner(
+		" WHERE ((`entity_id`) IN /*TUPLES=001*/)",
+		1, errors.NoKind,
+		" WHERE ((`entity_id`) IN (?))",
 	))
 }

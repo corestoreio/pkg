@@ -109,7 +109,7 @@ func TestWriteInsertPlaceholders(t *testing.T) {
 
 	for i, test := range tests {
 		var buf bytes.Buffer
-		writeInsertPlaceholders(&buf, test.rowCount, test.columnCount)
+		writeTuplePlaceholders(&buf, test.rowCount, test.columnCount)
 		assert.Exactly(t, test.want, buf.String(), "Index %d", i)
 	}
 }

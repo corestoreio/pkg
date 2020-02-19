@@ -256,11 +256,6 @@ func TestConditions_writeOnDuplicateKey(t *testing.T) {
 			ph, err := cnds.writeOnDuplicateKey(buf, nil)
 			assert.Nil(t, ph, "TODO check me")
 			assert.NoError(t, err)
-			// args := MakeArgs(2)
-			// args, _, err = cnds.appendArgs(args, appendArgsDUPKEY)
-			// assert.NoError(t, err)
-			// assert.Exactly(t, wantSQL, buf.String(), t.Name())
-			// assert.Exactly(t, wantArgs, args.expandInterfaces(), t.Name())
 		}
 	}
 	t.Run("empty columns does nothing", runner(Conditions{}, ""))
@@ -414,6 +409,60 @@ func TestConditionExpr(t *testing.T) {
 		compareToSQL(t, s, errors.NoKind,
 			"SELECT `month`, `total`, \"best\" FROM `sales_by_month`",
 			"",
+		)
+	})
+}
+
+func TestCondition_Columns_Tuples(t *testing.T) {
+	t.Parallel()
+	/*
+	  SELECT * FROM catalog_product_index_eav_decimal_idx WHERE
+	 (entity_id,attribute_id,store_id,source_id) IN (
+	 	(4,4,4,4),
+	 	(3,3,3,3)
+	 );
+	*/
+
+	cond := Conditions{
+		Columns("entity_id", "attribute_id", "store_id", "source_id").In().Tuples(),
+	}
+	t.Run("WHERE withDBR=false", func(t *testing.T) {
+		var buf bytes.Buffer
+		_, err := cond.write(&buf, 'w', nil, false)
+		assert.NoError(t, err)
+		assert.Exactly(t, " WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN (?,?,?,?))", buf.String())
+	})
+	t.Run("WHERE withDBR=true", func(t *testing.T) {
+		var buf bytes.Buffer
+		_, err := cond.write(&buf, 'w', nil, true)
+		assert.NoError(t, err)
+		assert.Exactly(t, " WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN /*TUPLES=004*/)", buf.String())
+	})
+	t.Run("ToSQL", func(t *testing.T) {
+		compareToSQL2(t,
+			NewSelect("*").From("cpieavdidx").Where(
+				Columns("entity_id", "attribute_id", "store_id", "source_id").Equal().Tuples(),
+			),
+			errors.NoKind,
+			"SELECT * FROM `cpieavdidx` WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) = (?,?,?,?))",
+		)
+	})
+	t.Run("WithDBR no expand placeholders", func(t *testing.T) {
+		compareToSQL2(t,
+			NewSelect("*").From("cpieavdidx").Where(
+				Columns("entity_id", "attribute_id", "store_id", "source_id").In().Tuples(),
+			).WithDBR(),
+			errors.NoKind,
+			"SELECT * FROM `cpieavdidx` WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN /*TUPLES=004*/)",
+		)
+	})
+	t.Run("WithDBR with expand placeholders", func(t *testing.T) {
+		compareToSQL2(t,
+			NewSelect("*").From("cpieavdidx").Where(
+				Columns("entity_id", "attribute_id", "store_id", "source_id").In().Tuples(),
+			).WithDBR().ExpandPlaceHolders(),
+			errors.NoKind,
+			"SELECT * FROM `cpieavdidx` WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN /*TUPLES=004*/)",
 		)
 	})
 }

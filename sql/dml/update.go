@@ -166,6 +166,7 @@ func (b *Update) Limit(limit uint64) *Update {
 // used in parallel. Each goroutine must have its own dedicated *DBR
 // pointer.
 func (b *Update) WithDBR() *DBR {
+	b.isWithDBR = true
 	return b.newDBR(b)
 }
 
@@ -176,7 +177,7 @@ func (b *Update) ToSQL() (string, []interface{}, error) {
 	if err != nil {
 		return "", nil, errors.WithStack(err)
 	}
-	return string(rawSQL), nil, nil
+	return rawSQL, nil, nil
 }
 
 // WithCacheKey sets the currently used cache key when generating a SQL string.
@@ -214,7 +215,7 @@ func (b *Update) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 	}
 
 	// Write WHERE clause if we have any fragments
-	placeHolders, err = b.Wheres.write(buf, 'w', placeHolders)
+	placeHolders, err = b.Wheres.write(buf, 'w', placeHolders, b.isWithDBR)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

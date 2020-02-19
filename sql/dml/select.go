@@ -413,7 +413,9 @@ func (b *Select) CrossJoin(table id, onConditions ...*Condition) *Select {
 // used in parallel. Each goroutine must have its own dedicated *DBR
 // pointer.
 func (b *Select) WithDBR() *DBR {
-	return b.newDBR(b)
+	b.isWithDBR = true
+	dbr := b.newDBR(b)
+	return dbr
 }
 
 // ToSQL generates the SQL string and might caches it internally, if not
@@ -436,7 +438,7 @@ func (b *Select) WithCacheKey(key string, args ...interface{}) *Select {
 
 // ToSQL serialized the Select to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err error) {
+func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) (_placeHolders []string, err error) {
 	b.source = dmlSourceSelect
 	b.defaultQualifier = b.Table.qualifier()
 
@@ -504,12 +506,12 @@ func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err 
 		if placeHolders, err = f.Table.writeQuoted(w, placeHolders); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if placeHolders, err = f.On.write(w, 'j', placeHolders); err != nil {
+		if placeHolders, err = f.On.write(w, 'j', placeHolders, b.isWithDBR); err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}
 
-	if placeHolders, err = b.Wheres.write(w, 'w', placeHolders); err != nil {
+	if placeHolders, err = b.Wheres.write(w, 'w', placeHolders, b.isWithDBR); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
@@ -525,7 +527,7 @@ func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err 
 		}
 	}
 
-	if placeHolders, err = b.Havings.write(w, 'h', placeHolders); err != nil {
+	if placeHolders, err = b.Havings.write(w, 'h', placeHolders, b.isWithDBR); err != nil {
 		return nil, errors.WithStack(err)
 	}
 

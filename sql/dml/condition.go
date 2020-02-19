@@ -17,6 +17,7 @@ package dml
 import (
 	"bytes"
 	"database/sql/driver"
+	"fmt"
 	"strings"
 	"time"
 
@@ -504,6 +505,17 @@ func (c *Condition) PlaceHolder() *Condition {
 	return c
 }
 
+// Tuples allows to build a query string for tuple comparison.
+// 	SELECT * FROM catalog_product_index_decimal_idx WHERE
+//	(entity_id,attribute_id,store_id,source_id) IN (
+//		(4,4,4,4), (3,3,3,3), (dynamical values)
+//	);
+// See test ... TBC
+func (c *Condition) Tuples() *Condition {
+	c.Right.PlaceHolder = placeHolderTuples
+	return c
+}
+
 // PlaceHolders treats a condition as a string with multiple placeholders. Sets
 // the database specific placeholder character "?" as many times as specified in
 // variable count. Mostly used in prepared statements and for interpolation and
@@ -864,7 +876,7 @@ func (c *Condition) SQLIfNull(expression ...string) *Condition {
 
 // write writes the conditions for usage as restrictions in WHERE, HAVING or
 // JOIN clauses. conditionType enum of j=join, w=where, h=having
-func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []string) ( /*placeHolders*/ _ []string, err error) {
+func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []string, isWithDBR bool) (_placeHolders []string, err error) {
 	if len(cs) == 0 {
 		return placeHolders, nil
 	}
@@ -1002,6 +1014,27 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 				return nil, errors.WithStack(err)
 			}
 			Quoter.WriteIdentifier(w, cnd.Right.Column)
+
+		case cnd.Right.PlaceHolder == placeHolderTuples:
+			w.WriteByte('(')
+			for j, col := range cnd.Columns {
+				if j > 0 {
+					w.WriteString(", ")
+				}
+				Quoter.quote(w, col)
+			}
+			w.WriteByte(')')
+			if err = cnd.Operator.write(w); err != nil {
+				return nil, errors.WithStack(err)
+			}
+			if isWithDBR {
+				fmt.Fprintf(w, placeHolderTuples, len(cnd.Columns))
+				// BuilderBase.buildToSQL needs this hack to see if we have a tuple. If
+				// so, sets containsTuples to true.
+				placeHolders = append(placeHolders, placeHolderTuples)
+			} else {
+				writeTuplePlaceholders(w, 1, uint(len(cnd.Columns)))
+			}
 
 		case cnd.Right.PlaceHolder != "":
 			Quoter.WriteIdentifier(w, cnd.Left)

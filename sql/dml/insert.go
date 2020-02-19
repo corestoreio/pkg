@@ -293,7 +293,7 @@ func (b *Insert) WithDBR() *DBR {
 	if b.RecordPlaceHolderCount > 0 {
 		a.insertColumnCount = uint(b.RecordPlaceHolderCount)
 	}
-	a.insertRowCount = uint(b.RowCount)
+	a.tupleRowCount = uint(b.RowCount)
 	a.insertIsBuildValues = b.IsBuildValues
 	return a
 }
@@ -421,7 +421,7 @@ func (b *Insert) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 			}
 			buf.WriteByte(')')
 		} else {
-			writeInsertPlaceholders(buf, uint(rowCount), uint(argCount0))
+			writeTuplePlaceholders(buf, uint(rowCount), uint(argCount0))
 		}
 	}
 

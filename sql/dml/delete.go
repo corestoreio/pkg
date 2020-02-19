@@ -225,6 +225,7 @@ func (b *Delete) Limit(limit uint64) *Delete {
 // used in parallel. Each goroutine must have its own dedicated *DBR
 // pointer.
 func (b *Delete) WithDBR() *DBR {
+	b.isWithDBR = true
 	return b.newDBR(b)
 }
 
@@ -300,12 +301,12 @@ func (b *Delete) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err 
 		if placeHolders, err = f.Table.writeQuoted(w, placeHolders); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if placeHolders, err = f.On.write(w, 'j', placeHolders); err != nil {
+		if placeHolders, err = f.On.write(w, 'j', placeHolders, b.isWithDBR); err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}
 
-	placeHolders, err = b.Wheres.write(w, 'w', placeHolders)
+	placeHolders, err = b.Wheres.write(w, 'w', placeHolders, b.isWithDBR)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

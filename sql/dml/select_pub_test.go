@@ -805,7 +805,7 @@ func TestSelect_When_Unless(t *testing.T) {
 func TestPrepareWithDBR(t *testing.T) {
 	t.Run("all dml types", func(t *testing.T) {
 		dbc, dbMock := dmltest.MockDB(t)
-		// defer dmltest.MockClose(t, dbc, dbMock)
+		defer dmltest.MockClose(t, dbc, dbMock)
 
 		dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("SELECT `a1` FROM `a`")).WillBeClosed()
 		dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("(SELECT * FROM `b1`) UNION (SELECT * FROM `b2`)")).WillBeClosed()
@@ -846,5 +846,45 @@ func TestPrepareWithDBR(t *testing.T) {
 
 		err := dbc.Union(dml.NewSelect("*").From("b")).PrepareWithDBR(ctx).Close()
 		assert.ErrorIsKind(t, errors.Empty, err)
+	})
+}
+
+func TestDBR_ExpandTuples(t *testing.T) {
+	dbc, dbMock := dmltest.MockDB(t)
+	defer dmltest.MockClose(t, dbc, dbMock)
+	ctx := context.TODO()
+
+	dbr := dbc.SelectFrom("core_config_data").Star().Where(
+		dml.Columns("entity_id", "attribute_id", "store_id", "source_id").In().Tuples(),
+	).WithDBR().ExpandPlaceHolders()
+
+	t.Run("1,4 tuple, no interpolate", func(t *testing.T) {
+		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT * FROM `core_config_data` WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN (?,?,?,?))")).
+			WithArgs(1, 2, 3, 4).
+			WillReturnRows(dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data.csv")))
+
+		ccd := &TableCoreConfigDataSlice{}
+		_, err := dbr.Load(ctx, ccd, 1, 2, 3, 4)
+		assert.NoError(t, err)
+	})
+
+	t.Run("2,4 tuple, no interpolate", func(t *testing.T) {
+		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT * FROM `core_config_data` WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN (?,?,?,?),(?,?,?,?))")).
+			WithArgs("b1", 2, 3, 4, "a11", 22, 33, 44).
+			WillReturnRows(dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data.csv")))
+
+		ccd := &TableCoreConfigDataSlice{}
+		_, err := dbr.Load(ctx, ccd, "b1", 2, 3, 4, "a11", 22, 33, 44)
+		assert.NoError(t, err)
+	})
+
+	t.Run("1,4 tuple, with interpolate", func(t *testing.T) {
+		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT * FROM `core_config_data` WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN (1,2,3,4))")).
+			WithArgs().
+			WillReturnRows(dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data.csv")))
+
+		ccd := &TableCoreConfigDataSlice{}
+		_, err := dbr.Interpolate().Load(ctx, ccd, 1, 2, 3, 4)
+		assert.NoError(t, err)
 	})
 }
