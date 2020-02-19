@@ -232,14 +232,14 @@ func (t *Table) SelectByPK(columns ...string) *dml.Select {
 		columns = t.columnsAll
 	}
 	s := t.dcp.SelectFrom(t.Name, MainTable).AddColumns(columns...)
-	s.Wheres = t.whereByPK(dml.Equal)
+	s.Wheres = t.whereByPK()
 	return s
 }
 
 // DeleteByPK creates a new `DELETE FROM table WHERE id = ?`
 func (t *Table) DeleteByPK() *dml.Delete {
 	d := t.dcp.DeleteFrom(t.Name)
-	d.Wheres = t.whereByPK(dml.Equal)
+	d.Wheres = t.whereByPK()
 	return d
 }
 
@@ -253,15 +253,15 @@ func (t *Table) Delete() *dml.Delete {
 // contains all non primary columns.
 func (t *Table) UpdateByPK() *dml.Update {
 	u := t.dcp.Update(t.Name).AddColumns(t.columnsUpsert...)
-	u.Wheres = t.whereByPK(dml.Equal)
+	u.Wheres = t.whereByPK()
 	return u
 }
 
-func (t *Table) whereByPK(op dml.Op) dml.Conditions {
+func (t *Table) whereByPK() dml.Conditions {
 	cnds := make(dml.Conditions, 0, 1)
 	for _, pk := range t.columnsPK {
 		c := dml.Column(pk).PlaceHolder()
-		c.Operator = op
+		c.Operator = dml.Equal
 		cnds = append(cnds, c)
 	}
 	return cnds
