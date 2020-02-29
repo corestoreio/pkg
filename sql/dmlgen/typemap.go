@@ -409,6 +409,10 @@ func (g *Generator) findType(c *ddl.Column) *TypeDef {
 	return goType
 }
 
+func (g *Generator) goTypeNull(c *ddl.Column) string { return g.mySQLToGoType(c, true) }
+func (g *Generator) goType(c *ddl.Column) string     { return g.mySQLToGoType(c, false) }
+func (g *Generator) goFuncNull(c *ddl.Column) string { return g.mySQLToGoDmlColumnMap(c, true) }
+
 // mySQLToGoType calculates the data type of the field DataType. For example
 // bigint, smallint, tinyint will result in "int". If withNull is true the
 // returned type can store a null value.

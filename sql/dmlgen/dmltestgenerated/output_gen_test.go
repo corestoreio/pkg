@@ -168,7 +168,6 @@ func TestNewDBManagerNonDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 		assert.True(t, errors.NotValid.Match(c.Validate()))
 	})
 }
-
 func TestNewDBManagerDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)

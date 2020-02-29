@@ -524,11 +524,11 @@ func TestNewGenerator_DB_Partial_SQL_Queries(t *testing.T) {
 		dmlgen.WithTableConfigDefault(dmlgen.TableConfig{
 			StructTags: []string{"max_len"},
 			FeaturesInclude: dmlgen.FeatureEntityStruct | dmlgen.FeatureCollectionStruct |
-				dmlgen.FeatureDBMapColumns | dmlgen.FeatureDBSelect,
+				dmlgen.FeatureDB | dmlgen.FeatureDBMapColumns | dmlgen.FeatureDBSelect | dmlgen.FeatureCollectionEach,
 		}),
 
 		dmlgen.WithTableConfig("core_configuration", &dmlgen.TableConfig{
-			FeaturesInclude: dmlgen.FeatureDBUpsert | dmlgen.FeatureDBDelete,
+			FeaturesInclude: dmlgen.FeatureDBInsert | dmlgen.FeatureDBUpsert | dmlgen.FeatureDBDelete | dmlgen.FeatureDBUpdate,
 		}),
 	)
 	assert.NoError(t, err)

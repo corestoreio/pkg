@@ -16,7 +16,6 @@ package dmlgen
 
 import (
 	"bytes"
-	"crypto/md5"
 	"fmt"
 	"strconv"
 	"strings"
@@ -26,119 +25,6 @@ import (
 	"github.com/corestoreio/pkg/util/codegen"
 	"github.com/corestoreio/pkg/util/strs"
 )
-
-// FeatureToggle allows certain generated code blocks to be switched off or on.
-type FeatureToggle uint64
-
-// List of available features
-const (
-	FeatureCollectionAppend FeatureToggle = 1 << iota
-	FeatureCollectionBinaryMarshaler
-	FeatureCollectionCut
-	FeatureCollectionDelete
-	FeatureCollectionEach
-	FeatureCollectionFilter
-	FeatureCollectionInsert
-	FeatureCollectionStruct // creates the struct type
-	FeatureCollectionSwap
-	FeatureCollectionUniqueGetters
-	FeatureCollectionUniquifiedGetters
-	FeatureCollectionValidate
-	FeatureDB
-	FeatureDBAssignLastInsertID
-	FeatureDBDelete
-	FeatureDBInsert
-	FeatureDBMapColumns
-	FeatureDBSelect
-	FeatureDBTracing // opentelemetry tracing
-	FeatureDBUpdate
-	FeatureDBUpsert
-	FeatureEntityCopy
-	FeatureEntityEmpty
-	FeatureEntityGetSetPrivateFields
-	FeatureEntityIsSet
-	FeatureEntityRelationships
-	FeatureEntityStruct // creates the struct type
-	FeatureEntityValidate
-	FeatureEntityWriteTo
-	featureMax
-)
-
-var featureNames = map[FeatureToggle]string{
-	FeatureCollectionAppend:            "FeatureCollectionAppend",
-	FeatureCollectionBinaryMarshaler:   "FeatureCollectionBinaryMarshaler",
-	FeatureCollectionCut:               "FeatureCollectionCut",
-	FeatureCollectionDelete:            "FeatureCollectionDelete",
-	FeatureCollectionEach:              "FeatureCollectionEach",
-	FeatureCollectionFilter:            "FeatureCollectionFilter",
-	FeatureCollectionInsert:            "FeatureCollectionInsert",
-	FeatureCollectionStruct:            "FeatureCollectionStruct",
-	FeatureCollectionSwap:              "FeatureCollectionSwap",
-	FeatureCollectionUniqueGetters:     "FeatureCollectionUniqueGetters",
-	FeatureCollectionUniquifiedGetters: "FeatureCollectionUniquifiedGetters",
-	FeatureCollectionValidate:          "FeatureCollectionValidate",
-	FeatureDB:                          "FeatureDB",
-	FeatureDBAssignLastInsertID:        "FeatureDBAssignLastInsertID",
-	FeatureDBDelete:                    "FeatureDBDelete",
-	FeatureDBInsert:                    "FeatureDBInsert",
-	FeatureDBMapColumns:                "FeatureDBMapColumns",
-	FeatureDBSelect:                    "FeatureDBSelect",
-	FeatureDBTracing:                   "FeatureDBTracing",
-	FeatureDBUpdate:                    "FeatureDBUpdate",
-	FeatureDBUpsert:                    "FeatureDBUpsert",
-	FeatureEntityCopy:                  "FeatureEntityCopy",
-	FeatureEntityEmpty:                 "FeatureEntityEmpty",
-	FeatureEntityGetSetPrivateFields:   "FeatureEntityGetSetPrivateFields",
-	FeatureEntityIsSet:                 "FeatureEntityIsSet",
-	FeatureEntityRelationships:         "FeatureEntityRelationships",
-	FeatureEntityStruct:                "FeatureEntityStruct",
-	FeatureEntityValidate:              "FeatureEntityValidate",
-	FeatureEntityWriteTo:               "FeatureEntityWriteTo",
-}
-
-func (f FeatureToggle) String() string {
-	var buf strings.Builder
-	j := 0
-	for i, k := 0, 0; i <= int(featureMax); i, k = 1<<k, k+1 {
-		if int(f)&i > 0 {
-			if j > 0 {
-				buf.WriteByte(',')
-			}
-			buf.WriteString(featureNames[FeatureToggle(i)])
-			j++
-		}
-	}
-	return buf.String()
-}
-
-type tables []*Table
-
-// hasFeature returns false when any of the tables does not have the feature/s.
-func (ts tables) hasFeature(g *Generator, feature FeatureToggle) bool {
-	for _, tbl := range ts {
-		if g.hasFeature(tbl.featuresInclude, tbl.featuresExclude, feature) {
-			return true
-		}
-	}
-	return false
-}
-
-func (ts tables) names() []string {
-	names := make([]string, len(ts))
-	for i, tbl := range ts {
-		names[i] = tbl.Table.Name
-	}
-	return names
-}
-
-// nameID returns a consistent md5 hash of the table names.
-func (ts tables) nameID() string {
-	var buf bytes.Buffer
-	for _, tbl := range ts {
-		buf.WriteString(tbl.Table.Name)
-	}
-	return fmt.Sprintf("%x", md5.Sum(buf.Bytes()))
-}
 
 // table writes one database table into Go source code.
 type Table struct {
@@ -183,7 +69,7 @@ func (t *Table) EntityName() string {
 }
 
 func (t *Table) hasFeature(g *Generator, f FeatureToggle) bool {
-	return g.hasFeature(t.featuresInclude, t.featuresExclude, f)
+	return g.hasFeature(t.featuresInclude, t.featuresExclude, f, 'a') // mode == AND
 }
 
 func (t *Table) collectionStruct(mainGen *codegen.Go, g *Generator) {
@@ -992,7 +878,6 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 
 	var bufPKStructArg strings.Builder
 	var bufPKNames strings.Builder
-	var bufPKNamesAsArgs strings.Builder
 	i := 0
 
 	tblPkCols := t.Table.Columns.PrimaryKeys()
@@ -1004,7 +889,6 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	tblPkCols.Each(func(c *ddl.Column) {
 		if i > 0 {
 			bufPKNames.WriteByte(',')
-			bufPKNamesAsArgs.WriteByte(',')
 		}
 		goNamedField := strs.ToGoCamelCase(c.Field)
 		if tblPkCols.Len() == 1 {
@@ -1016,8 +900,6 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 		}
 		bufPKNames.WriteString(goNamedField)
 
-		bufPKNamesAsArgs.WriteString("e.")
-		bufPKNamesAsArgs.WriteString(strs.ToGoCamelCase(c.Field))
 		i++
 	})
 	bufPKStructArg.WriteString("}\n")
@@ -1050,6 +932,20 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	}`)
 
 	if tblPkCols.Len() > 1 { // for tables with more than one PK
+		mainGen.Pln(`	cacheKey := `, codegen.SkipWS(`"`, collectionFuncName, "All", `"`), `
+	var args []interface{}
+	if len(pkIDs) > 0 {
+		args = make([]interface{}, 0, len(pkIDs)*`, tblPkCols.Len(), `)
+		for _, pk := range pkIDs {`)
+		tblPkCols.Each(func(c *ddl.Column) {
+			mainGen.Pln(`args = append(args, pk.`, strs.ToGoCamelCase(c.Field), `)`)
+		})
+		mainGen.Pln(`}
+		cacheKey = `, codegen.SkipWS(`"`, collectionFuncName, "DefiniteIDs", `"`), `
+	}
+	if _, err = dbm.CachedQuery(cacheKey).ApplyCallBacks(opts...).Load(ctx, cc, args...); err != nil {
+		return errors.WithStack(err)
+	}`)
 	} else {
 		mainGen.Pln(dmlEnabled, `if len(pkIDs) > 0 {`)
 		mainGen.In()
@@ -1078,86 +974,95 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 
 	dmlEnabled = t.hasFeature(g, FeatureDBDelete)
 	collectionFuncName = codegen.SkipWS(t.CollectionName(), "DeleteByPK")
-	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {`)
+	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result,err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, collectionFuncName, `"`), `)
 			defer func(){ cstrace.Status(span, err); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if cc == nil {
-		return errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
+		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
 	}`)
 
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeDelete, cc, nil); err != nil {
-			return errors.WithStack(err)
+			return nil, errors.WithStack(err)
 		}
-		if _, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, `, bufPKNamesAsArgs.String(), `); err != nil {
-			return errors.WithStack(err)
+		if res, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
+			return nil, errors.WithStack(err)
 		}
-		return errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterDelete, cc, nil))
+		if err = errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterDelete, cc, nil)); err != nil {
+			return nil, errors.WithStack(err)
+		}
+		return res, nil
 	}`)
 
 	dmlEnabled = t.hasFeature(g, FeatureDBUpdate)
 	collectionFuncName = codegen.SkipWS(t.CollectionName(), "UpdateByPK")
-	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBUpdate(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {`)
+	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBUpdate(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result,err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, collectionFuncName, `"`), `);
 			defer func(){ cstrace.Status(span, err); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if cc == nil {
-		return errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
+		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
 	}`)
 
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpdate, cc, nil); err != nil {
-			return errors.WithStack(err)
+			return nil, errors.WithStack(err)
 		}
-		if _, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, cc); err != nil {
-			return errors.WithStack(err)
+		if res, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, cc); err != nil {
+			return nil, errors.WithStack(err)
 		}
-		return errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpdate, cc, nil))
+		if err = errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpdate, cc, nil)); err != nil {
+			return nil, errors.WithStack(err)
+		}
+		return res, nil
 	}`)
 
 	dmlEnabled = t.hasFeature(g, FeatureDBInsert)
 	collectionFuncName = codegen.SkipWS(t.CollectionName(), "Insert")
-	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {`)
+	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result,err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, collectionFuncName, `"`), `);
 			defer func(){ cstrace.Status(span, err); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if cc == nil {
-		return errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
+		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
 	}`)
 
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeInsert, cc, nil); err != nil {
-			return errors.WithStack(err)
+			return nil, errors.WithStack(err)
 		}
-		if _, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, cc); err != nil {
-			return errors.WithStack(err)
+		if res, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, cc); err != nil {
+			return nil, errors.WithStack(err)
 		}
-		return errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterInsert, cc, nil))
+		if err = errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterInsert, cc, nil)); err != nil {
+			return nil, errors.WithStack(err)
+		}
+		return res, nil
 	}`)
 
 	dmlEnabled = t.hasFeature(g, FeatureDBUpsert)
 	collectionFuncName = codegen.SkipWS(t.CollectionName(), "Upsert")
-	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {`)
+	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result,err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, collectionFuncName, `"`), `);
 			defer func(){ cstrace.Status(span, err); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if cc == nil {
-		return errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
+		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
 	}`)
 
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpsert, cc, nil); err != nil {
-			return errors.WithStack(err)
+			return nil, errors.WithStack(err)
 		}
-		if _, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, collectionFuncName, `ByPK"`), `).ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
-			return errors.WithStack(err)
+		if res, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, collectionFuncName, `ByPK"`), `).ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
+			return nil, errors.WithStack(err)
 		}
-		var e2 `, t.CollectionName(), `
-		if _, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, t.CollectionName(), "FindByPK", `"`), `).ApplyCallBacks(opts...).Load(ctx, &e2, `, &bufPKNamesAsArgs, `); err != nil {
-			return errors.WithStack(err)
+		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpsert, cc, nil); err != nil {
+			return nil, errors.WithStack(err)
 		}
-		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpsert, e2, nil); err != nil {
-			return errors.WithStack(err)
-		}
-		*cc = e2
-		return nil
+		return res, nil
 	}`)
 }
 
 func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureDB|FeatureDBSelect|FeatureDBDelete|
+		FeatureDBInsert|FeatureDBUpdate|FeatureDBUpsert) {
+		return
+	}
+
 	var bufPKNameTypes strings.Builder
 	var bufPKNames strings.Builder
 	var bufPKNamesAsArgs strings.Builder
@@ -1224,109 +1129,114 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 
 	dmlEnabled = t.hasFeature(g, FeatureDBDelete)
 	entityFuncName = codegen.SkipWS(t.EntityName(), "DeleteByPK")
-	mainGen.Pln(dmlEnabled, `func (e `, entityPTRName, `) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {`)
+	mainGen.Pln(dmlEnabled, `func (e `, entityPTRName, `) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, entityFuncName, `"`), `)
 			defer func(){ cstrace.Status(span, err); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if e == nil {
-		return errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
+		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
 	}`)
 
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeDelete, nil, e); err != nil {
-			return errors.WithStack(err)
+			return nil, errors.WithStack(err)
 		}
-		if _, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, `, bufPKNamesAsArgs.String(), `); err != nil {
-			return errors.WithStack(err)
+		if res, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, `, bufPKNamesAsArgs.String(), `); err != nil {
+			return nil, errors.WithStack(err)
 		}
-		return errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterDelete, nil, e))
+		if err = errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterDelete, nil, e)); err != nil {
+			return nil, errors.WithStack(err)
+		}
+		return res, nil
 	}`)
 
 	dmlEnabled = t.hasFeature(g, FeatureDBUpdate)
 	entityFuncName = codegen.SkipWS(t.EntityName(), "UpdateByPK")
-	mainGen.Pln(dmlEnabled, `func (e `, entityPTRName, `) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {`)
+	mainGen.Pln(dmlEnabled, `func (e `, entityPTRName, `) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, entityFuncName, `"`), `);
 			defer func(){ cstrace.Status(span, err); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if e == nil {
-		return errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
+		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
 	}`)
 
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpdate, nil, e); err != nil {
-			return errors.WithStack(err)
+			return nil, errors.WithStack(err)
 		}
-		if _, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
-			return errors.WithStack(err)
+		if res, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
+			return nil, errors.WithStack(err)
 		}
-		return errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpdate, nil, e))
+		if err = errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpdate, nil, e)); err != nil {
+			return nil, errors.WithStack(err)
+		}
+		return res, nil
 	}`)
 
 	dmlEnabled = t.hasFeature(g, FeatureDBInsert)
 	entityFuncName = codegen.SkipWS(t.EntityName(), "Insert")
-	mainGen.Pln(dmlEnabled, `func (e `, entityPTRName, `) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {`)
+	mainGen.Pln(dmlEnabled, `func (e `, entityPTRName, `) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, entityFuncName, `"`), `);
 			defer func(){ cstrace.Status(span, err); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if e == nil {
-		return errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
+		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
 	}`)
 
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeInsert, nil, e); err != nil {
-			return errors.WithStack(err)
+			return nil, errors.WithStack(err)
 		}
-		if _, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
-			return errors.WithStack(err)
+		if res, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
+			return nil, errors.WithStack(err)
 		}
-		return errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterInsert, nil, e))
+		if err = errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterInsert, nil, e)); err != nil {
+			return nil, errors.WithStack(err)
+		}
+		return res, nil
 	}`)
 
 	dmlEnabled = t.hasFeature(g, FeatureDBUpsert)
 	entityFuncName = codegen.SkipWS(t.EntityName(), "Upsert")
-	mainGen.Pln(dmlEnabled, `func (e `, entityPTRName, `) Upsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {`)
+	mainGen.Pln(dmlEnabled, `func (e `, entityPTRName, `) Upsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, entityFuncName, `"`), `);
 			defer func(){ cstrace.Status(span, err); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if e == nil {
-		return errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
+		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
 	}`)
 
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpsert, nil, e); err != nil {
-			return errors.WithStack(err)
+			return nil, errors.WithStack(err)
 		}
-		if _, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, entityFuncName, `ByPK"`), `).ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", e)); err != nil {
-			return errors.WithStack(err)
+		if res, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, entityFuncName, `ByPK"`), `).ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", e)); err != nil {
+			return nil, errors.WithStack(err)
 		}
-		var e2 `, t.EntityName(), `
-		if _, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, t.EntityName(), "FindByPK", `"`), `).ApplyCallBacks(opts...).Load(ctx, &e2, `, &bufPKNamesAsArgs, `); err != nil {
-			return errors.WithStack(err)
+		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpsert, nil, e); err != nil {
+			return nil, errors.WithStack(err)
 		}
-		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpsert, nil, &e2); err != nil {
-			return errors.WithStack(err)
-		}
-		*e = e2
-		return nil
+		return res, nil
 	}`)
 }
 
 func (t *Table) fnDBMOptionsSQLBuildQueries(mainGen *codegen.Go, g *Generator) {
 	tblPKLen := t.Table.Columns.PrimaryKeys().Len()
+	tblPK := t.Table.Columns.PrimaryKeys()
 	if t.Table.IsView() {
 		tblPKLen = t.Table.Columns.ViewPrimaryKeys().Len()
+		tblPK = t.Table.Columns.ViewPrimaryKeys()
 	}
 
-	mainGen.Pln(tblPKLen > 0 && t.hasFeature(g, FeatureDBSelect), `ddl.WithQueryDBR( `,
+	mainGen.Pln(tblPKLen > 0 && t.hasFeature(g, FeatureDBSelect|FeatureEntityStruct), `ddl.WithQueryDBR( `,
 		codegen.SkipWS(`"`, t.EntityName(), `FindByPK"`),
 		`, dbmo.InitSelectFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).SelectByPK("*")).WithDBR().Interpolate()),`)
 
-	mainGen.Pln(tblPKLen > 0 && t.hasFeature(g, FeatureDBSelect&FeatureCollectionStruct), `ddl.WithQueryDBR( `,
+	mainGen.Pln(tblPKLen > 0 && t.hasFeature(g, FeatureDBSelect|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
 		codegen.SkipWS(`"`, t.CollectionName(), `DBLoadAll"`),
 		`, dbmo.InitSelectFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Select("*")).WithDBR()),`)
 
 	var onePKWhere strings.Builder
-	// var multiPKWhere strings.Builder
-	onePKWhere.WriteByte('\n')
-	// multiPKWhere.WriteByte('\n')
-	t.Table.Columns.PrimaryKeys().Each(func(c *ddl.Column) {
-		onePKWhere.WriteString("dml.Column(`" + c.Field + "`).In().PlaceHolder(),\n")
-		// multiPKWhere.WriteString("dml.Column(`" + c.Field + "`).Equal().PlaceHolder(),\n")
-	})
+	onePKWhere.WriteString("\ndml.Columns(`" + strings.Join(tblPK.FieldNames(), "`,`") + "`).In().")
+	if tblPKLen == 1 {
+		onePKWhere.WriteString("PlaceHolder(),\n")
+	} else {
+		onePKWhere.WriteString("Tuples(),\n")
+	}
 
-	mainGen.Pln(tblPKLen > 0 && t.hasFeature(g, FeatureDBSelect&FeatureCollectionStruct), `ddl.WithQueryDBR( `,
+	mainGen.Pln(tblPKLen > 0 && t.hasFeature(g, FeatureDBSelect|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
 		codegen.SkipWS(`"`, t.CollectionName(), `DBLoadDefiniteIDs"`),
 		`, dbmo.InitSelectFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Select("*")).Where(`, onePKWhere.String(), `).WithDBR().Interpolate()),`)
 
@@ -1334,18 +1244,37 @@ func (t *Table) fnDBMOptionsSQLBuildQueries(mainGen *codegen.Go, g *Generator) {
 		return
 	}
 
-	mainGen.Pln(t.hasFeature(g, FeatureDBUpdate), `ddl.WithQueryDBR( `,
+	// <ENTITY>
+	mainGen.Pln(t.hasFeature(g, FeatureDBUpdate|FeatureEntityStruct), `ddl.WithQueryDBR( `,
 		codegen.SkipWS(`"`, t.EntityName(), `UpdateByPK"`),
 		`, dbmo.InitUpdateFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).UpdateByPK()).WithDBR()),`)
-	mainGen.Pln(t.hasFeature(g, FeatureDBDelete), `ddl.WithQueryDBR( `,
+	mainGen.Pln(t.hasFeature(g, FeatureDBDelete|FeatureEntityStruct), `ddl.WithQueryDBR( `,
 		codegen.SkipWS(`"`, t.EntityName(), `DeleteByPK"`),
 		`, dbmo.InitDeleteFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).DeleteByPK()).WithDBR().Interpolate()),`)
-	mainGen.Pln(t.hasFeature(g, FeatureDBInsert), `ddl.WithQueryDBR( `,
+	mainGen.Pln(t.hasFeature(g, FeatureDBInsert|FeatureEntityStruct), `ddl.WithQueryDBR( `,
 		codegen.SkipWS(`"`, t.EntityName(), `Insert"`),
 		`, dbmo.InitInsertFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Insert()).WithDBR()),`)
-	mainGen.Pln(t.hasFeature(g, FeatureDBUpsert), `ddl.WithQueryDBR( `,
+	mainGen.Pln(t.hasFeature(g, FeatureDBUpsert|FeatureEntityStruct), `ddl.WithQueryDBR( `,
 		codegen.SkipWS(`"`, t.EntityName(), `UpsertByPK"`),
 		`, dbmo.InitInsertFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Insert()).OnDuplicateKey().WithDBR()),`)
+	mainGen.Pln(``)
+	// </ENTITY>
+
+	// <COLLECTION>
+	mainGen.Pln(t.hasFeature(g, FeatureDBUpdate|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
+		codegen.SkipWS(`"`, t.CollectionName(), `UpdateByPK"`),
+		`, dbmo.InitUpdateFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).UpdateByPK()).WithDBR()),`)
+	mainGen.Pln(t.hasFeature(g, FeatureDBDelete|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
+		codegen.SkipWS(`"`, t.CollectionName(), `DeleteByPK"`),
+		`, dbmo.InitDeleteFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).DeleteByPK()).WithDBR().Interpolate()),`)
+	mainGen.Pln(t.hasFeature(g, FeatureDBInsert|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
+		codegen.SkipWS(`"`, t.CollectionName(), `Insert"`),
+		`, dbmo.InitInsertFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Insert()).WithDBR()),`)
+	mainGen.Pln(t.hasFeature(g, FeatureDBUpsert|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
+		codegen.SkipWS(`"`, t.CollectionName(), `UpsertByPK"`),
+		`, dbmo.InitInsertFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Insert()).OnDuplicateKey().WithDBR()),`)
+	mainGen.Pln(``)
+	// </COLLECTION>
 }
 
 func (t *Table) generateTestOther(testGen *codegen.Go, g *Generator) (codeWritten int) {
