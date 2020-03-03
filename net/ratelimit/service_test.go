@@ -131,7 +131,7 @@ func TestService_WithRateLimit_StoreFallbackToWebsite(t *testing.T) {
 			scpCfg, err := srv.ConfigByScopeID(scopeID, 0)
 			assert.NoError(t, err, "%+v", err)
 			assert.Exactly(t, scopeID, scpCfg.ScopeID, "ScopeID")
-			cstesting.EqualPointers(t, errH, scpCfg.ErrorHandler)
+			assert.Same(t, errH, scpCfg.ErrorHandler)
 		}
 	}
 

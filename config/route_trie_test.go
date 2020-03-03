@@ -41,7 +41,6 @@ import (
 
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/assert"
-	"github.com/corestoreio/pkg/util/cstesting"
 )
 
 func TestBuildTrieKey(t *testing.T) {
@@ -172,9 +171,7 @@ func TestPathTrieNormal(t *testing.T) {
 	// get
 	for _, c := range cases {
 		value := trie.Get(c.key)
-		if !cstesting.EqualPointers(t, value.Events[EventOnAfterGet][1], c.value) {
-			t.Errorf("expected key %s to have value %#v, got %#v", c.key, c.value, value)
-		}
+		assert.Same(t, value.Events[EventOnAfterGet][1], c.value)
 		assert.Exactly(t, c.meta.Default, value.Default)
 		assert.Exactly(t, c.meta.WriteScopePerm, value.WriteScopePerm)
 	}
@@ -241,9 +238,9 @@ func TestPathTrieRoot(t *testing.T) {
 	if trie.PutEvent(EventOnAfterGet, "", noopCB1) {
 		t.Error("expected key '' to have a value already")
 	}
-	if value := trie.Get(""); !cstesting.EqualPointers(t, value.Events[EventOnAfterGet][1], noopCB1) {
-		t.Errorf("expected key '' to have value %p, got %#v", noopCB1, value)
-	}
+	value := trie.Get("")
+	assert.Same(t, value.Events[EventOnAfterGet][1], noopCB1)
+
 	if !trie.Delete("") {
 		t.Error("expected key '' to be deleted")
 	}
@@ -279,8 +276,8 @@ func TestPathTrieWalk(t *testing.T) {
 	walker := func(key string, value FieldMeta) error {
 		// value for each walked key is correct
 
-		if value.Events[EventOnAfterGet] != nil && !cstesting.EqualPointers(t, value.Events[EventOnAfterGet][0], table[key]) {
-			t.Errorf("expected key %s to have value %#v, got %#v", key, table[key], value)
+		if value.Events[EventOnAfterGet] != nil {
+			assert.Same(t, value.Events[EventOnAfterGet][0], table[key])
 		}
 		walked[key]++
 		return nil

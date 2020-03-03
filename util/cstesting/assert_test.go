@@ -30,18 +30,6 @@ func (m *mockErrorf) Errorf(format string, args ...interface{}) {
 	m.data = fmt.Sprintf(format, args...)
 }
 
-func TestEqualPointers(t *testing.T) {
-	t.Parallel()
-	p1 := new(string)
-	p2 := new(string)
-
-	me := &mockErrorf{}
-	if have, want := cstesting.EqualPointers(me, p1, p2), false; have != want {
-		t.Errorf("Have: %v Want: %v", have, want)
-	}
-	assert.Regexp(t, "Expecting equal pointers\nWant: 0x[0-9a-f]+\nHave: 0x[0-9a-f]+", me.data)
-}
-
 func TestContainsCount(t *testing.T) {
 	t.Parallel()
 	me := &mockErrorf{}

@@ -19,10 +19,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/corestoreio/pkg/util/cstesting"
 	"gopkg.in/throttled/throttled.v2"
 	"gopkg.in/throttled/throttled.v2/store/memstore"
 )
@@ -56,7 +56,6 @@ func TestCalculateRate(t *testing.T) {
 }
 
 func TestWithDefaultConfig(t *testing.T) {
-
 	s := MustNew(WithDefaultConfig(scope.Store.WithID(33)))
 	s33 := scope.Store.WithID(33)
 	want33 := newScopedConfig(s33, scope.DefaultTypeID)
@@ -81,7 +80,7 @@ func TestWithVaryBy(t *testing.T) {
 		assert.Exactly(t, vb, s.scopeCache[scope.DefaultTypeID].VaryByer)
 	})
 
-	//TODO	move the following test into scopedservice package
+	// TODO	move the following test into scopedservice package
 
 	t.Run("OverwrittenByWithDefaultConfig", func(t *testing.T) {
 		s := MustNew(
@@ -130,8 +129,8 @@ func TestWithDeniedHandler(t *testing.T) {
 			WithDeniedHandler(dh, scope.Website.WithID(2)),
 			WithDeniedHandler(dh, scope.Default.WithID(0)),
 		)
-		cstesting.EqualPointers(t, dh, s.scopeCache[w2].DeniedHandler)
-		cstesting.EqualPointers(t, dh, s.scopeCache[scope.DefaultTypeID].DeniedHandler)
+		assert.Same(t, dh, s.scopeCache[w2].DeniedHandler)
+		assert.Same(t, dh, s.scopeCache[scope.DefaultTypeID].DeniedHandler)
 	})
 	t.Run("OverwrittenByWithDefaultConfig", func(t *testing.T) {
 		s := MustNew(
@@ -139,7 +138,7 @@ func TestWithDeniedHandler(t *testing.T) {
 			WithDefaultConfig(scope.Website.WithID(2)),
 		)
 		// WithDefaultConfig overwrites the previously set RateLimiter
-		cstesting.EqualPointers(t, DefaultDeniedHandler, s.scopeCache[w2].DeniedHandler)
+		assert.Same(t, DefaultDeniedHandler, s.scopeCache[w2].DeniedHandler)
 		_, err := s.ConfigByScopeID(w2, 0)
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})

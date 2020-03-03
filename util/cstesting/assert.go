@@ -15,24 +15,12 @@
 package cstesting
 
 import (
-	"reflect"
 	"strings"
 )
 
 // ErrorFormater defines the function needed to print out an formatted error.
 type errorFormatter interface {
 	Errorf(format string, args ...interface{})
-}
-
-// EqualPointers compares pointers for equality. errorFormatter is *testing.T.
-func EqualPointers(t errorFormatter, expected, actual interface{}) bool {
-	wantP := reflect.ValueOf(expected)
-	haveP := reflect.ValueOf(actual)
-	if wantP.Pointer() != haveP.Pointer() {
-		t.Errorf("Expecting equal pointers\nWant: %p\nHave: %p", expected, actual)
-		return false
-	}
-	return true
 }
 
 // ContainsCount checks if str contains the substring contains maxOccurrences

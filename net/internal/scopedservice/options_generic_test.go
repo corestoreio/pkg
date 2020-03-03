@@ -35,15 +35,15 @@ func TestWithErrorHandler(t *testing.T) {
 	cfg, err := s.ConfigByScopeID(scope.MakeTypeID(scope.Store, 44), 0)
 	assert.NoError(t, err, "%+v", err)
 	assert.NotNil(t, cfg.ErrorHandler)
-	cstesting.EqualPointers(t, eh, cfg.ErrorHandler)
-	cstesting.EqualPointers(t, s.ErrorHandler, defaultErrorHandler)
+	assert.Same(t, eh, cfg.ErrorHandler)
+	assert.Same(t, s.ErrorHandler, defaultErrorHandler)
 }
 
 func TestWithServiceErrorHandler(t *testing.T) {
 	var eh = func(error) http.Handler { return nil }
 	s, err := newService(nil, WithServiceErrorHandler(eh))
 	assert.NoError(t, err)
-	cstesting.EqualPointers(t, s.ErrorHandler, eh)
+	assert.Same(t, s.ErrorHandler, eh)
 	assert.Nil(t, s.ErrorHandler(errors.New("Error handler returns nil")))
 }
 
