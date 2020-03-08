@@ -689,7 +689,7 @@ func Test_expandPlaceHolderTuples(t *testing.T) {
 	t.Run("valid 12 args", runner(
 		" WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN /*TUPLES=004*/)",
 		12, errors.NoKind,
-		" WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN (?,?,?,?),(?,?,?,?),(?,?,?,?))",
+		" WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN ((?,?,?,?),(?,?,?,?),(?,?,?,?)))",
 	))
 	t.Run("invalid 1", runner(
 		" WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN /*TUPLES=004*/)",
