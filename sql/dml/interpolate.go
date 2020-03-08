@@ -39,6 +39,11 @@ const (
 var placeHolderByte = []byte(placeHolderStr)
 
 func expandPlaceHolderTuples(buf *bytes.Buffer, sql []byte, argCount int) error {
+	if argCount < 1 {
+		// do nothing
+		buf.Write(sql)
+		return nil
+	}
 	var tupleCount uint
 	var idxPlaceHolderTuples int
 	// TODO ugly code, needs refactoring
@@ -59,13 +64,14 @@ func expandPlaceHolderTuples(buf *bytes.Buffer, sql []byte, argCount int) error 
 	if tupleCount == 0 {
 		return errors.NotValid.Newf("[dml] expandPlaceHolderTuples failed to scan SQL string. Can't find number of tuples.")
 	}
-
 	if idxPlaceHolderTuples > 0 {
 		buf.Write(sql[:idxPlaceHolderTuples])
 		if uint(argCount)%tupleCount != 0 {
 			return errors.NotValid.Newf("[dml] expandPlaceHolderTuples rowCount can be zero. argCount must be at least %d but got %d", tupleCount, argCount)
 		}
+		buf.WriteByte('(')
 		writeTuplePlaceholders(buf, uint(argCount)/tupleCount, tupleCount)
+		buf.WriteByte(')')
 		buf.Write(sql[idxPlaceHolderTuples+14:])
 	}
 

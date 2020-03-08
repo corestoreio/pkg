@@ -436,9 +436,6 @@ func calcInsertTemplatePlaceholderPos(columnCount uint) (start, end uint) {
 
 func writeTuplePlaceholders(buf *bytes.Buffer, rowCount, columnCount uint) {
 	start, end := calcInsertTemplatePlaceholderPos(columnCount)
-	if rowCount > 1 {
-		buf.WriteByte('(')
-	}
 	for r := uint(0); r < rowCount; r++ {
 		if r > 0 {
 			buf.WriteByte(',')
@@ -455,8 +452,5 @@ func writeTuplePlaceholders(buf *bytes.Buffer, rowCount, columnCount uint) {
 			}
 			buf.WriteByte(')')
 		}
-	}
-	if rowCount > 1 {
-		buf.WriteByte(')')
 	}
 }

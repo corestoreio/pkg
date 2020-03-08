@@ -254,7 +254,9 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 		return "", nil, errors.Empty.Newf("[dml] DBR: The SQL string is empty.")
 	}
 
-	if a.base.templateStmtCount < 2 && hasNamedArgs == 0 && containsQualifiedRecords == 0 && a.Options == 0 { // no options and qualified records provided
+	if a.base.templateStmtCount < 2 && hasNamedArgs == 0 && containsQualifiedRecords == 0 &&
+		a.Options == 0 && !a.base.containsTuples { // no options and qualified records provided
+
 		if a.isPrepared {
 			return "", expandInterfaces(args), nil
 		}
@@ -306,20 +308,28 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 	if a.Options > 0 && lenExtArgs > 0 && containsQualifiedRecords == 0 && len(args) == 0 {
 		return "", nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
 	}
+	if a.base.containsTuples {
+		aLen, _ := totalSliceLen(args)
+		if err := expandPlaceHolderTuples(sqlBuf.Second, sqlBuf.First.Bytes(), aLen); err != nil {
+			return "", nil, errors.WithStack(err)
+		}
+		if _, err := sqlBuf.CopySecondToFirst(); err != nil {
+			return "", nil, errors.WithStack(err)
+		}
+	}
 
 	// TODO more advanced caching of the final non-expanded SQL string
-
 	if a.Options&argOptionExpandPlaceholder != 0 {
 		phCount := bytes.Count(sqlBuf.First.Bytes(), placeHolderByte)
 		if aLen, hasSlice := totalSliceLen(args); phCount < aLen || hasSlice {
-			if a.base.containsTuples {
-				if err := expandPlaceHolderTuples(sqlBuf.Second, sqlBuf.First.Bytes(), aLen); err != nil {
-					return "", nil, errors.WithStack(err)
-				}
-				if _, err := sqlBuf.CopySecondToFirst(); err != nil {
-					return "", nil, errors.WithStack(err)
-				}
-			}
+			// if a.base.containsTuples {
+			//	if err := expandPlaceHolderTuples(sqlBuf.Second, sqlBuf.First.Bytes(), aLen); err != nil {
+			//		return "", nil, errors.WithStack(err)
+			//	}
+			//	if _, err := sqlBuf.CopySecondToFirst(); err != nil {
+			//		return "", nil, errors.WithStack(err)
+			//	}
+			//}
 			if err := expandPlaceHolders(sqlBuf.Second, sqlBuf.First.Bytes(), args); err != nil {
 				return "", nil, errors.WithStack(err)
 			}

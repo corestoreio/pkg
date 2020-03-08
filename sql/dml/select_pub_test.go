@@ -859,7 +859,7 @@ func TestDBR_ExpandTuples(t *testing.T) {
 	).WithDBR().ExpandPlaceHolders()
 
 	t.Run("1,4 tuple, no interpolate", func(t *testing.T) {
-		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT * FROM `core_config_data` WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN (?,?,?,?))")).
+		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT * FROM `core_config_data` WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN ((?,?,?,?)))")).
 			WithArgs(1, 2, 3, 4).
 			WillReturnRows(dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data.csv")))
 
@@ -869,7 +869,7 @@ func TestDBR_ExpandTuples(t *testing.T) {
 	})
 
 	t.Run("2,4 tuple, no interpolate", func(t *testing.T) {
-		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT * FROM `core_config_data` WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN (?,?,?,?),(?,?,?,?))")).
+		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT * FROM `core_config_data` WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN ((?,?,?,?),(?,?,?,?)))")).
 			WithArgs("b1", 2, 3, 4, "a11", 22, 33, 44).
 			WillReturnRows(dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data.csv")))
 
@@ -879,7 +879,7 @@ func TestDBR_ExpandTuples(t *testing.T) {
 	})
 
 	t.Run("1,4 tuple, with interpolate", func(t *testing.T) {
-		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT * FROM `core_config_data` WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN (1,2,3,4))")).
+		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT * FROM `core_config_data` WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN ((1,2,3,4)))")).
 			WithArgs().
 			WillReturnRows(dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data.csv")))
 

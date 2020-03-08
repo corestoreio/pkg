@@ -1033,7 +1033,9 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte, placeHolders []s
 				// so, sets containsTuples to true.
 				placeHolders = append(placeHolders, placeHolderTuples)
 			} else {
+				w.WriteByte('(')
 				writeTuplePlaceholders(w, 1, uint(len(cnd.Columns)))
+				w.WriteByte(')')
 			}
 
 		case cnd.Right.PlaceHolder != "":

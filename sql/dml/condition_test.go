@@ -430,7 +430,7 @@ func TestCondition_Columns_Tuples(t *testing.T) {
 		var buf bytes.Buffer
 		_, err := cond.write(&buf, 'w', nil, false)
 		assert.NoError(t, err)
-		assert.Exactly(t, " WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN (?,?,?,?))", buf.String())
+		assert.Exactly(t, " WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN ((?,?,?,?)))", buf.String())
 	})
 	t.Run("WHERE withDBR=true", func(t *testing.T) {
 		var buf bytes.Buffer
@@ -444,7 +444,7 @@ func TestCondition_Columns_Tuples(t *testing.T) {
 				Columns("entity_id", "attribute_id", "store_id", "source_id").Equal().Tuples(),
 			),
 			errors.NoKind,
-			"SELECT * FROM `cpieavdidx` WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) = (?,?,?,?))",
+			"SELECT * FROM `cpieavdidx` WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) = ((?,?,?,?)))",
 		)
 	})
 	t.Run("WithDBR no expand placeholders", func(t *testing.T) {
@@ -464,6 +464,14 @@ func TestCondition_Columns_Tuples(t *testing.T) {
 			errors.NoKind,
 			"SELECT * FROM `cpieavdidx` WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN /*TUPLES=004*/)",
 		)
+	})
+	t.Run("interpolate tuples DBR", func(t *testing.T) {
+		sql, args, err := NewSelect("*").From("sales_order_status_state").Where(
+			Columns("status", "state").In().Tuples(),
+		).WithDBR().Interpolate().prepareQueryAndArgs([]interface{}{"a1", "a2", "b1", "b2"})
+		assert.NoError(t, err)
+		assert.Empty(t, args)
+		assert.Exactly(t, "SELECT * FROM `sales_order_status_state` WHERE ((`status`, `state`) IN (('a1','a2'),('b1','b2')))", sql)
 	})
 }
 

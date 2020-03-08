@@ -119,8 +119,16 @@ func writeInterfaceValue(arg interface{}, w *bytes.Buffer, pos uint) (err error)
 		pos-- // because we cannot use zero as index 0 when calling writeTo somewhere
 	}
 	switch v := arg.(type) {
+	case int8:
+		err = writeInt64(w, int64(v))
+	case int16:
+		err = writeInt64(w, int64(v))
+	case int32:
+		err = writeInt64(w, int64(v))
 	case int:
 		err = writeInt64(w, int64(v))
+	case int64:
+		err = writeInt64(w, v)
 	case []int:
 		if requestPos {
 			err = writeInt64(w, int64(v[pos]))
@@ -134,8 +142,6 @@ func writeInterfaceValue(arg interface{}, w *bytes.Buffer, pos uint) (err error)
 			}
 			w.WriteByte(')')
 		}
-	case int64:
-		err = writeInt64(w, v)
 	case []int64:
 		if requestPos {
 			err = writeInt64(w, v[pos])
@@ -188,6 +194,19 @@ func writeInterfaceValue(arg interface{}, w *bytes.Buffer, pos uint) (err error)
 			w.WriteByte(')')
 		}
 	case []uint:
+		if requestPos {
+			err = writeUint64(w, uint64(v[pos]))
+		} else {
+			w.WriteByte('(')
+			for l, i := len(v), 0; i < l && err == nil; i++ {
+				if i > 0 {
+					w.WriteByte(',')
+				}
+				err = writeUint64(w, uint64(v[i]))
+			}
+			w.WriteByte(')')
+		}
+	case []uint32:
 		if requestPos {
 			err = writeUint64(w, uint64(v[pos]))
 		} else {
