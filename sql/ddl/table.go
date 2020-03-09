@@ -245,8 +245,7 @@ func (t *Table) DeleteByPK() *dml.Delete {
 
 // Delete creates a new `DELETE FROM table` statement.
 func (t *Table) Delete() *dml.Delete {
-	d := t.dcp.DeleteFrom(t.Name)
-	return d
+	return t.dcp.DeleteFrom(t.Name)
 }
 
 // UpdateByPK creates a new `UPDATE table SET ... WHERE id = ?`. The SET clause
@@ -255,6 +254,11 @@ func (t *Table) UpdateByPK() *dml.Update {
 	u := t.dcp.Update(t.Name).AddColumns(t.columnsUpsert...)
 	u.Wheres = t.WhereByPK(dml.Equal)
 	return u
+}
+
+// Update creates a new UPDATE statement without a WHERE clause.
+func (t *Table) Update() *dml.Update {
+	return t.dcp.Update(t.Name).AddColumns(t.columnsUpsert...)
 }
 
 // WhereByPK puts the primary keys as WHERE clauses into a condition.

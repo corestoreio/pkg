@@ -104,7 +104,7 @@ type Tables struct {
 // WithQueryDBR adds a pre-defined query with its key to the Tables object.
 func WithQueryDBR(key string, dbr *dml.DBR) TableOption {
 	return TableOption{
-		sortOrder: 255,
+		sortOrder: 150,
 		fn: func(tm *Tables) error {
 			tm.mu.Lock()
 			defer tm.mu.Unlock()
@@ -112,6 +112,23 @@ func WithQueryDBR(key string, dbr *dml.DBR) TableOption {
 				tm.queries = map[string]*dml.DBR{}
 			}
 			tm.queries[key] = dbr
+			return nil
+		},
+	}
+}
+
+// WithQueryDBRCallBack allows to manipulate the generated dml.DBR objects in
+// generated code to fit your needs.
+func WithQueryDBRCallBack(cbFn func(key string, dbr *dml.DBR)) TableOption {
+	return TableOption{
+		sortOrder: 160,
+		fn: func(tm *Tables) error {
+			tm.mu.Lock()
+			defer tm.mu.Unlock()
+
+			for key, dbr := range tm.queries {
+				cbFn(key, dbr)
+			}
 			return nil
 		},
 	}
