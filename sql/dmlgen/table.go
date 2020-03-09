@@ -500,16 +500,14 @@ func (t *Table) fnCollectionDBAssignLastInsertID(mainGen *codegen.Go, g *Generat
 		return
 	}
 
-	mainGen.C(`AssignLastInsertID traverses through the slice and sets a decrementing new ID to each entity.`)
+	mainGen.C(`AssignLastInsertID traverses through the slice and sets an incrementing new ID to each entity.`)
 	mainGen.Pln(`func (cc *`, t.CollectionName(), `) AssignLastInsertID(id int64) {`)
 	{
 		mainGen.In()
-		mainGen.Pln(`var j int64`)
-		mainGen.Pln(`for i := len(cc.Data) - 1; i >= 0; i-- {`)
+		mainGen.Pln(`for i:=int64(0); i < int64(len(cc.Data)); i++ {`)
 		{
 			mainGen.In()
-			mainGen.Pln(`cc.Data[i].AssignLastInsertID(id - j)`)
-			mainGen.Pln(`j++`)
+			mainGen.Pln(`cc.Data[i].AssignLastInsertID(id + i)`)
 			mainGen.Out()
 		}
 		mainGen.Pln(`}`)
@@ -911,13 +909,13 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	collectionPTRName := codegen.SkipWS("*", t.CollectionName())
 	entityEventName := codegen.SkipWS(`event`, t.EntityName(), `Func`)
 	tracingEnabled := t.hasFeature(g, FeatureDBTracing)
-	collectionFuncName := codegen.SkipWS(t.CollectionName(), "DBLoad")
+	collectionFuncName := codegen.SkipWS(t.CollectionName(), "SelectAll")
 	dmlEnabled := t.hasFeature(g, FeatureDBSelect)
 
 	mainGen.Pln(dmlEnabled && tblPkCols.Len() > 1, bufPKStructArg.String())
 
 	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBLoad(ctx context.Context,dbm *DBM, pkIDs []`, dbLoadStructArgOrSliceName, `, opts ...dml.DBRFunc) (err error) {`)
-	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, collectionFuncName, `"`), `)
+	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, t.CollectionName(), "DBLoad", `"`), `)
 		defer func(){ cstrace.Status(span, err); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if cc == nil {
 		return errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
@@ -932,7 +930,7 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	}`)
 
 	if tblPkCols.Len() > 1 { // for tables with more than one PK
-		mainGen.Pln(`	cacheKey := `, codegen.SkipWS(`"`, collectionFuncName, "All", `"`), `
+		mainGen.Pln(`	cacheKey := `, codegen.SkipWS(`"`, collectionFuncName, "", `"`), `
 	var args []interface{}
 	if len(pkIDs) > 0 {
 		args = make([]interface{}, 0, len(pkIDs)*`, tblPkCols.Len(), `)
@@ -941,7 +939,7 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 			mainGen.Pln(`args = append(args, pk.`, strs.ToGoCamelCase(c.Field), `)`)
 		})
 		mainGen.Pln(`}
-		cacheKey = `, codegen.SkipWS(`"`, collectionFuncName, "DefiniteIDs", `"`), `
+		cacheKey = `, codegen.SkipWS(`"`, t.CollectionName(), "SelectByPK", `"`), `
 	}
 	if _, err = dbm.CachedQuery(cacheKey).ApplyCallBacks(opts...).Load(ctx, cc, args...); err != nil {
 		return errors.WithStack(err)
@@ -950,14 +948,14 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 		mainGen.Pln(dmlEnabled, `if len(pkIDs) > 0 {`)
 		mainGen.In()
 		{
-			mainGen.Pln(dmlEnabled, `if _, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, collectionFuncName, "DefiniteIDs", `"`), `).ApplyCallBacks(opts...).Load(ctx, cc, pkIDs); err != nil {
+			mainGen.Pln(dmlEnabled, `if _, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, t.CollectionName(), "SelectByPK", `"`), `).ApplyCallBacks(opts...).Load(ctx, cc, pkIDs); err != nil {
 		return errors.WithStack(err); }`)
 		}
 		mainGen.Out()
 		mainGen.Pln(dmlEnabled, `} else {`)
 		mainGen.In()
 		{
-			mainGen.Pln(dmlEnabled, `if _, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, collectionFuncName, "All", `"`), `).ApplyCallBacks(opts...).Load(ctx, cc); err != nil {
+			mainGen.Pln(dmlEnabled, `if _, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, collectionFuncName, "", `"`), `).ApplyCallBacks(opts...).Load(ctx, cc); err != nil {
 		return errors.WithStack(err); }`)
 		}
 		mainGen.Out()
@@ -973,9 +971,9 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	}
 
 	dmlEnabled = t.hasFeature(g, FeatureDBDelete)
-	collectionFuncName = codegen.SkipWS(t.CollectionName(), "DeleteByPK")
+	collectionFuncName = codegen.SkipWS(t.EntityName(), "DeleteByPK")
 	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result,err error) {`)
-	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, collectionFuncName, `"`), `)
+	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, t.CollectionName(), "DeleteByPK", `"`), `)
 			defer func(){ cstrace.Status(span, err); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if cc == nil {
 		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
@@ -994,9 +992,9 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	}`)
 
 	dmlEnabled = t.hasFeature(g, FeatureDBUpdate)
-	collectionFuncName = codegen.SkipWS(t.CollectionName(), "UpdateByPK")
+	collectionFuncName = codegen.SkipWS(t.EntityName(), "UpdateByPK")
 	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBUpdate(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result,err error) {`)
-	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, collectionFuncName, `"`), `);
+	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, t.CollectionName(), "UpdateByPK", `"`), `);
 			defer func(){ cstrace.Status(span, err); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if cc == nil {
 		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
@@ -1015,9 +1013,9 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	}`)
 
 	dmlEnabled = t.hasFeature(g, FeatureDBInsert)
-	collectionFuncName = codegen.SkipWS(t.CollectionName(), "Insert")
+	collectionFuncName = codegen.SkipWS(t.EntityName(), "Insert")
 	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result,err error) {`)
-	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, collectionFuncName, `"`), `);
+	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, t.CollectionName(), "Insert", `"`), `);
 			defer func(){ cstrace.Status(span, err); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if cc == nil {
 		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
@@ -1036,9 +1034,9 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	}`)
 
 	dmlEnabled = t.hasFeature(g, FeatureDBUpsert)
-	collectionFuncName = codegen.SkipWS(t.CollectionName(), "Upsert")
+	collectionFuncName = codegen.SkipWS(t.EntityName(), "UpsertByPK")
 	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result,err error) {`)
-	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, collectionFuncName, `"`), `);
+	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, t.CollectionName(), "UpsertByPK", `"`), `);
 			defer func(){ cstrace.Status(span, err); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if cc == nil {
 		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
@@ -1047,7 +1045,7 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpsert, cc, nil); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if res, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, collectionFuncName, `ByPK"`), `).ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
+		if res, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpsert, cc, nil); err != nil {
@@ -1099,7 +1097,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	entityPTRName := codegen.SkipWS("*", t.EntityName())
 	entityEventName := codegen.SkipWS(`event`, t.EntityName(), `Func`)
 	tracingEnabled := t.hasFeature(g, FeatureDBTracing)
-	entityFuncName := codegen.SkipWS(t.EntityName(), "FindByPK")
+	entityFuncName := codegen.SkipWS(t.EntityName(), "SelectByPK")
 
 	dmlEnabled := t.hasFeature(g, FeatureDBSelect)
 	mainGen.Pln(dmlEnabled, `func (e `, entityPTRName, `) Load(ctx context.Context,dbm *DBM, `, &bufPKNameTypes, `, opts ...dml.DBRFunc) (err error) {`)
@@ -1191,7 +1189,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	}`)
 
 	dmlEnabled = t.hasFeature(g, FeatureDBUpsert)
-	entityFuncName = codegen.SkipWS(t.EntityName(), "Upsert")
+	entityFuncName = codegen.SkipWS(t.EntityName(), "UpsertByPK")
 	mainGen.Pln(dmlEnabled, `func (e `, entityPTRName, `) Upsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, entityFuncName, `"`), `);
 			defer func(){ cstrace.Status(span, err); span.End(); }()`)
@@ -1202,7 +1200,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpsert, nil, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if res, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, entityFuncName, `ByPK"`), `).ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", e)); err != nil {
+		if res, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", e)); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpsert, nil, e); err != nil {
@@ -1220,61 +1218,49 @@ func (t *Table) fnDBMOptionsSQLBuildQueries(mainGen *codegen.Go, g *Generator) {
 		tblPK = t.Table.Columns.ViewPrimaryKeys()
 	}
 
-	mainGen.Pln(tblPKLen > 0 && t.hasFeature(g, FeatureDBSelect|FeatureEntityStruct), `ddl.WithQueryDBR( `,
-		codegen.SkipWS(`"`, t.EntityName(), `FindByPK"`),
-		`, dbmo.InitSelectFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).SelectByPK("*")).WithDBR().Interpolate()),`)
-
-	mainGen.Pln(tblPKLen > 0 && t.hasFeature(g, FeatureDBSelect|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
-		codegen.SkipWS(`"`, t.CollectionName(), `DBLoadAll"`),
-		`, dbmo.InitSelectFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Select("*")).WithDBR()),`)
-
-	var onePKWhere strings.Builder
-	onePKWhere.WriteString("\ndml.Columns(`" + strings.Join(tblPK.FieldNames(), "`,`") + "`).In().")
+	var pkWhereIN strings.Builder
+	var pkWhereEQ strings.Builder
 	if tblPKLen == 1 {
-		onePKWhere.WriteString("PlaceHolder(),\n")
+		pkWhereIN.WriteString("\ndml.Column(`" + strings.Join(tblPK.FieldNames(), "`,`") + "`).In().")
+		pkWhereIN.WriteString("PlaceHolder(),\n")
+		pkWhereEQ.WriteString("\ndml.Column(`" + strings.Join(tblPK.FieldNames(), "`,`") + "`).Equal().")
+		pkWhereEQ.WriteString("PlaceHolder(),\n")
 	} else {
-		onePKWhere.WriteString("Tuples(),\n")
+		pkWhereIN.WriteString("\ndml.Columns(`" + strings.Join(tblPK.FieldNames(), "`,`") + "`).In().")
+		pkWhereIN.WriteString("Tuples(),\n")
+		pkWhereEQ.WriteString("\ndml.Columns(`" + strings.Join(tblPK.FieldNames(), "`,`") + "`).Equal().")
+		pkWhereEQ.WriteString("Tuples(),\n")
 	}
 
 	mainGen.Pln(tblPKLen > 0 && t.hasFeature(g, FeatureDBSelect|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
-		codegen.SkipWS(`"`, t.CollectionName(), `DBLoadDefiniteIDs"`),
-		`, dbmo.InitSelectFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Select("*")).Where(`, onePKWhere.String(), `).WithDBR().Interpolate()),`)
+		codegen.SkipWS(`"`, t.CollectionName(), `SelectAll"`),
+		`, dbmo.InitSelectFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Select("*")).WithDBR()),`)
+
+	mainGen.Pln(tblPKLen > 0 && t.hasFeature(g, FeatureDBSelect|FeatureEntityStruct|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
+		codegen.SkipWS(`"`, t.CollectionName(), `SelectByPK"`),
+		`, dbmo.InitSelectFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Select("*")).Where(`, pkWhereIN.String(), `).WithDBR().Interpolate()),`)
+
+	mainGen.Pln(tblPKLen > 0 && t.hasFeature(g, FeatureDBSelect|FeatureEntityStruct|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
+		codegen.SkipWS(`"`, t.EntityName(), `SelectByPK"`),
+		`, dbmo.InitSelectFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Select("*")).Where(`, pkWhereEQ.String(), `).WithDBR().Interpolate()),`)
 
 	if t.Table.IsView() {
 		return
 	}
 
-	// <ENTITY>
-	mainGen.Pln(t.hasFeature(g, FeatureDBUpdate|FeatureEntityStruct), `ddl.WithQueryDBR( `,
+	mainGen.Pln(t.hasFeature(g, FeatureDBUpdate|FeatureEntityStruct|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
 		codegen.SkipWS(`"`, t.EntityName(), `UpdateByPK"`),
-		`, dbmo.InitUpdateFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).UpdateByPK()).WithDBR()),`)
-	mainGen.Pln(t.hasFeature(g, FeatureDBDelete|FeatureEntityStruct), `ddl.WithQueryDBR( `,
+		`, dbmo.InitUpdateFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Update().Where(`, pkWhereIN.String(), `)).WithDBR()),`)
+	mainGen.Pln(t.hasFeature(g, FeatureDBDelete|FeatureEntityStruct|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
 		codegen.SkipWS(`"`, t.EntityName(), `DeleteByPK"`),
-		`, dbmo.InitDeleteFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).DeleteByPK()).WithDBR().Interpolate()),`)
-	mainGen.Pln(t.hasFeature(g, FeatureDBInsert|FeatureEntityStruct), `ddl.WithQueryDBR( `,
+		`, dbmo.InitDeleteFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Delete().Where(`, pkWhereIN.String(), `)).WithDBR().Interpolate()),`)
+	mainGen.Pln(t.hasFeature(g, FeatureDBInsert|FeatureEntityStruct|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
 		codegen.SkipWS(`"`, t.EntityName(), `Insert"`),
 		`, dbmo.InitInsertFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Insert()).WithDBR()),`)
-	mainGen.Pln(t.hasFeature(g, FeatureDBUpsert|FeatureEntityStruct), `ddl.WithQueryDBR( `,
+	mainGen.Pln(t.hasFeature(g, FeatureDBUpsert|FeatureEntityStruct|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
 		codegen.SkipWS(`"`, t.EntityName(), `UpsertByPK"`),
 		`, dbmo.InitInsertFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Insert()).OnDuplicateKey().WithDBR()),`)
 	mainGen.Pln(``)
-	// </ENTITY>
-
-	// <COLLECTION>
-	mainGen.Pln(t.hasFeature(g, FeatureDBUpdate|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
-		codegen.SkipWS(`"`, t.CollectionName(), `UpdateByPK"`),
-		`, dbmo.InitUpdateFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).UpdateByPK()).WithDBR()),`)
-	mainGen.Pln(t.hasFeature(g, FeatureDBDelete|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
-		codegen.SkipWS(`"`, t.CollectionName(), `DeleteByPK"`),
-		`, dbmo.InitDeleteFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).DeleteByPK()).WithDBR().Interpolate()),`)
-	mainGen.Pln(t.hasFeature(g, FeatureDBInsert|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
-		codegen.SkipWS(`"`, t.CollectionName(), `Insert"`),
-		`, dbmo.InitInsertFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Insert()).WithDBR()),`)
-	mainGen.Pln(t.hasFeature(g, FeatureDBUpsert|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
-		codegen.SkipWS(`"`, t.CollectionName(), `UpsertByPK"`),
-		`, dbmo.InitInsertFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Insert()).OnDuplicateKey().WithDBR()),`)
-	mainGen.Pln(``)
-	// </COLLECTION>
 }
 
 func (t *Table) generateTestOther(testGen *codegen.Go, g *Generator) (codeWritten int) {

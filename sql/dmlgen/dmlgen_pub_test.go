@@ -515,7 +515,7 @@ func TestNewGenerator_DB_Partial_SQL_Queries(t *testing.T) {
 	// dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil)
 
 	ctx := context.Background()
-	ts, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated2",
+	ts, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated4",
 
 		dmlgen.WithTablesFromDB(ctx, db,
 			"core_configuration", "sales_order_status_state", "view_customer_auto_increment",

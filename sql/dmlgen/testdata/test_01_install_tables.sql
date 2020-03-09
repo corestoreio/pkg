@@ -211,7 +211,7 @@ CREATE TABLE `core_configuration` (
   `version_te` TIMESTAMP(6) GENERATED ALWAYS AS ROW END COMMENT 'Timestamp End Versioning',
   PERIOD FOR SYSTEM_TIME(`version_ts`, `version_te`),
   PRIMARY KEY (`config_id`),
-  UNIQUE KEY `CORE_CONFIG_DATA_SCOPE_SCOPE_ID_PATH` (`scope`,`scope_id`,`expires`,`path`)
+  UNIQUE KEY `CORE_CONFIG_DATA_SCOPE_SCOPE_ID_PATH` (`scope`,`scope_id`,`path`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Config Data'
   WITH SYSTEM VERSIONING
     PARTITION BY SYSTEM_TIME (

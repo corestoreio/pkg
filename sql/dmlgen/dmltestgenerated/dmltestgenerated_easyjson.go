@@ -78,6 +78,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(in *
 		in.Consumed()
 	}
 }
+
 func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(out *jwriter.Writer, in ViewCustomerNoAutoIncrements) {
 	out.RawByte('{')
 	first := true
@@ -127,6 +128,7 @@ func (v *ViewCustomerNoAutoIncrements) UnmarshalJSON(data []byte) error {
 func (v *ViewCustomerNoAutoIncrements) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated(l, v)
 }
+
 func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(in *jlexer.Lexer, out *ViewCustomerNoAutoIncrement) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
@@ -166,6 +168,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(in 
 		in.Consumed()
 	}
 }
+
 func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(out *jwriter.Writer, in ViewCustomerNoAutoIncrement) {
 	out.RawByte('{')
 	first := true
@@ -232,6 +235,7 @@ func (v *ViewCustomerNoAutoIncrement) UnmarshalJSON(data []byte) error {
 func (v *ViewCustomerNoAutoIncrement) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated1(l, v)
 }
+
 func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(in *jlexer.Lexer, out *ViewCustomerAutoIncrements) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
@@ -292,6 +296,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(in 
 		in.Consumed()
 	}
 }
+
 func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(out *jwriter.Writer, in ViewCustomerAutoIncrements) {
 	out.RawByte('{')
 	first := true
@@ -341,6 +346,7 @@ func (v *ViewCustomerAutoIncrements) UnmarshalJSON(data []byte) error {
 func (v *ViewCustomerAutoIncrements) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated2(l, v)
 }
+
 func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(in *jlexer.Lexer, out *ViewCustomerAutoIncrement) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
@@ -382,6 +388,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(in 
 		in.Consumed()
 	}
 }
+
 func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(out *jwriter.Writer, in ViewCustomerAutoIncrement) {
 	out.RawByte('{')
 	first := true
@@ -458,6 +465,7 @@ func (v *ViewCustomerAutoIncrement) UnmarshalJSON(data []byte) error {
 func (v *ViewCustomerAutoIncrement) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated3(l, v)
 }
+
 func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated4(in *jlexer.Lexer, out *SalesOrderStatusStates) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
@@ -518,6 +526,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated4(in 
 		in.Consumed()
 	}
 }
+
 func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated4(out *jwriter.Writer, in SalesOrderStatusStates) {
 	out.RawByte('{')
 	first := true
@@ -567,6 +576,7 @@ func (v *SalesOrderStatusStates) UnmarshalJSON(data []byte) error {
 func (v *SalesOrderStatusStates) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated4(l, v)
 }
+
 func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated5(in *jlexer.Lexer, out *SalesOrderStatusState) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
@@ -604,6 +614,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated5(in 
 		in.Consumed()
 	}
 }
+
 func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated5(out *jwriter.Writer, in SalesOrderStatusState) {
 	out.RawByte('{')
 	first := true
@@ -670,6 +681,7 @@ func (v *SalesOrderStatusState) UnmarshalJSON(data []byte) error {
 func (v *SalesOrderStatusState) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated5(l, v)
 }
+
 func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated6(in *jlexer.Lexer, out *DmlgenTypesCollection) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
@@ -730,6 +742,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated6(in 
 		in.Consumed()
 	}
 }
+
 func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated6(out *jwriter.Writer, in DmlgenTypesCollection) {
 	out.RawByte('{')
 	first := true
@@ -779,6 +792,7 @@ func (v *DmlgenTypesCollection) UnmarshalJSON(data []byte) error {
 func (v *DmlgenTypesCollection) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated6(l, v)
 }
+
 func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated7(in *jlexer.Lexer, out *DmlgenTypes) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
@@ -950,6 +964,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated7(in 
 		in.Consumed()
 	}
 }
+
 func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated7(out *jwriter.Writer, in DmlgenTypes) {
 	out.RawByte('{')
 	first := true
@@ -1386,6 +1401,7 @@ func (v *DmlgenTypes) UnmarshalJSON(data []byte) error {
 func (v *DmlgenTypes) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated7(l, v)
 }
+
 func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated8(in *jlexer.Lexer, out *CustomerEntity) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
@@ -1525,6 +1541,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated8(in 
 		in.Consumed()
 	}
 }
+
 func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated8(out *jwriter.Writer, in CustomerEntity) {
 	out.RawByte('{')
 	first := true
@@ -1831,6 +1848,7 @@ func (v *CustomerEntity) UnmarshalJSON(data []byte) error {
 func (v *CustomerEntity) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated8(l, v)
 }
+
 func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(in *jlexer.Lexer, out *CustomerEntities) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
@@ -1891,6 +1909,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(in 
 		in.Consumed()
 	}
 }
+
 func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(out *jwriter.Writer, in CustomerEntities) {
 	out.RawByte('{')
 	first := true
@@ -1940,6 +1959,7 @@ func (v *CustomerEntities) UnmarshalJSON(data []byte) error {
 func (v *CustomerEntities) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated9(l, v)
 }
+
 func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(in *jlexer.Lexer, out *CustomerAddressEntity) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
@@ -2053,6 +2073,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(in
 		in.Consumed()
 	}
 }
+
 func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(out *jwriter.Writer, in CustomerAddressEntity) {
 	out.RawByte('{')
 	first := true
@@ -2329,6 +2350,7 @@ func (v *CustomerAddressEntity) UnmarshalJSON(data []byte) error {
 func (v *CustomerAddressEntity) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated10(l, v)
 }
+
 func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated11(in *jlexer.Lexer, out *CustomerAddressEntities) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
@@ -2389,6 +2411,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated11(in
 		in.Consumed()
 	}
 }
+
 func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated11(out *jwriter.Writer, in CustomerAddressEntities) {
 	out.RawByte('{')
 	first := true
@@ -2438,6 +2461,7 @@ func (v *CustomerAddressEntities) UnmarshalJSON(data []byte) error {
 func (v *CustomerAddressEntities) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated11(l, v)
 }
+
 func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated12(in *jlexer.Lexer, out *CoreConfigurations) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
@@ -2498,6 +2522,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated12(in
 		in.Consumed()
 	}
 }
+
 func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated12(out *jwriter.Writer, in CoreConfigurations) {
 	out.RawByte('{')
 	first := true
@@ -2547,6 +2572,7 @@ func (v *CoreConfigurations) UnmarshalJSON(data []byte) error {
 func (v *CoreConfigurations) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated12(l, v)
 }
+
 func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated13(in *jlexer.Lexer, out *CoreConfiguration) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
@@ -2600,6 +2626,7 @@ func easyjson4b0a353eDecodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated13(in
 		in.Consumed()
 	}
 }
+
 func easyjson4b0a353eEncodeGithubComCorestoreioPkgSqlDmlgenDmltestgenerated13(out *jwriter.Writer, in CoreConfiguration) {
 	out.RawByte('{')
 	first := true

@@ -895,7 +895,8 @@ func (g *Generator) fnCreateDBM(mainGen *codegen.Go, tbls tables) {
 	mainGen.Pln(`type DBMOption struct {`)
 	{
 		mainGen.Pln(tbls.hasFeature(g, FeatureDBTracing), `Trace                trace.Tracer`)
-		mainGen.Pln(`TableOptions         []ddl.TableOption`)
+		mainGen.Pln(`TableOptions         []ddl.TableOption // gets applied at the beginning`)
+		mainGen.Pln(`TableOptionsAfter    []ddl.TableOption // gets applied at the end`)
 		mainGen.Pln(tbls.hasFeature(g, FeatureDBSelect), `InitSelectFn         func(*dml.Select) *dml.Select`)
 		mainGen.Pln(tbls.hasFeature(g, FeatureDBUpdate), `InitUpdateFn         func(*dml.Update) *dml.Update`)
 		mainGen.Pln(tbls.hasFeature(g, FeatureDBDelete), `InitDeleteFn         func(*dml.Delete) *dml.Delete`)
@@ -971,11 +972,13 @@ It panics if the event argument is larger than dml.EventFlagMax.`)
 			`	if dbmo.InitInsertFn == nil { dbmo.InitInsertFn = func(s *dml.Insert) *dml.Insert { return s; }; } `)
 
 		{
-			mainGen.Pln(`_ = tbls.Options(`)
+			mainGen.Pln(`err = tbls.Options(`)
 			for _, tbl := range tbls {
 				tbl.fnDBMOptionsSQLBuildQueries(mainGen, g)
 			}
 			mainGen.Pln(`)`) // end options
+			mainGen.Pln(`if err != nil { return nil, err }`)
+			mainGen.Pln(`if err := tbls.Options(dbmo.TableOptionsAfter...); err != nil { return nil, err }`)
 		}
 		mainGen.Out()
 	}
