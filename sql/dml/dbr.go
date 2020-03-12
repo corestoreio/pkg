@@ -54,6 +54,7 @@ type DBR struct {
 	// amount of placeholders.
 	insertCachedSQL     string
 	insertColumnCount   uint
+	tupleCount          uint
 	tupleRowCount       uint
 	insertIsBuildValues bool
 	// isPrepared if true the cachedSQL field in base gets ignored
@@ -83,6 +84,19 @@ func (a *DBR) ApplyCallBacks(fns ...DBRFunc) *DBR {
 		af(ac)
 	}
 	return ac
+}
+
+// TupleCount sets the amount of tuples and its rows. Only needed in case of a prepared statement with tuples.
+// WHERE clause contains:
+//		dml.Columns("entity_id", "attribute_id", "store_id", "source_id").In().Tuples(),
+// and set to 4,2 because 4 columns with two rows = 8 arguments.
+//		TupleCount(4,2)
+// results into
+//		WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN ((?,?,?,?),(?,?,?,?)))
+func (a *DBR) TupleCount(tuples, rows uint) *DBR {
+	a.tupleCount = tuples
+	a.tupleRowCount = rows
+	return a
 }
 
 // OrderBy appends columns to the ORDER BY statement for ascending sorting. A
@@ -308,8 +322,14 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 	if a.Options > 0 && lenExtArgs > 0 && containsQualifiedRecords == 0 && len(args) == 0 {
 		return "", nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
 	}
+
 	if a.base.containsTuples {
 		aLen, _ := totalSliceLen(args)
+		if aLen == 0 {
+			// in case of a prepared statement containing a tuple
+			aLen = int(a.tupleCount * a.tupleRowCount)
+		}
+
 		if err := expandPlaceHolderTuples(sqlBuf.Second, sqlBuf.First.Bytes(), aLen); err != nil {
 			return "", nil, errors.WithStack(err)
 		}
@@ -607,6 +627,25 @@ func (a *DBR) WithDB(db QueryExecPreparer) *DBR {
 func (a *DBR) WithPreparedStmt(stmt *sql.Stmt) *DBR {
 	a.base.db = stmtWrapper{stmt: stmt}
 	return a
+}
+
+// Prepare generates a prepared statement from the underlying SQL. It fails if
+// it contains an already prepared statement.
+func (a *DBR) Prepare(ctx context.Context) (*DBR, error) {
+	sqlStr, _, err := a.prepareQueryAndArgs(nil)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if _, ok := a.base.db.(stmtWrapper); ok {
+		return nil, errors.Fatal.Newf("already a prepared statement")
+	}
+	stmt, err := a.base.db.PrepareContext(ctx, sqlStr)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Preparation of query %q failed", sqlStr)
+	}
+	a.isPrepared = true
+	a.base.db = stmtWrapper{stmt: stmt}
+	return a, nil
 }
 
 // WithTx sets the transaction query executor and the logger to run this query

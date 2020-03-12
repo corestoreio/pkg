@@ -88,13 +88,7 @@ type builderCommon struct {
 	// created SELECT statements. This value  gets stored in templateStmtCount.
 	// An example exists in TestUnionTemplate_ReuseArgs.
 	templateStmtCount int
-	// EstimatedCachedSQLSize specifies the estimated size in bytes of the final
-	// SQL string. This value gets used during SQL string building process to
-	// reduce the allocations and speed up the process. Default Value is xxxx
-	// Bytes.
-	EstimatedCachedSQLSize uint16
-
-	cacheKey string
+	cacheKey          string
 	// SingleUseCacheKey      bool // TODO implement, should panic when setting the same cahce key the 2nd time
 	// cachedSQL contains the final SQL string which gets send to the server.
 	// Using the CacheKey allows a dml type (insert,update,select ... ) to build

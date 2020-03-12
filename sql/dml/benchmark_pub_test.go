@@ -230,7 +230,6 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 				Where(Column("entity_id").In().Int64s(entityIDs...)).
 				Where(Column("attribute_id").In().Int64s(174, 175)).
 				Where(Column("store_id").Int(0))
-			sel.EstimatedCachedSQLSize = 10240
 			var err error
 			benchmarkSelectStr, benchmarkGlobalVals, err = sel.ToSQL()
 			if err != nil {
@@ -252,7 +251,6 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 				Where(Column("attribute_id").In().PlaceHolder()).
 				Where(Column("store_id").PlaceHolder())
 
-			sel.EstimatedCachedSQLSize = 8192
 			var err error
 			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithDBR().Interpolate().testWithArgs(4, entityIDs, []int64{174, 175}, 0).ToSQL()
 			if err != nil {
@@ -273,7 +271,6 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 				Where(Column("attribute_id").In().NamedArg("AttributeId")).
 				Where(Column("store_id").NamedArg("StoreId"))
 
-			sel.EstimatedCachedSQLSize = 8192
 			var err error
 			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithDBR().Interpolate().testWithArgs(
 				sql.Named("EntityTypeId", int64(4)),
@@ -297,7 +294,6 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 			Where(Column("entity_id").In().PlaceHolder()).
 			Where(Column("attribute_id").In().PlaceHolder()).
 			Where(Column("store_id").PlaceHolder())
-		sel.EstimatedCachedSQLSize = 8192
 
 		selA := sel.WithDBR().Interpolate()
 

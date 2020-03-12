@@ -564,6 +564,14 @@ func expandInterface(appendTo []interface{}, arg interface{}) []interface{} {
 				appendTo = append(appendTo, int64(v))
 			}
 		}
+	case []uint32:
+		for _, v := range vv {
+			if v > math.MaxInt32 {
+				appendTo = append(appendTo, strconv.AppendUint([]byte{}, uint64(v), 10))
+			} else {
+				appendTo = append(appendTo, int64(v))
+			}
+		}
 	case []uint:
 		for _, v := range vv {
 			if v > math.MaxInt64 {

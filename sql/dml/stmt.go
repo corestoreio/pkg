@@ -30,31 +30,19 @@ type stmtWrapper struct {
 	}
 }
 
-func (sw stmtWrapper) PrepareContext(_ context.Context, sql string) (*sql.Stmt, error) {
-	if sql != "" {
-		panic(errors.NotAllowed.Newf("[dml] Argument `sql` with %q not allowed because this is a prepared statement", sql))
-	}
+func (sw stmtWrapper) PrepareContext(_ context.Context, _ string) (*sql.Stmt, error) {
 	return nil, errors.NotImplemented.Newf("[dml] A *sql.Stmt cannot prepare anything")
 }
 
-func (sw stmtWrapper) ExecContext(ctx context.Context, sql string, args ...interface{}) (sql.Result, error) {
-	if sql != "" {
-		panic(errors.NotAllowed.Newf("[dml] Argument `sql` with %q not allowed because this is a prepared statement", sql))
-	}
+func (sw stmtWrapper) ExecContext(ctx context.Context, _ string, args ...interface{}) (sql.Result, error) {
 	return sw.stmt.ExecContext(ctx, args...)
 }
 
-func (sw stmtWrapper) QueryContext(ctx context.Context, sql string, args ...interface{}) (*sql.Rows, error) {
-	if sql != "" {
-		panic(errors.NotAllowed.Newf("[dml] Argument `sql` with %q not allowed because this is a prepared statement", sql))
-	}
+func (sw stmtWrapper) QueryContext(ctx context.Context, _ string, args ...interface{}) (*sql.Rows, error) {
 	return sw.stmt.QueryContext(ctx, args...)
 }
 
-func (sw stmtWrapper) QueryRowContext(ctx context.Context, sql string, args ...interface{}) *sql.Row {
-	if sql != "" {
-		panic(errors.NotAllowed.Newf("[dml] Argument `sql` with %q not allowed because this is a prepared statement", sql))
-	}
+func (sw stmtWrapper) QueryRowContext(ctx context.Context, _ string, args ...interface{}) *sql.Row {
 	return sw.stmt.QueryRowContext(ctx, args...)
 }
 
