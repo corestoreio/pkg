@@ -19,6 +19,12 @@ const (
 	TableNameViewCustomerAutoIncrement = "view_customer_auto_increment"
 )
 
+var dbmEmptyOpts = []dml.DBRFunc{func(dbr *dml.DBR) {
+	// do nothing because Clone gets called automatically
+}}
+
+func dbmNoopResultCheckFn(_ sql.Result, err error) error { return err }
+
 // DBMOption provides various options to the DBM object.
 type DBMOption struct {
 	TableOptions                       []ddl.TableOption // gets applied at the beginning
@@ -127,7 +133,7 @@ func NewDBManager(ctx context.Context, dbmo *DBMOption) (*DBM, error) {
 			dml.Column(`config_id`).Equal().PlaceHolder(),
 		).WithDBR().Interpolate()),
 		ddl.WithQueryDBR("CoreConfigurationUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameCoreConfiguration).Update().Where(
-			dml.Column(`config_id`).In().PlaceHolder(),
+			dml.Column(`config_id`).Equal().PlaceHolder(),
 		)).WithDBR()),
 		ddl.WithQueryDBR("CoreConfigurationDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameCoreConfiguration).Delete().Where(
 			dml.Column(`config_id`).In().PlaceHolder(),
@@ -395,20 +401,29 @@ func (cc *CoreConfigurations) DBDelete(ctx context.Context, dbm *DBM, opts ...dm
 	return res, nil
 }
 
-func (cc *CoreConfigurations) DBUpdate(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
+func (cc *CoreConfigurations) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
 	if cc == nil {
-		return nil, errors.NotValid.Newf("CoreConfigurations can't be nil")
+		return errors.NotValid.Newf("CoreConfigurations can't be nil")
 	}
 	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpdate, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
-	if res, err = dbm.CachedQuery("CoreConfigurationUpdateByPK").ApplyCallBacks(opts...).ExecContext(ctx, cc); err != nil {
-		return nil, errors.WithStack(err)
+	if len(opts) == 0 {
+		opts = dbmEmptyOpts
 	}
-	if err = errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpdate, cc, nil)); err != nil {
-		return nil, errors.WithStack(err)
+	if resCheckFn == nil {
+		resCheckFn = dbmNoopResultCheckFn
 	}
-	return res, nil
+	dbrStmt, err := dbm.CachedQuery("CoreConfigurationUpdateByPK").ApplyCallBacks(opts...).Prepare(ctx)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	for _, c := range cc.Data {
+		if err := resCheckFn(dbrStmt.ExecContext(ctx, c)); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpdate, cc, nil))
 }
 
 func (cc *CoreConfigurations) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {

@@ -2,6 +2,8 @@ package dmltestgenerated4
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"sort"
 	"testing"
 
@@ -20,9 +22,7 @@ func TestNewDBManager_Manual(t *testing.T) {
 
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
-	defer dmltest.SQLDumpLoad(t, "../testdata/test_*_tables.sql", &dmltest.SQLDumpOptions{
-		SkipDBCleanup: true,
-	}).Deferred()
+	defer dmltest.SQLDumpLoad(t, "../testdata/test_*_tables.sql", nil).Deferred()
 
 	availableEvents := []dml.EventFlag{
 		dml.EventFlagBeforeInsert, dml.EventFlagAfterInsert,
@@ -66,43 +66,6 @@ func TestNewDBManager_Manual(t *testing.T) {
 	assert.NoError(t, err)
 
 	ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de", FloatMaxDecimals: 6, MaxLenStringLimit: 41})
-	var entityInsertCount int64
-	t.Run("Entity", func(t *testing.T) {
-		var eFake CoreConfiguration // e=entity => entityFake or entityLoaded
-		assert.NoError(t, ps.FakeData(&eFake))
-
-		t.Run("Insert", func(t *testing.T) {
-			res, err := eFake.Insert(ctx, dbm, shouldInterpolateFn)
-			assert.NoError(t, err)
-
-			assert.NoError(t, dml.ExecValidateOneAffectedRow(res, err))
-
-			lid, _ := res.LastInsertId()
-			ra, _ := res.RowsAffected()
-			assert.True(t, lid > 0, "LastInsertID should be greater than 0")
-			assert.True(t, ra > 0, "RowsAffected should be greater than 0")
-			t.Logf("LastInsertId(%d) RowsAffected(%d)", lid, ra)
-			entityInsertCount += ra
-		})
-		t.Run("Upsert", func(t *testing.T) {
-			// this test, runs the ON DUPLICATE KEY clause as the table core_config_data has a unique key.
-			res, err := eFake.Upsert(ctx, dbm, shouldInterpolateFn)
-			assert.NoError(t, err)
-			lid, _ := res.LastInsertId()
-			ra, _ := res.RowsAffected()
-			assert.True(t, lid == 0, "LastInsertID should be zero")
-			assert.True(t, ra == 0, "RowsAffected should be zero")
-			t.Logf("LastInsertId(%d) RowsAffected(%d)", lid, ra)
-		})
-		t.Run("Load", func(t *testing.T) {
-			eLoaded := &CoreConfiguration{}
-			err = eLoaded.Load(ctx, dbm, eFake.ConfigID)
-			assert.NoError(t, err)
-			assert.NotEmpty(t, eLoaded.ConfigID)
-			assert.NotEmpty(t, eLoaded.Scope)
-			assert.NotEmpty(t, eLoaded.Path)
-		})
-	})
 
 	t.Run("Collection", func(t *testing.T) {
 		var ec CoreConfigurations
@@ -130,6 +93,36 @@ func TestNewDBManager_Manual(t *testing.T) {
 			t.Logf("LastInsertId(%d) RowsAffected(%d)", lid, ra)
 		})
 
+		t.Run("DBUpdate", func(t *testing.T) {
+			i := 0
+			ec.Each(func(c *CoreConfiguration) {
+				c.Path = fmt.Sprintf("UpdateUnique:%d", i)
+				i++
+			}) // reset configIDs
+
+			i = 0
+			err := ec.DBUpdate(ctx, dbm, func(result sql.Result, err error) error {
+				assert.NoError(t, err)
+				raw, err := result.RowsAffected()
+				assert.NoError(t, err)
+				assert.Exactly(t, int64(1), raw)
+				i++
+				return nil
+			})
+			assert.Exactly(t, len(ec.Data), i)
+			assert.NoError(t, err)
+
+			var ec2 CoreConfigurations
+			err = ec2.DBLoad(ctx, dbm, nil)
+			assert.NoError(t, err)
+
+			i = 0
+			ec2.Each(func(c *CoreConfiguration) {
+				assert.Exactly(t, fmt.Sprintf("UpdateUnique:%d", i), c.Path)
+				i++
+			}) // reset configIDs
+		})
+
 		t.Run("validate auto increment", func(t *testing.T) {
 			calls := 0
 			ec.Each(func(c *CoreConfiguration) {
@@ -142,7 +135,7 @@ func TestNewDBManager_Manual(t *testing.T) {
 		t.Run("DBLoad All", func(t *testing.T) {
 			var eca CoreConfigurations
 			assert.NoError(t, eca.DBLoad(ctx, dbm, []uint32{}))
-			assert.Exactly(t, len(ec.Data)+int(entityInsertCount), len(eca.Data), "former collection must have the same length as the loaded one")
+			assert.Exactly(t, len(ec.Data), len(eca.Data), "former collection must have the same length as the loaded one")
 		})
 		t.Run("DBLoad partial IDs", func(t *testing.T) {
 			var eca CoreConfigurations
@@ -150,7 +143,7 @@ func TestNewDBManager_Manual(t *testing.T) {
 			assert.Exactly(t, len(ec.Data), len(eca.Data), "former collection must have the same length as the loaded one")
 		})
 		t.Run("DBDelete", func(t *testing.T) {
-			t.Skip("asdadasds")
+			t.Skip("asdasdasdasdasdas")
 			res, err := ec.DBDelete(ctx, dbm)
 			assert.NoError(t, err)
 			lid, _ := res.LastInsertId()
@@ -158,6 +151,42 @@ func TestNewDBManager_Manual(t *testing.T) {
 			assert.True(t, lid == 0, "LastInsertID should be zero")
 			assert.Exactly(t, int64(len(ec.Data)), ra, "RowsAffected should be same as ec.Data length")
 			t.Logf("LastInsertId(%d) RowsAffected(%d)", lid, ra)
+		})
+	})
+
+	t.Run("Entity", func(t *testing.T) {
+		var eFake CoreConfiguration // e=entity => entityFake or entityLoaded
+		assert.NoError(t, ps.FakeData(&eFake))
+
+		t.Run("Insert", func(t *testing.T) {
+			res, err := eFake.Insert(ctx, dbm, shouldInterpolateFn)
+			assert.NoError(t, err)
+
+			assert.NoError(t, dml.ExecValidateOneAffectedRow(res, err))
+
+			lid, _ := res.LastInsertId()
+			ra, _ := res.RowsAffected()
+			assert.True(t, lid > 0, "LastInsertID should be greater than 0")
+			assert.True(t, ra > 0, "RowsAffected should be greater than 0")
+			t.Logf("LastInsertId(%d) RowsAffected(%d)", lid, ra)
+		})
+		t.Run("Upsert", func(t *testing.T) {
+			// this test, runs the ON DUPLICATE KEY clause as the table core_config_data has a unique key.
+			res, err := eFake.Upsert(ctx, dbm, shouldInterpolateFn)
+			assert.NoError(t, err)
+			lid, _ := res.LastInsertId()
+			ra, _ := res.RowsAffected()
+			assert.True(t, lid == 0, "LastInsertID should be zero")
+			assert.True(t, ra == 0, "RowsAffected should be zero")
+			t.Logf("LastInsertId(%d) RowsAffected(%d)", lid, ra)
+		})
+		t.Run("Load", func(t *testing.T) {
+			eLoaded := &CoreConfiguration{}
+			err = eLoaded.Load(ctx, dbm, eFake.ConfigID)
+			assert.NoError(t, err)
+			assert.NotEmpty(t, eLoaded.ConfigID)
+			assert.NotEmpty(t, eLoaded.Scope)
+			assert.NotEmpty(t, eLoaded.Path)
 		})
 	})
 
@@ -173,7 +202,7 @@ func TestNewDBManager_Manual(t *testing.T) {
 			"CoreConfigurationDeleteByPK::DELETE FROM `core_configuration` WHERE (`config_id` IN ?)",
 			"CoreConfigurationInsert::INSERT INTO `core_configuration` (`scope`,`scope_id`,`expires`,`path`,`value`) VALUES (?,?,?,?,?)",
 			"CoreConfigurationSelectByPK::SELECT `config_id`, `scope`, `scope_id`, `expires`, `path`, `value` FROM `core_configuration` AS `main_table` WHERE (`config_id` = ?) LIMIT 0,1000",
-			"CoreConfigurationUpdateByPK::UPDATE `core_configuration` SET `scope`=?, `scope_id`=?, `expires`=?, `path`=?, `value`=? WHERE (`config_id` IN ?)",
+			"CoreConfigurationUpdateByPK::UPDATE `core_configuration` SET `scope`=?, `scope_id`=?, `expires`=?, `path`=?, `value`=? WHERE (`config_id` = ?)",
 			"CoreConfigurationUpsertByPK::INSERT INTO `core_configuration` (`scope`,`scope_id`,`expires`,`path`,`value`) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE `scope`=VALUES(`scope`), `scope_id`=VALUES(`scope_id`), `expires`=VALUES(`expires`), `path`=VALUES(`path`), `value`=VALUES(`value`)",
 			"CoreConfigurationsSelectAll::SELECT `config_id`, `scope`, `scope_id`, `expires`, `path`, `value` FROM `core_configuration` AS `main_table` LIMIT 0,1000",
 			"CoreConfigurationsSelectByPK::SELECT `config_id`, `scope`, `scope_id`, `expires`, `path`, `value` FROM `core_configuration` AS `main_table` WHERE (`config_id` IN ?) LIMIT 0,1000",

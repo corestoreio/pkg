@@ -233,8 +233,6 @@ func TestInfoSchemaForeignKeys(t *testing.T) {
 }
 
 func TestWithCustomStructTags(t *testing.T) {
-	t.Parallel()
-
 	t.Run("unbalanced should panic", func(t *testing.T) {
 		defer func() {
 			if r := recover(); r != nil {
@@ -270,8 +268,6 @@ func TestWithCustomStructTags(t *testing.T) {
 }
 
 func TestWithStructTags(t *testing.T) {
-	t.Parallel()
-
 	t.Run("table not found", func(t *testing.T) {
 		tbls, err := dmlgen.NewGenerator("test",
 			dmlgen.WithTableConfig("tableNOTFOUND", &dmlgen.TableConfig{
@@ -311,8 +307,6 @@ func TestWithStructTags(t *testing.T) {
 }
 
 func TestWithColumnAliases(t *testing.T) {
-	t.Parallel()
-
 	t.Run("table not found", func(t *testing.T) {
 		tbls, err := dmlgen.NewGenerator("test",
 			dmlgen.WithTableConfig("tableNOTFOUND", &dmlgen.TableConfig{
@@ -338,8 +332,6 @@ func TestWithColumnAliases(t *testing.T) {
 }
 
 func TestWithUniquifiedColumns(t *testing.T) {
-	t.Parallel()
-
 	t.Run("column not found", func(t *testing.T) {
 		tbls, err := dmlgen.NewGenerator("test",
 			dmlgen.WithTableConfig("core_configuration", &dmlgen.TableConfig{

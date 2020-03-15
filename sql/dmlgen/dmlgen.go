@@ -890,6 +890,12 @@ func (g *Generator) fnCreateDBM(mainGen *codegen.Go, tbls tables) {
 	}
 	mainGen.WriteConstants(tableConstants...)
 
+	mainGen.Pln(`var dbmEmptyOpts = []dml.DBRFunc{func(dbr *dml.DBR) {
+			// do nothing because Clone gets called automatically
+		}}
+		func dbmNoopResultCheckFn(_ sql.Result, err error) error { return err }
+`)
+
 	// <DBM option struct>
 	mainGen.C(`DBMOption provides various options to the DBM object.`)
 	mainGen.Pln(`type DBMOption struct {`)

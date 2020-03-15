@@ -23,7 +23,6 @@ import (
 )
 
 func TestToGoTypeNull(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		c    *ddl.Column
 		want string
@@ -90,7 +89,6 @@ func TestToGoTypeNull(t *testing.T) {
 }
 
 func TestMySQLToGoDmlColumnMap(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		c    *ddl.Column
 		want string // The function names as mentioned in dml.ColumnMap.[TFunc]
@@ -159,7 +157,6 @@ func TestMySQLToGoDmlColumnMap(t *testing.T) {
 }
 
 func TestToGoPrimitive(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		want string // The function names as mentioned in dml.ColumnMap.[TFunc]
 		c    *ddl.Column

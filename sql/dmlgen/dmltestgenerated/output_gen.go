@@ -31,6 +31,12 @@ const (
 	TableNameViewCustomerNoAutoIncrement      = "view_customer_no_auto_increment"
 )
 
+var dbmEmptyOpts = []dml.DBRFunc{func(dbr *dml.DBR) {
+	// do nothing because Clone gets called automatically
+}}
+
+func dbmNoopResultCheckFn(_ sql.Result, err error) error { return err }
+
 // DBMOption provides various options to the DBM object.
 type DBMOption struct {
 	Trace                                     trace.Tracer
@@ -248,7 +254,7 @@ func NewDBManager(ctx context.Context, dbmo *DBMOption) (*DBM, error) {
 			dml.Columns(`entity_id`, `attribute_id`, `store_id`, `source_id`).Equal().Tuples(),
 		).WithDBR().Interpolate()),
 		ddl.WithQueryDBR("CatalogProductIndexEAVDecimalIDXUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameCatalogProductIndexEAVDecimalIDX).Update().Where(
-			dml.Columns(`entity_id`, `attribute_id`, `store_id`, `source_id`).In().Tuples(),
+			dml.Columns(`entity_id`, `attribute_id`, `store_id`, `source_id`).Equal().Tuples(),
 		)).WithDBR()),
 		ddl.WithQueryDBR("CatalogProductIndexEAVDecimalIDXDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameCatalogProductIndexEAVDecimalIDX).Delete().Where(
 			dml.Columns(`entity_id`, `attribute_id`, `store_id`, `source_id`).In().Tuples(),
@@ -263,7 +269,7 @@ func NewDBManager(ctx context.Context, dbmo *DBMOption) (*DBM, error) {
 			dml.Column(`config_id`).Equal().PlaceHolder(),
 		).WithDBR().Interpolate()),
 		ddl.WithQueryDBR("CoreConfigurationUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameCoreConfiguration).Update().Where(
-			dml.Column(`config_id`).In().PlaceHolder(),
+			dml.Column(`config_id`).Equal().PlaceHolder(),
 		)).WithDBR()),
 		ddl.WithQueryDBR("CoreConfigurationDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameCoreConfiguration).Delete().Where(
 			dml.Column(`config_id`).In().PlaceHolder(),
@@ -278,7 +284,7 @@ func NewDBManager(ctx context.Context, dbmo *DBMOption) (*DBM, error) {
 			dml.Column(`entity_id`).Equal().PlaceHolder(),
 		).WithDBR().Interpolate()),
 		ddl.WithQueryDBR("CustomerAddressEntityUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameCustomerAddressEntity).Update().Where(
-			dml.Column(`entity_id`).In().PlaceHolder(),
+			dml.Column(`entity_id`).Equal().PlaceHolder(),
 		)).WithDBR()),
 		ddl.WithQueryDBR("CustomerAddressEntityDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameCustomerAddressEntity).Delete().Where(
 			dml.Column(`entity_id`).In().PlaceHolder(),
@@ -293,7 +299,7 @@ func NewDBManager(ctx context.Context, dbmo *DBMOption) (*DBM, error) {
 			dml.Column(`entity_id`).Equal().PlaceHolder(),
 		).WithDBR().Interpolate()),
 		ddl.WithQueryDBR("CustomerEntityUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameCustomerEntity).Update().Where(
-			dml.Column(`entity_id`).In().PlaceHolder(),
+			dml.Column(`entity_id`).Equal().PlaceHolder(),
 		)).WithDBR()),
 		ddl.WithQueryDBR("CustomerEntityDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameCustomerEntity).Delete().Where(
 			dml.Column(`entity_id`).In().PlaceHolder(),
@@ -308,7 +314,7 @@ func NewDBManager(ctx context.Context, dbmo *DBMOption) (*DBM, error) {
 			dml.Column(`id`).Equal().PlaceHolder(),
 		).WithDBR().Interpolate()),
 		ddl.WithQueryDBR("DmlgenTypesUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameDmlgenTypes).Update().Where(
-			dml.Column(`id`).In().PlaceHolder(),
+			dml.Column(`id`).Equal().PlaceHolder(),
 		)).WithDBR()),
 		ddl.WithQueryDBR("DmlgenTypesDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameDmlgenTypes).Delete().Where(
 			dml.Column(`id`).In().PlaceHolder(),
@@ -323,7 +329,7 @@ func NewDBManager(ctx context.Context, dbmo *DBMOption) (*DBM, error) {
 			dml.Columns(`status`, `state`).Equal().Tuples(),
 		).WithDBR().Interpolate()),
 		ddl.WithQueryDBR("SalesOrderStatusStateUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameSalesOrderStatusState).Update().Where(
-			dml.Columns(`status`, `state`).In().Tuples(),
+			dml.Columns(`status`, `state`).Equal().Tuples(),
 		)).WithDBR()),
 		ddl.WithQueryDBR("SalesOrderStatusStateDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameSalesOrderStatusState).Delete().Where(
 			dml.Columns(`status`, `state`).In().Tuples(),
@@ -662,22 +668,31 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) DBDelete(ctx context.Context, dbm 
 	return res, nil
 }
 
-func (cc *CatalogProductIndexEAVDecimalIDXes) DBUpdate(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
+func (cc *CatalogProductIndexEAVDecimalIDXes) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXesUpdateByPK")
 	defer func() { cstrace.Status(span, err); span.End() }()
 	if cc == nil {
-		return nil, errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDXes can't be nil")
+		return errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDXes can't be nil")
 	}
 	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeUpdate, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
-	if res, err = dbm.CachedQuery("CatalogProductIndexEAVDecimalIDXUpdateByPK").ApplyCallBacks(opts...).ExecContext(ctx, cc); err != nil {
-		return nil, errors.WithStack(err)
+	if len(opts) == 0 {
+		opts = dbmEmptyOpts
 	}
-	if err = errors.WithStack(dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterUpdate, cc, nil)); err != nil {
-		return nil, errors.WithStack(err)
+	if resCheckFn == nil {
+		resCheckFn = dbmNoopResultCheckFn
 	}
-	return res, nil
+	dbrStmt, err := dbm.CachedQuery("CatalogProductIndexEAVDecimalIDXUpdateByPK").ApplyCallBacks(opts...).Prepare(ctx)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	for _, c := range cc.Data {
+		if err := resCheckFn(dbrStmt.ExecContext(ctx, c)); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return errors.WithStack(dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterUpdate, cc, nil))
 }
 
 func (cc *CatalogProductIndexEAVDecimalIDXes) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
@@ -1193,22 +1208,31 @@ func (cc *CoreConfigurations) DBDelete(ctx context.Context, dbm *DBM, opts ...dm
 	return res, nil
 }
 
-func (cc *CoreConfigurations) DBUpdate(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
+func (cc *CoreConfigurations) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationsUpdateByPK")
 	defer func() { cstrace.Status(span, err); span.End() }()
 	if cc == nil {
-		return nil, errors.NotValid.Newf("CoreConfigurations can't be nil")
+		return errors.NotValid.Newf("CoreConfigurations can't be nil")
 	}
 	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpdate, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
-	if res, err = dbm.CachedQuery("CoreConfigurationUpdateByPK").ApplyCallBacks(opts...).ExecContext(ctx, cc); err != nil {
-		return nil, errors.WithStack(err)
+	if len(opts) == 0 {
+		opts = dbmEmptyOpts
 	}
-	if err = errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpdate, cc, nil)); err != nil {
-		return nil, errors.WithStack(err)
+	if resCheckFn == nil {
+		resCheckFn = dbmNoopResultCheckFn
 	}
-	return res, nil
+	dbrStmt, err := dbm.CachedQuery("CoreConfigurationUpdateByPK").ApplyCallBacks(opts...).Prepare(ctx)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	for _, c := range cc.Data {
+		if err := resCheckFn(dbrStmt.ExecContext(ctx, c)); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpdate, cc, nil))
 }
 
 func (cc *CoreConfigurations) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
@@ -1769,22 +1793,31 @@ func (cc *CustomerAddressEntities) DBDelete(ctx context.Context, dbm *DBM, opts 
 	return res, nil
 }
 
-func (cc *CustomerAddressEntities) DBUpdate(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
+func (cc *CustomerAddressEntities) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntitiesUpdateByPK")
 	defer func() { cstrace.Status(span, err); span.End() }()
 	if cc == nil {
-		return nil, errors.NotValid.Newf("CustomerAddressEntities can't be nil")
+		return errors.NotValid.Newf("CustomerAddressEntities can't be nil")
 	}
 	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeUpdate, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
-	if res, err = dbm.CachedQuery("CustomerAddressEntityUpdateByPK").ApplyCallBacks(opts...).ExecContext(ctx, cc); err != nil {
-		return nil, errors.WithStack(err)
+	if len(opts) == 0 {
+		opts = dbmEmptyOpts
 	}
-	if err = errors.WithStack(dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterUpdate, cc, nil)); err != nil {
-		return nil, errors.WithStack(err)
+	if resCheckFn == nil {
+		resCheckFn = dbmNoopResultCheckFn
 	}
-	return res, nil
+	dbrStmt, err := dbm.CachedQuery("CustomerAddressEntityUpdateByPK").ApplyCallBacks(opts...).Prepare(ctx)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	for _, c := range cc.Data {
+		if err := resCheckFn(dbrStmt.ExecContext(ctx, c)); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return errors.WithStack(dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterUpdate, cc, nil))
 }
 
 func (cc *CustomerAddressEntities) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
@@ -2344,22 +2377,31 @@ func (cc *CustomerEntities) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.
 	return res, nil
 }
 
-func (cc *CustomerEntities) DBUpdate(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
+func (cc *CustomerEntities) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntitiesUpdateByPK")
 	defer func() { cstrace.Status(span, err); span.End() }()
 	if cc == nil {
-		return nil, errors.NotValid.Newf("CustomerEntities can't be nil")
+		return errors.NotValid.Newf("CustomerEntities can't be nil")
 	}
 	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeUpdate, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
-	if res, err = dbm.CachedQuery("CustomerEntityUpdateByPK").ApplyCallBacks(opts...).ExecContext(ctx, cc); err != nil {
-		return nil, errors.WithStack(err)
+	if len(opts) == 0 {
+		opts = dbmEmptyOpts
 	}
-	if err = errors.WithStack(dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterUpdate, cc, nil)); err != nil {
-		return nil, errors.WithStack(err)
+	if resCheckFn == nil {
+		resCheckFn = dbmNoopResultCheckFn
 	}
-	return res, nil
+	dbrStmt, err := dbm.CachedQuery("CustomerEntityUpdateByPK").ApplyCallBacks(opts...).Prepare(ctx)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	for _, c := range cc.Data {
+		if err := resCheckFn(dbrStmt.ExecContext(ctx, c)); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return errors.WithStack(dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterUpdate, cc, nil))
 }
 
 func (cc *CustomerEntities) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
@@ -2960,22 +3002,31 @@ func (cc *DmlgenTypesCollection) DBDelete(ctx context.Context, dbm *DBM, opts ..
 	return res, nil
 }
 
-func (cc *DmlgenTypesCollection) DBUpdate(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
+func (cc *DmlgenTypesCollection) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesCollectionUpdateByPK")
 	defer func() { cstrace.Status(span, err); span.End() }()
 	if cc == nil {
-		return nil, errors.NotValid.Newf("DmlgenTypesCollection can't be nil")
+		return errors.NotValid.Newf("DmlgenTypesCollection can't be nil")
 	}
 	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeUpdate, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
-	if res, err = dbm.CachedQuery("DmlgenTypesUpdateByPK").ApplyCallBacks(opts...).ExecContext(ctx, cc); err != nil {
-		return nil, errors.WithStack(err)
+	if len(opts) == 0 {
+		opts = dbmEmptyOpts
 	}
-	if err = errors.WithStack(dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterUpdate, cc, nil)); err != nil {
-		return nil, errors.WithStack(err)
+	if resCheckFn == nil {
+		resCheckFn = dbmNoopResultCheckFn
 	}
-	return res, nil
+	dbrStmt, err := dbm.CachedQuery("DmlgenTypesUpdateByPK").ApplyCallBacks(opts...).Prepare(ctx)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	for _, c := range cc.Data {
+		if err := resCheckFn(dbrStmt.ExecContext(ctx, c)); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return errors.WithStack(dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterUpdate, cc, nil))
 }
 
 func (cc *DmlgenTypesCollection) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
@@ -3549,22 +3600,31 @@ func (cc *SalesOrderStatusStates) DBDelete(ctx context.Context, dbm *DBM, opts .
 	return res, nil
 }
 
-func (cc *SalesOrderStatusStates) DBUpdate(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
+func (cc *SalesOrderStatusStates) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStatesUpdateByPK")
 	defer func() { cstrace.Status(span, err); span.End() }()
 	if cc == nil {
-		return nil, errors.NotValid.Newf("SalesOrderStatusStates can't be nil")
+		return errors.NotValid.Newf("SalesOrderStatusStates can't be nil")
 	}
 	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeUpdate, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
-	if res, err = dbm.CachedQuery("SalesOrderStatusStateUpdateByPK").ApplyCallBacks(opts...).ExecContext(ctx, cc); err != nil {
-		return nil, errors.WithStack(err)
+	if len(opts) == 0 {
+		opts = dbmEmptyOpts
 	}
-	if err = errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterUpdate, cc, nil)); err != nil {
-		return nil, errors.WithStack(err)
+	if resCheckFn == nil {
+		resCheckFn = dbmNoopResultCheckFn
 	}
-	return res, nil
+	dbrStmt, err := dbm.CachedQuery("SalesOrderStatusStateUpdateByPK").ApplyCallBacks(opts...).Prepare(ctx)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	for _, c := range cc.Data {
+		if err := resCheckFn(dbrStmt.ExecContext(ctx, c)); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterUpdate, cc, nil))
 }
 
 func (cc *SalesOrderStatusStates) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
