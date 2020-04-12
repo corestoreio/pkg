@@ -18,6 +18,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"fmt"
 	"os"
 	"sort"
 	"strings"
@@ -141,7 +142,7 @@ func WithLogger(l log.Logger, uniqueIDFn func() string) ConnPoolOption {
 // be established.
 func WithVerifyConnection() ConnPoolOption {
 	return ConnPoolOption{
-		sortOrder: 253,
+		sortOrder: 249,
 		fn: func(c *ConnPool) error {
 			return errors.WithStack(c.DB.Ping())
 		},
@@ -149,7 +150,8 @@ func WithVerifyConnection() ConnPoolOption {
 }
 
 // WithCreateDatabase creates the database and sets the utf8mb4 option. It does
-// not drop the database.
+// not drop the database. If databaseName is empty, the DB name gets derived
+// from the DSN.
 func WithCreateDatabase(ctx context.Context, databaseName string) ConnPoolOption {
 	return ConnPoolOption{
 		sortOrder: 253,
@@ -200,13 +202,15 @@ func WithCreateDatabase(ctx context.Context, databaseName string) ConnPoolOption
 // }
 
 // WithExecSQLOnConnOpen runs the sqlQuery arguments after successful opening a
-// DB connection. All queries are running in a transaction.
+// DB connection. More than one queries are running in a transaction, a single
+// query not.
 func WithExecSQLOnConnOpen(ctx context.Context, sqlQuery ...string) ConnPoolOption {
 	return withExecSQL(ctx, eventOnOpen, sqlQuery...)
 }
 
 // WithExecSQLOnConnClose runs the sqlQuery arguments before closing a DB
-// connection. All queries are running in a transaction.
+// connection. More than one queries are running in a transaction, a single
+// query not.
 func WithExecSQLOnConnClose(ctx context.Context, sqlQuery ...string) ConnPoolOption {
 	return withExecSQL(ctx, eventOnClose, sqlQuery...)
 }
@@ -216,21 +220,28 @@ func withExecSQL(ctx context.Context, event uint8, sqlQuery ...string) ConnPoolO
 		eventType: event,
 		sortOrder: 250,
 		fn: func(c *ConnPool) error {
-			if len(sqlQuery) == 0 {
-				return errors.Empty.Newf("[dml] WithInitialExecSQL argument sqlQuery is empty.")
-			}
+			switch len(sqlQuery) {
 
-			fns := make([]func(*Tx) error, len(sqlQuery))
-			for i, sq := range sqlQuery {
-				sq := sq // prevent bug while scoping
-				fns[i] = func(tx *Tx) error {
-					if _, err := tx.DB.ExecContext(ctx, sq); err != nil {
-						return errors.Wrapf(err, "[dml] WithInitialExecSQL Query: %q", sq)
+			case 0:
+				return errors.Empty.Newf("[dml] WithInitialExecSQL argument sqlQuery is empty.")
+
+			case 1:
+				_, err := c.DB.ExecContext(ctx, sqlQuery[0])
+				return err
+
+			default:
+				fns := make([]func(*Tx) error, len(sqlQuery))
+				for i, sq := range sqlQuery {
+					sq := sq // prevent bug while scoping
+					fns[i] = func(tx *Tx) error {
+						if _, err := tx.DB.ExecContext(ctx, sq); err != nil {
+							return errors.Wrapf(err, "[dml] WithInitialExecSQL Query: %q", sq)
+						}
+						return nil
 					}
-					return nil
 				}
+				return c.Transaction(ctx, &sql.TxOptions{}, fns...)
 			}
-			return c.Transaction(ctx, &sql.TxOptions{}, fns...)
 		},
 	}
 }
@@ -260,7 +271,11 @@ func WithDB(db *sql.DB) ConnPoolOption {
 
 // WithDSN sets the data source name for a connection. Second argument
 // DriverCallBack adds a low level call back function on MySQL driver level to
-// create a a new instrumented driver. No need to call `sql.Register`!
+// create a a new instrumented driver. No need to call `sql.Register`! If the
+// DSN contains as database name the word "random", then the name will be
+// "test_[unixtimestamp_nano]", especially useful in tests.
+// The environment variable SKIP_CLEANUP=1 skips dropping the test database.
+//		$ SKIP_CLEANUP=1 go test -v -run=TestX
 func WithDSN(dsn string, cb ...DriverCallBack) ConnPoolOption {
 	if len(cb) > 1 {
 		panic(errors.NotImplemented.Newf("[dml] Only one DriverCallBack function does currently work. You provided: %d", len(cb)))
@@ -274,6 +289,20 @@ func WithDSN(dsn string, cb ...DriverCallBack) ConnPoolOption {
 			if c.dsn, err = mysql.ParseDSN(dsn); err != nil {
 				return errors.WithStack(err)
 			}
+
+			if c.dsn.DBName == "random" {
+				db := fmt.Sprintf("test_%d", time.Now().UnixNano())
+				c.dsn.DBName = ""
+				dsn = c.dsn.FormatDSN()
+				// sql.OpenDB must connect with an empty DB name to not use the DB or
+				// CREATE database statement will fail.
+				c.dsn.DBName = db
+				if os.Getenv("SKIP_CLEANUP") != "1" {
+					c.runOnClose = append(c.runOnClose, WithExecSQLOnConnClose(context.Background(), "DROP DATABASE IF EXISTS "+Quoter.Name(db)))
+				}
+				defer os.Setenv(EnvDSN, c.dsn.FormatDSN()) // propagate the DSN to e.g. dmltest.SQLDumpLoad
+			}
+
 			var drv driver.Driver = mysql.MySQLDriver{}
 			if len(cb) == 1 {
 				drv = wrapDriver(drv, cb[0])
