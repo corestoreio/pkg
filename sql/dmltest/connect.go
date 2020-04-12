@@ -15,6 +15,7 @@
 package dmltest
 
 import (
+	"context"
 	"database/sql"
 	"io"
 	"os"
@@ -50,13 +51,17 @@ func MustGetDSN(t testing.TB) string {
 // MustConnectDB is a helper function that creates a new database connection
 // using a DSN from an environment variable found in the constant csdb.EnvDSN.
 // If the DSN environment variable has not been set it skips the test.
-// Argument t specified usually the *testing.T/B struct.
+// It creates a random database if the DSN database name is the word "random".
 func MustConnectDB(t testing.TB, opts ...dml.ConnPoolOption) *dml.ConnPool {
 	t.Helper()
 	if _, err := getDSN(EnvDSN); errors.NotFound.Match(err) {
 		t.Skip(color.MagentaString("%s", err))
 	}
-	cfg := []dml.ConnPoolOption{dml.WithDSN(MustGetDSN(t))}
+
+	cfg := []dml.ConnPoolOption{
+		dml.WithDSN(MustGetDSN(t)),
+		dml.WithCreateDatabase(context.Background(), ""), // empty DB name gets derived from the DSN
+	}
 	return dml.MustConnectAndVerify(append(cfg, opts...)...)
 }
 

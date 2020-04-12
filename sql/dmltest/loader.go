@@ -32,7 +32,6 @@ import (
 )
 
 func writeMySQLDefaults(cfg *mysql.Config, o *SQLDumpOptions) (string, error) {
-
 	var myCnf bytes.Buffer
 	myCnf.WriteString("[mysql]\n")
 
