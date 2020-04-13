@@ -130,20 +130,19 @@ func SQLDumpLoad(t testing.TB, globPattern string, o *SQLDumpOptions) struct{ De
 		execCmd = stdInExec
 	}
 
-	dfFile, err := writeMySQLDefaults(cfg, o)
+	defaultsFile, err := writeMySQLDefaults(cfg, o)
 	FatalIfError(t, err)
 
 	myPath := o.MySQLPath
 	if myPath == "" {
 		myPath = "mysql"
 	}
-	ctx := context.TODO()
 
 	runExec := func(file string) {
 		f, err := os.Open(file)
 		FatalIfError(t, err)
 
-		err = execCmd(ctx, f, "bash", "-c", fmt.Sprintf("%s --defaults-file=%s", myPath, dfFile))
+		err = execCmd(context.Background(), f, "bash", "-c", fmt.Sprintf("%s --defaults-file=%s", myPath, defaultsFile))
 		FatalIfError(t, err)
 	}
 
@@ -160,8 +159,9 @@ func SQLDumpLoad(t testing.TB, globPattern string, o *SQLDumpOptions) struct{ De
 		Deferred func()
 	}{
 		Deferred: func() {
-			defer os.Remove(dfFile)
-			if !o.SkipDBCleanup {
+			defer os.Remove(defaultsFile)
+			skip := !(o.SkipDBCleanup || os.Getenv("SKIP_CLEANUP") == "1")
+			if skip {
 				for _, file := range cleanUpFiles {
 					runExec(file)
 				}
