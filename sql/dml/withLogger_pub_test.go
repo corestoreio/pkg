@@ -31,9 +31,6 @@ import (
 
 func TestWithLogger_Insert(t *testing.T) {
 	uniID := new(int32)
-	rConn := createRealSession(t)
-	defer dmltest.Close(t, rConn)
-
 	uniqueIDFunc := func() string {
 		return fmt.Sprintf("UNIQ%02d", atomic.AddInt32(uniID, 4))
 	}
@@ -44,7 +41,9 @@ func TestWithLogger_Insert(t *testing.T) {
 		logw.WithWriter(buf),
 		logw.WithFlag(0), // no flags at all
 	)
-	assert.NoError(t, rConn.Options(dml.WithLogger(lg, uniqueIDFunc)))
+
+	rConn := createRealSession(t, dml.WithLogger(lg, uniqueIDFunc))
+	defer dmltest.Close(t, rConn)
 
 	t.Run("Conn1Pool", func(t *testing.T) {
 		d := rConn.InsertInto("dml_people").Replace().AddColumns("email", "name")
@@ -166,9 +165,6 @@ func TestWithLogger_Insert(t *testing.T) {
 
 func TestWithLogger_Delete(t *testing.T) {
 	uniID := new(int32)
-	rConn := createRealSession(t)
-	defer dmltest.Close(t, rConn)
-
 	uniqueIDFunc := func() string {
 		return fmt.Sprintf("UNIQUEID%02d", atomic.AddInt32(uniID, 1))
 	}
@@ -179,7 +175,8 @@ func TestWithLogger_Delete(t *testing.T) {
 		logw.WithWriter(buf),
 		logw.WithFlag(0), // no flags at all
 	)
-	assert.NoError(t, rConn.Options(dml.WithLogger(lg, uniqueIDFunc)))
+	rConn := createRealSession(t, dml.WithLogger(lg, uniqueIDFunc))
+	defer dmltest.Close(t, rConn)
 
 	t.Run("ConnPool", func(t *testing.T) {
 		d := rConn.DeleteFrom("dml_people").Where(dml.Column("id").GreaterOrEqual().Float64(34.56))
@@ -287,9 +284,6 @@ func TestWithLogger_Delete(t *testing.T) {
 
 func TestWithLogger_Select(t *testing.T) {
 	uniID := new(int32)
-	rConn := createRealSession(t)
-	defer dmltest.Close(t, rConn)
-
 	uniqueIDFunc := func() string {
 		return fmt.Sprintf("UNIQ%02d", atomic.AddInt32(uniID, 1))
 	}
@@ -300,7 +294,8 @@ func TestWithLogger_Select(t *testing.T) {
 		logw.WithWriter(buf),
 		logw.WithFlag(0), // no flags at all
 	)
-	assert.NoError(t, rConn.Options(dml.WithLogger(lg, uniqueIDFunc)))
+	rConn := createRealSession(t, dml.WithLogger(lg, uniqueIDFunc))
+	defer dmltest.Close(t, rConn)
 
 	t.Run("ConnPool", func(t *testing.T) {
 		pplSel := rConn.SelectFrom("dml_people").AddColumns("email").Where(dml.Column("id").Greater().PlaceHolder())
@@ -553,9 +548,6 @@ func TestWithLogger_Select(t *testing.T) {
 
 func TestWithLogger_Union(t *testing.T) {
 	uniID := new(int32)
-	rConn := createRealSession(t)
-	defer dmltest.Close(t, rConn)
-
 	uniqueIDFunc := func() string {
 		return fmt.Sprintf("UNIQ%02d", atomic.AddInt32(uniID, 1))
 	}
@@ -566,7 +558,8 @@ func TestWithLogger_Union(t *testing.T) {
 		logw.WithWriter(buf),
 		logw.WithFlag(0), // no flags at all
 	)
-	assert.NoError(t, rConn.Options(dml.WithLogger(lg, uniqueIDFunc)))
+	rConn := createRealSession(t, dml.WithLogger(lg, uniqueIDFunc))
+	defer dmltest.Close(t, rConn)
 
 	t.Run("ConnPool", func(t *testing.T) {
 		u := rConn.Union(
@@ -697,9 +690,6 @@ func TestWithLogger_Union(t *testing.T) {
 
 func TestWithLogger_Update(t *testing.T) {
 	uniID := new(int32)
-	rConn := createRealSession(t)
-	defer dmltest.Close(t, rConn)
-
 	uniqueIDFunc := func() string {
 		return fmt.Sprintf("UNIQ%02d", atomic.AddInt32(uniID, 3))
 	}
@@ -710,7 +700,8 @@ func TestWithLogger_Update(t *testing.T) {
 		logw.WithWriter(buf),
 		logw.WithFlag(0), // no flags at all
 	)
-	assert.NoError(t, rConn.Options(dml.WithLogger(lg, uniqueIDFunc)))
+	rConn := createRealSession(t, dml.WithLogger(lg, uniqueIDFunc))
+	defer dmltest.Close(t, rConn)
 
 	t.Run("ConnPool", func(t *testing.T) {
 		d := rConn.Update("dml_people").AddClauses(
@@ -822,9 +813,6 @@ func TestWithLogger_Update(t *testing.T) {
 
 func TestWithLogger_WithCTE(t *testing.T) {
 	uniID := new(int32)
-	rConn := createRealSession(t)
-	defer dmltest.Close(t, rConn)
-
 	uniqueIDFunc := func() string {
 		return fmt.Sprintf("UNIQ%02d", atomic.AddInt32(uniID, 2))
 	}
@@ -835,7 +823,8 @@ func TestWithLogger_WithCTE(t *testing.T) {
 		logw.WithWriter(buf),
 		logw.WithFlag(0), // no flags at all
 	)
-	assert.NoError(t, rConn.Options(dml.WithLogger(lg, uniqueIDFunc)))
+	rConn := createRealSession(t, dml.WithLogger(lg, uniqueIDFunc))
+	defer dmltest.Close(t, rConn)
 
 	cte := dml.WithCTE{
 		Name:    "zehTeEh",

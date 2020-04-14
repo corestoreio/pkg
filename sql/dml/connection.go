@@ -58,6 +58,7 @@ type connCommon struct {
 // events, errors, and timings to
 type ConnPool struct {
 	connCommon
+	driverCallBack DriverCallBack
 	// DB must be set using one of the ConnPoolOption function.
 	DB  *sql.DB
 	dsn *mysql.Config
@@ -169,6 +170,9 @@ func WithCreateDatabase(ctx context.Context, databaseName string) ConnPoolOption
 			if _, err := c.DB.ExecContext(ctx, "ALTER DATABASE "+qdb+" DEFAULT CHARACTER SET='utf8mb4' COLLATE='utf8mb4_unicode_ci'"); err != nil {
 				return errors.WithStack(err)
 			}
+			if _, err := c.DB.ExecContext(ctx, "USE "+qdb); err != nil {
+				return errors.WithStack(err)
+			}
 			return nil
 		},
 	}
@@ -249,7 +253,7 @@ func withExecSQL(ctx context.Context, event uint8, sqlQuery ...string) ConnPoolO
 // WithSetNamesUTF8MB4 sets the utf8mb4 charset and collation.
 func WithSetNamesUTF8MB4() ConnPoolOption {
 	return ConnPoolOption{
-		sortOrder: 2, // must run after WithDSN and WithDB
+		sortOrder: 3, // must run after WithDSN and WithDB
 		fn: func(c *ConnPool) error {
 			_, err := c.DB.ExecContext(context.Background(), "SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'")
 			return errors.WithStack(err)
@@ -260,10 +264,35 @@ func WithSetNamesUTF8MB4() ConnPoolOption {
 // WithDB sets the DB value to an existing connection. Mainly used for testing.
 // Does not support DriverCallBack.
 func WithDB(db *sql.DB) ConnPoolOption {
+	// this function can be called multiple times within different contexts.
 	return ConnPoolOption{
-		sortOrder: 1,
+		sortOrder: 2,
 		fn: func(c *ConnPool) error {
-			c.DB = db
+			if c.DB == nil {
+				c.DB = db
+			}
+			if c.DB == nil && c.dsn != nil {
+				var drv driver.Driver = mysql.MySQLDriver{}
+				if c.driverCallBack != nil {
+					drv = wrapDriver(drv, c.driverCallBack)
+					c.driverCallBack = nil
+				}
+				c.DB = sql.OpenDB(dsnConnector{
+					dsn:    c.dsn.FormatDSN(),
+					driver: drv,
+				})
+			}
+			return nil
+		},
+	}
+}
+
+// WithDriverCallBack allows t
+func WithDriverCallBack(cb DriverCallBack) ConnPoolOption {
+	return ConnPoolOption{
+		sortOrder: 0,
+		fn: func(c *ConnPool) (err error) {
+			c.driverCallBack = cb
 			return nil
 		},
 	}
@@ -276,12 +305,9 @@ func WithDB(db *sql.DB) ConnPoolOption {
 // "test_[unixtimestamp_nano]", especially useful in tests.
 // The environment variable SKIP_CLEANUP=1 skips dropping the test database.
 //		$ SKIP_CLEANUP=1 go test -v -run=TestX
-func WithDSN(dsn string, cb ...DriverCallBack) ConnPoolOption {
-	if len(cb) > 1 {
-		panic(errors.NotImplemented.Newf("[dml] Only one DriverCallBack function does currently work. You provided: %d", len(cb)))
-	}
+func WithDSN(dsn string) ConnPoolOption {
 	return ConnPoolOption{
-		sortOrder: 0,
+		sortOrder: 1,
 		fn: func(c *ConnPool) (err error) {
 			if !strings.Contains(dsn, "parseTime") {
 				return errors.NotImplemented.Newf("[dml] The DSN for go-sql-driver/mysql must contain the parameters `?parseTime=true[&loc=YourTimeZone]`")
@@ -293,7 +319,6 @@ func WithDSN(dsn string, cb ...DriverCallBack) ConnPoolOption {
 			if c.dsn.DBName == "random" {
 				db := fmt.Sprintf("test_%d", time.Now().UnixNano())
 				c.dsn.DBName = ""
-				dsn = c.dsn.FormatDSN()
 				// sql.OpenDB must connect with an empty DB name to not use the DB or
 				// CREATE database statement will fail.
 				c.dsn.DBName = db
@@ -303,11 +328,6 @@ func WithDSN(dsn string, cb ...DriverCallBack) ConnPoolOption {
 				defer os.Setenv(EnvDSN, c.dsn.FormatDSN()) // propagate the DSN to e.g. dmltest.SQLDumpLoad
 			}
 
-			var drv driver.Driver = mysql.MySQLDriver{}
-			if len(cb) == 1 {
-				drv = wrapDriver(drv, cb[0])
-			}
-			c.DB = sql.OpenDB(dsnConnector{dsn: dsn, driver: drv})
 			return nil
 		},
 	}
@@ -319,7 +339,7 @@ const EnvDSN string = "CS_DSN"
 // WithDSNFromEnv loads the DSN string from an environment variable named by
 // `dsnEnvName`. If `dsnEnvName` is empty, then it falls back to the environment
 // variable name of constant `EnvDSN`.
-func WithDSNFromEnv(dsnEnvName string, cb ...DriverCallBack) ConnPoolOption {
+func WithDSNFromEnv(dsnEnvName string) ConnPoolOption {
 	if dsnEnvName == "" {
 		dsnEnvName = EnvDSN
 	}
@@ -332,7 +352,7 @@ func WithDSNFromEnv(dsnEnvName string, cb ...DriverCallBack) ConnPoolOption {
 			},
 		}
 	}
-	return WithDSN(env, cb...)
+	return WithDSN(env)
 }
 
 // dsnConnector implements a type to open a connection to the DB. It makes the
@@ -374,7 +394,8 @@ func (t dsnConnector) Driver() driver.Driver {
 // infrastructure/network engineer.
 func NewConnPool(opts ...ConnPoolOption) (*ConnPool, error) {
 	var c ConnPool
-	if err := c.Options(opts...); err != nil {
+	opts = append(opts, WithDB(nil))
+	if err := c.options(opts...); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
@@ -396,14 +417,14 @@ func MustConnectAndVerify(opts ...ConnPoolOption) *ConnPool {
 	if err != nil {
 		panic(err)
 	}
-	if err := c.Options(WithVerifyConnection()); err != nil {
+	if err := c.options(WithVerifyConnection()); err != nil {
 		panic(err)
 	}
 	return c
 }
 
 // Options applies options to a connection.
-func (c *ConnPool) Options(opts ...ConnPoolOption) error {
+func (c *ConnPool) options(opts ...ConnPoolOption) error {
 	for i, opt := range opts {
 		if opt.UniqueIDFn != nil {
 			opts[i].sortOrder = 8 // must be this number

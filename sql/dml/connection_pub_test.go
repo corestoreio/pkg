@@ -263,61 +263,39 @@ func TestWithRawSQL(t *testing.T) {
 }
 
 func TestWithExecSQLOnConn(t *testing.T) {
-	t.Parallel()
-
-	t.Run("empty query", func(t *testing.T) {
-		ctx := context.TODO()
-		dbc, mock := dmltest.MockDB(t)
-		defer dmltest.MockClose(t, dbc, mock)
-
-		err := dbc.Options(dml.WithExecSQLOnConnOpen(ctx))
-		assert.ErrorIsKind(t, errors.Empty, err)
-	})
-
 	t.Run("success", func(t *testing.T) {
 		ctx := context.TODO()
-		dbc, mock := dmltest.MockDB(t,
+		dbc, mock := dmltest.MockDBCallBack(t,
+			func(mock sqlmock.Sqlmock) {
+				mock.ExpectBegin()
+				mock.ExpectExec("create table xx3").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+				mock.ExpectExec("create table xx4").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+				mock.ExpectCommit()
+
+				mock.ExpectExec("drop table xx3").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+			},
 			dml.WithExecSQLOnConnClose(ctx, "drop table xx3"),
-		)
-
-		mock.ExpectBegin()
-		mock.ExpectExec("create table xx3").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
-		mock.ExpectExec("create table xx4").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
-		mock.ExpectCommit()
-
-		mock.ExpectBegin()
-		mock.ExpectExec("drop table xx3").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
-		mock.ExpectCommit()
-
-		err := dbc.Options(
 			dml.WithExecSQLOnConnOpen(ctx, "create table xx3", "create table xx4"),
 		)
-		dmltest.MockClose(t, dbc, mock)
 
-		assert.NoError(t, err)
+		dmltest.MockClose(t, dbc, mock)
 	})
 
 	t.Run("transaction rollback", func(t *testing.T) {
 		ctx := context.TODO()
-		dbc, mock := dmltest.MockDB(t,
-			dml.WithExecSQLOnConnClose(ctx, "drop table xx3"),
-		)
-
-		mock.ExpectBegin()
-		mock.ExpectExec("create table xx3").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
-		mock.ExpectCommit()
-
-		mock.ExpectBegin()
 		errDrop := errors.NotAcceptable.Newf("Ups")
-		mock.ExpectExec("drop table xx3").WithArgs().WillReturnError(errDrop)
-		mock.ExpectRollback()
 
-		err := dbc.Options(
+		dbc, mock := dmltest.MockDBCallBack(t,
+			func(mock sqlmock.Sqlmock) {
+				mock.ExpectExec("create table xx3").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+
+				mock.ExpectExec("drop table xx3").WithArgs().WillReturnError(errDrop)
+			},
+			dml.WithExecSQLOnConnClose(ctx, "drop table xx3"),
 			dml.WithExecSQLOnConnOpen(ctx, "create table xx3"),
 		)
-		assert.NoError(t, err)
 
-		err = dbc.Close()
+		err := dbc.Close()
 		assert.ErrorIsKind(t, errors.NotAcceptable, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -354,15 +332,16 @@ func TestTx_WithPrepare(t *testing.T) {
 
 func TestWithCreateDatabase(t *testing.T) {
 	t.Parallel()
-	dbc, dbMock := dmltest.MockDB(t)
-	defer dmltest.MockClose(t, dbc, dbMock)
-
-	dbMock.ExpectExec("SET NAMES 'utf8mb4'").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
-	dbMock.ExpectExec("CREATE DATABASE IF NOT EXISTS `myTestDb`").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
-	dbMock.ExpectExec("ALTER DATABASE `myTestDb` DEFAULT CHARACTER SET='utf8mb4' COLLATE='utf8mb4_unicode_ci'").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
-
-	err := dbc.Options(dml.WithCreateDatabase(context.TODO(), "myTestDb"))
-	assert.NoError(t, err)
+	dbc, mock := dmltest.MockDBCallBack(t,
+		func(mock sqlmock.Sqlmock) {
+			mock.ExpectExec("SET NAMES 'utf8mb4'").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+			mock.ExpectExec("CREATE DATABASE IF NOT EXISTS `myTestDb`").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+			mock.ExpectExec("ALTER DATABASE `myTestDb` DEFAULT CHARACTER SET='utf8mb4' COLLATE='utf8mb4_unicode_ci'").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+			mock.ExpectExec("USE `myTestDb`").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+		},
+		dml.WithCreateDatabase(context.TODO(), "myTestDb"),
+	)
+	dmltest.MockClose(t, dbc, mock)
 }
 
 func TestConnPool_WithDisabledForeignKeyChecks(t *testing.T) {

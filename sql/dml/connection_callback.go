@@ -167,7 +167,7 @@ func (c cbConn) BeginTx(ctx context.Context, opts driver.TxOptions) (tx driver.T
 func (c cbConn) Ping(ctx context.Context) (err error) {
 	fn := c.cb("Conn.Ping")
 	defer func() {
-		if errFn := fn(err, "", nil); err == nil && errFn != nil {
+		if errFn := fn(err, "/*PING*/", nil); err == nil && errFn != nil {
 			err = errFn
 		}
 	}()

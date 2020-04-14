@@ -37,26 +37,24 @@ func TestDriverCallBack(t *testing.T) {
 		dml.ConnPoolOption{
 			UniqueIDFn: func() string { return fmt.Sprintf("RANJID%d", atomic.AddInt32(counter, 1)) },
 		},
-		dml.WithDSN(
-			dmltest.MustGetDSN(t),
-			func(fnName string) func(error, string, []driver.NamedValue) error {
-				start := now()
-				return func(err error, query string, namedArgs []driver.NamedValue) error {
-					fmt.Fprintf(buf, "%q Took: %s\n", fnName, now().Sub(start))
-					if err != nil {
-						fmt.Fprintf(buf, "Error: %s\n", err)
-					}
-					if query != "" {
-						fmt.Fprintf(buf, "Query: %q\n", query)
-					}
-					if len(namedArgs) > 0 {
-						fmt.Fprintf(buf, "NamedArgs: %#v\n", namedArgs)
-					}
-					fmt.Fprint(buf, "\n")
-					return err
+		dml.WithDriverCallBack(func(fnName string) func(error, string, []driver.NamedValue) error {
+			start := now()
+			return func(err error, query string, namedArgs []driver.NamedValue) error {
+				fmt.Fprintf(buf, "%q Took: %s\n", fnName, now().Sub(start))
+				if err != nil {
+					fmt.Fprintf(buf, "Error: %s\n", err)
 				}
-			},
-		))
+				if query != "" {
+					fmt.Fprintf(buf, "Query: %q\n", query)
+				}
+				if len(namedArgs) > 0 {
+					fmt.Fprintf(buf, "NamedArgs: %#v\n", namedArgs)
+				}
+				fmt.Fprint(buf, "\n")
+				return err
+			}
+		}),
+		dml.WithDSN(dmltest.MustGetDSN(t)))
 
 	ctx := context.TODO()
 	sel := db.SelectFrom("dml_people").Star().Where(dml.Column("name").PlaceHolder())
@@ -86,5 +84,6 @@ func TestDriverCallBack(t *testing.T) {
 	assert.NoError(t, err)
 	if !bytes.Equal(wantLog, buf.Bytes()) {
 		t.Error("testdata/TestDriverCallBack.want.txt does not match with `have`.")
+		println(buf.String())
 	}
 }

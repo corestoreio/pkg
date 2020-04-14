@@ -1,4 +1,17 @@
+"Conn.ExecContext" Took: 0s
+Query: "SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'"
+
+"Conn.ExecContext" Took: 0s
+Query: "CREATE DATABASE IF NOT EXISTS `test`"
+
+"Conn.ExecContext" Took: 0s
+Query: "ALTER DATABASE `test` DEFAULT CHARACTER SET='utf8mb4' COLLATE='utf8mb4_unicode_ci'"
+
+"Conn.ExecContext" Took: 0s
+Query: "USE `test`"
+
 "Conn.Ping" Took: 0s
+Query: "/*PING*/"
 
 "Conn.QueryContext" Took: 0s
 Error: driver: skip fast-path; continue as if unimplemented
