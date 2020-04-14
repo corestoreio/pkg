@@ -87,6 +87,23 @@ func MockDB(t testing.TB, opts ...dml.ConnPoolOption) (*dml.ConnPool, sqlmock.Sq
 	return dbc, sm
 }
 
+// MockDBCallBack same as MockDB but allows to add expectations early to the
+// mock.
+func MockDBCallBack(t testing.TB, mockCB func(sqlmock.Sqlmock), opts ...dml.ConnPoolOption) (*dml.ConnPool, sqlmock.Sqlmock) {
+	if t != nil { // t can be nil in Example functions
+		t.Helper()
+	}
+	db, sm, err := sqlmock.New()
+	FatalIfError(t, err)
+	if mockCB != nil {
+		mockCB(sm)
+	}
+	cfg := []dml.ConnPoolOption{dml.WithDB(db)}
+	dbc, err := dml.NewConnPool(append(cfg, opts...)...)
+	FatalIfError(t, err)
+	return dbc, sm
+}
+
 // MockClose for usage in conjunction with defer.
 // 		defer dmltest.MockClose(t, db, dbMock)
 func MockClose(t testing.TB, c io.Closer, m sqlmock.Sqlmock) {
