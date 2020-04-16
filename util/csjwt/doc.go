@@ -31,6 +31,8 @@
 //
 // Headless JWT mode: https://dev.to/neilmadden/7-best-practices-for-json-web-tokens
 //
+// https://insomniasec.com/blog/auth0-jwt-validation-bypass
+//
 // TODO: Investigate security bugs: http://blogs.adobe.com/security/2017/03/critical-vulnerability-uncovered-in-json-encryption.html
 // Critical Vulnerability Uncovered in JSON Encryption. Executive Summary: If
 // you are using go-jose, node-jose, jose2go, Nimbus JOSE+JWT or jose4 with
