@@ -160,6 +160,7 @@ func WithCreateDatabase(ctx context.Context, databaseName string) ConnPoolOption
 			if databaseName == "" && c.dsn != nil {
 				databaseName = c.dsn.DBName
 			}
+
 			if err := WithSetNamesUTF8MB4().fn(c); err != nil {
 				return errors.WithStack(err)
 			}
@@ -261,6 +262,8 @@ func WithSetNamesUTF8MB4() ConnPoolOption {
 	}
 }
 
+const randomTestDBPrefix = "test_"
+
 // WithDB sets the DB value to an existing connection. Mainly used for testing.
 // Does not support DriverCallBack.
 func WithDB(db *sql.DB) ConnPoolOption {
@@ -277,8 +280,19 @@ func WithDB(db *sql.DB) ConnPoolOption {
 					drv = wrapDriver(drv, c.driverCallBack)
 					c.driverCallBack = nil
 				}
+
+				dsn := c.dsn.FormatDSN()
+				if strings.HasPrefix(c.dsn.DBName, randomTestDBPrefix) {
+					// sql.OpenDB must connect with an empty DB name to not use the DB or
+					// CREATE database statement will fail.
+					db := c.dsn.DBName
+					c.dsn.DBName = ""
+					dsn = c.dsn.FormatDSN()
+					c.dsn.DBName = db
+				}
+
 				c.DB = sql.OpenDB(dsnConnector{
-					dsn:    c.dsn.FormatDSN(),
+					dsn:    dsn,
 					driver: drv,
 				})
 			}
@@ -317,15 +331,12 @@ func WithDSN(dsn string) ConnPoolOption {
 			}
 
 			if c.dsn.DBName == "random" {
-				db := fmt.Sprintf("test_%d", time.Now().UnixNano())
-				c.dsn.DBName = ""
-				// sql.OpenDB must connect with an empty DB name to not use the DB or
-				// CREATE database statement will fail.
+				db := fmt.Sprintf(randomTestDBPrefix+"%d", time.Now().UnixNano())
 				c.dsn.DBName = db
 				if os.Getenv("SKIP_CLEANUP") != "1" {
 					c.runOnClose = append(c.runOnClose, WithExecSQLOnConnClose(context.Background(), "DROP DATABASE IF EXISTS "+Quoter.Name(db)))
 				}
-				defer os.Setenv(EnvDSN, c.dsn.FormatDSN()) // propagate the DSN to e.g. dmltest.SQLDumpLoad
+				_ = os.Setenv(EnvDSN, c.dsn.FormatDSN()) // propagate the DSN to e.g. dmltest.SQLDumpLoad
 			}
 
 			return nil

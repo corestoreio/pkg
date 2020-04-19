@@ -330,8 +330,7 @@ func TestTx_WithPrepare(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestWithCreateDatabase(t *testing.T) {
-	t.Parallel()
+func TestWithCreateDatabase_GivenName(t *testing.T) {
 	dbc, mock := dmltest.MockDBCallBack(t,
 		func(mock sqlmock.Sqlmock) {
 			mock.ExpectExec("SET NAMES 'utf8mb4'").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
@@ -340,6 +339,21 @@ func TestWithCreateDatabase(t *testing.T) {
 			mock.ExpectExec("USE `myTestDb`").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
 		},
 		dml.WithCreateDatabase(context.TODO(), "myTestDb"),
+	)
+	dmltest.MockClose(t, dbc, mock)
+}
+
+func TestWithCreateDatabase_RandomTest(t *testing.T) {
+	dbc, mock := dmltest.MockDBCallBack(t,
+		func(mock sqlmock.Sqlmock) {
+			mock.ExpectExec("SET NAMES 'utf8mb4'").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+			mock.ExpectExec("CREATE DATABASE IF NOT EXISTS `test_[0-9]+`").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+			mock.ExpectExec("ALTER DATABASE `test_[0-9]+` DEFAULT CHARACTER SET='utf8mb4' COLLATE='utf8mb4_unicode_ci'").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+			mock.ExpectExec("USE `test_[0-9]+`").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+			mock.ExpectExec("DROP DATABASE IF EXISTS `test_[0-9]+`").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+		},
+		dml.WithDSN("magento2:magento2@tcp(127.0.0.2:3306)/random?parseTime=true&loc=UTC"),
+		dml.WithCreateDatabase(context.TODO(), ""),
 	)
 	dmltest.MockClose(t, dbc, mock)
 }
