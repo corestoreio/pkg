@@ -13,12 +13,12 @@ var ErrorKey = key.New("error")
 
 // Status if there is an error, it sets the error code "unknown" with the error
 // string as span status otherwise status ok.
-func Status(span trace.Span, err error) {
+func Status(span trace.Span, err error, msg string) {
 	if err == nil {
-		span.SetStatus(codes.OK)
+		span.SetStatus(codes.OK, msg)
 		return
 	}
-	span.SetStatus(codes.Unknown)
+	span.SetStatus(codes.Unknown, msg)
 	span.SetAttributes(ErrorKey.String(err.Error()))
 }
 
