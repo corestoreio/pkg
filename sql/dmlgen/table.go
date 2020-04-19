@@ -916,7 +916,7 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 
 	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBLoad(ctx context.Context,dbm *DBM, pkIDs []`, dbLoadStructArgOrSliceName, `, opts ...dml.DBRFunc) (err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, t.CollectionName(), "DBLoad", `"`), `)
-		defer func(){ cstrace.Status(span, err); span.End(); }()`)
+		defer func(){ cstrace.Status(span, err, ""); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if cc == nil {
 		return errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
 	}`)
@@ -974,7 +974,7 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	collectionFuncName = codegen.SkipWS(t.EntityName(), "DeleteByPK")
 	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result,err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, t.CollectionName(), "DeleteByPK", `"`), `)
-			defer func(){ cstrace.Status(span, err); span.End(); }()`)
+			defer func(){ cstrace.Status(span, err, ""); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if cc == nil {
 		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
 	}`)
@@ -995,7 +995,7 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	collectionFuncName = codegen.SkipWS(t.EntityName(), "UpdateByPK")
 	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, t.CollectionName(), "UpdateByPK", `"`), `);
-			defer func(){ cstrace.Status(span, err); span.End(); }()`)
+			defer func(){ cstrace.Status(span, err, ""); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if cc == nil {
 		return errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
 	}`)
@@ -1027,7 +1027,7 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	collectionFuncName = codegen.SkipWS(t.EntityName(), "Insert")
 	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result,err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, t.CollectionName(), "Insert", `"`), `);
-			defer func(){ cstrace.Status(span, err); span.End(); }()`)
+			defer func(){ cstrace.Status(span, err, ""); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if cc == nil {
 		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
 	}`)
@@ -1048,7 +1048,7 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	collectionFuncName = codegen.SkipWS(t.EntityName(), "UpsertByPK")
 	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result,err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, t.CollectionName(), "UpsertByPK", `"`), `);
-			defer func(){ cstrace.Status(span, err); span.End(); }()`)
+			defer func(){ cstrace.Status(span, err, ""); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if cc == nil {
 		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
 	}`)
@@ -1113,7 +1113,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	dmlEnabled := t.hasFeature(g, FeatureDBSelect)
 	mainGen.Pln(dmlEnabled, `func (e `, entityPTRName, `) Load(ctx context.Context,dbm *DBM, `, &bufPKNameTypes, `, opts ...dml.DBRFunc) (err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, entityFuncName, `"`), `)
-		defer func(){ cstrace.Status(span, err); span.End(); }()`)
+		defer func(){ cstrace.Status(span, err, ""); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if e == nil {
 		return errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
 	}`)
@@ -1140,7 +1140,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	entityFuncName = codegen.SkipWS(t.EntityName(), "DeleteByPK")
 	mainGen.Pln(dmlEnabled, `func (e `, entityPTRName, `) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, entityFuncName, `"`), `)
-			defer func(){ cstrace.Status(span, err); span.End(); }()`)
+			defer func(){ cstrace.Status(span, err, ""); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if e == nil {
 		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
 	}`)
@@ -1161,7 +1161,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	entityFuncName = codegen.SkipWS(t.EntityName(), "UpdateByPK")
 	mainGen.Pln(dmlEnabled, `func (e `, entityPTRName, `) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, entityFuncName, `"`), `);
-			defer func(){ cstrace.Status(span, err); span.End(); }()`)
+			defer func(){ cstrace.Status(span, err, ""); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if e == nil {
 		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
 	}`)
@@ -1182,7 +1182,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	entityFuncName = codegen.SkipWS(t.EntityName(), "Insert")
 	mainGen.Pln(dmlEnabled, `func (e `, entityPTRName, `) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, entityFuncName, `"`), `);
-			defer func(){ cstrace.Status(span, err); span.End(); }()`)
+			defer func(){ cstrace.Status(span, err, ""); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if e == nil {
 		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
 	}`)
@@ -1203,7 +1203,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	entityFuncName = codegen.SkipWS(t.EntityName(), "UpsertByPK")
 	mainGen.Pln(dmlEnabled, `func (e `, entityPTRName, `) Upsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, entityFuncName, `"`), `);
-			defer func(){ cstrace.Status(span, err); span.End(); }()`)
+			defer func(){ cstrace.Status(span, err, ""); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if e == nil {
 		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
 	}`)

@@ -401,7 +401,7 @@ func (e *CatalogProductIndexEAVDecimalIDX) MapColumns(cm *dml.ColumnMap) error {
 
 func (e *CatalogProductIndexEAVDecimalIDX) Load(ctx context.Context, dbm *DBM, entityID uint32, attributeID uint32, storeID uint32, sourceID uint32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXSelectByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDX can't be nil")
 	}
@@ -420,7 +420,7 @@ func (e *CatalogProductIndexEAVDecimalIDX) Load(ctx context.Context, dbm *DBM, e
 
 func (e *CatalogProductIndexEAVDecimalIDX) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXDeleteByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDX can't be nil")
 	}
@@ -438,7 +438,7 @@ func (e *CatalogProductIndexEAVDecimalIDX) Delete(ctx context.Context, dbm *DBM,
 
 func (e *CatalogProductIndexEAVDecimalIDX) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXUpdateByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDX can't be nil")
 	}
@@ -456,7 +456,7 @@ func (e *CatalogProductIndexEAVDecimalIDX) Update(ctx context.Context, dbm *DBM,
 
 func (e *CatalogProductIndexEAVDecimalIDX) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXInsert")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDX can't be nil")
 	}
@@ -474,7 +474,7 @@ func (e *CatalogProductIndexEAVDecimalIDX) Insert(ctx context.Context, dbm *DBM,
 
 func (e *CatalogProductIndexEAVDecimalIDX) Upsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXUpsertByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDX can't be nil")
 	}
@@ -621,7 +621,7 @@ type CatalogProductIndexEAVDecimalIDXesDBLoadArgs struct {
 
 func (cc *CatalogProductIndexEAVDecimalIDXes) DBLoad(ctx context.Context, dbm *DBM, pkIDs []CatalogProductIndexEAVDecimalIDXesDBLoadArgs, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXesDBLoad")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDX can't be nil")
 	}
@@ -652,7 +652,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) DBLoad(ctx context.Context, dbm *D
 
 func (cc *CatalogProductIndexEAVDecimalIDXes) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXesDeleteByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDXes can't be nil")
 	}
@@ -670,7 +670,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) DBDelete(ctx context.Context, dbm 
 
 func (cc *CatalogProductIndexEAVDecimalIDXes) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXesUpdateByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDXes can't be nil")
 	}
@@ -697,7 +697,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) DBUpdate(ctx context.Context, dbm 
 
 func (cc *CatalogProductIndexEAVDecimalIDXes) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXesInsert")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDXes can't be nil")
 	}
@@ -715,7 +715,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) DBInsert(ctx context.Context, dbm 
 
 func (cc *CatalogProductIndexEAVDecimalIDXes) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXesUpsertByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDXes can't be nil")
 	}
@@ -944,7 +944,7 @@ func (e *CoreConfiguration) MapColumns(cm *dml.ColumnMap) error {
 
 func (e *CoreConfiguration) Load(ctx context.Context, dbm *DBM, configID uint32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationSelectByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return errors.NotValid.Newf("CoreConfiguration can't be nil")
 	}
@@ -963,7 +963,7 @@ func (e *CoreConfiguration) Load(ctx context.Context, dbm *DBM, configID uint32,
 
 func (e *CoreConfiguration) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationDeleteByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("CoreConfiguration can't be nil")
 	}
@@ -981,7 +981,7 @@ func (e *CoreConfiguration) Delete(ctx context.Context, dbm *DBM, opts ...dml.DB
 
 func (e *CoreConfiguration) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationUpdateByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("CoreConfiguration can't be nil")
 	}
@@ -999,7 +999,7 @@ func (e *CoreConfiguration) Update(ctx context.Context, dbm *DBM, opts ...dml.DB
 
 func (e *CoreConfiguration) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationInsert")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("CoreConfiguration can't be nil")
 	}
@@ -1017,7 +1017,7 @@ func (e *CoreConfiguration) Insert(ctx context.Context, dbm *DBM, opts ...dml.DB
 
 func (e *CoreConfiguration) Upsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationUpsertByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("CoreConfiguration can't be nil")
 	}
@@ -1167,7 +1167,7 @@ func (cc *CoreConfigurations) MapColumns(cm *dml.ColumnMap) error {
 
 func (cc *CoreConfigurations) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationsDBLoad")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return errors.NotValid.Newf("CoreConfiguration can't be nil")
 	}
@@ -1192,7 +1192,7 @@ func (cc *CoreConfigurations) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint
 
 func (cc *CoreConfigurations) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationsDeleteByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CoreConfigurations can't be nil")
 	}
@@ -1210,7 +1210,7 @@ func (cc *CoreConfigurations) DBDelete(ctx context.Context, dbm *DBM, opts ...dm
 
 func (cc *CoreConfigurations) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationsUpdateByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return errors.NotValid.Newf("CoreConfigurations can't be nil")
 	}
@@ -1237,7 +1237,7 @@ func (cc *CoreConfigurations) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn
 
 func (cc *CoreConfigurations) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationsInsert")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CoreConfigurations can't be nil")
 	}
@@ -1255,7 +1255,7 @@ func (cc *CoreConfigurations) DBInsert(ctx context.Context, dbm *DBM, opts ...dm
 
 func (cc *CoreConfigurations) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationsUpsertByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CoreConfigurations can't be nil")
 	}
@@ -1508,7 +1508,7 @@ func (e *CustomerAddressEntity) MapColumns(cm *dml.ColumnMap) error {
 
 func (e *CustomerAddressEntity) Load(ctx context.Context, dbm *DBM, entityID uint32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntitySelectByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return errors.NotValid.Newf("CustomerAddressEntity can't be nil")
 	}
@@ -1527,7 +1527,7 @@ func (e *CustomerAddressEntity) Load(ctx context.Context, dbm *DBM, entityID uin
 
 func (e *CustomerAddressEntity) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntityDeleteByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("CustomerAddressEntity can't be nil")
 	}
@@ -1545,7 +1545,7 @@ func (e *CustomerAddressEntity) Delete(ctx context.Context, dbm *DBM, opts ...dm
 
 func (e *CustomerAddressEntity) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntityUpdateByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("CustomerAddressEntity can't be nil")
 	}
@@ -1563,7 +1563,7 @@ func (e *CustomerAddressEntity) Update(ctx context.Context, dbm *DBM, opts ...dm
 
 func (e *CustomerAddressEntity) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntityInsert")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("CustomerAddressEntity can't be nil")
 	}
@@ -1581,7 +1581,7 @@ func (e *CustomerAddressEntity) Insert(ctx context.Context, dbm *DBM, opts ...dm
 
 func (e *CustomerAddressEntity) Upsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntityUpsertByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("CustomerAddressEntity can't be nil")
 	}
@@ -1752,7 +1752,7 @@ func (cc *CustomerAddressEntities) MapColumns(cm *dml.ColumnMap) error {
 
 func (cc *CustomerAddressEntities) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntitiesDBLoad")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return errors.NotValid.Newf("CustomerAddressEntity can't be nil")
 	}
@@ -1777,7 +1777,7 @@ func (cc *CustomerAddressEntities) DBLoad(ctx context.Context, dbm *DBM, pkIDs [
 
 func (cc *CustomerAddressEntities) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntitiesDeleteByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CustomerAddressEntities can't be nil")
 	}
@@ -1795,7 +1795,7 @@ func (cc *CustomerAddressEntities) DBDelete(ctx context.Context, dbm *DBM, opts 
 
 func (cc *CustomerAddressEntities) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntitiesUpdateByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return errors.NotValid.Newf("CustomerAddressEntities can't be nil")
 	}
@@ -1822,7 +1822,7 @@ func (cc *CustomerAddressEntities) DBUpdate(ctx context.Context, dbm *DBM, resCh
 
 func (cc *CustomerAddressEntities) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntitiesInsert")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CustomerAddressEntities can't be nil")
 	}
@@ -1840,7 +1840,7 @@ func (cc *CustomerAddressEntities) DBInsert(ctx context.Context, dbm *DBM, opts 
 
 func (cc *CustomerAddressEntities) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntitiesUpsertByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CustomerAddressEntities can't be nil")
 	}
@@ -2083,7 +2083,7 @@ func (e *CustomerEntity) MapColumns(cm *dml.ColumnMap) error {
 
 func (e *CustomerEntity) Load(ctx context.Context, dbm *DBM, entityID uint32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntitySelectByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return errors.NotValid.Newf("CustomerEntity can't be nil")
 	}
@@ -2102,7 +2102,7 @@ func (e *CustomerEntity) Load(ctx context.Context, dbm *DBM, entityID uint32, op
 
 func (e *CustomerEntity) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntityDeleteByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("CustomerEntity can't be nil")
 	}
@@ -2120,7 +2120,7 @@ func (e *CustomerEntity) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFu
 
 func (e *CustomerEntity) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntityUpdateByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("CustomerEntity can't be nil")
 	}
@@ -2138,7 +2138,7 @@ func (e *CustomerEntity) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFu
 
 func (e *CustomerEntity) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntityInsert")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("CustomerEntity can't be nil")
 	}
@@ -2156,7 +2156,7 @@ func (e *CustomerEntity) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFu
 
 func (e *CustomerEntity) Upsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntityUpsertByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("CustomerEntity can't be nil")
 	}
@@ -2336,7 +2336,7 @@ func (cc *CustomerEntities) MapColumns(cm *dml.ColumnMap) error {
 
 func (cc *CustomerEntities) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntitiesDBLoad")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return errors.NotValid.Newf("CustomerEntity can't be nil")
 	}
@@ -2361,7 +2361,7 @@ func (cc *CustomerEntities) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint32
 
 func (cc *CustomerEntities) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntitiesDeleteByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CustomerEntities can't be nil")
 	}
@@ -2379,7 +2379,7 @@ func (cc *CustomerEntities) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.
 
 func (cc *CustomerEntities) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntitiesUpdateByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return errors.NotValid.Newf("CustomerEntities can't be nil")
 	}
@@ -2406,7 +2406,7 @@ func (cc *CustomerEntities) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn f
 
 func (cc *CustomerEntities) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntitiesInsert")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CustomerEntities can't be nil")
 	}
@@ -2424,7 +2424,7 @@ func (cc *CustomerEntities) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.
 
 func (cc *CustomerEntities) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntitiesUpsertByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CustomerEntities can't be nil")
 	}
@@ -2704,7 +2704,7 @@ func (e *DmlgenTypes) MapColumns(cm *dml.ColumnMap) error {
 
 func (e *DmlgenTypes) Load(ctx context.Context, dbm *DBM, iD int32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesSelectByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return errors.NotValid.Newf("DmlgenTypes can't be nil")
 	}
@@ -2723,7 +2723,7 @@ func (e *DmlgenTypes) Load(ctx context.Context, dbm *DBM, iD int32, opts ...dml.
 
 func (e *DmlgenTypes) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesDeleteByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("DmlgenTypes can't be nil")
 	}
@@ -2741,7 +2741,7 @@ func (e *DmlgenTypes) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc)
 
 func (e *DmlgenTypes) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesUpdateByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("DmlgenTypes can't be nil")
 	}
@@ -2759,7 +2759,7 @@ func (e *DmlgenTypes) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc)
 
 func (e *DmlgenTypes) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesInsert")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("DmlgenTypes can't be nil")
 	}
@@ -2777,7 +2777,7 @@ func (e *DmlgenTypes) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc)
 
 func (e *DmlgenTypes) Upsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesUpsertByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("DmlgenTypes can't be nil")
 	}
@@ -2961,7 +2961,7 @@ func (cc *DmlgenTypesCollection) MapColumns(cm *dml.ColumnMap) error {
 
 func (cc *DmlgenTypesCollection) DBLoad(ctx context.Context, dbm *DBM, pkIDs []int32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesCollectionDBLoad")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return errors.NotValid.Newf("DmlgenTypes can't be nil")
 	}
@@ -2986,7 +2986,7 @@ func (cc *DmlgenTypesCollection) DBLoad(ctx context.Context, dbm *DBM, pkIDs []i
 
 func (cc *DmlgenTypesCollection) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesCollectionDeleteByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return nil, errors.NotValid.Newf("DmlgenTypesCollection can't be nil")
 	}
@@ -3004,7 +3004,7 @@ func (cc *DmlgenTypesCollection) DBDelete(ctx context.Context, dbm *DBM, opts ..
 
 func (cc *DmlgenTypesCollection) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesCollectionUpdateByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return errors.NotValid.Newf("DmlgenTypesCollection can't be nil")
 	}
@@ -3031,7 +3031,7 @@ func (cc *DmlgenTypesCollection) DBUpdate(ctx context.Context, dbm *DBM, resChec
 
 func (cc *DmlgenTypesCollection) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesCollectionInsert")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return nil, errors.NotValid.Newf("DmlgenTypesCollection can't be nil")
 	}
@@ -3049,7 +3049,7 @@ func (cc *DmlgenTypesCollection) DBInsert(ctx context.Context, dbm *DBM, opts ..
 
 func (cc *DmlgenTypesCollection) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesCollectionUpsertByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return nil, errors.NotValid.Newf("DmlgenTypesCollection can't be nil")
 	}
@@ -3333,7 +3333,7 @@ func (e *SalesOrderStatusState) MapColumns(cm *dml.ColumnMap) error {
 
 func (e *SalesOrderStatusState) Load(ctx context.Context, dbm *DBM, status string, state string, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStateSelectByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return errors.NotValid.Newf("SalesOrderStatusState can't be nil")
 	}
@@ -3352,7 +3352,7 @@ func (e *SalesOrderStatusState) Load(ctx context.Context, dbm *DBM, status strin
 
 func (e *SalesOrderStatusState) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStateDeleteByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("SalesOrderStatusState can't be nil")
 	}
@@ -3370,7 +3370,7 @@ func (e *SalesOrderStatusState) Delete(ctx context.Context, dbm *DBM, opts ...dm
 
 func (e *SalesOrderStatusState) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStateUpdateByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("SalesOrderStatusState can't be nil")
 	}
@@ -3388,7 +3388,7 @@ func (e *SalesOrderStatusState) Update(ctx context.Context, dbm *DBM, opts ...dm
 
 func (e *SalesOrderStatusState) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStateInsert")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("SalesOrderStatusState can't be nil")
 	}
@@ -3406,7 +3406,7 @@ func (e *SalesOrderStatusState) Insert(ctx context.Context, dbm *DBM, opts ...dm
 
 func (e *SalesOrderStatusState) Upsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStateUpsertByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return nil, errors.NotValid.Newf("SalesOrderStatusState can't be nil")
 	}
@@ -3555,7 +3555,7 @@ type SalesOrderStatusStatesDBLoadArgs struct {
 
 func (cc *SalesOrderStatusStates) DBLoad(ctx context.Context, dbm *DBM, pkIDs []SalesOrderStatusStatesDBLoadArgs, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStatesDBLoad")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return errors.NotValid.Newf("SalesOrderStatusState can't be nil")
 	}
@@ -3584,7 +3584,7 @@ func (cc *SalesOrderStatusStates) DBLoad(ctx context.Context, dbm *DBM, pkIDs []
 
 func (cc *SalesOrderStatusStates) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStatesDeleteByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return nil, errors.NotValid.Newf("SalesOrderStatusStates can't be nil")
 	}
@@ -3602,7 +3602,7 @@ func (cc *SalesOrderStatusStates) DBDelete(ctx context.Context, dbm *DBM, opts .
 
 func (cc *SalesOrderStatusStates) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStatesUpdateByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return errors.NotValid.Newf("SalesOrderStatusStates can't be nil")
 	}
@@ -3629,7 +3629,7 @@ func (cc *SalesOrderStatusStates) DBUpdate(ctx context.Context, dbm *DBM, resChe
 
 func (cc *SalesOrderStatusStates) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStatesInsert")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return nil, errors.NotValid.Newf("SalesOrderStatusStates can't be nil")
 	}
@@ -3647,7 +3647,7 @@ func (cc *SalesOrderStatusStates) DBInsert(ctx context.Context, dbm *DBM, opts .
 
 func (cc *SalesOrderStatusStates) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStatesUpsertByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return nil, errors.NotValid.Newf("SalesOrderStatusStates can't be nil")
 	}
@@ -3829,7 +3829,7 @@ func (e *ViewCustomerAutoIncrement) MapColumns(cm *dml.ColumnMap) error {
 
 func (e *ViewCustomerAutoIncrement) Load(ctx context.Context, dbm *DBM, ceEntityID uint32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "ViewCustomerAutoIncrementSelectByPK")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if e == nil {
 		return errors.NotValid.Newf("ViewCustomerAutoIncrement can't be nil")
 	}
@@ -3971,7 +3971,7 @@ func (cc *ViewCustomerAutoIncrements) MapColumns(cm *dml.ColumnMap) error {
 
 func (cc *ViewCustomerAutoIncrements) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "ViewCustomerAutoIncrementsDBLoad")
-	defer func() { cstrace.Status(span, err); span.End() }()
+	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
 		return errors.NotValid.Newf("ViewCustomerAutoIncrement can't be nil")
 	}

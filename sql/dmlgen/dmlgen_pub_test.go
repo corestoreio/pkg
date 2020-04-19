@@ -92,7 +92,6 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 	defer dmltest.Close(t, db)
 
 	defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil).Deferred()
-	// dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil)
 
 	ctx := context.Background()
 	g, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated",
