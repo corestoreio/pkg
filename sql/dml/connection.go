@@ -143,7 +143,7 @@ func WithLogger(l log.Logger, uniqueIDFn func() string) ConnPoolOption {
 // be established.
 func WithVerifyConnection() ConnPoolOption {
 	return ConnPoolOption{
-		sortOrder: 249,
+		sortOrder: 149,
 		fn: func(c *ConnPool) error {
 			return errors.WithStack(c.DB.Ping())
 		},
@@ -155,7 +155,7 @@ func WithVerifyConnection() ConnPoolOption {
 // from the DSN.
 func WithCreateDatabase(ctx context.Context, databaseName string) ConnPoolOption {
 	return ConnPoolOption{
-		sortOrder: 253,
+		sortOrder: 150,
 		fn: func(c *ConnPool) error {
 			if databaseName == "" && c.dsn != nil {
 				databaseName = c.dsn.DBName
@@ -181,7 +181,7 @@ func WithCreateDatabase(ctx context.Context, databaseName string) ConnPoolOption
 
 // TODO func WithRequireUTF8MB4() ConnPoolOption {
 // 	return ConnPoolOption{
-// 		sortOrder: 253,
+// 		sortOrder: 152,
 // 		fn: func(c *ConnPool) error {
 // 			// For Schemas:
 // 			//
@@ -223,7 +223,7 @@ func WithExecSQLOnConnClose(ctx context.Context, sqlQuery ...string) ConnPoolOpt
 func withExecSQL(ctx context.Context, event uint8, sqlQuery ...string) ConnPoolOption {
 	return ConnPoolOption{
 		eventType: event,
-		sortOrder: 250,
+		sortOrder: 154,
 		fn: func(c *ConnPool) error {
 			switch len(sqlQuery) {
 
@@ -329,12 +329,13 @@ func WithDSN(dsn string) ConnPoolOption {
 			if c.dsn, err = mysql.ParseDSN(dsn); err != nil {
 				return errors.WithStack(err)
 			}
-
 			if c.dsn.DBName == "random" {
 				db := fmt.Sprintf(randomTestDBPrefix+"%d", time.Now().UnixNano())
 				c.dsn.DBName = db
 				if os.Getenv("SKIP_CLEANUP") != "1" {
-					c.runOnClose = append(c.runOnClose, WithExecSQLOnConnClose(context.Background(), "DROP DATABASE IF EXISTS "+Quoter.Name(db)))
+					opt := WithExecSQLOnConnClose(context.Background(), "DROP DATABASE IF EXISTS "+Quoter.Name(db))
+					opt.sortOrder = 200 // must run at the very end. or other queries will fail.
+					c.runOnClose = append(c.runOnClose, opt)
 				}
 				_ = os.Setenv(EnvDSN, c.dsn.FormatDSN()) // propagate the DSN to e.g. dmltest.SQLDumpLoad
 			}
@@ -494,6 +495,11 @@ func (c *ConnPool) Close() (err error) {
 	if c.Log != nil && c.Log.IsDebug() {
 		defer c.Log.Debug("Close", log.Err(err), log.Duration("duration", now().Sub(c.start)))
 	}
+
+	sort.SliceStable(c.runOnClose, func(i, j int) bool {
+		return c.runOnClose[i].sortOrder < c.runOnClose[j].sortOrder
+	})
+
 	for _, opt := range c.runOnClose {
 		if err = opt.fn(c); err != nil {
 			return errors.WithStack(err)
