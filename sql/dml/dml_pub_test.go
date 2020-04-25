@@ -15,6 +15,7 @@
 package dml_test
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -92,6 +93,33 @@ func createRealSession(t testing.TB, opts ...dml.ConnPoolOption) *dml.ConnPool {
 		t.Fatal(err)
 	}
 	return cxn
+}
+
+func installFixtures(t testing.TB, db *sql.DB) {
+	// see also test case "LoadUint64 max Uint64 found"
+	sqlToRun := []string{
+		"DROP TABLE IF EXISTS `dml_people`",
+		fmt.Sprintf(`
+		CREATE TABLE dml_people (
+			id bigint(8) unsigned NOT NULL auto_increment PRIMARY KEY,
+			name varchar(255) NOT NULL,
+			email varchar(255),
+			%s varchar(255),
+			store_id smallint(5) unsigned DEFAULT 0 COMMENT 'Store Id',
+			created_at timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' COMMENT 'Created At',
+			total_income decimal(12,4) NOT NULL DEFAULT 0.0000 COMMENT 'Used as float64',
+			avg_income decimal(12,5) COMMENT 'Used as Decimal'
+		)
+	`, "`key`"),
+		"INSERT INTO dml_people (name,email,avg_income) VALUES ('Sir George', 'SirGeorge@GoIsland.com',333.66677)",
+		"INSERT INTO dml_people (name,email) VALUES ('Dmitri', 'userXYZZ@emailServerX.com')",
+		"INSERT INTO `dml_people` (id,name,email) VALUES (18446744073700551613,'Cyrill', 'firstname@lastname.fm')",
+	}
+
+	for _, sqlStr := range sqlToRun {
+		_, err := db.Exec(sqlStr)
+		assert.NoError(t, err, "With SQL statement: %q", sqlStr)
+	}
 }
 
 // compareToSQL compares a SQL object with a placeholder string and an optional

@@ -54,7 +54,8 @@ func TestDriverCallBack(t *testing.T) {
 				return err
 			}
 		}),
-		dml.WithDSN(dmltest.MustGetDSN(t)))
+	)
+	installFixtures(t, db.DB)
 
 	ctx := context.TODO()
 	sel := db.SelectFrom("dml_people").Star().Where(dml.Column("name").PlaceHolder())
@@ -82,6 +83,7 @@ func TestDriverCallBack(t *testing.T) {
 	// ioutil.WriteFile("testdata/TestDriverCallBack.want2.txt", buf.Bytes(), 0644)
 	wantLog, err := ioutil.ReadFile("testdata/TestDriverCallBack.want.txt")
 	assert.NoError(t, err)
+	wantLog = bytes.ReplaceAll(wantLog, []byte(`{{SCHMEA}}`), []byte(db.Schema()))
 	if !bytes.Equal(wantLog, buf.Bytes()) {
 		t.Error("testdata/TestDriverCallBack.want.txt does not match with `have`.")
 		println(buf.String())

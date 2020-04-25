@@ -2,16 +2,31 @@
 Query: "SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'"
 
 "Conn.ExecContext" Took: 0s
-Query: "CREATE DATABASE IF NOT EXISTS `test`"
+Query: "CREATE DATABASE IF NOT EXISTS `{{SCHMEA}}`"
 
 "Conn.ExecContext" Took: 0s
-Query: "ALTER DATABASE `test` DEFAULT CHARACTER SET='utf8mb4' COLLATE='utf8mb4_unicode_ci'"
+Query: "ALTER DATABASE `{{SCHMEA}}` DEFAULT CHARACTER SET='utf8mb4' COLLATE='utf8mb4_unicode_ci'"
 
 "Conn.ExecContext" Took: 0s
-Query: "USE `test`"
+Query: "USE `{{SCHMEA}}`"
 
 "Conn.Ping" Took: 0s
 Query: "/*PING*/"
+
+"Conn.ExecContext" Took: 0s
+Query: "DROP TABLE IF EXISTS `dml_people`"
+
+"Conn.ExecContext" Took: 0s
+Query: "\n\t\tCREATE TABLE dml_people (\n\t\t\tid bigint(8) unsigned NOT NULL auto_increment PRIMARY KEY,\n\t\t\tname varchar(255) NOT NULL,\n\t\t\temail varchar(255),\n\t\t\t`key` varchar(255),\n\t\t\tstore_id smallint(5) unsigned DEFAULT 0 COMMENT 'Store Id',\n\t\t\tcreated_at timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' COMMENT 'Created At',\n\t\t\ttotal_income decimal(12,4) NOT NULL DEFAULT 0.0000 COMMENT 'Used as float64',\n\t\t\tavg_income decimal(12,5) COMMENT 'Used as Decimal'\n\t\t)\n\t"
+
+"Conn.ExecContext" Took: 0s
+Query: "INSERT INTO dml_people (name,email,avg_income) VALUES ('Sir George', 'SirGeorge@GoIsland.com',333.66677)"
+
+"Conn.ExecContext" Took: 0s
+Query: "INSERT INTO dml_people (name,email) VALUES ('Dmitri', 'userXYZZ@emailServerX.com')"
+
+"Conn.ExecContext" Took: 0s
+Query: "INSERT INTO `dml_people` (id,name,email) VALUES (18446744073700551613,'Cyrill', 'firstname@lastname.fm')"
 
 "Conn.QueryContext" Took: 0s
 Error: driver: skip fast-path; continue as if unimplemented
@@ -48,6 +63,9 @@ Query: "UPDATE /*ID$RANJID2*/ `dml_people` SET `name`=?"
 
 "Conn.ExecContext" Took: 0s
 Query: "UPDATE /*ID$RANJID2*/ `dml_people` SET `name`='Bernie'"
+
+"Conn.ExecContext" Took: 0s
+Query: "DROP DATABASE IF EXISTS `{{SCHMEA}}`"
 
 "Conn.Close" Took: 0s
 

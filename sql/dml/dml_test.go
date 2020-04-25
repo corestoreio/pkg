@@ -40,6 +40,7 @@ func createRealSession(t testing.TB) *ConnPool {
 	}
 	cxn, err := NewConnPool(
 		WithDSN(dsn),
+		WithCreateDatabase(context.Background(), ""),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -276,7 +277,7 @@ func installFixtures(t testing.TB, db *sql.DB, c *installFixturesConfig) {
 		"DROP TABLE IF EXISTS `dml_people`",
 		createPeopleTable,
 		"INSERT INTO dml_people (name,email,avg_income) VALUES ('Sir George', 'SirGeorge@GoIsland.com',333.66677)",
-		"INSERT INTO dml_people (name,email) VALUES ('Dmitri', 'zavorotni@jadius.com')",
+		"INSERT INTO dml_people (name,email) VALUES ('Dmitri', 'userXYZZ@emailServerX.com')",
 
 		"DROP TABLE IF EXISTS `dml_null_types`",
 		createNullTypesTable,

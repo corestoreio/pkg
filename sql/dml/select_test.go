@@ -549,7 +549,7 @@ func TestSelect_Load_Slice_Scanner(t *testing.T) {
 		assert.Exactly(t, "SirGeorge@GoIsland.com", people.Data[0].Email.Data)
 		assert.Exactly(t, "Dmitri", people.Data[1].Name)
 		assert.True(t, people.Data[1].Email.Valid)
-		assert.Exactly(t, "zavorotni@jadius.com", people.Data[1].Email.Data)
+		assert.Exactly(t, "userXYZZ@emailServerX.com", people.Data[1].Email.Data)
 	}
 }
 
