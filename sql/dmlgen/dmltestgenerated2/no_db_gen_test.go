@@ -3,11 +3,10 @@
 package dmltestgenerated2
 
 import (
-	"testing"
-
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/pseudo"
+	"testing"
 )
 
 func TestNewDBManagerNonDB_48a8450c0b62e880b2d40acd0bbbd0dc(t *testing.T) {

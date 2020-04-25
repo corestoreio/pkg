@@ -570,7 +570,7 @@ func (g *Generator) hasFeature(includes, excludes, features FeatureToggle, mode 
 }
 
 // findUsedPackages checks for needed packages which we must import.
-func (g *Generator) findUsedPackages(file []byte) ([]string, error) {
+func (g *Generator) findUsedPackages(file []byte,predefinedImportPaths []string) ([]string, error) {
 	af, err := goparser.ParseFile(token.NewFileSet(), "cs_virtual_file.go", append([]byte("package temporarily_main\n\n"), file...), 0)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -584,8 +584,8 @@ func (g *Generator) findUsedPackages(file []byte) ([]string, error) {
 		return true
 	})
 
-	ret := make([]string, 0, len(g.ImportPaths))
-	for _, path := range g.ImportPaths {
+	ret := make([]string, 0, len(predefinedImportPaths))
+	for _, path := range predefinedImportPaths {
 		_, pkg := filepath.Split(path)
 		if _, ok := idents[pkg]; ok {
 			ret = append(ret, path)
@@ -853,18 +853,24 @@ func (g *Generator) GenerateGo(wMain, wTest io.Writer) error {
 	}
 
 	// now figure out all used package names in the buffer.
-	pkgs, err := g.findUsedPackages(mainGen.Bytes())
+	pkgs, err := g.findUsedPackages(mainGen.Bytes(),g.ImportPaths)
 	if err != nil {
 		_, _ = wMain.Write(mainGen.Bytes()) // write for debug reasons
 		return errors.WithStack(err)
 	}
 	mainGen.AddImports(pkgs...)
 
-	testGen.AddImports(g.ImportPathsTesting...)
-
 	if err := mainGen.GenerateFile(wMain); err != nil {
 		return errors.WithStack(err)
 	}
+
+	pkgs, err = g.findUsedPackages(testGen.Bytes(),g.ImportPathsTesting)
+	if err != nil {
+		_, _ = wMain.Write(testGen.Bytes()) // write for debug reasons
+		return errors.WithStack(err)
+	}
+	testGen.AddImports(pkgs...)
+	//testGen.AddImports(g.ImportPathsTesting...)
 
 	if err := testGen.GenerateFile(wTest); err != nil {
 		return errors.WithStack(err)

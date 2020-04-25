@@ -883,7 +883,8 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 		tblPkCols = t.Table.Columns.ViewPrimaryKeys()
 	}
 	dbLoadStructArgOrSliceName := t.CollectionName() + "DBLoadArgs"
-	bufPKStructArg.WriteString("type " + dbLoadStructArgOrSliceName + " struct {")
+	bufPKStructArg.WriteString("type " + dbLoadStructArgOrSliceName + " struct {\n")
+	bufPKStructArg.WriteString("\t_Named_Fields_Required struct{}\n")
 	tblPkCols.Each(func(c *ddl.Column) {
 		if i > 0 {
 			bufPKNames.WriteByte(',')
@@ -1072,34 +1073,44 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 		return
 	}
 
-	var bufPKNameTypes strings.Builder
-	var bufPKNames strings.Builder
 	var bufPKNamesAsArgs strings.Builder
+	var bufPKStructArg strings.Builder
+	var bufPKNames strings.Builder
 	i := 0
 
-	tblCols := t.Table.Columns.PrimaryKeys()
+	tblPkCols := t.Table.Columns.PrimaryKeys()
 	if t.Table.IsView() {
-		tblCols = t.Table.Columns.ViewPrimaryKeys()
+		tblPkCols = t.Table.Columns.ViewPrimaryKeys()
 	}
-
-	tblCols.Each(func(c *ddl.Column) {
+	dbLoadStructArgOrSliceName := t.EntityName() + "LoadArgs"
+	bufPKStructArg.WriteString("type " + dbLoadStructArgOrSliceName + " struct {\n")
+	bufPKStructArg.WriteString("\t_Named_Fields_Required struct{}\n")
+	loadArgName := "arg"
+	if tblPkCols.Len() == 1 {
+		loadArgName = "primaryKey"
+	}
+	tblPkCols.Each(func(c *ddl.Column) {
 		if i > 0 {
-			bufPKNameTypes.WriteByte(',')
 			bufPKNames.WriteByte(',')
 			bufPKNamesAsArgs.WriteByte(',')
 		}
-		goNamedField := lcFirst(strs.ToGoCamelCase(c.Field))
-
-		bufPKNameTypes.WriteString(goNamedField)
-		bufPKNameTypes.WriteByte(' ')
-		bufPKNameTypes.WriteString(g.goTypeNull(c))
-
-		bufPKNames.WriteString(goNamedField)
+		goNamedField := strs.ToGoCamelCase(c.Field)
+		if tblPkCols.Len() == 1 {
+			dbLoadStructArgOrSliceName = g.goTypeNull(c)
+			bufPKNames.WriteString(loadArgName)
+		} else {
+			bufPKStructArg.WriteString(goNamedField)
+			bufPKStructArg.WriteByte(' ')
+			bufPKStructArg.WriteString(g.goTypeNull(c) + "\n")
+			bufPKNames.WriteString(loadArgName + "." + goNamedField)
+		}
 
 		bufPKNamesAsArgs.WriteString("e.")
 		bufPKNamesAsArgs.WriteString(strs.ToGoCamelCase(c.Field))
 		i++
 	})
+	bufPKStructArg.WriteString("}\n")
+
 	if i == 0 {
 		mainGen.C("The table/view", t.EntityName(), "does not have a primary key. SKipping to generate DML functions based on the PK.")
 		mainGen.Pln("\n")
@@ -1111,7 +1122,8 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	entityFuncName := codegen.SkipWS(t.EntityName(), "SelectByPK")
 
 	dmlEnabled := t.hasFeature(g, FeatureDBSelect)
-	mainGen.Pln(dmlEnabled, `func (e `, entityPTRName, `) Load(ctx context.Context,dbm *DBM, `, &bufPKNameTypes, `, opts ...dml.DBRFunc) (err error) {`)
+	mainGen.Pln(dmlEnabled && tblPkCols.Len() > 1, bufPKStructArg.String())
+	mainGen.Pln(dmlEnabled, `func (e `, entityPTRName, `) Load(ctx context.Context,dbm *DBM, `, loadArgName, ` `, dbLoadStructArgOrSliceName, `, opts ...dml.DBRFunc) (err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, entityFuncName, `"`), `)
 		defer func(){ cstrace.Status(span, err, ""); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if e == nil {

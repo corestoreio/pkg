@@ -90,7 +90,10 @@ func TestNewDBManager_Manual_Tuples(t *testing.T) {
 		})
 		t.Run("Load", func(t *testing.T) {
 			eLoaded := &SalesOrderStatusState{}
-			err = eLoaded.Load(ctx, dbm, eFake.Status, eFake.State)
+			err = eLoaded.Load(ctx, dbm, SalesOrderStatusStateLoadArgs{
+				Status: eFake.Status,
+				State:  eFake.State,
+			})
 			assert.NoError(t, err)
 			assert.NotEmpty(t, eLoaded.Status)
 			assert.NotEmpty(t, eLoaded.State)

@@ -4,15 +4,14 @@ package dmltestgenerated4
 
 import (
 	"context"
-	"sort"
-	"testing"
-	"time"
-
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/pseudo"
+	"sort"
+	"testing"
+	"time"
 )
 
 func TestNewDBManagerDB_48a8450c0b62e880b2d40acd0bbbd0dc(t *testing.T) {

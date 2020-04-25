@@ -5,12 +5,11 @@ package dmltestgenerated4
 import (
 	"context"
 	"database/sql"
-	"time"
-
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/storage/null"
+	"time"
 )
 
 const (
@@ -88,7 +87,6 @@ func (dbm DBM) eventCoreConfigurationFunc(ctx context.Context, ef dml.EventFlag,
 	}
 	return nil
 }
-
 func (dbm DBM) eventSalesOrderStatusStateFunc(ctx context.Context, ef dml.EventFlag, ec *SalesOrderStatusStates, e *SalesOrderStatusState) error {
 	if len(dbm.option.eventSalesOrderStatusStateFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
 		return nil
@@ -100,7 +98,6 @@ func (dbm DBM) eventSalesOrderStatusStateFunc(ctx context.Context, ef dml.EventF
 	}
 	return nil
 }
-
 func (dbm DBM) eventViewCustomerAutoIncrementFunc(ctx context.Context, ef dml.EventFlag, ec *ViewCustomerAutoIncrements, e *ViewCustomerAutoIncrement) error {
 	if len(dbm.option.eventViewCustomerAutoIncrementFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
 		return nil
@@ -222,24 +219,22 @@ func (e *CoreConfiguration) MapColumns(cm *dml.ColumnMap) error {
 	}
 	return errors.WithStack(cm.Err())
 }
-
-func (e *CoreConfiguration) Load(ctx context.Context, dbm *DBM, configID uint32, opts ...dml.DBRFunc) (err error) {
+func (e *CoreConfiguration) Load(ctx context.Context, dbm *DBM, primaryKey uint32, opts ...dml.DBRFunc) (err error) {
 	if e == nil {
 		return errors.NotValid.Newf("CoreConfiguration can't be nil")
 	}
-	// put the IDs configID into the context as value to search for a cache entry in the event function.
+	// put the IDs primaryKey into the context as value to search for a cache entry in the event function.
 	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeSelect, nil, e); err != nil {
 		return errors.WithStack(err)
 	}
 	if e.IsSet() {
 		return nil // might return data from cache
 	}
-	if _, err = dbm.CachedQuery("CoreConfigurationSelectByPK").ApplyCallBacks(opts...).Load(ctx, e, configID); err != nil {
+	if _, err = dbm.CachedQuery("CoreConfigurationSelectByPK").ApplyCallBacks(opts...).Load(ctx, e, primaryKey); err != nil {
 		return errors.WithStack(err)
 	}
 	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterSelect, nil, e))
 }
-
 func (e *CoreConfiguration) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	if e == nil {
 		return nil, errors.NotValid.Newf("CoreConfiguration can't be nil")
@@ -255,7 +250,6 @@ func (e *CoreConfiguration) Delete(ctx context.Context, dbm *DBM, opts ...dml.DB
 	}
 	return res, nil
 }
-
 func (e *CoreConfiguration) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	if e == nil {
 		return nil, errors.NotValid.Newf("CoreConfiguration can't be nil")
@@ -271,7 +265,6 @@ func (e *CoreConfiguration) Update(ctx context.Context, dbm *DBM, opts ...dml.DB
 	}
 	return res, nil
 }
-
 func (e *CoreConfiguration) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	if e == nil {
 		return nil, errors.NotValid.Newf("CoreConfiguration can't be nil")
@@ -287,7 +280,6 @@ func (e *CoreConfiguration) Insert(ctx context.Context, dbm *DBM, opts ...dml.DB
 	}
 	return res, nil
 }
-
 func (e *CoreConfiguration) Upsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	if e == nil {
 		return nil, errors.NotValid.Newf("CoreConfiguration can't be nil")
@@ -328,7 +320,6 @@ func (cc *CoreConfigurations) AssignLastInsertID(id int64) {
 		cc.Data[i].AssignLastInsertID(id + i)
 	}
 }
-
 func (cc *CoreConfigurations) scanColumns(cm *dml.ColumnMap, e *CoreConfiguration, idx uint64) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
@@ -370,7 +361,6 @@ func (cc *CoreConfigurations) MapColumns(cm *dml.ColumnMap) error {
 	}
 	return cm.Err()
 }
-
 func (cc *CoreConfigurations) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint32, opts ...dml.DBRFunc) (err error) {
 	if cc == nil {
 		return errors.NotValid.Newf("CoreConfiguration can't be nil")
@@ -393,7 +383,6 @@ func (cc *CoreConfigurations) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint
 	}
 	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterSelect, cc, nil))
 }
-
 func (cc *CoreConfigurations) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CoreConfigurations can't be nil")
@@ -409,7 +398,6 @@ func (cc *CoreConfigurations) DBDelete(ctx context.Context, dbm *DBM, opts ...dm
 	}
 	return res, nil
 }
-
 func (cc *CoreConfigurations) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
 	if cc == nil {
 		return errors.NotValid.Newf("CoreConfigurations can't be nil")
@@ -434,7 +422,6 @@ func (cc *CoreConfigurations) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn
 	}
 	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpdate, cc, nil))
 }
-
 func (cc *CoreConfigurations) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CoreConfigurations can't be nil")
@@ -450,7 +437,6 @@ func (cc *CoreConfigurations) DBInsert(ctx context.Context, dbm *DBM, opts ...dm
 	}
 	return res, nil
 }
-
 func (cc *CoreConfigurations) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CoreConfigurations can't be nil")
@@ -526,18 +512,24 @@ func (e *SalesOrderStatusState) MapColumns(cm *dml.ColumnMap) error {
 	return errors.WithStack(cm.Err())
 }
 
-func (e *SalesOrderStatusState) Load(ctx context.Context, dbm *DBM, status string, state string, opts ...dml.DBRFunc) (err error) {
+type SalesOrderStatusStateLoadArgs struct {
+	_Named_Fields_Required struct{}
+	Status                 string
+	State                  string
+}
+
+func (e *SalesOrderStatusState) Load(ctx context.Context, dbm *DBM, arg SalesOrderStatusStateLoadArgs, opts ...dml.DBRFunc) (err error) {
 	if e == nil {
 		return errors.NotValid.Newf("SalesOrderStatusState can't be nil")
 	}
-	// put the IDs status,state into the context as value to search for a cache entry in the event function.
+	// put the IDs arg.Status,arg.State into the context as value to search for a cache entry in the event function.
 	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeSelect, nil, e); err != nil {
 		return errors.WithStack(err)
 	}
 	if e.IsSet() {
 		return nil // might return data from cache
 	}
-	if _, err = dbm.CachedQuery("SalesOrderStatusStateSelectByPK").ApplyCallBacks(opts...).Load(ctx, e, status, state); err != nil {
+	if _, err = dbm.CachedQuery("SalesOrderStatusStateSelectByPK").ApplyCallBacks(opts...).Load(ctx, e, arg.Status, arg.State); err != nil {
 		return errors.WithStack(err)
 	}
 	return errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterSelect, nil, e))
@@ -560,7 +552,6 @@ func NewSalesOrderStatusStates() *SalesOrderStatusStates {
 		Data: make([]*SalesOrderStatusState, 0, 5),
 	}
 }
-
 func (cc *SalesOrderStatusStates) scanColumns(cm *dml.ColumnMap, e *SalesOrderStatusState, idx uint64) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
@@ -606,8 +597,9 @@ func (cc *SalesOrderStatusStates) MapColumns(cm *dml.ColumnMap) error {
 }
 
 type SalesOrderStatusStatesDBLoadArgs struct {
-	Status string
-	State  string
+	_Named_Fields_Required struct{}
+	Status                 string
+	State                  string
 }
 
 func (cc *SalesOrderStatusStates) DBLoad(ctx context.Context, dbm *DBM, pkIDs []SalesOrderStatusStatesDBLoadArgs, opts ...dml.DBRFunc) (err error) {
@@ -713,19 +705,18 @@ func (e *ViewCustomerAutoIncrement) MapColumns(cm *dml.ColumnMap) error {
 	}
 	return errors.WithStack(cm.Err())
 }
-
-func (e *ViewCustomerAutoIncrement) Load(ctx context.Context, dbm *DBM, ceEntityID uint32, opts ...dml.DBRFunc) (err error) {
+func (e *ViewCustomerAutoIncrement) Load(ctx context.Context, dbm *DBM, primaryKey uint32, opts ...dml.DBRFunc) (err error) {
 	if e == nil {
 		return errors.NotValid.Newf("ViewCustomerAutoIncrement can't be nil")
 	}
-	// put the IDs ceEntityID into the context as value to search for a cache entry in the event function.
+	// put the IDs primaryKey into the context as value to search for a cache entry in the event function.
 	if err = dbm.eventViewCustomerAutoIncrementFunc(ctx, dml.EventFlagBeforeSelect, nil, e); err != nil {
 		return errors.WithStack(err)
 	}
 	if e.IsSet() {
 		return nil // might return data from cache
 	}
-	if _, err = dbm.CachedQuery("ViewCustomerAutoIncrementSelectByPK").ApplyCallBacks(opts...).Load(ctx, e, ceEntityID); err != nil {
+	if _, err = dbm.CachedQuery("ViewCustomerAutoIncrementSelectByPK").ApplyCallBacks(opts...).Load(ctx, e, primaryKey); err != nil {
 		return errors.WithStack(err)
 	}
 	return errors.WithStack(dbm.eventViewCustomerAutoIncrementFunc(ctx, dml.EventFlagAfterSelect, nil, e))
@@ -748,7 +739,6 @@ func NewViewCustomerAutoIncrements() *ViewCustomerAutoIncrements {
 		Data: make([]*ViewCustomerAutoIncrement, 0, 5),
 	}
 }
-
 func (cc *ViewCustomerAutoIncrements) scanColumns(cm *dml.ColumnMap, e *ViewCustomerAutoIncrement, idx uint64) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
@@ -788,7 +778,6 @@ func (cc *ViewCustomerAutoIncrements) MapColumns(cm *dml.ColumnMap) error {
 	}
 	return cm.Err()
 }
-
 func (cc *ViewCustomerAutoIncrements) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint32, opts ...dml.DBRFunc) (err error) {
 	if cc == nil {
 		return errors.NotValid.Newf("ViewCustomerAutoIncrement can't be nil")

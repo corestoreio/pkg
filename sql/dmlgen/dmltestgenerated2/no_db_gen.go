@@ -4,11 +4,10 @@ package dmltestgenerated2
 
 import (
 	"fmt"
-	"io"
-	"time"
-
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/storage/null"
+	"io"
+	"time"
 )
 
 // CoreConfiguration represents a single row for DB table core_configuration.
