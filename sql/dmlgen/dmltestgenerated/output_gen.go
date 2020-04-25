@@ -37,6 +37,20 @@ var dbmEmptyOpts = []dml.DBRFunc{func(dbr *dml.DBR) {
 
 func dbmNoopResultCheckFn(_ sql.Result, err error) error { return err }
 
+// Event functions are getting dispatched during before or after handling a
+// collection or an entity.
+// Context is always non-nil but either collection or entity pointer will be set.
+type (
+	EventCatalogProductIndexEAVDecimalIDXFn func(context.Context, *CatalogProductIndexEAVDecimalIDXes, *CatalogProductIndexEAVDecimalIDX) error
+	EventCoreConfigurationFn                func(context.Context, *CoreConfigurations, *CoreConfiguration) error
+	EventCustomerAddressEntityFn            func(context.Context, *CustomerAddressEntities, *CustomerAddressEntity) error
+	EventCustomerEntityFn                   func(context.Context, *CustomerEntities, *CustomerEntity) error
+	EventDmlgenTypesFn                      func(context.Context, *DmlgenTypesCollection, *DmlgenTypes) error
+	EventSalesOrderStatusStateFn            func(context.Context, *SalesOrderStatusStates, *SalesOrderStatusState) error
+	EventViewCustomerAutoIncrementFn        func(context.Context, *ViewCustomerAutoIncrements, *ViewCustomerAutoIncrement) error
+	EventViewCustomerNoAutoIncrementFn      func(context.Context, *ViewCustomerNoAutoIncrements, *ViewCustomerNoAutoIncrement) error
+)
+
 // DBMOption provides various options to the DBM object.
 type DBMOption struct {
 	Trace                                     trace.Tracer
@@ -46,27 +60,27 @@ type DBMOption struct {
 	InitUpdateFn                              func(*dml.Update) *dml.Update
 	InitDeleteFn                              func(*dml.Delete) *dml.Delete
 	InitInsertFn                              func(*dml.Insert) *dml.Insert
-	eventCatalogProductIndexEAVDecimalIDXFunc [dml.EventFlagMax][]func(context.Context, *CatalogProductIndexEAVDecimalIDXes, *CatalogProductIndexEAVDecimalIDX) error
-	eventCoreConfigurationFunc                [dml.EventFlagMax][]func(context.Context, *CoreConfigurations, *CoreConfiguration) error
-	eventCustomerAddressEntityFunc            [dml.EventFlagMax][]func(context.Context, *CustomerAddressEntities, *CustomerAddressEntity) error
-	eventCustomerEntityFunc                   [dml.EventFlagMax][]func(context.Context, *CustomerEntities, *CustomerEntity) error
-	eventDmlgenTypesFunc                      [dml.EventFlagMax][]func(context.Context, *DmlgenTypesCollection, *DmlgenTypes) error
-	eventSalesOrderStatusStateFunc            [dml.EventFlagMax][]func(context.Context, *SalesOrderStatusStates, *SalesOrderStatusState) error
-	eventViewCustomerAutoIncrementFunc        [dml.EventFlagMax][]func(context.Context, *ViewCustomerAutoIncrements, *ViewCustomerAutoIncrement) error
-	eventViewCustomerNoAutoIncrementFunc      [dml.EventFlagMax][]func(context.Context, *ViewCustomerNoAutoIncrements, *ViewCustomerNoAutoIncrement) error
+	eventCatalogProductIndexEAVDecimalIDXFunc [dml.EventFlagMax][]EventCatalogProductIndexEAVDecimalIDXFn
+	eventCoreConfigurationFunc                [dml.EventFlagMax][]EventCoreConfigurationFn
+	eventCustomerAddressEntityFunc            [dml.EventFlagMax][]EventCustomerAddressEntityFn
+	eventCustomerEntityFunc                   [dml.EventFlagMax][]EventCustomerEntityFn
+	eventDmlgenTypesFunc                      [dml.EventFlagMax][]EventDmlgenTypesFn
+	eventSalesOrderStatusStateFunc            [dml.EventFlagMax][]EventSalesOrderStatusStateFn
+	eventViewCustomerAutoIncrementFunc        [dml.EventFlagMax][]EventViewCustomerAutoIncrementFn
+	eventViewCustomerNoAutoIncrementFunc      [dml.EventFlagMax][]EventViewCustomerNoAutoIncrementFn
 }
 
 // AddEventCatalogProductIndexEAVDecimalIDX adds a specific defined event call
 // back to the DBM.
 // It panics if the event argument is larger than dml.EventFlagMax.
-func (o *DBMOption) AddEventCatalogProductIndexEAVDecimalIDX(event dml.EventFlag, fn func(context.Context, *CatalogProductIndexEAVDecimalIDXes, *CatalogProductIndexEAVDecimalIDX) error) *DBMOption {
+func (o *DBMOption) AddEventCatalogProductIndexEAVDecimalIDX(event dml.EventFlag, fn EventCatalogProductIndexEAVDecimalIDXFn) *DBMOption {
 	o.eventCatalogProductIndexEAVDecimalIDXFunc[event] = append(o.eventCatalogProductIndexEAVDecimalIDXFunc[event], fn)
 	return o
 }
 
 // AddEventCoreConfiguration adds a specific defined event call back to the DBM.
 // It panics if the event argument is larger than dml.EventFlagMax.
-func (o *DBMOption) AddEventCoreConfiguration(event dml.EventFlag, fn func(context.Context, *CoreConfigurations, *CoreConfiguration) error) *DBMOption {
+func (o *DBMOption) AddEventCoreConfiguration(event dml.EventFlag, fn EventCoreConfigurationFn) *DBMOption {
 	o.eventCoreConfigurationFunc[event] = append(o.eventCoreConfigurationFunc[event], fn)
 	return o
 }
@@ -74,21 +88,21 @@ func (o *DBMOption) AddEventCoreConfiguration(event dml.EventFlag, fn func(conte
 // AddEventCustomerAddressEntity adds a specific defined event call back to the
 // DBM.
 // It panics if the event argument is larger than dml.EventFlagMax.
-func (o *DBMOption) AddEventCustomerAddressEntity(event dml.EventFlag, fn func(context.Context, *CustomerAddressEntities, *CustomerAddressEntity) error) *DBMOption {
+func (o *DBMOption) AddEventCustomerAddressEntity(event dml.EventFlag, fn EventCustomerAddressEntityFn) *DBMOption {
 	o.eventCustomerAddressEntityFunc[event] = append(o.eventCustomerAddressEntityFunc[event], fn)
 	return o
 }
 
 // AddEventCustomerEntity adds a specific defined event call back to the DBM.
 // It panics if the event argument is larger than dml.EventFlagMax.
-func (o *DBMOption) AddEventCustomerEntity(event dml.EventFlag, fn func(context.Context, *CustomerEntities, *CustomerEntity) error) *DBMOption {
+func (o *DBMOption) AddEventCustomerEntity(event dml.EventFlag, fn EventCustomerEntityFn) *DBMOption {
 	o.eventCustomerEntityFunc[event] = append(o.eventCustomerEntityFunc[event], fn)
 	return o
 }
 
 // AddEventDmlgenTypes adds a specific defined event call back to the DBM.
 // It panics if the event argument is larger than dml.EventFlagMax.
-func (o *DBMOption) AddEventDmlgenTypes(event dml.EventFlag, fn func(context.Context, *DmlgenTypesCollection, *DmlgenTypes) error) *DBMOption {
+func (o *DBMOption) AddEventDmlgenTypes(event dml.EventFlag, fn EventDmlgenTypesFn) *DBMOption {
 	o.eventDmlgenTypesFunc[event] = append(o.eventDmlgenTypesFunc[event], fn)
 	return o
 }
@@ -96,7 +110,7 @@ func (o *DBMOption) AddEventDmlgenTypes(event dml.EventFlag, fn func(context.Con
 // AddEventSalesOrderStatusState adds a specific defined event call back to the
 // DBM.
 // It panics if the event argument is larger than dml.EventFlagMax.
-func (o *DBMOption) AddEventSalesOrderStatusState(event dml.EventFlag, fn func(context.Context, *SalesOrderStatusStates, *SalesOrderStatusState) error) *DBMOption {
+func (o *DBMOption) AddEventSalesOrderStatusState(event dml.EventFlag, fn EventSalesOrderStatusStateFn) *DBMOption {
 	o.eventSalesOrderStatusStateFunc[event] = append(o.eventSalesOrderStatusStateFunc[event], fn)
 	return o
 }
@@ -104,7 +118,7 @@ func (o *DBMOption) AddEventSalesOrderStatusState(event dml.EventFlag, fn func(c
 // AddEventViewCustomerAutoIncrement adds a specific defined event call back to
 // the DBM.
 // It panics if the event argument is larger than dml.EventFlagMax.
-func (o *DBMOption) AddEventViewCustomerAutoIncrement(event dml.EventFlag, fn func(context.Context, *ViewCustomerAutoIncrements, *ViewCustomerAutoIncrement) error) *DBMOption {
+func (o *DBMOption) AddEventViewCustomerAutoIncrement(event dml.EventFlag, fn EventViewCustomerAutoIncrementFn) *DBMOption {
 	o.eventViewCustomerAutoIncrementFunc[event] = append(o.eventViewCustomerAutoIncrementFunc[event], fn)
 	return o
 }
@@ -112,7 +126,7 @@ func (o *DBMOption) AddEventViewCustomerAutoIncrement(event dml.EventFlag, fn fu
 // AddEventViewCustomerNoAutoIncrement adds a specific defined event call back to
 // the DBM.
 // It panics if the event argument is larger than dml.EventFlagMax.
-func (o *DBMOption) AddEventViewCustomerNoAutoIncrement(event dml.EventFlag, fn func(context.Context, *ViewCustomerNoAutoIncrements, *ViewCustomerNoAutoIncrement) error) *DBMOption {
+func (o *DBMOption) AddEventViewCustomerNoAutoIncrement(event dml.EventFlag, fn EventViewCustomerNoAutoIncrementFn) *DBMOption {
 	o.eventViewCustomerNoAutoIncrementFunc[event] = append(o.eventViewCustomerNoAutoIncrementFunc[event], fn)
 	return o
 }
@@ -430,7 +444,7 @@ func (e *CatalogProductIndexEAVDecimalIDX) Delete(ctx context.Context, dbm *DBM,
 	if res, err = dbm.CachedQuery("CatalogProductIndexEAVDecimalIDXDeleteByPK").ApplyCallBacks(opts...).ExecContext(ctx, e.EntityID, e.AttributeID, e.StoreID, e.SourceID); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterDelete, nil, e)); err != nil {
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterDelete, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -448,7 +462,7 @@ func (e *CatalogProductIndexEAVDecimalIDX) Update(ctx context.Context, dbm *DBM,
 	if res, err = dbm.CachedQuery("CatalogProductIndexEAVDecimalIDXUpdateByPK").ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterUpdate, nil, e)); err != nil {
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterUpdate, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -466,7 +480,7 @@ func (e *CatalogProductIndexEAVDecimalIDX) Insert(ctx context.Context, dbm *DBM,
 	if res, err = dbm.CachedQuery("CatalogProductIndexEAVDecimalIDXInsert").ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterInsert, nil, e)); err != nil {
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterInsert, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -973,7 +987,7 @@ func (e *CoreConfiguration) Delete(ctx context.Context, dbm *DBM, opts ...dml.DB
 	if res, err = dbm.CachedQuery("CoreConfigurationDeleteByPK").ApplyCallBacks(opts...).ExecContext(ctx, e.ConfigID); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterDelete, nil, e)); err != nil {
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterDelete, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -991,7 +1005,7 @@ func (e *CoreConfiguration) Update(ctx context.Context, dbm *DBM, opts ...dml.DB
 	if res, err = dbm.CachedQuery("CoreConfigurationUpdateByPK").ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpdate, nil, e)); err != nil {
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpdate, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -1009,7 +1023,7 @@ func (e *CoreConfiguration) Insert(ctx context.Context, dbm *DBM, opts ...dml.DB
 	if res, err = dbm.CachedQuery("CoreConfigurationInsert").ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterInsert, nil, e)); err != nil {
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterInsert, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -1537,7 +1551,7 @@ func (e *CustomerAddressEntity) Delete(ctx context.Context, dbm *DBM, opts ...dm
 	if res, err = dbm.CachedQuery("CustomerAddressEntityDeleteByPK").ApplyCallBacks(opts...).ExecContext(ctx, e.EntityID); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterDelete, nil, e)); err != nil {
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterDelete, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -1555,7 +1569,7 @@ func (e *CustomerAddressEntity) Update(ctx context.Context, dbm *DBM, opts ...dm
 	if res, err = dbm.CachedQuery("CustomerAddressEntityUpdateByPK").ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterUpdate, nil, e)); err != nil {
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterUpdate, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -1573,7 +1587,7 @@ func (e *CustomerAddressEntity) Insert(ctx context.Context, dbm *DBM, opts ...dm
 	if res, err = dbm.CachedQuery("CustomerAddressEntityInsert").ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterInsert, nil, e)); err != nil {
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterInsert, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -2112,7 +2126,7 @@ func (e *CustomerEntity) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFu
 	if res, err = dbm.CachedQuery("CustomerEntityDeleteByPK").ApplyCallBacks(opts...).ExecContext(ctx, e.EntityID); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterDelete, nil, e)); err != nil {
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterDelete, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -2130,7 +2144,7 @@ func (e *CustomerEntity) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFu
 	if res, err = dbm.CachedQuery("CustomerEntityUpdateByPK").ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterUpdate, nil, e)); err != nil {
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterUpdate, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -2148,7 +2162,7 @@ func (e *CustomerEntity) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFu
 	if res, err = dbm.CachedQuery("CustomerEntityInsert").ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterInsert, nil, e)); err != nil {
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterInsert, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -2733,7 +2747,7 @@ func (e *DmlgenTypes) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc)
 	if res, err = dbm.CachedQuery("DmlgenTypesDeleteByPK").ApplyCallBacks(opts...).ExecContext(ctx, e.ID); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterDelete, nil, e)); err != nil {
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterDelete, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -2751,7 +2765,7 @@ func (e *DmlgenTypes) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc)
 	if res, err = dbm.CachedQuery("DmlgenTypesUpdateByPK").ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterUpdate, nil, e)); err != nil {
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterUpdate, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -2769,7 +2783,7 @@ func (e *DmlgenTypes) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc)
 	if res, err = dbm.CachedQuery("DmlgenTypesInsert").ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterInsert, nil, e)); err != nil {
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterInsert, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -3362,7 +3376,7 @@ func (e *SalesOrderStatusState) Delete(ctx context.Context, dbm *DBM, opts ...dm
 	if res, err = dbm.CachedQuery("SalesOrderStatusStateDeleteByPK").ApplyCallBacks(opts...).ExecContext(ctx, e.Status, e.State); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterDelete, nil, e)); err != nil {
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterDelete, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -3380,7 +3394,7 @@ func (e *SalesOrderStatusState) Update(ctx context.Context, dbm *DBM, opts ...dm
 	if res, err = dbm.CachedQuery("SalesOrderStatusStateUpdateByPK").ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterUpdate, nil, e)); err != nil {
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterUpdate, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -3398,7 +3412,7 @@ func (e *SalesOrderStatusState) Insert(ctx context.Context, dbm *DBM, opts ...dm
 	if res, err = dbm.CachedQuery("SalesOrderStatusStateInsert").ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterInsert, nil, e)); err != nil {
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterInsert, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil

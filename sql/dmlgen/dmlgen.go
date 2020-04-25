@@ -896,6 +896,16 @@ func (g *Generator) fnCreateDBM(mainGen *codegen.Go, tbls tables) {
 		func dbmNoopResultCheckFn(_ sql.Result, err error) error { return err }
 `)
 
+	// <event functions>
+	mainGen.C(`Event functions are getting dispatched during before or after handling a collection or an entity.
+Context is always non-nil but either collection or entity pointer will be set.`)
+	mainGen.Pln(`type (`)
+	for _, tbl := range tbls {
+		mainGen.Pln(`Event` + tbl.EntityName() + `Fn func(context.Context, *` + tbl.CollectionName() + `, *` + tbl.EntityName() + `) error`)
+	}
+	mainGen.Pln(`)`)
+	// </event functions>
+
 	// <DBM option struct>
 	mainGen.C(`DBMOption provides various options to the DBM object.`)
 	mainGen.Pln(`type DBMOption struct {`)
@@ -908,7 +918,7 @@ func (g *Generator) fnCreateDBM(mainGen *codegen.Go, tbls tables) {
 		mainGen.Pln(tbls.hasFeature(g, FeatureDBDelete), `InitDeleteFn         func(*dml.Delete) *dml.Delete`)
 		mainGen.Pln(tbls.hasFeature(g, FeatureDBInsert|FeatureDBUpsert), `InitInsertFn         func(*dml.Insert) *dml.Insert`)
 		for _, tbl := range tbls {
-			mainGen.Pln(`event`+tbl.EntityName()+`Func [dml.EventFlagMax][]func(context.Context, `, codegen.SkipWS(`*`, tbl.CollectionName(), `, *`, tbl.EntityName()), `) error`)
+			mainGen.Pln(`event` + tbl.EntityName() + `Func [dml.EventFlagMax][]Event` + tbl.EntityName() + `Fn`)
 		}
 	}
 	mainGen.Pln(`}`)
@@ -919,7 +929,7 @@ func (g *Generator) fnCreateDBM(mainGen *codegen.Go, tbls tables) {
 		mainGen.C(codegen.SkipWS(`AddEvent`, tbl.EntityName()), `adds a specific defined event call back to the DBM.
 It panics if the event argument is larger than dml.EventFlagMax.`)
 		mainGen.Pln(`func (o *DBMOption) `, codegen.SkipWS(`AddEvent`, tbl.EntityName(), `(`), `event dml.EventFlag,`,
-			`fn func(context.Context, *`+tbl.CollectionName()+`, *`+tbl.EntityName()+`) error) *DBMOption {`)
+			`fn Event`+tbl.EntityName()+`Fn) *DBMOption {`)
 		{
 			mainGen.In()
 			mainGen.Pln(`o.event` + tbl.EntityName() + `Func[event] = append(o.event` + tbl.EntityName() + `Func[event], fn)`)

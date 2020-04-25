@@ -1151,7 +1151,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 		if res, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, `, bufPKNamesAsArgs.String(), `); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if err = errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterDelete, nil, e)); err != nil {
+		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterDelete, nil, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		return res, nil
@@ -1172,7 +1172,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 		if res, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if err = errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpdate, nil, e)); err != nil {
+		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpdate, nil, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		return res, nil
@@ -1193,7 +1193,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 		if res, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if err = errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterInsert, nil, e)); err != nil {
+		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterInsert, nil, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		return res, nil
