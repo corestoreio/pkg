@@ -46,7 +46,7 @@ func TestLoadForeignKeys_Integration(t *testing.T) {
 		dataJSON, err := json.Marshal(fkCols.Data)
 		assert.NoError(t, err)
 		assert.Regexp(t,
-			"[{\"ConstraintCatalog\":\"def\",\"ConstraintSchema\":\"[^\"]+\",\"ConstraintName\":\"ADMIN_PASSWORDS_USER_ID_ADMIN_USER_USER_ID\",\"TableCatalog\":\"def\",\"TableSchema\":\"[^\"]+\",\"TableName\":\"x859admin_passwords\",\"ColumnName\":\"user_id\",\"OrdinalPosition\":1,\"PositionInUniqueConstraint\":1,\"ReferencedTableSchema\":\"[^\"]+\",\"ReferencedTableName\":\"x859admin_user\",\"ReferencedColumnName\":\"user_id\"}]",
+			"\\[{\"ConstraintCatalog\":\"def\",\"ConstraintSchema\":\"[^\"]+\",\"ConstraintName\":\"ADMIN_PASSWORDS_USER_ID_ADMIN_USER_USER_ID\",\"TableCatalog\":\"def\",\"TableSchema\":\"[^\"]+\",\"TableName\":\"x859admin_passwords\",\"ColumnName\":\"user_id\",\"OrdinalPosition\":1,\"PositionInUniqueConstraint\":1,\"ReferencedTableSchema\":\"[^\"]+\",\"ReferencedTableName\":\"x859admin_user\",\"ReferencedColumnName\":\"user_id\"}\\]",
 			string(dataJSON),
 		)
 	})
@@ -59,14 +59,14 @@ func TestLoadForeignKeys_Integration(t *testing.T) {
 		dataJSON, err := json.Marshal(tc["x910cms_block_store"].Data)
 		assert.NoError(t, err)
 		assert.Regexp(t,
-			"[{\"ConstraintCatalog\":\"def\",\"ConstraintSchema\":\"[^\"]+\",\"ConstraintName\":\"CMS_BLOCK_STORE_BLOCK_ID_CMS_BLOCK_BLOCK_ID\",\"TableCatalog\":\"def\",\"TableSchema\":\"[^\"]+\",\"TableName\":\"x910cms_block_store\",\"ColumnName\":\"block_id\",\"OrdinalPosition\":1,\"PositionInUniqueConstraint\":1,\"ReferencedTableSchema\":\"[^\"]+\",\"ReferencedTableName\":\"x910cms_block\",\"ReferencedColumnName\":\"block_id\"}]",
+			"\\[{\"ConstraintCatalog\":\"def\",\"ConstraintSchema\":\"[^\"]+\",\"ConstraintName\":\"CMS_BLOCK_STORE_BLOCK_ID_CMS_BLOCK_BLOCK_ID\",\"TableCatalog\":\"def\",\"TableSchema\":\"[^\"]+\",\"TableName\":\"x910cms_block_store\",\"ColumnName\":\"block_id\",\"OrdinalPosition\":1,\"PositionInUniqueConstraint\":1,\"ReferencedTableSchema\":\"[^\"]+\",\"ReferencedTableName\":\"x910cms_block\",\"ReferencedColumnName\":\"block_id\"}\\]",
 			string(dataJSON),
 		)
 
 		dataJSON, err = json.Marshal(tc["x910cms_page_store"].Data)
 		assert.NoError(t, err)
 		assert.Regexp(t,
-			"[{\"ConstraintCatalog\":\"def\",\"ConstraintSchema\":\"[^\"]+\",\"ConstraintName\":\"CMS_PAGE_STORE_PAGE_ID_CMS_PAGE_PAGE_ID\",\"TableCatalog\":\"def\",\"TableSchema\":\"[^\"]+\",\"TableName\":\"x910cms_page_store\",\"ColumnName\":\"page_id\",\"OrdinalPosition\":1,\"PositionInUniqueConstraint\":1,\"ReferencedTableSchema\":\"[^\"]+\",\"ReferencedTableName\":\"x910cms_page\",\"ReferencedColumnName\":\"page_id\"}]",
+			"\\[{\"ConstraintCatalog\":\"def\",\"ConstraintSchema\":\"[^\"]+\",\"ConstraintName\":\"CMS_PAGE_STORE_PAGE_ID_CMS_PAGE_PAGE_ID\",\"TableCatalog\":\"def\",\"TableSchema\":\"[^\"]+\",\"TableName\":\"x910cms_page_store\",\"ColumnName\":\"page_id\",\"OrdinalPosition\":1,\"PositionInUniqueConstraint\":1,\"ReferencedTableSchema\":\"[^\"]+\",\"ReferencedTableName\":\"x910cms_page\",\"ReferencedColumnName\":\"page_id\"}\\]",
 			string(dataJSON),
 		)
 	})
