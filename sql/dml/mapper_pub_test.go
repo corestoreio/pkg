@@ -209,8 +209,6 @@ func (vs *baseTestCollection) MapColumns(cm *dml.ColumnMap) error {
 }
 
 func TestColumnMap_Query(t *testing.T) {
-	t.Parallel()
-
 	dbc, dbMock := dmltest.MockDB(t)
 	defer dmltest.MockClose(t, dbc, dbMock)
 
@@ -403,8 +401,6 @@ func TestColumnMap_Query(t *testing.T) {
 }
 
 func TestColumnMap_Prepared(t *testing.T) {
-	t.Parallel()
-
 	dbc, dbMock := dmltest.MockDB(t)
 	defer dmltest.MockClose(t, dbc, dbMock)
 

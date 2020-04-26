@@ -28,6 +28,5 @@ func init() {
 }
 
 func TestNowSentinel_String(t *testing.T) {
-	t.Parallel()
 	assert.Exactly(t, "2006-01-02 19:04:05", Now.String())
 }

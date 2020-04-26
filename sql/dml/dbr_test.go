@@ -36,8 +36,6 @@ func toIFaceSlice(args ...interface{}) []interface{} {
 }
 
 func TestArguments_Interfaces(t *testing.T) {
-	t.Parallel()
-
 	container := make([]interface{}, 0, 48)
 
 	t.Run("no slices, nulls valid", func(t *testing.T) {
@@ -48,7 +46,9 @@ func TestArguments_Interfaces(t *testing.T) {
 
 		assert.Exactly(t,
 			[]interface{}{
-				nil, int64(-1), int64(1), int64(2), 3.1, true, "eCom1", []uint8{0x65, 0x43, 0x6f, 0x6d, 0x32}, now(),
+				nil, int64(-1), int64(1), int64(2), 3.1, true, "eCom1",
+				[]uint8{0x65, 0x43, 0x6f, 0x6d, 0x32},
+				now(),
 				"eCom3", int64(4), 2.7, true, now(),
 			},
 			expandInterfaces(args))
@@ -61,7 +61,9 @@ func TestArguments_Interfaces(t *testing.T) {
 			null.Bool{}, null.Time{})
 		assert.Exactly(t,
 			[]interface{}{
-				nil, int64(-1), int64(1), int64(2), 3.1, true, "eCom1", []uint8{0x65, 0x43, 0x6f, 0x6d, 0x32}, now(),
+				nil, int64(-1), int64(1), int64(2), 3.1, true, "eCom1",
+				[]uint8{0x65, 0x43, 0x6f, 0x6d, 0x32},
+				now(),
 				nil, nil, nil, nil, nil,
 			},
 			expandInterfaces(args))
@@ -77,7 +79,9 @@ func TestArguments_Interfaces(t *testing.T) {
 		assert.Exactly(t,
 			[]interface{}{
 				nil, int64(-1), int64(-2), int64(1), int64(2), int64(568), int64(766), int64(2), 1.2, 3.1, false, true,
-				"eCom1", "eCom11", []uint8{0x65, 0x43, 0x6f, 0x6d, 0x32}, now(), now(),
+				"eCom1", "eCom11",
+				[]uint8{0x65, 0x43, 0x6f, 0x6d, 0x32},
+				now(), now(),
 				"eCom3", "eCom3", int64(4), int64(4),
 				2.7, 2.7,
 				true, now(), now(),
@@ -90,8 +94,6 @@ func TestArguments_Interfaces(t *testing.T) {
 }
 
 func TestArguments_DriverValue(t *testing.T) {
-	t.Parallel()
-
 	t.Run("Driver.Values supported types", func(t *testing.T) {
 		args := toIFaceSlice(
 			driverValueNil(0),
@@ -101,7 +103,8 @@ func TestArguments_DriverValue(t *testing.T) {
 		assert.Exactly(t,
 			[]interface{}{
 				nil, []uint8(nil), int64(3), 2.7, true,
-				[]uint8{0x49, 0x6e, 0x76, 0x6f, 0x69, 0x63, 0x65}, "Creditmemo", "2006-01-02 19:04:05", now(),
+				[]uint8{0x49, 0x6e, 0x76, 0x6f, 0x69, 0x63, 0x65},
+				"Creditmemo", "2006-01-02 19:04:05", now(),
 			},
 			expandInterfaces(args))
 	})
@@ -121,7 +124,8 @@ func TestArguments_DriverValue(t *testing.T) {
 		assert.Exactly(t,
 			[]interface{}{
 				nil, []uint8(nil), int64(3), 2.7, true,
-				[]uint8{0x49, 0x6e, 0x76, 0x6f, 0x69, 0x63, 0x65}, "Creditmemo", "2006-01-02 19:04:05", now(),
+				[]uint8{0x49, 0x6e, 0x76, 0x6f, 0x69, 0x63, 0x65},
+				"Creditmemo", "2006-01-02 19:04:05", now(),
 			},
 			expandInterfaces(args))
 	})
@@ -138,8 +142,6 @@ func TestArguments_DriverValue(t *testing.T) {
 }
 
 func TestArguments_WriteTo(t *testing.T) {
-	t.Parallel()
-
 	t.Run("no slices, nulls valid", func(t *testing.T) {
 		args := toIFaceSlice(
 			nil, -1, int64(1), uint64(2), 3.1, true, "eCom1", []byte(`eCom2`), now(),
@@ -226,7 +228,6 @@ func TestArguments_WriteTo(t *testing.T) {
 }
 
 func TestArguments_HasNamedArgs(t *testing.T) {
-	t.Parallel()
 	// TODO fix test resp. hasNamedArgs
 	t.Run("hasNamedArgs in expression", func(t *testing.T) {
 		p := &dmlPerson{
@@ -269,8 +270,6 @@ func TestArguments_HasNamedArgs(t *testing.T) {
 }
 
 func TestArguments_NextUnnamedArg(t *testing.T) {
-	t.Parallel()
-
 	t.Run("three occurrences", func(t *testing.T) {
 		args := toIFaceSlice(sql.Named("colZ", int64(3)), uint64(6), sql.Named("colB", 2.2), "c", sql.Named("colA", []string{"a", "b"}))
 
@@ -319,7 +318,6 @@ func TestArguments_NextUnnamedArg(t *testing.T) {
 }
 
 func TestDBR_Clone(t *testing.T) {
-	t.Parallel()
 	sel := NewSelect("a", "b").From("c").WithDB(dbMock{})
 	sel.qualifiedColumns = []string{"x", "y"}
 	selA := sel.WithDBR()
@@ -334,8 +332,6 @@ func TestDBR_Clone(t *testing.T) {
 }
 
 func TestDBR_OrderByLimit(t *testing.T) {
-	t.Parallel()
-
 	t.Run("WithoutArgs", func(t *testing.T) {
 		a := NewSelect("a", "b").From("c").Where(
 			Column("id").Greater().Int(221),
@@ -378,8 +374,6 @@ func TestDBR_OrderByLimit(t *testing.T) {
 }
 
 func TestDBR_PreGeneratedQueries(t *testing.T) {
-	t.Parallel()
-
 	t.Run("SELECT", func(t *testing.T) {
 		sel := NewSelect("a", "b").From("c").Where(
 			Column("id").Greater().PlaceHolder(),

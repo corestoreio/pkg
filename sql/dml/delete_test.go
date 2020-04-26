@@ -26,15 +26,11 @@ import (
 )
 
 func TestDeleteAllToSQL(t *testing.T) {
-	t.Parallel()
-
 	compareToSQL2(t, NewDelete("a"), errors.NoKind, "DELETE FROM `a`")
 	compareToSQL2(t, NewDelete("a").Alias("b"), errors.NoKind, "DELETE FROM `a` AS `b`")
 }
 
 func TestDeleteSingleToSQL(t *testing.T) {
-	t.Parallel()
-
 	qb := NewDelete("a").Where(Column("id").Int(1))
 	compareToSQL2(t, qb, errors.NoKind,
 		"DELETE FROM `a` WHERE (`id` = 1)",
@@ -47,7 +43,6 @@ func TestDeleteSingleToSQL(t *testing.T) {
 }
 
 func TestDelete_OrderBy(t *testing.T) {
-	t.Parallel()
 	t.Run("expr", func(t *testing.T) {
 		compareToSQL2(t, NewDelete("a").Unsafe().OrderBy("b=c").OrderByDesc("d"), errors.NoKind,
 			"DELETE FROM `a` ORDER BY b=c, `d` DESC",
@@ -66,15 +61,12 @@ func TestDelete_OrderBy(t *testing.T) {
 }
 
 func TestDelete_Limit_Offset(t *testing.T) {
-	t.Parallel()
 	compareToSQL2(t, NewDelete("a").Limit(10).OrderBy("id"), errors.NoKind,
 		"DELETE FROM `a` ORDER BY `id` LIMIT 10",
 	)
 }
 
 func TestDelete_Interpolate(t *testing.T) {
-	t.Parallel()
-
 	compareToSQL2(t, NewDelete("tableA").
 		Where(
 			Column("colA").GreaterOrEqual().Float64(3.14159),
@@ -128,8 +120,6 @@ func TestDeleteReal(t *testing.T) {
 }
 
 func TestDelete_BuildCacheDisabled(t *testing.T) {
-	t.Parallel()
-
 	del := NewDelete("alpha").Where(
 		Column("a").Str("b"),
 		Column("b").PlaceHolder(),
@@ -173,7 +163,6 @@ func TestDelete_BuildCacheDisabled(t *testing.T) {
 }
 
 func TestDelete_Bind(t *testing.T) {
-	t.Parallel()
 	p := &dmlPerson{
 		ID:    5555,
 		Email: null.MakeString("hans@wurst.com"),

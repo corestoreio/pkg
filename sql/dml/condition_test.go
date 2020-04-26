@@ -28,7 +28,6 @@ import (
 var _ fmt.Stringer = Op(0)
 
 func TestConditionOpRune(t *testing.T) {
-	t.Parallel()
 	s := NewSelect().From("tableA").AddColumns("a", "b").
 		Where(
 			Column("a1").Like().Str("H_ll_"),
@@ -100,14 +99,12 @@ func TestConditionOpRune(t *testing.T) {
 }
 
 func TestConditionOp_String(t *testing.T) {
-	t.Parallel()
 	var o Op
 	assert.Exactly(t, "=", o.String())
 	assert.Exactly(t, "🚀", SpaceShip.String())
 }
 
 func TestConditionOpArgs(t *testing.T) {
-	t.Parallel()
 	t.Run("Null with place holder IN,Regexp", func(t *testing.T) {
 		compareToSQL(t,
 			NewSelect("a", "b").From("t1").Where(
@@ -226,8 +223,6 @@ func TestConditionOpArgs(t *testing.T) {
 }
 
 func TestConditionColumn(t *testing.T) {
-	t.Parallel()
-
 	t.Run("invalid column name", func(t *testing.T) {
 		s := NewSelect("a", "b").From("c").Where(
 			Column("a").Int(111),
@@ -247,8 +242,6 @@ func TestConditionColumn(t *testing.T) {
 }
 
 func TestConditions_writeOnDuplicateKey(t *testing.T) {
-	t.Parallel()
-
 	runner := func(cnds Conditions, wantSQL string, wantArgs ...interface{}) func(*testing.T) {
 		return func(t *testing.T) {
 			buf := new(bytes.Buffer)
@@ -290,8 +283,6 @@ func TestConditions_writeOnDuplicateKey(t *testing.T) {
 }
 
 func TestConditionExpr_Arguments(t *testing.T) {
-	t.Parallel()
-
 	t.Run("ints", func(t *testing.T) {
 		sel := NewSelect("a").From("c").
 			Where(
@@ -359,8 +350,6 @@ func TestConditionExpr_Arguments(t *testing.T) {
 }
 
 func TestCondition_Column(t *testing.T) {
-	t.Parallel()
-
 	t.Run("complex", func(t *testing.T) {
 		sel := NewSelect("t_d.attribute_id", "e.entity_id").
 			AddColumnsAliases("t_d.value", "default_value").
@@ -403,7 +392,6 @@ func TestCondition_Column(t *testing.T) {
 }
 
 func TestConditionExpr(t *testing.T) {
-	t.Parallel()
 	t.Run("quoted string", func(t *testing.T) {
 		s := NewSelect().AddColumns("month", "total").AddColumnsConditions(Expr(`"best"`)).From("sales_by_month")
 		compareToSQL(t, s, errors.NoKind,
@@ -414,7 +402,6 @@ func TestConditionExpr(t *testing.T) {
 }
 
 func TestCondition_Columns_Tuples(t *testing.T) {
-	t.Parallel()
 	/*
 	  SELECT * FROM catalog_product_index_eav_decimal_idx WHERE
 	 (entity_id,attribute_id,store_id,source_id) IN (
@@ -476,8 +463,6 @@ func TestCondition_Columns_Tuples(t *testing.T) {
 }
 
 func TestConditionSplitColumn(t *testing.T) {
-	t.Parallel()
-
 	tests := []struct {
 		identifier string
 		wantQuali  string
@@ -506,7 +491,6 @@ func (ai appendInt) MapColumns(cm *ColumnMap) error {
 }
 
 func TestConditionAppendArgs(t *testing.T) {
-	t.Parallel()
 	t.Run("PH,val,expr,PH", func(t *testing.T) {
 		s := NewSelect("sku").FromAlias("catalog", "e").
 			// alias t_d ignored and not needed in this test case
@@ -544,8 +528,6 @@ func TestConditionAppendArgs(t *testing.T) {
 }
 
 func TestCondition_Sub(t *testing.T) {
-	t.Parallel()
-
 	countSel := NewSelect().AddColumnsConditions(
 		Expr("((? / COUNT(*)) * 10)"),
 	).From("dml_fake_person")
@@ -561,8 +543,6 @@ func TestCondition_Sub(t *testing.T) {
 }
 
 func TestConditions_Clone(t *testing.T) {
-	t.Parallel()
-
 	t.Run("non-nil", func(t *testing.T) {
 		cnd := Conditions{
 			Column("a").Equal().Float64(3.141),
@@ -596,8 +576,6 @@ func TestConditions_Clone(t *testing.T) {
 }
 
 func TestConditionJoins_Clone(t *testing.T) {
-	t.Parallel()
-
 	jn := Joins{
 		&join{
 			JoinType: "LEFT",
@@ -618,8 +596,6 @@ func TestConditionJoins_Clone(t *testing.T) {
 }
 
 func TestConditions_Reset(t *testing.T) {
-	t.Parallel()
-
 	s := NewSelect("sku").FromAlias("catalog", "e").
 		Where(
 			Column("e.entity_id").PlaceHolder(),

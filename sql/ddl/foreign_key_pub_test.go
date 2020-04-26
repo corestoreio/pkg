@@ -33,7 +33,7 @@ func init() {
 func TestLoadForeignKeys_Integration(t *testing.T) {
 	dbc := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, dbc)
-	defer dmltest.SQLDumpLoad(t, "testdata/testLoadForeignKeys*.sql", nil).Deferred()
+	defer dmltest.SQLDumpLoad(t, "testdata/testLoadForeignKeys*.sql", &dmltest.SQLDumpOptions{DSN: dbc.DSN()}).Deferred()
 
 	t.Run("x859admin_user", func(t *testing.T) {
 		tc, err := ddl.LoadKeyColumnUsage(context.TODO(), dbc.DB, "x859admin_user")
@@ -85,7 +85,7 @@ func TestLoadForeignKeys_Integration(t *testing.T) {
 func TestLoadKeyRelationships(t *testing.T) {
 	dbc := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, dbc)
-	defer dmltest.SQLDumpLoad(t, "testdata/testLoadForeignKeys*.sql", nil).Deferred()
+	defer dmltest.SQLDumpLoad(t, "testdata/testLoadForeignKeys*.sql", &dmltest.SQLDumpOptions{DSN: dbc.DSN()}).Deferred()
 	// dmltest.SQLDumpLoad(t, "testdata/testLoadForeignKeys*.sql", nil)
 
 	ctx := context.Background()

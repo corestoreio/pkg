@@ -22,7 +22,6 @@ import (
 )
 
 func TestMakeAlias(t *testing.T) {
-	t.Parallel()
 	assert.Exactly(t, "`table1`", MakeIdentifier("table1").String())
 	assert.Exactly(t, "`table0` AS `table1`", MakeIdentifier("table0").Alias("table1").String())
 	assert.Exactly(t, "`(table1)`", MakeIdentifier("(table1)").String())
@@ -32,7 +31,6 @@ func TestMakeAlias(t *testing.T) {
 }
 
 func TestIds_AppendColumns(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		have, want ids
 	}{
@@ -55,14 +53,13 @@ func TestIds_AppendColumns(t *testing.T) {
 }
 
 // func TestMakeExpressionAlias(t *testing.T) {
-//	t.Parallel()
+//
 //	assert.Exactly(t, "(table1)", MakeExpressionAlias("(table1)", "").String())
 //	assert.Exactly(t, "(table1) AS `x`", MakeExpressionAlias("(table1)", "x").String())
 //	assert.Exactly(t, "(table1)", MakeExpressionAlias("(table1)", "").String())
 //}
 
 func TestMysqlQuoter_QuoteAlias(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		name, alias, want string
 	}{
@@ -81,7 +78,6 @@ func TestMysqlQuoter_QuoteAlias(t *testing.T) {
 }
 
 func TestMysqlQuoter_Name(t *testing.T) {
-	t.Parallel()
 	assert.Exactly(t, "`tableName`", Quoter.Name("tableName"))
 	assert.Exactly(t, "`tableName`", Quoter.Name("table`Name"))
 	assert.Exactly(t, "``", Quoter.Name(""))
@@ -91,7 +87,6 @@ func TestMysqlQuoter_Name(t *testing.T) {
 }
 
 func TestIsValidIdentifier(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		have string
 		want int8
@@ -128,14 +123,11 @@ func TestIsValidIdentifier(t *testing.T) {
 }
 
 func TestIsValidIdentifier2(t *testing.T) {
-	t.Parallel()
 	assert.ErrorIsKind(t, errors.NotValid, IsValidIdentifier("DATE_FORMAT(t3.period, '%Y-%m-01')"))
 	assert.NoError(t, IsValidIdentifier("table.col"))
 }
 
 func TestIds_Clone(t *testing.T) {
-	t.Parallel()
-
 	t.Run("non-nil", func(t *testing.T) {
 		c := MakeIdentifier("c")
 		c.DerivedTable = NewSelect("x", "y").From("z")

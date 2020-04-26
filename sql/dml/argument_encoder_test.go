@@ -25,8 +25,6 @@ import (
 )
 
 func TestArgBytes(t *testing.T) {
-	t.Parallel()
-
 	var ac argEncoded
 	t.Run("simple case, immutable", func(t *testing.T) {
 		ac = makeArgBytes().

@@ -26,8 +26,6 @@ import (
 )
 
 func TestSelect_BasicToSQL(t *testing.T) {
-	t.Parallel()
-
 	t.Run("no table no args", func(t *testing.T) {
 		sel := NewSelect().AddColumnsConditions(Expr("1").Alias("n")).AddColumnsAliases("abc", "str")
 		compareToSQL2(t, sel, errors.NoKind,
@@ -172,8 +170,6 @@ func TestSelect_BasicToSQL(t *testing.T) {
 }
 
 func TestSelect_FullToSQL(t *testing.T) {
-	t.Parallel()
-
 	sel := NewSelect("a", "b").
 		Distinct().
 		FromAlias("c", "cc").
@@ -203,8 +199,6 @@ func TestSelect_FullToSQL(t *testing.T) {
 }
 
 func TestSelect_ComplexExpr(t *testing.T) {
-	t.Parallel()
-
 	t.Run("two args in one condition", func(t *testing.T) {
 		sel := NewSelect("a", "b", "z", "y", "x").From("c").
 			Distinct().
@@ -227,8 +221,6 @@ func TestSelect_ComplexExpr(t *testing.T) {
 }
 
 func TestSelect_OrderByRandom_Strings(t *testing.T) {
-	t.Parallel()
-
 	t.Run("simple select", func(t *testing.T) {
 		compareToSQL2(t,
 			NewSelect("id", "first_name", "last_name").
@@ -281,8 +273,6 @@ func TestSelect_OrderByRandom_Integration(t *testing.T) {
 }
 
 func TestSelect_Paginate(t *testing.T) {
-	t.Parallel()
-
 	t.Run("asc", func(t *testing.T) {
 		compareToSQL2(t,
 			NewSelect("a", "b").
@@ -308,8 +298,6 @@ func TestSelect_Paginate(t *testing.T) {
 }
 
 func TestSelect_WithoutWhere(t *testing.T) {
-	t.Parallel()
-
 	compareToSQL2(t,
 		NewSelect("a", "b").From("c"),
 		errors.NoKind,
@@ -318,8 +306,6 @@ func TestSelect_WithoutWhere(t *testing.T) {
 }
 
 func TestSelect_MultiHavingSQL(t *testing.T) {
-	t.Parallel()
-
 	compareToSQL2(t,
 		NewSelect("a", "b").From("c").
 			Where(Column("p").Int(1)).
@@ -330,7 +316,6 @@ func TestSelect_MultiHavingSQL(t *testing.T) {
 }
 
 func TestSelect_MultiOrderSQL(t *testing.T) {
-	t.Parallel()
 	compareToSQL2(t,
 		NewSelect("a", "b").From("c").OrderBy("name").OrderByDesc("id"),
 		errors.NoKind,
@@ -339,7 +324,6 @@ func TestSelect_MultiOrderSQL(t *testing.T) {
 }
 
 func TestSelect_OrderByDeactivated(t *testing.T) {
-	t.Parallel()
 	compareToSQL2(t,
 		NewSelect("a", "b").From("c").OrderBy("name").OrderByDeactivated(),
 		errors.NoKind,
@@ -348,7 +332,6 @@ func TestSelect_OrderByDeactivated(t *testing.T) {
 }
 
 func TestSelect_ConditionColumn(t *testing.T) {
-	t.Parallel()
 	// TODO rewrite test to use every type which implements interface Argument and every operator
 
 	runner := func(wf *Condition, wantSQL string) func(*testing.T) {
@@ -434,8 +417,6 @@ func TestSelect_ConditionColumn(t *testing.T) {
 }
 
 func TestSelect_Null(t *testing.T) {
-	t.Parallel()
-
 	t.Run("col is null", func(t *testing.T) {
 		compareToSQL2(t,
 			NewSelect("a", "b").From("c").Where(Column("r").Null()),
@@ -468,8 +449,6 @@ func TestSelect_Null(t *testing.T) {
 }
 
 func TestSelect_WhereNULL(t *testing.T) {
-	t.Parallel()
-
 	t.Run("one nil", func(t *testing.T) {
 		compareToSQL2(t,
 			NewSelect("a").From("b").Where(Column("a")),
@@ -510,8 +489,6 @@ func TestSelect_WhereNULL(t *testing.T) {
 }
 
 func TestSelect_Varieties(t *testing.T) {
-	t.Parallel()
-
 	// This would be incorrect SQL!
 	compareToSQL2(t, NewSelect("id, name, email").From("users"), errors.NoKind,
 		"SELECT `id, name, email` FROM `users`",
@@ -884,8 +861,6 @@ func TestSelect_Join(t *testing.T) {
 }
 
 func TestSelect_Locks(t *testing.T) {
-	t.Parallel()
-
 	t.Run("LOCK IN SHARE MODE", func(t *testing.T) {
 		s := NewSelect("p1.*").
 			AddColumnsAliases("p2.name", "p2Name", "p2.email", "p2Email").
@@ -905,8 +880,6 @@ func TestSelect_Locks(t *testing.T) {
 }
 
 func TestSelect_Columns(t *testing.T) {
-	t.Parallel()
-
 	t.Run("AddColumns, multiple args", func(t *testing.T) {
 		s := NewSelect("a", "b")
 		s.FromAlias("tableA", "tA")
@@ -986,7 +959,6 @@ func TestSelect_Columns(t *testing.T) {
 }
 
 func TestSelect_SubSelect(t *testing.T) {
-	t.Parallel()
 	sub := NewSelect().From("catalog_category_product").
 		AddColumns("entity_id").Where(Column("category_id").Int64(234))
 
@@ -1018,7 +990,6 @@ func TestSelect_SubSelect(t *testing.T) {
 }
 
 func TestSelect_Subselect_Complex(t *testing.T) {
-	t.Parallel()
 	/* Something like:
 	   SELECT
 	     `t1`.`store_id`,
@@ -1114,8 +1085,6 @@ func TestSelect_Subselect_Complex(t *testing.T) {
 }
 
 func TestSelect_Subselect_Compact(t *testing.T) {
-	t.Parallel()
-
 	sel2 := NewSelect().FromAlias("sales_bestsellers_aggregated_daily", "t3").
 		AddColumns("`t3`.`product_name`").
 		Where(Column("t3.store_id").In().Int64s(2, 3, 4)).
@@ -1132,7 +1101,6 @@ func TestSelect_Subselect_Compact(t *testing.T) {
 }
 
 func TestSelect_ParenthesisOpen_Close(t *testing.T) {
-	t.Parallel()
 	t.Run("beginning of WHERE", func(t *testing.T) {
 		sel := NewSelect("a", "b").
 			FromAlias("c", "cc").
@@ -1206,7 +1174,6 @@ func TestSelect_ParenthesisOpen_Close(t *testing.T) {
 }
 
 func TestSelect_Count(t *testing.T) {
-	t.Parallel()
 	t.Run("written count star gets quoted", func(t *testing.T) {
 		compareToSQL2(t,
 			NewSelect("count(*)").From("dml_people"),
@@ -1232,8 +1199,6 @@ func TestSelect_Count(t *testing.T) {
 }
 
 func TestSelect_DisableBuildCache(t *testing.T) {
-	t.Parallel()
-
 	sel := NewSelect("a", "b").
 		Distinct().
 		FromAlias("c", "cc").
@@ -1277,8 +1242,6 @@ func TestSelect_DisableBuildCache(t *testing.T) {
 }
 
 func TestSelect_NamedArguments(t *testing.T) {
-	t.Parallel()
-
 	sel := NewSelect("config_id", "value").
 		From("core_config_data").
 		Where(
@@ -1308,7 +1271,6 @@ func TestSelect_NamedArguments(t *testing.T) {
 }
 
 func TestSelect_SetRecord(t *testing.T) {
-	t.Parallel()
 	p := &dmlPerson{
 		ID:    6666,
 		Name:  "Hans Wurst",

@@ -9,8 +9,6 @@ import (
 )
 
 func TestMySQLFromError(t *testing.T) {
-	t.Parallel()
-
 	myErr := &mysql.MySQLError{
 		Number:  1062,
 		Message: "Duplicate Key",

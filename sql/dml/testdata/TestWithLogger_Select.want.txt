@@ -1,0 +1,43 @@
+DEBUG Query conn_pool_id: "UNIQ01" select_id: "UNIQ02" table: "dml_people" duration: 0 sql: "SELECT /*ID$UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > 67896543123)" length_args: 0 source: "s" error: "<nil>"
+DEBUG Query conn_pool_id: "UNIQ01" select_id: "UNIQ02" table: "dml_people" duration: 0 sql: "SELECT /*ID$UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)" length_args: 1 source: "s" error: "<nil>"
+DEBUG Query conn_pool_id: "UNIQ01" select_id: "UNIQ02" table: "dml_people" duration: 0 sql: "SELECT /*ID$UNIQ02*/ `email` FROM `dml_people` WHERE (`id` > ?)" length_args: 1 source: "s" error: "<nil>"
+DEBUG Load conn_pool_id: "UNIQ01" select_id: "UNIQ02" table: "dml_people" duration: 0 id: "UNIQ02" error: "<nil>" ColumnMapper: "*dml_test.dmlPerson" row_count: 0
+DEBUG Query conn_pool_id: "UNIQ01" select_id: "UNIQ03" table: "dml_people" duration: 0 sql: "SELECT /*ID$UNIQ03*/ `id` FROM `dml_people` WHERE (`id` <= ?)" length_args: 1 source: "s" error: "<nil>"
+DEBUG LoadPrimitive conn_pool_id: "UNIQ01" select_id: "UNIQ03" table: "dml_people" duration: 0 id: "UNIQ03" error: "<nil>" ptr_type: "*null.Int64"
+DEBUG Query conn_pool_id: "UNIQ01" select_id: "UNIQ03" table: "dml_people" duration: 0 sql: "SELECT /*ID$UNIQ03*/ `id` FROM `dml_people` WHERE (`id` <= ?)" length_args: 1 source: "s" error: "<nil>"
+DEBUG LoadInt64s conn_pool_id: "UNIQ01" select_id: "UNIQ03" table: "dml_people" duration: 0 row_count: 0 error: "<nil>"
+DEBUG Query conn_pool_id: "UNIQ01" select_id: "UNIQ03" table: "dml_people" duration: 0 sql: "SELECT /*ID$UNIQ03*/ `id` FROM `dml_people` WHERE (`id` <= ?)" length_args: 1 source: "s" error: "<nil>"
+DEBUG LoadPrimitive conn_pool_id: "UNIQ01" select_id: "UNIQ03" table: "dml_people" duration: 0 id: "UNIQ03" error: "<nil>" ptr_type: "*null.Uint64"
+DEBUG Query conn_pool_id: "UNIQ01" select_id: "UNIQ03" table: "dml_people" duration: 0 sql: "SELECT /*ID$UNIQ03*/ `id` FROM `dml_people` WHERE (`id` <= ?)" length_args: 1 source: "s" error: "<nil>"
+DEBUG LoadUint64s conn_pool_id: "UNIQ01" select_id: "UNIQ03" table: "dml_people" duration: 0 row_count: 0 id: "UNIQ03" error: "<nil>"
+DEBUG Query conn_pool_id: "UNIQ01" select_id: "UNIQ04" table: "dml_people" duration: 0 sql: "SELECT /*ID$UNIQ04*/ `total_income` FROM `dml_people` WHERE (`id` > ?)" length_args: 1 source: "s" error: "<nil>"
+DEBUG LoadPrimitive conn_pool_id: "UNIQ01" select_id: "UNIQ04" table: "dml_people" duration: 0 id: "UNIQ04" error: "<nil>" ptr_type: "*null.Float64"
+DEBUG Query conn_pool_id: "UNIQ01" select_id: "UNIQ04" table: "dml_people" duration: 0 sql: "SELECT /*ID$UNIQ04*/ `total_income` FROM `dml_people` WHERE (`id` > ?)" length_args: 1 source: "s" error: "<nil>"
+DEBUG LoadFloat64s conn_pool_id: "UNIQ01" select_id: "UNIQ04" table: "dml_people" duration: 0 id: "UNIQ04" error: "<nil>"
+DEBUG Query conn_pool_id: "UNIQ01" select_id: "UNIQ05" table: "dml_people" duration: 0 sql: "SELECT /*ID$UNIQ05*/ `email` FROM `dml_people` WHERE (`id` > ?)" length_args: 1 source: "s" error: "<nil>"
+DEBUG LoadPrimitive conn_pool_id: "UNIQ01" select_id: "UNIQ05" table: "dml_people" duration: 0 id: "UNIQ05" error: "<nil>" ptr_type: "*null.String"
+DEBUG Query conn_pool_id: "UNIQ01" select_id: "UNIQ05" table: "dml_people" duration: 0 sql: "SELECT /*ID$UNIQ05*/ `email` FROM `dml_people` WHERE (`id` > ?)" length_args: 1 source: "s" error: "<nil>"
+DEBUG LoadStrings conn_pool_id: "UNIQ01" select_id: "UNIQ05" table: "dml_people" duration: 0 row_count: 0 id: "UNIQ05" error: "<nil>"
+DEBUG Prepare conn_pool_id: "UNIQ01" select_id: "UNIQ05" table: "dml_people" duration: 0 error: "<nil>" sql: "SELECT /*ID$UNIQ05*/ `email` FROM `dml_people` WHERE (`id` > ?)"
+DEBUG BeginTx conn_pool_id: "UNIQ01" tx_id: "UNIQ06"
+DEBUG Query conn_pool_id: "UNIQ01" tx_id: "UNIQ06" select_id: "UNIQ07" table: "dml_people" duration: 0 sql: "SELECT /*ID$UNIQ07*/ `name`, `email` FROM `dml_people` WHERE (`id` IN (7,9))" length_args: 0 source: "s" error: "<nil>"
+DEBUG Commit conn_pool_id: "UNIQ01" tx_id: "UNIQ06" duration: 0
+DEBUG Query conn_pool_id: "UNIQ01" conn_id: "UNIQ08" select_id: "UNIQ09" table: "dml_people" duration: 0 sql: "SELECT /*ID$UNIQ09*/ `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` < ?)" length_args: 1 source: "s" error: "<nil>"
+DEBUG Query conn_pool_id: "UNIQ01" conn_id: "UNIQ08" select_id: "UNIQ09" table: "dml_people" duration: 0 sql: "SELECT /*ID$UNIQ09*/ `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` < ?)" length_args: 1 source: "s" error: "<nil>"
+DEBUG Load conn_pool_id: "UNIQ01" conn_id: "UNIQ08" select_id: "UNIQ09" table: "dml_people" duration: 0 id: "UNIQ09" error: "<nil>" ColumnMapper: "*dml_test.dmlPerson" row_count: 0
+DEBUG Prepare conn_pool_id: "UNIQ01" conn_id: "UNIQ08" select_id: "UNIQ09" table: "dml_people" duration: 0 error: "<nil>" sql: "SELECT /*ID$UNIQ09*/ `name`, `email` FROM `dml_people` AS `dp2` WHERE (`id` < ?)"
+DEBUG QueryRowContext conn_pool_id: "UNIQ01" conn_id: "UNIQ08" select_id: "UNIQ09" table: "dml_people" duration: 0 sql: "" source: "s" error: "<nil>"
+DEBUG Query conn_pool_id: "UNIQ01" conn_id: "UNIQ08" select_id: "UNIQ09" table: "dml_people" duration: 0 sql: "" length_args: 1 source: "s" error: "<nil>"
+DEBUG Query conn_pool_id: "UNIQ01" conn_id: "UNIQ08" select_id: "UNIQ09" table: "dml_people" duration: 0 sql: "" length_args: 1 source: "s" error: "<nil>"
+DEBUG Load conn_pool_id: "UNIQ01" conn_id: "UNIQ08" select_id: "UNIQ09" table: "dml_people" duration: 0 id: "UNIQ09" error: "<nil>" ColumnMapper: "*dml_test.dmlPerson" row_count: 0
+DEBUG Query conn_pool_id: "UNIQ01" conn_id: "UNIQ08" select_id: "UNIQ09" table: "dml_people" duration: 0 sql: "" length_args: 1 source: "s" error: "<nil>"
+DEBUG LoadPrimitive conn_pool_id: "UNIQ01" conn_id: "UNIQ08" select_id: "UNIQ09" table: "dml_people" duration: 0 id: "UNIQ09" error: "<nil>" ptr_type: "*null.Int64"
+DEBUG Query conn_pool_id: "UNIQ01" conn_id: "UNIQ08" select_id: "UNIQ09" table: "dml_people" duration: 0 sql: "" length_args: 1 source: "s" error: "<nil>"
+DEBUG LoadInt64s conn_pool_id: "UNIQ01" conn_id: "UNIQ08" select_id: "UNIQ09" table: "dml_people" duration: 0 row_count: 0 error: "<nil>"
+DEBUG BeginTx conn_pool_id: "UNIQ01" conn_id: "UNIQ08" tx_id: "UNIQ10"
+DEBUG Query conn_pool_id: "UNIQ01" conn_id: "UNIQ08" tx_id: "UNIQ10" select_id: "UNIQ11" table: "dml_people" duration: 0 sql: "SELECT /*ID$UNIQ11*/ `name`, `email` FROM `dml_people` WHERE (`id` IN (71,91))" length_args: 0 source: "s" error: "<nil>"
+DEBUG Commit conn_pool_id: "UNIQ01" conn_id: "UNIQ08" tx_id: "UNIQ10" duration: 0
+DEBUG BeginTx conn_pool_id: "UNIQ01" conn_id: "UNIQ08" tx_id: "UNIQ12"
+DEBUG Query conn_pool_id: "UNIQ01" conn_id: "UNIQ08" tx_id: "UNIQ12" select_id: "UNIQ13" table: "dml_people" duration: 0 sql: "SELECT /*ID$UNIQ13*/ `name`, `email` FROM `dml_people` WHERE (`id` IN ?)" length_args: 0 source: "s" error: "<nil>"
+DEBUG Rollback conn_pool_id: "UNIQ01" conn_id: "UNIQ08" tx_id: "UNIQ12" duration: 0
+DEBUG Close conn_pool_id: "UNIQ01" conn_id: "UNIQ08" duration: 0

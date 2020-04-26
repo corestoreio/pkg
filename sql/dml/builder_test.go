@@ -46,7 +46,6 @@ var (
 )
 
 func TestSqlObjToString(t *testing.T) {
-	t.Parallel()
 	t.Run("error", func(t *testing.T) {
 		s := sqlObjToString("", errors.Aborted.Newf("Query aborted"))
 		assert.Contains(t, s, "[dml] String Error: Query aborted\n")
@@ -83,8 +82,6 @@ func TestSqlObjToString(t *testing.T) {
 }
 
 func TestWriteInsertPlaceholders(t *testing.T) {
-	t.Parallel()
-
 	tests := []struct {
 		rowCount    uint
 		columnCount uint

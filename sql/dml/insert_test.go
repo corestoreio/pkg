@@ -53,8 +53,6 @@ func (sr someRecord) MapColumns(cm *ColumnMap) error {
 }
 
 func TestInsert_NoArguments(t *testing.T) {
-	t.Parallel()
-
 	t.Run("ToSQL", func(t *testing.T) {
 		ins := NewInsert("tableA").AddColumns("a", "b").BuildValues()
 		compareToSQL2(t, ins, errors.NoKind,
@@ -68,8 +66,6 @@ func TestInsert_NoArguments(t *testing.T) {
 }
 
 func TestInsert_SetValuesCount(t *testing.T) {
-	t.Parallel()
-
 	t.Run("No BuildValues", func(t *testing.T) {
 		ins := NewInsert("a").AddColumns("b", "c")
 		compareToSQL2(t, ins, errors.NoKind,
@@ -206,8 +202,6 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 }
 
 func TestInsert_FromSelect(t *testing.T) {
-	t.Parallel()
-
 	t.Run("One Placeholder, ON DUPLICATE KEY", func(t *testing.T) {
 		ins := NewInsert("tableA").AddColumns("a", "b").OnDuplicateKey()
 
@@ -329,8 +323,6 @@ func TestInsert_FromSelect(t *testing.T) {
 }
 
 func TestInsert_Replace_Ignore(t *testing.T) {
-	t.Parallel()
-
 	// this generated statement does not comply the SQL standard
 	compareToSQL(t, NewInsert("a").
 		Replace().Ignore().
@@ -344,8 +336,6 @@ func TestInsert_Replace_Ignore(t *testing.T) {
 }
 
 func TestInsert_WithoutColumns(t *testing.T) {
-	t.Parallel()
-
 	t.Run("each column in its own Arg", func(t *testing.T) {
 		compareToSQL(t, NewInsert("catalog_product_link").SetRowCount(3).
 			WithDBR().TestWithArgs(2046, 33, 3, 2046, 34, 3, 2046, 35, 3),
@@ -358,8 +348,6 @@ func TestInsert_WithoutColumns(t *testing.T) {
 }
 
 func TestInsert_sqlNamedArg(t *testing.T) {
-	t.Parallel()
-
 	t.Run("one row", func(t *testing.T) {
 		compareToSQL(t, NewInsert("catalog_product_link").AddColumns("product_id", "linked_product_id", "link_type_id").
 			WithDBR().TestWithArgs([]sql.NamedArg{
@@ -407,8 +395,6 @@ func TestInsert_sqlNamedArg(t *testing.T) {
 }
 
 func TestInsert_DisableBuildCache(t *testing.T) {
-	t.Parallel()
-
 	insA := NewInsert("a").AddColumns("b", "c").
 		OnDuplicateKey().WithDBR()
 
@@ -442,8 +428,6 @@ func TestInsert_DisableBuildCache(t *testing.T) {
 }
 
 func TestInsert_AddArguments(t *testing.T) {
-	t.Parallel()
-
 	t.Run("single WithDBR", func(t *testing.T) {
 		compareToSQL(t,
 			NewInsert("a").AddColumns("b", "c").WithDBR().TestWithArgs(1, 2),
@@ -486,8 +470,6 @@ func TestInsert_AddArguments(t *testing.T) {
 }
 
 func TestInsert_OnDuplicateKey(t *testing.T) {
-	t.Parallel()
-
 	t.Run("Exclude only", func(t *testing.T) {
 		compareToSQL(t, NewInsert("customer_gr1d_flat").
 			AddColumns("entity_id", "name", "email", "group_id", "created_at", "website_id").
@@ -577,8 +559,6 @@ func TestInsert_OnDuplicateKey(t *testing.T) {
 // TestInsert_Parallel_Bind_Slice is a tough test because first a complex SQL
 // statement from a collection and second it runs in parallel.
 func TestInsert_Parallel_Bind_Slice(t *testing.T) {
-	t.Parallel()
-
 	wantArgs := []interface{}{
 		"Muffin Hat", "Muffin@Hat.head",
 		"Marianne Phyllis Finch", "marianne@phyllis.finch",
@@ -613,8 +593,6 @@ func TestInsert_Parallel_Bind_Slice(t *testing.T) {
 }
 
 func TestInsert_Expressions_In_Values(t *testing.T) {
-	t.Parallel()
-
 	t.Run("1 string expression one row", func(t *testing.T) {
 		ins := NewInsert("catalog_product_customer_relation").
 			AddColumns("product_id", "sort_order").

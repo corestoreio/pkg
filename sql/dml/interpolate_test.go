@@ -33,8 +33,6 @@ var (
 )
 
 func TestExpandPlaceHolders(t *testing.T) {
-	t.Parallel()
-
 	cp, err := NewConnPool()
 	assert.NoError(t, err)
 
@@ -68,7 +66,6 @@ func TestExpandPlaceHolders(t *testing.T) {
 }
 
 func TestInterpolate_Nil(t *testing.T) {
-	t.Parallel()
 	t.Run("one nil", func(t *testing.T) {
 		ip := Interpolate("SELECT * FROM x WHERE a = ?").Null()
 		assert.Exactly(t, "SELECT * FROM x WHERE a = NULL", ip.String())
@@ -90,8 +87,6 @@ func TestInterpolate_Nil(t *testing.T) {
 }
 
 func TestInterpolate_AllTypes(t *testing.T) {
-	t.Parallel()
-
 	sqlStr, args, err := Interpolate(`SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?`).
 		Null().
 		Unsafe(`Unsafe`).
@@ -130,7 +125,6 @@ func TestInterpolate_AllTypes(t *testing.T) {
 }
 
 func TestInterpolate_Errors(t *testing.T) {
-	t.Parallel()
 	t.Run("non utf8", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a = ?").Str(string([]byte{0x34, 0xFF, 0xFE})),
@@ -175,8 +169,6 @@ func (u argValUint16) Value() (driver.Value, error) {
 }
 
 func TestInterpolate_ArgValue(t *testing.T) {
-	t.Parallel()
-
 	aInt := null.MakeInt64(4711)
 	aStr := null.MakeString("Goph'er")
 	aFlo := null.MakeFloat64(2.7182818)
@@ -220,8 +212,6 @@ func TestInterpolate_ArgValue(t *testing.T) {
 }
 
 func TestInterpolate_Reset(t *testing.T) {
-	t.Parallel()
-
 	t.Run("call twice with different arguments", func(t *testing.T) {
 		ip := Interpolate("SELECT * FROM x WHERE a IN ? AND b BETWEEN ? AND ? AND c = ? AND d IN ?").
 			Ints(1, -2).
@@ -240,8 +230,6 @@ func TestInterpolate_Reset(t *testing.T) {
 }
 
 func TestInterpolate_Int64(t *testing.T) {
-	t.Parallel()
-
 	t.Run("equal named params", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a = (:ArgX) AND b > @ArgY").
@@ -287,8 +275,6 @@ func TestInterpolate_Int64(t *testing.T) {
 }
 
 func TestInterpolate_Bools(t *testing.T) {
-	t.Parallel()
-
 	t.Run("single args", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a = ? AND b = ?").Bool(true).Bool(false),
@@ -307,8 +293,6 @@ func TestInterpolate_Bools(t *testing.T) {
 }
 
 func TestInterpolate_Bytes(t *testing.T) {
-	t.Parallel()
-
 	b1 := []byte(`Go`)
 	b2 := []byte(`Further`)
 	t.Run("UTF8 valid: single args", func(t *testing.T) {
@@ -343,8 +327,6 @@ func TestInterpolate_Bytes(t *testing.T) {
 }
 
 func TestInterpolate_Time(t *testing.T) {
-	t.Parallel()
-
 	t1 := now()
 	t2 := now().Add(time.Minute)
 
@@ -372,7 +354,6 @@ func TestInterpolate_Time(t *testing.T) {
 }
 
 func TestInterpolate_Floats(t *testing.T) {
-	t.Parallel()
 	t.Run("single args", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a = ? AND b = ?").Float64(3.14159).Float64(2.7182818),
@@ -397,8 +378,6 @@ func TestInterpolate_Floats(t *testing.T) {
 }
 
 func TestInterpolate_Slices_Strings_Between(t *testing.T) {
-	t.Parallel()
-
 	t.Run("BETWEEN at the end", func(t *testing.T) {
 		compareToSQL2(t,
 			Interpolate("SELECT * FROM x WHERE a IN ? AND b IN ? AND c NOT IN ? AND d BETWEEN ? AND ?").
@@ -453,7 +432,6 @@ func TestInterpolate_Slices_Strings_Between(t *testing.T) {
 }
 
 func TestInterpolate_Different(t *testing.T) {
-	t.Parallel()
 	ifs := func(vals ...interface{}) []interface{} { return vals }
 	tests := []struct {
 		sql     string
@@ -602,8 +580,6 @@ func TestInterpolate_MultipleSingleQuotes(t *testing.T) {
 }
 
 func TestExtractNamedArgs(t *testing.T) {
-	t.Parallel()
-
 	runner := func(haveSQL, wantSQL string, wantQualifiedColumns ...string) func(*testing.T) {
 		return func(t *testing.T) {
 			gotSQL, qualifiedColumns, _ := extractReplaceNamedArgs(haveSQL, nil)

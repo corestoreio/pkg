@@ -27,8 +27,6 @@ import (
 )
 
 func TestUnion_Query(t *testing.T) {
-	t.Parallel()
-
 	t.Run("ToSQL Error", func(t *testing.T) {
 		u := dml.NewUnion(
 			dml.NewSelect(),
@@ -79,8 +77,6 @@ func TestUnion_Query(t *testing.T) {
 }
 
 func TestUnion_Load(t *testing.T) {
-	t.Parallel()
-
 	u := dml.NewUnion(
 		dml.NewSelect("a").AddColumnsAliases("d", "b").From("tableAD"),
 		dml.NewSelect("a", "b").From("tableAB").Where(dml.Column("b").Float64(3.14159)),
@@ -102,8 +98,6 @@ func TestUnion_Load(t *testing.T) {
 }
 
 func TestUnion_Prepare(t *testing.T) {
-	t.Parallel()
-
 	t.Run("ToSQL Error", func(t *testing.T) {
 		u := dml.NewUnion(
 			dml.NewSelect(),
@@ -247,8 +241,6 @@ func TestUnion_Prepare(t *testing.T) {
 }
 
 func TestUnion_Clone(t *testing.T) {
-	t.Parallel()
-
 	dbc, dbMock := dmltest.MockDB(t, dml.WithLogger(log.BlackHole{}, func() string { return "uniqueID" }))
 	defer dmltest.MockClose(t, dbc, dbMock)
 

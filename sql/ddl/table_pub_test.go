@@ -535,7 +535,7 @@ func TestTable_Artisan_Methods(t *testing.T) {
 func TestTable_GeneratedColumns(t *testing.T) {
 	dbc := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, dbc)
-	defer dmltest.SQLDumpLoad(t, "testdata/generated*.sql", nil).Deferred()
+	defer dmltest.SQLDumpLoad(t, "testdata/generated*.sql", &dmltest.SQLDumpOptions{DSN: dbc.DSN()}).Deferred()
 
 	tbls := ddl.MustNewTables(
 		ddl.WithDB(dbc.DB),

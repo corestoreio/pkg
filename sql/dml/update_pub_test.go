@@ -29,8 +29,6 @@ import (
 )
 
 func TestUpdate_WithArgs(t *testing.T) {
-	t.Parallel()
-
 	t.Run("no columns provided", func(t *testing.T) {
 		mu := dml.NewUpdate("catalog_product_entity").Where(dml.Column("entity_id").In().PlaceHolder())
 
@@ -261,8 +259,6 @@ func (so *salesInvoice) MapColumns(cm *dml.ColumnMap) error {
 }
 
 func TestArguments_WithQualifiedColumnsAliases(t *testing.T) {
-	t.Parallel()
-
 	dbc, dbMock := dmltest.MockDB(t)
 
 	prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta(
@@ -380,8 +376,6 @@ func TestUpdate_BindRecord(t *testing.T) {
 }
 
 func TestUpdate_Clone(t *testing.T) {
-	t.Parallel()
-
 	dbc, dbMock := dmltest.MockDB(t, dml.WithLogger(log.BlackHole{}, func() string { return "uniqueID" }))
 	defer dmltest.MockClose(t, dbc, dbMock)
 

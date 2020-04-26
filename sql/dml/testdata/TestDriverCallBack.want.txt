@@ -2,13 +2,12 @@
 Query: "SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'"
 
 "Conn.ExecContext" Took: 0s
-Query: "CREATE DATABASE IF NOT EXISTS `{{SCHMEA}}`"
+Query: "CREATE DATABASE IF NOT EXISTS `{{SCHEMA}}`"
 
 "Conn.ExecContext" Took: 0s
-Query: "ALTER DATABASE `{{SCHMEA}}` DEFAULT CHARACTER SET='utf8mb4' COLLATE='utf8mb4_unicode_ci'"
+Query: "ALTER DATABASE `{{SCHEMA}}` DEFAULT CHARACTER SET='utf8mb4' COLLATE='utf8mb4_unicode_ci'"
 
-"Conn.ExecContext" Took: 0s
-Query: "USE `{{SCHMEA}}`"
+"Conn.Close" Took: 0s
 
 "Conn.Ping" Took: 0s
 Query: "/*PING*/"
@@ -65,7 +64,7 @@ Query: "UPDATE /*ID$RANJID2*/ `dml_people` SET `name`=?"
 Query: "UPDATE /*ID$RANJID2*/ `dml_people` SET `name`='Bernie'"
 
 "Conn.ExecContext" Took: 0s
-Query: "DROP DATABASE IF EXISTS `{{SCHMEA}}`"
+Query: "DROP DATABASE IF EXISTS `{{SCHEMA}}`"
 
 "Conn.Close" Took: 0s
 

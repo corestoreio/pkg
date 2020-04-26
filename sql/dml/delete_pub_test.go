@@ -28,8 +28,6 @@ import (
 )
 
 func TestDelete_Prepare(t *testing.T) {
-	t.Parallel()
-
 	t.Run("ToSQL Error", func(t *testing.T) {
 		compareToSQL(t, dml.NewDelete("").Where(dml.Column("a").Int64(1)), errors.Empty, "", "")
 	})
@@ -161,8 +159,6 @@ func TestDelete_Prepare(t *testing.T) {
 }
 
 func TestDelete_Join(t *testing.T) {
-	t.Parallel()
-
 	del1 := dml.NewDelete("customer_entity").Alias("ce").
 		FromTables("customer_address", "customer_company").
 		Join(
@@ -241,8 +237,6 @@ func TestDelete_Join(t *testing.T) {
 }
 
 func TestDelete_Returning(t *testing.T) {
-	t.Parallel()
-
 	t.Run("not allowed", func(t *testing.T) {
 		del := dml.NewDelete("customer_entity").
 			FromTables("customer_address").
@@ -271,8 +265,6 @@ func TestDelete_Returning(t *testing.T) {
 }
 
 func TestDelete_Clone(t *testing.T) {
-	t.Parallel()
-
 	dbc, dbMock := dmltest.MockDB(t, dml.WithLogger(log.BlackHole{}, func() string { return "uniqueID" }))
 	defer dmltest.MockClose(t, dbc, dbMock)
 

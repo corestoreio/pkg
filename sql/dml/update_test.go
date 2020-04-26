@@ -24,8 +24,6 @@ import (
 )
 
 func TestUpdate_Basics(t *testing.T) {
-	t.Parallel()
-
 	t.Run("all rows", func(t *testing.T) {
 		qb := NewUpdate("a").AddClauses(
 			Column("b").Int64(1),
@@ -74,8 +72,6 @@ func TestUpdate_Basics(t *testing.T) {
 }
 
 func TestUpdate_SetExprToSQL(t *testing.T) {
-	t.Parallel()
-
 	t.Run("no placeholder", func(t *testing.T) {
 		compareToSQL(t, NewUpdate("a").
 			AddClauses(
@@ -174,7 +170,6 @@ func TestUpdateReal(t *testing.T) {
 }
 
 func TestUpdate_Prepare(t *testing.T) {
-	t.Parallel()
 	t.Run("ToSQL Error", func(t *testing.T) {
 		in := &Update{}
 		in.AddClauses(Column("a").Int(1))
@@ -198,7 +193,6 @@ func TestUpdate_Prepare(t *testing.T) {
 }
 
 func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
-	t.Parallel()
 	t.Run("with condition values", func(t *testing.T) {
 		u := NewUpdate("catalog_product_entity").AddColumns("sku", "updated_at")
 		u.Where(Column("entity_id").In().Int64s(1, 2, 3))
@@ -219,8 +213,6 @@ func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 }
 
 func TestUpdate_SetRecord(t *testing.T) {
-	t.Parallel()
-
 	pRec := &dmlPerson{
 		ID:    12345,
 		Name:  "Gopher",
@@ -270,8 +262,6 @@ func TestUpdate_SetColumns(t *testing.T) {
 }
 
 func TestUpdate_DisableBuildCache(t *testing.T) {
-	t.Parallel()
-
 	up := NewUpdate("a").
 		AddClauses(
 			Column("foo").Int(1),

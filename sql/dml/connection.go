@@ -171,40 +171,35 @@ func WithCreateDatabase(ctx context.Context, databaseName string) ConnPoolOption
 			if _, err := c.DB.ExecContext(ctx, "ALTER DATABASE "+qdb+" DEFAULT CHARACTER SET='utf8mb4' COLLATE='utf8mb4_unicode_ci'"); err != nil {
 				return errors.WithStack(err)
 			}
-			if _, err := c.DB.ExecContext(ctx, "USE "+qdb); err != nil {
+
+			if c.dsn != nil && c.dsn.User == "sqlmock" && c.dsn.Passwd == "sqlmock" {
+				return nil
+			}
+
+			// explanation: close db and reconnect because MySQL driver binds to a
+			// database. the SQL statement: `USE dbname` cannot be used because of new
+			// connections where you have to call USE DB every time.
+			if err := c.DB.Close(); err != nil {
 				return errors.WithStack(err)
+			}
+
+			var drv driver.Driver = mysql.MySQLDriver{}
+			if c.driverCallBack != nil {
+				drv = wrapDriver(drv, c.driverCallBack)
+			}
+			if c.dsn != nil {
+				dsn := c.dsn.FormatDSN()
+				c.DB = sql.OpenDB(dsnConnector{
+					dsn:    dsn,
+					driver: drv,
+				})
+			} else {
+				c.DB = nil
 			}
 			return nil
 		},
 	}
 }
-
-// TODO func WithRequireUTF8MB4() ConnPoolOption {
-// 	return ConnPoolOption{
-// 		sortOrder: 152,
-// 		fn: func(c *ConnPool) error {
-// 			// For Schemas:
-// 			//
-// 			// SELECT default_character_set_name FROM information_schema.SCHEMATA
-// 			// WHERE schema_name = "schemaname";
-// 			// For Tables:
-// 			//
-// 			// SELECT CCSA.character_set_name FROM information_schema.`TABLES` T,
-// 			// 	information_schema.`COLLATION_CHARACTER_SET_APPLICABILITY` CCSA
-// 			// WHERE CCSA.collation_name = T.table_collation
-// 			// AND T.table_schema = "schemaname"
-// 			// AND T.table_name = "tablename";
-// 			// For Columns:
-// 			//
-// 			// SELECT character_set_name FROM information_schema.`COLUMNS`
-// 			// WHERE table_schema = "schemaname"
-// 			// AND table_name = "tablename"
-// 			// AND column_name = "columnname";
-//
-// 			return nil
-// 		},
-// 	}
-// }
 
 // WithExecSQLOnConnOpen runs the sqlQuery arguments after successful opening a
 // DB connection. More than one queries are running in a transaction, a single
@@ -278,7 +273,6 @@ func WithDB(db *sql.DB) ConnPoolOption {
 				var drv driver.Driver = mysql.MySQLDriver{}
 				if c.driverCallBack != nil {
 					drv = wrapDriver(drv, c.driverCallBack)
-					c.driverCallBack = nil
 				}
 
 				dsn := c.dsn.FormatDSN()
@@ -296,17 +290,6 @@ func WithDB(db *sql.DB) ConnPoolOption {
 					driver: drv,
 				})
 			}
-			return nil
-		},
-	}
-}
-
-// WithDriverCallBack allows t
-func WithDriverCallBack(cb DriverCallBack) ConnPoolOption {
-	return ConnPoolOption{
-		sortOrder: 0,
-		fn: func(c *ConnPool) (err error) {
-			c.driverCallBack = cb
 			return nil
 		},
 	}
@@ -337,7 +320,6 @@ func WithDSN(dsn string) ConnPoolOption {
 					opt.sortOrder = 200 // must run at the very end. or other queries will fail.
 					c.runOnClose = append(c.runOnClose, opt)
 				}
-				_ = os.Setenv(EnvDSN, c.dsn.FormatDSN()) // propagate the DSN to e.g. dmltest.SQLDumpLoad
 			}
 
 			return nil
@@ -365,6 +347,17 @@ func WithDSNFromEnv(dsnEnvName string) ConnPoolOption {
 		}
 	}
 	return WithDSN(env)
+}
+
+// WithDriverCallBack allows t
+func WithDriverCallBack(cb DriverCallBack) ConnPoolOption {
+	return ConnPoolOption{
+		sortOrder: 0,
+		fn: func(c *ConnPool) (err error) {
+			c.driverCallBack = cb
+			return nil
+		},
+	}
 }
 
 // dsnConnector implements a type to open a connection to the DB. It makes the
@@ -481,6 +474,14 @@ func (c *ConnPool) options(opts ...ConnPoolOption) error {
 func (c *ConnPool) Schema() string {
 	if c.dsn != nil {
 		return c.dsn.DBName
+	}
+	return ""
+}
+
+// DSN returns the formatted DSN. Will leak the password.
+func (c *ConnPool) DSN() string {
+	if c.dsn != nil {
+		return c.dsn.FormatDSN()
 	}
 	return ""
 }
@@ -894,3 +895,30 @@ func (tx *Tx) WithQueryBuilder(qb QueryBuilder) *DBR {
 	}
 	return a
 }
+
+// TODO func WithRequireUTF8MB4() ConnPoolOption {
+// 	return ConnPoolOption{
+// 		sortOrder: 152,
+// 		fn: func(c *ConnPool) error {
+// 			// For Schemas:
+// 			//
+// 			// SELECT default_character_set_name FROM information_schema.SCHEMATA
+// 			// WHERE schema_name = "schemaname";
+// 			// For Tables:
+// 			//
+// 			// SELECT CCSA.character_set_name FROM information_schema.`TABLES` T,
+// 			// 	information_schema.`COLLATION_CHARACTER_SET_APPLICABILITY` CCSA
+// 			// WHERE CCSA.collation_name = T.table_collation
+// 			// AND T.table_schema = "schemaname"
+// 			// AND T.table_name = "tablename";
+// 			// For Columns:
+// 			//
+// 			// SELECT character_set_name FROM information_schema.`COLUMNS`
+// 			// WHERE table_schema = "schemaname"
+// 			// AND table_name = "tablename"
+// 			// AND column_name = "columnname";
+//
+// 			return nil
+// 		},
+// 	}
+// }

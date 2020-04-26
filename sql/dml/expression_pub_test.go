@@ -23,7 +23,6 @@ import (
 )
 
 func TestTableColumnQuote(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		haveT string
 		haveC []string
@@ -58,7 +57,6 @@ func TestTableColumnQuote(t *testing.T) {
 }
 
 func TestSQLIfNull(t *testing.T) {
-	t.Parallel()
 	runner := func(want string, have ...string) func(*testing.T) {
 		return func(t *testing.T) {
 			var alias string
@@ -152,8 +150,6 @@ func TestSQLIfNull(t *testing.T) {
 }
 
 func TestSQLIf_Expression(t *testing.T) {
-	t.Parallel()
-
 	t.Run("single call", func(t *testing.T) {
 		assert.Exactly(t, "IF((c.value_id > 0), c.value, d.value)", dml.SQLIf("c.value_id > 0", "c.value", "d.value").Left)
 	})
@@ -184,8 +180,6 @@ func TestSQLIf_Expression(t *testing.T) {
 }
 
 func TestSQLCase(t *testing.T) {
-	t.Parallel()
-
 	t.Run("UPDATE in columns with args and no place holders", func(t *testing.T) {
 		/*
 					UPDATE `cataloginventory_stock_item`

@@ -61,7 +61,6 @@ func (a driverValueError) Value() (driver.Value, error) {
 }
 
 func TestArguments_Length_and_Stringer(t *testing.T) {
-	t.Parallel()
 	nt := now().In(time.UTC)
 
 	t.Run("no slices, nulls valid", func(t *testing.T) {
@@ -115,7 +114,6 @@ func TestArguments_Length_and_Stringer(t *testing.T) {
 }
 
 func TestIFaceToArgs(t *testing.T) {
-	t.Parallel()
 	t.Run("not supported", func(t *testing.T) {
 		_, err := iFaceToArgs(nil, time.Minute)
 		assert.ErrorIsKind(t, errors.NotSupported, err)
@@ -135,7 +133,8 @@ func TestIFaceToArgs(t *testing.T) {
 			float64(2.299999952316284), float64(2.2),
 			int64(5), int64(6), int64(7), int64(8), int64(9),
 			int64(math.MaxUint32), int64(math.MaxUint16), int64(math.MaxUint8),
-			true, "Gopher", []uint8{0x48, 0x65, 0x6c, 0x6c, 0x6f},
+			true, "Gopher",
+			[]uint8{0x48, 0x65, 0x6c, 0x6c, 0x6f},
 			now(), now(), nil,
 		}, expandInterfaces(args))
 	})

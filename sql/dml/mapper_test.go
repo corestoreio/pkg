@@ -87,8 +87,6 @@ func TestColumnMap_BinaryText(t *testing.T) {
 }
 
 func TestColumnMap_Nil_Pointers(t *testing.T) {
-	t.Parallel()
-
 	cm := NewColumnMap(20)
 	cm.
 		Bool(nil).
@@ -114,7 +112,6 @@ func TestColumnMap_Nil_Pointers(t *testing.T) {
 }
 
 func TestScannedColumn_String(t *testing.T) {
-	t.Parallel()
 	sc := scannedColumn{
 		field:   'b',
 		bool:    true,
@@ -140,7 +137,6 @@ func TestScannedColumn_String(t *testing.T) {
 }
 
 func TestScannedColumn_Scan(t *testing.T) {
-	t.Parallel()
 	sc := scannedColumn{}
 
 	assert.NoError(t, sc.Scan(int64(4711)))
@@ -177,8 +173,6 @@ func TestScannedColumn_Scan(t *testing.T) {
 }
 
 func TestColumnMap_Scan_Empty_Bytes(t *testing.T) {
-	t.Parallel()
-
 	cm := NewColumnMap(0, "SomeColumn")
 	cm.index = 0
 	cm.scanCol = make([]scannedColumn, 1)

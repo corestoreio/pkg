@@ -22,8 +22,6 @@ import (
 )
 
 func TestShow(t *testing.T) {
-	t.Parallel()
-
 	t.Run("variables", func(t *testing.T) {
 		s := NewShow().Variable()
 		compareToSQL(t, s, errors.NoKind,

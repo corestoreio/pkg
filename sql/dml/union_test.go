@@ -23,8 +23,6 @@ import (
 )
 
 func TestUnion_Basics(t *testing.T) {
-	t.Parallel()
-
 	t.Run("simple", func(t *testing.T) {
 		u := NewUnion(
 			NewSelect("a", "b").From("tableAB").Where(Column("a").Int64(3)),
@@ -122,8 +120,6 @@ func TestUnion_Basics(t *testing.T) {
 }
 
 func TestUnion_DisableBuildCache(t *testing.T) {
-	t.Parallel()
-
 	u := NewUnion(
 		NewSelect("a").AddColumnsAliases("d", "b").From("tableAD"),
 		NewSelect("a", "b").From("tableAB").Where(Column("b").Float64(3.14159)),
@@ -161,7 +157,6 @@ func TestUnion_DisableBuildCache(t *testing.T) {
 }
 
 func TestNewUnionTemplate(t *testing.T) {
-	t.Parallel()
 	/*
 		   (SELECT `t`.`value`,
 				   `t`.`attribute_id`
@@ -337,8 +332,6 @@ func TestNewUnionTemplate(t *testing.T) {
 }
 
 func TestUnionTemplate_DisableBuildCache(t *testing.T) {
-	t.Parallel()
-
 	u := NewUnion(
 		NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").FromAlias("catalog_product_entity_$type$", "t").
 			Where(Column("entity_id").Int64(1561), Column("store_id").In().Int64s(1, 0)),
@@ -373,8 +366,6 @@ func TestUnionTemplate_DisableBuildCache(t *testing.T) {
 }
 
 func TestUnionTemplate_ReuseArgs(t *testing.T) {
-	t.Parallel()
-
 	u := NewUnion(
 		NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").FromAlias("catalog_product_entity_$type$", "t").
 			Where(Column("entity_id").NamedArg("entityID"), Column("store_id").In().NamedArg("storeID")),

@@ -27,8 +27,6 @@ import (
 )
 
 func TestWith_Query(t *testing.T) {
-	t.Parallel()
-
 	t.Run("error", func(t *testing.T) {
 		dbc, dbMock := dmltest.MockDB(t)
 		defer dmltest.MockClose(t, dbc, dbMock)
@@ -46,8 +44,6 @@ func TestWith_Query(t *testing.T) {
 }
 
 func TestWith_Load(t *testing.T) {
-	t.Parallel()
-
 	t.Run("error", func(t *testing.T) {
 		dbc, dbMock := dmltest.MockDB(t)
 		defer dmltest.MockClose(t, dbc, dbMock)
@@ -65,8 +61,6 @@ func TestWith_Load(t *testing.T) {
 }
 
 func TestNewWith(t *testing.T) {
-	t.Parallel()
-
 	t.Run("one CTE", func(t *testing.T) {
 		cte := dml.NewWith(
 			dml.WithCTE{Name: "one", Select: dml.NewSelect().Unsafe().AddColumns("1")},
@@ -162,8 +156,6 @@ func TestNewWith(t *testing.T) {
 }
 
 func TestWith_Prepare(t *testing.T) {
-	t.Parallel()
-
 	t.Run("error", func(t *testing.T) {
 		dbc, dbMock := dmltest.MockDB(t)
 		defer dmltest.MockClose(t, dbc, dbMock)
@@ -310,8 +302,6 @@ func TestWith_Prepare(t *testing.T) {
 }
 
 func TestWith_Clone(t *testing.T) {
-	t.Parallel()
-
 	dbc, dbMock := dmltest.MockDB(t, dml.WithLogger(log.BlackHole{}, func() string { return "uniqueID" }))
 	defer dmltest.MockClose(t, dbc, dbMock)
 

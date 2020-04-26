@@ -19,7 +19,6 @@ import (
 	"context"
 	"database/sql/driver"
 	"fmt"
-	"io/ioutil"
 	"sync/atomic"
 	"testing"
 
@@ -77,15 +76,9 @@ func TestDriverCallBack(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NoError(t, con.Close())
-
 	dmltest.Close(t, db)
-	// t.Log(buf.String())
-	// ioutil.WriteFile("testdata/TestDriverCallBack.want2.txt", buf.Bytes(), 0644)
-	wantLog, err := ioutil.ReadFile("testdata/TestDriverCallBack.want.txt")
-	assert.NoError(t, err)
-	wantLog = bytes.ReplaceAll(wantLog, []byte(`{{SCHMEA}}`), []byte(db.Schema()))
-	if !bytes.Equal(wantLog, buf.Bytes()) {
-		t.Error("testdata/TestDriverCallBack.want.txt does not match with `have`.")
-		println(buf.String())
-	}
+
+	assert.MatchesGolden(t, "testdata/TestDriverCallBack.want.txt", buf.Bytes(), false, func(goldenData []byte) []byte {
+		return bytes.ReplaceAll(goldenData, []byte(`{{SCHEMA}}`), []byte(db.Schema()))
+	})
 }

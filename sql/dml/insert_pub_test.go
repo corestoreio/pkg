@@ -56,8 +56,6 @@ func (sr someRecord) MapColumns(cm *dml.ColumnMap) error {
 }
 
 func TestInsert_Bind(t *testing.T) {
-	t.Parallel()
-
 	objs := []someRecord{{1, 88, false}, {2, 99, true}, {3, 101, true}}
 	wantArgs := []interface{}{int64(1), int64(88), false, int64(2), int64(99), true, int64(3), int64(101), true}
 
@@ -120,8 +118,6 @@ func TestInsert_Bind(t *testing.T) {
 }
 
 func TestInsert_Prepare(t *testing.T) {
-	t.Parallel()
-
 	t.Run("BuildValues not set Error", func(t *testing.T) {
 		in := &dml.Insert{}
 		in.AddColumns("a", "b")
@@ -316,8 +312,6 @@ func TestInsert_Prepare(t *testing.T) {
 }
 
 func TestInsert_BuildValues(t *testing.T) {
-	t.Parallel()
-
 	t.Run("WithDBR", func(t *testing.T) {
 		p := &dmlPerson{
 			Name:  "Pike",
@@ -349,8 +343,6 @@ func TestInsert_BuildValues(t *testing.T) {
 }
 
 func TestInsert_Clone(t *testing.T) {
-	t.Parallel()
-
 	dbc, dbMock := dmltest.MockDB(t, dml.WithLogger(log.BlackHole{}, func() string { return "uniqueID" }))
 	defer dmltest.MockClose(t, dbc, dbMock)
 

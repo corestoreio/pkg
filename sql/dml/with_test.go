@@ -25,7 +25,6 @@ import (
 )
 
 func TestWith_Placeholder(t *testing.T) {
-	t.Parallel()
 	t.Run("placeholder DBR", func(t *testing.T) {
 		cte := NewWith(
 			WithCTE{
@@ -51,7 +50,6 @@ func TestWith_Placeholder(t *testing.T) {
 }
 
 func TestWith_ToSQL(t *testing.T) {
-	t.Parallel()
 	t.Run("Find best and worst month With cache", func(t *testing.T) {
 		/*
 			WITH sales_by_month(month, total)

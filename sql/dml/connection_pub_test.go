@@ -27,7 +27,6 @@ import (
 )
 
 func TestTableNameMapper(t *testing.T) {
-	t.Parallel()
 	dbc, dbMock := dmltest.MockDB(t, dml.ConnPoolOption{
 		TableNameMapper: func(old string) string { return fmt.Sprintf("prefix_%s", old) },
 	})
@@ -113,8 +112,6 @@ func TestTableNameMapper(t *testing.T) {
 }
 
 func TestConnPool_Schema(t *testing.T) {
-	t.Parallel()
-
 	cp, err := dml.NewConnPool(dml.WithDSN("xuser:xpassw0rd@tcp(localhost:3307)/t3st?parseTime=true&loc=UTC"))
 	assert.NoError(t, err)
 	assert.Exactly(t, "t3st", cp.Schema())
@@ -127,8 +124,6 @@ func TestConnPool_Schema(t *testing.T) {
 }
 
 func TestTx_Wrap(t *testing.T) {
-	t.Parallel()
-
 	t.Run("commit", func(t *testing.T) {
 		dbc, dbMock := dmltest.MockDB(t)
 		defer dmltest.MockClose(t, dbc, dbMock)
@@ -171,8 +166,6 @@ func TestTx_Wrap(t *testing.T) {
 }
 
 func TestWithRawSQL(t *testing.T) {
-	t.Parallel()
-
 	dbc, mock := dmltest.MockDB(t)
 	defer dmltest.MockClose(t, dbc, mock)
 
@@ -302,7 +295,6 @@ func TestWithExecSQLOnConn(t *testing.T) {
 }
 
 func TestConnPool_WithPrepare(t *testing.T) {
-	t.Parallel()
 	dbc, dbMock := dmltest.MockDB(t)
 	defer dmltest.MockClose(t, dbc, dbMock)
 
@@ -314,7 +306,6 @@ func TestConnPool_WithPrepare(t *testing.T) {
 }
 
 func TestTx_WithPrepare(t *testing.T) {
-	t.Parallel()
 	dbc, dbMock := dmltest.MockDB(t)
 	defer dmltest.MockClose(t, dbc, dbMock)
 
@@ -336,11 +327,12 @@ func TestWithCreateDatabase_GivenName(t *testing.T) {
 			mock.ExpectExec("SET NAMES 'utf8mb4'").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
 			mock.ExpectExec("CREATE DATABASE IF NOT EXISTS `myTestDb`").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
 			mock.ExpectExec("ALTER DATABASE `myTestDb` DEFAULT CHARACTER SET='utf8mb4' COLLATE='utf8mb4_unicode_ci'").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
-			mock.ExpectExec("USE `myTestDb`").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
+			mock.ExpectClose()
 		},
 		dml.WithCreateDatabase(context.TODO(), "myTestDb"),
 	)
-	dmltest.MockClose(t, dbc, mock)
+	assert.NoError(t, dbc.Close())
+	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestWithCreateDatabase_RandomTest(t *testing.T) {
@@ -349,13 +341,14 @@ func TestWithCreateDatabase_RandomTest(t *testing.T) {
 			mock.ExpectExec("SET NAMES 'utf8mb4'").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
 			mock.ExpectExec("CREATE DATABASE IF NOT EXISTS `test_[0-9]+`").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
 			mock.ExpectExec("ALTER DATABASE `test_[0-9]+` DEFAULT CHARACTER SET='utf8mb4' COLLATE='utf8mb4_unicode_ci'").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
-			mock.ExpectExec("USE `test_[0-9]+`").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
 			mock.ExpectExec("DROP DATABASE IF EXISTS `test_[0-9]+`").WithArgs().WillReturnResult(sqlmock.NewResult(0, 0))
 		},
-		dml.WithDSN("magento2:magento2@tcp(127.0.0.2:3306)/random?parseTime=true&loc=UTC"),
+		dml.WithDSN("sqlmock:sqlmock@tcp(127.0.0.2:3306)/random?parseTime=true&loc=UTC"),
 		dml.WithCreateDatabase(context.TODO(), ""),
 	)
-	dmltest.MockClose(t, dbc, mock)
+	mock.ExpectClose()
+	assert.NoError(t, dbc.Close())
+	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestConnPool_WithDisabledForeignKeyChecks(t *testing.T) {

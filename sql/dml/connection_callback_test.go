@@ -38,8 +38,6 @@ var (
 // var _ driver.ResetSessioner = (*cbConn)(nil)
 
 func TestWrapDriver_Connection_Error(t *testing.T) {
-	t.Parallel()
-
 	ctx := context.TODO()
 
 	getCon := func(t *testing.T, errCon SQLErrDriverCon) driver.Conn {
@@ -112,8 +110,6 @@ func TestWrapDriver_Connection_Error(t *testing.T) {
 }
 
 func TestWrapDriver_Stmt_Error(t *testing.T) {
-	t.Parallel()
-
 	getStmt := func(t *testing.T) driver.Stmt {
 		wrappedDrv := wrapDriver(SQLErrDriver{}, func(fnName string) func(error, string, []driver.NamedValue) error {
 			return func(err error, _ string, _ []driver.NamedValue) error {

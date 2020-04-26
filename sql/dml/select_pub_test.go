@@ -217,8 +217,6 @@ func (ps *TableCoreConfigDataSlice) Close() error {
 }
 
 func TestSelect_Load(t *testing.T) {
-	t.Parallel()
-
 	t.Run("success no condition", func(t *testing.T) {
 		dbc, dbMock := dmltest.MockDB(t)
 		defer dmltest.MockClose(t, dbc, dbMock)
@@ -316,8 +314,6 @@ func TestSelect_Load(t *testing.T) {
 }
 
 func TestSelect_Prepare(t *testing.T) {
-	t.Parallel()
-
 	t.Run("ToSQL Error", func(t *testing.T) {
 		sel := dml.NewSelect()
 		stmt, err := sel.Prepare(context.TODO())
@@ -562,9 +558,9 @@ func TestSelect_Prepare(t *testing.T) {
 }
 
 func TestSelect_Argument_Iterate(t *testing.T) {
-	dbc := createRealSession(t)
+	dbc := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, dbc)
-	defer dmltest.SQLDumpLoad(t, "testdata/person_ffaker*", nil).Deferred()
+	defer dmltest.SQLDumpLoad(t, "testdata/person_ffaker*", &dmltest.SQLDumpOptions{DSN: dbc.DSN()}).Deferred()
 
 	rowCount, found, err := dbc.SelectFrom("dml_fake_person").Count().WithDBR().LoadNullInt64(context.Background())
 	assert.NoError(t, err)
@@ -634,8 +630,8 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 				ifErrPanic(err)
 				ifNotEqualPanic(counter, limit, "Should have loaded this amount of rows")
 			}
-
-			fpSel := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
+			// dbc.Schema()+". that is a hack :-(
+			fpSel := dbc.SelectFrom(dbc.Schema()+".dml_fake_person").AddColumns("id", "weight", "height", "update_time").
 				Where(
 					dml.Column("id").Between().PlaceHolder(),
 				).
@@ -687,7 +683,7 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 		})
 
 		t.Run("successful 40 rows fibonacci", func(t *testing.T) {
-			fpSel := dbc.SelectFrom("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
+			fpSel := dbc.SelectFrom(dbc.Schema()+".dml_fake_person").AddColumns("id", "weight", "height", "update_time").
 				Where(dml.Column("id").LessOrEqual().Int(60)).
 				Limit(0, 40)
 			fpSel.IsOrderByRand = true
@@ -733,8 +729,6 @@ func fib(n uint) uint {
 }
 
 func TestSelect_Clone(t *testing.T) {
-	t.Parallel()
-
 	dbc, dbMock := dmltest.MockDB(t, dml.WithLogger(log.BlackHole{}, func() string { return "uniqueID" }))
 	defer dmltest.MockClose(t, dbc, dbMock)
 
@@ -775,8 +769,6 @@ func TestSelect_Clone(t *testing.T) {
 }
 
 func TestSelect_When_Unless(t *testing.T) {
-	t.Parallel()
-
 	t.Run("true and no default", func(t *testing.T) {
 		s := dml.NewSelect("entity_id").From("catalog_product_entity")
 		s.When(true, func(s2 *dml.Select) {
