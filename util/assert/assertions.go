@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"os"
 	"reflect"
@@ -1605,4 +1606,36 @@ func Never(t TestingT, condition func() bool, waitFor time.Duration, tick time.D
 			tick = ticker.C
 		}
 	}
+}
+
+// MatchesGolden compares haveData with the file content of pathGoldenFile.
+func MatchesGolden(t TestingT, pathGoldenFile string, haveData []byte, updateGolden bool, msgAndArgs ...interface{}) bool {
+	if h, ok := t.(tHelper); ok {
+		h.Helper()
+	}
+
+	goldenCB := func(in []byte) []byte { return in }
+	if len(msgAndArgs) > 0 { // no that is a hack
+		if cb, ok := msgAndArgs[0].(func([]byte) []byte); ok && cb != nil {
+			goldenCB = cb
+			msgAndArgs = msgAndArgs[1:]
+		}
+	}
+
+	wantData, err := ioutil.ReadFile(pathGoldenFile)
+	if err != nil {
+		Fail(t, fmt.Sprintf("unable to find file %q", pathGoldenFile), msgAndArgs...)
+	}
+	wantData = goldenCB(wantData)
+
+	if updateGolden {
+		NoError(t, ioutil.WriteFile(pathGoldenFile, haveData, 0644))
+	}
+
+	if !bytes.Equal(wantData, haveData) {
+		diffed := DiffValues(string(wantData), string(haveData))
+		Fail(t, diffed, msgAndArgs...)
+	}
+
+	return true
 }
