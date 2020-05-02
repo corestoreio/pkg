@@ -504,10 +504,10 @@ func (t *Table) fnCollectionDBAssignLastInsertID(mainGen *codegen.Go, g *Generat
 	mainGen.Pln(`func (cc *`, t.CollectionName(), `) AssignLastInsertID(id int64) {`)
 	{
 		mainGen.In()
-		mainGen.Pln(`for i:=int64(0); i < int64(len(cc.Data)); i++ {`)
+		mainGen.Pln(`for i:=0 ; i < len(cc.Data); i++ {`)
 		{
 			mainGen.In()
-			mainGen.Pln(`cc.Data[i].AssignLastInsertID(id + i)`)
+			mainGen.Pln(`cc.Data[i].AssignLastInsertID(id + int64(i))`)
 			mainGen.Out()
 		}
 		mainGen.Pln(`}`)

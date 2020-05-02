@@ -570,7 +570,7 @@ func (g *Generator) hasFeature(includes, excludes, features FeatureToggle, mode 
 }
 
 // findUsedPackages checks for needed packages which we must import.
-func (g *Generator) findUsedPackages(file []byte,predefinedImportPaths []string) ([]string, error) {
+func (g *Generator) findUsedPackages(file []byte, predefinedImportPaths []string) ([]string, error) {
 	af, err := goparser.ParseFile(token.NewFileSet(), "cs_virtual_file.go", append([]byte("package temporarily_main\n\n"), file...), 0)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -703,18 +703,20 @@ func (g *Generator) generateProto(w io.Writer) error {
 
 				// for debugging see Table.entityStruct function. This code is only different in the Pln function.
 
+				var hasAtLeastOneRelationShip int
+				relationShipSeen := map[string]bool{}
 				if kcuc, ok := g.kcu[t.Table.Name]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
 					for _, kcuce := range kcuc.Data {
 						if !kcuce.ReferencedTableName.Valid {
 							continue
 						}
-
+						hasAtLeastOneRelationShip++
 						// case ONE-TO-MANY
 						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
 						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
 						hasTable := g.Tables[kcuce.ReferencedTableName.Data] != nil
 						if isOneToMany && hasTable && isRelationAllowed {
-							proto.Pln(collectionName(kcuce.ReferencedTableName.Data), fieldMapFn(collectionName(kcuce.ReferencedTableName.Data)),
+							proto.Pln(fieldMapFn(collectionName(kcuce.ReferencedTableName.Data)), fieldMapFn(collectionName(kcuce.ReferencedTableName.Data)),
 								"=", lastColumnPos, ";",
 								"// 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 							lastColumnPos++
@@ -723,36 +725,50 @@ func (g *Generator) generateProto(w io.Writer) error {
 						// case ONE-TO-ONE
 						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
 						if isOneToOne && hasTable && isRelationAllowed {
-							proto.Pln(strs.ToGoCamelCase(kcuce.ReferencedTableName.Data), fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.Data)),
+							proto.Pln(fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.Data)), fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.Data)),
 								"=", lastColumnPos, ";",
 								"// 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 							lastColumnPos++
 						}
+
+						// case MANY-TO-MANY
+						targetTbl, targetColumn := g.krs.ManyToManyTarget(kcuce.TableName, kcuce.ColumnName)
+						// hasTable variable shall not be added because usually the link table does not get loaded.
+						if isRelationAllowed && targetTbl != "" && targetColumn != "" {
+							proto.Pln(fieldMapFn(collectionName(targetTbl)), " *", collectionName(targetTbl),
+								t.customStructTagFields[targetTbl],
+								"// M:N", kcuce.TableName+"."+kcuce.ColumnName, "via", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data,
+								"=>", targetTbl+"."+targetColumn,
+							)
+						}
 					}
 				}
 
-				// TODO reversed M:N might be buggy as this code is not equal to the table.go code.
 				if kcuc, ok := g.kcuRev[t.Table.Name]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
 					for _, kcuce := range kcuc.Data {
 						if !kcuce.ReferencedTableName.Valid {
 							continue
 						}
-
+						hasAtLeastOneRelationShip++
 						// case ONE-TO-MANY
 						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
 						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
 						hasTable := g.Tables[kcuce.ReferencedTableName.Data] != nil
-						if isOneToMany && hasTable && isRelationAllowed {
-							proto.Pln(collectionName(kcuce.ReferencedTableName.Data), fieldMapFn(collectionName(kcuce.ReferencedTableName.Data)),
+						keySeen := fieldMapFn(collectionName(kcuce.ReferencedTableName.Data))
+						relationShipSeenAlready := relationShipSeen[keySeen]
+						// case ONE-TO-MANY
+						if isRelationAllowed && isOneToMany && hasTable && !relationShipSeenAlready {
+							proto.Pln(fieldMapFn(collectionName(kcuce.ReferencedTableName.Data)), fieldMapFn(collectionName(kcuce.ReferencedTableName.Data)),
 								"=", lastColumnPos, ";",
 								"// Reversed 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
+							relationShipSeen[keySeen] = true
 							lastColumnPos++
 						}
 
 						// case ONE-TO-ONE
 						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
-						if isOneToOne && hasTable && isRelationAllowed {
-							proto.Pln(strs.ToGoCamelCase(kcuce.ReferencedTableName.Data), fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.Data)),
+						if isRelationAllowed && isOneToOne && hasTable {
+							proto.Pln(fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.Data)), fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.Data)),
 								"=", lastColumnPos, ";",
 								"// Reversed 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 							lastColumnPos++
@@ -761,18 +777,22 @@ func (g *Generator) generateProto(w io.Writer) error {
 						// case MANY-TO-MANY
 						targetTbl, targetColumn := g.krs.ManyToManyTarget(kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
 						if targetTbl != "" && targetColumn != "" {
-							isRelationAllowed = g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, targetTbl, targetColumn)
+							keySeen := fieldMapFn(collectionName(targetTbl))
+							isRelationAllowed = g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, targetTbl, targetColumn) &&
+								!relationShipSeen[keySeen]
+							relationShipSeen[keySeen] = true
 						}
 
 						// case MANY-TO-MANY
+						// hasTable shall not be added because usually the link table does not get loaded.
 						if isRelationAllowed && targetTbl != "" && targetColumn != "" {
-							proto.Pln(collectionName(targetTbl), fieldMapFn(collectionName(targetTbl)),
+							proto.Pln(fieldMapFn(collectionName(targetTbl)), fieldMapFn(collectionName(targetTbl)),
 								"=", lastColumnPos, ";",
 								"// Reversed M:N", kcuce.TableName+"."+kcuce.ColumnName, "via", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data,
-								"=>", targetTbl+"."+targetColumn)
+								"=>", targetTbl+"."+targetColumn,
+							)
 							lastColumnPos++
 						}
-
 					}
 				}
 			}
@@ -853,7 +873,7 @@ func (g *Generator) GenerateGo(wMain, wTest io.Writer) error {
 	}
 
 	// now figure out all used package names in the buffer.
-	pkgs, err := g.findUsedPackages(mainGen.Bytes(),g.ImportPaths)
+	pkgs, err := g.findUsedPackages(mainGen.Bytes(), g.ImportPaths)
 	if err != nil {
 		_, _ = wMain.Write(mainGen.Bytes()) // write for debug reasons
 		return errors.WithStack(err)
@@ -864,13 +884,13 @@ func (g *Generator) GenerateGo(wMain, wTest io.Writer) error {
 		return errors.WithStack(err)
 	}
 
-	pkgs, err = g.findUsedPackages(testGen.Bytes(),g.ImportPathsTesting)
+	pkgs, err = g.findUsedPackages(testGen.Bytes(), g.ImportPathsTesting)
 	if err != nil {
 		_, _ = wMain.Write(testGen.Bytes()) // write for debug reasons
 		return errors.WithStack(err)
 	}
 	testGen.AddImports(pkgs...)
-	//testGen.AddImports(g.ImportPathsTesting...)
+	// testGen.AddImports(g.ImportPathsTesting...)
 
 	if err := testGen.GenerateFile(wTest); err != nil {
 		return errors.WithStack(err)
