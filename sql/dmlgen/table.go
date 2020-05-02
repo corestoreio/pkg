@@ -812,7 +812,7 @@ func (t *Table) fnCollectionDBMapColumns(mainGen *codegen.Go, g *Generator) {
 		return
 	}
 
-	mainGen.Pln(`func (cc *`, t.CollectionName(), `) scanColumns(cm *dml.ColumnMap, e *`, t.EntityName(), `, idx uint64) error {
+	mainGen.Pln(`func (cc *`, t.CollectionName(), `) scanColumns(cm *dml.ColumnMap, e *`, t.EntityName(), `) error {
 			if err := e.MapColumns(cm); err != nil {
 				return errors.WithStack(err)
 			}
@@ -825,8 +825,8 @@ func (t *Table) fnCollectionDBMapColumns(mainGen *codegen.Go, g *Generator) {
 	{
 		mainGen.Pln(`switch m := cm.Mode(); m {
 						case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
-							for i, e := range cc.Data {
-								if err := cc.scanColumns(cm, e, uint64(i)); err != nil {
+							for _, e := range cc.Data {
+								if err := cc.scanColumns(cm, e); err != nil {
 									return errors.WithStack(err)
 								}
 							}`)
@@ -835,17 +835,18 @@ func (t *Table) fnCollectionDBMapColumns(mainGen *codegen.Go, g *Generator) {
 							if cm.Count == 0 {
 								cc.Data = cc.Data[:0]
 							}
-							e := new(`, t.EntityName(), `)
-							if err := cc.scanColumns(cm, e, cm.Count); err != nil {
+							var e `, t.EntityName(), `
+							if err := cc.scanColumns(cm, &e); err != nil {
 								return errors.WithStack(err)
 							}
-							cc.Data = append(cc.Data, e)`)
+							cc.Data = append(cc.Data, &e)`)
 
-		mainGen.Pln(`case dml.ColumnMapCollectionReadSet:
+		unqiueCols := t.Table.Columns.UniqueColumns()
+		hasUniqueCols := unqiueCols.Len() > 0
+		mainGen.Pln(hasUniqueCols, `case dml.ColumnMapCollectionReadSet:
 							for cm.Next() {
 								switch c := cm.Column(); c {`)
-
-		t.Table.Columns.UniqueColumns().Each(func(c *ddl.Column) {
+		unqiueCols.Each(func(c *ddl.Column) {
 			if !c.IsFloat() {
 				mainGen.P(`case`, strconv.Quote(c.Field))
 				for _, a := range c.Aliases {
@@ -855,13 +856,13 @@ func (t *Table) fnCollectionDBMapColumns(mainGen *codegen.Go, g *Generator) {
 				mainGen.Pln(`cm = cm.`, g.goFuncNull(c)+`s(cc.`, strs.ToGoCamelCase(c.Field)+`s()...)`)
 			}
 		})
-		mainGen.Pln(`default:
+		mainGen.Pln(hasUniqueCols, `default:
 				return errors.NotFound.Newf("[`+t.Package+`]`, t.CollectionName(), `Column %q not found", c)
 			}
-		} // end for cm.Next
+		} // end for cm.Next`)
 
-	default:
-		return errors.NotSupported.Newf("[`+t.Package+`] Unknown Mode: %q", string(m))
+		mainGen.Pln(`default:
+		return errors.NotSupported.Newf("[` + t.Package + `] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()`)
 	}
@@ -931,15 +932,15 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	}`)
 
 	if tblPkCols.Len() > 1 { // for tables with more than one PK
-		mainGen.Pln(`	cacheKey := `, codegen.SkipWS(`"`, collectionFuncName, "", `"`), `
+		mainGen.Pln(dmlEnabled, `	cacheKey := `, codegen.SkipWS(`"`, collectionFuncName, "", `"`), `
 	var args []interface{}
 	if len(pkIDs) > 0 {
 		args = make([]interface{}, 0, len(pkIDs)*`, tblPkCols.Len(), `)
 		for _, pk := range pkIDs {`)
 		tblPkCols.Each(func(c *ddl.Column) {
-			mainGen.Pln(`args = append(args, pk.`, strs.ToGoCamelCase(c.Field), `)`)
+			mainGen.Pln(dmlEnabled, `args = append(args, pk.`, strs.ToGoCamelCase(c.Field), `)`)
 		})
-		mainGen.Pln(`}
+		mainGen.Pln(dmlEnabled, `}
 		cacheKey = `, codegen.SkipWS(`"`, t.CollectionName(), "SelectByPK", `"`), `
 	}
 	if _, err = dbm.CachedQuery(cacheKey).ApplyCallBacks(opts...).Load(ctx, cc, args...); err != nil {
