@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"go/build"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -12,6 +13,9 @@ import (
 	"strings"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/sql/ddl"
+	"github.com/corestoreio/pkg/util/codegen"
+	"github.com/corestoreio/pkg/util/strs"
 )
 
 // ProtocOptions allows to modify the protoc CLI command.
@@ -210,4 +214,184 @@ func GenerateProto(protoFilesPath string, po *ProtocOptions) error {
 	}
 
 	return nil
+}
+
+func (g *Generator) generateProto(w io.Writer) error {
+	pPkg := g.PackageSerializer
+	if pPkg == "" {
+		pPkg = g.Package
+	}
+
+	proto := codegen.NewProto(pPkg)
+	proto.Pln(`import "github.com/gogo/protobuf/gogoproto/gogo.proto";`)
+
+	const importTimeStamp = `import "google/protobuf/timestamp.proto";`
+	proto.Pln(importTimeStamp)
+	proto.Pln(`import "github.com/corestoreio/pkg/storage/null/null.proto";`)
+	var hasGoPackageOption bool
+	for _, o := range g.SerializerHeaderOptions {
+		proto.Pln(`option ` + o + `;`)
+		if !hasGoPackageOption {
+			hasGoPackageOption = strings.Contains(o, "go_package")
+		}
+	}
+	if !hasGoPackageOption {
+		proto.Pln(`option go_package = `, fmt.Sprintf("%q;", pPkg))
+	}
+
+	var hasTimestampField bool
+	for _, tblname := range g.sortedTableNames() {
+		t := g.Tables[tblname] // must panic if table name not found
+
+		fieldMapFn := g.defaultTableConfig.FieldMapFn
+		if fieldMapFn == nil {
+			fieldMapFn = t.fieldMapFn
+		}
+		if fieldMapFn == nil {
+			fieldMapFn = defaultFieldMapFn
+		}
+
+		proto.C(t.EntityName(), `represents a single row for`, t.Table.Name, `DB table. Auto generated.`)
+		if t.Table.TableComment != "" {
+			proto.C("Table comment:", t.Table.TableComment)
+		}
+		proto.Pln(`message`, t.EntityName(), `{`)
+		{
+			proto.In()
+			var lastColumnPos uint64
+			t.Table.Columns.Each(func(c *ddl.Column) {
+				if t.IsFieldPublic(c.Field) {
+					serType := g.serializerType(c)
+					if !hasTimestampField && strings.HasPrefix(serType, "google.protobuf.Timestamp") {
+						hasTimestampField = true
+					}
+					var optionConcret string
+					if options := g.serializerCustomType(c); len(options) > 0 {
+						optionConcret = `[` + strings.Join(options, ",") + `]`
+					}
+					// extend here with a custom code option, if someone needs
+					proto.Pln(serType, strs.ToGoCamelCase(c.Field), `=`, c.Pos, optionConcret+`;`)
+					lastColumnPos = c.Pos
+				}
+			})
+			lastColumnPos++
+
+			if g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityRelationships) {
+
+				// for debugging see Table.entityStruct function. This code is only different in the Pln function.
+
+				var hasAtLeastOneRelationShip int
+				relationShipSeen := map[string]bool{}
+				if kcuc, ok := g.kcu[t.Table.Name]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
+					for _, kcuce := range kcuc.Data {
+						if !kcuce.ReferencedTableName.Valid {
+							continue
+						}
+						hasAtLeastOneRelationShip++
+						// case ONE-TO-MANY
+						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
+						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
+						hasTable := g.Tables[kcuce.ReferencedTableName.Data] != nil
+						if isOneToMany && hasTable && isRelationAllowed {
+							proto.Pln(fieldMapFn(collectionName(kcuce.ReferencedTableName.Data)), fieldMapFn(collectionName(kcuce.ReferencedTableName.Data)),
+								"=", lastColumnPos, ";",
+								"// 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
+							lastColumnPos++
+						}
+
+						// case ONE-TO-ONE
+						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
+						if isOneToOne && hasTable && isRelationAllowed {
+							proto.Pln(fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.Data)), fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.Data)),
+								"=", lastColumnPos, ";",
+								"// 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
+							lastColumnPos++
+						}
+
+						// case MANY-TO-MANY
+						targetTbl, targetColumn := g.krs.ManyToManyTarget(kcuce.TableName, kcuce.ColumnName)
+						// hasTable variable shall not be added because usually the link table does not get loaded.
+						if isRelationAllowed && targetTbl != "" && targetColumn != "" {
+							proto.Pln(fieldMapFn(collectionName(targetTbl)), " *", collectionName(targetTbl),
+								t.customStructTagFields[targetTbl],
+								"// M:N", kcuce.TableName+"."+kcuce.ColumnName, "via", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data,
+								"=>", targetTbl+"."+targetColumn,
+							)
+						}
+					}
+				}
+
+				if kcuc, ok := g.kcuRev[t.Table.Name]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
+					for _, kcuce := range kcuc.Data {
+						if !kcuce.ReferencedTableName.Valid {
+							continue
+						}
+						hasAtLeastOneRelationShip++
+						// case ONE-TO-MANY
+						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
+						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
+						hasTable := g.Tables[kcuce.ReferencedTableName.Data] != nil
+						keySeen := fieldMapFn(collectionName(kcuce.ReferencedTableName.Data))
+						relationShipSeenAlready := relationShipSeen[keySeen]
+						// case ONE-TO-MANY
+						if isRelationAllowed && isOneToMany && hasTable && !relationShipSeenAlready {
+							proto.Pln(fieldMapFn(collectionName(kcuce.ReferencedTableName.Data)), fieldMapFn(collectionName(kcuce.ReferencedTableName.Data)),
+								"=", lastColumnPos, ";",
+								"// Reversed 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
+							relationShipSeen[keySeen] = true
+							lastColumnPos++
+						}
+
+						// case ONE-TO-ONE
+						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
+						if isRelationAllowed && isOneToOne && hasTable {
+							proto.Pln(fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.Data)), fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.Data)),
+								"=", lastColumnPos, ";",
+								"// Reversed 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
+							lastColumnPos++
+						}
+
+						// case MANY-TO-MANY
+						targetTbl, targetColumn := g.krs.ManyToManyTarget(kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
+						if targetTbl != "" && targetColumn != "" {
+							keySeen := fieldMapFn(collectionName(targetTbl))
+							isRelationAllowed = g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, targetTbl, targetColumn) &&
+								!relationShipSeen[keySeen]
+							relationShipSeen[keySeen] = true
+						}
+
+						// case MANY-TO-MANY
+						// hasTable shall not be added because usually the link table does not get loaded.
+						if isRelationAllowed && targetTbl != "" && targetColumn != "" {
+							proto.Pln(fieldMapFn(collectionName(targetTbl)), fieldMapFn(collectionName(targetTbl)),
+								"=", lastColumnPos, ";",
+								"// Reversed M:N", kcuce.TableName+"."+kcuce.ColumnName, "via", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data,
+								"=>", targetTbl+"."+targetColumn,
+							)
+							lastColumnPos++
+						}
+					}
+				}
+			}
+			proto.Out()
+		}
+		proto.Pln(`}`)
+
+		proto.C(t.CollectionName(), `represents multiple rows for the`, t.Table.Name, `DB table. Auto generated.`)
+		proto.Pln(`message`, t.CollectionName(), `{`)
+		{
+			proto.In()
+			proto.Pln(`repeated`, t.EntityName(), `Data = 1;`)
+			proto.Out()
+		}
+		proto.Pln(`}`)
+	}
+
+	if !hasTimestampField {
+		// bit hacky to remove the import of timestamp proto but for now OK.
+		removedImport := strings.ReplaceAll(proto.String(), importTimeStamp, "")
+		proto.Reset()
+		proto.WriteString(removedImport)
+	}
+	return proto.GenerateFile(w)
 }
