@@ -724,7 +724,7 @@ func (g *Generator) GenerateGo(wMain, wTest io.Writer) error {
 
 func (g *Generator) fnCreateDBM(mainGen *codegen.Go, tbls tables) {
 	if !tbls.hasFeature(g, FeatureDB|FeatureDBTracing|FeatureDBSelect|FeatureDBDelete|
-		FeatureDBInsert|FeatureDBUpdate|FeatureDBUpsert) {
+		FeatureDBInsert|FeatureDBUpdate|FeatureDBUpsert|FeatureDBTableColumnNames) {
 		return
 	}
 
@@ -738,7 +738,43 @@ func (g *Generator) fnCreateDBM(mainGen *codegen.Go, tbls tables) {
 		tableNames = append(tableNames, tblname)
 		tableCreateStmt = append(tableCreateStmt, constName, `""`)
 	}
+	mainGen.C(`TableName constants define the names of all tables.`)
 	mainGen.WriteConstants(tableConstants...)
+
+	if tbls.hasFeature(g, FeatureDBTableColumnNames) {
+		mainGen.C(`Columns struct provides for all tables the name of the columns. Allows type safety.`)
+		mainGen.Pln(`var Columns = struct {`)
+		{
+			for _, tbl := range tbls {
+				mainGen.Pln(tbl.EntityName(), `struct {`)
+				{
+					tbl.Table.Columns.Each(func(c *ddl.Column) {
+						mainGen.Pln(tbl.GoCamelMaybePrivate(c.Field), `string`)
+					})
+				}
+				mainGen.Pln(`}`)
+			}
+		}
+		mainGen.Pln(`}{`)
+		{
+			for _, tbl := range tbls {
+				mainGen.Pln(tbl.EntityName(), `: struct {`)
+				{
+					tbl.Table.Columns.Each(func(c *ddl.Column) {
+						mainGen.Pln(tbl.GoCamelMaybePrivate(c.Field), `string`)
+					})
+				}
+				mainGen.Pln(`}{`)
+				{
+					tbl.Table.Columns.Each(func(c *ddl.Column) {
+						mainGen.Pln(tbl.GoCamelMaybePrivate(c.Field), `:`, fmt.Sprintf("%q", c.Field), ",")
+					})
+				}
+				mainGen.Pln(`},`)
+			}
+		}
+		mainGen.Pln(`}`) // end main struct
+	}
 
 	mainGen.Pln(`var dbmEmptyOpts = []dml.DBRFunc{func(dbr *dml.DBR) {
 			// do nothing because Clone gets called automatically

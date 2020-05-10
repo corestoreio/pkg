@@ -91,7 +91,7 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
 
-	defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil).Deferred()
+	defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", &dmltest.SQLDumpOptions{DSN: db.DSN()}).Deferred()
 
 	ctx := context.Background()
 	g, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated",
@@ -350,8 +350,7 @@ func TestNewGenerator_NoDB(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
 
-	defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil).Deferred()
-	// dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil)
+	defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", &dmltest.SQLDumpOptions{DSN: db.DSN()}).Deferred()
 
 	ctx := context.Background()
 	ts, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated2",
@@ -383,8 +382,7 @@ func TestNewGenerator_ReversedForeignKeys(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
 
-	defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil).Deferred()
-	// dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil)
+	defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", &dmltest.SQLDumpOptions{DSN: db.DSN()}).Deferred()
 
 	ctx := context.Background()
 	ts, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated3",
@@ -445,8 +443,7 @@ func TestNewGenerator_MToMForeignKeys(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
 
-	defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil).Deferred()
-	// dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil)
+	defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", &dmltest.SQLDumpOptions{DSN: db.DSN()}).Deferred()
 
 	ctx := context.Background()
 	ts, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgeneratedMToM",
@@ -502,8 +499,7 @@ func TestNewGenerator_DB_Partial_SQL_Queries(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
 
-	defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil).Deferred()
-	// dmltest.SQLDumpLoad(t, "testdata/test_*.sql", nil)
+	defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", &dmltest.SQLDumpOptions{DSN: db.DSN()}).Deferred()
 
 	ctx := context.Background()
 	ts, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated4",

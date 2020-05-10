@@ -9,16 +9,18 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io"
+	"time"
+
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/cstrace"
 	"go.opentelemetry.io/otel/api/trace"
-	"io"
-	"time"
 )
 
+// TableName constants define the names of all tables.
 const (
 	TableNameCatalogProductIndexEAVDecimalIDX = "catalog_product_index_eav_decimal_idx"
 	TableNameCoreConfiguration                = "core_configuration"
@@ -29,6 +31,412 @@ const (
 	TableNameViewCustomerAutoIncrement        = "view_customer_auto_increment"
 	TableNameViewCustomerNoAutoIncrement      = "view_customer_no_auto_increment"
 )
+
+// Columns struct provides for all tables the name of the columns. Allows type
+// safety.
+var Columns = struct {
+	CatalogProductIndexEAVDecimalIDX struct {
+		EntityID    string
+		AttributeID string
+		StoreID     string
+		SourceID    string
+		Value       string
+	}
+	CoreConfiguration struct {
+		ConfigID  string
+		Scope     string
+		ScopeID   string
+		Expires   string
+		Path      string
+		Value     string
+		VersionTs string
+		VersionTe string
+	}
+	CustomerAddressEntity struct {
+		EntityID          string
+		IncrementID       string
+		ParentID          string
+		CreatedAt         string
+		UpdatedAt         string
+		IsActive          string
+		City              string
+		Company           string
+		CountryID         string
+		Fax               string
+		Firstname         string
+		Lastname          string
+		Middlename        string
+		Postcode          string
+		Prefix            string
+		Region            string
+		RegionID          string
+		Street            string
+		Suffix            string
+		Telephone         string
+		VatID             string
+		VatIsValid        string
+		VatRequestDate    string
+		VatRequestID      string
+		VatRequestSuccess string
+	}
+	CustomerEntity struct {
+		EntityID               string
+		WebsiteID              string
+		Email                  string
+		GroupID                string
+		IncrementID            string
+		StoreID                string
+		CreatedAt              string
+		UpdatedAt              string
+		IsActive               string
+		DisableAutoGroupChange string
+		CreatedIn              string
+		Prefix                 string
+		Firstname              string
+		Middlename             string
+		Lastname               string
+		Suffix                 string
+		Dob                    string
+		passwordHash           string
+		RpToken                string
+		RpTokenCreatedAt       string
+		DefaultBilling         string
+		DefaultShipping        string
+		Taxvat                 string
+		Confirmation           string
+		Gender                 string
+		FailuresNum            string
+		FirstFailure           string
+		LockExpires            string
+	}
+	DmlgenTypes struct {
+		ID             string
+		ColBigint1     string
+		ColBigint2     string
+		ColBigint3     string
+		ColBigint4     string
+		ColBlob        string
+		ColDate1       string
+		ColDate2       string
+		ColDatetime1   string
+		ColDatetime2   string
+		ColDecimal101  string
+		ColDecimal124  string
+		PriceA124      string
+		PriceB124      string
+		ColDecimal123  string
+		ColDecimal206  string
+		ColDecimal2412 string
+		ColInt1        string
+		ColInt2        string
+		ColInt3        string
+		ColInt4        string
+		ColLongtext1   string
+		ColLongtext2   string
+		ColMediumblob  string
+		ColMediumtext1 string
+		ColMediumtext2 string
+		ColSmallint1   string
+		ColSmallint2   string
+		ColSmallint3   string
+		ColSmallint4   string
+		HasSmallint5   string
+		IsSmallint5    string
+		ColText        string
+		ColTimestamp1  string
+		ColTimestamp2  string
+		ColTinyint1    string
+		ColVarchar1    string
+		ColVarchar100  string
+		ColVarchar16   string
+		ColChar1       string
+		ColChar2       string
+	}
+	SalesOrderStatusState struct {
+		Status         string
+		State          string
+		IsDefault      string
+		VisibleOnFront string
+	}
+	ViewCustomerAutoIncrement struct {
+		CeEntityID string
+		Email      string
+		Firstname  string
+		Lastname   string
+		City       string
+	}
+	ViewCustomerNoAutoIncrement struct {
+		Email     string
+		Firstname string
+		Lastname  string
+		City      string
+	}
+}{
+	CatalogProductIndexEAVDecimalIDX: struct {
+		EntityID    string
+		AttributeID string
+		StoreID     string
+		SourceID    string
+		Value       string
+	}{
+		EntityID:    "entity_id",
+		AttributeID: "attribute_id",
+		StoreID:     "store_id",
+		SourceID:    "source_id",
+		Value:       "value",
+	},
+	CoreConfiguration: struct {
+		ConfigID  string
+		Scope     string
+		ScopeID   string
+		Expires   string
+		Path      string
+		Value     string
+		VersionTs string
+		VersionTe string
+	}{
+		ConfigID:  "config_id",
+		Scope:     "scope",
+		ScopeID:   "scope_id",
+		Expires:   "expires",
+		Path:      "path",
+		Value:     "value",
+		VersionTs: "version_ts",
+		VersionTe: "version_te",
+	},
+	CustomerAddressEntity: struct {
+		EntityID          string
+		IncrementID       string
+		ParentID          string
+		CreatedAt         string
+		UpdatedAt         string
+		IsActive          string
+		City              string
+		Company           string
+		CountryID         string
+		Fax               string
+		Firstname         string
+		Lastname          string
+		Middlename        string
+		Postcode          string
+		Prefix            string
+		Region            string
+		RegionID          string
+		Street            string
+		Suffix            string
+		Telephone         string
+		VatID             string
+		VatIsValid        string
+		VatRequestDate    string
+		VatRequestID      string
+		VatRequestSuccess string
+	}{
+		EntityID:          "entity_id",
+		IncrementID:       "increment_id",
+		ParentID:          "parent_id",
+		CreatedAt:         "created_at",
+		UpdatedAt:         "updated_at",
+		IsActive:          "is_active",
+		City:              "city",
+		Company:           "company",
+		CountryID:         "country_id",
+		Fax:               "fax",
+		Firstname:         "firstname",
+		Lastname:          "lastname",
+		Middlename:        "middlename",
+		Postcode:          "postcode",
+		Prefix:            "prefix",
+		Region:            "region",
+		RegionID:          "region_id",
+		Street:            "street",
+		Suffix:            "suffix",
+		Telephone:         "telephone",
+		VatID:             "vat_id",
+		VatIsValid:        "vat_is_valid",
+		VatRequestDate:    "vat_request_date",
+		VatRequestID:      "vat_request_id",
+		VatRequestSuccess: "vat_request_success",
+	},
+	CustomerEntity: struct {
+		EntityID               string
+		WebsiteID              string
+		Email                  string
+		GroupID                string
+		IncrementID            string
+		StoreID                string
+		CreatedAt              string
+		UpdatedAt              string
+		IsActive               string
+		DisableAutoGroupChange string
+		CreatedIn              string
+		Prefix                 string
+		Firstname              string
+		Middlename             string
+		Lastname               string
+		Suffix                 string
+		Dob                    string
+		passwordHash           string
+		RpToken                string
+		RpTokenCreatedAt       string
+		DefaultBilling         string
+		DefaultShipping        string
+		Taxvat                 string
+		Confirmation           string
+		Gender                 string
+		FailuresNum            string
+		FirstFailure           string
+		LockExpires            string
+	}{
+		EntityID:               "entity_id",
+		WebsiteID:              "website_id",
+		Email:                  "email",
+		GroupID:                "group_id",
+		IncrementID:            "increment_id",
+		StoreID:                "store_id",
+		CreatedAt:              "created_at",
+		UpdatedAt:              "updated_at",
+		IsActive:               "is_active",
+		DisableAutoGroupChange: "disable_auto_group_change",
+		CreatedIn:              "created_in",
+		Prefix:                 "prefix",
+		Firstname:              "firstname",
+		Middlename:             "middlename",
+		Lastname:               "lastname",
+		Suffix:                 "suffix",
+		Dob:                    "dob",
+		passwordHash:           "password_hash",
+		RpToken:                "rp_token",
+		RpTokenCreatedAt:       "rp_token_created_at",
+		DefaultBilling:         "default_billing",
+		DefaultShipping:        "default_shipping",
+		Taxvat:                 "taxvat",
+		Confirmation:           "confirmation",
+		Gender:                 "gender",
+		FailuresNum:            "failures_num",
+		FirstFailure:           "first_failure",
+		LockExpires:            "lock_expires",
+	},
+	DmlgenTypes: struct {
+		ID             string
+		ColBigint1     string
+		ColBigint2     string
+		ColBigint3     string
+		ColBigint4     string
+		ColBlob        string
+		ColDate1       string
+		ColDate2       string
+		ColDatetime1   string
+		ColDatetime2   string
+		ColDecimal101  string
+		ColDecimal124  string
+		PriceA124      string
+		PriceB124      string
+		ColDecimal123  string
+		ColDecimal206  string
+		ColDecimal2412 string
+		ColInt1        string
+		ColInt2        string
+		ColInt3        string
+		ColInt4        string
+		ColLongtext1   string
+		ColLongtext2   string
+		ColMediumblob  string
+		ColMediumtext1 string
+		ColMediumtext2 string
+		ColSmallint1   string
+		ColSmallint2   string
+		ColSmallint3   string
+		ColSmallint4   string
+		HasSmallint5   string
+		IsSmallint5    string
+		ColText        string
+		ColTimestamp1  string
+		ColTimestamp2  string
+		ColTinyint1    string
+		ColVarchar1    string
+		ColVarchar100  string
+		ColVarchar16   string
+		ColChar1       string
+		ColChar2       string
+	}{
+		ID:             "id",
+		ColBigint1:     "col_bigint_1",
+		ColBigint2:     "col_bigint_2",
+		ColBigint3:     "col_bigint_3",
+		ColBigint4:     "col_bigint_4",
+		ColBlob:        "col_blob",
+		ColDate1:       "col_date_1",
+		ColDate2:       "col_date_2",
+		ColDatetime1:   "col_datetime_1",
+		ColDatetime2:   "col_datetime_2",
+		ColDecimal101:  "col_decimal_10_1",
+		ColDecimal124:  "col_decimal_12_4",
+		PriceA124:      "price_a_12_4",
+		PriceB124:      "price_b_12_4",
+		ColDecimal123:  "col_decimal_12_3",
+		ColDecimal206:  "col_decimal_20_6",
+		ColDecimal2412: "col_decimal_24_12",
+		ColInt1:        "col_int_1",
+		ColInt2:        "col_int_2",
+		ColInt3:        "col_int_3",
+		ColInt4:        "col_int_4",
+		ColLongtext1:   "col_longtext_1",
+		ColLongtext2:   "col_longtext_2",
+		ColMediumblob:  "col_mediumblob",
+		ColMediumtext1: "col_mediumtext_1",
+		ColMediumtext2: "col_mediumtext_2",
+		ColSmallint1:   "col_smallint_1",
+		ColSmallint2:   "col_smallint_2",
+		ColSmallint3:   "col_smallint_3",
+		ColSmallint4:   "col_smallint_4",
+		HasSmallint5:   "has_smallint_5",
+		IsSmallint5:    "is_smallint_5",
+		ColText:        "col_text",
+		ColTimestamp1:  "col_timestamp_1",
+		ColTimestamp2:  "col_timestamp_2",
+		ColTinyint1:    "col_tinyint_1",
+		ColVarchar1:    "col_varchar_1",
+		ColVarchar100:  "col_varchar_100",
+		ColVarchar16:   "col_varchar_16",
+		ColChar1:       "col_char_1",
+		ColChar2:       "col_char_2",
+	},
+	SalesOrderStatusState: struct {
+		Status         string
+		State          string
+		IsDefault      string
+		VisibleOnFront string
+	}{
+		Status:         "status",
+		State:          "state",
+		IsDefault:      "is_default",
+		VisibleOnFront: "visible_on_front",
+	},
+	ViewCustomerAutoIncrement: struct {
+		CeEntityID string
+		Email      string
+		Firstname  string
+		Lastname   string
+		City       string
+	}{
+		CeEntityID: "ce_entity_id",
+		Email:      "email",
+		Firstname:  "firstname",
+		Lastname:   "lastname",
+		City:       "city",
+	},
+	ViewCustomerNoAutoIncrement: struct {
+		Email     string
+		Firstname string
+		Lastname  string
+		City      string
+	}{
+		Email:     "email",
+		Firstname: "firstname",
+		Lastname:  "lastname",
+		City:      "city",
+	},
+}
 
 var dbmEmptyOpts = []dml.DBRFunc{func(dbr *dml.DBR) {
 	// do nothing because Clone gets called automatically
@@ -151,6 +559,7 @@ func (dbm DBM) eventCatalogProductIndexEAVDecimalIDXFunc(ctx context.Context, ef
 	}
 	return nil
 }
+
 func (dbm DBM) eventCoreConfigurationFunc(ctx context.Context, ef dml.EventFlag, ec *CoreConfigurations, e *CoreConfiguration) error {
 	if len(dbm.option.eventCoreConfigurationFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
 		return nil
@@ -162,6 +571,7 @@ func (dbm DBM) eventCoreConfigurationFunc(ctx context.Context, ef dml.EventFlag,
 	}
 	return nil
 }
+
 func (dbm DBM) eventCustomerAddressEntityFunc(ctx context.Context, ef dml.EventFlag, ec *CustomerAddressEntities, e *CustomerAddressEntity) error {
 	if len(dbm.option.eventCustomerAddressEntityFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
 		return nil
@@ -173,6 +583,7 @@ func (dbm DBM) eventCustomerAddressEntityFunc(ctx context.Context, ef dml.EventF
 	}
 	return nil
 }
+
 func (dbm DBM) eventCustomerEntityFunc(ctx context.Context, ef dml.EventFlag, ec *CustomerEntities, e *CustomerEntity) error {
 	if len(dbm.option.eventCustomerEntityFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
 		return nil
@@ -184,6 +595,7 @@ func (dbm DBM) eventCustomerEntityFunc(ctx context.Context, ef dml.EventFlag, ec
 	}
 	return nil
 }
+
 func (dbm DBM) eventDmlgenTypesFunc(ctx context.Context, ef dml.EventFlag, ec *DmlgenTypesCollection, e *DmlgenTypes) error {
 	if len(dbm.option.eventDmlgenTypesFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
 		return nil
@@ -195,6 +607,7 @@ func (dbm DBM) eventDmlgenTypesFunc(ctx context.Context, ef dml.EventFlag, ec *D
 	}
 	return nil
 }
+
 func (dbm DBM) eventSalesOrderStatusStateFunc(ctx context.Context, ef dml.EventFlag, ec *SalesOrderStatusStates, e *SalesOrderStatusState) error {
 	if len(dbm.option.eventSalesOrderStatusStateFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
 		return nil
@@ -206,6 +619,7 @@ func (dbm DBM) eventSalesOrderStatusStateFunc(ctx context.Context, ef dml.EventF
 	}
 	return nil
 }
+
 func (dbm DBM) eventViewCustomerAutoIncrementFunc(ctx context.Context, ef dml.EventFlag, ec *ViewCustomerAutoIncrements, e *ViewCustomerAutoIncrement) error {
 	if len(dbm.option.eventViewCustomerAutoIncrementFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
 		return nil
@@ -217,6 +631,7 @@ func (dbm DBM) eventViewCustomerAutoIncrementFunc(ctx context.Context, ef dml.Ev
 	}
 	return nil
 }
+
 func (dbm DBM) eventViewCustomerNoAutoIncrementFunc(ctx context.Context, ef dml.EventFlag, ec *ViewCustomerNoAutoIncrements, e *ViewCustomerNoAutoIncrement) error {
 	if len(dbm.option.eventViewCustomerNoAutoIncrementFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
 		return nil
@@ -431,6 +846,7 @@ func (e *CatalogProductIndexEAVDecimalIDX) Load(ctx context.Context, dbm *DBM, a
 	}
 	return errors.WithStack(dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterSelect, nil, e))
 }
+
 func (e *CatalogProductIndexEAVDecimalIDX) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXDeleteByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -448,6 +864,7 @@ func (e *CatalogProductIndexEAVDecimalIDX) Delete(ctx context.Context, dbm *DBM,
 	}
 	return res, nil
 }
+
 func (e *CatalogProductIndexEAVDecimalIDX) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXUpdateByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -465,6 +882,7 @@ func (e *CatalogProductIndexEAVDecimalIDX) Update(ctx context.Context, dbm *DBM,
 	}
 	return res, nil
 }
+
 func (e *CatalogProductIndexEAVDecimalIDX) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXInsert")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -482,6 +900,7 @@ func (e *CatalogProductIndexEAVDecimalIDX) Insert(ctx context.Context, dbm *DBM,
 	}
 	return res, nil
 }
+
 func (e *CatalogProductIndexEAVDecimalIDX) Upsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXUpsertByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -573,7 +992,8 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) Cut(i, j int) *CatalogProductIndex
 	cc.Data = z
 	return cc
 }
-func (cc *CatalogProductIndexEAVDecimalIDXes) scanColumns(cm *dml.ColumnMap, e *CatalogProductIndexEAVDecimalIDX, idx uint64) error {
+
+func (cc *CatalogProductIndexEAVDecimalIDXes) scanColumns(cm *dml.ColumnMap, e *CatalogProductIndexEAVDecimalIDX) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
@@ -585,8 +1005,8 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) scanColumns(cm *dml.ColumnMap, e *
 func (cc *CatalogProductIndexEAVDecimalIDXes) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
-		for i, e := range cc.Data {
-			if err := cc.scanColumns(cm, e, uint64(i)); err != nil {
+		for _, e := range cc.Data {
+			if err := cc.scanColumns(cm, e); err != nil {
 				return errors.WithStack(err)
 			}
 		}
@@ -594,11 +1014,11 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) MapColumns(cm *dml.ColumnMap) erro
 		if cm.Count == 0 {
 			cc.Data = cc.Data[:0]
 		}
-		e := new(CatalogProductIndexEAVDecimalIDX)
-		if err := cc.scanColumns(cm, e, cm.Count); err != nil {
+		var e CatalogProductIndexEAVDecimalIDX
+		if err := cc.scanColumns(cm, &e); err != nil {
 			return errors.WithStack(err)
 		}
-		cc.Data = append(cc.Data, e)
+		cc.Data = append(cc.Data, &e)
 	case dml.ColumnMapCollectionReadSet:
 		for cm.Next() {
 			switch c := cm.Column(); c {
@@ -614,7 +1034,6 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) MapColumns(cm *dml.ColumnMap) erro
 				return errors.NotFound.Newf("[dmltestgenerated] CatalogProductIndexEAVDecimalIDXes Column %q not found", c)
 			}
 		} // end for cm.Next
-
 	default:
 		return errors.NotSupported.Newf("[dmltestgenerated] Unknown Mode: %q", string(m))
 	}
@@ -659,6 +1078,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) DBLoad(ctx context.Context, dbm *D
 	}
 	return errors.WithStack(dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterSelect, cc, nil))
 }
+
 func (cc *CatalogProductIndexEAVDecimalIDXes) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXesDeleteByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -676,6 +1096,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) DBDelete(ctx context.Context, dbm 
 	}
 	return res, nil
 }
+
 func (cc *CatalogProductIndexEAVDecimalIDXes) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXesUpdateByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -702,6 +1123,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) DBUpdate(ctx context.Context, dbm 
 	}
 	return errors.WithStack(dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterUpdate, cc, nil))
 }
+
 func (cc *CatalogProductIndexEAVDecimalIDXes) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXesInsert")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -719,6 +1141,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) DBInsert(ctx context.Context, dbm 
 	}
 	return res, nil
 }
+
 func (cc *CatalogProductIndexEAVDecimalIDXes) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXesUpsertByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -947,6 +1370,7 @@ func (e *CoreConfiguration) MapColumns(cm *dml.ColumnMap) error {
 	}
 	return errors.WithStack(cm.Err())
 }
+
 func (e *CoreConfiguration) Load(ctx context.Context, dbm *DBM, primaryKey uint32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationSelectByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -965,6 +1389,7 @@ func (e *CoreConfiguration) Load(ctx context.Context, dbm *DBM, primaryKey uint3
 	}
 	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterSelect, nil, e))
 }
+
 func (e *CoreConfiguration) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationDeleteByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -982,6 +1407,7 @@ func (e *CoreConfiguration) Delete(ctx context.Context, dbm *DBM, opts ...dml.DB
 	}
 	return res, nil
 }
+
 func (e *CoreConfiguration) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationUpdateByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -999,6 +1425,7 @@ func (e *CoreConfiguration) Update(ctx context.Context, dbm *DBM, opts ...dml.DB
 	}
 	return res, nil
 }
+
 func (e *CoreConfiguration) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationInsert")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -1016,6 +1443,7 @@ func (e *CoreConfiguration) Insert(ctx context.Context, dbm *DBM, opts ...dml.DB
 	}
 	return res, nil
 }
+
 func (e *CoreConfiguration) Upsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationUpsertByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -1119,11 +1547,12 @@ func (cc *CoreConfigurations) Cut(i, j int) *CoreConfigurations {
 // AssignLastInsertID traverses through the slice and sets an incrementing new ID
 // to each entity.
 func (cc *CoreConfigurations) AssignLastInsertID(id int64) {
-	for i := int64(0); i < int64(len(cc.Data)); i++ {
-		cc.Data[i].AssignLastInsertID(id + i)
+	for i := 0; i < len(cc.Data); i++ {
+		cc.Data[i].AssignLastInsertID(id + int64(i))
 	}
 }
-func (cc *CoreConfigurations) scanColumns(cm *dml.ColumnMap, e *CoreConfiguration, idx uint64) error {
+
+func (cc *CoreConfigurations) scanColumns(cm *dml.ColumnMap, e *CoreConfiguration) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
@@ -1135,8 +1564,8 @@ func (cc *CoreConfigurations) scanColumns(cm *dml.ColumnMap, e *CoreConfiguratio
 func (cc *CoreConfigurations) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
-		for i, e := range cc.Data {
-			if err := cc.scanColumns(cm, e, uint64(i)); err != nil {
+		for _, e := range cc.Data {
+			if err := cc.scanColumns(cm, e); err != nil {
 				return errors.WithStack(err)
 			}
 		}
@@ -1144,11 +1573,11 @@ func (cc *CoreConfigurations) MapColumns(cm *dml.ColumnMap) error {
 		if cm.Count == 0 {
 			cc.Data = cc.Data[:0]
 		}
-		e := new(CoreConfiguration)
-		if err := cc.scanColumns(cm, e, cm.Count); err != nil {
+		var e CoreConfiguration
+		if err := cc.scanColumns(cm, &e); err != nil {
 			return errors.WithStack(err)
 		}
-		cc.Data = append(cc.Data, e)
+		cc.Data = append(cc.Data, &e)
 	case dml.ColumnMapCollectionReadSet:
 		for cm.Next() {
 			switch c := cm.Column(); c {
@@ -1158,12 +1587,12 @@ func (cc *CoreConfigurations) MapColumns(cm *dml.ColumnMap) error {
 				return errors.NotFound.Newf("[dmltestgenerated] CoreConfigurations Column %q not found", c)
 			}
 		} // end for cm.Next
-
 	default:
 		return errors.NotSupported.Newf("[dmltestgenerated] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }
+
 func (cc *CoreConfigurations) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationsDBLoad")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -1188,6 +1617,7 @@ func (cc *CoreConfigurations) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint
 	}
 	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterSelect, cc, nil))
 }
+
 func (cc *CoreConfigurations) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationsDeleteByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -1205,6 +1635,7 @@ func (cc *CoreConfigurations) DBDelete(ctx context.Context, dbm *DBM, opts ...dm
 	}
 	return res, nil
 }
+
 func (cc *CoreConfigurations) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationsUpdateByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -1231,6 +1662,7 @@ func (cc *CoreConfigurations) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn
 	}
 	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpdate, cc, nil))
 }
+
 func (cc *CoreConfigurations) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationsInsert")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -1248,6 +1680,7 @@ func (cc *CoreConfigurations) DBInsert(ctx context.Context, dbm *DBM, opts ...dm
 	}
 	return res, nil
 }
+
 func (cc *CoreConfigurations) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationsUpsertByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -1500,6 +1933,7 @@ func (e *CustomerAddressEntity) MapColumns(cm *dml.ColumnMap) error {
 	}
 	return errors.WithStack(cm.Err())
 }
+
 func (e *CustomerAddressEntity) Load(ctx context.Context, dbm *DBM, primaryKey uint32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntitySelectByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -1518,6 +1952,7 @@ func (e *CustomerAddressEntity) Load(ctx context.Context, dbm *DBM, primaryKey u
 	}
 	return errors.WithStack(dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterSelect, nil, e))
 }
+
 func (e *CustomerAddressEntity) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntityDeleteByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -1535,6 +1970,7 @@ func (e *CustomerAddressEntity) Delete(ctx context.Context, dbm *DBM, opts ...dm
 	}
 	return res, nil
 }
+
 func (e *CustomerAddressEntity) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntityUpdateByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -1552,6 +1988,7 @@ func (e *CustomerAddressEntity) Update(ctx context.Context, dbm *DBM, opts ...dm
 	}
 	return res, nil
 }
+
 func (e *CustomerAddressEntity) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntityInsert")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -1569,6 +2006,7 @@ func (e *CustomerAddressEntity) Insert(ctx context.Context, dbm *DBM, opts ...dm
 	}
 	return res, nil
 }
+
 func (e *CustomerAddressEntity) Upsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntityUpsertByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -1693,11 +2131,12 @@ func (cc *CustomerAddressEntities) Cut(i, j int) *CustomerAddressEntities {
 // AssignLastInsertID traverses through the slice and sets an incrementing new ID
 // to each entity.
 func (cc *CustomerAddressEntities) AssignLastInsertID(id int64) {
-	for i := int64(0); i < int64(len(cc.Data)); i++ {
-		cc.Data[i].AssignLastInsertID(id + i)
+	for i := 0; i < len(cc.Data); i++ {
+		cc.Data[i].AssignLastInsertID(id + int64(i))
 	}
 }
-func (cc *CustomerAddressEntities) scanColumns(cm *dml.ColumnMap, e *CustomerAddressEntity, idx uint64) error {
+
+func (cc *CustomerAddressEntities) scanColumns(cm *dml.ColumnMap, e *CustomerAddressEntity) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
@@ -1709,8 +2148,8 @@ func (cc *CustomerAddressEntities) scanColumns(cm *dml.ColumnMap, e *CustomerAdd
 func (cc *CustomerAddressEntities) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
-		for i, e := range cc.Data {
-			if err := cc.scanColumns(cm, e, uint64(i)); err != nil {
+		for _, e := range cc.Data {
+			if err := cc.scanColumns(cm, e); err != nil {
 				return errors.WithStack(err)
 			}
 		}
@@ -1718,11 +2157,11 @@ func (cc *CustomerAddressEntities) MapColumns(cm *dml.ColumnMap) error {
 		if cm.Count == 0 {
 			cc.Data = cc.Data[:0]
 		}
-		e := new(CustomerAddressEntity)
-		if err := cc.scanColumns(cm, e, cm.Count); err != nil {
+		var e CustomerAddressEntity
+		if err := cc.scanColumns(cm, &e); err != nil {
 			return errors.WithStack(err)
 		}
-		cc.Data = append(cc.Data, e)
+		cc.Data = append(cc.Data, &e)
 	case dml.ColumnMapCollectionReadSet:
 		for cm.Next() {
 			switch c := cm.Column(); c {
@@ -1732,12 +2171,12 @@ func (cc *CustomerAddressEntities) MapColumns(cm *dml.ColumnMap) error {
 				return errors.NotFound.Newf("[dmltestgenerated] CustomerAddressEntities Column %q not found", c)
 			}
 		} // end for cm.Next
-
 	default:
 		return errors.NotSupported.Newf("[dmltestgenerated] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }
+
 func (cc *CustomerAddressEntities) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntitiesDBLoad")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -1762,6 +2201,7 @@ func (cc *CustomerAddressEntities) DBLoad(ctx context.Context, dbm *DBM, pkIDs [
 	}
 	return errors.WithStack(dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterSelect, cc, nil))
 }
+
 func (cc *CustomerAddressEntities) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntitiesDeleteByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -1779,6 +2219,7 @@ func (cc *CustomerAddressEntities) DBDelete(ctx context.Context, dbm *DBM, opts 
 	}
 	return res, nil
 }
+
 func (cc *CustomerAddressEntities) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntitiesUpdateByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -1805,6 +2246,7 @@ func (cc *CustomerAddressEntities) DBUpdate(ctx context.Context, dbm *DBM, resCh
 	}
 	return errors.WithStack(dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterUpdate, cc, nil))
 }
+
 func (cc *CustomerAddressEntities) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntitiesInsert")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -1822,6 +2264,7 @@ func (cc *CustomerAddressEntities) DBInsert(ctx context.Context, dbm *DBM, opts 
 	}
 	return res, nil
 }
+
 func (cc *CustomerAddressEntities) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntitiesUpsertByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -2064,6 +2507,7 @@ func (e *CustomerEntity) MapColumns(cm *dml.ColumnMap) error {
 	}
 	return errors.WithStack(cm.Err())
 }
+
 func (e *CustomerEntity) Load(ctx context.Context, dbm *DBM, primaryKey uint32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntitySelectByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -2082,6 +2526,7 @@ func (e *CustomerEntity) Load(ctx context.Context, dbm *DBM, primaryKey uint32, 
 	}
 	return errors.WithStack(dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterSelect, nil, e))
 }
+
 func (e *CustomerEntity) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntityDeleteByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -2099,6 +2544,7 @@ func (e *CustomerEntity) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFu
 	}
 	return res, nil
 }
+
 func (e *CustomerEntity) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntityUpdateByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -2116,6 +2562,7 @@ func (e *CustomerEntity) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFu
 	}
 	return res, nil
 }
+
 func (e *CustomerEntity) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntityInsert")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -2133,6 +2580,7 @@ func (e *CustomerEntity) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFu
 	}
 	return res, nil
 }
+
 func (e *CustomerEntity) Upsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntityUpsertByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -2266,11 +2714,12 @@ func (cc *CustomerEntities) Cut(i, j int) *CustomerEntities {
 // AssignLastInsertID traverses through the slice and sets an incrementing new ID
 // to each entity.
 func (cc *CustomerEntities) AssignLastInsertID(id int64) {
-	for i := int64(0); i < int64(len(cc.Data)); i++ {
-		cc.Data[i].AssignLastInsertID(id + i)
+	for i := 0; i < len(cc.Data); i++ {
+		cc.Data[i].AssignLastInsertID(id + int64(i))
 	}
 }
-func (cc *CustomerEntities) scanColumns(cm *dml.ColumnMap, e *CustomerEntity, idx uint64) error {
+
+func (cc *CustomerEntities) scanColumns(cm *dml.ColumnMap, e *CustomerEntity) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
@@ -2282,8 +2731,8 @@ func (cc *CustomerEntities) scanColumns(cm *dml.ColumnMap, e *CustomerEntity, id
 func (cc *CustomerEntities) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
-		for i, e := range cc.Data {
-			if err := cc.scanColumns(cm, e, uint64(i)); err != nil {
+		for _, e := range cc.Data {
+			if err := cc.scanColumns(cm, e); err != nil {
 				return errors.WithStack(err)
 			}
 		}
@@ -2291,11 +2740,11 @@ func (cc *CustomerEntities) MapColumns(cm *dml.ColumnMap) error {
 		if cm.Count == 0 {
 			cc.Data = cc.Data[:0]
 		}
-		e := new(CustomerEntity)
-		if err := cc.scanColumns(cm, e, cm.Count); err != nil {
+		var e CustomerEntity
+		if err := cc.scanColumns(cm, &e); err != nil {
 			return errors.WithStack(err)
 		}
-		cc.Data = append(cc.Data, e)
+		cc.Data = append(cc.Data, &e)
 	case dml.ColumnMapCollectionReadSet:
 		for cm.Next() {
 			switch c := cm.Column(); c {
@@ -2305,12 +2754,12 @@ func (cc *CustomerEntities) MapColumns(cm *dml.ColumnMap) error {
 				return errors.NotFound.Newf("[dmltestgenerated] CustomerEntities Column %q not found", c)
 			}
 		} // end for cm.Next
-
 	default:
 		return errors.NotSupported.Newf("[dmltestgenerated] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }
+
 func (cc *CustomerEntities) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntitiesDBLoad")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -2335,6 +2784,7 @@ func (cc *CustomerEntities) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint32
 	}
 	return errors.WithStack(dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterSelect, cc, nil))
 }
+
 func (cc *CustomerEntities) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntitiesDeleteByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -2352,6 +2802,7 @@ func (cc *CustomerEntities) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.
 	}
 	return res, nil
 }
+
 func (cc *CustomerEntities) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntitiesUpdateByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -2378,6 +2829,7 @@ func (cc *CustomerEntities) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn f
 	}
 	return errors.WithStack(dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterUpdate, cc, nil))
 }
+
 func (cc *CustomerEntities) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntitiesInsert")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -2395,6 +2847,7 @@ func (cc *CustomerEntities) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.
 	}
 	return res, nil
 }
+
 func (cc *CustomerEntities) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntitiesUpsertByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -2674,6 +3127,7 @@ func (e *DmlgenTypes) MapColumns(cm *dml.ColumnMap) error {
 	}
 	return errors.WithStack(cm.Err())
 }
+
 func (e *DmlgenTypes) Load(ctx context.Context, dbm *DBM, primaryKey int32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesSelectByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -2692,6 +3146,7 @@ func (e *DmlgenTypes) Load(ctx context.Context, dbm *DBM, primaryKey int32, opts
 	}
 	return errors.WithStack(dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterSelect, nil, e))
 }
+
 func (e *DmlgenTypes) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesDeleteByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -2709,6 +3164,7 @@ func (e *DmlgenTypes) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc)
 	}
 	return res, nil
 }
+
 func (e *DmlgenTypes) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesUpdateByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -2726,6 +3182,7 @@ func (e *DmlgenTypes) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc)
 	}
 	return res, nil
 }
+
 func (e *DmlgenTypes) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesInsert")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -2743,6 +3200,7 @@ func (e *DmlgenTypes) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc)
 	}
 	return res, nil
 }
+
 func (e *DmlgenTypes) Upsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesUpsertByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -2880,11 +3338,12 @@ func (cc *DmlgenTypesCollection) Cut(i, j int) *DmlgenTypesCollection {
 // AssignLastInsertID traverses through the slice and sets an incrementing new ID
 // to each entity.
 func (cc *DmlgenTypesCollection) AssignLastInsertID(id int64) {
-	for i := int64(0); i < int64(len(cc.Data)); i++ {
-		cc.Data[i].AssignLastInsertID(id + i)
+	for i := 0; i < len(cc.Data); i++ {
+		cc.Data[i].AssignLastInsertID(id + int64(i))
 	}
 }
-func (cc *DmlgenTypesCollection) scanColumns(cm *dml.ColumnMap, e *DmlgenTypes, idx uint64) error {
+
+func (cc *DmlgenTypesCollection) scanColumns(cm *dml.ColumnMap, e *DmlgenTypes) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
@@ -2896,8 +3355,8 @@ func (cc *DmlgenTypesCollection) scanColumns(cm *dml.ColumnMap, e *DmlgenTypes, 
 func (cc *DmlgenTypesCollection) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
-		for i, e := range cc.Data {
-			if err := cc.scanColumns(cm, e, uint64(i)); err != nil {
+		for _, e := range cc.Data {
+			if err := cc.scanColumns(cm, e); err != nil {
 				return errors.WithStack(err)
 			}
 		}
@@ -2905,11 +3364,11 @@ func (cc *DmlgenTypesCollection) MapColumns(cm *dml.ColumnMap) error {
 		if cm.Count == 0 {
 			cc.Data = cc.Data[:0]
 		}
-		e := new(DmlgenTypes)
-		if err := cc.scanColumns(cm, e, cm.Count); err != nil {
+		var e DmlgenTypes
+		if err := cc.scanColumns(cm, &e); err != nil {
 			return errors.WithStack(err)
 		}
-		cc.Data = append(cc.Data, e)
+		cc.Data = append(cc.Data, &e)
 	case dml.ColumnMapCollectionReadSet:
 		for cm.Next() {
 			switch c := cm.Column(); c {
@@ -2919,12 +3378,12 @@ func (cc *DmlgenTypesCollection) MapColumns(cm *dml.ColumnMap) error {
 				return errors.NotFound.Newf("[dmltestgenerated] DmlgenTypesCollection Column %q not found", c)
 			}
 		} // end for cm.Next
-
 	default:
 		return errors.NotSupported.Newf("[dmltestgenerated] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }
+
 func (cc *DmlgenTypesCollection) DBLoad(ctx context.Context, dbm *DBM, pkIDs []int32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesCollectionDBLoad")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -2949,6 +3408,7 @@ func (cc *DmlgenTypesCollection) DBLoad(ctx context.Context, dbm *DBM, pkIDs []i
 	}
 	return errors.WithStack(dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterSelect, cc, nil))
 }
+
 func (cc *DmlgenTypesCollection) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesCollectionDeleteByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -2966,6 +3426,7 @@ func (cc *DmlgenTypesCollection) DBDelete(ctx context.Context, dbm *DBM, opts ..
 	}
 	return res, nil
 }
+
 func (cc *DmlgenTypesCollection) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesCollectionUpdateByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -2992,6 +3453,7 @@ func (cc *DmlgenTypesCollection) DBUpdate(ctx context.Context, dbm *DBM, resChec
 	}
 	return errors.WithStack(dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterUpdate, cc, nil))
 }
+
 func (cc *DmlgenTypesCollection) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesCollectionInsert")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -3009,6 +3471,7 @@ func (cc *DmlgenTypesCollection) DBInsert(ctx context.Context, dbm *DBM, opts ..
 	}
 	return res, nil
 }
+
 func (cc *DmlgenTypesCollection) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesCollectionUpsertByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -3317,6 +3780,7 @@ func (e *SalesOrderStatusState) Load(ctx context.Context, dbm *DBM, arg SalesOrd
 	}
 	return errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterSelect, nil, e))
 }
+
 func (e *SalesOrderStatusState) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStateDeleteByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -3334,6 +3798,7 @@ func (e *SalesOrderStatusState) Delete(ctx context.Context, dbm *DBM, opts ...dm
 	}
 	return res, nil
 }
+
 func (e *SalesOrderStatusState) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStateUpdateByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -3351,6 +3816,7 @@ func (e *SalesOrderStatusState) Update(ctx context.Context, dbm *DBM, opts ...dm
 	}
 	return res, nil
 }
+
 func (e *SalesOrderStatusState) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStateInsert")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -3368,6 +3834,7 @@ func (e *SalesOrderStatusState) Insert(ctx context.Context, dbm *DBM, opts ...dm
 	}
 	return res, nil
 }
+
 func (e *SalesOrderStatusState) Upsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStateUpsertByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -3467,7 +3934,8 @@ func (cc *SalesOrderStatusStates) Cut(i, j int) *SalesOrderStatusStates {
 	cc.Data = z
 	return cc
 }
-func (cc *SalesOrderStatusStates) scanColumns(cm *dml.ColumnMap, e *SalesOrderStatusState, idx uint64) error {
+
+func (cc *SalesOrderStatusStates) scanColumns(cm *dml.ColumnMap, e *SalesOrderStatusState) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
@@ -3479,8 +3947,8 @@ func (cc *SalesOrderStatusStates) scanColumns(cm *dml.ColumnMap, e *SalesOrderSt
 func (cc *SalesOrderStatusStates) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
-		for i, e := range cc.Data {
-			if err := cc.scanColumns(cm, e, uint64(i)); err != nil {
+		for _, e := range cc.Data {
+			if err := cc.scanColumns(cm, e); err != nil {
 				return errors.WithStack(err)
 			}
 		}
@@ -3488,11 +3956,11 @@ func (cc *SalesOrderStatusStates) MapColumns(cm *dml.ColumnMap) error {
 		if cm.Count == 0 {
 			cc.Data = cc.Data[:0]
 		}
-		e := new(SalesOrderStatusState)
-		if err := cc.scanColumns(cm, e, cm.Count); err != nil {
+		var e SalesOrderStatusState
+		if err := cc.scanColumns(cm, &e); err != nil {
 			return errors.WithStack(err)
 		}
-		cc.Data = append(cc.Data, e)
+		cc.Data = append(cc.Data, &e)
 	case dml.ColumnMapCollectionReadSet:
 		for cm.Next() {
 			switch c := cm.Column(); c {
@@ -3504,7 +3972,6 @@ func (cc *SalesOrderStatusStates) MapColumns(cm *dml.ColumnMap) error {
 				return errors.NotFound.Newf("[dmltestgenerated] SalesOrderStatusStates Column %q not found", c)
 			}
 		} // end for cm.Next
-
 	default:
 		return errors.NotSupported.Newf("[dmltestgenerated] Unknown Mode: %q", string(m))
 	}
@@ -3545,6 +4012,7 @@ func (cc *SalesOrderStatusStates) DBLoad(ctx context.Context, dbm *DBM, pkIDs []
 	}
 	return errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterSelect, cc, nil))
 }
+
 func (cc *SalesOrderStatusStates) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStatesDeleteByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -3562,6 +4030,7 @@ func (cc *SalesOrderStatusStates) DBDelete(ctx context.Context, dbm *DBM, opts .
 	}
 	return res, nil
 }
+
 func (cc *SalesOrderStatusStates) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStatesUpdateByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -3588,6 +4057,7 @@ func (cc *SalesOrderStatusStates) DBUpdate(ctx context.Context, dbm *DBM, resChe
 	}
 	return errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterUpdate, cc, nil))
 }
+
 func (cc *SalesOrderStatusStates) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStatesInsert")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -3605,6 +4075,7 @@ func (cc *SalesOrderStatusStates) DBInsert(ctx context.Context, dbm *DBM, opts .
 	}
 	return res, nil
 }
+
 func (cc *SalesOrderStatusStates) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStatesUpsertByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -3786,6 +4257,7 @@ func (e *ViewCustomerAutoIncrement) MapColumns(cm *dml.ColumnMap) error {
 	}
 	return errors.WithStack(cm.Err())
 }
+
 func (e *ViewCustomerAutoIncrement) Load(ctx context.Context, dbm *DBM, primaryKey uint32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "ViewCustomerAutoIncrementSelectByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -3887,7 +4359,8 @@ func (cc *ViewCustomerAutoIncrements) Cut(i, j int) *ViewCustomerAutoIncrements 
 	cc.Data = z
 	return cc
 }
-func (cc *ViewCustomerAutoIncrements) scanColumns(cm *dml.ColumnMap, e *ViewCustomerAutoIncrement, idx uint64) error {
+
+func (cc *ViewCustomerAutoIncrements) scanColumns(cm *dml.ColumnMap, e *ViewCustomerAutoIncrement) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
@@ -3899,8 +4372,8 @@ func (cc *ViewCustomerAutoIncrements) scanColumns(cm *dml.ColumnMap, e *ViewCust
 func (cc *ViewCustomerAutoIncrements) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
-		for i, e := range cc.Data {
-			if err := cc.scanColumns(cm, e, uint64(i)); err != nil {
+		for _, e := range cc.Data {
+			if err := cc.scanColumns(cm, e); err != nil {
 				return errors.WithStack(err)
 			}
 		}
@@ -3908,24 +4381,17 @@ func (cc *ViewCustomerAutoIncrements) MapColumns(cm *dml.ColumnMap) error {
 		if cm.Count == 0 {
 			cc.Data = cc.Data[:0]
 		}
-		e := new(ViewCustomerAutoIncrement)
-		if err := cc.scanColumns(cm, e, cm.Count); err != nil {
+		var e ViewCustomerAutoIncrement
+		if err := cc.scanColumns(cm, &e); err != nil {
 			return errors.WithStack(err)
 		}
-		cc.Data = append(cc.Data, e)
-	case dml.ColumnMapCollectionReadSet:
-		for cm.Next() {
-			switch c := cm.Column(); c {
-			default:
-				return errors.NotFound.Newf("[dmltestgenerated] ViewCustomerAutoIncrements Column %q not found", c)
-			}
-		} // end for cm.Next
-
+		cc.Data = append(cc.Data, &e)
 	default:
 		return errors.NotSupported.Newf("[dmltestgenerated] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }
+
 func (cc *ViewCustomerAutoIncrements) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "ViewCustomerAutoIncrementsDBLoad")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
@@ -4163,7 +4629,8 @@ func (cc *ViewCustomerNoAutoIncrements) Cut(i, j int) *ViewCustomerNoAutoIncreme
 	cc.Data = z
 	return cc
 }
-func (cc *ViewCustomerNoAutoIncrements) scanColumns(cm *dml.ColumnMap, e *ViewCustomerNoAutoIncrement, idx uint64) error {
+
+func (cc *ViewCustomerNoAutoIncrements) scanColumns(cm *dml.ColumnMap, e *ViewCustomerNoAutoIncrement) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
@@ -4175,8 +4642,8 @@ func (cc *ViewCustomerNoAutoIncrements) scanColumns(cm *dml.ColumnMap, e *ViewCu
 func (cc *ViewCustomerNoAutoIncrements) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
-		for i, e := range cc.Data {
-			if err := cc.scanColumns(cm, e, uint64(i)); err != nil {
+		for _, e := range cc.Data {
+			if err := cc.scanColumns(cm, e); err != nil {
 				return errors.WithStack(err)
 			}
 		}
@@ -4184,19 +4651,11 @@ func (cc *ViewCustomerNoAutoIncrements) MapColumns(cm *dml.ColumnMap) error {
 		if cm.Count == 0 {
 			cc.Data = cc.Data[:0]
 		}
-		e := new(ViewCustomerNoAutoIncrement)
-		if err := cc.scanColumns(cm, e, cm.Count); err != nil {
+		var e ViewCustomerNoAutoIncrement
+		if err := cc.scanColumns(cm, &e); err != nil {
 			return errors.WithStack(err)
 		}
-		cc.Data = append(cc.Data, e)
-	case dml.ColumnMapCollectionReadSet:
-		for cm.Next() {
-			switch c := cm.Column(); c {
-			default:
-				return errors.NotFound.Newf("[dmltestgenerated] ViewCustomerNoAutoIncrements Column %q not found", c)
-			}
-		} // end for cm.Next
-
+		cc.Data = append(cc.Data, &e)
 	default:
 		return errors.NotSupported.Newf("[dmltestgenerated] Unknown Mode: %q", string(m))
 	}

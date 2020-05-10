@@ -5,13 +5,15 @@ package dmltestgenerated4
 import (
 	"context"
 	"database/sql"
+	"time"
+
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/storage/null"
-	"time"
 )
 
+// TableName constants define the names of all tables.
 const (
 	TableNameCoreConfiguration         = "core_configuration"
 	TableNameSalesOrderStatusState     = "sales_order_status_state"
@@ -316,11 +318,11 @@ func NewCoreConfigurations() *CoreConfigurations {
 // AssignLastInsertID traverses through the slice and sets an incrementing new ID
 // to each entity.
 func (cc *CoreConfigurations) AssignLastInsertID(id int64) {
-	for i := int64(0); i < int64(len(cc.Data)); i++ {
-		cc.Data[i].AssignLastInsertID(id + i)
+	for i := 0; i < len(cc.Data); i++ {
+		cc.Data[i].AssignLastInsertID(id + int64(i))
 	}
 }
-func (cc *CoreConfigurations) scanColumns(cm *dml.ColumnMap, e *CoreConfiguration, idx uint64) error {
+func (cc *CoreConfigurations) scanColumns(cm *dml.ColumnMap, e *CoreConfiguration) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
@@ -332,8 +334,8 @@ func (cc *CoreConfigurations) scanColumns(cm *dml.ColumnMap, e *CoreConfiguratio
 func (cc *CoreConfigurations) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
-		for i, e := range cc.Data {
-			if err := cc.scanColumns(cm, e, uint64(i)); err != nil {
+		for _, e := range cc.Data {
+			if err := cc.scanColumns(cm, e); err != nil {
 				return errors.WithStack(err)
 			}
 		}
@@ -341,11 +343,11 @@ func (cc *CoreConfigurations) MapColumns(cm *dml.ColumnMap) error {
 		if cm.Count == 0 {
 			cc.Data = cc.Data[:0]
 		}
-		e := new(CoreConfiguration)
-		if err := cc.scanColumns(cm, e, cm.Count); err != nil {
+		var e CoreConfiguration
+		if err := cc.scanColumns(cm, &e); err != nil {
 			return errors.WithStack(err)
 		}
-		cc.Data = append(cc.Data, e)
+		cc.Data = append(cc.Data, &e)
 	case dml.ColumnMapCollectionReadSet:
 		for cm.Next() {
 			switch c := cm.Column(); c {
@@ -355,7 +357,6 @@ func (cc *CoreConfigurations) MapColumns(cm *dml.ColumnMap) error {
 				return errors.NotFound.Newf("[dmltestgenerated4] CoreConfigurations Column %q not found", c)
 			}
 		} // end for cm.Next
-
 	default:
 		return errors.NotSupported.Newf("[dmltestgenerated4] Unknown Mode: %q", string(m))
 	}
@@ -552,7 +553,7 @@ func NewSalesOrderStatusStates() *SalesOrderStatusStates {
 		Data: make([]*SalesOrderStatusState, 0, 5),
 	}
 }
-func (cc *SalesOrderStatusStates) scanColumns(cm *dml.ColumnMap, e *SalesOrderStatusState, idx uint64) error {
+func (cc *SalesOrderStatusStates) scanColumns(cm *dml.ColumnMap, e *SalesOrderStatusState) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
@@ -564,8 +565,8 @@ func (cc *SalesOrderStatusStates) scanColumns(cm *dml.ColumnMap, e *SalesOrderSt
 func (cc *SalesOrderStatusStates) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
-		for i, e := range cc.Data {
-			if err := cc.scanColumns(cm, e, uint64(i)); err != nil {
+		for _, e := range cc.Data {
+			if err := cc.scanColumns(cm, e); err != nil {
 				return errors.WithStack(err)
 			}
 		}
@@ -573,11 +574,11 @@ func (cc *SalesOrderStatusStates) MapColumns(cm *dml.ColumnMap) error {
 		if cm.Count == 0 {
 			cc.Data = cc.Data[:0]
 		}
-		e := new(SalesOrderStatusState)
-		if err := cc.scanColumns(cm, e, cm.Count); err != nil {
+		var e SalesOrderStatusState
+		if err := cc.scanColumns(cm, &e); err != nil {
 			return errors.WithStack(err)
 		}
-		cc.Data = append(cc.Data, e)
+		cc.Data = append(cc.Data, &e)
 	case dml.ColumnMapCollectionReadSet:
 		for cm.Next() {
 			switch c := cm.Column(); c {
@@ -589,7 +590,6 @@ func (cc *SalesOrderStatusStates) MapColumns(cm *dml.ColumnMap) error {
 				return errors.NotFound.Newf("[dmltestgenerated4] SalesOrderStatusStates Column %q not found", c)
 			}
 		} // end for cm.Next
-
 	default:
 		return errors.NotSupported.Newf("[dmltestgenerated4] Unknown Mode: %q", string(m))
 	}
@@ -739,7 +739,7 @@ func NewViewCustomerAutoIncrements() *ViewCustomerAutoIncrements {
 		Data: make([]*ViewCustomerAutoIncrement, 0, 5),
 	}
 }
-func (cc *ViewCustomerAutoIncrements) scanColumns(cm *dml.ColumnMap, e *ViewCustomerAutoIncrement, idx uint64) error {
+func (cc *ViewCustomerAutoIncrements) scanColumns(cm *dml.ColumnMap, e *ViewCustomerAutoIncrement) error {
 	if err := e.MapColumns(cm); err != nil {
 		return errors.WithStack(err)
 	}
@@ -751,8 +751,8 @@ func (cc *ViewCustomerAutoIncrements) scanColumns(cm *dml.ColumnMap, e *ViewCust
 func (cc *ViewCustomerAutoIncrements) MapColumns(cm *dml.ColumnMap) error {
 	switch m := cm.Mode(); m {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
-		for i, e := range cc.Data {
-			if err := cc.scanColumns(cm, e, uint64(i)); err != nil {
+		for _, e := range cc.Data {
+			if err := cc.scanColumns(cm, e); err != nil {
 				return errors.WithStack(err)
 			}
 		}
@@ -760,19 +760,11 @@ func (cc *ViewCustomerAutoIncrements) MapColumns(cm *dml.ColumnMap) error {
 		if cm.Count == 0 {
 			cc.Data = cc.Data[:0]
 		}
-		e := new(ViewCustomerAutoIncrement)
-		if err := cc.scanColumns(cm, e, cm.Count); err != nil {
+		var e ViewCustomerAutoIncrement
+		if err := cc.scanColumns(cm, &e); err != nil {
 			return errors.WithStack(err)
 		}
-		cc.Data = append(cc.Data, e)
-	case dml.ColumnMapCollectionReadSet:
-		for cm.Next() {
-			switch c := cm.Column(); c {
-			default:
-				return errors.NotFound.Newf("[dmltestgenerated4] ViewCustomerAutoIncrements Column %q not found", c)
-			}
-		} // end for cm.Next
-
+		cc.Data = append(cc.Data, &e)
 	default:
 		return errors.NotSupported.Newf("[dmltestgenerated4] Unknown Mode: %q", string(m))
 	}

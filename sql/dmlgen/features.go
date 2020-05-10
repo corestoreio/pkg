@@ -28,6 +28,7 @@ const (
 	FeatureDBTracing // opentelemetry tracing
 	FeatureDBUpdate
 	FeatureDBUpsert
+	FeatureDBTableColumnNames
 	FeatureEntityCopy
 	FeatureEntityEmpty
 	FeatureEntityGetSetPrivateFields

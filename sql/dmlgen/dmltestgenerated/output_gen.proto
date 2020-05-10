@@ -4,13 +4,13 @@ package dmltestgenerated;
 import "github.com/gogo/protobuf/gogoproto/gogo.proto"; 
 import "google/protobuf/timestamp.proto"; 
 import "github.com/corestoreio/pkg/storage/null/null.proto"; 
-option go_package = "dmltestgenerated"; 
 option (gogoproto.typedecl_all) = false; 
 option (gogoproto.goproto_getters_all) = false; 
 option (gogoproto.unmarshaler_all) = true; 
 option (gogoproto.marshaler_all) = true; 
 option (gogoproto.sizer_all) = true; 
 option (gogoproto.goproto_unrecognized_all) = false; 
+option go_package =  "dmltestgenerated"; 
 // CatalogProductIndexEAVDecimalIDX represents a single row for
 // catalog_product_index_eav_decimal_idx DB table. Auto generated.
 // Table comment: Catalog Product EAV Decimal Indexer Index Table
