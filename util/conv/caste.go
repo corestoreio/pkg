@@ -11,6 +11,7 @@ import (
 	"html/template"
 	"math"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -630,7 +631,6 @@ func ToSliceE(i interface{}) ([]interface{}, error) {
 // ToStringSliceE casts an empty interface to a []string.
 func ToStringSliceE(i interface{}) ([]string, error) {
 	var a []string
-
 	switch v := i.(type) {
 	case []interface{}:
 		for _, u := range v {
@@ -641,6 +641,16 @@ func ToStringSliceE(i interface{}) ([]string, error) {
 		return v, nil
 	case string:
 		return strings.Fields(v), nil
+	case map[string]string:
+		keys := make([]string, 0, len(v))
+		for key := range v {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			a = append(a, k, v[k])
+		}
+		return a, nil
 	case interface{}:
 		str, err := ToStringE(v)
 		if err != nil {
