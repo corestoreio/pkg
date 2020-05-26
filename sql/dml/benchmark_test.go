@@ -406,3 +406,11 @@ func BenchmarkArgumentEncoding(b *testing.B) {
 		}
 	})
 }
+
+// BenchmarkHashSQL-4   	  617323	      1890 ns/op	      64 B/op	       4 allocs/op
+func BenchmarkHashSQL(b *testing.B) {
+	const sql = "WITH RECURSIVE `cte` (`n`) AS ((SELECT `name`, `d` AS `email` FROM `dml_person`) UNION ALL (SELECT `name`, `email` FROM `dml_person2` WHERE (`id` = ?))) SELECT * FROM `cte`"
+	for i := 0; i < b.N; i++ {
+		preprocessSink = hashSQL(sql)
+	}
+}

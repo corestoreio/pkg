@@ -51,7 +51,7 @@ func TestShow(t *testing.T) {
 		)
 	})
 	t.Run("variables LIKE interpolated", func(t *testing.T) {
-		s := NewShow().Variable().Like().WithDBR().TestWithArgs("aria%")
+		s := NewShow().Variable().Like().WithDBR(dbMock{}).TestWithArgs("aria%")
 		compareToSQL(t, s, errors.NoKind,
 			"SHOW VARIABLES LIKE ?",
 			"SHOW VARIABLES LIKE 'aria%'",
@@ -61,13 +61,13 @@ func TestShow(t *testing.T) {
 	t.Run("variables LIKE place holder", func(t *testing.T) {
 		s := NewShow().Variable().
 			Where(Column("Variable_name").PlaceHolder()).
-			WithDBR()
+			WithDBR(dbMock{})
 		compareToSQL(t, s.TestWithArgs("aria%"), errors.NoKind,
 			"SHOW VARIABLES WHERE (`Variable_name` = ?)",
 			"SHOW VARIABLES WHERE (`Variable_name` = 'aria%')",
 			"aria%",
 		)
-		assert.Exactly(t, []string{"Variable_name"}, s.base.qualifiedColumns)
+		assert.Exactly(t, []string{"Variable_name"}, s.cachedSQL.qualifiedColumns)
 	})
 	t.Run("variables WHERE interpolate", func(t *testing.T) {
 		s := NewShow().Variable().Where(Column("Variable_name").In().Strs("basedir", "back_log"))
@@ -79,7 +79,7 @@ func TestShow(t *testing.T) {
 	t.Run("variables WHERE placeholder", func(t *testing.T) {
 		s := NewShow().Variable().
 			Where(Column("Variable_name").In().PlaceHolder()).
-			WithDBR().TestWithArgs([]string{"basedir", "back_log"})
+			WithDBR(dbMock{}).TestWithArgs([]string{"basedir", "back_log"})
 		compareToSQL(t, s, errors.NoKind,
 			"SHOW VARIABLES WHERE (`Variable_name` IN ?)",
 			"SHOW VARIABLES WHERE (`Variable_name` IN ('basedir','back_log'))",
@@ -110,24 +110,5 @@ func TestShow(t *testing.T) {
 			"SHOW SESSION STATUS WHERE (`Variable_name` LIKE '%error%')",
 			"SHOW SESSION STATUS WHERE (`Variable_name` LIKE '%error%')",
 		)
-	})
-
-	t.Run("table status WHERE (build cache)", func(t *testing.T) {
-		s := NewShow().TableStatus().Where(Column("Name").Regexp().Str(".*catalog[_]+"))
-		compareToSQL(t, s, errors.NoKind,
-			"SHOW TABLE STATUS WHERE (`Name` REGEXP '.*catalog[_]+')",
-			"SHOW TABLE STATUS WHERE (`Name` REGEXP '.*catalog[_]+')",
-		)
-		assert.Exactly(t, []string{"", "SHOW TABLE STATUS WHERE (`Name` REGEXP '.*catalog[_]+')"}, s.CachedQueries())
-
-		s.WithCacheKey("XsalesX").WhereFragments[0].Str("sales$") // set Equal on purpose ... because cache already written
-		// twice to test the build cache
-		compareToSQL(t, s, errors.NoKind,
-			"SHOW TABLE STATUS WHERE (`Name` REGEXP 'sales$')",
-			"SHOW TABLE STATUS WHERE (`Name` REGEXP 'sales$')",
-		)
-		assert.Exactly(t,
-			[]string{"", "SHOW TABLE STATUS WHERE (`Name` REGEXP '.*catalog[_]+')", "XsalesX", "SHOW TABLE STATUS WHERE (`Name` REGEXP 'sales$')"},
-			s.CachedQueries())
 	})
 }

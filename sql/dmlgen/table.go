@@ -79,12 +79,11 @@ func (t *Table) collectionStruct(mainGen *codegen.Go, g *Generator) {
 
 	mainGen.C(t.CollectionName(), `represents a collection type for DB table`, t.Table.Name)
 	mainGen.C(`Not thread safe. Auto generated.`)
-	if t.Comment != "" {
-		mainGen.C(t.Comment)
-	}
-	if t.HasEasyJSONMarshaler {
-		mainGen.Pln(`//easyjson:json`) // do not use C() because it adds a whitespace between "//" and "e"
-	}
+
+	mainGen.C(t.Comment != "", t.Comment)
+
+	mainGen.Pln(t.HasEasyJSONMarshaler, `//easyjson:json`) // do not use C() because it adds a whitespace between "//" and "e"
+
 	mainGen.Pln(`type `, t.CollectionName(), ` struct {`)
 	{
 		mainGen.In()

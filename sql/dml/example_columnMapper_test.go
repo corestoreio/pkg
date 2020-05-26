@@ -165,21 +165,23 @@ func ExampleColumnMapper() {
 	dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("SELECT * FROM `customer_entity`")).WillReturnRows(r)
 	// </ignore_this>
 
+	_ = dbc.RegisterByQueryBuilder(map[string]dml.QueryBuilder{
+		"select001": dml.NewSelect("*").From("customer_entity"),
+	})
 	customers := new(customerCollection)
 
-	s := dml.NewSelect("*").From("customer_entity").WithDB(dbc.DB)
-	_, err := s.WithDBR().Load(context.TODO(), customers)
+	_, err := dbc.WithCacheKey("select001").Load(context.TODO(), customers)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Result of %q query:\n", s)
+	fmt.Printf("Result of %v query:\n", dbc.CachedQueries())
 	fmt.Println("[entity_id firstname store_id lifetime_sales voucher_codes]")
 	for _, c := range customers.Data {
 		fmt.Printf("%v\n", *c)
 	}
 
 	// Output:
-	// Result of "SELECT * FROM `customer_entity`" query:
+	// Result of map[select001:SELECT * FROM `customer_entity`] query:
 	//[entity_id firstname store_id lifetime_sales voucher_codes]
 	//{18446744073700551613 Karl Gopher 7 47.11 [1FE9983E 28E76FBC]}
 	//{18446744073700551614 Fung Go Roo 7 28.94 [4FE7787E 15E59FBB 794EFDE8]}

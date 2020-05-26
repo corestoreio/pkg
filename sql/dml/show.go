@@ -18,7 +18,6 @@ import (
 	"bytes"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 )
 
 // Always in alphabetical order. We can add more once needed.
@@ -45,66 +44,6 @@ type Show struct {
 
 // NewShow creates a new Truman SHOW.
 func NewShow() *Show { return &Show{} }
-
-// Show creates a new Show statement with a random connection from the pool.
-func (c *ConnPool) Show() *Show {
-	id := c.makeUniqueID()
-	l := c.Log
-	if l != nil {
-		l = c.Log.With(log.String("ConnPool", "Show"), log.String("id", id))
-	}
-	return &Show{
-		BuilderBase: BuilderBase{
-			builderCommon: builderCommon{
-				id:  id,
-				Log: l,
-				db:  c.DB,
-			},
-		},
-	}
-}
-
-// Show creates a new Show statement bound to a single connection.
-func (c *Conn) Show() *Show {
-	id := c.makeUniqueID()
-	l := c.Log
-	if l != nil {
-		l = c.Log.With(log.String("Conn", "Show"), log.String("id", id))
-	}
-	return &Show{
-		BuilderBase: BuilderBase{
-			builderCommon: builderCommon{
-				id:  id,
-				Log: l,
-				db:  c.DB,
-			},
-		},
-	}
-}
-
-// Show creates a new Show query bound to a transaction.
-func (tx *Tx) Show() *Show {
-	id := tx.makeUniqueID()
-	l := tx.Log
-	if l != nil {
-		l = tx.Log.With(log.String("Tx", "Show"), log.String("id", id))
-	}
-	return &Show{
-		BuilderBase: BuilderBase{
-			builderCommon: builderCommon{
-				id:  id,
-				Log: l,
-				db:  tx.DB,
-			},
-		},
-	}
-}
-
-// WithDB sets the database query object.
-func (b *Show) WithDB(db QueryExecPreparer) *Show {
-	b.db = db
-	return b
-}
 
 // Global displays with a GLOBAL modifier, the statement displays global system
 // variable values. These are the values used to initialize the corresponding
@@ -175,44 +114,18 @@ func (b *Show) Like() *Show {
 	return b
 }
 
-// WithDBR returns a new type to support multiple executions of the underlying
-// SQL statement and reuse of memory allocations for the arguments. WithDBR
-// builds the SQL string in a thread safe way. It copies the underlying
-// connection and settings from the current DML type (Delete, Insert, Select,
-// Update, Union, With, etc.). The field DB can still be overwritten.
-// Interpolation does not support the raw interfaces. It's an architecture bug
-// to use WithDBR inside a loop. WithDBR does support thread safety and can be
-// used in parallel. Each goroutine must have its own dedicated *DBR
-// pointer.
-func (b *Show) WithDBR() *DBR {
-	return b.newDBR(b)
-}
-
 // ToSQL converts the select statement into a string and returns its arguments.
 func (b *Show) ToSQL() (string, []interface{}, error) {
-	b.source = dmlSourceShow
 	rawSQL, err := b.buildToSQL(b)
 	if err != nil {
 		return "", nil, errors.WithStack(err)
 	}
-	return string(rawSQL), nil, nil
-}
-
-// WithCacheKey sets the currently used cache key when generating a SQL string.
-// By setting a different cache key, a previous generated SQL query is
-// accessible again. New cache keys allow to change the generated query of the
-// current object. E.g. different where clauses or different row counts in
-// INSERT ... VALUES statements. The empty string defines the default cache key.
-// If the `args` argument contains values, then fmt.Sprintf gets used.
-func (b *Show) WithCacheKey(key string, args ...interface{}) *Show {
-	b.withCacheKey(key, args...)
-	return b
+	return rawSQL, nil, nil
 }
 
 // ToSQL serialized the Show to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Show) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err error) {
-	b.source = dmlSourceShow
 	w.WriteString("SHOW ")
 
 	switch {

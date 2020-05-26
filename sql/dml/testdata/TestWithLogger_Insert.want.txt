@@ -1,0 +1,16 @@
+DEBUG Prepare conn_pool_id: "UNIQ04" conn_source: "ConnPool" is_prepared: true query_id: "UNIQ08" query: "/*$ID$UNIQ08*/REPLACE INTO `dml_people` (`email`,`name`) VALUES (?,?)" duration: 0
+DEBUG Exec conn_pool_id: "UNIQ04" conn_source: "ConnPool" is_prepared: false query_id: "UNIQ08" query: "/*$ID$UNIQ08*/REPLACE INTO `dml_people` (`email`,`name`) VALUES (?,?)" duration: 0 sql: "/*$ID$UNIQ08*/REPLACE INTO `dml_people` (`email`,`name`) VALUES ('a@b.c','John')" length_args: 0 length_raw_args: 2 source: "i" error: "<nil>"
+DEBUG BeginTx conn_pool_id: "UNIQ04" tx_id: "UNIQ16"
+DEBUG Exec conn_pool_id: "UNIQ04" tx_id: "UNIQ16" conn_source: "Tx" is_prepared: false query_id: "UNIQ12" query: "/*$ID$UNIQ12*/REPLACE INTO `dml_people` (`email`,`name`) VALUES (?,?)" duration: 0 sql: "/*$ID$UNIQ12*/REPLACE INTO `dml_people` (`email`,`name`) VALUES (?,?)" length_args: 2 length_raw_args: 2 source: "i" error: "<nil>"
+DEBUG Commit conn_pool_id: "UNIQ04" tx_id: "UNIQ16" duration: 0
+DEBUG Exec conn_pool_id: "UNIQ04" conn_id: "UNIQ20" conn_source: "Conn" is_prepared: false query_id: "UNIQ08" query: "/*$ID$UNIQ08*/REPLACE INTO `dml_people` (`email`,`name`) VALUES (?,?)" duration: 0 sql: "/*$ID$UNIQ08*/REPLACE INTO `dml_people` (`email`,`name`) VALUES ('a@b.zeh','J0hn')" length_args: 0 length_raw_args: 2 source: "i" error: "<nil>"
+DEBUG Exec conn_pool_id: "UNIQ04" conn_id: "UNIQ20" conn_source: "Conn" is_prepared: false query_id: "UNIQ08" query: "/*$ID$UNIQ08*/REPLACE INTO `dml_people` (`email`,`name`) VALUES (?,?)" duration: 0 sql: "" length_args: 2 length_raw_args: 2 source: "i" error: "<nil>"
+DEBUG BeginTx conn_pool_id: "UNIQ04" conn_id: "UNIQ20" tx_id: "UNIQ24"
+DEBUG Exec conn_pool_id: "UNIQ04" conn_id: "UNIQ20" tx_id: "UNIQ24" conn_source: "Tx" is_prepared: false query_id: "UNIQ12" query: "/*$ID$UNIQ12*/REPLACE INTO `dml_people` (`email`,`name`) VALUES (?,?)" duration: 0 sql: "/*$ID$UNIQ12*/REPLACE INTO `dml_people` (`email`,`name`) VALUES (?,?)" length_args: 2 length_raw_args: 2 source: "i" error: "<nil>"
+DEBUG Commit conn_pool_id: "UNIQ04" conn_id: "UNIQ20" tx_id: "UNIQ24" duration: 0
+DEBUG BeginTx conn_pool_id: "UNIQ04" conn_id: "UNIQ20" tx_id: "UNIQ28"
+DEBUG Exec conn_pool_id: "UNIQ04" conn_id: "UNIQ20" tx_id: "UNIQ28" conn_source: "Tx" is_prepared: false query_id: "UNIQ12" query: "/*$ID$UNIQ12*/REPLACE INTO `dml_people` (`email`,`name`) VALUES (?,?)" duration: 0 sql: "" length_args: 0 length_raw_args: 1 source: "i" error: "[dml] Interpolation failed: \"/*$ID$UNIQ12*/REPLACE INTO `dml_people` (`email`,`name`) VALUES (?,?)\": [dml] Number of place holders (2) vs number of arguments (1) do not match."
+DEBUG Rollback conn_pool_id: "UNIQ04" conn_id: "UNIQ20" tx_id: "UNIQ28" duration: 0
+DEBUG BeginTx conn_pool_id: "UNIQ04" conn_id: "UNIQ20" tx_id: "UNIQ32"
+DEBUG Exec conn_pool_id: "UNIQ04" conn_id: "UNIQ20" tx_id: "UNIQ32" conn_source: "Tx" is_prepared: false query_id: "UNIQ12" query: "/*$ID$UNIQ12*/REPLACE INTO `dml_people` (`email`,`name`) VALUES (?,?)" duration: 0 sql: "/*$ID$UNIQ12*/REPLACE INTO `dml_people` (`email`,`name`) VALUES (?,?)" length_args: 2 length_raw_args: 2 source: "i" error: "<nil>"
+DEBUG Commit conn_pool_id: "UNIQ04" conn_id: "UNIQ20" tx_id: "UNIQ32" duration: 0

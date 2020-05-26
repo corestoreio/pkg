@@ -50,7 +50,7 @@ func TestSelect_BasicToSQL(t *testing.T) {
 			AddColumnsConditions(
 				Expr("?").Alias("n").Int64(1),
 				Expr("CAST(:name AS CHAR(20))").Alias("str"),
-			).WithDBR().TestWithArgs(Qualify("", p))
+			).WithDBR(dbMock{}).TestWithArgs(Qualify("", p))
 
 		compareToSQL(t, sel, errors.NoKind,
 			"SELECT 1 AS `n`, CAST(? AS CHAR(20)) AS `str`",
@@ -134,7 +134,7 @@ func TestSelect_BasicToSQL(t *testing.T) {
 			Column("name").NotIn().PlaceHolder(),
 		)
 
-		selA := sel.WithDBR().ExpandPlaceHolders()
+		selA := sel.WithDBR(dbMock{}).ExpandPlaceHolders()
 
 		compareToSQL(t, selA.TestWithArgs([]int{3, 4, 5}, []null.String{null.MakeString("A1"), {}, null.MakeString("A2")}), errors.NoKind,
 			"SELECT `sku`, `name` FROM `products` WHERE (`id` IN (?,?,?)) AND (`name` NOT IN (?,?,?))",
@@ -261,10 +261,10 @@ func TestSelect_OrderByRandom_Integration(t *testing.T) {
 	s := createRealSessionWithFixtures(t, nil)
 	defer testCloser(t, s)
 
-	sel := s.SelectFrom("dml_people").AddColumns("id").OrderByRandom("id", 10)
-
 	t.Run("Load IDs", func(t *testing.T) {
-		ids, err := sel.WithDBR().LoadUint64s(context.TODO(), nil)
+		ids, err := s.WithQueryBuilder(
+			NewSelect("id").From("dml_people").OrderByRandom("id", 10),
+		).LoadUint64s(context.TODO(), nil)
 		assert.NoError(t, err)
 		assert.Len(t, ids, 2)
 	})
@@ -509,7 +509,7 @@ func TestSelect_Load_Slice_Scanner(t *testing.T) {
 	defer testCloser(t, s)
 
 	var people dmlPersons
-	count, err := s.SelectFrom("dml_people").AddColumns("id", "name", "email").OrderBy("id").WithDBR().Load(context.TODO(), &people)
+	count, err := s.WithQueryBuilder(NewSelect("id", "name", "email").From("dml_people").OrderBy("id")).Load(context.TODO(), &people)
 
 	assert.NoError(t, err)
 	assert.Exactly(t, uint64(2), count)
@@ -536,8 +536,8 @@ func TestSelect_Load_Rows(t *testing.T) {
 
 	t.Run("found", func(t *testing.T) {
 		var person dmlPerson
-		_, err := s.SelectFrom("dml_people").AddColumns("id", "name", "email").
-			Where(Column("email").Str("SirGeorge@GoIsland.com")).WithDBR().Load(context.TODO(), &person)
+		_, err := s.WithQueryBuilder(NewSelect("id", "name", "email").From("dml_people").
+			Where(Column("email").Str("SirGeorge@GoIsland.com"))).Load(context.TODO(), &person)
 		assert.NoError(t, err)
 		assert.True(t, person.ID > 0)
 		assert.Exactly(t, "Sir George", person.Name)
@@ -547,8 +547,8 @@ func TestSelect_Load_Rows(t *testing.T) {
 
 	t.Run("not found", func(t *testing.T) {
 		var person2 dmlPerson
-		count, err := s.SelectFrom("dml_people").AddColumns("id", "name", "email").
-			Where(Column("email").Str("dontexist@uservoice.com")).WithDBR().Load(context.TODO(), &person2)
+		count, err := s.WithQueryBuilder(NewSelect("id", "name", "email").From("dml_people").
+			Where(Column("email").Str("dontexist@uservoice.com"))).Load(context.TODO(), &person2)
 
 		assert.NoError(t, err)
 		assert.Exactly(t, dmlPerson{}, person2)
@@ -562,7 +562,7 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 
 	t.Run("single slice item", func(t *testing.T) {
 		var people dmlPersons
-		count, err := s.WithRawSQL("SELECT `name` FROM `dml_people` WHERE `email` = ?").
+		count, err := s.WithQueryBuilder(QuerySQL("SELECT `name` FROM `dml_people` WHERE `email` = ?")).
 			Load(context.TODO(), &people, "SirGeorge@GoIsland.com")
 
 		assert.NoError(t, err)
@@ -576,26 +576,27 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 	})
 
 	t.Run("IN Clause (multiple args,interpolate)", func(t *testing.T) {
-		ids, err := s.SelectFrom("dml_people").AddColumns("id").
-			Where(Column("id").In().Int64s(1, 2, 3)).WithDBR().LoadInt64s(context.TODO(), nil)
+		ids, err := s.WithQueryBuilder(NewSelect("id").From("dml_people").
+			Where(Column("id").In().Int64s(1, 2, 3))).LoadInt64s(context.TODO(), nil)
 		assert.NoError(t, err)
 		assert.Exactly(t, []int64{1, 2}, ids)
 	})
 	t.Run("IN Clause (single args,interpolate)", func(t *testing.T) {
-		ids, err := s.SelectFrom("dml_people").AddColumns("id").
-			Where(Column("id").In().Int64s(2)).WithDBR().LoadInt64s(context.TODO(), nil)
+		ids, err := s.WithQueryBuilder(NewSelect("id").From("dml_people").
+			Where(Column("id").In().Int64s(2))).LoadInt64s(context.TODO(), nil)
 		assert.NoError(t, err)
 		assert.Exactly(t, []int64{2}, ids)
 	})
 	t.Run("NOT IN Clause (multiple args)", func(t *testing.T) {
-		ids, err := s.SelectFrom("dml_people").AddColumns("id").
-			Where(Column("id").NotIn().Int64s(2, 3)).WithDBR().LoadInt64s(context.TODO(), nil)
+		ids, err := NewSelect("id").From("dml_people").
+			Where(Column("id").NotIn().Int64s(2, 3)).WithDBR(s.DB).LoadInt64s(context.TODO(), nil)
 		assert.NoError(t, err)
 		assert.Exactly(t, []int64{1}, ids)
 	})
 	t.Run("Scan string into arg UINT returns error", func(t *testing.T) {
 		var people dmlPersons
-		rc, err := s.SelectFrom("dml_people").AddColumnsAliases("email", "id", "name", "email").WithDBR().Load(context.TODO(), &people)
+		rc, err := NewSelect().AddColumnsAliases("email", "id", "name", "email").From("dml_people").
+			WithDBR(s.DB).Load(context.TODO(), &people)
 		assert.EqualError(t, err, "[dml] DBR.Load failed with queryID \"\" and ColumnMapper *dml.dmlPersons: [dml] Column \"id\": strconv.ParseUint: parsing \"SirGeorge@GoIsland.com\": invalid syntax")
 		assert.EqualError(t, errors.Cause(err), "strconv.ParseUint: parsing \"SirGeorge@GoIsland.com\": invalid syntax")
 		assert.Empty(t, rc)
@@ -607,85 +608,87 @@ func TestSelect_LoadType_Single(t *testing.T) {
 	defer testCloser(t, s)
 
 	t.Run("LoadNullString", func(t *testing.T) {
-		name, found, err := s.SelectFrom("dml_people").AddColumns("name").Where(Column("email").PlaceHolder()).
-			WithDBR().LoadNullString(context.TODO(), "SirGeorge@GoIsland.com")
+		name, found, err := NewSelect("name").From("dml_people").Where(Column("email").PlaceHolder()).
+			WithDBR(s.DB).LoadNullString(context.TODO(), "SirGeorge@GoIsland.com")
 		assert.NoError(t, err)
 		assert.True(t, found)
 		assert.Exactly(t, null.MakeString("Sir George"), name)
 	})
 	t.Run("LoadNullString too many columns", func(t *testing.T) {
-		name, found, err := s.SelectFrom("dml_people").AddColumns("name", "email").Where(Expr("email = 'SirGeorge@GoIsland.com'")).WithDBR().LoadNullString(context.TODO())
+		name, found, err := NewSelect("name", "email").From("dml_people").Where(Expr("email = 'SirGeorge@GoIsland.com'")).
+			WithDBR(s.DB).LoadNullString(context.TODO())
 		assert.Error(t, err)
 		assert.False(t, found)
 		assert.Empty(t, name.Data)
 	})
 	t.Run("LoadNullString not found", func(t *testing.T) {
-		name, found, err := s.SelectFrom("dml_people").AddColumns("name").Where(Expr("email = 'notfound@example.com'")).WithDBR().LoadNullString(context.TODO())
+		name, found, err := NewSelect("name").From("dml_people").Where(Expr("email = 'notfound@example.com'")).
+			WithDBR(s.DB).LoadNullString(context.TODO())
 		assert.NoError(t, err)
 		assert.False(t, found)
 		assert.Exactly(t, null.String{}, name)
 	})
 
 	t.Run("LoadNullInt64", func(t *testing.T) {
-		id, found, err := s.SelectFrom("dml_people").AddColumns("id").Limit(0, 1).WithDBR().LoadNullInt64(context.TODO())
+		id, found, err := NewSelect("id").From("dml_people").Limit(0, 1).WithDBR(s.DB).LoadNullInt64(context.TODO())
 		assert.NoError(t, err)
 		assert.True(t, found)
 		assert.True(t, id.Int64 > 0)
 	})
 	t.Run("LoadNullInt64 too many columns", func(t *testing.T) {
-		id, found, err := s.SelectFrom("dml_people").AddColumns("id", "email").Limit(0, 1).WithDBR().LoadNullInt64(context.TODO())
+		id, found, err := NewSelect("id", "email").From("dml_people").Limit(0, 1).WithDBR(s.DB).LoadNullInt64(context.TODO())
 		assert.Error(t, err)
 		assert.False(t, found)
 		assert.Exactly(t, null.Int64{}, id)
 	})
 	t.Run("LoadNullInt64 not found", func(t *testing.T) {
-		id, found, err := s.SelectFrom("dml_people").AddColumns("id").Where(Expr("id=236478326")).WithDBR().LoadNullInt64(context.TODO())
+		id, found, err := NewSelect("id").From("dml_people").Where(Expr("id=236478326")).WithDBR(s.DB).LoadNullInt64(context.TODO())
 		assert.NoError(t, err)
 		assert.False(t, found)
 		assert.Exactly(t, null.Int64{}, id)
 	})
 
 	t.Run("LoadNullUint64", func(t *testing.T) {
-		id, found, err := s.SelectFrom("dml_people").AddColumns("id").Limit(0, 1).WithDBR().LoadNullUint64(context.TODO())
+		id, found, err := NewSelect("id").From("dml_people").Limit(0, 1).WithDBR(s.DB).LoadNullUint64(context.TODO())
 		assert.NoError(t, err)
 		assert.True(t, found)
 		assert.True(t, id.Uint64 > 0)
 	})
 	t.Run("LoadNullUint64 too many columns", func(t *testing.T) {
-		id, found, err := s.SelectFrom("dml_people").AddColumns("id", "email").Limit(0, 1).WithDBR().LoadNullUint64(context.TODO())
+		id, found, err := NewSelect("id", "email").From("dml_people").Limit(0, 1).WithDBR(s.DB).LoadNullUint64(context.TODO())
 		assert.Error(t, err)
 		assert.False(t, found)
 		assert.Exactly(t, null.Uint64{}, id)
 	})
 	t.Run("LoadNullUint64 not found", func(t *testing.T) {
-		id, found, err := s.SelectFrom("dml_people").AddColumns("id").Where(Expr("id=236478326")).WithDBR().LoadNullUint64(context.TODO())
+		id, found, err := NewSelect("id").From("dml_people").Where(Expr("id=236478326")).WithDBR(s.DB).LoadNullUint64(context.TODO())
 		assert.NoError(t, err)
 		assert.False(t, found)
 		assert.Exactly(t, null.Uint64{}, id)
 	})
 
 	t.Run("LoadNullFloat64", func(t *testing.T) {
-		id, found, err := s.SelectFrom("dml_people").AddColumns("id").Limit(0, 1).WithDBR().LoadNullFloat64(context.TODO())
+		id, found, err := NewSelect("id").From("dml_people").Limit(0, 1).WithDBR(s.DB).LoadNullFloat64(context.TODO())
 		assert.NoError(t, err)
 		assert.True(t, found)
 		assert.True(t, id.Float64 > 0)
 	})
 	t.Run("LoadNullFloat64 too many columns", func(t *testing.T) {
-		id, found, err := s.SelectFrom("dml_people").AddColumns("id", "email").Limit(0, 1).WithDBR().LoadNullFloat64(context.TODO())
+		id, found, err := NewSelect("id", "email").From("dml_people").Limit(0, 1).WithDBR(s.DB).LoadNullFloat64(context.TODO())
 		assert.Error(t, err)
 		assert.False(t, found)
 		assert.Exactly(t, null.Float64{}, id)
 	})
 	t.Run("LoadNullFloat64 not found", func(t *testing.T) {
-		id, found, err := s.SelectFrom("dml_people").AddColumns("id").Where(Expr("id=236478326")).WithDBR().LoadNullFloat64(context.TODO())
+		id, found, err := NewSelect("id").From("dml_people").Where(Expr("id=236478326")).WithDBR(s.DB).LoadNullFloat64(context.TODO())
 		assert.NoError(t, err)
 		assert.False(t, found)
 		assert.Exactly(t, null.Float64{}, id)
 	})
 
 	t.Run("LoadDecimal", func(t *testing.T) {
-		income, found, err := s.SelectFrom("dml_people").AddColumns("avg_income").Where(Column("email").Like().Str(`SirGeorge@GoIsland.com`)).
-			WithDBR().LoadDecimal(context.TODO())
+		income, found, err := NewSelect("avg_income").From("dml_people").Where(Column("email").Like().Str(`SirGeorge@GoIsland.com`)).
+			WithDBR(s.DB).LoadDecimal(context.TODO())
 		assert.NoError(t, err)
 		assert.True(t, found)
 		assert.Exactly(t, null.MakeDecimalInt64(33366677, 5), income)
@@ -703,16 +706,16 @@ func TestSelect_WithArgs_LoadUint64(t *testing.T) {
 	// string into a bigint.
 	const bigID uint64 = 18446744073700551613 // see also file dml_test.go MaxUint64
 
-	sel := s.SelectFrom("dml_people").AddColumns("id").Where(Column("id").Uint64(bigID))
+	sel := NewSelect("id").From("dml_people").Where(Column("id").Uint64(bigID))
 
 	t.Run("MaxUint64 prepared stmt o:equal", func(t *testing.T) {
-		id, found, err := sel.WithDBR().LoadNullUint64(context.TODO())
+		id, found, err := sel.WithDBR(s.DB).LoadNullUint64(context.TODO())
 		assert.NoError(t, err)
 		assert.True(t, found)
 		assert.Exactly(t, null.MakeUint64(bigID), id)
 	})
 	t.Run("MaxUint64 interpolated o:equal", func(t *testing.T) {
-		id, found, err := sel.WithDBR().Interpolate().LoadNullUint64(context.TODO())
+		id, found, err := sel.WithDBR(s.DB).Interpolate().LoadNullUint64(context.TODO())
 		assert.NoError(t, err)
 		assert.True(t, found)
 		assert.Exactly(t, null.MakeUint64(bigID), id)
@@ -723,65 +726,65 @@ func TestSelect_WithArgs_LoadType_Slices(t *testing.T) {
 	s := createRealSessionWithFixtures(t, nil)
 	defer testCloser(t, s)
 	t.Run("LoadStrings", func(t *testing.T) {
-		names, err := s.SelectFrom("dml_people").AddColumns("name").WithDBR().LoadStrings(context.TODO(), nil)
+		names, err := NewSelect("name").From("dml_people").WithDBR(s.DB).LoadStrings(context.TODO(), nil)
 		assert.NoError(t, err)
 		assert.Exactly(t, []string{"Sir George", "Dmitri"}, names)
 	})
 	t.Run("LoadStrings too many columns", func(t *testing.T) {
-		vals, err := s.SelectFrom("dml_people").AddColumns("name", "email").WithDBR().LoadStrings(context.TODO(), nil)
+		vals, err := NewSelect("name", "email").From("dml_people").WithDBR(s.DB).LoadStrings(context.TODO(), nil)
 		assert.Error(t, err)
 		assert.Exactly(t, []string(nil), vals)
 	})
 	t.Run("LoadStrings not found", func(t *testing.T) {
-		names, err := s.SelectFrom("dml_people").AddColumns("name").Where(Expr("name ='jdhsjdf'")).WithDBR().LoadStrings(context.TODO(), nil)
+		names, err := NewSelect("name").From("dml_people").Where(Expr("name ='jdhsjdf'")).WithDBR(s.DB).LoadStrings(context.TODO(), nil)
 		assert.NoError(t, err)
 		assert.Nil(t, names)
 	})
 
 	t.Run("LoadInt64s", func(t *testing.T) {
-		names, err := s.SelectFrom("dml_people").AddColumns("id").WithDBR().LoadInt64s(context.TODO(), nil)
+		names, err := NewSelect("id").From("dml_people").WithDBR(s.DB).LoadInt64s(context.TODO(), nil)
 		assert.NoError(t, err)
 		assert.Exactly(t, []int64{1, 2}, names)
 	})
 	t.Run("LoadInt64s too many columns", func(t *testing.T) {
-		vals, err := s.SelectFrom("dml_people").AddColumns("id", "email").WithDBR().LoadInt64s(context.TODO(), nil)
+		vals, err := NewSelect("id", "email").From("dml_people").WithDBR(s.DB).LoadInt64s(context.TODO(), nil)
 		assert.Error(t, err)
 		assert.Exactly(t, []int64(nil), vals)
 	})
 	t.Run("LoadInt64s not found", func(t *testing.T) {
-		names, err := s.SelectFrom("dml_people").AddColumns("id").Where(Expr("name ='jdhsjdf'")).WithDBR().LoadInt64s(context.TODO(), nil)
+		names, err := NewSelect("id").From("dml_people").Where(Expr("name ='jdhsjdf'")).WithDBR(s.DB).LoadInt64s(context.TODO(), nil)
 		assert.NoError(t, err)
 		assert.Nil(t, names)
 	})
 
 	t.Run("LoadUint64s", func(t *testing.T) {
-		names, err := s.SelectFrom("dml_people").AddColumns("id").WithDBR().LoadUint64s(context.TODO(), nil)
+		names, err := NewSelect("id").From("dml_people").WithDBR(s.DB).LoadUint64s(context.TODO(), nil)
 		assert.NoError(t, err)
 		assert.Exactly(t, []uint64{1, 2}, names)
 	})
 	t.Run("LoadUint64s too many columns", func(t *testing.T) {
-		vals, err := s.SelectFrom("dml_people").AddColumns("id", "email").WithDBR().LoadUint64s(context.TODO(), nil)
+		vals, err := NewSelect("id", "email").From("dml_people").WithDBR(s.DB).LoadUint64s(context.TODO(), nil)
 		assert.Error(t, err)
 		assert.Exactly(t, []uint64(nil), vals)
 	})
 	t.Run("LoadUint64s not found", func(t *testing.T) {
-		names, err := s.SelectFrom("dml_people").AddColumns("id").Where(Expr("name ='jdhsjdf'")).WithDBR().LoadUint64s(context.TODO(), nil)
+		names, err := NewSelect("id").From("dml_people").Where(Expr("name ='jdhsjdf'")).WithDBR(s.DB).LoadUint64s(context.TODO(), nil)
 		assert.NoError(t, err)
 		assert.Nil(t, names)
 	})
 
 	t.Run("LoadFloat64s", func(t *testing.T) {
-		names, err := s.SelectFrom("dml_people").AddColumns("id").WithDBR().LoadFloat64s(context.TODO(), nil)
+		names, err := NewSelect("id").From("dml_people").WithDBR(s.DB).LoadFloat64s(context.TODO(), nil)
 		assert.NoError(t, err)
 		assert.Exactly(t, []float64{1, 2}, names)
 	})
 	t.Run("LoadFloat64s too many columns", func(t *testing.T) {
-		vals, err := s.SelectFrom("dml_people").AddColumns("id", "email").WithDBR().LoadFloat64s(context.TODO(), nil)
+		vals, err := NewSelect("id", "email").From("dml_people").WithDBR(s.DB).LoadFloat64s(context.TODO(), nil)
 		assert.Error(t, err)
 		assert.Exactly(t, []float64(nil), vals)
 	})
 	t.Run("LoadFloat64s not found", func(t *testing.T) {
-		names, err := s.SelectFrom("dml_people").AddColumns("id").Where(Expr("name ='jdhsjdf'")).WithDBR().LoadFloat64s(context.TODO(), nil)
+		names, err := NewSelect("id").From("dml_people").Where(Expr("name ='jdhsjdf'")).WithDBR(s.DB).LoadFloat64s(context.TODO(), nil)
 		assert.NoError(t, err)
 		assert.Nil(t, names)
 	})
@@ -792,8 +795,7 @@ func TestSelect_Join(t *testing.T) {
 	defer testCloser(t, s)
 
 	t.Run("inner, distinct, no cache, high prio", func(t *testing.T) {
-		sqlObj := s.
-			SelectFrom("dml_people", "p1").AddColumns("p1.*", "p2.*").
+		sqlObj := NewSelect("p1.*", "p2.*").FromAlias("dml_people", "p1").
 			Distinct().StraightJoin().SQLNoCache().
 			Join(
 				MakeIdentifier("dml_people").Alias("p2"),
@@ -807,8 +809,7 @@ func TestSelect_Join(t *testing.T) {
 	})
 
 	t.Run("inner", func(t *testing.T) {
-		sqlObj := s.
-			SelectFrom("dml_people", "p1").AddColumns("p1.*", "p2.*").
+		sqlObj := NewSelect("p1.*", "p2.*").FromAlias("dml_people", "p1").
 			Join(
 				MakeIdentifier("dml_people").Alias("p2"),
 				Expr("`p2`.`id` = `p1`.`id`"),
@@ -821,7 +822,7 @@ func TestSelect_Join(t *testing.T) {
 	})
 
 	t.Run("left", func(t *testing.T) {
-		sqlObj := s.SelectFrom("dml_people", "p1").AddColumns("p1.*", "p2.name").
+		sqlObj := NewSelect("p1.*", "p2.name").FromAlias("dml_people", "p1").
 			LeftJoin(
 				MakeIdentifier("dml_people").Alias("p2"),
 				Expr("`p2`.`id` = `p1`.`id`"),
@@ -834,8 +835,7 @@ func TestSelect_Join(t *testing.T) {
 	})
 
 	t.Run("right", func(t *testing.T) {
-		sqlObj := s.
-			SelectFrom("dml_people", "p1").AddColumns("p1.*").
+		sqlObj := NewSelect("p1.*").FromAlias("dml_people", "p1").
 			AddColumnsAliases("p2.name", "p2Name", "p2.email", "p2Email", "id", "internalID").
 			RightJoin(
 				MakeIdentifier("dml_people").Alias("p2"),
@@ -847,8 +847,7 @@ func TestSelect_Join(t *testing.T) {
 	})
 
 	t.Run("using", func(t *testing.T) {
-		sqlObj := s.
-			SelectFrom("dml_people", "p1").AddColumns("p1.*").
+		sqlObj := NewSelect("p1.*").FromAlias("dml_people", "p1").
 			AddColumnsAliases("p2.name", "p2Name", "p2.email", "p2Email").
 			RightJoin(
 				MakeIdentifier("dml_people").Alias("p2"),
@@ -1225,7 +1224,7 @@ func TestSelect_DisableBuildCache(t *testing.T) {
 	const run1 = "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 8,7"
 	const run2 = "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) AND (`added_col` = 3.14159) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 8,7"
 
-	compareToSQL(t, sel.WithCacheKey("key1").WithDBR().TestWithArgs(87654), errors.NoKind,
+	compareToSQL(t, sel.WithDBR(dbMock{}).TestWithArgs(87654), errors.NoKind,
 		run1,
 		"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 87654) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 8,7",
 		int64(87654))
@@ -1233,10 +1232,10 @@ func TestSelect_DisableBuildCache(t *testing.T) {
 	sel.Where(
 		Column("added_col").Float64(3.14159),
 	)
-	compareToSQL(t, sel.WithCacheKey("key2").WithDBR().TestWithArgs(87654), errors.NoKind, run2, "", int64(87654))
+	compareToSQL(t, sel.WithDBR(dbMock{}).TestWithArgs(87654), errors.NoKind, run2, "", int64(87654))
 	// key2 still applies to the next 2 calls
-	compareToSQL(t, sel.WithDBR().TestWithArgs(87654), errors.NoKind, run2, "", int64(87654))
-	compareToSQL(t, sel.WithDBR().TestWithArgs(87654), errors.NoKind, run2,
+	compareToSQL(t, sel.WithDBR(dbMock{}).TestWithArgs(87654), errors.NoKind, run2, "", int64(87654))
+	compareToSQL(t, sel.WithDBR(dbMock{}).TestWithArgs(87654), errors.NoKind, run2,
 		"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 87654) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) AND (`added_col` = 3.14159) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 8,7",
 		int64(87654))
 }
@@ -1251,7 +1250,7 @@ func TestSelect_NamedArguments(t *testing.T) {
 			Column("value").Like().PlaceHolder(),
 		)
 
-	selDBR := sel.WithDBR()
+	selDBR := sel.WithDBR(dbMock{})
 
 	t.Run("With ID 3", func(t *testing.T) {
 		compareToSQL2(t, selDBR.TestWithArgs(sql.Named("configID", 3), "GopherValue"), errors.NoKind,
@@ -1302,7 +1301,7 @@ func TestSelect_SetRecord(t *testing.T) {
 				Column("n").Str("wh3r3"),
 			).
 			OrderBy("l").
-			WithDBR().TestWithArgs(Qualify("dp", p), Qualify("dg", p2), sql.Named("dbSIZE", uint(201801)))
+			WithDBR(dbMock{}).TestWithArgs(Qualify("dp", p), Qualify("dg", p2), sql.Named("dbSIZE", uint(201801)))
 
 		compareToSQL2(t, sel, errors.NoKind,
 			"SELECT `a`, `b` FROM `dml_person` AS `dp` INNER JOIN `dml_group` AS `dg` ON (`dp`.`id` = ?) WHERE (`dg`.`dob` > ?) AND (`dg`.`size` < ?) AND (`age` < 56) AND ((`dp`.`name` = ?) OR (`e` = 'wat')) AND (`f` <= 2) AND (`g` > 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING (`dp`.`email` = ?) AND (`n` = 'wh3r3') ORDER BY `l`",
@@ -1312,7 +1311,7 @@ func TestSelect_SetRecord(t *testing.T) {
 	t.Run("single arg JOIN", func(t *testing.T) {
 		sel := NewSelect("a").FromAlias("dml_people", "dp").
 			Join(MakeIdentifier("dml_group").Alias("dg"), Column("dp.id").PlaceHolder(), Column("dg.name").Strs("XY%")).
-			OrderBy("id").WithDBR().TestWithArgs(Qualify("dp", p))
+			OrderBy("id").WithDBR(dbMock{}).TestWithArgs(Qualify("dp", p))
 
 		compareToSQL2(t, sel, errors.NoKind,
 			"SELECT `a` FROM `dml_people` AS `dp` INNER JOIN `dml_group` AS `dg` ON (`dp`.`id` = ?) AND (`dg`.`name` = ('XY%')) ORDER BY `id`",
@@ -1324,7 +1323,7 @@ func TestSelect_SetRecord(t *testing.T) {
 			Where(
 				Column("id").PlaceHolder(),
 			).
-			OrderBy("id").WithDBR().TestWithArgs(Qualify("", p))
+			OrderBy("id").WithDBR(dbMock{}).TestWithArgs(Qualify("", p))
 
 		compareToSQL2(t, sel, errors.NoKind,
 			"SELECT `a` FROM `dml_people` WHERE (`id` = ?) ORDER BY `id`",
@@ -1348,7 +1347,7 @@ func TestSelect_SetRecord(t *testing.T) {
 				Column("id").PlaceHolder(),
 				Column("name").Like().PlaceHolder(),
 			).
-			OrderBy("id").WithDBR().TestWithArgs(Qualify("", p))
+			OrderBy("id").WithDBR(dbMock{}).TestWithArgs(Qualify("", p))
 
 		compareToSQL2(t, sel, errors.NoKind,
 			"SELECT `a` FROM `dml_people` HAVING (`id` = ?) AND (`name` LIKE ?) ORDER BY `id`",
@@ -1370,7 +1369,7 @@ func TestSelect_SetRecord(t *testing.T) {
 					Where(
 						Column("id").In().PlaceHolder(),
 					).
-					WithDBR().TestWithArgs(Qualify("", persons)),
+					WithDBR(dbMock{}).TestWithArgs(Qualify("", persons)),
 				errors.NoKind,
 				"SELECT `name`, `email` FROM `dml_person` WHERE (`id` IN ?)",
 				int64(33), int64(44), int64(55),
@@ -1383,7 +1382,7 @@ func TestSelect_SetRecord(t *testing.T) {
 						Column("name").In().PlaceHolder(),
 						Column("email").In().PlaceHolder(),
 					).
-					WithDBR().TestWithArgs(Qualify("", persons)),
+					WithDBR(dbMock{}).TestWithArgs(Qualify("", persons)),
 				errors.NoKind,
 				"SELECT `name`, `email` FROM `dml_person` WHERE (`name` IN ?) AND (`email` IN ?)",
 				// "SELECT `name`, `email` FROM `dml_person` WHERE (`name` IN ('Muffin Hat','Marianne Phyllis Finch','Daphne Augusta Perry')) AND (`email` IN ('Muffin@Hat.head','marianne@phyllis.finch','daphne@augusta.perry'))",
@@ -1399,7 +1398,7 @@ func TestSelect_SetRecord(t *testing.T) {
 						Column("name").In().PlaceHolder(),
 						Column("id").In().PlaceHolder(),
 					).
-					WithDBR().TestWithArgs(Qualify("", persons)),
+					WithDBR(dbMock{}).TestWithArgs(Qualify("", persons)),
 				errors.NoKind,
 				"SELECT `name`, `email` FROM `dml_person` WHERE (`email` IN ?) AND (`name` IN ?) AND (`id` IN ?)",
 				//"SELECT `name`, `email` FROM `dml_person` WHERE (`email` IN ('Muffin@Hat.head','marianne@phyllis.finch','daphne@augusta.perry')) AND (`name` IN ('Muffin Hat','Marianne Phyllis Finch','Daphne Augusta Perry')) AND (`id` IN (33,44,55))",
@@ -1415,7 +1414,7 @@ func TestSelect_DBR_Load_Functions(t *testing.T) {
 	s := createRealSessionWithFixtures(t, nil)
 	defer testCloser(t, s)
 
-	inA := s.InsertInto("dml_null_types").AddColumns("string_val", "int64_val", "float64_val", "time_val", "bool_val", "decimal_val").WithDBR()
+	inA := NewInsert("dml_null_types").AddColumns("string_val", "int64_val", "float64_val", "time_val", "bool_val", "decimal_val").WithDBR(s.DB)
 	res, err := inA.ExecContext(context.Background(),
 		"A1", 11, 11.11, now(), true, 11.111,
 		nil, nil, nil, nil, nil, nil,
@@ -1430,17 +1429,17 @@ func TestSelect_DBR_Load_Functions(t *testing.T) {
 
 	t.Run("LoadFloat64s all rows", func(t *testing.T) {
 		var vals []float64
-		vals, err := s.SelectFrom("dml_null_types").AddColumns("float64_val").OrderBy("id").WithDBR().LoadFloat64s(context.Background(), vals)
+		vals, err := NewSelect("float64_val").From("dml_null_types").OrderBy("id").WithDBR(s.DB).LoadFloat64s(context.Background(), vals)
 		assert.NoError(t, err)
 		assert.Exactly(t, []float64{11.11, 22.22, -33.33}, vals)
 	})
 
 	t.Run("LoadFloat64s IN with one arg", func(t *testing.T) {
 		var vals []float64
-		vals, err := s.SelectFrom("dml_null_types").AddColumns("float64_val").Where(
+		vals, err := NewSelect("float64_val").From("dml_null_types").Where(
 			Column("int64_val").In().PlaceHolders(1),
 			// do not interpolate because we want a prepare statement
-		).WithDBR().LoadFloat64s(context.Background(), vals, []int{11})
+		).WithDBR(s.DB).LoadFloat64s(context.Background(), vals, []int{11})
 		assert.NoError(t, err)
 		// the mariaDB field type of float64_val is float and go-sql-driver/mysql
 		// converts it to float32 as we use internally null.Float64 we must convert
@@ -1451,28 +1450,29 @@ func TestSelect_DBR_Load_Functions(t *testing.T) {
 
 	t.Run("LoadInt64s", func(t *testing.T) {
 		var vals []int64
-		vals, err := s.SelectFrom("dml_null_types").AddColumns("int64_val").OrderBy("id").WithDBR().LoadInt64s(context.Background(), vals)
+		vals, err := NewSelect("int64_val").From("dml_null_types").OrderBy("id").WithDBR(s.DB).LoadInt64s(context.Background(), vals)
 		assert.NoError(t, err)
 		assert.Exactly(t, []int64{11, 22, -33}, vals)
 	})
 
 	t.Run("LoadUint64s", func(t *testing.T) {
 		var vals []uint64
-		vals, err := s.SelectFrom("dml_null_types").AddColumns("int64_val").Where(Column("int64_val").GreaterOrEqual().Int(0)).OrderBy("id").WithDBR().LoadUint64s(context.Background(), vals)
+		vals, err := NewSelect("int64_val").From("dml_null_types").Where(Column("int64_val").GreaterOrEqual().Int(0)).OrderBy("id").
+			WithDBR(s.DB).LoadUint64s(context.Background(), vals)
 		assert.NoError(t, err)
 		assert.Exactly(t, []uint64{11, 22}, vals)
 	})
 	t.Run("LoadStrings found", func(t *testing.T) {
 		var vals []string
-		vals, err := s.SelectFrom("dml_null_types").AddColumns("string_val").OrderBy("id").WithDBR().LoadStrings(context.Background(), vals)
+		vals, err := NewSelect("string_val").From("dml_null_types").OrderBy("id").WithDBR(s.DB).LoadStrings(context.Background(), vals)
 		assert.NoError(t, err)
 		assert.Exactly(t, []string{"A1", "A2", "-A3"}, vals)
 	})
 	t.Run("LoadStrings not found", func(t *testing.T) {
 		var vals []string
-		vals, err := s.SelectFrom("dml_null_types").Where(
+		vals, err := NewSelect("string_val").From("dml_null_types").Where(
 			Column("int64_val").Equal().Int64(-34),
-		).AddColumns("string_val").OrderBy("id").WithDBR().LoadStrings(context.Background(), vals)
+		).OrderBy("id").WithDBR(s.DB).LoadStrings(context.Background(), vals)
 		assert.NoError(t, err)
 		assert.Exactly(t, []string(nil), vals)
 	})

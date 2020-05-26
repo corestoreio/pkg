@@ -29,42 +29,44 @@ Query: "INSERT INTO `dml_people` (id,name,email) VALUES (18446744073700551613,'C
 
 "Conn.QueryContext" Took: 0s
 Error: driver: skip fast-path; continue as if unimplemented
-Query: "SELECT /*ID$RANJID1*/ * FROM `dml_people` WHERE (`name` = ?)"
+Query: "/*$ID$RANJID1*/SELECT * FROM `dml_people` WHERE (`name` = ?)"
 NamedArgs: []driver.NamedValue{driver.NamedValue{Name:"", Ordinal:1, Value:"Bernd"}}
 
 "Conn.PrepareContext" Took: 0s
-Query: "SELECT /*ID$RANJID1*/ * FROM `dml_people` WHERE (`name` = ?)"
+Query: "/*$ID$RANJID1*/SELECT * FROM `dml_people` WHERE (`name` = ?)"
 
 "Stmt.QueryContext" Took: 0s
-Query: "SELECT /*ID$RANJID1*/ * FROM `dml_people` WHERE (`name` = ?)"
+Query: "/*$ID$RANJID1*/SELECT * FROM `dml_people` WHERE (`name` = ?)"
 NamedArgs: []driver.NamedValue{driver.NamedValue{Name:"", Ordinal:1, Value:"Bernd"}}
 
 "Stmt.Close" Took: 0s
-Query: "SELECT /*ID$RANJID1*/ * FROM `dml_people` WHERE (`name` = ?)"
+Query: "/*$ID$RANJID1*/SELECT * FROM `dml_people` WHERE (`name` = ?)"
 
 "Conn.QueryContext" Took: 0s
-Query: "SELECT /*ID$RANJID1*/ SQL_NO_CACHE * FROM `dml_people` WHERE (`name` = 'Das Brot')"
+Query: "/*$ID$RANJID2*/SELECT SQL_NO_CACHE * FROM `dml_people` WHERE (`name` = 'Das Brot')"
 
 "Conn.ExecContext" Took: 0s
 Error: driver: skip fast-path; continue as if unimplemented
-Query: "UPDATE /*ID$RANJID2*/ `dml_people` SET `name`=?"
+Query: "/*$ID$RANJID3*/UPDATE `dml_people` SET `name`=?"
 NamedArgs: []driver.NamedValue{driver.NamedValue{Name:"", Ordinal:1, Value:"Hugo"}}
 
 "Conn.PrepareContext" Took: 0s
-Query: "UPDATE /*ID$RANJID2*/ `dml_people` SET `name`=?"
+Query: "/*$ID$RANJID3*/UPDATE `dml_people` SET `name`=?"
 
 "Stmt.ExecContext" Took: 0s
-Query: "UPDATE /*ID$RANJID2*/ `dml_people` SET `name`=?"
+Query: "/*$ID$RANJID3*/UPDATE `dml_people` SET `name`=?"
 NamedArgs: []driver.NamedValue{driver.NamedValue{Name:"", Ordinal:1, Value:"Hugo"}}
 
 "Stmt.Close" Took: 0s
-Query: "UPDATE /*ID$RANJID2*/ `dml_people` SET `name`=?"
+Query: "/*$ID$RANJID3*/UPDATE `dml_people` SET `name`=?"
 
 "Conn.ExecContext" Took: 0s
-Query: "UPDATE /*ID$RANJID2*/ `dml_people` SET `name`='Bernie'"
+Query: "/*$ID$RANJID3*/UPDATE `dml_people` SET `name`='Bernie'"
 
 "Conn.ExecContext" Took: 0s
 Query: "DROP DATABASE IF EXISTS `{{SCHEMA}}`"
+
+"Conn.Close" Took: 0s
 
 "Conn.Close" Took: 0s
 

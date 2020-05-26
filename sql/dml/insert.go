@@ -16,17 +16,15 @@ package dml
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 )
 
 /*
 TODO: Using big transactions When doing many inserts in a row, you should wrap
-them with BEGIN / END to avoid doing a full transaction (which includes a disk
-sync) for every row. For example, doing a begin/end every 1000 inserts will
+ them with BEGIN / END to avoid doing a full transaction (which includes a disk
+ sync) for every row. For example, doing a begin/end every 1000 inserts will
 speed up your inserts by almost 1000 times.
 BEGIN;
 INSERT ...
@@ -116,53 +114,8 @@ type Insert struct {
 // NewInsert creates a new Insert object.
 func NewInsert(into string) *Insert {
 	return &Insert{
-		BuilderBase: BuilderBase{},
-		Into:        into,
-	}
-}
-
-func newInsertInto(db QueryExecPreparer, cCom *connCommon, into string) *Insert {
-	id := cCom.makeUniqueID()
-	into = cCom.mapTableName(into)
-	l := cCom.Log
-	if l != nil {
-		l = l.With(log.String("insert_id", id), log.String("table", into))
-	}
-
-	return &Insert{
-		BuilderBase: BuilderBase{
-			builderCommon: builderCommon{
-				id:  id,
-				Log: l,
-				db:  db,
-			},
-		},
 		Into: into,
 	}
-}
-
-// InsertInto instantiates a Insert for the given table. Mapping the table name
-// is supported.
-func (c *ConnPool) InsertInto(into string) *Insert {
-	return newInsertInto(c.DB, &c.connCommon, into)
-}
-
-// InsertInto instantiates a Insert for the given table. Mapping the table name
-// is supported.
-func (c *Conn) InsertInto(into string) *Insert {
-	return newInsertInto(c.DB, &c.connCommon, into)
-}
-
-// InsertInto instantiates a Insert for the given table bound to a transaction.
-// Mapping the table name is supported.
-func (tx *Tx) InsertInto(into string) *Insert {
-	return newInsertInto(tx.DB, &tx.connCommon, into)
-}
-
-// WithDB sets the database query object.
-func (b *Insert) WithDB(db QueryExecPreparer) *Insert {
-	b.db = db
-	return b
 }
 
 // Ignore modifier enables errors that occur while executing the INSERT
@@ -263,61 +216,14 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 	return b
 }
 
-// WithDBR returns a new DBR type to support multiple executions of the
-// underlying SQL statement and reuse of memory allocations for the arguments.
-// WithDBR builds the SQL string in a thread safe way. It copies the underlying
-// connection and settings from the current DML type (Delete, Insert, Select,
-// Update, Union, With, etc.). The field DB can still be overwritten.
-// Interpolation does not support the raw interfaces. It's an architecture bug
-// to use WithDBR inside a loop. In case of INSERT statement, WithDBR figures
-// automatically out how the VALUES section must look like depending on the
-// number of arguments. In some cases type Insert needs to know the RowCount to
-// build the appropriate amount of placeholders.
-func (b *Insert) WithDBR() *DBR {
-	b.rwmu.RLock()
-	isSelect := b.Select != nil // b.newDBR unsets the Select field if caching is enabled
-	b.rwmu.RUnlock()
-
-	a := b.newDBR(b)
-	a.base.source = dmlSourceInsert
-
-	if isSelect {
-		// Must change to this source because to trigger a different argument
-		// collector in DBR.prepareQueryAndArgs. It is not a real INSERT statement
-		// anymore.
-		a.base.source = dmlSourceInsertSelect
-		return a
-	}
-
-	a.insertColumnCount = uint(len(b.Columns))
-	if b.RecordPlaceHolderCount > 0 {
-		a.insertColumnCount = uint(b.RecordPlaceHolderCount)
-	}
-	a.tupleRowCount = uint(b.RowCount)
-	a.insertIsBuildValues = b.IsBuildValues
-	return a
-}
-
 // ToSQL serialized the Insert to a SQL string
 // It returns the string with placeholders and a slice of query arguments.
 func (b *Insert) ToSQL() (string, []interface{}, error) {
-	b.source = dmlSourceInsert
 	rawSQL, err := b.buildToSQL(b)
 	if err != nil {
 		return "", nil, errors.WithStack(err)
 	}
 	return rawSQL, nil, nil
-}
-
-// WithCacheKey sets the currently used cache key when generating a SQL string.
-// By setting a different cache key, a previous generated SQL query is
-// accessible again. New cache keys allow to change the generated query of the
-// current object. E.g. different where clauses or different row counts in
-// INSERT ... VALUES statements. The empty string defines the default cache key.
-// If the `args` argument contains values, then fmt.Sprintf gets used.
-func (b *Insert) WithCacheKey(key string, args ...interface{}) *Insert {
-	b.withCacheKey(key, args...)
-	return b
 }
 
 func (b *Insert) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, error) {
@@ -336,7 +242,6 @@ func (b *Insert) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 		ior = "REPLACE "
 	}
 	buf.WriteString(ior)
-	writeStmtID(buf, b.id)
 	if b.IsIgnore {
 		buf.WriteString("IGNORE ")
 	}
@@ -460,32 +365,6 @@ func strInSlice(search string, sl []string) bool {
 		}
 	}
 	return false
-}
-
-// Prepare executes the statement represented by the Insert to create a prepared
-// statement. It returns a custom statement type or an error if there was one.
-// Provided arguments or recs in the Insert are getting ignored. The provided
-// context is used for the preparation of the statement, not for the execution
-// of the statement. The returned Stmter is not safe for concurrent use, despite
-// the underlying *sql.Stmt is.
-func (b *Insert) Prepare(ctx context.Context) (*Stmt, error) {
-	return b.prepare(ctx, b.db, b, dmlSourceInsert)
-}
-
-// PrepareWithDBR same as Prepare but forwards the possible error of creating a
-// prepared statement into the DBR type. Reduces boilerplate code. You must
-// call DBR.Close to deallocate the prepared statement in the SQL server.
-func (b *Insert) PrepareWithDBR(ctx context.Context) *DBR {
-	stmt, err := b.prepare(ctx, b.db, b, dmlSourceInsert)
-	if err != nil {
-		a := &DBR{
-			base: builderCommon{
-				ärgErr: errors.WithStack(err),
-			},
-		}
-		return a
-	}
-	return stmt.WithDBR()
 }
 
 // Clone creates a clone of the current object, leaving fields DB and Log

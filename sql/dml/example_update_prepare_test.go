@@ -85,13 +85,12 @@ func ExampleUpdate_Prepare() {
 	// </ignore_this>
 
 	// Create the prepared update statement
-	stmt, err := dml.NewUpdate("sales_order").
+	stmt, err := dbc.WithQueryBuilder(dml.NewUpdate("sales_order").
 		AddColumns("state", "customer_id", "grand_total").
 		Where(
 			dml.Column("shipping_method").In().Strs("DHL", "UPS"),
 			dml.Column("entity_id").PlaceHolder(),
-		).
-		WithDB(dbc.DB).
+		)).
 		Prepare(context.TODO())
 	if err != nil {
 		fmt.Printf("Exec Error: %+v\n", err)
@@ -108,7 +107,7 @@ func ExampleUpdate_Prepare() {
 	for _, record := range collection {
 		// We're not using an alias in the query so Qualify can have an empty
 		// qualifier, which falls back to the default table name "sales_order".
-		result, err := stmt.WithDBR().ExecContext(context.Background(), dml.Qualify("", record))
+		result, err := stmt.ExecContext(context.Background(), dml.Qualify("", record))
 		if err != nil {
 			fmt.Printf("Exec Error: %+v\n", err)
 			return

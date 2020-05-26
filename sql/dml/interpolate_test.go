@@ -37,27 +37,27 @@ func TestExpandPlaceHolders(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Run("MisMatch", func(t *testing.T) {
-		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN (?)").ExpandPlaceHolders()
+		a := cp.WithQueryBuilder(QuerySQL("SELECT * FROM `table` WHERE id IN (?)")).ExpandPlaceHolders()
 		compareToSQL2(t, a, errors.NoKind, "SELECT * FROM `table` WHERE id IN (?)")
 	})
 	t.Run("MisMatch length reps", func(t *testing.T) {
-		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ?").ExpandPlaceHolders().TestWithArgs([]int64{1, 2}, []string{"d", "3"})
+		a := cp.WithQueryBuilder(QuerySQL("SELECT * FROM `table` WHERE id IN ?")).ExpandPlaceHolders().TestWithArgs([]int64{1, 2}, []string{"d", "3"})
 		compareToSQL2(t, a, errors.Mismatch, "")
 	})
 	t.Run("MisMatch qMarks", func(t *testing.T) {
-		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN(!)").ExpandPlaceHolders().TestWithArgs(3)
+		a := cp.WithQueryBuilder(QuerySQL("SELECT * FROM `table` WHERE id IN(!)")).ExpandPlaceHolders().TestWithArgs(3)
 		compareToSQL2(t, a, errors.Mismatch, "")
 	})
 	t.Run("one arg with one value", func(t *testing.T) {
-		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN (?)").ExpandPlaceHolders().TestWithArgs(1)
+		a := cp.WithQueryBuilder(QuerySQL("SELECT * FROM `table` WHERE id IN (?)")).ExpandPlaceHolders().TestWithArgs(1)
 		compareToSQL2(t, a, errors.NoKind, "SELECT * FROM `table` WHERE id IN (?)", int64(1))
 	})
 	t.Run("one arg with three values", func(t *testing.T) {
-		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ?").ExpandPlaceHolders().TestWithArgs([]int64{11, 3, 5})
+		a := cp.WithQueryBuilder(QuerySQL("SELECT * FROM `table` WHERE id IN ?")).ExpandPlaceHolders().TestWithArgs([]int64{11, 3, 5})
 		compareToSQL2(t, a, errors.NoKind, "SELECT * FROM `table` WHERE id IN (?,?,?)", int64(11), int64(3), int64(5))
 	})
 	t.Run("multi 3,5 times replacement", func(t *testing.T) {
-		a := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ? AND name IN ?").ExpandPlaceHolders().
+		a := cp.WithQueryBuilder(QuerySQL("SELECT * FROM `table` WHERE id IN ? AND name IN ?")).ExpandPlaceHolders().
 			TestWithArgs([]int64{5, 7, 9}, []string{"a", "b", "c", "d", "e"})
 		compareToSQL2(t, a, errors.NoKind, "SELECT * FROM `table` WHERE id IN (?,?,?) AND name IN (?,?,?,?,?)",
 			int64(5), int64(7), int64(9), "a", "b", "c", "d", "e",
@@ -587,6 +587,11 @@ func TestExtractNamedArgs(t *testing.T) {
 			assert.Exactly(t, wantQualifiedColumns, qualifiedColumns)
 		}
 	}
+	t.Run("colon in comment", runner(
+		"/*ID$:RANJID1*/SELECT SQL_NO_CACHE * FROM `dml_people` WHERE (`name` = :name)", // in comment, a bug
+		"/*ID$?*/SELECT SQL_NO_CACHE * FROM `dml_people` WHERE (`name` = ?)",            // BUG fix later
+		namedArgStartStr+"RANJID1", namedArgStartStr+"name",
+	))
 	t.Run("one", runner(
 		"SELECT 1 AS `n`, CAST(:abc AS CHAR(20)) AS `str`",
 		"SELECT 1 AS `n`, CAST(? AS CHAR(20)) AS `str`",

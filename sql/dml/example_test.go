@@ -91,7 +91,7 @@ func writeToSQLAndInterpolate(qb dml.QueryBuilder) {
 
 func ExampleNewInsert() {
 	i := dml.NewInsert("tableA").
-		AddColumns("b", "c", "d", "e").SetRowCount(2).WithDBR().TestWithArgs(
+		AddColumns("b", "c", "d", "e").SetRowCount(2).WithDBR(dbMock{}).TestWithArgs(
 		1, 2, "Three", nil,
 		5, 6, "Seven", 3.14156,
 	)
@@ -121,7 +121,7 @@ func ExampleInsert_SetRowCount() {
 }
 
 func ExampleInsert_SetRowCount_withdata() {
-	i := dml.NewInsert("catalog_product_link").SetRowCount(3).WithDBR().TestWithArgs(
+	i := dml.NewInsert("catalog_product_link").SetRowCount(3).WithDBR(dbMock{}).TestWithArgs(
 		2046, 33, 3,
 		2046, 34, 3,
 		2046, 35, 3,
@@ -142,7 +142,7 @@ func ExampleInsert_SetRowCount_withdata() {
 func ExampleInsert_WithArgs_rawData() {
 	// Without any columns you must for each row call AddArgs. Here we insert
 	// three rows at once.
-	i := dml.NewInsert("catalog_product_link").SetRowCount(3).WithDBR().TestWithArgs(
+	i := dml.NewInsert("catalog_product_link").SetRowCount(3).WithDBR(dbMock{}).TestWithArgs(
 		2046, 33, 3,
 		2046, 34, 3,
 		2046, 35, 3,
@@ -153,7 +153,7 @@ func ExampleInsert_WithArgs_rawData() {
 	// three rows at once. Of course you can also insert only one row ;-)
 	i = dml.NewInsert("catalog_product_link").
 		AddColumns("product_id", "linked_product_id", "link_type_id").
-		WithDBR().TestWithArgs(
+		WithDBR(dbMock{}).TestWithArgs(
 		2046, 33, 3,
 		2046, 34, 3,
 		2046, 35, 3)
@@ -178,7 +178,7 @@ func ExampleInsert_AddOnDuplicateKey() {
 		AddOnDuplicateKey(
 			dml.Column("name").Str("Pik3"),
 			dml.Column("email").Values(),
-		).WithDBR().TestWithArgs(1, "Pik'e", "pikes@peak.com")
+		).WithDBR(dbMock{}).TestWithArgs(1, "Pik'e", "pikes@peak.com")
 	writeToSQLAndInterpolate(i)
 
 	// Output:
@@ -207,7 +207,7 @@ func ExampleInsert_FromSelect_withPlaceHolders() {
 			).
 			OrderByDesc("id").
 			Paginate(1, 20),
-	).WithDBR().TestWithArgs(4, sql.Named("i64BIn", []int64{9, 8, 7}))
+	).WithDBR(dbMock{}).TestWithArgs(4, sql.Named("i64BIn", []int64{9, 8, 7}))
 	writeToSQLAndInterpolate(ins)
 	// Output:
 	// Prepared Statement:
@@ -251,7 +251,7 @@ func ExampleInsert_FromSelect_withoutPlaceHolders() {
 // string.
 func ExampleInsert_WithPairs() {
 	ins := dml.NewInsert("catalog_product_link").AddColumns("product_id", "linked_product_id", "link_type_id").
-		WithDBR().TestWithArgs([]sql.NamedArg{
+		WithDBR(dbMock{}).TestWithArgs([]sql.NamedArg{
 		{Name: "product_id", Value: 2046},
 		{Name: "linked_product_id", Value: 33},
 		{Name: "link_type_id", Value: 3},
@@ -451,7 +451,7 @@ func ExampleExpandPlaceHolders() {
 	if err != nil {
 		panic(err)
 	}
-	sqlStr, args, err := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ? AND name IN ?").
+	sqlStr, args, err := cp.WithQueryBuilder(dml.QuerySQL("SELECT * FROM `table` WHERE id IN ? AND name IN ?")).
 		ExpandPlaceHolders().TestWithArgs(
 		[]int{5, 7, 9}, []string{"a", "b", "c", "d", "e"},
 	).ToSQL()
@@ -702,7 +702,7 @@ func ExampleSQLCase_select() {
 		).
 		From("catalog_promotions").Where(
 		dml.Column("promotion_id").NotIn().PlaceHolders(3)).
-		WithDBR().TestWithArgs(start, end, start, end, 4711, 815, 42)
+		WithDBR(dbMock{}).TestWithArgs(start, end, start, end, 4711, 815, 42)
 	writeToSQLAndInterpolate(s)
 
 	// Output:
@@ -735,7 +735,7 @@ func ExampleSelect_AddColumnsConditions() {
 		).
 		From("catalog_promotions").Where(
 		dml.Column("promotion_id").NotIn().Ints(4711, 815, 42))
-	writeToSQLAndInterpolate(s.WithDBR())
+	writeToSQLAndInterpolate(s.WithDBR(dbMock{}))
 
 	// Output:
 	// Statement:

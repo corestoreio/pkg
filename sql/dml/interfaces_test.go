@@ -12,16 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dml_test
+package dml
 
 import (
 	"context"
 	"database/sql"
-
-	"github.com/corestoreio/pkg/sql/dml"
 )
 
-var _ dml.QueryExecPreparer = (*dbMock)(nil)
+var (
+	_ QueryExecPreparer = (*dbMock)(nil)
+	_ Execer            = (*dbMock)(nil)
+)
 
 type dbMock struct {
 	error

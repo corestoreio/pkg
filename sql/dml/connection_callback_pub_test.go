@@ -22,6 +22,8 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/corestoreio/pkg/util/conv"
+
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/util/assert"
@@ -32,7 +34,7 @@ func TestDriverCallBack(t *testing.T) {
 	counter := new(int32)
 
 	buf := new(bytes.Buffer)
-	db := dmltest.MustConnectDB(t,
+	dbc := dmltest.MustConnectDB(t, // dbc == database connection
 		dml.ConnPoolOption{
 			UniqueIDFn: func() string { return fmt.Sprintf("RANJID%d", atomic.AddInt32(counter, 1)) },
 		},
@@ -54,31 +56,44 @@ func TestDriverCallBack(t *testing.T) {
 			}
 		}),
 	)
-	installFixtures(t, db.DB)
+	installFixtures(t, dbc.DB)
 
-	ctx := context.TODO()
-	sel := db.SelectFrom("dml_people").Star().Where(dml.Column("name").PlaceHolder())
+	ctx := context.Background()
+
+	selSQL := dml.NewSelect("*").From("dml_people").Where(dml.Column("name").PlaceHolder())
+	err := dbc.RegisterByQueryBuilder(map[string]dml.QueryBuilder{
+		"sel1c":  selSQL,
+		"sel1nc": selSQL.Clone().SQLNoCache(),
+		"up":     dml.NewUpdate("dml_people").AddClauses(dml.Column("name").PlaceHolder()),
+	})
+	assert.NoError(t, err)
+
+	assert.Exactly(t, []string{
+		"sel1c", "/*$ID$RANJID1*/SELECT * FROM `dml_people` WHERE (`name` = ?)",
+		"sel1nc", "/*$ID$RANJID2*/SELECT SQL_NO_CACHE * FROM `dml_people` WHERE (`name` = ?)",
+		"up", "/*$ID$RANJID3*/UPDATE `dml_people` SET `name`=?",
+	}, conv.ToStringSlice(dbc.CachedQueries()))
+
 	var ppl dmlPerson
-	_, err := sel.WithDBR().Load(ctx, &ppl, "Bernd")
+	_, err = dbc.WithCacheKey("sel1c").Load(ctx, &ppl, "Bernd")
+	assert.NoError(t, err)
+	_, err = dbc.WithCacheKey("sel1nc").Interpolate().Load(context.Background(), &ppl, "Das Brot")
 	assert.NoError(t, err)
 
-	_, err = sel.WithCacheKey("NoCache").SQLNoCache().WithDBR().Interpolate().Load(context.Background(), &ppl, "Das Brot")
+	con, err := dbc.Conn(ctx)
 	assert.NoError(t, err)
 
-	con, err := db.Conn(ctx)
+	up := dbc.WithCacheKey("up")
+	_, err = up.ExecContext(ctx, "Hugo")
 	assert.NoError(t, err)
 
-	upd := con.Update("dml_people").AddClauses(dml.Column("name").PlaceHolder())
-	_, err = upd.WithDBR().ExecContext(ctx, "Hugo")
-	assert.NoError(t, err)
-
-	_, err = upd.WithDBR().Interpolate().ExecContext(ctx, "Bernie")
+	_, err = up.Interpolate().ExecContext(ctx, "Bernie")
 	assert.NoError(t, err)
 
 	assert.NoError(t, con.Close())
-	dmltest.Close(t, db)
+	dmltest.Close(t, dbc)
 
 	assert.MatchesGolden(t, "testdata/TestDriverCallBack.want.txt", buf.Bytes(), false, func(goldenData []byte) []byte {
-		return bytes.ReplaceAll(goldenData, []byte(`{{SCHEMA}}`), []byte(db.Schema()))
+		return bytes.ReplaceAll(goldenData, []byte(`{{SCHEMA}}`), []byte(dbc.Schema()))
 	})
 }

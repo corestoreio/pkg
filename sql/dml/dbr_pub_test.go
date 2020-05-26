@@ -18,9 +18,11 @@ func TestDBR_Prepare(t *testing.T) {
 	prep.ExpectQuery().WithArgs(1, 2, 3, 4, 6, 7, 8, 9).
 		WillReturnRows(dmltest.MustMockRows(dmltest.WithFile("testdata/core_config_data.csv")))
 
-	dbrStmt, err := dbc.SelectFrom("core_config_data").Star().Where(
-		dml.Columns("entity_id", "attribute_id", "store_id", "source_id").In().Tuples(),
-	).WithDBR().TupleCount(4, 2).ExpandPlaceHolders().Prepare(ctx)
+	dbrStmt, err := dbc.WithQueryBuilder(
+		dml.NewSelect("*").From("core_config_data").Where(
+			dml.Columns("entity_id", "attribute_id", "store_id", "source_id").In().Tuples(),
+		),
+	).TupleCount(4, 2).ExpandPlaceHolders().Prepare(ctx)
 
 	assert.NoError(t, err)
 

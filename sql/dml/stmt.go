@@ -55,18 +55,7 @@ func (sw stmtWrapper) Close() error {
 // yet safe for concurrent use, despite the underlying *sql.Stmt is. Don't
 // forget to call Close!
 type Stmt struct {
-	base builderCommon
 	Stmt *sql.Stmt
-}
-
-// WithDBR creates a new argument handler. Not safe for concurrent use.
-func (st *Stmt) WithDBR() *DBR {
-	a := &DBR{
-		base:       st.base,
-		isPrepared: true,
-	}
-	a.base.db = stmtWrapper{stmt: st.Stmt}
-	return a
 }
 
 // Close closes the statement in the database and frees its resources.

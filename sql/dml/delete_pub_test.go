@@ -38,12 +38,12 @@ func TestDelete_Prepare(t *testing.T) {
 				Table: dml.MakeIdentifier("table"),
 			},
 		}
-		d.WithDB(dbMock{
+		ddbr := d.WithDBR(dbMock{
 			error: errors.AlreadyClosed.Newf("Who closed myself?"),
 		})
 
 		d.Where(dml.Column("a").Int(1))
-		stmt, err := d.Prepare(context.TODO())
+		stmt, err := ddbr.Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
@@ -56,9 +56,8 @@ func TestDelete_Prepare(t *testing.T) {
 		prep.ExpectExec().WithArgs("a@b.c", 33).WillReturnResult(sqlmock.NewResult(0, 1))
 		prep.ExpectExec().WithArgs("x@y.z", 44).WillReturnResult(sqlmock.NewResult(0, 2))
 
-		stmt, err := dml.NewDelete("customer_entity").
-			Where(dml.Column("email").PlaceHolder(), dml.Column("group_id").PlaceHolder()).
-			WithDB(dbc.DB).
+		stmt, err := dbc.WithQueryBuilder(dml.NewDelete("customer_entity").
+			Where(dml.Column("email").PlaceHolder(), dml.Column("group_id").PlaceHolder())).
 			Prepare(context.TODO())
 		assert.NoError(t, err, "failed creating a prepared statement")
 		defer dmltest.Close(t, stmt)
@@ -71,9 +70,9 @@ func TestDelete_Prepare(t *testing.T) {
 			{"a@b.c", 33, 1},
 			{"x@y.z", 44, 2},
 		}
-		args := stmt.WithDBR()
+
 		for i, test := range tests {
-			res, err := args.ExecContext(context.TODO(), test.email, test.groupID)
+			res, err := stmt.ExecContext(context.TODO(), test.email, test.groupID)
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -82,7 +81,7 @@ func TestDelete_Prepare(t *testing.T) {
 				t.Fatalf("Result index %d with error: %s", i, err)
 			}
 			assert.Exactly(t, test.affRows, ra, "Index %d has different RowsAffected", i)
-			args.Reset()
+			stmt.Reset()
 		}
 	})
 
@@ -94,9 +93,8 @@ func TestDelete_Prepare(t *testing.T) {
 		prep.ExpectExec().WithArgs("Peter Gopher", "peter@gopher.go").WillReturnResult(sqlmock.NewResult(0, 4))
 		prep.ExpectExec().WithArgs("John Doe", "john@doe.go").WillReturnResult(sqlmock.NewResult(0, 5))
 
-		stmt, err := dml.NewDelete("dml_person").
-			Where(dml.Column("name").PlaceHolder(), dml.Column("email").PlaceHolder()).
-			WithDB(dbc.DB).
+		stmt, err := dbc.WithQueryBuilder(dml.NewDelete("dml_person").
+			Where(dml.Column("name").PlaceHolder(), dml.Column("email").PlaceHolder())).
 			Prepare(context.TODO())
 		assert.NoError(t, err, "failed creating a prepared statement")
 		defer func() {
@@ -119,7 +117,7 @@ func TestDelete_Prepare(t *testing.T) {
 				Email: null.MakeString(test.email),
 			}
 
-			res, err := stmt.WithDBR().ExecContext(context.TODO(), dml.Qualify("", p))
+			res, err := stmt.ExecContext(context.TODO(), dml.Qualify("", p))
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -138,16 +136,15 @@ func TestDelete_Prepare(t *testing.T) {
 		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("DELETE FROM `dml_person` WHERE (`name` = ?) AND (`email` = ?)"))
 		prep.ExpectExec().WithArgs("Peter Gopher", "peter@gopher.go").WillReturnResult(sqlmock.NewResult(0, 4))
 
-		stmt, err := dml.NewDelete("dml_person").
-			Where(dml.Column("name").PlaceHolder(), dml.Column("email").PlaceHolder()).
-			WithDB(dbc.DB).
+		stmt, err := dbc.WithQueryBuilder(dml.NewDelete("dml_person").
+			Where(dml.Column("name").PlaceHolder(), dml.Column("email").PlaceHolder())).
 			Prepare(context.TODO())
 		assert.NoError(t, err, "failed creating a prepared statement")
 		defer func() {
 			assert.NoError(t, stmt.Close(), "Close on a prepared statement")
 		}()
 
-		res, err := stmt.WithDBR().ExecContext(context.TODO(), "Peter Gopher", "peter@gopher.go")
+		res, err := stmt.ExecContext(context.TODO(), "Peter Gopher", "peter@gopher.go")
 		assert.NoError(t, err, "failed to execute ExecContext")
 
 		lid, err := res.RowsAffected()
@@ -181,7 +178,7 @@ func TestDelete_Join(t *testing.T) {
 	})
 
 	t.Run("JOIN USING with alias WithDBR", func(t *testing.T) {
-		compareToSQL(t, del1.WithDBR().TestWithArgs(now()), errors.NoKind,
+		compareToSQL(t, del1.WithDBR(dbMock{}).TestWithArgs(now()), errors.NoKind,
 			"DELETE `ce`,`customer_address`,`customer_company` FROM `customer_entity` AS `ce` INNER JOIN `customer_company` AS `cc` USING (`ce.entity_id`,`cc.customer_id`) RIGHT JOIN `customer_address` AS `ca` USING (`ce.entity_id`,`ca.parent_id`) WHERE (`ce`.`created_at` < ?)",
 			"DELETE `ce`,`customer_address`,`customer_company` FROM `customer_entity` AS `ce` INNER JOIN `customer_company` AS `cc` USING (`ce.entity_id`,`cc.customer_id`) RIGHT JOIN `customer_address` AS `ca` USING (`ce.entity_id`,`ca.parent_id`) WHERE (`ce`.`created_at` < '2006-01-02 15:04:05')",
 			now(),
@@ -276,7 +273,7 @@ func TestDelete_Clone(t *testing.T) {
 	})
 
 	t.Run("non-nil", func(t *testing.T) {
-		d := dbc.DeleteFrom("dml_people").Alias("dmlPpl").FromTables("a1", "b2").
+		d := dml.NewDelete("dml_people").Alias("dmlPpl").FromTables("a1", "b2").
 			Where(
 				dml.Column("id").PlaceHolder(),
 			).OrderBy("id")
@@ -287,6 +284,5 @@ func TestDelete_Clone(t *testing.T) {
 		notEqualPointers(t, d.BuilderConditional.OrderBys, d2.BuilderConditional.OrderBys)
 		notEqualPointers(t, d.MultiTables, d2.MultiTables)
 		// assert.Exactly(t, d.DB, d2.DB)
-		assert.Exactly(t, d.Log, d2.Log)
 	})
 }

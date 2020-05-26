@@ -16,12 +16,10 @@ package dml
 
 import (
 	"bytes"
-	"context"
 	"strconv"
 	"strings"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
@@ -30,6 +28,13 @@ import (
 // With template usage enabled, it builds multiple select statements joined by
 // UNION and all based on a common template.
 type Union struct {
+	// templateStmtCount only used in case a UNION statement acts as a template.
+	// Create one SELECT statement and by setting the data for
+	// Union.StringReplace function additional SELECT statements are getting
+	// created. Now the arguments must be multiplied by the number of new
+	// created SELECT statements. This value gets stored in templateStmtCount.
+	// An example exists in TestUnionTemplate_ReuseArgs.
+	templateStmtCount int
 	BuilderBase
 	Selects     []*Select
 	OrderBys    ids
@@ -48,69 +53,6 @@ func NewUnion(selects ...*Select) *Union {
 	return &Union{
 		Selects: selects,
 	}
-}
-
-func unionInitLog(l log.Logger, selects []*Select, id string) log.Logger {
-	if l != nil {
-		tables := make([]string, len(selects))
-		for i, s := range selects {
-			tables[i] = s.Table.Name
-		}
-		l = l.With(log.String("union_id", id), log.Strings("tables", tables...))
-	}
-	return l
-}
-
-// Union creates a new Union with a random connection from the pool.
-func (c *ConnPool) Union(selects ...*Select) *Union {
-	id := c.makeUniqueID()
-	return &Union{
-		BuilderBase: BuilderBase{
-			builderCommon: builderCommon{
-				id:  id,
-				Log: unionInitLog(c.Log, selects, id),
-				db:  c.DB,
-			},
-		},
-		Selects: selects,
-	}
-}
-
-// Union creates a new Union with a dedicated connection from the pool.
-func (c *Conn) Union(selects ...*Select) *Union {
-	id := c.makeUniqueID()
-	return &Union{
-		BuilderBase: BuilderBase{
-			builderCommon: builderCommon{
-				id:  id,
-				Log: unionInitLog(c.Log, selects, id),
-				db:  c.DB,
-			},
-		},
-		Selects: selects,
-	}
-}
-
-// Union creates a new Union that select that given columns bound to the
-// transaction.
-func (tx *Tx) Union(selects ...*Select) *Union {
-	id := tx.makeUniqueID()
-	return &Union{
-		BuilderBase: BuilderBase{
-			builderCommon: builderCommon{
-				id:  id,
-				Log: unionInitLog(tx.Log, selects, id),
-				db:  tx.DB,
-			},
-		},
-		Selects: selects,
-	}
-}
-
-// WithDB sets the database query object.
-func (u *Union) WithDB(db QueryExecPreparer) *Union {
-	u.db = db
-	return u
 }
 
 // Unsafe see BuilderBase.IsUnsafe which weakens security when building the SQL
@@ -226,46 +168,18 @@ func (u *Union) StringReplace(key string, values ...string) *Union {
 	return u
 }
 
-// WithDBR returns a new type to support multiple executions of the underlying
-// SQL statement and reuse of memory allocations for the arguments. WithDBR
-// builds the SQL string in a thread safe way. It copies the underlying
-// connection and settings from the current DML type (Delete, Insert, Select,
-// Update, Union, With, etc.). The field DB can still be overwritten.
-// Interpolation does not support the raw interfaces. It's an architecture bug
-// to use WithDBR inside a loop. WithDBR does support thread safety and can be
-// used in parallel. Each goroutine must have its own dedicated *DBR
-// pointer.
-func (u *Union) WithDBR() *DBR {
-	return u.newDBR(u)
-}
-
 // ToSQL converts the statements into a string and returns its arguments.
 func (u *Union) ToSQL() (string, []interface{}, error) {
-	u.source = dmlSourceUnion
 	rawSQL, err := u.buildToSQL(u)
 	if err != nil {
 		return "", nil, errors.WithStack(err)
 	}
-	return string(rawSQL), nil, nil
-}
-
-// WithCacheKey sets the currently used cache key when generating a SQL string.
-// By setting a different cache key, a previous generated SQL query is
-// accessible again. New cache keys allow to change the generated query of the
-// current object. E.g. different where clauses or different row counts in
-// INSERT ... VALUES statements. The empty string defines the default cache key.
-// If the `args` argument contains values, then fmt.Sprintf gets used.
-func (u *Union) WithCacheKey(key string, args ...interface{}) *Union {
-	u.withCacheKey(key, args...)
-	return u
+	return rawSQL, nil, nil
 }
 
 // ToSQL generates the SQL string and its arguments. Calls to this function are
 // idempotent.
 func (u *Union) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err error) {
-	u.source = dmlSourceUnion
-	u.Selects[0].id = u.id
-
 	if len(u.Selects) > 1 {
 		for i, s := range u.Selects {
 			if i > 0 {
@@ -311,32 +225,6 @@ func (u *Union) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err e
 
 	sqlWriteOrderBy(w, u.OrderBys, true)
 	return placeHolders, nil
-}
-
-// Prepare executes the statement represented by the Union to create a prepared
-// statement. It returns a custom statement type or an error if there was one.
-// Provided arguments or records in the Union are getting ignored. The provided
-// context is used for the preparation of the statement, not for the execution
-// of the statement. The returned Stmter is not safe for concurrent use, despite
-// the underlying *sql.Stmt is.
-func (u *Union) Prepare(ctx context.Context) (*Stmt, error) {
-	return u.prepare(ctx, u.db, u, dmlSourceUnion)
-}
-
-// PrepareWithDBR same as Prepare but forwards the possible error of creating a
-// prepared statement into the DBR type. Reduces boilerplate code. You must
-// call DBR.Close to deallocate the prepared statement in the SQL server.
-func (u *Union) PrepareWithDBR(ctx context.Context) *DBR {
-	stmt, err := u.prepare(ctx, u.db, u, dmlSourceUnion)
-	if err != nil {
-		a := &DBR{
-			base: builderCommon{
-				ärgErr: errors.WithStack(err),
-			},
-		}
-		return a
-	}
-	return stmt.WithDBR()
 }
 
 // Clone creates a clone of the current object, leaving fields DB and Log

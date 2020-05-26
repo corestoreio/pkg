@@ -32,12 +32,12 @@ func TestEscapeWith_NaughtyStrings(t *testing.T) {
 	s := createRealSessionWithFixtures(t, nil)
 	defer testCloser(t, s)
 
-	sel := s.SelectFrom("dml_people").AddColumns("id", "name", "email").OrderBy("id")
+	sel := NewSelect("id", "name", "email").From("dml_people").OrderBy("id")
 
 	for _, nstr := range naughtystrings.Unencoded() {
 		var people dmlPersons
 		sel.Where(Column("name").Str(nstr))
-		count, err := sel.WithDBR().Load(context.TODO(), &people)
+		count, err := sel.WithDBR(s.DB).Load(context.TODO(), &people)
 		if err != nil {
 			t.Fatalf("DB Error: %+v\n\nWith string: %q", err, nstr)
 		}

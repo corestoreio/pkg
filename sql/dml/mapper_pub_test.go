@@ -425,10 +425,10 @@ func TestColumnMap_Prepared(t *testing.T) {
 				assert.NoError(t, b.Debug(buf))
 				assert.Exactly(t, want, buf.String())
 			}
-			stmt, err := dbc.SelectFrom("test").Star().Prepare(context.TODO())
+			stmt, err := dbc.WithQueryBuilder(dml.NewSelect("*").From("test")).Prepare(context.TODO())
 			assert.NoError(t, err)
 
-			rc, err := stmt.WithDBR().Load(context.TODO(), tbl)
+			rc, err := stmt.Load(context.TODO(), tbl)
 			if scanErrWantKind != errors.NoKind {
 				assert.True(t, errors.MatchKind(err, scanErrWantKind), "Should be Error Kind %s; Got: %s\n%+v", scanErrWantKind, errors.UnwrapKind(err), err)
 			} else {

@@ -292,41 +292,6 @@ func installFixtures(t testing.TB, db *sql.DB, c *installFixturesConfig) {
 	}
 }
 
-var (
-	_ QueryExecPreparer = (*dbMock)(nil)
-	_ Execer            = (*dbMock)(nil)
-)
-
-type dbMock struct {
-	error
-	prepareFn func(query string) (*sql.Stmt, error)
-}
-
-func (pm dbMock) PrepareContext(ctx context.Context, query string) (*sql.Stmt, error) {
-	if pm.error != nil {
-		return nil, pm.error
-	}
-	return pm.prepareFn(query)
-}
-
-func (pm dbMock) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
-	if pm.error != nil {
-		return nil, pm.error
-	}
-	return nil, nil
-}
-
-func (pm dbMock) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
-	return new(sql.Row)
-}
-
-func (pm dbMock) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
-	if pm.error != nil {
-		return nil, pm.error
-	}
-	return nil, nil
-}
-
 // compareToSQL compares a SQL object with a placeholder string and an optional
 // interpolated string. This function also exists in file dml_public_test.go to
 // avoid import cycles when using a single package dedicated for testing.

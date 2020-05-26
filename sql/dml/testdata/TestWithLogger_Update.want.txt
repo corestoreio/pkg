@@ -1,0 +1,12 @@
+DEBUG Exec conn_pool_id: "UNIQ03" conn_source: "ConnPool" is_prepared: false query_id: "UNIQ06" query: "/*$ID$UNIQ06*/UPDATE `dml_people` SET `email`='new@email.com' WHERE (`id` >= 78.31)" duration: 0 sql: "/*$ID$UNIQ06*/UPDATE `dml_people` SET `email`='new@email.com' WHERE (`id` >= 78.31)" length_args: 0 length_raw_args: 0 source: "u" error: "<nil>"
+DEBUG BeginTx conn_pool_id: "UNIQ03" tx_id: "UNIQ09"
+DEBUG Exec conn_pool_id: "UNIQ03" tx_id: "UNIQ09" conn_source: "Tx" is_prepared: false query_id: "UNIQ12" query: "/*$ID$UNIQ12*/UPDATE `dml_people` SET `email`='new@email.com' WHERE (`id` >= 36.56)" duration: 0 sql: "/*$ID$UNIQ12*/UPDATE `dml_people` SET `email`='new@email.com' WHERE (`id` >= 36.56)" length_args: 0 length_raw_args: 0 source: "u" error: "<nil>"
+DEBUG Commit conn_pool_id: "UNIQ03" tx_id: "UNIQ09" duration: 0
+DEBUG Exec conn_pool_id: "UNIQ03" conn_id: "UNIQ15" conn_source: "Conn" is_prepared: false query_id: "UNIQ18" query: "/*$ID$UNIQ18*/UPDATE `dml_people` SET `email`='new@email.com' WHERE (`id` >= 21.56)" duration: 0 sql: "/*$ID$UNIQ18*/UPDATE `dml_people` SET `email`='new@email.com' WHERE (`id` >= 21.56)" length_args: 0 length_raw_args: 0 source: "u" error: "<nil>"
+DEBUG Exec conn_pool_id: "UNIQ03" conn_id: "UNIQ15" conn_source: "Conn" is_prepared: false query_id: "UNIQ18" query: "/*$ID$UNIQ18*/UPDATE `dml_people` SET `email`='new@email.com' WHERE (`id` >= 21.56)" duration: 0 sql: "" length_args: 0 length_raw_args: 0 source: "u" error: "<nil>"
+DEBUG BeginTx conn_pool_id: "UNIQ03" conn_id: "UNIQ15" tx_id: "UNIQ21"
+DEBUG Exec conn_pool_id: "UNIQ03" conn_id: "UNIQ15" tx_id: "UNIQ21" conn_source: "Tx" is_prepared: false query_id: "UNIQ24" query: "/*$ID$UNIQ24*/UPDATE `dml_people` SET `email`='new@email.com' WHERE (`id` >= 39.56)" duration: 0 sql: "/*$ID$UNIQ24*/UPDATE `dml_people` SET `email`='new@email.com' WHERE (`id` >= 39.56)" length_args: 0 length_raw_args: 0 source: "u" error: "<nil>"
+DEBUG Commit conn_pool_id: "UNIQ03" conn_id: "UNIQ15" tx_id: "UNIQ21" duration: 0
+DEBUG BeginTx conn_pool_id: "UNIQ03" conn_id: "UNIQ15" tx_id: "UNIQ27"
+DEBUG Exec conn_pool_id: "UNIQ03" conn_id: "UNIQ15" tx_id: "UNIQ27" conn_source: "Tx" is_prepared: false query_id: "UNIQ30" query: "/*$ID$UNIQ30*/UPDATE `dml_people` SET `email`='new@email.com' WHERE (`id` >= ?)" duration: 0 sql: "/*$ID$UNIQ30*/UPDATE `dml_people` SET `email`='new@email.com' WHERE (`id` >= ?)" length_args: 0 length_raw_args: 0 source: "u" error: "<nil>"
+DEBUG Rollback conn_pool_id: "UNIQ03" conn_id: "UNIQ15" tx_id: "UNIQ27" duration: 0

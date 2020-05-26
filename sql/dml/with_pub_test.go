@@ -28,33 +28,31 @@ import (
 
 func TestWith_Query(t *testing.T) {
 	t.Run("error", func(t *testing.T) {
-		dbc, dbMock := dmltest.MockDB(t)
-		defer dmltest.MockClose(t, dbc, dbMock)
+		dbc, mockDB := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, mockDB)
 
-		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("WITH `sel` AS (SELECT 1) SELECT * FROM `sel`")).
+		mockDB.ExpectQuery(dmltest.SQLMockQuoteMeta("WITH `sel` AS (SELECT 1) SELECT * FROM `sel`")).
 			WillReturnError(errors.AlreadyClosed.Newf("Who closed myself?"))
 
 		sel := dml.NewWith(dml.WithCTE{Name: "sel", Select: dml.NewSelect().Unsafe().AddColumns("1")}).
-			Select(dml.NewSelect().Star().From("sel")).
-			WithDB(dbc.DB)
-		rows, err := sel.WithDBR().QueryContext(context.TODO())
-		assert.Nil(t, rows)
+			Select(dml.NewSelect().Star().From("sel"))
+		rows, err := sel.WithDBR(dbc.DB).QueryContext(context.TODO())
 		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
+		assert.Nil(t, rows)
 	})
 }
 
 func TestWith_Load(t *testing.T) {
 	t.Run("error", func(t *testing.T) {
-		dbc, dbMock := dmltest.MockDB(t)
-		defer dmltest.MockClose(t, dbc, dbMock)
+		dbc, mockDB := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, mockDB)
 
-		dbMock.ExpectQuery(dmltest.SQLMockQuoteMeta("WITH `sel` AS (SELECT 1) SELECT * FROM `sel`")).
+		mockDB.ExpectQuery(dmltest.SQLMockQuoteMeta("WITH `sel` AS (SELECT 1) SELECT * FROM `sel`")).
 			WillReturnError(errors.AlreadyClosed.Newf("Who closed myself?"))
 
 		sel := dml.NewWith(dml.WithCTE{Name: "sel", Select: dml.NewSelect().Unsafe().AddColumns("1")}).
-			Select(dml.NewSelect().Star().From("sel")).
-			WithDB(dbc.DB)
-		rows, err := sel.WithDBR().Load(context.TODO(), nil)
+			Select(dml.NewSelect().Star().From("sel"))
+		rows, err := sel.WithDBR(dbc.DB).Load(context.TODO(), nil)
 		assert.Exactly(t, uint64(0), rows)
 		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
@@ -157,32 +155,31 @@ func TestNewWith(t *testing.T) {
 
 func TestWith_Prepare(t *testing.T) {
 	t.Run("error", func(t *testing.T) {
-		dbc, dbMock := dmltest.MockDB(t)
-		defer dmltest.MockClose(t, dbc, dbMock)
+		dbc, mockDB := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, mockDB)
 
-		dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("WITH `sel` AS (SELECT 1) SELECT * FROM `sel`")).
+		mockDB.ExpectPrepare(dmltest.SQLMockQuoteMeta("WITH `sel` AS (SELECT 1) SELECT * FROM `sel`")).
 			WillReturnError(errors.AlreadyClosed.Newf("Who closed myself?"))
 
-		sel := dml.NewWith(dml.WithCTE{Name: "sel", Select: dml.NewSelect().Unsafe().AddColumns("1")}).
-			Select(dml.NewSelect().Star().From("sel")).
-			WithDB(dbc.DB)
-		stmt, err := sel.Prepare(context.TODO())
-		assert.Nil(t, stmt)
-		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
+		stmt := dbc.WithPrepare(context.TODO(),
+			dml.NewWith(dml.WithCTE{Name: "sel", Select: dml.NewSelect().Unsafe().AddColumns("1")}).
+				Select(dml.NewSelect().Star().From("sel")),
+		)
+		assert.ErrorIsKind(t, errors.AlreadyClosed, stmt.PreviousError())
 	})
 
 	t.Run("Query", func(t *testing.T) {
-		dbc, dbMock := dmltest.MockDB(t)
-		defer dmltest.MockClose(t, dbc, dbMock)
+		dbc, mockDB := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, mockDB)
 
-		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("WITH RECURSIVE `cte` (`n`) AS ((SELECT `a`, `d` AS `b` FROM `tableAD`) UNION ALL (SELECT `a`, `b` FROM `tableAB` WHERE (`b` = ?))) SELECT * FROM `cte`"))
+		prep := mockDB.ExpectPrepare(dmltest.SQLMockQuoteMeta("WITH RECURSIVE `cte` (`n`) AS ((SELECT `a`, `d` AS `b` FROM `tableAD`) UNION ALL (SELECT `a`, `b` FROM `tableAB` WHERE (`b` = ?))) SELECT * FROM `cte`"))
 		prep.ExpectQuery().WithArgs(6889).
 			WillReturnRows(sqlmock.NewRows([]string{"a", "b"}).AddRow("Peter Gopher", "peter@gopher.go"))
 
 		prep.ExpectQuery().WithArgs(6890).
 			WillReturnRows(sqlmock.NewRows([]string{"a", "b"}).AddRow("Peter Gopher2", "peter@gopher.go2"))
 
-		stmt, err := dml.NewWith(
+		stmt := dbc.WithPrepare(context.TODO(), dml.NewWith(
 			dml.WithCTE{
 				Name:    "cte",
 				Columns: []string{"n"},
@@ -193,17 +190,14 @@ func TestWith_Prepare(t *testing.T) {
 			},
 		).
 			Recursive().
-			Select(dml.NewSelect().Star().From("cte")).
-			WithDB(dbc.DB).
-			Prepare(context.TODO())
+			Select(dml.NewSelect().Star().From("cte")),
+		)
+		defer dmltest.Close(t, stmt)
 
-		assert.NoError(t, err, "failed creating a prepared statement")
-		defer func() {
-			assert.NoError(t, stmt.Close(), "Close on a prepared statement")
-		}()
+		assert.NoError(t, stmt.PreviousError(), "failed creating a prepared statement")
 
 		t.Run("Context", func(t *testing.T) {
-			rows, err := stmt.WithDBR().QueryContext(context.TODO(), 6889)
+			rows, err := stmt.QueryContext(context.TODO(), 6889)
 			assert.NoError(t, err)
 			defer rows.Close()
 
@@ -213,8 +207,7 @@ func TestWith_Prepare(t *testing.T) {
 		})
 
 		t.Run("RowContext", func(t *testing.T) {
-			row := stmt.WithDBR().QueryRowContext(context.TODO(), 6890)
-			assert.NoError(t, err)
+			row := stmt.QueryRowContext(context.TODO(), 6890)
 			n, e := "", ""
 			assert.NoError(t, row.Scan(&n, &e))
 
@@ -224,12 +217,12 @@ func TestWith_Prepare(t *testing.T) {
 	})
 
 	t.Run("Exec", func(t *testing.T) {
-		dbc, dbMock := dmltest.MockDB(t)
-		defer dmltest.MockClose(t, dbc, dbMock)
+		dbc, mockDB := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, mockDB)
 
-		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("WITH RECURSIVE `cte` (`n`) AS ((SELECT `name`, `d` AS `email` FROM `dml_person`) UNION ALL (SELECT `name`, `email` FROM `dml_person2` WHERE (`id` = ?))) SELECT * FROM `cte`"))
+		prep := mockDB.ExpectPrepare(dmltest.SQLMockQuoteMeta("WITH RECURSIVE `cte` (`n`) AS ((SELECT `name`, `d` AS `email` FROM `dml_person`) UNION ALL (SELECT `name`, `email` FROM `dml_person2` WHERE (`id` = ?))) SELECT * FROM `cte`"))
 
-		stmt, err := dml.NewWith(
+		stmt := dbc.WithPrepare(context.TODO(), dml.NewWith(
 			dml.WithCTE{
 				Name:    "cte",
 				Columns: []string{"n"},
@@ -240,14 +233,9 @@ func TestWith_Prepare(t *testing.T) {
 			},
 		).
 			Recursive().
-			Select(dml.NewSelect().Star().From("cte")).
-			WithDB(dbc.DB).
-			Prepare(context.TODO())
+			Select(dml.NewSelect().Star().From("cte")))
 
-		assert.NoError(t, err, "failed creating a prepared statement")
-		defer func() {
-			assert.NoError(t, stmt.Close(), "Close on a prepared statement")
-		}()
+		defer dmltest.Close(t, stmt)
 
 		const iterations = 3
 
@@ -257,10 +245,9 @@ func TestWith_Prepare(t *testing.T) {
 					WillReturnRows(sqlmock.NewRows([]string{"name", "email"}).AddRow("Peter Gopher", "peter@gopher.go"))
 			}
 			// use loop with Query and add args before
-			stmtA := stmt.WithDBR()
 
 			for i := 0; i < iterations; i++ {
-				rows, err := stmtA.QueryContext(context.TODO(), 6899)
+				rows, err := stmt.QueryContext(context.TODO(), 6899)
 				assert.NoError(t, err)
 
 				cols, err := rows.Columns()
@@ -277,10 +264,9 @@ func TestWith_Prepare(t *testing.T) {
 			}
 
 			p := &dmlPerson{ID: 6900}
-			stmtA := stmt.WithDBR()
 
 			for i := 0; i < iterations; i++ {
-				rows, err := stmtA.QueryContext(context.TODO(), dml.Qualify("", p))
+				rows, err := stmt.QueryContext(context.TODO(), dml.Qualify("", p))
 				assert.NoError(t, err)
 
 				cols, err := rows.Columns()
@@ -293,8 +279,7 @@ func TestWith_Prepare(t *testing.T) {
 		t.Run("WithRecords Error", func(t *testing.T) {
 			p := &TableCoreConfigDataSlice{err: errors.Duplicated.Newf("Found a duplicate")}
 
-			stmtA := stmt.WithDBR()
-			rows, err := stmtA.QueryContext(context.TODO(), dml.Qualify("", p))
+			rows, err := stmt.QueryContext(context.TODO(), dml.Qualify("", p))
 			assert.ErrorIsKind(t, errors.Duplicated, err)
 			assert.Nil(t, rows)
 		})
@@ -302,8 +287,8 @@ func TestWith_Prepare(t *testing.T) {
 }
 
 func TestWith_Clone(t *testing.T) {
-	dbc, dbMock := dmltest.MockDB(t, dml.WithLogger(log.BlackHole{}, func() string { return "uniqueID" }))
-	defer dmltest.MockClose(t, dbc, dbMock)
+	dbc, mockDB := dmltest.MockDB(t, dml.WithLogger(log.BlackHole{}, func() string { return "uniqueID" }))
+	defer dmltest.MockClose(t, dbc, mockDB)
 
 	t.Run("nil", func(t *testing.T) {
 		var d *dml.With
@@ -338,7 +323,6 @@ func TestWith_Clone(t *testing.T) {
 		assert.Nil(t, cte2.TopLevel.Union)
 
 		// assert.Exactly(t, cte.db, cte2.db) // how to test this?
-		assert.Exactly(t, cte.Log, cte2.Log)
 	})
 	// Add more tests for the different fields ... one day.
 }

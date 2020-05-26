@@ -16,11 +16,9 @@ package dml
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 )
 
 // Select contains the clauses for a SELECT statement. Wildcard `SELECT *`
@@ -79,53 +77,6 @@ func NewSelectWithDerivedTable(subSelect *Select, aliasName string) *Select {
 			},
 		},
 	}
-}
-
-func newSelect(db QueryExecPreparer, cCom *connCommon, from []string) *Select {
-	id := cCom.makeUniqueID()
-	from[0] = cCom.mapTableName(from[0])
-	l := cCom.Log
-	if l != nil {
-		l = l.With(log.String("select_id", id), log.String("table", from[0]))
-	}
-	s := &Select{
-		BuilderBase: BuilderBase{
-			builderCommon: builderCommon{
-				id:  id,
-				Log: l,
-				db:  db,
-			},
-			Table: MakeIdentifier(from[0]),
-		},
-	}
-	if len(from) > 1 {
-		s.Table = s.Table.Alias(from[1])
-	}
-	return s
-}
-
-// SelectFrom creates a new Select with a connection from the pool. Mapping of
-// the table name is supported.
-func (c *ConnPool) SelectFrom(fromAlias ...string) *Select {
-	return newSelect(c.DB, &c.connCommon, fromAlias)
-}
-
-// SelectFrom creates a new Select in a dedicated connection. Mapping of the
-// table name is supported.
-func (c *Conn) SelectFrom(fromAlias ...string) *Select {
-	return newSelect(c.DB, &c.connCommon, fromAlias)
-}
-
-// SelectFrom creates a new Select that select that given columns bound to the
-// transaction. Mapping of the table name is supported.
-func (tx *Tx) SelectFrom(fromAlias ...string) *Select {
-	return newSelect(tx.DB, &tx.connCommon, fromAlias)
-}
-
-// WithDB sets the database query object.
-func (b *Select) WithDB(db QueryExecPreparer) *Select {
-	b.db = db
-	return b
 }
 
 // Distinct marks the statement at a DISTINCT SELECT. It specifies removal of
@@ -403,21 +354,6 @@ func (b *Select) CrossJoin(table id, onConditions ...*Condition) *Select {
 	return b
 }
 
-// WithDBR returns a new type to support multiple executions of the underlying
-// SQL statement and reuse of memory allocations for the arguments. WithDBR
-// builds the SQL string in a thread safe way. It copies the underlying
-// connection and settings from the current DML type (Delete, Insert, Select,
-// Update, Union, With, etc.). The field DB can still be overwritten.
-// Interpolation does not support the raw interfaces. It's an architecture bug
-// to use WithDBR inside a loop. WithDBR does support thread safety and can be
-// used in parallel. Each goroutine must have its own dedicated *DBR
-// pointer.
-func (b *Select) WithDBR() *DBR {
-	b.isWithDBR = true
-	dbr := b.newDBR(b)
-	return dbr
-}
-
 // ToSQL generates the SQL string and might caches it internally, if not
 // disabled.
 func (b *Select) ToSQL() (string, []interface{}, error) {
@@ -425,29 +361,17 @@ func (b *Select) ToSQL() (string, []interface{}, error) {
 	return rawSQL, nil, err
 }
 
-// WithCacheKey sets the currently used cache key when generating a SQL string.
-// By setting a different cache key, a previous generated SQL query is
-// accessible again. New cache keys allow to change the generated query of the
-// current object. E.g. different where clauses or different row counts in
-// INSERT ... VALUES statements. The empty string defines the default cache key.
-// If the `args` argument contains values, then fmt.Sprintf gets used.
-func (b *Select) WithCacheKey(key string, args ...interface{}) *Select {
-	b.withCacheKey(key, args...)
-	return b
-}
-
 // ToSQL serialized the Select to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) (_placeHolders []string, err error) {
-	b.source = dmlSourceSelect
-	b.defaultQualifier = b.Table.qualifier()
-
+	if b.BuilderBase.ärgErr != nil {
+		return nil, b.BuilderBase.ärgErr
+	}
 	if len(b.Columns) == 0 && !b.IsCountStar && !b.IsStar {
 		return nil, errors.Empty.Newf("[dml] Select: no columns specified")
 	}
 
 	w.WriteString("SELECT ")
-	writeStmtID(w, b.id)
 	if b.IsDistinct {
 		w.WriteString("DISTINCT ")
 	}
@@ -549,32 +473,6 @@ func (b *Select) toSQL(w *bytes.Buffer, placeHolders []string) (_placeHolders []
 		w.WriteString(" FOR UPDATE")
 	}
 	return placeHolders, err
-}
-
-// Prepare executes the statement represented by the Select to create a prepared
-// statement. It returns a custom statement type or an error if there was one.
-// Provided arguments or records in the Select are getting ignored. The provided
-// context is used for the preparation of the statement, not for the execution
-// of the statement. The returned Stmter is not safe for concurrent use, despite
-// the underlying *sql.Stmt is (really? TODO investigate).
-func (b *Select) Prepare(ctx context.Context) (*Stmt, error) {
-	return b.prepare(ctx, b.db, b, dmlSourceSelect)
-}
-
-// PrepareWithDBR same as Prepare but forwards the possible error of creating a
-// prepared statement into the DBR type. Reduces boilerplate code. You must
-// call DBR.Close to deallocate the prepared statement in the SQL server.
-func (b *Select) PrepareWithDBR(ctx context.Context) *DBR {
-	stmt, err := b.prepare(ctx, b.db, b, dmlSourceInsert)
-	if err != nil {
-		a := &DBR{
-			base: builderCommon{
-				ärgErr: errors.WithStack(err),
-			},
-		}
-		return a
-	}
-	return stmt.WithDBR()
 }
 
 // Clone creates a clone of the current object, leaving fields DB and Log

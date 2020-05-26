@@ -16,10 +16,8 @@ package dml
 
 import (
 	"bytes"
-	"context"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 )
 
 // Update contains the logic for an UPDATE statement.
@@ -41,50 +39,9 @@ func NewUpdate(table string) *Update {
 	}
 }
 
-func newUpdate(db QueryExecPreparer, cComm *connCommon, table string) *Update {
-	id := cComm.makeUniqueID()
-	l := cComm.Log
-	table = cComm.mapTableName(table)
-	if l != nil {
-		l = l.With(log.String("update_id", id), log.String("table", table))
-	}
-	return &Update{
-		BuilderBase: BuilderBase{
-			builderCommon: builderCommon{
-				id:  id,
-				Log: l,
-				db:  db,
-			},
-			Table: MakeIdentifier(table),
-		},
-	}
-}
-
-// Update creates a new Update for the given table with a random connection from
-// the pool.
-func (c *ConnPool) Update(table string) *Update {
-	return newUpdate(c.DB, &c.connCommon, table)
-}
-
-// Update creates a new Update for the given table bound to a single connection.
-func (c *Conn) Update(table string) *Update {
-	return newUpdate(c.DB, &c.connCommon, table)
-}
-
-// Update creates a new Update for the given table bound to a transaction.
-func (tx *Tx) Update(table string) *Update {
-	return newUpdate(tx.DB, &tx.connCommon, table)
-}
-
 // Alias sets an alias for the table name.
 func (b *Update) Alias(alias string) *Update {
 	b.Table.Aliased = alias
-	return b
-}
-
-// WithDB sets the database query object.
-func (b *Update) WithDB(db QueryExecPreparer) *Update {
-	b.db = db
 	return b
 }
 
@@ -156,47 +113,18 @@ func (b *Update) Limit(limit uint64) *Update {
 	return b
 }
 
-// WithDBR returns a new type to support multiple executions of the underlying
-// SQL statement and reuse of memory allocations for the arguments. WithDBR
-// builds the SQL string in a thread safe way. It copies the underlying
-// connection and settings from the current DML type (Delete, Insert, Select,
-// Update, Union, With, etc.). The field DB can still be overwritten.
-// Interpolation does not support the raw interfaces. It's an architecture bug
-// to use WithDBR inside a loop. WithDBR does support thread safety and can be
-// used in parallel. Each goroutine must have its own dedicated *DBR
-// pointer.
-func (b *Update) WithDBR() *DBR {
-	b.isWithDBR = true
-	return b.newDBR(b)
-}
-
 // ToSQL converts the select statement into a string and returns its arguments.
 func (b *Update) ToSQL() (string, []interface{}, error) {
-	b.source = dmlSourceUpdate
 	rawSQL, err := b.buildToSQL(b)
 	if err != nil {
 		return "", nil, errors.WithStack(err)
 	}
-	return rawSQL, nil, nil
-}
-
-// WithCacheKey sets the currently used cache key when generating a SQL string.
-// By setting a different cache key, a previous generated SQL query is
-// accessible again. New cache keys allow to change the generated query of the
-// current object. E.g. different where clauses or different row counts in
-// INSERT ... VALUES statements. The empty string defines the default cache key.
-// If the `args` argument contains values, then fmt.Sprintf gets used.
-func (b *Update) WithCacheKey(key string, args ...interface{}) *Update {
-	b.withCacheKey(key, args...)
-	return b
+	return rawSQL,nil, nil
 }
 
 // ToSQL serialized the Update to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Update) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, error) {
-	b.defaultQualifier = b.Table.qualifier()
-	b.source = dmlSourceUpdate
-
 	if b.Table.Name == "" {
 		return nil, errors.Empty.Newf("[dml] Update: Table at empty")
 	}
@@ -205,7 +133,6 @@ func (b *Update) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 	}
 
 	buf.WriteString("UPDATE ")
-	writeStmtID(buf, b.id)
 	_, _ = b.Table.writeQuoted(buf, nil)
 	buf.WriteString(" SET ")
 
@@ -223,32 +150,6 @@ func (b *Update) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 	sqlWriteOrderBy(buf, b.OrderBys, false)
 	sqlWriteLimitOffset(buf, b.LimitValid, false, 0, b.LimitCount)
 	return placeHolders, nil
-}
-
-// Prepare executes the statement represented by the Update to create a prepared
-// statement. It returns a custom statement type or an error if there was one.
-// Provided arguments or records in the Update are getting ignored. The provided
-// context is used for the preparation of the statement, not for the execution
-// of the statement. The returned Stmter is not safe for concurrent use, despite
-// the underlying *sql.Stmt is.
-func (b *Update) Prepare(ctx context.Context) (*Stmt, error) {
-	return b.prepare(ctx, b.db, b, dmlSourceUpdate)
-}
-
-// PrepareWithDBR same as Prepare but forwards the possible error of creating a
-// prepared statement into the DBR type. Reduces boilerplate code. You must
-// call DBR.Close to deallocate the prepared statement in the SQL server.
-func (b *Update) PrepareWithDBR(ctx context.Context) *DBR {
-	stmt, err := b.prepare(ctx, b.db, b, dmlSourceUpdate)
-	if err != nil {
-		a := &DBR{
-			base: builderCommon{
-				ärgErr: errors.WithStack(err),
-			},
-		}
-		return a
-	}
-	return stmt.WithDBR()
 }
 
 // Clone creates a clone of the current object, leaving fields DB and Log

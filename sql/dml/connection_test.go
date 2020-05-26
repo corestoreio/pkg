@@ -30,15 +30,18 @@ func TestTransactionReal(t *testing.T) {
 	tx, err := s.BeginTx(context.TODO(), nil)
 	assert.NoError(t, err)
 
-	txIns := tx.InsertInto("dml_people").AddColumns("name", "email").WithDBR()
+	s.RegisterByQueryBuilder(map[string]QueryBuilder{
+		"insert01": NewInsert("dml_people").AddColumns("name", "email"),
+		"selectID": NewSelect("*").From("dml_people").Where(Column("id").PlaceHolder()),
+	})
 
-	lastInsertID, _ := compareExecContext(t, txIns, []interface{}{
+	lastInsertID, _ := compareExecContext(t, tx.WithCacheKey("insert01"), []interface{}{
 		"Barack", "obama@whitehouse.gov",
 		"Obama", "barack@whitehouse.gov",
 	}, 3, 2)
 
 	var person dmlPerson
-	_, err = tx.SelectFrom("dml_people").Star().Where(Column("id").Int64(lastInsertID)).WithDBR().Load(context.TODO(), &person)
+	_, err = tx.WithCacheKey("selectID").Load(context.TODO(), &person, lastInsertID)
 	assert.NoError(t, err)
 
 	assert.Exactly(t, lastInsertID, int64(person.ID))
@@ -59,7 +62,7 @@ func TestTransactionRollbackReal(t *testing.T) {
 	assert.NoError(t, err)
 
 	var person dmlPerson
-	_, err = tx.SelectFrom("dml_people").Star().Where(Column("email").PlaceHolder()).WithDBR().Load(context.TODO(), &person, "SirGeorge@GoIsland.com")
+	_, err = tx.WithQueryBuilder(NewSelect("*").From("dml_people").Where(Column("email").PlaceHolder())).Load(context.TODO(), &person, "SirGeorge@GoIsland.com")
 	assert.NoError(t, err)
 	assert.Exactly(t, "Sir George", person.Name)
 
@@ -83,4 +86,27 @@ func TestWithDSNfromEnv(t *testing.T) {
 		assert.Nil(t, cp)
 		assert.ErrorIsKind(t, errors.NotExists, err)
 	})
+}
+
+func Test_hashSQL(t *testing.T) {
+	tests := []struct {
+		name string
+		args string
+		want string
+	}{
+		{"empty", "", "cbf29ce484222325"},
+		{"one char", "a", "af63fc4c860222ec"},
+		{"select01", "SELECT * FROM dual", "SELECT6928bed45f95652f"},
+		{"select02", "SELECT*FROM\tdual", "SELECT*FROM6928bed45f95652f"},
+		{"select03", sqlIDPrefix + "asdfasfasd*/SELECT\ncol1 FROM\tdual", "SELECTfb435c798e219c6e"},
+		{"update04", sqlIDPrefix + "asdfasfasd*/UPDATE\r\ncol1 FROM\tdual", "UPDATE27ae3c89bd8e8d9f"},
+		{"union", "(SELECT `a`, `d` AS `b` FROM `tableAD`) UNION (SELECT `a`, `b` FROM `tableAB` WHERE (`b` = 3.14159)) ORDER BY `a`, `b` DESC, concat(\"c\",b,\"d\")", "(SELECT13d6ec028c4394e5"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := hashSQL(tt.args); got != tt.want {
+				t.Errorf("hashSQL() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

@@ -121,7 +121,7 @@ func ExampleSelect_WithArgs_record() {
 			dml.Column("t_d.store_id").Equal().SQLIfNull("t_s.store_id", "0"), // Just for testing
 			dml.Column("t_d.store_id").Equal().PlaceHolder(),                  // 17
 		).
-		WithDBR().TestWithArgs(dml.Qualify("e", ce), dml.Qualify("t_d", st))
+		WithDBR(dbMock{}).TestWithArgs(dml.Qualify("e", ce), dml.Qualify("t_d", st))
 
 	writeToSQLAndInterpolate(s)
 	fmt.Print("\n\n")

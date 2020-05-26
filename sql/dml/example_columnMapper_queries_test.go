@@ -37,7 +37,7 @@ func ExampleColumnMapper_selectWhereInCollection() {
 			dml.Column("entity_id").In().PlaceHolder(),
 		).
 		// for variable customers see ExampleColumnMapper
-		WithDBR().TestWithArgs(dml.Qualify("", cmCustomers))
+		WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", cmCustomers))
 	writeToSQLAndInterpolate(q)
 
 	// Output:
@@ -62,7 +62,7 @@ func ExampleColumnMapper_selectJoinCollection() {
 		Where(
 			dml.Column("ce.entity_id").In().PlaceHolder(),
 		).
-		WithDBR().TestWithArgs(dml.Qualify("ce", cmCustomers))
+		WithDBR(dbMock{}).TestWithArgs(dml.Qualify("ce", cmCustomers))
 
 	writeToSQLAndInterpolate(q)
 
@@ -85,7 +85,7 @@ func ExampleColumnMapper_selectJoinCollection() {
 func ExampleColumnMapper_updateEntity() {
 	q := dml.NewUpdate("customer_entity").AddColumns("firstname", "lifetime_sales", "voucher_codes").
 		Where(dml.Column("entity_id").Equal().PlaceHolder()).
-		WithDBR().TestWithArgs(dml.Qualify("", cmCustomers.Data[0])) // Empty string is the qualifier
+		WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", cmCustomers.Data[0])) // Empty string is the qualifier
 
 	writeToSQLAndInterpolate(q)
 	// Output:
@@ -103,7 +103,7 @@ func ExampleColumnMapper_updateEntity() {
 // Collection not yet supported.
 func ExampleColumnMapper_insertEntitiesWithColumns() {
 	q := dml.NewInsert("customer_entity").AddColumns("firstname", "lifetime_sales", "store_id", "voucher_codes").
-		WithDBR().TestWithArgs(
+		WithDBR(dbMock{}).TestWithArgs(
 		// might get optimized in the future, but it depends.
 		dml.Qualify("", cmCustomers.Data[0]),
 		dml.Qualify("", cmCustomers.Data[1]),
@@ -133,7 +133,7 @@ func ExampleColumnMapper_insertEntitiesWithoutColumns() {
 		// customerEntity has five fields and all fields are requested. For
 		// now a hard coded 5.
 		SetRecordPlaceHolderCount(5).
-		WithDBR().TestWithArgs(
+		WithDBR(dbMock{}).TestWithArgs(
 		dml.Qualify("", cmCustomers.Data[0]),
 		dml.Qualify("", cmCustomers.Data[1]),
 		dml.Qualify("", cmCustomers.Data[2]),
@@ -153,7 +153,7 @@ func ExampleColumnMapper_insertEntitiesWithoutColumns() {
 func ExampleColumnMapper_insertCollectionWithoutColumns() {
 	q := dml.NewInsert("customer_entity"). // AddColumns("firstname", "lifetime_sales", "store_id", "voucher_codes").
 						SetRecordPlaceHolderCount(5).
-						SetRowCount(len(cmCustomers.Data)).WithDBR().TestWithArgs(dml.Qualify("", cmCustomers))
+						SetRowCount(len(cmCustomers.Data)).WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", cmCustomers))
 
 	writeToSQLAndInterpolate(q)
 	// Output:
@@ -176,7 +176,7 @@ func ExampleColumnMapper_selectSalesOrdersFromSpecificCustomers() {
 	// ColumnMapper in customerCollection and customerEntity. `customer_id` acts
 	// as an alias to `entity_id`.
 	q := dml.NewSelect("entity_id", "status", "increment_id", "grand_total", "tax_total").From("sales_order_entity").
-		Where(dml.Column("customer_id").In().PlaceHolder()).WithDBR().TestWithArgs(dml.Qualify("", cmCustomers))
+		Where(dml.Column("customer_id").In().PlaceHolder()).WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", cmCustomers))
 
 	writeToSQLAndInterpolate(q)
 	// Output:

@@ -16,10 +16,8 @@ package dml
 
 import (
 	"bytes"
-	"context"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 )
 
 // Delete contains the clauses for a DELETE statement.
@@ -65,46 +63,6 @@ func NewDelete(from string) *Delete {
 			Wheres: make(Conditions, 0, 2),
 		},
 	}
-}
-
-func newDeleteFrom(db QueryExecPreparer, cCom *connCommon, from string) *Delete {
-	id := cCom.makeUniqueID()
-	l := cCom.Log
-	from = cCom.mapTableName(from)
-	if l != nil {
-		l = l.With(log.String("delete_id", id), log.String("table", from))
-	}
-	return &Delete{
-		BuilderBase: BuilderBase{
-			builderCommon: builderCommon{
-				id:  id,
-				Log: l,
-				db:  db,
-			},
-			Table: MakeIdentifier(from),
-		},
-		BuilderConditional: BuilderConditional{
-			Wheres: make(Conditions, 0, 2),
-		},
-	}
-}
-
-// DeleteFrom creates a new Delete for the given table. Mapping the table name
-// is supported.
-func (c *ConnPool) DeleteFrom(from string) *Delete {
-	return newDeleteFrom(c.DB, &c.connCommon, from)
-}
-
-// DeleteFrom creates a new Delete for the given table in the context for a
-// single database connection. Mapping the table name is supported.
-func (c *Conn) DeleteFrom(from string) *Delete {
-	return newDeleteFrom(c.DB, &c.connCommon, from)
-}
-
-// DeleteFrom creates a new Delete for the given table in the context for a
-// transaction. Mapping the table name is supported.
-func (tx *Tx) DeleteFrom(from string) *Delete {
-	return newDeleteFrom(tx.DB, &tx.connCommon, from)
 }
 
 // FromTables specifies additional tables to delete from besides the default table.
@@ -163,14 +121,6 @@ func (b *Delete) Alias(alias string) *Delete {
 	return b
 }
 
-// WithDB sets the database query object. DB can be either a *sql.DB (connection
-// pool), a *sql.Conn (a single dedicated database session) or a *sql.Tx (an
-// in-progress database transaction).
-func (b *Delete) WithDB(db QueryExecPreparer) *Delete {
-	b.db = db
-	return b
-}
-
 // Unsafe see BuilderBase.IsUnsafe which weakens security when building the SQL
 // string. This function must be called before calling any other function.
 func (b *Delete) Unsafe() *Delete {
@@ -215,54 +165,24 @@ func (b *Delete) Limit(limit uint64) *Delete {
 	return b
 }
 
-// WithDBR returns a new DBR type to support multiple executions of the
-// underlying SQL statement and reuse of memory allocations for the arguments.
-// WithDBR builds the SQL string in a thread safe way. It copies the underlying
-// connection and settings from the current DML type (Delete, Insert, Select,
-// Update, Union, With, etc.). The field DB can still be overwritten.
-// Interpolation does not support the raw interfaces. It's an architecture bug
-// to use WithDBR inside a loop. WithDBR does support thread safety and can be
-// used in parallel. Each goroutine must have its own dedicated *DBR
-// pointer.
-func (b *Delete) WithDBR() *DBR {
-	b.isWithDBR = true
-	return b.newDBR(b)
-}
-
 // ToSQL generates the SQL string and might caches it internally, if not
 // disabled. The returned interface slice is always nil.
 func (b *Delete) ToSQL() (string, []interface{}, error) {
-	b.source = dmlSourceDelete
 	rawSQL, err := b.buildToSQL(b)
 	if err != nil {
 		return "", nil, errors.WithStack(err)
 	}
-	return string(rawSQL), nil, nil
-}
-
-// WithCacheKey sets the currently used cache key when generating a SQL string.
-// By setting a different cache key, a previous generated SQL query is
-// accessible again. New cache keys allow to change the generated query of the
-// current object. E.g. different where clauses or different row counts in
-// INSERT ... VALUES statements. The empty string defines the default cache key.
-// If the `args` argument contains values, then fmt.Sprintf gets used.
-func (b *Delete) WithCacheKey(key string, args ...interface{}) *Delete {
-	b.withCacheKey(key, args...)
-	return b
+	return rawSQL, nil, nil
 }
 
 // ToSQL serialized the Delete to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Delete) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err error) {
-	b.source = dmlSourceDelete
-	b.defaultQualifier = b.Table.qualifier()
-
 	if b.Table.Name == "" {
 		return nil, errors.Empty.Newf("[dml] Delete: Table is missing")
 	}
 
 	w.WriteString("DELETE ")
-	writeStmtID(w, b.id)
 
 	for i, mt := range b.MultiTables {
 		if i == 0 {
@@ -323,33 +243,6 @@ func (b *Delete) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err 
 	}
 
 	return placeHolders, nil
-}
-
-// Prepare executes the statement represented by the Delete to create a prepared
-// statement. It returns a custom statement type or an error if there was one.
-// Provided arguments or records in the Delete are getting ignored. The provided
-// context is used for the preparation of the statement, not for the execution
-// of the statement. If debug mode for logging has been enabled it logs the
-// duration taken and the SQL string. The returned Stmter is not safe for
-// concurrent use, despite the underlying *sql.Stmt is.
-func (b *Delete) Prepare(ctx context.Context) (*Stmt, error) {
-	return b.prepare(ctx, b.db, b, dmlSourceDelete)
-}
-
-// PrepareWithDBR same as Prepare but forwards the possible error of creating a
-// prepared statement into the DBR type. Reduces boilerplate code. You must
-// call DBR.Close to deallocate the prepared statement in the SQL server.
-func (b *Delete) PrepareWithDBR(ctx context.Context) *DBR {
-	stmt, err := b.prepare(ctx, b.db, b, dmlSourceDelete)
-	if err != nil {
-		a := &DBR{
-			base: builderCommon{
-				ärgErr: errors.WithStack(err),
-			},
-		}
-		return a
-	}
-	return stmt.WithDBR()
 }
 
 // Clone creates a clone of the current object, leaving fields DB and Log

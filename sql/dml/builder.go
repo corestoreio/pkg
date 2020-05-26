@@ -16,15 +16,11 @@ package dml
 
 import (
 	"bytes"
-	"context"
 	"fmt"
-	"sort"
 	"strconv"
-	"sync"
 	"unicode/utf8"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
@@ -62,100 +58,38 @@ func (fn QuerySQLFn) ToSQL() (string, []interface{}, error) {
 	return fn()
 }
 
+// QuerySQL simple type to satisfy the QueryBuilder interface.
+type QuerySQL string
+
+// ToSQL satisfies interface QueryBuilder and returns always nil arguments and
+// nil error.
+func (qs QuerySQL) ToSQL() (string, []interface{}, error) {
+	return string(qs), nil, nil
+}
+
 // queryBuilder must support thread safety when writing and reading the cache.
 type queryBuilder interface {
 	toSQL(w *bytes.Buffer, placeHolders []string) ([]string, error)
-}
-
-// builderCommon
-type builderCommon struct {
-	defaultQualifier string
-	// ID of a statement. Used in logging. The ID gets generated with function
-	// signature `func() string`. This func gets applied to the logger when
-	// setting up a logger.
-	id string // tracing ID
-	// ärgErr represents an argument error caused in any of the other functions.
-	// A stack has been attached to the error to identify properly the source.
-	ärgErr error // Sorry Germans for that terrible pun #notSorry
-	// source defines with which DML statement the builderCommon struct has been initialized.
-	// Constants are `dmlType*`
-	source rune
-	Log    log.Logger // Log optional logger
-	// templateStmtCount only used in case a UNION statement acts as a template.
-	// Create one SELECT statement and by setting the data for
-	// Union.StringReplace function additional SELECT statements are getting
-	// created. Now the arguments must be multiplied by the number of new
-	// created SELECT statements. This value  gets stored in templateStmtCount.
-	// An example exists in TestUnionTemplate_ReuseArgs.
-	templateStmtCount int
-	cacheKey          string
-	// SingleUseCacheKey      bool // TODO implement, should panic when setting the same cahce key the 2nd time
-	// cachedSQL contains the final SQL string which gets send to the server.
-	// Using the CacheKey allows a dml type (insert,update,select ... ) to build
-	// multiple different versions from object.
-	cachedSQL map[string]string
-	// qualifiedColumns gets collected before calling ToSQL, and clearing the all
-	// pointers, to know which columns need values from the QualifiedRecords
-	qualifiedColumns []string
-	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
-	// dedicated database session) or a *sql.Tx (an in-progress database
-	// transaction).
-	db QueryExecPreparer
-	// containsTuples indicates if a SQL query contains the tuples placeholder
-	// (see constant placeHolderTuples) and if true the function
-	// DBR.prepareQueryAndArgs will replace the tuples placeholder with the
-	// correct amount of MySQL/MariaDB placeholders.
-	containsTuples bool
-}
-
-func (bc *builderCommon) withCacheKey(key string, args ...interface{}) {
-	if len(args) > 0 {
-		key = fmt.Sprintf(key, args...)
-	}
-	bc.cacheKey = key
-}
-
-func (bc *builderCommon) CachedQueries(queries ...string) []string {
-	keys := make([]string, 0, len(bc.cachedSQL))
-	for key := range bc.cachedSQL {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	for _, k := range keys {
-		queries = append(queries, k, bc.cachedSQL[k])
-	}
-	return queries
-}
-
-func (bc *builderCommon) cachedSQLUpsert(key, sql string) {
-	if bc.cachedSQL == nil {
-		bc.cachedSQL = make(map[string]string, 32) // 32 is just a guess
-	}
-	bc.cachedSQL[key] = sql
 }
 
 // BuilderBase contains fields which all SQL query builder have in common, the
 // same base. Exported for documentation reasons.
 type BuilderBase struct {
 	Table id
-	// PropagationStopped set to true if you would like to interrupt the
-	// listener chain. Once set to true all sub sequent calls of the next
-	// listeners will be suppressed.
-	PropagationStopped bool
 	// IsUnsafe if set to true the functions AddColumn* will turn any
 	// non valid identifier (not `{a-z}[a-z0-9$_]+`i) into an expression.
-	IsUnsafe bool
-
-	rwmu sync.RWMutex // also protects the whole SQL string building process
-	builderCommon
+	IsUnsafe         bool
+	ärgErr           error
+	isWithDBR        bool // tuple handling before building the SQL string
+	containsTuples   bool
+	qualifiedColumns []string
 }
 
 // Clone creates a clone of the current object.
 func (bb BuilderBase) Clone() BuilderBase {
 	cc := bb
 	cc.Table = bb.Table.Clone()
-	cc.rwmu = sync.RWMutex{}
-	cc.builderCommon.qualifiedColumns = cloneStringSlice(bb.builderCommon.qualifiedColumns)
+	cc.ärgErr = nil
 	return cc
 }
 
@@ -168,74 +102,26 @@ func (bb *BuilderBase) buildToSQL(qb queryBuilder) (string, error) {
 		return "", errors.WithStack(bb.ärgErr)
 	}
 
-	rawSQL, ok := bb.cachedSQL[bb.cacheKey]
-	if !ok {
-		buf := bufferpool.Get()
-		defer bufferpool.Put(buf)
-		qualifiedColumns, err := qb.toSQL(buf, []string{})
-		if err != nil {
-			return "", errors.WithStack(err)
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	qualifiedColumns, err := qb.toSQL(buf, []string{})
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	// the qualifiedColumns might have an entry from Conditions.write to
+	// indicate there is a tuple placeholder.
+	qualifiedColumns2 := qualifiedColumns[:0]
+	for _, pc := range qualifiedColumns {
+		if pc != placeHolderTuples {
+			qualifiedColumns2 = append(qualifiedColumns2, pc)
+		} else {
+			bb.containsTuples = true
 		}
-		rawSQL = buf.String()
+	}
+	bb.qualifiedColumns = qualifiedColumns2
 
-		// the qualifiedColumns might have an entry from Conditions.write to
-		// indicate there is a tuple placeholder.
-		qualifiedColumns2 := qualifiedColumns[:0]
-		for _, pc := range qualifiedColumns {
-			if pc != placeHolderTuples {
-				qualifiedColumns2 = append(qualifiedColumns2, pc)
-			} else {
-				bb.containsTuples = true
-			}
-		}
-		bb.qualifiedColumns = qualifiedColumns2
-		bb.cachedSQLUpsert(bb.cacheKey, rawSQL)
-	}
-	return rawSQL, nil
-}
-
-func (bb *BuilderBase) prepare(ctx context.Context, db Preparer, qb queryBuilder, source rune) (_ *Stmt, err error) {
-	if in, ok := qb.(*Insert); ok && in != nil && !in.IsBuildValues {
-		return nil, errors.NotAcceptable.Newf("[dml] did you forgot to call .BuildValues()?")
-	}
-
-	rawQuery, err := bb.buildToSQL(qb)
-	if bb.Log != nil && bb.Log.IsDebug() {
-		defer log.WhenDone(bb.Log).Debug("Prepare", log.Err(err), log.String("sql", rawQuery))
-	}
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	sqlStmt, err := db.PrepareContext(ctx, rawQuery)
-	if err != nil {
-		return nil, errors.Wrapf(err, "[dml] Prepare.PrepareContext with query %q", rawQuery)
-	}
-
-	stmt := &Stmt{
-		base: bb.builderCommon,
-		Stmt: sqlStmt,
-	}
-	stmt.base.cacheKey = bb.cacheKey
-	stmt.base.cachedSQLUpsert(bb.cacheKey, rawQuery)
-	stmt.base.db = stmtWrapper{stmt: sqlStmt}
-	stmt.base.source = source
-	return stmt, nil
-}
-
-// newDBR builds the SQl string and creates a new DBR object for
-// collecting arguments and later querying.
-func (bb *BuilderBase) newDBR(qb queryBuilder) *DBR {
-	bb.rwmu.Lock()
-	_, err := bb.buildToSQL(qb)
-	a := DBR{
-		base: bb.builderCommon,
-	}
-	if err != nil {
-		a.base.ärgErr = errors.WithStack(err)
-	}
-	bb.rwmu.Unlock()
-	return &a
+	return buf.String(), nil
 }
 
 // BuilderConditional defines base fields used in statements which can have
@@ -250,7 +136,6 @@ type BuilderConditional struct {
 	OrderByRandColumnName string
 	LimitCount            uint64
 	LimitValid            bool
-	isWithDBR             bool
 }
 
 // Clone creates a new clone of the current object.
@@ -394,14 +279,6 @@ func writeBytes(w *bytes.Buffer, p []byte) (err error) {
 		dialect.EscapeString(w, string(p)) // maybe create an EscapeByteString version to avoid one alloc ;-)
 	}
 	return
-}
-
-func writeStmtID(w *bytes.Buffer, id string) {
-	if id != "" {
-		w.WriteString("/*ID$") // colon not possible because used for named arguments.
-		w.WriteString(id)
-		w.WriteString("*/ ")
-	}
 }
 
 const (

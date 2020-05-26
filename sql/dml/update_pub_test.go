@@ -32,7 +32,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 	t.Run("no columns provided", func(t *testing.T) {
 		mu := dml.NewUpdate("catalog_product_entity").Where(dml.Column("entity_id").In().PlaceHolder())
 
-		res, err := mu.WithDBR().ExecContext(context.TODO())
+		res, err := mu.WithDBR(dbMock{}).ExecContext(context.TODO())
 		assert.Nil(t, res)
 		assert.ErrorIsKind(t, errors.Empty, err)
 	})
@@ -40,12 +40,11 @@ func TestUpdate_WithArgs(t *testing.T) {
 	t.Run("alias mismatch Exec", func(t *testing.T) {
 		res, err := dml.NewUpdate("catalog_product_entity").
 			AddColumns("sku", "updated_at").
-			Where(dml.Column("entity_id").In().PlaceHolder()).WithDB(dbMock{
+			Where(dml.Column("entity_id").In().PlaceHolder()).WithDBR(dbMock{
 			prepareFn: func(query string) (*sql.Stmt, error) {
 				return nil, nil
 			},
-		}).
-			WithDBR().WithQualifiedColumnsAliases("update_sku").ExecContext(context.TODO(), dml.Qualify("", nil))
+		}).WithQualifiedColumnsAliases("update_sku").ExecContext(context.TODO(), dml.Qualify("", nil))
 		assert.Nil(t, res)
 		assert.ErrorIsKind(t, errors.Mismatch, err)
 	})
@@ -55,32 +54,31 @@ func TestUpdate_WithArgs(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 
 		_ = dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("UPDATE `catalog_product_entity` SET `sku`=?, `updated_at`=? WHERE (`entity_id` IN ?)"))
-
-		mu := dbc.Update("catalog_product_entity").
+		ctx := context.Background()
+		dbr := dbc.WithPrepare(ctx, dml.NewUpdate("catalog_product_entity").
 			AddColumns("sku", "updated_at").
-			Where(dml.Column("entity_id").In().PlaceHolder())
+			Where(dml.Column("entity_id").In().PlaceHolder()))
 
-		stmt, err := mu.Prepare(context.TODO())
-		assert.NoError(t, err)
-		defer dmltest.Close(t, stmt)
+		assert.NoError(t, dbr.PreviousError())
+		defer dmltest.Close(t, dbr)
 
 		p := &dmlPerson{
 			ID:    1,
 			Name:  "Alf",
 			Email: null.MakeString("alf@m') -- el.mac"),
 		}
-		res, err := stmt.WithDBR().WithQualifiedColumnsAliases("update_sku").ExecContext(context.TODO(), dml.Qualify("", p))
+		res, err := dbr.WithQualifiedColumnsAliases("update_sku").ExecContext(context.TODO(), dml.Qualify("", p))
 		assert.ErrorIsKind(t, errors.Mismatch, err)
 		assert.Nil(t, res, "No result is expected")
 	})
 
 	t.Run("empty Records and RecordChan", func(t *testing.T) {
 		mu := dml.NewUpdate("catalog_product_entity").AddColumns("sku", "updated_at").
-			Where(dml.Column("entity_id").In().PlaceHolder()).WithDB(dbMock{
+			Where(dml.Column("entity_id").In().PlaceHolder()).WithDBR(dbMock{
 			error: errors.AlreadyClosed.Newf("Who closed myself?"),
 		})
 
-		res, err := mu.WithDBR().ExecContext(context.TODO())
+		res, err := mu.ExecContext(context.TODO())
 		assert.Nil(t, res)
 		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
@@ -103,21 +101,18 @@ func TestUpdate_WithArgs(t *testing.T) {
 		}
 
 		// interpolate must get ignored
-		mu := dml.NewUpdate("customer_entity").Alias("ce").
-			AddColumns("name", "email").
-			Where(dml.Column("id").Equal().PlaceHolder()).
-			WithDB(dbc.DB)
 
 		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`=?, `email`=? WHERE (`id` = ?)"))
 		prep.ExpectExec().WithArgs("Alf", "alf@m') -- el.mac", 1).WillReturnResult(sqlmock.NewResult(0, 1))
 		prep.ExpectExec().WithArgs("John", "john@doe.com", 2).WillReturnResult(sqlmock.NewResult(0, 1))
 
-		stmt, err := mu.Prepare(context.TODO())
-		assert.NoError(t, err)
+		stmt := dbc.WithPrepare(context.TODO(), dml.NewUpdate("customer_entity").Alias("ce").
+			AddColumns("name", "email").
+			Where(dml.Column("id").Equal().PlaceHolder()))
 		defer dmltest.Close(t, stmt)
 
 		for i, record := range records {
-			results, err := stmt.WithDBR().ExecContext(context.TODO(), dml.Qualify("ce", record))
+			results, err := stmt.ExecContext(context.TODO(), dml.Qualify("ce", record))
 			assert.NoError(t, err)
 			aff, err := results.RowsAffected()
 			if err != nil {
@@ -134,14 +129,12 @@ func TestUpdate_WithArgs(t *testing.T) {
 		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`=?, `email`=? WHERE (`id` = ?)"))
 		prep.ExpectExec().WithArgs("Peter Gopher", "peter@gopher.go", 3456).WillReturnResult(sqlmock.NewResult(0, 9))
 
-		stmt, err := dml.NewUpdate("customer_entity").Alias("ce").
+		stmt := dbc.WithPrepare(context.TODO(), dml.NewUpdate("customer_entity").Alias("ce").
 			AddColumns("name", "email").
-			Where(dml.Column("id").Equal().PlaceHolder()).
-			WithDB(dbc.DB).Prepare(context.TODO())
-		assert.NoError(t, err, "failed creating a prepared statement")
+			Where(dml.Column("id").Equal().PlaceHolder()))
 		defer dmltest.Close(t, stmt)
 
-		res, err := stmt.WithDBR().ExecContext(context.TODO(), "Peter Gopher", "peter@gopher.go", 3456)
+		res, err := stmt.ExecContext(context.TODO(), "Peter Gopher", "peter@gopher.go", 3456)
 		assert.NoError(t, err, "failed to execute ExecContext")
 
 		ra, err := res.RowsAffected()
@@ -158,11 +151,9 @@ func TestUpdate_WithArgs(t *testing.T) {
 		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`=?, `email`=? WHERE (`id` = ?)"))
 		prep.ExpectExec().WithArgs("Peter Gopher", "peter@gopher.go", 3456).WillReturnResult(sqlmock.NewResult(0, 9))
 
-		stmt, err := dml.NewUpdate("customer_entity").Alias("ce").
+		stmt := dbc.WithPrepare(context.TODO(), dml.NewUpdate("customer_entity").Alias("ce").
 			AddColumns("name", "email").
-			Where(dml.Column("id").Equal().PlaceHolder()).
-			WithDB(dbc.DB).Prepare(context.TODO())
-		assert.NoError(t, err, "failed creating a prepared statement")
+			Where(dml.Column("id").Equal().PlaceHolder()))
 		defer dmltest.Close(t, stmt)
 
 		p := &dmlPerson{
@@ -171,7 +162,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 			Email:   null.MakeString("peter@gopher.go"),
 			StoreID: 3,
 		}
-		res, err := stmt.WithDBR().ExecContext(context.TODO(), dml.Qualify("", p))
+		res, err := stmt.ExecContext(context.TODO(), dml.Qualify("", p))
 		assert.NoError(t, err, "failed to execute ExecContext")
 
 		ra, err := res.RowsAffected()
@@ -189,11 +180,9 @@ func TestUpdate_WithArgs(t *testing.T) {
 		prep.ExpectExec().WithArgs("Peter Gopher", "peter@gopher.go", 3456).WillReturnResult(sqlmock.NewResult(0, 11))
 		prep.ExpectExec().WithArgs("Petra Gopher", "petra@gopher.go", 3457).WillReturnResult(sqlmock.NewResult(0, 21))
 
-		stmt, err := dml.NewUpdate("customer_entity").Alias("ce").
+		stmt := dbc.WithPrepare(context.TODO(), dml.NewUpdate("customer_entity").Alias("ce").
 			AddColumns("name", "email").
-			Where(dml.Column("id").Equal().PlaceHolder()).
-			WithDB(dbc.DB).Prepare(context.TODO())
-		assert.NoError(t, err, "failed creating a prepared statement")
+			Where(dml.Column("id").Equal().PlaceHolder()))
 		defer dmltest.Close(t, stmt)
 
 		tests := []struct {
@@ -206,9 +195,8 @@ func TestUpdate_WithArgs(t *testing.T) {
 			{"Petra Gopher", "petra@gopher.go", 3457, 21},
 		}
 
-		stmtA := stmt.WithDBR()
 		for i, test := range tests {
-			res, err := stmtA.ExecContext(context.TODO(), test.name, test.email, test.id)
+			res, err := stmt.ExecContext(context.TODO(), test.name, test.email, test.id)
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -217,7 +205,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 				t.Fatalf("Result index %d with error: %s", i, err)
 			}
 			assert.Exactly(t, test.rowsAffected, ra, "Index %d has different LastInsertIDs", i)
-			stmtA.Reset()
+			stmt.Reset()
 		}
 	})
 }
@@ -283,16 +271,14 @@ func TestArguments_WithQualifiedColumnsAliases(t *testing.T) {
 	}
 
 	// Create the multi update statement
-	stmt, err := dbc.Update("sales_invoice").
+	stmt := dbc.WithPrepare(context.TODO(), dml.NewUpdate("sales_invoice").
 		AddColumns("state", "customer_id", "grand_total").
 		Where(
 			dml.Column("shipping_method").In().Strs("DHL", "UPS"), // For all clauses the same restriction
 			dml.Column("entity_id").PlaceHolder(),                 // Int64() acts as a place holder
-		).
-		Prepare(context.TODO())
-	assert.NoError(t, err)
+		))
 
-	stmtExec := stmt.WithDBR().WithQualifiedColumnsAliases("state", "alias_customer_id", "grand_total", "entity_id")
+	stmtExec := stmt.WithQualifiedColumnsAliases("state", "alias_customer_id", "grand_total", "entity_id")
 
 	for i, record := range collection {
 		results, err := stmtExec.ExecContext(context.TODO(), dml.Qualify("sales_invoice", record))
@@ -320,7 +306,7 @@ func TestUpdate_BindRecord(t *testing.T) {
 		u := dml.NewUpdate("catalog_category_entity").
 			AddColumns("attribute_set_id", "parent_id", "path").
 			Where(dml.Column("entity_id").Greater().PlaceHolder()).
-			WithDBR().TestWithArgs(dml.Qualify("", ce))
+			WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", ce))
 
 		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`entity_id` > ?)",
@@ -335,7 +321,7 @@ func TestUpdate_BindRecord(t *testing.T) {
 			Where(
 				dml.Column("x").In().Int64s(66, 77),
 				dml.Column("entity_id").Greater().PlaceHolder(),
-			).WithDBR().TestWithArgs(dml.Qualify("", ce))
+			).WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", ce))
 		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`x` IN (66,77)) AND (`entity_id` > ?)",
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`x` IN (66,77)) AND (`entity_id` > 678)",
@@ -349,7 +335,7 @@ func TestUpdate_BindRecord(t *testing.T) {
 				dml.Column("entity_id").Greater().PlaceHolder(),
 				dml.Column("x").In().Int64s(66, 77),
 				dml.Column("y").Greater().Int64(99),
-			).WithDBR().TestWithArgs(dml.Qualify("", ce))
+			).WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", ce))
 		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`entity_id` > ?) AND (`x` IN (66,77)) AND (`y` > 99)",
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`entity_id` > 678) AND (`x` IN (66,77)) AND (`y` > 99)",
@@ -366,7 +352,7 @@ func TestUpdate_BindRecord(t *testing.T) {
 				dml.Column("ce.entity_id").Greater().PlaceHolder(), // 678
 				dml.Column("cpe.entity_id").In().Int64s(66, 77),
 				dml.Column("cpei.attribute_set_id").Equal().PlaceHolder(), // 6
-			).WithDBR().TestWithArgs(dml.Qualify("", ce), dml.Qualify("cpei", ce))
+			).WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", ce), dml.Qualify("cpei", ce))
 		compareToSQL(t, u, errors.NoKind,
 			"UPDATE `catalog_category_entity` AS `ce` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`ce`.`entity_id` > ?) AND (`cpe`.`entity_id` IN (66,77)) AND (`cpei`.`attribute_set_id` = ?)",
 			"UPDATE `catalog_category_entity` AS `ce` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`ce`.`entity_id` > 678) AND (`cpe`.`entity_id` IN (66,77)) AND (`cpei`.`attribute_set_id` = 6)",
@@ -387,7 +373,7 @@ func TestUpdate_Clone(t *testing.T) {
 	})
 
 	t.Run("non-nil", func(t *testing.T) {
-		d := dbc.Update("catalog_category_entity").Alias("ce").
+		d := dml.NewUpdate("catalog_category_entity").Alias("ce").
 			AddColumns("attribute_set_id", "parent_id", "path").
 			Where(
 				dml.Column("ce.entity_id").Greater().PlaceHolder(), // 678
@@ -400,6 +386,5 @@ func TestUpdate_Clone(t *testing.T) {
 		notEqualPointers(t, d.BuilderConditional.Wheres, d2.BuilderConditional.Wheres)
 		notEqualPointers(t, d.SetClauses, d2.SetClauses)
 		// assert.Exactly(t, d.db, d2.db) // how to test this?
-		assert.Exactly(t, d.Log, d2.Log)
 	})
 }

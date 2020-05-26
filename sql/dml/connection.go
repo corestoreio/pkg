@@ -18,11 +18,17 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"encoding/hex"
 	"fmt"
+	"hash/fnv"
 	"os"
 	"sort"
 	"strings"
+	"sync"
 	"time"
+	"unicode"
+
+	"github.com/corestoreio/pkg/util/bufferpool"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
@@ -39,9 +45,7 @@ const (
 	eventOnClose
 )
 
-type connCommon struct {
-	start time.Time
-	Log   log.Logger
+type queryCache struct {
 	// makeUniqueID generates for each call a new unique ID. Those IDs will be
 	// assigned to a new connection or a new statement. The function signature is
 	// equal to fmt.Stringer so one can use for example:
@@ -51,12 +55,24 @@ type connCommon struct {
 	// comment-end-termination pattern: `*/`.
 	makeUniqueID uniqueIDFn
 	mapTableName func(oldName string) (newName string)
-	runOnClose   []ConnPoolOption
+
+	mu sync.RWMutex
+	// cachedSQL contains the final SQL string which gets send to the server.
+	// Using the CacheKey allows a dml type (insert,update,select ... ) to build
+	// multiple different versions from object.
+	queries map[string]*cachedSQL
+}
+
+type connCommon struct {
+	start      time.Time
+	Log        log.Logger
+	runOnClose []ConnPoolOption
 }
 
 // ConnPool at a connection to the database with an EventReceiver to send
 // events, errors, and timings to
 type ConnPool struct {
+	queryCache *queryCache // must be a pointer because we forward that pointer to Conn and Tx structs.
 	connCommon
 	driverCallBack DriverCallBack
 	// DB must be set using one of the ConnPoolOption function.
@@ -74,6 +90,7 @@ type ConnPool struct {
 // After a call to Close, all operations on the connection fail with
 // ErrConnDone.
 type Conn struct {
+	queryCache *queryCache
 	connCommon
 	DB *sql.Conn
 }
@@ -90,6 +107,7 @@ type Conn struct {
 // Practical Guide to SQL Transaction Isolation:
 // https://begriffs.com/posts/2017-08-01-practical-guide-sql-isolation.html
 type Tx struct {
+	queryCache *queryCache
 	connCommon
 	DB *sql.Tx
 }
@@ -132,8 +150,8 @@ func WithLogger(l log.Logger, uniqueIDFn func() string) ConnPoolOption {
 	return ConnPoolOption{
 		sortOrder: 10,
 		fn: func(c *ConnPool) error {
-			c.makeUniqueID = uniqueIDFn
-			c.Log = l.With(log.String("conn_pool_id", c.makeUniqueID()))
+			c.queryCache.makeUniqueID = uniqueIDFn
+			c.Log = l.With(log.String("conn_pool_id", c.queryCache.makeUniqueID()))
 			return nil
 		},
 	}
@@ -398,17 +416,21 @@ func (t dsnConnector) Driver() driver.Driver {
 // When you want to set it for longer than an hour, discuss that with an
 // infrastructure/network engineer.
 func NewConnPool(opts ...ConnPoolOption) (*ConnPool, error) {
-	var c ConnPool
+	c := ConnPool{
+		queryCache: &queryCache{
+			queries: make(map[string]*cachedSQL),
+		},
+	}
 	opts = append(opts, WithDB(nil))
 	if err := c.options(opts...); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	if c.makeUniqueID == nil {
-		c.makeUniqueID = uniqueIDNoOp
+	if c.queryCache.makeUniqueID == nil {
+		c.queryCache.makeUniqueID = uniqueIDNoOp
 	}
-	if c.mapTableName == nil {
-		c.mapTableName = mapTableNameNoOp
+	if c.queryCache.mapTableName == nil {
+		c.queryCache.mapTableName = mapTableNameNoOp
 	}
 	// validate that DSN contains the utf8mb4 setting, if DSN is set
 
@@ -435,7 +457,7 @@ func (c *ConnPool) options(opts ...ConnPoolOption) error {
 			opts[i].sortOrder = 8 // must be this number
 			opt := opt
 			opts[i].fn = func(cp *ConnPool) error {
-				cp.makeUniqueID = opt.UniqueIDFn
+				cp.queryCache.makeUniqueID = opt.UniqueIDFn
 				return nil
 			}
 		}
@@ -443,7 +465,7 @@ func (c *ConnPool) options(opts ...ConnPoolOption) error {
 			opts[i].sortOrder = 20 // just a number
 			opt := opt
 			opts[i].fn = func(cp *ConnPool) error {
-				cp.mapTableName = opt.TableNameMapper
+				cp.queryCache.mapTableName = opt.TableNameMapper
 				return nil
 			}
 		}
@@ -467,6 +489,57 @@ func (c *ConnPool) options(opts ...ConnPoolOption) error {
 	}
 
 	return nil
+}
+
+const (
+	sqlIDPrefix = "/*$ID$"
+	sqlIDSuffix = "*/"
+)
+
+func (qc *queryCache) prependUniqueID(rawSQL string) (id string, _rawSQL string) {
+	if qc.makeUniqueID != nil {
+		id = qc.makeUniqueID()
+		if id != "" {
+			var buf strings.Builder
+			buf.WriteString(sqlIDPrefix)
+			buf.WriteString(id)
+			buf.WriteString(sqlIDSuffix)
+			buf.WriteString(rawSQL)
+			rawSQL = buf.String()
+		}
+	}
+	return id, rawSQL
+}
+
+// hashSQL removes spaces and transforms the SQL to all lowercase and hashes it,
+// to avoid minor duplicates ... maybe that is not worth. refactor later.
+func hashSQL(rawSQL string) string {
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	if strings.HasPrefix(rawSQL, sqlIDPrefix) {
+		idx := strings.Index(rawSQL, sqlIDSuffix)
+		if idx < 0 {
+			idx = 0
+		} else {
+			idx += len(sqlIDSuffix)
+		}
+		rawSQL = rawSQL[idx:]
+	}
+	for _, r := range rawSQL {
+		switch {
+		case unicode.IsSpace(r):
+		// do nothing, removes all spaces
+		default:
+			buf.WriteRune(unicode.ToUpper(r))
+		}
+	}
+	h := fnv.New64a()
+	buf.WriteTo(h)
+	idx := strings.IndexFunc(rawSQL, unicode.IsSpace)
+	if idx < 0 {
+		idx = 0
+	}
+	return rawSQL[:idx] + hex.EncodeToString(h.Sum(nil)) // fastest code
 }
 
 // Schema returns the database name as provided in the DSN. Returns an empty
@@ -533,17 +606,16 @@ func (c *ConnPool) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error
 	}
 	l := c.Log
 	if l != nil {
-		l = l.With(log.String("tx_id", c.makeUniqueID()))
+		l = l.With(log.String("tx_id", c.queryCache.makeUniqueID()))
 		if l.IsDebug() {
 			l.Debug("BeginTx")
 		}
 	}
 	return &Tx{
+		queryCache: c.queryCache,
 		connCommon: connCommon{
-			start:        start,
-			Log:          l,
-			makeUniqueID: c.makeUniqueID,
-			mapTableName: c.mapTableName,
+			start: start,
+			Log:   l,
 		},
 		DB: dbTx,
 	}, nil
@@ -583,21 +655,141 @@ func (c *ConnPool) Transaction(ctx context.Context, opts *sql.TxOptions, fns ...
 	return errors.WithStack(tx.Commit())
 }
 
+func (c *ConnPool) CachedQueries() map[string]string {
+	c.queryCache.mu.RLock()
+	defer c.queryCache.mu.RUnlock()
+
+	queries := make(map[string]string, len(c.queryCache.queries))
+	for key, cq := range c.queryCache.queries {
+		queries[key] = cq.rawSQL
+	}
+
+	return queries
+}
+
+// RegisterByQueryBuilder adds the SQL queries to the local internal cache. The
+// cacheKeyQB map gets iterated in alphabetical order.
+func (c *ConnPool) RegisterByQueryBuilder(cacheKeyQB map[string]QueryBuilder) error {
+	c.queryCache.mu.Lock()
+	defer c.queryCache.mu.Unlock()
+
+	keys := make([]string, 0, len(cacheKeyQB))
+	for cacheKey := range cacheKeyQB {
+		keys = append(keys, cacheKey)
+	}
+	sort.Strings(keys)
+	for _, cacheKey := range keys {
+		qb := cacheKeyQB[cacheKey]
+		if _, ok := c.queryCache.queries[cacheKey]; ok {
+			continue
+		}
+
+		prepareQueryBuilder(c.queryCache.mapTableName, qb)
+		rawSQL, _, err := qb.ToSQL()
+		if err != nil {
+			return errors.Fatal.New(err, "Failed to build SQL for cache key %q", cacheKey)
+		}
+		id, rawSQL := c.queryCache.prependUniqueID(rawSQL)
+		c.queryCache.queries[cacheKey] = makeCachedSQL(qb, rawSQL, id)
+	}
+	return nil
+}
+
+func (c *ConnPool) DeregisterByCacheKey(cacheKeys ...string) error {
+	c.queryCache.mu.Lock()
+	defer c.queryCache.mu.Unlock()
+
+	for _, cacheKey := range cacheKeys {
+		delete(c.queryCache.queries, cacheKey)
+	}
+	return nil
+}
+
+// WithCacheKey creates a DBR object from a cached query.
+func (c *ConnPool) WithCacheKey(cacheKey string) *DBR {
+	c.queryCache.mu.RLock()
+	defer c.queryCache.mu.RUnlock()
+
+	sqlCache, ok := c.queryCache.queries[cacheKey]
+	if !ok {
+		return &DBR{
+			previousErr: errors.NotFound.Newf("CacheKey %q not found", cacheKey),
+		}
+	}
+	l := c.Log
+	if l != nil {
+		l = l.With(log.String("conn_source", "ConnPool"), log.Bool("is_prepared", false),
+			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
+	}
+	return &DBR{
+		cachedSQL: *sqlCache,
+		log:       l,
+		DB:        c.DB,
+	}
+}
+
+// WithPrepareCacheKey creates a DBR object from a prepared cached query.
+func (c *ConnPool) WithPrepareCacheKey(ctx context.Context, cacheKey string) *DBR {
+	c.queryCache.mu.RLock()
+	defer c.queryCache.mu.RUnlock()
+
+	sqlCache, ok := c.queryCache.queries[cacheKey]
+	if !ok {
+		return &DBR{
+			previousErr: errors.NotFound.Newf("CacheKey %q not found", cacheKey),
+		}
+	}
+	l := c.Log
+	if l != nil {
+		l = l.With(log.String("conn_source", "ConnPool"), log.Bool("is_prepared", true),
+			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
+	}
+	if l != nil && l.IsDebug() {
+		defer log.WhenDone(l).Debug("Prepare")
+	}
+	stmt, err := c.DB.PrepareContext(ctx, sqlCache.rawSQL)
+	return &DBR{
+		cachedSQL:   *sqlCache,
+		log:         l,
+		DB:          stmtWrapper{stmt: stmt},
+		previousErr: err,
+		isPrepared:  true,
+	}
+}
+
 // WithQueryBuilder creates a new DBR for handling the arguments with the
 // assigned connection and builds the SQL string. The returned arguments and
-// errors of the QueryBuilder will be forwarded to the DBR type.
+// errors of the QueryBuilder will be forwarded to the DBR type. It generates a
+// unique cache key based on the SQL string. The cache key can be retrieved via
+// DBR object.
 func (c *ConnPool) WithQueryBuilder(qb QueryBuilder) *DBR {
-	sql, _, err := qb.ToSQL()
-	a := &DBR{
-		base: builderCommon{
-			cachedSQL: map[string]string{"": sql},
-			Log:       c.Log,
-			id:        c.makeUniqueID(),
-			db:        c.DB,
-			ärgErr:    errors.WithStack(err),
-		},
+	prepareQueryBuilder(c.queryCache.mapTableName, qb)
+	rawSQL, _, err := qb.ToSQL()
+	if err != nil {
+		return &DBR{
+			previousErr: errors.WithStack(err),
+		}
 	}
-	return a
+
+	key := hashSQL(rawSQL)
+	c.queryCache.mu.Lock()
+	defer c.queryCache.mu.Unlock()
+	sqlCache, ok := c.queryCache.queries[key]
+	if !ok {
+		id, rawSQL := c.queryCache.prependUniqueID(rawSQL)
+		sqlCache = makeCachedSQL(qb, rawSQL, id)
+		c.queryCache.queries[key] = sqlCache
+	}
+	l := c.Log
+	if l != nil {
+		l = l.With(log.String("conn_source", "ConnPool"), log.Bool("is_prepared", false),
+			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
+	}
+	return &DBR{
+		cachedSQL: *sqlCache,
+		log:       l,
+		DB:        c.DB,
+	}
 }
 
 // Conn returns a single connection by either opening a new connection
@@ -611,62 +803,58 @@ func (c *ConnPool) Conn(ctx context.Context) (*Conn, error) {
 	dbc, err := c.DB.Conn(ctx)
 	l := c.Log
 	if l != nil {
-		l = c.Log.With(log.String("conn_id", c.makeUniqueID()))
+		l = c.Log.With(log.String("conn_id", c.queryCache.makeUniqueID()))
 	}
 	return &Conn{
+		queryCache: c.queryCache,
 		connCommon: connCommon{
-			start:        now(),
-			Log:          l,
-			makeUniqueID: c.makeUniqueID,
-			mapTableName: c.mapTableName,
+			start: now(),
+			Log:   l,
 		},
 		DB: dbc,
 	}, errors.WithStack(err)
-}
-
-// WithRawSQL creates a new DBR for the given SQL string. It does not
-// prepare the query nor runs place holder substitution.
-// Supports expanding the placeholders in case of argument slices.
-func (c *ConnPool) WithRawSQL(query string) *DBR {
-	id := c.makeUniqueID()
-	l := c.Log
-	if l != nil {
-		l = l.With(log.String("conn_pool_raw_sql_id", id), log.String("query", query))
-	}
-	return &DBR{
-		base: builderCommon{
-			cachedSQL: map[string]string{"": query},
-			Log:       l,
-			id:        id,
-			db:        c.DB,
-		},
-	}
 }
 
 // Prepare executes the statement represented by the Select to create a prepared
 // statement. It returns a custom statement type or an error if there was one.
 // Provided arguments or records in the Select are getting ignored. The provided
 // context is used for the preparation of the statement, not for the execution
-// of the statement. The returned Stmter is not safe for concurrent use, despite
+// of the statement. The returned DBR is not safe for concurrent use, despite
 // the underlying *sql.Stmt is.
-func (c *ConnPool) WithPrepare(ctx context.Context, query string) *DBR {
-	id := c.makeUniqueID()
-	l := c.Log
-	if l != nil {
-		l = l.With(log.String("conn_pool_prepare_sql_id", id), log.String("query", query))
+// It generates a unique cache key based on the SQL string. The cache key can be
+// retrieved via DBR object.
+func (c *ConnPool) WithPrepare(ctx context.Context, qb QueryBuilder) *DBR {
+	prepareQueryBuilder(c.queryCache.mapTableName, qb)
+	rawSQL, _, err := qb.ToSQL()
+	if err != nil {
+		return &DBR{
+			previousErr: errors.WithStack(err),
+		}
 	}
 
-	stmt, err := c.DB.PrepareContext(ctx, query)
-	a := &DBR{
-		base: builderCommon{
-			id:     id,
-			ärgErr: err,
-			Log:    l,
-			db:     stmtWrapper{stmt: stmt},
-		},
-		isPrepared: true,
+	key := hashSQL(rawSQL)
+	c.queryCache.mu.Lock()
+	defer c.queryCache.mu.Unlock()
+	sqlCache, ok := c.queryCache.queries[key]
+	if !ok {
+		id, rawSQL := c.queryCache.prependUniqueID(rawSQL)
+		sqlCache = makeCachedSQL(qb, rawSQL, id)
+		c.queryCache.queries[key] = sqlCache
 	}
-	return a
+
+	l := c.Log
+	if l != nil {
+		l = l.With(log.String("conn_source", "ConnPool"), log.Bool("is_prepared", true),
+			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
+	}
+	stmt, err := c.DB.PrepareContext(ctx, sqlCache.rawSQL)
+	return &DBR{
+		cachedSQL:   *sqlCache,
+		log:         l,
+		DB:          stmtWrapper{stmt: stmt},
+		previousErr: errors.WithStack(err),
+		isPrepared:  true,
+	}
 }
 
 // WithDisabledForeignKeyChecks runs the callBack with disabled foreign key
@@ -713,17 +901,16 @@ func (c *Conn) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 	}
 	l := c.Log
 	if l != nil {
-		l = l.With(log.String("tx_id", c.makeUniqueID()))
+		l = l.With(log.String("tx_id", c.queryCache.makeUniqueID()))
 		if l.IsDebug() {
 			l.Debug("BeginTx")
 		}
 	}
 	return &Tx{
+		queryCache: c.queryCache,
 		connCommon: connCommon{
-			start:        start,
-			Log:          l,
-			makeUniqueID: c.makeUniqueID,
-			mapTableName: c.mapTableName,
+			start: start,
+			Log:   l,
 		},
 		DB: dbTx,
 	}, nil
@@ -736,29 +923,24 @@ func (c *Conn) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 // 			func(tx *dml.Tx) error {
 //          	// SQL
 // 		        return nil
-//      	}[,
-// 			func(tx *dml.Tx) error {
-//          	// more SQL
-// 		        return nil
-//      	},]
+//      	},
 // 		); err != nil{
 //           panic(err.Error()) // you could gracefully handle the error also
 //      }
 // It logs the time taken, if a logger has been set with Debug logging enabled.
 // The provided context gets used only for starting the transaction.
-func (c *Conn) Transaction(ctx context.Context, opts *sql.TxOptions, fns ...func(*Tx) error) error {
+func (c *Conn) Transaction(ctx context.Context, opts *sql.TxOptions, f func(*Tx) error) error {
 	tx, err := c.BeginTx(ctx, opts)
 	if err != nil {
 		return err
 	}
-	for i, f := range fns {
-		if err := f(tx); err != nil {
-			err = errors.Wrapf(err, "[dml] ConnPool.Transaction.error at index %d", i)
-			if rErr := tx.Rollback(); rErr != nil {
-				err = errors.Wrapf(rErr, "[dml] ConnPool.Transaction.Rollback.error at index %d", i)
-			}
-			return err
+
+	if err := f(tx); err != nil {
+		err = errors.Wrapf(err, "[dml] ConnPool.Transaction.error")
+		if rErr := tx.Rollback(); rErr != nil {
+			err = errors.Wrapf(rErr, "[dml] ConnPool.Transaction.Rollback.error")
 		}
+		return err
 	}
 	return errors.WithStack(tx.Commit())
 }
@@ -777,88 +959,248 @@ func (c *Conn) Close() error {
 
 // WithQueryBuilder creates a new DBR for handling the arguments with the
 // assigned connection and builds the SQL string. The returned arguments and
-// errors of the QueryBuilder will be forwarded to the DBR type.
+// errors of the QueryBuilder will be forwarded to the DBR type. It generates a
+// unique cache key based on the SQL string. The cache key can be retrieved via
+// DBR object.
 func (c *Conn) WithQueryBuilder(qb QueryBuilder) *DBR {
-	sql, _, err := qb.ToSQL()
-	id := c.makeUniqueID()
+	prepareQueryBuilder(c.queryCache.mapTableName, qb)
+	rawSQL, _, err := qb.ToSQL()
+	if err != nil {
+		return &DBR{
+			previousErr: errors.WithStack(err),
+		}
+	}
+
+	key := hashSQL(rawSQL)
+	c.queryCache.mu.Lock()
+	defer c.queryCache.mu.Unlock()
+	sqlCache, ok := c.queryCache.queries[key]
+	if !ok {
+		id, rawSQL := c.queryCache.prependUniqueID(rawSQL)
+		sqlCache = makeCachedSQL(qb, rawSQL, id)
+		c.queryCache.queries[key] = sqlCache
+	}
 	l := c.Log
 	if l != nil {
-		l = l.With(log.String("query_builder_id", id), log.String("sql", sql))
+		l = l.With(log.String("conn_source", "Conn"), log.Bool("is_prepared", false),
+			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
 	}
-	a := &DBR{
-		base: builderCommon{
-			cachedSQL: map[string]string{"": sql},
-			Log:       l,
-			id:        id,
-			db:        c.DB,
-			ärgErr:    errors.WithStack(err),
-		},
+	return &DBR{
+		cachedSQL: *sqlCache,
+		log:       l,
+		DB:        c.DB,
 	}
-	return a
 }
 
-// WithRawSQL creates a new DBR for the given SQL string in the current
-// connection.
-// Supports expanding the placeholders in case of argument slices.
-func (c *Conn) WithRawSQL(query string) *DBR {
-	id := c.makeUniqueID()
+// WithPrepare adds the query to the cache and returns a prepared statement
+// which must be closed after its use.
+func (c *Conn) WithPrepare(ctx context.Context, qb QueryBuilder) *DBR {
+	prepareQueryBuilder(c.queryCache.mapTableName, qb)
+	rawSQL, _, err := qb.ToSQL()
+	if err != nil {
+		return &DBR{
+			previousErr: errors.WithStack(err),
+		}
+	}
+
+	key := hashSQL(rawSQL)
+	c.queryCache.mu.Lock()
+	defer c.queryCache.mu.Unlock()
+	sqlCache, ok := c.queryCache.queries[key]
+	if !ok {
+		id, rawSQL := c.queryCache.prependUniqueID(rawSQL)
+		sqlCache = makeCachedSQL(qb, rawSQL, id)
+		c.queryCache.queries[key] = sqlCache
+	}
 	l := c.Log
 	if l != nil {
-		l = l.With(log.String("conn_pool_raw_sql_id", id), log.String("sql", query))
+		l = l.With(log.String("conn_source", "Conn"), log.Bool("is_prepared", true),
+			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
 	}
+	stmt, err := c.DB.PrepareContext(ctx, sqlCache.rawSQL)
 	return &DBR{
-		base: builderCommon{
-			cachedSQL: map[string]string{"": query},
-			Log:       l,
-			id:        id,
-			db:        c.DB,
-		},
+		cachedSQL:   *sqlCache,
+		log:         l,
+		DB:          stmtWrapper{stmt: stmt},
+		previousErr: errors.WithStack(err),
+		isPrepared:  true,
 	}
 }
 
-// WithRawSQL creates a new DBR for the given SQL string in the current
-// transaction.
-// Supports expanding the placeholders in case of argument slices.
-func (tx *Tx) WithRawSQL(query string) *DBR {
-	id := tx.makeUniqueID()
-	l := tx.Log
+// WithCacheKey creates a DBR object from a cached query.
+func (c *Conn) WithCacheKey(cacheKey string) *DBR {
+	c.queryCache.mu.RLock()
+	defer c.queryCache.mu.RUnlock()
+
+	sqlCache, ok := c.queryCache.queries[cacheKey]
+	if !ok {
+		return &DBR{
+			previousErr: errors.NotFound.Newf("CacheKey %q not found", cacheKey),
+		}
+	}
+	l := c.Log
 	if l != nil {
-		l = l.With(log.String("tx_raw_sql_id", id), log.String("sql", query))
+		l = l.With(log.String("conn_source", "Conn"), log.Bool("is_prepared", false),
+			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
 	}
 	return &DBR{
-		base: builderCommon{
-			cachedSQL: map[string]string{"": query},
-			Log:       l,
-			id:        id,
-			db:        tx.DB,
-		},
+		cachedSQL: *sqlCache,
+		log:       l,
+		DB:        c.DB,
 	}
 }
 
-// Prepare executes the statement represented by the Select to create a prepared
-// statement. It returns a custom statement type or an error if there was one.
-// Provided arguments or records in the Select are getting ignored. The provided
-// context is used for the preparation of the statement, not for the execution
-// of the statement. The returned Stmter is not safe for concurrent use, despite
-// the underlying *sql.Stmt is.
-func (tx *Tx) WithPrepare(ctx context.Context, query string) *DBR {
-	id := tx.makeUniqueID()
+// WithPrepareCacheKey creates a DBR object from a prepared cached query. The
+// statement must be closed after its use.
+func (c *Conn) WithPrepareCacheKey(ctx context.Context, cacheKey string) *DBR {
+	c.queryCache.mu.RLock()
+	defer c.queryCache.mu.RUnlock()
+
+	sqlCache, ok := c.queryCache.queries[cacheKey]
+	if !ok {
+		return &DBR{
+			previousErr: errors.NotFound.Newf("CacheKey %q not found", cacheKey),
+		}
+	}
+	l := c.Log
+	if l != nil {
+		l = l.With(log.String("conn_source", "Conn"), log.Bool("is_prepared", true),
+			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
+	}
+	stmt, err := c.DB.PrepareContext(ctx, sqlCache.rawSQL)
+	return &DBR{
+		cachedSQL:   *sqlCache,
+		log:         l,
+		DB:          stmtWrapper{stmt: stmt},
+		previousErr: err,
+		isPrepared:  true,
+	}
+}
+
+// WithCacheKey creates a DBR object from a cached query.
+func (tx *Tx) WithCacheKey(cacheKey string) *DBR {
+	tx.queryCache.mu.RLock()
+	defer tx.queryCache.mu.RUnlock()
+
+	sqlCache, ok := tx.queryCache.queries[cacheKey]
+	if !ok {
+		return &DBR{
+			previousErr: errors.NotFound.Newf("CacheKey %q not found", cacheKey),
+		}
+	}
 	l := tx.Log
 	if l != nil {
-		l = l.With(log.String("tx_prepare_sql_id", id), log.String("query", query))
+		l = l.With(log.String("conn_source", "Tx"), log.Bool("is_prepared", false),
+			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
+	}
+	return &DBR{
+		cachedSQL: *sqlCache,
+		log:       l,
+		DB:        tx.DB,
+	}
+}
+
+// WithPrepareCacheKey creates a DBR object from a prepared cached query. After
+// use the query statement must be closed.
+func (tx *Tx) WithPrepareCacheKey(ctx context.Context, cacheKey string) *DBR {
+	tx.queryCache.mu.RLock()
+	defer tx.queryCache.mu.RUnlock()
+
+	sqlCache, ok := tx.queryCache.queries[cacheKey]
+	if !ok {
+		return &DBR{
+			previousErr: errors.NotFound.Newf("CacheKey %q not found", cacheKey),
+		}
+	}
+	l := tx.Log
+	if l != nil {
+		l = l.With(log.String("conn_source", "Tx"), log.Bool("is_prepared", true),
+			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
+	}
+	stmt, err := tx.DB.PrepareContext(ctx, sqlCache.rawSQL)
+	return &DBR{
+		cachedSQL:   *sqlCache,
+		log:         l,
+		DB:          stmtWrapper{stmt: stmt},
+		previousErr: err,
+		isPrepared:  true,
+	}
+}
+
+// WithPrepare executes the statement represented by the Select to create a
+// prepared statement. It returns a custom statement type or an error if there
+// was one. Provided arguments or records in the Select are getting ignored. The
+// provided context is used for the preparation of the statement, not for the
+// execution of the statement. The returned Stmter is not safe for concurrent
+// use, despite the underlying *sql.Stmt is. You must close DBR after its use.
+// It generates a unique cache key based on the SQL string. The cache key can be
+// retrieved via DBR object.
+func (tx *Tx) WithPrepare(ctx context.Context, qb QueryBuilder) *DBR {
+	prepareQueryBuilder(tx.queryCache.mapTableName, qb)
+	rawSQL, _, err := qb.ToSQL()
+	if err != nil {
+		return &DBR{
+			previousErr: errors.WithStack(err),
+		}
 	}
 
-	stmt, err := tx.DB.PrepareContext(ctx, query)
-	a := &DBR{
-		base: builderCommon{
-			id:     id,
-			ärgErr: err,
-			Log:    l,
-			db:     stmtWrapper{stmt: stmt},
-		},
-		isPrepared: true,
+	key := hashSQL(rawSQL)
+	tx.queryCache.mu.Lock()
+	defer tx.queryCache.mu.Unlock()
+	sqlCache, ok := tx.queryCache.queries[key]
+	if !ok {
+		id, rawSQL := tx.queryCache.prependUniqueID(rawSQL)
+		sqlCache = makeCachedSQL(qb, rawSQL, id)
+		tx.queryCache.queries[key] = sqlCache
 	}
-	return a
+	l := tx.Log
+	if l != nil {
+		l = l.With(log.String("conn_source", "Tx"), log.Bool("is_prepared", true),
+			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
+	}
+	stmt, err := tx.DB.PrepareContext(ctx, sqlCache.rawSQL)
+	return &DBR{
+		cachedSQL:   *sqlCache,
+		log:         l,
+		DB:          stmtWrapper{stmt: stmt},
+		previousErr: errors.WithStack(err),
+		isPrepared:  true,
+	}
+}
+
+// WithQueryBuilder creates a new DBR for handling the arguments with the
+// assigned connection and builds the SQL string. The returned arguments and
+// errors of the QueryBuilder will be forwarded to the DBR type. It generates a
+// unique cache key based on the SQL string. The cache key can be retrieved via
+// DBR object.
+func (tx *Tx) WithQueryBuilder(qb QueryBuilder) *DBR {
+	prepareQueryBuilder(tx.queryCache.mapTableName, qb)
+	rawSQL, _, err := qb.ToSQL()
+	if err != nil {
+		return &DBR{
+			previousErr: errors.WithStack(err),
+		}
+	}
+
+	key := hashSQL(rawSQL)
+	tx.queryCache.mu.Lock()
+	defer tx.queryCache.mu.Unlock()
+	sqlCache, ok := tx.queryCache.queries[key]
+	if !ok {
+		id, rawSQL := tx.queryCache.prependUniqueID(rawSQL)
+		sqlCache = makeCachedSQL(qb, rawSQL, id)
+		tx.queryCache.queries[key] = sqlCache
+	}
+	l := tx.Log
+	if l != nil {
+		l = l.With(log.String("conn_source", "Tx"), log.Bool("is_prepared", false),
+			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
+	}
+	return &DBR{
+		cachedSQL: *sqlCache,
+		log:       l,
+		DB:        tx.DB,
+	}
 }
 
 // Commit finishes the transaction. It logs the time taken, if a logger has been
@@ -877,23 +1219,6 @@ func (tx *Tx) Rollback() error {
 		defer tx.Log.Debug("Rollback", log.Duration("duration", now().Sub(tx.start)))
 	}
 	return tx.DB.Rollback()
-}
-
-// WithQueryBuilder creates a new DBR for handling the arguments with the
-// assigned connection and builds the SQL string. The returned arguments and
-// errors of the QueryBuilder will be forwarded to the DBR type.
-func (tx *Tx) WithQueryBuilder(qb QueryBuilder) *DBR {
-	sqlStr, _, err := qb.ToSQL()
-	a := &DBR{
-		base: builderCommon{
-			cachedSQL: map[string]string{"": sqlStr},
-			Log:       tx.Log,
-			id:        tx.makeUniqueID(),
-			db:        tx.DB,
-			ärgErr:    errors.WithStack(err),
-		},
-	}
-	return a
 }
 
 // TODO func WithRequireUTF8MB4() ConnPoolOption {

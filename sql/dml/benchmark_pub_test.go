@@ -24,26 +24,7 @@ import (
 var (
 	benchmarkGlobalVals []interface{}
 	benchmarkSelectStr  string
-	_                   QueryExecPreparer = (*benchMockQuerier)(nil)
 )
-
-type benchMockQuerier struct{}
-
-func (benchMockQuerier) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
-	return new(sql.Rows), nil
-}
-
-func (benchMockQuerier) PrepareContext(ctx context.Context, query string) (*sql.Stmt, error) {
-	return new(sql.Stmt), nil
-}
-
-func (benchMockQuerier) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
-	return nil, nil
-}
-
-func (benchMockQuerier) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
-	return new(sql.Row)
-}
 
 // BenchmarkSelect_Rows-4		 1000000	      2276 ns/op	    4344 B/op	      12 allocs/op git commit 609db6db
 // BenchmarkSelect_Rows-4   	  500000	      2919 ns/op	    5411 B/op	      18 allocs/op
@@ -51,18 +32,17 @@ func (benchMockQuerier) QueryRowContext(ctx context.Context, query string, args 
 func BenchmarkSelect_Rows(b *testing.B) {
 	tables := []string{"eav_attribute"}
 	ctx := context.TODO()
-	db := benchMockQuerier{}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 
 		sel := NewSelect("TABLE_NAME", "COLUMN_NAME", "ORDINAL_POSITION", "COLUMN_DEFAULT", "IS_NULLABLE",
 			"DATA_TYPE", "CHARACTER_MAXIMUM_LENGTH", "NUMERIC_PRECISION", "NUMERIC_SCALE",
 			"COLUMN_TYPE", "COLUMN_KEY", "EXTRA", "COLUMN_COMMENT").From("information_schema.COLUMNS").
-			Where(Expr(`TABLE_SCHEMA=DATABASE()`)).WithDB(db)
+			Where(Expr(`TABLE_SCHEMA=DATABASE()`))
 
 		sel.Where(Column("TABLE_NAME").In().PlaceHolder())
 
-		rows, err := sel.WithDBR().QueryContext(ctx, tables)
+		rows, err := sel.WithDBR(dbMock{}).QueryContext(ctx, tables)
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
@@ -190,18 +170,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 		}
 	})
 
-	b.Run("ToSQL Interpolate NoCache", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.WithCacheKey("bm_ip_nc_%d", i).ToSQL()
-			if err != nil {
-				b.Fatalf("%+v", err)
-			}
-		}
-	})
-
 	b.Run("ToSQL Interpolate Cache", func(b *testing.B) {
-		sqlObj.WithCacheKey("")
 		for i := 0; i < b.N; i++ {
 			var err error
 			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.ToSQL()
@@ -252,7 +221,10 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 				Where(Column("store_id").PlaceHolder())
 
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithDBR().Interpolate().testWithArgs(4, entityIDs, []int64{174, 175}, 0).ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithDBR(dbMock{}).
+				Interpolate().
+				testWithArgs(4, entityIDs, []int64{174, 175}, 0).
+				ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -272,7 +244,7 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 				Where(Column("store_id").NamedArg("StoreId"))
 
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithDBR().Interpolate().testWithArgs(
+			benchmarkSelectStr, benchmarkGlobalVals, err = sel.WithDBR(dbMock{}).Interpolate().testWithArgs(
 				sql.Named("EntityTypeId", int64(4)),
 				sql.Named("EntityId", entityIDs),
 				sql.Named("AttributeId", []int64{174, 175}),
@@ -295,7 +267,7 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 			Where(Column("attribute_id").In().PlaceHolder()).
 			Where(Column("store_id").PlaceHolder())
 
-		selA := sel.WithDBR().Interpolate()
+		selA := sel.WithDBR(dbMock{}).Interpolate()
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -400,7 +372,7 @@ func BenchmarkDeleteSQL(b *testing.B) {
 	b.Run("ToSQL no cache", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.WithCacheKey("delete_nc_%d", i).ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -408,7 +380,6 @@ func BenchmarkDeleteSQL(b *testing.B) {
 	})
 
 	b.Run("ToSQL with cache", func(b *testing.B) {
-		sqlObj.WithCacheKey("")
 		for i := 0; i < b.N; i++ {
 			var err error
 			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.ToSQL()
@@ -425,7 +396,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 			var err error
 			benchmarkSelectStr, benchmarkGlobalVals, err = NewInsert("alpha").
 				AddColumns("something_id", "user_id", "other").
-				WithDBR().testWithArgs(1, 2, true).ToSQL()
+				WithDBR(dbMock{}).testWithArgs(1, 2, true).ToSQL()
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -437,7 +408,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			var err error
-			sqlObjA := sqlObj.WithCacheKey("index_%d", i).WithDBR().testWithArgs(1, 2, true)
+			sqlObjA := sqlObj.WithDBR(dbMock{}).testWithArgs(1, 2, true)
 			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObjA.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
@@ -447,7 +418,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 
 	b.Run("ToSQL with cache", func(b *testing.B) {
 		sqlObj := NewInsert("alpha").AddColumns("something_id", "user_id", "other")
-		delA := sqlObj.WithDBR()
+		delA := sqlObj.WithDBR(dbMock{})
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			var err error
@@ -464,7 +435,7 @@ func BenchmarkInsertRecordsSQL(b *testing.B) {
 	obj := someRecord{SomethingID: 1, UserID: 99, Other: false}
 	insA := NewInsert("alpha").
 		AddColumns("something_id", "user_id", "other").
-		WithDBR()
+		WithDBR(dbMock{})
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -484,7 +455,7 @@ func BenchmarkRepeat(b *testing.B) {
 	}
 	b.Run("multi", func(b *testing.B) {
 		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?) AND name IN (?,?,?,?,?) AND status = ?"
-		dbr := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ? AND name IN ? AND status = ?").
+		dbr := cp.WithQueryBuilder(QuerySQL("SELECT * FROM `table` WHERE id IN ? AND name IN ? AND status = ?")).
 			ExpandPlaceHolders().
 			testWithArgs([]int{5, 7, 9, 11}, []string{"a", "b", "c", "d", "e"}, 22)
 		b.ResetTimer()
@@ -501,7 +472,7 @@ func BenchmarkRepeat(b *testing.B) {
 
 	b.Run("single", func(b *testing.B) {
 		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?)"
-		dbr := cp.WithRawSQL("SELECT * FROM `table` WHERE id IN ?").
+		dbr := cp.WithQueryBuilder(QuerySQL("SELECT * FROM `table` WHERE id IN ?")).
 			ExpandPlaceHolders().
 			testWithArgs([]int{9, 8, 7, 6})
 		b.ResetTimer()
@@ -648,7 +619,7 @@ func BenchmarkUnion(b *testing.B) {
 		}
 	})
 	b.Run("5 SELECTs WithDBR", func(b *testing.B) {
-		u := newUnion5().WithDBR()
+		u := newUnion5().WithDBR(dbMock{})
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			var err error

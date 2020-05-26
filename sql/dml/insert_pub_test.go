@@ -66,7 +66,7 @@ func TestInsert_Bind(t *testing.T) {
 				AddOnDuplicateKey(
 					dml.Column("something_id").Int64(99),
 					dml.Column("user_id").Values(),
-				).WithDBR().TestWithArgs(dml.Qualify("", objs[0]), dml.Qualify("", objs[1]), dml.Qualify("", objs[2])),
+				).WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", objs[0]), dml.Qualify("", objs[1]), dml.Qualify("", objs[2])),
 			errors.NoKind,
 			"INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?),(?,?,?) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
 			"INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (1,88,0),(2,99,1),(3,101,1) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
@@ -80,7 +80,7 @@ func TestInsert_Bind(t *testing.T) {
 				AddOnDuplicateKey(
 					dml.Column("something_id").Int64(99),
 					dml.Column("user_id").Values(),
-				).WithDBR().TestWithArgs(dml.Qualify("", objs[0]), dml.Qualify("", objs[1]), dml.Qualify("", objs[2])),
+				).WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", objs[0]), dml.Qualify("", objs[1]), dml.Qualify("", objs[2])),
 			errors.NoKind,
 			"INSERT INTO `a` VALUES (?,?,?),(?,?,?),(?,?,?) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
 			"INSERT INTO `a` VALUES (1,88,0),(2,99,1),(3,101,1) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
@@ -97,7 +97,7 @@ func TestInsert_Bind(t *testing.T) {
 		compareToSQL(t,
 			dml.NewInsert("customer_entity").
 				SetRecordPlaceHolderCount(5). // mandatory because no columns provided!
-				WithDBR().TestWithArgs(dml.Qualify("", customers[0]), dml.Qualify("", customers[1]), dml.Qualify("", customers[2])),
+				WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", customers[0]), dml.Qualify("", customers[1]), dml.Qualify("", customers[2])),
 			errors.NoKind,
 			"INSERT INTO `customer_entity` VALUES (?,?,?,?,?),(?,?,?,?,?),(?,?,?,?,?)",
 			"INSERT INTO `customer_entity` VALUES (11,'Karl Gopher',7,47.11,'1FE9983E|28E76FBC'),(12,'Fung Go Roo',7,28.94,'4FE7787E|15E59FBB|794EFDE8'),(13,'John Doe',6,138.54,'')",
@@ -107,7 +107,7 @@ func TestInsert_Bind(t *testing.T) {
 	t.Run("column not found", func(t *testing.T) {
 		objs := []someRecord{{1, 88, false}, {2, 99, true}}
 		compareToSQL(t,
-			dml.NewInsert("a").AddColumns("something_it", "user_id", "other").WithDBR().TestWithArgs(
+			dml.NewInsert("a").AddColumns("something_it", "user_id", "other").WithDBR(dbMock{}).TestWithArgs(
 				dml.Qualify("", objs[0]), dml.Qualify("", objs[1]),
 			),
 			errors.NotFound,
@@ -121,9 +121,8 @@ func TestInsert_Prepare(t *testing.T) {
 	t.Run("BuildValues not set Error", func(t *testing.T) {
 		in := &dml.Insert{}
 		in.AddColumns("a", "b")
-		stmt, err := in.Prepare(context.TODO())
-		assert.Nil(t, stmt)
-		assert.ErrorIsKind(t, errors.NotAcceptable, err)
+		_, _, err := in.ToSQL()
+		assert.ErrorIsKind(t, errors.Empty, err)
 	})
 
 	t.Run("ToSQL Error", func(t *testing.T) {
@@ -138,12 +137,12 @@ func TestInsert_Prepare(t *testing.T) {
 		in := &dml.Insert{
 			Into: "table",
 		}
-		in = in.WithDB(dbMock{
+		inDBR := in.WithDBR(dbMock{
 			error: errors.AlreadyClosed.Newf("Who closed myself?"),
 		})
 		in.AddColumns("a", "b").BuildValues()
 
-		stmt, err := in.Prepare(context.TODO())
+		stmt, err := inDBR.Prepare(context.Background())
 		assert.Nil(t, stmt)
 		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
@@ -156,10 +155,9 @@ func TestInsert_Prepare(t *testing.T) {
 		prep.ExpectExec().WithArgs("a@b.c", 33, now()).WillReturnResult(sqlmock.NewResult(4, 0))
 		prep.ExpectExec().WithArgs("x@y.z", 44, now().Add(time.Minute)).WillReturnResult(sqlmock.NewResult(5, 0))
 
-		stmt, err := dml.NewInsert("customer_entity").
-			AddColumns("email", "group_id", "created_at").BuildValues().
-			WithDB(dbc.DB).
-			Prepare(context.TODO())
+		stmt, err := dbc.WithQueryBuilder(dml.NewInsert("customer_entity").
+			AddColumns("email", "group_id", "created_at").BuildValues()).
+			Prepare(context.Background())
 		assert.NoError(t, err, "failed creating a prepared statement")
 		defer func() {
 			assert.NoError(t, stmt.Close(), "Close on a prepared statement")
@@ -175,9 +173,8 @@ func TestInsert_Prepare(t *testing.T) {
 			{"x@y.z", 44, now().Add(time.Minute), 5},
 		}
 
-		stmtA := stmt.WithDBR()
 		for i, test := range tests {
-			res, err := stmtA.ExecContext(context.TODO(), test.email, test.groupID, test.created_at)
+			res, err := stmt.ExecContext(context.Background(), test.email, test.groupID, test.created_at)
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -186,7 +183,7 @@ func TestInsert_Prepare(t *testing.T) {
 				t.Fatalf("Result index %d with error: %s", i, err)
 			}
 			assert.Exactly(t, test.insertID, lid, "Index %d has different LastInsertIDs", i)
-			stmtA.Reset()
+			stmt.Reset()
 		}
 	})
 
@@ -198,12 +195,9 @@ func TestInsert_Prepare(t *testing.T) {
 		prep.ExpectExec().WithArgs("a@b.c", 33, "d@e.f", 33).WillReturnResult(sqlmock.NewResult(6, 0))
 		prep.ExpectExec().WithArgs("x@y.z", 44, "u@v.w", 44).WillReturnResult(sqlmock.NewResult(7, 0))
 
-		stmt, err := dml.NewInsert("customer_entity").
-			AddColumns("email", "group_id").
-			BuildValues().
-			SetRowCount(2).
-			WithDB(dbc.DB).
-			Prepare(context.TODO())
+		stmt, err := dbc.WithQueryBuilder(dml.NewInsert("customer_entity").
+			AddColumns("email", "group_id").BuildValues().SetRowCount(2),
+		).Prepare(context.Background())
 		assert.NoError(t, err)
 		defer func() {
 			assert.NoError(t, stmt.Close(), "Close on a prepared statement")
@@ -220,10 +214,9 @@ func TestInsert_Prepare(t *testing.T) {
 			{"x@y.z", 44, "u@v.w", 44, 7},
 		}
 
-		stmtA := stmt.WithDBR()
 		for i, test := range tests {
 
-			res, err := stmtA.ExecContext(context.TODO(), test.email1, test.groupID1, test.email2, test.groupID2)
+			res, err := stmt.ExecContext(context.Background(), test.email1, test.groupID1, test.email2, test.groupID2)
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -232,7 +225,7 @@ func TestInsert_Prepare(t *testing.T) {
 				t.Fatalf("Result index %d with error: %s", i, err)
 			}
 			assert.Exactly(t, test.insertID, lid, "Index %d has different LastInsertIDs", i)
-			stmtA.Reset()
+			stmt.Reset()
 		}
 	})
 
@@ -244,15 +237,9 @@ func TestInsert_Prepare(t *testing.T) {
 		prep.ExpectExec().WithArgs("Peter Gopher", "peter@gopher.go").WillReturnResult(sqlmock.NewResult(4, 0))
 		prep.ExpectExec().WithArgs("John Doe", "john@doe.go").WillReturnResult(sqlmock.NewResult(5, 0))
 
-		stmt, err := dml.NewInsert("dml_person").
-			AddColumns("name", "email").
-			BuildValues().
-			WithDB(dbc.DB).
-			Prepare(context.TODO())
-		assert.NoError(t, err, "failed creating a prepared statement")
-		defer func() {
-			assert.NoError(t, stmt.Close(), "Close on a prepared statement")
-		}()
+		stmt := dbc.WithPrepare(context.Background(), dml.NewInsert("dml_person").
+			AddColumns("name", "email").BuildValues())
+		defer dmltest.Close(t, stmt)
 
 		tests := []struct {
 			name     string
@@ -264,20 +251,16 @@ func TestInsert_Prepare(t *testing.T) {
 		}
 
 		for i, test := range tests {
-
 			p := &dmlPerson{
 				Name:  test.name,
 				Email: null.MakeString(test.email),
 			}
 
-			res, err := stmt.WithDBR().ExecContext(context.TODO(), dml.Qualify("", p))
-			if err != nil {
-				t.Fatalf("Index %d => %+v", i, err)
-			}
+			res, err := stmt.ExecContext(context.Background(), dml.Qualify("", p))
+			assert.NoError(t, err, "Index %d", i)
+
 			lid, err := res.LastInsertId()
-			if err != nil {
-				t.Fatalf("Result index %d with error: %s", i, err)
-			}
+			assert.NoError(t, err, "Result index %d", i)
 			assert.Exactly(t, test.insertID, lid, "Index %d has different LastInsertIDs", i)
 			assert.Exactly(t, test.insertID, p.ID, "Index %d and model p has different LastInsertIDs", i)
 		}
@@ -290,17 +273,16 @@ func TestInsert_Prepare(t *testing.T) {
 		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("INSERT INTO `dml_person` (`name`,`email`) VALUES (?,?)"))
 		prep.ExpectExec().WithArgs("Peter Gopher", "peter@gopher.go").WillReturnResult(sqlmock.NewResult(4, 0))
 
-		stmt, err := dml.NewInsert("dml_person").
+		stmt, err := dbc.WithQueryBuilder(dml.NewInsert("dml_person").
 			AddColumns("name", "email").
-			BuildValues().
-			WithDB(dbc.DB).
-			Prepare(context.TODO())
+			BuildValues()).
+			Prepare(context.Background())
 		assert.NoError(t, err, "failed creating a prepared statement")
 		defer func() {
 			assert.NoError(t, stmt.Close(), "Close on a prepared statement")
 		}()
 
-		res, err := stmt.WithDBR().ExecContext(context.TODO(), "Peter Gopher", "peter@gopher.go")
+		res, err := stmt.ExecContext(context.Background(), "Peter Gopher", "peter@gopher.go")
 		assert.NoError(t, err, "failed to execute ExecContext")
 
 		lid, err := res.LastInsertId()
@@ -320,7 +302,7 @@ func TestInsert_BuildValues(t *testing.T) {
 
 		insA := dml.NewInsert("alpha").
 			AddColumns("name", "email").BuildValues().
-			WithDBR()
+			WithDBR(dbMock{})
 
 		// bug
 
@@ -354,7 +336,7 @@ func TestInsert_Clone(t *testing.T) {
 	})
 
 	t.Run("non-nil AddColumns", func(t *testing.T) {
-		i := dbc.InsertInto("dml_people").AddColumns("name", "email")
+		i := dml.NewInsert("dml_people").AddColumns("name", "email")
 
 		i2 := i.Clone()
 		notEqualPointers(t, i, i2)
@@ -362,10 +344,9 @@ func TestInsert_Clone(t *testing.T) {
 		assert.Exactly(t, i.Pairs, i2.Pairs)
 		assert.Exactly(t, i.RecordPlaceHolderCount, i2.RecordPlaceHolderCount)
 		// assert.Exactly(t, i.db, i2.db) // how to test this as it is now unexported? fmt.Sprintf?
-		assert.Exactly(t, i.Log, i2.Log)
 	})
 	t.Run("non-nil AddColumns", func(t *testing.T) {
-		i := dbc.InsertInto("dml_people").WithPairs(
+		i := dml.NewInsert("dml_people").WithPairs(
 			dml.Column("name").Str("Hans"),
 			dml.Column("age").Int(79),
 		)
@@ -376,7 +357,6 @@ func TestInsert_Clone(t *testing.T) {
 		notEqualPointers(t, i.Pairs, i2.Pairs)
 		assert.Exactly(t, i.RecordPlaceHolderCount, i2.RecordPlaceHolderCount)
 		// assert.Exactly(t, i.db, i2.db) // how to test this as it is now unexported? fmt.Sprintf?
-		assert.Exactly(t, i.Log, i2.Log)
 	})
 	t.Run("non-nil OnDulicateKey", func(t *testing.T) {
 		i := dml.NewInsert("a").

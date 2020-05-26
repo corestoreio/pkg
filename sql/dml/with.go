@@ -16,10 +16,8 @@ package dml
 
 import (
 	"bytes"
-	"context"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 )
 
 // WithCTE defines a common table expression used in the type `With`.
@@ -83,68 +81,6 @@ func NewWith(expressions ...WithCTE) *With {
 	}
 }
 
-func withInitLog(l log.Logger, expressions []WithCTE, id string) log.Logger {
-	if l != nil {
-		tables := make([]string, len(expressions))
-		for i, w := range expressions {
-			tables[i] = w.Name
-		}
-		l = l.With(log.String("with_cte_id", id), log.Strings("tables", tables...))
-	}
-	return l
-}
-
-// With creates a new With statement.
-func (c *ConnPool) With(expressions ...WithCTE) *With {
-	id := c.makeUniqueID()
-	return &With{
-		BuilderBase: BuilderBase{
-			builderCommon: builderCommon{
-				id:  id,
-				Log: withInitLog(c.Log, expressions, id),
-				db:  c.DB,
-			},
-		},
-		Subclauses: expressions,
-	}
-}
-
-// With creates a new With statement bound to a single connection.
-func (c *Conn) With(expressions ...WithCTE) *With {
-	id := c.makeUniqueID()
-	return &With{
-		BuilderBase: BuilderBase{
-			builderCommon: builderCommon{
-				id:  id,
-				Log: withInitLog(c.Log, expressions, id),
-				db:  c.DB,
-			},
-		},
-		Subclauses: expressions,
-	}
-}
-
-// With creates a new With that select that given columns bound to the transaction
-func (tx *Tx) With(expressions ...WithCTE) *With {
-	id := tx.makeUniqueID()
-	return &With{
-		BuilderBase: BuilderBase{
-			builderCommon: builderCommon{
-				id:  id,
-				Log: withInitLog(tx.Log, expressions, id),
-				db:  tx.DB,
-			},
-		},
-		Subclauses: expressions,
-	}
-}
-
-// WithDB sets the database query object.
-func (b *With) WithDB(db QueryExecPreparer) *With {
-	b.db = db
-	return b
-}
-
 // Select gets used in the top level statement.
 func (b *With) Select(topLevel *Select) *With {
 	b.TopLevel.Select = topLevel
@@ -182,44 +118,17 @@ func (b *With) Recursive() *With {
 	return b
 }
 
-// WithDBR returns a new type to support multiple executions of the underlying
-// SQL statement and reuse of memory allocations for the arguments. WithDBR
-// builds the SQL string in a thread safe way. It copies the underlying
-// connection and settings from the current DML type (Delete, Insert, Select,
-// Update, Union, With, etc.). The field DB can still be overwritten.
-// Interpolation does not support the raw interfaces. It's an architecture bug
-// to use WithDBR inside a loop. WithDBR does support thread safety and can be
-// used in parallel. Each goroutine must have its own dedicated *DBR
-// pointer.
-func (b *With) WithDBR() *DBR {
-	return b.newDBR(b)
-}
-
 // ToSQL converts the select statement into a string and returns its arguments.
 func (b *With) ToSQL() (string, []interface{}, error) {
-	b.source = dmlSourceWith
 	rawSQL, err := b.buildToSQL(b)
 	if err != nil {
 		return "", nil, errors.WithStack(err)
 	}
-	return string(rawSQL), nil, nil
-}
-
-// WithCacheKey sets the currently used cache key when generating a SQL string.
-// By setting a different cache key, a previous generated SQL query is
-// accessible again. New cache keys allow to change the generated query of the
-// current object. E.g. different where clauses or different row counts in
-// INSERT ... VALUES statements. The empty string defines the default cache key.
-// If the `args` argument contains values, then fmt.Sprintf gets used.
-func (b *With) WithCacheKey(key string, args ...interface{}) *With {
-	b.withCacheKey(key, args...)
-	return b
+	return rawSQL, nil, nil
 }
 
 func (b *With) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err error) {
-	b.source = dmlSourceWith
 	w.WriteString("WITH ")
-	writeStmtID(w, b.id)
 	if b.IsRecursive {
 		w.WriteString("RECURSIVE ")
 	}
@@ -240,13 +149,11 @@ func (b *With) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err er
 		w.WriteString(" AS (")
 		switch {
 		case sc.Select != nil:
-			sc.Select.cacheKey = b.cacheKey
 			placeHolders, err = sc.Select.toSQL(w, placeHolders)
 			if err != nil {
 				return nil, errors.WithStack(err)
 			}
 		case sc.Union != nil:
-			sc.Union.cacheKey = b.cacheKey
 			placeHolders, err = sc.Union.toSQL(w, placeHolders)
 			if err != nil {
 				return nil, errors.WithStack(err)
@@ -261,52 +168,22 @@ func (b *With) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err er
 
 	switch {
 	case b.TopLevel.Select != nil:
-		b.TopLevel.Select.cacheKey = b.cacheKey
 		placeHolders, err = b.TopLevel.Select.toSQL(w, placeHolders)
 		return placeHolders, errors.WithStack(err)
 
 	case b.TopLevel.Union != nil:
-		b.TopLevel.Union.cacheKey = b.cacheKey
 		placeHolders, err = b.TopLevel.Union.toSQL(w, placeHolders)
 		return placeHolders, errors.WithStack(err)
 
 	case b.TopLevel.Update != nil:
-		b.TopLevel.Update.cacheKey = b.cacheKey
 		placeHolders, err = b.TopLevel.Update.toSQL(w, placeHolders)
 		return placeHolders, errors.WithStack(err)
 
 	case b.TopLevel.Delete != nil:
-		b.TopLevel.Delete.cacheKey = b.cacheKey
 		placeHolders, err = b.TopLevel.Delete.toSQL(w, placeHolders)
 		return placeHolders, errors.WithStack(err)
 	}
 	return nil, errors.Empty.Newf("[dml] Type With misses a top level statement")
-}
-
-// Prepare executes the statement represented by the `With` to create a prepared
-// statement. It returns a custom statement type or an error if there was one.
-// Provided arguments or recs in the `With` are getting ignored. The provided
-// context is used for the preparation of the statement, not for the execution
-// of the statement. The returned Stmter is not safe for concurrent use, despite
-// the underlying *sql.Stmt is.
-func (b *With) Prepare(ctx context.Context) (*Stmt, error) {
-	return b.prepare(ctx, b.db, b, dmlSourceWith)
-}
-
-// PrepareWithDBR same as Prepare but forwards the possible error of creating a
-// prepared statement into the DBR type. Reduces boilerplate code. You must
-// call DBR.Close to deallocate the prepared statement in the SQL server.
-func (b *With) PrepareWithDBR(ctx context.Context) *DBR {
-	stmt, err := b.prepare(ctx, b.db, b, dmlSourceWith)
-	if err != nil {
-		a := &DBR{
-			base: builderCommon{
-				ärgErr: errors.WithStack(err),
-			},
-		}
-		return a
-	}
-	return stmt.WithDBR()
 }
 
 // Clone creates a clone of the current object, leaving fields DB and Log

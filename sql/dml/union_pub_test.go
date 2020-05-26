@@ -32,7 +32,7 @@ func TestUnion_Query(t *testing.T) {
 			dml.NewSelect(),
 			dml.NewSelect(),
 		)
-		rows, err := u.WithDBR().QueryContext(context.TODO())
+		rows, err := u.WithDBR(dbMock{}).QueryContext(context.TODO())
 		assert.Nil(t, rows)
 		assert.ErrorIsKind(t, errors.Empty, err)
 	})
@@ -43,10 +43,10 @@ func TestUnion_Query(t *testing.T) {
 	)
 
 	t.Run("Error", func(t *testing.T) {
-		u.WithDB(dbMock{
+		dbr := u.WithDBR(dbMock{
 			error: errors.ConnectionFailed.Newf("Who closed myself?"),
 		})
-		rows, err := u.WithDBR().QueryContext(context.TODO())
+		rows, err := dbr.QueryContext(context.TODO())
 		assert.Nil(t, rows)
 		assert.ErrorIsKind(t, errors.ConnectionFailed, err)
 	})
@@ -60,9 +60,9 @@ func TestUnion_Query(t *testing.T) {
 			dmltest.SQLMockQuoteMeta("(SELECT `value` FROM `eavChar`) UNION (SELECT `value` FROM `eavInt` WHERE (`b` = 3.14159))"),
 		).WillReturnRows(smr)
 
-		u.WithDB(dbc.DB)
+		dbr := u.WithDBR(dbc.DB)
 
-		rows, err := u.WithDBR().QueryContext(context.TODO())
+		rows, err := dbr.QueryContext(context.TODO())
 		assert.NoError(t, err)
 
 		var xx []string
@@ -91,7 +91,7 @@ func TestUnion_Load(t *testing.T) {
 			"(SELECT `a`, `d` AS `b` FROM `tableAD`) UNION (SELECT `a`, `b` FROM `tableAB` WHERE (`b` = 3.14159)) ORDER BY `a`, `b` DESC, concat(\"c\",b,\"d\")")).
 			WillReturnError(errors.AlreadyClosed.Newf("Who closed myself?"))
 
-		rows, err := u.WithDB(dbc.DB).WithDBR().Load(context.TODO(), nil)
+		rows, err := u.WithDBR(dbc.DB).Load(context.TODO(), nil)
 		assert.Exactly(t, uint64(0), rows)
 		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
@@ -103,7 +103,7 @@ func TestUnion_Prepare(t *testing.T) {
 			dml.NewSelect(),
 			dml.NewSelect(),
 		)
-		stmt, err := u.Prepare(context.TODO())
+		stmt, err := u.WithDBR(dbMock{}).Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.ErrorIsKind(t, errors.Empty, err)
 	})
@@ -124,9 +124,9 @@ func TestUnion_Prepare(t *testing.T) {
 		).
 			Unsafe().
 			OrderBy("a").OrderByDesc("b").OrderBy(`concat("c",b,"d")`).
-			PreserveResultSet().WithDB(dbc.DB)
+			PreserveResultSet()
 
-		stmt, err := u.Prepare(context.TODO())
+		stmt, err := dbc.WithQueryBuilder(u).Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
 	})
@@ -142,21 +142,16 @@ func TestUnion_Prepare(t *testing.T) {
 		prep.ExpectQuery().WithArgs(6890).
 			WillReturnRows(sqlmock.NewRows([]string{"a", "b"}).AddRow("Peter Gopher2", "peter@gopher.go2"))
 
-		stmt, err := dml.NewUnion(
+		stmt := dbc.WithPrepare(context.TODO(), dml.NewUnion(
 			dml.NewSelect("a").AddColumnsAliases("d", "b").From("tableAD"),
 			dml.NewSelect("a", "b").From("tableAB").Where(dml.Column("b").PlaceHolder()),
-		).
-			WithDB(dbc.DB).
-			Prepare(context.TODO())
-		assert.NoError(t, err, "failed creating a prepared statement")
-		defer func() {
-			assert.NoError(t, stmt.Close(), "Close on a prepared statement")
-		}()
+		))
+		defer dmltest.Close(t, stmt)
 
 		t.Run("Context", func(t *testing.T) {
-			rows, err := stmt.WithDBR().QueryContext(context.TODO(), 6889)
+			rows, err := stmt.QueryContext(context.TODO(), 6889)
 			assert.NoError(t, err)
-			defer rows.Close()
+			defer dmltest.Close(t, rows)
 
 			cols, err := rows.Columns()
 			assert.NoError(t, err)
@@ -164,8 +159,7 @@ func TestUnion_Prepare(t *testing.T) {
 		})
 
 		t.Run("RowContext", func(t *testing.T) {
-			row := stmt.WithDBR().QueryRowContext(context.TODO(), 6890)
-			assert.NoError(t, err)
+			row := stmt.QueryRowContext(context.TODO(), 6890)
 			n, e := "", ""
 			assert.NoError(t, row.Scan(&n, &e))
 
@@ -180,14 +174,10 @@ func TestUnion_Prepare(t *testing.T) {
 
 		prep := dbMock.ExpectPrepare(dmltest.SQLMockQuoteMeta("(SELECT `name`, `d` AS `email` FROM `dml_people`) UNION (SELECT `name`, `email` FROM `dml_people2` WHERE (`id` = ?))"))
 
-		stmt, err := dml.NewUnion(
+		stmt := dbc.WithPrepare(context.TODO(), dml.NewUnion(
 			dml.NewSelect("name").AddColumnsAliases("d", "email").From("dml_people"),
 			dml.NewSelect("name", "email").From("dml_people2").Where(dml.Column("id").PlaceHolder()),
-		).
-			WithDB(dbc.DB).
-			Prepare(context.TODO())
-
-		assert.NoError(t, err, "failed creating a prepared statement")
+		))
 		defer dmltest.Close(t, stmt)
 
 		const iterations = 3
@@ -198,16 +188,15 @@ func TestUnion_Prepare(t *testing.T) {
 					WillReturnRows(sqlmock.NewRows([]string{"name", "email"}).AddRow("Peter Gopher", "peter@gopher.go"))
 			}
 			// use loop with Query and add args before
-			stmtA := stmt.WithDBR()
 
 			for i := 0; i < iterations; i++ {
-				rows, err := stmtA.QueryContext(context.TODO(), 6899)
+				rows, err := stmt.QueryContext(context.TODO(), 6899)
 				assert.NoError(t, err)
 
 				cols, err := rows.Columns()
 				assert.NoError(t, err)
 				assert.Exactly(t, []string{"name", "email"}, cols)
-				rows.Close()
+				assert.NoError(t, rows.Close())
 			}
 		})
 
@@ -218,22 +207,21 @@ func TestUnion_Prepare(t *testing.T) {
 			}
 
 			p := &dmlPerson{ID: 6900}
-			stmtA := stmt.WithDBR()
 
 			for i := 0; i < iterations; i++ {
-				rows, err := stmtA.QueryContext(context.TODO(), dml.Qualify("", p))
+				rows, err := stmt.QueryContext(context.TODO(), dml.Qualify("", p))
 				assert.NoError(t, err)
 
 				cols, err := rows.Columns()
 				assert.NoError(t, err)
 				assert.Exactly(t, []string{"name", "email"}, cols)
-				rows.Close()
+				assert.NoError(t, rows.Close())
 			}
 		})
 
 		t.Run("WithRecords Error", func(t *testing.T) {
 			p := &TableCoreConfigDataSlice{err: errors.Duplicated.Newf("Found a duplicate")}
-			rows, err := stmt.WithDBR().QueryContext(context.TODO(), dml.Qualify("", p))
+			rows, err := stmt.QueryContext(context.TODO(), dml.Qualify("", p))
 			assert.ErrorIsKind(t, errors.Duplicated, err)
 			assert.Nil(t, rows)
 		})
@@ -265,6 +253,5 @@ func TestUnion_Clone(t *testing.T) {
 		notEqualPointers(t, u.Selects[0], u2.Selects[0])
 		notEqualPointers(t, u.Selects[1], u2.Selects[1])
 		// assert.Exactly(t, u.db, u2.db) // how to test this?
-		assert.Exactly(t, u.Log, u2.Log)
 	})
 }

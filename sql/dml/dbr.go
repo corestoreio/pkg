@@ -29,14 +29,32 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// DBR is a DataBaseRunner which prepares the SQL string from a DML type,
-// collects and build a list of arguments for later sending and execution in the
-// database server. Arguments are collections of primitive types or slices of
-// primitive types. An DBR type acts like a prepared statement. In fact it can
-// contain under the hood different connection types. DBR is optimized for reuse
-// and allow saving memory allocations. It can't be used in concurrent context.
-type DBR struct {
-	base builderCommon
+type cachedSQL struct {
+	rawSQL string
+
+	defaultQualifier string
+	// ID of a statement. Used in logging. The ID gets generated with function
+	// signature `func() string`. This func gets applied to the logger when
+	// setting up a logger.
+	id string // tracing ID
+	// source defines with which DML statement the builderCommon struct has been initialized.
+	// Constants are `dmlType*`
+	source rune
+	// templateStmtCount only used in case a UNION statement acts as a template.
+	// Create one SELECT statement and by setting the data for
+	// Union.StringReplace function additional SELECT statements are getting
+	// created. Now the arguments must be multiplied by the number of new
+	// created SELECT statements. This value  gets stored in templateStmtCount.
+	// An example exists in TestUnionTemplate_ReuseArgs.
+	templateStmtCount int
+	// qualifiedColumns gets collected before calling ToSQL, and clearing the all
+	// pointers, to know which columns need values from the QualifiedRecords
+	qualifiedColumns []string
+	// containsTuples indicates if a SQL query contains the tuples placeholder
+	// (see constant placeHolderTuples) and if true the function
+	// DBR.prepareQueryAndArgs will replace the tuples placeholder with the
+	// correct amount of MySQL/MariaDB placeholders.
+	containsTuples bool
 	// QualifiedColumnsAliases allows to overwrite the internal qualified
 	// columns slice with custom names. Only in the use case when records are
 	// applied. The list of column names in `QualifiedColumnsAliases` gets
@@ -57,10 +75,204 @@ type DBR struct {
 	tupleCount          uint
 	tupleRowCount       uint
 	insertIsBuildValues bool
+}
+
+func noopMapTableNameFn(oldName string) string { return oldName }
+
+func prepareQueryBuilder(mapTableNameFn func(oldName string) (newName string), qb QueryBuilder) {
+	if mapTableNameFn == nil {
+		mapTableNameFn = noopMapTableNameFn
+	}
+
+	switch qbs := qb.(type) {
+	case *Select:
+		qbs.Table.Name = mapTableNameFn(qbs.Table.Name)
+		qbs.BuilderBase.isWithDBR = true
+	case *Insert:
+		qbs.Into = mapTableNameFn(qbs.Into)
+		qbs.BuilderBase.isWithDBR = true
+		if qbs.Select != nil {
+			qbs.Select.Table.Name = mapTableNameFn(qbs.Select.Table.Name)
+		}
+	case *Delete:
+		qbs.Table.Name = mapTableNameFn(qbs.Table.Name)
+		qbs.BuilderBase.isWithDBR = true
+	case *Update:
+		qbs.Table.Name = mapTableNameFn(qbs.Table.Name)
+		qbs.BuilderBase.isWithDBR = true
+	case *Show:
+		qbs.BuilderBase.isWithDBR = true
+	case *With:
+		qbs.Table.Name = mapTableNameFn(qbs.Table.Name)
+		qbs.BuilderBase.isWithDBR = true
+	case *Union:
+		qbs.Table.Name = mapTableNameFn(qbs.Table.Name)
+		qbs.BuilderBase.isWithDBR = true
+	}
+}
+
+func makeCachedSQL(qb QueryBuilder, rawSQL, id string) *cachedSQL {
+	sqlCache := &cachedSQL{
+		rawSQL: rawSQL,
+		id:     id,
+	}
+
+	// TODO optimize this switch statement later, if worth.
+	switch qbs := qb.(type) {
+	case *Select:
+		sqlCache.defaultQualifier = qbs.Table.qualifier()
+		sqlCache.source = dmlSourceSelect
+		sqlCache.containsTuples = qbs.BuilderBase.containsTuples
+		sqlCache.qualifiedColumns = qbs.BuilderBase.qualifiedColumns
+	case *Insert:
+		sqlCache.source = dmlSourceInsert
+		if qbs.Select != nil {
+			// Must change to this source because to trigger a different argument
+			// collector in DBR.prepareQueryAndArgs. It is not a real INSERT statement
+			// anymore.
+			sqlCache.source = dmlSourceInsertSelect
+		}
+		sqlCache.insertColumnCount = uint(len(qbs.Columns))
+		if qbs.RecordPlaceHolderCount > 0 {
+			sqlCache.insertColumnCount = uint(qbs.RecordPlaceHolderCount)
+		}
+		sqlCache.tupleRowCount = uint(qbs.RowCount)
+		sqlCache.insertIsBuildValues = qbs.IsBuildValues
+		sqlCache.containsTuples = qbs.BuilderBase.containsTuples
+		sqlCache.qualifiedColumns = qbs.BuilderBase.qualifiedColumns
+	case *Delete:
+		sqlCache.defaultQualifier = qbs.Table.qualifier()
+		sqlCache.source = dmlSourceDelete
+		sqlCache.containsTuples = qbs.BuilderBase.containsTuples
+		sqlCache.qualifiedColumns = qbs.BuilderBase.qualifiedColumns
+	case *Update:
+		sqlCache.defaultQualifier = qbs.Table.qualifier()
+		sqlCache.source = dmlSourceUpdate
+		sqlCache.containsTuples = qbs.BuilderBase.containsTuples
+		sqlCache.qualifiedColumns = qbs.BuilderBase.qualifiedColumns
+	case *Show:
+		sqlCache.source = dmlSourceShow
+		sqlCache.containsTuples = qbs.BuilderBase.containsTuples
+		sqlCache.qualifiedColumns = qbs.BuilderBase.qualifiedColumns
+	case *With:
+		sqlCache.source = dmlSourceWith
+		sqlCache.containsTuples = qbs.BuilderBase.containsTuples
+		sqlCache.qualifiedColumns = qbs.BuilderBase.qualifiedColumns
+	case *Union:
+		sqlCache.templateStmtCount = qbs.templateStmtCount
+		sqlCache.source = dmlSourceUnion
+		sqlCache.containsTuples = qbs.BuilderBase.containsTuples
+		sqlCache.qualifiedColumns = qbs.BuilderBase.qualifiedColumns
+	case QuerySQLFn:
+		// do nothing
+	}
+	return sqlCache
+}
+
+// DBR is a DataBaseRunner which prepares the SQL string from a DML type,
+// collects and build a list of arguments for later sending and execution in the
+// database server. Arguments are collections of primitive types or slices of
+// primitive types. An DBR type acts like a prepared statement. In fact it can
+// contain under the hood different connection types. DBR is optimized for reuse
+// and allow saving memory allocations. It can't be used in concurrent context.
+type DBR struct {
+	cachedSQL cachedSQL
+	log       log.Logger // Log optional logger
+	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
+	// dedicated database session) or a *sql.Tx (an in-progress database
+	// transaction).
+	DB QueryExecPreparer
 	// isPrepared if true the cachedSQL field in base gets ignored
 	isPrepared bool
 	// Options like enable interpolation or expanding placeholders.
-	Options uint
+	Options     uint
+	previousErr error
+}
+
+// PreviousError returns the previous error. Mostly used for testing.
+func (a *DBR) PreviousError() error {
+	if a == nil {
+		return nil
+	}
+	return a.previousErr
+}
+
+// WithDBR sets the database query object and creates a database runner.
+func (b *Select) WithDBR(db QueryExecPreparer) *DBR {
+	b.BuilderBase.isWithDBR = true
+	rawSQL, _, err := b.ToSQL()
+	sqlCache := makeCachedSQL(b, rawSQL, "")
+	return &DBR{
+		cachedSQL:   *sqlCache,
+		DB:          db,
+		previousErr: err,
+	}
+}
+
+func (b *Insert) WithDBR(db QueryExecPreparer) *DBR {
+	b.BuilderBase.isWithDBR = true
+	rawSQL, _, err := b.ToSQL()
+	sqlCache := makeCachedSQL(b, rawSQL, "")
+	return &DBR{
+		cachedSQL:   *sqlCache,
+		DB:          db,
+		previousErr: err,
+	}
+}
+
+func (b *Delete) WithDBR(db QueryExecPreparer) *DBR {
+	b.BuilderBase.isWithDBR = true
+	rawSQL, _, err := b.ToSQL()
+	sqlCache := makeCachedSQL(b, rawSQL, "")
+	return &DBR{
+		cachedSQL:   *sqlCache,
+		DB:          db,
+		previousErr: err,
+	}
+}
+
+func (b *Update) WithDBR(db QueryExecPreparer) *DBR {
+	b.BuilderBase.isWithDBR = true
+	rawSQL, _, err := b.ToSQL()
+	sqlCache := makeCachedSQL(b, rawSQL, "")
+	return &DBR{
+		cachedSQL:   *sqlCache,
+		DB:          db,
+		previousErr: err,
+	}
+}
+
+func (b *Show) WithDBR(db QueryExecPreparer) *DBR {
+	b.BuilderBase.isWithDBR = true
+	rawSQL, _, err := b.ToSQL()
+	sqlCache := makeCachedSQL(b, rawSQL, "")
+	return &DBR{
+		cachedSQL:   *sqlCache,
+		DB:          db,
+		previousErr: err,
+	}
+}
+
+func (b *Union) WithDBR(db QueryExecPreparer) *DBR {
+	b.BuilderBase.isWithDBR = true
+	rawSQL, _, err := b.ToSQL()
+	sqlCache := makeCachedSQL(b, rawSQL, "")
+	return &DBR{
+		cachedSQL:   *sqlCache,
+		DB:          db,
+		previousErr: err,
+	}
+}
+
+func (b *With) WithDBR(db QueryExecPreparer) *DBR {
+	b.BuilderBase.isWithDBR = true
+	rawSQL, _, err := b.ToSQL()
+	sqlCache := makeCachedSQL(b, rawSQL, "")
+	return &DBR{
+		cachedSQL:   *sqlCache,
+		DB:          db,
+		previousErr: err,
+	}
 }
 
 const (
@@ -71,6 +283,11 @@ const (
 // DBRFunc defines a call back function used in other packages to allow
 // modifications to the DBR object.
 type DBRFunc func(*DBR)
+
+// CacheKey returns the cache key used when registering a SQL statement with the ConnPool.
+func (bc *DBR) CacheKey() string {
+	return bc.cachedSQL.id
+}
 
 // ApplyCallBacks may clone the DBR object and applies various functions to the new
 // DBR instance. It only clones if slice `fns` has at least one entry.
@@ -94,8 +311,8 @@ func (a *DBR) ApplyCallBacks(fns ...DBRFunc) *DBR {
 // results into
 //		WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN ((?,?,?,?),(?,?,?,?)))
 func (a *DBR) TupleCount(tuples, rows uint) *DBR {
-	a.tupleCount = tuples
-	a.tupleRowCount = rows
+	a.cachedSQL.tupleCount = tuples
+	a.cachedSQL.tupleRowCount = rows
 	return a
 }
 
@@ -108,7 +325,7 @@ func (a *DBR) TupleCount(tuples, rows uint) *DBR {
 // the sorting. This avoids using the method OrderByDesc when sorting certain
 // columns descending.
 func (a *DBR) OrderBy(columns ...string) *DBR {
-	a.OrderBys = a.OrderBys.AppendColumns(false, columns...)
+	a.cachedSQL.OrderBys = a.cachedSQL.OrderBys.AppendColumns(false, columns...)
 	return a
 }
 
@@ -118,7 +335,7 @@ func (a *DBR) OrderBy(columns ...string) *DBR {
 // internal cached SQL string independently if the SQL statement supports it or
 // not or if there exists already an ORDER BY clause.
 func (a *DBR) OrderByDesc(columns ...string) *DBR {
-	a.OrderBys = a.OrderBys.AppendColumns(false, columns...).applySort(len(columns), sortDescending)
+	a.cachedSQL.OrderBys = a.cachedSQL.OrderBys.AppendColumns(false, columns...).applySort(len(columns), sortDescending)
 	return a
 }
 
@@ -127,10 +344,10 @@ func (a *DBR) OrderByDesc(columns ...string) *DBR {
 // independently if the SQL statement supports it or not or if there exists
 // already a LIMIT clause.
 func (a *DBR) Limit(offset, limit uint64) *DBR {
-	a.OffsetCount = offset
-	a.LimitCount = limit
-	a.OffsetValid = true
-	a.LimitValid = true
+	a.cachedSQL.OffsetCount = offset
+	a.cachedSQL.LimitCount = limit
+	a.cachedSQL.OffsetValid = true
+	a.cachedSQL.LimitValid = true
 	return a
 }
 
@@ -144,7 +361,7 @@ func (a *DBR) Paginate(page, perPage uint64) *DBR {
 // WithQualifiedColumnsAliases for documentation please see:
 // DBR.QualifiedColumnsAliases.
 func (a *DBR) WithQualifiedColumnsAliases(aliases ...string) *DBR {
-	a.QualifiedColumnsAliases = aliases
+	a.cachedSQL.QualifiedColumnsAliases = aliases
 	return a
 }
 
@@ -179,22 +396,6 @@ func (a *DBR) testWithArgs(args ...interface{}) QueryBuilder {
 	})
 }
 
-// CachedQueries returns a list with all cached SQL queries.
-func (a *DBR) CachedQueries(queries ...string) []string {
-	return a.base.CachedQueries(queries...)
-}
-
-// WithCacheKey sets the currently used cache key when generating a SQL string.
-// By setting a different cache key, a previous generated SQL query is
-// accessible again. New cache keys allow to change the generated query of the
-// current object. E.g. different where clauses or different row counts in
-// INSERT ... VALUES statements. The empty string defines the default cache key.
-// If the `args` argument contains values, then fmt.Sprintf gets used.
-func (a *DBR) WithCacheKey(key string, args ...interface{}) *DBR {
-	a.base.withCacheKey(key, args...)
-	return a
-}
-
 // Interpolate if set stringyfies the arguments into the SQL string and returns
 // pre-processed SQL command when calling the function ToSQL. Not suitable for
 // prepared statements. ToSQLs second argument `args` will then be nil.
@@ -224,8 +425,8 @@ func (a *DBR) ExpandPlaceHolders() *DBR {
 // slice is the same as `extArgs`.
 // The returned []QualifiedRecord slice is needed to use interface LastInsertIDAssigner.
 func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interface{}, err error) {
-	if a.base.ärgErr != nil {
-		return "", nil, errors.WithStack(a.base.ärgErr)
+	if a.previousErr != nil {
+		return "", nil, errors.WithStack(a.previousErr)
 	}
 	lenExtArgs := len(extArgs)
 	var hasNamedArgs uint8
@@ -259,39 +460,38 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 			}
 		}
 	}
-	if a.base.source == dmlSourceInsert {
+	if a.cachedSQL.source == dmlSourceInsert {
 		return a.prepareQueryAndArgsInsert(args, primitiveCounts)
 	}
 
-	cachedSQL, ok := a.base.cachedSQL[a.base.cacheKey]
-	if !a.isPrepared && !ok {
+	cachedSQL := a.cachedSQL.rawSQL
+	if !a.isPrepared && cachedSQL == "" {
 		return "", nil, errors.Empty.Newf("[dml] DBR: The SQL string is empty.")
 	}
 
-	if a.base.templateStmtCount < 2 && hasNamedArgs == 0 && containsQualifiedRecords == 0 &&
-		a.Options == 0 && !a.base.containsTuples { // no options and qualified records provided
+	if a.cachedSQL.templateStmtCount < 2 && hasNamedArgs == 0 && containsQualifiedRecords == 0 &&
+		a.Options == 0 && !a.cachedSQL.containsTuples { // no options and qualified records provided
 
 		if a.isPrepared {
 			return "", expandInterfaces(args), nil
 		}
-
-		if a.Options == 0 && len(a.OrderBys) == 0 && !a.LimitValid {
+		if a.Options == 0 && len(a.cachedSQL.OrderBys) == 0 && !a.cachedSQL.LimitValid {
 			return cachedSQL, expandInterfaces(args), nil
 		}
 		buf := bufferpool.Get()
 		defer bufferpool.Put(buf)
 		buf.WriteString(cachedSQL)
-		sqlWriteOrderBy(buf, a.OrderBys, false)
-		sqlWriteLimitOffset(buf, a.LimitValid, a.OffsetValid, a.OffsetCount, a.LimitCount)
+		sqlWriteOrderBy(buf, a.cachedSQL.OrderBys, false)
+		sqlWriteLimitOffset(buf, a.cachedSQL.LimitValid, a.cachedSQL.OffsetValid, a.cachedSQL.OffsetCount, a.cachedSQL.LimitCount)
 		return buf.String(), expandInterfaces(args), nil
 	}
 
 	if !a.isPrepared && hasNamedArgs == 0 {
 		var found bool
 		hasNamedArgs = 1
-		cachedSQL, a.base.qualifiedColumns, found = extractReplaceNamedArgs(cachedSQL, a.base.qualifiedColumns)
+		cachedSQL, a.cachedSQL.qualifiedColumns, found = extractReplaceNamedArgs(cachedSQL, a.cachedSQL.qualifiedColumns)
 		if found {
-			a.base.cachedSQLUpsert(a.base.cacheKey, cachedSQL)
+			a.cachedSQL.rawSQL = cachedSQL
 			hasNamedArgs = 2
 		}
 	}
@@ -315,19 +515,19 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 		return "", nil, errors.WithStack(err)
 	}
 
-	sqlWriteOrderBy(sqlBuf.First, a.OrderBys, false)
-	sqlWriteLimitOffset(sqlBuf.First, a.LimitValid, a.OffsetValid, a.OffsetCount, a.LimitCount)
+	sqlWriteOrderBy(sqlBuf.First, a.cachedSQL.OrderBys, false)
+	sqlWriteLimitOffset(sqlBuf.First, a.cachedSQL.LimitValid, a.cachedSQL.OffsetValid, a.cachedSQL.OffsetCount, a.cachedSQL.LimitCount)
 
 	// `switch` statement no suitable.
 	if a.Options > 0 && lenExtArgs > 0 && containsQualifiedRecords == 0 && len(args) == 0 {
 		return "", nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
 	}
 
-	if a.base.containsTuples {
+	if a.cachedSQL.containsTuples {
 		aLen, _ := totalSliceLen(args)
 		if aLen == 0 {
 			// in case of a prepared statement containing a tuple
-			aLen = int(a.tupleCount * a.tupleRowCount)
+			aLen = int(a.cachedSQL.tupleCount * a.cachedSQL.tupleRowCount)
 		}
 
 		if err := expandPlaceHolderTuples(sqlBuf.Second, sqlBuf.First.Bytes(), aLen); err != nil {
@@ -342,7 +542,7 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 	if a.Options&argOptionExpandPlaceholder != 0 {
 		phCount := bytes.Count(sqlBuf.First.Bytes(), placeHolderByte)
 		if aLen, hasSlice := totalSliceLen(args); phCount < aLen || hasSlice {
-			// if a.base.containsTuples {
+			// if a.cachedSQL.containsTuples {
 			//	if err := expandPlaceHolderTuples(sqlBuf.Second, sqlBuf.First.Bytes(), aLen); err != nil {
 			//		return "", nil, errors.WithStack(err)
 			//	}
@@ -369,8 +569,8 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 }
 
 func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArgs []interface{}, containsQualifiedRecords int) ([]interface{}, error) {
-	templateStmtCount := a.base.templateStmtCount
-	if a.base.templateStmtCount == 0 {
+	templateStmtCount := a.cachedSQL.templateStmtCount
+	if a.cachedSQL.templateStmtCount == 0 {
 		templateStmtCount = 1
 	}
 
@@ -388,12 +588,16 @@ func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArg
 		return collectedArgs, nil
 	}
 
-	qualifiedColumns := a.base.qualifiedColumns
-	if lqca := len(a.QualifiedColumnsAliases); lqca > 0 {
-		if lqca != len(a.base.qualifiedColumns) {
-			return nil, errors.Mismatch.Newf("[dml] Argument.Record: QualifiedColumnsAliases slice %v and qualifiedColumns slice %v must have the same length", a.QualifiedColumnsAliases, a.base.qualifiedColumns)
+	qualifiedColumns := a.cachedSQL.qualifiedColumns
+	if lqca := len(a.cachedSQL.QualifiedColumnsAliases); lqca > 0 {
+		if lqca != len(a.cachedSQL.qualifiedColumns) {
+			return nil, errors.Mismatch.Newf(
+				"[dml] Argument.Record: QualifiedColumnsAliases slice %v and qualifiedColumns slice %v must have the same length",
+				a.cachedSQL.QualifiedColumnsAliases,
+				a.cachedSQL.qualifiedColumns,
+			)
 		}
-		qualifiedColumns = a.QualifiedColumnsAliases
+		qualifiedColumns = a.cachedSQL.QualifiedColumnsAliases
 	}
 
 	var nextUnnamedArgPos int
@@ -406,7 +610,7 @@ func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArg
 		for _, identifier := range qualifiedColumns {
 			// identifier can be either: column or qualifier.column or :column
 			qualifier, column := splitColumn(identifier)
-			// a.base.defaultQualifier is empty in case of INSERT statements
+			// a.cachedSQL.defaultQualifier is empty in case of INSERT statements
 
 			column, isNamedArg := cutNamedArgStartStr(column) // removes the colon for named arguments
 			cm.columns[0] = column                            // length is always one, as created in NewColumnMap
@@ -422,10 +626,10 @@ func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArg
 					switch qRec := arg.(type) {
 					case QualifiedRecord:
 						if qRec.Qualifier == "" && qualifier != "" {
-							qRec.Qualifier = a.base.defaultQualifier
+							qRec.Qualifier = a.cachedSQL.defaultQualifier
 						}
 						if qRec.Qualifier != "" && qualifier == "" {
-							qualifier = a.base.defaultQualifier
+							qualifier = a.cachedSQL.defaultQualifier
 						}
 
 						if qRec.Qualifier == qualifier {
@@ -468,15 +672,15 @@ func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArg
 func (a *DBR) prepareQueryAndArgsInsert(extArgs []interface{}, primitiveCounts int) (string, []interface{}, error) {
 	sqlBuf := bufferpool.GetTwin()
 	defer bufferpool.PutTwin(sqlBuf)
-	cm := NewColumnMap(2*primitiveCounts, a.base.qualifiedColumns...)
+	cm := NewColumnMap(2*primitiveCounts, a.cachedSQL.qualifiedColumns...)
 	cm.args = extArgs
 	lenExtArgsBefore := len(extArgs)
-	lenInsertCachedSQL := len(a.insertCachedSQL)
-	cachedSQL, _ := a.base.cachedSQL[a.base.cacheKey]
+	lenInsertCachedSQL := len(a.cachedSQL.insertCachedSQL)
+	cachedSQL := a.cachedSQL.rawSQL
 	var containsRecords bool
 	{
 		if lenInsertCachedSQL > 0 {
-			cachedSQL = a.insertCachedSQL
+			cachedSQL = a.cachedSQL.insertCachedSQL
 		}
 		if _, err := sqlBuf.First.WriteString(cachedSQL); err != nil {
 			return "", nil, errors.WithStack(err)
@@ -507,29 +711,29 @@ func (a *DBR) prepareQueryAndArgsInsert(extArgs []interface{}, primitiveCounts i
 		return "", expandInterfaces(cm.args), nil
 	}
 
-	if !a.insertIsBuildValues && lenInsertCachedSQL == 0 { // Write placeholder list e.g. "VALUES (?,?),(?,?)"
+	if !a.cachedSQL.insertIsBuildValues && lenInsertCachedSQL == 0 { // Write placeholder list e.g. "VALUES (?,?),(?,?)"
 		odkPos := strings.Index(cachedSQL, onDuplicateKeyPartS)
 		if odkPos > 0 {
 			sqlBuf.First.Reset()
 			sqlBuf.First.WriteString(cachedSQL[:odkPos])
 		}
 
-		if a.tupleRowCount > 0 {
-			columnCount := uint(primitiveCounts) / a.tupleRowCount
-			writeTuplePlaceholders(sqlBuf.First, a.tupleRowCount, columnCount)
-		} else if a.insertColumnCount > 0 {
-			rowCount := uint(primitiveCounts) / a.insertColumnCount
+		if a.cachedSQL.tupleRowCount > 0 {
+			columnCount := uint(primitiveCounts) / a.cachedSQL.tupleRowCount
+			writeTuplePlaceholders(sqlBuf.First, a.cachedSQL.tupleRowCount, columnCount)
+		} else if a.cachedSQL.insertColumnCount > 0 {
+			rowCount := uint(primitiveCounts) / a.cachedSQL.insertColumnCount
 			if rowCount == 0 {
 				rowCount = 1
 			}
-			writeTuplePlaceholders(sqlBuf.First, rowCount, a.insertColumnCount)
+			writeTuplePlaceholders(sqlBuf.First, rowCount, a.cachedSQL.insertColumnCount)
 		}
 		if odkPos > 0 {
 			sqlBuf.First.WriteString(cachedSQL[odkPos:])
 		}
 	}
 	if lenInsertCachedSQL == 0 {
-		a.insertCachedSQL = sqlBuf.First.String()
+		a.cachedSQL.insertCachedSQL = sqlBuf.First.String()
 	}
 
 	if a.Options > 0 {
@@ -545,7 +749,7 @@ func (a *DBR) prepareQueryAndArgsInsert(extArgs []interface{}, primitiveCounts i
 		}
 	}
 
-	return a.insertCachedSQL, expandInterfaces(cm.args), nil
+	return a.cachedSQL.insertCachedSQL, expandInterfaces(cm.args), nil
 }
 
 // nextUnnamedArg returns an unnamed argument by its position.
@@ -612,50 +816,52 @@ func (a *DBR) mapColumns(containsQualifiedRecords int, args []interface{}, cm *C
 // case of an INSERT statement, Reset triggers a new build of the VALUES part.
 // This function must be called when the number of argument changes.
 func (a *DBR) Reset() *DBR {
-	a.insertIsBuildValues = false
-	a.insertCachedSQL = a.insertCachedSQL[:0]
+	a.previousErr = nil
+	a.cachedSQL.insertIsBuildValues = false
+	a.cachedSQL.insertCachedSQL = a.cachedSQL.insertCachedSQL[:0]
 	return a
 }
 
 // WithDB sets the database query object.
 func (a *DBR) WithDB(db QueryExecPreparer) *DBR {
-	a.base.db = db
+	a.DB = db
 	return a
 }
 
 // WithPreparedStmt uses a SQL statement as DB connection.
 func (a *DBR) WithPreparedStmt(stmt *sql.Stmt) *DBR {
-	a.base.db = stmtWrapper{stmt: stmt}
+	a.DB = stmtWrapper{stmt: stmt}
 	return a
 }
 
-// Prepare generates a prepared statement from the underlying SQL. It fails if
-// it contains an already prepared statement.
+// Prepare generates a prepared statement from the underlying SQL and assigns
+// the *sql.Stmt to the DB field. It fails if it contains an already prepared
+// statement.
 func (a *DBR) Prepare(ctx context.Context) (*DBR, error) {
 	sqlStr, _, err := a.prepareQueryAndArgs(nil)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if _, ok := a.base.db.(stmtWrapper); ok {
+	if _, ok := a.DB.(stmtWrapper); ok {
 		return nil, errors.Fatal.Newf("already a prepared statement")
 	}
-	stmt, err := a.base.db.PrepareContext(ctx, sqlStr)
+	stmt, err := a.DB.PrepareContext(ctx, sqlStr)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Preparation of query %q failed", sqlStr)
 	}
 	a.isPrepared = true
-	a.base.db = stmtWrapper{stmt: stmt}
+	a.DB = stmtWrapper{stmt: stmt}
 	return a, nil
 }
 
 // WithTx sets the transaction query executor and the logger to run this query
 // within a transaction.
 func (a *DBR) WithTx(tx *Tx) *DBR {
-	if a.base.id == "" {
-		a.base.id = tx.makeUniqueID()
+	if a.cachedSQL.id == "" {
+		a.cachedSQL.id = tx.queryCache.makeUniqueID()
 	}
-	a.base.Log = tx.Log
-	a.base.db = tx.DB
+	a.log = tx.Log
+	a.DB = tx.DB
 	return a
 }
 
@@ -664,9 +870,9 @@ func (a *DBR) WithTx(tx *Tx) *DBR {
 // the source DBR object.
 func (a *DBR) Clone() *DBR {
 	c := *a
-	if a.QualifiedColumnsAliases != nil {
-		c.QualifiedColumnsAliases = make([]string, len(a.QualifiedColumnsAliases))
-		copy(c.QualifiedColumnsAliases, a.QualifiedColumnsAliases)
+	if a.cachedSQL.QualifiedColumnsAliases != nil {
+		c.cachedSQL.QualifiedColumnsAliases = make([]string, len(a.cachedSQL.QualifiedColumnsAliases))
+		copy(c.cachedSQL.QualifiedColumnsAliases, a.cachedSQL.QualifiedColumnsAliases)
 	}
 	return &c
 }
@@ -675,10 +881,10 @@ func (a *DBR) Clone() *DBR {
 // prepared statements. If the underlying DB connection does not implement
 // io.Closer, nothing will happen.
 func (a *DBR) Close() error {
-	if a.base.ärgErr != nil {
-		return errors.WithStack(a.base.ärgErr)
+	if a.previousErr != nil {
+		return errors.WithStack(a.previousErr)
 	}
-	if c, ok := a.base.db.(ioCloser); ok {
+	if c, ok := a.DB.(ioCloser); ok {
 		return errors.WithStack(c.Close())
 	}
 	return nil
@@ -753,30 +959,30 @@ func (a *DBR) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows,
 // QueryRowContext traditional way of the databasel/sql package.
 func (a *DBR) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row {
 	sqlStr, args, err := a.prepareQueryAndArgs(args)
-	if a.base.Log != nil && a.base.Log.IsDebug() {
-		defer log.WhenDone(a.base.Log).Debug(
+	if a.log != nil && a.log.IsDebug() {
+		defer log.WhenDone(a.log).Debug(
 			"QueryRowContext",
 			log.String("sql", sqlStr),
-			log.String("source", string(a.base.source)),
+			log.String("source", string(a.cachedSQL.source)),
 			log.Err(err))
 	}
-	return a.base.db.QueryRowContext(ctx, sqlStr, args...)
+	return a.DB.QueryRowContext(ctx, sqlStr, args...)
 }
 
 // IterateSerial iterates in serial order over the result set by loading one row each
 // iteration and then discarding it. Handles records one by one. The context
 // gets only used in the Query function.
 func (a *DBR) IterateSerial(ctx context.Context, callBack func(*ColumnMap) error, args ...interface{}) (err error) {
-	if a.base.Log != nil && a.base.Log.IsDebug() {
-		defer log.WhenDone(a.base.Log).Debug(
+	if a.log != nil && a.log.IsDebug() {
+		defer log.WhenDone(a.log).Debug(
 			"IterateSerial",
-			log.String("id", a.base.id),
+			log.String("id", a.cachedSQL.id),
 			log.Err(err))
 	}
 
 	r, err := a.query(ctx, args)
 	if err != nil {
-		err = errors.Wrapf(err, "[dml] IterateSerial.Query with query ID %q", a.base.id)
+		err = errors.Wrapf(err, "[dml] IterateSerial.Query with query ID %q", a.cachedSQL.id)
 		return
 	}
 	cmr := pooledColumnMapGet() // this sync.Pool might not work correctly, write a complex test.
@@ -839,16 +1045,16 @@ func iterateParallelForNextLoop(ctx context.Context, r *sql.Rows, rowChan chan<-
 // function when you expect to process large amount of rows returned from a
 // query.
 func (a *DBR) IterateParallel(ctx context.Context, concurrencyLevel int, callBack func(*ColumnMap) error, args ...interface{}) (err error) {
-	if a.base.Log != nil && a.base.Log.IsDebug() {
-		defer log.WhenDone(a.base.Log).Debug("IterateParallel", log.String("id", a.base.id), log.Err(err))
+	if a.log != nil && a.log.IsDebug() {
+		defer log.WhenDone(a.log).Debug("IterateParallel", log.String("id", a.cachedSQL.id), log.Err(err))
 	}
 	if concurrencyLevel < 1 {
-		return errors.OutOfRange.Newf("[dml] DBR.IterateParallel concurrencyLevel %d for query ID %q cannot be smaller zero.", concurrencyLevel, a.base.id)
+		return errors.OutOfRange.Newf("[dml] DBR.IterateParallel concurrencyLevel %d for query ID %q cannot be smaller zero.", concurrencyLevel, a.cachedSQL.id)
 	}
 
 	r, err := a.query(ctx, args)
 	if err != nil {
-		err = errors.Wrapf(err, "[dml] IterateParallel.Query with query ID %q", a.base.id)
+		err = errors.Wrapf(err, "[dml] IterateParallel.Query with query ID %q", a.cachedSQL.id)
 		return
 	}
 
@@ -882,13 +1088,13 @@ func (a *DBR) IterateParallel(ctx context.Context, concurrencyLevel int, callBac
 // multiple-rows. It checks on top if ColumnMapper `s` implements io.Closer, to
 // call the custom close function. This is useful for e.g. unlocking a mutex.
 func (a *DBR) Load(ctx context.Context, s ColumnMapper, args ...interface{}) (rowCount uint64, err error) {
-	if a.base.Log != nil && a.base.Log.IsDebug() {
-		defer log.WhenDone(a.base.Log).Debug("Load", log.String("id", a.base.id), log.Err(err), log.ObjectTypeOf("ColumnMapper", s), log.Uint64("row_count", rowCount))
+	if a.log != nil && a.log.IsDebug() {
+		defer log.WhenDone(a.log).Debug("Load", log.String("id", a.cachedSQL.id), log.Err(err), log.ObjectTypeOf("ColumnMapper", s), log.Uint64("row_count", rowCount))
 	}
 
 	r, err := a.query(ctx, args)
 	if err != nil {
-		err = errors.Wrapf(err, "[dml] DBR.Load.QueryContext failed with queryID %q and ColumnMapper %T", a.base.id, s)
+		err = errors.Wrapf(err, "[dml] DBR.Load.QueryContext failed with queryID %q and ColumnMapper %T", a.cachedSQL.id, s)
 		return
 	}
 	cm := pooledColumnMapGet()
@@ -909,7 +1115,7 @@ func (a *DBR) Load(ctx context.Context, s ColumnMapper, args ...interface{}) (ro
 			return 0, errors.WithStack(err)
 		}
 		if err = s.MapColumns(cm); err != nil {
-			return 0, errors.Wrapf(err, "[dml] DBR.Load failed with queryID %q and ColumnMapper %T", a.base.id, s)
+			return 0, errors.Wrapf(err, "[dml] DBR.Load failed with queryID %q and ColumnMapper %T", a.cachedSQL.id, s)
 		}
 	}
 	if err = r.Err(); err != nil {
@@ -967,9 +1173,9 @@ func (a *DBR) LoadDecimal(ctx context.Context, args ...interface{}) (nv null.Dec
 }
 
 func (a *DBR) loadPrimitive(ctx context.Context, ptr interface{}, args ...interface{}) (found bool, err error) {
-	if a.base.Log != nil && a.base.Log.IsDebug() {
+	if a.log != nil && a.log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(a.base.Log).Debug("LoadPrimitive", log.String("id", a.base.id), log.Err(err), log.ObjectTypeOf("ptr_type", ptr))
+		defer log.WhenDone(a.log).Debug("LoadPrimitive", log.String("id", a.cachedSQL.id), log.Err(err), log.ObjectTypeOf("ptr_type", ptr))
 	}
 	var rows *sql.Rows
 	rows, err = a.query(ctx, args)
@@ -998,9 +1204,9 @@ func (a *DBR) loadPrimitive(ctx context.Context, ptr interface{}, args ...interf
 // dest. It ignores and skips NULL values.
 func (a *DBR) LoadInt64s(ctx context.Context, dest []int64, args ...interface{}) (_ []int64, err error) {
 	var rowCount int
-	if a.base.Log != nil && a.base.Log.IsDebug() {
+	if a.log != nil && a.log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(a.base.Log).Debug("LoadInt64s", log.Int("row_count", rowCount), log.Err(err))
+		defer log.WhenDone(a.log).Debug("LoadInt64s", log.Int("row_count", rowCount), log.Err(err))
 	}
 	var r *sql.Rows
 	r, err = a.query(ctx, args)
@@ -1035,9 +1241,9 @@ func (a *DBR) LoadInt64s(ctx context.Context, dest []int64, args ...interface{})
 // dest. It ignores and skips NULL values.
 func (a *DBR) LoadUint64s(ctx context.Context, dest []uint64, args ...interface{}) (_ []uint64, err error) {
 	var rowCount int
-	if a.base.Log != nil && a.base.Log.IsDebug() {
+	if a.log != nil && a.log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(a.base.Log).Debug("LoadUint64s", log.Int("row_count", rowCount), log.String("id", a.base.id), log.Err(err))
+		defer log.WhenDone(a.log).Debug("LoadUint64s", log.Int("row_count", rowCount), log.String("id", a.cachedSQL.id), log.Err(err))
 	}
 
 	rows, err := a.query(ctx, args)
@@ -1071,9 +1277,9 @@ func (a *DBR) LoadUint64s(ctx context.Context, dest []uint64, args ...interface{
 // LoadFloat64s executes the query and returns the values appended to slice
 // dest. It ignores and skips NULL values.
 func (a *DBR) LoadFloat64s(ctx context.Context, dest []float64, args ...interface{}) (_ []float64, err error) {
-	if a.base.Log != nil && a.base.Log.IsDebug() {
+	if a.log != nil && a.log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(a.base.Log).Debug("LoadFloat64s", log.String("id", a.base.id), log.Err(err))
+		defer log.WhenDone(a.log).Debug("LoadFloat64s", log.String("id", a.cachedSQL.id), log.Err(err))
 	}
 
 	var rows *sql.Rows
@@ -1107,9 +1313,9 @@ func (a *DBR) LoadFloat64s(ctx context.Context, dest []float64, args ...interfac
 // dest. It ignores and skips NULL values.
 func (a *DBR) LoadStrings(ctx context.Context, dest []string, args ...interface{}) (_ []string, err error) {
 	var rowCount int
-	if a.base.Log != nil && a.base.Log.IsDebug() {
+	if a.log != nil && a.log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(a.base.Log).Debug("LoadStrings", log.Int("row_count", rowCount), log.String("id", a.base.id), log.Err(err))
+		defer log.WhenDone(a.log).Debug("LoadStrings", log.Int("row_count", rowCount), log.String("id", a.cachedSQL.id), log.Err(err))
 	}
 
 	rows, err := a.query(ctx, args)
@@ -1140,18 +1346,17 @@ func (a *DBR) LoadStrings(ctx context.Context, dest []string, args ...interface{
 
 func (a *DBR) query(ctx context.Context, args []interface{}) (rows *sql.Rows, err error) {
 	sqlStr, args, err := a.prepareQueryAndArgs(args)
-	if a.base.Log != nil && a.base.Log.IsDebug() {
-		defer log.WhenDone(a.base.Log).Debug(
-			"Query", log.String("sql", sqlStr), log.Int("length_args", len(args)), log.String("source", string(a.base.source)), log.Err(err))
+	if a.log != nil && a.log.IsDebug() {
+		defer log.WhenDone(a.log).Debug(
+			"Query", log.String("sql", sqlStr), log.Int("length_args", len(args)), log.String("source", string(a.cachedSQL.source)), log.Err(err))
 	}
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	rows, err = a.base.db.QueryContext(ctx, sqlStr, args...)
+	rows, err = a.DB.QueryContext(ctx, sqlStr, args...)
 	if err != nil {
 		if sqlStr == "" {
-			cachedSQL, _ := a.base.cachedSQL[a.base.cacheKey]
-			sqlStr = "PREPARED:" + cachedSQL
+			sqlStr = "PREPARED:" + a.cachedSQL.rawSQL
 		}
 		return nil, errors.Wrapf(err, "[dml] Query.QueryContext with query %q", sqlStr)
 	}
@@ -1160,16 +1365,16 @@ func (a *DBR) query(ctx context.Context, args []interface{}) (rows *sql.Rows, er
 
 func (a *DBR) exec(ctx context.Context, rawArgs []interface{}) (result sql.Result, err error) {
 	sqlStr, args, err := a.prepareQueryAndArgs(rawArgs)
-	if a.base.Log != nil && a.base.Log.IsDebug() {
-		defer log.WhenDone(a.base.Log).Debug("Exec", log.String("sql", sqlStr),
-			log.Int("length_args", len(args)), log.Int("length_raw_args", len(rawArgs)), log.String("source", string(a.base.source)),
+	if a.log != nil && a.log.IsDebug() {
+		defer log.WhenDone(a.log).Debug("Exec", log.String("sql", sqlStr),
+			log.Int("length_args", len(args)), log.Int("length_raw_args", len(rawArgs)), log.String("source", string(a.cachedSQL.source)),
 			log.Err(err))
 	}
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	result, err = a.base.db.ExecContext(ctx, sqlStr, args...)
+	result, err = a.DB.ExecContext(ctx, sqlStr, args...)
 	if err != nil {
 		return nil, errors.Wrapf(err, "[dml] ExecContext with query %q", sqlStr) // err gets catched by the defer
 	}

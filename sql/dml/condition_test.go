@@ -123,7 +123,7 @@ func TestConditionOpArgs(t *testing.T) {
 			NewSelect("a", "b").From("t1").Where(
 				Column("a315").In().Null(),
 				Column("a316").In().PlaceHolder(),
-			).WithDBR().TestWithArgs([]string{"aa"}),
+			).WithDBR(dbMock{}).TestWithArgs([]string{"aa"}),
 			errors.NoKind,
 			"SELECT `a`, `b` FROM `t1` WHERE (`a315` IS NULL) AND (`a316` IN ?)",
 			"SELECT `a`, `b` FROM `t1` WHERE (`a315` IS NULL) AND (`a316` IN ('aa'))",
@@ -135,7 +135,7 @@ func TestConditionOpArgs(t *testing.T) {
 			NewSelect("a", "b").From("t1").Where(
 				Column("a315").In().Null(),
 				Column("a316").In().PlaceHolder(),
-			).WithDBR().TestWithArgs([]string{"aa", "bb"}),
+			).WithDBR(dbMock{}).TestWithArgs([]string{"aa", "bb"}),
 			errors.NoKind,
 			"SELECT `a`, `b` FROM `t1` WHERE (`a315` IS NULL) AND (`a316` IN ?)",
 			"SELECT `a`, `b` FROM `t1` WHERE (`a315` IS NULL) AND (`a316` IN ('aa','bb'))",
@@ -438,7 +438,7 @@ func TestCondition_Columns_Tuples(t *testing.T) {
 		compareToSQL2(t,
 			NewSelect("*").From("cpieavdidx").Where(
 				Columns("entity_id", "attribute_id", "store_id", "source_id").In().Tuples(),
-			).WithDBR(),
+			).WithDBR(dbMock{}),
 			errors.NoKind,
 			"SELECT * FROM `cpieavdidx` WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN /*TUPLES=004*/)",
 		)
@@ -447,7 +447,7 @@ func TestCondition_Columns_Tuples(t *testing.T) {
 		compareToSQL2(t,
 			NewSelect("*").From("cpieavdidx").Where(
 				Columns("entity_id", "attribute_id", "store_id", "source_id").In().Tuples(),
-			).WithDBR().ExpandPlaceHolders(),
+			).WithDBR(dbMock{}).ExpandPlaceHolders(),
 			errors.NoKind,
 			"SELECT * FROM `cpieavdidx` WHERE ((`entity_id`, `attribute_id`, `store_id`, `source_id`) IN /*TUPLES=004*/)",
 		)
@@ -455,7 +455,7 @@ func TestCondition_Columns_Tuples(t *testing.T) {
 	t.Run("interpolate tuples DBR", func(t *testing.T) {
 		sql, args, err := NewSelect("*").From("sales_order_status_state").Where(
 			Columns("status", "state").In().Tuples(),
-		).WithDBR().Interpolate().prepareQueryAndArgs([]interface{}{"a1", "a2", "b1", "b2"})
+		).WithDBR(dbMock{}).Interpolate().prepareQueryAndArgs([]interface{}{"a1", "a2", "b1", "b2"})
 		assert.NoError(t, err)
 		assert.Empty(t, args)
 		assert.Exactly(t, "SELECT * FROM `sales_order_status_state` WHERE ((`status`, `state`) IN (('a1','a2'),('b1','b2')))", sql)
@@ -501,7 +501,7 @@ func TestConditionAppendArgs(t *testing.T) {
 				Column("t_d.store_id").Equal().PlaceHolder(),                  // 17
 			)
 
-		compareToSQL(t, s.WithDBR().TestWithArgs(Qualify("e", appendInt(678)), Qualify("t_d", appendInt(17))),
+		compareToSQL(t, s.WithDBR(dbMock{}).TestWithArgs(Qualify("e", appendInt(678)), Qualify("t_d", appendInt(17))),
 			errors.NoKind,
 			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = ?) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0)) AND (`t_d`.`store_id` = ?)",
 			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = 678) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0)) AND (`t_d`.`store_id` = 17)",
@@ -518,7 +518,7 @@ func TestConditionAppendArgs(t *testing.T) {
 				Column("t_d.store_id").Equal().PlaceHolder(), // 17
 			)
 
-		compareToSQL(t, s.WithDBR().TestWithArgs(Qualify("e", appendInt(678)), Qualify("t_d", appendInt(17))),
+		compareToSQL(t, s.WithDBR(dbMock{}).TestWithArgs(Qualify("e", appendInt(678)), Qualify("t_d", appendInt(17))),
 			errors.NoKind,
 			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = ?) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = ?)",
 			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = 678) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = 17)",
@@ -605,7 +605,7 @@ func TestConditions_Reset(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Exactly(t, "SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = ?) AND (`t_d`.`attribute_id` IN (45))", sql)
 
-	s.WithCacheKey("resetted_where").Wheres.Reset()
+	s.Wheres.Reset()
 	s.Where(
 		Column("e.entity_id2").PlaceHolder(),
 	)
@@ -613,10 +613,4 @@ func TestConditions_Reset(t *testing.T) {
 	sql, _, err = s.ToSQL()
 	assert.NoError(t, err)
 	assert.Exactly(t, "SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id2` = ?)", sql)
-
-	assert.Exactly(t, []string{
-		"", "SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` = ?) AND (`t_d`.`attribute_id` IN (45))",
-		"resetted_where", "SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id2` = ?)",
-	},
-		s.CachedQueries(), "CachedQueries")
 }
