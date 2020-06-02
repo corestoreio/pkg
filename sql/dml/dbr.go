@@ -456,7 +456,7 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 				}
 			default:
 				args = append(args, ea)
-				primitiveCounts++
+				primitiveCounts++ // contains slices and all other stuff
 			}
 		}
 	}

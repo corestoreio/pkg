@@ -137,7 +137,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 		Having(Column("jjj").Int64(2)).
 		OrderBy("l1").OrderBy("l2").OrderBy("l3").
 		Limit(8, 7)
-
+	sqlObjDBR := sqlObj.WithDBR(nil)
 	b.ResetTimer()
 	b.ReportAllocs()
 
@@ -146,6 +146,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 	// BenchmarkSelectFullSQL/NewSelect-4         	  200000	      7084 ns/op	    8212 B/op	      44 allocs/op <== DBR
 	// BenchmarkSelectFullSQL/NewSelect-4         	  200000	      6449 ns/op	    5515 B/op	      44 allocs/op no pointers
 	// BenchmarkSelectFullSQL/NewSelect-4         	  200000	      6268 ns/op	    5443 B/op	      37 allocs/op
+	// BenchmarkSelectFullSQL/NewSelect-4          	  342667	      3497 ns/op	    3672 B/op	      29 allocs/op
 	b.Run("NewSelect", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			var err error
@@ -173,7 +174,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 	b.Run("ToSQL Interpolate Cache", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObjDBR.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -379,10 +380,11 @@ func BenchmarkDeleteSQL(b *testing.B) {
 		}
 	})
 
+	sqlObjDBR := sqlObj.WithDBR(nil)
 	b.Run("ToSQL with cache", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			var err error
-			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObj.ToSQL()
+			benchmarkSelectStr, benchmarkGlobalVals, err = sqlObjDBR.ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -601,6 +603,7 @@ func BenchmarkUnion(b *testing.B) {
 
 	b.Run("5 SELECTs", func(b *testing.B) {
 		u := newUnion5()
+		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			var err error
 			benchmarkSelectStr, benchmarkGlobalVals, err = u.ToSQL()
@@ -631,6 +634,7 @@ func BenchmarkUnion(b *testing.B) {
 	})
 	b.Run("Template", func(b *testing.B) {
 		u := newUnionTpl()
+		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			var err error
 			benchmarkSelectStr, benchmarkGlobalVals, err = u.ToSQL()
@@ -649,7 +653,8 @@ func BenchmarkUnion(b *testing.B) {
 		}
 	})
 	b.Run("Template interpolated", func(b *testing.B) {
-		u := newUnionTpl()
+		u := newUnionTpl().WithDBR(nil)
+		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			var err error
 			benchmarkSelectStr, benchmarkGlobalVals, err = u.ToSQL()
