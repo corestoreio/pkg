@@ -462,7 +462,7 @@ func TestTable_Artisan_Methods(t *testing.T) {
 			WithArgs("a@b.c", "Franz", "franz", "d@e.f", "Sissi", "sissi").
 			WillReturnResult(sqlmock.NewResult(11, 0))
 
-		res, err := tblAdmUser.Insert().WithDBR().ExecContext(context.Background(),
+		res, err := tblAdmUser.Insert().WithDBR(dbc.DB).ExecContext(context.Background(),
 			"a@b.c", "Franz", "franz",
 			"d@e.f", "Sissi", "sissi",
 		)
@@ -477,7 +477,7 @@ func TestTable_Artisan_Methods(t *testing.T) {
 			WithArgs("a@b.c").
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
-		res, err := tblAdmUser.DeleteByPK().WithDBR().ExpandPlaceHolders().
+		res, err := tblAdmUser.DeleteByPK().WithDBR(dbc.DB).ExpandPlaceHolders().
 			ExecContext(context.Background(), "a@b.c")
 		assert.NoError(t, err)
 		id, err := res.RowsAffected()
@@ -489,7 +489,7 @@ func TestTable_Artisan_Methods(t *testing.T) {
 			WithArgs().
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
-		res, err := tblAdmUser.DeleteByPK().WithDBR().Interpolate().
+		res, err := tblAdmUser.DeleteByPK().WithDBR(dbc.DB).Interpolate().
 			ExecContext(context.Background(), "a@b.c")
 		assert.NoError(t, err, "%+v", err)
 		id, err := res.RowsAffected()
@@ -502,7 +502,7 @@ func TestTable_Artisan_Methods(t *testing.T) {
 			WithArgs(int64(234)).
 			WillReturnRows(sqlmock.NewRows([]string{"user_id", "email", "first_name", "username"}))
 
-		rows, err := tblAdmUser.SelectByPK("*").WithDBR().ExpandPlaceHolders().QueryContext(context.Background(), 234)
+		rows, err := tblAdmUser.SelectByPK("*").WithDBR(dbc.DB).ExpandPlaceHolders().QueryContext(context.Background(), 234)
 		assert.NoError(t, err)
 		assert.NoError(t, rows.Close())
 	})
@@ -512,7 +512,7 @@ func TestTable_Artisan_Methods(t *testing.T) {
 			WithArgs().
 			WillReturnRows(sqlmock.NewRows([]string{"user_id", "email", "first_name", "username"}))
 
-		rows, err := tblAdmUser.Select("*").WithDBR().QueryContext(context.Background())
+		rows, err := tblAdmUser.Select("*").WithDBR(dbc.DB).QueryContext(context.Background())
 		assert.NoError(t, err)
 		assert.NoError(t, rows.Close())
 	})
@@ -522,7 +522,7 @@ func TestTable_Artisan_Methods(t *testing.T) {
 			WithArgs("a@b.c", "Franz", "franz", int64(3)).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
-		res, err := tblAdmUser.UpdateByPK().WithDBR().ExecContext(context.Background(),
+		res, err := tblAdmUser.UpdateByPK().WithDBR(dbc.DB).ExecContext(context.Background(),
 			"a@b.c", "Franz", "franz", 3,
 		)
 		assert.NoError(t, err)

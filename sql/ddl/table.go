@@ -212,7 +212,7 @@ func (t *Table) update() *Table {
 // prepare a query, a call to `BuildValues()` triggers building the VALUES
 // clause, otherwise a SQL parse error will occur.
 func (t *Table) Insert() *dml.Insert {
-	return t.dcp.InsertInto(t.Name).AddColumns(t.columnsUpsert...)
+	return dml.NewInsert(t.Name).AddColumns(t.columnsUpsert...)
 }
 
 // Select creates a new SELECT statement. If "*" gets set as an argument, then
@@ -221,7 +221,7 @@ func (t *Table) Select(columns ...string) *dml.Select {
 	if len(columns) == 1 && columns[0] == "*" {
 		columns = t.columnsAll
 	}
-	return t.dcp.SelectFrom(t.Name, MainTable).AddColumns(columns...)
+	return dml.NewSelect(columns...).FromAlias(t.Name, MainTable)
 }
 
 // SelectByPK creates a new `SELECT columns FROM table WHERE id = ?`. If "*"
@@ -231,34 +231,34 @@ func (t *Table) SelectByPK(columns ...string) *dml.Select {
 	if len(columns) == 1 && columns[0] == "*" {
 		columns = t.columnsAll
 	}
-	s := t.dcp.SelectFrom(t.Name, MainTable).AddColumns(columns...)
+	s := dml.NewSelect(columns...).FromAlias(t.Name, MainTable)
 	s.Wheres = t.WhereByPK(dml.Equal)
 	return s
 }
 
 // DeleteByPK creates a new `DELETE FROM table WHERE id = ?`
 func (t *Table) DeleteByPK() *dml.Delete {
-	d := t.dcp.DeleteFrom(t.Name)
+	d := dml.NewDelete(t.Name)
 	d.Wheres = t.WhereByPK(dml.Equal)
 	return d
 }
 
 // Delete creates a new `DELETE FROM table` statement.
 func (t *Table) Delete() *dml.Delete {
-	return t.dcp.DeleteFrom(t.Name)
+	return dml.NewDelete(t.Name)
 }
 
 // UpdateByPK creates a new `UPDATE table SET ... WHERE id = ?`. The SET clause
 // contains all non primary columns.
 func (t *Table) UpdateByPK() *dml.Update {
-	u := t.dcp.Update(t.Name).AddColumns(t.columnsUpsert...)
+	u := dml.NewUpdate(t.Name).AddColumns(t.columnsUpsert...)
 	u.Wheres = t.WhereByPK(dml.Equal)
 	return u
 }
 
 // Update creates a new UPDATE statement without a WHERE clause.
 func (t *Table) Update() *dml.Update {
-	return t.dcp.Update(t.Name).AddColumns(t.columnsUpsert...)
+	return dml.NewUpdate(t.Name).AddColumns(t.columnsUpsert...)
 }
 
 // WhereByPK puts the primary keys as WHERE clauses into a condition.

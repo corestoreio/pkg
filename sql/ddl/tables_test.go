@@ -30,8 +30,6 @@ import (
 )
 
 func TestNewTableServicePanic(t *testing.T) {
-	t.Parallel()
-
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
@@ -47,8 +45,6 @@ func TestNewTableServicePanic(t *testing.T) {
 }
 
 func TestTables_Upsert_Insert(t *testing.T) {
-	t.Parallel()
-
 	ts := ddl.MustNewTables()
 
 	t.Run("Insert OK", func(t *testing.T) {
@@ -58,8 +54,6 @@ func TestTables_Upsert_Insert(t *testing.T) {
 }
 
 func TestTables_DeleteFromCache(t *testing.T) {
-	t.Parallel()
-
 	ts := ddl.MustNewTables(ddl.WithCreateTable(context.TODO(), "a3", "", "b5", "", "c7", ""))
 	t.Run("Delete One", func(t *testing.T) {
 		ts.DeleteFromCache("b5")
@@ -72,16 +66,12 @@ func TestTables_DeleteFromCache(t *testing.T) {
 }
 
 func TestTables_DeleteAllFromCache(t *testing.T) {
-	t.Parallel()
-
 	ts := ddl.MustNewTables(ddl.WithCreateTable(context.TODO(), "a3", "", "b5", "", "c7", ""))
 	ts.DeleteAllFromCache()
 	assert.Exactly(t, 0, ts.Len())
 }
 
 func TestTables_Truncate(t *testing.T) {
-	t.Parallel()
-
 	db, mock := dmltest.MockDB(t)
 	defer dmltest.MockClose(t, db, mock)
 
@@ -100,7 +90,6 @@ func TestTables_Truncate(t *testing.T) {
 }
 
 func TestTables_Optimize(t *testing.T) {
-	t.Parallel()
 	t.Run("ok", func(t *testing.T) {
 		db, mock := dmltest.MockDB(t)
 		defer dmltest.MockClose(t, db, mock)
@@ -211,8 +200,6 @@ func TestTables_Lock(t *testing.T) {
 }
 
 func TestTables_Upsert_Update(t *testing.T) {
-	t.Parallel()
-
 	ts := ddl.MustNewTables(ddl.WithCreateTable(context.TODO(), "a3", "", "b5", "", "c7", ""))
 	t.Run("One", func(t *testing.T) {
 		_ = ts.Upsert(ddl.NewTable("x5"))
@@ -224,8 +211,6 @@ func TestTables_Upsert_Update(t *testing.T) {
 }
 
 func TestTables_MustTable(t *testing.T) {
-	t.Parallel()
-
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
@@ -243,8 +228,6 @@ func TestTables_MustTable(t *testing.T) {
 }
 
 func TestWithTableNames(t *testing.T) {
-	t.Parallel()
-
 	ts := ddl.MustNewTables(ddl.WithCreateTable(context.TODO(), "a3", "", "b5", "", "c7", ""))
 	t.Run("Ok", func(t *testing.T) {
 		assert.Exactly(t, "a3", ts.MustTable("a3").Name)
@@ -260,8 +243,6 @@ func TestWithTableNames(t *testing.T) {
 }
 
 func TestWithCreateTable_IsView(t *testing.T) {
-	t.Parallel()
-
 	ts := ddl.MustNewTables(ddl.WithCreateTable(context.TODO(), "view_a3", "", "b5_view", "", "c7", "CREATEA VIEW `c7` ...", "d2", ""))
 	t.Run("IsView", func(t *testing.T) {
 		assert.True(t, ts.MustTable("view_a3").IsView())
@@ -272,8 +253,6 @@ func TestWithCreateTable_IsView(t *testing.T) {
 }
 
 func TestWithCreateTable_Mock_DoesNotCreateTable(t *testing.T) {
-	t.Parallel()
-
 	dbc, dbMock := dmltest.MockDB(t)
 	defer dmltest.MockClose(t, dbc, dbMock)
 
@@ -299,8 +278,6 @@ func TestWithCreateTable_Mock_DoesNotCreateTable(t *testing.T) {
 }
 
 func TestWithCreateTable_Mock_DoesCreateTable(t *testing.T) {
-	t.Parallel()
-
 	dbc, dbMock := dmltest.MockDB(t)
 	defer dmltest.MockClose(t, dbc, dbMock)
 
@@ -326,8 +303,6 @@ func TestWithCreateTable_Mock_DoesCreateTable(t *testing.T) {
 }
 
 func TestWithCreateTableFromFile(t *testing.T) {
-	t.Parallel()
-
 	t.Run("case01 load one file one table correctly", func(t *testing.T) {
 		dbc, dbMock := dmltest.MockDB(t)
 		defer dmltest.MockClose(t, dbc, dbMock)
@@ -414,8 +389,6 @@ func TestWithCreateTableFromFile(t *testing.T) {
 }
 
 func TestWithDropTable(t *testing.T) {
-	t.Parallel()
-
 	t.Run("not previously registered", func(t *testing.T) {
 		t.Run("with DISABLE_FOREIGN_KEY_CHECKS", func(t *testing.T) {
 			dbc, dbMock := dmltest.MockDB(t)
@@ -491,8 +464,6 @@ func TestWithDropTable(t *testing.T) {
 }
 
 func TestWithCreateTable_FromQuery(t *testing.T) {
-	t.Parallel()
-
 	t.Run("create table fails", func(t *testing.T) {
 		dbc, dbMock := dmltest.MockDB(t)
 		defer dmltest.MockClose(t, dbc, dbMock)
@@ -669,12 +640,16 @@ func TestWithLoadTables(t *testing.T) {
 }
 
 func TestWithQueryDBR(t *testing.T) {
-	ts := ddl.MustNewTables()
-	dbr := dml.NewSelect("*").From("a1").WithDBR()
-	err := ts.Options(ddl.WithQueryDBR("key1", dbr))
+	p, err := dml.NewConnPool()
 	assert.NoError(t, err)
-	assert.Exactly(t, map[string]string{"key1": "SELECT * FROM `a1`"}, ts.CachedQueries())
-	sqlStr, _, err := ts.CachedQuery("key1").ToSQL()
+	ts := ddl.MustNewTables(ddl.WithConnPool(p))
+
+	err = ts.Options(ddl.WithQueryDBR(map[string]dml.QueryBuilder{
+		"key1": dml.NewSelect("*").From("a1"),
+	}))
+	assert.NoError(t, err)
+	assert.Exactly(t, map[string]string{"key1": "SELECT * FROM `a1`"}, ts.ConnPool.CachedQueries())
+	sqlStr, _, err := ts.ConnPool.WithCacheKey("key1").ToSQL()
 	assert.NoError(t, err)
 	assert.Exactly(t, "SELECT * FROM `a1`", sqlStr)
 }

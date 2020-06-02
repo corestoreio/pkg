@@ -89,30 +89,21 @@ type TableOption struct {
 
 // Tables handles all the tables defined for a package. Thread safe.
 type Tables struct {
-	dcp *dml.ConnPool // database connection pool
+	ConnPool *dml.ConnPool // database connection pool
 	// Schema represents the name of the database. Might be empty.
 	Schema string
 
 	mu sync.RWMutex
 	// tm a map where key = table name and value the table pointer
 	tm map[string]*Table
-	// queries contains the query key, e.g. if the query is select or update or
-	// etc, and the associated object with the final query
-	queries map[string]*dml.DBR
 }
 
 // WithQueryDBR adds a pre-defined query with its key to the Tables object.
-func WithQueryDBR(key string, dbr *dml.DBR) TableOption {
+func WithQueryDBR(rqb map[string]dml.QueryBuilder) TableOption {
 	return TableOption{
 		sortOrder: 150,
 		fn: func(tm *Tables) error {
-			tm.mu.Lock()
-			defer tm.mu.Unlock()
-			if tm.queries == nil {
-				tm.queries = map[string]*dml.DBR{}
-			}
-			tm.queries[key] = dbr
-			return nil
+			return tm.ConnPool.RegisterByQueryBuilder(rqb)
 		},
 	}
 }
@@ -126,8 +117,8 @@ func WithQueryDBRCallBack(cbFn func(key string, dbr *dml.DBR)) TableOption {
 			tm.mu.Lock()
 			defer tm.mu.Unlock()
 
-			for key, dbr := range tm.queries {
-				cbFn(key, dbr)
+			for key := range tm.ConnPool.CachedQueries() {
+				cbFn(key, tm.ConnPool.WithCacheKey(key))
 			}
 			return nil
 		},
@@ -158,7 +149,7 @@ func WithConnPool(db *dml.ConnPool) TableOption {
 		fn: func(tm *Tables) error {
 			tm.mu.Lock()
 			defer tm.mu.Unlock()
-			tm.dcp = db
+			tm.ConnPool = db
 			for _, t := range tm.tm {
 				t.dcp = db
 			}
@@ -228,16 +219,17 @@ func WithCreateTable(ctx context.Context, identifierCreateSyntax ...string) Tabl
 					t.Type = "VIEW"
 				}
 
-				if isCreateStmt(tvName, tvCreate) {
-					if _, err := tm.dcp.DB.ExecContext(ctx, tvCreate); err != nil {
+				if isCreateStmt(tvName, tvCreate) && tm.ConnPool != nil {
+					// TODO ConnPool != nil might lead to unexpected behaviour ... fix tests to make remove this check.
+					if _, err := tm.ConnPool.DB.ExecContext(ctx, tvCreate); err != nil {
 						return errors.Wrapf(err, "[ddl] WithCreateTable failed to run for table %q the query: %q", tvName, tvCreate)
 					}
 				}
 			}
-			if tm.dcp == nil {
+			if tm.ConnPool == nil {
 				return nil
 			}
-			tc, err := LoadColumns(ctx, tm.dcp.DB, tvNames...)
+			tc, err := LoadColumns(ctx, tm.ConnPool.DB, tvNames...)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -320,11 +312,11 @@ func WithDropTable(ctx context.Context, option string, tableViewNames ...string)
 			defer tm.mu.Unlock()
 
 			if option != "" && strings.Contains(strings.ToUpper(option), "DISABLE_FOREIGN_KEY_CHECKS") {
-				return tm.dcp.WithDisabledForeignKeyChecks(ctx, func(conn *dml.Conn) error {
+				return tm.ConnPool.WithDisabledForeignKeyChecks(ctx, func(conn *dml.Conn) error {
 					return withDropTable(ctx, tm, conn.DB, tableViewNames)
 				})
 			}
-			return withDropTable(ctx, tm, tm.dcp.DB, tableViewNames)
+			return withDropTable(ctx, tm, tm.ConnPool.DB, tableViewNames)
 		},
 	}
 }
@@ -469,38 +461,12 @@ func (tm *Tables) Options(opts ...TableOption) error {
 	}
 	tm.mu.Lock()
 	for _, tbl := range tm.tm {
-		if tbl.dcp != tm.dcp {
-			tbl.dcp = tm.dcp
+		if tbl.dcp != tm.ConnPool {
+			tbl.dcp = tm.ConnPool
 		}
 	}
 	tm.mu.Unlock()
 	return nil
-}
-
-// CachedQuery returns a SQL query string by its cache key. If a cache key does
-// not exists, it panics. Do not share the returned pointer by multiple
-// goroutines. This function must only be used by generated code.
-func (tm *Tables) CachedQuery(key string) *dml.DBR {
-	tm.mu.RLock()
-	defer tm.mu.RUnlock()
-	d, ok := tm.queries[key]
-	if !ok || d == nil {
-		// during dev we keep the panic because a programmer made a mistake.
-		panic(fmt.Sprintf("cache key %q not found", key))
-	}
-	return d
-}
-
-// CachedQueries returns a copy of the cached SQL queries. cache key => SQL string.
-func (tm *Tables) CachedQueries() map[string]string {
-	tm.mu.RLock()
-	defer tm.mu.RUnlock()
-	ret := make(map[string]string, len(tm.queries))
-	for k, v := range tm.queries {
-		sqlStr, _, _ := v.ToSQL()
-		ret[k] = sqlStr
-	}
-	return ret
 }
 
 // errTableNotFound provides a custom error behaviour with not capturing the
@@ -605,7 +571,11 @@ func (tm *Tables) DeleteAllFromCache() {
 	defer tm.mu.Unlock()
 	// maybe clear each pointer in the Table struct to avoid a memory leak
 	tm.tm = make(map[string]*Table)
-	tm.queries = make(map[string]*dml.DBR)
+	if tm.ConnPool != nil {
+		for key := range tm.ConnPool.CachedQueries() {
+			_ = tm.ConnPool.DeregisterByCacheKey(key)
+		}
+	}
 }
 
 // Validate validates the table names and their column against the current
@@ -620,7 +590,7 @@ func (tm *Tables) Validate(ctx context.Context) error {
 		tblNames = append(tblNames, tn)
 	}
 
-	tMap, err := LoadColumns(ctx, tm.dcp.DB, tblNames...)
+	tMap, err := LoadColumns(ctx, tm.ConnPool.DB, tblNames...)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -673,7 +643,7 @@ func (tm *Tables) Validate(ctx context.Context) error {
 func (tm *Tables) Truncate(ctx context.Context, o Options) error {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
-	return DisableForeignKeys(ctx, o.exec(tm.dcp.DB), func() error {
+	return DisableForeignKeys(ctx, o.exec(tm.ConnPool.DB), func() error {
 		for _, t := range tm.tm {
 			if err := t.Truncate(ctx, o); err != nil {
 				return errors.WithStack(err)
@@ -698,7 +668,7 @@ func (tm *Tables) Optimize(ctx context.Context, o Options) error {
 		dml.Quoter.WriteQualifierName(buf, tm.Schema, tn)
 	}
 	o.sqlAddShouldWait(buf)
-	_, err := o.exec(tm.dcp.DB).ExecContext(ctx, buf.String())
+	_, err := o.exec(tm.ConnPool.DB).ExecContext(ctx, buf.String())
 	return errors.WithStack(err)
 }
 
@@ -749,7 +719,7 @@ func (tl TableLock) writeTable(buf *bytes.Buffer) error {
 // success the lock gets automatically released. The Options do not support the
 // Execer field. All queries run in a single database connection (*sql.Conn).
 // Locks may be used to emulate transactions or to get more speed when updating tables.
-func (tm *Tables) Lock(ctx context.Context, o Options, tables []TableLock, fns ...func(*dml.Conn) error) (err error) {
+func (tm *Tables) Lock(ctx context.Context, o Options, tables []TableLock, fn func(*dml.Conn) error) (err error) {
 	// maybe to do to look into the Tables map to see if the table/view name is
 	// included in the Tables map. for now you can use any table to lock.
 	buf := bufferpool.Get()
@@ -774,10 +744,8 @@ func (tm *Tables) Lock(ctx context.Context, o Options, tables []TableLock, fns .
 			if _, err = singleCon.DB.ExecContext(ctx, buf.String()); err != nil {
 				return errors.WithStack(err)
 			}
-			for _, fn := range fns {
-				if err := fn(singleCon); err != nil {
-					return errors.WithStack(err)
-				}
+			if err := fn(singleCon); err != nil {
+				return errors.WithStack(err)
 			}
 			return nil
 		},
@@ -791,7 +759,7 @@ func (tm *Tables) Lock(ctx context.Context, o Options, tables []TableLock, fns .
 // Transaction runs all fns within a transaction. On error it calls
 // automatically ROLLBACK and on success (no error) COMMIT.
 func (tm *Tables) Transaction(ctx context.Context, opts *sql.TxOptions, fns ...func(*dml.Tx) error) error {
-	return tm.dcp.Transaction(ctx, opts, fns...)
+	return tm.ConnPool.Transaction(ctx, opts, fns...)
 }
 
 // SingleConnection runs all fns in a single connection and guarantees no change
@@ -799,7 +767,7 @@ func (tm *Tables) Transaction(ctx context.Context, opts *sql.TxOptions, fns ...f
 // last function of the fns slice runs in a defer statement before the
 // connection close.
 func (tm *Tables) SingleConnection(ctx context.Context, fns ...func(*dml.Conn) error) (err error) {
-	c, err := tm.dcp.Conn(ctx)
+	c, err := tm.ConnPool.Conn(ctx)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -822,9 +790,4 @@ func (tm *Tables) SingleConnection(ctx context.Context, fns ...func(*dml.Conn) e
 		}
 	}
 	return nil
-}
-
-// WithRawSQL creates a database runner with a raw SQL string.
-func (tm *Tables) WithRawSQL(query string) *dml.DBR {
-	return tm.dcp.WithRawSQL(query)
 }
