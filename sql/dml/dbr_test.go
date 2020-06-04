@@ -316,17 +316,6 @@ func TestArguments_NextUnnamedArg(t *testing.T) {
 	})
 }
 
-func TestDBR_Clone(t *testing.T) {
-	sel := NewSelect("a", "b").From("c").WithDBR(dbMock{})
-	sel.cachedSQL.qualifiedColumns = []string{"x", "y"}
-
-	selB := sel.Clone()
-	assert.NotNil(t, selB.DB)
-	assert.Exactly(t, sel.cachedSQL, selB.cachedSQL)
-
-	assert.Exactly(t, sel.cachedSQL.qualifiedColumns, selB.cachedSQL.qualifiedColumns)
-}
-
 func TestDBR_OrderByLimit(t *testing.T) {
 	t.Run("WithoutArgs", func(t *testing.T) {
 		a := NewSelect("a", "b").From("c").Where(

@@ -292,15 +292,10 @@ func (bc *DBR) CacheKey() string {
 // ApplyCallBacks may clone the DBR object and applies various functions to the new
 // DBR instance. It only clones if slice `fns` has at least one entry.
 func (a *DBR) ApplyCallBacks(fns ...DBRFunc) *DBR {
-	if len(fns) == 0 {
-		return a
-	}
-
-	ac := a.Clone() // locks
 	for _, af := range fns {
-		af(ac)
+		af(a)
 	}
-	return ac
+	return a
 }
 
 // TupleCount sets the amount of tuples and its rows. Only needed in case of a prepared statement with tuples.
@@ -863,18 +858,6 @@ func (a *DBR) WithTx(tx *Tx) *DBR {
 	a.log = tx.Log
 	a.DB = tx.DB
 	return a
-}
-
-// Clone creates a shallow clone of the current pointer. The logger gets copied.
-// Some underlying slices for the cached SQL statements are still referring to
-// the source DBR object.
-func (a *DBR) Clone() *DBR {
-	c := *a
-	if a.cachedSQL.QualifiedColumnsAliases != nil {
-		c.cachedSQL.QualifiedColumnsAliases = make([]string, len(a.cachedSQL.QualifiedColumnsAliases))
-		copy(c.cachedSQL.QualifiedColumnsAliases, a.cachedSQL.QualifiedColumnsAliases)
-	}
-	return &c
 }
 
 // Close tries to close the underlying DB connection. Useful in cases of
