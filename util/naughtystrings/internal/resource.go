@@ -212,6 +212,7 @@ var _BlnsBase64Json = []byte(`[
   "56S+5pyD56eR5a246Zmi6Kqe5a2456CU56m25omA",
   "7Jq4656A67CU7Yag66W0",
   "8KCcjvCgnLHwoJ258KCxk/CgsbjwoLKW8KCzjw==",
+  "6KGo44Od44GCQem3l8WSw6nvvKLpgI3DnMOfwqrEhcOx5LiC45CA8KCAgA==",
   "44O94Ly84LqI2YTNnOC6iOC8ve++iSDjg73gvLzguojZhM2c4LqI4Ly9776J",
   "KO+9oeKXlSDiiIAg4peV772hKQ==",
   "772A772oKMK04oiA772A4oip",
@@ -732,7 +733,7 @@ func BlnsBase64Json() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "../blns.base64.json", size: 33414, mode: os.FileMode(420), modTime: time.Unix(1484832583, 0)}
+	info := bindataFileInfo{name: "../blns.base64.json", size: 34148, mode: os.FileMode(420), modTime: time.Unix(1548804227, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -832,6 +833,9 @@ var _BlnsJson = []byte(`[
   "!@#$%^&*()` + "`" + `~",
   "\u0001\u0002\u0003\u0004\u0005\u0006\u0007\b\u000e\u000f\u0010\u0011\u0012\u0013\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f",
   "",
+  "\t\u000b\f              ​    　",
+  "­؀؁؂؃؄؅؜۝܏᠎​‌‍‎‏‪‫‬‭‮⁠⁡⁢⁣⁤⁦⁧⁨⁩⁪⁫⁬⁭⁮⁯` + "\xEF\xBB\xBF" + `￹￺￻𑂽𛲠𛲡𛲢𛲣𝅳𝅴𝅵𝅶𝅷𝅸𝅹𝅺󠀁󠀠󠀡󠀢󠀣󠀤󠀥󠀦󠀧󠀨󠀩󠀪󠀫󠀬󠀭󠀮󠀯󠀰󠀱󠀲󠀳󠀴󠀵󠀶󠀷󠀸󠀹󠀺󠀻󠀼󠀽󠀾󠀿󠁀󠁁󠁂󠁃󠁄󠁅󠁆󠁇󠁈󠁉󠁊󠁋󠁌󠁍󠁎󠁏󠁐󠁑󠁒󠁓󠁔󠁕󠁖󠁗󠁘󠁙󠁚󠁛󠁜󠁝󠁞󠁟󠁠󠁡󠁢󠁣󠁤󠁥󠁦󠁧󠁨󠁩󠁪󠁫󠁬󠁭󠁮󠁯󠁰󠁱󠁲󠁳󠁴󠁵󠁶󠁷󠁸󠁹󠁺󠁻󠁼󠁽󠁾󠁿",
+  "` + "\xEF\xBB\xBF" + `",
   "￾",
   "Ω≈ç√∫˜µ≤≥÷",
   "åß∂ƒ©˙∆˚¬…æ",
@@ -868,6 +872,9 @@ var _BlnsJson = []byte(`[
   "社會科學院語學研究所",
   "울란바토르",
   "𠜎𠜱𠝹𠱓𠱸𠲖𠳏",
+  "表ポあA鷗ŒéＢ逍Üßªąñ丂㐀𠀀",
+  "Ⱥ",
+  "Ⱦ",
   "ヽ༼ຈل͜ຈ༽ﾉ ヽ༼ຈل͜ຈ༽ﾉ",
   "(｡◕ ∀ ◕｡)",
   "｀ｨ(´∀｀∩",
@@ -876,6 +883,7 @@ var _BlnsJson = []byte(`[
   "ﾟ･✿ヾ╲(｡◕‿◕｡)╱✿･ﾟ",
   ",。・:*:・゜’( ☻ ω ☻ )。・:*:・゜’",
   "(╯°□°）╯︵ ┻━┻)",
+  "(ﾉಥ益ಥ）ﾉ` + "\xEF\xBB\xBF" + ` ┻━┻",
   "┬─┬ノ( º _ ºノ)",
   "( ͡° ͜ʖ ͡°)",
   "😍",
@@ -1179,9 +1187,12 @@ var _BlnsJson = []byte(`[
   "$HOME",
   "$ENV{'HOME'}",
   "%d",
-  "%s",
+  "%s%s%s%s%s",
   "{0}",
   "%*.*s",
+  "%@",
+  "%n",
+  "File:///",
   "../../../../../../../../../../../etc/passwd%00",
   "../../../../../../../../../../../etc/hosts",
   "() { 0; }; touch /tmp/blns.shellshock1.fail;",
@@ -1229,7 +1240,9 @@ var _BlnsJson = []byte(`[
   "Roses are \u001b[0;31mred\u001b[0m, violets are \u001b[0;34mblue. Hope you enjoy terminal hue",
   "But now...\u001b[20Cfor my greatest trick...\u001b[8m",
   "The quic\b\b\b\b\b\bk brown fo\u0007\u0007\u0007\u0007\u0007\u0007\u0007\u0007\u0007\u0007\u0007x... [Beeeep]",
-  "Powerلُلُصّبُلُلصّبُررً ॣ ॣh ॣ ॣ冗"
+  "Powerلُلُصّبُلُلصّبُررً ॣ ॣh ॣ ॣ冗",
+  "🏳0🌈️",
+  "జ్ఞ‌ా"
 ]`)
 
 func BlnsJsonBytes() ([]byte, error) {
@@ -1242,7 +1255,7 @@ func BlnsJson() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "../blns.json", size: 22013, mode: os.FileMode(420), modTime: time.Unix(1484832486, 0)}
+	info := bindataFileInfo{name: "../blns.json", size: 26381, mode: os.FileMode(420), modTime: time.Unix(1548804227, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1360,7 +1373,7 @@ func RestoreAsset(dir, name string) error {
 	if err != nil {
 		return err
 	}
-	err = os.MkdirAll(_filePath(dir, filepath.Dir(name)), os.FileMode(0755))
+	err = os.MkdirAll(_filePath(dir, filepath.Dir(name)), os.FileMode(0o755))
 	if err != nil {
 		return err
 	}
