@@ -23,7 +23,7 @@ import (
 )
 
 // WithToken parses and validates a token depending on the scope. A check to the
-// blacklist will be performed. The token gets added to the context for further
+// blockList will be performed. The token gets added to the context for further
 // processing for the next middlewares. This function depends on the runMode and
 // its scope which must exists in the requests context. WithToken() does not
 // change the scope of the previously initialized runMode and its scope.
@@ -46,7 +46,7 @@ func (s *Service) WithToken(next http.Handler) http.Handler {
 			return
 		}
 
-		token, err := scpCfg.ParseFromRequest(s.Blacklist, r)
+		token, err := scpCfg.ParseFromRequest(s.Blocklist, r)
 		if err != nil {
 			s.Log.Info("jwt.Service.WithToken.ParseFromRequest.Error", log.Err(err))
 			if s.Log.IsDebug() {

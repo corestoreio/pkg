@@ -77,8 +77,8 @@ var keyBenchmarkHMACPW = jwt.WithKey(csjwt.WithPassword([]byte(`Rump3lst!lzch3n`
 // 200000	      8474 ns/op	    2698 B/op	      63 allocs/op <= Go 1.7
 func BenchmarkWithToken_HMAC_InMemoryBL(b *testing.B) {
 	bl := set.NewInMemory()
-	bmWithToken(b, keyBenchmarkHMACPW, jwt.WithBlacklist(bl))
-	// b.Logf("Blacklist Items %d", bl.Len())
+	bmWithToken(b, keyBenchmarkHMACPW, jwt.WithBlocklist(bl))
+	// b.Logf("Blocklist Items %d", bl.Len())
 }
 
 // 30000	     55376 ns/op	    9180 B/op	      92 allocs/op <= Go 1.7
@@ -116,7 +116,7 @@ func BenchmarkWithRunMode_MultiTokenAndScope(b *testing.B) {
 	)
 
 	// below two lines comment out enables the null black list
-	jwts.Blacklist = set.NewInMemory()
+	jwts.Blocklist = set.NewInMemory()
 
 	var generateToken = func(storeCode string) []byte {
 		s := jwtclaim.NewStore()
@@ -136,9 +136,9 @@ func BenchmarkWithRunMode_MultiTokenAndScope(b *testing.B) {
 	for i := range tokens {
 		tokens[i] = generateToken(storeCodes[rand.Intn(len(storeCodes))])
 
-		// just add garbage to the blacklist
+		// just add garbage to the blockList
 		tbl := generateToken(strconv.Itoa(i))
-		if err := jwts.Blacklist.Set(tbl, time.Millisecond*time.Microsecond*time.Duration(i)); err != nil {
+		if err := jwts.Blocklist.Set(tbl, time.Millisecond*time.Microsecond*time.Duration(i)); err != nil {
 			b.Fatalf("%+v", err)
 		}
 	}

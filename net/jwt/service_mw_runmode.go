@@ -83,7 +83,7 @@ func (s *Service) WithRunMode(rm scope.RunModeCalculater, sf StoreFinder) mw.Mid
 				return
 			}
 
-			token, err := defaultScpCfg.ParseFromRequest(s.Blacklist, r)
+			token, err := defaultScpCfg.ParseFromRequest(s.Blocklist, r)
 			ctx := withContext(r.Context(), token)
 			if err != nil {
 				if s.Log.IsDebug() {

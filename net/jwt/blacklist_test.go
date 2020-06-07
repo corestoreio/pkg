@@ -19,5 +19,5 @@ import (
 	"github.com/corestoreio/pkg/storage/containable"
 )
 
-var _ jwt.Blacklister = (*set.InMemory)(nil)
+var _ jwt.Blocklister = (*set.InMemory)(nil)
 var _ set.Container = (*set.InMemory)(nil)

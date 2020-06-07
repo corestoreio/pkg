@@ -17,10 +17,10 @@ package jwt
 import (
 	"time"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/csjwt"
-	"github.com/corestoreio/errors"
 )
 
 // WithDefaultConfig applies the default JWT configuration settings based for
@@ -36,11 +36,11 @@ func WithDefaultConfig(scopeIDs ...scope.TypeID) Option {
 	return withDefaultConfig(scopeIDs...)
 }
 
-// WithBlacklist sets a new global black list service. Convenience helper
+// WithBlocklist sets a new global block list service. Convenience helper
 // function.
-func WithBlacklist(bl Blacklister) Option {
+func WithBlocklist(bl Blocklister) Option {
 	return func(s *Service) error {
-		s.Blacklist = bl
+		s.Blocklist = bl
 		return nil
 	}
 }
@@ -151,7 +151,7 @@ func WithUnauthorizedHandler(uh mw.ErrorHandler, scopeIDs ...scope.TypeID) Optio
 }
 
 // WithSingleTokenUsage if set to true for each request a token can be only used
-// once. The JTI (JSON Token Identifier) gets added to the blacklist until it
+// once. The JTI (JSON Token Identifier) gets added to the blockList until it
 // expires.
 func WithSingleTokenUsage(enable bool, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {

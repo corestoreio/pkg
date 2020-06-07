@@ -15,10 +15,10 @@
 package jwt
 
 import (
-	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/pkg/util/csjwt"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util/csjwt"
 )
 
 //go:generate go run ../internal/scopedservice/main_copy.go "$GOPACKAGE"
@@ -29,16 +29,16 @@ const (
 	claimKeyID     = "jti"
 )
 
-// Service main type for handling JWT authentication, generation, blacklists and
+// Service main type for handling JWT authentication, generation, blockLists and
 // log outs depending on a scope.
 type Service struct {
 	service
 	// JTI generates for each token a new ID. It panics on nil. Default ID
 	// generator runs in package util/shortid.
 	JTI IDGenerator
-	// Blacklist concurrent safe black list service which handles blocked
+	// Blocklist concurrent safe black list service which handles blocked
 	// tokens. Default black hole storage. Must be thread safe.
-	Blacklist Blacklister
+	Blocklist Blocklister
 }
 
 // New creates a new token service.
@@ -65,8 +65,8 @@ func New(opts ...Option) (*Service, error) {
 	if s.JTI == nil {
 		s.JTI = jti{}
 	}
-	if s.Blacklist == nil {
-		s.Blacklist = nullBL{}
+	if s.Blocklist == nil {
+		s.Blocklist = nullBL{}
 	}
 	if err := s.optionAfterApply(); err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ func (s *Service) NewToken(scopeID scope.TypeID, claim ...csjwt.Claimer) (csjwt.
 		return empty, errors.Wrap(err, "[jwt] NewToken.ConfigByScopeID")
 	}
 
-	var tk = sc.TemplateToken()
+	tk := sc.TemplateToken()
 
 	if len(claim) > 0 && claim[0] != nil {
 		if err := csjwt.MergeClaims(tk.Claims, claim...); err != nil {
@@ -117,7 +117,7 @@ func (s *Service) NewToken(scopeID scope.TypeID, claim ...csjwt.Claimer) (csjwt.
 	return tk, errors.Wrap(err, "[jwt] NewToken.SignedString")
 }
 
-// Logout adds a token securely to a blacklist with the expiration duration. If
+// Logout adds a token securely to a blockList with the expiration duration. If
 // the JTI or token ID is empty or missing, an error gets returned of behaviour
 // Empty.
 func (s *Service) Logout(token csjwt.Token) error {
@@ -130,7 +130,7 @@ func (s *Service) Logout(token csjwt.Token) error {
 		return errors.Wrap(err, "[jwt] Service.Logout extractJTI")
 	}
 
-	return errors.Wrap(s.Blacklist.Set(kid, token.Claims.Expires()), "[jwt] Service.Logout.Blacklist.Set")
+	return errors.Wrap(s.Blocklist.Set(kid, token.Claims.Expires()), "[jwt] Service.Logout.Blocklist.Set")
 }
 
 // Parse parses a token string with the DefaultID scope and returns the
@@ -158,13 +158,13 @@ func (s *Service) ParseScoped(scopeID scope.TypeID, rawToken []byte) (csjwt.Toke
 	var inBL bool
 	isValid := token.Valid && len(token.Raw) > 0
 	if isValid {
-		inBL = s.Blacklist.Has(token.Raw)
+		inBL = s.Blocklist.Has(token.Raw)
 	}
 	if isValid && !inBL {
 		return token, nil
 	}
 	if s.Log.IsDebug() {
-		s.Log.Debug("jwt.Service.ParseScoped", log.Err(err), log.Bool("inBlackList", inBL), log.String("rawToken", string(rawToken)), log.Marshal("token", token))
+		s.Log.Debug("jwt.Service.ParseScoped", log.Err(err), log.Bool("block_listed", inBL), log.String("rawToken", string(rawToken)), log.Marshal("token", token))
 	}
-	return empty, errors.NewNotValidf(errTokenParseNotValidOrBlackListed)
+	return empty, errors.NewNotValidf(errTokenParseNotValidOrBlockListed)
 }

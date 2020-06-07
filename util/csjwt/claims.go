@@ -29,7 +29,7 @@ type Claimer interface {
 	Valid() error
 	// Expires declares when a token expires. A duration smaller or equal
 	// to zero means that the token has already expired.
-	// Useful when adding a token to a blacklist.
+	// Useful when adding a token to a blockList.
 	Expires() time.Duration
 	// Set sets a value to the claim and may overwrite existing values
 	Set(key string, value interface{}) error

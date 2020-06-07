@@ -138,5 +138,5 @@ func (n binary) IsValid() bool            { return n == '1' }
 
 // MakeBinary creates a binary type for using in Set/Get functions when the code
 // needs a `set` algorithm. For example checking if a JWT exists in the
-// blacklist. Function IsValid returns true if the key exists.
+// blockList. Function IsValid returns true if the key exists.
 func MakeBinary() binary { return binary('1') }

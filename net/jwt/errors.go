@@ -18,17 +18,15 @@ import "github.com/corestoreio/errors"
 
 const (
 	errServiceUnsupportedScope         = "[jwt] Service does not support this: %s. Only default or website scope are allowed."
-	errTokenParseNotValidOrBlackListed = "[jwt] Token not valid or black listed"
+	errTokenParseNotValidOrBlockListed = "[jwt] Token not valid or block listed"
 	errScopedConfigNotValid            = `[jwt] ScopedConfig %s is invalid.`
 	errUnknownSigningMethod            = "[jwt] Unknown signing method - Have: %q Want: %q"
 	errUnknownSigningMethodOptions     = "[jwt] Unknown signing method - Have: %q Want: ES, HS or RS"
 	errKeyEmpty                        = "[jwt] Provided key argument is empty"
 
-	// ErrTokenBlacklisted returned by the middleware if the token can be found
+	// ErrTokenBlockListed returned by the middleware if the token can be found
 	// within the black list.
-	errTokenBlacklisted = "[jwt] Token has been black listed"
+	errTokenBlocklisted = "[jwt] Token appears on the block listed"
 )
 
-var (
-	errEmptyKID = errors.NewEmptyf("[jwt] JTI / key ID is empty.")
-)
+var errEmptyKID = errors.NewEmptyf("[jwt] JTI / key ID is empty.")

@@ -71,21 +71,21 @@ func matchPath(caseSensitivePath bool, r *http.Request, other string) bool {
 // Providing no scopeIDs applies the resource ACL to the default scope ID. The
 // string based ACL checks will always be executed before REGEX based ACL
 // checks, if both functional options have been provided.
-func WithResourceACLs(blacklist, whitelist []string, scopeIDs ...scope.TypeID) Option {
+func WithResourceACLs(blockList, allowList []string, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
 		sc := s.findScopedConfig(scopeIDs...)
 		isCaseSensitive := sc.caseSensitivePath // copy the value to avoid races
 		sc.triggers = append(sc.triggers, authTrigger{
 			prio: -10,
 			TriggerFunc: func(r *http.Request) bool {
-				blocked := len(blacklist) == 0
-				for _, b := range blacklist {
+				blocked := len(blockList) == 0
+				for _, b := range blockList {
 					if matchPath(isCaseSensitive, r, b) {
 						blocked = true
 					}
 				}
 				if blocked {
-					for _, w := range whitelist {
+					for _, w := range allowList {
 						if matchPath(isCaseSensitive, r, w) {
 							return false
 						}
@@ -116,17 +116,17 @@ func strSliceToRegexSlice(sl []string) ([]*regexp.Regexp, error) {
 
 // WithResourceRegexpACLs same as WithResourceACLs but uses the slow
 // pre-compiled and more powerful regexes.
-func WithResourceRegexpACLs(block, whitelist []string, scopeIDs ...scope.TypeID) Option {
-	br, err := strSliceToRegexSlice(block)
+func WithResourceRegexpACLs(blockList, allowList []string, scopeIDs ...scope.TypeID) Option {
+	br, err := strSliceToRegexSlice(blockList)
 	if err != nil {
 		return func(s *Service) error {
-			return errors.Wrap(err, "[auth] WithResourcesRegexp black list")
+			return errors.Wrap(err, "[auth] WithResourcesRegexp block list")
 		}
 	}
-	wlr, err := strSliceToRegexSlice(whitelist)
+	wlr, err := strSliceToRegexSlice(allowList)
 	if err != nil {
 		return func(s *Service) error {
-			return errors.Wrap(err, "[auth] WithResourcesRegexp white list")
+			return errors.Wrap(err, "[auth] WithResourcesRegexp allow list")
 		}
 	}
 

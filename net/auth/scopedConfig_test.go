@@ -24,8 +24,8 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/net/auth"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/pkg/util/hashpool"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/corestoreio/pkg/util/hashpool"
 	"github.com/stretchr/testify/require"
 )
 
@@ -52,14 +52,14 @@ func TestScopedConfig_Authenticate(t *testing.T) {
 			errors.NoKind,
 		},
 		{
-			"REGEX blacklist error",
+			"REGEX blockList error",
 			[]auth.Option{auth.WithResourceRegexpACLs([]string{"][0-9"}, nil)},
 			httptest.NewRequest("GET", "http://corestore.io/anyroute", nil),
 			errors.Fatal,
 			errors.NoKind,
 		},
 		{
-			"REGEX whitelist error",
+			"REGEX allowList error",
 			[]auth.Option{auth.WithResourceRegexpACLs([]string{""}, []string{"][0-9"})},
 			httptest.NewRequest("GET", "http://corestore.io/anyroute", nil),
 			errors.Fatal,
@@ -171,14 +171,14 @@ func TestScopedConfig_Authenticate(t *testing.T) {
 			errors.Unauthorized,
 		},
 		{
-			"Blocks one resource /customer, we call /customer/forgetpassword which is whitelisted",
+			"Blocks one resource /customer, we call /customer/forgetpassword which is allowListed",
 			[]auth.Option{auth.WithResourceACLs([]string{"/customer"}, []string{"/customer/resetpassword", "/customer/forgetpassword"}), auth.WithInvalidAuth(false)},
 			httptest.NewRequest("GET", "http://corestore.io/customer/forgetpassword?param=1", nil),
 			errors.NoKind,
 			errors.NoKind,
 		},
 		{
-			"REGEX Blocks one resource /customer, we call /customer/forgetpassword which is whitelisted",
+			"REGEX Blocks one resource /customer, we call /customer/forgetpassword which is allowListed",
 			[]auth.Option{auth.WithResourceRegexpACLs([]string{"^/customer"}, []string{"^/[a-z]+/resetpassword", "^/[a-z]+/forgetpassword"}), auth.WithInvalidAuth(false)},
 			httptest.NewRequest("GET", "http://corestore.io/customer/forgetpassword?param=1", nil),
 			errors.NoKind,

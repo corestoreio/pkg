@@ -18,11 +18,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/csjwt"
 	"github.com/corestoreio/pkg/util/csjwt/jwtclaim"
-	"github.com/corestoreio/errors"
 )
 
 // ScopedConfig contains the configuration for a scope
@@ -58,7 +58,7 @@ type ScopedConfig struct {
 	// to find the store code, defaults to constant store.CodeFieldName.
 	StoreCodeFieldName string
 	// SingleTokenUsage if set to true for each request a token can be only used
-	// once. The JTI (JSON Token Identifier) gets added to the blacklist until it
+	// once. The JTI (JSON Token Identifier) gets added to the blockList until it
 	// expires.
 	SingleTokenUsage bool
 }
@@ -99,7 +99,7 @@ func (sc ScopedConfig) TemplateToken() (tk csjwt.Token) {
 
 // ParseFromRequest parses a request to find a token in either the header, a
 // cookie or an HTML form.
-func (sc ScopedConfig) ParseFromRequest(bl Blacklister, r *http.Request) (csjwt.Token, error) {
+func (sc ScopedConfig) ParseFromRequest(bl Blocklister, r *http.Request) (csjwt.Token, error) {
 	dst := sc.TemplateToken()
 
 	if err := sc.Verifier.ParseFromRequest(&dst, sc.KeyFunc, r); err != nil {
@@ -112,11 +112,11 @@ func (sc ScopedConfig) ParseFromRequest(bl Blacklister, r *http.Request) (csjwt.
 	}
 
 	if bl.Has(kid) {
-		return dst, errors.NewNotValidf(errTokenBlacklisted)
+		return dst, errors.NewNotValidf(errTokenBlocklisted)
 	}
 	if sc.SingleTokenUsage {
 		if err := bl.Set(kid, dst.Claims.Expires()); err != nil {
-			return dst, errors.Wrap(err, "[jwt] ScopedConfig.ParseFromRequest.Blacklist.Set")
+			return dst, errors.Wrap(err, "[jwt] ScopedConfig.ParseFromRequest.Blocklist.Set")
 		}
 	}
 	return dst, nil

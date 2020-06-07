@@ -454,8 +454,8 @@ type InfileOptions struct {
 
 // LoadDataInfile loads a local CSV file into a MySQL table. For more details
 // please read https://dev.mysql.com/doc/refman/5.7/en/load-data.html Files must
-// be whitelisted by registering them with mysql.RegisterLocalFile(filepath)
-// (recommended) or the Whitelist check must be deactivated by using the DSN
+// be allowlisted by registering them with mysql.RegisterLocalFile(filepath)
+// (recommended) or the allow list check must be deactivated by using the DSN
 // parameter allowAllFiles=true (Might be insecure!). For more details
 // https://godoc.org/github.com/go-sql-driver/mysql#RegisterLocalFile. To ignore
 // foreign key constraints during the load operation, issue a SET

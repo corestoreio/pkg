@@ -74,7 +74,7 @@ func NewConfigStructure() (element.Sections, error) {
 							// Path: net/jwt/single_usage
 							ID:        cfgpath.MakeRoute("single_usage"),
 							Label:     text.Chars(`Enable single token usage`),
-							Comment:   text.Chars(`If set to true for each request a token can only be used once. The JTI (JSON Token Identifier) gets added to the blacklist until it expires.`),
+							Comment:   text.Chars(`If set to true for each request a token can only be used once. The JTI (JSON Token Identifier) gets added to the blockList until it expires.`),
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,

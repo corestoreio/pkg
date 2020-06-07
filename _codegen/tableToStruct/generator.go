@@ -37,7 +37,7 @@ type generator struct {
 	dbrConn         *dbr.ConnPool
 	outfile         *os.File
 	tables          []string      // all available tables for which we should at least generate a type definition
-	whiteListTables slices.String // table name in this slice is allowed for generic functions
+	allowListTables slices.String // table name in this slice is allowed for generic functions
 	eavValueTables  codegen.TypeCodeValueTable
 	wg              *sync.WaitGroup
 	// existingMethodSets contains all existing method sets from a package for the Table* types
@@ -156,16 +156,16 @@ func (g *generator) initTables() {
 		}
 	}
 
-	if g.tts.GenericsWhiteList == "" {
+	if g.tts.GenericsAllowList == "" {
 		return // do nothing because nothing defined, neither custom SQL nor to copy from SQLQuery field
 	}
-	if false == dbr.Stmt.IsSelect(g.tts.GenericsWhiteList) {
+	if false == dbr.Stmt.IsSelect(g.tts.GenericsAllowList) {
 		// copy result from tables because select key word not found
-		g.whiteListTables = g.tables
+		g.allowListTables = g.tables
 		return
 	}
 
-	g.whiteListTables, err = codegen.GetTables(g.dbrConn.NewSession(), codegen.ReplaceTablePrefix(g.tts.GenericsWhiteList))
+	g.allowListTables, err = codegen.GetTables(g.dbrConn.NewSession(), codegen.ReplaceTablePrefix(g.tts.GenericsAllowList))
 	codegen.LogFatal(err)
 }
 
@@ -222,7 +222,7 @@ func (g *generator) getGenericTemplate(tableName string) string {
 		codegen.LogFatal(err)
 	}
 
-	if false == g.whiteListTables.Contains(tableName) {
+	if false == g.allowListTables.Contains(tableName) {
 		return finalTpl.String()
 	}
 	isAll := (g.tts.GenericsFunctions & tpl.OptAll) == tpl.OptAll

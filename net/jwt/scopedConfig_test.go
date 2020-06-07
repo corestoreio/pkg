@@ -19,12 +19,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/storage/containable"
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/csjwt"
 	"github.com/corestoreio/pkg/util/csjwt/jwtclaim"
 	"github.com/corestoreio/pkg/util/shortid"
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestScopedConfig_ParseFromRequest_Valid(t *testing.T) {
@@ -60,7 +60,6 @@ func TestScopedConfig_ParseFromRequest_Invalid_Token(t *testing.T) {
 }
 
 func TestScopedConfig_ParseFromRequest_Invalid_JTI(t *testing.T) {
-
 	sc := newScopedConfig(0, 0)
 	tk := csjwt.NewToken(jwtclaim.Map{})
 	token, err := tk.SignedString(sc.SigningMethod, sc.Key)
@@ -75,7 +74,7 @@ func TestScopedConfig_ParseFromRequest_Invalid_JTI(t *testing.T) {
 	assert.Exactly(t, token, reqToken.Raw)
 }
 
-func TestScopedConfig_ParseFromRequest_In_Blacklist(t *testing.T) {
+func TestScopedConfig_ParseFromRequest_In_Blocklist(t *testing.T) {
 	bl := set.NewInMemory()
 	sc := newScopedConfig(0, 0)
 	kid := shortid.MustGenerate()
@@ -101,14 +100,14 @@ type errBl struct {
 func (e errBl) Set(id []byte, expires time.Duration) error {
 	return e.setErr
 }
+
 func (e errBl) Has(id []byte) bool {
 	return e.has
 }
 
-var _ Blacklister = (*errBl)(nil)
+var _ Blocklister = (*errBl)(nil)
 
 func TestScopedConfig_ParseFromRequest_SingleTokenUsage_BL_Set_Error(t *testing.T) {
-
 	sc := newScopedConfig(0, 0)
 	sc.SingleTokenUsage = true
 	kid := shortid.MustGenerate()

@@ -160,8 +160,8 @@ func TestService_WithToken_SingleUsage(t *testing.T) {
 				panic("Should not get called")
 			})
 		}),
-		// default is a null blacklist so we must set one
-		jwt.WithBlacklist(set.NewInMemory()),
+		// default is a null blockList so we must set one
+		jwt.WithBlocklist(set.NewInMemory()),
 	)
 
 	req := httptest.NewRequest("GET", "http://auth2.xyz", nil)

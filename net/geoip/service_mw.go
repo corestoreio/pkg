@@ -171,7 +171,7 @@ func (s *Service) WithIsCountryAllowedByIP(next http.Handler) http.Handler {
 //				return
 //			}
 //
-//			token, err := defaultScpCfg.ParseFromRequest(s.Blacklist, r)
+//			token, err := defaultScpCfg.ParseFromRequest(s.Blocklist, r)
 //			ctx := withContext(r.Context(), token)
 //			if err != nil {
 //				if s.Log.IsDebug() {

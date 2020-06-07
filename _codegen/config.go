@@ -40,12 +40,12 @@ type (
 		// EntityTypeCodes If provided then eav_entity_type.value_table_prefix
 		// will be evaluated for further tables.
 		EntityTypeCodes []string
-		// GenericsWhiteList config option as a SQL query to select all tables
+		// GenericsAllowList config option as a SQL query to select all tables
 		// for which it should generate the generic functions. If empty nothing
-		// gets generated. If GenericsWhiteList contains the word SQLQuery then
+		// gets generated. If GenericsAllowList contains the word SQLQuery then
 		// the query will be copied from SQLQuery field and all tables receive
 		// the generated functions.
-		GenericsWhiteList string
+		GenericsAllowList string
 		// GenericsFunctions specify which functions you need in the whole
 		// package
 		GenericsFunctions tpl.Generics
@@ -248,7 +248,7 @@ var ConfigTableToStruct = TableToStructMap{
 							'{{tableprefix}}authorization_rule','{{tableprefix}}admin_rule'
 						) GROUP BY TABLE_NAME;`,
 		EntityTypeCodes:   nil,
-		GenericsWhiteList: "SQLQuery",
+		GenericsAllowList: "SQLQuery",
 		GenericsFunctions: tpl.OptSQL | tpl.OptFindBy,
 	},
 	"user": TableToStruct{
@@ -256,7 +256,7 @@ var ConfigTableToStruct = TableToStructMap{
 		OutputFile:        BasePath.AppendDir("user", "tables_generated"),
 		SQLQuery:          `{{tableprefix}}admin_user`,
 		EntityTypeCodes:   nil,
-		GenericsWhiteList: "SQLQuery",
+		GenericsAllowList: "SQLQuery",
 		GenericsFunctions: tpl.OptAll,
 	},
 	"config/storage/ccd": TableToStruct{
@@ -264,7 +264,7 @@ var ConfigTableToStruct = TableToStructMap{
 		OutputFile:        BasePath.AppendDir("config", "storage", "ccd", "tables_generated"),
 		SQLQuery:          `{{tableprefix}}core_config_data`,
 		EntityTypeCodes:   nil,
-		GenericsWhiteList: "",
+		GenericsAllowList: "",
 		// GenericsFunctions: tpl.OptAll, not needed ... or @todo
 	},
 	"directory": TableToStruct{
@@ -274,7 +274,7 @@ var ConfigTableToStruct = TableToStructMap{
 						TABLE_SCHEMA = DATABASE() AND
 						TABLE_NAME LIKE '{{tableprefix}}directory%' GROUP BY TABLE_NAME;`,
 		EntityTypeCodes:   nil,
-		GenericsWhiteList: "SQLQuery",
+		GenericsAllowList: "SQLQuery",
 		GenericsFunctions: tpl.OptAll,
 	},
 	"eav": TableToStruct{
@@ -282,7 +282,7 @@ var ConfigTableToStruct = TableToStructMap{
 		OutputFile:      BasePath.AppendDir("eav", "tables_generated"),
 		SQLQuery:        `{{tableprefix}}eav%`,
 		EntityTypeCodes: nil,
-		GenericsWhiteList: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
+		GenericsAllowList: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
 						TABLE_SCHEMA = DATABASE() AND
 						TABLE_NAME LIKE '{{tableprefix}}eav_entity_type' GROUP BY TABLE_NAME;`,
 		GenericsFunctions: tpl.OptSQL | tpl.OptFindBy,
@@ -298,7 +298,7 @@ var ConfigTableToStruct = TableToStructMap{
 						'{{tableprefix}}core_website','{{tableprefix}}store_website'
 					) GROUP BY TABLE_NAME;`,
 		EntityTypeCodes:   nil,
-		GenericsWhiteList: "SQLQuery",
+		GenericsAllowList: "SQLQuery",
 		GenericsFunctions: tpl.OptAll,
 	},
 	"catalog": TableToStruct{
@@ -311,7 +311,7 @@ var ConfigTableToStruct = TableToStructMap{
 						TABLE_NAME NOT LIKE '{{tableprefix}}%bundle%' AND
 						TABLE_NAME NOT LIKE '{{tableprefix}}%\_flat\_%' GROUP BY TABLE_NAME;`,
 		EntityTypeCodes: []string{"catalog_category", "catalog_product"},
-		GenericsWhiteList: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
+		GenericsAllowList: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
 								TABLE_SCHEMA = DATABASE() AND
 								(TABLE_NAME LIKE '{{tableprefix}}catalog\_%' OR TABLE_NAME LIKE '{{tableprefix}}catalogindex%' ) AND
 								TABLE_NAME NOT LIKE '{{tableprefix}}%bundle%' AND
@@ -325,7 +325,7 @@ var ConfigTableToStruct = TableToStructMap{
 		OutputFile:        BasePath.AppendDir("customer", "tables_generated"),
 		SQLQuery:          `{{tableprefix}}customer%`,
 		EntityTypeCodes:   []string{"customer", "customer_address"},
-		GenericsWhiteList: "SQLQuery",
+		GenericsAllowList: "SQLQuery",
 		GenericsFunctions: tpl.OptAll,
 	},
 }

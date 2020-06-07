@@ -18,18 +18,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/net/jwt"
 	"github.com/corestoreio/pkg/storage/text"
 	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/conv"
 	"github.com/corestoreio/pkg/util/csjwt"
 	"github.com/corestoreio/pkg/util/csjwt/jwtclaim"
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestServiceMustNewServicePanic(t *testing.T) {
-
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
@@ -41,20 +40,18 @@ func TestServiceMustNewServicePanic(t *testing.T) {
 	_ = jwt.MustNew(jwt.WithKey(csjwt.WithECPrivateKeyFromFile("non-existent.pem")))
 }
 
-func TestServiceNewDefaultBlacklist(t *testing.T) {
-
+func TestServiceNewDefaultBlocklist(t *testing.T) {
 	jwts := jwt.MustNew()
 
 	key := []byte("test")
-	assert.Nil(t, jwts.Blacklist.Set(key, time.Hour))
-	assert.False(t, jwts.Blacklist.Has(key))
+	assert.Nil(t, jwts.Blocklist.Set(key, time.Hour))
+	assert.False(t, jwts.Blocklist.Has(key))
 	jti, err := jwts.JTI.NewID()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, jti)
 }
 
 func TestServiceNewDefault(t *testing.T) {
-
 	jwts := jwt.MustNew()
 
 	testClaims := &jwtclaim.Standard{
@@ -81,7 +78,6 @@ func TestServiceNewDefault(t *testing.T) {
 }
 
 func TestServiceNewDefaultRSAError(t *testing.T) {
-
 	jmRSA, err := jwt.New(jwt.WithKey(csjwt.WithRSAPrivateKeyFromFile("invalid.key")))
 	assert.Nil(t, jmRSA)
 	assert.Contains(t, err.Error(), "open invalid.key:") //  no such file or directory OR The system cannot find the file specified.
@@ -96,7 +92,6 @@ func (ms malformedSigner) Alg() string {
 }
 
 func TestServiceParseInvalidSigningMethod(t *testing.T) {
-
 	ms := &malformedSigner{
 		SigningMethodHMAC: csjwt.NewSigningMethodHS256(),
 	}
@@ -130,13 +125,12 @@ func (b *testBL) Set(theToken []byte, exp time.Duration) error {
 }
 func (b *testBL) Has(_ []byte) bool { return false }
 
-var _ jwt.Blacklister = (*testBL)(nil)
+var _ jwt.Blocklister = (*testBL)(nil)
 
 func TestServiceLogout(t *testing.T) {
-
 	tbl := &testBL{T: t}
 	jwts := jwt.MustNew(
-		jwt.WithBlacklist(tbl),
+		jwt.WithBlocklist(tbl),
 	)
 
 	theToken, err := jwts.NewToken(scope.DefaultTypeID, jwtclaim.NewStore())
@@ -158,14 +152,12 @@ func TestServiceLogout(t *testing.T) {
 }
 
 func TestServiceIncorrectConfigurationScope(t *testing.T) {
-
 	jwts, err := jwt.New(jwt.WithKey(csjwt.WithPasswordRandom(), scope.Store.WithID(33)))
 	assert.Nil(t, jwts)
 	assert.True(t, errors.IsNotSupported(err), "Error: %+v", err)
 }
 
 func TestService_NewToken_Merge_Maps(t *testing.T) {
-
 	jwts, err := jwt.New(
 		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.WithID(3)),
 	)
@@ -189,7 +181,6 @@ func TestService_NewToken_Merge_Maps(t *testing.T) {
 }
 
 func TestService_NewToken_Merge_Structs(t *testing.T) {
-
 	jwts, err := jwt.New(
 		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.WithID(4)),
 		jwt.WithTemplateToken(func() csjwt.Token {
@@ -231,7 +222,6 @@ func TestService_NewToken_Merge_Structs(t *testing.T) {
 }
 
 func TestService_NewToken_Merge_Fail(t *testing.T) {
-
 	jwts, err := jwt.New(
 		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.WithID(4)),
 		jwt.WithTemplateToken(func() csjwt.Token {
