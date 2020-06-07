@@ -628,6 +628,31 @@ func ToSliceE(i interface{}) ([]interface{}, error) {
 	}
 }
 
+// ToDataSliceE casts an empty interface to a [][]string.
+// Supports: map[string]string and []string if it contains semicolon (as in CSV)
+func ToDataSliceE(i interface{}) ([][]string, error) {
+	var a [][]string
+	switch v := i.(type) {
+	case []string:
+		for _, line := range v {
+			a = append(a, strings.Split(line, ";"))
+		}
+		return a, nil
+	case map[string]string:
+		keys := make([]string, 0, len(v))
+		for key := range v {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			a = append(a, []string{k, v[k]})
+		}
+		return a, nil
+	default:
+		return a, errors.NotValid.Newf("[conv] Unable to cast %#v to [][]string", i)
+	}
+}
+
 // ToStringSliceE casts an empty interface to a []string.
 func ToStringSliceE(i interface{}) ([]string, error) {
 	var a []string

@@ -82,6 +82,11 @@ func ToStringSlice(i interface{}) []string {
 	return v
 }
 
+func ToDataSlice(i interface{}) [][]string {
+	v, _ := ToDataSliceE(i)
+	return v
+}
+
 func ToIntSlice(i interface{}) []int {
 	v, _ := ToIntSliceE(i)
 	return v

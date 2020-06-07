@@ -286,6 +286,23 @@ func TestSlices(t *testing.T) {
 	assert.Equal(t, []int{2, 3}, ToIntSlice([2]string{"2", "3"}))
 }
 
+func TestToDataSlice(t *testing.T) {
+	assert.Exactly(t, [][]string{
+		{"a", "b"},
+		{"c", "d"},
+		{"e", "f"},
+	}, ToDataSlice(map[string]string{
+		"e": "f",
+		"a": "b",
+		"c": "d",
+	}))
+	assert.Exactly(t, [][]string{
+		{"e", "f"},
+		{"a", "b"},
+		{"c", "d"},
+	}, ToDataSlice([]string{"e;f", "a;b", "c;d"}))
+}
+
 func TestToBool2(t *testing.T) {
 	assert.Equal(t, ToBool(0), false)
 	assert.Equal(t, ToBool(int64(0)), false)
