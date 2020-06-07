@@ -809,7 +809,8 @@ func (a *DBR) mapColumns(containsQualifiedRecords int, args []interface{}, cm *C
 // Reset resets the internal slices for new usage retaining the already
 // allocated memory. Reset gets called automatically in many Load* functions. In
 // case of an INSERT statement, Reset triggers a new build of the VALUES part.
-// This function must be called when the number of argument changes.
+// This function must be called when the number of argument changes for an
+// INSERT query.
 func (a *DBR) Reset() *DBR {
 	a.previousErr = nil
 	a.cachedSQL.insertIsBuildValues = false

@@ -294,7 +294,7 @@ func TestInsert_Prepare(t *testing.T) {
 }
 
 func TestInsert_BuildValues(t *testing.T) {
-	t.Run("WithDBR", func(t *testing.T) {
+	t.Run("WithArgs", func(t *testing.T) {
 		p := &dmlPerson{
 			Name:  "Pike",
 			Email: null.MakeString("pikes@peak.co"),
@@ -304,8 +304,6 @@ func TestInsert_BuildValues(t *testing.T) {
 			AddColumns("name", "email").BuildValues().
 			WithDBR(dbMock{})
 
-		// bug
-
 		compareToSQL(t, insA.TestWithArgs(dml.Qualify("", p)), errors.NoKind,
 			"INSERT INTO `alpha` (`name`,`email`) VALUES (?,?)",
 			"",
@@ -314,13 +312,61 @@ func TestInsert_BuildValues(t *testing.T) {
 	})
 
 	t.Run("WithoutArgs", func(t *testing.T) {
-		ins := dml.NewInsert("alpha").
-			AddColumns("name", "email").BuildValues()
+		ins := dml.NewInsert("alpha").AddColumns("name", "email").BuildValues()
 
 		compareToSQL(t, ins, errors.NoKind,
 			"INSERT INTO `alpha` (`name`,`email`) VALUES (?,?)",
 			"",
 		)
+	})
+
+	t.Run("reuse statement", func(t *testing.T) {
+		dbc, dbMock := dmltest.MockDB(t)
+		defer dmltest.MockClose(t, dbc, dbMock)
+		ctx := context.Background()
+		cp, err := dml.NewConnPool(dml.WithDB(dbc.DB))
+		assert.NoError(t, err)
+
+		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("INSERT INTO `people` (`name`,`email`) VALUES (?,?)")).
+			WithArgs("Pike", "pikes@peak.co").
+			WillReturnResult(sqlmock.NewResult(1, 0))
+		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("INSERT INTO `people` (`name`,`email`) VALUES (?,?),(?,?)")).
+			WithArgs("Pike1", "p1@p.co", "Pike2", "p2@p.co").
+			WillReturnResult(sqlmock.NewResult(1, 0))
+		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("INSERT INTO `people` (`name`,`email`) VALUES (?,?),(?,?),(?,?)")).
+			WithArgs("Pike1", "p1@p.co", "Pike2", "p2@p.co", "Pike3", "p3@p.co").
+			WillReturnResult(sqlmock.NewResult(1, 0))
+		dbMock.ExpectExec(dmltest.SQLMockQuoteMeta("INSERT INTO `people` (`name`,`email`) VALUES ('Pike4','pikes@peak.co')")).
+			WithArgs().
+			WillReturnResult(sqlmock.NewResult(1, 0))
+
+		inDBR := cp.WithQueryBuilder(dml.NewInsert("people").AddColumns("name", "email"))
+
+		_, err = inDBR.ExecContext(ctx,
+			&dmlPerson{Name: "Pike", Email: null.MakeString("pikes@peak.co")},
+		)
+		assert.NoError(t, err)
+
+		inDBR.Reset()
+		_, err = inDBR.ExecContext(ctx,
+			&dmlPerson{Name: "Pike1", Email: null.MakeString("p1@p.co")},
+			&dmlPerson{Name: "Pike2", Email: null.MakeString("p2@p.co")},
+		)
+		assert.NoError(t, err)
+
+		inDBR.Reset()
+		_, err = inDBR.ExecContext(ctx,
+			&dmlPerson{Name: "Pike1", Email: null.MakeString("p1@p.co")},
+			&dmlPerson{Name: "Pike2", Email: null.MakeString("p2@p.co")},
+			&dmlPerson{Name: "Pike3", Email: null.MakeString("p3@p.co")},
+		)
+		assert.NoError(t, err)
+
+		inDBR.Interpolate().Reset()
+		_, err = inDBR.ExecContext(ctx,
+			&dmlPerson{Name: "Pike4", Email: null.MakeString("pikes@peak.co")},
+		)
+		assert.NoError(t, err)
 	})
 }
 
